@@ -328,10 +328,15 @@ def _nach_themen(felder: list[str], bindung: dict) -> list[str]:
     # (hinter „Waren die Ausgaben notwendig?" und „Konntest du sie nicht vermeiden?"), und „Wie
     # viel hast du für die Betreuung deines Kindes gezahlt?" als LETZTE von zehn Betreuungsfragen.
     # Beide Male fragte der Fragebogen nach Merkmalen einer Sache, die er nie erhoben hatte.
+    # EINMAL rechnen, nicht je Thema: `gate_gewicht` laeuft ueber die ganze Bindung, und die
+    # Schleife darunter hat 76 Durchgaenge. Je Thema gerufen kostete das ~300 ms pro
+    # /fragen-Aufruf — gemessen 2026-08-27, als vier UI-Tests daran in den Timeout liefen.
+    gw_einmal = gate_gewicht(bindung)
     for thema, gruppe in nach_thema.items():
         eingang = [f for f in gruppe if bindung[f].get("eingangsfrage")]
         if eingang:
-            nach_thema[thema] = eingang + [f for f in gruppe if f not in eingang]
+            gruppe = eingang + [f for f in gruppe if f not in eingang]
+        nach_thema[thema] = _nach_vordruck(gruppe, bindung, gw_einmal)
     return [f for thema in _themen_folge(nach_thema, bindung) for f in nach_thema[thema]]
 
 
@@ -369,6 +374,51 @@ def _feld_ausgeschlossen(eintrag: dict, aktiv: dict) -> bool:
     if "wert_nicht" in bed:
         return ev.get("wert") == bed["wert_nicht"]
     return ev.get("wert") != bed["wert"]
+
+
+def _nach_vordruck(gruppe: list[str], bindung: dict, gw: dict) -> list[str]:
+    """Innerhalb eines Themas: die Felder mit ELSTER-Kennzahl in der Reihenfolge des Vordrucks.
+
+    Die Kennzahlen sind durchnummeriert, wie das amtliche Formular sie führt — E0500107 (Vorname
+    des Kindes) vor E0500406 (IdNr) vor E0500701 (Geburtsdatum) vor E0501103 (Name des anderen
+    Elternteils). Diese Ordnung ist da und kostet nichts; ohne sie entschied der
+    Unsicherheits-Beitrag, und der ist quer zu allem, was ein Mensch erwartet.
+
+    GEMESSEN 2026-08-27 im Kinderfreibetrags-Block, wie Julius ihn im Durchgang sah: die ersten
+    vier Fragen galten dem ANDEREN Elternteil (Geburtsdatum, Verhältnis, Name, Zeitraum), der
+    Vorname des eigenen Kindes stand auf Platz 12 von 13.
+
+    NUR DIE FELDER MIT KENNZAHL TAUSCHEN UNTEREINANDER DIE PLÄTZE. Alles andere — Gates,
+    Eingangsfragen, Bedingungsfelder, die neuen Zählfelder — bleibt, wo es steht. Sonst würde eine
+    Formular-Nummerierung darüber entscheiden, wann eine Frage kommt, die ganze Regeln abschaltet.
+    """
+    # UMSORTIERT WIRD NUR INNERHALB EINER KLASSE, nie über die Grenze hinweg. Die Queue trennt
+    # Felder, die andere Fragen streichen, von solchen, die nur einen Wert liefern — diese
+    # Trennung ist der Grund, warum ein Gate früh kommt, und eine Formular-Nummerierung darf sie
+    # nicht aufheben. Gemessen 2026-08-27: über die Grenze hinweg sortiert, rutschten Gates hinter
+    # Wertfelder und drei Bestandstests wurden zu Recht rot.
+    #
+    # Eingangsfragen bleiben ganz aussen vor: sie stehen vorn, weil sie die Existenz erheben.
+    #
+    # Die Klasse „formales Gate" (trägt eine geltungsbedingung, streicht aber nichts — Gewicht 0)
+    # ist der gefundene Fall: ALLE dreizehn Felder des Kind-Blocks gehören ihr an, und untereinander
+    # ist die Vordruck-Ordnung genau das, was ein Mensch erwartet.
+    def _klasse(f):
+        if bindung[f].get("eingangsfrage"):
+            return None                                   # nie umsortieren
+        if gw.get(f, 0) > 0:
+            return None                                   # echtes Gate: Gewichtsordnung gilt
+        return "formal" if "geltungsbedingung" in (bindung[f].get("quelle") or {}) else "wert"
+
+    aus = list(gruppe)
+    for klasse in ("formal", "wert"):
+        mit = [f for f in gruppe if bindung[f].get("elster_kz") and _klasse(f) == klasse]
+        if len(mit) < 2:
+            continue
+        sortiert = iter(sorted(mit, key=lambda f: bindung[f]["elster_kz"]))
+        kandidaten = set(mit)
+        aus = [next(sortiert) if f in kandidaten else f for f in aus]
+    return aus
 
 
 def _themen_folge(nach_thema: dict[str, list[str]], bindung: dict) -> list[str]:

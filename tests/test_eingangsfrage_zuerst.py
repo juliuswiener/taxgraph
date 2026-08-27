@@ -245,6 +245,61 @@ def test_die_queue_springt_nicht_zwischen_themen_hin_und_her():
         f"die Messung stimmt nicht.")
 
 
+def test_ein_thema_folgt_der_reihenfolge_des_vordrucks():
+    """Innerhalb eines Themas stehen die Felder mit ELSTER-Kennzahl in der Reihenfolge des
+    amtlichen Vordrucks — die Nummerierung bildet sie ab und kostet nichts.
+
+    ANLASS, Julius' E2E-Durchgang am 2026-08-27: der Kinderfreibetrags-Block begann mit VIER
+    Fragen zum ANDEREN Elternteil (Geburtsdatum, Verhältnis, Name, Zeitraum), während der Vorname
+    des eigenen Kindes auf Platz 12 von 13 stand. Sortiert hatte bis dahin der
+    Unsicherheits-Beitrag, und der ist quer zu allem, was ein Mensch erwartet.
+
+    Geprüft wird am Kind-Block namentlich, weil er der gefundene Fall ist und mit 13 Feldern der
+    grösste — und zusätzlich über alle Themen, damit die Regel nicht auf einen Einzelfall
+    zusammenschrumpft."""
+    s = ST.leerer_store(2025, fall_id="vordruck")
+    for fid, e in BINDUNG.items():
+        if e.get("screening"):
+            ST.append_event(s, feld_id=fid,
+                            wert=(False if fid == "kein_kind"
+                                  else fid.startswith(("kein_", "keine_"))),
+                            zustand="bestaetigt",
+                            herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft",
+                                      "haftung": "nutzer"},
+                            schreiber="ui:laie",
+                            signal={"signal_1": None, "signal_2": "klick"}, bindung=BINDUNG)
+    q = TR.naechste_fragen(s, BINDUNG)
+
+    kind = [f for f in q
+            if (BINDUNG[f].get("quelle") or {}).get("regel_id") == "p32_6_kinderfreibetraege"]
+    assert len(kind) >= 10, f"Nur {len(kind)} Kind-Felder — Messung prüfen."
+    assert kind[0] == "kind_vorname", (
+        f"Der Kind-Block beginnt mit {kind[0]!r} statt mit dem Vornamen — im Vordruck steht er "
+        f"als erstes (E0500107).")
+
+    # Dieselben Ausnahmen wie im Traverser, und zwar aus demselben Grund: Eingangsfragen und
+    # echte Gates stehen vorn, WEIL ihre Antwort andere Fragen streicht. Der Vordruck ordnet die
+    # Felder, bei denen es nur um Reihenfolge geht. Ohne diese Ausnahme meldet der Test die
+    # Eingangsfrage des Betreuungs-Blocks (E0506105, „Wie viel hast du für die Betreuung
+    # gezahlt?") als Verstoss — sie steht zu Recht vor den kleineren Kennzahlen.
+    def _sortierbar(f):
+        return (BINDUNG[f].get("elster_kz")
+                and not BINDUNG[f].get("eingangsfrage")
+                and GEWICHT.get(f, 0) == 0)
+
+    verdreht = []
+    je_thema: dict[str, list[str]] = {}
+    for f in q:
+        je_thema.setdefault((BINDUNG[f].get("quelle") or {}).get("regel_id") or "", []).append(f)
+    for regel, felder in je_thema.items():
+        for formal in (True, False):
+            kz = [BINDUNG[f]["elster_kz"] for f in felder if _sortierbar(f)
+                  and (("geltungsbedingung" in (BINDUNG[f].get("quelle") or {})) is formal)]
+            if len(kz) > 1 and kz != sorted(kz):
+                verdreht.append(f"{regel} ({'formales Gate' if formal else 'Wertfeld'}): {kz[:6]}")
+    assert not verdreht, ("Kennzahlen nicht in Vordruck-Reihenfolge:\n  " + "\n  ".join(verdreht))
+
+
 def test_zusammenhaengende_themen_bleiben_zusammen():
     """Der Fall, an dem es Julius auffiel, namentlich: die Zweitwohnung. Ihre dreizehn Fragen
     standen über die Queue verteilt; jetzt stehen sie an einem Stück, mit der Eingangsfrage
