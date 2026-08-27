@@ -345,6 +345,264 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
     return felder
 
 
+# Zu jedem Grund, mit dem /ergebnis ohne Zahl zurueckkommt, ein Satz, den ein Laie lesen kann.
+# ZWEI Quellen speisen ihn, und beide muessen hier vertreten sein — `ergebnis()` (api.py) setzt den
+# Klartext fuer JEDEN grund ausser None/"bestaetigt", ohne zu unterscheiden, woher er stammt:
+#   (1) die 36 Rueckgaben von _an_gesamt_sperrgrund unten,
+#   (2) die drei, die _ergebnis_roh (api.py) selbst setzt, wenn gar keine Zahl zustande kam.
+#
+# Anlass 2026-08-27: ein vollstaendig ausgefuellter Fragebogen (134 Antworten, 0 offene Fragen)
+# endete mit `grund="flag_konsistenz_offen", offen=[]` — der Nutzer sah eine Maschinen-Kennung und
+# eine leere Liste und wusste nicht, was er tun soll. Der Grund SAGT etwas, aber nur nach innen;
+# hier bekommt er eine Stimme nach aussen.
+#
+# Was ein Satz leisten muss: WAS die Software nicht entscheiden kann, und WAS der Nutzer tun soll.
+# Keine Feld-Kennungen, keine Regel-Ids, keine Paragraphen — der Nutzer hat diese Namen nie gesehen
+# (tests/test_sperrgrund_klartext.py haelt das fest). Kein Vorwurf: eine fehlende Angabe ist ein
+# Zustand, kein Fehler des Nutzers.
+#
+# Vier Sorten Grund, vier Tonlagen:
+#   (0) noch nicht fertig  -> sagen, dass nichts kaputt ist, und auf die Liste daneben zeigen
+#   (1) etwas fehlt        -> die Frage benennen und sagen, wo die Antwort steht
+#   (2) zwei Angaben       -> sagen, DASS sie sich widersprechen und wo beide stehen; nie, welche
+#       widersprechen sich    "falsch" ist — das weiss nur der Nutzer
+#   (3) nicht gerechnet    -> ehrlich sagen, dass die Software diesen Fall noch nicht rechnet,
+#                             statt es nach einem Formfehler des Nutzers klingen zu lassen
+#
+# Bei den drei Widerspruchs-Gruenden (flag/partner/alleinerziehend) sind diese Texte die ALLGEMEINE
+# Fassung. flag_check.flag_widersprueche() und partner_check.partner_ohne_zusammen()/
+# alleinerziehend_mit_zusammen() liefern zum selben Fall bereits einen KONKRETEN Satz mit Feldnamen
+# und Betrag ("... bei den GWG-Anschaffungen wurden aber 111 EUR erfasst"); _an_gesamt_sperrgrund
+# verwirft ihn und behaelt nur den Namen. Wo die Haut an diese Listen herankommt, ist deren Satz der
+# bessere — dieser hier ist der Boden, der immer traegt.
+SPERRGRUND_KLARTEXT: dict[str, str] = {
+    # ---- (3) Fälle, die die Software noch nicht rechnet ----------------------------------------
+    "abs3_ueber_5mio_offen":
+        "Du hast den ermäßigten Steuersatz für den Verkauf oder die Aufgabe deines Betriebs "
+        "beantragt, und der Gewinn liegt über fünf Millionen Euro. Der ermäßigte Satz gilt nur "
+        "bis zu dieser Grenze; wie der Teil darüber zu versteuern ist, rechnet die Software noch "
+        "nicht. Dieser Fall braucht steuerliche Beratung.",
+    "ausland_dhf_nicht_ring_faehig":
+        "Deine zweite Wohnung am Arbeitsort liegt im Ausland. Dafür gelten eigene Obergrenzen, die "
+        "die Software noch nicht rechnet. Dieser Fall braucht steuerliche Beratung.",
+    "ausland_uebernachtung_nicht_ring_faehig":
+        "Deine Übernachtungen auf Auswärtstätigkeit liegen im Ausland. Für Übernachtungskosten "
+        "im Ausland gelten eigene Sätze je Land, die die Software noch nicht rechnet. Dieser Fall "
+        "braucht steuerliche Beratung.",
+    "dba_kapital_offen":
+        "Du hast Kapitalerträge angegeben und zugleich ausländische Einkünfte. Ob und wie eine im "
+        "Ausland gezahlte Steuer auf deine Kapitalerträge angerechnet wird, rechnet die Software "
+        "noch nicht. Dieser Fall braucht steuerliche Beratung.",
+    "dba_multi_country_offen":
+        "Du hast Einkünfte aus mehr als einem ausländischen Staat. Jedes Land hat ein eigenes "
+        "Abkommen mit Deutschland darüber, wo besteuert wird; mehrere Länder zugleich rechnet die "
+        "Software noch nicht. Dieser Fall braucht steuerliche Beratung.",
+    "einkunftsart_nicht_ring_faehig":
+        "Du hast angegeben, dass du eine Einkunftsart hast, die in dieser Berechnung noch nicht "
+        "mitgerechnet werden kann — je nach Fall Renten und andere sonstige Einkünfte, Einnahmen "
+        "aus Vermietung, Kapitalerträge oder Gewinn aus einem Betrieb. Ein Ergebnis ohne diese "
+        "Einkünfte wäre zu niedrig, deshalb rechnet die Software hier nicht weiter.",
+    "kinder_gehoeren_in_gesamt":
+        "Du hast Kinder angegeben. Ob Kindergeld oder die Kinderfreibeträge günstiger sind, wird "
+        "gegeneinander abgewogen, und diese Abwägung ist in der gerade laufenden Berechnung nicht "
+        "enthalten. Ohne sie wäre deine Steuer zu hoch, deshalb rechnet die Software hier nicht "
+        "weiter.",
+    "luf_euer_offen":
+        "Du hast einen land- oder forstwirtschaftlichen Betrieb angegeben und dazu Einnahmen und "
+        "Ausgaben einzeln erfasst. Für die Land- und Forstwirtschaft gelten eigene Arten der "
+        "Gewinnermittlung, die die Software noch nicht rechnet. Dieser Fall braucht steuerliche "
+        "Beratung.",
+    "p32b_kombi_offen":
+        "Du hast Lohnersatzleistungen wie Eltern-, Kranken- oder Arbeitslosengeld angegeben und "
+        "zusätzlich einen Betriebsverkauf, Gewerbesteuer oder ausländische Einkünfte. Diese "
+        "Kombination rechnet die Software noch nicht: Lohnersatzleistungen erhöhen den Steuersatz, "
+        "und wie sich das mit den anderen Ermäßigungen verzahnt, ist offen. Dieser Fall braucht "
+        "steuerliche Beratung.",
+    "partner_vor_offen":
+        "Du hast eine gemeinsame Veranlagung gewählt und Beiträge zur Rentenversicherung "
+        "angegeben. Die Altersvorsorgebeiträge beider Partner rechnet die Software in dieser "
+        "Zusammenstellung noch nicht. Dieser Fall wird derzeit nicht berechnet.",
+    "progression_gehoert_in_gesamt":
+        "Du hast Lohnersatzleistungen wie Eltern-, Kranken- oder Arbeitslosengeld angegeben. Diese "
+        "Leistungen sind steuerfrei, erhöhen aber den Steuersatz auf dein übriges Einkommen. "
+        "Dieser Effekt ist in der gerade laufenden Berechnung nicht enthalten, deshalb rechnet die "
+        "Software hier nicht weiter.",
+    "uebernachtung_zeitraum_offen":
+        "Deine Übernachtungen am selben auswärtigen Ort überschreiten die Grenze von 48 Monaten. "
+        "Ab diesem Zeitpunkt sind die Kosten nur noch begrenzt absetzbar, und wie der Zeitraum davor "
+        "und danach aufzuteilen ist, rechnet die Software noch nicht. Dieser Fall braucht "
+        "steuerliche Beratung.",
+    "verlustvortrag_gehoert_in_gesamt":
+        "Du hast einen Verlustvortrag aus einem früheren Jahr angegeben. Seine Verrechnung mit dem "
+        "Einkommen dieses Jahres ist in der gerade laufenden Berechnung nicht enthalten. Ohne sie "
+        "wäre deine Steuer zu hoch, deshalb rechnet die Software hier nicht weiter.",
+
+    # ---- (0) Nicht aus _an_gesamt_sperrgrund, sondern aus _ergebnis_roh (api.py) -----------------
+    # Diese drei laufen NIE durch den Sperr-Guard: api.py setzt sie selbst, wenn gar keine Zahl
+    # zustande kam. Sie muessen trotzdem hier stehen, weil `ergebnis()` den Klartext fuer JEDEN
+    # grund ausser None/"bestaetigt" setzt — ohne Eintrag saehe der Nutzer den Ersatztext, und der
+    # sagt "woran es liegt, laesst sich hier nicht in Worte fassen". Fuer den haeufigsten Zustand
+    # ueberhaupt (input_kegel_nicht_bestaetigt, jeder frische Fall) waere das aktiv irrefuehrend:
+    # es liegt an konkreten Feldern, die in derselben Antwort unter "offen" danebenstehen.
+    "input_kegel_nicht_bestaetigt":
+        "Für ein Ergebnis fehlen noch Angaben. Welche das sind, ist hier aufgeführt — sobald sie "
+        "beantwortet sind, geht es weiter. Es ist nichts schiefgegangen: du bist noch mitten in "
+        "der Erklärung.",
+    "kein_scheiben_gesamtbescheid":
+        "Für diesen Ausschnitt deiner Erklärung gibt es bewusst keine Gesamtsumme. Die einzelnen "
+        "Regeln werden hier gerechnet, aber eine belastbare Gesamtsteuer daraus zu bilden kann die "
+        "Software an dieser Stelle noch nicht — und sie zeigt lieber keine Zahl als eine falsche.",
+    "engine_unavailable":
+        "Alle nötigen Angaben liegen vor, aber der Rechenkern liefert für diesen Fall gerade kein "
+        "Ergebnis. Das liegt an der Software, nicht an deinen Angaben. Bitte versuche es später "
+        "noch einmal, und melde den Fall, wenn er bestehen bleibt.",
+
+    # ---- (2) Zwei Angaben widersprechen sich -----------------------------------------------------
+    "alleinerziehend_konsistenz_offen":
+        "Zwei Angaben passen nicht zusammen: Du hast angegeben, allein stehend zu sein, und zugleich "
+        "eine gemeinsame Veranlagung mit Ehe- oder Lebenspartner gewählt. Den Entlastungsbetrag "
+        "für Alleinerziehende gibt es nur, wenn du nicht gemeinsam veranlagt wirst. Bitte sieh dir "
+        "beide Angaben noch einmal an.",
+    "flag_konsistenz_offen":
+        "Zwei Angaben passen nicht zusammen: Bei einer Einkunftsart hast du angegeben, dass du sie "
+        "nicht hast, und an anderer Stelle trotzdem einen Betrag dazu eingetragen. Es geht um eine "
+        "der vier Fragen, ob du Gewinneinkünfte, Kapitalerträge, Einnahmen aus Vermietung oder "
+        "sonstige Einkünfte wie Renten hast. Bitte sieh dir an, welche der beiden Angaben stimmt.",
+    "gewinn_quelle_offen":
+        "Deinen Gewinn hast du auf zwei Wegen angegeben: einmal als fertigen Betrag und einmal "
+        "aufgeteilt in Betriebseinnahmen, Betriebsausgaben und Abschreibungen. Welcher der beiden "
+        "gilt, kann die Software nicht raten. Bitte lass einen der beiden Wege stehen.",
+    "kapital_semantik_offen":
+        "Deine Kapitalerträge hast du auf zwei Wegen angegeben: einmal als Gesamtsumme und einmal "
+        "aufgeteilt in einzelne Gewinne und Verluste. Ob die Einzelbeträge in der Summe schon "
+        "enthalten sind oder dazukommen, kann die Software nicht raten. Bitte lass einen der beiden "
+        "Wege stehen.",
+    "partner_konsistenz_offen":
+        "Zwei Angaben passen nicht zusammen: Du hast etwas zu deinem Ehe- oder Lebenspartner "
+        "eingetragen — etwa dessen Behinderung, Kapitalerträge oder Rente — aber keine gemeinsame "
+        "Veranlagung gewählt. Angaben zum Partner zählen nur in einer gemeinsamen Erklärung. "
+        "Bitte sieh dir beide Angaben noch einmal an.",
+
+    # ---- (1) Eine Angabe oder Antwort fehlt noch -------------------------------------------------
+    "arbeitsmittel_afa_ueber_gwg_offen":
+        "Zu deinen angeschafften Arbeitsmitteln fehlt noch, wie die Kosten abgesetzt werden sollen. "
+        "Bei Anschaffungen bis 800 Euro ist das die Frage, ob du den Betrag sofort in voller Höhe "
+        "absetzen willst; bei teureren Geräten die Nutzungsdauer und — wenn du sie in diesem Jahr "
+        "gekauft hast — der Anschaffungsmonat. Bitte beantworte die Rückfragen zu deinen "
+        "Arbeitsmitteln.",
+    "behinderungsbedingte_aufwendungen_wahlrecht_offen":
+        "Du hast eine Behinderung angegeben und zusätzlich Kosten, die dadurch entstanden sind. "
+        "Hier hast du die Wahl: entweder der Pauschbetrag ohne Nachweis oder deine tatsächlichen "
+        "Kosten mit Belegen. Welcher Weg günstiger ist, hängt an der Höhe deiner Kosten — "
+        "deshalb kann die Software das nicht für dich entscheiden. Bitte beantworte die Frage nach "
+        "dem Pauschbetrag.",
+    "behinderungsbedingte_aufwendungen_wahlrecht_partner_offen":
+        "Für deinen Ehe- oder Lebenspartner ist eine Behinderung angegeben und zusätzlich Kosten, "
+        "die dadurch entstanden sind. Auch hier gibt es die Wahl zwischen dem Pauschbetrag ohne "
+        "Nachweis und den tatsächlichen Kosten mit Belegen. Welcher Weg günstiger ist, hängt an "
+        "der Höhe der Kosten — deshalb kann die Software das nicht entscheiden. Bitte beantworte "
+        "die Frage nach dem Pauschbetrag für deinen Partner.",
+    "dhf_tatbestand_offen":
+        "Du hast Kosten für eine zweite Wohnung am Arbeitsort angegeben. Ob sie absetzbar sind, "
+        "hängt an drei Voraussetzungen: dass die zweite Wohnung beruflich veranlasst ist, dass du "
+        "an deinem Hauptwohnsitz einen eigenen Hausstand führst und dass du dich dort finanziell an "
+        "den Kosten beteiligst. Bitte beantworte diese drei Fragen.",
+    "gewst_hebesatz_offen":
+        "Zu deinem Gewerbebetrieb fehlt der Hebesatz deiner Gemeinde. Ohne ihn lässt sich nicht "
+        "berechnen, wie viel Gewerbesteuer auf deine Einkommensteuer angerechnet wird. Den Hebesatz "
+        "findest du auf deinem Gewerbesteuerbescheid oder auf der Internetseite deiner Gemeinde.",
+    "handwerker_foerderung_offen":
+        "Zu deinen Handwerkerkosten fehlt noch die Antwort, ob du dafür öffentliche Fördermittel "
+        "bekommen hast — etwa einen zinsverbilligten Kredit oder einen steuerfreien Zuschuss. Für "
+        "geförderte Maßnahmen gibt es die Steuerermäßigung nicht. Bitte beantworte diese Frage, "
+        "auch wenn du keine Förderung bekommen hast.",
+    "p16_4_gate_offen":
+        "Es ist ein Gewinn aus dem Verkauf oder der Aufgabe eines Betriebs angegeben — bei dir oder "
+        "bei deinem Partner. Dafür gibt es einen Freibetrag, aber nur unter zwei Bedingungen: Die "
+        "betreffende Person ist mindestens 55 Jahre alt oder dauernd berufsunfähig, und sie hat "
+        "diesen Freibetrag noch nie in Anspruch genommen. Bitte beantworte beide Fragen.",
+    "p35c_doppelfoerderung_offen":
+        "Zu deiner energetischen Sanierung fehlt noch die Antwort, ob du dafür schon anderweitig "
+        "gefördert wurdest — etwa durch öffentliche Zuschüsse oder weil du dieselben Kosten "
+        "bereits als Handwerkerleistung geltend machst. In diesen Fällen entfällt die "
+        "Steuerermäßigung ganz. Bitte beantworte diese Frage, auch wenn keine andere Förderung "
+        "vorliegt.",
+    "partner_kegel_offen":
+        "Zu deinem Ehe- oder Lebenspartner fehlen noch Angaben, die die gemeinsame Berechnung "
+        "braucht — je nach Fall der Bruttoarbeitslohn, die Kapitalerträge oder die Art der "
+        "Krankenversicherung. Ein Ergebnis für nur eine der beiden Personen wäre falsch. Bitte "
+        "ergänze die offenen Angaben zu deinem Partner.",
+    "rechnung_unbar_offen":
+        "Zu deinen Handwerker- oder Haushaltsdienstleistungen fehlt noch die Antwort, ob du eine "
+        "Rechnung erhalten und sie überwiesen hast. Barzahlungen erkennt das Finanzamt hier nicht "
+        "an. Bitte beantworte diese Frage.",
+    "rente_instanz_offen":
+        "Zu einer deiner Renten oder zu einer Rente deines Partners sind die Angaben unvollständig. "
+        "Für jede einzelne Rente braucht die Berechnung vier Dinge: die Art der Rente, den "
+        "Jahresbetrag, das Jahr des Rentenbeginns und das Alter der beziehenden Person zu diesem "
+        "Zeitpunkt. Bitte ergänze die fehlenden Angaben.",
+    "rentenfreibetrag_fixierung_offen":
+        "Die Rente hat vor diesem Jahr begonnen. Dann ist der steuerfreie Teil der Rente ein fester "
+        "Eurobetrag, der im Jahr nach dem Rentenbeginn einmal festgelegt wurde und sich seither "
+        "nicht mehr ändert. Diesen Betrag findest du in einem früheren Steuerbescheid. Bitte trage "
+        "ihn ein.",
+    "uebernachtung_tatbestand_offen":
+        "Du hast Übernachtungskosten auf Auswärtstätigkeit angegeben. Ob sie absetzbar sind, "
+        "hängt an mehreren Fragen: ob die Unterkunft im Inland liegt, ob die Übernachtung wirklich "
+        "auswärts stattfand, ob du die Unterkunft allein genutzt hast und ob die Tätigkeit ohne "
+        "lange Unterbrechung lief. Bitte beantworte diese Fragen.",
+    "verpflegung_dreimonatsfrist_aufteilung_offen":
+        "Du warst länger als drei Monate am selben auswärtigen Ort tätig. Die "
+        "Verpflegungspauschale gibt es nur für die ersten drei Monate, danach entfällt sie. "
+        "Deshalb braucht die Berechnung zu jeder Art von Abwesenheitstag zusätzlich die Zahl der "
+        "Tage, die nach diesen drei Monaten lagen. Bitte ergänze diese Angabe.",
+    "verpflegung_dreimonatsfrist_unterbrechung_offen":
+        "Du warst länger als drei Monate am selben auswärtigen Ort tätig, hast aber für die Zeit "
+        "nach Ablauf der drei Monate keine Abwesenheitstage angegeben. Das ist möglich, wenn du die "
+        "Tätigkeit dort mindestens vier Wochen unterbrochen hast — dann beginnt die Frist neu. "
+        "Bitte beantworte die Frage, ob es eine solche Unterbrechung gab.",
+    "verpflegung_reduktion_offen":
+        "Zu deinen Auswärtstätigkeiten fehlt noch die Antwort, ob dir dabei Mahlzeiten gestellt "
+        "wurden — also Frühstück, Mittag- oder Abendessen von deinem Arbeitgeber oder auf dessen "
+        "Veranlassung. Jede gestellte Mahlzeit kürzt die Verpflegungspauschale. Bitte beantworte "
+        "diese Frage, auch wenn keine Mahlzeiten gestellt wurden.",
+    "versorgungsfreibetrag_offen":
+        "Du hast Versorgungsbezüge angegeben — etwa eine Betriebsrente oder eine Beamtenpension. "
+        "Für den Freibetrag darauf braucht die Berechnung zwei Angaben: das Jahr, in dem die "
+        "Versorgung begann, und den Betrag, aus dem der Freibetrag berechnet wird. Beides findest du "
+        "in deiner Lohnsteuerbescheinigung oder in der Mitteilung deiner Versorgungsstelle.",
+    "vv_instanz_offen":
+        "Zu einer deiner vermieteten Immobilien sind die Angaben unvollständig. Jedes weitere "
+        "Objekt braucht dieselben Angaben wie das erste: Mieteinnahmen, Gebäudeabschreibung, "
+        "Schuldzinsen, Erhaltungsaufwand, sonstige Werbungskosten und den Anteil, der entgeltlich "
+        "vermietet ist. Bitte ergänze die fehlenden Angaben.",
+}
+
+
+# Ein Grund ohne Text ist ein Maschinenstring auf dem Schirm — genau der Zustand, den diese
+# Zuordnung beendet. tests/test_sperrgrund_klartext.py hält jeden Rückgabewert von
+# _an_gesamt_sperrgrund gegen SPERRGRUND_KLARTEXT, ein neuer Grund ohne Satz fällt dort sofort auf.
+# Kommt trotzdem einer durch (etwa ein Grund aus einer anderen Quelle als dieser Funktion), ist ein
+# ehrlicher Satz besser als die rohe Kennung: der Nutzer erfährt, dass es an der Software liegt und
+# nicht an ihm.
+UNBEKANNTER_SPERRGRUND = (
+    "Die Berechnung kann an dieser Stelle nicht fortgesetzt werden, und woran genau es liegt, lässt "
+    "sich hier nicht in Worte fassen. Das liegt an der Software, nicht an deinen Angaben. Bitte "
+    "melde diesen Fall — damit lässt sich nachvollziehen, was gefehlt hat."
+)
+
+
+def sperrgrund_klartext(grund: str | None) -> str | None:
+    """Der Satz zu einem Sperrgrund, den ein Laie lesen kann.
+
+    None (= keine Sperre) bleibt None: es gibt nichts zu erklaeren. Jeder andere Wert — auch ein
+    unbekannter — liefert einen Satz, nie None und nie die rohe Kennung.
+    """
+    if grund is None:
+        return None
+    return SPERRGRUND_KLARTEXT.get(grund, UNBEKANNTER_SPERRGRUND)
+
+
 def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None = None,
                           store: dict | None = None, bindung: dict | None = None):
     """K2-Guard: nicht-ring-fähige Werbungskosten/Einkunftsarten sperren den Ring GANZ (nie Fake-0).

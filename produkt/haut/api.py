@@ -62,6 +62,7 @@ from bescheid import (  # noqa: E402, F401
     _gwg_sofortabzug_summe,
     _kind_behinderten_pb_daten,
     _kind_kv_pv_summe,
+    sperrgrund_klartext,
     _kinderbetreuung_summe,
     _laufender_gewinn,
     _laufender_gewinn_partner,
@@ -540,6 +541,10 @@ def warum(fall_id: str, feld_id: str) -> tuple[int, dict]:
 def ergebnis(fall_id: str) -> tuple[int, dict]:
     """Hülle um `_ergebnis_roh`: schreibt nur den Ausgang in den Fluss (s. flow.py)."""
     st, obj = _ergebnis_roh(fall_id)
+    # Der Grund ist ein Maschinenwort („flag_konsistenz_offen"). Julius, 2026-08-27, nach einem
+    # vollständig ausgefüllten Fragebogen: „ende nicht klar, kann nicht weiter machen."
+    if obj.get("grund") not in (None, "bestaetigt"):
+        obj["klartext"] = sperrgrund_klartext(obj["grund"])
     flow.ergebnis_notiert(fall_id, obj)
     return st, obj
 

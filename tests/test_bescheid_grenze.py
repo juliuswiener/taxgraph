@@ -200,7 +200,10 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # mehr aendern", was nicht stimmt. Dass „Aendern" auf der Pruefliste ging, lag nur daran, dass
 # KI-Vorschlaege vorlaeufig sind und in der Queue bleiben — der Weg war genau fuer die Felder
 # heil, an denen er gebaut wurde.
-API_ZEILEN_OBERGRENZE = 1262
+# 1262 -> 1267 (2026-08-27, Klartext zum Sperrgrund). 5 Zeilen: 3 Kommentar, 2 Code —
+# `ergebnis()` legt `klartext` in die Antwort, wenn der Grund nicht „bestaetigt" ist. Der Text
+# selbst steht in produkt/bescheid/bescheid_deklaration.py; hier steht nur der Aufruf.
+API_ZEILEN_OBERGRENZE = 1267
 
 
 def _runner_stellen(pfad: str) -> list[int]:

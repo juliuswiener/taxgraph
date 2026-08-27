@@ -54,6 +54,9 @@ from bescheid_einkuenfte import (  # noqa: F401
 from bescheid_deklaration import (  # noqa: F401
     _an_gesamt_sperrgrund,
     _mit_ring_werten,
+    # Gehört zu _an_gesamt_sperrgrund wie die Übersetzung zum Wort: der Sperrgrund ist ein
+    # Maschinenwort, und wer ihn liefert, muss auch den Satz dazu liefern können.
+    sperrgrund_klartext,
 )
 from bescheid_zweige import (  # noqa: F401
     _abschlusszahlung_cent,
@@ -66,7 +69,8 @@ from bescheid_zweige import (  # noqa: F401
 
 __all__ = [
     # Die Naht: was der Rest von api.py aus dem Kern ruft (tests/test_bescheid_grenze.py).
-    "_bescheid_fn", "_an_gesamt_sperrgrund", "_abschlusszahlung_cent", "_mit_ring_werten",
+    "_bescheid_fn", "_an_gesamt_sperrgrund", "sperrgrund_klartext", "_abschlusszahlung_cent",
+    "_mit_ring_werten",
     # Alles Übrige, damit `import bescheid` weiterhin dasselbe hergibt wie vor dem Schnitt.
     "_abs3_eligible", "_gewinn_partner_anteil", "_gwg_sofortabzug_summe",
     "_kind_behinderten_pb_daten", "_kind_kv_pv_summe", "_kinderbetreuung_summe",
