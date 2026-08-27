@@ -257,6 +257,12 @@ def test_aendern_oeffnet_das_feld_im_fragefluss(seite):
     die Frage vor — der Nutzer korrigiert und bestätigt dort, was denselben Vorschlag ersetzt."""
     page = seite
     page.click(".v-zeile[data-feld='ep_arbeitstage'] .v-aendern")
+    # Gewartet wird auf das ENDE der Handlung, und das ist das Verschwinden der Liste — nicht auf
+    # `#wegpunkt`, das schon vorher sichtbar wird. Gemessen 2026-08-27 mit 350 ms je Netzaufruf:
+    # auf `#wegpunkt` gewartet, stand hier `veranlagung` statt `ep_arbeitstage`.
+    # `state="attached"`, nicht der Standard: ein verstecktes Element ist nie „sichtbar", der
+    # Standard-Zustand wartet also auf etwas, das nie eintritt.
+    page.wait_for_selector("#verstanden[hidden]", state="attached", timeout=8000)
     page.wait_for_selector("#wegpunkt:not([hidden])", timeout=5000)
     assert page.evaluate("AKTUELL && AKTUELL.feld_id") == "ep_arbeitstage"
     assert not page.is_visible("#verstanden")

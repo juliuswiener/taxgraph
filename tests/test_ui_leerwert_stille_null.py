@@ -19,9 +19,11 @@ NULL LLM.
 """
 from __future__ import annotations
 
+import json
 import os
 import sys
 import threading
+import urllib.request
 
 import pytest
 
@@ -164,6 +166,19 @@ def test_bestaetigen_schreibt_explizite_null_erfolgreich(seite, base):
     page.wait_for_function("!document.getElementById('bestaetigen').disabled", timeout=5000)
     banner_versteckt = page.evaluate("document.getElementById('netz-banner').hidden")
     assert banner_versteckt is True, "Fehlerbanner erscheint bei einer gültigen 0 — falsch abgelehnt."
-    gespeichert = page.evaluate("STAND.felder['bruttoarbeitslohn']")
+
+    # `STAND` ist der BROWSER-Zwischenstand, und der wird von refresh() nachgezogen — nach dem
+    # Freigeben des Knopfes. Gemessen 2026-08-27 mit 350 ms je Netzaufruf: hier stand `None`,
+    # obwohl die 0 sauber geschrieben war. Der freigegebene Knopf sagt eben nicht, dass der
+    # Vorgang durch ist (dieselbe Verwechslung wie in 52fa22a).
+    #
+    # Gefragt wird deshalb der STORE über echtes HTTP — das ist ohnehin die bessere Quelle: was
+    # die Oberfläche zwischengespeichert hat, ist eine Behauptung, was hier steht, ist das
+    # Ergebnis. Gewartet wird auf den Zustand, nicht auf eine Zeitspanne.
+    page.wait_for_function(
+        "STAND && STAND.felder && STAND.felder['bruttoarbeitslohn'] !== undefined", timeout=8000)
+    with urllib.request.urlopen(f"{base}/fall/{page.evaluate('FALL')}/stand", timeout=10) as r:
+        felder = json.loads(r.read().decode("utf-8")).get("felder", {})
+    gespeichert = felder.get("bruttoarbeitslohn")
     assert gespeichert is not None and gespeichert.get("wert") == 0, (
         f"bruttoarbeitslohn steht nicht mit wert=0 im Store: {gespeichert!r}")

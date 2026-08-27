@@ -1084,7 +1084,7 @@ function verstandenZeile(v) {
   ok.addEventListener("click", () => verstandenBestaetigen(v, li, ok));
   const aendern = document.createElement("button");
   aendern.type = "button"; aendern.className = "v-aendern"; aendern.textContent = "Ändern";
-  aendern.addEventListener("click", () => verstandenAendern(v));
+  aendern.addEventListener("click", () => verstandenAendern(v, aendern));
   akt.appendChild(ok);
   akt.appendChild(aendern);
   li.appendChild(akt);
@@ -1240,15 +1240,28 @@ async function verstandenBestaetigen(v, li, btn) {
   await refresh();   // Ring + Belegt-Liste ziehen mit; die Seite selbst bleibt vorn
 }
 
-async function verstandenAendern(v) {
-  $("verstanden").hidden = true;
-  VERSTANDEN_OFFEN = false;
-  if (!await korrigiereBestaetigt(v.feld_id)) {
-    if (!$("login").hidden) return;   // Anmeldemaske hat übernommen (401) — Verstanden-Seite nicht zurückholen
-    // Frage nicht ladbar -> die Liste ist immer noch die bessere Anzeige als ein leerer Bildschirm.
-    VERSTANDEN_OFFEN = true;
-    $("verstanden").hidden = false;
+async function verstandenAendern(v, btn) {
+  // ERST die Zielfrage laden, DANN die Liste wegräumen. Bis zum 2026-08-27 stand es umgekehrt,
+  // und dazwischen liegen ZWEI Netzaufrufe (korrigiereBestaetigt holt /warum und /fragen). In
+  // dieser Lücke war die Verstanden-Seite weg und der Fragebogen stand offen — mit der Frage, die
+  // vorher aktuell war.
+  //
+  // GEMESSEN 2026-08-27 mit 350 ms künstlicher Verzögerung je Netzaufruf: nach dem Klick auf
+  // „Ändern" bei `ep_arbeitstage` stand `veranlagung` da. Der Nutzer bekommt also für die Dauer
+  // einer langsamen Verbindung die FALSCHE Frage vorgelegt — und kann in sie hineinschreiben,
+  // bevor sie unter ihm wechselt.
+  //
+  // In dieser Reihenfolge braucht es auch die Rücknahme nicht mehr (Seite zurückholen, wenn die
+  // Frage nicht ladbar war) und den Sonderfall der Anmeldemaske nicht: was nie versteckt wurde,
+  // muss nicht zurückgeholt werden.
+  if (btn) { btn.disabled = true; btn.textContent = "Wird geladen …"; }
+  try {
+    if (!await korrigiereBestaetigt(v.feld_id)) return;   // Meldung steht, Liste bleibt stehen
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Ändern"; }
   }
+  VERSTANDEN_OFFEN = false;
+  $("verstanden").hidden = true;
 }
 
 async function verstandenWeiter() {
