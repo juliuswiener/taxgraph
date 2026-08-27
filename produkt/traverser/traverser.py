@@ -284,10 +284,31 @@ def naechste_fragen(store: dict, bindung: dict, beitrag: dict | None = None) -> 
         slots.sort(key=lambda f: (-beitrag.get(f, 0), f))
     else:
         slots.sort()
-    return _nach_themen(gates + slots, bindung)
+    return _nach_themen(gates + slots, bindung, _angefangene_themen(store, bindung))
 
 
-def _nach_themen(felder: list[str], bindung: dict) -> list[str]:
+def _angefangene_themen(store: dict, bindung: dict) -> list[str]:
+    """Themen mit mindestens einer BEANTWORTETEN Frage — das zuletzt angefasste zuerst.
+
+    Nur BESTÄTIGT zählt, wie überall sonst: ein vorläufiger KI-Vorschlag ist keine Antwort des
+    Nutzers und darf ein Thema nicht für angefangen erklären, das er noch nie gesehen hat.
+
+    Die Reihenfolge der Events IST die Reihenfolge der Antworten (der Log ist append-only), also
+    kostet die Auskunft einen Durchlauf über die Events — dieselbe Grössenordnung wie
+    `_aktive_events` nebenan, und nichts, was je Feld oder je Thema wiederholt würde.
+    """
+    zuletzt: dict[str, int] = {}
+    for i, e in enumerate(store.get("events", [])):
+        if e.get("zustand") != "bestaetigt":
+            continue
+        t = ((bindung.get(e["feld_id"]) or {}).get("quelle") or {}).get("regel_id")
+        if t:
+            zuletzt[t] = i
+    return sorted(zuletzt, key=lambda t: -zuletzt[t])
+
+
+def _nach_themen(felder: list[str], bindung: dict,
+                 angefangen: list[str] | None = None) -> list[str]:
     """Hält Fragen desselben Themas beisammen, ohne die Rangfolge davor umzuwerfen.
 
     Julius, 2026-08-25: „wichtig auch dass die fragen in einer für den user sinnvollen reihenfolge
@@ -337,7 +358,8 @@ def _nach_themen(felder: list[str], bindung: dict) -> list[str]:
         if eingang:
             gruppe = eingang + [f for f in gruppe if f not in eingang]
         nach_thema[thema] = _nach_vordruck(gruppe, bindung, gw_einmal)
-    return [f for thema in _themen_folge(nach_thema, bindung) for f in nach_thema[thema]]
+    return [f for thema in _themen_folge(nach_thema, bindung, angefangen or [])
+            for f in nach_thema[thema]]
 
 
 def _feld_ausgeschlossen(eintrag: dict, aktiv: dict) -> bool:
@@ -421,7 +443,8 @@ def _nach_vordruck(gruppe: list[str], bindung: dict, gw: dict) -> list[str]:
     return aus
 
 
-def _themen_folge(nach_thema: dict[str, list[str]], bindung: dict) -> list[str]:
+def _themen_folge(nach_thema: dict[str, list[str]], bindung: dict,
+                  angefangen: list[str] | None = None) -> list[str]:
     """Ein Thema folgt dem Thema, das seine Voraussetzung erhebt.
 
     Julius, 2026-08-26: „hier wird immernoch ohne anlass nach einem übernachtungsort gefragt".
@@ -483,8 +506,31 @@ def _themen_folge(nach_thema: dict[str, list[str]], bindung: dict) -> list[str]:
     # Gewicht. Ohne das eröffnete der Fragebogen mit „Hattest du Kosten für Handwerker?", während
     # Name und Anschrift auf Platz 50 standen.
     vorne = [t for t in lade_themen_zuerst() if t in nach_thema]
-    rest = [t for t in nach_thema if t not in vorne]
-    wunsch = vorne + rest
+
+    # EIN ANGEFANGENES THEMA WIRD ZU ENDE GEFRAGT, bevor ein neues beginnt.
+    #
+    # Der Rest dieser Funktion ordnet THEMEN; welches Thema wo steht, entscheidet die Position
+    # seines BESTEN Feldes in `gates + slots`. Genau dieses Feld beantwortet der Nutzer als erstes
+    # — danach hat das Thema nur noch seine schwächeren Felder, fällt auf deren Rang zurück und
+    # ein fremdes Thema steht vorn. `naechste_fragen` läuft nach JEDER Antwort neu, also wiederholt
+    # sich das bei jedem Feld.
+    #
+    # GEMESSEN 2026-08-27 an einem simulierten Volldurchgang (288 Fragen, Kopf der Queue
+    # beantworten, neu rechnen): **43 Abbrüche mitten im Thema, davon 43 aus genau diesem Grund und
+    # 0, weil eine Frage noch nicht in der Queue stand.** Die abgebrochenen Fragen standen jedes Mal
+    # direkt hinter der beantworteten und rutschten dann auf Platz 44, 91, 126, 165. Julius' Fälle
+    # aus dem echten Durchgang: § 35a in zwei Stücken (#47-63 und #122), Kranken-/Pflege-
+    # versicherung in drei, Arbeitsmittel in drei, Kirchensteuer von zwei Fragen zerteilt.
+    #
+    # WARUM DIE EINZELMESSUNG DAS NICHT SIEHT: die Bestandstests rufen `naechste_fragen` EINMAL auf
+    # leerem Store und finden 61 Wechsel bei 62 Themen — das Minimum. Das ist auch richtig; die
+    # Ordnung ist erst kaputt, wenn man sie fortschreibt. Der Fehler lebt zwischen zwei Aufrufen.
+    #
+    # Die Rangfolge selbst bleibt unangetastet: sie entscheidet weiterhin, welches Thema als
+    # nächstes ANFÄNGT. Sie darf nur nicht mehr entscheiden, ob ein bereits begonnenes weiterläuft.
+    laufend = [t for t in (angefangen or []) if t in nach_thema and t not in vorne]
+    rest = [t for t in nach_thema if t not in vorne and t not in laufend]
+    wunsch = vorne + laufend + rest
 
     # Jedes Thema kommt hinter ALLE seine Quellen. Mehrere sind der Normalfall: § 35a führt drei
     # Instanz-Gruppen (Handwerker, Dienstleistung, Minijob) mit je eigenem Zählfeld, also drei
