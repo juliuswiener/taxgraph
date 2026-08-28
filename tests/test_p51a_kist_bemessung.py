@@ -269,13 +269,77 @@ def test_kap_q_ohne_kirchensteuerpflicht(base):
         elif k == "kap_kapitalertraege":
             kegel[i] = (k, 500000)
     kegel += [("kap_q_auslaendische_steuer", 30000)]  # 300 EUR, keine Kirchensteuerpflicht
+    # Die Konfession wird hier AUSDRUECKLICH auf "keine" gesetzt (2026-08-28). Vorher fehlte sie
+    # ganz — GESAMT_KEGEL_BASE fuehrt das Feld nicht — und der Test nannte das „keine Konfession".
+    # Das war dieselbe Verwechslung wie im Produktionscode: unbeantwortet ist nicht dasselbe wie
+    # „gehoert keiner Kirche an". Seit die Vorgabe "keine" weg ist (_kist_konfession in
+    # bescheid_zweige.py), meldet /ergebnis fuer den unbeantworteten Fall gar keine Kirchensteuer
+    # mehr statt einer gerechneten 0. Mit der ausdruecklichen Antwort prueft dieser Test wieder
+    # das, was sein Name verspricht — die q-Anrechnung OHNE Kirchensteuerpflicht. Am ESt-Zweig
+    # aendert das nichts: "keine" nimmt denselben Weg wie zuvor die Vorgabe (zahl_cent bleibt).
+    kegel += [("kist_konfession", "keine")]
     _anlegen(base, "kapqnokist", "gesamt", kegel)
     st, erg = _req(base, "GET", "/fall/kapqnokist/ergebnis")
     assert st == 200
     assert erg["zahl_cent"] == 303200, (
         f"ESt {erg['zahl_cent']} != 303200 (2.332+700 nach q-Anrechnung ohne KiSt-Pflicht, "
         f"vs. 333200 ohne q). erg={erg}")
-    assert erg.get("kist_cent", 0) == 0, f"KiSt sollte 0 sein (keine Konfession). erg={erg}"
+    assert erg.get("kist_cent") == 0, (
+        f"KiSt sollte gerechnete 0 sein (Konfession ausdruecklich 'keine'). erg={erg}")
+
+
+def test_ohne_konfession_keine_erfundene_null(base):
+    """Unbeantwortete Konfession -> kist_cent ist None (nicht rechenbar), nicht 0.
+
+    GEMESSEN 2026-08-28 am Live-Fall serie-verheiratet-1kind-handwerker: Bundesland, gezahlte
+    (580 EUR) und erstattete Kirchensteuer bestaetigt, die Konfession nie beantwortet. /ergebnis
+    meldete kist_cent = 0 — bei roemisch-katholisch waeren es 105336 Cent. Die Null war nicht
+    gerechnet, sondern kam aus der Vorgabe `f.get("kist_konfession", {}).get("wert", "keine")`,
+    die aus „unbeantwortet" ein „gehoert keiner Kirche an" machte.
+
+    Der Beweis, dass 0 hier gelogen war, stand im SELBEN Antwortobjekt: mobilitaetspraemie_cent
+    war None. Deshalb pruefen wir beide zusammen — sie muessen auf dieselbe Lage dieselbe Antwort
+    geben. Die festzusetzende ESt bleibt davon unberuehrt; falsch war allein die Kirchensteuer.
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    kegel = list(GESAMT_KEGEL_BASE)
+    # Alles zur Kirchensteuer ausser der Mitgliedschaft selbst — wie im gemessenen Fall.
+    kegel += [("kist_bundesland", "nordrhein_westfalen"), ("kist_gezahlt", 58000),
+              ("kist_erstattet", 0)]
+    _anlegen(base, "kistoffen", "gesamt", kegel)
+    st, erg = _req(base, "GET", "/fall/kistoffen/ergebnis")
+    assert st == 200
+    assert erg["kist_cent"] is None, (
+        f"kist_cent = {erg['kist_cent']!r} statt None: ohne beantwortete Konfession ist die "
+        f"Kirchensteuer nicht rechenbar, und eine 0 behauptet das Gegenteil. erg={erg}")
+    assert erg["mobilitaetspraemie_cent"] is None, (
+        "Kontrollwert: die Praemie war in diesem Fall schon immer None. Ist sie es nicht mehr, "
+        f"misst dieser Test nicht mehr, was er soll. erg={erg}")
+    assert erg["zahl_cent"] is not None and erg["zahl_cent"] > 0, (
+        f"Die Einkommensteuer selbst muss weiter herauskommen — nur die Kirchensteuer fehlt. "
+        f"erg={erg}")
+
+
+def test_mit_konfession_kommt_die_kirchensteuer(base):
+    """Gegenprobe zum Test darueber, an DEMSELBEN Fall: mit beantworteter Mitgliedschaft steht
+    eine Kirchensteuer da. Ohne diese Haelfte waere nicht gezeigt, dass None an der fehlenden
+    Antwort haengt und nicht daran, dass dieser Fall gar keine Kirchensteuer erzeugt.
+
+    Der gemessene Betrag ist der, den der Live-Fall verloren hatte."""
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    kegel = list(GESAMT_KEGEL_BASE)
+    kegel += [("kist_bundesland", "nordrhein_westfalen"), ("kist_gezahlt", 58000),
+              ("kist_erstattet", 0), ("kist_konfession", "roemisch-katholisch")]
+    _anlegen(base, "kistda", "gesamt", kegel)
+    st, erg = _req(base, "GET", "/fall/kistda/ergebnis")
+    assert st == 200
+    assert erg["kist_cent"] is not None and erg["kist_cent"] > 0, (
+        f"Mit roem.-kath. muss eine Kirchensteuer herauskommen. erg={erg}")
+    # 9 % der festzusetzenden ESt (NRW), dieselbe Massstabsteuer wie in den Tests oben.
+    assert erg["kist_cent"] == erg["zahl_cent"] // 100 * 9, (
+        f"KiSt {erg['kist_cent']} != 9 % von {erg['zahl_cent']} CENT. erg={erg}")
 
 
 # ===== RENTNER-KiSt (Befund 1: Z.1526 gibt est_mit_fb = est_raw + kap_st) =====

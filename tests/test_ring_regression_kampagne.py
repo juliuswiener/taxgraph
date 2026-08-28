@@ -1141,13 +1141,28 @@ def test_kist_ratio_9zu8_exakt(base):
     assert e_nrw["kist_cent"] * 8 == e_by["kist_cent"] * 9, f"9:8-Ratio verletzt: {e_nrw['kist_cent']}*8 vs {e_by['kist_cent']}*9"
 
 
-def test_kist_ohne_konfession_null(base):
-    """Keine Konfession gesetzt (default→keine) → kist_cent = 0 (Accessor liefert 0)."""
+def test_kist_ohne_konfession_nicht_rechenbar(base):
+    """Keine Konfession gesetzt → kist_cent = None (nicht rechenbar), NICHT 0.
+
+    Hiess bis 2026-08-28 `test_kist_ohne_konfession_null` und verlangte eine 0, mit der
+    Begruendung „(default→keine)" im eigenen Docstring. Der Default war genau der Fehler: er
+    machte aus „unbeantwortet" ein „gehoert keiner Kirche an" und meldete das als gerechnetes
+    Ergebnis. GEMESSEN am Live-Fall serie-verheiratet-1kind-handwerker: 580 EUR gezahlte
+    Kirchensteuer, Bundesland und Erstattung bestaetigt, Konfession nie beantwortet — kist_cent
+    kam als 0 zurueck, wo roemisch-katholisch 1.053,36 EUR ergibt.
+
+    `grund` bleibt bewusst "bestaetigt": die festzusetzende Einkommensteuer ist in diesem Fall
+    richtig (gemessen: Delta 0 Cent). Unvollstaendig ist die Erklaerung, nicht die Rechnung —
+    darauf weist seit derselben Messung der Preflight hin (test_preflight_plausibilitaet.py,
+    „Kirchensteuer erklaert ↔ Konfession offen").
+    """
     _an_anlegen(base, "kist_null", AN_KEGEL_HOCH)  # kein kist_konfession/kist_bundesland
     st, erg = _req(base, "GET", "/fall/kist_null/ergebnis")
     _val("ergebnis", erg)
     assert erg["grund"] == "bestaetigt"
-    assert erg["kist_cent"] == 0, f"kist_cent={erg['kist_cent']}"
+    assert erg["kist_cent"] is None, (
+        f"kist_cent={erg['kist_cent']} — ohne beantwortete Konfession ist die Kirchensteuer "
+        f"nicht rechenbar; eine 0 behauptet, der Nutzer gehoere keiner Kirche an.")
 
 
 # ---- § 16 Abs. 4: Veräußerungsfreibetrag fail-closed gaten (Under-tax-Fix) ----

@@ -94,10 +94,20 @@ def test_rv_ohne_bruttolohn_schweigt():
 
 # ---- Kirchensteuer ↔ Bruttoarbeitslohn ---------------------------------------
 
+# Wer Kirchensteuer zahlt, gehört einer Kirche an. Die Betrags-Prüfungen unten brauchen die
+# Mitgliedschaft nicht — ein Snapshot ohne sie wäre aber in sich widersprüchlich, und seit
+# 2026-08-28 meldet genau das eine eigene Prüfung (s. „Kirchensteuer erklärt, Konfession offen").
+# Ohne diese Angabe schlüge in jedem Test hier zusätzlich jene Prüfung an, und die Negativtests
+# könnten nicht mehr zeigen, dass über den BETRAG geschwiegen wird. Die beiden Form-Tests am
+# Dateiende lassen sie bewusst weg, damit der neue Text dort mitgeprüft wird.
+KIRCHENMITGLIED = _b("roemisch-katholisch")
+
+
 def test_kirchensteuer_ueber_dem_lohnanteil_meldet():
     """22.222 € Kirchensteuer auf 40.000 € Lohn — mehr als die Hälfte des Lohns."""
     w = PF.plausibilitaets_widersprueche(_snap(
-        bruttoarbeitslohn=_b(BRUTTO_40K), kist_gezahlt=_b(2_222_200)))
+        bruttoarbeitslohn=_b(BRUTTO_40K), kist_gezahlt=_b(2_222_200),
+        kist_konfession=KIRCHENMITGLIED))
     assert _felder(w) == {"kist_gezahlt"}
     assert "22.222 €" in w[0]["grund"]
 
@@ -105,18 +115,21 @@ def test_kirchensteuer_ueber_dem_lohnanteil_meldet():
 def test_kirchensteuer_in_richtiger_groessenordnung_meldet_nicht():
     """Rund 500 € Kirchensteuer auf 40.000 € Lohn ist die reale Größenordnung."""
     assert PF.plausibilitaets_widersprueche(_snap(
-        bruttoarbeitslohn=_b(BRUTTO_40K), kist_gezahlt=_b(50_000))) == []
+        bruttoarbeitslohn=_b(BRUTTO_40K), kist_gezahlt=_b(50_000),
+        kist_konfession=KIRCHENMITGLIED)) == []
 
 
 def test_kirchensteuer_nachzahlung_bleibt_unbeanstandet():
     """Grenzfall, der NICHT melden darf: 3.000 € durch eine Nachzahlung für Vorjahre — die
     Schwelle hat dafür ausdrücklich Luft (Faktor 3 über dem gesetzlichen Höchstsatz)."""
     assert PF.plausibilitaets_widersprueche(_snap(
-        bruttoarbeitslohn=_b(BRUTTO_40K), kist_gezahlt=_b(300_000))) == []
+        bruttoarbeitslohn=_b(BRUTTO_40K), kist_gezahlt=_b(300_000),
+        kist_konfession=KIRCHENMITGLIED)) == []
 
 
 def test_kirchensteuer_ohne_bruttolohn_schweigt():
-    assert PF.plausibilitaets_widersprueche(_snap(kist_gezahlt=_b(2_222_200))) == []
+    assert PF.plausibilitaets_widersprueche(_snap(
+        kist_gezahlt=_b(2_222_200), kist_konfession=KIRCHENMITGLIED)) == []
 
 
 # ---- Schulgeld je Kind --------------------------------------------------------
@@ -151,7 +164,8 @@ def test_kirchensteuer_beide_angaben_weit_auseinander_meldet():
     """Der gemessene Fall: 2.000 € einbehalten, 22.222 € gezahlt — nie abgeglichen.
     Der Bruttolohn fehlt hier bewusst, damit nur dieser Abgleich anschlagen kann."""
     w = PF.plausibilitaets_widersprueche(_snap(
-        kirchensteuer_arbeitgeber=_b(200_000), kist_gezahlt=_b(2_222_200)))
+        kirchensteuer_arbeitgeber=_b(200_000), kist_gezahlt=_b(2_222_200),
+        kist_konfession=KIRCHENMITGLIED))
     assert _felder(w) == {"kist_gezahlt"}
     assert "2.000 €" in w[0]["grund"] and "22.222 €" in w[0]["grund"]
 
@@ -159,12 +173,85 @@ def test_kirchensteuer_beide_angaben_weit_auseinander_meldet():
 def test_kirchensteuer_beide_angaben_stimmig_meldet_nicht():
     """450 € einbehalten, 500 € gezahlt — die übliche kleine Abweichung."""
     assert PF.plausibilitaets_widersprueche(_snap(
-        kirchensteuer_arbeitgeber=_b(45_000), kist_gezahlt=_b(50_000))) == []
+        kirchensteuer_arbeitgeber=_b(45_000), kist_gezahlt=_b(50_000),
+        kist_konfession=KIRCHENMITGLIED)) == []
 
 
 def test_kirchensteuer_abgleich_braucht_beide_angaben():
     """Nur eine der beiden Zahlen erlaubt keinen Abgleich — dann ist zu schweigen."""
-    assert PF.plausibilitaets_widersprueche(_snap(kirchensteuer_arbeitgeber=_b(200_000))) == []
+    assert PF.plausibilitaets_widersprueche(_snap(
+        kirchensteuer_arbeitgeber=_b(200_000), kist_konfession=KIRCHENMITGLIED)) == []
+
+
+# ---- Kirchensteuer erklärt ↔ Konfession offen --------------------------------
+#
+# GEMESSEN 2026-08-28 am Fall serie-verheiratet-1kind-handwerker: Bundesland, gezahlte (580 €)
+# und erstattete Kirchensteuer bestätigt, die Konfession nie beantwortet. /ergebnis meldete
+# `grund: "bestaetigt"` und 0 € Kirchensteuer — bei römisch-katholisch wären es 1.053,36 €.
+# Die Einkommensteuer war dabei richtig (Delta 0 Cent), deshalb MELDET diese Prüfung und sperrt
+# nicht: ein Sperrgrund nähme dem Nutzer eine korrekte Zahl weg.
+# Der Preflight sagte zu diesem Fall GREEN — er prüfte Kirchensteuer gegen Lohn und gegen den
+# Arbeitgeber-Einbehalt, nie gegen die Mitgliedschaft.
+
+def _kirchen_widersprueche(**felder):
+    """Nur die Einträge dieser Prüfung — die Nachbarprüfungen schlagen bei denselben Feldern an."""
+    return [w for w in PF.plausibilitaets_widersprueche(_snap(**felder))
+            if "Kirche" in w["grund"]]
+
+
+def test_gezahlte_kirchensteuer_ohne_konfession_meldet():
+    """Der gemessene Fall: 580 € gezahlt, Bundesland gesetzt, Mitgliedschaft offen."""
+    w = _kirchen_widersprueche(kist_gezahlt=_b(58_000),
+                               kist_bundesland=_b("nordrhein_westfalen"),
+                               kist_erstattet=_b(0))
+    assert len(w) == 1, w
+    assert "580 €" in w[0]["grund"]
+
+
+def test_einbehaltene_kirchensteuer_ohne_konfession_meldet():
+    """Der Arbeitgeber-Einbehalt ist derselbe Beleg wie die gezahlte Kirchensteuer: er entsteht
+    nur bei einem Kirchenmitglied."""
+    assert len(_kirchen_widersprueche(kirchensteuer_arbeitgeber=_b(12_300))) == 1
+
+
+def test_bundesland_allein_ohne_konfession_meldet():
+    """Das Bundesland wird ausschließlich gebraucht, um den Hebesatz einer Kirche anzuwenden —
+    es steht also nie ohne Grund da, auch wenn gar kein Betrag erfasst ist."""
+    assert len(_kirchen_widersprueche(kist_bundesland=_b("bayern"))) == 1
+
+
+def test_beantwortete_konfession_schweigt():
+    """Die wichtigste Gegenprobe: mit beantworteter Mitgliedschaft ist nichts offen. Ohne sie
+    meldete die Prüfung bei JEDEM Kirchensteuerzahler und wäre wertlos."""
+    assert _kirchen_widersprueche(kist_gezahlt=_b(58_000),
+                                  kist_bundesland=_b("nordrhein_westfalen"),
+                                  kist_konfession=KIRCHENMITGLIED) == []
+
+
+def test_bewusstes_nein_zur_kirche_schweigt():
+    """„keine" ist eine Antwort, kein fehlender Wert — dann ist die Kirchensteuer mit 0 korrekt
+    gerechnet und es gibt nichts zu melden."""
+    assert _kirchen_widersprueche(kist_gezahlt=_b(58_000),
+                                  kist_konfession=_b("keine")) == []
+
+
+def test_ohne_jede_kirchensteuerangabe_schweigt():
+    """Wer zur Kirchensteuer gar nichts gesagt hat, wird nicht danach gefragt — sonst bekäme
+    jeder Konfessionslose diesen Hinweis, obwohl bei ihm nichts fehlt."""
+    assert _kirchen_widersprueche(bruttoarbeitslohn=_b(BRUTTO_40K)) == []
+
+
+def test_erstattung_von_null_ist_keine_angabe():
+    """Eine 0 bei der erstatteten Kirchensteuer sagt nichts über eine Mitgliedschaft — sie ist
+    der Normalfall und darf den Hinweis nicht auslösen."""
+    assert _kirchen_widersprueche(kist_erstattet=_b(0)) == []
+
+
+def test_vorlaeufige_kirchensteuer_schweigt():
+    """Nur bestätigte Werte sind ein Beleg — ein KI-Vorschlag ist keine Angabe des Nutzers
+    (Hausregel dieser Datei: vorläufig ist kein Beleg)."""
+    assert PF.plausibilitaets_widersprueche(
+        {"kist_gezahlt": {"wert": 58_000, "zustand": "vorlaeufig"}}) == []
 
 
 # ---- Keine Bankverbindung ↔ erfasste IBAN ------------------------------------

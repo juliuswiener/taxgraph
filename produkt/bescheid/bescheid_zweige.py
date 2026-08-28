@@ -68,6 +68,37 @@ from bescheid_einkuenfte import (  # noqa: E402
     _shared_dba_sonstige,
 )
 
+def _kist_konfession(felder: dict):
+    """Die Konfession — oder None, wenn sie niemand angegeben hat.
+
+    Die drei Setzstellen von `extras["kist_cent"]` lasen bis 2026-08-28
+    `f.get("kist_konfession", {}).get("wert", "keine")`. Die Vorgabe "keine" machte aus
+    „unbeantwortet" ein „gehoert keiner Kirche an" und meldete das Ergebnis als gerechnete
+    Null — nicht als „nicht rechenbar".
+
+    GEMESSEN am Fall serie-verheiratet-1kind-handwerker: kist_bundesland, kist_gezahlt
+    (580 EUR) und kist_erstattet bestaetigt, kist_konfession nie beantwortet. /ergebnis
+    meldete kist_cent = 0; mit roemisch-katholisch sind es 1.053,36 EUR. Die festzusetzende
+    ESt blieb dabei unveraendert (Delta 0) — falsch war allein die Kirchensteuer.
+
+    Der Beweis, dass 0 hier gelogen ist, stand im SELBEN Antwortobjekt: mobilitaetspraemie_cent
+    war None, weil die Praemie ohne ihre Eingaben nicht rechenbar ist. Zwei Post-Engine-
+    Zuschlaege, dieselbe Lage, zwei verschiedene Antworten — und `_feste_zahl` (api.py) sagt
+    fuer beide dasselbe zu: „Schluessel absent = nicht rechenbar".
+
+    Dieselbe Bauart wie [[slot-fail-open-get-default]], wo eine falsche Vorgabe 13.568 EUR
+    lautlos loeschte und nur ein zufaelliger Cent-Assert sie fing.
+
+    NICHT geaendert und bewusst so gelassen: die beiden Lesestellen der §-32d-Abs.-1-S.-3-5-
+    Ermaessigung (unten, Kapital-KiSt). Dort steuert die Konfession die festzusetzende ESt,
+    und die Vorgabe "keine" laesst die Ermaessigung aus — zu viel Steuer statt zu wenig. Das
+    ist ein eigener Befund, an team-lead gemeldet, und nicht ohne Entscheidung zu aendern.
+    """
+    e = felder.get("kist_konfession")
+    wert = e and e.get("wert")
+    return wert if isinstance(wert, str) and wert else None
+
+
 def _abschlusszahlung_cent(felder: dict, zahl_cent: int):
     """§ 36 Abs. 2+4 EStG — Abschlusszahlung (+) / Erstattung (−) in CENT auf der bereits festgesetzten
     ESt (zahl_cent), scheibe-agnostisch (jede Rate-Scheibe erzeugt genau eine festzusetzende ESt).
@@ -268,10 +299,13 @@ def _zweig_festzusetzende_est(vz: int, bindung: dict, felder, store, nur_bestaet
                 "bemessungsgrundlage": est,
                 "splitting": zusammen})
         # KiSt § 51a: dieselbe Maßstabsteuer wie SolZ (reiner AN-Fall: kein KiFB/§32d)
-        if extras is not None:
+        # Ohne beantwortete Konfession bleibt der Schlüssel absent (= nicht rechenbar, wie bei
+        # mobilitaetspraemie_cent darunter). Vorher stand hier eine gerechnete 0 — s. _kist_konfession.
+        konf = _kist_konfession(f)
+        if extras is not None and konf is not None:
             extras["kist_cent"] = runner.catala_kist({
                 "est_mit_fb": est,
-                "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
+                "konfession": konf,
                 "bundesland": f.get("kist_bundesland", {}).get("wert", "")})
         # § 101 Mobilitätsprämie (Post-Engine-Prämie, KEIN ESt-Impact; extras-Naht wie KiSt).
         # Stufe-1: reiner-AN einzel mit Pendlerstrecke (ab-21km-EP). zusammen = Stufe-2 (per-
@@ -890,10 +924,14 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # Pro-Kapitalertrag-25%-Deckel (Abs. 5 S. 1) bleibt ungeprüft, over-tax-safe (der
         # Jahres-Deckel lässt höchstens so viel q durch wie der Jahres-Deckel erlaubt) — s.
         # reports/adjudikation/p32d-abgeltung-kist.md Abschnitt 3.
-        if extras is not None:
+        # Ohne beantwortete Konfession bleibt der Schlüssel absent (= nicht rechenbar), statt eine
+        # gerechnete 0 zu melden — s. _kist_konfession. Der Kapital-Nachtrag geht dabei nicht
+        # verloren: kist_kap_cent wird oben nur gesetzt, wenn die Konfession steuererhebend ist.
+        konf = _kist_konfession(f)
+        if extras is not None and konf is not None:
             extras["kist_cent"] = runner.catala_kist({
                 "est_mit_fb": solz_info.get("est_roh_ohne_kap", 0),
-                "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
+                "konfession": konf,
                 "bundesland": f.get("kist_bundesland", {}).get("wert", "")}) + extras.get("kist_kap_cent", 0)
         return est
     return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")
@@ -1247,10 +1285,13 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         # BUG-FIX 2026-08-06: selbe Bugklasse wie gesamt-Ring (Z.1144). Z.1575/1578 setzte
         # est_mit_fb = est_raw + kap_st → KiSt auf 13.855 statt 1.605 (Rentner 20k + Kapital 50k).
         # est_roh_ohne_kap = est_raw (ESt ohne §32d-Kapital), separat von est_mit_fb (SolZ-Basis).
-        if extras is not None and "est_roh_ohne_kap" in solz_info_r:
+        # Konfession unbeantwortet -> Schlüssel absent (= nicht rechenbar), keine gerechnete 0.
+        # Dieselbe Naht wie im gesamt-Zweig, s. _kist_konfession.
+        konf_r = _kist_konfession(f)
+        if extras is not None and konf_r is not None and "est_roh_ohne_kap" in solz_info_r:
             extras["kist_cent"] = runner.catala_kist({
                 "est_mit_fb": solz_info_r["est_roh_ohne_kap"],
-                "konfession": f.get("kist_konfession", {}).get("wert", "keine"),
+                "konfession": konf_r,
                 "bundesland": f.get("kist_bundesland", {}).get("wert", "")}) + extras.get("kist_kap_cent", 0)
         return est
     return IV.bescheid_via_slots(bindung, slot_fn, quantitaet="festzusetzende_est")

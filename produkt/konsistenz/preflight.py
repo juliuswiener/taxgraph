@@ -246,6 +246,39 @@ def plausibilitaets_widersprueche(snapshot: dict) -> list:
                      "das Finanzamt eine Erstattung nicht überweisen. Bitte prüfe, welche der "
                      "beiden Angaben stimmt."})
 
+    # Kirchensteuer erklärt, Kirchenzugehörigkeit nicht. Angabe gegen FEHLENDE Angabe — der einzige
+    # Fall hier, der eine Lücke meldet statt zweier Zahlen, die sich widersprechen.
+    #
+    # GEMESSEN 2026-08-28 am Fall serie-verheiratet-1kind-handwerker: Bundesland, gezahlte (580 €)
+    # und erstattete Kirchensteuer bestätigt, die Konfession nie beantwortet. Alle drei Felder
+    # werden laut Bindung NUR gefragt, wenn eine Konfession vorliegt — die Software hat sie also
+    # gestellt, weil sie eine annahm, und rechnete danach mit „keine". Ergebnis: 0 € Kirchensteuer
+    # gemeldet, wo bei römisch-katholisch 1.053,36 € festzusetzen wären. Die Einkommensteuer blieb
+    # dabei richtig (Delta 0 Cent), deshalb MELDEN und nicht sperren: einen Sperrgrund zu setzen
+    # nähme dem Nutzer eine korrekte Zahl weg. Unvollständig ist die Erklärung, nicht die Rechnung.
+    #
+    # Ein Betrag von 0 € zählt hier NICHT als Angabe (_bestaetigter_betrag verlangt > 0): wer bei
+    # der erstatteten Kirchensteuer eine Null einträgt, sagt damit nichts über seine Mitgliedschaft.
+    # Das Bundesland dagegen zählt schon als gesetzt, sobald es dasteht — es wird ausschließlich
+    # gebraucht, um den Hebesatz einer Kirche anzuwenden.
+    konfession = _bestaetigt_wert(snapshot, "kist_konfession")
+    if not (isinstance(konfession, str) and konfession):
+        bundesland = _bestaetigt_wert(snapshot, "kist_bundesland")
+        belege = [(f, _bestaetigter_betrag(snapshot, f))
+                  for f in ("kist_gezahlt", "kirchensteuer_arbeitgeber", "kist_erstattet")]
+        belege = [(f, b) for f, b in belege if b is not None]
+        if belege or (isinstance(bundesland, str) and bundesland):
+            feld_id, betrag = belege[0] if belege else ("kist_bundesland", None)
+            womit = (f"Kirchensteuer gezahlt oder einbehalten ({_eur(betrag)})" if betrag is not None
+                     else "angegeben, in welchem Bundesland du Kirchensteuer zahlst")
+            widersprueche.append({
+                "feld_id": feld_id, "wert": betrag,
+                "grund": f"Du hast {womit} — ob du einer Kirche angehörst, die Kirchensteuer "
+                         f"erhebt, ist aber noch offen. Ohne diese Angabe wird deine "
+                         f"Kirchensteuer nicht berechnet und fehlt in deinem Ergebnis. Bitte gib "
+                         f"an, ob du einer solchen Kirche angehörst — und wenn nicht, prüfe die "
+                         f"Kirchensteuer-Angaben noch einmal."})
+
     # Angekündigt, aber nicht ausgefüllt — Angabe gegen Angabe wie die beiden Fälle darüber, nur
     # zählt hier eine Anzahl gegen die Zahl der Antworten. BEWUSST IM SELBEN SCHLÜSSEL
     # (`widersprueche_plausibilitaet`): `api.preflight_check` führt eine fest verdrahtete Liste der
