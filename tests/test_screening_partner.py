@@ -266,6 +266,19 @@ def test_vorlaeufiger_vorschlag_schliesst_nichts_aus():
 
 @pytest.mark.parametrize("flag", sorted(AK.PARTNER_SCREENING))
 def test_alleinstehender_sieht_die_partner_kreuze_nicht(flag):
+    """MIT POSITIVKONTROLLE, und die ist hier der ganze Punkt.
+
+    Gegen den Stand vor dieser Aenderung (3e4d08a) gemessen: ohne die erste Haelfte waere dieser
+    Test VAKUUM-GRUEN gewesen — die vier Kreuze existierten damals gar nicht, „nicht in der
+    Warteschlange" ist dann trivial wahr. Ein Test, der gruen ist, WEIL er nichts findet, sieht
+    von aussen aus wie einer, der gruen ist, weil nichts zu finden ist.
+
+    Deshalb zuerst der Nachweis, dass das Kreuz ueberhaupt erreichbar IST (Ehepaar), und erst
+    danach, dass es dem Alleinstehenden erspart bleibt.
+    """
+    assert flag in _fragen(ZUSAMMEN), (
+        f"{flag} steht einem Ehepaar nicht zur Verfuegung — dann sagt die zweite Haelfte dieses "
+        f"Tests nichts aus, sie faende das Kreuz auch dann nicht, wenn es gar nicht existierte.")
     assert flag not in _fragen(EINZEL), (
         f"{flag} wird einem Einzelveranlagten gestellt — er hat keinen Partner.")
 
