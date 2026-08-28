@@ -1,4 +1,4 @@
-"""Sechs Abgabe-Luecken-Blockmatrix: fuer sechs Bereiche ohne eigenen BLOECKE-Eintrag in
+"""Abgabe-Luecken-Blockmatrix: fuer Bereiche ohne eigenen BLOECKE-Eintrag in
 tests/test_checkest_blockmatrix.py wird hier je EIN "nacktes Kernfeld" (nur das jeweilige
 Kernfeld gesetzt, alle schliessenden Zusatzangaben fehlen) gegen ECHTES ERiC gehalten.
 
@@ -12,11 +12,26 @@ ein legitimer Schreibabbruch bestaetigten: das amtliche Programm weist alle sech
 Faelle zurueck. Aber die Sonden sind Wegwerf-Dateien ausserhalb des Repos -- bricht die
 Bindung morgen, meldet sich kein Test. Dieser Test macht die Messung stehend.
 
+Ergaenzung 2026-08-28 (Nachtrag im selben Vault-Dokument, "Fremdverifikation"): eine zweite
+Nachmessung an drei vermeintlichen "Nachzueglern" ergab, dass zwei davon exakt demselben
+Muster folgen wie die sechs oben -- spenden_betrag und rentner_pflegegrad sind mit ihrem
+nackten Kernfeld allein ebenso ungeprueft-durchlassend gefaehrdet. Beide sind hier
+aufgenommen. Die anderen zwei Nachzuegler-Unterfaelle (realsplitting_krankengeld, das erst
+ab einem zweiten beruehrten Feld ueberhaupt etwas verlangt; rentner_hinterbliebenenbezuege,
+zu dem es gar kein Begleitfeld gibt) folgen NICHT diesem Muster und sind bewusst NICHT hier
+aufgenommen -- Begruendung je Fall im Vault-Nachtrag.
+
+rentner_gepflegter_hilflos war zuvor nur PER ANALOGIE zu rentner_pflegegrad vermutet (teilt
+dieselbe Ang_pflegebeduerft_Pers-Instanz) -- eigens nachgemessen, 2026-08-28: nacktes
+Kernfeld allein wird zurueckgewiesen (rc=610001002, dieselben zwei fehlenden Angaben wie bei
+rentner_pflegegrad), die volle Sechserkombination inkl. hilflos=True wird angenommen
+(rc=0). Die Analogie war in diesem Fall richtig -- aber gemessen, nicht angenommen.
+
 Bauart: HARTES Gate, keine Ratschen-Obergrenze
 ------------------------------------------------
-Fail-closed, keine Toleranz: es geht um sechs BENANNTE Faelle, nicht um eine Quote. Jeder
-Fall ist ein eigener Parameter und muss einzeln zurueckgewiesen werden -- eine "5 von 6
-reichen"-Schwelle wuerde genau die Regression verdecken, die dieses Gate fangen soll.
+Fail-closed, keine Toleranz: es geht um BENANNTE Faelle, nicht um eine Quote. Jeder
+Fall ist ein eigener Parameter und muss einzeln zurueckgewiesen werden -- eine "reicht
+mehrheitlich"-Schwelle wuerde genau die Regression verdecken, die dieses Gate fangen soll.
 
 Ausgangsfall: _fall_einzel() aus test_checkest_durchstich.py (Veranlagung "einzel",
 Stammdaten Person A vollstaendig, kein Gewinn/Kap/VuV/Sonstige -- derselbe Boden wie der
@@ -69,6 +84,15 @@ FAELLE = [
     ("gewst_zu_zahlen", {"gewst_messbetrag": 350000}),
     ("p22_nr3", {"p22_nr3_einkuenfte": 100000}),
     ("p33a", {"p33a_unterhalt_aufwendungen": 600000}),
+    # Ab hier: Nachtrag 2026-08-28 "Fremdverifikation" (selbes Vault-Dokument, Abschnitt
+    # "Die genaue Feldkombination je Fall"). spenden_betrag und rentner_pflegegrad sind
+    # dieselbe Machart wie die sechs oben -- Kernfeld allein reicht checkESt nicht.
+    ("spenden_betrag", {"spenden_betrag": 30000}),
+    ("rentner_pflegegrad", {"rentner_pflegegrad": 3}),
+    # Eigens nachgemessen (nicht per Analogie zu rentner_pflegegrad uebernommen), 2026-08-28:
+    # teilt dieselbe Ang_pflegebeduerft_Pers-Instanz und dieselben fuenf Begleitfelder, aber
+    # das war hier Ergebnis einer eigenen Messung, keine Annahme.
+    ("rentner_gepflegter_hilflos", {"rentner_gepflegter_hilflos": True}),
 ]
 
 _NICHT_GEPRUEFT = {"io_gate_nicht_geprueft", "hersteller_id_gesperrt",
