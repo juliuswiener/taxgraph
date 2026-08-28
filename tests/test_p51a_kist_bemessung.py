@@ -259,6 +259,12 @@ def test_kap_q_ohne_kirchensteuerpflicht(base):
     e=4.000, Abgeltung 25% = 1.000 EUR (kap_st==abgeltung, konfession=keine -> kein KiSt-Zweig).
     q=300 EUR -> kap_st_k = max(0, 1.000-300) = 700 EUR. ESt = 2.332+700 = 3.032 EUR =
     303.200 CENT (vs. 3.332 EUR = 333.200 CENT ohne q).
+
+    Die Zeile ("kist_konfession", "keine") unten ist NICHT Beiwerk und darf nicht wieder
+    wegfallen: bis 2026-08-28 setzte dieser Test das Feld gar nicht und nannte das trotzdem
+    „keine Konfession" — GESAMT_KEGEL_BASE fuehrt es nicht. Damit hing der ganze Test an der
+    Vorgabe, die der eigentliche Defekt war, und er waere beim Fix rot geworden. Ausfuehrlich
+    an der Zeile selbst.
     """
     if not _catala_da():
         pytest.skip("Catala nicht verfügbar")

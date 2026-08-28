@@ -512,6 +512,71 @@ def _rueckfragen_gebuendelt(rueckfragen: list[dict]) -> tuple[list[dict], int]:
     return behalten, len(rueckfragen) - len(behalten)
 
 
+# Woran eine Frage erkennen lässt, WELCHE Art Zahl sie haben will. Bewusst nur diese beiden:
+# „Euro" und „wie viele" sind die zwei Wörter, bei denen die Antwort eine Zahl ist UND die Art der
+# Zahl im Fragetext steht. Alles Weitere (etwa „wie hoch") wäre geraten — „Wie hoch ist dein Grad
+# der Behinderung?" ist eine völlig richtige Frage nach einer Zahl, die kein Geld ist.
+_GELD_WORT = re.compile(r"(?<!\w)eur(?:o)?(?!\w)|€", re.I)
+_ANZAHL_WORT = re.compile(r"(?<!\w)(?:wie\s*viele|anzahl)(?!\w)", re.I)
+
+
+def _rueckfragen_gebunden(rueckfragen: list[dict], kat3: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Eine Rückfrage behält ihr Feld nur, wenn Frage und Feld dasselbe meinen.
+
+    ANLASS, gemessen im Live-Lauf `serie-rentner-mit-behinderung-1787909863` vom 2026-08-28. Die
+    Nutzerin schrieb „bekomme 1850 euro im monat". Das Modell fragte:
+
+        Feld:  rentner_anzahl_renten  (typ int, „Wie viele verschiedene Renten bekommst du?")
+        Text:  „Wie hoch ist der monatliche Rentenzahlbetrag genau? Du schreibst 1850 Euro …"
+
+    Die Oberfläche baut das Eingabefeld nach dem TYP des Feldes, nicht nach dem Fragetext. Wer die
+    gestellte Frage beantwortet, tippt 1850 — und legt 1850 Renten an. Das ist kein Anzeigefehler,
+    sondern ein Zahlendreher mit Ansage: die Zahl landet bestätigt und richtig aussehend im Fall.
+
+    ZWEI PRÜFUNGEN, und beide sind deterministisch, aus demselben Grund wie das Beleg-Gate: eine
+    Regel, die nur im Prompt steht, gilt, solange das Modell mag.
+
+      1. `unbekannt` — das genannte Feld stand gar nicht auf der Liste, die Stufe 3 gesehen hat.
+         Das Schema verlangt „exakt eine feld_id aus der Liste"; alles andere ist erfunden. Heute
+         verschwindet so eine Frage in der Oberfläche spurlos (app.js `entfallen`, weil das Feld
+         nicht in /fragen steht) — gemessen 1 von 24 Rückfragen aus echten Läufen.
+      2. `zahlenart` — der Fragetext nennt Geld, das Feld ist `int`; oder er fragt nach einer
+         Anzahl, das Feld ist `cent`. Das trägt, weil in diesem Haus JEDES Geldfeld `cent` ist und
+         KEIN `int`-Feld eine Geld-Einheit hat (nachgezählt 2026-08-28: int trägt Jahr, Tage,
+         Monate, km, %, Stunden, kWp, Kinder — nie EUR). „Geld gefragt, Anzahl gemeint" ist damit
+         keine Vermutung über den Fragetext, sondern ein Widerspruch zwischen zwei Angaben.
+
+    DAS FELD WIRD GELÖST, DIE FRAGE BLEIBT. Sie wegzuwerfen wäre der stille Verlust, gegen den
+    dieses Modul gebaut ist: die Frage nach den 1850 € ist ja RICHTIG, nur ihr Ziel ist falsch.
+    Ohne Feld zeigt die Oberfläche sie im Chat statt in einem Eingabefeld (app.js: „Nennt die
+    Rückfrage gar kein Feld … dann bleibt der Chat der Weg"), die Antwort läuft erneut durch die
+    drei Stufen und kann diesmal im richtigen Feld landen. Das Schema sieht den leeren String
+    ausdrücklich vor — wir stellen nur her, was das Modell hätte liefern sollen.
+
+    Gemessen an 50 verschiedenen Rückfragen aus echten Läufen greift die Prüfung dreimal
+    (1× unbekannt, 1× Geld an int, 1× Anzahl an cent) und trifft dabei keine richtige Frage.
+
+    Rückgabe: (rueckfragen, geloest) — `geloest` trägt den Grund je Fall fürs Protokoll.
+    """
+    erlaubt = {f.get("feld_id") for f in kat3}
+    typen = {f.get("feld_id"): f.get("typ") for f in kat3}
+    geloest = []
+    for r in rueckfragen:
+        fid, frage = r.get("feld_id") or "", r.get("frage", "")
+        if not fid:
+            continue
+        typ = typen.get(fid)
+        if fid not in erlaubt:
+            grund = "unbekannt"
+        elif (_GELD_WORT.search(frage) and typ == "int") or (_ANZAHL_WORT.search(frage) and typ == "cent"):
+            grund = "zahlenart"
+        else:
+            continue
+        geloest.append({"frage": frage, "feld_id": fid, "grund": grund})
+        r["feld_id"] = ""
+    return rueckfragen, geloest
+
+
 def _rueckfrage_verdraengt(vorschlaege: list[dict], rueckfragen: list[dict]) -> list[dict]:
     """Auflage: eine Rückfrage ERSETZT den Vorschlag zum selben Feld, sie begleitet ihn nicht.
 
@@ -716,33 +781,57 @@ def _regel_zeilen(je_regel: dict[str, list[dict]], regeln: list[str]) -> str:
 
 
 def _mit_zaehlfeldern(kat3: list[dict], katalog: list[dict]) -> list[dict]:
-    """Legt das Zählfeld einer Instanz-Gruppe dazu, wenn Felder dieser Gruppe im Katalog stehen.
+    """Zählfeld und Instanz-Gruppe gehören zusammen — und zwar in BEIDE Richtungen.
 
     Stufe 2 wählt THEMEN, Stufe 3 sieht nur die Felder der gewählten Themen. Das Zählfeld einer
-    Instanz-Gruppe liegt aber ausdrücklich in einer ANDEREN Regel — bei `kind` gehört
-    `fam_anzahl_kinder` zu `p24b_entlastungsbetrag` (Entlastungsbetrag für Alleinerziehende),
-    die Kind-Felder zu `p32_6_kinderfreibetraege`. Das steht so in bindung_regel_bedingungen.yaml
-    und war beim Bau der Instanz-Achse als blosse Notiz vermerkt.
+    Instanz-Gruppe liegt aber ausdrücklich in einer ANDEREN Regel als die Felder, die es zählt —
+    bei `kind` gehört `fam_anzahl_kinder` zu `p24b_entlastungsbetrag` (Entlastungsbetrag für
+    Alleinerziehende), die Kind-Felder zu `p32_6_kinderfreibetraege`; bei `rente` gehört
+    `rentner_anzahl_renten` zu `p22_anzahl_renten_erhebung`, die Renten selbst zu
+    `p22_1_leibrente_besteuerungsanteil`. Das steht so in bindung_regel_bedingungen.yaml. Ein
+    Thema kann also gewählt werden und die Hälfte des Paares stehenlassen — auf beiden Seiten.
 
-    Julius, 2026-08-25, mit „verheiratet, 2 kinder" im Chat: das Modell nahm das Thema
-    Kinderfreibeträge (dessen erste Frage nach dem Vornamen fragt — genau die kam) und NICHT das
-    Thema Alleinerziehende, denn er ist verheiratet. Die Zahl 2 hatte damit kein Feld, in das sie
-    gehen konnte. Folge: ein einziges Vornamensfeld statt zwei, und die Existenzfrage nach Kindern
-    stand danach noch in der Ankreuzliste.
+    RICHTUNG 1, die Instanzfelder sind da und die Zahl fehlt. Julius, 2026-08-25, mit
+    „verheiratet, 2 kinder" im Chat: das Modell nahm das Thema Kinderfreibeträge (dessen erste
+    Frage nach dem Vornamen fragt — genau die kam) und NICHT das Thema Alleinerziehende, denn er
+    ist verheiratet. Die Zahl 2 hatte damit kein Feld, in das sie gehen konnte. Folge: ein
+    einziges Vornamensfeld statt zwei, und die Existenzfrage nach Kindern stand danach noch in
+    der Ankreuzliste.
+
+    RICHTUNG 2, die Zahl ist da und das Gezählte fehlt — derselbe Bruch, andersherum, und er hat
+    2026-08-28 einen Live-Lauf gekostet (`serie-rentner-mit-behinderung-1787909863`). Die
+    Nutzerin schrieb „ich bin seit 2023 in rente, bekomme 1850 euro im monat". Stufe 2 wählte
+    `p22_anzahl_renten_erhebung` — und NICHT `p22_1_leibrente_besteuerungsanteil`. Der enge
+    Katalog trug damit 22 Felder und darunter kein einziges, das einen Rentenbetrag aufnehmen
+    kann: `rentner_jahresrente` war nicht dabei. Die 1850 € hatten kein Ziel, und das Modell
+    hängte seine Frage danach an das einzige Feld mit „Rente" im Namen — das Zählfeld. Wer die
+    gestellte Frage beantwortete, legte 1850 Renten an.
+
+    Eine Anzahl ohne die Sache, die sie zählt, ist keine Frage: „Wie viele Renten bekommst du?"
+    ist nur dann etwas wert, wenn danach jemand nach den Renten fragen kann.
+
+    BEIDE Richtungen lesen `drin` aus dem UNVERÄNDERTEN kat3, damit sich nichts aufschaukelt:
+    ein Zählfeld, das Richtung 1 gerade erst nachgelegt hat, darf nicht seinerseits eine ganze
+    Gruppe nachziehen. Gemessen an neun echten Läufen macht genau das den Unterschied zwischen
+    +5 passenden Feldern und +34 Kind-Feldern im Katalog einer kinderlosen Rentnerin.
 
     Die Zuordnung wird NICHT geraten: `instanz_gruppen` sagt je Gruppe, welches Feld die Zahl
-    trägt. Fehlt die Gruppe dort (sieben der acht), passiert hier nichts.
+    trägt (2026-08-28: alle acht Gruppen). Fehlt eine Gruppe dort, passiert für sie nichts.
     """
     gruppen = TR.lade_instanz_gruppen()
     if not gruppen:
         return kat3
     drin = {f.get("feld_id") for f in kat3}
-    gebraucht = {gruppen[g]["anzahl_feld"] for f in kat3
-                 for g in [f.get("instanz_gruppe")] if g and g in gruppen}
-    fehlend = gebraucht - drin
-    if not fehlend:
+    zu_gruppe = {g["anzahl_feld"]: name for name, g in gruppen.items()}
+    fehlende_zahl = {gruppen[g]["anzahl_feld"] for f in kat3
+                     for g in [f.get("instanz_gruppe")] if g and g in gruppen} - drin
+    offene_gruppen = {zu_gruppe[fid] for fid in drin if fid in zu_gruppe}
+    if not fehlende_zahl and not offene_gruppen:
         return kat3
-    return kat3 + [f for f in katalog if f.get("feld_id") in fehlend]
+    return kat3 + [f for f in katalog
+                   if f.get("feld_id") not in drin
+                   and (f.get("feld_id") in fehlende_zahl
+                        or f.get("instanz_gruppe") in offene_gruppen)]
 
 
 def _themen_prompt(freitext: str, aussagen: list[dict], regel_zeilen: str) -> list[dict]:
@@ -966,9 +1055,18 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
         # trägt gekürzten Anbietertext und gehört nicht in ein Metadaten-Protokoll. Die STUFE steht
         # daneben, weil sonst wieder nur „der Aufruf ging schief" im Protokoll stünde — und genau
         # das war der Zustand, in dem niemand sagen konnte, wo Julius' drei Fakten blieben.
-        melde(f"stufe={stufe}, ergebnis=kein_ergebnis, "
-              f"grund={getattr(e, 'grund', '') or 'sonstiger_fehler'}, "
-              f"provider={llm_client.letzte_meta().get('provider', '')!r}")
+        grund = getattr(e, "grund", "") or "sonstiger_fehler"
+        provider = llm_client.letzte_meta().get("provider", "")
+        melde(f"stufe={stufe}, ergebnis=kein_ergebnis, grund={grund}, provider={provider!r}")
+        # UND IN DEN FLUSS, seit 2026-08-28. Der Ausfall stand bisher nur im Audit; im Fluss fehlte
+        # die Stufe einfach. Gemessen an `serie-verheiratet-1kind-handwerker-1787909637`: Stufe 1
+        # las fünf Aussagen, dann kam nichts mehr — und wer nur den Fluss las, sah zwar, DASS
+        # nichts kam, konnte aber nicht sagen, warum. Der Grund („abgeschnitten") lag in einer
+        # zweiten Datei, die man über Zeitstempel danebenlegen musste. Genau das Zusammenlegen von
+        # Hand sollte der Fluss abschaffen; ein Strang, in dem nur die geglückten Schritte stehen,
+        # ist kein Fluss, sondern eine Erfolgsmeldung.
+        flow.schreibe(None, "ki", {"stufe": stufe, "was": "ausgefallen",
+                                   "inhalt": {"grund": grund, "provider": provider}})
 
     # --------------------------------------------------------- Stufe 1: was hat er gesagt
     try:
@@ -1033,6 +1131,11 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
     # ihn unter dem Wert ("50.000 € pro Jahr ÷ 12 × 6 Monate"). Er ist damit Anzeige, nicht Gate.
     behalten, verworfen = _beleg_geprueft(_chat_parse(c3.text), gefiltert)
     rueckfragen = _rueckfragen_parse(c3.text, len(kat3))
+    # ERST das Feld prüfen. Eine Rückfrage, die auf ein Feld zeigt, nach dem sie gar nicht fragt,
+    # darf zwei Dinge nicht: die Antwort des Nutzers in dieses Feld schreiben lassen (1850 Euro
+    # als 1850 Renten) UND unten den Vorschlag zu diesem Feld verdrängen. Beides hängt am
+    # `feld_id`, also wird es hier gelöst, bevor irgendetwas anderes es liest.
+    rueckfragen, geloest = _rueckfragen_gebunden(rueckfragen, kat3)
     # ERST bündeln, DANN verdrängen. Andersherum nähme eine Rückfrage, die gleich wegfällt, den
     # Vorschlag zu ihrem Feld mit — der Nutzer verlöre den Wert UND die Frage danach, und zwar
     # lautlos. Genau die Bauart von stillem Verlust, gegen die die Aussagen-Liste gebaut wurde.
@@ -1046,11 +1149,13 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
     # „das Modell hatte nichts zu sagen" von „es kam etwas, das wir nicht verwerten konnten", ohne
     # dass ein Zeichen des Inhalts ins Protokoll wandert.
     mitschnitt(3, "ergebnis", {"vorschlaege": behalten, "ohne_beleg_verworfen": verworfen,
-                               "rueckfragen": rueckfragen, "antwort": antwort,
+                               "rueckfragen": rueckfragen, "rueckfragen_geloest": geloest,
+                               "antwort": antwort,
                                "unsicher": unsicher, "aussagen": aussagen})
     melde(f"stufe=3, katalog={'eng' if eng else 'voll'}, katalog_felder={len(kat3)}, "
           f"vorschlaege={len(behalten)}, ohne_beleg_verworfen={len(verworfen)}, "
           f"rueckfragen={len(rueckfragen)}, rueckfragen_zurueckgestellt={zurueckgestellt}, "
+          f"rueckfragen_geloest={len(geloest)}, "
           f"offen={sum(1 for a in aussagen if a['status'] not in ('vorschlag', 'rueckfrage'))}, "
           f"antwortlaenge={len(antwort)}, unsicher={unsicher}, "
           f"inhalt_laenge={len(c3.text or '')}, provider={c3.provider!r}, finish={c3.finish!r}")
