@@ -1424,7 +1424,7 @@ bindungen:
   # Verdopplung eines bekannten Fehlers.
   - feld_id: einkuenfte_gewinn_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: einkuenfte_gewinn_partner}
-    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus, und § 26b EStG ermittelt sie je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen selbstaendigen PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Angaben samt Gewerbesteuer-Anrechnung. Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: cent
     einheit: EUR
     askable: true
@@ -1443,7 +1443,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
   - feld_id: gewinn_betriebsart_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: gewinn_betriebsart_partner_weiche}
-    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus, und § 26b EStG ermittelt sie je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen selbstaendigen PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Angaben samt Gewerbesteuer-Anrechnung. Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: enum
     einheit: null
     enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
@@ -1464,7 +1464,7 @@ bindungen:
   # Person A. Ohne sie lehnt checkESt den Partner-Betrag ab, sobald einkuenfte_gewinn_partner steht.
   - feld_id: gewinn_bezeichnung_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewinn_bezeichnung_partner}
-    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus, und § 26b EStG ermittelt sie je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen selbstaendigen PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Angaben samt Gewerbesteuer-Anrechnung. Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: text
     einheit: null
     askable: true
@@ -1487,7 +1487,7 @@ bindungen:
     # nur Person-A-Signatur-Slots, ein zweiter Aufruf fuer Person B ist Stufe 2 (Ring, api.py) und
     # noch nicht gebaut. Rechtsgrundlage bleibt § 15 Abs. 1 S. 1 Nr. 2 EStG (s. anker_ref unten).
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewinnanteil_partner}
-    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15 Abs. 1 S. 1 Nr. 2 EStG erfasst den Gewinnanteil des Mitunternehmers, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen beteiligten PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Angaben. Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -1508,6 +1508,9 @@ bindungen:
     # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): s. Begruendung bei gewinnanteil_partner
     # oben. Loest sich mit Stufe 2 auf.
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: verguetung_taetigkeit_partner}
+    # Julius, echter Durchgang 2026-08-28 (L1 #66-68, L3 #56-58): diese Frage kam, ohne dass je
+    # erhoben war, ob der Partner ueberhaupt an einer Gesellschaft beteiligt ist.
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15 Abs. 1 S. 1 Nr. 2 EStG erfasst Sonderverguetungen NUR bei einem Gesellschafter, der als Mitunternehmer anzusehen ist — die Verguetung setzt die Beteiligung voraus, und die gehoert zu den Gewinneinkuenften. Ohne bestaetigte Gewinneinkuenfte des Partners gibt es keine Gesellschafterstellung, zu der etwas zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -1528,6 +1531,7 @@ bindungen:
     # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): s. Begruendung bei gewinnanteil_partner
     # oben. Loest sich mit Stufe 2 auf.
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: verguetung_darlehen_partner}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15 Abs. 1 S. 1 Nr. 2 EStG erfasst Sonderverguetungen NUR bei einem Gesellschafter, der als Mitunternehmer anzusehen ist — die Verguetung fuer die Hingabe von Darlehen setzt die Beteiligung voraus, und die gehoert zu den Gewinneinkuenften. Ohne bestaetigte Gewinneinkuenfte des Partners gibt es keine Gesellschafterstellung, zu der etwas zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -1548,6 +1552,7 @@ bindungen:
     # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): s. Begruendung bei gewinnanteil_partner
     # oben. Loest sich mit Stufe 2 auf.
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: verguetung_ueberlassung_partner}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15 Abs. 1 S. 1 Nr. 2 EStG erfasst Sonderverguetungen NUR bei einem Gesellschafter, der als Mitunternehmer anzusehen ist — die Verguetung fuer die Ueberlassung von Wirtschaftsguetern setzt die Beteiligung voraus, und die gehoert zu den Gewinneinkuenften. Ohne bestaetigte Gewinneinkuenfte des Partners gibt es keine Gesellschafterstellung, zu der etwas zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -1566,7 +1571,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
   - feld_id: gewst_hebesatz_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_hebesatz_partner}
-    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 35 EStG rechnet die Gewerbesteuer des Gewerbetreibenden an, § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen gewerbetreibenden PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Anrechnung (Kz E0801705). Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: int
     einheit: null
     bereich: {min: 1, max: 999, grund: "Reine Sanity-Bound (Hebesatz-Prozentzahl > 0), wie gewst_hebesatz (Person A). KEIN gesetzlicher Mindesthebesatz-Anker."}
@@ -1585,7 +1590,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
   - feld_id: gewst_messbetrag_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_messbetrag_partner}
-    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 35 EStG rechnet die Gewerbesteuer des Gewerbetreibenden an, § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen gewerbetreibenden PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Anrechnung (Kz E0801606). Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true

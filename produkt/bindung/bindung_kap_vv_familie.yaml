@@ -188,6 +188,10 @@ bindungen:
   - feld_id: kap_kapitalertraege_partner
     vorschlagbar_von: [beleg]
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_kapitalertraege_partner}
+    # Julius, echter Durchgang 2026-08-28 (L1 #58-62, L3 #48-52): fuenf Fragen nach den
+    # Kapitalertraegen des Partners, obwohl „keine Kapitalertraege" angekreuzt war. Das vorhandene
+    # Kreuz `kein_kap` fragt woertlich nach „dir" und konnte diese Felder deshalb nicht abschalten.
+    feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 EStG setzt Einkuenfte aus Kapitalvermoegen voraus, und § 26b EStG ermittelt sie je Ehegatten getrennt — jeder hat eine eigene Steuerbescheinigung und einen eigenen Sparer-Pauschbetrag. Ohne bestaetigte Kapitalertraege des Partners gibt es zu dessen Anlage KAP nichts zu erklaeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: cent
     einheit: EUR
     askable: true
@@ -205,6 +209,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
   - feld_id: kap_gewinn_aktien_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_gewinn_aktien_partner}
+    feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 Abs. 2 S. 1 Nr. 1 EStG erfasst Gewinne aus der Veraeusserung von Aktien als Einkuenfte aus Kapitalvermoegen, und § 26b EStG ermittelt sie je Ehegatten getrennt. Ohne bestaetigte Kapitalertraege des Partners gibt es zu dessen Anlage KAP nichts zu erklaeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -222,6 +227,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
   - feld_id: kap_verlust_aktien_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_verlust_aktien_partner}
+    feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 Abs. 6 S. 4 EStG verrechnet Verluste aus Aktien nur mit Gewinnen aus Aktien, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte Kapitalertraege des Partners gibt es weder Gewinne noch Verluste, die zu verrechnen waeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -239,6 +245,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
   - feld_id: kap_verlust_sonstige_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_verlust_sonstige_partner}
+    feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 Abs. 6 EStG verrechnet Verluste aus Kapitalvermoegen, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte Kapitalertraege des Partners gibt es weder Gewinne noch Verluste, die zu verrechnen waeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -259,6 +266,7 @@ bindungen:
   # deklariert -> dev-1s Fold liest den Read-Key, kein stiller Falschwert.
   - feld_id: kap_gewinn_sonstige_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_gewinn_sonstige_partner}
+    feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 Abs. 2 EStG erfasst Gewinne aus der Veraeusserung von Kapitalanlagen, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte Kapitalertraege des Partners gibt es zu dessen Anlage KAP nichts zu erklaeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true

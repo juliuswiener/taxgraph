@@ -107,6 +107,31 @@ INSTANZ_ZAEHLFELDER = (
     "hh_anzahl_minijobs",
     "gwg_anzahl",
 )
+# Dieselben Existenzfragen fuer den PARTNER (2026-08-28). Eigene Kreuze, nicht die vorhandenen
+# mitbenutzt — und das ist keine Geschmacksfrage, sondern gemessen:
+#
+# Neun Partner-Felder hingen an einem ICH-Kreuz. `keine_behinderung_pflege` fragt woertlich
+# „Hast du selbst oder hat eines deiner Kinder eine amtlich festgestellte Behinderung…?" — der
+# Partner kommt darin nicht vor. Wer nur einen behinderten PARTNER hat, antwortete
+# wahrheitsgemaess „nein" und verlor dessen Pauschbetrag fuer immer. Ueber den echten Rechenweg
+# gemessen (rentner_gesamt, VZ 2025, zusammen, Partner-GdB 50): 5.532 EUR gegen 5.834 EUR,
+# also 302 EUR ZU VIEL STEUER.
+#
+# Die Bindung formuliert das Prinzip drei Zeilen ueber der Stelle, an der sie es brach: „ein Flag
+# darf nur abschalten, wonach es auch gefragt hat." Sachlich dahinter § 26b EStG: die Einkuenfte
+# werden zusammengerechnet, aber je Person getrennt ERMITTELT (eigene Anlage N/KAP). Die Existenz
+# eines Sachverhalts ist personenbezogen; ein Kreuz, dessen Text „du" sagt, kann nicht fuer zwei
+# Personen sprechen.
+#
+# Sie erscheinen nur bei Zusammenveranlagung (feld_bedingung auf `veranlagung`) — ein
+# Alleinstehender sieht sie nie. Gemessen: 88 -> 71 Fragen in `gesamt`, 76 -> 54 in
+# `rentner_gesamt`, wenn das Paar auch sie verneint.
+PARTNER_SCREENING = (
+    "kein_kap_partner",
+    "kein_gewinn_partner",
+    "kein_sonstige_partner",
+    "keine_behinderung_pflege_partner",
+)
 # person_b_idnr NICHT hier: ERiC lehnt E0100082 amtlich ab (rc=610301106, "Eingefuegt-Kennzeichen
 # J/P"), unabhaengig vom Wert — Feld wird nicht mehr deklariert (elster_kz: null in
 # bindung_an_gesamt.yaml), darf also auch keinen Ehepaar-Bescheid mehr blockieren. Gemessen
@@ -684,7 +709,7 @@ SCHEIBEN = {
                    + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER
                    + GESAMT_VERSORGUNG
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER
-                   + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN
+                   + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + PARTNER_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN
                    + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
@@ -728,7 +753,8 @@ __all__ = [
     # § 19 Einkünfte
     "EP_FELDER", "EP_FORMALIEN",
     # an_gesamt
-    "AN_GESAMT_FLAGS", "KIND_SCREENING", "AUSGABEN_SCREENING", "INSTANZ_ZAEHLFELDER", "AN_GESAMT_PARTNER",
+    "AN_GESAMT_FLAGS", "KIND_SCREENING", "AUSGABEN_SCREENING", "PARTNER_SCREENING",
+    "INSTANZ_ZAEHLFELDER", "AN_GESAMT_PARTNER",
     # Arbeitsmittel
     "ARBEITSMITTEL_KOSTEN", "ARBEITSMITTEL_RING", "ARBEITSMITTEL_AFA_GESAMT",
     # § 36/§22/§10 KiSt

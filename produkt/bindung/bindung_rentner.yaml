@@ -117,6 +117,10 @@ bindungen:
   # est_mapping PARTNER_VERZWEIGUNG). K2 partner_check: nur bei veranlagung==zusammen. Accessor je Person (dev-1). =====
   - feld_id: rentner_renten_art_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_renten_art_weiche}
+    # Auf der Ich-Seite haengt dieser ganze Block ueber regel_bedingungen an `kein_sonstige`
+    # (p22_1_leibrente_besteuerungsanteil). Die Partner-Felder liegen dagegen in
+    # p2_festzusetzung_zusammen und waren deshalb bis 2026-08-28 durch nichts abschaltbar.
+    feld_bedingung: {feld: kein_sonstige_partner, wert: false, grund: "§ 22 Nr. 1 S. 3 Buchst. a EStG besteuert Leibrenten als sonstige Einkuenfte, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte sonstige Einkuenfte des Partners gibt es keine Rente, zu der Art, Hoehe, Beginn oder Freibetrag zu erklaeren waeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: enum
     einheit: null
     enum_werte: ["gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente", "private_leibrente", "sonstige_leibrente"]
@@ -135,6 +139,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
   - feld_id: rentner_jahresrente_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: rentner_jahresrente_partner}
+    feld_bedingung: {feld: kein_sonstige_partner, wert: false, grund: "§ 22 Nr. 1 S. 3 Buchst. a EStG besteuert Leibrenten als sonstige Einkuenfte, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte sonstige Einkuenfte des Partners gibt es keine Rente, deren Jahresbetrag zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -152,6 +157,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
   - feld_id: rentner_renten_beginn_jahr_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_besteuerungsanteil_aus_kohortentabelle}
+    feld_bedingung: {feld: kein_sonstige_partner, wert: false, grund: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG bestimmt den Besteuerungsanteil nach dem Jahr des Rentenbeginns, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte sonstige Einkuenfte des Partners gibt es keine Rente, deren Beginn zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: int
     einheit: Jahr
     bereich: {min: 1955, max: 2060, grund: "Renten-Beginn-Jahr des Partners (Kohorten-Besteuerung, eigene Kohorte je Ehegatte)."}
@@ -170,6 +176,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
   - feld_id: rentner_alter_bei_rentenbeginn_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_ertragsanteil_alter}
+    feld_bedingung: {feld: kein_sonstige_partner, wert: false, grund: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. bb EStG bemisst den Ertragsanteil nach dem Alter bei Rentenbeginn, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte sonstige Einkuenfte des Partners gibt es keine Rente, zu der ein Alter bei Rentenbeginn zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: int
     einheit: null
     bereich: {min: 0, max: 100, grund: "Bei Rentenbeginn vollendetes Lebensjahr des Partners; bb-Ertragsanteil-Lookup (private Leibrente)."}
@@ -188,6 +195,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
   - feld_id: rentner_rentenfreibetrag_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_rentenfreibetrag_fixierung_folgejahr}
+    feld_bedingung: {feld: kein_sonstige_partner, wert: false, grund: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa S. 5 EStG schreibt den einmal ermittelten Rentenfreibetrag fuer die Folgejahre fest, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte sonstige Einkuenfte des Partners gibt es keine Rente, fuer die ein Freibetrag festgeschrieben waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -440,7 +448,16 @@ bindungen:
   # Person A). Store-/Feldseite folgt person_b-Bucket (wie kap_kapitalertraege_partner).
   - feld_id: rentner_grad_der_behinderung_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: grad_der_behinderung_partner}
-    feld_bedingung: {feld: keine_behinderung_pflege, wert: false, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus. Das Ankreuzfeld `keine_behinderung_pflege` erhebt sie ausdruecklich fuer die eigene Person und fuer Kinder; wer sie bestaetigt verneint, hat auch fuer den Partner keinen Grad anzugeben. Das Feld sitzt in der Zusammenveranlagungs-Regel, die nicht entfallen darf — deshalb auf Feldebene."}
+    # DER TEURE FALL, gemessen 2026-08-28. Hier stand `keine_behinderung_pflege` — das Kreuz des
+    # NUTZERS, das woertlich fragt „Hast du SELBST oder hat eines DEINER KINDER eine amtlich
+    # festgestellte Behinderung…?". Der Partner kommt darin nicht vor. Wer nur einen behinderten
+    # Partner hat, verneinte wahrheitsgemaess — und verlor dessen Pauschbetrag fuer immer, weil
+    # diese Frage danach nie mehr kam. Ueber den echten Rechenweg gemessen (rentner_gesamt,
+    # VZ 2025, zusammen, Partner-GdB 50): 5.532 EUR gegen 5.834 EUR, also 302 EUR zu viel Steuer.
+    # Die alte Begruendung behauptete die Deckung sogar ausdruecklich („wer sie bestaetigt
+    # verneint, hat auch fuer den Partner keinen Grad anzugeben") — die Frage deckt den Partner
+    # aber nicht ab. Ein Flag darf nur abschalten, wonach es auch gefragt hat.
+    feld_bedingung: {feld: keine_behinderung_pflege_partner, wert: false, grund: "§ 33b Abs. 1 und 2 EStG setzen eine amtlich festgestellte Behinderung voraus, und der Pauschbetrag steht jedem Ehegatten fuer sich zu (§ 26b EStG rechnet die Einkuenfte zusammen, aendert aber nichts an den personenbezogenen Merkmalen). Ohne bestaetigte Behinderung des Partners ist fuer ihn kein Grad anzugeben. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: int
     einheit: null
     bereich: {min: 20, max: 100, grund: "GdB des Ehe-/Lebenspartners, amtlich 20..100; jeder Ehegatte hat einen eigenen Behinderten-Pauschbetrag (§ 33b personenbezogen)."}
@@ -459,6 +476,10 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
   - feld_id: rentner_hilflos_blind_taubblind_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: ist_hilflos_blind_taubblind_partner}
+    # Hing an gar nichts und wurde deshalb ausnahmslos gefragt — auch dem Paar, das jede
+    # Behinderung verneint hatte. Das Nachbarfeld (Grad der Behinderung) war immerhin gegated,
+    # nur am falschen Kreuz; dieses hier an keinem.
+    feld_bedingung: {feld: keine_behinderung_pflege_partner, wert: false, grund: "§ 33b Abs. 3 S. 4 EStG knuepft den erhoehten Pauschbetrag an die Merkzeichen H, Bl und TBl, die Teil der amtlichen Feststellung sind. Ohne bestaetigte Behinderung des Partners gibt es keine Feststellung, aus der ein Merkzeichen hervorginge. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: bool
     einheit: null
     askable: true
@@ -565,6 +586,11 @@ bindungen:
   # den echten zweiten p16_4_freibetrag-Aufruf fuer Person B verdrahtet.
   - feld_id: rentner_veraeusserungsgewinn_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: veraeusserungsgewinn_partner}
+    # Gehoert zu den GEWINNeinkuenften, nicht zu den sonstigen: § 16 steht in § 2 Abs. 1 S. 1 Nr. 2.
+    # Auf der Ich-Seite haengen die beiden Schwesterfelder ueber p16_4_freibetrag ebenfalls an
+    # `kein_gewinn`. Eine Symmetrieprobe gegen die Ich-Seite hat die erste, falsche Zuordnung
+    # dieser Bindung (`kein_sonstige_partner`) gefangen.
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 16 Abs. 1 EStG rechnet den Gewinn aus der Veraeusserung eines Betriebs zu den Einkuenften aus Gewerbebetrieb, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte Gewinneinkuenfte des Partners gibt es keinen Betrieb, dessen Veraeusserung zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -584,6 +610,12 @@ bindungen:
     # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): Art-Weiche fuer Person B, keine
     # echte p16_4_freibetrag-Bedingung (s. Kommentar am Block-Anfang). Loest sich mit Stufe 2 auf.
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: veraeusserungs_betriebsart_partner_weiche}
+    # Julius, echter Durchgang 2026-08-28: „Aus welcher Art von Betrieb stammt der
+    # Veraeusserungsgewinn deines Partners?" kam VOR der Frage, ob es ueberhaupt einen gibt
+    # (L1 #53 vor #65=0, L3 #43 vor #55=0) — und danach stand „gewerbe" als Betriebsart eines
+    # nicht existierenden Gewinns in den Daten. Gemessen: Position 97 gegen 119 von 315.
+    # Mit diesem Kreuz entfaellt das Paar gemeinsam, sobald der Partner keine Gewinneinkuenfte hat.
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 16 Abs. 1 EStG rechnet den Gewinn aus der Veraeusserung eines Betriebs zu den Einkuenften aus Gewerbebetrieb; die Betriebsart ist ein Merkmal dieses Gewinns und ohne ihn gegenstandslos. § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: enum
     einheit: null
     enum_werte: ["gewerbe", "selbstaendig", "land_forst"]

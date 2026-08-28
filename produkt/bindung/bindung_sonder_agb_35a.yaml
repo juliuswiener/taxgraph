@@ -215,7 +215,26 @@ bindungen:
   - feld_id: behinderungsbedingte_aufwendungen_partner
     vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb_partner}
-    feld_bedingung: {feld: keine_behinderung_pflege, wert: false, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus; das Wahlrecht zwischen Pauschbetrag und Einzelnachweis besteht nur fuer behinderungsbedingte Aufwendungen. `keine_behinderung_pflege` erhebt die Existenz — wer bestaetigt, keine zu haben, hat weder solche Aufwendungen noch ein Wahlrecht darueber. Die Felder sitzen in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
+    # DIESE ZWEI FELDER BRAUCHEN ZWEI BEDINGUNGEN UND KOENNEN NUR EINE TRAGEN (2026-08-28).
+    #
+    # Bis heute stand hier `keine_behinderung_pflege` — das Kreuz des NUTZERS, das woertlich nur
+    # nach der eigenen Person und den Kindern fragt (Messung im Nachbarfeld derselben Klasse,
+    # rentner_grad_der_behinderung_partner: 302 EUR zu viel Steuer). Der naheliegende Tausch gegen
+    # `keine_behinderung_pflege_partner` schlug fehl und wurde gemessen zurueckgenommen: dieses
+    # Feld liegt als einziges Partner-Feld NICHT in p2_festzusetzung_zusammen, sondern in
+    # p33_1_2_agb_abzug — einer Regel, die auch den Einzelveranlagten trifft. Das Partner-Kreuz
+    # wird einem Einzelveranlagten nie gestellt, bleibt also unbeantwortet, und fail-closed heisst
+    # dann „fragen": jeder Alleinstehende bekam beide Fragen nach den Aufwendungen eines Partners,
+    # den er nicht hat.
+    #
+    # Deshalb die VERANLAGUNGSART als Bedingung. Sie ist in jedem Fall besser als der Zustand
+    # davor: bis heute bekam ein Alleinstehender MIT Behinderung diese beiden Partner-Fragen
+    # (`keine_behinderung_pflege=false` liess sie stehen). Was fehlt, ist die zusaetzliche
+    # Feinsteuerung ueber das Partner-Kreuz — ein Ehepaar ohne Behinderung bekommt die beiden
+    # Fragen weiterhin. Dafuer braeuchte `feld_bedingung` ein `und_feld`, wie `ableitung` es
+    # schon hat (schema.json). Bewusst NICHT hier entschieden: das Schema ist nicht Teil dieses
+    # Auftrags.
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus, und der Pauschbetrag samt Wahlrecht steht der behinderten Person selbst zu. Aufwendungen eines Partners sind ueberhaupt nur zu erklaeren, wenn dieser nach § 26b EStG mitveranlagt wird — wer allein veranlagt wird, hat keinen Partner, dessen Aufwendungen in diese Erklaerung gehoerten. Das Feld sitzt in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
     typ: cent
     einheit: EUR
     askable: true
@@ -233,7 +252,9 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
   - feld_id: behinderungsbedingte_aufwendungen_wahlrecht_pb_partner
     quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb_partner}
-    feld_bedingung: {feld: keine_behinderung_pflege, wert: false, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus; das Wahlrecht zwischen Pauschbetrag und Einzelnachweis besteht nur fuer behinderungsbedingte Aufwendungen. `keine_behinderung_pflege` erhebt die Existenz — wer bestaetigt, keine zu haben, hat weder solche Aufwendungen noch ein Wahlrecht darueber. Die Felder sitzen in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
+    # Dieselbe Lage wie beim Betragsfeld darueber — dort steht die ausfuehrliche Begruendung,
+    # warum hier die Veranlagungsart und nicht das Partner-Kreuz die Bedingung ist.
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 33b Abs. 1 S. 1 EStG raeumt das Wahlrecht zwischen Pauschbetrag und Einzelnachweis der behinderten Person selbst ein; es steht jedem Ehegatten fuer sich zu (Person A und Partner sind unabhaengig, s. test_p33b_partner_wahlrecht). Ein Wahlrecht des Partners gibt es nur, wenn dieser nach § 26b EStG mitveranlagt wird — wer allein veranlagt wird, hat keines zu treffen. Die Felder sitzen in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
     typ: bool
     einheit: null
     askable: true

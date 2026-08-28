@@ -1307,6 +1307,20 @@ REGELN_OHNE_GROUND_TRUTH = {
     # Zaehlfelder der Instanz-Gruppen (2026-08-27): eigene Pseudo-Regel je Gruppe,
     # damit das Feld kein Gate der echten Rechenregel wird. Die Zahl geht nicht in
     # die Rechnung ein — sie bestimmt, wie viele Eingabefelder die Oberflaeche baut.
+    # Vier Pseudoregeln fuer den PARTNER (2026-08-28), dieselbe Bauart wie p2_einkunftsart_*
+    # daruber. Der ganze Partner-Zweig trug bis dahin kein einziges Gate ausser der
+    # Veranlagungsart: ein Ehepaar, das alle achtzehn vorhandenen Kreuze verneinte, bekam
+    # 32 Partner-Fragen, derselbe Mensch allein veranlagt keine einzige.
+    # Eigene Kreuze und nicht die vorhandenen mitbenutzt, weil die alle woertlich nach „dir"
+    # fragen: neun Partner-Felder hingen an einem Ich-Kreuz, und `keine_behinderung_pflege`
+    # („Hast du selbst oder hat eines deiner Kinder…?") nahm dem Paar den Behinderten-
+    # Pauschbetrag des Partners — gemessen 302 EUR zu viel Steuer bei Partner-GdB 50.
+    # Je eine eigene regel_id aus demselben Grund wie oben: relevanz() wertet die Gates EINER
+    # Regel konjunktiv aus und bricht beim ersten bestaetigten False ab.
+    "p2_einkunftsart_kap_partner",
+    "p2_einkunftsart_gewinn_partner",
+    "p2_einkunftsart_sonstige_partner",
+    "p33b_behinderung_pflege_partner_vorhanden",
     "p21_anzahl_objekte_erhebung",
     "p22_anzahl_renten_erhebung",
     "p23_anzahl_verkaeufe_erhebung",
