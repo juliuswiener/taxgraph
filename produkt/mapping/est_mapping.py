@@ -366,12 +366,19 @@ def _kap_alle_null(snapshot: dict, felder: tuple) -> bool:
 # nur EINE Fixtur ab (_fall_einzel).
 #
 # Jeder Eintrag traegt eine "bedingung":
-#   "immer"            -- unbedingt Pflicht (die sieben Stammdaten inkl. Konfession).
-#   "mindestens_eins"  -- die GANZE Gruppe ist nur Pflicht, wenn mindestens eins ihrer Felder gesetzt
-#                          ist (gemessen per Gruppen-Gegenprobe: alle Gruppenfelder ZUSAMMEN entfernt
-#                          -> rc=0). Ohne diese Bedingungsform wuerde jeder Rentner ohne Lohn nach
-#                          seiner nicht existierenden Lohnsteuerbescheinigung gefragt -- eine erfundene
-#                          Pflicht ist kein vorsichtiger Fehler, sondern ein eigener Defekt.
+#   "immer"           -- unbedingt Pflicht (die sieben Stammdaten inkl. Konfession).
+#   "alle_oder_keins" -- die Gruppe ist entweder GANZ unberuehrt (kein Pflichtfall) oder muss GANZ
+#                         gesetzt sein -- nichts dazwischen. Gemessen per Gruppen-Gegenprobe
+#                         (tests/test_pflichtfelder_eric_sweep.py, 2026-08-30): JEDES einzelne
+#                         Gruppenfeld weggelassen (Rest bleibt) -> ERiC lehnt ab; alle zusammen
+#                         entfernt -> rc=0. Woertlicher ERiC-Beleg (RV-Anteile-Paar): "Arbeitnehmer-
+#                         anteil ... und Arbeitgeberanteil ... sind gemeinsam -gegebenenfalls mit
+#                         dem Wert 0- zu erklaeren." Hiess vorher "mindestens_eins" -- der Name war
+#                         falsch, nicht nur ungenau: er suggerierte "irgendeins reicht", ERiC
+#                         verlangt aber die Gruppe geschlossen. Ohne diese Bedingungsform wuerde
+#                         jeder Rentner ohne Lohn nach seiner nicht existierenden Lohnsteuer-
+#                         bescheinigung gefragt -- eine erfundene Pflicht ist kein vorsichtiger
+#                         Fehler, sondern ein eigener Defekt.
 #
 # BEWUSST NICHT enthalten: KAP_FELDER_A / KAP_FELDER_B. Ihr Fehlen bei ERiC ist KEIN
 # Optionalitaetsbefund, sondern eine Tautologie -- sie werden VOR der Deklaration absichtlich
@@ -381,9 +388,9 @@ PFLICHTFELDER = (
     {"bedingung": "immer", "eric_version": "44.2.4.0", "felder": (
         "stammdaten_nachname", "stammdaten_vorname", "stammdaten_geburtsdatum",
         "stammdaten_strasse", "stammdaten_plz", "stammdaten_wohnort", "kist_konfession")},
-    {"bedingung": "mindestens_eins", "eric_version": "44.2.4.0", "felder": (
+    {"bedingung": "alle_oder_keins", "eric_version": "44.2.4.0", "felder": (
         "bruttoarbeitslohn", "steuerklasse", "p36_lohnsteuer")},
-    {"bedingung": "mindestens_eins", "eric_version": "44.2.4.0", "felder": (
+    {"bedingung": "alle_oder_keins", "eric_version": "44.2.4.0", "felder": (
         "vor_an_anteil_rv", "vor_ag_anteil_rv")},
 )
 
@@ -398,7 +405,7 @@ def _pflichtfelder_luecken(snapshot: dict) -> list:
     luecken = []
     for gruppe in PFLICHTFELDER:
         felder = gruppe["felder"]
-        if gruppe["bedingung"] == "mindestens_eins" and not any(f in snapshot for f in felder):
+        if gruppe["bedingung"] == "alle_oder_keins" and not any(f in snapshot for f in felder):
             continue                            # Gruppe ganz unberuehrt -> kein Pflichtfall (gemessen)
         for f in felder:
             if f not in snapshot:
