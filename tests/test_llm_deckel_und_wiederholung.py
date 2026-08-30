@@ -171,8 +171,12 @@ class _FakeAntwort:
     def __init__(self, text: str):
         self._text = text
 
-    def read(self):
-        return self._text.encode()
+    # `read(n)` wie ein echter HTTPResponse, und beim zweiten Mal leer: der Client liest seit
+    # 2026-08-28 in Stücken, um zwischendurch auf die Uhr zu sehen (llm_client `_lies_bis`).
+    # Eine Attrappe, die immer alles zurückgibt, käme aus dieser Schleife nie heraus.
+    def read(self, n: int = -1) -> bytes:
+        text, self._text = self._text, ""
+        return text.encode()
 
     def __enter__(self):
         return self

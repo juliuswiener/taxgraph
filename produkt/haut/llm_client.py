@@ -23,6 +23,35 @@ from dataclasses import dataclass
 
 _TIMEOUT = 30
 
+# ------------------------------------------------- Wanduhr-Grenze für EINEN Aufruf
+# `_TIMEOUT` IST KEINE WANDUHR-GRENZE, und das war bis 2026-08-28 niemandem klar. Es geht als
+# Socket-Timeout an `urlopen` und gilt je LESEOPERATION — eine Antwort, die tröpfelt, setzt es
+# bei jedem Paket zurück und reisst es nie. Gemessen an 57 echten Stufen-Aufrufen: der Median
+# liegt bei 55 s, der längste erfolgreiche bei 128,7 s, und ein einzelner Aufruf lief 187,8 s.
+# Alle unter einem „30-s-Timeout". Es gab damit KEINE Obergrenze dafür, wie lange ein Nutzer auf
+# eine Chat-Antwort wartet; 600 s hätte genauso wenig etwas verhindert.
+#
+# DIE ZAHL IST GEMESSEN, NICHT GEWÄHLT. An denselben 57 Aufrufen, gezählt wurde, wie viele HEUTE
+# ERFOLGREICHE Aufrufe eine Grenze abschneiden würde:
+#     90 s → 8 von 56 (14,3 %)   120 s → 2 (3,6 %)   150 s → 0   180 s → 0
+# 150 s ist die kleinste runde Zahl, die keinen einzigen gemessenen Erfolg kostet, mit 21 s
+# Luft über dem längsten (128,7 s). Die 90 s aus der Entscheidung sind das Budget für die
+# WIEDERHOLUNG, nicht für den ersten Versuch — als Grenze für jeden Aufruf hätten sie jeden
+# siebten funktionierenden Aufruf abgeschnitten, um einen von 29 zu retten.
+#
+# EHRLICHE GRENZE DER GRENZE: geprüft wird ZWISCHEN den Leseoperationen. Eine einzelne blockierte
+# Leseoperation läuft weiter bis `_TIMEOUT`, im schlechtesten Fall überschreitet der Aufruf die
+# Frist also um bis zu 30 s. Exakter ginge es nur mit einem anderen HTTP-Client oder einem
+# Wächter-Thread — beides ein eigener Umbau, und für eine Obergrenze, die es vorher gar nicht
+# gab, ist „150 bis 180 statt unbegrenzt" die richtige erste Stufe.
+_FRIST_S = 150
+
+# Budget für den zweiten Versuch nach einer abgeschnittenen Antwort (Entscheidung team-lead,
+# 2026-08-28). Kleiner als `_FRIST_S`, und das ist der Sinn: der Median-Aufruf braucht 55 s, 90 s
+# decken rund neun von zehn. Wer auch beim zweiten Mal länger braucht, ist wieder auf dem Weg in
+# die Token-Grenze — und dann ist Abbrechen billiger als Warten.
+_FRIST_WIEDERHOLUNG_S = 90
+
 # ------------------------------------------------- Obergrenze für die Erzeugung
 # Die Anbieter-Doku zu DeepSeeks JSON-Ausgabe verlangt ausdrücklich ein gesetztes max_tokens,
 # damit die JSON-Zeichenkette nicht mitten im Satz abbricht. Bisher stand hier gar keins — die
@@ -43,6 +72,7 @@ _MAX_TOKENS = 8192
 # Metadaten führen soll (produkt/store/audit.py). Ein Wort aus dieser Liste ist ein Metadatum.
 GRUND_LEER = "leere_antwort"
 GRUND_ABGESCHNITTEN = "abgeschnitten"
+GRUND_FRIST = "frist_ueberschritten"
 
 # Metadaten der zuletzt gelesenen Antwort (welcher Anbieter, wie die Erzeugung endete). Nötig,
 # weil `_call` einen nackten `str` zurückgibt und diese Signatur bleiben muss — sie wird an
@@ -79,6 +109,31 @@ class _Voruebergehend(Exception):
     """Intern: dieser Fehlschlag ist einen weiteren Versuch wert. Bewusst NICHT von
     LlmNichtVerfuegbar abgeleitet — sonst fingen ihn die Aufrufer, die auf ihre Erklär-Grenze
     zurückfallen, schon ab, bevor überhaupt wiederholt wurde. Verlässt dieses Modul nie."""
+
+
+class _Abgeschnitten(_Voruebergehend):
+    """Die Antwort lief in die Token-Grenze — einen zweiten Versuch wert, aber nur EINEN.
+
+    BIS 2026-08-28 STAND HIER DAS GEGENTEIL, und die Begründung war falsch: „bei temperature=0
+    läuft derselbe Aufruf in dieselbe Grenze, dreimal für dieselbe Antwort." Das klingt zwingend
+    und ist an unseren eigenen Daten widerlegt:
+
+      * Derselbe Nutzertext (137 Zeichen) lief 17 Minuten VOR dem Ausfall durch — gleiche Eingabe,
+        gleicher Code, einmal rot, einmal grün.
+      * Bei identischer Eingabe ordnet Stufe 2 mal 5, mal 60 Regeln zu (Faktor 11).
+      * api_llm.py hält dieselbe Nicht-Determiniertheit seit dem 2026-08-14 fest: „das Modell
+        antwortet trotz temperature=0 NICHT deterministisch (derselbe Satz, derselbe Code: einmal
+        4, einmal 3 Vorschläge)."
+
+    `temperature=0` heisst nicht deterministisch — es heisst nur „nimm das wahrscheinlichste
+    Token". Batching, Fliesskomma-Reihenfolge und wechselnde Endpunkte hinter einem Vermittler
+    reichen für einen anderen Lauf. Ein denkendes Modell grübelt deshalb bei derselben Frage
+    einmal 200 und einmal 8.000 Tokens, und nur im zweiten Fall reisst die Grenze.
+
+    NUR EIN ZWEITER VERSUCH, nicht die drei der übrigen vorübergehenden Fehler: ein abgeschnittener
+    Aufruf hat bis zur Token-Grenze erzeugt und ist damit per Konstruktion der LANGSAMSTE, den es
+    gibt (gemessen 187,8 s — länger als jeder erfolgreiche). Jede Wiederholung startet aus dem
+    schlechtesten Fall; drei davon wären für den Nutzer ein leerer Bildschirm über zehn Minuten."""
 
 
 def _mit_grund(e: Exception, grund: str) -> Exception:
@@ -154,25 +209,83 @@ def _call(messages: list[dict], schema: dict | None = None) -> str:
         f"{base}/chat/completions", data=body, method="POST",
         headers={"Authorization": f"Bearer {schluessel}", "Content-Type": "application/json"})
     _merke("", "")            # nie die Angabe eines früheren Aufrufs stehen lassen
+    # Abgeschnittene Antworten werden GETRENNT gezählt: sie sind teuer (s. _Abgeschnitten) und
+    # bekommen deshalb genau einen zweiten Versuch, während ein 503 weiter drei bekommt.
+    abgeschnitten = 0
     for versuch in range(_VERSUCHE):
         letzter = versuch == _VERSUCHE - 1
         try:
-            return _ein_versuch(req, schluessel)
+            # Der zweite Versuch nach einem Abschnitt bekommt das kleinere Budget.
+            return _ein_versuch(req, schluessel,
+                                _FRIST_WIEDERHOLUNG_S if abgeschnitten else _FRIST_S)
+        except _Abgeschnitten as e:
+            abgeschnitten += 1
+            if abgeschnitten >= _ABGESCHNITTEN_MAX or letzter:
+                raise _aufgegeben(e, abgeschnitten)
+            time.sleep(_BACKOFF_S[versuch])
         except _Voruebergehend as e:
             if letzter:
-                raise _mit_grund(
-                    LlmNichtVerfuegbar(f"LLM-Aufruf nach {_VERSUCHE} Versuchen fehlgeschlagen: {e}"),
-                    getattr(e, "grund", "")) from e
+                raise _aufgegeben(e, _VERSUCHE)
             time.sleep(_BACKOFF_S[versuch])
     raise AssertionError("unerreichbar")   # die Schleife kehrt zurück oder wirft
 
 
-def _ein_versuch(req, schluessel: str) -> str:
+# Ein regulärer Versuch + EINE Wiederholung. Bewusst nicht `_VERSUCHE`: s. _Abgeschnitten.
+_ABGESCHNITTEN_MAX = 2
+
+
+def _aufgegeben(e: Exception, versuche: int) -> LlmNichtVerfuegbar:
+    """Endgültiger Fehlschlag, mit der Zahl der Versuche daran.
+
+    Die Zahl wandert über `getattr(e, "versuche", 1)` bis in den Fluss-Mitschnitt (api_llm
+    `gescheitert`). Auflage team-lead 2026-08-28, und sie ist der Punkt: eine Wiederholung, die
+    im Protokoll nicht auftaucht, VERSTECKT den Ausfall — hinterher sähe ein Aufruf, der zweimal
+    scheiterte, aus wie einer, der es einmal versucht hat. Es ist eine Metadaten-Zahl aus unserem
+    eigenen Code, kein Anbietertext; sie darf ins Protokoll."""
+    neu = LlmNichtVerfuegbar(f"LLM-Aufruf nach {versuche} Versuch(en) fehlgeschlagen: {e}")
+    neu.versuche = versuche
+    return _mit_grund(neu, getattr(e, "grund", ""))
+
+
+def _lies_bis(r, ende: float) -> bytes:
+    """Die Antwort lesen, aber nicht über `ende` (monotone Uhr) hinaus.
+
+    `r.read()` in einem Zug hat keine Obergrenze: es kehrt zurück, wenn der Anbieter fertig ist,
+    und der Socket-Timeout beginnt bei jedem Paket von vorn. Genau daran lief ein Aufruf 187,8 s
+    unter einem „30-s-Timeout" (s. `_FRIST_S`). In Stücken gelesen, lässt sich zwischen den
+    Paketen auf die Uhr sehen.
+
+    Die monotone Uhr, nicht die Wanduhr: eine Zeitumstellung oder ein NTP-Sprung darf eine
+    laufende Anfrage weder verlängern noch abwürgen.
+
+    KEIN zweiter Versuch bei Fristablauf, anders als bei 503 oder leerer Antwort: gemessen
+    überschreitet KEIN einziger erfolgreicher Aufruf die Frist (0 von 56, längster 128,7 s). Wer
+    sie reisst, ist kein Ausrutscher, sondern auf dem Weg in die Token-Grenze — und drei Versuche
+    à 150 s wären 450 s Warten, also genau der unbegrenzte Bildschirm, gegen den die Frist steht.
+    Deshalb LlmNichtVerfuegbar und nicht _Voruebergehend."""
+    stuecke = []
+    while True:
+        if time.monotonic() >= ende:
+            raise _mit_grund(LlmNichtVerfuegbar("LLM-Antwort überschritt die Frist"), GRUND_FRIST)
+        stueck = r.read(65536)
+        if not stueck:
+            return b"".join(stuecke)
+        stuecke.append(stueck)
+
+
+def _ein_versuch(req, schluessel: str, frist_s: float = _FRIST_S) -> str:
     """Ein einzelner Aufruf. Wirft _Voruebergehend bei Störungen, die vorübergehen können, und
-    LlmNichtVerfuegbar bei allem, was ein zweiter Versuch nicht heilt."""
+    LlmNichtVerfuegbar bei allem, was ein zweiter Versuch nicht heilt.
+
+    `frist_s` ist die Wanduhr-Grenze für DIESEN Versuch — sie deckt Verbindungsaufbau und Lesen
+    zusammen, denn beide kosten den Nutzer dieselbe Wartezeit."""
+    ende = time.monotonic() + frist_s
     try:
-        with urllib.request.urlopen(req, timeout=_TIMEOUT) as r:
-            j = json.loads(r.read())
+        # Der Socket-Timeout bleibt die Grenze für EINE Leseoperation; die Frist deckelt den
+        # Aufruf als Ganzes. `min` verhindert, dass ein einzelner Lesevorgang länger blockiert,
+        # als die Frist überhaupt noch hergibt.
+        with urllib.request.urlopen(req, timeout=min(_TIMEOUT, frist_s)) as r:
+            j = json.loads(_lies_bis(r, ende))
     except urllib.error.HTTPError as e:
         # Statuscode UND Provider-Meldung mitnehmen (gekürzt). Vorher stand hier nur
         # type(e).__name__, also "HTTPError" — und damit sah eine erschöpfte Budget-Grenze
@@ -206,6 +319,12 @@ def _ein_versuch(req, schluessel: str) -> str:
         # aussehen lässt (test_llm_client_fehlerdiagnose.py hält das fest). Der eigene Umbau
         # hätte das beinahe wieder weggenommen — aufgefallen ist es nur, weil jener Test rot wurde.
         raise _Voruebergehend(f"{type(e).__name__}: Zeitüberschreitung nach {_TIMEOUT}s") from e
+    except (_Voruebergehend, LlmNichtVerfuegbar):
+        # AUS `_lies_bis`, schon eingeordnet und mit Grund versehen. Ohne diese Zeile finge der
+        # Auffang-Zweig darunter sie ein und machte daraus einen namenlosen Fehler ohne `grund` —
+        # dieselbe Falle, der `_inhalt()` unten dadurch entgeht, dass es AUSSERHALB des try steht.
+        # Ein Gate, das im Aufräum-Zweig eines anderen hängt, ist keins.
+        raise
     except Exception as e:
         # Alles Übrige (kaputtes JSON) heilt kein zweiter Versuch.
         raise LlmNichtVerfuegbar(f"LLM-Aufruf fehlgeschlagen: {type(e).__name__}") from e
@@ -228,11 +347,17 @@ def _inhalt(j: dict) -> str:
         raise LlmNichtVerfuegbar(f"LLM-Aufruf fehlgeschlagen: {type(e).__name__}") from e
     _merke(str(j.get("provider") or ""), ende)
     # REIHENFOLGE IST DIE AUSSAGE. Ein denkendes Modell kann sein ganzes Token-Budget im
-    # Nachdenken verbrauchen; dann ist der Inhalt leer UND abgeschnitten. "Abgeschnitten" ist
-    # die genauere Diagnose und die einzige der beiden, die ein zweiter Versuch nicht heilt:
-    # bei temperature=0 läuft derselbe Aufruf in dieselbe Grenze, dreimal für dieselbe Antwort.
+    # Nachdenken verbrauchen; dann ist der Inhalt leer UND abgeschnitten. "Abgeschnitten" ist die
+    # genauere Diagnose von beiden.
+    #
+    # BIS 2026-08-28 STAND HIER, ein zweiter Versuch heile das nicht — "bei temperature=0 läuft
+    # derselbe Aufruf in dieselbe Grenze, dreimal für dieselbe Antwort". Das ist gemessen falsch,
+    # und es war die BEGRÜNDUNG einer Entscheidung, nicht bloss eine Notiz: derselbe Nutzertext
+    # lief 17 Minuten vor dem Ausfall durch, und dieselbe Eingabe erzeugt mal 5, mal 60
+    # Regel-Zuordnungen. Die volle Beweisführung steht bei `_Abgeschnitten`. Ein Versuch ist es
+    # deshalb wert — genau EINER, denn er ist teuer.
     if ende == "length":
-        raise _mit_grund(LlmNichtVerfuegbar(
+        raise _mit_grund(_Abgeschnitten(
             f"LLM-Antwort bei {_MAX_TOKENS} Tokens abgeschnitten — unvollständiges JSON."),
             GRUND_ABGESCHNITTEN)
     if not (inhalt or "").strip():

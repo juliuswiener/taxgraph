@@ -1057,7 +1057,14 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
         # das war der Zustand, in dem niemand sagen konnte, wo Julius' drei Fakten blieben.
         grund = getattr(e, "grund", "") or "sonstiger_fehler"
         provider = llm_client.letzte_meta().get("provider", "")
-        melde(f"stufe={stufe}, ergebnis=kein_ergebnis, grund={grund}, provider={provider!r}")
+        # WIE OFT es versucht wurde, bevor aufgegeben wurde (llm_client `_aufgegeben`). Seit der
+        # Client abgeschnittene Antworten wiederholt, ist das die Angabe, die den Ausfall davor
+        # bewahrt, unsichtbar zu werden: ohne sie sähe ein Aufruf, der zweimal scheiterte, aus wie
+        # einer, der es einmal versucht hat — und die Wiederholung wäre nicht nachprüfbar.
+        # Voreinstellung 1: eine Ausnahme ohne die Angabe kam ohne Wiederholung zustande.
+        versuche = getattr(e, "versuche", 1)
+        melde(f"stufe={stufe}, ergebnis=kein_ergebnis, grund={grund}, versuche={versuche}, "
+              f"provider={provider!r}")
         # UND IN DEN FLUSS, seit 2026-08-28. Der Ausfall stand bisher nur im Audit; im Fluss fehlte
         # die Stufe einfach. Gemessen an `serie-verheiratet-1kind-handwerker-1787909637`: Stufe 1
         # las fünf Aussagen, dann kam nichts mehr — und wer nur den Fluss las, sah zwar, DASS
@@ -1066,7 +1073,8 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
         # Hand sollte der Fluss abschaffen; ein Strang, in dem nur die geglückten Schritte stehen,
         # ist kein Fluss, sondern eine Erfolgsmeldung.
         flow.schreibe(None, "ki", {"stufe": stufe, "was": "ausgefallen",
-                                   "inhalt": {"grund": grund, "provider": provider}})
+                                   "inhalt": {"grund": grund, "versuche": versuche,
+                                              "provider": provider}})
 
     # --------------------------------------------------------- Stufe 1: was hat er gesagt
     try:

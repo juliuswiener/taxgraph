@@ -65,8 +65,12 @@ class _Antwort:
     def __init__(self, roh: bytes):
         self._roh = roh
 
-    def read(self):
-        return self._roh
+    # `read(n)` wie ein echter HTTPResponse, und beim zweiten Mal leer: der Client liest seit
+    # 2026-08-28 in Stücken, um zwischendurch auf die Uhr zu sehen (llm_client `_lies_bis`).
+    # Eine Attrappe, die immer alles zurückgibt, käme aus dieser Schleife nie heraus.
+    def read(self, n: int = -1) -> bytes:
+        roh, self._roh = self._roh, b""
+        return roh
 
     def __enter__(self):
         return self
@@ -237,10 +241,19 @@ def test_leere_antwort_ist_im_audit_unterscheidbar(konfiguriert, monkeypatch, tm
         f"blieb: {zeilen[-1]!r}")
 
 
-def test_abgeschnittene_antwort_wird_nicht_wiederholt(konfiguriert, monkeypatch):
-    """Die Gegenprobe zur Wiederholung. Bei temperature=0 läuft derselbe Aufruf in dieselbe
-    Grenze — dreimal zu fragen kostet nur Geld und liefert dieselbe halbe Zeichenkette. Und die
-    Diagnose ist eine andere als „leer": hier war das Token-Budget zu klein, kein Anbieter-Fehler."""
+def test_abgeschnittene_antwort_bekommt_genau_einen_wiederholungsversuch(konfiguriert, monkeypatch):
+    """Bis 2026-08-28 stand hier das Gegenteil ("wird nicht wiederholt"), mit einer Begründung,
+    die zwingend klang und an den eigenen Daten widerlegt ist: bei temperature=0 laufe derselbe
+    Aufruf in dieselbe Grenze, ein zweiter Versuch koste nur Geld für dieselbe halbe Zeichenkette.
+    Gemessen (s. llm_client._Abgeschnitten): derselbe Nutzertext lief 17 Minuten VOR diesem Ausfall
+    erfolgreich durch, und dieselbe Eingabe erzeugt bei Stufe 2 mal 5, mal 60 Regel-Zuordnungen
+    (Faktor 11) — temperature=0 heißt „nimm das wahrscheinlichste Token", nicht deterministisch.
+    Ein zweiter Versuch heilt das oft.
+
+    Trotzdem nur EINER, nicht die drei der übrigen vorübergehenden Fehler: ein abgeschnittener
+    Aufruf hat bis zur Token-Grenze erzeugt und ist damit per Konstruktion der langsamste, den es
+    gibt (gemessen 187,8 s) — drei davon wären für die Nutzerin ein leerer Bildschirm über zehn
+    Minuten."""
     halb = '{"vorschlaege": [{"feld_id": "bruttoarb'
     gesendet = _aufzeichnend(monkeypatch, [_hülle(halb, finish="length")])
     with pytest.raises(LC.LlmNichtVerfuegbar) as e:
@@ -248,9 +261,10 @@ def test_abgeschnittene_antwort_wird_nicht_wiederholt(konfiguriert, monkeypatch)
 
     assert getattr(e.value, "grund", "") == LC.GRUND_ABGESCHNITTEN, (
         f"abgeschnitten und leer sind derselbe Fall geworden: {getattr(e.value, 'grund', None)!r}")
-    assert len(gesendet) == 1, (
-        f"{len(gesendet)} Versuche für eine abgeschnittene Antwort — dreimal dasselbe Ergebnis "
-        f"für dreimal die Kosten.")
+    assert len(gesendet) == 2, (
+        f"{len(gesendet)} Versuche für eine abgeschnittene Antwort — erwartet ist genau EIN "
+        f"Wiederholungsversuch (gemessen: derselbe Text lief 17 Minuten vorher erfolgreich durch), "
+        f"nicht keiner und nicht drei wie bei den übrigen vorübergehenden Fehlern.")
 
 
 def test_leer_und_abgeschnitten_zugleich_heisst_abgeschnitten(konfiguriert, monkeypatch):
@@ -262,7 +276,11 @@ def test_leer_und_abgeschnitten_zugleich_heisst_abgeschnitten(konfiguriert, monk
     Beide Prüfungen greifen, aber sie sagen Verschiedenes. Fiele die Entscheidung auf „leer",
     würde dreimal derselbe Aufruf abgesetzt (Budget zu klein → wieder zu klein), und im Protokoll
     stünde ein Anbieterfehler, wo unsere eigene Grenze zu eng war. Deshalb liegt `length` zuerst.
-    """
+
+    Die Anzahl der Versuche ist trotzdem dieselbe wie bei einem sauber abgeschnittenen Fall (s.
+    test_abgeschnittene_antwort_bekommt_genau_einen_wiederholungsversuch): genau EIN
+    Wiederholungsversuch, gemessen und nicht bloß behauptet — dieselbe Eingabe lief 17 Minuten
+    vor diesem Ausfall erfolgreich durch, ein zweiter Versuch heilt das oft."""
     gesendet = _aufzeichnend(monkeypatch, [_hülle("", finish="length")])
     with pytest.raises(LC.LlmNichtVerfuegbar) as e:
         LC._call([{"role": "user", "content": "x"}], schema=api_llm.DIALOG_SCHEMA)
@@ -270,9 +288,9 @@ def test_leer_und_abgeschnitten_zugleich_heisst_abgeschnitten(konfiguriert, monk
     assert getattr(e.value, "grund", "") == LC.GRUND_ABGESCHNITTEN, (
         f"leer UND abgeschnitten wird als {getattr(e.value, 'grund', None)!r} gemeldet — die "
         f"engere Diagnose (unser Token-Budget) geht verloren, es sieht nach Anbieterfehler aus.")
-    assert len(gesendet) == 1, (
-        f"{len(gesendet)} Versuche — bei zu kleinem Budget läuft jeder weitere in dieselbe "
-        f"Grenze, für dieselben Kosten.")
+    assert len(gesendet) == 2, (
+        f"{len(gesendet)} Versuche — erwartet ist genau EIN Wiederholungsversuch, wie beim "
+        f"sauber abgeschnittenen Fall, nicht keiner und nicht drei.")
 
 
 def test_anbieter_eines_frueheren_aufrufs_wird_nicht_weitergemeldet(konfiguriert, monkeypatch):

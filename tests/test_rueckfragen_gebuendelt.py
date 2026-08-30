@@ -126,8 +126,12 @@ class _Antwort:
     def __init__(self, roh: bytes):
         self._roh = roh
 
-    def read(self):
-        return self._roh
+    # `read(n)` wie ein echter HTTPResponse, und beim zweiten Mal leer: der Client liest seit
+    # 2026-08-28 in Stücken, um zwischendurch auf die Uhr zu sehen (llm_client `_lies_bis`).
+    # Eine Attrappe, die immer alles zurückgibt, käme aus dieser Schleife nie heraus.
+    def read(self, n: int = -1) -> bytes:
+        roh, self._roh = self._roh, b""
+        return roh
 
     def __enter__(self):
         return self
