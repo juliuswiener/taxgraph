@@ -53,10 +53,16 @@ KAP_PARTNER_FAMILIE = ("kap_kapitalertraege_partner", "kap_gewinn_aktien_partner
                         "kap_verlust_aktien_partner", "kap_gewinn_sonstige_partner",
                         "kap_verlust_sonstige_partner")
 
+# "kein_p23_verkauf" explizit noetig (nicht dem _antwort_fuer-Default ueberlassen): das Feld ist
+# invertiert benannt (frage_invertiert: true, bindung_an_gesamt.yaml), der Default "False" bedeutet
+# hier "ich HABE einen privaten Verkauf" -- und traefe seit 2026-08-30 den fremd_arten-Guard
+# (bescheid_deklaration.py:1041/1061, api_constants.py: "fremd_arten": (..., "kein_p23_verkauf")),
+# unabhaengig vom hier untersuchten kap_partner-Defekt. Beide Szenarien haben keinen Verkauf --
+# "True" ist wahrheitsgemaess, kein Pflaster fuer die Sperre.
 EXPLIZIT_A = {
     "veranlagung": "einzel",
     "bruttoarbeitslohn": 6000000,
-    "kein_gewinn": True, "kein_vuv": True, "kein_sonstige": True,
+    "kein_gewinn": True, "kein_vuv": True, "kein_sonstige": True, "kein_p23_verkauf": True,
     "kein_kap": False,
     "kap_kapitalertraege": 500000,
     "kap_gewinn_aktien": 0,
@@ -66,6 +72,7 @@ EXPLIZIT_AB = {
     "veranlagung": "zusammen",
     "bruttoarbeitslohn": 6000000,
     "kein_gewinn": True, "kein_kap": True, "kein_vuv": True, "kein_sonstige": True,
+    "kein_p23_verkauf": True,
     "kein_kap_partner": False,
     "kap_kapitalertraege_partner": 500000,
     "kap_gewinn_aktien_partner": 0, "kap_verlust_aktien_partner": 0,
