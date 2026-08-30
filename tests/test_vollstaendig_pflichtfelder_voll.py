@@ -1,28 +1,36 @@
 """Alle-Kz-Felder-Sweep: jedes im Fall beantwortete Feld mit elster_kz einzeln weglassen und
-gegen ECHTES ERiC pruefen, ob `eingaben_konsistent` das Fehlen sieht.
+gegen ECHTES ERiC pruefen, ob `pflichtfelder_vollstaendig` das Fehlen sieht.
 
 Warum es das gibt
 ------------------
 Audit 2026-08-28 (vault: audits/taxgraph-vollstaendig-deckt-nichts.md,
 audits/taxgraph-vollstaendig-luegt.md; Regal-Eintrag
-backlog/taxgraph/vollstaendig-blind-fuer-fehlende-pflichtfelder.md): `eingaben_konsistent` in
-est_mapping.deklariere() (est_mapping.py:501,737) laeuft nur ueber Felder, die im Snapshot DA
-sind -- ein fehlendes Pflichtfeld kann per Konstruktion nie hineingeraten, es gibt keine
-Soll-Liste. Gemessen: von 19 Feldern mit elster_kz im Durchstich-Fall (_fall_einzel) lehnt
-ECHTES ERiC 12 beim Fehlen ab (rc != CE.RC_OK), waehrend `eingaben_konsistent` in allen 19 Faellen
-True bleibt. Bei den restlichen 6 stoert sich ERiC selbst nicht am Fehlen (rc==CE.RC_OK) --
-das ist kein Blindspot, sondern eine echte Nicht-Pflicht.
+backlog/taxgraph/vollstaendig-blind-fuer-fehlende-pflichtfelder.md): die Hauptschleife in
+est_mapping.deklariere() (est_mapping.py:501) laeuft nur ueber Felder, die im Snapshot DA sind --
+ein fehlendes Pflichtfeld kann per Konstruktion nie hineingeraten. Gemessen: von 19 Feldern mit
+elster_kz im Durchstich-Fall (_fall_einzel) lehnt ECHTES ERiC 12 beim Fehlen ab (rc != CE.RC_OK).
+Bei den restlichen 6 stoert sich ERiC selbst nicht am Fehlen (rc==CE.RC_OK) -- das ist kein
+Blindspot, sondern eine echte Nicht-Pflicht.
+
+Julius-Entscheidung 2026-08-30: DIESE Pruefung sitzt bewusst NICHT unter `eingaben_konsistent`.
+`eingaben_konsistent` beantwortet eine andere Frage ("sind die VORHANDENEN Eingaben stimmig?")
+-- ein fehlendes Feld macht die vorhandenen nicht unstimmig, gehoert also nicht zu dieser Aussage
+(genau deshalb hiess der Schluessel vorher `vollstaendig` und wurde umbenannt, s. Commit
+"eingaben_konsistent statt vollstaendig"). Die gepflegte Pflichtfeld-Liste (est_mapping.py:
+PFLICHTFELDER) traegt stattdessen einen EIGENEN Schluessel, `pflichtfelder_vollstaendig`, der
+genau diese Aussage macht und sonst nichts.
 
 Ergaenzt test_checkest_durchstich.py: der dortige Durchstich prueft EINEN vollstaendigen Fall
 gegen ERiC. Dieser Sweep prueft das GEGENTEIL -- jeweils EIN Feld absichtlich weggelassen --
-und haelt `eingaben_konsistent` gegen das amtliche Urteil.
+und haelt `pflichtfelder_vollstaendig` gegen das amtliche Urteil.
 
 Bauart: HARTES Gate, keine Ratschen-Obergrenze
 ------------------------------------------------
 Anders als test_produkt_xml_erreicht_die_amtliche_pruefung() (Ratsche mit Toleranzwert) ist
-dies fail-closed: rot, sobald IRGENDEIN Feld `vollstaendig=True` UND ein von ERiC abgelehntes
-rc zeigt. Der Defekt sitzt in der Pruef-LOGIK, nicht in einzelnen Feldern -- er verschwindet
-nur durch einen Fix an est_mapping.deklariere()/erzeuge_xml(), nie durch weitere Testfaelle.
+dies fail-closed: rot, sobald IRGENDEIN Feld `pflichtfelder_vollstaendig=True` UND ein von ERiC
+abgelehntes rc zeigt. Der Defekt sitzt in der Pruef-LOGIK (bzw. in der gepflegten Liste selbst),
+nicht in einzelnen Feldern -- er verschwindet nur durch einen Fix an est_mapping.PFLICHTFELDER,
+nie durch weitere Testfaelle.
 
 Ueberspringt sauber, wenn ERiC oder die Hersteller-ID fehlen (credential-freies CI, gleiches
 Muster wie test_checkest_durchstich.braucht_eric) -- meldet den Grund, statt falsch gruen zu
@@ -56,17 +64,19 @@ def _ohne_feld(feld_id: str, felder_basis: dict, bindung: dict):
     try:
         xml = EX.erzeuge_xml(dekl, vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     except EX.XmlFehler as exc:
-        return dekl["eingaben_konsistent"], "WRITER_ABBRUCH", str(exc)
+        return dekl["pflichtfelder_vollstaendig"], "WRITER_ABBRUCH", str(exc)
     rc, antwort = CE.validate(xml, "ESt_2025")
     texte = [" ".join(t.split()) for t in re.findall(r"<Text>(.*?)</Text>", antwort or "", re.S)]
-    return dekl["eingaben_konsistent"], rc, (texte[0] if texte else "")
+    return dekl["pflichtfelder_vollstaendig"], rc, (texte[0] if texte else "")
 
 
 @braucht_eric
 def test_vollstaendig_sieht_kein_fehlendes_pflichtfeld():
-    """Fail-closed: rot, solange ein Feld eingaben_konsistent=True zeigt, obwohl ECHTES ERiC sein
-    Fehlen ablehnt. Audit 2026-08-28, Regal-Eintrag
-    backlog/taxgraph/vollstaendig-blind-fuer-fehlende-pflichtfelder.md.
+    """Fail-closed: rot, solange ein Feld pflichtfelder_vollstaendig=True zeigt, obwohl ECHTES ERiC
+    sein Fehlen ablehnt. Audit 2026-08-28, Regal-Eintrag
+    backlog/taxgraph/vollstaendig-blind-fuer-fehlende-pflichtfelder.md. Liest bewusst
+    `pflichtfelder_vollstaendig`, NICHT `eingaben_konsistent` (Julius-Entscheidung 2026-08-30):
+    Konsistenz und Vollstaendigkeit sind zwei verschiedene Aussagen, s. Modul-Docstring oben.
     """
     store = _fall_einzel()
     bindung = TR.lade_bindung()
@@ -77,17 +87,17 @@ def test_vollstaendig_sieht_kein_fehlendes_pflichtfeld():
 
     luecken = []
     for feld_id in kz_felder:
-        konsistent, rc, text = _ohne_feld(feld_id, felder, bindung)
+        pflicht_vollstaendig, rc, text = _ohne_feld(feld_id, felder, bindung)
         if rc == "WRITER_ABBRUCH":
             continue                        # Writer selbst faengt es fail-closed ab -- kein Blindspot
         if rc == CE.RC_OK:
             continue                        # ELSTER stoert sich nicht am Fehlen -- kein Blindspot
-        if konsistent:
+        if pflicht_vollstaendig:
             kz = bindung[feld_id]["elster_kz"]
-            luecken.append(f"{feld_id} ({kz}): eingaben_konsistent=True, aber ERiC rc={rc} -> {text[:120]}")
+            luecken.append(f"{feld_id} ({kz}): pflichtfelder_vollstaendig=True, aber ERiC rc={rc} -> {text[:120]}")
 
     assert not luecken, (
-        f"{len(luecken)} von {len(kz_felder)} Pflichtfeldern: eingaben_konsistent=True, obwohl ERiC "
-        f"das Fehlen ablehnt -- eingaben_konsistent kann ein fehlendes Feld per Konstruktion nicht "
-        f"sehen (est_mapping.py: die Schleife laeuft nur ueber vorhandene Felder).\n"
+        f"{len(luecken)} von {len(kz_felder)} Pflichtfeldern: pflichtfelder_vollstaendig=True, "
+        f"obwohl ERiC das Fehlen ablehnt -- die gepflegte Liste est_mapping.PFLICHTFELDER deckt "
+        f"diese Faelle noch nicht ab.\n"
         + "\n".join(luecken))

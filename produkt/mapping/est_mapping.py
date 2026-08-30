@@ -352,6 +352,62 @@ def _kap_alle_null(snapshot: dict, felder: tuple) -> bool:
     return True
 
 
+# Klasse PFLICHT — gepflegte, NICHT generierte Liste (Julius-Entscheidung 2026-08-30, s.
+# backlog/taxgraph/vollstaendig-blind-fuer-fehlende-pflichtfelder.md). Die XSD traegt bei ALLEN 19
+# Feldern mit elster_kz in der Referenz-Fixtur minOccurs="0" -- eine Ableitung aus dem Schema
+# liefert also kein Signal (gemessen, nicht vermutet). Diese Liste stammt stattdessen aus
+# wiederholten checkESt-Sweeps ueber mehrere Fixturen (Rentner ohne Lohn, Fall mit Lohn, Fall mit
+# Kapitalertraegen) gegen ERiC 44.2.4.0 -- ein FOTO des kompilierten Pruefregelwerks, keine
+# abgeleitete Erkenntnis. Es gibt keine oeffentliche Spezifikation dieser Plausibilitaetspruefungen;
+# die einzige Wahrheit ist die Bibliothek selbst, und die Liste veraltet OHNE Fehlermeldung, wenn
+# ERiC sich aendert -- ein wiederholbarer Sweep, der nur MIT ERiC laeuft und die Liste periodisch
+# neu belegt statt ihr auf Dauer zu vertrauen, ist als Beleg vorgesehen (Auftrag 2026-08-30), aber
+# in diesem Stand NOCH NICHT gebaut. tests/test_vollstaendig_pflichtfelder_voll.py deckt bislang
+# nur EINE Fixtur ab (_fall_einzel).
+#
+# Jeder Eintrag traegt eine "bedingung":
+#   "immer"            -- unbedingt Pflicht (die sieben Stammdaten inkl. Konfession).
+#   "mindestens_eins"  -- die GANZE Gruppe ist nur Pflicht, wenn mindestens eins ihrer Felder gesetzt
+#                          ist (gemessen per Gruppen-Gegenprobe: alle Gruppenfelder ZUSAMMEN entfernt
+#                          -> rc=0). Ohne diese Bedingungsform wuerde jeder Rentner ohne Lohn nach
+#                          seiner nicht existierenden Lohnsteuerbescheinigung gefragt -- eine erfundene
+#                          Pflicht ist kein vorsichtiger Fehler, sondern ein eigener Defekt.
+#
+# BEWUSST NICHT enthalten: KAP_FELDER_A / KAP_FELDER_B. Ihr Fehlen bei ERiC ist KEIN
+# Optionalitaetsbefund, sondern eine Tautologie -- sie werden VOR der Deklaration absichtlich
+# stummgeschaltet (s. _kap_alle_null/_KAP_NULL_GRUND oben), ERiC sieht sie in diesem Fall nie, egal
+# ob sie Pflicht sind oder nicht. Wer sie hier "vervollstaendigt", traegt einen unbelegten Befund ein.
+PFLICHTFELDER = (
+    {"bedingung": "immer", "eric_version": "44.2.4.0", "felder": (
+        "stammdaten_nachname", "stammdaten_vorname", "stammdaten_geburtsdatum",
+        "stammdaten_strasse", "stammdaten_plz", "stammdaten_wohnort", "kist_konfession")},
+    {"bedingung": "mindestens_eins", "eric_version": "44.2.4.0", "felder": (
+        "bruttoarbeitslohn", "steuerklasse", "p36_lohnsteuer")},
+    {"bedingung": "mindestens_eins", "eric_version": "44.2.4.0", "felder": (
+        "vor_an_anteil_rv", "vor_ag_anteil_rv")},
+)
+
+
+def _pflichtfelder_luecken(snapshot: dict) -> list:
+    """Die Hauptschleife oben (`for feld_id in sorted(snapshot)`) laeuft nur ueber ANWESENDE Felder
+    -- ein Feld, das komplett FEHLT, kann sie per Konstruktion nie sehen (Audit 2026-08-28/-30,
+    backlog/taxgraph/vollstaendig-blind-fuer-fehlende-pflichtfelder.md). Deshalb hier ein zweiter,
+    post-hoc Blick auf die gepflegte Liste PFLICHTFELDER, nach demselben Muster wie die
+    Bankverbindungs-Exklusivitaet weiter unten: cross-field, laeuft NACH der Schleife, haengt sich
+    an unvollstaendig an."""
+    luecken = []
+    for gruppe in PFLICHTFELDER:
+        felder = gruppe["felder"]
+        if gruppe["bedingung"] == "mindestens_eins" and not any(f in snapshot for f in felder):
+            continue                            # Gruppe ganz unberuehrt -> kein Pflichtfall (gemessen)
+        for f in felder:
+            if f not in snapshot:
+                luecken.append({"feld_id": f,
+                                "grund": f"Pflichtfeld fehlt (ERiC {gruppe['eric_version']}, "
+                                f"Bedingung '{gruppe['bedingung']}') -- kein Wert im Snapshot"})
+    return luecken
+
+
 # Klasse i — Wertekodierung (Laien-Enum -> amtlicher XSD-Code, kein 1:1-Passthrough): der Store trägt
 # den laienverständlichen Enum-Wert (z.B. "roemisch-katholisch"), das Kz erwartet den amtlichen
 # Religionsschlüssel (Enum_Religionsschluessel_ab_VZ_2014_3, E10-2025.xsd). "andere" hat KEINEN
@@ -603,6 +659,14 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
         raise ValueError("kein Eingabe-Feld in der Bindungstabelle gefunden — vermutlich falsche "
                          "Eingabe-Ebene/-Struktur; deklariere() liefert kein stilles Leer-Ergebnis.")
 
+    # Klasse PFLICHT: sieht Feld-ABWESENHEIT gegen die gepflegte PFLICHTFELDER-Liste (s. dort) --
+    # die Hauptschleife oben kann das per Konstruktion nicht (sie laeuft nur ueber Anwesendes).
+    # BEWUSST NICHT in unvollstaendig eingehaengt (Julius-Entscheidung 2026-08-30, Korrektur der
+    # ersten Fassung dieses Bausteins): unvollstaendig/eingaben_konsistent pruefen, ob die
+    # VORHANDENEN Eingaben stimmig sind -- ein fehlendes Feld macht die vorhandenen nicht
+    # unstimmig, also gehoert es nicht in dieselbe Aussage. Eigener Schluessel, eigene Bedeutung.
+    pflichtfelder_luecken = _pflichtfelder_luecken(snapshot)
+
     # Bankverbindung: Exklusivitaets-Weiche (Julius-Entscheidung 2026-08-10, Bankverbindungs-Baustein).
     # Gemessen (checkESt, ERiC 44.2.4.0): IBAN UND "keine Bankverbindung" gleichzeitig -> rc=610001002
     # (Widerspruch). Beide Checks hier feuern NUR, wenn die betroffenen Kz tatsaechlich BESTAETIGT
@@ -736,6 +800,12 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
         "unvollstaendig": unvollstaendig,        # Auflage C: welches Pflicht-Feld vorläufig
         "vollstaendig": not unvollstaendig,      # fail-closed (Legacy)
         "eingaben_konsistent": not unvollstaendig,  # fail-closed (API-Konsumenten: elster_xml, api.py)
+        # Klasse PFLICHT (Julius-Entscheidung 2026-08-30): EIGENER Schluessel, EIGENE Aussage --
+        # "fehlt kein Pflichtfeld ganz", unabhaengig von eingaben_konsistent ("was da ist, ist
+        # stimmig"). Absichtlich NICHT verdrahtet (kein neuer Abgabe-Blocker): wird gebaut und
+        # gemessen, der Absendeknopf prueft ohnehin ein zweites Mal gegen echtes ERiC.
+        "pflichtfelder_luecken": pflichtfelder_luecken,
+        "pflichtfelder_vollstaendig": not pflichtfelder_luecken,
     }
 
 
