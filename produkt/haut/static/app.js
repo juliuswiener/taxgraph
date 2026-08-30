@@ -2447,8 +2447,9 @@ async function zeigePreflight() {
 // Einzige Ausnahme: `grund === "plausibilitaet_verletzt"` bekommt einen eigenen Text, weil das der
 // einzige Fall ist, in dem checkESt wirklich ein Urteil über die Erklärung gefällt hat.
 // Kein Ursachentext zu rc-Codes (Instructor 2026-08-30): rc=610301200 heißt laut ERiC-Header
-// (eric_fehlercodes.h) ERIC_IO_READER_SCHEMA_VALIDIERUNGSFEHLER — der Repo-Name RC_IO_KEIN_TICKET
-// ist ein Fehlschluss aus einer einzelnen Fuzz-Probe. Belegt (Commit cebb228): derselbe rc entsteht
+// (eric_fehlercodes.h) ERIC_IO_READER_SCHEMA_VALIDIERUNGSFEHLER — im Repo seit 7c0a725
+// RC_IO_SCHEMA_VALIDIERUNGSFEHLER (elster/checkest_gate.py:48), zuvor RC_IO_KEIN_TICKET, ein
+// Fehlschluss aus einer einzelnen Fuzz-Probe. Belegt (Commit cebb228): derselbe rc entsteht
 // auch aus einem ganz anderen Fehler (Namensraum-Präfix). EIN Code, MINDESTENS zwei unverwandte
 // Ursachen — daraus lässt sich keine Ursache ableiten, also steht hier keine.
 async function einreichenPruefen() {
