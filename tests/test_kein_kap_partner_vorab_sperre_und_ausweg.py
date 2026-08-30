@@ -26,8 +26,6 @@ from __future__ import annotations
 
 import json
 import os
-import re._constants as _src  # noqa: E402
-import re._parser as _srep    # noqa: E402
 import sys
 import threading
 import urllib.error
@@ -94,58 +92,26 @@ def _laie(fld, wert, ersetzt=None):
 # -- Antwort-Generator: baut fuer JEDE Frage im Dialog einen bindungstyp-konformen Wert (Auflage T,
 # store.py:_pruefe_typ_konformitaet, greift real ueber /event). "text"-Felder mit einem `muster`-
 # Regex (z.B. Datumsbereiche) brauchen einen zum Muster passenden Wert, nicht irgendeine Zeichen-
-# kette -- deshalb der kleine Regex-Sample-Generator darunter (deckt Literale, Zeichenklassen,
-# \d/\w/\s, Wiederholung, Gruppen, erste Alternative -- keine Allgemeinheits-Garantie, reicht aber
-# fuer die im Fragebogen vorkommenden Muster).
-def _gen_category(cat):
-    name = str(cat)
-    if "DIGIT" in name and "NOT" not in name:
-        return "1"
-    if "WORD" in name and "NOT" not in name:
-        return "a"
-    if "SPACE" in name and "NOT" not in name:
-        return " "
-    return "x"
+# kette. GEMESSEN 2026-08-30: im Durchlauf DIESES Tests kommen 4 von 170 Feldern mit `muster` vor,
+# alle mit demselben Regex-String; repo-weit (produkt/bindung/*.yaml, alle Dateien) gibt es genau
+# ZWEI unterschiedliche `muster`-Strings ueberhaupt (12 Vorkommen gesamt). Eine feste Tabelle statt
+# eines Regex-Sample-Generators: kuerzer, lesbar, und haengt nicht an privaten CPython-Interna
+# (re._parser/re._constants), die sich versionslos aendern koennen. Ein drittes, unbekanntes
+# Muster faellt fail-closed auf einen AssertionError statt auf einen erratenen Wert.
+_MUSTER_BEISPIELWERT = {
+    r"^\d{2}\.\d{2}\.\d{4}$": "01.01.2000",          # TT.MM.JJJJ (Datum)
+    r"^\d{2}\.\d{2}-\d{2}\.\d{2}$": "01.01-31.12",   # TT.MM-TT.MM (Zeitraum ohne Jahr)
+}
 
 
-def _gen_in(av):
-    negate = av and av[0][0] is _src.NEGATE
-    items = av[1:] if negate else av
-    if negate:
-        return "z"
-    for op, val in items:
-        if op is _src.LITERAL:
-            return chr(val)
-        if op is _src.RANGE:
-            return chr(val[0])
-        if op is _src.CATEGORY:
-            return _gen_category(val)
-    return "x"
-
-
-def _gen_parsed(parsed):
-    out = []
-    for op, av in parsed:
-        if op is _src.LITERAL:
-            out.append(chr(av))
-        elif op is _src.NOT_LITERAL:
-            out.append("_")
-        elif op is _src.ANY:
-            out.append("x")
-        elif op is _src.IN:
-            out.append(_gen_in(av))
-        elif op is _src.CATEGORY:
-            out.append(_gen_category(av))
-        elif op in (_src.MAX_REPEAT, _src.MIN_REPEAT):
-            mn, _mx, item = av
-            for _ in range(mn if mn > 0 else 1):
-                out.append(_gen_parsed(item))
-        elif op is _src.SUBPATTERN:
-            out.append(_gen_parsed(av[3]))
-        elif op is _src.BRANCH:
-            out.append(_gen_parsed(av[1][0]))
-        # AT (Anker), ASSERT/ASSERT_NOT: ignoriert, kein Zeichen im Ergebnis.
-    return "".join(out)
+def _wert_zu_muster(muster: str) -> str:
+    wert = _MUSTER_BEISPIELWERT.get(muster)
+    if wert is None:
+        raise AssertionError(
+            f"Kein Beispielwert fuer unbekanntes Muster {muster!r} hinterlegt -- "
+            f"_MUSTER_BEISPIELWERT ergaenzen (produkt/bindung/*.yaml hat aktuell nur die zwei "
+            f"oben eingetragenen Muster).")
+    return wert
 
 
 def _antwort_fuer(frage: dict):
@@ -161,7 +127,7 @@ def _antwort_fuer(frage: dict):
     if typ == "text":
         muster = frage.get("muster")
         if muster:
-            return _gen_parsed(_srep.parse(muster))
+            return _wert_zu_muster(muster)
         return "x"
     if typ == "datum":
         return "01.01.2000"
