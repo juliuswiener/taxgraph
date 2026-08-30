@@ -430,7 +430,11 @@ def _chat_parse(text: str) -> list[dict]:
                         # Rückverweis auf die Aussage aus Stufe 1. Fehlt er (altes Format, oder ein
                         # Anbieter, der die Eigenschaft wegliess), ist er None — der Vorschlag gilt
                         # dann, er ist nur keiner Aussage zuzurechnen.
-                        "aussage": _index(v.get("aussage"))})
+                        "aussage": _index(v.get("aussage")),
+                        # Vom Modell ausgerechnet (z. B. Jahresbetrag anteilig auf Monate) oder None,
+                        # wenn nichts zu rechnen war — Anzeige, kein Gate (Julius 2026-08-23, s.
+                        # _llm_dialog). Wandert unverändert bis zur Oberfläche.
+                        "rechenweg": v.get("rechenweg")})
     return out
 
 

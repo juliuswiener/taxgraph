@@ -1,27 +1,29 @@
 """`_chat_parse()` liest den rohen LLM-Text der Stufe 3 — genau die Stelle, die
 `test_rechenweg_durchgereicht.py` NICHT erreicht: jene Datei mockt `_llm_dialog` selbst, eine
 Ebene OBERHALB von `_chat_parse`, und speist den fertigen Vorschlag (mit `rechenweg`) direkt ein.
-Deshalb ist sie grün, obwohl der Verlust real ist.
+Deshalb war sie grün, obwohl der Verlust real war.
 
-BEFUND (gemessen gegen HEAD a4da29b0068604398c14de3ff0e81d901fac778e): `_chat_parse`
-(`api_llm.py:405-434`) kopiert aus jedem Modell-Vorschlag genau fünf Schlüssel — `feld_id`,
-`wert`, `beleg`, `begruendung`, `aussage`. `rechenweg` ist keiner davon, obwohl das Schema
-(`DIALOG_SCHEMA`) es als Pflichtfeld (nullable) vom Modell verlangt und `api.py` es an zwei
-Stellen bereits korrekt weiterreicht (`v.get("rechenweg")`), sobald es ankommt. Der Verlust
-sitzt strukturell zwischen beiden — bei JEDEM Aufruf, nicht stichprobenhaft.
+BEFUND (zuerst gemessen gegen HEAD a4da29b0068604398c14de3ff0e81d901fac778e, xfail(strict=True)
+committed in 71f92d6): `_chat_parse` (`api_llm.py:405-434`) kopierte aus jedem Modell-Vorschlag
+nur fünf Schlüssel — `feld_id`, `wert`, `beleg`, `begruendung`, `aussage`. `rechenweg` war keiner
+davon, obwohl das Schema (`DIALOG_SCHEMA`) es als Pflichtfeld (nullable) vom Modell verlangt und
+`api.py` es an zwei Stellen bereits korrekt weiterreichte (`v.get("rechenweg")`), sobald es
+ankam. Der Verlust saß strukturell zwischen beiden — bei JEDEM Aufruf, nicht stichprobenhaft.
+Behoben: `_chat_parse` kopiert `rechenweg` jetzt als sechsten Schlüssel mit.
 
-Zwei Tests unten, an zwei verschiedenen Stellen der Kette gemessen:
+Zwei Tests unten, an zwei verschiedenen Stellen der Kette gemessen — beide waren `xfail(strict=True)`
+und sind mit dem Fix im selben Commit auf normale grüne Tests umgestellt (die `XPASS(strict)`, mit
+der der Fix zuerst auffiel, ist damit dokumentiert, nicht nur behauptet):
   1. `_chat_parse()` direkt gefüttert — die kleinste mögliche Nachweisstelle.
   2. der ganze Weg von `llm_client.complete()` (dem Netz-Rand, UNTERHALB von `_chat_parse`) bis
      zur `API.chat()`-Antwort — damit „repariert" nicht heißt „nur `_chat_parse` selbst gibt es
-     zurück", sondern „es kommt auch bei der Oberfläche an".
+     zurück", sondern „es kommt auch bei der Oberfläche an". Lief tatsächlich end-to-end durch,
+     keine zweite Stelle zwischen `_chat_parse` und `api.chat()` wirft das Feld nochmal weg
+     (`_beleg_geprueft` und `_rueckfrage_verdraengt` filtern nur die Liste, sie bauen die Dicts
+     nicht neu).
 
-Beide `xfail(strict=True)`: heute rot, ohne die Suite rot zu machen. `strict=True` heißt, sobald
-`_chat_parse` `rechenweg` durchreicht, wird aus dem `xfail` ein `XPASS` — und der Testlauf schlägt
-GENAU DESHALB fehl, statt still grün zu bleiben, bis jemand den Marker entfernt.
-
-Gegenprobe (kein xfail, muss heute UND nach dem Fix grün bleiben): ein Vorschlag ohne
-`rechenweg` darf keins erfinden.
+Gegenprobe (kein xfail, war schon vorher grün, bleibt es): ein Vorschlag ohne `rechenweg` darf
+keins erfinden.
 
 NULL LLM: kein Netz-Call, kein Key, kein Cent — `_chat_parse` ist reine Textverarbeitung, und der
 End-to-End-Test ersetzt nur `llm_client.complete` durch eine Fixture-Funktion (derselbe Rand, den
@@ -53,7 +55,6 @@ RECHENWEG = {"basis": 5_000_000, "faktor": "6/12",
              "erklaerung": "50.000 € pro Jahr ÷ 12 × 6 Monate (ab Juli arbeitslos)"}
 
 
-@pytest.mark.xfail(strict=True, reason="_chat_parse kopiert rechenweg nicht (api_llm.py:405-434)")
 def test_chat_parse_reicht_rechenweg_durch():
     """Kleinste Nachweisstelle: roher Stufe-3-Text hinein, `rechenweg` muss im geparsten
     Vorschlag wieder herauskommen."""
@@ -97,16 +98,15 @@ def _stub_complete(vorschlag: dict):
     return complete
 
 
-@pytest.mark.xfail(strict=True, reason="Verlust reicht bis in die API-Antwort durch (api_llm.py:405-434)")
 def test_rechenweg_kommt_bis_in_die_chat_antwort(fall, monkeypatch):
     """Derselbe Verlust, diesmal end-to-end gemessen statt isoliert: von `llm_client.complete`
-    (unterhalb von `_chat_parse`) bis zur echten `API.chat()`-Antwort. Beweist, dass ein Fix in
-    `_chat_parse` allein auch beim Nutzer ankommt — und nicht durch eine zweite, ungetestete
-    Stelle zwischen `_chat_parse` und der Oberfläche wieder verlorengeht."""
+    (unterhalb von `_chat_parse`) bis zur echten `API.chat()`-Antwort. Beweist, dass der Fix in
+    `_chat_parse` auch beim Nutzer ankommt — und nicht durch eine zweite, ungetestete Stelle
+    zwischen `_chat_parse` und der Oberfläche wieder verlorengeht."""
     monkeypatch.setattr(LC, "complete", _stub_complete(
         {"feld_id": FELD, "wert": WERT, "beleg": "50k pro jahr",
          "begruendung": "anteilig", "rechenweg": dict(RECHENWEG)}))
-    st, body = API.chat(fall, {"text": "50k im jahr, seit juli arbeitslos"})
+    st, body = API.chat(fall, {"text": "50k pro jahr, seit juli arbeitslos"})
     assert st == 200, f"chat() antwortete {st}: {body}"
     v = body["vorschlaege"]
     assert v and v[0]["feld_id"] == FELD, "der Vorschlag kam gar nicht in der Antwort an"
