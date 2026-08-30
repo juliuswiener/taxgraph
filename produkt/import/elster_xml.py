@@ -66,6 +66,21 @@ E10_AUSSCHLUSS_DATENART: dict[str, str] = {
     "E6004901": "E77/EÜR (§ 4 Abs. 3 — Gewinnermittlung) Datenart, kein E10-Element",
 }
 
+# instanz_gruppe -> Pfadsegment, an dem ihre Wiederholung im E10-Schema HAENGT, wenn es NICHT
+# das E10-Direktkind ist (Normalfall: kz_path[:2], keine Eintragung hier noetig). Zweite Stelle,
+# die weiss, wie eine Gruppe gebaut ist (die erste ist ihr instanz_gruppe-Auftauchen in
+# est_mapping.py/bindung) — bewusst hier als benannte Tabelle statt als Literal-Vergleich im
+# Schleifenkoerper, damit eine zukuenftige zweite Gruppe dieser Art HIER eingetragen wird, nicht
+# als weiterer Sonderfall im Code. Ein Bindungs-Attribut (z.B. instanz_ebene) waere der sauberere
+# Ort, sitzt aber in bindung_an_gesamt.yaml -- ausserhalb dieser Reparatur.
+#
+#   p23_veraeusserung: <SO> traegt maxOccurs=1 (E10-2025.xsd:8298), "mehrere Verkaeufe EINER
+#                       Person" wiederholt sich stattdessen ueber <Einz> INNERHALB EINES
+#                       <Grdst>/<And_WG> (maxOccurs=99, E10-2025.xsd:22231).
+INSTANZ_CONTAINER_TIEFER: dict[str, str] = {
+    "p23_veraeusserung": "Einz",
+}
+
 
 class XmlFehler(Exception):
     """Deklaration lässt sich nicht schema-konform serialisieren."""
@@ -518,6 +533,12 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
     # Container-Pfad wird aus dem Kz-Pfad abgeleitet: prefix bis E10-Direktkind.
     # Kz, die nicht im E10-Schema liegen (z.B. E60xx->E77), sind EXPLIZIT in
     # E10_AUSSCHLUSS_DATENART benannt — sonst fail-closed (nie stilles Weglassen).
+    #
+    # Gruppen in INSTANZ_CONTAINER_TIEFER haengen ihre Wiederholung tiefer als das E10-Direktkind
+    # (s. Konstante oben) -- der E10-Direktkind-Container bleibt fuer sie ein Singleton (kein
+    # instanz-Eintrag auf seiner Ebene -> _einhaengen() findet-oder-legt-erstes an), die
+    # Wiederholung sitzt am eingetragenen Segment. Gruppen-gebunden statt pfadbasiert, weil z.B.
+    # "Einz" als Elementname im E10-Schema generisch fuer viele andere Anlagen wiederkehrt.
     instanz_map: dict[str, list[tuple[tuple, int, object]]] = {}
     for gruppe, instanzen in anlage_instanzen.items():
         for inst in instanzen:
@@ -539,7 +560,11 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                     raise XmlFehler(
                         f"Gruppe '{gruppe}': Kz {kz} Pfad {kz_path} zu kurz — "
                         f"kein E10-Container ableitbar.")
-                container = kz_path[:2]   # ("E10", "<Direktkind>")
+                tiefer_segment = INSTANZ_CONTAINER_TIEFER.get(gruppe)
+                if tiefer_segment and tiefer_segment in kz_path:
+                    container = kz_path[:kz_path.index(tiefer_segment) + 1]
+                else:
+                    container = kz_path[:2]   # ("E10", "<Direktkind>")
                 instanz_map.setdefault(kz, []).append((container, inst_idx_0, wert))
 
     ns_e10 = NS_E10.format(vz=vz)
