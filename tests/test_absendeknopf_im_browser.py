@@ -18,8 +18,12 @@ Test verlangt unterschiedlichen Text.
 
 Monkeypatch-Rezept 1:1 aus tests/test_einreichen.py übernommen (dort schon scharf: scheibe=
 "gesamt" ohne ein einziges Event durchläuft dort denselben Codepfad bis CE.validate, weil
-STAMMDATEN_FELDER Teil ihres Kegels ist und _an_gesamt_sperrgrund bei leerem Store nicht
-greift) — hier nur über einen echten Browser-Klick statt eines direkten API.einreichen()-Rufs.
+_an_gesamt_sperrgrund (bescheid_deklaration.py) dHf, Verpflegung, Übernachtung, Arbeitsmittel,
+Partner-/Alleinerziehend-Konsistenz, §34-Abs.3-Excess und die an_gesamt-Gaps (Kinder/
+Verlustvortrag/Progression/DBA) prüft — Stammdaten (u.a. Geburtsdatum) kommt darin an keiner
+Stelle vor, unabhängig vom Kegel; ein leerer Store lässt jede dieser Prüfungen unbeantwortet,
+keine schlägt an) — hier nur über einen echten Browser-Klick statt eines direkten
+API.einreichen()-Rufs.
 """
 
 from __future__ import annotations
