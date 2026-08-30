@@ -19,6 +19,18 @@ NeuRIS historische Fassungen noch nicht vollstaendig liefert.
 - Dateien in diesem Verzeichnis werden nach dem Anlegen nicht mehr editiert
   (immutable). Eine neue Fassung ist ein neuer Abruf mit neuem Datum.
 
+## Abruf ausschliesslich per Skript, nie per LLM-Zusammenfassung
+
+Ein Rechtstext wird **immer** mit `scripts/freeze_source.py` abgerufen (deterministisches
+`urllib`-Fetch + Hash), nie mit einem LLM-gestuetzten Werkzeug (z. B. WebFetch), auch nicht mit der
+expliziten Anweisung "wörtlich, keine Zusammenfassung". Konkreter Schaden, an dem das gelernt wurde
+(2026-08-30, § 52 EStG): WebFetch lieferte zweimal in Folge eine komprimierte Fassung und liess dabei
+genau den einen Satz aus 89 138 Zeichen aus, der die gestellte Frage beantwortete (§ 52 Abs. 12 Satz 11,
+die Anwendungsvorschrift zu § 6 Abs. 2 Satz 1 selbst — die Sätze zu Satz 4 und Abs. 2a blieben stehen).
+Eine Zusammenfassung, die nicht sagt, was sie weggelassen hat, ist bei Gesetzestext wertlos: das
+Fehlende faellt nicht auf, weil niemand nach etwas sucht, das nicht da ist (vgl. den § 35a-Schaden oben,
+selbes Muster, andere Ursache).
+
 ## Integritaet pruefen
 
 ```bash
