@@ -108,7 +108,7 @@ def test_fail_closed_vorlaeufig_unvollstaendig(bindung):
     _b(s, "kap_gewinn_aktien", 99999, zustand="vorlaeufig")        # ein vorläufiges Pflicht-Feld
     snap, _ = ST.materialisiere(s)
     r = EM.deklariere(snap, bindung)
-    assert r["vollstaendig"] is False
+    assert r["eingaben_konsistent"] is False
     uf = {x["feld_id"] for x in r["unvollstaendig"]}
     assert "kap_gewinn_aktien" in uf
     assert "E1900901" not in r["deklaration"]                      # vorläufiger Wert NICHT deklariert
@@ -474,7 +474,7 @@ def test_multi_objekt_vv_zwei_objekte(bindung):
     assert inst[0]["felder"]["E0700201"] == 9000
     assert inst[0]["dokumentiert"]["E0703838"]["summe"] == 3000
     assert inst[0]["dokumentiert"]["E0703838"]["quell_felder"] == ["vv_gebaeude_afa__2", "vv_schuldzinsen__2"]
-    assert r["vollstaendig"] is True
+    assert r["eingaben_konsistent"] is True
 
 
 def test_multi_objekt_summe_datenvollstaendig_fuer_ring(bindung):
@@ -507,7 +507,7 @@ def test_multi_objekt_fail_closed_objekt_b_vorlaeufig(bindung):
     _b(s, "vv_einnahmen__2", 900000, zustand="vorlaeufig")
     snap, _ = ST.materialisiere(s)
     r = EM.deklariere(snap, bindung)
-    assert r["vollstaendig"] is False
+    assert r["eingaben_konsistent"] is False
     assert "vv_einnahmen__2" in {x["feld_id"] for x in r["unvollstaendig"]}
     assert r["anlage_instanzen"] == {}                         # vorläufiges Objekt B nicht deklariert
 
@@ -553,7 +553,7 @@ def test_per_kind_zwei_kinder(bindung):
     assert inst[0]["felder"]["E0500406"] == "22222222222"
     assert inst[0]["felder"]["E0500807"] == "Pflegekind" and inst[0]["felder"]["E0500808"] == "Pflegekind"
     assert inst[0]["felder"]["E0500601"] == "01.03.2025 - 31.12.2025"
-    assert r["vollstaendig"] is True
+    assert r["eingaben_konsistent"] is True
 
 
 def test_per_kind_ab_zwei_distinkte_kz(bindung):
@@ -582,7 +582,7 @@ def test_per_kind_fail_closed_kind_2_vorlaeufig(bindung):
     _b(s, "kind_idnr__2", "22222222222", zustand="vorlaeufig")
     snap, _ = ST.materialisiere(s)
     r = EM.deklariere(snap, bindung)
-    assert r["vollstaendig"] is False
+    assert r["eingaben_konsistent"] is False
     assert "kind_idnr__2" in {x["feld_id"] for x in r["unvollstaendig"]}
     assert "kind" not in r["anlage_instanzen"]                            # vorläufiges einziges Kind-2-Feld nicht deklariert
 
@@ -615,7 +615,7 @@ def test_multi_rente_zwei_renten_verschiedene_art(bindung):
     assert len(inst) == 1 and inst[0]["index"] == 2
     assert inst[0]["felder"]["E1801601"] == 9000 and inst[0]["felder"]["E1801701"] == 2018   # Rente 2 bb (EUR)
     assert "E1801601" not in r["deklaration"]                            # Rente-2-Kz NICHT in Person-A-Deklaration
-    assert r["vollstaendig"] is True
+    assert r["eingaben_konsistent"] is True
 
 
 def test_multi_rente_kz_reuse_gleiche_art(bindung):
@@ -635,7 +635,7 @@ def test_multi_rente_fail_closed_instanz_art_offen(bindung):
     _b(s, "rentner_renten_art__2", "private_leibrente", zustand="vorlaeufig")   # Art nur vorläufig
     snap, _ = ST.materialisiere(s)
     r = EM.deklariere(snap, bindung)
-    assert r["vollstaendig"] is False
+    assert r["eingaben_konsistent"] is False
     assert "rentner_jahresrente__2" in {x["feld_id"] for x in r["unvollstaendig"]}
     assert "rente" not in r["anlage_instanzen"]                          # leere Instanz gefiltert
     assert "E1801601" not in r["deklaration"]                            # kein Phantom-Kz
@@ -674,7 +674,7 @@ def test_multi_rente_alter_rentenfreibetrag_pro_instanz(bindung):
     assert inst["felder"] == {"E1801601": 9000, "E1801701": 2018}       # nur Kz-Felder (EUR), alter/rentenfreibetrag KEIN Phantom
     nd = {x["feld_id"] for x in r["nicht_deklariert"]}
     assert "rentner_alter_bei_rentenbeginn__2" in nd and "rentner_rentenfreibetrag__2" in nd
-    assert r["vollstaendig"] is True
+    assert r["eingaben_konsistent"] is True
 
 
 # ---- Ring-Naht #5: instanzen(store, bindung, gruppe) — Instanz-Enumeration für dev-1s per-Instanz-Σ ----

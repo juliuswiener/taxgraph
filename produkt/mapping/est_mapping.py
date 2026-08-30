@@ -734,7 +734,8 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
         "dokumentiert": dokumentiert,            # dokumentiert, NICHT deklariert: E-Nr -> {summe, quell_felder}
         "nicht_deklariert": nicht_deklariert,    # Auflage C: bewusst nicht deklariert (Grund)
         "unvollstaendig": unvollstaendig,        # Auflage C: welches Pflicht-Feld vorläufig
-        "vollstaendig": not unvollstaendig,      # fail-closed
+        "vollstaendig": not unvollstaendig,      # fail-closed (Legacy)
+        "eingaben_konsistent": not unvollstaendig,  # fail-closed (API-Konsumenten: elster_xml, api.py)
     }
 
 

@@ -38,8 +38,8 @@ snapshot, sid = store.materialisiere(store)
 bescheid_fn = unsicherheit.bescheid_via_slots(bindung, slot_fn, quantitaet="abziehbarer_betrag")
 band = unsicherheit.intervall(snapshot, bindung, bescheid_fn)   # {intervall: {min_cent, max_cent, offene_achsen, nicht_fixierbar, ...}, beitraege: [{feld_id, spanne_cent, ...}]}  — alles in CENT
 
-# 5. Deklaration (fail-closed: nur zustand=bestaetigt fließt; ein vorlaeufig -> vollstaendig=False)
-dekl = est_mapping.deklariere(snapshot, bindung, snapshot_id=sid)  # {deklaration E-Nr->Wert, dokumentiert (Σ nicht-deklariert), nicht_deklariert, unvollstaendig, vollstaendig}
+# 5. Deklaration (fail-closed: nur zustand=bestaetigt fließt; ein vorlaeufig -> eingaben_konsistent=False)
+dekl = est_mapping.deklariere(snapshot, bindung, snapshot_id=sid)  # {deklaration E-Nr->Wert, dokumentiert (Σ nicht-deklariert), nicht_deklariert, unvollstaendig, eingaben_konsistent}
 
 # 6. Nachvollziehbarkeit
 just  = traverser.justification(store, feld_id, bindung)     # Vorwärts-Trace: wert/zustand/herkunft/anker_ref/regel_id

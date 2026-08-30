@@ -57,7 +57,7 @@ braucht_eric = pytest.mark.skipif(
 
 
 def _dekl(**kz) -> dict:
-    return {"vollstaendig": True, "deklaration": dict(kz)}
+    return {"eingaben_konsistent": True, "deklaration": dict(kz)}
 
 
 def _schreibe(tmp_path, result, **kw) -> str:
@@ -129,7 +129,7 @@ def test_geschwister_in_schema_reihenfolge():
 # ----------------------------------------------------------------- fail-closed
 
 def test_unvollstaendige_deklaration_wird_nicht_serialisiert():
-    result = {"vollstaendig": False, "deklaration": {"E0100201": "Maier"},
+    result = {"eingaben_konsistent": False, "deklaration": {"E0100201": "Maier"},
               "unvollstaendig": [{"feld_id": "x", "grund": "vorlaeufig"}]}
     with pytest.raises(EX.XmlFehler, match="unvollständig"):
         EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)

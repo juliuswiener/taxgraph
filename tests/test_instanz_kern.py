@@ -63,7 +63,7 @@ def test_instanz_1zu1_reuse_ueber_n():
     assert [e["index"] for e in inst] == [2, 3]                # index-sortiert
     assert inst[0]["felder"]["E0700201"] == 200000             # Reuse: dieselbe Kz je Instanz
     assert inst[1]["felder"]["E0700201"] == 300000
-    assert "E0700201" in r["deklaration"] and r["vollstaendig"] is True
+    assert "E0700201" in r["deklaration"] and r["eingaben_konsistent"] is True
 
 
 def test_instanz_1_nicht_in_anlage_instanzen():
@@ -103,7 +103,7 @@ def test_instanz_roundtrip_1zu1_und_aggregat():
 def test_instanz_fail_closed_vorlaeufig():
     """Ein vorläufiges Instanz-Feld -> unvollständig, NICHT im Bucket, Gesamt vollstaendig=False."""
     r = EM.deklariere(_snap({"vv_einnahmen__2": 200000}, vorlaeufig=("vv_einnahmen__2",)), BINDUNG)
-    assert r["vollstaendig"] is False
+    assert r["eingaben_konsistent"] is False
     assert "vv_einnahmen__2" in {x["feld_id"] for x in r["unvollstaendig"]}
     assert r["anlage_instanzen"] == {}                         # vorläufige Instanz nie im Bucket
 

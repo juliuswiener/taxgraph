@@ -62,7 +62,7 @@ def _bauen(felder: tuple, fall_id: str):
         T._b(s, f, w)
     snap, _ = ST.materialisiere(s)
     dekl = est_mapping.deklariere(snap, BINDUNG)
-    if not dekl["vollstaendig"]:
+    if not dekl["eingaben_konsistent"]:
         sys.exit(f"[{fall_id}] unerwartet unvollstaendig: {dekl['unvollstaendig']}")
     return dekl
 

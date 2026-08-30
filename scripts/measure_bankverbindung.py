@@ -65,7 +65,7 @@ def _bauen(felder: tuple, fall_id: str):
         T._b(s, f, w)
     snap, _ = ST.materialisiere(s)
     dekl = est_mapping.deklariere(snap, BINDUNG)
-    if not dekl["vollstaendig"]:
+    if not dekl["eingaben_konsistent"]:
         sys.exit(f"[{fall_id}] unerwartet unvollstaendig: {dekl['unvollstaendig']}")
     return dekl
 
@@ -92,7 +92,7 @@ _pruefe(dekl_3a, "3a) Auslands-IBAN MIT BIC")
 # ---- 3b) Auslands-IBAN OHNE BIC (Tamper -- unser Gate umgangen, s. Docstring oben) ----
 dekl_3b = dict(dekl_3a)
 dekl_3b["deklaration"] = {k: v for k, v in dekl_3a["deklaration"].items() if k != "E0102201"}
-dekl_3b["vollstaendig"] = True
+dekl_3b["eingaben_konsistent"] = True
 _pruefe(dekl_3b, "3b) Auslands-IBAN OHNE BIC (Tamper -- unser Gate umgangen)")
 
 print("Fertig.")

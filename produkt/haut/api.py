@@ -703,7 +703,7 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
                          "hinweis": "Die Deklaration kann nicht erstellt werden, weil eine erforderliche Angabe fehlt."}
 
     result = EM.deklariere(felder, bindung, snapshot_id=sid)
-    if not result["vollstaendig"]:
+    if not result["eingaben_konsistent"]:
         return 409, {"fall_id": fall_id, "eingereicht": False, "grund": "deklaration_unvollstaendig",
                      "unvollstaendig": result["unvollstaendig"]}
     try:

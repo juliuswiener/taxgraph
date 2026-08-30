@@ -91,7 +91,7 @@ def test_iban_inland_wird_deklariert(bindung):
     assert dekl["E0102102"] == IBAN_INLAND
     assert "E0102603" not in dekl
     assert dekl["E0101601"] is True, "Kontoinhaber wird bei bestaetigter IBAN auto-abgeleitet"
-    assert result["vollstaendig"] is True
+    assert result["eingaben_konsistent"] is True
 
 
 def test_iban_leerzeichen_werden_entfernt_und_normalisiert(bindung):
@@ -103,7 +103,7 @@ def test_iban_leerzeichen_werden_entfernt_und_normalisiert(bindung):
     snap, _ = ST.materialisiere(s)
     result = EM.deklariere(snap, bindung)
     assert result["deklaration"]["E0102102"] == IBAN_INLAND
-    assert result["vollstaendig"] is True
+    assert result["eingaben_konsistent"] is True
 
 
 # ---------------------------------------------------------------- IBAN-Variante (ausland + BIC)
@@ -121,7 +121,7 @@ def test_iban_ausland_mit_bic(bindung):
     assert "E0102102" not in dekl
     assert dekl["E0102201"] == BIC_AUSLAND
     assert dekl["E0101601"] is True
-    assert result["vollstaendig"] is True
+    assert result["eingaben_konsistent"] is True
 
 
 def test_iban_ausland_ohne_bic_bleibt_vollstaendig(bindung):
@@ -136,7 +136,7 @@ def test_iban_ausland_ohne_bic_bleibt_vollstaendig(bindung):
     snap, _ = ST.materialisiere(s)
     result = EM.deklariere(snap, bindung)
 
-    assert result["vollstaendig"] is True
+    assert result["eingaben_konsistent"] is True
     assert result["deklaration"]["E0102603"] == IBAN_AUSLAND
     assert "E0102201" not in result["deklaration"]
 
@@ -152,7 +152,7 @@ def test_keine_bankverbindung_variante(bindung):
     assert result["deklaration"]["E0102002"] is True
     assert "E0102102" not in result["deklaration"]
     assert "E0102603" not in result["deklaration"]
-    assert result["vollstaendig"] is True
+    assert result["eingaben_konsistent"] is True
 
 
 # ---------------------------------------------------------------- Exklusivitaet: beides gleichzeitig
@@ -167,7 +167,7 @@ def test_iban_und_keine_bankverbindung_gleichzeitig_fail_closed(bindung):
     snap, _ = ST.materialisiere(s)
     result = EM.deklariere(snap, bindung)
 
-    assert result["vollstaendig"] is False
+    assert result["eingaben_konsistent"] is False
     gruende = [u["feld_id"] for u in result["unvollstaendig"]]
     assert "stammdaten_iban" in gruende
 
@@ -183,7 +183,7 @@ def test_weder_iban_noch_keine_bankverbindung_deklariere_bleibt_unberuehrt(bindu
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
     result = EM.deklariere(snap, bindung)
-    assert result["vollstaendig"] is True
+    assert result["eingaben_konsistent"] is True
     assert "E0102002" not in result["deklaration"]
     assert "E0102102" not in result["deklaration"]
     assert "E0102603" not in result["deklaration"]
@@ -200,7 +200,7 @@ def test_weder_iban_noch_keine_bankverbindung_blockiert_abgabe(bindung):
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
     result = EM.deklariere(snap, bindung)
-    assert result["vollstaendig"] is True  # deklariere() selbst sieht keinen Fehler (s.o.)
+    assert result["eingaben_konsistent"] is True  # deklariere() selbst sieht keinen Fehler (s.o.)
 
     with pytest.raises(EX.XmlFehler, match="Bankverbindungs-Entscheidung"):
         EX.erzeuge_xml(result, vz=2025, hersteller_id=HID, abgabefaehig=True,
@@ -231,7 +231,7 @@ def test_iban_falsches_muster_fail_closed(bindung):
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
     result = EM.deklariere(snap, bindung)
-    assert result["vollstaendig"] is False
+    assert result["eingaben_konsistent"] is False
     gruende = [u["grund"] for u in result["unvollstaendig"] if u["feld_id"] == "stammdaten_iban"]
     assert gruende and "Muster" in gruende[0]
 
@@ -246,7 +246,7 @@ def test_iban_falsche_pruefziffer_fail_closed(bindung):
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
     result = EM.deklariere(snap, bindung)
-    assert result["vollstaendig"] is False
+    assert result["eingaben_konsistent"] is False
     gruende = [u["grund"] for u in result["unvollstaendig"] if u["feld_id"] == "stammdaten_iban"]
     assert gruende and "Pruefziffer" in gruende[0]
     assert kaputt not in gruende[0], "PII: der IBAN-Wert selbst darf nicht in der Fehlermeldung stehen"

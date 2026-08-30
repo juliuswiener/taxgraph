@@ -44,7 +44,7 @@ _STAMM_KZ = dict(E0100201="Maier", E0100301="Hans", E0101104="Musterstr.",
 
 
 def _dekl(**kz) -> dict:
-    return {"vollstaendig": True, "deklaration": dict(kz)}
+    return {"eingaben_konsistent": True, "deklaration": dict(kz)}
 
 
 def _snap(wert, zustand="bestaetigt") -> dict:

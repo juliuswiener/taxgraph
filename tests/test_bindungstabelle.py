@@ -950,7 +950,7 @@ def test_k_alle_python_dateien_parsen():
 # Dieses Gate deckt die deklariere()-Semantik ab: was passiert mit einem
 # Feld, das im Snapshot steht, aber nicht in der Bindung?
 #
-# Heute: `vollstaendig` bleibt True, das Feld landet in `nicht_deklariert`
+# Heute: `eingaben_konsistent` bleibt True, das Feld landet in `nicht_deklariert`
 # mit Grund "nicht in der Bindungstabelle". Klasse c ("Feld in Bindung,
 # kein Kz") und "Feld gar nicht in Bindung" fallen in denselben Bucket.
 # Der zweite Fall ist fast immer ein Bug (Umbenennung nicht mitgezogen),
@@ -958,12 +958,12 @@ def test_k_alle_python_dateien_parsen():
 #
 # SCHAEKFUNG: wenn est_mapping.py:260-262 erweitert wird, sodass
 # unbekannte feld_ids `unvollstaendig` ausloesen, muss dieser Test
-# auf `vollstaendig is False` schaerfen. Die Assertion ist bewusst
+# auf `eingaben_konsistent is False` schaerfen. Die Assertion ist bewusst
 # auf `is True` gesetzt, damit der Umbau den Test zwingt, sich zu
 # aendern — nicht stillschweigend weiterzulaufen.
 
 def test_l_unbekannte_feld_id_in_deklariere():
-    """Ein snapshot-Feld ohne Bindungseintrag -> vollstaendig bleibt True (Ist-Verhalten).
+    """Ein snapshot-Feld ohne Bindungseintrag -> eingaben_konsistent bleibt True (Ist-Verhalten).
 
     Negativ-Probe: das Feld existiert in der Bindung -> gleiches Verhalten.
     Erst wenn est_mapping.py:260-262 erweitert wird (unbekanntes Feld ->
@@ -997,9 +997,9 @@ def test_l_unbekannte_feld_id_in_deklariere():
     assert any("nicht in der Bindungstabelle" in g for g in nd_gruende), (
         f"Unbekanntes Feld muss 'nicht in der Bindungstabelle' melden: {nd_gruende}")
 
-    # (3) Unbekanntes Feld -> vollstaendig = False (Verschärfung)
-    assert ergebnis["vollstaendig"] is False, (
-        f"Unbekanntes Feld muss vollstaendig auf False setzen: {ergebnis['vollstaendig']}")
+    # (3) Unbekanntes Feld -> eingaben_konsistent = False (Verschärfung)
+    assert ergebnis["eingaben_konsistent"] is False, (
+        f"Unbekanntes Feld muss eingaben_konsistent auf False setzen: {ergebnis['eingaben_konsistent']}")
 
 
 # ---- (n) Rückrichtung von (b): Bindung -> existierende Bedingung/Slot ----------

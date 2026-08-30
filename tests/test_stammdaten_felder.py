@@ -89,7 +89,7 @@ def test_person_a_stammdaten_1_zu_1(bindung):
     assert dekl["E0100602"] == "Musterort"
     assert dekl["E0102002"] is True
     assert dekl["E0100001"] is True
-    assert result["vollstaendig"] is True
+    assert result["eingaben_konsistent"] is True
 
 
 def test_stammdaten_vorlaeufig_macht_unvollstaendig(bindung):
@@ -100,7 +100,7 @@ def test_stammdaten_vorlaeufig_macht_unvollstaendig(bindung):
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
     result = EM.deklariere(snap, bindung)
-    assert result["vollstaendig"] is False
+    assert result["eingaben_konsistent"] is False
     gruende = [u["feld_id"] for u in result["unvollstaendig"]]
     assert "stammdaten_nachname" in gruende
 

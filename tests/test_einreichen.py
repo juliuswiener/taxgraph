@@ -165,7 +165,7 @@ def test_eric_fehlt_gibt_503_statt_crash(tmp_path, monkeypatch):
     monkeypatch.setattr(EX, "erzeuge_xml",
                         lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
-                        lambda *a, **k: {"vollstaendig": True, "deklaration": {"E0100201": "M"},
+                        lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
                                          "unvollstaendig": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate",
@@ -184,7 +184,7 @@ def test_plausibilitaetsfehler_reicht_ericantwort_durch(tmp_path, monkeypatch):
     import elster_xml as EX
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
-                        lambda *a, **k: {"vollstaendig": True, "deklaration": {"E0100201": "M"},
+                        lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
                                          "unvollstaendig": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate",
@@ -204,7 +204,7 @@ def test_io_gate_rc_ist_nicht_gruen(tmp_path, monkeypatch):
     import elster_xml as EX
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
-                        lambda *a, **k: {"vollstaendig": True, "deklaration": {"E0100201": "M"},
+                        lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
                                          "unvollstaendig": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_IO_KEIN_TICKET, ""))
@@ -224,7 +224,7 @@ def test_io_reader_unerwartete_elemente_kein_plausibilitaetsverdikt(tmp_path, mo
     import elster_xml as EX
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
-                        lambda *a, **k: {"vollstaendig": True, "deklaration": {"E0100201": "M"},
+                        lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
                                          "unvollstaendig": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_IO_UNERWARTETE_ELEMENTE, ""))
@@ -245,7 +245,7 @@ def test_unbekannter_rc_faellt_nicht_in_plausibilitaet_verletzt(tmp_path, monkey
     import elster_xml as EX
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
-                        lambda *a, **k: {"vollstaendig": True, "deklaration": {"E0100201": "M"},
+                        lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
                                          "unvollstaendig": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (777777, ""))
@@ -265,7 +265,7 @@ def test_erfolg_meldet_plausibel_aber_nicht_eingereicht(tmp_path, monkeypatch):
     import elster_xml as EX
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
-                        lambda *a, **k: {"vollstaendig": True, "deklaration": {"E0100201": "M"},
+                        lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
                                          "unvollstaendig": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_OK, ""))
@@ -282,7 +282,7 @@ def test_xml_nicht_baubar_gibt_422(tmp_path, monkeypatch):
     monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
     import elster_xml as EX
     monkeypatch.setattr(API.EM, "deklariere",
-                        lambda *a, **k: {"vollstaendig": True, "deklaration": {"E9999999": "x"},
+                        lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E9999999": "x"},
                                          "unvollstaendig": []})
     monkeypatch.setattr(EX, "erzeuge_xml",
                         lambda *a, **k: (_ for _ in ()).throw(EX.XmlFehler("Kz ohne Pfad")))

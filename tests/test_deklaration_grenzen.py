@@ -139,8 +139,8 @@ def test_unbestaettigte_werte_nicht_in_deklaration(base):
         "Vorläufiges Feld (vorlaeufig, nicht bestaetigt) erscheint in /deklaration. "
         "Nur bestätigte Werte dürfen deklariert werden."
     )
-    assert dekl.get("vollstaendig") is False, (
-        "Unbestätigte Felder sollten vollstaendig=False erzeugen"
+    assert dekl.get("eingaben_konsistent") is False, (
+        "Unbestätigte Felder sollten eingaben_konsistent=False erzeugen"
     )
 
 

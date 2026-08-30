@@ -5,7 +5,7 @@ verschachtelte ELSTER-XML — die Verschachtelung kommt NICHT aus einer Handtabe
 sondern aus dem amtlichen E10-XSD (`xsd_verify.walk()` liefert je Kz den vollen
 Element-Pfad). Damit gibt es keine zweite Wahrheit über die Sektionsstruktur.
 
-Fail-closed: eine unvollständige Deklaration (`vollstaendig=False`) wird NICHT
+Fail-closed: eine unvollständige Deklaration (`eingaben_konsistent=False`) wird NICHT
 serialisiert — ohne Bestätigung aller Pflichtfelder entsteht kein Submission-XML.
 Kz ohne Pfad im Schema sind ein harter Fehler (nie stilles Weglassen).
 
@@ -441,7 +441,7 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                 snapshot: dict | None = None) -> str:
     """Deklaration (aus est_mapping.deklariere()) -> ELSTER-Submission-XML als String.
 
-    Fail-closed: `result["vollstaendig"] is False` -> XmlFehler. Kz ohne Schema-Pfad -> XmlFehler.
+    Fail-closed: `result["eingaben_konsistent"] is False` -> XmlFehler. Kz ohne Schema-Pfad -> XmlFehler.
 
     Verarbeitet die drei Buckets aus est_mapping.deklariere():
     - `deklaration`: {Kz: Wert} — Person A / Basis-Instanzen (Index 0)
@@ -476,7 +476,7 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
     (`_STNR_PATTERN`, gemessen — s. dort); beides gilt fuer Parameter UND Ableitung gleich,
     die Pruefung sitzt nach der Ableitung, nicht davor.
     """
-    if not result.get("vollstaendig", False):
+    if not result.get("eingaben_konsistent", False):
         offen = result.get("unvollstaendig", [])
         raise XmlFehler(f"Deklaration unvollständig ({len(offen)} offene Pflichtfelder) — "
                         f"kein Submission-XML. Erste: {offen[:3]}")

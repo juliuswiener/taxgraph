@@ -60,7 +60,7 @@ def test_s1_vorschlag_nicht_in_deklaration():
     felder, _ = ST.materialisiere(s)
     erg = EM.deklariere(felder, BINDUNG)
     assert "agb_aufwendungen" in {u["feld_id"] for u in erg["unvollstaendig"]}
-    assert erg["vollstaendig"] is False
+    assert erg["eingaben_konsistent"] is False
 
 
 # ---------- S2: nach menschlichem Confirm (signal_2) fließt es in die Deklaration ----------
@@ -158,7 +158,7 @@ def test_s6_steuersumme_eingabe_invariant():
     felder, _ = ST.materialisiere(s)
     erg_vor = EM.deklariere(felder, BINDUNG)
     assert "spenden_betrag" in {u["feld_id"] for u in erg_vor["unvollstaendig"]}  # vorläufig → NICHT Steuer-Eingabe
-    assert erg_vor["vollstaendig"] is False
+    assert erg_vor["eingaben_konsistent"] is False
     ST.append_event(s, feld_id="spenden_betrag", wert=500000, zustand="bestaetigt",
                     herkunft={"herkunft": "nutzer", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
                     schreiber="ui:laie", signal={"signal_1": None, "signal_2": "confirm@spende"},

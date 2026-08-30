@@ -36,6 +36,7 @@ mehrheitlich"-Schwelle wuerde genau die Regression verdecken, die dieses Gate fa
 Ausgangsfall: _fall_einzel() aus test_checkest_durchstich.py (Veranlagung "einzel",
 Stammdaten Person A vollstaendig, kein Gewinn/Kap/VuV/Sonstige -- derselbe Boden wie der
 Durchstich-Test und test_vollstaendig_pflichtfelder_voll.py). Je Fall wird GENAU das in
+# (vollstaendig == eingaben_konsistent: Feldname umbenannt 2026-08-28, s. vault/decisions/vollstaendig-umbenennen-statt-eigener-pflichtfeldliste.md)
 FAELLE unten genannte Kernfeld ergaenzt, keine weiteren Zusatzangaben -- Feldauswahl exakt
 wie in der Nachmessung 2026-08-28 gemessen, dort auch die Fehlertexte im Wortlaut.
 

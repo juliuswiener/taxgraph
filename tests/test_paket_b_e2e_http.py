@@ -534,7 +534,7 @@ def test_durchstich_n_vor_gwg(base):
     kz = set(dek.get("deklaration", {}))
     assert VOR_KZ <= kz, f"VOR-Summanden-Kz fehlen in der Deklaration: {kz}"
     assert "E0203503" in kz                                   # ep_arbeitstage
-    assert dek["vollstaendig"] is True                        # alle erfassten Felder bestätigt
+    assert dek["eingaben_konsistent"] is True                        # alle erfassten Felder bestätigt
 
     # 6) Trace bis anker_ref für ein VOR-Feld
     st, w = _req(base, "GET", f"/fall/{fid}/feld/vor_an_anteil_rv/warum")

@@ -71,7 +71,7 @@ def test_alle_fuenf_null_bleibt_vollstaendig(bindung):
     felder = {f: 0 for f in EM.KAP_FELDER_A}
     snap, _ = ST.materialisiere(_store_mit(felder))
     r = EM.deklariere(snap, bindung)
-    assert r["vollstaendig"] is True
+    assert r["eingaben_konsistent"] is True
     assert not r["unvollstaendig"]
 
 
@@ -170,7 +170,7 @@ def test_ein_feld_vorlaeufig_unterdrueckt_nichts(bindung):
             _b(s, f, 0)
     snap, _ = ST.materialisiere(s)
     r = EM.deklariere(snap, bindung)
-    assert r["vollstaendig"] is False
+    assert r["eingaben_konsistent"] is False
     for kz in ("E1900701", "E1901301", "E1901201"):             # die bestätigten Nullen bleiben deklariert
         assert kz in r["deklaration"]
     assert "E1900901" not in r["deklaration"]                   # das vorläufige Feld selbst nie deklariert

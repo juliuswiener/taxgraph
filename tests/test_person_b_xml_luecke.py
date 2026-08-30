@@ -619,7 +619,7 @@ def test_e10_ausschluss_gwg_dokumentiert(bindung):
     # Gweg daher direkt als anlage_instanzen-Eintrag, ohne base-instance
     import copy
     result = {
-        "vollstaendig": True,
+        "eingaben_konsistent": True,
         "deklaration": {
             "E0100201": "Maier",  # benoetigt fuer nicht-leere deklaration
             "E0100401": "05.05.1955",
@@ -641,7 +641,7 @@ def test_e10_ausschluss_gwg_dokumentiert(bindung):
 def test_e10_ausschluss_unbekanntes_kz_fail_closed():
     """Nicht-E10-Kz OHNE Eintrag in E10_AUSSCHLUSS_DATENART -> XmlFehler."""
     result = {
-        "vollstaendig": True,
+        "eingaben_konsistent": True,
         "deklaration": {
             "E0100201": "Maier",
             "E0100401": "05.05.1955",
