@@ -499,6 +499,10 @@ bindungen:
   # ========================= Veräußerungsfreibetrag §16 Abs. 4 (p16_4) =========================
   - feld_id: rentner_veraeusserungsgewinn
     quelle: {regel_id: p16_4_freibetrag, signatur_slot: veraeusserungsgewinn}
+    # Bis 2026-08-28 hing die GANZE Regel ueber regel_bedingungen an `kein_gewinn`. Das war fuer
+    # den Einzelveranlagten richtig und fuer das Ehepaar eine Sackgasse: die Regel traegt auch die
+    # beiden Partner-Gates, und das Kreuz des Nutzers schaltete sie mit ab (Begruendung dort).
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 16 Abs. 1 EStG rechnet den Gewinn aus der Veraeusserung eines Betriebs zu den Einkuenften aus Gewerbebetrieb, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Wer bestaetigt, selbst keine Gewinneinkuenfte zu haben, hat keinen eigenen Betrieb veraeussert. Auf Feldebene statt regel-weit, weil dieselbe Regel die Freibetrags-Gates des PARTNERS traegt — die duerfen von der Antwort des Nutzers nicht mit abgeschaltet werden."}
     typ: cent
     einheit: EUR
     askable: true
@@ -516,6 +520,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
   - feld_id: rentner_veraeusserungs_betriebsart
     quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: veraeusserungs_betriebsart_weiche}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 16 Abs. 1 EStG rechnet den Veraeusserungsgewinn zu den Einkuenften aus Gewerbebetrieb; die Betriebsart ist ein Merkmal dieses Gewinns und ohne ihn gegenstandslos. Auf Feldebene statt regel-weit, weil dieselbe Regel die Freibetrags-Gates des PARTNERS traegt — die duerfen von der Antwort des Nutzers nicht mit abgeschaltet werden."}
     typ: enum
     einheit: null
     enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
@@ -534,6 +539,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
   - feld_id: rentner_alter_55_oder_berufsunfaehig
     quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: alter_55_oder_berufsunfaehig}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 16 Abs. 4 S. 1 EStG gewaehrt den Freibetrag dem Steuerpflichtigen, der das 55. Lebensjahr vollendet hat oder dauernd berufsunfaehig ist — und zwar auf seinen eigenen Veraeusserungsgewinn. Ohne eigene Gewinneinkuenfte gibt es keinen, auf den er anzuwenden waere. Auf Feldebene statt regel-weit, weil dieselbe Regel das gleichnamige Gate des PARTNERS traegt."}
     typ: bool
     einheit: null
     askable: true
@@ -551,6 +557,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
   - feld_id: rentner_freibetrag_erstmalig
     quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: freibetrag_einmal_im_leben}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 16 Abs. 4 S. 2 EStG gewaehrt den Freibetrag nur EINMAL im Leben; die Frage danach setzt einen eigenen Veraeusserungsgewinn voraus. Ohne eigene Gewinneinkuenfte gibt es nichts, wofuer der Freibetrag erstmalig in Anspruch genommen wuerde. Auf Feldebene statt regel-weit, weil dieselbe Regel das gleichnamige Gate des PARTNERS traegt."}
     typ: bool
     einheit: null
     askable: true
@@ -640,6 +647,20 @@ bindungen:
     # Dialog-Durchstich Task C / pv_auf_gebaeude-Fund). Die fiktive _partner-Bedingung ist daher
     # in GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE dokumentiert statt auf den Sammel-Scope verschoben.
     quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: alter_55_oder_berufsunfaehig_partner}
+    # DIESES FELD WAR DIE SACKGASSE. Es hing ueber regel_bedingungen an `kein_gewinn` — dem Kreuz
+    # des NUTZERS. Ein Ehepaar, bei dem nur der Partner einen Betrieb verkauft hatte, beantwortete
+    # 208 Fragen bis zur leeren Warteschlange und bekam `p16_4_gate_offen` und keine Zahl: der
+    # Sperrgrund liest den Veraeusserungsgewinn des Partners, die Frage, die ihn aufloest, war
+    # aber vom Kreuz des Nutzers abgeschaltet.
+    # Die Bedingung ist die VERANLAGUNGSART, nicht `kein_gewinn_partner` — gemessen und so
+    # entschieden: das Partner-Kreuz wird einem Einzelveranlagten nie gestellt, bleibt also
+    # unbeantwortet, und fail-closed heisst dann „fragen". Jeder Alleinstehende bekaeme diese
+    # beiden Fragen nach dem Betriebsverkauf eines Partners, den er nicht hat
+    # (test_alleinstehender_bekommt_keine_partner_frage hat es prompt rot gemacht). Dieselbe Lage
+    # und dieselbe Entscheidung wie bei behinderungsbedingte_aufwendungen_partner: `feld_bedingung`
+    # traegt nur EINE Bedingung, und von beiden moeglichen ist die sicherere die richtige. Preis:
+    # ein Ehepaar ohne Gewinneinkuenfte des Partners bekommt diese zwei Fragen weiterhin.
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 16 Abs. 4 S. 1 EStG knuepft den Freibetrag an das Alter bzw. die Berufsunfaehigkeit DERJENIGEN Person, die den Betrieb veraeussert hat. Einen Freibetrag des Partners gibt es nur, wenn dieser nach § 26b EStG mitveranlagt wird — wer allein veranlagt wird, hat keinen Partner, dessen Betriebsveraeusserung in diese Erklaerung gehoerte."}
     typ: bool
     einheit: null
     askable: true
@@ -670,6 +691,9 @@ bindungen:
     # regel_id bleibt p16_4_freibetrag: gleicher Grund wie rentner_alter_55_oder_berufsunfaehig_
     # partner oben — bool-Gate darf nicht auf den Sammel-Scope (test_p_sammelscope_ohne_bool_gate).
     quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: freibetrag_einmal_im_leben_partner}
+    # Dieselbe Lage wie beim Nachbarfeld darueber — dort steht, warum hier die Veranlagungsart
+    # und nicht `kein_gewinn_partner` die Bedingung ist.
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 16 Abs. 4 S. 2 EStG gewaehrt den Freibetrag nur EINMAL im Leben, und zwar je Person; jeder Ehegatte hat sein eigenes Kontingent. Ein Kontingent des Partners gibt es nur, wenn dieser nach § 26b EStG mitveranlagt wird — wer allein veranlagt wird, hat keines zu verbrauchen. Zweites der beiden Felder, die die Sackgasse bildeten (s. Nachbarfeld)."}
     typ: bool
     einheit: null
     askable: true

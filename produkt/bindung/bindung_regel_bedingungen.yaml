@@ -208,10 +208,35 @@ regel_bedingungen:
     wert: false
     grund: "§ 10 Abs. 1 Nr. 5 S. 1 EStG beguenstigt Kinderbetreuungskosten fuer ein Kind, 'welches das 14. Lebensjahr noch nicht vollendet hat oder wegen einer vor Vollendung des 25. Lebensjahres eingetretenen Behinderung ausserstande ist, sich selbst zu unterhalten' — ohne Kind gibt es weder Betreuung noch die Frage nach dem Alter waehrend dieser Betreuung. Genau jene Altersfrage meldete Julius am 2026-08-25."
 
-  - regel_id: p16_4_freibetrag
-    feld: kein_gewinn
-    wert: false
-    grund: "§ 16 Abs. 4 S. 1 EStG gewaehrt den Freibetrag, wenn der Steuerpflichtige das 55. Lebensjahr vollendet hat oder dauernd berufsunfaehig ist — und zwar auf den VERAEUSSERUNGSGEWINN. Der entsteht bei der Veraeusserung eines Gewerbebetriebs (§ 16 Abs. 1); wer bestaetigt, keine Gewinneinkuenfte zu haben, hat keinen Betrieb veraeussert und damit keinen Gewinn, auf den ein Freibetrag anzuwenden waere."
+  # p16_4_freibetrag stand hier bis 2026-08-28 mit `kein_gewinn` — regel-weit, und das war eine
+  # SACKGASSE fuer Ehepaare. Die Begruendung war fuer den Einzelveranlagten richtig und fuer das
+  # Ehepaar falsch: sie sagt „wer bestaetigt, keine Gewinneinkuenfte zu haben", meint aber nur den
+  # NUTZER, waehrend die Regel auch die beiden Partner-Gates traegt.
+  #
+  # GEMESSEN, Scheibe `gesamt`, Ehepaar, der Partner verkauft seinen Betrieb (50.000 EUR), der
+  # Nutzer kreuzt wahrheitsgemaess „keine Gewinneinkuenfte" an:
+  #
+  #     208 Felder beantwortet, Warteschlange LEER  ->  grund=p16_4_gate_offen, zahl_cent=None
+  #     die zwei Fragen, die die Sperre aufheben, wurden NIE gestellt
+  #
+  # Der Nutzer hat alles beantwortet, was das Programm ihn gefragt hat, und bekommt keine Zahl und
+  # keinen Weg zu einer. Das Kreuz, das ihn festsetzt, ist seins — der Sachverhalt gehoert dem
+  # Partner. Der Sperrgrund (bescheid_deklaration.py) liest naemlich nur FELDWERTE und weiss
+  # nichts davon, dass relevanz() die Regel abgeschaltet hat: er feuert weiter, waehrend die
+  # Fragen, die ihn aufloesen wuerden, aus der Warteschlange verschwunden sind.
+  #
+  # Die Wirkung liegt jetzt je Feld (`feld_bedingung` in bindung_rentner.yaml): die vier
+  # Ich-Felder an `kein_gewinn`, die zwei Partner-Gates an `kein_gewinn_partner`. Damit entfaellt
+  # fuer jede Person genau das, was sie nicht betrifft.
+  #
+  # ZWEI WEGE WURDEN VORHER GEPRUEFT, ueber die dieser Eingriff Schaden anrichten koennte — beide
+  # sind frei, nachgemessen statt angenommen:
+  #   1. Der Sperrgrund `p16_4_gate_offen` haengt an Feldwerten (Veraeusserungsgewinn > 0), nicht
+  #      am Regel-Status. Ohne Veraeusserungsgewinn feuert er nie, egal ob die Regel
+  #      `ausgeschlossen` oder `unentschieden` ist.
+  #   2. `_relevante_kegel_felder` (api.py) nimmt Pflichtfelder aus dem Kegel, WEIL ihre Regel
+  #      ausgeschlossen ist. Faellt der Ausschluss weg, blieben sie Pflicht — aber KEIN
+  #      p16_4-Feld liegt in einem Kegel (gesamt: 33 Felder, rentner_gesamt: 26, beide ohne).
 
   - regel_id: p34_3_ermaessigter_durchschnittssatz
     feld: kein_gewinn

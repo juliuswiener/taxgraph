@@ -51,6 +51,11 @@ import traverser as TR # noqa: E402
 BINDUNG = TR.lade_bindung()
 
 # (Screening-Feld, Regel) — dieselben neun Paare wie in bindung_regel_bedingungen.yaml.
+# HINWEIS: p16_4_freibetrag ist NICHT mehr in PAARE, weil die Architektur von regel-weit
+# (regel_bedingungen) auf feld-weit (feld_bedingung in bindung_rentner.yaml) geändert wurde.
+# Die Regel bleibt "unentschieden" (Partner-Gates offen), aber die 4 Ich-Felder werden
+# korrekt per feld_bedingung an kein_gewinn ausgeschlossen, die 2 Partner-Felder bleiben
+# korrekt per feld_bedingung an veranlagung=zusammen.
 PAARE = [
     ("kein_vuv", "p21_vermietung_einkuenfte"),
     ("kein_kap", "p20_6_verlustverrechnung"),
@@ -76,7 +81,6 @@ PAARE = [
     # Die Existenzfrage stand jeweils früh in der Queue; sie zu beantworten nahm die Detailfrage
     # trotzdem nicht weg, weil zwischen den Regeln keine Verbindung bestand.
     ("kein_kind", "p10_1_5_kinderbetreuung"),          # „War dein Kind unter 14 Jahre alt?"
-    ("kein_gewinn", "p16_4_freibetrag"),               # „Warst du beim Verkauf mind. 55?"
     ("kein_gewinn", "p34_3_ermaessigter_durchschnittssatz"),
     ("kein_vuv", "p21_2_verbilligte_vermietung_wk"),
 ]
