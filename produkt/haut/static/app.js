@@ -2435,6 +2435,50 @@ async function zeigePreflight() {
   pf.hidden = false;
 }
 
+// --- Absendeknopf: löst NUR die lokale checkESt-Prüfung aus (POST /fall/{id}/einreichen), sendet
+// nichts ans Finanzamt — der echte Versand bleibt CLI-only (elster/versand.py) und ist hier bewusst
+// nicht verdrahtet. Server ist fail-closed: der Knopf ist immer klickbar, `vollstaendig` und
+// `preflight.status` gaten hier nichts, weil beide Signale ELSTER-Pflichtfelder übersehen können.
+//
+// Fail-closed in der ANDEREN Richtung als sonst üblich: nicht eine Liste bekannter
+// "nicht geprüft"-Gründe pflegen (ein neuer, unbekannter Grund würde sonst lautlos durchrutschen),
+// sondern umgekehrt — NUR der ausdrückliche Erfolg (200, kein `grund`-Schlüssel) gilt als
+// "in Ordnung"; jeder andere Fall (bekannt oder nicht) landet in "nicht geprüft/nicht bestanden".
+// Einzige Ausnahme: `grund === "plausibilitaet_verletzt"` bekommt einen eigenen Text, weil das der
+// einzige Fall ist, in dem checkESt wirklich ein Urteil über die Erklärung gefällt hat.
+// Kein Ursachentext zu rc-Codes (Instructor 2026-08-30): rc=610301200 heißt laut ERiC-Header
+// (eric_fehlercodes.h) ERIC_IO_READER_SCHEMA_VALIDIERUNGSFEHLER — der Repo-Name RC_IO_KEIN_TICKET
+// ist ein Fehlschluss aus einer einzelnen Fuzz-Probe. Belegt (Commit cebb228): derselbe rc entsteht
+// auch aus einem ganz anderen Fehler (Namensraum-Präfix). EIN Code, MINDESTENS zwei unverwandte
+// Ursachen — daraus lässt sich keine Ursache ableiten, also steht hier keine.
+async function einreichenPruefen() {
+  const btn = $("einreichen-btn");
+  if (btn.disabled) return;   // Doppel-Submit-Schutz
+  btn.disabled = true;
+  const status = $("einreichen-status");
+  status.hidden = true;
+  status.replaceChildren();
+  const r = await jpost(`/fall/${FALL}/einreichen`, {});
+  const kopf = document.createElement("p");
+  kopf.className = "einreichen-kopf";
+  const detail = document.createElement("p");
+  detail.className = "einreichen-detail";
+  if (r.status === 200 && r.body && !("grund" in r.body)) {
+    kopf.textContent = "Geprüft und in Ordnung.";
+    detail.textContent = r.body.hinweis || "";
+  } else if (r.body && r.body.grund === "plausibilitaet_verletzt") {
+    kopf.textContent = "Geprüft und beanstandet.";
+    detail.textContent = "Die Prüfung hat Einwände gegen die Erklärung gefunden. Bitte Angaben " +
+                          "prüfen, bevor erneut eingereicht wird.";
+  } else {
+    kopf.textContent = "Nicht geprüft.";
+    detail.textContent = "Aus der Prüfung liegt kein Ergebnis vor. Der Fall gilt als offen.";
+  }
+  status.replaceChildren(kopf, detail);
+  status.hidden = false;
+  btn.disabled = false;
+}
+
 // --- Vorjahr-Übernahme: Vorjahres-Fall → vorläufige Vorschläge (herkunft=vorjahr), Nutzer bestätigt ---
 async function vorjahrUebernehmen() {
   const btn = $("vorjahr-go");
@@ -2620,6 +2664,7 @@ $("screening-weiter").addEventListener("click", screeningWeiter);
 $("kette-zu").addEventListener("click", () => $("kette-overlay").hidden = true);
 $("vorjahr-toggle").addEventListener("click", () => { const p = $("vorjahr-panel"); p.hidden = !p.hidden; });
 $("vorjahr-go").addEventListener("click", vorjahrUebernehmen);
+$("einreichen-btn").addEventListener("click", einreichenPruefen);
 $("konto-toggle").addEventListener("click", () => { const p = $("konto-panel"); p.hidden = !p.hidden; });
 $("konto-file").addEventListener("change", (e) => kontoauszugHochladen(e.target.files[0]));
 $("login-go").addEventListener("click", loginGo);
