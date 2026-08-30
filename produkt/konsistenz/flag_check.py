@@ -16,6 +16,23 @@ FLAG_NEGIERT = {
     "kein_kap":      ["kap_kapitalertraege", "kap_gewinn_aktien"],          # § 2 Abs. 1 Nr. 5
     "kein_vuv":      ["vv_einnahmen"],                                       # § 2 Abs. 1 Nr. 6
     "kein_sonstige": ["rentner_jahresrente"],                               # § 2 Abs. 1 Nr. 7 (Renten)
+    # Partner-Spiegel (§ 26b: Einkuenfte je Ehegatten getrennt ermittelt) derselben zwei Flags oben.
+    # Person As eigene Liste deckt nur zwei von fuenf Kap-Feldern (nicht kap_gewinn_sonstige/
+    # kap_verlust_aktien/kap_verlust_sonstige) -- gespiegelt, nicht erweitert: der Partner soll
+    # denselben Schutz wie Person A bekommen, keinen groesseren. 2026-08-30, kap_partner-Defekt:
+    # Korrektur kein_kap_partner=True nach bereits bestaetigtem kap_kapitalertraege_partner>0 blieb
+    # unentdeckt, 750 EUR Steuer auf zurueckgezogene Einkuenfte liefen ohne Sperre weiter.
+    "kein_kap_partner":      ["kap_kapitalertraege_partner", "kap_gewinn_aktien_partner"],
+    # kein_sonstige_partner: die Aussage ist richtig, ABER gemessen 2026-08-31 (HEAD 5af945c) derzeit
+    # unfeuerbar -- kein Bug in dieser Zeile, sondern ein disjunkter Scheiben-Zuschnitt eine Ebene
+    # hoeher. Das Flag lebt nur auf Scheibe "gesamt" (PARTNER_SCREENING in api_constants.py), das
+    # Zielfeld rentner_jahresrente_partner nur auf Scheibe "rentner_gesamt" (RENTNER_22_PARTNER via
+    # RENTNER_FELDER) -- api.py::event() laesst pro Fall nur Felder der EIGENEN Scheibe zu (HTTP 400
+    # sonst), Flag und Ziel koennen also nie im selben Fall-Snapshot koexistieren. flag_widersprueche()
+    # sieht die beiden deshalb nie zusammen; der Eintrag bleibt, bis der Scheiben-Zuschnitt es aendert
+    # (s. tests/test_kein_sonstige_partner_korrektur_ueberlebt_widerspruch.py, xfail(strict=True) als
+    # Melder fuer genau diesen Tag).
+    "kein_sonstige_partner": ["rentner_jahresrente_partner"],               # § 22 Nr. 1, Partner-Rente
     # § 2 Abs. 1 Nr. 1-3 (§§ 13-18): Stufe-1-Direktgewinn + § 16-vg (2-I) + EÜR-Komponenten (2-II) + GWG (2-III).
     # ALLE Betriebs-Indikatoren negieren kein_gewinn — auch ein Verlustjahr (einnahmen=0, aber afa/ausgaben>0)
     # oder nur GWG-Anschaffungen belegen einen existierenden Betrieb, dürfen nicht als "kein Gewinn" durchrutschen.
@@ -44,6 +61,8 @@ def flag_widersprueche(snapshot: dict) -> list:
         "kein_kap": "Kapitalerträge (Zinsen, Dividenden, Kursgewinne)",
         "kein_vuv": "Einnahmen aus Vermietung oder Verpachtung",
         "kein_sonstige": "sonstige Einkünfte (z. B. Renten, private Verkäufe)",
+        "kein_kap_partner": "Kapitalerträge deines Partners (Zinsen, Dividenden, Kursgewinne)",
+        "kein_sonstige_partner": "sonstige Einkünfte deines Partners (z. B. Renten)",
     }
     # Lesbare Namen für die negierten Felder
     FELD_NAME = {
@@ -51,6 +70,9 @@ def flag_widersprueche(snapshot: dict) -> list:
         "kap_gewinn_aktien": "Aktiengewinne",
         "vv_einnahmen": "Einnahmen aus Vermietung",
         "rentner_jahresrente": "Renteneinkünfte",
+        "kap_kapitalertraege_partner": "Kapitaleinkünfte des Partners",
+        "kap_gewinn_aktien_partner": "Aktiengewinne des Partners",
+        "rentner_jahresrente_partner": "Renteneinkünfte des Partners",
         "einkuenfte_gewinn": "Gewinneinkünfte",
         "rentner_veraeusserungsgewinn": "Veräußerungsgewinne",
         "betriebseinnahmen": "Betriebseinnahmen",

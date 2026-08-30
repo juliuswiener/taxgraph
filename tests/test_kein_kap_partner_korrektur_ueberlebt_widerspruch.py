@@ -25,6 +25,14 @@ Drei Tests:
   test_kap_partner_korrektur_richtung_offen_zu_gesetzt_bleibt_korrekt -- Gegenprobe, MUSS gruen
       bleiben (ein Fix fuer den Defekt darf diese schon richtige Richtung nicht kaputt machen).
 
+Klartext-Anzeige (r.klartext von app.js::zeigeErgebnis() ignoriert) NICHT hier nochmal versioniert:
+bereits abgedeckt durch tests/test_sperrgrund_klartext_im_browser.py (Commit 78861cc) --
+strukturelle Pruefung ueber ALLE SPERRGRUND_KLARTEXT-Gruende, nicht ueber eine Namensliste. Der
+hier gefixte Defekt erzeugt keinen neuen `grund`-Wert, sondern denselben "flag_konsistenz_offen"
+wie der Person-A-Praezedenzfall (bereits in SPERRGRUND_KLARTEXT, bereits im "guard_sperrgrund"-
+Zweig von _ergebnis_roh erfasst) -- die bestehenden xfails decken die zwei neuen FLAG_NEGIERT-
+Faelle also mit ab, ohne Erweiterung.
+
 NULL LLM.
 """
 from __future__ import annotations
@@ -206,17 +214,14 @@ def test_person_a_flag_widerspruch_wird_gesperrt(base):
         f"die beiden Tests unten vergleichen nicht mehr gegen den echten Praezedenzfall.")
 
 
-# ---------------------------------------------------------------- der Defekt
+# ---------------------------------------------------------------- der (jetzt behobene) Defekt
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="flag_check.py:FLAG_NEGIERT kennt kein_kap<->kap_kapitalertraege nur fuer Person A, "
-           "kein '_partner'-Eintrag. bescheid_deklaration.py:822 (_an_gesamt_sperrgrund) ruft "
-           "flag_widersprueche() bereits fuer die gesamt-Scheibe auf -- ein Partner-Eintrag in "
-           "FLAG_NEGIERT traefe denselben Code-Pfad wie Person A, ohne bescheid_deklaration.py "
-           "selbst zu aendern. Marker faellt am Tag des Fixes (XPASS) und zwingt dazu, ihn zu "
-           "entfernen.")
-def test_kap_partner_korrektur_widerspruch_bleibt_unentdeckt(base):
+def test_kap_partner_korrektur_widerspruch_wird_gesperrt(base):
+    """War xfail(strict=True) bis flag_check.py:FLAG_NEGIERT den Eintrag kein_kap_partner ->
+    [kap_kapitalertraege_partner, kap_gewinn_aktien_partner] bekam (2026-08-30). Kein
+    bescheid_deklaration.py-Eingriff noetig -- _an_gesamt_sperrgrund() ruft flag_widersprueche()
+    bereits fuer die gesamt-Scheibe auf, der Partner-Eintrag traf denselben Code-Pfad wie
+    Person A."""
     fall_id = "partner_defekt"
     st, b = _req(base, "POST", "/fall",
                  {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": fall_id})
