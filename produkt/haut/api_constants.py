@@ -357,7 +357,7 @@ RENTNER_KEGEL = RENTNER_22 + RENTNER_33B + ("veranlagung",) + AN_GESAMT_FLAGS + 
 RENTNER_FELDER = (RENTNER_KEGEL + RENTNER_33B_PFLEGE_ANGABEN
                   + ("rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner")
                   + RENTNER_PARTNER + RENTNER_22_PARTNER + RENTNER_GEWINN
-                  + ("gewst_hebesatz", "gewst_messbetrag") + VERLUST_FELD)
+                  + ("gewst_hebesatz", "gewst_messbetrag", "gewst_zu_zahlen") + VERLUST_FELD)
 
 # ========== § 35a Haushaltsnahe ==========
 HAUSHALT_35A_ABS23 = ("hh_dienstleistungen", "hh_handwerker_arbeitskosten")
