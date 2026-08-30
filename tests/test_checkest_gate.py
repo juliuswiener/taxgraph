@@ -2,7 +2,7 @@
 
 Die Falsch-Gruen-Regel (api.py:einreichen): "ein leerer Fehlerpuffer bei rc!=0 heisst
 'nicht geprueft', nicht 'fehlerfrei'". klassifiziere_rc muss das halten:
-RC_IO_KEIN_TICKET (610301200) liefert 0 Fehler im Puffer, darf aber NIE als gruen
+RC_IO_SCHEMA_VALIDIERUNGSFEHLER (610301200) liefert 0 Fehler im Puffer, darf aber NIE als gruen
 durch - es ist "io_gate_nicht_geprueft", nicht "plausibel".
 
 Nur deterministische Pure-Logik (rc->klasse, Kappungs-Verdacht) wird hier getestet;
@@ -34,8 +34,8 @@ def test_rc_plausibilitaet():
 def test_rc_io_kein_ticket_nie_gruen():
     """Falsch-Gruen-Kern: rc=610301200 liefert 0 Fehler im Puffer, ist aber NICHT geprueft.
     Muss 'io_gate_nicht_geprueft' sein, nie 'plausibel'."""
-    assert CE.klassifiziere_rc(CE.RC_IO_KEIN_TICKET) == "io_gate_nicht_geprueft"
-    assert CE.klassifiziere_rc(CE.RC_IO_KEIN_TICKET) != "plausibel"
+    assert CE.klassifiziere_rc(CE.RC_IO_SCHEMA_VALIDIERUNGSFEHLER) == "io_gate_nicht_geprueft"
+    assert CE.klassifiziere_rc(CE.RC_IO_SCHEMA_VALIDIERUNGSFEHLER) != "plausibel"
 
 
 def test_rc_hersteller_gesperrt():
@@ -75,7 +75,7 @@ def test_gekappt_verdacht_ohne_fehler():
 
 def test_rc_konstanten_distinkt():
     """Alle rc-Konstanten muessen verschieden sein, sonst kollidiert die Klasse."""
-    s = {CE.RC_OK, CE.RC_PLAUSIBILITAET, CE.RC_IO_KEIN_TICKET, CE.RC_HERSTELLER_GESPERRT,
+    s = {CE.RC_OK, CE.RC_PLAUSIBILITAET, CE.RC_IO_SCHEMA_VALIDIERUNGSFEHLER, CE.RC_HERSTELLER_GESPERRT,
          CE.RC_DATENARTVERSION_UNBEKANNT, CE.RC_IO_UNERWARTETE_ELEMENTE}
     assert len(s) == 6
 
@@ -110,7 +110,7 @@ def test_rc_datenartversion_unbekannt_ist_eigene_klasse():
 
 
 def test_datenartversion_unbekannt_ist_nicht_geprueft():
-    """Wie RC_IO_KEIN_TICKET: leerer Fehlerpuffer, aber kein Pruefergebnis."""
+    """Wie RC_IO_SCHEMA_VALIDIERUNGSFEHLER: leerer Fehlerpuffer, aber kein Pruefergebnis."""
     assert CE.klassifiziere_rc(CE.RC_DATENARTVERSION_UNBEKANNT) != "plausibel"
     assert CE.RC_DATENARTVERSION_UNBEKANNT != CE.RC_OK
 

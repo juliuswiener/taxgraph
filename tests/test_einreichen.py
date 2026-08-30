@@ -207,7 +207,7 @@ def test_io_gate_rc_ist_nicht_gruen(tmp_path, monkeypatch):
                         lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
                                          "unvollstaendig": []})
     import checkest_gate as CE
-    monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_IO_KEIN_TICKET, ""))
+    monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_IO_SCHEMA_VALIDIERUNGSFEHLER, ""))
     _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
     st, resp = API.einreichen(r["fall_id"], {})
     assert st == 422, "leerer Fehlerpuffer bei rc!=0 darf nicht als plausibel durchgehen"

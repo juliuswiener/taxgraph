@@ -262,8 +262,10 @@ def phase2() -> list[dict]:
             continue
         rc, fehler = validate(xml)
         # P2 mutiert ABSICHTLICH -> jede gefeuerte Regel ist die dokumentierte Folge, KEIN
-        # Engine-Fund. rc-Klasse mitfuehren: 610001002 = Plausibilitaet, 610301200 = I/O-Gate
-        # (z.B. fehlendes Nutzdatenticket) kurzschliesst VOR der Plausibilitaet.
+        # Engine-Fund. rc-Klasse mitfuehren: 610001002 = Plausibilitaet, 610301200 =
+        # RC_IO_SCHEMA_VALIDIERUNGSFEHLER (Sammelcode fuer jeden Schema-Verstoss, z.B.
+        # fehlendes NutzdatenTicket oder falscher Namensraum-Praefix), kurzschliesst VOR
+        # der Plausibilitaet.
         for f in fehler:
             f["klasse"] = "struktur-regel (Mutation absichtlich)"
         if rc == 0:
@@ -314,8 +316,9 @@ def phase3() -> dict:
     print(f"  TAMPER-BEWEIS: {'BESTANDEN' if tamper_ok else 'GESCHEITERT'} "
           f"(Default kappt bei 20 UND Härtung liefert {n_hart}>{n_default}).")
     print(f"  Doktrin zusaetzlich: rc-Klasse pruefen (checkest_gate.klassifiziere_rc) — "
-          f"RC_IO_KEIN_TICKET (610301200) liefert 0 Fehler, ist aber NICHT geprueft; nie als gruen "
-          f"werten. Fixpunkt-Revalidierung bis rc==0 bleibt Doktrin fuer den Fix-Loop.")
+          f"RC_IO_SCHEMA_VALIDIERUNGSFEHLER (610301200, Sammelcode fuer jeden Schema-Verstoss) "
+          f"liefert 0 Fehler, ist aber NICHT geprueft; nie als gruen werten. Fixpunkt-"
+          f"Revalidierung bis rc==0 bleibt Doktrin fuer den Fix-Loop.")
     return {"korrumpierte_felder": n_felder, "cap_default": n_default,
             "cap_haertung": n_hart, "tamper_beweis": tamper_ok}
 

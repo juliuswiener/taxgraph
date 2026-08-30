@@ -79,7 +79,7 @@ def _stufe_a() -> bool:
 
 def _stufe_b() -> tuple[bool, str]:
     """checkESt (ERIC_VALIDIERE, offline). Rueckgabe (gate_ok, verdikt). rc explizit klassifiziert
-    (Falsch-Gruen-Sperre): RC_IO_KEIN_TICKET (610301200) liefert 0 Fehler, ist aber NICHT geprueft."""
+    (Falsch-Gruen-Sperre): RC_IO_SCHEMA_VALIDIERUNGSFEHLER (610301200) liefert 0 Fehler, ist aber NICHT geprueft."""
     with open(MINIMAL_XML, "rb") as f:
         xml, hid = CE._mit_hersteller_id(f.read())
     rc, antwort = CE.validate(xml, DATENART)
@@ -93,7 +93,7 @@ def _stufe_b() -> tuple[bool, str]:
     if rc == HID_GESPERRT:
         return True, ("GESPERRT-Grenze (rc=610301202): Hersteller-ID Pflicht auch fuer "
                       "Validierung — Julius-Territorium, erwartete credential-freie Grenze")
-    if rc == CE.RC_IO_KEIN_TICKET:
+    if rc == CE.RC_IO_SCHEMA_VALIDIERUNGSFEHLER:
         return False, ("I/O-Gate (rc=610301200): short-circuit VOR der Plausibilitaet, 0 Fehler "
                        "≠ fehlerfrei -> RED (NICHT als gruen werten)")
     kurz = (antwort[:300].replace("\n", " ") if antwort else "(keine Ericantwort)")

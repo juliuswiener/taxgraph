@@ -39,7 +39,13 @@ VALIDIERE_MELDUNGEN_MAX = 1000
 # ERiC-rc-Klassen (Falsch-Gruen-Sperre): "0 Fehler im Puffer" ist NUR gruen, wenn rc==0.
 RC_OK = 0
 RC_PLAUSIBILITAET = 610001002           # Plausibilitaetsfehler -> Fehlerliste im Rueckgabepuffer
-RC_IO_KEIN_TICKET = 610301200           # I/O-Gate (z.B. Nutzdatenticket) -> short-circuit VOR Plausi
+# ERIC_IO_READER_SCHEMA_VALIDIERUNGSFEHLER (eric_fehlercodes.h:1074, ERiC-44.2.4.0/
+# Linux-x86_64/include): "Es traten Fehler beim Validieren des XML auf. Details stehen im
+# Logfile (eric.log)." Sammelcode fuer JEDEN Schema-Verstoss, KEIN Ticket-spezifischer Code
+# — zwei belegte, unverwandte Ausloeser bisher: fehlendes NutzdatenTicket (f29c69f,
+# 2026-07-17, Fuzz-Probe) und ein falscher Namensraum-Praefix am <Elster>-Root (cebb228,
+# 2026-08-10). Aus diesem rc allein folgt KEINE Ursache -> immer eric.log lesen.
+RC_IO_SCHEMA_VALIDIERUNGSFEHLER = 610301200  # short-circuit VOR der Plausibilitaetspruefung
 RC_HERSTELLER_GESPERRT = 610301202      # Test-Hersteller-ID gesperrt
 # ERIC_GLOBAL_DATENARTVERSION_UNBEKANNT (eric_fehlercodes.h:162): "Die uebergebene
 # Datenartversion ist unbekannt oder das benoetigte ERiC-Plugin wurde nicht gefunden."
@@ -62,7 +68,7 @@ def klassifiziere_rc(rc: int) -> str:
 
     Drei Klassen bedeuten NICHT GEPRUEFT und duerfen nie wie ein Pruefergebnis behandelt
     werden — alle liefern einen leeren Fehlerpuffer, der wie "keine Beanstandungen" aussieht:
-      RC_IO_KEIN_TICKET             short-circuit VOR der Plausibilitaet
+      RC_IO_SCHEMA_VALIDIERUNGSFEHLER  short-circuit VOR der Plausibilitaet
       RC_DATENARTVERSION_UNBEKANNT  fuer diesen VZ existiert gar kein Pruefmodul
       RC_IO_UNERWARTETE_ELEMENTE    ERiCs XML-Reader lehnt die Eingabedatei schon ab
 
@@ -72,7 +78,7 @@ def klassifiziere_rc(rc: int) -> str:
     wieder ein (s. unerwarteter_rc_hinweis()).
     """
     return {RC_OK: "plausibel", RC_PLAUSIBILITAET: "plausibilitaet_fehler",
-            RC_IO_KEIN_TICKET: "io_gate_nicht_geprueft",
+            RC_IO_SCHEMA_VALIDIERUNGSFEHLER: "io_gate_nicht_geprueft",
             RC_HERSTELLER_GESPERRT: "hersteller_id_gesperrt",
             RC_DATENARTVERSION_UNBEKANNT: "datenartversion_unbekannt",
             RC_IO_UNERWARTETE_ELEMENTE: "io_reader_unerwartete_elemente"}.get(rc, "sonstig")
@@ -116,7 +122,7 @@ def unerwarteter_rc_hinweis(rc: int, antwort: str) -> str:
     Fail-closed gegen die Falsch-Gruen-Falle: ein Aufrufer, der nur die einzeln bekannten
     Klassen abfragt und den Rest pauschal als "plausibilitaet_verletzt" meldet, behauptet
     einen Inhaltsfehler fuer eine Erklaerung, die gar nicht inhaltlich geprueft wurde —
-    egal ob der rc bekannt (RC_IO_KEIN_TICKET, RC_IO_UNERWARTETE_ELEMENTE, ...) oder ganz
+    egal ob der rc bekannt (RC_IO_SCHEMA_VALIDIERUNGSFEHLER, RC_IO_UNERWARTETE_ELEMENTE, ...) oder ganz
     unbekannt ("sonstig") ist. Nennt immer den rohen rc + die Klasse im Klartext; ist der
     Fehlerpuffer leer, zusaetzlich den Weg zu eric.log — das ist dann die einzige Quelle.
     """
