@@ -1351,6 +1351,11 @@ REGELN_OHNE_GROUND_TRUTH = {
     # Umzug auf eine bestehende Ground-Truth-Regel (es gibt keine passende) — dieselbe
     # Blindspot-Klasse wie p2_festzusetzung_* oben, hier bewusst neu statt vererbt.
     "p3_nr72_pv",
+    # NEU 2026-08-30: Screening-Pseudoregel "Privater Verkauf" (§ 23 EStG, produkt/bindung/
+    # bindung_an_gesamt.yaml, Feld kein_p23_verkauf) -- gleiche Bauart wie p2_einkunftsart_* oben
+    # (eigene regel_id statt Gate an der echten Regel p23_veraeusserungsgewinn, deren vier
+    # geltungsbedingungen alle echte Befreiungstatbestaende sind, nicht "wurde ueberhaupt verkauft").
+    "p23_verkauf_vorhanden",
 }
 
 
@@ -1732,3 +1737,322 @@ def test_p_abzugs_kz_deckt_die_bindung(daten):
     assert not erledigt, (
         f"ABZUGS_KZ_OHNE_FELD nennt Kennzahlen, die inzwischen gebunden sind: {erledigt} — "
         f"bitte aus der Ausnahmeliste streichen.")
+
+
+# ========== q: elster_kz_grund zitiert einen Code, den GENAU DIESES Feld auch schreibt ==========
+#
+# Reichweite (bewusst eng): geprueft wird, ob MINDESTENS EINER der im Text zitierten E-Codes fuer
+# GENAU DIESES Feld ueber eine echte Routingstruktur aus est_mapping.deklariere() erreichbar ist.
+# Eine schwaechere Fassung ("kommt der Code irgendwo im Code vor") waere bei den teuersten Faellen
+# zufrieden gewesen: E1900701 wird geschrieben, aber fuer kap_kapitalertraege_partner, nicht fuer
+# kap_gewinn_sonstige_partner, dessen Text ihn behauptet; E0801704 wird geschrieben, aber fuer
+# gewst_zu_zahlen (Person A, eigener elster_kz), nicht fuer gewst_zu_zahlen_partner, das nicht in
+# PARTNER_INSTANZ steht; E2004403 wird geschrieben, aber im Pers-Zweig Arbeitslosenversicherung,
+# nicht fuer die fuenf vorsorge_*_partner-Felder, deren Texte ihn nennen. Ein erfundener Code faellt
+# beim ersten Grep auf; ein echter Code, der einem ANDEREN Feld gehoert, bestaetigt sich selbst.
+#
+# Die Quelle der Wahrheit ist _codes_fuer_feld() unten: sie liest die echten Python-Objekte aus
+# est_mapping.py (VERZWEIGUNG/PARTNER_VERZWEIGUNG/PARTNER_INSTANZ/WERTEKODIERUNG/NEGATION/
+# DOKUMENTIERT_AGGREGAT/IBAN_TRANSFORM_ZIEL_KZ/P23_GEWINN + den eigenen elster_kz), nicht einen
+# Kommentar. Genau daran haengt der E0800502-Fall: im Bindungskommentar steht der Code, und der
+# Kommentar sagt das Gegenteil dessen, was ein naives Grep daraus liest (die Container-Korrektur
+# 2026-08-20 hat den Zielcontainer gewechselt, sieben Texte zitieren noch den alten).
+#
+# Grenze des Gates (bewusst benannt, damit niemand mehr daraus liest als geprueft wird): ein Feld,
+# das strukturell NIE einen eigenen Kz traegt — Screening-Flag, berechnetes/abgeleitetes Feld,
+# rohes Instanz-Input (Kz sitzt am berechneten Zwilling), von ERiC pauschal abgelehntes Feld —
+# zitiert legitim die Kz ANDERER Felder zur Erklaerung. Das ist Kontext, keine Fehlzuordnung. Das
+# Gate entscheidet auch NICHT, ob ein zitierter Fremd-Code fuer das genannte Feld inhaltlich passen
+# WUERDE, wenn es ihn haette (kap_gewinn_sonstige: ob ueberhaupt ein amtliches Ziel existiert, ist
+# eine Rechtsfrage, keine Routing-Frage) — und es sieht KEINE Werte-Semantik: ein Feld kann hier
+# gruen sein und trotzdem den falschen WERT in einen korrekt zitierten Kz schreiben
+# (rentner_renten_beginn_jahr: VERZWEIGUNG traegt das Feld korrekt nach E1800501 — der dortige
+# Defekt ist Jahr-Zahl auf Datums-Kz, keine Fehlzuordnung, dieses Gate sieht ihn nicht und soll es
+# auch nicht).
+#
+# Drei Register statt einem fuer die 20 Nicht-Fehlzuordnungs-Treffer, weil die naheliegende
+# Rechtfertigung — "der Text sagt selbst, er habe kein Ziel" — dieselbe Autoritaetsfalle waere wie
+# die 19 echten Fehlzuordnungen: DIE tragen ihre falsche Behauptung auch im eigenen Text, wortgleich
+# selbstsicher. Gemessen 2026-08-30: das Schema-Feld `kz_status: endgueltig` ("am amtlichen XSD
+# BELEGT, dass es kein Kz gibt") sieht aus wie ein staerkerer, code-seitiger Beleg als Fliesstext —
+# ist es nicht. Es steht bei SIEBZEHN der neunzehn echten Fehlzuordnungen GENAUSO (betriebseinnahmen,
+# afa_jahresbetrag, gewinnanteil* & Zwillinge, vorsorge_*_partner, kap_gewinn_sonstige & Partner) —
+# derselbe Autor, dieselbe Fehlerquelle, nur in ein Enum-Feld statt in Prosa gegossen. `kz_status`
+# ALLEIN zaehlt hier deshalb nicht als Beleg. Was zaehlt: eine vom Grund-Text UNABHAENGIGE
+# Code-Tatsache — ein anderes, echtes Feld traegt den genannten Kz nachweislich selbst (gegengeprueft
+# gegen die eigene elster_kz-Angabe der Schwester ODER gegen eine Routingstruktur aus est_mapping.py),
+# oder eine schema-deklarierte, anderswo tatsaechlich konsumierte Eigenschaft (`screening: true`, von
+# app.js als Ankreuzliste gelesen; `E0100001 in est_mapping.KONSTANTE_KZ`, live gegen das echte
+# Objekt), oder eine dokumentierte externe Messung (ERiC-Ablehnung mit Skript). Nur was so belegt
+# ist, steht in KZ_GRUND_KEIN_ZIEL_STRUKTURELL. Ein Feld mit einem ECHTEN, nur noch nicht
+# verdrahteten Ziel gehoert nicht dorthin, sonst waescht das Register einen offenen Punkt zu einem
+# dauerhaften Okay — dafuer steht KZ_GRUND_RUECKSTAND. Und wo keine dieser Code-Tatsachen zu finden
+# war (in dieser Umgebung: keine E10-XSD, kein $ERIC_DIR), steht das Feld unter
+# KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT — benannt, nicht mitgezaehlt als geklaert.
+
+_KZ_Q_PAT = re.compile(r"E\d{7}")
+
+
+def _codes_fuer_feld(feld_id: str, b: dict, M) -> set:
+    """Welche Kz KANN dieses Feld laut den echten Routingstrukturen aus est_mapping.deklariere()
+    schreiben — dieselbe Verzweigung wie dort (Klassen d/a/f/g×f/g/i/j/h/1:1), gegen importierte
+    Objekte gelesen, nicht gegen Text."""
+    if feld_id in M.NEGATION:
+        return {M.NEGATION[feld_id]}
+    if feld_id in M.MULTIPLIKATION:
+        return set()
+    agg_quellen = {f for fs in M.DOKUMENTIERT_AGGREGAT.values() for f in fs}
+    if feld_id in agg_quellen:
+        return {ziel for ziel, srcs in M.DOKUMENTIERT_AGGREGAT.items() if feld_id in srcs}
+    if feld_id in M.VERZWEIGUNG:
+        return set(M.VERZWEIGUNG[feld_id]["kz"].values())
+    if feld_id in M.PARTNER_VERZWEIGUNG:
+        return set(M.PARTNER_VERZWEIGUNG[feld_id]["kz"].values())
+    if feld_id in M.PARTNER_INSTANZ:
+        return {M.PARTNER_INSTANZ[feld_id]}
+    if feld_id in M.WERTEKODIERUNG:
+        return {M.WERTEKODIERUNG[feld_id]["kz"]}
+    if feld_id == "stammdaten_iban":
+        return set(M.IBAN_TRANSFORM_ZIEL_KZ)
+    if feld_id in M.P23_BETRAGSFELDER:            # Rohdaten -> Kz sitzt am berechneten Instanz-Gewinn
+        return set(M.P23_GEWINN["kz"].values())
+    if b.get("elster_kz"):
+        return {b["elster_kz"]}
+    return set()
+
+
+def _q_kandidaten(daten, M):
+    """{feld_id: (datei, zitiert, eigene)} fuer jedes Feld, dessen Text >=1 E-Code zitiert, aber
+    KEINER der zitierten Codes zu den eigenen (laut Routingstruktur) gehoert."""
+    treffer = {}
+    for f, d in daten.items():
+        for b in d["bindungen"]:
+            g = b.get("elster_kz_grund")
+            if not g:
+                continue
+            zitiert = set(_KZ_Q_PAT.findall(g))
+            if not zitiert:
+                continue
+            eigene = _codes_fuer_feld(b["feld_id"], b, M)
+            if not (zitiert & eigene):
+                treffer[b["feld_id"]] = (os.path.basename(f), zitiert, eigene)
+    return treffer
+
+
+# Schuldenliste: der Text behauptet einen Zielcode, den laut Routingstruktur ein ANDERES Feld
+# traegt oder den gar niemand traegt. Jeder Eintrag ist ein Fund, keine Ausnahme.
+KZ_GRUND_BEKANNTE_FEHLZUORDNUNG = {
+    "betriebseinnahmen": "EUeR-Komponente behauptet Ziel E0800502 -- der Container ist seit der "
+        "Container-Korrektur 2026-08-20 abgeloest, kein Routing-Pfad schreibt ihn mehr.",
+    "afa_jahresbetrag": "dieselbe Fehlzuordnung auf E0800502 wie betriebseinnahmen.",
+    "gewinnanteil": "'in E0800502 aufgegangen' behauptet; VERZWEIGUNG fuehrt keinen Pfad dorthin.",
+    "verguetung_taetigkeit": "dieselbe Fehlzuordnung auf E0800502/E0800602 wie gewinnanteil.",
+    "verguetung_darlehen": "dieselbe Fehlzuordnung auf E0800502/E0800602 wie gewinnanteil.",
+    "verguetung_ueberlassung": "dieselbe Fehlzuordnung auf E0800502/E0800602 wie gewinnanteil.",
+    "gewinnanteil_partner": "Person-B-Zwilling derselben Fehlzuordnung wie gewinnanteil.",
+    "verguetung_taetigkeit_partner": "Person-B-Zwilling derselben Fehlzuordnung.",
+    "verguetung_darlehen_partner": "Person-B-Zwilling derselben Fehlzuordnung.",
+    "verguetung_ueberlassung_partner": "Person-B-Zwilling derselben Fehlzuordnung.",
+    "gewst_zu_zahlen_partner": "behauptet PARTNER_INSTANZ-Routing auf E0801704 -- PARTNER_INSTANZ "
+        "fuehrt dieses Feld nicht (nur gewst_hebesatz_partner/gewst_messbetrag_partner); E0801704 "
+        "wird nur fuer Person A (gewst_zu_zahlen, eigener elster_kz) geschrieben.",
+    "vorsorge_arbeitslosenversicherung_partner": "behauptet (Teil-)Ziel E2004403 -- das Feld steht "
+        "in keiner Routingstruktur; E2004403 gehoert laut eigenem Bindungskommentar ohnehin einer "
+        "anderen Kategorie (Pers-Zweig Arbeitslosenversicherung, additiv zu A_B_LP, nicht Ersatz).",
+    "vorsorge_erwerbsunfaehigkeit_partner": "dieselbe Fehlzuordnung auf E2004403 wie beim "
+        "Arbeitslosenversicherung-Zwilling.",
+    "vorsorge_unfall_haftpflicht_partner": "dieselbe Fehlzuordnung auf E2004403.",
+    "vorsorge_rv_alt_mit_ueberschuss_partner": "dieselbe Fehlzuordnung auf E2004403.",
+    "vorsorge_rv_alt_ohne_ueberschuss_partner": "dieselbe Fehlzuordnung auf E2004403.",
+    "kap_gewinn_sonstige": "'Wert in E1900701' behauptet -- E1900701 gehoert "
+        "PARTNER_INSTANZ['kap_kapitalertraege_partner'], nicht diesem Feld; gemessen 2026-08-30: "
+        "kein amtliches Ziel existiert ueberhaupt (vier Geschwister-Kz von E1900701 passen keins).",
+    "kap_gewinn_sonstige_partner": "derselbe Fehlschluss fuer den Partner-Zwilling.",
+    "vv_gebaeude_afa": "behauptet im Praesens eine Deklaration ueber E0703302+E0703304, die kein "
+        "Code schreibt -- tatsaechlich ist das Feld Aggregationsquelle fuer E0703838 "
+        "(DOKUMENTIERT_AGGREGAT), das der Text nicht erwaehnt. Andere Bauart als der Rest der "
+        "Liste (kein 'aufgegangen in X', sondern ein nie erwaehnter echter Pfad) -- eigens genannt.",
+}
+
+# Register 2: strukturell code-verifiziert. Jede Begruendung nennt eine vom Grund-Text UNABHAENGIGE
+# Tatsache (Schwester-Feld traegt den Kz nachweislich selbst / schema-deklarierte, anderswo
+# konsumierte Eigenschaft / dokumentierte externe Messung) -- nie den Grund-Text selbst und nie
+# `kz_status` allein (Begruendung s. Kommentarblock oben).
+KZ_GRUND_KEIN_ZIEL_STRUKTURELL = {
+    "kein_unterhalt": "screening=True (Schema-Feld), von app.js:350 als Ankreuzliste konsumiert "
+        "(`filter(q => q.screening)`) -- Existenzfrage fuer ein ganzes Thema, kein Deklarationsfeld.",
+    "keine_auslandseinkuenfte": "screening=True, gleiche Bauart wie kein_unterhalt.",
+    "keine_behinderung_pflege": "screening=True, gleiche Bauart wie kein_unterhalt.",
+    "keine_energetische_sanierung": "screening=True, gleiche Bauart wie kein_unterhalt.",
+    "kein_kap_partner": "screening=True, gleiche Bauart wie kein_unterhalt.",
+    "kein_gewinn_partner": "screening=True, gleiche Bauart wie kein_unterhalt.",
+    "keine_behinderung_pflege_partner": "screening=True, gleiche Bauart wie kein_unterhalt.",
+    "stammdaten_art_est_erklaerung": "askable=False, und E0100001 liegt in est_mapping.KONSTANTE_KZ "
+        "(live gegen das echte Objekt geprueft) -- der Code setzt diesen Kz UNBEDINGT, unabhaengig "
+        "von jedem Feld, dieses eingeschlossen.",
+    "kind_unter_14_haushaltszugehoerig": "ableitung-Block (aus=kind_geburtsdatum, echte "
+        "schema-gepruefte Struktur) UND E0506105 wird unabhaengig davon von der Schwester "
+        "kinderbetreuungskosten als eigener elster_kz getragen (gegengeprueft).",
+    "person_b_idnr": "scripts/measure_person_b_idnr.py existiert, ruft die echte checkESt-Pruefung "
+        "gegen ERiC auf und dokumentiert rc=610301106 -- eine Messung, kein Textclaim (Skript-Logik "
+        "gegengelesen 2026-08-30; in dieser Umgebung nicht neu ausgefuehrt, $ERIC_DIR fehlt hier).",
+    "p35c_keine_doppelfoerderung": "E0240902 wird unabhaengig davon von der Schwester "
+        "p35c_foerderung_in_anspruch als eigener elster_kz getragen (gegengeprueft).",
+    "vpf_an_oder_abreisetag": "E0205302 wird unabhaengig davon von der Schwester tage_an_abreise "
+        "als eigener elster_kz getragen (gegengeprueft).",
+    "vv_werbungskosten": "E0703838 ist ein real geschriebenes Aggregationsziel "
+        "(est_mapping.DOKUMENTIERT_AGGREGAT), gespeist von vier Schwesterfeldern "
+        "(vv_gebaeude_afa/vv_schuldzinsen/vv_erhaltungsaufwand/vv_sonstige_wk) -- dieses Feld "
+        "selbst ist keine der vier Quellen.",
+    "vpf_abwesenheit_stunden": "E0205201/E0205409 werden unabhaengig davon von den Schwestern "
+        "tage_ueber_8h_eintaegig/tage_24h als eigene elster_kz getragen (gegengeprueft).",
+    "rentner_alter_bei_rentenbeginn": "E1801701 wird unabhaengig davon von der Schwester "
+        "rentner_renten_beginn_jahr ueber VERZWEIGUNG getragen (gegengeprueft in est_mapping.py).",
+    "behinderungsbedingte_aufwendungen": "E0161804 wird unabhaengig davon von der Schwester "
+        "agb_aufwendungen als eigener elster_kz getragen (gegengeprueft).",
+}
+
+# Register 3: Rueckstand, kein Nicht-Eigentuemer. Es GIBT ein amtliches Ziel, es ist nur noch nicht
+# verdrahtet -- wer das in KZ_GRUND_KEIN_ZIEL_STRUKTURELL steckt, waescht einen offenen Punkt zu
+# einem dauerhaften Okay (main 2026-08-30).
+KZ_GRUND_RUECKSTAND = {
+    "am_anschaffungskosten": "E0204401 ist ein reales Anlage-N-Ziel, nur noch nicht verdrahtet "
+        "('Betrags-Kz per Sequenz-Nachtrag' -- eigene Formulierung des Textes gesteht die Luecke "
+        "bereits ein). Gehoert auf die Wiedervorlage, nicht in eine Nicht-Eigentuemer-Liste.",
+}
+
+# Register 4: kein unabhaengiger Code-Beleg gefunden. Nicht widerlegt, nicht bestaetigt -- die
+# Textbehauptung koennte stimmen, aber weder kz_status (s.o. entwertet) noch eine Schwester-Kz-
+# Zuordnung noch eine schema-konsumierte Eigenschaft belegen es. Braucht menschliche/rechtliche
+# Pruefung (fuer die Typ-Behauptungen: gegen die amtliche E10-XSD, die in dieser Umgebung fehlt),
+# nicht einen weiteren Blick in denselben Text.
+KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT = {
+    "verlustvortrag_bestand": "kz_status=endgueltig gesetzt, aber das steht bei 17 von 19 echten "
+        "Fehlzuordnungen genauso -- kein unabhaengiger Beleg. Die Typ-Behauptung (E0190701 = "
+        "Ja/Nein-RABE) ist gegen die amtliche E10-XSD hier nicht pruefbar ($ERIC_DIR fehlt, keine "
+        "E10-XSD im Repo); E0190701 wird von keinem Feld in der Bindungstabelle als eigener Kz "
+        "getragen (weder Bestaetigung noch Widerlegung).",
+    "vv_entgelt_quote_prozent": "kz_status=endgueltig gesetzt, dieselbe Schwaeche wie oben. "
+        "E0708601 wird nirgends -- weder als eigener elster_kz noch in einer Routingstruktur -- "
+        "referenziert.",
+    "fam_monate_ohne_voraussetzung": "E0503801 (behauptete Quelle) wird von KEINEM Feld in der "
+        "gesamten Bindungstabelle oder in est_mapping.py getragen -- weder als eigener elster_kz "
+        "noch ueber eine Routingstruktur. Zudem askable=True ohne ableitung-Block, obwohl der Text "
+        "'abgeleitet' behauptet -- Widerspruch zum sonstigen Schema-Muster (vgl. "
+        "kind_unter_14_haushaltszugehoerig, das einen echten ableitung-Block hat).",
+}
+
+
+def test_q_elster_kz_grund_ziel_existiert(daten):
+    """elster_kz_grund zitiert einen E-Code -> mindestens einer der zitierten Codes muss laut
+    _codes_fuer_feld() (echte Routingstruktur aus est_mapping.py, kein Kommentar) fuer GENAU
+    DIESES Feld erreichbar sein. Reichweite und Grenze stehen im Kommentarblock oben. Gemessen
+    2026-08-30 (HEAD 915e327): 123 Felder zitieren >=1 Code, 39 davon ohne eigenen Treffer -- 19
+    echte Fehlzuordnung (KZ_GRUND_BEKANNTE_FEHLZUORDNUNG), 16 code-verifizierte Nicht-Eigentuemer
+    (KZ_GRUND_KEIN_ZIEL_STRUKTURELL), 1 Rueckstand (KZ_GRUND_RUECKSTAND), 3 unverifiziert
+    (KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT)."""
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "mapping"))
+    import est_mapping as M
+
+    # Registergroessen mitpruefen: jede Erweiterung einer der vier Listen ist eine bewusste
+    # Handlung mit eigener Begruendung, kein stiller Nebeneffekt -- sonst loest sich die Ratsche
+    # unbemerkt (main 2026-08-30, Auflage 1).
+    assert len(KZ_GRUND_BEKANNTE_FEHLZUORDNUNG) == 19
+    assert len(KZ_GRUND_KEIN_ZIEL_STRUKTURELL) == 16
+    assert len(KZ_GRUND_RUECKSTAND) == 1
+    assert len(KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT) == 3
+
+    treffer = _q_kandidaten(daten, M)
+    bekannt = (set(KZ_GRUND_BEKANNTE_FEHLZUORDNUNG) | set(KZ_GRUND_KEIN_ZIEL_STRUKTURELL)
+               | set(KZ_GRUND_RUECKSTAND) | set(KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT))
+    assert len(bekannt) == 39, "Register ueberschneiden sich -- ein Feld steht in mehr als einem."
+
+    unbekannt = sorted(set(treffer) - bekannt)
+    assert not unbekannt, "\n".join(
+        f"{fid} [{treffer[fid][0]}]: zitiert {sorted(treffer[fid][1])}, eigene Codes laut "
+        f"Routingstruktur {sorted(treffer[fid][2])} -- kein Treffer, kein Registereintrag. Neu "
+        f"einordnen: echte Fehlzuordnung, code-verifizierter Nicht-Eigentuemer, Rueckstand, oder "
+        f"(wenn kein Beleg zu finden ist) KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT mit Begruendung, "
+        f"was gefehlt hat."
+        for fid in unbekannt)
+
+    # Ratsche in die Gegenrichtung: ein Register-Eintrag, dessen Feld jetzt tatsaechlich einen
+    # eigenen Treffer hat, ist erledigt und verrottet sonst nach oben.
+    erledigt = sorted(bekannt - set(treffer))
+    assert not erledigt, (
+        f"Register nennt Felder, die inzwischen einen eigenen Kz-Treffer haben: {erledigt} — "
+        f"bitte aus dem jeweiligen Register streichen.")
+
+
+def test_q_gate_faengt_falsches_ziel_in_grund(daten):
+    """Mutationsprobe A (zu lax): ein Text, der NUR EIN erfundenes Ziel nennt -- der ECHTE
+    Kz-Anteil wird ersetzt, nicht ergaenzt --, MUSS auffallen. Prueft die Mutation selbst (nicht
+    nur das Ergebnis) -- sonst waere das Gate gruen, weil es nie hinschaut, nicht weil es nichts
+    findet."""
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "mapping"))
+    import est_mapping as M
+
+    d = _erste_datei_daten(daten)
+    fid = "einkuenfte_gewinn"
+    ziel = next(b for b in d["bindungen"] if b["feld_id"] == fid)
+    vorher = ziel["elster_kz_grund"]
+    assert vorher and "E0800302" in vorher, "Testaufbau ungueltig: Ausgangstext unerwartet"
+    ziel["elster_kz_grund"] = "Gebunden auf E9999999."
+    assert "E0800302" not in ziel["elster_kz_grund"] and ziel["elster_kz_grund"] != vorher, (
+        "Mutation hat den echten Code nicht entfernt -- kein Test des zu-lax-Falls")
+
+    treffer = _q_kandidaten({"mutiert.yaml": d}, M)
+    assert fid in treffer, (
+        f"Gegenprobe fehlgeschlagen: {fid} mit einem NUR erfundenen Ziel wurde nicht als Treffer "
+        f"erkannt -- das Gate waere zu lax.")
+    assert treffer[fid][1] == {"E9999999"}, "Gegenprobe fehlgeschlagen: falsche Codes zitiert"
+
+
+def test_q_gate_bleibt_gruen_bei_korrektem_mehrfachzitat(daten):
+    """Mutationsprobe B (zu streng, Gegenrichtung): ein korrekter Text darf NICHT rot werden, nur
+    weil er neben dem echten Ziel auch eine explizit AUSGESCHLOSSENE Alternative nennt
+    (einkuenfte_gewinn zitiert E0800302 als echtes Ziel UND E0800502 als verworfenen
+    Container-Kandidaten, s. CONTAINER-KORREKTUR 2026-08-20 in est_mapping.py). Eine Fassung, die
+    verlangt, dass JEDER zitierte Code trifft, waere hier faelschlich rot -- das ist die konkrete
+    Gestalt, die ein zu strenger Pruefer hier annehmen wuerde."""
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "mapping"))
+    import est_mapping as M
+
+    d = _erste_datei_daten(daten)
+    fid = "einkuenfte_gewinn"
+    b = next(x for x in d["bindungen"] if x["feld_id"] == fid)
+    zitiert = set(_KZ_Q_PAT.findall(b["elster_kz_grund"]))
+    eigene = _codes_fuer_feld(fid, b, M)
+    assert "E0800502" in zitiert and "E0800502" not in eigene, (
+        "Testaufbau ungueltig: der verworfene Container-Kandidat fehlt oder waere doch attribuierbar")
+    assert "E0800302" in zitiert & eigene, "Testaufbau ungueltig: das echte Ziel fehlt"
+
+    # Die real gebaute Regel ("mindestens einer trifft") laesst das Feld durch:
+    treffer = _q_kandidaten({"mutiert.yaml": d}, M)
+    assert fid not in treffer, "Gate faelschlich rot bei korrektem Mehrfachzitat"
+    # Die zu strenge Alternativregel ("alle muessen treffen") haette es faelschlich kassiert --
+    # konkret vorgefuehrt, damit der Kontrast nicht nur behauptet ist:
+    assert not (zitiert <= eigene), (
+        "Testaufbau ueberholt: 'alle treffen' wuerde dieses Feld nicht mehr faelschlich roeten")
+
+
+def test_q_gate_faengt_geloeschten_registereintrag(daten):
+    """Mutationsprobe (Registermechanik): ein Register-Eintrag entfernen MUSS das Gate roeten,
+    solange das zugrundeliegende Feld weiterhin ungedeckt ist -- sonst ist das Register Dekoration,
+    kein Beleg, egal wie plausibel seine Begruendung liest."""
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "mapping"))
+    import est_mapping as M
+
+    fid = "kein_unterhalt"
+    assert fid in KZ_GRUND_KEIN_ZIEL_STRUKTURELL, "Testaufbau ungueltig: Eintrag fehlt bereits"
+    register_ohne_fid = dict(KZ_GRUND_KEIN_ZIEL_STRUKTURELL)
+    entfernt = register_ohne_fid.pop(fid)
+    assert fid not in register_ohne_fid and entfernt, "Loeschen hat nichts veraendert"
+
+    treffer = _q_kandidaten(daten, M)
+    bekannt = (set(KZ_GRUND_BEKANNTE_FEHLZUORDNUNG) | set(register_ohne_fid)
+               | set(KZ_GRUND_RUECKSTAND) | set(KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT))
+    unbekannt = set(treffer) - bekannt
+    assert fid in unbekannt, (
+        f"Gegenprobe fehlgeschlagen: {fid} taucht nach dem Entfernen aus dem Register NICHT als "
+        f"unbekannter Treffer auf -- das Register hat keine Wirkung auf das Ergebnis.")
