@@ -12,7 +12,7 @@ Nur der mittlere ist "geprüft und beanstandet"; die beiden anderen (und alle 40
 sind "NICHT geprüft" — der Browser darf diese drei nicht über einen Kamm scheren, sonst sieht
 ein Nutzer "nicht geprüft" für "in Ordnung" an.
 test_nicht_geprueft_unterscheidet_sich_von_beanstandet_trotz_gleichem_http_status prüft genau
-das: RC_IO_KEIN_TICKET (610301200, "nicht geprüft") und RC_PLAUSIBILITAET ("beanstandet")
+das: RC_IO_SCHEMA_VALIDIERUNGSFEHLER (610301200, "nicht geprüft") und RC_PLAUSIBILITAET ("beanstandet")
 liefern BEIDE Status 422 — wer nur den HTTP-Status ausliest, kann sie nicht unterscheiden; der
 Test verlangt unterschiedlichen Text.
 
@@ -213,7 +213,7 @@ def test_beanstandet_zeigt_anderen_text_als_erfolg(base, playwright_context, mon
 
 def test_nicht_geprueft_unterscheidet_sich_von_beanstandet_trotz_gleichem_http_status(
         base, playwright_context, monkeypatch):
-    """Kernfalle des Auftrags: RC_IO_KEIN_TICKET (610301200, leerer Fehlerpuffer) liefert
+    """Kernfalle des Auftrags: RC_IO_SCHEMA_VALIDIERUNGSFEHLER (610301200, leerer Fehlerpuffer) liefert
     GENAU WIE der Plausibilitätsfehler HTTP 422 — wer nur den Status ausliest, verwechselt
     "nicht geprüft" mit "beanstandet". Der Browser-Text muss trotzdem unterscheidbar sein und
     dem Nutzer klarmachen, dass hier gar kein Urteil vorliegt."""

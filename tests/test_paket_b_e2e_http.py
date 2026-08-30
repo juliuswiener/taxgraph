@@ -1232,6 +1232,37 @@ def test_gesamt_gwg_only_verlust(base):
         assert erg["zahl_cent"] is None
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason="tickets/gwg-selbstaendig-nutzbar-nicht-erfragbar.md: keine der drei "
+           "§ 6 Abs. 2-Bedingungen ist im Kegel der Scheibe 'gesamt' erfragbar, der Sofortabzug "
+           "fliesst ungeprueft -- Marker faellt am Tag des Fixes (XPASS) und zwingt dazu, ihn zu "
+           "entfernen.")
+def test_gesamt_gwg_tatbestand_nicht_bestaetigbar(base):
+    """§ 6 Abs. 2 S. 1 EStG (sources/gesetze-im-internet/estg_p6_2026-07-14.txt) macht den Sofortabzug an
+    einem Eigenschafts-Tatbestand fest: "abnutzbaren beweglichen Wirtschaftsgütern des Anlagevermögens, die
+    einer selbständigen Nutzung fähig sind" (S. 2/3 definieren "selbständig nutzbar" negativ). Der Abzug
+    fließt (wie test_gesamt_gwg_multi u.a.), aber dieser Tatbestand ist im Kegel der Scheibe "gesamt" nicht
+    erreichbar — UNERREICHBAR_BEKANNT (test_bindungstabelle.py) trackt die Lücke als bekannt. Ein Nutzer,
+    dessen Wirtschaftsgut NICHT selbständig nutzbar ist (Voraussetzung fehlt, § 6 Abs. 2 gilt nicht), kann
+    das nicht einmal EINGEBEN: der Traverser lehnt mit 400 ab, bevor irgendeine Prüfung stattfinden könnte.
+    Dieser Test hält NUR diesen einen, am Wortlaut geprüften Tatbestand fest — nicht die Zahl der insgesamt
+    betroffenen Felder (dazu s. Bericht an @main, Schritt 1)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "gwt", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
+                    betriebseinnahmen=5000000, gwg=[60000]))
+    st, erg = _req(base, "GET", "/fall/gwt/ergebnis")
+    _val("ergebnis", erg)
+    if catala:
+        # Der Sofortabzug fließt, ohne dass "selbständig nutzbar" (oder irgendeine andere
+        # Tatbestandsvoraussetzung) je bestätigt — oder auch nur erfragt — wurde.
+        assert erg["zahl_cent"] is not None and erg["grund"] == "bestaetigt"
+    # DEFEKT: der Nutzer kann die (möglicherweise falsche) Annahme "selbständig nutzbar" nicht einmal
+    # bestreiten. Erwartet wäre 201 (die Voraussetzung ist erfragbar); gemessen ist 400.
+    _req(base, "POST", "/fall/gwt/event",
+         _laie("gwg_bewegliches_selbstaendig_nutzbar", False), erwarte=201)
+
+
 @pytest.mark.parametrize("vg_cent,erwartet_cent", [
     (4000000,  0),        # vg 40000 → FB 45000 > vg → netto_vg 0 → kein Fünftel (Guard netto_vg>0), kein Phantom-Verlust
     # ⚠ § 34 Abs. 1 S. 3 (verbleibendes zvE negativ ∧ zvE positiv) → 5×Tarif(zvE/5): 5×Tarif(54964//5=10992); 10992 < GfB
