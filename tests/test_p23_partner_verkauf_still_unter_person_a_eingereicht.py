@@ -21,7 +21,7 @@ deshalb hier im Docstring, nicht in der Assertion):
     Begr_V_Rue (:21907-21910) -- das Schema VERBIETET zwei Instanzen desselben Blocks mit
     demselben Person-Wert, wenn sie Geschwister unter derselben Priv_VA_G sind.
   - `Einz` innerhalb von Grdst ist zusaetzlich maxOccurs="99" (:22231) -- Person und Mehrfachheit
-    sind zwei GETRENNTE Achsen im Schema: mehrere Verkaufe DERSELBEN Person laufen ueber `Einz`,
+    sind zwei GETRENNTE Achsen im Schema: mehrere Verkaeufe DERSELBEN Person laufen ueber `Einz`,
     ein zweiter FILER laeuft ueber eine zweite Grdst-Instanz mit anderem Person-Wert. Ein Testfall
     fuer "zwei Verkaeufe derselben Person" ist deshalb bewusst NICHT Teil dieser Datei (Instructor
     2026-08-30: eine Nachbarinstanz vermisst dieses Muster separat, Ergebnis offen).
@@ -37,24 +37,42 @@ unberuehrt, gemessen: eingaben_konsistent bleibt in beiden Faellen unten True):
 
   ZWEI Verkaeufe (Person A 45.000 EUR + "Partner" 8.000 EUR, ueber die einzige verfuegbare
   Zaehl-Instanz __2 -- der einzige heute existierende Eingabeweg fuer einen zweiten Verkauf):
-    #<SO> im XML = 2 (ZWEI separate <SO>-Elemente, nicht ein <SO> mit zwei Grdst-Geschwistern),
-    beide mit Person=PersonA, PersonB kommt kein einziges Mal vor. Beide Betraege stehen im XML,
-    aber jeweils in einem eigenen, gegen das Schema ungueltigen zweiten <SO>-Block.
-    xmllint gegen das amtliche E10-2025.xsd: UNGUELTIG --
-      "Element '...SO': This element is not expected." (SO hat maxOccurs=1; das eigentliche
-      xs:unique(Grdst,Person) wird gar nicht erst erreicht, weil die zwei Grdst-Instanzen heute
-      keine Geschwister unter derselben Priv_VA_G sind, sondern in getrennten SO-Bloecken liegen --
-      ein noch grundlegenderer Schema-Verstoss als die eingangs vermutete xs:unique-Verletzung.)
+    Damals (bis fa9453d): #<SO> im XML = 2 (ZWEI separate <SO>-Elemente), beide mit
+    Person=PersonA, PersonB kommt kein einziges Mal vor -- xmllint gegen E10-2025.xsd: UNGUELTIG
+    ("Element '...SO': This element is not expected", SO hat maxOccurs=1).
 
-Ursache (produkt/import/elster_xml.py, erzeuge_xml()): der generische Instanz-Mechanismus fuer
-`anlage_instanzen` verankert eine neue Zaehl-Instanz am direkten E10-Kind des Kz-Pfads
-(`kz_path[:2]`, hier also immer `("E10","SO")`) -- richtig fuer Gruppen wie kind/gwg/vv_objekt/
-rente, wo genau diese Ebene die tatsaechlich wiederholbare ist, falsch fuer p23/SO, dessen
-wiederholbare Ebene drei Stufen tiefer liegt (Grdst/And_WG). Der bereits vorhandene, generische
-Person-B-Mechanismus des Writers (pflicht_kinder()/_bestimme_person_container(), erkennt
-Person-Container ueber die im Schema als Pflicht markierten Kinder) faende Grdst/And_WG schon
-heute korrekt -- der gesamte Mangel liegt in est_mapping.py, das den zweiten Verkauf nie in den
-person_b-Bucket schreibt, sondern ausschliesslich in anlage_instanzen.
+NACHTRAG 2026-08-31 (fa9453d, "fix(p23): Mehrfachverkauf EINER Person an <Einz> statt an <SO>
+gehaengt"): eine Nachbarinstanz hat die xmllint-Ablehnung oben beseitigt, indem der zweite
+Verkauf jetzt am schon vorhandenen Wiederholungssegment <Grdst>/<Einz> (maxOccurs=99) haengt statt
+an einem zweiten <SO>-Geschwister. Live nachgemessen (dieser Datei, gegen einen sauberen Klon von
+HEAD fa9453d979890a81bc164c3d45c32ddc47cf76c4):
+
+  ZWEI Verkaeufe, JETZT (fa9453d): #<SO> im XML = 1 (nur noch EIN <SO>, xmllint: VALIDE -- der
+  Fix wirkt, das Schema akzeptiert das Dokument). Trotzdem: beide Person-Werte im Dokument sind
+  weiterhin "PersonA" -- gefunden {(PersonA,45000), (PersonA,8000)}, erwartet
+  {(PersonA,45000), (PersonB,8000)}. PersonB kommt weiterhin kein einziges Mal vor.
+
+DER KERN (warum die xmllint-Fassung den Befund verloren hat, nicht der Befund selbst verschwunden
+ist): Schema-Gueltigkeit war hier ein STELLVERTRETERMERKMAL. Die alte xmllint-Ablehnung maass die
+Personen-Achse nur ZUFAELLIG mit, weil der damalige Fehler (Instanz-Verankerung am generischen
+E10-Direktkind 'SO' statt an der gruppenspezifischen Wiederholungsebene) gleichzeitig maxOccurs=1
+verletzte. Die Person-Achse (Grdst/And_WG, Pflicht-Kindfeld 'Person', maxOccurs=2) und die
+Mehrfachheits-Achse (Einz, maxOccurs=99, KEIN Person-Feld) sind im Schema zwei GETRENNTE
+Konstrukte (s. XSD-Befund oben) -- fa9453d hat nur die Mehrfachheits-Achse repariert (Einz statt
+SO), die Person-Achse (welche der beiden Grdst-Geschwister-Kandidaten -- hier: gar keiner, beide
+Verkaeufe teilen sich dieselbe Grdst-Instanz -- welchen Person-Wert traegt) bleibt unveraendert
+falsch. Weil <Einz> strukturell GAR KEIN Person-Feld traegt, kann das Schema diesen Fehler an
+dieser Stelle grundsaetzlich nicht mehr sehen -- nicht "noch nicht", sondern prinzipiell nicht,
+solange der zweite Verkauf ueber Einz statt ueber eine zweite Grdst-Instanz mit Person=PersonB
+eingehaengt wird. Ein spaeterer Aufraeumer, der nur "der Marker ist jetzt XPASS, also ist der
+Fehler behoben" liest, wuerde den Melder mit dem Defekt verwechseln.
+
+Ursache (produkt/import/elster_xml.py, erzeuge_xml()) bleibt unveraendert gegenueber der obigen
+Analyse: est_mapping.py schreibt den zweiten Verkauf nach wie vor ausschliesslich in
+anlage_instanzen, nie in person_b. fa9453d hat NUR den Verankerungs-Level der Instanz geaendert
+(INSTANZ_CONTAINER_TIEFER: Gruppe 'p23_veraeusserung' -> 'Einz' statt 'SO'), nicht WELCHE Person
+die Instanz traegt -- die Person bleibt implizit die des Grdst-Blocks, in den Einz eingehaengt
+wird, und es existiert weiterhin nur EIN Grdst-Block (Person A).
 
 Reparaturrichtung bewusst offen gelassen (neues `_partner`-Feld vs. Person-Enum an der bestehenden
 Instanz -- nicht entschieden). Die Erwartung unten prueft deshalb NICHT auf einen Feldnamen,
@@ -63,6 +81,21 @@ Person-unterschiedenen Verkaufsblocken und den zwei unterscheidbaren Betraegen d
 
 Unterscheidbare Betraege (45.000 / 8.000 EUR) sind Pflicht -- gleiche Betraege wuerden einen
 verschluckten Partner-Verkauf wie eine funktionierende Zuordnung aussehen lassen.
+
+WAS DIESE DATEI NICHT BEHAUPTET:
+  - keine Aussage, welcher Reparaturmechanismus (neues Feld vs. Person-Enum an bestehender
+    Instanz) richtig ist -- s. oben.
+  - keine Aussage ueber die Betragshoehe/-berechnung der Verkaeufe selbst -- nur ueber die
+    Person-Zuordnung der bereits berechneten Betraege im XML.
+  - keine Aussage ueber ERiC/die amtliche Plausibilitaetspruefung: diese Datei prueft nur
+    XSD-Schema-Validitaet (xmllint) und die Struktur des erzeugten XML, NICHT den ERiC-Testmerker-
+    Pfad. fa9453d's eigene Commit-Message nennt zusaetzlich einen unabhaengigen ERiC-Befund
+    (FachlicheFehlerId=zuGrosseLfdNummer, rc=610001002) fuer den ALTEN Zustand -- ob ERiC die
+    NEUE (Einz-basierte) Fassung ebenfalls durchwinkt, ist hier NICHT gemessen.
+  - keine Aussage, dass das Schema selbst falsch waere: Einz ohne Person-Feld ist eine legitime,
+    amtliche Konstruktion fuer "mehrere Verkaeufe derselben Person" -- der Fehler liegt in
+    TaxGraph, das den zweiten Verkauf faelschlich ueber Einz statt ueber eine zweite,
+    Person-B-markierte Grdst-Instanz einhaengt.
 """
 from __future__ import annotations
 
@@ -119,8 +152,8 @@ _VERKAUF_A = {
     "p23_veraeusserungspreis": 9_000_000, "p23_anschaffung_herstellungskosten": 4_500_000,
     "p23_werbungskosten": 0, "p23_veraeusserungs_typ": "grundstueck",
 }
-# Verkauf 2 (Partner, einzige heute verfuegbare Eingabe: die Zaehl-Instanz __2): 8.000 EUR Gewinn --
-# bewusst ein ANDERER Betrag als Verkauf 1, sonst waere ein verschluckter Partner-Verkauf von einer
+# Verkauf 2 (Partner, einzige heute verfuegbare Eingabe: die Zaehl-Instanz __2) -- bewusst ein
+# ANDERER Betrag als Verkauf 1, sonst waere ein verschluckter Partner-Verkauf von einer
 # funktionierenden Zuordnung nicht zu unterscheiden.
 _VERKAUF_PARTNER_UEBER_INSTANZ_2 = {
     "p23_veraeusserungspreis__2": 2_000_000, "p23_anschaffung_herstellungskosten__2": 1_200_000,
@@ -211,18 +244,22 @@ def test_person_a_verkauf_ist_xsd_valide(bindung, tmp_path):
 
 @pytest.mark.xfail(
     strict=True,
-    reason="est_mapping.py schreibt den zweiten (Partner-)Verkauf nur in anlage_instanzen, nie in "
-           "person_b -- elster_xml.erzeuge_xml() verankert jede anlage_instanzen-Instanz am "
-           "direkten E10-Kind ('E10','SO') statt an der tatsaechlich wiederholbaren Ebene "
-           "(Grdst/And_WG, je maxOccurs=2 im Schema). Gemessen: zwei SEPARATE <SO>-Elemente, "
-           "beide Person=PersonA, PersonB kommt nicht vor -- das Schema erlaubt nur EIN <SO> "
-           "(maxOccurs=1). Marker faellt am Tag des Fixes (XPASS) und zwingt dazu, ihn zu entfernen.")
+    reason="fa9453d (Mehrfachverkauf haengt jetzt an <Einz> statt an einem zweiten <SO>) hat die "
+           "SICHTBARE Symptomatik verschoben, den Defekt selbst nicht behoben: anzahl_so ist jetzt "
+           "1 (schema-konform, vorher 2), aber beide Verkaeufe tragen weiterhin Person=PersonA -- "
+           "gemessen {('PersonA','45000'), ('PersonA','8000')} statt der erwarteten "
+           "{('PersonA','45000'), ('PersonB','8000')}. Vor fa9453d scheiterte diese Assertion "
+           "schon frueher, an anzahl_so==2 (zwei separate <SO>-Elemente) -- die Ursache "
+           "(est_mapping.py schreibt den zweiten Verkauf nur in anlage_instanzen, nie in "
+           "person_b) ist unveraendert dieselbe, nur die zuerst sichtbare Konsequenz hat sich "
+           "verschoben. Marker faellt am Tag des Fixes (XPASS) und zwingt dazu, ihn zu entfernen.")
 def test_person_a_und_partner_verkauf_zwei_instanzen_mit_unterschiedlichem_person_kennzeichen(bindung):
     """Erwartung nach Fix (reparaturrichtungsneutral -- ob ueber ein neues _partner-Feld oder ueber
     das Person-Enum an der bestehenden Instanz, ist nicht entschieden): genau EIN <SO>-Element mit
     zwei Person-unterschiedenen Verkaufsbloecken, je einem der beiden unterscheidbaren Betraege.
-    Heute (gemessen): zwei <SO>-Elemente, beide Person=PersonA -- der Partner-Verkauf wird still
-    als zweiter eigener Verkauf der Person A eingereicht, kein Fehler, kein Hinweis."""
+    Heute (gemessen, HEAD fa9453d): ein <SO>-Element (Schema-Achse repariert), beide Verkaeufe
+    weiterhin Person=PersonA (Personen-Achse unveraendert falsch) -- der Partner-Verkauf wird
+    still als zweiter eigener Verkauf der Person A eingereicht, kein Fehler, kein Hinweis."""
     result, xml_text = _xml_bauen(bindung, {**_VERKAUF_A, **_VERKAUF_PARTNER_UEBER_INSTANZ_2})
     assert result.get("eingaben_konsistent") is True
     anzahl_so, paare = _so_grdst_person_betrag_paare(xml_text)
@@ -234,17 +271,29 @@ def test_person_a_und_partner_verkauf_zwei_instanzen_mit_unterschiedlichem_perso
 @braucht_xsd
 @pytest.mark.xfail(
     strict=True,
-    reason="Direkte amtliche Bestaetigung desselben Befunds: xmllint gegen E10-2025.xsd lehnt das "
-           "heute erzeugte Zwei-Verkaeufe-XML ab (zweites <SO> nicht erwartet, SO hat maxOccurs=1). "
-           "Marker faellt am Tag des Fixes (XPASS) und zwingt dazu, ihn zu entfernen.")
-def test_person_a_und_partner_verkauf_ist_heute_xsd_ungueltig(bindung, tmp_path):
-    """Staerkster amtlicher Beleg: das amtliche Schema selbst lehnt das heutige XML ab. Gemessen
-    (HEAD 1a96285b62e38a4cc3db9b9bee816996f22c03b6): xmllint meldet 'Element ...SO: This element
-    is not expected' -- das zweite <SO> verletzt maxOccurs=1, bevor das eigentlich vermutete
-    xs:unique(Grdst,Person) ueberhaupt geprueft wird."""
+    reason="Ersetzt die alte xmllint-Ablehnung (bis fa9453d): das Schema lehnt das Zwei-Verkaeufe-"
+           "XML jetzt NICHT mehr ab (gemessen unten, xmllint akzeptiert es -- der SO-maxOccurs-Fix "
+           "wirkt). Trotzdem bleibt die Personen-Achse falsch: beide Verkaeufe stehen weiterhin "
+           "unter Person=PersonA. Schema-Gueltigkeit war ein Stellvertretermerkmal -- sie maass "
+           "die Personen-Zuordnung nur zufaellig mit, solange derselbe Fehler gleichzeitig "
+           "maxOccurs=1 auf <SO> verletzte. <Einz> (wo der zweite Verkauf jetzt haengt) traegt "
+           "KEIN Person-Feld -- das Schema kann diesen Fehler an dieser Stelle grundsaetzlich "
+           "nicht mehr erkennen, nicht nur heute nicht. Marker faellt, sobald der zweite Verkauf "
+           "tatsaechlich unter PersonB einsortiert wird.")
+def test_person_a_und_partner_verkauf_ist_heute_xsd_valide_aber_personenachse_falsch(bindung, tmp_path):
+    """Vorher (bis fa9453d) lehnte xmllint das Zwei-Verkaeufe-XML strukturell ab -- diese
+    Ablehnung war der staerkste amtliche Beleg fuer den Defekt, ist aber KEIN direkter Beleg der
+    Personen-Achse gewesen (s. Moduldocstring "DER KERN"). Diese Fassung prueft beides getrennt:
+    zuerst die (jetzt WAHRE) Schema-Validitaet als Tatsachenfeststellung, danach die Personen-
+    Achse direkt (wie test_..._zwei_instanzen_mit_unterschiedlichem_person_kennzeichen) als die
+    Assertion, an der der Test tatsaechlich xfailt."""
     _, xml_text = _xml_bauen(bindung, {**_VERKAUF_A, **_VERKAUF_PARTNER_UEBER_INSTANZ_2})
     pfad = str(tmp_path / "defekt.xml")
     with open(pfad, "w", encoding="utf-8") as f:
         f.write(xml_text)
     ok, meldung = VX.validate(pfad, "2025")
-    assert ok, meldung
+    assert ok, f"erwartet (fa9453d): xmllint akzeptiert das Dokument jetzt -- {meldung}"
+    anzahl_so, paare = _so_grdst_person_betrag_paare(xml_text)
+    erwartet = {("PersonA", E0306801_PERSON_A_EUR), ("PersonB", E0306801_PARTNER_EUR)}
+    assert anzahl_so == 1, f"erwartet genau ein <SO>-Element, gefunden {anzahl_so}"
+    assert paare == erwartet, f"erwartet {erwartet}, gefunden {paare}"
