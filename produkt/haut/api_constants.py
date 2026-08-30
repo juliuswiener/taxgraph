@@ -63,6 +63,15 @@ AN_GESAMT_FLAGS = ("kein_gewinn", "kein_kap", "kein_vuv", "kein_sonstige")
 # jede Zahl von seiner Beantwortung abhaengig. Es steuert nur, welche Fragen kommen.
 KIND_SCREENING = ("kein_kind",)
 
+# Screening-Flag "Privater Verkauf" (§ 23 EStG, 2026-08-30): gleiche Bauart wie AN_GESAMT_FLAGS
+# darueber, aber ein EIGENES Tupel statt Mitgliedschaft dort -- AN_GESAMT_FLAGS wird auch von der
+# an_gesamt-Scheibe (kein §23-Zweig dort) und von drei bescheid_*.py-Modulen gelesen; ein eigenes
+# Tupel haelt die Wirkung auf gesamt/rentner_gesamt begrenzt. Anders als KIND_SCREENING bewusst IM
+# Kegel: ein nie gefragter Verkauf waere von "keiner" nicht zu unterscheiden und die Software
+# rechnete still weiter, ohne die vier Befreiungen (Frist/Eigennutzung/tgl. Gebrauch/originaerer
+# Erwerb) je erfragt zu haben.
+P23_SCREENING = ("kein_p23_verkauf",)
+
 # Screening der AUSGABENSEITE (2026-08-21). Dieselbe Bauart und dieselbe Auflage wie KIND_SCREENING
 # direkt darüber: NICHT in einen Kegel — ein Screening-Flag im Kegel machte jede Zahl von seiner
 # Beantwortung abhängig, obwohl es nur steuert, welche Fragen kommen.
@@ -354,7 +363,9 @@ RENTNER_GEWINN = (("einkuenfte_gewinn", "gewinn_bezeichnung", "rentner_veraeusse
 RENTNER_KEGEL = RENTNER_22 + RENTNER_33B + ("veranlagung",) + AN_GESAMT_FLAGS + VOR_FELDER + KV_PV_FELDER
 
 # ========== RENTNER_FELDER — ERSTE DEFINITION (Z.188 api.py) ==========
-RENTNER_FELDER = (RENTNER_KEGEL + RENTNER_33B_PFLEGE_ANGABEN
+# P23_SCREENING NICHT ueber RENTNER_KEGEL geerbt (Messung 2026-08-30, Instructor-Auftrag): eigener,
+# kegel-unabhaengiger Anker, analog zu "gesamt" (dort felder/kegel bereits getrennte Tupel).
+RENTNER_FELDER = (RENTNER_KEGEL + P23_SCREENING + RENTNER_33B_PFLEGE_ANGABEN
                   + ("rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner")
                   + RENTNER_PARTNER + RENTNER_22_PARTNER + RENTNER_GEWINN
                   + ("gewst_hebesatz", "gewst_messbetrag", "gewst_zu_zahlen") + VERLUST_FELD)
@@ -710,7 +721,7 @@ SCHEIBEN = {
                    + GESAMT_VERSORGUNG
                    + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER
                    + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + PARTNER_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN
-                   + GESAMT_DBA + GESAMT_P23 + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
+                   + GESAMT_DBA + GESAMT_P23 + P23_SCREENING + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
@@ -725,7 +736,7 @@ SCHEIBEN = {
         "teil_ringe": [],
         "guard": True,
         "gesamt_guard": True,
-        "fremd_arten": ("kein_sonstige",),
+        "fremd_arten": ("kein_sonstige", "kein_p23_verkauf"),
         "partner_19": True,
         "multi_objekt": "vv_objekt",
     },
@@ -739,7 +750,7 @@ SCHEIBEN = {
         "gesamt_guard": True,
         "rentner": True,
         "multi_rente": "rente",
-        "fremd_arten": ("kein_vuv",),
+        "fremd_arten": ("kein_vuv", "kein_p23_verkauf"),
     },
 }
 
@@ -753,7 +764,7 @@ __all__ = [
     # § 19 Einkünfte
     "EP_FELDER", "EP_FORMALIEN",
     # an_gesamt
-    "AN_GESAMT_FLAGS", "KIND_SCREENING", "AUSGABEN_SCREENING", "PARTNER_SCREENING",
+    "AN_GESAMT_FLAGS", "KIND_SCREENING", "P23_SCREENING", "AUSGABEN_SCREENING", "PARTNER_SCREENING",
     "INSTANZ_ZAEHLFELDER", "AN_GESAMT_PARTNER",
     # Arbeitsmittel
     "ARBEITSMITTEL_KOSTEN", "ARBEITSMITTEL_RING", "ARBEITSMITTEL_AFA_GESAMT",

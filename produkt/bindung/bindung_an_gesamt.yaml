@@ -325,6 +325,33 @@ bindungen:
       zitatanker: "sonstige Einkünfte im Sinne des § 22"
       datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
 
+  # Screening-Flag "Privater Verkauf" (§ 23 EStG, 2026-08-30): eigene Pseudoregel, gleiche Bauart
+  # wie die vier Einkunftsart-Flags darueber -- kein Gate an der echten Regel
+  # p23_veraeusserungsgewinn, sonst waere es an deren vier ECHTE Befreiungs-geltungsbedingungen
+  # gekoppelt (relevanz() wertet je regel_id konjunktiv aus). Die Software rechnet die vier
+  # Befreiungen (Spekulationsfrist, Eigennutzung, taeglicher Gebrauch, originaerer Erwerb) noch
+  # nicht -- dieses Kreuz sperrt statt eine ungeprueft zu niedrige Zahl auszugeben, sobald ein
+  # Verkauf bejaht wird (fremd_arten, produkt/haut/api_constants.py).
+  - feld_id: kein_p23_verkauf
+    quelle: {regel_id: p23_verkauf_vorhanden, geltungsbedingung: veraeusserung_erklaert}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr ein Grundstück, eine Wohnung oder einen anderen Vermögensgegenstand (z. B. Aktien außerhalb des Depots, Kryptowährung, Kunst) privat verkauft?"
+    hilfe_kurz: "Gemeint sind Verkäufe innerhalb der gesetzlichen Frist (Grundstücke: 10 Jahre, andere Gegenstände: 1 Jahr seit dem Kauf). Gegenstände des täglichen Gebrauchs wie dein Auto oder deine Möbel zählen nicht."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag, kein Deklarationsfeld — bestätigt der Nutzer einen Verkauf, sperrt die Berechnung (fremd_arten), statt eine ungeprüfte Zahl auszugeben."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 S. 1 EStG"
+      zitatanker: "Private Veräußerungsgeschäfte (§ 22 Nummer 2) sind 1. Veräußerungsgeschäfte bei Grundstücken und Rechten, die den Vorschriften des bürgerlichen Rechts über Grundstücke unterliegen"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+
   # ===== Gewinneinkünfte §§ 13-18 (Stufe 1): vorberechneter § 2-Gewinn + Betriebsart-Weiche =====
   # Der bereits ermittelte Gewinn (EÜR § 4 Abs. 3 / Betriebsvermögensvergleich) fließt DIREKT als
   # einkuenfte_gewinn-Summand in die § 2-Stufenfolge (Engine-Slot LIVE, p32a Z.464/559; dev-1s slot_fn

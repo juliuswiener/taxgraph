@@ -43,13 +43,17 @@ import traverser as TR     # noqa: E402
 BRUTTOLOHN_CENT = 6000000        # 60.000 EUR
 
 # Julius' Fall: Arbeitnehmer, Zusammenveranlagung, VZ 2025. Keine Gewinneinkünfte, keine
-# Kapitalerträge, keine Vermietung, keine sonstigen Einkünfte. Alles, was hier nicht steht,
-# wird nach Typ beantwortet (s. _antwort) — bool-Gates mit False (Tatbestand liegt nicht vor),
-# Beträge mit 0, enum mit dem ersten zulässigen Wert.
+# Kapitalerträge, keine Vermietung, keine sonstigen Einkünfte, kein privater Verkauf. Alles, was
+# hier nicht steht, wird nach Typ beantwortet (s. _antwort) — bool-Gates mit False (Tatbestand
+# liegt nicht vor), Beträge mit 0, enum mit dem ersten zulässigen Wert. Für ein INVERTIERTES
+# Screening-Kreuz (frage_invertiert: true, z.B. kein_p23_verkauf) behauptet dieser generische
+# False-Default das GEGENTEIL — "Tatbestand liegt vor" — darum steht jedes fremd_arten-Mitglied
+# hier NAMENTLICH, nie dem Default überlassen (test_explizit_deckt_fremd_arten unten prüft das).
 EXPLIZIT = {
     "veranlagung": "zusammen",
     "bruttoarbeitslohn": BRUTTOLOHN_CENT,
     "kein_gewinn": True, "kein_kap": True, "kein_vuv": True, "kein_sonstige": True,
+    "kein_p23_verkauf": True,
 }
 MAX_FRAGEN = 600                 # Reißleine: der Dialog muss ENDEN, nicht nur antworten
 
@@ -157,3 +161,19 @@ def test_beide_scheiben_kommen_auf_dieselbe_zahl():
         zahlen[scheibe] = e[0]
     assert zahlen["an_gesamt"] == zahlen["gesamt"], (
         f"Dieselbe Ausgangslage, zwei Steuern: {zahlen}")
+
+
+def test_explizit_deckt_fremd_arten():
+    """Melder gegen genau die Falle, die kein_p23_verkauf hier ausgelöst hat (2026-08-31): ein
+    neues Screening-Kreuz landet in cfg['fremd_arten'] einer Scheibe, EXPLIZIT weiß noch nichts
+    davon, der generische Bool-Default (False) beantwortet die Frage für die Persona -- und bei
+    einem INVERTIERTEN Feld (frage_invertiert: true) heißt False 'Tatbestand liegt vor', die
+    Persona behauptet also ungefragt etwas, das sie nie sagen wollte. Kein Wert-Check, nur ein
+    Namens-Check: jedes fremd_arten-Mitglied muss ein Schlüssel in EXPLIZIT sein."""
+    for scheibe in ("an_gesamt", "gesamt"):
+        fremd = API.SCHEIBEN[scheibe].get("fremd_arten", ())
+        fehlend = [f for f in fremd if f not in EXPLIZIT]
+        assert not fehlend, (
+            f"Scheibe {scheibe!r}: fremd_arten {fehlend} steht nicht in EXPLIZIT -- der generische "
+            f"Bool-Default beantwortet die Frage für die Persona statt dass sie es tut, und bei "
+            f"einem invertierten Feld ungefragt mit 'Tatbestand liegt vor'.")
