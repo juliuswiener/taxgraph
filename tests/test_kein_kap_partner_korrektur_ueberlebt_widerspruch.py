@@ -59,6 +59,10 @@ KAP_PARTNER_FAMILIE = ("kap_kapitalertraege_partner", "kap_gewinn_aktien_partner
 # (bescheid_deklaration.py:1041/1061, api_constants.py: "fremd_arten": (..., "kein_p23_verkauf")),
 # unabhaengig vom hier untersuchten kap_partner-Defekt. Beide Szenarien haben keinen Verkauf --
 # "True" ist wahrheitsgemaess, kein Pflaster fuer die Sperre.
+# ACHTUNG fuer den naechsten Leser: diese Zeile ist ein Workaround gegen den _antwort_fuer-Pauschal-
+# Default, kein Fachfeld dieses Tests. Sie ist nicht an eine importierte Feldliste gekoppelt --
+# aendert sich der Pflicht-Kegel (welche Felder fremd_arten/AN_GESAMT_FLAGS scharf schalten), faellt
+# das hier NICHT automatisch auf; nur eine erneute Durchsicht findet es.
 EXPLIZIT_A = {
     "veranlagung": "einzel",
     "bruttoarbeitslohn": 6000000,
