@@ -295,7 +295,13 @@ def fall_anlegen(body: dict) -> tuple[int, dict]:
     scheibe = body.get("scheibe", "ep")
     if scheibe not in SCHEIBEN:
         raise ApiError(400, f"unbekannte Scheibe {scheibe!r}")
-    vz = int(body.get("veranlagungszeitraum", 2025))
+    vz_roh = body.get("veranlagungszeitraum", 2025)
+    try:
+        vz = int(vz_roh)
+    except (TypeError, ValueError):
+        raise ApiError(400, f"veranlagungszeitraum {vz_roh!r} ist keine Zahl")
+    if vz not in (verfuegbar := {int(n) for n in os.listdir(os.path.join(ROOT, "params")) if n.isdigit()}):
+        raise ApiError(400, f"veranlagungszeitraum {vz} hat keine Parameter — verfügbar: {sorted(verfuegbar)}")
     fall_id = body.get("fall_id")
     if not fall_id or not _FALL_RE.fullmatch(str(fall_id)):
         raise ApiError(400, "fall_id fehlt oder ungültig (nur [A-Za-z0-9_-]{1,64})")

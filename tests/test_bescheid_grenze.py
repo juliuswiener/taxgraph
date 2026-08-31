@@ -210,7 +210,13 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # bekam die Frage nach dem Vornamen seines Kindes vorgelegt — die Regel war ausgeschlossen, das
 # Feld aber weiterhin da, und `frage_einzeln` antwortete 200 wie bei jedem beantworteten Feld.
 # `relevanz` in /stand haengt an der REGEL, nicht am Feld; nur dieser Schluessel verbindet beide.
-API_ZEILEN_OBERGRENZE = 1275
+#
+# 1275 -> 1281 (2026-08-31, VZ-Pruefung in fall_anlegen). 6 Zeilen Endpunkt-Validierung.
+# ANLASS, gemessen: POST /fall nahm jeden veranlagungszeitraum an, auch ohne params/<jahr>/ —
+# vz=2099 wurde mit 201 angelegt, das spaetere Laden von params/2099/... scheiterte still und
+# E1901401 zeigte None bei eingaben_konsistent=true (Live-HTTP-Messung, /deklaration). Fail-closed
+# gegen die tatsaechlich vorhandenen params/-Jahre, dynamisch gelesen statt hartkodiert.
+API_ZEILEN_OBERGRENZE = 1281
 
 
 def _runner_stellen(pfad: str) -> list[int]:
