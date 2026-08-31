@@ -171,6 +171,12 @@ AUSNAHMEN = {
         "Einkommensstruktur (§34-CHOOSER-Guard)."),
     "catala_gesamt_tarifliche": (
         "tarifliche ESt je Zweig — hängt an g2/rentner_g, s. catala_gesamt_zve."),
+    "catala_gesamt_kette": (
+        "P5.4 Rechenweg-Kette (bescheid_zweige.py:905/1278, kinder==0-Gate) — bündelt intern über "
+        "_gesamt_out(s) exakt die vier bereits oben begründeten Werte (catala_gesamt_gde/_zve/"
+        "_tarifliche, catala_est) in EINEM Dict-Rückgabewert. Aufgerufen mit g (gesamt) bzw. "
+        "rentner_g (rentner) — derselbe branch-eigene Sachverhalt, keine neue Rechenstelle. Teilt "
+        "sich den Namen, nicht den Sinn: exakt dieselbe Divergenzursache wie catala_gesamt_gde."),
     "catala_est": (
         "die eigentliche Steuerfestsetzung — g2/rentner_g sind je Zweig eigene Dicts mit "
         "unterschiedlichen Einkunftsarten, mehrere Aufrufstellen je Zweig (Kapital-"

@@ -1269,6 +1269,13 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
                 "kindergeld": kinder * runner._kindergeld(vz) * 12})
         else:
             est = _festzusetzende_r(0)
+        # P5.4 Rechenweg-Kette (Bruch 2, Instructor-Auftrag 2026-08-30/31): fehlte im Rentner-Zweig
+        # komplett -- 1:1 gesamt-Naht-Präzedenz Z. 902-905, nur bei kinder==0 (§ 31-Zweig-Ambiguität
+        # sonst, siehe dort). rentner_g trägt bereits gesamtfall=True und speist denselben Catala-
+        # Gesamtfall-Scope wie catala_est/catala_gesamt_zve oben -- catala_gesamt_kette(rentner_g)
+        # ist damit derselbe Aufruf wie im gesamt-Zweig, kein neuer Ring-Code nötig.
+        if extras is not None and kinder == 0:
+            extras["kette"] = runner.catala_gesamt_kette(rentner_g)
         # SolZ §3, §4 SolzG: Basis = KiFB-fiktive ESt (§3 Abs.2) minus §32d-Kapitalsteuer (§3 Abs.3 S.1);
         # §32d-Kapital-SolZ 5,5% ohne Freigrenze (§3 Abs.3 S.2) wird von catala_solz separat addiert.
         if solz_container is not None and "est_mit_fb" in solz_info_r:
