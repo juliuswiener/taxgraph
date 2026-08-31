@@ -84,6 +84,14 @@ def klassifiziere_rc(rc: int) -> str:
             RC_IO_UNERWARTETE_ELEMENTE: "io_reader_unerwartete_elemente"}.get(rc, "sonstig")
 
 
+# Dieselben vier Klassen als Menge -- fuer Aufrufer, die nur wissen wollen "wurde ueberhaupt
+# geprueft", ohne selbst eine (womoeglich unvollstaendige) Teilmenge der Klassen aufzulisten.
+# Ein Guard auf EINEN Return-Code statt auf diese Menge ist blind fuer die anderen drei.
+NICHT_GEPRUEFT_KLASSEN = frozenset({
+    "io_gate_nicht_geprueft", "hersteller_id_gesperrt",
+    "datenartversion_unbekannt", "io_reader_unerwartete_elemente"})
+
+
 def gekappt_verdacht(antwort: str) -> bool:
     """Rest-Trunkierungs-Doktrin: erreicht die Fehlerzahl den (bereits angehobenen) Cap, KANN die
     Liste weiter gekappt sein — dann nie als vollstaendig behandeln, sondern Fehler beheben und

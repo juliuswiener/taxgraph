@@ -220,7 +220,7 @@ _ABSENDER = dict(absender_name="Maier Hans", absender_strasse="Musterstr. 55",
                  absender_steuernummer="9181081508155")
 
 
-def _pruefe(store) -> tuple[int, list[str]]:
+def _pruefe(store) -> tuple[int, list[str], str]:
     """Echter Pfad bis zum amtlichen Plugin, auf der ABGABE-Variante.
 
     `abgabefaehig=True` ist hier nicht optional: ohne das Flag haengt erzeuge_xml() den
@@ -228,6 +228,9 @@ def _pruefe(store) -> tuple[int, list[str]]:
     wird. Gemessen 2026-08-09 nach e365a37: ohne Flag bleiben es 18 Fehler (Vorsatz fehlt
     im XML), mit Flag faellt der Vorsatz-Block weg. Eine Ratsche auf dem Nicht-Abgabe-Pfad
     haette den Fortschritt nie gesehen.
+
+    Rueckgabe (rc, texte, antwort): `antwort` ist die rohe Ericantwort -- CE.gekappt_verdacht()
+    braucht den Puffer selbst, nicht die schon geparste texte-Liste.
     """
     snap, _ = ST.materialisiere(store)
     xml = EX.erzeuge_xml(est_mapping.deklariere(snap, TR.lade_bindung()),
@@ -235,7 +238,7 @@ def _pruefe(store) -> tuple[int, list[str]]:
     rc, antwort = CE.validate(xml, "ESt_2025")
     texte = [" ".join(t.split())
              for t in re.findall(r"<Text>(.*?)</Text>", antwort or "", re.S)]
-    return rc, texte
+    return rc, texte, antwort
 
 
 @braucht_eric
@@ -250,7 +253,7 @@ def test_produkt_xml_erreicht_die_amtliche_pruefung(name, bauer, grenze):
     und sieht damit aus wie "keine Beanstandungen", ist aber ein Abbruch VOR der
     Pruefung. Genau diese Verwechslung haelt `klassifiziere_rc` auseinander.
     """
-    rc, texte = _pruefe(bauer())
+    rc, texte, _ = _pruefe(bauer())
     klasse = CE.klassifiziere_rc(rc)
     assert klasse != "io_gate_nicht_geprueft", (
         f"[{name}] rc={rc}: das XML bricht VOR der Plausibilitaetspruefung ab. "
@@ -269,13 +272,17 @@ def test_produkt_xml_erreicht_die_amtliche_pruefung(name, bauer, grenze):
 ])
 def test_restfehler_ratsche(name, bauer, grenze):
     """Die Zahl amtlicher Beanstandungen darf nur sinken — und muss dann eingetragen werden."""
-    rc, texte = _pruefe(bauer())
+    rc, texte, antwort = _pruefe(bauer())
+    klasse = CE.klassifiziere_rc(rc)
+    if klasse in CE.NICHT_GEPRUEFT_KLASSEN:
+        pytest.skip(f"[{name}] rc={rc} [{klasse}]: nicht geprueft, kein Restfehler-Urteil "
+                    f"moeglich. Leerer Puffer heisst hier NICHT fehlerfrei.")
     if rc == CE.RC_OK:
         assert grenze == 0, (
             f"[{name}] checkESt meldet rc=0 (abgabefaehig!), die Ratsche steht aber "
             f"noch auf {grenze}. Setze RESTFEHLER_{name.upper()} = 0.")
         return
-    assert not CE.gekappt_verdacht(""), "Puffer gekappt — Zahl waere nicht belastbar"
+    assert not CE.gekappt_verdacht(antwort), "Puffer gekappt — Zahl waere nicht belastbar"
     assert len(texte) <= grenze, (
         f"[{name}] REGRESSION: {len(texte)} amtliche Fehler, erlaubt sind {grenze}.\n"
         + "\n".join(f"  - {t[:160]}" for t in texte))
@@ -294,7 +301,7 @@ def test_restfehler_kirchensteuerpflichtig(name, bauer):
     """Explizite Messung des kirchensteuerpflichtigen Pfads (Paar-Zwang E0200301+E0200501):
     kist_konfession != 'keine' + kirchensteuer_arbeitgeber[_partner] mitdeklariert -> amtlich
     weiterhin rc=RC_OK, keine neuen Beanstandungen gegenueber dem konfessionslosen Basisfall."""
-    rc, texte = _pruefe(bauer())
+    rc, texte, _ = _pruefe(bauer())
     assert rc == CE.RC_OK, (
         f"[{name}] kirchensteuerpflichtig: rc={rc} (erwartet RC_OK/abgabefaehig). "
         f"Beanstandungen: {texte}")
@@ -346,13 +353,17 @@ def _fall_zusammen_mit_gewinn_partner():
 def test_restfehler_zusammen_mit_gewinneinkuenfte_partner():
     """Ratsche (wie test_restfehler_ratsche oben): misst ehrlich, statt rc=0 zu behaupten.
     Steht seit dem Instanz-Fix auf 0 (s. Kommentar bei RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER)."""
-    rc, texte = _pruefe(_fall_zusammen_mit_gewinn_partner())
+    rc, texte, antwort = _pruefe(_fall_zusammen_mit_gewinn_partner())
+    klasse = CE.klassifiziere_rc(rc)
+    if klasse in CE.NICHT_GEPRUEFT_KLASSEN:
+        pytest.skip(f"rc={rc} [{klasse}]: nicht geprueft, kein Restfehler-Urteil moeglich. "
+                    f"Leerer Puffer heisst hier NICHT fehlerfrei.")
     if rc == CE.RC_OK:
         assert RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER == 0, (
             f"checkESt meldet rc=0, die Ratsche steht aber noch auf "
             f"{RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER}. Setze die Konstante auf 0.")
         return
-    assert not CE.gekappt_verdacht(""), "Puffer gekappt — Zahl waere nicht belastbar"
+    assert not CE.gekappt_verdacht(antwort), "Puffer gekappt — Zahl waere nicht belastbar"
     assert len(texte) <= RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER, (
         f"REGRESSION: {len(texte)} amtliche Fehler, erlaubt sind "
         f"{RESTFEHLER_ZUSAMMEN_GEWINN_PARTNER}.\n" + "\n".join(f"  - {t[:200]}" for t in texte))
@@ -391,7 +402,7 @@ def test_nur_partner_hat_anlage_n_keine_leere_person_a_huelle():
 
     Kein Ratschen-Kommentar noetig — die Klasse ist zu, und ein Rueckfall waere hier eine
     echte Regression, keine Restfehler-Zahl."""
-    rc, texte = _pruefe(_fall_nur_partner_hat_lohn())
+    rc, texte, _ = _pruefe(_fall_nur_partner_hat_lohn())
     assert rc == CE.RC_OK, (
         f"Nur-Partner-hat-Lohn: rc={rc} [{CE.klassifiziere_rc(rc)}], erwartet RC_OK. "
         f"Beanstandungen:\n" + "\n".join(f"  - {t[:200]}" for t in texte))
@@ -417,6 +428,11 @@ def test_steuernummer_ableitung_liefert_dieselbe_amtliche_fehlerzahl():
 
     rc1, antwort1 = CE.validate(xml_explizit, "ESt_2025")
     rc2, antwort2 = CE.validate(xml_abgeleitet, "ESt_2025")
+    for rc, seite in ((rc1, "explizit"), (rc2, "abgeleitet")):
+        klasse = CE.klassifiziere_rc(rc)
+        if klasse in CE.NICHT_GEPRUEFT_KLASSEN:
+            pytest.skip(f"{seite}: rc={rc} [{klasse}]: nicht geprueft, kein Vergleich "
+                        f"moeglich. Leerer Puffer heisst hier NICHT fehlerfrei.")
     n1 = len(re.findall(r"<Text>", antwort1 or ""))
     n2 = len(re.findall(r"<Text>", antwort2 or ""))
     assert n1 == n2, (

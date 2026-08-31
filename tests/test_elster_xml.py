@@ -392,6 +392,11 @@ def test_ableitung_liefert_checkest_dieselbe_fehlerzahl_wie_explizite_parameter(
                                   abgabefaehig=True, **ABSENDER)
     rc1, antwort1 = CE.validate(xml_abgeleitet, "ESt_2025")
     rc2, antwort2 = CE.validate(xml_explizit, "ESt_2025")
+    for rc, seite in ((rc1, "abgeleitet"), (rc2, "explizit")):
+        klasse = CE.klassifiziere_rc(rc)
+        if klasse in CE.NICHT_GEPRUEFT_KLASSEN:
+            pytest.skip(f"{seite}: rc={rc} [{klasse}]: nicht geprueft, kein Vergleich "
+                        f"moeglich. Leerer Puffer heisst hier NICHT fehlerfrei.")
     n1 = len(re.findall(r"<Text>", antwort1 or ""))
     n2 = len(re.findall(r"<Text>", antwort2 or ""))
     assert n1 == n2, (f"Ableitung liefert eine ANDERE Fehlerzahl als explizite Parameter "

@@ -185,9 +185,9 @@ def test_feld_einzeln_bleibt_amtlich_plausibel(feld_id, wert):
     rc, texte = _scharf(_mit(feld_id, wert))
 
     klasse = CE.klassifiziere_rc(rc)
-    assert klasse != "io_gate_nicht_geprueft", (
-        f"{feld_id}: rc={rc} — XML bricht VOR der Pruefung ab. Ein leerer Fehlerpuffer "
-        f"heisst hier NICHT fehlerfrei.")
+    assert klasse not in CE.NICHT_GEPRUEFT_KLASSEN, (
+        f"{feld_id}: rc={rc} [{klasse}] — XML bricht VOR der Pruefung ab. Ein leerer "
+        f"Fehlerpuffer heisst hier NICHT fehlerfrei.")
 
     if feld_id in BEKANNTE_LUECKEN:
         assert rc != CE.RC_OK, (

@@ -257,9 +257,9 @@ def test_block_ist_amtlich_plausibel(block):
 
     if rc is not None:
         klasse = CE.klassifiziere_rc(rc)
-        assert klasse != "io_gate_nicht_geprueft", (
-            f"{block}: rc={rc} — XML bricht VOR der Pruefung ab, ein leerer Fehlerpuffer "
-            f"heisst hier NICHT fehlerfrei.")
+        assert klasse not in CE.NICHT_GEPRUEFT_KLASSEN, (
+            f"{block}: rc={rc} [{klasse}] — XML bricht VOR der Pruefung ab, ein leerer "
+            f"Fehlerpuffer heisst hier NICHT fehlerfrei.")
 
     if block in BLOCKIERTE_BLOECKE:
         assert rc != CE.RC_OK, (
