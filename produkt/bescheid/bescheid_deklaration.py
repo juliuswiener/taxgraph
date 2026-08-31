@@ -400,7 +400,8 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
     "einkunftsart_nicht_ring_faehig":
         "Du hast angegeben, dass du eine Einkunftsart hast, die in dieser Berechnung noch nicht "
         "mitgerechnet werden kann — je nach Fall Renten und andere sonstige Einkünfte, Einnahmen "
-        "aus Vermietung, Kapitalerträge oder Gewinn aus einem Betrieb. Ein Ergebnis ohne diese "
+        "aus Vermietung, Kapitalerträge, Gewinn aus einem Betrieb oder der Verkauf eines "
+        "Grundstücks oder eines anderen Vermögensgegenstands. Ein Ergebnis ohne diese "
         "Einkünfte wäre zu niedrig, deshalb rechnet die Software hier nicht weiter.",
     "kinder_gehoeren_in_gesamt":
         "Du hast Kinder angegeben. Ob Kindergeld oder die Kinderfreibeträge günstiger sind, wird "
