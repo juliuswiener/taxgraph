@@ -232,9 +232,14 @@ def test_gegenprobe_unbeantwortet_und_ausdruecklich_null_kommen_gleich_durch(bas
     "-- die vier Detailfelder aber wahrheitsgemaess mit Gewinn 50.000 EUR ausfuellt --, bekommt "
     "grund=bestaetigt, zahl_cent=8017000 statt einer Sperre. Live gemessen: derselbe Rentner mit "
     "wahrheitsgemaess False (Verkauf bejaht) sperrt korrekt mit einkunftsart_nicht_ring_faehig, "
-    "der einzige Unterschied ist unbeantwortet statt bestaetigt. Kippt auf XPASS, sobald "
-    "kein_p23_verkauf wieder Pflichtfeld im Kegel ist -- dann diesen Marker entfernen, nicht "
-    "die Zahlen anpassen."))
+    "der einzige Unterschied ist unbeantwortet statt bestaetigt. Gemessen (2026-08-31, HEAD "
+    "ed0f460, in-process Mutationsprobe mit Rueckweg, kein Dateiedit): kein_p23_verkauf in beide "
+    "Kegel zu haengen kippt genau diesen Test auf XPASS(strict) und laesst /fragen erreichbar "
+    "(kein 500 in drei Phasen Baseline/Mutation/Rueckweg), reisst aber die volle Suite von 3 auf "
+    "251 rote Tests, weil rund 20 Fremddateien den Pflichtkegel als eigene, nicht importierte "
+    "Python-Liste ohne dieses Feld hartkodieren -- deshalb bleibt der Marker diese Runde stehen, "
+    "waehrend statt des Kegels ein engerer Widerspruchs-Waechter geprueft wird, der nur bei "
+    "gefuellten §23-Detailfeldern + nie beantwortetem Kreuz feuert."))
 def test_kreuz_nie_beantwortet_bei_tatsaechlichem_verkauf_darf_nicht_bestaetigt_liefern(base):
     _neuer_fall(base, "b_nie_beantwortet", "rentner_gesamt")
     paare = [(f, w) for f, w in KEGEL_OHNE_VERKAUF if f != FLAG_ID] + P23_VERKAUF
