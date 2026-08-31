@@ -1787,8 +1787,12 @@ def test_p_abzugs_kz_deckt_die_bindung(daten):
 # ist, steht in KZ_GRUND_KEIN_ZIEL_STRUKTURELL. Ein Feld mit einem ECHTEN, nur noch nicht
 # verdrahteten Ziel gehoert nicht dorthin, sonst waescht das Register einen offenen Punkt zu einem
 # dauerhaften Okay — dafuer steht KZ_GRUND_RUECKSTAND. Und wo keine dieser Code-Tatsachen zu finden
-# war (in dieser Umgebung: keine E10-XSD, kein $ERIC_DIR), steht das Feld unter
-# KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT — benannt, nicht mitgezaehlt als geklaert.
+# ist, steht das Feld unter KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT — benannt, nicht mitgezaehlt als
+# geklaert. Seit 2026-08-31 zaehlt die amtliche E10-XSD (xs:documentation-Label je Kz-Element)
+# ebenfalls als unabhaengige Quelle -- sie liegt NICHT im Repo, aber lokal unter der
+# ERiC-44.2.4.0-Dokumentation (.../ERiC-44.2.4.0/Dokumentation/Datenarten/ElsterErklaerung/ESt/
+# Schema/<jahr>/E10-<jahr>.xsd); $ERIC_DIR-Abwesenheit ist KEIN Beleg fuer Datei-Abwesenheit (eigener
+# Fehler in einer frueheren Fassung dieses Kommentars, hier korrigiert).
 
 _KZ_Q_PAT = re.compile(r"E\d{7}")
 
@@ -1910,6 +1914,23 @@ KZ_GRUND_KEIN_ZIEL_STRUKTURELL = {
         "rentner_renten_beginn_jahr ueber VERZWEIGUNG getragen (gegengeprueft in est_mapping.py).",
     "behinderungsbedingte_aufwendungen": "E0161804 wird unabhaengig davon von der Schwester "
         "agb_aufwendungen als eigener elster_kz getragen (gegengeprueft).",
+    "verlustvortrag_bestand": "XSD-belegt 2026-08-31 (vorher KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT "
+        "-- $ERIC_DIR-Abwesenheit faelschlich als Datei-Abwesenheit gelesen, korrigiert): "
+        "E10-2025.xsd:10677 (ERiC-44.2.4.0-Dokumentation, nicht im Repo) fuehrt E0190701 als Typ "
+        "Ja1BaseCType_RABE, Label 'Es wurde ein verbleibender Verlustvortrag nach Paragraph 10d EStG "
+        "zum 31.12.$VZ-1$ festgestellt.' -- ein Ja/Nein-Ankreuzfeld. Unser Feld ist typ: cent "
+        "(der Bescheinigungsbetrag aus dem Feststellungsbescheid) -- Typkonflikt amtlich bestaetigt.",
+    "vv_entgelt_quote_prozent": "XSD-belegt 2026-08-31 (vorher unverifiziert): E10-2025.xsd:23821 "
+        "fuehrt E0708601 mit Label 'Kuerzung der Werbungskosten wegen verbilligter Vermietung "
+        "(in %)' -- die berechnete WK-Kuerzung, nicht die vom Nutzer eingegebene Miet-Quote "
+        "(Miete/Marktmiete) dieses Feldes. Zwei verschiedene Prozentwerte im selben Themenblock; "
+        "E0708601 hat keinen eigenen Schreiber (Runde-2-Grep produkt/ komplett leer).",
+    "fam_monate_ohne_voraussetzung": "XSD-belegt 2026-08-31 (vorher unverifiziert): "
+        "E10-2025.xsd:11983 fuehrt E0503801 als Typ DatumBereichTTpMMbTTpMMBaseCType_RABE "
+        "(Zeitraum), Label 'Das Kind war mit mir in der gemeinsamen Wohnung gemeldet im Zeitraum' "
+        "(complexType EfA_72569777_CType, deckt sich mit dem eigenen 'EfA-Zeitraum'-Verweis der "
+        "Bindung). Unser Feld ist int/Monate (askable, direkt vom Nutzer erfragt) -- keine "
+        "Ableitung von E0503801 existiert im Code (0 Treffer, Runde 1+2).",
 }
 
 # Register 3: Rueckstand, kein Nicht-Eigentuemer. Es GIBT ein amtliches Ziel, es ist nur noch nicht
@@ -1923,24 +1944,14 @@ KZ_GRUND_RUECKSTAND = {
 
 # Register 4: kein unabhaengiger Code-Beleg gefunden. Nicht widerlegt, nicht bestaetigt -- die
 # Textbehauptung koennte stimmen, aber weder kz_status (s.o. entwertet) noch eine Schwester-Kz-
-# Zuordnung noch eine schema-konsumierte Eigenschaft belegen es. Braucht menschliche/rechtliche
-# Pruefung (fuer die Typ-Behauptungen: gegen die amtliche E10-XSD, die in dieser Umgebung fehlt),
-# nicht einen weiteren Blick in denselben Text.
-KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT = {
-    "verlustvortrag_bestand": "kz_status=endgueltig gesetzt, aber das steht bei 17 von 19 echten "
-        "Fehlzuordnungen genauso -- kein unabhaengiger Beleg. Die Typ-Behauptung (E0190701 = "
-        "Ja/Nein-RABE) ist gegen die amtliche E10-XSD hier nicht pruefbar ($ERIC_DIR fehlt, keine "
-        "E10-XSD im Repo); E0190701 wird von keinem Feld in der Bindungstabelle als eigener Kz "
-        "getragen (weder Bestaetigung noch Widerlegung).",
-    "vv_entgelt_quote_prozent": "kz_status=endgueltig gesetzt, dieselbe Schwaeche wie oben. "
-        "E0708601 wird nirgends -- weder als eigener elster_kz noch in einer Routingstruktur -- "
-        "referenziert.",
-    "fam_monate_ohne_voraussetzung": "E0503801 (behauptete Quelle) wird von KEINEM Feld in der "
-        "gesamten Bindungstabelle oder in est_mapping.py getragen -- weder als eigener elster_kz "
-        "noch ueber eine Routingstruktur. Zudem askable=True ohne ableitung-Block, obwohl der Text "
-        "'abgeleitet' behauptet -- Widerspruch zum sonstigen Schema-Muster (vgl. "
-        "kind_unter_14_haushaltszugehoerig, das einen echten ableitung-Block hat).",
-}
+# Zuordnung noch eine schema-konsumierte Eigenschaft belegen es. Bleibt bestehen, auch leer (main
+# 2026-08-31): ein Feld, dessen Grund noch gegen keine unabhaengige Quelle geprueft ist, braucht
+# einen Platz zum Landen -- sonst rutscht der naechste ungeprueft direkt in eines der
+# bestaetigenden Register. Die ersten drei Eintraege (verlustvortrag_bestand/
+# vv_entgelt_quote_prozent/fam_monate_ohne_voraussetzung) sind 2026-08-31 nach
+# KZ_GRUND_KEIN_ZIEL_STRUKTURELL umgezogen, XSD-belegt statt nur textbehauptet -- s. dort, Marker
+# "XSD-belegt 2026-08-31".
+KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT = {}
 
 
 def test_q_elster_kz_grund_ziel_existiert(daten):
@@ -1948,9 +1959,10 @@ def test_q_elster_kz_grund_ziel_existiert(daten):
     _codes_fuer_feld() (echte Routingstruktur aus est_mapping.py, kein Kommentar) fuer GENAU
     DIESES Feld erreichbar sein. Reichweite und Grenze stehen im Kommentarblock oben. Gemessen
     2026-08-30 (HEAD 915e327): 123 Felder zitieren >=1 Code, 39 davon ohne eigenen Treffer -- 19
-    echte Fehlzuordnung (KZ_GRUND_BEKANNTE_FEHLZUORDNUNG), 16 code-verifizierte Nicht-Eigentuemer
-    (KZ_GRUND_KEIN_ZIEL_STRUKTURELL), 1 Rueckstand (KZ_GRUND_RUECKSTAND), 3 unverifiziert
-    (KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT)."""
+    echte Fehlzuordnung (KZ_GRUND_BEKANNTE_FEHLZUORDNUNG), 19 code-verifizierte Nicht-Eigentuemer
+    (KZ_GRUND_KEIN_ZIEL_STRUKTURELL, davon 3 seit 2026-08-31 XSD-belegt statt strukturell), 1
+    Rueckstand (KZ_GRUND_RUECKSTAND), 0 unverifiziert (KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT,
+    Register bleibt fuer kuenftige Faelle bestehen)."""
     sys.path.insert(0, os.path.join(ROOT, "produkt", "mapping"))
     import est_mapping as M
 
@@ -1958,9 +1970,9 @@ def test_q_elster_kz_grund_ziel_existiert(daten):
     # Handlung mit eigener Begruendung, kein stiller Nebeneffekt -- sonst loest sich die Ratsche
     # unbemerkt (main 2026-08-30, Auflage 1).
     assert len(KZ_GRUND_BEKANNTE_FEHLZUORDNUNG) == 19
-    assert len(KZ_GRUND_KEIN_ZIEL_STRUKTURELL) == 16
+    assert len(KZ_GRUND_KEIN_ZIEL_STRUKTURELL) == 19
     assert len(KZ_GRUND_RUECKSTAND) == 1
-    assert len(KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT) == 3
+    assert len(KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT) == 0
 
     treffer = _q_kandidaten(daten, M)
     bekannt = (set(KZ_GRUND_BEKANNTE_FEHLZUORDNUNG) | set(KZ_GRUND_KEIN_ZIEL_STRUKTURELL)
