@@ -249,22 +249,30 @@ def test_drei_verkaeufe_gleiche_person_liefert_drei_einz(bindung, tmp_path):
 @pytest.mark.xfail(strict=True, reason=(
     "Test-Hersteller-ID amtlich gesperrt (rc=610301202 ERIC_IO_TESTHERSTELLERID_GESPERRT, "
     "gemessen 2026-08-30, eric.log: 'Die im XML angegebene Hersteller-ID ist gesperrt.' -- "
-    "vermutlich Fleet-weite Erschoepfung, mehrere Instanzen liefen heute ERiC-Checks. rc=610301202 "
-    "ist die dokumentierte NICHT-GEPRUEFT-Klasse in checkest_gate.py (RC_HERSTELLER_GESPERRT, "
-    "leerer Antwortpuffer) -- xmllint-gruen traegt das ERiC-Bein NICHT von selbst: vor diesem Fix "
-    "widersprachen sich beide Pruefer bereits einmal (xmllint harte Schemaablehnung, ERiC dagegen "
-    "eine Plausibilitaetsfehlerliste ueber den Reader hinweg). Dieser Test behauptet nur, DASS "
-    "ERiC ueberhaupt antwortet (rc != RC_HERSTELLER_GESPERRT), nicht WAS er sagt. Ein `skip` waere "
-    "hier falsch (sieht aus wie bestanden) -- kippt er auf XPASS, ist die ID wieder frei, und die "
-    "eigentliche 17-gegen-17-Fehlerzahl-Messung gegen die Kontrolle ist nachzuholen."))
+    "vermutlich Fleet-weite Erschoepfung, mehrere Instanzen liefen heute ERiC-Checks. "
+    "hersteller_id_gesperrt ist eine von VIER NICHT-GEPRUEFT-Klassen in checkest_gate.py "
+    "(CE.NICHT_GEPRUEFT_KLASSEN: io_gate_nicht_geprueft, hersteller_id_gesperrt, "
+    "datenartversion_unbekannt, io_reader_unerwartete_elemente) -- alle liefern einen leeren "
+    "Antwortpuffer, der wie 'keine Beanstandungen' aussieht. Ein Marker auf nur den einen heute "
+    "gemessenen rc waere blind fuer die anderen drei; die Bedingung unten prueft deshalb "
+    "Klassenzugehoerigkeit, nicht den einzelnen Code. xmllint-gruen traegt das ERiC-Bein NICHT "
+    "von selbst: vor diesem Fix widersprachen sich beide Pruefer bereits einmal (xmllint harte "
+    "Schemaablehnung, ERiC dagegen eine Plausibilitaetsfehlerliste ueber den Reader hinweg). "
+    "Dieser Test behauptet nur, DASS ERiC ueberhaupt geprueft hat, nicht WAS er sagt. Ein `skip` "
+    "waere hier falsch (sieht aus wie bestanden) -- kippt er auf XPASS, ist eine NICHT-GEPRUEFT-"
+    "Klasse nicht mehr aktiv, und die eigentliche 17-gegen-17-Fehlerzahl-Messung gegen die "
+    "Kontrolle ist nachzuholen."))
 def test_eric_hat_ueberhaupt_geantwortet_zwei_verkaeufe(bindung):
     """Meldet sich selbst, sobald ERiC wieder antwortet -- misst NUR, ob ueberhaupt eine echte
-    Pruefung stattgefunden hat (Klassifikation ueber rc, nicht ueber die Pufferlaenge: ein
-    `len(fehler) == 0`-Test waere bei gesperrter ID falsch-gruen)."""
+    Pruefung stattgefunden hat (Klassifikation ueber die rc-Klassenmenge, nicht ueber einen
+    einzelnen Code oder die Pufferlaenge: ein `len(fehler) == 0`-Test waere bei gesperrter ID
+    falsch-gruen, und ein Marker auf nur RC_HERSTELLER_GESPERRT waere blind fuer die anderen drei
+    NICHT-GEPRUEFT-Klassen)."""
     snap, sid = ST.materialisiere(_fall("p23_eric_gate_zwei_verkaeufe", 2))
     result = est_mapping.deklariere(snap, bindung, snapshot_id=sid)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID, snapshot=snap)
     rc, _antwort = CE.validate(xml, "ESt_2025")
-    assert rc != CE.RC_HERSTELLER_GESPERRT, (
-        f"ERiC antwortet mit rc={rc} ({CE.klassifiziere_rc(rc)}) -- Sperrklasse, keine echte "
-        f"Pruefung stattgefunden.")
+    klasse = CE.klassifiziere_rc(rc)
+    assert klasse not in CE.NICHT_GEPRUEFT_KLASSEN, (
+        f"ERiC antwortet mit rc={rc} ({klasse}) -- das ist eine NICHT-GEPRUEFT-Klasse "
+        f"(CE.NICHT_GEPRUEFT_KLASSEN), keine echte Pruefung hat stattgefunden.")
