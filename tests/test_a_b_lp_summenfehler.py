@@ -124,7 +124,7 @@ def test_person_a_allein_traegt_ihren_betrag(kz, feld_a, cent_a, feld_b, cent_b)
     assert _kz_text(root, kz) == [str(cent_a // 100)]
 
 
-@pytest.mark.xfail(strict=True, reason="A_B_LP/.../Sum ist laut XSD (E10-2025.xsd, "
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="A_B_LP/.../Sum ist laut XSD (E10-2025.xsd, "
                     "Weit_Sons_VorAW, kein Person-Diskriminator im Teilbaum) die GEMEINSAME "
                     "Summe beider Ehegatten -- est_mapping.py:654-655 ueberschreibt statt zu "
                     "addieren, wenn beide Seiten einen Betrag in derselben Kategorie haben.")
