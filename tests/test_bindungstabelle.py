@@ -1868,10 +1868,22 @@ KZ_GRUND_BEKANNTE_FEHLZUORDNUNG = {
     "vorsorge_unfall_haftpflicht_partner": "dieselbe Fehlzuordnung auf E2004403.",
     "vorsorge_rv_alt_mit_ueberschuss_partner": "dieselbe Fehlzuordnung auf E2004403.",
     "vorsorge_rv_alt_ohne_ueberschuss_partner": "dieselbe Fehlzuordnung auf E2004403.",
-    "kap_gewinn_sonstige": "'Wert in E1900701' behauptet -- E1900701 gehoert "
-        "PARTNER_INSTANZ['kap_kapitalertraege_partner'], nicht diesem Feld; gemessen 2026-08-30: "
-        "kein amtliches Ziel existiert ueberhaupt (vier Geschwister-Kz von E1900701 passen keins).",
-    "kap_gewinn_sonstige_partner": "derselbe Fehlschluss fuer den Partner-Zwilling.",
+    "kap_gewinn_sonstige": "'Wert in E1900701' behauptet -- E1900701 ist bereits direkt an "
+        "kap_kapitalertraege gebunden (eigenes elster_kz), fuer den Partner-Zwilling an "
+        "PARTNER_INSTANZ['kap_kapitalertraege_partner']; kein Routing-Pfad addiert diesen Betrag "
+        "dazu. Gemessen 2026-08-30 gegen die vier E1900701-Geschwister-Kz (E1900901/E1900904/"
+        "E1900804/E1901101): keine passt, das ist richtig -- es sind laut E10-2025.xsd (Z.19420-19447) "
+        "Teilmengen-Zeilen von E1900701, keine eigenstaendigen Ziele. E1900701 SELBST war am 30.08. "
+        "nicht im Kandidatenkreis und ist als Summenzeile grundsaetzlich moeglich (Vordruck-Beleg "
+        "unten). Sie scheidet trotzdem aus: laut Anlage_KAP_2025.pdf Zeile 7 + Anleitung S.1 ist "
+        "E1900701 zweckgebunden auf 'Kapitalertraege ... laut Steuerbescheinigung(en)' mit "
+        "inlaendischem Steuerabzug -- die Bindung erhebt fuer kap_gewinn_sonstige (Signatur-Slot "
+        "p20_6_verlustverrechnung/gewinn_sonstige, Verlustverrechnungs-Topf-Logik) nicht, ob der "
+        "Betrag aus einer solchen Bescheinigung stammt. Ein additiver Fix wuerde eine unbelegte "
+        "Bescheinigungs-Aussage ins Formular schreiben -- Instructor-Adjudikation 2026-08-31: "
+        "nicht bauen.",
+    "kap_gewinn_sonstige_partner": "derselbe Befund fuer den Partner-Zwilling (Ziel dort "
+        "PARTNER_INSTANZ['kap_kapitalertraege_partner']).",
     "vv_gebaeude_afa": "behauptet im Praesens eine Deklaration ueber E0703302+E0703304, die kein "
         "Code schreibt -- tatsaechlich ist das Feld Aggregationsquelle fuer E0703838 "
         "(DOKUMENTIERT_AGGREGAT), das der Text nicht erwaehnt. Andere Bauart als der Rest der "
