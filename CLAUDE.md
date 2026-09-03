@@ -1,4 +1,19 @@
-# TaxGraph
+# TaxGraph — German tax rules in Catala, with a Python pipeline around them
+
+## Commands
+
+```
+make unit               python3 -m pytest tests/ -q -n 6 --dist loadfile
+make tests              clerk test -W rules/          the Catala scope tests
+make all                unit + tests + s02
+make golden             golden/golden_lauf.py          full-return regression
+make snapshot-verify    pipeline/snapshot.py verify --all
+```
+
+`make unit` runs under `OPAM_ENV`/`VENV312` from the Makefile — call the targets, not
+pytest directly, or the Catala toolchain and the 3.12 venv are missing.
+
+A single test: `python3 -m pytest tests/path/to/test_x.py::test_name -q`.
 
 ## graphify — code graph
 
