@@ -20,6 +20,7 @@ for _sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/unsi
 
 import intervall as IV      # noqa: E402
 import est_mapping as EM    # noqa: E402
+import fehler_log           # noqa: E402 — Fehler-Protokoll (Metadaten only, nie str(exception))
 import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche)
 import partner_check as PC  # noqa: E402  (Partner-Behinderungsfeld↔Zusammenveranlagung)
 from api_constants import (  # noqa: E402
@@ -343,7 +344,17 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
     statt je Zweig wiederholt zu werden."""
     try:
         import runner  # noqa: F401
-    except Exception:
+    except ImportError as e:   # ModuleNotFoundError ist eine Unterklasse — der dokumentierte,
+        # erwartete Ausfall (Catala-Paket nicht gebaut). Bleibt None für den Nutzer, aber der
+        # Grund landet jetzt im Fehler-Protokoll statt spurlos zu verschwinden.
+        fehler_log.protokolliere("bescheid_zweige._zweig_festzusetzende_est_gesamt runner",
+                                 e, stufe=fehler_log.WARNUNG)
+        return None
+    except Exception as e:     # ein echter Bug beim Laden von runner.py — kein Fail-Open
+        # aufs Nutzerergebnis (bleibt None, wie zuvor), aber im Log von obigem Fall
+        # unterscheidbar: Klasse ist NICHT ImportError/ModuleNotFoundError, Stufe FEHLER.
+        fehler_log.protokolliere("bescheid_zweige._zweig_festzusetzende_est_gesamt runner",
+                                 e, stufe=fehler_log.FEHLER)
         return None
     f = felder or {}
 

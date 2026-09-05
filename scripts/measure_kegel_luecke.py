@@ -173,6 +173,13 @@ def main() -> int:
     basis_store = _basisfall()
     basis = _zahl(basis_store, a.scheibe, a.vz)
     if basis is None:
+        try:
+            import runner  # noqa: F401  — unterscheidet "Paket fehlt" von echtem Bindungsfehler
+        except ImportError as e:
+            print(f"Basisfall liefert KEINE Zahl fuer Scheibe '{a.scheibe}', weil `runner` nicht "
+                  f"importierbar ist ({type(e).__name__}) — das Catala-Paket ist nicht gebaut, "
+                  f"KEIN Bindungsfehler. Siehe oracle/gettsim/assemble_catala.sh.", file=sys.stderr)
+            return 2
         cfg = API.SCHEIBEN[a.scheibe]
         kegel = tuple(cfg.get("kegel") or cfg.get("felder") or ())
         felder, _ = ST.materialisiere(basis_store)
