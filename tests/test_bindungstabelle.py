@@ -1097,6 +1097,17 @@ GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE = {
     ("p10_1_9_schulgeld_gesamt", "[Lücke]", "p10_1_9_schulgeld", "dreissig_prozent_deckel_2500_je_kind"),
     ("p10_1_9_schulgeld_gesamt", "[Lücke]", "p10_1_9_schulgeld", "kind_schulbesuch"),
     ("p33_2a_fahrtkostenpauschale", "[Lücke]", "p33_2a_fahrtkostenpauschale", "partner_kz_fehlen"),
+    # p3_nr72_pv (2026-09-05): ueber RUNNER_ACCESSOR_FUER_REGEL an catala_p3_nr72_photovoltaik
+    # angebunden (produkt/engine/runner.py:443 hat einen einzigen dict-Parameter — der Kommentar,
+    # der bis dahin eine positionale Signatur behauptete, war falsch, s. Backlog
+    # zwei-regeln-ohne-ruecklaufkontrolle-anschliessen.md). Der Accessor kennt keine
+    # rules.yaml-geltungsbedingungen (gbs = set()), jede gebundene geltungsbedingung waere also
+    # automatisch ein Verstoss — alle 5 hier sind reine Datentabellen-Eintraege, kein neuer Befund.
+    ("p3_nr72_pv", "pv_bruttoleistung_kwp", "p3_nr72_pv", "pv_leistungsgrenze"),
+    ("p3_nr72_pv", "pv_anzahl_einheiten", "p3_nr72_pv", "pv_leistungsgrenze"),
+    ("p3_nr72_pv", "pv_auf_gebaeude", "p3_nr72_pv", "pv_auf_gebaeude"),
+    ("p3_nr72_pv", "[Lücke]", "p3_nr72_pv", "pv_leistungsgrenze"),
+    ("p3_nr72_pv", "[Lücke]", "p3_nr72_pv", "pv_auf_gebaeude"),
 }
 
 # Analog: signatur_slot-Namen, die in keiner Signatur (rules.yaml inputs / Catala input) stehen.
@@ -1338,19 +1349,22 @@ REGELN_OHNE_GROUND_TRUTH = {
     # Aggregationsbruch: Kind-Achse gegen Fall-Achse.
     "p10_1_3_kv_pv_kind",
     "p33b_abs5_kind_uebertragung",
-    # Positionale Signatur (catala_p22_nr3_einkuenfte(betrag_cent: int)), kein dict-Parameter.
+    # Positionale Signatur (catala_p22_nr3_einkuenfte(betrag_cent: int)), kein dict-Parameter —
+    # bestaetigt richtig (nachgesehen 2026-09-05, s. Backlog
+    # zwei-regeln-ohne-ruecklaufkontrolle-anschliessen.md): der einzige real konsumierte
+    # signatur_slot ist einkuenfte_vor_freigrenze (bindung_p22_nr3.yaml:15 -> _c("p22_nr3_einkuenfte")
+    # -> bescheid_zweige.py:698-700/1057-1059 -> runner.catala_p22_nr3_einkuenfte(nr3) positional).
+    # RUNNER_ACCESSOR_FUER_REGEL liest Inputs nur ueber _runner_dict_inputs() (AST auf EINEN
+    # dict-Parameter) — eine positionale Ein-Parameter-Signatur hat keine Schluessel zu
+    # extrahieren, der Helfer versteht diesen Fall nicht. Ein Anschluss braeuchte zusaetzlich zur
+    # Mechanik-Erweiterung eine eigene Entscheidung fuer die 4 uebrigen gebundenen Slots
+    # (einnahmen_brutto, einnahmen_art, einnahmen_einzelposten, werbungskosten_zu_einnahmen) plus
+    # die Luecke (verlustrestriktion_s3_s4) — alle 5 sind ELSTER-Deklarationsfelder ohne Eingang in
+    # die Catala-Funktion, muessten also einzeln und begruendet in SIGNATUR_SLOT_ZEIGT_INS_LEERE
+    # aufgenommen werden. Das ist keine offene Ausschlussgrund-Korrektur mehr (die war hier von
+    # Anfang an richtig), sondern eine neue fachliche Entscheidung ueber den Aufbau der
+    # Ausnahmeliste — nicht Teil dieses Auftrags, deshalb hier belassen statt geraten.
     "p22_3_leistungen",
-    # NEU 2026-08-12: eigene regel_id fuer § 3 Nr. 72 (bindung_p3_nr72_pv.yaml). Kein
-    # rules.yaml-Eintrag, kein rules/estg/p3_nr72_pv/-Verzeichnis, kein RUNNER_ACCESSOR_FUER_
-    # REGEL-Eintrag (catala_p3_nr72_photovoltaik hat keinen einzelnen dict-Parameter). Vorher
-    # teilten sich pv_bruttoleistung_kwp/pv_anzahl_einheiten/pv_auf_gebaeude die Pseudoregel
-    # p2_festzusetzung_einzel mit 23 sachfremden Feldern (Bruttoarbeitslohn, Veranlagungsart,
-    # alle Stammdaten) — traverser.relevanz() schliesst pro regel_id aus, und das bestaetigte
-    # "nein" auf pv_auf_gebaeude (bool, Mehrheitsantwort) hat im Dialog-Durchstich die gesamte
-    # AN-Kernerklaerung dauerhaft aus naechste_fragen() genommen. Fix: eigene regel_id statt
-    # Umzug auf eine bestehende Ground-Truth-Regel (es gibt keine passende) — dieselbe
-    # Blindspot-Klasse wie p2_festzusetzung_* oben, hier bewusst neu statt vererbt.
-    "p3_nr72_pv",
     # NEU 2026-08-30: Screening-Pseudoregel "Privater Verkauf" (§ 23 EStG, produkt/bindung/
     # bindung_an_gesamt.yaml, Feld kein_p23_verkauf) -- gleiche Bauart wie p2_einkunftsart_* oben
     # (eigene regel_id statt Gate an der echten Regel p23_veraeusserungsgewinn, deren vier
@@ -1425,6 +1439,7 @@ if not os.path.exists(GOLDEN_RUNNER_PATH):
 RUNNER_ACCESSOR_FUER_REGEL = {
     "p10_1_9_schulgeld": "catala_p10_1_9_schulgeld",
     "p33_2a_fahrtkostenpauschale": "catala_p33_2a_fahrtkostenpauschale",
+    "p3_nr72_pv": "catala_p3_nr72_photovoltaik",
 }
 
 
