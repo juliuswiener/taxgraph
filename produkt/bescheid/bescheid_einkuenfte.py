@@ -83,7 +83,7 @@ def _laufender_gewinn_partner(f: dict):
     Bewusst schmaler als _laufender_gewinn (Person A): Stufe 1 der Partnerachse hat für den
     Ehegatten KEINE EÜR-Felder gebaut — Anlage EÜR (E77) hat anders als Anlage G/S keine
     Person-A/B-Achse, ein betriebseinnahmen_partner wäre totes Wiring (BACKLOG
-    partnerseite-gewinneinkuenfte-fehlt-strukturell/eueur_keine_partnerachse). Ebenso gibt es
+    partnerseite-gewinneinkuenfte-fehlt-strukturell). Ebenso gibt es
     keine PV-Partnerfelder, also auch keine § 3 Nr. 72-Kürzung hier. Es bleiben der Direktwert
     und die § 15 Abs. 1 S. 1 Nr. 2-Mitunternehmer-Komponente.
 

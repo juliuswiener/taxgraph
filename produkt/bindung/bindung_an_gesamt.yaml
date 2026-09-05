@@ -1445,7 +1445,7 @@ bindungen:
   # sonstige_betriebsausgaben/afa_jahresbetrag) bewusst NICHT dupliziert: Anlage EÜR ist Datenart E77,
   # ein eigenes Dokument OHNE Person-A/B-Indexfeld (E77-2025.xsd hat keinen Enum_INDEXFELD_PERSON-Treffer,
   # anders als E10 — verifiziert 2026-08-12) — der Partner-Betrieb braeuchte ein zweites E77-Dokument,
-  # die Mechanik dafuer fehlt (BACKLOG rechenluecken). §34 Abs.3-Flags ebenfalls NICHT dupliziert:
+  # die Mechanik dafuer fehlt (BACKLOG partnerseite-gewinneinkuenfte-fehlt-strukturell). §34 Abs.3-Flags ebenfalls NICHT dupliziert:
   # diese Felder werden an Person A gerade korrigiert (ermaessigung_einmal_genutzt invertiert,
   # dauernd_berufsunfaehig ohne Alter-55-ODER-Verknuepfung) — ein Partner-Pendant waere heute die
   # Verdopplung eines bekannten Fehlers.

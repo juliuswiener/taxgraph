@@ -329,7 +329,7 @@ GESAMT_33B_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_b
 # ========== §§ 13-18 Gewinn ==========
 # EUER_KOMPONENTEN bewusst OHNE Person-B-Pendant: Anlage EÜR ist Datenart E77, ein eigenes Dokument
 # ohne Person-A/B-Indexfeld (kein Enum_INDEXFELD_PERSON-Treffer in E77-2025.xsd) — der Partner-Betrieb
-# braeuchte ein zweites E77-Dokument, die Mechanik dafuer fehlt (BACKLOG rechenluecken, 2026-08-12).
+# braeuchte ein zweites E77-Dokument, die Mechanik dafuer fehlt (BACKLOG partnerseite-gewinneinkuenfte-fehlt-strukturell, 2026-08-12).
 EUER_KOMPONENTEN = ("betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahresbetrag")
 GWG_FELDER = ("gwg_anschaffungskosten_netto",)
 VERLUST_FELD = ("verlustvortrag_bestand",)
