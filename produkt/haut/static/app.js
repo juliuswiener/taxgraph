@@ -559,6 +559,11 @@ function zeigeFrage(q, stand) {
   const kiVorschlag = vorhanden && vorhanden.zustand === "vorlaeufig"
     && VORSCHLAG_QUELLEN.includes(vorhanden.herkunft_badge);
 
+  // `vorschlag`-Kategorie (Julius, 2026-09-05): jahres-spezifischer Betrag, bleibt Frage, aber
+  // auffaelliger als ein normaler Vorjahres-Vorschlag — sonst sieht dieser Wegpunkt genauso aus
+  // wie jedes `uebernehmbar`-Feld vor dem Filtern in naechste_fragen().
+  $("vorjahr-vorschlag-hinweis").hidden = !(kiVorschlag && q.vorjahr_kategorie === "vorschlag");
+
   // Julius-Feature: Arbeitsweg-km über Karten-Dienst (Vorschlag-Fluss; Backend ge-stubbt, PII/Cap offen).
   const altMaps = document.getElementById("maps-affordanz"); if (altMaps) altMaps.remove();
   if (q.feld_id === "ep_entfernung_km") mapsAffordanz(q);

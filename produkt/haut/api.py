@@ -439,6 +439,12 @@ def _frage_metadaten(fid: str, bindung: dict, store: dict) -> dict:
             # dort den Satz „durch eine andere Antwort entfallen", und nur diesen Schlüssel
             # trennt die beiden Fälle: `relevanz` in /stand hängt an der REGEL, nicht am Feld.
             "regel_id": (b.get("quelle") or {}).get("regel_id"),
+            # Julius, 2026-09-05 (BACKLOG vorjahr-kategorie-ohne-verhalten): `vorschlag`-Felder
+            # bleiben Fragen, sollen aber auffaelliger markiert werden als ein normaler
+            # Vorjahres-Vorschlag — die Oberfläche braucht dafür die Kategorie. `uebernehmbar`
+            # taucht hier ohnehin nicht mehr auf (naechste_fragen() filtert es mit Vorjahres-Wert
+            # heraus), absent wo kein vorjahr-Flag gesetzt ist.
+            "vorjahr_kategorie": b.get("vorjahr"),
     }
 
 

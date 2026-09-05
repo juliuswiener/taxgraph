@@ -311,6 +311,21 @@ def gate_gewicht(bindung: dict) -> dict:
     return gewicht
 
 
+def _vorjahr_uebernommen(b: dict, ev) -> bool:
+    """True, wenn ein `vorjahr: uebernehmbar`-Feld bereits einen Vorjahres-Wert trägt.
+
+    Julius, 2026-09-05 (BACKLOG vorjahr-kategorie-ohne-verhalten): `uebernehmbar` (Stammdaten/
+    kohortenfix, z.B. Renten-Beginn-Jahr) wird OHNE Rückfrage aus dem Vorjahr übernommen — es
+    verschwindet aus der Fragen-Queue, bleibt aber über /event korrigierbar (das Event ist und
+    bleibt `vorlaeufig`, der Store-Guard ^import:vorjahr lässt ihn nie direkt `bestaetigt`
+    schreiben; hier wird nur die INTERVIEW-Queue gefiltert, nicht der Zustand geändert).
+    `vorschlag` (jahres-spezifischer Betrag) bleibt unverändert eine Frage — der Nutzer
+    bestätigt jeden Wert. Ohne Vorjahres-Wert (ev is None) bleibt auch ein uebernehmbar-Feld
+    eine Frage."""
+    return (b.get("vorjahr") == "uebernehmbar" and ev is not None
+            and (ev.get("herkunft") or {}).get("herkunft") == "vorjahr")
+
+
 def naechste_fragen(store: dict, bindung: dict, beitrag: dict | None = None) -> list[str]:
     """Geordnete Interview-Queue: unbeantwortete askable Felder nicht-ausgeschlossener Regeln.
     Gating-Bedingungen zuerst (streichen ganze Regeln), dann Slots nach Unsicherheits-Beitrag
@@ -325,6 +340,7 @@ def naechste_fragen(store: dict, bindung: dict, beitrag: dict | None = None) -> 
     aktiv = _aktive_events(store)
     kand = [fid for fid, b in bindung.items()
             if b.get("askable") and _unbeantwortet(aktiv.get(fid))
+            and not _vorjahr_uebernommen(b, aktiv.get(fid))
             and rel[b["quelle"]["regel_id"]]["status"] != "ausgeschlossen"
             and not _feld_ausgeschlossen(b, aktiv)]
     gw = gate_gewicht(bindung)
