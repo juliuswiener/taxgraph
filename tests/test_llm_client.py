@@ -1,5 +1,5 @@
 """K1/K3 LLM-Client — reiner Client-Test (produkt/haut/llm_client.py) + Interface-Reconcile-Beweis mit dem
-Kontoauszug-LLM-Fallback (produkt/import/kontoauszug_writer.llm_klassifikator_factory).
+Kontoauszug-LLM-Fallback (produkt/eingang/kontoauszug_writer.llm_klassifikator_factory).
 
 Der Client kennt keine Aufgabe, nur den rohen Call (`complete(role, msgs, fixture_id)`). Task-Wrapper
 (Chat-Vorschläge) sitzen in api.py (siehe test_haut_chat.py), der Kontoauszug-Klassifikator-Wrapper in
@@ -26,7 +26,7 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for _sub in ("produkt/haut", "produkt/import", "produkt/store", "produkt/traverser"):
+for _sub in ("produkt/haut", "produkt/eingang", "produkt/store", "produkt/traverser"):
     sys.path.insert(0, os.path.join(ROOT, _sub))
 
 import api as API                    # noqa: E402

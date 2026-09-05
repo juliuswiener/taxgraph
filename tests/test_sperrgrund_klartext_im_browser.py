@@ -73,7 +73,7 @@ import pytest
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 for _sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/unsicherheit",
-             "produkt/mapping", "produkt/konsistenz", "produkt/import", "produkt/engine",
+             "produkt/mapping", "produkt/konsistenz", "produkt/eingang", "produkt/engine",
              "produkt/bescheid", "golden", "elster"):
     _p = os.path.join(ROOT, _sub)
     if _p not in sys.path:

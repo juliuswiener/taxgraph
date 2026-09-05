@@ -24,7 +24,7 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for sub in ("produkt/import", "produkt/mapping", "produkt/store", "produkt/traverser"):
+for sub in ("produkt/eingang", "produkt/mapping", "produkt/store", "produkt/traverser"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 from test_ring_deklaration_differential import _pruefe_differential, _b

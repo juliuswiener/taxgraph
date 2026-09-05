@@ -59,7 +59,7 @@ import xml.etree.ElementTree as ET
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-for _sub in ("produkt/import", "produkt/mapping", "produkt/store", "produkt/traverser"):
+for _sub in ("produkt/eingang", "produkt/mapping", "produkt/store", "produkt/traverser"):
     sys.path.insert(0, os.path.join(ROOT, _sub))
 
 import elster_xml as EX      # noqa: E402

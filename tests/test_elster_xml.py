@@ -14,7 +14,7 @@ import sys
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "produkt", "import"))
+sys.path.insert(0, os.path.join(ROOT, "produkt", "eingang"))
 sys.path.insert(0, os.path.join(ROOT, "elster", "submission"))
 sys.path.insert(0, os.path.join(ROOT, "elster"))
 
@@ -318,7 +318,7 @@ def test_abgabefaehiges_xml_ist_xsd_valide(tmp_path):
 # Kz-Element) — ohne `snapshot`-Parameter bleibt sie deshalb Pflicht-Parameter, s.
 # test_absender_steuernummer_bleibt_ohne_kz_ableitung_pflicht_parameter() unten. Mit `snapshot`
 # leitet erzeuge_xml() sie aus `stammdaten_steuernummer` ab (s. _leite_steuernummer_ab() in
-# produkt/import/elster_xml.py) — eigene Tests dafuer in tests/test_stammdaten_steuernummer.py.
+# produkt/eingang/elster_xml.py) — eigene Tests dafuer in tests/test_stammdaten_steuernummer.py.
 
 # E0102002 (keine Bankverbindung): seit dem Bankverbindungs-Baustein (2026-08-10) verlangt
 # abgabefaehig=True zusaetzlich eine Bankverbindungs-Entscheidung (s. erzeuge_xml()); hier dabei,

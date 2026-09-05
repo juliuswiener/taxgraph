@@ -38,7 +38,7 @@ import re
 # Deshalb trägt _KONTONUMMER `{8,}` OHNE Obergrenze: eine Obergrenze in einem Sicherheitsmuster
 # ist eine Einladung, sie zu überschreiten.
 #
-# PARALLELE FASSUNG: produkt/import/kontoauszug_writer.py führt dieselben Klassen für den
+# PARALLELE FASSUNG: produkt/eingang/kontoauszug_writer.py führt dieselben Klassen für den
 # Kontoauszug-Pfad. NICHT zusammengelegt und bewusst nicht: dort bleibt ein Präfix stehen
 # (`DE89****`), damit die Klassifikation noch etwas zu greifen hat; hier wird vollständig durch
 # `[PII]` ersetzt. Gleiche Bauart, verschiedene Ersetzungsregel.

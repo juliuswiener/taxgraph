@@ -24,7 +24,7 @@ import pytest
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, 'produkt', 'haut'))
-sys.path.insert(0, os.path.join(ROOT, 'produkt', 'import'))
+sys.path.insert(0, os.path.join(ROOT, 'produkt', 'eingang'))
 
 import api as API
 import server as SRV
@@ -223,7 +223,7 @@ def test_e2e_kz_durchgang_26_felder(base):
     # ===== XML-SCHRITT: Deklaration → XML =====
     import importlib
     spec = importlib.util.spec_from_file_location(
-        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+        "elster_xml", os.path.join(ROOT, "produkt", "eingang", "elster_xml.py"))
     EX = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(EX)
 
@@ -253,7 +253,7 @@ def _kvpv_deklaration(base, fall_id, steuerfall):
     _, dekl = _req(base, "GET", f"/fall/{fall_id}/deklaration", erwarte=200)
     import importlib
     spec = importlib.util.spec_from_file_location(
-        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+        "elster_xml", os.path.join(ROOT, "produkt", "eingang", "elster_xml.py"))
     EX = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(EX)
     result = dekl.get("deklaration", {})
@@ -321,7 +321,7 @@ def test_kvpv_kz_person_b(base, vers_art, basis_kv_val, basis_pv_val, kz_kv, kz_
         assert kz_a in dekl.get("deklaration", {}), f"Person A Kz {kz_a} fehlt in Haupt-Deklaration"
     import importlib
     _spec_xml = importlib.util.spec_from_file_location(
-        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+        "elster_xml", os.path.join(ROOT, "produkt", "eingang", "elster_xml.py"))
     _EX = importlib.util.module_from_spec(_spec_xml)
     _spec_xml.loader.exec_module(_EX)
     xml_str = _EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
@@ -407,7 +407,7 @@ def test_p23_kz_durchgang(base, typ, typ_wert, kz):
     assert found, f"§23-Kz {kz} fehlt in anlage_instanzen ({p23_inst})"
     import importlib
     spec = importlib.util.spec_from_file_location(
-        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+        "elster_xml", os.path.join(ROOT, "produkt", "eingang", "elster_xml.py"))
     EX = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(EX)
     xml_str = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
@@ -525,7 +525,7 @@ def test_gewinn_kz_durchgang(base, betriebsart, gewinn_cent, kz, kz_bez):
         f"Bezeichnungs-Kz {kz_bez} fehlt oder falsch fuer {betriebsart}: {result.get(kz_bez)!r}")
     import importlib
     spec = importlib.util.spec_from_file_location(
-        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+        "elster_xml", os.path.join(ROOT, "produkt", "eingang", "elster_xml.py"))
     EX = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(EX)
     xml_str = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
@@ -575,7 +575,7 @@ def test_p32b_kz_durchgang(base):
     assert "E0104801" in result, "E0104801 fehlt in Deklaration"
     import importlib
     spec = importlib.util.spec_from_file_location(
-        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+        "elster_xml", os.path.join(ROOT, "produkt", "eingang", "elster_xml.py"))
     EX = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(EX)
     xml_str = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")
@@ -621,7 +621,7 @@ def test_weitere_vorsorge_kz_durchgang(base, feld_id, kz, wert):
     assert kz in result, f"{kz} ({feld_id}) fehlt in Deklaration"
     import importlib
     spec = importlib.util.spec_from_file_location(
-        "elster_xml", os.path.join(ROOT, "produkt", "import", "elster_xml.py"))
+        "elster_xml", os.path.join(ROOT, "produkt", "eingang", "elster_xml.py"))
     EX = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(EX)
     xml_str = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="00000")

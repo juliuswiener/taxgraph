@@ -36,7 +36,7 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for _sub in ("produkt/haut", "produkt/store", "produkt/import", "produkt/traverser"):
+for _sub in ("produkt/haut", "produkt/store", "produkt/eingang", "produkt/traverser"):
     _p = os.path.join(ROOT, _sub)
     if _p not in sys.path:
         sys.path.insert(0, _p)

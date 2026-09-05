@@ -31,7 +31,7 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for _sub in ("produkt/haut", "produkt/store", "produkt/import", "produkt/traverser",
+for _sub in ("produkt/haut", "produkt/store", "produkt/eingang", "produkt/traverser",
              "produkt/unsicherheit", "produkt/mapping", "produkt/konsistenz", "produkt/bescheid",
              "golden", "elster"):
     _p = os.path.join(ROOT, _sub)

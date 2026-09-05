@@ -22,7 +22,7 @@ import sys
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-for sub in ("produkt/import", "produkt/mapping", "produkt/store", "produkt/traverser", "golden"):
+for sub in ("produkt/eingang", "produkt/mapping", "produkt/store", "produkt/traverser", "golden"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 import elster_xml as EX       # noqa: E402

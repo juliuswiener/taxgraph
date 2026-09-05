@@ -20,7 +20,7 @@ import json
 import os
 import re
 import subprocess   # nur für subprocess.TimeoutExpired am OCR-Endpunkt — api.py startet selbst
-                    # keinen Unterprozess (das tun die Writer unter produkt/import/)
+                    # keinen Unterprozess (das tun die Writer unter produkt/eingang/)
 import sys
 import tempfile
 
@@ -28,7 +28,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PRODUKT = os.path.dirname(HERE)
 ROOT = os.path.dirname(PRODUKT)
 for _sub in ("produkt/store", "produkt/traverser", "produkt/unsicherheit", "produkt/mapping",
-             "produkt/konsistenz", "produkt/import", "produkt/bescheid", "produkt/engine", "golden", "elster"):
+             "produkt/konsistenz", "produkt/eingang", "produkt/bescheid", "produkt/engine", "golden", "elster"):
     _p = os.path.join(ROOT, _sub)
     if _p not in sys.path:
         sys.path.insert(0, _p)

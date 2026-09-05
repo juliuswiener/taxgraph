@@ -27,7 +27,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 for sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/mapping",
-            "produkt/unsicherheit", "golden", "produkt/import", "produkt/auth"):
+            "produkt/unsicherheit", "golden", "produkt/eingang", "produkt/auth"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 import api_llm  # noqa: E402

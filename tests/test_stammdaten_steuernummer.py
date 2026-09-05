@@ -24,7 +24,7 @@ import sys
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "produkt", "import"))
+sys.path.insert(0, os.path.join(ROOT, "produkt", "eingang"))
 sys.path.insert(0, os.path.join(ROOT, "produkt", "traverser"))
 sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
 sys.path.insert(0, os.path.join(ROOT, "elster"))

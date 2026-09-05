@@ -1,6 +1,6 @@
 """§23 EStG (private Veraeusserungsgeschaefte), Mehrfachverkauf DERSELBEN Person: die generische
 Instanz-Wiederholung (`p23_anzahl_verkaeufe` -> `anlage_instanzen["p23_veraeusserung"]`) haengt
-am direkten E10-Kind `SO` (`container = kz_path[:2]`, produkt/import/elster_xml.py). Das E10-2025-
+am direkten E10-Kind `SO` (`container = kz_path[:2]`, produkt/eingang/elster_xml.py). Das E10-2025-
 Schema erlaubt `<SO>` aber nur EINMAL:
 
     E10-2025.xsd:8298  <xs:element name="SO" ... minOccurs="0" maxOccurs="1">
@@ -18,7 +18,7 @@ Das Schema selbst sieht die richtige Stelle fuer "mehrere Verkaeufe EINER Person
     E10-2025.xsd:22224  <xs:complexType name="Grdst_972825866_CType">
     E10-2025.xsd:22231    <xs:element name="Einz" ... minOccurs="0" maxOccurs="99"/>
 
--- mehrere `<Einz>` INNERHALB EINES `<Grdst>`. Ein Grep ueber produkt/import/elster_xml.py und
+-- mehrere `<Einz>` INNERHALB EINES `<Grdst>`. Ein Grep ueber produkt/eingang/elster_xml.py und
 produkt/mapping/est_mapping.py nach `Einz` findet dort NIRGENDS eine tatsaechliche Erzeugung
 dieses Elements (nur unverwandte Treffer wie "Einzel-"/"Einzelposten") -- die vorgesehene Stelle
 ist unbenutzt; der bestehende Instanz-Mechanismus vermischt die Personen-Achse (2. Grdst-Instanz)
@@ -45,12 +45,12 @@ Gemessen bei HEAD b3d1a1b (2026-08-30), gegen den geteilten Baum, ueber den nied
 Store -> deklariere -> erzeuge_xml (produkt/haut/api_constants.py, produkt/bindung/
 bindung_an_gesamt.yaml und darauf haengende WIP einer Nachbarinstanz werden hier nicht
 beruehrt/importiert). elster_xml.py/est_mapping.py sind seit a4da29b (Basis der ersten
-Messung, /tmp-Worktree) unveraendert (`git diff a4da29b..HEAD -- produkt/import/elster_xml.py
+Messung, /tmp-Worktree) unveraendert (`git diff a4da29b..HEAD -- produkt/eingang/elster_xml.py
 produkt/mapping/est_mapping.py` = leer).
 
 Repariert (HEAD 915e327, derselbe Commit wie diese Testaenderung): `erzeuge_xml()` verankert die
 Instanz-Achse fuer die Gruppe `p23_veraeusserung` jetzt an `Einz` statt am E10-Direktkind
-(`INSTANZ_CONTAINER_TIEFER` in produkt/import/elster_xml.py) -- gruppen-gebunden, weil "Einz" als
+(`INSTANZ_CONTAINER_TIEFER` in produkt/eingang/elster_xml.py) -- gruppen-gebunden, weil "Einz" als
 Elementname im E10-Schema generisch fuer ~100 andere Stellen wiederkehrt und ein pfadbasierter
 Trigger fremde Instanzgruppen (kind/gwg/vv_objekt/rente/...) mitgerissen haette.
 
@@ -87,7 +87,7 @@ import sys
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-for sub in ("produkt/import", "produkt/mapping", "produkt/store", "produkt/traverser",
+for sub in ("produkt/eingang", "produkt/mapping", "produkt/store", "produkt/traverser",
             "elster/submission", "elster"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
@@ -195,7 +195,7 @@ def test_zwei_verkaeufe_gleiche_person_ist_xsd_valide(bindung, tmp_path):
     Geschwister verletzten maxOccurs=1 (E10-2025.xsd:8298), xmllint lehnte hart ab, ERiC
     bestaetigte unabhaengig ueber die Plausibilitaetspruefung (FachlicheFehlerId=
     zuGrosseLfdNummer auf SO[2]/Priv_VA_G[1]/Grdst[1], rc=610001002). Repariert ueber
-    INSTANZ_CONTAINER_TIEFER in produkt/import/elster_xml.py (Achse -> Grdst.Einz,
+    INSTANZ_CONTAINER_TIEFER in produkt/eingang/elster_xml.py (Achse -> Grdst.Einz,
     maxOccurs=99, E10-2025.xsd:22231) -- der xfail-Marker ist im selben Commit gefallen
     (XPASS(strict) beobachtet, nicht angenommen), nicht nur entfernt."""
     snap, sid = ST.materialisiere(_fall("p23_messung_zwei_verkaeufe", 2))

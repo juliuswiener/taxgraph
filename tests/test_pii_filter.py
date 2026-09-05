@@ -17,7 +17,7 @@ import pytest
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 for _sub in ("produkt/haut", "produkt/store", "produkt/traverser",
-             "produkt/import", "produkt/mapping", "golden"):
+             "produkt/eingang", "produkt/mapping", "golden"):
     sys.path.insert(0, os.path.join(ROOT, _sub))
 
 import api_llm
