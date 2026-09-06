@@ -20,7 +20,7 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for sub in ("produkt/store", "produkt/traverser", "produkt/import", "produkt/haut"):
+for sub in ("produkt/store", "produkt/traverser", "produkt/eingang", "produkt/haut"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 import store as ST      # noqa: E402

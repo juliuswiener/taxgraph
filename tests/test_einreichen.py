@@ -320,7 +320,11 @@ def test_einreichen_traegt_verpflegung_kuerzung_ein(tmp_path, monkeypatch):
     fid = r["fall_id"]
     store = API.lade_fall(fid)
 
+    # vpf_monate_am_ort: Naht-Fix (gate-naht-guard-liest-zustand) verlangt jetzt einen bestätigten
+    # Wert, bevor die 3-Monats-Prüfung als geklärt gilt (vorher lief ein UNSET-Wert stillschweigend
+    # als "≤3 Monate" durch) -- 2 ist ≤3, unverändert keine Frist-Kürzung.
     for fld, w in [("tage_24h", 10),
+                   ("vpf_monate_am_ort", 2),
                    ("vpf_fruehstuecke_gestellt_anzahl", 5),
                    ("vpf_mittagessen_gestellt_anzahl", 5)]:
         ST.append_event(store, feld_id=fld, wert=w, zustand="bestaetigt",

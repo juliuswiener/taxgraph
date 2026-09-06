@@ -573,7 +573,14 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # rentner-spezifisch, Kz Anlage G/S). GEFLOORT bei 0 (FB > vg → kein Phantom-Verlust) + ADDITIV in
         # einkuenfte_gewinn (§ 16 Abs. 1: Veräußerungs- + laufender Gewinn = dieselbe § 2-Einkunftsart). Absent → 0.
         vg_euro = _c("rentner_veraeusserungsgewinn") // 100
-        netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag({"rentner_veraeusserungsgewinn": vg_euro}))
+        # Naht-Fix (gate-naht-guard-liest-zustand): der FB wurde bisher unconditional gewährt, sobald
+        # der Guard (_an_gesamt_sperrgrund) den Fall durchliess — der Guard sperrt jetzt nur noch bei
+        # NICHT bestätigten Bools, ein bestätigtes False (S.1 nicht erfüllt) kommt hier an und darf
+        # keinen FB bekommen. f ist bei nur_bestaetigt=True bereits auf bestätigt gefiltert.
+        p16_4_gate_ok = (f.get("rentner_alter_55_oder_berufsunfaehig", {}).get("wert") is True
+                         and f.get("rentner_freibetrag_erstmalig", {}).get("wert") is True)
+        p16_4_fb = runner.catala_p16_4_freibetrag({"rentner_veraeusserungsgewinn": vg_euro}) if p16_4_gate_ok else 0
+        netto_vg = max(0, vg_euro - p16_4_fb)
         laufender_gewinn, mitu = _laufender_gewinn(f, store, bindung, nur_bestaetigt)   # § 15/§ 18 laufend (für § 35-Zähler, OHNE § 16-vg)
         # § 26b: bei Zusammenveranlagung kommen die Gewinneinkünfte des Ehegatten hinzu (Stufe 2
         # der Partnerachse, 2026-08-13). Bis dahin wurde der Partner-Gewinn zwar deklariert und
@@ -1066,8 +1073,13 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         # Naht-CENT → EURO: der Accessor nimmt EUROS (wie catala_p10_1_7_berufsausbildung — die //100-
         # Umrechnung liegt im slot_fn, nicht im Accessor). vg_euro EINMAL, an Freibetrag + Subtraktion.
         vg_euro = _c("rentner_veraeusserungsgewinn") // 100
-        netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag(
-            {"rentner_veraeusserungsgewinn": vg_euro}))
+        # Naht-Fix (gate-naht-guard-liest-zustand): der FB wurde bisher unconditional gewährt, sobald
+        # der Guard (_an_gesamt_sperrgrund) den Fall durchliess — der Guard sperrt jetzt nur noch bei
+        # NICHT bestätigten Bools, ein bestätigtes False (S.1 nicht erfüllt) kommt hier an und darf
+        # keinen FB bekommen. f ist bei nur_bestaetigt=True bereits auf bestätigt gefiltert.
+        p16_4_gate_ok = _b("rentner_alter_55_oder_berufsunfaehig") is True and _b("rentner_freibetrag_erstmalig") is True
+        p16_4_fb = runner.catala_p16_4_freibetrag({"rentner_veraeusserungsgewinn": vg_euro}) if p16_4_gate_ok else 0
+        netto_vg = max(0, vg_euro - p16_4_fb)
         laufender_gewinn, mitu = _laufender_gewinn(f, store, bindung, nur_bestaetigt)   # § 15/§ 18 laufend (§ 35-Zähler, OHNE § 16-vg)
         # § 24a Altersentlastungsbetrag im Rentner-Ring (b): Bemessung = positive Nicht-§19-Einkünfte = §§13-18-Gewinn
         # (laufender + § 16-vg-netto); LEIBRENTE § 22 Nr. 1 (renten) + Versorgungsbezüge § 19 Abs. 2 sind KEINE Bemessung

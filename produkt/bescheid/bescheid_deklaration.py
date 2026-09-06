@@ -650,11 +650,26 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # ring-verdrahtet: an_gesamt (catala_est) UND der gesamt/rentner-WK-Pfad (B1, catala_werbungskosten_n).
         # Ausland-dHf → nicht ring-fähig; offene Geltungsbedingung → offen; offene Reduktion (§9 Abs.4a) → offen.
         if _positiv(DHF_KOSTEN):
-            if felder.get("dhf_im_inland", {}).get("wert") is False:
+            _dhf_inland = felder.get("dhf_im_inland") or {}
+            if _dhf_inland.get("wert") is False:
                 return "ausland_dhf_nicht_ring_faehig"
+            # Naht-Fix (gate-naht-guard-liest-zustand): NICHT nur "is True" auf dem Rohwert — ein
+            # vorläufiger Wert las hier durch (der Ring filtert auf bestätigt und sieht das Feld
+            # dann als fehlend, silent-drop statt Sperre). Beide Bedingungen zusammen.
+            if _dhf_inland.get("wert") is not True or _dhf_inland.get("zustand") != "bestaetigt":
+                return "dhf_tatbestand_offen"
             if any((felder.get(b) or {}).get("zustand") != "bestaetigt" for b in DHF_BEDINGUNGEN):
                 return "dhf_tatbestand_offen"
         if sum((felder.get(t, {}).get("wert") or 0) for t in VERPFLEGUNG_TAGE) > 0:
+            # Naht-Fix: ohne bestätigten vpf_monate_am_ort weiss der Guard nicht, ob die 3-Monats-
+            # Aufteilung (S.6, unten) greift — ein fehlender/vorläufiger Wert liess die Prüfung dort
+            # (isinstance(None, int) ist False) einfach AUS, der Ring bekam die volle Pauschale wie
+            # bei ≤3 Monaten, ohne dass "≤3 Monate" je bestätigt war.
+            _mon_feld = felder.get("vpf_monate_am_ort") or {}
+            _mon_wert = _mon_feld.get("wert")
+            if not (isinstance(_mon_wert, int) and not isinstance(_mon_wert, bool)
+                    and _mon_feld.get("zustand") == "bestaetigt"):
+                return "verpflegung_dreimonatsfrist_aufteilung_offen"
             # Verpflegungspauschale (§ 9 Abs. 4a S. 3): Jahres-Pauschale summiert aus Tage-Kategorien.
             # S. 6 (3-Monats-Frist): Reduktion — wenn vpf_monate_am_ort > 3, MUSS die Aufteilung
             #   (Tage_gesamt vs. Tage_nach_Frist) angegeben sein, ABER NUR FÜR KATEGORIEN MIT TAGEN > 0.
@@ -728,16 +743,27 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # allen 3 Tatbestands-Bedingungen bestätigt UND ohne 48-Monats-Schwellenübertritt. Ausland /
         # offener Tatbestand (inkl. UNSET Inland, fail-closed) / überspannender Zeitraum sperren.
         if _positiv(UEBERNACHTUNG_KOSTEN):
-            if felder.get("uebernachtung_im_inland", {}).get("wert") is False:
+            _ueb_inland = felder.get("uebernachtung_im_inland") or {}
+            if _ueb_inland.get("wert") is False:
                 return "ausland_uebernachtung_nicht_ring_faehig"
-            if (felder.get("uebernachtung_im_inland", {}).get("wert") is not True
+            # Naht-Fix: Rohwert True reichte hier bisher (vorläufig las durch) — jetzt zusätzlich
+            # bestätigt verlangt, sonst filtert der Ring das Feld weg und rechnet blind weiter.
+            if (_ueb_inland.get("wert") is not True or _ueb_inland.get("zustand") != "bestaetigt"
                     or any((felder.get(b) or {}).get("zustand") != "bestaetigt" for b in UEBERNACHTUNG_BEDINGUNGEN)):
                 return "uebernachtung_tatbestand_offen"
-            bisher = felder.get("uebernachtung_monate_bisher", {}).get("wert")
-            monate = felder.get("uebernachtung_monate", {}).get("wert")
-            if (isinstance(bisher, int) and not isinstance(bisher, bool)
+            _bisher_feld = felder.get("uebernachtung_monate_bisher") or {}
+            _monate_feld = felder.get("uebernachtung_monate") or {}
+            bisher = _bisher_feld.get("wert")
+            monate = _monate_feld.get("wert")
+            # Naht-Fix: bisher/monate müssen BESTÄTIGTE int sein — sonst sieht der Guard hier (auf
+            # Rohdaten) einen Wert, den der Ring (bestätigt-only) gar nicht kennt, und rechnet mit
+            # dem impliziten Default 0 weiter (unbegrenzt statt gekappt, oder WK ganz verschluckt).
+            if not (isinstance(bisher, int) and not isinstance(bisher, bool)
+                    and _bisher_feld.get("zustand") == "bestaetigt"
                     and isinstance(monate, int) and not isinstance(monate, bool)
-                    and bisher < 48 < bisher + monate):
+                    and _monate_feld.get("zustand") == "bestaetigt"):
+                return "uebernachtung_zeitraum_offen"
+            if bisher < 48 < bisher + monate:
                 return "uebernachtung_zeitraum_offen"
         # Arbeitsmittel (§ 9 Abs. 1 Nr. 6/7 i.V.m. § 6 Abs. 2 GWG / § 7 AfA): AK > 0 → Ring nur fähig für den
         # GWG-Sofortabzug (AK ≤ 800 EUR mit ausgeübtem Wahlrecht). AK > 800 → mehrjährige § 7-AfA (A6-L2),
@@ -746,23 +772,32 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         _am = felder.get(ARBEITSMITTEL_KOSTEN, {}).get("wert")
         if isinstance(_am, (int, float)) and not isinstance(_am, bool) and _am > 0:
             if _am <= 80000:
-                if felder.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is not True:
+                _gwg_feld = felder.get("am_gwg_sofortabzug_gewaehlt") or {}
+                # Naht-Fix: "is not True" auf dem Rohwert liess ein vorläufiges True durch — der
+                # Ring filtert auf bestätigt, sieht das Feld dann fehlend und rechnet ohne Abzug.
+                if not (_gwg_feld.get("wert") is True and _gwg_feld.get("zustand") == "bestaetigt"):
                     return "arbeitsmittel_afa_ueber_gwg_offen"
             else:  # _am > 80000 → § 7 Abs. 1 lineare AfA
                 nd = felder.get("arbeitsmittel_nutzungsdauer", {}).get("wert")
                 monat = felder.get("am_anschaffung_monat", {}).get("wert")
-                ist_aj = felder.get("am_afa_ist_anschaffungsjahr", {}).get("wert")
+                ist_aj_feld = felder.get("am_afa_ist_anschaffungsjahr") or {}
+                ist_aj = ist_aj_feld.get("wert")
                 # § 7 Abs. 1: Nutzungsdauer MUSS beantwortet sein (fail-closed).
                 # Anschaffungsmonat + Zustand-Flag: nur wenn Anschaffungsjahr=true.
                 # Flag unbeantwortet → Folgejahr angenommen (voller Jahresbetrag, Monat egal).
                 # Grund: S. 4 Zwölftelung gilt NUR im Anschaffungsjahr; Folgejahre voller Betrag.
                 if not isinstance(nd, int) or isinstance(nd, bool) or nd <= 0:
                     return "arbeitsmittel_afa_ueber_gwg_offen"
-                # Wenn Anschaffungsjahr=true: Monat MUSS beantwortet sein
+                # Wenn Anschaffungsjahr=true: Monat MUSS beantwortet sein. Naht-Fix: ein vorläufiges
+                # True fiel sonst durch die "unbeantwortet → Folgejahr"-Annahme unten — der Ring
+                # filtert das Feld auf bestätigt weg und rechnet den vollen Jahresbetrag statt 1/12.
                 if ist_aj is True:
+                    if ist_aj_feld.get("zustand") != "bestaetigt":
+                        return "arbeitsmittel_afa_ueber_gwg_offen"
                     if (not isinstance(monat, int) or isinstance(monat, bool) or monat < 1 or monat > 12):
                         return "arbeitsmittel_afa_ueber_gwg_offen"
-                # ist_aj == false oder None → Folgejahr/unbeantwortet: voller Jahresbetrag, OK
+                # ist_aj == false oder None (bestätigt oder gar nicht beantwortet) → Folgejahr:
+                # voller Jahresbetrag, OK — unverändert, das ist der akzeptierte Default.
         return None
     # Partner-Behinderungsfeld (§ 33b Person B) ohne Zusammenveranlagung: benannte Inkonsistenz
     # (dev-2s partner_check, Spiegel zu partner_kegel_offen). Universell VOR der Scheiben-Verzweigung —
@@ -830,13 +865,17 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             # 3. §34c DBA-Anrechnung
             if _positiv("dba_gezahlte_auslaendische_steuer") or _positiv("dba_auslaendische_einkuenfte"):
                 return "p32b_kombi_offen"
-        # § 16 Abs. 4 Freibetrag (fail-closed): Veräußerungsgewinn > 0 erfordert bestätigt
-        # alter_55_oder_berufsunfaehig=True UND freibetrag_erstmalig=True (§ 16 Abs. 4 S. 1+2).
-        # Fehlt eine der Bedingungen oder ist explizit false → kein FB (over-tax-safe).
-        vg = (felder.get("rentner_veraeusserungsgewinn") or {}).get("wert")
-        if isinstance(vg, (int, float)) and not isinstance(vg, bool) and vg > 0:
-            if not (felder.get("rentner_alter_55_oder_berufsunfaehig", {}).get("wert") is True
-                    and felder.get("rentner_freibetrag_erstmalig", {}).get("wert") is True):
+        # § 16 Abs. 4 Freibetrag (fail-closed): Veräußerungsgewinn > 0 erfordert, dass alter_55_
+        # oder_berufsunfaehig UND freibetrag_erstmalig BEIDE bestätigt sind — egal mit welchem Wert.
+        # Naht-Fix (gate-naht-guard-liest-zustand): die Sperre fragt nur nach der ENTSCHEIDUNG, nicht
+        # nach ihrem Ausgang. Vorher prüfte sie den Rohwert ("is True"), also liess ein vorläufiges
+        # True durch (der Ring filtert auf bestätigt und gewährt den FB dort ohnehin unconditional,
+        # s. bescheid_zweige._zweig_festzusetzende_est_gesamt/_rentner) — under-tax. Umgekehrt sperrte
+        # ein bestätigtes False (eine gültige, abschliessende Antwort: kein FB) den Bescheid komplett
+        # statt eine echte Zahl ohne FB zu liefern — der Ring prüft die Bools jetzt selbst (s. dort).
+        if _positiv("rentner_veraeusserungsgewinn"):
+            if not (felder.get("rentner_alter_55_oder_berufsunfaehig", {}).get("zustand") == "bestaetigt"
+                    and felder.get("rentner_freibetrag_erstmalig", {}).get("zustand") == "bestaetigt"):
                 return "p16_4_gate_offen"
         # Dasselbe für den Ehegatten (Stufe 2 der Partnerachse, 2026-08-13). Ohne diesen Spiegel
         # gewährte _gewinn_partner_anteil dem Partner-vg den Freibetrag, OHNE dass die Abs. 4-
@@ -844,10 +883,9 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # Einzelveranlagung rechnet der Ring den Partner-vg gar nicht, ein dort stehender Wert
         # darf den eigenen Bescheid deshalb auch nicht sperren.
         if felder.get("veranlagung", {}).get("wert") == "zusammen":
-            vg_p = (felder.get("rentner_veraeusserungsgewinn_partner") or {}).get("wert")
-            if isinstance(vg_p, (int, float)) and not isinstance(vg_p, bool) and vg_p > 0:
-                if not (felder.get("rentner_alter_55_oder_berufsunfaehig_partner", {}).get("wert") is True
-                        and felder.get("rentner_freibetrag_erstmalig_partner", {}).get("wert") is True):
+            if _positiv("rentner_veraeusserungsgewinn_partner"):
+                if not (felder.get("rentner_alter_55_oder_berufsunfaehig_partner", {}).get("zustand") == "bestaetigt"
+                        and felder.get("rentner_freibetrag_erstmalig_partner", {}).get("zustand") == "bestaetigt"):
                     return "p16_4_gate_offen"
         # Gesamt-Ring: Flag↔Einkunftsart-Widerspruch (kein_X=true + echtes Feld > 0 bestätigt) surfacen —
         # K2, keine still übergangene Einkunftsart (dev-2s flag_check).
@@ -968,12 +1006,18 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # müssen gesetzt sein (Bemessungsgrundlage + Beginnjahr), sonst fail-closed.
         versorgung_jahresrente = felder.get("versorgung_jahresrente", {}).get("wert")
         if isinstance(versorgung_jahresrente, (int, float)) and not isinstance(versorgung_jahresrente, bool) and versorgung_jahresrente > 0:
-            versorgung_beginn = felder.get("versorgung_beginn_jahr", {}).get("wert")
-            versorgung_bemessungsgrundlage = felder.get("versorgung_bemessungsgrundlage", {}).get("wert")
-            # Beide Inputs müssen gesetzt sein; fehlt einer → Sperrgrund (Accessor kann nicht rechnen).
-            if not (isinstance(versorgung_beginn, int) and versorgung_beginn > 0):
+            _vs_beginn_feld = felder.get("versorgung_beginn_jahr") or {}
+            _vs_bmg_feld = felder.get("versorgung_bemessungsgrundlage") or {}
+            versorgung_beginn = _vs_beginn_feld.get("wert")
+            versorgung_bemessungsgrundlage = _vs_bmg_feld.get("wert")
+            # Beide Inputs müssen BESTÄTIGT gesetzt sein; fehlt einer oder ist nur vorläufig → Sperrgrund
+            # (Naht-Fix: vorher zählte der Rohwert — der Ring filtert auf bestätigt und liess die 30.000
+            # EUR Versorgungsbezüge dann klanglos aus der Summe fallen statt zu sperren).
+            if not (isinstance(versorgung_beginn, int) and versorgung_beginn > 0
+                    and _vs_beginn_feld.get("zustand") == "bestaetigt"):
                 return "versorgungsfreibetrag_offen"
-            if not (isinstance(versorgung_bemessungsgrundlage, (int, float)) and not isinstance(versorgung_bemessungsgrundlage, bool) and versorgung_bemessungsgrundlage > 0):
+            if not (isinstance(versorgung_bemessungsgrundlage, (int, float)) and not isinstance(versorgung_bemessungsgrundlage, bool)
+                    and versorgung_bemessungsgrundlage > 0 and _vs_bmg_feld.get("zustand") == "bestaetigt"):
                 return "versorgungsfreibetrag_offen"
         # § 33b Abs. 1 S. 1 Wahlrecht (Stufe 2b, K2): kein over-tax-sicherer Default möglich
         # (Bauanleitung Frage C: kleiner Aufwand -> PB zu hoch, großer Aufwand -> PB zu niedrig) ->

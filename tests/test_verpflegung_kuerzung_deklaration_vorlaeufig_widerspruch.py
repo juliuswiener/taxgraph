@@ -194,8 +194,13 @@ def gemessen(tmp_path_factory):
     ergebnisse = {}
     try:
         ergebnisse["baseline"] = _messe("vpflk_baseline", [])
+        # vpf_monate_am_ort: Naht-Fix (gate-naht-guard-liest-zustand) verlangt jetzt einen
+        # bestaetigten Wert, bevor die 3-Monats-Pruefung als geklaert gilt (vorher lief ein
+        # UNSET-Wert stillschweigend als "<=3 Monate" durch) -- 2 ist <=3, unveraendert keine
+        # Frist-Kuerzung.
         ergebnisse["gruen"] = _messe("vpflk_gruen", [
-            _laie("tage_24h", TAGE_24H), _laie("vpf_fruehstuecke_gestellt_anzahl", FRUEHSTUECKE)])
+            _laie("tage_24h", TAGE_24H), _laie("vpf_monate_am_ort", 2),
+            _laie("vpf_fruehstuecke_gestellt_anzahl", FRUEHSTUECKE)])
         ergebnisse["leck"] = _messe("vpflk_leck", [
             _vorjahr_vorschlag("tage_24h", TAGE_24H),
             _vorjahr_vorschlag("vpf_fruehstuecke_gestellt_anzahl", FRUEHSTUECKE)])
