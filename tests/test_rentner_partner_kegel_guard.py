@@ -31,7 +31,7 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for sub in ("produkt/haut", "produkt/import", "produkt/store"):
+for sub in ("produkt/haut", "produkt/eingang", "produkt/store"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 import api as API              # noqa: E402

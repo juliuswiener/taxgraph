@@ -7,7 +7,7 @@ entscheidet, wessen Verkauf es ist. Zwei Verkaeufe verschiedener Personen liefer
 {(PersonA,45000),(PersonA,8000)} statt {(PersonA,45000),(PersonB,8000)}. Dieser Test
 wiederholt jene Zielaussage NICHT (Doppelarbeit, main-Weisung) -- er prueft stattdessen die
 URSACHE, eine Ebene tiefer: est_mapping.py schreibt §23-Kennzahlen NIE in `person_b`, den
-Mechanismus, der KAP-/N-/G-Partnerfelder korrekt nach PersonB routet (produkt/import/
+Mechanismus, der KAP-/N-/G-Partnerfelder korrekt nach PersonB routet (produkt/eingang/
 elster_xml.py, `_person_b_index`/`person_override` -- nur der `person_b`-Dict-Pfad, NIE der
 `anlage_instanzen`-Pfad, den §23 tatsaechlich benutzt, uebergibt `person_override`). Es gibt fuer
 §23 nicht einmal ein `_partner`-Eingabefeld -- der Nutzer hat strukturell keine Moeglichkeit,
@@ -50,7 +50,7 @@ import sys
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-for sub in ("produkt/import", "produkt/mapping", "produkt/store", "produkt/traverser",
+for sub in ("produkt/eingang", "produkt/mapping", "produkt/store", "produkt/traverser",
             "produkt/haut"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 

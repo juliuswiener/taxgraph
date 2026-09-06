@@ -79,7 +79,7 @@ append_event(feld_id, wert, zustand="vorlaeufig",
 - **Lokales tesseract verlässt das Gerät NICHT** → passt zur Lokal-first-Leitplanke, kein ausgehender
   Dienst. Ein EXTERNER OCR-Dienst wäre eine ausgehende Integration → Julius-Wort (Leitplanke 5); Stufe
   1 nutzt bewusst nur den lokalen Pfad.
-- Writer-Modul (später): `produkt/import/beleg_writer.py` — konsumiert Bindungstabelle (Anker/typ) +
+- Writer-Modul (später): `produkt/eingang/beleg_writer.py` — konsumiert Bindungstabelle (Anker/typ) +
   schreibt Store. Kollisionsfrei mit dev-1 (an_gesamt-Ring, produkt/haut).
 
 ## Offene Entscheide (zur Abnahme)
@@ -95,5 +95,5 @@ append_event(feld_id, wert, zustand="vorlaeufig",
    confidence; Negativ: unlesbar → Lücke, nie Auto-bestätigt; Guard: import:beleg kann nicht
    bestätigen).
 
-Nach Abnahme: Guard-Zeile + Schema-Regel (Store-Kern) + `produkt/import/beleg_writer.py` (Extraktions-
+Nach Abnahme: Guard-Zeile + Schema-Regel (Store-Kern) + `produkt/eingang/beleg_writer.py` (Extraktions-
 Pfad) + Extraktions-Gate. Alles LLM-frei, lokal, fail-closed.

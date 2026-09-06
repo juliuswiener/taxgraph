@@ -1,4 +1,4 @@
-"""Gate für den Kontoauszug-Writer (produkt/import/kontoauszug_writer.py) + Store-Guard
+"""Gate für den Kontoauszug-Writer (produkt/eingang/kontoauszug_writer.py) + Store-Guard
 (^import:kontoauszug). Deterministisch, NULL LLM (die LLM-Fallback-Schicht wird über einen injizierten
 PLAIN-Stub getestet — kein Mock eines LLM-Calls; die echte LLM-Extraktion prüft ein Recorded-Fixture-Test
 separat). Cost = $0.
@@ -17,7 +17,7 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for sub in ("produkt/store", "produkt/traverser", "produkt/import"):
+for sub in ("produkt/store", "produkt/traverser", "produkt/eingang"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 import store as ST              # noqa: E402

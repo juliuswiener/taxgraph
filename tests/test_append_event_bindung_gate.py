@@ -3,7 +3,7 @@
 store.py:append_event() prüft _pruefe_typ_konformitaet() (Auflage T, Stille-Null-Klasse) NUR,
 wenn bindung is not None — ohne bindung= ist der Aufruf ein blinder Fleck, der ein
 falsch-typisiertes Feld schweigend durchlässt (genau die Lücke, die L1 in
-produkt/import/vorjahr_writer.py:50 schloss: der einzige Aufrufer, der bindung NICHT
+produkt/eingang/vorjahr_writer.py:50 schloss: der einzige Aufrufer, der bindung NICHT
 übergab, obwohl es längst als Parameter vorlag).
 
 Findet Aufrufstellen per AST (gleiches Muster wie test_llm_import_boundary.py), nicht per

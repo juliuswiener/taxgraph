@@ -48,7 +48,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 for sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/mapping",
-            "produkt/import", "produkt/engine"):
+            "produkt/eingang", "produkt/engine"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 import yaml                             # noqa: E402

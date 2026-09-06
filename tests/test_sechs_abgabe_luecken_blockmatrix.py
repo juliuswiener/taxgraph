@@ -62,7 +62,7 @@ import sys
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-for _sub in ("produkt/import", "produkt/mapping", "produkt/store",
+for _sub in ("produkt/eingang", "produkt/mapping", "produkt/store",
              "produkt/traverser", "elster"):
     sys.path.insert(0, os.path.join(ROOT, _sub))
 

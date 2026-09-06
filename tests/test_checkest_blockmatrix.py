@@ -38,7 +38,7 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for sub in ("elster", "produkt/haut", "produkt/import", "produkt/mapping",
+for sub in ("elster", "produkt/haut", "produkt/eingang", "produkt/mapping",
             "produkt/store", "produkt/traverser"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 sys.path.insert(0, HERE)

@@ -39,7 +39,7 @@ import sys
 ROOT = os.environ.get("TAXGRAPH_ROOT", "/home/julius/00_projects/168_TaxGraph/taxgraph")
 for _sub in ("produkt/bescheid", "produkt/haut", "produkt/store", "produkt/traverser",
              "produkt/unsicherheit", "produkt/mapping", "produkt/konsistenz",
-             "produkt/import", "produkt/engine", "golden", "elster"):
+             "produkt/eingang", "produkt/engine", "golden", "elster"):
     _p = os.path.join(ROOT, _sub)
     if _p not in sys.path:
         sys.path.insert(0, _p)

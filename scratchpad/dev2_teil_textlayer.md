@@ -1,7 +1,7 @@
 # Teil-Textlayer-Fix — Design-Draft (transplant-ready)
 
-Betrifft `produkt/import/kontoauszug_writer.lies_kontoauszug_pdf` (committed) UND
-`produkt/import/beleg_writer.lies_beleg_text` (committed) — geteiltes Muster, geteilter Fix.
+Betrifft `produkt/eingang/kontoauszug_writer.lies_kontoauszug_pdf` (committed) UND
+`produkt/eingang/beleg_writer.lies_beleg_text` (committed) — geteiltes Muster, geteilter Fix.
 
 ## Bug bestätigt (empirisch, synthetisches 2-Seiten-PDF, kein echtes Sample nötig)
 

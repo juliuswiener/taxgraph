@@ -1,4 +1,4 @@
-"""Gate für den Beleg-Upload-Writer (produkt/import/, Stufe 1 LStB). Deterministisch, NULL LLM.
+"""Gate für den Beleg-Upload-Writer (produkt/eingang/, Stufe 1 LStB). Deterministisch, NULL LLM.
 
 Prüft: (a) Beleg-Typ-Erkennung + Anker-Extraktion aus dem synthetischen Muster-LStB gegen die
 erwarteten Kandidatenwerte; (b) fail-closed — der Writer schreibt NUR vorlaeufig (herkunft=beleg_import,
@@ -20,7 +20,7 @@ jsonschema = pytest.importorskip("jsonschema")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for sub in ("produkt/import", "produkt/store", "produkt/traverser"):
+for sub in ("produkt/eingang", "produkt/store", "produkt/traverser"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 import beleg_writer as BW   # noqa: E402

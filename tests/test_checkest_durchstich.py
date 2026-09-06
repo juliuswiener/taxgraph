@@ -42,7 +42,7 @@ import sys
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-for _sub in ("produkt/import", "produkt/mapping", "produkt/store",
+for _sub in ("produkt/eingang", "produkt/mapping", "produkt/store",
              "produkt/traverser", "produkt/bescheid", "produkt/haut",
              "produkt/unsicherheit", "produkt/konsistenz", "produkt/engine",
              "golden", "elster"):
@@ -134,7 +134,7 @@ def _b(s, feld_id, wert):
 # Lohnsteuer und Kirchensteuer auf Anlage N (reports/adjudikation/checkest_feldkopplungen_
 # 2026-08-09.md), und der Lohnsteuer-Ausschluss ist eine offene Julius-Entscheidung.
 # stammdaten_steuernummer (2026-08-10, keine Kz -> erreicht erzeuge_xml() ueber den
-# snapshot-Parameter, s. produkt/import/elster_xml.py:_leite_steuernummer_ab()): Wert aus
+# snapshot-Parameter, s. produkt/eingang/elster_xml.py:_leite_steuernummer_ab()): Wert aus
 # demselben amtlichen Beispiel wie _ABSENDER["absender_steuernummer"] unten, Praefix 9181
 # passt zum Default-empfaenger_finanzamt. Steht hier in _STAMM_A, nicht als eigene Fixtur --
 # _ABSENDER ueberschreibt sie ohnehin explizit (Vorrang der Parameter), aendert also nichts
@@ -343,7 +343,7 @@ def test_restfehler_kirchensteuerpflichtig(name, bauer):
 # die erste -- die dann leer blieb bis auf ihr Person-Indexfeld. Eine Writer-Naht (leere
 # Anlagen-Instanz), keine fehlende Angabe.
 #
-# WEG seit dem Instanz-Fix (2026-08-20, produkt/import/elster_xml.py:_person_b_index): erklaert
+# WEG seit dem Instanz-Fix (2026-08-20, produkt/eingang/elster_xml.py:_person_b_index): erklaert
 # Person A in einem Person-Container nichts, rueckt Person B auf Instanz 0 -- mit explizitem
 # person_override, damit der Diskriminator nicht ueber den Index zu "PersonA" wird. Die Klasse
 # war nicht auf Anlage G beschraenkt: dieselbe Beanstandung mit '$/N[1]/Person[1]$', wenn nur

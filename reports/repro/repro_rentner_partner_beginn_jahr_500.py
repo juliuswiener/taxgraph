@@ -31,7 +31,7 @@ import traceback
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-for sub in ("produkt/haut", "produkt/import", "produkt/store", "produkt/konsistenz"):
+for sub in ("produkt/haut", "produkt/eingang", "produkt/store", "produkt/konsistenz"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 os.environ["TAXGRAPH_NO_AUTH"] = "1"   # wie tests/conftest.py -- sonst 401 auf /fall

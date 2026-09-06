@@ -1,4 +1,4 @@
-"""Gate für den eDaten-Übernahme-Writer (produkt/import/elster_writer.py).
+"""Gate für den eDaten-Übernahme-Writer (produkt/eingang/elster_writer.py).
 Deterministisch, NULL LLM.
 
 Prüft: (1) Übertrag als vorlaeufig+schreiber=import:elster+herkunft=edaten; (2) kein Überschreiben
@@ -15,7 +15,7 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for sub in ("produkt/store", "produkt/import"):
+for sub in ("produkt/store", "produkt/eingang"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 import store as ST          # noqa: E402

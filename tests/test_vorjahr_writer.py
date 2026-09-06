@@ -1,4 +1,4 @@
-"""Gate für den Vorjahr-Übernahme-Writer (produkt/import/vorjahr_writer.py) + den Store-Guard
+"""Gate für den Vorjahr-Übernahme-Writer (produkt/eingang/vorjahr_writer.py) + den Store-Guard
 (^import:vorjahr). Deterministisch, NULL LLM.
 
 Prüft: (1) Store-Guard fail-closed — import:vorjahr kann NIE bestaetigt schreiben; (2) Übertrag der
@@ -17,7 +17,7 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for sub in ("produkt/store", "produkt/traverser", "produkt/import"):
+for sub in ("produkt/store", "produkt/traverser", "produkt/eingang"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 import store as ST          # noqa: E402

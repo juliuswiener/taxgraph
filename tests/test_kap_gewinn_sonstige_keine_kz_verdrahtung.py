@@ -41,7 +41,7 @@ import urllib.error
 import urllib.request
 
 ROOT = os.environ.get("TAXGRAPH_ROOT", "/home/julius/00_projects/168_TaxGraph/taxgraph")
-for _sub in ("produkt/haut", "produkt/import", "produkt/store", "produkt/mapping", "golden"):
+for _sub in ("produkt/haut", "produkt/eingang", "produkt/store", "produkt/mapping", "golden"):
     sys.path.insert(0, os.path.join(ROOT, _sub))
 
 os.environ["TAXGRAPH_NO_AUTH"] = "1"   # wie tests/conftest.py -- sonst 401 auf /fall
