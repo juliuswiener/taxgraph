@@ -36,7 +36,8 @@
           "screening",
           "instanz_anzahl",
           "instanz_etikett",
-          "regel_id"
+          "regel_id",
+          "vorjahr_kategorie"
         ],
         "additionalProperties": false,
         "properties": {
@@ -133,6 +134,18 @@
               "string",
               "null"
             ]
+          },
+          "vorjahr_kategorie": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "uebernehmbar",
+              "vorschlag",
+              null
+            ],
+            "description": "Kategorie des Vorjahres-Flags (BACKLOG vorjahr-kategorie-ohne-verhalten, 2026-09-05): `vorschlag`-Felder bleiben Fragen, werden aber auffaelliger markiert; `uebernehmbar` taucht hier praktisch nicht auf (naechste_fragen filtert es mit Vorjahres-Wert heraus). null, wo kein vorjahr-Flag gesetzt ist."
           }
         }
       }

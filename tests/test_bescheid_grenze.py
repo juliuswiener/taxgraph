@@ -216,7 +216,7 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # vz=2099 wurde mit 201 angelegt, das spaetere Laden von params/2099/... scheiterte still und
 # E1901401 zeigte None bei eingaben_konsistent=true (Live-HTTP-Messung, /deklaration). Fail-closed
 # gegen die tatsaechlich vorhandenen params/-Jahre, dynamisch gelesen statt hartkodiert.
-API_ZEILEN_OBERGRENZE = 1281
+API_ZEILEN_OBERGRENZE = 1287
 
 
 def _runner_stellen(pfad: str) -> list[int]:
