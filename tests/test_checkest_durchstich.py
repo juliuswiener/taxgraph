@@ -43,9 +43,12 @@ import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 for _sub in ("produkt/import", "produkt/mapping", "produkt/store",
-             "produkt/traverser", "elster"):
+             "produkt/traverser", "produkt/bescheid", "produkt/haut",
+             "produkt/unsicherheit", "produkt/konsistenz", "produkt/engine",
+             "golden", "elster"):
     sys.path.insert(0, os.path.join(ROOT, _sub))
 
+import bescheid_deklaration as BD  # noqa: E402
 import checkest_gate as CE   # noqa: E402
 import elster_xml as EX      # noqa: E402
 import est_mapping           # noqa: E402
@@ -78,6 +81,14 @@ import traverser as TR       # noqa: E402
 #
 # Der Stammdaten-Schritt zaehlt nur, wenn die Felder im Fall auch BEANTWORTET sind —
 # ihr blosses Vorhandensein aendert nichts. Deshalb stehen sie jetzt in _STAMM_A/_STAMM_B.
+#
+# (2026-09-05) _pruefe() durchlaeuft seither _mit_ring_werten() (BACKLOG checkest-durchstich-
+# sieht-die-injektion-nicht). Nachgemessen: beide Zahlen bleiben 0 -- ECHT, nicht blind. Grund:
+# _fall_einzel()/_fall_zusammen() fuehren kap_*=0 und keine Verpflegungs-/§35a-/Anlage-V-Felder,
+# also injiziert _mit_ring_werten fuer diese beiden Faelle nichts (leeres Diff der Feld-Keys vor/
+# nach dem Aufruf, geprueft). Ein injizierter Ring-Wert (z. B. E1900401 ohne sein Pflichtpaar
+# E1901401, kap_kapitalertraege>0) macht rc=610001002 -- damit sieht dieser Messweg jetzt, was er
+# vorher nicht sah.
 RESTFEHLER_EINZEL = 0
 RESTFEHLER_ZUSAMMEN = 0
 
@@ -229,10 +240,18 @@ def _pruefe(store) -> tuple[int, list[str], str]:
     im XML), mit Flag faellt der Vorsatz-Block weg. Eine Ratsche auf dem Nicht-Abgabe-Pfad
     haette den Fortschritt nie gesehen.
 
+    `BD._mit_ring_werten()` VOR `est_mapping.deklariere()` -- identisch zum Produktionspfad
+    (api.py `deklaration()`/`einreichen()`: `felder = _mit_ring_werten(felder, vz)` vor
+    `EM.deklariere(felder, ...)`). Ohne diesen Schritt lief dieser Messweg an jeder
+    Ring-Injektion vorbei (Guenstigerpruefungs-Antrag E1900401/E1901401, Verpflegungs-
+    kuerzung E0205508, § 35a-Summen etc.) — die Ratsche konnte auf keinen dieser Werte
+    jemals rot werden (BACKLOG checkest-durchstich-sieht-die-injektion-nicht).
+
     Rueckgabe (rc, texte, antwort): `antwort` ist die rohe Ericantwort -- CE.gekappt_verdacht()
     braucht den Puffer selbst, nicht die schon geparste texte-Liste.
     """
     snap, _ = ST.materialisiere(store)
+    snap = BD._mit_ring_werten(snap, vz=2025)
     xml = EX.erzeuge_xml(est_mapping.deklariere(snap, TR.lade_bindung()),
                          vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     rc, antwort = CE.validate(xml, "ESt_2025")
