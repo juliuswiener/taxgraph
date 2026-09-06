@@ -13,18 +13,26 @@ ordnungsempfindlich, ein Kz an der falschen Stelle fällt nur dort auf.
 """
 from __future__ import annotations
 
+import json
 import os
 import sys
+import threading
+import urllib.error
+import urllib.request
 
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-for sub in ("produkt/import", "produkt/mapping", "produkt/traverser", "elster/submission"):
+for sub in ("produkt/import", "produkt/mapping", "produkt/traverser", "elster/submission",
+            "produkt/haut", "produkt/store"):
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 import elster_xml as EX        # noqa: E402
 import est_mapping             # noqa: E402
 import traverser as TR         # noqa: E402
+import api as API               # noqa: E402
+import server as SRV             # noqa: E402
+import audit                      # noqa: E402
 
 HID = "74931"
 
@@ -825,6 +833,72 @@ def test_gewst_zu_zahlen_wird_berechnet_beide_personen():
         "gewst_hebesatz": {"wert": 400, "zustand": "bestaetigt"},
     }, 2025)
     assert "gewst_zu_zahlen" not in vorlaeufig
+
+
+def _http_req(base_url: str, method: str, path: str, body: dict | None = None):
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    req = urllib.request.Request(base_url + path, data=data, method=method,
+                                  headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.status, json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read())
+
+
+def _http_bestaetigt(feld_id: str, wert) -> dict:
+    return {"feld_id": feld_id, "wert": wert, "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": f"ok@{feld_id}"}}
+
+
+@pytest.fixture
+def http_base(tmp_path, monkeypatch):
+    """Wie die `base`-Fixture in tests/test_paket_b_e2e_http.py: eigener lokaler Server je Test,
+    Fall-Daten in tmp_path (nie im echten faelle/-Ordner)."""
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
+    srv = SRV.make_server(0)
+    th = threading.Thread(target=srv.serve_forever, daemon=True)
+    th.start()
+    try:
+        yield f"http://{srv.server_address[0]}:{srv.server_address[1]}"
+    finally:
+        srv.shutdown()
+        th.join(timeout=5)
+        srv.server_close()
+
+
+def test_gewst_zu_zahlen_uebersteht_scheibengefilterte_bindung(http_base):
+    """BACKLOG gewst-zu-zahlen-fix-ohne-test: die zwei Tests oben rufen est_mapping.deklariere()
+    direkt mit der VOLLEN Bindung (TR.lade_bindung()) -- der Defekt, den 17d7e6f schließt, sitzt
+    aber in der SCHEIBENGEFILTERTEN Bindung, die _scheibe_bindung() (produkt/haut/api.py) aus
+    RENTNER_FELDER baut. Ohne "gewst_zu_zahlen" in RENTNER_FELDER filtert _scheibe_bindung() das
+    Feld aus der Scheibe rentner_gesamt heraus, obwohl der Ring (bescheid_deklaration.
+    _mit_ring_werten) es unabhängig von der Scheibe in `felder` injiziert -- genau deshalb greift
+    der Scheibenfilter erst danach, und genau das messen die beiden Tests oben nie.
+
+    Weg: POST /fall (rentner_gesamt) -> POST /event für Messbetrag+Hebesatz (beide bestätigt) ->
+    GET /deklaration -- der volle HTTP-Pfad, kein direkter deklariere()-Aufruf.
+
+    Ohne den Fix: "gewst_zu_zahlen" steht in dek["unvollstaendig"] mit "Feld nicht in der
+    Bindungstabelle" (est_mapping.py) und eingaben_konsistent kippt auf False -- was
+    einreichen() mit 409 deklaration_unvollstaendig abbrechen lässt, für jeden Rentner mit
+    § 35-Anrechnung."""
+    st, _ = _http_req(http_base, "POST", "/fall",
+                       {"fall_id": "gzz1", "scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025})
+    assert st == 201
+    for feld, wert in (("gewst_messbetrag", 500000), ("gewst_hebesatz", 400)):
+        st, _ = _http_req(http_base, "POST", "/fall/gzz1/event", _http_bestaetigt(feld, wert))
+        assert st == 201, (st, feld)
+
+    st, dek = _http_req(http_base, "GET", "/fall/gzz1/deklaration")
+    assert st == 200
+    unvollstaendig_ids = {e["feld_id"] for e in dek["unvollstaendig"]}
+    assert "gewst_zu_zahlen" not in unvollstaendig_ids, dek["unvollstaendig"]
+    assert dek["eingaben_konsistent"] is True
+    assert dek["deklaration"]["E0801704"] == 20000     # gewst_zu_zahlen: 5.000 EUR * 400 % (Cent -> EUR)
+    assert dek["deklaration"]["E0801705"] == 400       # gewst_hebesatz
 
 
 # ---------------------------------------------------------------- § 10b Abs. 1a Vermögensstock
