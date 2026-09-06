@@ -285,6 +285,10 @@ def _felder() -> dict:
         "kap_gewinn_sonstige": _bst(0), "kap_verlust_sonstige": _bst(0),
         "kist_gezahlt": _bst(100000), "kist_erstattet": _bst(250000),
         "rentner_veraeusserungsgewinn": _bst(6000000),
+        # Naht-Fix (gate-naht-guard-liest-zustand): der Ring gewährt den § 16 Abs. 4-Freibetrag nur
+        # noch, wenn BEIDE Bedingungen bestätigt sind (vorher unconditional) -- ohne diese beiden
+        # Felder rief keiner der Zweige catala_p16_4_freibetrag mehr auf, der Mitschnitt blieb leer.
+        "rentner_alter_55_oder_berufsunfaehig": _bst(True), "rentner_freibetrag_erstmalig": _bst(True),
         "p22_nr3_einkuenfte": _bst(50000),
     }
 

@@ -1184,13 +1184,28 @@ def test_p16_4_gate_sperrt_ohne_bedingungen(base):
     assert erg["zahl_cent"] is None
 
 
-def test_p16_4_gate_sperrt_bei_alter_false(base):
-    """vg > 0 + alter_55=False + erstmalig=True → sperr (S.1 nicht erfüllt)."""
+def test_p16_4_gate_ehrliches_nein_rechnet_ohne_freibetrag(base):
+    """vg > 0 + alter_55=False (bestätigt) + erstmalig=True (bestätigt) → BEIDE Bedingungen sind
+    entschieden, der Guard sperrt also nicht mehr (Naht-Fix gate-naht-guard-liest-zustand: die
+    Sperre fragt nur, ob die Bools bestätigt sind, nicht, wie sie ausgehen). Eine bestätigte
+    Absage ist eine gültige, abschließende Antwort — kein FB, aber ein echtes Ergebnis statt einer
+    Dauer-Sperre. Der Ring gewährt entsprechend keinen FB: der volle vg zählt."""
+    # Baseline ohne vg
+    _rent_anlegen(base, "p16b0", RENTNER_KEGEL_HOCH)
+    st, e0 = _req(base, "GET", "/fall/p16b0/ergebnis")
+    _val("ergebnis", e0)
+    assert e0["grund"] == "bestaetigt"
+    z0 = e0["zahl_cent"]
     k = list(_RENTNER_KEGEL_VG_BASIS) + [("rentner_alter_55_oder_berufsunfaehig", False),
                                           ("rentner_freibetrag_erstmalig", True)]
     _rent_anlegen(base, "p16b", k)
     st, erg = _req(base, "GET", "/fall/p16b/ergebnis")
-    assert erg["grund"] == "p16_4_gate_offen", f"grund={erg.get('grund')}"
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt", f"grund={erg.get('grund')}"
+    diff = erg["zahl_cent"] - z0
+    # Kein FB → der volle vg (80.000 €) zählt, mehr als die 35.000 € netto mit FB
+    # (test_p16_4_gate_durchlaesst_mit_bedingungen). Max. Grenzsteuersatz 45 % × 80.000 € = 36.000 €.
+    assert 0 < diff <= 3600000, f"Delta {diff} außerhalb des plausiblen Bands (0–36.000 €)"
 
 
 def test_p16_4_gate_durchlaesst_mit_bedingungen(base):

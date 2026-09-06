@@ -320,9 +320,15 @@ def _gewinn_partner_anteil(f: dict):
 
     laufend, mitu = _laufender_gewinn_partner(f)
     vg_euro = _c("rentner_veraeusserungsgewinn_partner") // 100
+    # Naht-Fix (gate-naht-guard-liest-zustand), Partner-Spiegel zu Person A (bescheid_zweige.py):
+    # der FB wurde bisher unconditional gewährt, sobald bd._an_gesamt_sperrgrund den Fall durchliess
+    # — der Guard sperrt jetzt nur noch bei NICHT bestätigten Partner-Bools, ein bestätigtes False
+    # (S.1 nicht erfüllt) kommt hier an und darf keinen FB bekommen.
+    p16_4_gate_ok = (f.get("rentner_alter_55_oder_berufsunfaehig_partner", {}).get("wert") is True
+                     and f.get("rentner_freibetrag_erstmalig_partner", {}).get("wert") is True)
+    p16_4_fb = runner.catala_p16_4_freibetrag({"rentner_veraeusserungsgewinn": vg_euro}) if p16_4_gate_ok else 0
     # GEFLOORT bei 0 wie bei Person A: FB > vg darf keinen Phantom-Verlust erzeugen.
-    netto_vg = max(0, vg_euro - runner.catala_p16_4_freibetrag(
-        {"rentner_veraeusserungsgewinn": vg_euro}))
+    netto_vg = max(0, vg_euro - p16_4_fb)
     return laufend + netto_vg, mitu
 
 

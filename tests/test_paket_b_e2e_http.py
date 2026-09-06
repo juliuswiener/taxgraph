@@ -810,10 +810,13 @@ def test_an_gesamt_verpflegung_ring(base):
 
 def test_an_gesamt_verpflegung_reduktion_unset(base):
     """fail-closed-on-unset (Instructor-Härtung): Reisetage > 0, aber die Reduktions-Fragen
-    (3-Monats-Frist / Mahlzeitenkürzung) UNBEANTWORTET → Ring gesperrt, kein stiller Über-Abzug."""
+    (3-Monats-Frist / Mahlzeitenkürzung) UNBEANTWORTET → Ring gesperrt, kein stiller Über-Abzug.
+    Naht-Fix (gate-naht-guard-liest-zustand): vpf_monate_am_ort selbst ist jetzt die erste der
+    beiden offenen Fragen (ohne sie weiss der Guard nicht, ob die 3-Monats-Frist greift) --
+    grund entsprechend verpflegung_dreimonatsfrist_aufteilung_offen statt verpflegung_reduktion_offen."""
     _an_gesamt_anlegen(base, "vpu", _verpflegung_kegel(monate=None, keine_mahlzeit=None))
     st, erg = _req(base, "GET", "/fall/vpu/ergebnis")
-    assert erg["zahl_cent"] is None and erg["grund"] == "verpflegung_reduktion_offen"
+    assert erg["zahl_cent"] is None and erg["grund"] == "verpflegung_dreimonatsfrist_aufteilung_offen"
 
 
 def _zusammen_kegel(vor_a=0, ohne=()):
@@ -3752,10 +3755,14 @@ def test_verpflegung_dreimonats_frist_ring(base):
     """
     catala = _catala_da()
 
-    # Fall A: ohne Dreimonatsfrist-Angabe, ohne Monats-Angabe (≤3, keine Frist-Kürzung)
+    # Fall A: mit bestätigtem Monats-Wert ≤3 (keine Frist-Kürzung). Naht-Fix
+    # (gate-naht-guard-liest-zustand): vpf_monate_am_ort muss jetzt bestätigt sein, bevor der
+    # Guard die volle Pauschale zulässt -- ein UNSET-Wert sperrt jetzt (statt die 3-Monats-Prüfung
+    # stillschweigend zu überspringen), s. test_an_gesamt_verpflegung_reduktion_unset.
     kegel_ohne = _gesamt_kegel(0, bruttolohn=5000000)
     _gesamt_anlegen(base, "vpf-d-ohne", kegel_ohne)
     _req(base, "POST", "/fall/vpf-d-ohne/event", _laie("tage_24h", 60))
+    _req(base, "POST", "/fall/vpf-d-ohne/event", _laie("vpf_monate_am_ort", 2))  # ≤ 3
     # Mahlzeiten-Antwort: "keine gestellt" (vpf_keine_mahlzeitengestellung=true)
     _req(base, "POST", "/fall/vpf-d-ohne/event", _laie("vpf_keine_mahlzeitengestellung", True))
     st, erg_ohne = _req(base, "GET", "/fall/vpf-d-ohne/ergebnis")

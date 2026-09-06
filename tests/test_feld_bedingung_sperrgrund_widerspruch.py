@@ -15,28 +15,43 @@ Quelltext gebaut, nicht von Hand gepflegt -- ein neuer Treffer faellt beim naech
 ## Nicht jeder Treffer ist ein Fund: das strukturelle Muster
 
 Ein Guard kann im Code stehen und trotzdem nie in genau dem Zustand feuern, den der Schnitt
-meldet. Live geprueft (nicht nur aus dem Code geschlossen, s. Anlass unten) fuer drei der zwoelf
-mechanischen Treffer: der Guard verlangt `_positiv(X)` als Vorbedingung, und X traegt SELBST
-dieselbe `feld_bedingung` wie das bewachte Feld. Wird das bewachte Feld ausgeschlossen (Kreuz
-bestaetigt, abweichender Wert), ist X unter derselben Bedingung IMMER MIT ausgeschlossen -- X kann
-in diesem Zustand nie positiv sein, der Guard also nie feuern, waehrend das bewachte Feld fehlt.
-Das ist eine Aussage ueber die Bauart, nicht drei Einzelfaelle: `_strukturell_unerreichbar()`
-unten prueft das Muster maschinell (Vorbedingungen aus allen umschliessenden `if`-Tests, auch bei
-Verschachtelung statt flachem `and`) statt es als drei Namen mit "ist ok" zu listen -- eine
-Ausnahme aus einem Muster laesst sich beim naechsten Lauf nachrechnen, eine aus Namen altert ohne
+meldet. Live geprueft (nicht nur aus dem Code geschlossen, s. Anlass unten) fuer sieben der 16
+mechanischen Treffer, in zwei Varianten (beide macht `_strukturell_unerreichbar()` maschinell
+nach, keine der beiden ist eine Liste von Namen):
+  (a) der Guard verlangt `_positiv(X)` als Vorbedingung, und X traegt SELBST dieselbe
+      `feld_bedingung` wie das bewachte Feld. Wird das bewachte Feld ausgeschlossen (Kreuz
+      bestaetigt, abweichender Wert), ist X unter derselben Bedingung IMMER MIT ausgeschlossen --
+      X kann in diesem Zustand nie positiv sein, der Guard also nie feuern, waehrend das bewachte
+      Feld fehlt.
+  (b) der Guard verlangt `felder.get(F).get("wert") == KONST` als Vorbedingung, WOERTLICH
+      identisch mit der `feld_bedingung` des bewachten Feldes (F/KONST == feld/wert) -- der Guard
+      erreicht die Pruefung des bewachten Feldes also nur in genau dem Zustand, in dem dieses
+      Feld selbst noch askable ist.
+Beide sind Aussagen ueber die Bauart, nicht Einzelfaelle: `_strukturell_unerreichbar()` unten
+prueft sie maschinell (Vorbedingungen aus allen umschliessenden `if`-Tests, auch bei
+Verschachtelung statt flachem `and`) statt sie als Namen mit "ist ok" zu listen -- eine Ausnahme
+aus einem Muster laesst sich beim naechsten Lauf nachrechnen, eine aus Namen altert ohne
 Fehlermeldung.
 
-Die drei bekannten Instanzen (belegt in `test_muster_erklaert_genau_die_drei_bekannten_...`):
+Die sieben bekannten Instanzen (belegt in `test_muster_erklaert_genau_die_sieben_bekannten_...`):
   - gewst_hebesatz (Kreuz kein_gewinn) -- Vorbedingung `_positiv("gewst_messbetrag")`, dasselbe
-    Kreuz (bindung_an_gesamt.yaml).
+    Kreuz (bindung_an_gesamt.yaml). Muster (a).
   - behinderungsbedingte_aufwendungen_wahlrecht_pb (Kreuz keine_behinderung_pflege) -- Vorbedingung
     `_positiv("behinderungsbedingte_aufwendungen")`, dasselbe Kreuz (bindung_sonder_agb_35a.yaml
-    Z.166 vs. Z.193).
+    Z.166 vs. Z.193). Muster (a).
   - behinderungsbedingte_aufwendungen_wahlrecht_pb_partner (Kreuz veranlagung=zusammen) --
     Vorbedingung `_positiv("behinderungsbedingte_aufwendungen_partner")`, dieselbe feld_bedingung
-    (Z.237 vs. Z.257).
-Waere der mechanische Schnitt ungeprueft als Fundliste gemeldet worden, waeren 3 von 12 Eintraegen
-(25 %) erfunden gewesen -- eine Landkarte, die nach dem ersten Fehlalarm nicht mehr gelesen wird.
+    (Z.237 vs. Z.257). Muster (a).
+  - rentner_alter_55_oder_berufsunfaehig, rentner_freibetrag_erstmalig (beide Kreuz kein_gewinn) --
+    Vorbedingung `_positiv("rentner_veraeusserungsgewinn")`, dieselbe feld_bedingung
+    (bindung_rentner.yaml Z.500-505 vs. Z.540-542/558-560). Muster (a). Neu seit dem Naht-Fix
+    gate-naht-guard-liest-zustand (`p16_4_gate_offen` liest jetzt `zustand`, nicht den Rohwert).
+  - rentner_alter_55_oder_berufsunfaehig_partner, rentner_freibetrag_erstmalig_partner (beide
+    Kreuz veranlagung=zusammen) -- Vorbedingung `felder.get("veranlagung").get("wert") ==
+    "zusammen"`, wortgleich mit der feld_bedingung beider Felder (bindung_rentner.yaml Z.663/696).
+    Muster (b), derselbe Naht-Fix.
+Waere der mechanische Schnitt ungeprueft als Fundliste gemeldet worden, waeren 7 von 16 Eintraegen
+(44 %) erfunden gewesen -- eine Landkarte, die nach dem ersten Fehlalarm nicht mehr gelesen wird.
 
 ## Die zwei echten Treffer -- und ihre gemeinsame Wurzel
 
@@ -239,9 +254,50 @@ def _vorbedingung_positiv_felder(node: ast.AST, eltern: dict[ast.AST, ast.AST]) 
     return out
 
 
-def _menge_b_mit_vorbedingungen() -> tuple[set[str], dict[str, set[str]]]:
-    """Menge B (Felder, die der Guard als bestaetigt verlangt) UND, je Feld, die Menge der
-    `_positiv(...)`-Felder in einem umschliessenden if -- Rohmaterial fuer die Musterpruefung."""
+def _feld_wert_gleichheit_in(node: ast.AST) -> dict[str, object]:
+    """Alle `felder.get("F", ...).get("wert") == KONST`-Vergleiche in `node` (ein if-Test), F -> KONST."""
+    out: dict[str, object] = {}
+    for n in ast.walk(node):
+        if not (isinstance(n, ast.Compare) and len(n.ops) == 1 and isinstance(n.ops[0], ast.Eq)):
+            continue
+        seiten = [n.left] + n.comparators
+        konst = next((s for s in seiten if isinstance(s, ast.Constant)), None)
+        innen = next((s for s in seiten if s is not konst), None)
+        if konst is None or innen is None:
+            continue
+        if not (isinstance(innen, ast.Call) and isinstance(innen.func, ast.Attribute)
+                and innen.func.attr == "get" and innen.args
+                and isinstance(innen.args[0], ast.Constant) and innen.args[0].value == "wert"):
+            continue
+        aussen = innen.func.value
+        if not (isinstance(aussen, ast.Call) and isinstance(aussen.func, ast.Attribute)
+                and aussen.func.attr == "get" and isinstance(aussen.func.value, ast.Name)
+                and aussen.func.value.id == "felder" and aussen.args
+                and isinstance(aussen.args[0], ast.Constant) and isinstance(aussen.args[0].value, str)):
+            continue
+        out[aussen.args[0].value] = konst.value
+    return out
+
+
+def _vorbedingung_gleichheit_felder(node: ast.AST, eltern: dict[ast.AST, ast.AST]) -> dict[str, object]:
+    """Wie `_vorbedingung_positiv_felder`, aber fuer `felder.get(F, ...).get("wert") == KONST` statt
+    `_positiv(F)` -- deckt Vorbedingungen ab, die direkt denselben Wert verlangen, den auch die
+    `feld_bedingung` des bewachten Feldes traegt (z. B. `veranlagung == "zusammen"`, s.
+    p16_4_gate_offen Partner-Zweig)."""
+    out: dict[str, object] = {}
+    cur = node
+    while cur in eltern:
+        p = eltern[cur]
+        if isinstance(p, ast.If):
+            out.update(_feld_wert_gleichheit_in(p.test))
+        cur = p
+    return out
+
+
+def _menge_b_mit_vorbedingungen() -> tuple[set[str], dict[str, set[str]], dict[str, dict[str, object]]]:
+    """Menge B (Felder, die der Guard als bestaetigt verlangt) UND, je Feld, (a) die Menge der
+    `_positiv(...)`-Felder und (b) die `felder.get(F).get("wert") == KONST`-Gleichheiten in einem
+    umschliessenden if -- Rohmaterial fuer die Musterpruefung."""
     fn = _funktion(BD, "_an_gesamt_sperrgrund")
     eltern = _eltern_karte(fn)
     local_assigns: dict[str, ast.AST] = {}
@@ -251,6 +307,7 @@ def _menge_b_mit_vorbedingungen() -> tuple[set[str], dict[str, set[str]]]:
 
     gefunden: set[str] = set()
     vorbedingungen: dict[str, set[str]] = {}
+    gleichheiten: dict[str, dict[str, object]] = {}
 
     def _walk(node: ast.AST, scope: dict[str, ast.AST]) -> None:
         if isinstance(node, ast.For):
@@ -292,14 +349,16 @@ def _menge_b_mit_vorbedingungen() -> tuple[set[str], dict[str, set[str]]]:
                     else:
                         namen = _resolve_feldnamen(arg, local_assigns)
                     vb = _vorbedingung_positiv_felder(node, eltern)
+                    gl = _vorbedingung_gleichheit_felder(node, eltern)
                     for f in namen:
                         gefunden.add(f)
                         vorbedingungen.setdefault(f, set()).update(vb)
+                        gleichheiten.setdefault(f, {}).update(gl)
         for kind in ast.iter_child_nodes(node):
             _walk(kind, scope)
 
     _walk(fn, {})
-    return gefunden, vorbedingungen
+    return gefunden, vorbedingungen, gleichheiten
 
 
 # --------------------------------------------------------------- Musterpruefung + Gate
@@ -308,10 +367,14 @@ def _teilt_feld_bedingung(a: dict, b: dict) -> bool:
     return a.get("feld") == b.get("feld") and a.get("wert") == b.get("wert") and a.get("wert_nicht") == b.get("wert_nicht")
 
 
-def _strukturell_unerreichbar(feld: str, menge_a: dict[str, dict], vorbedingungen: dict[str, set[str]]) -> str | None:
-    """Muster (s. Modul-Docstring): eine `_positiv(X)`-Vorbedingung im Guard, wobei X dieselbe
-    feld_bedingung traegt wie `feld` selbst -- X kann dann nie positiv sein, waehrend `feld`
-    ausgeschlossen ist. Gibt den Namen von X als Beleg zurueck, sonst None."""
+def _strukturell_unerreichbar(feld: str, menge_a: dict[str, dict], vorbedingungen: dict[str, set[str]],
+                               gleichheiten: dict[str, dict[str, object]]) -> str | None:
+    """Muster (s. Modul-Docstring), zwei Varianten: (a) eine `_positiv(X)`-Vorbedingung im Guard,
+    wobei X dieselbe feld_bedingung traegt wie `feld` selbst -- X kann dann nie positiv sein,
+    waehrend `feld` ausgeschlossen ist; (b) eine `felder.get(F).get("wert") == KONST`-Vorbedingung,
+    die WOERTLICH die feld_bedingung von `feld` reproduziert (F/KONST == feld/wert) -- der Guard
+    erreicht die Pruefung von `feld` dann nur in genau dem Zustand, in dem `feld` selbst askable
+    ist. Gibt den Beleg (Namen von X bzw. die Gleichheit) zurueck, sonst None."""
     fb = menge_a.get(feld)
     if not fb:
         return None
@@ -319,14 +382,18 @@ def _strukturell_unerreichbar(feld: str, menge_a: dict[str, dict], vorbedingunge
         fb_x = menge_a.get(x)
         if fb_x and _teilt_feld_bedingung(fb, fb_x):
             return x
+    gl = gleichheiten.get(feld, {})
+    if fb.get("feld") in gl and gl[fb["feld"]] == fb.get("wert"):
+        return f"{fb['feld']}=={fb['wert']!r}"
     return None
 
 
-def _ungeklaerte_treffer(menge_a: dict[str, dict], menge_b: set[str], vorbedingungen: dict[str, set[str]]) -> list[str]:
+def _ungeklaerte_treffer(menge_a: dict[str, dict], menge_b: set[str], vorbedingungen: dict[str, set[str]],
+                          gleichheiten: dict[str, dict[str, object]]) -> list[str]:
     schnitt = sorted(set(menge_a) & menge_b)
     out = []
     for feld in schnitt:
-        if _strukturell_unerreichbar(feld, menge_a, vorbedingungen):
+        if _strukturell_unerreichbar(feld, menge_a, vorbedingungen, gleichheiten):
             continue
         if feld in BEKANNTE_TREFFER:
             continue
@@ -338,23 +405,35 @@ def test_mengen_nicht_leer():
     """Waechter gegen eine Extraktion, die mangels Fundstellen (umbenannte Funktion, geaenderte
     YAML-Struktur) still leer wird und den Gate-Test unten sinnlos gruen macht."""
     menge_a = _menge_a()
-    menge_b, _ = _menge_b_mit_vorbedingungen()
+    menge_b, _, _ = _menge_b_mit_vorbedingungen()
     assert len(menge_a) > 30, f"Menge A verdaechtig klein ({len(menge_a)}) -- YAML-Scan kaputt?"
     assert len(menge_b) > 20, f"Menge B verdaechtig klein ({len(menge_b)}) -- Guard-Extraktion kaputt?"
 
 
-def test_muster_erklaert_genau_die_drei_bekannten_falsch_positiven():
+def test_muster_erklaert_genau_die_sieben_bekannten_falsch_positiven():
     """Haelt fest, WAS die Musterpruefung heute erklaert -- nicht mehr, nicht weniger -- damit eine
-    kuenftige Verschiebung sichtbar wird, statt sich in den Gate-Treffern zu verstecken."""
+    kuenftige Verschiebung sichtbar wird, statt sich in den Gate-Treffern zu verstecken.
+
+    Seit dem Naht-Fix (gate-naht-guard-liest-zustand) liest `p16_4_gate_offen` `zustand ==
+    "bestaetigt"` statt des Rohwerts -- dadurch treten rentner_alter_55_oder_berufsunfaehig(_partner)
+    und rentner_freibetrag_erstmalig(_partner) neu in Menge B auf. Die Personen-A-Variante matcht
+    das bestehende `_positiv(X)`-Muster (X = rentner_veraeusserungsgewinn, dieselbe feld_bedingung
+    kein_gewinn=false). Die Partner-Variante hat eine ANDERE Vorbedingung: der Guard steht in
+    `if veranlagung == "zusammen":`, wortgleich mit der feld_bedingung der beiden Partnerfelder
+    (bindung_rentner.yaml Z.663/696) -- Variante (b) von `_strukturell_unerreichbar`."""
     menge_a = _menge_a()
-    menge_b, vorbedingungen = _menge_b_mit_vorbedingungen()
+    menge_b, vorbedingungen, gleichheiten = _menge_b_mit_vorbedingungen()
     schnitt = set(menge_a) & menge_b
 
-    erklaert = {f for f in schnitt if _strukturell_unerreichbar(f, menge_a, vorbedingungen)}
+    erklaert = {f for f in schnitt if _strukturell_unerreichbar(f, menge_a, vorbedingungen, gleichheiten)}
     erwartet = {
         "gewst_hebesatz",
         "behinderungsbedingte_aufwendungen_wahlrecht_pb",
         "behinderungsbedingte_aufwendungen_wahlrecht_pb_partner",
+        "rentner_alter_55_oder_berufsunfaehig",
+        "rentner_freibetrag_erstmalig",
+        "rentner_alter_55_oder_berufsunfaehig_partner",
+        "rentner_freibetrag_erstmalig_partner",
     }
     assert erklaert == erwartet, (
         f"Musterpruefung erklaert {sorted(erklaert)}, erwartet {sorted(erwartet)} -- neuer Fall "
@@ -365,8 +444,8 @@ def test_feld_bedingung_schnitt_sperrgrund_nur_bekannte_oder_strukturell_unerrei
     """Das eigentliche Gate. A ∩ B, frisch aus YAML+Guard gebaut. Jeder Treffer, der weder ins
     Muster (strukturell unerreichbar) noch in BEKANNTE_TREFFER faellt, ist ein NEUER Fund."""
     menge_a = _menge_a()
-    menge_b, vorbedingungen = _menge_b_mit_vorbedingungen()
-    ungeklaert = _ungeklaerte_treffer(menge_a, menge_b, vorbedingungen)
+    menge_b, vorbedingungen, gleichheiten = _menge_b_mit_vorbedingungen()
+    ungeklaert = _ungeklaerte_treffer(menge_a, menge_b, vorbedingungen, gleichheiten)
     assert not ungeklaert, (
         "Neue(r) Treffer in Menge A ∩ Menge B, weder strukturell unerreichbar noch bekannt: "
         f"{ungeklaert}. Ein Feld darf nur per Kreuz entfallen, wenn kein Sperrgrund es als "
@@ -387,13 +466,13 @@ def test_gate_reagiert_auf_neue_feld_bedingung_mutationsprobe():
     (2) zeigt, koennte gruen bleiben, weil die Mutation gar nicht ankam, und saehe trotzdem wie
     ein bestandener Test aus."""
     menge_a = _menge_a()
-    menge_b, vorbedingungen = _menge_b_mit_vorbedingungen()
+    menge_b, vorbedingungen, gleichheiten = _menge_b_mit_vorbedingungen()
 
     assert "hh_rechnung_unbar" in menge_b, "Praemisse verletzt: hh_rechnung_unbar nicht mehr in Menge B."
     assert "hh_rechnung_unbar" not in menge_a, (
         "Praemisse verletzt: hh_rechnung_unbar traegt inzwischen eine echte feld_bedingung -- "
         "Mutationsziel neu waehlen.")
-    assert "hh_rechnung_unbar" not in _ungeklaerte_treffer(menge_a, menge_b, vorbedingungen), (
+    assert "hh_rechnung_unbar" not in _ungeklaerte_treffer(menge_a, menge_b, vorbedingungen, gleichheiten), (
         "Vor der Mutation sollte hh_rechnung_unbar nicht auftauchen.")
 
     # (1) Mutation einspielen und BELEGEN, dass sie ankam -- bevor irgendeine Gate-Logik laeuft.
@@ -404,7 +483,7 @@ def test_gate_reagiert_auf_neue_feld_bedingung_mutationsprobe():
     assert "hh_rechnung_unbar" not in menge_a, "Mutation hat das Original veraendert statt einer Kopie."
 
     # (2) ERST DANACH: dieselbe Gate-Logik auf den mutierten Zustand losgelassen -- muss rot werden.
-    treffer_nach_mutation = _ungeklaerte_treffer(mutiert, menge_b, vorbedingungen)
+    treffer_nach_mutation = _ungeklaerte_treffer(mutiert, menge_b, vorbedingungen, gleichheiten)
     assert "hh_rechnung_unbar" in treffer_nach_mutation, (
         "Mutation kam an (siehe (1)), aber das Gate hat sie nicht bemerkt -- die Gate-Logik "
         "selbst ist blind fuer einen neuen Treffer.")
