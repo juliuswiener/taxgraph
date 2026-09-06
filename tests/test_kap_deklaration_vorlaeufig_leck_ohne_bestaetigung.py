@@ -141,7 +141,7 @@ _GRUND = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
           ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
           ("mit_anspruch_auf_zuschuss", False)) + _STAMM
 
-_KAP_NULL = (("kein_kap", True), ("kap_kapitalertraege", 0),
+_KAP_NULL = (("kap_kapitalertraege", 0),
              ("kap_gewinn_aktien", 0), ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0))
 
 
@@ -191,9 +191,14 @@ def gemessen(tmp_path_factory):
 
     ergebnisse = {}
     try:
-        ergebnisse["baseline"] = _messe("kapleck_baseline", [])
-        ergebnisse["gruen"] = _messe("kapleck_gruen", [_laie("kap_gewinn_sonstige", 175000)])
-        ergebnisse["leck"] = _messe("kapleck_leck", [_vorjahr_vorschlag("kap_gewinn_sonstige", 175000)])
+        ergebnisse["baseline"] = _messe("kapleck_baseline", [_laie("kein_kap", True)])
+        # kein_kap=False noetig: ein bestaetigter kap_gewinn_sonstige>0 neben kein_kap=True
+        # widerspricht sich selbst -- flag_check.flag_widersprueche() sperrt das zu Recht
+        # (live gemessen 2026-08-31: grund=flag_konsistenz_offen ohne diese Zeile).
+        ergebnisse["gruen"] = _messe("kapleck_gruen",
+                                      [_laie("kein_kap", False), _laie("kap_gewinn_sonstige", 175000)])
+        ergebnisse["leck"] = _messe("kapleck_leck",
+                                     [_laie("kein_kap", False), _vorjahr_vorschlag("kap_gewinn_sonstige", 175000)])
     finally:
         EX.erzeuge_xml = orig_erzeuge_xml
         srv.shutdown()

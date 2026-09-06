@@ -271,9 +271,15 @@ def test_ernte_est_mapping_kz_negation_und_verzweigung_mit_echtem_vz():
     # Die Bezeichnung steht im selben Block wie der Betrag (checkESt verlangt sie gemeinsam).
     assert synth.get("verzweigung:gewinn_bezeichnung:gewerbe", {}).get("elster_kz") == "E0800301"
     assert synth.get("verzweigung:gewinn_bezeichnung:selbstaendig", {}).get("elster_kz") == "E0803101"
-    # land_forst BEWUSST ohne Kz: Anlage L trennt § 4 Abs. 1/3 (E0901007) und
-    # § 13a (E0901103) — unser gewinn_betriebsart unterscheidet das nicht.
-    # fail-closed bis zweites Art-Feld existiert.
+    # land_forst BEWUSST ohne Kz (XSD-Befund Recherche-Worker 2026-08-31, korrigiert die vorherige
+    # Fassung dieses Kommentars): Anlage L hat vier Kandidaten-Kz im Container `L/Gewinn/Einz_Unt`
+    # (dem zu `veranlagung=einzel` passenden Container, analog G/Gew/Einz_U/Betr_1_2 und
+    # S/Gewinn/Freiber_T oben) — E0900202/E0900301 fuer § 4 Abs. 1/3, E0900405/E0900502 fuer § 13a.
+    # NICHT E0901007/E0901103 (Ges_Fest) — das sind, wie oben bei gewerbe/selbstaendig, die Kz des
+    # gesondert festgestellten Beteiligungsanteils, nicht des eigenen Betriebs. Welcher der vier
+    # Einz_Unt-Kandidaten zutrifft, haengt an ZWEI Feldern, die es im Projekt nicht gibt:
+    # Gewinnermittlungsart (E0900407) UND Wirtschaftsjahr-Lage (E0900101) — unser gewinn_betriebsart
+    # deckt nur die Betriebsart ab, keines von beiden. fail-closed bis beide Art-Felder existieren.
     assert "verzweigung:einkuenfte_gewinn:land_forst" not in synth
 
 

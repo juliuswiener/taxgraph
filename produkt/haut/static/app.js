@@ -310,10 +310,21 @@ function zeigeRing(stand, offen) {
     if (SPANNE0 === null || breite > SPANNE0) SPANNE0 = breite || 1;
     ringEl.style.setProperty("--schrumpf", SPANNE0 ? breite / SPANNE0 : 0);
     // „steht" allein sagte einem Laien nichts — es ist die Aussage, dass die Spanne zu einem Punkt
-    // geschrumpft ist und keine offene Frage den Betrag mehr bewegt.
+    // geschrumpft ist. GEMESSEN 2026-08-31: min_cent===max_cent heißt nur „unter den Achsen, die
+    // die Rechnung geschwenkt hat, hat sich nichts bewegt" — nicht „keine offene Frage ändert den
+    // Betrag". Felder ohne eigene Achse (z.B. rentner_alter_bei_rentenbeginn) bleiben unsichtbar für
+    // diesen Vergleich, obwohl sie in `offen` mitzählen. Der alte Satz behauptete Endgültigkeit, die
+    // die Rechnung nicht belegt hatte — offen>0 bei gleichzeitig „steht fest" widersprach sich.
+    // GEMESSEN 2026-08-31 (zweite Runde): offen===0 reicht allein nicht — ein Instanz-Feld ohne
+    // bereich (z.B. rentner_jahresrente) landet in iv.offene_achsen und wird vom Sweep NIE
+    // geschwenkt, auch wenn alle Fragen beantwortet sind. min===max ist dann keine Messung,
+    // sondern eine Nichtmessung, die wie eine aussieht — „steht fest" darf hier nicht fallen.
     if (iv.min_cent === iv.max_cent) {
+      const achsenOffen = (iv.offene_achsen || []).length > 0;
       spanneEl.textContent = `Deine Steuer: ${euro(iv.min_cent)}`;
-      hintEl.textContent = "steht fest — keine offene Frage ändert diesen Betrag mehr";
+      hintEl.textContent = (offen === 0 && !achsenOffen)
+        ? "steht fest — keine offene Frage ändert diesen Betrag mehr"
+        : "ändert sich unter den geprüften Angaben nicht";
     }
     else {
       spanneEl.textContent = `${euro(iv.min_cent)} – ${euro(iv.max_cent)}`;
@@ -2464,6 +2475,7 @@ async function einreichenPruefen() {
   kopf.className = "einreichen-kopf";
   const detail = document.createElement("p");
   detail.className = "einreichen-detail";
+  let extra = [];
   if (r.status === 200 && r.body && !("grund" in r.body)) {
     kopf.textContent = "Geprüft und in Ordnung.";
     detail.textContent = r.body.hinweis || "";
@@ -2471,11 +2483,36 @@ async function einreichenPruefen() {
     kopf.textContent = "Geprüft und beanstandet.";
     detail.textContent = "Die Prüfung hat Einwände gegen die Erklärung gefunden. Bitte Angaben " +
                           "prüfen, bevor erneut eingereicht wird.";
+  } else if (r.body && r.body.grund === "deklaration_unvollstaendig" &&
+             Array.isArray(r.body.unvollstaendig) && r.body.unvollstaendig.length) {
+    // Server hat die Ursache je Feld schon ermittelt (est_mapping.py) — durchreichen statt neu formulieren.
+    kopf.textContent = "Geprüft und unvollständig.";
+    detail.textContent = "Diese Angaben fehlen oder sind bei uns noch nicht abgebbar:";
+    // Der Servertext nennt die Einkunftsart als Code-Wert, z.B. "'land_forst' (gewinn_betriebsart)" —
+    // NUR diesen Ausschnitt ersetzen wir, mit derselben Anzeigetext-Quelle, die enum-Fragen ohnehin
+    // schon nutzen (s. baueEingabe(), verstandenWertText()): enum_labels aus /feld/{fid}/frage. Rest
+    // des Satzes (inkl. der entlastenden Hälfte "keine Eingabe von dir fehlt...") bleibt Servertext.
+    const labelCache = new Map();
+    const MUSTER = /'([^']+)'\s*\(([a-zA-Z0-9_]+)\)/;
+    for (const u of r.body.unvollstaendig) {
+      let text = GUARD[u.grund] || u.grund;
+      const m = MUSTER.exec(text);
+      if (m) {
+        if (!labelCache.has(m[2])) {
+          const fr = await jget(`/fall/${FALL}/feld/${m[2]}/frage`);
+          labelCache.set(m[2], (fr.status === 200 && fr.body.frage && fr.body.frage.enum_labels) || {});
+        }
+        const lesbar = labelCache.get(m[2])[m[1]] || m[1];
+        text = text.slice(0, m.index) + lesbar + text.slice(m.index + m[0].length);
+      }
+      extra.push(Object.assign(document.createElement("p"),
+        {className: "einreichen-detail", textContent: `${u.feld_id}: ${text}`}));
+    }
   } else {
     kopf.textContent = "Nicht geprüft.";
     detail.textContent = "Aus der Prüfung liegt kein Ergebnis vor. Der Fall gilt als offen.";
   }
-  status.replaceChildren(kopf, detail);
+  status.replaceChildren(kopf, detail, ...extra);
   status.hidden = false;
   btn.disabled = false;
 }

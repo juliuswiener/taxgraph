@@ -289,8 +289,13 @@ def plausibilitaets_widersprueche(snapshot: dict) -> list:
     return widersprueche
 
 
-def preflight(snapshot: dict) -> dict:
+def preflight(snapshot: dict, bindung: dict | None = None) -> dict:
     """Snapshot → Preflight-Ergebnis.
+
+    `bindung` (optional, dieselbe Quelle wie der Schreibpfad: api.py::_scheibe_bindung(store)) reicht
+    an flag_check.flag_widersprueche() durch, damit ein auf der aktuellen Scheibe strukturell
+    unfragbares Flag nicht als unbeantwortet-verdächtig gilt (s. dort). Ohne `bindung` (Alt-Aufrufer)
+    unverändertes Verhalten.
 
     Rückgabe:
       - widersprueche_flag: Liste (flag_check)
@@ -301,7 +306,7 @@ def preflight(snapshot: dict) -> dict:
       - hinweise_nicht_gerechnet: Liste (check_nicht_gerechnet)
       - status: "RED" (harte Widersprüche), "AMBER" (nur soft warnings), "GREEN" (clean)
     """
-    flag = flag_check.flag_widersprueche(snapshot)
+    flag = flag_check.flag_widersprueche(snapshot, bindung)
     partner = partner_check.partner_ohne_zusammen(snapshot)
     alleinerziehend = partner_check.alleinerziehend_mit_zusammen(snapshot)
     plausibilitaet = plausibilitaets_widersprueche(snapshot)

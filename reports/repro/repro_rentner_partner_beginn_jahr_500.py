@@ -11,17 +11,21 @@ Lauf: python3 reports/repro/repro_rentner_partner_beginn_jahr_500.py
 Faelle liegen als flache JSON-Dateien in API.FAELLE (echtes Verzeichnis, KEIN tmp_path wie in
 den Tests) -- Skript raeumt seine drei Fall-IDs am Ende selbst weg.
 
-Hinweis 2026-08-31: das Skript patcht flag_check.flag_widersprueche zur Laufzeit auf eine reine
-HEAD-Kopie der Pruefregel (s. _HEAD_FLAG_WIDERSPRUECHE unten) und nimmt den Patch am Ende zurueck.
-Grund: ein paralleler, ungecommitteter Umbau in produkt/konsistenz/flag_check.py (fremdes Terrain,
-hier nicht angefasst) behandelt ein NIE gestelltes Screening-Flag (kein_sonstige_partner) testweise
-wie bestaetigt-true; kein_sonstige_partner ist auf Scheibe rentner_gesamt aber gar nicht erreichbar
-(400 "nicht in dieser Scheibe"), laesst sich also nicht durch eine explizite Antwort neutralisieren.
-Ohne den Patch feuert flag_konsistenz_offen und verdeckt den eigentlichen Rentner-Partner-Befund
-dieses Skripts. Gemessen per git diff, s. Meldung an den Instructor.
+Hinweis 2026-08-31 (ueberholt, s. u.): das Skript patchte flag_check.flag_widersprueche zeitweise
+zur Laufzeit auf eine reine HEAD-Kopie der Pruefregel, weil ein damals unfertiger Umbau in
+produkt/konsistenz/flag_check.py ein NIE gestelltes Screening-Flag (kein_sonstige_partner) auf
+Scheibe rentner_gesamt faelschlich wie bestaetigt-true behandelte (Flag dort ueberhaupt nicht
+erreichbar, 400 "nicht in dieser Scheibe", liess sich also nicht durch eine Antwort neutralisieren).
+
+2026-08-31, spaeter: der Umbau ist fertig -- flag_widersprueche(snapshot, bindung=None) bekommt
+jetzt den bindung-Parameter (_scheibe_bindung(store)) durchgereicht und ueberspringt ein Flag, das
+auf der aktuellen Scheibe strukturell gar nicht fragbar ist (s. Docstring dort). Genau das behebt
+den Umgehungsgrund von oben: kein_sonstige_partner ist nicht in rentner_gesamts Bindung, wird also
+nicht mehr wie bestaetigt-true behandelt. Der Patch ist damit ueberfluessig UND wuerde jetzt selbst
+mit TypeError crashen (HEAD-Kopie kennt nur die alte einarmige Signatur, _an_gesamt_sperrgrund ruft
+seit demselben Umbau zweiarmig auf) -- deshalb entfernt statt repariert.
 """
 import os
-import subprocess
 import sys
 import traceback
 
@@ -33,25 +37,6 @@ for sub in ("produkt/haut", "produkt/import", "produkt/store", "produkt/konsiste
 os.environ["TAXGRAPH_NO_AUTH"] = "1"   # wie tests/conftest.py -- sonst 401 auf /fall
 
 import api as API  # noqa: E402
-import flag_check as FC  # noqa: E402
-
-
-def _head_flag_widersprueche_installieren():
-    """flag_check.flag_widersprueche() zur Laufzeit durch die HEAD-Fassung ersetzen (git show
-    HEAD:...), damit ein paralleler ungecommitteter Umbau derselben Datei dieses Skript nicht
-    verfaelscht. Gibt eine restore()-Funktion zurueck."""
-    quelle = subprocess.run(
-        ["git", "show", "HEAD:produkt/konsistenz/flag_check.py"],
-        cwd=ROOT, capture_output=True, text=True, check=True,
-    ).stdout
-    ns = {}
-    exec(compile(quelle, "flag_check@HEAD", "exec"), ns)  # noqa: S102 -- vertrauenswuerdige eigene Repo-Quelle
-    orig = FC.flag_widersprueche
-    FC.flag_widersprueche = ns["flag_widersprueche"]
-
-    def _restore():
-        FC.flag_widersprueche = orig
-    return _restore
 
 
 def _laie(fld, w):
@@ -93,7 +78,6 @@ def _aufraeumen(fall_id):
 
 def main():
     ausfaelle = []
-    _restore_flag_check = _head_flag_widersprueche_installieren()
 
     # ---- Fall A (Weg 2): renten_art_partner gesetzt, beginn_jahr_partner NIE beantwortet ----
     fall_a = "repro_500_beginn_jahr_partner_fehlt"
@@ -187,8 +171,6 @@ def main():
         API._an_gesamt_sperrgrund = orig
         _aufraeumen(fall_c)
         assert API._an_gesamt_sperrgrund is orig, "Guard-Patch nicht zurueckgenommen!"
-
-    _restore_flag_check()
 
     print()
     if ausfaelle:

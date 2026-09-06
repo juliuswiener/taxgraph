@@ -46,6 +46,60 @@ def test_kein_kap_und_sonstige_widerspruch():
     assert flags == {"kein_kap", "kein_sonstige"}
 
 
+# ---- kein_kap deckte nur 2 von 5 Kap-Feldern (kap_gewinn_sonstige/kap_verlust_aktien/kap_verlust_sonstige
+# fehlten in FLAG_NEGIERT, obwohl beide in est_mapping.KAP_FELDER_A und in Anlage KAP deklariert werden) ----
+
+def test_kein_kap_sonstige_gewinn_widerspruch():
+    # 1.750 EUR (175000 Cent) in kap_gewinn_sonstige bei gesetztem kein_kap=true -> muss sperren
+    w = FC.flag_widersprueche(_snap(kein_kap=(True, "bestaetigt"), kap_gewinn_sonstige=(175000, "bestaetigt")))
+    assert len(w) == 1 and w[0]["flag"] == "kein_kap" and w[0]["feld_id"] == "kap_gewinn_sonstige"
+
+
+def test_kein_kap_verlust_aktien_widerspruch():
+    w = FC.flag_widersprueche(_snap(kein_kap=(True, "bestaetigt"), kap_verlust_aktien=(50000, "bestaetigt")))
+    assert len(w) == 1 and w[0]["flag"] == "kein_kap" and w[0]["feld_id"] == "kap_verlust_aktien"
+
+
+def test_kein_kap_verlust_sonstige_widerspruch():
+    w = FC.flag_widersprueche(_snap(kein_kap=(True, "bestaetigt"), kap_verlust_sonstige=(50000, "bestaetigt")))
+    assert len(w) == 1 and w[0]["flag"] == "kein_kap" and w[0]["feld_id"] == "kap_verlust_sonstige"
+
+
+def test_kein_kap_wahre_abwesenheit_alle_fuenf_felder():
+    # Normalfall: Kreuz zu Recht gesetzt, KEIN Betrag in irgendeinem der 5 Kap-Felder -> KEINE Sperre
+    assert FC.flag_widersprueche(_snap(kein_kap=(True, "bestaetigt"))) == []
+
+
+# ---- kein_kap_partner spiegelte nur 2 von 5 Kap-Feldern der (jetzt erweiterten) Person-A-Liste ------
+# (kap_verlust_aktien_partner/kap_gewinn_sonstige_partner/kap_verlust_sonstige_partner fehlten,
+# obwohl alle drei denselben feld_bedingung-Mechanismus haben wie die zwei urspruenglichen Felder) ----
+
+def test_kein_kap_partner_sonstige_gewinn_widerspruch():
+    w = FC.flag_widersprueche(_snap(kein_kap_partner=(True, "bestaetigt"),
+                                    kap_gewinn_sonstige_partner=(175000, "bestaetigt")))
+    assert (len(w) == 1 and w[0]["flag"] == "kein_kap_partner"
+            and w[0]["feld_id"] == "kap_gewinn_sonstige_partner")
+
+
+def test_kein_kap_partner_verlust_aktien_widerspruch():
+    w = FC.flag_widersprueche(_snap(kein_kap_partner=(True, "bestaetigt"),
+                                    kap_verlust_aktien_partner=(50000, "bestaetigt")))
+    assert (len(w) == 1 and w[0]["flag"] == "kein_kap_partner"
+            and w[0]["feld_id"] == "kap_verlust_aktien_partner")
+
+
+def test_kein_kap_partner_verlust_sonstige_widerspruch():
+    w = FC.flag_widersprueche(_snap(kein_kap_partner=(True, "bestaetigt"),
+                                    kap_verlust_sonstige_partner=(50000, "bestaetigt")))
+    assert (len(w) == 1 and w[0]["flag"] == "kein_kap_partner"
+            and w[0]["feld_id"] == "kap_verlust_sonstige_partner")
+
+
+def test_kein_kap_partner_wahre_abwesenheit_alle_fuenf_felder():
+    # Normalfall: Partner-Kreuz zu Recht gesetzt, KEIN Betrag in irgendeinem der 5 Felder -> KEINE Sperre
+    assert FC.flag_widersprueche(_snap(kein_kap_partner=(True, "bestaetigt"))) == []
+
+
 # ---- §§ 13-18 Gewinneinkünfte (Stufe 1): kein_gewinn ↔ einkuenfte_gewinn (vorher leer, jetzt scharf) ----
 
 def test_kein_gewinn_widerspruch():

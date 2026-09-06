@@ -55,8 +55,7 @@ import flow  # noqa: E402  (Fluss-Mitschnitt, nur mit TAXGRAPH_FLOW=1 — s. pro
 # DASSELBE Objekt ist (`is`) und nicht eine zweite Bindung desselben Namens.
 from bescheid import (  # noqa: E402, F401
     _abs3_eligible,
-    _abschlusszahlung_cent,
-    _an_gesamt_sperrgrund,
+    _abschlusszahlung_cent, _an_gesamt_sperrgrund,
     _bescheid_fn,
     _gewinn_partner_anteil,
     _gwg_sofortabzug_summe,
@@ -73,7 +72,7 @@ from bescheid import (  # noqa: E402, F401
     _p33b_kind_pauschbetraege,
     _p35_gezahlte_gewst,
     _p35_partner_anteile,
-    _p35_summen,
+    _p35_summen, _rentenbeginn_offen_stand,
     _schulgeld_summe,
     _shared_dba_sonstige,
     _shared_steuer_sonder_agb,
@@ -466,7 +465,7 @@ def stand(fall_id: str) -> tuple[int, dict]:
     }
 
     gesamt_iv, engine, teil = None, "unavailable", []
-    gesperrt = _an_gesamt_sperrgrund(felder, cfg, vz, store, bindung) if cfg.get("guard") else None
+    gesperrt = (_an_gesamt_sperrgrund(felder, cfg, vz, store, bindung) if cfg.get("guard") else None) or _rentenbeginn_offen_stand(felder, cfg)
     if gesperrt:
         engine = "gesperrt"          # nicht-ring-fähiger Abzug/Einkunftsart -> kein Ring (K2)
     elif cfg["gesamt_ring"]:
@@ -624,8 +623,9 @@ def preflight_check(fall_id: str) -> tuple[int, dict]:
     """P5.5 Preflight-Check: Konsistenz-Prüfungen + vergessene Pauschalen. NULL LLM."""
     _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
+    bindung = _scheibe_bindung(store)
     felder, _ = ST.materialisiere(store)
-    ergebnis = PF.preflight(felder)
+    ergebnis = PF.preflight(felder, bindung)
     # Nur ausliefern, was auch was zu sagen hat. "nicht_gerechnet" ist ein eigener Bereich und
     # läuft NICHT unter "pauschale" mit: dort wurde etwas vergessen, hier nicht — die Angabe
     # steht korrekt in der Erklärung, nur die angezeigte Zahl kennt sie noch nicht.

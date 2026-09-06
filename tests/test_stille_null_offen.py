@@ -17,6 +17,20 @@ Referenzzahlen aus dem Bericht (60k-Basisfall wie test_p23_ueber_ring_accessor):
   schulgeld=300000 bestaetigt: 1359200
   kind_kv=100000/kind_pv=50000 bestaetigt: 1336300
   kind_behinderten_pb (GdB 80) bestaetigt: 1311400
+
+Reparatur (Recherche-Worker 2026-08-31): die zwei TestP23StilleNull-Faelle mit bestaetigten
+p23-Betraegen liefen rot, weil der KEGEL das Screening-Flag `kein_p23_verkauf` (neuer Guard
+FC.flag_widersprueche, s. produkt/konsistenz/flag_check.py) nie beantwortet -- unbeantwortet
+zaehlt dort wie bestaetigt-true ("keine privaten Verkaeufe"), was neben den bestaetigten
+p23-Betraegen einen Widerspruch meldet (`grund=flag_konsistenz_offen` statt `bestaetigt`). Der
+Guard existierte beim Schreiben dieser Tests noch nicht. Fix wie bei TestGwgStilleNull (dort
+`kein_gewinn`): `kein_p23_verkauf` mit Default True in _KEGEL aufgenommen, die zwei Faelle mit
+bestaetigtem p23-Betrag ueberschreiben es via `kegel_overrides` auf False -- das ist keine
+Testkosmetik, sondern dieselbe Eingabe, die ein echter Nutzer machen muesste (wer einen privaten
+Verkauf bestaetigt, kann nicht gleichzeitig "keine privaten Verkaeufe" bestaetigt lassen). Die
+urspruengliche Zusicherung (Betrag vorlaeufig -> in offen, bestaetigt -> nicht in offen, Zahl
+bewegt sich) ist dadurch unveraendert, nicht abgeschwaecht -- per Mutationsprobe gegen
+produkt/haut/api.py::_ergebnis_roh (offen_c-Sammlung) bestaetigt, s. Bericht an den Instructor.
 """
 import os
 import sys
@@ -45,6 +59,7 @@ _KEGEL = [
     ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
     ("mit_anspruch_auf_zuschuss", False),
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
+    ("kein_p23_verkauf", True),
     ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
     ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
 ]
@@ -177,7 +192,10 @@ class TestP23StilleNull:
             f"vorlaeufige p23-Instanz muss in offen auftauchen, war: {erg['offen']}")
 
     def test_bestaetigt_nicht_in_offen_und_zahl_aendert_sich(self, tmp_path, monkeypatch):
-        fid = _neuer_fall(tmp_path, monkeypatch, "sn-p23-b")
+        # kein_p23_verkauf=True widerspricht bestaetigten p23-Betraegen (flag_widersprueche, neuer
+        # Guard seit 2026-08-31) -- wie beim gwg-Fall oben: Flag im Kegel gleich als False setzen,
+        # sonst sperrt der Fall VOR der stille-Null-Pruefung, um die es hier geht.
+        fid = _neuer_fall(tmp_path, monkeypatch, "sn-p23-b", kegel_overrides={"kein_p23_verkauf": False})
         for feld, wert in [
             ("p23_veraeusserungspreis", 20000000),
             ("p23_anschaffung_herstellungskosten", 15000000),
@@ -198,7 +216,9 @@ class TestP23StilleNull:
         macht die GANZE Instanz vorlaeufig, aber offen darf NUR das tatsaechlich unbestaetigte
         Feld listen, nicht die 3 bereits bestaetigten (sonst meldet die API Felder als offen,
         die der Nutzer laengst bestaetigt hat)."""
-        fid = _neuer_fall(tmp_path, monkeypatch, "sn-p23-mix")
+        # kein_p23_verkauf=False aus demselben Grund wie in test_bestaetigt_... oben: drei der vier
+        # p23-Felder sind hier bestaetigt, ohne das Flag sperrt der Fall vor der eigentlichen Pruefung.
+        fid = _neuer_fall(tmp_path, monkeypatch, "sn-p23-mix", kegel_overrides={"kein_p23_verkauf": False})
         for feld, wert in [
             ("p23_veraeusserungspreis", 20000000),
             ("p23_anschaffung_herstellungskosten", 15000000),

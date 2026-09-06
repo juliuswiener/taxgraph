@@ -981,7 +981,10 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
               ("kap_gewinn_aktien_partner", kap_gewinn_aktien_partner),
               ("kap_gewinn_sonstige_partner", kap_gewinn_sonstige_partner),
               ("kap_verlust_aktien_partner", kap_verlust_aktien_partner),
-              ("kap_verlust_sonstige_partner", kap_verlust_sonstige_partner)]
+              ("kap_verlust_sonstige_partner", kap_verlust_sonstige_partner),
+              ("kein_kap_partner", not any((kap_ertraege_partner, kap_gewinn_aktien_partner,
+                                            kap_gewinn_sonstige_partner, kap_verlust_aktien_partner,
+                                            kap_verlust_sonstige_partner)))]
     return k
 
 
@@ -2063,6 +2066,25 @@ def test_gesamt_zusammen_kapital_semantik_partner(base):
                                        kap_ertraege_partner=600000, kap_gewinn_aktien_partner=300000))
     st, erg = _req(base, "GET", "/fall/zsp/ergebnis")
     assert erg["zahl_cent"] is None and erg["grund"] == "kapital_semantik_offen"
+
+
+def test_gesamt_zusammen_kapital_partner_ohne_screening_kreuz_sperrt(base):
+    """K2 fail-closed, ABSICHTLICH unvollständig gepostet: Person-B-Kapitalbetrag > 0 auf Szene
+    gesamt, aber kein_kap_partner wird NICHT mitgepostet (Kegel manuell ohne das Flag zusammen-
+    gebaut, nicht über _gesamt_kegel — der postet das Flag seit dem Fixture-Fix von selbst).
+    Reproduziert exakt den Fall, der test_gesamt_zusammen_kapital_gewinn_sonstige_partner vor dem
+    Fixture-Fix rot machte: Betrag gesetzt, Screening-Kreuz nie beantwortet -> auf Szene gesamt ist
+    kein_kap_partner fragbar (bestätigt via API._scheibe_bindung({"scheibe": "gesamt"})), also gilt
+    unbeantwortet als bestätigt-true -> Widerspruch zum gesetzten Betrag -> flag_konsistenz_offen.
+    Diese Stelle bleibt bewusst als einzige Beobachtung für "Betrag ohne Kreuz auf gesamt" stehen,
+    damit der reparierte Fixture-Weg diesen Fall nicht aus der Suite verschwinden lässt."""
+    kegel = [p for p in _gesamt_kegel(0, bruttolohn=6000000, kein_vuv=True, kein_kap=False,
+                                       veranlagung="zusammen", bruttolohn_partner=4000000,
+                                       kap_gewinn_sonstige_partner=500000)
+             if p[0] != "kein_kap_partner"]
+    _gesamt_anlegen(base, "zskn", kegel)
+    st, erg = _req(base, "GET", "/fall/zskn/ergebnis")
+    assert erg["zahl_cent"] is None and erg["grund"] == "flag_konsistenz_offen"
 
 
 def _gesamt_abzuege(base, fid, minijob=0, dienstleistung=0, handwerker=0, rechnung_unbar=None,

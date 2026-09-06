@@ -1,5 +1,7 @@
-"""K2-Guard-Lücke: `kein_vuv` nie beantwortet lässt `_an_gesamt_sperrgrund` durch, obwohl
-`vv_einnahmen` bestätigt daneben steht.
+"""K2-Guard-Lücke (BEHOBEN, s. produkt/konsistenz/flag_check.py::flag_widersprueche): `kein_vuv`
+nie beantwortet ließ `_an_gesamt_sperrgrund` durch, obwohl `vv_einnahmen` bestätigt daneben stand.
+Die xfail-Marker sind entfernt, weil der Zustand jetzt gesperrt wird — die Tests unten sind der
+Beweis dafür geblieben (Rot vor dem Fix, s. Commit-Historie).
 
 Fund (Aufgabe E/F, 2026-08-31): `/ergebnis` sperrt diesen Zustand korrekt über einen ZWEITEN,
 separaten Mechanismus (api.py::_ergebnis_roh, `_feste_zahl` liefert None -> grund=
@@ -81,12 +83,6 @@ def test_kontrollzeile_expliziter_widerspruch_wird_gesperrt():
     assert grund == "flag_konsistenz_offen", f"Kontrollzeile lief nicht — grund={grund!r}"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="_an_gesamt_sperrgrund prueft nur explizite Widersprueche (Flag=true + Feld>0), "
-           "nicht 'Flag nie beantwortet + Feld>0'. Der Guard sollte diesen Zustand ebenso "
-           "sperren wie /ergebnis es (ueber einen ANDEREN Mechanismus) tut.",
-)
 def test_kein_vuv_nie_beantwortet_sollte_gesperrt_werden():
     """Verdachtsfall: kein_vuv fehlt ganz (nie beantwortet), vv_einnahmen bestätigt=20.000 EUR.
     Erwuenscht waere ein Sperrgrund (analog zu /ergebnis's 'input_kegel_nicht_bestaetigt') —
@@ -208,12 +204,6 @@ def test_abgabepfad_kontrollzeile_direkt_und_beobachtet_stimmen_ueberein(_server
     assert st == 409 and resp.get("grund") == "flag_konsistenz_offen", resp
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Wie test_kein_vuv_nie_beantwortet_sollte_gesperrt_werden, aber am echten "
-           "/einreichen-Endpunkt statt an der isolierten Funktion: der Guard laesst den "
-           "Verdachtsfall auch im echten Abgabepfad unbestraft durch.",
-)
 def test_abgabepfad_verdachtsfall_direkt_und_beobachtet_stimmen_ueberein(_server, monkeypatch):
     """Verdachtsfall am echten Endpunkt: kein_vuv nie beantwortet, vv_einnahmen bestaetigt. Erwartet
     (fuer eine SPERRE): beobachteter Guard-Wert waere nicht None. Gemessen: er ist None -- der

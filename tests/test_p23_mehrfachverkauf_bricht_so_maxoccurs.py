@@ -246,7 +246,7 @@ def test_drei_verkaeufe_gleiche_person_liefert_drei_einz(bindung, tmp_path):
 
 
 @braucht_eric
-@pytest.mark.xfail(strict=True, reason=(
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
     "Test-Hersteller-ID amtlich gesperrt (rc=610301202 ERIC_IO_TESTHERSTELLERID_GESPERRT, "
     "gemessen 2026-08-30, eric.log: 'Die im XML angegebene Hersteller-ID ist gesperrt.' -- "
     "vermutlich Fleet-weite Erschoepfung, mehrere Instanzen liefen heute ERiC-Checks. "

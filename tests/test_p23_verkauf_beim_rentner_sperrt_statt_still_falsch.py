@@ -225,32 +225,31 @@ def test_gegenprobe_unbeantwortet_und_ausdruecklich_null_kommen_gleich_durch(bas
         f"Rentner (Verkauf zum Einstandspreis) waere dann faelschlich gesperrt.")
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "fail-open auf dem Screening-Kreuz selbst (Instructor-Auftrag 2026-08-30, Anker-Variante fuer "
-    "rentner_gesamt: P23_SCREENING aus RENTNER_KEGEL heraus, kegel-unabhaengig in RENTNER_FELDER "
-    "verankert). Ein Rentner MIT §23-Verkauf, der nur das Kreuz kein_p23_verkauf nie beantwortet "
-    "-- die vier Detailfelder aber wahrheitsgemaess mit Gewinn 50.000 EUR ausfuellt --, bekommt "
-    "grund=bestaetigt, zahl_cent=8017000 statt einer Sperre. Live gemessen: derselbe Rentner mit "
-    "wahrheitsgemaess False (Verkauf bejaht) sperrt korrekt mit einkunftsart_nicht_ring_faehig, "
-    "der einzige Unterschied ist unbeantwortet statt bestaetigt. Gemessen (2026-08-31, HEAD "
-    "ed0f460, in-process Mutationsprobe mit Rueckweg, kein Dateiedit): kein_p23_verkauf in beide "
-    "Kegel zu haengen kippt genau diesen Test auf XPASS(strict) und laesst /fragen erreichbar "
-    "(kein 500 in drei Phasen Baseline/Mutation/Rueckweg), reisst aber die volle Suite von 3 auf "
-    "251 rote Tests, weil rund 20 Fremddateien den Pflichtkegel als eigene, nicht importierte "
-    "Python-Liste ohne dieses Feld hartkodieren -- deshalb bleibt der Marker diese Runde stehen, "
-    "waehrend statt des Kegels ein engerer Widerspruchs-Waechter geprueft wird, der nur bei "
-    "gefuellten §23-Detailfeldern + nie beantwortetem Kreuz feuert."))
 def test_kreuz_nie_beantwortet_bei_tatsaechlichem_verkauf_darf_nicht_bestaetigt_liefern(base):
+    """War bis HEAD ed0f460 (2026-08-31) fail-open (xfail(strict), s. git-Historie dieser Datei) --
+    genau der oben beschriebene Fehlfall lieferte grund='bestaetigt', zahl_cent=8017000. Seit dem
+    WIP-Diff in produkt/konsistenz/flag_check.py (dritte Instanz, 2026-08-31: neuer FLAG_NEGIERT-
+    Eintrag kein_p23_verkauf + Drei-Zustands-Logik in flag_widersprueche()) faengt ein ANDERER,
+    vorgelagerter Guard denselben Fall ab -- NICHT der urspruenglich hier angezielte fremd_arten-/
+    Kegel-Pflichtfeld-Pfad (kein_p23_verkauf ist weiterhin NICHT in RENTNER_KEGEL/RENTNER_FELDER
+    verankert, s. Klassendocstring oben; die dort beschriebene Mutationsprobe, die genau DAS
+    veraenderte, riss die volle Suite von 3 auf 251 rote Tests). Deshalb hier explizit auf den
+    neuen Grund gepinnt statt nur auf 'irgendeine Sperre': verschwindet dieser Guard (Diff
+    reverted/umgebaut) ohne Ersatz, faellt dieser Test wieder rot statt still gruen zu bleiben --
+    genau die Garantie, die main fuer diese Fassung verlangt hat (nachgemessen per Mutationsprobe:
+    FLAG_NEGIERT-Eintrag kein_p23_verkauf in-process entfernt -> grund faellt auf 'bestaetigt'
+    zurueck, Test schlaegt fehl, s. reports/repro/ falls diese Probe dauerhaft gebraucht wird)."""
     _neuer_fall(base, "b_nie_beantwortet", "rentner_gesamt")
     paare = [(f, w) for f, w in KEGEL_OHNE_VERKAUF if f != FLAG_ID] + P23_VERKAUF
     _antworten(base, "b_nie_beantwortet", paare)
     erg = _ergebnis(base, "b_nie_beantwortet")
-    assert erg["grund"] != "bestaetigt", (
+    assert erg["grund"] == "flag_konsistenz_offen", (
         f"Kreuz {FLAG_ID!r} nie beantwortet, aber die vier §23-Detailfelder bejahen einen Verkauf "
-        f"(Gewinn 50.000 EUR) -- erwartet: KEINE Zahl (Sperre oder offen). Tatsaechlich: "
-        f"grund={erg['grund']!r}, zahl_cent={erg['zahl_cent']!r}. Dieselbe Person mit "
-        f"wahrheitsgemaess {FLAG_ID}=False sperrt korrekt -- unbeantwortet wird wie 'kein "
-        f"Verkauf' behandelt, das ist fail-open auf dem Screening-Kreuz.")
+        f"(Gewinn 50.000 EUR) -- erwartet: grund='flag_konsistenz_offen' (der Widerspruchs-Guard "
+        f"in produkt/konsistenz/flag_check.py::flag_widersprueche(), NICHT der urspruenglich hier "
+        f"angezielte fremd_arten-Pfad). Tatsaechlich: grund={erg['grund']!r}, "
+        f"zahl_cent={erg['zahl_cent']!r}. Faellt dieser Guard weg, rutscht die Zahl still auf "
+        f"'bestaetigt' zurueck -- genau der urspruengliche Defekt (s. Klassendocstring, HEAD 78861cc).")
 
 
 def test_verkauf_bejaht_liefert_konkreten_sperrgrund_mit_klartext(base):

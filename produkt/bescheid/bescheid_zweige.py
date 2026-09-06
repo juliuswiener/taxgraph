@@ -976,6 +976,15 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         def _ci(k):
             v = fi.get(k, {}).get("wert")
             return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+        # Gleiche Absicherung wie § 19 Abs. 2 Versorgungsfreibetrag (Zeile ~528): renten_beginn_jahr
+        # unbeantwortet (None) darf nicht als Jahr 0 in den aa-Folgejahr-Vergleich (beginn<vz) rutschen
+        # -- das las bislang IMMER als "vor VZ begonnen", ohne fixierten Freibetrag -> Absturz
+        # (RentenfreibetragFixierungOffen). _fixierung_offen (bescheid_deklaration.py) faengt nur den
+        # Fall "beginn beantwortet, aber < vz ohne Freibetrag", nicht "beginn nie beantwortet"
+        # (isinstance(None, int) ist False). Naechstliegender Ort ohne Rechenwirkung: 0 (kein Summand),
+        # bis der Guard vorher rente_instanz_offen greifen laesst.
+        if not isinstance(fi.get("rentner_renten_beginn_jahr", {}).get("wert"), int):
+            return 0
         rf = fi.get("rentner_rentenfreibetrag", {}).get("wert")
         return runner.catala_renten_einkuenfte({
             "veranlagungszeitraum": vz,

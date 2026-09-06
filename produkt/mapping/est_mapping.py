@@ -225,9 +225,12 @@ VERZWEIGUNG = {
         "lueftung": "E0241401", "heizung": "E0241501", "digital": "E0241601",
         "heizung_optimierung": "E0241701"}},
     # §§ 13-18 Gewinneinkünfte (Stufe 1, p2_festzusetzung_einzel): der vorberechnete Gewinn verzweigt nach
-    # gewinn_betriebsart in Anlage G/S. land_forst NICHT gebunden — Anlage L hat zwei alternative Kz
-    # (P4_Abs_1_3=E0901007, P13a=E0901103) je Gewinnermittlungsart; unser Modell differenziert nicht.
-    # land_forst -> fail-closed in nicht_deklariert ("ohne Kz-Zweig", kein Over-Tax — Gewinn rechnet).
+    # gewinn_betriebsart in Anlage G/S. land_forst NICHT gebunden — Anlage L hat vier Kandidaten-Kz
+    # im Container Einz_Unt (E0900202/E0900301 fuer §4 Abs.1/3, E0900405/E0900502 fuer §13a), NICHT
+    # E0901007/E0901103 (Ges_Fest, gesondert festgestellter Anteil). Welcher Kandidat zutrifft, haengt
+    # an zwei fehlenden Feldern (Gewinnermittlungsart E0900407, Wirtschaftsjahr-Lage E0900101); unser
+    # Modell hat keins von beiden. land_forst -> fail-closed (vollstaendig=False seit 2026-08-31, s.
+    # tests/test_luf_gewinn_sperrt_vollstaendig.py), kein Over-Tax — Gewinn rechnet weiter im Ring.
     #
     # CONTAINER-KORREKTUR 2026-08-20 (vorher E0800502/E0803402): beide Anlagen führen ZWEI
     # Gewinn-Container nebeneinander, und wir standen im falschen.
@@ -311,7 +314,8 @@ PARTNER_VERZWEIGUNG = {
     # §§ 13-18 Gewinneinkünfte + § 16 Abs. 4 Veräußerungsfreibetrag Person-B: wie VERZWEIGUNG (Klasse f),
     # aber der Wert läuft in den person_b-Bucket (dieselben Person-A-Kz, kein Ehegatte-Kz). Art-Weichen =
     # gewinn_betriebsart_partner / rentner_veraeusserungs_betriebsart_partner. land_forst bei
-    # einkuenfte_gewinn_partner bewusst ohne Kz (spiegelt Person A, Anlage L hat zwei alternative Kz).
+    # einkuenfte_gewinn_partner bewusst ohne Kz (spiegelt Person A — s. Kommentar dort; Anlage L hat
+    # vier Kandidaten-Kz im Container Einz_Unt, nicht Ges_Fest, Auswahl haengt an zwei fehlenden Feldern).
     # Container-Korrektur 2026-08-20 wie Person A (s. VERZWEIGUNG): eigener Betrieb = Einz_U/Betr_1_2
     # bzw. Freiber_T, nicht Ges_Fest/Sum. Der Ehegatte hat seinen eigenen Betrieb, also eine eigene
     # Anlage-G/S-Instanz mit denselben Kz.
@@ -477,7 +481,7 @@ _INSTANZ_RE = re.compile(r"^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[1-9][0-9]*)$")
 
 
 def parse_instanz(feld_id: str):
-    """Die EINE Enumerations-Wahrheit für Repeated-Instance: `base__<n>` (n>=2) -> (base, n); eine Basis-
+    """Die EINE Enumerations-Wahrheit für Repeated-Instance: `base__<n>` (n>=1) -> (base, n); eine Basis-
     feld_id OHNE Suffix -> None (= Instanz 1). BEIDE Seiten — die Deklaration (deklariere) UND der Ring-
     Instanz-Reader (instanzen) — rufen NUR diese Funktion (kein zweites Regex, keine Enumerations-Drift
     zwischen Deklaration und Ring)."""
@@ -607,8 +611,14 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
                 if kz:
                     deklaration[kz] = _cent_nach_kz(wert, kz) if b.get("typ") == "cent" else wert
                 else:
-                    nicht_deklariert.append({"feld_id": feld_id,
-                                             "grund": f"Art '{art['wert']}' ({cfg['art_feld']}) ohne Kz-Zweig"})
+                    grund = f"Art '{art['wert']}' ({cfg['art_feld']}) ohne Kz-Zweig"
+                    nicht_deklariert.append({"feld_id": feld_id, "grund": grund})
+                    # bestätigtes Geldfeld ohne Kz-Ziel ist unsere Zuordnungslücke, kein Widerspruch
+                    # in den Nutzereingaben -> muss vollstaendig/eingaben_konsistent kippen (fail-closed)
+                    unvollstaendig.append({"feld_id": feld_id,
+                                           "grund": f"Für '{art['wert']}' ({cfg['art_feld']}) ist diese "
+                                           "Einkunftsart bei uns noch nicht abgebbar — keine Eingabe von "
+                                           "dir fehlt oder widerspricht sich."})
         elif feld_id in PARTNER_VERZWEIGUNG:                     # Klasse g×f (Renten-Verzweigung Person B -> person_b)
             cfg = PARTNER_VERZWEIGUNG[feld_id]
             art = snapshot.get(cfg["art_feld"])
@@ -622,6 +632,36 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
                 else:
                     nicht_deklariert.append({"feld_id": feld_id,
                                              "grund": f"Partner-Renten-Art '{art['wert']}' ohne Kz-Zweig"})
+                    # bestätigtes Geldfeld ohne Kz-Ziel ist unsere Zuordnungslücke, kein Widerspruch
+                    # in den Nutzereingaben -> muss vollstaendig/eingaben_konsistent kippen (fail-closed),
+                    # symmetrisch zu Klasse f oben. Grund nennt "des Partners" ausdrücklich (Auftrag
+                    # 2026-08-31): ohne das liest ein Paar die Meldung und weiß nicht, wessen
+                    # Einkünfte gemeint sind.
+                    # Fehlt eine Angabe, die eine Zahl in der Erklärung bewegen kann, wird gesperrt
+                    # statt still weggelassen — eine Sperre kostet den Nutzer einen Umweg, eine
+                    # verschwiegene Einkunft kostet ihn das Verfahren. Der Satz gilt nur für Angaben,
+                    # deren Zahlwirkung GEMESSEN ist (hier: 3.000.000 Cent verschwinden aus person_b
+                    # bei erzeuge_xml, siehe /tmp/probe_partner_workspace.py); für Felder ohne
+                    # Zahlwirkung ist Sperren falsch. (Instructor-Entscheidung, 2026-08-31, Fassung
+                    # NACHTRAG 2 — vorige Fassung war zu allgemein und zitierfähig als generelle
+                    # Regel missverstehbar)
+                    #
+                    # NACHTRAG 3 (2026-08-31, Korrektur der Gegenlese): der alte Grund-Text nannte
+                    # einkuenfte_gewinn_partner/gewinn_bezeichnung_partner als "fehlend". Live gemessen
+                    # (/tmp/probe_partner_fragen_queue.py): beide Felder SIND im Dialog erreichbar
+                    # (feld_bedingung kein_gewinn_partner=false, unabhaengig vom Betriebsart-Wert),
+                    # der Nutzer KANN sie beantworten (HTTP 201) und sie verlassen danach die
+                    # /fragen-Queue als beantwortet. Trotzdem taucht der Grund hier wieder auf — nicht
+                    # weil die Eingabe fehlt, sondern weil KEIN Wert dieser beiden Felder die Kz-Luecke
+                    # schliessen kann; das entscheidende Feld ist gewinn_betriebsart_partner, und "land_forst"
+                    # dort zu aendern waere eine falsche Angabe, keine Reparatur. "Fehlt" ist deshalb die
+                    # falsche Beschriftung fuer eine Sackgasse, die wie eine Abzweigung aussieht — der
+                    # Text muss das VORNE sagen, nicht als Nachsatz (der Bildschirm zeigt feld_id zuerst).
+                    unvollstaendig.append({"feld_id": feld_id,
+                                           "grund": f"Eure Angabe zu '{art['wert']}' ({cfg['art_feld']}) ist "
+                                           "vollständig, nichts von euch fehlt oder widerspricht sich. Diese "
+                                           "Einkunftsart des Partners ist bei uns noch nicht abgebbar — das "
+                                           "liegt nicht an eurer Eingabe, ihr müsst hier nichts nachtragen."})
         elif feld_id in PARTNER_INSTANZ:                         # Klasse g (Person-Multiplikation, Instanz B)
             person_b[PARTNER_INSTANZ[feld_id]] = _cent_nach_kz(wert, PARTNER_INSTANZ[feld_id]) if b.get("typ") == "cent" else wert
         elif feld_id in WERTEKODIERUNG:                          # Klasse i (Laien-Enum -> XSD-Code)

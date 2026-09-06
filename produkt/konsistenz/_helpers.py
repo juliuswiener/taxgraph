@@ -12,7 +12,13 @@ from __future__ import annotations
 
 
 def _bestaetigt_wert(snapshot: dict, feld_id: str):
-    """Wert eines Felds nur, wenn es bestätigt vorliegt (sonst None — vorlaeufig zählt nicht als Beleg)."""
+    """Wert eines Felds nur, wenn es bestätigt vorliegt (sonst None — vorlaeufig zählt nicht als Beleg).
+
+    None ist zweideutig und trennt NICHT, woher es kommt: Feld ganz abwesend im Snapshot (nie
+    beantwortet) und Feld vorhanden mit zustand != "bestaetigt" (z. B. "vorlaeufig", Nutzer mitten
+    im Dialog) liefern beide None. Wer die beiden Fälle unterscheiden muss, prüft `feld_id in
+    snapshot` selbst VOR dem Aufruf hier — nicht am Rückgabewert dieser Funktion.
+    """
     f = snapshot.get(feld_id)
     if f is None or f.get("zustand") != "bestaetigt":
         return None

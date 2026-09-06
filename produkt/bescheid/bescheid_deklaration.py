@@ -72,9 +72,13 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
     HÄUFIGEREN Fall (Abgeltung günstiger) uneinreichbar (rc=610001002).
     Stattdessen: gesetzt, sobald irgendein KAP-Betragsfeld (eigene Töpfe/
     Aggregat ODER — bei Zusammenveranlagung — die des Ehegatten, § 32d
-    Abs. 6 S. 4) erklärt wird. Beide Kz sind ZUSAMMEN Pflicht (ohne
-    E1901401 bleibt rc=610001002 trotz Antrag, siehe
-    bindung_kap_vv_familie.yaml) — deshalb ein gemeinsames Gate.
+    Abs. 6 S. 4) erklärt wird UND der Ring den Betrag tatsächlich liefert.
+    Beide Kz sind ZUSAMMEN Pflicht (ohne E1901401 bleibt rc=610001002
+    trotz Antrag, siehe bindung_kap_vv_familie.yaml) — deshalb ein
+    gemeinsames Gate: beide Felder entstehen zusammen, NACH dem Ring-
+    Aufruf, oder keins von beiden (2026-08-31: ein Ausfall im Ring durfte
+    vorher E1900401 allein stehen lassen, mit einer aus der Exception
+    geerbten Fake-Null bei E1901401 — nicht mehr).
     Töpfe-XOR-Aggregat-Auswahl 1:1 zur SINGLE-SOURCE in _bescheid_fn
     (api.py Z. 1019-1047/1462-1483) — bei Änderung dort nachziehen.
     Direkt auf `felder` gerechnet (kein _feste_zahl/Meet-Gate): der Wert
@@ -123,13 +127,12 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
                     or (zusammen and (any(_kap_positiv(t) for t in KAP_TOEPFE_PARTNER)
                                        or _kap_positiv(KAP_ERTRAEGE_PARTNER))))
     if kap_erklaert:
-        felder["kap_antrag_guenstigerpruefung"] = {
-            "wert": True,
-            "zustand": "bestaetigt",
-            "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
-            "schreiber": "engine",
-            "signal": {"signal_1": None, "signal_2": None},
-        }
+        # Zustand=bestaetigt erst NACH erfolgreicher Berechnung setzen (nicht vorher, wie bis
+        # 2026-08-31): ein Ausfall im try darf nie einen echten Antrag samt Fake-0-Betrag als
+        # bestaetigt hinterlassen — sonst sieht kein Waechter den Unterschied zu einer echten
+        # Null (gemessen: die Null erreicht unveraendert das abgesendete XML). Bei Ausfall bleibt
+        # KEIN Eintrag stehen (identisch zum Inert-Vertrag von (1) oben) — ohne E1901401 waere ein
+        # gesetztes E1900401 ohnehin nur ein neuer rc=610001002 (s. Docstring), also kein Gewinn.
         try:
             import runner
 
@@ -158,14 +161,22 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
                 "zusammenveranlagung": zusammen})
             pb_genutzt_cent = max(0, verrechnete - kapitaleinkuenfte) * 100
         except Exception:
-            pb_genutzt_cent = 0
-        felder["kap_sparer_pauschbetrag_genutzt"] = {
-            "wert": pb_genutzt_cent,  # CENT, Vordruck erlaubt ausdruecklich "(ggf. 0)"
-            "zustand": "bestaetigt",
-            "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
-            "schreiber": "engine",
-            "signal": {"signal_1": None, "signal_2": None},
-        }
+            pb_genutzt_cent = None
+        if pb_genutzt_cent is not None:
+            felder["kap_antrag_guenstigerpruefung"] = {
+                "wert": True,
+                "zustand": "bestaetigt",
+                "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+                "schreiber": "engine",
+                "signal": {"signal_1": None, "signal_2": None},
+            }
+            felder["kap_sparer_pauschbetrag_genutzt"] = {
+                "wert": pb_genutzt_cent,  # CENT, Vordruck erlaubt ausdruecklich "(ggf. 0)"
+                "zustand": "bestaetigt",
+                "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+                "schreiber": "engine",
+                "signal": {"signal_1": None, "signal_2": None},
+            }
 
     # (4) § 35a Haushaltsnahe: Sum-Kz aus der Σ der Einz-Instanzen (Instanz-Reuse, Basis-feld_id
     # ohne Suffix = Instanz 1 — dieselbe Konvention wie EM.instanzen, hier ohne store/bindung
@@ -604,6 +615,26 @@ def sperrgrund_klartext(grund: str | None) -> str | None:
     return SPERRGRUND_KLARTEXT.get(grund, UNBEKANNTER_SPERRGRUND)
 
 
+def _rentenbeginn_offen_stand(felder: dict, cfg: dict | None = None) -> str | None:
+    """§ 22 aa Rentenfreibetrag (K2, /stand-spezifisch): /ergebnis faengt eine fehlende
+    rentner_renten_beginn_jahr ueber die Kegel-Vollstaendigkeitspruefung (input_kegel_nicht_bestaetigt);
+    /stand faehrt diese Pruefung NICHT mit (gemessen: ein normaler, drei-von-zwanzig-Fragen-Fall würde
+    sonst sofort komplett sperren -- das zerstoert genau den Zwischenstand-Zweck). Ohne dieses Gate lief
+    eine fehlende Jahresangabe hier still als 0-EUR-Rente durch (HTTP 200, min=max=0 fuer 20.000 EUR
+    Jahresrente) statt als Absturz oder Sperre sichtbar zu werden -- deshalb eng auf DIESES eine Feld
+    begrenzt, nicht als Ersatz fuer die Kegel-Pruefung. NUR von stand() gerufen, nicht von
+    _an_gesamt_sperrgrund (die bedient auch /ergebnis und /einreichen, wo dieselbe Luecke schon die
+    Kegel-Vollstaendigkeitspruefung deckt -- ein zweiter Treffer dort wuerde deren grund verfaelschen)."""
+    if not cfg or not cfg.get("rentner"):
+        return None
+    jahresrente = felder.get("rentner_jahresrente", {}).get("wert")
+    if (isinstance(jahresrente, (int, float)) and not isinstance(jahresrente, bool)
+            and jahresrente > 0
+            and not isinstance(felder.get("rentner_renten_beginn_jahr", {}).get("wert"), int)):
+        return "rentenbeginn_offen"
+    return None
+
+
 def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None = None,
                           store: dict | None = None, bindung: dict | None = None):
     """K2-Guard: nicht-ring-fähige Werbungskosten/Einkunftsarten sperren den Ring GANZ (nie Fake-0).
@@ -820,7 +851,7 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                     return "p16_4_gate_offen"
         # Gesamt-Ring: Flag↔Einkunftsart-Widerspruch (kein_X=true + echtes Feld > 0 bestätigt) surfacen —
         # K2, keine still übergangene Einkunftsart (dev-2s flag_check).
-        if FC.flag_widersprueche(felder):
+        if FC.flag_widersprueche(felder, bindung):
             return "flag_konsistenz_offen"
         # Kapital-Semantik (Instructor-Q1, fail-closed): E1900701-Aggregat UND Verlust-Töpfe beide gesetzt
         # → additiv-vs-subset ungeklärt (benannter GAP) → kein Rate-Bescheid (die slot_fn nähme sonst still
