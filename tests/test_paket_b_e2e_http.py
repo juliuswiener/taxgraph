@@ -206,6 +206,29 @@ def test_vorjahr_fehlender_fall_404(base):
     st, _ = _req(base, "POST", "/fall/neu2/vorjahr", {"vorjahr_fall_id": "gibtsnicht"}, erwarte=404)
 
 
+def test_vorjahr_verlustvortrag_abweichung_meldet_sich_am_preflight(base):
+    """BACKLOG verlustvortrag-ungeprueft-uebernommen.md: verlustvortrag_bestand traegt bewusst KEIN
+    vorjahr-Flag (s. test_vorjahr_writer.py) und wird deshalb NICHT automatisch als Formular-
+    Vorschlag uebernommen — die Vorjahres-Verknuepfung liefert preflight() stattdessen eine
+    Vergleichsgroesse. Gemessener Fall: 5.000 € laut letztem Bescheid (Vorjahr, bestätigt), 15.000 €
+    "erinnert" im aktuellen Fall (bestätigt) — macht am echten Rechenkern 2.796,00 € Differenz bei
+    der festzusetzenden Einkommensteuer aus (separat über /fall/{id}/ergebnis vermessen, s. Backlog).
+    VORHER (bis 2026-09-07): preflight blieb hier GREEN, obwohl beide Werte bestätigt und die
+    Vorjahres-Verknüpfung real war."""
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2024, "fall_id": "vj-vv"})
+    st, _ = _req(base, "POST", "/fall/vj-vv/event", _laie("verlustvortrag_bestand", 500000))
+    assert st == 201
+    _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "neu-vv"})
+    st, _ = _req(base, "POST", "/fall/neu-vv/event", _laie("verlustvortrag_bestand", 1500000))
+    assert st == 201
+    st, b = _req(base, "POST", "/fall/neu-vv/vorjahr", {"vorjahr_fall_id": "vj-vv"})
+    # kein vorjahr-Flag auf dem Feld -> kein Formular-Vorschlag, NUR die Vergleichsgroesse wird gesetzt.
+    assert st == 200 and b["uebernommen"] == 0
+    st, ergebnis = _req(base, "GET", "/fall/neu-vv/preflight")
+    assert st == 200 and ergebnis["status"] == "RED"
+    assert any("5.000 €" in it["text"] and "15.000 €" in it["text"] for it in ergebnis["items"])
+
+
 def test_kontoauszug_csv_vorsorge_vorschlag(base):
     """Kontoauszug-Upload (CSV, det-Pfad, KEIN LLM): eine Vorsorge-Ausgabe (Rürup) → deterministische
     Kategorie → vor_rv_ausserhalb_lstb (§ 10, in der an_gesamt-Scheibe) als VORLÄUFIGER Vorschlag

@@ -34,6 +34,14 @@ Aufgefallen ist es nie, weil der Schema-Test seinen Store SELBST baut (`leerer_s
 prüft `tests/test_befund_bindet_an_zustand.py` einen Store, der wirklich durch `fall_anlegen`
 und den Endpunkt gelaufen ist.
 
+Eine dritte, optionale Kopfangabe seit 2026-09-07: **`vorjahr_referenz`** — von `api.vorjahr()`
+gesetzt, wenn ein Vorjahres-Fall verknüpft wurde. Trägt reine Vergleichsgrößen für
+`preflight.plausibilitaets_widersprueche()`, KEINE Formular-Vorschläge (die laufen über das
+`vorjahr`-Bindungsflag und `vorjahr_writer.uebernehme_vorjahr`). Heute nur
+`verlustvortrag_bestand`, weil dieses Feld bewusst kein `vorjahr`-Flag trägt — der Bestand
+ändert sich durch Verrechnung im Vorjahr, ein wörtlicher Übertrag wäre falsch (BACKLOG
+`verlustvortrag-ungeprueft-uebernommen.md`).
+
 ## Der Wert-Typ: `zustand` (Julius #2)
 
 `zustand ∈ {vorlaeufig, bestaetigt}` ist der materialisierte `Vorlaeufig<T>`/`Bestaetigt<T>`-Typ.

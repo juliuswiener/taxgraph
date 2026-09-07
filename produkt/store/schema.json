@@ -45,6 +45,10 @@
         "$ref": "#/$defs/snapshot"
       },
       "description": "Content-adressierte Materialisierungen eines Log-Präfixes. Optional; deterministisch aus den Events reproduzierbar."
+    },
+    "vorjahr_referenz": {
+      "type": "object",
+      "description": "Von api.vorjahr() gesetzt, wenn ein Vorjahres-Fall verknüpft wurde: reine Vergleichsgrößen für preflight.plausibilitaets_widersprueche(), KEINE Formular-Vorschläge (die laufen über das vorjahr-Bindungsflag). Heute nur 'verlustvortrag_bestand', weil dieses Feld bewusst kein vorjahr-Flag trägt (BACKLOG verlustvortrag-ungeprueft-uebernommen.md)."
     }
   },
   "$defs": {

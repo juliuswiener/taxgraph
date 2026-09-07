@@ -281,6 +281,39 @@ def test_leere_iban_ist_keine_iban():
         stammdaten_keine_bankverbindung=_b(True), stammdaten_iban=_b("   "))) == []
 
 
+# ---- Verlustvortrag ↔ Vorjahres-Referenz --------------------------------------
+# BACKLOG verlustvortrag-ungeprueft-uebernommen.md: gemessener Fall (2026-08-28), hier als
+# Vorjahres-Referenz nachgebaut — 5.000 € laut letztem Bescheid, 15.000 € "erinnert" im
+# aktuellen Fall, Differenz macht am echten Rechenkern 2.796,00 € festzusetzende Steuer aus.
+
+VV_ALT_5K = 500_000            # 5.000 € in Cent — Bezugsgröße aus dem verknüpften Vorjahr
+VV_NEU_15K = 1_500_000         # 15.000 € in Cent — Eingabe im aktuellen Fall
+
+
+def _vv_ref(cent):
+    return {"verlustvortrag_bestand": {"wert": cent}}
+
+
+def test_verlustvortrag_hoeher_als_vorjahr_meldet():
+    """Der gemessene Fall: 15.000 € jetzt gegen 5.000 € im letzten verknüpften Vorjahr."""
+    w = PF.plausibilitaets_widersprueche(
+        _snap(verlustvortrag_bestand=_b(VV_NEU_15K)), _vv_ref(VV_ALT_5K))
+    assert _felder(w) == {"verlustvortrag_bestand"}
+    assert "5.000 €" in w[0]["grund"] and "15.000 €" in w[0]["grund"]
+
+
+def test_verlustvortrag_gesunken_meldet_nicht():
+    """Der Normalfall: der Vortrag wird kleiner, weil im Vorjahr ein Teil verrechnet wurde."""
+    assert PF.plausibilitaets_widersprueche(
+        _snap(verlustvortrag_bestand=_b(VV_ALT_5K)), _vv_ref(VV_NEU_15K)) == []
+
+
+def test_verlustvortrag_ohne_vorjahr_referenz_schweigt():
+    """Ohne verknüpftes Vorjahr (heutiger Normalfall) keine Bezugsgröße — also still, wie überall
+    sonst in dieser Datei ohne Bezugsgröße."""
+    assert PF.plausibilitaets_widersprueche(_snap(verlustvortrag_bestand=_b(VV_NEU_15K))) == []
+
+
 # ---- Querschnitt --------------------------------------------------------------
 
 def test_bool_gilt_nicht_als_betrag():

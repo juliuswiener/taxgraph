@@ -161,11 +161,16 @@ def unvollstaendige_instanzen(snapshot: dict) -> list:
         for luecke in TR.fehlende_instanzen(snapshot, bindung)]
 
 
-def plausibilitaets_widersprueche(snapshot: dict) -> list:
+def plausibilitaets_widersprueche(snapshot: dict, vorjahr_referenz: dict | None = None) -> list:
     """{feld_id -> {wert, zustand, ...}} → Liste der Betrag↔Bezugsgröße-Widersprüche.
 
     Rein deterministisch, nur bestätigte Werte (vorläufig ist kein Beleg). Ohne die jeweilige
-    Bezugsgröße wird die betroffene Prüfung übersprungen, nicht geschätzt."""
+    Bezugsgröße wird die betroffene Prüfung übersprungen, nicht geschätzt.
+
+    `vorjahr_referenz` (optional) kommt aus einer echten Vorjahres-Verknüpfung
+    (api.vorjahr() -> vorjahr_writer.referenzwert_verlustvortrag()) und trägt bislang nur
+    den Verlustvortrag; ohne sie (kein verknüpftes Vorjahr) bleibt die betroffene Prüfung
+    still, wie alle anderen hier ohne ihre Bezugsgröße."""
     widersprueche = []
     brutto = _bestaetigter_betrag(snapshot, "bruttoarbeitslohn")
 
@@ -279,6 +284,24 @@ def plausibilitaets_widersprueche(snapshot: dict) -> list:
                          f"an, ob du einer solchen Kirche angehörst — und wenn nicht, prüfe die "
                          f"Kirchensteuer-Angaben noch einmal."})
 
+    # Verlustvortrag höher als im letzten verknüpften Vorjahr. BACKLOG
+    # verlustvortrag-ungeprueft-uebernommen.md, Abhilfe (a): der Bestand wird von Jahr zu Jahr
+    # WENIGER, weil im Vorjahr schon ein Teil verrechnet wurde — ein Anstieg ist nur plausibel,
+    # wenn im Vorjahr ein NEUER Verlust hinzukam. Das kommt vor, deshalb MELDEN, nicht sperren.
+    if vorjahr_referenz:
+        vv_alt = (vorjahr_referenz.get("verlustvortrag_bestand") or {}).get("wert")
+        vv_neu = _bestaetigter_betrag(snapshot, "verlustvortrag_bestand")
+        if (isinstance(vv_alt, (int, float)) and not isinstance(vv_alt, bool)
+                and vv_neu is not None and vv_neu > vv_alt):
+            widersprueche.append({
+                "feld_id": "verlustvortrag_bestand", "wert": vv_neu, "bezug": vv_alt,
+                "grund": f"Im letzten verknüpften Vorjahr stand dein Verlustvortrag bei "
+                         f"{_eur(vv_alt)}, jetzt gibst du {_eur(vv_neu)} an. Der Vortrag wird "
+                         f"normalerweise von Jahr zu Jahr weniger, weil ein Teil davon verrechnet "
+                         f"wird — ein Anstieg ist nur richtig, wenn im Vorjahr ein neuer Verlust "
+                         f"hinzukam. Bitte prüfe den Betrag gegen deinen aktuellen "
+                         f"Verlustfeststellungsbescheid."})
+
     # Angekündigt, aber nicht ausgefüllt — Angabe gegen Angabe wie die beiden Fälle darüber, nur
     # zählt hier eine Anzahl gegen die Zahl der Antworten. BEWUSST IM SELBEN SCHLÜSSEL
     # (`widersprueche_plausibilitaet`): `api.preflight_check` führt eine fest verdrahtete Liste der
@@ -289,13 +312,16 @@ def plausibilitaets_widersprueche(snapshot: dict) -> list:
     return widersprueche
 
 
-def preflight(snapshot: dict, bindung: dict | None = None) -> dict:
+def preflight(snapshot: dict, bindung: dict | None = None, vorjahr_referenz: dict | None = None) -> dict:
     """Snapshot → Preflight-Ergebnis.
 
     `bindung` (optional, dieselbe Quelle wie der Schreibpfad: api.py::_scheibe_bindung(store)) reicht
     an flag_check.flag_widersprueche() durch, damit ein auf der aktuellen Scheibe strukturell
     unfragbares Flag nicht als unbeantwortet-verdächtig gilt (s. dort). Ohne `bindung` (Alt-Aufrufer)
     unverändertes Verhalten.
+
+    `vorjahr_referenz` (optional, aus store["vorjahr_referenz"] nach einer echten
+    api.vorjahr()-Verknüpfung) reicht an plausibilitaets_widersprueche() durch, s. dort.
 
     Rückgabe:
       - widersprueche_flag: Liste (flag_check)
@@ -309,7 +335,7 @@ def preflight(snapshot: dict, bindung: dict | None = None) -> dict:
     flag = flag_check.flag_widersprueche(snapshot, bindung)
     partner = partner_check.partner_ohne_zusammen(snapshot)
     alleinerziehend = partner_check.alleinerziehend_mit_zusammen(snapshot)
-    plausibilitaet = plausibilitaets_widersprueche(snapshot)
+    plausibilitaet = plausibilitaets_widersprueche(snapshot, vorjahr_referenz)
     pauschal = check_pauschalen.pauschal_hinweise(snapshot)
     nicht_gerechnet = check_nicht_gerechnet.nicht_gerechnete_angaben(snapshot)
 

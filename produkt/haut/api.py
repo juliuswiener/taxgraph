@@ -631,7 +631,7 @@ def preflight_check(fall_id: str) -> tuple[int, dict]:
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     felder, _ = ST.materialisiere(store)
-    ergebnis = PF.preflight(felder, bindung)
+    ergebnis = PF.preflight(felder, bindung, vorjahr_referenz=store.get("vorjahr_referenz"))
     # Nur ausliefern, was auch was zu sagen hat. "nicht_gerechnet" ist ein eigener Bereich und
     # läuft NICHT unter "pauschale" mit: dort wurde etwas vergessen, hier nicht — die Angabe
     # steht korrekt in der Erklärung, nur die angezeigte Zahl kennt sie noch nicht.

@@ -151,3 +151,28 @@ def test_bestand_felder_tragen_kein_vorjahr_flag(bindung):
     for fid, grund in BESTAND_FELDER_OHNE_VORJAHR.items():
         vj = bindung.get(fid, {}).get("vorjahr")
         assert vj is None, f"{fid} traegt wieder ein vorjahr-Flag ({vj!r}). {grund}"
+
+
+# ---- (8) Vergleichs-Referenz statt Vorschlag fuer verlustvortrag_bestand -------
+# BACKLOG verlustvortrag-ungeprueft-uebernommen.md: kein vorjahr-Flag (s.o.) heisst nicht "keine
+# Gegenpruefung moeglich" — referenzwert_verlustvortrag() liefert den alten Wert separat, NUR fuer
+# preflight.plausibilitaets_widersprueche(), nie als Formular-Vorschlag.
+
+def test_referenzwert_verlustvortrag_liefert_bestaetigten_wert(bindung):
+    vj = ST.leerer_store(2024, fall_id="vj-ref")
+    _bestaetigt(vj, "verlustvortrag_bestand", 500000)
+    vj_felder, _ = ST.materialisiere(vj)
+    assert VW.referenzwert_verlustvortrag(vj_felder) == {"wert": 500000}
+
+
+def test_referenzwert_verlustvortrag_ignoriert_vorlaeufigen_wert():
+    vj = ST.leerer_store(2024, fall_id="vj-ref-vorl")
+    ST.append_event(vj, feld_id="verlustvortrag_bestand", wert=500000, zustand="vorlaeufig",
+                    herkunft=VJ, schreiber="import:vorjahr",
+                    signal={"signal_1": {"typ": "vorjahr"}, "signal_2": None}, ts=TS)
+    vj_felder, _ = ST.materialisiere(vj)
+    assert VW.referenzwert_verlustvortrag(vj_felder) is None
+
+
+def test_referenzwert_verlustvortrag_ohne_wert_ist_none():
+    assert VW.referenzwert_verlustvortrag({}) is None

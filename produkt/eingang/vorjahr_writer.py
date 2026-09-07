@@ -56,4 +56,26 @@ def uebernehme_vorjahr(neuer_store: dict, vorjahr_felder: dict, bindung: dict, *
                         # (uebertragbare_felder() braucht sie ohnehin), also mitgeben statt Luecke lassen.
                         bindung=bindung)
         n += 1
+    # Verlustvortrag traegt bewusst kein vorjahr-Flag (s. Docstring oben), deshalb separat: eine
+    # reine Vergleichsgroesse fuer preflight.plausibilitaets_widersprueche(), kein Formular-
+    # Vorschlag (BACKLOG verlustvortrag-ungeprueft-uebernommen.md).
+    ref = referenzwert_verlustvortrag(vorjahr_felder)
+    if ref is not None:
+        neuer_store["vorjahr_referenz"] = {"verlustvortrag_bestand": ref}
     return n
+
+
+def referenzwert_verlustvortrag(vorjahr_felder: dict) -> dict | None:
+    """Der im Vorjahres-Fall BESTÄTIGTE `verlustvortrag_bestand` als reine Vergleichsgröße für
+    preflight.plausibilitaets_widersprueche() — KEIN Vorschlag: das Feld trägt bewusst kein
+    vorjahr-Flag (bindung_an_gesamt.yaml, tests/test_vorjahr_writer.py::
+    test_bestand_felder_tragen_kein_vorjahr_flag), weil ein wörtlicher Übertrag falsch wäre —
+    der Bestand ändert sich durch Verrechnung im Vorjahr. Der Nutzer trägt den neuen Wert
+    also selbst ein; diese Funktion liefert nur den alten Wert zum Gegenprüfen.
+
+    None, wenn im Vorjahres-Fall kein bestätigter Wert vorliegt (dann bleibt die Prüfung still,
+    wie bei jeder anderen fehlenden Bezugsgröße in preflight.py)."""
+    vf = vorjahr_felder.get("verlustvortrag_bestand")
+    if vf is None or vf.get("zustand") != "bestaetigt":
+        return None
+    return {"wert": vf["wert"]}
