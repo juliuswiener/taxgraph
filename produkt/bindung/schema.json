@@ -208,7 +208,7 @@
           "description": "Kurzer Hilfetext (auch einfach gehalten)."
         },
         "beispielwert": {
-          "description": "Beispielwert passend zu typ (cent: Ganzzahl Cent; bool: true/false; ...)."
+          "description": "Beispielwert passend zu typ (cent: Ganzzahl Cent; bool: true/false; ...). Reine Anschauung fuer den Laien (Platzhaltertext, Formatbeispiel) — NICHT dasselbe wie standardwert und darf nie als Vorbelegung/Vorauswahl eines Eingabefelds landen; dafuer ist ausschliesslich standardwert da."
         },
         "muster": {
           "type": "string",

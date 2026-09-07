@@ -285,6 +285,32 @@ def test_ohne_standardwert_kein_knopf(page):
                     "`beispielwert`, und der ist ein Beispiel, keine Vorgabe.")
 
 
+def test_beispielwert_wird_nie_zur_vorbelegung(page):
+    """ANLASS 2026-09-07, Julius: Beispielwert (Anschauung für den Laien) und Standardwert
+    (Vorschlag zum Übernehmen) sind zwei verschiedene Dinge — ein Beispiel, das als Antwort
+    landet, ist eine erfundene Zahl in einer echten Steuererklärung.
+
+    `input.placeholder = q.standardwert ?? q.beispielwert ?? ""` und
+    `formatHinweis()`s `q.standardwert || q.beispielwert` fallen beide auf `beispielwert`
+    zurück, wenn kein `standardwert` da ist — das ist in Ordnung, SOLANGE beide reine Anzeige
+    bleiben (Platzhaltertext, Formathinweis) und nie das echte `.value` des Feldes füllen. Kippt
+    einer der beiden künftig in eine Vorbelegung, fällt dieser Test."""
+    q = {"feld_id": ZEITRAUM_FELD, "typ": "text",
+         "muster": r"^\d{2}\.\d{2}-\d{2}\.\d{2}$", "beispielwert": "01.01-31.12"}
+    r = page.evaluate("""(q) => {
+      const box = document.getElementById('eingabe');
+      const el = baueEingabe(q, box, 'feld-input', 'frage', null);
+      return {wert: el.value, platzhalter: el.placeholder, hinweis: formatHinweis(q)};
+    }""", q)
+    assert r["wert"] == "", (
+        f"`beispielwert` landet als Vorbelegung im Feld: {r['wert']!r} — nur ein zugesagter "
+        f"`standardwert` darf das Feld füllen.")
+    assert "01.01-31.12" in r["platzhalter"], (
+        "Der Platzhalter zeigt den Beispielwert nicht mehr — das ist die erlaubte Anzeige.")
+    assert "01.01-31.12" in r["hinweis"], (
+        "Der Formathinweis nennt den Beispielwert nicht mehr — er darf ihn als Text zeigen.")
+
+
 def test_die_bindung_enthaelt_diese_typen_wirklich():
     """Gegen den stillen Leerlauf: würden `text`/`datum` in der Bindung gar nicht vorkommen, wäre
     die ganze Datei ein Test über einen Fall, den es nicht gibt — grün und wertlos.
