@@ -13,6 +13,7 @@ import os
 import re
 import signal
 import sys
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -325,14 +326,23 @@ def main(argv):
     srv = make_server(port)
     host, gebunden = srv.server_address[0], srv.server_address[1]
     print(f"TaxGraph-Haut auf http://{host}:{gebunden}  (Ctrl-C zum Beenden)")
-    # P8.5 Graceful Shutdown: SIGTERM → KeyboardInterrupt → laufende Requests zu Ende
-    signal.signal(signal.SIGTERM, lambda _sig, _frame: sys.stderr.write("\nSIGTERM empfangen, fahre herunter...\n") or os.kill(os.getpid(), signal.SIGINT))
+    # P8.5 Graceful Shutdown, Ticket server-shutdown-haengt-sigterm: gemessen (tests/
+    # test_server_sigterm.py) blieb serve_forever() nach SIGTERM unbegrenzt hängen, wenn der
+    # Handler per Signal-Relay (os.kill(SIGINT)) versuchte, es per KeyboardInterrupt zu
+    # unterbrechen -- die genaue CPython-Mechanik dahinter ist nicht abschließend geklärt.
+    # Der Handler setzt darum nur ein Event; ein eigener Thread ruft darauf shutdown() -- der
+    # von Python vorgesehene Cross-Thread-Aufruf, den auch die Test-Fixtures (threading.Thread +
+    # srv.shutdown()) schon so nutzen.
+    beendet = threading.Event()
+    signal.signal(signal.SIGTERM, lambda _sig, _frame: (
+        sys.stderr.write("\nSIGTERM empfangen, fahre herunter...\n"), beendet.set()))
+    threading.Thread(target=lambda: (beendet.wait(), srv.shutdown()), daemon=True).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
-        srv.shutdown()
+        srv.server_close()
         print("Server heruntergefahren.")
 
 
