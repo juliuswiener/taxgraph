@@ -51,6 +51,11 @@ NAME = "Erika Musterfrau"
 ART9 = "Schwerbehinderung GdB 80"          # Gesundheitsdatum, Art. 9 DSGVO
 MARKER = (IBAN, STEUER_ID, BETRAG, NAME, ART9)
 
+# Nachgebildet aus app.js:139 ("demo-" + Date.now()) — die einzige echte fall_id-Erzeugung im
+# Produkt, ein 13-stelliger Millisekunden-Zeitstempel am Präfix. Der NORMALFALL, nicht der
+# Verdachtsfall: eine Teilstring-Suche träfe die Ziffernfolge und sperrte JEDE echte Kennung.
+DEMO_FALL_ID = "demo-1757239200123"
+
 # Der Meldungstext ist dem echten aus store.py:342 nachgebildet — dort steht {wert!r}.
 PII_MELDUNG = (f"fail-closed (F2/Magnitude): kap_ertraege={BETRAG!r} von llm:chat — "
                f"Konto {IBAN}, StNr {STEUER_ID}, {NAME}, {ART9}")
@@ -173,18 +178,21 @@ def test_kein_pii_im_protokoll(base, monkeypatch):
 
 
 def test_meta_nimmt_keinen_text(tmp_path, monkeypatch):
-    """Zusatzangaben sind Anzahlen und Wahrheitswerte. Ein String wird nicht geschrieben,
-    sondern durch seinen Typnamen ersetzt — Text ist die Form, in der Nutzdaten reisen,
-    und eine Regel, die von der Sorgfalt des naechsten Aufrufers abhaengt, haelt nicht."""
+    """Zusatzangaben sind Anzahlen und Wahrheitswerte UNTER ERLAUBTEM NAMEN (Positivliste
+    FL._ERLAUBTE_META, s. dort) — ein String unter erlaubtem Namen wird durch seinen Typnamen
+    ersetzt, ein Name AUSSERHALB der Liste unabhaengig vom Typ durch <gesperrt>: eine Regel,
+    die von der Sorgfalt des naechsten Aufrufers abhaengt, haelt nicht — auch nicht beim
+    Namen (urspruenglich pruefte dieser Test nur den Typ; `leer` stand nicht auf der Liste
+    und wurde durch `versuche` ersetzt, s. Ticket fehler-log-meta-nimmt-noch-zahlen-und-fall-id)."""
     monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
     FL.protokolliere("test.meta", ValueError(PII_MELDUNG),
-                     anzahl=3, geglueckt=False, leer=None, verraeterisch=IBAN)
+                     anzahl=3, geglueckt=False, versuche=None, verraeterisch=IBAN)
 
     roh = _roh()
     assert IBAN not in roh
     e = FL.lies()[-1]
-    assert e["anzahl"] == 3 and e["geglueckt"] is False and e["leer"] is None
-    assert e["verraeterisch"] == "<str>"
+    assert e["anzahl"] == 3 and e["geglueckt"] is False and e["versuche"] is None
+    assert e["verraeterisch"] == "<gesperrt>"
 
 
 def test_traceback_text_wird_nicht_gelesen(tmp_path, monkeypatch):
@@ -200,6 +208,84 @@ def test_traceback_text_wird_nicht_gelesen(tmp_path, monkeypatch):
     assert IBAN not in roh, "der Quelltext der Fehlerzeile ist ins Protokoll gelangt"
     assert "Kontonummer" not in roh
     assert FL.lies()[-1]["typ"] == "ValueError"      # der Eintrag existiert trotzdem
+
+
+def test_meta_betrag_als_int_wird_gesperrt(tmp_path, monkeypatch):
+    """Genau der Fall aus dem Ticket fehler-log-meta-nimmt-noch-zahlen-und-fall-id: ein Betrag
+    in Cent ist ein `int`, kein `str` — `_sicher()` liess int/bool/None bisher unabhaengig vom
+    NAMEN durch. `betrag_cent` steht nicht auf der Positivliste (FL._ERLAUBTE_META) und muss
+    deshalb gesperrt werden, obwohl der WERT harmlos aussieht (ein `int`, wie jede erlaubte
+    Anzahl)."""
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
+    FL.protokolliere("store.append", ValueError("egal"), betrag_cent=4500000)
+
+    roh = _roh()
+    assert "4500000" not in roh
+    e = FL.lies()[-1]
+    assert e["betrag_cent"] == "<gesperrt>"
+
+
+def test_fall_id_ziffernfoermige_pii_ueber_url_wird_gesperrt(base, monkeypatch):
+    """Der tatsaechliche Angriffspfad, kein synthetischer: server.py:250 uebernimmt die
+    URL-Fallkennung UNGEPRUEFT (`treffer.groupdict().get("id")`) und reicht sie als `fall_id`
+    durch. Ein Klarname scheitert dabei schon am Routing (kein Leerzeichen in dessen
+    Zeichenklasse, api_constants._FALL_RE) — die tatsaechliche Gefahr ist eine REIN
+    ZIFFERNFOERMIGE PII wie eine Steuer-ID, die dieselbe Zeichenklasse erfuellt wie eine echte
+    Kennung und deshalb bis zu protokolliere() durchkommt."""
+    def _platzt(_fall_id):
+        raise ValueError("egal")
+
+    monkeypatch.setattr(API, "stand", _platzt)
+    assert _ruf(base, "GET", f"/fall/{STEUER_ID}/stand") == 500
+
+    roh = _roh()
+    assert STEUER_ID not in roh
+    e = FL.lies()[-1]
+    assert e["fall_id"] != STEUER_ID
+    assert e["fall_id"].startswith("<gesperrt")
+
+
+def test_fall_id_klarname_ohne_url_wird_gesperrt(tmp_path, monkeypatch):
+    """Ergaenzung zum URL-Test oben: ein Klarname erreicht protokolliere() nie ueber die
+    HTTP-Route (Leerzeichen scheitert am Routing-Muster), aber jeder DIREKTE Aufrufer koennte
+    ihn trotzdem uebergeben — _sicherer_fall_id darf sich nicht auf das Routing als einzige
+    Schranke verlassen."""
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
+    FL.protokolliere("test.fall_id", ValueError("egal"), fall_id=NAME)
+
+    roh = _roh()
+    assert NAME not in roh
+    e = FL.lies()[-1]
+    assert e["fall_id"] != NAME
+    assert e["fall_id"].startswith("<gesperrt")
+
+
+def test_fall_id_demo_schema_kommt_unveraendert_durch(tmp_path, monkeypatch):
+    """Der NORMALFALL, nicht der Verdachtsfall: app.js:139 erzeugt JEDE echte fall_id als
+    "demo-" + Date.now(), eine 13-stellige Ziffernfolge haengt am Praefix. Gemessen (main,
+    2026-09-07, nachgemessen hier: die Kategorie ist "steuer_id", 11-13 Ziffern treffen dort
+    zuerst): eine Teilstring-Pruefung (pii_filter.filtere()) traf diese Ziffernfolge und sperrte
+    damit HUNDERT PROZENT der echten Kennungen im Betrieb — kein Filter mehr, ein Aus-Schalter.
+    Als GANZES ist DEMO_FALL_ID weder Steuer-ID noch Kontonummer, deshalb muss sie unveraendert
+    durchkommen."""
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
+    FL.protokolliere("test.fall_id", ValueError("egal"), fall_id=DEMO_FALL_ID)
+
+    e = FL.lies()[-1]
+    assert e["fall_id"] == DEMO_FALL_ID
+
+
+def test_erlaubte_meta_und_echte_fall_id_kommen_durch(tmp_path, monkeypatch):
+    """Gegenprobe zu den drei Sperr-Tests oben: eine Positivliste, die auch den erlaubten Fall
+    sperrt, waere trivial „sicher" und nutzlos. `anzahl` steht auf der Liste, `abc123` ist eine
+    gewoehnliche interne Fallkennung (Buchstaben+Ziffern, keine PII-Form) — beide muessen
+    unveraendert im Eintrag stehen."""
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
+    FL.protokolliere("test.durchlass", ValueError("egal"), fall_id="abc123", anzahl=7)
+
+    e = FL.lies()[-1]
+    assert e["fall_id"] == "abc123"
+    assert e["anzahl"] == 7
 
 
 # ------------------------------------------------------------------ Struktur: die Schranke umgehbar?
