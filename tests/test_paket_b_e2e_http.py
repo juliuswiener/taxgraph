@@ -1239,34 +1239,39 @@ def test_gesamt_gwg_only_verlust(base):
 
 
 @pytest.mark.xfail(
-    strict=True,
-    reason="tickets/gwg-selbstaendig-nutzbar-nicht-erfragbar.md: keine der drei "
-           "§ 6 Abs. 2-Bedingungen ist im Kegel der Scheibe 'gesamt' erfragbar, der Sofortabzug "
-           "fliesst ungeprueft -- Marker faellt am Tag des Fixes (XPASS) und zwingt dazu, ihn zu "
-           "entfernen.")
-def test_gesamt_gwg_tatbestand_nicht_bestaetigbar(base):
+    strict=True, raises=AssertionError,
+    reason="tickets/gwg-selbstaendig-nutzbar-nicht-erfragbar.md, Schritt 2: seit dem Schritt-1-Fix "
+           "(GWG_FELDER, api_constants.py) sind die drei § 6 Abs. 2-Bedingungen auf 'gesamt' erfragbar "
+           "UND bestätigbar (201, nicht mehr 400) — das war der alte Marker-Grund, der ist behoben. "
+           "Offen bleibt Schritt 2 (Backlog gwg-sofortabzug-ohne-tatbestand.md, noch nicht gebaut): "
+           "der Sofortabzug fließt unverändert weiter, auch wenn die Bedingung verneint bestätigt wird "
+           "— kein Guard/Catala-Input liest die Antwort. Fällt grün (XPASS), sobald Schritt 2 steht.")
+def test_gesamt_gwg_ohne_tatbestand_darf_keinen_abzug_geben(base):
     """§ 6 Abs. 2 S. 1 EStG (sources/gesetze-im-internet/estg_p6_2026-07-14.txt) macht den Sofortabzug an
     einem Eigenschafts-Tatbestand fest: "abnutzbaren beweglichen Wirtschaftsgütern des Anlagevermögens, die
-    einer selbständigen Nutzung fähig sind" (S. 2/3 definieren "selbständig nutzbar" negativ). Der Abzug
-    fließt (wie test_gesamt_gwg_multi u.a.), aber dieser Tatbestand ist im Kegel der Scheibe "gesamt" nicht
-    erreichbar — UNERREICHBAR_BEKANNT (test_bindungstabelle.py) trackt die Lücke als bekannt. Ein Nutzer,
-    dessen Wirtschaftsgut NICHT selbständig nutzbar ist (Voraussetzung fehlt, § 6 Abs. 2 gilt nicht), kann
-    das nicht einmal EINGEBEN: der Traverser lehnt mit 400 ab, bevor irgendeine Prüfung stattfinden könnte.
-    Dieser Test hält NUR diesen einen, am Wortlaut geprüften Tatbestand fest — nicht die Zahl der insgesamt
-    betroffenen Felder (dazu s. Bericht an @main, Schritt 1)."""
-    catala = _catala_da()
+    einer selbständigen Nutzung fähig sind" (S. 2/3 definieren "selbständig nutzbar" negativ). Seit Schritt 1
+    ist die Bedingung erfragbar; dieser Test bestätigt sie mit False (Tatbestand verneint, § 6 Abs. 2 gilt
+    nicht) und erwartet, dass der Sofortabzug DANN entfällt — zahl_cent müsste identisch mit einem sonst
+    gleichen Fall OHNE das GWG-Asset sein. Schritt 2 (Guard vor Catala) fehlt noch: gemessen fließt der
+    Abzug trotz verneintem Tatbestand unverändert, zahl_cent bleibt wie MIT bestätigtem Tatbestand."""
+    if not _catala_da():
+        pytest.skip("Catala-Toolchain nicht verfügbar")   # Vergleich braucht eine echte Berechnung.
     _gesamt_anlegen(base, "gwt", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
                     betriebseinnahmen=5000000, gwg=[60000]))
-    st, erg = _req(base, "GET", "/fall/gwt/ergebnis")
-    _val("ergebnis", erg)
-    if catala:
-        # Der Sofortabzug fließt, ohne dass "selbständig nutzbar" (oder irgendeine andere
-        # Tatbestandsvoraussetzung) je bestätigt — oder auch nur erfragt — wurde.
-        assert erg["zahl_cent"] is not None and erg["grund"] == "bestaetigt"
-    # DEFEKT: der Nutzer kann die (möglicherweise falsche) Annahme "selbständig nutzbar" nicht einmal
-    # bestreiten. Erwartet wäre 201 (die Voraussetzung ist erfragbar); gemessen ist 400.
+    # Schritt 1 behoben: die Bedingung ist jetzt erfragbar UND bestätigbar (201, nicht mehr 400).
     _req(base, "POST", "/fall/gwt/event",
          _laie("gwg_bewegliches_selbstaendig_nutzbar", False), erwarte=201)
+    st, erg = _req(base, "GET", "/fall/gwt/ergebnis")
+    _val("ergebnis", erg)
+    # Kontrollfall: gleicher Fall, aber OHNE das GWG-Asset — das ist der Betrag, den ein verneinter
+    # Tatbestand liefern MÜSSTE (kein Sofortabzug). Schritt 2 (noch offen) müsste diese Gleichheit
+    # herstellen; DEFEKT gemessen: der Abzug bleibt drin, obwohl der Tatbestand verneint wurde.
+    _gesamt_anlegen(base, "gwt_kontrolle", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
+                    betriebseinnahmen=5000000))
+    st2, erg2 = _req(base, "GET", "/fall/gwt_kontrolle/ergebnis")
+    assert erg["zahl_cent"] == erg2["zahl_cent"], (
+        "verneinter § 6 Abs. 2-Tatbestand muss denselben Betrag liefern wie 'kein GWG-Asset' — "
+        f"gemessen: mit_verneintem_gwg={erg['zahl_cent']} ohne_gwg={erg2['zahl_cent']}")
 
 
 @pytest.mark.parametrize("vg_cent,erwartet_cent", [

@@ -406,8 +406,9 @@ UNERREICHBAR_BEKANNT = {
     "kind_idnr",
     # kind_kindschaftsverhaeltnis_a/b + kind_kindschaftsverh_zeitraum_a/b: seit 2026-08-12
     # via KIND_KV_PV im Kegel (checkESt-Messung), also erreichbar — nicht mehr hier.
-    # § 6 Abs. 2 GWG-Tatbestand — Geltungsbedingungen, nicht erfragt
-    "gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250",
+    # gwg_bewegliches_selbstaendig_nutzbar/gwg_netto_ohne_vorsteuer/gwg_verzeichnis_ab_250: seit
+    # 2026-09-07 via GWG_FELDER auf gesamt/rentner_gesamt (tickets/gwg-selbstaendig-nutzbar-
+    # nicht-erfragbar.md, Schritt 1), also erreichbar — nicht mehr hier.
     # § 24a — der Accessor leitet das Alter aus geburtsjahr + VZ ab
     "rentner_alter_64_erfuellt",
     # § 9 Abs. 4a Einzelreise-Slots — der Ring rechnet aus den Tages-Aggregaten
