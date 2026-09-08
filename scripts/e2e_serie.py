@@ -11,6 +11,8 @@ Jede Antwort trägt "origin":
   "schema" — aus dem Feldtyp geraten, weil die Lebenslage dazu nichts hergibt
 
 stdlib-only (urllib), keine neuen Abhängigkeiten. Erwartet einen laufenden Server unter BASE.
+Einzige Ausnahme: `api_constants` aus dem Produkt selbst, für SPERRENDE_SCREENING_FLAGS — das ist
+keine Abhängigkeit nach außen, sondern die Weigerung, eine Feldliste hier ein zweites Mal zu führen.
 """
 from __future__ import annotations
 
@@ -29,6 +31,16 @@ MAX_ROUNDS = 400  # eine Runde = eine Frage seit 2026-09-07 (s. Kommentar in fah
 OUT_DIR = "/tmp/e2e_2026-09-07"
 
 _INSTANZ_RE = re.compile(r"^(.*)__(\d+)$")
+
+# Verneinte Screening-Flags, deren "False" eine Einkunftsart erklaert, die die Scheibe NICHT rechnet
+# -> Sperrgrund einkunftsart_nicht_ring_faehig. Quelle ist das Produkt selbst; eine hier gepflegte
+# Zweitliste liefe weg, sobald eine Scheibe eine Art dazunimmt oder abgibt.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                "produkt", "haut"))
+import api_constants as _AC  # noqa: E402  (nach dem sys.path-Eintrag, sonst nicht auffindbar)
+
+SPERRENDE_SCREENING_FLAGS = frozenset(_AC.AN_GESAMT_FLAGS).union(
+    *(s.get("fremd_arten", ()) for s in _AC.SCHEIBEN.values()))
 
 
 def _req(method, path, body=None):
@@ -97,6 +109,23 @@ def _entscheide(frage, overrides):
 
     typ = frage["typ"]
     if typ == "bool":
+        # BEFUND 2026-09-08: hier stand nur das `return False`. Bei einem VERNEINTEN Feld
+        # (`kein_sonstige`, Frage "Hattest du sonstige Einkuenfte?", `frage_invertiert`) heisst False
+        # aber "ja, hatte ich" — der Treiber erklaerte also in JEDEM Lauf Einkunftsarten, die die
+        # Lebenslage gar nicht nennt, und /ergebnis sperrte zu Recht mit
+        # einkunftsart_nicht_ring_faehig. Gemessen: in allen vier Lebenslagen liefen
+        # kein_sonstige UND kein_p23_verkauf auf diesen Default, jedes allein schon hinreichend.
+        # Bewusst NICHT ueber `frage_invertiert` entschieden: das Kennzeichen sagt, ob Fragetext und
+        # Speicherwert gegenlaeufig sind, nicht ob eine Antwort etwas ERKLAERT. Ueber die Namen zu
+        # gehen (kein_/keine_/ohne_) waere noch schlechter — `stammdaten_keine_bankverbindung` traegt
+        # dieselbe Form, und True hiesse dort "dieser Mensch hat kein Konto".
+        # ponytail: nur die SPERRENDEN Flags. Die uebrigen verneinten Screening-Fragen (Spenden,
+        # Arbeitsmittel, ...) bleiben auf False, der Treiber erklaert sie also weiterhin und
+        # beantwortet die Folgefragen mit 0. Das kostet Fragen, aber keine Zahl. Wenn die Serie
+        # kuenftig Abzuege pruefen soll, gehoert hier eine Antwort je Lebenslage hin, kein Default.
+        if basis in SPERRENDE_SCREENING_FLAGS:
+            return True, "schema", ("verneintes Screening-Flag, Lebenslage nennt diese Einkunftsart "
+                                    "nicht -> true (= habe ich nicht)")
         return False, "schema", "Feldtyp bool, Lebenslage sagt dazu nichts -> false"
     if typ in ("cent", "int"):
         wert = 0
