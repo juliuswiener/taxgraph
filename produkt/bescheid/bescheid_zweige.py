@@ -248,6 +248,17 @@ def _zweig_festzusetzende_est(vz: int, bindung: dict, felder, store, nur_bestaet
             # Ring lag (Fix 2026-08-13, Test test_arbeitsmittel_ueber_gwg_schwelle_stuerzt_nicht_ab).
             nd = _cent("arbeitsmittel_nutzungsdauer")
             if nd > 0:
+                # ponytail: keine Zwölftelung im Anschaffungsjahr (§ 7 Abs. 1 S. 4). Der Aufruf
+                # lässt `ist_anschaffungsjahr` und `anschaffung_monat` weg, weil an_gesamt den
+                # Kaufmonat gar nicht erfragt — beide Felder fehlen in ihrem Feldkegel UND in
+                # bindung_an_gesamt.yaml (anders als bei `gesamt`, s. _zweig_festzusetzende_est_gesamt).
+                # Ohne sie ist der Wächter im Accessor dauerhaft falsch, es gibt immer den vollen
+                # Jahresbetrag: im Beispiel 400 statt 100 EUR, Richtung ZU WENIG STEUER. Gedeckelt
+                # nur dadurch, dass an_gesamt keine UI-Kachel hat und mit 0/12 Stammdaten nicht
+                # abgabefähig ist — über POST /fall ist die Scheibe sehr wohl erreichbar.
+                # Aufstieg: beide Felder in SCHEIBEN["an_gesamt"]["felder"] und in die Bindung
+                # nachziehen, dann hier durchreichen. Vorher entscheiden, ob dieser MVP-Zweig
+                # überhaupt bleibt — vault backlog/taxgraph/an-gesamt-fragt-den-kaufmonat-nicht.md
                 wk_input["am_anschaffungskosten"] = runner.catala_p7_linear_afa({
                     "anschaffungskosten_cent": _cent(ARBEITSMITTEL_KOSTEN),
                     "nutzungsdauer": nd})  # europe, already euro
