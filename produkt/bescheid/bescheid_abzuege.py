@@ -219,6 +219,10 @@ def _shared_steuer_sonder_agb(g_dict, gde, ausserg, veranlagung,
         "hh_handwerker_arbeitskosten": _hh_summe("hh_handwerker_betrag", "hh_handwerker", "hh_handwerker_arbeitskosten") // 100,
         "hh_in_eu_ewr": f_dict.get("hh_in_eu_ewr", {}),
         "hh_rechnung_unbar": f_dict.get("hh_rechnung_unbar", {}),
+        # Abs. 3 S. 2 (öffentlich geförderte Maßnahme). Fehlte hier, während der Riegel
+        # handwerker_foerderung_offen die Antwort erzwang: gefragt, geliefert, verworfen —
+        # `ist_gefoerdert` war ohne den Schlüssel dauerhaft False.
+        "hh_handwerker_keine_foerderung": f_dict.get("hh_handwerker_keine_foerderung", {}),
         "p35a_mitveranlagung": f_dict.get("p35a_mitveranlagung", {})})
     g_dict["steuerermaessigungen"] = base
     # § 35c Abs. 3 S. 2: "Die Steuerermäßigung nach Absatz 1 ist ebenfalls nicht zu gewähren, wenn

@@ -121,8 +121,9 @@ def _minimal_gesamt_kegel():
         ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
         ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
         ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
-        # Gewinn für ausreichend hohe ESt (keine Steuer-Quantisierung)
-        ("einkuenfte_gewinn", 500000),  # 5000 EUR Gewinn
+        # Deutlich über dem Grundfreibetrag: bei 5.000 EUR ist die ESt schon vor jeder
+        # § 35a-Ermäßigung 0, und jede Differenzmessung wäre ein Bodeneffekt.
+        ("einkuenfte_gewinn", 5000000),  # 50.000 EUR Gewinn
         ("gewinn_betriebsart", "gewerbe"),
     ]
 
@@ -135,6 +136,16 @@ def _gesamt_anlegen(base, fid, kegel):
         assert st == 201, f"POST event {feld}={wert} failed: {st}"
 
 
+def _basis_zahl_cent(base, fid):
+    """Steuer desselben Kegels OHNE jede § 35a-Angabe — die Bezugsgröße, gegen die die
+    Ermäßigung gemessen wird. Ohne sie prüft ein Test nur, DASS gerechnet wurde, nicht WAS."""
+    _gesamt_anlegen(base, fid, _minimal_gesamt_kegel())
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    assert erg["grund"] == "bestaetigt", f"Basisfall gesperrt: {erg.get('grund')}"
+    assert erg["zahl_cent"] is not None, "Basisfall ohne Zahl"
+    return erg["zahl_cent"]
+
+
 def test_p35a_foerderung_mit_foerderung(base):
     """§ 35a Abs. 3 S. 2: Maßnahme mit öffentlicher Förderung (keine_foerderung=false).
     Erwartung: Abs. 3 (Handwerker) = 0, Abs. 1 + 2 unberührt.
@@ -142,6 +153,7 @@ def test_p35a_foerderung_mit_foerderung(base):
     Sollwert Abs. 1/2 nur: 400×20% + 2000×20% = 80 + 400 = 480 EUR.
     """
     catala = _catala_da()
+    basis = _basis_zahl_cent(base, "p35a-foerd-ja-basis")
     kegel = _minimal_gesamt_kegel()
     _gesamt_anlegen(base, "p35a-foerd-ja", kegel)
 
@@ -156,24 +168,30 @@ def test_p35a_foerderung_mit_foerderung(base):
     st, erg = _req(base, "GET", "/fall/p35a-foerd-ja/ergebnis")
     _val("ergebnis", erg)
 
-    if catala and erg["grund"] == "bestaetigt":
-        # Nur Abs. 1 + 2: (400 + 2000) × 20% = 480 EUR Ermäßigung
-        # @ ~30% Tarif: ca. 144 EUR weniger Steuer
-        # Ohne Förderung wäre (400 + 2000 + 3000) × 20% = 1100 EUR (+ 600 EUR Handwerker)
-        # Differenz ca. (600 × 20%) × 30% = 120 × 30% ≈ 36 EUR
-        # Aber Rundung/Tarif-Effekt: assert solide Bounds
+    if catala:
+        # `grund == "bestaetigt"` als ASSERTION, nicht als Sprungbedingung: sonst ist die
+        # Bedingung identisch mit der Behauptung darunter und der Test kann nie rot werden.
         assert erg["grund"] == "bestaetigt", f"Expected confirmed, got grund={erg['grund']}"
         assert erg["offen"] == [], f"No open gates expected, got offen={erg['offen']}"
+        # Die Euro-Zahl selbst, nicht nur „es wurde gerechnet": § 35a mindert die Steuer
+        # 1:1, die Differenz zur Basis IST die Ermäßigung.
+        # Nur Abs. 1 + 2: (400 + 2000) × 20% = 480 EUR. Der Handwerker (600 EUR) ist
+        # gefördert und damit nach Abs. 3 S. 2 gesperrt.
+        assert basis - erg["zahl_cent"] == 48000, (
+            f"Ermaessigung {basis - erg['zahl_cent']} Cent statt 48000 "
+            f"(Basis {basis}, mit Foerderung {erg['zahl_cent']}) — "
+            f"Differenz 60000 = der geförderte Handwerker wird trotz Abs. 3 S. 2 abgezogen")
 
 
 def test_p35a_foerderung_ohne_foerderung(base):
     """§ 35a Abs. 3 S. 2: Maßnahme OHNE öffentliche Förderung (keine_foerderung=true).
     Erwartung: voller Abzug Abs. 1 + 2 + 3.
     Testfall: wie oben, aber keine_foerderung=true.
-    Sollwert: (400 + 2000 + 3000) × 20% = 1100 EUR.
-    Differenzial zu mit_foerderung: (3000 × 20%) × Tarif = 600 × 20% × Tarif ≈ ca. 36€ Steuer.
+    Sollwert: (400 + 2000 + 3000) × 20% = 80 + 400 + 600 = 1080 EUR.
+    Differenzial zu mit_foerderung: die 600 EUR des Handwerkers.
     """
     catala = _catala_da()
+    basis = _basis_zahl_cent(base, "p35a-foerd-nein-basis")
     kegel = _minimal_gesamt_kegel()
     _gesamt_anlegen(base, "p35a-foerd-nein", kegel)
 
@@ -188,10 +206,16 @@ def test_p35a_foerderung_ohne_foerderung(base):
     st, erg = _req(base, "GET", "/fall/p35a-foerd-nein/ergebnis")
     _val("ergebnis", erg)
 
-    if catala and erg["grund"] == "bestaetigt":
-        # Alle drei: (400 + 2000 + 3000) × 20% = 1100 EUR Ermäßigung
+    if catala:
+        # `grund == "bestaetigt"` als ASSERTION, nicht als Sprungbedingung: sonst ist die
+        # Bedingung identisch mit der Behauptung darunter und der Test kann nie rot werden.
         assert erg["grund"] == "bestaetigt"
         assert erg["offen"] == []
+        # Der Kontrastfall zur Förderung: alle drei Töpfe, 80 + 400 + 600 = 1080 EUR.
+        # Er hält den Fix ehrlich — eine Sperre, die IMMER nullt, wäre hier rot.
+        assert basis - erg["zahl_cent"] == 108000, (
+            f"Ermaessigung {basis - erg['zahl_cent']} Cent statt 108000 "
+            f"(Basis {basis}, ohne Foerderung {erg['zahl_cent']})")
 
 
 def test_p35a_foerderung_unbeantwortet_sperrung(base):
@@ -227,22 +251,33 @@ def test_p35a_foerderung_minijob_bleibt_aktiv(base):
     Sollwert: nur Minijob 400 × 20% = 80 EUR, Handwerker = 0.
     """
     catala = _catala_da()
+    basis = _basis_zahl_cent(base, "p35a-foerd-minijob-basis")
     kegel = _minimal_gesamt_kegel()
     _gesamt_anlegen(base, "p35a-foerd-minijob", kegel)
 
     _req(base, "POST", "/fall/p35a-foerd-minijob/event", _laie("hh_minijob_betrag", 40000))  # 400 EUR
     _req(base, "POST", "/fall/p35a-foerd-minijob/event", _laie("hh_handwerker_betrag", 300000))  # 3000 EUR
     _req(base, "POST", "/fall/p35a-foerd-minijob/event", _laie("hh_in_eu_ewr", True))
-    # hh_rechnung_unbar NICHT GESETZT (Abs. 5 S. 3 NUR für Abs. 2/3)
+    # Abs. 5 S. 3 gilt nur für Abs. 2/3 — für den Minijob wäre die Rechnung entbehrlich.
+    # Der Handwerkerbetrag steht hier aber im Fall, also verlangt der Riegel sie trotzdem;
+    # ohne diese Antwort misst der Test nur `rechnung_unbar_offen` statt die Förderungs-Sperre.
+    _req(base, "POST", "/fall/p35a-foerd-minijob/event", _laie("hh_rechnung_unbar", True))
     _req(base, "POST", "/fall/p35a-foerd-minijob/event", _laie("hh_handwerker_keine_foerderung", False))  # GEFÖRDERT
 
     st, erg = _req(base, "GET", "/fall/p35a-foerd-minijob/ergebnis")
     _val("ergebnis", erg)
 
     # Minijob sollte trotz Förderung-Sperre der Handwerker aktiv sein
-    if catala and erg["grund"] == "bestaetigt":
+    if catala:
+        # `grund == "bestaetigt"` als ASSERTION, nicht als Sprungbedingung: sonst ist die
+        # Bedingung identisch mit der Behauptung darunter und der Test kann nie rot werden.
         assert erg["grund"] == "bestaetigt", f"Minijob sollte unabhängig rechnen, got {erg['grund']}"
         assert erg["offen"] == []
+        # Nur der Minijob: 400 × 20% = 80 EUR. Der geförderte Handwerker (600 EUR) fällt weg.
+        assert basis - erg["zahl_cent"] == 8000, (
+            f"Ermaessigung {basis - erg['zahl_cent']} Cent statt 8000 "
+            f"(Basis {basis}, Fall {erg['zahl_cent']}) — 68000 hiesse: der geförderte "
+            f"Handwerker wird mitgerechnet")
 
 
 def test_p35a_foerderung_mutation_gate_inversion(base):
