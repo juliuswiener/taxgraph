@@ -147,6 +147,36 @@ def test_happy_path_vorlaeufig(fall, monkeypatch):
         assert ev["signal"]["signal_2"] is None
 
 
+# --------------------------------------------------------------- Scheiben-Gate: scheibenfremdes Feld
+def test_scheibenfremder_vorschlag_landet_nicht_im_store(fall, monkeypatch):
+    """(Auftrag 2026-09-08) Die gesamt-Scheibe führt `rentner_jahresrente` NICHT — das Feld gehört
+    zu rentner_gesamt. Der GLOBALE Katalog-Check im Store lässt es trotzdem durch (es ist global
+    llm-vorschlagbar), also landete so ein Vorschlag bisher als vorläufiges Event im Fall. Der Beleg
+    „Euro" steht wörtlich im Freitext, das Beleg-Gate lässt ihn also passieren: der Test misst
+    allein das Scheiben-Gate, nicht den Beleg."""
+    monkeypatch.setattr(LC, "complete", _fake_complete(("rentner_jahresrente", 185000)))
+    st, body = API.chat(fall, {"text": "Ich bekomme 1850 Euro Rente."})
+    assert st == 200
+    assert body["vorschlaege"] == [], (
+        "Ein scheibenfremder Vorschlag kam durch — das Scheiben-Gate hängt nicht im Pfad.")
+    assert body["abgelehnt"] == ["rentner_jahresrente"], (
+        "Der scheibenfremde Vorschlag verschwand still statt im Protokoll aufzutauchen.")
+    assert "rentner_jahresrente" in body["abgelehnt_gruende"]
+    import store as ST
+    assert "rentner_jahresrente" not in ST._aktives(API.lade_fall(fall)), (
+        "Der scheibenfremde Vorschlag wurde sogar geschrieben.")
+
+
+def test_scheibeneigenes_feld_geht_weiterhin_durch(fall, monkeypatch):
+    """Die Gegenprobe, ohne die „filtere alles weg" auch grün wäre. `agb_aufwendungen` führt die
+    gesamt-Scheibe SEHR WOHL und muss unverändert durchgehen."""
+    monkeypatch.setattr(LC, "complete", _fake_complete(("agb_aufwendungen", 300000)))
+    st, body = API.chat(fall, {"text": "3000 Euro Krankheitskosten."})
+    assert st == 200
+    assert [v["feld_id"] for v in body["vorschlaege"]] == ["agb_aufwendungen"], (
+        "Ein scheibeneigenes Feld wurde fälschlich verworfen.")
+
+
 # --------------------------------------------------------------- Graceful-Skip: human-only-Vorschlag (Instructor)
 def test_graceful_skip_human_only(fall, monkeypatch, capsys):
     """Instructor-Auflage: schlägt die KI ein HUMAN-ONLY-Feld (antrag_ermaessigter_satz, Wahlrecht § 34

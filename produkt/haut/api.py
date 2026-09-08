@@ -1125,6 +1125,15 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
     abgelehnt_gruende = {}
     for v in vorschlaege:
         fid = v.get("feld_id")
+        # Scheiben-Gate: eine feld_id, die die Scheibe des Falls NICHT führt, darf nicht geschrieben
+        # werden. `bindung` ist die SCHEIBE-GEFILTERTE Bindung (Z.1079) — weder der globale Katalog
+        # (autorisiert über `vorschlagbar_von`, nicht über die Scheibe) noch `kat3` (enger: nur die
+        # Stufe-3-Auswahl). Gemessen: `rentner_jahresrente` ist global llm-vorschlagbar, gehört aber
+        # in keine `gesamt`-Variante — ein append_event gelang dadurch als vorläufig.
+        if fid and fid not in bindung:
+            abgelehnt.append(fid)                    # ins Protokoll statt still verschwinden (s. abgelehnt_gruende)
+            abgelehnt_gruende[fid] = "scheibenfremd: Feld gehört nicht zu dieser Scheibe"
+            continue
         # Auflage-B-Vorprüfung: fid schon aktiv UND grundsätzlich katalog-erlaubt? -> KONFLIKT (Fall 2), nicht
         # abgelehnt. Reihenfolge spiegelt append_event: Katalog sticht immer zuerst — ein human-only-Feld bleibt
         # abgelehnt, auch wenn es zufällig schon einen Wert trägt (die KI durfte es nie vorschlagen, Fall 1).
