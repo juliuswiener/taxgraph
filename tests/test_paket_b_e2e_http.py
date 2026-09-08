@@ -3622,15 +3622,19 @@ def test_rentner_kap_differential(base):
     _val("ergebnis", erg_mit)
     steuern_mit = erg_mit["zahl_cent"]
 
-    if steuern_ohne is not None and steuern_mit is not None:
-        delta = steuern_mit - steuern_ohne
-        # 2.000 EUR steuerpflichtig × 23,7 % = 474 EUR (47400 Cent)
-        # Nicht 25 % Abgeltungsteuer, sondern Günstigerprüfung nach § 32d Abs. 6:
-        # Bei 20.000 EUR Rente liegt der tarifliche Grenzsteuersatz unter 25%, deshalb ist der Tarif günstiger.
-        assert delta == 47400, (
-            f"Kapital-Differential mit Günstigerprüfung § 32d Abs. 6 (tariflich < Abgeltungsteuer): "
-            f"ohne {steuern_ohne}, mit {steuern_mit}, delta={delta} (sollte 47400)"
-        )
+    # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+    # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+    assert steuern_ohne is not None and steuern_mit is not None, (
+        f"Sperrgrund statt Zahl: ohne Kapital {erg_ohne.get('grund')}, mit Kapital {erg_mit.get('grund')}"
+    )
+    delta = steuern_mit - steuern_ohne
+    # 2.000 EUR steuerpflichtig × 23,7 % = 474 EUR (47400 Cent)
+    # Nicht 25 % Abgeltungsteuer, sondern Günstigerprüfung nach § 32d Abs. 6:
+    # Bei 20.000 EUR Rente liegt der tarifliche Grenzsteuersatz unter 25%, deshalb ist der Tarif günstiger.
+    assert delta == 47400, (
+        f"Kapital-Differential mit Günstigerprüfung § 32d Abs. 6 (tariflich < Abgeltungsteuer): "
+        f"ohne {steuern_ohne}, mit {steuern_mit}, delta={delta} (sollte 47400)"
+    )
 
 
 def test_rentner_kap_abgeltungsteuer_hohe_rente(base):
@@ -3648,6 +3652,7 @@ def test_rentner_kap_abgeltungsteuer_hohe_rente(base):
     st, erg = _req(base, "GET", "/fall/rentner-kap-80k/ergebnis")
     _val("ergebnis", erg)
     steuern_hoch = erg["zahl_cent"]
+    grund_hoch = erg.get("grund")
 
     # Dieselbe Rente ohne Kapital
     kegel_hoch_ohne = _rentner_kegel(jahresrente=8000000, kein_kap=True, kap_ertraege=0)
@@ -3660,13 +3665,17 @@ def test_rentner_kap_abgeltungsteuer_hohe_rente(base):
     _val("ergebnis", erg)
     steuern_hoch_ohne = erg["zahl_cent"]
 
-    if steuern_hoch is not None and steuern_hoch_ohne is not None:
-        delta = steuern_hoch - steuern_hoch_ohne
-        # 2.000 EUR × 25 % (Abgeltungsteuer bei hohem Einkommen) = 500 EUR (50000 Cent)
-        assert delta == 50000, (
-            f"Abgeltungsteuer bei hohem Einkommen (80k Rente): "
-            f"ohne {steuern_hoch_ohne}, mit {steuern_hoch}, delta={delta} (sollte 50000, aktuell {delta} vor Günstigerprüfung)"
-        )
+    # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+    # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+    assert steuern_hoch is not None and steuern_hoch_ohne is not None, (
+        f"Sperrgrund statt Zahl: mit Kapital {grund_hoch}, ohne Kapital {erg.get('grund')}"
+    )
+    delta = steuern_hoch - steuern_hoch_ohne
+    # 2.000 EUR × 25 % (Abgeltungsteuer bei hohem Einkommen) = 500 EUR (50000 Cent)
+    assert delta == 50000, (
+        f"Abgeltungsteuer bei hohem Einkommen (80k Rente): "
+        f"ohne {steuern_hoch_ohne}, mit {steuern_hoch}, delta={delta} (sollte 50000, aktuell {delta} vor Günstigerprüfung)"
+    )
 
 
 def test_rentner_kap_zusammenveranlagung_pb_verdopplung(base):
@@ -3686,6 +3695,7 @@ def test_rentner_kap_zusammenveranlagung_pb_verdopplung(base):
     st, erg = _req(base, "GET", "/fall/rentner-zusammen-2500/ergebnis")
     _val("ergebnis", erg)
     steuern_25 = erg["zahl_cent"]
+    grund_25 = erg.get("grund")
 
     # Fall 2: zusammen, Person A 2.000€ Kapital (genau verdoppelter PB), Person B Rente
     kegel_20 = _rentner_kegel(jahresrente=2000000, veranlagung="zusammen",
@@ -3700,15 +3710,19 @@ def test_rentner_kap_zusammenveranlagung_pb_verdopplung(base):
     _val("ergebnis", erg)
     steuern_20 = erg["zahl_cent"]
 
-    if steuern_25 is not None and steuern_20 is not None:
-        # § 20 Abs. 9 S. 3: verdoppelter Sparer-PB bei Zusammenveranlagung = 2.000 EUR
-        # 2.500 EUR Kapitalerträge − 2.000 EUR PB = 500 EUR steuerpflichtig
-        # ESt-Berechnung: ohne Kapital 162.200 Cent, mit Kapital 173.400 Cent → Delta 11.200 Cent
-        delta = steuern_25 - steuern_20
-        assert delta == 11200, (
-            f"Verdopplung Sparer-PB Zusammenveranlagung (500€ über PB): "
-            f"2.500€ {steuern_25}, 2.000€ {steuern_20}, delta={delta} (sollte 11200)"
-        )
+    # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+    # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+    assert steuern_25 is not None and steuern_20 is not None, (
+        f"Sperrgrund statt Zahl: 2.500€ {grund_25}, 2.000€ {erg.get('grund')}"
+    )
+    # § 20 Abs. 9 S. 3: verdoppelter Sparer-PB bei Zusammenveranlagung = 2.000 EUR
+    # 2.500 EUR Kapitalerträge − 2.000 EUR PB = 500 EUR steuerpflichtig
+    # ESt-Berechnung: ohne Kapital 162.200 Cent, mit Kapital 173.400 Cent → Delta 11.200 Cent
+    delta = steuern_25 - steuern_20
+    assert delta == 11200, (
+        f"Verdopplung Sparer-PB Zusammenveranlagung (500€ über PB): "
+        f"2.500€ {steuern_25}, 2.000€ {steuern_20}, delta={delta} (sollte 11200)"
+    )
 
 
 def test_gesamt_p33_agb_ring_wirkung(base):

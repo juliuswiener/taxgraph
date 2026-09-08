@@ -1378,6 +1378,11 @@ def test_p32b_null_progression_aendert_nichts_gesamt(base):
     st, null = _req(base, "GET", "/fall/p32b_n1/ergebnis")
 
     if catala:
+        # Unbedingte Assertion VOR dem Gleichheitsvergleich: sonst sind bei einem Sperrgrund
+        # beide Seiten None, None == None ist wahr, und der Vergleich besteht ohne zu rechnen.
+        assert ohne["zahl_cent"] is not None and null["zahl_cent"] is not None, (
+            f"Sperrgrund statt Zahl: ohne {ohne.get('grund')}, mit pe=0 {null.get('grund')}"
+        )
         assert ohne["zahl_cent"] == null["zahl_cent"], (
             "pe=0 verändert die Steuer — der §32b-Zweig feuert, obwohl es nichts zu "
             "progressionieren gibt")
@@ -1453,6 +1458,9 @@ def test_p3_nr72_ueber_grenze_keine_befreiung_gesamt(base):
     st, ueber = _req(base, "GET", "/fall/pv_g1/ergebnis")
 
     if catala:
+        assert ohne["zahl_cent"] is not None and ueber["zahl_cent"] is not None, (
+            f"Sperrgrund statt Zahl: ohne PV {ohne.get('grund')}, 35 kWp {ueber.get('grund')}"
+        )
         assert ohne["zahl_cent"] == ueber["zahl_cent"], (
             "35 kWp bei 1 Einheit überschreitet die Freigrenze — es darf KEINE "
             "Steuerminderung geben")
@@ -1471,6 +1479,9 @@ def test_p3_nr72_freiflaeche_keine_befreiung_gesamt(base):
     st, frei = _req(base, "GET", "/fall/pv_f1/ergebnis")
 
     if catala:
+        assert ohne["zahl_cent"] is not None and frei["zahl_cent"] is not None, (
+            f"Sperrgrund statt Zahl: ohne PV {ohne.get('grund')}, Freifläche {frei.get('grund')}"
+        )
         assert ohne["zahl_cent"] == frei["zahl_cent"], (
             "Freiflächenanlage ist nicht begünstigt — keine Steuerminderung erwartet")
 
@@ -1525,6 +1536,9 @@ def test_dba_ohne_einkunftsart_bleibt_pauschal_gesamt(base):
     st, zinsen = _req(base, "GET", "/fall/dbaart_z2/ergebnis")
 
     if catala:
+        assert ohne_art["zahl_cent"] is not None and zinsen["zahl_cent"] is not None, (
+            f"Sperrgrund statt Zahl: ohne Art {ohne_art.get('grund')}, Zinsen {zinsen.get('grund')}"
+        )
         assert ohne_art["zahl_cent"] == zinsen["zahl_cent"], (
             "Polen steht pauschal auf Anrechnung und Zinsen ebenfalls — beide Fälle "
             "müssen identisch rechnen")
@@ -1546,6 +1560,9 @@ def test_dba_nicht_ausgearbeitetes_land_ignoriert_einkunftsart_gesamt(base):
     st, mit_art = _req(base, "GET", "/fall/dbaart_f1/ergebnis")
 
     if catala:
+        assert ohne_art["zahl_cent"] is not None and mit_art["zahl_cent"] is not None, (
+            f"Sperrgrund statt Zahl: ohne Art {ohne_art.get('grund')}, mit Art {mit_art.get('grund')}"
+        )
         assert ohne_art["zahl_cent"] == mit_art["zahl_cent"], (
             "Frankreich ist nicht per-Einkunftsart adjudiziert — die Angabe darf die "
             "Berechnung nicht verändern")
