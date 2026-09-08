@@ -3154,7 +3154,13 @@ def test_gesamt_versorgungsfreibetrag_altersgate_60_ohne_gdb(base):
     _val("ergebnis", erg)
     steuern_60_ohne_gdb = erg["zahl_cent"]
 
-    if catala and steuern_baseline is not None and steuern_60_ohne_gdb is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert steuern_baseline is not None and steuern_60_ohne_gdb is not None, (
+            f"Sperrgrund statt Zahl: Baseline {erg_base.get('grund')}, "
+            f"60-ohne-GdB {erg.get('grund')}"
+        )
         # Gate nicht erfüllt → Versorgung als Arbeitslohn (§ 19 Abs. 1) → EXAKT dasselbe wie Baseline
         # Derselbe Sachverhalt: 30k Einkünfte, § 9a Pauschbetrag einmal über Summe
         assert steuern_60_ohne_gdb == steuern_baseline, (
@@ -3194,7 +3200,12 @@ def test_gesamt_versorgungsfreibetrag_altersgate_63(base):
     _val("ergebnis", erg_63)
     steuern_63 = erg_63["zahl_cent"]
 
-    if catala and steuern_60 is not None and steuern_63 is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert steuern_60 is not None and steuern_63 is not None, (
+            f"Sperrgrund statt Zahl: 60-ohne-GdB {erg_60.get('grund')}, 63 {erg_63.get('grund')}"
+        )
         # Gate erfüllt (63) → Freibetrag + Zuschlag wirken → Steuern < 60-ohne-GdB
         assert steuern_60 > steuern_63, (
             f"Alter 63 (Gate erfüllt) sollte weniger Steuern haben als 60-ohne-GdB: "
@@ -3235,7 +3246,13 @@ def test_gesamt_versorgungsfreibetrag_altersgate_60_mit_gdb50(base):
     _val("ergebnis", erg_mit)
     steuern_mit = erg_mit["zahl_cent"]
 
-    if catala and steuern_ohne is not None and steuern_mit is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert steuern_ohne is not None and steuern_mit is not None, (
+            f"Sperrgrund statt Zahl: 60-ohne-GdB {erg_ohne.get('grund')}, "
+            f"60-mit-GdB50 {erg_mit.get('grund')}"
+        )
         # Gate erfüllt (60 mit GdB50) → Freibetrag + Zuschlag wirken → Steuern < 60-ohne-GdB
         assert steuern_ohne > steuern_mit, (
             f"Alter 60 mit GdB50 (Gate erfüllt) sollte weniger Steuern haben als 60-ohne-GdB: "
