@@ -323,9 +323,6 @@ def main(argv):
     # Turnkey externe Live-Schaltung: gitignored .env.maps/.env.llm aus dem Repo-Root laden (Prozess-Env gewinnt).
     _lade_env_dateien(os.path.dirname(os.path.dirname(HERE)))
     port = int(argv[1]) if len(argv) > 1 else 8000
-    srv = make_server(port)
-    host, gebunden = srv.server_address[0], srv.server_address[1]
-    print(f"TaxGraph-Haut auf http://{host}:{gebunden}  (Ctrl-C zum Beenden)")
     # P8.5 Graceful Shutdown, Ticket server-shutdown-haengt-sigterm: gemessen (tests/
     # test_server_sigterm.py) blieb serve_forever() nach SIGTERM unbegrenzt hängen, wenn der
     # Handler per Signal-Relay (os.kill(SIGINT)) versuchte, es per KeyboardInterrupt zu
@@ -333,14 +330,33 @@ def main(argv):
     # Der Handler setzt darum nur ein Event; ein eigener Thread ruft darauf shutdown() -- der
     # von Python vorgesehene Cross-Thread-Aufruf, den auch die Test-Fixtures (threading.Thread +
     # srv.shutdown()) schon so nutzen.
+    #
+    # 2026-09-08: die Handler-Installation stand bis hierher NACH der Bereit-Meldung, und SIGINT
+    # hatte gar keinen -- es verließ sich auf den KeyboardInterrupt im try. Beides ergab ein
+    # Zeitfenster zwischen "Server ist da" und "Server hört auf Signale", in dem beide Signale
+    # ihr Standardverhalten behalten: SIGTERM tötet den Prozess (rc=-15), ein ungefangener
+    # KeyboardInterrupt lässt CPython SIGINT an sich selbst weiterreichen (rc=-2). Betrieblich
+    # trifft das genau den Dienstverwalter, der auf die Bereit-Meldung wartet und dann stoppt:
+    # kein server_close(), der Port bleibt im Kernel hängen, der Neustart scheitert. Gemessen:
+    # unter Parallellast 5 von 25 Läufen rot; mit einer 0,5-s-Sonde in genau dieses Fenster
+    # gelegt 5 von 5 rot, beide Tests. Darum werden beide Handler jetzt VOR dem Binden gesetzt.
     beendet = threading.Event()
-    signal.signal(signal.SIGTERM, lambda _sig, _frame: (
-        sys.stderr.write("\nSIGTERM empfangen, fahre herunter...\n"), beendet.set()))
+
+    def _endsignal(sig, _frame):
+        sys.stderr.write(f"\n{signal.Signals(sig).name} empfangen, fahre herunter...\n")
+        beendet.set()
+
+    signal.signal(signal.SIGTERM, _endsignal)
+    signal.signal(signal.SIGINT, _endsignal)
+    srv = make_server(port)
+    # Kommt das Signal, bevor serve_forever() läuft, blockiert shutdown() auf dem noch nicht
+    # gesetzten __is_shut_down -- serve_forever() sieht dann sofort __shutdown_request und kehrt
+    # zurück, der Watcher löst sich auf. Kein Sonderfall nötig.
     threading.Thread(target=lambda: (beendet.wait(), srv.shutdown()), daemon=True).start()
+    host, gebunden = srv.server_address[0], srv.server_address[1]
+    print(f"TaxGraph-Haut auf http://{host}:{gebunden}  (Ctrl-C zum Beenden)")
     try:
         srv.serve_forever()
-    except KeyboardInterrupt:
-        pass
     finally:
         srv.server_close()
         print("Server heruntergefahren.")

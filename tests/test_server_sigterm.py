@@ -22,6 +22,16 @@ Signal-Weiterleitung, `shutdown()` aus einem eigenen Watcher-Thread) macht diese
 Die genaue CPython-Mechanik, warum das Signal-Relay (`os.kill(SIGINT)` aus dem SIGTERM-Handler)
 serve_forever() nicht zuverlässig unterbricht, ist NICHT abschließend geklärt — belegt ist nur
 das Verhalten an diesem Test, vor und nach beiden Fassungen.
+
+ZWEITER DEFEKT, gefunden 2026-09-08 unter Parallellast (5 von 25 Läufen rot, solo 0 von 10):
+kein Hänger, sondern `rc=-15` — der Prozess starb am STANDARDVERHALTEN von SIGTERM. Die
+Handler-Installation stand nach der Bereit-Meldung, SIGINT hatte gar keinen eigenen Handler.
+Zwischen "Server ist gebunden und sagt es" und "Server hört auf Signale" lag also ein Fenster,
+das unter Last breit genug wurde, um getroffen zu werden. Mechanismus deterministisch belegt,
+nicht erschlossen: eine 0,5-s-Sonde in genau dieses Fenster gelegt macht BEIDE Tests 5 von 5
+rot (SIGTERM rc=-15, SIGINT rc=-2); dieselbe Sonde hinter die Handler gelegt lässt sie 5 von 5
+grün. Betriebliche Folge war dieselbe wie beim ersten Defekt und deshalb leicht zu verwechseln:
+kein `server_close()`, Port bleibt belegt, Neustart scheitert.
 """
 from __future__ import annotations
 
@@ -111,11 +121,14 @@ def test_sigint_beendet_prozess_binnen_zeitlimit():
     dieser andere Pfad greift statt des Watcher-Threads."""
     proc, _ = _starte_server()
     try:
-        # Kurze Ruhezeit nach dem Bind-Log: zwischen dem Start-Print und dem Betreten von
-        # serve_forever() liegen noch Signal-Handler-Setup + Thread-Start -- ein Signal exakt in
-        # diesem schmalen Fenster erzeugt einen rohen Traceback statt eines geordneten Endes.
-        # Das ist ein Setup-Detail dieses Tests, kein Verhalten von serve_forever() selbst.
-        time.sleep(0.3)
+        # KEINE Ruhezeit vor dem Signal (2026-09-08): hier stand ein `time.sleep(0.3)` mit der
+        # Begründung, ein Signal direkt nach der Bereit-Meldung sei "ein Setup-Detail dieses
+        # Tests, kein Verhalten von serve_forever() selbst". Das war falsch, und der Satz deckte
+        # den Defekt zu: die Signal-Handler wurden erst NACH der Bereit-Meldung installiert, also
+        # behielten beide Signale in genau diesem Fenster ihr Standardverhalten (SIGTERM tötet,
+        # rc=-15; ungefangener KeyboardInterrupt -> CPython schickt sich selbst SIGINT, rc=-2).
+        # Ohne die Ruhezeit trifft der Test das Fenster -- das ist der Nutzerpfad "warte auf die
+        # Bereit-Meldung, dann stoppe den Dienst", nicht ein Testartefakt.
         proc.send_signal(signal.SIGINT)
         try:
             rc = proc.wait(timeout=SIGNAL_TIMEOUT)
