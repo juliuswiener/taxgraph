@@ -37,7 +37,9 @@ def uebernehme_edaten(store: dict, edaten_record: list, *, ts: str | None = None
     bindung: optional (Auflage T, Stille-Null-Klasse) — dieser Writer schreibt DIREKT zustand=
     bestaetigt (kein Zwischenschritt über einen Mensch-Confirm), darum ist er der riskanteste
     Schreiber für den genau hier gejagten Fehler (String/Falschtyp aus dem eDaten-XML → still
-    bestätigt → Ring liest 0). Aktuell hat dieser Writer noch KEINEN Produktions-Aufrufer
+    bestätigt → Ring liest 0). Wenn bindung gesetzt ist, prüft der Writer zusätzlich die
+    Scheiben-Grenze: ein Satz, dessen feld_id die Bindung nicht führt, wird NICHT geschrieben.
+    Aktuell hat dieser Writer noch KEINEN Produktions-Aufrufer
     (gemessen: nur tests/test_elster_writer.py, tests/test_vast_mapping.py rufen ihn — s. Bericht
     an team-lead) — bindung bleibt darum optional/unverdrahtet, statt einen nicht-existenten
     Aufrufer zu erfinden.
@@ -46,6 +48,11 @@ def uebernehme_edaten(store: dict, edaten_record: list, *, ts: str | None = None
     n = 0
     for rec in edaten_record:
         fid = rec["feld_id"]
+        if bindung is not None and fid not in bindung:
+            continue
+        # ponytail: ohne bindung prüft gar nichts, und der verworfene Satz wird still übersprungen
+        # statt gemeldet — wer den Writer verdrahtet, muss beides anfassen (Meldung je verworfenem
+        # Satz, bindung immer setzen).
         if fid in aktiv:
             continue
         wert = rec["wert"]
