@@ -153,9 +153,18 @@ def test_p35_anrechnung_gilt_auch_fuer_den_betrieb_des_partners():
     mit_gewst = dict(f)
     mit_gewst["gewst_messbetrag_partner"] = {"wert": 175000, "zustand": "bestaetigt"}  # 1.750 EUR
     mit_gewst["gewst_hebesatz_partner"] = {"wert": 400, "zustand": "bestaetigt"}
-    assert _zahl(mit_gewst) < ohne_gewst, (
-        "Der Gewerbesteuer-Messbetrag des Ehegatten mindert die Steuer nicht — sein Gewinn steht "
-        "im § 35-Nenner, sein Messbetrag aber nicht im Zähler.")
+    # § 35 ist eine STEUERERMÄSSIGUNG, kein Abzug von den Einkünften: sie mindert die Steuer
+    # 1:1, ein Grenzsatz kommt nicht vor. Das zvE ist in beiden Fällen dasselbe — der
+    # Partnergewinn steht auch im ohne_gewst-Fall. Die Differenz IST also die Anrechnung, und
+    # die ist ohne Tarifkenntnis herleitbar: 4 × Messbetrag = 4 × 1.750 = 7.000 EUR (S. 1
+    # Nr. 1), tatsächlich gezahlte Gewerbesteuer = 1.750 × 400 % = 7.000 EUR (S. 5) — beide
+    # Deckel treffen sich exakt. Nur die Richtung zu prüfen liesse zu, dass die Anrechnung um
+    # eine Grössenordnung danebenliegt.
+    z_mit = _zahl(mit_gewst)
+    assert ohne_gewst - z_mit == 700000, (
+        f"Anrechnung {ohne_gewst - z_mit} Cent statt 700000 (ohne {ohne_gewst}, mit {z_mit}) — "
+        "der Gewerbesteuer-Messbetrag des Ehegatten mindert die Steuer nicht (oder nicht in "
+        "voller Höhe); sein Gewinn steht im § 35-Nenner, sein Messbetrag aber nicht im Zähler.")
 
 
 def test_p35_hebesatz_deckel_wird_je_betrieb_gerechnet():
@@ -165,8 +174,21 @@ def test_p35_hebesatz_deckel_wird_je_betrieb_gerechnet():
 
     Gemessen wird an einem Fall, in dem dieser Deckel bindet: bei Hebesatz 400 ist
     Messbetrag × 4 exakt das Vierfache aus S. 1 Nr. 1, darunter greift S. 5. Person A steht bei
-    300, der Ehegatte bei 500 — würde der Code A's Hebesatz auf beide Messbeträge anwenden, käme
-    eine niedrigere Anrechnung heraus als bei korrekter Rechnung je Betrieb."""
+    300, der Ehegatte bei 500 — würde der Code A's Hebesatz auf beide Messbeträge anwenden, wäre
+    die gezahlte Gewerbesteuer in BEIDEN verglichenen Fällen dieselbe und die Differenz 0.
+    Genau das schliesst der feste Sollwert unten aus.
+
+    OFFEN, aufgefallen beim Festschreiben der Zahl (2026-09-08): ob der S.-5-Deckel je Betrieb
+    VOR dem Summieren greift oder erst auf die Summe. Die Software rechnet auf die Summe
+    (bescheid_zweige.py: `min(4 * p35_messbetrag_ges, p35_gezahlt, ...)`), d. h. die überschüssige
+    Gewerbesteuer des einen Betriebs füllt den ungenutzten Kopfraum des anderen:
+
+        auf die Summe (so rechnet die Software):  min(4×2.000, 3.000+5.000) = 8.000 EUR
+        je Betrieb vor dem Summieren:             min(4.000, 3.000) + min(4.000, 5.000) = 7.000
+
+    Der Sollwert 200000 unten ist der GEMESSENE, nicht der aus dem Gesetz abgeleitete — der
+    Wortlaut von S. 5 entscheidet die Frage nicht, und in sources/ liegt keine weitere Quelle.
+    Differenz 1.000 EUR zugunsten des Nutzers. Vault: p35-s5-deckel-summe-statt-je-betrieb."""
     if not _catala_da():
         pytest.skip("catala nicht verfügbar")
     gemeinsam = _basis("zusammen")
@@ -186,9 +208,18 @@ def test_p35_hebesatz_deckel_wird_je_betrieb_gerechnet():
     # Steuer niedriger ausfallen, weil der S.-5-Deckel höher liegt.
     beide_niedriger_hebesatz = dict(beide)
     beide_niedriger_hebesatz["gewst_hebesatz_partner"] = {"wert": 300, "zustand": "bestaetigt"}
-    assert _zahl(beide) < _zahl(beide_niedriger_hebesatz), (
-        "Der Hebesatz des Ehegatten ändert nichts — sein Deckel nach § 16 Abs. 1 S. 5 wird "
-        "offenbar nicht mit seinem eigenen Hebesatz gerechnet.")
+    z_beide = _zahl(beide)
+    z_niedriger = _zahl(beide_niedriger_hebesatz)
+    # Eine Steuerermäßigung bei identischem zvE: der Partnergewinn steht in beiden Fällen drin,
+    # nur sein Hebesatz unterscheidet sie. Die Differenz IST also die Differenz der Anrechnung,
+    # ein Grenzsatz kommt nicht vor. Gezahlte Gewerbesteuer, je Betrieb mit dem eigenen Hebesatz:
+    #   A          1.000 × 300 % = 3.000 EUR   (in beiden Fällen gleich)
+    #   Partner    1.000 × 500 % = 5.000 EUR   gegen   1.000 × 300 % = 3.000 EUR
+    # Deckel auf die Summe: min(8.000, 8.000) = 8.000 gegen min(8.000, 6.000) = 6.000 EUR.
+    assert z_niedriger - z_beide == 200000, (
+        f"Differenz {z_niedriger - z_beide} Cent statt 200000 (Hebesatz 500: {z_beide}, "
+        f"Hebesatz 300: {z_niedriger}) — bei 0 zählt der Hebesatz des Ehegatten gar nicht, "
+        "bei 100000 wäre der S.-5-Deckel je Betrieb statt auf die Summe gerechnet (s. Docstring).")
     assert nur_a is not None
 
 
