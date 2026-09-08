@@ -153,19 +153,54 @@ def instanz_feld_id(basis: str, i: int) -> str:
     return basis if i <= 1 else f"{basis}__{i}"
 
 
+def _instanz_unvollstaendig(aktiv: dict, bindung: dict, feld_id: str) -> bool:
+    """True, wenn `feld_id` zu einer Instanz-Gruppe gehört, deren bestätigte Zahl mehr Instanzen
+    verlangt, als aktuell bestätigt sind.
+
+    Repariert Befund 2026-09-07 (Diagnose desselben Tages): `naechste_fragen()` liess das
+    Basisfeld nach Instanz 1 GANZ aus der Queue fallen, egal ob das Zählfeld 2 oder 3 verlangte —
+    ein `kind_vorname__2` stand nie als eigene Frage, und zurück führte kein Weg (die Korrektur
+    sucht das Feld in `/fragen`, `__n` steht dort nicht). Diese Funktion hält das Basisfeld offen,
+    solange eine angekündigte Instanz fehlt — dieselben Zähl-Primitive wie `instanz_anzahl()` und
+    `fehlende_instanzen()` (`_gruppe_von`, `_anzahl_aus_eintrag`, `instanz_feld_id`), KEINE zweite
+    Zählregel. Die Kartenanzeige (N Felder, N Events) bleibt allein in app.js — die stand schon
+    seit 2026-08-27; hier fehlte nur der Weg zurück zu ihr.
+
+    Felder ohne Achse oder mit `anzahl < 2` sind billig ausgeschlossen (`if not g`/`anzahl < 2`),
+    bevor der `range`-Lauf beginnt — trifft nur die ~69 Felder mit `instanz_gruppe`.
+
+    DIE FRÜHERE GEGENPOSITION IST GEMESSEN UND WIDERLEGT, nicht bloss gestrichen: bis zum
+    2026-09-07 stand hier nebenan die Begründung, eine offene Frage wäre eine „Sackgasse", weil
+    das angefangene Thema vorn bliebe und der Fragebogen dauerhaft darauf stehen bliebe. Am
+    2026-09-07 über den vollen HTTP-Weg nachgemessen (2 Kinder, nur Kind 1 beantwortet):
+    `kind_vorname` steht auf Platz 144 von 322 Fragen und 79 Themen bleiben erreichbar — die
+    Themenfolge hält das Thema NICHT vorn, weil `_nach_themen` ein Thema dort einordnet, wo sein
+    BESTES Feld stand, und das Basisfeld eines Instanz-Slots trägt kein Gate-Gewicht. Auch der
+    zweite Teil der Sorge trägt nicht: das Zählfeld bleibt über `/fall/<id>/feld/<fid>/frage`
+    korrigierbar (gemessen: 200), und eine Korrektur auf „1 Kind" nimmt die Frage sofort wieder
+    aus der Queue. Wer den Zweifel erneut hat: /tmp-Probe war ein Fall mit `fam_anzahl_kinder=2`
+    und einem einzigen `kind_vorname`-Event."""
+    g = _gruppe_von(bindung, feld_id)
+    if not g or feld_id == g["anzahl_feld"]:
+        return False
+    anzahl = _anzahl_aus_eintrag(aktiv.get(g["anzahl_feld"]), g)
+    if anzahl < 2:
+        return False
+    return any(_unbeantwortet(aktiv.get(instanz_feld_id(feld_id, i))) for i in range(1, anzahl + 1))
+
+
 def fehlende_instanzen(felder: dict, bindung: dict) -> list[dict]:
     """Welche angekündigten Instanzen hat der Nutzer NICHT ausgefüllt?
 
     ANLASS, gemessen am 2026-08-27: wer drei Kinder angibt und zwei Namen einträgt, verliert den
-    dritten lautlos. Ist Instanz 1 beantwortet, fällt das Basisfeld GANZ aus `naechste_fragen` —
-    der Traverser führt nur das Basisfeld und legt die Zahl als `instanz_anzahl` daneben; ein
-    `kind_vorname__3` steht dort nie als eigene Frage. Zurück führt auch kein Weg: die Korrektur
-    sucht das Feld in `/fragen`, und `__n` steht dort nicht.
+    dritten lautlos. Bis zum Fix vom 2026-09-07 fiel das Basisfeld nach Instanz 1 GANZ aus
+    `naechste_fragen` und kam nie zurück (`_instanz_unvollstaendig` daneben behebt genau das) —
+    diese Funktion bleibt trotzdem: sie liefert die DETAILS für den Preflight-Text (welche Instanz
+    genau fehlt), `naechste_fragen` sagt nur „wieder offen", nicht „was fehlt".
 
-    Deshalb sagt der Traverser die Lücke nur AN, statt die Frage offenzuhalten. Eine offene Frage
-    wäre eine Sackgasse: das Zählfeld selbst ist nach dem Beantworten ebenfalls nicht mehr in
-    `/fragen`, der Nutzer könnte „es sind doch nur zwei" also gar nicht mehr sagen — und seit
-    `_themen_folge` ein angefangenes Thema vorn hält, bliebe der Fragebogen dauerhaft darauf stehen.
+    Deshalb sagt der Traverser die Lücke hier AN, unabhängig davon, ob die Frage inzwischen auch
+    wieder offen steht — wer preflight vor dem nächsten Fragebogen-Durchlauf aufruft, soll die
+    Lücke trotzdem sehen.
 
     NUR FELDER, DIE SCHON EINE ANTWORT TRAGEN. Ein Feld ganz ohne Instanz ist schlicht
     unbeantwortet und geht diese Prüfung nichts an — sonst meldete sie bei drei Kindern jedes
@@ -177,7 +212,7 @@ def fehlende_instanzen(felder: dict, bindung: dict) -> list[dict]:
 
     Arbeitet auf dem materialisierten Snapshot (`{feld_id -> {wert, zustand, …}}`), nicht auf dem
     Store — dort liegen die `__n`-Felder flach nebeneinander, und dort fragt die Konsistenzprüfung.
-    NICHT im Hotpath: `naechste_fragen` ruft das hier nicht.
+    NICHT im Hotpath: `naechste_fragen` ruft das hier nicht (es ruft `_instanz_unvollstaendig`).
     """
     def _da(feld_id: str) -> bool:
         eintrag = felder.get(feld_id)
@@ -338,8 +373,12 @@ def naechste_fragen(store: dict, bindung: dict, beitrag: dict | None = None) -> 
     Regeln kommen in die Queue — kein Zweig wird anhand eines vorläufigen Siegers weggeschnitten."""
     rel = relevanz(store, bindung)
     aktiv = _aktive_events(store)
+    # Zweiter Grund, ein Feld offenzuhalten (neben `_unbeantwortet`): es gehört zu einer
+    # Instanz-Gruppe, deren Zählfeld mehr Instanzen verlangt, als bestätigt sind — sonst fiele das
+    # Basisfeld nach Instanz 1 für immer aus der Queue (s. `_instanz_unvollstaendig`-Docstring).
     kand = [fid for fid, b in bindung.items()
-            if b.get("askable") and _unbeantwortet(aktiv.get(fid))
+            if b.get("askable")
+            and (_unbeantwortet(aktiv.get(fid)) or _instanz_unvollstaendig(aktiv, bindung, fid))
             and not _vorjahr_uebernommen(b, aktiv.get(fid))
             and rel[b["quelle"]["regel_id"]]["status"] != "ausgeschlossen"
             and not _feld_ausgeschlossen(b, aktiv)]

@@ -72,11 +72,18 @@ def test_zwei_fragen_laeufe_lesen_die_datei_nur_beim_ersten_mal():
         stamm = {"veranlagung": "zusammen", "bruttoarbeitslohn": 6000000,
                  "geburtsjahr": 1970, "kein_gewinn": False, "kein_kap": False,
                  "kein_vuv": False, "kein_sonstige": False, "kein_kind": False}
+        beantwortet: set[str] = set()
         for _ in range(250):
             offen = TR.naechste_fragen(store, bindung)
-            if not offen:
+            # Ein Instanz-Basisfeld steht seit 2026-09-07 auch dann wieder in der Queue, wenn
+            # Instanz 1 schon beantwortet ist (traverser._instanz_unvollstaendig — Kind 2 muss
+            # erfragbar bleiben). Dieser Treiber schreibt jedes Feld genau einmal und OHNE
+            # `ersetzt`, also die erste noch unbeantwortete feld_id nehmen statt offen[0]:
+            # ein zweites Event auf dasselbe Feld weist der Store nach Auflage B ab.
+            fid = next((f for f in offen if f not in beantwortet), None)
+            if fid is None:
                 break
-            fid = offen[0]
+            beantwortet.add(fid)
             b = bindung.get(fid, {})
             if fid in stamm:
                 wert = stamm[fid]

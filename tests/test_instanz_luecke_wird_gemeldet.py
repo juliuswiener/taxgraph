@@ -5,20 +5,27 @@ GEMESSEN am 2026-08-27, drei Kinder angegeben, zwei Namen eingetragen:
     vor      : kind_vorname offen? True  | __2 einzeln? False | instanz_anzahl (3, 'Kind')
     nach 1+2 : base offen? False | __2? False | __3? False    | instanz_anzahl (3, 'Kind')
 
-Ist die erste Instanz beantwortet, fällt das Basisfeld GANZ aus `naechste_fragen`. Der Traverser
+Ist die erste Instanz beantwortet, fiel das Basisfeld GANZ aus `naechste_fragen`. Der Traverser
 führt nur das Basisfeld und legt die Zahl als `instanz_anzahl` daneben; `kind_vorname__3` steht
-dort nie als eigene Frage — die Instanzfelder stehen nicht einmal in der Bindung. Zurück führt
+dort nie als eigene Frage — die Instanzfelder stehen nicht einmal in der Bindung. Zurück führte
 auch kein Weg: die Korrektur sucht das Feld in `/fragen`, und `__n` steht dort nicht.
 
 Zwei Stellen versprachen wörtlich das Gegenteil („die dritte Frage bleibt offen und kommt im
 Fragebogen wieder") — in `app.js` und im Docstring von test_ui_instanzen.py. Kein einziger Assert
 prüfte die Zusage, deshalb konnte sie jahrelang danebenstehen.
 
-WARUM GEMELDET UND NICHT DIE FRAGE OFFENGEHALTEN: das Zählfeld ist nach dem Beantworten selbst
-nicht mehr im Fragebogen (gemessen: `'fam_anzahl_kinder' in naechste_fragen(...)` ist False). Der
-Nutzer könnte „es sind doch nur zwei" also gar nicht mehr sagen, die Frage würde nie schliessen —
-und seit `_themen_folge` ein angefangenes Thema vorn hält, bliebe der Fragebogen dauerhaft darauf
-stehen. Eine Sackgasse ist schlimmer als eine Lücke, die man sieht.
+STAND 2026-09-07: BEIDES, und die Zusage von app.js stimmt jetzt. Die Frage wird wieder
+offengehalten (`traverser._instanz_unvollstaendig`), UND die Lücke wird weiterhin gemeldet.
+Die Entscheidung von 2026-08-27 lautete umgekehrt — offenhalten sei eine Sackgasse, weil das
+Zählfeld nach dem Beantworten nicht mehr im Fragebogen steht und der Nutzer „es sind doch nur
+zwei" nicht mehr sagen könne. Der EINE Satz darin war falsch: das Zählfeld ist über
+`/fall/<id>/feld/<fid>/frage` sehr wohl korrigierbar (gemessen 2026-09-07: 200, und die
+Korrektur auf „1 Kind" nimmt die Frage sofort aus der Queue). Die zweite Sorge — das
+angefangene Thema bliebe vorn stehen — ist ebenfalls nachgemessen und falsch: die offene Frage
+steht auf Platz 144 von 322, 79 Themen bleiben erreichbar.
+
+Die beiden Wege sind KEINE Doppelung, sie beantworten verschiedene Fragen: der Fragebogen sagt
+„hier ist noch etwas offen", der Preflight sagt „es ist genau Instanz 3".
 
 NULL LLM.
 """
@@ -66,23 +73,45 @@ def _fall(kinder=3, namen=("Anna", "Ben"), zustand="bestaetigt"):
 
 # ------------------------------------------------------- die Tatsache, nicht die Prosa
 
-def test_die_uebersprungene_instanz_kommt_wirklich_nicht_wieder():
-    """PINNT DEN IST-ZUSTAND, damit die falsche Zusage nicht unbemerkt zurückkehrt.
+def test_die_uebersprungene_instanz_kommt_wieder():
+    """ENTSCHEIDUNG VOM 2026-08-27 AM 2026-09-07 NEU GETROFFEN (Julius: „zu den Kindern: A").
 
-    Ein Test über einen Kommentar wäre spröde und würde nichts beweisen. Dieser hier misst, was
-    wirklich passiert — und wird rot, sobald jemand das Basisfeld doch offenhält. Dann ist nicht
-    dieser Test falsch, sondern die Entscheidung von 2026-08-27 neu zu treffen: das Zählfeld muss
-    dann ebenfalls korrigierbar sein, sonst entsteht die Sackgasse."""
+    Die Vorfassung dieses Tests pinnte das Gegenteil — das Basisfeld bleibt draussen — und gab
+    für den Fall, dass jemand es doch offenhält, selbst die Bedingung vor: *„Dann ist nicht
+    dieser Test falsch, sondern die Entscheidung von 2026-08-27 neu zu treffen: das Zählfeld
+    muss dann ebenfalls korrigierbar sein, sonst entsteht die Sackgasse."* Genau das ist
+    passiert, und die Bedingung ist erfüllt — über den vollen HTTP-Weg nachgemessen, nicht
+    behauptet:
+
+      * `GET /fall/<id>/feld/fam_anzahl_kinder/frage` -> 200, das Zählfeld bleibt korrigierbar
+      * Korrektur auf „1 Kind" nimmt `kind_vorname` sofort wieder aus der Queue
+      * die offene Frage steht auf Platz 144 von 322, 79 Themen bleiben erreichbar — die
+        befürchtete „der Fragebogen bleibt dauerhaft darauf stehen"-Sackgasse gibt es nicht
+
+    Die Sackgasse, die zur alten Entscheidung führte, war real, aber sie sass woanders: nicht
+    in der offenen Frage, sondern im fehlenden Rückweg. Der Rückweg existiert.
+
+    `fehlende_instanzen()` bleibt daneben bestehen und wird NICHT überflüssig: der Fragebogen
+    sagt „wieder offen", der Preflight sagt „welche Instanz genau fehlt"."""
     s = _fall()
     offen = TR.naechste_fragen(s, BINDUNG)
-    assert "kind_vorname" not in offen, (
-        "Das Basisfeld steht wieder im Fragebogen — dann kommt die übersprungene Instanz doch "
-        "wieder, und die Meldung in preflight ist überflüssig geworden. Bitte auch prüfen, ob das "
-        "Zählfeld korrigierbar ist; ohne das ist die Frage eine Sackgasse.")
+    assert "kind_vorname" in offen, (
+        "Kind 3 fehlt — das Basisfeld muss wieder erfragbar sein. Fällt es dauerhaft aus der "
+        "Queue, gibt es keinen Weg zurück zur übersprungenen Instanz (Befund 2026-09-07).")
     assert "kind_vorname__3" not in offen, (
-        "Ein Instanzfeld steht einzeln in der Queue — der Traverser führt nur Basisfelder.")
+        "Ein Instanzfeld steht einzeln in der Queue — der Traverser führt nur Basisfelder, die "
+        "Oberfläche baut daraus N Eingabefelder (app.js baueInstanzEingaben).")
     assert TR.instanz_anzahl(s, BINDUNG, "kind_vorname") == (3, "Kind"), (
         "Vorbedingung: die Oberfläche muss drei Eingabefelder bauen, sonst misst der Test nichts.")
+
+
+def test_vollstaendige_reihe_fragt_nicht_nach():
+    """Die Gegenprobe zum Test darüber — ohne sie liesse sich das Offenhalten auch dadurch
+    „erreichen", dass das Feld IMMER offen bleibt, und niemand käme je zum Ende des Fragebogens.
+    Sind alle drei Instanzen da, ist die Frage weg."""
+    s = _fall(kinder=3, namen=("Anna", "Ben", "Cem"))
+    assert "kind_vorname" not in TR.naechste_fragen(s, BINDUNG), (
+        "Alle angekündigten Instanzen sind beantwortet — die Frage darf nicht nachschieben.")
 
 
 def test_die_luecke_wird_erkannt():
