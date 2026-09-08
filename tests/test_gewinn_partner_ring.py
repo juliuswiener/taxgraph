@@ -178,17 +178,19 @@ def test_p35_hebesatz_deckel_wird_je_betrieb_gerechnet():
     die gezahlte Gewerbesteuer in BEIDEN verglichenen Fällen dieselbe und die Differenz 0.
     Genau das schliesst der feste Sollwert unten aus.
 
-    OFFEN, aufgefallen beim Festschreiben der Zahl (2026-09-08): ob der S.-5-Deckel je Betrieb
-    VOR dem Summieren greift oder erst auf die Summe. Die Software rechnet auf die Summe
-    (bescheid_zweige.py: `min(4 * p35_messbetrag_ges, p35_gezahlt, ...)`), d. h. die überschüssige
-    Gewerbesteuer des einen Betriebs füllt den ungenutzten Kopfraum des anderen:
+    "Je Betrieb" meint hier die GEZAHLTE Gewerbesteuer — Messbetrag mal EIGENER Hebesatz, dann
+    summiert. Es meint NICHT, dass die Anrechnung je Betrieb gedeckelt würde; die läuft über die
+    Summe (`min(4 * p35_messbetrag_ges, p35_gezahlt, ...)` in bescheid_zweige.py):
 
-        auf die Summe (so rechnet die Software):  min(4×2.000, 3.000+5.000) = 8.000 EUR
-        je Betrieb vor dem Summieren:             min(4.000, 3.000) + min(4.000, 5.000) = 7.000
+        so rechnet die Software:   min(4 × 2.000, 3.000 + 5.000) = 8.000 EUR
+        betriebsbezogen gelesen:   min(4.000, 3.000) + min(4.000, 5.000) = 7.000 EUR
 
-    Der Sollwert 200000 unten ist der GEMESSENE, nicht der aus dem Gesetz abgeleitete — der
-    Wortlaut von S. 5 entscheidet die Frage nicht, und in sources/ liegt keine weitere Quelle.
-    Differenz 1.000 EUR zugunsten des Nutzers. Vault: p35-s5-deckel-summe-statt-je-betrieb."""
+    Der Unterschied sind 1.000 EUR, und die betriebsbezogene Lesart ist bereits zweimal aus dem
+    Gedächtnis aufgetaucht — sie steht nicht im Gesetz. Abs. 1 S. 2 bemisst den Höchstbetrag über
+    "Summe der positiven gewerblichen Einkünfte / Summe aller positiven Einkünfte", S. 5 nennt
+    keinen Betriebsbezug. Am 2026-08-13 gegen sources/ geprüft und bewusst so gebaut, siehe
+    vault backlog/archive/taxgraph/p35-anrechnung-partner-offen.md. Wer das ändern will, braucht
+    eine Quelle über den Gesetzeswortlaut hinaus."""
     if not _catala_da():
         pytest.skip("catala nicht verfügbar")
     gemeinsam = _basis("zusammen")
