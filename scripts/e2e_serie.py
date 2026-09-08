@@ -24,7 +24,8 @@ import urllib.error
 import urllib.request
 
 BASE = "http://127.0.0.1:8000"
-MAX_ROUNDS = 20
+MAX_ROUNDS = 400  # eine Runde = eine Frage seit 2026-09-07 (s. Kommentar in fahre_fall); 324 offene
+                  # Fragen wurden zu Fallbeginn gemessen, 400 laesst Luft ohne einen echten Haenger zu verdecken
 OUT_DIR = "/tmp/e2e_2026-09-07"
 
 _INSTANZ_RE = re.compile(r"^(.*)__(\d+)$")
@@ -55,6 +56,33 @@ def _basis(feld_id):
     """Instanz-Suffix (__2, __3, ...) abstreifen — Übersteuerungen gelten je Basis-Feld."""
     m = _INSTANZ_RE.match(feld_id)
     return m.group(1) if m else feld_id
+
+
+def _instanz_feld_id(basis, i):
+    """Instanz i eines Feldes: `basis` für die erste, `basis__i` ab der zweiten.
+    Dieselbe Konvention wie traverser.instanz_feld_id / app.js instanzFeldId."""
+    return basis if i <= 1 else f"{basis}__{i}"
+
+
+def _schreibe(fall_id, feld_id, wert):
+    """Ein Event schreiben — und wie die echte Oberfläche mit Auflage B umgehen.
+
+    `store.append_event` weist ein zweites Event auf dasselbe Feld ohne `ersetzt` ab
+    (fail-closed, Auflage B). app.js holt sich das `ersetzt` vorab über /warum, wenn das Feld
+    laut /stand schon belegt ist (schreibeInstanzen, ~Z.1193). Hier derselbe Effekt mit einer
+    Anfrage weniger im Normalfall: erst schreiben, und NUR bei genau dieser Abweisung das
+    `ersetzt` nachholen und einmal wiederholen. Kein blindes Wiederholen — jeder andere Fehler
+    bleibt stehen und wird gemeldet."""
+    st, b = _req("POST", f"/fall/{fall_id}/event", _laie(feld_id, wert))
+    if st == 422 and "ersetzt" in json.dumps(b, ensure_ascii=False):
+        st_w, b_w = _req("GET", f"/fall/{fall_id}/feld/{feld_id}/warum")
+        ev_id = ((b_w or {}).get("justification") or {}).get("event_id") if st_w == 200 else None
+        if ev_id:
+            ev = _laie(feld_id, wert)
+            ev["ersetzt"] = ev_id
+            ev["signal"]["signal_1"] = ev_id
+            return _req("POST", f"/fall/{fall_id}/event", ev)
+    return st, b
 
 
 def _entscheide(frage, overrides):
@@ -127,6 +155,17 @@ def fahre_fall(lage_key, overrides, fall_id, scheibe="gesamt", vz=2025):
         lauf["fehler"].append({"schritt": "POST /fall", "status": st, "body": b})
         return lauf
 
+    # EINE Runde ist jetzt EINE Frage — nicht mehr ein ganzer /fragen-Stapel. Fund 2026-09-07:
+    # die alte Fassung holte /fragen einmal pro Runde und beantwortete dann ALLE offenen Fragen
+    # dieser Liste in einer Schleife, ohne zwischendurch neu zu fragen. Die echte Oberfläche tut
+    # das Gegenteil (app.js: eine Frage zeigen, schreiben, sofort /fragen neu holen — laut
+    # Kommentar dort eine bewusst durchgehaltene Regel, "nie zwei Aufforderungen gleichzeitig").
+    # Die alte Schleife konnte dadurch ein Feld ansprechen, das der Server zwischen Listenabruf
+    # und dieser Antwort schon selbst berechnet hatte (`ableitung` in der Bindung, z.B.
+    # `geburtsjahr` aus `stammdaten_geburtsdatum`) -> 422 "hat schon ein aktives Event". Das war
+    # ein Treiber-Artefakt, kein Produktfehler (gemessen 2026-09-07, s. Vault). MAX_ROUNDS zählt
+    # deshalb jetzt Einzelfragen, nicht Fragebögen — hochgesetzt, weil eine Scheibe zu Fallbeginn
+    # bis zu 324 offene Fragen zeigt (gemessen) und jede davon jetzt ein eigener Schritt ist.
     beantwortet = set()
     fehlgeschlagen = set()
     for runde in range(1, MAX_ROUNDS + 1):
@@ -139,17 +178,33 @@ def fahre_fall(lage_key, overrides, fall_id, scheibe="gesamt", vz=2025):
         lauf["runden"] = runde
         if not offen:
             break
-        for frage in offen:
-            wert, origin, begruendung = _entscheide(frage, overrides)
-            st, eb = _req("POST", f"/fall/{fall_id}/event", _laie(frage["feld_id"], wert))
-            eintrag = {"feld_id": frage["feld_id"], "typ": frage["typ"], "wert": wert,
-                       "origin": origin, "begruendung": begruendung, "status": st}
-            if st == 201:
-                beantwortet.add(frage["feld_id"])
-            else:
-                fehlgeschlagen.add(frage["feld_id"])
-                eintrag["fehler_body"] = eb
-            lauf["antworten"].append(eintrag)
+        frage = offen[0]   # nur die erste — wie die Oberfläche (AKTUELL = fragen[0]), dann neu holen
+        wert, origin, begruendung = _entscheide(frage, overrides)
+        # ALLE Instanzen der Karte auf einmal, wie app.js `schreibeInstanzen()` beim Absenden:
+        # der Traverser führt nur das Basisfeld und legt die Zahl als `instanz_anzahl` daneben,
+        # die Oberfläche baut daraus N Eingabefelder. Wer hier nur Instanz 1 schreibt, lässt bei
+        # "2 Kinder" die zweite Reihe leer — gemessen 2026-09-08: 22 preflight-Widersprüche
+        # "Angegeben hast du 2, ausgefüllt sind 1", und der Fall wird nie abgabefähig.
+        # Jede Instanz bekommt DENSELBEN Wert (beide Kinder heißen "Anna"). Für einen Treiber,
+        # dessen Werte ohnehin zu ~98 % aus dem Feldtyp geraten sind ("schema"), ist das ehrlich
+        # genug; wer fachlich unterscheidbare Instanzen braucht, muss die Lebenslage erweitern.
+        anzahl = frage.get("instanz_anzahl") or 1
+        st, eb = None, None
+        for i in range(1, anzahl + 1):
+            fid_i = _instanz_feld_id(frage["feld_id"], i)
+            st, eb = _schreibe(fall_id, fid_i, wert)
+            if st != 201:
+                break
+        eintrag = {"feld_id": frage["feld_id"], "typ": frage["typ"], "wert": wert,
+                   "origin": origin, "begruendung": begruendung, "status": st}
+        if anzahl > 1:
+            eintrag["instanzen"] = anzahl
+        if st == 201:
+            beantwortet.add(frage["feld_id"])
+        else:
+            fehlgeschlagen.add(frage["feld_id"])
+            eintrag["fehler_body"] = eb
+        lauf["antworten"].append(eintrag)
     else:
         lauf["fehler"].append({"schritt": "rundenlimit", "hinweis": f"MAX_ROUNDS={MAX_ROUNDS} erreicht"})
 
@@ -169,9 +224,16 @@ def _zusammenfassung(lauf):
     grund = lauf.get("ergebnis", {}).get("body", {}).get("grund")
     pf_status = lauf.get("preflight", {}).get("status")
     pf_body = lauf.get("preflight", {}).get("body", {})
+    # `pf_body["status"]`, NICHT `pf_body["abgabefaehig"]`: der Schlüssel `abgabefaehig` steht in
+    # keiner preflight-Antwort (die Antwort trägt fall_id/status/items). `.get()` lieferte dafür
+    # stumm None, und die Zusammenfassung las sich wie "nicht abgabefähig", während in Wahrheit
+    # nur die falsche Frage gestellt war — gemessen 2026-09-08 an vier Läufen, von denen einer
+    # in Wirklichkeit GREEN war. Ein fehlender Schlüssel darf nicht wie ein Befund aussehen.
+    pf_urteil = pf_body.get("status")
+    n_items = len(pf_body.get("items") or ())
     return (f"{lauf['lage']}: {lauf['runden']} Runden, {n} Fragen ({n_person} person / {n_schema} schema, "
             f"{n_fehl} fehlgeschlagen), ergebnis.zahl_cent={zahl} grund={grund}, "
-            f"preflight status={pf_status} abgabefaehig={pf_body.get('abgabefaehig')}")
+            f"preflight http={pf_status} urteil={pf_urteil} ({n_items} Einwände)")
 
 
 def selftest():
