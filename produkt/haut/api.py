@@ -1183,6 +1183,9 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
     _abg = [a for a in abgelehnt if a]
     if _abg:                                         # Security-Observability (feld_ids, KEIN Wert/Freitext = PII-frei):
         sys.stderr.write(f"[haut.chat] LLM-Vorschläge außerhalb Katalog abgelehnt: {sorted(set(_abg))}\n")
+    _malformt = len(abgelehnt) - len(_abg)            # fehlende/None/leere feld_id -- fiel bisher spurlos aus abgelehnt
+    if _malformt:                                     # dieselbe Observability-Regel, nur ohne feld_id (die gibt es ja nicht)
+        sys.stderr.write(f"[haut.chat] LLM-Vorschläge mit fehlender/leerer feld_id abgelehnt: {_malformt}\n")
     return 200, {"vorschlaege": geschrieben, "abgelehnt": _abg, "abgelehnt_gruende": abgelehnt_gruende,
                  "konflikte": konflikte,
                  # `antwort` leer = nichts gefragt; `unsicher` sagt, ob das Modell sie selbst für

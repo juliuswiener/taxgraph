@@ -177,6 +177,37 @@ def test_scheibeneigenes_feld_geht_weiterhin_durch(fall, monkeypatch):
         "Ein scheibeneigenes Feld wurde fälschlich verworfen.")
 
 
+def test_malformter_vorschlag_erscheint_im_log(fall, monkeypatch, capsys):
+    """(Auftrag 2026-09-08) Ein Vorschlag mit fehlender/None/leerer `feld_id` fällt bei `if fid and
+    fid not in bindung:` (Scheiben-Gate) glatt durch — `fid` ist falsy, die Prüfung greift nicht. Er
+    landet dann in append_events Katalog-Check (K1) und fliegt dort raus, ABER der Filter
+    `_abg = [a for a in abgelehnt if a]` nimmt das falsy `fid` wieder aus `abgelehnt` heraus, und
+    `if fid: abgelehnt_gruende[fid] = ...` trägt gar nicht erst ein — der Vorschlag verschwindet
+    bisher SPURLOS, weder in der Antwort noch im stderr-Log. Antwortstruktur bleibt unverändert
+    (Instructor-Grenze); der Fix ist additiv nur im stderr-Zweig."""
+    monkeypatch.setattr(LC, "complete", _fake_complete(("", 6), ("agb_aufwendungen", 300000)))
+    st, body = API.chat(fall, {"text": "3000 Euro Krankheitskosten."})
+    assert st == 200
+    assert body["abgelehnt"] == [], "abgelehnt bleibt eine Liste echter feld_ids -- unveraendert"
+    assert body["abgelehnt_gruende"] == {}, "abgelehnt_gruende bleibt unveraendert"
+    assert [v["feld_id"] for v in body["vorschlaege"]] == ["agb_aufwendungen"]
+    err = capsys.readouterr().err
+    assert "fehlender/leerer feld_id" in err and "1" in err, (
+        "Der malformte Vorschlag verschwand spurlos aus dem Log.")
+    assert "None" not in err and "6" not in err, "kein Wert/Freitext ins Log (PII-frei)"
+
+    # Gegenprobe: ein Lauf OHNE malformten Vorschlag darf die neue Zeile NICHT produzieren --
+    # sonst waere "loggt immer" ebenfalls gruen. Anderes Feld als oben, damit der zweite Lauf
+    # nicht am schon aktiven `agb_aufwendungen` in einen Konflikt statt eines Happy-Paths läuft.
+    monkeypatch.setattr(LC, "complete", _fake_complete(("berufsausbildung_aufwendungen", 90000)))
+    st2, body2 = API.chat(fall, {"text": "900 Euro Fortbildung."})
+    assert st2 == 200
+    assert [v["feld_id"] for v in body2["vorschlaege"]] == ["berufsausbildung_aufwendungen"]
+    err2 = capsys.readouterr().err
+    assert "fehlender/leerer feld_id" not in err2, (
+        "Die neue Log-Zeile erscheint auch ohne malformten Vorschlag -- misst nichts.")
+
+
 # --------------------------------------------------------------- Graceful-Skip: human-only-Vorschlag (Instructor)
 def test_graceful_skip_human_only(fall, monkeypatch, capsys):
     """Instructor-Auflage: schlägt die KI ein HUMAN-ONLY-Feld (antrag_ermaessigter_satz, Wahlrecht § 34

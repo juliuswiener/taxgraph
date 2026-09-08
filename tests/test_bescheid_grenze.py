@@ -222,7 +222,15 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # ANLASS, gemessen: `rentner_jahresrente` ist global llm-vorschlagbar, gehoert aber in keine
 # `gesamt`-Variante; ein append_event gelang dadurch als vorlaeufig, weil die `vorschlaege` nur
 # gegen den globalen Katalog liefen, die `rueckfragen` dagegen schon gegen die Scheibe.
-API_ZEILEN_OBERGRENZE = 1295
+#
+# 1295 -> 1298 (2026-09-08, Beobachtbarkeit fuer malformte LLM-Vorschlaege in chat()). 3 Zeilen
+# stderr-Protokoll, KEIN Rechenkern und keine Verzweigung ueber Steuerdaten — eine Zaehlung
+# neben der schon vorhandenen Log-Zeile zwei Zeilen darueber, gleiche PII-Regel (keine Werte).
+# ANLASS, gemessen: ein Vorschlag mit fehlender/leerer `feld_id` wird von Auflage K1 im Store
+# korrekt abgewiesen, es landet nichts auf Platte. Danach verschwand er aber spurlos — `if fid:`
+# ueberspringt den Grund, `_abg = [a for a in abgelehnt if a]` filtert ihn aus der Antwort UND
+# aus dem stderr-Log. Das widersprach dem Docstring in api.py („kein stiller Abbruch mehr").
+API_ZEILEN_OBERGRENZE = 1298
 
 
 def _runner_stellen(pfad: str) -> list[int]:
