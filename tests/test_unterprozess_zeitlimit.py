@@ -121,6 +121,27 @@ def test_das_gate_erkennt_seinen_eigenen_fehlerfall():
     assert len(ohne) == 1, "das Muster erkennt den ungeschützten Aufruf nicht (oder zu viele)"
 
 
+def test_scan_menge_ist_nicht_leer_und_enthaelt_reale_module():
+    """Selbstprüfung des Scans: die Scan-Basis, die _aufrufe_ohne_zeitlimit tatsächlich
+    durchläuft (PRODUKT.rglob("*.py")), darf nicht leer sein und muss mindestens die zum
+    Zeitpunkt dieses Tests bekannten realen Module unter produkt/ enthalten. Ohne diese
+    Zusicherung wäre test_kein_unterprozess_ohne_zeitlimit bei einem stumm kollabierten Scan
+    (verschobenes produkt/-Verzeichnis, falscher PRODUKT-Pfad) grün, obwohl er nichts geprüft
+    hätte — heute ist die Fundliste ohnehin leer (repariert), also sieht man dem Gate einen
+    kollabierten Scan gerade NICHT an (Muster: test_llm_import_boundary.py::
+    test_scan_menge_ist_nicht_leer_und_enthaelt_reale_module)."""
+    gescannt = {p.relative_to(pathlib.Path(ROOT)) for p in PRODUKT.rglob("*.py")
+                if "__pycache__" not in str(p)}
+    UNTERGRENZE = 30  # gemessen 2026-09-08: 36 .py-Dateien unter produkt/
+    assert len(gescannt) >= UNTERGRENZE, (
+        f"Nur {len(gescannt)} .py-Dateien unter produkt/ gefunden, erwartet mindestens "
+        f"{UNTERGRENZE} — die Scan-Basis ist unerwartet klein geworden"
+    )
+    bekannte_module = {pathlib.Path("produkt/haut/api.py"), pathlib.Path("produkt/store/store.py")}
+    fehlend = bekannte_module - gescannt
+    assert not fehlend, f"Bekannte Module fehlen in der Scan-Basis: {sorted(fehlend)}"
+
+
 # ------------------------------------------------------------- Verhalten: Deckel statt Teilergebnis
 
 def _pdf_mit_seiten(n: int) -> str:

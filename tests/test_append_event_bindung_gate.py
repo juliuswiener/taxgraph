@@ -115,3 +115,21 @@ def test_ausnahmeliste_hat_keine_toten_eintraege():
         assert schluessel in alle_calls, (
             f"{schluessel} steht in AUSNAHMEN, zeigt aber auf keine Aufrufstelle mehr — "
             f"toter Eintrag, Zeile hat sich verschoben oder der Code ist weg.")
+
+
+def test_scan_menge_ist_nicht_leer_und_enthaelt_reale_module():
+    """Selbstprüfung des Scans: _alle_py_dateien() darf nicht leer sein und muss mindestens die
+    zum Zeitpunkt dieses Tests bekannten realen Module unter produkt/ enthalten. Ohne diese
+    Zusicherung wäre test_jede_append_event_aufrufstelle_hat_bindung bei einem stumm
+    kollabierten Scan (verschobenes produkt/-Verzeichnis, falscher PRODUKT-Pfad) grün, obwohl
+    er nichts geprüft hätte (Muster: test_llm_import_boundary.py::
+    test_scan_menge_ist_nicht_leer_und_enthaelt_reale_module)."""
+    gescannt = {os.path.relpath(p, PRODUKT) for p in _alle_py_dateien()}
+    UNTERGRENZE = 30  # gemessen 2026-09-08: 36 .py-Dateien unter produkt/
+    assert len(gescannt) >= UNTERGRENZE, (
+        f"Nur {len(gescannt)} .py-Dateien unter produkt/ gefunden, erwartet mindestens "
+        f"{UNTERGRENZE} — die Scan-Menge ist unerwartet klein geworden"
+    )
+    bekannte_module = {os.path.join("haut", "api.py"), os.path.join("store", "store.py")}
+    fehlend = bekannte_module - gescannt
+    assert not fehlend, f"Bekannte Module fehlen in der Scan-Menge: {sorted(fehlend)}"
