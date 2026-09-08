@@ -378,7 +378,12 @@ def test_solz_ring_rentner_grenzfall_mit_kapital(base):
     solz_mit = erg_mit.get("solz_cent")
     est_mit = erg_mit.get("zahl_cent")
 
-    if catala and solz_ohne is not None and solz_mit is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (solz_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert solz_ohne is not None and solz_mit is not None, (
+            f"Sperrgrund statt Zahl: ohne Kapital {erg_ohne.get('grund')}, mit Kapital {erg_mit.get('grund')}"
+        )
         # Ohne Kapital: ESt unter FG → SolZ 0
         assert solz_ohne == 0, f"Rente 88k unter FG: solz_ohne sollte 0 sein, got {solz_ohne}"
 

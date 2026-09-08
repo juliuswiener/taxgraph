@@ -216,7 +216,13 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # vz=2099 wurde mit 201 angelegt, das spaetere Laden von params/2099/... scheiterte still und
 # E1901401 zeigte None bei eingaben_konsistent=true (Live-HTTP-Messung, /deklaration). Fail-closed
 # gegen die tatsaechlich vorhandenen params/-Jahre, dynamisch gelesen statt hartkodiert.
-API_ZEILEN_OBERGRENZE = 1287
+#
+# 1287 -> 1295 (2026-09-08, Scheiben-Gate fuer die LLM-Vorschlaege in chat()). 8 Zeilen
+# Reichweiten-Pruefung, KEIN Rechenkern — dieselbe Bauart wie der Scheiben-Check in event().
+# ANLASS, gemessen: `rentner_jahresrente` ist global llm-vorschlagbar, gehoert aber in keine
+# `gesamt`-Variante; ein append_event gelang dadurch als vorlaeufig, weil die `vorschlaege` nur
+# gegen den globalen Katalog liefen, die `rueckfragen` dagegen schon gegen die Scheibe.
+API_ZEILEN_OBERGRENZE = 1295
 
 
 def _runner_stellen(pfad: str) -> list[int]:

@@ -3383,7 +3383,12 @@ def test_gesamt_p33b_behinderung_gdb_50(base):
     _val("ergebnis", erg_no)
     steuern_no = erg_no["zahl_cent"]
 
-    if catala and steuern_gdb is not None and steuern_no is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert steuern_gdb is not None and steuern_no is not None, (
+            f"Sperrgrund statt Zahl: mit GdB {erg_gdb.get('grund')}, ohne GdB {erg_no.get('grund')}"
+        )
         # GdB 50 → 1.140€ weniger Einkommen → weniger Steuer (höhere zahl_cent möglich bei Negativeinkommen)
         # Aber Standard: weniger Einkommen = weniger Steuer. Delta ≈ 1.140 × Grenzsatz (~42%) ≈ 480 EUR
         # Toleranz: ±100 EUR für Freibetrags-Interaktion
@@ -3414,7 +3419,12 @@ def test_gesamt_p33b_hilflos_7400(base):
     _val("ergebnis", erg_no)
     steuern_no = erg_no["zahl_cent"]
 
-    if catala and steuern_h is not None and steuern_no is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert steuern_h is not None and steuern_no is not None, (
+            f"Sperrgrund statt Zahl: mit H {erg_h.get('grund')}, ohne H {erg_no.get('grund')}"
+        )
         # H → 7.400€ Pauschbetrag → ca. 7.400 × 42% ≈ 3.100€ weniger Steuer
         delta = steuern_no - steuern_h
         assert delta > 3000, (
@@ -3443,7 +3453,12 @@ def test_gesamt_p33b_pflegegrad_3(base):
     _val("ergebnis", erg_no)
     steuern_no = erg_no["zahl_cent"]
 
-    if catala and steuern_pf is not None and steuern_no is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert steuern_pf is not None and steuern_no is not None, (
+            f"Sperrgrund statt Zahl: mit Pflegegrad {erg_pf.get('grund')}, ohne {erg_no.get('grund')}"
+        )
         # Pflegegrad 3 → 1.100€ → ca. 1.100 × 42% ≈ 460€ weniger Steuer
         delta = steuern_no - steuern_pf
         assert delta > 300, (
@@ -3477,7 +3492,12 @@ def test_gesamt_p33b_partner_gdb_zusammenveranlagung(base):
     _val("ergebnis", erg_a)
     steuern_a = erg_a["zahl_cent"]
 
-    if catala and steuern_zuzam is not None and steuern_a is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert steuern_zuzam is not None and steuern_a is not None, (
+            f"Sperrgrund statt Zahl: A+B {erg_zuzam.get('grund')}, nur A {erg_a.get('grund')}"
+        )
         # Partner-GdB sollte zusätzliche ~480€ Steuer sparen (1.140€ × 42%)
         delta = steuern_a - steuern_zuzam
         assert delta > 300, (
@@ -3514,7 +3534,12 @@ def test_gesamt_p35a_minijob_hoechstbetrag(base):
     _val("ergebnis", erg_2)
     steuern_2 = erg_2["zahl_cent"]
 
-    if catala and steuern_1 is not None and steuern_2 is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert steuern_1 is not None and steuern_2 is not None, (
+            f"Sperrgrund statt Zahl: 400 EUR {erg_1.get('grund')}, 3000 EUR {erg_2.get('grund')}"
+        )
         # Fall 1: 80 EUR Ermäßigung → ca. 80 × 42% Grenzsatz ≈ 34€ weniger Steuer
         # Fall 2: 510 EUR Ermäßigung → ca. 510 × 42% ≈ 214€ weniger Steuer
         # Differenzial sollte ca. (510-80) × 42% ≈ 180 EUR sein
@@ -3542,6 +3567,7 @@ def test_gesamt_p35a_alle_toepfe(base):
     _req(base, "POST", "/fall/p35a-all/event", _laie("hh_handwerker_betrag", 300000))  # 3000 EUR
     _req(base, "POST", "/fall/p35a-all/event", _laie("hh_in_eu_ewr", True))
     _req(base, "POST", "/fall/p35a-all/event", _laie("hh_rechnung_unbar", True))
+    _req(base, "POST", "/fall/p35a-all/event", _laie("hh_handwerker_keine_foerderung", True))
     st, erg_all = _req(base, "GET", "/fall/p35a-all/ergebnis")
     _val("ergebnis", erg_all)
     steuern_all = erg_all["zahl_cent"]
@@ -3555,7 +3581,12 @@ def test_gesamt_p35a_alle_toepfe(base):
     _val("ergebnis", erg_mj)
     steuern_mj = erg_mj["zahl_cent"]
 
-    if catala and steuern_all is not None and steuern_mj is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert steuern_all is not None and steuern_mj is not None, (
+            f"Sperrgrund statt Zahl: alle drei {erg_all.get('grund')}, nur Minijob {erg_mj.get('grund')}"
+        )
         # Differenz sollte (1700 - 100) = 1600 EUR Ermäßigung sein
         # Bei ~42% Grenzsatz: ca. 1600 × 42% ≈ 672€ weniger Steuer
         delta = steuern_mj - steuern_all
@@ -3704,7 +3735,12 @@ def test_gesamt_p33_agb_ring_wirkung(base):
     _val("ergebnis", erg_no)
     steuern_no = erg_no["zahl_cent"]
 
-    if catala and steuern_agb is not None and steuern_no is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert steuern_agb is not None and steuern_no is not None, (
+            f"Sperrgrund statt Zahl: mit agB {erg_agb.get('grund')}, ohne agB {erg_no.get('grund')}"
+        )
         # agB 6.000 - zumutbar ~4.850 = ~1.150 EUR abzugsfähig
         # Bei ~42% Grenzsatz: ca. 1.150 × 42% ≈ 483 EUR weniger Steuer
         delta = steuern_no - steuern_agb
@@ -3738,7 +3774,12 @@ def test_gesamt_p33_agb_unter_zumutbar(base):
     _val("ergebnis", erg_no)
     steuern_no = erg_no["zahl_cent"]
 
-    if catala and steuern_agb is not None and steuern_no is not None:
+    if catala:
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert steuern_agb is not None and steuern_no is not None, (
+            f"Sperrgrund statt Zahl: mit agB {erg_agb.get('grund')}, ohne agB {erg_no.get('grund')}"
+        )
         # agB unter zumutbar → Abzug 0 → gleiche Steuer
         delta = abs(steuern_no - steuern_agb)
         assert delta < 10, (
@@ -3747,78 +3788,66 @@ def test_gesamt_p33_agb_unter_zumutbar(base):
         )
 
 
-def test_rentner_p32d_kapital_niedrig_rente_tarif_gewinnt(base):
-    """Messung § 32d Abs. 6 Rentner — Günstigerprüfung Tarif vs 25% Abgeltung.
-    Niedrige Rente (20.000 EUR) + 2.000 EUR stpfl. Kapital.
-    Erwartung: Tarif ~27% > 25% Abgeltung → 25% sollte gewinnen.
-    Aber Tarif bei niedriger Rente ist ~3%, mit Kapital ~27% → Tarif gewinnt
-    mit ~474 EUR (23,7% auf 2k effektiv).
-    
-    Aktuell (vor Fix): Kapital läuft ungedeckelt → 39-42% Mehrbetrag → Überbesteuerung.
+def _p32d_kapital_mehrbetrag(base, praefix, jahresrente):
+    """Mehrbetrag in CENT, den 3.000 EUR Kapitalerträge bei dieser Jahresrente auslösen.
+
+    3.000 EUR brutto − 1.000 EUR Sparer-PB (§ 20 Abs. 9) = 2.000 EUR steuerpflichtig; 25 %
+    Abgeltung darauf sind 50000 Cent. Zwei sonst identische rentner_gesamt-Fälle, einmal ohne
+    und einmal mit Kapital — dieselbe Bauform wie test_rentner_kap_differential.
     """
-    catala = _catala_da()
+    werte = {}
+    for name, kegel in (("ohne", _rentner_kegel(jahresrente=jahresrente, kein_kap=True, kap_ertraege=0)),
+                        ("mit", _rentner_kegel(jahresrente=jahresrente, kein_kap=False, kap_ertraege=300000))):
+        _rentner_anlegen(base, f"{praefix}-{name}", kegel)
+        _, erg = _req(base, "GET", f"/fall/{praefix}-{name}/ergebnis")
+        _val("ergebnis", erg)
+        # `is not None` als ASSERTION, nicht als Sprungbedingung: sonst schaltet ein zu breit
+        # feuernder Riegel (zahl_cent → None) genau die Prüfung ab, die ihn fangen soll.
+        assert erg["zahl_cent"] is not None, f"Sperrgrund statt Zahl ({name} Kapital): {erg.get('grund')}"
+        werte[name] = erg["zahl_cent"]
+    return werte["mit"] - werte["ohne"]
 
-    # Rentner mit 20k Rente + 2k Kapital (rentner_gesamt-Scheibe)
-    kegel = {}  # Rentner braucht kein bruttoarbeitslohn
-    st, b = _req(base, "POST", "/fall", {"scheibe": "rentner_gesamt", "veranlagungszeitraum": 2026, "fall_id": "r-32d-20k"})
-    assert st == 201
 
-    st, _ = _req(base, "POST", "/fall/r-32d-20k/event", _laie("rentner_renten_art", "gesetzliche_rente"))
-    assert st == 201
-    st, _ = _req(base, "POST", "/fall/r-32d-20k/event", _laie("rentner_jahresrente", 2000000))  # 20k EUR (CENT)
-    assert st == 201
-    st, _ = _req(base, "POST", "/fall/r-32d-20k/event", _laie("rentner_renten_beginn_jahr", 2020))
-    assert st == 201
-    st, _ = _req(base, "POST", "/fall/r-32d-20k/event", _laie("rentner_alter_bei_rentenbeginn", 65))
-    assert st == 201
-    st, _ = _req(base, "POST", "/fall/r-32d-20k/event", _laie("kap_kapitalertraege", 200000))  # 2k EUR (CENT)
-    assert st == 201
-    
-    st, erg = _req(base, "GET", "/fall/r-32d-20k/ergebnis")
-    _val("ergebnis", erg)
-    steuern = erg["zahl_cent"]
+def test_rentner_p32d_kapital_niedrig_rente_tarif_gewinnt(base):
+    """§ 32d Abs. 6 Günstigerprüfung bei NIEDRIGER Rente: der Tarif-Weg muss gewinnen.
 
-    if catala and steuern is not None:
-        # Kapital mit Günstigerprüfung sollte ca. 474 EUR sein (Tarif-Weg gewinnt bei niedriger Rente)
-        # Toleranz: ±50 EUR für Freibetrags-Interaktion
-        assert 420 < steuern < 530, (
-            f"Rentner 20k + 2k Kapital sollte ca. 474 EUR Steuer haben (Tarif-Weg): {steuern} EUR"
-        )
+    20.000 EUR Rente + 2.000 EUR steuerpflichtiges Kapital. Der tarifliche Grenzsteuersatz
+    liegt hier unter 25 %, das Kapital muss also BILLIGER sein als die 25 %-Abgeltung
+    (50000 Cent). Geprüft wird die REGEL, nicht der Betrag — den exakten Wert (47400 Cent)
+    pinnt test_rentner_kap_differential mit demselben Aufbau.
+
+    Vorgängerfassung (bis 2026-09-08): hielt die ABSOLUTE zahl_cent gegen eine EUR-Erwartung
+    (420 < zahl_cent < 530) und konnte damit nie grün werden — die Rente allein trägt schon
+    77400 Cent. Grün war sie nur, weil ein Riegel zahl_cent=None lieferte und die
+    Sprungbedingung `if catala and steuern is not None` die Prüfung abschaltete.
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    delta = _p32d_kapital_mehrbetrag(base, "r-32d-20k", 2000000)
+    assert 0 < delta < 50000, (
+        f"Günstigerprüfung § 32d Abs. 6 bei 20k Rente: Kapital-Mehrbetrag {delta} Cent muss "
+        f"über 0 und unter 50000 Cent (25 % auf 2.000 EUR) liegen — hier ist der Tarif günstiger"
+    )
 
 
 def test_rentner_p32d_kapital_hohe_rente_abgeltung_25pct(base):
-    """Messung § 32d Abs. 6 Rentner — hohe Rente (80.000 EUR) + 2.000 EUR Kapital.
-    Erwartung: Abgeltung 25% = exakt 500 EUR sollte gewinnen.
-    
-    Aktuell (vor Fix): Kapital läuft ungedeckelt in den hohen Tarif (42%) → 840 EUR Überbesteuerung.
+    """§ 32d Abs. 6 Günstigerprüfung bei HOHER Rente: die 25 %-Abgeltung muss gewinnen.
+
+    80.000 EUR Rente + 2.000 EUR steuerpflichtiges Kapital. Der tarifliche Grenzsteuersatz
+    liegt hier über 25 %; ungedeckelt wären es ~84000 Cent. Die Deckelung auf 50000 Cent ist
+    die Aussage.
+
+    Vorgängerfassung: siehe test_rentner_p32d_kapital_niedrig_rente_tarif_gewinnt — gleiche
+    drei Baufehler (absolute statt Differenz, EUR-Schranke gegen Cent-Wert, 2.000 EUR brutto
+    statt 2.000 EUR steuerpflichtig).
     """
-    catala = _catala_da()
-
-    # Rentner mit 80k Rente + 2k Kapital (rentner_gesamt-Scheibe)
-    st, b = _req(base, "POST", "/fall", {"scheibe": "rentner_gesamt", "veranlagungszeitraum": 2026, "fall_id": "r-32d-80k"})
-    assert st == 201
-
-    st, _ = _req(base, "POST", "/fall/r-32d-80k/event", _laie("rentner_renten_art", "gesetzliche_rente"))
-    assert st == 201
-    st, _ = _req(base, "POST", "/fall/r-32d-80k/event", _laie("rentner_jahresrente", 8000000))  # 80k EUR (CENT)
-    assert st == 201
-    st, _ = _req(base, "POST", "/fall/r-32d-80k/event", _laie("rentner_renten_beginn_jahr", 2020))
-    assert st == 201
-    st, _ = _req(base, "POST", "/fall/r-32d-80k/event", _laie("rentner_alter_bei_rentenbeginn", 65))
-    assert st == 201
-    st, _ = _req(base, "POST", "/fall/r-32d-80k/event", _laie("kap_kapitalertraege", 200000))  # 2k EUR (CENT)
-    assert st == 201
-    
-    st, erg = _req(base, "GET", "/fall/r-32d-80k/ergebnis")
-    _val("ergebnis", erg)
-    steuern = erg["zahl_cent"]
-
-    if catala and steuern is not None:
-        # Kapital mit Günstigerprüfung sollte ca. 500 EUR sein (Abgeltung 25% gewinnt)
-        # Exakt 500, oder sehr nah (±10 EUR für Rundung)
-        assert 490 < steuern < 510, (
-            f"Rentner 80k + 2k Kapital sollte exakt ca. 500 EUR Steuer haben (Abgeltung 25%): {steuern} EUR"
-        )
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    delta = _p32d_kapital_mehrbetrag(base, "r-32d-80k", 8000000)
+    assert delta == 50000, (
+        f"Günstigerprüfung § 32d Abs. 6 bei 80k Rente: Kapital-Mehrbetrag {delta} Cent, "
+        f"erwartet 50000 Cent (25 % auf 2.000 EUR) — der Tarif (~42 %) darf hier nicht greifen"
+    )
 
 
 def test_verpflegung_dreimonats_frist_ring(base):
