@@ -544,6 +544,11 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "braucht — je nach Fall der Bruttoarbeitslohn, die Kapitalerträge oder die Art der "
         "Krankenversicherung. Ein Ergebnis für nur eine der beiden Personen wäre falsch. Bitte "
         "ergänze die offenen Angaben zu deinem Partner.",
+    "gwg_tatbestand_offen":
+        "Zu einem als Sofortabzug erfassten Gerät fehlt noch eine Antwort zu einer der Voraussetzungen — "
+        "ob es allein benutzbar ist, ob der Betrag den Vorsteuerabzug schon abgezogen hat, oder (ab 250 "
+        "Euro) ob du dazu eine Liste geführt hast oder es aus deiner Buchführung ersichtlich ist. Bitte "
+        "beantworte die offene Frage zu diesem Gerät.",
     "rechnung_unbar_offen":
         "Zu deinen Handwerker- oder Haushaltsdienstleistungen fehlt noch die Antwort, ob du eine "
         "Rechnung erhalten und sie überwiesen hast. Barzahlungen erkennt das Finanzamt hier nicht "
@@ -1107,6 +1112,34 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if _positiv("p35c_sanierungsaufwendungen") or _positiv("p35c_energieberater_aufwendungen"):
             if (felder.get("p35c_keine_doppelfoerderung") or {}).get("zustand") != "bestaetigt":
                 return "p35c_doppelfoerderung_offen"
+        # § 6 Abs. 2 GWG-Sofortabzug S. 1-5: die drei Anspruchsvoraussetzungen (selbständig nutzbar S.2/3,
+        # netto vorsteuerbereinigt S.1, ab 250 EUR Verzeichnis/Buchführung S.4/5) sind CONDITIONAL-MANDATORY
+        # je gwg-Instanz -- nur wenn die Instanz überhaupt einen Betrag > 0 trägt (analog
+        # _hh_instanz_positiv oben). Unbeantwortet (nicht bestätigt) sperrt den GANZEN Ring; explizit false
+        # ist ANTWORT (Ring rechenbar, _gwg_sofortabzug_summe nullt genau diese Instanz), nur UNSET/vorläufig
+        # sperrt. instanzweise wie EM.instanzen(gwg) liefert -- vor Schritt 1 (2026-09-07) waren die drei
+        # Bool-Felder unerreichbar, es gibt daher keine Altantworten, die eine neue Sperre stumm auslöst.
+        if store is not None and bindung is not None:
+            for _inst in EM.instanzen(store, bindung, "gwg"):
+                _netto_v = _inst["felder"].get("gwg_anschaffungskosten_netto", {}).get("wert")
+                _netto_i = _netto_v if isinstance(_netto_v, (int, float)) and not isinstance(_netto_v, bool) else 0
+                if _netto_i <= 0:
+                    continue
+                # § 6 Abs. 2 S. 1: über 800 EUR netto ist der Sofortabzug strukturell ausgeschlossen
+                # (zwingend AfA) -- die drei Tatbestandsfragen sind für DIESES Wirtschaftsgut gegenstandslos,
+                # unbeantwortet darf nicht sperren. Spiegelt den > 80000-Cent-Guard in _gwg_sofortabzug_summe
+                # (bescheid_einkuenfte.py), sonst fragt die Sperre nach Voraussetzungen, die am Betrag längst
+                # gescheitert sind (gemessen 2026-09-07: 1000-EUR-Instanz sperrte die Abgabe grundlos).
+                if _netto_i > 80000:
+                    continue
+                if any((_inst["felder"].get(fb) or {}).get("zustand") != "bestaetigt"
+                       for fb in ("gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer")):
+                    return "gwg_tatbestand_offen"
+                # S. 4: Verzeichnispflicht nur > 250 EUR netto -- darunter ist die Frage rechtlich
+                # gegenstandslos, unbeantwortet darf hier nicht sperren.
+                if (_netto_i > 25000
+                        and (_inst["felder"].get("gwg_verzeichnis_ab_250") or {}).get("zustand") != "bestaetigt"):
+                    return "gwg_tatbestand_offen"
         # § 10 Abs. 4b KiSt-Erstattungsüberhang: früher sperrte hier erstattungsueberhang_offen,
         # weil die GdE-Hinzurechnung (S. 3) fehlte und ein stiller Abzug 0 unterbesteuert hätte.
         # Sie ist jetzt gebaut (catala_p10_4b_erstattungsueberhang, im Ring vor den GdE-Verwendungen

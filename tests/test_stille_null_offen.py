@@ -111,6 +111,13 @@ class TestGwgStilleNull:
         fid = _neuer_fall(tmp_path, monkeypatch, "sn-gwg-v")
         st, r = API.event(fid, _laie("gwg_anschaffungskosten_netto", 50000, "vorlaeufig"))
         assert st == 201, r
+        # Schritt 2 (2026-09-07, bescheid_deklaration.py): die drei GWG-Tatbestandsfragen sind
+        # CONDITIONAL-MANDATORY, sobald die Instanz einen Betrag > 0 traegt -- unabhaengig vom
+        # Bestaetigungsstatus des Betrags selbst (analog _hh_instanz_positiv). Ohne sie sperrt
+        # gwg_tatbestand_offen, bevor die stille-Null-Sammlung unten ueberhaupt erreicht wird.
+        for _fld in ("gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250"):
+            st, r = API.event(fid, _laie(_fld, True))
+            assert st == 201, r
         st, erg = API.ergebnis(fid)
         assert st == 200, erg
         assert erg["grund"] == "bestaetigt", erg
@@ -126,6 +133,11 @@ class TestGwgStilleNull:
         fid = _neuer_fall(tmp_path, monkeypatch, "sn-gwg-b", kegel_overrides={"kein_gewinn": False})
         st, r = API.event(fid, _laie("gwg_anschaffungskosten_netto", 50000, "bestaetigt"))
         assert st == 201, r
+        # Schritt 2 (2026-09-07): dieselben drei Pflichtfragen wie oben, hier bestaetigt statt
+        # vorlaeufig -- sonst sperrt gwg_tatbestand_offen VOR der hier zu pruefenden Zahl-Wirkung.
+        for _fld in ("gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250"):
+            st, r = API.event(fid, _laie(_fld, True))
+            assert st == 201, r
         st, erg = API.ergebnis(fid)
         assert st == 200, erg
         assert erg["grund"] == "bestaetigt", erg

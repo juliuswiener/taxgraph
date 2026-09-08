@@ -65,12 +65,27 @@ def _gwg_sofortabzug_summe(f: dict, store: dict | None, bindung: dict | None,
         # (under-tax, Sofortabzug statt AfA). Schwelle VOR der Euro-Rundung in Cent prüfen.
         if netto > 80000:
             return 0
+        # § 6 Abs. 2 S. 1-5, Schritt 2 (2026-09-07): ein verneinter Tatbestand ist eine gültige, rechenbare
+        # Antwort -- das WG gehört dann in die AfA, nicht in den Sofortabzug (0 hier). S.1/2/3 gelten für
+        # JEDEN Betrag; S.4 (Verzeichnis/Buchführung, S.5-Ausnahme im Fragetext mitabgedeckt) nur > 250€ --
+        # darunter ist die Frage gegenstandslos, ein "nein" darf den Sofortabzug nicht schmälern. Ein nie
+        # beantwortetes Feld bleibt hier folgenlos (wert=None) -- das sperrt _an_gesamt_sperrgrund
+        # (gwg_tatbestand_offen), nicht diese Funktion.
+        if fi.get("gwg_bewegliches_selbstaendig_nutzbar", {}).get("wert") is False:
+            return 0
+        if fi.get("gwg_netto_ohne_vorsteuer", {}).get("wert") is False:
+            return 0
+        if netto > 25000 and fi.get("gwg_verzeichnis_ab_250", {}).get("wert") is False:
+            return 0
         return runner.catala_p6_2_gwg({"gwg_anschaffungskosten_netto": netto // 100})
     if store is not None and bindung is not None:
         # ⭐ SECURITY (Zwei-Signal am Ring, INSTANZ-Pfad): EM.instanzen liest den STORE separat vom bestätigt-
         # gefilterten _bescheid_fn-Snapshot → eine VORLÄUFIGE gwg-Instanz bewegte sonst den Sofortabzug OHNE
-        # Confirm (dev-2-Repro: 600€ am Ring). gwg ist OPTIONAL → KEIN Kegel-/Sperr-Gate (anders als vv/rente) →
-        # bei nur_bestaetigt=True (festgesetzt) ist der Filter PFLICHT. nur_bestaetigt=False (Estimate /stand) zeigt
+        # Confirm (dev-2-Repro: 600€ am Ring). Seit Schritt 2 (2026-09-07) hat gwg einen eigenen Sperrgrund
+        # (gwg_tatbestand_offen, _an_gesamt_sperrgrund) für eine unbeantwortete Anspruchsvoraussetzung bei
+        # bestätigtem Betrag -- der Filter hier bleibt trotzdem PFLICHT, denn er deckt einen ANDEREN Fall: der
+        # Sperrgrund prüft nur die drei Bedingungsfelder, nicht den Betrag selbst. bei nur_bestaetigt=True
+        # (festgesetzt) ist der Filter also weiter PFLICHT. nur_bestaetigt=False (Estimate /stand) zeigt
         # die vorläufige Wirkung im Range (Parität zum agB-Skalar). inst["zustand"] = per-Instanz-meet.
         return sum(_abzug(inst["felder"]) for inst in EM.instanzen(store, bindung, "gwg")
                    if not nur_bestaetigt or inst["zustand"] == "bestaetigt")

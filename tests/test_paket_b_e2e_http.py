@@ -1217,10 +1217,16 @@ def test_gesamt_gwg_multi(base):
     """§ 6 Abs. 2 GWG-Sofortabzug (Stufe 2b) im EÜR: DREI GWG-Assets à 400/600/800 € (alle ≤ 800, je sofort
     abziehbar) → Σ 1800 als Betriebsausgabe. Betriebseinnahmen 50000 − (sonstige BA 10000 + AfA 5000 + GWG-Σ 1800)
     = Gewinn 33200 → festzusetzende_est 5220 = 522000 Cent. Belegt: der Ring summiert die GWG-Instanzen (EM.instanzen
-    ,gwg — Basis + __2 + __3) stumpf in den betriebsausgaben-Term."""
+    ,gwg — Basis + __2 + __3) stumpf in den betriebsausgaben-Term. Schritt 2 (2026-09-07) machte die drei
+    Tatbestandsfragen je Instanz CONDITIONAL-MANDATORY -- alle drei Assets sind > 250 € und ≤ 800 €, also
+    für alle drei Fragen und alle drei Instanzen mit 'ja' bestätigen."""
     catala = _catala_da()
     _gesamt_anlegen(base, "gwm", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, betriebseinnahmen=5000000,
                     sonstige_betriebsausgaben=1000000, afa_jahresbetrag=500000, gwg=[40000, 60000, 80000]))
+    for _idx in (1, 2, 3):
+        _sfx = "" if _idx == 1 else f"__{_idx}"
+        for _fld in ("gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250"):
+            _req(base, "POST", "/fall/gwm/event", _laie(_fld + _sfx, True), erwarte=201)
     st, erg = _req(base, "GET", "/fall/gwm/ergebnis")
     _val("ergebnis", erg)
     if catala:
@@ -1233,10 +1239,15 @@ def test_gesamt_gwg_ueber_800_ausgeschlossen(base):
     """§ 6 Abs. 2 PER-ASSET-Deckelung (non-vacuous): zwei „GWG" 400 € (≤ 800 → 400 abziehbar) + 1000 € (> 800 →
     0, KEIN GWG — muss über AfA). Σ-Sofortabzug = 400 (nicht 1400). Betriebseinnahmen 50000 − 400 = Gewinn 49600 →
     festzusetzende_est 10537 = 1053700 Cent. Belegt: der ≤ 800-Schwellwert greift JE ASSET (kein Zusammenzählen zu
-    1400 dann Deckelung; genau der B-Over-Tax-Trap den Option A vermeidet)."""
+    1400 dann Deckelung; genau der B-Over-Tax-Trap den Option A vermeidet). Nur die 400-€-Instanz (Basis) muss
+    den Tatbestand bestätigen -- die 1000-€-Instanz (__2) ist nach S. 1 STRUKTURELL vom Sofortabzug
+    ausgeschlossen, ihre drei Fragen sind gegenstandslos und dürfen unbeantwortet NICHT sperren (gemessen
+    2026-09-07: die Sperre feuerte vorher für JEDES Asset mit Betrag > 0, auch für dieses)."""
     catala = _catala_da()
     _gesamt_anlegen(base, "gw8", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
                     betriebseinnahmen=5000000, gwg=[40000, 100000]))
+    for _fld in ("gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250"):
+        _req(base, "POST", "/fall/gw8/event", _laie(_fld, True), erwarte=201)
     st, erg = _req(base, "GET", "/fall/gw8/ergebnis")
     _val("ergebnis", erg)
     if catala:
@@ -1249,10 +1260,16 @@ def test_gesamt_gwg_only_verlust(base):
     """§ 6 Abs. 2 GWG als EÜR-present-Trigger + Verlust-Durchfluss: KEINE Betriebseinnahmen, nur zwei GWG à 800
     (Σ 1600) → Gewinn 0 − 1600 = −1600 (Anlaufverlust). Der GWG-Sofortabzug allein triggert den EÜR-Pfad (nicht nur
     betriebseinnahmen) → mindert den § 19-Lohn (Job 40000 → § 19 38770): GdE 37170 → festzusetzende_est 6419 =
-    641900 Cent, NIEDRIGER als § 19-only. Belegt: GWG-only zählt zum EÜR-Trigger, Verlust fließt in § 2 Abs. 3."""
+    641900 Cent, NIEDRIGER als § 19-only. Belegt: GWG-only zählt zum EÜR-Trigger, Verlust fließt in § 2 Abs. 3.
+    Beide Assets = 800 € (genau die Schwelle, noch abziehbar) und > 250 € -- beide Instanzen bestätigen alle
+    drei Tatbestandsfragen (Schritt 2, 2026-09-07)."""
     catala = _catala_da()
     _gesamt_anlegen(base, "gwl", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, bruttolohn=4000000,
                     gwg=[80000, 80000]))
+    for _idx in (1, 2):
+        _sfx = "" if _idx == 1 else f"__{_idx}"
+        for _fld in ("gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250"):
+            _req(base, "POST", "/fall/gwl/event", _laie(_fld + _sfx, True), erwarte=201)
     st, erg = _req(base, "GET", "/fall/gwl/ergebnis")
     _val("ergebnis", erg)
     if catala:
@@ -1261,34 +1278,28 @@ def test_gesamt_gwg_only_verlust(base):
         assert erg["zahl_cent"] is None
 
 
-@pytest.mark.xfail(
-    strict=True, raises=AssertionError,
-    reason="tickets/gwg-selbstaendig-nutzbar-nicht-erfragbar.md, Schritt 2: seit dem Schritt-1-Fix "
-           "(GWG_FELDER, api_constants.py) sind die drei § 6 Abs. 2-Bedingungen auf 'gesamt' erfragbar "
-           "UND bestätigbar (201, nicht mehr 400) — das war der alte Marker-Grund, der ist behoben. "
-           "Offen bleibt Schritt 2 (Backlog gwg-sofortabzug-ohne-tatbestand.md, noch nicht gebaut): "
-           "der Sofortabzug fließt unverändert weiter, auch wenn die Bedingung verneint bestätigt wird "
-           "— kein Guard/Catala-Input liest die Antwort. Fällt grün (XPASS), sobald Schritt 2 steht.")
 def test_gesamt_gwg_ohne_tatbestand_darf_keinen_abzug_geben(base):
     """§ 6 Abs. 2 S. 1 EStG (sources/gesetze-im-internet/estg_p6_2026-07-14.txt) macht den Sofortabzug an
     einem Eigenschafts-Tatbestand fest: "abnutzbaren beweglichen Wirtschaftsgütern des Anlagevermögens, die
-    einer selbständigen Nutzung fähig sind" (S. 2/3 definieren "selbständig nutzbar" negativ). Seit Schritt 1
-    ist die Bedingung erfragbar; dieser Test bestätigt sie mit False (Tatbestand verneint, § 6 Abs. 2 gilt
-    nicht) und erwartet, dass der Sofortabzug DANN entfällt — zahl_cent müsste identisch mit einem sonst
-    gleichen Fall OHNE das GWG-Asset sein. Schritt 2 (Guard vor Catala) fehlt noch: gemessen fließt der
-    Abzug trotz verneintem Tatbestand unverändert, zahl_cent bleibt wie MIT bestätigtem Tatbestand."""
+    einer selbständigen Nutzung fähig sind" (S. 2/3 definieren "selbständig nutzbar" negativ). Die beiden
+    ANDEREN Bedingungen werden bestätigt (True), damit dieser Test GENAU die verneinte Bedingung isoliert —
+    sonst träfe der Kegel-Sperrgrund (gwg_tatbestand_offen, offen wegen der unbeantworteten Nachbarfragen)
+    statt der hier zu prüfenden Nullung. Erwartung: zahl_cent identisch mit einem sonst gleichen Fall OHNE
+    das GWG-Asset (kein Sofortabzug, das WG gehört in die AfA). Schritt 2 (2026-09-07, _abzug in
+    bescheid_einkuenfte.py) behoben — vormals xfail, seit Schritt 1 die Bedingung erfragbar wurde, aber
+    keine Rechenstelle die Antwort las."""
     if not _catala_da():
         pytest.skip("Catala-Toolchain nicht verfügbar")   # Vergleich braucht eine echte Berechnung.
     _gesamt_anlegen(base, "gwt", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
                     betriebseinnahmen=5000000, gwg=[60000]))
-    # Schritt 1 behoben: die Bedingung ist jetzt erfragbar UND bestätigbar (201, nicht mehr 400).
     _req(base, "POST", "/fall/gwt/event",
          _laie("gwg_bewegliches_selbstaendig_nutzbar", False), erwarte=201)
+    _req(base, "POST", "/fall/gwt/event", _laie("gwg_netto_ohne_vorsteuer", True), erwarte=201)
+    _req(base, "POST", "/fall/gwt/event", _laie("gwg_verzeichnis_ab_250", True), erwarte=201)
     st, erg = _req(base, "GET", "/fall/gwt/ergebnis")
     _val("ergebnis", erg)
     # Kontrollfall: gleicher Fall, aber OHNE das GWG-Asset — das ist der Betrag, den ein verneinter
-    # Tatbestand liefern MÜSSTE (kein Sofortabzug). Schritt 2 (noch offen) müsste diese Gleichheit
-    # herstellen; DEFEKT gemessen: der Abzug bleibt drin, obwohl der Tatbestand verneint wurde.
+    # Tatbestand liefern MUSS (kein Sofortabzug).
     _gesamt_anlegen(base, "gwt_kontrolle", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
                     betriebseinnahmen=5000000))
     st2, erg2 = _req(base, "GET", "/fall/gwt_kontrolle/ergebnis")

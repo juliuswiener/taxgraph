@@ -1344,6 +1344,7 @@ bindungen:
       zitatanker: "800 Euro nicht übersteigen"
       datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
   - feld_id: gwg_netto_ohne_vorsteuer
+    instanz_gruppe: gwg
     quelle: {regel_id: p6_2_gwg_sofortabzug, geltungsbedingung: netto_ist_9b_bereinigt}
     typ: bool
     einheit: null
@@ -1361,6 +1362,7 @@ bindungen:
       zitatanker: "vermindert um einen darin enthaltenen Vorsteuerbetrag"
       datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
   - feld_id: gwg_bewegliches_selbstaendig_nutzbar
+    instanz_gruppe: gwg
     quelle: {regel_id: p6_2_gwg_sofortabzug, geltungsbedingung: bewegliches_abnutzbares_anlagevermoegen_selbstaendig_nutzbar}
     typ: bool
     einheit: null
@@ -1378,13 +1380,14 @@ bindungen:
       zitatanker: "die einer selbständigen Nutzung fähig sind"
       datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
   - feld_id: gwg_verzeichnis_ab_250
+    instanz_gruppe: gwg
     quelle: {regel_id: p6_2_gwg_sofortabzug, geltungsbedingung: verzeichnis_ab_250_gefuehrt}
     typ: bool
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Hast du Geräte über 250 Euro in einer Liste festgehalten (Anschaffungsdatum und Kosten)?"
-    hilfe_kurz: "Für Geräte über 250 Euro netto ist so eine Liste vorgeschrieben."
+    fragetext_laie: "Sind Anschaffungsdatum und Kosten für Geräte über 250 Euro entweder in einer eigenen Liste festgehalten oder aus deiner normalen Buchführung ersichtlich?"
+    hilfe_kurz: "Für Geräte über 250 Euro netto ist das vorgeschrieben — als eigene Liste, oder es reicht, wenn deine Buchführung diese Angaben schon enthält."
     beispielwert: true
     herkunft_slots: null
     elster_kz: null
