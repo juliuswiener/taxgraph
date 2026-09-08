@@ -126,10 +126,25 @@ def test_p16_4_freibetrag_gilt_je_person():
         pytest.skip("catala nicht verfügbar")
     z_120_allein = _zahl(_mit_vg(12000000))
     z_60_und_60 = _zahl(_mit_vg(6000000, 6000000))
-    assert z_60_und_60 < z_120_allein, (
-        f"Zwei Veräußerungsgewinne von je 60.000 EUR werden nicht günstiger besteuert als "
-        f"120.000 EUR bei einer Person ({z_60_und_60} vs. {z_120_allein} ct) — der Partner "
-        f"bekommt keinen eigenen § 16 Abs. 4-Freibetrag.")
+    # Exakter Wert statt `<`: die Richtungsprüfung blieb auch dann grün, wenn der zweite
+    # Freibetrag nur zu einem Bruchteil ankommt. Herleitung VZ 2025, Splitting, und § 34
+    # Abs. 1 Fünftelung auf den Veräußerungsgewinn (bescheid_zweige.py glättet ihn):
+    #   allein: Fünftel(zvE 133.698, ao 75.000) = 30.358 EUR
+    #   je 60k: Fünftel(zvE  88.698, ao 15.000) = 17.332 EUR   → Differenz 13.026 EUR
+    # Die zvE-Differenz ist exakt der zweite Freibetrag (133.698 − 88.698 = 45.000).
+    #
+    # ponytail: der Wert schreibt eine ASYMMETRIE mit fest, die noch keine Rechtsfrage
+    # beantwortet hat — in die Fünftel-Glättung geht nur der Netto-VG von Person A ein, der
+    # des Partners erhöht das zvE vollprogressiv (ao=15.000, nicht 30.000). Ob § 34 Abs. 1 die
+    # außerordentlichen Einkünfte BEIDER Ehegatten erfassen muss, ist offen. Wird das geklärt
+    # und geändert, geht dieser Test rot — das ist beabsichtigt und der Grund für den festen
+    # Wert: die alte `<`-Form hätte die Änderung stumm geschluckt.
+    delta = z_120_allein - z_60_und_60
+    assert delta == 1302600, (
+        f"Zwei Veräußerungsgewinne von je 60.000 EUR müssen 13.026 EUR günstiger sein als "
+        f"120.000 EUR bei einer Person, gemessen {delta} ct ({z_60_und_60} vs. "
+        f"{z_120_allein} ct) — prüfe, ob der Partner seinen eigenen § 16 Abs. 4-Freibetrag "
+        f"bekommt und ob sich die § 34-Glättung geändert hat.")
 
 
 def test_p35_anrechnung_gilt_auch_fuer_den_betrieb_des_partners():

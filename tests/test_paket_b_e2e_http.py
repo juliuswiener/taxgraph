@@ -3425,11 +3425,17 @@ def test_gesamt_p33b_hilflos_7400(base):
         assert steuern_h is not None and steuern_no is not None, (
             f"Sperrgrund statt Zahl: mit H {erg_h.get('grund')}, ohne H {erg_no.get('grund')}"
         )
-        # H → 7.400€ Pauschbetrag → ca. 7.400 × 42% ≈ 3.100€ weniger Steuer
+        # § 33b ist ein Pauschbetrag: er mindert das zvE, nicht die Steuer. Der Abzug ist also
+        # NICHT "7.400 × Spitzensatz", sondern die Differenz zweier Tarifauswertungen — bei
+        # einer quadratischen Zone trifft ein einzelner Grenzsatz nur am Mittelpunkt der
+        # Spanne. VZ 2025, § 32a Abs. 1 (params/2025/einkommensteuertarif_p32a.yaml):
+        #   zvE ohne H 37.964 → 6.677 EUR,  zvE mit H 30.564 → 4.464 EUR  →  2.213 EUR.
+        # Die Spanne ist exakt der Pauschbetrag (37.964 − 30.564 = 7.400). Fester Wert statt
+        # `> 3000`: die alte Schranke blieb auch dann gruen, wenn nur ein Bruchteil ankommt.
         delta = steuern_no - steuern_h
-        assert delta > 3000, (
-            f"H/Bl/TBl sollte 7.400€ Pauschbetrag → weniger Steuer (delta > 3000): "
-            f"ohne H {steuern_no}, mit H {steuern_h}, delta={delta}"
+        assert delta == 221300, (
+            f"H/Bl/TBl: 7.400€ Pauschbetrag → 2.213€ weniger Steuer erwartet, delta={delta}: "
+            f"ohne H {steuern_no}, mit H {steuern_h}"
         )
 
 
@@ -3501,11 +3507,16 @@ def test_gesamt_p33b_partner_gdb_zusammenveranlagung(base):
         assert steuern_zuzam is not None and steuern_a is not None, (
             f"Sperrgrund statt Zahl: A+B {erg_zuzam.get('grund')}, nur A {erg_a.get('grund')}"
         )
-        # Partner-GdB sollte zusätzliche ~480€ Steuer sparen (1.140€ × 42%)
+        # Der Splitting-Tarif halbiert die Wirkung des Pauschbetrags gegenueber der naiven
+        # Einzelsicht: 1.140 EUR mindern das gemeinsame zvE, versteuert wird aber die Haelfte
+        # zum doppelten Tarif. VZ 2025, § 32a Abs. 1/Abs. 5:
+        #   2 × (S(32.779) − S(32.209)) = 2 × 167 = 334 EUR,  nicht die 465 EUR der Einzelsicht.
+        # Genau diese Differenz war unter `> 300` unsichtbar — die Schranke haette beide Werte
+        # getragen und damit den Fehler, den sie fangen soll.
         delta = steuern_a - steuern_zuzam
-        assert delta > 300, (
-            f"Partner-GdB 50 sollte +1.140€ Pauschbetrag → ca. 480€ weniger Steuer: "
-            f"nur A {steuern_a}, A+B {steuern_zuzam}, delta={delta}"
+        assert delta == 33400, (
+            f"Partner-GdB 50: +1.140€ Pauschbetrag → 334€ weniger Steuer erwartet, delta={delta}: "
+            f"nur A {steuern_a}, A+B {steuern_zuzam}"
         )
 
 
