@@ -3459,11 +3459,14 @@ def test_gesamt_p33b_pflegegrad_3(base):
         assert steuern_pf is not None and steuern_no is not None, (
             f"Sperrgrund statt Zahl: mit Pflegegrad {erg_pf.get('grund')}, ohne {erg_no.get('grund')}"
         )
-        # Pflegegrad 3 → 1.100€ → ca. 1.100 × 42% ≈ 460€ weniger Steuer
+        # § 33b ist ein Pauschbetrag, mindert also das zu versteuernde Einkommen — anders als
+        # § 35a wirkt hier der Grenzsatz. 1.100 EUR bei 50.000 EUR Bruttolohn = 341 EUR
+        # weniger Steuer (31 %), gemessen. Fester Wert statt `> 300`: die alte Schranke blieb
+        # auch dann gruen, wenn nur noch ein Bruchteil des Pauschbetrags ankommt.
         delta = steuern_no - steuern_pf
-        assert delta > 300, (
-            f"Pflegegrad 3 sollte 1.100€ Pauschbetrag → weniger Steuer (delta > 300): "
-            f"ohne Pf {steuern_no}, mit Pf {steuern_pf}, delta={delta}"
+        assert delta == 34100, (
+            f"Pflegegrad 3: 1.100€ Pauschbetrag → 341€ weniger Steuer erwartet, delta={delta}: "
+            f"ohne Pf {steuern_no}, mit Pf {steuern_pf}"
         )
 
 
@@ -3540,13 +3543,13 @@ def test_gesamt_p35a_minijob_hoechstbetrag(base):
         assert steuern_1 is not None and steuern_2 is not None, (
             f"Sperrgrund statt Zahl: 400 EUR {erg_1.get('grund')}, 3000 EUR {erg_2.get('grund')}"
         )
-        # Fall 1: 80 EUR Ermäßigung → ca. 80 × 42% Grenzsatz ≈ 34€ weniger Steuer
-        # Fall 2: 510 EUR Ermäßigung → ca. 510 × 42% ≈ 214€ weniger Steuer
-        # Differenzial sollte ca. (510-80) × 42% ≈ 180 EUR sein
+        # Steuerermässigung, kein Abzug von den Einkuenften — sie mindert die Steuer 1:1.
+        # Fall 1: 80 EUR. Fall 2: min(3000 × 20%, 510) = 510 EUR. Differenz 430 EUR.
+        # Genau der Deckel ist hier die Aussage: ohne ihn waeren es 600 statt 510 EUR.
         delta = steuern_1 - steuern_2
-        assert delta > 100, (
-            f"Minijob 400 EUR (80€ ermäßigung) sollte höhere Steuer als 3000 EUR (510€): "
-            f"400 EUR {steuern_1}, 3000 EUR {steuern_2}, delta={delta}"
+        assert delta == 43000, (
+            f"Hoechstbetrag 510€ minus 80€ = 430€ erwartet, delta={delta}: "
+            f"400 EUR {steuern_1}, 3000 EUR {steuern_2}"
         )
 
 
@@ -3587,12 +3590,14 @@ def test_gesamt_p35a_alle_toepfe(base):
         assert steuern_all is not None and steuern_mj is not None, (
             f"Sperrgrund statt Zahl: alle drei {erg_all.get('grund')}, nur Minijob {erg_mj.get('grund')}"
         )
-        # Differenz sollte (1700 - 100) = 1600 EUR Ermäßigung sein
-        # Bei ~42% Grenzsatz: ca. 1600 × 42% ≈ 672€ weniger Steuer
+        # § 35a ist eine STEUERERMÄSSIGUNG, kein Abzug von den Einkünften: sie mindert die
+        # Steuer 1:1, ein Grenzsatz kommt nicht vor. Differenz (1700 - 100) = 1600 EUR.
+        # `> 500` liess einen ganzen Topf still ausfallen und blieb gruen — genau der Defekt,
+        # den 4e7c9f2 an anderer Stelle gefunden hat.
         delta = steuern_mj - steuern_all
-        assert delta > 500, (
-            f"Alle drei Töpfe sollten viel weniger Steuer ergeben: "
-            f"nur Minijob {steuern_mj}, alle drei {steuern_all}, delta={delta}"
+        assert delta == 160000, (
+            f"Dienstleistung (1000€) + Handwerker (600€) = 1600€ erwartet, delta={delta}: "
+            f"nur Minijob {steuern_mj}, alle drei {steuern_all}"
         )
 
 
