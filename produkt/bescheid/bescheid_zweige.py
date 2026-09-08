@@ -746,7 +746,9 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # der Partner-Stufe-2 ohnehin im Nenner — ohne diese Zeilen fehlte nur der Zähler, und ein
         # Paar, bei dem NUR der Ehegatte gewerblich tätig ist, bekam gar keine Anrechnung.
         # § 16-vg bleibt draußen (§ 7 S. 2 GewStG), deshalb _laufender_gewinn_partner statt
-        # _gewinn_partner_anteil. Der Hebesatz-Deckel wird je Betrieb gerechnet (s. _p35_gezahlt).
+        # _gewinn_partner_anteil. Die gezahlte Gewerbesteuer wird je Betrieb mit dem eigenen
+        # Hebesatz ermittelt und aufsummiert (s. _p35_gezahlte_gewst); der Deckel selbst — das
+        # min(...) unten — läuft über diese Summe, nicht je Betrieb.
         p35_messbetrag_ges, p35_zaehler_ges, p35_gezahlt = _p35_summen(
             f, p35_messbetrag, p35_hebesatz, p35_zaehler)
         # Nenner (§ 35 Abs. 1 S. 2 „Summe aller positiven Einkünfte") = Σ positive TARIFLICHE Einkunftsarten:

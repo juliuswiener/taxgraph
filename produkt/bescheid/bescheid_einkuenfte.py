@@ -125,8 +125,15 @@ def _p35_gezahlte_gewst(messbetrag_a: int, hebesatz_a: int,
                         messbetrag_b: int, hebesatz_b: int) -> int:
     """§ 35 Abs. 1 S. 5: der Abzug ist auf die tatsächlich zu zahlende Gewerbesteuer beschränkt.
 
-    JE BETRIEB gerechnet und dann summiert — die Hebesätze zweier Gemeinden sind verschieden,
-    ein gemeinsamer Hebesatz auf die Messbetragssumme wäre schlicht eine andere Zahl."""
+    Die GEZAHLTE Steuer wird je Betrieb mit dem eigenen Hebesatz ermittelt und dann summiert —
+    die Hebesätze zweier Gemeinden sind verschieden, ein gemeinsamer Hebesatz auf die
+    Messbetragssumme wäre schlicht eine andere Zahl.
+
+    "Je Betrieb" gilt NUR für diese Ermittlung, nicht für den Deckel: der Rückgabewert geht als
+    EIN Term in das `min(...)` in bescheid_zweige.py, und das läuft über die Summe. Die
+    betriebsbezogene Lesart des Deckels ist zweimal aus dem Gedächtnis aufgetaucht und beide
+    Male gegen den Wortlaut widerlegt (Abs. 1 S. 2 bemisst über Summen, S. 5 nennt keinen
+    Betriebsbezug), s. vault backlog/archive/taxgraph/p35-anrechnung-partner-offen.md."""
     return messbetrag_a * hebesatz_a // 100 + messbetrag_b * hebesatz_b // 100
 
 
@@ -374,9 +381,11 @@ def _p35_summen(f: dict, messbetrag_a: int, hebesatz_a: int, zaehler_a: int):
     """(messbetrag_ges, zaehler_ges, gezahlt) für § 35 — Person A plus Ehegatte.
 
     EINE Stelle für die Summen, damit die Deckel weiter unten nicht je Verwendung neu addiert
-    werden müssen; `gezahlt` ist der Deckel aus Abs. 1 S. 5, JE BETRIEB gerechnet (zwei
-    Gemeinden, zwei Hebesätze — ein gemeinsamer Hebesatz auf die Messbetragssumme wäre eine
-    andere Zahl, s. _p35_gezahlte_gewst).
+    werden müssen; `gezahlt` ist die tatsächlich gezahlte Gewerbesteuer aus Abs. 1 S. 5, je
+    Betrieb mit dem eigenen Hebesatz ermittelt und dann AUFSUMMIERT (zwei Gemeinden, zwei
+    Hebesätze — ein gemeinsamer Hebesatz auf die Messbetragssumme wäre eine andere Zahl,
+    s. _p35_gezahlte_gewst). Damit ist `gezahlt` ein TERM des Deckels, nicht der Deckel: das
+    `min(...)` weiter unten läuft über die Summe, nicht je Betrieb.
 
     Extrahiert aus beiden Zweigen (Phase 2b, 2026-08-17), wo diese sieben Zeilen byte-identisch
     standen. Die Anteile des Ehegatten kamen schon vorher aus einer gemeinsamen Quelle

@@ -167,7 +167,7 @@ def test_p35_anrechnung_gilt_auch_fuer_den_betrieb_des_partners():
         "voller Höhe); sein Gewinn steht im § 35-Nenner, sein Messbetrag aber nicht im Zähler.")
 
 
-def test_p35_hebesatz_deckel_wird_je_betrieb_gerechnet():
+def test_p35_hebesatz_je_betrieb_ermittelt_deckel_ist_summe():
     """§ 35 Abs. 1 S. 5 deckelt auf die TATSÄCHLICH zu zahlende Gewerbesteuer. Die ist je Betrieb
     Messbetrag × Hebesatz — und zwei Gemeinden haben verschiedene Hebesätze. Ein gemeinsamer
     Hebesatz auf die Messbetragssumme wäre eine andere Zahl.
