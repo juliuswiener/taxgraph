@@ -197,6 +197,21 @@ def test_die_oberflaeche_laeuft_unter_der_csp(base):
     assert frage and frage.strip(), "keine Frage gerendert — die Seite ist unter der CSP leer"
 
 
+def test_es_gibt_ueberhaupt_html_dateien_fuer_die_richtlinienpruefung():
+    """Positivkontrolle für test_richtlinie_passt_zur_ausgelieferten_seite unten. Dessen
+    `assert`s sind alle Negativ-Behauptungen ("kein Inline-<script>" usw.) — im gesunden
+    Zustand ist das legitim für jede gefundene Datei erfüllt. Läuft der glob dort ins Leere
+    (Pfad falsch, Static-Ordner umgezogen), läuft die for-Schleife null Mal, jede Assertion
+    ist vakuum-wahr, und die CSP-Prüfung meldet grün, ohne eine einzige HTML-Datei gelesen zu
+    haben. Ein blinder Sicherheitstest markiert die Frage als beantwortet, obwohl sie es nicht
+    ist."""
+    import glob
+    dateien = glob.glob(os.path.join(ROOT, "produkt", "haut", "static", "*.html"))
+    assert len(dateien) >= 1, (
+        f"Nur {len(dateien)} HTML-Dateien unter produkt/haut/static gefunden — die "
+        f"Richtlinienpruefung prüft dann nichts. Pfad falsch, oder es gibt wirklich kein HTML mehr.")
+
+
 def test_richtlinie_passt_zur_ausgelieferten_seite():
     """Eine Richtlinie, die die eigene Oberfläche abschaltet, ist schlimmer als keine — und ein
     Test, der nur den HTTP-Status prüft, merkt davon nichts. Deshalb hier gegen die Dateien

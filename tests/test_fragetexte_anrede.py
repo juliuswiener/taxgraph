@@ -46,6 +46,23 @@ def _askable_texte():
     return out
 
 
+def test_es_gibt_ueberhaupt_bindungsdateien_fuer_die_anredepruefung():
+    """Positivkontrolle für test_kein_fragetext_siezt unten. Dessen `treffer` ist im gesunden
+    Zustand LEGITIM leer (kein Text siezt) — kollabiert der glob in _askable_texte() (Pfad
+    falsch, Muster verfehlt) ODER der `bindungen:`-Schlüssel selbst (Schema-Umbenennung, von
+    _askable_texte() über `.get("bindungen", [])` klaglos verschluckt), liefert die Funktion
+    [], die Siez-Prüfung findet nichts zum Prüfen, und der Test meldet grün, ohne einen
+    einzigen Fragetext gelesen zu haben. Deshalb zählt der Boden hier die geparsten
+    Fragetexte/Kurzhilfen selbst, nicht die Datei-Zahl — eine Datei-Zahl allein sähe den
+    Parse-Kollaps nicht."""
+    texte = _askable_texte()
+    assert len(texte) >= 500, (
+        f"Nur {len(texte)} askable Fragetexte/Kurzhilfen über alle Bindungsdateien gefunden — "
+        f"erwartet werden über 500. Entweder stimmt der Pfad nicht, oder der `bindungen:`-"
+        f"Schlüssel liefert nichts mehr (Schema-Umbenennung) — beides prüft die Anrede-Prüfung "
+        f"dann nicht.")
+
+
 def test_kein_fragetext_siezt():
     treffer = [(fid, k, SIEZEN.search(t).group(0), t[:70])
                for fid, k, t in _askable_texte() if SIEZEN.search(t)]

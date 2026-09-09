@@ -33,6 +33,24 @@ def _eintraege_je_datei() -> dict:
             for f in sorted(glob.glob(BINDUNG_GLOB))}
 
 
+def test_es_gibt_ueberhaupt_bindungsdateien():
+    """Positivkontrolle für dieses Modul. Ohne sie ist die Datei vakuum-grün — und zwar auf
+    ZWEI Arten: fasst `glob.glob(BINDUNG_GLOB)` ins Leere, ODER liefert jede gefundene Datei
+    nur einen umbenannten/leeren `bindungen:`-Schlüssel (`.get("bindungen") or []` verschluckt
+    das klaglos). Beides läuft auf dasselbe hinaus: `merged` (die Fixture unten) bleibt {}, und
+    alle fünf Assertions (Kz-Deklaration, GAP/Transform, Phantom-Kz, Person-B-Kz, feld_id-
+    Eindeutigkeit) iterieren über eine leere Menge und melden grün, ohne eine Zeile
+    Bindungstabelle gelesen zu haben. Deshalb zählt der Boden hier EINTRÄGE, nicht Dateien —
+    eine Datei-Zahl allein hätte den Parse-Kollaps (Schema-Umbenennung) nicht gesehen."""
+    eintraege = _eintraege_je_datei()
+    gesamt = sum(len(v) for v in eintraege.values())
+    assert gesamt >= 300, (
+        f"Nur {gesamt} Bindungs-Einträge über {len(eintraege)} Dateien unter {BINDUNG_GLOB} "
+        f"gefunden — erwartet werden über 300. Entweder stimmt der Pfad nicht, oder der "
+        f"`bindungen:`-Schlüssel liefert nichts mehr (Schema-Umbenennung) — beides prüft "
+        f"dieses Modul dann nicht.")
+
+
 @pytest.fixture(scope="module")
 def merged() -> dict:
     """{feld_id -> eintrag} über ALLE Scheiben (nach dem Eindeutigkeits-Check gefahrlos)."""

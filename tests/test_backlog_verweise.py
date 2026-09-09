@@ -121,6 +121,21 @@ def _find_backlog_refs(root):
 @pytest.mark.skipif(
     not os.path.isdir(VAULT_ROOT), reason="Vault nicht vorhanden (CI hat ihn nicht)"
 )
+def test_es_gibt_ueberhaupt_dateien_ausserhalb_reports():
+    """Positivkontrolle für test_backlog_verweise_loesen_auf unten. Dessen `dead` ist im
+    gesunden Zustand LEGITIM leer (kein toter Verweis) — kollabiert der os.walk in
+    _files_outside_reports (ROOT falsch, EXCLUDED_TOP_DIRS filtert versehentlich alles),
+    liefert _find_backlog_refs() [], `dead` bleibt trivial leer, und der Test meldet grün,
+    ohne eine einzige Datei nach BACKLOG-Verweisen durchsucht zu haben."""
+    n = sum(1 for _ in _files_outside_reports(ROOT))
+    assert n >= 1000, (
+        f"Nur {n} Dateien ausserhalb reports/ unter {ROOT} gefunden — die Backlog-Verweis-"
+        f"Pruefung prueft dann kaum noch etwas. ROOT falsch, oder os.walk kollabiert.")
+
+
+@pytest.mark.skipif(
+    not os.path.isdir(VAULT_ROOT), reason="Vault nicht vorhanden (CI hat ihn nicht)"
+)
 def test_backlog_verweise_loesen_auf():
     known_headings = _known_headings()
     dead = [

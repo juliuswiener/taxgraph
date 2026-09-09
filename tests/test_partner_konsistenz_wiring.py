@@ -57,6 +57,28 @@ def test_ohne_partner_feld_kein_sperr():
 # 250 € zu wenig Steuer bei 4.000 € Kapital. Das Feld ist entfernt — § 26 EStG kennt keine
 # von der allgemeinen Veranlagungsart getrennte Kapital-Veranlagung.
 
+def test_es_gibt_ueberhaupt_bindungsdateien_fuer_die_kap_pruefung():
+    """Positivkontrolle für test_kap_zusammenveranlagung_ist_entfernt unten. Dessen `treffer`
+    ist im gesunden Zustand LEGITIM leer (das Feld ist entfernt) — kollabiert der glob dort
+    (Pfad falsch) ODER der `bindungen:`-Schlüssel selbst (Schema-Umbenennung, von `d.get(
+    "bindungen") or []` klaglos verschluckt), läuft die Schleife null Mal, `treffer` bleibt
+    trivial leer, und der Test meldet grün, als hätte er das Feld wirklich gesucht und nicht
+    gefunden — dabei wurde keine einzige Bindungsdatei GELESEN. Deshalb zählt der Boden hier
+    geparste Bindungseinträge, nicht Dateien — eine Datei-Zahl allein sähe den Parse-Kollaps
+    nicht."""
+    import glob
+    import yaml
+    gesamt = 0
+    for pfad in glob.glob(os.path.join(ROOT, "produkt", "bindung", "bindung_*.yaml")):
+        d = yaml.safe_load(open(pfad, encoding="utf-8")) or {}
+        gesamt += len(d.get("bindungen") or [])
+    assert gesamt >= 300, (
+        f"Nur {gesamt} Bindungs-Einträge über alle Dateien unter produkt/bindung gefunden — "
+        f"erwartet werden über 300. Entweder stimmt der Pfad nicht, oder der `bindungen:`-"
+        f"Schlüssel liefert nichts mehr (Schema-Umbenennung) — beides prüft die "
+        f"kap_zusammenveranlagung-Prüfung dann nicht.")
+
+
 def test_kap_zusammenveranlagung_ist_entfernt():
     """Das Feld darf nicht zurückkommen — sonst ist der Widerspruch wieder möglich."""
     import glob

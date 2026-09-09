@@ -129,6 +129,18 @@ def test_unbeantwortetes_gate_sperrt_weiter():
         f"weiter sperren. relevanz() schließt nur bei bestätigtem False aus (traverser.py:122).")
 
 
+def test_es_gibt_ueberhaupt_bindungsdateien_fuer_die_kegel_slot_pruefung():
+    """Positivkontrolle für test_kein_ausschliessbares_kegelfeld_ist_ein_gelesener_slot unten.
+    Dessen `verstoesse` ist im gesunden Zustand LEGITIM leer — kollabiert der glob dort (Pfad
+    falsch), bleibt `bind` {}, `gates_je_regel` leer, die Verstoß-Schleife läuft null Mal, und
+    das Strukturgate meldet grün, ohne eine einzige Bindungsdatei gelesen zu haben."""
+    import glob
+    dateien = glob.glob(os.path.join(ROOT, "produkt", "bindung", "bindung_*.yaml"))
+    assert len(dateien) >= 20, (
+        f"Nur {len(dateien)} Bindungsdateien unter produkt/bindung gefunden — die "
+        f"Kegel-Slot-Prüfung prüft dann nichts.")
+
+
 def test_kein_ausschliessbares_kegelfeld_ist_ein_gelesener_slot():
     """Strukturgate gegen die Falle im Fix: fällt ein Feld aus dem Kegel, fehlt auch sein Slot im
     Dict, das bescheid_via_slots an die slot_fn übergibt. Die slot_fn liest ihre Slots seit der

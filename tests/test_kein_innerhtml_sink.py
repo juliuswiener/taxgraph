@@ -53,6 +53,19 @@ def _js_dateien() -> list[str]:
     return sorted(glob.glob(os.path.join(STATIC, "*.js")))
 
 
+def test_es_gibt_ueberhaupt_js_dateien():
+    """Positivkontrolle für die Sink-Regel unten. `treffer` in test_keine_innerhtml_interpolation
+    ist im gesunden Zustand LEGITIM leer (kein Sink gefunden) — ein kollabierter Scan (STATIC
+    falsch, *.js-Muster ins Leere) sieht deshalb GENAUSO aus wie ein sauberer Befund: `_js_dateien()`
+    liefert [], die Schleife läuft null Mal, die Regel meldet grün, ohne eine einzige JS-Datei
+    gelesen zu haben. Ein blinder Sicherheitstest ist schlimmer als keiner, weil er die Frage
+    als beantwortet markiert."""
+    dateien = _js_dateien()
+    assert len(dateien) >= 1, (
+        f"Nur {len(dateien)} JS-Dateien unter {STATIC} gefunden — die Sink-Regel prüft dann "
+        f"nichts. Entweder stimmt der Pfad nicht, oder es gibt wirklich kein JS mehr.")
+
+
 def _ist_kommentar(zeile: str) -> bool:
     """Zeilen-Kommentare überspringen. Ein Kommentar führt kein Markup aus — und genau hier
     zitieren mehrere Kommentare die ALTE, unsichere Zeile, um zu erklären, warum sie weg ist.

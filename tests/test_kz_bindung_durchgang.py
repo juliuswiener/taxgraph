@@ -1049,6 +1049,20 @@ def test_p33a_zweite_schicht_kommt_im_xml_an(bindung):
     assert _pfad_im_xml(xml, person + ("Allg", "U_Berecht", "E0122613"), "2")
 
 
+def test_es_gibt_ueberhaupt_bindungsdateien_fuer_die_idnr_pruefung():
+    """Positivkontrolle für test_beispiel_idnr_sind_eric_tauglich unten. Dessen `schlecht` ist
+    im gesunden Zustand LEGITIM leer (alle Beispiel-IdNr sind ERiC-tauglich) — kollabiert der
+    glob dort (Pfad falsch), läuft die Schleife null Mal, `schlecht` bleibt trivial leer, und
+    der Test meldet grün, ohne eine einzige Beispiel-IdNr geprüft zu haben."""
+    import glob
+    import os
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    dateien = glob.glob(os.path.join(root, "produkt", "bindung", "bindung_*.yaml"))
+    assert len(dateien) >= 20, (
+        f"Nur {len(dateien)} Bindungsdateien unter produkt/bindung gefunden — die "
+        f"IdNr-Prüfung prüft dann nichts.")
+
+
 def test_beispiel_idnr_sind_eric_tauglich():
     """Jede 11-stellige Beispiel-IdNr in der Bindung muss BEIDE Regeln erfüllen.
 
