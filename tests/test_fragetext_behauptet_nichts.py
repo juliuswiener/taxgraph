@@ -84,6 +84,30 @@ def test_kein_fragetext_unterstellt_dem_nutzer_etwas():
           "BEHAUPTUNG_ERLAUBT mit Begründung UND Beleg, dass die Behauptung im Dialog immer gilt.")
 
 
+def test_es_gibt_ueberhaupt_askable_fragetexte():
+    """Positivkontrolle für den Sweep oben. Dessen `schaden` ist im gesunden Zustand LEGITIM leer
+    (kein askable Fragetext behauptet dem Nutzer etwas) — und das ist prüfbar-blind gegenüber
+    genau der Menge, die der Sweep durchläuft: kollabiert `BINDUNG` (z.B. Schema-Umbenennung wie
+    beim `bindungen:`-Schlüssel) ODER wird `fragetext_laie` überall leer, überspringt der Sweep
+    (`if not text: continue`) schlicht jedes Feld und meldet ein Grün, das nichts geprüft hat.
+
+    `test_das_muster_greift_ueberhaupt` unten sichert etwas ANDERES ab, nicht dasselbe: nur die
+    Regex `_BEHAUPTUNG` selbst gegen drei fest verdrahtete Strings — das ist die richtige Probe
+    gegen eine zerschossene Regex, aber sie ruft `_askable_texte()`/`BINDUNG` nie auf und sieht
+    einen Kollaps der Sammelmenge deshalb gar nicht. Wer die eine Probe für die andere hält, hält
+    den Sweep für doppelt abgesichert, obwohl er es nur gegen eine von zwei Kollaps-Arten ist.
+
+    Deshalb hier der Boden auf dem Objekt, das der Sweep tatsächlich verbraucht: die nicht-leeren
+    Texte, genauso gezählt wie der Sweep sie sieht (leere überspringt er selbst per `if not
+    text`), gemessen 340, konservativ auf 300 gesetzt."""
+    nicht_leer = [text for _, text in _askable_texte() if text]
+    assert len(nicht_leer) >= 300, (
+        f"Nur {len(nicht_leer)} nicht-leere askable Fragetexte gefunden — erwartet werden über "
+        f"300 (gemessen sonst: 340). Entweder ist BINDUNG kollabiert oder `fragetext_laie` "
+        f"liefert nichts mehr — in beiden Fällen prüft der Sweep oben keinen einzigen echten "
+        f"Fragetext.")
+
+
 def test_das_muster_greift_ueberhaupt():
     """Ohne diese Probe wäre der Test oben vakuum-grün, sobald jemand die Regex zerschiesst."""
     assert _BEHAUPTUNG.match("Du warst mehr als 3 Monate am selben Ort, hast aber …")
