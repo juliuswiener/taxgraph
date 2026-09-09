@@ -1051,16 +1051,42 @@ def test_p33a_zweite_schicht_kommt_im_xml_an(bindung):
 
 def test_es_gibt_ueberhaupt_bindungsdateien_fuer_die_idnr_pruefung():
     """Positivkontrolle für test_beispiel_idnr_sind_eric_tauglich unten. Dessen `schlecht` ist
-    im gesunden Zustand LEGITIM leer (alle Beispiel-IdNr sind ERiC-tauglich) — kollabiert der
-    glob dort (Pfad falsch), läuft die Schleife null Mal, `schlecht` bleibt trivial leer, und
-    der Test meldet grün, ohne eine einzige Beispiel-IdNr geprüft zu haben."""
+    im gesunden Zustand LEGITIM leer (alle Beispiel-IdNr sind ERiC-tauglich) — und das auf ZWEI
+    Ebenen prüfbar-blind: kollabiert der glob (Pfad falsch) ODER der `bindungen:`-Schlüssel
+    selbst (Schema-Umbenennung, dort ungeschützt per `daten.get("bindungen") or []`), läuft die
+    Schleife null Mal; verschwinden stattdessen NUR die 11-stelligen Beispielwerte (z.B.
+    Beispieldaten auf ein anderes Format umgestellt), bleiben die 364 Einträge unverändert
+    stehen, aber der IdNr-Filter unten sieht keinen einzigen Kandidaten mehr — in beiden Fällen
+    bleibt `schlecht` trivial leer und der Test meldet grün, ohne eine einzige Beispiel-IdNr
+    geprüft zu haben. Deshalb zwei Böden: die geparsten Bindungseinträge selbst (Parse-Kollaps,
+    gemessen 364, Boden 300) UND die 11-stelligen IdNr-Kandidaten darunter (Beispielwert-
+    Kollaps, gemessen NUR 4, Boden 1 — die 1 beantwortet bewusst nur "hat das Gate überhaupt
+    etwas zu behaupten?", nicht "wie viele"; ein höherer Boden würde einen Bestand festnageln,
+    den niemand versprochen hat)."""
     import glob
     import os
+    import yaml
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    dateien = glob.glob(os.path.join(root, "produkt", "bindung", "bindung_*.yaml"))
-    assert len(dateien) >= 20, (
-        f"Nur {len(dateien)} Bindungsdateien unter produkt/bindung gefunden — die "
-        f"IdNr-Prüfung prüft dann nichts.")
+    gesamt = 0
+    kandidaten = 0
+    for pfad in sorted(glob.glob(os.path.join(root, "produkt", "bindung", "bindung_*.yaml"))):
+        with open(pfad, encoding="utf-8") as fh:
+            daten = yaml.safe_load(fh) or {}
+        eintraege = daten.get("bindungen") or []
+        gesamt += len(eintraege)
+        for b in eintraege:
+            wert = b.get("beispielwert")
+            if isinstance(wert, str) and len(wert) == 11 and wert.isdigit():
+                kandidaten += 1
+    assert gesamt >= 300, (
+        f"Nur {gesamt} Bindungs-Einträge über alle Dateien unter produkt/bindung gefunden — "
+        f"erwartet werden über 300. Entweder stimmt der Pfad nicht, oder der `bindungen:`-"
+        f"Schlüssel liefert nichts mehr (Schema-Umbenennung) — beides prüft die IdNr-Prüfung "
+        f"dann nicht.")
+    assert kandidaten >= 1, (
+        f"{gesamt} Bindungs-Einträge gefunden, aber 0 davon mit einem 11-stelligen "
+        f"Beispielwert (gemessen sonst: 4) — die IdNr-Prüfung unten hat dann nichts mehr zu "
+        f"prüfen und ihr Grün behauptet etwas, das gar nicht getestet wurde.")
 
 
 def test_beispiel_idnr_sind_eric_tauglich():

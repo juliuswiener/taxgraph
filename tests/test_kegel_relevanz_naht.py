@@ -132,13 +132,22 @@ def test_unbeantwortetes_gate_sperrt_weiter():
 def test_es_gibt_ueberhaupt_bindungsdateien_fuer_die_kegel_slot_pruefung():
     """Positivkontrolle für test_kein_ausschliessbares_kegelfeld_ist_ein_gelesener_slot unten.
     Dessen `verstoesse` ist im gesunden Zustand LEGITIM leer — kollabiert der glob dort (Pfad
-    falsch), bleibt `bind` {}, `gates_je_regel` leer, die Verstoß-Schleife läuft null Mal, und
-    das Strukturgate meldet grün, ohne eine einzige Bindungsdatei gelesen zu haben."""
+    falsch) ODER der `bindungen:`-Schlüssel selbst (Schema-Umbenennung, dort ungeschützt per
+    `.get("bindungen", [])`), bleibt `bind` {}, `gates_je_regel` leer, die Verstoß-Schleife
+    läuft null Mal, und das Strukturgate meldet grün, ohne eine einzige Bindungsdatei gelesen
+    zu haben. Deshalb zählt der Boden hier die Größe von `bind` selbst (dieselbe Konstruktion
+    wie unten) — eine Datei-Zahl allein sähe den Parse-Kollaps nicht."""
     import glob
-    dateien = glob.glob(os.path.join(ROOT, "produkt", "bindung", "bindung_*.yaml"))
-    assert len(dateien) >= 20, (
-        f"Nur {len(dateien)} Bindungsdateien unter produkt/bindung gefunden — die "
-        f"Kegel-Slot-Prüfung prüft dann nichts.")
+    import yaml
+    bind = {}
+    for fp in sorted(glob.glob(os.path.join(ROOT, "produkt", "bindung", "bindung_*.yaml"))):
+        for b in yaml.safe_load(open(fp)).get("bindungen", []):
+            bind[b["feld_id"]] = b
+    assert len(bind) >= 300, (
+        f"Nur {len(bind)} geparste Bindungseinträge (nach feld_id) über alle Dateien unter "
+        f"produkt/bindung gefunden — erwartet werden über 300. Entweder stimmt der Pfad nicht, "
+        f"oder der `bindungen:`-Schlüssel liefert nichts mehr (Schema-Umbenennung) — beides "
+        f"prüft die Kegel-Slot-Prüfung dann nicht.")
 
 
 def test_kein_ausschliessbares_kegelfeld_ist_ein_gelesener_slot():
