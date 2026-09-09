@@ -308,3 +308,32 @@ def test_p35a_foerderung_mutation_gate_inversion(base):
         # Okay wenn ein anderer Gate-Grund feuert (z.B. rechnung_unbar für Minijob wenn absent)
         # aber nicht handwerker_foerderung_offen
         assert erg["grund"] in ("rechnung_unbar_offen",), f"Unexpected grund={erg['grund']}"
+
+
+# rentner_gesamt: derselbe Guard (_shared_steuer_sonder_agb, bescheid_abzuege.py:178), aus
+# beiden Zweigen identisch aufgerufen (bescheid_zweige.py:696 / :1168) — hier über die Zahl
+# belegt statt über den geteilten Aufrufpfad geglaubt (Geltungsbereich ≠ Verwendung).
+# Kegel + Helfer NICHT neu gebaut, sondern von der bereits gruenen rentner_gesamt-Fixtur
+# aus test_p33b_abs5_s4_ring.py wiederverwendet.
+from test_p33b_abs5_s4_ring import RENTNER_KEGEL, _zahl  # noqa: E402
+
+# 6.000 EUR Handwerker-Arbeitskosten -> voller Abs.-3-Deckel 20% = 1.200 EUR.
+_RENTNER_HANDWERKER = [
+    ("hh_handwerker_betrag", 600000), ("hh_in_eu_ewr", True), ("hh_rechnung_unbar", True),
+]
+
+
+def test_p35a_foerderung_rentner_zweig_sperrt_ebenfalls(base):
+    """§ 35a Abs. 3 S. 2 auf rentner_gesamt: Sollwert VORHER festgelegt (AUFTRAG 45,
+    Frage 2, ad-hoc gemessen): Δ = 120000 Cent (1.200 EUR), dieselbe Größe wie auf gesamt.
+    """
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    ohne = _zahl(base, "rentner_gesamt", "p35a-rentner-foerd-nein",
+                 RENTNER_KEGEL + _RENTNER_HANDWERKER + [("hh_handwerker_keine_foerderung", True)])
+    mit = _zahl(base, "rentner_gesamt", "p35a-rentner-foerd-ja",
+                RENTNER_KEGEL + _RENTNER_HANDWERKER + [("hh_handwerker_keine_foerderung", False)])
+    delta = mit - ohne
+    assert delta == 120000, (
+        f"ohne_foerderung={ohne} mit_foerderung={mit} Δ={delta} ≠ 120000 (1.200 EUR) — "
+        f"die § 35a-Abs.3-S.2-Sperre wirkt auf rentner_gesamt nicht wie auf gesamt")
