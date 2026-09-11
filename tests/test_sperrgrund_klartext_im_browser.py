@@ -68,8 +68,6 @@ import pathlib
 import re
 import sys
 
-import pytest
-
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 for _sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/unsicherheit",
@@ -103,6 +101,13 @@ def _guard_block(text: str) -> str:
             f"{anker!r} bzw. der anschliessende Erfolgs-Zweig ist nicht mehr auffindbar. "
             "Dieses Gate prueft dann nichts mehr und muss nachgezogen werden."
         ) from e
+    return text[start:ende]
+
+
+def _zeige_ring_block(text: str) -> str:
+    """Komplette zeigeRing()-Funktion bis zur naechsten Top-Level-Funktion."""
+    start = text.index("function zeigeRing(stand, offen) {")
+    ende = text.index("\nfunction ", start + 1)
     return text[start:ende]
 
 
@@ -158,11 +163,6 @@ def test_kette_wird_ueberhaupt_gefunden():
 
 # ---------------------------------------------------------------- (a) + (b)
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="backlog/taxgraph/sperrgruende-erreichen-den-nutzer-nicht.md: app.js liest "
-           "'klartext' nirgends -- Marker faellt am Tag des Fixes (XPASS) und zwingt dazu, "
-           "ihn zu entfernen.")
 def test_klartext_wird_ueberhaupt_gelesen():
     """(a) aus dem Auftrag: kommt 'klartext' in app.js ueberhaupt vor.
 
@@ -174,11 +174,6 @@ def test_klartext_wird_ueberhaupt_gelesen():
         "(SPERRGRUND_KLARTEXT) bleibt wirkungslos, egal wie gut formuliert.")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="backlog/taxgraph/sperrgruende-erreichen-den-nutzer-nicht.md: die rohe Feldliste "
-           "ist nicht hinter einer klartext-Pruefung versteckt -- Marker faellt am Tag des "
-           "Fixes (XPASS) und zwingt dazu, ihn zu entfernen.")
 def test_kein_sperrgrund_faellt_auf_die_rohe_feldliste_durch():
     """(b) aus dem Auftrag: kein Grund aus SPERRGRUND_KLARTEXT faellt auf den rohen
     Feldlisten-Zweig durch -- geprueft ueber die Zweig-REIHENFOLGE, nicht ueber eine
@@ -202,3 +197,12 @@ def test_kein_sperrgrund_faellt_auf_die_rohe_feldliste_durch():
             "else-if-Sonderfaelle steht. Heutige Zaehlung nach der Vault-Methodik (Diagnose, "
             f"nicht das Kriterium selbst): {len(durchfaller)} von {len(BD.SPERRGRUND_KLARTEXT)} "
             "Sperrgruenden fallen durch: " + ", ".join(durchfaller))
+
+
+def test_ring_schaetzung_liest_konkreten_sperrgrund_klartext():
+    """Der Zwischenstand muss den konkreten Backend-Text vor dem generischen Satz lesen."""
+    block = _zeige_ring_block(_app_js_text())
+    guard_start = block.index("if (stand.ring_gesperrt)")
+    guard_ende = block.index("\n  }", guard_start)
+    guard = block[guard_start:guard_ende]
+    assert "stand.ring_gesperrt_klartext" in guard

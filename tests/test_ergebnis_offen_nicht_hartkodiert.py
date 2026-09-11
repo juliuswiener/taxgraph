@@ -1,21 +1,23 @@
-"""_ergebnis_roh(): "offen" darf keine fest verdrahtete leere Liste sein.
+"""Leere ``offen``-Listen duerfen im Browser keinen leeren Satz erzeugen.
 
 Anlass 2026-08-28/29, Vault-Funde zum selben Defekt:
   - backlog/taxgraph/guard-sperrgruende-leerer-satz-im-browser.md
   - backlog/taxgraph/sperrgruende-erreichen-den-nutzer-nicht.md
 
-produkt/haut/api.py::_ergebnis_roh() hat vier return-Zweige. In ZWEI davon ist der Wert von
-"offen" ein woertliches `[]` -- unabhaengig vom tatsaechlichen Sperrgrund/Zustand:
+produkt/haut/api.py::_ergebnis_roh() hat vier return-Zweige. In zwei davon ist der Wert von
+"offen" bewusst ein woertliches `[]` -- dort gibt es keine fehlende Eingabe aufzulisten:
   - dem Guard-Zweig (K2: `sperr = _an_gesamt_sperrgrund(...)`, dann `if sperr: return ...`)
   - dem "kein_scheiben_gesamtbescheid"-Zweig (Multi-Regel-Scheibe ohne Gesamt-Accessor)
-Im Browser (app.js::zeigeErgebnis) wird daraus fuer jeden Grund ohne eigenen GUARD-Eintrag
-woertlich "Noch offen: " ohne jeden Inhalt danach -- gemessen: 22 von 36 Faellen.
+Der Browser muss deshalb den vom Backend gelieferten ``klartext`` vor dem generischen
+"Noch offen"-Fallback anzeigen. Genau diese Reihenfolge prueft
+``test_sperrgrund_klartext_im_browser.py``; diese Datei haelt nur noch die vier
+Rueckgabeformen als Blindheitswaechter fest.
 
-Die zwei UEBRIGEN Zweige haben dasselbe Feld, aber NICHT hartkodiert:
+Die zwei uebrigen Zweige haben dasselbe Feld, aber nicht hartkodiert:
   - der "engine_unavailable"/"input_kegel_nicht_bestaetigt"-Zweig: `"offen": sorted(offen)`
   - der Erfolgs-Zweig ("grund": "bestaetigt"): `"offen": offen_c`
-Diese zwei dienen hier als KONTROLLE (Positivbeleg): waeren sie auch hartkodiert, waere
-dieser Test aus Zufall rot, nicht aus Befund (s. test_kontrollzweige_liefern_bereits_eine_echte_liste).
+Diese zwei dienen als Positivbeleg, dass die AST-Auswertung zwischen echten und leeren Listen
+unterscheidet.
 
 Bauart: Muster, nicht Zeilennummer
 -----------------------------------
@@ -29,13 +31,11 @@ ternaerer Ausdruck). Verschiebt sich die Zeile, findet dieser Test den Zweig tro
 `_ergebnis_roh` selbst wird nie IMPORTIERT/ausgefuehrt (kein Catala-Laufzeit-Bedarf) --
 nur ihr Quelltext geparst.
 
-Fail-closed, kein Toleranzwert
--------------------------------
-Jeder der beiden bekannten Fundorte ist ein eigener parametrisierter Fall
-(test_offen_ist_nicht_hartkodiert_leer[guard_sperrgrund] /
-[kein_scheiben_gesamtbescheid]) -- eine "reicht mehrheitlich"-Schwelle wuerde genau die
-Regression verdecken, die dieser Test fangen soll (wie
-tests/test_sechs_abgabe_luecken_blockmatrix.py es fuer ERiC-Rueckweisungen vormacht).
+Die Anzeige-Reihenfolge ist der scharfe Vertrag
+-----------------------------------------------
+Eine leere Liste ist fuer eine nicht unterstuetzte Konstellation korrekt; falsch war nur,
+daraus im Browser einen leeren Satz zu bilden. Der scharfe Vertrag lebt deshalb beim
+Renderer, nicht als Verbot einer leeren Backend-Liste.
 """
 
 from __future__ import annotations
@@ -141,8 +141,8 @@ def _alle_zweige() -> dict[str, tuple[ast.AST | None, int]]:
 
 def test_alle_vier_rueckgabe_zweige_werden_gefunden():
     """Ohne diesen Waechter waere eine kaputte AST-Extraktion (0 oder 1 statt 4 Zweige) still
-    gruen fuer die beiden Bug-Faelle unten -- ein Zweig, der nicht GEFUNDEN wird, kann auch
-    nicht als 'hartkodiert leer' auffallen."""
+    gruen fuer die Kontrollen unten -- ein Zweig, der nicht gefunden wird, kann auch nicht
+    auf seine Rueckgabeform geprueft werden."""
     zweige = _alle_zweige()
     erwartet = {"guard_sperrgrund", "kein_scheiben_gesamtbescheid",
                 "engine_oder_kegel_offen", "bestaetigt_erfolg"}
@@ -153,31 +153,10 @@ def test_alle_vier_rueckgabe_zweige_werden_gefunden():
         "nachgezogen werden.")
 
 
-# ---------------------------------------------------------------- die zwei Fundstellen
-
-@pytest.mark.xfail(
-    strict=True,
-    reason="backlog/taxgraph/guard-sperrgruende-leerer-satz-im-browser.md: 'offen' ist in "
-           "beiden Backend-Zweigen fest verdrahtet leer -- Marker faellt am Tag des Fixes "
-           "(XPASS) und zwingt dazu, ihn zu entfernen.")
-@pytest.mark.parametrize("zweig", ["guard_sperrgrund", "kein_scheiben_gesamtbescheid"])
-def test_offen_ist_nicht_hartkodiert_leer(zweig):
-    """Fail-closed, je Fundstelle ein eigener Fall -- keine Quote. In BEIDEN Zweigen liefert
-    _ergebnis_roh() heute "offen": [] woertlich, unabhaengig vom tatsaechlichen Sperrgrund
-    oder Zustand. Kontrolle dazu: test_kontrollzweige_liefern_bereits_eine_echte_liste."""
-    zweige = _alle_zweige()
-    offen_node, lineno = zweige[zweig]
-    assert not _ist_leere_listen_konstante(offen_node), (
-        f"[{zweig}] api.py Zeile {lineno}: 'offen' ist dort ein woertliches [] -- fest "
-        "verdrahtet, unabhaengig vom tatsaechlichen Sperrgrund. Im Browser wird daraus fuer "
-        "jeden Grund ohne eigenen GUARD-Eintrag 'Noch offen: ' ohne jeden Inhalt danach.")
-
-
 @pytest.mark.parametrize("zweig", ["engine_oder_kegel_offen", "bestaetigt_erfolg"])
 def test_kontrollzweige_liefern_bereits_eine_echte_liste(zweig):
     """Positivbeleg: diese zwei Zweige haben den Fehler NICHT. Waeren sie es auch, waere
-    test_offen_ist_nicht_hartkodiert_leer oben zufaellig rot, nicht aus Befund -- dieser Test
-    macht sichtbar, dass das Muster echte Unterscheidungskraft hat (s. Mutationsprobe)."""
+    macht sichtbar, dass das Muster echte Unterscheidungskraft hat."""
     zweige = _alle_zweige()
     offen_node, lineno = zweige[zweig]
     assert not _ist_leere_listen_konstante(offen_node), (

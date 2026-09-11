@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 import api as API        # noqa: E402
 import server as SRV     # noqa: E402
 import audit                # noqa: E402
+from bescheid_deklaration import sperrgrund_klartext  # noqa: E402
 
 jsonschema = pytest.importorskip("jsonschema")
 SCHEMA_DIR = os.path.join(ROOT, "produkt", "haut", "api_schema")
@@ -108,6 +109,8 @@ def test_uebernachtung_tatbestand_offen_sperrgrund(base):
     assert status == 200
     _val("stand", resp)
     assert resp["ring_gesperrt"] == "uebernachtung_tatbestand_offen"
+    assert resp["ring_gesperrt_klartext"] == sperrgrund_klartext(
+        "uebernachtung_tatbestand_offen")
 
 
 def test_uebernachtung_alle_bedingungen_bestaetigt_nicht_gesperrt(base):
@@ -133,6 +136,7 @@ def test_uebernachtung_alle_bedingungen_bestaetigt_nicht_gesperrt(base):
     assert status == 200
     _val("stand", resp)
     assert resp["ring_gesperrt"] is None
+    assert resp["ring_gesperrt_klartext"] is None
 
 
 def test_ausland_uebernachtung_nicht_ring_faehig_sperrgrund(base):
@@ -148,6 +152,8 @@ def test_ausland_uebernachtung_nicht_ring_faehig_sperrgrund(base):
     assert status == 200
     _val("stand", resp)
     assert resp["ring_gesperrt"] == "ausland_uebernachtung_nicht_ring_faehig"
+    assert resp["ring_gesperrt_klartext"] == sperrgrund_klartext(
+        "ausland_uebernachtung_nicht_ring_faehig")
 
 
 def test_verpflegung_dreimonats_felder_erreichbar(base):

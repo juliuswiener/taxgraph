@@ -558,6 +558,10 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "Für jede einzelne Rente braucht die Berechnung vier Dinge: die Art der Rente, den "
         "Jahresbetrag, das Jahr des Rentenbeginns und das Alter der beziehenden Person zu diesem "
         "Zeitpunkt. Bitte ergänze die fehlenden Angaben.",
+    "rentenbeginn_offen":
+        "Zu deiner Rente fehlt das Jahr, in dem die Rentenzahlung begonnen hat. Die Berechnung "
+        "braucht dieses Jahr, um den steuerfreien Teil der Rente richtig festzulegen. Bitte trage "
+        "das Jahr des Rentenbeginns ein.",
     "rentenfreibetrag_fixierung_offen":
         "Die Rente hat vor diesem Jahr begonnen. Dann ist der steuerfreie Teil der Rente ein fester "
         "Eurobetrag, der im Jahr nach dem Rentenbeginn einmal festgelegt wurde und sich seither "
@@ -932,7 +936,7 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                 return "partner_kegel_offen"
         # (A.2: der frühere partner_vorsorge_offen-Guard ist ENTFERNT — die Person-B-Vorsorge (VOR + KV/PV + § 24a)
         # ist jetzt im gesamt-slot_fn additiv verdrahtet, ein zusammen-Bescheid rechnet beider Ehegatten-Vorsorge
-        # korrekt statt zu sperren. partner_vorsorge_offen bleibt im Schema-Enum als Alt-Grund erhalten, feuert nicht.)
+        # korrekt statt zu sperren. Der alte Schema-Grund wurde nach dem Erzeuger-Sweep entfernt.)
         # Multi-Objekt § 21 (#5): jede WEITERE vv_objekt-Instanz (index ≥ 2) muss VOLLSTÄNDIG bestätigt sein —
         # alle 5 Basis-vv-Felder present UND per-Instanz-meet == bestaetigt (instanzen-Naht). Sonst kein Σ (K2:
         # eine halbe/vorläufige Objekt-Instanz erzeugte sonst ein still zu niedriges §21-Σ). Instanz 1 = der
@@ -1143,8 +1147,7 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # § 10 Abs. 4b KiSt-Erstattungsüberhang: früher sperrte hier erstattungsueberhang_offen,
         # weil die GdE-Hinzurechnung (S. 3) fehlte und ein stiller Abzug 0 unterbesteuert hätte.
         # Sie ist jetzt gebaut (catala_p10_4b_erstattungsueberhang, im Ring vor den GdE-Verwendungen
-        # verdrahtet) — der Fall rechnet. erstattungsueberhang_offen bleibt im Schema-Enum als
-        # Alt-Grund erhalten, feuert aber nicht mehr.
+        # verdrahtet) — der Fall rechnet. Der alte Schema-Grund wurde nach dem Erzeuger-Sweep entfernt.
         # fremd_arten = Arten, die DIESE Scheibe NICHT rechnet → bestätigt-false (Nutzer HAT die Art) sperrt
         # (Stufe 2). Die von der Scheibe GERECHNETEN Arten stehen NICHT in fremd_arten (kein Fehl-Sperr).
         if any(felder.get(fl, {}).get("wert") is False for fl in cfg.get("fremd_arten", ())):

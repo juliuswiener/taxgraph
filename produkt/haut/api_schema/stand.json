@@ -3,13 +3,14 @@
   "title": "haut.stand response",
   "type": "object",
   "required": ["fall_id", "snapshot_id", "engine", "felder", "relevanz", "intervall",
-               "teil_ringe", "ring_gesperrt"],
+               "teil_ringe", "ring_gesperrt", "ring_gesperrt_klartext"],
   "additionalProperties": false,
   "properties": {
     "fall_id": {"type": "string"},
     "snapshot_id": {"type": "string"},
     "engine": {"type": "string", "enum": ["catala", "catala_teilweise", "unavailable", "gesperrt"]},
     "ring_gesperrt": {"type": ["string", "null"]},
+    "ring_gesperrt_klartext": {"type": ["string", "null"]},
     "felder": {
       "type": "object",
       "additionalProperties": {

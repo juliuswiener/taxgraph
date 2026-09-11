@@ -6,6 +6,7 @@ Prozess-Env GEWINNT (kein Override — Sicherheits-Invariant: eine gesetzte Umge
 """
 from __future__ import annotations
 
+import builtins
 import os
 import sys
 
@@ -14,6 +15,8 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
 
 import server as SRV   # noqa: E402
+import audit  # noqa: E402
+import fehler_log as FL  # noqa: E402
 
 
 def test_laedt_unsetzten_schluessel(tmp_path, monkeypatch):
@@ -57,3 +60,25 @@ def test_env_datei_ueberschreibt_prozess_env_nicht(tmp_path, monkeypatch):
     monkeypatch.setenv("TG_ENV_TEST", "aus_prozess")
     SRV._lade_env_dateien(str(tmp_path))
     assert os.environ["TG_ENV_TEST"] == "aus_prozess"
+
+
+def test_vorhandene_aber_unlesbare_datei_wird_protokolliert(tmp_path, monkeypatch):
+    """Fehlen ist normal; ein Lesefehler an einer vorhandenen Datei braucht eine Log-Spur."""
+    env_pfad = tmp_path / ".env"
+    env_pfad.write_text("TG_ENV_TEST=geheim\n", encoding="utf-8")
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "audit"))
+    echtes_open = builtins.open
+
+    def unlesbar(pfad, *args, **kwargs):
+        if os.fspath(pfad) == os.fspath(env_pfad):
+            raise PermissionError("synthetisch unlesbar")
+        return echtes_open(pfad, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "open", unlesbar)
+    SRV._lade_env_dateien(str(tmp_path))
+
+    eintraege = FL.lies()
+    assert len(eintraege) == 1
+    assert eintraege[0]["ort"] == "server.env_datei_lesen"
+    assert eintraege[0]["typ"] == "PermissionError"
+    assert "geheim" not in (tmp_path / "audit" / "fehler.log").read_text(encoding="utf-8")

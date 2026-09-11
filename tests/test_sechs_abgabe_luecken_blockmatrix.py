@@ -58,19 +58,25 @@ from __future__ import annotations
 import os
 import re
 import sys
+import json
+import threading
+import urllib.error
+import urllib.request
 
 import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 for _sub in ("produkt/eingang", "produkt/mapping", "produkt/store",
-             "produkt/traverser", "elster"):
+             "produkt/traverser", "produkt/haut", "elster"):
     sys.path.insert(0, os.path.join(ROOT, _sub))
 
 import checkest_gate as CE   # noqa: E402
 import elster_xml as EX      # noqa: E402
 import est_mapping           # noqa: E402
 import store as ST           # noqa: E402
-import traverser as TR       # noqa: E402
+import api as API             # noqa: E402
+import audit                  # noqa: E402
+import server as SRV          # noqa: E402
 
 from test_checkest_durchstich import _ABSENDER, _HID, _b, _fall_einzel, braucht_eric  # noqa: E402
 
@@ -106,10 +112,11 @@ def _pruefe_kernfeld(kernfeld_werte: dict) -> tuple[str, int | None, list[str]]:
     Rueckgabe (ausgang, rc, texte): ausgang in {"WRITER_ABBRUCH", "GEPRUEFT"}.
     """
     s = _fall_einzel()
+    s["scheibe"] = "gesamt"
     for feld_id, wert in kernfeld_werte.items():
         _b(s, feld_id, wert)
     snap, _sid = ST.materialisiere(s)
-    dekl = est_mapping.deklariere(snap, TR.lade_bindung())
+    dekl = est_mapping.deklariere(snap, API._scheibe_bindung(s))
     try:
         xml = EX.erzeuge_xml(dekl, vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     except EX.XmlFehler as exc:
@@ -117,6 +124,66 @@ def _pruefe_kernfeld(kernfeld_werte: dict) -> tuple[str, int | None, list[str]]:
     rc, antwort = CE.validate(xml, "ESt_2025")
     texte = [" ".join(t.split()) for t in re.findall(r"<Text>(.*?)</Text>", antwort or "", re.S)]
     return "GEPRUEFT", rc, texte
+
+
+@pytest.mark.parametrize("name,kernfeld_werte", FAELLE)
+def test_jedes_kernfeld_liegt_in_der_getesteten_scheibe(name, kernfeld_werte):
+    """ERiC-freies CI-Gate: die Blockmatrix darf kein Feld ausserhalb der Scheibe testen.
+
+    Entfernt eine Mutation eines der Kernfelder aus ``SCHEIBEN['gesamt']['felder']``, wird
+    dieser Test rot, bevor ein lizenzabhaengiger Amtslauf ueberhaupt ins Spiel kommt.
+    """
+    s = _fall_einzel()
+    s["scheibe"] = "gesamt"
+    scheiben_bindung = API._scheibe_bindung(s)
+    fehlend = sorted(set(kernfeld_werte) - set(scheiben_bindung))
+    assert not fehlend, (
+        f"[{name}] Kernfeld(er) ausserhalb der Scheibe 'gesamt': {fehlend}. "
+        "Die ERiC-Pruefung mit der vollen Bindung waere fuer diese Regression blind.")
+
+
+def _http_req(base_url: str, method: str, path: str, body: dict | None = None):
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    req = urllib.request.Request(base_url + path, data=data, method=method,
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            return response.status, json.loads(response.read())
+    except urllib.error.HTTPError as exc:
+        return exc.code, json.loads(exc.read())
+
+
+@pytest.fixture
+def http_base(tmp_path, monkeypatch):
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
+    srv = SRV.make_server(0)
+    thread = threading.Thread(target=srv.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://{srv.server_address[0]}:{srv.server_address[1]}"
+    finally:
+        srv.shutdown()
+        thread.join(timeout=5)
+        srv.server_close()
+
+
+def test_berufsausbildung_durchlaeuft_den_scheibengefilterten_http_pfad(http_base):
+    """Ein Matrixfall nimmt den Nutzerweg statt der vollen Bindung aus dem Testprozess."""
+    status, _ = _http_req(http_base, "POST", "/fall", {
+        "fall_id": "blockmatrix-http", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
+    assert status == 201
+    status, _ = _http_req(http_base, "POST", "/fall/blockmatrix-http/event",
+                          {"feld_id": "berufsausbildung_aufwendungen", "wert": 200000,
+                           "zustand": "bestaetigt", "herkunft": {
+                               "herkunft": "laie", "pruef_tiefe": "ungeprueft",
+                               "haftung": "nutzer"}, "schreiber": "ui:laie",
+                           "signal": {"signal_1": None, "signal_2": "blockmatrix@http"}})
+    assert status == 201
+    status, deklaration = _http_req(
+        http_base, "GET", "/fall/blockmatrix-http/deklaration")
+    assert status == 200
+    assert deklaration["deklaration"]["E0108202"] == 2000
 
 
 @braucht_eric

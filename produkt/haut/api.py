@@ -491,7 +491,7 @@ def stand(fall_id: str) -> tuple[int, dict]:
 
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "engine": engine,
                  "felder": felder_out, "relevanz": rel, "intervall": gesamt_iv,
-                 "teil_ringe": teil, "ring_gesperrt": gesperrt}
+                 "teil_ringe": teil, "ring_gesperrt": gesperrt, "ring_gesperrt_klartext": sperrgrund_klartext(gesperrt)}
 
 
 def event(fall_id: str, body: dict) -> tuple[int, dict]:

@@ -166,6 +166,16 @@ def _gruende_aus_ergebnis_roh() -> set[str]:
     return gruende
 
 
+# ---------------------------------------------------------------- Quelle 3: /stand-spezifische Sperrgruende
+
+def _gruende_aus_stand() -> set[str]:
+    """Rueckgabe-Strings des eng begrenzten /stand-Zusatzguards."""
+    fn = _funktion(pathlib.Path(BD.__file__), "_rentenbeginn_offen_stand")
+    return {n.value.value for n in ast.walk(fn)
+            if isinstance(n, ast.Return) and isinstance(n.value, ast.Constant)
+            and isinstance(n.value.value, str)}
+
+
 def _klartext_ausnahmen() -> set[str]:
     """Die grund-Werte, fuer die `ergebnis()` bewusst KEINEN Klartext setzt.
 
@@ -189,32 +199,19 @@ def _klartext_ausnahmen() -> set[str]:
 
 
 def _erwartete_gruende() -> set[str]:
-    """Beide Code-Quellen zusammen, ohne die, fuer die bewusst kein Klartext gesetzt wird."""
-    return (_gruende_aus_sperrgrund_guard() | _gruende_aus_ergebnis_roh()) - _klartext_ausnahmen()
+    """Alle Anzeige-Quellen zusammen, ohne bewusst nicht uebersetzte Ergebniszustaende."""
+    return (_gruende_aus_sperrgrund_guard() | _gruende_aus_ergebnis_roh()
+            | _gruende_aus_stand()) - _klartext_ausnahmen()
 
 
-# ---------------------------------------------------------------- Quelle 3: das Schema-enum
+# ---------------------------------------------------------------- Quelle 4: das Ergebnis-Schema-enum
 
 SCHEMA_PFAD = pathlib.Path(ROOT) / "produkt" / "haut" / "api_schema" / "ergebnis.json"
 
-# Enum-Werte, die KEIN Code-Pfad mehr erzeugt. Nachrecherchiert am 2026-08-27, repo-weit ueber alle
-# Dateitypen: kein einziger Produzent. Zwei davon sagen es im Quelltext selbst —
-# bescheid_deklaration.py Z. 1034-1037 ("erstattungsueberhang_offen bleibt im Schema-Enum als
-# Alt-Grund erhalten, feuert aber nicht mehr") und Z. 858-860 (dasselbe fuer partner_vorsorge_offen,
-# nachdem die Person-B-Vorsorge additiv verdrahtet wurde). Die anderen zwei stammen aus dem
-# an_gesamt-Zuschnitt, dessen Guards laengst in _dhf_vpf_grund aufgegangen sind. Unabhaengig
-# bestaetigt vom Audit .audit/2026-08-16 ("four enum values have no producer anywhere").
-#
-# Sie stehen hier als AUSNAHME und nicht als Verstoss, weil das Streichen team-lead gehoert
-# (produkt/haut/api_schema/ergebnis.json ist seine Datei) und weil ein rotes Gate fuer eine
-# Altlast, die niemand heute verursacht hat, nur Laerm waere. Diese Liste darf NUR SCHRUMPFEN:
-# der Waechter darunter wird rot, sobald ein Name hier steht, den das enum nicht mehr fuehrt.
-TOTE_ENUM_WERTE = frozenset({
-    "erstattungsueberhang_offen",
-    "partner_vorsorge_offen",
-    "sonderausgaben_nicht_ring_faehig",
-    "werbungskosten_nicht_ring_faehig",
-})
+# Bewusste Altlasten muessen hier befristet und begruendet stehen. Die zuletzt gefuehrten vier
+# Werte wurden 2026-09-11 aus dem Schema entfernt, nachdem der Erzeuger-Sweep sie erneut als tot
+# bestaetigt hatte. Leer ist der Normalzustand; die Waechter unten verhindern neues Verrotten.
+TOTE_ENUM_WERTE = frozenset()
 
 
 def _enum_aus_schema() -> set[str]:

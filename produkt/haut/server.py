@@ -290,7 +290,8 @@ def _lade_env_dateien(root: str) -> None:
     """Lädt gitignored Env-Dateien (`.env.maps` für $ORS_API_KEY, `.env.llm` für den LLM-Key, `.env` für
     Sonstiges wie $ELSTER_HERSTELLER_ID) aus `root` in os.environ — NUR Schlüssel, die noch NICHT gesetzt
     sind (das echte Prozess-Env gewinnt IMMER, kein Override).
-    Fehlt/unlesbar → still übersprungen (nie Crash beim Start). Keine externe Dependency (kein python-dotenv).
+    Fehlt → still übersprungen. Ein Lesefehler wird ohne Dateiinhalte protokolliert und danach
+    übersprungen (nie Crash beim Start). Keine externe Dependency (kein python-dotenv).
     Zeilenformat KEY=VALUE, `#` = Kommentar, Anführungszeichen werden getrimmt. WERTE werden NIE geloggt (Secrets).
     Macht die externe Live-Schaltung schlüsselfertig: Key in die (gitignored) Datei legen — kein Shell-Export nötig.
     NUR in main() aufgerufen (nicht beim Import), damit Test-Importe von server.py keine echten Keys laden.
@@ -307,7 +308,13 @@ def _lade_env_dateien(root: str) -> None:
         try:
             with open(pfad, encoding="utf-8") as f:
                 zeilen = f.readlines()
-        except OSError:
+        except OSError as e:
+            # Die Datei existiert, konnte aber nicht gelesen werden. Das ist anders als der
+            # normale Abwesenheitsfall oben: ohne Spur zeigt sich die Ursache erst spaeter als
+            # vermeintlich fehlende Konfiguration. Weder Pfad noch Inhalt gehen ins Protokoll;
+            # protokolliere() liest aus der Exception nur Typ und Code-Ursprungsort.
+            fehler_log.protokolliere("server.env_datei_lesen", e,
+                                     stufe=fehler_log.WARNUNG)
             continue
         for zeile in zeilen:
             zeile = zeile.strip()

@@ -88,8 +88,8 @@ dann Scheibe `an_gesamt` + e2e (voller bestätigter Kegel, echte festzusetzende_
 
 Scheibe `an_gesamt` (`gesamt_ring="festzusetzende_est"`): komposite slot_fn (EP → `catala_werbungskosten_n`,
 `bruttoarbeitslohn` Cent→Euro, `sonderausgaben=0`) → `catala_est`. e2e: voller Kegel → **662900 Cent
-(6629 €)**. K2-Guard test-belegt: VOR/dHf/Verpflegung/AM-Feld > 0 (vorläufig ODER bestätigt) → Ring
-gesperrt (`sonderausgaben_/werbungskosten_nicht_ring_faehig`), Einkunftsart-Flag = false →
+(6629 €)**. K2-Guard test-belegt: nicht unterstützte dHf/Verpflegung/AM-Konstellationen
+(vorläufig ODER bestätigt) sperren mit ihrem konkreten Grund; Einkunftsart-Flag = false →
 `einkunftsart_nicht_ring_faehig` — nie Fake-6629. Ehrliche Etikettierung: **technischer Durchstich,
 reiner Pendler ohne gesondert erfasste Sonderausgaben** — NICHT „fertig für Angestellte".
 
