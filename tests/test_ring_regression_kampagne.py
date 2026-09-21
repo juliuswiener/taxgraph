@@ -886,8 +886,8 @@ def test_a4_lohnsteuer_cent_aufrundung_auf_volle_euro(base):
 
 
 def test_a4_vorlaeufige_lohnsteuer_bewegt_anrechnung_nicht(base):
-    """[[ring-liest-vorlaeufig-parallel-pfad-luecke]]: vorläufige (nicht bestätigte) LSt darf die
-    Abschlusszahlung NICHT bewegen → bleibt None wie ohne Feld. Nur bestätigte Anrechnung zählt."""
+    """Vorläufige (nicht bestätigte) LSt darf die Abschlusszahlung NICHT bewegen
+    → bleibt None wie ohne Feld. Nur bestätigte Anrechnung zählt."""
     z0 = _a4_zahl_baseline(base, "a4s0")
     _an_anlegen(base, "a4vorl", AN_KEGEL_HOCH)
     body = {"feld_id": "p36_lohnsteuer", "wert": z0 + 5000000, "zustand": "vorlaeufig",
@@ -1003,7 +1003,7 @@ def test_a4_kap_anrechnung_rundet_je_abzugsteuer_unabhaengig(base):
 
 def test_a4_vorlaeufige_kapitalertragsteuer_bewegt_anrechnung_nicht(base):
     """Wie p36_lohnsteuer: eine vorlaeufige (nicht bestaetigte) KapESt darf die Abschlusszahlung
-    NICHT bewegen -- bleibt None wie ganz ohne Feld [[ring-liest-vorlaeufig-parallel-pfad-luecke]]."""
+    NICHT bewegen -- bleibt None wie ganz ohne Feld."""
     z0 = _a4_zahl_baseline_gesamt(base, "a4kaps0")
     _ges_anlegen(base, "a4kapvorl", GESAMT_AN_KEGEL)
     body = {"feld_id": "p36_kapitalertragsteuer", "wert": 135680, "zustand": "vorlaeufig",

@@ -13,8 +13,7 @@ Was hier geprüft wird, und warum genau das:
   1. **Beide Richtungen je Regel.** Nur „schaltet ab" zu prüfen ließe die gefährlichere Hälfte
      offen: eine Bedingung mit falscher Polarität schaltet die Regel für ALLE ab, auch für den,
      der die Einkunftsart hat — das wäre stille Under-Deklaration. Dieselbe Fehlerklasse wie
-     [[gate-polaritaet-normalfall-antwort]] (ein verdrehtes Gate kostete den ganzen
-     Verpflegungsmehraufwand).
+     ein verdrehtes Gate, das den ganzen Verpflegungsmehraufwand kostete.
   2. **Unbeantwortet schließt NICHT aus.** Der fail-closed-Kern von relevanz(): nur ein
      BESTÄTIGT abweichender Wert schließt aus. Sonst verschwänden Fragen, bevor der Nutzer die
      Screening-Frage überhaupt gesehen hat.

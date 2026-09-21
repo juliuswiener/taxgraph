@@ -204,7 +204,7 @@ def _textlayer_ist_plausibel(seiten_text: str) -> bool:
     Bild-Seite).
     BACKLOG (non-blocking, dev-3-Review 2026-07-20): eine gescannte Seite mit echter Kopf-/Fußzeile
     ≥20 Zeichen könnte fälschlich "plausibel" durchgehen, obwohl der eigentliche Belegtext Bild ist ->
-    stille OCR-Lücke. Braucht echte Scan-Samples (Julius-Cap), siehe [[pdf-teil-textlayer-luecke]]."""
+    stille OCR-Lücke. Braucht echte Scan-Samples (Julius-Cap)."""
     return len(seiten_text.strip()) >= 20
 
 

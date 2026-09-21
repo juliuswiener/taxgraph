@@ -15,8 +15,7 @@ Gemessen am 2026-08-16, unmittelbar nachdem die Anlage V einreichbar war:
 Der normale Vermieter antwortet auf alle vier mit „nein" — und verlor damit die komplette
 Anlage V aus dem Dialog: 155 statt 174 Fragen, kein einziges vv_-Betragsfeld mehr. Das XML war
 davon unberührt (est_mapping.deklariere kennt relevanz() nicht), die Erklärung wäre also leer
-geblieben, ohne dass irgendetwas rot geworden wäre. Dieselbe Klasse wie 519199e
-([[gate-polaritaet-normalfall-antwort]]).
+geblieben, ohne dass irgendetwas rot geworden wäre. Dieselbe Klasse wie 519199e.
 
 Behoben durch `gate: false` in der Bindung — „Deklaration, keine Rechen-Voraussetzung". Die
 Geltungsbedingung erscheint dann als OFFENE ANNAHME statt als beantwortetes Gate, wird also nie

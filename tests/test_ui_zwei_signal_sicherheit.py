@@ -170,7 +170,7 @@ def test_s6_steuersumme_eingabe_invariant():
 
 # ---------- S7: Provenance-Guard SCHREIBER-scoped (nicht herkunft-scoped) ----------
 def test_s7_provenance_guard_schreiber_scoped():
-    """[[produkt-beleg-writer]]-Lehre: der beleg_import-vorläufig-Zwang hängt an ^import:beleg, NICHT an der
+    """Lehre aus dem Beleg-Writer: der beleg_import-vorläufig-Zwang hängt an ^import:beleg, NICHT an der
     herkunft. Ein import:elster-Schreiber (echter ELSTER-Kanal, kein Vorschlag) mit herkunft=beleg_import DARF
     bestätigen — er ist NICHT vom import:beleg-Guard (noch vom Katalog: import:elster → _vorschlag_typ=None) erfasst."""
     s = _leer()

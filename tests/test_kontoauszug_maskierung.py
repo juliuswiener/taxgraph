@@ -173,7 +173,7 @@ def test_mehrere_geheimnisse_in_einer_zeile():
 
 # --------------------------------------------------------------------------------------------
 # DIE NAHT. Alles oben prüft `maskiere()` für sich. Genau das ist die bekannte Blindstelle dieses
-# Repos ([[naht-blindstelle-zwei-repraesentationen]]): zwei Repräsentationen, ungetestete Übergabe.
+# Repos: zwei Repräsentationen, ungetestete Übergabe.
 # Hörte eine der beiden Aufrufstellen in uebernehme_kontoauszug auf, `maskiere()` zu rufen, bliebe
 # jede Zeile oben grün — und der ROHE Zweck ginge hinaus. Deshalb wird hier gemessen, was die
 # Aufrufstelle WIRKLICH weitergibt, nicht was die Funktion könnte.

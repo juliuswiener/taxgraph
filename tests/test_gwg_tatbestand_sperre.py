@@ -36,7 +36,7 @@ tests/test_instanz_luecke.py) statt Import aus tests/test_stille_null_offen.py.
 
 Die Kontrollfaelle pruefen `grund == "bestaetigt"`, nicht `grund != "gwg_tatbestand_offen"`:
 sonst geht ein Test gruen durch, weil ein GANZ ANDERER Sperrgrund gefeuert hat, und der
-Kontrastfall traegt nichts (s. vault [[kontrastfall-traegt-nicht]]).
+Kontrastfall traegt nichts.
 
 NULL LLM."""
 from __future__ import annotations
@@ -129,8 +129,7 @@ def test_eine_offene_von_dreien_reicht(tmp_path, monkeypatch):
 def test_verneinter_tatbestand_sperrt_nicht(tmp_path, monkeypatch):
     """"Nein" ist eine ANTWORT, keine Luecke: der Ring ist rechenbar, das Geraet gehoert in die
     AfA (_gwg_sofortabzug_summe nullt genau diese Instanz). Wuerde auch "nein" sperren, kaeme der
-    ehrliche Nutzer nie durch -- fail-closed am falschen Ort, s. vault
-    [[fail-closed-ohne-messung-ist-keine-tugend]]."""
+    ehrliche Nutzer nie durch -- fail-closed am falschen Ort."""
     erg = _fall_mit_gwg(tmp_path, monkeypatch, "gwg-sperre-nein", MITTLERES_GWG,
                         antworten=[("gwg_bewegliches_selbstaendig_nutzbar", False),
                                    ("gwg_netto_ohne_vorsteuer", True),

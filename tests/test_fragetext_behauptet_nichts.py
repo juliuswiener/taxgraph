@@ -20,7 +20,8 @@ stimmten beide Behauptungen. bescheid_deklaration.py:388-405 stellt die Rückfra
 Einleitung belegt. Der DIALOG kennt diese Bedingung nicht: `traverser.naechste_fragen` filtert
 allein nach askable / unbeantwortet / Regel-nicht-ausgeschlossen, eine feldbezogene
 Sichtbarkeitsbedingung gibt es nicht. Wer den Text für den einen Pfad schreibt, schreibt ihn
-zwangsläufig falsch für den anderen. Dieselbe Klasse wie [[naht-blindstelle-zwei-repraesentationen]].
+zwangsläufig falsch für den anderen. Dieselbe Klasse wie die Naht-Blindstelle zwischen
+zwei Repräsentationen.
 
 WAS DIESER TEST NICHT LEISTET: er prüft die FORM des Textes, nicht die Sichtbarkeit der Frage. Die
 eigentliche Lösung wäre, dass der Dialog die Frage nur unter denselben Bedingungen zeigt wie der

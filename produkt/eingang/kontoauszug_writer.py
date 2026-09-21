@@ -300,8 +300,7 @@ def parse_pdf_zeilen(text: str, conf_map: dict, schwelle: float = 0.6) -> tuple[
 # baut KEINE neue Klassifikation.
 
 def _fix_bel(text: str) -> str:
-    """Alt-Layer-Bug: manche PDF-Textlayer trennen Wörter mit U+0007 (BEL) statt Leerzeichen
-    (`[[bgbl-scan-textlayer-ocr-route]]`)."""
+    """Alt-Layer-Bug: manche PDF-Textlayer trennen Wörter mit U+0007 (BEL) statt Leerzeichen."""
     return text.replace("\x07", " ")
 
 
@@ -314,7 +313,7 @@ def _textlayer_ist_plausibel(seiten_text: str) -> bool:
     BACKLOG (non-blocking, dev-3-Review 2026-07-20): ein gescannter Kontoauszug mit einer echten
     Kopfzeile/Fußzeile ≥20 Zeichen (z.B. Bankname+Adresse) könnte hier fälschlich als "plausibel"
     durchgehen, obwohl der Tabelleninhalt selbst reines Bild ist -> stille OCR-Lücke. Braucht echte
-    Scan-Samples zur Kalibrierung (Julius-Cap), siehe [[pdf-teil-textlayer-luecke]]."""
+    Scan-Samples zur Kalibrierung (Julius-Cap)."""
     return len(seiten_text.strip()) >= 20
 
 

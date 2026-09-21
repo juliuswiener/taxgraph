@@ -18,7 +18,7 @@ Beleg → [Textschicht?] → Text → Beleg-Typ-Erkennung → Anker-/Label-Match
 
 - **Textschicht zuerst:** digitale Rechnungen/LStB-PDF haben einen Textlayer → `pdftotext` (exakt,
   kein OCR-Rauschen). Nur echte Bild-Scans → **tesseract-deu** (lokal vorhanden, wie die DBA-Bildscan-
-  Route, `[[bgbl-scan-textlayer-ocr-route]]`). Kein externer Dienst → Gerät wird nie verlassen.
+  Route). Kein externer Dienst → Gerät wird nie verlassen.
 - **Anker aus der Bindungstabelle — schon da:** das Feld `herkunft_slots` trägt bereits die Beleg-
   Positions-Anker: `bruttoarbeitslohn → "Lohnsteuerbescheinigung Nr. 3"`, `vor_an_anteil_rv → "Nr. 23
   a/b"`, `vor_ag_anteil_rv → "Nr. 22 a/b"`. Der Writer sucht diese Label/Nummern-Anker im Text
@@ -65,8 +65,8 @@ append_event(feld_id, wert, zustand="vorlaeufig",
 
 - tesseract liefert **per-Wort-Confidence** (`--tsv`, `conf`-Spalte) → je Kandidat eine OCR-Confidence.
   Sie wandert in den Vorschlag (signal_1-Metadatum), **ändert aber nie den Zustand**: vorlaeufig bleibt
-  vorlaeufig, egal wie hoch. **Keine Auto-Bestätigung** — das ist die K2-Invariante, nicht verhandelbar
-  (`[[falsches-gruen]]`). Confidence dient NUR zur Anzeige/Sortierung, NIE zum Setzen.
+  vorlaeufig, egal wie hoch. **Keine Auto-Bestätigung** — das ist die K2-Invariante, nicht
+  verhandelbar. Confidence dient NUR zur Anzeige/Sortierung, NIE zum Setzen.
 - **Unlesbar/mehrdeutig → KEIN geratener Wert**, benannte Lücke: das Feld bleibt offen, die UI fragt
   es manuell. Mehrere Betrags-Kandidaten für ein Feld → ALLE als Vorschläge zeigen, Mensch wählt; nie
   still den „besten" nehmen.

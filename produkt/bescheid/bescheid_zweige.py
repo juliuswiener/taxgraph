@@ -87,7 +87,7 @@ def _kist_konfession(felder: dict):
     Zuschlaege, dieselbe Lage, zwei verschiedene Antworten — und `_feste_zahl` (api.py) sagt
     fuer beide dasselbe zu: „Schluessel absent = nicht rechenbar".
 
-    Dieselbe Bauart wie [[slot-fail-open-get-default]], wo eine falsche Vorgabe 13.568 EUR
+    Dieselbe Bauart wie [[slot-fail-open-13568-eur]], wo eine falsche Vorgabe 13.568 EUR
     lautlos loeschte und nur ein zufaelliger Cent-Assert sie fing.
 
     NICHT geaendert und bewusst so gelassen: die beiden Lesestellen der §-32d-Abs.-1-S.-3-5-
@@ -105,7 +105,7 @@ def _abschlusszahlung_cent(felder: dict, zahl_cent: int):
     ESt (zahl_cent), scheibe-agnostisch (jede Rate-Scheibe erzeugt genau eine festzusetzende ESt).
     None, wenn KEIN einziges Anrechnungsfeld (LSt/VZ/KapESt/SolZ-KapESt/KiSt-KapESt) bestätigt
     vorliegt — dann keine irreführende Voll-Steuer-Nachzahlung ausweisen. Nur BESTÄTIGTE Felder
-    (vorläufige Werte bewegen die Anrechnung nie — [[ring-liest-vorlaeufig-parallel-pfad-luecke]]).
+    (vorläufige Werte bewegen die Anrechnung nie).
     Stufe 2 (2026-08-10, BAU-GO team-lead): KapESt/SolZ/KiSt (Zeilen 37-39 Anlage KAP) spiegeln
     p36_lohnsteuer — dieselbe Quelle speist Deklaration (bindung_p36_abschlusszahlung.yaml) UND
     Ring-Anrechnung hier, sonst zeigt /ergebnis eine Zahl, die der Bescheid unterschreitet."""
