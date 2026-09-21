@@ -19,7 +19,7 @@ Zwei getrennte Anker-Ebenen im System, nur EINE ist heute freeze-geprüft:
   keine Datei.
 
 → Die „Volllängen-Pflicht" für `deckt_ab` ist heute **manuelle Disziplin** (mein/Instructor-
-Anker-Check, [[anker-verifikation-volllaenge]]), NICHT maschinell erzwungen. Das ist das Loch:
+Anker-Check), NICHT maschinell erzwungen. Das ist das Loch:
 nicht dass die Anker schlecht wären, sondern dass nichts sie beim Freeze-Drift fängt. Ein Refactoring
 der Quelle, das eine Passage umformuliert, kippt kein Gate — die Bedingung zeigt still ins Leere.
 
@@ -132,7 +132,7 @@ harten Fälle zu sichtbaren FAILs, die D1/D2 sauber lösen.
 ## Empfehlung (für Julius-Entscheid)
 1. **D0 + D1 + D4 zuerst** (alle klein/winzig, schließen 260/260 mit 8 harten + 17 Lint-Touches).
 2. **D2** wenn die erste Umkehrschluss-/Altfassungs-Bedingung landet (BLP-Kohorte aus meinem Dossier
-   ist der nächste Kandidat — [[versprochene-bedingung-materialisieren]]).
+   ist der nächste Kandidat).
 3. **D3 zurückstellen** — T3-Konstanten vorerst in D1 einfalten (umgebenden Satz ankern).
 
 Kein Eingriff in rules.yaml/pipeline. Reines Scoping. Zonen-Zuweisung (gates.py/quellen.py = TABU,

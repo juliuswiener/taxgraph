@@ -93,7 +93,7 @@ Andockung: (`dba_staat = ES`, Einkunftsart) → `dba_methode` → `p32b` / `p34c
 subject-to-tax-Rückfall (a „tatsächlich besteuert") + Rückfallklauseln Art. 22 Abs. 1 e; Aktivitäts-
 Tatbestand § 8 AStG (Sachverhalts-Vorfrage); Vermögensteuer-Freistellung (a Satz 2/3 — DE erhebt keine
 VSt); Sonderfälle Art. 17 Abs. 1 (private Ruhegehälter → Ansässigkeitsstaat, Freistellung-nah).
-Zweitbelege (NWB/Kommentar) nur Gegenprobe, nie Primäranker (siehe [[dba-anker-nur-amtlich]]).
+Zweitbelege (NWB/Kommentar) nur Gegenprobe, nie Primäranker.
 
 ## Voll-Länge-Anker-Verifikation
 

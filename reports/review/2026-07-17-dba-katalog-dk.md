@@ -124,7 +124,7 @@ unilateralen § 34c** für DK-Einkünfte — der Katalog regiert: Freistellung �
 **Nachträge / Nicht-Gegenstand:** Prog aus dem 2020er-Freeze (oben); Rückfall-/Subject-to-tax-Details
 (Protokoll 2020 Art. 4/23-Änderungen); DK-seitige Methode (Abs. 2 a–g) = Nicht-Gegenstand; obsolete
 Ausschüttungsbelastungs-c (1995) = historischer Fassungs-Vermerk. Zweitbelege (NWB/Kommentare) NUR
-Gegenprobe, nie Primäranker (siehe [[dba-anker-nur-amtlich]]).
+Gegenprobe, nie Primäranker.
 
 ## Voll-Länge-Anker-Verifikation
 

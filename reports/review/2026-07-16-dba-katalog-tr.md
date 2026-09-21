@@ -92,7 +92,7 @@ Andockung: (`dba_staat = TR`, Einkunftsart) → `dba_methode` → `p32b` / `p34c
 Auflage 4); Aktivitäts-Tatbestand § 8 Abs. 1 Nr. 1–6 AStG (Sachverhalts-Vorfrage); Rückfallklauseln
 (subject-to-tax); öffentliche Kassen (Art. 19) Vorrang; Protokollziffer-Details (z. B. Ziffer 6 zu
 Art. 15). Zweitbelege liegen in `corpus/kommentare/` bzw. `corpus/dba_text_nwb/` (gitignoriert, NIE
-committen) — nur Gegenprobe, nie Primäranker (siehe [[dba-anker-nur-amtlich]]).
+committen) — nur Gegenprobe, nie Primäranker.
 
 ## Voll-Länge-Anker-Verifikation
 

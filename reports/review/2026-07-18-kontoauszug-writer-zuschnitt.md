@@ -2,7 +2,7 @@
 
 **Status:** concept-first, KEIN Bau. 4. Store-Writer (nach laie · import:beleg · import:vorjahr). hosted-LLM
 als Start (Julius), REUSE der bestehenden OpenRouter-Infra. Der Live-LLM-Call ist eine ausgehende Aktion
-(Finanzdaten verlassen das Gerät) → Julius-Cap [[ausgehende-aktionen-nur-julius]]. LLM-frei bis auf die
+(Finanzdaten verlassen das Gerät) → Julius-Cap. LLM-frei bis auf die
 Klassifikations-Schicht.
 
 ## Architektur: 4. Writer im Beleg-Writer-Muster (kein Umbau)

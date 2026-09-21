@@ -24,7 +24,7 @@ Cap-Wort.** Kalibrierung: 3 der 4 sind 1-quellig (~$0,07), Sammelposten multi-qu
 ## Encoding-Leiter (Klasse-2, ab Stufe A eingeplant — Instructor-Auflage)
 
 Alle drei GWG/Sammelposten-Schwellen sind **Netto-Grenzen** (§ 9b-Vorsteuer heraus). Per
-[[klasse2-encoding-hinweis-leiter]]: **erst Encoding-Hinweis, Split nur Fallback.**
+**erst Encoding-Hinweis, Split nur Fallback.**
 Signatur-Input = `anschaffungskosten_netto` (bereits um abziehbare Vorsteuer gemindert;
 bei Nicht-Vorsteuerabzugsberechtigten ist netto = brutto — Geltungsbedingung). Richtung
 der Grenzen wörtlich:

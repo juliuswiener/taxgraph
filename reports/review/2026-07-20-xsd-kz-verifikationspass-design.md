@@ -222,6 +222,6 @@ Prüfung, falls es je auftritt (aktuell: totes Szenario, nicht gebaut).
 
 ## 7. Referenzen
 
-[[kz-block-disambiguierung-personA-B]] · [[dba-anker-nur-amtlich]] (amtliche Quelle für
-Schema-Datei-Wahl, hier: lokales ERiC 44.2.4.0) · Prototyp nicht committet
+[[kz-block-disambiguierung-personA-B]] · amtliche Quelle für
+Schema-Datei-Wahl, hier: lokales ERiC 44.2.4.0 · Prototyp nicht committet
 (`/tmp/xsd_proto/`), auf Wunsch reproduzierbar (kein externer Zustand).

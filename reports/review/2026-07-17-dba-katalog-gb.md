@@ -130,7 +130,7 @@ docken die Anrechnungsfälle weiter an p34c_1 an). Der Katalog ist damit die Mat
 **Nachträge / Nicht-Gegenstand:** Switch-over e (aa/bb) als Geltungsbedingung materialisiert (oben);
 PPT/Art. 30A (2021) als Missbrauchs-Vorfrage (oben); Sozialversicherungsrenten/öff. Kassen (Art. 18)
 Sonderzuordnung; Aktivitäts-Tatbestand § 8 Abs. 1 AStG (Sachverhalts-Vorfrage); Rückfall-/Subject-to-
-tax-Details. Zweitbelege (NWB/Kommentare) NUR Gegenprobe, nie Primäranker (siehe [[dba-anker-nur-amtlich]]).
+tax-Details. Zweitbelege (NWB/Kommentare) NUR Gegenprobe, nie Primäranker.
 
 ## Voll-Länge-Anker-Verifikation
 

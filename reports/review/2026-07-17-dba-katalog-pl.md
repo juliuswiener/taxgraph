@@ -105,7 +105,7 @@ den § 34c-Abs.-6-DBA-Vorrang für PL.
 Geltungsbedingung (oben, PL-Spezifikum); Aktivitäts-Tatbestand § 8 Abs. 1 Nr. 1–6 + Abs. 2 AStG
 (Sachverhalts-Vorfrage); Verständigungsvereinbarung 2015 (Auslegungs-Zweitbeleg, NIE Primäranker); öff.
 Kassen (Art. 19); PL-seitige Methode (Abs. 2) = Nicht-Gegenstand. Zweitbelege (NWB/Kommentare) NUR
-Gegenprobe (siehe [[dba-anker-nur-amtlich]]).
+Gegenprobe.
 
 ## Voll-Länge-Anker-Verifikation
 

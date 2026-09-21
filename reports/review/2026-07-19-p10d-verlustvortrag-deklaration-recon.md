@@ -21,7 +21,7 @@ sockel = if zusammenveranlagung then $2,000,000.00 else $1,000,000.00
 hoechstbetrag = sockel + ueberstieg * 0.70   ← 70 % korrekt (VZ 2026)
 verlustabzug = min(verlustvortrag_bestand, hoechstbetrag)
 ```
-→ **PROMOTBAR nach nicht_echt-Adjudikation der falschen abweichung** (Muster [[inerte-bindung-verified-bedingt-snapshot]] /
+→ **PROMOTBAR nach nicht_echt-Adjudikation der falschen abweichung** (Muster inerte Bindung /
 p6_2a-auflösung-Judge-Artefakt). catala_a byte-ready, 70 %/1-Mio/2-Mio source-verankert.
 
 ## Naht: GdE-Abzug (vorrangig vor Sonderausgaben)

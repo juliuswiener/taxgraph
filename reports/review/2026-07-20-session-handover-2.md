@@ -44,15 +44,15 @@ Aufwand ~1-1.5h (Kernrisiko gelöst, Rest = lade_bindung()-Reuse + Report-Format
 
 ## 4. BACKLOG (non-cap, buildbar; + Julius-Cap)
 
-- **beleg_writer Teil-Textlayer-Restrisiko** (non-cap, klein): `_textlayer_ist_plausibel` (≥20 Zeichen) kann durch eine Scan-Seite mit echter Kopf-/Fußzeile getäuscht werden (Tabelle bleibt Bild, nie OCR't, keine sichtbare Lücke). Code-Kommentar-verankert beide Writer, [[pdf-teil-textlayer-luecke]]. Braucht echte Scan-Samples zur Kalibrierung (Julius-Cap).
+- **beleg_writer Teil-Textlayer-Restrisiko** (non-cap, klein): `_textlayer_ist_plausibel` (≥20 Zeichen) kann durch eine Scan-Seite mit echter Kopf-/Fußzeile getäuscht werden (Tabelle bleibt Bild, nie OCR't, keine sichtbare Lücke). Code-Kommentar-verankert beide Writer. Braucht echte Scan-Samples zur Kalibrierung (Julius-Cap).
 - **Deklaration nicht_material-Posten** (§10d-Deckelung >1Mio€ + ~8 weitere): für Bürger/Rentner/kleine-Selbständige immateriell → DEFERRED. Basis-§10d-Vortrag ist committet (6fa945a, echter Zielgruppenfall). NUR die >1Mio-Deckelungsformel fehlt = out-of-scope.
 - **E0500702** (Kindergeld-Anspruch als 6. per-Kind-Feld): NICHT gebunden — Werte-Kodierung nicht amtlich verifizierbar (Platzhalter 2448) + schon 2026-07-18 abgelehnt. Kommentar in est_mapping korrigiert (5/6 per-Kind gebunden).
 - **Julius-Cap:** §34-Stufe-2b (H 34.2 EStH-2021), eDaten-Import-Writer (eDaten-Kanal ELSTER-API/ERiC), echte Bank/Beleg-Samples, LLM-Provider+Key, ORS-Key, Push-Go.
 
 ## 5. SCHLÜSSEL-DISZIPLINEN (unverändert, bewährt diese Session)
 
-- **[[falsches-gruen]]**: grüne Gates aktiv misstrauen — dev-3 fing diese Session 3 echte Bugs die targeted-grün überlebten (geocode 503→500-Regression, conf_map-Offset-off-by-1 unterlief conf<0.6-K2, XSD-Design-Soundness-Frage) + 2 vacuous-Tests. Non-Vacuous-Disziplin: Test MUSS ohne den Fix rot laufen (empirisch gegen buggy-revert prüfen).
-- **[[instructor-gesetzeswert-nie-aus-gedaechtnis]]**: E0500702-Werte-Kodierung NICHT geraten (Platzhalter erkannt → GAP statt Fake-Wert).
+- **Falsches Grün**: grüne Gates aktiv misstrauen — dev-3 fing diese Session 3 echte Bugs die targeted-grün überlebten (geocode 503→500-Regression, conf_map-Offset-off-by-1 unterlief conf<0.6-K2, XSD-Design-Soundness-Frage) + 2 vacuous-Tests. Non-Vacuous-Disziplin: Test MUSS ohne den Fix rot laufen (empirisch gegen buggy-revert prüfen).
+- **Gesetzeswert nie aus dem Gedächtnis**: E0500702-Werte-Kodierung NICHT geraten (Platzhalter erkannt → GAP statt Fake-Wert).
 - **K2**: kein silent-wrong; Under-tax > Over-tax; fail-closed. Teil-Textlayer-Silent-Vanish-Fund war K2 (unsichtbare Vollständigkeits-Lücke).
 - **Commit-Mechanik**: agent-delegiert (`git commit -F`), HEAD-Guard + explizites `git add` je Datei (NIE `-A` — Tree hatte oft 2 Fronten parallel, disjunkte Zonen getrennt committet).
 - **pytest-Race**: nur EIN Voll-Suite-Owner (verify-1); e2e-http degradiert (~13-17min, geleakter Daemon-Thread) — Split A (Bulk `--ignore=test_paket_b_e2e_http`) + B (e2e-http isoliert) zur Isolation/Attribution.

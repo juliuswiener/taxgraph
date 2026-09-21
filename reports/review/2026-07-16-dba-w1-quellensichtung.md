@@ -11,7 +11,7 @@ amtliche Verifikation beim Freeze.
   W1-Staaten haben einen sauberen NWB-Volltext (konsolidierte i.d.F.) — kein OCR nötig.**
 - **2 BEL-Verdachts-PDFs** (U+0007-kodierte Wortabstände, Fix `tr '\a' ' '`, KEIN OCR):
   Spanien `2012-01-20-…-DBA-Gesetz.pdf` (428× U+0007), Türkei `2012-05-30-…-DBA-Gesetz.pdf`
-  (456× U+0007). Muster wie [[bgbl-scan-textlayer-ocr-route]].
+  (456× U+0007). Bekanntes Textlayer-Muster.
 - **Reine Scans ohne Textlayer** (IT-1990, ES-1968, DK-1996, CZ-alle, GB-1966/71, TR-1989):
   alle mit NWB-Pendant → NWB nutzen, kein OCR.
 - **Methodenartikel uneinheitlich nummeriert** (Art. 22/23/24) — je Staat einzeln ankern

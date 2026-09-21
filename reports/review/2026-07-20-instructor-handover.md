@@ -63,7 +63,7 @@ eigene Verify/Commit-Arbeit via AGENTS (nicht inline) · devs busy halten.
 ## 4. PENDING — ALLES Julius-direct (blockiert die nächste produktive UI-Arbeit)
 
 1. **⚠ PUSH-GO**: der Arbeitsbranch ist LOKAL-only (16h+ Arbeit = Backup-Risiko). Push braucht Julius' DIREKTES Wort
-   im Chat — ein Bus-Relay (auch instructor) genügt strukturell NICHT (Push-Vorfall 2026-07-12; [[ausgehende-aktionen-nur-julius]]).
+   im Chat — ein Bus-Relay (auch instructor) genügt strukturell NICHT (Push-Vorfall 2026-07-12).
    Stehende Arbeitsbranch-Push-Freigabe seit 2026-07-13 gibt die PERMISSION, aber der Trigger braucht Julius-direct.
    dev-1 holt seinen direkten Go im Terminal. **Nicht auf Bus-Auth pushen.**
 2. **CAPS (echte Calls, kein Mock ohne Julius' Wort):** (a) LLM Provider/Modell + `$LLM_API_KEY` für K1-Live;
@@ -96,14 +96,14 @@ eigene Verify/Commit-Arbeit via AGENTS (nicht inline) · devs busy halten.
 ## 7. SCHLÜSSEL-DISZIPLINEN (nicht verhandelbar)
 
 - **K2-Doktrin**: kein silent-wrong-number; Under-tax > Over-tax (beide Verstöße, Under-tax Priorität); fail-closed > silent-wrong.
-- **[[falsches-gruen]]**: grüne Gates AKTIV misstrauen. Ring-Integration nie dem Mapping-Grün vertrauen — K1-Präzedenz:
+- **Falsches Grün**: grüne Gates AKTIV misstrauen. Ring-Integration nie dem Mapping-Grün vertrauen — K1-Präzedenz:
   Mapping-Layer-Goldens grün ≠ Ring-Layer-Invariant (der Ring war ein separater zustand-blinder Konsument).
-- **[[instructor-gesetzeswert-nie-aus-gedaechtnis]]**: NIE Gesetzeswert/Faktor/Schwelle/VZ aus Gedächtnis behaupten →
+- **Gesetzeswert nie aus dem Gedächtnis**: NIE Gesetzeswert/Faktor/Schwelle/VZ aus Gedächtnis behaupten →
   `grep sources/` + Wortlaut + Gültigkeits-Zeile VOR jeder Direktive/Adjudikation. Auch VZ/veranlagung vom Artefakt
   LESEN (e2e-Goldens = **VZ2025** hardcodiert, nicht „aktuelles Jahr"). Gilt für Instructor-Claims genauso wie dev-Claims.
-- **[[verified-bedingt-promotion-boundary-review]]**: Multi-Konsumenten-Invariant-Sweep (ein Invariant an EINEM
+- **Verified-bedingt: Promotion-Boundary-Review**: Multi-Konsumenten-Invariant-Sweep (ein Invariant an EINEM
   Konsumenten ≠ an ALLEN); Ring-Versprechen-Loch (ring-derived bedingung dokumentiert ≠ ring-eingelöst); est_rest=0-Blindfleck.
-- **[[ausgehende-aktionen-nur-julius]]**: Push/publish/send/download brauchen Julius DIREKT im Chat. Instructor-Bus-Relay genügt NICHT.
+- **Ausgehende Aktionen nur mit Julius**: Push/publish/send/download brauchen Julius DIREKT im Chat. Instructor-Bus-Relay genügt NICHT.
 - **Commit-Mechanik**: agent-delegiert (Julius: eigene Verify/Commit-Arbeit = Agent). Commit-Msg mit §/„/→/> via
   `git commit -F <datei>` (Scratchpad-Temp), NIE inline `-m` (bash-Redirect/Quoting-Falle → Stray-Datei).
 - **Gate**: `pytest tests/` (700) + `clerk build p32a-python` rc=0 + targeted. `clerk test rules/` hat ~16 PRE-EXISTING

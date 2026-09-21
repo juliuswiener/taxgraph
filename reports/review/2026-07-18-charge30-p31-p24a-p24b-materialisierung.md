@@ -20,7 +20,7 @@
 
 ## ⚠ TRIAGE-BEFUND §24a/§24b (faithful=false) — GETRIAGED-ARTEFAKT, KEIN echter Defekt
 Beide Snapshots: **faithful=false MIT abweichungen=[]** (keine Wert-Abweichung) + `bedingungen` = getriagte
-Geltungsbedingungen. Exakt das §35a-Arbeitskosten-Artefakt-Muster ([[altfassung-aenderungsbefehl-judge-artefakt]]):
+Geltungsbedingungen. Exakt das §35a-Arbeitskosten-Artefakt-Muster:
 der Judge misst gegen die VOLLE Norm (inkl. der getriagten Bedingungen), die Teilregel nimmt diese als INPUT/
 Andockung — daher faithful=false, aber KEINE echte Rechen-Abweichung (abweichungen=[]).
 - **§24a (Altersentlastungsbetrag)** bedingungen: `prozentsatz_hoechstbetrag_aus_kohortentabelle` (Prozentsatz +

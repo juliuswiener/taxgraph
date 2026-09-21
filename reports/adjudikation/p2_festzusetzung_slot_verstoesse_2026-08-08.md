@@ -292,7 +292,7 @@ api.py:574   "bruttoarbeitslohn_a": int(slots.get("bruttoarbeitslohn", 0)) // 10
 Das sind `.get(key, default)`-Aufrufe, kein `slots[key]`. Ein falscher/umbenannter Slot-Name
 wirft KEIN `KeyError` — er liefert still den Default (`0` bzw. `"einzel"`) und rechnet damit
 weiter. Fail-open, nicht fail-closed. Dieselbe Bauart, die bei der Gate-Polarität
-([[gate-polaritaet-normalfall-antwort]]) und beim vorläufig-Filter bereits echte Geldfehler
+ und beim vorläufig-Filter bereits echte Geldfehler
 verursacht hat.
 
 ### Mutationsmessung — main's Auftrag, ausgeführt

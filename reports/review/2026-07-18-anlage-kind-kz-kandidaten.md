@@ -12,7 +12,7 @@ Quelle: E10-2025.html Schemadok (ERiC 44.2.4.0) + amtlicher Vordruck Anlage Kind
 | 3 | E0500808 | "Art des Kindschaftsverhältnisses" | `K_Verh_B` (m1388229944) | Zeile 56 (Elternteil B) | kind_kindschaftsverhaeltnis_b (text/enum) | STARK |
 | 4 | E0500601 | "Kindschaftsverhältnis bestand vom - bis" | `K_Verh_A` (m1388229944) | Zeile 53 (Zeitraum vom–bis, Elternteil A) | kind_kindschaftsverh_zeitraum_a (text/datum) | STARK |
 | 5 | E0500805 | "Kindschaftsverhältnis bestand vom - bis" | `K_Verh_B` (m1388229944) | Zeile 53 (Elternteil B) | kind_kindschaftsverh_zeitraum_b (text/datum) | STARK |
-| — | E0500702 | "Anspruch auf Kindergeld oder vergleichbare Leistungen für $VZ$" | `Allg` (m1285501656) | — | **ABGELEHNT, bleibt** (≠Haushaltszugehörigkeit, [[vier-pakete-sequenz-2026-07]]) | n/a |
+| — | E0500702 | "Anspruch auf Kindergeld oder vergleichbare Leistungen für $VZ$" | `Allg` (m1285501656) | — | **ABGELEHNT, bleibt** (≠Haushaltszugehörigkeit) | n/a |
 
 ## Disambiguierungs-Beleg (Sektions-Pfad, NICHT E-Präfix)
 - **E0500807 vs E0500808** tragen IDENTISCHES XSD-Label "Art des Kindschaftsverhältnisses" — getrennt AUSSCHLIESSLICH
@@ -37,7 +37,7 @@ verh.-Art + 2×Zeitraum), je Kind-Instanz Kz-Reuse. Tarif-neutral (count-MVP ble
   Steuerpflichtigen verwandte Kinder" (Pflegekind-Fall im selben Absatz).
 - **kind_kindschaftsverh_zeitraum_a/b (E0500601/805)** → § 32 Abs. 2 EStG, zitatanker: "Besteht bei einem
   angenommenen Kind das Kindschaftsverhältnis zu den leiblichen Eltern weiter" (Bestehen des Kindschaftsverh.).
-Alle vier Zitatanker voll-Länge gegen die Quelldatei prüfbar ([[anker-verifikation-volllaenge]]); im Bau via
+Alle vier Zitatanker voll-Länge gegen die Quelldatei prüfbar; im Bau via
 _normalize verifiziert.
 
 ## Zur Adjudikation

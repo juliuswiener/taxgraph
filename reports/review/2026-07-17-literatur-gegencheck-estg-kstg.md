@@ -89,7 +89,6 @@ verifiziert. Kein Fund ist eine Registry-Änderung — alle sind Prüfaufträge.
    DBA-Methoden-Kataloge (AT/US/CH/FR/LU/NL/ES/TR) docken laut Design an §34c_1/§32b, existieren aber
    nur als **Markdown-Reports, nicht als Registry-Bedingung**. → Cross-Rule-Vertrag offen; bei jedem
    DBA-Staat griffe der unilaterale §34c ohne DBA-Vorfrage. **Wichtigster struktureller Einzelfund.**
-   (Verknüpft mit [[versprochene-bedingung-materialisieren]].)
 2. **§15a Abs. 3 S. 3–4 Haftungsminderung fehlt komplett** — `p15a_3_einlageminderung` scopet nur
    Abs. 3 S. 1–2 (Einlageminderung). Amtl. §15a Abs. 3 S. 3 („Wird der Haftungsbetrag … gemindert
    (Haftungsminderung) … ist … der Betrag der Haftungsminderung … als Gewinn zuzurechnen") ist ein

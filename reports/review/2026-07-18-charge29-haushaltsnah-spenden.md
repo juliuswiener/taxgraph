@@ -25,7 +25,7 @@ steuerermaessigung = abs1 + abs2 + abs3              # 3 additive Töpfe, eigene
 - **judge faithful=false = getriaged Artefakt:** einzige Abweichung „20 % auf Gesamtbetrag statt nur
   Arbeitskosten" → Julius triagierte als Geltungsbedingung `*_enthaelt_nur_arbeitskosten` (Material
   wird UPSTREAM am Sachverhalt ausgeschlossen; Felder heißen `*_arbeitskosten`, Fragetext „ohne
-  Material"). Kein Baufehler. Vgl. [[altfassung-aenderungsbefehl-judge-artefakt]]-Klasse.
+  Material"). Kein Baufehler.
 - **Geltungsbedingungen (verified_bedingt-Auflagen, Wiring erzwingt):** `rechnung_und_unbare_zahlung`
   (Abs. 5 S. 3, NUR Abs. 2/3), `*_enthaelt_nur_arbeitskosten` (Abs. 5 S. 2), `haushalt_in_eu_ewr`
   (Abs. 4), `keine_beruecksichtigung_als_wk_sa_agb` (Abs. 5 S. 1), `handwerker_keine_oeffentliche_

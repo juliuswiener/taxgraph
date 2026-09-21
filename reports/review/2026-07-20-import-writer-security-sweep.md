@@ -2,7 +2,7 @@
 
 Read-only Cross-cutting-Sweep. Frage: bewegt IRGENDEIN vorläufig-Event der neuen
 Import-Kanäle (`import:beleg`, `import:kontoauszug`, `llm:chat`) die FESTGESETZTE Steuer
-ohne Mensch-signal_2 — die [[ring-liest-vorlaeufig-parallel-pfad-luecke]]-Falle, auf Import
+ohne Mensch-signal_2 — die Vorläufig-Falle, auf Import
 angewandt. **VERDIKT: GRÜN.** Keine neue parallele Roh-Pfad-Lücke gefunden.
 
 ## Gate 1 — Store-Katalog (Choke-Point)

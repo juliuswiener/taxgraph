@@ -1,7 +1,7 @@
 # Pre-UI-Vollverifikations-Sweep (dev-2, 2026-07-18)
 
 **Auftrag:** unabhängige Gesamt-Verifikation, dass der Rechen-Ring live-komplett + solide ist, BEVOR die
-UI-Politur drüberkommt. Frisch gelaufen, Grün aktiv misstraut ([[falsches-gruen]]). HEAD 8270bd6.
+UI-Politur drüberkommt. Frisch gelaufen, Grün aktiv misstraut. HEAD 8270bd6.
 
 ## ERGEBNIS: FUNDAMENT SOLIDE ✅ (ein env-gated Caveat)
 

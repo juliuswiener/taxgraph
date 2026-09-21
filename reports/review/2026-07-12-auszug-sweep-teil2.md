@@ -1,6 +1,6 @@
 # Auszug-Leitlinien-Sweep — Teil-2-Rest-Regeln (Stufe-A, vor den Rest-Batches)
 
-Leitlinie (Instructor 2026-07-12, [[formalisierer-kontext-kanal]]): der `auszug` ist der
+Leitlinie (Instructor 2026-07-12): der `auszug` ist der
 EINZIGE Norm-Kanal zum Formalisierer (Geltungsbedingungen → nur Judge). Er muss **jede
 Klausel enthalten, die den OUTPUT variiert** (Trigger, Schwellen, Beträge, Formelbestandteile);
 reine Anwendbarkeits-Klauseln dürfen draußen bleiben. Vier Regeln (nr5a-Cap, nr6_7-Verteilung,

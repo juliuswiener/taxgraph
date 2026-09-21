@@ -7,7 +7,7 @@ Paket 2). Basis: mein Scoping `2026-07-15-ebilanz-taxonomie-scoping.md` (commit 
 
 ## ⚠ BOUNDARY — Download-Schritt wartet auf Julius DIREKT im Chat
 Instructor meldet „Download von Julius autorisiert". Per stehendem Protokoll
-([[ausgehende-aktionen-nur-julius]], Push-Vorfall 2026-07-12): **Download = ausgehende Aktion,
+(Push-Vorfall 2026-07-12): **Download = ausgehende Aktion,
 braucht Julius direkt im Chat — Instructor-Relay genügt NICHT.** Deshalb hier NUR die
 read-only-Teile geliefert (Teil A Version-Gültigkeit vollständig; Teil B Beschaffungs-SPEC;
 Teil C Kartierungs-RAHMEN). Der eigentliche Binär-Download nach `sources/ebilanz/` +

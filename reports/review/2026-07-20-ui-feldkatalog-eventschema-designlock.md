@@ -59,7 +59,7 @@ liest/rechnet, der Mensch bestätigt.
 
 ## 2. EVENT-SCHEMA (existiert — dokumentiert + neue Writer bestätigt)
 Zwei-Signal-Event (append_event): `{feld_id, wert, zustand, herkunft:{herkunft,pruef_tiefe,haftung}, schreiber,
-signal:{signal_1,signal_2}, ersetzt}`. **SCHREIBER-scoped Provenance-Guard** (^präfix, [[produkt-beleg-writer]]):
+signal:{signal_1,signal_2}, ersetzt}`. **SCHREIBER-scoped Provenance-Guard** (^präfix):
 | Writer (UI-Runde) | schreiber-Präfix | herkunft-Enum | Status |
 |---|---|---|---|
 | LLM-Chat | `llm:<rolle>` | llm_vorschlag | EXISTIERT (Store-Gate Z.127) |
@@ -78,7 +78,7 @@ VOR append_event; sonst fail-closed „Feld nicht vorschlagbar"). Kein neues her
 | S4 | berechnet:maps/import:kontoauszug dito bestaetigt-Versuch → ValueError | alle Vorschlags-Schreiber symmetrisch fail-closed |
 | S5 | LLM/externer Writer versucht HUMAN-ONLY-Feld (veranlagung/antrag_ermaessigter_satz/kein_kap) → fail-closed „nicht vorschlagbar" (Feld-Katalog) | KI schlägt kein Wahlrecht/keine Abwesenheit vor |
 | S6 | E2E: llm-Vorschlag spenden 5000 → /ergebnis-est == ohne-spenden-est (unverändert); dann Confirm → est sinkt | End-to-End Steuer-Summen-Invariant unter der echten Ring-Rechnung |
-| S7 | Provenance-Guard: import:elster darf beleg_import NICHT schreiben (schreiber-scoped ^import:beleg, nicht herkunft-scoped) — [[produkt-beleg-writer]]-Lehre | Guard-Scope korrekt |
+| S7 | Provenance-Guard: import:elster darf beleg_import NICHT schreiben (schreiber-scoped ^import:beleg, nicht herkunft-scoped) — Lehre aus dem Beleg-Writer | Guard-Scope korrekt |
 
 ## Fazit
 Der K2-Kern (Vorschlag bewegt Steuer nie ohne Mensch-signal_2) steht schon STRUKTURELL doppelt (Store+Mapping) —

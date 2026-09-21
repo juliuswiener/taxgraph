@@ -45,7 +45,7 @@ DE/EN) — für den amtlichen deutschen Anker OCR/pdftotext auf der **deutschen 
   **1996 Art. 24 (OCR) ∘ 2021-Änderung (sauberer Text-Layer)** — beide Fassungen zusammen.
 - **Anker-Kandidat:** 2021-Änderungstext direkt verfügbar (58.922 Zeichen, sauber) — Änderungsbefehl an
   Art. 24 amtlich zitierbar OHNE OCR. Der Basis-Art.-24-Wortlaut (1996) per OCR. ⚠ Altfassung aus
-  Änderungsbefehl-Freeze ist planbar heikel (vgl. [[altfassung-aenderungsbefehl-judge-artefakt]]) —
+  Änderungsbefehl-Freeze ist planbar heikel —
   konsolidierte Fassung sauber führen.
 - **Gültigkeit:** 2021 Protokoll (06.02.) + 2021 Berichtigung (10.12.) + 2022 Bekanntmachung (24.02.).
   Der Stand ist der jüngste im Korpus. **MLI separat prüfen.**
@@ -74,9 +74,8 @@ DE/EN) — für den amtlichen deutschen Anker OCR/pdftotext auf der **deutschen 
 2. **DK** — konsolidierte Art. 24 = 1996-Basis (OCR) ∘ 2021-Änderung (direkt). Änderungsbefehl-Doktrin
    beachten (Alt-/Neufassung sauber trennen).
 3. **PL** — reiner OCR-Fall für den Body; Feasibility bewiesen, aber jeder Anker MUSS voll via `_normalize`
-   gegen den OCR-Text geprüft werden (vgl. [[anker-verifikation-volllaenge]], [[bgbl-scan-textlayer-ocr-route]]).
+   gegen den OCR-Text geprüft werden.
 4. **MLI-Overlay** ist für ALLE drei ungeklärt (kein MLI-PDF im Korpus) → vor jedem Freeze der
-   MLI-Anwendbarkeits-Status je Staat gegen das BMF-MLI-Anwendungsschreiben prüfen
-   (vgl. [[gueltigkeits-check-direktive]]).
+   MLI-Anwendbarkeits-Status je Staat gegen das BMF-MLI-Anwendungsschreiben prüfen.
 
 Keine Freezes ausgeführt (auftragsgemäß). Anker-Kandidaten nur GB direkt verifizierbar; PL/DK erst nach OCR.

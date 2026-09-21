@@ -7,7 +7,7 @@ vorregistrierten Plan.** Dieser Plan ist vor dem Lauf fixiert; nachträgliche Kr
 ## Frage
 
 Der Formalisierer-Prompt sieht heute NUR den quellen-**auszug** (+ worker-claims + bare-signature);
-Geltungsbedingungen erreichen ihn NIE (Code-Fakt, [[formalisierer-kontext-kanal]]). Die Nacht löste
+Geltungsbedingungen erreichen ihn NIE (Code-Fakt). Die Nacht löste
 Kontext-Hunger durch auszug-Weitung + Prominenz — arbeitsintensiv je Regel. **Reduziert es den
 Hunger STRUKTURELL, wenn deklarierte Bedingungen/Hinweise den Formalisierer erreichen?** Falls ja,
 sparen wir künftig Weitungs-Handarbeit; falls nein, bleibt die auszug-Leitlinie der Weg.
