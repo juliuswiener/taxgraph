@@ -1,0 +1,4 @@
+{
+  "argv": ["make", "unit"],
+  "silence": "5m"
+}
