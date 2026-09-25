@@ -79,7 +79,6 @@ for _sub in ("produkt/haut", "produkt/eingang", "produkt/store", "produkt/mappin
     sys.path.insert(0, os.path.join(ROOT, _sub))
 
 os.environ["TAXGRAPH_NO_AUTH"] = "1"   # wie tests/conftest.py -- sonst 401 auf /fall
-os.environ.setdefault("ELSTER_HERSTELLER_ID", "00000000000")  # nur lokale XML-Erzeugung, kein Versand
 
 import api as API              # noqa: E402
 import server as SRV           # noqa: E402
@@ -166,6 +165,12 @@ def gemessen(tmp_path_factory):
         return text
 
     EX.erzeuge_xml = _spion
+    # Hersteller-ID nur fuer die Dauer dieser Fixtur (lokale XML-Erzeugung, kein Versand). Auf
+    # Modulebene gesetzt galt der elfstellige Dummy ab der Sammlung fuer JEDEN Test im Prozess:
+    # ERiC-Tests bauten damit schema-widriges XML (rc=610301200), statt mangels ID zu skippen.
+    hid = pytest.MonkeyPatch()
+    if "ELSTER_HERSTELLER_ID" not in os.environ:
+        hid.setenv("ELSTER_HERSTELLER_ID", "00000000000")
 
     def _messe(fid, verpflegung_events):
         st, r = _req(base, "POST", "/fall",
@@ -206,6 +211,7 @@ def gemessen(tmp_path_factory):
             _vorjahr_vorschlag("vpf_fruehstuecke_gestellt_anzahl", FRUEHSTUECKE)])
     finally:
         EX.erzeuge_xml = orig_erzeuge_xml
+        hid.undo()
         srv.shutdown()
         th.join(timeout=5)
         srv.server_close()

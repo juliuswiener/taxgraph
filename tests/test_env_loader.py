@@ -82,3 +82,19 @@ def test_vorhandene_aber_unlesbare_datei_wird_protokolliert(tmp_path, monkeypatc
     assert eintraege[0]["ort"] == "server.env_datei_lesen"
     assert eintraege[0]["typ"] == "PermissionError"
     assert "geheim" not in (tmp_path / "audit" / "fehler.log").read_text(encoding="utf-8")
+
+
+def test_datei_ohne_gueltiges_utf8_wird_protokolliert_und_uebersprungen(tmp_path, monkeypatch):
+    """Ungueltiges UTF-8 ist kein OSError. Es darf trotzdem weder main() noch den conftest-Import
+    abbrechen ("nie Crash beim Start"): eine Log-Spur, danach geht es mit der naechsten Datei weiter."""
+    (tmp_path / ".env.llm").write_bytes(b"\xff\xfe")
+    (tmp_path / ".env").write_text("TG_ENV_TEST=hid42\n", encoding="utf-8")
+    monkeypatch.delenv("TG_ENV_TEST", raising=False)
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "audit"))
+    SRV._lade_env_dateien(str(tmp_path))
+
+    eintraege = FL.lies()
+    assert len(eintraege) == 1
+    assert eintraege[0]["ort"] == "server.env_datei_lesen"
+    assert eintraege[0]["typ"] == "UnicodeDecodeError"
+    assert os.environ.get("TG_ENV_TEST") == "hid42"     # .env nach der kaputten Datei noch geladen

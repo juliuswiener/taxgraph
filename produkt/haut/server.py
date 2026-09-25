@@ -308,11 +308,13 @@ def _lade_env_dateien(root: str) -> None:
         try:
             with open(pfad, encoding="utf-8") as f:
                 zeilen = f.readlines()
-        except OSError as e:
+        except (OSError, UnicodeDecodeError) as e:
             # Die Datei existiert, konnte aber nicht gelesen werden. Das ist anders als der
             # normale Abwesenheitsfall oben: ohne Spur zeigt sich die Ursache erst spaeter als
             # vermeintlich fehlende Konfiguration. Weder Pfad noch Inhalt gehen ins Protokoll;
             # protokolliere() liest aus der Exception nur Typ und Code-Ursprungsort.
+            # UnicodeDecodeError (kein gueltiges UTF-8) ist kein OSError und brach ohne diesen
+            # Fang main() und den conftest-Import ab (pytest exit 4, gemessen 2026-09-26).
             fehler_log.protokolliere("server.env_datei_lesen", e,
                                      stufe=fehler_log.WARNUNG)
             continue

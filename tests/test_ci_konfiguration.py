@@ -63,6 +63,15 @@ def test_alle_importierten_fremdpakete_stehen_im_manifest():
     sonst wiederholt sich genau der Fall, in dem jemand einen Import hinzufügt und die
     Paketliste nicht kennt."""
     stdlib = set(sys.stdlib_module_names)
+
+    def _versteckt(p: pathlib.Path) -> bool:
+        """Punkt-Verzeichnis oder __pycache__ INNERHALB des Repos, geprüft am Pfad relativ zur
+        Wurzel. Am absoluten Pfad fiel unter jedem Punkt-Verzeichnis (~/.cache/…,
+        .claude/worktrees/…) JEDE Datei heraus: gemessen 2026-09-26 0 statt 496 eigene Module,
+        und 55 projekteigene Module galten als fehlende Fremdpakete. Beide Filter unten brauchen
+        die Regel: nur mit dem ersten blieb der Test grün, auch ohne `requests` im Manifest."""
+        return any(t.startswith(".") or t == "__pycache__" for t in p.relative_to(ROOT).parts)
+
     # Eigene Module: JEDE .py-Datei und jedes Verzeichnis im Repo. Die erste Fassung zählte
     # nur eine Handvoll bekannter sys.path-Wurzeln auf und hielt daraufhin fünf projekteigene
     # Module (validate_xsd, linkbase, katalog, run, generate_abzinsungsfaktor) für fehlende
@@ -70,7 +79,7 @@ def test_alle_importierten_fremdpakete_stehen_im_manifest():
     # Paketliste im Workflow, gegen die dieser Test gerade gerichtet ist.
     eigene = set()
     for p in ROOT.rglob("*"):
-        if any(teil.startswith(".") or teil == "__pycache__" for teil in p.parts):
+        if _versteckt(p):
             continue
         if p.suffix == ".py":
             eigene.add(p.stem)
@@ -146,7 +155,7 @@ def test_alle_importierten_fremdpakete_stehen_im_manifest():
     # cq-broken-tracked-symlink-golden, hier beim Bau dieses Tests über die Füsse gelaufen).
     modul_datei: dict[str, pathlib.Path] = {}
     for p in ROOT.rglob("*.py"):
-        if any(t.startswith(".") or t == "__pycache__" for t in p.parts) or not p.is_file():
+        if _versteckt(p) or not p.is_file():
             continue
         modul_datei.setdefault(p.stem, p)
 

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 
 import pytest
 
@@ -218,7 +219,20 @@ import server as _server  # noqa: E402 — teilt server._lade_env_dateien mit de
 # (nur server.main() tat das) — dadurch blieb z.B. $ELSTER_HERSTELLER_ID aus einer lokalen `.env`
 # fuer die gesamte Suite unsichtbar. Reuse der bestehenden Funktion, kein neuer Mechanismus.
 # Bestehendes Prozess-Env gewinnt IMMER (kein Override, s. Doku dort); fehlende .env = no-op.
-_server._lade_env_dateien(_ROOT)
+#
+# Die Ablage ist fuer die Dauer des Aufrufs umgelenkt (2026-09-26): ein Lesefehler an einer
+# vorhandenen .env wird protokolliert, und die Fehlerlog-Wache unten gibt es beim conftest-Import
+# noch nicht. Ohne Umlenkung schrieb jeder Sitzungsstart eine WARNING ins ECHTE fehler.log (unter
+# -n 6 sieben Zeilen), nicht zu unterscheiden von einem Serverstart. Das Zuruecksetzen ist Pflicht:
+# _REAL_AUDIT_PFAD und _REAL_FEHLER_PFAD unten lesen AUDIT_DIR, sonst bewachten beide Wachen
+# das Temp-Verzeichnis statt der echten Dateien.
+with tempfile.TemporaryDirectory() as _env_ablage:
+    _audit_dir_echt = _audit.AUDIT_DIR
+    _audit.AUDIT_DIR = _env_ablage
+    try:
+        _server._lade_env_dateien(_ROOT)
+    finally:
+        _audit.AUDIT_DIR = _audit_dir_echt
 
 # ...ABER der LLM-Schlüssel wird für die Suite sofort wieder entfernt (2026-08-14).
 # Seit .env.llm existiert, lud die Zeile darüber einen ECHTEN Key in jeden Testlauf. Folge:
