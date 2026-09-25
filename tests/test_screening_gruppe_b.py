@@ -278,3 +278,43 @@ def test_rentner_wird_weiter_nach_seiner_rente_gefragt():
               or f == "rentner_jahresrente"]
     assert renten, (
         f"Der Rentner-Dialog fragt nichts zur Rente mehr. Gestellt: {sorted(gestellt)[:20]}")
+
+
+# ---------------------------------------------------------------- Fragetext von kein_sonstige
+# Je Regel, die an `kein_sonstige` hängt, Gruppen von Alltagswörtern. JEDE Gruppe braucht einen
+# Treffer im Fragetext oder in der Kurzhilfe. § 23 hat zwei Gruppen: die Wohnung innerhalb der
+# Frist und die Kryptowährung sind die zwei Fälle, die ein Laie nicht als „sonstige Einkünfte"
+# erkennt. Aktien fehlen mit Absicht: § 23 Abs. 2 EStG ordnet sie den Kapitalerträgen zu, die
+# `kein_kap` erhebt.
+_SONSTIGE_BEISPIELE = {
+    "p22_1_leibrente_besteuerungsanteil": [("rente",)],
+    "p23_veraeusserungsgewinn": [("wohnung", "grundstück", "immobilie", "haus"),
+                                 ("krypto", "bitcoin")],
+    "p22_3_leistungen": [("gegenstände", "vermittlung")],
+}
+
+
+@pytest.mark.parametrize("scheibe", sorted(s for s, c in API.SCHEIBEN.items()
+                                           if "kein_sonstige" in (c.get("felder") or ())))
+def test_frage_nach_sonstigen_einkuenften_nennt_alltagsfaelle(scheibe):
+    """Ein falsches „Nein" auf `kein_sonstige` nimmt Rente, privaten Verkauf und gelegentliche
+    Leistungen aus dem Dialog, und die Rechnung läuft still ohne sie weiter. Anlass: der
+    Backlog-Eintrag „Frage nach sonstigen Einkünften trägt 87.000 EUR Absicherung" (2026-08-28).
+    Der alte Text nannte nur Rechtsbegriffe („private Veräußerungsgeschäfte"). Wer eine Wohnung
+    innerhalb der Frist verkauft hat, erkennt sich darin nicht und antwortet ehrlich falsch.
+
+    Die Regeln kommen aus `bindung_regel_bedingungen.yaml`, nicht aus einer Liste hier: hängt
+    jemand eine neue Regel an die Frage, wird der Test rot, bis ihr Text sie nennt. Geprüft je
+    Scheibe mit dieser Frage, auch `rentner_gesamt` — dort liest der Rentner denselben Text."""
+    store = ST.leerer_store(2025, fall_id=f"sonstige_{scheibe}")
+    store["scheibe"] = scheibe
+    b = API._scheibe_bindung(store)["kein_sonstige"]
+    text = f"{b['fragetext_laie']} {b['hilfe_kurz']}".lower()
+    regeln = sorted(r for r, cs in TR.lade_regel_bedingungen().items()
+                    if any(c["feld"] == "kein_sonstige" for c in cs))
+    assert regeln, "Keine Regel hängt an kein_sonstige — der Sammler greift ins Leere."
+    fehlend = [(r, g) for r in regeln for g in _SONSTIGE_BEISPIELE.get(r, [()])
+               if not any(w in text for w in g)]
+    assert not fehlend, (
+        f"Scheibe {scheibe!r}: die Frage nach sonstigen Einkünften nennt kein Alltagsbeispiel "
+        f"für {fehlend}. Text: {text!r}")
