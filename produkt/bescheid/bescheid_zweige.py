@@ -131,6 +131,18 @@ def _abschlusszahlung_cent(felder: dict, zahl_cent: int):
         "vorauszahlungen_cent": int(vor or 0)})
 
 
+def _setze_kette(extras: dict, kette: dict, est: int) -> None:
+    """Rechenweg-Kette nur, wenn ihre letzte Stufe exakt die ausgegebene Steuer `est` (EURO) ist —
+    [[rechenweg-wird-nur-korrekt-angezeigt]]. Die Kette rechnet auf dem Rohstand VOR den
+    Korrekturen in _festzusetzende(_r) (§ 34, § 35, § 32b, § 32d) und endete dort bei einer
+    anderen Steuer als die Zahl darüber (120.000 EUR Veräußerungsgewinn: 34.338 statt 30.358 EUR).
+    Abweichung = Schlüssel absent, die Oberfläche zeigt dann den Hinweis statt der Tabelle."""
+    # ponytail: prüft nur die letzte Stufe — heben sich zwei Korrekturen auf den Euro genau auf,
+    # stimmen die Zwischenstufen nicht. Upgrade: die Kette aus dem Endstand von _festzusetzende speisen.
+    if kette["festzusetzende_est"] == est:
+        extras["kette"] = kette
+
+
 def _zweig_abziehbarer_betrag(vz: int, bindung: dict):
     """§ 9 Entfernungspauschale — quantitaet='abziehbarer_betrag'.
 
@@ -933,7 +945,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # P5.4 Rechenweg-Kette: nur im kinderlosen Fall (§ 31-Zweig-Ambiguität vermeiden).
         # Kette in extras = dict von runner.catala_gesamt_kette(g) für /ergebnis-Erklär-UI.
         if extras is not None and kinder == 0:
-            extras["kette"] = runner.catala_gesamt_kette(g)
+            _setze_kette(extras, runner.catala_gesamt_kette(g), est)
         # SolZ §3, §4 SolzG: Basis = KiFB-fiktive ESt (§3 Abs.2) minus §32d-Kapitalsteuer (§3 Abs.3 S.1);
         # §32d-Kapital-SolZ 5,5% ohne Freigrenze (§3 Abs.3 S.2) wird von catala_solz separat addiert.
         if solz_container is not None and "est_mit_fb" in solz_info:
@@ -1320,7 +1332,7 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         # Gesamtfall-Scope wie catala_est/catala_gesamt_zve oben -- catala_gesamt_kette(rentner_g)
         # ist damit derselbe Aufruf wie im gesamt-Zweig, kein neuer Ring-Code nötig.
         if extras is not None and kinder == 0:
-            extras["kette"] = runner.catala_gesamt_kette(rentner_g)
+            _setze_kette(extras, runner.catala_gesamt_kette(rentner_g), est)
         # SolZ §3, §4 SolzG: Basis = KiFB-fiktive ESt (§3 Abs.2) minus §32d-Kapitalsteuer (§3 Abs.3 S.1);
         # §32d-Kapital-SolZ 5,5% ohne Freigrenze (§3 Abs.3 S.2) wird von catala_solz separat addiert.
         if solz_container is not None and "est_mit_fb" in solz_info_r:
