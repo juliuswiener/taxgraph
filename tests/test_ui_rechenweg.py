@@ -428,8 +428,12 @@ def test_ergebnis_hinweis_offen_bei_stiller_null(base, playwright_context):
 #   gesamt, zusammen, 120.000 EUR Veräußerungsgewinn bei A:  zahl 30.358 EUR, Kette 34.338 EUR
 #   gesamt, zusammen, je 60.000 EUR bei A und B:             zahl 17.332 EUR, Kette 17.486 EUR
 #   rentner_gesamt, 20.000 EUR Rente + 120.000 EUR bei A:    zahl 20.511 EUR, Kette 27.544 EUR
-# Die Gegenproben ohne Sonderregel (Lohn: 8.238 = 8.238, Rente: 811 = 811) müssen die Kette
-# WEITER zeigen — sonst wäre „nie eine Kette" ebenfalls grün.
+#   gesamt, einzel, 60.000 EUR Lohn + 30.000 EUR Kapital (§ 32d):     zahl 21.174, Kette 13.924 EUR
+#   dito + 50.000 EUR Gewerbe, 1.500 EUR GewSt-Messbetrag (§ 35):     zahl 28.756, Kette 34.756 EUR
+#   dito + 20.000 EUR Lohnersatz (§ 32b):                             zahl 16.527, Kette 13.924 EUR
+#   dito + 120.000 EUR Veräußerungsgewinn (§ 34):                     zahl 44.584, Kette 45.256 EUR
+# Die Gegenproben ohne Sonderregel (Lohn zusammen: 8.238 = 8.238, Lohn einzel: 13.924 = 13.924,
+# Rente: 811 = 811) müssen die Kette WEITER zeigen — sonst wäre „nie eine Kette" ebenfalls grün.
 _VORSORGE_NULL = [
     ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
     ("basis_kv", 0), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"),
@@ -445,6 +449,11 @@ _LOHN_60K_ZUSAMMEN = [
     ("bruttoarbeitslohn_partner", 0), ("kap_kapitalertraege_partner", 0),
     ("kap_gewinn_aktien_partner", 0), ("kap_gewinn_sonstige_partner", 0),
     ("kap_verlust_aktien_partner", 0), ("kap_verlust_sonstige_partner", 0),
+] + _VORSORGE_NULL
+_LOHN_60K_EINZEL = [
+    ("veranlagung", "einzel"), ("bruttoarbeitslohn", 6_000_000),
+    ("ep_arbeitstage", 0), ("ep_eigenes_kfz", False), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0),
+    ("kein_vuv", True), ("kein_sonstige", True),
 ] + _VORSORGE_NULL
 _RENTE_20K = [
     ("veranlagung", "einzel"),
@@ -481,7 +490,20 @@ def _fall_mit(base: str, fid: str, scheibe: str, felder: list) -> dict:
         ("rentner_veraeusserungsgewinn_partner", 6_000_000)], False),
     ("rentner_gesamt", _RENTE_20K + [("kein_gewinn", True)], True),
     ("rentner_gesamt", _RENTE_20K + _VG_A + [("rentner_veraeusserungsgewinn", 12_000_000)], False),
-], ids=["lohn60k-gegenprobe", "vg-a120-allein", "vg-a60-b60", "rente20k-gegenprobe", "rente20k-vg120"])
+    ("gesamt", _LOHN_60K_EINZEL + [("kein_kap", True), ("kein_gewinn", True)], True),
+    ("gesamt", _LOHN_60K_EINZEL + [
+        ("kein_gewinn", True), ("kein_kap", False), ("kap_kapitalertraege", 3_000_000),
+        ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
+        ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0)], False),
+    ("gesamt", _LOHN_60K_EINZEL + [
+        ("kein_kap", True), ("kein_gewinn", False), ("einkuenfte_gewinn", 5_000_000),
+        ("gewinn_betriebsart", "gewerbe"), ("gewst_messbetrag", 150_000), ("gewst_hebesatz", 400)], False),
+    ("gesamt", _LOHN_60K_EINZEL + [
+        ("kein_kap", True), ("kein_gewinn", True), ("p32b_progressionseinkuenfte", 2_000_000)], False),
+    ("gesamt", _LOHN_60K_EINZEL + [("kein_kap", True)] + _VG_A + [
+        ("rentner_veraeusserungsgewinn", 12_000_000)], False),
+], ids=["lohn60k-gegenprobe", "vg-a120-allein", "vg-a60-b60", "rente20k-gegenprobe", "rente20k-vg120",
+        "lohn60k-einzel-gegenprobe", "p32d-kap30k", "p35-gewst1500", "p32b-pe20k", "vg-einzel120"])
 def test_kette_endet_bei_der_zahl(base, request, scheibe, felder, kette_pflicht):
     """Zwei Beträge mit demselben Label in derselben Antwort: steht eine Kette da, endet sie bei
     zahl_cent. Beide Setzstellen (gesamt- und Rentner-Zweig) sind abgedeckt."""
