@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "gewstg/p16/2026-09-26"
+  norm: "GewStG § 16 (Hebesatz)"
+  fassung: "geltende Fassung 2026 (Abs. 4 S. 2 i.d.F. G v. 29.6.2026 erstmals EZ 2027 - § 36 Abs. 5b)"
+  quelle_url: "https://www.gesetze-im-internet.de/gewstg/__16.html"
+  abrufdatum: "2026-09-26"
+  datei: "gewstg_p16_2026-09-26.txt"
+  sha256: "29ffb36417baf8b65e47c73b90b636e041e31ba8343a0a285bb3d3b49d35b3f9"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["produkt/bescheid/bescheid_deklaration.py gewst_zu_zahlen (Messbetrag x Hebesatz, Kz E0801704)"]

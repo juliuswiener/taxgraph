@@ -1,0 +1,10 @@
+Quelle: https://www.gesetze-im-internet.de/estg/__9b.html
+Abgerufen: 2026-09-26
+Norm: § 9b EStG
+Fassung: geltende Fassung 2026
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+(1) Der Vorsteuerbetrag nach § 15 des Umsatzsteuergesetzes gehört, soweit er bei der Umsatzsteuer abgezogen werden kann, nicht zu den Anschaffungs- oder Herstellungskosten des Wirtschaftsguts, auf dessen Anschaffung oder Herstellung er entfällt. (2) 1 Wird der Vorsteuerabzug nach § 15a des Umsatzsteuergesetzes berichtigt, so sind die Mehrbeträge als Betriebseinnahmen oder Einnahmen zu behandeln, wenn sie im Rahmen einer der Einkunftsarten des § 2 Absatz 1 Satz 1 bezogen werden; die Minderbeträge sind als Betriebsausgaben oder Werbungskosten zu behandeln, wenn sie durch den Betrieb veranlasst sind oder der Erwerbung, Sicherung und Erhaltung von Einnahmen dienen. 2 Die Anschaffungs- oder Herstellungskosten bleiben in den Fällen des Satzes 1 unberührt. Fußnote (+++ § 9b Abs. 2: Zur Anwendung vgl. § 52 +++)

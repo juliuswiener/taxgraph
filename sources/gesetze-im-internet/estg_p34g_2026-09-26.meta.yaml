@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p34g/2026-09-26"
+  norm: "§ 34g EStG"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://www.gesetze-im-internet.de/estg/__34g.html"
+  abrufdatum: "2026-09-26"
+  datei: "estg_p34g_2026-09-26.txt"
+  sha256: "ea13d2909f8e28e1c81ccd031ca25b19c91b2b17f3089cf447f6bc70c312d5f6"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["geplant: Steuerermäßigung Parteispenden/Wählervereinigungen, Vordruck Sonderausgaben Z. 7/8 (vault backlog parteispenden-erfragt-aber-kein-feld)"]
