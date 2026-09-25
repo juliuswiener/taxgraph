@@ -1308,6 +1308,31 @@ def test_gesamt_gwg_ohne_tatbestand_darf_keinen_abzug_geben(base):
         f"gemessen: mit_verneintem_gwg={erg['zahl_cent']} ohne_gwg={erg2['zahl_cent']}")
 
 
+def test_gesamt_gwg_ohne_verzeichnis_darf_keinen_abzug_geben(base):
+    """§ 6 Abs. 2 S. 4 EStG (sources/gesetze-im-internet/estg_p6_2026-07-14.txt): Wirtschaftsgüter, "deren Wert
+    250 Euro übersteigt", sind "in ein besonderes, laufend zu führendes Verzeichnis aufzunehmen" (S. 5: oder aus
+    der Buchführung ersichtlich) — Feld gwg_verzeichnis_ab_250. Das Asset liegt mit 600 € bewusst ÜBER 250 €:
+    darunter prüft _abzug die Frage gar nicht, ein Test dort bewiese nichts. Aufbau wie
+    test_gesamt_gwg_ohne_tatbestand_darf_keinen_abzug_geben, nur DIESES Feld verneint; gepinnt auf 1067800
+    (Kontrollfall ohne GWG). Mutationsprobe 2026-09-26: die Prüfung liess sich auskommentieren, und alle
+    gwg-Tests blieben grün (1046600 statt 1067800)."""
+    if not _catala_da():
+        pytest.skip("Catala-Toolchain nicht verfügbar")   # Vergleich braucht eine echte Berechnung.
+    _gesamt_anlegen(base, "gwv", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
+                    betriebseinnahmen=5000000, gwg=[60000]))
+    _req(base, "POST", "/fall/gwv/event", _laie("gwg_bewegliches_selbstaendig_nutzbar", True), erwarte=201)
+    _req(base, "POST", "/fall/gwv/event", _laie("gwg_netto_ohne_vorsteuer", True), erwarte=201)
+    _req(base, "POST", "/fall/gwv/event", _laie("gwg_verzeichnis_ab_250", False), erwarte=201)
+    st, erg = _req(base, "GET", "/fall/gwv/ergebnis")
+    _val("ergebnis", erg)
+    _gesamt_anlegen(base, "gwv_kontrolle", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
+                    betriebseinnahmen=5000000))
+    st2, erg2 = _req(base, "GET", "/fall/gwv_kontrolle/ergebnis")
+    assert erg["zahl_cent"] == erg2["zahl_cent"] == 1067800, (
+        "fehlendes Verzeichnis über 250 € (§ 6 Abs. 2 S. 4) muss denselben Betrag liefern wie 'kein GWG-Asset' — "
+        f"gemessen: mit_verneintem_gwg={erg['zahl_cent']} ohne_gwg={erg2['zahl_cent']}")
+
+
 @pytest.mark.parametrize("vg_cent,erwartet_cent", [
     (4000000,  0),        # vg 40000 → FB 45000 > vg → netto_vg 0 → kein Fünftel (Guard netto_vg>0), kein Phantom-Verlust
     # ⚠ § 34 Abs. 1 S. 3 (verbleibendes zvE negativ ∧ zvE positiv) → 5×Tarif(zvE/5): 5×Tarif(54964//5=10992); 10992 < GfB
