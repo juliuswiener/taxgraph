@@ -383,6 +383,7 @@ def test_bekannte_luecken_sind_begruendet():
 # verlangt. MATRIX setzt genau EIN Feld je Fall (_mit) — dafuer taugt ein Feldpaar (Art+Betrag je
 # Instanz) nicht. Deshalb ein eigener Test, kein MATRIX-Eintrag.
 
+@braucht_eric
 def test_p35a_einzelaufstellung_alle_drei_toepfe_amtlich_plausibel():
     """Je Topf EIN vollstaendiger Einz-Posten (Art+Betrag, Instanz 1 = bare feld_id) → rc=0.
 
