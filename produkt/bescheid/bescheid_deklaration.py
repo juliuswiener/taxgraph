@@ -868,6 +868,9 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             if (isinstance(ao_gewinn, (int, float)) and not isinstance(ao_gewinn, bool) and ao_gewinn > 0) \
                     or (felder.get("antrag_ermaessigter_satz", {}).get("wert") is True):
                 return "p32b_kombi_offen"
+            # 1b. §34 ao-Gewinn des Ehegatten: die Fünftelung umfasst beide (p34-fuenftelung-umfasst-beide-ehegatten).
+            if felder.get("veranlagung", {}).get("wert") == "zusammen" and _positiv("rentner_veraeusserungsgewinn_partner"):
+                return "p32b_kombi_offen"
             # 2. §35 Gewerbesteuer
             if _positiv("gewst_messbetrag"):
                 return "p32b_kombi_offen"

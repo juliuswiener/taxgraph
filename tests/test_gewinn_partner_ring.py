@@ -55,10 +55,27 @@ def _basis(veranlagung: str) -> dict:
     }
 
 
-def _zahl(felder: dict) -> int:
-    """festzusetzende_est_gesamt in CENT für diesen Feld-Snapshot."""
+def _basis_rentner(veranlagung: str) -> dict:
+    """Minimaler bestätigter Fall für den rentner-Ring: 20.000 EUR gesetzliche Rente ab 2025
+    (Präzedenz test_zweig_duplikation_differential._felder). Geburtsjahr 1970 hält § 24a
+    heraus: dessen Altersentlastungsbetrag knüpft nur an Person A an und machte A und B sonst
+    verschieden, ganz ohne § 34."""
+    return {fid: {"wert": w, "zustand": "bestaetigt"} for fid, w in {
+        "veranlagung": veranlagung,
+        "rentner_renten_art": "gesetzliche_rente", "rentner_jahresrente": 2000000,
+        "rentner_renten_beginn_jahr": 2025, "rentner_alter_bei_rentenbeginn": 65,
+        "rentner_rentenfreibetrag": 0,
+        "vor_an_anteil_rv": 0, "vor_ag_anteil_rv": 0, "vor_rv_ausserhalb_lstb": 0,
+        "basis_kv": 0, "basis_pv": 0, "versicherungsart": "gesetzlich_an",
+        "mit_anspruch_auf_zuschuss": False, "geburtsjahr": 1970,
+        "fam_alleinstehend": False, "fam_anzahl_kinder": 0, "fam_monate_ohne_voraussetzung": 0,
+    }.items()}
+
+
+def _zahl(felder: dict, quantitaet: str = "festzusetzende_est_gesamt") -> int:
+    """Die festzusetzende ESt des gewählten Rings in CENT für diesen Feld-Snapshot."""
     bindung = TR.lade_bindung()
-    bf = API._bescheid_fn("festzusetzende_est_gesamt", 2025, bindung, felder,
+    bf = API._bescheid_fn(quantitaet, 2025, bindung, felder,
                           store=None, nur_bestaetigt=True)
     assert bf is not None, "bescheid_fn gab None (catala/cases?)"
     return bf({f: ev["wert"] for f, ev in felder.items()})
@@ -96,10 +113,10 @@ def test_partner_gewinn_wirkt_nicht_bei_einzelveranlagung():
         "Ehegatten, dessen Einkünfte mitzuveranlagen wären.")
 
 
-def _mit_vg(a_cent: int, b_cent: int | None = None) -> dict:
+def _mit_vg(a_cent: int, b_cent: int | None = None, basis=_basis) -> dict:
     """Zusammenveranlagung mit Veräußerungsgewinn bei A (und optional B), § 16 Abs. 4-Gates
     jeweils bestätigt-true."""
-    f = _basis("zusammen")
+    f = basis("zusammen")
     f["rentner_veraeusserungsgewinn"] = {"wert": a_cent, "zustand": "bestaetigt"}
     f["rentner_alter_55_oder_berufsunfaehig"] = {"wert": True, "zustand": "bestaetigt"}
     f["rentner_freibetrag_erstmalig"] = {"wert": True, "zustand": "bestaetigt"}
@@ -128,23 +145,57 @@ def test_p16_4_freibetrag_gilt_je_person():
     z_60_und_60 = _zahl(_mit_vg(6000000, 6000000))
     # Exakter Wert statt `<`: die Richtungsprüfung blieb auch dann grün, wenn der zweite
     # Freibetrag nur zu einem Bruchteil ankommt. Herleitung VZ 2025, Splitting, und § 34
-    # Abs. 1 Fünftelung auf den Veräußerungsgewinn (bescheid_zweige.py glättet ihn):
+    # Abs. 1 Fünftelung auf die Veräußerungsgewinne BEIDER Ehegatten (bescheid_zweige.py
+    # glättet sie, Entscheidung p34-fuenftelung-umfasst-beide-ehegatten):
     #   allein: Fünftel(zvE 133.698, ao 75.000) = 30.358 EUR
-    #   je 60k: Fünftel(zvE  88.698, ao 15.000) = 17.332 EUR   → Differenz 13.026 EUR
+    #   je 60k: Fünftel(zvE  88.698, ao 30.000) = 16.848 EUR   → Differenz 13.510 EUR
     # Die zvE-Differenz ist exakt der zweite Freibetrag (133.698 − 88.698 = 45.000).
-    #
-    # ponytail: der Wert schreibt eine ASYMMETRIE mit fest, die noch keine Rechtsfrage
-    # beantwortet hat — in die Fünftel-Glättung geht nur der Netto-VG von Person A ein, der
-    # des Partners erhöht das zvE vollprogressiv (ao=15.000, nicht 30.000). Ob § 34 Abs. 1 die
-    # außerordentlichen Einkünfte BEIDER Ehegatten erfassen muss, ist offen. Wird das geklärt
-    # und geändert, geht dieser Test rot — das ist beabsichtigt und der Grund für den festen
-    # Wert: die alte `<`-Form hätte die Änderung stumm geschluckt.
+    # Bis 2026-09 stand hier 13.026 EUR: in ao ging nur der Netto-VG von A ein (15.000).
     delta = z_120_allein - z_60_und_60
-    assert delta == 1302600, (
-        f"Zwei Veräußerungsgewinne von je 60.000 EUR müssen 13.026 EUR günstiger sein als "
+    assert delta == 1351000, (
+        f"Zwei Veräußerungsgewinne von je 60.000 EUR müssen 13.510 EUR günstiger sein als "
         f"120.000 EUR bei einer Person, gemessen {delta} ct ({z_60_und_60} vs. "
         f"{z_120_allein} ct) — prüfe, ob der Partner seinen eigenen § 16 Abs. 4-Freibetrag "
         f"bekommt und ob sich die § 34-Glättung geändert hat.")
+
+
+@pytest.mark.parametrize("quantitaet,basis,vg_cent,erwartet_cent", [
+    # Fünftel(zvE 88.698, ao 30.000) = 16.848 EUR, Herleitung s. test_p16_4_freibetrag_gilt_je_person.
+    ("festzusetzende_est_gesamt", _basis, 6000000, 1684800),
+    # Fünftel(zvE 126.526, ao 110.000) = 5 × 2 × T(19.263) = 14.570 EUR (vorher ao 55.000: 29.278).
+    # Je 100.000 statt 60.000: ohne vg liegt das zvE hier bei 16.526, mit je 60.000 wäre die
+    # Steuer nach der Glättung 0 und die Symmetrie unten prüfte nichts.
+    ("festzusetzende_est_rentner", _basis_rentner, 10000000, 1457000),
+])
+def test_p34_fuenftelung_glaettet_auch_den_partner(quantitaet, basis, vg_cent, erwartet_cent):
+    """§ 34 Abs. 1 bei Zusammenveranlagung: der § 16-Gewinn des Ehegatten wird geglättet wie der
+    von Person A (Entscheidung p34-fuenftelung-umfasst-beide-ehegatten; § 26b behandelt beide
+    „gemeinsam als ein Steuerpflichtiger"). Vorher ging nur der Netto-VG von A in die Fünftelung
+    ein, der des Partners stand vollprogressiv im zvE — in BEIDEN Ringen, daher beide gemessen.
+
+    Zwei Prüfungen: der exakte Wert mit zwei Gewinnen, und die Symmetrie — derselbe Gewinn
+    ergibt dieselbe Steuer, gleich welcher Ehegatte verkauft hat. Verkaufte vorher nur der
+    Partner, lief gar keine Fünftelung."""
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    beide = _zahl(_mit_vg(vg_cent, vg_cent, basis=basis), quantitaet)
+    assert beide == erwartet_cent, (
+        f"{quantitaet}: zwei Veräußerungsgewinne von je {vg_cent // 100} EUR ergeben {beide} ct, "
+        f"erwartet {erwartet_cent} ct — geht der Netto-VG des Partners in die Fünftelung ein?")
+    nur_a = _zahl(_mit_vg(vg_cent, basis=basis), quantitaet)
+    nur_b = _zahl(_mit_vg(0, vg_cent, basis=basis), quantitaet)
+    assert nur_b == nur_a, (
+        f"{quantitaet}: derselbe Veräußerungsgewinn kostet beim Partner {nur_b} ct, bei "
+        f"Person A {nur_a} ct — die Glättung hängt an der Formularposition.")
+    # Ein Abs.-3-Antrag von A ohne eigenen Gewinn darf dem Partner die Fünftelung nicht nehmen:
+    # _abs3_eligible liest nur Person A, und bei A gibt es nichts zu ermäßigen.
+    antrag_a = _mit_vg(0, vg_cent, basis=basis)
+    antrag_a["antrag_ermaessigter_satz"] = {"wert": True, "zustand": "bestaetigt"}
+    antrag_a["dauernd_berufsunfaehig"] = {"wert": True, "zustand": "bestaetigt"}
+    mit_antrag = _zahl(antrag_a, quantitaet)
+    assert mit_antrag == nur_a, (
+        f"{quantitaet}: A beantragt § 34 Abs. 3 ohne eigenen Gewinn, der Gewinn des Partners "
+        f"kostet dann {mit_antrag} ct statt {nur_a} ct.")
 
 
 def test_p35_anrechnung_gilt_auch_fuer_den_betrieb_des_partners():

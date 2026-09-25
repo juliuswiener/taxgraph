@@ -596,7 +596,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # § 26b: bei Zusammenveranlagung kommen die Gewinneinkünfte des Ehegatten hinzu (Stufe 2
         # der Partnerachse, 2026-08-13). Bis dahin wurde der Partner-Gewinn zwar deklariert und
         # übermittelt, aber nicht besteuert — die angezeigte Steuer war zu niedrig.
-        gewinn_partner, _mitu_partner = _gewinn_partner_anteil(f)
+        gewinn_partner, _mitu_partner, netto_vg_partner = _gewinn_partner_anteil(f)
         g["einkuenfte_gewinn"] = laufender_gewinn + netto_vg + gewinn_partner
         # § 24a/§ 24b Freibeträge (Weg ii Stage 2, § 2 Abs. 3 — MINDERN den GdE VOR den Abzügen): § 24a
         # Altersentlastungsbetrag (§24a S.1: Arbeitslohn BRUTTO + max(0, positive Summe der Nicht-§19-Einkünfte =
@@ -799,12 +799,17 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
             # § 16-vg (netto_vg, außerordentlich § 34 Abs. 2 Nr. 1) wird geglättet statt voll progressiv. Engine-vor-
             # verdrahtet: tarif_modifiziert setzt tarifliche_est = tarifliche_est_modifiziert (einkommensteuertarif
             # Z.483/518). PER §31-Zweig (zve2 je Zweig — Kinderfreibetrag senkt zvE → eigener Tarif). Guard zve2>0.
-            # ao = netto_vg NUR (laufender §15/§18-Gewinn progressiv). §35-Deckel-3 liest die post-§34-tarifliche unten.
-            if netto_vg > 0:
+            # ao = netto_vg BEIDER Ehegatten (laufender §15/§18-Gewinn progressiv; § 26b, Entscheidung p34-fuenftelung-
+            # umfasst-beide-ehegatten; bei Einzelveranlagung ist netto_vg_partner 0). §35-Deckel-3 liest die post-§34-
+            # tarifliche unten. Abs. 3 bleibt beim vg von Person A — _abs3_eligible liest nur deren Felder.
+            # ponytail: Abs. 3 für A + Partner-vg lässt Letzteren vollprogressiv im zvE-Rest; wie Abs. 3 und die
+            # Fünftelung auf einen zweiten Gewinn zusammenwirken, ist ungeklärt und nicht gebaut.
+            ao = netto_vg + netto_vg_partner
+            if ao > 0:
                 zve2 = runner.catala_gesamt_zve(g2)
                 if zve2 > 0:
                     if f.get("antrag_ermaessigter_satz", {}).get("wert") is True \
-                            and _abs3_eligible(f, vz) and netto_vg <= 5_000_000:
+                            and _abs3_eligible(f, vz) and 0 < netto_vg <= 5_000_000:
                         # § 34 Abs. 3: est = plain grundtarif(verbleibendes zvE = zvE−ao, S.3 „allgemeine Tarif-
                         # vorschriften") + ermäßigter_satz × min(ao,5Mio). est_gesamt = grundtarif(VOLLES zvE) OHNE
                         # §32b-Progressionszuschlag (nicht im Ring). catala_est nur-zvE → plain §32a, KEIN Fünftel.
@@ -820,7 +825,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
                         # 5×[Tarif(zvE_rest+ao/5)−Tarif(zvE_rest)], S.3-Negativ via catala_fuenftel.
                         g2 = dict(g2, tarif_modifiziert=True, tarifliche_est_modifiziert=runner.catala_fuenftel({
                             "veranlagungszeitraum": vz, "veranlagung": g2["veranlagung"],
-                            "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": netto_vg}))
+                            "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": ao}))
             # § 35 Abs. 1: min(4×Messbetrag [S. 1 „das Vierfache"], Messbetrag×Hebesatz [S. 5 „tatsächlich zu
             # zahlende Gewerbesteuer"], Ermäßigungshöchstbetrag [S. 2: Zähler/Nenner × geminderte tarifliche
             # Steuer]). ADDITIV in steuerermaessigungen DIESES Freibetrag-Zweigs — tarifliche_est ist freibetrag-
@@ -1116,7 +1121,7 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         # § 26b: Gewinneinkünfte des Ehegatten (Stufe 2 der Partnerachse, 2026-08-13). BEWUSST erst
         # hier und nicht in alt24a_r oben: § 24a S. 1 knüpft an "den Steuerpflichtigen" an, der
         # Altersentlastungsbetrag von Person A darf sich am Gewinn von Person B nicht erhöhen.
-        gewinn_partner, _mitu_partner = _gewinn_partner_anteil(f)
+        gewinn_partner, _mitu_partner, netto_vg_partner = _gewinn_partner_anteil(f)
         rentner_g = {
             "gesamtfall": True, "veranlagungszeitraum": vz,
             "veranlagung": _b("veranlagung") or "einzel",
@@ -1194,12 +1199,14 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
             # Anrechnung je Zweig. 1:1 gesamt-Naht-Präzedenz (_festzusetzende Z. 842-892).
             g2 = dict(rentner_g, freibetraege_kinder=freibetrag) if freibetrag else dict(rentner_g)
             # § 34 CHOOSER im Rentner-Ring (Abs. 1 Fünftel Default vs Abs. 3 ermäßigter Satz auf Antrag):
-            # identisch zur gesamt-Naht. Guard zve2>0. ao = netto_vg (laufender Gewinn progressiv).
-            if netto_vg > 0:
+            # identisch zur gesamt-Naht. Guard zve2>0. ao = netto_vg beider Ehegatten (laufender Gewinn progressiv),
+            # Abs. 3 nur auf den vg von Person A — samt demselben ponytail wie dort.
+            ao = netto_vg + netto_vg_partner
+            if ao > 0:
                 zve2 = runner.catala_gesamt_zve(g2)
                 if zve2 > 0:
                     if f.get("antrag_ermaessigter_satz", {}).get("wert") is True \
-                            and _abs3_eligible(f, vz) and netto_vg <= 5_000_000:
+                            and _abs3_eligible(f, vz) and 0 < netto_vg <= 5_000_000:
                         # § 34 Abs. 3: plain grundtarif(verbleibendes zvE, S.3) + ermäßigter_satz × min(ao,5Mio).
                         est_rest = runner.catala_est({"veranlagungszeitraum": vz, "veranlagung": g2["veranlagung"],
                                                       "zu_versteuerndes_einkommen": max(0, zve2 - netto_vg)})
@@ -1211,7 +1218,7 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
                     else:
                         g2 = dict(g2, tarif_modifiziert=True, tarifliche_est_modifiziert=runner.catala_fuenftel({
                             "veranlagungszeitraum": vz, "veranlagung": g2["veranlagung"],
-                            "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": netto_vg}))
+                            "zu_versteuerndes_einkommen": zve2, "ausserordentliche_einkuenfte": ao}))
             # § 35 GewSt-Anrechnung Deckel-3 (JE §31-Zweig — tarifliche_est ist freibetrag-abhängig, global-
             # einmal würde den Kinderfreibetrag-Zweig über-crediten = stille Under-tax, 1:1 gesamt-Präzedenz).
             p35_credit_r = 0
