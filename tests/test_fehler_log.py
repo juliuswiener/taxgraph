@@ -179,11 +179,16 @@ def test_kein_pii_im_protokoll(base, monkeypatch):
 
 def test_meta_nimmt_keinen_text(tmp_path, monkeypatch):
     """Zusatzangaben sind Anzahlen und Wahrheitswerte UNTER ERLAUBTEM NAMEN (Positivliste
-    FL._ERLAUBTE_META, s. dort) — ein String unter erlaubtem Namen wird durch seinen Typnamen
-    ersetzt, ein Name AUSSERHALB der Liste unabhaengig vom Typ durch <gesperrt>: eine Regel,
-    die von der Sorgfalt des naechsten Aufrufers abhaengt, haelt nicht — auch nicht beim
-    Namen (urspruenglich pruefte dieser Test nur den Typ; `leer` stand nicht auf der Liste
-    und wurde durch `versuche` ersetzt, s. Ticket fehler-log-meta-nimmt-noch-zahlen-und-fall-id)."""
+    FL._ERLAUBTE_META, s. dort) — die kommen unveraendert durch; ein Name AUSSERHALB der Liste
+    wird durch <gesperrt> ersetzt, hier an einem String: eine Regel, die von der Sorgfalt des
+    naechsten Aufrufers abhaengt, haelt nicht — auch nicht beim Namen (urspruenglich pruefte
+    dieser Test nur den Typ; `leer` stand nicht auf der Liste und wurde durch `versuche`
+    ersetzt, s. Ticket fehler-log-meta-nimmt-noch-zahlen-und-fall-id).
+
+    Den Typ prueft dieser Test seit 54be1b4 NICHT mehr: `verraeterisch` erwartete vorher
+    "<str>" und steht seitdem ausserhalb der Liste. Die Zahl unter fremdem Namen prueft
+    test_meta_betrag_als_int_wird_gesperrt, den String UNTER erlaubtem Namen
+    test_meta_text_unter_erlaubtem_namen_wird_ersetzt."""
     monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
     FL.protokolliere("test.meta", ValueError(PII_MELDUNG),
                      anzahl=3, geglueckt=False, versuche=None, verraeterisch=IBAN)
@@ -286,6 +291,53 @@ def test_erlaubte_meta_und_echte_fall_id_kommen_durch(tmp_path, monkeypatch):
     e = FL.lies()[-1]
     assert e["fall_id"] == "abc123"
     assert e["anzahl"] == 7
+
+
+def test_fall_id_als_int_wird_gesperrt(tmp_path, monkeypatch):
+    """Ergaenzung zu den fall_id-Sperr-Tests oben: `_sicherer_fall_id` behandelt einen
+    Nicht-String GETRENNT (-> "<gesperrt:typ>"), denn Zeichenklasse und PII-Muster pruefen nur
+    Text. Eine Steuer-ID als `int` -- dieselbe Form wie der Betrag in
+    test_meta_betrag_als_int_wird_gesperrt -- stuende sonst als JSON-Zahl im Protokoll.
+    Mutationsprobe 2026-09-26: `return fall_id` statt `return "<gesperrt:typ>"` liess alle 30
+    Tests der vier Dateien, die fehler_log nennen, gruen."""
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
+    FL.protokolliere("test.fall_id", ValueError("egal"), fall_id=int(STEUER_ID))
+
+    roh = _roh()
+    assert STEUER_ID not in roh
+    e = FL.lies()[-1]
+    assert e["fall_id"] == "<gesperrt:typ>"
+
+
+def test_fall_id_ohne_pii_filter_wird_gesperrt(tmp_path, monkeypatch):
+    """Fehlt pii_filter (Store ohne Haut, s. _lade_pii_filter), laesst sich nicht pruefen, ob
+    die Kennung PII ist -- dann fail-closed "<gesperrt:pii_filter_fehlt>", nicht durchreichen.
+    Mutationsprobe 2026-09-26: `return fall_id` statt `return _FALL_ID_KEIN_FILTER` liess alle
+    30 Tests der vier Dateien, die fehler_log nennen, gruen -- keiner schaltete den Filter ab."""
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
+    monkeypatch.setattr(FL, "_PII_FILTER", None)
+    FL.protokolliere("test.fall_id", ValueError("egal"), fall_id=STEUER_ID)
+
+    roh = _roh()
+    assert STEUER_ID not in roh
+    e = FL.lies()[-1]
+    assert e["fall_id"] == "<gesperrt:pii_filter_fehlt>"
+
+
+def test_meta_text_unter_erlaubtem_namen_wird_ersetzt(tmp_path, monkeypatch):
+    """Die zweite Schranke in `_sicher`: auch ein ERLAUBTER Name traegt nur int/bool/None, ein
+    String wird durch seinen Typnamen ersetzt. Die Positivliste prueft nur den Namen -- ein
+    Aufrufer, der `anzahl=` versehentlich mit Text fuellt, schriebe ihn sonst im Klartext ins
+    Protokoll. Mutationsprobe 2026-09-26: `return wert` statt `return f"<{type(wert).__name__}>"`
+    liess alle 30 Tests der vier Dateien, die fehler_log nennen, gruen (von 02197c4 bis 54be1b4
+    pruefte den Fall test_meta_nimmt_keinen_text, s. dort)."""
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path))
+    FL.protokolliere("test.meta", ValueError("egal"), anzahl=NAME)
+
+    roh = _roh()
+    assert NAME not in roh
+    e = FL.lies()[-1]
+    assert e["anzahl"] == "<str>"
 
 
 # ------------------------------------------------------------------ Struktur: die Schranke umgehbar?
