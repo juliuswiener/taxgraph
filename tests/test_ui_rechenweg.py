@@ -2,6 +2,7 @@
 
 Positivfall: kinderloser Fall → /ergebnis liefert kette → vier Stufen sichtbar.
 Negativfall: kette null/fehlt → Rechenweg-Liste NICHT im DOM.
+Gleichheit: kette erscheint nur, wenn ihre letzte Stufe exakt zahl_cent ist (ohne Browser).
 """
 
 import json
@@ -417,5 +418,98 @@ def test_ergebnis_hinweis_offen_bei_stiller_null(base, playwright_context):
         # Kein horizontales Scrollen
         scroll = page.evaluate("document.documentElement.scrollWidth")
         assert scroll <= 360, f"scrollWidth={scroll} > 360"
+    finally:
+        page.close()
+
+# Entscheidung rechenweg-wird-nur-korrekt-angezeigt (2026-09-12): die Kette erscheint nur, wenn
+# ihre letzte Stufe exakt die ausgegebene Steuer ist. Die Kette rechnet auf dem Rohstand VOR den
+# Korrekturen in _festzusetzende(_r) (§ 34, § 35, § 32b, § 32d). Gemessen an 5f5cbfd, VZ 2025,
+# kinderlos, dieselbe /ergebnis-Antwort:
+#   gesamt, zusammen, 120.000 EUR Veräußerungsgewinn bei A:  zahl 30.358 EUR, Kette 34.338 EUR
+#   gesamt, zusammen, je 60.000 EUR bei A und B:             zahl 17.332 EUR, Kette 17.486 EUR
+#   rentner_gesamt, 20.000 EUR Rente + 120.000 EUR bei A:    zahl 20.511 EUR, Kette 27.544 EUR
+# Die Gegenproben ohne Sonderregel (Lohn: 8.238 = 8.238, Rente: 811 = 811) müssen die Kette
+# WEITER zeigen — sonst wäre „nie eine Kette" ebenfalls grün.
+_VORSORGE_NULL = [
+    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
+    ("basis_kv", 0), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"),
+    ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
+    ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0),
+    ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
+]
+_LOHN_60K_ZUSAMMEN = [
+    ("veranlagung", "zusammen"), ("bruttoarbeitslohn", 6_000_000),
+    ("ep_arbeitstage", 0), ("ep_eigenes_kfz", False), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0),
+    ("kein_vuv", True), ("kein_sonstige", True), ("kein_kap", True),
+    # Person-B-Kegel, sonst sperrt partner_kegel_offen vor jeder Zahl
+    ("bruttoarbeitslohn_partner", 0), ("kap_kapitalertraege_partner", 0),
+    ("kap_gewinn_aktien_partner", 0), ("kap_gewinn_sonstige_partner", 0),
+    ("kap_verlust_aktien_partner", 0), ("kap_verlust_sonstige_partner", 0),
+] + _VORSORGE_NULL
+_RENTE_20K = [
+    ("veranlagung", "einzel"),
+    ("rentner_renten_art", "gesetzliche_rente"), ("rentner_jahresrente", 2_000_000),
+    ("rentner_renten_beginn_jahr", 2025), ("rentner_alter_bei_rentenbeginn", 65),
+    ("rentner_rentenfreibetrag", 0), ("rentner_grad_der_behinderung", 0),
+    ("rentner_hilflos_blind_taubblind", False), ("rentner_hinterbliebenenbezuege", False),
+    ("rentner_pflegegrad", 0), ("rentner_gepflegter_hilflos", False),
+    ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
+] + _VORSORGE_NULL
+# § 16 Abs. 4-Gates bestätigt-true, Veräußerungsgewinn bei A (und B)
+_VG_A = [("kein_gewinn", False), ("rentner_alter_55_oder_berufsunfaehig", True),
+         ("rentner_freibetrag_erstmalig", True)]
+_VG_B = [("rentner_alter_55_oder_berufsunfaehig_partner", True),
+         ("rentner_freibetrag_erstmalig_partner", True)]
+_A120_ALLEIN = _LOHN_60K_ZUSAMMEN + _VG_A + [("rentner_veraeusserungsgewinn", 12_000_000)]
+
+
+def _fall_mit(base: str, fid: str, scheibe: str, felder: list) -> dict:
+    """Legt den Fall an, bestätigt alle Felder und liefert die /ergebnis-Antwort."""
+    _req(base, "POST", "/fall", {"scheibe": scheibe, "veranlagungszeitraum": 2025, "fall_id": fid})
+    for feld, wert in felder:
+        _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
+    _, ergebnis = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    assert ergebnis["grund"] == "bestaetigt", ergebnis
+    return ergebnis
+
+
+@pytest.mark.parametrize("scheibe,felder,kette_pflicht", [
+    ("gesamt", _LOHN_60K_ZUSAMMEN + [("kein_gewinn", True)], True),
+    ("gesamt", _A120_ALLEIN, False),
+    ("gesamt", _LOHN_60K_ZUSAMMEN + _VG_A + _VG_B + [
+        ("rentner_veraeusserungsgewinn", 6_000_000),
+        ("rentner_veraeusserungsgewinn_partner", 6_000_000)], False),
+    ("rentner_gesamt", _RENTE_20K + [("kein_gewinn", True)], True),
+    ("rentner_gesamt", _RENTE_20K + _VG_A + [("rentner_veraeusserungsgewinn", 12_000_000)], False),
+], ids=["lohn60k-gegenprobe", "vg-a120-allein", "vg-a60-b60", "rente20k-gegenprobe", "rente20k-vg120"])
+def test_kette_endet_bei_der_zahl(base, request, scheibe, felder, kette_pflicht):
+    """Zwei Beträge mit demselben Label in derselben Antwort: steht eine Kette da, endet sie bei
+    zahl_cent. Beide Setzstellen (gesamt- und Rentner-Zweig) sind abgedeckt."""
+    ergebnis = _fall_mit(base, request.node.callspec.id, scheibe, felder)
+    k = ergebnis["kette"]
+    if kette_pflicht:
+        assert k is not None, f"Gegenprobe ohne Sonderregel verliert die Kette: {ergebnis}"
+    if k is not None:
+        assert k["festzusetzende_est"] * 100 == ergebnis["zahl_cent"], (
+            f"Rechenweg endet bei {k['festzusetzende_est']} EUR, die Zahl darüber ist "
+            f"{ergebnis['zahl_cent']} ct — zwei Steuern unter demselben Label")
+
+
+def test_abweichende_kette_zeigt_hinweis_statt_tabelle(base, playwright_context):
+    """Was der Nutzer sieht: im § 34-Fall den Hinweis, nicht die Tabelle mit 34.338 EUR."""
+    page = playwright_context.new_page()
+    try:
+        fid = "rw-a120"
+        _fall_mit(base, fid, "gesamt", _A120_ALLEIN)
+        page.goto(base)
+        page.wait_for_load_state("networkidle")
+        page.evaluate(f"FALL = '{fid}';")
+        page.evaluate("document.getElementById('start').hidden = true;")
+        page.evaluate("document.getElementById('flow').hidden = false;")
+        page.evaluate("(async () => { await zeigeErgebnis(); })();")
+        page.wait_for_selector("#rechenweg:not([hidden])", timeout=5000)
+        assert page.evaluate("document.getElementById('rechenweg-tabelle').hidden"), (
+            "Tabelle sichtbar: " + page.evaluate("document.getElementById('rechenweg-body').innerText"))
+        assert not page.evaluate("document.getElementById('rechenweg-hinweis').hidden")
     finally:
         page.close()
