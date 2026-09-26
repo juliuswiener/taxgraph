@@ -37,6 +37,13 @@ import store as ST          # noqa: E402
 import audit                # noqa: E402 — P1.6 Audit-Log
 import fehler_log           # noqa: E402 — Fehler-Protokoll (Metadaten only, nie str(exception))
 import traverser as TR      # noqa: E402
+import bindung_rollen as BR  # noqa: E402 — die drei Rollen der Bindung (Kegel/Enumeration/Slots)
+
+# ponytail: zwei Aliase als Zugestaendnis an zwei Testmodule, die auf den alten privaten
+# Namen zugreifen (test_dialog_ehrlich_lauf, test_kopfzeile_deckt_das_ergebnis). Sie fallen,
+# sobald diese Tests auf `BR.` umgestellt sind — nicht vorher, sonst brechen sie grundlos.
+_relevante_kegel_felder = BR.relevante_kegel_felder
+_ring_bindungen = BR.rollen
 import intervall as IV      # noqa: E402
 import est_mapping as EM    # noqa: E402
 import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche, dev-2)
@@ -187,34 +194,6 @@ def _scheibe_bindung(store: dict) -> dict:
     return {f: b[f] for f in felder}
 
 
-def _relevante_kegel_felder(scheibe_felder: tuple, bindung: dict, store: dict | None) -> tuple:
-    """Der Pflicht-Kegel ohne die Felder, deren Regel der Nutzer selbst abbestellt hat.
-
-    _feste_zahl verlangt für den Meet jedes Kegel-Feld als bestätigt. Ein Feld, dessen Regel
-    traverser.relevanz() bereits ausgeschlossen hat, wird vom Traverser nie gefragt — es sperrte
-    den Ring dauerhaft auf input_kegel_nicht_bestaetigt, ohne dass der Nutzer die Frage je zu
-    sehen bekam (BACKLOG traverser-ring-kegel-relevanz-naht; gefunden am Fall vv_wohnzwecke=False,
-    das p21_2_verbilligte_vermietung_wk ausschließt und vv_entgelt_quote_prozent im Kegel zurückließ).
-
-    Fail-closed bleibt erhalten, und zwar an zwei Stellen:
-    - relevanz() schließt NUR bei einem BESTÄTIGTEN False aus (traverser.py:122). Unbeantwortet
-      oder vorläufig schließt NICHT aus, der Kegel bleibt also gesperrt, solange der Nutzer nicht
-      geantwortet hat.
-    - Ohne store (Alt-Aufrufer, Teil-Ringe) wird gar nichts ausgeschlossen — dann gilt der volle
-      Kegel wie bisher.
-
-    Nebenwirkung auf die slot_fn: ein weggelassenes Feld fehlt auch im Dict, das
-    bescheid_via_slots an die slot_fn übergibt. Das ist geprüft und abgesichert — kein
-    ausschließbares Kegel-Feld trägt einen Slot, den eine slot_fn liest
-    (test_kegel_relevanz_naht::test_kein_ausschliessbares_kegelfeld_ist_ein_gelesener_slot)."""
-    if store is None:
-        return scheibe_felder
-    rel = TR.relevanz(store, bindung)
-    return tuple(f for f in scheibe_felder
-                 if rel.get((bindung.get(f) or {}).get("quelle", {}).get("regel_id"),
-                            {}).get("status") != "ausgeschlossen")
-
-
 def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder: tuple,
                 store: dict | None = None):
     """Fail-closed: die festzusetzende Zahl NUR bei Scheiben-Gesamt-Accessor UND vollständig
@@ -225,7 +204,7 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     q = cfg["gesamt_ring"]
     if q is None:
         return None
-    scheibe_felder = _relevante_kegel_felder(scheibe_felder, bindung, store)
+    scheibe_felder = BR.relevante_kegel_felder(scheibe_felder, bindung, store)
     zustaende = [felder[f]["zustand"] for f in scheibe_felder if f in felder]
     if len(zustaende) < len(scheibe_felder) or ST.meet_zustand(zustaende) != "bestaetigt":
         return None
@@ -334,21 +313,14 @@ def _badge(herkunft: dict) -> str:
     return herkunft.get("herkunft", "laie")
 
 
-def _ring_bindung(cfg: dict, bindung: dict, store: dict | None = None) -> dict:
-    """Bindung für die Spannen-/intervall-Rechnung: nur die Pflicht-Kegel-Felder; mit `store` (nur für IV.intervall) ohne abbestellte.
-    Sonst zögen ungesetzte Partner-Felder (einzel) und nie gefragte Felder als unbounded-ohne-Wert das Intervall auf nicht_fixierbar."""
-    kegel = cfg.get("kegel")
-    return {f: bindung[f] for f in _relevante_kegel_felder(kegel, bindung, store) if f in bindung} if kegel else bindung
-
-
 def _gesamt_beitrag(store: dict, cfg: dict, bindung: dict, felder: dict, sid: str, vz: int):
     """Frage-Reihenfolge-Gewichte aus dem verfügbaren Ring (Gesamt bevorzugt, sonst erster Teil)."""
     if cfg["gesamt_ring"]:
-        rb = _ring_bindung(cfg, bindung)
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
+        aufbau, achsen = BR.rollen(cfg, bindung, store)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, aufbau, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
         if bf is not None:
             return {b["feld_id"]: b["spanne_cent"]
-                    for b in IV.intervall(felder, _ring_bindung(cfg, bindung, store), bf, snapshot_id=sid)["beitraege"]}
+                    for b in IV.intervall(felder, achsen, bf, snapshot_id=sid)["beitraege"]}
     for _name, q, tfelder in cfg["teil_ringe"]:
         tb = {f: bindung[f] for f in tfelder if f in bindung}
         bf = _bescheid_fn(q, vz, tb, nur_bestaetigt=False)   # Estimate-Pfad (fragen-Gewichte)
@@ -486,10 +458,10 @@ def stand(fall_id: str) -> tuple[int, dict]:
     if gesperrt:
         engine = "gesperrt"          # nicht-ring-fähiger Abzug/Einkunftsart -> kein Ring (K2)
     elif cfg["gesamt_ring"]:
-        rb = _ring_bindung(cfg, bindung)
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
+        aufbau, achsen = BR.rollen(cfg, bindung, store)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, aufbau, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
         if bf is not None:
-            gesamt_iv = IV.intervall(felder, _ring_bindung(cfg, bindung, store), bf, snapshot_id=sid)["intervall"]
+            gesamt_iv = IV.intervall(felder, achsen, bf, snapshot_id=sid)["intervall"]
             engine = "catala"
     else:
         for name, q, tfelder in cfg["teil_ringe"]:
@@ -608,7 +580,7 @@ def _ergebnis_roh(fall_id: str) -> tuple[int, dict]:
         # dieselbe Relevanz-Sicht wie _feste_zahl: ein Feld, dessen Regel der Nutzer abbestellt
         # hat, darf auch nicht als "offen" gemeldet werden — sonst zeigt die API weiter auf eine
         # Frage, die der Traverser gar nicht mehr stellt.
-        offen = [f for f in _relevante_kegel_felder(scheibe_felder, bindung, store)
+        offen = [f for f in BR.relevante_kegel_felder(scheibe_felder, bindung, store)
                  if f not in felder or felder[f]["zustand"] != "bestaetigt"]
         # Klasse C: der Kegel kann vollstaendig bestaetigt sein und _feste_zahl trotzdem None
         # liefern — dann fehlt oben nichts, und "input_kegel_nicht_bestaetigt" waere eine falsche

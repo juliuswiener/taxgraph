@@ -182,33 +182,64 @@ def test_erstjahr_liefert_normale_fragenliste(base):
 
 
 @pytest.mark.parametrize("label, extra_event", [
-    ("unbeantwortet", None),
     ("bestaetigt", _bestaetigt("rentner_rentenfreibetrag", RF)),
     ("vorlaeufig_vorjahr", _vorjahr_vorlaeufig("rentner_rentenfreibetrag", RF)),
 ])
-@pytest.mark.xfail(
-    strict=True,
-    reason="GET /fall/{id}/fragen wirft ungefangen bis zum server.py:236-Blanket-except durch, "
-           "sobald rentner_renten_beginn_jahr < veranlagungszeitraum (aa-Folgejahr) -- UNABHÄNGIG "
-           "vom Zustand von rentner_rentenfreibetrag (unbeantwortet/bestätigt/vorläufig liefern "
-           "wortgleich dieselbe Exception, gemessen). Trace: api.fragen -> _gesamt_beitrag -> "
-           "_ring_bindung (kegel-beschneidet Bindung, RENTNER_KEGEL enthält "
-           "rentner_rentenfreibetrag nicht) -> intervall.intervall -> "
-           "bescheid_zweige.py slot_fn/_rente_instanz (sieht das Feld nie) -> "
-           "runner.catala_renten_einkuenfte -> raise RentenfreibetragFixierungOffen. "
-           "Client-Antwort (gemessen, wortgleich für alle drei Zustände): HTTP 500 "
-           '{"fehler": "RentenfreibetragFixierungOffen: aa-Folgejahr 2015<2025 ohne fixierten '
-           'Rentenfreibetrag"}. Marker faellt am Tag des Fixes (XPASS) und zwingt dazu, ihn zu '
-           "entfernen.")
-def test_aa_folgejahr_bricht_fragen_mit_500_unabhaengig_vom_freibetrag_zustand(base, label, extra_event):
-    """ROTER Fall, parametrisiert über drei Zustände von rentner_rentenfreibetrag (unbeantwortet,
-    bestätigt, vorläufig über den ECHTEN Vorjahresübernahme-Kanal) -- alle drei stürzen identisch
-    ab. Die Parametrisierung hält genau die Aussage fest, die der Kontrollfall erzwungen hat:
-    der Zustand ist nicht die Ursache. Ein künftiger Fix, der nur den vorläufig-Fall behebt (z.B.
-    eine Sonderbehandlung für herkunft=vorjahr) und die anderen beiden Zustände weiter abstürzen
-    lässt, würde von diesem Test weiterhin als XFAIL erkannt -- erst wenn alle drei durchgehen,
-    ist der Marker weg."""
+def test_aa_folgejahr_mit_freibetrag_liefert_fragen_ohne_500(base, label, extra_event):
+    """Der aa-Folgejahr-Zweig stürzt NICHT mehr ab, wenn der Freibetrag in der Enumeration sichtbar ist.
+
+    Bis 2026-09-26 warf `GET /fragen` hier für JEDEN Zustand HTTP 500
+    (`RentenfreibetragFixierungOffen: aa-Folgejahr 2015<2025 ohne fixierten Rentenfreibetrag`).
+    Ursache war nicht der Zustand, sondern die kegel-beschnittene Bindung an
+    `_gesamt_beitrag`: `RENTNER_KEGEL` enthält `rentner_rentenfreibetrag` nicht, also sah
+    `est_mapping.instanzen` das Feld strukturell nie. `ad2ef61` trennt Aufbau-Bindung (voll,
+    enumeriert) von Achsen-Bindung (Kegel), seitdem findet die Enumeration das Feld.
+
+    ZWEI ZUSTÄNDE MIT ZAHL, nicht „stürzt nicht ab": ein Test, der nur HTTP 200 prüft, wäre auch
+    dann grün, wenn der Ring danach 0 € nennte (`gruen-weil-der-pruefer-weniger-sieht`).
+    Gemessen 2026-09-26, aa-Folgejahr 2015 < VZ 2025, Freibetrag 5.000 €:
+
+      Zustand          /fragen       /ergebnis
+      bestaetigt       200, 132 Fr.  200, zahl=45800, grund="bestaetigt"
+      vorlaeufig       200, 133 Fr.  200, zahl=0,     grund="bestaetigt"
+
+    Der `vorlaeufig`-Fall trägt die Zahl 0: der Zwei-Signal-Filter
+    (`nur_bestaetigt=True` in `_feste_zahl`) lässt eine vorläufige Instanz korrekt aus der
+    festgesetzten Zahl heraus — die 0 ist gewollt, nicht der Defekt. Die Zahl steht hier
+    trotzdem als Erwartung, damit ein späterer Umbau sie nicht still verschiebt."""
     _anlegen(base, f"rf_{label}", beginn_jahr=2015, extra_event=extra_event)
     st, b = _req(base, "GET", f"/fall/rf_{label}/fragen")
-    assert st == 200
+    assert st == 200, f"aa-Folgejahr mit Freibetrag ({label}) darf nicht mehr abstürzen: {b}"
+    assert isinstance(b.get("fragen"), list)
+    assert len(b["fragen"]) > 0, (label, b)
+
+    st_e, e = _req(base, "GET", f"/fall/rf_{label}/ergebnis")
+    assert st_e == 200, e
+    erwartet = 45800 if label == "bestaetigt" else 0
+    assert e["zahl_cent"] == erwartet, (
+        f"{label}: /ergebnis nennt {e['zahl_cent']}, erwartet {erwartet} (grund={e['grund']!r})")
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="OHNE Freibetrag muss der aa-Folgejahr-Zweig weiter sperren: § 22 Nr. 1 S. 3 Buchst. a "
+           "Doppelbuchst. aa S. 4 EStG verlangt einen fixierten Betrag. Gemessen 2026-09-26: "
+           "GET /fragen liefert HTTP 500 statt eines Sperrgrunds mit Klartext. Das ist die "
+           "verbleibende Hälfte des alten Befunds — ad2ef61 hat nur die Sichtbarkeit des Feldes "
+           "geheilt, nicht die Fehlerbehandlung. Marker fällt, wenn der Zweig einen Sperrgrund "
+           "liefert statt zu werfen.")
+def test_aa_folgejahr_ohne_freibetrag_sperrt_mit_klartext_statt_500(base):
+    """Dritte Parametrisierung des alten Tests, jetzt getrennt: ohne jeden Freibetrag.
+
+    Mit `ad2ef61` findet die Enumeration das Feld, aber es ist nicht da — `_rente_instanz` liest
+    `None` und `runner.catala_renten_einkuenfte` (runner.py:916) wirft weiter. Der Server
+    antwortet HTTP 500 statt mit einem Sperrgrund. Gemessen:
+
+      /fragen   HTTP 500
+      /ergebnis HTTP 200, zahl=None, grund="rentenfreibetrag_fixierung_offen"   <- tut es richtig
+
+    `/ergebnis` zeigt, wie es aussehen soll: eine gesperrte Antwort mit Klartext-grund. Der
+    Unterschied zwischen den beiden Endpunkten ist der Befund, nicht die Exception selbst."""
+    _anlegen(base, "rf_ohne", beginn_jahr=2015, extra_event=None)
+    st, b = _req(base, "GET", "/fall/rf_ohne/fragen", erwarte=200)
     assert isinstance(b.get("fragen"), list)
