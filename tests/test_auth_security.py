@@ -184,9 +184,25 @@ class TestAuditIntegration:
         assert len(auth_entries) >= 1
 
     def test_user_creation_audited(self, base):
-        """Registration not yet audited (future scope). Skip for now."""
-        pytest.skip("Funktion fehlt: auth.register schreibt kein Audit, server.py ruft es ohne audit_fn; "
-                    "Vault-Ticket auth-audit-und-login-drosselung-fehlen")
+        """AK1: Die Anlage eines Nutzers schreibt einen Audit-Eintrag mit der Nutzerkennung."""
+        _req(base, "POST", "/auth/register",
+             {"username": "neunutzer", "password": "ein-geheimnis-123"}, erwarte=201)
+        eintraege = [e for e in audit.lies() if e.get("action") == "register"]
+        assert len(eintraege) == 1, f"kein register-Eintrag im Protokoll: {audit.lies()}"
+        assert eintraege[0]["user_id"] == "neunutzer", eintraege[0]
+
+    def test_register_audit_ohne_passwort(self, base):
+        """AK3: Der register-Eintrag darf den Passwortwert nicht tragen.
+
+        Kontrolle ueber den INHALT, nicht ueber den heutigen Code: der Wert ist ein Kanarienvogel.
+        Findet ihn jemand im Protokoll, hat ein kuenftiger Fix den Request-Body mitgeschrieben —
+        und das faellt nur auf, wenn der Wert gesucht wird."""
+        kanarienvogel = "kanarienvogel-nicht-in-audit"
+        _req(base, "POST", "/auth/register",
+             {"username": "vogelhalter", "password": kanarienvogel}, erwarte=201)
+        roh = json.dumps(audit.lies(), ensure_ascii=False)
+        assert kanarienvogel not in roh, (
+            f"Das Passwort steht im Audit-Protokoll: {audit.lies()}")
 
     def test_failed_login_attempt_audited(self, base):
         """Failed login not yet audited (future scope). Skip for now."""

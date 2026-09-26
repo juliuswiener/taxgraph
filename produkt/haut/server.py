@@ -65,7 +65,8 @@ def _routes():
         ("GET", re.compile(r"^/health$"), lambda m, b: api.health()),
         ("GET", re.compile(r"^/ready$"), lambda m, b: api.ready()),
         # P1.1 Auth (kein _fall_owner_check — öffentlich)
-        ("POST", re.compile(r"^/auth/register$"), lambda m, b: auth.register(b)),
+        ("POST", re.compile(r"^/auth/register$"),
+         lambda m, b: auth.register(b, audit_fn=lambda uid, act, fid, det: audit.append(uid, act, fid, det))),
         ("POST", re.compile(r"^/auth/login$"),
          lambda m, b: auth.login(b, audit_fn=lambda uid, act, fid, det: audit.append(uid, act, fid, det))),
         ("POST", re.compile(r"^/auth/logout$"),
