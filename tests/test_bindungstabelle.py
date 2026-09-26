@@ -461,6 +461,17 @@ def test_g_askable_felder_sind_erreichbar(daten):
         f"stehen: {veraltet} — Eintrag streichen und in einem Kommentar festhalten, dass das "
         "Feld erreichbar geworden ist")
 
+    # Untergrenze, gleiche Bauart wie DATEIEN_UNTEN in test_ci_konfiguration.py: ohne sie wird
+    # die Zusicherung oben LAUTLOS WAHR, sobald die Liste leer ist — dann prueft sie nichts
+    # mehr, sie dekoriert nur. Gemessen 2026-09-26: 6 Eintraege (fuenf, die laut Entscheidung
+    # verdrahtet werden, plus rentner_alter_64_erfuellt). Ein Sinken ist eine Entscheidung,
+    # keine Nebenwirkung — wer ein Feld verdrahtet, streicht hier bewusst mit.
+    UNTERGRENZE = 6
+    assert len(UNERREICHBAR_BEKANNT) >= UNTERGRENZE, (
+        f"UNERREICHBAR_BEKANNT hat nur noch {len(UNERREICHBAR_BEKANNT)} Eintraege, erwartet "
+        f"mindestens {UNTERGRENZE} — sind Felder erreichbar geworden (dann gehoert die Zahl "
+        "hier bewusst gesenkt) oder ist die Liste beschnitten worden?")
+
 
 def test_g_gate_faengt_tote_bindung(daten):
     """Gegenprobe: ein erfundenes askable-Feld ohne Scheibe MUSS auffallen.
