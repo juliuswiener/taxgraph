@@ -786,6 +786,9 @@ def test_kist_rentner_p32b_delta_guenstigerpruefung(base):
 
     ohne_pe, _, k_ohne = _ring_rentner(_kegel_guenstiger(False))
     mit_pe, _, k_mit = _ring_rentner(_kegel_guenstiger(True))
-    assert k_mit > k_ohne, (
-        f"KiSt mit Progressionseinkuenften ({k_mit}) ist nicht groesser als ohne ({k_ohne}) — "
-        f"der § 32b-Zuschlag fehlt in der KiSt-Basis.")
+    # GEPINNT, nicht gebaendert: k_mit > k_ohne waere kein Pin — ein zu weit wirkender
+    # Delta (Kapital doppelt gezaehlt) bliebe darunter gruen.
+    assert (k_ohne, k_mit) == (0, 684), (
+        f"KiSt ohne/mit Progressionseinkuenften {k_ohne}/{k_mit}, erwartet 0/684 CENT. "
+        f"0/0 heisst: der § 32b-Zuschlag fehlt in der Basis. Deutlich mehr als 684 hiesse: "
+        f"der Delta zaehlt das Kapital doppelt.")
