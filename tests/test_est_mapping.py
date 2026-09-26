@@ -325,17 +325,17 @@ def test_klasse_f_verzweigung_aa_basisversorgung(bindung):
                                             "rentner_jahresrente": 1800000, "rentner_renten_beginn_jahr": 2015}))
     r = EM.deklariere(snap, bindung)
     assert r["deklaration"]["E1800301"] == 18000
-    assert r["deklaration"]["E1800501"] == 2015                # Jahr-Granularität (Datum = Submission-Layer, int→unverändert)
+    assert r["deklaration"]["E1800501"] == "01.01.2015"   # Jahr -> Datum am Schreiber (ERiC verlangt TT.MM.JJJJ)
 
 
 def test_klasse_f_verzweigung_private_und_sonstige(bindung):
     """private Leibrente (bb) -> Leibr_priv E1801601/E1801701; sonstige -> Leibr_sonst E1803102/E1803202."""
     r_priv = EM.deklariere(ST.materialisiere(_store_mit({"rentner_renten_art": "private_leibrente",
         "rentner_jahresrente": 900000, "rentner_renten_beginn_jahr": 2018}))[0], bindung)
-    assert r_priv["deklaration"]["E1801601"] == 9000 and r_priv["deklaration"]["E1801701"] == 2018
+    assert r_priv["deklaration"]["E1801601"] == 9000 and r_priv["deklaration"]["E1801701"] == "01.01.2018"
     r_sonst = EM.deklariere(ST.materialisiere(_store_mit({"rentner_renten_art": "sonstige_leibrente",
         "rentner_jahresrente": 120000, "rentner_renten_beginn_jahr": 2020}))[0], bindung)
-    assert r_sonst["deklaration"]["E1803102"] == 1200 and r_sonst["deklaration"]["E1803202"] == 2020
+    assert r_sonst["deklaration"]["E1803102"] == 1200 and r_sonst["deklaration"]["E1803202"] == "01.01.2020"
 
 
 def test_klasse_f_fail_closed_ohne_bestaetigte_art(bindung):
@@ -422,12 +422,12 @@ def test_klasse_gf_renten_verzweigung_person_b(bindung):
     snap, _ = ST.materialisiere(_store_mit({"rentner_renten_art_partner": "gesetzliche_rente",
         "rentner_jahresrente_partner": 1800000, "rentner_renten_beginn_jahr_partner": 2015}))
     r = EM.deklariere(snap, bindung)
-    assert r["person_b"]["E1800301"] == 18000 and r["person_b"]["E1800501"] == 2015
+    assert r["person_b"]["E1800301"] == 18000 and r["person_b"]["E1800501"] == "01.01.2015"
     assert "E1800301" not in r["deklaration"]                   # nicht in Person-A-Deklaration
     # bb private Leibrente Person B
     r2 = EM.deklariere(ST.materialisiere(_store_mit({"rentner_renten_art_partner": "private_leibrente",
         "rentner_jahresrente_partner": 900000, "rentner_renten_beginn_jahr_partner": 2018}))[0], bindung)
-    assert r2["person_b"]["E1801601"] == 9000 and r2["person_b"]["E1801701"] == 2018
+    assert r2["person_b"]["E1801601"] == 9000 and r2["person_b"]["E1801701"] == "01.01.2018"
     # ohne Partner-Art -> fail-closed unvollständig
     r3 = EM.deklariere(ST.materialisiere(_store_mit({"rentner_jahresrente_partner": 1800000}))[0], bindung)
     assert "rentner_jahresrente_partner" in {x["feld_id"] for x in r3["unvollstaendig"]}
@@ -610,10 +610,10 @@ def test_multi_rente_zwei_renten_verschiedene_art(bindung):
     Instanz-Art. Rente 1 in der Haupt-Deklaration, Rente 2 in anlage_instanzen[rente]."""
     snap, _ = ST.materialisiere(_store_mit({**_RENTE_1, **_RENTE_2}))
     r = EM.deklariere(snap, bindung)
-    assert r["deklaration"]["E1800301"] == 20000 and r["deklaration"]["E1800501"] == 2025   # Rente 1 aa (EUR)
+    assert r["deklaration"]["E1800301"] == 20000 and r["deklaration"]["E1800501"] == "01.01.2025"   # Rente 1 aa (EUR / Datum)
     inst = r["anlage_instanzen"]["rente"]
     assert len(inst) == 1 and inst[0]["index"] == 2
-    assert inst[0]["felder"]["E1801601"] == 9000 and inst[0]["felder"]["E1801701"] == 2018   # Rente 2 bb (EUR)
+    assert inst[0]["felder"]["E1801601"] == 9000 and inst[0]["felder"]["E1801701"] == "01.01.2018"   # Rente 2 bb (EUR / Datum)
     assert "E1801601" not in r["deklaration"]                            # Rente-2-Kz NICHT in Person-A-Deklaration
     assert r["eingaben_konsistent"] is True
 
@@ -671,7 +671,7 @@ def test_multi_rente_alter_rentenfreibetrag_pro_instanz(bindung):
     assert snap["rentner_rentenfreibetrag__2"]["wert"] == 600000
     r = EM.deklariere(snap, bindung)
     inst = r["anlage_instanzen"]["rente"][0]
-    assert inst["felder"] == {"E1801601": 9000, "E1801701": 2018}       # nur Kz-Felder (EUR), alter/rentenfreibetrag KEIN Phantom
+    assert inst["felder"] == {"E1801601": 9000, "E1801701": "01.01.2018"}   # Kz-Felder (EUR bzw. Datum), alter/rentenfreibetrag KEIN Phantom
     nd = {x["feld_id"] for x in r["nicht_deklariert"]}
     assert "rentner_alter_bei_rentenbeginn__2" in nd and "rentner_rentenfreibetrag__2" in nd
     assert r["eingaben_konsistent"] is True
