@@ -142,26 +142,32 @@ def test_stand_event_id_gleich_warum(base):
     assert event_id_event == event_id_stand == event_id_warum
 
 
-def test_stand_event_id_null_fuer_unbelegte_felder(base):
-    """Unbelegte Felder haben event_id = null."""
-    # Fall anlegen (leer)
+def test_stand_listet_nur_belegte_felder_mit_eigener_event_id(base):
+    """/stand führt nur belegte Felder, und jedes trägt die event_id seines aktiven Events — auch ein
+    vorläufiges: ohne sie kann die UI den Vorschlag nicht per `ersetzt` überschreiben."""
+    # Fall anlegen (leer) → kein Feld in /stand
     status, resp = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": "2025", "fall_id": "test-3"})
     assert status == 201
     fall_id = resp["fall_id"]
-
-    # /stand abrufen
     status, resp = _req(base, "GET", f"/fall/{fall_id}/stand", None)
     assert status == 200
     _val("stand", resp)
+    assert resp["felder"] == {}, f"Unbelegte Felder in /stand: {sorted(resp['felder'])}"
 
-    # Unbelegte Felder müssen event_id=null haben
-    if resp["felder"]:  # Falls überhaupt Felder vorhanden sind
-        for fid, feld in resp["felder"].items():
-            # event_id muss in jedem Feld vorhanden sein, ist aber null falls unbelegte
-            assert "event_id" in feld
-            if feld.get("zustand") is None or feld["zustand"] != "bestaetigt":
-                # Unbelegtes Feld → event_id sollte null sein
-                assert feld["event_id"] is None, f"Unbelegtes Feld {fid} hat event_id={feld['event_id']}"
+    # Vorläufiges Feld setzen → genau dieses Feld erscheint, mit der event_id seines Events
+    ev = {**_laie("einkuenfte_gewinn", 10000), "zustand": "vorlaeufig",
+          "signal": {"signal_1": None, "signal_2": None}}
+    status, resp = _req(base, "POST", f"/fall/{fall_id}/event", ev)
+    assert status == 201
+    assert resp["zustand"] == "vorlaeufig"
+    event_id = resp["event_id"]
+    status, resp = _req(base, "GET", f"/fall/{fall_id}/stand", None)
+    assert status == 200
+    _val("stand", resp)
+    assert sorted(resp["felder"]) == ["einkuenfte_gewinn"], f"Felder in /stand: {sorted(resp['felder'])}"
+    feld = resp["felder"]["einkuenfte_gewinn"]
+    assert feld["zustand"] == "vorlaeufig"
+    assert feld.get("event_id") == event_id, f"event_id {feld.get('event_id')} statt {event_id}"
 
 
 def test_fehler_ohne_ersetzt_bleibt_fail_closed(base):
