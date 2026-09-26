@@ -388,10 +388,20 @@ def test_bekannte_luecken_sind_begruendet():
 def test_p35a_einzelaufstellung_alle_drei_toepfe_amtlich_plausibel():
     """Je Topf EIN vollstaendiger Einz-Posten (Art+Betrag, Instanz 1 = bare feld_id) → rc=0.
 
-    Der Marker fehlte bis 2026-09-26 und fiel nicht auf, solange vier Testmodule ihren
-    Hersteller-ID-Platzhalter global in die Umgebung schrieben: der Test lief dann gegen ERiC
-    und riss mit rc=610301200 den ganzen `make unit`-Lauf mit. Er prueft einen rc und braucht
-    ERiC wie seine Geschwister in dieser Datei.
+    Der Marker fehlte bis 2026-09-26. Er prueft einen rc und braucht ERiC wie seine vier
+    Geschwister in dieser Datei (176/263/355/368); er rief es als einziger hier ohne die
+    Vorbedingung.
+
+    Die DAUER des Lochs: der Marker fehlte unbemerkt, solange vier Testmodule ihren
+    Hersteller-ID-Platzhalter global in die Umgebung schrieben — der Test lief dann gegen ERiC
+    und riss mit rc=610301200 den ganzen `make unit`-Lauf mit.
+
+    Der MECHANISMUS: fehlt ERiC oder die Hersteller-ID, ueberspringen die vier Geschwister —
+    dieser lief weiter, bekam vom IO-Gate rc=610301200 (leerer Fehlerpuffer) und riss den
+    Suite-Lauf auf genau EINEN roten Test (3115 passed, 71 skipped, 1 failed). Die
+    Hersteller-ID kam dabei nicht aus der Umgebung des Laufs, sondern aus dem
+    Import-Zeit-setdefault einer fremden Testdatei im selben xdist-Worker. Mit ERiC und ID
+    laeuft der Test unveraendert scharf.
 
     Die Sum-Kz (E0104109/E0107208/E0111215) werden NICHT direkt gesetzt — sie kommen aus
     _mit_ring_werten (4), berechnet aus genau diesen Instanz-Feldern. Ein Test, der die Sum-Felder
