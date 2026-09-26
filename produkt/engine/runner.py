@@ -563,9 +563,11 @@ def catala_kist(s: dict) -> int:
     Pipeline-verifiziert (snapshot p51a_kirchensteuer, catala_a): int-kodiert konfession
     0=keine/3=andere → satz 0 ; sonst bundesland Bayern/Baden-Württemberg → 8 % ; sonst 9 %.
     Hier laien-enum-domäniert (Store-Werte). est_mit_fb = § 51a-Bemessungsgrundlage (veranlagte
-    ESt mit Kinderfreibetrag = SolZ-§3-Abs.2-Zwilling, ohne § 32d-Abgeltung-Kapital — die
-    Abgeltung-KiSt e/(4+k) ist ein eigener Nachtrag), EURO. EURO × Prozent-int = CENT, exakt
-    (ganzzahlige EURO-Basis × ganzzahliger Hebesatz → kein Rundungsschnitt)."""
+    ESt mit Kinderfreibetrag, ohne § 32d-Abgeltung-Kapital — die Abgeltung-KiSt e/(4+k) ist ein
+    eigener Nachtrag), EURO. NICHT identisch zur SolZ-Basis: § 51a Abs. 2 S. 3 EStG nimmt § 35
+    (GewSt-Anrechnung) aus der KiSt-Basis heraus, § 3 Abs. 2 SolzG kennt keine solche Ausnahme —
+    der Ring übergibt deshalb est_ohne_p35, nicht est_roh_ohne_kap. EURO × Prozent-int = CENT,
+    exakt (ganzzahlige EURO-Basis × ganzzahliger Hebesatz → kein Rundungsschnitt)."""
     if str(s.get("konfession", "keine")) not in _KIST_KONFESSION_STEUERERHEBEND:
         return 0
     satz = 8 if str(s.get("bundesland", "")) in _KIST_BY_BW else 9

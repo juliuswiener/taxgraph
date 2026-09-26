@@ -333,7 +333,9 @@ def _zweig_festzusetzende_est(vz: int, bindung: dict, felder, store, nur_bestaet
                 "veranlagungszeitraum": vz,
                 "bemessungsgrundlage": est,
                 "splitting": zusammen})
-        # KiSt § 51a: dieselbe Maßstabsteuer wie SolZ (reiner AN-Fall: kein KiFB/§32d)
+        # KiSt § 51a: Maßstabsteuer = festgesetzte ESt. Im reinen AN-Fall fallen KiSt- und SolZ-Basis
+        # zusammen, weil hier weder KiFB noch §32d-Kapital noch § 35 GewSt vorkommen (kein Gewinn
+        # modelliert). Sobald § 35 im Spiel ist, gilt Abs. 2 S. 3 und die Basen gehen auseinander.
         # Ohne beantwortete Konfession bleibt der Schlüssel absent (= nicht rechenbar, wie bei
         # mobilitaetspraemie_cent darunter). Vorher stand hier eine gerechnete 0 — s. _kist_konfession.
         konf = _kist_konfession(f)
@@ -866,6 +868,17 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
                 if not pe_active:
                     g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + p35_credit)
             est_raw = runner.catala_est(g2)     # KEIN Kapital (est_regulaer_ohne_kap)
+            # § 51a Abs. 2 S. 3 EStG: „§ 35 ist bei der Ermittlung der festzusetzenden Einkommensteuer
+            # nach Satz 1 nicht anzuwenden" — die KiSt-Basis trägt die § 35-GewSt-Anrechnung NICHT, die
+            # SolZ-Basis (§ 3 Abs. 2 SolzG, kennt keine solche Ausnahme) trägt sie. Die Basis deshalb
+            # NEU rechnen statt den Kredit zurückzuaddieren: wirksame_ermaessigung ist in Catala
+            # min(steuerermaessigungen, verfuegbare_steuer), der Kredit also nur so weit wirksam, wie er
+            # unter diesem Deckel liegt (zusammen mit § 35a/§ 35c). est_raw + p35_credit überzeichnet die
+            # Basis, sobald der Deckel greift. pe_active: § 35 greift erst im Post-Wrapper (unten), g2 ist
+            # hier noch kreditfrei — aber auch noch ohne § 32b; die Basis setzt dort der Wrapper.
+            est_ohne_p35 = (est_raw if (pe_active or p35_credit == 0) else
+                            runner.catala_est(dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0)
+                                                   - p35_credit)))
             # §32b Post-Engine-Wrapper (NACH catala_est, VOR §35-Apply-if-pe_active)
             if pe_active:
                 tarifliche_pre32b = runner.catala_gesamt_tarifliche(g2)
@@ -881,6 +894,9 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
                         "progressionseinkuenfte": pe_raw,
                         "est_auf_erhoehte_bemessung": est_erhoeht})
                     est_raw = t_32b + est_without_tarifliche
+                # § 51a-Basis NACH § 32b, VOR § 35: Abs. 2 nimmt nur § 3 Nr. 40/§ 3c (S. 2) und
+                # § 35 (S. 3) heraus, der Progressionsvorbehalt bleibt in der Basis.
+                est_ohne_p35 = est_raw
                 # §35-Deckel-3 apply post-wrapper mit t_32b (§35 Abs.1 S.4 geminderte tarifliche = Post-§32b)
                 if p35_messbetrag_ges > 0 and p35_zaehler_ges > 0 and p35_nenner > 0:
                     deckel3_32b = p35_zaehler_ges * max(0, t_32b - dba_anrechnung) // p35_nenner
@@ -893,6 +909,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
                     solz_info["kap_st"] = 0
                     solz_info["est_roh_ohne_kap"] = est_raw
                     solz_info["est_roh_mit_kap"] = est_raw
+                    solz_info["est_ohne_p35"] = est_ohne_p35
                 return est_raw
             est_mit = runner.catala_est(dict(g2, einkuenfte_kapitalvermoegen=kapitaleinkuenfte))
             kap_st = runner.catala_kapital_steuer({
@@ -939,6 +956,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
                 solz_info["kap_st"] = kap_st_k
                 solz_info["est_roh_ohne_kap"] = est_raw
                 solz_info["est_roh_mit_kap"] = est_mit
+                solz_info["est_ohne_p35"] = est_ohne_p35
                 if extras is not None:
                     extras["kist_kap_cent"] = kist_kap_cent
                     extras["kap_guenstiger_gewonnen"] = guenstiger
@@ -971,7 +989,9 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
                 "kapital_steuer": solz_info.get("kap_st", 0),
                 "splitting": g["veranlagung"] == "zusammen"})
         # KiSt § 51a: Bemessungsgrundlage = veranlagte ESt mit Kinderfreibetrag, OHNE
-        # §32d-Kapitalanteil (= SolZ-basis_main). est_roh_ohne_kap = ESt ohne Kapitalsteuer.
+        # §32d-Kapitalanteil und OHNE § 35-GewSt-Anrechnung (Abs. 2 S. 3; est_ohne_p35).
+        # est_roh_ohne_kap = ESt ohne Kapitalsteuer — das ist die SolZ-Naht, nicht die KiSt-Naht:
+        # die SolZ-Basis (§ 3 Abs. 2 SolzG) trägt § 35 sehr wohl.
         # BUG-FIX 2026-08-06: c09bd7d hatte hier versehentlich kap_st_total (nur die
         # Kapitalsteuer) als est_mit_fb übergeben → KiSt=0 für jeden kirchensteuerpflichtigen
         # Angestellten ohne Kapital (Under-tax im Normalfall).
@@ -989,7 +1009,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         konf = _kist_konfession(f)
         if extras is not None and konf is not None:
             extras["kist_cent"] = runner.catala_kist({
-                "est_mit_fb": solz_info.get("est_roh_ohne_kap", 0),
+                "est_mit_fb": solz_info.get("est_ohne_p35", 0),
                 "konfession": konf,
                 "bundesland": f.get("kist_bundesland", {}).get("wert", "")}) + extras.get("kist_kap_cent", 0)
         return est
@@ -1254,6 +1274,14 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
                                    p35_zaehler_ges * tarifliche_gemindert // p35_nenner)
                 if not pe_active:
                     g2 = dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0) + p35_credit_r)
+            # § 51a Abs. 2 S. 3 EStG wie im gesamt-Ring: die KiSt-Basis trägt die § 35-GewSt-Anrechnung
+            # NICHT, die SolZ-Basis trägt sie. NEU rechnen statt zurückzuaddieren — der Kredit ist nur so
+            # weit wirksam, wie er unter dem Catala-Deckel min(steuerermaessigungen, verfuegbare_steuer)
+            # liegt (s. die ausführliche Begründung im gesamt-Ring). pe_active: § 35 greift erst im
+            # Post-Wrapper, g2 ist hier noch kreditfrei.
+            est_ohne_p35 = (runner.catala_est(g2) if (pe_active or p35_credit_r == 0) else
+                            runner.catala_est(dict(g2, steuerermaessigungen=g2.get("steuerermaessigungen", 0)
+                                                   - p35_credit_r)))
             # § 32d Abs. 6 Günstigerprüfung: Kapitalerträge tariflich oder Abgeltungsteuer?
             if kapitaleinkuenfte_r <= 0:
                 result = runner.catala_est(g2)
@@ -1293,10 +1321,12 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
                 result = est_raw + kap_st_k
                 # SolZ-Tracking: est_mit_fb = KiFB-fiktive ESt (SolzG §3 Abs.3 S.1: cap-st ist
                 # abgezogen VOR Freigrenze). kap_st_k = §32d-Abgeltung-SolZ (5,5% ohne Freigrenze).
-                # est_roh_ohne_kap = ESt vor §32d-Kapital — für §51a-KiSt-Basis (OHNE §32d).
+                # est_roh_ohne_kap = ESt vor §32d-Kapital — das ist die SolZ-Naht, NICHT die
+                # KiSt-Basis (die ist est_ohne_p35, Abs. 2 S. 3, s. unten).
                 if freibetrag > 0 or kinder == 0:
                     solz_info_r["est_mit_fb"] = result
                     solz_info_r["est_roh_ohne_kap"] = est_raw
+                    solz_info_r["est_ohne_p35"] = est_ohne_p35
                     # BACKLOG rentner-solz-kap-st-tracking (bada2a0-Fund): fehlte, dadurch lief
                     # kapital_steuer=0 in catala_solz -> §3 Abs.3 S.1 minderte die Basis nie und
                     # S.2 (5,5% ohne Freigrenze) fehlte ganz. 1:1 gesamt-Präzedenz (Z. 1282).
@@ -1318,6 +1348,11 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
                         "progressionseinkuenfte": pe_raw,
                         "est_auf_erhoehte_bemessung": est_erhoeht})
                     result = tarifliche_32b + est_without_tarifliche
+                    # § 51a Abs. 2 S. 1 EStG nimmt die ESt, wie sie festzusetzen waere — der
+                    # § 32b-Zuschlag gehoert dazu. Die Kapital-KiSt laeuft getrennt ueber
+                    # kap_st_k (Abs. 1 S. 3-5), deshalb nur das TARIFLICHE Delta in die Basis,
+                    # sonst zaehlte Kapital doppelt (Entscheidung Weg c).
+                    est_ohne_p35 += tarifliche_32b - tarifliche_pre32b
                 # §35-Deckel-3 post-wrapper mit tarifliche_32b
                 if p35_credit_r > 0:
                     result = max(0, result - p35_credit_r)
@@ -1330,6 +1365,7 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
                 solz_info_r["est_mit_fb"] = result
                 solz_info_r["est_roh_ohne_kap"] = solz_info_r.get("est_roh_ohne_kap", result)
                 solz_info_r["kap_st"] = solz_info_r.get("kap_st", 0)
+                solz_info_r["est_ohne_p35"] = est_ohne_p35
             return result
 
         # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6, Fund D):
@@ -1362,17 +1398,19 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
                 # bleibt als fail-closed-Default (0) für den kap<=0-Zweig stehen.
                 "kapital_steuer": solz_info_r.get("kap_st", 0),
                 "splitting": rentner_g["veranlagung"] == "zusammen"})
-        # KiSt § 51a: Basis = KiFB-fiktive ESt OHNE §32d-Kapital (= est_roh_ohne_kap).
+        # KiSt § 51a: Basis = KiFB-fiktive ESt OHNE §32d-Kapital UND OHNE § 35-GewSt-Anrechnung
+        # (Abs. 2 S. 3; est_ohne_p35). est_roh_ohne_kap ist die SolZ-Naht und trägt § 35.
         # §32d-Abgeltung-KiSt ist separater Nachtrag (§32d Abs.1 S.3-5, benannte Lücke).
         # BUG-FIX 2026-08-06: selbe Bugklasse wie gesamt-Ring (Z.1144). Z.1575/1578 setzte
         # est_mit_fb = est_raw + kap_st → KiSt auf 13.855 statt 1.605 (Rentner 20k + Kapital 50k).
-        # est_roh_ohne_kap = est_raw (ESt ohne §32d-Kapital), separat von est_mit_fb (SolZ-Basis).
+        # est_roh_ohne_kap = est_raw (ESt ohne §32d-Kapital), separat von est_mit_fb (SolZ-Basis);
+        # est_ohne_p35 = dieselbe ESt zusätzlich ohne § 35 — die KiSt-Basis (Abs. 2 S. 3).
         # Konfession unbeantwortet -> Schlüssel absent (= nicht rechenbar), keine gerechnete 0.
         # Dieselbe Naht wie im gesamt-Zweig, s. _kist_konfession.
         konf_r = _kist_konfession(f)
-        if extras is not None and konf_r is not None and "est_roh_ohne_kap" in solz_info_r:
+        if extras is not None and konf_r is not None and "est_ohne_p35" in solz_info_r:
             extras["kist_cent"] = runner.catala_kist({
-                "est_mit_fb": solz_info_r["est_roh_ohne_kap"],
+                "est_mit_fb": solz_info_r["est_ohne_p35"],
                 "konfession": konf_r,
                 "bundesland": f.get("kist_bundesland", {}).get("wert", "")}) + extras.get("kist_kap_cent", 0)
         return est
