@@ -321,7 +321,8 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
 
 def _gewinn_partner_anteil(f: dict):
     """Der Beitrag des Ehegatten zu g["einkuenfte_gewinn"] (EURO): laufender Gewinn + § 16-vg
-    netto nach EIGENEM § 16 Abs. 4-Freibetrag.
+    netto nach EIGENEM § 16 Abs. 4-Freibetrag. Dritter Wert: dieser § 16-vg netto allein — er
+    geht außerdem in die § 34-Fünftelung (Entscheidung p34-fuenftelung-umfasst-beide-ehegatten).
 
     NUR bei Zusammenveranlagung — bei Einzelveranlagung gibt es in dieser Erklärung keinen
     Ehegatten, dessen Einkünfte mitzuveranlagen wären; ein dort gesetztes Partner-Feld darf die
@@ -333,7 +334,7 @@ def _gewinn_partner_anteil(f: dict):
     (test_gewinn_partner_ring::test_p16_4_freibetrag_gilt_je_person misst genau diesen
     Unterschied)."""
     if f.get("veranlagung", {}).get("wert") != "zusammen":
-        return 0, 0
+        return 0, 0, 0
     import runner
 
     def _c(fid):
@@ -351,7 +352,7 @@ def _gewinn_partner_anteil(f: dict):
     p16_4_fb = runner.catala_p16_4_freibetrag({"rentner_veraeusserungsgewinn": vg_euro}) if p16_4_gate_ok else 0
     # GEFLOORT bei 0 wie bei Person A: FB > vg darf keinen Phantom-Verlust erzeugen.
     netto_vg = max(0, vg_euro - p16_4_fb)
-    return laufend + netto_vg, mitu
+    return laufend + netto_vg, mitu, netto_vg
 
 
 def _p35_partner_anteile(f: dict):

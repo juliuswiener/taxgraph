@@ -32,6 +32,25 @@ def test_p32b_plus_p34c_dba_sperrt():
     assert API._an_gesamt_sperrgrund(felder, CFG) == "p32b_kombi_offen"
 
 
+def test_p32b_plus_partner_veraeusserungsgewinn_sperrt():
+    """pe>0 + § 16-vg des Ehegatten bei Zusammenveranlagung → p32b_kombi_offen. Seit die
+    Fünftelung beide Ehegatten umfasst, ist auch der Partner-vg ein § 34-ao-Gewinn; ohne die
+    Sperre liefe er ungeprüft durch den §32b-Wrapper, der den §34-Tarif nicht kennt."""
+    felder = _snap(p32b_progressionseinkuenfte=(500000, "bestaetigt"),
+                   veranlagung=("zusammen", "bestaetigt"),
+                   rentner_veraeusserungsgewinn_partner=(6000000, "bestaetigt"))
+    assert API._an_gesamt_sperrgrund(felder, CFG) == "p32b_kombi_offen"
+
+
+def test_p32b_plus_partner_vg_bei_einzelveranlagung_kein_kombi_sperr():
+    """Gegenrichtung: bei Einzelveranlagung rechnet der Ring den Partner-vg nicht mit — keine
+    §34-Co-Präsenz, also auch keine Sperre."""
+    felder = _snap(p32b_progressionseinkuenfte=(500000, "bestaetigt"),
+                   veranlagung=("einzel", "bestaetigt"),
+                   rentner_veraeusserungsgewinn_partner=(6000000, "bestaetigt"))
+    assert API._an_gesamt_sperrgrund(felder, CFG) != "p32b_kombi_offen"
+
+
 def test_p32b_allein_kein_kombi_sperr():
     """pe>0 ALLEIN (kein §34/§35/§34c) → kein Kombi-Sperr, §32b rechnet normal."""
     felder = _snap(p32b_progressionseinkuenfte=(500000, "bestaetigt"))
