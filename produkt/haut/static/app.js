@@ -2381,7 +2381,9 @@ async function zeigeErgebnis() {
         th.textContent = label;
         // "→" ist rein visuell — Screenreader liest Label ohne Pfeil
         if (label.charCodeAt(0) === 0x2192) th.setAttribute("aria-label", label.slice(2));
-        const sub = RW_SUB[label];
+        // § 31-Fall (Kinder): die letzte Zeile traegt die Guenstigerpruefung als Unterzeile.
+        // Der Text kommt vom Server (bescheid_zweige._kette_p31), damit er ohne Browser pruefbar ist.
+        const sub = (k.p31 && label === "festzusetzende Einkommensteuer") ? k.p31.text : RW_SUB[label];
         if (sub) {
           const span = document.createElement("span"); span.className = "rw-sub"; span.textContent = sub;
           th.appendChild(span);
