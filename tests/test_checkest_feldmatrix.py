@@ -57,6 +57,7 @@ import traverser as TR              # noqa: E402
 
 from test_checkest_durchstich import (  # noqa: E402
     _ABSENDER, _HID, _b, _fall_einzel, _fall_einzel_kirchensteuerpflichtig, braucht_eric,
+    hid_attrappe,
 )
 
 
@@ -203,7 +204,7 @@ def test_feld_einzeln_bleibt_amtlich_plausibel(feld_id, wert):
           "Luecke (dann mit gemessener Begruendung in BEKANNTE_LUECKEN eintragen).")
 
 
-def test_kap_antrag_ist_inert_ohne_kapitalertraege():
+def test_kap_antrag_ist_inert_ohne_kapitalertraege(hid_attrappe):
     """Der KAP-Antrag darf NUR erscheinen, wenn Kapitalertraege erklaert werden.
 
     Braucht kein ERiC. Ohne diese Gegenprobe waere ein Bau, der den Antrag bedingungslos setzt,
@@ -280,7 +281,7 @@ def test_p36_kap_anrechnung_amtlich_plausibel_mit_kapitalertraegen():
         + "\n".join(f"   - {t}" for t in texte[:5]))
 
 
-def test_p36_kap_anrechnung_kz_inert_ohne_angabe():
+def test_p36_kap_anrechnung_kz_inert_ohne_angabe(hid_attrappe):
     """KAP Stufe 2 (Zeile 37-39): E1904701/E1904901/E1904801 duerfen nur im XML stehen, wenn
     der Nutzer die Abzugsteuer laut Steuerbescheinigung bestaetigt hat. Braucht kein ERiC.
 
@@ -406,7 +407,7 @@ def test_p35a_einzelaufstellung_alle_drei_toepfe_amtlich_plausibel():
         f"Erklaerung uneinreichbar (rc={rc}).\n" + "\n".join(f"   - {t}" for t in texte[:5]))
 
 
-def test_p35a_ohne_daten_kein_einz_und_keine_sum_im_xml():
+def test_p35a_ohne_daten_kein_einz_und_keine_sum_im_xml(hid_attrappe):
     """Gegenprobe zum Inert-Vertrag von _mit_ring_werten (4): keine §35a-Angaben → weder Sum-
     noch Einz-Kz im XML (keine Instanz-Σ > 0 heisst KEIN Eintrag, nicht Eintrag mit Wert 0).
 

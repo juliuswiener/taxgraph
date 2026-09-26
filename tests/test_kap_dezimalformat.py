@@ -51,7 +51,7 @@ import est_mapping                  # noqa: E402
 import store as ST                  # noqa: E402
 
 from test_checkest_durchstich import (  # noqa: E402
-    _ABSENDER, _HID, _b, braucht_eric,
+    _ABSENDER, _HID, _b, braucht_eric, hid_attrappe,
 )
 from test_checkest_feldmatrix import _mit  # noqa: E402
 
@@ -107,7 +107,8 @@ def _xml(paare):
 
 
 @pytest.mark.parametrize("kz,feld,cent,erwartet", KOMMA_KZ)
-def test_steuerabzugsbetrag_wird_mit_zwei_nachkommastellen_geschrieben(kz, feld, cent, erwartet):
+def test_steuerabzugsbetrag_wird_mit_zwei_nachkommastellen_geschrieben(
+        kz, feld, cent, erwartet, hid_attrappe):
     """Braucht kein ERiC — geprueft wird der XML-Text, nicht die Plausibilitaet.
 
     Absichtlich am Text und nicht ueber rc: eine vorgelagerte Block-Beanstandung kann den
@@ -126,7 +127,7 @@ def test_steuerabzugsbetrag_wird_mit_zwei_nachkommastellen_geschrieben(kz, feld,
 
 
 @pytest.mark.parametrize("kz,feld,cent,erwartet", GANZZAHL_KZ)
-def test_ertragsfeld_bleibt_ganzzahlig(kz, feld, cent, erwartet):
+def test_ertragsfeld_bleibt_ganzzahlig(kz, feld, cent, erwartet, hid_attrappe):
     """Gegenprobe: nicht jedes KAP-Kz will Nachkommastellen.
 
     Ohne diese Haelfte waere ein Bau gruen, der ALLE Kz ins Komma-Format schiebt — das XSD
