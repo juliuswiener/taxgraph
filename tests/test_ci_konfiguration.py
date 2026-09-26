@@ -803,3 +803,148 @@ def test_die_probe_faengt_den_umzugs_fehler():
         f"Ohne die Pfadzeile gelingt der Import trotzdem — dann prüft das Gate darüber nichts. "
         f"(Läge ein zweites `runner` im Pfad, wäre genau das die Doppel-Identitäts-Falle.)\n"
         f"rc={r.returncode}\n{r.stderr[-800:]}")
+
+
+# ---- ERiC-Aufrufer: jeder traegt den Marker @braucht_eric --------------------------------
+#
+# ABGRENZUNG zum Waechter oben (bewusst NICHT zusammengebaut, zwei verschiedene Aussagen):
+#   test_kein_testmodul_veraendert_die_umgebung_beim_import  prueft die ENGE des Skips
+#       (darf hier ueberhaupt etwas uebersprungen werden?) und liest dafuer `os.environ`.
+#   hier unten: die DEKORATEURE (ist beim ERiC-Aufrufer ueberhaupt ein Marker da?).
+#
+# ANLASS, gemessen 2026-09-26: test_checkest_feldmatrix.py::test_p35a_einzelaufstellung_alle_
+# drei_toepfe_amtlich_plausibel trug den Marker nicht, obwohl seine vier Geschwister in derselben
+# Datei ihn trugen. Solange eine fremde Testdatei ihren Hersteller-ID-Platzhalter global in die
+# Umgebung schrieb (10baecb), lief er mit dem Platzhalter gegen ERiC und fiel mit rc=610301200 —
+# die Suite rot, und der rote Test sah nach einem 35a-Fehler aus. Nach dem Leck-Fix faellt er
+# korrekt in den Skip. Der Marker ist inzwischen an beiden Stellen gesetzt (bab2ec5, 4cce87b) —
+# ohne ein Gate kommt er beim naechsten neuen ERiC-Aufrufer wieder weg.
+#
+# WAS ALS "ERiC-AUFRUFER" ZAEHLT, und was ausdruecklich nicht:
+#   JA:  `CE.validate(...)` — CE ist `import checkest_gate as CE`, und checkest_gate.validate()
+#        laedt die ERiC-Bibliothek (elster/checkest_gate.py:197 ueber _load_and_init).
+#   NEIN: `VX.validate(...)` — VX ist `import validate_xsd as VX`, ein reiner XSD-Check ohne ERiC.
+#        Beide heissen `validate`; wer nur auf den Methodennamen sieht, verwechselt sie. Das
+#        waere genau die Klasse "ueber X gemessen, ueber Y behauptet".
+
+# Der Modulname, unter dem checkest_gate in tests/ importiert wird. Gemessen 2026-09-26 ueber
+# alle 283 Dateien: genau EIN Alias, `import checkest_gate as CE` — kein `from ... import`.
+ERIC_MODUL = "CE"
+ERIC_FUNKTION = "validate"
+
+# Aufrufer, die ERiC erreichen und trotzdem KEINEN Marker tragen duerfen — mit Begruendung.
+# LEER, und das ist ein Messergebnis: alle Aufrufer, die ERiC heute erreichen, tragen den Marker.
+ERIC_OHNE_MARKER: dict[tuple[str, str], str] = {}
+
+MARKER = "braucht_eric"
+
+
+def _dekorator_namen(fn) -> set[str]:
+    """Alle Decorator-Namen einer Funktion, ohne Argumente (@braucht_eric, @pytest.mark.x)."""
+    namen = set()
+    for d in fn.decorator_list:
+        ziel = d.func if isinstance(d, ast.Call) else d
+        if isinstance(ziel, ast.Name):
+            namen.add(ziel.id)
+        elif isinstance(ziel, ast.Attribute):
+            namen.add(ziel.attr)
+    return namen
+
+
+def _funktionen(baum: ast.Module) -> dict:
+    return {f.name: f for f in ast.walk(baum)
+            if isinstance(f, (ast.FunctionDef, ast.AsyncFunctionDef))}
+
+
+def _ruft_eric(fn) -> bool:
+    """True, wenn die Funktion CE.validate(...) DIREKT aufruft."""
+    return any(isinstance(k, ast.Call) and isinstance(k.func, ast.Attribute)
+               and k.func.attr == ERIC_FUNKTION
+               and isinstance(k.func.value, ast.Name)
+               and k.func.value.id == ERIC_MODUL
+               for k in ast.walk(fn))
+
+
+def _ruft(fn) -> set[str]:
+    """Namen aller direkt aufgerufenen Funktionen — die Kanten fuer den Erreichbarkeitslauf."""
+    return {k.func.id for k in ast.walk(fn)
+            if isinstance(k, ast.Call) and isinstance(k.func, ast.Name)}
+
+
+def _eric_aufrufer() -> tuple[set, int]:
+    """((Datei, Testfunktion) die ERiC transitiv erreichen; Zahl der CE.validate-Stellen).
+
+    TRANSITIV, und das ist der Punkt: von den CE.validate-Aufrufstellen unter tests/ stehen
+    sieben in Helfern (_block_scharf, _pruefe, _scharf, _xml_und_rc, _dekl_ohne,
+    _pruefe_kernfeld, _ohne_feld), nicht in Tests. Ein Gate, das nur die aufrufende Funktion
+    ansieht, uebersaehe jeden Test, der ERiC ueber einen solchen Helfer erreicht.
+    """
+    aufrufer = set()
+    stellen = 0
+    for pfad in _gescannte_testdateien():
+        baum = ast.parse(pfad.read_text(encoding="utf-8"))
+        funs = _funktionen(baum)
+        stellen += sum(1 for f in funs.values() for k in ast.walk(f)
+                       if isinstance(k, ast.Call) and isinstance(k.func, ast.Attribute)
+                       and k.func.attr == ERIC_FUNKTION
+                       and isinstance(k.func.value, ast.Name) and k.func.value.id == ERIC_MODUL)
+        erreicht = {n for n, f in funs.items() if _ruft_eric(f)}
+        # Fixpunkt: wer einen ERiC-Erreicher ruft, erreicht ERiC ebenfalls.
+        # ponytail: O(n^2) je Datei bei ~25 Funktionen — reicht weit, bei Wachstum Worklist.
+        geaendert = True
+        while geaendert:
+            geaendert = False
+            for n, f in funs.items():
+                if n not in erreicht and (_ruft(f) & erreicht):
+                    erreicht.add(n)
+                    geaendert = True
+        aufrufer |= {(pfad.name, n) for n in funs if n.startswith("test_") and n in erreicht}
+    return aufrufer, stellen
+
+
+def test_jeder_eric_aufrufer_traegt_den_marker():
+    """Kern-Gate: wer ERiC erreicht, traegt @braucht_eric — sonst laeuft er ohne ERiC-Zugang
+    gegen eine fehlende Bibliothek statt zu skippen."""
+    aufrufer, _ = _eric_aufrufer()
+    fehlend = []
+    for pfad in _gescannte_testdateien():
+        baum = ast.parse(pfad.read_text(encoding="utf-8"))
+        for fn in _funktionen(baum).values():
+            if not fn.name.startswith("test_"):
+                continue
+            if (pfad.name, fn.name) in aufrufer and MARKER not in _dekorator_namen(fn):
+                if (pfad.name, fn.name) not in ERIC_OHNE_MARKER:
+                    fehlend.append(f"{pfad.name}:{fn.lineno}  {fn.name}")
+    assert not fehlend, (
+        f"Testfunktionen erreichen ERiC (CE.validate), tragen aber kein @{MARKER} — ohne ERiC "
+        f"laufen sie nicht in den Skip, sondern in einen Fehler, der nach einem Fachfehler "
+        f"aussieht:\n  " + "\n  ".join(sorted(fehlend)))
+
+
+def test_eric_gate_sieht_ueberhaupt_aufrufer():
+    """Selbstratsche in beide Richtungen.
+
+    Ohne die Untergrenze ist das Gate still gruen, sobald es keine Aufrufer mehr findet — etwa
+    weil der Modul-Alias sich aendert (dann sucht es `CE.validate` und keiner ruft mehr so) oder
+    weil die Dateischleife leer wird. Beide Faelle sind als Mutation gemessen.
+    """
+    aufrufer, stellen = _eric_aufrufer()
+    AUFRUFER_UNTEN = 24   # gemessen 2026-09-26: Testfunktionen, die ERiC transitiv erreichen
+    STELLEN_UNTEN = 15    # gemessen 2026-09-26: CE.validate-Aufrufstellen unter tests/
+    assert len(aufrufer) >= AUFRUFER_UNTEN, (
+        f"Nur {len(aufrufer)} ERiC-erreichende Testfunktionen gefunden, erwartet mindestens "
+        f"{AUFRUFER_UNTEN} — sucht das Gate noch den richtigen Modulnamen?")
+    assert stellen >= STELLEN_UNTEN, (
+        f"Nur {stellen} CE.validate-Aufrufstellen unter tests/ gefunden, erwartet mindestens "
+        f"{STELLEN_UNTEN} — der Scan sucht womoeglich einen Namen, den keiner mehr ruft")
+
+    assert len(ERIC_OHNE_MARKER) == 0, (
+        f"ERIC_OHNE_MARKER ist auf {len(ERIC_OHNE_MARKER)} gewachsen "
+        f"({sorted(ERIC_OHNE_MARKER)}): jeder Eintrag nimmt einen ERiC-Aufrufer vom Gate aus — "
+        f"das braucht eine Entscheidung mit Begruendung, nicht eine Zeile mehr")
+    for schluessel, grund in ERIC_OHNE_MARKER.items():
+        assert len(grund) > 20, f"{schluessel}: Ausnahme ohne (ausreichende) Begruendung"
+
+    # Gegenrichtung: die Ausnahmeliste darf nicht auf tote Eintraege zeigen.
+    tot = sorted(set(ERIC_OHNE_MARKER) - aufrufer)
+    assert not tot, f"ERIC_OHNE_MARKER nennt Aufrufer, die es nicht (mehr) gibt: {tot}"
