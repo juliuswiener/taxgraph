@@ -383,8 +383,17 @@ def test_bekannte_luecken_sind_begruendet():
 # verlangt. MATRIX setzt genau EIN Feld je Fall (_mit) — dafuer taugt ein Feldpaar (Art+Betrag je
 # Instanz) nicht. Deshalb ein eigener Test, kein MATRIX-Eintrag.
 
+@braucht_eric
 def test_p35a_einzelaufstellung_alle_drei_toepfe_amtlich_plausibel():
     """Je Topf EIN vollstaendiger Einz-Posten (Art+Betrag, Instanz 1 = bare feld_id) → rc=0.
+
+    `@braucht_eric` wie die vier Geschwistertests dieser Datei (176/263/355/368): dieser Test
+    ruft als einziger hier ERiC ohne die Vorbedingung. Gemessen 2026-09-26: fehlt ERiC oder
+    die Hersteller-ID, ueberspringen die vier — dieser lief weiter, bekam vom IO-Gate
+    rc=610301200 (leerer Fehlerpuffer) und riss den Suite-Lauf auf genau EINEN roten Test
+    (3115 passed, 71 skipped, 1 failed). Die Hersteller-ID kam dabei nicht aus der Umgebung
+    des Laufs, sondern aus dem Import-Zeit-setdefault einer fremden Testdatei im selben
+    xdist-Worker. Mit ERiC und ID laeuft der Test unveraendert scharf.
 
     Die Sum-Kz (E0104109/E0107208/E0111215) werden NICHT direkt gesetzt — sie kommen aus
     _mit_ring_werten (4), berechnet aus genau diesen Instanz-Feldern. Ein Test, der die Sum-Felder
