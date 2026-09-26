@@ -36,7 +36,8 @@ from __future__ import annotations
 import os
 import sys
 
-ROOT = os.environ.get("TAXGRAPH_ROOT", "/home/julius/00_projects/168_TaxGraph/taxgraph")
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
 for _sub in ("produkt/bescheid", "produkt/haut", "produkt/store", "produkt/traverser",
              "produkt/unsicherheit", "produkt/mapping", "produkt/konsistenz",
              "produkt/eingang", "produkt/engine", "golden", "elster"):
