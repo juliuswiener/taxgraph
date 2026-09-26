@@ -914,6 +914,9 @@ GEWST_ERIC_FAELLE = [
 GEWST_PERSONEN = [
     pytest.param("einzel", ("kein_gewinn", "gewst_messbetrag", "gewst_hebesatz"), "deklaration",
                  id="person-a"),
+    pytest.param("zusammen", ("kein_gewinn_partner", "gewst_messbetrag_partner",
+                              "gewst_hebesatz_partner"), "person_b",
+                 id="partnerbetrieb"),
 ]
 
 

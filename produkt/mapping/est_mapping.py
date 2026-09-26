@@ -298,6 +298,11 @@ PARTNER_INSTANZ = {
     # Ehegatte-Kz (eigener Betrieb, eigener Hebesatz/Messbetrag je Person).
     "gewst_hebesatz_partner": "E0801705",
     "gewst_messbetrag_partner": "E0801606",
+    # Ohne diesen Eintrag fehlte E0801704 in der Anlage-G-Instanz B, waehrend E0801606 und
+    # E0801705 dort standen. checkESt verlangt die drei Zahlen gemeinsam (Regeln 2106 und
+    # 100800012), die Erklaerung eines Paares mit Gewerbe des Partners war damit nicht abgebbar
+    # (2026-09-26).
+    "gewst_zu_zahlen_partner": "E0801704",
 }
 # Klasse g×f — Renten-Verzweigung Person-B (§ 22, Anlage-R-Instanz B): wie VERZWEIGUNG (aa/bb-Kz je
 # renten_art), aber der Wert läuft in den person_b-Bucket (dieselben Person-A-Kz, kein Ehegatte-Kz).
