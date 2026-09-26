@@ -656,6 +656,32 @@ def sperrgrund_klartext(grund: str | None) -> str | None:
     return SPERRGRUND_KLARTEXT.get(grund, UNBEKANNTER_SPERRGRUND)
 
 
+def sperrgrund_felder(grund: str | None, felder: dict) -> list:
+    """Die Angaben, die einen Widerspruchs-Sperrgrund ausloesen — leer bei allen anderen.
+
+    GEGENSTUECK ZU `sperrgrund_klartext`, und aus demselben Grund: wer den Grund liefert, muss
+    auch sagen koennen, WORAN er haengt. Hier stand bis 2026-09-26 nur
+
+        if PC.partner_ohne_zusammen(felder):
+            return "partner_konsistenz_offen"
+
+    — der Rueckgabewert wurde als Wahrheitswert verbraucht und weggeworfen, obwohl er je
+    Widerspruch `feld_id`, `wert` und einen fertigen Satz traegt (partner_check.py:66). Der Nutzer
+    las damit, DASS zwei Angaben sich widersprechen, aber nicht, WELCHE, und hatte keinen Weg zu
+    der Angabe, die die Sperre aufhebt (backlog
+    partnerangaben-nach-umstellung-auf-einzel-sackgasse, gemessen 2026-09-26).
+
+    HIER, NICHT IN DER HAUT: der Widerspruch entsteht in `partner_check`, erkannt wird er in
+    `_an_gesamt_sperrgrund`. Ein zweiter Aufruf in api.py waere eine zweite Wahrheit ueber
+    denselben Widerspruch — genau die Bauform, die uns beim p16_4-Gate den Rueckweg gekostet hat.
+
+    `partner_ohne_zusammen` zaehlt nur BESTAETIGTE Werte (s. dort): ein vorlaeufiger Wert ist kein
+    Beleg und loest auch die Sperre nicht aus. Die beiden bleiben damit deckungsgleich."""
+    if grund == "partner_konsistenz_offen":
+        return PC.partner_ohne_zusammen(felder)
+    return []
+
+
 def _rentenbeginn_offen_stand(felder: dict, cfg: dict | None = None) -> str | None:
     """§ 22 aa Rentenfreibetrag (K2, /stand-spezifisch): /ergebnis faengt eine fehlende
     rentner_renten_beginn_jahr ueber die Kegel-Vollstaendigkeitspruefung (input_kegel_nicht_bestaetigt);

@@ -1060,6 +1060,63 @@ async function korrigiereBestaetigt(fid) {
   return true;
 }
 
+// --- Die Sperre bietet die Angabe an, die sie ausloest -----------------------------------------
+//
+// GEMESSEN 2026-09-26 (Chromium, echter Server): im Sperrzustand `partner_konsistenz_offen` ist die
+// Belegt-Liste „Schon beantwortet" SICHTBAR und ihre Zeile anklickbar — der Klick ist aber TOT.
+// Beide Serveraufrufe antworten 200 (/warum, /feld/<fid>/frage); die Abweisung faellt vorher in
+// `korrigiereBestaetigt`, das bei `relevanz.status === "ausgeschlossen"` zurueckkehrt, BEVOR es
+// KORREKTUR_FID setzt. `veranlagung=einzel` setzt genau diesen Status auf der regel_id, an der alle
+// acht Partnerfelder haengen — die Sperre schaltet damit die Frage ab, deren Korrektur sie aufhebt
+// (backlog partnerangaben-nach-umstellung-auf-einzel-sackgasse).
+//
+// Dieser Weg geht daran VORBEI, und das ist die Entscheidung (Weg A,
+// decisions/nach-wechsel-auf-einzel-bleibt-die-sperre-mit-rueckweg.md): `korrigiereBestaetigt`
+// bleibt unveraendert scharf fuer alles uebrige, und die Sperranzeige bekommt einen EIGENEN Weg zu
+// genau den Feldern, die der SERVER als Ausloeser benannt hat (`sperr_felder`) — nicht zu irgendeinem
+// Feld, das die Oberflaeche fuer passend haelt. Ein zweiter Frageweg entsteht dabei nicht: es ist
+// derselbe Einzel-Feld-Endpunkt, den korrigiereBestaetigt seit e7f9f2a nutzt.
+//
+// Ein Waechter, der eine Ausnahme fuer „den Fall, der die Sperre ausloest" traegt, ist ein Waechter,
+// dem man sein Urteil ausreden kann — deshalb steht die Ausnahme NICHT in korrigiereBestaetigt,
+// sondern in dieser eigenen Funktion, die nur die Sperranzeige ruft.
+async function sperreOeffnetFrage(fid) {
+  const r = await jget(`/fall/${FALL}/feld/${fid}/frage`);
+  if (r.status !== 200 || !r.body.frage) {
+    // Derselbe Fehlerfall wie in korrigiereBestaetigt, und derselbe Satz: das Feld gehoert nicht
+    // mehr zu dieser Scheibe. Die Kennung gehoert nicht in die Meldung, der Laie hat sie nie gesehen.
+    zeigeNetzFehler("Diese Frage gehört nicht mehr zu deiner Erklärung und lässt sich deshalb "
+                    + "nicht ändern.");
+    return;
+  }
+  KORREKTUR_FID = r.body.frage.feld_id;   // die Basis, wie der Endpunkt sie aufgeloest hat
+  AKTUELL = r.body.frage;
+  zeigeFrage(AKTUELL, STAND);
+}
+
+// Die Ausloeser eines Widerspruchs-Sperrgrunds als anklickbare Wege — leer fuer jeden Grund, der
+// keinen Widerspruch benennt (fehlende Angabe, Kegel-Luecke): dort gibt es kein Feld zu oeffnen, und
+// eins zu erfinden waere schlimmer als keins. `grund` ist der fertige Satz aus partner_check.
+function zeigeSperrFelder(el, r) {
+  const felder = r.sperr_felder || [];
+  if (!felder.length) return;
+  const hinweis = document.createElement("p");
+  hinweis.className = "ergebnis-sperr-hinweis";
+  hinweis.textContent = felder.length === 1
+    ? "Diese Angabe löst die Sperre aus — tippe sie an, um sie zu ändern:"
+    : "Diese Angaben lösen die Sperre aus — tippe eine an, um sie zu ändern:";
+  el.appendChild(hinweis);
+  for (const w of felder) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn-link ergebnis-sperr-feld";
+    b.dataset.sperrFeld = w.feld_id;
+    b.textContent = w.grund;
+    b.addEventListener("click", () => sperreOeffnetFrage(w.feld_id));
+    el.appendChild(b);
+  }
+}
+
 // --- Bestätigen: Zwei-Signal über den EINZIGEN Schreibpfad. kiFeld gesetzt -> ersetzt das vorläufige KI-Event. ---
 async function bestaetigen(kiFeld) {
   if (!AKTUELL) return;
@@ -2339,6 +2396,9 @@ async function zeigeErgebnis() {
     else if (r.grund === "kein_scheiben_gesamtbescheid") el.textContent = "Alle Angaben erfasst — die Gesamtsteuer wird in einem späteren Schritt berechnet.";
     else if (r.grund === "engine_unavailable") el.textContent = "Alle Angaben bestätigt — die Rechen-Engine ist hier nicht verfügbar.";
     else el.textContent = "Noch offen: " + (r.offen || []).join(", ");
+    // Der Nutzer sieht hier keine Zahl, sondern nur den Sperrgrund — der Ausweg gehoert also
+    // hierhin, nicht in die Belegt-Liste (deren Klick ist in diesem Zustand tot, s.o.).
+    zeigeSperrFelder(el, r);
   } else {
     el.className = "ergebnis";
     // Auch hier ohne innerHTML-Interpolation — nicht weil euro() gefaehrlich waere (es

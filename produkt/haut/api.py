@@ -61,6 +61,7 @@ from bescheid import (  # noqa: E402, F401
     _gwg_sofortabzug_summe,
     _kind_behinderten_pb_daten,
     _kind_kv_pv_summe,
+    sperrgrund_felder,
     _kinderbetreuung_summe,
     _p10_1_5_gate_fehlend, sperrgrund_klartext,
     _laufender_gewinn,
@@ -594,8 +595,8 @@ def _ergebnis_roh(fall_id: str) -> tuple[int, dict]:
         if sperr:
             return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                          "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
-                         "abschlusszahlung_cent": None,
-                         "grund": sperr, "offen": [], "trace": None}
+                         "abschlusszahlung_cent": None, "grund": sperr, "offen": [], "trace": None,
+                         "sperr_felder": sperrgrund_felder(sperr, felder)}  # WELCHE Angabe sperrt
     result = _feste_zahl(felder, bindung, cfg, vz, scheibe_felder, store)
     if result is None:
         if cfg["gesamt_ring"] is None:
