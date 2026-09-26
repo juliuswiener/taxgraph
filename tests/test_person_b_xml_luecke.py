@@ -158,11 +158,11 @@ def test_person_b_xsd_valide(bindung, tmp_path):
 def test_gewinneinkuenfte_partner_kommt_im_xml_an(bindung):
     """Stufe 1 (Deklaration) der Gewinneinkünfte-Partnerseite: einkuenfte_gewinn_partner
     (gewerbe) -> E0800302, rentner_veraeusserungsgewinn_partner (selbstaendig) -> E0804501,
-    gewst_hebesatz_partner/gewst_messbetrag_partner -> E0801705/E0801606. Alle vier laufen
-    in den person_b-Bucket (dieselben Person-A-Kz, zweite Anlage-G-Instanz) — kein eigenes
-    Ehegatte-Kz. Person A und B mit UNTERSCHIEDLICHEN Werten, damit ein Vertauschen der
-    Buckets sofort auffiele. Hebesatz bleibt bewusst ein Nicht-Cent-Wert (410 -> "410",
-    keine Cent->Euro-Wandlung)."""
+    gewst_hebesatz_partner/gewst_messbetrag_partner/gewst_zu_zahlen_partner ->
+    E0801705/E0801606/E0801704. Alle fünf laufen in den person_b-Bucket (dieselben Person-A-Kz,
+    zweite Anlage-G-Instanz) — kein eigenes Ehegatte-Kz. Person A und B mit UNTERSCHIEDLICHEN
+    Werten, damit ein Vertauschen der Buckets sofort auffiele. Hebesatz bleibt bewusst ein
+    Nicht-Cent-Wert (410 -> "410", keine Cent->Euro-Wandlung)."""
     s = ST.leerer_store(2025, fall_id="gewinn_partner_xml")
     _b(s, "einkuenfte_gewinn", 500000)                        # 5.000 EUR, Person A
     _b(s, "gewinn_betriebsart", "gewerbe")
@@ -174,6 +174,7 @@ def test_gewinneinkuenfte_partner_kommt_im_xml_an(bindung):
     _b(s, "rentner_veraeusserungs_betriebsart_partner", "selbstaendig")
     _b(s, "gewst_hebesatz_partner", 410)                      # Prozent, kein Cent-Feld
     _b(s, "gewst_messbetrag_partner", 120000)                 # 1.200 EUR
+    _b(s, "gewst_zu_zahlen_partner", 492000)                  # 1.200 EUR * 410 %
     _b(s, "veranlagung", "zusammen")
     _b(s, "kein_gewinn", False)
     _b(s, "kein_kap", True)
@@ -207,6 +208,11 @@ def test_gewinneinkuenfte_partner_kommt_im_xml_an(bindung):
         "Hebesatz Person B nicht 410 — Cent-Wandlung faelschlich angewandt?\n" + xml)
     assert "<E0801606>1200</E0801606>" in clean, (
         "Messbetrag Person B nicht 1200:\n" + xml)
+    # Zu zahlende Gewerbesteuer Person B (E0801704): 1.200 EUR * 410 % = 4.920 EUR. Ohne diesen
+    # Eintrag in PARTNER_INSTANZ fehlte das Kz in der Anlage-G-Instanz B, waehrend E0801606 und
+    # E0801705 dort standen — checkESt verlangt die drei Zahlen gemeinsam (Regel 2106, 2026-09-26).
+    assert "<E0801704>4920</E0801704>" in clean, (
+        "E0801704 (Gewerbesteuer Person B) fehlt oder falscher Wert:\n" + xml)
 
 
 @braucht_xsd
@@ -221,6 +227,11 @@ def test_gewinneinkuenfte_partner_xsd_valide(bindung, tmp_path):
     _b(s, "rentner_veraeusserungs_betriebsart_partner", "selbstaendig")
     _b(s, "gewst_hebesatz_partner", 410)
     _b(s, "gewst_messbetrag_partner", 120000)
+    # E0801704 (zu zahlende Gewerbesteuer) Person B: 1.200 EUR * 410 % = 4.920 EUR. Der Wert kommt
+    # sonst aus bescheid_deklaration._mit_ring_werten; hier steht er direkt, damit diese Datei ohne
+    # den Rechenring laeuft (wie die uebrigen Werte). Das Element ist neu in der Anlage-G-Instanz B
+    # (2026-09-26) — deshalb hier gegen die amtliche Reihenfolge geprueft.
+    _b(s, "gewst_zu_zahlen_partner", 492000)
     _b(s, "veranlagung", "zusammen")
     _b(s, "kein_gewinn", False)
     _b(s, "kein_kap", True)

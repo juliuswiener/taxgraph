@@ -1768,8 +1768,9 @@ def test_p_abzugs_kz_deckt_die_bindung(daten):
 # Eine schwaechere Fassung ("kommt der Code irgendwo im Code vor") waere bei den teuersten Faellen
 # zufrieden gewesen: E1900701 wird geschrieben, aber fuer kap_kapitalertraege_partner, nicht fuer
 # kap_gewinn_sonstige_partner, dessen Text ihn behauptet; E0801704 wird geschrieben, aber fuer
-# gewst_zu_zahlen (Person A, eigener elster_kz), nicht fuer gewst_zu_zahlen_partner, das nicht in
-# PARTNER_INSTANZ steht; E2004403 wird geschrieben, aber im Pers-Zweig Arbeitslosenversicherung,
+# gewst_zu_zahlen (Person A, eigener elster_kz) — der Partner-Zwilling kam am 2026-09-26 in
+# PARTNER_INSTANZ und ist damit kein Beispiel mehr; E2004403 wird geschrieben, aber im Pers-Zweig
+# Arbeitslosenversicherung,
 # nicht fuer die fuenf vorsorge_*_partner-Felder, deren Texte ihn nennen. Ein erfundener Code faellt
 # beim ersten Grep auf; ein echter Code, der einem ANDEREN Feld gehoert, bestaetigt sich selbst.
 #
@@ -1879,9 +1880,6 @@ KZ_GRUND_BEKANNTE_FEHLZUORDNUNG = {
     "verguetung_taetigkeit_partner": "Person-B-Zwilling derselben Fehlzuordnung.",
     "verguetung_darlehen_partner": "Person-B-Zwilling derselben Fehlzuordnung.",
     "verguetung_ueberlassung_partner": "Person-B-Zwilling derselben Fehlzuordnung.",
-    "gewst_zu_zahlen_partner": "behauptet PARTNER_INSTANZ-Routing auf E0801704 -- PARTNER_INSTANZ "
-        "fuehrt dieses Feld nicht (nur gewst_hebesatz_partner/gewst_messbetrag_partner); E0801704 "
-        "wird nur fuer Person A (gewst_zu_zahlen, eigener elster_kz) geschrieben.",
     "vorsorge_arbeitslosenversicherung_partner": "behauptet (Teil-)Ziel E2004403 -- das Feld steht "
         "in keiner Routingstruktur; E2004403 gehoert laut eigenem Bindungskommentar ohnehin einer "
         "anderen Kategorie (Pers-Zweig Arbeitslosenversicherung, additiv zu A_B_LP, nicht Ersatz).",
@@ -2003,7 +2001,9 @@ def test_q_elster_kz_grund_ziel_existiert(daten):
     # Registergroessen mitpruefen: jede Erweiterung einer der vier Listen ist eine bewusste
     # Handlung mit eigener Begruendung, kein stiller Nebeneffekt -- sonst loest sich die Ratsche
     # unbemerkt (main 2026-08-30, Auflage 1).
-    assert len(KZ_GRUND_BEKANNTE_FEHLZUORDNUNG) == 19
+    # 19 -> 18 am 2026-09-26: gewst_zu_zahlen_partner kam in PARTNER_INSTANZ und hat damit einen
+    # eigenen Kz-Treffer; sein Eintrag hier war erledigt.
+    assert len(KZ_GRUND_BEKANNTE_FEHLZUORDNUNG) == 18
     assert len(KZ_GRUND_KEIN_ZIEL_STRUKTURELL) == 19
     assert len(KZ_GRUND_RUECKSTAND) == 1
     assert len(KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT) == 0
@@ -2011,7 +2011,7 @@ def test_q_elster_kz_grund_ziel_existiert(daten):
     treffer = _q_kandidaten(daten, M)
     bekannt = (set(KZ_GRUND_BEKANNTE_FEHLZUORDNUNG) | set(KZ_GRUND_KEIN_ZIEL_STRUKTURELL)
                | set(KZ_GRUND_RUECKSTAND) | set(KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT))
-    assert len(bekannt) == 39, "Register ueberschneiden sich -- ein Feld steht in mehr als einem."
+    assert len(bekannt) == 38, "Register ueberschneiden sich -- ein Feld steht in mehr als einem."
 
     unbekannt = sorted(set(treffer) - bekannt)
     assert not unbekannt, "\n".join(

@@ -276,10 +276,19 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
     # checkESt verlangt sie neben den beiden Faktoren ("... sind gemeinsam anzugeben",
     # "Der Hebesatz wurde angegeben, die zu zahlende Gewerbesteuer jedoch nicht", 2026-08-19).
     #
-    # Der Hebesatz ist eine Prozentzahl (typ int, z. B. 450), der Messbetrag steht in Cent —
-    # Ergebnis also messbetrag * hebesatz // 100, und das bleibt Cent. Ganzzahlig abgerundet:
-    # die Gemeinde setzt volle Euro fest, und Aufrunden würde hier eine Steuerschuld behaupten,
-    # die höher ist als die tatsächliche.
+    # Der Hebesatz ist eine Prozentzahl (typ int, z. B. 450), der Messbetrag steht in Cent.
+    # Gerechnet wird mit dem auf volle Euro ABGERUNDETEN Messbetrag, also mit genau der Zahl, die
+    # als E0801606 in der Erklärung steht (_cent_nach_kz rundet ab); Euro mal Prozent ergibt Cent.
+    # Grund: ELSTER nimmt E0801606 und E0801704 nur in vollen Euro an (Jahresdokumentation E10
+    # 2025, Blatt "G - Felder": GeldBetragOhneCent) und prüft mit Regel 100800013 (Blatt
+    # "G - Regeln", Typ Fehler), ob E0801704 bis auf 1 EUR gleich E0801606 * E0801705 / 100 ist.
+    # Getrennt abgerundet verfehlte das die Toleranz: 20.247,50 EUR bei 400 % ergab 20247 und
+    # 80990, 2 EUR daneben. Die § 35-Rechnung liest dieses Feld nicht (bescheid_zweige.py rechnet
+    # aus Messbetrag und Hebesatz selbst).
+    # ponytail: abgerundet, obwohl die Anleitung ESt 1 A Runden zu Gunsten des Nutzers erlaubt
+    # (Wirkung höchstens knapp 4 EUR § 35-Obergrenze); Aufrunden hieße, diese Stelle und die
+    # E0801606-Rundung gemeinsam zu ändern (Entscheidung
+    # gewerbesteuer-kennzahlen-aus-dem-abgerundeten-messbetrag).
     for _mb, _hs, _ziel in (("gewst_messbetrag", "gewst_hebesatz", "gewst_zu_zahlen"),
                             ("gewst_messbetrag_partner", "gewst_hebesatz_partner",
                              "gewst_zu_zahlen_partner")):
@@ -287,7 +296,7 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
         if all(isinstance(f, dict) and f.get("zustand") == "bestaetigt"
                and isinstance(f.get("wert"), int) and f["wert"] > 0 for f in (_m, _h)):
             felder[_ziel] = {
-                "wert": _m["wert"] * _h["wert"] // 100,
+                "wert": _m["wert"] // 100 * _h["wert"],
                 "zustand": "bestaetigt",
                 "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
                 "schreiber": "engine",
