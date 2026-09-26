@@ -333,11 +333,11 @@ def _badge(herkunft: dict) -> str:
     return herkunft.get("herkunft", "laie")
 
 
-def _ring_bindung(cfg: dict, bindung: dict) -> dict:
-    """Bindung für die Spannen-/intervall-Rechnung: nur die Pflicht-Kegel-Felder. Sonst zögen die
-    (bei einzel ungesetzten) Partner-Felder als unbounded-ohne-Wert das Intervall auf nicht_fixierbar."""
+def _ring_bindung(cfg: dict, bindung: dict, store: dict | None = None) -> dict:
+    """Bindung für die Spannen-/intervall-Rechnung: nur die Pflicht-Kegel-Felder; mit `store` (nur für IV.intervall) ohne abbestellte.
+    Sonst zögen ungesetzte Partner-Felder (einzel) und nie gefragte Felder als unbounded-ohne-Wert das Intervall auf nicht_fixierbar."""
     kegel = cfg.get("kegel")
-    return {f: bindung[f] for f in kegel if f in bindung} if kegel else bindung
+    return {f: bindung[f] for f in _relevante_kegel_felder(kegel, bindung, store) if f in bindung} if kegel else bindung
 
 
 def _gesamt_beitrag(store: dict, cfg: dict, bindung: dict, felder: dict, sid: str, vz: int):
@@ -347,7 +347,7 @@ def _gesamt_beitrag(store: dict, cfg: dict, bindung: dict, felder: dict, sid: st
         bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
         if bf is not None:
             return {b["feld_id"]: b["spanne_cent"]
-                    for b in IV.intervall(felder, rb, bf, snapshot_id=sid)["beitraege"]}
+                    for b in IV.intervall(felder, _ring_bindung(cfg, bindung, store), bf, snapshot_id=sid)["beitraege"]}
     for _name, q, tfelder in cfg["teil_ringe"]:
         tb = {f: bindung[f] for f in tfelder if f in bindung}
         bf = _bescheid_fn(q, vz, tb, nur_bestaetigt=False)   # Estimate-Pfad (fragen-Gewichte)
@@ -488,7 +488,7 @@ def stand(fall_id: str) -> tuple[int, dict]:
         rb = _ring_bindung(cfg, bindung)
         bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
         if bf is not None:
-            gesamt_iv = IV.intervall(felder, rb, bf, snapshot_id=sid)["intervall"]
+            gesamt_iv = IV.intervall(felder, _ring_bindung(cfg, bindung, store), bf, snapshot_id=sid)["intervall"]
             engine = "catala"
     else:
         for name, q, tfelder in cfg["teil_ringe"]:
