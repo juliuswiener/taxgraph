@@ -217,3 +217,49 @@ def test_preflight_meldet_keinen_int_wert_als_eurobetrag():
     EURO-Betrag -- ein int-Feld darf ihn nicht ausloesen ('Du hast 19 € eingetragen')."""
     f = _felder(RENTNER, {"geburtsjahr": (1960, V)})
     assert _preflight(f)["hinweise_betrag_vorlaeufig"] == []
+
+
+# ===================== Die Texte behaupten keine Richtung =====================
+# Klartext und Preflight-Hinweis sagen dem Nutzer, WAS noch nicht bestaetigt ist. Sie sagen NICHT,
+# in welche Richtung sich die Zahl dadurch bewegt -- und sie verweisen nicht auf eine Liste.
+#
+# Warum die Richtung in BEIDE Richtungen falsch waere: ein vorlaeufiger agB-Abzug
+# (agb_aufwendungen, 5.000 EUR) SENKT die Steuer nach der Bestaetigung, eine vorlaeufige
+# Lohnsteuer-Anrechnung (p36_lohnsteuer) HEBT die Abschlusszahlung. Ein Satz, der "zu niedrig"
+# behauptet, ist fuer das eine Feld richtig und fuer das andere falsch -- und der Hinweis ist fuer
+# alle Felder derselbe Text.
+#
+# Warum "die Liste daneben" nicht stimmt: zeigeErgebnis() zeigt den Klartext genau dann, wenn
+# zahl_cent === null; die Liste der offenen Angaben steht im ERFOLGS-Zweig daneben und wird in
+# diesem Fall nie gezeichnet (produkt/haut/static/app.js, zwei sich ausschliessende Zweige).
+#
+# Der Test pinnt BEIDES: das Verbotene fehlt UND der Auftrag steht drin. Ohne den zweiten Teil
+# waere "Satz gestrichen" ein gruener Fix.
+
+VERBOTEN = ("zu niedrig", "zu hoch", "passt nicht", "nicht passt", "Liste daneben")
+
+
+def test_sperrgrund_klartext_behauptet_keine_richtung():
+    text = BD.sperrgrund_klartext("ring_betrag_vorlaeufig")
+    for wort in VERBOTEN:
+        assert wort not in text, f"Klartext behauptet eine Richtung ('{wort}'): {text}"
+    assert "bestätig" in text.lower(), (
+        f"Der Klartext muss sagen, was zu tun ist (bestaetigen): {text}")
+
+
+@pytest.mark.parametrize("feld_id,wert", [
+    ("p36_lohnsteuer", 3000000),
+    ("p36_kapitalertragsteuer", 135680),
+    ("agb_aufwendungen", 500000),
+])
+def test_preflight_hinweis_behauptet_keine_richtung(feld_id, wert):
+    f = _felder(GESAMT, {feld_id: (wert, V)})
+    treffer = [e for e in _preflight(f)["hinweise_betrag_vorlaeufig"] if e["feld_id"] == feld_id]
+    assert treffer, (
+        f"{feld_id} ist vorlaeufig, aber /preflight meldet nichts -- der Nutzer sieht nicht, "
+        "dass der Betrag in der Zahl fehlt.")
+    text = treffer[0]["hinweis"]
+    for wort in VERBOTEN:
+        assert wort not in text, f"Preflight-Hinweis behauptet eine Richtung ('{wort}'): {text}"
+    assert "bestätig" in text.lower(), (
+        f"Der Hinweis muss sagen, was zu tun ist (bestaetigen): {text}")

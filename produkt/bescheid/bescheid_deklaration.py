@@ -497,11 +497,17 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "Bitte sieh dir beide Angaben noch einmal an.",
 
     # ---- (1) Eine Angabe oder Antwort fehlt noch -------------------------------------------------
+    # Keine Richtungsaussage ("zu niedrig", "passt nicht"): derselbe Satz gilt fuer einen
+    # vorlaeufigen agB-Abzug (senkt die Steuer) und eine vorlaeufige Lohnsteuer-Anrechnung (hebt
+    # die Abschlusszahlung) -- jede Richtung waere fuer die Haelfte der Felder falsch. Und kein
+    # Verweis auf eine Liste: der Klartext erscheint genau dann, wenn zahl_cent None ist, waehrend
+    # die Liste der offenen Angaben im Erfolgs-Zweig daneben steht und hier nie gezeichnet wird
+    # (app.js, zwei sich ausschliessende Zweige). tests/test_klasse_c_vorlaeufiger_betrag_sperrt.py
+    # haelt beides fest.
     "ring_betrag_vorlaeufig":
-        "Du hast einen Betrag eingetragen, ihn aber noch nicht bestätigt. Solange das so ist, "
-        "rechnet die Software ihn nicht mit — sonst würde sie eine Steuer ausweisen, die zu deinen "
-        "Angaben nicht passt. Bitte sieh dir den Betrag noch einmal an und bestätige ihn; danach "
-        "steht das Ergebnis sofort da. Um welche Angabe es geht, steht in der Liste daneben.",
+        "Ein Betrag, den du genannt hast, ist noch nicht bestätigt. Solange das so ist, zeigt die "
+        "Software keine Steuer an; sie könnte einen genannten Betrag sonst nicht mitrechnen. Bitte "
+        "sieh dir die Angabe noch einmal an und bestätige sie; danach rechnet die Software die Zahl.",
     "arbeitsmittel_afa_ueber_gwg_offen":
         "Zu deinen angeschafften Arbeitsmitteln fehlt noch, wie die Kosten abgesetzt werden sollen. "
         "Bei Anschaffungen bis 800 Euro ist das die Frage, ob du den Betrag sofort in voller Höhe "

@@ -203,13 +203,19 @@ def vorlaeufige_ring_betraege(snapshot: dict) -> list:
         wert = eintrag.get("wert")
         if not isinstance(wert, (int, float)) or isinstance(wert, bool) or wert <= 0:
             continue
-        frage = _frage_kurz(feld_id, bindung) or "einen Betrag"
+        # Drei Felder tragen keinen fragetext_laie. Dann faellt der Ortshinweis weg -- ein
+        # Fuellwort wie "einen Betrag" in Anfuehrungszeichen liest sich als Frage, die es nicht gibt.
+        frage = _frage_kurz(feld_id, bindung)
+        ort = f" bei der Frage »{frage}«" if frage else ""
         treffer.append({
             "feld_id": feld_id, "wert": wert,
-            "hinweis": f"Du hast {_eur(wert)} eingetragen, diesen Betrag aber noch nicht "
-                       f"bestätigt. Solange das so ist, rechnet die Software ihn nicht mit — die "
-                       f"angezeigte Steuer ist dann zu niedrig. Bitte sieh dir die Frage "
-                       f"»{frage}« noch einmal an und bestätige den Betrag."})
+            # Keine Richtungsaussage: derselbe Satz gilt fuer einen vorlaeufigen agB-Abzug
+            # (senkt die Steuer) und eine vorlaeufige Lohnsteuer-Anrechnung (hebt die
+            # Abschlusszahlung) -- "zu niedrig" waere fuer die Haelfte der Felder falsch.
+            "hinweis": f"Du hast{ort} {_eur(wert)} eingetragen, diesen Betrag "
+                       f"aber noch nicht bestätigt. Solange das so ist, zeigt die Software keine "
+                       f"Steuer an; sie könnte den Betrag sonst nicht mitrechnen. Bitte prüfe und "
+                       f"bestätige ihn; danach rechnet die Software die Zahl."})
     return treffer
 
 
