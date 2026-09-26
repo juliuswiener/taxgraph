@@ -457,3 +457,39 @@ def test_steuernummer_ableitung_liefert_dieselbe_amtliche_fehlerzahl():
     assert n1 == n2, (
         f"Ableitung ueber snapshot liefert eine ANDERE amtliche Fehlerzahl als der explizite "
         f"absender_steuernummer-Parameter ({n2} vs {n1}) -- keine echte Aequivalenz.")
+
+
+# Die allgemeine Spende steht seit 2026-09-26 in Zeile 5 (E0108105), nicht mehr in Zeile 9
+# (E0108405, Vermoegensstock einer Stiftung). Unter E0108405 lehnte ERiC 500 EUR mit
+# rc=610001002 ab (Vault: decisions/allgemeine-spenden-gehoeren-in-zeile-5).
+def _fall_einzel_mit_spenden(fall_id, spenden):
+    """Einzel-Basisfall (rc=0, RESTFEHLER_EINZEL) PLUS Spenden-Felder."""
+    s = ST.leerer_store(2025, fall_id=fall_id)
+    for f, w in _BASIS_A + spenden:
+        _b(s, f, w)
+    _b(s, "veranlagung", "einzel")
+    return s
+
+
+@braucht_eric
+@pytest.mark.parametrize("name,spenden,mit_zeile_5", [
+    ("spende_500", (("spenden_betrag", 50000),), True),
+    # E0108105 ist GanzzahlPos: eine geschriebene 0 lehnt ERiC ab (zahlIstNull), etwa bei
+    # reiner Parteispende. Die Zeile bleibt deshalb leer.
+    ("spende_null", (("spenden_betrag", 0),), False),
+    # Bestaetigter Altwert im stillgelegten Feld (Zeile 11). Ohne Zeile 9 lehnt ERiC Zeile 11
+    # ab, auch mit 0 (Meldung 1115) -- der Wert darf nicht ins XML.
+    ("altwert_vermoegensstock",
+     (("spenden_betrag", 50000), ("spenden_vermoegensstock", 20000)), True),
+])
+def test_spenden_zeile_5_besteht_die_amtliche_pruefung(name, spenden, mit_zeile_5):
+    """Zeile 5 mit Betrag, Zeile 5 leer bei 0, Zeile 11 nie: jeweils amtlich rc=0."""
+    store = _fall_einzel_mit_spenden(f"durchstich_{name}", spenden)
+    snap, _ = ST.materialisiere(store)
+    dekl = est_mapping.deklariere(BD._mit_ring_werten(snap, vz=2025), TR.lade_bindung())
+    # Vorbedingung: der Fall traegt, was er messen soll
+    assert ("E0108105" in dekl["deklaration"]) is mit_zeile_5, dekl["nicht_deklariert"]
+    rc, texte, _ = _pruefe(store)
+    assert rc == CE.RC_OK, (
+        f"[{name}] rc={rc} [{CE.klassifiziere_rc(rc)}], erwartet RC_OK. "
+        f"Beanstandungen:\n" + "\n".join(f"  - {t[:200]}" for t in texte))

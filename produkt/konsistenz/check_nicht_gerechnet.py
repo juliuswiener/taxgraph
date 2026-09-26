@@ -17,14 +17,11 @@ from __future__ import annotations
 # feld_id -> Text. Bewusst eine Tabelle und keine verstreuten ifs: wer hier einen Eintrag
 # hinzufügt, hat gerade ein Feld gebunden, das der Ring nicht liest — und soll beim Schreiben
 # des Hinweises merken, dass das eine Aussage über eine Lücke ist, nicht über den Nutzer.
-NICHT_GERECHNET = {
-    "spenden_vermoegensstock": (
-        "Deine Spende in den Vermögensstock einer Stiftung steht in der Erklärung ans "
-        "Finanzamt, wird in der hier angezeigten Steuer aber noch nicht berücksichtigt "
-        "(§ 10b Abs. 1a EStG). Dein Bescheid kann deshalb günstiger ausfallen als die "
-        "Vorschau."
-    ),
-}
+#
+# Leer seit 2026-09-26. Der einzige Eintrag war spenden_vermoegensstock (§ 10b Abs. 1a). Das Feld
+# ist stillgelegt und steht NICHT mehr in der Erklärung — "steht in der Erklärung ans Finanzamt"
+# wäre falsch (bindung_sonder_agb_35a.yaml, Vault: decisions/allgemeine-spenden-gehoeren-in-zeile-5).
+NICHT_GERECHNET: dict[str, str] = {}
 
 
 def nicht_gerechnete_angaben(snapshot: dict) -> list[dict]:

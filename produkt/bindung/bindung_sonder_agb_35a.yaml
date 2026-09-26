@@ -584,17 +584,36 @@ bindungen:
     hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung (Spendenquittung). Nur Spenden an inländische Empfänger."
     beispielwert: 30000
     herkunft_slots: ["Zuwendungsbestätigung: Betrag"]
-    elster_kz: E0108405
+    elster_kz: E0108105
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10b Abs. 1 S. 1 EStG"
       zitatanker: "Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke"
       datei: "sources/gesetze-im-internet/estg_p10b_2026-07-13.txt"
 
-  # Gemessen 2026-08-19: mit spenden_betrag allein antwortet checkESt rc=610001002, "Bitte geben
-  # Sie an, in welcher Hoehe die 2025 geleisteten Spenden in den Vermoegensstock einer Stiftung
-  # im Veranlagungszeitraum 2025 beruecksichtigt werden sollen". Mit dem Feld (auch mit Wert 0)
-  # rc=0.
+  # STILLGELEGT SEIT 2026-09-26: weder gefragt noch geschrieben, solange es kein Feld fuer Zeile 9
+  # gibt (die Vermoegensstock-Spende selbst). Dieses Feld ist Zeile 11: wie viel von Zeile 9 im
+  # Jahr zaehlen soll. Ohne Betrag in Zeile 9 hat es keinen Gegenstand, und ERiC lehnt es ab, auch
+  # mit Wert 0 (rc=610001002, Zeile 9, Meldung 1115). Entschieden vom Instructor, Vault:
+  # decisions/allgemeine-spenden-gehoeren-in-zeile-5.
+  #
+  # Die Messung, fuer die das Feld gebaut wurde, war ein Folgefehler. Am 2026-08-19 stand
+  # spenden_betrag auf E0108405, also in Zeile 9 statt in Zeile 5. Deshalb antwortete checkESt
+  # rc=610001002, "Bitte geben Sie an, in welcher Hoehe die 2025 geleisteten Spenden in den
+  # Vermoegensstock einer Stiftung im Veranlagungszeitraum 2025 beruecksichtigt werden sollen".
+  #
+  # Das Feld bleibt in der Bindung, statt zu verschwinden (FELD_BESTAND.yaml): ein schon
+  # bestaetigter Wert bleibt im Store und landet in nicht_deklariert, mit dem Grund unten. Den
+  # Preflight-Hinweis "steht in der Erklaerung, wird aber nicht gerechnet" gibt es dafuer nicht
+  # mehr — er waere jetzt falsch.
+  #
+  # Fuer den Wiederaufbau: Zeile 11 ist E0108509 [SA/Zuw/Sp_erh_Verm_Stift], Typ GanzzahlNichtNeg
+  # (0 zulaessig). NICHT E0108607 — das ist der Vorjahres-Rest (Spenden aus Vorjahren, die bisher
+  # nicht beruecksichtigt wurden); der Backlog nannte faelschlich diese Kz. Die Kz steht hier im
+  # Kommentar und nicht im elster_kz_grund, weil der Grund nur Codes zitieren darf, die das Feld
+  # auch schreibt (tests/test_bindungstabelle.py, test_q).
+  #
+  # BIS 2026-09-26 GALT, UND FUER EIN ZEILE-9-FELD GILT ES WIEDER:
   #
   # GEFRAGT, NICHT AUF 0 GESETZT — und das war eine Entscheidung, keine Selbstverstaendlichkeit.
   # Eine stille 0 haette fuer JEDEN Nutzer behauptet, er wolle nichts als Vermoegensstock-Spende
@@ -607,7 +626,7 @@ bindungen:
   # Zuschnitte". Ein Wert > 0 wird also korrekt DEKLARIERT, aber nicht gerechnet: die angezeigte
   # Steuer faellt zu hoch aus, der Bescheid guenstiger. Das ist die ungefaehrliche Richtung —
   # niemand zahlt zu viel, niemand wird boese ueberrascht —, aber der Nutzer soll es wissen.
-  # Deshalb der Preflight-Hinweis in produkt/konsistenz/preflight.py (hinweise_nicht_gerechnet).
+  # Deshalb gab es den Preflight-Hinweis in produkt/konsistenz/check_nicht_gerechnet.py.
   #
   # Die Alternative waere ein Sperrgrund gewesen: dann bekaeme der Betroffene GAR KEINE
   # Erklaerung. Das bestraft genau den, den es schuetzen soll.
@@ -620,14 +639,14 @@ bindungen:
     quelle: {regel_id: p10b_spenden, signatur_slot: vermoegensstock_betrag}
     typ: cent
     einheit: EUR
-    askable: true
+    askable: false
     vorjahr: uebernehmbar
-    fragetext_laie: "War eine deiner Spenden für den Grundstock (das Startvermögen) einer Stiftung? Wenn ja: wie viel davon? Sonst 0."
+    fragetext_laie: null
     hilfe_kurz: "Gemeint ist nur der Sonderfall, dass du einer Stiftung beim Aufbau ihres Vermögens geholfen hast — nicht die normale Spende an eine Stiftung. Im Zweifel 0."
     beispielwert: 0
     herkunft_slots: null
-    elster_kz: E0108509
-    elster_kz_grund: "E0108509 [SA/Zuw/Sp_erh_Verm_Stift], XSD-Label 'Von den Spenden in den Zeilen ... sollen $VZ$ beruecksichtigt werden'. NICHT E0108607 — das ist der Vorjahres-Rest (Spenden aus Vorjahren, die bisher nicht beruecksichtigt wurden); der Backlog nannte faelschlich diese Kz. Typ GanzzahlNichtNeg, 0 also zulaessig (anders als E0108405 daneben, das GanzzahlPos ist)."
+    elster_kz: null
+    elster_kz_grund: "Stillgelegt seit 2026-09-26 (Instructor, Vault decisions/allgemeine-spenden-gehoeren-in-zeile-5): Zeile 11 der Anlage Sonderausgaben sagt, wie viel von Zeile 9 (Vermoegensstock einer Stiftung) im Jahr zaehlen soll. Ohne Zeile-9-Feld hat sie keinen Gegenstand, und ERiC lehnt sie ab, auch mit Wert 0 (rc=610001002, Meldung 1115). Weder gefragt noch geschrieben, bis es ein Feld fuer Zeile 9 gibt."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 10b Abs. 1a S. 1 EStG"

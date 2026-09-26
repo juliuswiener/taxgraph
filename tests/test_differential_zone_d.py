@@ -120,7 +120,7 @@ def test_zone_d_sonderausgaben_anrechnung_keine_luecken(bindung):
     """KiSt + §36 Anrechnung + §10b Spenden — 5 Betragsfelder.
 
     kist_*, p36_* null-kz -> nicht_deklariert (Topf b).
-    spenden_betrag (E0108405) -> Topf a.
+    spenden_betrag (E0108105) -> Topf a.
     """
     s = ST.leerer_store(2025, fall_id="zone_d_sa_anr")
     _b(s, "veranlagung", "einzel")
@@ -139,7 +139,7 @@ def test_zone_d_sonderausgaben_anrechnung_keine_luecken(bindung):
     _b(s, "p36_vorauszahlungen", 200000)                 # cent, null-kz -> nicht_deklariert
 
     # §10b Spende (1 mit Kz)
-    _b(s, "spenden_betrag", 30000)                       # cent, E0108405 -> 1:1 (Topf a)
+    _b(s, "spenden_betrag", 30000)                       # cent, E0108105 -> 1:1 (Topf a)
 
     snap, _ = ST.materialisiere(s)
     result = est_mapping.deklariere(snap, bindung)
@@ -225,7 +225,7 @@ def test_zone_d_zusammenveranlagung_keine_luecken(bindung):
     _b(s, "hh_minijob_betrag", 280000)                    # cent, E0104108 -> 1:1 (Instanz 1)
     _b(s, "kist_gezahlt", 60000)                          # cent, null-kz -> nicht_deklariert
     _b(s, "kist_erstattet", 5000)                         # cent, null-kz -> nicht_deklariert
-    _b(s, "spenden_betrag", 30000)                        # cent, E0108405 -> 1:1
+    _b(s, "spenden_betrag", 30000)                        # cent, E0108105 -> 1:1
     _b(s, "p36_lohnsteuer", 800000)                       # cent, null-kz -> nicht_deklariert
     _b(s, "p36_vorauszahlungen", 200000)                  # cent, null-kz -> nicht_deklariert
     _b(s, "kinderbetreuungskosten", 600000)                # cent, E0506105 (per-Kind, 2026-08-06)

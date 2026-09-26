@@ -586,6 +586,12 @@ BETRAGSFELDER_OHNE_KZ = {
     # (s. bindung_an_gesamt.yaml, test_est_mapping.py::test_steuerklasse_lohnsteuer_kirchensteuer_person_b).
     "p36_lohnsteuer_partner",
     "kirchensteuer_arbeitgeber_partner",
+
+    # Gruppe F: stillgelegt (Instructor-Entscheidung 2026-09-26, Vault decisions/allgemeine-spenden-
+    # gehoeren-in-zeile-5). Zeile 11 der Anlage Sonderausgaben hat ohne Zeile-9-Feld keinen
+    # Gegenstand, ERiC lehnt sie dann ab, auch mit 0. Bekommt das Feld mit einem Zeile-9-Feld sein
+    # Kz zurueck, faellt es hier heraus.
+    "spenden_vermoegensstock",
 }
 
 
