@@ -56,6 +56,8 @@ import server as SRV           # noqa: E402
 import audit                   # noqa: E402
 import elster_xml as EX        # noqa: E402
 
+from _kegel import kegel_fuer  # noqa: E402
+
 
 @pytest.fixture(scope="module", autouse=True)
 def _fake_hersteller_id():
@@ -97,8 +99,10 @@ def _laie(fld, wert):
             "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": f"ok@{fld}"}}
 
 
-# Minimale vollstaendige gesamt-Fixtur, uebernommen aus tests/test_einreichen_durchstich.py
-# (dort 2026-08-10 team-lead-gemessen gegen den echten Endpunkt: _STAMM_A/_BASIS_A).
+# GEBAUT, nicht kopiert (tests/_kegel.py), seit 2026-09-26. Von Hand standen hier 23 Felder;
+# 18 trugen genau den ABWESENHEITSWERT. Nur die fuenf Overrides unten sind echte Werte.
+# `_kap()` schickt `kein_kap` + die fuenf kap_*-Felder SELBST -- sie werden darum ausgelassen,
+# sonst weist der Store dasselbe Feld zweimal ab (Auflage B, 422).
 _STAMM = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
           ("stammdaten_geburtsdatum", "05.05.1955"),
           ("stammdaten_strasse", "Musterstr."), ("stammdaten_hausnummer", "55"),
@@ -109,25 +113,20 @@ _STAMM = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
           ("stammdaten_steuernummer", "9181081508155"),
           ("steuerklasse", "1"), ("p36_lohnsteuer", 1200000))
 
-# "kegel" von /ergebnis (api_constants.SCHEIBEN["gesamt"]["kegel"]) verlangt zusaetzlich
-# EP_FELDER + KV_PV_FELDER unbedingt (kein "kein_X"-Schalter unterdrueckt sie) -- gemessen per
-# Probe-Skript: /ergebnis lieferte ohne diese 13 Felder grund="input_kegel_nicht_bestaetigt".
-# Werte identisch zu den Defaults in tests/test_paket_b_e2e_http.py::_gesamt_kegel.
-_GRUND = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
-          ("vor_ag_anteil_rv", 1200000), ("vor_rv_ausserhalb_lstb", 0),
-          ("kein_gewinn", True), ("kein_vuv", True), ("kein_sonstige", True),
-          ("veranlagung", "einzel"),
-          ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0),
-          ("ep_eigenes_kfz", False), ("versicherungsart", "gesetzlich_an"),
-          ("basis_kv", 0), ("basis_pv", 0), ("vorsorge_arbeitslosenversicherung", 0),
-          ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0),
-          ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-          ("mit_anspruch_auf_zuschuss", False),
-          # 2026-09-26: `agb_zwangslaeufig`/`agb_notwendig_angemessen` sind neu im Kegel von
-          # "gesamt" (produkt/haut/api_constants.py, SCHEIBEN["gesamt"]["kegel"]). Ohne diese
-          # zwei Antworten liefert /ergebnis grund="input_kegel_nicht_bestaetigt" statt der
-          # gemessenen Zahl -- alle drei Faelle dieser Datei fallen darueber aus.
-          ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True)) + _STAMM
+_KAP_IDS = {"kein_kap", "kap_kapitalertraege", "kap_gewinn_aktien",
+            "kap_verlust_aktien", "kap_gewinn_sonstige", "kap_verlust_sonstige"}
+
+_GRUND = tuple(
+    (f, w) for f, w in kegel_fuer("gesamt", {
+        "bruttoarbeitslohn": 6000000, "vor_an_anteil_rv": 4200000,
+        "vor_ag_anteil_rv": 1200000,
+        "veranlagung": "einzel",
+        # Die zwei agb-Felder halten `p33_1_2_agb_abzug` offen. Der Bauer setzt nach
+        # Namenpolaritaet False; das waere eine Verneinung des Tatbestands.
+        "agb_zwangslaeufig": True,
+        "agb_notwendig_angemessen": True,
+    }) if f not in _KAP_IDS
+) + _STAMM
 
 
 def _kap(kein_kap, ertraege, gewinn_sonstige):

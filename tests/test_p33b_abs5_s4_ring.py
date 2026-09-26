@@ -212,23 +212,23 @@ def test_p33b_abs5_s4_kuerzung_nicht_negativ(base):
 
 # rentner_gesamt geht durch DENSELBEN Helfer (_shared_steuer_sonder_agb, api.py:387).
 # Dieser Test belegt das an der Zahl statt es dem Schnittplan zu glauben.
-RENTNER_KEGEL = [
-    ("veranlagung", "einzel"),
-    ("rentner_renten_art", "gesetzliche_rente"), ("rentner_jahresrente", 20000000),
-    ("rentner_renten_beginn_jahr", 2025), ("rentner_alter_bei_rentenbeginn", 65),
-    ("rentner_rentenfreibetrag", 0), ("rentner_grad_der_behinderung", 0),
-    ("rentner_hilflos_blind_taubblind", False), ("rentner_hinterbliebenenbezuege", False),
-    ("rentner_pflegegrad", 0), ("rentner_gepflegter_hilflos", False),
-    ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
-    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("basis_kv", 0), ("basis_pv", 0),
-    ("versicherungsart", "gesetzlich_an"),
-    ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
-    ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0),
-    ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
-    ("fam_anzahl_kinder", 1),
-    ("agb_aufwendungen", 3000000),
-]
+# GEBAUT, nicht kopiert (tests/_kegel.py), seit 2026-09-26. Die Liste war eine Handkopie des
+# rentner_gesamt-Kegels und kannte die zwei agb-Felder nicht -- sie kommen ueber `kegel_fuer`
+# jetzt mit. `agb_aufwendungen` bleibt ausdruecklich: es ist der MESSGEGENSTAND dieser Datei
+# (30.000 EUR, davon 3.000 behinderungsbedingt) und steht nicht im Kegel.
+# Die zwei agb_*-Felder sind Overrides, kein Abwesenheitswert: False waere die VERNEINUNG des
+# Tatbestands und schloesse `p33_1_2_agb_abzug` aus -- genau die Regel, die hier kuerzen soll.
+RENTNER_KEGEL = kegel_fuer("rentner_gesamt", {
+    "veranlagung": "einzel",
+    "rentner_renten_art": "gesetzliche_rente", "rentner_jahresrente": 20000000,
+    "rentner_renten_beginn_jahr": 2025, "rentner_alter_bei_rentenbeginn": 65,
+    "rentner_rentenfreibetrag": 0, "rentner_grad_der_behinderung": 0,
+    "kein_sonstige": False,                   # "habe ich" -- die Regel muss im Kegel offen sein
+    "agb_zwangslaeufig": True,
+    "agb_notwendig_angemessen": True,
+    "fam_anzahl_kinder": 1,
+    "agb_aufwendungen": 3000000,              # 30.000 EUR -- Messgegenstand, nicht im Kegel
+})
 
 
 def test_p33b_abs5_s4_kuerzt_auch_im_rentner_zweig(base):
