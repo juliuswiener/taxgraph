@@ -46,7 +46,16 @@
                 "gesamtbetrag_der_einkuenfte": {"type": "integer"},
                 "zu_versteuerndes_einkommen": {"type": "integer"},
                 "tarifliche_est": {"type": "integer"},
-                "festzusetzende_est": {"type": "integer"}
+                "festzusetzende_est": {"type": "integer"},
+                "p31": {"type": "object",
+                        "properties": {
+                          "guenstiger": {"type": "string",
+                                         "enum": ["freibetraege", "kindergeld"]},
+                          "kindergeld": {"type": "integer"},
+                          "text": {"type": "string"}
+                        },
+                        "required": ["guenstiger", "kindergeld", "text"],
+                        "additionalProperties": false}
               },
               "required": ["gesamtbetrag_der_einkuenfte", "zu_versteuerndes_einkommen", "tarifliche_est", "festzusetzende_est"],
               "additionalProperties": false}

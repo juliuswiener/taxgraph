@@ -143,6 +143,45 @@ def _setze_kette(extras: dict, kette: dict, est: int) -> None:
         extras["kette"] = kette
 
 
+def _kette_p31(kette_ohne: dict, kette_mit: dict, freibetraege_guenstiger: bool,
+               kindergeld: int) -> dict:
+    """Die Rechenweg-Kette im § 31-Fall: der Lauf, der die Steuer bestimmt hat, plus die
+    Günstigerprüfung als eigene, benannte Entscheidung.
+
+    § 31 S. 1 EStG bewirkt die Freistellung des Existenzminimums ENTWEDER über die Freibeträge
+    nach § 32 Abs. 6 ODER über das Kindergeld. Ein Kinderfall hat deshalb nicht EINE Kette,
+    sondern zwei mögliche — die Kette muss sagen, welche gilt:
+
+    Kindergeld nicht erforderlich für die Freistellung (Grundregel, S. 4 greift nicht):
+        festzusetzende ESt = est_ohne. Der Freibetrag wirkt NICHT, die Kette zeigt den Lauf
+        ohne ihn.
+    Freibetrag günstiger (S. 4):
+        festzusetzende ESt = tarifliche ESt MIT Freibetrag + Kindergeldanspruch. Die
+        Hinzurechnung gehört an das Ende der Kette — sonst endet sie bei est_mit und der
+        Wächter _setze_kette verwirft sie.
+
+    Eine Kette, die die Günstigerprüfung verschweigt, sieht aus wie eine Rechnung, ist aber eine
+    Entscheidung zwischen zwei Wegen. `p31` nennt beide Zahlen und den Gewinner."""
+    kg = f"{kindergeld:,}".replace(",", ".")
+    if freibetraege_guenstiger:
+        kette = dict(kette_mit)
+        kette["festzusetzende_est"] = kette["festzusetzende_est"] + kindergeld
+        # Diese Zeile liegt HÖHER als die tarifliche Steuer darüber — das ist richtig, sieht aber
+        # wie ein Rechenfehler aus, wenn man es nicht sagt. Deshalb benennt der Satz den Sprung.
+        kette["p31"] = {
+            "guenstiger": "freibetraege", "kindergeld": kindergeld,
+            "text": f"Höher als die tarifliche Steuer, weil die {kg} € Kindergeld für das Jahr "
+                    f"hinzugerechnet sind (§ 31 S. 4 EStG): Der Kinderfreibetrag ist in den Stufen "
+                    f"darüber schon abgezogen."}
+    else:
+        kette = dict(kette_ohne)
+        kette["p31"] = {
+            "guenstiger": "kindergeld", "kindergeld": kindergeld,
+            "text": f"Hier bleibt es beim Kindergeld von {kg} €; der Kinderfreibetrag wurde "
+                    f"geprüft und mindert die Steuer nicht (§ 31 EStG)."}
+    return kette
+
+
 def _zweig_abziehbarer_betrag(vz: int, bindung: dict):
     """§ 9 Entfernungspauschale — quantitaet='abziehbarer_betrag'.
 
@@ -972,17 +1011,28 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # NICHT die GdE (§ 2 Abs. 3) → die §10b/§33-Deckel (auf gde) bleiben unberührt. Ohne Kinder kein § 31.
         kinder = _c("fam_anzahl_kinder")
         if kinder > 0:
+            _fb_kind = kinder * runner._kinderfreibetrag(vz, g["veranlagung"])
+            _kg_kind = kinder * runner._kindergeld(vz) * 12
+            _est_ohne_fb = _festzusetzende(0)
+            _est_mit_fb = _festzusetzende(_fb_kind)
+            _fb_guenstiger = _est_mit_fb + _kg_kind < _est_ohne_fb
             est = runner.catala_p31_familienleistung({
-                "est_ohne_freibetraege": _festzusetzende(0),
-                "est_mit_freibetraegen": _festzusetzende(
-                    kinder * runner._kinderfreibetrag(vz, g["veranlagung"])),
-                "kindergeld": kinder * runner._kindergeld(vz) * 12})
+                "est_ohne_freibetraege": _est_ohne_fb,
+                "est_mit_freibetraegen": _est_mit_fb,
+                "kindergeld": _kg_kind})
         else:
             est = _festzusetzende(0)
-        # P5.4 Rechenweg-Kette: nur im kinderlosen Fall (§ 31-Zweig-Ambiguität vermeiden).
-        # Kette in extras = dict von runner.catala_gesamt_kette(g) für /ergebnis-Erklär-UI.
-        if extras is not None and kinder == 0:
-            _setze_kette(extras, runner.catala_gesamt_kette(g), est)
+        # P5.4 Rechenweg-Kette: auch mit Kindern (AK-K). § 31 waehlt zwischen Kinderfreibetrag
+        # und Kindergeld — die Kette kommt aus dem Lauf, der die Steuer bestimmt hat, und nennt
+        # die Entscheidung (s. _kette_p31). Ohne Kinder, wie bisher: der eine Lauf.
+        if extras is not None:
+            if kinder > 0:
+                _setze_kette(extras, _kette_p31(
+                    runner.catala_gesamt_kette(g),
+                    runner.catala_gesamt_kette(dict(g, freibetraege_kinder=_fb_kind)),
+                    _fb_guenstiger, _kg_kind), est)
+            else:
+                _setze_kette(extras, runner.catala_gesamt_kette(g), est)
         # SolZ §3, §4 SolzG: Basis = KiFB-fiktive ESt (§3 Abs.2) minus §32d-Kapitalsteuer (§3 Abs.3 S.1);
         # §32d-Kapital-SolZ 5,5% ohne Freigrenze (§3 Abs.3 S.2) wird von catala_solz separat addiert.
         if solz_container is not None and "est_mit_fb" in solz_info:
@@ -1376,20 +1426,30 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         # (Over-tax). 1:1 gesamt-Naht-Präzedenz Z. 894-906. Ohne Kinder kein § 31.
         kinder = _c("fam_anzahl_kinder")
         if kinder > 0:
+            _fb_kind_r = kinder * runner._kinderfreibetrag(vz, rentner_g["veranlagung"])
+            _kg_kind_r = kinder * runner._kindergeld(vz) * 12
+            _est_ohne_fb_r = _festzusetzende_r(0)
+            _est_mit_fb_r = _festzusetzende_r(_fb_kind_r)
+            _fb_guenstiger_r = _est_mit_fb_r + _kg_kind_r < _est_ohne_fb_r
             est = runner.catala_p31_familienleistung({
-                "est_ohne_freibetraege": _festzusetzende_r(0),
-                "est_mit_freibetraegen": _festzusetzende_r(
-                    kinder * runner._kinderfreibetrag(vz, rentner_g["veranlagung"])),
-                "kindergeld": kinder * runner._kindergeld(vz) * 12})
+                "est_ohne_freibetraege": _est_ohne_fb_r,
+                "est_mit_freibetraegen": _est_mit_fb_r,
+                "kindergeld": _kg_kind_r})
         else:
             est = _festzusetzende_r(0)
         # P5.4 Rechenweg-Kette (Bruch 2, Instructor-Auftrag 2026-08-30/31): fehlte im Rentner-Zweig
-        # komplett -- 1:1 gesamt-Naht-Präzedenz Z. 902-905, nur bei kinder==0 (§ 31-Zweig-Ambiguität
-        # sonst, siehe dort). rentner_g trägt bereits gesamtfall=True und speist denselben Catala-
-        # Gesamtfall-Scope wie catala_est/catala_gesamt_zve oben -- catala_gesamt_kette(rentner_g)
-        # ist damit derselbe Aufruf wie im gesamt-Zweig, kein neuer Ring-Code nötig.
-        if extras is not None and kinder == 0:
-            _setze_kette(extras, runner.catala_gesamt_kette(rentner_g), est)
+        # komplett -- 1:1 gesamt-Naht-Präzedenz. rentner_g trägt bereits gesamtfall=True und speist
+        # denselben Catala-Gesamtfall-Scope wie catala_est/catala_gesamt_zve oben --
+        # catala_gesamt_kette(rentner_g) ist damit derselbe Aufruf wie im gesamt-Zweig, kein neuer
+        # Ring-Code nötig. Seit AK-K auch mit Kindern, mit der § 31-Entscheidung in der Kette.
+        if extras is not None:
+            if kinder > 0:
+                _setze_kette(extras, _kette_p31(
+                    runner.catala_gesamt_kette(rentner_g),
+                    runner.catala_gesamt_kette(dict(rentner_g, freibetraege_kinder=_fb_kind_r)),
+                    _fb_guenstiger_r, _kg_kind_r), est)
+            else:
+                _setze_kette(extras, runner.catala_gesamt_kette(rentner_g), est)
         # SolZ §3, §4 SolzG: Basis = KiFB-fiktive ESt (§3 Abs.2) minus §32d-Kapitalsteuer (§3 Abs.3 S.1);
         # §32d-Kapital-SolZ 5,5% ohne Freigrenze (§3 Abs.3 S.2) wird von catala_solz separat addiert.
         if solz_container is not None and "est_mit_fb" in solz_info_r:

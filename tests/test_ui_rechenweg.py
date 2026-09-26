@@ -229,7 +229,10 @@ def test_rechenweg_negativ(base, playwright_context):
     """kette null/fehlt → Rechenweg-Liste NICHT im DOM."""
     page = playwright_context.new_page()
     try:
-        # Fall anlegen, der kette nicht liefert (kinder > 0 → §31-Zweig)
+        # Fall anlegen, der kette nicht liefert. Grund ist die SCHEIBE an_gesamt, nicht die
+        # Kinderzahl: an_gesamt hat gar keinen Rechenweg. Der Kommentar sagte frueher
+        # "kinder > 0 → §31-Zweig" — das war nie der tragende Grund und ist seit AK-K
+        # (Kette auch mit Kindern) endgueltig falsch.
         s, _ = _req(base, "POST", "/fall", {
             "scheibe": "an_gesamt",
             "veranlagungszeitraum": 2025,
@@ -467,6 +470,146 @@ def test_kette_endet_bei_der_zahl(base, request, scheibe, felder, kette_pflicht)
         assert k["festzusetzende_est"] * 100 == ergebnis["zahl_cent"], (
             f"Rechenweg endet bei {k['festzusetzende_est']} EUR, die Zahl darüber ist "
             f"{ergebnis['zahl_cent']} ct — zwei Steuern unter demselben Label")
+
+
+# --- AK-K: die Kette gibt es auch mit Kindern -----------------------------------------------
+# Bis hierher wurde sie nur bei kinder==0 gebaut (§ 31-Zweig-Ambiguität vermeiden). Ein Kinderfall
+# hat aber nicht EINE Kette: § 31 S. 1 EStG bewirkt die Freistellung ENTWEDER über die Freibeträge
+# nach § 32 Abs. 6 ODER über das Kindergeld. Die Kette kommt deshalb aus dem Lauf, der die Steuer
+# bestimmt hat, und nennt die Entscheidung (`kette["p31"]`).
+#
+# Beide Zweige sind bei VZ 2025 erreichbar und hier gepinnt — mit Zahlen, nicht mit Spannen:
+#   Kindergeld gewinnt (Normalfall):  4.800 EUR Freibetrag einzel gegen 3.060 EUR Kindergeld/Jahr
+#   Freibetrag gewinnt:               9.600 EUR bei Zusammenveranlagung (hoher Grenzsatz)
+_LOHN_300K_ZUSAMMEN = [(f, 30_000_000 if f == "bruttoarbeitslohn" else w)
+                       for f, w in _LOHN_60K_ZUSAMMEN]
+# 20.000 EUR einzel, 1 Kind: hier gewinnt das Kindergeld (gemessen 2026-09-26: der Ohne-
+# Freibetrag-Lauf ergibt 1.327 EUR, der Mit-Freibetrag-Lauf plus 3.060 EUR Kindergeld liegt
+# darueber). Die Kette kommt deshalb aus dem Ohne-Lauf — dieselben vier Stufen wie ohne Kind.
+_LOHN_20K_EINZEL = [(f, 2_000_000 if f == "bruttoarbeitslohn" else w)
+                    for f, w in _LOHN_60K_EINZEL] + [("kein_kap", True)]
+# Die vier Stufen des kinderlosigen 20.000-EUR-Falls (gemessen, s. probe_kette_zahlen.py).
+_KETTE_20K = {"gesamtbetrag_der_einkuenfte": 18_770, "zu_versteuerndes_einkommen": 18_734,
+              "tarifliche_est": 1_327, "festzusetzende_est": 1_327}
+# Dasselbe fuer RENTNER_KEGEL (200.000 EUR Rente): die vier Stufen, kinderlos gemessen.
+_KETTE_RENTNER = {"gesamtbetrag_der_einkuenfte": 166_898, "zu_versteuerndes_einkommen": 166_862,
+                  "tarifliche_est": 59_170, "festzusetzende_est": 59_170}
+
+
+def test_p31_stufe_nennt_die_guenstigerpruefung(base):
+    """Der Freibetrag gewinnt (Zusammenveranlagung, 300.000 EUR, 1 Kind): die Kette zeigt den
+    Freibetrag-Lauf und rechnet das Kindergeld hinzu — est_mit + Kindergeld ist die Spitze
+    (§ 31 S. 4 EStG), nicht est_mit. Ohne die Hinzurechnung endete die Kette bei 99.596 EUR,
+    waehrend die Zahl darueber 102.656 EUR ist."""
+    e = _fall_mit(base, "p31-freibetrag-gewinnt", "gesamt",
+                  _LOHN_300K_ZUSAMMEN + [("kein_gewinn", True), ("fam_anzahl_kinder", 1)])
+    assert e["zahl_cent"] == 10_265_600, e
+    k = e["kette"]
+    assert k is not None, f"Kette fehlt bei 1 Kind trotz bestaetigtem Fall: {e}"
+    assert k["festzusetzende_est"] == 102_656, k
+    assert k["festzusetzende_est"] * 100 == e["zahl_cent"], k
+    assert k["tarifliche_est"] == 99_596, k
+    assert k["zu_versteuerndes_einkommen"] == 289_098, k
+    assert k["p31"] == {"guenstiger": "freibetraege", "kindergeld": 3_060,
+                        "text": k["p31"]["text"]}, k["p31"]
+    assert "hinzugerechnet" in k["p31"]["text"] and "3.060" in k["p31"]["text"], k["p31"]
+
+
+def test_p31_kindergeld_gewinnt_kette_bleibt_vollstaendig(base):
+    """Gegenprobe: hier gewinnt das Kindergeld (kleines Einkommen). Die Kette darf nicht davon
+    abhaengen, welcher Zweig gewinnt — sie muss auch hier vollstaendig sein und die Entscheidung
+    nennen. Der Betrag ist mit Kind derselbe wie ohne (13.924 EUR): das Kindergeld bleibt."""
+    e = _fall_mit(base, "p31-kindergeld-gewinnt", "gesamt",
+                  _LOHN_20K_EINZEL + [("kein_gewinn", True), ("fam_anzahl_kinder", 1)])
+    assert e["zahl_cent"] == 132_700, e
+    k = e["kette"]
+    assert k is not None, f"Kette fehlt bei 1 Kind trotz bestaetigtem Fall: {e}"
+    assert k["festzusetzende_est"] == 1_327, k
+    assert k["festzusetzende_est"] * 100 == e["zahl_cent"], k
+    assert k["tarifliche_est"] == 1_327, k
+    assert k["p31"]["guenstiger"] == "kindergeld", k["p31"]
+    assert k["p31"]["kindergeld"] == 3_060, k["p31"]
+
+
+def test_p31_kontrolle_kinderlos_hat_dieselbe_kette_wie_vorher(base):
+    """Kontrolle: derselbe Fall ohne Kind liefert die Kette unveraendert.
+
+    Gepinnt sind alle VIER Stufen, nicht nur die letzte — eine Abwesenheitsbehauptung
+    ("kein p31") waere auch dann gruen, wenn die Kette ganz verschwaende. Dieselben Felder
+    wie test_p31_kindergeld_gewinnt_kette_bleibt_vollstaendig, nur fam_anzahl_kinder=0:
+    der Unterschied zwischen beiden Laeufen ist damit genau die AK-K-Aenderung."""
+    e = _fall_mit(base, "p31-kontrolle", "gesamt",
+                  _LOHN_20K_EINZEL + [("kein_gewinn", True), ("fam_anzahl_kinder", 0)])
+    assert e["zahl_cent"] == 132_700, e
+    k = e["kette"]
+    assert k is not None, f"Kette fehlt im kinderlosigen Fall: {e}"
+    assert {s: k[s] for s in _KETTE_20K} == _KETTE_20K, k
+    assert "p31" not in k, f"Ohne Kinder gibt es keine § 31-Entscheidung zu nennen: {k}"
+
+
+def test_rentner_kette_mit_kind_nennt_p31(base):
+    """Dieselbe Naht im Rentner-Zweig: 200.000 EUR Rente, 1 Kind, Kindergeld gewinnt.
+
+    Der Kegel kommt aus test_rentner_kette_nie_gebaut.RENTNER_KEGEL (200.000 EUR, kein_gewinn
+    bestaetigt) -- der 20.000-EUR-Kegel dieses Moduls traegt kein kein_gewinn und sperrt deshalb
+    schon vor der Zahl. Dieselben Felder wie der dortige kinderlosse Lauf, nur mit einem Kind:
+    so ist der Unterschied zwischen beiden Ketten genau die AK-K-Aenderung."""
+    from test_rentner_kette_nie_gebaut import RENTNER_KEGEL
+    kinderlos = _fall_mit(base, "p31-rentner-ohne", "rentner_gesamt", RENTNER_KEGEL)
+    e = _fall_mit(base, "p31-rentner", "rentner_gesamt",
+                  RENTNER_KEGEL + [("fam_anzahl_kinder", 1)])
+    assert e["zahl_cent"] == kinderlos["zahl_cent"], (
+        f"Das Kindergeld gewinnt hier, also bleibt die Zahl wie ohne Kind: "
+        f"{e['zahl_cent']} gegen {kinderlos['zahl_cent']}")
+    k = e["kette"]
+    assert k is not None, f"Kette fehlt bei rentner_gesamt mit Kind: {e}"
+    assert k["festzusetzende_est"] * 100 == e["zahl_cent"], k
+    assert k["p31"]["guenstiger"] == "kindergeld", k["p31"]
+    assert k["p31"]["kindergeld"] == 3_060, k["p31"]
+    # Kontrolle: der kinderlose Lauf derselben Felder traegt dieselben vier Stufen, ohne
+    # p31-Stufe — gepinnt mit Werten, nicht mit einer Abwesenheitsbehauptung. Der Rentner-Fall
+    # steht bei 59.170 EUR (RENTNER_KEGEL, 200.000 EUR Rente, kein_gewinn bestaetigt).
+    assert {s: k[s] for s in _KETTE_RENTNER} == _KETTE_RENTNER, k
+    assert kinderlos["kette"] == {
+        "gesamtbetrag_der_einkuenfte": 166_898, "zu_versteuerndes_einkommen": 166_862,
+        "tarifliche_est": 59_170, "festzusetzende_est": 59_170}, kinderlos["kette"]
+
+
+def test_p31_stufe_ist_im_dom_sichtbar(base, playwright_context):
+    """Was der Nutzer sieht: der § 31-Satz steht als Unterzeile an der letzten Rechenweg-Zeile.
+
+    Ohne diesen Test waere die UI-Naht (app.js, k.p31.text) nur behauptet — die uebrigen
+    AK-K-Tests lesen die API-Antwort, nicht das DOM. Geprueft wird der Freibetrag-Fall:
+    dort liegt die festzusetzende Steuer (102.656 EUR) ueber der tariflichen (99.596 EUR),
+    und genau diesen Sprung muss der Satz erklaeren."""
+    page = playwright_context.new_page()
+    try:
+        _fall_mit(base, "p31-dom", "gesamt",
+                  _LOHN_300K_ZUSAMMEN + [("kein_gewinn", True), ("fam_anzahl_kinder", 1)])
+        page.goto(base)
+        page.wait_for_load_state("networkidle")
+        page.evaluate("FALL = 'p31-dom';")
+        page.evaluate("document.getElementById('start').hidden = true;")
+        page.evaluate("document.getElementById('flow').hidden = false;")
+        page.evaluate("(async () => { await zeigeErgebnis(); })();")
+        page.wait_for_selector("#rechenweg:not([hidden])", timeout=5000)
+
+        reihen = page.query_selector_all("#rechenweg-body .rw-reihe")
+        letzte = reihen[-1]
+        label = letzte.query_selector(".rw-label")
+        assert "festzusetzende Einkommensteuer" in label.text_content(), label.text_content()
+        unter = label.query_selector(".rw-sub")
+        assert unter is not None, (
+            "Keine Unterzeile an der letzten Stufe — der § 31-Satz erreicht die Oberflaeche "
+            f"nicht. Zeilen: {[r.text_content() for r in reihen]}")
+        text = unter.text_content()
+        assert "Kindergeld" in text and "3.060" in text, text
+        assert "hinzugerechnet" in text, f"Der Sprung ueber die tarifliche Steuer fehlt: {text}"
+        # Die Zahl darueber ist die festgesetzte, nicht die tarifliche.
+        wert = letzte.query_selector(".rw-wert").text_content().strip()
+        assert wert == "102.656 €", f"Letzte Stufe zeigt {wert!r} statt 102.656 €"
+    finally:
+        page.close()
 
 
 def test_abweichende_kette_zeigt_hinweis_statt_tabelle(base, playwright_context):
