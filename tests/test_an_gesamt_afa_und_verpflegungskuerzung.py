@@ -40,6 +40,25 @@ pytestmark = pytest.mark.usefixtures("base")
 # Die zwei Felder, die `an_gesamt` nicht führt und die der AfA-Zweig trotzdem liest.
 AFA_FELDER = ("am_anschaffung_monat", "am_afa_ist_anschaffungsjahr")
 
+# § 9 Abs. 4a: `an_gesamt` führt die Tage-Trigger, aber nicht die Kürzung. Die fünf
+# Eingabefelder sind askable, das sechste ist das BERECHNETE Ergebnis (askable: false,
+# Kz E0205508) — es muss trotzdem in der Scheibe stehen, sonst filtert `_scheibe_bindung()`
+# es aus der Deklaration und das XML zeigt die Kürzung nicht.
+KUERZUNG_FELDER = ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
+                   "vpf_abendessen_gestellt_anzahl", "vpf_mahlzeiten_gezahltes_entgelt",
+                   "vpf_steuerfreie_erstattung_betrag", "p9_4a_kuerzung_nach_entgelt")
+
+# 100 volle 24h-Tage, 100 gestellte Frühstücke, kein Entgelt, keine Erstattung.
+# § 9 Abs. 4a S. 8 Nr. 1 EStG: Frühstück kürzt um 20 % der 28-EUR-Pauschale = 5,60 EUR.
+# 100 × 5,60 EUR = 560,00 EUR. Der Betrag stammt aus dem Gesetz, nicht aus einer Messung:
+# sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt, S. 3 Nr. 1 ("28 Euro") und
+# S. 8 Nr. 1 ("für Frühstück um 20 Prozent").
+# EINHEIT: E0205508 steht in der Deklaration in EURO, nicht in Cent — der Ring liefert
+# Cent, `_cent_nach_kz` schreibt daraus den Vordruckwert. Gemessen (nicht geraten):
+# die erste Fassung dieses Tests erwartete 56_000 und bekam 560.
+FRUEHSTUECKE = 100
+KUERZUNG_EUR_EXACT = 560
+
 # Beiwerk, damit die AfA überhaupt sichtbar wird: 12 × 1.000 EUR Übernachtung liegen über
 # dem Arbeitnehmer-Pauschbetrag (1.230 EUR, § 9a S. 1 Nr. 1 Buchst. a). Ohne das lägen
 # beide Fälle darunter, der Pauschbetrag griffe, und der Test wäre grün, ohne zu messen.
@@ -195,3 +214,81 @@ def test_an_gesamt_folgejahr_ohne_monat_rechnet(base):
     _val("ergebnis", erg)
     assert erg["grund"] == "bestaetigt" and erg["zahl_cent"] is not None, \
         f"Folgejahr ohne Monat muss rechnen, bekam grund={erg.get('grund')}"
+# ---------------------------------------------------------------------------
+# Fund 2: Mahlzeitenkürzung (§ 9 Abs. 4a)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("feld_id", KUERZUNG_FELDER)
+def test_an_gesamt_nimmt_die_kuerzungsfelder_an(base, feld_id):
+    """Die Kürzungs-Felder sind über `POST /event` erreichbar — vorher HTTP 400.
+
+    `an_gesamt` führt `VERPFLEGUNG_TAGE`, aber nicht `VERPFLEGUNG_KUERZUNG`. Der Nutzer
+    kann „ja, N Mahlzeiten wurden gestellt" deshalb nicht ehrlich eingeben.
+    """
+    _an_gesamt_anlegen(base, f"ag_vpf_{feld_id}", _an_gesamt_kegel_mit_uebernachtung())
+    wert = 5 if "anzahl" in feld_id else 0
+    st, _ = _req(base, "POST", f"/fall/ag_vpf_{feld_id}/event", _laie(feld_id, wert))
+    assert st == 201, (
+        f"{feld_id} ist auf an_gesamt nicht postbar (HTTP {st}) — das Feld fehlt in "
+        f"SCHEIBEN['an_gesamt']['felder']. Die Mahlzeitenkürzung nach § 9 Abs. 4a "
+        f"kann dort nicht angegeben werden."
+    )
+
+
+def test_an_gesamt_verpflegungskuerzung_senkt_die_zahl(base):
+    """100 Frühstücke gestellt → weniger Werbungskosten → höhere Steuer.
+
+    Gemessen wird die Steuer selbst, nicht nur `vollstaendig`: der Ring kürzt, das
+    Ergebnis muss die Kürzung zeigen. Ohne Mahlzeiten und mit Mahlzeiten sind zwei
+    Fälle, deren Differenz die Kürzung sichtbar macht.
+
+    Rot auf HEAD: die Anzahl-Felder sind nicht postbar (HTTP 400), der Fall kommt gar
+    nicht erst zustande.
+    """
+    if not _catala_da():
+        pytest.skip("Catala-Toolchain fehlt — der Euro-Wert ist nicht messbar")
+
+    def _vpf_fall(fid: str, fruehstuecke: int):
+        # 100 Tage à 24h: die Kürzung muss über dem Arbeitnehmer-Pauschbetrag sichtbar
+        # bleiben und darf nicht vom Günstigerprinzip verdeckt werden.
+        # vpf_monate_am_ort=1 (≤ 3) hält die Dreimonatsfrist aus dem Weg: die ganze
+        # Pauschale bleibt innerhalb der Frist, sonst kürzt die Frist die Bezugsgröße.
+        kegel = [(f, (100 if f == "tage_24h" else w))
+                 for f, w in _an_gesamt_kegel_mit_uebernachtung()]
+        kegel = [(f, (True if f == "vpf_keine_mahlzeitengestellung" else w)) for f, w in kegel]
+        _an_gesamt_anlegen(base, fid, kegel)
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie("vpf_monate_am_ort", 1))
+        assert st == 201
+        for feld in ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
+                     "vpf_abendessen_gestellt_anzahl"):
+            st, _ = _req(base, "POST", f"/fall/{fid}/event",
+                         _laie(feld, fruehstuecke if feld.endswith("fruehstuecke_gestellt_anzahl") else 0))
+            assert st == 201, f"{feld} nicht postbar (HTTP {st})"
+        st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+        _val("ergebnis", erg)
+        st, dek = _req(base, "GET", f"/fall/{fid}/deklaration")
+        assert st == 200, f"deklaration nicht abrufbar (HTTP {st}): {dek}"
+        return erg, dek
+
+    ohne, dek_ohne = _vpf_fall("ag_vpf_ohne", 0)
+    mit, dek_mit = _vpf_fall("ag_vpf_mit", FRUEHSTUECKE)
+
+    assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt", \
+        f"ohne={ohne.get('grund')} mit={mit.get('grund')}"
+    assert mit["zahl_cent"] > ohne["zahl_cent"], (
+        f"100 gestellte Frühstücke müssen die Steuer erhöhen (Kürzung senkt die "
+        f"Werbungskosten). ohne={ohne['zahl_cent']} mit={mit['zahl_cent']} — keine "
+        f"oder die falsche Richtung."
+    )
+
+    # Der Wert selbst, nicht nur die Richtung. Das Ergebnis der Kürzung steht als
+    # E0205508 in der Deklaration — dasselbe Feld, das die Scheibe ohne die Kürzung
+    # aus der Bindung gefiltert hätte. Ohne Mahlzeiten gibt es keine Kürzung.
+    assert "E0205508" not in dek_ohne.get("deklaration", {}), dek_ohne.get("deklaration")
+    assert dek_mit["deklaration"].get("E0205508") == KUERZUNG_EUR_EXACT, (
+        f"E0205508 = {dek_mit['deklaration'].get('E0205508')!r}, erwartet "
+        f"{KUERZUNG_EUR_EXACT} EUR (100 × 20 % × 28 EUR nach § 9 Abs. 4a S. 8 Nr. 1 EStG). "
+        f"Die Scheibe hat den Ring-Wert nicht deklariert."
+    )
+    # Die Deklaration ist vollständig — der Fall kommt ohne Sperre durch.
+    assert dek_mit["eingaben_konsistent"] is True, dek_mit
