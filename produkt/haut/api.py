@@ -811,8 +811,6 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
         return 422, {**basis, "grund": "rc_kein_plausibilitaetsverdikt",
                      "detail": CE.unerwarteter_rc_hinweis(rc, antwort), "ericantwort": antwort}
     audit.append(api_auth._AUTH_USER or "dev", "fall_validiert", fall_id, f"vz={vz} rc=0")
-    # nicht_deklariert: gerechnet, aber nicht in der Erklärung. Ohne die Liste zeigte die Oberfläche
-    # „in Ordnung" neben einem fehlenden Abzug (Vault: hinweis-erreicht-den-nutzer-nie).
     return 200, {**basis, "plausibel": True, "nicht_deklariert": result["nicht_deklariert"],
                  "hinweis": "checkESt bestanden. Versand ist nicht verdrahtet — "
                             "ERIC_ENCRYPT_AND_SEND braucht Zertifikat + explizite Freigabe."}
