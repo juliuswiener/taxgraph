@@ -15,13 +15,25 @@ Testdatei mehr still rotmachen.
 Bezugsgroesse ist `SCHEIBEN[scheibe]["kegel"]`, NICHT eine hier gepflegte Liste
 ([[geltungsbereich-ungleich-verwendung]]).
 
-Werteherkunft je Feld: Aufrufer -> ABWESENHEITSWERT aus dem Typ (cent/int 0, bool die
-Polaritaet des Namens, enum der `beispielwert`). Ausdruecklich NICHT der `beispielwert`
-fuer bool/cent/int: er ist ILLUSTRATIV, nicht neutral. Gemessen 2026-09-26 widerspricht
-er in ALLEN 15 bool-Kegel-Feldern dem Abwesenheitswert -- `kein_gewinn` traegt dort
-`False` (= "ich habe Gewinneinkuenfte"), `agb_zwangslaeufig` `True` (= "die Regel
-greift"). Ein Bauer, der damit fuellt, erfindet Sachverhalte und aendert die Rechnung
-still; als A/B gemessen: 27 Tests in 13 Dateien rot.
+Werteherkunft je Feld, in dieser Reihenfolge:
+1. Der Aufrufer (gesetzt-Dict).
+2. `abwesenheitswert` aus dem Bindungseintrag, wenn gesetzt.
+3. Typ-Heuristik als Rueckfall: cent/int -> 0, bool -> Namenspolaritaet, enum ->
+   `beispielwert`.
+
+NICHT verwendet wird `beispielwert` fuer bool/cent/int: er ist ILLUSTRATIV, nicht
+neutral. Gemessen 2026-09-26 widerspricht er in ALLEN 15 bool-Kegel-Feldern dem
+Abwesenheitswert -- `kein_gewinn` traegt dort `False` (= "ich habe Gewinneinkuenfte"),
+`agb_zwangslaeufig` `True` (= "die Regel greift"). Ein Bauer, der damit fuellt,
+erfindet Sachverhalte und aendert die Rechnung still; als A/B gemessen: 27 Tests
+in 13 Dateien rot.
+
+Fuer `agb_zwangslaeufig` und `agb_notwendig_angemessen` traegt die Bindung seit
+2026-09-26 einen `abwesenheitswert: true`: ein fehlendes Merkmal sperrt (das leistet
+der Kegel), ein bestaetigtes NEIN rechnet 0 — der Fueller darf also nicht NEIN heissen.
+Der neue Guard in p33-gate (produkt/bescheid/bescheid_abzuege.py:_shared_steuer_sonder_agb)
+liest `is False` als "Tatbestand verneint, Abzug=0" und gab dem geratenen False des
+Fuellers eine Bedeutung, die kein Test gemeint hatte.
 """
 from __future__ import annotations
 
@@ -87,21 +99,30 @@ def standardwert(feld_id: str, eintrag: dict | None = None) -> object:
     eigenen Wagen", "mir steht ein Zuschuss zu"). Ein pauschales True setzte
     `ep_eigenes_kfz=True` neben `ep_entfernung_km=0` und erzeugte damit genau den
     Widerspruch, den `flag_konsistenz_offen` meldet (gemessen 2026-09-26).
+
+    Seit 2026-09-26 (p33-gate-Abwesenheitswert) prueft diese Funktion ZUERST den
+    `abwesenheitswert` aus dem Bindungseintrag; die Namensheuristik ist nur der
+    Rueckfall, wenn keiner dasteht.
     """
     e = eintrag if eintrag is not None else (bindung().get(feld_id) or {})
     typ = e.get("typ")
+
+    # Expliziter Abwesenheitswert aus der Bindung schlägt jede Heuristik.
+    if "abwesenheitswert" in e:
+        return e["abwesenheitswert"]
+
     if typ == "bool":
-        # ponytail: Polaritaet aus dem NAMEN, gilt nur weil gemessen (2026-09-26). Von 15
-        # bool-Kegel-Feldern tragen 4 ein "kein_"-Praefix (dort ist True belegt: "habe ich
-        # nicht"); die uebrigen 11 sind eine ANNAHME. Fuer 7 davon widerspricht sie der
-        # Bindung (Heuristik False, beispielwert True: agb_*, dhf_*, ep_eigenes_kfz) --
-        # die Bindung ist dort NICHT neutral, sondern illustrativ. Gemessen: die Bindung
-        # als Fuellung macht 27 Tests in 13 Dateien rot, die Namensheuristik nicht. Ein
-        # Feld ohne "kein_"-Praefix muesste streng genommen werfen statt zu raten; das
-        # steht hier bewusst nicht, weil die Suite sonst an einer Annahme scheitert, die
-        # der Aufrufer ohnehin immer selbst setzt (jedes der 11 hat ausdrueckliche
-        # True-Overrides in tests/). Upgrade: je Feld ein `abwesenheitswert` in die
-        # Bindung, dann raet der Name nicht mehr.
+        # ponytail: Polaritaet aus dem NAMEN, gilt nur als Rueckfall (2026-09-26).
+        # Von 15 bool-Kegel-Feldern tragen 4 ein "kein_"-Praefix (dort ist True
+        # belegt: "habe ich nicht"); die uebrigen 11 sind eine ANNAHME. Zwei davon
+        # haben seit 2026-09-26 einen `abwesenheitswert` in der Bindung und nehmen
+        # diesen Zweig nicht mehr (agb_zwangslaeufig, agb_notwendig_angemessen).
+        # Fuer die verbleibenden 9 gilt die Heuristik weiter; sie wurde 2026-09-26
+        # geprueft — kein Guard auf diesen Feldern liest `is False` mit einer
+        # rechenrelevanten Bedeutung (dhf_* nur bestaetigt-True-guard, nicht
+        # explizit-NEIN-guard; ebenso ep_eigenes_kfz, mit_anspruch_auf_zuschuss,
+        # rentner_*). Sobald das anders wird: `abwesenheitswert` in die Bindung
+        # setzen, dann raet der Name nicht mehr.
         return feld_id.startswith(("kein_", "keine_"))
     if typ in ("cent", "int"):
         return 0
