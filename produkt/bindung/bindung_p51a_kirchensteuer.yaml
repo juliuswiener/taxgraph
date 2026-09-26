@@ -1,5 +1,7 @@
 # Bindungstabelle § 51a EStG i.V.m. Landes-KiStG — Kirchensteuer-Festsetzung (Zuschlagsteuer).
-# kist = est_mit_fb (Maßstabsteuer, § 51a-Basis = SolZ-§3-Abs.2-Zwilling) × Hebesatz.
+# kist = est_mit_fb (Maßstabsteuer nach § 51a-Basis) × Hebesatz.
+# NICHT die SolZ-Basis: § 51a Abs. 2 S. 3 EStG nimmt § 35 aus der KiSt-Basis heraus,
+# § 3 Abs. 2 SolzG nicht. Der Ring übergibt dafür est_ohne_p35 (nicht est_roh_ohne_kap).
 # konfession + bundesland = Laien-Enums (askable); est_mit_fb = ring-derived (Lücke).
 # Hebesatz-Grounding (8 % BY/BW, 9 % übrige) amtlich in anker_ref.datei; KEINE EStG-Konstante.
 # kist_konfession -> E0100402 (Religionsschlüssel ESt1A, Enum_Religionsschluessel_ab_VZ_2014_3):
@@ -85,4 +87,4 @@ bindungen:
 luecken:
   - regel_id: p51a_kirchensteuer
     signatur_slot: est_mit_fb
-    grund: "Ring-derived (kein Laien-Input): Maßstabsteuer nach § 51a EStG = veranlagte ESt mit Kinderfreibetrag = SolZ-§3-Abs.2-Zwilling. Wird beim Ring-Wiring aus solz_info['est_mit_fb'] (ohne §32d-Abgeltung-Kapital) geliefert."
+    grund: "Ring-derived (kein Laien-Input): Maßstabsteuer nach § 51a EStG = veranlagte ESt mit Kinderfreibetrag, ohne §32d-Abgeltung-Kapital und OHNE § 35-GewSt-Anrechnung (Abs. 2 S. 3). Wird beim Ring-Wiring aus solz_info['est_ohne_p35'] geliefert — NICHT aus est_mit_fb/est_roh_ohne_kap, das ist die SolZ-Basis und traegt § 35."

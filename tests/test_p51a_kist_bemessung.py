@@ -4,7 +4,9 @@ BUG (2026-08-06): gesamt slot_fn Z.1146 gibt `kap_st_total` als `est_mit_fb`,
 catala_kist erwartet aber die volle ESt OHNE §32d-Kapital. Bei kap=0 ist
 kap_st_total=0 → KiSt=0 für JEDEN kirchensteuerpflichtigen Angestellten.
 
-Fix: est_mit_fb = ESt ohne Kapitalanteil = solz_info["est_roh_ohne_kap"].
+Fix: est_mit_fb = ESt ohne Kapitalanteil (seit 2026-09-26 die zusätzlich
+kreditfreie Basis solz_info["est_ohne_p35"], Abs. 2 S. 3; davor
+est_roh_ohne_kap, die SolZ-Naht).
 §32d-Abgeltung-KiSt wird über e/(4+k) in §32d Abs.1 S.3-4 geregelt, nicht
 separat.
 
@@ -469,3 +471,220 @@ def _anlegen(base, fid, scheibe, kegel):
     for feld, wert in kegel:
         st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
         assert st == 201
+
+
+# ===== §51a Abs. 2 S. 3: die §35-GewSt-Ermäßigung mindert die KiSt-Basis NICHT =====
+#
+# § 51a Abs. 2 S. 3 EStG: "§ 35 ist bei der Ermittlung der festzusetzenden Einkommensteuer
+# nach Satz 1 nicht anzuwenden." Die SolZ-Basis (§ 3 Abs. 2 SolZG) kennt keinen solchen
+# Ausschluss, dort mindert § 35 über § 2 Abs. 6 EStG mit. Geprüft wird gegen Bundesrecht;
+# ob ein Landes-KiStG abweicht, ist offen.
+# Quelle: sources/gesetze-im-internet/estg_p51a_2026-09-26.txt, solzg_1995_p3_2026-07-11.txt.
+#
+# Fall wie test_ring_regression_kampagne.test_p34c_mit_p35_kombi_senkt_steuer_kumulativ
+# (kbo/kbg): 200.000 EUR Gewerbegewinn; mit GewSt Messbetrag 1.000 EUR, Hebesatz 400 %
+# → § 35-Ermäßigung 4.000 EUR. Dazu roem.-kath., NRW (9 %).
+
+P35_GEWST = [("gewst_messbetrag", 100000), ("gewst_hebesatz", 400)]  # 1.000 EUR, 400 %
+
+
+def _p35_gesamt_kegel(mit_gewst: bool):
+    """GESAMT_KEGEL_BASE ohne Lohn + 200.000 EUR Gewerbegewinn (= kampagne _mit_gewinn)."""
+    kegel = [(k, {"bruttoarbeitslohn": 0, "kein_gewinn": False}.get(k, v))
+             for k, v in GESAMT_KEGEL_BASE]
+    kegel += [("einkuenfte_gewinn", 20000000), ("gewinn_betriebsart", "gewerbe"),
+              ("kist_konfession", "roemisch-katholisch"),
+              ("kist_bundesland", "nordrhein_westfalen")]
+    return kegel + (P35_GEWST if mit_gewst else [])
+
+
+def _p35_rentner_kegel(mit_gewst: bool):
+    """Rentner 20.000 EUR (_rentner_kegel: roem.-kath., NRW) + 200.000 EUR Gewerbegewinn."""
+    ersetzt = {"kein_gewinn": False, "einkuenfte_gewinn": 20000000}
+    if mit_gewst:
+        ersetzt.update(P35_GEWST)
+    kegel = [(k, ersetzt.get(k, v)) for k, v in _rentner_kegel(mit_kapital=False)]
+    return kegel + [("gewinn_betriebsart", "gewerbe")]
+
+
+def _p35_differenz(base, fid, scheibe, kegel_fn):
+    """ohne GewSt minus mit GewSt, je für zahl_cent, solz_cent und kist_cent (CENT)."""
+    erg = {}
+    for mit_gewst in (False, True):
+        f = f"{fid}{int(mit_gewst)}"
+        _anlegen(base, f, scheibe, kegel_fn(mit_gewst))
+        st, erg[mit_gewst] = _req(base, "GET", f"/fall/{f}/ergebnis")
+        assert st == 200
+        assert erg[mit_gewst]["grund"] == "bestaetigt", f"{f}: {erg[mit_gewst]}"
+        assert erg[mit_gewst].get("kist_cent") is not None, f"kist_cent fehlt: {erg[mit_gewst]}"
+    return {k: erg[False][k] - erg[True][k] for k in ("zahl_cent", "solz_cent", "kist_cent")}
+
+
+def _p35_pruefe(d):
+    # Vorbedingung: § 35 wirkt (4.000 EUR). Kontrolle: der SolZ sinkt um 5,5 % davon.
+    assert d["zahl_cent"] == 400000, f"§ 35 senkt die ESt nicht um 4.000 EUR: {d}"
+    assert d["solz_cent"] == 22000, f"SolZ sinkt nicht um 5,5 % von 4.000 EUR: {d}"
+    assert d["kist_cent"] == 0, (
+        f"KiSt sinkt um {d['kist_cent']} CENT mit der § 35-Ermäßigung; "
+        f"§ 51a Abs. 2 S. 3 EStG nimmt § 35 aus der KiSt-Basis. {d}")
+
+
+def test_kist_p35_mindert_basis_nicht_gesamt(base):
+    """Gesamt: § 35 senkt ESt um 4.000 EUR und SolZ um 220 EUR, die KiSt bleibt gleich.
+
+    MUSS ROT sein auf aktuellem Code: die KiSt sinkt um 9 % von 4.000 EUR = 36.000 CENT mit.
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    _p35_pruefe(_p35_differenz(base, "kistp35g", "gesamt", _p35_gesamt_kegel))
+
+
+def test_kist_p35_mindert_basis_nicht_rentner(base):
+    """Rentner-Zweig (rentner_gesamt): dieselbe Prüfung wie im gesamt-Zweig.
+
+    MUSS ROT sein auf aktuellem Code: die KiSt sinkt um 9 % von 4.000 EUR = 36.000 CENT mit.
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    _p35_pruefe(_p35_differenz(base, "kistp35r", "rentner_gesamt", _p35_rentner_kegel))
+
+
+# ===== Deckel-Fall: § 35 ist nur so weit wirksam, wie er unter den Catala-Deckel passt =====
+#
+# Die Regel rechnet wirksame_ermaessigung = min(steuerermaessigungen, verfuegbare_steuer)
+# (rules/estg/p32a/einkommensteuertarif.catala_en). Treffen § 35a/§ 35c und § 35 zusammen
+# auf eine kleine Steuer, ist der § 35-Kredit nur TEILWEISE wirksam. Ein Zurückaddieren des
+# vollen Kredits auf die reduzierte ESt überzeichnet die KiSt-Basis dann.
+#
+# Gemessen im Ring (2026-09-26, VZ 2025, Gewinn 20.000 EUR als einziges Einkommen,
+# § 35a-Dienstleistungen 5.000 EUR → 1.000 EUR, § 35 GewSt: Deckel 3 kappt 4.000 auf 1.630 EUR):
+#   tarifliche ESt 1.630 EUR; Ermäßigungen 1.000 (§ 35a) + 1.630 (§ 35) = 2.630
+#   ohne GewSt: ESt 630 EUR, KiSt 5.670 CENT
+#   mit  GewSt: ESt 0 EUR,   KiSt 5.670 CENT
+#   § 35 wirksam nur 630 EUR statt 1.630 EUR — der Catala-Deckel greift.
+# Der Fall trennt die NEU gerechnete Basis von beiden falschen Wegen (Mutation 2026-09-26):
+#   alte Basis (est_raw = ESt MIT § 35): KiSt 0 statt 5.670.
+#   Zurückaddieren (est_raw + p35_credit = 0 + 1.630 EUR): KiSt 14.670 statt 5.670.
+# Bis 2026-09-26 fehlte hh_in_eu_ewr: § 35a wirkte nicht (ESt 1.630 EUR mit und ohne
+# § 35a-Felder), der Catala-Deckel griff nie, und das Zurückaddieren blieb gruen.
+
+# 5.000 EUR Dienstleistungen → § 35a 20 % = 1.000 EUR. Das SUM-Feld (hh_dienstleistungen),
+# nicht der Einzelposten: _hh_summe faellt ohne Instanz auf das Sum-Feld zurueck, ein
+# gesetzter Einzelposten allein ergaebe 0 (gemessen 2026-09-26). hh_in_eu_ewr: ohne das Feld
+# gibt catala_p35a_haushaltsnahe 0 (§ 35a Abs. 4).
+P35A_DECKEL = [("hh_dienstleistungen", 500000), ("hh_rechnung_unbar", True), ("hh_in_eu_ewr", True)]
+# § 35a 1.000 + § 35 1.630 gegen eine tarifliche Steuer von 1.630 EUR: die Ermäßigungen
+# uebersteigen die Steuer, der Deckel greift — und § 35a allein deckt sie NICHT.
+
+
+def _p35_deckel_kegel(mit_gewst: bool):
+    """Gewinn 20.000 EUR als einziges Einkommen + § 35a 1.000 EUR + § 35 4.000 EUR.
+
+    Kein Lohn: die tarifliche Steuer muss klein bleiben, sonst greift der Deckel nicht.
+    """
+    kegel = [(k, {"bruttoarbeitslohn": 0, "kein_gewinn": False}.get(k, v))
+             for k, v in GESAMT_KEGEL_BASE]
+    kegel += [("einkuenfte_gewinn", 2000000), ("gewinn_betriebsart", "gewerbe"),
+              ("kist_konfession", "roemisch-katholisch"),
+              ("kist_bundesland", "nordrhein_westfalen")] + P35A_DECKEL
+    return kegel + (P35_GEWST if mit_gewst else [])
+
+
+def test_kist_deckel_35_ist_nur_teilweise_wirksam(base):
+    """Unter dem Catala-Deckel: die KiSt-Basis folgt der WIRKLICHEN Wirkung, nicht dem Kredit.
+
+    Die KiSt darf sich mit/ohne GewSt nicht ändern (Abs. 2 S. 3). Sie darf aber auch nicht
+    auf die volle Kreditsumme reagieren: wirksam ist nur der Teil unter dem Deckel. Ein
+    Zurückaddieren des vollen Kredits wäre hier um 1.000 EUR zu hoch (s. Kopfkommentar).
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    d = _p35_differenz(base, "kistdeckel", "gesamt", _p35_deckel_kegel)
+    assert d["kist_cent"] == 0, (
+        f"KiSt sinkt um {d['kist_cent']} CENT mit der § 35-Ermäßigung, obwohl § 51a "
+        f"Abs. 2 S. 3 EStG sie aus der KiSt-Basis nimmt. {d}")
+    # Vorbedingung des Falls: der Catala-Deckel MUSS greifen, sonst prüft dieser Test nichts
+    # Neues gegenüber test_kist_p35_mindert_basis_nicht_gesamt. 163.000 CENT = der § 35-Kredit
+    # nach seinem eigenen Deckel 3; nur darunter ist er teilweise wirksam.
+    assert d["zahl_cent"] < 163000, (
+        f"Vorbedingung kaputt: § 35 wirkt hier voll ({d['zahl_cent']} CENT statt < 163.000). "
+        f"Ohne greifenden Deckel sagt dieser Test nichts über die Teilwirksamkeit aus. {d}")
+    # Und die KiSt-Basis ist genau die ESt OHNE § 35 — nicht die reduzierte (dann KiSt 0) und
+    # nicht die zurückaddierte (dann KiSt 14.670).
+    assert d["kist_cent"] == 0 and d["zahl_cent"] == 63000, (
+        f"Erwartet: ESt-Wirkung 63.000 CENT (Deckel), KiSt unveraendert. {d}")
+
+
+# ===== § 32b bleibt in der KiSt-Basis, § 35 nicht =====
+#
+# § 51a Abs. 2 EStG nimmt nur § 3 Nr. 40/§ 3c (S. 2) und § 35 (S. 3) aus der Basis. Der
+# Progressionsvorbehalt (§ 32b) bleibt drin: Basis ist die ESt, wie sie festzusetzen wäre
+# (S. 1). Der § 32b-Wrapper im Ring läuft NACH catala_est. Eine Basis, die vor ihm abgegriffen
+# wird, verliert ihn still — so die erste Fassung des § 35-Fixes (gemessen 2026-09-26:
+# KiSt 20.988 statt 31.833 CENT).
+# Erwartete Werte: HEAD 82729e8 (vor dem § 35-Fix), dort trug die Basis § 32b.
+# Quelle: sources/gesetze-im-internet/estg_p51a_2026-09-26.txt.
+
+P32B_PE = [("p32b_progressionseinkuenfte", 1000000)]  # 10.000 EUR Lohnersatzleistungen
+
+
+def test_kist_p32b_bleibt_in_basis_gesamt(base):
+    """Lohn 24.000 EUR + 10.000 EUR Progressionseinkünfte: die KiSt folgt der ESt MIT § 32b.
+
+    ESt 3.537 EUR → KiSt 9 % = 318,33 EUR = 31.833 CENT. Ohne § 32b in der Basis wären es
+    9 % von 2.332 EUR (ESt ohne Progressionseinkünfte) = 20.988 CENT.
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    kegel = list(GESAMT_KEGEL_BASE) + [("kist_konfession", "roemisch-katholisch"),
+                                       ("kist_bundesland", "nordrhein_westfalen")] + P32B_PE
+    _anlegen(base, "kistpe", "gesamt", kegel)
+    st, erg = _req(base, "GET", "/fall/kistpe/ergebnis")
+    assert st == 200 and erg["grund"] == "bestaetigt", erg
+    kurz = {k: erg[k] for k in ("zahl_cent", "solz_cent", "kist_cent")}
+    assert erg["zahl_cent"] == 353700, f"Vorbedingung: § 32b hebt die ESt auf 3.537 EUR. {kurz}"
+    assert erg["kist_cent"] == 31833, (
+        f"KiSt {erg['kist_cent']} != 31.833 CENT (9 % von 3.537 EUR). 20.988 heisst: "
+        f"die KiSt-Basis hat § 32b verloren. {kurz}")
+
+
+def _ring_gesamt(kegel):
+    """(zahl_cent, solz_cent, kist_cent) direkt aus dem gesamt-Ring, ohne /ergebnis.
+
+    Mit Absicht am Endpunkt vorbei: _an_gesamt_sperrgrund sperrt § 32b zusammen mit § 35
+    (p32b_kombi_offen), /ergebnis liefert dort keine Zahl. Gemessen wird der Ring selbst.
+    """
+    felder = {k: {"wert": v, "zustand": "bestaetigt"} for k, v in kegel}
+    solz, extras = [None], {}
+    bf = API._bescheid_fn("festzusetzende_est_gesamt", 2025, API.TR.lade_bindung(), felder,
+                          store=None, nur_bestaetigt=True, solz_container=solz, extras=extras)
+    assert bf is not None, "bescheid_fn gab None (catala?)"
+    return bf(dict(kegel)), solz[0], extras.get("kist_cent")
+
+
+def test_kist_p35_und_p32b_zugleich_gesamt(base):
+    """Beide Ausnahmen in einem Fall: § 35 raus aus der Basis, § 32b drin.
+
+    Gewinn 200.000 EUR, § 35 4.000 EUR, dazu 10.000 EUR Progressionseinkünfte. Erwartet mit
+    und ohne GewSt: KiSt 662.319 CENT = 9 % von 73.591 EUR (ESt mit § 32b, ohne § 35). Falsch
+    wären 657.648 (§ 32b verloren, 9 % von 73.072 EUR) und 626.319 (§ 35 in der Basis).
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    ohne = _p35_gesamt_kegel(mit_gewst=False) + P32B_PE
+    mit = _p35_gesamt_kegel(mit_gewst=True) + P32B_PE
+    # Kalibrierung: ohne GewSt ist /ergebnis offen — der direkte Ring muss dort dieselben
+    # Zahlen liefern wie der Endpunkt.
+    _anlegen(base, "kistpe35", "gesamt", ohne)
+    st, erg = _req(base, "GET", "/fall/kistpe35/ergebnis")
+    assert st == 200 and erg["grund"] == "bestaetigt", erg
+    z0, s0, k0 = _ring_gesamt(ohne)
+    assert (z0, s0, k0) == (erg["zahl_cent"], erg["solz_cent"], erg["kist_cent"]), (
+        f"Ring {(z0, s0, k0)} weicht von /ergebnis ab: {erg}")
+    z1, s1, k1 = _ring_gesamt(mit)
+    # Vorbedingung: § 35 wirkt mit 4.000 EUR, der SolZ sinkt um 5,5 % davon.
+    assert (z0 - z1, s0 - s1) == (400000, 22000), (
+        f"§ 35 wirkt nicht wie erwartet: ESt {z0}->{z1}, SolZ {s0}->{s1}")
+    assert (k0, k1) == (662319, 662319), (
+        f"KiSt ohne/mit GewSt {k0}/{k1}, erwartet 662.319/662.319 CENT. 657.648 heisst: "
+        f"§ 32b fehlt in der Basis; 626.319 mit GewSt heisst: § 35 steckt in der Basis.")

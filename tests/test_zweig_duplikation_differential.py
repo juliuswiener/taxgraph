@@ -201,10 +201,12 @@ AUSNAHMEN = {
     "catala_p32b_1": (
         "§32b-Wrapper auf branch-eigenes zve32b/tarifliche_pre32b."),
     "catala_kist": (
-        "§51a-Bemessung ist branch-eigene est_roh_ohne_kap — das ist die Stelle, an der der "
-        "historische Doppelbug saß (kist-bemessungsgrundlage-doppelbug.md); der Bug lag in "
-        "EINEM der beiden est_roh_ohne_kap-Tracking-Pfade, nicht darin, dass die Basen "
-        "zwischen den Zweigen gleich sein müssten (sie sind es strukturell nicht)."),
+        "§51a-Bemessung ist branch-eigenes est_ohne_p35 (seit 2026-09-26; davor "
+        "est_roh_ohne_kap, das ist die SolZ-Naht und traegt § 35, s. "
+        "kirchensteuer-basis-ohne-gewerbesteuer-ermaessigung) — das ist die Stelle, an der "
+        "der historische Doppelbug saß (kist-bemessungsgrundlage-doppelbug.md); der Bug lag "
+        "in EINEM der beiden Tracking-Pfade, nicht darin, dass die Basen zwischen den "
+        "Zweigen gleich sein müssten (sie sind es strukturell nicht)."),
     "catala_solz": (
         "SolZ-Bemessungsgrundlage ist branch-eigenes solz_info[_r]['est_mit_fb'], s. "
         "catala_kist."),

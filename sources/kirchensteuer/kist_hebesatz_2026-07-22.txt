@@ -44,7 +44,10 @@ festgesetzt".
 
 Erzbistum Köln (kath., NRW): Zuschlag „in Höhe von 9 % von der festgesetzten Einkommensteuer,
 vermindert um Kinder- und Betreuungsfreibeträge". → bestätigt: Bemessungsgrundlage = ESt nach § 51a
-EStG (mit Kinderfreibetrag), identisch zur SolZ-Basis (§ 3 Abs. 2 SolzG); im Accessor = est_mit_fb.
+EStG (mit Kinderfreibetrag); im Accessor = est_mit_fb.
+NICHT identisch zur SolZ-Basis: § 51a Abs. 2 S. 3 EStG nimmt § 35 (GewSt-Anrechnung) aus der
+KiSt-Basis heraus, § 3 Abs. 2 SolzG kennt keine solche Ausnahme. Korrigiert 2026-09-26
+(Entscheidung kirchensteuer-basis-ohne-gewerbesteuer-ermaessigung).
 
 --- Baden-Württemberg: 8 v.H. ---
 

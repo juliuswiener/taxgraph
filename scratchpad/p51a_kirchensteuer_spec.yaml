@@ -9,7 +9,8 @@
 #   konfession: 0=keine, 1=evangelisch, 2=römisch-katholisch, 3=andere
 #   bundesland: 1=Bayern, 2=Baden-Württemberg (→ 8 %); jeder andere Code → 9 %
 # Satz: konfession ∈ {0,3} → 0 ; sonst bundesland ∈ {1,2} → 0,08 ; sonst 0,09.
-# kist = est_mit_fb × satz. est_mit_fb = § 51a-Basis (ESt mit KiFB) = SolZ-§3-Abs.2-Zwilling.
+# kist = est_mit_fb × satz. est_mit_fb = § 51a-Basis (ESt mit KiFB), OHNE § 35 (Abs. 2 S. 3).
+# NICHT die SolZ-Basis: die traegt § 35 (§ 3 Abs. 2 SolzG kennt keine Ausnahme).
 # KEINE geltungsbedingung: die Nicht-Pflicht (konfession 0/3) ist im Formel-Zweig (kist=0),
 # keine externe Bedingung → queue_status wird "verified" (nicht verified_bedingt).
 # Anchors gegen sources/kirchensteuer/kist_hebesatz_2026-07-22.txt verbatim geprüft (5/5 OK).
