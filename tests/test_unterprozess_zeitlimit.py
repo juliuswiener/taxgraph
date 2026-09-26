@@ -339,3 +339,51 @@ def test_beide_writer_haben_dieselben_grenzen():
         assert getattr(KW, name) == getattr(BW, name), (
             f"{name} ist in den beiden Writern verschieden: kontoauszug={getattr(KW, name)}, "
             f"beleg={getattr(BW, name)} — eine der beiden Kopien wurde nachgezogen, die andere nicht.")
+
+
+# ------------------------------------------------------ Verhalten: tesseract rechnet mit einem Faden
+
+# Die vier tesseract-Aufrufe, je über die öffentliche Einstiegsfunktion erreicht. pdftotext
+# liefert entweder gar keinen Text (Voll-Scan) oder eine plausible Seite 1 und eine leere
+# Seite 2 (Teil-Textlayer, nur Seite 2 geht in die Bilderkennung).
+TESSERACT_WEGE = {
+    "kontoauszug_voll_scan": (KW, KW.lies_kontoauszug_pdf, ""),
+    "kontoauszug_teil_scan": (KW, KW.lies_kontoauszug_pdf, "Buchung 12,34 EUR am 01.01.2025\x0c\x0c"),
+    "beleg_voll_scan": (BW, BW.lies_beleg_text, ""),
+    "beleg_teil_scan": (BW, BW.lies_beleg_text, "Lohnsteuerbescheinigung 2025 Nr. 3\x0c\x0c"),
+}
+
+
+@pytest.mark.parametrize("weg", sorted(TESSERACT_WEGE))
+def test_tesseract_rechnet_mit_einem_faden(monkeypatch, tmp_path, weg):
+    """tesseract startet sonst mehrere OpenMP-Fäden, und unter Überbuchung brach ein Scan, der
+    allein 0,25 s braucht, am Zeitlimit ab (2026-09-26, Last 27,8 auf 12 Kernen). Das Limit muss
+    AUSDRÜCKLICH am Aufruf stehen, und die übrige Umgebung muss erhalten bleiben — ohne PATH
+    fände der Unterprozess tesseract nicht mehr."""
+    modul, lies, pdftotext_ausgabe = TESSERACT_WEGE[weg]
+    monkeypatch.setenv("TG_UMGEBUNG_ZUR_LAUFZEIT", "ja")   # nach dem Import gesetzt
+    envs = []
+
+    def _fake_run(cmd, *a, **kw):
+        if cmd[0] == "pdftotext":
+            return subprocess.CompletedProcess(cmd, 0, stdout=pdftotext_ausgabe, stderr="")
+        if cmd[0] == "pdftoppm":
+            open(cmd[-1] + "-1.png", "wb").close()   # der Writer liest die PNG aus dem Verzeichnis
+            return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
+        assert cmd[0] == "tesseract", f"unerwarteter Unterprozess: {cmd}"
+        envs.append(kw.get("env"))
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(modul.subprocess, "run", _fake_run)
+    pdf = tmp_path / "scan.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+    lies(str(pdf))
+
+    n = len(envs)
+    assert n == 1, f"{weg}: {n} tesseract-Aufrufe erreicht statt genau einem"
+    env = envs[0]
+    assert env is not None, f"{weg}: tesseract ohne env= aufgerufen, OMP_THREAD_LIMIT fehlt"
+    soll = {**os.environ, "OMP_THREAD_LIMIT": "1"}
+    # Nur Namen in die Meldung, nie Werte: die Umgebung trägt API-Schlüssel.
+    abweichend = sorted(k for k in soll.keys() | env.keys() if env.get(k) != soll.get(k))
+    assert not abweichend, f"{weg}: env= weicht von der Umgebung ab bei {abweichend}"

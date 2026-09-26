@@ -44,6 +44,10 @@ PDFTOTEXT_ZEITLIMIT_S = 30
 PDFTOPPM_ZEITLIMIT_S = 60
 TESSERACT_ZEITLIMIT_S = 60
 
+# Jeder tesseract-Aufruf rechnet mit EINEM Faden (env= mit OMP_THREAD_LIMIT=1), aus demselben
+# Grund wie in kontoauszug_writer: mehrere OpenMP-Fäden können unter Überbuchung bis ans
+# Zeitlimit bremsen. Die übrige Umgebung bleibt ({**os.environ, ...}), sonst fehlte PATH.
+
 # Deckel über die gesamte Seitenschleife: die Einzelgrenzen begrenzen jeden Aufruf, nicht ihre
 # Anzahl. 500 Seiten × 60 s wären acht Stunden Stillstand, jeder Aufruf für sich im Limit.
 OCR_SEITEN_HOECHSTZAHL = 40
@@ -223,7 +227,8 @@ def lies_beleg_text(pfad: str) -> tuple[str, dict]:
         # Ein einziger tesseract-Aufruf über das GANZE PDF — die Seitenzahl steht hier noch gar
         # nicht fest, deshalb greift statt des Seitendeckels ein entsprechend weiteres Zeitlimit.
         return subprocess.run(["tesseract", pfad, "-", "-l", "deu"], capture_output=True, text=True,
-                              timeout=TESSERACT_ZEITLIMIT_S * OCR_SEITEN_HOECHSTZAHL).stdout, {}
+                              timeout=TESSERACT_ZEITLIMIT_S * OCR_SEITEN_HOECHSTZAHL,
+                              env={**os.environ, "OMP_THREAD_LIMIT": "1"}).stdout, {}
 
     seiten = txt.split("\x0c")[:-1]
     if all(_textlayer_ist_plausibel(s) for s in seiten):
@@ -269,7 +274,8 @@ def _ocr_tesseract_seite(pfad: str, seiten_nr: int) -> tuple[str, dict]:
                         pfad, praefix], capture_output=True, timeout=PDFTOPPM_ZEITLIMIT_S)
         png = sorted(os.listdir(td))[0]
         tsv = subprocess.run(["tesseract", os.path.join(td, png), "stdout", "-l", "deu", "tsv"],
-                             capture_output=True, text=True, timeout=TESSERACT_ZEITLIMIT_S).stdout
+                             capture_output=True, text=True, timeout=TESSERACT_ZEITLIMIT_S,
+                             env={**os.environ, "OMP_THREAD_LIMIT": "1"}).stdout
         zeilen = _tsv_zu_zeilen(tsv)
     text = "\n".join(z for z, _ in zeilen)
     conf_map = {i: c for i, (_, c) in enumerate(zeilen)}

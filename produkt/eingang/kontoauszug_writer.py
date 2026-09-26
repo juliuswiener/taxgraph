@@ -43,6 +43,12 @@ PDFTOTEXT_ZEITLIMIT_S = 30
 PDFTOPPM_ZEITLIMIT_S = 60
 TESSERACT_ZEITLIMIT_S = 60
 
+# Jeder tesseract-Aufruf rechnet mit EINEM Faden (env= mit OMP_THREAD_LIMIT=1). Sonst startet
+# tesseract mehrere OpenMP-Fäden, und unter Überbuchung kann das um Größenordnungen bremsen.
+# Am 2026-09-26 brach ein Scan, der allein 0,25 s braucht, bei Last 27,8 auf 12 Kernen an
+# TESSERACT_ZEITLIMIT_S ab. Allein kostet das Limit 0,01 s. Die übrige Umgebung bleibt
+# ({**os.environ, ...}), sonst fände der Unterprozess tesseract nicht mehr über PATH.
+
 # Deckel über die GESAMTE Seitenschleife. Die Einzel-Zeitlimits oben begrenzen jeden Aufruf,
 # aber nicht ihre ANZAHL: ein 500-seitiges PDF ohne brauchbaren Textlayer erzeugt 500 OCR-Läufe,
 # jeder einzeln brav unter seinem Limit. 500 × 60 s sind acht Stunden Stillstand — die
@@ -376,7 +382,8 @@ def _ocr_tesseract_seite(pfad: str, seiten_nr: int) -> tuple[str, dict]:
                         pfad, praefix], capture_output=True, timeout=PDFTOPPM_ZEITLIMIT_S)
         png = sorted(os.listdir(td))[0]
         tsv = subprocess.run(["tesseract", os.path.join(td, png), "stdout", "-l", "deu", "tsv"],
-                             capture_output=True, text=True, timeout=TESSERACT_ZEITLIMIT_S).stdout
+                             capture_output=True, text=True, timeout=TESSERACT_ZEITLIMIT_S,
+                             env={**os.environ, "OMP_THREAD_LIMIT": "1"}).stdout
         zeilen = _tsv_zu_zeilen(tsv)
     text = "\n".join(z for z, _ in zeilen)
     conf_map = {i: c for i, (_, c) in enumerate(zeilen)}
@@ -402,7 +409,8 @@ def _ocr_tesseract_zeilen(pfad: str) -> tuple[str, dict]:
         zeilen = []
         for seite in seiten:
             tsv = subprocess.run(["tesseract", os.path.join(td, seite), "stdout", "-l", "deu", "tsv"],
-                                 capture_output=True, text=True, timeout=TESSERACT_ZEITLIMIT_S).stdout
+                                 capture_output=True, text=True, timeout=TESSERACT_ZEITLIMIT_S,
+                                 env={**os.environ, "OMP_THREAD_LIMIT": "1"}).stdout
             zeilen.extend(_tsv_zu_zeilen(tsv))
     text = "\n".join(z for z, _ in zeilen)
     conf_map = {i: c for i, (_, c) in enumerate(zeilen)}
