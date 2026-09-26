@@ -236,17 +236,19 @@ def _zweig_festzusetzende_est(vz: int, bindung: dict, felder, store, nur_bestaet
             # Steuerfreie Erstattung (S. 11): Abzugsausschluss
             if _cent("vpf_steuerfreie_erstattung_betrag") > 0:
                 wk_input["vpf_steuerfreie_erstattung_betrag"] = _cent("vpf_steuerfreie_erstattung_betrag")
-        # Übernachtung Auswärtstätigkeit (Stufe 1b, § 9 Abs. 1 Nr. 5a): NUR bei Inland, allen 3
-        # Tatbestands-Bedingungen bestätigt-true UND ohne 48-Monats-Schwellenübertritt (der Guard
-        # sperrt sonst); der Accessor kappt nach-48 auf 1.000/Monat. Kosten = cent, Monate = Anzahl.
+        # Übernachtung Auswärtstätigkeit (Stufe 1b, § 9 Abs. 1 Nr. 5a): alle 3 Tatbestands-
+        # Bedingungen bestätigt-true; der Ort (Inland/Ausland) geht MIT in den Ring, weil er über die
+        # Höhe entscheidet (Accessor kappt Inland nach 48 Monaten, Ausland erst ab VZ 2026). Der
+        # überspannende Zeitraum ist KEIN Ausschluss mehr — der Accessor teilt monatsweise.
         _ub_bisher = _cent("uebernachtung_monate_bisher")
         _ub_monate = _cent("uebernachtung_monate")
-        if (_cent(UEBERNACHTUNG_KOSTEN) > 0 and f.get("uebernachtung_im_inland", {}).get("wert") is True
-                and all(f.get(b, {}).get("wert") is True for b in UEBERNACHTUNG_BEDINGUNGEN)
-                and not (_ub_bisher < 48 < _ub_bisher + _ub_monate)):
+        _ub_inland = f.get("uebernachtung_im_inland", {}).get("wert")
+        if (_cent(UEBERNACHTUNG_KOSTEN) > 0 and isinstance(_ub_inland, bool)
+                and all(f.get(b, {}).get("wert") is True for b in UEBERNACHTUNG_BEDINGUNGEN)):
             wk_input["uebernachtung_kosten_monat"] = _cent(UEBERNACHTUNG_KOSTEN) // 100   # cent -> euro
             wk_input["uebernachtung_monate"] = _ub_monate
             wk_input["uebernachtung_monate_bisher"] = _ub_bisher
+            wk_input["uebernachtung_im_inland"] = _ub_inland
         # Arbeitsmittel (A6, § 9 Abs. 1 Nr. 7 i.V.m. § 6 Abs. 2 GWG): NUR GWG-Sofortabzug — AK ≤ 800 EUR
         # (Schwelle in CENT, 80000) UND Wahlrecht ausgeübt. > 800 = mehrjährige § 7-AfA sperrt der Guard.
         if 0 < _cent(ARBEITSMITTEL_KOSTEN) <= 80000 and f.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is True:
@@ -514,17 +516,18 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
             # Steuerfreie Erstattung (S. 11): Abzugsausschluss
             if _c("vpf_steuerfreie_erstattung_betrag") > 0:
                 gesamt_wk_input["vpf_steuerfreie_erstattung_betrag"] = _c("vpf_steuerfreie_erstattung_betrag")
-        # Übernachtung Auswärtstätigkeit (B1/A5, § 9 Abs. 1 Nr. 5a): Parität an_gesamt — NUR bei
-        # Inland, allen 3 Bedingungen bestätigt-true UND ohne 48-Monats-Schwellenübertritt (Guard
-        # sperrt sonst); Accessor kappt nach-48 auf 1.000/Monat. Kosten = cent, Monate = Anzahl.
+        # Übernachtung Auswärtstätigkeit (B1/A5, § 9 Abs. 1 Nr. 5a): Parität an_gesamt — alle 3
+        # Bedingungen bestätigt-true; der Ort geht MIT in den Ring (entscheidet über die Höhe), der
+        # überspannende Zeitraum ist kein Ausschluss mehr (der Accessor teilt monatsweise).
         _ub_bisher = _c("uebernachtung_monate_bisher")
         _ub_monate = _c("uebernachtung_monate")
-        if (_c(UEBERNACHTUNG_KOSTEN) > 0 and f.get("uebernachtung_im_inland", {}).get("wert") is True
-                and all(f.get(b, {}).get("wert") is True for b in UEBERNACHTUNG_BEDINGUNGEN)
-                and not (_ub_bisher < 48 < _ub_bisher + _ub_monate)):
+        _ub_inland = f.get("uebernachtung_im_inland", {}).get("wert")
+        if (_c(UEBERNACHTUNG_KOSTEN) > 0 and isinstance(_ub_inland, bool)
+                and all(f.get(b, {}).get("wert") is True for b in UEBERNACHTUNG_BEDINGUNGEN)):
             gesamt_wk_input["uebernachtung_kosten_monat"] = _c(UEBERNACHTUNG_KOSTEN) // 100    # cent -> euro
             gesamt_wk_input["uebernachtung_monate"] = _ub_monate
             gesamt_wk_input["uebernachtung_monate_bisher"] = _ub_bisher
+            gesamt_wk_input["uebernachtung_im_inland"] = _ub_inland
         # Arbeitsmittel (A6, Parität an_gesamt): NUR GWG-Sofortabzug — AK ≤ 800 EUR (CENT-Schwelle 80000)
         # UND Wahlrecht ausgeübt. > 800 = mehrjährige § 7-AfA sperrt der SHARED _an_gesamt_sperrgrund.
         if 0 < _c(ARBEITSMITTEL_KOSTEN) <= 80000 and f.get("am_gwg_sofortabzug_gewaehlt", {}).get("wert") is True:

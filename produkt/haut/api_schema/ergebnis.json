@@ -16,7 +16,7 @@
               "enum": ["bestaetigt", "input_kegel_nicht_bestaetigt", "engine_unavailable",
                        "kein_scheiben_gesamtbescheid", "einkunftsart_nicht_ring_faehig",
                        "dhf_tatbestand_offen", "ausland_dhf_nicht_ring_faehig",
-                       "uebernachtung_tatbestand_offen", "ausland_uebernachtung_nicht_ring_faehig",
+                       "uebernachtung_tatbestand_offen",
                        "uebernachtung_zeitraum_offen", "arbeitsmittel_afa_ueber_gwg_offen",
                        "partner_kegel_offen", "partner_vor_offen",
                        "verpflegung_reduktion_offen", "verpflegung_dreimonatsfrist_aufteilung_offen", "verpflegung_dreimonatsfrist_unterbrechung_offen", "flag_konsistenz_offen",

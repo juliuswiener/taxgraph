@@ -406,10 +406,6 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
     "ausland_dhf_nicht_ring_faehig":
         "Deine zweite Wohnung am Arbeitsort liegt im Ausland. Dafür gelten eigene Obergrenzen, die "
         "die Software noch nicht rechnet. Dieser Fall braucht steuerliche Beratung.",
-    "ausland_uebernachtung_nicht_ring_faehig":
-        "Deine Übernachtungen auf Auswärtstätigkeit liegen im Ausland. Für Übernachtungskosten "
-        "im Ausland gelten eigene Sätze je Land, die die Software noch nicht rechnet. Dieser Fall "
-        "braucht steuerliche Beratung.",
     "dba_kapital_offen":
         "Du hast Kapitalerträge angegeben und zugleich ausländische Einkünfte. Ob und wie eine im "
         "Ausland gezahlte Steuer auf deine Kapitalerträge angerechnet wird, rechnet die Software "
@@ -450,10 +446,10 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "Dieser Effekt ist in der gerade laufenden Berechnung nicht enthalten, deshalb rechnet die "
         "Software hier nicht weiter.",
     "uebernachtung_zeitraum_offen":
-        "Deine Übernachtungen am selben auswärtigen Ort überschreiten die Grenze von 48 Monaten. "
-        "Ab diesem Zeitpunkt sind die Kosten nur noch begrenzt absetzbar, und wie der Zeitraum davor "
-        "und danach aufzuteilen ist, rechnet die Software noch nicht. Dieser Fall braucht "
-        "steuerliche Beratung.",
+        "Du hast Übernachtungskosten angegeben, aber die Angabe fehlt, in wie vielen Monaten dieses "
+        "Jahres du auswärts übernachtet hast und seit wie vielen Monaten du schon an diesem Ort "
+        "arbeitest. Davon hängt ab, ob deine Kosten nach 48 Monaten noch begrenzt sind. Bitte "
+        "beantworte diese Fragen.",
     "verlustvortrag_gehoert_in_gesamt":
         "Du hast einen Verlustvortrag aus einem früheren Jahr angegeben. Seine Verrechnung mit dem "
         "Einkommen dieses Jahres ist in der gerade laufenden Berechnung nicht enthalten. Ohne sie "
@@ -828,16 +824,23 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             if not mahlzeiten_beantwortet:
                 # Keine Angabe zu gestellten Mahlzeiten, oder bool=False ohne Anzahlen — fail-closed.
                 return "verpflegung_reduktion_offen"
-        # Übernachtung Auswärtstätigkeit (§ 9 Abs. 1 Nr. 5a): Kosten > 0 → Ring nur fähig bei Inland,
-        # allen 3 Tatbestands-Bedingungen bestätigt UND ohne 48-Monats-Schwellenübertritt. Ausland /
-        # offener Tatbestand (inkl. UNSET Inland, fail-closed) / überspannender Zeitraum sperren.
+        # Übernachtung Auswärtstätigkeit (§ 9 Abs. 1 Nr. 5a): Kosten > 0 → Ring nur fähig, wenn der
+        # Tatbestand bestätigt ist (Inland/Ausland als Ortsangabe, die 3 Bedingungen) UND die
+        # Zeitraum-Angaben bestätigte int sind.
+        # KEINE Sperre mehr für Ausland: die Sätze 1-3 unterscheiden nicht nach dem Ort, und Satz 4
+        # begrenzt nur die HÖHE (Ring kappt Inland nach 48 Monaten, Ausland erst ab VZ 2026).
+        # KEINE Sperre mehr für den überspannenden Zeitraum: die Schwelle ist ein Zeitpunkt, der Ring
+        # teilt monatsweise (siehe runner._uebernachtung_abzug). Beides nahm dem Nutzer den GANZEN
+        # Abzug, wofür die Norm keine Grundlage hat.
         if _positiv(UEBERNACHTUNG_KOSTEN):
             _ueb_inland = felder.get("uebernachtung_im_inland") or {}
-            if _ueb_inland.get("wert") is False:
-                return "ausland_uebernachtung_nicht_ring_faehig"
-            # Naht-Fix: Rohwert True reichte hier bisher (vorläufig las durch) — jetzt zusätzlich
-            # bestätigt verlangt, sonst filtert der Ring das Feld weg und rechnet blind weiter.
-            if (_ueb_inland.get("wert") is not True or _ueb_inland.get("zustand") != "bestaetigt"
+            # Naht-Fix: Rohwert reichte hier bisher (vorläufig las durch) — jetzt zusätzlich bestätigt
+            # verlangt, sonst filtert der Ring das Feld weg und rechnet blind weiter. BEIDE Werte sind
+            # gültig: True = Inland (Ring kappt nach 48), False = Ausland (kappt erst ab VZ 2026). Nur
+            # eine fehlende oder vorläufige Ortsangabe sperrt — sonst wäre Ausland wieder blockiert,
+            # nur unter anderem Namen.
+            if (not isinstance(_ueb_inland.get("wert"), bool)
+                    or _ueb_inland.get("zustand") != "bestaetigt"
                     or any((felder.get(b) or {}).get("zustand") != "bestaetigt" for b in UEBERNACHTUNG_BEDINGUNGEN)):
                 return "uebernachtung_tatbestand_offen"
             _bisher_feld = felder.get("uebernachtung_monate_bisher") or {}
@@ -851,8 +854,6 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                     and _bisher_feld.get("zustand") == "bestaetigt"
                     and isinstance(monate, int) and not isinstance(monate, bool)
                     and _monate_feld.get("zustand") == "bestaetigt"):
-                return "uebernachtung_zeitraum_offen"
-            if bisher < 48 < bisher + monate:
                 return "uebernachtung_zeitraum_offen"
         # Arbeitsmittel (§ 9 Abs. 1 Nr. 6/7 i.V.m. § 6 Abs. 2 GWG / § 7 AfA): AK > 0 → Ring nur fähig für den
         # GWG-Sofortabzug (AK ≤ 800 EUR mit ausgeübtem Wahlrecht). AK > 800 → mehrjährige § 7-AfA (A6-L2),

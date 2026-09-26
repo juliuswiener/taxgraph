@@ -572,7 +572,7 @@ def test_b1_verpflegung_senkt_steuer_gesamt(base):
 # Dritte §9-WK-Art (nach dHf/Verpflegung) im gesamt-Ring: tatsächliche Übernachtungskosten bei
 # Auswärtstätigkeit. Beweist Erreichbarkeit (POST 201) + Durchgriff (catala_werbungskosten_n), die
 # Satz-4-Kappung nach 48 Monaten (Under-tax-Wächter: monate_bisher muss durch den Ring fließen),
-# und fail-closed bei Ausland / überspannendem 48-Monats-Zeitraum.
+# den Split eines Zeitraums, der die Schwelle überspannt, und den Ausland-Fall vor/nach der Schwelle.
 
 # Übernachtung Inland gültig, vor 48 Monaten: 1.000 €/Monat × 12 = 12.000 € Roh-WK (ungekappt).
 UEBERNACHTUNG_GESAMT_VALID = [
@@ -583,10 +583,10 @@ UEBERNACHTUNG_GESAMT_VALID = [
 ]
 
 
-def _ueb(bisher, kosten=200000, monate=12):
+def _ueb(bisher, kosten=200000, monate=12, im_inland=True):
     """Übernachtungs-Kegelteil; bisher steuert vor/nach 48 (Kappung), kosten in Cent (2.000 €/Monat)."""
     return [("uebernachtung_kosten_monat", kosten), ("uebernachtung_monate", monate),
-            ("uebernachtung_monate_bisher", bisher), ("uebernachtung_im_inland", True),
+            ("uebernachtung_monate_bisher", bisher), ("uebernachtung_im_inland", im_inland),
             ("uebernachtung_auswaerts", True), ("uebernachtung_alleinnutzung", True),
             ("uebernachtung_keine_lange_unterbrechung", True)]
 
@@ -614,32 +614,96 @@ def test_a5_uebernachtung_senkt_steuer_gesamt(base):
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
 
 
-def test_a5_uebernachtung_ausland_haelt_offen_gesamt(base):
-    """gesamt-Ring + uebernachtung_im_inland=False → der SHARED Guard sperrt fail-closed
-    (ausland_uebernachtung_nicht_ring_faehig, zahl_cent=null). K2: kein stiller Über-Abzug (2.000er-
-    Auslandsgrenze ist außerhalb dieser Scheibe)."""
-    kegel = GESAMT_AN_KEGEL + [
-        ("uebernachtung_kosten_monat", 100000), ("uebernachtung_monate", 12),
-        ("uebernachtung_monate_bisher", 10), ("uebernachtung_im_inland", False),
-        ("uebernachtung_auswaerts", True), ("uebernachtung_alleinnutzung", True),
-        ("uebernachtung_keine_lange_unterbrechung", True)]
-    _ges_anlegen(base, "a5ausl", kegel)
-    st, erg = _req(base, "GET", "/fall/a5ausl/ergebnis")
-    _val("ergebnis", erg)
-    assert erg["grund"] == "ausland_uebernachtung_nicht_ring_faehig", f"grund={erg.get('grund')}"
-    assert erg["zahl_cent"] is None
+def test_a5_uebernachtung_ausland_vor_48_rechnet_gesamt(base):
+    """gesamt-Ring + uebernachtung_im_inland=False, WEIT unter 48 Monaten (bisher=10, monate=12):
+    der Ausland-Fall rechnet und ist dem identischen Inland-Fall auf den Cent gleich.
+
+    Grund (§ 9 Abs. 1 S. 3 Nr. 5a Sätze 1-3): die ersten 48 Monate unterscheiden nicht nach
+    Inland/Ausland — erst Satz 4 (nach Ablauf) verweist auf den Betrag nach Nr. 5. Der frühere
+    Sperrgrund ausland_uebernachtung_nicht_ring_faehig nahm hier den GANZEN Abzug, ohne dass die
+    Norm einen Unterschied kennt. Beide Antworten derselben Frage (im_inland true/false) müssen
+    vor der Schwelle dieselbe Zahl ergeben — deshalb der Vergleich gegen den Inland-Zwilling
+    statt einer festen Euro-Zahl: kein Kappungsparameter kann diesen Test still verstellen."""
+    catala = _catala_da()
+    _ges_anlegen(base, "a5ausl_in", GESAMT_AN_KEGEL + _ueb(10))
+    st, inland = _req(base, "GET", "/fall/a5ausl_in/ergebnis")
+    _val("ergebnis", inland)
+    _ges_anlegen(base, "a5ausl_aus", GESAMT_AN_KEGEL + _ueb(10, im_inland=False))
+    st, ausland = _req(base, "GET", "/fall/a5ausl_aus/ergebnis")
+    _val("ergebnis", ausland)
+    if catala:
+        assert ausland["grund"] == "bestaetigt", (
+            f"Ausland vor 48 Monaten sperrt weiter: grund={ausland.get('grund')} "
+            f"klartext={ausland.get('klartext')!r}")
+        assert inland["grund"] == "bestaetigt", f"grund={inland.get('grund')}"
+        assert ausland["zahl_cent"] == inland["zahl_cent"], (
+            f"Ausland {ausland['zahl_cent']} ≠ Inland {inland['zahl_cent']} vor der 48-Monats-"
+            f"Schwelle — die Norm unterscheidet dort nicht nach dem Ort.")
+    else:
+        assert inland["zahl_cent"] is None or ausland["zahl_cent"] is None
 
 
-def test_a5_uebernachtung_zeitraum_offen_gesamt(base):
-    """gesamt-Ring + Übernachtungs-Zeitraum überspannt die 48-Monats-Schwelle (bisher=40, monate=12 →
-    40<48<52). Die Einzel-Regel (_vor_48 / _nach_48) kann den gemischten Zeitraum nicht kappen → der
-    Guard sperrt fail-closed (uebernachtung_zeitraum_offen). K2: kein still-ungekappter Über-Abzug."""
-    kegel = GESAMT_AN_KEGEL + _ueb(40)
-    _ges_anlegen(base, "a5span", kegel)
-    st, erg = _req(base, "GET", "/fall/a5span/ergebnis")
+# DIE Testzahl für Nr. 5a/Ausland nach 48 Monaten, VZ 2025: ungekappt.
+# Die Auslandsgrenze ist VZ-abhängig und steht an EINER Stelle in runner._uebernachtung_monatsgrenze
+# (ponytail-Kommentar dort): bis VZ 2025 keine, ab VZ 2026 2.000 €/Monat.
+AUSLAND_NACH_48_ZIEL_CENT = 6047200   # 12 × 2.500 € = 30.000 € WK, VZ 2025 ungekappt → 60.472,00 € Steuer
+
+
+def test_a5_uebernachtung_ausland_nach_48_rechnet_gesamt(base):
+    """gesamt-Ring, Ausland, ÜBER der 48-Monats-Schwelle (bisher=48, monate=12, 2.500 €/Monat).
+
+    Soll ungekappt (VZ 2025): 12 × 2.500 € = 30.000 € WK. Zum Vergleich derselbe Fall im Inland:
+    dort kappt Satz 4 auf 1.000 €/Monat → 12.000 € WK und 68.032,00 € Steuer. Die 7.560,00 €
+    Differenz sind genau die Inlandskappung, die es für das Ausland bis VZ 2025 nicht gibt.
+
+    Entschieden (Vault-Entscheidung auslandsgrenze-2000-euro-gilt-erst-ab-vz-2026): Satz 4 verweist
+    auf den Betrag nach Nr. 5. Dessen 2.000-€-Auslandsgrenze fügte erst das StÄndG 2025 ein
+    (BGBl. 2025 I Nr. 363, Art. 2 Nr. 3 Buchst. b Doppelbuchst. aa), in Kraft ab 1.1.2026
+    (Art. 12 Abs. 2). Bis VZ 2025 gilt für Nr. 5a/Ausland deshalb keine Euro-Grenze
+    (BMF-Reisekosten 25.11.2020 Rz. 124: „Die Höchstgrenze von 1.000 € gilt hier nicht"), ab
+    VZ 2026 gilt 2.000 €/Monat. AUSLAND_NACH_48_ZIEL_CENT gilt nur für VZ 2025."""
+    catala = _catala_da()
+    _ges_anlegen(base, "a5ausl48", GESAMT_AN_KEGEL + _ueb(48, kosten=250000, im_inland=False))
+    st, erg = _req(base, "GET", "/fall/a5ausl48/ergebnis")
     _val("ergebnis", erg)
-    assert erg["grund"] == "uebernachtung_zeitraum_offen", f"grund={erg.get('grund')}"
-    assert erg["zahl_cent"] is None
+    if catala:
+        assert erg["grund"] == "bestaetigt", (
+            f"Ausland nach 48 Monaten sperrt: grund={erg.get('grund')} "
+            f"klartext={erg.get('klartext')!r}")
+        assert erg["zahl_cent"] == AUSLAND_NACH_48_ZIEL_CENT, (
+            f"zahl_cent={erg['zahl_cent']} ≠ {AUSLAND_NACH_48_ZIEL_CENT} "
+            f"(Δ={erg['zahl_cent'] - AUSLAND_NACH_48_ZIEL_CENT:+d} ct)")
+    else:
+        assert erg["zahl_cent"] is None
+
+
+def test_a5_uebernachtung_spannt_schwelle_split_gesamt(base):
+    """gesamt-Ring + Übernachtungs-Zeitraum überspannt die 48-Monats-Schwelle MITTEN im Jahr
+    (bisher=40, monate=12 → die Schwelle fällt auf Monat 8). Die Schwelle ist ein Zeitpunkt, kein
+    Jahresschalter: 8 Monate × 2.000 € ungekappt + 4 Monate × 1.000 € gekappt = 20.000 € WK.
+
+    Beweis über einen ÄQUIVALENTEN Fall ohne Übertritt (bisher=10, monate=10, ebenfalls
+    10×2.000 = 20.000 € WK): beide müssen dieselbe Steuer ergeben. Der frühere Sperrgrund
+    uebernachtung_zeitraum_offen ließ hier zahl_cent=null — der Nutzer verlor den GANZEN Abzug
+    (1.164,00 € im Backlog-Fall 47/3), obwohl die Norm nur die Monate AB der Schwelle begrenzt
+    (Satz 4; BMF-Reisekosten 25.11.2020 Rz. 126)."""
+    catala = _catala_da()
+    _ges_anlegen(base, "a5span", GESAMT_AN_KEGEL + _ueb(40))
+    st, gespannt = _req(base, "GET", "/fall/a5span/ergebnis")
+    _val("ergebnis", gespannt)
+    _ges_anlegen(base, "a5aeq", GESAMT_AN_KEGEL + _ueb(10, monate=10))
+    st, aequivalent = _req(base, "GET", "/fall/a5aeq/ergebnis")
+    _val("ergebnis", aequivalent)
+    if catala:
+        assert gespannt["grund"] == "bestaetigt", (
+            f"überspannender Zeitraum sperrt weiter: grund={gespannt.get('grund')} "
+            f"klartext={gespannt.get('klartext')!r}")
+        assert aequivalent["grund"] == "bestaetigt", f"grund={aequivalent.get('grund')}"
+        assert gespannt["zahl_cent"] == aequivalent["zahl_cent"], (
+            f"Split {gespannt['zahl_cent']} ≠ äquivalenter Fall ohne Übertritt "
+            f"{aequivalent['zahl_cent']} — der Monat der Schwelle wird falsch gezählt.")
+    else:
+        assert gespannt["zahl_cent"] is None or aequivalent["zahl_cent"] is None
 
 
 def test_a5_uebernachtung_nach_48_kappung_gesamt(base):
@@ -662,6 +726,34 @@ def test_a5_uebernachtung_nach_48_kappung_gesamt(base):
         assert 470000 <= delta <= 540000, f"nach-48-Kappung delta={delta} nicht in [470000,540000]"
     else:
         assert vor["zahl_cent"] is None or nach["zahl_cent"] is None
+
+
+def test_a5_uebernachtung_ausland_und_split_rechnen_an_gesamt(base):
+    """an_gesamt-Ring, Parität zu den beiden gesamt-Tests darüber: bescheid_zweige.
+    _zweig_festzusetzende_est trägt eine EIGENE Kopie der Übernachtungs-Bedingung. Gemessen
+    2026-09-26: dort „nur Inland" zurückgesetzt, blieben alle Tests grün — die Kopie war ungeprüft.
+
+    Zwei Paare, je gleiche Steuer: Ausland == Inland vor der Schwelle (bisher=10), und Split
+    (bisher=40, monate=12: 8 × 2.000 + 4 × 1.000 = 20.000 € WK) == äquivalenter Fall ohne
+    Übertritt (bisher=10, monate=10). Der Fall ohne Übernachtung beweist, dass der Abzug überhaupt
+    durchgreift — sonst wären beide Paare auch ohne ihn gleich."""
+    catala = _catala_da()
+    erg = {}
+    for fid, teil in (("a5an_ohne", []), ("a5an_in", _ueb(10)), ("a5an_aus", _ueb(10, im_inland=False)),
+                      ("a5an_span", _ueb(40)), ("a5an_aeq", _ueb(10, monate=10))):
+        _an_anlegen(base, fid, AN_KEGEL_HOCH + teil)
+        st, erg[fid] = _req(base, "GET", f"/fall/{fid}/ergebnis")
+        _val("ergebnis", erg[fid])
+    if catala:
+        assert all(e["grund"] == "bestaetigt" for e in erg.values()), \
+            {fid: e.get("grund") for fid, e in erg.items()}
+        assert erg["a5an_in"]["zahl_cent"] < erg["a5an_ohne"]["zahl_cent"], "Übernachtung greift nicht durch"
+        assert erg["a5an_aus"]["zahl_cent"] == erg["a5an_in"]["zahl_cent"], (
+            f"Ausland {erg['a5an_aus']['zahl_cent']} ≠ Inland {erg['a5an_in']['zahl_cent']} vor der Schwelle")
+        assert erg["a5an_span"]["zahl_cent"] == erg["a5an_aeq"]["zahl_cent"], (
+            f"Split {erg['a5an_span']['zahl_cent']} ≠ äquivalenter Fall {erg['a5an_aeq']['zahl_cent']}")
+    else:
+        assert any(e["zahl_cent"] is None for e in erg.values())
 
 
 # ===================== A6: § 9 Abs. 1 S. 3 Nr. 6/7 i.V.m. § 6 Abs. 2 Arbeitsmittel-GWG =====================

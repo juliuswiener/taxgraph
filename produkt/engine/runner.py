@@ -360,23 +360,53 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
 
 
 
+# Die 2.000-€-Auslandsgrenze ist NEU: sie gilt erst ab VZ 2026. Für VZ 2024/2025 nennt Nr. 5 S. 4
+# a.F. nur die Inlandsgrenze; für Ausland bleibt es bei der allgemeinen Notwendigkeitsprüfung
+# (BMF-Reisekosten v. 25.11.2020, Rz. 124: "Die Höchstgrenze von 1.000 € gilt hier nicht").
+# ponytail: Grenze 2.000 € gilt ab VZ 2026 (StÄndG 2025, BGBl. 2025 I Nr. 363); davor keine
+# Auslandsgrenze.
+UEBERNACHTUNG_AUSLANDSGRENZE_AB_VZ = 2026
+
+
+def _uebernachtung_monatsgrenze(year: int, im_inland: bool):
+    """Monatsgrenze für Übernachtungskosten NACH Ablauf der 48 Monate — EURO, oder None = keine.
+
+    § 9 Abs. 1 S. 3 Nr. 5a S. 4 verweist für die HÖHE auf den Betrag nach Nr. 5. Die Beträge kommen
+    aus params/<vz>/dhf_p9_1_nr5.yaml — derselben Quelle wie der Nachbarfall dHf, kein zweiter
+    Parametersatz. NUR die VZ-Abgrenzung der Auslandsgrenze steht hier: die params-Dateien für
+    2024/2025 behaupten "VZ-konstant seit 2014" und führen die 2.000 € auch dort, was für diese
+    beiden VZ nicht zutrifft (eigenes Ticket; hier NICHT mitgeändert). KOPPLUNG: bei Änderung der
+    Registry-Regeln p9_1_3_nr5a_* diese Grenze nachziehen."""
+    cap = _dhf_params(year)
+    if im_inland:
+        return cap["cap_monat_inland"]
+    return cap["cap_monat_ausland"] if year >= UEBERNACHTUNG_AUSLANDSGRENZE_AB_VZ else None
+
+
 def _uebernachtung_abzug(s: dict, year: int) -> int:
     """§ 9 Abs. 1 S. 3 Nr. 5a EStG — abziehbare Übernachtungskosten bei Auswärtstätigkeit, EURO.
-    WÖRTLICHE Transkription der Registry-Regeln p9_1_3_nr5a_uebernachtung_vor_48 / _nach_48:
-    Zeitraum VOR Ablauf der 48 Monate (uebernachtung_monate_bisher < 48) → tatsächliche Kosten
-    ungekappt (Satz 1-3): kosten × monate. NACH Ablauf (>= 48) → Kappung auf den Nr.-5-Betrag
-    (Satz 4 via Verweis, 1.000 EUR/Monat Inland aus params/<vz>/dhf_p9_1_nr5.yaml):
-    min(kosten, 1.000) × monate. Der Ring-Guard stellt sicher, dass der Zeitraum NICHT die
-    48-Monats-Schwelle überspannt (p9_1_3_nr5a_uebernachtung: zeitraum_ohne_schwellenuebertritt)
-    und Inland ist (Ausland-2.000er-Grenze zurückgestellt). KOPPLUNG: bei Änderung der Registry-
-    Regeln p9_1_3_nr5a_* diese Formel nachziehen."""
+    Transkription der Registry-Regeln p9_1_3_nr5a_uebernachtung_vor_48 / _nach_48, jetzt mit der
+    Aufteilung MITTEN im Zeitraum: die 48-Monats-Schwelle ist ein Zeitpunkt, kein Jahresschalter.
+
+    Die ersten 48 Monate am selben auswärtigen Ort sind ungekappt abziehbar (Sätze 1-3, sie nennen
+    Inland und Ausland nicht). Erst NACH Ablauf von 48 Monaten greift die Begrenzung der Höhe nach
+    auf den Betrag nach Nr. 5 (Satz 4). Für einen Zeitraum, der die Schwelle überspannt, wird daher
+    monatsweise geteilt: Monate bis zur Schwelle ungekappt, Monate ab der Schwelle gekappt.
+    BMF-Reisekosten v. 25.11.2020, Rz. 126: "Erst nach Ablauf von 48 Monaten greift die Begrenzung
+    der Höhe nach auf den Betrag von 1.000 € im Monat. Die unbegrenzte Berücksichtigung der
+    entstandenen Aufwendungen in den ersten 48 Monaten bleibt davon unberührt."
+
+    Der Ring-Guard verlangt bestätigte int für monate/monate_bisher (sonst uebernachtung_zeitraum_
+    offen), die Rechnung hier sieht also immer beide. KOPPLUNG: bei Änderung der Registry-Regeln
+    p9_1_3_nr5a_* diese Formel nachziehen."""
     kosten = int(s.get("uebernachtung_kosten_monat", 0))
     monate = int(s.get("uebernachtung_monate", 0))
     bisher = int(s.get("uebernachtung_monate_bisher", 0))
-    if bisher >= 48:
-        cap = _dhf_params(year)["cap_monat_inland"]
-        return min(kosten, cap) * monate
-    return kosten * monate
+    vor_48 = max(0, min(monate, 48 - bisher))          # Monate bis zur Schwelle, ungekappt
+    nach_48 = monate - vor_48                          # Monate ab der Schwelle
+    cap = _uebernachtung_monatsgrenze(year, bool(s.get("uebernachtung_im_inland", True)))
+    gekappt = kosten if cap is None else min(kosten, cap)
+    return kosten * vor_48 + gekappt * nach_48
 
 
 def catala_vermietung_einkuenfte(s: dict) -> int:
