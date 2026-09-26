@@ -185,18 +185,23 @@ class TestAuditIntegration:
 
     def test_user_creation_audited(self, base):
         """Registration not yet audited (future scope). Skip for now."""
-        pass
+        pytest.skip("Funktion fehlt: auth.register schreibt kein Audit, server.py ruft es ohne audit_fn; "
+                    "Vault-Ticket auth-audit-und-login-drosselung-fehlen")
 
     def test_failed_login_attempt_audited(self, base):
         """Failed login not yet audited (future scope). Skip for now."""
-        pass
+        pytest.skip("Funktion fehlt: auth.login wirft die 401 vor dem audit_fn-Aufruf, nur Erfolg wird "
+                    "auditiert; Vault-Ticket auth-audit-und-login-drosselung-fehlen")
 
 # ------------------------------------------------------------------ P1.3 Session Security
 
 class TestSessionSecurity:
-    def test_session_timeout(self):
+    def test_session_timeout(self, monkeypatch):
         """Session tokens expire after configured TTL."""
-        pass  # Implementation follows from test_jwt_token_expiry
+        # Control: a fresh token verifies — otherwise the None below would prove nothing.
+        assert AUTH.verify_token(AUTH._create_token("ttluser")) == "ttluser"
+        monkeypatch.setattr(AUTH, "JWT_TTL_H", -1)  # exp one hour in the past
+        assert AUTH.verify_token(AUTH._create_token("ttluser")) is None
 
     def test_concurrent_sessions_allowed(self):
         """Multiple concurrent sessions per user are allowed."""
@@ -217,7 +222,8 @@ class TestSessionSecurity:
 class TestRateLimiting:
     def test_rate_limit_placeholder(self):
         """Rate limiting not implemented (placeholder for future dev)."""
-        pass
+        pytest.skip("Funktion fehlt: /auth/login drosselt Fehlversuche nicht, keine Sperre je Konto oder IP; "
+                    "Vault-Ticket auth-audit-und-login-drosselung-fehlen")
 
 # ------------------------------------------------------------------ P1.4 Authorization
 

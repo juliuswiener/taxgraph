@@ -204,12 +204,14 @@ def test_rentner_zusammen_bvor_differential(base):
     _setup_rentner_zusammen(base, "rvo", 0)
     _, erg_o = _req(base, "GET", "/fall/rvo/ergebnis")
     assert erg_o["grund"] == "bestaetigt"
-    steuer_o = erg_o.get("zahl_cent") or 0
+    steuer_o = erg_o["zahl_cent"]
+    assert steuer_o is not None, "zahl_cent None trotz grund=bestaetigt (ohne B-VOR)"
 
     _setup_rentner_zusammen(base, "rvp", 5000)  # B-VOR setzen
     _, erg_p = _req(base, "GET", "/fall/rvp/ergebnis")
     assert erg_p["grund"] == "bestaetigt"
-    steuer_p = erg_p.get("zahl_cent") or 0
+    steuer_p = erg_p["zahl_cent"]
+    assert steuer_p is not None, "zahl_cent None trotz grund=bestaetigt (mit B-VOR)"
 
     # B-VOR muss Steuer senken oder gleich lassen (nicht steigern)
     assert steuer_p <= steuer_o, \

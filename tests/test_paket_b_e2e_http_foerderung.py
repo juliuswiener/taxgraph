@@ -303,11 +303,12 @@ def test_p35a_foerderung_mutation_gate_inversion(base):
         f"Gate-Bug: handwerker_foerderung_offen sollte NICHT feuern bei keine_foerderung=true, "
         f"got offen={erg.get('offen')}"
     )
-    # Aber grund sollte bestaetigt sein (oder ein anderer echte Sperrgrund, nicht Förderung)
-    if erg["grund"] != "bestaetigt":
-        # Okay wenn ein anderer Gate-Grund feuert (z.B. rechnung_unbar für Minijob wenn absent)
-        # aber nicht handwerker_foerderung_offen
-        assert erg["grund"] in ("rechnung_unbar_offen",), f"Unexpected grund={erg['grund']}"
+    # Die Zahl als ASSERTION, nicht `grund != "bestaetigt"` als Sprungbedingung: die frühere Toleranz
+    # für rechnung_unbar_offen liess genau die Inversion des Nachbar-Gates grün durch —
+    # hh_rechnung_unbar ist oben bestätigt, dieser Sperrgrund darf hier nie feuern.
+    if catala:
+        assert erg["zahl_cent"] is not None, f"Sperrgrund statt Zahl: {erg['grund']}"
+        assert erg["grund"] == "bestaetigt", f"Unexpected grund={erg['grund']}"
 
 
 # rentner_gesamt: derselbe Guard (_shared_steuer_sonder_agb, bescheid_abzuege.py:178), aus
