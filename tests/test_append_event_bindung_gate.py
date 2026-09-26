@@ -42,6 +42,14 @@ OPTIONAL_WEITERGEREICHT: dict[tuple[str, str], str] = {
         "streicht diesen Eintrag.",
 }
 
+# Aufrufstellen mit WOERTLICHEM bindung=None: das Keyword steht da, der Kern-Gate ist zufrieden,
+# und zur Laufzeit wird NICHTS geprueft — dieselbe Klasse wie slots.get(name, 0), ein Vorgabewert,
+# der wie eine Antwort aussieht. Abgrenzung zum Durchreicher oben: dort reicht der Aufruf einen
+# PARAMETER durch, der None sein KANN (ast.Name); hier steht das None im Aufruf selbst.
+# Leer heisst: keine Stelle schreibt ein woertliches None hin. Wer es doch muss, traegt sie hier
+# mit Grund ein, statt dass der Kern-Gate sie stillschweigend durchwinkt.
+WOERTLICH_NONE: dict[tuple[str, str], str] = {}
+
 
 def _ruft_append_event(call: ast.Call) -> bool:
     return ((isinstance(call.func, ast.Attribute) and call.func.attr == "append_event")
@@ -91,6 +99,35 @@ def _optionale_weiterreicher() -> set[tuple[str, str]]:
             for call in ast.walk(fn):
                 if isinstance(call, ast.Call) and _ruft_append_event(call) and any(
                         kw.arg == "bindung" and isinstance(kw.value, ast.Name) and kw.value.id in mit_none
+                        for kw in call.keywords):
+                    gefunden.add((rel, fn.name))
+    return gefunden
+
+
+def _woertliches_none() -> set[tuple[str, str]]:
+    """(Datei, Funktion) je append_event-Aufruf mit `bindung=None` als WOERTLICHEM Wert.
+
+    Streng getrennt von _optionale_weiterreicher() daneben: der Durchreicher schreibt `bindung=b`
+    mit einem Parameter `b` (ast.Name, darf None sein und ist benannt), dieser Fall schreibt das
+    None direkt hin (ast.Constant). Nur der zweite ist immer ein blinder Fleck — der erste ist eine
+    begruendete Ausnahme, sobald der Writer verdrahtet ist.
+    """
+    gefunden = set()
+    for pfad in _alle_py_dateien():
+        rel = os.path.relpath(pfad, PRODUKT)
+        with open(pfad, encoding="utf-8") as f:
+            baum = ast.parse(f.read(), filename=pfad)
+        for fn in ast.walk(baum):
+            if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            # ponytail: ast.walk zaehlt einen Aufruf in einer VERSCHACHTELTEN Funktion auch der
+            # aeusseren zu — der Schluessel nennt dann die aeussere. Heute gibt es null solche
+            # Faelle unter produkt/ (gemessen 2026-09-26); tritt einer auf, ist die Meldung eine
+            # Zeile daneben, aber immer noch rot, nie still gruen.
+            for call in ast.walk(fn):
+                if isinstance(call, ast.Call) and _ruft_append_event(call) and any(
+                        kw.arg == "bindung" and isinstance(kw.value, ast.Constant)
+                        and kw.value.value is None
                         for kw in call.keywords):
                     gefunden.add((rel, fn.name))
     return gefunden
@@ -193,3 +230,26 @@ def test_optionale_weiterreicher_sind_benannt_und_begruendet():
     for schluessel, grund in OPTIONAL_WEITERGEREICHT.items():
         assert len(grund) > 20, f"{schluessel}: Ausnahme ohne (ausreichende) Begründung"
     assert len(OPTIONAL_WEITERGEREICHT) == 1
+
+
+def test_woertliches_none_ist_benannt_und_begruendet():
+    """`bindung=None` besteht den Kern-Gate, weil er nur das Vorhandensein des Keywords prueft —
+    geprueft wird dann nichts. Gemessen 2026-09-26: eine Sonde unter produkt/ mit woertlichem
+    bindung=None liess den Kern-Gate auf 7 passed, erst diese Pruefung wird rot.
+
+    Der Durchreicher daneben (bindung=<Parameter mit Vorgabe None>) ist NICHT dasselbe und darf
+    hier nicht mitgerissen werden — er ist eine benannte Ausnahme in OPTIONAL_WEITERGEREICHT.
+
+    Die Liste ist leer, solange keine Stelle ein woertliches None schreibt. Wer eines braucht,
+    traegt sie hier mit Grund ein; ein stilles Durchwinken gibt es nicht."""
+    gefunden = _woertliches_none()
+    benannt = set(WOERTLICH_NONE)
+    assert not gefunden - benannt, (
+        "append_event-Aufrufstellen mit woertlichem bindung=None — der Kern-Gate sieht nur das "
+        "Keyword und laesst sie durch, zur Laufzeit prueft Auflage T dort NICHTS:\n"
+        + "\n".join(f"  - {rel}:{fn}" for rel, fn in sorted(gefunden - benannt)))
+    assert not benannt - gefunden, (
+        f"WOERTLICH_NONE nennt Stellen, die es nicht (mehr) gibt: {sorted(benannt - gefunden)} — "
+        f"toter Eintrag, tauescht eine Abdeckung vor, die es nicht gibt.")
+    for schluessel, grund in WOERTLICH_NONE.items():
+        assert len(grund) > 20, f"{schluessel}: Ausnahme ohne (ausreichende) Begründung"
