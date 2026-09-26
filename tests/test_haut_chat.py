@@ -19,8 +19,9 @@ Deckt:
   - test_graceful_skip_human_only .... (Instructor-Auflage) ein human-only-Vorschlag (veranlagung) → Store-
                                        ValueError → Handler überspringt STILL, crasht NICHT, schreibt das Feld
                                        NICHT, verarbeitet den Rest weiter.
-  - test_ring_e2e_vorlaeufig_bewegt_steuer_nicht ... der echte Ring: ein vorläufiger Chat-Vorschlag bewegt
-                                       /ergebnis NICHT; erst der menschliche Confirm senkt die Steuer.
+  - test_ring_e2e_vorlaeufig_bewegt_steuer_nicht ... der echte Ring: ein vorläufiger Chat-Vorschlag sperrt
+                                       /ergebnis (keine Zahl, ring_betrag_vorlaeufig); erst der menschliche
+                                       Confirm bringt die Zahl, gesenkt um den Abzug.
 """
 from __future__ import annotations
 
@@ -251,7 +252,10 @@ def test_graceful_skip_human_only(fall, monkeypatch, capsys):
 @pytest.mark.skipif(not _catala_da(), reason="Catala-Toolchain nicht verfügbar — Ring-Zahl übersprungen")
 def test_ring_e2e_vorlaeufig_bewegt_steuer_nicht(fall, monkeypatch):
     """DUAL-GOLDEN (Instructor-Auflage) an der ECHTEN Ring-Rechnung: ein vorläufiger Chat-Vorschlag (agB §33)
-      - bewegt /ergebnis (FESTGESETZTE Steuer, nur_bestaetigt=True) NICHT — Security-Invariant am Endpunkt;
+      - bewegt /ergebnis (FESTGESETZTE Steuer, nur_bestaetigt=True) NICHT — Security-Invariant am Endpunkt.
+        Seit Klasse C (Entscheidung klasse-c-vorlaeufiger-betrag-sperrt, 2026-09-26) heißt das: KEINE Zahl,
+        solange er vorläufig ist (grund ring_betrag_vorlaeufig, Feld in offen). Bis dahin pinnte der Test
+        zahl_cent == est_basis — die Zahl ohne den genannten Betrag, die trotzdem "bestaetigt" hieß;
       - ZEIGT seine potenzielle Wirkung in /stand ([min,max]-Range, nur_bestaetigt=False) — UX-Invariant;
       - senkt die Steuer erst nach dem menschlichen Confirm (Zwei-Signal).
     Fängt BEIDE Regressionen: Filter-Weg am /ergebnis (Security-Regress) UND Filter-Zu am /stand (UX-Regress,
@@ -265,16 +269,19 @@ def test_ring_e2e_vorlaeufig_bewegt_steuer_nicht(fall, monkeypatch):
     assert erg["grund"] == "bestaetigt" and isinstance(erg["zahl_cent"], int) and erg["zahl_cent"] > 0
     est_basis = erg["zahl_cent"]
 
-    # (2) Chat schlägt agB VORLÄUFIG vor → /ergebnis UNVERÄNDERT (kein signal_2 → nicht in der Bemessung)
+    # (2) Chat schlägt agB VORLÄUFIG vor → /ergebnis GESPERRT (kein signal_2 → nicht in der Bemessung,
+    # und eine Zahl ohne den genannten Betrag darf nicht "bestaetigt" heißen)
     monkeypatch.setattr(LC, "complete", _fake_complete(("agb_aufwendungen", 500000)))
     st, _ = API.chat(fall, {"text": "5000 Euro Krankheitskosten."})
     assert st == 200
     _, erg_vor = API.ergebnis(fall)
-    assert erg_vor["zahl_cent"] == est_basis, "ein VORLÄUFIGER llm-Vorschlag darf die festgesetzte Steuer NICHT bewegen"
+    assert erg_vor["zahl_cent"] is None, "ein VORLÄUFIGER llm-Vorschlag darf keine festgesetzte Steuer tragen"
+    assert erg_vor["grund"] == "ring_betrag_vorlaeufig", f"grund={erg_vor.get('grund')}"
+    assert "agb_aufwendungen" in erg_vor["offen"]
 
     # (2b) UX-Seite des Dual-Invariants: /stand ZEIGT die vorläufig-agB-Wirkung im Range (nur_bestaetigt=False),
-    # während /ergebnis sie ignoriert. Kegel voll bestätigt → keine offene Achse → Punkt-Schätzung, die aber den
-    # vorläufigen agB-Abzug einschließt (niedriger als /ergebnis). Ohne diese Assertion bliebe der /stand-Range-
+    # während /ergebnis sperrt. Kegel voll bestätigt → keine offene Achse → Punkt-Schätzung, die aber den
+    # vorläufigen agB-Abzug einschließt (niedriger als est_basis). Ohne diese Assertion bliebe der /stand-Range-
     # Kollaps (den der unbedingte Filter verursachte) ungetestet.
     _, stand_vor = API.stand(fall)
     iv = stand_vor["intervall"]
@@ -290,6 +297,8 @@ def test_ring_e2e_vorlaeufig_bewegt_steuer_nicht(fall, monkeypatch):
     st, _ = API.event(fall, best)
     assert st == 201
     _, erg_nach = API.ergebnis(fall)
+    assert erg_nach["grund"] == "bestaetigt" and erg_nach["zahl_cent"] is not None, (
+        f"nach der Bestätigung muss die Zahl zurückkommen, grund={erg_nach.get('grund')}")
     assert erg_nach["zahl_cent"] < est_basis, "der BESTÄTIGTE agB-Abzug muss die Steuer senken"
 
 
