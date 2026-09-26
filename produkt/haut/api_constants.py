@@ -389,6 +389,7 @@ AGB_KIST = ("kist_gezahlt", "kist_erstattet")
 
 # ========== § 10 Abs.1 Nr.5 Kinderbetreuung ==========
 KINDERBETREUUNG = ("kinderbetreuungskosten", "kind_unter_14_haushaltszugehoerig",
+                   "kind_betreuung_reine_betreuung", "kind_betreuung_rechnung_ueberweisung",
                     "kind_betreuung_dienstleister", "kind_betreuung_zeitraum",
                     "kind_betreuung_eigenanteil", "kind_betreuung_kein_gemeinsamer_haushalt_zeitraum",
                     "kind_betreuung_haushaltszugehoerigkeit_zeitraum",

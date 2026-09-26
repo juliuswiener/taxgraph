@@ -1925,6 +1925,17 @@ KZ_GRUND_KEIN_ZIEL_STRUKTURELL = {
     "kind_unter_14_haushaltszugehoerig": "ableitung-Block (aus=kind_geburtsdatum, echte "
         "schema-gepruefte Struktur) UND E0506105 wird unabhaengig davon von der Schwester "
         "kinderbetreuungskosten als eigener elster_kz getragen (gegengeprueft).",
+    # 2026-09-26, dieselbe Bauart wie der Zwilling oben: beide sind Anwendbarkeits-Voraussetzungen
+    # des § 10 Abs. 1 Nr. 5 (S. 2 bzw. S. 4) und tragen deshalb selbst kein Kz. Der Grund nennt
+    # E0506105, weil genau das ihre Aufgabe ist — sie steuern, OB die Schwester
+    # kinderbetreuungskosten ihren Kz zaehlen darf. E0506105 ist gegen das echte Objekt geprueft
+    # und wird von der Schwester als eigener elster_kz getragen.
+    "kind_betreuung_reine_betreuung": "Anwendbarkeits-Voraussetzung (§ 10 Abs. 1 Nr. 5 S. 2), "
+        "kein eigenes Deklarationsfeld. E0506105 wird unabhaengig davon von der Schwester "
+        "kinderbetreuungskosten als eigener elster_kz getragen (gegengeprueft).",
+    "kind_betreuung_rechnung_ueberweisung": "Anwendbarkeits-Voraussetzung (§ 10 Abs. 1 Nr. 5 S. 4), "
+        "kein eigenes Deklarationsfeld. E0506105 wird unabhaengig davon von der Schwester "
+        "kinderbetreuungskosten als eigener elster_kz getragen (gegengeprueft).",
     "person_b_idnr": "scripts/measure_person_b_idnr.py existiert, ruft die echte checkESt-Pruefung "
         "gegen ERiC auf und dokumentiert rc=610301106 -- eine Messung, kein Textclaim (Skript-Logik "
         "gegengelesen 2026-08-30; in dieser Umgebung nicht neu ausgefuehrt, $ERIC_DIR fehlt hier).",
@@ -1998,14 +2009,17 @@ def test_q_elster_kz_grund_ziel_existiert(daten):
     # Handlung mit eigener Begruendung, kein stiller Nebeneffekt -- sonst loest sich die Ratsche
     # unbemerkt (main 2026-08-30, Auflage 1).
     assert len(KZ_GRUND_BEKANNTE_FEHLZUORDNUNG) == 19
-    assert len(KZ_GRUND_KEIN_ZIEL_STRUKTURELL) == 19
+    # 19 -> 21 am 2026-09-26: die beiden neuen Kinderbetreuungs-Voraussetzungen (S. 2 / S. 4)
+    # sind Zwillinge von kind_unter_14_haushaltszugehoerig und nennen wie dieses E0506105, das
+    # die Schwester traegt.
+    assert len(KZ_GRUND_KEIN_ZIEL_STRUKTURELL) == 21
     assert len(KZ_GRUND_RUECKSTAND) == 1
     assert len(KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT) == 0
 
     treffer = _q_kandidaten(daten, M)
     bekannt = (set(KZ_GRUND_BEKANNTE_FEHLZUORDNUNG) | set(KZ_GRUND_KEIN_ZIEL_STRUKTURELL)
                | set(KZ_GRUND_RUECKSTAND) | set(KZ_GRUND_NICHT_CODESEITIG_VERIFIZIERT))
-    assert len(bekannt) == 39, "Register ueberschneiden sich -- ein Feld steht in mehr als einem."
+    assert len(bekannt) == 41, "Register ueberschneiden sich -- ein Feld steht in mehr als einem."
 
     unbekannt = sorted(set(treffer) - bekannt)
     assert not unbekannt, "\n".join(

@@ -2383,6 +2383,14 @@ regeln:
     deckt_ab: welches das 14. Lebensjahr noch nicht vollendet hat
     quelle: § 10 Abs. 1 Nr. 5 S. 1 EStG
     beschreibung: 'Anwendbarkeitsvoraussetzung (binaer): das betreute Kind gehoert zum Haushalt des Steuerpflichtigen (§ 32 Abs. 1) und hat das 14. Lebensjahr noch nicht vollendet (oder ist wegen Behinderung ausserstande, sich selbst zu unterhalten). Auswahl in der § 2-Integration. Nachdeklariert nach mistral-Judge-Nachzug (Bucket B, Instructor-Adjudikation msg 1639: Anwendbarkeit = Geltungsbedingung, nicht nicht_material).'
+  - bedingung: nur_betreuung_kein_unterricht
+    deckt_ab: Dies gilt nicht für Aufwendungen für Unterricht, die Vermittlung besonderer Fähigkeiten sowie für sportliche und andere Freizeitbetätigungen
+    quelle: § 10 Abs. 1 Nr. 5 S. 2 EStG
+    beschreibung: 'Negativabgrenzung des Begriffs Betreuung (S. 2): Nachhilfe, Unterricht, die Vermittlung besonderer Faehigkeiten sowie sportliche und andere Freizeitbetaetigungen sind KEINE Betreuungsleistungen. Der Abzug entfaellt fuer diese Aufwendungen ganz — es gibt keine Teilquote, ein gemischter Betrag wird nicht aufgeteilt. Gebunden an das Feld kind_betreuung_reine_betreuung (Normalfall ja). Gemessen im Defer-Sweep 2026-09-26 (Fund 4): 6.000 EUR Nachhilfe lieferten den vollen Abzug von 4.800 EUR.'
+  - bedingung: rechnung_und_unbare_zahlung
+    deckt_ab: Voraussetzung für den Abzug der Aufwendungen nach Satz 1 ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat und die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist
+    quelle: § 10 Abs. 1 Nr. 5 S. 4 EStG
+    beschreibung: 'Formelle Abzugsvoraussetzung (S. 4): Rechnung erhalten UND Zahlung auf das Konto des Leistungserbringers. Eine Barzahlung erfuellt den Abzug nicht. Gebunden an das Feld kind_betreuung_rechnung_ueberweisung (Normalfall ja). ACHTUNG Abgrenzung zu p35a (hh_rechnung_unbar): dort nullt der Ring die betroffene Quote, hier gibt es keine Teilquote — der Nutzer korrigiert den Betrag selbst.'
   rundung: []
   signature:
     scope: Kinderbetreuung

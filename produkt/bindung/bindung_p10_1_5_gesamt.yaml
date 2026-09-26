@@ -69,6 +69,60 @@ bindungen:
       quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
       zitatanker: "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  # ============ Die beiden Abzugsvoraussetzungen aus S. 2 und S. 4 (2026-09-26) ============
+  # Bis heute warnt der Fragetext oben („keine Verpflegung oder Unterricht"), GEFRAGT wurde
+  # nichts: 6.000 EUR Nachhilfe und 6.000 EUR bar bezahlte Betreuung lieferten beide den
+  # vollen Abzug von 4.800 EUR (Defer-Sweep Fund 4). Eine Warnung im Fliesstext ist keine
+  # Voraussetzung — sie wird beim Ausfuellen ueberlesen und von keiner Stelle geprueft.
+  #
+  # `gate: false` auf BEIDEN Feldern, und zwar aus einem gemessenen Grund: als echtes Gate
+  # schliesst ein bestaetigtes `false` auf Instanz 1 die GANZE Regel aus (relevanz()), und
+  # damit verschwaende auch die Frage des ZWEITEN Kindes, dessen eigener Betrag einwandfrei
+  # ist. Beide Antworten muessen die Regel stehen lassen; die Sperre sitzt in
+  # bescheid_deklaration._an_gesamt_sperrgrund und laeuft je Kind-Instanz.
+  #
+  # KEINE `feld_bedingung` („nur fragen, wenn kinderbetreuungskosten > 0"): sie liest nur
+  # Instanz 1 (traverser._feld_ausgeschlossen), ein zweites Kind fiele aus der Frage.
+  - feld_id: kind_betreuung_reine_betreuung
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: nur_betreuung_kein_unterricht}
+    gate: false
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Ist der Betrag reine Betreuung — ohne Nachhilfe, Unterricht, Sport- oder Freizeitkurse?"
+    hilfe_kurz: "Nur reine Betreuung zählt: Kindergarten, Tagesmutter, Babysitter, Hort. Nachhilfe, Musikunterricht, Sportkurse und Freizeitangebote sind keine Betreuung und werden nicht abgezogen. Bei einem gemischten Betrag trage bitte nur den Betreuungsteil ein."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: reine Anwendbarkeits-Voraussetzung (§ 10 Abs. 1 Nr. 5 S. 2), kein eigener Vordruck-Kz — steuert nur, ob E0506105 gezaehlt wird."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 2 EStG"
+      zitatanker: "Dies gilt nicht für Aufwendungen für Unterricht, die Vermittlung besonderer Fähigkeiten sowie für sportliche und andere Freizeitbetätigungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: kind_betreuung_rechnung_ueberweisung
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: rechnung_und_unbare_zahlung}
+    gate: false
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hast du für die Betreuung eine Rechnung bekommen und per Überweisung (nicht bar) bezahlt?"
+    hilfe_kurz: "Das Finanzamt erkennt nur Betreuungskosten an, die du per Rechnung erhalten und auf das Konto des Betreuers überwiesen hast. Eine Barzahlung ohne Überweisung zählt nicht — hast du teils bar und teils überwiesen gezahlt, trage bitte nur den überwiesenen Teil ein."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: reine Anwendbarkeits-Voraussetzung (§ 10 Abs. 1 Nr. 5 S. 4), kein eigener Vordruck-Kz — steuert nur, ob E0506105 gezaehlt wird."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 4 EStG"
+      zitatanker: "Voraussetzung für den Abzug der Aufwendungen nach Satz 1 ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat und die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   # Formalien der Anlage Kind, Zeile Kinderbetreuungskosten (KBK_72569777_CType im XSD),
   # gemessen 2026-08-12. E0506105 (Gesamtsumme) allein reicht checkESt nicht: drei weitere
   # Beanstandungen kommen nach — Dienstleister-Einzelposten, Eigenanteil-Angabe und
@@ -234,3 +288,9 @@ luecken:
   - regel_id: p10_1_5_kinderbetreuung
     geltungsbedingung: achtzig_prozent_deckel_4800_je_kind
     grund: "80%-Quote + 4.800€-je-Kind-Deckel (§ 10 Abs. 1 Nr. 5 S. 1) sind im pure-python Accessor catala_p10_1_5_kinderbetreuung materialisiert (Rechenlogik, keine Laien-Abfrage)."
+  # ponytail: gemischte Betraege (Betreuung + Nachhilfe, oder teils bar / teils ueberwiesen)
+  # werden NICHT aufgeteilt. Der Nutzer traegt nur den abzugsfaehigen Teil ein, die beiden
+  # Fragen oben sind dann beide "ja". Ein Teilbetrag-Feld je Leistungsart waere der naechste
+  # Schritt — er kommt erst, wenn Nutzer ihn brauchen; bis dahin kostet die Aufteilung mehr
+  # Fragen als sie Geld bringt, und ein falsch aufgeteilter Betrag waere schlimmer als ein
+  # selbst eingetragener. Der Hinweis steht deshalb in hilfe_kurz beider Felder.

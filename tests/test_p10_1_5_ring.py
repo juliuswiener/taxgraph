@@ -149,19 +149,29 @@ RENTNER_KEGEL_BASIS = [
 # Vor Fix (Gleichverteilung): 10000/2=5000 → 2×4000=8000€ (falsch).
 # kind_unter_14_haushaltszugehoerig (2026-08-11 Fix, § 10 Abs.1 Nr.5 S.1 Anwendbarkeit): ohne
 # diese Bestätigung zählt kein Kind mehr mit — s. Gegenprobe unten.
+# S. 2/S. 4 (2026-09-26): die beiden Abzugsvoraussetzungen je Kind. Sie stehen in JEDER Instanz
+# mit positivem Betrag, die das S. 1-Gate bestätigt trägt — sonst sperrt der Guard und diese
+# Fixturen kämen gar nicht bis zur Zahl. „ja"/„ja" ist die wahrheitsgemäße Antwort für einen
+# Kindergarten-Fall und lässt den Abzug unverändert: die Deltas unten sind dieselben wie vorher.
+_QUALIFIZIERT = [("kind_betreuung_reine_betreuung", True),
+                 ("kind_betreuung_rechnung_ueberweisung", True)]
+
 KINDERBETREUUNG_2KINDER = [
     ("kind_unter_14_haushaltszugehoerig", True),
     ("kinderbetreuungskosten", 800000),          # Kind 1: 8.000 € → 80%=6400, Deckel 4800 → 4800
     ("kind_unter_14_haushaltszugehoerig__2", True),
     ("kinderbetreuungskosten__2", 200000),       # Kind 2: 2.000 € → 80%=1600 (< Deckel) → 1600
-]
+] + _QUALIFIZIERT + [(f + "__2", w) for f, w in _QUALIFIZIERT]
 
 # Gegenprobe: Kind 1 wie oben (unter 14, bestätigt), Kind 2 OHNE Bestätigung -> nur Kind 1 zählt.
+# Kind 2 braucht die beiden S. 2/S. 4-Antworten NICHT: ohne bestätigtes S. 1-Gate fällt es aus der
+# Summe, sein Betrag wird nirgends abgezogen, und der Guard überspringt es (dieselbe Bedingung wie
+# _kinderbetreuung_summe). Genau das hält diese Fixture fest.
 KINDERBETREUUNG_2KINDER_KIND2_UNQUALIFIZIERT = [
     ("kind_unter_14_haushaltszugehoerig", True),
     ("kinderbetreuungskosten", 800000),          # Kind 1: zählt -> 4800 Abzug
     ("kinderbetreuungskosten__2", 200000),       # Kind 2: kein Gate -> 0 Abzug (over-tax-safe)
-]
+] + _QUALIFIZIERT
 
 # Erwartetes Δ exakt: 6.400 € (80 % von 8000+2000, per-Kind-Deckel 4800) × ~41,8 % = 2.672 €.
 # Gemessen 2026-08-06 17:10: gesamt=267200, rentner=267300 (100 ct Diff = Rundung gde-Unterschied).
