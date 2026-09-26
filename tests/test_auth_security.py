@@ -205,9 +205,29 @@ class TestAuditIntegration:
             f"Das Passwort steht im Audit-Protokoll: {audit.lies()}")
 
     def test_failed_login_attempt_audited(self, base):
-        """Failed login not yet audited (future scope). Skip for now."""
-        pytest.skip("Funktion fehlt: auth.login wirft die 401 vor dem audit_fn-Aufruf, nur Erfolg wird "
-                    "auditiert; Vault-Ticket auth-audit-und-login-drosselung-fehlen")
+        """AK2: Ein Fehl-Login schreibt einen Audit-Eintrag, die 401 bleibt."""
+        _req(base, "POST", "/auth/register",
+             {"username": "fehlversuch", "password": "das-richtige-123"}, erwarte=201)
+        _req(base, "POST", "/auth/login",
+             {"username": "fehlversuch", "password": "das-falsche-123"}, erwarte=401)
+        eintraege = [e for e in audit.lies() if e.get("action") == "login_fehlgeschlagen"]
+        assert len(eintraege) == 1, f"kein Eintrag zum Fehlversuch: {audit.lies()}"
+        assert eintraege[0]["user_id"] == "fehlversuch", eintraege[0]
+
+    def test_fehl_login_audit_ohne_passwort(self, base):
+        """AK3 fuer den Fehl-Login: Der Eintrag darf den versuchten Passwortwert nicht tragen.
+
+        Kanarienvogel statt Code-Kontrolle: der Wert ist erkennbar, und gesucht wird nach ihm.
+        Ein kuenftiger Fix, der den Request-Body mitschreibt, faellt hier auf — bei einer Pruefung
+        auf "der heutige Code schreibt nichts" nicht."""
+        kanarienvogel = "kanarienvogel-nicht-in-audit"
+        _req(base, "POST", "/auth/register",
+             {"username": "fehlvogel", "password": "ein-echtes-123"}, erwarte=201)
+        _req(base, "POST", "/auth/login",
+             {"username": "fehlvogel", "password": kanarienvogel}, erwarte=401)
+        roh = json.dumps(audit.lies(), ensure_ascii=False)
+        assert kanarienvogel not in roh, (
+            f"Das versuchte Passwort steht im Audit-Protokoll: {audit.lies()}")
 
 # ------------------------------------------------------------------ P1.3 Session Security
 

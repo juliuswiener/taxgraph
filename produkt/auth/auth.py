@@ -159,6 +159,8 @@ def login(body: dict, audit_fn=None) -> tuple[int, dict]:
     store = _lade_users()
     user = store["users"].get(username)
     if not user or not _check_pw(password, user["password_hash"]):
+        if audit_fn:
+            audit_fn(username, "login_fehlgeschlagen", None, None)
         raise AuthError(401, "username oder password falsch")
     token = _create_token(username)
     if audit_fn:
