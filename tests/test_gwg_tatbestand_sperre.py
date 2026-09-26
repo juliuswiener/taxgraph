@@ -7,7 +7,7 @@ blieb Zeichen fuer Zeichen gleich gruen -- 3073 gruen, dieselbe eine vorbestehen
 kam in Tests nur in KOMMENTAREN vor, in keinem einzigen Assert; die vier Tests, die ihn erwaehnen,
 beantworten die drei Fragen gerade so, dass die Sperre NICHT feuert. Damit war die zweite Haelfte
 des GWG-Umbaus ungeprueft: die Nullung bei verneintem Tatbestand (bescheid_einkuenfte.py::_abzug)
-ist bewacht -- stillgelegt wird test_gesamt_gwg_ohne_tatbestand_darf_keinen_abzug_geben rot --,
+ist bewacht -- stillgelegt wird test_gesamt_gwg_ohne_tatbestand_darf_keinen_sofortabzug_geben rot --,
 die Sperre bei UNBEANTWORTETEM Tatbestand war es nicht.
 
 Was hier festgehalten wird, sind vier Zusagen, die bisher nur als Prosa im Code standen:
