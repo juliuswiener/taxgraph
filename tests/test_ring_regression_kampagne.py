@@ -1235,9 +1235,16 @@ def test_p16_4_gate_ehrliches_nein_rechnet_ohne_freibetrag(base):
     _val("ergebnis", erg)
     assert erg["grund"] == "bestaetigt", f"grund={erg.get('grund')}"
     diff = erg["zahl_cent"] - z0
-    # Kein FB → der volle vg (80.000 €) zählt, mehr als die 35.000 € netto mit FB
-    # (test_p16_4_gate_durchlaesst_mit_bedingungen). Max. Grenzsteuersatz 45 % × 80.000 € = 36.000 €.
-    assert 0 < diff <= 3600000, f"Delta {diff} außerhalb des plausiblen Bands (0–36.000 €)"
+    # GEPINNT, nicht als Band (2026-09-26). Hier stand `0 < diff <= 3600000` — ein Band, das
+    # BEIDE Ausgänge durchliess: ohne FB 3.360.000 Cent, mit gewährtem FB 1.470.000 Cent, beide
+    # in 0..36.000 €. Der Test konnte den Unterschied, den sein eigener Docstring behauptet,
+    # nicht sehen ([[pruefer-misst-stellvertretermerkmal]]). GEMESSEN: wer in bescheid_zweige.py
+    # `if p16_4_gate_ok else 0` durch `if True else 0` ersetzt, verliert 42.000 EUR — und alle
+    # 81 Tests dieser drei Dateien blieben grün. Zahlen aus einem Lauf, nicht gerechnet.
+    assert erg["zahl_cent"] == 9277000, (
+        f"ohne FB müssen 92.770,00 EUR herauskommen (voller vg 80.000 €), "
+        f"tatsächlich {erg['zahl_cent'] / 100:,.2f} EUR")
+    assert diff == 3360000, f"Delta {diff} statt 3.360.000 Cent"
 
 
 def test_p16_4_gate_durchlaesst_mit_bedingungen(base):
@@ -1255,10 +1262,14 @@ def test_p16_4_gate_durchlaesst_mit_bedingungen(base):
     st, e1 = _req(base, "GET", "/fall/p16c1/ergebnis")
     _val("ergebnis", e1)
     assert e1["grund"] == "bestaetigt", f"grund={e1.get('grund')}"
-    assert e1["zahl_cent"] > z0, "vg+FB muss ESt erhöhen (netto 35k€ zusätzlich)"
+    # GEPINNT, nicht als Band (2026-09-26): das Gegenstück zu test_p16_4_gate_ehrliches_nein_
+    # rechnet_ohne_freibetrag. Die beiden Zahlen müssen sich UNTERSCHEIDEN, sonst pinnt der neue
+    # Test nur, dass sich nichts bewegt. GEMESSEN: mit FB 7.387.000, ohne FB 9.277.000 Cent —
+    # der Freibetrag von 45.000 € wirkt mit 1.890.000 Cent.
+    assert e1["zahl_cent"] == 7387000, (
+        f"mit FB müssen 73.870,00 EUR herauskommen, tatsächlich {e1['zahl_cent'] / 100:,.2f} EUR")
     diff = e1["zahl_cent"] - z0
-    # Plausibilität: max Grenzsteuer 45% × 35.000 € = 15.750 €; 35k bei 0% = 0
-    assert 0 < diff < 1575000, f"Delta {diff} außerhalb plausibler Band (0–15.750 €)"
+    assert diff == 1470000, f"Delta {diff} statt 1.470.000 Cent"
 
 
 def test_p16_4_gate_ignoriert_ohne_vg(base):

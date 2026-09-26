@@ -75,7 +75,12 @@ def test_gewinnfrage_bleibt_stehen_wenn_voraussetzung_nein(vor):
     """ROT an HEAD: `alter55=False` -> p16_4_freibetrag ausgeschlossen, 0 von 6 Feldern in
     der Queue. Der Nutzer wird nach seinem 100.000-EUR-Veraeusserungsgewinn nie gefragt."""
     frage = _fragen({vor: False})
-    assert T.relevanz(_store({vor: False}), B)[RID]["status"] != "ausgeschlossen"
+    # Exakt gepinnt, nicht „nicht ausgeschlossen" (2026-09-26): die Regel bleibt mit genau EINEM
+    # offenen Gate stehen — `rentner_veraeusserungs_betriebsart`. Eine negative Zusicherung waere
+    # auch bei einem falschen Status gruen.
+    rel = T.relevanz(_store({vor: False}), B)[RID]
+    assert rel["status"] == "unentschieden", rel
+    assert rel["gates_offen"] == ["rentner_veraeusserungs_betriebsart"], rel
     assert GEWINN in frage, (
         f"{vor}=False nimmt die Gewinnfrage aus der Warteschlange. § 16 Abs. 1 EStG rechnet den "
         f"Veraeusserungsgewinn in beiden Faellen gleich — die Antwort entfernt nur den Freibetrag.")
@@ -120,7 +125,8 @@ def test_ja_laesst_die_regel_stehen():
     unterscheiden — und der Freibetrag wird im Rechenpfad aus dem WERT gewaehrt, nicht aus
     dem Relevanz-Status (tests/test_gate_naht_guard_liest_zustand.py)."""
     rel = T.relevanz(_store({ALTER: True, ERST: True}), B)[RID]
-    assert rel["status"] != "ausgeschlossen", rel
+    assert rel["status"] == "unentschieden", rel
+    assert rel["gates_offen"] == ["rentner_veraeusserungs_betriebsart"], rel
     assert GEWINN in _fragen({ALTER: True, ERST: True})
 
 
