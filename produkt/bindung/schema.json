@@ -217,6 +217,9 @@
         "standardwert": {
           "description": "Optional. Der Wert, der in den allermeisten Faellen gilt — die Oberflaeche bietet ihn als 'Uebernehmen'-Knopf an. NICHT dasselbe wie beispielwert: der ist ein Beispiel und waere bei einem Geldfeld eine gefaehrliche Vorgabe. Nur setzen, wo die Hilfe selbst 'meist X' sagt."
         },
+        "abwesenheitswert": {
+          "description": "Optional. Der Wert, den der Kegel-Bauer (tests/_kegel.py) als Füllwert für dieses Feld einsetzt, wenn der Test es nicht selbst gesetzt hat (das Abwesenheits-Pendant zum Aufrufer-Wert). NICHT dasselbe wie beispielwert: der ist illustrativ und behauptet einen Sachverhalt, den der Test nicht meint. Nur setzen, wenn der Default-aus-Typ-Wert an einer Semantik scheitert, der Abwesenheit eine Bedeutung gibt — z.B. §33-Abzugsbedingungen, deren False den Abzug sperrt."
+        },
         "herkunft_slots": {
           "type": [
             "array",

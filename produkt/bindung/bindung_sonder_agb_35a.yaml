@@ -279,6 +279,11 @@ bindungen:
     fragetext_laie: "Musstest du diese Ausgaben zwangsläufig tragen (aus rechtlichen, tatsächlichen oder sittlichen Gründen)?"
     hilfe_kurz: "Zum Beispiel Krankheitskosten kannst du nicht einfach weglassen."
     beispielwert: true
+    abwesenheitswert: true
+    # Begruendung: 2026-09-26, p33-gate-Abwesenheitswert (tests/_kegel.py). Ein FEHLENDES
+    # Merkmal sperrt (das leistet der Kegel); ein bestaetigtes NEIN rechnet 0 — der Fueller darf
+    # also nicht NEIN heissen, weil der Guard (bescheid_abzuege.py: shared_steuer_sonder_agb)
+    # `is False` als "Tatbestand verneint" liest und den agB-Abzug dann auf 0 kuerzt.
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
@@ -296,6 +301,8 @@ bindungen:
     fragetext_laie: "Waren die Ausgaben notwendig und der Höhe nach angemessen?"
     hilfe_kurz: "Übermäßig teure oder unnötige Ausgaben zählen nicht."
     beispielwert: true
+    abwesenheitswert: true
+    # Begruendung: 2026-09-26, p33-gate-Abwesenheitswert (tests/_kegel.py). Siehe agb_zwangslaeufig.
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
