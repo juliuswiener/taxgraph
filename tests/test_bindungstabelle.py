@@ -1354,7 +1354,9 @@ REGELN_OHNE_GROUND_TRUTH = {
     # Entscheidung, welche Namensebene die Ground Truth ist — siehe BACKLOG.
     "p19_2_versorgungsfreibetrag",
     # Aggregationsbruch: Kind-Achse gegen Fall-Achse.
+    # je Kind gebunden; _kind_kv_pv_summe() addiert alle Kinder in basis_kv_pv von catala_p10_kv_pv.
     "p10_1_3_kv_pv_kind",
+    # Antrag/Nicht-Nutzung filtern je Kind (_kind_behinderten_pb_daten()); keine eigene Rechenfunktion.
     "p33b_abs5_kind_uebertragung",
     # Positionale Signatur (catala_p22_nr3_einkuenfte(betrag_cent: int)), kein dict-Parameter —
     # bestaetigt richtig (nachgesehen 2026-09-05, s. Backlog
