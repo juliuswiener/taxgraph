@@ -497,6 +497,21 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
 
   # ========================= Veräußerungsfreibetrag §16 Abs. 4 (p16_4) =========================
+  # `gate: false` auf den VIER Voraussetzungen (2026-09-26, backlog
+  # betriebsverkauf-unter-55-fragt-den-gewinn-nie, decisions/nein-zum-freibetrag-laesst-die-gewinnfrage-stehen).
+  # Ein Gate schaltet zwischen zwei RECHENWEGEN um (`antrag_ermaessigter_satz` waehlt zwischen zwei Kz
+  # und zwei Betraegen). § 16 Abs. 4 S. 1 rechnet in beiden Faellen gleich — die Antwort entfernt nur
+  # einen Abzug. DIESE Entscheidung liegt in bescheid_zweige.py (`p16_4_gate_ok`) und im Sperrgrund,
+  # nicht in der Ausschlusslogik des Traversers. Zweimal dieselbe Entscheidung im Code, und die
+  # zweite Fassung ist die, die den Rueckweg frisst.
+  # GEMESSEN an HEAD: `alter55=False` schloss die ganze regel_id aus -> 0 von 6 p16_4-Feldern in
+  # naechste_fragen; ein Veraeusserungsgewinn von 100.000 EUR wurde nie gefragt (42.000 EUR Steuer).
+  # Zweite Wirkung derselben Ursache: die Sperre `p16_4_gate_offen` wartet auf die BESTAETIGUNG genau
+  # dieser zwei Bools — die Ausschlussregel loeschte die Fragen, die sie hebt. Kein Rueckweg.
+  # `gate: false` heisst hier NICHT „ohne Wirkung": der Freibetrag entfaellt weiter, wenn die
+  # Voraussetzung nicht erfuellt ist. Es heisst: die Voraussetzung des FREIBETRAGS ist keine
+  # Voraussetzung der REGEL. `relevanz()` bleibt unberuehrt, echte Gates schliessen weiter aus
+  # (Kontrollfall in tests/test_p16_4_freibetrag_fragt_den_gewinn.py).
   - feld_id: rentner_veraeusserungsgewinn
     quelle: {regel_id: p16_4_freibetrag, signatur_slot: veraeusserungsgewinn}
     # Bis 2026-08-28 hing die GANZE Regel ueber regel_bedingungen an `kein_gewinn`. Das war fuer
@@ -540,6 +555,7 @@ bindungen:
   - feld_id: rentner_alter_55_oder_berufsunfaehig
     quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: alter_55_oder_berufsunfaehig}
     feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 16 Abs. 4 S. 1 EStG gewaehrt den Freibetrag dem Steuerpflichtigen, der das 55. Lebensjahr vollendet hat oder dauernd berufsunfaehig ist — und zwar auf seinen eigenen Veraeusserungsgewinn. Ohne eigene Gewinneinkuenfte gibt es keinen, auf den er anzuwenden waere. Auf Feldebene statt regel-weit, weil dieselbe Regel das gleichnamige Gate des PARTNERS traegt."}
+    gate: false
     typ: bool
     einheit: null
     askable: true
@@ -558,6 +574,7 @@ bindungen:
   - feld_id: rentner_freibetrag_erstmalig
     quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: freibetrag_einmal_im_leben}
     feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 16 Abs. 4 S. 2 EStG gewaehrt den Freibetrag nur EINMAL im Leben; die Frage danach setzt einen eigenen Veraeusserungsgewinn voraus. Ohne eigene Gewinneinkuenfte gibt es nichts, wofuer der Freibetrag erstmalig in Anspruch genommen wuerde. Auf Feldebene statt regel-weit, weil dieselbe Regel das gleichnamige Gate des PARTNERS traegt."}
+    gate: false
     typ: bool
     einheit: null
     askable: true
@@ -640,12 +657,18 @@ bindungen:
       zitatanker: "Gewinne, die erzielt werden bei der Veräußerung"
       datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
   - feld_id: rentner_alter_55_oder_berufsunfaehig_partner
-    # regel_id bleibt p16_4_freibetrag (NICHT p2_festzusetzung_zusammen): dieses Feld ist ein
-    # askables bool-Gate — auf einem Sammel-Scope wuerde eine bestaetigte False-Antwort per
-    # traverser.relevanz() die GANZE regel_id inkl. aller sachfremden Felder aus
-    # naechste_fragen() reissen (s. test_p_sammelscope_ohne_bool_gate, 2026-08-12,
-    # Dialog-Durchstich Task C / pv_auf_gebaeude-Fund). Die fiktive _partner-Bedingung ist daher
-    # in GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE dokumentiert statt auf den Sammel-Scope verschoben.
+    # regel_id bleibt p16_4_freibetrag (NICHT p2_festzusetzung_zusammen), aus zwei Gruenden.
+    # (1) Der Grund, der beim Bau galt: dieses Feld war ein askables bool-Gate, und auf einem
+    #     Sammel-Scope riss eine bestaetigte False-Antwort per traverser.relevanz() die GANZE
+    #     regel_id inkl. aller sachfremden Felder aus naechste_fragen() (s.
+    #     test_p_sammelscope_ohne_bool_gate, 2026-08-12, Dialog-Durchstich Task C /
+    #     pv_auf_gebaeude-Fund).
+    # (2) Seit 2026-09-26 traegt das Feld `gate: false` (s. Block-Anfang): der erste Grund
+    #     traegt nicht mehr, der zweite schon — die Bindung zeigt weiterhin auf die ECHTE
+    #     Bedingung dieser regel_id in rules.yaml (`alter_55_oder_berufsunfaehig_partner`),
+    #     und genau das prueft tests/test_bindungstabelle.py gegen die Ground Truth. Ein Umzug
+    #     auf den Sammel-Scope waere eine eigene Entscheidung, nicht Teil dieser Reparatur.
+    # Die fiktive _partner-Bedingung ist daher in GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE dokumentiert.
     quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: alter_55_oder_berufsunfaehig_partner}
     # DIESES FELD WAR DIE SACKGASSE. Es hing ueber regel_bedingungen an `kein_gewinn` — dem Kreuz
     # des NUTZERS. Ein Ehepaar, bei dem nur der Partner einen Betrieb verkauft hatte, beantwortete
@@ -661,6 +684,7 @@ bindungen:
     # traegt nur EINE Bedingung, und von beiden moeglichen ist die sicherere die richtige. Preis:
     # ein Ehepaar ohne Gewinneinkuenfte des Partners bekommt diese zwei Fragen weiterhin.
     feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 16 Abs. 4 S. 1 EStG knuepft den Freibetrag an das Alter bzw. die Berufsunfaehigkeit DERJENIGEN Person, die den Betrieb veraeussert hat. Einen Freibetrag des Partners gibt es nur, wenn dieser nach § 26b EStG mitveranlagt wird — wer allein veranlagt wird, hat keinen Partner, dessen Betriebsveraeusserung in diese Erklaerung gehoerte."}
+    gate: false
     typ: bool
     einheit: null
     askable: true
@@ -694,6 +718,7 @@ bindungen:
     # Dieselbe Lage wie beim Nachbarfeld darueber — dort steht, warum hier die Veranlagungsart
     # und nicht `kein_gewinn_partner` die Bedingung ist.
     feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 16 Abs. 4 S. 2 EStG gewaehrt den Freibetrag nur EINMAL im Leben, und zwar je Person; jeder Ehegatte hat sein eigenes Kontingent. Ein Kontingent des Partners gibt es nur, wenn dieser nach § 26b EStG mitveranlagt wird — wer allein veranlagt wird, hat keines zu verbrauchen. Zweites der beiden Felder, die die Sackgasse bildeten (s. Nachbarfeld)."}
+    gate: false
     typ: bool
     einheit: null
     askable: true
