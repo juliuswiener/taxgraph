@@ -1202,17 +1202,10 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     # signatur_slot ebenso ins Leere zeigt: p2_festzusetzung_einzel/_zusammen haben weder
     # rules.yaml-Eintrag noch Catala-Scope, stehen also in der Liste der 12 uebersprungenen
     # Regeln von test_n. Ein Eintrag hier waere eine Ausnahme fuer einen Verstoss, den der Test
-    # gar nicht sehen kann — derselbe Fall wie p22_3_leistungen unten. Gemessen 2026-08-20:
-    # mit Eintrag meldet test_n sie als "erledigte Eintraege — bitte streichen".)
-    # bindung_p22_nr3.yaml — p22_3_leistungen: die Bruttoeinnahmen, die ERiC neben den
-    # Einkuenften verlangt ("Bei den Leistungen wurden Einkuenfte erklaert, es fehlt jedoch eine
-    # Angabe zu den Einnahmen", gemessen 2026-08-19). p22_3_leistungen hat keinen
-    # rules.yaml-Eintrag, also auch keine geltungsbedingung; der einzige Catala-Input
-    # (einkuenfte_vor_freigrenze) gehoert dem Nettofeld. Die Einnahmen sind reine Formvoraussetzung
-    # — die Freigrenze von 256 Euro haengt an den Einkuenften, nicht an ihnen.
-    # (p22_3_leistungen braucht KEINE Eintraege: die Regel hat weder rules.yaml-Eintrag noch
-    # Catala-Scope unter rules/estg/, wird von test_n also gar nicht geprueft. Ein Eintrag hier
-    # waere eine Ausnahme fuer einen Verstoss, den es nicht gibt — genau das meldet der Test.)
+    # gar nicht sehen kann — derselbe Fall wie p22_3_leistungen VOR dessen Anschluss.
+    # Gemessen 2026-08-20: mit Eintrag meldet test_n sie als "erledigte Eintraege — bitte
+    # streichen". p22_3_leistungen steht seit 2026-09-26 nicht mehr in dieser Lage und traegt
+    # seine Eintraege weiter unten.)
     # bindung_sonder_agb_35a.yaml — p35a_2_3_haushaltsnahe: mitveranlagung (§ 35a Abs. 5 Satz 4
     # EStG, Höchstbetrags-Halbierung bei zwei Alleinstehenden im gemeinsamen Haushalt) ist KEIN
     # Input der rules.yaml-signature (die kennt nur minijob_aufwendungen/haushaltsnahe_
@@ -1288,6 +1281,26 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     # inneren Aufruf nicht folgt; Upgrade = Weg (c) (AST eine Ebene tief, dann 0 Slot-Ausnahmen).
     ("an_gesamt", "versorgung_jahresrente", "p19_2_versorgungsfreibetrag", "jahresrente"),
     ("an_gesamt", "versorgung_bemessungsgrundlage", "p19_2_versorgungsfreibetrag", "bemessungsgrundlage"),
+    # bindung_p22_nr3.yaml — p22_3_leistungen (2026-09-26, Entscheidung
+    # p22-ruecklaufkontrolle-wird-gebaut.md): die Regel ist ueber
+    # RUNNER_POSITIONAL_SLOT_FUER_REGEL an catala_p22_nr3_einkuenfte(betrag_cent: int)
+    # angebunden. Der eine Input der Funktion ist der Slot einkuenfte_vor_freigrenze — die vier
+    # uebrigen sind ELSTER-Deklarationsfelder, die die 256-Euro-Freigrenze NICHT speisen:
+    #   einnahmen_brutto (E0305101) und einnahmen_art (E0305103) und einnahmen_einzelposten
+    #   (E0305104) sind die von ERiC verlangten Begleitangaben (gemessen 2026-08-19: "Bei den
+    #   Leistungen wurden Einkuenfte erklaert, es fehlt jedoch eine Angabe zu den Einnahmen");
+    #   werbungskosten_zu_einnahmen (E0305201) ist die Rechenprobe Einnahmen − WK = Einkuenfte,
+    #   die das Finanzamt selbst nachrechnet.
+    # Sie gehen NICHT in die Funktion ein: die Bindung fuehrt sie als eigene Felder, der
+    # Rechenweg des Nutzers (Nettofeld) kennt sie nicht. Sie hier zusammenzurechnen waere die
+    # von der Entscheidung ausdruecklich verbotene Summierung ohne fachliche Zuordnung.
+    # Die Luecke (verlustrestriktion_s3_s4) ist Stufe-2-Backlog (§ 22 Nr. 3 S. 3/4
+    # Verlustausgleich) — kein Input der Freigrenzen-Funktion.
+    ("p22_nr3", "p22_nr3_einnahmen", "p22_3_leistungen", "einnahmen_brutto"),
+    ("p22_nr3", "p22_nr3_einnahmen_art", "p22_3_leistungen", "einnahmen_art"),
+    ("p22_nr3", "p22_nr3_einnahmen_einzelbetrag", "p22_3_leistungen", "einnahmen_einzelposten"),
+    ("p22_nr3", "p22_nr3_werbungskosten", "p22_3_leistungen", "werbungskosten_zu_einnahmen"),
+    ("p22_nr3", "[Lücke]", "p22_3_leistungen", "verlustrestriktion_s3_s4"),
 }
 
 
@@ -1379,22 +1392,6 @@ REGELN_OHNE_GROUND_TRUTH = {
     "p10_1_3_kv_pv_kind",
     # Antrag/Nicht-Nutzung filtern je Kind (_kind_behinderten_pb_daten()); keine eigene Rechenfunktion.
     "p33b_abs5_kind_uebertragung",
-    # Positionale Signatur (catala_p22_nr3_einkuenfte(betrag_cent: int)), kein dict-Parameter —
-    # bestaetigt richtig (nachgesehen 2026-09-05, s. Backlog
-    # zwei-regeln-ohne-ruecklaufkontrolle-anschliessen.md): der einzige real konsumierte
-    # signatur_slot ist einkuenfte_vor_freigrenze (bindung_p22_nr3.yaml:15 -> _c("p22_nr3_einkuenfte")
-    # -> bescheid_zweige.py:698-700/1057-1059 -> runner.catala_p22_nr3_einkuenfte(nr3) positional).
-    # RUNNER_ACCESSOR_FUER_REGEL liest Inputs nur ueber _runner_dict_inputs() (AST auf EINEN
-    # dict-Parameter) — eine positionale Ein-Parameter-Signatur hat keine Schluessel zu
-    # extrahieren, der Helfer versteht diesen Fall nicht. Ein Anschluss braeuchte zusaetzlich zur
-    # Mechanik-Erweiterung eine eigene Entscheidung fuer die 4 uebrigen gebundenen Slots
-    # (einnahmen_brutto, einnahmen_art, einnahmen_einzelposten, werbungskosten_zu_einnahmen) plus
-    # die Luecke (verlustrestriktion_s3_s4) — alle 5 sind ELSTER-Deklarationsfelder ohne Eingang in
-    # die Catala-Funktion, muessten also einzeln und begruendet in SIGNATUR_SLOT_ZEIGT_INS_LEERE
-    # aufgenommen werden. Das ist keine offene Ausschlussgrund-Korrektur mehr (die war hier von
-    # Anfang an richtig), sondern eine neue fachliche Entscheidung ueber den Aufbau der
-    # Ausnahmeliste — nicht Teil dieses Auftrags, deshalb hier belassen statt geraten.
-    "p22_3_leistungen",
     # NEU 2026-08-30: Screening-Pseudoregel "Privater Verkauf" (§ 23 EStG, produkt/bindung/
     # bindung_an_gesamt.yaml, Feld kein_p23_verkauf) -- gleiche Bauart wie p2_einkunftsart_* oben
     # (eigene regel_id statt Gate an der echten Regel p23_veraeusserungsgewinn, deren vier
@@ -1463,14 +1460,23 @@ if not os.path.exists(GOLDEN_RUNNER_PATH):
 
 # regel_id -> Name der golden/runner.py-Funktion, die die ECHTE Ground Truth für diese
 # Pseudoregel ist (kein rules.yaml-Eintrag, kein rules/estg/<rid>/-Dir). Nur Funktionen mit
-# einem einzigen dict-Parameter (s.get("key")/s["key"]) — positionale Signaturen (z.B.
-# p22_3_leistungen: catala_p22_nr3_einkuenfte(betrag_cent: int)) passen nicht in dieses Schema
-# und bleiben in REGELN_OHNE_GROUND_TRUTH.
+# einem einzigen dict-Parameter (s.get("key")/s["key"]) — positionale Signaturen stehen in
+# RUNNER_POSITIONAL_SLOT_FUER_REGEL darunter.
 RUNNER_ACCESSOR_FUER_REGEL = {
     "p10_1_9_schulgeld": "catala_p10_1_9_schulgeld",
     "p33_2a_fahrtkostenpauschale": "catala_p33_2a_fahrtkostenpauschale",
     "p3_nr72_pv": "catala_p3_nr72_photovoltaik",
     "p19_2_versorgungsfreibetrag": "catala_p19_2_versorgungsfreibetrag",
+}
+
+# regel_id -> (Funktion, signatur_slot) für Funktionen mit GENAU EINEM positionalen Parameter
+# (z.B. catala_p22_nr3_einkuenfte(betrag_cent: int)) — dort gibt es keine dict-Schluessel zu
+# extrahieren, der eine Slot IST der Input. Die Zuordnung laesst sich nicht aus der Signatur
+# ableiten (der Parameter heisst betrag_cent, der Slot einkuenfte_vor_freigrenze) und steht
+# deshalb hier ausdruecklich; sie ist damit KEINE stille Ausnahme, sondern eine Behauptung, die
+# _runner_positional_inputs() bei jedem Lauf gegen den Funktionsrumpf nachprueft.
+RUNNER_POSITIONAL_SLOT_FUER_REGEL = {
+    "p22_3_leistungen": ("catala_p22_nr3_einkuenfte", "einkuenfte_vor_freigrenze"),
 }
 
 
@@ -1491,6 +1497,31 @@ def _runner_dict_inputs(func_name):
                         and isinstance(n.slice, ast.Constant)):
                     keys.add(n.slice.value)
             return keys
+    raise AssertionError(f"golden/runner.py: Funktion {func_name} nicht gefunden")
+
+
+def _pruefe_positionale_ein_parameter_signatur(func_name):
+    """Prueft, dass golden/runner.py:func_name GENAU EINEN positionalen Parameter hat und
+    keinen zweiten Eingang (kein vararg/kwarg, kein Default, kein kwonly).
+
+    Das ist die Voraussetzung dafuer, dass RUNNER_POSITIONAL_SLOT_FUER_REGEL ueberhaupt EINEN
+    Slot als "den Input" fuehren darf: gaebe es eine zweite Zahl (Jahr, Satz, Schalter), waere
+    offen, welcher Slot sie speist — das braeuchte eine eigene Entscheidung, keine stille
+    Zuordnung. Der Parametername selbst ist NICHT der Slot-Name (betrag_cent vs.
+    einkuenfte_vor_freigrenze): die zwei Namensebenen fallen hier auseinander, deshalb steht
+    die Zuordnung in der Registry und nicht in der Signatur."""
+    tree = ast.parse(open(GOLDEN_RUNNER_PATH, encoding="utf-8").read())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == func_name:
+            args = list(node.args.posonlyargs) + list(node.args.args)
+            assert len(args) == 1 and not node.args.vararg and not node.args.kwarg, (
+                f"golden/runner.py:{func_name} hat {len(args)} Parameter — "
+                f"RUNNER_POSITIONAL_SLOT_FUER_REGEL traegt nur GENAU EINEN positionalen "
+                f"Parameter ({func_name} in der Registry pruefen oder einen anderen Weg bauen).")
+            assert not node.args.defaults and not node.args.kwonlyargs, (
+                f"golden/runner.py:{func_name} hat Defaults/kwonly-Argumente — das ist keine "
+                f"reine positionale Ein-Parameter-Signatur.")
+            return
     raise AssertionError(f"golden/runner.py: Funktion {func_name} nicht gefunden")
 
 
@@ -1516,6 +1547,11 @@ def _n_gefundene_verstoesse(daten, rules):
                 gbs = {g["bedingung"] for g in (r.get("geltungsbedingungen") or []) if "bedingung" in g}
             elif rid in RUNNER_ACCESSOR_FUER_REGEL:
                 inputs = _runner_dict_inputs(RUNNER_ACCESSOR_FUER_REGEL[rid])
+                gbs = set()   # golden/runner.py kennt keine rules.yaml-geltungsbedingungen
+            elif rid in RUNNER_POSITIONAL_SLOT_FUER_REGEL:
+                func_name, slot = RUNNER_POSITIONAL_SLOT_FUER_REGEL[rid]
+                _pruefe_positionale_ein_parameter_signatur(func_name)
+                inputs = {slot}
                 gbs = set()   # golden/runner.py kennt keine rules.yaml-geltungsbedingungen
             else:
                 inputs = _catala_inputs(rid)
