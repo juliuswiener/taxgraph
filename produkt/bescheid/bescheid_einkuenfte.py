@@ -28,9 +28,9 @@ from api_constants import (  # noqa: E402
     ARBEITSMITTEL_KOSTEN,
     DHF_BEDINGUNGEN,
     DHF_KOSTEN,
-    EUER_KOMPONENTEN,
     GESAMT_PARTNER_19,
     GESAMT_PARTNER_KAP,
+    GEWINN_QUELLEN_MENGEN,
     KAP_ERTRAEGE,
     KAP_ERTRAEGE_PARTNER,
     KAP_TOEPFE,
@@ -300,7 +300,11 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
         "verguetung_darlehen": _c("verguetung_darlehen") // 100,
         "verguetung_ueberlassung": _c("verguetung_ueberlassung") // 100,
     }) if any(_c(k) for k in MITU_FELDER) else 0
-    if any(_c(k) for k in EUER_KOMPONENTEN) or gwg_summe > 0:
+    # DIESELBE MENGE wie der Doppelquellen-Wächter in bescheid_deklaration.py — die zwei Stellen
+    # stellen EINE Frage und dürfen nicht auseinanderlaufen (2026-09-26). `gwg_summe` wird über die
+    # Instanzen-Naht gebildet (`_gwg_sofortabzug_summe`), nicht über das Basis-Feld; deshalb steht
+    # hier der BETRAG und nicht `_c("gwg_anschaffungskosten_netto")`.
+    if any(_c(k) for k in GEWINN_QUELLEN_MENGEN) or gwg_summe > 0:
         gewinn = runner.catala_euer_gewinn({
             "betriebseinnahmen": _c("betriebseinnahmen") // 100,
             "betriebsausgaben": (_c("sonstige_betriebsausgaben") + _c("afa_jahresbetrag")) // 100 + gwg_summe}) + mitu
