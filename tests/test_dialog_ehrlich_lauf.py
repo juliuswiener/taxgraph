@@ -163,6 +163,20 @@ def test_beide_scheiben_kommen_auf_dieselbe_zahl():
         f"Dieselbe Ausgangslage, zwei Steuern: {zahlen}")
 
 
+@pytest.mark.parametrize("scheibe", ["gesamt", "rentner_gesamt"])
+def test_iban_frage_kommt_im_echten_dialog(scheibe):
+    """Wer Geld zurückbekommt, muss dem Finanzamt eine IBAN nennen können. Dass das Feld in der
+    Scheibe steht, heißt noch nicht, dass der Dialog es je stellt — am 2026-08-27 war im
+    Live-Lauf ein zweites Kind nicht erreichbar, obwohl es eingebaut war. Deshalb wird hier
+    durchgeklickt, nicht nachgeschlagen. an_gesamt fehlt bewusst: sie bleibt eine Teilrechnung
+    ohne Stammdaten, /einreichen lehnt sie mit 409 ab (test_abgabescheibe_gate.py). Keine Zahl,
+    also kein catala nötig."""
+    _store, _bindung, gestellt = _durchklicken(scheibe)
+    assert "stammdaten_iban" in gestellt, (
+        f"Scheibe {scheibe}: unter {len(gestellt)} gestellten Fragen fehlt stammdaten_iban — "
+        f"der Nutzer kann kein Konto für eine Erstattung angeben.")
+
+
 def test_explizit_deckt_fremd_arten():
     """Melder gegen genau die Falle, die kein_p23_verkauf hier ausgelöst hat (2026-08-31): ein
     neues Screening-Kreuz landet in cfg['fremd_arten'] einer Scheibe, EXPLIZIT weiß noch nichts
