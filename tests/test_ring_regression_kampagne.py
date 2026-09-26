@@ -1245,7 +1245,12 @@ def test_p16_4_gate_ehrliches_nein_rechnet_ohne_freibetrag(base):
     diff = erg["zahl_cent"] - z0
     # Kein FB → der volle vg (80.000 €) zählt, mehr als die 35.000 € netto mit FB
     # (test_p16_4_gate_durchlaesst_mit_bedingungen). Max. Grenzsteuersatz 45 % × 80.000 € = 36.000 €.
-    assert 0 < diff <= 3600000, f"Delta {diff} außerhalb des plausiblen Bands (0–36.000 €)"
+    # GEMESSEN 2026-09-26: 3360000 (= 45 % × 80.000 €, der Docstring-Wert exakt).
+    # Das frühere Band (0, 3600000] ist die ANLASS-STELLE der Kampagne: die Mutation
+    # `p16_4_gate_ok = True` (FB faelschlich immer gewaehrt) misst 1470000 und liegt INNEN —
+    # der Test blieb gruen, waehrend der Docstring "keinen FB" behauptet. 81 Tests nebenan
+    # ebenfalls. Ein Pin auf eine Spanne ist kein Pin.
+    assert diff == 3360000, f"Delta {diff} ≠ 3360000 (voller vg ohne FB)"
 
 
 def test_p16_4_gate_durchlaesst_mit_bedingungen(base):
@@ -1266,7 +1271,11 @@ def test_p16_4_gate_durchlaesst_mit_bedingungen(base):
     assert e1["zahl_cent"] > z0, "vg+FB muss ESt erhöhen (netto 35k€ zusätzlich)"
     diff = e1["zahl_cent"] - z0
     # Plausibilität: max Grenzsteuer 45% × 35.000 € = 15.750 €; 35k bei 0% = 0
-    assert 0 < diff < 1575000, f"Delta {diff} außerhalb plausibler Band (0–15.750 €)"
+    # GEMESSEN 2026-09-26: 1470000. Die Umkehrmutation (Gate immer ZU, FB nie gewaehrt)
+    # misst 3360000 und liegt AUSSERHALB — dieser Test faengt sie also. Er ist damit eine
+    # echte Spanne, ABER nur in dieser Richtung: die Mutation "FB immer" misst 1470000 und
+    # liegt bei ihm EBENFALLS innen. Den Fall deckt der Pin in :1248 ab.
+    assert diff == 1470000, f"Delta {diff} ≠ 1470000 (vg mit FB)"
 
 
 def test_p16_4_gate_ignoriert_ohne_vg(base):
@@ -1322,8 +1331,11 @@ def test_p2_nr2_ring_differential_kv_pv_senkt_steuer(base):
     assert e1["grund"] == "bestaetigt", f"grund={e1.get('grund')}"
     assert e1["zahl_cent"] < z0, f"B-KV/PV: {e1['zahl_cent']} >= {z0} (Over-tax noch da)"
     delta = z0 - e1["zahl_cent"]
-    # HB max 2800 €, min 0 → Delta im plausiblen Band
-    assert delta > 0 and delta < 280000, f"Delta {delta} außerhalb plausiblen Band"
+    # GEMESSEN 2026-09-26: 81000. Der Kommentar sprach von "HB max 2800", der Test misst aber
+    # basis_kv_partner (2.000 €) — das Band [0, 280000] war 3,5x breiter als der Wert und
+    # liess einen halbierten Partnerbetrag durch (misst 39000, INNEN). Over-tax-Bug
+    # (Partnerterm faellt weg) misst 0 und liegt am Rand, wird von `zahl_cent < z0` gefangen.
+    assert delta == 81000, f"Delta {delta} ≠ 81000 (B-KV/PV-Partner)"
 
 
 def test_p35a_mitveranlagung_senkt_steuer_gesamt(base):
