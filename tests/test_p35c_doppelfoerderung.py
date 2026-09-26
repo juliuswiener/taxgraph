@@ -134,8 +134,11 @@ def test_doppelfoerderung_streicht_die_ganze_ermaessigung(monkeypatch, tmp_path)
     assert mit_doppel > getrennt, (
         "Bei Doppelförderung muss die Steuer HÖHER sein — die § 35c-Ermäßigung entfällt.")
     differenz = (mit_doppel - getrennt) / 100
-    assert 1300 <= differenz <= 1500, (
-        f"Erwartet ~1.400 EUR (7 % von 20.000, Förderjahr 1), gemessen {differenz:.2f} EUR")
+    # GEMESSEN 2026-09-26: exakt 1400,00 EUR. Das frühere Band [1300,1500] war doppelt so
+    # breit wie der Fehler, den es fangen soll (falsches Förderjahr: 6 % = 1.200 EUR), und
+    # fing ihn nur mit 1 Cent Luft. 7 % von 20.000 € im Förderjahr 1 sind exakt 1.400 €.
+    assert differenz == 1400, (
+        f"Erwartet 1.400 EUR (7 % von 20.000, Förderjahr 1), gemessen {differenz:.2f} EUR")
 
 
 def test_getrennte_massnahmen_bleiben_zulaessig(monkeypatch, tmp_path):

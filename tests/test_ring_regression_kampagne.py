@@ -257,10 +257,14 @@ def test_p34c_dba_senkt_steuer_rentner(base):
 DBA_ABS2 = [("dba_gezahlte_auslaendische_steuer", 300000),   # 3000€ ausländische Steuer
             ("dba_auslaendische_einkuenfte", 4000000),       # 40000€ ausländische Einkünfte
             ("dba_abzug_statt_anrechnung", True)]             # Antrag §34c Abs.2
-# Progressiver Abzug 3000€ × 42% (~200k zvE, § 32a-Zone 68.481–277.825) ≈ 1260€. Anrechnung (Abs.1)
-# wäre flach 3000€. Band großzügig gegen zvE-/§22-Besteuerungsanteil-Rundung.
-ABS2_MIN = 100000   # 1000€
-ABS2_MAX = 150000   # 1500€
+# Progressiver Abzug 3000€ × 42% = 1260€. Anrechnung (Abs.1) wäre flach 3000€.
+# GEMESSEN 2026-09-26 (Kampagne "Spannen statt Werte"): gesamt 126000, Mutex-d_abs2 126000,
+# rentner 126000 — alle drei EXAKT gleich. Das frühere Band [100000,150000] setzten keine zwei
+# Werte: es war ±20 % Slack um die eine Zahl ("großzügig gegen zvE-/§22-Besteuerungsanteil-
+# Rundung", 069e151) und hätte einen falschen Grenzsatz durchgelassen (33 % → 100800 läge drin).
+# Das zvE beider Ringe liegt in der § 32a-Zone 68.481–277.825, also greift auf alle 3000€ 42 % —
+# es gibt nichts zu runden. Mutationsprobe: Abs.2-Zweig aus → 300000, weit außerhalb.
+ABS2_EXACT = 126000   # 1260€
 
 
 def test_p34c_2_abzug_statt_anrechnung_gesamt(base):
@@ -279,7 +283,7 @@ def test_p34c_2_abzug_statt_anrechnung_gesamt(base):
     if catala:
         assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt"
         delta = ohne["zahl_cent"] - mit["zahl_cent"]
-        assert ABS2_MIN <= delta <= ABS2_MAX, f"Abs.2 Abzug delta={delta} nicht in [{ABS2_MIN},{ABS2_MAX}]"
+        assert delta == ABS2_EXACT, f"Abs.2 Abzug delta={delta} ≠ {ABS2_EXACT}"
     else:
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
 
@@ -288,7 +292,7 @@ def test_p34c_2_mutual_exclusion_kein_doppel_relief_gesamt(base):
     """MUTUAL-EXCLUSION: bei Abs.2-Antrag darf die Abs.1-Anrechnung NICHT zusätzlich greifen.
     Abs.1 (nur Anrechnung) senkt flach um 3000€; Abs.2 (Antrag) senkt nur progressiv (~1260€).
     Wäre die Anrechnung fälschlich ADDITIV, läge Abs.2-delta > Abs.1-delta (Doppel-Relief = Under-tax).
-    Assert: Abs.2-delta im progressiven Band UND strikt < Abs.1-delta."""
+    Assert: Abs.2-delta auf dem gemessenen Wert UND strikt < Abs.1-delta."""
     catala = _catala_da()
     kegel_abs1 = _mit_gewinn(GESAMT_KEGEL_BASIS) + [
         ("dba_gezahlte_auslaendische_steuer", 300000),
@@ -311,7 +315,7 @@ def test_p34c_2_mutual_exclusion_kein_doppel_relief_gesamt(base):
         d_abs1 = r_base["zahl_cent"] - r_abs1["zahl_cent"]   # 3000€ Anrechnung (flach)
         d_abs2 = r_base["zahl_cent"] - r_abs2["zahl_cent"]   # ~1260€ Abzug (progressiv)
         assert d_abs1 == 300000, f"Abs.1 Anrechnung delta={d_abs1} ≠ 300000 (Regression Flag-absent)"
-        assert ABS2_MIN <= d_abs2 <= ABS2_MAX, f"Abs.2 delta={d_abs2} nicht im progressiven Band"
+        assert d_abs2 == ABS2_EXACT, f"Abs.2 delta={d_abs2} ≠ {ABS2_EXACT}"
         assert d_abs2 < d_abs1, f"Doppel-Relief? Abs.2-delta {d_abs2} ≥ Abs.1-delta {d_abs1}"
     else:
         assert r_abs1["zahl_cent"] is None or r_abs2["zahl_cent"] is None
@@ -332,7 +336,7 @@ def test_p34c_2_abzug_statt_anrechnung_rentner(base):
     if catala:
         assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt"
         delta = ohne["zahl_cent"] - mit["zahl_cent"]
-        assert ABS2_MIN <= delta <= ABS2_MAX, f"Abs.2 rentner delta={delta} nicht in [{ABS2_MIN},{ABS2_MAX}]"
+        assert delta == ABS2_EXACT, f"Abs.2 rentner delta={delta} ≠ {ABS2_EXACT}"
     else:
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
 
@@ -726,8 +730,10 @@ def test_a5_uebernachtung_nach_48_kappung_gesamt(base):
         assert vor["grund"] == "bestaetigt" and nach["grund"] == "bestaetigt", \
             f"vor={vor.get('grund')} nach={nach.get('grund')}"
         delta = nach["zahl_cent"] - vor["zahl_cent"]
-        # (24000−12000)=12000 € weniger Abzug nach 48; × 42 % ≈ 5040 € = 504000 ct.
-        assert 470000 <= delta <= 540000, f"nach-48-Kappung delta={delta} nicht in [470000,540000]"
+        # (24000−12000)=12000 € weniger Abzug nach 48; × 42 % = 5040 € = 504000 ct.
+        # GEMESSEN 2026-09-26: 504000 exakt. Das frühere Band [470000,540000] ließ einen
+        # falschen Kappungssatz durch: cap+50 (1050 €/Monat statt 1000) misst 478800 — INNERHALB.
+        assert delta == 504000, f"nach-48-Kappung delta={delta} ≠ 504000"
     else:
         assert vor["zahl_cent"] is None or nach["zahl_cent"] is None
 
@@ -791,8 +797,10 @@ def test_a6_arbeitsmittel_gwg_senkt_steuer_gesamt(base):
         assert ohne["grund"] == "bestaetigt" and mit["grund"] == "bestaetigt", \
             f"ohne={ohne.get('grund')} mit={mit.get('grund')}"
         delta = ohne["zahl_cent"] - mit["zahl_cent"]
-        # Δeinkünfte = 800 €; × 42 % ≈ 336 € = 33600 ct. Band robust ggü. Satz-Rundung.
-        assert 25000 <= delta <= 42000, f"Arbeitsmittel-GWG gesamt delta={delta} nicht in [25000,42000]"
+        # Δeinkünfte = 800 €; × 42 % = 336 € = 33600 ct.
+        # GEMESSEN 2026-09-26: 33600 exakt. Das frühere Band [25000,42000] ließ jede
+        # Abzugssumme von 595–1000 € durch: 600 € GWG statt 800 misst 25200 — INNERHALB.
+        assert delta == 33600, f"Arbeitsmittel-GWG gesamt delta={delta} ≠ 33600"
     else:
         assert ohne["zahl_cent"] is None or mit["zahl_cent"] is None
 
@@ -1337,6 +1345,9 @@ def test_p16_4_gate_ehrliches_nein_rechnet_ohne_freibetrag(base):
     # nicht sehen ([[pruefer-misst-stellvertretermerkmal]]). GEMESSEN: wer in bescheid_zweige.py
     # `if p16_4_gate_ok else 0` durch `if True else 0` ersetzt, verliert 42.000 EUR — und alle
     # 81 Tests dieser drei Dateien blieben grün. Zahlen aus einem Lauf, nicht gerechnet.
+    # Dieses Band ist die ANLASS-STELLE der Kampagne (wip/baender): die Mutation
+    # `p16_4_gate_ok = True` (FB fälschlich immer gewährt) misst 1470000 und liegt INNEN,
+    # der Test blieb grün, während der Docstring "keinen FB" behauptet.
     assert erg["zahl_cent"] == 9277000, (
         f"ohne FB müssen 92.770,00 EUR herauskommen (voller vg 80.000 €), "
         f"tatsächlich {erg['zahl_cent'] / 100:,.2f} EUR")
@@ -1365,7 +1376,12 @@ def test_p16_4_gate_durchlaesst_mit_bedingungen(base):
     assert e1["zahl_cent"] == 7387000, (
         f"mit FB müssen 73.870,00 EUR herauskommen, tatsächlich {e1['zahl_cent'] / 100:,.2f} EUR")
     diff = e1["zahl_cent"] - z0
-    assert diff == 1470000, f"Delta {diff} statt 1.470.000 Cent"
+    # Plausibilität: max Grenzsteuer 45% × 35.000 € = 15.750 €; 35k bei 0% = 0
+    # GEMESSEN 2026-09-26: 1470000. Die Umkehrmutation (Gate immer ZU, FB nie gewährt)
+    # misst 3360000 und liegt AUSSERHALB — dieser Test fängt sie also. Er ist damit eine
+    # echte Spanne, ABER nur in dieser Richtung: die Mutation "FB immer" misst 1470000 und
+    # liegt bei ihm EBENFALLS innen. Den Fall deckt der Pin in :1248 ab.
+    assert diff == 1470000, f"Delta {diff} ≠ 1470000 (vg mit FB)"
 
 
 def test_p16_4_gate_ignoriert_ohne_vg(base):
@@ -1421,8 +1437,11 @@ def test_p2_nr2_ring_differential_kv_pv_senkt_steuer(base):
     assert e1["grund"] == "bestaetigt", f"grund={e1.get('grund')}"
     assert e1["zahl_cent"] < z0, f"B-KV/PV: {e1['zahl_cent']} >= {z0} (Over-tax noch da)"
     delta = z0 - e1["zahl_cent"]
-    # HB max 2800 €, min 0 → Delta im plausiblen Band
-    assert delta > 0 and delta < 280000, f"Delta {delta} außerhalb plausiblen Band"
+    # GEMESSEN 2026-09-26: 81000. Der Kommentar sprach von "HB max 2800", der Test misst aber
+    # basis_kv_partner (2.000 €) — das Band [0, 280000] war 3,5x breiter als der Wert und
+    # liess einen halbierten Partnerbetrag durch (misst 39000, INNEN). Over-tax-Bug
+    # (Partnerterm faellt weg) misst 0 und liegt am Rand, wird von `zahl_cent < z0` gefangen.
+    assert delta == 81000, f"Delta {delta} ≠ 81000 (B-KV/PV-Partner)"
 
 
 def test_p35a_mitveranlagung_senkt_steuer_gesamt(base):
