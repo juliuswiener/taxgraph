@@ -124,7 +124,7 @@ def _is_invalidated(jti: str) -> bool:
 _REGISTER_FELDER = {"username", "password"}
 
 
-def register(body: dict) -> tuple[int, dict]:
+def register(body: dict, audit_fn=None) -> tuple[int, dict]:
     missing = _REGISTER_FELDER - set(body)
     if missing:
         raise AuthError(400, f"Pflichtfelder fehlen: {sorted(missing)}")
@@ -142,6 +142,8 @@ def register(body: dict) -> tuple[int, dict]:
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     _speichere_users(store)
+    if audit_fn:
+        audit_fn(username, "register", None, None)
     return 201, {"username": username, "message": "registriert"}
 
 
@@ -157,6 +159,8 @@ def login(body: dict, audit_fn=None) -> tuple[int, dict]:
     store = _lade_users()
     user = store["users"].get(username)
     if not user or not _check_pw(password, user["password_hash"]):
+        if audit_fn:
+            audit_fn(username, "login_fehlgeschlagen", None, None)
         raise AuthError(401, "username oder password falsch")
     token = _create_token(username)
     if audit_fn:

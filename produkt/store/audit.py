@@ -1,6 +1,6 @@
 """P1.6 Audit-Log — Append-only JSON-Lines, niemals delete/update.
 
-Einträge: login, logout, fall_angelegt, zugriff_verweigert.
+Einträge: login, logout, login_fehlgeschlagen, register, fall_angelegt, zugriff_verweigert.
 Keine PII in Detail-Feldern (user_id = system-interner Username, kein Klarname/Email).
 """
 from __future__ import annotations
@@ -46,7 +46,7 @@ def append(user_id: str | None, action: str, fall_id: str | None = None,
     """Hängt EINEN Audit-Eintrag an (append-only, immutable).
 
     user_id: Username (system-intern, kein Klarname/Email). None → "unbekannt".
-    action: login | logout | fall_angelegt | zugriff_verweigert | llm_call.
+    action: login | logout | login_fehlgeschlagen | register | fall_angelegt | zugriff_verweigert | llm_call.
     fall_id: Optional — betroffener Fall.
     detail: Optional — z.B. Grund der Verweigerung. KEINE PII.
     """
