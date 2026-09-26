@@ -383,8 +383,14 @@ def test_bekannte_luecken_sind_begruendet():
 # verlangt. MATRIX setzt genau EIN Feld je Fall (_mit) — dafuer taugt ein Feldpaar (Art+Betrag je
 # Instanz) nicht. Deshalb ein eigener Test, kein MATRIX-Eintrag.
 
+@braucht_eric
 def test_p35a_einzelaufstellung_alle_drei_toepfe_amtlich_plausibel():
     """Je Topf EIN vollstaendiger Einz-Posten (Art+Betrag, Instanz 1 = bare feld_id) → rc=0.
+
+    Der Marker fehlte bis 2026-09-26 und fiel nicht auf, solange vier Testmodule ihren
+    Hersteller-ID-Platzhalter global in die Umgebung schrieben: der Test lief dann gegen ERiC
+    und riss mit rc=610301200 den ganzen `make unit`-Lauf mit. Er prueft einen rc und braucht
+    ERiC wie seine Geschwister in dieser Datei.
 
     Die Sum-Kz (E0104109/E0107208/E0111215) werden NICHT direkt gesetzt — sie kommen aus
     _mit_ring_werten (4), berechnet aus genau diesen Instanz-Feldern. Ein Test, der die Sum-Felder

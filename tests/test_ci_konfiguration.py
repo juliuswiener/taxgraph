@@ -431,6 +431,67 @@ def test_hersteller_id_skip_ist_genauso_eng():
         "eine beliebige Ausnahme mit der Meldung wird übersprungen — zu weit gefasst"
 
 
+def test_kein_testmodul_veraendert_die_umgebung_beim_import():
+    """Ein Testmodul, das beim IMPORT die Umgebung setzt, veraendert fremde Tests.
+
+    pytest importiert beim Sammeln jede Datei, bevor der erste Test laeuft — und unter
+    `-n 6 --dist loadfile` importiert jeder Worker ALLE ihm zugeteilten Dateien. Ein
+    `os.environ[...] = ...` auf Modulebene gilt damit fuer fremde Dateien im selben Worker.
+
+    Gemessen 2026-09-26: vier Module setzten `ELSTER_HERSTELLER_ID` auf einen Platzhalter.
+    Folge in test_checkest_feldmatrix.py: die ERiC-Tests hielten sich fuer lauffaehig, liefen
+    mit dem Platzhalter gegen ERiC und scheiterten mit rc=610301200 statt zu skippen —
+    `make unit` war rot, und der rote Test (test_p35a_einzelaufstellung...) sah nach einem
+    §35a-Fehler aus, war aber ein Umgebungsleck. Der Fix war eine modulgescopte Fixture.
+
+    ERLAUBT: nur Variablen, die conftest selbst auf Modulebene setzt. Dort ist der Wert derselbe,
+    ein Nachsetzen also wirkungslos — `TAXGRAPH_NO_AUTH` ist der einzige solche Fall. Alles
+    andere (eine Hersteller-ID, ein Schluessel, ein Pfad) gehoert in eine Fixture.
+
+    Erlaubt bleibt der Import in einer Funktion (dort laeuft er beim Test, nicht beim Sammeln).
+    """
+    import ast
+
+    def _env_ziel(knoten):
+        """(Name der Variablen, Zeilennummer) fuer eine Modulebene-Schreiboperation, sonst None."""
+        if isinstance(knoten, ast.Assign):
+            for t in knoten.targets:
+                if (isinstance(t, ast.Subscript) and isinstance(t.value, ast.Attribute)
+                        and t.value.attr == "environ"
+                        and isinstance(t.value.value, ast.Name) and t.value.value.id == "os"):
+                    s = t.slice
+                    if isinstance(s, ast.Constant) and isinstance(s.value, str):
+                        return s.value, knoten.lineno
+        if isinstance(knoten, ast.Expr) and isinstance(knoten.value, ast.Call):
+            a = knoten.value.func
+            if (isinstance(a, ast.Attribute) and a.attr in ("setdefault", "setenv", "putenv")
+                    and isinstance(a.value, ast.Attribute) and a.value.attr == "environ"
+                    and isinstance(a.value.value, ast.Name) and a.value.value.id == "os"
+                    and knoten.value.args
+                    and isinstance(knoten.value.args[0], ast.Constant)
+                    and isinstance(knoten.value.args[0].value, str)):
+                return knoten.value.args[0].value, knoten.lineno
+        return None
+
+    # Was conftest auf Modulebene setzt, ist Sitzungs-Eigentum — nachsetzen ist wirkungslos.
+    conftest_baum = ast.parse((ROOT / "tests" / "conftest.py").read_text(encoding="utf-8"))
+    erlaubt = {r[0] for k in conftest_baum.body if (r := _env_ziel(k))}
+
+    treffer = []
+    for pfad in sorted((ROOT / "tests").glob("test_*.py")):
+        baum = ast.parse(pfad.read_text(encoding="utf-8"))
+        for knoten in baum.body:       # NUR Modulebene, wie bei den runner-Importen oben
+            r = _env_ziel(knoten)
+            if r and r[0] not in erlaubt:
+                treffer.append(f"{pfad.name}:{r[1]}  {r[0]}")
+
+    assert not treffer, (
+        "Testmodule setzen beim Import Umgebungsvariablen, die conftest NICHT fuer die Sitzung "
+        "setzt — das leckt in fremde Tests im selben xdist-Worker. Nimm eine modulgescopte "
+        "Fixture (Vorbild: test_kap_gewinn_sonstige_keine_kz_verdrahtung._fake_hersteller_id).\n  "
+        + "\n  ".join(treffer))
+
+
 def test_guard_greift_nur_ohne_toolchain():
     """Die andere Richtung, und die wichtigere: mit verfügbarer Toolchain darf NICHTS
     übersprungen werden. Ein Guard, der immer greift, versteckt die halbe Suite."""
