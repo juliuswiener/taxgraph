@@ -40,7 +40,8 @@ import threading
 import urllib.error
 import urllib.request
 
-ROOT = os.environ.get("TAXGRAPH_ROOT", "/home/julius/00_projects/168_TaxGraph/taxgraph")
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
 for _sub in ("produkt/haut", "produkt/eingang", "produkt/store", "produkt/mapping", "golden"):
     sys.path.insert(0, os.path.join(ROOT, _sub))
 
