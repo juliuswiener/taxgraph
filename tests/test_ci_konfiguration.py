@@ -440,6 +440,45 @@ def test_hersteller_id_skip_ist_genauso_eng():
         "eine beliebige Ausnahme mit der Meldung wird übersprungen — zu weit gefasst"
 
 
+# ---- Umgebungslecks beim Testimport: Waechter und seine Selbstratsche ------------------------
+#
+# Der Scan steht als Modulfunktion, nicht in der Testfunktion: die Selbstratsche darunter muss
+# DIESELBE Menge sehen wie der Waechter. Eine eigene Kopie der Schleife waere genau der blinde
+# Fleck, den sie schliessen soll — der Waechter koennte leer laufen und die Kopie bliebe voll.
+
+def _env_ziel(knoten):
+    """(Name der Variablen, Zeilennummer) fuer eine Modulebene-Schreiboperation, sonst None."""
+    if isinstance(knoten, ast.Assign):
+        for t in knoten.targets:
+            if (isinstance(t, ast.Subscript) and isinstance(t.value, ast.Attribute)
+                    and t.value.attr == "environ"
+                    and isinstance(t.value.value, ast.Name) and t.value.value.id == "os"):
+                s = t.slice
+                if isinstance(s, ast.Constant) and isinstance(s.value, str):
+                    return s.value, knoten.lineno
+    if isinstance(knoten, ast.Expr) and isinstance(knoten.value, ast.Call):
+        a = knoten.value.func
+        if (isinstance(a, ast.Attribute) and a.attr in ("setdefault", "setenv", "putenv")
+                and isinstance(a.value, ast.Attribute) and a.value.attr == "environ"
+                and isinstance(a.value.value, ast.Name) and a.value.value.id == "os"
+                and knoten.value.args
+                and isinstance(knoten.value.args[0], ast.Constant)
+                and isinstance(knoten.value.args[0].value, str)):
+            return knoten.value.args[0].value, knoten.value.lineno
+    return None
+
+
+def _gescannte_testdateien() -> list[pathlib.Path]:
+    """Die Menge, die der Waechter liest: jede Testdatei unter tests/."""
+    return sorted((ROOT / "tests").glob("test_*.py"))
+
+
+def _erlaubte_conftest_variablen() -> set[str]:
+    """Was conftest auf Modulebene setzt, ist Sitzungs-Eigentum — nachsetzen ist wirkungslos."""
+    conftest_baum = ast.parse((ROOT / "tests" / "conftest.py").read_text(encoding="utf-8"))
+    return {r[0] for k in conftest_baum.body if (r := _env_ziel(k))}
+
+
 def test_kein_testmodul_veraendert_die_umgebung_beim_import():
     """Ein Testmodul, das beim IMPORT die Umgebung setzt, veraendert fremde Tests.
 
@@ -459,35 +498,10 @@ def test_kein_testmodul_veraendert_die_umgebung_beim_import():
 
     Erlaubt bleibt der Import in einer Funktion (dort laeuft er beim Test, nicht beim Sammeln).
     """
-    import ast
-
-    def _env_ziel(knoten):
-        """(Name der Variablen, Zeilennummer) fuer eine Modulebene-Schreiboperation, sonst None."""
-        if isinstance(knoten, ast.Assign):
-            for t in knoten.targets:
-                if (isinstance(t, ast.Subscript) and isinstance(t.value, ast.Attribute)
-                        and t.value.attr == "environ"
-                        and isinstance(t.value.value, ast.Name) and t.value.value.id == "os"):
-                    s = t.slice
-                    if isinstance(s, ast.Constant) and isinstance(s.value, str):
-                        return s.value, knoten.lineno
-        if isinstance(knoten, ast.Expr) and isinstance(knoten.value, ast.Call):
-            a = knoten.value.func
-            if (isinstance(a, ast.Attribute) and a.attr in ("setdefault", "setenv", "putenv")
-                    and isinstance(a.value, ast.Attribute) and a.value.attr == "environ"
-                    and isinstance(a.value.value, ast.Name) and a.value.value.id == "os"
-                    and knoten.value.args
-                    and isinstance(knoten.value.args[0], ast.Constant)
-                    and isinstance(knoten.value.args[0].value, str)):
-                return knoten.value.args[0].value, knoten.lineno
-        return None
-
-    # Was conftest auf Modulebene setzt, ist Sitzungs-Eigentum — nachsetzen ist wirkungslos.
-    conftest_baum = ast.parse((ROOT / "tests" / "conftest.py").read_text(encoding="utf-8"))
-    erlaubt = {r[0] for k in conftest_baum.body if (r := _env_ziel(k))}
+    erlaubt = _erlaubte_conftest_variablen()
 
     treffer = []
-    for pfad in sorted((ROOT / "tests").glob("test_*.py")):
+    for pfad in _gescannte_testdateien():
         baum = ast.parse(pfad.read_text(encoding="utf-8"))
         for knoten in baum.body:       # NUR Modulebene, wie bei den runner-Importen oben
             r = _env_ziel(knoten)
@@ -496,9 +510,32 @@ def test_kein_testmodul_veraendert_die_umgebung_beim_import():
 
     assert not treffer, (
         "Testmodule setzen beim Import Umgebungsvariablen, die conftest NICHT fuer die Sitzung "
-        "setzt — das leckt in fremde Tests im selben xdist-Worker. Nimm eine modulgescopte "
-        "Fixture (Vorbild: test_kap_gewinn_sonstige_keine_kz_verdrahtung._fake_hersteller_id).\n  "
+        "setzt — das leckt in fremde Tests im selben xdist-Worker. Nimm eine funktionsgescopte "
+        "Fixture (Vorbild: tests/test_checkest_durchstich.py::hid_attrappe).\n  "
         + "\n  ".join(treffer))
+
+
+def test_umgebungsleck_waechter_sieht_ueberhaupt_dateien():
+    """Selbstratsche zum Waechter darueber: er ist gruen, WEIL er nichts findet — wird seine
+    Schleife leer, sagt er dasselbe. Gemessen 2026-09-26 (Befund main): Dateischleife auf
+    `glob(...)[:0]` gesetzt -> der Waechter meldete weiter 1 passed. Die Zahlen unten sind
+    gemessen, nicht geschaetzt; sinkt die Zahl, ist das eine Entscheidung, keine Nebenwirkung."""
+    dateien = _gescannte_testdateien()
+    DATEIEN_UNTEN = 283    # gemessen 2026-09-26: tests/test_*.py
+    assert len(dateien) >= DATEIEN_UNTEN, (
+        f"Der Waechter liest nur {len(dateien)} Testdateien, erwartet mindestens {DATEIEN_UNTEN} — "
+        f"eine leere oder beschnittene Scan-Menge ist gruen, ohne etwas geprueft zu haben")
+
+    erlaubt = _erlaubte_conftest_variablen()
+    assert len(erlaubt) >= 1, (
+        "conftest setzt auf Modulebene keine Umgebungsvariable mehr — dann ist JEDER Modulebene-"
+        "Schreibzugriff ein Treffer, oder der Scan liest die conftest nicht mehr")
+
+    VARIABLEN_OBEN = 1     # gemessen 2026-09-26: TAXGRAPH_NO_AUTH, der einzige solche Fall
+    assert len(erlaubt) <= VARIABLEN_OBEN, (
+        f"Die Ausnahmemenge ist auf {len(erlaubt)} gewachsen ({sorted(erlaubt)}): {erlaubt - {'TAXGRAPH_NO_AUTH'}} "
+        f"ist neu. Jede Variable hier schaltet den Waechter fuer sie ab — das braucht eine "
+        f"Entscheidung, nicht eine Zeile mehr in conftest")
 
 
 def test_guard_greift_nur_ohne_toolchain():
