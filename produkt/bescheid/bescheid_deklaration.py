@@ -562,6 +562,16 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "Zu deinen Handwerker- oder Haushaltsdienstleistungen fehlt noch die Antwort, ob du eine "
         "Rechnung erhalten und sie überwiesen hast. Barzahlungen erkennt das Finanzamt hier nicht "
         "an. Bitte beantworte diese Frage.",
+    "kinderbetreuung_reine_betreuung_offen":
+        "Zu deinen Betreuungskosten fehlt noch die Antwort, ob der Betrag reine Betreuung ist. "
+        "Nachhilfe, Musik- oder Sportunterricht und Freizeitkurse sind keine Betreuung und werden "
+        "nicht abgezogen. Hast du beides in einem Betrag gezahlt, trage bitte nur den "
+        "Betreuungsteil ein und antworte dann mit Ja.",
+    "kinderbetreuung_zahlung_offen":
+        "Zu deinen Betreuungskosten fehlt noch die Antwort, ob du eine Rechnung erhalten und per "
+        "Überweisung bezahlt hast. Das Finanzamt erkennt nur Betreuungskosten an, die auf das "
+        "Konto des Betreuers überwiesen wurden. Bar bezahlte Beträge zählen nicht. Bitte "
+        "beantworte diese Frage oder trage nur den überwiesenen Teil ein.",
     "rente_instanz_offen":
         "Zu einer deiner Renten oder zu einer Rente deines Partners sind die Angaben unvollständig. "
         "Für jede einzelne Rente braucht die Berechnung vier Dinge: die Art der Rente, den "
@@ -1156,6 +1166,43 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                 if (_netto_i > 25000
                         and (_inst["felder"].get("gwg_verzeichnis_ab_250") or {}).get("zustand") != "bestaetigt"):
                     return "gwg_tatbestand_offen"
+        # § 10 Abs. 1 Nr. 5 S. 2 + S. 4 Kinderbetreuung: Nachhilfe/Unterricht/Sport (S. 2) und
+        # Barzahlung (S. 4) schliessen den Abzug aus. CONDITIONAL-MANDATORY je Kind-Instanz und
+        # nur bei Betrag > 0 (analog GWG oben) — ohne Betrag gibt es nichts abzuziehen, dann sind
+        # beide Fragen gegenstandslos und duerfen die Abgabe nicht sperren.
+        # Anders als bei hh_rechnung_unbar (§ 35a) nullt hier NICHTS eine Teilquote: der Abzug
+        # kennt keine Aufteilung, ein gemischter Betrag wird nicht zerlegt (s. ponytail in der
+        # Bindungstabelle). Deshalb sperrt auch ein BESTAETIGTES "nein" — der Nutzer muss den
+        # Betrag selbst berichtigen. Ein stiller Abzug waere Under-tax (gemessen 2026-09-26:
+        # 6.000 EUR Nachhilfe -> 4.800 EUR Abzug), eine stille Null ein Geldverlust ohne Hinweis.
+        # Ein Kind, das die Qualifikation aus S. 1 nicht traegt (ueber 14), zaehlt ohnehin nicht
+        # mit — seine Antworten duerfen nicht sperren, sonst haengt der Ring an einer Instanz,
+        # die _kinderbetreuung_summe selbst schon aussortiert.
+        if store is not None and bindung is not None:
+            for _inst in EM.instanzen(store, bindung, "kind"):
+                _aufw_v = _inst["felder"].get("kinderbetreuungskosten", {}).get("wert")
+                _aufw_i = _aufw_v if isinstance(_aufw_v, (int, float)) and not isinstance(_aufw_v, bool) else 0
+                if _aufw_i <= 0:
+                    continue
+                # Nur ein Kind, das die Qualifikation aus S. 1 BESTAETIGT traegt, erreicht den Ring
+                # ueberhaupt — _kinderbetreuung_summe zaehlt ausschliesslich `is True`. Unbeantwortet
+                # oder false heisst: das Kind faellt aus der Summe, sein Betrag wird nirgends
+                # abgezogen, und die beiden Fragen nach S. 2/S. 4 sind fuer DIESES Kind
+                # gegenstandslos. Wuerde die Sperre hier feuern, verlangte das Programm Auskuenfte
+                # zu einem Abzug, den es selbst nicht gewaehrt (dieselbe Regel wie beim GWG ueber
+                # 800 EUR) — und der Nutzer saehe zwei Fragen, die nichts aendern koennen.
+                if (_inst["felder"].get("kind_unter_14_haushaltszugehoerig") or {}).get("wert") is not True:
+                    continue
+                # Zwei getrennte Gruende, nicht eine UND-Kette mit einem Sammelgrund: der Nutzer
+                # muss wissen, WAS er korrigieren soll — den Betrag aufteilen (S. 2) oder die
+                # Zahlungsart (S. 4). Beide Bedingungen stehen einzeln, damit die zweite nicht
+                # wirkungslos wird, wenn die erste schon sperrt.
+                _reine = _inst["felder"].get("kind_betreuung_reine_betreuung") or {}
+                if _reine.get("zustand") != "bestaetigt" or _reine.get("wert") is not True:
+                    return "kinderbetreuung_reine_betreuung_offen"
+                _zahlung = _inst["felder"].get("kind_betreuung_rechnung_ueberweisung") or {}
+                if _zahlung.get("zustand") != "bestaetigt" or _zahlung.get("wert") is not True:
+                    return "kinderbetreuung_zahlung_offen"
         # § 10 Abs. 4b KiSt-Erstattungsüberhang: früher sperrte hier erstattungsueberhang_offen,
         # weil die GdE-Hinzurechnung (S. 3) fehlte und ein stiller Abzug 0 unterbesteuert hätte.
         # Sie ist jetzt gebaut (catala_p10_4b_erstattungsueberhang, im Ring vor den GdE-Verwendungen
