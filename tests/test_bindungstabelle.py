@@ -402,8 +402,11 @@ def test_neg_gemischte_summanden(daten):
 UNERREICHBAR_BEKANNT = {
     # § 33 Abs. 1 Tatbestand — Geltungsbedingungen der Regel, nicht erfragt
     "agb_notwendig_angemessen", "agb_zwangslaeufig",
-    # kind_idnr — instanz_gruppe: kind, kein Top-Level-Feld in SCHEIBEN["felder"]
-    "kind_idnr",
+    # kind_idnr: bis 2026-09-26 hier mit der Begründung "instanz_gruppe: kind, kein
+    # Top-Level-Feld in SCHEIBEN['felder']". Die Begründung war veraltet — kind_idnr steht
+    # seit dem Anlage-Kind-Blocker in KIND_KV_PV (api_constants.py:407), und KIND_KV_PV wird
+    # in die felder-Listen von gesamt UND rentner_gesamt gefaltet. Gemessen 2026-09-26:
+    # POST /event auf gesamt -> 201, nicht 400. Daher entfernt.
     # kind_kindschaftsverhaeltnis_a/b + kind_kindschaftsverh_zeitraum_a/b: seit 2026-08-12
     # via KIND_KV_PV im Kegel (checkESt-Messung), also erreichbar — nicht mehr hier.
     # gwg_bewegliches_selbstaendig_nutzbar/gwg_netto_ohne_vorsteuer/gwg_verzeichnis_ab_250: seit
@@ -411,8 +414,12 @@ UNERREICHBAR_BEKANNT = {
     # nicht-erfragbar.md, Schritt 1), also erreichbar — nicht mehr hier.
     # § 24a — der Accessor leitet das Alter aus geburtsjahr + VZ ab
     "rentner_alter_64_erfuellt",
-    # § 9 Abs. 4a Einzelreise-Slots — der Ring rechnet aus den Tages-Aggregaten
-    "vpf_abwesenheit_stunden", "vpf_an_oder_abreisetag", "vpf_auswaertige_taetigkeit",
+    # § 9 Abs. 4a Einzelreise-Slots — der Ring rechnet aus den Tages-Aggregaten.
+    # vpf_auswaertige_taetigkeit stand hier bis 2026-09-26 mit derselben Begründung, ist aber
+    # KEIN Einzelreise-Slot: es ist die Existenzfrage zweier Regeln und steht seit dem
+    # Screening-Umbau in AUSGABEN_SCREENING (api_constants.py:103), damit in gesamt.
+    # Gemessen 2026-09-26: POST /event auf gesamt -> 201, nicht 400. Daher entfernt.
+    "vpf_abwesenheit_stunden", "vpf_an_oder_abreisetag",
     "vpf_mit_uebernachtung",
 }
 
@@ -441,6 +448,18 @@ def test_g_askable_felder_sind_erreichbar(daten):
         "askable gebunden, aber in keiner nutzerwählbaren Scheibe (tote Bindung): "
         f"{neu} — entweder in SCHEIBEN aufnehmen oder in UNERREICHBAR_BEKANNT "
         "mit Begründung eintragen")
+
+    # Die zweite Richtung, und die leichtere zu übersehen: ein Feld wird erreichbar, der
+    # Eintrag bleibt stehen. Dann behauptet die Liste weiter "kommt über die Oberfläche
+    # nicht an", obwohl es das tut — und eine Liste, die mehr verdeckt als nötig, deckt
+    # irgendwann ein echtes totes Feld mit zu. Gemessen 2026-09-26: kind_idnr (KIND_KV_PV,
+    # api_constants.py:407) und vpf_auswaertige_taetigkeit (AUSGABEN_SCREENING, :103) waren
+    # SO erreichbar und standen trotzdem hier; beide sind entfernt.
+    veraltet = sorted(UNERREICHBAR_BEKANNT & erreichbar)
+    assert not veraltet, (
+        "UNERREICHBAR_BEKANNT behauptet Unerreichbarkeit für Felder, die in einer Scheibe "
+        f"stehen: {veraltet} — Eintrag streichen und in einem Kommentar festhalten, dass das "
+        "Feld erreichbar geworden ist")
 
 
 def test_g_gate_faengt_tote_bindung(daten):
