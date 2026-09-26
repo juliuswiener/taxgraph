@@ -1115,6 +1115,16 @@ GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE = {
     ("p3_nr72_pv", "pv_auf_gebaeude", "p3_nr72_pv", "pv_auf_gebaeude"),
     ("p3_nr72_pv", "[Lücke]", "p3_nr72_pv", "pv_leistungsgrenze"),
     ("p3_nr72_pv", "[Lücke]", "p3_nr72_pv", "pv_auf_gebaeude"),
+    # p19_2_versorgungsfreibetrag (2026-09-26, Weg (b) nach Vorabmessung): ueber
+    # RUNNER_ACCESSOR_FUER_REGEL an catala_p19_2_versorgungsfreibetrag angebunden. Der Accessor
+    # kennt keine rules.yaml-geltungsbedingungen (gbs = set()), jede gebundene geltungsbedingung
+    # waere also automatisch ein Verstoss. Die drei hier sind echt: Art, Kohorte und Altersgrenze
+    # entscheiden, ob der Freibetrag ueberhaupt greift (VersorgungsfreibetragOffen in
+    # produkt/engine/runner.py:981) — sie sind nur nicht als rules.yaml-Liste modelliert, weil
+    # p19_2_versorgungsfreibetrag keinen rules.yaml-Eintrag hat.
+    ("an_gesamt", "versorgung_alter_bei_beginn", "p19_2_versorgungsfreibetrag", "altersgrenze_sonstige_alter"),
+    ("an_gesamt", "versorgung_art", "p19_2_versorgungsfreibetrag", "art_beamtenrechtlich_oder_nicht"),
+    ("an_gesamt", "versorgung_beginn_jahr", "p19_2_versorgungsfreibetrag", "versorgungsbeginn_kohorte"),
 }
 
 # Analog: signatur_slot-Namen, die in keiner Signatur (rules.yaml inputs / Catala input) stehen.
@@ -1260,6 +1270,24 @@ SIGNATUR_SLOT_ZEIGT_INS_LEERE = {
     #     Korrektheit ohne dieses Risiko.
     ("an_gesamt", "dauernd_berufsunfaehig", "p34_3_ermaessigter_durchschnittssatz", "berufsunfaehig"),
     ("an_gesamt", "ermaessigung_einmal_genutzt", "p34_3_ermaessigter_durchschnittssatz", "bereits_genutzt"),
+    # bindung_an_gesamt.yaml — p19_2_versorgungsfreibetrag: die zwei Slot-Namen der Bindung
+    # (jahresrente, bemessungsgrundlage) stehen NICHT in der Input-Menge des Accessors
+    # catala_p19_2_versorgungsfreibetrag, obwohl beide Felder live gelesen werden — nur liest
+    # sie der Ring ueber die FELD-IDs (bescheid_zweige.py: versorgung_jahresrente,
+    # versorgung_bemessungsgrundlage). Der Accessor selbst kennt nur
+    # versorgung_bemessungsgrundlage und versorgung_beginn_jahr; versorgung_jahresrente liest
+    # die AEUSSERE Funktion catala_einkuenfte_versorgung, die den Freibetrag-Accessor intern
+    # aufruft. Weg (a) (Slots umbenennen) wurde vorher gemessen und verworfen: mit dem
+    # Freibetrag-Accessor bleibt versorgung_jahresrente ein Verstoss, mit
+    # catala_einkuenfte_versorgung bleibt versorgung_bemessungsgrundlage einer — kein
+    # Accessor macht beide Slots sauber, weil _runner_dict_inputs() dem verschachtelten Aufruf
+    # nicht folgt. Der Auslöser der Entscheidung (zweiter Träger von `jahresrente`:
+    # bindung_rentner.yaml:13, p22_1) ist gemessen, s. Backlog
+    # test-n-blindstelle-ohne-ground-truth.md.
+    # ponytail: Slots jahresrente/bemessungsgrundlage ungeprueft, weil _runner_dict_inputs dem
+    # inneren Aufruf nicht folgt; Upgrade = Weg (c) (AST eine Ebene tief, dann 0 Slot-Ausnahmen).
+    ("an_gesamt", "versorgung_jahresrente", "p19_2_versorgungsfreibetrag", "jahresrente"),
+    ("an_gesamt", "versorgung_bemessungsgrundlage", "p19_2_versorgungsfreibetrag", "bemessungsgrundlage"),
 }
 
 
@@ -1346,13 +1374,6 @@ REGELN_OHNE_GROUND_TRUTH = {
     "p35a_anzahl_dienstleistungen_erhebung",
     "p35a_anzahl_minijobs_erhebung",
     "p6_2_anzahl_gwg_erhebung",
-    # Hat einen dict-Accessor (catala_p19_2_versorgungsfreibetrag), aber der liest FELD-IDs
-    # (versorgung_bemessungsgrundlage), waehrend die Bindung SLOT-Namen fuehrt
-    # (bemessungsgrundlage). Der Ring ruft ausserdem catala_einkuenfte_versorgung, nicht den
-    # Freibetrag-Accessor direkt. Ein naiver Anschluss meldete beide Slots als Verstoss,
-    # obwohl versorgung_jahresrente live gelesen wird (api.py:822/843/860). Braucht erst eine
-    # Entscheidung, welche Namensebene die Ground Truth ist — siehe BACKLOG.
-    "p19_2_versorgungsfreibetrag",
     # Aggregationsbruch: Kind-Achse gegen Fall-Achse.
     # je Kind gebunden; _kind_kv_pv_summe() addiert alle Kinder in basis_kv_pv von catala_p10_kv_pv.
     "p10_1_3_kv_pv_kind",
@@ -1449,6 +1470,7 @@ RUNNER_ACCESSOR_FUER_REGEL = {
     "p10_1_9_schulgeld": "catala_p10_1_9_schulgeld",
     "p33_2a_fahrtkostenpauschale": "catala_p33_2a_fahrtkostenpauschale",
     "p3_nr72_pv": "catala_p3_nr72_photovoltaik",
+    "p19_2_versorgungsfreibetrag": "catala_p19_2_versorgungsfreibetrag",
 }
 
 
