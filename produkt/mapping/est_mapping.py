@@ -72,7 +72,8 @@ _ABZUGS_KZ = frozenset({
     # der Einzelposten (E0104108) nicht. Das ist konsistent — abzugswirksam ist die Summe.
     "E0107601",  # Kirchensteuer gezahlt (§10 Abs.1 Nr.4, Sonderausgabe) (ceiling)
     "E0108202",  # Berufsausbildung Summe (§10 Abs.1 Nr.7, Sonderausgabe) (ceiling)
-    "E0108405",  # Spenden (§10b Abs.1, Sonderausgabe) (ceiling)
+    "E0108105",  # Spenden Zeile 5 (§10b Abs.1, Sonderausgabe) (ceiling) — bis 2026-09-26 stand
+                 # hier E0108405, die Vermoegensstock-Zeile 9, an die spenden_betrag falsch gebunden war
     "E0304601",  # Realsplitting Unterhaltsleistungen (§10 Abs.1a Nr.1) (ceiling)
     "E0506105",  # Kinderbetreuungskosten Summe (§10 Abs.1 Nr.5) (ceiling)
     "E0120103",  # Unterhalt an Angehoerige (§33a Abs.1, agB) (ceiling)
@@ -139,6 +140,18 @@ _KOMMA_OHNE_E60_KZ = frozenset({
     # Der Wert stand als "1000" statt "1000,00" im XML — eine Erklaerung mit angerechneter
     # auslaendischer Steuer war damit nicht einreichbar.
     "E1905101",  # anrechenbare noch nicht angerechnete ausl. Steuer (Anlage KAP Zeile 41, q)
+})
+
+
+# _NULL_UNZULAESSIG_KZ — Kz vom XSD-Typ GanzzahlPos (E10-2025.xsd), an denen ERiC eine 0 ablehnt
+# (zahlIstNull, rc=610001002; gemessen 2026-09-26 an E0108405 und E0108701, beide dieser Typ).
+# Eine 0 dort macht die GANZE Erklaerung uneinreichbar. Eine Spendensumme 0 heisst "keine
+# Spende" — die Zeile bleibt dann leer. Greift nur in der Klasse-b/1:1-Zuordnung von deklariere().
+# ponytail: nur die Spenden-Kz. 14 weitere cent-Kz der Bindung tragen denselben XSD-Typ (gezaehlt
+# 2026-09-26), ob ihre Felder eine 0 erreichen, ist ungeprueft; Upgrade: Menge aus den XSD-Typen
+# ableiten statt sie von Hand zu pflegen.
+_NULL_UNZULAESSIG_KZ = frozenset({
+    "E0108105",  # Spenden Zeile 5 (Sp_MB/Foerd_st_beg_Zw_Inl/Sum_Best, E10-2025.xsd:9138)
 })
 
 
@@ -691,6 +704,10 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
                                        "Wert nicht geloggt."})
             else:
                 deklaration["E0102102" if iban_norm[:2] == "DE" else "E0102603"] = iban_norm
+        elif b.get("elster_kz") in _NULL_UNZULAESSIG_KZ and wert == 0:   # Klasse 1 / b, Wert 0
+            nicht_deklariert.append({"feld_id": feld_id,
+                                     "grund": f"Wert 0: {b['elster_kz']} bleibt leer (XSD-Typ "
+                                     "GanzzahlPos, eine 0 lehnt ERiC ab)"})
         elif b.get("elster_kz"):                                  # Klasse 1 / b (1:1)
             deklaration[b["elster_kz"]] = _cent_nach_kz(wert, b["elster_kz"]) if b.get("typ") == "cent" else wert
         elif feld_id in P23_BETRAGSFELDER:                  # Klasse h — §23 Instanz-1-Rohdaten: in p23_veraeusserung sammeln

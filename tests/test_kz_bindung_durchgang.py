@@ -33,6 +33,7 @@ import traverser as TR         # noqa: E402
 import api as API               # noqa: E402
 import server as SRV             # noqa: E402
 import audit                      # noqa: E402
+import xsd_verify as XV           # noqa: E402
 
 HID = "74931"
 
@@ -40,6 +41,14 @@ HID = "74931"
 @pytest.fixture(scope="module")
 def bindung():
     return TR.lade_bindung()
+
+
+@pytest.fixture(scope="module")
+def xsd_index():
+    schema = XV._find_schema(2025)
+    if not schema:
+        pytest.skip("E10-2025.xsd nicht gefunden — $ERIC_DIR setzen")
+    return XV.walk(schema, start_element="E10")[0]
 
 
 def _xml(felder: dict, bindung: dict) -> str:
@@ -901,33 +910,64 @@ def test_gewst_zu_zahlen_uebersteht_scheibengefilterte_bindung(http_base):
     assert dek["deklaration"]["E0801705"] == 400       # gewst_hebesatz
 
 
+# ---------------------------------------------------------------- § 10b Spenden: Zeile 5, nicht Zeile 9
+
+_ZEILE_5 = ("E10", "SA", "Zuw", "Sp_MB", "Foerd_st_beg_Zw_Inl", "Sum_Best")
+
+
+def test_spenden_betrag_steht_in_zeile_5(bindung, xsd_index):
+    """Die allgemeine Spende gehört in Zeile 5 (steuerbegünstigte Zwecke im Inland, Summe lt.
+    Bestätigungen), nicht in Zeile 9 (Vermögensstock einer Stiftung).
+
+    Bis 2026-09-26 stand hier E0108405 — eine echte Kennzahl, nur die falsche Zeile. ERiC
+    lehnte 500 € darunter mit rc=610001002 ab, unter E0108105 kam derselbe Fall mit rc=0 durch
+    (Vault: decisions/allgemeine-spenden-gehoeren-in-zeile-5). `Foerd_st_beg_Zw_Inl` allein
+    reicht nicht: Zeile 6 (E0108106, Nachweis Betriebsfinanzamt) liegt im selben Container.
+    """
+    pfade = xsd_index[bindung["spenden_betrag"]["elster_kz"]]
+    assert pfade and all(p[:-1] == _ZEILE_5 for p in pfade), pfade
+
+
+def test_spenden_betrag_null_bleibt_aus_dem_xml(bindung):
+    """E0108105 ist GanzzahlPos (E10-2025.xsd:9138). ERiC lehnt dort eine 0 ab (zahlIstNull,
+    rc=610001002; gemessen 2026-09-26 an E0108405 und E0108701, gleicher Typ) — und damit die
+    ganze Erklärung. Wer auf die Spendenfrage "0" antwortet, etwa weil er nur an eine Partei
+    gespendet hat, bekäme sonst keine einreichbare Erklärung.
+
+    Die Gegenprobe prüft zugleich die Rundung: 300,50 € sind ein Abzug und werden aufgerundet
+    (_ABZUGS_KZ). Bis 2026-09-26 stand dort nur die alte Kennzahl, E0108105 wurde abgerundet.
+    """
+    assert "E0108105" not in _xml({"spenden_betrag": 0}, bindung)
+    assert _pfad_im_xml(_xml({"spenden_betrag": 30050}, bindung), _ZEILE_5[1:] + ("E0108105",), "301")
+
+
 # ---------------------------------------------------------------- § 10b Abs. 1a Vermögensstock
 
-def test_spenden_vermoegensstock_kommt_im_xml_an(bindung):
-    """Ohne dieses Feld lehnte checkESt ab: "Bitte geben Sie an, in welcher Höhe die 2025
-    geleisteten Spenden in den Vermögensstock einer Stiftung ... berücksichtigt werden sollen."
+def test_spenden_vermoegensstock_ist_stillgelegt(bindung):
+    """Zeile 11 sagt, wie viel von Zeile 9 (Vermögensstock einer Stiftung) im Jahr zählen soll.
+    Ohne Zeile-9-Feld hat sie keinen Gegenstand, und ERiC lehnt sie ab, auch mit Wert 0
+    (rc=610001002, Meldung 1115). Deshalb weder gefragt noch geschrieben, auch ein schon
+    bestätigter Altwert nicht (Vault: decisions/allgemeine-spenden-gehoeren-in-zeile-5).
 
-    E0108509, NICHT E0108607 — Letzteres ist der Vorjahres-Rest (Spenden aus Vorjahren, die
-    bisher nicht berücksichtigt wurden). Der Backlog-Eintrag nannte die falsche Kennzahl; das
-    fiel erst beim Lesen des Containers auf.
+    Bis 2026-09-26 prüfte dieser Test das Gegenteil: E0108509 = 200 im XML, neben der
+    allgemeinen Spende unter E0108405 in Zeile 9. Beides zusammen war der Fehler.
     """
     xml = _xml({"spenden_betrag": 50000,                # 500 EUR
-                "spenden_vermoegensstock": 20000},      # davon 200 EUR in den Vermögensstock
+                "spenden_vermoegensstock": 20000},      # bestätigter Altwert: 200 EUR
                bindung)
-    stift = ("SA", "Zuw", "Sp_erh_Verm_Stift")
-    assert _pfad_im_xml(xml, stift + ("E0108405",), "500")
-    assert _pfad_im_xml(xml, stift + ("E0108509",), "200")
+    assert _pfad_im_xml(xml, _ZEILE_5[1:] + ("E0108105",), "500")
+    assert "Sp_erh_Verm_Stift" not in xml
+    b = bindung["spenden_vermoegensstock"]
+    assert b["askable"] is False and b["elster_kz"] is None
 
 
-def test_vermoegensstock_hinweis_nur_bei_echtem_betrag():
-    """Der Nutzer erfährt, dass diese Angabe deklariert, aber nicht gerechnet wird.
+def test_nicht_gerechnet_hinweis_nur_bei_echtem_betrag(bindung, monkeypatch):
+    """Der Nutzer erfährt, wenn eine Angabe deklariert, aber nicht gerechnet wird.
 
-    Das ist die Hälfte der Entscheidung, die dieses Feld überhaupt askable macht. Eine still
-    gesetzte 0 hätte für jeden behauptet, er wolle nichts als Vermögensstock-Spende
-    berücksichtigt sehen — für den, der eine Stiftung mit aufbaut, wären das bis zu eine
-    Million Abzugsvolumen, die niemand je erfragt hat. Der Rechenkern kennt § 10b Abs. 1a
-    nicht (rules.yaml nennt ihn selbst "einen eigenen Zuschnitt"), also fällt die angezeigte
-    Steuer zu hoch aus — die ungefährliche Richtung, aber keine, die man verschweigt.
+    Die Tabelle ist seit 2026-09-26 leer. Ihr einziger Eintrag, spenden_vermoegensstock, ist
+    stillgelegt und steht nicht mehr in der Erklärung — "steht in der Erklärung ans Finanzamt"
+    wäre dort falsch. Deshalb zuerst die Bedingung für jeden Eintrag: das Feld wird deklariert.
+    Der Mechanismus darunter bleibt geprüft, an einem Testeintrag.
 
     Die Antwort 0 ist der Normalfall und sagt gerade, dass der Sonderfall NICHT vorliegt —
     dafür darf kein Hinweis erscheinen, sonst ist er Rauschen und wird überlesen.
@@ -938,30 +978,36 @@ def test_vermoegensstock_hinweis_nur_bei_echtem_betrag():
     sys.path.insert(0, os.path.join(root, "produkt", "konsistenz"))
     import check_nicht_gerechnet as CNG
 
-    mit = CNG.nicht_gerechnete_angaben(
-        {"spenden_vermoegensstock": {"wert": 20000, "zustand": "bestaetigt"}})
-    assert len(mit) == 1 and mit[0]["feld_id"] == "spenden_vermoegensstock"
-    assert "günstiger" in mit[0]["hinweis"]
+    for feld in CNG.NICHT_GERECHNET:
+        dekl = est_mapping.deklariere({feld: {"wert": 20000, "zustand": "bestaetigt"}}, bindung)
+        assert feld not in {e["feld_id"] for e in dekl["nicht_deklariert"]}, feld
 
-    for still in ({"spenden_vermoegensstock": {"wert": 0, "zustand": "bestaetigt"}},
-                  {"spenden_vermoegensstock": {"wert": 20000, "zustand": "vorlaeufig"}},
+    monkeypatch.setitem(CNG.NICHT_GERECHNET, "testfeld", "Testhinweis")
+    mit = CNG.nicht_gerechnete_angaben({"testfeld": {"wert": 20000, "zustand": "bestaetigt"}})
+    assert len(mit) == 1 and mit[0]["feld_id"] == "testfeld"
+
+    for still in ({"testfeld": {"wert": 0, "zustand": "bestaetigt"}},
+                  {"testfeld": {"wert": 20000, "zustand": "vorlaeufig"}},
                   {}):
         assert CNG.nicht_gerechnete_angaben(still) == []
 
 
-def test_preflight_meldet_nicht_gerechnete_angabe_als_amber():
-    """Der Hinweis muss den Status anheben — GREEN hieße "hier gibt es nichts zu wissen"."""
+def test_preflight_meldet_nicht_gerechnete_angabe_als_amber(monkeypatch):
+    """Der Hinweis muss den Status anheben — GREEN hieße "hier gibt es nichts zu wissen".
+    Die Tabelle ist seit 2026-09-26 leer, geprüft wird an einem Testeintrag."""
     import os
     import sys
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.insert(0, os.path.join(root, "produkt", "konsistenz"))
+    import check_nicht_gerechnet as CNG
     import preflight as PF
 
-    erg = PF.preflight({"spenden_vermoegensstock": {"wert": 20000, "zustand": "bestaetigt"}})
+    monkeypatch.setitem(CNG.NICHT_GERECHNET, "testfeld", "Testhinweis")
+    erg = PF.preflight({"testfeld": {"wert": 20000, "zustand": "bestaetigt"}})
     assert erg["status"] == "AMBER"
     assert len(erg["hinweise_nicht_gerechnet"]) == 1
 
-    sauber = PF.preflight({"spenden_vermoegensstock": {"wert": 0, "zustand": "bestaetigt"}})
+    sauber = PF.preflight({"testfeld": {"wert": 0, "zustand": "bestaetigt"}})
     assert sauber["hinweise_nicht_gerechnet"] == []
 
 
@@ -1150,7 +1196,7 @@ def test_abzuege_werden_aufgerundet_einnahmen_abgerundet():
     # Abzüge: aufrunden. Je einer aus den Gruppen, die 2026-08-19 nachgetragen wurden.
     for kz, was in (("E0108202", "Berufsausbildung"),
                     ("E0107601", "Kirchensteuer"),
-                    ("E0108405", "Spenden"),
+                    ("E0108105", "Spenden"),
                     ("E0705701", "V+V-Werbungskosten"),
                     ("E0120103", "Unterhalt § 33a"),
                     ("E0241901", "§ 35c Sanierung")):

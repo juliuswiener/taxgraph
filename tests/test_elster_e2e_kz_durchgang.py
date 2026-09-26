@@ -196,7 +196,7 @@ def test_e2e_kz_durchgang_26_felder(base):
         # § 20 Kapital (1 Kz)
         "kap_kapitalertraege": "E1900701",
         # § 10b Spenden (1 Kz)
-        "spenden_betrag": "E0108405",
+        "spenden_betrag": "E0108105",
         # § 33 agB (1 Kz)
         "agb_aufwendungen": "E0161804",
         # § 35 Handwerker (1 Kz)

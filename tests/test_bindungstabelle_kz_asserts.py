@@ -6,7 +6,7 @@ Jeder Test prüft, dass:
   3. Die ELSTER-Deklaration das Kz mit dem erwarteten Wert enthält
 
 Kz in dieser Datei:
-  E0108405 spenden_betrag         (§10b Spenden)
+  E0108105 spenden_betrag         (§10b Spenden)
   E0203611 ep_oepnv_kosten        (§9 Entfernungspauschale ÖPNV)
   E0205201 tage_ueber_8h_eintaegig (§9 Abs.4a Verpflegung >8h)
   E0205302 tage_an_abreise        (§9 Abs.4a Verpflegung An-/Abreise)
@@ -48,7 +48,7 @@ def all_bindings():
 
 # --- Kz-Daten: feld_id -> (kz, test_wert_cent, expected_dekl_wert) ---
 
-_KZ_E0108405 = ("spenden_betrag", 50000, 500)  # 500€ Spenden
+_KZ_E0108105 = ("spenden_betrag", 50000, 500)  # 500€ Spenden
 _KZ_E0203611 = ("ep_oepnv_kosten", 10000, 100)  # 100€ ÖPNV-Kosten
 _KZ_E0205201 = ("tage_ueber_8h_eintaegig", 10, 10)  # 10 Tage >8h
 _KZ_E0205302 = ("tage_an_abreise", 5, 5)  # 5 Tage An-/Abreise
@@ -57,18 +57,18 @@ _KZ_E0207611 = ("dhf_unterkunftskosten_monat", 150000, 1500)  # 1500€ Unterkun
 _KZ_E0505607 = ("schulgeld", 100000, 1000)  # 1000€ Schulgeld
 
 
-def test_e0108405_spenden_betrag_in_deklaration(all_bindings):
-    """E0108405 spenden_betrag — Kz in Deklaration vorhanden (mit echter YAML-Bindung)."""
-    fid, wert_cent, expected = _KZ_E0108405
+def test_e0108105_spenden_betrag_in_deklaration(all_bindings):
+    """E0108105 spenden_betrag — Kz in Deklaration vorhanden (mit echter YAML-Bindung)."""
+    fid, wert_cent, expected = _KZ_E0108105
     assert fid in all_bindings, f"{fid} nicht in Bindungen"
-    assert all_bindings[fid]["elster_kz"] == "E0108405"
+    assert all_bindings[fid]["elster_kz"] == "E0108105"
 
     snapshot = {fid: {"wert": wert_cent, "zustand": "bestaetigt"}}
     result = deklariere(snapshot, {fid: all_bindings[fid]})
     dekl = result.get("deklaration", {})
 
-    assert "E0108405" in dekl, f"E0108405 nicht in Deklaration: {dekl.keys()}"
-    assert dekl["E0108405"] == expected, f"E0108405={dekl['E0108405']} ≠ {expected}"
+    assert "E0108105" in dekl, f"E0108105 nicht in Deklaration: {dekl.keys()}"
+    assert dekl["E0108105"] == expected, f"E0108105={dekl['E0108105']} ≠ {expected}"
 
 
 def test_e0203611_ep_oepnv_kosten_in_deklaration(all_bindings):
