@@ -76,13 +76,15 @@ bindungen:
   # Voraussetzung — sie wird beim Ausfuellen ueberlesen und von keiner Stelle geprueft.
   #
   # `gate: false` auf BEIDEN Feldern, und zwar aus einem gemessenen Grund: als echtes Gate
-  # schliesst ein bestaetigtes `false` auf Instanz 1 die GANZE Regel aus (relevanz()), und
-  # damit verschwaende auch die Frage des ZWEITEN Kindes, dessen eigener Betrag einwandfrei
-  # ist. Beide Antworten muessen die Regel stehen lassen; die Sperre sitzt in
-  # bescheid_deklaration._an_gesamt_sperrgrund und laeuft je Kind-Instanz.
+  # schloss ein bestaetigtes `false` auf Instanz 1 die GANZE Regel aus (relevanz(), bis
+  # feld-bedingung-liest-nur-instanz-1 am 2026-09-26), und damit verschwand auch die Frage des
+  # ZWEITEN Kindes, dessen eigener Betrag einwandfrei ist. Beide Antworten muessen die Regel
+  # stehen lassen; die Sperre sitzt in bescheid_deklaration._an_gesamt_sperrgrund und laeuft
+  # je Kind-Instanz.
   #
-  # KEINE `feld_bedingung` („nur fragen, wenn kinderbetreuungskosten > 0"): sie liest nur
-  # Instanz 1 (traverser._feld_ausgeschlossen), ein zweites Kind fiele aus der Frage.
+  # KEINE `feld_bedingung` („nur fragen, wenn kinderbetreuungskosten > 0"): sie las bis zum
+  # selben Tag nur Instanz 1 (traverser._feld_ausgeschlossen), ein zweites Kind fiel aus der
+  # Frage. Heute liest sie jede Instanz; nachgezogen ist sie hier nicht.
   - feld_id: kind_betreuung_reine_betreuung
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: nur_betreuung_kein_unterricht}
