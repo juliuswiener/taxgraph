@@ -97,6 +97,19 @@ DEKLARATION_STATT_GATE = [
     # auch die Kostenfrage. Dann sperrt der Guard nie, weil er Kosten > 0 prüft — der Abzug fiel
     # still weg, ohne Sperrgrund und ohne Zahl. Dieselbe Bauart wie der Anlage-V-Fund oben.
     ("uebernachtung_im_inland", "p9_1_3_nr5a_uebernachtung_nach_48"),
+    # 2026-09-26, Vollständigkeitstest. § 10 Abs. 1 Nr. 5 S. 2 EStG nimmt Unterricht, Vermittlung
+    # besonderer Fähigkeiten und Freizeitbetätigungen aus dem Abzug aus, S. 4 verlangt Rechnung und
+    # unbare Zahlung. Beides sind Voraussetzungen des ABZUGS einer qualifizierenden Aufwendung —
+    # nicht der Einkunftsart. "Betreuung war keine reine Betreuung" nimmt keine Einkünfte weg; die
+    # Aufwendung ist dann unqualifiziert und mindert die Bemessungsgrundlage nicht.
+    # GEMESSEN vor dem Eintrag, über den echten Pfad (API.event + API.ergebnis, Kind 1, Betrag
+    # 6.000 EUR): beide Antworten lassen die Regel stehen (Status "unentschieden", nie
+    # "ausgeschlossen"), und ein "nein" oder ein gar nicht gesetztes Feld liefert KEINE stille
+    # Zahl, sondern den Sperrgrund kinderbetreuung_reine_betreuung_offen bzw.
+    # kinderbetreuung_zahlung_offen. Kind 2 trägt weiter bei, wenn Kind 1 "nein" sagt — die Sperre
+    # läuft je Kind-Instanz, nicht regelweit.
+    ("kind_betreuung_reine_betreuung", "p10_1_5_kinderbetreuung"),
+    ("kind_betreuung_rechnung_ueberweisung", "p10_1_5_kinderbetreuung"),
 ]
 
 
@@ -261,3 +274,84 @@ def test_schuld_eintraege_sind_begruendet():
     for feld, grund in SCHULD.items():
         assert "BACKLOG" in grund, (
             f"{feld}: Begründung ohne BACKLOG-Verweis — dann findet den Punkt später niemand.")
+
+
+# ------------------------------------------------- Vollständigkeit der `gate: false`-Felder
+
+# Jedes Feld mit `gate: false` schaltet eine Regel nicht mehr ab. Das ist eine starke Aussage,
+# und bis zum 2026-09-26 war sie fuer die Haelfte der Felder UNBEZEUGT: DEKLARATION_STATT_GATE
+# ist eine handgepflegte Liste, und nichts erzwang, dass ein neues `gate: false` dort auftaucht
+# oder sonst einen Beleg bekommt. GEMESSEN am 2026-09-26: 14 Felder trugen `gate: false`,
+# 8 standen in DEKLARATION_STATT_GATE, 6 nicht — darunter die vier p16_4-Voraussetzungen und die
+# zwei kind_betreuung_*.
+#
+# Dieser Test schliesst die Luecke: jedes `gate: false`-Feld ist ENTWEDER in
+# DEKLARATION_STATT_GATE registriert ODER hier namentlich mit einer Pruefdatei belegt. Ein neues
+# `gate: false` ohne das eine oder das andere macht ihn rot.
+#
+# WARUM NICHT EINFACH ALLE REGISTRIEREN: DEKLARATION_STATT_GATE traegt je Eintrag eine Begruendung
+# und pinnt sie ueber `test_deklarationsfeld_schaltet_die_regel_nicht_ab`. Die vier p16_4-Felder
+# haben ihren eigenen, schaerferen Beleg (tests/test_p16_4_freibetrag_fragt_den_gewinn.py) und
+# gehoeren dort nicht zusaetzlich hinein — zwei Listen, dieselbe Frage ist die Bauart, die dieser
+# Test gerade verhindern soll.
+
+# gate: false -> Datei, die seine Berechtigung belegt (namentlich, nicht per Ordner-Scan)
+BELEGT_ANDERSWO: dict[str, str] = {
+    "rentner_alter_55_oder_berufsunfaehig":
+        "tests/test_p16_4_freibetrag_fragt_den_gewinn.py — § 16 Abs. 4 S. 1-2: die Voraussetzungen "
+        "des FREIBETRAGS, nicht der Einkunftsart. Ein 'nein' entfernt einen Abzug, keine Einkunft.",
+    "rentner_alter_55_oder_berufsunfaehig_partner":
+        "tests/test_p16_4_freibetrag_fragt_den_gewinn.py — Partner-Spiegel zu Person A.",
+    "rentner_freibetrag_erstmalig":
+        "tests/test_p16_4_freibetrag_fragt_den_gewinn.py — § 16 Abs. 4 S. 2, nur einmal zu gewaehren.",
+    "rentner_freibetrag_erstmalig_partner":
+        "tests/test_p16_4_freibetrag_fragt_den_gewinn.py — Partner-Spiegel zu Person A.",
+}
+
+
+def _gate_false_felder() -> set[str]:
+    return {fid for fid, b in BINDUNG.items() if b.get("gate") is False}
+
+
+def test_jedes_gate_false_feld_ist_registriert_oder_belegt():
+    """Die Luecke selbst: kein `gate: false` ohne Registrierung und ohne Beleg.
+
+    Ohne diesen Test kann jemand `gate: false` an ein Feld schreiben, das tatsaechlich eine
+    Rechen-Voraussetzung ist — die Regel bliebe dann stehen, obwohl die Antwort sie abschalten
+    muesste, und niemand merkte es.
+    """
+    registriert = {fid for fid, _ in DEKLARATION_STATT_GATE}
+    ungedeckt = []
+    for fid in sorted(_gate_false_felder()):
+        if fid in registriert or fid in BELEGT_ANDERSWO:
+            continue
+        ungedeckt.append(fid)
+    assert not ungedeckt, (
+        f"{ungedeckt} tragen `gate: false`, stehen aber weder in DEKLARATION_STATT_GATE noch in "
+        f"BELEGT_ANDERSWO. Ein `gate: false` behauptet: die Antwort schaltet die Regel NICHT ab. "
+        f"Entweder in DEKLARATION_STATT_GATE registrieren (mit Begruendung) oder hier einen "
+        f"namentlichen Beleg eintragen — sonst ist die Behauptung unbezeugt.")
+
+
+@pytest.mark.parametrize("feld", sorted(BELEGT_ANDERSWO))
+def test_belegte_gate_false_felder_tragen_wirklich_gate_false(feld):
+    """Die Gegenrichtung: ein Beleg fuer ein Feld, das kein `gate: false` mehr traegt, ist
+    veraltet und muss raus — sonst waechst hier eine zweite Dauerausnahme-Liste."""
+    b = BINDUNG.get(feld)
+    assert b is not None, f"{feld} ist gar nicht mehr gebunden — Beleg entfernen."
+    assert b.get("gate") is False, (
+        f"{feld} traegt kein `gate: false` mehr. Der Beleg in BELEGT_ANDERSWO ist damit "
+        f"gegenstandslos — entfernen oder die Ursache klaeren.")
+
+
+def test_belegte_gate_false_felder_lassen_die_regel_stehen():
+    """Der Beleg muss auch wirken: beide Antworten lassen die Regel des Feldes stehen. Das ist
+    dieselbe Pruefung wie bei DEKLARATION_STATT_GATE, nur fuer die namentlich belegten Felder —
+    die Zahl der Abdeckung ist damit 14 von 14, nicht 8 von 14."""
+    for feld, _ in sorted(BELEGT_ANDERSWO.items()):
+        rid = BINDUNG[feld]["quelle"]["regel_id"]
+        for wert in (True, False):
+            st = _relevanz_mit(feld, wert)[rid]["status"]
+            assert st != "ausgeschlossen", (
+                f"{feld}={wert} schliesst {rid} aus, obwohl das Feld `gate: false` traegt und "
+                f"namentlich belegt ist. Der Beleg traegt nicht.")

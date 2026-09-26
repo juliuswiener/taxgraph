@@ -441,7 +441,8 @@ def naechste_fragen(store: dict, bindung: dict, beitrag: dict | None = None) -> 
         slots.sort(key=lambda f: (-beitrag.get(f, 0), f))
     else:
         slots.sort()
-    return _nach_themen(gates + slots, bindung, _angefangene_themen(store, bindung))
+    return _nach_themen(gates + slots, bindung, _angefangene_themen(store, bindung),
+                        gewicht_aktiv=bool(beitrag))
 
 
 def _angefangene_themen(store: dict, bindung: dict) -> list[str]:
@@ -465,7 +466,8 @@ def _angefangene_themen(store: dict, bindung: dict) -> list[str]:
 
 
 def _nach_themen(felder: list[str], bindung: dict,
-                 angefangen: list[str] | None = None) -> list[str]:
+                 angefangen: list[str] | None = None,
+                 gewicht_aktiv: bool = False) -> list[str]:
     """Hält Fragen desselben Themas beisammen, ohne die Rangfolge davor umzuwerfen.
 
     Julius, 2026-08-25: „wichtig auch dass die fragen in einer für den user sinnvollen reihenfolge
@@ -514,7 +516,7 @@ def _nach_themen(felder: list[str], bindung: dict,
         eingang = [f for f in gruppe if bindung[f].get("eingangsfrage")]
         if eingang:
             gruppe = eingang + [f for f in gruppe if f not in eingang]
-        nach_thema[thema] = _nach_vordruck(gruppe, bindung, gw_einmal)
+        nach_thema[thema] = _nach_vordruck(gruppe, bindung, gw_einmal, gewicht_aktiv)
     return [f for thema in _themen_folge(nach_thema, bindung, angefangen or [])
             for f in nach_thema[thema]]
 
@@ -557,13 +559,21 @@ def _feld_ausgeschlossen(eintrag: dict, aktiv: dict, bindung: dict | None = None
     return _bedingung_je_instanz(aktiv, bindung or {}, bed["feld"], weicht_ab) == "ausgeschlossen"
 
 
-def _nach_vordruck(gruppe: list[str], bindung: dict, gw: dict) -> list[str]:
+def _nach_vordruck(gruppe: list[str], bindung: dict, gw: dict,
+                   gewicht_aktiv: bool = False) -> list[str]:
     """Innerhalb eines Themas: die Felder mit ELSTER-Kennzahl in der Reihenfolge des Vordrucks.
 
     Die Kennzahlen sind durchnummeriert, wie das amtliche Formular sie führt — E0500107 (Vorname
     des Kindes) vor E0500406 (IdNr) vor E0500701 (Geburtsdatum) vor E0501103 (Name des anderen
     Elternteils). Diese Ordnung ist da und kostet nichts; ohne sie entschied der
     Unsicherheits-Beitrag, und der ist quer zu allem, was ein Mensch erwartet.
+
+    GEWICHT GEGEN VORDRUCK (2026-09-26): `gewicht_aktiv` ist True, sobald `naechste_fragen` einen
+    Unsicherheits-Beitrag erhalten hat. Dann bleibt die Klasse „wert" in der Ordnung, die der
+    Beitrag gesetzt hat — der Rechenkern weiss besser als das Formular, welche Frage die Zahl am
+    staerksten bewegt. Die Klasse „formal" wird in BEIDEN Faellen nach Kennzahl sortiert, also
+    kann der Vordruck-Anlass unten nicht wieder aufreissen: seine vier Felder gehören ihr an.
+    Ohne Beitrag bleibt alles wie vorher — der Vordruck ist der Rueckfall, nicht der Verlierer.
 
     GEMESSEN 2026-08-27 im Kinderfreibetrags-Block, wie Julius ihn im Durchgang sah: die ersten
     vier Fragen galten dem ANDEREN Elternteil (Geburtsdatum, Verhältnis, Name, Zeitraum), der
@@ -593,6 +603,18 @@ def _nach_vordruck(gruppe: list[str], bindung: dict, gw: dict) -> list[str]:
 
     aus = list(gruppe)
     for klasse in ("formal", "wert"):
+        if klasse == "wert" and gewicht_aktiv:
+            # (a) 2026-09-26: Liegt ein Unsicherheits-Beitrag vor, ist er die bessere Ordnung
+            # INNERHALB der Wertfelder — er kommt aus dem Rechenkern und sagt, welche Frage die
+            # Zahl am staerksten bewegt. Der Vordruck bleibt Rueckfall, wenn es keinen gibt.
+            # Gemessen, bevor das hier stand: von 88 kennzahl-tragenden Wertfeldern wandern 63 in
+            # 15 von 81 Themen (groesste Verschiebung 15 Plaetze); die Gesamtzahl der Fragen
+            # aendert sich nicht (341 = 341). Der Vordruck-Anlass vom 2026-08-27 kann dabei nicht
+            # wieder aufreissen: seine vier Felder (kind_vorname E0500107, kind_anderer_elternteil_
+            # name/geburtsdatum/kindschaftsverhaeltnis E0501103/04/06) tragen die Klasse "formal",
+            # und ueber Klassengrenzen wird nie getauscht — "formal" bleibt in beiden Faellen nach
+            # Kennzahl sortiert. tests/test_vordruck_ordnung_bleibt.py pinnt das.
+            continue
         mit = [f for f in gruppe if bindung[f].get("elster_kz") and _klasse(f) == klasse]
         if len(mit) < 2:
             continue

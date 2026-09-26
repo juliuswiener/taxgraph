@@ -120,6 +120,37 @@ def _kinderbetreuung_summe(store, bindung: dict, nur_bestaetigt: bool, vz: int) 
     return total
 
 
+def _p10_1_5_gate_fehlend(store, bindung: dict) -> set:
+    """§10 Abs.1 Nr.5 S.1: Kind-Instanzen mit Betrag > 0, deren Geltungsbedingung
+    `kind_unter_14_haushaltszugehoerig` GAR NICHT im Snapshot steht — die offen gelassene Frage.
+
+    WARUM ES DIESE FUNKTION GIBT (gemessen 2026-09-26): die stille-Null-Sammlung in api.py
+    (_ergebnis_roh, offen_c) laeuft ueber `inst["felder"]` und sieht nur Felder, die ES GIBT.
+    Ein nie geschriebenes Gate ist fuer sie unsichtbar, also feuerte sie nicht. Folge: ein offen
+    gelassenes Gate ergab exakt dieselbe Zahl wie ein bestaetigtes "nein" — der Abzug fiel still
+    weg, grund blieb "bestaetigt", offen blieb []. Dieselbe Bauart wie [[hh_in_eu_ewr]].
+
+    Die ZAHL bleibt in beiden Faellen richtig (ohne Nachweis der S.1-Voraussetzung kein Abzug,
+    s. _kinderbetreuung_summe) — zu melden ist allein, dass die Frage offen blieb. Deshalb
+    liefert diese Funktion nur den Feldnamen fuer `offen`, keinen Sperrgrund: eine Sperre wuerde
+    eine Auskunft verlangen, die der Ring zur Anzeige der Zahl nicht braucht.
+
+    Bestaetigt-"ja" (Abzug greift) und bestaetigt-"nein" (beantwortet) sind hier absichtlich
+    NICHT dabei; ein vorlaeufiger Wert steht im Snapshot und wird von offen_c selbst erfasst.
+    Nur bei Betrag > 0: ohne Betrag gibt es nichts abzuziehen, dann ist die Frage gegenstandslos
+    und darf nicht als offen erscheinen (dieselbe Regel wie im Guard, bescheid_deklaration.py)."""
+    if store is None:
+        return set()
+    treffer = set()
+    for inst in EM.instanzen(store, bindung, "kind"):
+        if "kind_unter_14_haushaltszugehoerig" in inst["felder"]:
+            continue
+        aufw = inst["felder"].get("kinderbetreuungskosten", {}).get("wert")
+        if isinstance(aufw, (int, float)) and not isinstance(aufw, bool) and aufw > 0:
+            treffer.add("kind_unter_14_haushaltszugehoerig")
+    return treffer
+
+
 def _schulgeld_summe(store, bindung: dict, nur_bestaetigt: bool, vz: int, f: dict) -> int:
     """Per-Kind-Summe §10 Abs.1 Nr.9 via EM.instanzen (Ring-Lese-Naht wie Nr.5).
     ANNAHME: bei Einzelveranlagung 2.500€ je Kind (hb aus params), bei Zusammenveranlagung

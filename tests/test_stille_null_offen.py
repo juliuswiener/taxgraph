@@ -253,6 +253,92 @@ class TestP23StilleNull:
         assert erg["zahl_cent"] is None, erg
 
 
+class TestKindBetreuungGateFehltStilleNull:
+    """Dieselbe Bauart wie [[hh_in_eu_ewr]]: die Geltungsbedingung aus § 10 Abs. 1 Nr. 5 S. 1
+    (`kind_unter_14_haushaltszugehoerig`) ist OFFEN GELASSEN, waehrend der Betrag steht.
+
+    Warum das eine eigene Klasse ist: hier ist das Feld nicht VORLAEUFIG, sondern GAR NICHT IM
+    SNAPSHOT. Die offen_c-Sammlung laeuft ueber `inst["felder"]` und kann ein Feld, das dort
+    nicht steht, nicht sehen — sie feuert also nicht. Genau deshalb war der Fall bisher
+    ununterscheidbar von einem bestaetigten "nein".
+
+    GEMESSEN 2026-09-26 auf diesem Kegel (REFERENZ 1392400):
+      R Referenz, kein Betreuungsfeld            : 1392400  offen=[]
+      G Betrag 6000 EUR, Gate NICHT gesetzt      : 1392400  offen=[]   <- stiller Verlust
+      K Betrag 6000 EUR, Gate bestaetigt-ja      : 1212700  offen=[]   <- Abzug wirkt
+      N Betrag 6000 EUR, Gate bestaetigt-nein    : 1392400  offen=[]
+    Der Abzug ist 179700 CENT wert, wenn er gewaehrt wird. G ist bit-identisch mit N: der Nutzer
+    kann "Frage offen gelassen" nicht von "Frage mit nein beantwortet" unterscheiden.
+
+    Die Zahl bleibt in G RICHTIG (ohne Nachweis der S.1-Voraussetzung kein Abzug) — der Defekt ist
+    allein die STILLE. Deshalb HINWEIS statt Sperre: grund bleibt "bestaetigt", zahl_cent bleibt
+    die gefilterte Zahl, nur `offen` nennt das unbeantwortete Gate. Dieselbe Behandlung, die der
+    Bestand fuer die kind-Gruppe schon hat (api.py::_ergebnis_roh, offen_c).
+
+    Mutation: die fehlende-Gate-Ergaenzung in der offen_c-Sammlung entfernen -> die erste
+    Testmethode wird rot, die beiden Kontrollen bleiben gruen.
+    """
+
+    GATE = "kind_unter_14_haushaltszugehoerig"
+    BETRAG = "kinderbetreuungskosten"
+    REINE = "kind_betreuung_reine_betreuung"
+    ZAHLUNG = "kind_betreuung_rechnung_ueberweisung"
+    # 6.000 EUR: 80 % = 4.800 = genau der Deckel aus S. 1, also derselbe Abzug wie bei 8.000 EUR.
+    SECHTAUSEND = 600000
+    OHNE_ABZUG = REFERENZ          # 1392400 — Gate fehlt/nein: kein Abzug
+    MIT_ABZUG = 1212700            # Gate bestaetigt-ja: 179700 CENT Abzug
+
+    def _fall(self, tmp_path, monkeypatch, fid, zusatz):
+        fid = _neuer_fall(tmp_path, monkeypatch, fid)
+        for feld, wert in zusatz:
+            st, r = API.event(fid, _laie(feld, wert))
+            assert st == 201, f"{feld}={wert}: {st} {r}"
+        st, erg = API.ergebnis(fid)
+        assert st == 200, erg
+        return erg
+
+    def test_gate_offen_gelassen_taucht_in_offen_auf(self, tmp_path, monkeypatch):
+        """Der Defekt: Betrag steht, das S.1-Gate ist offen gelassen. Die Zahl ist richtig
+        (kein Abzug ohne Nachweis), aber sie darf nicht STILL zustande kommen."""
+        erg = self._fall(tmp_path, monkeypatch, "sn-kb-gate-fehlt", [
+            (self.BETRAG, self.SECHTAUSEND),
+            (self.REINE, True), (self.ZAHLUNG, True),
+        ])
+        assert erg["grund"] == "bestaetigt", erg
+        assert erg["zahl_cent"] == self.OHNE_ABZUG, (
+            f"ohne Nachweis der S.1-Voraussetzung kein Abzug: {erg['zahl_cent']} "
+            f"statt {self.OHNE_ABZUG}")
+        assert self.GATE in erg["offen"], (
+            f"das offen gelassene Gate muss in offen stehen, sonst ist der Verlust still "
+            f"und von einem bestaetigten 'nein' nicht zu unterscheiden: offen={erg['offen']}")
+
+    def test_gate_bestaetigt_nein_bleibt_ohne_offen_eintrag(self, tmp_path, monkeypatch):
+        """Gegenprobe gegen Ueberfeuern: ein BESTAETIGTES 'nein' ist beantwortet, nicht offen.
+        Dieselbe Zahl wie oben, aber ohne offen-Eintrag — das ist der Unterschied, den der
+        Nutzer sehen soll."""
+        erg = self._fall(tmp_path, monkeypatch, "sn-kb-gate-nein", [
+            (self.BETRAG, self.SECHTAUSEND), (self.GATE, False),
+            (self.REINE, True), (self.ZAHLUNG, True),
+        ])
+        assert erg["grund"] == "bestaetigt", erg
+        assert erg["zahl_cent"] == self.OHNE_ABZUG, erg["zahl_cent"]
+        assert self.GATE not in erg["offen"], (
+            f"ein beantwortetes 'nein' ist nicht offen: offen={erg['offen']}")
+
+    def test_gate_bestaetigt_ja_zieht_ab_und_ist_nicht_offen(self, tmp_path, monkeypatch):
+        """Kontrolle, dass das Gate den Abzug tatsaechlich steuert: bestaetigt-ja bewegt die Zahl
+        um 179700 CENT. Ohne diesen Fall belegte 'nicht in offen' nur Wirkungslosigkeit."""
+        erg = self._fall(tmp_path, monkeypatch, "sn-kb-gate-ja", [
+            (self.BETRAG, self.SECHTAUSEND), (self.GATE, True),
+            (self.REINE, True), (self.ZAHLUNG, True),
+        ])
+        assert erg["grund"] == "bestaetigt", erg
+        assert erg["zahl_cent"] == self.MIT_ABZUG, (
+            f"bestatigt-ja muss den Abzug gewaehren: {erg['zahl_cent']} statt {self.MIT_ABZUG}")
+        assert self.GATE not in erg["offen"], (
+            f"ein beantwortetes 'ja' ist nicht offen: offen={erg['offen']}")
+
+
 class TestGemischteKindInstanzStilleNull:
     def test_gemischte_instanz_nur_das_vorlaeufige_feld_in_offen(self, tmp_path, monkeypatch):
         """Eine Instanz mit gemischtem Zustand (2 Felder bestaetigt, 1 vorlaeufig) — meet_zustand
