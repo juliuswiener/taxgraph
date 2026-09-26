@@ -22,7 +22,7 @@
                        "verpflegung_reduktion_offen", "verpflegung_dreimonatsfrist_aufteilung_offen", "verpflegung_dreimonatsfrist_unterbrechung_offen", "flag_konsistenz_offen",
                        "partner_konsistenz_offen", "kapital_semantik_offen",
                        "rentenfreibetrag_fixierung_offen", "versorgungsfreibetrag_offen", "vv_instanz_offen",
-                       "rechnung_unbar_offen", "handwerker_foerderung_offen", "p35c_doppelfoerderung_offen", "rente_instanz_offen",
+                       "rechnung_unbar_offen", "handwerker_foerderung_offen", "haushalt_eu_ewr_offen", "p35c_doppelfoerderung_offen", "rente_instanz_offen",
                        "gwg_tatbestand_offen",
                        "kinderbetreuung_reine_betreuung_offen", "kinderbetreuung_zahlung_offen",
                        "alleinerziehend_konsistenz_offen", "gewinn_quelle_offen",

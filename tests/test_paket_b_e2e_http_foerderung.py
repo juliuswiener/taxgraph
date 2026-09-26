@@ -311,6 +311,145 @@ def test_p35a_foerderung_mutation_gate_inversion(base):
         assert erg["grund"] == "bestaetigt", f"Unexpected grund={erg['grund']}"
 
 
+# ---- § 35a Abs. 4 S. 1: der Haushalt muss in der EU oder im EWR liegen --------------------
+#
+# Das ZWEITE Voraussetzungsfeld derselben Regel, und bis 2026-09-26 das einzige ohne Sperrgrund.
+# `hh_in_eu_ewr` wird gefragt (askable, eigener Laientext, in beiden /fragen-Queues) — bleibt die
+# Antwort aus, las der Ring `is True` als False und nullte damit ALLE DREI Toepfe, ohne Sperre und
+# ohne Hinweis.
+#
+# Wovon die 1.000 EUR die Differenz sind (gemessen, nicht erschlossen — die Einheit allein macht
+# den Satz mehrdeutig: die `kette` fuehrt EUR, `zahl_cent` fuehrt Cent). Fall 5.000 EUR Handwerker,
+# vor dem Fix:
+#   Δ zahl_cent            1067800 -> 967800  = 100000 ct = 1.000 EUR
+#   Δ zu_versteuerndes_einkommen  49964 -> 49964 = 0        (die Ermäßigung beruehrt das zvE nicht)
+#   Δ tarifliche_est              10678 -> 10678 = 0
+#   Δ festzusetzende_est          10678 ->  9678 = 1.000 EUR
+# Die 1.000 EUR sind also der § 35a-ABZUG SELBST (20 % von 5.000 EUR), und weil § 35a eine
+# Steuerermaessigung ist, wirkt er 1:1 auf die festzusetzende Steuer — nicht die Haelfte davon.
+# Kalibriert an einem zweiten Betrag (3.000 EUR Handwerker): Δ zahl_cent 60000 ct = 600 EUR,
+# Δ festzusetzende_est 600 EUR, zvE und tarifliche_est wieder unveraendert. Das Verhaeltnis
+# haelt bei 20 %, es ist also der Abzugsmechanismus und kein Einzelartefakt.
+# Der Fall trug in bau-zweiges Kegel zusaetzlich 90 EUR KiSt-Differenz (dort ist KiSt konfiguriert);
+# die Kegel hier fuehren keine KiSt (kist_cent=None), gemessen wird hier nur die ESt.
+#
+# Der Schaden ist die Anzeige, nicht die Zahl: "bestaetigt" ueber einer Rechnung, die den Abzug
+# nicht enthaelt. Bei WERTEN ist fail-closed richtig — dasselbe Muster wie beim Geschwisterfeld
+# handwerker_foerderung_offen daneben (Abs. 3 S. 2, gate-naht-guard-liest-zustand).
+#
+# Was hier NICHT gemessen wird: ob das Feld ueberhaupt gefragt wird. Das ist eine andere Frage
+# (Traverser-Queue, tests/test_paket_b_e2e_http_foerderung.py::test_..._queue) und waere hier
+# eine zweite Behauptung in einem Test, der eine messen soll.
+
+_HHEU_HANDWERKER = [("hh_handwerker_betrag", 500000), ("hh_rechnung_unbar", True),
+                    ("hh_handwerker_keine_foerderung", True)]
+
+
+def _hheu_fall(base, fid, eu_ewr):
+    """Legt einen gesamt-Fall mit Handwerkerkosten an. `eu_ewr` = True/False/None;
+    None heisst: das Feld bleibt UNBEANTWORTET (der zu messende Zustand)."""
+    _gesamt_anlegen(base, fid, _minimal_gesamt_kegel())
+    for feld, wert in _HHEU_HANDWERKER:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
+        assert st == 201, f"{feld}={wert} abgelehnt: {st}"
+    if eu_ewr is not None:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie("hh_in_eu_ewr", eu_ewr))
+        assert st == 201, f"hh_in_eu_ewr={eu_ewr} abgelehnt: {st}"
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    _val("ergebnis", erg)
+    return erg
+
+
+def test_p35a_eu_ewr_unbeantwortet_sperrt(base):
+    """§ 35a Abs. 4 S. 1: unbeantwortetes hh_in_eu_ewr darf den Abzug nicht still entfallen lassen.
+
+    Zwei Faelle, EINE Behauptung: A ist die Kontrolle (beantwortet True), B der Prueefall (offen).
+    Ohne A zeigte ein roter Lauf nur, dass IRGENDETWAS fehlt — mit A steht daneben, dass der
+    Abzug bei beantworteter Frage sehr wohl ankommt.
+    """
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    basis = _basis_zahl_cent(base, "hheu-basis")
+    mit = _hheu_fall(base, "hheu-beantwortet", True)
+    offen = _hheu_fall(base, "hheu-offen", None)
+
+    # (A) Kontrolle: beantwortet True -> der volle Abs.-3-Abzug. 20 % von 5.000 = 1.000 EUR.
+    assert mit["grund"] == "bestaetigt", (
+        f"Kontrolle gesperrt (grund={mit['grund']}) — dann misst dieser Test nichts")
+    assert basis - mit["zahl_cent"] == 100000, (
+        f"Kontrolle: {basis - mit['zahl_cent']} Cent statt 100000 (20 % von 5.000 EUR) — "
+        f"Basis {basis}, beantwortet {mit['zahl_cent']}")
+
+    # WORAUF die 100000 ct sitzen, nicht nur DASS sie da sind: § 35a ist eine Steuerermaessigung,
+    # sie senkt die festzusetzende Steuer 1:1 und laesst das zvE unberuehrt. Die `kette` fuehrt EUR,
+    # `zahl_cent` Cent — ohne diese drei Zeilen laesst sich "1.000 EUR" als Abzug oder als halbe
+    # Steuerwirkung lesen. bau-zweige hat hier 90 EUR KiSt GEMESSEN (sein Kegel hat KiSt).
+    assert basis == 1067800, f"Bezugszahl {basis} statt 1067800"
+    k = mit["kette"]
+    assert k["tarifliche_est"] == 10678, f"tarifliche_est {k['tarifliche_est']} statt 10678"
+    assert k["festzusetzende_est"] == 9678, (
+        f"festzusetzende_est {k['festzusetzende_est']} statt 9678 — die 1.000 EUR sind der "
+        f"Abzug selbst, 1:1 in der festzusetzenden Steuer")
+    assert k["zu_versteuerndes_einkommen"] == 49964, (
+        f"zvE {k['zu_versteuerndes_einkommen']} statt 49964 — eine Steuerermaessigung darf das "
+        f"zvE nicht bewegen")
+    assert k["tarifliche_est"] - k["festzusetzende_est"] == 1000, (
+        f"tarifliche_est {k['tarifliche_est']} - festzusetzende_est "
+        f"{k['festzusetzende_est']} != 1000 EUR — der Abzug wirkt nicht 1:1 auf die Steuer")
+
+    # (B) Prueefall: offen -> Sperre mit Klartext, KEINE stille Null.
+    assert offen["grund"] == "haushalt_eu_ewr_offen", (
+        f"Offenes hh_in_eu_ewr liefert grund={offen['grund']!r} (zahl_cent={offen['zahl_cent']}) "
+        f"statt der Sperre — die Voraussetzung aus § 35a Abs. 4 S. 1 verschwindet still, "
+        f"waehrend der Nutzer 'bestaetigt' ueber einer Rechnung ohne Abzug liest")
+    assert offen["zahl_cent"] is None, (
+        f"Gesperrter Fall darf keine Zahl tragen, hat aber {offen['zahl_cent']}")
+
+
+def test_p35a_eu_ewr_false_nullt_den_abzug_und_sperrt_nicht(base):
+    """§ 35a Abs. 4 S. 1, beantwortete Verneinung: Haushalt AUSSERHALB der EU/dem EWR.
+
+    Gewaehlt: Abzug 0 und grund="bestaetigt" — NICHT gesperrt. Begruendung, zwei Gruende:
+    (1) Das Gesetz sagt hier nichts Unbekanntes: Abs. 4 S. 1 SCHLIESST die Ermäßigung aus, sie
+        ist damit rechenbar 0, nicht unentschieden. Ein bestaetigtes "nein" ist eine ANTWORT.
+    (2) Der Nachbar derselben Regel macht es genauso: keine_foerderung=false (gefoerdert) nullt
+        Abs. 3 und der Fall bleibt bestaetigt (test_p35a_foerderung_mit_foerderung oben, 480 EUR).
+        Nur UNSET sperrt. Beides anders zu behandeln waere ein zweiter Rechenweg fuer dieselbe
+        Bauart.
+    Die Sperre greift also genau dort, wo die Antwort FEHLT — nicht dort, wo sie "nein" lautet.
+    """
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    basis = _basis_zahl_cent(base, "hheu-false-basis")
+    nein = _hheu_fall(base, "hheu-nein", False)
+
+    assert nein["grund"] == "bestaetigt", (
+        f"Beantwortetes NEIN darf nicht sperren (grund={nein['grund']}) — die Antwort ist da, "
+        f"das Gesetz entscheidet: kein Abzug")
+    assert basis == nein["zahl_cent"], (
+        f"{basis - nein['zahl_cent']} Cent Ermäßigung trotz Haushalt außerhalb EU/EWR "
+        f"(Basis {basis}, Fall {nein['zahl_cent']}) — § 35a Abs. 4 S. 1 schließt sie aus")
+
+
+def test_p35a_eu_ewr_offen_sperrt_auch_ohne_handwerker(base):
+    """§ 35a Abs. 4 S. 1 gatet ALLE DREI Toepfe (Abs. 1-3), nicht nur den Handwerker-Topf.
+
+    Anders als das Geschwisterfeld daneben (Abs. 3 S. 2 gilt nur fuer Handwerker): ein
+    Minijob-Fall ohne jede Handwerkerleistung haengt an derselben unbeantworteten Voraussetzung.
+    Ohne diesen Fall waere eine Sperre, die nur `_hh_instanz_positiv("hh_handwerker", ...)`
+    prueft, gruen — und liesse den Minijob still auf 0 fallen.
+    """
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    _gesamt_anlegen(base, "hheu-minijob", _minimal_gesamt_kegel())
+    _req(base, "POST", "/fall/hheu-minijob/event", _laie("hh_minijob_betrag", 40000))  # 400 EUR
+    # hh_in_eu_ewr NICHT gesetzt, kein Handwerker, kein hh_rechnung_unbar
+    st, erg = _req(base, "GET", "/fall/hheu-minijob/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "haushalt_eu_ewr_offen", (
+        f"Minijob ohne Handwerker: grund={erg['grund']!r} — Abs. 4 gatet auch Abs. 1")
+
+
 # rentner_gesamt: derselbe Guard (_shared_steuer_sonder_agb, bescheid_abzuege.py:178), aus
 # beiden Zweigen identisch aufgerufen (bescheid_zweige.py:696 / :1168) — hier über die Zahl
 # belegt statt über den geteilten Aufrufpfad geglaubt (Geltungsbereich ≠ Verwendung).
@@ -338,3 +477,63 @@ def test_p35a_foerderung_rentner_zweig_sperrt_ebenfalls(base):
     assert delta == 120000, (
         f"ohne_foerderung={ohne} mit_foerderung={mit} Δ={delta} ≠ 120000 (1.200 EUR) — "
         f"die § 35a-Abs.3-S.2-Sperre wirkt auf rentner_gesamt nicht wie auf gesamt")
+
+
+def _rentner_erg(base, fid, extra):
+    """rentner_gesamt bis /ergebnis, OHNE grund-Vorbedingung — der Sperrgrund ist hier
+    gerade die zu messende Groesse. `_zahl` daneben asserted grund=="bestaetigt" und
+    waere fuer den offenen Fall unbrauchbar."""
+    st, _ = _req(base, "POST", "/fall", {"scheibe": "rentner_gesamt",
+                                         "veranlagungszeitraum": VZ, "fall_id": fid})
+    assert st == 201
+    for feld, wert in RENTNER_KEGEL + extra:
+        st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
+        assert st == 201, f"{feld}={wert} abgelehnt: {st}"
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    _val("ergebnis", erg)
+    return erg
+
+
+def test_p35a_eu_ewr_rentner_zweig_sperrt_und_rechnet(base):
+    """§ 35a Abs. 4 S. 1 auf der zweiten Scheibe: Sperre, Abzug und Verneinung.
+
+    Der Nachbarzweig laeuft durch einen ANDEREN Guard-Aufruf (bescheid_zweige.py statt
+    bescheid.py), also wird hier ueber die ZAHL gemessen, nicht ueber den geteilten Pfad
+    geglaubt. Alle vier Werte sind gemessen (2026-09-26, nach dem Fix, 6.000 EUR Handwerker
+    -> Abs.-3-Deckel 20 % = 1.200 EUR):
+      ohne_35a 4909500 · eu_ewr=True 4789500 (Δ 120000) · eu_ewr=False 4909500 · offen: None
+    """
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    # hh_handwerker_keine_foerderung MUSS mit: ohne die Antwort feuert das GESCHWISTER-Gate
+    # (handwerker_foerderung_offen) und der Fall misst den Nachbarn statt Abs. 4. Genau das
+    # hat die Kontrolle unten beim ersten Lauf gezeigt (grund=handwerker_foerderung_offen).
+    hw = [("hh_handwerker_betrag", 600000), ("hh_rechnung_unbar", True),
+          ("hh_handwerker_keine_foerderung", True)]
+    ohne = _rentner_erg(base, "p35a-hheu-rentner-ohne", [])
+    mit = _rentner_erg(base, "p35a-hheu-rentner-ja", hw + [("hh_in_eu_ewr", True)])
+    offen = _rentner_erg(base, "p35a-hheu-rentner-offen", hw)
+    nein = _rentner_erg(base, "p35a-hheu-rentner-nein", hw + [("hh_in_eu_ewr", False)])
+
+    # (A) Kontrolle: beantwortet True -> voller Abs.-3-Abzug, 1.200 EUR auf rentner_gesamt.
+    assert ohne["grund"] == "bestaetigt", f"Bezugslauf gesperrt: {ohne['grund']}"
+    assert ohne["zahl_cent"] == 4909500, f"Bezugszahl {ohne['zahl_cent']} statt 4909500"
+    assert mit["grund"] == "bestaetigt", (
+        f"Kontrolle gesperrt (grund={mit['grund']}) — dann misst dieser Test nichts")
+    assert ohne["zahl_cent"] - mit["zahl_cent"] == 120000, (
+        f"Kontrolle: {ohne['zahl_cent'] - mit['zahl_cent']} Cent statt 120000 (20 % von "
+        f"6.000 EUR) — ohne {ohne['zahl_cent']}, mit {mit['zahl_cent']}")
+
+    # (B) Prueefall: offen -> Sperre, keine Zahl. Dieselbe Bauart wie auf `gesamt`.
+    assert offen["grund"] == "haushalt_eu_ewr_offen", (
+        f"Offenes hh_in_eu_ewr auf rentner_gesamt: grund={offen['grund']!r} "
+        f"(zahl_cent={offen['zahl_cent']}) statt der Sperre")
+    assert offen["zahl_cent"] is None, (
+        f"Gesperrter Fall darf keine Zahl tragen, hat aber {offen['zahl_cent']}")
+
+    # (C) Verneinung: ehrliche Zahl ohne Abzug, KEINE Sperre — Polaritaet wie auf `gesamt`.
+    assert nein["grund"] == "bestaetigt", (
+        f"Beantwortetes NEIN darf nicht sperren (grund={nein['grund']})")
+    assert ohne["zahl_cent"] - nein["zahl_cent"] == 0, (
+        f"{ohne['zahl_cent'] - nein['zahl_cent']} Cent Ermäßigung trotz Haushalt außerhalb "
+        f"EU/EWR (ohne {ohne['zahl_cent']}, nein {nein['zahl_cent']})")
