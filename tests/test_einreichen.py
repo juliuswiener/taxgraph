@@ -166,7 +166,7 @@ def test_eric_fehlt_gibt_503_statt_crash(tmp_path, monkeypatch):
                         lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
                         lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
-                                         "unvollstaendig": []})
+                                         "unvollstaendig": [], "nicht_deklariert": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate",
                         lambda *a, **k: (_ for _ in ()).throw(RuntimeError("libericapi.so nicht gefunden")))
@@ -185,7 +185,7 @@ def test_plausibilitaetsfehler_reicht_ericantwort_durch(tmp_path, monkeypatch):
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
                         lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
-                                         "unvollstaendig": []})
+                                         "unvollstaendig": [], "nicht_deklariert": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate",
                         lambda *a, **k: (CE.RC_PLAUSIBILITAET, "<FehlerRegelpruefung>E0100201</FehlerRegelpruefung>"))
@@ -205,7 +205,7 @@ def test_io_gate_rc_ist_nicht_gruen(tmp_path, monkeypatch):
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
                         lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
-                                         "unvollstaendig": []})
+                                         "unvollstaendig": [], "nicht_deklariert": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_IO_SCHEMA_VALIDIERUNGSFEHLER, ""))
     _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
@@ -225,7 +225,7 @@ def test_io_reader_unerwartete_elemente_kein_plausibilitaetsverdikt(tmp_path, mo
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
                         lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
-                                         "unvollstaendig": []})
+                                         "unvollstaendig": [], "nicht_deklariert": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_IO_UNERWARTETE_ELEMENTE, ""))
     _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
@@ -246,7 +246,7 @@ def test_unbekannter_rc_faellt_nicht_in_plausibilitaet_verletzt(tmp_path, monkey
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
                         lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
-                                         "unvollstaendig": []})
+                                         "unvollstaendig": [], "nicht_deklariert": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (777777, ""))
     _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
@@ -266,7 +266,7 @@ def test_erfolg_meldet_plausibel_aber_nicht_eingereicht(tmp_path, monkeypatch):
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
                         lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
-                                         "unvollstaendig": []})
+                                         "unvollstaendig": [], "nicht_deklariert": []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (CE.RC_OK, ""))
     _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
@@ -283,7 +283,7 @@ def test_xml_nicht_baubar_gibt_422(tmp_path, monkeypatch):
     import elster_xml as EX
     monkeypatch.setattr(API.EM, "deklariere",
                         lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E9999999": "x"},
-                                         "unvollstaendig": []})
+                                         "unvollstaendig": [], "nicht_deklariert": []})
     monkeypatch.setattr(EX, "erzeuge_xml",
                         lambda *a, **k: (_ for _ in ()).throw(EX.XmlFehler("Kz ohne Pfad")))
     _st, r = API.fall_anlegen({"fall_id": "tg1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
