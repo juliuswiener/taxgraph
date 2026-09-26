@@ -150,10 +150,15 @@ AN_GESAMT_PARTNER = ("bruttoarbeitslohn_partner",)
 # ========== § 9 Arbeitsmittel (GWG) + § 7 Abs. 1 AfA ==========
 ARBEITSMITTEL_KOSTEN = "am_anschaffungskosten"
 ARBEITSMITTEL_RING = ("am_anschaffungskosten", "am_gwg_sofortabzug_gewaehlt", "arbeitsmittel_nutzungsdauer")
-# § 7 Abs. 1 S. 4 Zwölftelung im Anschaffungsjahr — NUR im gefalteten gesamt-Ring. an_gesamt
-# rechnet über catala_est ohne § 2-Gesamt-Scope und ist über die Oberfläche ohnehin nicht
-# wählbar (index.html bietet gesamt + rentner_gesamt); dort würden die Felder nur den
-# Fragenkegel aufblähen.
+# § 7 Abs. 1 S. 4 Zwölftelung im Anschaffungsjahr. Steht seit 2026-09-26 in BEIDEN Scheiben,
+# die den AfA-Zweig fahren (gesamt und an_gesamt).
+# Die frühere Begründung für das Weglassen bei an_gesamt („über die Oberfläche ohnehin nicht
+# wählbar") war der Fehlschluss aus [[geltungsbereich-ungleich-verwendung-sieben-faelle]]:
+# gemessen war die Zahl der UI-Kacheln, behauptet die Erreichbarkeit. an_gesamt steht in SCHEIBEN, api.py:295
+# prüft nur `if scheibe not in SCHEIBEN`, und POST /fall nimmt sie an — der Zweig rechnete
+# dort ohne Kaufmonat den vollen Jahresbetrag (400 statt 100 EUR bei 1.200 EUR / 3 Jahre),
+# Richtung zu wenig Steuer. Der Sperrgrund konnte das nicht auffangen: er liest
+# am_afa_ist_anschaffungsjahr, und ein Feld, das die Scheibe nicht führt, wird nie bestätigt.
 ARBEITSMITTEL_AFA_GESAMT = ("am_anschaffung_monat", "am_afa_ist_anschaffungsjahr")
 
 # ========== § 36 Abs. 2 Anrechnung (LSt + Vorauszahlungen) ==========
@@ -769,8 +774,8 @@ SCHEIBEN = {
     },
     "an_gesamt": {
         "felder": (("bruttoarbeitslohn", "veranlagung") + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER
-                   + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST
-                   + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
+                   + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
+                   + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT
                    + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER
                    + P36_ANRECHNUNG
                    + KIST_KONFESSION_FELDER

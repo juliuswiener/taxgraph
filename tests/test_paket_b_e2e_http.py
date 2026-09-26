@@ -597,9 +597,17 @@ AN_GESAMT_UEBERNACHTUNG = ("uebernachtung_kosten_monat", "uebernachtung_monate",
                           "uebernachtung_auswaerts", "uebernachtung_alleinnutzung",
                           "uebernachtung_keine_lange_unterbrechung")
 # A6 Arbeitsmittel-GWG (askable Felder; am_massgebliche_ak ist askable:false → nicht in /fragen)
-# am_anschaffung_monat / am_afa_ist_anschaffungsjahr stehen bewusst NICHT hier: die § 7 Abs. 4-
-# Zwölftelung ist nur im gefalteten gesamt-Ring verdrahtet (ARBEITSMITTEL_AFA_GESAMT).
 AN_GESAMT_ARBEITSMITTEL = ("am_anschaffungskosten", "arbeitsmittel_nutzungsdauer", "am_gwg_sofortabzug_gewaehlt")
+# § 7 Abs. 1 S. 4 Zwölftelung im Anschaffungsjahr (ARBEITSMITTEL_AFA_GESAMT), seit 2026-09-26
+# auch in an_gesamt. Vorher standen die Felder bewusst NICHT hier, und der Zweig zog ohne
+# Kaufmonat den vollen Jahresbetrag ab.
+AN_GESAMT_AFA = ("am_anschaffung_monat", "am_afa_ist_anschaffungsjahr")
+# § 9 Abs. 4a Kürzung wegen gestellter Mahlzeiten (VERPFLEGUNG_KUERZUNG), seit 2026-09-26
+# auch in an_gesamt. Die fünf Eingabefelder sind askable; `p9_4a_kuerzung_nach_entgelt` ist
+# das berechnete Ergebnis (askable: false, Kz E0205508) und steht darum nicht in /fragen.
+AN_GESAMT_VPF_KUERZUNG = ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
+                          "vpf_abendessen_gestellt_anzahl", "vpf_mahlzeiten_gezahltes_entgelt",
+                          "vpf_steuerfreie_erstattung_betrag")
 AN_GESAMT_P36 = ("p36_lohnsteuer", "p36_vorauszahlungen")
 AN_GESAMT_KIST = ("kist_konfession", "kist_bundesland")
 AN_GESAMT_KEGEL = [
@@ -656,11 +664,16 @@ def test_an_gesamt_durchstich(base):
     st, fr = _req(base, "GET", "/fall/ag/fragen")
     _val("fragen", fr)
     ids = {q["feld_id"] for q in fr["fragen"]}
-    assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
-             "kein_sonstige", "fam_anzahl_kinder", "verlustvortrag_bestand", "p35a_mitveranlagung"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
-            | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)
-            | set(AN_GESAMT_UEBERNACHTUNG) | set(AN_GESAMT_ARBEITSMITTEL)
-            | set(AN_GESAMT_P36) | set(AN_GESAMT_KIST)) == ids
+    # 2026-09-26: an_gesamt führt jetzt auch die AfA-Felder (§ 7 Abs. 1 S. 4 Zwölftelung).
+    # Vorher fehlten sie in der Scheibe, und der AfA-Zweig rechnete ohne Kaufmonat den vollen
+    # Jahresbetrag. Ebenso die Kürzungsfelder nach § 9 Abs. 4a — die Trigger standen hier
+    # schon, das Ergebnis nicht.
+    _erwartet = ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
+                  "kein_sonstige", "fam_anzahl_kinder", "verlustvortrag_bestand", "p35a_mitveranlagung"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
+                 | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)
+                 | set(AN_GESAMT_UEBERNACHTUNG) | set(AN_GESAMT_ARBEITSMITTEL) | set(AN_GESAMT_AFA)
+                 | set(AN_GESAMT_VPF_KUERZUNG) | set(AN_GESAMT_P36) | set(AN_GESAMT_KIST))
+    assert _erwartet == ids, f"neu={sorted(ids - _erwartet)} weg={sorted(_erwartet - ids)}"
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
         assert st == 201
@@ -804,10 +817,16 @@ def _verpflegung_kegel(monate=2, keine_mahlzeit=True, tage_24h=10):
     """an_gesamt-Kegel mit Verpflegungs-Reisetagen. Guard-Felder werden nur gesetzt, wenn nicht None
     (None simuliert den UNSET-Fall für den fail-closed-Test).
 
-    Mahlzeitengestellung: alte Semantik (kein Anzahl-Feld in an_gesamt-Scheibe):
+    Mahlzeitengestellung, bool-Semantik (vpf_keine_mahlzeitengestellung):
     - keine_mahlzeit=True (Default) → vpf_keine_mahlzeitengestellung=True (OK, keine Kürzung)
-    - keine_mahlzeit=False → vpf_keine_mahlzeitengestellung=False (würde neue Anzahl-Felder brauchen)
+    - keine_mahlzeit=False → vpf_keine_mahlzeitengestellung=False, OHNE Anzahl-Felder
+      → Sperre `verpflegung_reduktion_offen` (fail-closed, keine stille Falschzahl)
     - keine_mahlzeit=None → Felder UNSET (unbeantwortet, fail-closed-Sperre)
+
+    Seit 2026-09-26 führt an_gesamt zusätzlich die Anzahl-Felder (VERPFLEGUNG_KUERZUNG).
+    Wer „doch, Mahlzeiten gestellt" ehrlich angeben will, setzt sie über `_laie` nach —
+    dann rechnet die Kürzung nach § 9 Abs. 4a statt zu sperren. Vorher war das nicht
+    möglich: POST /event antwortete mit HTTP 400 "nicht in dieser Scheibe".
     """
     kegel = [(f, w) for f, w in AN_GESAMT_KEGEL if f != "tage_24h"]
     kegel.append(("tage_24h", tage_24h))
