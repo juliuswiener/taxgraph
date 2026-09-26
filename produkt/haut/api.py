@@ -61,8 +61,8 @@ from bescheid import (  # noqa: E402, F401
     _gwg_sofortabzug_summe,
     _kind_behinderten_pb_daten,
     _kind_kv_pv_summe,
-    sperrgrund_klartext,
     _kinderbetreuung_summe,
+    _p10_1_5_gate_fehlend, sperrgrund_klartext,
     _laufender_gewinn,
     _laufender_gewinn_partner,
     _mit_ring_werten,
@@ -637,11 +637,11 @@ def _ergebnis_roh(fall_id: str) -> tuple[int, dict]:
     # nur_bestaetigt-Filter laesst eine vorlaeufige Instanz korrekt aus der Zahl raus (Zahl bleibt
     # richtig), meldet das aber nirgends. Hinweis statt Sperre: grund bleibt "bestaetigt", zahl_cent
     # bleibt die gefilterte Zahl, offen listet die Basis-Feld-IDs der vorlaeufigen Instanzen.
-    offen_c = sorted({
+    offen_c = sorted({  # + offen gelassenes Gate, das nicht im Snapshot steht (s. _p10_1_5_gate_fehlend)
         fid for gruppe in ("gwg", "kind", "p23_veraeusserung")
         for inst in EM.instanzen(store, bindung, gruppe)
         for fid, fw in inst["felder"].items() if fw.get("zustand") != "bestaetigt"
-    })
+    } | _p10_1_5_gate_fehlend(store, bindung))
     return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": zahl,
                  "solz_cent": solz, "kist_cent": extras.get("kist_cent"),
                  "mobilitaetspraemie_cent": extras.get("mobilitaetspraemie_cent"),
