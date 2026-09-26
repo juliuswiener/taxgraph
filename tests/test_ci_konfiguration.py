@@ -54,6 +54,18 @@ def _pakete(pfad: pathlib.Path) -> set[str]:
     return namen
 
 
+def _versteckt(p: pathlib.Path, root: pathlib.Path = ROOT) -> bool:
+    """Punkt-Verzeichnis oder __pycache__ INNERHALB des Repos, geprüft am Pfad relativ zur
+    Wurzel. Am absoluten Pfad fiel unter jedem Punkt-Verzeichnis (~/.cache/…,
+    .claude/worktrees/…) JEDE Datei heraus: gemessen 2026-09-26 0 statt 496 eigene Module,
+    und 55 projekteigene Module galten als fehlende Fremdpakete. Beide Filter unten brauchen
+    die Regel: nur mit dem ersten blieb der Test grün, auch ohne `requests` im Manifest.
+
+    `root` ist ein Parameter, damit ein Test die Regel gegen eine ANDERE Wurzel stellen kann —
+    die historische Falle war ein Repo, das selbst unter einem Punkt-Verzeichnis lag."""
+    return any(t.startswith(".") or t == "__pycache__" for t in p.relative_to(root).parts)
+
+
 # ------------------------------------------------------------ die Ursache des roten Laufs
 
 def test_alle_importierten_fremdpakete_stehen_im_manifest():
@@ -63,14 +75,6 @@ def test_alle_importierten_fremdpakete_stehen_im_manifest():
     sonst wiederholt sich genau der Fall, in dem jemand einen Import hinzufügt und die
     Paketliste nicht kennt."""
     stdlib = set(sys.stdlib_module_names)
-
-    def _versteckt(p: pathlib.Path) -> bool:
-        """Punkt-Verzeichnis oder __pycache__ INNERHALB des Repos, geprüft am Pfad relativ zur
-        Wurzel. Am absoluten Pfad fiel unter jedem Punkt-Verzeichnis (~/.cache/…,
-        .claude/worktrees/…) JEDE Datei heraus: gemessen 2026-09-26 0 statt 496 eigene Module,
-        und 55 projekteigene Module galten als fehlende Fremdpakete. Beide Filter unten brauchen
-        die Regel: nur mit dem ersten blieb der Test grün, auch ohne `requests` im Manifest."""
-        return any(t.startswith(".") or t == "__pycache__" for t in p.relative_to(ROOT).parts)
 
     # Eigene Module: JEDE .py-Datei und jedes Verzeichnis im Repo. Die erste Fassung zählte
     # nur eine Handvoll bekannter sys.path-Wurzeln auf und hielt daraufhin fünf projekteigene
@@ -568,6 +572,52 @@ def test_guard_greift_nur_ohne_toolchain():
 # Liste der Skripte wird aus ci.yml + Makefile GEMESSEN statt gepflegt. Ein neues Skript im
 # Workflow ist automatisch dabei.
 _SKRIPT_AUFRUF = re.compile(r"python3?\s+(?:-\S+\s+)*([\w./-]+\.py)")
+
+
+def test_versteckt_urteilt_ueber_das_repo_nicht_ueber_seinen_ort(tmp_path):
+    """Der Filter `_versteckt` muss den Pfad INNERHALB des Repos beurteilen.
+
+    Anlass (gemessen 2026-09-26, backlog/arbeitsbaum-unter-punktverzeichnis-erfindet-fehlschlaege):
+    lag der Arbeitsbaum selbst unter einem Punkt-Verzeichnis (~/.cache/…, .claude/worktrees/…,
+    ~/.local/state/orch/…), pruefte der Filter ueber den ABSOLUTEN Pfad und warf JEDE Datei
+    heraus — 0 statt 496 eigene Module, 55 projekteigene Module galten als fehlende
+    Fremdpakete. Der Test oben meldete daraufhin jeden eigenen Import als fehlendes
+    Fremdpaket: ein Fehlschlag, der am Ort des Baums hing, nicht am Code.
+
+    Zwei Faelle, und der zweite ist der entscheidende:
+    1. ein Punkt-Verzeichnis INNERHALB des Repos -> die Datei darin ist zu Recht versteckt
+    2. ein Repo, das SELBST unter einem Punkt-Verzeichnis liegt -> darin ist NICHTS versteckt
+
+    Fall 2 unterscheidet die beiden Fassungen wirklich: in einem dot-freien Baum wie diesem
+    liefern `p.parts` und `p.relative_to(ROOT).parts` dasselbe Ergebnis, eine Probe an Fall 1
+    allein bliebe bei der Mutation also gruen. Die Wurzel wird darum als Parameter gestellt.
+    """
+    wurzel = tmp_path / "repo"
+    (wurzel / ".versteckt").mkdir(parents=True)
+    (wurzel / "sichtbar.py").write_text("", encoding="utf-8")
+    drin = wurzel / ".versteckt" / "drin.py"
+    drin.write_text("", encoding="utf-8")
+
+    # 1. Punkt-Verzeichnis IM Repo bleibt versteckt — auch relativ zur Wurzel.
+    assert _versteckt(drin, wurzel), "ein Punkt-Verzeichnis im Repo muss versteckt bleiben"
+    assert not _versteckt(wurzel / "sichtbar.py", wurzel), "eine normale Datei ist nicht versteckt"
+
+    # 2. Der Ort des Repos darf nicht mitzaehlen. Die Wurzel liegt hier explizit unter einem
+    #    Punkt-Verzeichnis; unter der Mutation (p.parts) faellt `sichtbar.py` damit heraus,
+    #    obwohl im Repo nichts versteckt ist. Nachgemessen 2026-09-26: laege die Wurzel
+    #    dot-FREI, bliebe Fall 1 unter der Mutation gruen (faenge sie also NICHT) — erst
+    #    Fall 2 wird dort rot. Deshalb steht Fall 2 hier und nicht nur Fall 1.
+    dot_wurzel = tmp_path / ".cache" / "repo"
+    (dot_wurzel / ".versteckt").mkdir(parents=True)
+    sichtbar_dot = dot_wurzel / "sichtbar.py"
+    sichtbar_dot.write_text("", encoding="utf-8")
+
+    assert not _versteckt(sichtbar_dot, dot_wurzel), (
+        "das Repo liegt unter einem Punkt-Verzeichnis, die Datei darin ist trotzdem nicht "
+        "versteckt — der Filter urteilt ueber den Pfad IM Repo, nicht ueber seinen Ort")
+    assert _versteckt(dot_wurzel / ".versteckt" / "x.py", dot_wurzel), (
+        "ein Punkt-Verzeichnis im Repo bleibt auch dann versteckt, wenn die Wurzel selbst "
+        "unter einem Punkt-Verzeichnis liegt")
 
 
 def _gestartete_skripte() -> set[str]:
