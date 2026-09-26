@@ -887,18 +887,34 @@ def test_a4_lohnsteuer_cent_aufrundung_auf_volle_euro(base):
 
 def test_a4_vorlaeufige_lohnsteuer_bewegt_anrechnung_nicht(base):
     """Vorläufige (nicht bestätigte) LSt darf die Abschlusszahlung NICHT bewegen
-    → bleibt None wie ohne Feld. Nur bestätigte Anrechnung zählt."""
+    → bleibt None wie ohne Feld. Nur bestätigte Anrechnung zählt.
+    Klasse C (decisions/klasse-c-vorlaeufiger-betrag-sperrt): die vorläufige LSt sperrt /ergebnis —
+    keine Zahl, grund ring_betrag_vorlaeufig, Feld in offen. Vorher hieß die Antwort still
+    "bestaetigt" mit zahl_cent == z0, obwohl die Abschlusszahlung ohne die LSt um den Betrag falsch war.
+    Kontrolle: DERSELBE Betrag bestätigt → Zahl kommt zurück, Abschlusszahlung sinkt um den Betrag."""
     z0 = _a4_zahl_baseline(base, "a4s0")
     _an_anlegen(base, "a4vorl", AN_KEGEL_HOCH)
-    body = {"feld_id": "p36_lohnsteuer", "wert": z0 + 5000000, "zustand": "vorlaeufig",
+    lst = z0 + 5000000
+    body = {"feld_id": "p36_lohnsteuer", "wert": lst, "zustand": "vorlaeufig",
             "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
             "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": None}}
-    st, _ = _req(base, "POST", "/fall/a4vorl/event", body)
+    st, ev = _req(base, "POST", "/fall/a4vorl/event", body)
     assert st == 201, f"vorläufiger POST erwartet 201, war {st}"
     st, erg = _req(base, "GET", "/fall/a4vorl/ergebnis")
     _val("ergebnis", erg)
-    assert erg["zahl_cent"] == z0
+    assert erg["zahl_cent"] is None, "vorläufige LSt: keine Zahl darf 'bestaetigt' heißen"
+    assert erg["grund"] == "ring_betrag_vorlaeufig", f"grund={erg.get('grund')}"
+    assert "p36_lohnsteuer" in erg["offen"]
     assert erg["abschlusszahlung_cent"] is None, "vorläufige LSt darf Anrechnung nicht auslösen"
+    best = _laie("p36_lohnsteuer", lst)
+    best["ersetzt"] = ev["event_id"]
+    st, _ = _req(base, "POST", "/fall/a4vorl/event", best)
+    assert st == 201, f"Bestätigung erwartet 201, war {st}"
+    st, erg = _req(base, "GET", "/fall/a4vorl/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt", f"grund={erg.get('grund')}"
+    assert erg["zahl_cent"] == z0, "§36-Anrechnung darf die festgesetzte ESt nicht verändern"
+    assert erg["abschlusszahlung_cent"] == z0 - lst, "bestätigte LSt senkt die Abschlusszahlung um den Betrag"
 
 
 def test_a4_abschlusszahlung_gesamt_scheibe(base):
@@ -1003,18 +1019,34 @@ def test_a4_kap_anrechnung_rundet_je_abzugsteuer_unabhaengig(base):
 
 def test_a4_vorlaeufige_kapitalertragsteuer_bewegt_anrechnung_nicht(base):
     """Wie p36_lohnsteuer: eine vorlaeufige (nicht bestaetigte) KapESt darf die Abschlusszahlung
-    NICHT bewegen -- bleibt None wie ganz ohne Feld."""
+    NICHT bewegen -- bleibt None wie ganz ohne Feld.
+    Klasse C (decisions/klasse-c-vorlaeufiger-betrag-sperrt): die vorlaeufige KapESt sperrt
+    /ergebnis -- keine Zahl, grund ring_betrag_vorlaeufig, Feld in offen. Vorher hiess die Antwort
+    still "bestaetigt" mit zahl_cent == z0.
+    Kontrolle: DERSELBE Betrag bestaetigt -> Zahl kommt zurueck, Abschlusszahlung sinkt um den
+    Betrag, auf volle Euro aufgerundet (§ 36 Abs. 3 S. 2: 1.356,80 EUR -> 1.357 EUR)."""
     z0 = _a4_zahl_baseline_gesamt(base, "a4kaps0")
     _ges_anlegen(base, "a4kapvorl", GESAMT_AN_KEGEL)
     body = {"feld_id": "p36_kapitalertragsteuer", "wert": 135680, "zustand": "vorlaeufig",
             "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
             "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": None}}
-    st, _ = _req(base, "POST", "/fall/a4kapvorl/event", body)
+    st, ev = _req(base, "POST", "/fall/a4kapvorl/event", body)
     assert st == 201, f"vorlaeufiger POST erwartet 201, war {st}"
     st, erg = _req(base, "GET", "/fall/a4kapvorl/ergebnis")
     _val("ergebnis", erg)
-    assert erg["zahl_cent"] == z0
+    assert erg["zahl_cent"] is None, "vorlaeufige KapESt: keine Zahl darf 'bestaetigt' heissen"
+    assert erg["grund"] == "ring_betrag_vorlaeufig", f"grund={erg.get('grund')}"
+    assert "p36_kapitalertragsteuer" in erg["offen"]
     assert erg["abschlusszahlung_cent"] is None, "vorlaeufige KapESt darf Anrechnung nicht ausloesen"
+    best = _laie("p36_kapitalertragsteuer", 135680)
+    best["ersetzt"] = ev["event_id"]
+    st, _ = _req(base, "POST", "/fall/a4kapvorl/event", best)
+    assert st == 201, f"Bestaetigung erwartet 201, war {st}"
+    st, erg = _req(base, "GET", "/fall/a4kapvorl/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["grund"] == "bestaetigt", f"grund={erg.get('grund')}"
+    assert erg["zahl_cent"] == z0, "KAP-Anrechnung darf die festgesetzte ESt nicht veraendern"
+    assert erg["abschlusszahlung_cent"] == z0 - 135700, "bestaetigte KapESt senkt die Abschlusszahlung"
 
 
 def test_a4_kap_anrechnung_rentner_scheibe(base):

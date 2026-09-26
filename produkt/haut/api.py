@@ -73,6 +73,7 @@ from bescheid import (  # noqa: E402, F401
     _p35_gezahlte_gewst,
     _p35_partner_anteile,
     _p35_summen, _rentenbeginn_offen_stand,
+    _vorlaeufige_ring_betraege,
     _schulgeld_summe,
     _shared_dba_sonstige,
     _shared_steuer_sonder_agb,
@@ -226,6 +227,15 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     scheibe_felder = _relevante_kegel_felder(scheibe_felder, bindung, store)
     zustaende = [felder[f]["zustand"] for f in scheibe_felder if f in felder]
     if len(zustaende) < len(scheibe_felder) or ST.meet_zustand(zustaende) != "bestaetigt":
+        return None
+    # Klasse C (BACKLOG klasse-c-vorlaeufiges-einkommen-faellt-still-aus): der Kegel oben ist nur
+    # die PFLICHT-Seite. Ein vorlaeufiger Betrag AUSSERHALB des Kegels faellt in _bescheid_fn
+    # still aus der Zahl (over-tax-safe, s. dort) -- die Zahl waere zu niedrig und hiesse trotzdem
+    # "bestaetigt". Gemessen: 100.000 EUR vorlaeufiger Veraeusserungsgewinn = 23.100 EUR zu wenig,
+    # ohne Signal. Deshalb hier dieselbe Schwelle wie fuer den Kegel: keine festgesetzte Zahl,
+    # solange ein Ring-Betrag unentschieden ist. _vorlaeufige_ring_betraege ist dieselbe Quelle,
+    # die der Sperrgrund in bescheid_deklaration nennt.
+    if _vorlaeufige_ring_betraege(felder, cfg, bindung):
         return None
     solz_out = [None]   # mutable container — slot_fn schreibt SolZ hinein
     extras = {}         # slot_fn schreibt kist_cent (§51a) + mobilitaetspraemie_cent (§101) hinein
@@ -599,8 +609,23 @@ def _ergebnis_roh(fall_id: str) -> tuple[int, dict]:
         # Frage, die der Traverser gar nicht mehr stellt.
         offen = [f for f in _relevante_kegel_felder(scheibe_felder, bindung, store)
                  if f not in felder or felder[f]["zustand"] != "bestaetigt"]
+        # Klasse C: der Kegel kann vollstaendig bestaetigt sein und _feste_zahl trotzdem None
+        # liefern — dann fehlt oben nichts, und "input_kegel_nicht_bestaetigt" waere eine falsche
+        # Auskunft ueber den Kegel. Diese Felder gehoeren in dieselbe Liste, sonst zeigt die
+        # Oberflaeche "noch offen" mit leerer Liste (genau der Defekt aus
+        # test_ergebnis_offen_nicht_hartkodiert).
+        betrag_offen = sorted(_vorlaeufige_ring_betraege(felder, cfg, bindung))
+        if betrag_offen:
+            # Der Kegel ist vollstaendig — dann ist "input_kegel_nicht_bestaetigt" eine falsche
+            # Auskunft ueber den Kegel, und die Liste daneben nennt den richtigen Grund.
+            offen = betrag_offen
         bf = _bescheid_fn(cfg["gesamt_ring"], vz, bindung, felder)
-        grund = "engine_unavailable" if (bf is None and not offen) else "input_kegel_nicht_bestaetigt"
+        # EINE Zuweisung an `grund` mit einem IfExp — tests/test_ergebnis_offen_nicht_hartkodiert
+        # verfolgt den Namen zurueck und erkennt den Zweig an genau dieser Form. Zwei Zuweisungen
+        # an denselben Namen (etwa in einem if/else) machen den Zweig fuer das Gate unsichtbar.
+        grund = ("ring_betrag_vorlaeufig" if betrag_offen
+                 else "engine_unavailable" if (bf is None and not offen)
+                 else "input_kegel_nicht_bestaetigt")
         return 200, {"fall_id": fall_id, "snapshot_id": sid, "zahl_cent": None,
                      "solz_cent": None, "kist_cent": None, "mobilitaetspraemie_cent": None,
                      "abschlusszahlung_cent": None,
@@ -642,7 +667,8 @@ def preflight_check(fall_id: str) -> tuple[int, dict]:
             ("widerspruch", "alleinerziehend", "widersprueche_alleinerziehend", "grund"),
             ("widerspruch", "plausibilitaet", "widersprueche_plausibilitaet", "grund"),
             ("hinweis", "pauschale", "hinweise_pauschalen", "hinweis"),
-            ("hinweis", "nicht_gerechnet", "hinweise_nicht_gerechnet", "hinweis")):
+            ("hinweis", "nicht_gerechnet", "hinweise_nicht_gerechnet", "hinweis"),
+            ("hinweis", "betrag_vorlaeufig", "hinweise_betrag_vorlaeufig", "hinweis")):
         for e in ergebnis.get(schluessel, []):
             items.append({"typ": typ, "bereich": bereich, "text": e[textfeld]})
     return 200, {"fall_id": fall_id, "status": ergebnis["status"], "items": items}

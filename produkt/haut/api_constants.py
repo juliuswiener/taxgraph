@@ -672,6 +672,74 @@ RENTNER_FELDER = RENTNER_FELDER + GESAMT_FREIBETRAEGE + GESAMT_DBA + GESAMT_P23 
 # ========== RENTNER_FELDER — VIERTE ÄNDERUNG (Gewinneinkünfte Person-B, Stufe 1 Deklaration) ==========
 RENTNER_FELDER = RENTNER_FELDER + GESAMT_GEWINN_PARTNER + P16_4_GATE_FELDER_PARTNER
 
+# ========== Betragsfelder, die der Ring liest (Klasse C: vorlaeufig faellt still aus der Zahl) ==========
+# Vault backlog/taxgraph/klasse-c-vorlaeufiges-einkommen-faellt-still-aus.md.
+#
+# _bescheid_fn (bescheid_zweige.py) filtert die flachen felder auf zustand == "bestaetigt". Ein
+# VORLAEUFIGER Betrag ist darin schlicht ABSENT, die slot_fn liest 0 und rechnet ohne ihn weiter --
+# als over-tax-safe dokumentiert und fuer sich genommen richtig. Falsch war nur die Beschriftung:
+# die Zahl hiess weiter "bestaetigt". Gemessen an rentner_veraeusserungsgewinn = 100.000 EUR
+# vorlaeufig: 59.170,00 EUR statt 82.270,00 EUR, ohne Signal, /preflight gruen.
+#
+# Diese Menge ist die ANTWORT auf "welche Felder koennen das ueberhaupt": ein flaches numerisches
+# Feld (typ cent/int, ohne instanz_gruppe -- Instanzgruppen haben ihren eigenen Filter), das der
+# Ring-Code erreichen kann. Hergeleitet aus dem Quelltext, nicht aus dem Ticket:
+#   (a) als String-Literal in einem der drei Ring-Module (bescheid_zweige/_einkuenfte/_abzuege), ODER
+#   (b) ueber einen Namen, den der Ring aus api_constants zieht und der an einen String oder ein
+#       Tupel von Strings gebunden ist. (b) ist NICHT redundant: `_c(KAP_ERTRAEGE_PARTNER)` liest
+#       kap_kapitalertraege_partner, dessen Name im Ring-Code nirgends als Literal steht -- ohne (b)
+#       fehlten zwei real gelesene Felder.
+# Gegenprobe (nicht geraten): ein Laufzeit-Mitschnitt ueber alle Lesevorgaenge des Rings auf allen
+# drei guard-Scheiben ergab KEIN Feld, das gelesen wird und hier fehlt.
+#
+# Die Liste ist handgepflegt, weil ein Laufzeit-AST-Scan im Produktcode nichts zu suchen hat.
+# tests/test_ring_betragsfelder_vollstaendig.py leitet sie bei jedem Lauf neu aus dem Quelltext ab
+# und vergleicht -- sie kann also nicht still veralten (Muster: GELESENE_SLOT_NAMEN_JE_QUANTITAET).
+RING_BETRAGSFELDER = (
+    "afa_jahresbetrag", "agb_aufwendungen", "am_anschaffung_monat", "am_anschaffungskosten",
+    "arbeitsmittel_nutzungsdauer", "basis_kv", "basis_kv_partner", "basis_pv",
+    "basis_pv_partner", "behinderungsbedingte_aufwendungen",
+    "behinderungsbedingte_aufwendungen_partner", "berufsausbildung_aufwendungen",
+    "betriebseinnahmen", "bruttoarbeitslohn", "bruttoarbeitslohn_partner",
+    "dba_auslaendische_einkuenfte", "dba_gezahlte_auslaendische_steuer", "dhf_monate",
+    "dhf_unterkunftskosten_monat", "einkuenfte_gewinn", "einkuenfte_gewinn_partner",
+    "fam_anzahl_kinder", "fam_monate_ohne_voraussetzung", "geburtsjahr", "geburtsjahr_partner",
+    "gewinnanteil", "gewinnanteil_partner", "gewst_hebesatz", "gewst_hebesatz_partner",
+    "gewst_messbetrag", "gewst_messbetrag_partner", "hh_dienstleistungen",
+    "hh_handwerker_arbeitskosten", "hh_minijob_aufwendungen", "kap_gewinn_aktien",
+    "kap_gewinn_aktien_partner", "kap_gewinn_sonstige", "kap_gewinn_sonstige_partner",
+    "kap_kapitalertraege", "kap_kapitalertraege_partner", "kap_q_auslaendische_steuer",
+    "kap_verlust_aktien", "kap_verlust_aktien_partner", "kap_verlust_sonstige",
+    "kap_verlust_sonstige_partner", "kist_erstattet", "kist_gezahlt", "p22_nr3_einkuenfte",
+    "p32b_progressionseinkuenfte", "p33a_andere_einkuenfte_bezuege",
+    "p33a_ausbildung_anzahl_kinder", "p33a_unterhalt_aufwendungen", "p33a_unterhalt_kv_pv",
+    "p35c_energieberater_aufwendungen", "p35c_sanierungsaufwendungen", "p36_kapitalertragsteuer",
+    "p36_kapitalertragsteuer_kist", "p36_kapitalertragsteuer_solz", "p36_lohnsteuer",
+    "p36_vorauszahlungen", "pv_anzahl_einheiten", "pv_bruttoleistung_kwp", "pv_einnahmen",
+    "realsplitting_empfaenger_kv_krankengeld", "realsplitting_empfaenger_kv_pv",
+    "realsplitting_unterhaltsleistungen", "rentner_alter_bei_rentenbeginn_partner",
+    "rentner_grad_der_behinderung", "rentner_grad_der_behinderung_partner",
+    "rentner_jahresrente_partner", "rentner_pflegegrad", "rentner_renten_beginn_jahr_partner",
+    "rentner_rentenfreibetrag_partner", "rentner_veraeusserungsgewinn",
+    "rentner_veraeusserungsgewinn_partner", "sonstige_betriebsausgaben", "spenden_betrag",
+    "tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig", "uebernachtung_kosten_monat",
+    "uebernachtung_monate", "uebernachtung_monate_bisher", "verguetung_darlehen",
+    "verguetung_darlehen_partner", "verguetung_taetigkeit", "verguetung_taetigkeit_partner",
+    "verguetung_ueberlassung", "verguetung_ueberlassung_partner", "verlustvortrag_bestand",
+    "versorgung_alter_bei_beginn", "versorgung_beginn_jahr", "versorgung_bemessungsgrundlage",
+    "versorgung_jahresrente", "vor_ag_anteil_rv", "vor_ag_anteil_rv_partner", "vor_an_anteil_rv",
+    "vor_an_anteil_rv_partner", "vor_rv_ausserhalb_lstb", "vor_rv_ausserhalb_lstb_partner",
+    "vorsorge_arbeitslosenversicherung", "vorsorge_arbeitslosenversicherung_partner",
+    "vorsorge_erwerbsunfaehigkeit", "vorsorge_erwerbsunfaehigkeit_partner",
+    "vorsorge_rv_alt_mit_ueberschuss", "vorsorge_rv_alt_mit_ueberschuss_partner",
+    "vorsorge_rv_alt_ohne_ueberschuss", "vorsorge_rv_alt_ohne_ueberschuss_partner",
+    "vorsorge_unfall_haftpflicht", "vorsorge_unfall_haftpflicht_partner",
+    "vpf_abendessen_gestellt_anzahl", "vpf_fruehstuecke_gestellt_anzahl",
+    "vpf_mahlzeiten_gezahltes_entgelt", "vpf_mittagessen_gestellt_anzahl", "vpf_monate_am_ort",
+    "vpf_steuerfreie_erstattung_betrag", "vpf_tage_24h_nach_drei_monaten",
+    "vpf_tage_an_abreise_nach_drei_monaten", "vpf_tage_ueber_8h_nach_drei_monaten"
+)
+
 # ========== Scheiben-Konfiguration ==========
 SCHEIBEN = {
     "ep": {

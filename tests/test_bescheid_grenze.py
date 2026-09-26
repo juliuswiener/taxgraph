@@ -230,7 +230,19 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # korrekt abgewiesen, es landet nichts auf Platte. Danach verschwand er aber spurlos — `if fid:`
 # ueberspringt den Grund, `_abg = [a for a in abgelehnt if a]` filtert ihn aus der Antwort UND
 # aus dem stderr-Log. Das widersprach dem Docstring in api.py („kein stiller Abbruch mehr").
-API_ZEILEN_OBERGRENZE = 1298
+#
+# 1298 -> 1324 (2026-09-26, Klasse C: vorlaeufiger Betrag faellt still aus der Zahl). 26 Zeilen,
+# davon zwei Aufrufe und zwei Zuweisungen; der Rest ist Kommentar. Die Sperre SELBST steht nicht hier — sie ist
+# bescheid_deklaration._vorlaeufige_ring_betraege, und der Grund steht in api_constants
+# (RING_BETRAGSFELDER). Hier steht nur die Entscheidung "keine Zahl" und der Grund in der Antwort.
+# ANLASS, gemessen (Scheibe rentner_gesamt, 5f5cbfd): ein VORLAEUFIGER Veraeusserungsgewinn von
+# 100.000 EUR ergab 59.170,00 EUR statt 82.270,00 EUR — 23.100 EUR zu wenig, ohne Signal, mit
+# grund="bestaetigt" und gruenem /preflight. _bescheid_fn filtert vorlaeufige Betraege bewusst aus
+# der Zahl (over-tax-safe); falsch war nur die Beschriftung. Der Kegel deckt das nicht ab, weil die
+# betroffenen Felder gerade die optionalen sind (agB, Spenden, § 16-vg, § 19-Versorgung).
+# Die letzte Zeile ist der neue Preflight-Schluessel: ohne ihn waere die Meldung totes Wiring
+# (dieselbe Falle, die an preflight.py schon einmal stand).
+API_ZEILEN_OBERGRENZE = 1324
 
 
 def _runner_stellen(pfad: str) -> list[int]:
