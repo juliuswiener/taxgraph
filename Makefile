@@ -184,6 +184,32 @@ eric-gate:
 	if [ -z "$$ELSTER_HERSTELLER_ID" ] && [ -f .env ]; then set -a; . ./.env; set +a; fi; \
 	ERIC_DIR=$${ERIC_DIR:-$$HOME/02_Software/eric} python3 elster/eric_gate.py
 
+## Lokaler Freigabenachweis fuer den ERiC-Abgabeweg (Entscheidung
+## eric-abgabeweg-bleibt-lokaler-manueller-nachweis, Julius 2026-09-12). Dieses Ziel ist der
+## Nachweis, den die EIGENTLICHE Abgabe prueft — `make eric-gate` ist es NICHT: das Gate prueft
+## eine Minimal-XML und zaehlt die GESPERRT-Grenze als Bestehen, laeuft also auch dann gruen,
+## wenn der Abgabeweg nie gerechnet hat.
+##
+## Faehrt tests/test_einreichen_durchstich.py durch den ECHTEN HTTP-Endpunkt mit ECHTEM
+## checkESt und ECHTEM eric_gate — und macht aus JEDEM Skip ein exit != 0 (tests/skip_ist_rot.py,
+## ueber PYTHONPATH geholt). Ohne ERiC oder ohne Herstellerkennung ueberspringen die beiden
+## ERiC-Faelle naemlich weiterhin, und pytest meldete dafuer exit 0: "CI gruen" und "Abgabeweg
+## geprueft" saehen gleich aus. Genau diese Verwechslung ist der Backlog-Eintrag
+## ci-beweist-den-abgabeweg-nicht.
+##
+## Kein Versand: der Pfad ruft `EricBearbeiteVorgang` mit ERIC_VALIDIERE (ohne ERIC_SENDE),
+## cryptoParameter und serverantwortXmlPuffer bleiben NULL. Nachgemessen mit strace — im ganzen
+## Lauf kein einziger Netz-Syscall ausserhalb von 127.0.0.1.
+##
+## Herstellerkennung wie bei eric-gate aus einer gitignorierten .env, bereits gesetztes
+## Prozess-Env gewinnt. ERIC_DIR muss auf die ERiC-Auslieferung zeigen; der Default
+## ~/02_Software/eric findet die Lib auch in Unterordnern (elster/smoke_test.find_eric_lib).
+abgabeweg-freigabe:
+	if [ -z "$$ELSTER_HERSTELLER_ID" ] && [ -f .env ]; then set -a; . ./.env; set +a; fi; \
+	ERIC_DIR=$${ERIC_DIR:-$$HOME/02_Software/eric} \
+	PYTHONPATH=tests$${PYTHONPATH:+:$$PYTHONPATH} \
+	python3 -m pytest tests/test_einreichen_durchstich.py -q -rs -p skip_ist_rot
+
 clean:
 	$(OPAM_ENV); clerk clean || true
 	rm -rf _build _target oracle/gettsim/_catala
