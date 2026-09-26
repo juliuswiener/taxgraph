@@ -167,6 +167,16 @@ def _pruefe_differential(felder_snapshot: dict, bindung: dict,
         for f in funde:
             print(f"    FUND: {f}")
 
+    # Fail-closed: "keine Funde" und "nichts angesehen" sahen bisher gleich aus. Ein Szenario, in
+    # dem jedes Betragsfeld uebersprungen wird (alle Werte 0/None), lieferte eine leere funde-Liste
+    # und damit GRUEN, ohne ein einziges Kz geprueft zu haben. Gemessen 2026-09-26: Store mit
+    # bruttoarbeitslohn=0 -> funde == [] -> Test gruen. Der Zaehler wird deshalb zur Zusicherung.
+    assert geprueft > 0, (
+        f"[{label}] kein einziges Betragsfeld geprueft (geprueft=0, betraege_ohne_kz="
+        f"{betraege_ohne_kz}, funde={len(funde)}). Ein leeres Ergebnis ist hier kein Freispruch: "
+        "die Schleife ueberspringt Nullwerte und Felder ohne Bindungseintrag, deshalb belegt erst "
+        "ein geprueft>0, dass die Invariante ueberhaupt angelegt wurde.")
+
     return funde
 
 
