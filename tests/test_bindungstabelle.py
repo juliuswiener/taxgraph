@@ -400,8 +400,10 @@ def test_neg_gemischte_summanden(daten):
 # NEUES unerreichbares Feld auffällt. Wer hier etwas einträgt, sollte begründen können,
 # warum das Feld nicht gefragt wird. Wer eines entfernt, hat es erreichbar gemacht.
 UNERREICHBAR_BEKANNT = {
-    # § 33 Abs. 1 Tatbestand — Geltungsbedingungen der Regel, nicht erfragt
-    "agb_notwendig_angemessen", "agb_zwangslaeufig",
+    # agb_notwendig_angemessen/agb_zwangslaeufig: seit 2026-09-26 ueber AGB_TATBESTAND in
+    # SCHEIBEN["gesamt"] UND ["rentner_gesamt"] (Felder UND Kegel), also erreichbar — nicht
+    # mehr hier. Entscheidung: decisions/agb-und-verpflegungs-gates-werden-verdrahtet-nicht-
+    # entfernt.md. Gemessen: POST /fall scheibe=gesamt -> HTTP 201, in /fragen.
     # kind_idnr — instanz_gruppe: kind, kein Top-Level-Feld in SCHEIBEN["felder"]
     "kind_idnr",
     # kind_kindschaftsverhaeltnis_a/b + kind_kindschaftsverh_zeitraum_a/b: seit 2026-08-12
@@ -411,9 +413,12 @@ UNERREICHBAR_BEKANNT = {
     # nicht-erfragbar.md, Schritt 1), also erreichbar — nicht mehr hier.
     # § 24a — der Accessor leitet das Alter aus geburtsjahr + VZ ab
     "rentner_alter_64_erfuellt",
-    # § 9 Abs. 4a Einzelreise-Slots — der Ring rechnet aus den Tages-Aggregaten
-    "vpf_abwesenheit_stunden", "vpf_an_oder_abreisetag", "vpf_auswaertige_taetigkeit",
-    "vpf_mit_uebernachtung",
+    # § 9 Abs. 4a Einzelreise-Slots: vpf_abwesenheit_stunden/vpf_an_oder_abreisetag/
+    # vpf_mit_uebernachtung seit 2026-09-26 ueber VERPFLEGUNG_EINZELREISE in
+    # SCHEIBEN["gesamt"], also erreichbar — nicht mehr hier. vpf_auswaertige_taetigkeit
+    # stand schon vorher ueber AUSGABEN_SCREENING in "gesamt" und "n_vor_gwg"; es bleibt
+    # hier als Screening-Gate, nicht als Einzelreise-Slot.
+    "vpf_auswaertige_taetigkeit",
 }
 
 

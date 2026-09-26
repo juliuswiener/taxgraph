@@ -206,6 +206,21 @@ VERPFLEGUNG_KUERZUNG = ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_ges
                         "p9_4a_kuerzung_nach_entgelt")
 VERPFLEGUNG_FRIST = ("vpf_frist_nicht_unterbrochen",)
 
+# ========== § 9 Abs. 4a Satz 3 — Voraussetzungen der Einzelreise ==========
+# Die drei Geltungsbedingungen der Regel p9_4a_verpflegungsmehraufwand standen bisher NUR in
+# n_vor_gwg (ueber felder_datei aus bindung_n_vor_gwg.yaml). Diese Scheibe bietet die
+# Oberflaeche nicht an (produkt/haut/static/index.html kennt nur 'gesamt' und
+# 'rentner_gesamt'), und nichts im Produktcode setzt sie — der Nutzer konnte die drei
+# Fragen deshalb nie beantworten. Gemessen 2026-09-26: POST /fall mit scheibe='gesamt' ->
+# alle drei HTTP 400 "feld_id ... nicht in dieser Scheibe", und keine davon in /fragen.
+# Ein Feld, dessen Regel es als Geltungsbedingung fuehrt, gehoert in dieselbe Scheibe, in
+# der die Regel rechnet — hier 'gesamt'; rentner_gesamt hat keine Verpflegung
+# (kein tage_24h, kein p9_4a_kuerzung_nach_entgelt), also auch diese drei nicht.
+# Entscheidung: decisions/agb-und-verpflegungs-gates-werden-verdrahtet-nicht-entfernt.md
+# (verdrahten, nicht entfernen; kein Betragsfeld, keine Automatik, elster_kz bleibt null).
+VERPFLEGUNG_EINZELREISE = ("vpf_abwesenheit_stunden", "vpf_an_oder_abreisetag",
+                           "vpf_mit_uebernachtung")
+
 # ========== § 10 Vorsorge ==========
 VOR_FELDER = ("vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb")
 VOR_PARTNER_FELDER = ("vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
@@ -447,6 +462,17 @@ BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_WAHLRECHT = ("behinderungsbedingte_aufwendunge
 # Obermengenfeld agb_aufwendungen, NICHT instanz_gruppe.
 BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_PARTNER = ("behinderungsbedingte_aufwendungen_partner",)
 BEHINDERUNGSBEDINGTE_AUFWENDUNGEN_WAHLRECHT_PARTNER = ("behinderungsbedingte_aufwendungen_wahlrecht_pb_partner",)
+
+# ========== § 33 Abs. 2 S. 1 — Tatbestandsmerkmale der außergewöhnlichen Belastung ==========
+# Die zwei Geltungsbedingungen der Regel p33_1_2_agb_abzug standen in KEINER Scheiben-Feldliste
+# und in keinem Kegel. Der Nutzer konnte sie damit nicht beantworten: gemessen 2026-09-26,
+# POST /fall mit scheibe='gesamt' -> HTTP 400 "feld_id ... nicht in dieser Scheibe", keine
+# davon in /fragen. Folge ohne diese Antworten: der Abzug entfaellt, ohne dass der Grund
+# sichtbar wird (Klasse [[bedingungsfeld-selbst-versteckt]]).
+# Beide gehoeren in BEIDE Scheiben, weil agb_aufwendungen ueber GESAMT_ABZUEGE in 'gesamt'
+# UND ueber RENTNER_FELDER = RENTNER_FELDER + GESAMT_ABZUEGE in 'rentner_gesamt' liegt —
+# die Regel rechnet also in beiden. Nicht als Betragsfeld, nicht als Automatik.
+AGB_TATBESTAND = ("agb_zwangslaeufig", "agb_notwendig_angemessen")
 
 # ========== § 33 Abs.2a Fahrtkostenpauschale (Person A) ==========
 FAHRTKOSTEN_PAUSCHALE = ("fahrtkosten_pausch_gdb80_oder_70g",
@@ -726,13 +752,15 @@ SCHEIBEN = {
                    + GESAMT_DBA + GESAMT_P23 + P23_SCREENING + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C
                    + GESAMT_REALSPLITTING
                    + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG
+                   + VERPFLEGUNG_EINZELREISE + AGB_TATBESTAND
                    + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING
                    + ARBEITSMITTEL_AFA_GESAMT
                    + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER
                    + STEUERKLASSE_FELDER
                    + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER),
         "kegel": (VV_GESAMT_FELDER + ("veranlagung", "bruttoarbeitslohn")
-                  + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS),
+                  + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS
+                  + AGB_TATBESTAND),
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est_gesamt",
         "teil_ringe": [],
@@ -743,8 +771,8 @@ SCHEIBEN = {
         "multi_objekt": "vv_objekt",
     },
     "rentner_gesamt": {
-        "felder": RENTNER_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + GESAMT_PARTNER_KAP,
-        "kegel": RENTNER_KEGEL,
+        "felder": RENTNER_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + GESAMT_PARTNER_KAP + AGB_TATBESTAND,
+        "kegel": RENTNER_KEGEL + AGB_TATBESTAND,
         "felder_datei": None,
         "gesamt_ring": "festzusetzende_est_rentner",
         "teil_ringe": [],

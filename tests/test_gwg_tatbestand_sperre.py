@@ -77,6 +77,13 @@ _KEGEL = [
     ("kein_p23_verkauf", True),
     ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
     ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
+    # 2026-09-26: `agb_zwangslaeufig`/`agb_notwendig_angemessen` sind neu im Kegel von
+    # "gesamt" (SCHEIBEN[...]["kegel"] in produkt/haut/api_constants.py). Diese Liste ist
+    # eine HANDGESCHRIEBENE Kopie des Kegels und lief ihm nach -- die acht Tests dieses
+    # Falls brachen mit grund="input_kegel_nicht_bestaetigt". Beide auf True: der Fall hat
+    # keine agB, also ist der Tatbestand fuer ihn nicht erfuellt; die Antwort haelt die
+    # Regel `p33_1_2_agb_abzug` im Kegel offen, ohne die gwg-Messung zu beruehren.
+    ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True),
 ]
 
 
