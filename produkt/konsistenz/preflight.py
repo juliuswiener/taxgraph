@@ -16,12 +16,17 @@ import sys
 _PRODUKT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_PRODUKT, "konsistenz"))
 sys.path.insert(0, os.path.join(_PRODUKT, "traverser"))
+sys.path.insert(0, os.path.join(_PRODUKT, "haut"))
 import flag_check       # noqa: E402
 import partner_check    # noqa: E402
 import check_pauschalen  # noqa: E402
 import check_nicht_gerechnet  # noqa: E402
 import traverser as TR   # noqa: E402
 from _helpers import _bestaetigt_wert  # noqa: E402
+# Nur die Feldmenge, nicht der Rechenkern: api_constants importiert seinerseits nichts aus
+# produkt/ (nur os/re), der Rand ist also kreisfrei. bescheid_deklaration zu importieren ginge
+# NICHT — bescheid zieht seinerseits flag_check/partner_check aus diesem Paket.
+from api_constants import RING_BETRAGSFELDER  # noqa: E402
 
 
 # ===================== Kreuz-Plausibilisierung (Betrag ↔ Bezugsgröße) =====================
@@ -159,6 +164,53 @@ def unvollstaendige_instanzen(snapshot: dict) -> list:
                  f"Steuererklärung. Bitte trage die fehlende Angabe nach, oder gib die Zahl an, "
                  f"die wirklich in die Erklärung soll."}
         for luecke in TR.fehlende_instanzen(snapshot, bindung)]
+
+
+def vorlaeufige_ring_betraege(snapshot: dict) -> list:
+    """Betraege, die der Nutzer genannt, aber noch nicht bestaetigt hat — und die deshalb NICHT
+    in der angezeigten Steuer stehen.
+
+    ANLASS (Vault backlog/taxgraph/klasse-c-vorlaeufiges-einkommen-faellt-still-aus.md, gemessen
+    am 2026-09-26): _bescheid_fn laesst einen vorlaeufigen Betrag bewusst aus der festgesetzten
+    Zahl heraus (over-tax-safe). Das ist richtig — falsch war, dass niemand es sagte: /ergebnis
+    lieferte keine Zahl mehr (Sperre), aber /preflight meldete weiter GREEN, also "hier gibt es
+    nichts zu wissen". Genau das stimmt dann nicht.
+
+    WARUM HIER UND NICHT NUR IM ERGEBNIS-PFAD: /preflight ist der Ort, an dem der Nutzer vor dem
+    Absenden sieht, was noch fehlt. Die Sperre sagt "keine Zahl", diese Meldung sagt WARUM und
+    WELCHE Angabe — beides aus derselben Menge (RING_BETRAGSFELDER), damit die zwei Antworten
+    nicht auseinanderlaufen koennen.
+
+    AMBER, nicht RED: die Erklärung ist vollstaendig und in Ordnung, es widerspricht sich nichts.
+    Nur die angezeigte Zahl bildet einen Teil davon noch nicht ab — dieselbe Begruendung wie bei
+    den vergessenen Pauschalen und "nicht_gerechnet" darunter.
+    """
+    bindung = TR.lade_bindung()
+    treffer = []
+    for feld_id in RING_BETRAGSFELDER:
+        eintrag = snapshot.get(feld_id)
+        if not isinstance(eintrag, dict) or eintrag.get("zustand") == "bestaetigt":
+            continue
+        b = bindung.get(feld_id) or {}
+        # NUR `cent`: der Satz unten nennt einen EURO-Betrag, und _eur() rechnet cent -> Euro.
+        # Fuer ein int-Feld (geburtsjahr, fam_anzahl_kinder, tage_24h, ...) kaeme dabei Unsinn
+        # heraus ("Du hast 19 € eingetragen"). Die Sperre in _feste_zahl deckt int-Felder weiter
+        # ab — hier geht es nur um den Satz, und der darf nicht luegen.
+        if b.get("typ") != "cent" or b.get("instanz_gruppe"):
+            continue
+        # Ohne Betrag gibt es nichts zu melden: ein leeres Feld ist eine offene Frage, kein
+        # genannter Betrag. Nur wer wirklich etwas eingetragen hat, soll den Hinweis sehen.
+        wert = eintrag.get("wert")
+        if not isinstance(wert, (int, float)) or isinstance(wert, bool) or wert <= 0:
+            continue
+        frage = _frage_kurz(feld_id, bindung) or "einen Betrag"
+        treffer.append({
+            "feld_id": feld_id, "wert": wert,
+            "hinweis": f"Du hast {_eur(wert)} eingetragen, diesen Betrag aber noch nicht "
+                       f"bestätigt. Solange das so ist, rechnet die Software ihn nicht mit — die "
+                       f"angezeigte Steuer ist dann zu niedrig. Bitte sieh dir die Frage "
+                       f"»{frage}« noch einmal an und bestätige den Betrag."})
+    return treffer
 
 
 def plausibilitaets_widersprueche(snapshot: dict, vorjahr_referenz: dict | None = None) -> list:
@@ -330,6 +382,7 @@ def preflight(snapshot: dict, bindung: dict | None = None, vorjahr_referenz: dic
       - widersprueche_plausibilitaet: Liste (plausibilitaets_widersprueche)
       - hinweise_pauschalen: Liste (check_pauschalen)
       - hinweise_nicht_gerechnet: Liste (check_nicht_gerechnet)
+      - hinweise_betrag_vorlaeufig: Liste (vorlaeufige_ring_betraege)
       - status: "RED" (harte Widersprüche), "AMBER" (nur soft warnings), "GREEN" (clean)
     """
     flag = flag_check.flag_widersprueche(snapshot, bindung)
@@ -338,10 +391,11 @@ def preflight(snapshot: dict, bindung: dict | None = None, vorjahr_referenz: dic
     plausibilitaet = plausibilitaets_widersprueche(snapshot, vorjahr_referenz)
     pauschal = check_pauschalen.pauschal_hinweise(snapshot)
     nicht_gerechnet = check_nicht_gerechnet.nicht_gerechnete_angaben(snapshot)
+    betrag_vorlaeufig = vorlaeufige_ring_betraege(snapshot)
 
     if flag or partner or alleinerziehend or plausibilitaet:
         status = "RED"
-    elif pauschal or nicht_gerechnet:
+    elif pauschal or nicht_gerechnet or betrag_vorlaeufig:
         # AMBER, nicht GREEN: die Erklärung ist in Ordnung, aber die angezeigte Zahl bildet
         # nicht alles ab, was deklariert wird. GREEN hieße "hier gibt es nichts zu wissen" —
         # und genau das stimmt dann nicht.
@@ -356,5 +410,6 @@ def preflight(snapshot: dict, bindung: dict | None = None, vorjahr_referenz: dic
         "widersprueche_plausibilitaet": plausibilitaet,
         "hinweise_pauschalen": pauschal,
         "hinweise_nicht_gerechnet": nicht_gerechnet,
+        "hinweise_betrag_vorlaeufig": betrag_vorlaeufig,
         "status": status,
     }

@@ -39,6 +39,7 @@ from api_constants import (  # noqa: E402
     RENTNER_22,
     RENTNER_22_PARTNER,
     RENTNER_AA_ARTEN,
+    RING_BETRAGSFELDER,
     UEBERNACHTUNG_BEDINGUNGEN,
     UEBERNACHTUNG_KOSTEN,
     VERPFLEGUNG_TAGE,
@@ -496,6 +497,11 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "Bitte sieh dir beide Angaben noch einmal an.",
 
     # ---- (1) Eine Angabe oder Antwort fehlt noch -------------------------------------------------
+    "ring_betrag_vorlaeufig":
+        "Du hast einen Betrag eingetragen, ihn aber noch nicht bestätigt. Solange das so ist, "
+        "rechnet die Software ihn nicht mit — sonst würde sie eine Steuer ausweisen, die zu deinen "
+        "Angaben nicht passt. Bitte sieh dir den Betrag noch einmal an und bestätige ihn; danach "
+        "steht das Ergebnis sofort da. Um welche Angabe es geht, steht in der Liste daneben.",
     "arbeitsmittel_afa_ueber_gwg_offen":
         "Zu deinen angeschafften Arbeitsmitteln fehlt noch, wie die Kosten abgesetzt werden sollen. "
         "Bei Anschaffungen bis 800 Euro ist das die Frage, ob du den Betrag sofort in voller Höhe "
@@ -642,6 +648,50 @@ def _rentenbeginn_offen_stand(felder: dict, cfg: dict | None = None) -> str | No
             and not isinstance(felder.get("rentner_renten_beginn_jahr", {}).get("wert"), int)):
         return "rentenbeginn_offen"
     return None
+
+
+def _vorlaeufige_ring_betraege(felder: dict, cfg: dict, bindung: dict) -> list:
+    """Die vorlaeufigen Betragsfelder DIESER Scheibe, die der Ring liest (Klasse C).
+
+    Warum es diese Funktion gibt
+    ----------------------------
+    _bescheid_fn (bescheid_zweige.py) filtert die flachen felder auf `zustand == "bestaetigt"`.
+    Ein vorlaeufiger Betrag ist darin ABSENT, die slot_fn liest `_c(fid) == 0` und rechnet ohne ihn
+    weiter. Das ist als over-tax-safe gewollt und richtig -- falsch war nur, dass die Zahl weiter
+    "bestaetigt" hiess. Gemessen (5f5cbfd, Scheibe rentner_gesamt): 100.000 EUR vorlaeufiger
+    Veraeusserungsgewinn ergaben 59.170,00 EUR statt 82.270,00 EUR, ohne Signal und mit
+    gruenem /preflight. Der Nutzer hatte den Betrag genannt.
+
+    Der Kegel deckt das NICHT ab: er ist die Pflicht-Seite, und die betroffenen Felder sind
+    gerade die optionalen (agB, Spenden, § 16-vg, § 19-Versorgung, ...) -- genau die, die
+    laut Kommentar an _bescheid_fn nie eine Zahl bewegen duerfen, bevor der Mensch bestaetigt.
+
+    Warum generisch und nicht je Feld
+    ---------------------------------
+    Die Zustandsachse wird sonst nur an den Stellen geprueft, die der Guard einzeln kennt --
+    § 16 Abs. 4 prueft die zwei Bedingungs-Bools statt den Betrag, § 19 Abs. 2 Beginnjahr und
+    Bemessungsgrundlage statt versorgung_jahresrente. Jedes neue Betragsfeld haette dieselbe
+    Luecke neu geerbt. Die Menge kommt deshalb aus api_constants.RING_BETRAGSFELDER (dort steht,
+    wie sie hergeleitet ist) und wird hier nur noch auf die Scheibe geschnitten.
+
+    Was NICHT gesperrt wird: Felder, die der Ring gar nicht liest. Ihr Fehlen aendert die Zahl
+    nicht, eine Sperre waere ein Fehlalarm. Und Felder aus Instanzgruppen (gwg/kind/p23/...):
+    die haben ihren eigenen, schon vorhandenen Filter und eine eigene Hinweis-Behandlung
+    (api._ergebnis_roh, offen_c).
+    """
+    kegel = set(cfg.get("kegel") or ())
+    treffer = []
+    for fid in RING_BETRAGSFELDER:
+        if fid in kegel:
+            continue        # Pflicht-Seite: deckt _feste_zahl / der Kegel-Meet bereits ab
+        if fid not in (cfg.get("felder") or ()):
+            continue        # gehoert nicht zu dieser Scheibe
+        if (bindung.get(fid) or {}).get("typ") not in ("cent", "int"):
+            continue        # kein Betrag (bool/str/enum) -- eigene Gates, s. die _b-Zweige
+        ev = felder.get(fid)
+        if ev is not None and ev.get("zustand") != "bestaetigt":
+            treffer.append(fid)
+    return treffer
 
 
 def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None = None,
