@@ -21,7 +21,7 @@ vorlagen:
 - id: kappung_ab_zeitschwelle
   muster_regel: p9_1_3_nr5a_uebernachtung
   klasse: 1
-  wirkung: "B1 Arm B 2/2 (Seeds 47->16800 ungekappt / 48->12000 gekappt)."
+  wirkung: "B1 Arm B 2/2 (Seeds 36->16800 ungekappt / 48->12000 gekappt; im B1-Lauf noch 47, am 2026-09-26 auf 36 gezogen — 47+12 ueberspannt die 48-Monats-Schwelle und lag damit ausserhalb der Geltungsbedingung)."
   hinweis: >-
     Hinweis zur Berechnung: Liegt der Abrechnungszeitraum vollstaendig NACH Ablauf von
     48 Monaten am selben Ort (monate_bisher_am_ort >= 48), werden die Uebernachtungskosten

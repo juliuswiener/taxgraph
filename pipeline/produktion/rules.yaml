@@ -131,11 +131,11 @@ regeln:
   - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
     zitatanker: 1 000 Euro im Monat
     herkunft: synthetisch
-    rechenweg: monate_bisher_am_ort 47 = 47 volle Monate abgelaufen, laufender Monat ist der 48. -> Ablauf von 48 Monaten noch nicht erreicht, keine Kappung; 1.400 x 12 = 16.800,00. Randfall 47 (ungekappt).
+    rechenweg: monate_bisher_am_ort 36 + monate 12 = 48 -> der Abrechnungszeitraum endet genau mit Ablauf der 48 Monate, kein Monat liegt danach, keine Kappung; 1.400 x 12 = 16.800,00. Randfall 36 (letzter vollstaendig davor liegende Zeitraum).
     inputs:
       uebernachtungskosten_monat: 1400
       monate: 12
-      monate_bisher_am_ort: 47
+      monate_bisher_am_ort: 36
     expected: 16800.0
   - quelle: reports/review/2026-07-11-charge2-zuschnitt-teil1.md
     zitatanker: 1 000 Euro im Monat
@@ -162,7 +162,7 @@ regeln:
     monate_bisher_am_ort: 10
   - uebernachtungskosten_monat: 1400
     monate: 12
-    monate_bisher_am_ort: 47
+    monate_bisher_am_ort: 36
   - uebernachtungskosten_monat: 1400
     monate: 12
     monate_bisher_am_ort: 48
@@ -206,11 +206,11 @@ regeln:
   - quelle: sources/gesetze-im-internet/estg_p9_2026-07-10.txt
     zitatanker: notwendige Mehraufwendungen eines Arbeitnehmers für beruflich veranlasste Übernachtungen
     herkunft: synthetisch
-    rechenweg: 'WAECHTER 47er: monate_bisher 47 < 48 -> ungekappt; 1.400 x 12 = 16.800,00.'
+    rechenweg: 'WAECHTER 36er: monate_bisher 36 < 48, Zeitraum endet mit dem 48. Monat -> ungekappt; 1.400 x 12 = 16.800,00.'
     inputs:
       uebernachtungskosten_monat: 1400
       monate: 12
-      monate_bisher_am_ort: 47
+      monate_bisher_am_ort: 36
     expected: 16800.0
   signature:
     scope: UebernachtungskostenVor48
@@ -225,7 +225,7 @@ regeln:
     monate_bisher_am_ort: 10
   - uebernachtungskosten_monat: 1400
     monate: 12
-    monate_bisher_am_ort: 47
+    monate_bisher_am_ort: 36
   exclude_rule_ids:
   - p9_1_3_nr5a_uebernachtung_vor_48
 - rule_id: p9_1_3_nr5a_uebernachtung_nach_48

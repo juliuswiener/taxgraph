@@ -130,14 +130,12 @@ def _ueb_registry_seed(rule_id):
     return next(r for r in doc["regeln"] if r["rule_id"] == rule_id)["test_seed"]
 
 
-# Der Registry-Seed p9_1_3_nr5a_uebernachtung_vor_48 mit (bisher=47, monate=12) erwartet 16.800
-# (1.400 × 12, ungekappt). Er verletzt die Geltungsbedingung seiner EIGENEN Regel
-# (zeitraum_vollstaendig_vor_48_monate) und widerspricht ihrer Beschreibung, die für überspannende
-# Zeiträume ausdrücklich sagt: "ueberspannende Zeitraeume splittet der Aufrufer." Der Seed trägt
-# damit die alte binäre Lesart in die Registry, die dieser Fix gerade ersetzt. Der Ring splittet
-# (1 × 1.400 ungekappt + 11 × 1.000 gekappt = 12.400) — die Abweichung ist GEWOLLT.
-# OFFEN (Bericht): Registry-Seed nachziehen, eigenes Ticket — die Registry ist kein Code-Artefakt.
-UEBERSPANNENDER_REGISTRY_SEED = {("p9_1_3_nr5a_uebernachtung_vor_48", 47, 12): 12400}
+# Bis 2026-09-26 stand hier eine Ausnahmeliste für den Registry-Seed (bisher=47, monate=12): er
+# erwartete 16.800 ungekappt, obwohl 47+12 die 48-Monats-Schwelle überspannt und damit die
+# Geltungsbedingung seiner eigenen Regel (zeitraum_vollstaendig_vor_48_monate) verletzt. Der Seed
+# ist auf (bisher=36, monate=12) gezogen — der letzte Zeitraum, der vollständig davor liegt —,
+# damit ist jeder Seed im Geltungsbereich seiner Regel und die Ausnahmeliste entbehrlich. Den
+# Überspannfall (47/12 → 12.400, monatsweise geteilt) hält test_uebernachtung_split_an_der_schwelle.
 
 
 def _ueb_registry_inputs(inputs):
@@ -152,30 +150,22 @@ def test_uebernachtung_konsistenz_runner_registry():
     """KONSISTENZ-GATE runner↔registry: _uebernachtung_abzug MUSS die Registry-Rechenwege
     (test_seed von p9_1_3_nr5a_uebernachtung_vor_48 / _nach_48) reproduzieren. Kopplung wie dHf.
 
-    Der überspannende Seed ist ausgenommen, aber NICHT still: die Ausnahmeliste wird unten gegen
-    die tatsächlich angetroffenen Seeds geprüft, ein zusätzlicher überspannender Seed fällt auf."""
+    Keine Ausnahmeliste mehr: jeder Seed liegt im Geltungsbereich seiner Regel, jeder muss
+    unverändert durchgehen. Ein Seed, der die Schwelle überspannt, wäre hier ein Fehler im
+    Seed — deshalb prüft der Test unten zusätzlich, dass keiner es tut."""
     runner = _runner()
-    ueberspannt_gesehen = set()
     for rule_id in ("p9_1_3_nr5a_uebernachtung_vor_48",
                     "p9_1_3_nr5a_uebernachtung_nach_48"):
         for c in _ueb_registry_seed(rule_id):
             i = c["inputs"]
             bisher, monate = i["monate_bisher_am_ort"], i["monate"]
-            schluessel = (rule_id, bisher, monate)
+            assert not (bisher < 48 < bisher + monate), (
+                f"{rule_id}: Seed {i} überspannt die 48-Monats-Schwelle — er liegt außerhalb der "
+                f"Geltungsbedingung seiner Regel und würde die alte binäre Lesart festschreiben")
             got = runner._uebernachtung_abzug(_ueb_registry_inputs(i), 2025)
-            if schluessel in UEBERSPANNENDER_REGISTRY_SEED:
-                ueberspannt_gesehen.add(schluessel)
-                exp = UEBERSPANNENDER_REGISTRY_SEED[schluessel]
-                assert got == exp, (
-                    f"{schluessel}: überspannender Zeitraum → runner {got} ≠ erwartet {exp} "
-                    f"(Split 1×1.400 + 11×1.000)")
-                continue
             exp = int(c["expected"])
             assert got == exp, (f"runner↔registry-Divergenz ({rule_id}): {i} → runner "
                                 f"{got} ≠ registry {exp} ({c['rechenweg']})")
-    assert ueberspannt_gesehen == set(UEBERSPANNENDER_REGISTRY_SEED), (
-        f"Die Ausnahmeliste ist nicht mehr aktuell — angetroffen: {ueberspannt_gesehen}, "
-        f"erwartet: {set(UEBERSPANNENDER_REGISTRY_SEED)}")
 
 
 def test_uebernachtung_monatsgrenze_verzweigt_nach_vz():
@@ -222,8 +212,13 @@ def test_uebernachtung_split_an_der_schwelle():
     assert u(uebernachtung_monate=3, uebernachtung_monate_bisher=47) == 2000 + 2 * 1000
     # Genau auf der Schwelle: der GANZE Zeitraum ist gekappt (kein Monat mehr davor).
     assert u(uebernachtung_monate=12, uebernachtung_monate_bisher=48) == 12 * 1000
-    # Ein Monat vor der Schwelle: der ganze Zeitraum ist ungekappt.
+    # Der letzte Zeitraum, der vollständig davor liegt: 36 + 12 = 48 → alles ungekappt.
     assert u(uebernachtung_monate=12, uebernachtung_monate_bisher=36) == 12 * 2000
+    # Der Registry-Randfall (bisher=47, monate=12, 1.400/Monat) als regulärer Fall: 1 Monat
+    # ungekappt (der 48.) + 11 gekappt. 16.800 wäre die alte binäre Lesart — 4.800 € zu viel.
+    assert runner._uebernachtung_abzug(
+        {"uebernachtung_kosten_monat": 1400, "uebernachtung_monate": 12,
+         "uebernachtung_monate_bisher": 47, "uebernachtung_im_inland": True}, 2025) == 12400
 
 
 # ---- Front V+V: § 21 Einkünfte aus Vermietung und Verpachtung ----
