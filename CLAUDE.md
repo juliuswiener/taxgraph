@@ -10,8 +10,9 @@ make golden             golden/golden_lauf.py          full-return regression
 make snapshot-verify    pipeline/snapshot.py verify --all
 ```
 
-`make unit` runs under `OPAM_ENV`/`VENV312` from the Makefile — call the targets, not
-pytest directly, or the Catala toolchain and the 3.12 venv are missing.
+`make unit` runs plain `python3 -m pytest`, without `OPAM_ENV`/`VENV312` from the Makefile.
+`make tests` runs under `OPAM_ENV` and `make golden` under `VENV312` — call those targets,
+not their commands directly, or the Catala toolchain and the 3.12 venv are missing.
 
 A single test: `python3 -m pytest tests/path/to/test_x.py::test_name -q`.
 
