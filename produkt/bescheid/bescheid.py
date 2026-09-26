@@ -58,6 +58,9 @@ from bescheid_deklaration import (  # noqa: F401
     # Gehört zu _an_gesamt_sperrgrund wie die Übersetzung zum Wort: der Sperrgrund ist ein
     # Maschinenwort, und wer ihn liefert, muss auch den Satz dazu liefern können.
     sperrgrund_klartext,
+    # Dieselbe Zugehörigkeit für das WELCHE: ein Widerspruchs-Grund ohne seine Felder lässt den
+    # Nutzer im Sperrzustand ohne Weg zu der Angabe, die ihn aufhebt.
+    sperrgrund_felder,
 )
 from bescheid_zweige import (  # noqa: F401
     _abschlusszahlung_cent,
@@ -70,7 +73,8 @@ from bescheid_zweige import (  # noqa: F401
 
 __all__ = [
     # Die Naht: was der Rest von api.py aus dem Kern ruft (tests/test_bescheid_grenze.py).
-    "_bescheid_fn", "_an_gesamt_sperrgrund", "sperrgrund_klartext", "_abschlusszahlung_cent",
+    "_bescheid_fn", "_an_gesamt_sperrgrund", "sperrgrund_klartext", "sperrgrund_felder",
+    "_abschlusszahlung_cent",
     "_mit_ring_werten", "_rentenbeginn_offen_stand",
     # Alles Übrige, damit `import bescheid` weiterhin dasselbe hergibt wie vor dem Schnitt.
     "_abs3_eligible", "_gewinn_partner_anteil", "_gwg_sofortabzug_summe",

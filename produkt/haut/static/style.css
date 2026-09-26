@@ -154,6 +154,10 @@ h1,h2,h3{margin:0}
   padding:16px;color:var(--warn);font-size:15px;text-align:left}
 .ergebnis-hinweis-offen{margin-top:12px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;
   color:var(--muted);font-size:14px;text-align:left;line-height:1.5}
+/* Die ausloesenden Angaben eines Sperrgrunds: der Satz ist mehrzeilig, deshalb block statt inline.
+   Farbe und 44px-Tap-Ziel kommen von .btn-link — hier nur der Umbruch. */
+.ergebnis-sperr-hinweis{margin:14px 0 6px;font-size:14px;color:var(--muted);text-align:left}
+.ergebnis-sperr-feld{display:block;width:100%;margin-top:6px;text-align:left}
 
 /* Rechenweg-Kette (P5.4) — Stufenliste, semantisch <table>, kein Diagramm */
 .rechenweg{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}

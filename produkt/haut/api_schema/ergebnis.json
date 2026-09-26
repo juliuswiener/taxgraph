@@ -29,6 +29,15 @@
                        "luf_euer_offen", "gewst_hebesatz_offen", "abs3_ueber_5mio_offen", "kinder_gehoeren_in_gesamt", "verlustvortrag_gehoert_in_gesamt", "dba_multi_country_offen", "dba_kapital_offen", "p32b_kombi_offen", "progression_gehoert_in_gesamt", "p16_4_gate_offen", "behinderungsbedingte_aufwendungen_wahlrecht_offen",
                        "behinderungsbedingte_aufwendungen_wahlrecht_partner_offen"]},
     "offen": {"type": "array", "items": {"type": "string"}},
+    "sperr_felder": {"type": "array", "items": {
+                       "type": "object",
+                       "properties": {
+                         "feld_id": {"type": "string"},
+                         "wert": {"type": ["integer", "boolean", "string", "null"]},
+                         "veranlagung": {"type": "string"},
+                         "grund": {"type": "string"}},
+                       "required": ["feld_id", "wert", "veranlagung", "grund"],
+                       "additionalProperties": false}},
     "klartext": {"type": "string"},
     "trace": {"type": ["object", "null"]},
     "kette": {"type": ["object", "null"],
