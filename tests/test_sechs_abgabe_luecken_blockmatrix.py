@@ -13,13 +13,15 @@ Faelle zurueck. Aber die Sonden sind Wegwerf-Dateien ausserhalb des Repos -- bri
 Bindung morgen, meldet sich kein Test. Dieser Test macht die Messung stehend.
 
 Ergaenzung 2026-08-28 (Nachtrag im selben Vault-Dokument, "Fremdverifikation"): eine zweite
-Nachmessung an drei vermeintlichen "Nachzueglern" ergab, dass zwei davon exakt demselben
-Muster folgen wie die sechs oben -- spenden_betrag und rentner_pflegegrad sind mit ihrem
-nackten Kernfeld allein ebenso ungeprueft-durchlassend gefaehrdet. Beide sind hier
-aufgenommen. Die anderen zwei Nachzuegler-Unterfaelle (realsplitting_krankengeld, das erst
-ab einem zweiten beruehrten Feld ueberhaupt etwas verlangt; rentner_hinterbliebenenbezuege,
-zu dem es gar kein Begleitfeld gibt) folgen NICHT diesem Muster und sind bewusst NICHT hier
-aufgenommen -- Begruendung je Fall im Vault-Nachtrag.
+Nachmessung an drei vermeintlichen "Nachzueglern" ergab, dass einer davon exakt demselben
+Muster folgt wie die sechs oben -- rentner_pflegegrad war mit seinem
+nackten Kernfeld allein ebenso ungeprueft-durchlassend gefaehrdet und ist hier
+aufgenommen; spenden_betrag folgt diesem Muster NICHT (ERiC akzeptiert den Betrag
+allein, rc=0) und ist 2026-09-26 entfernt. Die anderen zwei Nachzuegler-Unterfaelle
+(realsplitting_krankengeld, das erst ab einem zweiten beruehrten Feld ueberhaupt etwas
+verlangt; rentner_hinterbliebenenbezuege, zu dem es gar kein Begleitfeld gibt) folgen
+NICHT diesem Muster und sind bewusst NICHT hier aufgenommen -- Begruendung je Fall im
+Vault-Nachtrag.
 
 rentner_gepflegter_hilflos war zuvor nur PER ANALOGIE zu rentner_pflegegrad vermutet (teilt
 dieselbe Ang_pflegebeduerft_Pers-Instanz) -- eigens nachgemessen, 2026-08-28: nacktes
@@ -92,9 +94,9 @@ FAELLE = [
     ("p22_nr3", {"p22_nr3_einkuenfte": 100000}),
     ("p33a", {"p33a_unterhalt_aufwendungen": 600000}),
     # Ab hier: Nachtrag 2026-08-28 "Fremdverifikation" (selbes Vault-Dokument, Abschnitt
-    # "Die genaue Feldkombination je Fall"). spenden_betrag und rentner_pflegegrad sind
-    # dieselbe Machart wie die sechs oben -- Kernfeld allein reicht checkESt nicht.
-    ("spenden_betrag", {"spenden_betrag": 30000}),
+    # "Die genaue Feldkombination je Fall"). rentner_pflegegrad (analog zu den sechs oben --
+    # Kernfeld allein reicht checkESt nicht). spenden_betrag war ebenso angenommen,
+    # 2026-09-26 widerlegt und entfernt (ERiC akzeptiert 30000 allein, rc=0).
     ("rentner_pflegegrad", {"rentner_pflegegrad": 3}),
     # Eigens nachgemessen (nicht per Analogie zu rentner_pflegegrad uebernommen), 2026-08-28:
     # teilt dieselbe Ang_pflegebeduerft_Pers-Instanz und dieselben fuenf Begleitfelder, aber
