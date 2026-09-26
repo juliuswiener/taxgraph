@@ -1298,7 +1298,8 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
                 result = est_raw + kap_st_k
                 # SolZ-Tracking: est_mit_fb = KiFB-fiktive ESt (SolzG §3 Abs.3 S.1: cap-st ist
                 # abgezogen VOR Freigrenze). kap_st_k = §32d-Abgeltung-SolZ (5,5% ohne Freigrenze).
-                # est_roh_ohne_kap = ESt vor §32d-Kapital — für §51a-KiSt-Basis (OHNE §32d).
+                # est_roh_ohne_kap = ESt vor §32d-Kapital — das ist die SolZ-Naht, NICHT die
+                # KiSt-Basis (die ist est_ohne_p35, Abs. 2 S. 3, s. unten).
                 if freibetrag > 0 or kinder == 0:
                     solz_info_r["est_mit_fb"] = result
                     solz_info_r["est_roh_ohne_kap"] = est_raw
@@ -1324,6 +1325,11 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
                         "progressionseinkuenfte": pe_raw,
                         "est_auf_erhoehte_bemessung": est_erhoeht})
                     result = tarifliche_32b + est_without_tarifliche
+                    # § 51a Abs. 2 S. 1 EStG nimmt die ESt, wie sie festzusetzen waere — der
+                    # § 32b-Zuschlag gehoert dazu. Die Kapital-KiSt laeuft getrennt ueber
+                    # kap_st_k (Abs. 1 S. 3-5), deshalb nur das TARIFLICHE Delta in die Basis,
+                    # sonst zaehlte Kapital doppelt (Entscheidung Weg c).
+                    est_ohne_p35 += tarifliche_32b - tarifliche_pre32b
                 # §35-Deckel-3 post-wrapper mit tarifliche_32b
                 if p35_credit_r > 0:
                     result = max(0, result - p35_credit_r)

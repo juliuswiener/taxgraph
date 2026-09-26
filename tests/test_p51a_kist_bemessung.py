@@ -662,6 +662,16 @@ def _ring_gesamt(kegel):
     return bf(dict(kegel)), solz[0], extras.get("kist_cent")
 
 
+def _ring_rentner(kegel):
+    """(zahl_cent, solz_cent, kist_cent) direkt aus dem rentner-Ring — wie _ring_gesamt."""
+    felder = {k: {"wert": v, "zustand": "bestaetigt"} for k, v in kegel}
+    solz, extras = [None], {}
+    bf = API._bescheid_fn("festzusetzende_est_rentner", 2025, API.TR.lade_bindung(), felder,
+                          store=None, nur_bestaetigt=True, solz_container=solz, extras=extras)
+    assert bf is not None, "bescheid_fn gab None (catala?)"
+    return bf(dict(kegel)), solz[0], extras.get("kist_cent")
+
+
 def test_kist_p35_und_p32b_zugleich_gesamt(base):
     """Beide Ausnahmen in einem Fall: § 35 raus aus der Basis, § 32b drin.
 
@@ -688,3 +698,94 @@ def test_kist_p35_und_p32b_zugleich_gesamt(base):
     assert (k0, k1) == (662319, 662319), (
         f"KiSt ohne/mit GewSt {k0}/{k1}, erwartet 662.319/662.319 CENT. 657.648 heisst: "
         f"§ 32b fehlt in der Basis; 626.319 mit GewSt heisst: § 35 steckt in der Basis.")
+
+
+# ===== Rentner-Ring: § 32b-Zuschlag gehoert in die KiSt-Basis =====
+#
+# § 51a Abs. 2 S. 1 nimmt die ESt, wie sie festzusetzen waere — der § 32b-Zuschlag gehoert
+# dazu. Im Rentner-Ring laeuft die Kapital-KiSt getrennt ueber kap_st_k (Abs. 1 S. 3-5), also
+# darf ins tarifliche Delta nur tarifliche_32b - tarifliche_pre32b, sonst zaehlte Kapital
+# doppelt. Entscheidung kistensteuer-basis-ohne-gewerbesteuer-ermaessigung, Weg (c).
+
+def test_kist_rentner_p32b_delta_mit_kapital(base):
+    """Rentner 20.000 EUR + Kapital 50.000 EUR + 10.000 EUR Progressionseinkuenfte.
+
+    Handrechnung (VZ 2025, gemessen im Ring, nicht aus dem Gedaechtnis):
+      tarifliche ESt ohne Progressionseinkuenfte ....... 1.605 EUR
+      tarifliche ESt mit  10.000 EUR Progressionseink. . 2.836 EUR
+      Delta (der § 32b-Zuschlag) ...................... 1.231 EUR
+      KiSt-Basis ohne Zuschlag 1.605 EUR → 9 % ......... 14.445 CENT
+      KiSt-Basis mit  Zuschlag 2.836 EUR → 9 % ......... 25.524 CENT
+      dazu der § 32d-Kapital-Nachtrag (getrennt) ...... 107.823 CENT
+    Erwartet ohne Progressionseinkuenfte 122.268 CENT, mit 133.347 CENT — die Differenz ist
+    genau der Zuschlag, 9 % von 1.231 EUR = 11.079 CENT.
+
+    Falsch waere 122.268 auch MIT Progressionseinkuenften: dann fehlt der § 32b-Zuschlag in
+    der KiSt-Basis (genau der Zustand vor diesem Fix, gemessen 2026-09-26). Der Zuschlag darf
+    die Kapital-KiSt nicht doppelt zaehlen — die laeuft ueber kap_st_k, ins Delta geht nur der
+    tarifliche Teil.
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    ohne_pe, _, k_ohne = _ring_rentner(_rentner_kegel(mit_kapital=True))
+    mit_pe, _, k_mit = _ring_rentner(_rentner_kegel(mit_kapital=True) + P32B_PE)
+    # Vorbedingung: § 32b hebt die ESt um 1.231 EUR (135.850 → 148.160 CENT).
+    assert mit_pe - ohne_pe == 123100, (
+        f"§ 32b hebt die ESt nicht um 1.231 EUR: {ohne_pe} → {mit_pe}")
+    assert (k_ohne, k_mit - k_ohne) == (122268, 11079), (
+        f"KiSt ohne/mit Progressionseinkuenften {k_ohne}/{k_mit}, erwartet 122.268 und "
+        f"+11.079 CENT. Ein unveraendertes {k_ohne} heisst: der § 32b-Zuschlag fehlt in der "
+        f"KiSt-Basis (Zustand vor diesem Fix, gemessen 2026-09-26).")
+
+
+def test_kist_rentner_p32b_delta_ohne_kapital(base):
+    """Kontrollfall ohne Kapital (main: HEAD-Paritaet 25.524 ct), sonst derselbe Fall.
+
+    Dieselbe Rente, dieselben 10.000 EUR Progressionseinkuenfte, kein Kapital: die KiSt ist
+    9 % der ESt MIT § 32b-Zuschlag = 9 % von 2.836 EUR = 25.524 CENT.
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    kegel = ([x for x in RENTNER_KEGEL_BASE]
+             + [("kist_konfession", "roemisch-katholisch"),
+                ("kist_bundesland", "nordrhein_westfalen")] + P32B_PE)
+    zahl, _, kist = _ring_rentner(kegel)
+    assert zahl == 283600, f"ESt-Vorbedingung: § 32b hebt auf 2.836 EUR. {zahl}"
+    assert kist == 25524, (
+        f"KiSt {kist} != 25.524 CENT (9 % von 2.836 EUR). 14.445 heisst: die Basis hat "
+        f"§ 32b verloren.")
+
+
+def test_kist_rentner_p32b_delta_guenstigerpruefung(base):
+    """§ 32d Abs. 6 gewinnt: das Kapital steckt im Tarif — der Delta zaehlt es nicht doppelt.
+
+    Rente 4.000 EUR + Kapital 50.000 EUR: hier gewinnt die tarifliche Veranlagung
+    (kap_guenstiger_gewonnen=True), kist_kap_cent ist 0 — es gibt keinen Abgeltungs-Nachtrag,
+    der doppelt anfallen koennte. Der § 32b-Zuschlag darf deshalb NUR ueber den tariflichen
+    Teil wirken.
+
+    Gemessen 2026-09-26 (Rente 4.000 EUR, mit/ohne Progressionseinkuenfte):
+      ohne PE: kist 0 CENT;  mit PE: kist 684 CENT.
+    Vor dem Fix war kist mit PE ebenfalls 0 — der Zuschlag fehlte ganz.
+    """
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    def _kegel_guenstiger(mit_pe):
+        k = []
+        for f, v in RENTNER_KEGEL_BASE:
+            if f == "rentner_jahresrente":
+                v = 400000          # 4.000 EUR
+            elif f == "kein_kap":
+                v = False
+            elif f == "kap_kapitalertraege":
+                v = 5000000          # 50.000 EUR
+            k.append((f, v))
+        k += [("kist_konfession", "roemisch-katholisch"),
+              ("kist_bundesland", "nordrhein_westfalen")]
+        return k + (P32B_PE if mit_pe else [])
+
+    ohne_pe, _, k_ohne = _ring_rentner(_kegel_guenstiger(False))
+    mit_pe, _, k_mit = _ring_rentner(_kegel_guenstiger(True))
+    assert k_mit > k_ohne, (
+        f"KiSt mit Progressionseinkuenften ({k_mit}) ist nicht groesser als ohne ({k_ohne}) — "
+        f"der § 32b-Zuschlag fehlt in der KiSt-Basis.")
