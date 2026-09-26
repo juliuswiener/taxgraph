@@ -798,10 +798,9 @@ def test_gewst_zu_zahlen_kommt_im_xml_an(bindung):
 def test_gewst_zu_zahlen_wird_berechnet_beide_personen():
     """Die Rechnung selbst, für Person A und den Partnerbetrieb.
 
-    Der Hebesatz ist eine Prozentzahl, der Messbetrag steht in Cent — also
-    messbetrag * hebesatz // 100, Ergebnis wieder Cent. Ganzzahlig ABGERUNDET: die Gemeinde
-    setzt volle Euro fest, und Aufrunden behauptete eine höhere Steuerschuld als die
-    tatsächliche, was über § 35 zu einer zu hohen Anrechnung führte.
+    Der Hebesatz ist eine Prozentzahl, der Messbetrag steht in Cent — gerechnet wird mit dem auf
+    volle Euro abgerundeten Messbetrag (so steht er als E0801606 in der Erklärung), Ergebnis
+    wieder Cent. Warum: test_gewst_zu_zahlen_besteht_eric_toleranz unten.
     """
     import os
     import sys
@@ -899,6 +898,52 @@ def test_gewst_zu_zahlen_uebersteht_scheibengefilterte_bindung(http_base):
     assert dek["eingaben_konsistent"] is True
     assert dek["deklaration"]["E0801704"] == 20000     # gewst_zu_zahlen: 5.000 EUR * 400 % (Cent -> EUR)
     assert dek["deklaration"]["E0801705"] == 400       # gewst_hebesatz
+
+
+# ELSTER-Regel 100800013 (Jahresdokumentation E10 2025, Blatt "G - Regeln", Typ Fehler):
+# [E0801704] UngleichMitToleranz1 {[E0801606] * {[E0801705] / 100}}. checkESt lehnte die ersten
+# beiden Fälle ab (2026-09-26), die Kontrolle nicht.
+GEWST_ERIC_FAELLE = [
+    pytest.param(2024750, 400, id="messbetrag-50-cent-hebesatz-400"),   # war 20247 / 400 / 80990
+    pytest.param(123456, 385, id="messbetrag-56-cent-hebesatz-385"),    # war 1234 / 385 / 4753
+    pytest.param(2024400, 400, id="kontrolle-volle-euro"),              # 20244 / 400 / 80976
+]
+
+# Person A schreibt in die Haupt-Deklaration, der Partnerbetrieb in die zweite Anlage-G-Instanz
+# (person_b-Bucket, dieselben Kz, s. est_mapping.PARTNER_INSTANZ).
+GEWST_PERSONEN = [
+    pytest.param("einzel", ("kein_gewinn", "gewst_messbetrag", "gewst_hebesatz"), "deklaration",
+                 id="person-a"),
+]
+
+
+@pytest.mark.parametrize("veranlagung,felder,bucket", GEWST_PERSONEN)
+@pytest.mark.parametrize("messbetrag,hebesatz", GEWST_ERIC_FAELLE)
+def test_gewst_zu_zahlen_besteht_eric_toleranz(http_base, messbetrag, hebesatz,
+                                               veranlagung, felder, bucket):
+    """ELSTER nimmt Messbetrag (E0801606) und Gewerbesteuer (E0801704) nur in vollen Euro an und
+    prüft, ob die Gewerbesteuer zu Messbetrag mal Hebesatz passt — 1 EUR Toleranz, sonst Fehler,
+    und die Erklärung geht nicht ab. Bis 2026-09-26 wurden beide Zahlen getrennt abgerundet: ein
+    Messbetrag auf 50 Cent bei 400 % lag 2 EUR daneben.
+
+    Voller HTTP-Pfad (POST /fall -> POST /event -> GET /deklaration), weil der Fehler erst in der
+    Übergabe entsteht: der Ring rechnet in Cent, _cent_nach_kz rundet jede Kennzahl für sich.
+    """
+    kein_gewinn, messbetrag_feld, hebesatz_feld = felder
+    st, _ = _http_req(http_base, "POST", "/fall",
+                       {"fall_id": "gzt1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
+    assert st == 201
+    for feld, wert in (("veranlagung", veranlagung), (kein_gewinn, False),
+                       (messbetrag_feld, messbetrag), (hebesatz_feld, hebesatz)):
+        st, _ = _http_req(http_base, "POST", "/fall/gzt1/event", _http_bestaetigt(feld, wert))
+        assert st == 201, (st, feld)
+
+    st, dek = _http_req(http_base, "GET", "/fall/gzt1/deklaration")
+    assert st == 200
+    kz = dek[bucket]
+    assert "E0801704" in kz, [e for e in dek["nicht_deklariert"] if "gewst" in e["feld_id"]]
+    abweichung = kz["E0801704"] - kz["E0801606"] * kz["E0801705"] / 100
+    assert abs(abweichung) <= 1, (kz["E0801606"], kz["E0801705"], kz["E0801704"], abweichung)
 
 
 # ---------------------------------------------------------------- § 10b Abs. 1a Vermögensstock
