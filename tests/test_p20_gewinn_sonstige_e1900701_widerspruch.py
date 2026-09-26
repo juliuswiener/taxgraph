@@ -122,7 +122,12 @@ _GRUND = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
           ("basis_kv", 0), ("basis_pv", 0), ("vorsorge_arbeitslosenversicherung", 0),
           ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0),
           ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-          ("mit_anspruch_auf_zuschuss", False)) + _STAMM
+          ("mit_anspruch_auf_zuschuss", False),
+          # 2026-09-26: `agb_zwangslaeufig`/`agb_notwendig_angemessen` sind neu im Kegel von
+          # "gesamt" (produkt/haut/api_constants.py, SCHEIBEN["gesamt"]["kegel"]). Ohne diese
+          # zwei Antworten liefert /ergebnis grund="input_kegel_nicht_bestaetigt" statt der
+          # gemessenen Zahl -- alle drei Faelle dieser Datei fallen darueber aus.
+          ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True)) + _STAMM
 
 
 def _kap(kein_kap, ertraege, gewinn_sonstige):

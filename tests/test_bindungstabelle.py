@@ -400,13 +400,19 @@ def test_neg_gemischte_summanden(daten):
 # NEUES unerreichbares Feld auffällt. Wer hier etwas einträgt, sollte begründen können,
 # warum das Feld nicht gefragt wird. Wer eines entfernt, hat es erreichbar gemacht.
 UNERREICHBAR_BEKANNT = {
-    # § 33 Abs. 1 Tatbestand — Geltungsbedingungen der Regel, nicht erfragt
-    "agb_notwendig_angemessen", "agb_zwangslaeufig",
-    # kind_idnr: bis 2026-09-26 hier mit der Begründung "instanz_gruppe: kind, kein
-    # Top-Level-Feld in SCHEIBEN['felder']". Die Begründung war veraltet — kind_idnr steht
-    # seit dem Anlage-Kind-Blocker in KIND_KV_PV (api_constants.py:407), und KIND_KV_PV wird
+    # § 33 Abs. 1 Tatbestand: agb_notwendig_angemessen/agb_zwangslaeufig sind seit
+    # 2026-09-26 ueber AGB_TATBESTAND in SCHEIBEN["gesamt"] UND ["rentner_gesamt"]
+    # erreichbar (Felder UND Kegel) — nicht mehr hier. Entscheidung:
+    # decisions/agb-und-verpflegungs-gates-werden-verdrahtet-nicht-entfernt.md.
+    # Gemessen: POST /fall scheibe=gesamt -> HTTP 201, in /fragen.
+    # kind_idnr: bis 2026-09-26 hier mit der Begruendung "instanz_gruppe: kind, kein
+    # Top-Level-Feld in SCHEIBEN['felder']". Die Begruendung war veraltet — kind_idnr steht
+    # seit dem Anlage-Kind-Blocker in KIND_KV_PV (api_constants.py:427), und KIND_KV_PV wird
     # in die felder-Listen von gesamt UND rentner_gesamt gefaltet. Gemessen 2026-09-26:
-    # POST /event auf gesamt -> 201, nicht 400. Daher entfernt.
+    # POST /event auf gesamt -> 201, nicht 400.
+    # BEIDE Reparaturen desselben veralteten Eintrags zusammengefuehrt (HEAD entfernte
+    # kind_idnr/vpf_auswaertige_taetigkeit, wip/kleinteile-felder die agb- und
+    # Einzelreise-Slots; die Vereinigung ist: alle fuenf sind erreichbar).
     # kind_kindschaftsverhaeltnis_a/b + kind_kindschaftsverh_zeitraum_a/b: seit 2026-08-12
     # via KIND_KV_PV im Kegel (checkESt-Messung), also erreichbar — nicht mehr hier.
     # gwg_bewegliches_selbstaendig_nutzbar/gwg_netto_ohne_vorsteuer/gwg_verzeichnis_ab_250: seit
@@ -414,13 +420,13 @@ UNERREICHBAR_BEKANNT = {
     # nicht-erfragbar.md, Schritt 1), also erreichbar — nicht mehr hier.
     # § 24a — der Accessor leitet das Alter aus geburtsjahr + VZ ab
     "rentner_alter_64_erfuellt",
-    # § 9 Abs. 4a Einzelreise-Slots — der Ring rechnet aus den Tages-Aggregaten.
-    # vpf_auswaertige_taetigkeit stand hier bis 2026-09-26 mit derselben Begründung, ist aber
-    # KEIN Einzelreise-Slot: es ist die Existenzfrage zweier Regeln und steht seit dem
-    # Screening-Umbau in AUSGABEN_SCREENING (api_constants.py:103), damit in gesamt.
-    # Gemessen 2026-09-26: POST /event auf gesamt -> 201, nicht 400. Daher entfernt.
-    "vpf_abwesenheit_stunden", "vpf_an_oder_abreisetag",
-    "vpf_mit_uebernachtung",
+    # § 9 Abs. 4a Einzelreise-Slots: vpf_abwesenheit_stunden/vpf_an_oder_abreisetag/
+    # vpf_mit_uebernachtung sind seit 2026-09-26 ueber VERPFLEGUNG_EINZELREISE in
+    # SCHEIBEN["gesamt"], also erreichbar — nicht mehr hier.
+    # vpf_auswaertige_taetigkeit ist KEIN Einzelreise-Slot — es ist die Existenzfrage zweier
+    # Regeln und steht seit dem Screening-Umbau in AUSGABEN_SCREENING (api_constants.py:89),
+    # damit in gesamt und n_vor_gwg. Gemessen 2026-09-26: POST /event auf gesamt -> 201,
+    # nicht 400.
 }
 
 
@@ -463,10 +469,21 @@ def test_g_askable_felder_sind_erreichbar(daten):
 
     # Untergrenze, gleiche Bauart wie DATEIEN_UNTEN in test_ci_konfiguration.py: ohne sie wird
     # die Zusicherung oben LAUTLOS WAHR, sobald die Liste leer ist — dann prueft sie nichts
-    # mehr, sie dekoriert nur. Gemessen 2026-09-26: 6 Eintraege (fuenf, die laut Entscheidung
-    # verdrahtet werden, plus rentner_alter_64_erfuellt). Ein Sinken ist eine Entscheidung,
-    # keine Nebenwirkung — wer ein Feld verdrahtet, streicht hier bewusst mit.
-    UNTERGRENZE = 6
+    # mehr, sie dekoriert nur. Ein Sinken ist eine Entscheidung, keine Nebenwirkung.
+    #
+    # Gesenkt 6 -> 1 am 2026-09-26 (Merge wip/kleinteile-felder, 186aa59). Die fuenf Felder
+    # sind wirklich erreichbar geworden, jedes einzeln am lebenden api_constants.py gemessen
+    # (`feld_id in SCHEIBEN["gesamt"|"rentner_gesamt"]["felder"]`):
+    #   agb_notwendig_angemessen, agb_zwangslaeufig  -> AGB_TATBESTAND, gesamt + rentner_gesamt
+    #   kind_idnr                                     -> KIND_KV_PV
+    #   vpf_auswaertige_taetigkeit                    -> AUSGABEN_SCREENING
+    #   vpf_abwesenheit_stunden / _an_oder_abreisetag / _mit_uebernachtung
+    #                                                 -> VERPFLEGUNG_EINZELREISE, gesamt
+    # Uebrig bleibt rentner_alter_64_erfuellt: der Accessor leitet das Alter aus geburtsjahr +
+    # VZ ab, das Feld wird nicht gefragt. 1 ist der wahre Restbestand, nicht 1 als Polster.
+    # Der eigentliche Waechter ist die `neu == []`-Zusicherung oben; diese Zahl haelt nur fest,
+    # dass das Leeren der Liste eine bewusste Handlung bleibt.
+    UNTERGRENZE = 1
     assert len(UNERREICHBAR_BEKANNT) >= UNTERGRENZE, (
         f"UNERREICHBAR_BEKANNT hat nur noch {len(UNERREICHBAR_BEKANNT)} Eintraege, erwartet "
         f"mindestens {UNTERGRENZE} — sind Felder erreichbar geworden (dann gehoert die Zahl "

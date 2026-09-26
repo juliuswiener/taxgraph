@@ -95,6 +95,11 @@ RENTNER = [
     ("versicherungsart", "gesetzlich_an"), ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
     ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
     ("mit_anspruch_auf_zuschuss", False),
+    # 2026-09-26: neu im Kegel von "rentner_gesamt" (produkt/haut/api_constants.py,
+    # SCHEIBEN["rentner_gesamt"]["kegel"] += AGB_TATBESTAND). Diese Liste ist die
+    # handgeschriebene Kopie des Kegels; ohne die zwei Antworten sperrt der Ring auf
+    # "input_kegel_nicht_bestaetigt", bevor der Messgegenstand ueberhaupt greift.
+    ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True),
 ]
 
 GESAMT = [
@@ -109,6 +114,8 @@ GESAMT = [
     ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
     ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0), ("kap_verlust_aktien", 0),
     ("kap_verlust_sonstige", 0),
+    # 2026-09-26: dito fuer "gesamt" — siehe RENTNER oben.
+    ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True),
 ]
 
 
