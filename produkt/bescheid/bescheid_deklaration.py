@@ -549,6 +549,11 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "bekommen hast — etwa einen zinsverbilligten Kredit oder einen steuerfreien Zuschuss. Für "
         "geförderte Maßnahmen gibt es die Steuerermäßigung nicht. Bitte beantworte diese Frage, "
         "auch wenn du keine Förderung bekommen hast.",
+    "haushalt_eu_ewr_offen":
+        "Für deine Kosten für Handwerker, Haushaltshilfe oder haushaltsnahe Dienstleistungen fehlt "
+        "noch die Antwort, ob der Haushalt in der Europäischen Union oder im Europäischen "
+        "Wirtschaftsraum liegt. Nur dann gibt es die Steuerermäßigung. Bitte beantworte diese "
+        "Frage — bei einem Haushalt in Deutschland ist sie automatisch mit Ja beantwortet.",
     "p16_4_gate_offen":
         "Es ist ein Gewinn aus dem Verkauf oder der Aufgabe eines Betriebs angegeben — bei dir oder "
         "bei deinem Partner. Dafür gibt es einen Freibetrag, aber nur unter zwei Bedingungen: Die "
@@ -1185,6 +1190,36 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if _hh_instanz_positiv("hh_handwerker", "hh_handwerker_betrag", "hh_handwerker_arbeitskosten"):
             if (felder.get("hh_handwerker_keine_foerderung") or {}).get("zustand") != "bestaetigt":
                 return "handwerker_foerderung_offen"
+        # § 35a Abs. 4 S. 1: der Haushalt muss in der EU oder im EWR liegen. Anders als Abs. 3 S. 2
+        # (Zeile darüber) gatet diese Voraussetzung ALLE DREI Toepfe — Abs. 1 (Minijob) genauso wie
+        # Abs. 2/3. Deshalb ist die Vorbedingung hier "irgendein § 35a-Aufwand > 0", nicht "Handwerker
+        # > 0": ein reiner Minijob-Fall haengt an derselben unbeantworteten Voraussetzung.
+        #
+        # Gemessen 2026-09-26 (vorher): unbeantwortetes hh_in_eu_ewr -> grund="bestaetigt", 5.000 EUR
+        # Handwerker ohne Abzug. Der Fall war bitgleich mit einem, der § 35a nie erwaehnt — der Ring
+        # liest `is True` (runner.catala_p35a_haushaltsnahe) und nullt bei unset ALLE Toepfe, ohne
+        # Sperre und ohne Hinweis.
+        #
+        # Was die stille Einbusse IST, gemessen statt erschlossen (die Einheit macht den Satz sonst
+        # mehrdeutig — `kette` fuehrt EUR, `zahl_cent` fuehrt Cent): Δ zahl_cent 1067800 -> 967800
+        # = 100000 ct = 1.000 EUR = 20 % von 5.000 EUR, also der § 35a-ABZUG SELBST. Er sitzt 1:1
+        # auf der FESTZUSETZENDEN Steuer (Δ 10678 -> 9678 EUR), waehrend zvE (49964) und tarifliche
+        # ESt (10678) unveraendert bleiben — § 35a ist eine Steuerermaessigung, keine
+        # Sonderausgabe. Kalibriert an 3.000 EUR Handwerker: Δ 60000 ct = 600 EUR, dasselbe
+        # 20-%-Verhaeltnis. (bau-zweiges Kegel trug zusaetzlich 90 EUR KiSt; diese Kegel fuehren
+        # keine KiSt — die 90 EUR gehoeren nicht in dieselbe Messung.)
+        #
+        # Fail-closed bei WERTEN ([[bedingungsfeld-selbst-versteckt]]): die Anzeige ist der Schaden,
+        # nicht die Zahl — "bestaetigt" ueber einer Rechnung, die den Abzug nicht enthaelt.
+        # Explizit FALSE ist dagegen eine ANTWORT: Abs. 4 S. 1 SCHLIESST die Ermäßigung dann aus, sie
+        # ist rechenbar 0 -> der Ring rechnet, der Guard sperrt nicht. Dieselbe Polaritaet wie beim
+        # Geschwisterfeld (keine_foerderung=false nullt Abs. 3 und bleibt bestaetigt), kein zweiter
+        # Rechenweg. Nur UNSET/unbestaetigt sperrt.
+        if (_hh_instanz_positiv("hh_minijob", "hh_minijob_betrag", "hh_minijob_aufwendungen")
+                or _hh_instanz_positiv("hh_dienstleistung", "hh_dienstleistung_betrag", "hh_dienstleistungen")
+                or _hh_instanz_positiv("hh_handwerker", "hh_handwerker_betrag", "hh_handwerker_arbeitskosten")):
+            if (felder.get("hh_in_eu_ewr") or {}).get("zustand") != "bestaetigt":
+                return "haushalt_eu_ewr_offen"
         # § 35c Abs. 3 S. 2 (Zwilling des Guards darüber): die Ermäßigung entfällt GANZ, wenn für
         # dieselben energetischen Maßnahmen § 10f oder § 35a in Anspruch genommen wird oder eine
         # öffentliche Förderung vorliegt. Conditional-mandatory wie bei § 35a — nur wenn § 35c-
