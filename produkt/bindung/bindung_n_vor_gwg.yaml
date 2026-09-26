@@ -445,14 +445,18 @@ bindungen:
       quelle: "§ 9 Abs. 4a Satz 3 Nr. 2 EStG"
       zitatanker: "An- und Abreisetag"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
+  # Der Zeitbezug steht AUSDRÜCKLICH im Text: diese Zahl meint den Stand am ENDE des Zeitraums
+  # (kumulativ, das Steuerjahr mitgezählt). Das Nachbarfeld `uebernachtung_monate_bisher` fragt
+  # dagegen nach dem Stand zu Beginn — bis 2026-09-26 trugen beide denselben Text und eine Antwort
+  # speiste beide Regeln, obwohl nur eine der beiden Lesarten stimmen konnte.
   - feld_id: vpf_monate_am_ort
     quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: monate_am_ort}
     typ: int
     einheit: Monate
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Seit wie vielen Monaten arbeitest du schon an genau diesem auswärtigen Ort?"
-    hilfe_kurz: "Nach drei Monaten am selben Ort gibt es keine Verpflegungspauschale mehr."
+    fragetext_laie: "Seit wie vielen Monaten arbeitest du insgesamt an diesem auswärtigen Ort (bis heute gezählt)?"
+    hilfe_kurz: "Zähl bis heute, nicht bis zum Jahresanfang. Nach drei Monaten am selben Ort gibt es keine Verpflegungspauschale mehr."
     beispielwert: 1
     herkunft_slots: null
     elster_kz: null
@@ -859,16 +863,21 @@ bindungen:
       quelle: "§ 9 Abs. 1 S. 3 Nr. 5a Satz 4 EStG"
       zitatanker: "bis zur Höhe des Betrags nach Nummer 5"
       datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
+  # KEINE ableitung mehr aus vpf_monate_am_ort (entfernt 2026-09-26). Die beiden Regeln lesen
+  # die Monatszahl ENTGEGENGESETZT: die Übernachtung braucht den Stand zu BEGINN ihres Zeitraums
+  # (die Restlaufzeit ist `48 - bisher`, die gebuchten Monate kommen danach), die Verpflegung den
+  # kumulativen Stand (ihre Schwelle ist `> 3`, ein Zeitraum-Monatsfeld hat sie nicht). Eine
+  # Antwort konnte nur eine der beiden Lesarten treffen — welche, entschied die Reihenfolge im
+  # Code. Gemessen mit Antwort 47 und monate=12: 12.400 € gegen 16.800 €. Deshalb zwei Fragen.
   - feld_id: uebernachtung_monate_bisher
     quelle: {regel_id: p9_1_3_nr5a_uebernachtung_nach_48, signatur_slot: monate_bisher_am_ort}
-    ableitung: {aus: vpf_monate_am_ort, art: uebernahme, grund: "Wortgleiche Frage wie `vpf_monate_am_ort` (die wortgleiche Monatsfrage der Verpflegungsregel).. Beide Regeln brauchen dieselbe Angabe, nur mit verschiedenen Fristen: § 9 Abs. 4a S. 6 EStG kappt die Verpflegungspauschale nach drei Monaten, § 9 Abs. 1 S. 3 Nr. 5a S. 4 EStG begrenzt die Unterkunftskosten nach 48 Monaten. Zweimal zu fragen ist eine Frage zu viel."}
     typ: int
     einheit: Monate
-    bereich: {min: 0, max: 600, grund: "Kumulierte Monate der Tätigkeit am selben auswärtigen Ort (48-Monats-Schwelle Satz 4)."}
+    bereich: {min: 0, max: 600, grund: "Monate am selben auswärtigen Ort VOR Beginn des Abrechnungszeitraums (48-Monats-Schwelle Satz 4)."}
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Seit wie vielen Monaten arbeitest du schon an genau diesem auswärtigen Ort?"
-    hilfe_kurz: "Nach 48 Monaten am selben Ort sind die Übernachtungskosten auf 1.000 Euro im Monat begrenzt (Inland)."
+    fragetext_laie: "Wie viele Monate lagst du am 1. Januar dieses Jahres schon an genau diesem auswärtigen Ort untergebracht?"
+    hilfe_kurz: "Zähl nur die Monate VOR diesem Steuerjahr. Nach Ablauf von 48 Monaten am selben Ort werden die Übernachtungskosten auf 1.000 € im Monat begrenzt (Inland)."
     beispielwert: 10
     herkunft_slots: null
     elster_kz: null

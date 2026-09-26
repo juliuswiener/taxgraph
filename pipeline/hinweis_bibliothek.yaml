@@ -21,12 +21,13 @@ vorlagen:
 - id: kappung_ab_zeitschwelle
   muster_regel: p9_1_3_nr5a_uebernachtung
   klasse: 1
-  wirkung: "B1 Arm B 2/2 (Seeds 36->16800 ungekappt / 48->12000 gekappt; im B1-Lauf noch 47, am 2026-09-26 auf 36 gezogen — 47+12 ueberspannt die 48-Monats-Schwelle und lag damit ausserhalb der Geltungsbedingung)."
+  wirkung: "B1 Arm B 2/2 (Seeds 36->16800 ungekappt / 48->12000 gekappt; im B1-Lauf noch 47, am 2026-09-26 auf 36 gezogen — 47+12 ueberspannt die 48-Monats-Schwelle und lag damit ausserhalb der Geltungsbedingung). ACHTUNG: die Kopplung des Seeds an vpf_monate_am_ort ist am 2026-09-26 entfallen (ableitung uebernahme entfernt); monate_bisher_am_ort ist jetzt eine eigene Frage und meint den Stand zu BEGINN des Abrechnungszeitraums."
   hinweis: >-
-    Hinweis zur Berechnung: Liegt der Abrechnungszeitraum vollstaendig NACH Ablauf von
-    48 Monaten am selben Ort (monate_bisher_am_ort >= 48), werden die Uebernachtungskosten
-    auf hoechstens 1000 Euro je Monat gekappt (min(kosten_monat,1000) x monate). Davor
-    (monate_bisher_am_ort < 48) gelten die tatsaechlichen Kosten voll (kosten_monat x monate).
+    Hinweis zur Berechnung: Die 48-Monats-Schwelle ist ein Zeitpunkt, kein Jahresschalter.
+    Der Abrechnungszeitraum wird an ihr geteilt: Monate bis zum Ablauf der 48 Monate
+    (monate_bisher_am_ort < 48) gelten voll (kosten_monat x monate), jeder Monat ab der
+    Schwelle wird auf hoechstens 1000 Euro gekappt (min(kosten_monat,1000) x monate).
+    monate_bisher_am_ort zaehlt die Monate VOR diesem Zeitraum.
 
 - id: lineare_afa_mit_anschaffungsjahr_anteil
   muster_regel: p9_1_3_nr6_7_afa_laufend

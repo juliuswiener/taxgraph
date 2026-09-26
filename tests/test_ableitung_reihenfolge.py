@@ -213,3 +213,46 @@ def test_ein_ja_auf_die_neue_frage_rettet_den_abzug():
     nie angegeben, Kind fuenf Jahre alt. Auf die alte Frage („wegen einer Behinderung?") war die
     wahre Antwort „nein" und der Abzug weg; auf die neue ist sie „ja"."""
     assert _abzug(_store(GEB, KOSTEN, (FELD, True))) == 4800
+
+
+# ---- Die Monatsfrage: zwei Regeln, zwei Zeitbezuege, zwei Antworten --------------
+
+def _monatsfall(s, feld, monate):
+    """Ein bestaetigter Monatswert auf dem uebergebenen Feld."""
+    _setze(s, feld, monate)
+
+
+def test_die_monatsfrage_speist_nicht_mehr_beide_regeln():
+    """Die Kopplung war eine Frage zu viel — und eine zu wenig.
+
+    Vorher: `uebernachtung_monate_bisher` wurde per `ableitung: {art: uebernahme}` aus
+    `vpf_monate_am_ort` gefuellt. EINE Antwort speiste damit zwei Regeln, die den Wert
+    ENTGEGENGESETZT lesen: die Uebernachtung als Stand zu BEGINN ihres Zeitraums (die Restlaufzeit
+    ist `48 - bisher`), die Verpflegung als kumulativen Stand (ihre Schwelle ist `> 3`, ein
+    Zeitraum-Monatsfeld hat sie nicht).
+
+    Gemessen mit Antwort 47 und monate=12: 12.400 EUR unter der Beginn-Lesart, 16.800 EUR unter der
+    kumulativen — dieselbe Zahl, zwei Ergebnisse. Deshalb fragt jetzt jede Regel selbst.
+    """
+    s = ST.leerer_store(VZ, fall_id="monatsfrage-getrennt")
+    _setze(s, "vpf_monate_am_ort", 47)
+    felder, _ = ST.materialisiere(s)
+    assert "uebernachtung_monate_bisher" not in felder, (
+        "die Verpflegungsantwort leitet weiterhin die Uebernachtungs-Monatszahl ab — "
+        "eine Antwort speist zwei einander widersprechende Lesarten")
+
+
+def test_uebernachtung_monate_bisher_ist_eine_eigene_frage():
+    """Nach der Trennung wird sie gestellt — und die Antwort gilt nur fuer ihre Regel."""
+    s = ST.leerer_store(VZ, fall_id="monatsfrage-eigen")
+    _setze(s, "vpf_monate_am_ort", 47)
+    q = TR.naechste_fragen(s, BINDUNG, KATALOG)
+    assert "uebernachtung_monate_bisher" in q, (
+        "die Uebernachtungs-Monatszahl wird nicht gefragt — ohne die Ableitung bekommt sie "
+        "sonst nie einen Wert")
+    _setze(s, "uebernachtung_monate_bisher", 47)
+    felder, _ = ST.materialisiere(s)
+    assert felder["uebernachtung_monate_bisher"]["wert"] == 47
+    assert felder["vpf_monate_am_ort"]["wert"] == 47, (
+        "die Uebernachtungsantwort hat die Verpflegungszahl veraendert — die Felder sind nicht "
+        "getrennt")

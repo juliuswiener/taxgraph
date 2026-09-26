@@ -482,13 +482,6 @@ def _berechne(regel: dict, wert, vz: int):
         if jahr is None:
             return None
         return True if (vz - jahr) < int(regel["schwelle"]) else None
-    if art == "uebernahme":
-        # Zwei Felder, EINE Frage. `vpf_monate_am_ort` und `uebernachtung_monate_bisher` tragen
-        # denselben Fragetext bis aufs Wort („Seit wie vielen Monaten arbeitest du schon an genau
-        # diesem auswärtigen Ort?") und standen im E2E-Durchgang am 2026-08-26 gleichzeitig in der
-        # Queue, auf Platz 112 und 123. Sie gehören zwei Regeln mit verschiedenen Fristen (3 Monate
-        # Verpflegung, 48 Monate Übernachtung) — die ANGABE ist dieselbe, nur die Grenze nicht.
-        return wert
     jahr = _jahr(wert)
     if jahr is None:
         return None
