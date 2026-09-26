@@ -158,6 +158,26 @@ def test_knopf_ist_im_fertig_screen_nach_preflight(base, playwright_context):
         page.close()
 
 
+def test_vor_dem_klick_steht_nur_lokal_nichts_ans_finanzamt(base, playwright_context):
+    """Kriterium 2 (Vault: keine-abgabe-aus-dem-browser): BEVOR der Knopf zum ersten Mal geklickt
+    wird, steht sichtbar davor, dass nur lokal geprüft und nichts ans Finanzamt gesendet wird.
+    aria-describedby, damit auch ein Screenreader den Satz am Knopf vorliest."""
+    page = playwright_context.new_page()
+    try:
+        _fall_und_fertig_screen(base, page, "knopf-vorab-satz")
+        satz = page.query_selector("#einreichen-lokal")
+        assert satz is not None and satz.is_visible(), "kein sichtbarer Satz vor dem Absendeknopf"
+        text = satz.text_content()
+        assert "lokal" in text and "Finanzamt" in text, f"Satz sagt nicht lokal/Finanzamt: {text!r}"
+        davor = page.evaluate("""() => !!(document.getElementById('einreichen-lokal')
+            .compareDocumentPosition(document.getElementById('einreichen-btn'))
+            & Node.DOCUMENT_POSITION_FOLLOWING)""")
+        assert davor, "der Satz muss VOR dem Knopf stehen"
+        assert page.get_attribute("#einreichen-btn", "aria-describedby") == "einreichen-lokal"
+    finally:
+        page.close()
+
+
 def test_klick_ruft_wirklich_den_einreichen_endpunkt(base, playwright_context, monkeypatch):
     """Wirkung, nicht nur Struktur: ein echter Klick muss einen echten POST an
     /fall/{id}/einreichen auslösen — sonst ist der Knopf Dekoration."""
