@@ -31,6 +31,7 @@ from api_constants import (  # noqa: E402
     EUER_KOMPONENTEN,
     GESAMT_PARTNER_19,
     GESAMT_PARTNER_KAP,
+    GEWINN_QUELLEN_MENGEN,
     KAP_ERTRAEGE,
     KAP_ERTRAEGE_PARTNER,
     KAP_TOEPFE,
@@ -997,7 +998,13 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # EÜR-Komponente (betriebseinnahmen/sonstige_BA/AfA) beide gesetzt → welcher laufende Gewinn gilt? Doppel-
         # quelle → kein Rate-Bescheid (_laufender_gewinn nähme sonst still die EÜR und verschluckte den Direktwert).
         # Spiegel kapital_semantik_offen. Entweder den Betrag DIREKT ODER komponentenweise, nicht beides.
-        if _positiv("einkuenfte_gewinn") and any(_positiv(k) for k in EUER_KOMPONENTEN):
+        # GEWINN_QUELLEN_MENGEN, NICHT EUER_KOMPONENTEN (2026-09-26): die Menge muss DIESELBE sein wie die
+        # des Umschalters in _laufender_gewinn, und der schaltet auch bei `gwg_summe > 0` um. Mit der
+        # engeren Menge hier fiel der Direktwert bei einer bloßen GWG-Zeile still aus der Bemessung
+        # (21.063,00 EUR auf 50.000 EUR Gewinn, gemessen — s. api_constants.py und
+        # tests/test_gwg_direktwert_quelle.py). Die Konstante ist die gemeinsame Wurzel; zwei Listen
+        # für eine Frage waren der Defekt.
+        if _positiv("einkuenfte_gewinn") and any(_positiv(k) for k in GEWINN_QUELLEN_MENGEN):
             return "gewinn_quelle_offen"
         # § 13 Land-/Forstwirtschaft ist NICHT EÜR-materialisiert (EuerGewinn-Bedingungen § 15 Abs. 2/§ 18 Abs. 1,
         # nicht § 13): gewinn_betriebsart=land_forst MIT EÜR-Komponente (und OHNE Direktwert) → luf_euer_offen,

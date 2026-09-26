@@ -353,6 +353,25 @@ GESAMT_33B_PARTNER = ("rentner_grad_der_behinderung_partner", "rentner_hilflos_b
 EUER_KOMPONENTEN = ("betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahresbetrag")
 GWG_FELDER = ("gwg_anschaffungskosten_netto", "gwg_bewegliches_selbstaendig_nutzbar",
              "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250")
+# ========== DIE EINE MENGE, DIE DEN EÜR-ZWECK ENTSCHEIDET (2026-09-26) ==========
+# Zwei Stellen stellen dieselbe Frage — „liegt schon eine aufgeschlüsselte EÜR-Angabe vor?":
+#   - der UMSCHALTER `_laufender_gewinn` (bescheid_einkuenfte.py) wählt danach zwischen dem
+#     direkten `einkuenfte_gewinn` und der komponentenweisen Rechnung,
+#   - der WÄCHTER `_an_gesamt_sperrgrund` (bescheid_deklaration.py) sperrt `gewinn_quelle_offen`,
+#     wenn Direktwert UND Aufschlüsselung nebeneinander stehen.
+# Bis 2026-09-26 standen dort ZWEI VERSCHIEDENE Mengen: der Umschalter prüfte
+# `EUER_KOMPONENTEN oder gwg_summe > 0`, der Wächter nur `EUER_KOMPONENTEN`. Weil
+# `gwg_anschaffungskosten_netto` in GWG_FELDER steht und nicht in EUER_KOMPONENTEN, war die
+# Umschaltbedingung WEITER als die Wächterbedingung: EINE GWG-Zeile schaltete auf den EÜR-Zweig
+# um, ohne den Wächter zuständig zu machen. Der Direktwert fiel lautlos aus der Bemessung —
+# gemessen 50.000 EUR Direktwert + 600 EUR GWG → 1.369.300 ct statt Sperre, **21.063,00 EUR
+# Steuer auf 50.000 EUR Gewinn still verloren** (der EÜR-Zweig lief mit Einnahmen 0 und dem GWG
+# als einziger Betriebsausgabe; die Sonde steht in tests/test_gwg_direktwert_quelle.py).
+# Ab hier ziehen BEIDE aus dieser Konstante. Wer ein Feld aufnimmt, das den EÜR-Zweig
+# einschaltet, nimmt es HIER auf — sonst reißt dieselbe Lücke beim nächsten Feld wieder auf.
+# Der GWG-Betrag zählt über die Instanzen-Naht (`_gwg_sofortabzug_summe`, EM.instanzen), nicht
+# über das Basis-Feld allein: geprüft wird deshalb der BETRAG, nicht die bloße Anwesenheit.
+GEWINN_QUELLEN_MENGEN = EUER_KOMPONENTEN + ("gwg_anschaffungskosten_netto",)
 VERLUST_FELD = ("verlustvortrag_bestand",)
 MITU_FELDER = ("gewinnanteil", "verguetung_taetigkeit", "verguetung_darlehen", "verguetung_ueberlassung")
 # Person-B: gleiche Kz wie Person A (aufgegangen in E0800502-Instanz-B), keine Sondervergütungs-
@@ -888,7 +907,7 @@ __all__ = [
     # Rentner
     "RENTNER_AA_ARTEN", "RENTNER_22", "RENTNER_33B", "RENTNER_33B_PFLEGE_ANGABEN", "RENTNER_PARTNER", "RENTNER_22_PARTNER", "GESAMT_33B", "GESAMT_33B_PARTNER",
     # Gewinn
-    "EUER_KOMPONENTEN", "GWG_FELDER", "VERLUST_FELD", "MITU_FELDER", "ABS3_FELDER",
+    "EUER_KOMPONENTEN", "GWG_FELDER", "GEWINN_QUELLEN_MENGEN", "VERLUST_FELD", "MITU_FELDER", "ABS3_FELDER",
     # § 35
     "GESAMT_P35",
     # § 19 Abs. 2 Versorgung
