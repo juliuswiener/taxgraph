@@ -105,14 +105,15 @@ def playwright_context():
         pytest.skip(f"Playwright-Setup fehlgeschlagen: {e}")
 
 
-def _patch_bis_checkest(monkeypatch, rc: int, antwort: str = ""):
+def _patch_bis_checkest(monkeypatch, rc: int, antwort: str = "", nicht_deklariert: list | None = None):
     """Alles vor CE.validate() umgehen (Deklaration/XML), damit der HTTP-Roundtrip nur noch
     testet, was ab dem checkESt-Ergebnis passiert — Rezept aus test_einreichen.py."""
     import elster_xml as EX
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
                         lambda *a, **k: {"eingaben_konsistent": True,
-                                         "deklaration": {"E0100201": "M"}, "unvollstaendig": []})
+                                         "deklaration": {"E0100201": "M"}, "unvollstaendig": [],
+                                         "nicht_deklariert": nicht_deklariert or []})
     import checkest_gate as CE
     monkeypatch.setattr(CE, "validate", lambda *a, **k: (rc, antwort))
     return CE
@@ -153,6 +154,26 @@ def test_knopf_ist_im_fertig_screen_nach_preflight(base, playwright_context):
         assert reihenfolge == ["preflight", "einreichen-btn"], (
             f"Reihenfolge im #fertig-Screen falsch: {reihenfolge} — der Knopf muss NACH "
             "#preflight stehen")
+    finally:
+        page.close()
+
+
+def test_vor_dem_klick_steht_nur_lokal_nichts_ans_finanzamt(base, playwright_context):
+    """Kriterium 2 (Vault: keine-abgabe-aus-dem-browser): BEVOR der Knopf zum ersten Mal geklickt
+    wird, steht sichtbar davor, dass nur lokal geprüft und nichts ans Finanzamt gesendet wird.
+    aria-describedby, damit auch ein Screenreader den Satz am Knopf vorliest."""
+    page = playwright_context.new_page()
+    try:
+        _fall_und_fertig_screen(base, page, "knopf-vorab-satz")
+        satz = page.query_selector("#einreichen-lokal")
+        assert satz is not None and satz.is_visible(), "kein sichtbarer Satz vor dem Absendeknopf"
+        text = satz.text_content()
+        assert "lokal" in text and "Finanzamt" in text, f"Satz sagt nicht lokal/Finanzamt: {text!r}"
+        davor = page.evaluate("""() => !!(document.getElementById('einreichen-lokal')
+            .compareDocumentPosition(document.getElementById('einreichen-btn'))
+            & Node.DOCUMENT_POSITION_FOLLOWING)""")
+        assert davor, "der Satz muss VOR dem Knopf stehen"
+        assert page.get_attribute("#einreichen-btn", "aria-describedby") == "einreichen-lokal"
     finally:
         page.close()
 
@@ -233,6 +254,52 @@ def test_nicht_geprueft_unterscheidet_sich_von_beanstandet_trotz_gleichem_http_s
         "beide Fälle liefern HTTP 422 und denselben Browser-Text — 'nicht geprüft' und "
         "'beanstandet' sind dann für den Nutzer ununterscheidbar:\n"
         f"  nicht_geprueft={text_nicht_geprueft!r}\n  beanstandet={text_beanstandet!r}")
+
+
+# Zwei Einträge in der Form, die est_mapping.deklariere() baut: einer mit Handlungsanweisung
+# (`hinweis`, Klasse i), einer nur mit Grund (Klasse c).
+_NICHT_DEKLARIERT = [
+    {"feld_id": "kist_konfession", "grund": "Wert 'andere' ohne XSD-Code-Zuordnung (E0100402)",
+     "hinweis": "Bitte in Mein ELSTER nachtragen."},
+    {"feld_id": "sonder_feld", "grund": "kein elster_kz"},
+]
+
+
+def test_einreichen_200_traegt_nicht_deklariert(base, monkeypatch):
+    """Ohne `nicht_deklariert` im 200-Body kann die Oberfläche nicht wissen, dass gerechnete
+    Werte nicht in der Erklärung stehen — sie zeigte dann „in Ordnung"
+    (Vault: hinweis-erreicht-den-nutzer-nie)."""
+    _patch_bis_checkest(monkeypatch, rc=0, nicht_deklariert=_NICHT_DEKLARIERT)
+    s, r = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                        "fall_id": "nd-body"})
+    assert s == 201, r
+    s, r = _req(base, "POST", "/fall/nd-body/einreichen", {})
+    assert s == 200, r
+    assert r["nicht_deklariert"] == _NICHT_DEKLARIERT, r
+
+
+def test_nicht_deklariert_zeigt_jeden_eintrag_statt_in_ordnung(base, playwright_context, monkeypatch):
+    """Entscheidung nicht-deklarierte-werte-zeigt-die-pruefung-vollstaendig: nach dem Klick steht
+    JEDER Eintrag mit Grund und `hinweis` im Status, „in Ordnung" erscheint nicht, der Knopf
+    bleibt klickbar. Die leere Liste („in Ordnung") prüft
+    test_erfolg_zeigt_in_ordnung_ohne_beanstandung_oder_unsicherheit."""
+    _patch_bis_checkest(monkeypatch, rc=0, nicht_deklariert=_NICHT_DEKLARIERT)
+    page = playwright_context.new_page()
+    try:
+        _fall_und_fertig_screen(base, page, "nd-anzeige")
+        page.click("#einreichen-btn")
+        page.wait_for_function(
+            "document.getElementById('einreichen-status').textContent.trim().length > 0",
+            timeout=5000)
+        text = page.evaluate("document.getElementById('einreichen-status').textContent")
+        klickbar = not page.evaluate("document.getElementById('einreichen-btn').disabled")
+    finally:
+        page.close()
+    assert "in ordnung" not in text.lower(), f"'in Ordnung' trotz nicht übertragener Werte: {text!r}"
+    for e in _NICHT_DEKLARIERT:
+        assert e["feld_id"] in text and e["grund"] in text, f"Eintrag fehlt: {e} in {text!r}"
+    assert _NICHT_DEKLARIERT[0]["hinweis"] in text, f"hinweis fehlt in {text!r}"
+    assert klickbar, "Knopf muss nach der Antwort klickbar bleiben — keine neue Sperre"
 
 
 # fetch-Stub, der /einreichen offen haelt, statt auf reale Netz-Latenz zu vertrauen — sonst

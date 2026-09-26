@@ -90,7 +90,7 @@ def eric_ersatz(monkeypatch):
     monkeypatch.setattr(EX, "erzeuge_xml", lambda *a, **k: '<?xml version="1.0"?><Elster/>')
     monkeypatch.setattr(API.EM, "deklariere",
                         lambda *a, **k: {"eingaben_konsistent": True, "deklaration": {"E0100201": "M"},
-                                         "unvollstaendig": []})
+                                         "unvollstaendig": [], "nicht_deklariert": []})
 
     def _setze(rc):
         monkeypatch.setattr(CE, "validate", lambda *a, **k: (rc, ""))

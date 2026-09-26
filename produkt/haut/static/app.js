@@ -2481,8 +2481,22 @@ async function einreichenPruefen() {
   detail.className = "einreichen-detail";
   let extra = [];
   if (r.status === 200 && r.body && !("grund" in r.body)) {
-    kopf.textContent = "Geprüft und in Ordnung.";
+    // "in Ordnung" nur bei nachweislich leerer Liste. Sonst jeden nicht übertragenen Wert mit Grund
+    // zeigen — keine Positivliste, keine Sortierung (Vault: nicht-deklarierte-werte-zeigt-die-pruefung-vollstaendig).
+    const nd = Array.isArray(r.body.nicht_deklariert) ? r.body.nicht_deklariert : null;
     detail.textContent = r.body.hinweis || "";
+    if (nd && !nd.length) {
+      kopf.textContent = "Geprüft und in Ordnung.";
+    } else {
+      kopf.textContent = "Geprüft, aber nicht alle Werte stehen in der Erklärung.";
+      extra.push(Object.assign(document.createElement("p"),
+        {className: "einreichen-detail", textContent: "Diese Werte sind berechnet, stehen aber nicht in der Erklärung:"}));
+      for (const n of nd || []) {
+        extra.push(Object.assign(document.createElement("p"),
+          {className: "einreichen-detail",
+           textContent: `${n.feld_id}: ${n.grund}` + (n.hinweis ? ` — ${n.hinweis}` : "")}));
+      }
+    }
   } else if (r.body && r.body.grund === "plausibilitaet_verletzt") {
     kopf.textContent = "Geprüft und beanstandet.";
     detail.textContent = "Die Prüfung hat Einwände gegen die Erklärung gefunden. Bitte Angaben " +
