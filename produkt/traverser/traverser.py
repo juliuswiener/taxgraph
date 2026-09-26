@@ -250,6 +250,38 @@ def _unbeantwortet(ev) -> bool:
     return ev is None or ev.get("zustand") == "vorlaeufig"
 
 
+def _instanz_antworten(aktiv: dict, bindung: dict, feld_id: str) -> list:
+    """Die aktiven Events ALLER Instanzen von `feld_id` (`feld_id`, `feld_id__2`, …), in Reihenfolge.
+
+    Zwei Quellen, vereinigt: die bestätigte Zahl des Zählfeldes — eine angekündigte, noch leere
+    Instanz steht als None darin, gilt also als offen — und jede Instanz, die im Store steht
+    (Namensmuster, gegen `instanz_feld_id` gegengeprobt wie app.js `basisFeldId`: `x__02` ist
+    keine Instanz). Ohne Gruppe bleibt es bei dem, was da ist."""
+    g = _gruppe_von(bindung, feld_id)
+    n = _anzahl_aus_eintrag(aktiv.get(g["anzahl_feld"]), g) if g else 1
+    praefix = feld_id + "__"
+    da = {int(k[len(praefix):]) for k in aktiv
+          if k.startswith(praefix) and k[len(praefix):].isdigit()
+          and instanz_feld_id(feld_id, int(k[len(praefix):])) == k}
+    return [aktiv.get(instanz_feld_id(feld_id, i)) for i in sorted(da | set(range(1, n + 1)))]
+
+
+def _bedingung_je_instanz(aktiv: dict, bindung: dict, feld_id: str, weicht_ab) -> str:
+    """"offen" | "ausgeschlossen" | "erfuellt" — die EINE Nachschlagestelle für jede Bedingung, die
+    eine Antwort prüft: Gate und regel_bedingung in relevanz(), feld_bedingung in
+    `_feld_ausgeschlossen`.
+
+    Backlog feld-bedingung-liest-nur-instanz-1 (2026-09-26): alle drei lasen nur Instanz 1. Zwei
+    Kinder, Kind 1 „unter 14" nein, Kind 2 ja → die ganze Kinderbetreuung fiel aus, die Fragen für
+    Kind 2 kamen nie; getauscht kamen sie. Deshalb: ausgeschlossen erst, wenn JEDE Instanz bestätigt
+    abweicht. Eine offene Instanz schließt nie aus (fail-closed, wie bisher Instanz 1). Repariert
+    hier und nicht je Feld (decisions/instanz-schleife-an-der-nachschlagestelle.md)."""
+    evs = _instanz_antworten(aktiv, bindung, feld_id)
+    if any(_unbeantwortet(e) for e in evs):
+        return "offen"
+    return "ausgeschlossen" if all(weicht_ab(e.get("wert")) for e in evs) else "erfuellt"
+
+
 # ---------------------------------------------------------------- (a) RÜCKWÄRTS
 
 def _regel_ids(bindung: dict) -> set:
@@ -289,15 +321,15 @@ def relevanz(store: dict, bindung: dict) -> dict:
                 annahmen.append(q["geltungsbedingung"])
         status, offen = "relevant", []
         for cond in bedingungen.get(rid, []):
-            ev = aktiv.get(cond["feld"])
-            if not _unbeantwortet(ev) and ev.get("wert") != cond["wert"]:
+            if _bedingung_je_instanz(aktiv, bindung, cond["feld"],
+                                     lambda w: w != cond["wert"]) == "ausgeschlossen":
                 status = "ausgeschlossen"
         if status != "ausgeschlossen":
             for fid in gates:
-                ev = aktiv.get(fid)
-                if _unbeantwortet(ev):
+                z = _bedingung_je_instanz(aktiv, bindung, fid, lambda w: w is False)
+                if z == "offen":
                     offen.append(fid)
-                elif ev.get("wert") is False:
+                elif z == "ausgeschlossen":
                     status = "ausgeschlossen"
                     break
             if status != "ausgeschlossen":
@@ -381,7 +413,7 @@ def naechste_fragen(store: dict, bindung: dict, beitrag: dict | None = None) -> 
             and (_unbeantwortet(aktiv.get(fid)) or _instanz_unvollstaendig(aktiv, bindung, fid))
             and not _vorjahr_uebernommen(b, aktiv.get(fid))
             and rel[b["quelle"]["regel_id"]]["status"] != "ausgeschlossen"
-            and not _feld_ausgeschlossen(b, aktiv)]
+            and not _feld_ausgeschlossen(b, aktiv, bindung)]
     gw = gate_gewicht(bindung)
     # „Gate" heißt hier: die Antwort streicht andere Fragen — nicht: das Feld trägt technisch eine
     # geltungsbedingung. Beides fällt auseinander, und zwar beim wichtigsten Feld überhaupt:
@@ -487,7 +519,7 @@ def _nach_themen(felder: list[str], bindung: dict,
             for f in nach_thema[thema]]
 
 
-def _feld_ausgeschlossen(eintrag: dict, aktiv: dict) -> bool:
+def _feld_ausgeschlossen(eintrag: dict, aktiv: dict, bindung: dict | None = None) -> bool:
     """Fällt DIESES Feld weg, obwohl seine Regel für alle gilt?
 
     `regel_bedingungen` schaltet ganze Regeln ab. Das reicht nicht, wo ein Spezialfeld in einer
@@ -504,14 +536,14 @@ def _feld_ausgeschlossen(eintrag: dict, aktiv: dict) -> bool:
     also blieb das Spezialfeld stehen.
 
     FAIL-CLOSED wie die Regel-Bedingung daneben: ausgeschlossen wird nur bei einer BESTÄTIGTEN
-    abweichenden Antwort. Schweigen schliesst nichts aus, ein vorläufiger KI-Vorschlag auch nicht
-    — sonst nähme ein Vorschlag dem Nutzer eine Frage weg, die er nie gesehen hat.
+    abweichenden Antwort — und zwar jeder Instanz (`_bedingung_je_instanz`). Schweigen schliesst
+    nichts aus, ein vorläufiger KI-Vorschlag auch nicht — sonst nähme ein Vorschlag dem Nutzer eine
+    Frage weg, die er nie gesehen hat.
+
+    `bindung` liefert die angekündigte Zahl der Instanzen; ohne sie zählt, was im Store steht.
     """
     bed = eintrag.get("feld_bedingung")
     if not bed:
-        return False
-    ev = aktiv.get(bed["feld"])
-    if _unbeantwortet(ev):
         return False
     # `wert_nicht` statt `wert`, wo die Existenzfrage ein AUSWAHLFELD ist: `kist_konfession` hat
     # drei Werte, bei denen die Frage gilt (evangelisch, römisch-katholisch, andere) und einen,
@@ -519,8 +551,10 @@ def _feld_ausgeschlossen(eintrag: dict, aktiv: dict) -> bool:
     # Folge stand im E2E-Durchgang am 2026-08-26 in der Queue: „Wie viel Kirchensteuer wurde von
     # deinem Arbeitgeber einbehalten?" auf Platz 51, „Gehörst du einer Kirche an?" auf Platz 75.
     if "wert_nicht" in bed:
-        return ev.get("wert") == bed["wert_nicht"]
-    return ev.get("wert") != bed["wert"]
+        weicht_ab = lambda w: w == bed["wert_nicht"]
+    else:
+        weicht_ab = lambda w: w != bed["wert"]
+    return _bedingung_je_instanz(aktiv, bindung or {}, bed["feld"], weicht_ab) == "ausgeschlossen"
 
 
 def _nach_vordruck(gruppe: list[str], bindung: dict, gw: dict) -> list[str]:
