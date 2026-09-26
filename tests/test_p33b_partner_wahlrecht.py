@@ -46,19 +46,18 @@ def _laie(fld, w):
             "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": f"ok@{fld}"}}
 
 
-_BASIS_ZUSAMMEN = [
-    ("rentner_renten_art", "gesetzliche_rente"), ("rentner_jahresrente", 6000000),
-    ("rentner_renten_beginn_jahr", 2025), ("rentner_alter_bei_rentenbeginn", 0),
-    ("rentner_grad_der_behinderung", 0), ("rentner_hilflos_blind_taubblind", False),
-    ("rentner_pflegegrad", 0), ("rentner_gepflegter_hilflos", False),
-    ("rentner_hinterbliebenenbezuege", False), ("veranlagung", "zusammen"),
-    ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
-    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("versicherungsart", "gesetzlich_an"), ("basis_kv", 0), ("basis_pv", 0),
-    ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
-    ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0),
-    ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
-]
+# GEBAUT, nicht kopiert (tests/_kegel.py). Von Hand standen hier 26 Felder; 22 trugen genau den
+# Abwesenheitswert (gemessen 2026-09-26) und waren damit reine Kopie. Nur die vier unten sind echte
+# Werte dieses Falls. Als `agb_zwangslaeufig`/`agb_notwendig_angemessen` in den Kegel kamen, fehlten
+# sie hier — und die Datei sperrte auf `input_kegel_nicht_bestaetigt`, statt zu messen.
+from _kegel import kegel_fuer  # noqa: E402
+
+_BASIS_ZUSAMMEN = kegel_fuer("rentner_gesamt", {
+    "rentner_jahresrente": 6000000,
+    "rentner_renten_beginn_jahr": 2025,
+    "veranlagung": "zusammen",
+    "kein_sonstige": False,          # dieser Fall HAT sonstige Einkuenfte
+})
 
 # Partner: GdB 100 (>=20 -> eigener PB) + 3.000 EUR behinderungsbedingte Aufwendungen des
 # Partners. agb_aufwendungen == derselbe Betrag, sonst waere die agB-Seite der Kuerzung bei

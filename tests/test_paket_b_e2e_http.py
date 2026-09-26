@@ -1011,7 +1011,13 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
               ("kein_kap_partner", not any((kap_ertraege_partner, kap_gewinn_aktien_partner,
                                             kap_gewinn_sonstige_partner, kap_verlust_aktien_partner,
                                             kap_verlust_sonstige_partner)))]
-    return k
+    # 2026-09-26: fehlende Kegel-Mitglieder aus SCHEIBEN ergaenzen. Diese Liste ist der
+    # kanonische Bauer der Suite, fuehrt ihre Werte aber selbst — ein neues Mitglied in
+    # SCHEIBEN["gesamt"]["kegel"] liess 140 Tests dieser Datei auf
+    # input_kegel_nicht_bestaetigt sperren. `kegel_fuer` setzt nichts um, was hier steht;
+    # es fuellt nur, was fehlt (tests/_kegel.py).
+    from _kegel import kegel_fuer  # noqa: PLC0415
+    return kegel_fuer("gesamt", dict(k))
 
 
 def _gesamt_anlegen(base, fid, kegel):
@@ -2548,7 +2554,10 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
               ("rentner_alter_bei_rentenbeginn_partner", alter_partner)]
         if rentenfreibetrag_partner is not None:
             k.append(("rentner_rentenfreibetrag_partner", rentenfreibetrag_partner))
-    return k
+    # 2026-09-26: dito fuer "rentner_gesamt" — fehlende Kegel-Mitglieder ergaenzen
+    # (agb_zwangslaeufig/agb_notwendig_angemessen ueber AGB_TATBESTAND).
+    from _kegel import kegel_fuer  # noqa: PLC0415
+    return kegel_fuer("rentner_gesamt", dict(k))
 
 
 def _rentner_anlegen(base, fid, kegel):

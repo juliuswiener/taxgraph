@@ -67,6 +67,7 @@ for _sub in ("produkt/haut", "produkt/eingang", "produkt/store", "produkt/traver
 
 import api as API   # noqa: E402
 import audit         # noqa: E402
+from _kegel import kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
 
 
 def _laie(feld_id: str, wert) -> dict:
@@ -123,6 +124,7 @@ def fall(tmp_path, monkeypatch):
         ereignisse = (_BASIS + _PFLICHT_ZUSATZ + [("veranlagung", "einzel")]
                       + [("gewinn_betriebsart", betriebsart), ("gewinn_bezeichnung", "Testfall")]
                       + _EUER + [("einkuenfte_gewinn", 0)])
+        ereignisse = kegel_fuer("gesamt", dict(ereignisse))
         for fid, wert in ereignisse:
             st, resp = API.event(fall_id, _laie(fid, wert))
             assert st == 201, (fid, wert, st, resp)

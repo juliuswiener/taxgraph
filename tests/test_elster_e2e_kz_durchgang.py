@@ -29,6 +29,7 @@ sys.path.insert(0, os.path.join(ROOT, 'produkt', 'eingang'))
 import api as API
 import server as SRV
 import audit                # noqa: E402
+from _kegel import kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
 
 
 def _req(base, method, path, body=None, erwarte=None):
@@ -113,10 +114,11 @@ def test_e2e_kz_durchgang_26_felder(base):
         "fall_id": "e2e_kz_26"
     }, erwarte=201)
 
-    # Pflicht-Kegel (27) + Kz-Felder die funktionieren (9 = 36 Felder)
-    felder = {
-        # ===== PFLICHT-KEGEL (27) =====
-        "veranlagung": "einzel",
+    # Pflicht-Kegel GEBAUT, nicht kopiert (tests/_kegel.py) + die Kz-Felder, die funktionieren.
+    # Von Hand standen hier 36 Felder; 24 trugen den Abwesenheitswert (gemessen 2026-09-26).
+    # Die Handkopie kannte `agb_zwangslaeufig`/`agb_notwendig_angemessen` nicht -- seit die im
+    # Kegel stehen, kam `input_kegel_nicht_bestaetigt` statt der Zahl.
+    _echte = {
         "bruttoarbeitslohn": 5000000,  # 50k § 19
         "vv_einnahmen": 2000000,  # 20k § 21 Vermietung
         "vv_gebaeude_afa": 500000,  # 5k
@@ -126,36 +128,24 @@ def test_e2e_kz_durchgang_26_felder(base):
         "vv_entgelt_quote_prozent": 100,
         "ep_arbeitstage": 220,  # § 9 Entfernung (Kz: E0203503, E0203504, E0203611)
         "ep_entfernung_km": 30,
-        "ep_oepnv_kosten": 0,  # 0€ (optional)
         "ep_eigenes_kfz": True,
-        # Verpflegung braucht Reduktions-Flag, skip für diese Messung
-        "tage_ueber_8h_eintaegig": 0,
-        "tage_an_abreise": 0,
-        "tage_24h": 0,
-        "vpf_keine_mahlzeitengestellung": False,
         "basis_kv": 450000,  # 4.5k 10 (KV)
-        "basis_pv": 0,  # PV
         "versicherungsart": "gesetzlich_freiwillig",
-        "vorsorge_arbeitslosenversicherung": 0,
-        "vorsorge_erwerbsunfaehigkeit": 0,
-        "vorsorge_unfall_haftpflicht": 0,
-        "vorsorge_rv_alt_mit_ueberschuss": 0,
-        "vorsorge_rv_alt_ohne_ueberschuss": 0,
         "vor_an_anteil_rv": 200000,  # 2k
         "vor_ag_anteil_rv": 150000,  # 1.5k
         "vor_rv_ausserhalb_lstb": 100000,  # 1k
-        "mit_anspruch_auf_zuschuss": False,
         "kap_kapitalertraege": 500000,  # 5k § 20 (AGGREGAT)
-        "kap_gewinn_aktien": 0,  # Single-Source
-        "kap_verlust_aktien": 0,
-        "kap_gewinn_sonstige": 0,
-        "kap_verlust_sonstige": 0,
-        "kein_gewinn": True,
         "kein_kap": False,  # Kapital gesetzt
         "kein_vuv": False,  # Vermietung gesetzt
-        "kein_sonstige": True,
-
     }
+    # Nicht-Kegel-Felder (der Bauer kennt sie nicht). Die drei Verpflegungs-Tage standen vorher
+    # einzeln hier mit dem Vermerk "Verpflegung braucht Reduktions-Flag, skip fuer diese Messung"
+    # -- sie sind NICHT im gesamt-Kegel und wuerden ohne diese Zeile still verschwinden.
+    _zusatz = {"vpf_keine_mahlzeitengestellung": False,
+               "tage_ueber_8h_eintaegig": 0,
+               "tage_an_abreise": 0,
+               "tage_24h": 0}
+    felder = dict(kegel_fuer("gesamt", _echte)) | _zusatz
 
     # POST Felder
     felder_gesendet = []
@@ -248,6 +238,7 @@ def _kvpv_deklaration(base, fall_id, steuerfall):
     """Minimalfall (gesamt-Scheibe) -> Deklaration + XML."""
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
                                   "fall_id": fall_id}, erwarte=201)
+    steuerfall = kegel_fuer("gesamt", dict(steuerfall))
     for feld, wert in steuerfall:
         _req(base, "POST", f"/fall/{fall_id}/event", _laie(feld, wert), erwarte=201)
     _, dekl = _req(base, "GET", f"/fall/{fall_id}/deklaration", erwarte=200)
@@ -310,6 +301,7 @@ def test_kvpv_kz_person_b(base, vers_art, basis_kv_val, basis_pv_val, kz_kv, kz_
     ]
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
                                   "fall_id": f"kvpv-b-{vers_art}"}, erwarte=201)
+    fall = kegel_fuer("gesamt", dict(fall))
     for feld, wert in fall:
         _req(base, "POST", f"/fall/kvpv-b-{vers_art}/event", _laie(feld, wert), erwarte=201)
     _, dekl = _req(base, "GET", f"/fall/kvpv-b-{vers_art}/deklaration", erwarte=200)

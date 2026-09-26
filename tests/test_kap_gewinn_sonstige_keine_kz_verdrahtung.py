@@ -82,16 +82,28 @@ _STAMM = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
           ("stammdaten_steuernummer", "9181081508155"),
           ("steuerklasse", "1"), ("p36_lohnsteuer", 1200000))
 
-_GRUND = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
-          ("vor_ag_anteil_rv", 1200000), ("vor_rv_ausserhalb_lstb", 0),
-          ("kein_gewinn", True), ("kein_vuv", True), ("kein_sonstige", True),
-          ("veranlagung", "einzel"),
-          ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0),
-          ("ep_eigenes_kfz", False), ("versicherungsart", "gesetzlich_an"),
-          ("basis_kv", 0), ("basis_pv", 0), ("vorsorge_arbeitslosenversicherung", 0),
-          ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0),
-          ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-          ("mit_anspruch_auf_zuschuss", False)) + _STAMM
+# GEBAUT, nicht kopiert (tests/_kegel.py). Von Hand standen hier 20 Felder; 17 trugen genau den
+# Abwesenheitswert (gemessen 2026-09-26) und waren reine Kopie. Nur die drei unten sind echte Werte.
+# Die Handliste kannte 14 Kegel-Mitglieder nicht -- darunter `agb_zwangslaeufig` und
+# `agb_notwendig_angemessen`; sobald die im Kegel standen, sperrte die Datei, statt zu messen.
+# `_kap()` und `_STAMM` bleiben getrennt: der Bauer haengt Felder an, die nicht im Kegel stehen.
+from _kegel import kegel_fuer  # noqa: E402
+
+_GRUND_BASIS = {
+    "bruttoarbeitslohn": 6000000,
+    "vor_an_anteil_rv": 4200000,
+    "vor_ag_anteil_rv": 1200000,
+}
+
+
+def _grund(zusatz=None):
+    """Voller gesamt-Kegel mit den echten Fallwerten, plus _STAMM (das sind KEINE Kegel-Felder).
+
+    Die Werte des Aufrufers gewinnen: `_kap()` setzt `kein_kap` und die kap_*-Betraege, die der
+    Bauer sonst mit dem Abwesenheitswert fuellt. Deshalb EIN Durchlauf statt `_GRUND + _kap(gs)`:
+    ein zweites Event auf dasselbe Feld weist der Store nach Auflage B ab (422).
+    """
+    return kegel_fuer("gesamt", {**_GRUND_BASIS, **dict(zusatz or {})}) + list(_STAMM)
 
 
 def _kap(gewinn_sonstige):
@@ -138,7 +150,7 @@ def gemessen(tmp_path_factory):
             st, r = _req(base, "POST", "/fall",
                          {"fall_id": fid, "scheibe": "gesamt", "veranlagungszeitraum": 2025})
             assert st == 201, (name, "fall_anlegen", st, r)
-            for fld, w in _GRUND + _kap(gs):
+            for fld, w in _grund(_kap(gs)):
                 st, r = _req(base, "POST", f"/fall/{fid}/event", _laie(fld, w))
                 assert st == 201, (name, fld, st, r)
             st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")

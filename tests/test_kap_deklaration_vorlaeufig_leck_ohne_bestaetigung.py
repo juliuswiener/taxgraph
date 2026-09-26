@@ -130,19 +130,32 @@ _STAMM = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
           ("stammdaten_steuernummer", "9181081508155"),
           ("steuerklasse", "1"), ("p36_lohnsteuer", 1200000))
 
-_GRUND = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
-          ("vor_ag_anteil_rv", 1200000), ("vor_rv_ausserhalb_lstb", 0),
-          ("kein_gewinn", True), ("kein_vuv", True), ("kein_sonstige", True),
-          ("veranlagung", "einzel"),
-          ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0),
-          ("ep_eigenes_kfz", False), ("versicherungsart", "gesetzlich_an"),
-          ("basis_kv", 0), ("basis_pv", 0), ("vorsorge_arbeitslosenversicherung", 0),
-          ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0),
-          ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-          ("mit_anspruch_auf_zuschuss", False)) + _STAMM
+# GEBAUT, nicht kopiert (tests/_kegel.py). Von Hand standen hier 20 Felder; 17 trugen genau den
+# Abwesenheitswert (gemessen 2026-09-26) und waren reine Kopie. Nur die drei unten sind echte Werte.
+# Die Handliste kannte 14 Kegel-Mitglieder nicht -- darunter `agb_zwangslaeufig` und
+# `agb_notwendig_angemessen`; sobald die im Kegel standen, sperrte die Datei, statt zu messen.
+from _kegel import kegel_fuer  # noqa: E402
 
-_KAP_NULL = (("kap_kapitalertraege", 0),
-             ("kap_gewinn_aktien", 0), ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0))
+_GRUND_BASIS = {
+    "bruttoarbeitslohn": 6000000,
+    "vor_an_anteil_rv": 4200000,
+    "vor_ag_anteil_rv": 1200000,
+}
+# _KAP_NULL ist entfallen: kap_kapitalertraege/_gewinn_aktien/_verlust_aktien/_verlust_sonstige
+# tragen alle den Abwesenheitswert 0 und kommen jetzt aus dem Bauer.
+
+
+def _grund(auslassen=()):
+    """Voller gesamt-Kegel mit den echten Fallwerten, plus _STAMM (das sind KEINE Kegel-Felder).
+
+    `auslassen` sind Felder, die der Test DANACH als eigenes Event schickt (hier: die kap_events,
+    darunter ein bewusst vorlaeufiger Wert). Sie duerfen im Bauer nicht vorbelegt sein -- sonst
+    kaeme dasselbe Feld zweimal (Store weist das nach Auflage B mit 422 ab) oder der Bauer
+    ueberschriebe genau den Messgegenstand.
+    """
+    raus = [(f, w) for f, w in kegel_fuer("gesamt", _GRUND_BASIS)
+            if f not in set(auslassen)]
+    return raus + list(_STAMM)
 
 
 @pytest.fixture(scope="module")
@@ -180,7 +193,10 @@ def gemessen(tmp_path_factory):
         st, r = _req(base, "POST", "/fall",
                      {"fall_id": fid, "scheibe": "gesamt", "veranlagungszeitraum": 2025})
         assert st == 201, (fid, "fall_anlegen", st, r)
-        for fld, w in _GRUND + _KAP_NULL:
+        # Die kap_events des Aufrufers bleiben draussen: der Test schickt sie gleich selbst,
+        # und der 'leck'-Fall schickt dort bewusst einen VORLAEUFIGEN Wert -- der Bauer darf
+        # den Messgegenstand nicht vorbelegen.
+        for fld, w in _grund(auslassen=[ev["feld_id"] for ev in kap_events]):
             st, r = _req(base, "POST", f"/fall/{fid}/event", _laie(fld, w))
             assert st == 201, (fid, fld, st, r)
         for ev in kap_events:

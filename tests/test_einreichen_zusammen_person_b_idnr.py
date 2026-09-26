@@ -75,6 +75,8 @@ import server as SRV             # noqa: E402
 import audit                      # noqa: E402
 import checkest_gate as CE       # noqa: E402
 
+from _kegel import kegel_fuer    # noqa: E402
+
 
 def _catala_da() -> bool:
     try:
@@ -172,16 +174,24 @@ _BASIS_A = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
 # fuer /einreichen verwenden -- deklariert Anlage V + Entfernungspauschale gegenueber
 # checkESt und verlangt dort fremde Pflichtfelder (Adresse etc.), die dieser Auftrag nicht
 # beantwortet.
-_BASIS_A_RING = _BASIS_A + (
-    ("ep_arbeitstage", 220), ("ep_entfernung_km", 30), ("ep_oepnv_kosten", 0),
-    ("ep_eigenes_kfz", True),
-    ("versicherungsart", "gesetzlich_an"), ("basis_kv", 0), ("basis_pv", 0),
-    ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
-    ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0),
-    ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
-    ("vv_einnahmen", 0), ("vv_gebaeude_afa", 0), ("vv_schuldzinsen", 0),
-    ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("vv_entgelt_quote_prozent", 0),
-)
+# GEBAUT, nicht kopiert (tests/_kegel.py). Von Hand standen hier 32 Kegel-Felder
+# (_BASIS_A + 19 Ring-Felder); davon trugen 26 genau den Abwesenheitswert (gemessen 2026-09-26),
+# nur die sechs unten sind echte Werte. Die Handkopie kannte
+# `agb_zwangslaeufig`/`agb_notwendig_angemessen` nicht -- seit die im Kegel stehen, kam
+# `input_kegel_nicht_bestaetigt` statt einer Zahl.
+# `veranlagung` MUSS hier stehen: _fall_zusammen() schickt "zusammen" gleich selbst, und ein
+# zweites Event auf dasselbe Feld weist der Store nach Auflage B mit 422 ab. Der Bauer ist der
+# einzige Ort, an dem der Wert stehen darf.
+# _STAMM_A bleibt angehaengt: das sind KEINE Kegel-Felder, der Bauer kennt sie nicht.
+_BASIS_A_RING = tuple(kegel_fuer("gesamt", {
+    "bruttoarbeitslohn": 6000000,
+    "vor_an_anteil_rv": 4200000,
+    "vor_ag_anteil_rv": 1200000,
+    "ep_arbeitstage": 220,
+    "ep_entfernung_km": 30,
+    "ep_eigenes_kfz": True,
+    "veranlagung": "zusammen",
+})) + _STAMM_A
 
 # Person B -- STAMMDATEN_FELDER_PARTNER (api_constants.py) verlangt NUR nachname/vorname/
 # geburtsdatum/kist_konfession_partner. person_b_idnr steht ABSICHTLICH nicht hier -- genau
@@ -210,7 +220,8 @@ def _fall_zusammen(base, fall_id, person_a=_BASIS_A):
     fid = r["fall_id"]
     for fld, w in person_a + _BASIS_B:
         _req(base, "POST", f"/fall/{fid}/event", _laie(fld, w), erwarte=201)
-    _req(base, "POST", f"/fall/{fid}/event", _laie("veranlagung", "zusammen"), erwarte=201)
+    if not any(f == "veranlagung" for f, _ in person_a):
+        _req(base, "POST", f"/fall/{fid}/event", _laie("veranlagung", "zusammen"), erwarte=201)
     return fid
 
 

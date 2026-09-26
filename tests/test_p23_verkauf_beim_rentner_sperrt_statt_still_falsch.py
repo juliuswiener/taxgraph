@@ -72,6 +72,8 @@ for sub in ("produkt/haut", "produkt/bescheid", "golden"):
 
 import api as API                          # noqa: E402
 import audit                               # noqa: E402
+
+from _kegel import kegel_fuer              # noqa: E402
 import server as SRV                       # noqa: E402
 from bescheid_deklaration import SPERRGRUND_KLARTEXT   # noqa: E402
 
@@ -141,21 +143,19 @@ def _ergebnis(base_url, fall_id):
 # `kein_p23_verkauf` ist NEU (Pflichtfeld seit diesem Fix) und steht mit True ("kein Verkauf") an
 # derselben Stelle wie seine drei Geschwister -- ein ehrlicher Rentner ohne Verkauf traegt hier
 # wahrheitsgemaess True ein, ohne ueber seine Rente nachdenken zu muessen.
-KEGEL_OHNE_VERKAUF = [
-    ("veranlagung", "einzel"), ("rentner_renten_art", "gesetzliche_rente"),
-    ("rentner_jahresrente", 20000000), ("rentner_renten_beginn_jahr", 2025),
-    ("rentner_alter_bei_rentenbeginn", 65), ("rentner_rentenfreibetrag", 0),
-    ("rentner_grad_der_behinderung", 0), ("rentner_hilflos_blind_taubblind", False),
-    ("rentner_hinterbliebenenbezuege", False), ("rentner_pflegegrad", 0),
-    ("rentner_gepflegter_hilflos", False),
-    ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
-    (FLAG_ID, True),
-    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("basis_kv", 0), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"),
-    ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
-    ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0),
-    ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
-]
+# GEBAUT, nicht kopiert (tests/_kegel.py). Von Hand standen hier 28 Felder; 24 trugen genau den
+# Abwesenheitswert (gemessen 2026-09-26). Nur die fuenf unten sind echte Werte. Die Handliste
+# kannte `agb_zwangslaeufig`/`agb_notwendig_angemessen` nicht — seit die im Kegel stehen,
+# sperrten die Faelle, statt zu messen.
+# FLAG_ID MUSS hier stehen: KEGEL_MIT_VERKAUF unten dreht genau dieses Feld auf False. Sie ist
+# kein Kegel-Mitglied, also haengt der Bauer sie nur an, wenn der Aufrufer sie uebergibt.
+KEGEL_OHNE_VERKAUF = kegel_fuer("rentner_gesamt", {
+    "rentner_jahresrente": 20000000,
+    "rentner_renten_beginn_jahr": 2025,
+    "rentner_alter_bei_rentenbeginn": 65,
+    "kein_sonstige": False,
+    FLAG_ID: True,          # "kein Verkauf" -- der ehrliche Rentner
+})
 # Derselbe Kegel, aber FLAG_ID=False ("ich HATTE einen Verkauf") -- der Defektfall.
 KEGEL_MIT_VERKAUF = [(f, (False if f == FLAG_ID else w)) for f, w in KEGEL_OHNE_VERKAUF]
 

@@ -37,6 +37,8 @@ for sub in ("produkt/haut", "produkt/eingang", "produkt/store"):
 import api as API              # noqa: E402
 import audit                   # noqa: E402
 
+from _kegel import kegel_fuer  # noqa: E402
+
 
 @pytest.fixture(autouse=True)
 def _isoliert(tmp_path, monkeypatch):
@@ -51,19 +53,16 @@ def _laie(fld, w):
             "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": f"ok@{fld}"}}
 
 
-_BASIS_ZUSAMMEN = [
-    ("rentner_renten_art", "gesetzliche_rente"), ("rentner_jahresrente", 2000000),
-    ("rentner_renten_beginn_jahr", 2025), ("rentner_alter_bei_rentenbeginn", 0),
-    ("rentner_grad_der_behinderung", 0), ("rentner_hilflos_blind_taubblind", False),
-    ("rentner_pflegegrad", 0), ("rentner_gepflegter_hilflos", False),
-    ("rentner_hinterbliebenenbezuege", False), ("veranlagung", "zusammen"),
-    ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
-    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("versicherungsart", "gesetzlich_an"), ("basis_kv", 0), ("basis_pv", 0),
-    ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
-    ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0),
-    ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
-]
+# GEBAUT, nicht kopiert (tests/_kegel.py). Von Hand standen hier 26 Felder; 22 trugen genau den
+# Abwesenheitswert (gemessen 2026-09-26). Nur die vier unten sind echte Werte. Die Handliste
+# kannte `agb_zwangslaeufig`/`agb_notwendig_angemessen` nicht — seit die im Kegel stehen,
+# sperrten die Faelle, statt zu messen.
+_BASIS_ZUSAMMEN = kegel_fuer("rentner_gesamt", {
+    "rentner_jahresrente": 2000000,
+    "rentner_renten_beginn_jahr": 2025,
+    "veranlagung": "zusammen",
+    "kein_sonstige": False,
+})
 
 
 def _anlegen_und_fuellen(fall_id, zusatz_felder):

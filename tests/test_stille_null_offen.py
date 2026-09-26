@@ -65,6 +65,7 @@ for _sub in ("produkt/haut", "produkt/store", "golden"):
 
 import api as API        # noqa: E402
 import audit              # noqa: E402
+from _kegel import kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
 
 REFERENZ = 1392400
 
@@ -100,7 +101,10 @@ def _neuer_fall(tmp_path, monkeypatch, fid, kegel_overrides=None):
     st, r = API.fall_anlegen({"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": fid})
     assert st == 201, r
     overrides = kegel_overrides or {}
-    for feld, wert in _KEGEL:
+    # Eigener Name: `_KEGEL` ist modulweit (Z.72) und waere hier sonst eine lokale Zuweisung
+    # (UnboundLocalError). kegel_fuer ergaenzt die fehlenden Mitglieder aus SCHEIBEN.
+    volle_kegel = kegel_fuer("gesamt", dict(_KEGEL))
+    for feld, wert in volle_kegel:
         st, r = API.event(fid, _laie(feld, overrides.get(feld, wert)))
         assert st == 201, f"{feld}={wert}: {st} {r}"
     return fid

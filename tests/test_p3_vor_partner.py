@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 import api as API
 import server as SRV
 import audit                # noqa: E402
+from _kegel import kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
 
 
 def _req(base: str, method: str, path: str, body: dict | None = None,
@@ -181,6 +182,7 @@ def _setup_rentner_zusammen(base, fall_id, vor_partner=0):
     st, _ = _req(base, "POST", "/fall", {"scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025,
                                           "fall_id": fall_id})
     assert st == 201
+    events = kegel_fuer("rentner_gesamt", dict(events))
     for feld_id, wert in events:
         s, _ = _req(base, "POST", f"/fall/{fall_id}/event", _laie(feld_id, wert))
         assert s == 201, f"{feld_id}: {s}"
@@ -248,6 +250,7 @@ def test_rentner_einzel_kein_impact_bvor(base):
     st, _ = _req(base, "POST", "/fall", {"scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025,
                                           "fall_id": "rvs"})
     assert st == 201
+    events_single = kegel_fuer("rentner_gesamt", dict(events_single))
     for f, v in events_single:
         s, _ = _req(base, "POST", "/fall/rvs/event", _laie(f, v))
         assert s == 201

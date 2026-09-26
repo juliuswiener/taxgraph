@@ -131,6 +131,7 @@ def _minimal_gesamt_kegel():
 def _gesamt_anlegen(base, fid, kegel):
     st, _ = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": VZ, "fall_id": fid})
     assert st == 201
+    kegel = kegel_fuer("gesamt", dict(kegel))
     for feld, wert in kegel:
         st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
         assert st == 201, f"POST event {feld}={wert} failed: {st}"
@@ -317,6 +318,7 @@ def test_p35a_foerderung_mutation_gate_inversion(base):
 # Kegel + Helfer NICHT neu gebaut, sondern von der bereits gruenen rentner_gesamt-Fixtur
 # aus test_p33b_abs5_s4_ring.py wiederverwendet.
 from test_p33b_abs5_s4_ring import RENTNER_KEGEL, _zahl  # noqa: E402
+from _kegel import kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
 
 # 6.000 EUR Handwerker-Arbeitskosten -> voller Abs.-3-Deckel 20% = 1.200 EUR.
 _RENTNER_HANDWERKER = [

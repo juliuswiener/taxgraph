@@ -22,6 +22,7 @@ import api as API        # noqa: E402
 import server as SRV     # noqa: E402
 import audit                # noqa: E402
 import runner as R       # noqa: E402
+from _kegel import kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
 
 jsonschema = pytest.importorskip("jsonschema")
 SCHEMA_DIR = os.path.join(ROOT, "produkt", "haut", "api_schema")
@@ -106,6 +107,7 @@ VZ = 2025
 def _ges_anlegen(base, fid, kegel):
     st, _ = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": VZ, "fall_id": fid})
     assert st == 201
+    kegel = kegel_fuer("gesamt", dict(kegel))
     for feld, wert in kegel:
         st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
         assert st == 201
@@ -114,6 +116,7 @@ def _ges_anlegen(base, fid, kegel):
 def _rent_anlegen(base, fid, kegel):
     st, _ = _req(base, "POST", "/fall", {"scheibe": "rentner_gesamt", "veranlagungszeitraum": VZ, "fall_id": fid})
     assert st == 201
+    kegel = kegel_fuer("rentner_gesamt", dict(kegel))
     for feld, wert in kegel:
         st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
         assert st == 201
@@ -122,6 +125,7 @@ def _rent_anlegen(base, fid, kegel):
 def _an_anlegen(base, fid, kegel):
     st, _ = _req(base, "POST", "/fall", {"scheibe": "an_gesamt", "veranlagungszeitraum": VZ, "fall_id": fid})
     assert st == 201
+    kegel = kegel_fuer("an_gesamt", dict(kegel))
     for feld, wert in kegel:
         st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
         assert st == 201

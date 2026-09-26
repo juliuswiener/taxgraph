@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 import api as API        # noqa: E402
 import server as SRV     # noqa: E402
 import audit                # noqa: E402
+from _kegel import kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
 
 
 def _laie(fld, w):
@@ -466,6 +467,7 @@ def test_kist_rentner_mit_kapital_solz(base):
 def _anlegen(base, fid, scheibe, kegel):
     st, _ = _req(base, "POST", "/fall", {"scheibe": scheibe, "veranlagungszeitraum": 2025, "fall_id": fid})
     assert st == 201
+    kegel = kegel_fuer(scheibe, dict(kegel))
     for feld, wert in kegel:
         st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
         assert st == 201
