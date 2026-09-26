@@ -82,6 +82,26 @@ jobs:
   # lizenzpflichtig (ERIC_DIR, kein oeffentlicher Download) -> alle @requires_real_schema-
   # Tests in test_xsd_verify.py (inkl. test_voll_katalog_ist_gate_gruen) skippen hier
   # graceful weiter. Dieses Gate bleibt lokal (make eric-gate, ERIC_DIR gesetzt).
+  #
+  # DER ABGABEWEG IST HIER NICHT BEWIESEN — und dieser gruene Haken sagt das nicht. Der Weg,
+  # auf dem eine Erklaerung offiziell beim Finanzamt eingeht, braucht das lizenzpflichtige
+  # ERiC-SDK UND eine registrierte Herstellerkennung; beides fehlt auf oeffentlichen Runnern
+  # aus Lizenz- und Geheimnisgruenden. tests/test_einreichen_durchstich.py laeuft deshalb mit
+  # und ueberspringt seine beiden ERiC-bewehrten Faelle STILL: "1 passed, 2 skipped", exit 0.
+  # Ein gruener CI-Lauf ist hier also KEIN Beleg fuer den Abgabeweg, sondern nur dafuer, dass
+  # der Rest der Suite laeuft.
+  #
+  # Entschieden von Julius am 2026-09-12 (Vault decisions/eric-abgabeweg-bleibt-lokaler-
+  # manueller-nachweis): der Abgabeweg bleibt ein lokaler, manueller Nachweis. ERiC und
+  # Herstellerkennung werden NICHT als CI-Secrets hochgeladen, ein eigener geschuetzter Runner
+  # erst, wenn automatische Releases einen maschinellen Beleg zwingend brauchen.
+  #
+  # Der lokale Nachweis ist `make abgabeweg-freigabe` — NICHT `make eric-gate`: eric-gate
+  # prueft eine Minimal-XML und zaehlt die GESPERRT-Grenze als Bestehen, es laeuft also auch
+  # gruen, wenn der Abgabeweg nie gerechnet hat. abgabeweg-freigabe faehrt den echten
+  # HTTP-Endpunkt mit echtem checkESt und macht aus jedem Skip ein exit != 0. Ohne ERiC endet
+  # das Ziel mit exit!=0 statt mit "1 passed, 2 skipped" — das ist der Unterschied.
+  # Nachgemessen: mit ERiC gruen (3 passed), mit ERIC_DIR=/nonexistent-eric exit 1.
   catala-toolchain:
     runs-on: ubuntu-latest
     timeout-minutes: 45

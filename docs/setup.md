@@ -92,7 +92,48 @@ zvE-Werte plus Randwerte durch Catala und GETTSIM schickt und
 | `make build-python` | Catala -> Python-Paket bauen und zusammenfuegen. |
 | `make s02` | Differentialtest gegen GETTSIM, erzeugt den Divergenzreport. |
 | `make params-check` | Ableitung/Validierung der Tarifkoeffizienten. |
+| `make eric-gate` | ERiC-Offline-Gate: E10-2025-XSD-Struktur + checkESt. Prueft eine Minimal-XML, **kein** Abgabeweg-Nachweis. |
+| `make abgabeweg-freigabe` | Lokaler Freigabenachweis des ERiC-Abgabewegs ueber den echten HTTP-Endpunkt. Braucht ERiC + Herstellerkennung, jeder Skip wird zu exit != 0. |
 | `make clean` | Build- und Zwischenartefakte entfernen. |
+
+## Der Abgabeweg wird lokal nachgewiesen, nicht in CI
+
+Der Weg, auf dem eine Einkommensteuererklaerung offiziell beim Finanzamt eingeht, braucht
+zwei Dinge, die auf einem oeffentlichen CI-Runner nicht hingehoeren: das lizenzpflichtige
+ERiC-SDK und eine registrierte Herstellerkennung. `tests/test_einreichen_durchstich.py`
+laeuft in der CI deshalb mit, ueberspringt seine beiden ERiC-bewehrten Faelle aber
+**still** — der Lauf endet mit `1 passed, 2 skipped` und exit 0. Ein gruener CI-Lauf sagt
+ueber den Abgabeweg also nichts aus; er hat ihn nie geprueft.
+
+Entschieden am 2026-09-12: Der Abgabeweg bleibt ein lokaler, manueller Nachweis. ERiC und
+Herstellerkennung werden **nicht** als CI-Secrets hochgeladen. Ein eigener geschuetzter
+Runner lohnt sich erst, wenn automatische Releases einen maschinellen Beleg zwingend
+brauchen.
+
+**Vor einer Freigabe lokal ausfuehren:**
+
+```
+make abgabeweg-freigabe
+```
+
+Das Ziel faehrt den echten HTTP-Endpunkt mit echtem checkESt durch und macht aus **jedem**
+uebersprungenen Test ein exit != 0 (`tests/skip_ist_rot.py`). Ohne ERiC oder ohne
+Herstellerkennung endet es rot statt mit `1 passed, 2 skipped` — genau darin liegt der
+Unterschied zu einem gruenen CI-Lauf. Voraussetzungen:
+
+1. ERiC-Auslieferung vorhanden, `ERIC_DIR` gesetzt (Default `~/02_Software/eric`).
+2. `ELSTER_HERSTELLER_ID` in einer gitignorierten `.env` im Repo-Wurzelverzeichnis oder im
+   Prozess-Env. Die ID ist ein Geheimnis und gehoert nie ins Repo.
+
+**Kein Versand.** Der Pfad ruft `EricBearbeiteVorgang` mit `ERIC_VALIDIERE` auf (ohne
+`ERIC_SENDE`), `cryptoParameter` und `serverantwortXmlPuffer` bleiben NULL — die amtliche
+Plausibilitaetspruefung laeuft rein lokal. Nachgemessen mit `strace`: im ganzen Lauf kein
+einziger Netz-Syscall ausserhalb von `127.0.0.1` (dem Testserver des Durchstichs).
+`elster/versand.py` (mit `ERIC_SENDE`) wird von diesem Ziel nicht geladen.
+
+`make eric-gate` ist **kein** Ersatz: es prueft eine Minimal-XML gegen das amtliche Schema
+und zaehlt die GESPERRT-Grenze der Herstellerkennung als Bestehen. Es laeuft auch dann
+gruen, wenn der Abgabeweg nie gerechnet hat.
 
 ## Quellenbeschaffung: Fallback bei gesetze-im-internet-503
 
