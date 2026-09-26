@@ -338,8 +338,13 @@ def _shared_steuer_sonder_agb(g_dict, gde, ausserg, veranlagung,
     # angemessenen Betrag nicht übersteigen" — rechtlich eine TEILWEISE Begrenzung (nur der
     # angemessene Teil zählt). Der Bestand hat dafür nur ein bool (askable geltungsbedingung,
     # kein Betragsfeld, und das Gesetz nennt keine Formel). Dieses Gate liest es deshalb grob:
-    # nein -> 0, ja -> voller Betrag. Upgrade: eigenes Betragsfeld "agb_angemessener_teil" mit
-    # Deckelung statt Nullung, sobald die Anleitung eine Bezugsgröße hergibt.
+    # nein -> 0, ja -> voller Betrag. Das ist die SICHERE der beiden groben Lesarten.
+    #
+    # ENTSCHIEDEN 2026-09-26 (Instructor, gegen das Gesetzeszitat geprüft): die grobe Lesart
+    # BLEIBT, und es wird KEIN Betragsfeld gebaut. Grund: ohne Formel und ohne Bezugsgröße
+    # würde ein Betragsfeld eine Zahl erfinden. Aufstiegstrigger: erst wenn die Anleitung oder
+    # ein amtliches Schreiben eine Bezugsgröße nennt ("angemessen" im Verhältnis Wozu), wird
+    # "agb_angemessener_teil" mit Deckelung statt Nullung gebaut. Bis dahin nicht.
     #
     # Der Guard sitzt im Ring, nicht in der Regel — Bauform wie p35c_keine_doppelfoerderung
     # zwanzig Zeilen darüber: die Catala-Regel bleibt rein, das Gate wertet der Ring aus.
