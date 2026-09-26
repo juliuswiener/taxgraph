@@ -248,20 +248,31 @@ def _zweig_festzusetzende_est(vz: int, bindung: dict, felder, store, nur_bestaet
             # Ring lag (Fix 2026-08-13, Test test_arbeitsmittel_ueber_gwg_schwelle_stuerzt_nicht_ab).
             nd = _cent("arbeitsmittel_nutzungsdauer")
             if nd > 0:
-                # ponytail: keine Zwölftelung im Anschaffungsjahr (§ 7 Abs. 1 S. 4). Der Aufruf
-                # lässt `ist_anschaffungsjahr` und `anschaffung_monat` weg, weil an_gesamt den
-                # Kaufmonat gar nicht erfragt — beide Felder fehlen in ihrem Feldkegel UND in
-                # bindung_an_gesamt.yaml (anders als bei `gesamt`, s. _zweig_festzusetzende_est_gesamt).
-                # Ohne sie ist der Wächter im Accessor dauerhaft falsch, es gibt immer den vollen
-                # Jahresbetrag: im Beispiel 400 statt 100 EUR, Richtung ZU WENIG STEUER. Gedeckelt
-                # nur dadurch, dass an_gesamt keine UI-Kachel hat und mit 0/12 Stammdaten nicht
-                # abgabefähig ist — über POST /fall ist die Scheibe sehr wohl erreichbar.
-                # Aufstieg: beide Felder in SCHEIBEN["an_gesamt"]["felder"] und in die Bindung
-                # nachziehen, dann hier durchreichen. Vorher entscheiden, ob dieser MVP-Zweig
-                # überhaupt bleibt — vault backlog/taxgraph/an-gesamt-fragt-den-kaufmonat-nicht.md
-                wk_input["am_anschaffungskosten"] = runner.catala_p7_linear_afa({
-                    "anschaffungskosten_cent": _cent(ARBEITSMITTEL_KOSTEN),
-                    "nutzungsdauer": nd})  # europe, already euro
+                # § 7 Abs. 1 S. 4 Zwölftelung im Anschaffungsjahr — dieselbe Verdrahtung wie in
+                # _zweig_festzusetzende_est_gesamt. Beide Felder stehen seit 2026-09-26 in
+                # SCHEIBEN["an_gesamt"]["felder"] und ARBEITSMITTEL_AFA_GESAMT; vorher fehlten
+                # sie und der Accessor gab immer den vollen Jahresbetrag zurück
+                # (400 statt 100 EUR, Richtung ZU WENIG STEUER).
+                # Das Flag entscheidet: bestätigt True → Monat ist Pflicht (Guard in
+                # _an_gesamt_sperrgrund); False oder unbeantwortet → Folgejahr, voller Betrag.
+                _ist_aj = (f.get("am_afa_ist_anschaffungsjahr") or {}).get("wert") is True
+                if _ist_aj:
+                    # Anschaffungsjahr: der Monat MUSS da sein (der Guard sperrt sonst).
+                    # Fehlt er hier trotzdem, wird NICHTS abgezogen — nicht der volle
+                    # Jahresbetrag. Dieselbe fail-closed-Richtung wie _zweig_…_gesamt.
+                    _am = _cent("am_anschaffung_monat")
+                    if _am > 0:
+                        wk_input["am_anschaffungskosten"] = runner.catala_p7_linear_afa({
+                            "anschaffungskosten_cent": _cent(ARBEITSMITTEL_KOSTEN),
+                            "nutzungsdauer": nd,
+                            "anschaffung_monat": _am,
+                            "ist_anschaffungsjahr": True})  # europe, already euro
+                else:
+                    # Folgejahr oder Flag unbeantwortet: voller Jahresbetrag, Monat egal.
+                    wk_input["am_anschaffungskosten"] = runner.catala_p7_linear_afa({
+                        "anschaffungskosten_cent": _cent(ARBEITSMITTEL_KOSTEN),
+                        "nutzungsdauer": nd,
+                        "ist_anschaffungsjahr": False})  # europe, already euro
         wk = runner.catala_werbungskosten_n(wk_input)   # Person A: EP + dHf + Verpflegung + Übernachtung + AM-GWG, roh
         # § 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge (Pflicht-Kegel Person A, Gesamt-Parität, Over-tax-Fix):
         # eigener Abs.4-Höchstbetrag (1900/2800), additiv, GETRENNT von der VOR-Basisvorsorge unten.

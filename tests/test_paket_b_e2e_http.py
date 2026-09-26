@@ -597,9 +597,11 @@ AN_GESAMT_UEBERNACHTUNG = ("uebernachtung_kosten_monat", "uebernachtung_monate",
                           "uebernachtung_auswaerts", "uebernachtung_alleinnutzung",
                           "uebernachtung_keine_lange_unterbrechung")
 # A6 Arbeitsmittel-GWG (askable Felder; am_massgebliche_ak ist askable:false → nicht in /fragen)
-# am_anschaffung_monat / am_afa_ist_anschaffungsjahr stehen bewusst NICHT hier: die § 7 Abs. 4-
-# Zwölftelung ist nur im gefalteten gesamt-Ring verdrahtet (ARBEITSMITTEL_AFA_GESAMT).
 AN_GESAMT_ARBEITSMITTEL = ("am_anschaffungskosten", "arbeitsmittel_nutzungsdauer", "am_gwg_sofortabzug_gewaehlt")
+# § 7 Abs. 1 S. 4 Zwölftelung im Anschaffungsjahr (ARBEITSMITTEL_AFA_GESAMT), seit 2026-09-26
+# auch in an_gesamt. Vorher standen die Felder bewusst NICHT hier, und der Zweig zog ohne
+# Kaufmonat den vollen Jahresbetrag ab.
+AN_GESAMT_AFA = ("am_anschaffung_monat", "am_afa_ist_anschaffungsjahr")
 AN_GESAMT_P36 = ("p36_lohnsteuer", "p36_vorauszahlungen")
 AN_GESAMT_KIST = ("kist_konfession", "kist_bundesland")
 AN_GESAMT_KEGEL = [
@@ -656,11 +658,15 @@ def test_an_gesamt_durchstich(base):
     st, fr = _req(base, "GET", "/fall/ag/fragen")
     _val("fragen", fr)
     ids = {q["feld_id"] for q in fr["fragen"]}
-    assert ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
-             "kein_sonstige", "fam_anzahl_kinder", "verlustvortrag_bestand", "p35a_mitveranlagung"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
-            | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)
-            | set(AN_GESAMT_UEBERNACHTUNG) | set(AN_GESAMT_ARBEITSMITTEL)
-            | set(AN_GESAMT_P36) | set(AN_GESAMT_KIST)) == ids
+    # 2026-09-26: an_gesamt führt jetzt auch die AfA-Felder (§ 7 Abs. 1 S. 4 Zwölftelung).
+    # Vorher fehlten sie in der Scheibe, und der AfA-Zweig rechnete ohne Kaufmonat den vollen
+    # Jahresbetrag.
+    _erwartet = ({"bruttoarbeitslohn", "veranlagung", "kein_gewinn", "kein_kap", "kein_vuv",
+                  "kein_sonstige", "fam_anzahl_kinder", "verlustvortrag_bestand", "p35a_mitveranlagung"} | set(EP_FELDER) | set(AN_GESAMT_VOR) | set(AN_GESAMT_KV_PV)
+                 | set(AN_GESAMT_DHF) | set(AN_GESAMT_PARTNER) | set(AN_GESAMT_VERPFLEGUNG)
+                 | set(AN_GESAMT_UEBERNACHTUNG) | set(AN_GESAMT_ARBEITSMITTEL) | set(AN_GESAMT_AFA)
+                 | set(AN_GESAMT_P36) | set(AN_GESAMT_KIST))
+    assert _erwartet == ids, f"neu={sorted(ids - _erwartet)} weg={sorted(_erwartet - ids)}"
     for feld, wert in AN_GESAMT_KEGEL:
         st, _ = _req(base, "POST", "/fall/ag/event", _laie(feld, wert))
         assert st == 201
