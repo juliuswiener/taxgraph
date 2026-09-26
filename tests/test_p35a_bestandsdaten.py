@@ -147,30 +147,23 @@ def test_instanz_macht_den_fall_einreichbar():
         f"Beide Kz muessen ins XML: Einz={EINZ_KZ in xml}, Sum={SUM_KZ in xml}")
 
 
-# Voller Pflicht-Kegel fuer Scheibe "gesamt" (SCHEIBEN["gesamt"]["kegel"], api_constants.py) --
+# Voller Pflicht-Kegel fuer Scheibe "gesamt" -- GEBAUT, nicht kopiert (tests/_kegel.py).
 # _fall_einzel() (test_checkest_durchstich.py) deckt ihn NICHT ab, das reicht fuer die checkESt-XML-
 # Tests oben (die gehen ueber _mit_ring_werten, kein Kegel-Gate), aber _feste_zahl ist fail-closed und
-# verlangt ALLE Kegel-Felder bestaetigt. 1:1 aus GESAMT_KEGEL_BASIS (test_ring_regression_kampagne.py)
-# + hh_in_eu_ewr (§ 35a Abs. 4 gatet alle drei Toepfe, sonst bleibt jeder Betrag wirkungslos 0) -- lokal
-# kopiert statt importiert, weil jenes Modul beim Import pytest.importorskip("jsonschema") auswertet
-# und diese Datei sonst mitspringen wuerde, wenn jsonschema fehlt.
-_GESAMT_KEGEL = (
-    ("veranlagung", "einzel"),
-    ("bruttoarbeitslohn", 20000000),
-    ("vv_einnahmen", 0), ("vv_gebaeude_afa", 0), ("vv_schuldzinsen", 0),
-    ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("vv_entgelt_quote_prozent", 100),
-    ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", False),
-    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("basis_kv", 0), ("basis_pv", 0),
-    ("versicherungsart", "gesetzlich_an"), ("vorsorge_arbeitslosenversicherung", 0),
-    ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0),
-    ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-    ("mit_anspruch_auf_zuschuss", False),
-    ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
-    ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
-    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
-    ("hh_in_eu_ewr", True),
-)
+# verlangt ALLE Kegel-Felder bestaetigt.
+#
+# Von Hand standen hier 34 Felder; 31 davon trugen genau den Abwesenheitswert (gemessen 2026-09-26).
+# Nur die drei unten sind echte Werte, die dieser Test BRAUCHT: hh_in_eu_ewr (§ 35a Abs. 4 gatet alle
+# drei Toepfe, sonst bleibt jeder Betrag wirkungslos 0), bruttoarbeitslohn und die V+V-Quote.
+# Alles andere kam bei JEDEM neuen Kegel-Mitglied still abhanden: `agb_zwangslaeufig` und
+# `agb_notwendig_angemessen` fehlten, sobald sie im Kegel standen.
+from _kegel import kegel_fuer  # noqa: E402
+
+_GESAMT_KEGEL = tuple(kegel_fuer("gesamt", {
+    "bruttoarbeitslohn": 20000000,
+    "vv_entgelt_quote_prozent": 100,
+    "hh_in_eu_ewr": True,
+}))
 
 
 def _zahl_cent(paare):

@@ -80,6 +80,8 @@ import api as API        # noqa: E402
 import server as SRV     # noqa: E402
 import audit              # noqa: E402
 
+from _kegel import kegel_fuer  # noqa: E402
+
 
 def _req(base: str, method: str, path: str, body: dict | None = None, erwarte: int | None = None):
     """Wie test_paket_b_e2e_http.py: 5xx -> AssertionError (nie unterdrückbar), es sei denn
@@ -136,20 +138,17 @@ def _vorjahr_vorlaeufig(feld_id, wert):
 
 def _basis(beginn_jahr):
     """aa-Folgejahr, wenn beginn_jahr < 2025 (veranlagungszeitraum); Erstjahr, wenn ==."""
-    return [
-        ("rentner_renten_art", "gesetzliche_rente"), ("rentner_jahresrente", 2_000_000),
-        ("rentner_renten_beginn_jahr", beginn_jahr), ("rentner_alter_bei_rentenbeginn", 60),
-        ("rentner_grad_der_behinderung", 0), ("rentner_hilflos_blind_taubblind", False),
-        ("rentner_pflegegrad", 0), ("rentner_gepflegter_hilflos", False),
-        ("rentner_hinterbliebenenbezuege", False),
-        ("veranlagung", "einzel"),
-        ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
-        ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-        ("versicherungsart", "gesetzlich_an"), ("basis_kv", 0), ("basis_pv", 0),
-        ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
-        ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0),
-        ("vorsorge_rv_alt_ohne_ueberschuss", 0), ("mit_anspruch_auf_zuschuss", False),
-    ]
+    # GEBAUT, nicht kopiert (tests/_kegel.py). Von Hand standen hier 25 Felder; 22 trugen genau den
+    # Abwesenheitswert (gemessen 2026-09-26). Nur die drei unten sind echte Werte.
+    # Die Handliste kannte `rentner_renten_beginn_jahr` gar nicht -- und genau dieses Feld ist der
+    # Messgegenstand dieses Tests (aa-Folgejahr). `agb_zwangslaeufig`/`agb_notwendig_angemessen`
+    # fehlten ebenfalls, wodurch die Faelle auf `input_kegel_nicht_bestaetigt` sperrten.
+    return kegel_fuer("rentner_gesamt", {
+        "rentner_jahresrente": 2_000_000,
+        "rentner_renten_beginn_jahr": beginn_jahr,
+        "rentner_alter_bei_rentenbeginn": 60,
+        "kein_sonstige": False,
+    })
 
 
 RF = 500_000  # 5.000,00 EUR Rentenfreibetrag

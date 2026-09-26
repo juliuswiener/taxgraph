@@ -37,6 +37,8 @@ import runner as RUNNER  # noqa: E402
 import store as ST       # noqa: E402
 import traverser as TR   # noqa: E402
 
+from _kegel import fehlende_kegel_felder, kegel_fuer  # noqa: E402
+
 PFAD_P32A_2024 = os.path.join(ROOT, "params", "2024", "einkommensteuertarif_p32a.yaml")
 
 
@@ -100,6 +102,19 @@ def test_zwei_fragen_laeufe_lesen_die_datei_nur_beim_ersten_mal():
                             herkunft={"quelle": "test_runner_param_cache"}, schreiber="ui:laie",
                             signal={"signal_1": None, "signal_2": f"ok@{fid}"},
                             ts="2026-08-17T12:00:00Z")
+        # Die Schleife oben beantwortet nur, was der Traverser ANBIETET. Der Kegel ist aber
+        # fail-closed und verlangt ALLE Mitglieder -- gemessen 2026-09-26 fehlten danach
+        # `vv_entgelt_quote_prozent` und `agb_zwangslaeufig`, beide fragt der Traverser nie.
+        # Ohne diesen Nachschlag sperrt `fragen()` sofort und laedt keine einzige Parameter-Datei,
+        # womit der Test dann 0 statt >0 misses sieht.
+        nachschlag = [(f, w) for f, w in kegel_fuer("gesamt") if f not in beantwortet]
+        for fid, wert in nachschlag:
+            ST.append_event(store=store, feld_id=fid, wert=wert, zustand="bestaetigt",
+                            herkunft={"quelle": "test_runner_param_cache"}, schreiber="ui:laie",
+                            signal={"signal_1": None, "signal_2": f"ok@{fid}"},
+                            ts="2026-08-17T12:00:00Z")
+        fehlt = fehlende_kegel_felder("gesamt", set(beantwortet) | {f for f, _ in nachschlag})
+        assert not fehlt, f"Kegel unvollstaendig -- der Test misst sonst nur die Sperre: {fehlt}"
         API.speichere_fall(fall_id, store)
 
         API.fragen(fall_id)

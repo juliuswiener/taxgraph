@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 import api as API        # noqa: E402
 import server as SRV     # noqa: E402
 import audit                # noqa: E402
+from _kegel import kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
 
 
 try:
@@ -119,45 +120,17 @@ def _einfachen_fall_anlegen(base: str, fall_id: str) -> str:
         "veranlagungszeitraum": 2025,
         "fall_id": fall_id,
     })
-    # gesamt-Kegel: VV_GESAMT_FELDER + veranlagung + bruttoarbeitslohn
-    # + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS
+    # gesamt-Kegel GEBAUT, nicht kopiert (tests/_kegel.py). Von Hand standen hier 33 Felder;
+    # 29 trugen genau den Abwesenheitswert (gemessen 2026-09-26). Nur die vier unten sind echte
+    # Werte dieses Falls. Die Handliste kannte `agb_zwangslaeufig`/`agb_notwendig_angemessen`
+    # nicht -- seit die im Kegel stehen, sperrte der Fall, und `kette` fehlte.
     # kette wird nur in festzusetzende_est_gesamt gesetzt (api.py:969).
-    events = [
-        _laie("veranlagung", "einzel"),
-        _laie("bruttoarbeitslohn", 5000000),  # 50.000 € in Cent
-        # VV: alles 0
-        _laie("vv_einnahmen", 0),
-        _laie("vv_gebaeude_afa", 0),
-        _laie("vv_schuldzinsen", 0),
-        _laie("vv_erhaltungsaufwand", 0),
-        _laie("vv_sonstige_wk", 0),
-        _laie("vv_entgelt_quote_prozent", 0),
-        # EP
-        _laie("ep_entfernung_km", 20),
-        _laie("ep_eigenes_kfz", True),
-        _laie("ep_oepnv_kosten", 0),
-        _laie("ep_arbeitstage", 220),
-        # VOR
-        _laie("vor_an_anteil_rv", 0),
-        _laie("vor_ag_anteil_rv", 0),
-        _laie("vor_rv_ausserhalb_lstb", 0),
-        # KV/PV
-        _laie("basis_kv", 0), _laie("basis_pv", 0),
-        _laie("versicherungsart", "gesetzlich_an"),
-        _laie("vorsorge_arbeitslosenversicherung", 0), _laie("vorsorge_erwerbsunfaehigkeit", 0), _laie("vorsorge_unfall_haftpflicht", 0), _laie("vorsorge_rv_alt_mit_ueberschuss", 0), _laie("vorsorge_rv_alt_ohne_ueberschuss", 0),
-        _laie("mit_anspruch_auf_zuschuss", False),
-        # KAP
-        _laie("kap_kapitalertraege", 0),
-        _laie("kap_gewinn_aktien", 0),
-        _laie("kap_verlust_aktien", 0),
-        _laie("kap_gewinn_sonstige", 0),
-        _laie("kap_verlust_sonstige", 0),
-        # Flags
-        _laie("kein_gewinn", True),
-        _laie("kein_kap", True),
-        _laie("kein_vuv", True),
-        _laie("kein_sonstige", True),
-    ]
+    events = [_laie(f, w) for f, w in kegel_fuer("gesamt", {
+        "bruttoarbeitslohn": 5000000,   # 50.000 € in Cent
+        "ep_entfernung_km": 20,
+        "ep_eigenes_kfz": True,
+        "ep_arbeitstage": 220,
+    })]
     for ev in events:
         s2, _ = _req(base, "POST", f"/fall/{fall_id}/event", ev)
     return fall_id
@@ -170,39 +143,17 @@ def _einfachen_an_gesamt_fall_anlegen(base: str, fall_id: str) -> str:
         "veranlagungszeitraum": 2025,
         "fall_id": fall_id,
     })
-    # an_gesamt-Kegel: bruttoarbeitslohn, veranlagung, EP_FELDER, VOR_FELDER,
-    # KV_PV_FELDER, DHF_RING, DHF_BEDINGUNGEN, VERPFLEGUNG_TAGE, AN_GESAMT_FLAGS,
-    # fam_anzahl_kinder, verlustvortrag_bestand
-    events = [
-        _laie("bruttoarbeitslohn", 5000000),
-        _laie("veranlagung", "einzel"),
-        _laie("ep_entfernung_km", 20),
-        _laie("ep_eigenes_kfz", True),
-        _laie("ep_oepnv_kosten", 0),
-        _laie("ep_arbeitstage", 220),
-        _laie("vor_an_anteil_rv", 0),
-        _laie("vor_ag_anteil_rv", 0),
-        _laie("vor_rv_ausserhalb_lstb", 0),
-        _laie("basis_kv", 0), _laie("basis_pv", 0),
-        _laie("versicherungsart", "gesetzlich_an"),
-        _laie("vorsorge_arbeitslosenversicherung", 0), _laie("vorsorge_erwerbsunfaehigkeit", 0), _laie("vorsorge_unfall_haftpflicht", 0), _laie("vorsorge_rv_alt_mit_ueberschuss", 0), _laie("vorsorge_rv_alt_ohne_ueberschuss", 0),
-        _laie("mit_anspruch_auf_zuschuss", False),
-        _laie("dhf_unterkunftskosten_monat", 0),
-        _laie("dhf_monate", 0),
-        _laie("dhf_im_inland", True),
-        _laie("dhf_beruflich_veranlasst", False),
-        _laie("dhf_eigener_hausstand", False),
-        _laie("dhf_finanzielle_beteiligung", False),
-        _laie("dhf_keine_pflicht_dienstwohnung", False),
-        _laie("tage_24h", 0),
-        _laie("tage_an_abreise", 0),
-        _laie("tage_ueber_8h_eintaegig", 0),
-        _laie("kein_gewinn", True),
-        _laie("kein_kap", True),
-        _laie("kein_vuv", True),
-        _laie("kein_sonstige", True),
-        _laie("fam_anzahl_kinder", 0),
-        _laie("verlustvortrag_bestand", 0),
+    # an_gesamt-Kegel GEBAUT, nicht kopiert (tests/_kegel.py). Von Hand standen hier 34 Kegel-Felder;
+    # 29 trugen genau den Abwesenheitswert (gemessen 2026-09-26). Nur die fuenf unten sind echte Werte.
+    # Die vier Nicht-Kegel-Felder bleiben einzeln -- der Bauer haengt sie sonst mit dem
+    # Abwesenheitswert an, und `kist_konfession` ist ein enum ohne Abwesenheitswert.
+    events = [_laie(f, w) for f, w in kegel_fuer("an_gesamt", {
+        "bruttoarbeitslohn": 5000000,
+        "ep_entfernung_km": 20,
+        "ep_eigenes_kfz": True,
+        "ep_arbeitstage": 220,
+        "dhf_im_inland": True,
+    })] + [
         # Nicht-Kegel-Felder
         _laie("p36_lohnsteuer", 0),
         _laie("p36_vorauszahlungen", 0),
@@ -475,6 +426,7 @@ _A120_ALLEIN = _LOHN_60K_ZUSAMMEN + _VG_A + [("rentner_veraeusserungsgewinn", 12
 def _fall_mit(base: str, fid: str, scheibe: str, felder: list) -> dict:
     """Legt den Fall an, bestätigt alle Felder und liefert die /ergebnis-Antwort."""
     _req(base, "POST", "/fall", {"scheibe": scheibe, "veranlagungszeitraum": 2025, "fall_id": fid})
+    felder = kegel_fuer(scheibe, dict(felder))
     for feld, wert in felder:
         _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
     _, ergebnis = _req(base, "GET", f"/fall/{fid}/ergebnis")

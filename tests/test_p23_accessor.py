@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
 sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 import api as API  # noqa: E402
 import audit        # noqa: E402
+from _kegel import kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
 
 
 # -- p23_veraeusserungsgewinn (3 seeds: 200000-150000-5000=45000 / 100000-120000-3000=-23000 / 50000-50000-0=0)
@@ -134,6 +135,7 @@ def test_p23_ueber_ring_accessor(tmp_path, monkeypatch):
         ("p23_werbungskosten", 500000),
         ("p23_veraeusserungs_typ", "grundstueck"),
     ]
+    kegel = kegel_fuer("gesamt", dict(kegel))
     for feld, wert in kegel:
         st, r = API.event(fid, _laie(feld, wert))
         assert st == 201, f"{feld}={wert}: {st} {r}"
@@ -174,6 +176,7 @@ def test_p23_vorlaeufige_instanz_nicht_in_bestaetigter_rechnung(tmp_path, monkey
         ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
         ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
     ]
+    basis = kegel_fuer("gesamt", dict(basis))
     for feld, wert in basis:
         st, r = API.event(fid, _laie(feld, wert))
         assert st == 201, f"{feld}={wert}: {st} {r}"

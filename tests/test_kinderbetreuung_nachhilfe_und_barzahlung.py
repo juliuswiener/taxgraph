@@ -36,6 +36,8 @@ import audit             # noqa: E402
 import store as ST       # noqa: E402
 import traverser as TR   # noqa: E402
 
+from _kegel import kegel_fuer  # noqa: E402
+
 VZ = 2025
 
 REINE_BETREUUNG = "kind_betreuung_reine_betreuung"
@@ -61,38 +63,24 @@ def _laie(fld, w):
 # Kegel aus tests/test_p10_1_5_ring.py (GESAMT_KEGEL_BASIS / RENTNER_KEGEL_BASIS) —
 # 200.000 EUR Einkuenfte, damit der Abzug voll in der 42-%-Zone greift und die Deltas
 # dort schon gemessen sind.
-GESAMT_KEGEL = [
-    ("veranlagung", "einzel"), ("bruttoarbeitslohn", 0),
-    ("vv_einnahmen", 0), ("vv_gebaeude_afa", 0), ("vv_schuldzinsen", 0),
-    ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("vv_entgelt_quote_prozent", 100),
-    ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", False),
-    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("basis_kv", 0), ("basis_pv", 0),
-    ("versicherungsart", "gesetzlich_an"), ("vorsorge_arbeitslosenversicherung", 0),
-    ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0),
-    ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-    ("mit_anspruch_auf_zuschuss", False),
-    ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
-    ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
-    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
-    ("einkuenfte_gewinn", 20000000), ("gewinn_betriebsart", "gewerbe"),
-]
+# GEBAUT, nicht kopiert (tests/_kegel.py). Von Hand standen hier 34 bzw. 26 Felder; nur die
+# drei bzw. vier unten sind echte Werte (gemessen 2026-09-26). Der Rest trug genau den
+# Abwesenheitswert und war reine Kopie. Beide Handlisten kannten
+# `agb_zwangslaeufig`/`agb_notwendig_angemessen` nicht — seit die im Kegel stehen, sperrten
+# die Faelle, statt zu messen.
+GESAMT_KEGEL = kegel_fuer("gesamt", {
+    "vv_entgelt_quote_prozent": 100,
+    "kein_gewinn": False,            # Gewinneinkuenfte sind der Fall
+    "einkuenfte_gewinn": 20000000,   # 200.000 EUR, damit der Abzug voll in der 42-%-Zone greift
+    "gewinn_betriebsart": "gewerbe",
+})
 
-RENTNER_KEGEL = [
-    ("veranlagung", "einzel"),
-    ("rentner_renten_art", "gesetzliche_rente"), ("rentner_jahresrente", 20000000),
-    ("rentner_renten_beginn_jahr", 2025), ("rentner_alter_bei_rentenbeginn", 65),
-    ("rentner_rentenfreibetrag", 0), ("rentner_grad_der_behinderung", 0),
-    ("rentner_hilflos_blind_taubblind", False), ("rentner_hinterbliebenenbezuege", False),
-    ("rentner_pflegegrad", 0), ("rentner_gepflegter_hilflos", False),
-    ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
-    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("basis_kv", 0), ("basis_pv", 0),
-    ("versicherungsart", "gesetzlich_an"), ("vorsorge_arbeitslosenversicherung", 0),
-    ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0),
-    ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-    ("mit_anspruch_auf_zuschuss", False),
-]
+RENTNER_KEGEL = kegel_fuer("rentner_gesamt", {
+    "rentner_jahresrente": 20000000,
+    "rentner_renten_beginn_jahr": 2025,
+    "rentner_alter_bei_rentenbeginn": 65,
+    "kein_sonstige": False,
+})
 
 KEGEL = {"gesamt": GESAMT_KEGEL, "rentner_gesamt": RENTNER_KEGEL}
 

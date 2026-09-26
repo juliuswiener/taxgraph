@@ -34,6 +34,7 @@ sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 import api as API        # noqa: E402
 import server as SRV     # noqa: E402
 import audit                # noqa: E402
+from _kegel import kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
 
 jsonschema = pytest.importorskip("jsonschema")
 SCHEMA_DIR = os.path.join(ROOT, "produkt", "haut", "api_schema")
@@ -104,6 +105,7 @@ VZ = 2025
 def _zahl(base, scheibe, fid, kegel):
     st, _ = _req(base, "POST", "/fall", {"scheibe": scheibe, "veranlagungszeitraum": VZ, "fall_id": fid})
     assert st == 201
+    kegel = kegel_fuer(scheibe, dict(kegel))
     for feld, wert in kegel:
         st, _ = _req(base, "POST", f"/fall/{fid}/event", _laie(feld, wert))
         assert st == 201, f"{feld}={wert} abgelehnt: {st}"

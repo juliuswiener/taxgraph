@@ -52,6 +52,8 @@ for _sub in ("produkt/haut", "produkt/store", "golden"):
 import api as API        # noqa: E402
 import audit             # noqa: E402
 
+from _kegel import kegel_fuer  # noqa: E402
+
 # Betraege in CENT. 50000 = 500 EUR liegt zwischen beiden Schwellen (> 250, <= 800): dort gelten
 # ALLE DREI Fragen. 100000 = 1000 EUR ist ueber der 800-EUR-Grenze aus S. 1, 20000 = 200 EUR unter
 # der 250-EUR-Verzeichnisgrenze aus S. 4.
@@ -62,29 +64,21 @@ UNTER_250 = 20000
 IMMER_NOETIG = ("gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer")
 AB_250 = "gwg_verzeichnis_ab_250"
 
-_KEGEL = [
-    ("veranlagung", "einzel"), ("bruttoarbeitslohn", 6000000),
-    ("vv_einnahmen", 0), ("vv_gebaeude_afa", 0), ("vv_schuldzinsen", 0),
-    ("vv_erhaltungsaufwand", 0), ("vv_sonstige_wk", 0), ("vv_entgelt_quote_prozent", 100),
-    ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", False),
-    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0),
-    ("basis_kv", 0), ("basis_pv", 0),
-    ("versicherungsart", "gesetzlich_an"), ("vorsorge_arbeitslosenversicherung", 0),
-    ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0),
-    ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-    ("mit_anspruch_auf_zuschuss", False),
-    ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
-    ("kein_p23_verkauf", True),
-    ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
-    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
-    # 2026-09-26: `agb_zwangslaeufig`/`agb_notwendig_angemessen` sind neu im Kegel von
-    # "gesamt" (SCHEIBEN[...]["kegel"] in produkt/haut/api_constants.py). Diese Liste ist
-    # eine HANDGESCHRIEBENE Kopie des Kegels und lief ihm nach -- die acht Tests dieses
-    # Falls brachen mit grund="input_kegel_nicht_bestaetigt". Beide auf True: der Fall hat
-    # keine agB, also ist der Tatbestand fuer ihn nicht erfuellt; die Antwort haelt die
-    # Regel `p33_1_2_agb_abzug` im Kegel offen, ohne die gwg-Messung zu beruehren.
-    ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True),
-]
+# GEBAUT, nicht kopiert (tests/_kegel.py), seit 2026-09-26. Von Hand standen hier 34 Felder;
+# 30 trugen genau den Abwesenheitswert. Nur die vier unten sind echte Werte.
+#
+# Die beiden agb-Felder bleiben AUSDRUECKLICH auf True -- das ist kein Abwesenheitswert, sondern
+# eine Entscheidung: sie halten die Regel `p33_1_2_agb_abzug` im Kegel offen, ohne die
+# gwg-Messung zu beruehren. Der Bauer wuerde dort False setzen (Name ohne "kein_"), die Regel
+# waere ausgeschlossen, und der Test mae sse etwas anderes. Vorher standen sie als handkopierte
+# Zeilen mit genau dieser Begruendung hier -- jetzt als Override, mit derselben Begruendung.
+_KEGEL = kegel_fuer("gesamt", {
+    "bruttoarbeitslohn": 6000000,
+    "vv_entgelt_quote_prozent": 100,
+    "kein_gewinn": False,
+    "agb_zwangslaeufig": True,
+    "agb_notwendig_angemessen": True,
+})
 
 
 def _laie(fld, w):

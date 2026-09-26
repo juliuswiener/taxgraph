@@ -46,6 +46,8 @@ for _sub in ("produkt/haut", "produkt/eingang", "produkt/store", "produkt/traver
 import api as API   # noqa: E402
 import audit         # noqa: E402
 
+from _kegel import kegel_fuer  # noqa: E402
+
 
 def _laie(feld_id: str, wert) -> dict:
     return {"feld_id": feld_id, "wert": wert, "zustand": "bestaetigt",
@@ -63,20 +65,24 @@ _STAMM = [
     ("kist_konfession", "keine"),
 ]
 
-_PFLICHT_ZUSATZ = [
-    ("basis_kv", 0), ("basis_pv", 0), ("versicherungsart", "gesetzlich_an"),
-    ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
-    ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-    ("vorsorge_unfall_haftpflicht", 0), ("mit_anspruch_auf_zuschuss", False),
-    ("ep_arbeitstage", 0), ("ep_eigenes_kfz", False), ("ep_entfernung_km", 0),
-    ("ep_oepnv_kosten", 0),
-]
+# GEBAUT, nicht kopiert (tests/_kegel.py). _PFLICHT_ZUSATZ ist entfallen: seine 13 Felder
+# trugen ALLE den Abwesenheitswert (gemessen 2026-09-26) und kommen jetzt aus dem Bauer.
+# _STAMM bleibt: das sind KEINE Kegel-Felder, der Bauer kennt sie nicht.
+# Die Handkopie kannte `agb_zwangslaeufig`/`agb_notwendig_angemessen` nicht -- seit die im
+# Kegel stehen, kam `input_kegel_nicht_bestaetigt` statt des stillen Guards.
+def _basis(auslassen=()):
+    """Voller gesamt-Kegel + _STAMM, OHNE die Felder, die der Test gleich selbst schickt.
 
-_BASIS = [
-    ("bruttoarbeitslohn", 3_000_000), ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0),
-    ("vor_rv_ausserhalb_lstb", 0),
-    ("kein_gewinn", True), ("kein_vuv", True), ("kein_sonstige", True), ("kein_kap", False),
-] + _STAMM + _PFLICHT_ZUSATZ + [("veranlagung", "einzel")]
+    `auslassen` sind die kap_*-Felder aus _KAP_NULL/_KAP_NUR_SONSTIGE: sie sind der
+    Messgegenstand, und ein zweites Event auf dasselbe Feld weist der Store nach Auflage B
+    mit 422 ab. `kein_kap` bleibt im Bauer -- die kap_*-Listen fuehren es nicht.
+    """
+    raus = [(f, w) for f, w in kegel_fuer("gesamt", {
+        "bruttoarbeitslohn": 3_000_000,   # 30.000 EUR, damit die KAP-Verrechnung sichtbar wirkt
+        "veranlagung": "einzel",
+        "kein_kap": False,                # der KAP-Topf ist der Messgegenstand
+    }) if f not in set(auslassen)]
+    return raus + list(_STAMM)
 
 # Unterscheidbare Betraege (Instructor-Auftrag: kein Wert, der fuer beide Seiten zufaellig passt):
 # 30.000 EUR Bruttolohn als Basis, damit die KAP-Verrechnung ueberhaupt sichtbar Steuer aendert.
@@ -96,7 +102,9 @@ def fall(tmp_path, monkeypatch):
         st, resp = API.fall_anlegen(
             {"fall_id": fall_id, "scheibe": "gesamt", "veranlagungszeitraum": 2025})
         assert st == 201, (st, resp)
-        for fid, wert in _BASIS + kap_events:
+        # _basis() laesst genau die kap_*-Felder aus, die kap_events gleich selbst schickt --
+        # sonst kaeme dasselbe Feld zweimal (Store: Auflage B, 422).
+        for fid, wert in _basis([f for f, _ in kap_events]) + list(kap_events):
             st, resp = API.event(fall_id, _laie(fid, wert))
             assert st == 201, (fid, wert, st, resp)
         st, erg = API.ergebnis(fall_id)          # der ECHTE Nutzerpfad, nicht _bescheid_fn direkt
