@@ -66,6 +66,11 @@ RENTNER = [
     ("versicherungsart", "gesetzlich_an"), ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
     ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
     ("mit_anspruch_auf_zuschuss", False),
+    # 2026-09-26: Der Kegel dieser Scheibe fuehrt AGB_TATBESTAND (api_constants.py).
+    # Ohne diese zwei Zeilen sperrt jeder Fall mit `input_kegel_nicht_bestaetigt` —
+    # der Test maesse die Sperre statt der Spanne. Sieben weitere Dateien tragen
+    # denselben Nachtrag aus derselben Ursache.
+    ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True),
 ]
 
 GESAMT = [
@@ -80,6 +85,8 @@ GESAMT = [
     ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
     ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0), ("kap_verlust_aktien", 0),
     ("kap_verlust_sonstige", 0),
+    # 2026-09-26: s. o. — AGB_TATBESTAND steht im Kegel dieser Scheibe.
+    ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True),
 ]
 
 
