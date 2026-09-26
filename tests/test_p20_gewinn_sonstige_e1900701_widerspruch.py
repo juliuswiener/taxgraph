@@ -57,6 +57,29 @@ import audit                   # noqa: E402
 import elster_xml as EX        # noqa: E402
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _fake_hersteller_id():
+    """Hersteller-ID NUR fuer die Dauer dieser Datei setzen -- nur lokale XML-Erzeugung, kein Versand.
+
+    Vorher stand hier `os.environ.setdefault(...)` auf MODULEBENE. Das leckt: pytest importiert
+    beim Sammeln jede Datei des Workers, bevor der erste Test laeuft, die Fake-ID lag damit auch
+    fuer fremde Dateien in der Umgebung. Gemessen 2026-09-26: in test_checkest_feldmatrix.py
+    hielten sich die ERiC-Tests dadurch fuer lauffaehig und scheiterten mit rc=610301200 statt zu
+    skippen, und test_p35a_einzelaufstellung_alle_drei_toepfe_amtlich_plausibel riss den ganzen
+    `make unit`-Lauf mit. Ein Test, der die Umgebung eines anderen veraendert, ist kein Test.
+    """
+    alt = os.environ.get("ELSTER_HERSTELLER_ID")
+    if alt is None:                       # wie setdefault: eine echte ID bleibt unangetastet
+        os.environ["ELSTER_HERSTELLER_ID"] = "00000000000"
+    try:
+        yield
+    finally:
+        if alt is None:
+            os.environ.pop("ELSTER_HERSTELLER_ID", None)
+        else:
+            os.environ["ELSTER_HERSTELLER_ID"] = alt
+
+
 def _req(base, method, path, body=None):
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(base + path, data=data, method=method,

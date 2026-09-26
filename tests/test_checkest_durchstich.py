@@ -110,8 +110,21 @@ def _hid() -> str | None:
     return None
 
 
-_HID = _hid()
-_ERIC_DA = bool(_HID) and os.path.isdir(
+_HID_ECHT = _hid()
+
+# Zwei Rollen, zwei Werte. Bis 2026-09-26 war es EINER, und der Unterschied fiel nicht auf,
+# solange vier Testmodule ihren Platzhalter global in die Umgebung schrieben (die lecken seit
+# 2026-09-26 nicht mehr, s. test_kap_gewinn_sonstige_keine_kz_verdrahtung._fake_hersteller_id):
+#   _HID_ECHT — eine ECHTE ID. Nur sie entscheidet, ob ERiC pruefen darf.
+#   _HID      — was ins XML geht. Zum BAUEN genuegt ein Platzhalter; Tests, die den XML-TEXT
+#               pruefen (test_kap_dezimalformat, die Inert-Tests der Feldmatrix), brauchen keine
+#               amtliche Pruefung und liefen credential-frei sonst gar nicht.
+# ERiC lehnt den Platzhalter ab (rc=610301200, gemessen 2026-09-26) — deshalb haengt _ERIC_DA an
+# _HID_ECHT und NICHT an _HID: sonst liefen die ERiC-Tests mit dem Platzhalter los und faerbten
+# den Lauf rot, statt zu skippen.
+_HID = _HID_ECHT or "00000000000"
+
+_ERIC_DA = bool(_HID_ECHT) and os.path.isdir(
     os.environ.get("ERIC_DIR", os.path.expanduser("~/02_Software/eric")))
 
 braucht_eric = pytest.mark.skipif(
