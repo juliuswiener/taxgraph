@@ -450,8 +450,20 @@ def test_hersteller_id_skip_ist_genauso_eng():
 # DIESELBE Menge sehen wie der Waechter. Eine eigene Kopie der Schleife waere genau der blinde
 # Fleck, den sie schliessen soll — der Waechter koennte leer laufen und die Kopie bliebe voll.
 
+def _literal(wert) -> str | None:
+    """Der Zeichenketten-Literal, wenn `wert` einer ist, sonst None.
+
+    None heisst "nicht statisch vergleichbar" — `os.environ[...] = None` waere zur Laufzeit
+    ein TypeError, kann also nicht mit einem echten Wert verwechselt werden."""
+    return wert.value if isinstance(wert, ast.Constant) and isinstance(wert.value, str) else None
+
+
 def _env_ziel(knoten):
-    """(Name der Variablen, Zeilennummer) fuer eine Modulebene-Schreiboperation, sonst None."""
+    """(Name, Zeilennummer, gesetzter Wert) fuer eine Modulebene-Schreiboperation, sonst None.
+
+    Der Wert kam am 2026-09-26 dazu: der Waechter prueft damit nicht mehr nur den NAMEN.
+    Ein erlaubter Name ist kein erlaubter Wert — `TAXGRAPH_NO_AUTH = "0"` schaltet die
+    Authentifizierung wieder ein und war unter der Namenspruefung unsichtbar."""
     if isinstance(knoten, ast.Assign):
         for t in knoten.targets:
             if (isinstance(t, ast.Subscript) and isinstance(t.value, ast.Attribute)
@@ -459,7 +471,7 @@ def _env_ziel(knoten):
                     and isinstance(t.value.value, ast.Name) and t.value.value.id == "os"):
                 s = t.slice
                 if isinstance(s, ast.Constant) and isinstance(s.value, str):
-                    return s.value, knoten.lineno
+                    return s.value, knoten.lineno, _literal(knoten.value)
     if isinstance(knoten, ast.Expr) and isinstance(knoten.value, ast.Call):
         a = knoten.value.func
         if (isinstance(a, ast.Attribute) and a.attr in ("setdefault", "setenv", "putenv")
@@ -468,7 +480,10 @@ def _env_ziel(knoten):
                 and knoten.value.args
                 and isinstance(knoten.value.args[0], ast.Constant)
                 and isinstance(knoten.value.args[0].value, str)):
-            return knoten.value.args[0].value, knoten.value.lineno
+            # setdefault(name, wert) — der Wert ist das ZWEITE Argument. putenv traegt ihn im
+            # ersten ("X=1") und ist kein environ-Verfahren; hier bleibt er darum None.
+            zweites = knoten.value.args[1] if len(knoten.value.args) > 1 else None
+            return knoten.value.args[0].value, knoten.value.lineno, _literal(zweites)
     return None
 
 
@@ -477,10 +492,15 @@ def _gescannte_testdateien() -> list[pathlib.Path]:
     return sorted((ROOT / "tests").glob("test_*.py"))
 
 
-def _erlaubte_conftest_variablen() -> set[str]:
-    """Was conftest auf Modulebene setzt, ist Sitzungs-Eigentum — nachsetzen ist wirkungslos."""
+def _erlaubte_conftest_variablen() -> dict[str, str | None]:
+    """Was conftest auf Modulebene setzt, ist Sitzungs-Eigentum — nachsetzen ist wirkungslos.
+
+    Rueckgabe Name -> Wert, und zwar der WERT AUS DER CONFTEST, nicht ein Literal hier. Ein
+    Literal im Test waere eine zweite Wahrheit: aendert conftest seine `TAXGRAPH_NO_AUTH`, waere
+    das Nachsetzen mit dem alten Wert sofort ein Treffer, obwohl es gleichwertig ist. Der
+    erwartete Wert ist der, den die Sitzung tatsaechlich hat."""
     conftest_baum = ast.parse((ROOT / "tests" / "conftest.py").read_text(encoding="utf-8"))
-    return {r[0] for k in conftest_baum.body if (r := _env_ziel(k))}
+    return {r[0]: r[2] for k in conftest_baum.body if (r := _env_ziel(k))}
 
 
 def test_kein_testmodul_veraendert_die_umgebung_beim_import():
@@ -496,11 +516,23 @@ def test_kein_testmodul_veraendert_die_umgebung_beim_import():
     `make unit` war rot, und der rote Test (test_p35a_einzelaufstellung...) sah nach einem
     §35a-Fehler aus, war aber ein Umgebungsleck. Der Fix war eine modulgescopte Fixture.
 
-    ERLAUBT: nur Variablen, die conftest selbst auf Modulebene setzt. Dort ist der Wert derselbe,
-    ein Nachsetzen also wirkungslos — `TAXGRAPH_NO_AUTH` ist der einzige solche Fall. Alles
-    andere (eine Hersteller-ID, ein Schluessel, ein Pfad) gehoert in eine Fixture.
+    ERLAUBT: nur Variablen, die conftest selbst auf Modulebene setzt, UND NUR MIT DEM WERT, DEN
+    CONFTEST SETZT — `TAXGRAPH_NO_AUTH` ist der einzige solche Fall. Alles andere (eine
+    Hersteller-ID, ein Schluessel, ein Pfad) gehoert in eine Fixture.
 
     Erlaubt bleibt der Import in einer Funktion (dort laeuft er beim Test, nicht beim Sammeln).
+
+    WAS DIESER WAECHTER WEITERHIN NICHT SIEHT — alles am 2026-09-26 ueber alle 283 Dateien
+    gemessen, jede Zeile heute 0 Fundstellen, also heute kein Schaden, aber auch keine Deckung:
+    1. `os.environ.pop(...)`, `.update(...)`, `.clear()`, `del os.environ[...]` — ein Modul
+       koennte eine Variable ENTFERNEN; geprueft werden nur Zuweisungen und die drei
+       Setz-Aufrufe in `_env_ziel`.
+    2. Schreibzugriffe NICHT direkt auf Modulebene (in `if`/`try`/`with`) — der Scan liest
+       `baum.body`, also nur die oberste Ebene. Zur Laufzeit des Imports feuern sie trotzdem.
+    3. `from os import environ` als Alias — `_env_ziel` sucht `os.environ`.
+    4. Ein Wert, der erst zur Laufzeit entsteht (`os.environ[x] = f(...)`): der Vergleich
+       bekommt None und meldet. Das ist gewollt — lieber ein Fehlalarm als ein stilles Leck.
+    Ein Gate, das seine Blindstelle nicht nennt, wird fuer vollstaendig gehalten.
     """
     erlaubt = _erlaubte_conftest_variablen()
 
@@ -509,14 +541,42 @@ def test_kein_testmodul_veraendert_die_umgebung_beim_import():
         baum = ast.parse(pfad.read_text(encoding="utf-8"))
         for knoten in baum.body:       # NUR Modulebene, wie bei den runner-Importen oben
             r = _env_ziel(knoten)
-            if r and r[0] not in erlaubt:
-                treffer.append(f"{pfad.name}:{r[1]}  {r[0]}")
+            if not r:
+                continue
+            name, zeile, wert = r
+            if name not in erlaubt:
+                treffer.append(f"{pfad.name}:{zeile}  {name}")
+            elif wert != erlaubt[name]:
+                # Der Name ist erlaubt, der Wert nicht. Gemessen 2026-09-26: die Mutation
+                # `os.environ["TAXGRAPH_NO_AUTH"] = "1"` -> `"0"` liess den Waechter gruen
+                # (19 passed) — Anwesenheit ist kein Uebergeben, ein erlaubter Name ist kein
+                # erlaubter Wert. Dieselbe Klasse wie `_hat_bindung` bei bindung=None.
+                treffer.append(
+                    f"{pfad.name}:{zeile}  {name} = {wert!r} statt {erlaubt[name]!r} "
+                    f"(wie in conftest)")
 
     assert not treffer, (
         "Testmodule setzen beim Import Umgebungsvariablen, die conftest NICHT fuer die Sitzung "
         "setzt — das leckt in fremde Tests im selben xdist-Worker. Nimm eine funktionsgescopte "
         "Fixture (Vorbild: tests/test_checkest_durchstich.py::hid_attrappe).\n  "
         + "\n  ".join(treffer))
+
+
+def test_env_ziel_liest_den_wert_auch_im_setdefault_zweig():
+    """Der setdefault-Zweig hat in allen 283 Dateien heute 0 Fundstellen (gemessen 2026-09-26).
+    Ungedeckt bliebe er trotzdem falsch verdrahtbar: stuende der Wert-Index daneben, meldete der
+    Waechter still nichts — genau die Klasse, gegen die er antritt. Der Zweig wird darum direkt
+    gegen einen AST gestellt, ohne Fixtur und ohne Datei."""
+    mit_wert = ast.parse('os.environ.setdefault("TAXGRAPH_NO_AUTH", "1")').body[0]
+    assert _env_ziel(mit_wert) == ("TAXGRAPH_NO_AUTH", 1, "1")
+
+    # Ohne zweites Argument gibt es keinen Wert: None, und der Waechter meldet (fail-closed).
+    ohne_wert = ast.parse('os.environ.setdefault("TAXGRAPH_NO_AUTH")').body[0]
+    assert _env_ziel(ohne_wert) == ("TAXGRAPH_NO_AUTH", 1, None)
+
+    # Ein Nicht-String-Wert ist kein vergleichbarer Wert — ebenfalls None statt stiller Deckung.
+    zahl = ast.parse('os.environ["TAXGRAPH_NO_AUTH"] = 0').body[0]
+    assert _env_ziel(zahl) == ("TAXGRAPH_NO_AUTH", 1, None)
 
 
 def test_umgebungsleck_waechter_sieht_ueberhaupt_dateien():
@@ -535,11 +595,19 @@ def test_umgebungsleck_waechter_sieht_ueberhaupt_dateien():
         "conftest setzt auf Modulebene keine Umgebungsvariable mehr — dann ist JEDER Modulebene-"
         "Schreibzugriff ein Treffer, oder der Scan liest die conftest nicht mehr")
 
+    # Die Werte-Dimension darf nicht selbst blind werden: liest _env_ziel den Wert der conftest
+    # nicht als Literal, vergliche der Waechter gegen None. Gemessen 2026-09-26 ist der Wert ein
+    # Literal ('1') — die Zusicherung haelt das fest, statt es anzunehmen.
+    assert all(w is not None for w in erlaubt.values()), (
+        f"conftest setzt eine erlaubte Variable mit einem Wert, den der Scan nicht als Literal "
+        f"liest: {[k for k, w in erlaubt.items() if w is None]} — der Werte-Vergleich liefe dann "
+        f"gegen None. Erwartet wird ein String-Literal in conftest")
+
     VARIABLEN_OBEN = 1     # gemessen 2026-09-26: TAXGRAPH_NO_AUTH, der einzige solche Fall
     assert len(erlaubt) <= VARIABLEN_OBEN, (
-        f"Die Ausnahmemenge ist auf {len(erlaubt)} gewachsen ({sorted(erlaubt)}): {erlaubt - {'TAXGRAPH_NO_AUTH'}} "
-        f"ist neu. Jede Variable hier schaltet den Waechter fuer sie ab — das braucht eine "
-        f"Entscheidung, nicht eine Zeile mehr in conftest")
+        f"Die Ausnahmemenge ist auf {len(erlaubt)} gewachsen ({sorted(erlaubt)}): "
+        f"{sorted(set(erlaubt) - {'TAXGRAPH_NO_AUTH'})} ist neu. Jede Variable hier schaltet den "
+        f"Waechter fuer sie ab — das braucht eine Entscheidung, nicht eine Zeile mehr in conftest")
 
 
 def test_guard_greift_nur_ohne_toolchain():
