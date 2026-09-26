@@ -86,6 +86,8 @@ import server as SRV           # noqa: E402
 import audit                   # noqa: E402
 import elster_xml as EX        # noqa: E402
 
+from _kegel import kegel_fuer  # noqa: E402
+
 
 @pytest.fixture(scope="module", autouse=True)
 def _fake_hersteller_id():
@@ -136,8 +138,8 @@ def _vorjahr_vorschlag(fld, wert):
             "schreiber": "import:vorjahr", "signal": {"signal_1": None, "signal_2": None}}
 
 
-# Minimale vollstaendige gesamt-Fixtur -- identisch zu tests/test_p20_gewinn_sonstige_e1900701_
-# widerspruch.py::_STAMM/_GRUND (dort 2026-08-30 gegen den echten Endpunkt gemessen).
+# GEBAUT, nicht kopiert (tests/_kegel.py), seit 2026-09-26. Von Hand standen hier 24 Felder;
+# 19 trugen genau den ABWESENHEITSWERT. Nur die fuenf Overrides unten sind echte Werte.
 _STAMM = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
           ("stammdaten_geburtsdatum", "05.05.1955"),
           ("stammdaten_strasse", "Musterstr."), ("stammdaten_hausnummer", "55"),
@@ -148,22 +150,13 @@ _STAMM = (("stammdaten_nachname", "Maier"), ("stammdaten_vorname", "Hans"),
           ("stammdaten_steuernummer", "9181081508155"),
           ("steuerklasse", "1"), ("p36_lohnsteuer", 1200000))
 
-_GRUND = (("bruttoarbeitslohn", 6000000), ("vor_an_anteil_rv", 4200000),
-          ("vor_ag_anteil_rv", 1200000), ("vor_rv_ausserhalb_lstb", 0),
-          ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
-          ("veranlagung", "einzel"),
-          ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0),
-          ("ep_eigenes_kfz", False), ("versicherungsart", "gesetzlich_an"),
-          ("basis_kv", 0), ("basis_pv", 0), ("vorsorge_arbeitslosenversicherung", 0),
-          ("vorsorge_erwerbsunfaehigkeit", 0), ("vorsorge_unfall_haftpflicht", 0),
-          ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-          ("mit_anspruch_auf_zuschuss", False),
-          # § 33 Abs. 2 S. 1: die zwei Tatbestandsmerkmale sind seit 2026-09-26 ueber
-          # AGB_TATBESTAND im Kegel von "gesamt" (Entscheidung decisions/agb-und-verpflegungs-
-          # gates-werden-verdrahtet-nicht-entfernt.md). Ohne sie sperrt der Ring auf
-          # input_kegel_nicht_bestaetigt und zahl_cent bleibt None — der Basisfall dieser
-          # Datei kam vorher ohne sie aus, weil die Vorbedingung unsichtbar war.
-          ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True)) + _STAMM
+_GRUND = kegel_fuer("gesamt", {
+    "bruttoarbeitslohn": 6000000, "vor_an_anteil_rv": 4200000, "vor_ag_anteil_rv": 1200000,
+    "veranlagung": "einzel",
+    # § 33 Abs. 2 S. 1: die zwei Tatbestandsmerkmale halten `p33_1_2_agb_abzug` offen. Der Bauer
+    # setzt nach Namenpolaritaet False -- das waere eine Verneinung des Tatbestands.
+    "agb_zwangslaeufig": True, "agb_notwendig_angemessen": True,
+}) + list(_STAMM)
 
 # 100 Tage * 28 EUR = 2.800 EUR Pauschale, klar ueber dem AN-Pauschbetrag (1.230 EUR/2025) --
 # sonst maskiert der Pauschbetrag jede Steuerwirkung auch im bestaetigten Kontrollfall.

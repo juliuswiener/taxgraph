@@ -46,6 +46,8 @@ import server as SRV                     # noqa: E402
 import store as ST                       # noqa: E402
 from api_constants import SCHEIBEN       # noqa: E402
 
+from _kegel import kegel_fuer            # noqa: E402
+
 VZ = 2025
 V = "vorlaeufig"
 
@@ -85,38 +87,35 @@ def _ergebnis(scheibe: str, f: dict) -> tuple[str, str | int]:
     return ("bestaetigt", bf({k: f[k]["wert"] for k in kegel}))
 
 
-RENTNER = [
-    ("veranlagung", "einzel"), ("rentner_renten_art", "gesetzliche_rente"), ("rentner_jahresrente", 20000000),
-    ("rentner_renten_beginn_jahr", 2025), ("rentner_alter_bei_rentenbeginn", 65), ("rentner_rentenfreibetrag", 0),
-    ("rentner_grad_der_behinderung", 0), ("rentner_hilflos_blind_taubblind", False), ("rentner_hinterbliebenenbezuege", False),
-    ("rentner_pflegegrad", 0), ("rentner_gepflegter_hilflos", False),
-    ("kein_gewinn", False), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", False),
-    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0), ("basis_kv", 0), ("basis_pv", 0),
-    ("versicherungsart", "gesetzlich_an"), ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
-    ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-    ("mit_anspruch_auf_zuschuss", False),
-    # 2026-09-26: neu im Kegel von "rentner_gesamt" (produkt/haut/api_constants.py,
-    # SCHEIBEN["rentner_gesamt"]["kegel"] += AGB_TATBESTAND). Diese Liste ist die
-    # handgeschriebene Kopie des Kegels; ohne die zwei Antworten sperrt der Ring auf
-    # "input_kegel_nicht_bestaetigt", bevor der Messgegenstand ueberhaupt greift.
-    ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True),
-]
+# GEBAUT, nicht kopiert (tests/_kegel.py), seit 2026-09-26. Von Hand standen hier 29 (RENTNER)
+# bzw. 35 (GESAMT) Felder; 21 bzw. 31 trugen genau den ABWESENHEITSWERT und sind damit keine
+# Aussage des Tests, sondern nur die Vollstaendigkeit, die der Ring verlangt. Nur die Overrides
+# unten sind echte Werte. `rentner_rentenfreibetrag` steht NICHT im rentner_gesamt-Kegel und
+# kommt deshalb als ausdrueckliche Zusatzantwort mit -- ohne sie faellt der Messgegenstand weg.
+RENTNER = kegel_fuer("rentner_gesamt", {
+    "veranlagung": "einzel",
+    "rentner_renten_art": "gesetzliche_rente",
+    "rentner_jahresrente": 20000000,          # 200.000 EUR
+    "rentner_renten_beginn_jahr": 2025,
+    "rentner_alter_bei_rentenbeginn": 65,
+    "rentner_rentenfreibetrag": 0,            # nicht im Kegel -- siehe oben
+    # kein_gewinn/kein_sonstige False = "habe ich", also NICHT der Standardwert: die Regeln
+    # p16_4 und dhf muessen im Kegel offen stehen, sonst misst der Test nur die Sperre.
+    "kein_gewinn": False,
+    "kein_sonstige": False,
+    # Die zwei agb-Felder halten `p33_1_2_agb_abzug` offen. Der Bauer setzt nach Namenpolaritaet
+    # False; das waere eine Verneinung des Tatbestands und schloesse die Regel aus.
+    "agb_zwangslaeufig": True,
+    "agb_notwendig_angemessen": True,
+})
 
-GESAMT = [
-    ("veranlagung", "einzel"), ("bruttoarbeitslohn", 6000000),
-    ("vv_einnahmen", 0), ("vv_gebaeude_afa", 0), ("vv_schuldzinsen", 0), ("vv_erhaltungsaufwand", 0),
-    ("vv_sonstige_wk", 0), ("vv_entgelt_quote_prozent", 100),
-    ("ep_arbeitstage", 0), ("ep_entfernung_km", 0), ("ep_oepnv_kosten", 0), ("ep_eigenes_kfz", False),
-    ("vor_an_anteil_rv", 0), ("vor_ag_anteil_rv", 0), ("vor_rv_ausserhalb_lstb", 0), ("basis_kv", 0), ("basis_pv", 0),
-    ("versicherungsart", "gesetzlich_an"), ("vorsorge_arbeitslosenversicherung", 0), ("vorsorge_erwerbsunfaehigkeit", 0),
-    ("vorsorge_unfall_haftpflicht", 0), ("vorsorge_rv_alt_mit_ueberschuss", 0), ("vorsorge_rv_alt_ohne_ueberschuss", 0),
-    ("mit_anspruch_auf_zuschuss", False),
-    ("kein_gewinn", True), ("kein_kap", True), ("kein_vuv", True), ("kein_sonstige", True),
-    ("kap_kapitalertraege", 0), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0), ("kap_verlust_aktien", 0),
-    ("kap_verlust_sonstige", 0),
-    # 2026-09-26: dito fuer "gesamt" — siehe RENTNER oben.
-    ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True),
-]
+GESAMT = kegel_fuer("gesamt", {
+    "veranlagung": "einzel",
+    "bruttoarbeitslohn": 6000000,             # 60.000 EUR
+    "vv_entgelt_quote_prozent": 100,          # nicht der Standardwert 0 -- siehe Docstring der Faelle
+    "agb_zwangslaeufig": True,
+    "agb_notwendig_angemessen": True,
+})
 
 
 # ---- Klasse A: under-tax -- § 16 Abs. 4 Freibetrag (P1, rentner_gesamt) -----------------------
