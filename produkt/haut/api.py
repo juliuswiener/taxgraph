@@ -340,14 +340,44 @@ def _ring_bindung(cfg: dict, bindung: dict, store: dict | None = None) -> dict:
     return {f: bindung[f] for f in _relevante_kegel_felder(kegel, bindung, store) if f in bindung} if kegel else bindung
 
 
+def _ring_bindungen(cfg: dict, bindung: dict, store: dict | None = None) -> tuple[dict, dict]:
+    """Die ZWEI Bindungen des Estimate-Pfads, einmal benannt: `(aufbau, achsen)`.
+
+    Die Naht hat DREI Rollen, nicht zwei. Bis 2026-09-26 lagen zwei davon auf einer Variable
+    (`rb`), und daraus kam der Widerspruch Kopfzeile ↔ /ergebnis (240 EUR, Fall § 35a):
+
+      1. ENUMERIEREN — `EM.instanzen(store, bindung, gruppe)` liest `b.get("instanz_gruppe")`,
+         um zu wissen, welche Felder eine Instanz-Gruppe ausmachen. Braucht die VOLLE Bindung:
+         mit dem Kegel sieht der § 35a-Topf nur dessen Felder, findet keine Instanz und
+         summiert 0 — er rechnet, als hätte der Nutzer nichts angegeben.
+      2. ACHSEN — `intervall.py` bildet `askable` aus `b.get("askable")` und daraus `base`,
+         die Wertemenge, über die die Spanne läuft. Braucht den KEGEL: mit der vollen Bindung
+         werden 341 statt 21 Felder zu Achsen, ein ungesetztes Partner-/nie gefragtes Feld
+         zieht die Spanne auf `nicht_fixierbar` und die Kopfzeile zeigt „Noch keine Zahl"
+         (gemessen: 251 Felder; der naive Fix fällt damit durch).
+      3. SLOT-ÜBERSETZUNG — `bescheid_via_slots` schließt die Aufbau-Bindung ein und liest
+         `bindung[fid]["quelle"]["signatur_slot"]` beim Aufruf, je Feld aus `feld_werte`.
+         Braucht eine OBERMENGE der Achsen-Bindung, und das ist die volle: `feld_werte` kommt
+         aus `base`, `base` aus den Achsen — also Kegel ⊆ voll. Konstruktiv, nicht zufällig.
+
+    Die Reihenfolge im Rückgabewert IST die Zusicherung: wer die zwei wieder zu einer Variable
+    zusammenzieht, verliert entweder die Instanzen (Rolle 1) oder die Zahl (Rolle 2).
+
+    Dass die volle Bindung auf der Aufbauseite keine Zahl VERSCHIEBEN kann, ist nicht nur
+    diesmal gemessen: `bindung[fid]` als *Wert* kommt in den Bescheid-Modulen NULL Mal vor
+    (grep über bescheid_*.py). Dort ist die Bindung ausschließlich Schlüsselmenge und
+    Enumerations-Selektor, nie ein Wertefilter — sie sieht mehr Felder, sie glaubt nicht mehr."""
+    return bindung, _ring_bindung(cfg, bindung, store)
+
+
 def _gesamt_beitrag(store: dict, cfg: dict, bindung: dict, felder: dict, sid: str, vz: int):
     """Frage-Reihenfolge-Gewichte aus dem verfügbaren Ring (Gesamt bevorzugt, sonst erster Teil)."""
     if cfg["gesamt_ring"]:
-        rb = _ring_bindung(cfg, bindung)
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
+        aufbau, achsen = _ring_bindungen(cfg, bindung, store)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, aufbau, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
         if bf is not None:
             return {b["feld_id"]: b["spanne_cent"]
-                    for b in IV.intervall(felder, _ring_bindung(cfg, bindung, store), bf, snapshot_id=sid)["beitraege"]}
+                    for b in IV.intervall(felder, achsen, bf, snapshot_id=sid)["beitraege"]}
     for _name, q, tfelder in cfg["teil_ringe"]:
         tb = {f: bindung[f] for f in tfelder if f in bindung}
         bf = _bescheid_fn(q, vz, tb, nur_bestaetigt=False)   # Estimate-Pfad (fragen-Gewichte)
@@ -485,10 +515,10 @@ def stand(fall_id: str) -> tuple[int, dict]:
     if gesperrt:
         engine = "gesperrt"          # nicht-ring-fähiger Abzug/Einkunftsart -> kein Ring (K2)
     elif cfg["gesamt_ring"]:
-        rb = _ring_bindung(cfg, bindung)
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, rb, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
+        aufbau, achsen = _ring_bindungen(cfg, bindung, store)
+        bf = _bescheid_fn(cfg["gesamt_ring"], vz, aufbau, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
         if bf is not None:
-            gesamt_iv = IV.intervall(felder, _ring_bindung(cfg, bindung, store), bf, snapshot_id=sid)["intervall"]
+            gesamt_iv = IV.intervall(felder, achsen, bf, snapshot_id=sid)["intervall"]
             engine = "catala"
     else:
         for name, q, tfelder in cfg["teil_ringe"]:
