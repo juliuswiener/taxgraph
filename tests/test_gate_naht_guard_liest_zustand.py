@@ -23,8 +23,12 @@ NULL LLM.
 """
 from __future__ import annotations
 
+import json
 import os
 import sys
+import threading
+import urllib.error
+import urllib.request
 
 import pytest
 
@@ -36,9 +40,10 @@ for sub in ("produkt/haut", "produkt/engine", "golden", "produkt/store", "produk
     sys.path.insert(0, os.path.join(ROOT, sub))
 
 import api as API                        # noqa: E402
+import audit                             # noqa: E402
 import bescheid_deklaration as BD        # noqa: E402
+import server as SRV                     # noqa: E402
 import store as ST                       # noqa: E402
-import traverser as TR                   # noqa: E402
 from api_constants import SCHEIBEN       # noqa: E402
 
 VZ = 2025
@@ -65,16 +70,17 @@ def _felder(basis: list[tuple], extra: dict) -> dict:
 
 
 def _ergebnis(scheibe: str, f: dict) -> tuple[str, str | int]:
-    """("GESPERRT", sperrgrund) oder ("bestaetigt", zahl_cent) -- 1:1 zu api._ergebnis_roh."""
+    """("GESPERRT", sperrgrund) oder ("bestaetigt", zahl_cent) -- wie api._ergebnis_roh, mit derselben
+    Scheiben-Bindung (api._scheibe_bindung). Ohne store, also ohne die Instanz-Prüfungen des Guards."""
     cfg = SCHEIBEN[scheibe]
     kegel = cfg["kegel"]
-    sperr = BD._an_gesamt_sperrgrund(f, cfg, VZ, None, None)
+    bindung = API._scheibe_bindung({"scheibe": scheibe})
+    sperr = BD._an_gesamt_sperrgrund(f, cfg, VZ, None, bindung)
     if sperr:
         return ("GESPERRT", sperr)
     zust = [f[k]["zustand"] for k in kegel if k in f]
     if len(zust) < len(kegel) or ST.meet_zustand(zust) != "bestaetigt":
         return ("GESPERRT", "input_kegel_nicht_bestaetigt")
-    bindung = TR.lade_bindung()
     bf = API._bescheid_fn(cfg["gesamt_ring"], VZ, bindung, f, store=None, nur_bestaetigt=True)
     return ("bestaetigt", bf({k: f[k]["wert"] for k in kegel}))
 
@@ -200,3 +206,62 @@ def test_vpf_monate_am_ort_bestaetigt_liefert_die_pauschale():
     grund, cent = _ergebnis("gesamt", f)
     assert grund == "bestaetigt", (grund, cent)
     assert cent == 1227200, f"erwartet 12.272,00 EUR volle Pauschale, tatsächlich {cent / 100:,.2f} EUR"
+
+
+# ---- Der Helfer selbst: derselbe grund wie HTTP /ergebnis ---------------------------------------
+
+_RENTNER_ZUSAMMEN_5000 = [(k, "zusammen" if k == "veranlagung" else v) for k, v in RENTNER] + [
+    ("rentner_renten_art_partner", "gesetzliche_rente"), ("rentner_jahresrente_partner", 500000),
+    ("rentner_renten_beginn_jahr_partner", 2025), ("rentner_alter_bei_rentenbeginn_partner", 65)]
+
+
+@pytest.fixture
+def base(tmp_path, monkeypatch):
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
+    srv = SRV.make_server(0)
+    th = threading.Thread(target=srv.serve_forever, daemon=True)
+    th.start()
+    try:
+        yield f"http://{srv.server_address[0]}:{srv.server_address[1]}"
+    finally:
+        srv.shutdown()
+        th.join(timeout=5)
+        srv.server_close()
+
+
+def _req(base_url, method, path, body=None):
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    req = urllib.request.Request(base_url + path, data=data, method=method,
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.status, json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read())
+
+
+def test_helfer_liefert_denselben_grund_wie_http_ergebnis(base):
+    """Die Tests oben sind nur so viel wert, wie `_ergebnis` dem Nutzerpfad gleicht. rentner_gesamt,
+    zusammen, 5.000 EUR Partner-Rente: kein_sonstige_partner ist auf dieser Scheibe nie fragbar.
+    VORHER rief der Helfer die Sperrprüfung ohne Scheiben-Bindung, das Flag galt als unbeantwortet
+    -> flag_konsistenz_offen, während HTTP /ergebnis für dieselben Felder bestaetigt lieferte."""
+    if not _catala_da():
+        pytest.skip("catala nicht verfügbar")
+    fall_id = "helfer_gleich_http"
+    st, r = _req(base, "POST", "/fall",
+                 {"scheibe": "rentner_gesamt", "veranlagungszeitraum": VZ, "fall_id": fall_id})
+    assert st == 201, (st, r)
+    for fld, w in _RENTNER_ZUSAMMEN_5000:
+        st, r = _req(base, "POST", f"/fall/{fall_id}/event", {
+            "feld_id": fld, "wert": w, "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": f"ok@{fld}"}})
+        assert st == 201, (fld, st, r)
+    st, http = _req(base, "GET", f"/fall/{fall_id}/ergebnis")
+    assert st == 200, http
+
+    ausgang, wert = _ergebnis("rentner_gesamt", _felder(_RENTNER_ZUSAMMEN_5000, {}))
+    helfer_grund = wert if ausgang == "GESPERRT" else ausgang
+    assert (helfer_grund, http["grund"]) == ("bestaetigt", "bestaetigt"), (helfer_grund, http["grund"])
+    assert wert == http["zahl_cent"], (wert, http["zahl_cent"])
