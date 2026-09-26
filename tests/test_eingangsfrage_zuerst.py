@@ -83,10 +83,6 @@ def _gleichstaende() -> dict[str, list[str]]:
 # wird rot, wenn er unnötig geworden ist. Genau so hat sich die SCHULD-Liste in
 # test_gate_polaritaet.py selbst abgeräumt.
 OHNE_EINGANGSFRAGE: dict[str, str] = {
-    "p16_4_freibetrag":
-        "§ 16 Abs. 4: alle vier Gates fragen nach Merkmalen des Betriebsverkaufs (Alter 55, "
-        "Erstmaligkeit) — die Existenzfrage ('hast du einen Betrieb verkauft?') fehlt. Der "
-        "Block hängt aber an kein_gewinn, wird also für den Arbeitnehmer schon abgeschaltet.",
     "p21_2_verbilligte_vermietung_wk":
         "§ 21 Abs. 2: beide Gates fragen nach Merkmalen der Vermietung. Hängt an kein_vuv, "
         "für Nicht-Vermieter also bereits abgeschaltet.",
@@ -101,6 +97,23 @@ OHNE_EINGANGSFRAGE: dict[str, str] = {
     # KEIN Reihenfolge-Problem, sondern eine schlicht fehlende Existenzfrage. Sie gehört zu den
     # Screening-Flags (Backlog screening-flags-ausgabenseite), nicht hierher — ein Eintrag an
     # dieser Stelle würde ihn als „gelöst, sobald sortiert" ausweisen, und das wäre er nicht.
+    #
+    # NICHT MEHR HIER: p16_4_freibetrag. Der Eintrag stand hier bis 2026-09-26 und ist mit 6ac30c9
+    # weggefallen — dort bekamen die vier Voraussetzungen `gate: false` (backlog
+    # betriebsverkauf-unter-55-fragt-den-gewinn-nie), und `_gleichstaende()` zählt nur echte Gates.
+    # Die Regel hat seither NULL echte Gates, also auch keinen Gleichstand; dieser Test greift dort
+    # nicht mehr, und `test_schuld_ist_noch_offen` hat den Eintrag zu Recht angemahnt.
+    #
+    # DIE SCHULD SELBST IST NICHT BEHOBEN, und das ist der Grund, warum hier ein Kommentar steht
+    # statt nichts: gemessen 2026-09-26 stehen die vier Merkmalsfragen weiterhin in der Queue, und
+    # die naechstliegende Frage ist KEINE Existenzfrage — `rentner_veraeusserungs_betriebsart`
+    # lautet „Aus welcher Art von Betrieb stammt der Veräußerungsgewinn?" und setzt den Verkauf
+    # bereits voraus (Gewicht 0, `gate: None`). Der Befund „Detailfragen ohne Eingangsfrage" gilt
+    # unveraendert; er gehoert zu den Screening-Flags und ist dort unter
+    # audits/detailfragen-ohne-eingangsfrage.md mit p16_4 namentlich festgehalten (Julius'
+    # Originalmeldung: „Warst du beim Verkauf des Betriebs mindestens 55 Jahre alt …? — frage hat
+    # keine daseinsberechtigung"). Ein Eintrag an dieser Stelle wuerde ihn als „geloest, sobald
+    # sortiert" ausweisen, und das waere er nicht — dieselbe Begruendung wie bei p35c oben.
     "p6_2_gwg_sofortabzug":
         "§ 6 Abs. 2: alle drei Gates fragen nach Merkmalen eines Geräts, das nie erfragt wurde. "
         "Die Existenzfrage läge bei den Arbeitsmitteln, nicht hier.",
