@@ -1,10 +1,12 @@
 """Erreichbarkeits-Gate: Sperrgrund-Tests für _an_gesamt_sperrgrund().
 
 Teste die Guards, die verhindern, dass der Ring Mitveranlagung berechnet:
-- uebernachtung_tatbestand_offen (Kosten > 0, aber Bedingungen nicht alle bestätigt)
-- ausland_uebernachtung_nicht_ring_faehig (Kosten > 0, Ausland=True)
+- uebernachtung_tatbestand_offen (Kosten > 0, aber Ort/Bedingungen nicht bestätigt)
+- uebernachtung_zeitraum_offen (monate/monate_bisher nicht bestätigte int)
 
-Wichtig: beide Richtungen testen (sperrt vs. sperrt nicht).
+Wichtig: beide Richtungen testen (sperrt vs. sperrt nicht). Ausland sperrt NICHT: die ersten
+48 Monate unterscheiden nach § 9 Abs. 1 S. 3 Nr. 5a Sätze 1-3 nicht nach dem Ort. Die frühere
+Sperre ausland_uebernachtung_nicht_ring_faehig ist entfernt.
 """
 
 import json
@@ -139,21 +141,48 @@ def test_uebernachtung_alle_bedingungen_bestaetigt_nicht_gesperrt(base):
     assert resp["ring_gesperrt_klartext"] is None
 
 
-def test_ausland_uebernachtung_nicht_ring_faehig_sperrgrund(base):
-    """Guard: Kosten > 0 + Ausland (im_inland=False) → Sperrgrund."""
+def test_ausland_uebernachtung_bleibt_im_dialog_und_der_tatbestand_sperrt(base):
+    """Ein bestätigtes „Ausland" darf die Regel NICHT abschalten — der Sperrgrund bleibt sichtbar.
+
+    Der Defekt, den dieser Test festhält (gemessen 2026-09-26): `uebernachtung_im_inland` hing als
+    Gate an `p9_1_3_nr5a_uebernachtung_nach_48`. Ein bestätigtes „Ausland" setzte die Regel auf
+    „ausgeschlossen" — ALLE sieben Fragen fielen aus der Queue, auch die Kostenfrage. Der Guard
+    prüft aber Kosten > 0: ohne Kostenfrage sperrt er nie, es gibt also WEDER Zahl NOCH Sperrgrund.
+    Der Abzug verschwand still. Die Backlog-Messung sah eine Sperre, weil sie die Felder direkt per
+    POST setzte und den Dialog übersprang.
+
+    Zwei Hälften, beide im Nutzerpfad (/fragen bzw. /stand):
+    (1) Der Ort schaltet nichts ab — die Regel-Felder bleiben in der Queue.
+    (2) Ein UNVOLLSTÄNDIGER Auslandsfall sperrt weiter sichtbar (Tatbestand offen), statt still
+        durchzurechnen. Der Ort selbst ist kein Sperrgrund mehr: mit allen drei Bedingungen
+        bestätigt rechnet der Ring (siehe test_ring_regression_kampagne, Ausland-Tests).
+    """
+    from tests.test_ring_regression_kampagne import _ueb, GESAMT_AN_KEGEL, _an_anlegen
+
+    # (1) Nur die Eingangsfrage + Ort beantwortet: die Kostenfrage MUSS weiter gefragt werden.
     status, resp = _req(base, "POST", "/fall", {"scheibe": "an_gesamt", "veranlagungszeitraum": "2025", "fall_id": "ueb-3"})
     assert status == 201
     fall_id = resp["fall_id"]
+    for feld, wert in (("uebernachtung_auswaerts", True), ("uebernachtung_im_inland", False)):
+        status, resp = _req(base, "POST", f"/fall/{fall_id}/event", _laie(feld, wert))
+        assert status == 201
+    status, resp = _req(base, "GET", f"/fall/{fall_id}/fragen", None)
+    assert status == 200
+    offen = [q["feld_id"] for q in resp["fragen"]]
+    assert "uebernachtung_kosten_monat" in offen, (
+        'Die Kostenfrage fehlt in der Queue, nachdem der Ort mit "Ausland" beantwortet wurde — '
+        f"das Gate schaltet die Regel ab, der Abzug fällt still weg. Queue: {offen}")
+
+    # (2) Kosten eingetragen, Tatbestand unvollständig (Alleinnutzung/Unterbrechung fehlen):
+    # der Sperrgrund steht sichtbar auf /stand.
     status, resp = _req(base, "POST", f"/fall/{fall_id}/event", _laie("uebernachtung_kosten_monat", 100000))
-    assert status == 201
-    status, resp = _req(base, "POST", f"/fall/{fall_id}/event", _laie("uebernachtung_im_inland", False))
     assert status == 201
     status, resp = _req(base, "GET", f"/fall/{fall_id}/stand", None)
     assert status == 200
     _val("stand", resp)
-    assert resp["ring_gesperrt"] == "ausland_uebernachtung_nicht_ring_faehig"
-    assert resp["ring_gesperrt_klartext"] == sperrgrund_klartext(
-        "ausland_uebernachtung_nicht_ring_faehig")
+    assert resp["ring_gesperrt"] == "uebernachtung_tatbestand_offen", (
+        f"ring_gesperrt={resp.get('ring_gesperrt')!r}")
+    assert resp["ring_gesperrt_klartext"] == sperrgrund_klartext("uebernachtung_tatbestand_offen")
 
 
 def test_verpflegung_dreimonats_felder_erreichbar(base):

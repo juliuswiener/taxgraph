@@ -122,6 +122,110 @@ def test_werbungskosten_n_mit_verpflegung():
     assert runner.catala_werbungskosten_n(s) == 2156 + 280
 
 
+# ---- Stufe 1b: Übernachtung Auswärtstätigkeit (§ 9 Abs. 1 S. 3 Nr. 5a) ----
+
+def _ueb_registry_seed(rule_id):
+    import yaml
+    doc = yaml.safe_load(open(os.path.join(ROOT, "pipeline", "produktion", "rules.yaml")))
+    return next(r for r in doc["regeln"] if r["rule_id"] == rule_id)["test_seed"]
+
+
+# Der Registry-Seed p9_1_3_nr5a_uebernachtung_vor_48 mit (bisher=47, monate=12) erwartet 16.800
+# (1.400 × 12, ungekappt). Er verletzt die Geltungsbedingung seiner EIGENEN Regel
+# (zeitraum_vollstaendig_vor_48_monate) und widerspricht ihrer Beschreibung, die für überspannende
+# Zeiträume ausdrücklich sagt: "ueberspannende Zeitraeume splittet der Aufrufer." Der Seed trägt
+# damit die alte binäre Lesart in die Registry, die dieser Fix gerade ersetzt. Der Ring splittet
+# (1 × 1.400 ungekappt + 11 × 1.000 gekappt = 12.400) — die Abweichung ist GEWOLLT.
+# OFFEN (Bericht): Registry-Seed nachziehen, eigenes Ticket — die Registry ist kein Code-Artefakt.
+UEBERSPANNENDER_REGISTRY_SEED = {("p9_1_3_nr5a_uebernachtung_vor_48", 47, 12): 12400}
+
+
+def _ueb_registry_inputs(inputs):
+    """Registry-Signatur-Slots -> Store-Feld-IDs des Runners."""
+    return {"uebernachtung_kosten_monat": inputs["uebernachtungskosten_monat"],
+            "uebernachtung_monate": inputs["monate"],
+            "uebernachtung_monate_bisher": inputs["monate_bisher_am_ort"],
+            "uebernachtung_im_inland": True}      # Registry-Linie ist die Inlands-MVP-Linie
+
+
+def test_uebernachtung_konsistenz_runner_registry():
+    """KONSISTENZ-GATE runner↔registry: _uebernachtung_abzug MUSS die Registry-Rechenwege
+    (test_seed von p9_1_3_nr5a_uebernachtung_vor_48 / _nach_48) reproduzieren. Kopplung wie dHf.
+
+    Der überspannende Seed ist ausgenommen, aber NICHT still: die Ausnahmeliste wird unten gegen
+    die tatsächlich angetroffenen Seeds geprüft, ein zusätzlicher überspannender Seed fällt auf."""
+    runner = _runner()
+    ueberspannt_gesehen = set()
+    for rule_id in ("p9_1_3_nr5a_uebernachtung_vor_48",
+                    "p9_1_3_nr5a_uebernachtung_nach_48"):
+        for c in _ueb_registry_seed(rule_id):
+            i = c["inputs"]
+            bisher, monate = i["monate_bisher_am_ort"], i["monate"]
+            schluessel = (rule_id, bisher, monate)
+            got = runner._uebernachtung_abzug(_ueb_registry_inputs(i), 2025)
+            if schluessel in UEBERSPANNENDER_REGISTRY_SEED:
+                ueberspannt_gesehen.add(schluessel)
+                exp = UEBERSPANNENDER_REGISTRY_SEED[schluessel]
+                assert got == exp, (
+                    f"{schluessel}: überspannender Zeitraum → runner {got} ≠ erwartet {exp} "
+                    f"(Split 1×1.400 + 11×1.000)")
+                continue
+            exp = int(c["expected"])
+            assert got == exp, (f"runner↔registry-Divergenz ({rule_id}): {i} → runner "
+                                f"{got} ≠ registry {exp} ({c['rechenweg']})")
+    assert ueberspannt_gesehen == set(UEBERSPANNENDER_REGISTRY_SEED), (
+        f"Die Ausnahmeliste ist nicht mehr aktuell — angetroffen: {ueberspannt_gesehen}, "
+        f"erwartet: {set(UEBERSPANNENDER_REGISTRY_SEED)}")
+
+
+def test_uebernachtung_monatsgrenze_verzweigt_nach_vz():
+    """Die Auslandsgrenze ist VZ-abhängig — EINE Stelle, hier geprüft.
+
+    2.000 €/Monat gilt erst ab VZ 2026 (StÄndG 2025, BGBl. 2025 I Nr. 363). Für VZ 2024/2025 nennt
+    Nr. 5 S. 4 a.F. nur die Inlandsgrenze, für Ausland bleibt es bei der Notwendigkeitsprüfung
+    (BMF-Reisekosten 25.11.2020 Rz. 124). Inland ist in allen VZ gekappt."""
+    runner = _runner()
+    g = runner._uebernachtung_monatsgrenze
+    assert g(2025, True) == 1000 and g(2026, True) == 1000     # Inland: unverändert
+    assert g(2024, False) is None and g(2025, False) is None   # Ausland: keine Grenze
+    assert g(2026, False) == 2000                              # Ausland: neu ab VZ 2026
+
+
+def test_uebernachtung_ausland_nach_48_ungekappt_vz2025():
+    """VZ 2025, Ausland, über der 48-Monats-Schwelle: 12 × 2.500 € bleiben VOLL stehen (30.000 €).
+    Inland kappt derselbe Fall auf 12.000 € — der Unterschied ist genau der Ortsunterschied."""
+    runner = _runner()
+    s = {"uebernachtung_kosten_monat": 2500, "uebernachtung_monate": 12,
+         "uebernachtung_monate_bisher": 48}
+    assert runner._uebernachtung_abzug({**s, "uebernachtung_im_inland": False}, 2025) == 30000
+    assert runner._uebernachtung_abzug({**s, "uebernachtung_im_inland": True}, 2025) == 12000
+
+
+def test_uebernachtung_ausland_nach_48_gekappt_ab_vz2026():
+    """VZ 2026, Ausland, über der 48-Monats-Schwelle: 12 × min(2.500, 2.000) = 24.000 €.
+    Dieselben Eingaben ergeben in VZ 2025 noch 30.000 € — die Zahl hängt am VZ, nicht am Fall."""
+    runner = _runner()
+    s = {"uebernachtung_kosten_monat": 2500, "uebernachtung_monate": 12,
+         "uebernachtung_monate_bisher": 48, "uebernachtung_im_inland": False}
+    assert runner._uebernachtung_abzug(s, 2026) == 24000
+    assert runner._uebernachtung_abzug(s, 2025) == 30000
+
+
+def test_uebernachtung_split_an_der_schwelle():
+    """Die Schwelle ist ein Zeitpunkt, kein Jahresschalter: bisher=40, monate=12 → 8 Monate
+    ungekappt + 4 Monate gekappt. Beide Seiten der Grenze einzeln geprüft, damit ein Off-by-one
+    am Schwellenmonat auffällt (bisher=47/monate=3 → 1 × 2.000 + 2 × 1.000)."""
+    runner = _runner()
+    u = lambda **kw: runner._uebernachtung_abzug(
+        {"uebernachtung_kosten_monat": 2000, **kw}, 2025)
+    assert u(uebernachtung_monate=12, uebernachtung_monate_bisher=40) == 8 * 2000 + 4 * 1000
+    assert u(uebernachtung_monate=3, uebernachtung_monate_bisher=47) == 2000 + 2 * 1000
+    # Genau auf der Schwelle: der GANZE Zeitraum ist gekappt (kein Monat mehr davor).
+    assert u(uebernachtung_monate=12, uebernachtung_monate_bisher=48) == 12 * 1000
+    # Ein Monat vor der Schwelle: der ganze Zeitraum ist ungekappt.
+    assert u(uebernachtung_monate=12, uebernachtung_monate_bisher=36) == 12 * 2000
+
+
 # ---- Front V+V: § 21 Einkünfte aus Vermietung und Verpachtung ----
 
 def test_vermietung_konsistenz_runner_registry():

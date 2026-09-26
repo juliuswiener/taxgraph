@@ -82,6 +82,13 @@ DEKLARATION_STATT_GATE = [
     # bei einer Unterkunft im AUSLAND dann NICHT gilt. Sie hebt eine Obergrenze auf, ist also
     # günstig — als Gate schloss sie aus, und zwar auch im Inland, wo die Norm sie nicht erwähnt.
     ("dhf_keine_pflicht_dienstwohnung", "p9_1_3_nr5_doppelte_haushaltsfuehrung"),
+    # § 9 Abs. 1 S. 3 Nr. 5a: der Ort entscheidet nur über die HÖHE (Satz 4 verweist auf den
+    # Betrag nach Nr. 5), nie über den Abzug dem Grunde nach — die Sätze 1-3 nennen Inland und
+    # Ausland überhaupt nicht. Als Gate nahm ein bestätigtes „Ausland" dem Nutzer ALLE sieben
+    # Fragen der Regel (gemessen 2026-09-26: status=ausgeschlossen, 0 Felder in der Queue), also
+    # auch die Kostenfrage. Dann sperrt der Guard nie, weil er Kosten > 0 prüft — der Abzug fiel
+    # still weg, ohne Sperrgrund und ohne Zahl. Dieselbe Bauart wie der Anlage-V-Fund oben.
+    ("uebernachtung_im_inland", "p9_1_3_nr5a_uebernachtung_nach_48"),
 ]
 
 
