@@ -1278,14 +1278,18 @@ def test_gesamt_gwg_only_verlust(base):
         assert erg["zahl_cent"] is None
 
 
-def test_gesamt_gwg_ohne_tatbestand_darf_keinen_abzug_geben(base):
+def test_gesamt_gwg_ohne_tatbestand_darf_keinen_sofortabzug_geben(base):
     """§ 6 Abs. 2 S. 1 EStG (sources/gesetze-im-internet/estg_p6_2026-07-14.txt) macht den Sofortabzug an
     einem Eigenschafts-Tatbestand fest: "abnutzbaren beweglichen Wirtschaftsgütern des Anlagevermögens, die
     einer selbständigen Nutzung fähig sind" (S. 2/3 definieren "selbständig nutzbar" negativ). Die beiden
     ANDEREN Bedingungen werden bestätigt (True), damit dieser Test GENAU die verneinte Bedingung isoliert —
     sonst träfe der Kegel-Sperrgrund (gwg_tatbestand_offen, offen wegen der unbeantworteten Nachbarfragen)
-    statt der hier zu prüfenden Nullung. Erwartung: zahl_cent identisch mit einem sonst gleichen Fall OHNE
-    das GWG-Asset (kein Sofortabzug, das WG gehört in die AfA). Schritt 2 (2026-09-07, _abzug in
+    statt der hier zu prüfenden Nullung. Verglichen wird mit demselben Fall, alle drei Bedingungen bejaht
+    (voller Sofortabzug): bei "nein" muss die Steuer höher liegen. Bekannte Lücke, hier bewusst NICHT
+    gepinnt: "nein" verliert den Betrag heute ganz, obwohl über § 4 Abs. 3 S. 3 die AfA nach § 7 Abs. 1 S. 1
+    gilt, die das Merkmal "selbständig nutzbar" nicht kennt (Vault-Ticket
+    gwg-ohne-verzeichnis-verschwindet-statt-abgeschrieben). Bis 2026-09-26 verglich dieser Test per == mit
+    dem Fall OHNE GWG-Asset und hätte so genau diesen Fix gesperrt. Schritt 2 (2026-09-07, _abzug in
     bescheid_einkuenfte.py) behoben — vormals xfail, seit Schritt 1 die Bedingung erfragbar wurde, aber
     keine Rechenstelle die Antwort las."""
     if not _catala_da():
@@ -1298,14 +1302,16 @@ def test_gesamt_gwg_ohne_tatbestand_darf_keinen_abzug_geben(base):
     _req(base, "POST", "/fall/gwt/event", _laie("gwg_verzeichnis_ab_250", True), erwarte=201)
     st, erg = _req(base, "GET", "/fall/gwt/ergebnis")
     _val("ergebnis", erg)
-    # Kontrollfall: gleicher Fall, aber OHNE das GWG-Asset — das ist der Betrag, den ein verneinter
-    # Tatbestand liefern MUSS (kein Sofortabzug).
-    _gesamt_anlegen(base, "gwt_kontrolle", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
-                    betriebseinnahmen=5000000))
-    st2, erg2 = _req(base, "GET", "/fall/gwt_kontrolle/ergebnis")
-    assert erg["zahl_cent"] == erg2["zahl_cent"], (
-        "verneinter § 6 Abs. 2-Tatbestand muss denselben Betrag liefern wie 'kein GWG-Asset' — "
-        f"gemessen: mit_verneintem_gwg={erg['zahl_cent']} ohne_gwg={erg2['zahl_cent']}")
+    _gesamt_anlegen(base, "gwt_ja", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
+                    betriebseinnahmen=5000000, gwg=[60000]))
+    for _fld in ("gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250"):
+        _req(base, "POST", "/fall/gwt_ja/event", _laie(_fld, True), erwarte=201)
+    st2, erg2 = _req(base, "GET", "/fall/gwt_ja/ergebnis")
+    _val("ergebnis", erg2)
+    assert erg["zahl_cent"] > erg2["zahl_cent"], (
+        "verneinter § 6 Abs. 2-Tatbestand (nicht selbständig nutzbar) darf keinen Sofortabzug geben — die Steuer "
+        f"muss über der mit bejahtem Tatbestand liegen; gemessen: selbstaendig_nein={erg['zahl_cent']} "
+        f"selbstaendig_ja={erg2['zahl_cent']}")
 
 
 def test_gesamt_gwg_ohne_verzeichnis_darf_keinen_sofortabzug_geben(base):
