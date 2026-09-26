@@ -165,6 +165,52 @@ def _cent_nach_kz(wert: int, kz: str) -> int | str:
         return -(-wert // 100)   # ceiling: 1..99 Cent → 1 EUR (aufrunden=günstiger)
     return wert // 100            # floor: 1..99 Cent → 0 EUR (abrunden=günstiger)
 
+# Datums-Kz: der Store fuehrt den Rentenbeginn als JAHR (bindung_rentner.yaml:32 typ:int,
+# Einheit Jahr), E1800501/E1801701/E1803202 verlangen laut XSD aber TT.MM.JJJJ
+# (DatumTTpMMpJJJJBekanntBaseCType_RABE, E10-2025.xsd). Die Umrechnung ist an ZWEI Stellen
+# zugesagt -- bindung_rentner.yaml:42 "Jahr-Granularitaet; ERiC-Datum-Format = Submission-Layer"
+# und store.py:183 "nichts in der Pipeline konvertiert Datumswerte" -- und war NIRGENDS gebaut:
+# der Schreibpfad kannte nur `typ == "cent"`, jeder andere Typ fiel in den else-Zweig und ging roh
+# hinaus. ERiC wies darauf JEDE Rentner-Erklaerung ab (rc=610001002, "Bitte geben Sie ein gueltiges
+# Datum TT.MM.JJJJ ein").
+#
+# Die Menge ist aus dem XSD ABGELEITET, nicht von Hand gepflegt (xsd_verify._resolve_kz_meta gegen
+# E10-2025.xsd: 163 Datums-Kz; Schnitt mit den Kz-Literalen dieses Moduls = genau diese drei).
+# Die Betragsfelder daneben (E1800301/E1801601/E1803102) sind Ganzzahl-Typen und bleiben roh.
+# ponytail: feste Dreiermenge, Upgrade: den XSD-Schnitt zur Importzeit bilden, wenn weitere
+# Datumsfelder in den Mapper kommen.
+_DATUMS_KZ = frozenset({"E1800501", "E1801701", "E1803202"})
+
+def _jahr_aus_kz_wert(wert, kz: str):
+    """Umkehrung zu `_kz_wert`: Datums-Kz -> Jahr, sonst unveraendert.
+
+    Der Store fuehrt den Rentenbeginn als Jahr (typ:int). Gelesen wird das Kz, also muss die
+    Richtung Kz -> Store dieselbe Umrechnung rueckwaerts gehen, sonst stuende nach einem
+    Round-Trip der String "01.01.2015" in einem Feld vom Typ int -- genau die Naht aus
+    [[naht-blindstelle-zwei-repraesentationen]]. Gefangen von den Round-Trip-Tests.
+    """
+    if kz in _DATUMS_KZ and isinstance(wert, str):
+        m = re.match(r"^\d{2}\.\d{2}\.(\d{4})$", wert.strip())
+        return int(m.group(1)) if m else wert
+    return wert
+
+
+
+def _kz_wert(wert, kz: str, typ):
+    """Store-Wert -> Kz-Wert: cent gerundet, Datums-Kz aus dem Jahr, sonst unveraendert.
+
+    Der Monatserste ist die ANNAHME, nicht die Kenntnis: der Nutzer beantwortet das Jahr des
+    Rentenbeginns, den Tag kennt das Programm nicht. Der 01.01. ist der gesetzliche Beginn des
+    Rentenjahres und die Angabe, die am wenigsten behauptet. Ein bereits vorformatiertes Datum
+    (typ: datum, z.B. stammdaten_geburtsdatum) laeuft unveraendert durch.
+    """
+    if typ == "cent":
+        return _cent_nach_kz(wert, kz)
+    if kz in _DATUMS_KZ and isinstance(wert, int) and not isinstance(wert, bool):
+        return f"01.01.{wert:04d}"
+    return wert
+
+
 
 # --- Transform-Konfiguration (source-verankert via 2026-07-17-enr-nachtraege-kandidaten.md) ---
 # Klasse a — DOKUMENTIERTE Aggregation (dokumentiert, NICHT deklariert): die §21-WK-Detail-Slots
@@ -543,14 +589,14 @@ def _deklariere_instanz(basis: str, idx: int, feld_id: str, sfeld: dict, snapsho
         else:
             kz = cfg["kz"].get(art["wert"])
             if kz:
-                inst["felder"][kz] = _cent_nach_kz(wert, kz) if b.get("typ") == "cent" else wert
+                inst["felder"][kz] = _kz_wert(wert, kz, b.get("typ"))
             else:
                 nicht_deklariert.append({"feld_id": feld_id,
                                          "grund": f"Instanz-Art '{art['wert']}' ohne Kz-Zweig"})
     elif basis in P23_BETRAGSFELDER:                     # Klasse h — §23 Rohdaten (still speichern, kein Kz)
         inst.setdefault("rohdaten", {})[basis] = int(wert)
     elif b.get("elster_kz"):                              # 1:1 je Instanz (Kz-Reuse der Basis)
-        inst["felder"][b["elster_kz"]] = _cent_nach_kz(wert, b["elster_kz"]) if b.get("typ") == "cent" else wert
+        inst["felder"][b["elster_kz"]] = _kz_wert(wert, b["elster_kz"], b.get("typ"))
     else:
         nicht_deklariert.append({"feld_id": feld_id,
                                  "grund": f"Instanz-Basis '{basis}' ohne elster_kz/Aggregat-Ziel"})
@@ -627,7 +673,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             else:
                 kz = cfg["kz"].get(art["wert"])
                 if kz:
-                    deklaration[kz] = _cent_nach_kz(wert, kz) if b.get("typ") == "cent" else wert
+                    deklaration[kz] = _kz_wert(wert, kz, b.get("typ"))
                 else:
                     grund = f"Art '{art['wert']}' ({cfg['art_feld']}) ohne Kz-Zweig"
                     nicht_deklariert.append({"feld_id": feld_id, "grund": grund})
@@ -646,7 +692,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             else:
                 kz = cfg["kz"].get(art["wert"])
                 if kz:
-                    person_b[kz] = _cent_nach_kz(wert, kz) if b.get("typ") == "cent" else wert
+                    person_b[kz] = _kz_wert(wert, kz, b.get("typ"))
                 else:
                     nicht_deklariert.append({"feld_id": feld_id,
                                              "grund": f"Partner-Renten-Art '{art['wert']}' ohne Kz-Zweig"})
@@ -681,7 +727,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
                                            "Einkunftsart des Partners ist bei uns noch nicht abgebbar — das "
                                            "liegt nicht an eurer Eingabe, ihr müsst hier nichts nachtragen."})
         elif feld_id in PARTNER_INSTANZ:                         # Klasse g (Person-Multiplikation, Instanz B)
-            person_b[PARTNER_INSTANZ[feld_id]] = _cent_nach_kz(wert, PARTNER_INSTANZ[feld_id]) if b.get("typ") == "cent" else wert
+            person_b[PARTNER_INSTANZ[feld_id]] = _kz_wert(wert, PARTNER_INSTANZ[feld_id], b.get("typ"))
         elif feld_id in WERTEKODIERUNG:                          # Klasse i (Laien-Enum -> XSD-Code)
             cfg = WERTEKODIERUNG[feld_id]
             code = cfg["code"].get(wert)
@@ -714,7 +760,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
                                      "grund": f"Wert 0: {b['elster_kz']} bleibt leer (XSD-Typ "
                                      "GanzzahlPos, eine 0 lehnt ERiC ab)"})
         elif b.get("elster_kz"):                                  # Klasse 1 / b (1:1)
-            deklaration[b["elster_kz"]] = _cent_nach_kz(wert, b["elster_kz"]) if b.get("typ") == "cent" else wert
+            deklaration[b["elster_kz"]] = _kz_wert(wert, b["elster_kz"], b.get("typ"))
         elif feld_id in P23_BETRAGSFELDER:                  # Klasse h — §23 Instanz-1-Rohdaten: in p23_veraeusserung sammeln
             anlage_instanzen.setdefault("p23_veraeusserung", {}).setdefault(
                 1, {"index": 1, "felder": {}, "dokumentiert": {}}).setdefault("rohdaten", {})[feld_id] = int(wert)
@@ -911,14 +957,14 @@ def zuruecklesen(result: dict, bindung: dict) -> dict:
                 if kz in inst_kz_nach_feld:
                     felder[f"{inst_kz_nach_feld[kz]}__{idx}"] = wert
                 elif kz in e_nach_verzweigung:
-                    felder[f"{e_nach_verzweigung[kz]}__{idx}"] = wert
+                    felder[f"{e_nach_verzweigung[kz]}__{idx}"] = _jahr_aus_kz_wert(wert, kz)
             for ziel, agg in inst.get("dokumentiert", {}).items():
                 aggregat[f"{ziel}__{idx}"] = agg["summe"]
     for e_nr, wert in result["deklaration"].items():
         if e_nr in e_nach_negation:
             felder[e_nach_negation[e_nr]] = not bool(wert)
         elif e_nr in e_nach_verzweigung:
-            felder[e_nach_verzweigung[e_nr]] = wert
+            felder[e_nach_verzweigung[e_nr]] = _jahr_aus_kz_wert(wert, e_nr)
         elif e_nr in e_nach_feld:
             felder[e_nach_feld[e_nr]] = wert
     return {"felder": felder, "aggregat": aggregat}

@@ -125,20 +125,97 @@ def test_geburtsdatum_schreibt_datumsformat():
 
 # ---------------------------------------------------------------- der Defekt
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="elster_xml._wert_text (Zeile 179-183) kennt keine Datumskonvertierung -- "
-           "rentner_renten_beginn_jahr ist typ:int (bindung_rentner.yaml:32), die "
-           "Kz-Verzweigung schickt den rohen Jahreswert nach E1800501, XSD-Typ "
-           "DatumTTpMMpJJJJBekanntBaseCType_RABE erwartet TT.MM.JJJJ. Marker faellt am Tag des "
-           "Fixes (XPASS) und zwingt dazu, ihn zu entfernen.")
-def test_rentenbeginn_schreibt_kein_datumsformat():
-    """Erwartung nach Fix: der geschriebene Text fuer E1800501 ist irgendein gueltiges TT.MM.JJJJ
-    -- WELCHER Tag/Monat das ist (nachgefragt oder ergaenzt), entscheidet Julius, nicht dieser
-    Test. Aktuell (gemessen) steht dort der blanke Jahreswert '2015', kein Datum."""
+def test_rentenbeginn_schreibt_datumsformat():
+    """Der geschriebene Text fuer E1800501 ist ein gueltiges TT.MM.JJJJ.
+
+    Der Marker `xfail(strict=True)` stand hier bis 2026-09-26 und ist am Tag des Fixes wie
+    angekuendigt als XPASS gefallen — entfernt, nicht abgeschwaecht. Was er pinnte (der rohe
+    Jahreswert), ist jetzt das, was NICHT mehr passieren darf; der Test prueft die Erwartung
+    deshalb direkt statt als erwarteten Fehlschlag.
+
+    Tag und Monat sind der 01.01.: der Nutzer beantwortet das JAHR des Rentenbeginns
+    (bindung_rentner.yaml:32, typ:int), den Tag kennt das Programm nicht. Der Monatserste ist
+    der Beginn des Rentenjahres und die Angabe, die am wenigsten behauptet (Entscheidung
+    `rentenbeginn-jahr-wird-am-schreiber-umgerechnet`). Der Test pinnt deshalb auf ein
+    GUELTIGES Datum MIT dem Jahr des Nutzers, nicht auf einen bestimmten Tag — welcher Tag
+    richtig ist, ist eine fachliche Entscheidung und nicht Sache dieses Tests.
+    """
     text = _kz_text(_xml_text(), "E1800501")
     assert text is not None, "E1800501 nicht im XML gefunden."
     assert _DATUM_TTMMJJJJ.match(text), (
         f"E1800501 (Beginn der Rente) = {text!r} -- kein TT.MM.JJJJ. Real gemessenes ERiC-Echo "
         "auf genau diesen Text (rc=610001002): 'Bitte geben Sie ein gültiges Datum TT.MM.JJJJ "
         "ein.'")
+
+
+def test_rentenbeginn_traegt_das_jahr_des_nutzers():
+    """Das umgerechnete Datum traegt das JAHR aus dem Store, nicht ein anderes.
+
+    Ohne diese Zusicherung waere ein fest verdrahtetes '01.01.2000' ebenso gruen wie die
+    richtige Umrechnung — der Formatstest allein kann eine erfundene Jahreszahl nicht von der
+    uebernommenen unterscheiden. _BASIS_RENTNER_MIT_RENTE setzt 2015; ERiC bestaetigt denselben
+    Wert im Feld (E1800501 = Beginn der Rente, Kohorte des Besteuerungsanteils).
+    """
+    assert _kz_text(_xml_text(), "E1800501") == "01.01.2015", (
+        "E1800501 traegt nicht das Jahr 2015 aus dem Store. Das Jahr steuert den "
+        "Besteuerungsanteil (§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG) — ein anderes "
+        "Jahr waere eine falsche Steuer, kein Formatfehler.")
+
+
+@pytest.mark.parametrize("kz", ["E1801701", "E1803202"])
+def test_alle_rentenbeginn_kz_tragen_datumsformat(kz):
+    """Die beiden uebrigen Zweige desselben Slots (private Leibrente -> E1801701, sonstige ->
+    E1803202) verlangen laut XSD denselben Typ DatumTTpMMpJJJJBekanntBaseCType_RABE.
+
+    Der Defekt war Kz-unabhaengig (der Schreibpfad kannte nur `typ == "cent"`), also muss die
+    Umrechnung alle drei Zweige treffen — nicht nur den gemessenen gesetzliche_rente-Fall.
+    Dieser Test haelt die Menge vollstaendig: faellt ein Zweig heraus, bekaeme er wieder den
+    rohen Jahreswert.
+    """
+    assert kz in est_mapping._DATUMS_KZ, (
+        f"{kz} fehlt in est_mapping._DATUMS_KZ — der Art-Zweig {kz} bekaeme wieder den rohen "
+        "Jahreswert und ERiC wiese die Erklaerung ab.")
+
+
+# ------------------------------------------------- der dritte Schreiber (person_b)
+
+_PARTNER = (
+    ("stammdaten_nachname_partner", "Schulz"), ("stammdaten_vorname_partner", "Erik"),
+    ("stammdaten_geburtsdatum_partner", "02.02.1953"), ("kist_konfession_partner", "keine"),
+    ("rentner_renten_art_partner", "private_leibrente"),
+    ("rentner_jahresrente_partner", 900_000),
+    ("rentner_renten_beginn_jahr_partner", 2012),
+    ("rentner_alter_bei_rentenbeginn_partner", 63),
+)
+
+
+def test_rentenbeginn_partner_schreibt_datumsformat():
+    """Dritter Schreiber: der Person-B-Bucket (Zusammenveranlagung) — lief bei der ersten
+    Messung NICHT durch und war deshalb unbelegt.
+
+    Ohne diesen Test bleibt genau die Zusammenveranlagung kaputt: der Partner-Wert laeuft ueber
+    PARTNER_VERZWEIGUNG in `person_b`, einen anderen Topf als `deklaration`. Gemessen am
+    2026-09-26 mit echtem ERiC: E1801701 (private Leibrente, Person B) kam als roher
+    Jahreswert heraus und wurde abgewiesen ('Bitte geben Sie ein gueltiges Datum TT.MM.JJJJ
+    ein'), in einem EIGENEN Container /R[2]/Leibr_priv[1].
+
+    Die Kohorte ist 2012 (nicht 2015 wie Person A) — eine Verwechslung der beiden Jahreszahlen
+    faellt damit auf, statt als richtig durchzugehen.
+    """
+    s = ST.leerer_store(2025, fall_id="rentenbeginn_partner")
+    for f, w in _BASIS_RENTNER_MIT_RENTE + _PARTNER:
+        _b(s, f, w)
+    _b(s, "veranlagung", "zusammen")
+    bindung = TR.lade_bindung()
+    felder, sid = ST.materialisiere(s)
+    dekl = est_mapping.deklariere(felder, bindung, snapshot_id=sid)
+    xml = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="74931", abgabefaehig=True, **_ABSENDER)
+    xml = xml if isinstance(xml, str) else xml.decode("utf-8")
+
+    text = _kz_text(xml, "E1801701")
+    assert text is not None, (
+        "E1801701 (Beginn der Rente, Person B) nicht im XML — der Person-B-Zweig wurde nicht "
+        "geschrieben; der Testaufbau erreicht den dritten Schreiber nicht.")
+    assert text == "01.01.2012", (
+        f"E1801701 = {text!r}, erwartet '01.01.2012' (Jahr des Partners aus dem Store). "
+        "Ein roher Jahreswert ('2012') oder das Jahr von Person A ('01.01.2015') ist falsch.")
