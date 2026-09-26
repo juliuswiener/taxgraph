@@ -120,6 +120,23 @@ braucht_eric = pytest.mark.skipif(
            "(credential-freies CI)")
 
 
+# Fuer Tests, die das XML nur LESEN (Format, anwesende/fehlende Kz) und ERiC nie erreichen:
+# erzeuge_xml() verlangt eine Hersteller-ID, und ohne .env ist keine da. Der Dummy gilt nur
+# fuer die Dauer EINES Tests. Auf Modulebene gesetzt (so bis 10baecb) galt er ab der Sammlung
+# fuer jeden spaeteren Test im selben Prozess; weil er das XSD-Muster verletzt, liefen
+# ERiC-Tests damit rot (rc=610301200) statt mangels ID zu skippen.
+@pytest.fixture
+def hid_attrappe(monkeypatch):
+    """Setzt $ELSTER_HERSTELLER_ID fuer genau diesen Test — nur, wenn keine da ist.
+
+    Funktions-Scope ist der Punkt, nicht Bequemlichkeit: monkeypatch nimmt den Wert danach
+    zurueck, und `_HID`/`_ERIC_DA` oben bleiben davon unberuehrt, weil sie beim Import
+    gerechnet werden.
+    """
+    if not os.environ.get("ELSTER_HERSTELLER_ID", "").strip():
+        monkeypatch.setenv("ELSTER_HERSTELLER_ID", "00000000000")
+
+
 def _b(s, feld_id, wert):
     ST.append_event(store=s, feld_id=feld_id, wert=wert, zustand="bestaetigt",
                     herkunft=_H, schreiber="ui:laie",
