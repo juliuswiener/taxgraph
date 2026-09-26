@@ -353,14 +353,49 @@ def _shared_steuer_sonder_agb(g_dict, gde, ausserg, veranlagung,
             agb_cent = max(0, agb_cent - _c("behinderungsbedingte_aufwendungen_partner"))
         elif partner_pb_eur > 0 and wahlrecht_pb_partner is False:
             ausserg = max(0, ausserg - partner_pb_eur)
-    g_dict["aussergewoehnliche_belastungen"] = ausserg + runner.catala_p33_agb({
+    # § 33 Abs. 1/2 S. 1 EStG: der Abzug setzt ZWEI Tatbestandsmerkmale voraus — die
+    # Aufwendungen müssen zwangsläufig erwachsen und den Umständen nach notwendig sein und
+    # einen angemessenen Betrag nicht übersteigen. Beide stehen in der Bindung als
+    # geltungsbedingung an p33_1_2_agb_abzug (askable, typ bool); keine von beiden ist eine
+    # Betragsgrenze. Bis 2026-09-26 erreichten sie die Regel NIE: catala_p33_agb bekam vier
+    # Schlüssel, die beiden fehlten, und die Catala-Regel AgbAbzug kennt sie auch nicht
+    # (zwei Eingaben). Gemessen bei 20.000 EUR Lohn, scheibe gesamt, einzel, kinderlos, zwei
+    # Aufwandsstufen: ein bestätigtes NEIN lieferte dieselbe Zahl wie ein bestätigtes JA (bei
+    # 10.000 EUR Aufwand 0 Cent, bei 3.000 EUR 84.300 Cent). Richtig ist für das NEIN in BEIDEN
+    # Fällen 132.700 Cent — die Steuer ohne wirksamen Abzug. (843,00 EUR ist der Wert MIT Abzug
+    # bei 3.000 EUR Aufwand, nicht der Wert des verneinten Falls.)
+    #
+    # ponytail: Das Gesetz sagt "soweit die Aufwendungen ... notwendig sind und einen
+    # angemessenen Betrag nicht übersteigen" — rechtlich eine TEILWEISE Begrenzung (nur der
+    # angemessene Teil zählt). Der Bestand hat dafür nur ein bool (askable geltungsbedingung,
+    # kein Betragsfeld, und das Gesetz nennt keine Formel). Dieses Gate liest es deshalb grob:
+    # nein -> 0, ja -> voller Betrag. Das ist die SICHERE der beiden groben Lesarten.
+    #
+    # ENTSCHIEDEN 2026-09-26 (Instructor, gegen das Gesetzeszitat geprüft): die grobe Lesart
+    # BLEIBT, und es wird KEIN Betragsfeld gebaut. Grund: ohne Formel und ohne Bezugsgröße
+    # würde ein Betragsfeld eine Zahl erfinden. Aufstiegstrigger: erst wenn die Anleitung oder
+    # ein amtliches Schreiben eine Bezugsgröße nennt ("angemessen" im Verhältnis Wozu), wird
+    # "agb_angemessener_teil" mit Deckelung statt Nullung gebaut. Bis dahin nicht.
+    #
+    # Der Guard sitzt im Ring, nicht in der Regel — Bauform wie p35c_keine_doppelfoerderung
+    # zwanzig Zeilen darüber: die Catala-Regel bleibt rein, das Gate wertet der Ring aus.
+    #
+    # Polarität (decisions/fehlende-antwort-sperrt-nicht-die-antwort-nein.md, 2026-09-26):
+    # ein FEHLENDER Wert sperrt (input_kegel_nicht_bestaetigt — das leistet der Kegel, der
+    # beide Felder seit 2026-09-25 führt). Ein bestätigtes NEIN sperrt NICHT: es ist ein
+    # rechenbares Ergebnis Null, die Auskunft bleibt "bestätigt". Deshalb `is False` und
+    # nicht `is not True` — der Unterschied ist genau der zwischen Nein und keiner Antwort.
+    _p33_tatbestand = (f_dict.get("agb_zwangslaeufig", {}).get("wert") is False
+                       or f_dict.get("agb_notwendig_angemessen", {}).get("wert") is False)
+    g_dict["aussergewoehnliche_belastungen"] = ausserg + (0 if _p33_tatbestand else
+        runner.catala_p33_agb({
         "aussergewoehnliche_belastungen": (agb_cent // 100
             + runner.catala_p33_2a_fahrtkostenpauschale({
                 "veranlagungszeitraum": vz,
                 "hat_gdb80_oder_70g": f_dict.get("fahrtkosten_pausch_gdb80_oder_70g", {}).get("wert") is True,
                 "hat_ag_bl_tbl_h": f_dict.get("fahrtkosten_pausch_ag_bl_tbl_h", {}).get("wert") is True})),
         "gesamtbetrag_der_einkuenfte": gde, "anzahl_kinder": _c("fam_anzahl_kinder"),
-        "splitting": veranlagung == "zusammen"})
+        "splitting": veranlagung == "zusammen"}))
 
 
 def _p33b_kind_pauschbetraege(store, bindung: dict, nur_bestaetigt: bool, vz: int) -> int:
