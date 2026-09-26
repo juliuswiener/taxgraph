@@ -1349,9 +1349,15 @@ bindungen:
     typ: bool
     einheit: null
     askable: true
+    # KEIN Gate (2026-09-26). Die Frage erhebt eine Angabe UEBER DIE EINGABE, nicht eine
+    # Voraussetzung der Regel: "nein" heisst nicht "§ 6 Abs. 2 gilt nicht", sondern "der
+    # eingegebene Betrag ist brutto" — und dann gilt die Regel mit dem Bruttobetrag (§ 9b Abs. 1
+    # EStG, Anleitung EÜR 2025 Z. 1126). Als Gate schloss ein wahrheitsgemaesses "nein" des
+    # Kleinunternehmers die ganze Regel aus, samt der Folgefrage, die seinen Abzug rettet.
+    gate: false
     vorjahr: uebernehmbar
     fragetext_laie: "Ist der Preis, den du angibst, ohne Mehrwertsteuer (netto)?"
-    hilfe_kurz: "Wenn du die Mehrwertsteuer vom Finanzamt zurückbekommst, rechnest du netto."
+    hilfe_kurz: "Wenn du die Mehrwertsteuer vom Finanzamt zurückbekommst, rechnest du netto. Bekommst du sie nicht zurück (zum Beispiel als Kleinunternehmer), gibst du den Preis mit Mehrwertsteuer an und antwortest hier mit nein."
     beispielwert: true
     herkunft_slots: null
     elster_kz: null

@@ -82,6 +82,14 @@ DEKLARATION_STATT_GATE = [
     # bei einer Unterkunft im AUSLAND dann NICHT gilt. Sie hebt eine Obergrenze auf, ist also
     # günstig — als Gate schloss sie aus, und zwar auch im Inland, wo die Norm sie nicht erwähnt.
     ("dhf_keine_pflicht_dienstwohnung", "p9_1_3_nr5_doppelte_haushaltsfuehrung"),
+    # 2026-09-26, GWG-Brutto-Pfad. § 9b Abs. 1 EStG nimmt nur die ABZIEHBARE Vorsteuer aus den
+    # Anschaffungskosten; wer sie nicht abziehen darf, zieht brutto ab (Anleitung EÜR 2025
+    # Z. 1126: "Kleinunternehmer geben den Bruttobetrag an"). "Netto? nein" ist damit eine
+    # Angabe über die EINGABE, keine Voraussetzung — als Gate nahm sie dem Kleinunternehmer die
+    # ganze GWG-Familie aus dem Dialog, samt der Folgefrage, die seinen Abzug rettet.
+    # GEMESSEN vor dem Umbau, über den HTTP-Pfad: netto=nein -> p6_2_gwg_sofortabzug
+    # "ausgeschlossen", alle drei gwg-Felder aus /fragen.
+    ("gwg_netto_ohne_vorsteuer", "p6_2_gwg_sofortabzug"),
 ]
 
 
