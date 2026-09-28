@@ -794,3 +794,38 @@ def test_kist_rentner_p32b_delta_guenstigerpruefung(base):
         f"KiSt ohne/mit Progressionseinkuenften {k_ohne}/{k_mit}, erwartet 0/684 CENT. "
         f"0/0 heisst: der § 32b-Zuschlag fehlt in der Basis. Deutlich mehr als 684 hiesse: "
         f"der Delta zaehlt das Kapital doppelt.")
+
+
+# ===== §51a Abs. 2 S. 1: die KiSt-Basis rechnet mit den Freibetraegen nach § 32 Abs. 6 =====
+#
+# "... wobei die Freibeträge nach § 32 Absatz 6 in allen Fällen des § 32 festzusetzen wären"
+# (sources/gesetze-im-internet/estg_p51a_2026-09-26.txt) — auch wenn das Kindergeld guenstiger ist
+# und die festzusetzende ESt deshalb OHNE Freibetrag rechnet. Ohne festen Sollwert: die Basis mit
+# Kind muss genau der Basis OHNE Kind bei um die Freibetraege (params/2025/kinderfreibetrag_p32.yaml,
+# je Elternteil 3.336 + 1.464 EUR) gesenktem Lohn entsprechen. Gemessen 2026-09-28: 1.090,26 EUR
+# in beiden Faellen, ohne Kind 1.253,16 EUR; die ESt mit Kind == ohne Kind (Kindergeld guenstiger).
+
+def _kist_fall(base, fid, lohn, kinder=0):
+    kegel = [(f, (lohn if f == "bruttoarbeitslohn" else w)) for f, w in GESAMT_KEGEL_BASE]
+    kegel += [("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
+              ("kist_bundesland", "nordrhein_westfalen")]
+    if kinder:
+        kegel.append(("fam_anzahl_kinder", kinder))
+    _anlegen(base, fid, "gesamt", kegel)
+    st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+    assert st == 200 and erg["grund"] == "bestaetigt", erg.get("grund")
+    return erg
+
+
+def test_kist_basis_mit_kinderfreibetrag_auch_wenn_kindergeld_guenstiger(base):
+    if not _catala_da():
+        pytest.skip("Catala nicht verfügbar")
+    mit_kind = _kist_fall(base, "k51a_kind", 6000000, kinder=1)
+    ohne_kind = _kist_fall(base, "k51a_ohne", 6000000)
+    gesenkt = _kist_fall(base, "k51a_gesenkt", 6000000 - 480000)
+    assert mit_kind["zahl_cent"] == ohne_kind["zahl_cent"], (
+        "Voraussetzung: bei 60.000 EUR ist das Kindergeld guenstiger, die ESt rechnet ohne Freibetrag")
+    assert mit_kind["kist_cent"] == gesenkt["kist_cent"] < ohne_kind["kist_cent"], (
+        f"KiSt mit Kind {mit_kind['kist_cent']}, ohne Kind bei um 4.800 EUR gesenktem Lohn "
+        f"{gesenkt['kist_cent']}, ohne Kind {ohne_kind['kist_cent']} — die Basis muss die "
+        f"Freibetraege nach § 32 Abs. 6 abziehen (§ 51a Abs. 2 S. 1)")
