@@ -989,7 +989,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
     for _fid, _w in (("betriebseinnahmen", betriebseinnahmen),           # § 4 Abs. 3 EÜR-Komponenten (2a, cent, optional)
                      ("sonstige_betriebsausgaben", sonstige_betriebsausgaben),
                      ("afa_jahresbetrag", afa_jahresbetrag)):
-        if _w:
+        if _w or (gwg and not gewinn):             # GWG eröffnet den EÜR-Weg: bestätigte 0 statt unbeantwortet
             k.append((_fid, _w))
     if betriebsart is not None:                    # gewinn_betriebsart-Weiche (land_forst-Guard-Test)
         k.append(("gewinn_betriebsart", betriebsart))

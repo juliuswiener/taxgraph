@@ -76,6 +76,8 @@ _KEGEL = kegel_fuer("gesamt", {
     "bruttoarbeitslohn": 6000000,
     "vv_entgelt_quote_prozent": 100,
     "kein_gewinn": False,
+    # GWG-Zeile eröffnet den EÜR-Weg; ohne bestätigte EÜR-Angaben sperrt gewinn_angaben_offen (2026-09-28).
+    "betriebseinnahmen": 0, "sonstige_betriebsausgaben": 0, "afa_jahresbetrag": 0,
     "agb_zwangslaeufig": True,
     "agb_notwendig_angemessen": True,
 })

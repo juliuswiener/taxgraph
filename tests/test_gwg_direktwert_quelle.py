@@ -215,3 +215,41 @@ def test_luf_mit_direktwert_rechnet(fall):
     erg = fall({**LUF, "einkuenfte_gewinn": 5000000})
     assert erg["grund"] == "bestaetigt", f"grund={erg['grund']!r}"
     assert erg["zahl_cent"] is not None
+
+
+# Eine EÜR-Angabe, die das Gewinn-Thema eröffnet (kein_gewinn = nein) und unbeantwortet lässt,
+# lief still als 0 (gemessen 2026-09-28 an 9fdcc92, Lohn 60.000 €, Einnahmen 30.000 € fehlen:
+# 11.311 statt 23.416 € Steuer, grund 'bestaetigt'). Entscheidung:
+# [[fehlender-betrag-sperrt-bedingt-bestaetigte-null-ist-antwort]].
+EUER = {"kein_gewinn": False, "bruttoarbeitslohn": 6000000, "betriebseinnahmen": 3000000,
+        "sonstige_betriebsausgaben": 500000, "afa_jahresbetrag": 200000}
+
+
+@pytest.mark.parametrize("fehlt", ["betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahresbetrag"])
+def test_euer_angabe_unbeantwortet_sperrt(tmp_path, monkeypatch, fehlt):
+    """DER ROTE FALL: Gewinn-Thema eröffnet, kein Direktwert, eine EÜR-Angabe fehlt."""
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
+    st, r = API.fall_anlegen({"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "eu"})
+    assert st == 201, r
+    for feld_id, wert in _kegel.kegel_fuer("gesamt", EUER):
+        if feld_id != fehlt:
+            st, r = API.event("eu", _laie(feld_id, wert))
+            assert st == 201, f"{feld_id}: {r}"
+    st, erg = API.ergebnis("eu")
+    assert erg["grund"] == "gewinn_angaben_offen", (
+        f"{fehlt} fehlt, rechnet still: grund={erg['grund']!r}, zahl_cent={erg['zahl_cent']}")
+    assert erg["zahl_cent"] is None
+
+
+def test_euer_bestaetigte_null_ist_antwort(fall):
+    """GEGENPROBE: dieselbe Angabe als bestätigte 0 rechnet (eine Null ist eine Antwort)."""
+    erg = fall({**EUER, "afa_jahresbetrag": 0})
+    assert erg["grund"] == "bestaetigt", f"grund={erg['grund']!r}"
+    assert erg["zahl_cent"] == 2425600
+
+
+def test_euer_ohne_komponenten_mit_direktwert_rechnet(fall):
+    """GEGENPROBE: wer den Gewinn direkt angibt, muss die EÜR-Felder nicht beantworten."""
+    erg = fall(dict(DIREKTWERT))
+    assert erg["grund"] == "bestaetigt", f"grund={erg['grund']!r}"

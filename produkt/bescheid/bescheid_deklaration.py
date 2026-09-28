@@ -28,6 +28,7 @@ from api_constants import (  # noqa: E402
     ARBEITSMITTEL_KOSTEN,
     DHF_BEDINGUNGEN,
     DHF_KOSTEN,
+    EUER_KOMPONENTEN,
     GESAMT_PARTNER_19,
     GESAMT_PARTNER_KAP,
     GEWINN_QUELLEN_MENGEN,
@@ -502,6 +503,11 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "Bitte sieh dir beide Angaben noch einmal an.",
 
     # ---- (1) Eine Angabe oder Antwort fehlt noch -------------------------------------------------
+    "gewinn_angaben_offen":
+        "Du hast angegeben, dass du Gewinneinkünfte hast. Es fehlen noch Angaben zu deiner "
+        "Einnahmen-Überschuss-Rechnung: Betriebseinnahmen, sonstige Betriebsausgaben oder "
+        "Abschreibungen. Trag bei jeder dieser Angaben einen Betrag ein, auch wenn er 0 € ist. "
+        "Oder gib deinen Gewinn direkt als Gesamtbetrag an.",
     "berufsunfaehigkeit_offen":
         "Du hast den ermäßigten Steuersatz für den Verkauf oder die Aufgabe deines Betriebs "
         "beantragt. Vor dem 55. Geburtstag steht er dir nur zu, wenn du dauernd berufsunfähig bist. "
@@ -1053,6 +1059,16 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if (felder.get("gewinn_betriebsart", {}).get("wert") == "land_forst"
                 and any(_positiv(k) for k in GEWINN_QUELLEN_MENGEN) and not _positiv("einkuenfte_gewinn")):
             return "luf_euer_offen"
+        # § 4 Abs. 3 EÜR, fail-closed: der EÜR-Weg ist begonnen (eine EÜR-Angabe oder GWG-Zeile ist bestätigt —
+        # dieselbe Menge, die _laufender_gewinn umschalten lässt), kein Direktwert, und eine andere EÜR-Angabe
+        # ist unbeantwortet → der Ring läse sie als 0 (gemessen 2026-09-28: Einnahmen 30.000 € fehlen →
+        # 11.311 statt 23.416 € Steuer, grund bestaetigt). Eine bestätigte 0 ist eine Antwort. NICHT schon
+        # bei kein_gewinn = nein: Mitunternehmer und Betriebsverkäufer haben oft keine eigene EÜR.
+        # [[fehlender-betrag-sperrt-bedingt-bestaetigte-null-ist-antwort]]
+        if (any((felder.get(k) or {}).get("zustand") == "bestaetigt" for k in GEWINN_QUELLEN_MENGEN)
+                and not _positiv("einkuenfte_gewinn")
+                and any((felder.get(k) or {}).get("zustand") != "bestaetigt" for k in EUER_KOMPONENTEN)):
+            return "gewinn_angaben_offen"
         # § 35 GewSt-Anrechnung (S1, fail-closed): der Steuermessbetrag ist da (opt-in), aber der Hebesatz fehlt →
         # die Anrechnung min(4×MB, MB×Hebesatz, …) ist ohne Hebesatz nicht rechenbar. KEIN 4×MB-Default (der
         # über-creditete bei Hebesatz < 400 % = Under-tax) → gewst_hebesatz_offen. Kein gewst_messbetrag = kein § 35

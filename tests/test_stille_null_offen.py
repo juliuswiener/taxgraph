@@ -137,6 +137,11 @@ class TestGwgStilleNull:
         fid = _neuer_fall(tmp_path, monkeypatch, "sn-gwg-b", kegel_overrides={"kein_gewinn": False})
         st, r = API.event(fid, _laie("gwg_anschaffungskosten_netto", 50000, "bestaetigt"))
         assert st == 201, r
+        # Die bestätigte GWG-Zeile eröffnet den EÜR-Weg; ohne bestätigte EÜR-Angaben sperrt
+        # gewinn_angaben_offen (2026-09-28). Nullen ändern die Zahl nicht.
+        for _fld in ("betriebseinnahmen", "sonstige_betriebsausgaben", "afa_jahresbetrag"):
+            st, r = API.event(fid, _laie(_fld, 0, "bestaetigt"))
+            assert st == 201, r
         # Schritt 2 (2026-09-07): dieselben drei Pflichtfragen wie oben, hier bestaetigt statt
         # vorlaeufig -- sonst sperrt gwg_tatbestand_offen VOR der hier zu pruefenden Zahl-Wirkung.
         for _fld in ("gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250"):
