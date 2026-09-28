@@ -504,6 +504,15 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "Bitte sieh dir beide Angaben noch einmal an.",
 
     # ---- (1) Eine Angabe oder Antwort fehlt noch -------------------------------------------------
+    "realsplitting_angaben_offen":
+        "Du zahlst Unterhalt an deinen geschiedenen oder getrennt lebenden Ehepartner. Es fehlt "
+        "noch der Betrag oder die Antwort, ob der Empfänger dem Abzug zugestimmt hat (Anlage U). "
+        "Ohne Zustimmung gibt es den Abzug nicht. Bitte beantworte beide Fragen.",
+    "fahrtkostenpauschale_offen":
+        "Für die Fahrtkostenpauschale bei Behinderung fehlt noch eine Antwort: ob du eines der "
+        "Merkzeichen aG, Bl, TBl oder H hast, oder ob dein Grad der Behinderung mindestens 80 "
+        "beträgt (oder mindestens 70 mit Merkzeichen G). Bitte beantworte die Fragen, auch wenn "
+        "die Antwort „nein“ ist.",
     "lohnersatz_betrag_offen":
         "Du hast angegeben, dass du Lohnersatzleistungen bekommen hast, etwa Elterngeld, "
         "Krankengeld oder Arbeitslosengeld. Es fehlt noch der Betrag. Er ist steuerfrei, erhöht "
@@ -1101,6 +1110,23 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         if (felder.get("kist_konfession", {}).get("wert") not in (None, "keine")
                 and any((felder.get(k) or {}).get("zustand") != "bestaetigt" for k in AGB_KIST)):
             return "kirchensteuer_betrag_offen"
+        # § 10 Abs. 1a Nr. 1: Realsplitting nur „mit Zustimmung des Empfängers". Offen ist nicht nein: der
+        # Ring rechnete ohne Abzug weiter (`is True else 0`). Eine verneinte Zustimmung schließt die Regel aus,
+        # dann wird auch der Betrag nicht verlangt.
+        if (felder.get("kein_realsplitting", {}).get("wert") is False
+                and not ((felder.get("realsplitting_zustimmung") or {}).get("zustand") == "bestaetigt"
+                         and felder.get("realsplitting_zustimmung", {}).get("wert") is False)
+                and ((felder.get("realsplitting_zustimmung") or {}).get("zustand") != "bestaetigt"
+                     or (felder.get("realsplitting_unterhaltsleistungen") or {}).get("zustand") != "bestaetigt")):
+            return "realsplitting_angaben_offen"
+        # § 33 Abs. 2a S. 2: zwei ODER-Wege, 900 € (Nr. 1) und 4.500 € (Nr. 2, schließt Nr. 1 aus). Offen ist
+        # die Pauschale, solange eine noch zählende Frage unbeantwortet ist: aG/Bl/TBl/H offen — oder verneint
+        # und die 900-€-Frage offen. aG/Bl/TBl/H = ja entscheidet allein, dann sperrt nichts.
+        if (felder.get("keine_behinderung_pflege", {}).get("wert") is False
+                and felder.get("fahrtkosten_pausch_ag_bl_tbl_h", {}).get("wert") is not True
+                and ((felder.get("fahrtkosten_pausch_ag_bl_tbl_h") or {}).get("zustand") != "bestaetigt"
+                     or (felder.get("fahrtkosten_pausch_gdb80_oder_70g") or {}).get("zustand") != "bestaetigt")):
+            return "fahrtkostenpauschale_offen"
         # § 35 GewSt-Anrechnung (S1, fail-closed): der Steuermessbetrag ist da (opt-in), aber der Hebesatz fehlt →
         # die Anrechnung min(4×MB, MB×Hebesatz, …) ist ohne Hebesatz nicht rechenbar. KEIN 4×MB-Default (der
         # über-creditete bei Hebesatz < 400 % = Under-tax) → gewst_hebesatz_offen. Kein gewst_messbetrag = kein § 35

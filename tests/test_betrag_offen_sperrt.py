@@ -90,3 +90,40 @@ def test_bestaetigte_null_rechnet(fall, offen, feld, wert, grund, verneint):
 def test_verneintes_thema_rechnet(fall, offen, feld, wert, grund, verneint):
     erg = fall(dict(verneint), ohne=feld)
     assert erg["grund"] == "bestaetigt", f"Thema verneint, {feld} fehlt zu Recht: {erg['grund']!r}"
+
+
+# Ja/Nein-Voraussetzungen (Audit askable-felder-ohne-sperrgrund). § 34c Abs. 2 (DBA-Abzug) fehlt
+# hier absichtlich: der Abzug gilt „auf Antrag", unbeantwortet = Anrechnung = richtig.
+RS = {"kein_realsplitting": False, "realsplitting_unterhaltsleistungen": 1000000,
+      "realsplitting_zustimmung": True}
+FK = {"keine_behinderung_pflege": False, "fahrtkosten_pausch_gdb80_oder_70g": False,
+      "fahrtkosten_pausch_ag_bl_tbl_h": True}
+
+
+@pytest.mark.parametrize("ohne", ["realsplitting_zustimmung", "realsplitting_unterhaltsleistungen"])
+def test_realsplitting_offen_sperrt(fall, ohne):
+    """§ 10 Abs. 1a Nr. 1: Abzug nur „mit Zustimmung des Empfängers" — offen heißt nicht nein."""
+    erg = fall(dict(RS), ohne=ohne)
+    assert erg["grund"] == "realsplitting_angaben_offen", f"{ohne} fehlt: {erg['grund']!r} {erg['zahl_cent']}"
+
+
+def test_realsplitting_verneinte_zustimmung_rechnet(fall):
+    """GEGENPROBE: Zustimmung verneint → kein Abzug, aber eine Antwort; Betrag wird nicht verlangt."""
+    erg = fall({**RS, "realsplitting_zustimmung": False}, ohne="realsplitting_unterhaltsleistungen")
+    assert erg["grund"] == "bestaetigt", erg["grund"]
+
+
+@pytest.mark.parametrize("gesetzt,ohne", [
+    ({}, "fahrtkosten_pausch_ag_bl_tbl_h"),
+    ({"fahrtkosten_pausch_ag_bl_tbl_h": False}, "fahrtkosten_pausch_gdb80_oder_70g"),
+])
+def test_fahrtkostenpauschale_offen_sperrt(fall, gesetzt, ohne):
+    """§ 33 Abs. 2a S. 2: zwei Oder-Wege (900 € / 4.500 €) — offen, solange einer noch zählen kann."""
+    erg = fall({**FK, **gesetzt}, ohne=ohne)
+    assert erg["grund"] == "fahrtkostenpauschale_offen", f"{ohne} fehlt: {erg['grund']!r} {erg['zahl_cent']}"
+
+
+def test_fahrtkostenpauschale_4500_braucht_die_900_frage_nicht(fall):
+    """GEGENPROBE (Oder-Falle): aG/Bl/TBl/H = ja → 4.500 € stehen fest, die 900-€-Frage ändert nichts."""
+    erg = fall(dict(FK), ohne="fahrtkosten_pausch_gdb80_oder_70g")
+    assert erg["grund"] == "bestaetigt", erg["grund"]
