@@ -208,7 +208,7 @@ def _feste_zahl(felder: dict, bindung: dict, cfg: dict, vz: int, scheibe_felder:
     zustaende = [felder[f]["zustand"] for f in scheibe_felder if f in felder]
     if len(zustaende) < len(scheibe_felder) or ST.meet_zustand(zustaende) != "bestaetigt":
         return None
-    # Klasse C (BACKLOG klasse-c-vorlaeufiges-einkommen-faellt-still-aus): der Kegel oben ist nur
+    # Klasse C ([[klasse-c-vorlaeufiger-betrag-sperrt]]): der Kegel oben ist nur
     # die PFLICHT-Seite. Ein vorlaeufiger Betrag AUSSERHALB des Kegels faellt in _bescheid_fn
     # still aus der Zahl (over-tax-safe, s. dort) -- die Zahl waere zu niedrig und hiesse trotzdem
     # "bestaetigt". Gemessen: 100.000 EUR vorlaeufiger Veraeusserungsgewinn = 23.100 EUR zu wenig,
