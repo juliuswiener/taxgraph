@@ -1,0 +1,15 @@
+[package]
+name = "catala-sys"
+version = "0.0.0"
+edition.workspace = true
+publish.workspace = true
+links = "catala_taxrules"
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[build-dependencies]
+cc.workspace = true

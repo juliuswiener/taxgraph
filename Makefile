@@ -210,6 +210,21 @@ abgabeweg-freigabe:
 	PYTHONPATH=tests$${PYTHONPATH:+:$$PYTHONPATH} \
 	python3 -m pytest tests/test_einreichen_durchstich.py -q -rs -p skip_ist_rot
 
+## Rust-Port (REWRITE_PLAN.md). Der generierte Catala-C-Backend liegt committed unter
+## rust/catala-sys/generated/ -- catala-c regeneriert ihn (braucht den Opam-Switch).
+catala-c:
+	$(OPAM_ENV); bash rust/catala-sys/gen.sh
+
+rust-build:
+	cd rust && cargo build
+
+## clippy -D warnings VOR den Tests: ein Lint-Fehler soll den Lauf so rot machen wie ein
+## Testfehler. PARITY=1 erzwingt die Tarif-Paritaet gegen tools/parity/oracle.py (braucht den
+## Opam-Switch + produkt/); ohne PARITY laufen diese Tests als No-op gruen durch (CI hat kein
+## Catala/Python-Environment).
+rust-test:
+	cd rust && cargo build && cargo clippy --all-targets -- -D warnings && cargo test
+
 clean:
 	$(OPAM_ENV); clerk clean || true
 	rm -rf _build _target oracle/gettsim/_catala

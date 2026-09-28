@@ -1,0 +1,17 @@
+[package]
+name = "parity"
+version = "0.0.0"
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+catala-sys = { path = "../catala-sys" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

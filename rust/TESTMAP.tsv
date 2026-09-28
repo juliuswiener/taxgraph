@@ -1,0 +1,302 @@
+file	lines	n_tests	xfail	category	target_module	replacing_guarantee_or_note
+tests/conftest.py	411	0	0	NOT_PORTED	produkt/auth/audit	[deps: catala-guard,eric-skip] pytest fixtures + guard against writes to real audit.jsonl -> AuditLog path injected via constructor (no global AUDIT_DIR), tempdir per cargo test
+tests/_kegel.py	171	0	0	NOT_PORTED	produkt/haut/api_constants (SCHEIBEN kegel)	test helper duplicating Pflicht-Kegel -> Kegel derived from one const SCHEIBEN table, tests call the same fn
+tests/skip_ist_rot.py	46	0	0	NOT_PORTED	(pytest plugin)	skip counted as red -> cargo feature `eric`; CI job for Abgabeweg builds with --features eric so tests cannot be silently skipped
+tests/test_abgabescheibe_gate.py	161	4	0	NOT_PORTED	produkt/bindung (Scheiben)	subset-seam check (Abzugs-Kz without Kuerzungs-Kz) -> Kz-Gruppe as one struct in Bindung; build.rs rejects Scheibe binding a partial group
+tests/test_ableitung_reihenfolge.py	258	17	0	PROPERTY	produkt/bescheid/bescheid_abzuege	proptest: any permutation of the same event set yields identical Abzug (order independence)
+tests/test_a_b_lp_summenfehler.py	137	2	4	GOLDEN	elster/elster_xml	XML expectation Pers A/B with Person discriminator (xfail=known bug); minority: A/B symmetry property
+tests/test_absendeknopf_im_browser.py	351	9	0	INTEGRATION	produkt/haut/api (+app.js)	[deps: http-local] browser button -> POST /einreichen, never sends; checkESt mocked
+tests/test_abzinsungsfaktor.py	34	3	0	GOLDEN	params/<vz>/abzinsungsfaktor	BMF table Stuetzwerte as fixture; minority: regeneration byte-identity stays TOOLING (generator script)
+tests/test_afa_kohorten.py	51	3	0	GOLDEN	params/<vz>/afa_kohorten	norm values + E-Kfz Staffel sum=100 (sum could be a const assert in build.rs)
+tests/test_agb_kist_p33_p10.py	108	9	0	GOLDEN	golden/runner (catala_p33/p10 accessors)	[deps: catala] accessor seeds for §33 zumutbar/agB/§10 KiSt
+tests/test_an_gesamt_afa_und_verpflegungskuerzung.py	294	7	0	GOLDEN	produkt/bescheid (Scheibe an_gesamt)	[deps: catala] measured EUR cases AfA-Zwoelftelung + Verpflegungskuerzung
+tests/test_append_event_bindung_gate.py	255	8	0	NOT_PORTED	produkt/store/store	AST scan of append_event callers -> append_event(&Bindung, ...) takes non-Option parameter; call without Bindung does not compile
+tests/test_art9_nicht_an_llm.py	245	8	0	NOT_PORTED	produkt/haut/api_llm, pii_filter	Art.9 fields to LLM -> newtype Art9<T> without Serialize/Into<PromptKontext>; prompt builder cannot accept it; minority: 1 integration check of /chat prompt
+tests/test_audit_kz_in_assert.py	5	0	0	NOT_PORTED	-	empty stub (moved to test_bindungstabelle::test_m_); delete
+tests/test_audit.py	364	17	0	NOT_PORTED	produkt/auth/audit	AuditLog API exposes only append() on O_APPEND handle (no truncate/rewrite method); detail as typed enum without free String -> PII unrepresentable; user_id as Option handled by type; minority: 1 concurrency integration test
+tests/test_auth_comprehensive.py	411	20	0	INTEGRATION	produkt/auth/auth	[deps: http-local] register/login/logout/JWT/authz e2e; dedupe with test_auth_integration/test_auth_security
+tests/test_auth_integration.py	267	15	0	INTEGRATION	produkt/auth/auth	[deps: http-local] overlaps test_auth_comprehensive heavily; merge on port
+tests/test_auth_naht_mutation.py	170	5	0	NOT_PORTED	produkt/haut/api_auth	Python from-import binds value not name -> no such semantics in Rust; authenticated user passed as AuthedUser extractor type
+tests/test_auth_security.py	328	21	0	INTEGRATION	produkt/auth/auth	[deps: http-local] password hashing/JWT/session; third overlapping auth suite; merge
+tests/test_authz_fail_closed.py	162	9	0	INTEGRATION	produkt/haut/server, api	[deps: http-local] 401 without token, CSRF/Origin/Host; note: router-level AuthedUser extractor makes unauthenticated handler unreachable, keep HTTP checks for CSRF headers
+tests/test_backlog_verweise.py	225	5	0	TOOLING	(vault lint)	dead BACKLOG <slug> comments vs vault; stays a repo lint script
+tests/test_backup_restore_roundtrip.py	212	3	0	TOOLING	Makefile backup/restore	tar roundtrip via Makefile; stays with ops scripts
+tests/test_befund_bindet_an_zustand.py	252	7	0	INTEGRATION	produkt/store + elster/checkest_gate	[deps: eric] ERiC Befund bound to snapshot_id; note: type Befund<SnapshotId> enforces binding, integration keeps hash check
+tests/test_behinderten_pauschbetrag_p33b.py	71	6	0	GOLDEN	params/<vz>/behinderten_pauschbetrag_p33b	§33b GdB table values; tier lookup becomes exhaustive match on GdB enum
+tests/test_beleg_writer.py	351	23	0	GOLDEN	produkt/eingang/beleg_writer	synthetic LStB -> expected candidates; minority: vorlaeufig-only write via Feldzustand enum (NOT_PORTED part)
+tests/test_bescheid_fn_collector.py	239	3	0	NOT_PORTED	produkt/haut/api (_bescheid_fn)	[deps: catala,http-local] one-off refactor equivalence collector -> superseded by full-return GOLDEN fixtures
+tests/test_bescheid_grenze.py	440	8	0	NOT_PORTED	produkt/haut/api vs produkt/bescheid	AST scan: no runner calls in api.py -> haut crate has no dependency on engine crate in Cargo.toml
+tests/test_bestaetigt_wert.py	47	5	0	NOT_PORTED	produkt/bescheid/_helpers	enum Feldzustand{Vorlaeufig,Bestaetigt}; bestaetigt_wert only matches Bestaetigt -> vorlaeufig-as-bestaetigt unrepresentable
+tests/test_betrag_offen_sperrt.py	129	7	0	PROPERTY	produkt/bescheid/bescheid_deklaration	proptest fail-closed-on-missing: opened theme + unanswered Betrag => Sperre, never 0
+tests/test_beweist_existenzfrage.py	345	14	0	PROPERTY	produkt/traverser/traverser	answered detail (e.g. Kinderzahl) implies existence -> existence question never queued
+tests/test_bindung_frage_polaritaet.py	235	9	0	NOT_PORTED	produkt/bindung + traverser	required serde field `polaritaet: Polaritaet` (no default) forces declaration; name-heuristic lint stays in tooling
+tests/test_bindungstabelle_kz_asserts.py	155	7	0	GOLDEN	produkt/mapping/est_mapping	explicit Kz value expectations in Deklaration for 7 Kz
+tests/test_bindungstabelle.py	2225	38	0	NOT_PORTED	produkt/bindung (YAML) + est_mapping	[deps: catala partial] schema/uniqueness/bereich/Kz-exists/AST-parse -> serde deny_unknown_fields on BindungYaml, HashMap build fails on dup feld_id, Bereich newtype min<=max, Kz enum generated from XSD; minority PROPERTY (h: Betrag has Kz or grund) and TOOLING (pipeline.gates anchor normalize)
+tests/test_bindungs_typ_vs_xsd_typ.py	168	2	0	NOT_PORTED	produkt/bindung vs elster XSD	build.rs generates typed Kz from XSD (Ja-type vs number vs enum); Bindung typ mismatch fails compile
+tests/test_bindung_texte_lesbar.py	137	4	0	NOT_PORTED	produkt/bindung (texts)	build.rs lint on user-facing strings (umlauts, no internal ids)
+tests/test_bindung_yaml_laedt.py	123	4	0	NOT_PORTED	produkt/bindung (YAML)	YAML parsed in build.rs/include_str with serde_yaml -> broken file fails build with file name
+tests/test_bootstrap_wie_server.py	246	7	0	NOT_PORTED	produkt/haut/server bootstrap	[deps: catala] sys.path side-effect ordering -> Cargo module resolution, no runtime path
+tests/test_cascade_queue_status.py	85	10	0	TOOLING	pipeline/cascade	queue status false-green rule
+tests/test_charge30_p24a_p24b_p31.py	85	8	0	GOLDEN	golden/runner (catala_p24a/p24b/p31)	[deps: catala] accessor seeds
+tests/test_chat_beleg_gate.py	98	7	0	PROPERTY	produkt/haut/api_llm	proptest: suggestion whose quote is not a substring of user text is rejected
+tests/test_chat_parse_verliert_rechenweg.py	115	3	3	NOT_PORTED	produkt/haut/api_llm (_chat_parse)	serde Deserialize of LlmVorschlag with required `rechenweg` field -> silent loss impossible
+tests/test_chat_prompt_format.py	95	6	0	NOT_PORTED	produkt/haut/api_llm	response type is a serde struct (object root) matching json_object mode; minority: golden prompt snapshot
+tests/test_checkest_blockmatrix.py	367	5	0	INTEGRATION	elster/checkest_gate, elster_xml	[deps: eric] per-block official checkESt
+tests/test_checkest_durchstich.py	525	7	0	INTEGRATION	elster/checkest_gate, elster_xml	[deps: eric] Ring->deklariere->XML->checkESt
+tests/test_checkest_feldmatrix.py	444	9	0	INTEGRATION	elster/checkest_gate, elster_xml	[deps: eric] each Kz field singly against checkESt
+tests/test_checkest_gate.py	161	19	0	NOT_PORTED	elster/checkest_gate (klassifiziere_rc)	exhaustive match on enum EricRc; 610301200 maps to NichtGeprueft, no bool ok -> false green unrepresentable
+tests/test_check_pauschalen.py	167	22	0	PROPERTY	produkt/konsistenz/check_pauschalen	active income source & missing Pauschal field <=> hint
+tests/test_ci_konfiguration.py	950	23	0	TOOLING	.github workflow / requirements / Makefile	[deps: catala-pin, eric-markers] CI manifest, pins, skip markers, import-time env leaks; Rust side: Cargo.lock + #[cfg(feature)]
+tests/test_client_core.py	374	40	0	TOOLING	pipeline/client	mask_key, dry_run, RoleCallError
+tests/test_dateirechte.py	148	7	0	INTEGRATION	produkt/auth, store (file perms)	0600 for secret files; Rust: single write helper with OpenOptions::mode(0o600) + 1 test
+tests/test_datenwurzel_ausserhalb_repo.py	136	7	0	NOT_PORTED	produkt/store (data root)	DataRoot::from_env single constructor (XDG via directories crate) + 1 unit test
+tests/test_dba_einkunftsart_routing.py	182	20	0	GOLDEN	produkt/haut/api_constants (DBA_METHOD_MAP)	DBA Polen method per Einkunftsart table; minority: exhaustive match on (Staat,Einkunftsart) enums
+tests/test_deckt_ab_freeze.py	143	7	0	TOOLING	pipeline/quellen	deckt_ab freeze gate
+tests/test_deklaration_grenzen.py	261	3	0	INTEGRATION	produkt/haut/api (/deklaration,/einreichen)	[deps: http-local] unconfirmed values absent, sperre on einreichen
+tests/test_deklarations_abdeckung.py	184	9	0	NOT_PORTED	produkt/mapping/est_mapping vs bindung	est_mapping generated from Bindung: exhaustive match on Feld enum, each variant -> Kz | NichtDeklariert(grund)
+tests/test_deklaration_umgeht_waechter_gepinnt.py	109	3	2	NOT_PORTED	produkt/haut/api (/deklaration)	Deklaration only constructible via Sperrgrund guard (Freigegeben<Deklaration>) -> endpoint cannot bypass
+tests/test_detailfrage_braucht_existenzfrage.py	168	6	0	PROPERTY	produkt/traverser/traverser	detail question only after existence affirmed
+tests/test_dialog_drei_stufen.py	696	29	0	INTEGRATION	produkt/haut/api_llm (dialog)	LLM 3-stage dialog, 58 monkeypatches -> trait LlmClient fake
+tests/test_dialog_ehrlich_lauf.py	193	4	0	INTEGRATION	produkt/traverser + bescheid	[deps: catala] e2e answer-only-what-is-asked run to a number
+tests/test_dialog_kanal.py	357	17	0	INTEGRATION	produkt/haut/api (/chat)	single input channel values+answer; LLM faked
+tests/test_differential_zone_a.py	84	1	0	PROPERTY	produkt/mapping/est_mapping + elster_xml	Ring<->Deklaration differential: one proptest over Feld enum subsumes zones A-D
+tests/test_differential_zone_b.py	251	5	0	PROPERTY	produkt/mapping/est_mapping + elster_xml	see zone_a
+tests/test_differential_zone_c.py	205	3	0	PROPERTY	produkt/mapping/est_mapping + elster_xml	see zone_a (incl. Person-B fields)
+tests/test_differential_zone_d.py	239	5	0	PROPERTY	produkt/mapping/est_mapping + elster_xml	see zone_a
+tests/test_ebilanz_feldmapping.py	143	7	0	NOT_PORTED	ebilanz/feldmapping.yaml	build.rs resolves taxonomie_konzept against generated Konzept enum; serde deny_unknown_fields; status enum sicher{rule_id}/unklar{begruendung}
+tests/test_ebilanz_katalog.py	215	10	0	TOOLING	ebilanz/katalog, linkbase	XBRL linkbase parsing -> catalogue generation; pinned counts
+tests/test_ehepaar_gegenprobe.py	167	2	0	GOLDEN	elster/elster_xml + bescheid	[deps: catala] Zusammenveranlagung 2x50k; minority: A/B symmetry property
+tests/test_eingangsfrage_zuerst.py	331	9	0	PROPERTY	produkt/traverser/traverser	existence before feature questions (same property as detailfrage)
+tests/test_einheiten.py	118	8	0	NOT_PORTED	produkt/engine/runner, intervall	[deps: catala] Cent/Euro newtypes -> unit mix does not compile
+tests/test_einreichen_durchstich.py	326	3	0	INTEGRATION	produkt/haut/api /einreichen + checkest_gate	[deps: eric,http-local]
+tests/test_einreichen.py	381	15	0	INTEGRATION	produkt/haut/api /einreichen	[deps: eric partial] 57 monkeypatches -> trait fakes for Eric
+tests/test_einreichen_zusammen_person_b_idnr.py	267	2	0	INTEGRATION	produkt/haut/api /einreichen	[deps: eric,catala,http-local] regression person_b_idnr
+tests/test_elf_gewinnfelder_geld_fehlt_im_xml.py	212	3	6	PROPERTY	produkt/mapping/est_mapping + elster_xml	amount in Ring => in XML or documented reason (differential); xfail = known open bugs
+tests/test_elster_e2e_kz_durchgang.py	626	13	0	INTEGRATION	produkt/haut/api /deklaration	[deps: http-local] HTTP /fall->/deklaration Kz arrival
+tests/test_elster_writer.py	150	7	0	PROPERTY	produkt/eingang/elster_writer	import never overwrites bestaetigt or active vorlaeufig event; minority: Feldzustand enum
+tests/test_elster_xml.py	403	35	0	GOLDEN	elster/elster_xml	[deps: xmllint/XSD, eric partial] schema-valid XML expectations; minority NOT_PORTED: unknown Kz -> typed Kz enum, missing Hersteller-ID -> required config field
+tests/test_enum_labels.py	102	4	0	NOT_PORTED	produkt/haut/api_constants	label per variant via exhaustive match (no raw enum string reaches UI)
+tests/test_env_loader.py	100	8	0	NOT_PORTED	produkt/haut/server (_lade_env_dateien)	dotenvy::from_filename does not override existing env
+tests/test_ergebnis_kette.py	47	2	0	GOLDEN	golden/runner (catala_gesamt_kette)	[deps: catala] cent equation of the chain
+tests/test_ergebnis_offen_nicht_hartkodiert.py	165	2	0	NOT_PORTED	produkt/haut/api (_ergebnis_roh)	Gesperrt variant carries NonEmpty<Vec<Sperrgrund>> -> empty offen list unrepresentable
+tests/test_erreichbarkeit_gate.py	206	4	0	PROPERTY	produkt/bescheid/bescheid_deklaration	[deps: http-local] Sperrgruende fail-closed for open Uebernachtung facts
+tests/test_est_mapping.py	759	55	0	PROPERTY	produkt/mapping/est_mapping	roundtrip deklariere/parse property subsumes per-Scheibe roundtrips; minority GOLDEN Kz examples and NOT_PORTED (Klasse F unknown art -> enum)
+tests/test_fall_anlegen_vz_guard.py	91	6	0	NOT_PORTED	produkt/haut/api POST /fall	Vz enum (2024|2025|2026) via serde -> vz=2099 rejected at deserialize
+tests/test_fall_loeschen.py	196	12	0	INTEGRATION	produkt/haut/api DELETE /fall	DSGVO deletion, 403 foreign, audit survives
+tests/test_fehler_log.py	396	16	0	NOT_PORTED	produkt/haut/fehler_log	[deps: http-local] PII types (Cent, IdNr) with redacting Debug; errors as Result + tracing layer; minority: 1 integration test
+tests/test_feld_bedingung_je_instanz.py	115	6	0	PROPERTY	produkt/traverser/traverser	condition evaluated per instance n for all n
+tests/test_feld_bedingung_sperrgrund_widerspruch.py	513	4	0	NOT_PORTED	produkt/bescheid/bescheid_deklaration + api_constants	build-time check: feld_bedingung-droppable set disjoint from Sperrgrund-required set in generated tables
+tests/test_feld_bestand_ratsche.py	123	6	0	NOT_PORTED	produkt/bindung + traverser	removing a Feld variant breaks exhaustive Migration match -> paired migration forced by compiler
+tests/test_festzusetzende_est_scope.py	124	2	0	NOT_PORTED	produkt/haut/api (_bescheid_fn)	[deps: catala] NameError on out-of-scope name -> rustc rejects unresolved identifiers
+tests/test_flag_konsistenz.py	197	25	0	PROPERTY	produkt/konsistenz/flag_check	kein_X flag set & income of X present => widerspruch
+tests/test_flow_mitschnitt.py	199	8	0	INTEGRATION	produkt/haut/flow	flow log records steps
+tests/test_frage_einzeln.py	116	6	0	INTEGRATION	produkt/haut/api GET /feld/<fid>/frage	endpoint for answered field question
+tests/test_fragen_gewichte_nach_relevanz.py	117	2	0	PROPERTY	produkt/haut/api (_gesamt_beitrag) + intervall	[deps: catala] intervall respects relevanz at every call site; one fn in Rust
+tests/test_fragereihenfolge_aus_dem_graphen.py	136	4	0	PROPERTY	produkt/traverser/traverser	question order is a topological order of the rule graph
+tests/test_fragetext_behauptet_nichts.py	141	5	0	NOT_PORTED	produkt/bindung (fragetext)	build.rs lint on fragetext templates
+tests/test_fragetexte_anrede.py	80	3	0	NOT_PORTED	produkt/bindung (fragetext)	build.rs lint: no Sie-forms
+tests/test_gate_naht_guard_liest_zustand.py	273	8	0	NOT_PORTED	produkt/bescheid/bescheid_deklaration + runner	[deps: catala,http-local] guard and ring both take one typed view BestaetigteFelder -> cannot read different things; minority INTEGRATION
+tests/test_gate_polaritaet.py	357	9	0	PROPERTY	produkt/traverser/traverser (relevanz)	normal-case answer never disables a rule; plus enum GateArt{Tatbestand,Deklaration} required in Bindung
+tests/test_gate_semantik.py	629	58	0	TOOLING	pipeline/run, cascade, yamlstrict	[deps: catala mentions] cascade gate semantics
+tests/test_gettsim_crosscheck.py	84	4	0	TOOLING	oracle/gettsim/golden_crosscheck	[deps: catala] GETTSIM allowlist; minority GOLDEN
+tests/test_gewinn_partner_ring.py	362	10	0	PROPERTY	produkt/bescheid/bescheid_einkuenfte	[deps: catala] symmetry Person A/B for §§13-18 Gewinn
+tests/test_gewinn_quelle_offen_trifft_alle_betriebsarten.py	152	2	3	PROPERTY	produkt/bescheid/bescheid_deklaration	for all Betriebsart (exhaustive enum) gewinn_quelle_offen behaves identically
+tests/test_golden_anker_freeze.py	117	4	0	TOOLING	golden/cases loader + pipeline.gates	[deps: catala] anchor freeze
+tests/test_gwg_direktwert_quelle.py	255	10	0	NOT_PORTED	produkt/bescheid/bescheid_einkuenfte + bescheid_deklaration	guard and EUeR switch share one const set -> cannot diverge
+tests/test_gwg_tatbestand_sperre.py	161	5	0	PROPERTY	produkt/bescheid/bescheid_deklaration	fail-closed: open GWG Tatbestand => Sperre
+tests/test_haushalt_35a_10b.py	97	7	0	GOLDEN	golden/runner (catala_p35a/p10b)	[deps: catala] accessor seeds
+tests/test_haut_chat.py	435	13	0	INTEGRATION	produkt/haut/api (/chat)	[deps: catala partial] LLM suggests never sets; trait fake
+tests/test_hinweis_provenance.py	66	4	0	TOOLING	pipeline/run	hinweis provenance in report.json
+tests/test_idor_und_csp.py	232	8	0	INTEGRATION	produkt/haut/api (vorjahr) + server headers	[deps: http-local] IDOR + CSP headers
+tests/test_import_identitaet_gate.py	80	3	0	NOT_PORTED	produkt/haut/server bootstrap	dual module identity -> one crate path per module in Rust
+tests/test_instanz_kern.py	181	11	0	PROPERTY	produkt/mapping/est_mapping + store	instance roundtrip; replace __n suffix strings with typed key Instanz(FeldId, NonZeroU16)
+tests/test_instanz_luecke.py	161	3	0	PROPERTY	produkt/traverser (naechste_fragen)	[deps: http-local] all instances 1..N stay queued until answered
+tests/test_instanz_luecke_wird_gemeldet.py	255	11	0	PROPERTY	produkt/traverser/traverser	skipped instance is reported
+tests/test_intervall_relevanz_naht.py	115	2	0	PROPERTY	produkt/haut/api (stand) + intervall	[deps: catala] header respects relevanz like /ergebnis
+tests/test_item_registry.py	238	19	0	TOOLING	pipeline/item_registry	registry ratchet
+tests/test_judge_mehrheit.py	371	26	0	TOOLING	pipeline/judge	majority judge
+tests/test_kap_antrag_kz.py	56	1	0	GOLDEN	produkt/bescheid_deklaration (_mit_ring_werten)	Kz E1900401 declarable
+tests/test_kap_antrag_person_b.py	199	6	0	PROPERTY	produkt/mapping/est_mapping + elster_xml	[deps: eric] Antrag in both person containers: A/B symmetry; minority GOLDEN
+tests/test_kap_deklaration_verschweigt_topf.py	153	2	3	PROPERTY	produkt/bescheid/bescheid_deklaration	Topf amount never silently dropped when aggregate=0
+tests/test_kap_deklaration_vorlaeufig_leck_ohne_bestaetigung.py	317	2	2	NOT_PORTED	produkt/bescheid_deklaration + est_mapping	[deps: http-local] Feldzustand enum + formula triplicated -> one fn over BestaetigteFelder
+tests/test_kap_dezimalformat.py	155	3	0	NOT_PORTED	elster/elster_xml	[deps: eric] XSD-generated Kz types: EuroCent vs GanzeEuro newtypes carry their own format; minority GOLDEN
+tests/test_kap_gewinn_sonstige_keine_kz_verdrahtung.py	239	2	4	PROPERTY	produkt/mapping/est_mapping	[deps: http-local] differential: amount has Kz path or documented reason
+tests/test_kapital_32d.py	97	8	0	GOLDEN	golden/runner (Kapital accessors)	[deps: catala] §20/§32d seeds
+tests/test_kapital_accessoren.py	89	9	0	GOLDEN	golden/runner (Kapital accessors)	[deps: catala] registry formulas
+tests/test_kap_nulldeklaration.py	189	9	0	GOLDEN	produkt/mapping/est_mapping	confirmed KAP zeros not declared (XML expectation)
+tests/test_kap_q_deklaration.py	100	3	0	GOLDEN	produkt/mapping/est_mapping	E1905101 only with declared foreign tax
+tests/test_kap_ring_ausfall_keine_fake_null.py	112	3	0	NOT_PORTED	produkt/bescheid/bescheid_deklaration (_mit_ring_werten)	[deps: catala] catch-all except -> Result propagated with ?, no fake default
+tests/test_kegel_relevanz_naht.py	189	6	0	PROPERTY	produkt/haut/api_constants + traverser	[deps: catala] Pflicht-Kegel respects relevanz
+tests/test_kein_gewinn_n_vor_gwg_szenen_luecke.py	120	6	0	PROPERTY	produkt/konsistenz/flag_check	flag/scene consistency for all FLAG_NEGIERT
+tests/test_kein_innerhtml_sink.py	115	4	0	TOOLING	produkt/haut/static/app.js	frontend stays JS; lint (eslint no-unsanitized)
+tests/test_kein_kap_partner_korrektur_ueberlebt_widerspruch.py	302	3	4	PROPERTY	produkt/konsistenz/flag_check + bescheid_deklaration	[deps: http-local] A/B symmetry of flag widerspruch (Person enum)
+tests/test_kein_kap_partner_vorab_sperre_und_ausweg.py	212	1	0	INTEGRATION	produkt/haut/api	[deps: http-local] real server flow partner_kegel_offen
+tests/test_kein_sonstige_partner_korrektur_ueberlebt_widerspruch.py	224	2	5	PROPERTY	produkt/konsistenz/flag_check	[deps: http-local] same property as kap_partner
+tests/test_kein_vuv_unbeantwortet_durchlaesst_guard.py	233	4	4	PROPERTY	produkt/konsistenz/flag_check	[deps: http-local] fail-closed unanswered flag; xfail count = text mentions, markers removed per docstring
+tests/test_kette_accessor.py	49	4	0	PROPERTY	golden/runner (catala_gesamt_kette)	[deps: catala] chain == composition of single accessors
+tests/test_ki_mitschnitt.py	155	5	0	INTEGRATION	produkt/haut/api_llm	LLM transcript logging off by default
+tests/test_kinderbetreuung_nachhilfe_und_barzahlung.py	250	9	0	GOLDEN	produkt/bescheid (§10 Abs.1 Nr.5)	[deps: catala partial] S.2/S.4 exclusions
+tests/test_kist_accessor.py	57	8	0	GOLDEN	golden/runner (catala_kist)	[deps: catala] Hebesatz per Land
+tests/test_klasse3_dictcomp_wk_fail_open.py	150	3	0	NOT_PORTED	produkt/haut/api (_bescheid_fn)	[deps: catala] dict-comp filter drops keys -> struct with required fields
+tests/test_klasse_c_vorlaeufiger_betrag_sperrt.py	272	11	0	NOT_PORTED	produkt/bescheid/bescheid_zweige	enum Feldzustand: vorlaeufig amount cannot enter Bestaetigt result; minority PROPERTY
+tests/test_kontoauszug_maskierung.py	254	7	0	PROPERTY	produkt/eingang/kontoauszug_writer (maskiere)	proptest: no IBAN/name/IdNr survives masking
+tests/test_kontoauszug_pdf_endpoint.py	118	5	0	INTEGRATION	produkt/haut/api (kontoauszug pdf)	handler base64/tmp/cleanup
+tests/test_kontoauszug_writer.py	371	25	0	GOLDEN	produkt/eingang/kontoauszug_writer	sample statements -> expected events; minority PROPERTY (store guard)
+tests/test_kopfzeile_deckt_das_ergebnis.py	231	3	0	PROPERTY	produkt/haut/api (stand vs ergebnis)	[deps: catala] header == ergebnis for every Abzugstopf
+tests/test_kz_ausschluss_vollstaendig.py	101	2	0	NOT_PORTED	produkt/bindung vs elster XSD	Kz enum generated from XSD + explicit Ausschluss variant -> third case impossible
+tests/test_kz_bindung_durchgang.py	1268	40	0	GOLDEN	elster/elster_xml + est_mapping	[deps: eric partial,http-local] value at exact schema position per Kz
+tests/test_llm_client_fehlerdiagnose.py	95	4	0	NOT_PORTED	produkt/haut/llm_client	ApiKey newtype with redacting Debug + typed error enum (Auth/Model/Network)
+tests/test_llm_client.py	105	5	0	NOT_PORTED	produkt/haut/llm_client + kontoauszug_writer	trait LlmClient signature reconciled at compile time
+tests/test_llm_deckel_und_wiederholung.py	285	11	0	INTEGRATION	produkt/haut/api_llm + kontoauszug	[deps: network mocked] call cap + retry policy
+tests/test_llm_import_boundary.py	140	6	0	NOT_PORTED	produkt/haut/api_llm	llm_client as private module, pub(crate) only to api_llm -> other modules cannot import
+tests/test_llm_schema_erzwungen.py	333	12	0	INTEGRATION	produkt/haut/llm_client.py	request-shape contract (strict json_schema + provider require_parameters) against mocked HTTP; needs: none (urlopen mocked)
+tests/test_luf_euer_offen_asymmetrie.py	179	2	2	PROPERTY	produkt/bescheid/bescheid_zweige.py	fail-closed for every gewinn_betriebsart variant; exhaustive match on GewinnBetriebsart makes the 1-of-3 asymmetry a compile error
+tests/test_luf_gewinn_kz_fehlt.py	125	2	4	GOLDEN	produkt/mapping/est_mapping.py	Anlage-L XML expectation (Gewinn must appear in Deklaration); needs: ERiC optional
+tests/test_luf_gewinn_partner_sperrt_vollstaendig.py	167	3	1	PROPERTY	produkt/mapping/est_mapping.py	symmetry Person A/B of the Klasse-f Kz-gap sperre (PARTNER_VERZWEIGUNG); one generic Verzweigung<P: Person>
+tests/test_luf_gewinn_sperrt_vollstaendig.py	110	2	4	PROPERTY	produkt/mapping/est_mapping.py	fail-closed: bestaetigtes Geldfeld ohne Kz-Ast => vollstaendig=false; needs: ERiC optional
+tests/test_mutation_marker_gate.py	53	2	0	NOT_PORTED	produkt/haut/api.py; produkt/store/store.py	source grep for MUTATION markers -> CI `rg MUTATION src/` or #[cfg(test)]-only mutation hooks
+tests/test_nicht_deklariert_inventar.py	210	1	0	NOT_PORTED	produkt/mapping/bindung_*.yaml	YAML inventory of elster_kz_grund -> enum KzGrund{Endgueltig(..),Offen(..)} in BindungYaml, serde deny_unknown_fields
+tests/test_ors_client.py	82	5	0	INTEGRATION	produkt/haut/ors_client.py	parse of recorded ORS responses (fixture replay, mocked HTTP)
+tests/test_ors_key_leckt_nicht.py	157	5	0	NOT_PORTED	produkt/haut/ors_client.py	secrecy::SecretString ApiKey (redacted Debug/Display) + header-only request builder; keep 1 smoke test (security)
+tests/test_p10_1_3_kind_kv_pv_ring.py	206	3	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	ring differential /ergebnis with hand values; needs: Catala
+tests/test_p10_1_5_accessor.py	40	5	0	GOLDEN	golden/runner.py (catala_p10_1_5)	accessor seeds; needs: Catala
+tests/test_p10_1_5_kinderbetreuung_unequal.py	20	1	0	GOLDEN	golden/runner.py (catala_p10_1_5)	per-Kind Deckel regression case; needs: Catala
+tests/test_p10_1_5_ring.py	241	4	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	ring differential /ergebnis; needs: Catala
+tests/test_p10_1_7_berufsausbildung.py	41	2	0	PROPERTY	golden/runner.py (catala_p10_1_7)	result == min(aufwendungen, 6000) for all inputs; needs: Catala
+tests/test_p10_1_9_schulgeld_accessor.py	57	8	0	GOLDEN	golden/runner.py (catala_p10_1_9)	accessor seeds (minority: cap bound = property); needs: Catala
+tests/test_p10_1_9_schulgeld_ring.py	179	2	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	ring differential; needs: Catala
+tests/test_p10_1a_accessor.py	46	4	0	GOLDEN	golden/runner.py (catala_p10_1a)	Realsplitting accessor seeds; needs: Catala
+tests/test_p10_1a_ring.py	204	3	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	ring differential + Zustimmungs-Gate; needs: Catala
+tests/test_p101_mobilitaetspraemie_accessor.py	123	9	0	GOLDEN	golden/runner.py (catala_p101)	accessor seeds; needs: Catala
+tests/test_p101_ring.py	203	4	0	GOLDEN	produkt/bescheid/bescheid_zweige.py	/ergebnis mobilitaetspraemie_cent hand values; needs: Catala
+tests/test_p10_kv_pv.py	87	5	0	GOLDEN	golden/runner.py (catala_p10_kv_pv)	Hoechstbetrag cases; needs: Catala
+tests/test_p16_4_freibetrag_fragt_den_gewinn.py	140	6	0	INTEGRATION	produkt/traverser/traverser.py	traverser question flow; borderline: splitting regel_id into two typed rules would make it NOT_PORTED
+tests/test_p20_gewinn_sonstige_e1900701_widerspruch.py	270	2	2	GOLDEN	produkt/bescheid/bescheid_deklaration.py	Kap-Sonstige tax vs XML consistency case; needs: Catala
+tests/test_p21_2_verbilligt.py	42	2	0	GOLDEN	golden/runner.py (catala_p21_2)	66-%-threshold cases; needs: Catala
+tests/test_p23_accessor.py	203	13	0	GOLDEN	golden/runner.py (catala_p23_*)	3 snapshot seed sets; needs: Catala
+tests/test_p23_mehrfachverkauf_bricht_so_maxoccurs.py	278	4	4	NOT_PORTED	produkt/eingang/elster_xml.py	XSD-codegen types: SO container maxOccurs=1 -> Option, repetition only on Vec elements; wrong nesting unrepresentable
+tests/test_p23_partner_verkauf_still_unter_person_a_eingereicht.py	299	4	3	PROPERTY	produkt/eingang/elster_xml.py	symmetry A/B: Verkauf of Person P lands under P; Instanz carries Person enum (no index routing)
+tests/test_p23_ring_sperre_kopplung_an_personen_routing.py	177	2	0	NOT_PORTED	produkt/haut/api.py; elster_xml.py	coupling watchdog obsolete once Instanz<Person> is typed and routing is a match, not an index
+tests/test_p23_verkauf_beim_rentner_sperrt_statt_still_falsch.py	279	4	1	INTEGRATION	produkt/bescheid/bescheid_zweige.py	real server process HTTP flow; sperre instead of silent 21.000 EUR; needs: Catala
+tests/test_p32b_accessor.py	46	5	0	GOLDEN	golden/runner.py (catala_p32b)	seeds; needs: Catala
+tests/test_p32b_kombi.py	63	6	0	PROPERTY	produkt/bescheid/bescheid_zweige.py	fail-closed whenever Lohnersatz co-occurs with GewSt/DBA
+tests/test_p33_2a_fahrtkostenpauschale_ring.py	268	6	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	§33 Abs.2a cases 900/4500; needs: Catala
+tests/test_p33a_accessor.py	87	12	0	GOLDEN	golden/runner.py (catala_p33a)	seeds; needs: Catala
+tests/test_p33b_abs1_s1_wahlrecht_ring.py	291	8	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	Wahlrecht cases; needs: Catala
+tests/test_p33b_abs5_kind_pb_ring.py	278	6	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	Kind-PB transfer cases; needs: Catala
+tests/test_p33b_abs5_s4_ring.py	245	4	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	S.4 exclusion cases; needs: Catala
+tests/test_p33b_gesamt.py	108	13	0	PROPERTY	produkt/bescheid/bescheid_abzuege.py	gesamt-ring == rentner-ring composition, A/B additive symmetry; needs: Catala
+tests/test_p33b_partner_wahlrecht.py	187	8	0	PROPERTY	produkt/bescheid/bescheid_zweige.py	Wahlrecht symmetry Person A/B (no double deduction)
+tests/test_p33b.py	73	6	0	GOLDEN	golden/runner.py (catala_p33b)	Pauschbetrag table per GdB; needs: Catala
+tests/test_p33_tatbestand_gate.py	178	5	0	NOT_PORTED	produkt/bescheid/bescheid_abzuege.py	Catala input struct built with all fields (no dict subset) -> missing Tatbestandsmerkmal is a compile error; keep 1 golden
+tests/test_p34c_accessor.py	61	6	0	GOLDEN	golden/runner.py (catala_p34c_1)	seeds; needs: Catala
+tests/test_p34c_multi_country.py	168	11	0	PROPERTY	produkt/bescheid/bescheid_zweige.py	gate fires iff >1 DBA country with conflict
+tests/test_p35a_bestandsdaten.py	221	5	0	INTEGRATION	produkt/store/store.py; elster_xml.py	legacy flat-value migration Store->XML; needs: ERiC optional; drop if no legacy data migrates
+tests/test_p35c_accessor.py	86	12	0	GOLDEN	golden/runner.py (catala_p35c)	seeds; needs: Catala
+tests/test_p35c_doppelfoerderung.py	175	5	0	GOLDEN	golden/runner.py (catala_p35c)	§35c Abs.3 S.2 cases; needs: Catala
+tests/test_p35c_ring.py	191	3	0	GOLDEN	produkt/bescheid/bescheid_zweige.py	ring differential; needs: Catala
+tests/test_p35_mitu_zaehler.py	87	9	0	GOLDEN	produkt/bescheid/bescheid_zweige.py	Mitunternehmer counter cases; needs: Catala
+tests/test_p3_nr72_accessor.py	101	11	0	GOLDEN	golden/runner.py (catala_p3_nr72)	30-kW cases (minority: threshold property); needs: Catala
+tests/test_p3_vor_partner.py	262	5	0	PROPERTY	produkt/bescheid/bescheid_zweige.py	Person-B VOR symmetry to A + reachability; needs: Catala
+tests/test_p51a_kist_bemessung.py	831	20	0	GOLDEN	produkt/bescheid/bescheid_zweige.py	KiSt Bemessung cases; needs: Catala
+tests/test_paket_a_e2e.py	146	1	0	INTEGRATION	produkt/store; traverser; bescheid	Store->Traverser->Bescheid e2e; needs: Catala
+tests/test_paket_b_e2e_http_foerderung.py	541	10	0	INTEGRATION	produkt/haut/api.py	HTTP flow §35a Abs.3 Foerderung; needs: Catala
+tests/test_paket_b_e2e_http.py	4061	185	1	INTEGRATION	produkt/haut/api.py	HTTP e2e; minority (~30-40 %) request validation/404/422 -> serde + axum extractors (NOT_PORTED); needs: Catala, ERiC optional
+tests/test_parse_instanz.py	50	6	0	PROPERTY	produkt/mapping/est_mapping.py	roundtrip parse(format(FeldId{basis,instanz}))==x; FromStr on typed FeldId
+tests/test_partner_gleichbehandlung.py	205	12	0	PROPERTY	produkt/traverser/traverser.py	Partner asked exactly like user (A/B symmetry of question sets)
+tests/test_partner_konsistenz.py	159	20	0	NOT_PORTED	produkt/konsistenz/partner_check.py	enum Veranlagung{Einzel, Zusammen{partner}}: partner fields without Zusammen unrepresentable in computation input; borderline (store may still hold stale events)
+tests/test_partner_konsistenz_wiring.py	107	7	0	NOT_PORTED	produkt/haut/api.py	wiring check -> exhaustive match on Sperrgrund in guard; compiler enforces the arm
+tests/test_person_b_xml_luecke.py	668	18	1	GOLDEN	produkt/eingang/elster_xml.py	Person-B / instance XML expectations
+tests/test_pflichtfelder_eric_sweep.py	242	3	0	INTEGRATION	produkt/mapping/est_mapping.py	sweep against real ERiC; needs: ERiC
+tests/test_pii_filter.py	442	29	0	PROPERTY	produkt/haut (pii filter)	for all texts: no IdNr/IBAN survives; PII-free text unchanged
+tests/test_praezedenz.py	238	13	0	TOOLING	pipeline/ui/praezedenz.py	pipeline triage UI stays Python
+tests/test_preflight_erreichbarkeit.py	114	3	0	NOT_PORTED	produkt/konsistenz/preflight.py	enum PreflightBefund + exhaustive match in renderer/response -> unreachable Befund is compile error
+tests/test_preflight_plausibilitaet.py	378	40	0	GOLDEN	produkt/konsistenz/preflight.py	real-run plausibility cases
+tests/test_preflight.py	208	7	0	INTEGRATION	produkt/haut/api.py	GET /fall/{id}/preflight incl. owner check
+tests/test_progression_gehoert_in_gesamt.py	33	3	0	PROPERTY	produkt/bescheid/bescheid_zweige.py	fail-closed: Lohnersatz in an_gesamt always gates
+tests/test_provenance_stamp.py	160	12	0	TOOLING	pipeline/provenance.py	pipeline stays Python
+tests/test_quellen.py	59	4	0	TOOLING	pipeline/quellen.py	pipeline stays Python
+tests/test_realsplitting_krankengeld_kuerzung.py	165	8	0	GOLDEN	golden/runner.py; bescheid_abzuege.py	4-%-Kuerzung cases; needs: Catala
+tests/test_rechenweg_durchgereicht.py	118	4	0	NOT_PORTED	produkt/haut/api.py	typed Ergebnis{kette: Kette} response struct -> no dict key dropped at seam
+tests/test_rentenbeginn_kein_datumsformat.py	221	5	2	NOT_PORTED	produkt/mapping/est_mapping.py	XSD-codegen: E1800501 is Date newtype; mapping i32 Jahr there fails to compile
+tests/test_renten_ertragsanteil_p22.py	47	4	0	NOT_PORTED	params/kohorten/rente_ertragsanteil_p22.yaml	const table [u16; 98] indexed by age (complete by construction) or build.rs check
+tests/test_rentenfreibetrag_vorlaeufig_bricht_fragen.py	251	3	0	INTEGRATION	produkt/haut/api.py	HTTP /fragen 500 regression; borderline: Feldzustand enum would remove cause; needs: Catala
+tests/test_renten_p22.py	100	9	0	GOLDEN	golden/runner.py (catala_renten_einkuenfte)	4 branch cases; needs: Catala
+tests/test_rentner_kette_nie_gebaut.py	201	2	1	NOT_PORTED	produkt/bescheid/bescheid_zweige.py	trait Zweig with required fn kette(); Ergebnis.kette non-Option
+tests/test_rentner_partner_kegel_guard.py	128	5	0	PROPERTY	produkt/haut/api_constants.py	partner kegel symmetry rentner vs gesamt
+tests/test_request_groesse.py	152	5	0	INTEGRATION	produkt/haut/server.py	body limit before read (tower RequestBodyLimitLayer); 1 integration test
+tests/test_ring_betragsfelder_vollstaendig.py	117	4	0	NOT_PORTED	produkt/haut/api_constants.py	AST scan -> RING_BETRAGSFELDER generated from Bindung at build time
+tests/test_ring_deklaration_differential.py	406	6	0	PROPERTY	produkt/bescheid/bescheid_deklaration.py	every bestaetigtes Betragsfeld has Kz or declared reason in XML
+tests/test_ring_gruppen_vollstaendigkeit.py	219	5	0	NOT_PORTED	produkt/bescheid/bescheid_deklaration.py	exhaustive match on RingGruppe enum in _mit_ring_werten
+tests/test_ring_regression_kampagne.py	1851	68	0	GOLDEN	produkt/bescheid/bescheid_zweige.py	/ergebnis values per Scheibe; needs: Catala
+tests/test_ring_zweig_erreichbarkeit.py	87	2	0	NOT_PORTED	produkt/haut/api_constants.py	SCHEIBEN entries reference Zweig enum variant, not string -> unknown Zweig is compile error
+tests/test_rueckfragen_gebuendelt.py	255	10	0	INTEGRATION	produkt/haut/api_llm.py	LLM dialog with mocked model
+tests/test_rueckfrage_zielfeld.py	430	16	0	INTEGRATION	produkt/haut/api_llm.py	live-run replay (mocked model); minority golden transcript
+tests/test_runner_param_cache.py	131	3	0	NOT_PORTED	golden/runner.py	lru_cache perf -> params in static OnceLock / include_str! at compile time
+tests/test_screening_ausgabenseite.py	176	7	0	INTEGRATION	produkt/traverser/traverser.py	screening flags switch off follow-ups
+tests/test_screening_flag_unbeantwortet_sperrt.py	131	6	0	PROPERTY	produkt/konsistenz/flag_check.py	fail-closed over all flag states {unbeantwortet, ja, nein}
+tests/test_screening_fragen_unabhaengig.py	138	4	0	INTEGRATION	produkt/traverser/traverser.py	screening questions do not cut each other
+tests/test_screening_gruppe_b.py	320	9	0	INTEGRATION	produkt/traverser/traverser.py	absence flags gate follow-ups
+tests/test_screening_partner.py	363	13	0	PROPERTY	produkt/traverser/traverser.py	screening symmetry A/B
+tests/test_sechs_abgabe_luecken_blockmatrix.py	211	3	0	INTEGRATION	produkt/mapping/est_mapping.py	nacktes Kernfeld -> ERiC block matrix; needs: ERiC
+tests/test_server_sigterm.py	143	2	0	INTEGRATION	produkt/haut/server.py	process-level SIGTERM shutdown (tokio graceful shutdown)
+tests/test_slot_fn_reader_existiert.py	288	3	0	NOT_PORTED	produkt/haut/api.py	AST scan -> slots as struct fields, not string keys; rename is compile error
+tests/test_snapshot.py	173	12	0	TOOLING	pipeline/snapshot.py	pipeline stays Python
+tests/test_solz_accessor.py	89	10	0	GOLDEN	golden/runner.py (catala_solz)	hand values; needs: Catala
+tests/test_solz_ring.py	416	8	0	GOLDEN	produkt/bescheid/bescheid_zweige.py	solz_cent per Scheibe; needs: Catala
+tests/test_sonderausgaben_p10c.py	78	4	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	§10c floor cases; needs: Catala
+tests/test_sperre_bietet_ihr_feld_an.py	340	7	0	INTEGRATION	produkt/haut/api.py	HTTP+browser flow einzel-switch; needs: Playwright
+tests/test_sperrgrund_klartext_im_browser.py	208	5	0	INTEGRATION	produkt/haut/api.py; static app.js	backend sentence reaches UI
+tests/test_sperrgrund_klartext.py	418	17	0	NOT_PORTED	produkt/haut/api.py	AST scan -> enum Sperrgrund with exhaustive fn klartext()
+tests/test_split_naht_gate.py	121	3	0	NOT_PORTED	produkt/haut/api.py	Python from-import value binding; no Rust analogue
+tests/test_stammdaten_bankverbindung.py	286	14	0	GOLDEN	produkt/eingang/elster_xml.py	XML expectations E0102002 etc.
+tests/test_stammdaten_felder.py	254	10	0	GOLDEN	produkt/eingang/elster_xml.py	Stammdaten XML expectations
+tests/test_stammdaten_steuernummer.py	191	15	0	GOLDEN	produkt/eingang/elster_xml.py	StNr XML; minority format validation -> newtype Steuernummer FromStr; needs: ERiC optional
+tests/test_stand_event_id.py	271	6	0	INTEGRATION	produkt/haut/api.py	GET /stand event_id + ersetzt flow
+tests/test_stille_null_offen.py	372	12	0	NOT_PORTED	produkt/bescheid/bescheid_deklaration.py	enum Feldzustand; aggregation must match Vorlaeufig explicitly -> no silent drop
+tests/test_stille_null_typ.py	202	14	0	NOT_PORTED	produkt/store/store.py	serde typed Wert per FeldTyp rejects wrong type before bestaetigt
+tests/test_store_korpus.py	130	1	0	NOT_PORTED	produkt/store/store.py	FeldId enum generated from Bindung; unknown feld_id fails deserialization
+tests/test_store.py	391	30	0	PROPERTY	produkt/store/store.py	content-address determinism + materialize roundtrip; minority schema checks -> serde
+tests/test_thema_am_stueck_im_durchgang.py	264	5	0	PROPERTY	produkt/traverser/traverser.py	topic contiguity over a whole run
+tests/test_traverser.py	441	29	0	INTEGRATION	produkt/traverser/traverser.py	traverser core; minority rules.yaml sweep -> serde
+tests/test_triage_log_bindung.py	124	3	0	TOOLING	pipeline/item_registry	pipeline stays Python
+tests/test_ui_a11y.py	179	2	0	INTEGRATION	produkt/haut (static UI)	Playwright + axe-core; needs: Playwright, network (CDN)
+tests/test_ui_backend.py	196	12	0	TOOLING	pipeline/ui/service.py	pipeline triage UI stays Python
+tests/test_ui_chat_aussagen.py	685	17	0	INTEGRATION	produkt/haut (UI + api_llm)	needs: Playwright
+tests/test_ui_chat_wartezustand.py	424	10	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_feldtypen.py	326	10	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_fortschritt_und_panel.py	523	10	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_frage_polaritaet.py	200	3	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_hidden_wirkt.py	89	2	0	TOOLING	produkt/haut static CSS/HTML	static frontend asset check, independent of backend language
+tests/test_ui_instanzen.py	376	13	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_instanz_korrektur.py	627	14	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_ki_flow.py	1021	29	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_ki_fokus.py	440	12	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_leerwert_stille_null.py	184	5	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_lesbare_werte.py	223	5	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_login.py	200	6	0	INTEGRATION	produkt/haut + produkt/auth	needs: Playwright
+tests/test_ui_rechenweg.py	632	11	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_responsive.py	364	7	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_screening_liste.py	257	8	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_verstanden_seite.py	481	16	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_wahl_buttons.py	179	7	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
+tests/test_ui_zwei_signal_sicherheit.py	290	14	0	PROPERTY	produkt/store; traverser	LLM proposal never moves tax without signal_2 (keep: security); type Vorschlag vs Bestaetigt backs it; needs: Catala
+tests/test_unsicherheit.py	167	10	0	PROPERTY	produkt/unsicherheit/intervall.py	interval bounds lo<=x<=hi, monotone; needs: Catala (1 test)
+tests/test_unterprozess_zeitlimit.py	389	12	0	NOT_PORTED	produkt/eingang (OCR)	AST scan -> single run_with_timeout wrapper + clippy disallowed_methods on Command::output; keep 1 integration
+tests/test_vast_mapping.py	306	26	0	NOT_PORTED	produkt/eingang/vast_mapping.py	mapping typed against XSD-codegen elements + FeldId enum; Cent newtype conversion; minority golden unit conversions
+tests/test_veranlagung_llm_freigabe.py	114	5	0	PROPERTY	produkt/store/store.py	LLM proposal for veranlagung never lands bestaetigt
+tests/test_verpflegung_kuerzung_deklaration_vorlaeufig_widerspruch.py	331	3	2	NOT_PORTED	produkt/bescheid/bescheid_deklaration.py	Deklaration reads only Bestaetigt<T> -> vorlaeufig-as-bestaetigt unrepresentable
+tests/test_versand.py	264	19	0	INTEGRATION	elster/versand.py	ERiC send path, FakeEric mocked; needs: none (mocked)
+tests/test_versorgung_p19_2.py	137	12	0	GOLDEN	golden/runner.py (catala_p19_2)	cohort cases; needs: Catala
+tests/test_verstanden_bestaetigt_ohne_katalog_pruefung.py	109	4	0	TOOLING	produkt/haut static app.js	static frontend JS check, independent of backend language
+tests/test_vollstaendig_pflichtfelder_voll.py	103	1	0	INTEGRATION	produkt/mapping/est_mapping.py	per-field omission against real ERiC; needs: ERiC
+tests/test_vordruck_ordnung_bleibt.py	140	4	0	GOLDEN	produkt/traverser/traverser.py	expected Vordruck question order
+tests/test_vorjahr_kategorie_verhalten.py	86	4	0	NOT_PORTED	produkt/traverser/traverser.py	exhaustive match on enum VorjahrKategorie{Uebernehmbar,Vorschlag}
+tests/test_vorjahr_writer.py	178	10	0	NOT_PORTED	produkt/eingang/vorjahr_writer.py	import_vorjahr returns Event<Vorlaeufig>; no constructor path to Bestaetigt
+tests/test_vpf_frist_unterbrechung.py	181	6	0	GOLDEN	produkt/traverser/traverser.py	§9 Abs.4a S.6-7 cases
+tests/test_werbungskosten_n.py	283	19	0	GOLDEN	golden/runner.py (catala_werbungskosten_n)	cases; needs: Catala
+tests/test_xsd_verify.py	419	20	0	NOT_PORTED	produkt/mapping/xsd_verify.py	XSD codegen types replace the Kz verification pass; minority exit-code gate stays TOOLING if pass kept
+tests/test_zweig_duplikation_differential.py	377	4	0	NOT_PORTED	produkt/bescheid/bescheid_zweige.py	AST differential -> one fn per paragraph, generic over Zweig; no inline duplication
+tests/test_zweig_import_except_scope.py	80	2	0	NOT_PORTED	produkt/bescheid/bescheid_zweige.py	Python ImportError catch -> Result<_, ZweigFehler> enum, no catch-all
+tests/test_zweite_fall_kennung_gate.py	118	5	0	NOT_PORTED	produkt/haut/api.py	AST scan -> axum extractor OwnedFall required by handler signature; no Fall load without owner check
+tests/ui_hilfen.py	74	0	0	INTEGRATION	tests helper	Playwright helper, not a test file; moves with UI integration suite

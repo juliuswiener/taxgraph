@@ -58,3 +58,7 @@ graphify-out/
 # gehört bewusst nach reports/ — nicht versehentlich über ein Punkt-Verzeichnis hinein.
 .nord/
 .audit/
+
+# Rust-Port (REWRITE_PLAN.md) — Build-Artefakte, nicht rust/catala-sys/generated/ (das ist
+# committed, siehe rust/catala-sys/gen.sh).
+rust/target/

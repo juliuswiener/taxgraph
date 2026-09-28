@@ -268,3 +268,40 @@ jobs:
           . oracle/.venv312/bin/activate
           python oracle/gettsim/golden_crosscheck.py
           python -m pytest tests/test_gettsim_crosscheck.py -q
+
+  # Rust-Port (REWRITE_PLAN.md), Schritt 1 "Foundation". `rust/catala-sys/generated/` (der
+  # Catala-C-Backend) ist COMMITTED -- dieser Job braucht deshalb weder den Opam-Switch noch
+  # `clerk build` selbst, nur libgmp-dev zum Linken (`catala-sys/build.rs` bindet GMP dynamisch,
+  # LGPL). ubuntu-latest bringt einen Rust-Toolchain per rustup mit, keine dritte Action noetig.
+  #
+  # Die Tarif-Paritaet gegen tools/parity/oracle.py (rust/parity/tests/tarif_paritaet.rs)
+  # BRAUCHT den Opam-Switch + `produkt/` + `oracle/gettsim/assemble_catala.sh` und ist deshalb
+  # standardmaessig ein No-op (sie erkennt PARITY!=1 und skippt sich selbst, gruen). Lokal
+  # erzwingen: `PARITY=1 make rust-test` bzw. `PARITY=1 cargo test -p parity`.
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: System-Abhaengigkeiten (libgmp fuers Linken)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgmp-dev
+
+      - name: Cargo-Registry cachen
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            rust/target
+          key: cargo-taxgraph-${{ runner.os }}-${{ hashFiles('rust/Cargo.lock') }}
+
+      - name: cargo build
+        run: cd rust && cargo build
+
+      - name: cargo clippy (-D warnings)
+        run: cd rust && cargo clippy --all-targets -- -D warnings
+
+      - name: cargo test (Tarif-Paritaet ohne PARITY=1 -- no-op, gruen)
+        run: cd rust && cargo test

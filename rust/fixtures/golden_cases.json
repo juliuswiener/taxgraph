@@ -1,0 +1,2799 @@
+[
+  {
+    "beschreibung": "Arbeitnehmerfall Einzel VZ2025, Bruttolohn 40000, Werbungskosten 2156 (Entfernungspauschale), keine Sonderausgaben — Gesamtsteuer-Ring MVP G-AN-A",
+    "erwartung": {
+      "festzusetzende_est": 6629
+    },
+    "id": "an_2025_einzel_ep",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "Kette § 9a Satz 1 Nr. 1a + § 10c + § 32a EStG, VZ 2025 (WK 2156 > Pauschbetrag 1230)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn": 40000,
+      "sonderausgaben": 0,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "werbungskosten": 2156
+    }
+  },
+  {
+    "beschreibung": "Arbeitnehmerfall Einzel VZ2025, Bruttolohn 40000, Werbungskosten 14156 (EP 2156 + doppelte Haushaltsführung 12000: Miete 1400 gekappt 1000×12) — Gesamtsteuer-Ring Stufe 1b G-AN-D",
+    "erwartung": {
+      "festzusetzende_est": 3143
+    },
+    "id": "an_2025_einzel_ep_dhf",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "Kette § 9 Abs. 1 S. 3 Nr. 5 (dHf, Cap 1000/Monat) + § 9a + § 32a EStG, VZ 2025",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn": 40000,
+      "sonderausgaben": 0,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "werbungskosten": 14156
+    }
+  },
+  {
+    "beschreibung": "Arbeitnehmerfall Einzel VZ2025, Bruttolohn 40000, Werbungskosten 2436 (EP 2156 + Verpflegung 280: 10 volle Reisetage à 28 EUR) — Gesamtsteuer-Ring Stufe 1b Verpflegung, G-AN-V (Mehr-Tage)",
+    "erwartung": {
+      "festzusetzende_est": 6542
+    },
+    "id": "an_2025_einzel_ep_verpflegung",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "Kette § 9 Abs. 4a S. 3 Nr. 1 (Verpflegungspauschale 28/Tag) + § 9a + § 32a EStG, VZ 2025; 10 × 28 = 280",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn": 40000,
+      "sonderausgaben": 0,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "werbungskosten": 2436
+    }
+  },
+  {
+    "beschreibung": "Arbeitnehmerfall Einzel VZ2025, Bruttolohn 40000, Werbungskosten 2156 (EP), Sonderausgaben 3500 (Altersvorsorge § 10) — Gesamtsteuer-Ring MVP G-AN-B",
+    "erwartung": {
+      "festzusetzende_est": 5570
+    },
+    "id": "an_2025_einzel_ep_vor",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "Kette § 9a + § 10 Abs. 1 Nr. 2/Abs. 3 + § 10c + § 32a EStG, VZ 2025 (Vorsorge-Abzug 3500)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn": 40000,
+      "sonderausgaben": 3500,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "werbungskosten": 2156
+    }
+  },
+  {
+    "beschreibung": "Arbeitnehmerfall Einzel VZ2025, Bruttolohn 40000, Werbungskosten 0 — Arbeitnehmer-Pauschbetrag (§ 9a, 1230) greift IM Tarif; belegt, dass catala_werbungskosten_n roh liefern muss (kein Doppelabzug) — Gesamtsteuer-Ring MVP G-AN-C",
+    "erwartung": {
+      "festzusetzende_est": 6919
+    },
+    "id": "an_2025_einzel_pauschbetrag",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 9a Satz 1 Nr. 1a EStG (Arbeitnehmer-Pauschbetrag 1230, VZ 2025) im Tarif; § 32a Rundung",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn": 40000,
+      "sonderausgaben": 0,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "werbungskosten": 0
+    }
+  },
+  {
+    "beschreibung": "Zusammenveranlagung VZ2025, beide Bruttolohn 40000, keine WK/Sonderausgaben — bei gleichem Einkommen Splitting = 2× Einzel (Kontrollfall), festzusetzende_est_zusammen — G-ZUS-A",
+    "erwartung": {
+      "festzusetzende_est": 13838
+    },
+    "id": "an_2025_zusammen_gleich",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 26b i.V.m. § 32a Abs. 5 EStG (Splittingverfahren), VZ 2025; = 2× einzel(40000) bei gleichem Einkommen",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn_a": 40000,
+      "bruttoarbeitslohn_b": 40000,
+      "sonderausgaben_gemeinsam": 0,
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "werbungskosten_a": 0,
+      "werbungskosten_b": 0
+    }
+  },
+  {
+    "beschreibung": "Zusammenveranlagung VZ2025, beide 40000, WK je 500 (< Pauschbetrag 1230) — der § 9a-Pauschbetrag greift PRO Person IM Scope: identisch zu WK 0/0 → 13838, belegt kein §9a-Nachbau in der Haut — G-ZUS-C",
+    "erwartung": {
+      "festzusetzende_est": 13838
+    },
+    "id": "an_2025_zusammen_pauschbetrag",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 9a Satz 1 Nr. 1a (Arbeitnehmer-Pauschbetrag 1230, je Ehegatte) i.V.m. § 26b/§ 32a Abs. 5 EStG, VZ 2025",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn_a": 40000,
+      "bruttoarbeitslohn_b": 40000,
+      "sonderausgaben_gemeinsam": 0,
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "werbungskosten_a": 500,
+      "werbungskosten_b": 500
+    }
+  },
+  {
+    "beschreibung": "Zusammenveranlagung VZ2025, Bruttolohn 60000 + 20000 (ungleich) — Splitting 13838 gegenüber einzel(60000)+einzel(20000)=15251: sichtbarer Splitting-Vorteil 1413 EUR — G-ZUS-B",
+    "erwartung": {
+      "festzusetzende_est": 13838
+    },
+    "id": "an_2025_zusammen_splittingvorteil",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 26b i.V.m. § 32a Abs. 5 EStG (Splitting), VZ 2025; Progressionsvorteil bei ungleichem Einkommen (13838 < 15251 = Summe Einzelveranlagung)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn_a": 60000,
+      "bruttoarbeitslohn_b": 20000,
+      "sonderausgaben_gemeinsam": 0,
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "werbungskosten_a": 0,
+      "werbungskosten_b": 0
+    }
+  },
+  {
+    "beschreibung": "Arbeitnehmerfall Einzel, Bruttolohn 50000 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 10420
+    },
+    "id": "arbeitnehmer_2024_einzel_50000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "Kette § 9a Satz 1 Nr. 1a + § 10c + § 32a EStG, VZ 2024",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn": 50000,
+      "sonderausgaben": 0,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2024,
+      "werbungskosten": 0
+    }
+  },
+  {
+    "beschreibung": "Arbeitnehmerfall Einzel, Bruttolohn 80000 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 22156
+    },
+    "id": "arbeitnehmer_2025_einzel_80000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "Kette § 9a Satz 1 Nr. 1a + § 10c + § 32a EStG, VZ 2025",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn": 80000,
+      "sonderausgaben": 0,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "werbungskosten": 0
+    }
+  },
+  {
+    "beschreibung": "Arbeitnehmerfall Einzel, Bruttolohn 100000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 30332
+    },
+    "id": "arbeitnehmer_2026_einzel_100000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "Kette § 9a Satz 1 Nr. 1a + § 10c + § 32a EStG, VZ 2026",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn": 100000,
+      "sonderausgaben": 0,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "werbungskosten": 0
+    }
+  },
+  {
+    "beschreibung": "Arbeitnehmerfall Einzel, Bruttolohn 30000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 3862
+    },
+    "id": "arbeitnehmer_2026_einzel_30000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "Kette § 9a Satz 1 Nr. 1a + § 10c + § 32a EStG, VZ 2026",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn": 30000,
+      "sonderausgaben": 0,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "werbungskosten": 0
+    }
+  },
+  {
+    "beschreibung": "Arbeitnehmerfall Einzel, Bruttolohn 60000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 13747
+    },
+    "id": "arbeitnehmer_2026_einzel_60000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "Kette § 9a Satz 1 Nr. 1a + § 10c + § 32a EStG, VZ 2026",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn": 60000,
+      "sonderausgaben": 0,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "werbungskosten": 0
+    }
+  },
+  {
+    "beschreibung": "Arbeitnehmerfall Einzel, Bruttolohn 800 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 0
+    },
+    "id": "arbeitnehmer_2026_einzel_800",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "Kette § 9a Satz 1 Nr. 1a + § 10c + § 32a EStG, VZ 2026",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "bruttoarbeitslohn": 800,
+      "sonderausgaben": 0,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "werbungskosten": 0
+    }
+  },
+  {
+    "beschreibung": "Entfernungspauschale 20.0 km, 220 Arbeitstage, VZ 2024",
+    "erwartung": {
+      "abziehbarer_betrag": 1380
+    },
+    "id": "ep_2024_beispiel1_oepnv",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/bmf/bmf_entfernungspauschalen_2021-11-18.txt",
+      "fundstelle": "BMF-Schreiben 18.11.2021 Rz. 2, Beispiel 1 (OePNV-Guenstigerpruefung); VZ 2024 (km <= 20, jahresunabhaengig)",
+      "redistributable": true,
+      "zitatanker": "220 x 20 x 0,30"
+    },
+    "sachverhalt": {
+      "arbeitstage": 220,
+      "eigenes_oder_ueberlassenes_kfz": false,
+      "entfernung_km_roh": 20.0,
+      "oepnv_kosten_jahr": 1380,
+      "veranlagungszeitraum": 2024
+    }
+  },
+  {
+    "beschreibung": "Entfernungspauschale 10.6 km, 200 Arbeitstage, VZ 2024",
+    "erwartung": {
+      "abziehbarer_betrag": 600
+    },
+    "id": "ep_2024_rz12_volle_km",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/bmf/bmf_entfernungspauschalen_2021-11-18.txt",
+      "fundstelle": "BMF-Schreiben 18.11.2021 Rz. 12 (volle km); 10,6 km -> 10 km, 200 AT x 10 x 0,30 = 600",
+      "redistributable": true,
+      "zitatanker": "nur volle Kilometer der Entfernung anzusetzen"
+    },
+    "sachverhalt": {
+      "arbeitstage": 200,
+      "eigenes_oder_ueberlassenes_kfz": false,
+      "entfernung_km_roh": 10.6,
+      "oepnv_kosten_jahr": 0,
+      "veranlagungszeitraum": 2024
+    }
+  },
+  {
+    "beschreibung": "Entfernungspauschale 30.0 km, 220 Arbeitstage, VZ 2024",
+    "erwartung": {
+      "abziehbarer_betrag": 2156
+    },
+    "id": "ep_2024_staffel_30km",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/bmf/bmf_entfernungspauschalen_2021-11-18.txt",
+      "fundstelle": "BMF-Schreiben 18.11.2021 Rz. 9 (Staffel 2024-2026); 20 x 0,30 + 10 x 0,38, 220 AT, eigenes Kfz",
+      "redistributable": true,
+      "zitatanker": "restliche Entfernungskilometer x 0,38"
+    },
+    "sachverhalt": {
+      "arbeitstage": 220,
+      "eigenes_oder_ueberlassenes_kfz": true,
+      "entfernung_km_roh": 30.0,
+      "oepnv_kosten_jahr": 0,
+      "veranlagungszeitraum": 2024
+    }
+  },
+  {
+    "beschreibung": "Entfernungspauschale 30.0 km, 220 Arbeitstage, VZ 2026",
+    "erwartung": {
+      "abziehbarer_betrag": 2508
+    },
+    "id": "ep_2026_flach_30km",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt",
+      "fundstelle": "§ 9 Abs. 1 S. 3 Nr. 4 Satz 2 EStG i.d.F. 2026 (StAendG 2025); ABGELEITET (0,38 ab km 1), nicht aus BMF-Beispiel zitiert",
+      "redistributable": true,
+      "zitatanker": "von 0,38 Euro anzusetzen"
+    },
+    "sachverhalt": {
+      "arbeitstage": 220,
+      "eigenes_oder_ueberlassenes_kfz": true,
+      "entfernung_km_roh": 30.0,
+      "oepnv_kosten_jahr": 0,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 0 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 0
+    },
+    "id": "g32a_2024_single_0",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2024,
+      "zu_versteuerndes_einkommen": 0
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 100000 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 31363
+    },
+    "id": "g32a_2024_single_100000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2024,
+      "zu_versteuerndes_einkommen": 100000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 11784 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 0
+    },
+    "id": "g32a_2024_single_11784",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2024,
+      "zu_versteuerndes_einkommen": 11784
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 17005 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 991
+    },
+    "id": "g32a_2024_single_17005",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2024,
+      "zu_versteuerndes_einkommen": 17005
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 30000 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 4412
+    },
+    "id": "g32a_2024_single_30000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2024,
+      "zu_versteuerndes_einkommen": 30000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 300000 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 116028
+    },
+    "id": "g32a_2024_single_300000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2024,
+      "zu_versteuerndes_einkommen": 300000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 60000 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 14646
+    },
+    "id": "g32a_2024_single_60000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2024,
+      "zu_versteuerndes_einkommen": 60000
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 100000 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 21744
+    },
+    "id": "g32a_2024_split_100000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2024,
+      "zu_versteuerndes_einkommen": 100000
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 23634 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 8
+    },
+    "id": "g32a_2024_split_23634",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de); amtlich bestaetigt BMF-Steuerrechner (bmf-steuerrechner.de, 2026-07-09)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2024,
+      "zu_versteuerndes_einkommen": 23634
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 43139 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 4244
+    },
+    "id": "g32a_2024_split_43139",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2024,
+      "zu_versteuerndes_einkommen": 43139
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 60000 Euro, VZ 2024",
+    "erwartung": {
+      "tarifliche_est": 8824
+    },
+    "id": "g32a_2024_split_60000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2024, BGBl 2024 I Nr. 386 (recht.bund.de)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2024,
+      "zu_versteuerndes_einkommen": 60000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 0 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 0
+    },
+    "id": "g32a_2025_single_0",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 0
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 100000 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 31088
+    },
+    "id": "g32a_2025_single_100000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 100000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 12096 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 0
+    },
+    "id": "g32a_2025_single_12096",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 12096
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 17443 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 1015
+    },
+    "id": "g32a_2025_single_17443",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 17443
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 30000 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 4303
+    },
+    "id": "g32a_2025_single_30000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 30000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 300000 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 115753
+    },
+    "id": "g32a_2025_single_300000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 300000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 60000 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 14415
+    },
+    "id": "g32a_2025_single_60000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 60000
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 100000 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 21382
+    },
+    "id": "g32a_2025_split_100000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 100000
+    }
+  },
+  {
+    "beschreibung": "Splitting gemeinsames zvE 165300 Euro VZ 2025 - amtl. EStH-2025 H 34.2 (Berechnungsbeispiel § 34 Abs. 1), §32a-Splitting-Zwischenwert, cent-verifiziert",
+    "erwartung": {
+      "tarifliche_est": 47602
+    },
+    "id": "g32a_2025_split_165300",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "EStH 2025 H 34.2 (Berechnungsbeispiel zu § 34 Abs. 1, corpus/vwv/esth2025/h-34-2.txt); § 32a Abs. 5 i.V.m. Abs. 1, VZ 2025; catala_est-reproduziert (Paket 10c Block 7)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 165300
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 24342 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 20
+    },
+    "id": "g32a_2025_split_24342",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de); amtlich bestaetigt BMF-Steuerrechner (bmf-steuerrechner.de, 2026-07-09)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 24342
+    }
+  },
+  {
+    "beschreibung": "Splitting gemeinsames zvE 47150 Euro VZ 2025 - amtl. EStH-2025 H 34.2 (Berechnungsbeispiel § 34 Abs. 1), §32a-Splitting-Zwischenwert, cent-verifiziert",
+    "erwartung": {
+      "tarifliche_est": 5102
+    },
+    "id": "g32a_2025_split_47150",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "EStH 2025 H 34.2 (Berechnungsbeispiel zu § 34 Abs. 1, corpus/vwv/esth2025/h-34-2.txt); § 32a Abs. 5 i.V.m. Abs. 1, VZ 2025; catala_est-reproduziert (Paket 10c Block 7)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 47150
+    }
+  },
+  {
+    "beschreibung": "Splitting gemeinsames zvE 52150 Euro VZ 2025 - amtl. EStH-2025 H 34.2 (Berechnungsbeispiel § 34 Abs. 1), §32a-Splitting-Zwischenwert, cent-verifiziert",
+    "erwartung": {
+      "tarifliche_est": 6430
+    },
+    "id": "g32a_2025_split_52150",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "EStH 2025 H 34.2 (Berechnungsbeispiel zu § 34 Abs. 1, corpus/vwv/esth2025/h-34-2.txt); § 32a Abs. 5 i.V.m. Abs. 1, VZ 2025; catala_est-reproduziert (Paket 10c Block 7)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 52150
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 55555 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 7360
+    },
+    "id": "g32a_2025_split_55555",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 55555
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 60000 Euro, VZ 2025",
+    "erwartung": {
+      "tarifliche_est": 8606
+    },
+    "id": "g32a_2025_split_60000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2025, EStH/LStH 2025 (esth.bundesfinanzministerium.de)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 60000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 0 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 0
+    },
+    "id": "g32a_2026_single_0",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 0
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 100000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 30864
+    },
+    "id": "g32a_2026_single_100000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 100000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 12348 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 0
+    },
+    "id": "g32a_2026_single_12348",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 12348
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 12349 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 0
+    },
+    "id": "g32a_2026_single_12349",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 12349
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 17799 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 1034
+    },
+    "id": "g32a_2026_single_17799",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 17799
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 17800 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 1035
+    },
+    "id": "g32a_2026_single_17800",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 17800
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 20000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 1570
+    },
+    "id": "g32a_2026_single_20000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 20000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 277825 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 105550
+    },
+    "id": "g32a_2026_single_277825",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 277825
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 277826 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 105551
+    },
+    "id": "g32a_2026_single_277826",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 277826
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 30000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 4217
+    },
+    "id": "g32a_2026_single_30000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 30000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 300000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 115529
+    },
+    "id": "g32a_2026_single_300000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 300000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 500000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 205529
+    },
+    "id": "g32a_2026_single_500000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 500000
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 69878 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 18213
+    },
+    "id": "g32a_2026_single_69878",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 69878
+    }
+  },
+  {
+    "beschreibung": "Grundtarif, zvE 69879 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 18213
+    },
+    "id": "g32a_2026_single_69879",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "auf den naechsten vollen Euro-Betrag abzurunden"
+    },
+    "sachverhalt": {
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 69879
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 0 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 0
+    },
+    "id": "g32a_2026_split_0",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 0
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 100000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 21096
+    },
+    "id": "g32a_2026_split_100000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 100000
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 120000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 28466
+    },
+    "id": "g32a_2026_split_120000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 120000
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 200000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 61728
+    },
+    "id": "g32a_2026_split_200000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 200000
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 24696 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 0
+    },
+    "id": "g32a_2026_split_24696",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 24696
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 60000 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 8434
+    },
+    "id": "g32a_2026_split_60000",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 60000
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE 77777 Euro, VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 13718
+    },
+    "id": "g32a_2026_split_77777",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": 77777
+    }
+  },
+  {
+    "beschreibung": "Splitting, gemeinsames zvE -72 Euro (2x Kleinstlohn), VZ 2026",
+    "erwartung": {
+      "tarifliche_est": 0
+    },
+    "id": "g32a_2026_split_negativ_72",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32a_2026-07-09.txt",
+      "fundstelle": "§ 32a Abs. 5 EStG i.V.m. Abs. 1; § 32a Abs. 1 EStG, VZ 2026, gesetze-im-internet.de (Fassung ab VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "das Zweifache des Steuerbetrags"
+    },
+    "sachverhalt": {
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2026,
+      "zu_versteuerndes_einkommen": -72
+    }
+  },
+  {
+    "beschreibung": "§ 34 Abs. 1 S. 3 Sonderpfad (verbleibendes zvE negativ), ZV VZ2025, amtl. EStH 2025 H 34.2 Bsp 2",
+    "erwartung": {
+      "tarifliche_est": 12010
+    },
+    "id": "g34_1_s3_2025_zv_bsp2_negativ",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/gesetze-im-internet/estg_p34_2026-07-13.txt",
+      "fundstelle": "EStH 2025 H 34.2 (Berechnungsbeispiel 2 zu § 34 Abs. 1, corpus/vwv/esth2025/h-34-2.txt); § 34 Abs. 1 S. 3 EStG; verbleibendes zvE = 182.150 - 225.000 = -42.850 < 0 -> 5 x Tarif(36.430) VZ2025 Splitting = 5 x 2.402 = 12.010 (Paket 10c Block 8)",
+      "redistributable": true,
+      "zitatanker": "das Fünffache der auf ein Fünftel des zu versteuernden Einkommens entfallenden Einkommensteuer"
+    },
+    "sachverhalt": {
+      "ausserordentliche_einkuenfte": 225000,
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 182150
+    }
+  },
+  {
+    "beschreibung": "Gesamtfall Einzel mit 1 Kind, VZ 2024: § 19 40000 + § 21 18770, SA 36 -> einkommen 58734; KFB+BEA 4770 (3306+1464, params/2024) -> zvE 53964; § 31 S. 4 Kindergeld-Hinzurechnung 250x12=3000 (params/2024). festzusetzende = tarif(53964,2024)=12325 + 3000 = 15325.",
+    "erwartung": {
+      "festzusetzende_est": 15325
+    },
+    "id": "gesamt_2024_einzel_kinder",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 5/6 EStG (Stufenfolge), § 32 Abs. 6 (KFB+BEA, params/2024/kinderfreibetrag_p32), § 31 S. 4 i.V.m. § 66 (Kindergeld-Hinzurechnung, params/2024/kindergeld_p66), § 32a Abs. 1 (Grundtarif VZ 2024)",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 40000,
+      "einkuenfte_vermietung": 18770,
+      "freibetraege_kinder": 4770,
+      "gesamtfall": true,
+      "kinder_ganzjaehrig": 1,
+      "sonderausgaben": 36,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2024
+    }
+  },
+  {
+    "beschreibung": "Gesamtfall Einzel, VZ 2024, Altersvorsorge DECKELT: § 19 60000; Vorsorge-Beitraege 40000 inkl. AG > HB knappschaftl. RV 27566 (params/2024) -> Cap 27566, minus steuerfreier AG-Anteil 5000 = abziehbar 22566 (Kuerzung NACH Cap); Sonderausgaben 22566 -> einkommen 37434 = zvE; tarif(37434,2024) = festzusetzende 6644. Deckel bindet: ohne Cap waere abzug 35000.",
+    "erwartung": {
+      "festzusetzende_est": 6644
+    },
+    "id": "gesamt_2024_vorsorge_capped",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p10_2026-07-11.txt",
+      "fundstelle": "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG (Altersvorsorge, Höchstbeitrag knappschaftl. RV params/2024, Cap 27566), § 2 Abs. 4 (Sonderausgaben mindern das Einkommen), § 32a Abs. 1 (Grundtarif VZ 2024)",
+      "redistributable": true,
+      "zitatanker": "bis zu dem Höchstbeitrag zur knappschaftlichen Rentenversicherung"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 60000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2024,
+      "vorsorge_ag_anteil_steuerfrei": 5000,
+      "vorsorge_gesamtbeitraege_inkl_ag": 40000
+    }
+  },
+  {
+    "beschreibung": "Gesamtfall Einzel, VZ 2024, Altersvorsorge UNTER Deckel: § 19 60000; Vorsorge-Beitraege 12000 inkl. AG < HB 27566 -> kein Cap, min = 12000, minus steuerfreier AG-Anteil 2000 = abziehbar 10000; Sonderausgaben 10000 -> einkommen 50000 = zvE; tarif(50000,2024) = festzusetzende 10872. Gegenprobe zum capped-Fall: hier greift min(beitraege,HB) = beitraege.",
+    "erwartung": {
+      "festzusetzende_est": 10872
+    },
+    "id": "gesamt_2024_vorsorge_unter",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p10_2026-07-11.txt",
+      "fundstelle": "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG (Altersvorsorge unter Höchstbeitrag, params/2024), § 2 Abs. 4 (Sonderausgaben mindern das Einkommen), § 32a Abs. 1 (Grundtarif VZ 2024)",
+      "redistributable": true,
+      "zitatanker": "Beiträge zu den gesetzlichen Rentenversicherungen"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 60000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2024,
+      "vorsorge_ag_anteil_steuerfrei": 2000,
+      "vorsorge_gesamtbeitraege_inkl_ag": 12000
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition § 10 Abs. 1 Nr. 7 Berufsausbildung (Höchstbetrag-Deckelung): § 19 40000 + eigene Berufsausbildungsaufwendungen 8000. § 10 Abs. 1 Nr. 7: Aufwendungen für die eigene Berufsausbildung bis zu 6 000 Euro -> 8000 auf 6000 gedeckelt -> sonderausgaben 6000 -> zvE 34000 -> Grundtarif 5468 -> festzusetzende_est 5468. OHNE den Abzug wäre est 7309; der (gedeckelte) Berufsausbildungs-Abzug senkt die est um 1841. Beweist: der Höchstbetrag 6000 greift und der Tarif komponiert korrekt. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 5468
+    },
+    "id": "gesamt_2025_einzel_10_berufsausbildung_deckel",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p10_2026-07-11.txt",
+      "fundstelle": "§ 10 Abs. 1 Nr. 7 EStG (Berufsausbildung, Höchstbetrag 6 000) i.V.m. § 2 Abs. 3 bis 6",
+      "redistributable": true,
+      "zitatanker": "bis zu 6 000 Euro im Kalenderjahr"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 40000,
+      "gesamtfall": true,
+      "sonderausgaben": 6000,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition § 10 Abs. 4 S. 4 KV/PV-Basis-Durchbruch: § 19 40000 + Basis-Kranken-/Pflegeversicherungsbeiträge 4000 (über dem Höchstbetrag 2800 ohne Zuschuss). § 10 Abs. 4 S. 4: übersteigen die Basis-Beiträge (Abs. 1 Nr. 3) den nach S. 1-3 abziehbaren Betrag, sind DIESE voll abzuziehen (Durchbruch), ein Abzug weiterer Vorsorge (Nr. 3a) scheidet aus -> abziehbare KV/PV = 4000 (NICHT auf 2800 gedeckelt) -> sonderausgaben 4000 -> zvE 36000 -> Grundtarif 6071 -> festzusetzende_est 6071. OHNE Durchbruch (Deckelung auf 2800) wäre der Abzug 1200 zu niedrig = Über-Besteuerung. Beweist: der Basis-Durchbruch greift (voller Basis-Abzug), der Tarif komponiert korrekt. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 6071
+    },
+    "id": "gesamt_2025_einzel_10_kv_pv_durchbruch",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p10_2026-07-11.txt",
+      "fundstelle": "§ 10 Abs. 4 S. 4 EStG (KV/PV-Basis-Durchbruch, Abs. 1 Nr. 3) i.V.m. § 2 Abs. 3 bis 6",
+      "redistributable": true,
+      "zitatanker": "sind diese abzuziehen und ein Abzug von Vorsorgeaufwendungen im Sinne des Absatzes 1 Nummer 3a scheidet aus"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 40000,
+      "gesamtfall": true,
+      "sonderausgaben": 4000,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition § 10 Abs. 4 S. 2 KV/PV mit Zuschuss-Anspruch (reduzierter Höchstbetrag 1900) + Durchbruch: § 19 40000 + Basis-KV/PV 2500, Steuerpflichtiger mit Anspruch auf steuerfreien Arbeitgeber-Zuschuss/Beihilfe -> Höchstbetrag 1900 statt 2800. Basis 2500 > 1900 -> § 10 Abs. 4 S. 4 Durchbruch -> voller Basis-Abzug 2500 -> sonderausgaben 2500 -> zvE 37500 -> Grundtarif 6533 -> festzusetzende_est 6533. Beweist: der reduzierte 1900-Höchstbetrag (Zuschuss-Gruppe, § 10 Abs. 4 S. 2) und der Basis-Durchbruch komponieren korrekt; höhere est als der Durchbruch-ohne-Zuschuss-Fall (6071 bei nur 2800/4000), weil mit Zuschuss ein niedrigerer Basis-Betrag abziehbar ist. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 6533
+    },
+    "id": "gesamt_2025_einzel_10_kv_pv_zuschuss",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p10_2026-07-11.txt",
+      "fundstelle": "§ 10 Abs. 4 S. 2 EStG (reduzierter Höchstbetrag 1900 bei Zuschuss-Anspruch) i.V.m. Abs. 4 S. 4 + § 2 Abs. 3 bis 6",
+      "redistributable": true,
+      "zitatanker": "Höchstbetrag beträgt 1 900 Euro bei Steuerpflichtigen"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 40000,
+      "gesamtfall": true,
+      "sonderausgaben": 2500,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition § 21 Abs. 2 S. 1 verbilligte Vermietung (Tarif auf der WK-gekürzten Vermietungsgröße = der Under-Tax-Fix): § 19 40000 + verbilligt vermietete Wohnung. HERLEITUNG der Vermietungsgröße: Einnahmen 12000, Werbungskosten 10000, Entgelt-Quote 40 % < 50 % der ortsüblichen Marktmiete -> § 21 Abs. 2 S. 1 (aufzuteilen) -> WK nur anteilig abziehbar 10000 × 40/100 = 4000 -> § 21-Einkünfte = 12000 − 4000 = 8000 (statt 12000 − 10000 = 2000 bei voller WK). SdE 48000 -> zvE 47964 (§ 10c-PB 36) -> Grundtarif 9976 -> festzusetzende_est 9976. OHNE die § 21-Abs.2-WK-Kürzung wären die WK voll abgezogen worden -> § 21-Einkünfte 2000 -> est nur 7954 (unter-besteuert um 2022). Dieser Golden verankert den Tarif auf der reduzierten Größe; die Kürzungs-Rechnung selbst ist in dev-1s catala_p21_2-Accessor-Unit-Test verifiziert. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 9976
+    },
+    "id": "gesamt_2025_einzel_21_verbilligt",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p21_2026-07-13.txt",
+      "fundstelle": "§ 21 Abs. 2 S. 1 EStG (verbilligte Vermietung, WK-Aufteilung bei Entgelt < 50 % der ortsüblichen Marktmiete) i.V.m. § 2 Abs. 3 bis 6",
+      "redistributable": true,
+      "zitatanker": "weniger als 50 Prozent der ortsüblichen Marktmiete"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 40000,
+      "einkuenfte_vermietung": 8000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition § 21 Abs. 2 MEHR-OBJEKT (per-Objekt-Kürzung, nur das verbilligte Objekt): zwei Vermietungsobjekte. Objekt A marktüblich (Entgelt-Quote ≥ 66 %): Einnahmen 40000 − volle WK 10000 = 30000 (ungekürzt). Objekt B verbilligt (Entgelt-Quote 50 %): Einnahmen 20000 − anteilige WK 8000 × 50/100 = 4000 = 16000 (gekürzt, § 21 Abs. 2). Σ § 21-Einkünfte = 30000 + 16000 = 46000 -> zvE 45964 (§ 10c-PB 36) -> Grundtarif 9288 -> festzusetzende_est 9288. Beweist: die WK-Kürzung greift OBJEKTWEISE — nur B wird gekürzt, A bleibt voll; die EINE globale Quote würde A falsch mitkürzen (das ist der instanz_gruppe:vv_objekt-Zweck). VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 9288
+    },
+    "id": "gesamt_2025_einzel_21_verbilligt_multiobjekt",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p21_2026-07-13.txt",
+      "fundstelle": "§ 21 Abs. 2 EStG (verbilligte Vermietung, objektweise WK-Kürzung) i.V.m. § 2 Abs. 3 bis 6",
+      "redistributable": true,
+      "zitatanker": "weniger als 50 Prozent der ortsüblichen Marktmiete"
+    },
+    "sachverhalt": {
+      "einkuenfte_vermietung": 46000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition §24a-GdE-Zwilling: Senior § 19 35000 + § 21 15000 (SdE 50000), Altersentlastungsbetrag 665 (geburtsjahr 1958, Kohorte) mindert GdE auf 49335 -> § 33 agB 5000 minus zumutbare Belastung AUF DER GEMINDERTEN GdE (zumutbar 2806 statt 2846 ohne §24a) = 2193 -> Einkommen 47106 -> Grundtarif 9679. Beweist: §24a senkt GdE, das senkt die §33-zumutbar (GdE-Zwilling), höherer agB-Abzug. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 9679
+    },
+    "id": "gesamt_2025_einzel_24a_agb_gde_zwilling",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 3 bis 6 EStG (§ 24a GdE-Minderung wirkt auf § 33-zumutbare-Belastung, GdE-Zwilling)",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "altersentlastungsbetrag": 665,
+      "aussergewoehnliche_belastungen": 2193,
+      "einkuenfte_nichtselbststaendig": 35000,
+      "einkuenfte_vermietung": 15000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition §24b + §35a: Alleinerziehend § 19 45000, Entlastungsbetrag für Alleinerziehende 4500 (Grundbetrag 4260 + 240 je weiterem Kind, 2 Kinder) mindert die GdE auf 40500 -> zvE 40464 -> Grundtarif 7469; § 35a-Ermäßigung 800 (Handwerker 4000 × 20 %) auf verfügbare Steuer gefloort -> festzusetzende_est 6669. Beweist: § 24b (GdE-mindernd) + § 35a (tarifmindernd, Floor) komponiert. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 6669
+    },
+    "id": "gesamt_2025_einzel_24b_35a",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 3 bis 6 EStG (Komposition § 24b-Entlastungsbetrag + § 35a-Ermäßigung mit Floor)",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 45000,
+      "entlastungsbetrag_alleinerziehende": 4500,
+      "gesamtfall": true,
+      "steuerermaessigungen": 800,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition §31-Familienleistungsausgleich (Freibetrag-Zweig) + §24b: Alleinerziehend § 19 45000, 2 Kinder ganzjährig. § 24b-Entlastungsbetrag 4500 mindert GdE auf 40500; § 32 Abs. 6-Freibeträge 9600 (KFB+BEA je Kind) mindern das zvE auf 30864 -> Grundtarif 4550; § 31 S. 4 Kindergeld-Hinzurechnung (params/2025, 2 Kinder ganzjährig) -> festzusetzende_est 10670. Beweist: der § 31-Freibetrag-Zweig (zvE-Minderung + Kindergeld-Hinzurechnung) komponiert mit § 24b im gefalteten Ring. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 10670
+    },
+    "id": "gesamt_2025_einzel_31_freibetrag_24b",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 3 bis 6 EStG i.V.m. § 31/§ 32 Abs. 6 (Familienleistungsausgleich Freibetrag-Zweig) + § 24b",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 45000,
+      "entlastungsbetrag_alleinerziehende": 4500,
+      "freibetraege_kinder": 9600,
+      "gesamtfall": true,
+      "kinder_ganzjaehrig": 2,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition Floor (§ 2 Abs. 6, § 35a nicht erstattungsfähig): § 19 15000 -> zvE 14964 -> Grundtarif 478. § 35a-Ermäßigung als SUMME dreier Töpfe (Minijob 3000->510 + Dienstleistung 25000->4000-Cap + Handwerker 6000->1200 = 5710) übersteigt die verfügbare Steuer -> wirksame Ermäßigung auf 478 gefloort -> festzusetzende_est 0 (nicht negativ, Anrechnungsüberhang verfällt). Beweist: mehrere summierte § 35a-Ermäßigungen greifen den Floor korrekt. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 0
+    },
+    "id": "gesamt_2025_einzel_35a_floor_komposition",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt",
+      "fundstelle": "§ 35a Abs. 1-3 EStG (Steuerermäßigung nicht erstattungsfähig) i.V.m. § 2 Abs. 6 EStG",
+      "redistributable": true,
+      "zitatanker": "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, auf Antrag"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 15000,
+      "gesamtfall": true,
+      "steuerermaessigungen": 5710,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition (§ 2 Abs. 3-6): § 19 50000 + § 20-Kapital 8000 (Günstigerprüfung -> tariflich im zvE, GdE 58000) MISCHT mit zwei Abzügen -> § 10 KiSt 1200 (gezahlt, keine Erstattung) als Sonderausgabe + § 33 agB 5000 minus zumutbare Belastung (Tranchen 58000, kinderlos) = 1604 -> Einkommen 55196 -> Grundtarif 12582; keine Ermäßigung -> festzusetzende_est 12582. Beweist: § 19+§ 20 + § 10-KiSt + § 33-agB komponiert. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 12582
+    },
+    "id": "gesamt_2025_einzel_kapital_agb_kist",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 3 bis 6 EStG (Komposition § 19/§ 20-Günstiger + § 10 Abs. 1 Nr. 4 KiSt + § 33 agB)",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "aussergewoehnliche_belastungen": 1604,
+      "einkuenfte_kapitalvermoegen": 8000,
+      "einkuenfte_nichtselbststaendig": 50000,
+      "gesamtfall": true,
+      "sonderausgaben": 1200,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Gesamtfall Einzel mit 1 Kind, VZ 2025: § 19 40000 + § 21 18770, SA 36 -> einkommen 58734; KFB+BEA 4800 (3336+1464, params/2025) -> zvE 53934; § 31 S. 4 Kindergeld-Hinzurechnung 255x12=3060 (params/2025). festzusetzende = tarif(53934,2025)=12114 + 3060 = 15174.",
+    "erwartung": {
+      "festzusetzende_est": 15174
+    },
+    "id": "gesamt_2025_einzel_kinder",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 5/6 EStG (Stufenfolge), § 32 Abs. 6 (KFB+BEA, params/2025/kinderfreibetrag_p32), § 31 S. 4 i.V.m. § 66 (Kindergeld-Hinzurechnung, params/2025/kindergeld_p66), § 32a Abs. 1 (Grundtarif VZ 2025)",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 40000,
+      "einkuenfte_vermietung": 18770,
+      "freibetraege_kinder": 4800,
+      "gesamtfall": true,
+      "kinder_ganzjaehrig": 1,
+      "sonderausgaben": 36,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition CHARGE30-KOMBI: § 19 40000 (SdE 40000) mit DREI charge30-Abzügen zugleich -> Altersentlastungsbetrag 646 (§24a, geburtsjahr 1959) + Entlastungsbetrag Alleinerziehende 4260 (§24b, 1 Kind) mindern GdE auf 35094 -> § 10b-Spende 3000 (unter 20%-Cap der GEMINDERTEN GdE) als Sonderausgabe -> zvE 32094 -> Grundtarif 4906 -> festzusetzende_est 4906. Beweist: §24a + §24b + §10b komponieren gemeinsam, §10b-Cap nutzt die post-Freibetrag-GdE. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 4906
+    },
+    "id": "gesamt_2025_einzel_kombi_24a_24b_10b",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 3 bis 6 EStG (charge30-Komposition § 24a + § 24b GdE-mindernd + § 10b-Sonderausgabe)",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "altersentlastungsbetrag": 646,
+      "einkuenfte_nichtselbststaendig": 40000,
+      "entlastungsbetrag_alleinerziehende": 4260,
+      "gesamtfall": true,
+      "sonderausgaben": 3000,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition (§ 2 Abs. 3-6): § 19 40000 + § 21-Vermietung 18770 (GdE 58770) MISCHT mit zwei Abzügen -> § 10b-Spende 5000 (unter 20%-Cap 11754) als Sonderausgabe -> zvE 53770 -> Grundtarif 12053; § 35a-Ermäßigung 1200 (Handwerker 6000 × 20 %) auf verfügbare Steuer gefloort -> festzusetzende_est 10853. Beweist: catala_gesamt komponiert 2 Einkunftsarten + 2 Abzüge korrekt. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 10853
+    },
+    "id": "gesamt_2025_einzel_mehrarten_35a_10b",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 3 bis 6 EStG (Komposition § 19/§ 21 + § 10b-Sonderausgabe + § 35a-Ermäßigung mit Floor)",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 40000,
+      "einkuenfte_vermietung": 18770,
+      "gesamtfall": true,
+      "sonderausgaben": 5000,
+      "steuerermaessigungen": 1200,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Gesamtfall Einzel, VZ 2025, Altersvorsorge DECKELT: § 19 60000; Vorsorge-Beitraege 40000 inkl. AG > HB knappschaftl. RV 29344 (params/2025) -> Cap 29344, minus steuerfreier AG-Anteil 5000 = abziehbar 24344 (Kuerzung NACH Cap); Sonderausgaben 24344 -> einkommen 35656 = zvE; tarif(35656,2025) = festzusetzende 5966. Deckel bindet und differiert vom VZ 2024 (HB 27566 vs 29344).",
+    "erwartung": {
+      "festzusetzende_est": 5966
+    },
+    "id": "gesamt_2025_vorsorge_capped",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p10_2026-07-11.txt",
+      "fundstelle": "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG (Altersvorsorge, Höchstbeitrag knappschaftl. RV params/2025, Cap 29344), § 2 Abs. 4 (Sonderausgaben mindern das Einkommen), § 32a Abs. 1 (Grundtarif VZ 2025)",
+      "redistributable": true,
+      "zitatanker": "bis zu dem Höchstbeitrag zur knappschaftlichen Rentenversicherung"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 60000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "vorsorge_ag_anteil_steuerfrei": 5000,
+      "vorsorge_gesamtbeitraege_inkl_ag": 40000
+    }
+  },
+  {
+    "beschreibung": "Gesamtfall Einzel, VZ 2025, Altersvorsorge UNTER Deckel: § 19 60000; Vorsorge-Beitraege 12000 inkl. AG < HB 29344 -> kein Cap, min = 12000, minus steuerfreier AG-Anteil 2000 = abziehbar 10000; Sonderausgaben 10000 -> einkommen 50000 = zvE; tarif(50000,2025) = festzusetzende 10691. Gleicher abzug wie VZ 2024 (unter Cap), Ergebnis nur ueber den Tarif verschieden.",
+    "erwartung": {
+      "festzusetzende_est": 10691
+    },
+    "id": "gesamt_2025_vorsorge_unter",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p10_2026-07-11.txt",
+      "fundstelle": "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG (Altersvorsorge unter Höchstbeitrag, params/2025), § 2 Abs. 4 (Sonderausgaben mindern das Einkommen), § 32a Abs. 1 (Grundtarif VZ 2025)",
+      "redistributable": true,
+      "zitatanker": "Beiträge zu den gesetzlichen Rentenversicherungen"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 60000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025,
+      "vorsorge_ag_anteil_steuerfrei": 2000,
+      "vorsorge_gesamtbeitraege_inkl_ag": 12000
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition zusammen (§ 2 Abs. 3-6, § 26b, § 32a Abs. 5): gemeinsame § 19 80000 (GdE 80000) MISCHT mit zwei Abzügen auf die GEMEINSAME GdE -> § 10b-Spende 20000 auf 20%-Cap der gemeinsamen GdE gedeckelt = 16000 (nicht je Person) als Sonderausgabe + § 33 agB 6000 minus zumutbare Belastung (Tranchen 80000, Splitting) = 1864 -> Einkommen 62136 -> Splittingtarif 9216 -> festzusetzende_est 9216. Beweist: Abzüge komponieren auf gemeinsame GdE, Splittingtarif. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 9216
+    },
+    "id": "gesamt_2025_zusammen_abzuege",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 3 bis 6 EStG i.V.m. § 26b/§ 32a Abs. 5 (Komposition § 10b-20%-Cap + § 33-zumutbar auf gemeinsame GdE)",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "aussergewoehnliche_belastungen": 1864,
+      "einkuenfte_nichtselbststaendig": 80000,
+      "gesamtfall": true,
+      "sonderausgaben": 16000,
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Engine-Komposition A.2 Person-B-Vorsorge bei Zusammenveranlagung (§ 26b): beide Ehegatten § 19 (zusammen 80000). BEIDE haben eigene Vorsorge: Person A Basis-KV/PV 4000 + Person B Basis-KV/PV 4000, jeder über seinem eigenen Höchstbetrag 2800 -> § 10 Abs. 4 S. 4 Durchbruch je Person -> voller Basis-Abzug 4000 je Ehegatte -> sonderausgaben 8000 (§ 10 Abs. 4 S. 3: gemeinsamer HB = Summe je Ehegatte) -> zvE 72000 -> Splittingtarif 2 × Grundtarif(36000) = 12142 -> festzusetzende_est 12142. OHNE A.2 (nur Person-A-Vorsorge abgezogen, Person B still über-besteuert = der behobene A.1-Fehler) wäre sonderausgaben nur 4000 -> est 13378. Beweist: die Person-B-Vorsorge wird bei Zusammenveranlagung abgezogen (jeder Ehegatte eigene Vorsorge, § 10 Abs. 4 S. 3), senkt die est um 1236. VZ 2025",
+    "erwartung": {
+      "festzusetzende_est": 12142
+    },
+    "id": "gesamt_2025_zusammen_person_b_vorsorge",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p10_2026-07-11.txt",
+      "fundstelle": "§ 10 Abs. 4 S. 3 EStG (gemeinsamer Höchstbetrag je Ehegatte bei Zusammenveranlagung) i.V.m. § 26b / § 32a Abs. 5 (Splitting) + § 2 Abs. 3 bis 6",
+      "redistributable": true,
+      "zitatanker": "Bei zusammen veranlagten Ehegatten bestimmt sich der gemeinsame Höchstbetrag aus der Summe der jedem Ehegatten"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 80000,
+      "gesamtfall": true,
+      "sonderausgaben": 8000,
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Gesamtfall Einzel: § 19 62000, § 24a 2000, SA 2000, agB 500 -> zvE 57500 -> tarifl 13279, § 35a-Ermaessigung 279 -> festzusetzende 13000, VZ 2026",
+    "erwartung": {
+      "festzusetzende_est": 13000
+    },
+    "id": "gesamt_2026_einzel_abzuege_ermaessigung",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 3 bis 6 EStG (Stufenfolge inkl. § 24a, Sonderausgaben, agB, § 35a-Ermaessigung)",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "altersentlastungsbetrag": 2000,
+      "aussergewoehnliche_belastungen": 500,
+      "einkuenfte_nichtselbststaendig": 62000,
+      "gesamtfall": true,
+      "sonderausgaben": 2000,
+      "steuerermaessigungen": 279,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "Floor § 35a (nicht erstattungsfähig): § 19 20000 -> positive tarifliche ESt, aber steuerermaessigungen 50000 (weit über der Steuer) -> festzusetzende_est auf 0 gefloort, NICHT negativ (Anrechnungsüberhang verfällt). Ohne Floor ergäbe die ungefloorte Subtraktion einen negativen Bescheid. VZ 2026",
+    "erwartung": {
+      "festzusetzende_est": 0
+    },
+    "id": "gesamt_2026_einzel_ermaessigung_floor",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt",
+      "fundstelle": "§ 35a Abs. 1-3 EStG (Steuerermäßigung nicht erstattungsfähig) i.V.m. § 2 Abs. 6 EStG",
+      "redistributable": true,
+      "zitatanker": "ermäßigt sich die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen, auf Antrag"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 20000,
+      "gesamtfall": true,
+      "steuerermaessigungen": 50000,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "Gesamtfall Einzel, § 19 40000 + § 21 Vermietung 18770, SA-Pauschbetrag 36 -> zvE 58734, VZ 2026",
+    "erwartung": {
+      "festzusetzende_est": 13747
+    },
+    "id": "gesamt_2026_einzel_mehrarten",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 3 bis 6 EStG (Stufenfolge), § 32a Abs. 1 EStG (Grundtarif VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 40000,
+      "einkuenfte_vermietung": 18770,
+      "gesamtfall": true,
+      "sonderausgaben": 36,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "Gesamtfall Einzel, VZ 2026, Altersvorsorge DECKELT: § 19 60000; Vorsorge-Beitraege 40000 inkl. AG > HB knappschaftl. RV 30826 (params/2026) -> Cap 30826, minus steuerfreier AG-Anteil 5000 = abziehbar 25826 (Kuerzung NACH Cap); Sonderausgaben 25826 -> einkommen 34174 = zvE; tarif(34174,2026) = festzusetzende 5424. Deckel bindet und differiert von VZ 2024/2025 (HB 30826).",
+    "erwartung": {
+      "festzusetzende_est": 5424
+    },
+    "id": "gesamt_2026_vorsorge_capped",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p10_2026-07-11.txt",
+      "fundstelle": "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG (Altersvorsorge, Höchstbeitrag knappschaftl. RV params/2026, Cap 30826), § 2 Abs. 4 (Sonderausgaben mindern das Einkommen), § 32a Abs. 1 (Grundtarif VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "bis zu dem Höchstbeitrag zur knappschaftlichen Rentenversicherung"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 60000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "vorsorge_ag_anteil_steuerfrei": 5000,
+      "vorsorge_gesamtbeitraege_inkl_ag": 40000
+    }
+  },
+  {
+    "beschreibung": "Gesamtfall Einzel, VZ 2026, Altersvorsorge UNTER Deckel: § 19 60000; Vorsorge-Beitraege 12000 inkl. AG < HB 30826 -> kein Cap, min = 12000, minus steuerfreier AG-Anteil 2000 = abziehbar 10000; Sonderausgaben 10000 -> einkommen 50000 = zvE; tarif(50000,2026) = festzusetzende 10548. Gleicher abzug wie VZ 2024/2025 (unter Cap), Ergebnis nur ueber den Tarif verschieden.",
+    "erwartung": {
+      "festzusetzende_est": 10548
+    },
+    "id": "gesamt_2026_vorsorge_unter",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p10_2026-07-11.txt",
+      "fundstelle": "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG (Altersvorsorge unter Höchstbeitrag, params/2026), § 2 Abs. 4 (Sonderausgaben mindern das Einkommen), § 32a Abs. 1 (Grundtarif VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "Beiträge zu den gesetzlichen Rentenversicherungen"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 60000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2026,
+      "vorsorge_ag_anteil_steuerfrei": 2000,
+      "vorsorge_gesamtbeitraege_inkl_ag": 12000
+    }
+  },
+  {
+    "beschreibung": "Gesamtfall Zusammenveranlagung: zusammengerechnete § 19-Einkuenfte 97540, verdoppelter SA-Pauschbetrag 72 -> gemeinsames zvE 97468 -> Splitting 20212, VZ 2026",
+    "erwartung": {
+      "festzusetzende_est": 20212
+    },
+    "id": "gesamt_2026_zusammen_mehrarten",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 3 bis 6 EStG i.V.m. § 26b, § 32a Abs. 5 EStG (Splittingtarif VZ 2026)",
+      "redistributable": true,
+      "zitatanker": "ist die festzusetzende Einkommensteuer"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 97540,
+      "gesamtfall": true,
+      "sonderausgaben": 72,
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "GewSt-Basiskette Einzelunt. EZ 2026: Gewinn 500.000 + § 8 Nr.1 115.000 (Summe 660.000: a 300.000 + d 200.000/5 + e 600.000/2 + f 80.000/4; (660k-200k)/4) - § 9 Grundsteuer 12.000 = Gewerbeertrag 603.000; § 11 (603.000-24.500)*3,5% = Steuermessbetrag 20.247,50.",
+    "erwartung": {
+      "gewst_cent": 2024750
+    },
+    "id": "gewst_basis_ez2026",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt",
+      "fundstelle": "§ 7/§ 8 Nr.1/§ 9 Nr.1/§ 11 GewStG (Basiskette EZ 2026)",
+      "redistributable": true,
+      "zitatanker": "Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent"
+    },
+    "sachverhalt": {
+      "gewerbesteuer": true,
+      "gewinn_gewerbebetrieb": 500000,
+      "gewst_entgelte_schulden": 300000,
+      "gewst_grundsteuer": 12000,
+      "gewst_miet_beweglich": 200000,
+      "gewst_miet_unbeweglich": 600000,
+      "gewst_rechte": 80000,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "NEGATIVTEST / Stufe-A-Cut-Tripwire § 8 Nr. 1 Buchst. d GewSt (E-Kfz-Quote). Sachverhalt: gewst_miet_beweglich 3.000.000 = Leasingraten NUR fuer qualifizierte Elektro-/Hybridfahrzeuge (§ 8 Nr. 1 d Satz 2). Rechtlich richtig waere die HALBIERUNG der Satz-1-Hinzurechnung (\"nur zur Haelfte vorzunehmen\" -> 1/10 statt 1/5): Summe 3.000.000/10 = 300.000; (300.000-200.000)/4 = 25.000; Gewerbeertrag 500.000+25.000 = 525.000; (525.000-24.500)*3,5% = 17.517,50 = 1.751.750 ct. Die PRODUKTIVE Regel p8_1_hinzurechnung bildet die E-Kfz-Halbierung NICHT ab (Stufe-A-Zuschnitt: hinweis \"E-/Hybrid-/Fahrrad-Halbierung von Buchst. d (1/10 statt 1/5) = benannter Nachtrag, hier Standardfall\"). Daher pinnt die Erwartung den 1/5-STANDARDPFAD: Summe 3.000.000/5 = 600.000; (600.000-200.000)/4 = 100.000 Hinzurechnung; Gewerbeertrag 500.000+100.000 = 600.000; (600.000-24.500)*3,5% = 20.142,50 = 2.014.250 ct. TRIPWIRE: sobald die E-Kfz-Halbierung modelliert wird, produziert der Runner 1.751.750 != gepinnte 2.014.250 -> Fall wird ROT und erzwingt die Erwartungs- Anpassung (Delta Messbetrag 2.625,00 EUR). Bis dahin dokumentiert der Fall den Cut. Micro-Drift (nicht ausgerechnet, nur vermerkt): Hybrid-Eignung setzt Reichweite >= 80 km voraus (§ 8 Nr. 1 d Satz 2 bb); § 36 Abs. 4 Satz 2 laesst fuer Vertraege VOR 1.1.2025 statt 80 km bereits 60 km genuegen (Vertragsabschluss-Kohorte, KEINE EZ-Schwelle) — VZ 2026 hier => 80-km-Fassung. NACHTRAG-VERMERK: an der Regel p8_1 wird NICHTS geaendert (Instructor-Auflage); dieser Fall ist reiner Dokumentations- /Tripwire-Golden fuer den zurueckgestellten E-Kfz-Zuschnitt.",
+    "erwartung": {
+      "gewst_cent": 2014250
+    },
+    "id": "gewst_ekfz_beweglich_halbe_nachtrag",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/gewstg_p8_2026-07-16.txt",
+      "fundstelle": "§ 8 Nr. 1 Buchst. d GewStG (Satz 1: 1/5; Satz 2 E-Kfz-Halbierung = Nachtrag), EZ 2026",
+      "redistributable": true,
+      "zitatanker": "einem Fünftel der Miet- und Pachtzinsen (einschließlich Leasingraten) für die Benutzung von beweglichen Wirtschaftsgütern des Anlagevermögens"
+    },
+    "sachverhalt": {
+      "gewerbesteuer": true,
+      "gewinn_gewerbebetrieb": 500000,
+      "gewst_miet_beweglich": 3000000,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "KANTE § 8 Nr.1: Summe der Finanzierungsanteile 140.000 (a 120.000 + f 80.000/4=20.000) < 200.000 Freibetrag -> Hinzurechnung 0 (Freibetrag als Schwelle nach oben, floored). Gewerbeertrag 400.000; § 11 = 13.142,50.",
+    "erwartung": {
+      "gewst_cent": 1314250
+    },
+    "id": "gewst_kante_hinzu0",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt",
+      "fundstelle": "§ 8 Nr.1 GewStG (200k-Freibetrag als Schwelle)",
+      "redistributable": true,
+      "zitatanker": "Steuermesszahl für den Gewerbeertrag beträgt 3,5 Prozent"
+    },
+    "sachverhalt": {
+      "gewerbesteuer": true,
+      "gewinn_gewerbebetrieb": 400000,
+      "gewst_entgelte_schulden": 120000,
+      "gewst_rechte": 80000,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "KANTE § 11: Gewerbeertrag 20.000 < Freibetrag 24.500 -> Bemessung 0 (hoechstens abgerundeter Gewerbeertrag) -> Steuermessbetrag 0.",
+    "erwartung": {
+      "gewst_cent": 0
+    },
+    "id": "gewst_kante_mb0",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt",
+      "fundstelle": "§ 11 Abs.1 S.3 Nr.1 GewStG (Freibetrag 24.500)",
+      "redistributable": true,
+      "zitatanker": "Freibetrag in Höhe von 24 500 Euro"
+    },
+    "sachverhalt": {
+      "gewerbesteuer": true,
+      "gewinn_gewerbebetrieb": 20000,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "§ 10a Mindestbesteuerung (Deckel bindet, 60 %): massgeb. Gewerbeertrag 5 Mio, Fehlbetrag-Bestand 5 Mio -> Kapazitaet 1 Mio + 60%*(4 Mio) = 3,4 Mio (NICHT 3,8 Mio wie 70 % § 10d!), Abzug 3,4 Mio, verbleib. 1,6 Mio; § 11 = 55.142,50. Rest-Fehlbetrag 1,6 Mio vortragsfaehig.",
+    "erwartung": {
+      "gewst_cent": 5514250
+    },
+    "id": "gewst_p10a_deckel60",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/gewstg_p10a_2026-07-16.txt",
+      "fundstelle": "§ 10a S.2 GewStG (60 %, NICHT 70 %)",
+      "redistributable": true,
+      "zitatanker": "bis zu 60 Prozent"
+    },
+    "sachverhalt": {
+      "fehlbetrag_bestand": 5000000,
+      "gewerbesteuer": true,
+      "gewinn_gewerbebetrieb": 5000000,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "§ 10a Gewerbeverlust (Sockel bindet nicht): massgeb. Gewerbeertrag 900.000 < 1 Mio, Fehlbetrag-Bestand 700.000 -> Kapazitaet 1.000.000, Abzug 700.000, verbleib. Gewerbeertrag 200.000; § 11 (200.000-24.500)*3,5% = 6.142,50.",
+    "erwartung": {
+      "gewst_cent": 614250
+    },
+    "id": "gewst_p10a_sockel",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/gewstg_p10a_2026-07-16.txt",
+      "fundstelle": "§ 10a S.1 GewStG (1-Mio-Sockel)",
+      "redistributable": true,
+      "zitatanker": "bis zu 60 Prozent"
+    },
+    "sachverhalt": {
+      "fehlbetrag_bestand": 700000,
+      "gewerbesteuer": true,
+      "gewinn_gewerbebetrieb": 900000,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "§ 35 EStG GewSt-Anrechnung, Basiskette (Messbetrag 20.247,50), Hebesatz 380 %: 4x MB = 80.990,00 vs gezahlte GewSt 20.247,50*380% = 76.940,50 -> Deckel 2 (tatsaechlich zu zahlende GewSt) bindet = 76.940,50.",
+    "erwartung": {
+      "gewst_cent": 7694050
+    },
+    "id": "gewst_p35_h380",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p35_2026-07-14.txt",
+      "fundstelle": "§ 35 Abs.1 S.1/S.5 EStG (4x Messbetrag, Deckel gezahlte GewSt)",
+      "redistributable": true,
+      "zitatanker": "tatsächlich zu zahlende Gewerbesteuer"
+    },
+    "sachverhalt": {
+      "gewerbesteuer": true,
+      "gewinn_gewerbebetrieb": 500000,
+      "gewst_entgelte_schulden": 300000,
+      "gewst_grundsteuer": 12000,
+      "gewst_hebesatz": 380,
+      "gewst_miet_beweglich": 200000,
+      "gewst_miet_unbeweglich": 600000,
+      "gewst_output": "p35_anrechnung",
+      "gewst_rechte": 80000,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "§ 35 EStG GewSt-Anrechnung, Basiskette, Hebesatz 450 %: 4x MB = 80.990,00 vs gezahlte GewSt 20.247,50*450% = 91.113,75 -> Deckel 1 (4x Messbetrag) bindet = 80.990,00 (Definitivbelastung oberhalb ~400 %).",
+    "erwartung": {
+      "gewst_cent": 8099000
+    },
+    "id": "gewst_p35_h450",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p35_2026-07-14.txt",
+      "fundstelle": "§ 35 Abs.1 S.1 Nr.1 EStG (Vierfache Messbetrag)",
+      "redistributable": true,
+      "zitatanker": "das Vierfache des jeweils für den dem Veranlagungszeitraum entsprechenden Erhebungszeitraum nach § 14 des Gewerbesteuergesetzes"
+    },
+    "sachverhalt": {
+      "gewerbesteuer": true,
+      "gewinn_gewerbebetrieb": 500000,
+      "gewst_entgelte_schulden": 300000,
+      "gewst_grundsteuer": 12000,
+      "gewst_hebesatz": 450,
+      "gewst_miet_beweglich": 200000,
+      "gewst_miet_unbeweglich": 600000,
+      "gewst_output": "p35_anrechnung",
+      "gewst_rechte": 80000,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "§ 9-VZ-Split EZ 2024 (Altfassung): Gewinn 300.000 + § 8 25.000 (Summe 300.000: a 150.000 + e 300.000/2; (300k-200k)/4) - § 9 EZ2024 Einheitswert 400.000*1,2%=4.800 = Gewerbeertrag 320.200; § 11 = 10.349,50. Δ zu EZ2025 = +147 (Fassungswechsel JStG 2024, § 36 Abs.4b).",
+    "erwartung": {
+      "gewst_cent": 1034950
+    },
+    "id": "gewst_split_ez2024",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/bgbl/gewstg_p9_altfassung_ez2024.txt",
+      "fundstelle": "§ 9 Nr.1 S.1 GewStG a.F. (EZ 2024, 1,2 % Einheitswert)",
+      "redistributable": true,
+      "zitatanker": "1,2 Prozent des Einheitswerts des zum Betriebsvermögen des Unternehmers gehörenden"
+    },
+    "sachverhalt": {
+      "gewerbesteuer": true,
+      "gewinn_gewerbebetrieb": 300000,
+      "gewst_einheitswert": 400000,
+      "gewst_entgelte_schulden": 150000,
+      "gewst_miet_unbeweglich": 300000,
+      "veranlagungszeitraum": 2024
+    }
+  },
+  {
+    "beschreibung": "§ 9-VZ-Split EZ 2025 (Neufassung JStG 2024): identischer Fall wie EZ2024, aber § 9 = tatsaechliche Grundsteuer-BA 9.000 (statt 1,2 % Einheitswert 4.800) = Gewerbeertrag 316.000; § 11 = 10.202,50. NEGATIVTEST: naiver EZ2024-Klon ohne Fassungswechsel waere still falsch (Δ Messbetrag -147).",
+    "erwartung": {
+      "gewst_cent": 1020250
+    },
+    "id": "gewst_split_ez2025",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/gewstg_p9_2026-07-16.txt",
+      "fundstelle": "§ 9 Nr.1 S.1 GewStG n.F. (EZ 2025, tatsaechliche Grundsteuer)",
+      "redistributable": true,
+      "zitatanker": "die im Erhebungszeitraum als Betriebsausgabe erfasste Grundsteuer"
+    },
+    "sachverhalt": {
+      "gewerbesteuer": true,
+      "gewinn_gewerbebetrieb": 300000,
+      "gewst_entgelte_schulden": 150000,
+      "gewst_grundsteuer": 9000,
+      "gewst_miet_unbeweglich": 300000,
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Arbeitszimmer/Homeoffice, VZ 2024",
+    "erwartung": {
+      "abzug_gesamt": 2000
+    },
+    "id": "ho_2024_ausschluss",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p04_abs5_2026-07-09.txt",
+      "fundstelle": "§ 4 Abs. 5 S. 1 Nr. 6c Satz 3 EStG (Ausschluss bei Abzug nach Nr. 6b); Arbeitszimmer 2000, Homeoffice 0",
+      "redistributable": true,
+      "zitatanker": "soweit ein Abzug nach Nummer 6b vorgenommen wird"
+    },
+    "sachverhalt": {
+      "arbeitszimmer_vorhanden": true,
+      "homeoffice_tage": 100,
+      "ist_mittelpunkt": true,
+      "jahrespauschale_gewaehlt": false,
+      "monate_ohne_mittelpunkt": 0,
+      "tatsaechliche_aufwendungen": 2000,
+      "veranlagungszeitraum": 2024
+    }
+  },
+  {
+    "beschreibung": "Arbeitszimmer/Homeoffice, VZ 2024",
+    "erwartung": {
+      "abzug_gesamt": 1260
+    },
+    "id": "ho_2024_jahrespauschale",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p04_abs5_2026-07-09.txt",
+      "fundstelle": "§ 4 Abs. 5 S. 1 Nr. 6b Satz 3 EStG (Jahrespauschale 1 260 Euro)",
+      "redistributable": true,
+      "zitatanker": "1 260 Euro (Jahrespauschale)"
+    },
+    "sachverhalt": {
+      "arbeitszimmer_vorhanden": true,
+      "homeoffice_tage": 0,
+      "ist_mittelpunkt": true,
+      "jahrespauschale_gewaehlt": true,
+      "monate_ohne_mittelpunkt": 0,
+      "tatsaechliche_aufwendungen": 0,
+      "veranlagungszeitraum": 2024
+    }
+  },
+  {
+    "beschreibung": "Arbeitszimmer/Homeoffice, VZ 2024",
+    "erwartung": {
+      "abzug_gesamt": 1260
+    },
+    "id": "ho_2024_tagespauschale_cap",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p04_abs5_2026-07-09.txt",
+      "fundstelle": "§ 4 Abs. 5 S. 1 Nr. 6c Satz 1 EStG (6 Euro/Tag, hoechstens 1 260 Euro); 250 Tage -> Cap 1260",
+      "redistributable": true,
+      "zitatanker": "6 Euro (Tagespauschale)"
+    },
+    "sachverhalt": {
+      "arbeitszimmer_vorhanden": false,
+      "homeoffice_tage": 250,
+      "ist_mittelpunkt": false,
+      "jahrespauschale_gewaehlt": false,
+      "monate_ohne_mittelpunkt": 0,
+      "tatsaechliche_aufwendungen": 0,
+      "veranlagungszeitraum": 2024
+    }
+  },
+  {
+    "beschreibung": "§ 32d Abs. 1/3 Abgeltungsteuer-Integration: Arbeitnehmer mit Einkünften aus § 19 in Höhe von 60000 (einkuenfte_nichtselbststaendig wird hier DIREKT auf Einkünfte-Ebene gesetzt = Bruttolohn ~61230 nach Abzug des Arbeitnehmer-Pauschbetrags § 9a; NICHT Bruttolohn 60000 — das ist die Full-Pipeline-Variante, siehe Layer-II-Draft K4=16174). Kapitalerträge mit gesonderter 25-%-Abgeltungsteuer 2250 (= 25 % auf 9000 = Kapitalerträge 10000 minus Sparer-Pauschbetrag 1000, § 20 Abs. 9). Prüft, dass catala_gesamt die gesonderte Kapitalsteuer (steuer_kapital_gesondert) zur tariflichen ESt ADDIERT (§ 32d Abs. 3 S. 2). Die Günstigerprüfung greift NICHT (Grenzsteuersatz auf 9000 ~ 3651 > 2250 Abgeltung). Der gesonderte Steuerbetrag käme aus dem § 32d-Accessor (dev-1); dieser Golden testet die catala_gesamt-Integration accessor-unabhängig.",
+    "erwartung": {
+      "festzusetzende_est": 16651
+    },
+    "id": "kapital_abgeltung_2025_einzel",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32d_2026-07-13.txt",
+      "fundstelle": "§ 32d Abs. 1 S. 1, Abs. 3 S. 2 EStG i.V.m. § 20 Abs. 9, § 32a EStG (Grundtarif VZ 2025)",
+      "redistributable": true,
+      "zitatanker": "erhöht sich die tarifliche Einkommensteuer um den nach Absatz 1 ermittelten Betrag"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 60000,
+      "gesamtfall": true,
+      "steuer_kapital_gesondert": 2250,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "§ 32d Abs. 1/3 Abgeltungsteuer bei Zusammenveranlagung: Ehepaar mit § 19-Einkünften 80000 (einkuenfte_nichtselbststaendig DIREKT auf Einkünfte-Ebene, NICHT Bruttolohn — Full-Pipeline wäre höherer Brutto nach § 9a je Person). Kapitalerträge mit gesonderter 25-%-Abgeltungsteuer 2500 (= 25 % auf 10000 = Kapitalerträge 12000 minus GEMEINSAMER Sparer-Pauschbetrag 2000, § 20 Abs. 9 S. 2). Prüft, dass catala_gesamt im Zusammenveranlagungs-Tarif (Splitting) die gesonderte Kapitalsteuer korrekt zur tariflichen ESt addiert (§ 32d Abs. 3 S. 2). Ergänzt den einzel-Fall um den 2000-Euro-Sparer-PB-Zweig + Splitting-Tarif. Testet die catala_gesamt-Integration accessor-unabhängig.",
+    "erwartung": {
+      "festzusetzende_est": 17118
+    },
+    "id": "kapital_abgeltung_2025_zusammen",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32d_2026-07-13.txt",
+      "fundstelle": "§ 32d Abs. 1 S. 1, Abs. 3 S. 2 EStG i.V.m. § 20 Abs. 9 S. 2, § 32a Abs. 5 EStG (Splitting VZ 2025)",
+      "redistributable": true,
+      "zitatanker": "erhöht sich die tarifliche Einkommensteuer um den nach Absatz 1 ermittelten Betrag"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 80000,
+      "gesamtfall": true,
+      "steuer_kapital_gesondert": 2500,
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "§ 32d Abs. 6 Günstigerprüfung: geringes Einkommen (§ 19-Einkünfte 12000, einkuenfte_nichtselbststaendig DIREKT auf Einkünfte-Ebene) plus die nach § 20 ermittelten (netto, nach Sparer-Pauschbetrag) Kapitaleinkünfte 5000, tariflich hinzugerechnet. Weil der tarifliche Zuwachs (902) niedriger ist als die 25-%-Abgeltung auf dieselben Kapitaleinkünfte (25 % × 5000 = 1250), wählt der Accessor (dev-1) den Günstiger-Pfad: die Kapitaleinkünfte laufen als einkuenfte_kapitalvermoegen in den Grundtarif statt gesonderter Abgeltung. Prüft, dass catala_gesamt die tariflich hinzugerechneten Kapitaleinkünfte korrekt in die festzusetzende ESt einbezieht (§ 32d Abs. 6 Günstigerprüfung).",
+    "erwartung": {
+      "festzusetzende_est": 902
+    },
+    "id": "kapital_guenstiger_2025_einzel",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p32d_2026-07-13.txt",
+      "fundstelle": "§ 32d Abs. 6 S. 1 EStG i.V.m. § 2 Abs. 1, § 32a EStG (Grundtarif VZ 2025, Günstigerprüfung)",
+      "redistributable": true,
+      "zitatanker": "hinzugerechnet und der tariflichen Einkommensteuer unterworfen, wenn dies zu einer niedrigeren Einkommensteuer einschließlich Zuschlagsteuern führt"
+    },
+    "sachverhalt": {
+      "einkuenfte_kapitalvermoegen": 5000,
+      "einkuenfte_nichtselbststaendig": 12000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "AMTLICHES BEISPIEL (EÜR-Anleitung 2025, 1 %-Regel): Bruttolistenpreis 20.000 €, voller Nutzungswert (Teiler 1). Regel-Output ist der MONATSwert: 20.000 / 100 / 1 = 200 € je Monat -> nutzungswert_monat_cent = 20.000. HINWEIS: das amtliche Beispiel nennt den JAHRESwert 2.400 € = 200 x 12 Kalendermonate; die Regel liefert den Monatswert by design (x12 = amtlicher Jahreswert).",
+    "erwartung": {
+      "nutzungswert_monat_cent": 20000
+    },
+    "id": "kfz_amtlich_a4_blp20k_monat",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/bfinv/euer_2025.txt",
+      "fundstelle": "§ 6 Abs. 1 Nr. 4 S. 2 EStG / EÜR-Anleitung 2025 (1 %-Regel, 20.000 € x 12 x 1% = 2.400 € Jahr)",
+      "redistributable": true,
+      "zitatanker": "20.000 € x 12 x 1% = 2.400 €"
+    },
+    "sachverhalt": {
+      "bruchteils_teiler": 1,
+      "bruttolistenpreis": 20000
+    }
+  },
+  {
+    "beschreibung": "Kombiniert § 19 + § 21: Arbeitnehmer MIT Vermietung. § 19-Einkünfte 38770 (Bruttolohn 40000 − § 9a-Arbeitnehmer-Pauschbetrag 1230) + § 21-Vermietung 18770, Einzelveranlagung VZ 2025. Prüft die § 2-Abs.-3-Summierung ZWEIER Einkunftsarten in EINEM Gesamt-Scope und den § 10c-Pauschbetrag (36) auf Personen-Ebene -> zvE 57504 -> festzusetzende ESt 13452. (Der einkuenfte_nichtselbststaendig-Wert ist die § 9a-bereinigte Größe, die der einzel-Tarif als summe_der_einkuenfte liefert.)",
+    "erwartung": {
+      "festzusetzende_est": 13452
+    },
+    "id": "kombiniert_job_vermietung_2025_einzel",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 2 Nr. 2, Abs. 3 (Summe der Einkünfte), § 10c Satz 1, § 32a Abs. 1 EStG i.V.m. § 19, § 21 EStG, VZ 2025",
+      "redistributable": true,
+      "zitatanker": "Summe der Einkünfte"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 38770,
+      "einkuenfte_vermietung": 18770,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Kombiniert § 19 + § 21-VERLUST (K2-Kern des Loss-Offsets): Arbeitnehmer mit § 19-Einkünften 38770 (Bruttolohn 40000 − § 9a 1230) UND einem Vermietungsverlust −5000 (Werbungskosten > Einnahmen). Nach § 2 Abs. 3 mindert der § 21-Verlust den § 19-Lohn: Summe der Einkünfte 33770 statt 38770 -> festzusetzende ESt 5388 statt 6919 (nur § 19). Belegt, dass der Verlust NICHT verschluckt wird und NICHT zu Negativsteuer führt (der Floor greift erst, wenn der Verlust das Gesamteinkommen übersteigt). Verlustvortrag § 10d (ins Folgejahr) = benannter MVP-GAP, hier nicht modelliert.",
+    "erwartung": {
+      "festzusetzende_est": 5388
+    },
+    "id": "kombiniert_job_vermietungsverlust_2025_einzel",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p2_2026-07-14.txt",
+      "fundstelle": "§ 2 Abs. 3 (Summe der Einkünfte, horizontaler/vertikaler Verlustausgleich), § 10c Satz 1, § 32a Abs. 1 EStG i.V.m. § 19, § 21 Abs. 1 EStG, VZ 2025",
+      "redistributable": true,
+      "zitatanker": "Summe der Einkünfte"
+    },
+    "sachverhalt": {
+      "einkuenfte_nichtselbststaendig": 38770,
+      "einkuenfte_vermietung": -5000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Nenner B KapGes Basisfall VZ 2026: Gewinn 1.000.000, keine Korrekturen -> zvE 1.000.000; KSt 15% = 150.000, SolZ 5,5% = 8.250, GewSt (Hebesatz 400%, kein 24.500-FB) = 140.000; Nenner B = 298.250,00.",
+    "erwartung": {
+      "nenner_b_cent": 29825000
+    },
+    "id": "kst_nenner_b_c1_basis",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/kstg_p23_2026-07-16.txt",
+      "fundstelle": "§ 23 Abs.1 Nr.1 KStG (15% KSt) + SolZ + GewSt (KapGes-Basiskette)",
+      "redistributable": true,
+      "zitatanker": "Veranlagungszeiträume bis 2027 15 Prozent"
+    },
+    "sachverhalt": {
+      "gewinn_estg": 1000000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "Nenner B VZ 2025 mit vGA/Einlage + Schachteldividende + Personensteuer: Slot 800.000 + vGA 50.000 - Einlage 30.000 = 820.000; - §8b-netto (Schachtel 25%>=10%: 100.000*0,95=95.000) + §10-Addback 30.000 = einkommen_vor_spenden 765.000 = zvE; KSt 114.750, SolZ 6.311,25, GewSt 107.100; Nenner B = 228.161,25.",
+    "erwartung": {
+      "nenner_b_cent": 22816125
+    },
+    "id": "kst_nenner_b_c2_vga_schachtel_p10",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt",
+      "fundstelle": "§ 8b Abs.1/5 KStG (Schachtel 95%) i.V.m. § 8 Abs.3 / § 10 / § 23 (Nenner B)",
+      "redistributable": true,
+      "zitatanker": "bleiben bei der Ermittlung des Einkommens außer Ansatz"
+    },
+    "sachverhalt": {
+      "beteiligung_prozent": 25,
+      "dividende_bezuege": 100000,
+      "gewinn_estg": 800000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "personensteuern": 30000,
+      "veranlagungszeitraum": 2025,
+      "verdeckte_einlage": 20000,
+      "verdeckte_gewinnausschuettung": 50000
+    }
+  },
+  {
+    "beschreibung": "Nenner B VZ 2026 Streubesitz (5% < 10%, § 8b Abs.4): Dividende 100.000 VOLL steuerpflichtig (steuerfrei=0, keine 5%-Pauschale); Veräußerungsgewinn 200.000 (Abs.2, KEINE Streubesitz-Schranke) 95% frei -> §8b-netto 190.000; einkommen 500.000 - 190.000 = 310.000 = zvE; KSt 46.500, SolZ 2.557,50, GewSt 43.400; Nenner B = 92.457,50.",
+    "erwartung": {
+      "nenner_b_cent": 9245750
+    },
+    "id": "kst_nenner_b_c3_streubesitz_veraeusserung",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/kstg_p8b_2026-07-16.txt",
+      "fundstelle": "§ 8b Abs.4 KStG (Streubesitz < 10% steuerpflichtig) + Abs.2 Veräußerung (Nenner B)",
+      "redistributable": true,
+      "zitatanker": "wenn die Beteiligung zu Beginn des Kalenderjahres unmittelbar weniger als 10 Prozent des Grund- oder Stammkapitals betragen hat"
+    },
+    "sachverhalt": {
+      "beteiligung_prozent": 5,
+      "dividende_bezuege": 100000,
+      "gewinn_estg": 500000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "veraeusserungsgewinn": 200000,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "PFLICHT-LEHR-GOLDEN: Spenden mindern zvE/KSt, NICHT den Gewerbeertrag. Einkommen_vor_spenden 2.000.000; §9-Höchstbetrag = max(20% von 2.000.000=400.000; 4 Promille von (500.000+300.000)=3.200) = 400.000; Spendenabzug = min(300.000, 400.000) = 300.000 -> zvE 1.700.000; KSt 255.000, SolZ 14.025. ABER GewSt-Slot = einkommen_vor_spenden 2.000.000 (NICHT 1.700.000!) -> GewSt 280.000. BEWUSSTE DIVERGENZ zum Vollrecht: § 9 Nr. 5 GewStG (Spendenkürzung im Gewerbeertrag) = benannter Nachtrag, hier NICHT modelliert; ebenso § 8 Nr. 9 GewStG. Nenner B = 549.025,00.",
+    "erwartung": {
+      "nenner_b_cent": 54902500
+    },
+    "id": "kst_nenner_b_c4_spenden_nicht_gewst",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/kstg_p9_2026-07-16.txt",
+      "fundstelle": "§ 9 Abs.1 Nr.2 KStG (Spenden-Höchstbetrag) — mindert zvE, nicht Gewerbeertrag (§ 9 Nr.5 GewStG Nachtrag)",
+      "redistributable": true,
+      "zitatanker": "bis zur Höhe von insgesamt a) 20 Prozent des Einkommens oder b) 4 Promille der Summe der gesamten Umsätze und der im Kalenderjahr aufgewendeten Löhne und Gehälter"
+    },
+    "sachverhalt": {
+      "gewinn_estg": 2000000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "loehne_gehaelter": 300000,
+      "umsaetze": 500000,
+      "veranlagungszeitraum": 2026,
+      "zuwendungen": 300000
+    }
+  },
+  {
+    "beschreibung": "PFLICHT 60/70-KONTRAST-GOLDEN: § 10d-Deckel bindet. GdE 6.000.000, Verlustbestand 5.000.000. Mit 70% (§ 10d EStG, KSt-Verweis § 8 Abs.1): Höchstbetrag = 1.000.000 + 70%*(6.000.000-1.000.000) = 4.500.000; Verlustabzug 4.500.000 -> zvE 1.500.000; KSt 225.000; Nenner B = 107.737.500 ct = 1.077.375,00. KONTROLLWERT mit 60% (§ 10a GewStG, HIER NICHT): Höchstbetrag = 4.000.000; zvE 2.000.000; KSt 300.000; nenner_b = 115.650.000 ct = 1.156.500,00. GewSt (840.000) bewegt sich im Kontrast NICHT (Slot = einkommen_vor_spenden 6.000.000, verlust-unabhängig). 70 != 60 empirisch verankert.",
+    "erwartung": {
+      "nenner_b_cent": 107737500
+    },
+    "id": "kst_nenner_b_c5_verlust_60_70_deckel",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p10d_2026-07-13.txt",
+      "fundstelle": "§ 10d Abs.2 EStG (70%) via § 8 Abs.1 KStG — 60/70-Kontrast (60% ergäbe 1.156.500,00)",
+      "redistributable": true,
+      "zitatanker": "bis zu 70 Prozent des 1 Million Euro übersteigenden Gesamtbetrags der Einkünfte"
+    },
+    "sachverhalt": {
+      "gewinn_estg": 6000000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "veranlagungszeitraum": 2026,
+      "verlustvortrag_bestand": 5000000
+    }
+  },
+  {
+    "beschreibung": "Nenner B VZ 2024 Hebesatz-Streuung 450%: Gewinn 1.000.000 -> zvE 1.000.000; KSt 150.000, SolZ 8.250; GewSt = Messbetrag 35.000 * 450% = 157.500 (vs 140.000 bei 400%); Nenner B = 315.750,00.",
+    "erwartung": {
+      "nenner_b_cent": 31575000
+    },
+    "id": "kst_nenner_b_c6_hebesatz_450",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/kstg_p23_2026-07-16.txt",
+      "fundstelle": "§ 23 KStG + GewSt Hebesatz 450% (Streuung)",
+      "redistributable": true,
+      "zitatanker": "Veranlagungszeiträume bis 2027 15 Prozent"
+    },
+    "sachverhalt": {
+      "gewinn_estg": 1000000,
+      "gewst_hebesatz": 450,
+      "koerperschaft": true,
+      "veranlagungszeitraum": 2024
+    }
+  },
+  {
+    "beschreibung": "NEGATIV-GOLDEN § 24-Freibetrag-Ausschluss: kleine KapGes, Einkommen 10.000. § 24 S.1 gewährt Körperschaften 5.000-Freibetrag, ABER S.2 Nr.1 schließt Kapitalgesellschaften AUS (deren Leistungen = § 20 Abs.1 Nr.1 EStG). Daher zvE = 10.000 (NICHT 10.000-5.000=5.000!); KSt 1.500 (NICHT 750), SolZ 82,50, GewSt 1.400; Nenner B = 2.982,50. Ein still angewandter Freibetrag würde KSt auf 750 senken = Testbruch.",
+    "erwartung": {
+      "nenner_b_cent": 298250
+    },
+    "id": "kst_nenner_b_c7_negativ_p24_ausschluss",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/kstg_p24_2026-07-16.txt",
+      "fundstelle": "§ 24 Satz 2 Nr.1 KStG (Freibetrags-Ausschluss für Kapitalgesellschaften)",
+      "redistributable": true,
+      "zitatanker": "deren Leistungen bei den Empfängern zu den Einnahmen im Sinne des § 20 Abs. 1 Nr. 1 oder 2 des Einkommensteuergesetzes gehören"
+    },
+    "sachverhalt": {
+      "gewinn_estg": 10000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "veranlagungszeitraum": 2026
+    }
+  },
+  {
+    "beschreibung": "Nenner B VZ 2026 §10d-Sockel bindet nicht + §10-Addback: Gewinn 900.000 + Personensteuer 40.000 + Geldstrafe 10.000 (§10-Addback) = einkommen_vor_spenden 950.000 = GdE < 1.000.000 -> Verlustabzug = min(700.000, 1.000.000-Sockel) = 700.000 (Sockel unbeschränkt, 70%-Staffel greift nicht); zvE 250.000; KSt 37.500, SolZ 2.062,50; GewSt-Slot 950.000 -> GewSt 133.000; Nenner B = 172.562,50.",
+    "erwartung": {
+      "nenner_b_cent": 17256250
+    },
+    "id": "kst_nenner_b_c8_verlust_sockel_p10",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/kstg_p10_2026-07-16.txt",
+      "fundstelle": "§ 10 Nr.2 KStG (Add-back) + § 10d-Sockel (bindet nicht) — Nenner B",
+      "redistributable": true,
+      "zitatanker": "die Steuern vom Einkommen und sonstige Personensteuern"
+    },
+    "sachverhalt": {
+      "geldstrafen": 10000,
+      "gewinn_estg": 900000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "personensteuern": 40000,
+      "veranlagungszeitraum": 2026,
+      "verlustvortrag_bestand": 700000
+    }
+  },
+  {
+    "beschreibung": "Paket 7 / § 4h-Freigrenze UNTERSCHRITTEN (Fallbeil-Unterkante): KapGes VZ 2026, gewinn_estg 5.000.000, Zinsaufwand 2.999.999 (Nettozins < 3 Mio) -> § 4h Abs. 1 NICHT anwendbar (Freigrenze = alles-oder-nichts), KEIN Add-back. zvE 5.000.000; KSt 750.000, SolZ 41.250, GewSt 700.000; Nenner B = 1.491.250,00. Gegenstueck zu G2 (1 EUR mehr Zins kippt in den Mechanismus).",
+    "erwartung": {
+      "nenner_b_cent": 149125000
+    },
+    "id": "kst_nenner_b_p7_g1_freigrenze_unter",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p4h_2026-07-16.txt",
+      "fundstelle": "§ 4h Abs. 2 S. 1 lit. a EStG (Freigrenze 3 Mio) — § 4h aus, Nenner B ohne Add-back",
+      "redistributable": true,
+      "zitatanker": "die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen"
+    },
+    "sachverhalt": {
+      "abschreibungen": 0,
+      "gewinn_estg": 5000000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "veranlagungszeitraum": 2026,
+      "zinsaufwand": 2999999,
+      "zinsertrag": 0
+    }
+  },
+  {
+    "beschreibung": "Paket 7 / § 4h-Freigrenze ERREICHT + 30-%-Deckel bindet (FALLBEIL): gewinn_estg 5.000.000, Zinsaufwand 3.000.000 (Nettozins = 3 Mio, NICHT < 3 Mio) -> voller Mechanismus. ebitda_basis 8.000.000, verr. EBITDA 2.400.000 = Deckel; nichtabziehbar = 3.000.000 - 2.400.000 = 600.000 Add-back -> Slot 5.600.000 = zvE; KSt 840.000, SolZ 46.200, GewSt 784.000; Nenner B = 1.670.200,00. FALLBEIL: gegenueber G1 (Zins 2.999.999) steigt der Nenner B um 178.950,00 fuer 1 EUR mehr Zinsaufwand — die Freigrenze ist KEIN Freibetrag (alles-oder-nichts).",
+    "erwartung": {
+      "nenner_b_cent": 167020000
+    },
+    "id": "kst_nenner_b_p7_g2_freigrenze_auf_fallbeil",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p4h_2026-07-16.txt",
+      "fundstelle": "§ 4h Abs. 2 S. 1 lit. a EStG (Freigrenze erreicht) + Abs. 1 S. 2 (30-%-Deckel) — Add-back 600.000",
+      "redistributable": true,
+      "zitatanker": "die Nettozinsaufwendungen des Betriebs weniger als drei Millionen Euro betragen"
+    },
+    "sachverhalt": {
+      "abschreibungen": 0,
+      "gewinn_estg": 5000000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "veranlagungszeitraum": 2026,
+      "zinsaufwand": 3000000,
+      "zinsertrag": 0
+    }
+  },
+  {
+    "beschreibung": "Paket 7 / § 4h-Mechanismus aktiv, aber 30-%-Deckel NICHT bindend: gewinn_estg 20.000.000, Zinsaufwand 3.000.000 (Nettozins = 3 Mio -> Mechanismus). ebitda_basis 23.000.000, Deckel 6.900.000 > Zinssaldo 3.000.000 -> voller Abzug, KEIN Add-back. zvE 20.000.000; KSt 3.000.000, SolZ 165.000, GewSt 2.800.000; Nenner B = 5.965.000,00. Kontrast zu G2: gleicher Nettozins, aber hohe EBITDA-Basis -> Deckel bindet nicht.",
+    "erwartung": {
+      "nenner_b_cent": 596500000
+    },
+    "id": "kst_nenner_b_p7_g3_deckel_nicht_bindend",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p4h_2026-07-16.txt",
+      "fundstelle": "§ 4h Abs. 1 S. 1/2 EStG (verrechenbares EBITDA bindet nicht) — kein Add-back",
+      "redistributable": true,
+      "zitatanker": "sind abziehbar in Höhe des Zinsertrags, darüber hinaus nur bis zur Höhe des verrechenbaren EBITDA"
+    },
+    "sachverhalt": {
+      "abschreibungen": 0,
+      "gewinn_estg": 20000000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "veranlagungszeitraum": 2026,
+      "zinsaufwand": 3000000,
+      "zinsertrag": 0
+    }
+  },
+  {
+    "beschreibung": "Paket 7 / § 8c-Verlustuntergang VOR § 10d: gewinn_estg 6.000.000, verlustvortrag_bestand 5.000.000, schaedlicher_erwerb=true -> verlustbestand nach § 8c/§ 8d = 0 -> § 10d-Abzug = 0. zvE 6.000.000; KSt 900.000, SolZ 49.500, GewSt 840.000; Nenner B = 1.789.500,00. Kontrast zu G5 (identischer Sachverhalt, aber § 8d-Antrag rettet den Verlust) — belegt die Reihenfolge § 8c/§ 8d VOR § 10d.",
+    "erwartung": {
+      "nenner_b_cent": 178950000
+    },
+    "id": "kst_nenner_b_p7_g4_8c_untergang_vor_10d",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/kstg_p8c_2026-07-16.txt",
+      "fundstelle": "§ 8c Abs. 1 S. 1 KStG (Untergang > 50 %) wirkt VOR § 10d — voller zvE",
+      "redistributable": true,
+      "zitatanker": "(schädlicher Beteiligungserwerb), sind bis zum schädlichen Beteiligungserwerb nicht ausgeglichene oder abgezogene negative Einkünfte (nicht genutzte Verluste) vollständig nicht mehr abziehbar"
+    },
+    "sachverhalt": {
+      "gewinn_estg": 6000000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "schaedlicher_erwerb": true,
+      "veranlagungszeitraum": 2026,
+      "verlustvortrag_bestand": 5000000
+    }
+  },
+  {
+    "beschreibung": "Paket 7 / § 8d-Suspension des § 8c: gewinn_estg 6.000.000, verlustvortrag_bestand 5.000.000, schaedlicher_erwerb=true, antrag_8d=true, fortfuehrungs_voraussetzungen=true -> Verlust bleibt erhalten (fortfuehrungsgebunden) -> § 10d-Abzug = min(5.000.000, 1.000.000 + 70 % x 5.000.000 = 4.500.000) = 4.500.000. zvE 1.500.000; KSt 225.000, SolZ 12.375, GewSt 840.000 (GewSt verlust-UNABHAENGIG); Nenner B = 1.077.375,00. Gegenueber G4 (kein Antrag): Δ zvE 4.500.000.",
+    "erwartung": {
+      "nenner_b_cent": 107737500
+    },
+    "id": "kst_nenner_b_p7_g5_8d_suspension",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt",
+      "fundstelle": "§ 8d Abs. 1 S. 1 KStG (Suspension auf Antrag) -> § 10d greift wieder",
+      "redistributable": true,
+      "zitatanker": "§ 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung"
+    },
+    "sachverhalt": {
+      "antrag_8d": true,
+      "fortfuehrungs_voraussetzungen": true,
+      "gewinn_estg": 6000000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "schaedlicher_erwerb": true,
+      "veranlagungszeitraum": 2026,
+      "verlustvortrag_bestand": 5000000
+    }
+  },
+  {
+    "beschreibung": "Paket 7 / GATING-Grenzfall (§ 8d-Vorbedingung schaedlicher Erwerb): gewinn_estg 6.000.000, verlustvortrag_bestand 5.000.000, schaedlicher_erwerb=FALSE, antrag_8d=true, fortfuehrungs_voraussetzungen=true. Ohne schaedlichen Erwerb ist § 8c gegenstandslos (nach § 8c = voller Bestand) und die § 8d-Suspension feuert NICHT (suspension_greift setzt schaedlicher_erwerb voraus) -> KEIN Doppel-Erhalt. § 10d-Abzug 4.500.000 -> zvE 1.500.000; Nenner B = 1.077.375,00. PFAD-KONTRAST zu G5: IDENTISCHER Nenner-B-Wert, aber verschiedene Route (G5 via Suspension, G6 via Nicht-Untergang) — gewollt, belegt die Gating-Logik.",
+    "erwartung": {
+      "nenner_b_cent": 107737500
+    },
+    "id": "kst_nenner_b_p7_g6_gating_grenzfall",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/kstg_p8d_2026-07-16.txt",
+      "fundstelle": "§ 8d Abs. 1 S. 1 KStG (Suspension nur NACH schaedlichem Erwerb) — Gating, kein Doppel-Erhalt",
+      "redistributable": true,
+      "zitatanker": "§ 8c ist nach einem schädlichen Beteiligungserwerb auf Antrag nicht anzuwenden, wenn die Körperschaft seit ihrer Gründung"
+    },
+    "sachverhalt": {
+      "antrag_8d": true,
+      "fortfuehrungs_voraussetzungen": true,
+      "gewinn_estg": 6000000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "schaedlicher_erwerb": false,
+      "veranlagungszeitraum": 2026,
+      "verlustvortrag_bestand": 5000000
+    }
+  },
+  {
+    "beschreibung": "Paket 7 / § 4h-Bestand-Muster (Zins- + EBITDA-Vortrag) mit KORRIGIERTER Add-back-Formel: gewinn_estg 2.000.000, Zinsaufwand 3.200.000, Zinsertrag 100.000 (Nettozins 3,1 Mio >= 3 Mio -> Mechanismus), zins_vortrag_bestand 200.000, ebitda_vortrag_bestand 300.000. ebitda_basis 5.100.000, verr. EBITDA 1.530.000; zinsaufwand_eff 3.400.000 (Zinsvortrag NUR im Abzugstest), Deckel 1.830.000; abziehbar_kern = 100.000 + 1.830.000 = 1.930.000. ADD-BACK = gebuchter Zinsaufwand 3.200.000 - 1.930.000 = 1.270.000 (UNGEKLEMMT, gebuchter Aufwand NICHT zinsaufwand_eff — N6-Korrektur-Ruling Instructor 2026-07-16: der unverbrauchte Zinsvortrag war nie im gewinn_estg abgezogen, Δ 200.000 zum naiven Weg). Slot 3.270.000 = zvE; KSt 490.500, SolZ 26.977,50, GewSt 457.800; Nenner B = 975.277,50.",
+    "erwartung": {
+      "nenner_b_cent": 97527750
+    },
+    "id": "kst_nenner_b_p7_g7_vortrag_verbrauch",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p4h_2026-07-16.txt",
+      "fundstelle": "§ 4h Abs. 1 S. 4/6 EStG (EBITDA-/Zinsvortrag, Bestand-Muster) — korrigierter Add-back",
+      "redistributable": true,
+      "zitatanker": "sind bis zur Höhe der EBITDA-Vorträge aus vorangegangenen Wirtschaftsjahren abziehbar"
+    },
+    "sachverhalt": {
+      "abschreibungen": 0,
+      "ebitda_vortrag_bestand": 300000,
+      "gewinn_estg": 2000000,
+      "gewst_hebesatz": 400,
+      "koerperschaft": true,
+      "veranlagungszeitraum": 2026,
+      "zins_vortrag_bestand": 200000,
+      "zinsaufwand": 3200000,
+      "zinsertrag": 100000
+    }
+  },
+  {
+    "beschreibung": "§ 34 Abs. 1 Fünftelregelung, Zusammenveranlagung, zvE 72.150 Euro, außerordentliche Einkünfte 25.000 Euro -> tarifliche ESt 11.742 Euro (EStH 2025 H 34.2 Beispiel 1, e2e über § 32a-Splittingtarif VZ 2025). Rechenweg: verbleibendes zvE 47.150 -> 5.102; +1/5 der ao (52.150) -> 6.430; Unterschiedsbetrag 1.328 x Faktor 5 = 6.640; 5.102 + 6.640 = 11.742.",
+    "erwartung": {
+      "tarifliche_est": 11742
+    },
+    "id": "p34_fuenftel_ao_zv_72150",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/gesetze-im-internet/estg_p34_2026-07-13.txt",
+      "fundstelle": "EStH 2025 H 34.2 Beispiel 1 (§ 34 Abs. 1 Fünftelregelung, Zusammenveranlagung); Zwischen-Steuerbeträge via § 32a-Splittingtarif VZ 2025 (corpus/vwv/esth2025/h-34-2.txt)",
+      "redistributable": true,
+      "zitatanker": "beträgt das Fünffache des Unterschiedsbetrags"
+    },
+    "sachverhalt": {
+      "ausserordentliche_einkuenfte": 25000,
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025,
+      "zu_versteuerndes_einkommen": 72150
+    }
+  },
+  {
+    "beschreibung": "AMTLICHES BEISPIEL (BMF § 35c-Einzelfragen 2025-08-21, Bsp. 5): energetische Sanierung 130.000 € Aufwand, Abschluss-/Folgejahr (7 %, kein übernächstes Förderjahr). min(7 % x 130.000, 14.000) = 9.100 € -> sanierung_ermaessigung_cent = 910.000. Amtlicher Wert (drittes Bein = BMF selbst; == dev-2-Hand == meine Rechnung).",
+    "erwartung": {
+      "sanierung_ermaessigung_cent": 910000
+    },
+    "id": "p35c_amtlich_a1_130k_7prozent",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/bmf/bmf_35c_einzelfragen_2025-08-21.txt",
+      "fundstelle": "§ 35c Abs. 1 EStG / BMF-Schreiben 2025-08-21 (7 %, 9.100 € bei 130.000 € Aufwand)",
+      "redistributable": true,
+      "zitatanker": "Steuerermäßigung von 7 % (9.100 Euro) im Veranlagungszeitraum 2020"
+    },
+    "sachverhalt": {
+      "ist_uebernaechstes_foerderjahr": false,
+      "sanierungsaufwendungen": 130000
+    }
+  },
+  {
+    "beschreibung": "AMTLICHES BEISPIEL (BMF § 35c-Einzelfragen 2025-08-21, Bsp. 6): 200.000 € Aufwand, Abschluss-/Folgejahr (7 %). min(7 % x 200.000 = 14.000, Jahreshöchstbetrag 14.000) = 14.000 € (Cap bindet exakt) -> sanierung_ermaessigung_cent = 1.400.000. Amtlicher Jahreshöchstbetrag.",
+    "erwartung": {
+      "sanierung_ermaessigung_cent": 1400000
+    },
+    "id": "p35c_amtlich_a2_200k_cap14k",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/bmf/bmf_35c_einzelfragen_2025-08-21.txt",
+      "fundstelle": "§ 35c Abs. 1 EStG / BMF-Schreiben 2025-08-21 (Jahreshöchstbetrag 14.000 € Jahr 1/2)",
+      "redistributable": true,
+      "zitatanker": "die Jahreshöchstbeträge der Steuerermäßigung von 14.000 Euro, 14.000 Euro und 12.000 Euro"
+    },
+    "sachverhalt": {
+      "ist_uebernaechstes_foerderjahr": false,
+      "sanierungsaufwendungen": 200000
+    }
+  },
+  {
+    "beschreibung": "AMTLICHES BEISPIEL (BMF § 35c-Einzelfragen 2025-08-21, Bsp. 6): 200.000 € Aufwand, ÜBERNÄCHSTES Förderjahr (Jahr 3, 6 %). min(6 % x 200.000 = 12.000, Jahreshöchstbetrag 12.000) = 12.000 € (Cap bindet exakt) -> sanierung_ermaessigung_cent = 1.200.000. Amtlicher Jahreshöchstbetrag Jahr 3 (6 %/12.000).",
+    "erwartung": {
+      "sanierung_ermaessigung_cent": 1200000
+    },
+    "id": "p35c_amtlich_a3_200k_uebernaechst_cap12k",
+    "quelle": {
+      "authority": "verwaltung",
+      "datei": "sources/bmf/bmf_35c_einzelfragen_2025-08-21.txt",
+      "fundstelle": "§ 35c Abs. 1 EStG / BMF-Schreiben 2025-08-21 (Jahreshöchstbetrag 12.000 € Jahr 3, 6 %)",
+      "redistributable": true,
+      "zitatanker": "die Jahreshöchstbeträge der Steuerermäßigung von 14.000 Euro, 14.000 Euro und 12.000 Euro"
+    },
+    "sachverhalt": {
+      "ist_uebernaechstes_foerderjahr": true,
+      "sanierungsaufwendungen": 200000
+    }
+  },
+  {
+    "beschreibung": "Rentner § 22 + § 33b: gesetzliche Rente Erstjahr (einkuenfte_sonstige 16598) UND Behinderten-Pauschbetrag bei GdB 50 = 1140 (2021er-Reform-Fassung) als außergewöhnliche Belastung. Einzelveranlagung VZ 2025 → festzusetzende ESt 568 (niedriger als ohne § 33b: 811). Prüft den § 33b-Abzug im § 2-Bescheid (aussergewoehnliche_belastungen).",
+    "erwartung": {
+      "festzusetzende_est": 568
+    },
+    "id": "rentner_behinderung_2025_einzel",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt",
+      "fundstelle": "§ 33b Abs. 3 S. 2 EStG (Behinderten-Pauschbetrag GdB 50 = 1140, 2021er-Fassung) i.V.m. § 22 Nr. 1, § 2 Abs. 4, § 32a Abs. 1 EStG, VZ 2025",
+      "redistributable": true,
+      "zitatanker": "einen Pauschbetrag geltend machen"
+    },
+    "sachverhalt": {
+      "aussergewoehnliche_belastungen": 1140,
+      "einkuenfte_sonstige": 16598,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Rentner-Ehepaar § 22 + § 33b Ehegatte, Zusammenveranlagung: beide gesetzliche Rente Erstjahr (je einkuenfte_sonstige 14928, Summe 29856) + Behinderten-Pauschbetrag des Partners GdB 60 = 1440 (aussergewoehnliche_belastungen). Splittingtarif VZ 2025 → festzusetzende ESt 660. Der Fall, in dem der partner_check-Guard live durchlässt (Partner-Behinderung MIT Zusammenveranlagung = korrekt, kein Widerspruch).",
+    "erwartung": {
+      "festzusetzende_est": 660
+    },
+    "id": "rentner_ehegatte_behinderung_2025_zusammen",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt",
+      "fundstelle": "§ 33b Abs. 3 S. 2 (GdB 60 = 1440), Abs. 1 (Übertragung Ehegatte) i.V.m. § 22 Nr. 1, § 26b, § 32a Abs. 5 (Splitting) EStG, VZ 2025",
+      "redistributable": true,
+      "zitatanker": "einen Pauschbetrag geltend machen"
+    },
+    "sachverhalt": {
+      "aussergewoehnliche_belastungen": 1440,
+      "einkuenfte_sonstige": 29856,
+      "gesamtfall": true,
+      "veranlagung": "zusammen",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Rentner § 22 Nr. 1: gesetzliche Rente, Erstjahr 2025 (Besteuerungsanteil-Kohorte 83,5 %). Jahresrente 20000 → steuerpflichtiger Anteil 16700 − 102 (§ 9a S. 1 Nr. 3 WK-PB) = einkuenfte_sonstige 16598, Einzelveranlagung VZ 2025 → festzusetzende ESt 811. Prüft die § 2-Integration der § 22-Renten-Einkünfte als sonstige Einkünfte.",
+    "erwartung": {
+      "festzusetzende_est": 811
+    },
+    "id": "rentner_gesetzl_erstjahr_2025_einzel",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p22_2026-07-13.txt",
+      "fundstelle": "§ 22 Nr. 1 S. 3 a aa EStG (Besteuerungsanteil) i.V.m. § 2 Abs. 2 Nr. 2, Abs. 3-6, § 9a S. 1 Nr. 3, § 32a Abs. 1 EStG, VZ 2025",
+      "redistributable": true,
+      "zitatanker": "Leibrenten und andere Leistungen"
+    },
+    "sachverhalt": {
+      "einkuenfte_sonstige": 16598,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "Reiner Vermieter-Fall (Rentner/Vermieter ohne Job): § 21 Einkünfte aus Vermietung 30000 (= Einnahmen − Werbungskosten), keine anderen Einkünfte, Einzelveranlagung VZ 2025 -> Grundtarif. Prüft, dass catala_gesamt die § 21-Einkunftsart in die festzusetzende ESt summiert (die Einnahmen−WK-Überschussrechnung liefert der § 21-Accessor separat) UND den § 10c Sonderausgaben-Pauschbetrag (36) auf Personen-Ebene abzieht (Aufrufer-Floor, § 2 Abs. 4) -> zvE 29964.",
+    "erwartung": {
+      "festzusetzende_est": 4293
+    },
+    "id": "vermieter_only_2025_einzel",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p21_2026-07-13.txt",
+      "fundstelle": "§ 21 Abs. 1 S. 1 Nr. 1 EStG i.V.m. § 2 Abs. 2 Nr. 2, Abs. 3-6, § 10c Satz 1 (Sonderausgaben-Pauschbetrag 36), § 32a Abs. 1 EStG (Grundtarif VZ 2025)",
+      "redistributable": true,
+      "zitatanker": "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
+    },
+    "sachverhalt": {
+      "einkuenfte_vermietung": 30000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  },
+  {
+    "beschreibung": "§ 21 Vermietungsverlust (Werbungskosten > Einnahmen: Überschuss −2000), keine anderen Einkünfte, Einzelveranlagung VZ 2025 → festzusetzende ESt 0 (K2: KEINE Negativsteuer). Verlustvortrag § 10d (Vortrag ins Folgejahr) = benannter MVP-GAP; Verrechnung mit § 19-Lohn (§ 2 Abs. 3) beim kombinierten Fall.",
+    "erwartung": {
+      "festzusetzende_est": 0
+    },
+    "id": "vermieter_verlust_2025_einzel",
+    "quelle": {
+      "authority": "gesetz",
+      "datei": "sources/gesetze-im-internet/estg_p21_2026-07-13.txt",
+      "fundstelle": "§ 21 Abs. 1 S. 1 Nr. 1 EStG i.V.m. § 2 Abs. 2 Nr. 2, § 32a Abs. 1 (Nullzone) EStG, VZ 2025",
+      "redistributable": true,
+      "zitatanker": "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
+    },
+    "sachverhalt": {
+      "einkuenfte_vermietung": -2000,
+      "gesamtfall": true,
+      "veranlagung": "einzel",
+      "veranlagungszeitraum": 2025
+    }
+  }
+]
