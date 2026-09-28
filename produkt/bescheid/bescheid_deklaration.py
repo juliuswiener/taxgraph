@@ -23,6 +23,7 @@ import est_mapping as EM    # noqa: E402
 import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche)
 import partner_check as PC  # noqa: E402  (Partner-Behinderungsfeld↔Zusammenveranlagung)
 from api_constants import (  # noqa: E402
+    AGB_KIST,
     AN_GESAMT_FLAGS,
     AN_GESAMT_PARTNER,
     ARBEITSMITTEL_KOSTEN,
@@ -503,6 +504,21 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "Bitte sieh dir beide Angaben noch einmal an.",
 
     # ---- (1) Eine Angabe oder Antwort fehlt noch -------------------------------------------------
+    "lohnersatz_betrag_offen":
+        "Du hast angegeben, dass du Lohnersatzleistungen bekommen hast, etwa Elterngeld, "
+        "Krankengeld oder Arbeitslosengeld. Es fehlt noch der Betrag. Er ist steuerfrei, erhöht "
+        "aber den Steuersatz auf dein übriges Einkommen. Trag ihn ein, auch wenn er 0 € ist.",
+    "verlustvortrag_betrag_offen":
+        "Du hast angegeben, dass für dich ein Verlustvortrag festgestellt wurde. Es fehlt noch "
+        "der Betrag. Du findest ihn im letzten Bescheid über die gesonderte Feststellung des "
+        "verbleibenden Verlustvortrags. Trag ihn ein, auch wenn er 0 € ist.",
+    "unterhalt_betrag_offen":
+        "Du hast angegeben, dass du eine unterhaltsberechtigte Person unterstützt hast. Es fehlt "
+        "noch, wie viel du dafür im Jahr ausgegeben hast. Trag den Betrag ein, auch wenn er 0 € ist.",
+    "kirchensteuer_betrag_offen":
+        "Du bist Mitglied einer Kirche. Es fehlt noch, wie viel Kirchensteuer du im Jahr gezahlt "
+        "hast oder erstattet bekommen hast. Die gezahlte Kirchensteuer steht auf deiner "
+        "Lohnsteuerbescheinigung. Trag beide Beträge ein, auch wenn einer davon 0 € ist.",
     "gewinn_angaben_offen":
         "Du hast angegeben, dass du Gewinneinkünfte hast. Es fehlen noch Angaben zu deiner "
         "Einnahmen-Überschuss-Rechnung: Betriebseinnahmen, sonstige Betriebsausgaben oder "
@@ -1069,6 +1085,22 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                 and not _positiv("einkuenfte_gewinn")
                 and any((felder.get(k) or {}).get("zustand") != "bestaetigt" for k in EUER_KOMPONENTEN)):
             return "gewinn_angaben_offen"
+        # Dieselbe Regel für Beträge mit genau einem Screening-Flag und ohne Ersatzquelle: Thema eröffnet,
+        # Betrag unbestätigt → sperren. Gemessen 2026-09-28 (Lohn 60.000 €): p32b 10.000 € fehlen → 1.419 € zu
+        # wenig; Verlustvortrag / § 33a je 5.000 € → 1.884 € zu viel; KiSt gezahlt 1.000 € → 370 € zu viel,
+        # erstattet 500 € → 191 € zu wenig. Alle mit grund bestaetigt. Tests: test_betrag_offen_sperrt.py.
+        if (felder.get("keine_lohnersatzleistungen", {}).get("wert") is False
+                and (felder.get("p32b_progressionseinkuenfte") or {}).get("zustand") != "bestaetigt"):
+            return "lohnersatz_betrag_offen"
+        if (felder.get("kein_verlustvortrag", {}).get("wert") is False
+                and (felder.get("verlustvortrag_bestand") or {}).get("zustand") != "bestaetigt"):
+            return "verlustvortrag_betrag_offen"
+        if (felder.get("kein_unterhalt", {}).get("wert") is False
+                and (felder.get("p33a_unterhalt_aufwendungen") or {}).get("zustand") != "bestaetigt"):
+            return "unterhalt_betrag_offen"
+        if (felder.get("kist_konfession", {}).get("wert") not in (None, "keine")
+                and any((felder.get(k) or {}).get("zustand") != "bestaetigt" for k in AGB_KIST)):
+            return "kirchensteuer_betrag_offen"
         # § 35 GewSt-Anrechnung (S1, fail-closed): der Steuermessbetrag ist da (opt-in), aber der Hebesatz fehlt →
         # die Anrechnung min(4×MB, MB×Hebesatz, …) ist ohne Hebesatz nicht rechenbar. KEIN 4×MB-Default (der
         # über-creditete bei Hebesatz < 400 % = Under-tax) → gewst_hebesatz_offen. Kein gewst_messbetrag = kein § 35

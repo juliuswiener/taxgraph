@@ -107,7 +107,7 @@ def test_kist_bemessung_ohne_kapital(base):
     if not _catala_da():
         pytest.skip("Catala nicht verfügbar")
     kegel = list(GESAMT_KEGEL_BASE)
-    kegel += [("kist_konfession", "roemisch-katholisch"),
+    kegel += [("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
               ("kist_bundesland", "nordrhein_westfalen")]
     _anlegen(base, "kist0", "gesamt", kegel)
     st, erg = _req(base, "GET", "/fall/kist0/ergebnis")
@@ -132,7 +132,7 @@ def test_kist_bemessung_ohne_kapital_24000(base):
     if not _catala_da():
         pytest.skip("Catala nicht verfügbar")
     kegel = list(GESAMT_KEGEL_BASE)
-    kegel += [("kist_konfession", "roemisch-katholisch"),
+    kegel += [("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
               ("kist_bundesland", "nordrhein_westfalen")]
     _anlegen(base, "kist24", "gesamt", kegel)
     st, erg = _req(base, "GET", "/fall/kist24/ergebnis")
@@ -161,7 +161,7 @@ def test_kist_mit_kapital(base):
             kegel[i] = (k, False)
         elif k == "kap_kapitalertraege":
             kegel[i] = (k, 500000)  # 5000 EUR in cent
-    kegel += [("kist_konfession", "roemisch-katholisch"),
+    kegel += [("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
               ("kist_bundesland", "nordrhein_westfalen")]
     _anlegen(base, "kistkap", "gesamt", kegel)
     st, erg = _req(base, "GET", "/fall/kistkap/ergebnis")
@@ -194,7 +194,7 @@ def test_kist_mit_kapital_und_q(base):
             kegel[i] = (k, False)
         elif k == "kap_kapitalertraege":
             kegel[i] = (k, 500000)  # 5000 EUR in cent
-    kegel += [("kist_konfession", "roemisch-katholisch"),
+    kegel += [("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
               ("kist_bundesland", "nordrhein_westfalen"),
               ("kap_q_auslaendische_steuer", 10000)]  # 100 EUR
     _anlegen(base, "kistkapq", "gesamt", kegel)
@@ -239,7 +239,7 @@ def test_kist_mit_kapital_q_deckel(base):
             kegel[i] = (k, False)
         elif k == "kap_kapitalertraege":
             kegel[i] = (k, 500100)  # 5001 EUR in cent (bewusst nicht durch 4 teilbar, s.o.)
-    kegel += [("kist_konfession", "roemisch-katholisch"),
+    kegel += [("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
               ("kist_bundesland", "nordrhein_westfalen"),
               ("kap_q_auslaendische_steuer", 500000)]  # 5000 EUR, weit ueber kap_st=1000
     _anlegen(base, "kistkapdeckel", "gesamt", kegel)
@@ -382,7 +382,7 @@ RENTNER_KEGEL_BASE = [
 
 def _rentner_kegel(mit_kapital: bool):
     kegel = list(RENTNER_KEGEL_BASE)
-    kegel += [("kist_konfession", "roemisch-katholisch"),
+    kegel += [("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
               ("kist_bundesland", "nordrhein_westfalen")]
     if mit_kapital:
         for i, (k, v) in enumerate(kegel):
@@ -495,7 +495,7 @@ def _p35_gesamt_kegel(mit_gewst: bool):
     kegel = [(k, {"bruttoarbeitslohn": 0, "kein_gewinn": False}.get(k, v))
              for k, v in GESAMT_KEGEL_BASE]
     kegel += [("einkuenfte_gewinn", 20000000), ("gewinn_betriebsart", "gewerbe"),
-              ("kist_konfession", "roemisch-katholisch"),
+              ("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
               ("kist_bundesland", "nordrhein_westfalen")]
     return kegel + (P35_GEWST if mit_gewst else [])
 
@@ -587,7 +587,7 @@ def _p35_deckel_kegel(mit_gewst: bool):
     kegel = [(k, {"bruttoarbeitslohn": 0, "kein_gewinn": False}.get(k, v))
              for k, v in GESAMT_KEGEL_BASE]
     kegel += [("einkuenfte_gewinn", 2000000), ("gewinn_betriebsart", "gewerbe"),
-              ("kist_konfession", "roemisch-katholisch"),
+              ("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
               ("kist_bundesland", "nordrhein_westfalen")] + P35A_DECKEL
     return kegel + (P35_GEWST if mit_gewst else [])
 
@@ -638,7 +638,7 @@ def test_kist_p32b_bleibt_in_basis_gesamt(base):
     """
     if not _catala_da():
         pytest.skip("Catala nicht verfügbar")
-    kegel = list(GESAMT_KEGEL_BASE) + [("kist_konfession", "roemisch-katholisch"),
+    kegel = list(GESAMT_KEGEL_BASE) + [("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
                                        ("kist_bundesland", "nordrhein_westfalen")] + P32B_PE
     _anlegen(base, "kistpe", "gesamt", kegel)
     st, erg = _req(base, "GET", "/fall/kistpe/ergebnis")
@@ -749,7 +749,7 @@ def test_kist_rentner_p32b_delta_ohne_kapital(base):
     if not _catala_da():
         pytest.skip("Catala nicht verfügbar")
     kegel = ([x for x in RENTNER_KEGEL_BASE]
-             + [("kist_konfession", "roemisch-katholisch"),
+             + [("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
                 ("kist_bundesland", "nordrhein_westfalen")] + P32B_PE)
     zahl, _, kist = _ring_rentner(kegel)
     assert zahl == 283600, f"ESt-Vorbedingung: § 32b hebt auf 2.836 EUR. {zahl}"
@@ -782,7 +782,7 @@ def test_kist_rentner_p32b_delta_guenstigerpruefung(base):
             elif f == "kap_kapitalertraege":
                 v = 5000000          # 50.000 EUR
             k.append((f, v))
-        k += [("kist_konfession", "roemisch-katholisch"),
+        k += [("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0),
               ("kist_bundesland", "nordrhein_westfalen")]
         return k + (P32B_PE if mit_pe else [])
 

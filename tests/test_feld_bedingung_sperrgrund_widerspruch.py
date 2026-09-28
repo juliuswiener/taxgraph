@@ -33,7 +33,7 @@ Verschachtelung statt flachem `and`) statt sie als Namen mit "ist ok" zu listen 
 aus einem Muster laesst sich beim naechsten Lauf nachrechnen, eine aus Namen altert ohne
 Fehlermeldung.
 
-Die sieben bekannten Instanzen (belegt in `test_muster_erklaert_genau_die_sieben_bekannten_...`):
+Die bekannten Instanzen (belegt in `test_muster_erklaert_genau_die_bekannten_...`):
   - gewst_hebesatz (Kreuz kein_gewinn) -- Vorbedingung `_positiv("gewst_messbetrag")`, dasselbe
     Kreuz (bindung_an_gesamt.yaml). Muster (a).
   - behinderungsbedingte_aufwendungen_wahlrecht_pb (Kreuz keine_behinderung_pflege) -- Vorbedingung
@@ -50,6 +50,9 @@ Die sieben bekannten Instanzen (belegt in `test_muster_erklaert_genau_die_sieben
     Kreuz veranlagung=zusammen) -- Vorbedingung `felder.get("veranlagung").get("wert") ==
     "zusammen"`, wortgleich mit der feld_bedingung beider Felder (bindung_rentner.yaml Z.663/696).
     Muster (b), derselbe Naht-Fix.
+  - kist_gezahlt, kist_erstattet (feld_bedingung kist_konfession wert_nicht keine) -- Vorbedingung
+    `kist_konfession not in (None, "keine")` in kirchensteuer_betrag_offen (2026-09-28). Muster (b)
+    in der Ungleichheits-Form.
 Waere der mechanische Schnitt ungeprueft als Fundliste gemeldet worden, waeren 7 von 16 Eintraegen
 (44 %) erfunden gewesen -- eine Landkarte, die nach dem ersten Fehlalarm nicht mehr gelesen wird.
 
@@ -255,14 +258,27 @@ def _vorbedingung_positiv_felder(node: ast.AST, eltern: dict[ast.AST, ast.AST]) 
 
 
 def _feld_wert_gleichheit_in(node: ast.AST) -> dict[str, object]:
-    """Alle `felder.get("F", ...).get("wert") == KONST`-Vergleiche in `node` (ein if-Test), F -> KONST."""
+    """Alle `felder.get("F", ...).get("wert") == KONST`-Vergleiche in `node` (ein if-Test), F -> KONST.
+
+    Dazu die Ungleichheit `... not in (None, KONST)` als F -> ("nicht", KONST): sie reproduziert eine
+    feld_bedingung mit `wert_nicht: KONST` (das None schließt nur „unbeantwortet" aus, das die
+    feld_bedingung ohnehin nicht ausschließt). Beispiel: kirchensteuer_betrag_offen."""
     out: dict[str, object] = {}
     for n in ast.walk(node):
-        if not (isinstance(n, ast.Compare) and len(n.ops) == 1 and isinstance(n.ops[0], ast.Eq)):
+        if not (isinstance(n, ast.Compare) and len(n.ops) == 1):
             continue
-        seiten = [n.left] + n.comparators
-        konst = next((s for s in seiten if isinstance(s, ast.Constant)), None)
-        innen = next((s for s in seiten if s is not konst), None)
+        if isinstance(n.ops[0], ast.NotIn) and isinstance(n.comparators[0], ast.Tuple):
+            werte = [e.value for e in n.comparators[0].elts if isinstance(e, ast.Constant)]
+            rest = [w for w in werte if w is not None]
+            if len(werte) != len(n.comparators[0].elts) or len(rest) != 1:
+                continue
+            innen, konst = n.left, ast.Constant(("nicht", rest[0]))
+        elif isinstance(n.ops[0], ast.Eq):
+            seiten = [n.left] + n.comparators
+            konst = next((s for s in seiten if isinstance(s, ast.Constant)), None)
+            innen = next((s for s in seiten if s is not konst), None)
+        else:
+            continue
         if konst is None or innen is None:
             continue
         if not (isinstance(innen, ast.Call) and isinstance(innen.func, ast.Attribute)
@@ -385,6 +401,8 @@ def _strukturell_unerreichbar(feld: str, menge_a: dict[str, dict], vorbedingunge
     gl = gleichheiten.get(feld, {})
     if fb.get("feld") in gl and gl[fb["feld"]] == fb.get("wert"):
         return f"{fb['feld']}=={fb['wert']!r}"
+    if fb.get("wert_nicht") is not None and gl.get(fb.get("feld")) == ("nicht", fb["wert_nicht"]):
+        return f"{fb['feld']}!={fb['wert_nicht']!r}"
     return None
 
 
@@ -410,7 +428,7 @@ def test_mengen_nicht_leer():
     assert len(menge_b) > 20, f"Menge B verdaechtig klein ({len(menge_b)}) -- Guard-Extraktion kaputt?"
 
 
-def test_muster_erklaert_genau_die_sieben_bekannten_falsch_positiven():
+def test_muster_erklaert_genau_die_bekannten_falsch_positiven():
     """Haelt fest, WAS die Musterpruefung heute erklaert -- nicht mehr, nicht weniger -- damit eine
     kuenftige Verschiebung sichtbar wird, statt sich in den Gate-Treffern zu verstecken.
 
@@ -420,7 +438,11 @@ def test_muster_erklaert_genau_die_sieben_bekannten_falsch_positiven():
     das bestehende `_positiv(X)`-Muster (X = rentner_veraeusserungsgewinn, dieselbe feld_bedingung
     kein_gewinn=false). Die Partner-Variante hat eine ANDERE Vorbedingung: der Guard steht in
     `if veranlagung == "zusammen":`, wortgleich mit der feld_bedingung der beiden Partnerfelder
-    (bindung_rentner.yaml Z.663/696) -- Variante (b) von `_strukturell_unerreichbar`."""
+    (bindung_rentner.yaml Z.663/696) -- Variante (b) von `_strukturell_unerreichbar`.
+
+    Seit 2026-09-28 (kirchensteuer_betrag_offen) dazu kist_gezahlt/kist_erstattet: der Guard steht
+    hinter `kist_konfession not in (None, "keine")`, gleichwertig mit ihrer feld_bedingung
+    `wert_nicht: keine` -- Variante (b) in der Ungleichheits-Form."""
     menge_a = _menge_a()
     menge_b, vorbedingungen, gleichheiten = _menge_b_mit_vorbedingungen()
     schnitt = set(menge_a) & menge_b
@@ -434,6 +456,8 @@ def test_muster_erklaert_genau_die_sieben_bekannten_falsch_positiven():
         "rentner_freibetrag_erstmalig",
         "rentner_alter_55_oder_berufsunfaehig_partner",
         "rentner_freibetrag_erstmalig_partner",
+        "kist_gezahlt",
+        "kist_erstattet",
     }
     assert erklaert == erwartet, (
         f"Musterpruefung erklaert {sorted(erklaert)}, erwartet {sorted(erwartet)} -- neuer Fall "

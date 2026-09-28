@@ -1813,7 +1813,7 @@ def test_p32d_abgeltung_kist_gesamt(base):
     def _kegel(kapital):
         ersatz = {"kap_kapitalertraege": kapital, "kein_kap": False, "bruttoarbeitslohn": 4000000}
         k = [(f, ersatz.get(f, w)) for f, w in GESAMT_KEGEL_BASIS]
-        return k + [("kist_konfession", "roemisch-katholisch"), ("kist_bundesland", "nordrhein_westfalen")]
+        return k + [("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0), ("kist_bundesland", "nordrhein_westfalen")]
 
     _ges_anlegen(base, "p32d_kist", _kegel(5000000))    # 50.000 € Kapital
     st, erg = _req(base, "GET", "/fall/p32d_kist/ergebnis")
@@ -1837,7 +1837,7 @@ def test_p32d_abgeltung_kist_rentner(base):
     kegel = list(RENTNER_KEGEL_HOCH) + [
         ("kap_kapitalertraege", 5000000), ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
         ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0),
-        ("kist_konfession", "roemisch-katholisch"), ("kist_bundesland", "nordrhein_westfalen")]
+        ("kist_konfession", "roemisch-katholisch"), ("kist_gezahlt", 0), ("kist_erstattet", 0), ("kist_bundesland", "nordrhein_westfalen")]
     kegel = [(f, (False if f == "kein_kap" else w)) for f, w in kegel]
     _rent_anlegen(base, "p32d_kist_r", kegel)
     st, erg = _req(base, "GET", "/fall/p32d_kist_r/ergebnis")
