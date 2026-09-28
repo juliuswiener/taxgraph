@@ -28,7 +28,6 @@ from api_constants import (  # noqa: E402
     ARBEITSMITTEL_KOSTEN,
     DHF_BEDINGUNGEN,
     DHF_KOSTEN,
-    EUER_KOMPONENTEN,
     GESAMT_PARTNER_19,
     GESAMT_PARTNER_KAP,
     GEWINN_QUELLEN_MENGEN,
@@ -1036,8 +1035,9 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # nicht § 13): gewinn_betriebsart=land_forst MIT EÜR-Komponente (und OHNE Direktwert) → luf_euer_offen,
         # fail-closed (NIE silent 0 — die EÜR gilt für LuF steuerlich anders, § 13a Durchschnittssätze etc.).
         # land_forst + Direktwert bleibt erlaubt (Stufe-1-Direktwert ist einkunftsart-agnostisch, keine EÜR-Rechnung).
+        # GEWINN_QUELLEN_MENGEN wie gewinn_quelle_offen oben: auch eine bloße GWG-Zeile schaltet auf den EÜR-Weg.
         if (felder.get("gewinn_betriebsart", {}).get("wert") == "land_forst"
-                and any(_positiv(k) for k in EUER_KOMPONENTEN) and not _positiv("einkuenfte_gewinn")):
+                and any(_positiv(k) for k in GEWINN_QUELLEN_MENGEN) and not _positiv("einkuenfte_gewinn")):
             return "luf_euer_offen"
         # § 35 GewSt-Anrechnung (S1, fail-closed): der Steuermessbetrag ist da (opt-in), aber der Hebesatz fehlt →
         # die Anrechnung min(4×MB, MB×Hebesatz, …) ist ohne Hebesatz nicht rechenbar. KEIN 4×MB-Default (der

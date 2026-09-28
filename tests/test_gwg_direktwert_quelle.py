@@ -184,3 +184,34 @@ def test_der_umschalter_zieht_aus_derselben_menge():
         assert "GEWINN_QUELLEN_MENGEN" in quelle, (
             f"{name} nennt die gemeinsame Menge nicht mehr — dann prüft diese Stelle "
             f"wieder eine eigene Liste")
+
+
+# § 13 Land-/Forstwirtschaft: `luf_euer_offen` sperrt EÜR-Eingaben ohne Direktwert. Dieselbe
+# Mengenfrage wie oben — eine bloße GWG-Zeile schaltet auf den EÜR-Weg, also muss sie auch hier
+# zählen. Gemessen 2026-09-28 auf 0b30cde vor dem Fix: land_forst + nur GWG -> grund='bestaetigt'.
+LUF = {"kein_gewinn": False, "gewinn_betriebsart": "land_forst"}
+
+
+def test_luf_mit_nur_gwg_sperrt(fall):
+    """DER ROTE FALL: land_forst + GWG-Zeile, keine EÜR-Komponente, kein Direktwert."""
+    erg = fall({**LUF, **GWG})
+    assert erg["grund"] == "luf_euer_offen", (
+        f"land_forst + GWG rechnet still über den EÜR-Weg: grund={erg['grund']!r}, "
+        f"zahl_cent={erg['zahl_cent']}")
+    assert erg["zahl_cent"] is None
+
+
+def test_luf_mit_euer_komponente_sperrt_weiter(fall):
+    """GEGENPROBE (a): der alte Fall — land_forst + EÜR-Komponente — sperrt unverändert."""
+    erg = fall({**LUF, "betriebseinnahmen": 5000000})
+    assert erg["grund"] == "luf_euer_offen", f"grund={erg['grund']!r}"
+
+
+def test_luf_mit_direktwert_rechnet(fall):
+    """GEGENPROBE (b): land_forst + Direktwert bleibt erlaubt (einkunftsart-agnostisch).
+
+    Ohne diese Zelle wäre „jeder land_forst-Fall sperrt" vom richtigen Fix nicht zu unterscheiden.
+    """
+    erg = fall({**LUF, "einkuenfte_gewinn": 5000000})
+    assert erg["grund"] == "bestaetigt", f"grund={erg['grund']!r}"
+    assert erg["zahl_cent"] is not None
