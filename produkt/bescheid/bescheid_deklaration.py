@@ -502,6 +502,10 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "Bitte sieh dir beide Angaben noch einmal an.",
 
     # ---- (1) Eine Angabe oder Antwort fehlt noch -------------------------------------------------
+    "berufsunfaehigkeit_offen":
+        "Du hast den ermäßigten Steuersatz für den Verkauf oder die Aufgabe deines Betriebs "
+        "beantragt. Vor dem 55. Geburtstag steht er dir nur zu, wenn du dauernd berufsunfähig bist. "
+        "Bitte beantworte diese Frage, auch wenn die Antwort „nein“ ist.",
     # Keine Richtungsaussage ("zu niedrig", "passt nicht"): derselbe Satz gilt fuer einen
     # vorlaeufigen agB-Abzug (senkt die Steuer) und eine vorlaeufige Lohnsteuer-Anrechnung (hebt
     # die Abschlusszahlung) -- jede Richtung waere fuer die Haelfte der Felder falsch. Und kein
@@ -934,6 +938,16 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
     if vz is not None and felder.get("antrag_ermaessigter_satz", {}).get("wert") is True and _abs3_eligible(felder, vz) \
             and int(felder.get("rentner_veraeusserungsgewinn", {}).get("wert") or 0) // 100 > 5_000_000:
         return "abs3_ueber_5mio_offen"
+    # § 34 Abs. 3 S. 1 „oder wenn er ... dauernd berufsunfähig ist": Antrag gestellt, die Berufsunfähigkeit
+    # unbeantwortet, und NUR sie entscheidet noch über den ermäßigten Satz (unter 55, nicht einmal genutzt).
+    # Ohne Antwort lief der Chooser still auf Abs. 1 (gemessen 2026-09-28: vg 500.000 EUR, Jg. 1980 →
+    # 155.420 statt 115.221 EUR). Die Frage an _abs3_eligible selbst gestellt, damit Guard und Chooser
+    # nicht driften. Ein bestätigtes „nein" ist eine Antwort und sperrt nicht; über 55 sperrt nichts.
+    if (vz is not None and felder.get("antrag_ermaessigter_satz", {}).get("wert") is True
+            and (felder.get("dauernd_berufsunfaehig") or {}).get("zustand") != "bestaetigt"
+            and not _abs3_eligible(felder, vz)
+            and _abs3_eligible({**felder, "dauernd_berufsunfaehig": {"wert": True}}, vz)):
+        return "berufsunfaehigkeit_offen"
     # an_gesamt Gap-A (K2, Over-tax): Kinder → §31/§32-KiFB-Rechnung NICHT in dieser Scheibe.
     # an_gesamt nutzt catala_est (kein §2-Gesamt-Scope, kein freibetraege_kinder); Kinder-Fälle
     # gehören in Scheibe "gesamt", die den vollen §31-Günstiger-§2-Lauf macht. Der Guard feuert

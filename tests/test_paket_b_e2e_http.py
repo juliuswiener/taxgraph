@@ -957,7 +957,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
              betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0, betriebsart=None, gwg=None, vg=0,
              gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
              gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0,
-             geburtsjahr=0, antrag_erm=False, berufsunfaehig=False, einmal_genutzt=False,
+             geburtsjahr=0, antrag_erm=None, berufsunfaehig=None, einmal_genutzt=None,
              p16_alter_55=True, p16_erstmalig=True):
     """gesamt-Kegel (§ 19 + § 21 + § 20): § 21 (Einnahmen/WK) + § 19 (Bruttolohn in Cent + EP) + § 20
     Kapital (E0121709-Aggregat ODER Aktien/sonstige-Töpfe, in Cent) — je 0 = Einkunftsart abwesend
@@ -1011,7 +1011,7 @@ def _gesamt_kegel(einnahmen, afa=0, schuldzinsen=0, kein_vuv=False, bruttolohn=0
             k.append((_mf, _mv))
     for _af, _av in (("antrag_ermaessigter_satz", antrag_erm), ("dauernd_berufsunfaehig", berufsunfaehig),  # § 34 Abs. 3 Chooser-Flags
                      ("ermaessigung_einmal_genutzt", einmal_genutzt)):
-        if _av:
+        if _av is not None:                          # None = unbeantwortet; False = bestätigtes „nein"
             k.append((_af, _av))
     if geburtsjahr:                                  # § 34 Abs. 3 Alter≥55-DERIVE (auch § 24a)
         k.append(("geburtsjahr", geburtsjahr))
@@ -1498,13 +1498,37 @@ def test_gesamt_abs3_eligibility_fail(base):
     WEDER 55+/geburtsjahr NOCH berufsunfähig → nicht Abs.3-berechtigt → Abs.1-Fünftel auf GANZES ao.
     est == der kein-antrag-Fall (a3n). Belegt Guard-A-Logik: ¬eligible → Abs.1, kein false-block."""
     catala = _catala_da()
-    _gesamt_anlegen(base, "a3f", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=50000000, antrag_erm=True))
+    _gesamt_anlegen(base, "a3f", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=50000000, antrag_erm=True,
+                    berufsunfaehig=False))   # bestätigtes „nein" — unbeantwortet sperrt (berufsunfaehigkeit_offen)
     st, erg = _req(base, "GET", "/fall/a3f/ergebnis")
     _val("ergebnis", erg)
     if catala:
         assert erg["zahl_cent"] == 15542000 and erg["grund"] == "bestaetigt"
     else:
         assert erg["zahl_cent"] is None
+
+
+def test_gesamt_abs3_berufsunfaehigkeit_unbeantwortet_sperrt(base):
+    """§ 34 Abs. 3 S. 1: Antrag gestellt, unter 55 (Jg. 1980), dauernd_berufsunfaehig UNBEANTWORTET → sperren.
+    Vorher rechnete der Chooser still Abs. 1: 155.420 statt 115.221 EUR (gemessen 2026-09-28).
+    Gegenproben: berufsunfaehig=True rechnet Abs. 3; ein 60-Jähriger ohne Antwort rechnet Abs. 3 (Alter genügt)."""
+    catala = _catala_da()
+    _gesamt_anlegen(base, "a3bu", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=50000000,
+                    antrag_erm=True, geburtsjahr=1980))
+    st, erg = _req(base, "GET", "/fall/a3bu/ergebnis")
+    _val("ergebnis", erg)
+    assert erg["zahl_cent"] is None and erg["grund"] == "berufsunfaehigkeit_offen", erg["grund"]
+    _gesamt_anlegen(base, "a3bj", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=50000000,
+                    antrag_erm=True, geburtsjahr=1980, berufsunfaehig=True))
+    _gesamt_anlegen(base, "a3b60", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False, vg=50000000,
+                    antrag_erm=True, geburtsjahr=1965))
+    for fid in ("a3bj", "a3b60"):
+        st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
+        _val("ergebnis", erg)
+        if catala:
+            assert erg["zahl_cent"] == 11522100 and erg["grund"] == "bestaetigt", (fid, erg["grund"])
+        else:
+            assert erg["grund"] != "berufsunfaehigkeit_offen", fid
 
 
 def test_gesamt_abs3_einmal_genutzt(base):
@@ -1583,7 +1607,7 @@ def test_rentner_abs3_age_fail(base):
     weist korrekt ab (nicht jeder Rentner ist 55+; junger Erbe/Betriebsübernehmer)."""
     catala = _catala_da()
     _rentner_anlegen(base, "ra3af", _rentner_kegel(jahresrente=0, vg=50000000, kein_gewinn=False,
-                     antrag_erm=True, geburtsjahr=1980))
+                     antrag_erm=True, geburtsjahr=1980, berufsunfaehig=False))
     st, erg = _req(base, "GET", "/fall/ra3af/ergebnis")
     _val("ergebnis", erg)
     if catala:
@@ -2505,7 +2529,7 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
                    betriebseinnahmen=0, sonstige_betriebsausgaben=0, afa_jahresbetrag=0,
                    betriebsart=None, gewst_messbetrag=0, gewst_hebesatz=0, verlustvortrag_bestand=0,
                    gewinnanteil=0, verg_taetigkeit=0, verg_darlehen=0, verg_ueberlassung=0,
-                   geburtsjahr=0, antrag_erm=False, berufsunfaehig=False, einmal_genutzt=False,
+                   geburtsjahr=0, antrag_erm=None, berufsunfaehig=None, einmal_genutzt=None,
                    vor_an=0, vor_ag=0, vor_rv_ausserhalb=0, basis_kv=0, basis_pv=0, weitere_kv_pv=0, versicherungsart="gesetzlich_freiwillig",
                    mit_anspruch_zuschuss=False,
                    p16_alter_55=True, p16_erstmalig=True,
@@ -2556,7 +2580,7 @@ def _rentner_kegel(renten_art="gesetzliche_rente", jahresrente=2000000, beginn=2
             k.append((_mf, _mv))
     for _af, _av in (("antrag_ermaessigter_satz", antrag_erm), ("dauernd_berufsunfaehig", berufsunfaehig),  # § 34 Abs. 3 Chooser-Flags
                      ("ermaessigung_einmal_genutzt", einmal_genutzt)):
-        if _av:
+        if _av is not None:                          # None = unbeantwortet; False = bestätigtes „nein"
             k.append((_af, _av))
     if geburtsjahr:
         k.append(("geburtsjahr", geburtsjahr))
