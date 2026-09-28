@@ -1,0 +1,232 @@
+# REWRITE_PLAN — produkt/ nach Rust
+
+Stand 2026-09-28, gemessen gegen HEAD `607aedb` plus fremdes, uncommittetes WIP in 12 Dateien
+(`runner.py`, `api.py`, `store.py`, `bescheid_*.py`, `traverser.py`, `est_mapping.py`, zwei Tests).
+Evidenz: vier Audit-Berichte (Kern · API/ELSTER/YAML · Pipeline/Catala · Testklassifikation), deren
+Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** = gelesen oder gelaufen,
+**derived** = daraus berechnet, **conditional** = Annahme.
+
+---
+
+## 0. Worum es geht
+
+Das Produkt (Fragen stellen, Steuer rechnen, Bescheid erklären, ELSTER-XML bauen) wird in Rust neu
+gebaut. Das Verhalten nach außen bleibt gleich. Python bleibt Referenz, bis jede Zahl gleich ist.
+
+**Warum es zählt:** Viele der 2 700 Python-Tests prüfen Dinge, die ein Typ unmöglich machen kann
+(stille 0 bei fehlender Angabe, vorläufig als bestätigt gerechnet, Person-B-Feld bei
+Einzelveranlagung). Die teuersten Befunde der letzten Wochen (13.568 €, 39.007 €, 21.000 €) waren genau
+diese Klasse.
+
+---
+
+## 1. Korrekturen am Auftrag (gemessen, nicht angenommen)
+
+| Auftrag sagt | Repo zeigt | Grad | Folge |
+|---|---|---|---|
+| 148 YAML-Dateien | **525** getrackt; das Produkt lädt zur Laufzeit **91** (bindung_* 25, params 58, kohorten 8) | explicit (`git ls-files`, Lader-Grep) | Phase 2 lädt die 91 typisiert. Die 148 sind vermutlich `sources/**/*.meta.yaml` ohne `bfinv` (derived) — Tooling, nicht Produkt. |
+| ELSTER-XML in `produkt/` | Writer in `produkt/eingang/elster_xml.py`, ERiC in `elster/` (1 779 Z.) | explicit | `elster/checkest_gate.py`, `smoke_test.py`, `submission/validate_xsd.py` gehören in den Port. |
+| 22 xfail-Tests | **15** xfail-Marker in **13** Dateien | explicit (`git grep 'pytest.mark.xfail\|pytest.xfail('`) | Alle 15 werden `#[ignore = "…"]` mit Grund. |
+| Catala-Backend für Rust | Catala 1.2.1 hat **kein** Rust-Backend (c, java, python, ocaml, interpret) | explicit (`catala --help`) | C-Backend + FFI, §3. |
+| `catala_*` = Catala | **30 von 70** `catala_*`-Funktionen rufen Catala, **40 sind Hand-Python** (`catala_solz`, `catala_kist`, § 35a, § 23 …) | explicit (AST-Scan `runner.py`) | Die 40 werden von Hand portiert und per Parität gesichert — dort gibt es keine Regelquelle. |
+| Tests 301 Dateien | 301 `.py` unter `tests/`, 297 davon `test_*`; 75 075 Zeilen | explicit | §6. |
+
+---
+
+## 2. Modulkarte
+
+Produktcode: `produkt/` 36 Dateien / 17 017 Z., `elster/` 9 / 1 779 Z. `pipeline/` 26 / 6 528 Z.
+
+### 2.1 Entscheidung `pipeline/`: bleibt Python-Tooling
+
+Kein Modul in `produkt/` oder `elster/` importiert `pipeline/` (explicit, Grep). Die einzige
+Lesestelle `traverser.py:40` (`lade_rules`) ruft nur `tests/test_traverser.py:233`. `pipeline/` ist ein
+LLM-gestütztes Offline-Werkzeug (Gesetz → Catala) mit `requests`/`fastapi`/Subprozess an `catala`. Sein
+Produkt ist Catala-Quelltext unter `rules/` — genau den konsumiert Rust über das C-Backend.
+Ebenso bleiben Python: `oracle/` (GETTSIM ist Python), `golden/golden_lauf.py` (Parity-Treiber),
+`scripts/`, `docstore/`, `ebilanz/`, `corpus/`, `reports/`.
+Acht Löschkandidaten in `pipeline/` (bakeoff/*, judge_stabilitaet*, judge_replikation, run_smoke,
+backlog) sind eine eigene Entscheidung, nicht Teil des Ports.
+
+### 2.2 Crates
+
+Workspace unter `rust/`. Zyklenfrei, von unten nach oben:
+
+| Crate | Python-Quelle | Verantwortung |
+|---|---|---|
+| `catala-sys` | `rules/` via C-Backend | generiertes C + flacher Shim, `#[repr(C)]`-Structs, `unsafe` nur hier |
+| `domain` | `store/store.py` (Typen, Meet, Hash), `api_constants.py` (Scheiben, Zustände) | `Cent`, `Euro`, `Vz`, `FeldId`, `Feldzustand`, `Wert`, `Schreiber`, `Sperrgrund`, `Veranlagung`, `Person`, `Snapshot<Roh/Bestaetigt>` |
+| `bindung` | `produkt/bindung/*.yaml`, `params/`, `params/kohorten/` | typisiertes Laden, `deny_unknown_fields`, Duplikat = Fehler |
+| `store` | `store/store.py`, `store/audit.py`, `store/fehler_log.py` | Event-Store, einziger Schreibpfad, `event_id`-Hash byte-gleich; Audit, PII-sicheres Fehlerlog |
+| `engine` | `engine/runner.py` | 30 Catala-Aufrufe über `catala-sys`, 40 Hand-Accessoren |
+| `interview` | `traverser/traverser.py`, `haut/bindung_rollen.py` | Relevanz, nächste Fragen, Justification |
+| `konsistenz` | `konsistenz/*` | Flag-/Partner-Widersprüche, Preflight-Ampel |
+| `bescheid` | `bescheid/*`, `unsicherheit/intervall.py` | vier Zweige, Sperrgründe, Intervall |
+| `elster` | `mapping/est_mapping.py`, `mapping/xsd_verify.py`, `eingang/elster_xml.py`, `elster/checkest_gate.py`, `elster/smoke_test.py` | Deklaration, Kz-Format, XML, ERiC-FFI (`libloading`) |
+| `eingang` | `eingang/kontoauszug_writer.py`, `vorjahr_writer.py`, `beleg_writer.py`, `vast_mapping.py`, `elster_writer.py` | Importe als Vorschläge; OCR per Subprozess |
+| `llm` | `haut/llm_client.py`, `haut/api_llm.py`, `haut/pii_filter.py` | Client, 3-Stufen-Chat, strikte Parser, `Gefiltert`-Typ |
+| `auth` | `auth/auth.py` | bcrypt, JWT HS256, Nutzer-Datei 0600 |
+| `api` | `haut/server.py`, `haut/api.py`, `haut/flow.py`, `haut/ors_client.py`, `haut/api_auth.py` | axum, typisierte Handler, utoipa, statisches Frontend |
+| `parity` (dev) | — | liest Python-Korpus, ruft Rust, diff |
+
+`elster/versand.py` (Echtversand, kein Produktionsaufrufer, explicit) wird **nicht** portiert: Echtversand
+ist Julius vorbehalten. `elster/{kz_extract,validate_mapping,bench,fuzz,eric_gate}.py` sind Tooling.
+
+---
+
+## 3. Catala-Anbindung
+
+**Mechanismus: Catala-C-Backend, statisch gelinkt über das `cc`-Crate, hinter einem generierten
+flachen C-Shim.** Geprobt (explicit, Audit C §2.3): alle 30 Module → C → `libtaxrules.a` → Rust-Binary.
+Tarif (Grund-/Splitting, VZ 2024–2026, 24 327 Punkte) bit-identisch zum heutigen Python-Pfad,
+gleicher SHA-256; Negativkontrolle macht den Diff rot. ~3 µs je Aufruf gegen ~287 µs.
+
+Drei Hürden, alle in der Probe gelöst:
+
+1. **Scopes sind modul-privat.** Die Deklarationen stehen in ```` ```catala ````-Blöcken, das C-Backend
+   macht `static`-Funktionen daraus. Lösung ohne Änderung an `rules/`: das Generator-Skript
+   `rust/catala-sys/gen.sh` kopiert `rules/estg` in ein Build-Verzeichnis, stellt dort die
+   Deklarationsblöcke auf ```` ```catala-metadata ```` um (135 Blöcke) und ruft `clerk build`.
+   `rules/` bleibt Quelle der Wahrheit und unverändert. Semantik-Beleg der Umstellung in der Probe:
+   `clerk test` 136/136 Interpreter und 136/136 `--backend c`.
+2. **GCC 16 scheitert an `catala_runtime.c:588` (`__gmp_vprintf`).** Lösung `-std=c89`, wie clerk selbst.
+3. **Catala-Fehler springen per `longjmp`.** Jeder Scope-Aufruf läuft im C-Shim unter `catala_do`;
+   kein `longjmp` durch Rust-Frames. Ungültiger Enum-Code → `abort()` → Enums in Rust typisiert.
+
+**Entscheidung Toolchain:** Das generierte C wird **eingecheckt** (`rust/catala-sys/generated/`), damit
+`cargo build` ohne opam läuft. `make catala-c` erzeugt es neu; ein Test vergleicht den Hash der Quelle
+(`rules/**/*.catala_en`) mit dem im Generat gespeicherten und wird rot, wenn das Generat veraltet ist.
+
+**GMP:** `catala_init` biegt die GMP-Speicherverwaltung prozessweit um. Kein zweiter GMP-Nutzer im
+Prozess (kein `rug`). Die Catala-Arena ist `__thread`; der Shim ist darum pro Thread sicher, Aufrufe
+serialisiert `catala-sys` trotzdem über einen `Mutex`, bis Last-Parität gemessen ist
+(`ponytail:`-Grenze).
+
+**Parität** (§5) läuft an der Naht `runner.catala_*`: sie deckt Catala-Scopes und Hand-Python gleich ab.
+Unabhängige Orakel: `clerk test --backend c`, `golden/cases/*.yaml` (135), GETTSIM.
+
+---
+
+## 4. Invarianten je Modul → Rust-Typ
+
+Vollständige Tabellen: Audit A §1/§3, Audit B §2/§3. Die tragenden:
+
+| Invariante | Heute erzwungen | Rust |
+|---|---|---|
+| Geld in ganzen Cent; Euro nur an der Catala-Naht | Konvention, `// 100` an >100 Stellen | `Cent(i64)`, `Euro(i64)`, private Felder; `Cent::floor_euro()` = `div_euclid(100)` (Python `//` rundet gegen −∞, Rust `/` gegen 0 — tragend bei Verlusten, `bescheid_einkuenfte.py:292`) |
+| Rückgabe-Einheit je Funktion | String-Tabelle `intervall.NATIV_EINHEIT` (`intervall.py:36`) | Rückgabetyp `Euro` oder `Cent`; Tabelle entfällt |
+| Feldzustand offen / vorläufig / bestätigt | Strings + Abwesenheit, überall | `enum Feldzustand` |
+| `bestaetigt` braucht `signal_2` | `store.py:365` | `Bestaetigt { signal_2: Signal2 }`, `Signal2` nicht leer |
+| Ring rechnet nur mit Bestätigtem | EINE Stelle `bescheid_zweige.py:1487` | Typestate `Snapshot<Roh>` → `nur_bestaetigt()` → `Snapshot<Bestaetigt>`; Zweige nehmen nur Letzteres |
+| Vorschlags-Schreiber (llm, beleg, vorjahr, kontoauszug) schreiben nur vorläufig | Auflage A `store.py:262-308` | `VorschlagEvent` hat keinen Zustand-Parameter |
+| höchstens ein aktives Event je Feld, `ersetzt` gültig | Auflage B `store.py:368-381` | `Store::append -> Result<EventId, Abweisung>`, kein anderer `pub` Mutator |
+| Wert passt zum Bindungstyp | Auflage T `store.py:167-248`, **nur wenn Bindung übergeben** | `Wert` wird immer gegen die Bindung geparst; kein Pfad ohne |
+| `event_id` = sha256(canonical_json) | `store.py:22-34` | Serializer byte-gleich zu `json.dumps(sort_keys, ensure_ascii=False, separators=(",",":"))`; Parität über alle vorhandenen Stores |
+| Fehlende Angabe sperrt statt 0 | 47 Sperrgrund-Literale `bescheid_deklaration.py:781-1443`; 152 × `.get(…,0)` in `runner.py` | `enum Sperrgrund` (47 Varianten, exhaustiver `klartext`); Eingabe-Structs je Scope **ohne** `Default` |
+| Jeder Sperrgrund hat Klartext | Test `test_sperrgrund_klartext.py` | exhaustiver `match` |
+| Partnerdaten nur bei Zusammenveranlagung | Handliste `partner_check.py:17-29` | `Veranlagung::Einzel { a } \| Zusammen { a, b }` |
+| Nur VZ 2024–2026 | `VZ_ENUM[year]` KeyError | `enum Vz` mit `TryFrom<u16>` |
+| Instanz-ID `basis`, `basis__n` | zwei Regeln im Widerspruch (`est_mapping.py:543` vs `traverser.py:152`) | `FeldId { basis, instanz: NonZeroU16 }`, ein `FromStr`; Parität mit **beiden** Python-Pfaden je Aufrufstelle, Widerspruch im Bericht |
+| Bindung eindeutig je `feld_id` | nicht erzwungen (`traverser.py:33`, `safe_load`) | Ladefehler bei Duplikat und bei doppeltem Schlüssel |
+| Kz-Format (floor/ceil/Komma/Datum) | Handmengen `est_mapping.py:35-165` | `enum KzFormat` je Kz |
+| LLM-Ausgabe | `json.loads` → `[]` bei Fehler | serde-Struct `deny_unknown_fields`; Parität erhält „leer bei Fehler" als explizite Variante |
+| Nur `filtere()`-Text geht ans LLM | Konvention `api_llm.py:1016` | `Gefiltert(String)`, nur `pii::filtere` erzeugt ihn; Client nimmt nur `Gefiltert` |
+| ERiC grün nur bei rc==0 | `checkest_gate.py:66-92` | `enum EricRc` |
+| Owner-Check vor Fall-Zugriff | `api.py:114-127` je Handler | Extractor `EigenerFall`; Handler ohne ihn bekommen keinen `Fall` |
+
+**Parität vor Korrektur.** Wo Python nachweislich falsch ist, baut Rust zuerst das Python-Verhalten
+nach und markiert die Stelle mit `// PARITÄT:` plus Befund. Korrektur danach in eigenem Commit mit
+erklärtem Fixture-Diff. Bekannte Fälle:
+
+| # | Befund | Anker |
+|---|---|---|
+| P1 | `_cent_nach_kz(-150)` → `"-2,50"` statt `"-1,50"` | `est_mapping.py:161-162` (explicit, ausgeführt) |
+| P2 | `catala_einkuenfte_versorgung` schluckt `VersorgungsfreibetragOffen` → 0 € Einkünfte | `runner.py:1041-1046` |
+| P3 | Verpflegungskürzung `except Exception: 0` | `bescheid_deklaration.py:109-110` |
+| P4 | `/elster-ampel` ohne Owner-Check | `server.py:92` |
+| P5 | 500-Body enthält `str(e)` (Wert aus Store-Meldung) | `server.py:252`, `store.py:230` |
+| P6 | `/kontoauszug` Store-Abweisung → 500, `/event` → 422 | `api.py:534` vs `:1010` |
+| P7 | `graph.js` ohne Auth-Header → 401 | `graph.js:13,70` |
+| P8 | A-Renten Instanz-Σ, B-Rente Flat-Feld | `bescheid_zweige.py:1110-1127` |
+
+---
+
+## 5. Parity-Harness
+
+1. **Aufzeichnen (Python):** `tools/parity/record.py` wickelt jede öffentliche Funktion der
+   portierten Module ein (zuerst die 70 `runner.catala_*`) und schreibt `{fn, args, ergebnis | fehler}`
+   als JSONL. Quellen: `make unit`, `make golden`, `pipeline/produktion/rules.yaml`-Raster (105 Regeln),
+   dichte Sweeps (Schritt 1 € um Zonengrenzen, negative Beträge für Floor-Pfade).
+2. **Generieren:** `proptest`-Strategien je Funktion erzeugen Eingaben; `tools/parity/oracle.py`
+   (JSON rein, JSON raus, ein Prozess für alle Aufrufe über stdin/stdout) beantwortet sie mit Python.
+3. **Vergleichen (Rust):** `rust/parity` ruft die Rust-Funktion gleichen Namens, diff je Aufruf;
+   Fehler-Parität: Python-Exception-Typ ↔ Rust-`Err`-Variante.
+4. **Wirksamkeit:** jeder Lauf enthält eine Negativkontrolle (ein Ergebnis um 1 Cent gestört → rot)
+   und nennt die Zeilenzahl beider Seiten vor „0 Abweichungen".
+5. **Referenzstand:** der Korpus trägt `git describe --dirty` und den Hash von `git diff` des
+   Python-Baums. Fremdes WIP ändert die Referenz; ein Korpus gilt nur für seinen Stand.
+
+Abnahme je Modul: alle Golden-Eingaben + 1 000 generierte ohne Diff. Cutover: 10 000.
+
+---
+
+## 6. Testklassifikation (301 Dateien)
+
+Quelle: `tests_part{1,2}.tsv` (Klassifikation nach Docstring, Imports und Stichproben — **derived**,
+nicht jede Datei vollständig gelesen; Zeilen/Testzahlen nachgezählt, **explicit**).
+
+| Kategorie | Dateien | Zeilen | Tests | Rust | Faktor | Rust-Zeilen |
+|---|---:|---:|---:|---|---:|---:|
+| GOLDEN | 67 | 14 742 | 671 | Fixtures `rust/fixtures/*.json` + ein Runner je Crate | 0,25 | ~3 700 |
+| PROPERTY | 61 | 12 672 | 500 | ~25 proptest-Properties | 0,15 | ~1 900 |
+| INTEGRATION (ohne UI) | 51 | 17 926 | — | Rust-Integrationstests | 0,6 | ~10 800 |
+| INTEGRATION UI (Playwright) | 20 | 7 735 | — | **bleiben Python**, laufen gegen den Rust-Server (Phase 4 E2E) | 0 | 0 |
+| NOT_PORTED | 80 | 17 028 | 514 | ersetzt durch Typ/serde/Lint, je Datei in der TSV benannt | 0 | ~500 (Lade-Validierung) |
+| TOOLING | 22 | 4 972 | 279 | bleiben mit `pipeline/`/`oracle/` | 0 | 0 |
+| **Summe** | **301** | **75 075** | | | | **~17 000** |
+
+Tragende Ersetzungen der NOT_PORTED-Gruppe (Details je Datei in der TSV, wird als
+`rust/TESTMAP.tsv` eingecheckt):
+
+- YAML-Form, Duplikate, unbekannte Schlüssel → `serde(deny_unknown_fields)` + Duplikat-Fehler in `bindung`.
+- Sperrgrund-Klartext vollständig → exhaustiver `match`.
+- AST-Scans auf Python-Quelltext (Zeilen-Ratschen, Import-Nähte, Literal-`ort`) → `clippy::too_many_lines`, Crate-Graph, `&'static str`.
+- vorläufig als bestätigt gerechnet → `Snapshot<Bestaetigt>`.
+- Einheit Euro/Cent verwechselt → Newtypes.
+- Partner ohne Zusammenveranlagung → `Veranlagung`-Enum.
+
+Die UI-Tests (Playwright, Python) bleiben: sie prüfen das Frontend, das unverändert bleibt, und sind
+damit genau der End-to-End-Test „Frontend gegen Rust-API" aus Phase 4.
+
+---
+
+## 7. Port-Reihenfolge (blattzuerst)
+
+| Schritt | Crate | Abnahme |
+|---|---|---|
+| 1 | Workspace, Lints, CI, `catala-sys` (Generat + Shim für die 19 benutzten Module), Parity-Harness, Fixtures | `cargo build/clippy/test` grün; Tarif-Parität 24 327 Punkte |
+| 2 | `domain` + `bindung` | alle 91 Laufzeit-YAMLs laden; Fehler gelistet, Datenfixes in eigenem Commit |
+| 3 | `store` | `event_id` byte-gleich über alle vorhandenen Fälle; append-Parität |
+| 4 | `engine` (70 Accessoren) | Parität Korpus + 1 000 generiert je Funktion |
+| 5 | `interview`, `konsistenz`, `bescheid::intervall` | Parität |
+| 6 | `elster` (Deklaration, Kz-Format, XML, ERiC) | XML byte-gleich; XSD-valide |
+| 7 | `bescheid` | Parität `/ergebnis` auf allen Golden-Fällen |
+| 8 | `eingang`, `llm`, `auth` | Parität |
+| 9 | `api` (axum, utoipa) + Frontend-E2E | Kontrakttest, Playwright gegen Rust |
+| 10 | Cutover — **nur bei vollständiger Parität** | 10 000 generiert |
+
+Scheitert ein Schritt nach drei Versuchen, wird er zurückgenommen und im Bericht geführt.
+
+---
+
+## 8. Offene Fragen (nicht blockierend, Standard gewählt)
+
+| # | Frage | Gewählter Standard |
+|---|---|---|
+| F1 | Negativformat P1 korrigieren? | Erst Parität, dann Korrektur-Commit mit Fixture-Diff |
+| F2 | Instanz `x__1`: welche Regel? | Traverser-Regel (`__1` ist keine Instanz); `est_mapping`-Aufrufstellen per Parität prüfen |
+| F3 | Hartkodierte Gesetzeswerte (`runner.py:462-467,1052,1703-1706`) nach `params/`? | Port übernimmt sie als benannte `const` mit § im Doc-Kommentar; Umzug separat |
+| F4 | `versand.py` (Echtversand) portieren? | Nein — Julius-Vorbehalt |
+| F5 | Löschkandidaten in `pipeline/` | Nicht Teil des Ports |
+| F6 | Cutover löscht Python | Nur wenn Schritt 10 grün; sonst bleibt Python Referenz und der Bericht nennt die Lücke |
+| F7 | YAML-Crate (`serde_yaml` archiviert) | `serde_yaml_ng` oder `serde_norway` nach Doku-Check; Duplikat-Schlüssel-Verhalten per Test belegt |
