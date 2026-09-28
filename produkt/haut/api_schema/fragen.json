@@ -5,7 +5,9 @@
   "required": [
     "fall_id",
     "snapshot_id",
-    "fragen"
+    "fragen",
+    "ring_gesperrt",
+    "ring_gesperrt_klartext"
   ],
   "additionalProperties": false,
   "properties": {
@@ -14,6 +16,12 @@
     },
     "snapshot_id": {
       "type": "string"
+    },
+    "ring_gesperrt": {
+      "type": ["string", "null"]
+    },
+    "ring_gesperrt_klartext": {
+      "type": ["string", "null"]
     },
     "fragen": {
       "type": "array",

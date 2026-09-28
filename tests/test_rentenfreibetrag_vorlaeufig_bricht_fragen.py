@@ -220,26 +220,32 @@ def test_aa_folgejahr_mit_freibetrag_liefert_fragen_ohne_500(base, label, extra_
         f"{label}: /ergebnis nennt {e['zahl_cent']}, erwartet {erwartet} (grund={e['grund']!r})")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="OHNE Freibetrag muss der aa-Folgejahr-Zweig weiter sperren: § 22 Nr. 1 S. 3 Buchst. a "
-           "Doppelbuchst. aa S. 4 EStG verlangt einen fixierten Betrag. Gemessen 2026-09-26: "
-           "GET /fragen liefert HTTP 500 statt eines Sperrgrunds mit Klartext. Das ist die "
-           "verbleibende Hälfte des alten Befunds — ad2ef61 hat nur die Sichtbarkeit des Feldes "
-           "geheilt, nicht die Fehlerbehandlung. Marker fällt, wenn der Zweig einen Sperrgrund "
-           "liefert statt zu werfen.")
 def test_aa_folgejahr_ohne_freibetrag_sperrt_mit_klartext_statt_500(base):
     """Dritte Parametrisierung des alten Tests, jetzt getrennt: ohne jeden Freibetrag.
 
-    Mit `ad2ef61` findet die Enumeration das Feld, aber es ist nicht da — `_rente_instanz` liest
-    `None` und `runner.catala_renten_einkuenfte` (runner.py:916) wirft weiter. Der Server
-    antwortet HTTP 500 statt mit einem Sperrgrund. Gemessen:
+    Bis 2026-09-26 lieferte `GET /fragen` hier HTTP 500. Ursache war nicht die Sichtbarkeit des
+    Feldes (`ad2ef61` hat die Enumeration geheilt, s. Test oben), sondern der ungeschützte Ring
+    in `api._gesamt_beitrag`: `runner.catala_renten_einkuenfte` warf
+    `RentenfreibetragFixierungOffen`, und niemand fing sie. Jetzt fängt `_gesamt_beitrag` genau
+    diese Ausnahme (keine Gewichte), und `fragen()` meldet den Sperrgrund wie `/stand`.
 
-      /fragen   HTTP 500
-      /ergebnis HTTP 200, zahl=None, grund="rentenfreibetrag_fixierung_offen"   <- tut es richtig
+    Gemessen 2026-09-26 auf cdc05bb, Scheibe rentner_gesamt, aa-Folgejahr 2015 < VZ 2025:
 
-    `/ergebnis` zeigt, wie es aussehen soll: eine gesperrte Antwort mit Klartext-grund. Der
-    Unterschied zwischen den beiden Endpunkten ist der Befund, nicht die Exception selbst."""
+      Endpunkt                  vorher            nachher
+      /fragen                   HTTP 500          HTTP 200, ring_gesperrt="rentenfreibetrag_fixierung_offen"
+      /stand                    HTTP 200 gesperrt  HTTP 200 gesperrt   (unverändert)
+      /ergebnis                 HTTP 200 gesperrt  HTTP 200 gesperrt   (unverändert)
+
+    Der Test prüft DREI Dinge, nicht eine: den Status, den Grund als Maschinenwort UND seinen
+    Klartext. Ein Test, der nur HTTP 200 prüft, wäre auch dann grün, wenn die Fragenliste leer
+    zurückkäme oder der Grund verschwiegen würde (`gruen-weil-der-pruefer-weniger-sieht`)."""
     _anlegen(base, "rf_ohne", beginn_jahr=2015, extra_event=None)
     st, b = _req(base, "GET", "/fall/rf_ohne/fragen", erwarte=200)
     assert isinstance(b.get("fragen"), list)
+    assert len(b["fragen"]) > 0, "eine gesperrte Kopfzeile zeigt trotzdem die offenen Fragen"
+    assert b.get("ring_gesperrt") == "rentenfreibetrag_fixierung_offen", (
+        f"ohne fixierten Freibetrag muss /fragen sperren statt zu werfen: {b.get('ring_gesperrt')!r}")
+    kt = b.get("ring_gesperrt_klartext")
+    assert isinstance(kt, str) and kt, "der Sperrgrund muss als Klartext ankommen, nicht nur als Kennung"
+    assert "Rentenfreibetrag" in kt or "steuerfreie Teil der Rente" in kt, (
+        f"der Klartext muss die fehlende Angabe nennen, nicht bloß 'gesperrt' sagen: {kt!r}")

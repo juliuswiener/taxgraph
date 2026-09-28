@@ -314,19 +314,31 @@ def _badge(herkunft: dict) -> str:
 
 
 def _gesamt_beitrag(store: dict, cfg: dict, bindung: dict, felder: dict, sid: str, vz: int):
-    """Frage-Reihenfolge-Gewichte aus dem verfügbaren Ring (Gesamt bevorzugt, sonst erster Teil)."""
-    if cfg["gesamt_ring"]:
-        aufbau, achsen = BR.rollen(cfg, bindung, store)
-        bf = _bescheid_fn(cfg["gesamt_ring"], vz, aufbau, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
-        if bf is not None:
-            return {b["feld_id"]: b["spanne_cent"]
-                    for b in IV.intervall(felder, achsen, bf, snapshot_id=sid)["beitraege"]}
-    for _name, q, tfelder in cfg["teil_ringe"]:
-        tb = {f: bindung[f] for f in tfelder if f in bindung}
-        bf = _bescheid_fn(q, vz, tb, nur_bestaetigt=False)   # Estimate-Pfad (fragen-Gewichte)
-        if bf is not None:
-            return {b["feld_id"]: b["spanne_cent"]
-                    for b in IV.intervall(felder, tb, bf, snapshot_id=sid)["beitraege"]}
+    """Frage-Reihenfolge-Gewichte aus dem verfügbaren Ring (Gesamt bevorzugt, sonst erster Teil).
+
+    Ein aa-Folgejahr ohne fixierten Rentenfreibetrag lässt den Ring werfen
+    (`RentenfreibetragFixierungOffen`); bis 2026-09-26 endete GET /fragen dann mit HTTP 500,
+    während /stand und /ergebnis den Sperrgrund meldeten. Ohne Ring gibt es keine Gewichte:
+    None, und naechste_fragen() ordnet deterministisch — die Fragenliste bleibt vollständig.
+    Bewusst NICHT „gesperrt → None": ein gewöhnlicher Sperrgrund (z. B. dba_kapital_offen)
+    lässt den Ring rechnen, und seine Gewichte führen den Nutzer zur offenen Frage."""
+    try:
+        if cfg["gesamt_ring"]:
+            aufbau, achsen = BR.rollen(cfg, bindung, store)
+            bf = _bescheid_fn(cfg["gesamt_ring"], vz, aufbau, felder, store, nur_bestaetigt=False)  # Estimate-Pfad: vorläufig zeigt Wirkung im Range
+            if bf is not None:
+                return {b["feld_id"]: b["spanne_cent"]
+                        for b in IV.intervall(felder, achsen, bf, snapshot_id=sid)["beitraege"]}
+        for _name, q, tfelder in cfg["teil_ringe"]:
+            tb = {f: bindung[f] for f in tfelder if f in bindung}
+            bf = _bescheid_fn(q, vz, tb, nur_bestaetigt=False)   # Estimate-Pfad (fragen-Gewichte)
+            if bf is not None:
+                return {b["feld_id"]: b["spanne_cent"]
+                        for b in IV.intervall(felder, tb, bf, snapshot_id=sid)["beitraege"]}
+    # Klasse erst beim Fangen auflösen: runner ist ohne Catala nicht importierbar; warf der Ring,
+    # ist er geladen. () fängt nichts.
+    except getattr(sys.modules.get("runner"), "RentenfreibetragFixierungOffen", ()):
+        return None
     return None
 
 
@@ -336,11 +348,16 @@ def fragen(fall_id: str) -> tuple[int, dict]:
     cfg = _cfg(store)
     bindung = _scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
-    beitrag = _gesamt_beitrag(store, cfg, bindung, felder, sid, int(store["veranlagungszeitraum"]))
+    vz = int(store["veranlagungszeitraum"])
+    # Derselbe Guard wie stand()/ergebnis(), damit der Sperrgrund auch hier in der Antwort steht.
+    gesperrt = _an_gesamt_sperrgrund(felder, cfg, vz, store, bindung) if cfg.get("guard") else None
+    beitrag = _gesamt_beitrag(store, cfg, bindung, felder, sid, vz)
     queue = TR.naechste_fragen(store, bindung, beitrag)
     out = [_frage_metadaten(fid, bindung, store) for fid in queue]
     flow.schreibe(fall_id, "fragen", {"offen": len(out), "kopf": flow.kopf_der_queue(out)})
-    return 200, {"fall_id": fall_id, "snapshot_id": sid, "fragen": out}
+    return 200, {"fall_id": fall_id, "snapshot_id": sid, "fragen": out,
+                 "ring_gesperrt": gesperrt,
+                 "ring_gesperrt_klartext": sperrgrund_klartext(gesperrt)}
 
 
 def frage_einzeln(fall_id: str, feld_id: str) -> tuple[int, dict]:
