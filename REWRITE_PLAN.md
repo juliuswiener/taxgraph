@@ -26,7 +26,7 @@ diese Klasse.
 |---|---|---|---|
 | 148 YAML-Dateien | **525** getrackt; das Produkt lädt zur Laufzeit **91** (bindung_* 25, params 58, kohorten 8) | explicit (`git ls-files`, Lader-Grep) | Phase 2 lädt die 91 typisiert. Die 148 sind vermutlich `sources/**/*.meta.yaml` ohne `bfinv` (derived) — Tooling, nicht Produkt. |
 | ELSTER-XML in `produkt/` | Writer in `produkt/eingang/elster_xml.py`, ERiC in `elster/` (1 779 Z.) | explicit | `elster/checkest_gate.py`, `smoke_test.py`, `submission/validate_xsd.py` gehören in den Port. |
-| 22 xfail-Tests | **15** xfail-Marker in **13** Dateien | explicit (`git grep 'pytest.mark.xfail\|pytest.xfail('`) | Alle 15 werden `#[ignore = "…"]` mit Grund. |
+| 22 xfail-Tests | stimmt: **22 xfailed** zur Laufzeit (`make unit`, 2026-09-29) aus **15** Markern in **13** Dateien (parametrisierte Marker zählen je Fall) | explicit | Alle 22 Fälle werden `#[ignore = "…"]` mit Grund. |
 | Catala-Backend für Rust | Catala 1.2.1 hat **kein** Rust-Backend (c, java, python, ocaml, interpret) | explicit (`catala --help`) | C-Backend + FFI, §3. |
 | `catala_*` = Catala | **30 von 70** `catala_*`-Funktionen rufen Catala, **40 sind Hand-Python** (`catala_solz`, `catala_kist`, § 35a, § 23 …) | explicit (AST-Scan `runner.py`) | Die 40 werden von Hand portiert und per Parität gesichert — dort gibt es keine Regelquelle. |
 | Tests 301 Dateien | 301 `.py` unter `tests/`, 297 davon `test_*`; 75 075 Zeilen | explicit | §6. |

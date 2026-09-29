@@ -54,6 +54,7 @@ name = "bindung"
 version = "0.0.0"
 dependencies = [
  "domain",
+ "rust_decimal",
  "serde",
  "serde_json",
  "serde_yaml_ng",
@@ -254,6 +255,7 @@ dependencies = [
 name = "engine"
 version = "0.0.0"
 dependencies = [
+ "bindung",
  "catala-sys",
  "domain",
  "rust_decimal",

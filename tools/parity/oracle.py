@@ -280,6 +280,21 @@ def _append_sequence(req: dict) -> dict:
     return {"results": ergebnisse, "aktive_event_ids": sorted(e["event_id"] for e in aktiv.values())}
 
 
+def _runner(req: dict) -> dict:
+    """Generischer Accessor-Aufruf `runner.<name>` (Schritt 4b): ruft
+    `getattr(produkt.engine.runner, name)(*args, **kwargs)` mit den rohen Dict-Argumenten, wie das
+    Produkt sie uebergibt, und antwortet `{"ok": ergebnis}` oder `{"err": "<Ausnahmeklasse>"}` --
+    dieselbe Form wie `rust/fixtures/corpus/runner/*.jsonl`. `catala` markiert Catala-
+    Laufzeitausnahmen (`CatalaError`-Unterklassen), die der Rust-C-Shim nicht einzeln unterscheidet."""
+    from produkt.engine import runner as _RUNNER  # lazy: nur wer runner.* ruft, zahlt den Import
+    from catala_runtime import CatalaError
+    name = req["fn"][len("runner."):]
+    try:
+        return {"ok": getattr(_RUNNER, name)(*req.get("args", []), **req.get("kwargs", {}))}
+    except Exception as exc:  # noqa: BLE001 -- Fehlerparitaet braucht jeden Typ
+        return {"err": type(exc).__name__, "catala": isinstance(exc, CatalaError)}
+
+
 DISPATCH = {
     "grundtarif": _grundtarif,
     "splittingtarif": _splittingtarif,
@@ -310,6 +325,10 @@ def main() -> None:
         if not line:
             continue
         req = json.loads(line)
+        if str(req.get("fn", "")).startswith("runner."):
+            sys.stdout.write(json.dumps(_runner(req)) + "\n")
+            sys.stdout.flush()
+            continue
         try:
             fn = DISPATCH[req["fn"]]
             ergebnis = fn(req)

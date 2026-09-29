@@ -16,6 +16,7 @@
 mod bindung_datei;
 mod kohorten_datei;
 mod params_datei;
+mod params_zugriff;
 mod registry;
 
 pub use bindung_datei::{
@@ -25,4 +26,11 @@ pub use bindung_datei::{
 };
 pub use kohorten_datei::{lade_kohorten, KohortenDatei, KohortenFehler};
 pub use params_datei::{lade_params, Authority, ParamsDatei, ParamsFehler};
+pub use params_zugriff::{
+    AltersentlastungKohorte, ArbeitszimmerSaetze, DhfGrenzen, EntfernungspauschaleSaetze, Params,
+    ParamsWertFehler, VerpflegungSaetze,
+};
+pub use params_zugriff::{
+    FahrtkostenPauschalen, P33bPauschbetraege, SatzHoechstbetrag, VersorgungsfreibetragKohorte,
+};
 pub use registry::{lade_registry, Registry, RegistryFehler};

@@ -191,6 +191,26 @@ impl Oracle {
     }
 }
 
+impl Oracle {
+    /// Generischer Accessor-Aufruf `runner.<name>(*args)` (`tools/parity/oracle.py::_runner`).
+    /// Antwort roh: `{"ok": <Ergebnis>}` oder `{"err": "<Ausnahmeklasse>", "catala": <bool>}`.
+    ///
+    /// # Errors
+    /// Siehe [`OrakelFehler`] (nur Transportfehler; Python-Ausnahmen stehen in der Antwort).
+    pub fn call_runner(&mut self, name: &str, args: &[serde_json::Value]) -> Result<serde_json::Value, OrakelFehler> {
+        let anfrage = serde_json::json!({ "fn": format!("runner.{name}"), "args": args });
+        let mut zeile = serde_json::to_string(&anfrage)?;
+        zeile.push('\n');
+        self.stdin.write_all(zeile.as_bytes())?;
+        self.stdin.flush()?;
+        let mut antwort_zeile = String::new();
+        if self.stdout.read_line(&mut antwort_zeile)? == 0 {
+            return Err(OrakelFehler::Geschlossen);
+        }
+        Ok(serde_json::from_str(antwort_zeile.trim())?)
+    }
+}
+
 impl Drop for Oracle {
     fn drop(&mut self) {
         // Ein liegen gebliebener Python-Prozess ist kein Datenverlust, nur eine Leiche;

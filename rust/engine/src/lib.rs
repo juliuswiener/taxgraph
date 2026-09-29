@@ -42,5 +42,6 @@ pub mod verbilligte_vermietung;
 pub mod verlustvortrag;
 pub mod vorsorgeaufwendungen;
 pub mod zumutbare_belastung;
+pub mod zugriff;
 
 pub use catala_sys::CatalaFehler;

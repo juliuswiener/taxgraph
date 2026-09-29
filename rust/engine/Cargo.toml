@@ -10,5 +10,6 @@ workspace = true
 [dependencies]
 catala-sys = { path = "../catala-sys" }
 domain = { path = "../domain" }
+bindung = { path = "../bindung" }
 rust_decimal = { workspace = true }
 thiserror = { workspace = true }
