@@ -49,6 +49,20 @@ struct Antwort {
     error: Option<String>,
 }
 
+#[derive(serde::Serialize)]
+struct EventIdAnfrage<'a> {
+    #[serde(rename = "fn")]
+    funktion: &'static str,
+    event: &'a serde_json::Value,
+}
+
+#[derive(serde::Deserialize)]
+struct EventIdAntwort {
+    ok: bool,
+    result: Option<String>,
+    error: Option<String>,
+}
+
 impl Oracle {
     /// Startet `python3 tools/parity/oracle.py` mit `repo_root` als Arbeitsverzeichnis.
     ///
@@ -113,6 +127,68 @@ impl Oracle {
     pub fn splittingtarif(&mut self, zve_cent: i64, vz: u16) -> Result<i64, OrakelFehler> {
         self.call("splittingtarif", zve_cent, vz)
     }
+
+    /// `produkt/store/store.py::event_id` ueber ein beliebiges JSON-Objekt (Hex-String), fuer
+    /// die `store`-Crate-Paritaet (`tests/store_paritaet.rs`). Eigene Anfrage-/Antwortform
+    /// (`result` statt `cent`), da das Ergebnis ein String ist, kein Cent-Betrag.
+    ///
+    /// # Errors
+    /// Siehe [`OrakelFehler`].
+    pub fn event_id(&mut self, event: &serde_json::Value) -> Result<String, OrakelFehler> {
+        let anfrage = EventIdAnfrage { funktion: "store.event_id", event };
+        let mut zeile = serde_json::to_string(&anfrage)?;
+        zeile.push('\n');
+        self.stdin.write_all(zeile.as_bytes())?;
+        self.stdin.flush()?;
+
+        let mut antwort_zeile = String::new();
+        let n = self.stdout.read_line(&mut antwort_zeile)?;
+        if n == 0 {
+            return Err(OrakelFehler::Geschlossen);
+        }
+        let antwort: EventIdAntwort = serde_json::from_str(antwort_zeile.trim())?;
+        if antwort.ok {
+            antwort
+                .result
+                .ok_or_else(|| OrakelFehler::Python("ok=true ohne result-Feld".to_string()))
+        } else {
+            Err(OrakelFehler::Python(antwort.error.unwrap_or_default()))
+        }
+    }
+
+    /// Generischer Aufruf fuer die `engine`-Funktionen aus Schritt 4a: `funktion` ist der
+    /// `DISPATCH`-Schluessel und `args` das `args`-Objekt, wie `tools/parity/oracle.py`s
+    /// JSONL-Schema sie fuer diese Funktionen erwartet (Cent/Bruch/Bool/Integer, siehe dort).
+    ///
+    /// # Errors
+    /// Siehe [`OrakelFehler`].
+    pub fn call_engine(&mut self, funktion: &str, args: serde_json::Value) -> Result<i64, OrakelFehler> {
+        #[derive(serde::Serialize)]
+        struct EngineAnfrage<'a> {
+            #[serde(rename = "fn")]
+            funktion: &'a str,
+            args: serde_json::Value,
+        }
+        let anfrage = EngineAnfrage { funktion, args };
+        let mut zeile = serde_json::to_string(&anfrage)?;
+        zeile.push('\n');
+        self.stdin.write_all(zeile.as_bytes())?;
+        self.stdin.flush()?;
+
+        let mut antwort_zeile = String::new();
+        let n = self.stdout.read_line(&mut antwort_zeile)?;
+        if n == 0 {
+            return Err(OrakelFehler::Geschlossen);
+        }
+        let antwort: Antwort = serde_json::from_str(antwort_zeile.trim())?;
+        if antwort.ok {
+            antwort.cent.ok_or_else(|| {
+                OrakelFehler::Python("ok=true ohne cent-Feld".to_string())
+            })
+        } else {
+            Err(OrakelFehler::Python(antwort.error.unwrap_or_default()))
+        }
+    }
 }
 
 impl Drop for Oracle {
@@ -169,6 +245,117 @@ pub fn diff_splittingtarif(
     } else {
         Some(Abweichung { zve_cent, vz, rust_cent, python_cent })
     })
+}
+
+/// Vergleicht `rust_hex` (`store::EventId::von_json(...).to_string()`) gegen `oracle`s
+/// `produkt/store/store.py::event_id`-Antwort fuer dasselbe JSON-Event; `None`, wenn beide
+/// uebereinstimmen.
+///
+/// # Errors
+/// Siehe [`diff_grundtarif`].
+pub fn diff_event_id(
+    oracle: &mut Oracle,
+    event: &serde_json::Value,
+    rust_hex: &str,
+) -> Result<Option<String>, OrakelFehler> {
+    let python_hex = oracle.event_id(event)?;
+    Ok(if python_hex == rust_hex { None } else { Some(python_hex) })
+}
+
+/// Ein Vergleichsfall fuer eine `engine`-Funktion aus Schritt 4a (deliverable 3/4), der abwich.
+/// Traegt `funktion`/`args` statt der `tarif`-spezifischen `zve_cent`/`vz`, weil die 16
+/// Funktionen unterschiedliche Eingabeformen haben (siehe `tools/parity/oracle.py::DISPATCH`).
+#[derive(Debug, PartialEq)]
+pub struct EngineAbweichung {
+    pub funktion: String,
+    pub args: serde_json::Value,
+    pub rust_cent: i64,
+    pub python_cent: i64,
+}
+
+/// Vergleicht `rust_cent` gegen `oracle`s Antwort fuer eine beliebige `engine`-Funktion.
+///
+/// # Errors
+/// Siehe [`diff_grundtarif`].
+pub fn diff_engine(
+    oracle: &mut Oracle,
+    funktion: &str,
+    args: serde_json::Value,
+    rust_cent: i64,
+) -> Result<Option<EngineAbweichung>, OrakelFehler> {
+    let python_cent = oracle.call_engine(funktion, args.clone())?;
+    Ok(if python_cent == rust_cent {
+        None
+    } else {
+        Some(EngineAbweichung { funktion: funktion.to_string(), args, rust_cent, python_cent })
+    })
+}
+
+#[derive(serde::Serialize)]
+struct AppendSequenceAnfrage<'a> {
+    #[serde(rename = "fn")]
+    funktion: &'static str,
+    store: &'a serde_json::Value,
+    calls: &'a [serde_json::Value],
+}
+
+#[derive(serde::Deserialize)]
+struct AppendSequenceHuelle {
+    ok: bool,
+    result: Option<AppendSequenceErgebnis>,
+    error: Option<String>,
+}
+
+/// Antwort auf `store.append_sequence`: pro Aufruf entweder der neue `event_id` oder eine
+/// Fehlerklasse (`tools/parity/oracle.py::_fehlerklasse`), plus die `feld_id -> event_id`-Menge
+/// der am Ende noch aktiven Events (`store.py::_aktives`, sortiert).
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+pub struct AppendSequenceErgebnis {
+    pub results: Vec<AppendCallErgebnis>,
+    pub aktive_event_ids: Vec<String>,
+}
+
+/// Ergebnis EINES Aufrufs innerhalb einer `append_sequence`-Anfrage.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[serde(untagged)]
+pub enum AppendCallErgebnis {
+    Erfolg { event_id: String },
+    Fehler { err: String },
+}
+
+impl Oracle {
+    /// `produkt/store/store.py::append_event` als Aufruf-Sequenz gegen EINEN Store
+    /// (`tests/store_append_paritaet.rs`, Nachtrag zu Deliverable #2): `store` ist eine
+    /// Store-Datei (leer oder eine reale Fall-Datei) als JSON, `calls` eine Liste roher
+    /// `append_event`-kwargs (s. `tools/parity/oracle.py::_append_sequence`).
+    ///
+    /// # Errors
+    /// Siehe [`OrakelFehler`].
+    pub fn append_sequence(
+        &mut self,
+        store: &serde_json::Value,
+        calls: &[serde_json::Value],
+    ) -> Result<AppendSequenceErgebnis, OrakelFehler> {
+        let anfrage = AppendSequenceAnfrage { funktion: "store.append_sequence", store, calls };
+        let mut zeile = serde_json::to_string(&anfrage)?;
+        zeile.push('\n');
+        self.stdin.write_all(zeile.as_bytes())?;
+        self.stdin.flush()?;
+
+        let mut antwort_zeile = String::new();
+        let n = self.stdout.read_line(&mut antwort_zeile)?;
+        if n == 0 {
+            return Err(OrakelFehler::Geschlossen);
+        }
+        let antwort: AppendSequenceHuelle = serde_json::from_str(antwort_zeile.trim())?;
+        if antwort.ok {
+            antwort
+                .result
+                .ok_or_else(|| OrakelFehler::Python("ok=true ohne result-Feld".to_string()))
+        } else {
+            Err(OrakelFehler::Python(antwort.error.unwrap_or_default()))
+        }
+    }
 }
 
 /// Serialisiert Zugriffe auf das eine geteilte `Oracle` in den Integrationstests

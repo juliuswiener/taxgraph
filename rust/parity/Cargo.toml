@@ -15,3 +15,8 @@ thiserror.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
+store = { path = "../store" }
+engine = { path = "../engine" }
+domain = { path = "../domain" }
+bindung = { path = "../bindung" }
+rust_decimal.workspace = true

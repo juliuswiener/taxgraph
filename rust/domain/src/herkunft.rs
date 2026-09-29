@@ -3,6 +3,8 @@
 use std::fmt;
 use std::str::FromStr;
 
+use serde::{Deserialize, Serialize};
+
 use super::PruefTiefe;
 
 /// Ein Wert auf einer Herkunfts-Achse (`herkunft` oder `haftung`): "berechnet", "mensch",
@@ -54,9 +56,25 @@ impl fmt::Display for Achsenwert {
     }
 }
 
+/// Wie im Wire-Format (`schema.json`): ein blanker String, keine geschachtelte Struktur.
+impl Serialize for Achsenwert {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.0)
+    }
+}
+
+/// Ein leerer Achsenwert ist beim Laden ein Deserialisierungsfehler, nicht erst beim ersten
+/// `meet_herkunft` — dieselbe fail-closed-Disziplin wie [`Achsenwert::new`].
+impl<'de> Deserialize<'de> for Achsenwert {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Self::new(s).map_err(serde::de::Error::custom)
+    }
+}
+
 /// Herkunfts-Vektor eines Feldwerts: drei Achsen, jede fuer sich gemeinsam mit `meet_herkunft`
-/// zusammengefuehrt (`store.py:60-72`).
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+/// zusammengefuehrt (`store.py:60-72`). Feldnamen 1:1 `schema.json#/$defs/herkunft_vektor`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Herkunft {
     pub herkunft: Achsenwert,
     pub pruef_tiefe: PruefTiefe,
@@ -100,6 +118,23 @@ impl Schreiber {
             Self::Berechnet(_) => Some("maps"),
             _ => None,
         }
+    }
+}
+
+/// Wire-Format ist der rohe `schreiber`-String (`schema.json`: `"type": "string"`), ueber
+/// [`Display`](fmt::Display) serialisiert.
+impl Serialize for Schreiber {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+/// `FromStr::Err` ist [`std::convert::Infallible`] — jeder String parst (im Zweifel als
+/// `Mensch`), das Laden eines Events kann an dieser Stelle nie scheitern.
+impl<'de> Deserialize<'de> for Schreiber {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(s.parse::<Self>().unwrap_or_else(|unmoeglich: std::convert::Infallible| match unmoeglich {}))
     }
 }
 
@@ -190,5 +225,31 @@ mod tests {
             let sch: Schreiber = s.parse().unwrap();
             assert_eq!(sch.to_string(), s);
         }
+    }
+
+    #[test]
+    fn schreiber_und_herkunft_serialisieren_als_wire_format() {
+        use super::{Achsenwert, Herkunft};
+        use crate::PruefTiefe;
+
+        let sch: Schreiber = "llm:chat".parse().unwrap();
+        assert_eq!(serde_json::to_string(&sch).unwrap(), "\"llm:chat\"");
+        let zurueck: Schreiber = serde_json::from_str("\"llm:chat\"").unwrap();
+        assert_eq!(zurueck, sch);
+
+        let h = Herkunft {
+            herkunft: Achsenwert::new("llm_vorschlag").unwrap(),
+            pruef_tiefe: PruefTiefe::Ungeprueft,
+            haftung: Achsenwert::new("system").unwrap(),
+        };
+        let json = serde_json::to_value(&h).unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({"herkunft":"llm_vorschlag","pruef_tiefe":"ungeprueft","haftung":"system"})
+        );
+        let zurueck: Herkunft = serde_json::from_value(json).unwrap();
+        assert_eq!(zurueck, h);
+
+        assert!(serde_json::from_str::<Achsenwert>("\"\"").is_err());
     }
 }

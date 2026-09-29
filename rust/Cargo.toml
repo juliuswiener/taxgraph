@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["catala-sys", "domain", "bindung", "parity"]
+members = ["catala-sys", "domain", "bindung", "parity", "store", "engine"]
 
 [workspace.package]
 edition = "2021"
@@ -22,3 +22,6 @@ serde_yaml_ng = "=0.10.0"
 thiserror = "=1.0.69"
 proptest = "=1.9.0"
 cc = "=1.4.4"
+sha2 = "=0.10.9"
+regex = "=1.11.1"
+chrono = "=0.4.41"
