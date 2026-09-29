@@ -4,7 +4,7 @@
 use std::collections::BTreeMap;
 
 use bindung::{AnkerRef, Bindungspunkt};
-use domain::{Herkunft, Zustand};
+use domain::{HerkunftVektor, Zustand};
 use serde::Serialize;
 use serde_json::Value;
 use store::{Event, EventId, Signal, Store};
@@ -34,7 +34,10 @@ pub struct Justification<'s, 'r> {
     pub feld_id: &'s str,
     pub wert: &'s Value,
     pub zustand: Zustand,
-    pub herkunft: &'s Herkunft,
+    /// `HerkunftVektor` statt der strengen `Herkunft`: passthrough des Store-Events, wie
+    /// `traverser.py::justification`/`trace_ergebnis` `ev["herkunft"]` unveraendert ausgeben —
+    /// auch fuer die 32 realen Bestandsdateien mit der Alt-Form (s. `domain::HerkunftVektor`).
+    pub herkunft: &'s HerkunftVektor,
     pub event_id: EventId,
     pub signal: Option<&'s Signal>,
     pub regel_id: Option<&'r str>,

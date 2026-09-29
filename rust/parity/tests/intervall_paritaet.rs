@@ -219,22 +219,6 @@ fn sicht_gleich() {
     println!("sicht: {} Bindungen gleich", ids.len());
 }
 
-fn roh_falten(pfad: &std::path::Path) -> Option<Felder> {
-    let v: Value = serde_json::from_str(&std::fs::read_to_string(pfad).ok()?).ok()?;
-    let events = v.get("events")?.as_array()?;
-    let ersetzt: HashSet<&str> = events.iter().filter_map(|e| e.get("ersetzt")?.as_str()).collect();
-    let mut felder = Felder::new();
-    for e in events {
-        if ersetzt.contains(e.get("event_id")?.as_str()?) {
-            continue;
-        }
-        let zustand: Zustand = serde_json::from_value(e.get("zustand")?.clone()).ok()?;
-        let wert = e.get("wert").cloned().unwrap_or(Value::Null);
-        felder.insert(e.get("feld_id")?.as_str()?.to_owned(), SnapshotFeld { wert, zustand, herkunft: herkunft() });
-    }
-    Some(felder)
-}
-
 fn pruefe_intervall(bilanz: &mut Bilanz, name: &'static str, felder: &Felder, auswahl: &[&Bindung], cap: usize) {
     let achsen: Vec<AchsenBindung> = auswahl.iter().map(|b| AchsenBindung::from(*b)).collect();
     let ids: Vec<&str> = auswahl.iter().map(|b| b.feld_id.as_str()).collect();
@@ -253,18 +237,12 @@ fn reale_faelle() {
     let alle_ids: Vec<&str> = bindungen().iter().map(|b| b.feld_id.as_str()).collect();
     let mut bilanz = Bilanz::new();
     let (mut dateien, mut n) = (0, 0);
+    // P10: store::lade laedt inzwischen ALLE realen Faelle (legacy Herkunft, unbegrenzte VZ) —
+    // keine rohe Fallback-Faltung mehr noetig.
     for pfad in walk_json(&faelle_verzeichnis()) {
         dateien += 1;
-        let felder = match store::lade(&pfad) {
-            Ok(d) => match store::Store::aus_datei(d).materialisiere(None) {
-                Ok((f, _)) => f,
-                Err(_) => continue,
-            },
-            Err(_) => match roh_falten(&pfad) {
-                Some(f) => f,
-                None => continue,
-            },
-        };
+        let d = store::lade(&pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
+        let (felder, _) = store::Store::aus_datei(d).materialisiere(None).unwrap();
         n += 1;
         // A: nur Felder mit Snapshot-Wert oder Bereich -> meist eine echte Zahl.
         let a: Vec<&Bindung> = bindungen()
@@ -372,7 +350,7 @@ fn fall() -> impl Strategy<Value = Fall> {
             for ((a, _), s) in achsen.iter().zip(snap) {
                 if let Some((w, bestaetigt)) = s {
                     let zustand = if bestaetigt { Zustand::Bestaetigt } else { Zustand::Vorlaeufig };
-                    felder.insert(a.feld_id.clone(), SnapshotFeld { wert: w, zustand, herkunft: herkunft() });
+                    felder.insert(a.feld_id.clone(), SnapshotFeld { wert: w, zustand, herkunft: herkunft().into() });
                 }
             }
             // feld_werte fuer den Slot-Adapter: Index n = unbekanntes Feld (KeyError-Pfad).

@@ -4,7 +4,7 @@
 //! keine zweite Implementierung.
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Zustand};
+use domain::{Achsenwert, Feldzustand, Herkunft, HerkunftVektor, PruefTiefe, Schreiber, Zustand};
 use serde::{Deserialize, Serialize};
 
 use crate::abweisung::{self, Abweisung};
@@ -16,20 +16,132 @@ use crate::nachschlag::BindungNachschlag;
 use crate::zeit::jetzt_iso;
 
 /// Die reine Datei-Form (`schema.json` Top-Level-Objekt), OHNE den `aktiv`-Index — das ist, was
-/// `persistenz::lade`/`speichere` lesen/schreiben (`store.py:77-87`).
+/// `persistenz::lade`/`speichere` lesen/schreiben (`store.py:77-87`). Feldliste 1:1
+/// `schema.json`s Top-Level-`properties`; nur `version`/`veranlagungszeitraum`/`events` sind dort
+/// `required`, alle anderen bleiben `Option` bzw. leer-default, auch wenn sie ueber dem realen
+/// 192-Dateien-Bestand haeufiger vorkommen (s. Einzeldoku je Feld).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoreDatei {
     pub version: u32,
-    /// Bewusst `i64`, nicht `domain::Vz`: `schema.json` erlaubt `minimum:2000, maximum:2100`,
-    /// und Pythons `leerer_store`/`_berechne` rechnen mit uneingeschraenktem `int(...)`.
-    /// `domain::Vz` deckt nur 2024..=2026 ab (Rechenkern-Bereich) — waere hier strenger als die
-    /// Datei selbst sein darf. PARITAET: keine Bereichspruefung, wie im Original.
-    pub veranlagungszeitraum: i64,
+    /// Bewusst `Veranlagungsjahr` (roh), nicht `domain::Vz`: `schema.json` erlaubt
+    /// `minimum:2000, maximum:2100`, und Pythons `leerer_store`/`_berechne` rechnen mit
+    /// uneingeschraenktem `int(...)`. `domain::Vz` deckt nur 2024..=2026 ab (Rechenkern-Bereich)
+    /// — waere hier strenger als die Datei selbst sein darf. PARITAET: keine Bereichspruefung,
+    /// wie im Original — s. [`Veranlagungsjahr`]-Doku.
+    pub veranlagungszeitraum: Veranlagungsjahr,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fall_id: Option<String>,
+    /// Fragen-Scheibe des Falls (`schema.json`: `fall_anlegen()` setzt sie, danach nie geaendert).
+    /// Gemessen ueber alle 192 realen Fallakten (Zaehlung): in JEDER Datei vorhanden — trotzdem
+    /// `Option`, weil `schema.json` sie NICHT in `required` fuehrt (ein Store vor `fall_anlegen()`
+    /// koennte sie theoretisch nicht tragen). Bisher in `StoreDatei` gefehlt: `lade`→`speichere`
+    /// haette sie fuer jede reale Datei lautlos verworfen.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scheibe: Option<String>,
+    /// Besitzer des Falls (`schema.json`: fehlt im Einzelnutzer-Betrieb `TAXGRAPH_NO_AUTH=1`).
+    /// Gemessen: 39 der 192 realen Fallakten tragen sie. Bisher in `StoreDatei` gefehlt.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
     pub events: Vec<Event>,
     #[serde(default)]
     pub snapshots: Vec<Snapshot>,
+    /// Vergleichsgroessen aus einem verknuepften Vorjahres-Fall (`api.vorjahr()`,
+    /// `produkt/eingang/vorjahr_writer.py`), z. B. `{"verlustvortrag_bestand": {"wert": ...}}` —
+    /// `schema.json` selbst laesst die Objektform bewusst offen ("Heute nur
+    /// `verlustvortrag_bestand`", weitere Vergleichsgroessen sind absehbar), deshalb roh als
+    /// `serde_json::Value` statt vorab auf die heutige eine Unterstruktur festgelegt. Gemessen:
+    /// 0 der 192 realen Fallakten tragen sie (kein bisher verknuepfter Vorjahres-Fall im Bestand);
+    /// Python KANN sie trotzdem schreiben — bisher in `StoreDatei` gefehlt.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vorjahr_referenz: Option<serde_json::Value>,
+}
+
+/// Das `veranlagungszeitraum`-Feld einer Store-Datei — RAW wie Python (`int(...)`, `store.py:79`),
+/// keine Bereichspruefung beim Laden. Gemessen ueber alle 192 realen Fallakten unter
+/// `~/.local/share/taxgraph/faelle/` (Zaehlung, kein Wert ausserhalb dieses Kommentars
+/// festgehalten): neben sinnvollen Werten und Ausreissern wie `-5`/`2099` (beide passen in
+/// `i64`) traegt EINE Datei einen 40-stelligen Wert (`99999999999999999999999999999999999999`),
+/// der `i64` ueberlaeuft — genau der Grund, warum `store::lade` diese Datei bisher ablehnte.
+///
+/// Eine ZWEITE Datei traegt den Wert als JSON-Zahl in Exponentialschreibweise (Mantisse +
+/// `e`/`E`-Exponent, kein Wert hier festgehalten). `serde_yaml_ng` (der Parser von
+/// `persistenz::lade`, s. o.) loest das schon als
+/// Ganzzahl auf — `store::lade` laedt diese Datei bereits fehlerfrei. `serde_json` (von
+/// Parity-Tests fuer den rohen Python-Vergleich genutzt) liest denselben Token dagegen als
+/// `f64` und scheiterte bisher an `i128`s Standard-`Deserialize` (kein `visit_f64`). Die
+/// [`Deserialize`]-Impl unten faengt beide Zahl-Formen ab (`i128`-Varianten direkt, `f64` durch
+/// Abschneiden Richtung Null wie Pythons `int(float)`) — deserializer-unabhaengig, wie Pythons
+/// eigene `int(...)`-Koerzion an den Verwendungsstellen.
+///
+/// ponytail: `i128` statt Pythons echtem, beliebig grossem `int` — deckt jeden gemessenen Wert
+/// (auch den 40-stelligen) mit weitem Rand; ein noch groesserer Wert wird beim Laden zu einem
+/// benannten Deserialisierungsfehler (serde meldet den Ueberlauf explizit), nicht zu einem
+/// stillen Wrap.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
+#[serde(transparent)]
+pub struct Veranlagungsjahr(pub i128);
+
+impl<'de> Deserialize<'de> for Veranlagungsjahr {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct BesucherJahr;
+        impl serde::de::Visitor<'_> for BesucherJahr {
+            type Value = Veranlagungsjahr;
+
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("eine Ganzzahl (optional in Exponentialschreibweise)")
+            }
+
+            fn visit_i64<E: serde::de::Error>(self, v: i64) -> Result<Self::Value, E> {
+                Ok(Veranlagungsjahr(i128::from(v)))
+            }
+
+            fn visit_u64<E: serde::de::Error>(self, v: u64) -> Result<Self::Value, E> {
+                Ok(Veranlagungsjahr(i128::from(v)))
+            }
+
+            fn visit_i128<E: serde::de::Error>(self, v: i128) -> Result<Self::Value, E> {
+                Ok(Veranlagungsjahr(v))
+            }
+
+            fn visit_u128<E: serde::de::Error>(self, v: u128) -> Result<Self::Value, E> {
+                Ok(Veranlagungsjahr(i128::try_from(v).unwrap_or(i128::MAX)))
+            }
+
+            // Python: `int(float)` schneidet Richtung Null ab. `f.trunc()` endlich; `as`
+            // saettigt an den Grenzen statt zu ueberlaufen (kein Panic, kein UB) — s. Typdoku oben.
+            #[allow(clippy::cast_possible_truncation)]
+            fn visit_f64<E: serde::de::Error>(self, v: f64) -> Result<Self::Value, E> {
+                Ok(Veranlagungsjahr(v.trunc() as i128))
+            }
+        }
+        // Derselbe getypte Hint wie die vorherige derive-Deserialize (i128::deserialize ruft
+        // intern deserialize_i128 auf) — die bereits bewiesene YAML-Ladung bleibt unveraendert,
+        // nur `visit_f64` kommt als Fallback hinzu.
+        deserializer.deserialize_i128(BesucherJahr)
+    }
+}
+
+impl Veranlagungsjahr {
+    /// Fuer Aufrufer, die den (bewusst engeren) `i64`-Bereich brauchen — [`Store::leer`] und die
+    /// Datums-Ableitung ([`ableitung::berechne`], `vz: i64`). Saettigt an den `i64`-Grenzen statt
+    /// zu ueberlaufen: betrifft praktisch nur die eine gemessene 40-stellige Datei, deren Wert
+    /// fuer jede reale Ableitungsregel ohnehin weit ausserhalb jeder sinnvollen Jahresspanne
+    /// liegt — ein gesaettigtes `i64::MAX` fuehrt zu denselben "viel zu weit in der Zukunft"-
+    /// Vergleichsergebnissen wie Pythons unbeschraenkte Arithmetik mit dem echten 40-stelligen
+    /// Wert.
+    #[must_use]
+    pub fn als_i64_saettigend(self) -> i64 {
+        i64::try_from(self.0).unwrap_or(if self.0.is_positive() { i64::MAX } else { i64::MIN })
+    }
+}
+
+impl From<i64> for Veranlagungsjahr {
+    fn from(v: i64) -> Self {
+        Self(i128::from(v))
+    }
 }
 
 /// Materialisierter Feldwert innerhalb eines Snapshots (`schema.json#/$defs/snapshot_feld`).
@@ -37,7 +149,7 @@ pub struct StoreDatei {
 pub struct SnapshotFeld {
     pub wert: serde_json::Value,
     pub zustand: Zustand,
-    pub herkunft: Herkunft,
+    pub herkunft: HerkunftVektor,
 }
 
 /// ELSTER-Pruefergebnis-Klasse (`schema.json#/$defs/eric_befund.klasse`).
@@ -114,10 +226,13 @@ impl Store {
         Self {
             datei: StoreDatei {
                 version: 1,
-                veranlagungszeitraum,
+                veranlagungszeitraum: veranlagungszeitraum.into(),
                 fall_id,
+                scheibe: None,
+                user_id: None,
                 events: Vec::new(),
                 snapshots: Vec::new(),
+                vorjahr_referenz: None,
             },
             aktiv: HashMap::new(),
         }
@@ -153,7 +268,7 @@ impl Store {
 
     #[must_use]
     pub fn veranlagungszeitraum(&self) -> i64 {
-        self.datei.veranlagungszeitraum
+        self.datei.veranlagungszeitraum.als_i64_saettigend()
     }
 
     /// Das aktuell aktive Event fuer `feld_id`, wenn eines existiert (`store.py:92-100`,
@@ -214,21 +329,23 @@ impl Store {
         self.pruefe_auflage_b(neu)?;
 
         let signal =
-            Signal { signal_1: neu.signal_1.clone(), signal_2: neu.signal_2_roh().map(str::to_owned) };
+            // Schreibpfad: Schluessel ist immer da (Python `store.py`: `signal or {"signal_1":
+            // None, ...}`) -- aeussere Ebene daher immer `Some(...)` (s. `Signal`-Typdoku).
+            Signal { signal_1: Some(neu.signal_1.clone()), signal_2: neu.signal_2_roh().map(str::to_owned) };
         let event = Event {
             event_id: EventId::aus_bytes([0; 32]),
             ts: neu.ts.clone().unwrap_or_else(jetzt_iso),
             feld_id: neu.feld_id.clone(),
             wert: neu.wert.clone(),
             zustand: neu.zustand(),
-            herkunft: neu.herkunft.clone(),
+            herkunft: neu.herkunft.clone().into(),
             schreiber: neu.schreiber.clone(),
             signal: Some(signal),
             ersetzt: neu.ersetzt,
         };
         let event_id = self.push_neu(event);
 
-        let vz = self.datei.veranlagungszeitraum;
+        let vz = self.datei.veranlagungszeitraum.als_i64_saettigend();
         self.leite_ab(&neu.feld_id, &neu.wert, neu.zustand(), bindung);
         self.rechne_ab(&neu.feld_id, &neu.wert, neu.zustand(), bindung, vz);
         Ok(event_id)
@@ -314,9 +431,9 @@ impl Store {
             feld_id: regel.feld_id.clone(),
             wert: regel.wert.clone(),
             zustand: Zustand::Bestaetigt,
-            herkunft: berechnet_herkunft(),
+            herkunft: berechnet_herkunft().into(),
             schreiber: Schreiber::Abgeleitet("beweist".to_string()),
-            signal: Some(Signal { signal_1: None, signal_2: Some(format!("beweist@{feld_id}={wert}")) }),
+            signal: Some(Signal { signal_1: Some(None), signal_2: Some(format!("beweist@{feld_id}={wert}")) }),
             ersetzt: None,
         };
         self.push_neu(event);
@@ -376,9 +493,9 @@ impl Store {
                 feld_id: ziel.to_string(),
                 wert: neuer_wert,
                 zustand: Zustand::Bestaetigt,
-                herkunft: berechnet_herkunft(),
+                herkunft: berechnet_herkunft().into(),
                 schreiber: Schreiber::Abgeleitet("ableitung".to_string()),
-                signal: Some(Signal { signal_1: None, signal_2: Some(format!("ableitung@{}", regel.aus)) }),
+                signal: Some(Signal { signal_1: Some(None), signal_2: Some(format!("ableitung@{}", regel.aus)) }),
                 ersetzt: None,
             });
         }

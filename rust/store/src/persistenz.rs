@@ -69,15 +69,18 @@ pub fn speichere(pfad: &Path, datei: &StoreDatei) -> Result<(), PersistenzFehler
 #[cfg(test)]
 mod tests {
     use super::{lade, speichere};
-    use crate::store::StoreDatei;
+    use crate::store::{StoreDatei, Veranlagungsjahr};
 
     fn testdatei() -> StoreDatei {
         StoreDatei {
             version: 1,
-            veranlagungszeitraum: 2025,
+            veranlagungszeitraum: Veranlagungsjahr(2025),
             fall_id: Some("demo-1".to_string()),
+            scheibe: None,
+            user_id: None,
             events: Vec::new(),
             snapshots: Vec::new(),
+            vorjahr_referenz: None,
         }
     }
 
@@ -92,7 +95,7 @@ mod tests {
         let modus = std::fs::metadata(&pfad).unwrap().permissions().mode() & 0o777;
         assert_eq!(modus, 0o600);
         let geladen = lade(&pfad).unwrap();
-        assert_eq!(geladen.veranlagungszeitraum, 2025);
+        assert_eq!(geladen.veranlagungszeitraum, Veranlagungsjahr(2025));
         assert_eq!(geladen.fall_id.as_deref(), Some("demo-1"));
         std::fs::remove_dir_all(&dir).ok();
     }
@@ -104,7 +107,7 @@ mod tests {
         let pfad = dir.join("roh.json");
         std::fs::write(&pfad, r#"{"version":1,"veranlagungszeitraum":2026,"events":[],"snapshots":[]}"#).unwrap();
         let geladen = lade(&pfad).unwrap();
-        assert_eq!(geladen.veranlagungszeitraum, 2026);
+        assert_eq!(geladen.veranlagungszeitraum, Veranlagungsjahr(2026));
         std::fs::remove_dir_all(&dir).ok();
     }
 }

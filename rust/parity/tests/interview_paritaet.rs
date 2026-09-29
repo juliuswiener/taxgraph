@@ -30,7 +30,7 @@ use domain::{Achsenwert, BasisId, Feldtyp, Herkunft, PruefTiefe, Schreiber, Zust
 use interview::{Graph, Sicht};
 use proptest::test_runner::{Config, TestCaseError, TestRunner};
 use serde_json::{json, Value};
-use store::{Event, EventId, Signal, Store, StoreDatei};
+use store::{Event, EventId, Signal, Store, StoreDatei, Veranlagungsjahr};
 
 // ------------------------------------------------------------------ Umgebung + Orakel
 
@@ -144,7 +144,6 @@ fn scheiben() -> &'static Scheiben {
 #[derive(Default)]
 struct Zaehler {
     je_fn: BTreeMap<String, (usize, usize)>,
-    uebersprungen: BTreeMap<String, usize>,
     abdeckung: BTreeMap<String, usize>,
     beispiele: Vec<String>,
 }
@@ -186,9 +185,6 @@ fn bericht(titel: &str) -> usize {
             println!("interview-paritaet {titel}: {f:<42} Rust {n:>6} / Python {n:>6} Aufrufe, {d} Abweichungen");
             summe += d;
         }
-        for (f, n) in &z.uebersprungen {
-            println!("interview-paritaet {titel}: {f:<42} {n} Faelle uebersprungen (Alt-Herkunft ohne pruef_tiefe/haftung)");
-        }
         for (f, n) in &z.abdeckung {
             println!("interview-paritaet {titel}: Abdeckung {f:<36} in {n} Stores");
         }
@@ -217,45 +213,15 @@ fn sicht_aus(felder: Option<&[&str]>) -> Sicht<'static> {
     felder.map_or_else(|| graph().alle().clone(), |f| graph().sicht(f.iter().copied()).expect("sicht"))
 }
 
-/// Die Store-Datei fuer Rust. 32 reale Alt-Faelle tragen Events, deren `herkunft` ohne
-/// `pruef_tiefe`/`haftung` geschrieben wurde (Schema verlangt beide); `StoreDatei` laedt sie
-/// nicht. Fuer den Vergleich bekommt Rust eine im Speicher ergaenzte Kopie (`true`), Python das
-/// Original. Der Traverser liest aus `herkunft` nur `herkunft.herkunft`; die zwei Funktionen,
-/// die `herkunft` AUSGEBEN, werden dort nicht verglichen, sondern als uebersprungen gezaehlt.
-fn rust_datei(raw: &Value) -> (StoreDatei, bool) {
-    rust_datei_opt(raw).expect("StoreDatei laedt (reale_faelle filtert vorher)")
-}
-
-/// `None`, wenn auch die ergaenzte Kopie nicht laedt (z. B. `veranlagungszeitraum` kein i64).
-fn rust_datei_opt(raw: &Value) -> Option<(StoreDatei, bool)> {
-    if let Ok(d) = serde_json::from_value::<StoreDatei>(raw.clone()) {
-        return Some((d, false));
-    }
-    let mut kopie = raw.clone();
-    let ergaenze = |h: Option<&mut Value>| {
-        if let Some(h) = h.and_then(Value::as_object_mut) {
-            h.entry("pruef_tiefe").or_insert(json!("ungeprueft"));
-            h.entry("haftung").or_insert(json!("unbekannt"));
-        }
-    };
-    for e in kopie["events"].as_array_mut().into_iter().flatten() {
-        ergaenze(e.get_mut("herkunft"));
-    }
-    // Ein Alt-Snapshot traegt dieselbe Luecke; der Traverser liest Snapshots nicht.
-    for s in kopie.get_mut("snapshots").and_then(Value::as_array_mut).into_iter().flatten() {
-        for f in s.get_mut("felder").and_then(Value::as_object_mut).into_iter().flat_map(|m| m.values_mut()) {
-            ergaenze(f.get_mut("herkunft"));
-        }
-    }
-    serde_json::from_value(kopie).ok().map(|d| (d, true))
-}
-
-fn uebersprungen(funktion: &str) {
-    ZAEHLER.with_borrow_mut(|z| *z.uebersprungen.entry(funktion.to_owned()).or_default() += 1);
+/// Die Store-Datei fuer Rust. P10: `domain::HerkunftVektor` laedt beide realen Formen direkt —
+/// die volle `Herkunft` UND die 990 Alt-Events (32 der 192 realen Dateien) ohne `pruef_tiefe`/
+/// `haftung` — keine im Speicher ergaenzte Kopie mehr noetig.
+fn rust_datei(raw: &Value) -> StoreDatei {
+    serde_json::from_value(raw.clone()).expect("StoreDatei laedt (reale_faelle_paritaet filtert vorher)")
 }
 
 fn pruefe_store(raw: &Value, felder: Option<&[&str]>, ex: &Extras<'_>, kontext: &str, zeige: bool) -> bool {
-    let (datei, alt_herkunft) = rust_datei(raw);
+    let datei = rust_datei(raw);
     let store = Store::aus_datei(datei);
     let (g, s) = (graph(), sicht_aus(felder));
     let mut ok = true;
@@ -281,17 +247,14 @@ fn pruefe_store(raw: &Value, felder: Option<&[&str]>, ex: &Extras<'_>, kontext: 
     jf.sort_unstable();
     jf.extend(["gibt_es_nicht", "kind_vorname__2"]);
     let rust_j: Vec<_> = jf.iter().map(|f| interview::justification(&store, f, &s)).collect();
-    if alt_herkunft {
-        uebersprungen("traverser.justification");
-        uebersprungen("traverser.trace_ergebnis");
-    } else {
-        v("traverser.justification", js(&rust_j), py("traverser.justification", Some(raw), felder, json!({ "feld_ids": jf })));
-        v(
-            "traverser.trace_ergebnis",
-            js(&interview::trace_ergebnis(&store, &s, ex.snapshot_id)),
-            py("traverser.trace_ergebnis", Some(raw), felder, json!({ "snapshot_id": ex.snapshot_id })),
-        );
-    }
+    // P10: `Justification.herkunft` ist `HerkunftVektor` (Passthrough des Store-Events) — auch
+    // fuer die 32 realen Alt-Dateien vergleichbar, kein Uebersprungen mehr noetig.
+    v("traverser.justification", js(&rust_j), py("traverser.justification", Some(raw), felder, json!({ "feld_ids": jf })));
+    v(
+        "traverser.trace_ergebnis",
+        js(&interview::trace_ergebnis(&store, &s, ex.snapshot_id)),
+        py("traverser.trace_ergebnis", Some(raw), felder, json!({ "snapshot_id": ex.snapshot_id })),
+    );
 
     let mut af: Vec<&str> = s.iter().filter(|b| b.instanz_gruppe.is_some()).map(|b| b.feld_id.as_str()).collect();
     af.extend(["veranlagung", "gibt_es_nicht"]);
@@ -337,7 +300,7 @@ fn pruefe_rollen(raw: &Value, store: &Store, felder: Option<&[&str]>, s: &Sicht<
 
 /// Der Interview-Ablauf: Queue nach jedem Event-Praefix.
 fn pruefe_praefixe(raw: &Value, felder: Option<&[&str]>, kontext: &str) -> bool {
-    let (datei, _) = rust_datei(raw);
+    let datei = rust_datei(raw);
     let s = sicht_aus(felder);
     let python = py("traverser.praefix_fragen", Some(raw), felder, json!({}));
     let Ok(Value::Array(py_listen)) = python else {
@@ -435,14 +398,14 @@ fn reale_faelle_paritaet() {
     if skip_ohne_parity_env() {
         return;
     }
-    let alle = reale_faelle();
-    let gesamt = alle.len();
-    let faelle: Vec<Value> = alle.into_iter().filter(|r| rust_datei_opt(r).is_some()).collect();
-    println!("interview-paritaet real: {} von {gesamt} Dateien nicht als StoreDatei ladbar, uebersprungen", gesamt - faelle.len());
+    // P10: store::lade laedt inzwischen ALLE realen Faelle (legacy Herkunft, unbegrenzte VZ);
+    // `rust_datei` schlaegt hart fehl, statt still zu ueberspringen.
+    let faelle = reale_faelle();
     let (mut events, mut mit_scheibe, mut alt) = (0, 0, 0);
     for (i, raw) in faelle.iter().enumerate() {
-        events += raw["events"].as_array().map_or(0, Vec::len);
-        alt += usize::from(rust_datei(raw).1);
+        let datei = rust_datei(raw);
+        events += datei.events.len();
+        alt += datei.events.iter().filter(|e| e.herkunft.als_voll().is_none()).count();
         let scheibe = raw.get("scheibe").and_then(Value::as_str).and_then(|s| scheiben().get(s));
         let felder: Option<Vec<&str>> = scheibe.map(|(f, _)| f.iter().map(String::as_str).collect());
         mit_scheibe += usize::from(felder.is_some());
@@ -455,7 +418,7 @@ fn reale_faelle_paritaet() {
         pruefe_praefixe(raw, felder.as_deref(), &format!("fall {i}"));
     }
     println!(
-        "interview-paritaet real: {} Faelle, {mit_scheibe} mit bekannter Scheibe, {alt} mit Alt-Herkunft, {events} Events",
+        "interview-paritaet real: {} Faelle, {mit_scheibe} mit bekannter Scheibe, {events} Events ({alt} Alt-Herkunft)",
         faelle.len()
     );
     assert_eq!(bericht("real"), 0, "Abweichungen auf realen Faellen");
@@ -592,8 +555,8 @@ fn erzeuge_store(c: &mut Cursor<'_>) -> StoreDatei {
         };
         let signal = match c.range(3) {
             0 => None,
-            1 => Some(Signal { signal_1: Some(json!("a")), signal_2: Some("b".to_owned()) }),
-            _ => Some(Signal { signal_1: None, signal_2: None }),
+            1 => Some(Signal { signal_1: Some(Some(json!("a"))), signal_2: Some("b".to_owned()) }),
+            _ => Some(Signal { signal_1: Some(None), signal_2: None }),
         };
         let ersetzt = if i > 0 && c.range(5) == 0 { events.get(c.range(i)).map(|e| e.event_id) } else { None };
         let mut ev = Event {
@@ -602,7 +565,7 @@ fn erzeuge_store(c: &mut Cursor<'_>) -> StoreDatei {
             feld_id,
             wert,
             zustand: if c.range(2) == 0 { Zustand::Bestaetigt } else { Zustand::Vorlaeufig },
-            herkunft,
+            herkunft: herkunft.into(),
             schreiber: if c.range(3) == 0 { Schreiber::ImportVorjahr } else { Schreiber::Mensch("julius".to_owned()) },
             signal,
             ersetzt,
@@ -610,7 +573,16 @@ fn erzeuge_store(c: &mut Cursor<'_>) -> StoreDatei {
         ev.event_id = ev.berechne_event_id();
         events.push(ev);
     }
-    StoreDatei { version: 1, veranlagungszeitraum: 2025, fall_id: None, events, snapshots: Vec::new() }
+    StoreDatei {
+        version: 1,
+        veranlagungszeitraum: Veranlagungsjahr(2025),
+        fall_id: None,
+        scheibe: None,
+        user_id: None,
+        events,
+        snapshots: Vec::new(),
+        vorjahr_referenz: None,
+    }
 }
 
 /// Sicht: voll, eine Scheibe oder eine zufaellige Teilmenge in zufaelliger Reihenfolge.

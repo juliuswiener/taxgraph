@@ -216,7 +216,7 @@ fn rust_xml(d: &elster::Deklaration, felder: &Felder, vz: i64, abgabe: bool, hid
 
 /// Vergleicht einen ganzen Fall. `zeige_werte`: nur fuer generierte Daten.
 fn vergleiche_fall(datei: &StoreDatei, py_store: &Value, nur_bestaetigt: bool, z: &mut Zaehler, name: &str, zeige_werte: bool) {
-    let vz = vz_fuer_xml(datei.veranlagungszeitraum);
+    let vz = vz_fuer_xml(datei.veranlagungszeitraum.als_i64_saettigend());
     let py = frage(&json!({
         "fn": "elster.fall", "store": py_store, "nur_bestaetigt": nur_bestaetigt,
         "xml": xml_varianten(vz), "gruppen": GRUPPEN,
@@ -500,19 +500,17 @@ fn reale_faelle() {
     }
     let dateien = walk_json(&faelle_verzeichnis());
     let mut z = Zaehler::default();
-    let mut nicht_ladbar = 0;
     for (i, pfad) in dateien.iter().enumerate() {
-        let Ok(datei) = store::lade(pfad) else {
-            nicht_ladbar += 1;
-            continue;
-        };
+        // P10: store::lade laedt inzwischen ALLE realen Faelle (legacy Herkunft, unbegrenzte VZ).
+        // Ein Ladefehler ist kein stiller Skip mehr, sondern ein harter Testabbruch.
+        let datei = store::lade(pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
         // Python bekommt die ORIGINAL-Datei, nicht Rusts Re-Serialisierung.
         let original: Value = serde_json::from_str(&std::fs::read_to_string(pfad).unwrap()).unwrap();
         for nur in [false, true] {
             vergleiche_fall(&datei, &original, nur, &mut z, &format!("fall#{i}{}", if nur { "/bestaetigt" } else { "" }), false);
         }
     }
-    println!("[reale Faelle] Dateien={} von Rust nicht ladbar={nicht_ladbar}", dateien.len());
+    println!("[reale Faelle] Dateien={}", dateien.len());
     bericht("reale Faelle", &z);
     assert!(z.faelle > 0, "keine realen Faelle gefunden unter {}", faelle_verzeichnis().display());
     assert!(z.abweichungen.is_empty());
@@ -751,7 +749,7 @@ fn checkest_stichprobe() {
         let store = Store::aus_datei(datei.clone());
         let (felder, sid) = store.materialisiere(None).unwrap();
         let Ok(d) = elster::deklariere(&felder, index(), Some(&sid.to_string())) else { continue };
-        let vz = datei.veranlagungszeitraum;
+        let vz = datei.veranlagungszeitraum.als_i64_saettigend();
         let abgabe = proben.len().is_multiple_of(2);
         let Ok(r) = rust_xml(&d, &felder, vz, abgabe, &hid) else { continue };
         let mut kw = xml_varianten(vz)[if abgabe { "abgabe" } else { "basis" }].clone();

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["catala-sys", "domain", "bindung", "parity", "store", "engine", "elster", "interview", "konsistenz", "intervall"]
+members = ["catala-sys", "domain", "bindung", "parity", "store", "engine", "elster", "interview", "konsistenz", "intervall", "auth", "llm", "eingang"]
 
 [workspace.package]
 edition = "2021"
@@ -28,3 +28,11 @@ chrono = "=0.4.41"
 quick-xml = "=0.41.0"
 roxmltree = "=0.21.1"
 libloading = "=0.8.9"
+bcrypt = "=0.19.3"
+jsonwebtoken = { version = "=9.3.1", default-features = false }
+getrandom = "=0.3.4"
+fancy-regex = "=0.16.2"
+rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
+webpki-roots = "=1.0.9"
+wait-timeout = "=0.2.1"
+tempfile = "=3.27.0"

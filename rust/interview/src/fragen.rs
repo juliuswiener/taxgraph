@@ -75,7 +75,7 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
 /// `vorjahr: uebernehmbar` mit Vorjahres-Wert faellt aus der Queue, bleibt aber korrigierbar
 /// (`_vorjahr_uebernommen`, `traverser.py:380-392`). `vorschlag` bleibt eine Frage.
 fn vorjahr_uebernommen(b: &Bindung, ev: Option<&Event>) -> bool {
-    b.vorjahr == Some(Vorjahr::Uebernehmbar) && ev.is_some_and(|e| e.herkunft.herkunft.as_str() == "vorjahr")
+    b.vorjahr == Some(Vorjahr::Uebernehmbar) && ev.is_some_and(|e| e.herkunft.herkunft_achse().as_str() == "vorjahr")
 }
 
 /// Faellt DIESES Feld weg, obwohl seine Regel gilt (`_feld_ausgeschlossen`,

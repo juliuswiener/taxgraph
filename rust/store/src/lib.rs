@@ -32,5 +32,5 @@ pub use nachschlag::{baue_nachschlag, instanz_basis, BindungNachschlag};
 pub use persistenz::{lade, speichere, PersistenzFehler};
 pub use store::{
     EricBefund, EricBefundEingabe, EricKlasse, Snapshot, SnapshotFehler, SnapshotFeld, Store,
-    StoreDatei,
+    StoreDatei, Veranlagungsjahr,
 };

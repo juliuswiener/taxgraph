@@ -55,7 +55,7 @@ pub(crate) fn test_snap(eintraege: &[(&str, Value, Zustand)]) -> Felder {
     eintraege
         .iter()
         .map(|(k, v, z)| {
-            ((*k).to_owned(), SnapshotFeld { wert: v.clone(), zustand: *z, herkunft: herkunft.clone() })
+            ((*k).to_owned(), SnapshotFeld { wert: v.clone(), zustand: *z, herkunft: herkunft.clone().into() })
         })
         .collect()
 }

@@ -1,0 +1,1 @@
+doc-valid-idents = ["PyJWT", "HS256", "ValueError", "TypeError", "OverflowError", ".."]

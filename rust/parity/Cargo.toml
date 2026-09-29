@@ -24,3 +24,9 @@ konsistenz = { path = "../konsistenz" }
 intervall = { path = "../intervall" }
 elster = { path = "../elster" }
 rust_decimal.workspace = true
+auth = { path = "../auth" }
+llm = { path = "../llm" }
+eingang = { path = "../eingang" }
+tempfile.workspace = true
+bcrypt.workspace = true
+chrono.workspace = true

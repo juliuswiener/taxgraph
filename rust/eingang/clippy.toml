@@ -1,0 +1,1 @@
+doc-valid-idents = ["VaSt", "LStB", "LErsL", "OpenMP", "JSON", "CSV", "PDF", "OCR", "TSV", "ValueError", "TypeError", "OverflowError", "AttributeError", "IndexError", "UnicodeDecodeError", "FileNotFoundError", ".."]

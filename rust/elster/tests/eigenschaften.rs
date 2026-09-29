@@ -25,9 +25,13 @@ fn index() -> &'static HashMap<String, &'static Bindung> {
     CELL.get_or_init(|| store::baue_nachschlag(bindungen()))
 }
 
-fn feld(wert: Value, zustand: Zustand) -> SnapshotFeld {
+fn laie_herkunft() -> Herkunft {
     let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
-    SnapshotFeld { wert, zustand, herkunft: Herkunft { herkunft: a("laie"), pruef_tiefe: PruefTiefe::Ungeprueft, haftung: a("nutzer") } }
+    Herkunft { herkunft: a("laie"), pruef_tiefe: PruefTiefe::Ungeprueft, haftung: a("nutzer") }
+}
+
+fn feld(wert: Value, zustand: Zustand) -> SnapshotFeld {
+    SnapshotFeld { wert, zustand, herkunft: laie_herkunft().into() }
 }
 
 fn einzeln(feld_id: &str, wert: Value, zustand: Zustand) -> Felder {
@@ -115,7 +119,7 @@ proptest! {
                 feld_id: format!("{}__{idx}", b.feld_id),
                 wert: beispiel(b),
                 feldzustand: if *bestaetigt { domain::Feldzustand::Bestaetigt { signal_2: signal.clone() } } else { domain::Feldzustand::Vorlaeufig },
-                herkunft: feld(json!(0), Zustand::Vorlaeufig).herkunft,
+                herkunft: laie_herkunft(),
                 schreiber: domain::Schreiber::Mensch("t".to_owned()),
                 signal_1: None,
                 ersetzt: None,

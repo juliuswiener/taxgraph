@@ -138,13 +138,16 @@ fn event_id_paritaet_ueber_bestandsdateien_falls_vorhanden() {
         );
         return;
     }
+    let erwartete_dateien = kandidaten.len() as u64;
     let mut oracle = Oracle::spawn(&repo_root()).expect("oracle.py startet");
     let mut dateien = 0u64;
     let mut geprueft = 0u64;
     let mut selbst_diffs = 0u64;
     let mut python_diffs = 0u64;
+    // P10: store::lade laedt inzwischen ALLE realen Faelle (legacy Herkunft, unbegrenzte VZ) —
+    // ein Ladefehler ist kein stiller Skip mehr, sondern ein harter Testabbruch.
     for pfad in kandidaten {
-        let Ok(datei) = store::lade(&pfad) else { continue };
+        let datei = store::lade(&pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
         dateien += 1;
         for event in &datei.events {
             if event.berechne_event_id() != event.event_id {
@@ -168,8 +171,90 @@ fn event_id_paritaet_ueber_bestandsdateien_falls_vorhanden() {
         "event_id_paritaet_ueber_bestandsdateien: {dateien} Dateien, {geprueft} Events, \
          {selbst_diffs} Selbst-Diffs, {python_diffs} Python-Diffs (keine Pfade/Werte ausgegeben)"
     );
+    assert_eq!(dateien, erwartete_dateien, "store::lade sollte alle realen Faelle laden");
     assert_eq!(selbst_diffs, 0, "event_id-Selbstpruefung weicht ab (Anzahl s.o., keine Pfade/Werte)");
     assert_eq!(python_diffs, 0, "event_id-Paritaet zu Python weicht ab (Anzahl s.o., keine Pfade/Werte)");
+}
+
+/// Deliverable #7b (Instructor-Nachforderung): jede reale Fall-Datei behaelt nach `lade`→
+/// `speichere` dieselbe Top-Level-Schluesselmenge UND denselben Wert -- sonst haette `StoreDatei`
+/// ein Feld, das Python schreibt (`scheibe`/`user_id`/`vorjahr_referenz`, gefunden ueber
+/// `schema.json` + `grep produkt/ -- 'store\[.*\] ='`), lautlos verloren.
+///
+/// `speichere` schreibt NIE in den echten Fall-Ordner -- nur in ein Scratch-Verzeichnis unter
+/// `std::env::temp_dir()`, das der Test am Ende wieder entfernt (SICHERHEIT: reale Nutzer-
+/// Steuerdaten, s. Moduldoku oben).
+///
+/// Braucht keinen Oracle-Prozess (reiner Rust-Rundlauf), bleibt aber hinter [`skip_ohne_parity_env`]
+/// -- dieselbe Opt-in-Schranke wie jeder andere Test, der die realen Fallakten anfasst.
+#[test]
+fn lade_speichere_roundtrip_ueber_bestandsdateien_falls_vorhanden() {
+    if skip_ohne_parity_env() {
+        eprintln!("PARITY!=1 -- uebersprungen (braucht die realen Fallakten)");
+        return;
+    }
+    let verzeichnis = faelle_verzeichnis();
+    let kandidaten: Vec<std::path::PathBuf> = walk_json(&verzeichnis);
+    if kandidaten.is_empty() {
+        eprintln!(
+            "lade_speichere_roundtrip: 0 Fall-Dateien unter {} -- Korpus-Luecke, dokumentiert statt verschwiegen.",
+            verzeichnis.display()
+        );
+        return;
+    }
+    let erwartete_dateien = kandidaten.len() as u64;
+    let scratch = std::env::temp_dir()
+        .join(format!("taxgraph-store-roundtrip-{}-{}", std::process::id(), jetzt_ns()));
+    std::fs::create_dir_all(&scratch).expect("scratch-verzeichnis anlegen");
+
+    let mut dateien = 0u64;
+    let mut schluesselsatz_diffs = 0u64;
+    let mut werte_diffs = 0u64;
+    for (i, pfad) in kandidaten.iter().enumerate() {
+        let roh_text = std::fs::read_to_string(pfad)
+            .unwrap_or_else(|e| panic!("lesen({}): {e}", pfad.display()));
+        let roh: Value = serde_json::from_str(&roh_text)
+            .unwrap_or_else(|e| panic!("json({}): {e}", pfad.display()));
+        let roh_obj = roh.as_object().unwrap_or_else(|| panic!("{} ist kein JSON-Objekt", pfad.display()));
+
+        // P10: store::lade laedt inzwischen ALLE realen Faelle -- ein Ladefehler ist ein harter
+        // Testabbruch, kein stiller Skip.
+        let geladen = store::lade(pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
+        dateien += 1;
+
+        let temp_pfad = scratch.join(format!("{i}.json"));
+        store::speichere(&temp_pfad, &geladen)
+            .unwrap_or_else(|e| panic!("store::speichere(scratch): {e}"));
+        let zurueck_text = std::fs::read_to_string(&temp_pfad).expect("scratch-datei lesen");
+        let zurueck: Value = serde_json::from_str(&zurueck_text).expect("scratch-json parsen");
+        let zurueck_obj = zurueck.as_object().expect("scratch-wert ist ein JSON-Objekt");
+        std::fs::remove_file(&temp_pfad).ok();
+
+        let roh_keys: std::collections::BTreeSet<&String> = roh_obj.keys().collect();
+        let zurueck_keys: std::collections::BTreeSet<&String> = zurueck_obj.keys().collect();
+        if roh_keys != zurueck_keys {
+            schluesselsatz_diffs += 1;
+        }
+        if roh != zurueck {
+            werte_diffs += 1;
+        }
+    }
+    std::fs::remove_dir_all(&scratch).ok();
+
+    eprintln!(
+        "lade_speichere_roundtrip: {dateien} Dateien, {schluesselsatz_diffs} Schluesselsatz-Diffs, \
+         {werte_diffs} Werte-Diffs (keine Pfade/Werte ausgegeben)"
+    );
+    assert_eq!(dateien, erwartete_dateien, "store::lade sollte alle realen Faelle laden");
+    assert_eq!(schluesselsatz_diffs, 0, "Top-Level-Schluesselmenge weicht nach dem Rundlauf ab (Anzahl s.o.)");
+    assert_eq!(werte_diffs, 0, "Werte weichen nach dem Rundlauf ab (Anzahl s.o., keine Pfade/Werte)");
+}
+
+fn jetzt_ns() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or_default()
 }
 
 fn expand_home(pfad: &str) -> std::path::PathBuf {

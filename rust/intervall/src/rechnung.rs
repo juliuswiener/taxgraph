@@ -277,7 +277,7 @@ mod tests {
 
     fn feld(wert: Value, zustand: Zustand) -> SnapshotFeld {
         let a = Achsenwert::new("t").unwrap();
-        SnapshotFeld { wert, zustand, herkunft: Herkunft { herkunft: a.clone(), pruef_tiefe: PruefTiefe::Ungeprueft, haftung: a } }
+        SnapshotFeld { wert, zustand, herkunft: Herkunft { herkunft: a.clone(), pruef_tiefe: PruefTiefe::Ungeprueft, haftung: a }.into() }
     }
 
     /// Lineare Modellsteuer: Gewicht je Feld mal Zahlwert (bool 0/1, String Länge).

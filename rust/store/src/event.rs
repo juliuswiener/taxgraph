@@ -6,7 +6,7 @@
 //! Signal-Regel bereits im Typsystem erzwingt (`Feldzustand::Bestaetigt` traegt zwingend ein
 //! `Signal2` — der Python-Laufzeitfehler "zustand=bestaetigt braucht ein `signal_2`" kann in Rust
 //! gar nicht erst konstruiert werden).
-use domain::{Feldzustand, Herkunft, Schreiber, Zustand};
+use domain::{Feldzustand, Herkunft, HerkunftVektor, Schreiber, Zustand};
 use serde::{Deserialize, Serialize};
 
 use crate::canonical::EventId;
@@ -16,12 +16,40 @@ use crate::canonical::EventId;
 /// simpler `Option<String>` und NICHT `domain::Signal2` — eine geladene Bestandsdatei behaelt
 /// dieselbe Freiheit wie Pythons ungeprueftes `lade()`, die Signal2-Nichtleer-Regel gilt nur beim
 /// Schreiben (s. [`NeuesEvent`]).
+///
+/// `signal_1` ist `Option<Option<Value>>` (doppeltes `Option`), nicht das naheliegende einfache
+/// `Option<Value>`: Gemessen ueber alle 192 realen Fallakten (Zaehlung, keine Werte) traegt der
+/// `signal`-Schluessel bei 11.294 Events IMMER den Schluessel `signal_1` — 10.298x mit explizitem
+/// `null`, 877x mit einem Wert. Bei 119 Events (einer frueheren Store-Schema-Version, strikte
+/// Teilmenge der 990 Alt-Herkunft-Events, s. `domain::HerkunftVektor`-Moduldoku) FEHLT der
+/// Schluessel `signal_1` komplett. Ein einfaches `Option<Value>` kann "Schluessel fehlt" und
+/// "Schluessel da, Wert `null`" nicht unterscheiden (beides deserialisiert zu `None`) — jeder
+/// Rueck-Write haette den fehlenden Schluessel lautlos durch ein explizites `null` ersetzt, byte-
+/// verschieden vom Original und damit `event_id`-fremd (`sha256(canonical_json(...))` haengt am
+/// `signal`-Feld). Aeussere Ebene = Schluessel da/fehlt (`None` = fehlt, per `#[serde(default)]`
+/// bei fehlendem Schluessel); innere Ebene = `null`/Wert. Python-Schreibpfad setzt den Schluessel
+/// IMMER (`store.py`: `signal or {"signal_1": None, ...}`), deshalb ist die aeussere Ebene beim
+/// Schreiben in diesem Crate immer `Some(...)` (s. Konstruktionsstellen).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Signal {
-    #[serde(default)]
-    pub signal_1: Option<serde_json::Value>,
+    // Bewusstes `Option<Option<T>>` (s. Typdoku oben: Schluessel-Anwesenheit vs. `null`-Wert
+    // sind zwei verschiedene, real gemessene Zustaende, kein Sonderfall der Faelle 1-2).
+    #[allow(clippy::option_option)]
+    #[serde(default, deserialize_with = "signal_1_praesenz", skip_serializing_if = "Option::is_none")]
+    pub signal_1: Option<Option<serde_json::Value>>,
     #[serde(default)]
     pub signal_2: Option<String>,
+}
+
+/// Macht die Anwesenheit des Schluessels sichtbar (Standard-`Option<Option<T>>`-Deserialize
+/// wuerde `null` und einen fehlenden Schluessel gleichermassen zu `None` zusammenfalten) — s.
+/// Typdoku oben.
+#[allow(clippy::option_option)]
+fn signal_1_praesenz<'de, D>(deserializer: D) -> Result<Option<Option<serde_json::Value>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<serde_json::Value>::deserialize(deserializer).map(Some)
 }
 
 /// Ein Sachverhalts-Event, wie im Log gespeichert. Feldnamen/Optionalitaet 1:1
@@ -35,7 +63,10 @@ pub struct Event {
     /// Bindungstyp ist Auflage T, keine JSON-Schema-Eigenschaft.
     pub wert: serde_json::Value,
     pub zustand: Zustand,
-    pub herkunft: Herkunft,
+    /// `HerkunftVektor` statt der strengen `Herkunft`: 32 reale Bestandsdateien (990 Events)
+    /// tragen die Alt-Form ohne `pruef_tiefe`/`haftung` (s. `domain::HerkunftVektor`-Moduldoku).
+    /// `lade()` liest sie unveraendert; der Schreibpfad ([`NeuesEvent::herkunft`]) bleibt streng.
+    pub herkunft: HerkunftVektor,
     pub schreiber: Schreiber,
     #[serde(default)]
     pub signal: Option<Signal>,
@@ -118,7 +149,7 @@ mod tests {
             feld_id: "ep_arbeitstage".to_string(),
             wert: json!(220),
             zustand: Zustand::Bestaetigt,
-            herkunft,
+            herkunft: herkunft.into(),
             schreiber: "ui:laie".parse().unwrap(),
             signal: Some(Signal { signal_1: None, signal_2: Some("klick@ui".to_string()) }),
             ersetzt: None,

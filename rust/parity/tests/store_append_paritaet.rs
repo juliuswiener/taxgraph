@@ -44,7 +44,7 @@ use domain::{Achsenwert, Feldtyp, Feldzustand, Herkunft, PruefTiefe, Schreiber, 
 use parity::{AppendCallErgebnis, Oracle};
 use proptest::prelude::*;
 use serde_json::{json, Value};
-use store::{Abweisung, EventId, Katalog, NeuesEvent, Store};
+use store::{Abweisung, Event, EventId, Katalog, NeuesEvent, Signal, Store};
 
 fn repo_root() -> std::path::PathBuf {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -684,6 +684,20 @@ proptest! {
     }
 }
 
+/// Der Orakel-Aufruf eines einzelnen Events (ohne `event_id`, mit Signal aufgeloest).
+fn call_json(event: &Event, signal: &Signal) -> Value {
+    json!({
+        "feld_id": event.feld_id,
+        "wert": event.wert,
+        "zustand": event.zustand,
+        "herkunft": event.herkunft,
+        "schreiber": event.schreiber.to_string(),
+        "signal": signal,
+        "ersetzt": event.ersetzt.map(|e| e.to_string()),
+        "ts": event.ts,
+    })
+}
+
 /// Jede reale Fall-Datei als Aufruf-Sequenz in einen frischen leeren Store (Rust UND Python) --
 /// beide muessen jedes Event annehmen. S. Moduldoku fuer den Sicherheitshinweis.
 #[test]
@@ -714,17 +728,19 @@ fn append_sequence_replay_realer_faelle() {
     let mut gepruefte_dateien = 0u64;
     let mut gepruefte_events = 0u64;
     let mut uebersprungen_abgeleitet = 0u64;
+    let mut uebersprungen_alt_herkunft = 0u64;
     let mut rust_fehlschlaege = 0u64;
     let mut python_fehlschlaege = 0u64;
     let mut abweichende_entscheidungen = 0u64;
 
     for pfad in &kandidaten {
-        let Ok(datei) = store::lade(pfad) else { continue };
+        // P10: store::lade laedt inzwischen ALLE realen Faelle (legacy Herkunft, unbegrenzte VZ).
+        let datei = store::lade(pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
         if datei.events.is_empty() {
             continue;
         }
         gepruefte_dateien += 1;
-        let mut rust_store = Store::leer(datei.veranlagungszeitraum, None);
+        let mut rust_store = Store::leer(datei.veranlagungszeitraum.als_i64_saettigend(), None);
         let mut calls_json = Vec::new();
         // Je Aufruf: hat Rust angenommen? Index parallel zu `calls_json`.
         let mut rust_angenommen: Vec<bool> = Vec::new();
@@ -739,18 +755,15 @@ fn append_sequence_replay_realer_faelle() {
                 uebersprungen_abgeleitet += 1;
                 continue;
             }
+            // P10: 990 Alt-Herkunft-Events (32/192 Dateien, ohne `pruef_tiefe`/`haftung`) lassen
+            // sich nicht verlustfrei in einen `NeuesEvent`-Aufruf zurueckuebersetzen. Ausgelassen.
+            let Some(herkunft) = event.herkunft.als_voll() else {
+                uebersprungen_alt_herkunft += 1;
+                continue;
+            };
             gepruefte_events += 1;
             let signal = event.signal.clone().unwrap_or_default();
-            calls_json.push(json!({
-                "feld_id": event.feld_id,
-                "wert": event.wert,
-                "zustand": event.zustand,
-                "herkunft": event.herkunft,
-                "schreiber": event.schreiber.to_string(),
-                "signal": signal,
-                "ersetzt": event.ersetzt.map(|e| e.to_string()),
-                "ts": event.ts,
-            }));
+            calls_json.push(call_json(event, &signal));
             let feldzustand = match event.zustand {
                 domain::Zustand::Bestaetigt => {
                     let Ok(signal_2) = Signal2::new(signal.signal_2.clone().unwrap_or_default())
@@ -767,9 +780,13 @@ fn append_sequence_replay_realer_faelle() {
                 feld_id: event.feld_id.clone(),
                 wert: event.wert.clone(),
                 feldzustand,
-                herkunft: event.herkunft.clone(),
+                herkunft: herkunft.clone(),
                 schreiber: event.schreiber.clone(),
-                signal_1: signal.signal_1.clone(),
+                // signal_1-fehlt ist eine STRIKTE Teilmenge von Alt-Herkunft (P10, gemessen) --
+                // der `als_voll()`-Guard oben hat Alt-Herkunft schon ausgefiltert, die aeussere
+                // Ebene ist hier also immer `Some(...)`; `.flatten()` traegt trotzdem den echten
+                // Fall ab, statt sich auf die Reihenfolge der Filter zu verlassen.
+                signal_1: signal.signal_1.clone().flatten(),
                 ersetzt: event.ersetzt,
                 ts: Some(event.ts.clone()),
             };
@@ -789,7 +806,8 @@ fn append_sequence_replay_realer_faelle() {
 
     eprintln!(
         "append_sequence_replay_realer_faelle: {gepruefte_dateien} Dateien, {gepruefte_events} Events \
-         ({uebersprungen_abgeleitet} kaskaden-abgeleitete uebersprungen), \
+         ({uebersprungen_abgeleitet} kaskaden-abgeleitete, {uebersprungen_alt_herkunft} Alt-Herkunft \
+         uebersprungen), \
          {rust_fehlschlaege} Rust-Fehlschlaege, {python_fehlschlaege} Python-Fehlschlaege, \
          {abweichende_entscheidungen} abweichende Einzelentscheidungen"
     );

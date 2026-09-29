@@ -1,0 +1,1 @@
+doc-valid-idents = ["PyJWT", "JSON", "OpenRouter", "TimeoutError", "URLError", "ValueError", "TypeError", "OverflowError", "AttributeError", "HTTP/1.1", ".."]

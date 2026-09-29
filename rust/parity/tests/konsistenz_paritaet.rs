@@ -239,25 +239,6 @@ fn konstanten_gleich() {
     println!("konstanten: 5 Tabellen gleich");
 }
 
-/// `store.py::materialisiere` auf der rohen Datei, fuer Stores, die `store::lade` abweist (gemessen:
-/// `herkunft` ohne `pruef_tiefe` in Alt-Dateien). Die Herkunft liest keine Konsistenzpruefung;
-/// sie wird durch eine feste ersetzt — beide Seiten bekommen denselben Snapshot.
-fn roh_falten(pfad: &std::path::Path) -> Option<k::Felder> {
-    let v: Value = serde_json::from_str(&std::fs::read_to_string(pfad).ok()?).ok()?;
-    let events = v.get("events")?.as_array()?;
-    let ersetzt: HashSet<&str> = events.iter().filter_map(|e| e.get("ersetzt")?.as_str()).collect();
-    let mut felder = k::Felder::new();
-    for e in events {
-        if ersetzt.contains(e.get("event_id")?.as_str()?) {
-            continue;
-        }
-        let zustand: Zustand = serde_json::from_value(e.get("zustand")?.clone()).ok()?;
-        let wert = e.get("wert").cloned().unwrap_or(Value::Null);
-        felder.insert(e.get("feld_id")?.as_str()?.to_owned(), SnapshotFeld { wert, zustand, herkunft: herkunft() });
-    }
-    Some(felder)
-}
-
 #[test]
 fn reale_faelle() {
     if skip() {
@@ -266,25 +247,20 @@ fn reale_faelle() {
     let alle: Vec<String> = bindungen().iter().map(|b| b.feld_id.clone()).collect();
     let flags: HashSet<&str> = k::FLAG_NEGIERT.iter().map(|(f, _)| *f).collect();
     let ohne_flags: Vec<String> = alle.iter().filter(|f| !flags.contains(f.as_str())).cloned().collect();
-    let (mut dateien, mut stores, mut roh) = (0, 0, 0);
+    let mut dateien = 0;
     let mut bilanz = Bilanz::new();
+    // P10: store::lade laedt inzwischen ALLE realen Faelle (legacy Herkunft, unbegrenzte VZ) —
+    // keine rohe Fallback-Faltung mehr noetig.
     for pfad in walk_json(&faelle_verzeichnis()) {
         dateien += 1;
-        let felder = if let Ok(datei) = store::lade(&pfad) {
-            stores += 1;
-            let Ok((felder, _)) = store::Store::aus_datei(datei).materialisiere(None) else { continue };
-            felder
-        } else {
-            let Some(felder) = roh_falten(&pfad) else { continue };
-            roh += 1;
-            felder
-        };
+        let datei = store::lade(&pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
+        let (felder, _) = store::Store::aus_datei(datei).materialisiere(None).unwrap();
         for scheibe in [None, Some(&alle), Some(&ohne_flags)] {
             pruefe(&mut bilanz, &felder, scheibe, None);
         }
     }
-    println!("reale Faelle: {dateien} Dateien, {stores} via store::lade, {roh} roh gefaltet (x3 Scheiben-Varianten)");
-    assert!(stores + roh > 0, "keine realen Faelle gefunden — Paritaet waere leer");
+    println!("reale Faelle: {dateien} Dateien via store::lade (x3 Scheiben-Varianten)");
+    assert!(dateien > 0, "keine realen Faelle gefunden — Paritaet waere leer");
     assert_eq!(berichte("reale Faelle", &bilanz), 0);
 }
 
@@ -370,7 +346,7 @@ fn fall() -> impl Strategy<Value = Fall> {
         let mut felder = k::Felder::new();
         let mut setze = |f: &str, w: Value, b: bool| {
             let zustand = if b { Zustand::Bestaetigt } else { Zustand::Vorlaeufig };
-            felder.insert(f.to_owned(), SnapshotFeld { wert: w, zustand, herkunft: herkunft() });
+            felder.insert(f.to_owned(), SnapshotFeld { wert: w, zustand, herkunft: herkunft().into() });
         };
         for (f, w, b) in eintraege {
             setze(&f, w, b);
@@ -397,7 +373,7 @@ fn fall() -> impl Strategy<Value = Fall> {
         if let Some((brutto, d)) = kist {
             let k = brutto * 3 / 10 + d;
             for (f, w) in [("bruttoarbeitslohn", brutto), ("kist_gezahlt", k)] {
-                felder.insert(f.to_owned(), SnapshotFeld { wert: w.into(), zustand: Zustand::Bestaetigt, herkunft: herkunft() });
+                felder.insert(f.to_owned(), SnapshotFeld { wert: w.into(), zustand: Zustand::Bestaetigt, herkunft: herkunft().into() });
             }
         }
         (felder, scheibe, vorjahr)
@@ -435,7 +411,7 @@ fn negativkontrolle() {
     for (f, w) in [("kein_vuv", json!(true)), ("vv_einnahmen", json!(1_200_000)), ("bruttoarbeitslohn", json!(1000)),
         ("p36_lohnsteuer", json!(2000))]
     {
-        felder.insert(f.to_owned(), SnapshotFeld { wert: w, zustand: Zustand::Bestaetigt, herkunft: herkunft() });
+        felder.insert(f.to_owned(), SnapshotFeld { wert: w, zustand: Zustand::Bestaetigt, herkunft: herkunft().into() });
     }
     let snap = serde_json::to_value(&felder).unwrap();
     let py = frage(&json!({"fn": "konsistenz.flag_widersprueche", "snapshot": snap, "bindung": null}));

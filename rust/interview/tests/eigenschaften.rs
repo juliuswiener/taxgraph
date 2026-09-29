@@ -14,7 +14,7 @@ use domain::{Achsenwert, Herkunft, PruefTiefe, Schreiber, Zustand};
 use interview::{Antwort, Bedingungsstand, Graph};
 use proptest::prelude::*;
 use serde_json::{json, Value};
-use store::{Event, EventId, Store, StoreDatei};
+use store::{Event, EventId, Store, StoreDatei, Veranlagungsjahr};
 
 fn registry() -> &'static Registry {
     static CELL: OnceLock<Registry> = OnceLock::new();
@@ -37,7 +37,8 @@ fn event(i: usize, feld_id: &str, wert: Value, zustand: Zustand) -> Event {
             herkunft: Achsenwert::new("laie").unwrap(),
             pruef_tiefe: PruefTiefe::Ungeprueft,
             haftung: Achsenwert::new("nutzer").unwrap(),
-        },
+        }
+        .into(),
         schreiber: Schreiber::Mensch("julius".to_owned()),
         signal: None,
         ersetzt: None,
@@ -47,7 +48,16 @@ fn event(i: usize, feld_id: &str, wert: Value, zustand: Zustand) -> Event {
 }
 
 fn store(events: Vec<Event>) -> Store {
-    Store::aus_datei(StoreDatei { version: 1, veranlagungszeitraum: 2025, fall_id: None, events, snapshots: Vec::new() })
+    Store::aus_datei(StoreDatei {
+        version: 1,
+        veranlagungszeitraum: Veranlagungsjahr(2025),
+        fall_id: None,
+        scheibe: None,
+        user_id: None,
+        events,
+        snapshots: Vec::new(),
+        vorjahr_referenz: None,
+    })
 }
 
 fn queue(s: &Store) -> Vec<&'static str> {

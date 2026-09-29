@@ -81,6 +81,68 @@ pub struct Herkunft {
     pub haftung: Achsenwert,
 }
 
+/// Der `herkunft`-Vektor, wie ein Event ihn tatsaechlich TRAEGT — nicht nur, wie ein neuer
+/// geschrieben wird ([`Herkunft`] bleibt dafuer die strenge Form). Gemessen ueber alle 192
+/// realen Fallakten unter `~/.local/share/taxgraph/faelle/` (Zaehlung, keine Werte extrahiert):
+/// 10.304 Events tragen alle drei Schluessel (`Voll`); 990 Events in 32 Dateien tragen exakt
+/// `{"herkunft": "<wert>"}` ohne `pruef_tiefe`/`haftung` (`Alt`, eine fruehere Store-Schema-
+/// Version) — keine dritte oder gemischte Form kommt vor.
+///
+/// `store.py::lade` (Python) hat auf dem Lesepfad keinen Schema-Validator und akzeptiert beide
+/// Formen stillschweigend; `#[serde(untagged)]` bildet das nach — `Voll` zuerst versucht, `Alt`
+/// nur, wenn `Voll` an einem fehlenden Feld scheitert. `Alt` traegt `#[serde(deny_unknown_fields)]`,
+/// damit ein dritter, noch unbekannter Schluesselsatz explizit als Ladefehler auffaellt statt
+/// lautlos als `Alt` fehlgedeutet zu werden.
+///
+/// `Voll` serialisiert ueber [`Herkunft`]s eigenes `Serialize` (alle drei Felder); `Alt`
+/// serialisiert als struct-Variante unter `untagged` zu exakt `{"herkunft":"<wert>"}` — byte-
+/// identisch zur eingelesenen Form, damit `event_id` (`sha256(canonical_json(payload))`) fuer
+/// unveraenderte Events stabil bleibt.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum HerkunftVektor {
+    Voll(Herkunft),
+    Alt(HerkunftAlt),
+}
+
+/// Die Alt-Form von [`HerkunftVektor`]: nur die `herkunft`-Achse, ohne `pruef_tiefe`/`haftung`
+/// (s. dortige Doku fuer die gemessenen Zahlen). Eigener Typ statt einer struct-Variante, weil
+/// `#[serde(deny_unknown_fields)]` nur auf einem Container sitzen darf, nicht auf einer
+/// Enum-Variante direkt.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HerkunftAlt {
+    pub herkunft: Achsenwert,
+}
+
+impl HerkunftVektor {
+    /// Die `herkunft`-Achse — die einzige, die BEIDE Formen tragen (`traverser.py` liest ueber
+    /// `ev["herkunft"]["herkunft"]`, unabhaengig von der Form).
+    #[must_use]
+    pub fn herkunft_achse(&self) -> &Achsenwert {
+        match self {
+            Self::Voll(h) => &h.herkunft,
+            Self::Alt(a) => &a.herkunft,
+        }
+    }
+
+    /// `Some`, wenn der Vektor die volle Form traegt (alle drei Achsen) — `None` fuer `Alt`, dem
+    /// `pruef_tiefe`/`haftung` fehlen.
+    #[must_use]
+    pub fn als_voll(&self) -> Option<&Herkunft> {
+        match self {
+            Self::Voll(h) => Some(h),
+            Self::Alt(_) => None,
+        }
+    }
+}
+
+impl From<Herkunft> for HerkunftVektor {
+    fn from(h: Herkunft) -> Self {
+        Self::Voll(h)
+    }
+}
+
 /// Klassifikation des `schreiber`-Strings eines Events (`store.py:251-330`, Auflage A/B/K1/F2).
 /// Wire-Format ist ein Praefix-Code; alles andere ist ein Mensch mit seinem Namen/seiner Id.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
