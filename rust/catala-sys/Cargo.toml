@@ -9,6 +9,7 @@ links = "catala_taxrules"
 workspace = true
 
 [dependencies]
+domain = { path = "../domain" }
 thiserror.workspace = true
 
 [build-dependencies]

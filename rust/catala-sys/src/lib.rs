@@ -13,35 +13,10 @@
 
 use std::sync::Mutex;
 
-/// Veranlagungszeitraum (assessment period). An out-of-range discriminant would `abort()`
-/// the whole process inside the generated C (a `switch` with no default arm, Audit C Teil
-/// 2.3 Schritt F) — this type makes that value unrepresentable instead of checking it only
-/// at the FFI boundary.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(i32)]
-pub enum Vz {
-    Vz2024 = 0,
-    Vz2025 = 1,
-    Vz2026 = 2,
-}
-
-/// `jahr` liegt ausserhalb des unterstuetzten Bereichs 2024..=2026.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[error("kein unterstuetzter Veranlagungszeitraum: {0}")]
-pub struct UngueltigeVz(pub u16);
-
-impl TryFrom<u16> for Vz {
-    type Error = UngueltigeVz;
-
-    fn try_from(jahr: u16) -> Result<Self, Self::Error> {
-        match jahr {
-            2024 => Ok(Self::Vz2024),
-            2025 => Ok(Self::Vz2025),
-            2026 => Ok(Self::Vz2026),
-            other => Err(UngueltigeVz(other)),
-        }
-    }
-}
+// `Vz` lebt seit Schritt 2 in `domain` (jede hoehere Schicht braucht sie, keine davon braucht
+// die C-FFI dieser Crate) -- hier nur re-exportiert, damit bestehende `catala_sys::Vz`-Aufrufer
+// unveraendert bleiben.
+pub use domain::{UngueltigeVz, Vz};
 
 /// Ein Catala-Scope-Aufruf ist gescheitert (z. B. eine `assert`-Verletzung im Regeltext von
 /// `rules/estg/p32a/einkommensteuertarif.catala_en`).

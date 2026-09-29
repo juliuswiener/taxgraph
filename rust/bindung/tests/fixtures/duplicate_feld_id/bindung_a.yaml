@@ -1,0 +1,16 @@
+version: 1
+scheibe: test
+bindungen:
+  - feld_id: testfeld_dupliziert
+    quelle:
+      regel_id: test_regel_a
+      signatur_slot: slot_a
+    typ: bool
+    askable: false
+    hilfe_kurz: "Testfeld A"
+    beispielwert: true
+    elster_kz: "E1234567"
+    vz_gueltigkeit: [2025]
+    anker_ref:
+      quelle: "§ 1 Testgesetz"
+      zitatanker: "Testzitat A"
