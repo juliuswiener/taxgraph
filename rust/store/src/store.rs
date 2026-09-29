@@ -163,6 +163,20 @@ impl Store {
         self.aktiv.get(feld_id).and_then(|&idx| self.datei.events.get(idx))
     }
 
+    /// Alle aktiven Events (`feld_id`, Event), in unbestimmter Reihenfolge. Dieselbe Quelle wie
+    /// [`Store::aktives`]: `traverser.py:_aktive_events` dupliziert `store.py:_aktives` wortgleich,
+    /// in Rust gibt es dafuer genau diesen einen Index.
+    ///
+    /// ```
+    /// let s = store::Store::leer(2025, None);
+    /// assert_eq!(s.aktive().count(), 0);
+    /// ```
+    pub fn aktive(&self) -> impl Iterator<Item = (&str, &Event)> + '_ {
+        self.aktiv
+            .iter()
+            .filter_map(|(fid, &idx)| self.datei.events.get(idx).map(|e| (fid.as_str(), e)))
+    }
+
     /// Prueft die Auflagen A/K1/F2/T/F/B und haengt bei Erfolg ein Event an (`store.py:251-390`,
     /// `append_event`). Gibt den `event_id` des neuen Events zurueck.
     ///

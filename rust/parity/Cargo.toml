@@ -19,4 +19,8 @@ store = { path = "../store" }
 engine = { path = "../engine" }
 domain = { path = "../domain" }
 bindung = { path = "../bindung" }
+interview = { path = "../interview" }
+konsistenz = { path = "../konsistenz" }
+intervall = { path = "../intervall" }
+elster = { path = "../elster" }
 rust_decimal.workspace = true

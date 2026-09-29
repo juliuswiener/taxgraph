@@ -112,26 +112,44 @@ fn negativkontrolle_erkennt_genau_eine_abweichung() {
     assert_eq!(abweichungen.len(), 1, "Kontrollprobe muss GENAU eine Abweichung finden");
 }
 
-/// Deliverable #7a: `event_id`-Paritaet ueber jedes Event jeder vorhandenen Store-Datei im Repo.
-/// Aktuell KEIN Fixture-Korpus vorhanden (kein `runs/`-Verzeichnis, keine `*fall*.json` ausserhalb
-/// generierter Artefakte) -- dieser Test dokumentiert die Null als Tatsache, keine stille Luecke.
+/// Deliverable #7a: `event_id`-Paritaet ueber jedes Event jeder ECHTEN Fall-Datei unter
+/// `~/.local/share/taxgraph/faelle/` (bzw. `$TAXGRAPH_DATEN`, s. [`faelle_verzeichnis`]).
+///
+/// SICHERHEIT: diese Dateien tragen echte Nutzer-Steuerdaten. Nur lokal, in-prozess, ausschliesslich
+/// zum Hash-Vergleich lesen -- NIEMALS ins Repo/Fixtures kopieren. In Testausgabe/Assertions duerfen
+/// ausschliesslich Zaehlwerte und Hash-Werte auftauchen, nie Feldwerte/Pfade/Inhalte.
+///
+/// Zwei Pruefungen je Event: (1) Selbstkonsistenz -- `event.berechne_event_id()` reproduziert den
+/// gespeicherten `event_id` (haette Gap 1 sonst Bestandsdateien mit einem VERALTETEN Hash still
+/// durchgelassen); (2) Paritaet zu Python ueber `diff_event_id`. EIN Oracle-Prozess fuer den
+/// gesamten Sweep (nicht einer je Datei).
 #[test]
 fn event_id_paritaet_ueber_bestandsdateien_falls_vorhanden() {
     if skip_ohne_parity_env() {
         eprintln!("PARITY!=1 -- uebersprungen (braucht Catala-Toolchain + Python-Umfeld)");
         return;
     }
-    let wurzel = repo_root();
-    let kandidaten: Vec<std::path::PathBuf> = walk_json(&wurzel.join("runs"));
+    let verzeichnis = faelle_verzeichnis();
+    let kandidaten: Vec<std::path::PathBuf> = walk_json(&verzeichnis);
     if kandidaten.is_empty() {
-        eprintln!("event_id_paritaet_ueber_bestandsdateien: 0 Store-Dateien gefunden (kein `runs/`) -- Korpus-Luecke, dokumentiert statt verschwiegen.");
+        eprintln!(
+            "event_id_paritaet_ueber_bestandsdateien: 0 Fall-Dateien unter {} -- Korpus-Luecke, dokumentiert statt verschwiegen.",
+            verzeichnis.display()
+        );
         return;
     }
-    let mut oracle = Oracle::spawn(&wurzel).expect("oracle.py startet");
+    let mut oracle = Oracle::spawn(&repo_root()).expect("oracle.py startet");
+    let mut dateien = 0u64;
     let mut geprueft = 0u64;
+    let mut selbst_diffs = 0u64;
+    let mut python_diffs = 0u64;
     for pfad in kandidaten {
         let Ok(datei) = store::lade(&pfad) else { continue };
+        dateien += 1;
         for event in &datei.events {
+            if event.berechne_event_id() != event.event_id {
+                selbst_diffs += 1;
+            }
             let payload = serde_json::to_value(event).expect("Event serialisiert");
             let Some(obj) = payload.as_object().cloned() else { continue };
             let mut ohne_id = obj;
@@ -140,11 +158,52 @@ fn event_id_paritaet_ueber_bestandsdateien_falls_vorhanden() {
             let rust_hex = event.event_id.to_string();
             let abweichung = diff_event_id(&mut oracle, &event_json, &rust_hex)
                 .expect("Orakel-Aufruf laeuft durch");
-            assert_eq!(abweichung, None, "event_id-Abweichung in {pfad:?}");
+            if abweichung.is_some() {
+                python_diffs += 1;
+            }
             geprueft += 1;
         }
     }
-    eprintln!("event_id_paritaet_ueber_bestandsdateien: {geprueft} Events verglichen");
+    eprintln!(
+        "event_id_paritaet_ueber_bestandsdateien: {dateien} Dateien, {geprueft} Events, \
+         {selbst_diffs} Selbst-Diffs, {python_diffs} Python-Diffs (keine Pfade/Werte ausgegeben)"
+    );
+    assert_eq!(selbst_diffs, 0, "event_id-Selbstpruefung weicht ab (Anzahl s.o., keine Pfade/Werte)");
+    assert_eq!(python_diffs, 0, "event_id-Paritaet zu Python weicht ab (Anzahl s.o., keine Pfade/Werte)");
+}
+
+fn expand_home(pfad: &str) -> std::path::PathBuf {
+    if let Some(rest) = pfad.strip_prefix("~/") {
+        if let Ok(home) = std::env::var("HOME") {
+            return std::path::PathBuf::from(home).join(rest);
+        }
+    }
+    if pfad == "~" {
+        if let Ok(home) = std::env::var("HOME") {
+            return std::path::PathBuf::from(home);
+        }
+    }
+    std::path::PathBuf::from(pfad)
+}
+
+/// `produkt/haut/api_constants.py::_daten_wurzel`/`FAELLE`: `TAXGRAPH_DATEN` (getrimmt,
+/// nicht-leer) ersetzt die GESAMTE Wurzel (kein zusaetzliches `"taxgraph"`-Segment); sonst
+/// `XDG_DATA_HOME` (getrimmt) oder `~/.local/share`, mit `"taxgraph"` verbunden. `/faelle` haengt
+/// in JEDEM Fall am Ende an.
+fn faelle_verzeichnis() -> std::path::PathBuf {
+    let eigen = std::env::var("TAXGRAPH_DATEN").unwrap_or_default();
+    let wurzel = if eigen.trim().is_empty() {
+        let xdg = std::env::var("XDG_DATA_HOME").unwrap_or_default();
+        let basis = if xdg.trim().is_empty() {
+            expand_home("~").join(".local").join("share")
+        } else {
+            expand_home(xdg.trim())
+        };
+        basis.join("taxgraph")
+    } else {
+        expand_home(eigen.trim())
+    };
+    wurzel.join("faelle")
 }
 
 fn walk_json(dir: &std::path::Path) -> Vec<std::path::PathBuf> {

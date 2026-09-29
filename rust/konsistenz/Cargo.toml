@@ -1,0 +1,17 @@
+[package]
+name = "konsistenz"
+version = "0.0.0"
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+domain = { path = "../domain" }
+store = { path = "../store" }
+interview = { path = "../interview" }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }

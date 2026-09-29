@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["catala-sys", "domain", "bindung", "parity", "store", "engine"]
+members = ["catala-sys", "domain", "bindung", "parity", "store", "engine", "elster", "interview", "konsistenz", "intervall"]
 
 [workspace.package]
 edition = "2021"
@@ -25,3 +25,6 @@ cc = "=1.4.4"
 sha2 = "=0.10.9"
 regex = "=1.11.1"
 chrono = "=0.4.41"
+quick-xml = "=0.41.0"
+roxmltree = "=0.21.1"
+libloading = "=0.8.9"

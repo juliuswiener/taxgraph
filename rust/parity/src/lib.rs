@@ -209,6 +209,23 @@ impl Oracle {
         }
         Ok(serde_json::from_str(antwort_zeile.trim())?)
     }
+
+    /// Rohe Anfrage (ein JSON-Objekt mit `fn`), rohe Antwort — fuer die Praefixe `konsistenz.`/
+    /// `intervall.` (`tools/parity/oracle_konsistenz.py`): `{"ok": ...}` oder `{"err": "<Klasse>"}`.
+    ///
+    /// # Errors
+    /// Siehe [`OrakelFehler`] (nur Transportfehler; Python-Ausnahmen stehen in der Antwort).
+    pub fn call_json(&mut self, anfrage: &serde_json::Value) -> Result<serde_json::Value, OrakelFehler> {
+        let mut zeile = serde_json::to_string(anfrage)?;
+        zeile.push('\n');
+        self.stdin.write_all(zeile.as_bytes())?;
+        self.stdin.flush()?;
+        let mut antwort_zeile = String::new();
+        if self.stdout.read_line(&mut antwort_zeile)? == 0 {
+            return Err(OrakelFehler::Geschlossen);
+        }
+        Ok(serde_json::from_str(antwort_zeile.trim())?)
+    }
 }
 
 impl Drop for Oracle {

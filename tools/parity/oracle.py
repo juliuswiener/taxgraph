@@ -295,6 +295,96 @@ def _runner(req: dict) -> dict:
         return {"err": type(exc).__name__, "catala": isinstance(exc, CatalaError)}
 
 
+_VOLL_SORTIERT: dict | None = None
+
+
+def _voll_sortiert() -> dict:
+    """`lade_bindung()` in der Reihenfolge der Rust-Registry (Dateien alphabetisch, in der Datei
+    wie geschrieben). Python selbst liest in `glob`-Reihenfolge (Dateisystem); eine Produktions-
+    Lesestelle bekommt ohnehin eine Scheiben-Bindung in Scheiben-Reihenfolge (`api._scheibe_bindung`)."""
+    global _VOLL_SORTIERT
+    if _VOLL_SORTIERT is None:
+        import glob
+        import yaml
+        voll = _TR.lade_bindung()
+        reihe = []
+        for f in sorted(glob.glob(os.path.join(ROOT, "produkt", "bindung", "bindung_*.yaml"))):
+            d = yaml.safe_load(open(f, encoding="utf-8")) or {}
+            reihe += [b["feld_id"] for b in d.get("bindungen", [])]
+        _VOLL_SORTIERT = {f: voll[f] for f in reihe}
+    return _VOLL_SORTIERT
+
+
+def _interview(req: dict) -> dict:
+    """Schritt 5a, Crate `interview`: `traverser.<fn>` / `bindung_rollen.<fn>`. `felder` ist die
+    Teil-Bindung als geordnete feld_id-Liste (`None` = alle, s. `_voll_sortiert`) -- dieselbe Form
+    wie `api._scheibe_bindung`. Antwort `{"ok": <JSON>}` oder `{"err": "<Klasse>: <Text>"}`."""
+    name = req["fn"]
+    store = req.get("store")
+    a = req.get("args") or {}
+    voll = _voll_sortiert()
+    felder = req.get("felder")
+    sicht = voll if felder is None else {f: _TR.lade_bindung()[f] for f in felder}
+    try:
+        if name == "traverser.relevanz":
+            return {"ok": _TR.relevanz(store, sicht)}
+        if name == "traverser.naechste_fragen":
+            return {"ok": _TR.naechste_fragen(store, sicht, a.get("beitrag"))}
+        if name == "traverser.praefix_fragen":
+            evs = store.get("events", [])
+            return {"ok": [_TR.naechste_fragen(dict(store, events=evs[:k]), sicht)
+                           for k in range(len(evs) + 1)]}
+        if name == "traverser.gate_gewicht":
+            return {"ok": _TR.gate_gewicht(sicht)}
+        if name == "traverser.justification":
+            return {"ok": [_TR.justification(store, f, sicht) for f in a["feld_ids"]]}
+        if name == "traverser.trace_ergebnis":
+            return {"ok": _TR.trace_ergebnis(store, sicht, snapshot_id=a.get("snapshot_id"))}
+        if name == "traverser.instanz_anzahl":
+            return {"ok": [list(_TR.instanz_anzahl(store, sicht, f)) for f in a["feld_ids"]]}
+        if name == "traverser.instanz_feld_id":
+            return {"ok": [_TR.instanz_feld_id(b, i) for b, i in a["paare"]]}
+        if name == "traverser.fehlende_instanzen":
+            return {"ok": _TR.fehlende_instanzen(_ST.materialisiere(store)[0], sicht)}
+        if name == "traverser.lade_bindung":
+            return {"ok": list(_TR.lade_bindung())}
+        if name == "traverser.lade_regel_bedingungen":
+            return {"ok": _TR.lade_regel_bedingungen()}
+        if name == "traverser.lade_themen_zuerst":
+            return {"ok": _TR.lade_themen_zuerst()}
+        if name == "traverser.lade_instanz_gruppen":
+            return {"ok": _TR.lade_instanz_gruppen()}
+        if name == "traverser.scheiben":
+            # Eingabe-Beschaffung, kein Vergleich: Scheiben-Felder/Kegel wie `api._scheibe_felder`.
+            import yaml
+            sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
+            import api_constants as _AC
+            out = {}
+            for sch, cfg in _AC.SCHEIBEN.items():
+                fs = cfg["felder"]
+                if fs is None:
+                    d = yaml.safe_load(open(os.path.join(ROOT, "produkt", "bindung", cfg["felder_datei"]),
+                                            encoding="utf-8"))
+                    fs = tuple(b["feld_id"] for b in d.get("bindungen", []))
+                out[sch] = {"felder": list(fs), "kegel": None if cfg.get("kegel") is None else list(cfg["kegel"])}
+            return {"ok": out}
+        if name.startswith("bindung_rollen."):
+            sys.path.insert(0, os.path.join(ROOT, "produkt", "traverser"))
+            sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
+            import bindung_rollen as _BR
+            cfg = {"kegel": None if a.get("kegel") is None else tuple(a["kegel"])}
+            if name == "bindung_rollen.relevante_kegel_felder":
+                return {"ok": list(_BR.relevante_kegel_felder(cfg["kegel"] or (), sicht, store))}
+            if name == "bindung_rollen.ring_bindung":
+                return {"ok": list(_BR.ring_bindung(cfg, sicht, store))}
+            if name == "bindung_rollen.rollen":
+                aufbau, achsen = _BR.rollen(cfg, sicht, store)
+                return {"ok": {"aufbau": list(aufbau), "achsen": list(achsen)}}
+        return {"err": f"KeyError: unbekannte Funktion {name}"}
+    except Exception as exc:  # noqa: BLE001 -- Fehlerparitaet braucht jeden Typ
+        return {"err": f"{type(exc).__name__}: {exc}"}
+
+
 DISPATCH = {
     "grundtarif": _grundtarif,
     "splittingtarif": _splittingtarif,
@@ -327,6 +417,24 @@ def main() -> None:
         req = json.loads(line)
         if str(req.get("fn", "")).startswith("runner."):
             sys.stdout.write(json.dumps(_runner(req)) + "\n")
+            sys.stdout.flush()
+            continue
+        if str(req.get("fn", "")).startswith(("traverser.", "bindung_rollen.")):
+            sys.stdout.write(json.dumps(_interview(req), ensure_ascii=False) + "\n")
+            sys.stdout.flush()
+            continue
+        if str(req.get("fn", "")).startswith(("konsistenz.", "intervall.")):
+            # lazy: die bare-Modulnamen aus produkt/konsistenz|unsicherheit nur laden, wer sie ruft
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import oracle_konsistenz  # noqa: E402
+            sys.stdout.write(json.dumps(oracle_konsistenz.antwort(req), ensure_ascii=False) + "\n")
+            sys.stdout.flush()
+            continue
+        if str(req.get("fn", "")).startswith("elster."):
+            # lazy wie oben: tools/parity/elster_oracle.py (rust/elster, Schritt 6)
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import elster_oracle  # noqa: E402
+            sys.stdout.write(json.dumps(elster_oracle.handle(req), ensure_ascii=False) + "\n")
             sys.stdout.flush()
             continue
         try:

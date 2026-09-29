@@ -148,6 +148,8 @@ erklärtem Fixture-Diff. Bekannte Fälle:
 | P6 | `/kontoauszug` Store-Abweisung → 500, `/event` → 422 | `api.py:534` vs `:1010` |
 | P7 | `graph.js` ohne Auth-Header → 401 | `graph.js:13,70` |
 | P8 | A-Renten Instanz-Σ, B-Rente Flat-Feld | `bescheid_zweige.py:1110-1127` |
+| P9 | 200 von 332 echten ELSTER-XML schema-ungültig: `0` in GanzzahlPos-Kz (14 Kz fehlen in `_NULL_UNZULAESSIG_KZ`) | `est_mapping.py`; Vault-Ticket `elster-xml-null-in-ganzzahlpos-kz` |
+| P10 | 32 echte Fälle tragen Alt-Herkunft `{"herkunft": …}` ohne `pruef_tiefe`/`haftung`; 5 Fälle haben VZ 2099, −5, 10^38 (API-Sicherheitstests) | Rust-Store lädt sie noch nicht — Entscheidung: tolerant laden wie Python, keine Migration fremder Nutzerdaten |
 
 ---
 
