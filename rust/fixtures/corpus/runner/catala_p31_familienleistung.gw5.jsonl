@@ -1,0 +1,12 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"est_mit_freibetraegen": 53466, "est_ohne_freibetraege": 57498, "kindergeld": 6120}], "kwargs": {}, "ok": 57498}
+{"args": [{"est_mit_freibetraegen": 55138, "est_ohne_freibetraege": 59170, "kindergeld": 6120}], "kwargs": {}, "ok": 59170}
+{"args": [{"est_mit_freibetraegen": 12114, "est_ohne_freibetraege": 13924, "kindergeld": 3060}], "kwargs": {}, "ok": 13924}
+{"args": [{"est_mit_freibetraegen": 57154, "est_ohne_freibetraege": 59170, "kindergeld": 3060}], "kwargs": {}, "ok": 59170}
+{"args": [{"est_mit_freibetraegen": 288, "est_ohne_freibetraege": 1327, "kindergeld": 3060}], "kwargs": {}, "ok": 1327}
+{"args": [{"est_mit_freibetraegen": 155863, "est_ohne_freibetraege": 160183, "kindergeld": 6120}], "kwargs": {}, "ok": 160183}
+{"args": [{"est_mit_freibetraegen": 99596, "est_ohne_freibetraege": 103628, "kindergeld": 3060}], "kwargs": {}, "ok": 102656}
+{"args": [{"est_mit_freibetraegen": 155184, "est_ohne_freibetraege": 159504, "kindergeld": 6120}], "kwargs": {}, "ok": 159504}
+{"args": [{"est_mit_freibetraegen": 154072, "est_ohne_freibetraege": 158392, "kindergeld": 6120}], "kwargs": {}, "ok": 158392}
+{"args": [{"est_mit_freibetraegen": 47079, "est_ohne_freibetraege": 49095, "kindergeld": 3060}], "kwargs": {}, "ok": 49095}
+{"args": [{"est_mit_freibetraegen": 45879, "est_ohne_freibetraege": 47895, "kindergeld": 3060}], "kwargs": {}, "ok": 47895}

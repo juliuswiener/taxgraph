@@ -1,0 +1,26 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"bundesland": "baden_wuerttemberg", "est_mit_fb": 13924, "konfession": "keine"}], "kwargs": {}, "ok": 0}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 13924, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 125316}
+{"args": [{"bundesland": "baden_wuerttemberg", "est_mit_fb": 8238, "konfession": "keine"}], "kwargs": {}, "ok": 0}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 0, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 0}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 2836, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 25524}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 3537, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 31833}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 10000, "konfession": "evangelisch"}], "kwargs": {}, "ok": 90000}
+{"args": [{"bundesland": "hessen", "est_mit_fb": 12345, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 111105}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 73072, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 657648}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 73591, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 662319}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 630, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 5670}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 76, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 684}
+{"args": [{"est_mit_fb": 10000}], "kwargs": {}, "ok": 0}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 2332, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 20988}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 81166, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 730494}
+{"args": [{"bundesland": "", "est_mit_fb": 10213, "konfession": "keine"}], "kwargs": {}, "ok": 0}
+{"args": [{"bundesland": "bayern", "est_mit_fb": 10000, "konfession": "andere"}], "kwargs": {}, "ok": 0}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 12114, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 109026}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 10000, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 90000}
+{"args": [{"bundesland": "bayern", "est_mit_fb": 10000, "konfession": "evangelisch"}], "kwargs": {}, "ok": 80000}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 1605, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 14445}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 2192, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 19728}
+{"args": [{"bundesland": "", "est_mit_fb": 2332, "konfession": "keine"}], "kwargs": {}, "ok": 0}
+{"args": [{"bundesland": "baden_wuerttemberg", "est_mit_fb": 10000, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 80000}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 10000, "konfession": "keine"}], "kwargs": {}, "ok": 0}

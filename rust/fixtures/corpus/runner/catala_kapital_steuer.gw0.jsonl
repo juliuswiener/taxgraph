@@ -1,0 +1,16 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"est_regulaer_mit_kap": 0, "est_regulaer_ohne_kap": 0, "kapitaleinkuenfte": 4000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"est_regulaer_mit_kap": 4157, "est_regulaer_ohne_kap": 3946, "kapitaleinkuenfte": 750, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 187}
+{"args": [{"est_regulaer_mit_kap": 1734, "est_regulaer_ohne_kap": 1622, "kapitaleinkuenfte": 500, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 112}
+{"args": [{"est_regulaer_mit_kap": 15000, "est_regulaer_ohne_kap": 13924, "kapitaleinkuenfte": 9000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 1076}
+{"args": [{"est_regulaer_mit_kap": 17537, "est_regulaer_ohne_kap": 13924, "kapitaleinkuenfte": 9000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2250}
+{"args": [{"est_regulaer_mit_kap": 8000, "est_regulaer_ohne_kap": 5000, "kapitaleinkuenfte": 10000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2500}
+{"args": [{"est_regulaer_mit_kap": 24820, "est_regulaer_ohne_kap": 20490, "kapitaleinkuenfte": 12000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 3000}
+{"args": [{"est_regulaer_mit_kap": 21548, "est_regulaer_ohne_kap": 20490, "kapitaleinkuenfte": 3000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 750}
+{"args": [{"est_regulaer_mit_kap": 7776, "est_regulaer_ohne_kap": 7534, "kapitaleinkuenfte": 750, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 187}
+{"args": [{"est_regulaer_mit_kap": 24882, "est_regulaer_ohne_kap": 16902, "kapitaleinkuenfte": 19000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 4750}
+{"args": [{"est_regulaer_mit_kap": 6500, "est_regulaer_ohne_kap": 5000, "kapitaleinkuenfte": 10000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 1500}
+{"args": [{"est_regulaer_mit_kap": 17926, "est_regulaer_ohne_kap": 17092, "kapitaleinkuenfte": 2000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 500}
+{"args": [{"est_regulaer_mit_kap": 1285, "est_regulaer_ohne_kap": 811, "kapitaleinkuenfte": 2000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 474}
+{"args": [{"est_regulaer_mit_kap": 5000, "est_regulaer_ohne_kap": 5000, "kapitaleinkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"est_regulaer_mit_kap": 13924, "est_regulaer_ohne_kap": 13924, "kapitaleinkuenfte": 9000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}

@@ -1,0 +1,7 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"erstattete_kirchensteuer": 0, "gezahlte_kirchensteuer": 500}], "kwargs": {}, "ok": 500}
+{"args": [{"erstattete_kirchensteuer": 0, "gezahlte_kirchensteuer": 1200}], "kwargs": {}, "ok": 1200}
+{"args": [{"erstattete_kirchensteuer": 0, "gezahlte_kirchensteuer": 0}], "kwargs": {}, "ok": 0}
+{"args": [{"erstattete_kirchensteuer": 200, "gezahlte_kirchensteuer": 1200}], "kwargs": {}, "ok": 1000}
+{"args": [{"erstattete_kirchensteuer": 1200, "gezahlte_kirchensteuer": 1200}], "kwargs": {}, "ok": 0}
+{"args": [{"erstattete_kirchensteuer": 1200, "gezahlte_kirchensteuer": 200}], "kwargs": {}, "ok": 0}

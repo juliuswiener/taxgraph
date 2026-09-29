@@ -1,0 +1,7 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [50000], "kwargs": {}, "ok": 50000}
+{"args": [25599], "kwargs": {}, "ok": 0}
+{"args": [0], "kwargs": {}, "ok": 0}
+{"args": [100000], "kwargs": {}, "ok": 100000}
+{"args": [1000], "kwargs": {}, "ok": 0}
+{"args": [25600], "kwargs": {}, "ok": 25600}

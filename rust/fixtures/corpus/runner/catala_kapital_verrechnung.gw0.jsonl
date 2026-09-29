@@ -1,0 +1,9 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"gewinn_aktien": 0, "gewinn_sonstige": 4000, "verlust_aktien": 0, "verlust_sonstige": 1000}], "kwargs": {}, "ok": 3000}
+{"args": [{"gewinn_aktien": 5000, "gewinn_sonstige": 0, "verlust_aktien": 8000, "verlust_sonstige": 0}], "kwargs": {}, "ok": 0}
+{"args": [{"gewinn_aktien": 0, "gewinn_sonstige": 5000, "verlust_aktien": 0, "verlust_sonstige": 0}], "kwargs": {}, "ok": 5000}
+{"args": [{"gewinn_aktien": 0, "gewinn_sonstige": 4000, "verlust_aktien": 3000, "verlust_sonstige": 0}], "kwargs": {}, "ok": 4000}
+{"args": [{"gewinn_aktien": 3000, "gewinn_sonstige": 0, "verlust_aktien": 0, "verlust_sonstige": 0}], "kwargs": {}, "ok": 3000}
+{"args": [{"gewinn_aktien": 0, "gewinn_sonstige": 1750, "verlust_aktien": 0, "verlust_sonstige": 0}], "kwargs": {}, "ok": 1750}
+{"args": [{"gewinn_aktien": 5000, "gewinn_sonstige": 0, "verlust_aktien": 2000, "verlust_sonstige": 0}], "kwargs": {}, "ok": 3000}
+{"args": [{"gewinn_aktien": 5000, "gewinn_sonstige": 1000, "verlust_aktien": 2000, "verlust_sonstige": 3000}], "kwargs": {}, "ok": 3000}

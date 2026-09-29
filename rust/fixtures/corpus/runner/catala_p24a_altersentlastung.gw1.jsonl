@@ -1,0 +1,7 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 50000, "geburtsjahr": 0, "positive_andere_einkuenfte": 7000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 1955, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 760}
+{"args": [{"arbeitslohn": 200000, "geburtsjahr": 0, "positive_andere_einkuenfte": 200000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 59170, "geburtsjahr": 1970, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 50000, "geburtsjahr": 1988, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}

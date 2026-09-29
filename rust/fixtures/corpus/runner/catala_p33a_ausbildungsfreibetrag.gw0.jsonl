@@ -1,0 +1,5 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"anzahl_kinder": 1}], "kwargs": {}, "ok": 1200}
+{"args": [{"anzahl_kinder": 2}], "kwargs": {}, "ok": 2400}
+{"args": [{"anzahl_kinder": 0}], "kwargs": {}, "ok": 0}
+{"args": [{}], "kwargs": {}, "ok": 0}

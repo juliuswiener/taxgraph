@@ -1,0 +1,17 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"festzusetzende_est_cent": 7255600, "kapitalertragsteuer_cent": 1200000, "kapitalertragsteuer_kist_cent": 108000, "kapitalertragsteuer_solz_cent": 66000}], "kwargs": {}, "ok": 5881600}
+{"args": [{"festzusetzende_est_cent": 7255600, "kapitalertragsteuer_cent": 0, "kapitalertragsteuer_kist_cent": 0, "kapitalertragsteuer_solz_cent": 0, "lohnsteuer_cent": 3000000, "vorauszahlungen_cent": 1000000}], "kwargs": {}, "ok": 3255600}
+{"args": [{"festzusetzende_est_cent": 7255600, "kapitalertragsteuer_cent": 135680, "kapitalertragsteuer_kist_cent": 0, "kapitalertragsteuer_solz_cent": 0, "lohnsteuer_cent": 0, "vorauszahlungen_cent": 0}], "kwargs": {}, "ok": 7119900}
+{"args": [{"festzusetzende_est_cent": 5917000, "kapitalertragsteuer_cent": 500000, "kapitalertragsteuer_kist_cent": 45000, "kapitalertragsteuer_solz_cent": 27500, "lohnsteuer_cent": 0, "vorauszahlungen_cent": 0}], "kwargs": {}, "ok": 5344500}
+{"args": [{"festzusetzende_est_cent": 7255600, "kapitalertragsteuer_cent": 135680, "kapitalertragsteuer_kist_cent": 12211, "kapitalertragsteuer_solz_cent": 7460, "lohnsteuer_cent": 0, "vorauszahlungen_cent": 0}], "kwargs": {}, "ok": 7100100}
+{"args": [{"festzusetzende_est_cent": 1200000, "lohnsteuer_cent": 750030, "vorauszahlungen_cent": 0}], "kwargs": {}, "ok": 449900}
+{"args": [{"festzusetzende_est_cent": 7255600, "kapitalertragsteuer_cent": 1200000, "kapitalertragsteuer_kist_cent": 108000, "kapitalertragsteuer_solz_cent": 66000, "lohnsteuer_cent": 0, "vorauszahlungen_cent": 0}], "kwargs": {}, "ok": 5881600}
+{"args": [{"festzusetzende_est_cent": 1000000, "lohnsteuer_cent": 800000, "vorauszahlungen_cent": 0}], "kwargs": {}, "ok": 200000}
+{"args": [{"festzusetzende_est_cent": 7255600, "kapitalertragsteuer_cent": 0, "kapitalertragsteuer_kist_cent": 0, "kapitalertragsteuer_solz_cent": 0, "lohnsteuer_cent": 12255600, "vorauszahlungen_cent": 0}], "kwargs": {}, "ok": -5000000}
+{"args": [{"festzusetzende_est_cent": 1000000, "lohnsteuer_cent": 600000, "vorauszahlungen_cent": 300000}], "kwargs": {}, "ok": 100000}
+{"args": [{"festzusetzende_est_cent": 7255600, "lohnsteuer_cent": 3000000, "vorauszahlungen_cent": 1000000}], "kwargs": {}, "ok": 3255600}
+{"args": [{"festzusetzende_est_cent": 7255600, "kapitalertragsteuer_cent": 0, "kapitalertragsteuer_kist_cent": 0, "kapitalertragsteuer_solz_cent": 0, "lohnsteuer_cent": 500000, "vorauszahlungen_cent": 0}], "kwargs": {}, "ok": 6755600}
+{"args": [{"festzusetzende_est_cent": 500000, "lohnsteuer_cent": 800000, "vorauszahlungen_cent": 0}], "kwargs": {}, "ok": -300000}
+{"args": [{"festzusetzende_est_cent": 7255600, "kapitalertragsteuer_cent": 135680, "kapitalertragsteuer_kist_cent": 12211, "kapitalertragsteuer_solz_cent": 7460}], "kwargs": {}, "ok": 7100100}
+{"args": [{"festzusetzende_est_cent": 7255600, "lohnsteuer_cent": 12255600, "vorauszahlungen_cent": 0}], "kwargs": {}, "ok": -5000000}
+{"args": [{"festzusetzende_est_cent": 7255600, "kapitalertragsteuer_cent": 0, "kapitalertragsteuer_kist_cent": 0, "kapitalertragsteuer_solz_cent": 0, "lohnsteuer_cent": 750030, "vorauszahlungen_cent": 0}], "kwargs": {}, "ok": 6505500}

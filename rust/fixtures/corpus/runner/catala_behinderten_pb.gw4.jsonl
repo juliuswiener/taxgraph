@@ -1,0 +1,14 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"grad_der_behinderung": 45, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 860}
+{"args": [{"grad_der_behinderung": 30, "ist_hilflos_blind_taubblind": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 7400}
+{"args": [{"grad_der_behinderung": 100, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2840}
+{"args": [{"grad_der_behinderung": 0, "ist_hilflos_blind_taubblind": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"grad_der_behinderung": 50, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 1140}
+{"args": [{"grad_der_behinderung": 45, "ist_hilflos_blind_taubblind": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 860}
+{"args": [{"grad_der_behinderung": 19, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"grad_der_behinderung": 50, "ist_hilflos_blind_taubblind": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 1140}
+{"args": [{"grad_der_behinderung": 100, "ist_hilflos_blind_taubblind": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2840}
+{"args": [{"grad_der_behinderung": 1000, "ist_hilflos_blind_taubblind": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2840}
+{"args": [{"grad_der_behinderung": 50, "ist_hilflos_blind_taubblind": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 7400}
+{"args": [{"grad_der_behinderung": 20, "ist_hilflos_blind_taubblind": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 384}
+{"args": [{"grad_der_behinderung": 19, "ist_hilflos_blind_taubblind": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}

@@ -1,0 +1,12 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"aufwendungen": 5000, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 1500}
+{"args": [{"aufwendungen": 10000, "splitting": true, "veranlagungszeitraum": 2024}], "kwargs": {}, "ok": 3000}
+{"args": [{"aufwendungen": 10000, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 3000}
+{"args": [{"aufwendungen": 25000, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 5000}
+{"args": [{"aufwendungen": 20000, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 5000}
+{"args": [{"aufwendungen": 25000, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2500}
+{"args": [{"aufwendungen": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"aufwendungen": 10000, "splitting": false, "veranlagungszeitraum": 2026}], "kwargs": {}, "ok": 2500}
+{"args": [{"aufwendungen": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"aufwendungen": 10000, "splitting": false, "veranlagungszeitraum": 2024}], "kwargs": {}, "ok": 2500}
+{"args": [{"aufwendungen": 10000, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2500}

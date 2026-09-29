@@ -1,0 +1,5 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"ausserordentliche_einkuenfte": 35000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 201862}], "kwargs": {}, "ok": 73870}
+{"args": [{"ausserordentliche_einkuenfte": 15000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 73994}], "kwargs": {}, "ok": 19899}
+{"args": [{"ausserordentliche_einkuenfte": 15000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 31822}], "kwargs": {}, "ok": 4499}
+{"args": [{"ausserordentliche_einkuenfte": 80000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 246862}], "kwargs": {}, "ok": 92770}

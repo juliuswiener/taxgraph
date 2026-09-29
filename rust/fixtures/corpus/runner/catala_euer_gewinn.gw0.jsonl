@@ -1,0 +1,11 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"betriebsausgaben": 16800, "betriebseinnahmen": 50000}], "kwargs": {}, "ok": 33200}
+{"args": [{"betriebsausgaben": 30000, "betriebseinnahmen": 80000}], "kwargs": {}, "ok": 50000}
+{"args": [{"betriebsausgaben": 400, "betriebseinnahmen": 50000}], "kwargs": {}, "ok": 49600}
+{"args": [{"betriebsausgaben": 50000, "betriebseinnahmen": 100000}], "kwargs": {}, "ok": 50000}
+{"args": [{"betriebsausgaben": 1600, "betriebseinnahmen": 0}], "kwargs": {}, "ok": -1600}
+{"args": [{"betriebsausgaben": 15000, "betriebseinnahmen": 50000}], "kwargs": {}, "ok": 35000}
+{"args": [{"betriebsausgaben": 600, "betriebseinnahmen": 50000}], "kwargs": {}, "ok": 49400}
+{"args": [{"betriebsausgaben": 0, "betriebseinnahmen": 50000}], "kwargs": {}, "ok": 50000}
+{"args": [{"betriebsausgaben": 55000, "betriebseinnahmen": 40000}], "kwargs": {}, "ok": -15000}
+{"args": [{"betriebsausgaben": 500, "betriebseinnahmen": 0}], "kwargs": {}, "ok": -500}

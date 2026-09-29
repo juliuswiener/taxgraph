@@ -1,0 +1,19 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"est_mit_freibetraegen": 9239, "est_ohne_freibetraege": 12666, "kindergeld": 6120}], "kwargs": {}, "ok": 12666}
+{"args": [{"est_mit_freibetraegen": 156745, "est_ohne_freibetraege": 158905, "kindergeld": 3060}], "kwargs": {}, "ok": 158905}
+{"args": [{"est_mit_freibetraegen": 0, "est_ohne_freibetraege": 811, "kindergeld": 3060}], "kwargs": {}, "ok": 811}
+{"args": [{"est_mit_freibetraegen": 58112, "est_ohne_freibetraege": 62144, "kindergeld": 3060}], "kwargs": {}, "ok": 61172}
+{"args": [{"est_mit_freibetraegen": 0, "est_ohne_freibetraege": 29, "kindergeld": 3060}], "kwargs": {}, "ok": 29}
+{"args": [{"est_mit_freibetraegen": 36596, "est_ohne_freibetraege": 40628, "kindergeld": 3060}], "kwargs": {}, "ok": 39656}
+{"args": [{"est_mit_freibetraegen": 8000, "est_ohne_freibetraege": 10000, "kindergeld": 3000}], "kwargs": {}, "ok": 10000}
+{"args": [{"est_mit_freibetraegen": 47146, "est_ohne_freibetraege": 49162, "kindergeld": 3060}], "kwargs": {}, "ok": 49162}
+{"args": [{"est_mit_freibetraegen": 151402, "est_ohne_freibetraege": 153562, "kindergeld": 3060}], "kwargs": {}, "ok": 153562}
+{"args": [{"est_mit_freibetraegen": 150124, "est_ohne_freibetraege": 152284, "kindergeld": 3060}], "kwargs": {}, "ok": 152284}
+{"args": [{"est_mit_freibetraegen": 151474, "est_ohne_freibetraege": 153634, "kindergeld": 3060}], "kwargs": {}, "ok": 153634}
+{"args": [{"est_mit_freibetraegen": 4023, "est_ohne_freibetraege": 5411, "kindergeld": 3060}], "kwargs": {}, "ok": 5411}
+{"args": [{"est_mit_freibetraegen": 5448, "est_ohne_freibetraege": 6919, "kindergeld": 3060}], "kwargs": {}, "ok": 6919}
+{"args": [{"est_mit_freibetraegen": 25000, "est_ohne_freibetraege": 30000, "kindergeld": 3000}], "kwargs": {}, "ok": 28000}
+{"args": [{"est_mit_freibetraegen": 45886, "est_ohne_freibetraege": 47902, "kindergeld": 3060}], "kwargs": {}, "ok": 47902}
+{"args": [{"est_mit_freibetraegen": 19872, "est_ohne_freibetraege": 21276, "kindergeld": 3060}], "kwargs": {}, "ok": 21276}
+{"args": [{"est_mit_freibetraegen": 4211, "est_ohne_freibetraege": 5609, "kindergeld": 3060}], "kwargs": {}, "ok": 5609}
+{"args": [{"est_mit_freibetraegen": 102640, "est_ohne_freibetraege": 106672, "kindergeld": 6120}], "kwargs": {}, "ok": 106672}

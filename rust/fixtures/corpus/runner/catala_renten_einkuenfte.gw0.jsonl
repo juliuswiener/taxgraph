@@ -1,0 +1,11 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"alter_bei_rentenbeginn": 65, "jahresrente": 80000, "renten_art": "private_leibrente", "renten_beginn_jahr": 2025, "rentenfreibetrag": null, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 14298}
+{"args": [{"alter_bei_rentenbeginn": 65, "jahresrente": 200000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": null, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 166898}
+{"args": [{"alter_bei_rentenbeginn": 65, "jahresrente": 20000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 16598}
+{"args": [{"alter_bei_rentenbeginn": 65, "jahresrente": 200000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 166898}
+{"args": [{"alter_bei_rentenbeginn": 0, "jahresrente": 40000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": null, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 33298}
+{"args": [{"alter_bei_rentenbeginn": 65, "jahresrente": 40000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 33298}
+{"args": [{"alter_bei_rentenbeginn": 0, "jahresrente": 80000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": null, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 66698}
+{"args": [{"alter_bei_rentenbeginn": 0, "jahresrente": 0, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": null, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"alter_bei_rentenbeginn": 0, "jahresrente": 20000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": null, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 16598}
+{"args": [{"alter_bei_rentenbeginn": 0, "jahresrente": 21000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2015, "rentenfreibetrag": 6000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 14898}

@@ -1,0 +1,4 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"est_mit_freibetraegen": 8726, "est_ohne_freibetraege": 10373, "kindergeld": 3060}], "kwargs": {}, "ok": 10373}
+{"args": [{"est_mit_freibetraegen": 8634, "est_ohne_freibetraege": 10276, "kindergeld": 3060}], "kwargs": {}, "ok": 10276}
+{"args": [{"est_mit_freibetraegen": 8032, "est_ohne_freibetraege": 9643, "kindergeld": 3060}], "kwargs": {}, "ok": 9643}

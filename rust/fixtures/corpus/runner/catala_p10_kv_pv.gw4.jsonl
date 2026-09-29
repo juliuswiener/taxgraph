@@ -1,0 +1,5 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"basis_kv_pv": 2500, "mit_anspruch_auf_zuschuss": true, "weitere_vorsorgeaufwendungen": 0}], "kwargs": {}, "ok": 2500}
+{"args": [{"basis_kv_pv": 2000, "mit_anspruch_auf_zuschuss": true, "weitere_vorsorgeaufwendungen": 0}], "kwargs": {}, "ok": 2000}
+{"args": [{"basis_kv_pv": 20, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 50}], "kwargs": {}, "ok": 70}
+{"args": [{"basis_kv_pv": 0, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 0}], "kwargs": {}, "ok": 0}

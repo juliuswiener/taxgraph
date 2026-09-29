@@ -1,0 +1,11 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"entgelt_quote_prozent": 100, "werbungskosten": 0}], "kwargs": {}, "ok": 0}
+{"args": [{"entgelt_quote_prozent": 50, "werbungskosten": 0}], "kwargs": {}, "ok": 0}
+{"args": [{"entgelt_quote_prozent": 66, "werbungskosten": 10000}], "kwargs": {}, "ok": 10000}
+{"args": [{"entgelt_quote_prozent": 65, "werbungskosten": 10000}], "kwargs": {}, "ok": 6500}
+{"args": [{"entgelt_quote_prozent": 100, "werbungskosten": 10000}], "kwargs": {}, "ok": 10000}
+{"args": [{"entgelt_quote_prozent": 50, "werbungskosten": 8000}], "kwargs": {}, "ok": 4000}
+{"args": [{"entgelt_quote_prozent": 100, "werbungskosten": 8000}], "kwargs": {}, "ok": 8000}
+{"args": [{"entgelt_quote_prozent": 50, "werbungskosten": 10000}], "kwargs": {}, "ok": 5000}
+{"args": [{"entgelt_quote_prozent": 0, "werbungskosten": 10000}], "kwargs": {}, "ok": 0}
+{"args": [{"entgelt_quote_prozent": 40, "werbungskosten": 10000}], "kwargs": {}, "ok": 4000}

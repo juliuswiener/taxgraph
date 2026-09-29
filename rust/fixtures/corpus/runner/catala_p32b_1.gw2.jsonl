@@ -1,0 +1,6 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"est_auf_erhoehte_bemessung": 435, "progressionseinkuenfte": 5000, "zu_versteuerndes_einkommen": 10000}], "kwargs": {}, "ok": 290}
+{"args": [{"est_auf_erhoehte_bemessung": 2000, "progressionseinkuenfte": 10000, "zu_versteuerndes_einkommen": 0}], "kwargs": {}, "ok": 0}
+{"args": [{"est_auf_erhoehte_bemessung": 4217, "progressionseinkuenfte": 0, "zu_versteuerndes_einkommen": 30000}], "kwargs": {}, "ok": 4217}
+{"args": [{"est_auf_erhoehte_bemessung": 2000, "progressionseinkuenfte": 10000, "zu_versteuerndes_einkommen": -1000}], "kwargs": {}, "ok": -223}
+{"args": [{"est_auf_erhoehte_bemessung": 7209, "progressionseinkuenfte": 10000, "zu_versteuerndes_einkommen": 30000}], "kwargs": {}, "ok": 5406}

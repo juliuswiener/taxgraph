@@ -1,0 +1,5 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"gewinnanteil": 50000, "verguetung_darlehen": 0, "verguetung_taetigkeit": 0, "verguetung_ueberlassung": 0}], "kwargs": {}, "ok": 50000}
+{"args": [{"gewinnanteil": -20000, "verguetung_darlehen": 0, "verguetung_taetigkeit": 12000, "verguetung_ueberlassung": 0}], "kwargs": {}, "ok": -8000}
+{"args": [{"gewinnanteil": 30000, "verguetung_darlehen": 0, "verguetung_taetigkeit": 0, "verguetung_ueberlassung": 0}], "kwargs": {}, "ok": 30000}
+{"args": [{"gewinnanteil": 30000, "verguetung_darlehen": 3000, "verguetung_taetigkeit": 12000, "verguetung_ueberlassung": 5000}], "kwargs": {}, "ok": 50000}

@@ -1,0 +1,14 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 2000, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 0, "positive_andere_einkuenfte": 50000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 2000, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 0, "positive_andere_einkuenfte": 25000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 55000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 200000, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 50000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 49400, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 20000, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 200000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 100000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}

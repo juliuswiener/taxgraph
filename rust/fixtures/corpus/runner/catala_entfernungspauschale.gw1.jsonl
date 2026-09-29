@@ -1,0 +1,7 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"arbeitstage": 220, "eigenes_oder_ueberlassenes_kfz": true, "entfernung_km_roh": 30, "im_inland": true, "monate": 12, "oepnv_kosten_jahr": 0, "unterkunftskosten_monat": 1400, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2156}
+{"args": [{"arbeitstage": 0, "eigenes_oder_ueberlassenes_kfz": false, "entfernung_km_roh": 0, "oepnv_kosten_jahr": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitstage": 220, "eigenes_oder_ueberlassenes_kfz": true, "entfernung_km_roh": 30, "oepnv_kosten_jahr": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2156}
+{"args": [{"arbeitstage": 50, "eigenes_oder_ueberlassenes_kfz": true, "entfernung_km_roh": 10, "oepnv_kosten_jahr": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 150}
+{"args": [{"arbeitstage": 220, "eigenes_oder_ueberlassenes_kfz": false, "entfernung_km_roh": 20, "oepnv_kosten_jahr": 1380, "veranlagungszeitraum": 2024}], "kwargs": {}, "ok": 1380}
+{"args": [{"arbeitstage": 220, "eigenes_oder_ueberlassenes_kfz": true, "entfernung_km_roh": 30, "oepnv_kosten_jahr": 0, "tage_24h": 10, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2156}

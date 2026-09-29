@@ -1,0 +1,3 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"energieberater_ermaessigung": 0, "ist_uebernaechstes_foerderjahr": false, "sanierung_ermaessigung": 0}], "kwargs": {}, "ok": 0}
+{"args": [{"energieberater_ermaessigung": 0, "ist_uebernaechstes_foerderjahr": false, "sanierung_ermaessigung": 1400}], "kwargs": {}, "ok": 1400}

@@ -1,0 +1,5 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"ao_einkuenfte": 300000, "bemessungsgrundlage_durchschnitt": 379964, "est_gesamt_zzgl_progression": 151737}], "kwargs": {}, "ok": 67090}
+{"args": [{"ao_einkuenfte": 500000, "bemessungsgrundlage_durchschnitt": 499964, "est_gesamt_zzgl_progression": 205737}], "kwargs": {}, "ok": 115221}
+{"args": [{"ao_einkuenfte": 500000, "bemessungsgrundlage_durchschnitt": 499204, "est_gesamt_zzgl_progression": 205395}], "kwargs": {}, "ok": 115204}
+{"args": [{"ao_einkuenfte": 55000, "bemessungsgrundlage_durchschnitt": 54964, "est_gesamt_zzgl_progression": 12495}], "kwargs": {}, "ok": 7700}

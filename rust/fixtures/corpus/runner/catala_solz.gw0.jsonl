@@ -1,0 +1,151 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"bemessungsgrundlage": 3143, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 79648, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 438064}
+{"args": [{"bemessungsgrundlage": 102640, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 564520}
+{"args": [{"bemessungsgrundlage": 12410, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 10952, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 20475, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 6247}
+{"args": [{"bemessungsgrundlage": 89762, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 493691}
+{"args": [{"bemessungsgrundlage": 19648, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 6553, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 6324, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 21240, "kapital_steuer": 750, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 4125}
+{"args": [{"bemessungsgrundlage": 346, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 23490, "kapital_steuer": 3000, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 16500}
+{"args": [{"bemessungsgrundlage": 18488, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 28856, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 105981}
+{"args": [{"bemessungsgrundlage": 9050, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 22156, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 26251}
+{"args": [{"bemessungsgrundlage": 36596, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 5448, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 14311, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 4464, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 4250, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 5103, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 12127, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 22672, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 32391}
+{"args": [{"bemessungsgrundlage": 17092, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 5174, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 20978, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 12233}
+{"args": [{"bemessungsgrundlage": 458, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 30046, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 120142}
+{"args": [{"bemessungsgrundlage": 150124, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 825682}
+{"args": [{"bemessungsgrundlage": 21673, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 20503}
+{"args": [{"bemessungsgrundlage": 30476, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 125259}
+{"args": [{"bemessungsgrundlage": 71072, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 390896}
+{"args": [{"bemessungsgrundlage": 62144, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 264703}
+{"args": [{"bemessungsgrundlage": 2592, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 4722, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 24369, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 52586}
+{"args": [{"bemessungsgrundlage": 6646, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 4133, "kapital_steuer": 187, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 1028}
+{"args": [{"bemessungsgrundlage": 3946, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 5757, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 4023, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 10466, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13211, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 155420, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 854810}
+{"args": [{"bemessungsgrundlage": 503, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 5660, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13592, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13363, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 9492, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 12862, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 568, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 10087, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 1394, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 7700, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 115221, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 633715}
+{"args": [{"bemessungsgrundlage": 57169, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 314429}
+{"args": [{"bemessungsgrundlage": 3891, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 7534, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 4549, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 10678, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 59072, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 324896}
+{"args": [{"bemessungsgrundlage": 12515, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13414, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13452, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13838, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13040, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 6419, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 4116, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 30456, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 125021}
+{"args": [{"bemessungsgrundlage": 5388, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 6542, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 6196, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 17956, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 17050, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 151402, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 832711}
+{"args": [{"bemessungsgrundlage": 71672, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 394196}
+{"args": [{"bemessungsgrundlage": 52072, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 286396}
+{"args": [{"bemessungsgrundlage": 5849, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13101, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 58112, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 216722}
+{"args": [{"bemessungsgrundlage": 4105, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 9798, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 17592, "kapital_steuer": 500, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2750}
+{"args": [{"bemessungsgrundlage": 14861, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 7721, "kapital_steuer": 187, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 1028}
+{"args": [{"bemessungsgrundlage": 1622, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 10234, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 1734, "kapital_steuer": 112, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 616}
+{"args": [{"bemessungsgrundlage": 5248, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 57505, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 316277}
+{"args": [{"bemessungsgrundlage": 71521, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 393365}
+{"args": [{"bemessungsgrundlage": 19872, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 2917, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 11790, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 2469, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 9239, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13924, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 5570, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 47146, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 259303}
+{"args": [{"bemessungsgrundlage": 22072, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 25251}
+{"args": [{"bemessungsgrundlage": 57770, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 317735}
+{"args": [{"bemessungsgrundlage": 21818, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 22229}
+{"args": [{"bemessungsgrundlage": 4211, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 20490, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13598, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 5220, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 31248, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 134446}
+{"args": [{"bemessungsgrundlage": 73072, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 401896}
+{"args": [{"bemessungsgrundlage": 6629, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 115204, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 633622}
+{"args": [{"bemessungsgrundlage": 10537, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13554, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 30650, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 127330}
+{"args": [{"bemessungsgrundlage": 12721, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 9878, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 10212, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 889, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 21652, "kapital_steuer": 4750, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 26125}
+{"args": [{"bemessungsgrundlage": 4293, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 71408, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 392744}
+{"args": [{"bemessungsgrundlage": 45886, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 252373}
+{"args": [{"bemessungsgrundlage": 59170, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 325435}
+{"args": [{"bemessungsgrundlage": 9288, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 20546, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 7092}
+{"args": [{"bemessungsgrundlage": 5546, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 5891, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 4476, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 6369, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 156745, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 862097}
+{"args": [{"bemessungsgrundlage": 6677, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 2089, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 13731, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 1644, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 2678, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 1960, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 7042, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 6919, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 5339, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 0, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 1285, "kapital_steuer": 474, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2607}
+{"args": [{"bemessungsgrundlage": 5982, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 151474, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 833107}
+{"args": [{"bemessungsgrundlage": 3575, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 6336, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 10776, "kapital_steuer": 0, "splitting": true, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"bemessungsgrundlage": 16174, "kapital_steuer": 2250, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 12375}
+{"args": [{"bemessungsgrundlage": 811, "kapital_steuer": 0, "splitting": false, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}

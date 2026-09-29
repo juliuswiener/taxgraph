@@ -1,0 +1,2 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"arbeitnehmer_pauschbetrag": 1230, "entfernungspauschale_ab_21km": 0, "grundfreibetrag": 12096, "ist_arbeitnehmer": true, "werbungskosten_gesamt": 1320, "zu_versteuerndes_einkommen": 48644}], "kwargs": {}, "ok": 0}

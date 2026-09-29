@@ -1,0 +1,24 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 198770, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 188000, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 166898, "splitting": true}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 180000, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 170000, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 75270, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 58770, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 246898, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 197200, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 1, "aussergewoehnliche_belastungen": 30000, "gesamtbetrag_der_einkuenfte": 166898, "splitting": false}], "kwargs": {}, "ok": 23988}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 195000, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 1, "aussergewoehnliche_belastungen": 27000, "gesamtbetrag_der_einkuenfte": 166898, "splitting": false}], "kwargs": {}, "ok": 20988}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 176000, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 4500, "gesamtbetrag_der_einkuenfte": 58770, "splitting": false}], "kwargs": {}, "ok": 1050}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 166898, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 187200, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 201898, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 1, "aussergewoehnliche_belastungen": 27000, "gesamtbetrag_der_einkuenfte": 398770, "splitting": false}], "kwargs": {}, "ok": 11713}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 33598, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 187700, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 38770, "splitting": false}], "kwargs": {}, "ok": 0}
+{"args": [{"anzahl_kinder": 1, "aussergewoehnliche_belastungen": 30000, "gesamtbetrag_der_einkuenfte": 398770, "splitting": false}], "kwargs": {}, "ok": 14713}
+{"args": [{"anzahl_kinder": 0, "aussergewoehnliche_belastungen": 0, "gesamtbetrag_der_einkuenfte": 200000, "splitting": false}], "kwargs": {}, "ok": 0}

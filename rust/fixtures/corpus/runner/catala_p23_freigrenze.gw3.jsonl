@@ -1,0 +1,5 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"gesamtgewinn": 5000}], "kwargs": {}, "ok": 5000}
+{"args": [{"gesamtgewinn": 0}], "kwargs": {}, "ok": 0}
+{"args": [{"gesamtgewinn": 1000}], "kwargs": {}, "ok": 1000}
+{"args": [{"gesamtgewinn": 999}], "kwargs": {}, "ok": 0}

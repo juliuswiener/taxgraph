@@ -1,0 +1,12 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"bundesland": "bayern", "est_mit_fb": 72556, "konfession": "evangelisch"}], "kwargs": {}, "ok": 580448}
+{"args": [{"bundesland": "", "est_mit_fb": 13554, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 121986}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 59170, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 532530}
+{"args": [{"bundesland": "bayern", "est_mit_fb": 10000, "konfession": "andere"}], "kwargs": {}, "ok": 0}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 10000, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 90000}
+{"args": [{"bundesland": "", "est_mit_fb": 13924, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 125316}
+{"args": [{"bundesland": "bayern", "est_mit_fb": 10000, "konfession": "evangelisch"}], "kwargs": {}, "ok": 80000}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 72556, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 653004}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 6919, "konfession": "roemisch-katholisch"}], "kwargs": {}, "ok": 62271}
+{"args": [{"bundesland": "", "est_mit_fb": 13924, "konfession": "keine"}], "kwargs": {}, "ok": 0}
+{"args": [{"bundesland": "nordrhein_westfalen", "est_mit_fb": 10000, "konfession": "keine"}], "kwargs": {}, "ok": 0}

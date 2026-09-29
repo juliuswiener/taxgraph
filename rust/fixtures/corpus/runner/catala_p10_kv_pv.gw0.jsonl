@@ -1,0 +1,15 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"basis_kv_pv": 3000, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 0}], "kwargs": {}, "ok": 3000}
+{"args": [{"basis_kv_pv": 1500, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 0}], "kwargs": {}, "ok": 1500}
+{"args": [{"basis_kv_pv": 2500, "mit_anspruch_auf_zuschuss": true, "weitere_vorsorgeaufwendungen": 0}], "kwargs": {}, "ok": 2500}
+{"args": [{"basis_kv_pv": 1900, "mit_anspruch_auf_zuschuss": true, "weitere_vorsorgeaufwendungen": 0}], "kwargs": {}, "ok": 1900}
+{"args": [{"basis_kv_pv": 2000, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 0}], "kwargs": {}, "ok": 2000}
+{"args": [{"basis_kv_pv": 3200, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 0}], "kwargs": {}, "ok": 3200}
+{"args": [{"basis_kv_pv": 2000, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 500}], "kwargs": {}, "ok": 2500}
+{"args": [{"basis_kv_pv": 0, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 500}], "kwargs": {}, "ok": 500}
+{"args": [{"basis_kv_pv": 2200, "mit_anspruch_auf_zuschuss": true, "weitere_vorsorgeaufwendungen": 0}], "kwargs": {}, "ok": 2200}
+{"args": [{"basis_kv_pv": 2000, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 1000}], "kwargs": {}, "ok": 2800}
+{"args": [{"basis_kv_pv": 3000, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 500}], "kwargs": {}, "ok": 3000}
+{"args": [{"basis_kv_pv": 0, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 0}], "kwargs": {}, "ok": 0}
+{"args": [{"basis_kv_pv": 2000, "mit_anspruch_auf_zuschuss": false, "weitere_vorsorgeaufwendungen": 2000}], "kwargs": {}, "ok": 2800}
+{"args": [{"basis_kv_pv": 1500, "mit_anspruch_auf_zuschuss": true, "weitere_vorsorgeaufwendungen": 800}], "kwargs": {}, "ok": 1900}

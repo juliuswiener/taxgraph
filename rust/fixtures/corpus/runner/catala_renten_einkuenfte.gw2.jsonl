@@ -1,0 +1,14 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"alter_bei_rentenbeginn": 0, "jahresrente": 60000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": null, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 49998}
+{"args": [{"alter_bei_rentenbeginn": 65, "jahresrente": 12000, "renten_art": "private_leibrente", "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2058}
+{"args": [{"alter_bei_rentenbeginn": 65, "jahresrente": 20000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 16598}
+{"args": [{"alter_bei_rentenbeginn": 65, "jahresrente": 200000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 166898}
+{"args": [{"alter_bei_rentenbeginn": 64, "jahresrente": 12000, "renten_art": "sonstige_leibrente", "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 2178}
+{"args": [{"alter_bei_rentenbeginn": 66, "jahresrente": 88000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 73378}
+{"args": [{"jahresrente": 12000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2020, "veranlagungszeitraum": 2025}], "err": "RentenfreibetragFixierungOffen", "kwargs": {}}
+{"args": [{"alter_bei_rentenbeginn": 65, "jahresrente": 5000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": null, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 4073}
+{"args": [{"jahresrente": 12000, "renten_art": "betriebsrente_direktzusage", "veranlagungszeitraum": 2025}], "err": "ValueError", "kwargs": {}}
+{"args": [{"alter_bei_rentenbeginn": 0, "jahresrente": 20000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "rentenfreibetrag": null, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 16598}
+{"args": [{"jahresrente": 12000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2025, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 9918}
+{"args": [{"jahresrente": 12000, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": 2020, "rentenfreibetrag": 6000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 5898}
+{"args": [{"alter_bei_rentenbeginn": 65, "jahresrente": 500, "renten_art": "private_leibrente", "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}

@@ -1,0 +1,64 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 1958, "positive_andere_einkuenfte": 30000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 665}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 1970, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 1980, "positive_andere_einkuenfte": 500000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 14000, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 70000, "geburtsjahr": 0, "positive_andere_einkuenfte": 30000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 280000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 0, "positive_andere_einkuenfte": 75000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 0, "positive_andere_einkuenfte": 50000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 105000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 40000, "geburtsjahr": 0, "positive_andere_einkuenfte": 16000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 40000, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 33200, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 0, "positive_andere_einkuenfte": 100000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 1960, "positive_andere_einkuenfte": 30000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 627}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 55000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 20000, "geburtsjahr": 0}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 20000, "geburtsjahr": 1958, "positive_andere_einkuenfte": 5000}], "kwargs": {}, "ok": 665}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 181000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 85000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 50000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 20000, "geburtsjahr": 1965, "positive_andere_einkuenfte": 5000}], "kwargs": {}, "ok": 532}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 500000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 50000, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 30000, "geburtsjahr": 1958, "positive_andere_einkuenfte": 10000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 665}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 1990, "positive_andere_einkuenfte": 30000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 1958, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 25000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 119000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 30000, "geburtsjahr": 1970, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 50000, "geburtsjahr": 0, "positive_andere_einkuenfte": 100000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 80000, "geburtsjahr": 0, "positive_andere_einkuenfte": 20000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 49400, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 80000, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 0, "positive_andere_einkuenfte": 30000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 40000, "geburtsjahr": 0, "positive_andere_einkuenfte": 30000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 10000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 40000, "geburtsjahr": 1955, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 760}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 1955, "positive_andere_einkuenfte": 500000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 760}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 250000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 49600, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 40000, "geburtsjahr": 0, "positive_andere_einkuenfte": 18770, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 100000, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 1970, "positive_andere_einkuenfte": 35000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 1955, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 760}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 46000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 150000, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 1970, "positive_andere_einkuenfte": 55000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 80000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 200000, "geburtsjahr": 0, "positive_andere_einkuenfte": 200000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 30000, "geburtsjahr": 0, "positive_andere_einkuenfte": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 1965, "positive_andere_einkuenfte": 500000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 0, "positive_andere_einkuenfte": 20000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 1500000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 200000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 380000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 40000, "geburtsjahr": 0, "positive_andere_einkuenfte": 12000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 60000, "geburtsjahr": 0, "positive_andere_einkuenfte": 15000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 1961, "positive_andere_einkuenfte": 30000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 2000, "geburtsjahr": 1958}], "kwargs": {}, "ok": 280}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 30000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}
+{"args": [{"arbeitslohn": 0, "geburtsjahr": 0, "positive_andere_einkuenfte": 100000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}

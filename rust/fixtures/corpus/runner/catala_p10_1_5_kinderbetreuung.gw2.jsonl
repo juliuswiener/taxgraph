@@ -1,0 +1,7 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"aufwendungen": 1000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 800}
+{"args": [{"aufwendungen": 8000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 4800}
+{"args": [{"aufwendungen": 6000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 4800}
+{"args": [{"aufwendungen": 10000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 4800}
+{"args": [{"aufwendungen": 2000, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 1600}
+{"args": [{"aufwendungen": 0, "veranlagungszeitraum": 2025}], "kwargs": {}, "ok": 0}

@@ -1,0 +1,7 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"anschaffungskosten_cent": 100000, "nutzungsdauer": 10}], "kwargs": {}, "ok": 100}
+{"args": [{"anschaffungskosten_cent": 80001, "nutzungsdauer": 3}], "kwargs": {}, "ok": 266}
+{"args": [{"anschaffungskosten_cent": 100000, "nutzungsdauer": 0}], "kwargs": {}, "ok": 0}
+{"args": [{"anschaffungskosten_cent": 150000, "nutzungsdauer": 5}], "kwargs": {}, "ok": 300}
+{"args": [{"anschaffungskosten": 1500, "ist_anschaffungsjahr": false, "nutzungsdauer": 5}], "kwargs": {}, "ok": 300}
+{"args": [{"anschaffungskosten_cent": 100000, "nutzungsdauer": -1}], "kwargs": {}, "ok": 0}

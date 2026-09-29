@@ -1,0 +1,16 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"antrag_8d": true, "fortfuehrungs_voraussetzungen": true, "gewinn_estg": 6000000, "gewst_hebesatz": 400, "koerperschaft": true, "schaedlicher_erwerb": false, "veranlagungszeitraum": 2026, "verlustvortrag_bestand": 5000000}], "kwargs": {}, "ok": 107737500}
+{"args": [{"abschreibungen": 0, "gewinn_estg": 5000000, "gewst_hebesatz": 400, "koerperschaft": true, "veranlagungszeitraum": 2026, "zinsaufwand": 3000000, "zinsertrag": 0}], "kwargs": {}, "ok": 167020000}
+{"args": [{"gewinn_estg": 1000000, "gewst_hebesatz": 450, "koerperschaft": true, "veranlagungszeitraum": 2024}], "kwargs": {}, "ok": 31575000}
+{"args": [{"abschreibungen": 0, "gewinn_estg": 5000000, "gewst_hebesatz": 400, "koerperschaft": true, "veranlagungszeitraum": 2026, "zinsaufwand": 2999999, "zinsertrag": 0}], "kwargs": {}, "ok": 149125000}
+{"args": [{"abschreibungen": 0, "gewinn_estg": 20000000, "gewst_hebesatz": 400, "koerperschaft": true, "veranlagungszeitraum": 2026, "zinsaufwand": 3000000, "zinsertrag": 0}], "kwargs": {}, "ok": 596500000}
+{"args": [{"gewinn_estg": 2000000, "gewst_hebesatz": 400, "koerperschaft": true, "loehne_gehaelter": 300000, "umsaetze": 500000, "veranlagungszeitraum": 2026, "zuwendungen": 300000}], "kwargs": {}, "ok": 54902500}
+{"args": [{"antrag_8d": true, "fortfuehrungs_voraussetzungen": true, "gewinn_estg": 6000000, "gewst_hebesatz": 400, "koerperschaft": true, "schaedlicher_erwerb": true, "veranlagungszeitraum": 2026, "verlustvortrag_bestand": 5000000}], "kwargs": {}, "ok": 107737500}
+{"args": [{"gewinn_estg": 6000000, "gewst_hebesatz": 400, "koerperschaft": true, "veranlagungszeitraum": 2026, "verlustvortrag_bestand": 5000000}], "kwargs": {}, "ok": 107737500}
+{"args": [{"gewinn_estg": 1000000, "gewst_hebesatz": 400, "koerperschaft": true, "veranlagungszeitraum": 2026}], "kwargs": {}, "ok": 29825000}
+{"args": [{"geldstrafen": 10000, "gewinn_estg": 900000, "gewst_hebesatz": 400, "koerperschaft": true, "personensteuern": 40000, "veranlagungszeitraum": 2026, "verlustvortrag_bestand": 700000}], "kwargs": {}, "ok": 17256250}
+{"args": [{"gewinn_estg": 10000, "gewst_hebesatz": 400, "koerperschaft": true, "veranlagungszeitraum": 2026}], "kwargs": {}, "ok": 298250}
+{"args": [{"beteiligung_prozent": 25, "dividende_bezuege": 100000, "gewinn_estg": 800000, "gewst_hebesatz": 400, "koerperschaft": true, "personensteuern": 30000, "veranlagungszeitraum": 2025, "verdeckte_einlage": 20000, "verdeckte_gewinnausschuettung": 50000}], "kwargs": {}, "ok": 22816125}
+{"args": [{"abschreibungen": 0, "ebitda_vortrag_bestand": 300000, "gewinn_estg": 2000000, "gewst_hebesatz": 400, "koerperschaft": true, "veranlagungszeitraum": 2026, "zins_vortrag_bestand": 200000, "zinsaufwand": 3200000, "zinsertrag": 100000}], "kwargs": {}, "ok": 97527750}
+{"args": [{"beteiligung_prozent": 5, "dividende_bezuege": 100000, "gewinn_estg": 500000, "gewst_hebesatz": 400, "koerperschaft": true, "veraeusserungsgewinn": 200000, "veranlagungszeitraum": 2026}], "kwargs": {}, "ok": 9245750}
+{"args": [{"gewinn_estg": 6000000, "gewst_hebesatz": 400, "koerperschaft": true, "schaedlicher_erwerb": true, "veranlagungszeitraum": 2026, "verlustvortrag_bestand": 5000000}], "kwargs": {}, "ok": 178950000}

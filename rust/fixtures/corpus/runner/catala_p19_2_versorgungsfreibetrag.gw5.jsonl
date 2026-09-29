@@ -1,0 +1,13 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{}], "err": "VersorgungsfreibetragOffen", "kwargs": {}}
+{"args": [{"versorgung_bemessungsgrundlage": 0, "versorgungsbeginn_jahr": 2025}], "err": "VersorgungsfreibetragOffen", "kwargs": {}}
+{"args": [{"versorgung_bemessungsgrundlage": 12000, "versorgungsbeginn_jahr": 2058}], "kwargs": {}, "ok": 0}
+{"args": [{"versorgung_bemessungsgrundlage": 10000, "versorgungsbeginn_jahr": 2025}], "kwargs": {}, "ok": 1287}
+{"args": [{"versorgung_bemessungsgrundlage": 12000, "versorgungsbeginn_jahr": 0}], "err": "VersorgungsfreibetragOffen", "kwargs": {}}
+{"args": [{"versorgung_bemessungsgrundlage": 200, "versorgungsbeginn_jahr": 2025}], "kwargs": {}, "ok": 200}
+{"args": [{"versorgung_bemessungsgrundlage": 36000, "versorgungsbeginn_jahr": 2026}], "kwargs": {}, "ok": 1248}
+{"args": [{"versorgung_bemessungsgrundlage": 12000, "versorgungsbeginn_jahr": 2025}], "kwargs": {}, "ok": 1287}
+{"args": [{"versorgung_bemessungsgrundlage": 1500, "versorgungsbeginn_jahr": 2024}], "kwargs": {}, "ok": 510}
+{"args": [{"versorgung_bemessungsgrundlage": 12000, "versorgungsbeginn_jahr": 2005}], "kwargs": {}, "ok": 3900}
+{"args": [{"versorgung_bemessungsgrundlage": 500, "versorgungsbeginn_jahr": 2005}], "kwargs": {}, "ok": 500}
+{"args": [{"versorgung_bemessungsgrundlage": 12000, "versorgungsbeginn_jahr": 2024}], "kwargs": {}, "ok": 1326}

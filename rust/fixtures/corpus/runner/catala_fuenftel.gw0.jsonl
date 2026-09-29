@@ -1,0 +1,16 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"ausserordentliche_einkuenfte": 55000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 84964}], "kwargs": {}, "ok": 20978}
+{"args": [{"ausserordentliche_einkuenfte": 200000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 249964}], "kwargs": {}, "ok": 91648}
+{"args": [{"ausserordentliche_einkuenfte": 110000, "veranlagung": "zusammen", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 126526}], "kwargs": {}, "ok": 14570}
+{"args": [{"ausserordentliche_einkuenfte": 30000, "veranlagung": "zusammen", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 88698}], "kwargs": {}, "ok": 16848}
+{"args": [{"ausserordentliche_einkuenfte": 500000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 499964}], "kwargs": {}, "ok": 155420}
+{"args": [{"ausserordentliche_einkuenfte": 75000, "veranlagung": "zusammen", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 133698}], "kwargs": {}, "ok": 30358}
+{"args": [{"ausserordentliche_einkuenfte": 200000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 270364}], "kwargs": {}, "ok": 102640}
+{"args": [{"ausserordentliche_einkuenfte": 200000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 279964}], "kwargs": {}, "ok": 106672}
+{"args": [{"ausserordentliche_einkuenfte": 15000, "veranlagung": "zusammen", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 73698}], "kwargs": {}, "ok": 12508}
+{"args": [{"ausserordentliche_einkuenfte": 55000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 104964}], "kwargs": {}, "ok": 31248}
+{"args": [{"ausserordentliche_einkuenfte": 181000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 180964}], "kwargs": {}, "ok": 30650}
+{"args": [{"ausserordentliche_einkuenfte": 55000, "veranlagung": "zusammen", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 71526}], "kwargs": {}, "ok": 2590}
+{"args": [{"ausserordentliche_einkuenfte": 55000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 54964}], "kwargs": {}, "ok": 0}
+{"args": [{"ausserordentliche_einkuenfte": 55000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 71562}], "kwargs": {}, "ok": 14861}
+{"args": [{"ausserordentliche_einkuenfte": 119000, "veranlagung": "einzel", "veranlagungszeitraum": 2025, "zu_versteuerndes_einkommen": 118964}], "kwargs": {}, "ok": 13040}

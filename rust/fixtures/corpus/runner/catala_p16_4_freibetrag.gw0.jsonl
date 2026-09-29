@@ -1,0 +1,11 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"rentner_veraeusserungsgewinn": 100000}], "kwargs": {}, "ok": 45000}
+{"args": [{"rentner_veraeusserungsgewinn": 40000}], "kwargs": {}, "ok": 45000}
+{"args": [{"rentner_veraeusserungsgewinn": 300000}], "kwargs": {}, "ok": 0}
+{"args": [{"rentner_veraeusserungsgewinn": 181000}], "kwargs": {}, "ok": 0}
+{"args": [{"rentner_veraeusserungsgewinn": 0}], "kwargs": {}, "ok": 0}
+{"args": [{"rentner_veraeusserungsgewinn": 500000}], "kwargs": {}, "ok": 0}
+{"args": [{"rentner_veraeusserungsgewinn": 60000}], "kwargs": {}, "ok": 45000}
+{"args": [{"rentner_veraeusserungsgewinn": 200000}], "kwargs": {}, "ok": 0}
+{"args": [{"rentner_veraeusserungsgewinn": 120000}], "kwargs": {}, "ok": 45000}
+{"args": [{"rentner_veraeusserungsgewinn": 150000}], "kwargs": {}, "ok": 31000}

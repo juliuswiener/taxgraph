@@ -1,0 +1,19 @@
+{"kopf": true, "git_describe": "3abbed6-dirty", "git_diff_sha256": "ebff640106a3d0f57f686b508c059172beac4040f4967ae2fd032b48005b11a1"}
+{"args": [{"bruttoarbeitslohn": 40000, "veranlagungszeitraum": 2025, "werbungskosten": 0}], "kwargs": {}, "ok": 38770}
+{"args": [{"bruttoarbeitslohn": 50000, "veranlagungszeitraum": 2025, "werbungskosten": 1260}], "kwargs": {}, "ok": 48740}
+{"args": [{"bruttoarbeitslohn": 50000, "veranlagungszeitraum": 2025, "werbungskosten": 12400}], "kwargs": {}, "ok": 37600}
+{"args": [{"bruttoarbeitslohn": 150000, "veranlagungszeitraum": 2025, "werbungskosten": 0}], "kwargs": {}, "ok": 148770}
+{"args": [{"bruttoarbeitslohn": 60000, "veranlagungszeitraum": 2025, "werbungskosten": 0}], "kwargs": {}, "ok": 58770}
+{"args": [{"bruttoarbeitslohn": 50000, "veranlagungszeitraum": 2025, "werbungskosten": 0}], "kwargs": {}, "ok": 48770}
+{"args": [{"bruttoarbeitslohn": 60000, "veranlagungszeitraum": 2025, "werbungskosten": 2772}], "kwargs": {}, "ok": 57228}
+{"args": [{"bruttoarbeitslohn": 50000, "veranlagungszeitraum": 2025, "werbungskosten": 12000}], "kwargs": {}, "ok": 38000}
+{"args": [{"bruttoarbeitslohn": 100000, "veranlagungszeitraum": 2025, "werbungskosten": 0}], "kwargs": {}, "ok": 98770}
+{"args": [{"bruttoarbeitslohn": 70000, "veranlagungszeitraum": 2025, "werbungskosten": 0}], "kwargs": {}, "ok": 68770}
+{"args": [{"bruttoarbeitslohn": 14000, "veranlagungszeitraum": 2025, "werbungskosten": 0}], "kwargs": {}, "ok": 12770}
+{"args": [{"bruttoarbeitslohn": 50000, "veranlagungszeitraum": 2025, "werbungskosten": 12100}], "kwargs": {}, "ok": 37900}
+{"args": [{"bruttoarbeitslohn": 80000, "veranlagungszeitraum": 2025, "werbungskosten": 0}], "kwargs": {}, "ok": 78770}
+{"args": [{"bruttoarbeitslohn": 30000, "veranlagungszeitraum": 2025, "werbungskosten": 0}], "kwargs": {}, "ok": 28770}
+{"args": [{"bruttoarbeitslohn": 200000, "veranlagungszeitraum": 2025, "werbungskosten": 0}], "kwargs": {}, "ok": 198770}
+{"args": [{"bruttoarbeitslohn": 50000, "veranlagungszeitraum": 2025, "werbungskosten": 1680}], "kwargs": {}, "ok": 48320}
+{"args": [{"bruttoarbeitslohn": 40000, "veranlagungszeitraum": 2025, "werbungskosten": 2156}], "kwargs": {}, "ok": 37844}
+{"args": [{"bruttoarbeitslohn": 0, "veranlagungszeitraum": 2025, "werbungskosten": 0}], "kwargs": {}, "ok": 0}
