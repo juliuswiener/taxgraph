@@ -12,7 +12,9 @@ use std::sync::OnceLock;
 
 use bindung::Bindung;
 use domain::{Achsenwert, Cent, Feldtyp, Herkunft, PruefTiefe, Zustand};
-use elster::{cent_nach_kz, deklariere, kz_format, zuruecklesen, Felder, KzFormat};
+use elster::{
+    cent_nach_kz, deklariere, erzeuge_xml, kz_format, zuruecklesen, Felder, KzFormat, XmlOptionen,
+};
 use proptest::prelude::*;
 use serde_json::{json, Value};
 use store::SnapshotFeld;
@@ -96,6 +98,57 @@ fn vorlaeufig_deklariert_nie() {
             b.feld_id
         );
     }
+}
+
+/// fail-closed: ein Zeichen ausserhalb der XML-1.0-Char-Produktion (NUL aus kopiertem Text)
+/// landet nicht roh im XML, ELSTER wiese sonst die ganze Abgabe ab (Ticket
+/// elster-xml-steuerzeichen-im-textwert, `fuzz/regressions/elster/xml-nul-im-textwert.bin`).
+#[test]
+fn steuerzeichen_im_textwert_ist_harter_fehler() {
+    if elster::finde_schema(2025, "E10-{jahr}.xsd").is_none() {
+        println!("E10-2025.xsd fehlt — source_unavailable");
+        return;
+    }
+    let d = deklariere(
+        &einzeln(
+            "stammdaten_nachname",
+            json!("Maier\u{0}"),
+            Zustand::Bestaetigt,
+        ),
+        index(),
+        None,
+    )
+    .unwrap();
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        ..XmlOptionen::default()
+    };
+    let fehler = erzeuge_xml(&d, &opt).unwrap_err();
+    assert!(fehler.0.contains("Steuerzeichen"), "{fehler}");
+    // nennt die Kz, nie den Wert (PII) und nie das Zeichen selbst
+    assert!(fehler.0.contains("E0100201"), "{fehler}");
+    assert!(
+        !fehler.0.contains("Maier") && !fehler.0.contains('\u{0}'),
+        "{fehler}"
+    );
+    // jede Kz, nicht nur typ=text: der Fuzz-Fund war das bool-Feld hinter E0161806 mit NUL
+    let d = deklariere(
+        &einzeln(
+            "fahrtkosten_pausch_ag_bl_tbl_h",
+            json!("\u{0}"),
+            Zustand::Bestaetigt,
+        ),
+        index(),
+        None,
+    )
+    .unwrap();
+    let fehler = erzeuge_xml(&d, &opt).unwrap_err();
+    assert!(
+        fehler
+            .0
+            .contains("Element E0161806 enthält ein Steuerzeichen"),
+        "{fehler}"
+    );
 }
 
 /// Round-Trip fuer JEDE 1:1-Bindung (eigener `elster_kz`, keine Instanz): steht die Kz nach der

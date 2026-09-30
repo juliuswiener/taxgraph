@@ -25,12 +25,8 @@ fuzz_target!(|data: &[u8]| {
             let _ = elster::zuruecklesen(&d, bindung);
             let opt = XmlOptionen { hersteller_id: Some("00000".into()), snapshot: Some(&felder), ..XmlOptionen::default() };
             if let Ok(xml) = elster::erzeuge_xml(&d, &opt) {
-                // Roundtrip-Eigenschaft: was wir erzeugen, muss wohlgeformtes XML sein.
-                // Bekannt (Paritaet mit Python/ElementTree): Steuerzeichen im Textwert landen roh im
-                // XML, siehe regressions/elster/xml-nul-im-textwert.bin — dieser Fall wird uebersprungen.
-                if xml.chars().any(|c| !matches!(c, '\t' | '\n' | '\r' | '\u{20}'..='\u{D7FF}' | '\u{E000}'..='\u{FFFD}' | '\u{10000}'..='\u{10FFFF}')) {
-                    return;
-                }
+                // Roundtrip-Eigenschaft: was wir erzeugen, muss wohlgeformtes XML sein. Steuerzeichen im
+                // Textwert (regressions/elster/xml-nul-im-textwert.bin) sind ein Err von erzeuge_xml.
                 assert!(roxmltree::Document::parse(&xml).is_ok(), "erzeuge_xml lieferte kein wohlgeformtes XML");
             }
         }

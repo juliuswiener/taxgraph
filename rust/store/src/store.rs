@@ -674,9 +674,16 @@ fn pruefe_bindung(
         return Ok(());
     };
     if domain::Wert::aus_json(wert, eintrag.typ, eintrag.enum_werte.as_deref()).is_err() {
+        // Ein Wert mit Steuerzeichen bleibt aus der Meldung (422-detail an Nutzer und Log, PII);
+        // der Ersatztext steht wortgleich in `store.py::_pruefe_typ_konformitaet`.
+        let steuerzeichen = wert.as_str().is_some_and(|s| !domain::nur_xml_zeichen(s));
         return Err(Abweisung::TypInkonform {
             feld_id: feld_id.to_string(),
-            wert: wert.to_string(),
+            wert: if steuerzeichen {
+                "[Steuerzeichen im Text, Wert nicht geloggt]".to_string()
+            } else {
+                wert.to_string()
+            },
             typ: eintrag.typ.als_str(),
         });
     }
@@ -866,6 +873,43 @@ mod tests {
             fehler,
             crate::Abweisung::KatalogNichtFreigegeben { .. }
         ));
+    }
+
+    #[test]
+    fn text_mit_steuerzeichen_wird_abgewiesen_auflage_t() {
+        // Ticket elster-xml-steuerzeichen-im-textwert: echte Bindung, typ=text.
+        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        let bindungen: Vec<Bindung> = bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let map = crate::baue_nachschlag(&bindungen);
+        let mut store = Store::leer(2025, None);
+        let neu = NeuesEvent {
+            feld_id: "stammdaten_nachname".to_string(),
+            wert: json!("Maier\u{0}"),
+            feldzustand: Feldzustand::Bestaetigt {
+                signal_2: Signal2::new("klick").unwrap(),
+            },
+            herkunft: mensch_herkunft(),
+            schreiber: Schreiber::Mensch("julius".to_string()),
+            signal_1: None,
+            ersetzt: None,
+            ts: Some("2026-01-01T00:00:00+00:00".to_string()),
+        };
+        let fehler = store
+            .append(&neu, None, BindungNachschlag::neu(&map))
+            .unwrap_err();
+        assert!(matches!(fehler, crate::Abweisung::TypInkonform { .. }));
+        // nennt das Feld, nie den Wert (PII) und nie das Zeichen selbst
+        let meldung = fehler.to_string();
+        assert!(meldung.contains("stammdaten_nachname"), "{meldung}");
+        assert!(
+            !meldung.contains("Maier") && !meldung.contains('\u{0}'),
+            "{meldung}"
+        );
     }
 
     proptest! {

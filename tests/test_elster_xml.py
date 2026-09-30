@@ -157,6 +157,20 @@ def test_unbekannte_kz_ist_harter_fehler():
         EX.erzeuge_xml(_dekl(E9999999="x"), vz=2025, hersteller_id=HID)
 
 
+def test_steuerzeichen_im_textwert_ist_harter_fehler():
+    """Ticket elster-xml-steuerzeichen-im-textwert: ElementTree maskiert nur &, <, > — ein NUL
+    landete roh im XML, und ELSTER weist die ganze Abgabe ab. Zweite Linie hinter der
+    Store-Pruefung (Alt-Stores, Importe): fail-closed statt kaputtem XML."""
+    with pytest.raises(EX.XmlFehler, match="Steuerzeichen") as exc:
+        EX.erzeuge_xml(_dekl(E0100201="Maier\x00"), vz=2025, hersteller_id=HID)
+    meldung = str(exc.value)
+    assert "E0100201" in meldung, meldung                                  # nennt die Kz ...
+    assert "Maier" not in meldung and "\x00" not in meldung, meldung      # ... nie den Wert (PII)
+    # jede Kz, nicht nur typ=text: der Fuzz-Fund war die bool-Kz E0161806 mit NUL
+    with pytest.raises(EX.XmlFehler, match="Element E0161806 enthält ein Steuerzeichen"):
+        EX.erzeuge_xml(_dekl(E0161806="\x00"), vz=2025, hersteller_id=HID)
+
+
 # ----------------------------------------------------------------- XSD-Gate
 
 @braucht_xsd

@@ -71,6 +71,23 @@ fn ist_tt_mm_jjjj(s: &str) -> bool {
     }
 }
 
+/// XML-1.0-Char-Produktion (<https://www.w3.org/TR/xml/#charsets>): TAB, LF, CR,
+/// U+0020..=U+D7FF, U+E000..=U+FFFD, U+10000..=U+10FFFF. Alles andere (NUL und die uebrigen
+/// C0-Steuerzeichen, U+FFFE, U+FFFF; Surrogate kann ein `str` gar nicht tragen) macht das
+/// ELSTER-XML ungueltig. EINE Definition fuer Auflage T (`typ=text`) und
+/// `elster::erzeuge_xml`; das Python-Gegenstueck ist `store.py::nur_xml_zeichen`.
+///
+/// ```
+/// assert!(domain::nur_xml_zeichen("Maier\tMüller"));
+/// assert!(!domain::nur_xml_zeichen("Maier\u{0}"));
+/// ```
+#[must_use]
+pub fn nur_xml_zeichen(s: &str) -> bool {
+    s.chars().all(|c| {
+        matches!(c, '\t' | '\n' | '\r' | '\u{20}'..='\u{D7FF}' | '\u{E000}'..='\u{FFFD}' | '\u{10000}'..='\u{10FFFF}')
+    })
+}
+
 impl Wert {
     /// Parst einen JSON-Wert gegen einen Bindungstyp (Auflage T). `enum_werte` ist nur bei
     /// `typ == Enum` relevant.
@@ -124,6 +141,7 @@ impl Wert {
             }
             Feldtyp::Text => wert
                 .as_str()
+                .filter(|s| nur_xml_zeichen(s))
                 .map(|s| Self::Text(s.to_owned()))
                 .ok_or_else(inkonform),
         }
@@ -157,5 +175,13 @@ mod tests {
     fn datum_verlangt_tt_mm_jjjj_nicht_iso() {
         assert!(Wert::aus_json(&json!("05.05.1955"), Feldtyp::Datum, None).is_ok());
         assert!(Wert::aus_json(&json!("1955-05-05"), Feldtyp::Datum, None).is_err());
+    }
+
+    #[test]
+    fn text_ohne_xml_zeichen_wird_abgewiesen() {
+        // Ticket elster-xml-steuerzeichen-im-textwert: NUL liegt ausserhalb der XML-1.0-Char-
+        // Produktion und machte das ELSTER-XML kaputt.
+        assert!(Wert::aus_json(&json!("Maier"), Feldtyp::Text, None).is_ok());
+        assert!(Wert::aus_json(&json!("Maier\u{0}"), Feldtyp::Text, None).is_err());
     }
 }

@@ -283,7 +283,25 @@ fn schreibe(w: &mut Writer<Vec<u8>>, k: &Knoten, tiefe: usize) -> std::io::Resul
     }
 }
 
+/// Zweite Linie hinter Auflage T (Alt-Stores, Importe, Kz JEDEN Typs): `partial_escape` maskiert
+/// nur &, < und > — ein Zeichen ausserhalb der XML-1.0-Char-Produktion landete roh im XML, und
+/// ELSTER wiese die ganze Abgabe ab. Dokumentreihenfolge wie `ElementTree.iter()`; die Meldung
+/// nennt das Element, nie den Wert (PII), wortgleich mit `elster_xml.py::erzeuge_xml`.
+fn pruefe_zeichen(k: &Knoten) -> Result<(), XmlFehler> {
+    if k.text
+        .as_deref()
+        .is_some_and(|t| !domain::nur_xml_zeichen(t))
+    {
+        return Err(XmlFehler(format!(
+            "Element {} enthält ein Steuerzeichen, das im XML nicht zulässig ist — ELSTER wiese die ganze Abgabe ab. Wert nicht geloggt.",
+            k.name
+        )));
+    }
+    k.kinder.iter().try_for_each(pruefe_zeichen)
+}
+
 fn serialisiere(wurzel: &Knoten) -> Result<String, XmlFehler> {
+    pruefe_zeichen(wurzel)?;
     let mut w = Writer::new(Vec::new());
     w.config_mut().add_space_before_slash_in_empty_elements = true;
     schreibe(&mut w, wurzel, 0).map_err(|e| XmlFehler(format!("Serialisierung: {e}")))?;

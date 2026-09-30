@@ -947,8 +947,13 @@ def vorjahr(fall_id: str, body: dict) -> tuple[int, dict]:
     _fall_owner_check(vj_id)
     vj_store = lade_fall(vj_id)                           # 404, wenn der Vorjahres-Fall fehlt
     vj_felder, _ = ST.materialisiere(vj_store)
-    n = VW.uebernehme_vorjahr(store, vj_felder, bindung,
-                              vorjahr_vz=int(vj_store.get("veranlagungszeitraum", 0)))
+    try:
+        n = VW.uebernehme_vorjahr(store, vj_felder, bindung,
+                                  vorjahr_vz=int(vj_store.get("veranlagungszeitraum", 0)))
+    except ValueError as e:
+        # fail-closed-Abweisung des Stores (z. B. Auflage T: Steuerzeichen im Alt-Fall) -> 422 wie
+        # /event. Gespeichert ist dann nichts: speichere_fall() läuft erst nach der ganzen Übernahme.
+        raise ApiError(422, str(e))
     speichere_fall(fall_id, store)
     return 200, {"uebernommen": n, "vorjahr_fall_id": vj_id}
 

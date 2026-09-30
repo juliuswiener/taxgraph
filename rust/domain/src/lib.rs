@@ -34,5 +34,5 @@ pub use money::{Cent, CentUeberlauf, Euro};
 pub use sperrgrund::{Sperrgrund, UnbekannterSperrgrund, UNBEKANNTER_SPERRGRUND};
 pub use veranlagung::{Person, Scheibe, UnbekannteScheibe, Veranlagung};
 pub use vz::{UngueltigeVz, Vz};
-pub use wert::{Feldtyp, Wert, WertFehler};
+pub use wert::{nur_xml_zeichen, Feldtyp, Wert, WertFehler};
 pub use zustand::{Feldzustand, LeeresSignal2, PruefTiefe, Signal2, Zustand};

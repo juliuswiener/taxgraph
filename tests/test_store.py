@@ -63,7 +63,10 @@ def _typ_ok(wert, typ, enum_werte) -> bool:
         # uebereinstimmen; test_typ_konform_spiegelt_test_store_typ_ok haelt beide synchron.
         return isinstance(wert, str) and bool(re.match(r"^\d{2}\.\d{2}\.\d{4}$", wert))
     if typ == "text":
-        return isinstance(wert, str)
+        # XML-1.0-Char-Produktion, bewusst anders formuliert als store.nur_xml_zeichen (Spiegel).
+        return isinstance(wert, str) and all(
+            c in "\t\n\r" or " " <= c <= "\ud7ff" or "\ue000" <= c <= "\ufffd" or c >= "\U00010000"
+            for c in wert)
     return False
 
 

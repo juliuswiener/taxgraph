@@ -27,6 +27,8 @@ PRODUKT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(PRODUKT, "mapping"))
 sys.path.insert(0, os.path.join(PRODUKT, "traverser"))
 import xsd_verify as XV   # noqa: E402  (amtlicher Kz -> Element-Pfad aus dem E10-XSD)
+sys.path.insert(0, os.path.join(PRODUKT, "store"))
+import store as ST        # noqa: E402  (nur_xml_zeichen: dieselbe Zeichenpruefung wie Auflage T)
 
 NS_ELSTER = "http://www.elster.de/elsterxml/schema/v11"
 NS_E10 = "http://finkonsens.de/elster/elstererklaerung/est/e10/v{vz}"
@@ -730,6 +732,16 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
         e10.append(_vorsatz(vz, absender_name, absender_strasse, absender_plz, absender_ort,
                             absender_steuernummer, datenlieferant, ns_e10))
 
+    # Zweite Linie hinter Auflage T (Alt-Stores, Importe, Kz JEDEN Typs): ElementTree maskiert im
+    # Text nur &, < und > — ein Zeichen ausserhalb der XML-1.0-Char-Produktion landete roh im XML,
+    # und ELSTER wiese die ganze Abgabe ab. Die Meldung nennt das Element, nie den Wert (PII); sie
+    # ist wortgleich mit Rust (elster::xml::pruefe_zeichen).
+    for el in wurzel.iter():
+        if isinstance(el.text, str) and not ST.nur_xml_zeichen(el.text):
+            name = el.tag.rsplit("}", 1)[-1]
+            raise XmlFehler(
+                f"Element {name} enthält ein Steuerzeichen, das im XML nicht zulässig ist — "
+                "ELSTER wiese die ganze Abgabe ab. Wert nicht geloggt.")
     ET.indent(wurzel, space="\t")
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + _serialisiere(wurzel, ns_e10)
 

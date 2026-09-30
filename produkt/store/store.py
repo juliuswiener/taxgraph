@@ -163,6 +163,18 @@ def lade_katalog(bindung: dict) -> dict:
 
 _TYP_ORD = ("cent", "int", "bool", "enum", "datum", "text")   # gesamte Bindungs-typ-Menge (bindung/SCHEMA.md)
 
+# XML-1.0-Char-Produktion (https://www.w3.org/TR/xml/#charsets). Alles ausserhalb — NUL und die
+# uebrigen C0-Steuerzeichen ausser TAB/LF/CR, Surrogate, U+FFFE/U+FFFF — macht das ELSTER-XML
+# ungueltig, und ELSTER weist dann die ganze Abgabe ab (Ticket elster-xml-steuerzeichen-im-textwert).
+_KEIN_XML_ZEICHEN = re.compile(r"[^\t\n\r\x20-\uD7FF\uE000-\uFFFD\U00010000-\U0010FFFF]")
+
+
+def nur_xml_zeichen(text: str) -> bool:
+    """True, wenn `text` nur Zeichen der XML-1.0-Char-Produktion enthält. EINE Definition für
+    Auflage T (typ=text) und elster_xml.erzeuge_xml (zweite Linie für Alt-Stores und Importe);
+    das Rust-Gegenstück ist domain::nur_xml_zeichen."""
+    return _KEIN_XML_ZEICHEN.search(text) is None
+
 
 def _typ_konform(wert, typ: str, enum_werte) -> bool:
     """Wert↔Bindungstyp-Prüfung — DIESELBE Semantik wie tests/test_store.py:_typ_ok (bewusst gespiegelt,
@@ -186,7 +198,7 @@ def _typ_konform(wert, typ: str, enum_werte) -> bool:
         # Pruefung waere fail-closed gegen den eigenen dokumentierten Standard gewesen.
         return isinstance(wert, str) and re.match(r"^\d{2}\.\d{2}\.\d{4}$", wert) is not None
     if typ == "text":
-        return isinstance(wert, str)
+        return isinstance(wert, str) and nur_xml_zeichen(wert)
     return True
 
 
@@ -226,8 +238,13 @@ def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
     if typ not in _TYP_ORD:
         return   # kein/unerwarteter typ-Eintrag: durchlassen, nicht raten
     if not _typ_konform(wert, typ, eintrag.get("enum_werte")):
+        # Ein Wert mit Steuerzeichen bleibt aus der Meldung: sie geht als 422-detail an den Nutzer
+        # und ins Log (PII), das Zeichen selbst soll dort nicht landen. Der Ersatztext steht
+        # wortgleich in Rust (store::pruefe_bindung).
+        anzeige = ("[Steuerzeichen im Text, Wert nicht geloggt]"
+                   if isinstance(wert, str) and not nur_xml_zeichen(wert) else repr(wert))
         raise ValueError(
-            f"fail-closed (Typ): {feld_id}={wert!r} passt nicht zum Bindungstyp '{typ}' — "
+            f"fail-closed (Typ): {feld_id}={anzeige} passt nicht zum Bindungstyp '{typ}' — "
             "der Ring läse das sonst still als 0 (Stille-Null-Klasse).")
 
     # Auflage F (Format), 2026-08-25. `typ: text` heisst „beliebiger String" — für ein Feld mit

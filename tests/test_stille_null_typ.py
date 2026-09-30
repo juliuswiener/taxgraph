@@ -172,6 +172,51 @@ def test_mit_bindung_greift_direkt_am_store():
                         bindung=BINDUNG)
 
 
+def test_steuerzeichen_im_text_wird_abgelehnt():
+    """Ticket elster-xml-steuerzeichen-im-textwert (Entscheidung Julius 2026-09-30): ein Zeichen
+    ausserhalb der XML-1.0-Char-Produktion (hier NUL aus kopiertem Text) passt nicht zu typ=text.
+    Gespeichert, landete es roh im ELSTER-XML, und ELSTER weist die ganze Abgabe ab."""
+    s = ST.leerer_store(2025, fall_id="sn-typ-steuerzeichen")
+    with pytest.raises(ValueError, match="fail-closed \\(Typ\\)"):
+        ST.append_event(s, feld_id="stammdaten_nachname", wert="Maier\x00", zustand="bestaetigt",
+                        herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                        schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"}, ts=TS,
+                        bindung=BINDUNG)
+
+
+def test_steuerzeichen_im_text_ist_422_an_event(fall):
+    """Dieselbe Abweisung am Schreib-Endpunkt: das bestehende 422-Format, kein neuer 500. Die
+    Meldung nennt das Feld, aber weder den Wert (PII) noch das Zeichen selbst."""
+    with pytest.raises(API.ApiError) as exc:
+        API.event(fall, _laie("stammdaten_nachname", "Maier\x00"))
+    assert exc.value.status == 422
+    meldung = str(exc.value)
+    assert "stammdaten_nachname" in meldung and "Steuerzeichen" in meldung, meldung
+    assert "Maier" not in meldung and "\x00" not in meldung, meldung
+
+
+def test_steuerzeichen_im_vorjahr_ist_422_ohne_teilimport(fall):
+    """Ein Alt-Vorjahresfall (vor dieser Prüfung gespeichert) trägt NUL in einem Textfeld:
+    /vorjahr antwortet 422 wie /event statt 500. Der Zielfall bleibt unverändert — auch die zwei
+    Felder, die der Writer VOR dem Abbruch schon angehängt hatte (Übernahme in Bindungs-
+    reihenfolge), erreichen die Platte nicht: speichere_fall() läuft erst nach der Übernahme."""
+    st, r = API.fall_anlegen({"scheibe": "gesamt", "veranlagungszeitraum": 2024, "fall_id": "sn-typ-vj"})
+    assert st == 201, r
+    vj = API.lade_fall("sn-typ-vj")
+    for fid, wert in (("vv_einnahmen", 120000), ("bruttoarbeitslohn", 5000000),
+                      ("ep_ziel_adresse", "Werkstr. 1\x00")):
+        ST.append_event(vj, feld_id=fid, wert=wert, zustand="bestaetigt",   # ohne bindung= wie ein Alt-Store
+                        herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                        schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"}, ts=TS)
+    API.speichere_fall("sn-typ-vj", vj)
+    vorher = API.lade_fall(fall)
+    with pytest.raises(API.ApiError) as exc:
+        API.vorjahr(fall, {"vorjahr_fall_id": "sn-typ-vj"})
+    assert exc.value.status == 422
+    assert "ep_ziel_adresse" in str(exc.value) and "Werkstr" not in str(exc.value)
+    assert API.lade_fall(fall) == vorher
+
+
 def test_unbekanntes_feld_id_durchlaesst():
     """Team-Lead-Vorgabe Schritt 3: unbekanntes feld_id -> durchlassen, nicht raten."""
     s = ST.leerer_store(2025, fall_id="sn-typ-unbekannt")
@@ -195,7 +240,7 @@ def test_typ_konform_spiegelt_test_store_typ_ok():
         ("einzel", "enum", ["einzel", "zusammen"], True), ("x", "enum", ["einzel", "zusammen"], False),
         ("12.04.1985", "datum", None, True), ("1985-04-12", "datum", None, False),
         ("kein Datum", "datum", None, False),
-        ("Text", "text", None, True), (5, "text", None, False),
+        ("Text", "text", None, True), (5, "text", None, False), ("Maier\x00", "text", None, False),
     ]
     for wert, typ, enum_werte, erwartet in faelle:
         assert ST._typ_konform(wert, typ, enum_werte) == erwartet == _typ_ok(wert, typ, enum_werte), (
