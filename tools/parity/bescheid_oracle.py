@@ -45,9 +45,10 @@ def _module() -> dict:
         import api_constants as AC  # noqa: E402
         import bescheid_abzuege as BA  # noqa: E402
         import bescheid_einkuenfte as BE  # noqa: E402
+        import bescheid_zweige as BZ  # noqa: E402
         import store as ST  # noqa: E402
         import traverser as TR  # noqa: E402
-        _M.update(AC=AC, BA=BA, BE=BE, ST=ST, bindung=TR.lade_bindung())
+        _M.update(AC=AC, BA=BA, BE=BE, BZ=BZ, ST=ST, TR=TR, bindung=TR.lade_bindung())
     return _M
 
 
@@ -230,6 +231,81 @@ def _vorlaeufig(c):
 def _an_gesamt(c):
     vz = None if c.args.get("vz_none") else c.vz
     return _deklaration()._an_gesamt_sperrgrund(c.f, c.cfg, vz, c.store, c.sbindung)
+# ------------------------------------------------------------------ Handler (bescheid_zweige.py)
+
+def _kern_werte(x):
+    """`extras`/Kette JSON-faehig: dict-Schluessel bleiben, Werte sind int/bool/str/dict."""
+    return json.loads(json.dumps(x, ensure_ascii=False))
+
+
+def _scheibe_zu(m, q: str) -> dict:
+    """Die Scheibe, deren `gesamt_ring` die Quantitaet ist (eindeutig, api_constants.SCHEIBEN)."""
+    treffer = [c for c in m["AC"].SCHEIBEN.values() if c["gesamt_ring"] == q]
+    assert len(treffer) == 1, (q, len(treffer))
+    return treffer[0]
+
+
+def _zweig(req: dict) -> dict:
+    """`_bescheid_fn(...)` wie `_feste_zahl` (api.py:220-226) sie aufruft, danach `bf(werte)`.
+
+    Anfrage: `quantitaet`, `store` | `felder`, `vz`, `nur_bestaetigt`, `bindung` ("scheibe" wie /ergebnis,
+    "voll" = ganze Tabelle), `werte` ("kegel" wie /ergebnis, "alle" = alle Scheiben-Felder im Snapshot),
+    `solz`/`extras` (Out-Parameter uebergeben ja/nein), `store_uebergeben`.
+    Antwort: `{"none": true}` (kein Accessor) oder `{"zahl_cent", "solz", "extras", "bindung_ids", "werte_ids"}`
+    bzw. `{"err": Klasse, ..}` mit denselben `*_ids` — Rust baut damit GENAU dieselben Eingaben."""
+    m = _module()
+    q, vz = req["quantitaet"], req["vz"]
+    store = req.get("store")
+    felder = m["ST"].materialisiere(store)[0] if store is not None else (req.get("felder") or {})
+    cfg = _scheibe_zu(m, q) if q in {c["gesamt_ring"] for c in m["AC"].SCHEIBEN.values()} else None
+    if cfg is None:
+        bf = m["BZ"]._bescheid_fn(q, vz, m["bindung"], felder, store, nur_bestaetigt=bool(req.get("nur_bestaetigt", True)))
+        return {"none": bf is None}
+    alle = cfg["felder"] if cfg["felder"] is not None else tuple(
+        b["feld_id"] for b in __import__("yaml").safe_load(open(os.path.join(ROOT, "produkt", "bindung", cfg["felder_datei"]), encoding="utf-8")).get("bindungen", []))
+    kegel = cfg.get("kegel") or alle
+    voll = m["bindung"]
+    bindung = voll if req.get("bindung") == "voll" else {f: voll[f] for f in alle}
+    werte_ids = [f for f in (alle if req.get("werte") == "alle" else kegel) if f in felder]
+    solz_out = [None] if req.get("solz", True) else None
+    extras = {} if req.get("extras", True) else None
+    st = store if req.get("store_uebergeben", True) else None
+    bf = m["BZ"]._bescheid_fn(q, vz, bindung, felder, st, nur_bestaetigt=bool(req.get("nur_bestaetigt", True)),
+                              solz_container=solz_out, extras=extras)
+    kopf = {"bindung_ids": list(bindung), "werte_ids": werte_ids, "quelle": m["BZ"].__file__}
+    if bf is None:
+        return {"none": True, **kopf}
+    try:
+        zahl = bf({f: felder[f]["wert"] for f in werte_ids})
+    except Exception as exc:  # noqa: BLE001 -- Fehlerparitaet
+        return {"err": type(exc).__name__, "msg": str(exc), **kopf}
+    return {"zahl_cent": zahl, "solz": None if solz_out is None else solz_out[0],
+            "extras": None if extras is None else _kern_werte(extras), **kopf}
+
+
+def _abschlusszahlung(req: dict) -> dict:
+    """`_abschlusszahlung_cent(felder, zahl_cent)` (bescheid_zweige.py:103): Snapshot UNGEFILTERT, wie api.py:638."""
+    m = _module()
+    store = req.get("store")
+    felder = m["ST"].materialisiere(store)[0] if store is not None else (req.get("felder") or {})
+    try:
+        return {"ok": m["BZ"]._abschlusszahlung_cent(felder, req["zahl_cent"]), "quelle": m["BZ"].__file__}
+    except Exception as exc:  # noqa: BLE001 -- Fehlerparitaet
+        return {"err": type(exc).__name__, "msg": str(exc), "quelle": m["BZ"].__file__}
+
+
+def _scheiben(_req: dict) -> dict:
+    """`{quantitaet: {"felder": [...], "kegel": [...]}}` fuer die vier Zweig-Quantitaeten (api_constants.SCHEIBEN)."""
+    m = _module()
+    out = {}
+    for cfg in m["AC"].SCHEIBEN.values():
+        q = cfg["gesamt_ring"]
+        if q is None:
+            continue
+        alle = cfg["felder"] if cfg["felder"] is not None else tuple(
+            b["feld_id"] for b in __import__("yaml").safe_load(open(os.path.join(ROOT, "produkt", "bindung", cfg["felder_datei"]), encoding="utf-8")).get("bindungen", []))
+        out[q] = {"felder": list(alle), "kegel": list(cfg.get("kegel") or alle)}
+    return out
 
 
 def _konstanten(_c):
@@ -345,6 +421,12 @@ def handle(req: dict) -> dict:
         if fn in OHNE_KONTEXT:
             return {"ok": OHNE_KONTEXT[fn](req)}
         c = _ctx(req)
+        if fn == "bescheid.abschlusszahlung":
+            return {"ok": _abschlusszahlung(req)}
+        if fn == "bescheid.scheiben":
+            return {"ok": _scheiben(req)}
+        if fn == "bescheid.zweig":
+            return {"ok": _zweig(req)}
         if fn == "bescheid.fall":
             namen = req.get("funktionen") or list(DISPATCH)
             return {"ok": {n: _fang(DISPATCH[n], c) for n in namen}}

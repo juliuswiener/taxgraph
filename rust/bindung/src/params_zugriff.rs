@@ -529,6 +529,27 @@ impl Params {
         self.euro(vz, "kindergeld_p66.yaml", "kindergeld_monatlich_je_kind")
     }
 
+    /// § 32 Abs. 6 `EStG` Kinderfreibetrag JE ELTERNTEIL und Kind: saechliches Existenzminimum +
+    /// BEA-Freibetrag (`kinderfreibetrag_p32.yaml`), Python `runner._kinderfreibetrag` vor der
+    /// Verdopplung bei Zusammenveranlagung.
+    ///
+    /// # Errors
+    /// Wie [`Params::grundfreibetrag`]; dazu ein `i64`-Ueberlauf der Summe (als `Typ`-Fehler).
+    ///
+    /// ```
+    /// let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
+    /// assert_eq!(p.kinderfreibetrag_je_elternteil(domain::Vz::Vz2025).unwrap(), domain::Euro::new(3336 + 1464));
+    /// ```
+    pub fn kinderfreibetrag_je_elternteil(&self, vz: Vz) -> Result<Euro, ParamsWertFehler> {
+        let d = "kinderfreibetrag_p32.yaml";
+        let a = self.euro(vz, d, "kinderfreibetrag_je_elternteil")?;
+        let b = self.euro(vz, d, "bea_freibetrag_je_elternteil")?;
+        a.get()
+            .checked_add(b.get())
+            .map(Euro::new)
+            .ok_or_else(|| typ(vz, d, "kinderfreibetrag_je_elternteil", "Summe in i64"))
+    }
+
     /// § 10 Abs. 3 `EStG` Vorsorge-Hoechstbeitrag (`vorsorge_hoechstbetrag_p10.yaml`).
     ///
     /// # Errors

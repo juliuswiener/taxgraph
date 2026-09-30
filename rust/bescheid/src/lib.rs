@@ -28,6 +28,7 @@
 pub mod abzuege;
 pub mod deklaration;
 pub mod einkuenfte;
+pub mod zweige;
 
 use domain::{Cent, Euro, Zustand};
 use elster::Instanz;
