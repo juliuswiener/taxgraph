@@ -77,14 +77,23 @@ fn zerlege(url: &str) -> Result<Ziel, Transport> {
     } else {
         return Err(Transport::Kaputt("unbekanntes URL-Schema".into()));
     };
-    let (autoritaet, pfad) = rest.find('/').map_or((rest, "/"), |i| (rest.get(..i).unwrap_or(""), rest.get(i..).unwrap_or("/")));
+    let (autoritaet, pfad) = rest.find('/').map_or((rest, "/"), |i| {
+        (rest.get(..i).unwrap_or(""), rest.get(i..).unwrap_or("/"))
+    });
     let (host, port) = match autoritaet.rsplit_once(':') {
-        Some((h, p)) if !h.contains(']') || h.ends_with(']') => {
-            (h.to_owned(), p.parse().map_err(|_| Transport::Kaputt("Port keine Zahl".into()))?)
-        }
+        Some((h, p)) if !h.contains(']') || h.ends_with(']') => (
+            h.to_owned(),
+            p.parse()
+                .map_err(|_| Transport::Kaputt("Port keine Zahl".into()))?,
+        ),
         _ => (autoritaet.to_owned(), if tls { 443 } else { 80 }),
     };
-    Ok(Ziel { tls, host, port, pfad: pfad.to_owned() })
+    Ok(Ziel {
+        tls,
+        host,
+        port,
+        pfad: pfad.to_owned(),
+    })
 }
 
 fn verbinde(ziel: &Ziel, socket: Duration) -> Result<Strom, Transport> {
@@ -95,9 +104,15 @@ fn verbinde(ziel: &Ziel, socket: Duration) -> Result<Strom, Transport> {
     for a in adressen {
         match TcpStream::connect_timeout(&a, socket) {
             Ok(s) => {
-                s.set_read_timeout(Some(socket)).map_err(|e| Transport::Netz(e.to_string()))?;
-                s.set_write_timeout(Some(socket)).map_err(|e| Transport::Netz(e.to_string()))?;
-                return if ziel.tls { tls(ziel, s) } else { Ok(Strom::Klar(s)) };
+                s.set_read_timeout(Some(socket))
+                    .map_err(|e| Transport::Netz(e.to_string()))?;
+                s.set_write_timeout(Some(socket))
+                    .map_err(|e| Transport::Netz(e.to_string()))?;
+                return if ziel.tls {
+                    tls(ziel, s)
+                } else {
+                    Ok(Strom::Klar(s))
+                };
             }
             Err(e) => letzter = e.to_string(),
         }
@@ -106,21 +121,30 @@ fn verbinde(ziel: &Ziel, socket: Duration) -> Result<Strom, Transport> {
 }
 
 fn tls(ziel: &Ziel, s: TcpStream) -> Result<Strom, Transport> {
-    let wurzeln = rustls::RootCertStore { roots: webpki_roots::TLS_SERVER_ROOTS.to_vec() };
-    let konfig = rustls::ClientConfig::builder_with_provider(Arc::new(rustls::crypto::ring::default_provider()))
-        .with_safe_default_protocol_versions()
-        .map_err(|e| Transport::Netz(format!("URLError: {e}")))?
-        .with_root_certificates(wurzeln)
-        .with_no_client_auth();
+    let wurzeln = rustls::RootCertStore {
+        roots: webpki_roots::TLS_SERVER_ROOTS.to_vec(),
+    };
+    let konfig = rustls::ClientConfig::builder_with_provider(Arc::new(
+        rustls::crypto::ring::default_provider(),
+    ))
+    .with_safe_default_protocol_versions()
+    .map_err(|e| Transport::Netz(format!("URLError: {e}")))?
+    .with_root_certificates(wurzeln)
+    .with_no_client_auth();
     let name = rustls::pki_types::ServerName::try_from(ziel.host.clone())
         .map_err(|e| Transport::Netz(format!("URLError: {e}")))?;
     let verbindung = rustls::ClientConnection::new(Arc::new(konfig), name)
         .map_err(|e| Transport::Netz(format!("URLError: {e}")))?;
-    Ok(Strom::Tls(Box::new(rustls::StreamOwned::new(verbindung, s))))
+    Ok(Strom::Tls(Box::new(rustls::StreamOwned::new(
+        verbindung, s,
+    ))))
 }
 
 fn ist_zeit(e: &std::io::Error) -> bool {
-    matches!(e.kind(), std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut)
+    matches!(
+        e.kind(),
+        std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+    )
 }
 
 /// POST `koerper` an `<basis>/chat/completions`. `ende` = Wanduhr-Frist fuer das Lesen des
@@ -148,7 +172,13 @@ pub(crate) fn post(
         .write_all(kopf.as_bytes())
         .and_then(|()| strom.write_all(koerper))
         .and_then(|()| strom.flush())
-        .map_err(|e| if ist_zeit(&e) { Transport::Zeit } else { Transport::Netz(format!("URLError: {e}")) })?;
+        .map_err(|e| {
+            if ist_zeit(&e) {
+                Transport::Zeit
+            } else {
+                Transport::Netz(format!("URLError: {e}"))
+            }
+        })?;
     let mut leser = BufReader::new(strom);
     let (status, rahmen) = lies_kopf(&mut leser)?;
     if !(200..300).contains(&status) {
@@ -170,7 +200,9 @@ enum Rahmen {
 fn lies_zeile(leser: &mut impl BufRead) -> Result<String, Transport> {
     let mut zeile = Vec::new();
     match leser.read_until(b'\n', &mut zeile) {
-        Ok(_) => Ok(String::from_utf8_lossy(&zeile).trim_end_matches(['\r', '\n']).to_owned()),
+        Ok(_) => Ok(String::from_utf8_lossy(&zeile)
+            .trim_end_matches(['\r', '\n'])
+            .to_owned()),
         Err(e) if ist_zeit(&e) => Err(Transport::Zeit),
         Err(e) => Err(Transport::Kaputt(e.to_string())),
     }
@@ -179,7 +211,9 @@ fn lies_zeile(leser: &mut impl BufRead) -> Result<String, Transport> {
 fn lies_kopf(leser: &mut impl BufRead) -> Result<(u16, Rahmen), Transport> {
     let status_zeile = lies_zeile(leser)?;
     if status_zeile.is_empty() {
-        return Err(Transport::Kaputt("RemoteDisconnected: Verbindung ohne Antwort geschlossen".into()));
+        return Err(Transport::Kaputt(
+            "RemoteDisconnected: Verbindung ohne Antwort geschlossen".into(),
+        ));
     }
     let status: u16 = status_zeile
         .split_whitespace()
@@ -193,12 +227,17 @@ fn lies_kopf(leser: &mut impl BufRead) -> Result<(u16, Rahmen), Transport> {
         if zeile.is_empty() {
             break;
         }
-        let Some((name, wert)) = zeile.split_once(':') else { continue };
+        let Some((name, wert)) = zeile.split_once(':') else {
+            continue;
+        };
         let (name, wert) = (name.trim().to_ascii_lowercase(), wert.trim());
         if name == "transfer-encoding" && wert.to_ascii_lowercase().contains("chunked") {
             rahmen = Rahmen::Stueckweise;
         } else if name == "content-length" && !matches!(rahmen, Rahmen::Stueckweise) {
-            rahmen = Rahmen::Laenge(wert.parse().map_err(|_| Transport::Kaputt("Content-Length".into()))?);
+            rahmen = Rahmen::Laenge(
+                wert.parse()
+                    .map_err(|_| Transport::Kaputt("Content-Length".into()))?,
+            );
         }
     }
     Ok((status, rahmen))
@@ -212,7 +251,12 @@ fn lies_kopf(leser: &mut impl BufRead) -> Result<(u16, Rahmen), Transport> {
 /// die Uhr sieht. Eine troepfelnde Antwort unter 64 KiB reisst die Frist in Python deshalb nie —
 /// sie begrenzt nur den Socket-Timeout je `recv`. Rust bildet genau das nach (Befund im Bericht;
 /// Korrektur = Frist je `recv`, eigener Schritt).
-fn lies_bis(leser: &mut impl Read, n: Option<usize>, frist: Option<Instant>, out: &mut Vec<u8>) -> Result<(), Transport> {
+fn lies_bis(
+    leser: &mut impl Read,
+    n: Option<usize>,
+    frist: Option<Instant>,
+    out: &mut Vec<u8>,
+) -> Result<(), Transport> {
     let mut rest = n;
     let mut puffer = vec![0u8; 65536];
     loop {
@@ -243,7 +287,11 @@ fn lies_bis(leser: &mut impl Read, n: Option<usize>, frist: Option<Instant>, out
     }
 }
 
-fn lies_koerper(leser: &mut impl BufRead, rahmen: &Rahmen, frist: Option<Instant>) -> Result<Vec<u8>, Transport> {
+fn lies_koerper(
+    leser: &mut impl BufRead,
+    rahmen: &Rahmen,
+    frist: Option<Instant>,
+) -> Result<Vec<u8>, Transport> {
     let mut out = Vec::new();
     match rahmen {
         Rahmen::Laenge(n) => lies_bis(leser, Some(*n), frist, &mut out)?,
@@ -271,9 +319,16 @@ mod tests {
 
     #[test]
     fn url_zerlegen() {
-        let z = zerlege("http://127.0.0.1:8080/v1/chat/completions").ok().unwrap();
-        assert_eq!((z.tls, z.host.as_str(), z.port, z.pfad.as_str()), (false, "127.0.0.1", 8080, "/v1/chat/completions"));
-        let z = zerlege("https://openrouter.ai/api/v1/chat/completions").ok().unwrap();
+        let z = zerlege("http://127.0.0.1:8080/v1/chat/completions")
+            .ok()
+            .unwrap();
+        assert_eq!(
+            (z.tls, z.host.as_str(), z.port, z.pfad.as_str()),
+            (false, "127.0.0.1", 8080, "/v1/chat/completions")
+        );
+        let z = zerlege("https://openrouter.ai/api/v1/chat/completions")
+            .ok()
+            .unwrap();
         assert_eq!((z.tls, z.port), (true, 443));
     }
 }

@@ -64,9 +64,9 @@ impl Feldtyp {
 /// damit `clippy::indexing_slicing` nicht greift.
 fn ist_tt_mm_jjjj(s: &str) -> bool {
     match s.as_bytes() {
-        [t0, t1, b'.', m0, m1, b'.', j0, j1, j2, j3] => {
-            [t0, t1, m0, m1, j0, j1, j2, j3].iter().all(|b| b.is_ascii_digit())
-        }
+        [t0, t1, b'.', m0, m1, b'.', j0, j1, j2, j3] => [t0, t1, m0, m1, j0, j1, j2, j3]
+            .iter()
+            .all(|b| b.is_ascii_digit()),
         _ => false,
     }
 }
@@ -90,13 +90,20 @@ impl Wert {
         typ: Feldtyp,
         enum_werte: Option<&[String]>,
     ) -> Result<Self, WertFehler> {
-        let inkonform = || WertFehler::TypInkonform { wert: wert.to_string(), typ: typ.als_str() };
+        let inkonform = || WertFehler::TypInkonform {
+            wert: wert.to_string(),
+            typ: typ.als_str(),
+        };
         match typ {
             Feldtyp::Cent | Feldtyp::Int => {
                 // `bool` ist in JSON (anders als in Python) ein eigener `Value`-Fall -- kein
                 // expliziter Bool-Ausschluss noetig, `as_i64` liefert fuer `Value::Bool` `None`.
                 let n = wert.as_i64().ok_or_else(inkonform)?;
-                Ok(if matches!(typ, Feldtyp::Cent) { Self::Cent(n) } else { Self::Int(n) })
+                Ok(if matches!(typ, Feldtyp::Cent) {
+                    Self::Cent(n)
+                } else {
+                    Self::Int(n)
+                })
             }
             Feldtyp::Bool => wert.as_bool().map(Self::Bool).ok_or_else(inkonform),
             Feldtyp::Enum => {
@@ -115,7 +122,10 @@ impl Wert {
                     Err(WertFehler::UngueltigesDatum(s.to_owned()))
                 }
             }
-            Feldtyp::Text => wert.as_str().map(|s| Self::Text(s.to_owned())).ok_or_else(inkonform),
+            Feldtyp::Text => wert
+                .as_str()
+                .map(|s| Self::Text(s.to_owned()))
+                .ok_or_else(inkonform),
         }
     }
 }

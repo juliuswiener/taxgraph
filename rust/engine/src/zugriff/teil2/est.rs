@@ -10,11 +10,11 @@ use super::sonstige::{kfz_nutzungswert_monat_cent, KfzNutzungswertEingabe};
 use bindung::Params;
 
 use super::EngineFehler;
-use crate::zugriff::teil1::werbungskosten::{
-    entfernungspauschale, raumkosten, EntfernungspauschaleEingabe, RaumkostenEingabe,
-};
 use crate::tarif::{
     self, FestzusetzendeEstEinzelEingabe, FestzusetzendeEstZusammenEingabe, Veranlagung,
+};
+use crate::zugriff::teil1::werbungskosten::{
+    entfernungspauschale, raumkosten, EntfernungspauschaleEingabe, RaumkostenEingabe,
 };
 
 fn c(e: Euro) -> Result<Cent, EngineFehler> {
@@ -143,7 +143,12 @@ fn tarif_cent(vz: Vz, v: Veranlagung, zve_euro: i64) -> Result<i64, EngineFehler
 /// assert_eq!(tarif_est(&e).unwrap(), Euro::new(0));
 /// ```
 pub fn tarif_est(e: &TarifEingabe) -> Result<Euro, EngineFehler> {
-    Ok(Cent::new(tarif_cent(e.vz, e.veranlagung, e.zu_versteuerndes_einkommen.get())?).floor_euro())
+    Ok(Cent::new(tarif_cent(
+        e.vz,
+        e.veranlagung,
+        e.zu_versteuerndes_einkommen.get(),
+    )?)
+    .floor_euro())
 }
 
 /// Eingabe fuer [`fuenftel`].

@@ -2,9 +2,9 @@
 //! (`runner.py`, reines Python).
 use domain::{Euro, Vz};
 
+use super::{euro, int_mal_float, z, EngineFehler};
 use bindung::{Params, SatzHoechstbetrag};
 use rust_decimal::Decimal;
-use super::{euro, int_mal_float, z, EngineFehler};
 
 /// Der YAML-Float, den Python multipliziert: `bindung` liest ihn als kuerzeste Dezimaldarstellung,
 /// das Zurueckparsen liefert genau denselben `f64` (Round-Trip der kuerzesten Darstellung).
@@ -43,7 +43,10 @@ pub struct KinderbetreuungEingabe {
 /// let e = KinderbetreuungEingabe { vz: Vz::Vz2025, aufwendungen: Euro::new(3000) };
 /// assert_eq!(p10_1_5_kinderbetreuung(&e, &p).unwrap(), Euro::new(2400));
 /// ```
-pub fn p10_1_5_kinderbetreuung(e: &KinderbetreuungEingabe, p: &Params) -> Result<Euro, EngineFehler> {
+pub fn p10_1_5_kinderbetreuung(
+    e: &KinderbetreuungEingabe,
+    p: &Params,
+) -> Result<Euro, EngineFehler> {
     let s = p.kinderbetreuung(e.vz)?;
     satz_mit_deckel(e.aufwendungen, s, z(s.hoechstbetrag_je_kind))
 }

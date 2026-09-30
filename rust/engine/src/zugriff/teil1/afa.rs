@@ -25,7 +25,9 @@ pub struct P62GwgEingabe {
 /// assert_eq!(p6_2_gwg(&e).unwrap(), domain::Euro::new(0));
 /// ```
 pub fn p6_2_gwg(e: &P62GwgEingabe) -> Result<Euro, EngineFehler> {
-    let c = gwg::berechnen(GwgEingabe { anschaffungskosten_netto: in_cent(e.gwg_anschaffungskosten_netto)? })?;
+    let c = gwg::berechnen(GwgEingabe {
+        anschaffungskosten_netto: in_cent(e.gwg_anschaffungskosten_netto)?,
+    })?;
     Ok(c.floor_euro())
 }
 
@@ -77,7 +79,9 @@ pub fn p7_linear_afa(e: &P7LinearAfaEingabe) -> Result<Euro, EngineFehler> {
     if e.ist_anschaffungsjahr && (1..=12).contains(&e.anschaffung_monat) {
         let monate_im_jahr = 13 - e.anschaffung_monat;
         return ok(
-            jahresbetrag.checked_mul(monate_im_jahr).and_then(|x| x.checked_div_euclid(12)),
+            jahresbetrag
+                .checked_mul(monate_im_jahr)
+                .and_then(|x| x.checked_div_euclid(12)),
             "afa pro rata",
         )
         .map(Euro::new);

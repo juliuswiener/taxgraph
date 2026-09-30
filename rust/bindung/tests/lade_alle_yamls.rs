@@ -2,12 +2,19 @@
 //! `params/kohorten/*.yaml`) und zaehlt sie -- 25 + 58 + 8 = 91, Stand 2026-09-29 (siehe
 //! `REWRITE_PLAN.md`). Negative Tests fuer unbekannte Felder (`bindung_*.yaml`,
 //! `deny_unknown_fields`) und doppelte `feld_id` (Registry) liegen mit in dieser Datei.
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic
+)]
 
 use bindung::{lade_kohorten, lade_params, lade_registry, BindungDatei, RegistryFehler};
 
 fn repo_root() -> std::path::PathBuf {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
 }
 
 fn yaml_dateien(verzeichnis: &std::path::Path) -> Vec<std::path::PathBuf> {
@@ -21,8 +28,8 @@ fn yaml_dateien(verzeichnis: &std::path::Path) -> Vec<std::path::PathBuf> {
 #[test]
 fn alle_bindung_yamls_laden() {
     let verzeichnis = repo_root().join("produkt").join("bindung");
-    let registry = lade_registry(&verzeichnis)
-        .unwrap_or_else(|e| panic!("Registry-Aufbau gescheitert: {e}"));
+    let registry =
+        lade_registry(&verzeichnis).unwrap_or_else(|e| panic!("Registry-Aufbau gescheitert: {e}"));
     assert_eq!(
         registry.dateien.len(),
         25,
@@ -44,7 +51,11 @@ fn alle_params_yamls_laden() {
             }
         }
     }
-    assert!(fehler.is_empty(), "params-Ladefehler:\n{}", fehler.join("\n"));
+    assert!(
+        fehler.is_empty(),
+        "params-Ladefehler:\n{}",
+        fehler.join("\n")
+    );
     assert_eq!(anzahl, 58, "erwartete 58 params/<vz>/*.yaml-Dateien");
 }
 
@@ -59,7 +70,11 @@ fn alle_kohorten_yamls_laden() {
             fehler.push(format!("{}: {e}", pfad.display()));
         }
     }
-    assert!(fehler.is_empty(), "kohorten-Ladefehler:\n{}", fehler.join("\n"));
+    assert!(
+        fehler.is_empty(),
+        "kohorten-Ladefehler:\n{}",
+        fehler.join("\n")
+    );
     assert_eq!(anzahl, 8, "erwartete 8 params/kohorten/*.yaml-Dateien");
 }
 
@@ -85,7 +100,10 @@ bindungen:
     unbekanntes_feld: 1
 "#;
     let ergebnis: Result<BindungDatei, _> = serde_yaml_ng::from_str(yaml);
-    assert!(ergebnis.is_err(), "unbekanntes Feld haette abgewiesen werden muessen");
+    assert!(
+        ergebnis.is_err(),
+        "unbekanntes Feld haette abgewiesen werden muessen"
+    );
 }
 
 #[test]

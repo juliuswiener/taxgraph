@@ -98,20 +98,27 @@ where
     E: std::error::Error + 'static,
     F: Fn(&Slots) -> Result<T, E> + 'b,
 {
-    let nach_id: HashMap<&str, &AchsenBindung> = bindung.iter().map(|b| (b.feld_id.as_str(), b)).collect();
+    let nach_id: HashMap<&str, &AchsenBindung> =
+        bindung.iter().map(|b| (b.feld_id.as_str(), b)).collect();
     move |feld_werte: &Werte| {
         let mut slots = Slots::new();
         for (fid, wert) in feld_werte.iter() {
-            let b = nach_id.get(fid).ok_or_else(|| SlotFehler::UnbekanntesFeld(fid.to_owned()))?;
-            let Some(slot) = &b.signatur_slot else { continue };
+            let b = nach_id
+                .get(fid)
+                .ok_or_else(|| SlotFehler::UnbekanntesFeld(fid.to_owned()))?;
+            let Some(slot) = &b.signatur_slot else {
+                continue;
+            };
             match b.slot_beitrag {
                 SlotBeitrag::Summand => {
                     let bisher = slots.get(slot).map_or(Some(0), als_int);
                     let summe = bisher
                         .zip(als_int(wert))
                         .ok_or_else(|| SlotFehler::SummandNichtGanzzahl(fid.to_owned()))?;
-                    let summe =
-                        summe.0.checked_add(summe.1).ok_or_else(|| SlotFehler::Ueberlauf(slot.clone()))?;
+                    let summe = summe
+                        .0
+                        .checked_add(summe.1)
+                        .ok_or_else(|| SlotFehler::Ueberlauf(slot.clone()))?;
                     slots.insert(slot.clone(), summe.into());
                 }
                 SlotBeitrag::Exakt => {
@@ -119,6 +126,9 @@ where
                 }
             }
         }
-        slot_fn(&slots).map_err(SlotFehler::Slot)?.in_cent().map_err(|_| SlotFehler::Ueberlauf(String::new()))
+        slot_fn(&slots)
+            .map_err(SlotFehler::Slot)?
+            .in_cent()
+            .map_err(|_| SlotFehler::Ueberlauf(String::new()))
     }
 }

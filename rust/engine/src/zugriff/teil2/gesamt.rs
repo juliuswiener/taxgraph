@@ -56,12 +56,16 @@ fn vorsorge_abzug(e: &GesamtfallEingabe, p: &Params) -> Result<i128, EngineFehle
     if beitraege == 0 {
         return Ok(0);
     }
-    Ok((beitraege.min(z(p.vorsorge_hoechstbeitrag(e.vz)?)) - z(e.vorsorge_ag_anteil_steuerfrei)).max(0))
+    Ok(
+        (beitraege.min(z(p.vorsorge_hoechstbeitrag(e.vz)?)) - z(e.vorsorge_ag_anteil_steuerfrei))
+            .max(0),
+    )
 }
 
 /// § 10c Guenstigervergleich (`runner.py` `_sonderausgaben_final`).
 fn sonderausgaben_final(e: &GesamtfallEingabe, p: &Params) -> Result<i128, EngineFehler> {
-    let pausch = z(p.sonderausgaben_pauschbetrag(e.vz)?) * if e.zusammenveranlagung { 2 } else { 1 };
+    let pausch =
+        z(p.sonderausgaben_pauschbetrag(e.vz)?) * if e.zusammenveranlagung { 2 } else { 1 };
     Ok((z(e.sonderausgaben) + vorsorge_abzug(e, p)?).max(pausch))
 }
 
@@ -77,7 +81,10 @@ fn c(e: Euro) -> Result<Cent, EngineFehler> {
 ///
 /// # Errors
 /// [`EngineFehler::Catala`] aus dem Scope; [`EngineFehler::Ueberlauf`].
-fn gesamt_out(e: &GesamtfallEingabe, p: &Params) -> Result<FestzusetzendeEstErgebnis, EngineFehler> {
+fn gesamt_out(
+    e: &GesamtfallEingabe,
+    p: &Params,
+) -> Result<FestzusetzendeEstErgebnis, EngineFehler> {
     let hinzu_kg = if e.kinder_ganzjaehrig == 0 {
         z(e.hinzurechnung_kindergeld)
     } else {

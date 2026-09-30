@@ -149,7 +149,8 @@ fn kst_8b_netto(e: &KstEingabe) -> i128 {
 
 /// § 8 Abs. 1/3 `KStG` massgebliches Einkommen (vor § 4h/§ 9/§ 10d).
 fn massgebliches_einkommen(e: &KstEingabe) -> i128 {
-    let slot = (z(e.gewinn_estg) + z(e.verdeckte_gewinnausschuettung) - z(e.verdeckte_einlage)) * 100;
+    let slot =
+        (z(e.gewinn_estg) + z(e.verdeckte_gewinnausschuettung) - z(e.verdeckte_einlage)) * 100;
     let addback = (z(e.personensteuern) + z(e.geldstrafen)) * 100;
     slot - kst_8b_netto(e) + addback
 }
@@ -165,7 +166,12 @@ fn nichtabziehbare_zinsen(e: &KstEingabe) -> i128 {
     let ausnahme = zinsauf - zinsert < 3_000_000 * 100
         || e.keine_konzern_oder_nahestehende_b
         || e.eigenkapital_escape_c;
-    zinsauf - if ausnahme { zinsauf_eff } else { abziehbar_kern }
+    zinsauf
+        - if ausnahme {
+            zinsauf_eff
+        } else {
+            abziehbar_kern
+        }
 }
 
 /// § 8c/§ 8d `KStG` auf den Verlustbestand.
@@ -201,7 +207,11 @@ fn kst_zve(e: &KstEingabe) -> i128 {
 /// `GewSt` der `KapGes`: ohne Freibetrag, Gewerbeertrag = Einkommen vor Spenden.
 fn kst_gewst(e: &KstEingabe) -> i128 {
     let ge_euro = einkommen_vor_spenden(e).div_euclid(100);
-    let abger = if ge_euro > 0 { ge_euro.div_euclid(100) * 100 } else { 0 };
+    let abger = if ge_euro > 0 {
+        ge_euro.div_euclid(100) * 100
+    } else {
+        0
+    };
     let messbetrag = (abger * 35).div_euclid(10);
     (messbetrag * i128::from(e.gewst_hebesatz)).div_euclid(100)
 }

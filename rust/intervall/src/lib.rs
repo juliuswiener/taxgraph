@@ -29,7 +29,9 @@ use bindung::{Bindungspunkt, SlotBeitrag};
 use domain::Feldtyp;
 use serde_json::Value;
 
-pub use rechnung::{intervall, Beitrag, Intervall, IntervallErgebnis, IntervallFehler, Spanne, CAP_DEFAULT};
+pub use rechnung::{
+    intervall, Beitrag, Intervall, IntervallErgebnis, IntervallFehler, Spanne, CAP_DEFAULT,
+};
 pub use slots::{bescheid_via_slots, NahtEinheit, SlotFehler, Slots};
 
 /// Die Sicht auf einen Bindungseintrag, die Intervall und Slot-Adapter lesen.

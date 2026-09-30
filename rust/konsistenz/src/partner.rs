@@ -65,14 +65,18 @@ fn ist_gesetzt(wert: &Value) -> bool {
 /// ```
 #[must_use]
 pub fn partner_ohne_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> {
-    let Some(veranlagung) = lies(felder, "veranlagung").bestaetigt() else { return Vec::new() };
+    let Some(veranlagung) = lies(felder, "veranlagung").bestaetigt() else {
+        return Vec::new();
+    };
     if veranlagung.as_str() == Some("zusammen") {
         return Vec::new();
     }
     PARTNER_FELDER
         .iter()
         .filter_map(|&feld_id| {
-            let wert = lies(felder, feld_id).bestaetigt().filter(|w| ist_gesetzt(w))?;
+            let wert = lies(felder, feld_id)
+                .bestaetigt()
+                .filter(|w| ist_gesetzt(w))?;
             // Feldname in Anführungszeichen statt im Satzfluss: Singular und Plural gemischt,
             // jede feste Präposition-Artikel-Kombination beugte die Hälfte falsch.
             Some(PartnerWiderspruch {
@@ -101,7 +105,9 @@ pub fn partner_ohne_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> {
 pub fn alleinerziehend_mit_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> {
     let veranlagung = lies(felder, "veranlagung").bestaetigt();
     let alleinstehend = lies(felder, "fam_alleinstehend").bestaetigt();
-    if veranlagung.and_then(Value::as_str) != Some("zusammen") || alleinstehend != Some(&Value::Bool(true)) {
+    if veranlagung.and_then(Value::as_str) != Some("zusammen")
+        || alleinstehend != Some(&Value::Bool(true))
+    {
         return Vec::new();
     }
     vec![PartnerWiderspruch {
@@ -126,19 +132,33 @@ mod tests {
     fn gdb_partner_einzel_widerspruch() {
         let s = snap(&[
             ("veranlagung", json!("einzel"), Bestaetigt),
-            ("rentner_grad_der_behinderung_partner", json!(50), Bestaetigt),
-            ("rentner_hilflos_blind_taubblind_partner", json!(false), Bestaetigt),
+            (
+                "rentner_grad_der_behinderung_partner",
+                json!(50),
+                Bestaetigt,
+            ),
+            (
+                "rentner_hilflos_blind_taubblind_partner",
+                json!(false),
+                Bestaetigt,
+            ),
         ]);
         let w = partner_ohne_zusammen(&s);
         assert_eq!(w.len(), 1);
-        assert!(w[0].grund.starts_with("Du hast etwas bei „Grad der Behinderung des Partners“"));
+        assert!(w[0]
+            .grund
+            .starts_with("Du hast etwas bei „Grad der Behinderung des Partners“"));
     }
 
     #[test]
     fn unbestaetigt_kein_widerspruch() {
         let s = snap(&[
             ("veranlagung", json!("einzel"), Vorlaeufig),
-            ("rentner_grad_der_behinderung_partner", json!(50), Bestaetigt),
+            (
+                "rentner_grad_der_behinderung_partner",
+                json!(50),
+                Bestaetigt,
+            ),
         ]);
         assert!(partner_ohne_zusammen(&s).is_empty());
     }
@@ -150,7 +170,10 @@ mod tests {
             ("fam_alleinstehend", json!(true), Bestaetigt),
         ]);
         assert_eq!(alleinerziehend_mit_zusammen(&s).len(), 1);
-        s = snap(&[("veranlagung", json!("einzel"), Bestaetigt), ("fam_alleinstehend", json!(true), Bestaetigt)]);
+        s = snap(&[
+            ("veranlagung", json!("einzel"), Bestaetigt),
+            ("fam_alleinstehend", json!(true), Bestaetigt),
+        ]);
         assert!(alleinerziehend_mit_zusammen(&s).is_empty());
     }
 }

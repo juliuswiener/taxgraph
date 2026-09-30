@@ -55,11 +55,16 @@ fn symbol<T: Copy>(lib: &Library, name: &[u8]) -> Result<T, EricFehler> {
 
 impl Eric {
     /// Laedt `lib_pfad`, ruft `EricInitialisiere(lib_dir, log_dir)` und hebt die Meldungs-Caps an.
-    pub(super) fn laden(lib_pfad: &Path, log_dir: PathBuf, meldungen_max: u32) -> Result<Self, EricFehler> {
+    pub(super) fn laden(
+        lib_pfad: &Path,
+        log_dir: PathBuf,
+        meldungen_max: u32,
+    ) -> Result<Self, EricFehler> {
         // SAFETY: Laden fuehrt die Initialisierer von libericapi.so aus; das ist die amtliche
         // ERiC-Bibliothek aus der Auslieferung unter `$ERIC_DIR`, dieselbe, die das Python-
         // Original per `ctypes.CDLL` laedt. Kein weiterer Code im Prozess teilt ihren Zustand.
-        let lib = unsafe { Library::new(lib_pfad) }.map_err(|e| EricFehler::Laden(e.to_string()))?;
+        let lib =
+            unsafe { Library::new(lib_pfad) }.map_err(|e| EricFehler::Laden(e.to_string()))?;
         let initialisiere: FnInitialisiere = symbol(&lib, b"EricInitialisiere\0")?;
         let einstellung_setzen: FnEinstellungSetzen = symbol(&lib, b"EricEinstellungSetzen\0")?;
         let eric = Self {
@@ -92,7 +97,12 @@ impl Eric {
 
     /// `EricBearbeiteVorgang(xml, datenart, flags, NULL, NULL, puffer, NULL)`; der Puffer wird in
     /// jedem Fall freigegeben, sein Inhalt vorher kopiert.
-    pub(super) fn bearbeite(&self, xml: &CStr, datenart: &CStr, flags: u32) -> Result<(i32, String), EricFehler> {
+    pub(super) fn bearbeite(
+        &self,
+        xml: &CStr,
+        datenart: &CStr,
+        flags: u32,
+    ) -> Result<(i32, String), EricFehler> {
         // SAFETY: ERiC ist initialisiert; der Aufruf hat keine Vorbedingung.
         let puffer = unsafe { (self.puffer_erzeugen)() };
         if puffer.is_null() {
@@ -118,7 +128,9 @@ impl Eric {
             String::new()
         } else {
             // SAFETY: ERiC liefert einen NUL-terminierten Text, der bis zur Freigabe lebt.
-            unsafe { CStr::from_ptr(inhalt) }.to_string_lossy().into_owned()
+            unsafe { CStr::from_ptr(inhalt) }
+                .to_string_lossy()
+                .into_owned()
         };
         drop(guard);
         Ok((rc, antwort))

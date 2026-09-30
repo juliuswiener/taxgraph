@@ -79,7 +79,11 @@ fn extremwerte(b: &AchsenBindung) -> Option<Vec<Value>> {
         Feldtyp::Cent | Feldtyp::Int => b.bereich.map(|(lo, hi)| {
             // `sorted({min, max})`: bei min == max genau ein Wert.
             let (a, z) = (lo.min(hi), lo.max(hi));
-            if a == z { vec![a.into()] } else { vec![a.into(), z.into()] }
+            if a == z {
+                vec![a.into()]
+            } else {
+                vec![a.into(), z.into()]
+            }
         }),
         Feldtyp::Datum | Feldtyp::Text => None,
     }
@@ -110,7 +114,12 @@ struct Einteilung {
 }
 
 fn einteilen(felder: &BTreeMap<String, SnapshotFeld>, bindung: &[AchsenBindung]) -> Einteilung {
-    let mut e = Einteilung { basis: Werte::neu(), achsen: BTreeMap::new(), offen: Vec::new(), nicht_fix: Vec::new() };
+    let mut e = Einteilung {
+        basis: Werte::neu(),
+        achsen: BTreeMap::new(),
+        offen: Vec::new(),
+        nicht_fix: Vec::new(),
+    };
     for b in bindung.iter().filter(|b| b.askable) {
         let feld = felder.get(&b.feld_id);
         if let Some(f) = feld.filter(|f| f.zustand == Zustand::Bestaetigt) {
@@ -152,17 +161,34 @@ where
             lo = Some(lo.map_or(s, |x| x.min(s)));
             hi = Some(hi.map_or(s, |x| x.max(s)));
         }
-        let (Some(min), Some(max)) = (lo, hi) else { return Err(IntervallFehler::LeereAchse(fid.clone())) };
-        let spanne = max.checked_sub(min).ok_or_else(|| IntervallFehler::Ueberlauf(fid.clone()))?;
-        beitraege.push(Beitrag { feld_id: fid.clone(), spanne, min, max });
+        let (Some(min), Some(max)) = (lo, hi) else {
+            return Err(IntervallFehler::LeereAchse(fid.clone()));
+        };
+        let spanne = max
+            .checked_sub(min)
+            .ok_or_else(|| IntervallFehler::Ueberlauf(fid.clone()))?;
+        beitraege.push(Beitrag {
+            feld_id: fid.clone(),
+            spanne,
+            min,
+            max,
+        });
     }
-    beitraege.sort_by(|a, b| b.spanne.cmp(&a.spanne).then_with(|| a.feld_id.cmp(&b.feld_id)));
+    beitraege.sort_by(|a, b| {
+        b.spanne
+            .cmp(&a.spanne)
+            .then_with(|| a.feld_id.cmp(&b.feld_id))
+    });
     Ok(beitraege)
 }
 
 /// Stufe 2: min/max über den kartesischen Raum der Top-Achsen (`itertools.product`-Reihenfolge,
 /// erste Achse am langsamsten), übrige Felder auf der Basis.
-fn stufe2<E, F>(e: &Einteilung, top: &[&str], bescheid_fn: &mut F) -> Result<(Cent, Cent), IntervallFehler<E>>
+fn stufe2<E, F>(
+    e: &Einteilung,
+    top: &[&str],
+    bescheid_fn: &mut F,
+) -> Result<(Cent, Cent), IntervallFehler<E>>
 where
     E: std::error::Error + 'static,
     F: FnMut(&Werte) -> Result<Cent, E>,
@@ -188,7 +214,9 @@ where
                 return grenzen.ok_or_else(|| IntervallFehler::LeereAchse(String::new()));
             };
             stelle = s;
-            let (Some(i), Some(achse)) = (index.get_mut(s), achsen.get(s)) else { continue };
+            let (Some(i), Some(achse)) = (index.get_mut(s), achsen.get(s)) else {
+                continue;
+            };
             *i += 1;
             if *i < achse.len() {
                 break;
@@ -241,7 +269,11 @@ where
     };
     let basis_snapshot = snapshot_id.map(str::to_owned);
     if !e.nicht_fix.is_empty() {
-        return Ok(IntervallErgebnis { basis_snapshot, intervall: iv, beitraege: Vec::new() });
+        return Ok(IntervallErgebnis {
+            basis_snapshot,
+            intervall: iv,
+            beitraege: Vec::new(),
+        });
     }
     let beitraege = stufe1(&e, &mut bescheid_fn)?;
     let mut top: Vec<&str> = Vec::new();
@@ -257,14 +289,25 @@ where
         }
     }
     let (min, max) = stufe2(&e, &top, &mut bescheid_fn)?;
-    iv.spanne = Spanne::Zahl { min, max, offen: !e.offen.is_empty() };
+    iv.spanne = Spanne::Zahl {
+        min,
+        max,
+        offen: !e.offen.is_empty(),
+    };
     iv.exakt_bzgl_top_k = top.len();
-    let mut rest: Vec<String> =
-        beitraege.iter().map(|b| b.feld_id.clone()).filter(|f| !top.contains(&f.as_str())).collect();
+    let mut rest: Vec<String> = beitraege
+        .iter()
+        .map(|b| b.feld_id.clone())
+        .filter(|f| !top.contains(&f.as_str()))
+        .collect();
     iv.gedeckelt = !rest.is_empty();
     rest.sort();
     iv.rest_felder = rest;
-    Ok(IntervallErgebnis { basis_snapshot, intervall: iv, beitraege })
+    Ok(IntervallErgebnis {
+        basis_snapshot,
+        intervall: iv,
+        beitraege,
+    })
 }
 
 #[cfg(test)]
@@ -277,7 +320,16 @@ mod tests {
 
     fn feld(wert: Value, zustand: Zustand) -> SnapshotFeld {
         let a = Achsenwert::new("t").unwrap();
-        SnapshotFeld { wert, zustand, herkunft: Herkunft { herkunft: a.clone(), pruef_tiefe: PruefTiefe::Ungeprueft, haftung: a }.into() }
+        SnapshotFeld {
+            wert,
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a.clone(),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a,
+            }
+            .into(),
+        }
     }
 
     /// Lineare Modellsteuer: Gewicht je Feld mal Zahlwert (bool 0/1, String Länge).
@@ -297,27 +349,46 @@ mod tests {
     }
 
     fn fall() -> impl Strategy<Value = (Vec<AchsenBindung>, BTreeMap<String, SnapshotFeld>)> {
-        prop::collection::vec((0_u8..4, -50_i64..50, 0_i64..50, prop::option::of((any::<bool>(), -60_i64..60))), 0..7)
-            .prop_map(|spec| {
-                let mut bindung = Vec::new();
-                let mut felder = BTreeMap::new();
-                for (i, (art, lo, breite, snap)) in spec.into_iter().enumerate() {
-                    let fid = format!("f{i}{}", "x".repeat(i % 3));
-                    let (typ, enum_werte, bereich) = match art {
-                        0 => (Feldtyp::Bool, vec![], None),
-                        1 => (Feldtyp::Enum, vec!["a".into(), "bbb".into()], None),
-                        2 => (Feldtyp::Int, vec![], Some((lo, lo + breite))),
-                        _ => (Feldtyp::Text, vec![], None),
+        prop::collection::vec(
+            (
+                0_u8..4,
+                -50_i64..50,
+                0_i64..50,
+                prop::option::of((any::<bool>(), -60_i64..60)),
+            ),
+            0..7,
+        )
+        .prop_map(|spec| {
+            let mut bindung = Vec::new();
+            let mut felder = BTreeMap::new();
+            for (i, (art, lo, breite, snap)) in spec.into_iter().enumerate() {
+                let fid = format!("f{i}{}", "x".repeat(i % 3));
+                let (typ, enum_werte, bereich) = match art {
+                    0 => (Feldtyp::Bool, vec![], None),
+                    1 => (Feldtyp::Enum, vec!["a".into(), "bbb".into()], None),
+                    2 => (Feldtyp::Int, vec![], Some((lo, lo + breite))),
+                    _ => (Feldtyp::Text, vec![], None),
+                };
+                if let Some((bestaetigt, wert)) = snap {
+                    let z = if bestaetigt {
+                        Zustand::Bestaetigt
+                    } else {
+                        Zustand::Vorlaeufig
                     };
-                    if let Some((bestaetigt, wert)) = snap {
-                        let z = if bestaetigt { Zustand::Bestaetigt } else { Zustand::Vorlaeufig };
-                        felder.insert(fid.clone(), feld(wert.into(), z));
-                    }
-                    bindung.push(AchsenBindung { feld_id: fid, typ, askable: true, enum_werte, bereich,
-                        signatur_slot: None, slot_beitrag: SlotBeitrag::Exakt });
+                    felder.insert(fid.clone(), feld(wert.into(), z));
                 }
-                (bindung, felder)
-            })
+                bindung.push(AchsenBindung {
+                    feld_id: fid,
+                    typ,
+                    askable: true,
+                    enum_werte,
+                    bereich,
+                    signatur_slot: None,
+                    slot_beitrag: SlotBeitrag::Exakt,
+                });
+            }
+            (bindung, felder)
+        })
     }
 
     proptest! {
@@ -360,8 +431,15 @@ mod tests {
 
     #[test]
     fn nicht_fixierbar_hat_keine_zahl() {
-        let b = AchsenBindung { feld_id: "t".into(), typ: Feldtyp::Text, askable: true, enum_werte: vec![],
-            bereich: None, signatur_slot: None, slot_beitrag: SlotBeitrag::Exakt };
+        let b = AchsenBindung {
+            feld_id: "t".into(),
+            typ: Feldtyp::Text,
+            askable: true,
+            enum_werte: vec![],
+            bereich: None,
+            signatur_slot: None,
+            slot_beitrag: SlotBeitrag::Exakt,
+        };
         let r = intervall(&BTreeMap::new(), &[b], modell, CAP_DEFAULT, Some("sid")).unwrap();
         assert_eq!(r.intervall.spanne, Spanne::NichtFixierbar);
         assert_eq!(r.intervall.nicht_fixierbar, ["t"]);
@@ -370,10 +448,20 @@ mod tests {
 
     #[test]
     fn leere_enum_achse_ist_fehler() {
-        let b = AchsenBindung { feld_id: "e".into(), typ: Feldtyp::Enum, askable: true, enum_werte: vec![],
-            bereich: None, signatur_slot: None, slot_beitrag: SlotBeitrag::Exakt };
+        let b = AchsenBindung {
+            feld_id: "e".into(),
+            typ: Feldtyp::Enum,
+            askable: true,
+            enum_werte: vec![],
+            bereich: None,
+            signatur_slot: None,
+            slot_beitrag: SlotBeitrag::Exakt,
+        };
         let mut felder = BTreeMap::new();
         felder.insert("e".to_owned(), feld("x".into(), Zustand::Vorlaeufig));
-        assert!(matches!(intervall(&felder, &[b], modell, CAP_DEFAULT, None), Err(IntervallFehler::LeereAchse(_))));
+        assert!(matches!(
+            intervall(&felder, &[b], modell, CAP_DEFAULT, None),
+            Err(IntervallFehler::LeereAchse(_))
+        ));
     }
 }

@@ -87,11 +87,24 @@ impl Oracle {
             .stdout
             .take()
             .ok_or_else(|| std::io::Error::other("oracle.py: stdout nicht pipe-bar"))?;
-        Ok(Self { child, stdin, stdout: BufReader::new(stdout) })
+        Ok(Self {
+            child,
+            stdin,
+            stdout: BufReader::new(stdout),
+        })
     }
 
-    fn call(&mut self, funktion: &'static str, zve_cent: i64, vz: u16) -> Result<i64, OrakelFehler> {
-        let anfrage = Anfrage { funktion, zve_cent, vz };
+    fn call(
+        &mut self,
+        funktion: &'static str,
+        zve_cent: i64,
+        vz: u16,
+    ) -> Result<i64, OrakelFehler> {
+        let anfrage = Anfrage {
+            funktion,
+            zve_cent,
+            vz,
+        };
         let mut zeile = serde_json::to_string(&anfrage)?;
         zeile.push('\n');
         self.stdin.write_all(zeile.as_bytes())?;
@@ -104,9 +117,9 @@ impl Oracle {
         }
         let antwort: Antwort = serde_json::from_str(antwort_zeile.trim())?;
         if antwort.ok {
-            antwort.cent.ok_or_else(|| {
-                OrakelFehler::Python("ok=true ohne cent-Feld".to_string())
-            })
+            antwort
+                .cent
+                .ok_or_else(|| OrakelFehler::Python("ok=true ohne cent-Feld".to_string()))
         } else {
             Err(OrakelFehler::Python(antwort.error.unwrap_or_default()))
         }
@@ -135,7 +148,10 @@ impl Oracle {
     /// # Errors
     /// Siehe [`OrakelFehler`].
     pub fn event_id(&mut self, event: &serde_json::Value) -> Result<String, OrakelFehler> {
-        let anfrage = EventIdAnfrage { funktion: "store.event_id", event };
+        let anfrage = EventIdAnfrage {
+            funktion: "store.event_id",
+            event,
+        };
         let mut zeile = serde_json::to_string(&anfrage)?;
         zeile.push('\n');
         self.stdin.write_all(zeile.as_bytes())?;
@@ -162,7 +178,11 @@ impl Oracle {
     ///
     /// # Errors
     /// Siehe [`OrakelFehler`].
-    pub fn call_engine(&mut self, funktion: &str, args: serde_json::Value) -> Result<i64, OrakelFehler> {
+    pub fn call_engine(
+        &mut self,
+        funktion: &str,
+        args: serde_json::Value,
+    ) -> Result<i64, OrakelFehler> {
         #[derive(serde::Serialize)]
         struct EngineAnfrage<'a> {
             #[serde(rename = "fn")]
@@ -182,9 +202,9 @@ impl Oracle {
         }
         let antwort: Antwort = serde_json::from_str(antwort_zeile.trim())?;
         if antwort.ok {
-            antwort.cent.ok_or_else(|| {
-                OrakelFehler::Python("ok=true ohne cent-Feld".to_string())
-            })
+            antwort
+                .cent
+                .ok_or_else(|| OrakelFehler::Python("ok=true ohne cent-Feld".to_string()))
         } else {
             Err(OrakelFehler::Python(antwort.error.unwrap_or_default()))
         }
@@ -197,7 +217,11 @@ impl Oracle {
     ///
     /// # Errors
     /// Siehe [`OrakelFehler`] (nur Transportfehler; Python-Ausnahmen stehen in der Antwort).
-    pub fn call_runner(&mut self, name: &str, args: &[serde_json::Value]) -> Result<serde_json::Value, OrakelFehler> {
+    pub fn call_runner(
+        &mut self,
+        name: &str,
+        args: &[serde_json::Value],
+    ) -> Result<serde_json::Value, OrakelFehler> {
         let anfrage = serde_json::json!({ "fn": format!("runner.{name}"), "args": args });
         let mut zeile = serde_json::to_string(&anfrage)?;
         zeile.push('\n');
@@ -215,7 +239,10 @@ impl Oracle {
     ///
     /// # Errors
     /// Siehe [`OrakelFehler`] (nur Transportfehler; Python-Ausnahmen stehen in der Antwort).
-    pub fn call_json(&mut self, anfrage: &serde_json::Value) -> Result<serde_json::Value, OrakelFehler> {
+    pub fn call_json(
+        &mut self,
+        anfrage: &serde_json::Value,
+    ) -> Result<serde_json::Value, OrakelFehler> {
         let mut zeile = serde_json::to_string(anfrage)?;
         zeile.push('\n');
         self.stdin.write_all(zeile.as_bytes())?;
@@ -262,7 +289,12 @@ pub fn diff_grundtarif(
     Ok(if python_cent == rust_cent {
         None
     } else {
-        Some(Abweichung { zve_cent, vz, rust_cent, python_cent })
+        Some(Abweichung {
+            zve_cent,
+            vz,
+            rust_cent,
+            python_cent,
+        })
     })
 }
 
@@ -280,7 +312,12 @@ pub fn diff_splittingtarif(
     Ok(if python_cent == rust_cent {
         None
     } else {
-        Some(Abweichung { zve_cent, vz, rust_cent, python_cent })
+        Some(Abweichung {
+            zve_cent,
+            vz,
+            rust_cent,
+            python_cent,
+        })
     })
 }
 
@@ -296,7 +333,11 @@ pub fn diff_event_id(
     rust_hex: &str,
 ) -> Result<Option<String>, OrakelFehler> {
     let python_hex = oracle.event_id(event)?;
-    Ok(if python_hex == rust_hex { None } else { Some(python_hex) })
+    Ok(if python_hex == rust_hex {
+        None
+    } else {
+        Some(python_hex)
+    })
 }
 
 /// Ein Vergleichsfall fuer eine `engine`-Funktion aus Schritt 4a (deliverable 3/4), der abwich.
@@ -324,7 +365,12 @@ pub fn diff_engine(
     Ok(if python_cent == rust_cent {
         None
     } else {
-        Some(EngineAbweichung { funktion: funktion.to_string(), args, rust_cent, python_cent })
+        Some(EngineAbweichung {
+            funktion: funktion.to_string(),
+            args,
+            rust_cent,
+            python_cent,
+        })
     })
 }
 
@@ -373,7 +419,11 @@ impl Oracle {
         store: &serde_json::Value,
         calls: &[serde_json::Value],
     ) -> Result<AppendSequenceErgebnis, OrakelFehler> {
-        let anfrage = AppendSequenceAnfrage { funktion: "store.append_sequence", store, calls };
+        let anfrage = AppendSequenceAnfrage {
+            funktion: "store.append_sequence",
+            store,
+            calls,
+        };
         let mut zeile = serde_json::to_string(&anfrage)?;
         zeile.push('\n');
         self.stdin.write_all(zeile.as_bytes())?;
@@ -410,7 +460,9 @@ mod tests {
 
     #[test]
     fn oracle_antwortet() {
-        let _guard = super::ORACLE_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _guard = super::ORACLE_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let mut o = Oracle::spawn(&repo_root()).unwrap();
         let cent = o.grundtarif(12_096 * 100, 2025).unwrap();
         assert_eq!(cent, 0);
@@ -418,7 +470,9 @@ mod tests {
 
     #[test]
     fn diff_erkennt_uebereinstimmung() {
-        let _guard = super::ORACLE_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _guard = super::ORACLE_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let mut o = Oracle::spawn(&repo_root()).unwrap();
         let python_cent = o.grundtarif(5_000_000, 2025).unwrap();
         let abweichung = diff_grundtarif(&mut o, 5_000_000, 2025, python_cent).unwrap();
@@ -427,7 +481,9 @@ mod tests {
 
     #[test]
     fn diff_erkennt_abweichung() {
-        let _guard = super::ORACLE_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _guard = super::ORACLE_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let mut o = Oracle::spawn(&repo_root()).unwrap();
         let python_cent = o.grundtarif(5_000_000, 2025).unwrap();
         let abweichung = diff_grundtarif(&mut o, 5_000_000, 2025, python_cent + 1).unwrap();

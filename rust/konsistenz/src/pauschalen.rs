@@ -45,7 +45,8 @@ pub const PAUSCHAL_CHECKS: [PauschalCheck; 3] = [
         ausloeser_felder: &["vv_einnahmen"],
         pauschal_felder: &["vv_schuldzinsen", "vv_erhaltungsaufwand", "vv_sonstige_wk"],
         label: "Werbungskosten bei Vermietung und Verpachtung (§ 21)",
-        hinweis: "Einnahmen aus Vermietung vorhanden, aber keine Werbungskosten erfasst. \
+        hinweis:
+            "Einnahmen aus Vermietung vorhanden, aber keine Werbungskosten erfasst. \
                   Möglicherweise wurden Ausgaben (Schuldzinsen, Erhaltungsaufwand, etc.) vergessen.",
         nur_wenn_alle_leer: true,
     },
@@ -86,15 +87,24 @@ pub fn pauschal_hinweise(felder: &Felder) -> Vec<PauschalHinweis> {
             .ausloeser_felder
             .iter()
             .filter_map(|&fid| {
-                lies(felder, fid).bestaetigt().filter(|w| zahl_gt0(w)).map(|w| (fid, w.clone()))
+                lies(felder, fid)
+                    .bestaetigt()
+                    .filter(|w| zahl_gt0(w))
+                    .map(|w| (fid, w.clone()))
             })
             .collect();
         if ausloeser.is_empty() {
             continue;
         }
-        let fehlende: Vec<&'static str> =
-            check.pauschal_felder.iter().copied().filter(|fid| ist_leer(felder, fid)).collect();
-        if fehlende.is_empty() || (check.nur_wenn_alle_leer && fehlende.len() < check.pauschal_felder.len()) {
+        let fehlende: Vec<&'static str> = check
+            .pauschal_felder
+            .iter()
+            .copied()
+            .filter(|fid| ist_leer(felder, fid))
+            .collect();
+        if fehlende.is_empty()
+            || (check.nur_wenn_alle_leer && fehlende.len() < check.pauschal_felder.len())
+        {
             continue;
         }
         hinweise.push(PauschalHinweis {
@@ -122,7 +132,10 @@ mod tests {
             ("vv_schuldzinsen", json!(5), Bestaetigt),
         ]);
         assert!(pauschal_hinweise(&s).is_empty());
-        let s = snap(&[("vv_einnahmen", json!(100), Bestaetigt), ("vv_schuldzinsen", json!(5), Vorlaeufig)]);
+        let s = snap(&[
+            ("vv_einnahmen", json!(100), Bestaetigt),
+            ("vv_schuldzinsen", json!(5), Vorlaeufig),
+        ]);
         assert_eq!(pauschal_hinweise(&s)[0].fehlende_felder.len(), 3);
     }
 

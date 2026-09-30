@@ -14,7 +14,13 @@
 //! Braucht den Catala-Opam-Switch + `python3` mit dem Repo-Umfeld -- in CI standardmaessig SKIP:
 //!
 //!   `PARITY`=1 `cargo` test -p parity --test `engine_catala_paritaet` -- --nocapture
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
+#![allow(
+    clippy::too_many_lines,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic
+)]
 
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard, OnceLock};
@@ -68,22 +74,32 @@ fn diff(funktion: &str, args: Value, rust_cent: i64) -> Option<EngineAbweichung>
 }
 
 fn cent(args: &Value, key: &str) -> Cent {
-    Cent::new(args[key].as_i64().unwrap_or_else(|| panic!("{key} fehlt oder ist kein i64")))
+    Cent::new(
+        args[key]
+            .as_i64()
+            .unwrap_or_else(|| panic!("{key} fehlt oder ist kein i64")),
+    )
 }
 
 fn i64f(args: &Value, key: &str) -> i64 {
-    args[key].as_i64().unwrap_or_else(|| panic!("{key} fehlt oder ist kein i64"))
+    args[key]
+        .as_i64()
+        .unwrap_or_else(|| panic!("{key} fehlt oder ist kein i64"))
 }
 
 fn boolf(args: &Value, key: &str) -> bool {
-    args[key].as_bool().unwrap_or_else(|| panic!("{key} fehlt oder ist kein bool"))
+    args[key]
+        .as_bool()
+        .unwrap_or_else(|| panic!("{key} fehlt oder ist kein bool"))
 }
 
 /// § 21 Abs. 2 `EStG` und § 24a `EStG` kodieren ihren Prozentsatz im Corpus als `_num`/`_den`
 /// (siehe `tools/parity/record.py`/`oracle.py`), symmetrisch zu [`engine::dezimal::zu_bruch`].
 fn prozent_von(args: &Value, feld: &str) -> Decimal {
     let num = i64f(args, &format!("{feld}_num"));
-    let den = args[format!("{feld}_den")].as_u64().unwrap_or_else(|| panic!("{feld}_den fehlt"));
+    let den = args[format!("{feld}_den")]
+        .as_u64()
+        .unwrap_or_else(|| panic!("{feld}_den fehlt"));
     Decimal::from(num) / Decimal::from(den)
 }
 
@@ -140,12 +156,14 @@ fn rust_cent_fuer(funktion: &str, args: &Value) -> i64 {
             .unwrap_or_else(|e| panic!("{funktion}: {e:?}"))
             .get()
         }
-        "verbilligte_vermietung_wk" => verbilligte_vermietung::berechnen(VerbilligteVermietungEingabe {
-            werbungskosten: cent(args, "werbungskosten_cent"),
-            entgelt_quote_prozent: prozent_von(args, "entgelt_quote_prozent"),
-        })
-        .unwrap_or_else(|e| panic!("{funktion}: {e:?}"))
-        .get(),
+        "verbilligte_vermietung_wk" => {
+            verbilligte_vermietung::berechnen(VerbilligteVermietungEingabe {
+                werbungskosten: cent(args, "werbungskosten_cent"),
+                entgelt_quote_prozent: prozent_von(args, "entgelt_quote_prozent"),
+            })
+            .unwrap_or_else(|e| panic!("{funktion}: {e:?}"))
+            .get()
+        }
         "kranken_pflege_vorsorge" => vorsorgeaufwendungen::berechnen(VorsorgeaufwendungenEingabe {
             basis: cent(args, "basis_cent"),
             weitere: cent(args, "weitere_cent"),
@@ -571,6 +589,13 @@ fn negativkontrolle_erkennt_genau_eine_abweichung() {
         }
     }
 
-    eprintln!("negativkontrolle: {} Abweichungen gefunden (erwartet: 1)", abweichungen.len());
-    assert_eq!(abweichungen.len(), 1, "Kontrollprobe muss GENAU eine Abweichung finden");
+    eprintln!(
+        "negativkontrolle: {} Abweichungen gefunden (erwartet: 1)",
+        abweichungen.len()
+    );
+    assert_eq!(
+        abweichungen.len(),
+        1,
+        "Kontrollprobe muss GENAU eine Abweichung finden"
+    );
 }

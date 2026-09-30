@@ -174,7 +174,13 @@ mod tests {
 
     #[test]
     fn event_id_ist_deterministisch_und_tamper_fest() {
-        assert_eq!(EventId::von_json(&json!({"a": 1})), EventId::von_json(&json!({"a": 1})));
-        assert_ne!(EventId::von_json(&json!({"a": 1})), EventId::von_json(&json!({"a": 2})));
+        assert_eq!(
+            EventId::von_json(&json!({"a": 1})),
+            EventId::von_json(&json!({"a": 1}))
+        );
+        assert_ne!(
+            EventId::von_json(&json!({"a": 1})),
+            EventId::von_json(&json!({"a": 2}))
+        );
     }
 }

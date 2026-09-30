@@ -84,7 +84,9 @@ pub fn renten_einkuenfte(e: &RentenEingabe, p: &Params) -> Result<Euro, EngineFe
     let vz = i64::from(e.vz.jahr());
     let wk_pb = z(p.renten_wk_pauschbetrag(e.vz)?);
     let steuerpflichtig = match e.art {
-        Rentenart::Bb { alter_bei_rentenbeginn } => {
+        Rentenart::Bb {
+            alter_bei_rentenbeginn,
+        } => {
             let prozent = p.rente_ertragsanteil(alter_bei_rentenbeginn)?.ok_or(
                 EngineFehler::TabelleOhneEintrag {
                     tabelle: "rente_ertragsanteil_p22",
@@ -93,7 +95,10 @@ pub fn renten_einkuenfte(e: &RentenEingabe, p: &Params) -> Result<Euro, EngineFe
             )?;
             stpfl(e.jahresrente, prozent)?
         }
-        Rentenart::Aa { renten_beginn_jahr, rentenfreibetrag } => match rentenfreibetrag {
+        Rentenart::Aa {
+            renten_beginn_jahr,
+            rentenfreibetrag,
+        } => match rentenfreibetrag {
             _ if renten_beginn_jahr == vz => {
                 let prozent = p.rente_besteuerungsanteil(renten_beginn_jahr)?.ok_or(
                     EngineFehler::TabelleOhneEintrag {
@@ -152,7 +157,9 @@ pub fn p19_2_versorgungsfreibetrag(
     }
     let k = p.versorgungsfreibetrag_kohorte(e.beginn_jahr)?;
     let bg = z(e.bemessungsgrundlage);
-    let vfb = (bg * zehntel(k.prozentsatz)?).div_euclid(1000).min(z(k.hoechstbetrag));
+    let vfb = (bg * zehntel(k.prozentsatz)?)
+        .div_euclid(1000)
+        .min(z(k.hoechstbetrag));
     let zuschlag = z(k.zuschlag).min((bg - vfb).max(0));
     euro(vfb + zuschlag)
 }

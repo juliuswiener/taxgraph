@@ -44,7 +44,10 @@ pub fn behinderten_pb(e: &BehindertenPbEingabe, p: &Params) -> Result<Euro, Engi
     v.gdb_staffel
         .get(&stufe)
         .copied()
-        .ok_or(EngineFehler::TabelleOhneEintrag { tabelle: "gdb_staffel", schluessel: stufe })
+        .ok_or(EngineFehler::TabelleOhneEintrag {
+            tabelle: "gdb_staffel",
+            schluessel: stufe,
+        })
 }
 
 /// Eingabe fuer [`pflege_pb`].
@@ -75,7 +78,10 @@ pub fn pflege_pb(e: &PflegePbEingabe, p: &Params) -> Result<Euro, EngineFehler> 
     if e.ist_hilflos {
         return Ok(v.pflege_hilflos);
     }
-    Ok(v.pflege_staffel.get(&e.pflegegrad).copied().unwrap_or(Euro::new(0)))
+    Ok(v.pflege_staffel
+        .get(&e.pflegegrad)
+        .copied()
+        .unwrap_or(Euro::new(0)))
 }
 
 /// Eingabe fuer [`hinterbliebenen_pb`].
@@ -129,7 +135,10 @@ pub struct FahrtkostenpauschaleEingabe {
 /// let e = FahrtkostenpauschaleEingabe { vz: Vz::Vz2025, hat_ag_bl_tbl_h: true, hat_gdb80_oder_70g: true };
 /// assert_eq!(p33_2a_fahrtkostenpauschale(&e, &p).unwrap(), Euro::new(4500));
 /// ```
-pub fn p33_2a_fahrtkostenpauschale(e: &FahrtkostenpauschaleEingabe, p: &Params) -> Result<Euro, EngineFehler> {
+pub fn p33_2a_fahrtkostenpauschale(
+    e: &FahrtkostenpauschaleEingabe,
+    p: &Params,
+) -> Result<Euro, EngineFehler> {
     let v = p.fahrtkostenpauschale_p33_2a(e.vz)?;
     Ok(if e.hat_ag_bl_tbl_h {
         v.pauschale_4500

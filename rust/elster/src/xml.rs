@@ -36,8 +36,14 @@ const PFLICHT_DEFAULT: &[(&str, &str)] = &[("Person", "PersonA"), ("Laufende_Num
 const INSTANZ_NUMMER_FELDER: &[&str] = &["Laufende_Nummer_V"];
 /// Vorsatz-Absender aus Stammdaten-Kz (Person A); dieselben Angaben stehen im Hauptvordruck.
 const ABSENDER_HERKUNFT: &[(&str, &[(&str, &str)])] = &[
-    ("absender_name", &[("E0100201", "Nachname"), ("E0100301", "Vorname")]),
-    ("absender_strasse", &[("E0101104", "Straße"), ("E0101206", "Hausnummer")]),
+    (
+        "absender_name",
+        &[("E0100201", "Nachname"), ("E0100301", "Vorname")],
+    ),
+    (
+        "absender_strasse",
+        &[("E0101104", "Straße"), ("E0101206", "Hausnummer")],
+    ),
     ("absender_plz", &[("E0100601", "PLZ")]),
     ("absender_ort", &[("E0100602", "Wohnort")]),
 ];
@@ -98,7 +104,10 @@ impl fmt::Debug for XmlOptionen<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("XmlOptionen")
             .field("vz", &self.vz)
-            .field("hersteller_id", &self.hersteller_id.as_ref().map(|_| "<gesetzt>"))
+            .field(
+                "hersteller_id",
+                &self.hersteller_id.as_ref().map(|_| "<gesetzt>"),
+            )
             .field("abgabefaehig", &self.abgabefaehig)
             .finish_non_exhaustive()
     }
@@ -116,11 +125,18 @@ struct Knoten {
 
 impl Knoten {
     fn neu(name: &str) -> Self {
-        Self { name: name.to_owned(), ..Self::default() }
+        Self {
+            name: name.to_owned(),
+            ..Self::default()
+        }
     }
 
     fn blatt(name: &str, text: impl Into<String>) -> Self {
-        Self { name: name.to_owned(), text: Some(text.into()), ..Self::default() }
+        Self {
+            name: name.to_owned(),
+            text: Some(text.into()),
+            ..Self::default()
+        }
     }
 
     fn mit(mut self, kinder: Vec<Self>) -> Self {
@@ -143,7 +159,10 @@ impl Knoten {
 }
 
 fn vorgabe(name: &str) -> Option<&'static str> {
-    PFLICHT_DEFAULT.iter().find(|(k, _)| *k == name).map(|(_, v)| *v)
+    PFLICHT_DEFAULT
+        .iter()
+        .find(|(k, _)| *k == name)
+        .map(|(_, v)| *v)
 }
 
 fn fehlende_vorgabe(container: &[String], name: &str) -> XmlFehler {
@@ -180,7 +199,9 @@ fn einhaengen(
     let mut knoten = e10;
     let innen = pfad.len().saturating_sub(1);
     for i in 1..innen {
-        let (Some(name), Some(container)) = (pfad.get(i), pfad.get(..=i)) else { break };
+        let (Some(name), Some(container)) = (pfad.get(i), pfad.get(..=i)) else {
+            break;
+        };
         let leer = Vec::new();
         let pflichtkinder = pflicht.get(container).unwrap_or(&leer);
         let wahl = instanz.filter(|w| w.container == container);
@@ -192,11 +213,16 @@ fn einhaengen(
                 let mut neu = Knoten::neu(name);
                 for p in pflichtkinder {
                     let text = match (wahl, p.as_str()) {
-                        (Some(w), "Person") => {
-                            if j == w.index && w.person_b || j >= 1 { "PersonB" } else { "PersonA" }.to_owned()
+                        (Some(w), "Person") => if j == w.index && w.person_b || j >= 1 {
+                            "PersonB"
+                        } else {
+                            "PersonA"
                         }
+                        .to_owned(),
                         (Some(_), p) if INSTANZ_NUMMER_FELDER.contains(&p) => (j + 1).to_string(),
-                        (_, p) => vorgabe(p).ok_or_else(|| fehlende_vorgabe(container, p))?.to_owned(),
+                        (_, p) => vorgabe(p)
+                            .ok_or_else(|| fehlende_vorgabe(container, p))?
+                            .to_owned(),
                     };
                     neu.kinder.push(Knoten::blatt(p, text));
                 }
@@ -205,12 +231,16 @@ fn einhaengen(
         }
         knoten = knoten.nth_mut(name, n)?;
     }
-    let Some(kz_name) = pfad.last() else { return Ok(()) };
+    let Some(kz_name) = pfad.last() else {
+        return Ok(());
+    };
     // Ja-Typ: True → erster enum-Wert; False → bei JaNein12 der zweite ("2" = Nein, eine echte
     // Antwort), bei Ankreuzfeldern (Ja1/JaX) weglassen (gemessen 2026-08-16).
     if let (Some(km), Value::Bool(b)) = (kz_meta.get(kz_name), wert) {
         if km.is_ja {
-            let text = if *b { km.enums.first().map_or("X", String::as_str) } else {
+            let text = if *b {
+                km.enums.first().map_or("X", String::as_str)
+            } else {
                 match km.enums.get(1) {
                     Some(nein) => nein.as_str(),
                     None => return Ok(()),
@@ -244,7 +274,9 @@ fn schreibe(w: &mut Writer<Vec<u8>>, k: &Knoten, tiefe: usize) -> std::io::Resul
     } else if let Some(t) = k.text.as_deref().filter(|t| !t.is_empty()) {
         w.write_event(Event::Start(start))?;
         // ElementTree escaped im Text nur &, <, > — genau `partial_escape`.
-        w.write_event(Event::Text(BytesText::from_escaped(quick_xml::escape::partial_escape(t))))?;
+        w.write_event(Event::Text(BytesText::from_escaped(
+            quick_xml::escape::partial_escape(t),
+        )))?;
         w.write_event(Event::End(BytesEnd::new(k.name.as_str())))
     } else {
         w.write_event(Event::Empty(start))
@@ -255,8 +287,11 @@ fn serialisiere(wurzel: &Knoten) -> Result<String, XmlFehler> {
     let mut w = Writer::new(Vec::new());
     w.config_mut().add_space_before_slash_in_empty_elements = true;
     schreibe(&mut w, wurzel, 0).map_err(|e| XmlFehler(format!("Serialisierung: {e}")))?;
-    let body = String::from_utf8(w.into_inner()).map_err(|e| XmlFehler(format!("Serialisierung: {e}")))?;
-    Ok(format!("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n{body}"))
+    let body =
+        String::from_utf8(w.into_inner()).map_err(|e| XmlFehler(format!("Serialisierung: {e}")))?;
+    Ok(format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n{body}"
+    ))
 }
 
 // ---------------------------------------------------------------- Kopf, Vorsatz
@@ -270,7 +305,8 @@ fn transfer_header(opt: &XmlOptionen<'_>, hid: &str) -> Knoten {
     if let Some(tm) = opt.testmerker.as_deref().filter(|t| !t.is_empty()) {
         kinder.push(Knoten::blatt("Testmerker", tm));
     }
-    let mut empf = Knoten::neu("Empfaenger").mit(vec![Knoten::blatt("Ziel", opt.empfaenger_land.as_str())]);
+    let mut empf =
+        Knoten::neu("Empfaenger").mit(vec![Knoten::blatt("Ziel", opt.empfaenger_land.as_str())]);
     empf.attrs.push(("id", "L".to_owned()));
     kinder.push(empf);
     kinder.push(Knoten::blatt("HerstellerID", hid));
@@ -313,15 +349,28 @@ fn vorsatz(vz: i64, a: Absender, datenlieferant: &str) -> Knoten {
 }
 
 /// `_leite_absender_ab`: je Feld alle Kz vorhanden (truthy) → mit Leerzeichen verbunden.
-fn leite_absender_ab(deklaration: &std::collections::BTreeMap<String, Value>, feld: &str) -> Option<String> {
+fn leite_absender_ab(
+    deklaration: &std::collections::BTreeMap<String, Value>,
+    feld: &str,
+) -> Option<String> {
     let (_, quellen) = ABSENDER_HERKUNFT.iter().find(|(f, _)| *f == feld)?;
-    let teile: Vec<&Value> = quellen.iter().map(|(kz, _)| deklaration.get(*kz).unwrap_or(&Value::Null)).collect();
+    let teile: Vec<&Value> = quellen
+        .iter()
+        .map(|(kz, _)| deklaration.get(*kz).unwrap_or(&Value::Null))
+        .collect();
     if !teile.iter().all(|t| py::truthy(t)) {
         return None;
     }
-    let mut s = teile.iter().map(|t| py::str_von(t)).collect::<Vec<_>>().join(" ");
+    let mut s = teile
+        .iter()
+        .map(|t| py::str_von(t))
+        .collect::<Vec<_>>()
+        .join(" ");
     if feld == "absender_strasse" {
-        if let Some(z) = deklaration.get(ABSENDER_STRASSE_ZUSATZ_KZ).filter(|z| py::truthy(z)) {
+        if let Some(z) = deklaration
+            .get(ABSENDER_STRASSE_ZUSATZ_KZ)
+            .filter(|z| py::truthy(z))
+        {
             s.push_str(&py::str_von(z));
         }
     }
@@ -373,7 +422,10 @@ fn abgabe_pruefen(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<Absende
         if wert.as_deref().is_some_and(|w| !w.is_empty()) {
             continue;
         }
-        let quellen = ABSENDER_HERKUNFT.iter().find(|(f, _)| f == feld).map_or(&[][..], |(_, q)| *q);
+        let quellen = ABSENDER_HERKUNFT
+            .iter()
+            .find(|(f, _)| f == feld)
+            .map_or(&[][..], |(_, q)| *q);
         let kz: Vec<String> = quellen
             .iter()
             .filter(|(kz, _)| !dekl.get(*kz).is_some_and(py::truthy))
@@ -430,12 +482,17 @@ fn abgabe_pruefen(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<Absende
 fn schema_fuer(vz: i64) -> Result<Arc<SchemaInfo>, XmlFehler> {
     static CACHE: OnceLock<Mutex<HashMap<i64, Arc<SchemaInfo>>>> = OnceLock::new();
     let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
-    let mut guard = cache.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut guard = cache
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some(info) = guard.get(&vz) {
         return Ok(Arc::clone(info));
     }
-    let pfad = finde_schema(vz, "E10-{jahr}.xsd")
-        .ok_or_else(|| XmlFehler(format!("E10-{vz}.xsd nicht gefunden — $ERIC_DIR setzen / ERiC-Doku entpacken.")))?;
+    let pfad = finde_schema(vz, "E10-{jahr}.xsd").ok_or_else(|| {
+        XmlFehler(format!(
+            "E10-{vz}.xsd nicht gefunden — $ERIC_DIR setzen / ERiC-Doku entpacken."
+        ))
+    })?;
     let info = Arc::new(schema_info(&pfad).map_err(|e| XmlFehler(e.to_string()))?);
     guard.insert(vz, Arc::clone(&info));
     Ok(info)
@@ -483,10 +540,17 @@ fn baue_instanz_map<'d>(
                         tupel_repr(kz_pfad)
                     )));
                 }
-                let tiefer = INSTANZ_CONTAINER_TIEFER.iter().find(|(g, _)| g == gruppe).map(|(_, s)| *s);
-                let ende = tiefer.and_then(|s| kz_pfad.iter().position(|p| p == s)).map_or(2, |i| i + 1);
+                let tiefer = INSTANZ_CONTAINER_TIEFER
+                    .iter()
+                    .find(|(g, _)| g == gruppe)
+                    .map(|(_, s)| *s);
+                let ende = tiefer
+                    .and_then(|s| kz_pfad.iter().position(|p| p == s))
+                    .map_or(2, |i| i + 1);
                 let container = kz_pfad.get(..ende).unwrap_or(kz_pfad).to_vec();
-                map.entry(kz.as_str()).or_default().push((container, idx0, wert));
+                map.entry(kz.as_str())
+                    .or_default()
+                    .push((container, idx0, wert));
             }
         }
     }
@@ -526,7 +590,9 @@ pub fn erzeuge_xml(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<String
     }
     let dekl = &result.deklaration;
     if dekl.is_empty() {
-        return Err(XmlFehler("leere Deklaration — nichts zu übermitteln.".to_owned()));
+        return Err(XmlFehler(
+            "leere Deklaration — nichts zu übermitteln.".to_owned(),
+        ));
     }
     let hid = opt
         .hersteller_id
@@ -534,12 +600,26 @@ pub fn erzeuge_xml(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<String
         .filter(|h| !h.is_empty())
         .or_else(|| std::env::var("ELSTER_HERSTELLER_ID").ok())
         .filter(|h| !h.is_empty())
-        .ok_or_else(|| XmlFehler("keine Hersteller-ID — $ELSTER_HERSTELLER_ID setzen (nie im Repo, nie im Code).".to_owned()))?;
+        .ok_or_else(|| {
+            XmlFehler(
+                "keine Hersteller-ID — $ELSTER_HERSTELLER_ID setzen (nie im Repo, nie im Code)."
+                    .to_owned(),
+            )
+        })?;
     let vz = opt.vz;
     let info = schema_fuer(vz)?;
-    let pfade: HashMap<&str, &[String]> = info.pfade.iter().map(|(k, p)| (k.as_str(), p.as_slice())).collect();
-    let mut fehlend: Vec<String> =
-        dekl.keys().filter(|k| !pfade.contains_key(k.as_str()) && !E10_AUSSCHLUSS_DATENART.contains(&k.as_str())).cloned().collect();
+    let pfade: HashMap<&str, &[String]> = info
+        .pfade
+        .iter()
+        .map(|(k, p)| (k.as_str(), p.as_slice()))
+        .collect();
+    let mut fehlend: Vec<String> = dekl
+        .keys()
+        .filter(|k| {
+            !pfade.contains_key(k.as_str()) && !E10_AUSSCHLUSS_DATENART.contains(&k.as_str())
+        })
+        .cloned()
+        .collect();
     fehlend.sort();
     if !fehlend.is_empty() {
         return Err(XmlFehler(format!(
@@ -559,7 +639,12 @@ pub fn erzeuge_xml(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<String
         }
     }
     let instanz_map = baue_instanz_map(result, &pfade, vz)?;
-    let mut fehlend_b: Vec<String> = result.person_b.keys().filter(|k| !pfade.contains_key(k.as_str())).cloned().collect();
+    let mut fehlend_b: Vec<String> = result
+        .person_b
+        .keys()
+        .filter(|k| !pfade.contains_key(k.as_str()))
+        .cloned()
+        .collect();
     fehlend_b.sort();
     if !fehlend_b.is_empty() {
         return Err(XmlFehler(format!(
@@ -569,7 +654,10 @@ pub fn erzeuge_xml(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<String
         )));
     }
     let mut e10 = Knoten::neu("E10");
-    e10.attrs.push(("xmlns", format!("http://finkonsens.de/elster/elstererklaerung/est/e10/v{vz}")));
+    e10.attrs.push((
+        "xmlns",
+        format!("http://finkonsens.de/elster/elstererklaerung/est/e10/v{vz}"),
+    ));
     e10.attrs.push(("version", vz.to_string()));
     kz_schleife(&mut e10, result, &info, &pfade, &instanz_map)?;
     if opt.abgabefaehig {
@@ -578,11 +666,17 @@ pub fn erzeuge_xml(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<String
     }
     let mut empf_f = Knoten::blatt("Empfaenger", opt.empfaenger_finanzamt.as_str());
     empf_f.attrs.push(("id", "F".to_owned()));
-    let mut nh = Knoten::neu("NutzdatenHeader")
-        .mit(vec![Knoten::blatt("NutzdatenTicket", opt.nutzdaten_ticket.as_str()), empf_f]);
+    let mut nh = Knoten::neu("NutzdatenHeader").mit(vec![
+        Knoten::blatt("NutzdatenTicket", opt.nutzdaten_ticket.as_str()),
+        empf_f,
+    ]);
     nh.attrs.push(("version", "11".to_owned()));
-    let block = Knoten::neu("Nutzdatenblock").mit(vec![nh, Knoten::neu("Nutzdaten").mit(vec![e10])]);
-    let mut wurzel = Knoten::neu("Elster").mit(vec![transfer_header(opt, &hid), Knoten::neu("DatenTeil").mit(vec![block])]);
+    let block =
+        Knoten::neu("Nutzdatenblock").mit(vec![nh, Knoten::neu("Nutzdaten").mit(vec![e10])]);
+    let mut wurzel = Knoten::neu("Elster").mit(vec![
+        transfer_header(opt, &hid),
+        Knoten::neu("DatenTeil").mit(vec![block]),
+    ]);
     wurzel.attrs.push(("xmlns", NS_ELSTER.to_owned()));
     serialisiere(&wurzel)
 }
@@ -598,7 +692,10 @@ fn kz_schleife(
     let pflicht = &info.pflicht;
     let dekl = &result.deklaration;
     // Welche Container belegt Instanz 0 (Person A, und index=1-Instanzen)?
-    let mut instanz_null: Vec<&[String]> = dekl.keys().filter_map(|k| pfade.get(k.as_str()).copied()).collect();
+    let mut instanz_null: Vec<&[String]> = dekl
+        .keys()
+        .filter_map(|k| pfade.get(k.as_str()).copied())
+        .collect();
     for (kz, eintraege) in instanz_map {
         if eintraege.iter().any(|(_, i, _)| *i == 0) {
             instanz_null.extend(pfade.get(kz).copied());
@@ -608,7 +705,11 @@ fn kz_schleife(
         (2..=pfad.len())
             .rev()
             .filter_map(|i| pfad.get(..i))
-            .find(|c| pflicht.get(*c).is_some_and(|p| p.iter().any(|k| k == "Person")))
+            .find(|c| {
+                pflicht
+                    .get(*c)
+                    .is_some_and(|p| p.iter().any(|k| k == "Person"))
+            })
             .map(<[String]>::to_vec)
     };
     let mut person_b_index: HashMap<Vec<String>, usize> = HashMap::new();
@@ -629,11 +730,19 @@ fn kz_schleife(
             let index = *person_b_index
                 .entry(cp.clone())
                 .or_insert_with(|| usize::from(instanz_null.iter().any(|p| p.starts_with(&cp))));
-            let wahl = Instanzwahl { container: &cp, index, person_b: true };
+            let wahl = Instanzwahl {
+                container: &cp,
+                index,
+                person_b: true,
+            };
             einhaengen(e10, pfad, w, pflicht, &info.kz_meta, Some(&wahl))?;
         }
         for (container, idx0, w) in instanz_map.get(kz.as_str()).map_or(&[][..], Vec::as_slice) {
-            let wahl = Instanzwahl { container, index: *idx0, person_b: false };
+            let wahl = Instanzwahl {
+                container,
+                index: *idx0,
+                person_b: false,
+            };
             einhaengen(e10, pfad, w, pflicht, &info.kz_meta, Some(&wahl))?;
         }
     }

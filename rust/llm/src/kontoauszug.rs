@@ -85,6 +85,11 @@ pub fn parse_kategorie(text: &str) -> Option<Kategorie> {
 /// ```
 #[must_use]
 pub fn klassifiziere(chat: &dyn Chat, zweck: &Maskiert, betrag_cent: i64) -> Option<Kategorie> {
-    let nachrichten = [Nachricht::system(texte::KONTOAUSZUG_SYSTEM.to_owned()), Nachricht::buchung(zweck, betrag_cent)];
-    chat.complete(&nachrichten, None).ok().and_then(|c| parse_kategorie(&c.text))
+    let nachrichten = [
+        Nachricht::system(texte::KONTOAUSZUG_SYSTEM.to_owned()),
+        Nachricht::buchung(zweck, betrag_cent),
+    ];
+    chat.complete(&nachrichten, None)
+        .ok()
+        .and_then(|c| parse_kategorie(&c.text))
 }

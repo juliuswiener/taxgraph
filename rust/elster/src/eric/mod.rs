@@ -148,10 +148,16 @@ fn neues_log_dir() -> Result<PathBuf, EricFehler> {
 pub fn validiere(xml: &[u8], datenart_version: &str) -> Result<(i32, String), EricFehler> {
     let xml = std::ffi::CString::new(xml).map_err(|_| EricFehler::NulByte)?;
     let datenart = std::ffi::CString::new(datenart_version).map_err(|_| EricFehler::NulByte)?;
-    let mut guard = ERIC.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut guard = ERIC
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if guard.is_none() {
         let lib = find_eric_lib().ok_or(EricFehler::NichtGefunden)?;
-        *guard = Some(ffi::Eric::laden(&lib, neues_log_dir()?, VALIDIERE_MELDUNGEN_MAX)?);
+        *guard = Some(ffi::Eric::laden(
+            &lib,
+            neues_log_dir()?,
+            VALIDIERE_MELDUNGEN_MAX,
+        )?);
     }
     let eric = guard.as_ref().ok_or(EricFehler::NichtGefunden)?;
     eric.bearbeite(&xml, &datenart, ERIC_VALIDIERE)
@@ -164,7 +170,9 @@ pub fn validiere(xml: &[u8], datenart_version: &str) -> Result<(i32, String), Er
 /// ```
 #[must_use]
 pub fn eric_log_pfad() -> Option<PathBuf> {
-    let guard = ERIC.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let guard = ERIC
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let pfad = guard.as_ref()?.log_dir.join("eric.log");
     pfad.exists().then_some(pfad)
 }

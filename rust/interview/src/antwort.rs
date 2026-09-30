@@ -177,13 +177,20 @@ impl InstanzAnzahl {
     /// ```
     #[must_use]
     pub fn aus_zaehlfeld(antwort: Antwort<'_>, gruppe: &InstanzGruppe) -> Self {
-        let Antwort::Bestaetigt(Value::Number(n)) = antwort else { return Self::EINS };
-        let Some(n) = n.as_i64().or_else(|| n.as_u64().map(|_| i64::MAX)) else { return Self::EINS };
+        let Antwort::Bestaetigt(Value::Number(n)) = antwort else {
+            return Self::EINS;
+        };
+        let Some(n) = n.as_i64().or_else(|| n.as_u64().map(|_| i64::MAX)) else {
+            return Self::EINS;
+        };
         if n < 1 {
             return Self::EINS;
         }
         let max = i64::from(gruppe.max).clamp(1, i64::from(u16::MAX));
-        u16::try_from(n.min(max)).ok().and_then(NonZeroU16::new).map_or(Self::EINS, Self)
+        u16::try_from(n.min(max))
+            .ok()
+            .and_then(NonZeroU16::new)
+            .map_or(Self::EINS, Self)
     }
 
     /// Die Zahl.

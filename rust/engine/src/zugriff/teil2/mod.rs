@@ -53,7 +53,10 @@ pub enum EngineFehler {
     RentenartNichtRingfaehig,
     /// Python: `KeyError` beim Nachschlagen in einer Kohorten- oder Staffeltabelle.
     #[error("Tabelle {tabelle}: kein Eintrag fuer {schluessel}")]
-    TabelleOhneEintrag { tabelle: &'static str, schluessel: i64 },
+    TabelleOhneEintrag {
+        tabelle: &'static str,
+        schluessel: i64,
+    },
     /// Python: `ValueError` (§ 34 Abs. 1 S. 3 setzt ein positives zvE voraus).
     #[error("§ 34 Abs. 1 S. 3 setzt ein positives zvE voraus")]
     FuenftelZveNichtPositiv,

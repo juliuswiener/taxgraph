@@ -10,12 +10,16 @@ pub fn jahr_aus_datum(wert: &str) -> Option<i64> {
     let w = wert.trim();
     match w.as_bytes() {
         [j0, j1, j2, j3, b'-', m0, m1, b'-', t0, t1]
-            if [j0, j1, j2, j3, m0, m1, t0, t1].iter().all(|b| b.is_ascii_digit()) =>
+            if [j0, j1, j2, j3, m0, m1, t0, t1]
+                .iter()
+                .all(|b| b.is_ascii_digit()) =>
         {
             vierstellig(*j0, *j1, *j2, *j3)
         }
         [t0, t1, b'.', m0, m1, b'.', j0, j1, j2, j3]
-            if [t0, t1, m0, m1, j0, j1, j2, j3].iter().all(|b| b.is_ascii_digit()) =>
+            if [t0, t1, m0, m1, j0, j1, j2, j3]
+                .iter()
+                .all(|b| b.is_ascii_digit()) =>
         {
             vierstellig(*j0, *j1, *j2, *j3)
         }
@@ -61,7 +65,11 @@ pub fn berechne(regel: &Ableitung, wert: &serde_json::Value, vz: i64) -> Option<
             let jahr = jahr_aus_datum(wert_str)?;
             #[allow(clippy::cast_possible_truncation)]
             let schwelle = regel.schwelle? as i64;
-            if (vz - jahr) < schwelle { Some(serde_json::Value::Bool(true)) } else { None }
+            if (vz - jahr) < schwelle {
+                Some(serde_json::Value::Bool(true))
+            } else {
+                None
+            }
         }
         AbleitungArt::JahrAusDatum => Some(serde_json::json!(jahr_aus_datum(wert_str)?)),
         AbleitungArt::AlterAmJahresbeginnErreicht => {
@@ -102,7 +110,13 @@ mod tests {
     }
 
     fn regel(art: AbleitungArt, schwelle: Option<f64>) -> Ableitung {
-        Ableitung { aus: "geburtsdatum".to_string(), art, schwelle, grund: "test".to_string(), und_feld: None }
+        Ableitung {
+            aus: "geburtsdatum".to_string(),
+            art,
+            schwelle,
+            grund: "test".to_string(),
+            und_feld: None,
+        }
     }
 
     #[test]

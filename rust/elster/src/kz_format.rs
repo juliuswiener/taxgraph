@@ -29,8 +29,9 @@ pub const ABZUGS_KZ: &[&str] = &[
 /// (bzw. ohne `NichtNeg` fuer E1905101) ohne E60-Praefix (`est_mapping.py:128-142`). Ohne diese
 /// Liste stuende der rohe Euro-Betrag im XML und checkESt lehnte ab („Geldbetraege muessen vom
 /// Format '0,00' sein").
-pub const KOMMA_OHNE_E60_KZ: &[&str] =
-    &["E0200301", "E0200501", "E1904701", "E1904901", "E1904801", "E1905101"];
+pub const KOMMA_OHNE_E60_KZ: &[&str] = &[
+    "E0200301", "E0200501", "E1904701", "E1904901", "E1904801", "E1905101",
+];
 
 /// Kz vom XSD-Typ `GanzzahlPos`, an denen ERiC eine 0 ablehnt (`est_mapping.py:152-154`).
 ///
@@ -154,7 +155,9 @@ pub fn kz_wert(wert: &Value, kz: &str, typ: Option<Feldtyp>) -> Result<Value, Py
     if typ == Some(Feldtyp::Cent) {
         let cent = match wert {
             Value::Bool(b) => i64::from(*b),
-            Value::Number(n) => n.as_i64().ok_or_else(|| PyFehler::typ("cent-Wert ist keine ganze Zahl"))?,
+            Value::Number(n) => n
+                .as_i64()
+                .ok_or_else(|| PyFehler::typ("cent-Wert ist keine ganze Zahl"))?,
             _ => return Err(PyFehler::typ("unsupported operand type(s) for //")),
         };
         return Ok(cent_nach_kz(Cent::new(cent), kz).als_json());
@@ -184,13 +187,19 @@ pub fn jahr_aus_kz_wert(wert: &Value, kz: &str) -> Value {
     if !DATUMS_KZ.contains(&kz) {
         return wert.clone();
     }
-    let Value::String(s) = wert else { return wert.clone() };
+    let Value::String(s) = wert else {
+        return wert.clone();
+    };
     // ponytail: `\d` ist in Python jede Unicode-Ziffer; hier nur ASCII (Store-Werte sind ASCII).
     match py::strip(s).as_bytes() {
         [t0, t1, b'.', m0, m1, b'.', j @ ..]
-            if j.len() == 4 && [t0, t1, m0, m1].iter().all(|b| b.is_ascii_digit()) && j.iter().all(u8::is_ascii_digit) =>
+            if j.len() == 4
+                && [t0, t1, m0, m1].iter().all(|b| b.is_ascii_digit())
+                && j.iter().all(u8::is_ascii_digit) =>
         {
-            let jahr = j.iter().fold(0_i64, |acc, b| acc * 10 + i64::from(b - b'0'));
+            let jahr = j
+                .iter()
+                .fold(0_i64, |acc, b| acc * 10 + i64::from(b - b'0'));
             Value::from(jahr)
         }
         _ => wert.clone(),

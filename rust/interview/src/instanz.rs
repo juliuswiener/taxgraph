@@ -31,7 +31,9 @@ fn schluessel(feld: &str, i: NonZeroU16) -> Option<String> {
     if i == NonZeroU16::MIN {
         return Some(feld.to_owned());
     }
-    BasisId::new(feld).ok().map(|b| instanz_feld_id(&b, i).to_string())
+    BasisId::new(feld)
+        .ok()
+        .map(|b| instanz_feld_id(&b, i).to_string())
 }
 
 /// Die Antworten ALLER Instanzen von `feld`, nach Nummer (`_instanz_antworten`,
@@ -45,7 +47,9 @@ pub(crate) fn instanz_antworten<'s>(
 ) -> Vec<Antwort<'s>> {
     let n = graph
         .gruppe_von(sicht, feld)
-        .map_or(InstanzAnzahl::EINS, |g| InstanzAnzahl::aus_zaehlfeld(aktiv.antwort(&g.anzahl_feld), g));
+        .map_or(InstanzAnzahl::EINS, |g| {
+            InstanzAnzahl::aus_zaehlfeld(aktiv.antwort(&g.anzahl_feld), g)
+        });
     let mut nummern: BTreeSet<NonZeroU16> = (1..=n.get()).filter_map(NonZeroU16::new).collect();
     nummern.extend(aktiv.instanzen_von(feld));
     nummern
@@ -57,8 +61,15 @@ pub(crate) fn instanz_antworten<'s>(
 /// `true`, wenn `feld_id` zu einer Gruppe gehoert, deren bestaetigte Zahl mehr Instanzen
 /// verlangt, als bestaetigt sind (`_instanz_unvollstaendig`, `traverser.py:155-188`). Haelt das
 /// Basisfeld in der Queue, sonst fiele `kind_vorname__2` nach Instanz 1 fuer immer heraus.
-pub(crate) fn instanz_unvollstaendig(aktiv: &Aktiv<'_>, sicht: &Sicht<'_>, graph: &Graph<'_>, feld_id: &str) -> bool {
-    let Some(g) = graph.gruppe_von(sicht, feld_id) else { return false };
+pub(crate) fn instanz_unvollstaendig(
+    aktiv: &Aktiv<'_>,
+    sicht: &Sicht<'_>,
+    graph: &Graph<'_>,
+    feld_id: &str,
+) -> bool {
+    let Some(g) = graph.gruppe_von(sicht, feld_id) else {
+        return false;
+    };
     if feld_id == g.anzahl_feld {
         return false;
     }
@@ -83,12 +94,20 @@ pub(crate) fn instanz_unvollstaendig(aktiv: &Aktiv<'_>, sicht: &Sicht<'_>, graph
 /// assert_eq!((n.get(), etikett), (1, ""));
 /// ```
 #[must_use]
-pub fn instanz_anzahl<'r>(store: &Store, sicht: &Sicht<'r>, graph: &Graph<'r>, feld_id: &str) -> (InstanzAnzahl, &'r str) {
+pub fn instanz_anzahl<'r>(
+    store: &Store,
+    sicht: &Sicht<'r>,
+    graph: &Graph<'r>,
+    feld_id: &str,
+) -> (InstanzAnzahl, &'r str) {
     match graph.gruppe_von(sicht, feld_id) {
         None => (InstanzAnzahl::EINS, ""),
         Some(g) => {
             let aktiv = Aktiv::aus(store);
-            (InstanzAnzahl::aus_zaehlfeld(aktiv.antwort(&g.anzahl_feld), g), g.etikett.as_str())
+            (
+                InstanzAnzahl::aus_zaehlfeld(aktiv.antwort(&g.anzahl_feld), g),
+                g.etikett.as_str(),
+            )
         }
     }
 }
@@ -124,7 +143,9 @@ pub fn fehlende_instanzen<'r>(
     basen.sort_unstable();
     let mut out = Vec::new();
     for basis in basen {
-        let Some(g) = graph.gruppe_von(sicht, basis) else { continue };
+        let Some(g) = graph.gruppe_von(sicht, basis) else {
+            continue;
+        };
         if basis == g.anzahl_feld {
             continue;
         }
@@ -134,8 +155,13 @@ pub fn fehlende_instanzen<'r>(
         }
         let (mut vorhanden, mut fehlend) = (Vec::new(), Vec::new());
         for i in (1..=anzahl.get()).filter_map(NonZeroU16::new) {
-            let da = schluessel(basis, i).is_some_and(|k| !Antwort::aus(felder.get(&k)).ist_offen());
-            if da { vorhanden.push(i.get()) } else { fehlend.push(i.get()) }
+            let da =
+                schluessel(basis, i).is_some_and(|k| !Antwort::aus(felder.get(&k)).ist_offen());
+            if da {
+                vorhanden.push(i.get());
+            } else {
+                fehlend.push(i.get());
+            }
         }
         if !vorhanden.is_empty() && !fehlend.is_empty() {
             out.push(FehlendeInstanz {

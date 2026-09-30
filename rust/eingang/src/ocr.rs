@@ -54,16 +54,35 @@ pub enum OcrFehler {
 /// `subprocess.run(befehl, capture_output=True, text=True, timeout=…, env=…).stdout` —
 /// universelle Zeilenenden wie Pythons Textmodus (`\r\n`/`\r` → `\n`).
 fn lauf(befehl: &[&str], zeitlimit: Duration, ein_faden: bool) -> Result<String, OcrFehler> {
-    let anzeige = format!("[{}]", befehl.iter().map(|b| format!("'{b}'")).collect::<Vec<_>>().join(", "));
-    let (prog, args) = befehl.split_first().ok_or_else(|| OcrFehler::Start { befehl: anzeige.clone(), nachricht: "leer".into() })?;
+    let anzeige = format!(
+        "[{}]",
+        befehl
+            .iter()
+            .map(|b| format!("'{b}'"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    let (prog, args) = befehl.split_first().ok_or_else(|| OcrFehler::Start {
+        befehl: anzeige.clone(),
+        nachricht: "leer".into(),
+    })?;
     let mut cmd = Command::new(prog);
-    cmd.args(args).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::null());
+    cmd.args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null());
     if ein_faden {
         // OMP_THREAD_LIMIT=1: mehrere OpenMP-Faeden bremsen unter Ueberbuchung bis ans Zeitlimit.
         cmd.env("OMP_THREAD_LIMIT", "1");
     }
-    let mut kind = cmd.spawn().map_err(|e| OcrFehler::Start { befehl: anzeige.clone(), nachricht: e.to_string() })?;
-    let mut stdout = kind.stdout.take().ok_or_else(|| OcrFehler::Start { befehl: anzeige.clone(), nachricht: "stdout".into() })?;
+    let mut kind = cmd.spawn().map_err(|e| OcrFehler::Start {
+        befehl: anzeige.clone(),
+        nachricht: e.to_string(),
+    })?;
+    let mut stdout = kind.stdout.take().ok_or_else(|| OcrFehler::Start {
+        befehl: anzeige.clone(),
+        nachricht: "stdout".into(),
+    })?;
     // Lesen im eigenen Faden, sonst blockiert ein volles Pipe-Puffer das Kind bis zum Zeitlimit.
     let leser = std::thread::spawn(move || {
         let mut puffer = Vec::new();
@@ -74,9 +93,14 @@ fn lauf(befehl: &[&str], zeitlimit: Duration, ein_faden: bool) -> Result<String,
         let _ = kind.kill();
         let _ = kind.wait();
         let _ = leser.join();
-        return Err(OcrFehler::Zeitlimit { befehl: anzeige, sekunden: zeitlimit.as_secs() });
+        return Err(OcrFehler::Zeitlimit {
+            befehl: anzeige,
+            sekunden: zeitlimit.as_secs(),
+        });
     }
-    let bytes = leser.join().map_err(|_| OcrFehler::KeinUtf8(anzeige.clone()))??;
+    let bytes = leser
+        .join()
+        .map_err(|_| OcrFehler::KeinUtf8(anzeige.clone()))??;
     let text = String::from_utf8(bytes).map_err(|_| OcrFehler::KeinUtf8(anzeige))?;
     Ok(text.replace("\r\n", "\n").replace('\r', "\n"))
 }
@@ -108,37 +132,75 @@ pub fn tsv_zu_zeilen(tsv: &str) -> Result<Vec<(String, f64)>, csv::CsvFehler> {
         if z.get("level").cloned().flatten().as_deref() != Some("5") {
             continue;
         }
-        let key = (feld(z, "block_num"), feld(z, "par_num"), feld(z, "line_num"));
-        let conf = z.get("conf").cloned().flatten().and_then(|c| crate::kontoauszug::py_float(&c)).unwrap_or(-1.0);
+        let key = (
+            feld(z, "block_num"),
+            feld(z, "par_num"),
+            feld(z, "line_num"),
+        );
+        let conf = z
+            .get("conf")
+            .cloned()
+            .flatten()
+            .and_then(|c| crate::kontoauszug::py_float(&c))
+            .unwrap_or(-1.0);
         if !gruppen.contains_key(&key) {
             reihenfolge.push(key.clone());
         }
-        gruppen.entry(key).or_default().push((feld(z, "text"), conf));
+        gruppen
+            .entry(key)
+            .or_default()
+            .push((feld(z, "text"), conf));
     }
     Ok(reihenfolge
         .into_iter()
         .map(|k| {
             let woerter = gruppen.remove(&k).unwrap_or_default();
-            let text = woerter.iter().filter(|(w, _)| !llm::py::strip(w).is_empty()).map(|(w, _)| w.as_str()).collect::<Vec<_>>().join(" ");
-            let confs: Vec<f64> = woerter.iter().filter(|(_, c)| *c >= 0.0).map(|(_, c)| c / 100.0).collect();
+            let text = woerter
+                .iter()
+                .filter(|(w, _)| !llm::py::strip(w).is_empty())
+                .map(|(w, _)| w.as_str())
+                .collect::<Vec<_>>()
+                .join(" ");
+            let confs: Vec<f64> = woerter
+                .iter()
+                .filter(|(_, c)| *c >= 0.0)
+                .map(|(_, c)| c / 100.0)
+                .collect();
             (text, confs.into_iter().reduce(f64::min).unwrap_or(0.0))
         })
         .collect())
 }
 
 fn text_und_conf(zeilen: Vec<(String, f64)>) -> (String, ConfMap) {
-    let conf = zeilen.iter().enumerate().map(|(i, (_, c))| (i, *c)).collect();
-    (zeilen.into_iter().map(|(t, _)| t).collect::<Vec<_>>().join("\n"), conf)
+    let conf = zeilen
+        .iter()
+        .enumerate()
+        .map(|(i, (_, c))| (i, *c))
+        .collect();
+    (
+        zeilen
+            .into_iter()
+            .map(|(t, _)| t)
+            .collect::<Vec<_>>()
+            .join("\n"),
+        conf,
+    )
 }
 
 fn tesseract_tsv(bild: &Path) -> Result<Vec<(String, f64)>, OcrFehler> {
     let b = bild.to_string_lossy();
-    let tsv = lauf(&["tesseract", &b, "stdout", "-l", "deu", "tsv"], TESSERACT_ZEITLIMIT, true)?;
+    let tsv = lauf(
+        &["tesseract", &b, "stdout", "-l", "deu", "tsv"],
+        TESSERACT_ZEITLIMIT,
+        true,
+    )?;
     Ok(tsv_zu_zeilen(&tsv)?)
 }
 
 fn pngs(dir: &Path) -> Result<Vec<std::path::PathBuf>, OcrFehler> {
-    let mut v: Vec<_> = std::fs::read_dir(dir)?.filter_map(|e| e.ok().map(|e| e.path())).collect();
+    let mut v: Vec<_> = std::fs::read_dir(dir)?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .collect();
     v.sort();
     Ok(v)
 }
@@ -149,8 +211,26 @@ fn ocr_seite(pfad: &str, seite: usize) -> Result<(String, ConfMap), OcrFehler> {
     let praefix = td.path().join("seite");
     let n = seite.to_string();
     // Python prueft weder Rueckgabecode noch Ausgabe von pdftoppm, nur das Zeitlimit.
-    lauf(&["pdftoppm", "-png", "-r", "200", "-f", &n, "-l", &n, pfad, &praefix.to_string_lossy()], PDFTOPPM_ZEITLIMIT, false)?;
-    let bild = pngs(td.path())?.into_iter().next().ok_or(OcrFehler::KeinBild)?;
+    lauf(
+        &[
+            "pdftoppm",
+            "-png",
+            "-r",
+            "200",
+            "-f",
+            &n,
+            "-l",
+            &n,
+            pfad,
+            &praefix.to_string_lossy(),
+        ],
+        PDFTOPPM_ZEITLIMIT,
+        false,
+    )?;
+    let bild = pngs(td.path())?
+        .into_iter()
+        .next()
+        .ok_or(OcrFehler::KeinBild)?;
     Ok(text_und_conf(tesseract_tsv(&bild)?))
 }
 
@@ -158,8 +238,22 @@ fn ocr_seite(pfad: &str, seite: usize) -> Result<(String, ConfMap), OcrFehler> {
 fn ocr_alle(pfad: &str, zu_viel: &dyn Fn(usize) -> String) -> Result<(String, ConfMap), OcrFehler> {
     let td = tempfile::tempdir()?;
     let praefix = td.path().join("seite");
-    lauf(&["pdftoppm", "-png", "-r", "200", pfad, &praefix.to_string_lossy()], PDFTOPPM_ZEITLIMIT, false)?;
-    let seiten: Vec<_> = pngs(td.path())?.into_iter().filter(|p| p.extension().is_some_and(|e| e == "png")).collect();
+    lauf(
+        &[
+            "pdftoppm",
+            "-png",
+            "-r",
+            "200",
+            pfad,
+            &praefix.to_string_lossy(),
+        ],
+        PDFTOPPM_ZEITLIMIT,
+        false,
+    )?;
+    let seiten: Vec<_> = pngs(td.path())?
+        .into_iter()
+        .filter(|p| p.extension().is_some_and(|e| e == "png"))
+        .collect();
     if seiten.len() > OCR_SEITEN_HOECHSTZAHL {
         return Err(OcrFehler::ZuAufwendig(zu_viel(seiten.len())));
     }
@@ -172,7 +266,11 @@ fn ocr_alle(pfad: &str, zu_viel: &dyn Fn(usize) -> String) -> Result<(String, Co
 
 /// Seiten mit Textlayer behalten, implausible einzeln nach-OCRen; Zeilenindex ueber die
 /// Seitengrenzen fortgezaehlt (`rstrip("\n")` VOR dem Zaehlen, sonst verschiebt sich `conf_map`).
-fn gemischt(pfad: &str, text: &str, zu_viel: &dyn Fn(usize, usize) -> String) -> Result<(String, ConfMap), OcrFehler> {
+fn gemischt(
+    pfad: &str,
+    text: &str,
+    zu_viel: &dyn Fn(usize, usize) -> String,
+) -> Result<(String, ConfMap), OcrFehler> {
     let mut seiten: Vec<&str> = text.split('\x0c').collect();
     seiten.pop();
     if seiten.iter().all(|s| plausibel(s)) {
@@ -201,7 +299,11 @@ fn gemischt(pfad: &str, text: &str, zu_viel: &dyn Fn(usize, usize) -> String) ->
 }
 
 fn pdftotext(pfad: &str) -> Result<String, OcrFehler> {
-    lauf(&["pdftotext", "-layout", pfad, "-"], PDFTOTEXT_ZEITLIMIT, false)
+    lauf(
+        &["pdftotext", "-layout", pfad, "-"],
+        PDFTOTEXT_ZEITLIMIT,
+        false,
+    )
 }
 
 /// `lies_kontoauszug_pdf(pfad)`: Textlayer zuerst (BEL→Leerzeichen), sonst Voll-Scan.
@@ -249,12 +351,18 @@ pub fn lies_kontoauszug_pdf(pfad: &str) -> Result<(String, ConfMap), OcrFehler> 
 pub fn lies_beleg_text(pfad: &str) -> Result<(String, ConfMap), OcrFehler> {
     if pfad.to_lowercase().ends_with(".txt") {
         let text = std::fs::read_to_string(pfad)?;
-        return Ok((text.replace("\r\n", "\n").replace('\r', "\n"), ConfMap::new()));
+        return Ok((
+            text.replace("\r\n", "\n").replace('\r', "\n"),
+            ConfMap::new(),
+        ));
     }
     let text = pdftotext(pfad)?;
     if llm::py::strip(&text).is_empty() {
         let grenze = TESSERACT_ZEITLIMIT * u32::try_from(OCR_SEITEN_HOECHSTZAHL).unwrap_or(40);
-        return Ok((lauf(&["tesseract", pfad, "-", "-l", "deu"], grenze, true)?, ConfMap::new()));
+        return Ok((
+            lauf(&["tesseract", pfad, "-", "-l", "deu"], grenze, true)?,
+            ConfMap::new(),
+        ));
     }
     gemischt(pfad, &text, &|n, von| {
         format!(

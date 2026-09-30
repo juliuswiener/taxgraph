@@ -7,10 +7,13 @@ use rust_decimal::Decimal;
 use super::afa::{p6_2_gwg, P62GwgEingabe};
 use super::fehler::{in_cent, ok, EngineFehler};
 use super::reisekosten::{
-    dhf_abzug, uebernachtung_abzug, verpflegung_abzug, DhfEingabe, UebernachtungEingabe, VerpflegungEingabe,
+    dhf_abzug, uebernachtung_abzug, verpflegung_abzug, DhfEingabe, UebernachtungEingabe,
+    VerpflegungEingabe,
 };
 use crate::arbeitszimmer::{self, ArbeitszimmerEingabe};
-use crate::entfernungspauschale::{self as ep_scope, EntfernungspauschaleEingabe as EpScopeEingabe};
+use crate::entfernungspauschale::{
+    self as ep_scope, EntfernungspauschaleEingabe as EpScopeEingabe,
+};
 
 /// Eingabe fuer [`raumkosten`] (Sachverhalt-Schluessel wie in runner.py).
 #[derive(Debug, Clone, Copy)]
@@ -84,7 +87,9 @@ fn satz_cent(satz: Decimal) -> Result<Cent, EngineFehler> {
     if !c.fract().is_zero() {
         return Err(EngineFehler::NichtCentGenau(satz));
     }
-    i64::try_from(c).map(Cent::new).map_err(|_| EngineFehler::Ueberlauf("Satz->Cent"))
+    i64::try_from(c)
+        .map(Cent::new)
+        .map_err(|_| EngineFehler::Ueberlauf("Satz->Cent"))
 }
 
 /// `catala_entfernungspauschale` -- § 9 Abs. 1 S. 3 Nr. 4/4a `EStG`: abziehbarer Betrag nach
@@ -102,7 +107,10 @@ fn satz_cent(satz: Decimal) -> Result<Cent, EngineFehler> {
 /// };
 /// assert_eq!(entfernungspauschale(&e, &p).unwrap(), domain::Euro::new(8008));
 /// ```
-pub fn entfernungspauschale(e: &EntfernungspauschaleEingabe, p: &Params) -> Result<Euro, EngineFehler> {
+pub fn entfernungspauschale(
+    e: &EntfernungspauschaleEingabe,
+    p: &Params,
+) -> Result<Euro, EngineFehler> {
     let r = p.entfernungspauschale(e.veranlagungszeitraum)?;
     let out = ep_scope::berechnen(EpScopeEingabe {
         entfernung_km_roh: e.entfernung_km_roh,
@@ -119,7 +127,8 @@ pub fn entfernungspauschale(e: &EntfernungspauschaleEingabe, p: &Params) -> Resu
 
 /// Euro-Satz in ganzen Cent, abgeschnitten. Python: `int(Decimal(str(satz)) * 100)`.
 fn satz_cent_abgeschnitten(satz: Decimal) -> Result<i64, EngineFehler> {
-    i64::try_from((satz * Decimal::ONE_HUNDRED).trunc()).map_err(|_| EngineFehler::Ueberlauf("Satz->Cent"))
+    i64::try_from((satz * Decimal::ONE_HUNDRED).trunc())
+        .map_err(|_| EngineFehler::Ueberlauf("Satz->Cent"))
 }
 
 /// `catala_ep_ab_21km` -- § 9 Abs. 1 S. 3 Nr. 4 S. 2 `EStG`: der ab dem 21. vollen km erhoehte
@@ -144,7 +153,8 @@ fn satz_cent_abgeschnitten(satz: Decimal) -> Result<i64, EngineFehler> {
 pub fn ep_ab_21km(e: &EntfernungspauschaleEingabe, p: &Params) -> Result<Euro, EngineFehler> {
     let r = p.entfernungspauschale(e.veranlagungszeitraum)?;
     // § 9 Abs. 1 S. 3 Nr. 4 S. 4: nur volle Entfernungs-km (int() schneidet Richtung 0 ab).
-    let km_voll = i64::try_from(e.entfernung_km_roh.trunc()).map_err(|_| EngineFehler::Ueberlauf("km"))?;
+    let km_voll =
+        i64::try_from(e.entfernung_km_roh.trunc()).map_err(|_| EngineFehler::Ueberlauf("km"))?;
     let grenze = r.staffelgrenze_km;
     let satz_ab21_ct = satz_cent_abgeschnitten(r.satz_ab_21_km)?;
     let satz_bis20_ct = satz_cent_abgeschnitten(r.satz_bis_20_km)?;
@@ -219,7 +229,9 @@ pub fn werbungskosten_n(e: &WerbungskostenNEingabe, p: &Params) -> Result<Euro, 
         wk = ok(wk.checked_add(uebernachtung_abzug(uen, p)?), "wk uen")?;
     }
     if let Some(ak) = e.am_anschaffungskosten {
-        let gwg = p6_2_gwg(&P62GwgEingabe { gwg_anschaffungskosten_netto: ak })?;
+        let gwg = p6_2_gwg(&P62GwgEingabe {
+            gwg_anschaffungskosten_netto: ak,
+        })?;
         wk = ok(wk.checked_add(gwg.get()), "wk am")?;
     }
     Ok(Euro::new(wk))

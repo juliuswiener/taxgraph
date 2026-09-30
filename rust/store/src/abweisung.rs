@@ -22,7 +22,11 @@ pub enum Abweisung {
         "fail-closed (A): {schreiber}-Schreiber muss herkunft={erwartete_herkunft}, \
          zustand=vorlaeufig, signal_2=null tragen — {folge}"
     )]
-    AuflageA { schreiber: String, erwartete_herkunft: &'static str, folge: &'static str },
+    AuflageA {
+        schreiber: String,
+        erwartete_herkunft: &'static str,
+        folge: &'static str,
+    },
 
     /// Auflage A (Ersetzt-Guard, `store.py:321-324`): `llm:`/`import:beleg`/`import:kontoauszug`
     /// duerfen nie `ersetzt` tragen.
@@ -42,7 +46,11 @@ pub enum Abweisung {
         "fail-closed (Katalog): {schreiber} darf {feld_id} nicht vorschlagen (human-only oder \
          nicht für Typ '{typ}' freigegeben)."
     )]
-    KatalogNichtFreigegeben { schreiber: String, feld_id: String, typ: &'static str },
+    KatalogNichtFreigegeben {
+        schreiber: String,
+        feld_id: String,
+        typ: &'static str,
+    },
 
     /// Auflage F2/Magnitude (`store.py:355-358`): `abs(wert) >= 10^10` bei einem
     /// Vorschlags-Schreiber.
@@ -50,25 +58,40 @@ pub enum Abweisung {
         "fail-closed (F2/Magnitude): {feld_id}={wert} von {schreiber} — vermuteter \
          Einheiten-/Skalierungsfehler (EUR statt Cent)."
     )]
-    Magnitude { feld_id: String, schreiber: String, wert: String },
+    Magnitude {
+        feld_id: String,
+        schreiber: String,
+        wert: String,
+    },
 
     /// Auflage T (`store.py:228-231`, Stille-Null-Klasse): `wert` passt nicht zum Bindungstyp.
     #[error(
         "fail-closed (Typ): {feld_id}={wert} passt nicht zum Bindungstyp '{typ}' — der Ring läse \
          das sonst still als 0 (Stille-Null-Klasse)."
     )]
-    TypInkonform { feld_id: String, wert: String, typ: &'static str },
+    TypInkonform {
+        feld_id: String,
+        wert: String,
+        typ: &'static str,
+    },
 
     /// Auflage F/Format (`store.py:245-248`): `wert` passt nicht auf `bindung.muster`.
     #[error(
         "fail-closed (Format): {feld_id}={wert} passt nicht zum Muster '{muster}' der Bindung — \
          ein formal falscher Wert wird spätestens beim Finanzamt abgelehnt."
     )]
-    FormatInkonform { feld_id: String, wert: String, muster: String },
+    FormatInkonform {
+        feld_id: String,
+        wert: String,
+        muster: String,
+    },
 
     /// Auflage B (`store.py:371-373`): `feld_id` hat schon ein aktives Event, `ersetzt` fehlt.
     #[error("fail-closed (B): {feld_id} hat schon ein aktives Event; Überschreiben braucht ersetzt={aktives_event}.")]
-    AktivesEventVorhanden { feld_id: String, aktives_event: EventId },
+    AktivesEventVorhanden {
+        feld_id: String,
+        aktives_event: EventId,
+    },
 
     /// Auflage B (`store.py:377`): das `ersetzt`-Ziel existiert nicht im Log.
     #[error("fail-closed (B): ersetzt-Ziel {0} existiert nicht.")]
@@ -94,12 +117,14 @@ pub fn auflage_a_erwartung(schreiber: &Schreiber) -> Option<(&'static str, &'sta
         Schreiber::ImportVorjahr => {
             Some(("vorjahr", "eine Vorjahres-Übernahme bestätigt nie direkt."))
         }
-        Schreiber::ImportKontoauszug => {
-            Some(("kontoauszug", "eine Kontoauszug-Klassifikation bestätigt nie direkt."))
-        }
-        Schreiber::Berechnet(_) => {
-            Some(("berechnet", "ein berechneter/abgeleiteter Vorschlag bestätigt nie direkt."))
-        }
+        Schreiber::ImportKontoauszug => Some((
+            "kontoauszug",
+            "eine Kontoauszug-Klassifikation bestätigt nie direkt.",
+        )),
+        Schreiber::Berechnet(_) => Some((
+            "berechnet",
+            "ein berechneter/abgeleiteter Vorschlag bestätigt nie direkt.",
+        )),
         _ => None,
     }
 }
@@ -109,7 +134,10 @@ pub fn auflage_a_erwartung(schreiber: &Schreiber) -> Option<(&'static str, &'sta
 /// `ersetzt=<aktives Event>`, s. Kommentar in `store.py:317-320`).
 #[must_use]
 pub fn ersetzt_gesperrt(schreiber: &Schreiber) -> bool {
-    matches!(schreiber, Schreiber::Llm(_) | Schreiber::ImportBeleg | Schreiber::ImportKontoauszug)
+    matches!(
+        schreiber,
+        Schreiber::Llm(_) | Schreiber::ImportBeleg | Schreiber::ImportKontoauszug
+    )
 }
 
 #[cfg(test)]

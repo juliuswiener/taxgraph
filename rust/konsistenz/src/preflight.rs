@@ -25,47 +25,124 @@ use crate::zahl::{eur, ganzzahl, leer_nach_strip};
 /// `RING_BETRAGSFELDER`). Dieselbe Menge wie die Klasse-C-Sperre in `_feste_zahl`, damit Sperre
 /// und Hinweis nicht auseinanderlaufen.
 pub const RING_BETRAGSFELDER: [&str; 119] = [
-    "afa_jahresbetrag", "agb_aufwendungen", "am_anschaffung_monat", "am_anschaffungskosten",
-    "arbeitsmittel_nutzungsdauer", "basis_kv", "basis_kv_partner", "basis_pv", "basis_pv_partner",
-    "behinderungsbedingte_aufwendungen", "behinderungsbedingte_aufwendungen_partner",
-    "berufsausbildung_aufwendungen", "betriebseinnahmen", "bruttoarbeitslohn",
-    "bruttoarbeitslohn_partner", "dba_auslaendische_einkuenfte",
-    "dba_gezahlte_auslaendische_steuer", "dhf_monate", "dhf_unterkunftskosten_monat",
-    "einkuenfte_gewinn", "einkuenfte_gewinn_partner", "fam_anzahl_kinder",
-    "fam_monate_ohne_voraussetzung", "geburtsjahr", "geburtsjahr_partner", "gewinnanteil",
-    "gewinnanteil_partner", "gewst_hebesatz", "gewst_hebesatz_partner", "gewst_messbetrag",
-    "gewst_messbetrag_partner", "hh_dienstleistungen", "hh_handwerker_arbeitskosten",
-    "hh_minijob_aufwendungen", "kap_gewinn_aktien", "kap_gewinn_aktien_partner",
-    "kap_gewinn_sonstige", "kap_gewinn_sonstige_partner", "kap_kapitalertraege",
-    "kap_kapitalertraege_partner", "kap_q_auslaendische_steuer", "kap_verlust_aktien",
-    "kap_verlust_aktien_partner", "kap_verlust_sonstige", "kap_verlust_sonstige_partner",
-    "kist_erstattet", "kist_gezahlt", "p22_nr3_einkuenfte", "p32b_progressionseinkuenfte",
-    "p33a_andere_einkuenfte_bezuege", "p33a_ausbildung_anzahl_kinder",
-    "p33a_unterhalt_aufwendungen", "p33a_unterhalt_kv_pv", "p35c_energieberater_aufwendungen",
-    "p35c_sanierungsaufwendungen", "p36_kapitalertragsteuer", "p36_kapitalertragsteuer_kist",
-    "p36_kapitalertragsteuer_solz", "p36_lohnsteuer", "p36_vorauszahlungen", "pv_anzahl_einheiten",
-    "pv_bruttoleistung_kwp", "pv_einnahmen", "realsplitting_empfaenger_kv_krankengeld",
-    "realsplitting_empfaenger_kv_pv", "realsplitting_unterhaltsleistungen",
-    "rentner_alter_bei_rentenbeginn_partner", "rentner_grad_der_behinderung",
-    "rentner_grad_der_behinderung_partner", "rentner_jahresrente_partner", "rentner_pflegegrad",
-    "rentner_renten_beginn_jahr_partner", "rentner_rentenfreibetrag_partner",
-    "rentner_veraeusserungsgewinn", "rentner_veraeusserungsgewinn_partner",
-    "sonstige_betriebsausgaben", "spenden_betrag", "tage_24h", "tage_an_abreise",
-    "tage_ueber_8h_eintaegig", "uebernachtung_kosten_monat", "uebernachtung_monate",
-    "uebernachtung_monate_bisher", "verguetung_darlehen", "verguetung_darlehen_partner",
-    "verguetung_taetigkeit", "verguetung_taetigkeit_partner", "verguetung_ueberlassung",
-    "verguetung_ueberlassung_partner", "verlustvortrag_bestand", "versorgung_alter_bei_beginn",
-    "versorgung_beginn_jahr", "versorgung_bemessungsgrundlage", "versorgung_jahresrente",
-    "vor_ag_anteil_rv", "vor_ag_anteil_rv_partner", "vor_an_anteil_rv", "vor_an_anteil_rv_partner",
-    "vor_rv_ausserhalb_lstb", "vor_rv_ausserhalb_lstb_partner", "vorsorge_arbeitslosenversicherung",
-    "vorsorge_arbeitslosenversicherung_partner", "vorsorge_erwerbsunfaehigkeit",
-    "vorsorge_erwerbsunfaehigkeit_partner", "vorsorge_rv_alt_mit_ueberschuss",
-    "vorsorge_rv_alt_mit_ueberschuss_partner", "vorsorge_rv_alt_ohne_ueberschuss",
-    "vorsorge_rv_alt_ohne_ueberschuss_partner", "vorsorge_unfall_haftpflicht",
-    "vorsorge_unfall_haftpflicht_partner", "vpf_abendessen_gestellt_anzahl",
-    "vpf_fruehstuecke_gestellt_anzahl", "vpf_mahlzeiten_gezahltes_entgelt",
-    "vpf_mittagessen_gestellt_anzahl", "vpf_monate_am_ort", "vpf_steuerfreie_erstattung_betrag",
-    "vpf_tage_24h_nach_drei_monaten", "vpf_tage_an_abreise_nach_drei_monaten",
+    "afa_jahresbetrag",
+    "agb_aufwendungen",
+    "am_anschaffung_monat",
+    "am_anschaffungskosten",
+    "arbeitsmittel_nutzungsdauer",
+    "basis_kv",
+    "basis_kv_partner",
+    "basis_pv",
+    "basis_pv_partner",
+    "behinderungsbedingte_aufwendungen",
+    "behinderungsbedingte_aufwendungen_partner",
+    "berufsausbildung_aufwendungen",
+    "betriebseinnahmen",
+    "bruttoarbeitslohn",
+    "bruttoarbeitslohn_partner",
+    "dba_auslaendische_einkuenfte",
+    "dba_gezahlte_auslaendische_steuer",
+    "dhf_monate",
+    "dhf_unterkunftskosten_monat",
+    "einkuenfte_gewinn",
+    "einkuenfte_gewinn_partner",
+    "fam_anzahl_kinder",
+    "fam_monate_ohne_voraussetzung",
+    "geburtsjahr",
+    "geburtsjahr_partner",
+    "gewinnanteil",
+    "gewinnanteil_partner",
+    "gewst_hebesatz",
+    "gewst_hebesatz_partner",
+    "gewst_messbetrag",
+    "gewst_messbetrag_partner",
+    "hh_dienstleistungen",
+    "hh_handwerker_arbeitskosten",
+    "hh_minijob_aufwendungen",
+    "kap_gewinn_aktien",
+    "kap_gewinn_aktien_partner",
+    "kap_gewinn_sonstige",
+    "kap_gewinn_sonstige_partner",
+    "kap_kapitalertraege",
+    "kap_kapitalertraege_partner",
+    "kap_q_auslaendische_steuer",
+    "kap_verlust_aktien",
+    "kap_verlust_aktien_partner",
+    "kap_verlust_sonstige",
+    "kap_verlust_sonstige_partner",
+    "kist_erstattet",
+    "kist_gezahlt",
+    "p22_nr3_einkuenfte",
+    "p32b_progressionseinkuenfte",
+    "p33a_andere_einkuenfte_bezuege",
+    "p33a_ausbildung_anzahl_kinder",
+    "p33a_unterhalt_aufwendungen",
+    "p33a_unterhalt_kv_pv",
+    "p35c_energieberater_aufwendungen",
+    "p35c_sanierungsaufwendungen",
+    "p36_kapitalertragsteuer",
+    "p36_kapitalertragsteuer_kist",
+    "p36_kapitalertragsteuer_solz",
+    "p36_lohnsteuer",
+    "p36_vorauszahlungen",
+    "pv_anzahl_einheiten",
+    "pv_bruttoleistung_kwp",
+    "pv_einnahmen",
+    "realsplitting_empfaenger_kv_krankengeld",
+    "realsplitting_empfaenger_kv_pv",
+    "realsplitting_unterhaltsleistungen",
+    "rentner_alter_bei_rentenbeginn_partner",
+    "rentner_grad_der_behinderung",
+    "rentner_grad_der_behinderung_partner",
+    "rentner_jahresrente_partner",
+    "rentner_pflegegrad",
+    "rentner_renten_beginn_jahr_partner",
+    "rentner_rentenfreibetrag_partner",
+    "rentner_veraeusserungsgewinn",
+    "rentner_veraeusserungsgewinn_partner",
+    "sonstige_betriebsausgaben",
+    "spenden_betrag",
+    "tage_24h",
+    "tage_an_abreise",
+    "tage_ueber_8h_eintaegig",
+    "uebernachtung_kosten_monat",
+    "uebernachtung_monate",
+    "uebernachtung_monate_bisher",
+    "verguetung_darlehen",
+    "verguetung_darlehen_partner",
+    "verguetung_taetigkeit",
+    "verguetung_taetigkeit_partner",
+    "verguetung_ueberlassung",
+    "verguetung_ueberlassung_partner",
+    "verlustvortrag_bestand",
+    "versorgung_alter_bei_beginn",
+    "versorgung_beginn_jahr",
+    "versorgung_bemessungsgrundlage",
+    "versorgung_jahresrente",
+    "vor_ag_anteil_rv",
+    "vor_ag_anteil_rv_partner",
+    "vor_an_anteil_rv",
+    "vor_an_anteil_rv_partner",
+    "vor_rv_ausserhalb_lstb",
+    "vor_rv_ausserhalb_lstb_partner",
+    "vorsorge_arbeitslosenversicherung",
+    "vorsorge_arbeitslosenversicherung_partner",
+    "vorsorge_erwerbsunfaehigkeit",
+    "vorsorge_erwerbsunfaehigkeit_partner",
+    "vorsorge_rv_alt_mit_ueberschuss",
+    "vorsorge_rv_alt_mit_ueberschuss_partner",
+    "vorsorge_rv_alt_ohne_ueberschuss",
+    "vorsorge_rv_alt_ohne_ueberschuss_partner",
+    "vorsorge_unfall_haftpflicht",
+    "vorsorge_unfall_haftpflicht_partner",
+    "vpf_abendessen_gestellt_anzahl",
+    "vpf_fruehstuecke_gestellt_anzahl",
+    "vpf_mahlzeiten_gezahltes_entgelt",
+    "vpf_mittagessen_gestellt_anzahl",
+    "vpf_monate_am_ort",
+    "vpf_steuerfreie_erstattung_betrag",
+    "vpf_tage_24h_nach_drei_monaten",
+    "vpf_tage_an_abreise_nach_drei_monaten",
     "vpf_tage_ueber_8h_nach_drei_monaten",
 ];
 
@@ -176,12 +253,19 @@ pub struct PreflightErgebnis {
 /// `_bestaetigter_betrag` (`preflight.py:89-98`): bestätigter Betrag > 0, sonst `None`. `true`
 /// ist kein Betrag. PARITÄT: Floats zählen nicht (Wertebereich, s. Crate-Doku).
 fn bestaetigter_betrag(felder: &Felder, feld_id: &str) -> Option<i64> {
-    lies(felder, feld_id).bestaetigt().and_then(ganzzahl).filter(|n| *n > 0)
+    lies(felder, feld_id)
+        .bestaetigt()
+        .and_then(ganzzahl)
+        .filter(|n| *n > 0)
 }
 
 /// `_frage_kurz` (`preflight.py:128-133`): Fragetext bis einschließlich des ersten „?".
 fn frage_kurz(feld_id: &str, graph: &Graph<'_>) -> String {
-    let text = graph.alle().get(feld_id).and_then(|b| b.fragetext_laie.as_deref()).unwrap_or("");
+    let text = graph
+        .alle()
+        .get(feld_id)
+        .and_then(|b| b.fragetext_laie.as_deref())
+        .unwrap_or("");
     match text.split_once('?') {
         Some((kopf, _)) => format!("{kopf}?"),
         None => text.to_owned(),
@@ -244,19 +328,31 @@ pub fn unvollstaendige_instanzen(felder: &Felder, graph: &Graph<'_>) -> Vec<Plau
 pub fn vorlaeufige_ring_betraege(felder: &Felder, graph: &Graph<'_>) -> Vec<VorlaeufigerBetrag> {
     let mut treffer = Vec::new();
     for feld_id in RING_BETRAGSFELDER {
-        let Some(eintrag) = felder.get(feld_id) else { continue };
+        let Some(eintrag) = felder.get(feld_id) else {
+            continue;
+        };
         if eintrag.zustand == domain::Zustand::Bestaetigt {
             continue;
         }
-        let Some(b) = graph.alle().get(feld_id) else { continue };
-        if b.typ != domain::Feldtyp::Cent || b.instanz_gruppe.as_deref().is_some_and(|g| !g.is_empty()) {
+        let Some(b) = graph.alle().get(feld_id) else {
+            continue;
+        };
+        if b.typ != domain::Feldtyp::Cent
+            || b.instanz_gruppe.as_deref().is_some_and(|g| !g.is_empty())
+        {
             continue;
         }
         // PARITÄT: Floats zählen nicht (Wertebereich, s. Crate-Doku).
-        let Some(wert) = ganzzahl(&eintrag.wert).filter(|n| *n > 0) else { continue };
+        let Some(wert) = ganzzahl(&eintrag.wert).filter(|n| *n > 0) else {
+            continue;
+        };
         // Ohne fragetext_laie fällt der Ortshinweis weg — ein Füllwort läse sich als Frage.
         let frage = frage_kurz(feld_id, graph);
-        let ort = if frage.is_empty() { String::new() } else { format!(" bei der Frage »{frage}«") };
+        let ort = if frage.is_empty() {
+            String::new()
+        } else {
+            format!(" bei der Frage »{frage}«")
+        };
         treffer.push(VorlaeufigerBetrag {
             feld_id,
             wert,
@@ -289,21 +385,37 @@ fn schulgeld_felder(felder: &Felder) -> Vec<(&str, i64)> {
 }
 
 fn widerspruch(feld_id: &str, wert: Value, bezug: Option<i64>, grund: String) -> PlausiWiderspruch {
-    PlausiWiderspruch { feld_id: feld_id.to_owned(), wert, bezug, grund }
+    PlausiWiderspruch {
+        feld_id: feld_id.to_owned(),
+        wert,
+        bezug,
+        grund,
+    }
 }
 
 /// Lohnsteuer, RV-Beiträge und `KiSt` gegen den Bruttolohn (`preflight.py:235-274`).
 fn gegen_brutto(felder: &Felder, brutto: i64, out: &mut Vec<PlausiWiderspruch>) {
     // § 32a Abs. 1 S. 2 Nr. 5: Spitzensatz 0,45 — Lohnsteuer über dem Lohn ist unmöglich.
-    if let Some(lohnsteuer) = bestaetigter_betrag(felder, "p36_lohnsteuer").filter(|l| *l > brutto) {
-        out.push(widerspruch("p36_lohnsteuer", lohnsteuer.into(), Some(brutto), format!(
-            "Bei einem Bruttoarbeitslohn von {} kann dein Arbeitgeber nicht {} Lohnsteuer \
+    if let Some(lohnsteuer) = bestaetigter_betrag(felder, "p36_lohnsteuer").filter(|l| *l > brutto)
+    {
+        out.push(widerspruch(
+            "p36_lohnsteuer",
+            lohnsteuer.into(),
+            Some(brutto),
+            format!(
+                "Bei einem Bruttoarbeitslohn von {} kann dein Arbeitgeber nicht {} Lohnsteuer \
              einbehalten haben — die Lohnsteuer wird vom Lohn abgezogen und ist deshalb immer \
              kleiner als der Lohn. Bitte prüfe, welche der beiden Zahlen stimmt.",
-            eur(brutto), eur(lohnsteuer))));
+                eur(brutto),
+                eur(lohnsteuer)
+            ),
+        ));
     }
     // RV-Anteile sind ein Prozentsatz des Lohns — ohne Beitragssatz und BBG prüfbar.
-    for (feld_id, name) in [("vor_an_anteil_rv", "dein eigener Anteil"), ("vor_ag_anteil_rv", "der Anteil deines Arbeitgebers")] {
+    for (feld_id, name) in [
+        ("vor_an_anteil_rv", "dein eigener Anteil"),
+        ("vor_ag_anteil_rv", "der Anteil deines Arbeitgebers"),
+    ] {
         if let Some(beitrag) = bestaetigter_betrag(felder, feld_id).filter(|b| *b > brutto) {
             out.push(widerspruch(feld_id, beitrag.into(), Some(brutto), format!(
                 "Bei einem Bruttoarbeitslohn von {} können die Rentenversicherungsbeiträge nicht {} \
@@ -312,14 +424,26 @@ fn gegen_brutto(felder: &Felder, brutto: i64, out: &mut Vec<PlausiWiderspruch>) 
                 eur(brutto), eur(beitrag))));
         }
     }
-    for (feld_id, name) in [("kist_gezahlt", "gezahlte"), ("kirchensteuer_arbeitgeber", "vom Arbeitgeber einbehaltene")] {
-        if let Some(kist) = bestaetigter_betrag(felder, feld_id).filter(|k| kist_ueber_brutto_anteil(*k, brutto)) {
-            out.push(widerspruch(feld_id, kist.into(), Some(brutto), format!(
-                "Bei einem Bruttoarbeitslohn von {} sind {} {name} Kirchensteuer sehr \
+    for (feld_id, name) in [
+        ("kist_gezahlt", "gezahlte"),
+        ("kirchensteuer_arbeitgeber", "vom Arbeitgeber einbehaltene"),
+    ] {
+        if let Some(kist) =
+            bestaetigter_betrag(felder, feld_id).filter(|k| kist_ueber_brutto_anteil(*k, brutto))
+        {
+            out.push(widerspruch(
+                feld_id,
+                kist.into(),
+                Some(brutto),
+                format!(
+                    "Bei einem Bruttoarbeitslohn von {} sind {} {name} Kirchensteuer sehr \
                  unwahrscheinlich. Die Kirchensteuer beträgt 8 bis 9 Prozent der Einkommensteuer \
                  und liegt damit üblicherweise im Bereich einiger hundert Euro. Bitte prüfe, \
                  welche der beiden Zahlen stimmt.",
-                eur(brutto), eur(kist))));
+                    eur(brutto),
+                    eur(kist)
+                ),
+            ));
         }
     }
 }
@@ -329,27 +453,44 @@ fn gegen_brutto(felder: &Felder, brutto: i64, out: &mut Vec<PlausiWiderspruch>) 
 /// Ein Betrag von 0 € zählt nicht als Angabe; das Bundesland schon.
 fn konfession_offen(felder: &Felder, out: &mut Vec<PlausiWiderspruch>) {
     let konfession = lies(felder, "kist_konfession").bestaetigt();
-    if konfession.and_then(Value::as_str).is_some_and(|s| !s.is_empty()) {
+    if konfession
+        .and_then(Value::as_str)
+        .is_some_and(|s| !s.is_empty())
+    {
         return;
     }
     let bundesland = lies(felder, "kist_bundesland").bestaetigt();
-    let beleg = ["kist_gezahlt", "kirchensteuer_arbeitgeber", "kist_erstattet"]
-        .into_iter()
-        .find_map(|f| bestaetigter_betrag(felder, f).map(|b| (f, b)));
+    let beleg = [
+        "kist_gezahlt",
+        "kirchensteuer_arbeitgeber",
+        "kist_erstattet",
+    ]
+    .into_iter()
+    .find_map(|f| bestaetigter_betrag(felder, f).map(|b| (f, b)));
     let (feld_id, betrag) = match beleg {
         Some((f, b)) => (f, Some(b)),
-        None if bundesland.and_then(Value::as_str).is_some_and(|s| !s.is_empty()) => ("kist_bundesland", None),
+        None if bundesland
+            .and_then(Value::as_str)
+            .is_some_and(|s| !s.is_empty()) =>
+        {
+            ("kist_bundesland", None)
+        }
         None => return,
     };
     let womit = match betrag {
         Some(b) => format!("Kirchensteuer gezahlt oder einbehalten ({})", eur(b)),
         None => "angegeben, in welchem Bundesland du Kirchensteuer zahlst".to_owned(),
     };
-    out.push(widerspruch(feld_id, betrag.map_or(Value::Null, Value::from), None, format!(
+    out.push(widerspruch(
+        feld_id,
+        betrag.map_or(Value::Null, Value::from),
+        None,
+        format!(
         "Du hast {womit} — ob du einer Kirche angehörst, die Kirchensteuer erhebt, ist aber noch \
          offen. Ohne diese Angabe wird deine Kirchensteuer nicht berechnet und fehlt in deinem \
          Ergebnis. Bitte gib an, ob du einer solchen Kirche angehörst — und wenn nicht, prüfe die \
-         Kirchensteuer-Angaben noch einmal.")));
+         Kirchensteuer-Angaben noch einmal."),
+    ));
 }
 
 /// Betrag ↔ Bezugsgröße (`preflight.py:222-370`). Nur bestätigte Werte; ohne Bezugsgröße bleibt
@@ -374,22 +515,35 @@ pub fn plausibilitaets_widersprueche(
     }
     for (feld_id, betrag) in schulgeld_felder(felder) {
         if betrag > SCHULGELD_SCHWELLE_CENT {
-            out.push(widerspruch(feld_id, betrag.into(), None, format!(
+            out.push(widerspruch(
+                feld_id,
+                betrag.into(),
+                None,
+                format!(
                 "{} Schulgeld für ein Kind in einem Jahr ist ungewöhnlich hoch. Absetzbar sind 30 \
                  Prozent des Schulgelds, höchstens 5.000 € je Kind — dieser Höchstbetrag ist \
                  bereits ab rund 16.700 € Schulgeld erreicht. Bitte prüfe den Betrag.",
-                eur(betrag))));
+                eur(betrag)),
+            ));
         }
     }
-    if let (Some(gezahlt), Some(einbehalten)) =
-        (bestaetigter_betrag(felder, "kist_gezahlt"), bestaetigter_betrag(felder, "kirchensteuer_arbeitgeber"))
-    {
-        if i128::from(gezahlt.max(einbehalten)) > i128::from(gezahlt.min(einbehalten)) * KIST_ABGLEICH_FAKTOR {
-            out.push(widerspruch("kist_gezahlt", gezahlt.into(), Some(einbehalten), format!(
+    if let (Some(gezahlt), Some(einbehalten)) = (
+        bestaetigter_betrag(felder, "kist_gezahlt"),
+        bestaetigter_betrag(felder, "kirchensteuer_arbeitgeber"),
+    ) {
+        if i128::from(gezahlt.max(einbehalten))
+            > i128::from(gezahlt.min(einbehalten)) * KIST_ABGLEICH_FAKTOR
+        {
+            out.push(widerspruch(
+                "kist_gezahlt",
+                gezahlt.into(),
+                Some(einbehalten),
+                format!(
                 "Dein Arbeitgeber hat {} Kirchensteuer einbehalten, gezahlt hast du nach deiner \
                  Angabe {}. Beide Angaben beschreiben normalerweise dieselbe Zahlung und liegen \
                  hier weit auseinander. Bitte prüfe, welche der beiden Angaben stimmt.",
-                eur(einbehalten), eur(gezahlt))));
+                eur(einbehalten), eur(gezahlt)),
+            ));
         }
     }
     let keine_bank = lies(felder, "stammdaten_keine_bankverbindung").bestaetigt();
@@ -397,16 +551,23 @@ pub fn plausibilitaets_widersprueche(
         (keine_bank, lies(felder, "stammdaten_iban").bestaetigt())
     {
         if !leer_nach_strip(iban) {
-            out.push(widerspruch("stammdaten_iban", Value::String(iban.clone()), None,
+            out.push(widerspruch(
+                "stammdaten_iban",
+                Value::String(iban.clone()),
+                None,
                 "Du hast angegeben, keine Bankverbindung für eine Erstattung angeben zu wollen — \
                  trotzdem ist eine Kontonummer (IBAN) erfasst. Ohne Konto kann das Finanzamt eine \
                  Erstattung nicht überweisen. Bitte prüfe, welche der beiden Angaben stimmt."
-                    .to_owned()));
+                    .to_owned(),
+            ));
         }
     }
     konfession_offen(felder, &mut out);
     // Der Bestand wird von Jahr zu Jahr weniger; ein Anstieg braucht einen neuen Verlust im Vorjahr.
-    if let (Some(alt), Some(neu)) = (vorjahr_verlustvortrag, bestaetigter_betrag(felder, "verlustvortrag_bestand")) {
+    if let (Some(alt), Some(neu)) = (
+        vorjahr_verlustvortrag,
+        bestaetigter_betrag(felder, "verlustvortrag_bestand"),
+    ) {
         if neu > alt {
             out.push(widerspruch("verlustvortrag_bestand", neu.into(), Some(alt), format!(
                 "Im letzten verknüpften Vorjahr stand dein Verlustvortrag bei {}, jetzt gibst du {} \
@@ -501,7 +662,11 @@ mod tests {
         for b in brutto_werte {
             let k = i64::try_from(i128::from(b) * 3 / 10).unwrap();
             for kist in [k - 1, k, k + 1] {
-                assert_eq!(kist_ueber_brutto_anteil(kist, b), python_kist(kist, b), "b={b} kist={kist}");
+                assert_eq!(
+                    kist_ueber_brutto_anteil(kist, b),
+                    python_kist(kist, b),
+                    "b={b} kist={kist}"
+                );
             }
         }
     }

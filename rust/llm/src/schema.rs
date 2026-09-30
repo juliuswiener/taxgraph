@@ -26,7 +26,9 @@ pub static ZUORDNUNG_SCHEMA: LazyLock<Value> = LazyLock::new(|| lade(texte::ZUOR
 
 /// `rechenweg` ist `required`, aber `null` erlaubt: ohne `deserialize_with` wuerde serde ein
 /// FEHLENDES `Option`-Feld still als `None` lesen.
-fn pflicht<'de, D: serde::Deserializer<'de>, T: Deserialize<'de>>(d: D) -> Result<Option<T>, D::Error> {
+fn pflicht<'de, D: serde::Deserializer<'de>, T: Deserialize<'de>>(
+    d: D,
+) -> Result<Option<T>, D::Error> {
     Option::<T>::deserialize(d)
 }
 

@@ -346,7 +346,8 @@ impl GesamtEingabe {
             aussergewoehnliche_belastungen_cents: self.aussergewoehnliche_belastungen_cent,
             freibetraege_kinder_cents: self.freibetraege_kinder_cent,
             sonstige_abzuege_vom_einkommen_cents: self.sonstige_abzuege_vom_einkommen_cent,
-            anzurechnende_auslaendische_steuern_cents: self.anzurechnende_auslaendische_steuern_cent,
+            anzurechnende_auslaendische_steuern_cents: self
+                .anzurechnende_auslaendische_steuern_cent,
             steuerermaessigungen_cents: self.steuerermaessigungen_cent,
             steuer_kapital_gesondert_cents: self.steuer_kapital_gesondert_cent,
             hinzurechnung_kindergeld_cents: self.hinzurechnung_kindergeld_cent,
@@ -640,7 +641,12 @@ pub fn familienleistungsausgleich(
         let mut out: i64 = 0;
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
-            tg_familienleistungsausgleich(est_ohne_cent, est_mit_cent, kindergeld_cent, &raw mut out)
+            tg_familienleistungsausgleich(
+                est_ohne_cent,
+                est_mit_cent,
+                kindergeld_cent,
+                &raw mut out,
+            )
         };
         ergebnis_ohne_vz(rc, out)
     })
@@ -665,7 +671,12 @@ pub fn verbilligte_vermietung_wk(
         let mut out: i64 = 0;
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
-            tg_verbilligte_vermietung_wk(werbungskosten_cent, entgelt_quote_num, entgelt_quote_den, &raw mut out)
+            tg_verbilligte_vermietung_wk(
+                werbungskosten_cent,
+                entgelt_quote_num,
+                entgelt_quote_den,
+                &raw mut out,
+            )
         };
         ergebnis_ohne_vz(rc, out)
     })
@@ -691,7 +702,12 @@ pub fn kranken_pflege_vorsorge(
         let mut out: i64 = 0;
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
-            tg_kranken_pflege_vorsorge(basis_cent, weitere_cent, i32::from(mit_zuschuss), &raw mut out)
+            tg_kranken_pflege_vorsorge(
+                basis_cent,
+                weitere_cent,
+                i32::from(mit_zuschuss),
+                &raw mut out,
+            )
         };
         ergebnis_ohne_vz(rc, out)
     })
@@ -752,7 +768,8 @@ pub fn euer_gewinn(
     locked(|| {
         let mut out: i64 = 0;
         // SAFETY: siehe `spenden_abzug`.
-        let rc = unsafe { tg_euer_gewinn(betriebseinnahmen_cent, betriebsausgaben_cent, &raw mut out) };
+        let rc =
+            unsafe { tg_euer_gewinn(betriebseinnahmen_cent, betriebsausgaben_cent, &raw mut out) };
         ergebnis_ohne_vz(rc, out)
     })
 }
@@ -828,7 +845,12 @@ pub fn verlustvortrag_abzug(
         let mut out: i64 = 0;
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
-            tg_verlustvortrag_abzug(gde_cent, bestand_cent, i32::from(zusammenveranlagung), &raw mut out)
+            tg_verlustvortrag_abzug(
+                gde_cent,
+                bestand_cent,
+                i32::from(zusammenveranlagung),
+                &raw mut out,
+            )
         };
         ergebnis_ohne_vz(rc, out)
     })
@@ -1057,7 +1079,8 @@ pub fn festzusetzende_est_gesamt(
         let ffi_in = eingabe.zu_ffi();
         let mut ffi_out = TgEstOutFfi::default();
         // SAFETY: siehe `entfernungspauschale`.
-        let rc = unsafe { tg_festzusetzende_est_gesamt(&raw const ffi_in, vz as i32, &raw mut ffi_out) };
+        let rc =
+            unsafe { tg_festzusetzende_est_gesamt(&raw const ffi_in, vz as i32, &raw mut ffi_out) };
         ergebnis(rc, FestzusetzendeEstErgebnis::from(ffi_out), vz as i32)
     })
 }
@@ -1119,7 +1142,10 @@ pub fn recompute_source_hash(repo_root: &std::path::Path) -> std::io::Result<Str
         "find {root} -name '*.catala_en' -print0 | sort -z | xargs -0 cat | sha256sum | cut -d' ' -f1",
         root = shell_quote(&repo_root.join("rules")),
     );
-    let output = std::process::Command::new("sh").arg("-c").arg(script).output()?;
+    let output = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(script)
+        .output()?;
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
@@ -1146,8 +1172,7 @@ mod tests {
 
     #[test]
     fn festzusetzende_est_einzel_laeuft_durch() {
-        let cent =
-            festzusetzende_est_einzel(50_000 * 100, 0, 0, Vz::Vz2025).unwrap();
+        let cent = festzusetzende_est_einzel(50_000 * 100, 0, 0, Vz::Vz2025).unwrap();
         assert!(cent > 0);
     }
 
@@ -1183,12 +1208,21 @@ mod tests {
         std::fs::write(&file, "declaration scope A:\n  output x content money\n").unwrap();
         let hash_a = recompute_source_hash(&tmp).unwrap();
         let hash_a_again = recompute_source_hash(&tmp).unwrap();
-        assert_eq!(hash_a, hash_a_again, "gleicher Baum muss gleichen Hash liefern");
+        assert_eq!(
+            hash_a, hash_a_again,
+            "gleicher Baum muss gleichen Hash liefern"
+        );
 
-        std::fs::write(&file, "declaration scope A:\n  output x content money\n  # geaendert\n")
-            .unwrap();
+        std::fs::write(
+            &file,
+            "declaration scope A:\n  output x content money\n  # geaendert\n",
+        )
+        .unwrap();
         let hash_b = recompute_source_hash(&tmp).unwrap();
-        assert_ne!(hash_a, hash_b, "geaenderter Inhalt muss einen anderen Hash liefern");
+        assert_ne!(
+            hash_a, hash_b,
+            "geaenderter Inhalt muss einen anderen Hash liefern"
+        );
 
         std::fs::remove_dir_all(&tmp).unwrap();
     }

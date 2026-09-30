@@ -91,8 +91,12 @@ impl Sperrgrund {
             Self::AlleinerziehendKonsistenzOffen => "alleinerziehend_konsistenz_offen",
             Self::ArbeitsmittelAfaUeberGwgOffen => "arbeitsmittel_afa_ueber_gwg_offen",
             Self::AuslandDhfNichtRingFaehig => "ausland_dhf_nicht_ring_faehig",
-            Self::BehinderungsbedingteAufwendungenWahlrechtOffen => "behinderungsbedingte_aufwendungen_wahlrecht_offen",
-            Self::BehinderungsbedingteAufwendungenWahlrechtPartnerOffen => "behinderungsbedingte_aufwendungen_wahlrecht_partner_offen",
+            Self::BehinderungsbedingteAufwendungenWahlrechtOffen => {
+                "behinderungsbedingte_aufwendungen_wahlrecht_offen"
+            }
+            Self::BehinderungsbedingteAufwendungenWahlrechtPartnerOffen => {
+                "behinderungsbedingte_aufwendungen_wahlrecht_partner_offen"
+            }
             Self::BerufsunfaehigkeitOffen => "berufsunfaehigkeit_offen",
             Self::DbaKapitalOffen => "dba_kapital_offen",
             Self::DbaMultiCountryOffen => "dba_multi_country_offen",
@@ -134,8 +138,12 @@ impl Sperrgrund {
             Self::UnterhaltBetragOffen => "unterhalt_betrag_offen",
             Self::VerlustvortragBetragOffen => "verlustvortrag_betrag_offen",
             Self::VerlustvortragGehoertInGesamt => "verlustvortrag_gehoert_in_gesamt",
-            Self::VerpflegungDreimonatsfristAufteilungOffen => "verpflegung_dreimonatsfrist_aufteilung_offen",
-            Self::VerpflegungDreimonatsfristUnterbrechungOffen => "verpflegung_dreimonatsfrist_unterbrechung_offen",
+            Self::VerpflegungDreimonatsfristAufteilungOffen => {
+                "verpflegung_dreimonatsfrist_aufteilung_offen"
+            }
+            Self::VerpflegungDreimonatsfristUnterbrechungOffen => {
+                "verpflegung_dreimonatsfrist_unterbrechung_offen"
+            }
             Self::VerpflegungReduktionOffen => "verpflegung_reduktion_offen",
             Self::VersorgungsfreibetragOffen => "versorgungsfreibetrag_offen",
             Self::VvInstanzOffen => "vv_instanz_offen",
@@ -227,8 +235,12 @@ impl FromStr for Sperrgrund {
             "alleinerziehend_konsistenz_offen" => Ok(Self::AlleinerziehendKonsistenzOffen),
             "arbeitsmittel_afa_ueber_gwg_offen" => Ok(Self::ArbeitsmittelAfaUeberGwgOffen),
             "ausland_dhf_nicht_ring_faehig" => Ok(Self::AuslandDhfNichtRingFaehig),
-            "behinderungsbedingte_aufwendungen_wahlrecht_offen" => Ok(Self::BehinderungsbedingteAufwendungenWahlrechtOffen),
-            "behinderungsbedingte_aufwendungen_wahlrecht_partner_offen" => Ok(Self::BehinderungsbedingteAufwendungenWahlrechtPartnerOffen),
+            "behinderungsbedingte_aufwendungen_wahlrecht_offen" => {
+                Ok(Self::BehinderungsbedingteAufwendungenWahlrechtOffen)
+            }
+            "behinderungsbedingte_aufwendungen_wahlrecht_partner_offen" => {
+                Ok(Self::BehinderungsbedingteAufwendungenWahlrechtPartnerOffen)
+            }
             "berufsunfaehigkeit_offen" => Ok(Self::BerufsunfaehigkeitOffen),
             "dba_kapital_offen" => Ok(Self::DbaKapitalOffen),
             "dba_multi_country_offen" => Ok(Self::DbaMultiCountryOffen),
@@ -270,8 +282,12 @@ impl FromStr for Sperrgrund {
             "unterhalt_betrag_offen" => Ok(Self::UnterhaltBetragOffen),
             "verlustvortrag_betrag_offen" => Ok(Self::VerlustvortragBetragOffen),
             "verlustvortrag_gehoert_in_gesamt" => Ok(Self::VerlustvortragGehoertInGesamt),
-            "verpflegung_dreimonatsfrist_aufteilung_offen" => Ok(Self::VerpflegungDreimonatsfristAufteilungOffen),
-            "verpflegung_dreimonatsfrist_unterbrechung_offen" => Ok(Self::VerpflegungDreimonatsfristUnterbrechungOffen),
+            "verpflegung_dreimonatsfrist_aufteilung_offen" => {
+                Ok(Self::VerpflegungDreimonatsfristAufteilungOffen)
+            }
+            "verpflegung_dreimonatsfrist_unterbrechung_offen" => {
+                Ok(Self::VerpflegungDreimonatsfristUnterbrechungOffen)
+            }
             "verpflegung_reduktion_offen" => Ok(Self::VerpflegungReduktionOffen),
             "versorgungsfreibetrag_offen" => Ok(Self::VersorgungsfreibetragOffen),
             "vv_instanz_offen" => Ok(Self::VvInstanzOffen),
@@ -292,12 +308,23 @@ mod tests {
     fn klartext_ist_byte_identisch_zur_python_quelle() {
         let fixture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
         let klartext = fixture["klartext"].as_object().unwrap();
-        assert_eq!(klartext.len(), 52, "Fixture-Groesse hat sich veraendert -- Enum nachziehen");
+        assert_eq!(
+            klartext.len(),
+            52,
+            "Fixture-Groesse hat sich veraendert -- Enum nachziehen"
+        );
         for (schluessel, erwartet) in klartext {
             let grund: Sperrgrund = schluessel.parse().unwrap();
-            assert_eq!(grund.klartext().unwrap(), erwartet.as_str().unwrap(), "{schluessel}");
+            assert_eq!(
+                grund.klartext().unwrap(),
+                erwartet.as_str().unwrap(),
+                "{schluessel}"
+            );
         }
-        assert_eq!(UNBEKANNTER_SPERRGRUND, fixture["unbekannt"].as_str().unwrap());
+        assert_eq!(
+            UNBEKANNTER_SPERRGRUND,
+            fixture["unbekannt"].as_str().unwrap()
+        );
     }
 
     #[test]

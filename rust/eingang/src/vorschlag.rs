@@ -143,7 +143,8 @@ impl EdatenEvent {
             feld_id: self.feld_id.clone(),
             wert: self.wert.clone(),
             feldzustand: Feldzustand::Bestaetigt {
-                signal_2: Signal2::new("edaten_uebermittelt").map_err(|_| SchreibFehler::Konstante)?,
+                signal_2: Signal2::new("edaten_uebermittelt")
+                    .map_err(|_| SchreibFehler::Konstante)?,
             },
             // `.into()` bewusst: `NeuesEvent::herkunft` kann auf `HerkunftVektor` wechseln
             // (`From<Herkunft>`), dann bleibt diese Stelle unveraendert gueltig.

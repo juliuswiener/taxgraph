@@ -44,7 +44,9 @@ pub fn relevante_kegel_felder<'k>(
     store: Option<&Store>,
     graph: &Graph<'_>,
 ) -> Vec<&'k str> {
-    let Some(store) = store else { return kegel.to_vec() };
+    let Some(store) = store else {
+        return kegel.to_vec();
+    };
     let rel = relevanz(store, sicht, graph);
     kegel
         .iter()
@@ -78,7 +80,9 @@ pub fn ring_bindung<'r>(
     match kegel.filter(|k| !k.is_empty()) {
         None => AchsenBindung(sicht.clone()),
         Some(k) => AchsenBindung(Sicht::aus(
-            relevante_kegel_felder(k, sicht, store, graph).into_iter().filter_map(|f| sicht.get(f)),
+            relevante_kegel_felder(k, sicht, store, graph)
+                .into_iter()
+                .filter_map(|f| sicht.get(f)),
         )),
     }
 }
@@ -100,5 +104,8 @@ pub fn rollen<'r>(
     store: Option<&Store>,
     graph: &Graph<'r>,
 ) -> (AufbauBindung<'r>, AchsenBindung<'r>) {
-    (AufbauBindung(sicht.clone()), ring_bindung(kegel, sicht, store, graph))
+    (
+        AufbauBindung(sicht.clone()),
+        ring_bindung(kegel, sicht, store, graph),
+    )
 }

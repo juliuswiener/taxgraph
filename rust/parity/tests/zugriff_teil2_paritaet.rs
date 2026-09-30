@@ -8,7 +8,13 @@
 //! 4. Negativkontrolle: ein um 1 verschobenes Ergebnis muss als Abweichung auffallen.
 //!
 //!   `PARITY`=1 `cargo` test -p parity --test `zugriff_teil2_paritaet` -- --nocapture
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
+#![allow(
+    clippy::too_many_lines,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic
+)]
 
 #[path = "zugriff_teil2/adapter.rs"]
 mod adapter;
@@ -29,8 +35,16 @@ const GENERIERT_JE_FUNKTION: usize = 1000;
 
 /// Ausnahmeklassen des Catala-Laufzeitsystems (`catala_runtime.py`, `CatalaError`-Unterklassen).
 const CATALA_KLASSEN: &[&str] = &[
-    "CatalaError", "AssertionFailed", "NoValue", "Conflict", "DivisionByZero", "ListEmpty",
-    "NotSameLength", "UncomparableValues", "DateError", "Impossible",
+    "CatalaError",
+    "AssertionFailed",
+    "NoValue",
+    "Conflict",
+    "DivisionByZero",
+    "ListEmpty",
+    "NotSameLength",
+    "UncomparableValues",
+    "DateError",
+    "Impossible",
 ];
 
 fn repo_root() -> PathBuf {
@@ -70,7 +84,9 @@ fn rust(f: Adapter, args: &[Value]) -> Ausgang {
     match f(args, params()) {
         Ok(v) => Ausgang::Ok(v),
         Err(Fehl::Py(t)) => Ausgang::Err(t.to_string()),
-        Err(Fehl::Engine(e)) => python_typ(&e).map_or(Ausgang::Catala, |t| Ausgang::Err(t.to_string())),
+        Err(Fehl::Engine(e)) => {
+            python_typ(&e).map_or(Ausgang::Catala, |t| Ausgang::Err(t.to_string()))
+        }
     }
 }
 
@@ -79,8 +95,13 @@ fn python(antwort: &Value) -> Ausgang {
     if let Some(v) = antwort.get("ok") {
         return Ausgang::Ok(v.clone());
     }
-    let typ = antwort["err"].as_str().unwrap_or_else(|| panic!("unlesbar: {antwort}"));
-    let catala = antwort.get("catala").and_then(Value::as_bool).unwrap_or(false);
+    let typ = antwort["err"]
+        .as_str()
+        .unwrap_or_else(|| panic!("unlesbar: {antwort}"));
+    let catala = antwort
+        .get("catala")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     if catala || CATALA_KLASSEN.contains(&typ) {
         Ausgang::Catala
     } else {
@@ -89,7 +110,11 @@ fn python(antwort: &Value) -> Ausgang {
 }
 
 fn live(name: &str, args: &[Value]) -> Ausgang {
-    python(&oracle().call_runner(&format!("catala_{name}"), args).expect("Orakel antwortet"))
+    python(
+        &oracle()
+            .call_runner(&format!("catala_{name}"), args)
+            .expect("Orakel antwortet"),
+    )
 }
 
 #[derive(Default)]
@@ -109,7 +134,10 @@ impl Zaehler {
         if r != py {
             self.abweichungen += 1;
             if self.beispiele.len() < 3 {
-                self.beispiele.push(format!("{quelle}: {} rust={r:?} python={py:?}", json!(args)));
+                self.beispiele.push(format!(
+                    "{quelle}: {} rust={r:?} python={py:?}",
+                    json!(args)
+                ));
             }
         }
     }
@@ -123,19 +151,34 @@ fn korpus(name: &str) -> Vec<Value> {
         .filter_map(Result::ok)
         .map(|e| e.path())
         .filter(|p| p.extension().is_some_and(|x| x == "jsonl"))
-        .filter(|p| p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.starts_with(&praefix)))
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.starts_with(&praefix))
+        })
         .collect();
     dateien.sort();
     dateien
         .iter()
-        .flat_map(|p| std::fs::read_to_string(p).unwrap().lines().map(str::to_string).collect::<Vec<_>>())
+        .flat_map(|p| {
+            std::fs::read_to_string(p)
+                .unwrap()
+                .lines()
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        })
         .map(|z| serde_json::from_str::<Value>(&z).unwrap())
         .filter(|r| r.get("kopf").is_none())
         .collect()
 }
 
 fn args_von(r: &Value) -> Vec<Value> {
-    assert!(r["kwargs"].as_object().is_none_or(serde_json::Map::is_empty), "kwargs nicht modelliert: {r}");
+    assert!(
+        r["kwargs"]
+            .as_object()
+            .is_none_or(serde_json::Map::is_empty),
+        "kwargs nicht modelliert: {r}"
+    );
     r["args"].as_array().unwrap().clone()
 }
 
@@ -145,7 +188,10 @@ fn korpus_gegen_aufzeichnung_und_orakel() {
         return;
     }
     let mut summe = 0;
-    eprintln!("{:<32} {:>6} {:>9} {:>9} {:>6}", "funktion", "faelle", "diff_rec", "diff_live", "err");
+    eprintln!(
+        "{:<32} {:>6} {:>9} {:>9} {:>6}",
+        "funktion", "faelle", "diff_rec", "diff_live", "err"
+    );
     for (name, f) in FUNKTIONEN {
         let (mut rec, mut liv) = (Zaehler::default(), Zaehler::default());
         for r in korpus(name) {
@@ -172,7 +218,10 @@ fn generiert_gegen_orakel() {
         return;
     }
     let mut summe = 0;
-    eprintln!("{:<32} {:>6} {:>6} {:>6}", "funktion", "faelle", "diff", "err");
+    eprintln!(
+        "{:<32} {:>6} {:>6} {:>6}",
+        "funktion", "faelle", "diff", "err"
+    );
     for (name, f) in FUNKTIONEN {
         let strategie = gen::fuer(name);
         let mut runner = TestRunner::deterministic();
@@ -181,7 +230,10 @@ fn generiert_gegen_orakel() {
             let args = strategie.new_tree(&mut runner).unwrap().current();
             z.pruefe(&args, &rust(*f, &args), &live(name, &args), "generiert");
         }
-        eprintln!("{name:<32} {:>6} {:>6} {:>6}", z.faelle, z.abweichungen, z.fehlerfaelle);
+        eprintln!(
+            "{name:<32} {:>6} {:>6} {:>6}",
+            z.faelle, z.abweichungen, z.fehlerfaelle
+        );
         for b in &z.beispiele {
             eprintln!("    {b}");
         }
@@ -206,23 +258,37 @@ fn kohorten_exhaustiv() {
     };
     for alter in -2i64..=100 {
         for r in renten {
-            fall("renten_einkuenfte", adapter::renten_einkuenfte, json!({"veranlagungszeitraum": 2025,
-                "renten_art": "private_leibrente", "jahresrente": r, "alter_bei_rentenbeginn": alter}));
+            fall(
+                "renten_einkuenfte",
+                adapter::renten_einkuenfte,
+                json!({"veranlagungszeitraum": 2025,
+                "renten_art": "private_leibrente", "jahresrente": r, "alter_bei_rentenbeginn": alter}),
+            );
         }
     }
     for vz in 2024i64..=2026 {
         for r in renten {
-            fall("renten_einkuenfte", adapter::renten_einkuenfte, json!({"veranlagungszeitraum": vz,
-                "renten_art": "gesetzliche_rente", "jahresrente": r, "renten_beginn_jahr": vz}));
+            fall(
+                "renten_einkuenfte",
+                adapter::renten_einkuenfte,
+                json!({"veranlagungszeitraum": vz,
+                "renten_art": "gesetzliche_rente", "jahresrente": r, "renten_beginn_jahr": vz}),
+            );
         }
     }
     for beginn in 1990i64..=2070 {
         for bg in renten {
-            fall("p19_2_versorgungsfreibetrag", adapter::p19_2_versorgungsfreibetrag,
-                json!({"versorgung_bemessungsgrundlage": bg, "versorgung_beginn_jahr": beginn}));
+            fall(
+                "p19_2_versorgungsfreibetrag",
+                adapter::p19_2_versorgungsfreibetrag,
+                json!({"versorgung_bemessungsgrundlage": bg, "versorgung_beginn_jahr": beginn}),
+            );
         }
     }
-    eprintln!("kohorten_exhaustiv: {} Faelle, {} Abweichungen, {} Fehlerfaelle", z.faelle, z.abweichungen, z.fehlerfaelle);
+    eprintln!(
+        "kohorten_exhaustiv: {} Faelle, {} Abweichungen, {} Fehlerfaelle",
+        z.faelle, z.abweichungen, z.fehlerfaelle
+    );
     for b in &z.beispiele {
         eprintln!("    {b}");
     }
@@ -236,7 +302,12 @@ fn negativkontrolle() {
         return;
     }
     let mut z = Zaehler::default();
-    for (i, r) in korpus("solz").iter().filter(|r| r.get("ok").is_some()).take(20).enumerate() {
+    for (i, r) in korpus("solz")
+        .iter()
+        .filter(|r| r.get("ok").is_some())
+        .take(20)
+        .enumerate()
+    {
         let args = args_von(r);
         let mut ergebnis = rust(adapter::solz, &args);
         if i == 10 {
@@ -246,7 +317,10 @@ fn negativkontrolle() {
         }
         z.pruefe(&args, &ergebnis, &live("solz", &args), "negativkontrolle");
     }
-    eprintln!("negativkontrolle: {} Faelle, {} Abweichungen (erwartet 1)", z.faelle, z.abweichungen);
+    eprintln!(
+        "negativkontrolle: {} Faelle, {} Abweichungen (erwartet 1)",
+        z.faelle, z.abweichungen
+    );
     assert_eq!(z.faelle, 20);
     assert_eq!(z.abweichungen, 1);
 }

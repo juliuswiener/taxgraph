@@ -10,7 +10,9 @@ use store::{Event, Store};
 use crate::antwort::{py_eq, Aktiv, Antwort};
 use crate::graph::{Graph, Sicht};
 use crate::instanz::instanz_unvollstaendig;
-use crate::relevanz::{bedingung_je_instanz, gate_gewicht, relevanz_mit, Bedingungsstand, Regelstatus};
+use crate::relevanz::{
+    bedingung_je_instanz, gate_gewicht, relevanz_mit, Bedingungsstand, Regelstatus,
+};
 
 /// Geordnete Interview-Queue: unbeantwortete askable Felder nicht-ausgeschlossener Regeln
 /// (`naechste_fragen`, `traverser.py:395-444`).
@@ -47,9 +49,12 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
         .iter()
         .filter(|b| {
             b.askable
-                && (aktiv.antwort(&b.feld_id).ist_offen() || instanz_unvollstaendig(&aktiv, sicht, graph, &b.feld_id))
+                && (aktiv.antwort(&b.feld_id).ist_offen()
+                    || instanz_unvollstaendig(&aktiv, sicht, graph, &b.feld_id))
                 && !vorjahr_uebernommen(b, aktiv.get(&b.feld_id))
-                && rel.get(b.quelle.regel_id.as_str()).is_none_or(|r| r.status != Regelstatus::Ausgeschlossen)
+                && rel
+                    .get(b.quelle.regel_id.as_str())
+                    .is_none_or(|r| r.status != Regelstatus::Ausgeschlossen)
                 && !feld_ausgeschlossen(b, &aktiv, sicht, graph)
         })
         .collect();
@@ -57,14 +62,26 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
     let gewicht = |b: &Bindung| gw.get(b.feld_id.as_str()).copied().unwrap_or(0);
     // "Gate" heisst hier: die Antwort streicht andere Fragen. `veranlagung` hat KEINE
     // geltungsbedingung, wirkt aber ueber regel_bedingungen auf 38 Partner-Felder.
-    let ist_gate = |b: &Bindung| matches!(b.quelle.bindungspunkt, Bindungspunkt::Geltungsbedingung(_)) || gewicht(b) > 0;
-    let (mut gates, mut slots): (Vec<&'r Bindung>, Vec<&'r Bindung>) = kand.into_iter().partition(|b| ist_gate(b));
+    let ist_gate = |b: &Bindung| {
+        matches!(b.quelle.bindungspunkt, Bindungspunkt::Geltungsbedingung(_)) || gewicht(b) > 0
+    };
+    let (mut gates, mut slots): (Vec<&'r Bindung>, Vec<&'r Bindung>) =
+        kand.into_iter().partition(|b| ist_gate(b));
     gates.sort_by(|a, b| {
-        (Reverse(gewicht(a)), !a.eingangsfrage, a.feld_id.as_str()).cmp(&(Reverse(gewicht(b)), !b.eingangsfrage, b.feld_id.as_str()))
+        (Reverse(gewicht(a)), !a.eingangsfrage, a.feld_id.as_str()).cmp(&(
+            Reverse(gewicht(b)),
+            !b.eingangsfrage,
+            b.feld_id.as_str(),
+        ))
     });
     let beitrag = beitrag.filter(|m| !m.is_empty());
     match beitrag {
-        Some(m) => slots.sort_by_key(|b| (Reverse(m.get(&b.feld_id).copied().unwrap_or(0)), b.feld_id.as_str())),
+        Some(m) => slots.sort_by_key(|b| {
+            (
+                Reverse(m.get(&b.feld_id).copied().unwrap_or(0)),
+                b.feld_id.as_str(),
+            )
+        }),
         None => slots.sort_by_key(|b| b.feld_id.as_str()),
     }
     gates.extend(slots);
@@ -75,7 +92,8 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
 /// `vorjahr: uebernehmbar` mit Vorjahres-Wert faellt aus der Queue, bleibt aber korrigierbar
 /// (`_vorjahr_uebernommen`, `traverser.py:380-392`). `vorschlag` bleibt eine Frage.
 fn vorjahr_uebernommen(b: &Bindung, ev: Option<&Event>) -> bool {
-    b.vorjahr == Some(Vorjahr::Uebernehmbar) && ev.is_some_and(|e| e.herkunft.herkunft_achse().as_str() == "vorjahr")
+    b.vorjahr == Some(Vorjahr::Uebernehmbar)
+        && ev.is_some_and(|e| e.herkunft.herkunft_achse().as_str() == "vorjahr")
 }
 
 /// Faellt DIESES Feld weg, obwohl seine Regel gilt (`_feld_ausgeschlossen`,
@@ -86,8 +104,15 @@ fn vorjahr_uebernommen(b: &Bindung, ev: Option<&Event>) -> bool {
 /// kennt nur `Option`. Ein ausdrueckliches `wert_nicht: null` hiesse in Python "gleich None";
 /// in keiner `bindung_*.yaml` belegt (gemessen: 42× `wert: false`, 8× `"zusammen"`, 5×
 /// `wert_nicht: "keine"`, 4× `wert_nicht: 0`, 3× `wert: true`).
-fn feld_ausgeschlossen(b: &Bindung, aktiv: &Aktiv<'_>, sicht: &Sicht<'_>, graph: &Graph<'_>) -> bool {
-    let Some(bed) = &b.feld_bedingung else { return false };
+fn feld_ausgeschlossen(
+    b: &Bindung,
+    aktiv: &Aktiv<'_>,
+    sicht: &Sicht<'_>,
+    graph: &Graph<'_>,
+) -> bool {
+    let Some(bed) = &b.feld_bedingung else {
+        return false;
+    };
     let stand = if let Some(nicht) = &bed.wert_nicht {
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| py_eq(w, nicht))
     } else {
@@ -141,7 +166,8 @@ fn nach_themen<'r>(
         }
     }
     for (_, gruppe) in &mut themen {
-        let (eingang, rest): (Vec<&Bindung>, Vec<&Bindung>) = gruppe.iter().partition(|b| b.eingangsfrage);
+        let (eingang, rest): (Vec<&Bindung>, Vec<&Bindung>) =
+            gruppe.iter().partition(|b| b.eingangsfrage);
         let geordnet: Vec<&Bindung> = eingang.into_iter().chain(rest).collect();
         *gruppe = nach_vordruck(&geordnet, gw, gewicht_aktiv);
     }
@@ -165,7 +191,11 @@ enum Klasse {
 /// ihrer Klasse (`_nach_vordruck`, `traverser.py:561-623`). Eingangsfragen und echte Gates
 /// (Gewicht > 0) bleiben stehen; "formal" = traegt eine Geltungsbedingung, streicht nichts.
 /// Mit Unsicherheits-Beitrag bleibt die Klasse "wert" in Beitrags-Ordnung.
-fn nach_vordruck<'r>(gruppe: &[&'r Bindung], gw: &HashMap<&'r str, usize>, gewicht_aktiv: bool) -> Vec<&'r Bindung> {
+fn nach_vordruck<'r>(
+    gruppe: &[&'r Bindung],
+    gw: &HashMap<&'r str, usize>,
+    gewicht_aktiv: bool,
+) -> Vec<&'r Bindung> {
     let klasse = |b: &Bindung| -> Option<Klasse> {
         if b.eingangsfrage || gw.get(b.feld_id.as_str()).copied().unwrap_or(0) > 0 {
             return None;
@@ -183,7 +213,9 @@ fn nach_vordruck<'r>(gruppe: &[&'r Bindung], gw: &HashMap<&'r str, usize>, gewic
         let mit: Vec<&Bindung> = gruppe
             .iter()
             .copied()
-            .filter(|b| b.elster_kz.as_deref().is_some_and(|kz| !kz.is_empty()) && klasse(b) == Some(k))
+            .filter(|b| {
+                b.elster_kz.as_deref().is_some_and(|kz| !kz.is_empty()) && klasse(b) == Some(k)
+            })
             .collect();
         if mit.len() < 2 {
             continue;
@@ -245,14 +277,27 @@ fn themen_folge<'r>(
             }
         }
     }
-    let vorne: Vec<&'r str> = graph.themen_zuerst().iter().copied().filter(|t| vorhanden.contains(t)).collect();
-    let laufend: Vec<&'r str> =
-        angefangen.iter().copied().filter(|t| vorhanden.contains(t) && !vorne.contains(t)).collect();
+    let vorne: Vec<&'r str> = graph
+        .themen_zuerst()
+        .iter()
+        .copied()
+        .filter(|t| vorhanden.contains(t))
+        .collect();
+    let laufend: Vec<&'r str> = angefangen
+        .iter()
+        .copied()
+        .filter(|t| vorhanden.contains(t) && !vorne.contains(t))
+        .collect();
     let wunsch: Vec<&'r str> = vorne
         .iter()
         .chain(&laufend)
         .copied()
-        .chain(themen.iter().map(|(t, _)| *t).filter(|t| !vorne.contains(t) && !laufend.contains(t)))
+        .chain(
+            themen
+                .iter()
+                .map(|(t, _)| *t)
+                .filter(|t| !vorne.contains(t) && !laufend.contains(t)),
+        )
         .collect();
     let mut folge: Vec<&'r str> = Vec::new();
     let mut gesetzt_menge: HashSet<&'r str> = HashSet::new();

@@ -42,7 +42,13 @@ fn zwanzig_prozent(betrag: i64, hoechst: i64) -> Result<i64, EngineFehler> {
     if betrag <= 0 {
         return Ok(0);
     }
-    Ok(ok(betrag.checked_mul(20).and_then(|x| x.checked_div_euclid(100)), "p35a")?.min(hoechst))
+    Ok(ok(
+        betrag
+            .checked_mul(20)
+            .and_then(|x| x.checked_div_euclid(100)),
+        "p35a",
+    )?
+    .min(hoechst))
 }
 
 /// `catala_p35a_haushaltsnahe` -- § 35a Abs. 1-5 `EStG`, EURO. EU/EWR (Abs. 4) gatet alles;
@@ -66,7 +72,10 @@ pub fn p35a_haushaltsnahe(e: &P35aHaushaltsnaheEingabe) -> Result<Euro, EngineFe
     if !e.hh_in_eu_ewr {
         return Ok(Euro::new(0));
     }
-    let (mut dienstleistungen, mut handwerker) = (e.hh_dienstleistungen.get(), e.hh_handwerker_arbeitskosten.get());
+    let (mut dienstleistungen, mut handwerker) = (
+        e.hh_dienstleistungen.get(),
+        e.hh_handwerker_arbeitskosten.get(),
+    );
     if !e.hh_rechnung_unbar {
         dienstleistungen = 0;
         handwerker = 0;
@@ -77,7 +86,11 @@ pub fn p35a_haushaltsnahe(e: &P35aHaushaltsnaheEingabe) -> Result<Euro, EngineFe
     let summe = zwanzig_prozent(e.hh_minijob_aufwendungen.get(), HOECHST_MINIJOB)?
         + zwanzig_prozent(dienstleistungen, HOECHST_DIENSTLEISTUNGEN)?
         + zwanzig_prozent(handwerker, HOECHST_HANDWERKER)?;
-    Ok(Euro::new(if e.p35a_mitveranlagung { summe.div_euclid(2) } else { summe }))
+    Ok(Euro::new(if e.p35a_mitveranlagung {
+        summe.div_euclid(2)
+    } else {
+        summe
+    }))
 }
 
 /// Eingabe fuer [`kist`]. Konfession und Bundesland sind die Store-Werte, wie Python sie mit
@@ -114,7 +127,11 @@ pub fn kist(e: &KistEingabe) -> Result<Cent, EngineFehler> {
     if !KIST_KONFESSION.contains(&e.konfession.as_str()) {
         return Ok(Cent::new(0));
     }
-    let satz = if KIST_8_PROZENT.contains(&e.bundesland.as_str()) { 8 } else { 9 };
+    let satz = if KIST_8_PROZENT.contains(&e.bundesland.as_str()) {
+        8
+    } else {
+        9
+    };
     ok(e.est_mit_fb.get().checked_mul(satz), "kist").map(Cent::new)
 }
 
@@ -206,7 +223,10 @@ pub struct P24aAltersentlastungEingabe {
 /// };
 /// assert_eq!(p24a_altersentlastung(&e, &p).unwrap(), Euro::new(627));
 /// ```
-pub fn p24a_altersentlastung(e: &P24aAltersentlastungEingabe, p: &Params) -> Result<Euro, EngineFehler> {
+pub fn p24a_altersentlastung(
+    e: &P24aAltersentlastungEingabe,
+    p: &Params,
+) -> Result<Euro, EngineFehler> {
     let vz = e.veranlagungszeitraum;
     let folgejahr = ok(e.geburtsjahr.checked_add(65), "p24a folgejahr")?;
     if e.geburtsjahr <= 0 || (vz > 0 && folgejahr > vz) {

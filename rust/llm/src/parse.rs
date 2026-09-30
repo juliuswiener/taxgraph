@@ -93,7 +93,9 @@ pub struct Vorschlag {
 /// ```
 #[must_use]
 pub fn chat_parse(text: &str) -> Antwort<Vec<Vorschlag>> {
-    let Some(j) = lies(text) else { return Antwort::Unlesbar };
+    let Some(j) = lies(text) else {
+        return Antwort::Unlesbar;
+    };
     let liste: Vec<&Value> = match &j {
         Value::Object(o) => {
             let wrapper = ["vorschlaege", "vorschläge", "suggestions", "felder"]
@@ -113,7 +115,10 @@ pub fn chat_parse(text: &str) -> Antwort<Vec<Vorschlag>> {
         .filter_map(|v| {
             let o = v.as_object()?;
             let (fid, wert) = (o.get("feld_id")?, o.get("wert")?);
-            let text_von = |k: &str, n: usize| o.get(k).map_or_else(String::new, |x| vorne(&py_str(x), n).to_owned());
+            let text_von = |k: &str, n: usize| {
+                o.get(k)
+                    .map_or_else(String::new, |x| vorne(&py_str(x), n).to_owned())
+            };
             Some(Vorschlag {
                 feld_id: py_str(fid),
                 wert: wert.clone(),
@@ -146,23 +151,38 @@ pub struct Rueckfrage {
 /// ```
 #[must_use]
 pub fn rueckfragen_parse(text: &str, felder: usize) -> Antwort<Vec<Rueckfrage>> {
-    let Some(j) = lies(text) else { return Antwort::Unlesbar };
-    let Some(liste) = j.get("rueckfragen").filter(|_| j.is_object()).and_then(Value::as_array) else {
+    let Some(j) = lies(text) else {
+        return Antwort::Unlesbar;
+    };
+    let Some(liste) = j
+        .get("rueckfragen")
+        .filter(|_| j.is_object())
+        .and_then(Value::as_array)
+    else {
         return einordnen::<_, schema::DialogStreng>(&j, Vec::new());
     };
     let out = liste
         .iter()
         .filter_map(|r| {
             let o = r.as_object()?;
-            let frage = o.get("frage").map_or_else(String::new, |f| vorne(py::strip(&py_str(f)), 300).to_owned());
+            let frage = o.get("frage").map_or_else(String::new, |f| {
+                vorne(py::strip(&py_str(f)), 300).to_owned()
+            });
             if frage.is_empty() {
                 return None;
             }
-            let fid = o.get("feld_id").filter(|v| py::wahr(v)).map_or_else(String::new, |v| py::strip(&py_str(v)).to_owned());
+            let fid = o
+                .get("feld_id")
+                .filter(|v| py::wahr(v))
+                .map_or_else(String::new, |v| py::strip(&py_str(v)).to_owned());
             if !fid.is_empty() && felder == 0 {
                 return None;
             }
-            Some(Rueckfrage { frage, feld_id: fid, aussage: o.get("aussage").and_then(index) })
+            Some(Rueckfrage {
+                frage,
+                feld_id: fid,
+                aussage: o.get("aussage").and_then(index),
+            })
         })
         .collect();
     einordnen::<_, schema::DialogStreng>(&j, out)
@@ -176,9 +196,18 @@ pub fn rueckfragen_parse(text: &str, felder: usize) -> Antwort<Vec<Rueckfrage>> 
 /// ```
 #[must_use]
 pub fn antwort_parse(text: &str) -> Antwort<(String, bool)> {
-    let Some(j) = lies(text) else { return Antwort::Unlesbar };
-    let Some(o) = j.as_object() else { return Antwort::Tolerant((String::new(), false)) };
-    let antwort = o.get("antwort").filter(|v| py::wahr(v)).map_or_else(String::new, |v| vorne(py::strip(&py_str(v)), 2000).to_owned());
+    let Some(j) = lies(text) else {
+        return Antwort::Unlesbar;
+    };
+    let Some(o) = j.as_object() else {
+        return Antwort::Tolerant((String::new(), false));
+    };
+    let antwort = o
+        .get("antwort")
+        .filter(|v| py::wahr(v))
+        .map_or_else(String::new, |v| {
+            vorne(py::strip(&py_str(v)), 2000).to_owned()
+        });
     let unsicher = o.get("unsicher").is_some_and(py::wahr);
     einordnen::<_, schema::DialogStreng>(&j, (antwort, unsicher))
 }
@@ -218,8 +247,14 @@ pub struct Aussage {
 /// ```
 #[must_use]
 pub fn aussagen_parse(text: &str, freitext: &Gefiltert) -> Antwort<Vec<Aussage>> {
-    let Some(j) = lies(text) else { return Antwort::Unlesbar };
-    let Some(liste) = j.get("aussagen").filter(|_| j.is_object()).and_then(Value::as_array) else {
+    let Some(j) = lies(text) else {
+        return Antwort::Unlesbar;
+    };
+    let Some(liste) = j
+        .get("aussagen")
+        .filter(|_| j.is_object())
+        .and_then(Value::as_array)
+    else {
         return einordnen::<_, schema::AussagenStreng>(&j, Vec::new());
     };
     let heuhaufen = py::normalisiert(freitext.as_str());
@@ -228,14 +263,28 @@ pub fn aussagen_parse(text: &str, freitext: &Gefiltert) -> Antwort<Vec<Aussage>>
         .filter_map(|a| {
             let o = a.as_object()?;
             let roh = o.get("text").map_or_else(String::new, py_str);
-            let satz = pii::filtere(vorne(py::strip(&roh), 300)).0.as_str().to_owned();
+            let satz = pii::filtere(vorne(py::strip(&roh), 300))
+                .0
+                .as_str()
+                .to_owned();
             if satz.is_empty() {
                 return None;
             }
-            let beleg = o.get("beleg").map_or_else(String::new, |b| vorne(&py_str(b), 300).to_owned());
+            let beleg = o
+                .get("beleg")
+                .map_or_else(String::new, |b| vorne(&py_str(b), 300).to_owned());
             let n = py::normalisiert(&beleg);
-            let beleg = if py::laenge(&n) >= 3 && heuhaufen.contains(&n) { beleg } else { String::new() };
-            Some(Aussage { text: satz, beleg, status: AussageStatus::Offen, regeln: Vec::new() })
+            let beleg = if py::laenge(&n) >= 3 && heuhaufen.contains(&n) {
+                beleg
+            } else {
+                String::new()
+            };
+            Some(Aussage {
+                text: satz,
+                beleg,
+                status: AussageStatus::Offen,
+                regeln: Vec::new(),
+            })
         })
         .collect();
     einordnen::<_, schema::AussagenStreng>(&j, out)
@@ -265,16 +314,30 @@ pub fn zuordnung_parse<H: std::hash::BuildHasher>(
     erlaubt: &std::collections::HashSet<String, H>,
     anzahl: usize,
 ) -> Antwort<Zuordnung> {
-    let Some(j) = lies(text) else { return Antwort::Unlesbar };
+    let Some(j) = lies(text) else {
+        return Antwort::Unlesbar;
+    };
     let mut z = Zuordnung::default();
-    let Some(liste) = j.get("zuordnungen").filter(|_| j.is_object()).and_then(Value::as_array) else {
+    let Some(liste) = j
+        .get("zuordnungen")
+        .filter(|_| j.is_object())
+        .and_then(Value::as_array)
+    else {
         return einordnen::<_, schema::ZuordnungStreng>(&j, z);
     };
     for eintrag in liste {
-        let Some(regeln) = eintrag.as_object().and_then(|o| o.get("regeln")).and_then(Value::as_array) else {
+        let Some(regeln) = eintrag
+            .as_object()
+            .and_then(|o| o.get("regeln"))
+            .and_then(Value::as_array)
+        else {
             continue;
         };
-        let regeln: Vec<String> = regeln.iter().map(py_str).filter(|r| erlaubt.contains(r)).collect();
+        let regeln: Vec<String> = regeln
+            .iter()
+            .map(py_str)
+            .filter(|r| erlaubt.contains(r))
+            .collect();
         if regeln.is_empty() {
             continue;
         }
@@ -287,7 +350,11 @@ pub fn zuordnung_parse<H: std::hash::BuildHasher>(
         if let Some(i) = i.filter(|i| usize::try_from(*i).is_ok_and(|i| i < anzahl)) {
             let bisher = z.je_aussage.entry(i).or_default();
             // `je[i] += [r for r in regeln if r not in je[i]]` — gegen den Stand VOR dem Anhaengen.
-            let neu: Vec<String> = regeln.iter().filter(|r| !bisher.contains(r)).cloned().collect();
+            let neu: Vec<String> = regeln
+                .iter()
+                .filter(|r| !bisher.contains(r))
+                .cloned()
+                .collect();
             bisher.extend(neu);
         }
     }

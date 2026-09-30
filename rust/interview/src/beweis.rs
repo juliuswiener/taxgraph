@@ -24,7 +24,11 @@ pub struct AnkerRefSicht<'r> {
 
 impl<'r> From<&'r AnkerRef> for AnkerRefSicht<'r> {
     fn from(a: &'r AnkerRef) -> Self {
-        Self { quelle: &a.quelle, zitatanker: &a.zitatanker, datei: a.datei.as_deref() }
+        Self {
+            quelle: &a.quelle,
+            zitatanker: &a.zitatanker,
+            datei: a.datei.as_deref(),
+        }
     }
 }
 
@@ -77,7 +81,11 @@ fn aus_event<'s, 'r>(ev: &'s Event, sicht: &Sicht<'r>) -> Justification<'s, 'r> 
 /// assert!(interview::justification(&store::Store::leer(2025, None), "veranlagung", g.alle()).is_none());
 /// ```
 #[must_use]
-pub fn justification<'s, 'r>(store: &'s Store, feld_id: &str, sicht: &Sicht<'r>) -> Option<Justification<'s, 'r>> {
+pub fn justification<'s, 'r>(
+    store: &'s Store,
+    feld_id: &str,
+    sicht: &Sicht<'r>,
+) -> Option<Justification<'s, 'r>> {
     store.aktives(feld_id).map(|ev| aus_event(ev, sicht))
 }
 
@@ -100,15 +108,25 @@ pub struct Trace<'s, 'r> {
 /// assert_eq!(t.basis_snapshot, Some("abc"));
 /// ```
 #[must_use]
-pub fn trace_ergebnis<'s, 'r>(store: &'s Store, sicht: &Sicht<'r>, snapshot_id: Option<&'s str>) -> Trace<'s, 'r> {
+pub fn trace_ergebnis<'s, 'r>(
+    store: &'s Store,
+    sicht: &Sicht<'r>,
+    snapshot_id: Option<&'s str>,
+) -> Trace<'s, 'r> {
     let mut regeln: BTreeMap<&'r str, Vec<Justification<'s, 'r>>> = BTreeMap::new();
     for (fid, ev) in Aktiv::aus(store).iter() {
         if let Some(b) = sicht.get(fid) {
-            regeln.entry(b.quelle.regel_id.as_str()).or_default().push(aus_event(ev, sicht));
+            regeln
+                .entry(b.quelle.regel_id.as_str())
+                .or_default()
+                .push(aus_event(ev, sicht));
         }
     }
     for js in regeln.values_mut() {
         js.sort_by(|a, b| a.feld_id.cmp(b.feld_id));
     }
-    Trace { basis_snapshot: snapshot_id, regeln }
+    Trace {
+        basis_snapshot: snapshot_id,
+        regeln,
+    }
 }

@@ -41,7 +41,7 @@ pub use partner::{
 pub use pauschalen::{pauschal_hinweise, PauschalCheck, PauschalHinweis, PAUSCHAL_CHECKS};
 pub use preflight::{
     kist_ueber_brutto_anteil, plausibilitaets_widersprueche, preflight, unvollstaendige_instanzen,
-    vorlaeufige_ring_betraege, Ampel, PlausiWiderspruch, PreflightErgebnis,
-    VorlaeufigerBetrag, BRUTTO_FLOAT_EXAKT_MAX, RING_BETRAGSFELDER, SCHULGELD_SCHWELLE_CENT,
+    vorlaeufige_ring_betraege, Ampel, PlausiWiderspruch, PreflightErgebnis, VorlaeufigerBetrag,
+    BRUTTO_FLOAT_EXAKT_MAX, RING_BETRAGSFELDER, SCHULGELD_SCHWELLE_CENT,
 };
 pub use zahl::eur;

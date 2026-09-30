@@ -46,14 +46,21 @@ impl BelegterVorschlag {
 /// assert_eq!((ok.len(), weg.len()), (1, 1));
 /// ```
 #[must_use]
-pub fn beleg_geprueft(vorschlaege: Vec<Vorschlag>, freitext: &Gefiltert) -> (Vec<BelegterVorschlag>, Vec<Vorschlag>) {
+pub fn beleg_geprueft(
+    vorschlaege: Vec<Vorschlag>,
+    freitext: &Gefiltert,
+) -> (Vec<BelegterVorschlag>, Vec<Vorschlag>) {
     let heuhaufen = py::normalisiert(freitext.as_str());
     let mut behalten = Vec::new();
     let mut verworfen = Vec::new();
     for v in vorschlaege {
         let beleg = py::normalisiert(&v.beleg);
         let ok = !beleg.is_empty()
-            && if py::laenge(&beleg) >= 3 { heuhaufen.contains(&beleg) } else { als_wort(&heuhaufen, &beleg) };
+            && if py::laenge(&beleg) >= 3 {
+                heuhaufen.contains(&beleg)
+            } else {
+                als_wort(&heuhaufen, &beleg)
+            };
         if ok {
             behalten.push(BelegterVorschlag(v));
         } else {
@@ -67,13 +74,20 @@ pub fn beleg_geprueft(vorschlaege: Vec<Vorschlag>, freitext: &Gefiltert) -> (Vec
 /// ueberlappende, wie der Suchlauf des Regex.
 fn als_wort(text: &str, nadel: &str) -> bool {
     let mut start = 0;
-    while let Some(i) = text.get(start..).and_then(|t| t.find(nadel)).map(|i| i + start) {
+    while let Some(i) = text
+        .get(start..)
+        .and_then(|t| t.find(nadel))
+        .map(|i| i + start)
+    {
         let davor = text.get(..i).and_then(|t| t.chars().next_back());
         let danach = text.get(i + nadel.len()..).and_then(|t| t.chars().next());
         if !davor.is_some_and(py::ist_wortzeichen) && !danach.is_some_and(py::ist_wortzeichen) {
             return true;
         }
-        start = i + text.get(i..).and_then(|t| t.chars().next()).map_or(1, char::len_utf8);
+        start = i + text
+            .get(i..)
+            .and_then(|t| t.chars().next())
+            .map_or(1, char::len_utf8);
     }
     false
 }
@@ -139,8 +153,10 @@ pub struct Geloest {
     pub grund: LoeseGrund,
 }
 
-static GELD_WORT: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"(?i)(?<!\w)eur(?:o)?(?!\w)|€"));
-static ANZAHL_WORT: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"(?i)(?<!\w)(?:wie\s*viele|anzahl)(?!\w)"));
+static GELD_WORT: LazyLock<PyRegex> =
+    LazyLock::new(|| PyRegex::neu(r"(?i)(?<!\w)eur(?:o)?(?!\w)|€"));
+static ANZAHL_WORT: LazyLock<PyRegex> =
+    LazyLock::new(|| PyRegex::neu(r"(?i)(?<!\w)(?:wie\s*viele|anzahl)(?!\w)"));
 
 /// `_rueckfragen_gebunden(rueckfragen, kat3)`: das Feld wird geloest (die Frage bleibt), wenn
 /// es nicht im Katalog stand oder Geld↔`int` bzw. Anzahl↔`cent` nicht passt. Ein
@@ -153,8 +169,14 @@ static ANZAHL_WORT: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"(?i)(?<!
 /// assert_eq!((r[0].feld_id.as_str(), geloest.len()), ("", 1));
 /// ```
 #[must_use]
-pub fn rueckfragen_gebunden(mut rueckfragen: Vec<Rueckfrage>, kat3: &[&KatalogFeld]) -> (Vec<Rueckfrage>, Vec<Geloest>) {
-    let typen: HashMap<&str, Option<&str>> = kat3.iter().map(|f| (f.feld_id.as_str(), f.typ.as_deref())).collect();
+pub fn rueckfragen_gebunden(
+    mut rueckfragen: Vec<Rueckfrage>,
+    kat3: &[&KatalogFeld],
+) -> (Vec<Rueckfrage>, Vec<Geloest>) {
+    let typen: HashMap<&str, Option<&str>> = kat3
+        .iter()
+        .map(|f| (f.feld_id.as_str(), f.typ.as_deref()))
+        .collect();
     let mut geloest = Vec::new();
     for r in &mut rueckfragen {
         if r.feld_id.is_empty() {
@@ -171,7 +193,11 @@ pub fn rueckfragen_gebunden(mut rueckfragen: Vec<Rueckfrage>, kat3: &[&KatalogFe
                 LoeseGrund::Zahlenart
             }
         };
-        geloest.push(Geloest { frage: r.frage.clone(), feld_id: std::mem::take(&mut r.feld_id), grund });
+        geloest.push(Geloest {
+            frage: r.frage.clone(),
+            feld_id: std::mem::take(&mut r.feld_id),
+            grund,
+        });
     }
     (rueckfragen, geloest)
 }
@@ -186,17 +212,36 @@ pub fn rueckfragen_gebunden(mut rueckfragen: Vec<Rueckfrage>, kat3: &[&KatalogFe
 /// assert!(llm::gates::rueckfrage_verdraengt(ok, &r).is_empty());
 /// ```
 #[must_use]
-pub fn rueckfrage_verdraengt(behalten: Vec<BelegterVorschlag>, rueckfragen: &[Rueckfrage]) -> Vec<BelegterVorschlag> {
-    let gefragt: HashSet<&str> = rueckfragen.iter().filter(|r| !r.feld_id.is_empty()).map(|r| r.feld_id.as_str()).collect();
-    behalten.into_iter().filter(|v| !gefragt.contains(v.0.feld_id.as_str())).collect()
+pub fn rueckfrage_verdraengt(
+    behalten: Vec<BelegterVorschlag>,
+    rueckfragen: &[Rueckfrage],
+) -> Vec<BelegterVorschlag> {
+    let gefragt: HashSet<&str> = rueckfragen
+        .iter()
+        .filter(|r| !r.feld_id.is_empty())
+        .map(|r| r.feld_id.as_str())
+        .collect();
+    behalten
+        .into_iter()
+        .filter(|v| !gefragt.contains(v.0.feld_id.as_str()))
+        .collect()
 }
 
 /// `_zugerechnet(eintraege, aussagen)`: Nummer aus der Antwort, sonst Beleg-Abgleich.
-fn zugerechnet<'a>(eintraege: impl Iterator<Item = (Option<i64>, &'a str)>, aussagen: &[Aussage]) -> HashSet<usize> {
-    let belege: Vec<String> = aussagen.iter().map(|a| py::normalisiert(&a.beleg)).collect();
+fn zugerechnet<'a>(
+    eintraege: impl Iterator<Item = (Option<i64>, &'a str)>,
+    aussagen: &[Aussage],
+) -> HashSet<usize> {
+    let belege: Vec<String> = aussagen
+        .iter()
+        .map(|a| py::normalisiert(&a.beleg))
+        .collect();
     let mut treffer = HashSet::new();
     for (nr, beleg) in eintraege {
-        if let Some(i) = nr.and_then(|i| usize::try_from(i).ok()).filter(|i| *i < aussagen.len()) {
+        if let Some(i) = nr
+            .and_then(|i| usize::try_from(i).ok())
+            .filter(|i| *i < aussagen.len())
+        {
             treffer.insert(i);
             continue;
         }
@@ -204,7 +249,10 @@ fn zugerechnet<'a>(eintraege: impl Iterator<Item = (Option<i64>, &'a str)>, auss
         if py::laenge(&eigen) < 3 {
             continue;
         }
-        if let Some(k) = belege.iter().position(|b| py::laenge(b) >= 3 && (eigen.contains(b.as_str()) || b.contains(&eigen))) {
+        if let Some(k) = belege
+            .iter()
+            .position(|b| py::laenge(b) >= 3 && (eigen.contains(b.as_str()) || b.contains(&eigen)))
+        {
             treffer.insert(k);
         }
     }
@@ -219,11 +267,21 @@ pub(crate) fn status_setzen(
     verworfen: &[Vorschlag],
     rueckfragen: &[Rueckfrage],
 ) {
-    let mit_vorschlag = zugerechnet(behalten.iter().map(|v| (v.0.aussage, v.0.beleg.as_str())), aussagen);
+    let mit_vorschlag = zugerechnet(
+        behalten.iter().map(|v| (v.0.aussage, v.0.beleg.as_str())),
+        aussagen,
+    );
     let mit_rueckfrage = zugerechnet(rueckfragen.iter().map(|r| (r.aussage, "")), aussagen);
-    let ohne_beleg = zugerechnet(verworfen.iter().map(|v| (v.aussage, v.beleg.as_str())), aussagen);
+    let ohne_beleg = zugerechnet(
+        verworfen.iter().map(|v| (v.aussage, v.beleg.as_str())),
+        aussagen,
+    );
     for (i, a) in aussagen.iter_mut().enumerate() {
-        a.regeln = i64::try_from(i).ok().and_then(|k| zuordnungen.get(&k)).cloned().unwrap_or_default();
+        a.regeln = i64::try_from(i)
+            .ok()
+            .and_then(|k| zuordnungen.get(&k))
+            .cloned()
+            .unwrap_or_default();
         a.status = if mit_vorschlag.contains(&i) {
             AussageStatus::Vorschlag
         } else if mit_rueckfrage.contains(&i) {
@@ -281,20 +339,33 @@ pub fn felder_je_regel(katalog: &[KatalogFeld]) -> Vec<(String, Vec<&KatalogFeld
 /// assert_eq!(mit_zaehlfeldern(vec![&katalog[0]], &katalog, &[]).len(), 1); // ohne Gruppen unveraendert
 /// ```
 #[must_use]
-pub fn mit_zaehlfeldern<'a>(kat3: Vec<&'a KatalogFeld>, katalog: &'a [KatalogFeld], gruppen: &[(String, String)]) -> Vec<&'a KatalogFeld> {
+pub fn mit_zaehlfeldern<'a>(
+    kat3: Vec<&'a KatalogFeld>,
+    katalog: &'a [KatalogFeld],
+    gruppen: &[(String, String)],
+) -> Vec<&'a KatalogFeld> {
     if gruppen.is_empty() {
         return kat3;
     }
     let drin: HashSet<&str> = kat3.iter().map(|f| f.feld_id.as_str()).collect();
-    let anzahl_von: HashMap<&str, &str> = gruppen.iter().map(|(g, a)| (g.as_str(), a.as_str())).collect();
-    let zu_gruppe: HashMap<&str, &str> = gruppen.iter().map(|(g, a)| (a.as_str(), g.as_str())).collect();
+    let anzahl_von: HashMap<&str, &str> = gruppen
+        .iter()
+        .map(|(g, a)| (g.as_str(), a.as_str()))
+        .collect();
+    let zu_gruppe: HashMap<&str, &str> = gruppen
+        .iter()
+        .map(|(g, a)| (a.as_str(), g.as_str()))
+        .collect();
     let fehlende_zahl: HashSet<&str> = kat3
         .iter()
         .filter_map(|f| f.instanz_gruppe.as_deref().filter(|g| !g.is_empty()))
         .filter_map(|g| anzahl_von.get(g).copied())
         .filter(|a| !drin.contains(a))
         .collect();
-    let offene_gruppen: HashSet<&str> = drin.iter().filter_map(|fid| zu_gruppe.get(fid).copied()).collect();
+    let offene_gruppen: HashSet<&str> = drin
+        .iter()
+        .filter_map(|fid| zu_gruppe.get(fid).copied())
+        .collect();
     if fehlende_zahl.is_empty() && offene_gruppen.is_empty() {
         return kat3;
     }
@@ -302,7 +373,9 @@ pub fn mit_zaehlfeldern<'a>(kat3: Vec<&'a KatalogFeld>, katalog: &'a [KatalogFel
     out.extend(katalog.iter().filter(|f| {
         !drin.contains(f.feld_id.as_str())
             && (fehlende_zahl.contains(f.feld_id.as_str())
-                || f.instanz_gruppe.as_deref().is_some_and(|g| offene_gruppen.contains(g)))
+                || f.instanz_gruppe
+                    .as_deref()
+                    .is_some_and(|g| offene_gruppen.contains(g)))
     }));
     out
 }

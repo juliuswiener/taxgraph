@@ -101,7 +101,12 @@ impl Auth {
     /// ```
     #[must_use]
     pub fn neu(geheimnis: String, nutzerdatei: PathBuf, audit: Option<PathBuf>) -> Self {
-        Self { geheimnis, nutzerdatei, audit, gesperrt: Mutex::new(HashSet::new()) }
+        Self {
+            geheimnis,
+            nutzerdatei,
+            audit,
+            gesperrt: Mutex::new(HashSet::new()),
+        }
     }
 
     /// Wie `auth.py:18-23`: Geheimnis aus `TAXGRAPH_JWT_SECRET`, sonst zufaellig je Start (64
@@ -121,7 +126,8 @@ impl Auth {
             Some(g) => g,
             None => token_hex(32)?,
         };
-        let nutzerdatei = env("TAXGRAPH_USER_STORE").map_or_else(|| standard_datei.to_path_buf(), PathBuf::from);
+        let nutzerdatei =
+            env("TAXGRAPH_USER_STORE").map_or_else(|| standard_datei.to_path_buf(), PathBuf::from);
         Ok(Self::neu(geheimnis, nutzerdatei, audit))
     }
 
@@ -144,14 +150,18 @@ impl Auth {
             return Err(AuthFehler::PasswortUngueltig);
         }
         let mut bestand = datei::lade(&self.nutzerdatei)?;
-        let nutzer = bestand.get_mut("users").and_then(Value::as_object_mut).ok_or(AuthFehler::NutzerdateiOhneUsers)?;
+        let nutzer = bestand
+            .get_mut("users")
+            .and_then(Value::as_object_mut)
+            .ok_or(AuthFehler::NutzerdateiOhneUsers)?;
         if nutzer.contains_key(name.as_str()) {
             return Err(AuthFehler::Existiert(name));
         }
-        let hash = bcrypt::non_truncating_hash(&a.password, BCRYPT_KOSTEN).map_err(|e| match e {
-            bcrypt::BcryptError::Truncation(_) => AuthFehler::PasswortUeber72Bytes,
-            andere => AuthFehler::Bcrypt(andere),
-        })?;
+        let hash =
+            bcrypt::non_truncating_hash(&a.password, BCRYPT_KOSTEN).map_err(|e| match e {
+                bcrypt::BcryptError::Truncation(_) => AuthFehler::PasswortUeber72Bytes,
+                andere => AuthFehler::Bcrypt(andere),
+            })?;
         nutzer.insert(
             name.as_str().to_owned(),
             serde_json::json!({"password_hash": hash, "created_at": iso_jetzt()}),
@@ -203,7 +213,12 @@ impl Auth {
     /// [`AuthFehler::Zufall`] oder [`AuthFehler::Jwt`].
     pub fn stelle_aus(&self, sub: &str) -> Result<String, AuthFehler> {
         let iat = chrono::Utc::now().timestamp();
-        let claims = Claims { sub: sub.to_owned(), iat, exp: iat + JWT_TTL_S, jti: token_hex(16)? };
+        let claims = Claims {
+            sub: sub.to_owned(),
+            iat,
+            exp: iat + JWT_TTL_S,
+            jti: token_hex(16)?,
+        };
         Ok(token::signiere(&claims, &self.geheimnis)?)
     }
 
@@ -222,7 +237,10 @@ impl Auth {
         if self.gesperrt.lock().is_ok_and(|g| g.contains(jti)) {
             return None;
         }
-        payload.get("sub").and_then(Value::as_str).map(str::to_owned)
+        payload
+            .get("sub")
+            .and_then(Value::as_str)
+            .map(str::to_owned)
     }
 
     /// `logout` (`auth.py:171-182`): ein gueltiges Token (optional mit `Bearer `-Praefix) auf
@@ -234,11 +252,19 @@ impl Auth {
             return None;
         }
         let payload = token::pruefe(token, &self.geheimnis, jetzt())?;
-        let jti = payload.get("jti").and_then(Value::as_str).unwrap_or("").to_owned();
+        let jti = payload
+            .get("jti")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_owned();
         if let Ok(mut g) = self.gesperrt.lock() {
             g.insert(jti);
         }
-        let sub = payload.get("sub").and_then(Value::as_str).filter(|s| !s.is_empty()).map(str::to_owned);
+        let sub = payload
+            .get("sub")
+            .and_then(Value::as_str)
+            .filter(|s| !s.is_empty())
+            .map(str::to_owned);
         if let Some(s) = &sub {
             self.protokolliere(s, AuditAktion::Logout);
         }
@@ -264,11 +290,13 @@ fn iso_jetzt() -> String {
 fn token_hex(n: usize) -> Result<String, AuthFehler> {
     let mut puffer = vec![0u8; n];
     getrandom::fill(&mut puffer).map_err(|e| AuthFehler::Zufall(e.to_string()))?;
-    Ok(puffer.iter().fold(String::with_capacity(2 * n), |mut s, b| {
-        use std::fmt::Write as _;
-        let _ = write!(s, "{b:02x}");
-        s
-    }))
+    Ok(puffer
+        .iter()
+        .fold(String::with_capacity(2 * n), |mut s, b| {
+            use std::fmt::Write as _;
+            let _ = write!(s, "{b:02x}");
+            s
+        }))
 }
 
 #[cfg(test)]
@@ -276,7 +304,10 @@ mod tests {
     use super::{Anmeldung, Auth, AuthFehler};
 
     fn anmeldung(u: &str, p: &str) -> Anmeldung {
-        Anmeldung { username: u.into(), password: p.into() }
+        Anmeldung {
+            username: u.into(),
+            password: p.into(),
+        }
     }
 
     #[test]
@@ -286,9 +317,18 @@ mod tests {
         let pfad = dir.path().join("users.json");
         let a = Auth::neu("s".into(), pfad.clone(), None);
         a.registriere(&anmeldung("julius", "geheim123")).unwrap();
-        assert_eq!(std::fs::metadata(&pfad).unwrap().permissions().mode() & 0o777, 0o600);
-        assert!(matches!(a.registriere(&anmeldung("julius", "geheim123")), Err(AuthFehler::Existiert(_))));
-        assert!(matches!(a.login(&anmeldung("julius", "falsch123")), Err(AuthFehler::Falsch)));
+        assert_eq!(
+            std::fs::metadata(&pfad).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        assert!(matches!(
+            a.registriere(&anmeldung("julius", "geheim123")),
+            Err(AuthFehler::Existiert(_))
+        ));
+        assert!(matches!(
+            a.login(&anmeldung("julius", "falsch123")),
+            Err(AuthFehler::Falsch)
+        ));
         let t = a.login(&anmeldung("julius", "geheim123")).unwrap();
         assert_eq!(a.pruefe_token(&t).as_deref(), Some("julius"));
         assert_eq!(a.logout(&t).as_deref(), Some("julius"));
@@ -300,7 +340,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let a = Auth::neu("s".into(), dir.path().join("u.json"), None);
         let lang = "x".repeat(73);
-        assert!(matches!(a.registriere(&anmeldung("julius", &lang)), Err(AuthFehler::PasswortUeber72Bytes)));
+        assert!(matches!(
+            a.registriere(&anmeldung("julius", &lang)),
+            Err(AuthFehler::PasswortUeber72Bytes)
+        ));
     }
 
     #[test]

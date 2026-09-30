@@ -12,7 +12,10 @@ pub(crate) struct Geordnet<K: Ord + Clone, V> {
 
 impl<K: Ord + Clone, V> Default for Geordnet<K, V> {
     fn default() -> Self {
-        Self { reihenfolge: Vec::new(), werte: BTreeMap::new() }
+        Self {
+            reihenfolge: Vec::new(),
+            werte: BTreeMap::new(),
+        }
     }
 }
 
@@ -36,6 +39,9 @@ impl<K: Ord + Clone, V> Geordnet<K, V> {
     /// Paare in Einfuege-Reihenfolge.
     pub(crate) fn in_reihenfolge(self) -> Vec<(K, V)> {
         let mut werte = self.werte;
-        self.reihenfolge.into_iter().filter_map(|k| werte.remove(&k).map(|v| (k, v))).collect()
+        self.reihenfolge
+            .into_iter()
+            .filter_map(|k| werte.remove(&k).map(|v| (k, v)))
+            .collect()
     }
 }

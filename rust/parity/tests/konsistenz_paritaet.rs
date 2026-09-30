@@ -15,7 +15,12 @@
 //! Wertebereich: keine Floats (s. `konsistenz`-Crate-Doku; reale Fälle: 0 Floats).
 //!
 //!   `PARITY`=1 `cargo` test -p parity --test `konsistenz_paritaet` -- --nocapture
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic
+)]
 
 use std::collections::{BTreeMap, HashSet};
 use std::sync::{Mutex, OnceLock};
@@ -41,14 +46,18 @@ fn faelle_verzeichnis() -> std::path::PathBuf {
     match std::env::var("TAXGRAPH_DATEN") {
         Ok(p) if !p.trim().is_empty() => std::path::PathBuf::from(p.trim()).join("faelle"),
         _ => match std::env::var("XDG_DATA_HOME") {
-            Ok(x) if !x.trim().is_empty() => std::path::PathBuf::from(x.trim()).join("taxgraph/faelle"),
+            Ok(x) if !x.trim().is_empty() => {
+                std::path::PathBuf::from(x.trim()).join("taxgraph/faelle")
+            }
             _ => home.join(".local/share/taxgraph/faelle"),
         },
     }
 }
 
 fn walk_json(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
-    let Ok(read) = std::fs::read_dir(dir) else { return Vec::new() };
+    let Ok(read) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for e in read.flatten() {
         let p = e.path();
@@ -66,7 +75,10 @@ fn bindungen() -> &'static [Bindung] {
     static CELL: OnceLock<Vec<Bindung>> = OnceLock::new();
     CELL.get_or_init(|| {
         let reg = bindung::lade_registry(&repo_root().join("produkt/bindung")).expect("registry");
-        reg.dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect()
+        reg.dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect()
     })
 }
 
@@ -87,14 +99,23 @@ fn oracle() -> &'static Mutex<Oracle> {
 }
 
 fn frage(anfrage: &Value) -> Value {
-    let antwort = oracle().lock().unwrap().call_json(anfrage).expect("orakel antwortet");
-    antwort.get("ok").cloned().unwrap_or_else(|| json!({ "err": antwort["err"] }))
+    let antwort = oracle()
+        .lock()
+        .unwrap()
+        .call_json(anfrage)
+        .expect("orakel antwortet");
+    antwort
+        .get("ok")
+        .cloned()
+        .unwrap_or_else(|| json!({ "err": antwort["err"] }))
 }
 
 // ------------------------------------------------------------------ Rust-Ergebnis → Python-Form
 
 fn flag_json(v: &[k::FlagWiderspruch]) -> Value {
-    v.iter().map(|w| json!({"flag": w.flag, "feld_id": w.feld_id, "wert": w.wert, "grund": w.grund})).collect()
+    v.iter()
+        .map(|w| json!({"flag": w.flag, "feld_id": w.feld_id, "wert": w.wert, "grund": w.grund}))
+        .collect()
 }
 
 fn partner_json(v: &[k::PartnerWiderspruch]) -> Value {
@@ -114,7 +135,9 @@ fn pauschal_json(v: &[k::PauschalHinweis]) -> Value {
 }
 
 fn nicht_gerechnet_json(v: &[k::NichtGerechnet]) -> Value {
-    v.iter().map(|n| json!({"feld_id": n.feld_id, "hinweis": n.hinweis})).collect()
+    v.iter()
+        .map(|n| json!({"feld_id": n.feld_id, "hinweis": n.hinweis}))
+        .collect()
 }
 
 fn plausi_json(v: &[k::PlausiWiderspruch]) -> Value {
@@ -169,7 +192,11 @@ fn buche(bilanz: &mut Bilanz, name: &'static str, rust: &Value, py: &Value) {
         z.diffs += 1;
         if z.diffs <= 3 {
             // Nur Strukturhinweis, keine Werte (reale Daten): die Schlüssel der ersten Abweichung.
-            eprintln!("ABWEICHUNG {name}: rust_len={} py_len={}", rust.to_string().len(), py.to_string().len());
+            eprintln!(
+                "ABWEICHUNG {name}: rust_len={} py_len={}",
+                rust.to_string().len(),
+                py.to_string().len()
+            );
         }
     }
 }
@@ -178,7 +205,10 @@ fn berichte(titel: &str, bilanz: &Bilanz) -> usize {
     println!("== {titel}");
     let mut summe = 0;
     for (name, z) in bilanz {
-        println!("  {name:<40} faelle={:>6} nicht_leer={:>6} diffs={}", z.faelle, z.nicht_leer, z.diffs);
+        println!(
+            "  {name:<40} faelle={:>6} nicht_leer={:>6} diffs={}",
+            z.faelle, z.nicht_leer, z.diffs
+        );
         summe += z.diffs;
     }
     summe
@@ -191,26 +221,63 @@ fn vorjahr_wert(v: Option<&Value>) -> Option<i64> {
 }
 
 /// Alle Funktionen gegen Python für EINEN Snapshot.
-fn pruefe(bilanz: &mut Bilanz, felder: &k::Felder, scheibe: Option<&Vec<String>>, vorjahr: Option<&Value>) {
+fn pruefe(
+    bilanz: &mut Bilanz,
+    felder: &k::Felder,
+    scheibe: Option<&Vec<String>>,
+    vorjahr: Option<&Value>,
+) {
     let snap = serde_json::to_value(felder).unwrap();
     let set: Option<HashSet<String>> = scheibe.map(|s| s.iter().cloned().collect());
     let einfach = |fn_name: &str| json!({"fn": fn_name, "snapshot": snap});
-    let py = frage(&json!({"fn": "konsistenz.flag_widersprueche", "snapshot": snap, "bindung": scheibe}));
-    buche(bilanz, "flag_widersprueche", &flag_json(&k::flag_widersprueche(felder, set.as_ref())), &py);
+    let py = frage(
+        &json!({"fn": "konsistenz.flag_widersprueche", "snapshot": snap, "bindung": scheibe}),
+    );
+    buche(
+        bilanz,
+        "flag_widersprueche",
+        &flag_json(&k::flag_widersprueche(felder, set.as_ref())),
+        &py,
+    );
     let py = frage(&einfach("konsistenz.partner_ohne_zusammen"));
-    buche(bilanz, "partner_ohne_zusammen", &partner_json(&k::partner_ohne_zusammen(felder)), &py);
+    buche(
+        bilanz,
+        "partner_ohne_zusammen",
+        &partner_json(&k::partner_ohne_zusammen(felder)),
+        &py,
+    );
     let py = frage(&einfach("konsistenz.alleinerziehend_mit_zusammen"));
-    buche(bilanz, "alleinerziehend_mit_zusammen", &partner_json(&k::alleinerziehend_mit_zusammen(felder)), &py);
+    buche(
+        bilanz,
+        "alleinerziehend_mit_zusammen",
+        &partner_json(&k::alleinerziehend_mit_zusammen(felder)),
+        &py,
+    );
     let py = frage(&einfach("konsistenz.pauschal_hinweise"));
-    buche(bilanz, "pauschal_hinweise", &pauschal_json(&k::pauschal_hinweise(felder)), &py);
+    buche(
+        bilanz,
+        "pauschal_hinweise",
+        &pauschal_json(&k::pauschal_hinweise(felder)),
+        &py,
+    );
     let py = frage(&einfach("konsistenz.nicht_gerechnete_angaben"));
-    buche(bilanz, "nicht_gerechnete_angaben", &nicht_gerechnet_json(&k::nicht_gerechnete_angaben(felder)), &py);
-    let py = frage(&json!({"fn": "konsistenz.preflight", "snapshot": snap, "bindung": scheibe, "vorjahr_referenz": vorjahr}));
+    buche(
+        bilanz,
+        "nicht_gerechnete_angaben",
+        &nicht_gerechnet_json(&k::nicht_gerechnete_angaben(felder)),
+        &py,
+    );
+    let py = frage(
+        &json!({"fn": "konsistenz.preflight", "snapshot": snap, "bindung": scheibe, "vorjahr_referenz": vorjahr}),
+    );
     let rust = k::preflight(felder, set.as_ref(), vorjahr_wert(vorjahr), graph());
     buche(bilanz, "preflight", &preflight_json(&rust), &py["ergebnis"]);
     // Zählt nur die Abdeckung: Rust rechnet die Lücken selbst (`interview::fehlende_instanzen`).
     if py["luecken"].as_array().is_some_and(|a| !a.is_empty()) {
-        bilanz.entry("  davon luecken_nicht_leer").or_default().faelle += 1;
+        bilanz
+            .entry("  davon luecken_nicht_leer")
+            .or_default()
+            .faelle += 1;
     }
 }
 
@@ -225,8 +292,14 @@ fn konstanten_gleich() {
     let flag: Value = k::FLAG_NEGIERT.iter().map(|(f, l)| json!([f, l])).collect();
     assert_eq!(flag, py["flag_negiert"]);
     assert_eq!(json!(k::PARTNER_FELDER), py["partner_felder"]);
-    assert_eq!(json!(k::RING_BETRAGSFELDER.as_slice()), py["ring_betragsfelder"]);
-    let ng: Value = k::NICHT_GERECHNET.iter().map(|(f, t)| json!([f, t])).collect();
+    assert_eq!(
+        json!(k::RING_BETRAGSFELDER.as_slice()),
+        py["ring_betragsfelder"]
+    );
+    let ng: Value = k::NICHT_GERECHNET
+        .iter()
+        .map(|(f, t)| json!([f, t]))
+        .collect();
     assert_eq!(ng, py["nicht_gerechnet"]);
     let pc: Value = k::PAUSCHAL_CHECKS
         .iter()
@@ -235,7 +308,9 @@ fn konstanten_gleich() {
         .collect();
     assert_eq!(pc, py["pauschal_checks"]);
     // `nur_wenn_alle_leer` ersetzt Pythons `check["id"] == "vv_wk"`:
-    assert!(k::PAUSCHAL_CHECKS.iter().all(|c| c.nur_wenn_alle_leer == (c.id == "vv_wk")));
+    assert!(k::PAUSCHAL_CHECKS
+        .iter()
+        .all(|c| c.nur_wenn_alle_leer == (c.id == "vv_wk")));
     println!("konstanten: 5 Tabellen gleich");
 }
 
@@ -246,27 +321,39 @@ fn reale_faelle() {
     }
     let alle: Vec<String> = bindungen().iter().map(|b| b.feld_id.clone()).collect();
     let flags: HashSet<&str> = k::FLAG_NEGIERT.iter().map(|(f, _)| *f).collect();
-    let ohne_flags: Vec<String> = alle.iter().filter(|f| !flags.contains(f.as_str())).cloned().collect();
+    let ohne_flags: Vec<String> = alle
+        .iter()
+        .filter(|f| !flags.contains(f.as_str()))
+        .cloned()
+        .collect();
     let mut dateien = 0;
     let mut bilanz = Bilanz::new();
     // P10: store::lade laedt inzwischen ALLE realen Faelle (legacy Herkunft, unbegrenzte VZ) —
     // keine rohe Fallback-Faltung mehr noetig.
     for pfad in walk_json(&faelle_verzeichnis()) {
         dateien += 1;
-        let datei = store::lade(&pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
+        let datei =
+            store::lade(&pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
         let (felder, _) = store::Store::aus_datei(datei).materialisiere(None).unwrap();
         for scheibe in [None, Some(&alle), Some(&ohne_flags)] {
             pruefe(&mut bilanz, &felder, scheibe, None);
         }
     }
     println!("reale Faelle: {dateien} Dateien via store::lade (x3 Scheiben-Varianten)");
-    assert!(dateien > 0, "keine realen Faelle gefunden — Paritaet waere leer");
+    assert!(
+        dateien > 0,
+        "keine realen Faelle gefunden — Paritaet waere leer"
+    );
     assert_eq!(berichte("reale Faelle", &bilanz), 0);
 }
 
 fn herkunft() -> Herkunft {
     let a = Achsenwert::new("parity").unwrap();
-    Herkunft { herkunft: a.clone(), pruef_tiefe: PruefTiefe::Ungeprueft, haftung: a }
+    Herkunft {
+        herkunft: a.clone(),
+        pruef_tiefe: PruefTiefe::Ungeprueft,
+        haftung: a,
+    }
 }
 
 fn pool() -> Vec<String> {
@@ -282,17 +369,48 @@ fn pool() -> Vec<String> {
     }
     p.extend(k::PARTNER_FELDER.iter().map(|s| (*s).to_owned()));
     for c in &k::PAUSCHAL_CHECKS {
-        p.extend(c.ausloeser_felder.iter().chain(c.pauschal_felder).map(|s| (*s).to_owned()));
+        p.extend(
+            c.ausloeser_felder
+                .iter()
+                .chain(c.pauschal_felder)
+                .map(|s| (*s).to_owned()),
+        );
     }
     p.extend(
         [
-            "veranlagung", "fam_alleinstehend", "bruttoarbeitslohn", "p36_lohnsteuer", "vor_an_anteil_rv",
-            "vor_ag_anteil_rv", "kist_gezahlt", "kirchensteuer_arbeitgeber", "kist_erstattet", "kist_konfession",
-            "kist_bundesland", "schulgeld", "schulgeld__2", "schulgeld__3", "schulgeld__0", "schulgeld__x",
-            "schulgeld__", "stammdaten_keine_bankverbindung", "stammdaten_iban", "verlustvortrag_bestand",
-            "fam_anzahl_kinder", "kinderbetreuungskosten", "kinderbetreuungskosten__2", "kinderbetreuungskosten__3",
-            "rentner_anzahl_renten", "p23_anzahl_verkaeufe", "gwg_anzahl", "vv_anzahl_objekte",
-            "hh_dienstleistungen", "spenden_betrag", "tage_24h", "p36_vorauszahlungen", "basis_kv",
+            "veranlagung",
+            "fam_alleinstehend",
+            "bruttoarbeitslohn",
+            "p36_lohnsteuer",
+            "vor_an_anteil_rv",
+            "vor_ag_anteil_rv",
+            "kist_gezahlt",
+            "kirchensteuer_arbeitgeber",
+            "kist_erstattet",
+            "kist_konfession",
+            "kist_bundesland",
+            "schulgeld",
+            "schulgeld__2",
+            "schulgeld__3",
+            "schulgeld__0",
+            "schulgeld__x",
+            "schulgeld__",
+            "stammdaten_keine_bankverbindung",
+            "stammdaten_iban",
+            "verlustvortrag_bestand",
+            "fam_anzahl_kinder",
+            "kinderbetreuungskosten",
+            "kinderbetreuungskosten__2",
+            "kinderbetreuungskosten__3",
+            "rentner_anzahl_renten",
+            "p23_anzahl_verkaeufe",
+            "gwg_anzahl",
+            "vv_anzahl_objekte",
+            "hh_dienstleistungen",
+            "spenden_betrag",
+            "tage_24h",
+            "p36_vorauszahlungen",
+            "basis_kv",
         ]
         .map(str::to_owned),
     );
@@ -306,12 +424,28 @@ fn wert() -> impl Strategy<Value = Value> {
         Just(Value::Null),
         any::<bool>().prop_map(Value::Bool),
         (-3_i64..=4).prop_map(Value::from),
-        prop::sample::select(vec![0_i64, 1, 999, 1000, 1001, 1500, 100_000, 1_212_321_300, 16_666_660, 16_666_661,
-            5_000_000_000, -150, i64::MAX, i64::MIN])
-            .prop_map(Value::from),
+        prop::sample::select(vec![
+            0_i64,
+            1,
+            999,
+            1000,
+            1001,
+            1500,
+            100_000,
+            1_212_321_300,
+            16_666_660,
+            16_666_661,
+            5_000_000_000,
+            -150,
+            i64::MAX,
+            i64::MIN
+        ])
+        .prop_map(Value::from),
         (-10_i64.pow(13)..10_i64.pow(13)).prop_map(Value::from),
-        prop::sample::select(vec!["", " ", "\u{1f}", "\u{a0}", "einzel", "zusammen", "DE12", "rk", "by", " x "])
-            .prop_map(|s| Value::String(s.to_owned())),
+        prop::sample::select(vec![
+            "", " ", "\u{1f}", "\u{a0}", "einzel", "zusammen", "DE12", "rk", "by", " x "
+        ])
+        .prop_map(|s| Value::String(s.to_owned())),
     ]
 }
 
@@ -326,7 +460,10 @@ type Fall = (k::Felder, Option<Vec<String>>, Option<Value>);
 
 fn fall() -> impl Strategy<Value = Fall> {
     let p = pool();
-    let eintraege = prop::collection::vec((prop::sample::select(p.clone()), wert(), any::<bool>()), 0..30);
+    let eintraege = prop::collection::vec(
+        (prop::sample::select(p.clone()), wert(), any::<bool>()),
+        0..30,
+    );
     // KiSt-Schwelle gezielt: kist = floor(3·brutto/10) + d.
     let kist = prop::option::of((1_i64..=10_i64.pow(12), -2_i64..=2));
     let scheibe = prop::option::of(prop::collection::vec(prop::sample::select(p), 0..40));
@@ -337,47 +474,78 @@ fn fall() -> impl Strategy<Value = Fall> {
     // Anker: Veranlagung, § 24b, ein Partnerfeld und eine Instanzreihe — sonst trifft der
     // Zufall aus ~300 Schluesseln diese Pruefungen kaum.
     let anker = (
-        prop::option::of((prop::sample::select(vec!["einzel", "zusammen", "zusammen", "getrennt"]), prop::bool::weighted(0.8))),
+        prop::option::of((
+            prop::sample::select(vec!["einzel", "zusammen", "zusammen", "getrennt"]),
+            prop::bool::weighted(0.8),
+        )),
         prop::option::of((prop::bool::weighted(0.8), prop::bool::weighted(0.8))),
         prop::option::of((prop::sample::select(k::PARTNER_FELDER.to_vec()), wert())),
-        prop::option::of((prop::sample::select(INSTANZ_REIHEN.to_vec()), 0_i64..5, any::<u8>())),
+        prop::option::of((
+            prop::sample::select(INSTANZ_REIHEN.to_vec()),
+            0_i64..5,
+            any::<u8>(),
+        )),
     );
-    (eintraege, kist, scheibe, vorjahr, anker).prop_map(|(eintraege, kist, scheibe, vorjahr, anker)| {
-        let mut felder = k::Felder::new();
-        let mut setze = |f: &str, w: Value, b: bool| {
-            let zustand = if b { Zustand::Bestaetigt } else { Zustand::Vorlaeufig };
-            felder.insert(f.to_owned(), SnapshotFeld { wert: w, zustand, herkunft: herkunft().into() });
-        };
-        for (f, w, b) in eintraege {
-            setze(&f, w, b);
-        }
-        let (veranlagung, allein, partner, reihe) = anker;
-        if let Some((v, b)) = veranlagung {
-            setze("veranlagung", json!(v), b);
-        }
-        if let Some((w, b)) = allein {
-            setze("fam_alleinstehend", json!(w), b);
-        }
-        if let Some((f, w)) = partner {
-            setze(f, w, true);
-        }
-        if let Some(((anzahl_feld, basis), n, maske)) = reihe {
-            setze(anzahl_feld, json!(n), true);
-            for i in 1..=5_u8 {
-                if maske & (1 << i) != 0 {
-                    let fid = if i == 1 { basis.to_owned() } else { format!("{basis}__{i}") };
-                    setze(&fid, json!(1000), maske & 1 == 0 || i != 2);
+    (eintraege, kist, scheibe, vorjahr, anker).prop_map(
+        |(eintraege, kist, scheibe, vorjahr, anker)| {
+            let mut felder = k::Felder::new();
+            let mut setze = |f: &str, w: Value, b: bool| {
+                let zustand = if b {
+                    Zustand::Bestaetigt
+                } else {
+                    Zustand::Vorlaeufig
+                };
+                felder.insert(
+                    f.to_owned(),
+                    SnapshotFeld {
+                        wert: w,
+                        zustand,
+                        herkunft: herkunft().into(),
+                    },
+                );
+            };
+            for (f, w, b) in eintraege {
+                setze(&f, w, b);
+            }
+            let (veranlagung, allein, partner, reihe) = anker;
+            if let Some((v, b)) = veranlagung {
+                setze("veranlagung", json!(v), b);
+            }
+            if let Some((w, b)) = allein {
+                setze("fam_alleinstehend", json!(w), b);
+            }
+            if let Some((f, w)) = partner {
+                setze(f, w, true);
+            }
+            if let Some(((anzahl_feld, basis), n, maske)) = reihe {
+                setze(anzahl_feld, json!(n), true);
+                for i in 1..=5_u8 {
+                    if maske & (1 << i) != 0 {
+                        let fid = if i == 1 {
+                            basis.to_owned()
+                        } else {
+                            format!("{basis}__{i}")
+                        };
+                        setze(&fid, json!(1000), maske & 1 == 0 || i != 2);
+                    }
                 }
             }
-        }
-        if let Some((brutto, d)) = kist {
-            let k = brutto * 3 / 10 + d;
-            for (f, w) in [("bruttoarbeitslohn", brutto), ("kist_gezahlt", k)] {
-                felder.insert(f.to_owned(), SnapshotFeld { wert: w.into(), zustand: Zustand::Bestaetigt, herkunft: herkunft().into() });
+            if let Some((brutto, d)) = kist {
+                let k = brutto * 3 / 10 + d;
+                for (f, w) in [("bruttoarbeitslohn", brutto), ("kist_gezahlt", k)] {
+                    felder.insert(
+                        f.to_owned(),
+                        SnapshotFeld {
+                            wert: w.into(),
+                            zustand: Zustand::Bestaetigt,
+                            herkunft: herkunft().into(),
+                        },
+                    );
+                }
             }
-        }
-        (felder, scheibe, vorjahr)
-    })
+            (felder, scheibe, vorjahr)
+        },
+    )
 }
 
 #[test]
@@ -386,20 +554,43 @@ fn generierte_faelle() {
         return;
     }
     let bilanz = Mutex::new(Bilanz::new());
-    let mut runner = proptest::test_runner::TestRunner::new(ProptestConfig { cases: 1000, ..ProptestConfig::default() });
+    let mut runner = proptest::test_runner::TestRunner::new(ProptestConfig {
+        cases: 1000,
+        ..ProptestConfig::default()
+    });
     runner
         .run(&fall(), |(felder, scheibe, vorjahr)| {
-            pruefe(&mut bilanz.lock().unwrap(), &felder, scheibe.as_ref(), vorjahr.as_ref());
+            pruefe(
+                &mut bilanz.lock().unwrap(),
+                &felder,
+                scheibe.as_ref(),
+                vorjahr.as_ref(),
+            );
             Ok(())
         })
         .unwrap();
     let bilanz = bilanz.into_inner().unwrap();
     assert_eq!(berichte("generierte Faelle (1000)", &bilanz), 0);
-    assert!(bilanz["flag_widersprueche"].nicht_leer > 50, "Generator trifft flag_check zu selten");
-    assert!(bilanz["preflight"].nicht_leer > 500, "Generator trifft preflight zu selten");
-    assert!(bilanz["partner_ohne_zusammen"].nicht_leer > 20, "Generator trifft partner_check zu selten");
-    assert!(bilanz["alleinerziehend_mit_zusammen"].nicht_leer > 20, "Generator trifft § 24b zu selten");
-    assert!(bilanz["  davon luecken_nicht_leer"].faelle > 20, "Generator trifft fehlende_instanzen zu selten");
+    assert!(
+        bilanz["flag_widersprueche"].nicht_leer > 50,
+        "Generator trifft flag_check zu selten"
+    );
+    assert!(
+        bilanz["preflight"].nicht_leer > 500,
+        "Generator trifft preflight zu selten"
+    );
+    assert!(
+        bilanz["partner_ohne_zusammen"].nicht_leer > 20,
+        "Generator trifft partner_check zu selten"
+    );
+    assert!(
+        bilanz["alleinerziehend_mit_zusammen"].nicht_leer > 20,
+        "Generator trifft § 24b zu selten"
+    );
+    assert!(
+        bilanz["  davon luecken_nicht_leer"].faelle > 20,
+        "Generator trifft fehlende_instanzen zu selten"
+    );
 }
 
 #[test]
@@ -408,13 +599,24 @@ fn negativkontrolle() {
         return;
     }
     let mut felder = k::Felder::new();
-    for (f, w) in [("kein_vuv", json!(true)), ("vv_einnahmen", json!(1_200_000)), ("bruttoarbeitslohn", json!(1000)),
-        ("p36_lohnsteuer", json!(2000))]
-    {
-        felder.insert(f.to_owned(), SnapshotFeld { wert: w, zustand: Zustand::Bestaetigt, herkunft: herkunft().into() });
+    for (f, w) in [
+        ("kein_vuv", json!(true)),
+        ("vv_einnahmen", json!(1_200_000)),
+        ("bruttoarbeitslohn", json!(1000)),
+        ("p36_lohnsteuer", json!(2000)),
+    ] {
+        felder.insert(
+            f.to_owned(),
+            SnapshotFeld {
+                wert: w,
+                zustand: Zustand::Bestaetigt,
+                herkunft: herkunft().into(),
+            },
+        );
     }
     let snap = serde_json::to_value(&felder).unwrap();
-    let py = frage(&json!({"fn": "konsistenz.flag_widersprueche", "snapshot": snap, "bindung": null}));
+    let py =
+        frage(&json!({"fn": "konsistenz.flag_widersprueche", "snapshot": snap, "bindung": null}));
     let mut rust = k::flag_widersprueche::<std::hash::RandomState>(&felder, None);
     let mut bilanz = Bilanz::new();
     buche(&mut bilanz, "unveraendert", &flag_json(&rust), &py);
@@ -423,10 +625,17 @@ fn negativkontrolle() {
     rust[0].grund.pop();
     rust[0].wert = json!(1_200_001);
     buche(&mut bilanz, "wert + 1 Cent", &flag_json(&rust), &py);
-    let py = frage(&json!({"fn": "konsistenz.preflight", "snapshot": snap, "bindung": null, "vorjahr_referenz": null}));
+    let py = frage(
+        &json!({"fn": "konsistenz.preflight", "snapshot": snap, "bindung": null, "vorjahr_referenz": null}),
+    );
     let mut e = k::preflight::<std::hash::RandomState>(&felder, None, None, graph());
     e.widersprueche_plausibilitaet[0].bezug = Some(1001);
-    buche(&mut bilanz, "preflight bezug + 1 Cent", &preflight_json(&e), &py["ergebnis"]);
+    buche(
+        &mut bilanz,
+        "preflight bezug + 1 Cent",
+        &preflight_json(&e),
+        &py["ergebnis"],
+    );
     berichte("Negativkontrolle", &bilanz);
     assert_eq!(bilanz["unveraendert"].diffs, 0);
     assert_eq!(bilanz["grund + 1 Zeichen"].diffs, 1);

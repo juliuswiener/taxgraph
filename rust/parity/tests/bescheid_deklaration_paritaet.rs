@@ -229,7 +229,8 @@ impl Kontext {
             .iter()
             .copied()
             .filter(|n| {
-                *n != "vorlaeufige_ring_betraege" || (self.scheibe.is_some() && self.bindung_uebergeben)
+                *n != "vorlaeufige_ring_betraege"
+                    || (self.scheibe.is_some() && self.bindung_uebergeben)
             })
             .filter(|n| {
                 !self.float_modus || !["an_gesamt_sperrgrund", "sperrgrund_felder"].contains(n)
@@ -542,7 +543,13 @@ fn vergleiche(b: &mut Bilanz, k: &Kontext, ort: &str, werte: bool, stoere_erste:
 }
 
 /// Alle Aufrufformen eines Snapshots: Scheiben-Kontext × (Store, Bindung, VZ) da/fehlt.
-fn formen(quelle: &Quelle, vz: u16, eigene: Option<&'static str>, dicht: bool, float_modus: bool) -> Vec<Kontext> {
+fn formen(
+    quelle: &Quelle,
+    vz: u16,
+    eigene: Option<&'static str>,
+    dicht: bool,
+    float_modus: bool,
+) -> Vec<Kontext> {
     let mk = |scheibe, store_uebergeben, bindung_uebergeben, vz_ohne| Kontext {
         quelle: quelle.clone(),
         vz,
@@ -554,7 +561,12 @@ fn formen(quelle: &Quelle, vz: u16, eigene: Option<&'static str>, dicht: bool, f
     };
     let mut out = Vec::new();
     // Die Form der Python-Aufrufer: cfg, vz, store, bindung — je vollständig.
-    for s in [None, Some("an_gesamt"), Some("gesamt"), Some("rentner_gesamt")] {
+    for s in [
+        None,
+        Some("an_gesamt"),
+        Some("gesamt"),
+        Some("rentner_gesamt"),
+    ] {
         out.push(mk(s, true, true, false));
     }
     if let Some(e) = eigene.filter(|e| !["an_gesamt", "gesamt", "rentner_gesamt"].contains(e)) {
@@ -562,7 +574,14 @@ fn formen(quelle: &Quelle, vz: u16, eigene: Option<&'static str>, dicht: bool, f
     }
     if dicht {
         // Alt-Aufrufer und Tests: Teile weglassen.
-        for s in [None, Some("an_gesamt"), Some("gesamt"), Some("rentner_gesamt"), Some("ep"), Some("n_vor_gwg")] {
+        for s in [
+            None,
+            Some("an_gesamt"),
+            Some("gesamt"),
+            Some("rentner_gesamt"),
+            Some("ep"),
+            Some("n_vor_gwg"),
+        ] {
             out.push(mk(s, false, true, false));
             out.push(mk(s, true, false, false));
             out.push(mk(s, true, true, true));
@@ -620,25 +639,39 @@ fn sperrgrund_klartext_literale() {
     alle.dedup();
     let (mut gleich, mut typisiert) = (0_usize, 0_usize);
     for l in &alle {
-        let py = frage_roh(&json!({"fn": "bescheid.fall", "funktionen": ["bescheid.sperrgrund_klartext"],
-            "felder": {}, "vz": 2025, "nur_bestaetigt": false, "args": {"grund": l}}));
+        let py = frage_roh(
+            &json!({"fn": "bescheid.fall", "funktionen": ["bescheid.sperrgrund_klartext"],
+            "felder": {}, "vz": 2025, "nur_bestaetigt": false, "args": {"grund": l}}),
+        );
         let erwartet = py["bescheid.sperrgrund_klartext"]["ok"].as_str().unwrap();
-        assert_eq!(dk::sperrgrund_klartext_text(Some(l)), Some(erwartet), "Literal {l:?}");
+        assert_eq!(
+            dk::sperrgrund_klartext_text(Some(l)),
+            Some(erwartet),
+            "Literal {l:?}"
+        );
         gleich += 1;
         if let Ok(g) = l.parse::<Sperrgrund>() {
-            assert_eq!(dk::sperrgrund_klartext(Some(g)), Some(erwartet), "typisiert {l:?}");
+            assert_eq!(
+                dk::sperrgrund_klartext(Some(g)),
+                Some(erwartet),
+                "typisiert {l:?}"
+            );
             typisiert += 1;
         }
     }
     // None bleibt None (Python `if grund is None: return None`).
-    let py_none = frage_roh(&json!({"fn": "bescheid.fall", "funktionen": ["bescheid.sperrgrund_klartext"],
-        "felder": {}, "vz": 2025, "nur_bestaetigt": false, "args": {"grund": null}}));
+    let py_none = frage_roh(
+        &json!({"fn": "bescheid.fall", "funktionen": ["bescheid.sperrgrund_klartext"],
+        "felder": {}, "vz": 2025, "nur_bestaetigt": false, "args": {"grund": null}}),
+    );
     assert!(py_none["bescheid.sperrgrund_klartext"]["ok"].is_null());
     assert_eq!(dk::sperrgrund_klartext(None), None);
     assert_eq!(dk::sperrgrund_klartext_text(None), None);
     // Jede Rückgabe der Guards ist ein Sperrgrund der Enum UND hat einen Klartext-Eintrag.
     for r in &rueck {
-        let g: Sperrgrund = r.parse().unwrap_or_else(|_| panic!("Rückgabe {r:?} fehlt in domain::Sperrgrund"));
+        let g: Sperrgrund = r
+            .parse()
+            .unwrap_or_else(|_| panic!("Rückgabe {r:?} fehlt in domain::Sperrgrund"));
         assert!(g.klartext().is_some(), "{r:?} ohne Klartext");
         assert!(schluessel.contains(r), "{r:?} fehlt in SPERRGRUND_KLARTEXT");
     }
@@ -669,7 +702,8 @@ fn reale_faelle() {
         return;
     }
     let mut b = Bilanz::default();
-    let (mut kontexte, mut kein_store, mut vz_ersatz, mut stores) = (0_usize, 0_usize, 0_usize, 0_usize);
+    let (mut kontexte, mut kein_store, mut vz_ersatz, mut stores) =
+        (0_usize, 0_usize, 0_usize, 0_usize);
     let mut stoerung_offen = stoerung_an();
     for pfad in &dateien {
         let Ok(text) = std::fs::read_to_string(pfad) else {
@@ -693,8 +727,20 @@ fn reale_faelle() {
         let mut roh = roh;
         roh["veranlagungszeitraum"] = json!(vz);
         stores += 1;
-        for k in formen(&Quelle::Store(roh.clone()), vz, eigene_scheibe(&roh), true, false) {
-            vergleiche(&mut b, &k, "real", false, std::mem::take(&mut stoerung_offen));
+        for k in formen(
+            &Quelle::Store(roh.clone()),
+            vz,
+            eigene_scheibe(&roh),
+            true,
+            false,
+        ) {
+            vergleiche(
+                &mut b,
+                &k,
+                "real",
+                false,
+                std::mem::take(&mut stoerung_offen),
+            );
             kontexte += 1;
         }
     }
@@ -702,7 +748,11 @@ fn reale_faelle() {
     b.drucke_gruende();
     eprintln!("reale_faelle: {} Dateien, {stores} Stores, {kein_store} ohne Store übersprungen, {vz_ersatz} mit VZ außerhalb 2024–2026 (Ersatz 2025)", dateien.len());
     assert!(kontexte > 0);
-    assert_eq!(b.abweichungen(), 0, "Abweichungen (Anzahl s. o., keine Werte ausgegeben)");
+    assert_eq!(
+        b.abweichungen(),
+        0,
+        "Abweichungen (Anzahl s. o., keine Werte ausgegeben)"
+    );
 }
 
 // ---------------------------------------------------------------- Golden
@@ -736,10 +786,19 @@ fn golden_faelle() {
                         }
                         _ => v.clone(),
                     };
-                    (k.clone(), json!({"wert": wert, "zustand": "bestaetigt", "herkunft": herkunft}))
+                    (
+                        k.clone(),
+                        json!({"wert": wert, "zustand": "bestaetigt", "herkunft": herkunft}),
+                    )
                 })
                 .collect();
-            for k in formen(&Quelle::Felder(Value::Object(felder)), vz, None, false, false) {
+            for k in formen(
+                &Quelle::Felder(Value::Object(felder)),
+                vz,
+                None,
+                false,
+                false,
+            ) {
                 vergleiche(&mut b, &k, "golden", true, false);
                 n += 1;
             }
@@ -913,7 +972,10 @@ const FELDER: &[(&str, Kind)] = &[
     ("behinderungsbedingte_aufwendungen", Cent),
     ("behinderungsbedingte_aufwendungen_partner", Cent),
     ("behinderungsbedingte_aufwendungen_wahlrecht_pb", Bool),
-    ("behinderungsbedingte_aufwendungen_wahlrecht_pb_partner", Bool),
+    (
+        "behinderungsbedingte_aufwendungen_wahlrecht_pb_partner",
+        Bool,
+    ),
     ("kind_idnr", Idnr),
     ("kind_behinderten_pb_antrag", Bool),
     ("kind_pb_nicht_selbst_genutzt", Bool),
@@ -973,8 +1035,22 @@ const FELDER: &[(&str, Kind)] = &[
 ];
 
 const GRENZEN: &[i64] = &[
-    0, 1, 99, 100, 101, 25_000, 25_001, 80_000, 80_001, 99_900, 100_000, 250_000, 1_000_000,
-    5_000_000, 20_000_000, 500_000_100,
+    0,
+    1,
+    99,
+    100,
+    101,
+    25_000,
+    25_001,
+    80_000,
+    80_001,
+    99_900,
+    100_000,
+    250_000,
+    1_000_000,
+    5_000_000,
+    20_000_000,
+    500_000_100,
 ];
 
 /// Felder, die `konsistenz` liest (`FLAG_NEGIERT`-Basen und `PARTNER_FELDER`).
@@ -1057,7 +1133,9 @@ fn wert(c: &mut Cursor, k: Kind, wahr_pct: u64, kein_float: bool) -> Value {
             _ => json!(format!("{:011}", c.range(99_999_999_999))),
         },
         Veranl => json!(*c.waehle(&["einzel", "zusammen", "zusammen", "getrennt", "", "Zusammen"])),
-        Kind::Betriebsart => json!(*c.waehle(&["gewerbe", "gewerbe", "selbstaendig", "land_forst", ""])),
+        Kind::Betriebsart => {
+            json!(*c.waehle(&["gewerbe", "gewerbe", "selbstaendig", "land_forst", ""]))
+        }
         Rentenart => match c.range(10) {
             0 => Value::Null,
             1 => json!(5),
@@ -1095,9 +1173,23 @@ fn event(i: usize, fid: &str, wert: &Value, bestaetigt: bool) -> Value {
 
 /// Präfixe der frühen Sperren; im sauberen Store fehlen diese Felder.
 const FRUEH: &[&str] = &[
-    "dba_", "p32b", "rentner_veraeusserungsgewinn", "antrag_ermaessigter", "kap_", "kein_gewinn",
-    "kein_kap", "kein_vuv", "kein_sonstige", "kein_p23", "fam_alleinstehend", "einkuenfte_gewinn",
-    "betriebseinnahmen", "sonstige_betriebsausgaben", "afa_", "gewinnanteil", "verguetung_",
+    "dba_",
+    "p32b",
+    "rentner_veraeusserungsgewinn",
+    "antrag_ermaessigter",
+    "kap_",
+    "kein_gewinn",
+    "kein_kap",
+    "kein_vuv",
+    "kein_sonstige",
+    "kein_p23",
+    "fam_alleinstehend",
+    "einkuenfte_gewinn",
+    "betriebseinnahmen",
+    "sonstige_betriebsausgaben",
+    "afa_",
+    "gewinnanteil",
+    "verguetung_",
 ];
 
 /// Fokusgruppen (Teilstrings der Feld-Id): im Fokus liegt die Feld-Dichte bei 95 %.
@@ -1106,15 +1198,61 @@ const FOKUS: &[&[&str]] = &[
     &["dhf_", "veranlagung"],
     &["tage_", "vpf_", "veranlagung"],
     &["uebernachtung_", "am_", "arbeitsmittel_"],
-    &["dba_", "p32b", "rentner_veraeusserungsgewinn", "antrag_", "gewst_", "geburtsjahr", "berufsunf", "ermaessigung"],
-    &["kap_", "kein_", "gewinn", "betriebs", "einkuenfte_gewinn", "afa_", "gwg_", "verguetung", "veranlagung"],
-    &["lohnersatz", "verlustvortrag", "unterhalt", "kist_", "realsplitting", "fahrtkosten", "behinderung", "gewst_"],
+    &[
+        "dba_",
+        "p32b",
+        "rentner_veraeusserungsgewinn",
+        "antrag_",
+        "gewst_",
+        "geburtsjahr",
+        "berufsunf",
+        "ermaessigung",
+    ],
+    &[
+        "kap_",
+        "kein_",
+        "gewinn",
+        "betriebs",
+        "einkuenfte_gewinn",
+        "afa_",
+        "gwg_",
+        "verguetung",
+        "veranlagung",
+    ],
+    &[
+        "lohnersatz",
+        "verlustvortrag",
+        "unterhalt",
+        "kist_",
+        "realsplitting",
+        "fahrtkosten",
+        "behinderung",
+        "gewst_",
+    ],
     &["vv_", "veranlagung", "bruttoarbeitslohn_partner", "vor_"],
-    &["rentner_", "basis_", "versicherungsart", "veranlagung", "versorgung_", "kein_"],
-    &["hh_", "p35c", "kind", "p22_", "berufsausbildung", "gwg_", "veranlagung"],
+    &[
+        "rentner_",
+        "basis_",
+        "versicherungsart",
+        "veranlagung",
+        "versorgung_",
+        "kein_",
+    ],
+    &[
+        "hh_",
+        "p35c",
+        "kind",
+        "p22_",
+        "berufsausbildung",
+        "gwg_",
+        "veranlagung",
+    ],
 ];
 
-fn generiere_store(c: &mut Cursor, index: &HashMap<String, &'static Bindung>) -> (Value, u16, bool) {
+fn generiere_store(
+    c: &mut Cursor,
+    index: &HashMap<String, &'static Bindung>,
+) -> (Value, u16, bool) {
     let dichte = *c.waehle(&[15, 35, 60, 90]);
     let bestaetigt_pct = *c.waehle(&[50, 80, 100]);
     let wahr_pct = *c.waehle(&[40, 85, 95]);
@@ -1164,7 +1302,11 @@ fn generiere_store(c: &mut Cursor, index: &HashMap<String, &'static Bindung>) ->
             } else {
                 c.chance(bestaetigt_pct)
             };
-            events.push((id, wert(c, *kind, wahr_pct, !float_modus && konsistenz_feld(fid)), z));
+            events.push((
+                id,
+                wert(c, *kind, wahr_pct, !float_modus && konsistenz_feld(fid)),
+                z,
+            ));
         }
     }
     if !events.is_empty() && c.chance(15) {
@@ -1177,7 +1319,11 @@ fn generiere_store(c: &mut Cursor, index: &HashMap<String, &'static Bindung>) ->
         .map(|(i, (f, w, b))| event(i, f, w, *b))
         .collect();
     let vz = *c.waehle(&[2024_u16, 2025, 2026]);
-    (json!({"version": 1, "veranlagungszeitraum": vz, "events": evs}), vz, float_modus)
+    (
+        json!({"version": 1, "veranlagungszeitraum": vz, "events": evs}),
+        vz,
+        float_modus,
+    )
 }
 
 fn runner(cases: u32) -> TestRunner {
@@ -1200,7 +1346,10 @@ fn generierte_faelle() {
     let kontexte = std::cell::Cell::new(0_usize);
     let floats = std::cell::Cell::new(0_usize);
     let ergebnis = runner(1200).run(&prop::collection::vec(any::<u8>(), 1024..4096), |bytes| {
-        let mut c = Cursor { bytes: &bytes, pos: 0 };
+        let mut c = Cursor {
+            bytes: &bytes,
+            pos: 0,
+        };
         let (store, vz, float_modus) = generiere_store(&mut c, index());
         floats.set(floats.get() + usize::from(float_modus));
         n.set(n.get() + 1);
@@ -1208,19 +1357,38 @@ fn generierte_faelle() {
         // Jeder vierte Fall bekommt ALLE Aufrufformen (alle sechs Scheiben-Kontexte).
         let dicht = n.get().is_multiple_of(4);
         for k in formen(&Quelle::Store(store), vz, None, dicht, float_modus) {
-            vergleiche(&mut b.borrow_mut(), &k, &format!("gen#{}", n.get()), true, false);
+            vergleiche(
+                &mut b.borrow_mut(),
+                &k,
+                &format!("gen#{}", n.get()),
+                true,
+                false,
+            );
             kontexte.set(kontexte.get() + 1);
         }
-        prop_assert_eq!(b.borrow().abweichungen(), vorher, "{:?}", b.borrow().abweichungen.last());
+        prop_assert_eq!(
+            b.borrow().abweichungen(),
+            vorher,
+            "{:?}",
+            b.borrow().abweichungen.last()
+        );
         Ok(())
     });
     b.borrow().drucke("generierte_faelle", kontexte.get());
     b.borrow().drucke_gruende();
-    eprintln!("generierte_faelle: {} Stores ({} im Float-Modus), {} Kontexte", n.get(), floats.get(), kontexte.get());
+    eprintln!(
+        "generierte_faelle: {} Stores ({} im Float-Modus), {} Kontexte",
+        n.get(),
+        floats.get(),
+        kontexte.get()
+    );
     ergebnis.unwrap();
     assert!(n.get() >= 1000);
     for f in FUNKTIONEN {
-        assert!(b.borrow().zeilen[f].python >= 1000, "{f}: weniger als 1.000 Aufrufe");
+        assert!(
+            b.borrow().zeilen[f].python >= 1000,
+            "{f}: weniger als 1.000 Aufrufe"
+        );
     }
 }
 
@@ -1258,8 +1426,15 @@ fn negativkontrolle_erkennt_genau_eine_abweichung() {
     gestoert.drucke("negativkontrolle (gestört)", 1);
     eprintln!("negativkontrolle: ungestört {} Abweichungen, gestört {} (erwartet 0 und 1), nicht-leere Ergebnisse: {nicht_leer_zahl}", sauber.abweichungen(), gestoert.abweichungen());
     assert_eq!(sauber.abweichungen(), 0);
-    assert_eq!(gestoert.abweichungen(), 1, "die Störung muss GENAU eine Abweichung erzeugen");
-    assert!(nicht_leer_zahl >= 2, "der Kontrollfall muss nicht-leere Ergebnisse tragen");
+    assert_eq!(
+        gestoert.abweichungen(),
+        1,
+        "die Störung muss GENAU eine Abweichung erzeugen"
+    );
+    assert!(
+        nicht_leer_zahl >= 2,
+        "der Kontrollfall muss nicht-leere Ergebnisse tragen"
+    );
 
     // Zweite Störung auf der Sperrgrund-Zeichenkette (der Text ist kein i64).
     let mut r = json!("p35c_doppelfoerderung_offen");
@@ -1277,13 +1452,20 @@ fn gezielte_faelle() {
     if skip() {
         return;
     }
-    let partner_kegel: Vec<(&str, Value, bool)> = std::iter::once(("veranlagung", json!("zusammen"), true))
-        .chain(
-            ["bruttoarbeitslohn_partner", "kap_kapitalertraege_partner", "kap_gewinn_aktien_partner",
-             "kap_gewinn_sonstige_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner"]
+    let partner_kegel: Vec<(&str, Value, bool)> =
+        std::iter::once(("veranlagung", json!("zusammen"), true))
+            .chain(
+                [
+                    "bruttoarbeitslohn_partner",
+                    "kap_kapitalertraege_partner",
+                    "kap_gewinn_aktien_partner",
+                    "kap_gewinn_sonstige_partner",
+                    "kap_verlust_aktien_partner",
+                    "kap_verlust_sonstige_partner",
+                ]
                 .map(|f| (f, json!(0), true)),
-        )
-        .collect();
+            )
+            .collect();
     let euer_leer: Vec<(&str, Value, bool)> = vec![
         ("kein_gewinn", json!(false), true),
         ("betriebseinnahmen", json!(0), true),
@@ -1353,7 +1535,11 @@ fn gezielte_faelle() {
         (
             "gwg_tatbestand_offen",
             "gesamt",
-            [euer_leer.clone(), vec![("gwg_anschaffungskosten_netto", json!(50_000), true)]].concat(),
+            [
+                euer_leer.clone(),
+                vec![("gwg_anschaffungskosten_netto", json!(50_000), true)],
+            ]
+            .concat(),
         ),
         (
             "kinderbetreuung_reine_betreuung_offen",
@@ -1382,7 +1568,11 @@ fn gezielte_faelle() {
                 partner_kegel.clone(),
                 vec![
                     ("rentner_grad_der_behinderung_partner", json!(50), true),
-                    ("behinderungsbedingte_aufwendungen_partner", json!(100_000), true),
+                    (
+                        "behinderungsbedingte_aufwendungen_partner",
+                        json!(100_000),
+                        true,
+                    ),
                 ],
             ]
             .concat(),
@@ -1413,9 +1603,15 @@ fn gezielte_faelle() {
     ));
     let mut b = Bilanz::default();
     for (erwartet, scheibe, felder) in &faelle {
-        let evs: Vec<Value> = felder.iter().enumerate().map(|(i, (f, w, z))| event(i, f, w, *z)).collect();
+        let evs: Vec<Value> = felder
+            .iter()
+            .enumerate()
+            .map(|(i, (f, w, z))| event(i, f, w, *z))
+            .collect();
         let k = Kontext {
-            quelle: Quelle::Store(json!({"version": 1, "veranlagungszeitraum": 2025, "events": evs})),
+            quelle: Quelle::Store(
+                json!({"version": 1, "veranlagungszeitraum": 2025, "events": evs}),
+            ),
             vz: 2025,
             scheibe: Some(scheibe),
             store_uebergeben: true,
@@ -1424,14 +1620,26 @@ fn gezielte_faelle() {
             float_modus: false,
         };
         let py = frage_roh(&k.request(&["an_gesamt_sperrgrund"]));
-        let py_grund = py["bescheid.an_gesamt_sperrgrund"]["ok"].as_str().unwrap_or("(keine Sperre)");
-        assert_eq!(py_grund, *erwartet, "Python trifft die Stelle nicht (Fall {erwartet})");
+        let py_grund = py["bescheid.an_gesamt_sperrgrund"]["ok"]
+            .as_str()
+            .unwrap_or("(keine Sperre)");
+        assert_eq!(
+            py_grund, *erwartet,
+            "Python trifft die Stelle nicht (Fall {erwartet})"
+        );
         let c = baue_ctx(&k);
         let rust = rust_run(&c, "an_gesamt_sperrgrund").unwrap();
-        assert_eq!(rust.as_str().unwrap_or("(keine Sperre)"), *erwartet, "Rust weicht ab (Fall {erwartet})");
+        assert_eq!(
+            rust.as_str().unwrap_or("(keine Sperre)"),
+            *erwartet,
+            "Rust weicht ab (Fall {erwartet})"
+        );
         vergleiche(&mut b, &k, erwartet, true, false);
     }
     b.drucke("gezielte_faelle", faelle.len());
-    eprintln!("gezielte_faelle: {} Fälle, jeder trifft in Python den erwarteten Grund", faelle.len());
+    eprintln!(
+        "gezielte_faelle: {} Fälle, jeder trifft in Python den erwarteten Grund",
+        faelle.len()
+    );
     assert_eq!(b.abweichungen(), 0);
 }

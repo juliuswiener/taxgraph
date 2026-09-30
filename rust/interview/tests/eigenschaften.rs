@@ -4,7 +4,12 @@
 //!    Basisfeld aendert die Queue nicht.
 //! 2. Die Queue enthaelt nur askable Felder der Sicht, jedes hoechstens einmal.
 //! 3. Eine Bedingung schliesst erst aus, wenn JEDE Instanz bestaetigt abweicht.
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic
+)]
 
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
@@ -71,7 +76,15 @@ fn basis_events() -> impl Strategy<Value = Vec<(usize, usize, bool)>> {
 }
 
 fn wert(k: usize) -> Value {
-    [json!(true), json!(false), json!(0), json!(2), json!("zusammen"), json!("keine")][k % 6].clone()
+    [
+        json!(true),
+        json!(false),
+        json!(0),
+        json!(2),
+        json!("zusammen"),
+        json!("keine"),
+    ][k % 6]
+        .clone()
 }
 
 proptest! {

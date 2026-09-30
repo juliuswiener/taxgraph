@@ -78,7 +78,9 @@ pub struct EinkuenfteNichtselbststaendigEingabe {
 /// };
 /// assert_eq!(einkuenfte_nichtselbststaendig(&e).unwrap(), Euro::new(38_770));
 /// ```
-pub fn einkuenfte_nichtselbststaendig(e: &EinkuenfteNichtselbststaendigEingabe) -> Result<Euro, EngineFehler> {
+pub fn einkuenfte_nichtselbststaendig(
+    e: &EinkuenfteNichtselbststaendigEingabe,
+) -> Result<Euro, EngineFehler> {
     let out = tarif::festzusetzende_est_einzel_voll(
         FestzusetzendeEstEinzelEingabe {
             bruttoarbeitslohn: in_cent(e.bruttoarbeitslohn)?,
@@ -256,7 +258,9 @@ pub struct MitunternehmerEinkuenfteEingabe {
 /// };
 /// assert_eq!(mitunternehmer_einkuenfte(&e).unwrap(), Euro::new(500));
 /// ```
-pub fn mitunternehmer_einkuenfte(e: &MitunternehmerEinkuenfteEingabe) -> Result<Euro, EngineFehler> {
+pub fn mitunternehmer_einkuenfte(
+    e: &MitunternehmerEinkuenfteEingabe,
+) -> Result<Euro, EngineFehler> {
     let c = mitunternehmer::berechnen(MitunternehmerEingabe {
         gewinnanteil: in_cent(e.gewinnanteil)?,
         verguetung_taetigkeit: in_cent(e.verguetung_taetigkeit)?,

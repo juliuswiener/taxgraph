@@ -19,7 +19,9 @@ pub fn finde_xsd_schema(vz: &str) -> Option<PathBuf> {
 
 fn xmllint() -> Option<PathBuf> {
     let path = std::env::var_os("PATH")?;
-    std::env::split_paths(&path).map(|d| d.join("xmllint")).find(|p| p.is_file())
+    std::env::split_paths(&path)
+        .map(|d| d.join("xmllint"))
+        .find(|p| p.is_file())
 }
 
 enum Quelle<'a> {
@@ -29,7 +31,10 @@ enum Quelle<'a> {
 
 fn validiere(quelle: &Quelle<'_>, vz: &str) -> (bool, String) {
     let Some(bin) = xmllint() else {
-        return (false, "xmllint nicht gefunden (libxml2-utils installieren).".to_owned());
+        return (
+            false,
+            "xmllint nicht gefunden (libxml2-utils installieren).".to_owned(),
+        );
     };
     let Some(schema) = finde_xsd_schema(vz) else {
         return (
@@ -38,20 +43,35 @@ fn validiere(quelle: &Quelle<'_>, vz: &str) -> (bool, String) {
         );
     };
     let mut cmd = Command::new(bin);
-    cmd.arg("--noout").arg("--schema").arg(&schema).stdout(Stdio::null()).stderr(Stdio::piped());
+    cmd.arg("--noout")
+        .arg("--schema")
+        .arg(&schema)
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped());
     let ausgabe = match quelle {
         Quelle::Datei(p) => cmd.arg(p).stdin(Stdio::null()).output(),
-        Quelle::Text(xml) => cmd.arg("-").stdin(Stdio::piped()).spawn().and_then(|mut kind| {
-            if let Some(mut stdin) = kind.stdin.take() {
-                stdin.write_all(xml)?;
-            }
-            kind.wait_with_output()
-        }),
+        Quelle::Text(xml) => cmd
+            .arg("-")
+            .stdin(Stdio::piped())
+            .spawn()
+            .and_then(|mut kind| {
+                if let Some(mut stdin) = kind.stdin.take() {
+                    stdin.write_all(xml)?;
+                }
+                kind.wait_with_output()
+            }),
     };
     match ausgabe {
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr).trim().to_owned();
-            (out.status.success(), if stderr.is_empty() { "validates".to_owned() } else { stderr })
+            (
+                out.status.success(),
+                if stderr.is_empty() {
+                    "validates".to_owned()
+                } else {
+                    stderr
+                },
+            )
         }
         Err(e) => (false, format!("xmllint: {e}")),
     }

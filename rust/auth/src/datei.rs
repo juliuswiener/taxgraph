@@ -43,7 +43,11 @@ pub(crate) fn speichere(pfad: &Path, bestand: &Value) -> Result<(), AuthFehler> 
         Err(e) if e.kind() != std::io::ErrorKind::NotFound => return Err(AuthFehler::Speicher(e)),
         _ => {}
     }
-    let mut f = std::fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(&tmp)?;
+    let mut f = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(&tmp)?;
     f.write_all(py_json(bestand).as_bytes())?;
     f.flush()?;
     f.sync_all()?;
@@ -72,7 +76,11 @@ pub fn py_json(wert: &Value) -> String {
 struct PyFormatter;
 
 impl serde_json::ser::Formatter for PyFormatter {
-    fn begin_array_value<W: ?Sized + Write>(&mut self, w: &mut W, erstes: bool) -> std::io::Result<()> {
+    fn begin_array_value<W: ?Sized + Write>(
+        &mut self,
+        w: &mut W,
+        erstes: bool,
+    ) -> std::io::Result<()> {
         if erstes {
             Ok(())
         } else {
@@ -80,7 +88,11 @@ impl serde_json::ser::Formatter for PyFormatter {
         }
     }
 
-    fn begin_object_key<W: ?Sized + Write>(&mut self, w: &mut W, erstes: bool) -> std::io::Result<()> {
+    fn begin_object_key<W: ?Sized + Write>(
+        &mut self,
+        w: &mut W,
+        erstes: bool,
+    ) -> std::io::Result<()> {
         if erstes {
             Ok(())
         } else {

@@ -38,10 +38,14 @@ fn glob_rekursiv(verzeichnis: &Path, name: &str, treffer: &mut Vec<PathBuf>, tie
     if tiefe > 64 {
         return;
     }
-    let Ok(eintraege) = std::fs::read_dir(verzeichnis) else { return };
+    let Ok(eintraege) = std::fs::read_dir(verzeichnis) else {
+        return;
+    };
     for e in eintraege.flatten() {
         let dateiname = e.file_name();
-        let Some(n) = dateiname.to_str() else { continue };
+        let Some(n) = dateiname.to_str() else {
+            continue;
+        };
         if n.starts_with('.') {
             continue;
         }
@@ -119,7 +123,10 @@ fn ist_kz(name: &str) -> bool {
 
 /// Python `node.get("name") or node.get("ref")`.
 fn lokaler_name<'a>(n: Node<'a, '_>) -> &'a str {
-    n.attribute("name").filter(|s| !s.is_empty()).or_else(|| n.attribute("ref")).unwrap_or("")
+    n.attribute("name")
+        .filter(|s| !s.is_empty())
+        .or_else(|| n.attribute("ref"))
+        .unwrap_or("")
 }
 
 /// Die drei Indizes ueber die Top-Level-Kinder des Schemas.
@@ -132,14 +139,22 @@ struct Indizes<'a, 'i> {
 impl<'a, 'i> Indizes<'a, 'i> {
     fn neu(doc: &'a Document<'i>, pfad: &Path) -> Result<Self, XsdFehler> {
         let wurzel = doc.root_element();
-        let mut ix = Self { typen: HashMap::new(), gruppen: HashMap::new(), elemente: HashMap::new() };
+        let mut ix = Self {
+            typen: HashMap::new(),
+            gruppen: HashMap::new(),
+            elemente: HashMap::new(),
+        };
         for kind in kinder(wurzel) {
             if (ist_xs(kind, "include") || ist_xs(kind, "import"))
-                && kind.attribute("schemaLocation").is_some_and(|loc| pfad.with_file_name(loc).exists())
+                && kind
+                    .attribute("schemaLocation")
+                    .is_some_and(|loc| pfad.with_file_name(loc).exists())
             {
                 return Err(XsdFehler::Include(pfad.to_path_buf()));
             }
-            let Some(name) = kind.attribute("name").filter(|s| !s.is_empty()) else { continue };
+            let Some(name) = kind.attribute("name").filter(|s| !s.is_empty()) else {
+                continue;
+            };
             if ist_xs(kind, "complexType") {
                 ix.typen.insert(name, kind);
             } else if ist_xs(kind, "group") {
@@ -156,14 +171,19 @@ impl<'a, 'i> Indizes<'a, 'i> {
         if let Some(ct) = kinder(n).find(|k| ist_xs(*k, "complexType")) {
             return Some(ct);
         }
-        n.attribute("type").filter(|t| !t.is_empty()).and_then(|t| self.typen.get(t).copied())
+        n.attribute("type")
+            .filter(|t| !t.is_empty())
+            .and_then(|t| self.typen.get(t).copied())
     }
 
     fn start(&self, start: &str, pfad: &Path) -> Result<Node<'a, 'i>, XsdFehler> {
         self.elemente
             .get(start)
             .copied()
-            .ok_or_else(|| XsdFehler::StartFehlt { start: start.to_owned(), pfad: pfad.to_path_buf() })
+            .ok_or_else(|| XsdFehler::StartFehlt {
+                start: start.to_owned(),
+                pfad: pfad.to_path_buf(),
+            })
     }
 }
 
@@ -198,13 +218,21 @@ fn abstieg<'a, 'i>(ix: &Indizes<'a, 'i>, inhalt: Node<'a, 'i>) -> Vec<Node<'a, '
 }
 
 fn lies(pfad: &Path) -> Result<String, XsdFehler> {
-    std::fs::read_to_string(pfad).map_err(|e| XsdFehler::Lesen { pfad: pfad.to_path_buf(), nachricht: e.to_string() })
+    std::fs::read_to_string(pfad).map_err(|e| XsdFehler::Lesen {
+        pfad: pfad.to_path_buf(),
+        nachricht: e.to_string(),
+    })
 }
 
 fn parse<'i>(text: &'i str, pfad: &Path) -> Result<Document<'i>, XsdFehler> {
-    let opt = roxmltree::ParsingOptions { allow_dtd: true, ..roxmltree::ParsingOptions::default() };
-    Document::parse_with_options(text, opt)
-        .map_err(|e| XsdFehler::Lesen { pfad: pfad.to_path_buf(), nachricht: e.to_string() })
+    let opt = roxmltree::ParsingOptions {
+        allow_dtd: true,
+        ..roxmltree::ParsingOptions::default()
+    };
+    Document::parse_with_options(text, opt).map_err(|e| XsdFehler::Lesen {
+        pfad: pfad.to_path_buf(),
+        nachricht: e.to_string(),
+    })
 }
 
 /// Kz → alle Fundstellen (Pfad-Tupel), in Schema-Reihenfolge des ersten Auftretens.
@@ -230,7 +258,14 @@ pub fn xsd_walk(pfad: &Path, start: &str) -> Result<(KzFundstellen, usize), XsdF
     let mut index: Geordnet<String, Vec<Vec<String>>> = Geordnet::default();
     let mut abbrueche = 0;
     let mut weg = Vec::new();
-    walk_rek(&ix, ix.start(start, pfad)?, &mut weg, 0, &mut index, &mut abbrueche);
+    walk_rek(
+        &ix,
+        ix.start(start, pfad)?,
+        &mut weg,
+        0,
+        &mut index,
+        &mut abbrueche,
+    );
     Ok((index.in_reihenfolge(), abbrueche))
 }
 
@@ -277,8 +312,13 @@ pub struct KzMeta {
 /// ```
 #[must_use]
 pub fn ist_ja_typ(typ: &str) -> bool {
-    let Some(rest) = typ.strip_prefix("Ja") else { return false };
-    let rest = ["1", "X", "Nein12", "2"].iter().find_map(|v| rest.strip_prefix(v)).unwrap_or(rest);
+    let Some(rest) = typ.strip_prefix("Ja") else {
+        return false;
+    };
+    let rest = ["1", "X", "Nein12", "2"]
+        .iter()
+        .find_map(|v| rest.strip_prefix(v))
+        .unwrap_or(rest);
     matches!(rest, "BaseCType" | "BaseCType_RABE")
 }
 
@@ -290,11 +330,22 @@ struct Facetten {
 /// Folgt der Vererbungskette (`simpleContent` → `restriction`/`extension` → `base`) und nimmt
 /// die Facetten der tiefsten Stufe, die welche hat (`_resolve_type_facets`).
 fn facetten(ix: &Indizes<'_, '_>, typ: &str, gesehen: &mut HashSet<String>) -> Facetten {
-    let leer = Facetten { enums: Vec::new(), patterns: Vec::new() };
-    let Some(knoten) = ix.typen.get(typ).copied().filter(|_| !gesehen.contains(typ)) else { return leer };
+    let leer = Facetten {
+        enums: Vec::new(),
+        patterns: Vec::new(),
+    };
+    let Some(knoten) = ix
+        .typen
+        .get(typ)
+        .copied()
+        .filter(|_| !gesehen.contains(typ))
+    else {
+        return leer;
+    };
     gesehen.insert(typ.to_owned());
     for sc in kinder(knoten).filter(|k| ist_xs(*k, "simpleContent")) {
-        if let Some(ch) = kinder(sc).find(|k| ist_xs(*k, "restriction") || ist_xs(*k, "extension")) {
+        if let Some(ch) = kinder(sc).find(|k| ist_xs(*k, "restriction") || ist_xs(*k, "extension"))
+        {
             let werte = |facette: &str| -> Vec<String> {
                 kinder(ch)
                     .filter(|e| ist_xs(*e, facette))
@@ -305,14 +356,23 @@ fn facetten(ix: &Indizes<'_, '_>, typ: &str, gesehen: &mut HashSet<String>) -> F
             let sub = facetten(ix, ch.attribute("base").unwrap_or_default(), gesehen);
             return Facetten {
                 enums: if enums.is_empty() { sub.enums } else { enums },
-                patterns: if patterns.is_empty() { sub.patterns } else { patterns },
+                patterns: if patterns.is_empty() {
+                    sub.patterns
+                } else {
+                    patterns
+                },
             };
         }
     }
     leer
 }
 
-fn meta_rek<'a, 'i>(ix: &Indizes<'a, 'i>, knoten: Node<'a, 'i>, tiefe: usize, out: &mut HashMap<String, KzMeta>) {
+fn meta_rek<'a, 'i>(
+    ix: &Indizes<'a, 'i>,
+    knoten: Node<'a, 'i>,
+    tiefe: usize,
+    out: &mut HashMap<String, KzMeta>,
+) {
     if tiefe > MAX_DEPTH {
         return;
     }
@@ -322,7 +382,12 @@ fn meta_rek<'a, 'i>(ix: &Indizes<'a, 'i>, knoten: Node<'a, 'i>, tiefe: usize, ou
             let f = facetten(ix, typ, &mut HashSet::new());
             out.insert(
                 name.to_owned(),
-                KzMeta { type_name: typ.to_owned(), enums: f.enums, patterns: f.patterns, is_ja: ist_ja_typ(typ) },
+                KzMeta {
+                    type_name: typ.to_owned(),
+                    enums: f.enums,
+                    patterns: f.patterns,
+                    is_ja: ist_ja_typ(typ),
+                },
             );
         }
     }
@@ -337,7 +402,8 @@ fn meta_rek<'a, 'i>(ix: &Indizes<'a, 'i>, knoten: Node<'a, 'i>, tiefe: usize, ou
 pub type PflichtKinder = HashMap<Vec<String>, Vec<String>>;
 
 fn hat_element_kinder(ix: &Indizes<'_, '_>, n: Node<'_, '_>) -> bool {
-    ix.inhalt(n).is_some_and(|c| flach(c).iter().any(|k| ist_xs(*k, "element")))
+    ix.inhalt(n)
+        .is_some_and(|c| flach(c).iter().any(|k| ist_xs(*k, "element")))
 }
 
 struct PflichtLauf<'x, 'a, 'i> {
@@ -360,7 +426,8 @@ impl<'a, 'i> PflichtLauf<'_, 'a, 'i> {
                         Some(r) => self.ix.elemente.get(r).copied(),
                         None => Some(kind),
                     };
-                    let pflichtig = kind.attribute("minOccurs").unwrap_or("1") != "0" && !ist_kz(kind_name);
+                    let pflichtig =
+                        kind.attribute("minOccurs").unwrap_or("1") != "0" && !ist_kz(kind_name);
                     if pflichtig && ziel.is_some_and(|z| !hat_element_kinder(self.ix, z)) {
                         pflicht.push(kind_name.to_owned());
                     }
@@ -418,17 +485,27 @@ pub fn schema_info(pfad: &Path) -> Result<SchemaInfo, XsdFehler> {
     let doc = parse(&text, pfad)?;
     let ix = Indizes::neu(&doc, pfad)?;
     let start = ix.start("E10", pfad)?;
-    let mut lauf = PflichtLauf { ix: &ix, gesehen: HashSet::new(), treffer: HashMap::new() };
+    let mut lauf = PflichtLauf {
+        ix: &ix,
+        gesehen: HashSet::new(),
+        treffer: HashMap::new(),
+    };
     lauf.rek(start, &mut Vec::new(), 0);
     let mut pflicht = lauf.treffer;
     // Gemessen 2026-08-16: ERiC verlangt Laufende_Nummer_V trotz minOccurs=0.
-    let v = pflicht.entry(vec!["E10".to_owned(), "V".to_owned()]).or_default();
+    let v = pflicht
+        .entry(vec!["E10".to_owned(), "V".to_owned()])
+        .or_default();
     if !v.iter().any(|k| k == "Laufende_Nummer_V") {
         v.push("Laufende_Nummer_V".to_owned());
     }
     let mut kz_meta = HashMap::new();
     meta_rek(&ix, start, 0, &mut kz_meta);
-    Ok(SchemaInfo { pfade, pflicht, kz_meta })
+    Ok(SchemaInfo {
+        pfade,
+        pflicht,
+        kz_meta,
+    })
 }
 
 /// Kz-Typen ab `start` (`_resolve_kz_meta`).
@@ -504,10 +581,19 @@ pub struct Pruefbericht {
 /// assert!(elster::ernte_est_mapping_kz(&std::collections::HashMap::new()).is_err());
 /// ```
 pub fn ernte_est_mapping_kz(bindung: &BindungIndex<'_>) -> Result<Vec<KzPruefling>, String> {
-    let vz = |f: &str| bindung.get(f).map(|b| b.vz_gueltigkeit.clone()).ok_or_else(|| f.to_owned());
+    let vz = |f: &str| {
+        bindung
+            .get(f)
+            .map(|b| b.vz_gueltigkeit.clone())
+            .ok_or_else(|| f.to_owned())
+    };
     let mut out = Vec::new();
     for (feld, kz) in NEGATION {
-        out.push(KzPruefling { feld_id: format!("negation:{feld}"), elster_kz: (*kz).to_owned(), vz_gueltigkeit: vz(feld)? });
+        out.push(KzPruefling {
+            feld_id: format!("negation:{feld}"),
+            elster_kz: (*kz).to_owned(),
+            vz_gueltigkeit: vz(feld)?,
+        });
     }
     for v in VERZWEIGUNG.iter().chain(PARTNER_VERZWEIGUNG) {
         let jahre = vz(v.feld)?;
@@ -575,7 +661,13 @@ pub fn pruefe_bindung(prueflinge: &[KzPruefling]) -> Result<Pruefbericht, XsdFeh
         let mut jahre = BTreeMap::new();
         for jahr in &p.vz_gueltigkeit {
             let Some(schema) = finde_schema(*jahr, muster) else {
-                jahre.insert(*jahr, JahrPruefung { status: PruefStatus::SchemaUnverfuegbar, pfade: Vec::new() });
+                jahre.insert(
+                    *jahr,
+                    JahrPruefung {
+                        status: PruefStatus::SchemaUnverfuegbar,
+                        pfade: Vec::new(),
+                    },
+                );
                 unverfuegbar.insert(*jahr);
                 continue;
             };
@@ -584,18 +676,36 @@ pub fn pruefe_bindung(prueflinge: &[KzPruefling]) -> Result<Pruefbericht, XsdFeh
                 let (index, abbrueche) = xsd_walk(&schema, start)?;
                 cache.insert(schluessel.clone(), (index.into_iter().collect(), abbrueche));
             }
-            let kandidaten = cache.get(&schluessel).and_then(|(ix, _)| ix.get(&p.elster_kz)).cloned().unwrap_or_default();
+            let kandidaten = cache
+                .get(&schluessel)
+                .and_then(|(ix, _)| ix.get(&p.elster_kz))
+                .cloned()
+                .unwrap_or_default();
             let status = match kandidaten.len() {
                 0 => PruefStatus::NichtGefunden,
                 1 => PruefStatus::Ok,
                 _ => PruefStatus::Mehrdeutig,
             };
-            jahre.insert(*jahr, JahrPruefung { status, pfade: kandidaten.iter().map(|k| k.join("/")).collect() });
+            jahre.insert(
+                *jahr,
+                JahrPruefung {
+                    status,
+                    pfade: kandidaten.iter().map(|k| k.join("/")).collect(),
+                },
+            );
         }
-        felder.insert(p.feld_id.clone(), FeldPruefung { status: rollup(&jahre), jahre });
+        felder.insert(
+            p.feld_id.clone(),
+            FeldPruefung {
+                status: rollup(&jahre),
+                jahre,
+            },
+        );
     }
     let abbrueche: usize = cache.values().map(|(_, a)| a).sum();
-    let alle_ok = felder.values().all(|f: &FeldPruefung| f.status == PruefStatus::Ok);
+    let alle_ok = felder
+        .values()
+        .all(|f: &FeldPruefung| f.status == PruefStatus::Ok);
     Ok(Pruefbericht {
         felder,
         unverfuegbare_jahre: unverfuegbar.into_iter().collect(),

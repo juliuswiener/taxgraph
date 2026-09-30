@@ -12,7 +12,9 @@ const FELD_GRENZE: usize = 131_072;
 /// `csv.Error` — Python bricht die ganze Uebernahme damit ab (HTTP 500).
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum CsvFehler {
-    #[error("new-line character seen in unquoted field - do you need to open the file with newline=''?")]
+    #[error(
+        "new-line character seen in unquoted field - do you need to open the file with newline=''?"
+    )]
     ZeilenumbruchImFeld,
     #[error("field larger than field limit ({FELD_GRENZE})")]
     FeldZuGross,
@@ -60,7 +62,11 @@ impl Leser {
 
     fn ende_feld(&mut self, z: Z) {
         self.speichere();
-        self.zustand = if z == Z::Eol { Zustand::StartDatensatz } else { Zustand::CrNlFressen };
+        self.zustand = if z == Z::Eol {
+            Zustand::StartDatensatz
+        } else {
+            Zustand::CrNlFressen
+        };
     }
 
     fn zeichen(&mut self, z: Z) -> Result<(), CsvFehler> {
@@ -166,10 +172,19 @@ impl Leser {
 /// ```
 #[must_use]
 pub fn lies_datensaetze(text: &str, trenner: char) -> (Vec<Vec<String>>, Option<CsvFehler>) {
-    let mut l = Leser { trenner, zustand: Zustand::StartDatensatz, feld: String::new(), feld_laenge: 0, felder: Vec::new() };
+    let mut l = Leser {
+        trenner,
+        zustand: Zustand::StartDatensatz,
+        feld: String::new(),
+        feld_laenge: 0,
+        felder: Vec::new(),
+    };
     let mut out = Vec::new();
     for zeile in text.split_inclusive('\n') {
-        let schritt = zeile.chars().try_for_each(|c| l.zeichen(Z::C(c))).and_then(|()| l.zeichen(Z::Eol));
+        let schritt = zeile
+            .chars()
+            .try_for_each(|c| l.zeichen(Z::C(c)))
+            .and_then(|()| l.zeichen(Z::Eol));
         if let Err(e) = schritt {
             return (out, Some(e));
         }
@@ -204,7 +219,9 @@ pub type Zeile = HashMap<String, Option<String>>;
 pub fn dict_reader(text: &str, trenner: char) -> (Vec<String>, Vec<Zeile>, Option<CsvFehler>) {
     let (saetze, fehler) = lies_datensaetze(text, trenner);
     let mut saetze = saetze.into_iter();
-    let Some(kopf) = saetze.next() else { return (Vec::new(), Vec::new(), fehler) };
+    let Some(kopf) = saetze.next() else {
+        return (Vec::new(), Vec::new(), fehler);
+    };
     let zeilen = saetze
         .filter(|s| !s.is_empty())
         .map(|s| {
@@ -227,8 +244,14 @@ mod tests {
 
     #[test]
     fn cr_mitten_in_zeile_ist_fehler() {
-        assert_eq!(lies_datensaetze("a\rb\n", ';'), (vec![], Some(CsvFehler::ZeilenumbruchImFeld)));
-        assert_eq!(lies_datensaetze("a\r\nb\n", ';').0, vec![vec!["a"], vec!["b"]]);
+        assert_eq!(
+            lies_datensaetze("a\rb\n", ';'),
+            (vec![], Some(CsvFehler::ZeilenumbruchImFeld))
+        );
+        assert_eq!(
+            lies_datensaetze("a\r\nb\n", ';').0,
+            vec![vec!["a"], vec!["b"]]
+        );
     }
 
     #[test]
@@ -239,6 +262,9 @@ mod tests {
 
     #[test]
     fn doppeltes_quote_und_nachlauf() {
-        assert_eq!(lies_datensaetze("\"a\"\"b\"x;c\n", ';').0, vec![vec!["a\"bx", "c"]]);
+        assert_eq!(
+            lies_datensaetze("\"a\"\"b\"x;c\n", ';').0,
+            vec![vec!["a\"bx", "c"]]
+        );
     }
 }

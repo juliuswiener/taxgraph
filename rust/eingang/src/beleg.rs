@@ -144,10 +144,13 @@ fn eur_cent(betrag: &str) -> Option<i64> {
 
 /// Zeile, in der `passt` greift → `(cent, zeile.strip())` des LETZTEN EUR-Betrags darauf.
 fn finde(text: &str, passt: impl Fn(&str) -> bool) -> Option<(i64, String)> {
-    py::splitlines(text).into_iter().filter(|z| passt(z)).find_map(|z| {
-        let letzter = EUR.finde_alle(z)?.pop()?;
-        Some((eur_cent(&letzter)?, py::strip(z).to_owned()))
-    })
+    py::splitlines(text)
+        .into_iter()
+        .filter(|z| passt(z))
+        .find_map(|z| {
+            let letzter = EUR.finde_alle(z)?.pop()?;
+            Some((eur_cent(&letzter)?, py::strip(z).to_owned()))
+        })
 }
 
 /// Ein Kandidat (`extrahiere`-Eintrag).
@@ -175,8 +178,14 @@ pub struct Kandidat {
 /// assert!(extrahiere("irgendein Text", nachschlag, &BTreeMap::new()).is_empty()); // kein Typ: nichts raten
 /// ```
 #[must_use]
-pub fn extrahiere(text: &str, bindung: BindungNachschlag<'_>, conf: &BTreeMap<String, f64>) -> Vec<Kandidat> {
-    let Some(typ) = erkenne_beleg_typ(text) else { return Vec::new() };
+pub fn extrahiere(
+    text: &str,
+    bindung: BindungNachschlag<'_>,
+    conf: &BTreeMap<String, f64>,
+) -> Vec<Kandidat> {
+    let Some(typ) = erkenne_beleg_typ(text) else {
+        return Vec::new();
+    };
     beleg_felder(bindung, typ)
         .into_iter()
         .filter_map(|(fid, a)| {

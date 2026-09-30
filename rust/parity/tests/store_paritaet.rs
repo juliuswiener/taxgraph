@@ -14,7 +14,12 @@
 //! `python3` mit dem Repo-Umfeld -- in CI standardmaessig SKIP, lokal erzwingen:
 //!
 //!   `PARITY`=1 `cargo` test -p parity --test `store_paritaet` -- --nocapture
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic
+)]
 
 use parity::{diff_event_id, Oracle};
 use proptest::prelude::*;
@@ -92,7 +97,8 @@ fn negativkontrolle_erkennt_genau_eine_abweichung() {
     let mut abweichungen = Vec::new();
 
     for i in 0..20i64 {
-        let event = serde_json::json!({"feld_id": "ep_arbeitstage", "wert": i, "zustand": "bestaetigt"});
+        let event =
+            serde_json::json!({"feld_id": "ep_arbeitstage", "wert": i, "zustand": "bestaetigt"});
         let mut rust_hex = EventId::von_json(&event).to_string();
         if i == 10 {
             // Letztes Hex-Zeichen kontrolliert kippen -- bleibt gueltiges Hex, garantiert
@@ -101,15 +107,22 @@ fn negativkontrolle_erkennt_genau_eine_abweichung() {
             let geflippt = if letztes == '0' { '1' } else { '0' };
             rust_hex.push(geflippt);
         }
-        if let Some(_abweichung) = diff_event_id(&mut oracle, &event, &rust_hex)
-            .expect("Orakel-Aufruf laeuft durch")
+        if let Some(_abweichung) =
+            diff_event_id(&mut oracle, &event, &rust_hex).expect("Orakel-Aufruf laeuft durch")
         {
             abweichungen.push(i);
         }
     }
 
-    eprintln!("negativkontrolle: {} Abweichungen gefunden (erwartet: 1)", abweichungen.len());
-    assert_eq!(abweichungen.len(), 1, "Kontrollprobe muss GENAU eine Abweichung finden");
+    eprintln!(
+        "negativkontrolle: {} Abweichungen gefunden (erwartet: 1)",
+        abweichungen.len()
+    );
+    assert_eq!(
+        abweichungen.len(),
+        1,
+        "Kontrollprobe muss GENAU eine Abweichung finden"
+    );
 }
 
 /// Deliverable #7a: `event_id`-Paritaet ueber jedes Event jeder ECHTEN Fall-Datei unter
@@ -147,14 +160,17 @@ fn event_id_paritaet_ueber_bestandsdateien_falls_vorhanden() {
     // P10: store::lade laedt inzwischen ALLE realen Faelle (legacy Herkunft, unbegrenzte VZ) —
     // ein Ladefehler ist kein stiller Skip mehr, sondern ein harter Testabbruch.
     for pfad in kandidaten {
-        let datei = store::lade(&pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
+        let datei =
+            store::lade(&pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
         dateien += 1;
         for event in &datei.events {
             if event.berechne_event_id() != event.event_id {
                 selbst_diffs += 1;
             }
             let payload = serde_json::to_value(event).expect("Event serialisiert");
-            let Some(obj) = payload.as_object().cloned() else { continue };
+            let Some(obj) = payload.as_object().cloned() else {
+                continue;
+            };
             let mut ohne_id = obj;
             ohne_id.remove("event_id");
             let event_json = Value::Object(ohne_id);
@@ -171,9 +187,18 @@ fn event_id_paritaet_ueber_bestandsdateien_falls_vorhanden() {
         "event_id_paritaet_ueber_bestandsdateien: {dateien} Dateien, {geprueft} Events, \
          {selbst_diffs} Selbst-Diffs, {python_diffs} Python-Diffs (keine Pfade/Werte ausgegeben)"
     );
-    assert_eq!(dateien, erwartete_dateien, "store::lade sollte alle realen Faelle laden");
-    assert_eq!(selbst_diffs, 0, "event_id-Selbstpruefung weicht ab (Anzahl s.o., keine Pfade/Werte)");
-    assert_eq!(python_diffs, 0, "event_id-Paritaet zu Python weicht ab (Anzahl s.o., keine Pfade/Werte)");
+    assert_eq!(
+        dateien, erwartete_dateien,
+        "store::lade sollte alle realen Faelle laden"
+    );
+    assert_eq!(
+        selbst_diffs, 0,
+        "event_id-Selbstpruefung weicht ab (Anzahl s.o., keine Pfade/Werte)"
+    );
+    assert_eq!(
+        python_diffs, 0,
+        "event_id-Paritaet zu Python weicht ab (Anzahl s.o., keine Pfade/Werte)"
+    );
 }
 
 /// Deliverable #7b (Instructor-Nachforderung): jede reale Fall-Datei behaelt nach `lade`→
@@ -203,8 +228,11 @@ fn lade_speichere_roundtrip_ueber_bestandsdateien_falls_vorhanden() {
         return;
     }
     let erwartete_dateien = kandidaten.len() as u64;
-    let scratch = std::env::temp_dir()
-        .join(format!("taxgraph-store-roundtrip-{}-{}", std::process::id(), jetzt_ns()));
+    let scratch = std::env::temp_dir().join(format!(
+        "taxgraph-store-roundtrip-{}-{}",
+        std::process::id(),
+        jetzt_ns()
+    ));
     std::fs::create_dir_all(&scratch).expect("scratch-verzeichnis anlegen");
 
     let mut dateien = 0u64;
@@ -215,11 +243,14 @@ fn lade_speichere_roundtrip_ueber_bestandsdateien_falls_vorhanden() {
             .unwrap_or_else(|e| panic!("lesen({}): {e}", pfad.display()));
         let roh: Value = serde_json::from_str(&roh_text)
             .unwrap_or_else(|e| panic!("json({}): {e}", pfad.display()));
-        let roh_obj = roh.as_object().unwrap_or_else(|| panic!("{} ist kein JSON-Objekt", pfad.display()));
+        let roh_obj = roh
+            .as_object()
+            .unwrap_or_else(|| panic!("{} ist kein JSON-Objekt", pfad.display()));
 
         // P10: store::lade laedt inzwischen ALLE realen Faelle -- ein Ladefehler ist ein harter
         // Testabbruch, kein stiller Skip.
-        let geladen = store::lade(pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
+        let geladen =
+            store::lade(pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
         dateien += 1;
 
         let temp_pfad = scratch.join(format!("{i}.json"));
@@ -227,7 +258,9 @@ fn lade_speichere_roundtrip_ueber_bestandsdateien_falls_vorhanden() {
             .unwrap_or_else(|e| panic!("store::speichere(scratch): {e}"));
         let zurueck_text = std::fs::read_to_string(&temp_pfad).expect("scratch-datei lesen");
         let zurueck: Value = serde_json::from_str(&zurueck_text).expect("scratch-json parsen");
-        let zurueck_obj = zurueck.as_object().expect("scratch-wert ist ein JSON-Objekt");
+        let zurueck_obj = zurueck
+            .as_object()
+            .expect("scratch-wert ist ein JSON-Objekt");
         std::fs::remove_file(&temp_pfad).ok();
 
         let roh_keys: std::collections::BTreeSet<&String> = roh_obj.keys().collect();
@@ -245,9 +278,18 @@ fn lade_speichere_roundtrip_ueber_bestandsdateien_falls_vorhanden() {
         "lade_speichere_roundtrip: {dateien} Dateien, {schluesselsatz_diffs} Schluesselsatz-Diffs, \
          {werte_diffs} Werte-Diffs (keine Pfade/Werte ausgegeben)"
     );
-    assert_eq!(dateien, erwartete_dateien, "store::lade sollte alle realen Faelle laden");
-    assert_eq!(schluesselsatz_diffs, 0, "Top-Level-Schluesselmenge weicht nach dem Rundlauf ab (Anzahl s.o.)");
-    assert_eq!(werte_diffs, 0, "Werte weichen nach dem Rundlauf ab (Anzahl s.o., keine Pfade/Werte)");
+    assert_eq!(
+        dateien, erwartete_dateien,
+        "store::lade sollte alle realen Faelle laden"
+    );
+    assert_eq!(
+        schluesselsatz_diffs, 0,
+        "Top-Level-Schluesselmenge weicht nach dem Rundlauf ab (Anzahl s.o.)"
+    );
+    assert_eq!(
+        werte_diffs, 0,
+        "Werte weichen nach dem Rundlauf ab (Anzahl s.o., keine Pfade/Werte)"
+    );
 }
 
 fn jetzt_ns() -> u128 {
@@ -292,7 +334,9 @@ fn faelle_verzeichnis() -> std::path::PathBuf {
 }
 
 fn walk_json(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
-    let Ok(read) = std::fs::read_dir(dir) else { return Vec::new() };
+    let Ok(read) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
     let mut gefunden = Vec::new();
     for eintrag in read.flatten() {
         let pfad = eintrag.path();

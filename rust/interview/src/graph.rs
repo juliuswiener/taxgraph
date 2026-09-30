@@ -41,7 +41,9 @@ impl<'r> Sicht<'r> {
         let mut sicht = Self::default();
         for b in bindungen {
             if !sicht.index.contains_key(b.feld_id.as_str()) {
-                sicht.index.insert(b.feld_id.as_str(), sicht.eintraege.len());
+                sicht
+                    .index
+                    .insert(b.feld_id.as_str(), sicht.eintraege.len());
                 sicht.eintraege.push(b);
             }
         }
@@ -58,7 +60,10 @@ impl<'r> Sicht<'r> {
     /// ```
     #[must_use]
     pub fn get(&self, feld_id: &str) -> Option<&'r Bindung> {
-        self.index.get(feld_id).and_then(|&i| self.eintraege.get(i)).copied()
+        self.index
+            .get(feld_id)
+            .and_then(|&i| self.eintraege.get(i))
+            .copied()
     }
 
     /// Alle Eintraege in Sicht-Reihenfolge.
@@ -140,7 +145,10 @@ impl<'r> Graph<'r> {
         let mut themen_zuerst: Vec<&str> = Vec::new();
         for (_, datei) in &registry.dateien {
             for rb in &datei.regel_bedingungen {
-                regel_bedingungen.entry(rb.regel_id.as_str()).or_default().push(rb);
+                regel_bedingungen
+                    .entry(rb.regel_id.as_str())
+                    .or_default()
+                    .push(rb);
                 let regeln = bedingte_regeln.entry(rb.feld.as_str()).or_default();
                 if !regeln.contains(&rb.regel_id.as_str()) {
                     regeln.push(rb.regel_id.as_str());
@@ -156,8 +164,19 @@ impl<'r> Graph<'r> {
                 }
             }
         }
-        let alle = Sicht::aus(registry.dateien.iter().flat_map(|(_, d)| d.bindungen.iter()));
-        Self { alle, regel_bedingungen, bedingte_regeln, instanz_gruppen, themen_zuerst }
+        let alle = Sicht::aus(
+            registry
+                .dateien
+                .iter()
+                .flat_map(|(_, d)| d.bindungen.iter()),
+        );
+        Self {
+            alle,
+            regel_bedingungen,
+            bedingte_regeln,
+            instanz_gruppen,
+            themen_zuerst,
+        }
     }
 
     /// Die volle Bindung (`lade_bindung()`), Dateien alphabetisch.
@@ -184,10 +203,17 @@ impl<'r> Graph<'r> {
     /// assert_eq!(s.feld_ids().collect::<Vec<_>>(), ["veranlagung", "bruttoarbeitslohn"]);
     /// assert!(g.sicht(["gibt_es_nicht"]).is_err());
     /// ```
-    pub fn sicht<'f>(&self, felder: impl IntoIterator<Item = &'f str>) -> Result<Sicht<'r>, UnbekanntesFeld> {
+    pub fn sicht<'f>(
+        &self,
+        felder: impl IntoIterator<Item = &'f str>,
+    ) -> Result<Sicht<'r>, UnbekanntesFeld> {
         let mut out = Vec::new();
         for f in felder {
-            out.push(self.alle.get(f).ok_or_else(|| UnbekanntesFeld(f.to_owned()))?);
+            out.push(
+                self.alle
+                    .get(f)
+                    .ok_or_else(|| UnbekanntesFeld(f.to_owned()))?,
+            );
         }
         Ok(Sicht::aus(out))
     }
@@ -201,7 +227,9 @@ impl<'r> Graph<'r> {
     /// ```
     #[must_use]
     pub fn regel_bedingungen(&self, regel_id: &str) -> &[&'r RegelBedingung] {
-        self.regel_bedingungen.get(regel_id).map_or(&[], Vec::as_slice)
+        self.regel_bedingungen
+            .get(regel_id)
+            .map_or(&[], Vec::as_slice)
     }
 
     /// Die Regeln, deren `regel_bedingungen` `feld` nennen.
@@ -243,7 +271,11 @@ impl<'r> Graph<'r> {
     /// Die Instanz-Gruppe eines Feldes in `sicht` (`_gruppe_von`, `traverser.py:122-125`):
     /// `None` ohne `instanz_gruppe`, bei leerem Namen oder ungepflegter Gruppe.
     pub(crate) fn gruppe_von(&self, sicht: &Sicht<'r>, feld_id: &str) -> Option<&'r InstanzGruppe> {
-        let name = sicht.get(feld_id)?.instanz_gruppe.as_deref().filter(|g| !g.is_empty())?;
+        let name = sicht
+            .get(feld_id)?
+            .instanz_gruppe
+            .as_deref()
+            .filter(|g| !g.is_empty())?;
         self.instanz_gruppe(name)
     }
 }

@@ -35,7 +35,11 @@ pub struct Signal {
     // Bewusstes `Option<Option<T>>` (s. Typdoku oben: Schluessel-Anwesenheit vs. `null`-Wert
     // sind zwei verschiedene, real gemessene Zustaende, kein Sonderfall der Faelle 1-2).
     #[allow(clippy::option_option)]
-    #[serde(default, deserialize_with = "signal_1_praesenz", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "signal_1_praesenz",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub signal_1: Option<Option<serde_json::Value>>,
     #[serde(default)]
     pub signal_2: Option<String>,
@@ -151,7 +155,10 @@ mod tests {
             zustand: Zustand::Bestaetigt,
             herkunft: herkunft.into(),
             schreiber: "ui:laie".parse().unwrap(),
-            signal: Some(Signal { signal_1: None, signal_2: Some("klick@ui".to_string()) }),
+            signal: Some(Signal {
+                signal_1: None,
+                signal_2: Some("klick@ui".to_string()),
+            }),
             ersetzt: None,
         }
     }

@@ -53,7 +53,11 @@ impl Grund {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LlmFehler {
     /// Nach allen Versuchen voruebergehend gescheitert (`_aufgegeben(e, 3)`).
-    Voruebergehend { versuche: u32, grund: Grund, detail: String },
+    Voruebergehend {
+        versuche: u32,
+        grund: Grund,
+        detail: String,
+    },
     /// Abgeschnitten, und die eine Wiederholung auch (`_aufgegeben(e, abgeschnitten)`).
     Abgeschnitten { versuche: u32 },
     /// Nicht heilbar: nicht konfiguriert, anderer Status, kaputte Antwort, Frist.
@@ -149,14 +153,25 @@ impl Konfiguration {
     /// # Errors
     /// [`LlmFehler::Endgueltig`], wenn eine der drei Angaben fehlt.
     pub fn aus_env() -> Result<Self, LlmFehler> {
-        let env = |k: &str| std::env::var(k).map(|v| v.trim().to_owned()).unwrap_or_default();
-        let (basis, modell) = (env("LLM_API_BASE").trim_end_matches('/').to_owned(), env("LLM_MODEL"));
+        let env = |k: &str| {
+            std::env::var(k)
+                .map(|v| v.trim().to_owned())
+                .unwrap_or_default()
+        };
+        let (basis, modell) = (
+            env("LLM_API_BASE").trim_end_matches('/').to_owned(),
+            env("LLM_MODEL"),
+        );
         if basis.is_empty() || modell.is_empty() {
-            return Err(endgueltig("LLM_API_BASE/LLM_MODEL nicht gesetzt — Provider nicht konfiguriert."));
+            return Err(endgueltig(
+                "LLM_API_BASE/LLM_MODEL nicht gesetzt — Provider nicht konfiguriert.",
+            ));
         }
         let schluessel = env("LLM_API_KEY");
         if schluessel.is_empty() {
-            return Err(endgueltig("kein LLM_API_KEY in der Umgebung — Chat bleibt reine Erklär-Grenze ($0)."));
+            return Err(endgueltig(
+                "kein LLM_API_KEY in der Umgebung — Chat bleibt reine Erklär-Grenze ($0).",
+            ));
         }
         Ok(Self::neu(basis, modell, schluessel))
     }
@@ -182,7 +197,10 @@ impl Konfiguration {
 }
 
 fn endgueltig(detail: &str) -> LlmFehler {
-    LlmFehler::Endgueltig { grund: Grund::Sonstig, detail: detail.to_owned() }
+    LlmFehler::Endgueltig {
+        grund: Grund::Sonstig,
+        detail: detail.to_owned(),
+    }
 }
 
 /// Rolle einer Nachricht.
@@ -205,7 +223,10 @@ pub struct Nachricht {
 
 impl Nachricht {
     pub(crate) fn system(inhalt: String) -> Self {
-        Self { rolle: Rolle::System, inhalt }
+        Self {
+            rolle: Rolle::System,
+            inhalt,
+        }
     }
 
     /// Nutzertext — nur gefiltert.
@@ -216,7 +237,10 @@ impl Nachricht {
     /// ```
     #[must_use]
     pub fn nutzer(text: &Gefiltert) -> Self {
-        Self { rolle: Rolle::User, inhalt: text.as_str().to_owned() }
+        Self {
+            rolle: Rolle::User,
+            inhalt: text.as_str().to_owned(),
+        }
     }
 
     /// Kontoauszug-Buchung fuer den Klassifikator (`kontoauszug_writer.py:471-472`).
@@ -224,7 +248,10 @@ impl Nachricht {
         // `f"{betrag / 100:.2f}"`: beide Seiten runden korrekt vom selben f64.
         #[allow(clippy::cast_precision_loss)] // Buchungsbetraege liegen weit unter 2^53 Cent
         let euro = betrag_cent as f64 / 100.0;
-        Self { rolle: Rolle::User, inhalt: format!("Zweck: {zweck}\nBetrag: {euro:.2} EUR") }
+        Self {
+            rolle: Rolle::User,
+            inhalt: format!("Zweck: {zweck}\nBetrag: {euro:.2} EUR"),
+        }
     }
 
     /// Rolle der Nachricht.
@@ -264,7 +291,11 @@ pub trait Chat {
     ///
     /// # Errors
     /// [`LlmFehler`] nach der Wiederholungsregel.
-    fn complete(&self, nachrichten: &[Nachricht], schema: Option<&Value>) -> Result<Completion, LlmFehler>;
+    fn complete(
+        &self,
+        nachrichten: &[Nachricht],
+        schema: Option<&Value>,
+    ) -> Result<Completion, LlmFehler>;
 }
 
 /// Der HTTP-Client.
@@ -282,7 +313,11 @@ enum Versuch {
 }
 
 impl Chat for HttpChat {
-    fn complete(&self, nachrichten: &[Nachricht], schema: Option<&Value>) -> Result<Completion, LlmFehler> {
+    fn complete(
+        &self,
+        nachrichten: &[Nachricht],
+        schema: Option<&Value>,
+    ) -> Result<Completion, LlmFehler> {
         let k = &self.konfiguration;
         let mut nutzlast = json!({"model": k.modell, "messages": nachrichten, "temperature": 0,
             "response_format": schema.map_or_else(|| json!({"type": "json_object"}),
@@ -297,23 +332,39 @@ impl Chat for HttpChat {
         let mut abgeschnitten = 0;
         for versuch in 0..VERSUCHE {
             let letzter = versuch == VERSUCHE - 1;
-            let frist = if abgeschnitten > 0 { k.frist_wiederholung } else { k.frist };
+            let frist = if abgeschnitten > 0 {
+                k.frist_wiederholung
+            } else {
+                k.frist
+            };
             match ein_versuch(k, &koerper, frist) {
                 Versuch::Ok(c) => return Ok(c),
-                Versuch::Endgueltig(grund, detail) => return Err(LlmFehler::Endgueltig { grund, detail }),
+                Versuch::Endgueltig(grund, detail) => {
+                    return Err(LlmFehler::Endgueltig { grund, detail })
+                }
                 Versuch::Abgeschnitten => {
                     abgeschnitten += 1;
                     if abgeschnitten >= ABGESCHNITTEN_MAX || letzter {
-                        return Err(LlmFehler::Abgeschnitten { versuche: abgeschnitten });
+                        return Err(LlmFehler::Abgeschnitten {
+                            versuche: abgeschnitten,
+                        });
                     }
                 }
                 Versuch::Voruebergehend(grund, detail) => {
                     if letzter {
-                        return Err(LlmFehler::Voruebergehend { versuche: VERSUCHE, grund, detail });
+                        return Err(LlmFehler::Voruebergehend {
+                            versuche: VERSUCHE,
+                            grund,
+                            detail,
+                        });
                     }
                 }
             }
-            let pause = usize::try_from(versuch).ok().and_then(|i| k.backoff.get(i)).copied().unwrap_or_default();
+            let pause = usize::try_from(versuch)
+                .ok()
+                .and_then(|i| k.backoff.get(i))
+                .copied()
+                .unwrap_or_default();
             std::thread::sleep(pause);
         }
         Err(endgueltig("unerreichbar"))
@@ -327,16 +378,26 @@ fn ein_versuch(k: &Konfiguration, koerper: &[u8], frist: Duration) -> Versuch {
     let schluessel = k.schluessel.0.as_str();
     let antwort = match http::post(&k.basis, schluessel, koerper, socket, ende) {
         Ok(a) => a,
-        Err(Transport::Netz(d)) => return Versuch::Voruebergehend(Grund::Sonstig, maskiere(&d, schluessel)),
+        Err(Transport::Netz(d)) => {
+            return Versuch::Voruebergehend(Grund::Sonstig, maskiere(&d, schluessel))
+        }
         Err(Transport::Zeit) => {
             return Versuch::Voruebergehend(
                 Grund::Sonstig,
-                format!("TimeoutError: Zeitüberschreitung nach {}s", k.socket.as_secs()),
+                format!(
+                    "TimeoutError: Zeitüberschreitung nach {}s",
+                    k.socket.as_secs()
+                ),
             )
         }
-        Err(Transport::Frist) => return Versuch::Endgueltig(Grund::Frist, "LLM-Antwort überschritt die Frist".into()),
+        Err(Transport::Frist) => {
+            return Versuch::Endgueltig(Grund::Frist, "LLM-Antwort überschritt die Frist".into())
+        }
         Err(Transport::Kaputt(d)) => {
-            return Versuch::Endgueltig(Grund::Sonstig, format!("LLM-Aufruf fehlgeschlagen: {}", maskiere(&d, schluessel)))
+            return Versuch::Endgueltig(
+                Grund::Sonstig,
+                format!("LLM-Aufruf fehlgeschlagen: {}", maskiere(&d, schluessel)),
+            )
         }
     };
     if !(200..300).contains(&antwort.status) {
@@ -348,11 +409,20 @@ fn ein_versuch(k: &Konfiguration, koerper: &[u8], frist: Duration) -> Versuch {
         return if VORUEBERGEHEND.contains(&antwort.status) {
             Versuch::Voruebergehend(Grund::Sonstig, format!("HTTP {} {detail}", antwort.status))
         } else {
-            Versuch::Endgueltig(Grund::Sonstig, format!("LLM-Aufruf fehlgeschlagen: HTTP {} {detail}", antwort.status))
+            Versuch::Endgueltig(
+                Grund::Sonstig,
+                format!(
+                    "LLM-Aufruf fehlgeschlagen: HTTP {} {detail}",
+                    antwort.status
+                ),
+            )
         };
     }
     let Ok(j) = serde_json::from_slice::<Value>(&antwort.koerper) else {
-        return Versuch::Endgueltig(Grund::Sonstig, "LLM-Aufruf fehlgeschlagen: JSONDecodeError".into());
+        return Versuch::Endgueltig(
+            Grund::Sonstig,
+            "LLM-Aufruf fehlgeschlagen: JSONDecodeError".into(),
+        );
     };
     inhalt(&j)
 }
@@ -365,7 +435,11 @@ fn inhalt(j: &Value) -> Versuch {
     let Some(nachricht) = wahl.get("message").filter(|m| m.is_object()) else {
         return Versuch::Endgueltig(Grund::Sonstig, "LLM-Aufruf fehlgeschlagen: KeyError".into());
     };
-    let ende = wahl.get("finish_reason").filter(|v| crate::py::wahr(v)).map(crate::py::py_str).unwrap_or_default();
+    let ende = wahl
+        .get("finish_reason")
+        .filter(|v| crate::py::wahr(v))
+        .map(crate::py::py_str)
+        .unwrap_or_default();
     if ende == "length" {
         return Versuch::Abgeschnitten;
     }
@@ -376,13 +450,26 @@ fn inhalt(j: &Value) -> Versuch {
         Some(Value::String(s)) => s.clone(),
         // PARITAET-Abweichung: Python ruft `.strip()` auf einer Nicht-Zeichenkette und stuerzt
         // mit `AttributeError` ausserhalb jeder Behandlung (HTTP 500). Hier endgueltig.
-        Some(_) => return Versuch::Endgueltig(Grund::Sonstig, "LLM-Aufruf fehlgeschlagen: AttributeError".into()),
+        Some(_) => {
+            return Versuch::Endgueltig(
+                Grund::Sonstig,
+                "LLM-Aufruf fehlgeschlagen: AttributeError".into(),
+            )
+        }
     };
     if crate::py::strip(&text).is_empty() {
         return Versuch::Voruebergehend(Grund::Leer, "leerer Inhalt vom Anbieter".into());
     }
-    let provider = j.get("provider").filter(|v| crate::py::wahr(v)).map(crate::py::py_str).unwrap_or_default();
-    Versuch::Ok(Completion { text, provider, finish: ende })
+    let provider = j
+        .get("provider")
+        .filter(|v| crate::py::wahr(v))
+        .map(crate::py::py_str)
+        .unwrap_or_default();
+    Versuch::Ok(Completion {
+        text,
+        provider,
+        finish: ende,
+    })
 }
 
 /// Schluessel in einer Diagnose durch `<KEY>` ersetzen (`llm_client.py:305-306`).
@@ -408,11 +495,17 @@ mod tests {
     #[test]
     fn leer_ist_voruebergehend() {
         let j = json!({"choices": [{"message": {"content": "  "}, "finish_reason": "stop"}]});
-        assert!(matches!(inhalt(&j), Versuch::Voruebergehend(super::Grund::Leer, _)));
+        assert!(matches!(
+            inhalt(&j),
+            Versuch::Voruebergehend(super::Grund::Leer, _)
+        ));
     }
 
     #[test]
     fn schluessel_wird_maskiert() {
-        assert_eq!(maskiere("invalid key sk-123", "sk-123"), "invalid key <KEY>");
+        assert_eq!(
+            maskiere("invalid key sk-123", "sk-123"),
+            "invalid key <KEY>"
+        );
     }
 }

@@ -23,7 +23,10 @@ const REGEL_FRAGE_ZEICHEN: usize = 44;
 /// ```
 #[must_use]
 pub fn aussagen_prompt(freitext: &Gefiltert) -> Vec<Nachricht> {
-    vec![Nachricht::system(texte::AUSSAGEN_SYSTEM.to_owned()), Nachricht::nutzer(freitext)]
+    vec![
+        Nachricht::system(texte::AUSSAGEN_SYSTEM.to_owned()),
+        Nachricht::nutzer(freitext),
+    ]
 }
 
 /// `_regel_zeilen(je_regel, regeln)`: je Regel die ersten drei Feldfragen, an der Wortgrenze
@@ -40,12 +43,20 @@ pub fn regel_zeilen(je_regel: &[(String, Vec<&KatalogFeld>)], regeln: &[String])
     regeln
         .iter()
         .map(|r| {
-            let felder = je_regel.iter().find(|(k, _)| k == r).map(|(_, v)| v.as_slice()).unwrap_or_default();
+            let felder = je_regel
+                .iter()
+                .find(|(k, _)| k == r)
+                .map(|(_, v)| v.as_slice())
+                .unwrap_or_default();
             let fragen: Vec<String> = felder
                 .iter()
                 .take(REGEL_FRAGEN)
                 .filter_map(|f| {
-                    let roh = f.fragetext_laie.as_deref().filter(|s| !s.is_empty()).unwrap_or(&f.feld_id);
+                    let roh = f
+                        .fragetext_laie
+                        .as_deref()
+                        .filter(|s| !s.is_empty())
+                        .unwrap_or(&f.feld_id);
                     let mut t = py::strip(roh.trim_end_matches(['?', ' '])).to_owned();
                     if py::laenge(&t) > REGEL_FRAGE_ZEICHEN {
                         let kopf = py::vorne(&t, REGEL_FRAGE_ZEICHEN);
@@ -72,15 +83,33 @@ pub fn regel_zeilen(je_regel: &[(String, Vec<&KatalogFeld>)], regeln: &[String])
 /// assert!(m[0].inhalt().contains("AUSSAGEN:\n(keine)\n\nREGELN:\n- r"));
 /// ```
 #[must_use]
-pub fn themen_prompt(freitext: &Gefiltert, aussagen: &[Aussage], regel_zeilen: &str) -> Vec<Nachricht> {
+pub fn themen_prompt(
+    freitext: &Gefiltert,
+    aussagen: &[Aussage],
+    regel_zeilen: &str,
+) -> Vec<Nachricht> {
     let nummeriert = nummeriert(aussagen);
-    let nummeriert = if nummeriert.is_empty() { "(keine)".to_owned() } else { nummeriert };
-    let system = format!("{}{nummeriert}{}{regel_zeilen}{}", texte::THEMEN_KOPF, texte::THEMEN_MITTE, texte::THEMEN_ENDE);
+    let nummeriert = if nummeriert.is_empty() {
+        "(keine)".to_owned()
+    } else {
+        nummeriert
+    };
+    let system = format!(
+        "{}{nummeriert}{}{regel_zeilen}{}",
+        texte::THEMEN_KOPF,
+        texte::THEMEN_MITTE,
+        texte::THEMEN_ENDE
+    );
     vec![Nachricht::system(system), Nachricht::nutzer(freitext)]
 }
 
 fn nummeriert(aussagen: &[Aussage]) -> String {
-    aussagen.iter().enumerate().map(|(i, a)| format!("[{i}] {}", a.text)).collect::<Vec<_>>().join("\n")
+    aussagen
+        .iter()
+        .enumerate()
+        .map(|(i, a)| format!("[{i}] {}", a.text))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn opt(s: Option<&str>) -> &str {
@@ -89,12 +118,21 @@ fn opt(s: Option<&str>) -> &str {
 
 /// Eine Feldzeile des Stufe-3-Katalogs.
 fn feld_zeile(f: &KatalogFeld) -> String {
-    let mut z = format!("- {}: {} (Typ {}", f.feld_id, opt(f.fragetext_laie.as_deref()), opt(f.typ.as_deref()));
+    let mut z = format!(
+        "- {}: {} (Typ {}",
+        f.feld_id,
+        opt(f.fragetext_laie.as_deref()),
+        opt(f.typ.as_deref())
+    );
     if let Some(b) = f.bereich.as_ref().filter(|b| !b.0.is_empty()) {
         let _ = write!(z, ", Bereich {}", b.py_repr());
     }
     if let Some(w) = f.enum_werte.as_ref().filter(|w| !w.is_empty()) {
-        let liste = w.iter().map(|s| py::py_repr_str(s)).collect::<Vec<_>>().join(", ");
+        let liste = w
+            .iter()
+            .map(|s| py::py_repr_str(s))
+            .collect::<Vec<_>>()
+            .join(", ");
         let _ = write!(z, ", Werte [{liste}]");
     }
     z.push(')');
@@ -113,8 +151,17 @@ fn feld_zeile(f: &KatalogFeld) -> String {
 /// assert!(m[0].inhalt().ends_with("Kein Fließtext außerhalb des JSON."));
 /// ```
 #[must_use]
-pub fn dialog_prompt(freitext: &Gefiltert, katalog: &[&KatalogFeld], kontext: &Gefiltert, aussagen: &[Aussage]) -> Vec<Nachricht> {
-    let felder = katalog.iter().map(|f| feld_zeile(f)).collect::<Vec<_>>().join("\n");
+pub fn dialog_prompt(
+    freitext: &Gefiltert,
+    katalog: &[&KatalogFeld],
+    kontext: &Gefiltert,
+    aussagen: &[Aussage],
+) -> Vec<Nachricht> {
+    let felder = katalog
+        .iter()
+        .map(|f| feld_zeile(f))
+        .collect::<Vec<_>>()
+        .join("\n");
     let mut system = format!("{}{felder}{}", texte::DIALOG_KOPF, texte::DIALOG_REGELN);
     if !aussagen.is_empty() {
         system.push_str(texte::AUSSAGEN_BLOCK_KOPF);

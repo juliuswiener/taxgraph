@@ -107,5 +107,8 @@ pub struct KfzNutzungswertEingabe {
 /// ```
 pub fn kfz_nutzungswert_monat_cent(e: &KfzNutzungswertEingabe) -> Result<Cent, EngineFehler> {
     let blp_cent = z(e.bruttolistenpreis) * 100;
-    cent(floor_div(blp_cent.div_euclid(100), i128::from(e.bruchteils_teiler))?)
+    cent(floor_div(
+        blp_cent.div_euclid(100),
+        i128::from(e.bruchteils_teiler),
+    )?)
 }

@@ -137,7 +137,10 @@ pub fn anhaengen(
     let eintrag = AuditEintrag {
         ts: jetzt_iso(),
         // Python: `user_id or "unbekannt"` — auch ein leerer Name wird `unbekannt`.
-        user_id: user_id.filter(|u| !u.is_empty()).unwrap_or("unbekannt").to_string(),
+        user_id: user_id
+            .filter(|u| !u.is_empty())
+            .unwrap_or("unbekannt")
+            .to_string(),
         action,
         fall_id: fall_id.map(str::to_string),
         detail: detail.map(str::to_string),
@@ -170,19 +173,29 @@ mod tests {
 
     #[test]
     fn anhaengen_und_lies_roundtrip() {
-        let dir = std::env::temp_dir().join(format!("taxgraph-store-test-audit-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("taxgraph-store-test-audit-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let pfad = dir.join("audit.jsonl");
         let _ = std::fs::remove_file(&pfad);
         anhaengen(&pfad, Some("julius"), AuditAktion::Login, None, None).unwrap();
-        anhaengen(&pfad, None, AuditAktion::Andere("fall_einreichen".to_string()), Some("f1"), Some("status=200"))
-            .unwrap();
+        anhaengen(
+            &pfad,
+            None,
+            AuditAktion::Andere("fall_einreichen".to_string()),
+            Some("f1"),
+            Some("status=200"),
+        )
+        .unwrap();
         let eintraege = lies(&pfad).unwrap();
         assert_eq!(eintraege.len(), 2);
         assert_eq!(eintraege[0].user_id, "julius");
         assert_eq!(eintraege[0].action, AuditAktion::Login);
         assert_eq!(eintraege[1].user_id, "unbekannt");
-        assert_eq!(eintraege[1].action, AuditAktion::Andere("fall_einreichen".to_string()));
+        assert_eq!(
+            eintraege[1].action,
+            AuditAktion::Andere("fall_einreichen".to_string())
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 

@@ -16,7 +16,11 @@ fn oeffne_zum_anhaengen(pfad: &Path) -> io::Result<File> {
             std::fs::create_dir_all(eltern)?;
         }
     }
-    OpenOptions::new().append(true).create(true).mode(0o600).open(pfad)
+    OpenOptions::new()
+        .append(true)
+        .create(true)
+        .mode(0o600)
+        .open(pfad)
 }
 
 /// Haengt `zeile` (ohne eigenen Zeilenumbruch) an und fsynct danach

@@ -196,7 +196,8 @@ impl Serialize for Schreiber {
 impl<'de> Deserialize<'de> for Schreiber {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let s = String::deserialize(deserializer)?;
-        Ok(s.parse::<Self>().unwrap_or_else(|unmoeglich: std::convert::Infallible| match unmoeglich {}))
+        Ok(s.parse::<Self>()
+            .unwrap_or_else(|unmoeglich: std::convert::Infallible| match unmoeglich {}))
     }
 }
 
@@ -258,15 +259,42 @@ mod tests {
 
     #[test]
     fn vorschlag_typ_matcht_store_py_vorschlag_typ() {
-        assert_eq!("llm:chat".parse::<Schreiber>().unwrap().vorschlag_typ(), Some("llm"));
-        assert_eq!("import:beleg".parse::<Schreiber>().unwrap().vorschlag_typ(), Some("beleg"));
         assert_eq!(
-            "import:kontoauszug".parse::<Schreiber>().unwrap().vorschlag_typ(),
+            "llm:chat".parse::<Schreiber>().unwrap().vorschlag_typ(),
+            Some("llm")
+        );
+        assert_eq!(
+            "import:beleg".parse::<Schreiber>().unwrap().vorschlag_typ(),
+            Some("beleg")
+        );
+        assert_eq!(
+            "import:kontoauszug"
+                .parse::<Schreiber>()
+                .unwrap()
+                .vorschlag_typ(),
             Some("kontoauszug")
         );
-        assert_eq!("berechnet:maps".parse::<Schreiber>().unwrap().vorschlag_typ(), Some("maps"));
-        assert_eq!("import:vorjahr".parse::<Schreiber>().unwrap().vorschlag_typ(), None);
-        assert_eq!("import:elster".parse::<Schreiber>().unwrap().vorschlag_typ(), None);
+        assert_eq!(
+            "berechnet:maps"
+                .parse::<Schreiber>()
+                .unwrap()
+                .vorschlag_typ(),
+            Some("maps")
+        );
+        assert_eq!(
+            "import:vorjahr"
+                .parse::<Schreiber>()
+                .unwrap()
+                .vorschlag_typ(),
+            None
+        );
+        assert_eq!(
+            "import:elster"
+                .parse::<Schreiber>()
+                .unwrap()
+                .vorschlag_typ(),
+            None
+        );
         assert_eq!("engine".parse::<Schreiber>().unwrap().vorschlag_typ(), None);
         assert_eq!("julius".parse::<Schreiber>().unwrap().vorschlag_typ(), None);
     }

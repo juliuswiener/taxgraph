@@ -1,6 +1,11 @@
 //! Eigenschaften der Deklaration ueber die ECHTE Bindung (`produkt/bindung/*.yaml`), ohne
 //! Python: Round-Trip, fail-closed, Rundung zugunsten der Steuerpflichtigen, Instanz-Meet.
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic
+)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -16,7 +21,12 @@ fn bindungen() -> &'static [Bindung] {
     static CELL: OnceLock<Vec<Bindung>> = OnceLock::new();
     CELL.get_or_init(|| {
         let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        bindung::lade_registry(&pfad).expect("Bindung laedt").dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect()
+        bindung::lade_registry(&pfad)
+            .expect("Bindung laedt")
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect()
     })
 }
 
@@ -27,11 +37,19 @@ fn index() -> &'static HashMap<String, &'static Bindung> {
 
 fn laie_herkunft() -> Herkunft {
     let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
-    Herkunft { herkunft: a("laie"), pruef_tiefe: PruefTiefe::Ungeprueft, haftung: a("nutzer") }
+    Herkunft {
+        herkunft: a("laie"),
+        pruef_tiefe: PruefTiefe::Ungeprueft,
+        haftung: a("nutzer"),
+    }
 }
 
 fn feld(wert: Value, zustand: Zustand) -> SnapshotFeld {
-    SnapshotFeld { wert, zustand, herkunft: laie_herkunft().into() }
+    SnapshotFeld {
+        wert,
+        zustand,
+        herkunft: laie_herkunft().into(),
+    }
 }
 
 fn einzeln(feld_id: &str, wert: Value, zustand: Zustand) -> Felder {
@@ -43,7 +61,12 @@ fn beispiel(b: &Bindung) -> Value {
         Feldtyp::Cent => json!(12_345),
         Feldtyp::Int => json!(3),
         Feldtyp::Bool => json!(true),
-        Feldtyp::Enum => json!(b.enum_werte.as_ref().and_then(|w| w.first()).cloned().unwrap_or_default()),
+        Feldtyp::Enum => json!(b
+            .enum_werte
+            .as_ref()
+            .and_then(|w| w.first())
+            .cloned()
+            .unwrap_or_default()),
         Feldtyp::Datum => json!("05.05.1990"),
         Feldtyp::Text => b.beispielwert.clone(),
     }
@@ -54,10 +77,24 @@ fn beispiel(b: &Bindung) -> Value {
 #[test]
 fn vorlaeufig_deklariert_nie() {
     for b in bindungen() {
-        let d = deklariere(&einzeln(&b.feld_id, beispiel(b), Zustand::Vorlaeufig), index(), None).unwrap();
+        let d = deklariere(
+            &einzeln(&b.feld_id, beispiel(b), Zustand::Vorlaeufig),
+            index(),
+            None,
+        )
+        .unwrap();
         assert!(!d.eingaben_konsistent(), "{}", b.feld_id);
-        assert_eq!(d.deklaration.keys().collect::<Vec<_>>(), ["E0100001"], "{}", b.feld_id);
-        assert!(d.person_b.is_empty() && d.anlage_instanzen.is_empty() && d.dokumentiert.is_empty(), "{}", b.feld_id);
+        assert_eq!(
+            d.deklaration.keys().collect::<Vec<_>>(),
+            ["E0100001"],
+            "{}",
+            b.feld_id
+        );
+        assert!(
+            d.person_b.is_empty() && d.anlage_instanzen.is_empty() && d.dokumentiert.is_empty(),
+            "{}",
+            b.feld_id
+        );
     }
 }
 
@@ -67,18 +104,37 @@ fn vorlaeufig_deklariert_nie() {
 #[test]
 fn round_trip_eins_zu_eins() {
     let mut geprueft = 0;
-    for b in bindungen().iter().filter(|b| b.elster_kz.is_some() && b.instanz_gruppe.is_none()) {
+    for b in bindungen()
+        .iter()
+        .filter(|b| b.elster_kz.is_some() && b.instanz_gruppe.is_none())
+    {
         let kz = b.elster_kz.as_deref().unwrap();
         let wert = beispiel(b);
-        let d = deklariere(&einzeln(&b.feld_id, wert.clone(), Zustand::Bestaetigt), index(), None).unwrap();
-        let Some(deklariert) = d.deklaration.get(kz) else { continue };
+        let d = deklariere(
+            &einzeln(&b.feld_id, wert.clone(), Zustand::Bestaetigt),
+            index(),
+            None,
+        )
+        .unwrap();
+        let Some(deklariert) = d.deklaration.get(kz) else {
+            continue;
+        };
         let zurueck = zuruecklesen(&d, index());
-        let erwartet = if b.typ == Feldtyp::Cent { deklariert.clone() } else { wert.clone() };
+        let erwartet = if b.typ == Feldtyp::Cent {
+            deklariert.clone()
+        } else {
+            wert.clone()
+        };
         // Wertekodierung (Religionsschluessel) ist bewusst nicht umkehrbar: "02" statt "evangelisch".
         if b.feld_id.starts_with("kist_konfession") {
             continue;
         }
-        assert_eq!(zurueck.felder.get(&b.feld_id), Some(&erwartet), "{} ({kz})", b.feld_id);
+        assert_eq!(
+            zurueck.felder.get(&b.feld_id),
+            Some(&erwartet),
+            "{} ({kz})",
+            b.feld_id
+        );
         geprueft += 1;
     }
     assert!(geprueft > 100, "nur {geprueft} 1:1-Bindungen geprueft");
@@ -151,7 +207,11 @@ fn kz_mengen_aus_xsd() {
         assert!(typ(kz).starts_with("DatumTTpMMpJJJJ"), "{kz}: {}", typ(kz));
     }
     for kz in elster::KOMMA_OHNE_E60_KZ {
-        assert!(typ(kz).starts_with("Dezimalzahl") && typ(kz).contains("MinNK2_MaxNK2"), "{kz}: {}", typ(kz));
+        assert!(
+            typ(kz).starts_with("Dezimalzahl") && typ(kz).contains("MinNK2_MaxNK2"),
+            "{kz}: {}",
+            typ(kz)
+        );
     }
     for kz in elster::NULL_UNZULAESSIG_KZ {
         assert!(typ(kz).starts_with("GanzzahlPos"), "{kz}: {}", typ(kz));
@@ -169,8 +229,16 @@ fn kz_mengen_aus_xsd() {
     let null_luecke: Vec<&str> = cent_kz
         .iter()
         .copied()
-        .filter(|kz| typ(kz).starts_with("GanzzahlPos") && !elster::NULL_UNZULAESSIG_KZ.contains(kz))
+        .filter(|kz| {
+            typ(kz).starts_with("GanzzahlPos") && !elster::NULL_UNZULAESSIG_KZ.contains(kz)
+        })
         .collect();
-    println!("[xsd-abgeleitet] cent-Kz={} Dezimal-Typ ohne Komma-Format={komma_luecke:?}", cent_kz.len());
-    println!("[xsd-abgeleitet] GanzzahlPos-Typ ohne 0-Sperre={} {null_luecke:?}", null_luecke.len());
+    println!(
+        "[xsd-abgeleitet] cent-Kz={} Dezimal-Typ ohne Komma-Format={komma_luecke:?}",
+        cent_kz.len()
+    );
+    println!(
+        "[xsd-abgeleitet] GanzzahlPos-Typ ohne 0-Sperre={} {null_luecke:?}",
+        null_luecke.len()
+    );
 }

@@ -35,7 +35,13 @@
 //! Braucht die Catala-Opam-Toolchain + `python3` mit Repo-Umfeld -- in CI standardmaessig SKIP:
 //!
 //!   `PARITY`=1 `cargo` test -p parity --test `store_append_paritaet` -- --nocapture
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
+#![allow(
+    clippy::too_many_lines,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic
+)]
 
 use std::sync::{Mutex, OnceLock};
 
@@ -87,7 +93,9 @@ fn faelle_verzeichnis() -> std::path::PathBuf {
 }
 
 fn walk_json(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
-    let Ok(read) = std::fs::read_dir(dir) else { return Vec::new() };
+    let Ok(read) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
     let mut gefunden = Vec::new();
     for eintrag in read.flatten() {
         let pfad = eintrag.path();
@@ -105,7 +113,11 @@ fn alle_bindungen() -> &'static [Bindung] {
     CELL.get_or_init(|| {
         let verzeichnis = repo_root().join("produkt").join("bindung");
         let registry = bindung::lade_registry(&verzeichnis).expect("bindung-registry laedt");
-        registry.dateien.into_iter().flat_map(|(_, datei)| datei.bindungen).collect()
+        registry
+            .dateien
+            .into_iter()
+            .flat_map(|(_, datei)| datei.bindungen)
+            .collect()
     })
 }
 
@@ -210,7 +222,11 @@ impl<'a> Cursor<'a> {
     }
 
     fn range(&mut self, n: usize) -> usize {
-        if n == 0 { 0 } else { usize::from(self.byte()) % n }
+        if n == 0 {
+            0
+        } else {
+            usize::from(self.byte()) % n
+        }
     }
 
     fn bool(&mut self) -> bool {
@@ -225,7 +241,11 @@ fn zufallszahl(cursor: &mut Cursor, n: usize) -> Value {
 }
 
 fn waehle<'p, T>(cursor: &mut Cursor, pool: &'p [T]) -> Option<&'p T> {
-    if pool.is_empty() { None } else { pool.get(cursor.range(pool.len())) }
+    if pool.is_empty() {
+        None
+    } else {
+        pool.get(cursor.range(pool.len()))
+    }
 }
 
 fn herkunft(wert: &str, haftung: &str) -> Herkunft {
@@ -431,7 +451,9 @@ fn szenario_vorschlag_gluecklich(cursor: &mut Cursor, pools: &Pools) -> Option<A
 fn szenario_auflage_a_verletzt(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
     let sch = auflage_a_schreiber(cursor);
     let feld = match sch.vorschlag_typ() {
-        Some(typ) => waehle(cursor, pool_fuer(pools, typ)).or_else(|| waehle(cursor, &pools.alle))?,
+        Some(typ) => {
+            waehle(cursor, pool_fuer(pools, typ)).or_else(|| waehle(cursor, &pools.alle))?
+        }
         None => waehle(cursor, &pools.alle)?,
     };
     let wert = wert_korrekt(cursor, feld);
@@ -472,8 +494,11 @@ fn szenario_katalog_verletzt(cursor: &mut Cursor, pools: &Pools) -> Option<Aufru
     let sch = vorschlag_katalog_schreiber(cursor);
     let typ = sch.vorschlag_typ()?;
     let ziel_pool = pool_fuer(pools, typ);
-    let kandidaten: Vec<&&Bindung> =
-        pools.alle.iter().filter(|b| !ziel_pool.iter().any(|p| p.feld_id == b.feld_id)).collect();
+    let kandidaten: Vec<&&Bindung> = pools
+        .alle
+        .iter()
+        .filter(|b| !ziel_pool.iter().any(|p| p.feld_id == b.feld_id))
+        .collect();
     let feld = **waehle(cursor, &kandidaten)?;
     let mut spec = leer_spec();
     spec.feld_id.clone_from(&feld.feld_id);
@@ -544,8 +569,16 @@ fn szenario_ersetzt_unbekannt(cursor: &mut Cursor, pools: &Pools, salt: u64) -> 
     Some(spec)
 }
 
-fn szenario_ersetzt_mismatch(cursor: &mut Cursor, pools: &Pools, store: &Store) -> Option<AufrufSpec> {
-    let explizit: Vec<_> = store.events().iter().filter(|e| ist_explizit(&e.schreiber)).collect();
+fn szenario_ersetzt_mismatch(
+    cursor: &mut Cursor,
+    pools: &Pools,
+    store: &Store,
+) -> Option<AufrufSpec> {
+    let explizit: Vec<_> = store
+        .events()
+        .iter()
+        .filter(|e| ist_explizit(&e.schreiber))
+        .collect();
     let ziel = *waehle(cursor, &explizit)?;
     let feld = pools.alle.iter().find(|b| b.feld_id != ziel.feld_id)?;
     let mut spec = leer_spec();
@@ -558,7 +591,12 @@ fn szenario_ersetzt_mismatch(cursor: &mut Cursor, pools: &Pools, store: &Store) 
 fn szenario_ersetzt_bereits(cursor: &mut Cursor, store: &Store) -> Option<AufrufSpec> {
     let bereits: Vec<EventId> = store.events().iter().filter_map(|e| e.ersetzt).collect();
     let ziel = *waehle(cursor, &bereits)?;
-    let urspruenglich_feld = store.events().iter().find(|e| e.event_id == ziel)?.feld_id.clone();
+    let urspruenglich_feld = store
+        .events()
+        .iter()
+        .find(|e| e.event_id == ziel)?
+        .feld_id
+        .clone();
     let mut spec = leer_spec();
     spec.feld_id = urspruenglich_feld;
     spec.wert = zufallszahl(cursor, 1000);
@@ -566,7 +604,11 @@ fn szenario_ersetzt_bereits(cursor: &mut Cursor, store: &Store) -> Option<Aufruf
     Some(spec)
 }
 
-fn szenario_ersetzt_erfolg(cursor: &mut Cursor, pools: &Pools, store: &Store) -> Option<AufrufSpec> {
+fn szenario_ersetzt_erfolg(
+    cursor: &mut Cursor,
+    pools: &Pools,
+    store: &Store,
+) -> Option<AufrufSpec> {
     let feld_ids: Vec<String> = aktive_feld_ids(store)
         .into_iter()
         .filter(|f| store.aktives(f).is_some_and(|e| ist_explizit(&e.schreiber)))
@@ -574,7 +616,11 @@ fn szenario_ersetzt_erfolg(cursor: &mut Cursor, pools: &Pools, store: &Store) ->
     let feld_id = waehle(cursor, &feld_ids)?.clone();
     let aktiv = store.aktives(&feld_id)?;
     let bindung = pools.alle.iter().find(|b| b.feld_id == feld_id);
-    let wert = if let Some(b) = bindung { wert_korrekt(cursor, b) } else { zufallszahl(cursor, 1000) };
+    let wert = if let Some(b) = bindung {
+        wert_korrekt(cursor, b)
+    } else {
+        zufallszahl(cursor, 1000)
+    };
     let mut spec = leer_spec();
     spec.feld_id = feld_id;
     spec.wert = wert;
@@ -594,7 +640,13 @@ fn szenario_plain(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
     Some(spec)
 }
 
-fn baue_aufruf(cursor: &mut Cursor, pools: &Pools, store: &Store, salt: u64, ts: &str) -> AufrufSpec {
+fn baue_aufruf(
+    cursor: &mut Cursor,
+    pools: &Pools,
+    store: &Store,
+    salt: u64,
+    ts: &str,
+) -> AufrufSpec {
     let versuch = match cursor.range(13) {
         0 => szenario_vorschlag_gluecklich(cursor, pools),
         1 => szenario_auflage_a_verletzt(cursor, pools),
@@ -610,7 +662,9 @@ fn baue_aufruf(cursor: &mut Cursor, pools: &Pools, store: &Store, salt: u64, ts:
         11 => szenario_ersetzt_erfolg(cursor, pools, store),
         _ => szenario_ersetzt_bereits(cursor, store),
     };
-    let mut spec = versuch.or_else(|| szenario_plain(cursor, pools)).unwrap_or_else(leer_spec);
+    let mut spec = versuch
+        .or_else(|| szenario_plain(cursor, pools))
+        .unwrap_or_else(leer_spec);
     if spec.feld_id.is_empty() {
         spec.feld_id = "fallback_feld".to_string();
         spec.wert = json!(1);
@@ -735,7 +789,8 @@ fn append_sequence_replay_realer_faelle() {
 
     for pfad in &kandidaten {
         // P10: store::lade laedt inzwischen ALLE realen Faelle (legacy Herkunft, unbegrenzte VZ).
-        let datei = store::lade(pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
+        let datei =
+            store::lade(pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
         if datei.events.is_empty() {
             continue;
         }
@@ -799,8 +854,11 @@ fn append_sequence_replay_realer_faelle() {
         let python = oracle
             .append_sequence(&initial_json, &calls_json)
             .expect("Orakel-Aufruf laeuft durch");
-        python_fehlschlaege +=
-            python.results.iter().filter(|r| matches!(r, AppendCallErgebnis::Fehler { .. })).count() as u64;
+        python_fehlschlaege += python
+            .results
+            .iter()
+            .filter(|r| matches!(r, AppendCallErgebnis::Fehler { .. }))
+            .count() as u64;
         abweichende_entscheidungen += abweichende(&python.results, &rust_angenommen);
     }
 
@@ -812,19 +870,29 @@ fn append_sequence_replay_realer_faelle() {
          {abweichende_entscheidungen} abweichende Einzelentscheidungen"
     );
     // Je Event dieselbe Entscheidung (angenommen/abgewiesen), nicht nur dieselbe Anzahl.
-    assert_eq!(abweichende_entscheidungen, 0, "Rust und Python entscheiden einzelne reale Events verschieden");
+    assert_eq!(
+        abweichende_entscheidungen, 0,
+        "Rust und Python entscheiden einzelne reale Events verschieden"
+    );
     // Deliverable-Vorgabe war "beide muessen jedes Event annehmen" -- real trifft das nicht ZU
     // 100%: ein Teil der Bestandsdateien ist aelter als die heutige Bindungsregistry (Format-
     // Regeln/Reihenfolge-Abhaengigkeiten haben sich seither veraendert) und lehnt darum auf
     // BEIDEN Seiten symmetrisch ab. Massgeblich fuer DIESEN Test ist Rust-vs-Python-Paritaet,
     // nicht Alt-Datei-Validitaet gegen die heutige Registry -- deshalb Gleichstand statt Null.
-    assert_eq!(rust_fehlschlaege, python_fehlschlaege, "Rust/Python lehnen unterschiedlich viele reale Events ab (Anzahl s.o.)");
+    assert_eq!(
+        rust_fehlschlaege, python_fehlschlaege,
+        "Rust/Python lehnen unterschiedlich viele reale Events ab (Anzahl s.o.)"
+    );
 }
 
 /// Zahl der Aufrufe, bei denen Rust anders entscheidet (angenommen/abgewiesen) als Python.
 /// Index `i` in `python` gehoert zu Index `i` in `rust_angenommen`.
 fn abweichende(python: &[AppendCallErgebnis], rust_angenommen: &[bool]) -> u64 {
-    assert_eq!(python.len(), rust_angenommen.len(), "Aufrufzahl je Datei muss gleich sein");
+    assert_eq!(
+        python.len(),
+        rust_angenommen.len(),
+        "Aufrufzahl je Datei muss gleich sein"
+    );
     python
         .iter()
         .zip(rust_angenommen)

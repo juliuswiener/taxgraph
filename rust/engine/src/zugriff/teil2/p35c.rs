@@ -28,7 +28,11 @@ pub struct SanierungEingabe {
 /// assert_eq!(p35c_sanierung(&e).unwrap(), Euro::new(1200));
 /// ```
 pub fn p35c_sanierung(e: &SanierungEingabe) -> Result<Euro, EngineFehler> {
-    let (satz, hoechst) = if e.ist_uebernaechstes_foerderjahr { (0.06, 12_000) } else { (0.07, 14_000) };
+    let (satz, hoechst) = if e.ist_uebernaechstes_foerderjahr {
+        (0.06, 12_000)
+    } else {
+        (0.07, 14_000)
+    };
     euro(int_mal_float(e.sanierungsaufwendungen, satz)?.min(hoechst))
 }
 
@@ -45,8 +49,16 @@ pub fn p35c_sanierung(e: &SanierungEingabe) -> Result<Euro, EngineFehler> {
 /// assert_eq!(p35c_ermaessigung_cent(&e).unwrap(), Cent::new(140_000));
 /// ```
 pub fn p35c_ermaessigung_cent(e: &SanierungEingabe) -> Result<Cent, EngineFehler> {
-    let (satz, hoechst) = if e.ist_uebernaechstes_foerderjahr { (6, 12_000) } else { (7, 14_000) };
-    cent((z(e.sanierungsaufwendungen) * 100 * satz).div_euclid(100).min(hoechst * 100))
+    let (satz, hoechst) = if e.ist_uebernaechstes_foerderjahr {
+        (6, 12_000)
+    } else {
+        (7, 14_000)
+    };
+    cent(
+        (z(e.sanierungsaufwendungen) * 100 * satz)
+            .div_euclid(100)
+            .min(hoechst * 100),
+    )
 }
 
 /// § 35c Abs. 1 S. 4 `EStG`: Energieberater 50 %, EURO. `int(aufw x 0.50)`.
@@ -89,7 +101,11 @@ pub struct JahresdeckelEingabe {
 /// assert_eq!(p35c_jahresdeckel(&e).unwrap(), Euro::new(14000));
 /// ```
 pub fn p35c_jahresdeckel(e: &JahresdeckelEingabe) -> Result<Euro, EngineFehler> {
-    let hb = if e.ist_uebernaechstes_foerderjahr { 12_000 } else { 14_000 };
+    let hb = if e.ist_uebernaechstes_foerderjahr {
+        12_000
+    } else {
+        14_000
+    };
     let summe = z(e.sanierung_ermaessigung) + z(e.energieberater_ermaessigung);
     euro(if summe > hb { hb } else { summe })
 }

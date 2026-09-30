@@ -14,7 +14,8 @@ use engine::zugriff::teil1::afa::{P62GwgEingabe, P7LinearAfaEingabe};
 use engine::zugriff::teil1::belastungen::{P33AgbEingabe, P33ZumutbarEingabe};
 use engine::zugriff::teil1::einkuenfte::{
     EinkuenfteNichtselbststaendigEingabe, EuerGewinnEingabe, MitunternehmerEinkuenfteEingabe,
-    P164FreibetragEingabe, P212VerbilligtEingabe, P3Nr72PhotovoltaikEingabe, VermietungEinkuenfteEingabe,
+    P164FreibetragEingabe, P212VerbilligtEingabe, P3Nr72PhotovoltaikEingabe,
+    VermietungEinkuenfteEingabe,
 };
 use engine::zugriff::teil1::ermaessigungen::{
     KistEingabe, P24aAltersentlastungEingabe, P24bEntlastungEingabe, P31FamilienleistungEingabe,
@@ -25,7 +26,9 @@ use engine::zugriff::teil1::reisekosten::{DhfEingabe, UebernachtungEingabe, Verp
 use engine::zugriff::teil1::sonderausgaben::{
     P1017BerufsausbildungEingabe, P10KistEingabe, P10KvPvEingabe, P10bSpendenEingabe,
 };
-use engine::zugriff::teil1::werbungskosten::{EntfernungspauschaleEingabe, RaumkostenEingabe, WerbungskostenNEingabe};
+use engine::zugriff::teil1::werbungskosten::{
+    EntfernungspauschaleEingabe, RaumkostenEingabe, WerbungskostenNEingabe,
+};
 use rust_decimal::Decimal;
 use serde_json::{Map, Value};
 
@@ -38,7 +41,9 @@ type S = Map<String, Value>;
 
 /// Das eine Dict-Argument `s`.
 pub fn dict(args: &[Value]) -> R<&S> {
-    args.first().and_then(Value::as_object).ok_or(NICHT_ABGEBILDET)
+    args.first()
+        .and_then(Value::as_object)
+        .ok_or(NICHT_ABGEBILDET)
 }
 
 /// Pythons `int(v)`.
@@ -52,7 +57,11 @@ pub fn int_von(v: &Value) -> R<i64> {
                 let f = n.as_f64().ok_or(NICHT_ABGEBILDET)?.trunc();
                 // `as` ist hier die gewollte Umwandlung; der Bereich ist vorher geprueft.
                 #[allow(clippy::cast_possible_truncation)]
-                if f.abs() < 9.0e15 { Ok(f as i64) } else { Err(NICHT_ABGEBILDET) }
+                if f.abs() < 9.0e15 {
+                    Ok(f as i64)
+                } else {
+                    Err(NICHT_ABGEBILDET)
+                }
             }
         }
         Value::String(t) => t.trim().parse::<i64>().map_err(|_| "ValueError"),
@@ -124,7 +133,9 @@ fn vz_aus_jahr(j: i64) -> Option<Vz> {
 /// kein Verzeichnis -> `FileNotFoundError`.
 pub fn vz_pfad(s: &S) -> R<Vz> {
     match s.get("veranlagungszeitraum").ok_or("KeyError")? {
-        Value::Number(n) if n.is_i64() => n.as_i64().and_then(vz_aus_jahr).ok_or("FileNotFoundError"),
+        Value::Number(n) if n.is_i64() => {
+            n.as_i64().and_then(vz_aus_jahr).ok_or("FileNotFoundError")
+        }
         Value::Bool(_) | Value::Null => Err("FileNotFoundError"),
         _ => Err(NICHT_ABGEBILDET),
     }
@@ -144,7 +155,9 @@ pub fn decimal_str(v: &Value) -> R<Decimal> {
     match v {
         Value::Number(n) => {
             let t = n.to_string();
-            Decimal::from_str(&t).or_else(|_| Decimal::from_scientific(&t)).map_err(|_| NICHT_ABGEBILDET)
+            Decimal::from_str(&t)
+                .or_else(|_| Decimal::from_scientific(&t))
+                .map_err(|_| NICHT_ABGEBILDET)
         }
         Value::String(t) => Decimal::from_str(t.trim()).map_err(|_| "ValueError"),
         Value::Bool(_) | Value::Null => Err("ValueError"),
@@ -170,7 +183,10 @@ pub fn raumkosten(args: &[Value]) -> R<RaumkostenEingabe> {
 /// Positionales Jahr: `params/<str(year)>/...`.
 pub fn jahr(args: &[Value]) -> R<Vz> {
     let mut s = S::new();
-    s.insert("veranlagungszeitraum".into(), args.first().cloned().ok_or(NICHT_ABGEBILDET)?);
+    s.insert(
+        "veranlagungszeitraum".into(),
+        args.first().cloned().ok_or(NICHT_ABGEBILDET)?,
+    );
     vz_pfad(&s)
 }
 
@@ -193,7 +209,10 @@ pub fn p101(args: &[Value]) -> R<P101Eingabe> {
     let an = get_truthy(s, "ist_arbeitnehmer", false);
     // Python liest die beiden nur im Arbeitnehmer-Zweig.
     let (wk, ap) = if an {
-        (euro(s, "werbungskosten_gesamt")?, euro(s, "arbeitnehmer_pauschbetrag")?)
+        (
+            euro(s, "werbungskosten_gesamt")?,
+            euro(s, "arbeitnehmer_pauschbetrag")?,
+        )
     } else {
         (Euro::new(0), Euro::new(0))
     };
@@ -225,7 +244,11 @@ fn verpflegung(s: &S) -> R<VerpflegungEingabe> {
         tage_an_abreise: get_int(s, "tage_an_abreise", 0)?,
         tage_ueber_8h_eintaegig: get_int(s, "tage_ueber_8h_eintaegig", 0)?,
         vpf_tage_24h_nach_drei_monaten: get_int(s, "vpf_tage_24h_nach_drei_monaten", 0)?,
-        vpf_tage_an_abreise_nach_drei_monaten: get_int(s, "vpf_tage_an_abreise_nach_drei_monaten", 0)?,
+        vpf_tage_an_abreise_nach_drei_monaten: get_int(
+            s,
+            "vpf_tage_an_abreise_nach_drei_monaten",
+            0,
+        )?,
         vpf_tage_ueber_8h_nach_drei_monaten: get_int(s, "vpf_tage_ueber_8h_nach_drei_monaten", 0)?,
         vpf_fruehstuecke_gestellt_anzahl: get_int(s, "vpf_fruehstuecke_gestellt_anzahl", 0)?,
         vpf_mittagessen_gestellt_anzahl: get_int(s, "vpf_mittagessen_gestellt_anzahl", 0)?,
@@ -254,15 +277,32 @@ pub fn werbungskosten_n(args: &[Value]) -> R<WerbungskostenNEingabe> {
     let s = dict(args)?;
     let hat = |k: &str| s.contains_key(k);
     Ok(WerbungskostenNEingabe {
-        entfernung: if hat("entfernung_km_roh") { Some(entfernungspauschale(args)?) } else { None },
-        doppelte_haushaltsfuehrung: if hat("unterkunftskosten_monat") { Some(dhf(s)?) } else { None },
-        verpflegung: if hat("tage_24h") || hat("tage_an_abreise") || hat("tage_ueber_8h_eintaegig") {
+        entfernung: if hat("entfernung_km_roh") {
+            Some(entfernungspauschale(args)?)
+        } else {
+            None
+        },
+        doppelte_haushaltsfuehrung: if hat("unterkunftskosten_monat") {
+            Some(dhf(s)?)
+        } else {
+            None
+        },
+        verpflegung: if hat("tage_24h") || hat("tage_an_abreise") || hat("tage_ueber_8h_eintaegig")
+        {
             Some(verpflegung(s)?)
         } else {
             None
         },
-        uebernachtung: if hat("uebernachtung_kosten_monat") { Some(uebernachtung(s)?) } else { None },
-        am_anschaffungskosten: if hat("am_anschaffungskosten") { Some(euro(s, "am_anschaffungskosten")?) } else { None },
+        uebernachtung: if hat("uebernachtung_kosten_monat") {
+            Some(uebernachtung(s)?)
+        } else {
+            None
+        },
+        am_anschaffungskosten: if hat("am_anschaffungskosten") {
+            Some(euro(s, "am_anschaffungskosten")?)
+        } else {
+            None
+        },
     })
 }
 
@@ -295,7 +335,11 @@ pub fn p35a_haushaltsnahe(args: &[Value]) -> R<P35aHaushaltsnaheEingabe> {
     let rechnung = wert_ist(s, "hh_rechnung_unbar", true)?;
     let gefoerdert = wert_ist(s, "hh_handwerker_keine_foerderung", false)?;
     // Python liest p35a_mitveranlagung erst nach dem EU/EWR-Gate.
-    let mitveranlagung = if eu { wert_ist(s, "p35a_mitveranlagung", true)? } else { false };
+    let mitveranlagung = if eu {
+        wert_ist(s, "p35a_mitveranlagung", true)?
+    } else {
+        false
+    };
     Ok(P35aHaushaltsnaheEingabe {
         hh_minijob_aufwendungen: minijob,
         hh_dienstleistungen: dienst,
@@ -339,7 +383,10 @@ pub fn p33_zumutbar(args: &[Value]) -> R<P33ZumutbarEingabe> {
 
 pub fn p33_agb(args: &[Value]) -> R<P33AgbEingabe> {
     let s = dict(args)?;
-    Ok(P33AgbEingabe { aussergewoehnliche_belastungen: euro(s, "aussergewoehnliche_belastungen")?, zumutbar: zumutbar(s)? })
+    Ok(P33AgbEingabe {
+        aussergewoehnliche_belastungen: euro(s, "aussergewoehnliche_belastungen")?,
+        zumutbar: zumutbar(s)?,
+    })
 }
 
 pub fn p10_kist(args: &[Value]) -> R<P10KistEingabe> {
@@ -352,9 +399,15 @@ pub fn p10_kist(args: &[Value]) -> R<P10KistEingabe> {
 
 pub fn kist(args: &[Value]) -> R<KistEingabe> {
     let s = dict(args)?;
-    let konfession = s.get("konfession").map_or(Ok("keine".to_string()), py_str)?;
+    let konfession = s
+        .get("konfession")
+        .map_or(Ok("keine".to_string()), py_str)?;
     let bundesland = s.get("bundesland").map_or(Ok(String::new()), py_str)?;
-    Ok(KistEingabe { konfession, bundesland, est_mit_fb: euro(s, "est_mit_fb")? })
+    Ok(KistEingabe {
+        konfession,
+        bundesland,
+        est_mit_fb: euro(s, "est_mit_fb")?,
+    })
 }
 
 pub fn p36_abschlusszahlung(args: &[Value]) -> R<P36AbschlusszahlungEingabe> {
@@ -415,16 +468,23 @@ pub fn p10_kv_pv(args: &[Value]) -> R<P10KvPvEingabe> {
 }
 
 pub fn p10_1_7_berufsausbildung(args: &[Value]) -> R<P1017BerufsausbildungEingabe> {
-    Ok(P1017BerufsausbildungEingabe { berufsausbildung_aufwendungen: euro(dict(args)?, "berufsausbildung_aufwendungen")? })
+    Ok(P1017BerufsausbildungEingabe {
+        berufsausbildung_aufwendungen: euro(dict(args)?, "berufsausbildung_aufwendungen")?,
+    })
 }
 
 pub fn p16_4_freibetrag(args: &[Value]) -> R<P164FreibetragEingabe> {
-    Ok(P164FreibetragEingabe { rentner_veraeusserungsgewinn: euro(dict(args)?, "rentner_veraeusserungsgewinn")? })
+    Ok(P164FreibetragEingabe {
+        rentner_veraeusserungsgewinn: euro(dict(args)?, "rentner_veraeusserungsgewinn")?,
+    })
 }
 
 pub fn euer_gewinn(args: &[Value]) -> R<EuerGewinnEingabe> {
     let s = dict(args)?;
-    Ok(EuerGewinnEingabe { betriebseinnahmen: euro(s, "betriebseinnahmen")?, betriebsausgaben: euro(s, "betriebsausgaben")? })
+    Ok(EuerGewinnEingabe {
+        betriebseinnahmen: euro(s, "betriebseinnahmen")?,
+        betriebsausgaben: euro(s, "betriebsausgaben")?,
+    })
 }
 
 pub fn mitunternehmer_einkuenfte(args: &[Value]) -> R<MitunternehmerEinkuenfteEingabe> {
@@ -438,14 +498,20 @@ pub fn mitunternehmer_einkuenfte(args: &[Value]) -> R<MitunternehmerEinkuenfteEi
 }
 
 pub fn p6_2_gwg(args: &[Value]) -> R<P62GwgEingabe> {
-    Ok(P62GwgEingabe { gwg_anschaffungskosten_netto: euro(dict(args)?, "gwg_anschaffungskosten_netto")? })
+    Ok(P62GwgEingabe {
+        gwg_anschaffungskosten_netto: euro(dict(args)?, "gwg_anschaffungskosten_netto")?,
+    })
 }
 
 pub fn p7_linear_afa(args: &[Value]) -> R<P7LinearAfaEingabe> {
     let s = dict(args)?;
     let ak_cent = cent(s, "anschaffungskosten_cent")?;
     // Python liest `anschaffungskosten` nur, wenn `anschaffungskosten_cent <= 0`.
-    let ak = if ak_cent.get() > 0 { Euro::new(0) } else { euro(s, "anschaffungskosten")? };
+    let ak = if ak_cent.get() > 0 {
+        Euro::new(0)
+    } else {
+        euro(s, "anschaffungskosten")?
+    };
     Ok(P7LinearAfaEingabe {
         anschaffungskosten_cent: ak_cent,
         anschaffungskosten: ak,

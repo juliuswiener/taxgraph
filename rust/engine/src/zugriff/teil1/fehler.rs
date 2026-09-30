@@ -92,5 +92,7 @@ pub(crate) fn ok(wert: Option<i64>, wo: &'static str) -> Result<i64, EngineFehle
 
 /// Euro nach Cent, Ueberlauf als [`EngineFehler::Ueberlauf`].
 pub(crate) fn in_cent(betrag: domain::Euro) -> Result<domain::Cent, EngineFehler> {
-    betrag.to_cent().map_err(|_| EngineFehler::Ueberlauf("Euro->Cent"))
+    betrag
+        .to_cent()
+        .map_err(|_| EngineFehler::Ueberlauf("Euro->Cent"))
 }

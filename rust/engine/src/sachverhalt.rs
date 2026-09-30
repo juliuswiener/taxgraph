@@ -6,8 +6,8 @@
 use catala_sys::CatalaFehler;
 use domain::Cent;
 
-use crate::entfernungspauschale::{self, EntfernungspauschaleEingabe, EntfernungspauschaleFehler};
 use crate::arbeitszimmer::{self, ArbeitszimmerEingabe};
+use crate::entfernungspauschale::{self, EntfernungspauschaleEingabe, EntfernungspauschaleFehler};
 use crate::tarif::{
     self, FestzusetzendeEstEinzelEingabe, FestzusetzendeEstZusammenEingabe, FuenftelEingabe,
     FuenftelFehler, GesamtEingabe, Veranlagung, Vz,

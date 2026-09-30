@@ -23,8 +23,18 @@ pub struct DhfEingabe {
 /// Monat (Inland 1.000, Ausland 2.000 aus `params/<vz>`), mal Monate.
 pub(crate) fn dhf_abzug(e: &DhfEingabe, p: &Params) -> Result<i64, EngineFehler> {
     let cap = p.dhf(e.veranlagungszeitraum)?;
-    let grenze = if e.im_inland { cap.cap_monat_inland } else { cap.cap_monat_ausland };
-    ok(e.unterkunftskosten_monat.get().min(grenze.get()).checked_mul(e.monate), "dhf")
+    let grenze = if e.im_inland {
+        cap.cap_monat_inland
+    } else {
+        cap.cap_monat_ausland
+    };
+    ok(
+        e.unterkunftskosten_monat
+            .get()
+            .min(grenze.get())
+            .checked_mul(e.monate),
+        "dhf",
+    )
 }
 
 /// Verpflegungsmehraufwand (§ 9 Abs. 4a `EStG`). Tage und Mahlzeiten als Anzahl, Entgelt und
@@ -70,8 +80,14 @@ fn mul3(a: i64, b: i64, c: i64, wo: &'static str) -> Result<i64, EngineFehler> {
 /// den Abzug (Floor 0). Rechnung in Cent, am Ende abgerundet auf Euro.
 pub(crate) fn verpflegung_abzug(e: &VerpflegungEingabe, p: &Params) -> Result<i64, EngineFehler> {
     let s = p.verpflegung(e.veranlagungszeitraum)?;
-    let in_frist = |tage: i64, nach: i64| ok(tage.checked_sub(nach.max(0)), "vpf tage").map(|t| t.max(0));
-    let s24 = mul3(in_frist(e.tage_24h, e.vpf_tage_24h_nach_drei_monaten)?, s.pauschale_24h.get(), 100, "vpf s24")?;
+    let in_frist =
+        |tage: i64, nach: i64| ok(tage.checked_sub(nach.max(0)), "vpf tage").map(|t| t.max(0));
+    let s24 = mul3(
+        in_frist(e.tage_24h, e.vpf_tage_24h_nach_drei_monaten)?,
+        s.pauschale_24h.get(),
+        100,
+        "vpf s24",
+    )?;
     let sa = mul3(
         in_frist(e.tage_an_abreise, e.vpf_tage_an_abreise_nach_drei_monaten)?,
         s.pauschale_an_abreise.get(),
@@ -79,27 +95,43 @@ pub(crate) fn verpflegung_abzug(e: &VerpflegungEingabe, p: &Params) -> Result<i6
         "vpf sa",
     )?;
     let s8 = mul3(
-        in_frist(e.tage_ueber_8h_eintaegig, e.vpf_tage_ueber_8h_nach_drei_monaten)?,
+        in_frist(
+            e.tage_ueber_8h_eintaegig,
+            e.vpf_tage_ueber_8h_nach_drei_monaten,
+        )?,
         s.pauschale_ab_8h.get(),
         100,
         "vpf s8",
     )?;
-    let pauschale_gesamt = ok(s24.checked_add(sa).and_then(|x| x.checked_add(s8)), "vpf gesamt")?;
+    let pauschale_gesamt = ok(
+        s24.checked_add(sa).and_then(|x| x.checked_add(s8)),
+        "vpf gesamt",
+    )?;
 
     let p24_cent = ok(s.pauschale_24h.get().checked_mul(100), "vpf p24")?;
     let je_fruehstueck = ok(
-        p24_cent.checked_mul(s.kuerzung_fruehstueck_prozent).and_then(|x| x.checked_div_euclid(100)),
+        p24_cent
+            .checked_mul(s.kuerzung_fruehstueck_prozent)
+            .and_then(|x| x.checked_div_euclid(100)),
         "vpf kf",
     )?;
     let je_mittag_abend = ok(
-        p24_cent.checked_mul(s.kuerzung_mittag_abend_prozent).and_then(|x| x.checked_div_euclid(100)),
+        p24_cent
+            .checked_mul(s.kuerzung_mittag_abend_prozent)
+            .and_then(|x| x.checked_div_euclid(100)),
         "vpf km",
     )?;
     let k28_brutto = ok(
         e.vpf_fruehstuecke_gestellt_anzahl
             .checked_mul(je_fruehstueck)
-            .zip(e.vpf_mittagessen_gestellt_anzahl.checked_mul(je_mittag_abend))
-            .zip(e.vpf_abendessen_gestellt_anzahl.checked_mul(je_mittag_abend))
+            .zip(
+                e.vpf_mittagessen_gestellt_anzahl
+                    .checked_mul(je_mittag_abend),
+            )
+            .zip(
+                e.vpf_abendessen_gestellt_anzahl
+                    .checked_mul(je_mittag_abend),
+            )
             .and_then(|((f, m), a)| f.checked_add(m)?.checked_add(a)),
         "vpf k28",
     )?;
@@ -107,7 +139,11 @@ pub(crate) fn verpflegung_abzug(e: &VerpflegungEingabe, p: &Params) -> Result<i6
     let rest = ok(k28_brutto.checked_sub(k28), "vpf rest")?.max(0);
     let k14 = rest.min(ok(sa.checked_add(s8), "vpf s14")?);
     let kuerzung = ok(k28.checked_add(k14), "vpf k")?;
-    let nach_entgelt = ok(kuerzung.checked_sub(e.vpf_mahlzeiten_gezahltes_entgelt.get()), "vpf entgelt")?.max(0);
+    let nach_entgelt = ok(
+        kuerzung.checked_sub(e.vpf_mahlzeiten_gezahltes_entgelt.get()),
+        "vpf entgelt",
+    )?
+    .max(0);
     let ergebnis = ok(
         pauschale_gesamt
             .checked_sub(nach_entgelt)
@@ -140,7 +176,10 @@ const AUSLANDSGRENZE_AB_VZ: u16 = 2026;
 /// § 9 Abs. 1 S. 3 Nr. 5a `EStG` -- Uebernachtungskosten, EURO. Die ersten 48 Monate am selben
 /// Ort ungekappt; danach auf die Grenze nach Nr. 5 gekappt (S. 4). Ein Zeitraum ueber die
 /// Schwelle wird monatsweise geteilt (BMF v. 25.11.2020, Rz. 126).
-pub(crate) fn uebernachtung_abzug(e: &UebernachtungEingabe, p: &Params) -> Result<i64, EngineFehler> {
+pub(crate) fn uebernachtung_abzug(
+    e: &UebernachtungEingabe,
+    p: &Params,
+) -> Result<i64, EngineFehler> {
     let kosten = e.uebernachtung_kosten_monat.get();
     let bis_schwelle = ok(48i64.checked_sub(e.uebernachtung_monate_bisher), "uen 48")?;
     let vor_48 = e.uebernachtung_monate.min(bis_schwelle).max(0);

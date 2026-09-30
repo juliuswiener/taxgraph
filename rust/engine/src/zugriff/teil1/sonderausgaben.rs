@@ -80,7 +80,12 @@ pub fn p10_kist(e: &P10KistEingabe) -> Result<Euro, EngineFehler> {
 /// assert_eq!(p10_4b_erstattungsueberhang(&e).unwrap(), Euro::new(200));
 /// ```
 pub fn p10_4b_erstattungsueberhang(e: &P10KistEingabe) -> Result<Euro, EngineFehler> {
-    let d = ok(e.erstattete_kirchensteuer.get().checked_sub(e.gezahlte_kirchensteuer.get()), "p10_4b")?;
+    let d = ok(
+        e.erstattete_kirchensteuer
+            .get()
+            .checked_sub(e.gezahlte_kirchensteuer.get()),
+        "p10_4b",
+    )?;
     Ok(Euro::new(d.max(0)))
 }
 
@@ -139,6 +144,8 @@ pub struct P1017BerufsausbildungEingabe {
 /// assert_eq!(p10_1_7_berufsausbildung(&e).unwrap(), Euro::new(6000));
 /// ```
 pub fn p10_1_7_berufsausbildung(e: &P1017BerufsausbildungEingabe) -> Result<Euro, EngineFehler> {
-    let c = berufsausbildung::berechnen(BerufsausbildungEingabe { aufwendungen: in_cent(e.berufsausbildung_aufwendungen)? })?;
+    let c = berufsausbildung::berechnen(BerufsausbildungEingabe {
+        aufwendungen: in_cent(e.berufsausbildung_aufwendungen)?,
+    })?;
     Ok(c.floor_euro())
 }

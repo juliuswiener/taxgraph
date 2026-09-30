@@ -14,7 +14,11 @@ pub enum RegistryFehler {
     #[error(transparent)]
     Bindung(#[from] BindungFehler),
     #[error("{feld_id}: doppelt gebunden in {erste} und {zweite}")]
-    DoppelteFeldId { feld_id: String, erste: PathBuf, zweite: PathBuf },
+    DoppelteFeldId {
+        feld_id: String,
+        erste: PathBuf,
+        zweite: PathBuf,
+    },
     #[error("konnte Verzeichnis {pfad} nicht lesen: {nachricht}")]
     Verzeichnis { pfad: PathBuf, nachricht: String },
 }
@@ -39,8 +43,11 @@ pub fn lade_registry(verzeichnis: &Path) -> Result<Registry, RegistryFehler> {
         })?
         .filter_map(|eintrag| eintrag.ok().map(|e| e.path()))
         .filter(|p| {
-            p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.starts_with("bindung_"))
-                && p.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("yaml"))
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.starts_with("bindung_"))
+                && p.extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("yaml"))
         })
         .collect();
     pfade.sort();

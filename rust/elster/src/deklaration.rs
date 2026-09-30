@@ -20,9 +20,10 @@ use crate::instanz::parse_instanz;
 use crate::kz_format::{cent_nach_kz, kz_wert, KzBetrag, NULL_UNZULAESSIG_KZ};
 use crate::py::{self, PyFehler};
 use crate::tabellen::{
-    suche, PflichtBedingung, Verzweigung, DOKUMENTIERT_AGGREGAT, KAP_FELDER_A, KAP_FELDER_B, KAP_NULL_GRUND,
-    KONSTANTE_KZ, MULTIPLIKATION, NEGATION, P23_ART_FELD, P23_BETRAGSFELDER, P23_GEWINN_KZ, PARTNER_INSTANZ,
-    PARTNER_VERZWEIGUNG, PFLICHTFELDER, VERZWEIGUNG, WERTEKODIERUNG,
+    suche, PflichtBedingung, Verzweigung, DOKUMENTIERT_AGGREGAT, KAP_FELDER_A, KAP_FELDER_B,
+    KAP_NULL_GRUND, KONSTANTE_KZ, MULTIPLIKATION, NEGATION, P23_ART_FELD, P23_BETRAGSFELDER,
+    P23_GEWINN_KZ, PARTNER_INSTANZ, PARTNER_VERZWEIGUNG, PFLICHTFELDER, VERZWEIGUNG,
+    WERTEKODIERUNG,
 };
 
 /// Die materialisierte Felder-Ebene eines Snapshots (`feld_id -> {wert, zustand, herkunft}`).
@@ -43,7 +44,11 @@ pub struct Eintrag {
 
 impl Eintrag {
     fn neu(feld_id: impl Into<String>, grund: impl Into<String>) -> Self {
-        Self { feld_id: feld_id.into(), grund: grund.into(), hinweis: None }
+        Self {
+            feld_id: feld_id.into(),
+            grund: grund.into(),
+            hinweis: None,
+        }
     }
 }
 
@@ -140,7 +145,10 @@ impl Deklaration {
     /// ```
     #[must_use]
     pub fn instanzen_der_gruppe(&self, gruppe: &str) -> &[AnlageInstanz] {
-        self.anlage_instanzen.iter().find(|(g, _)| g == gruppe).map_or(&[], |(_, v)| v.as_slice())
+        self.anlage_instanzen
+            .iter()
+            .find(|(g, _)| g == gruppe)
+            .map_or(&[], |(_, v)| v.as_slice())
     }
 }
 
@@ -168,7 +176,10 @@ impl Serialize for Deklaration {
         m.serialize_entry("vollstaendig", &self.eingaben_konsistent())?;
         m.serialize_entry("eingaben_konsistent", &self.eingaben_konsistent())?;
         m.serialize_entry("pflichtfelder_luecken", &self.pflichtfelder_luecken)?;
-        m.serialize_entry("pflichtfelder_vollstaendig", &self.pflichtfelder_luecken.is_empty())?;
+        m.serialize_entry(
+            "pflichtfelder_vollstaendig",
+            &self.pflichtfelder_luecken.is_empty(),
+        )?;
         m.end()
     }
 }
@@ -235,7 +246,10 @@ struct Bau<'a> {
 type Ergebnis<T> = Result<T, DeklarationsFehler>;
 
 fn wert_fehler(feld_id: &str) -> impl Fn(PyFehler) -> DeklarationsFehler + '_ {
-    move |fehler| DeklarationsFehler::Wert { feld_id: feld_id.to_owned(), fehler }
+    move |fehler| DeklarationsFehler::Wert {
+        feld_id: feld_id.to_owned(),
+        fehler,
+    }
 }
 
 /// Nicht-leerer `elster_kz` (Python: `b.get("elster_kz")` ist truthy).
@@ -256,7 +270,10 @@ fn zustand_text(z: Zustand) -> &'static str {
 
 /// Python `dict.get(wert)` auf einer Tabelle mit Text-Schluesseln: Listen/Objekte sind nicht
 /// hashbar (`TypeError`), jeder andere Nicht-Text trifft keinen Schluessel.
-fn nachschlagen<'t>(tabelle: &'t [(&'t str, &'t str)], wert: &Value) -> Result<Option<&'t str>, PyFehler> {
+fn nachschlagen<'t>(
+    tabelle: &'t [(&'t str, &'t str)],
+    wert: &Value,
+) -> Result<Option<&'t str>, PyFehler> {
     match wert {
         Value::String(s) => Ok(suche(tabelle, s)),
         Value::Array(_) | Value::Object(_) => Err(PyFehler::typ("unhashable type")),
@@ -272,13 +289,17 @@ fn aggregat_beitrag(wert: &Value, ziel: &str, typ: Feldtyp) -> Result<i64, PyFeh
     }
     match cent_nach_kz(Cent::new(n), ziel) {
         KzBetrag::Euro(e) => Ok(e.get()),
-        KzBetrag::Komma(_) => Err(PyFehler::typ("unsupported operand type(s) for +: 'int' and 'str'")),
+        KzBetrag::Komma(_) => Err(PyFehler::typ(
+            "unsupported operand type(s) for +: 'int' and 'str'",
+        )),
     }
 }
 
 impl Bau<'_> {
     fn instanz(&mut self, gruppe: &str, idx: u64) -> &mut InstBau {
-        self.instanzen.eintrag(gruppe.to_owned(), Geordnet::default).eintrag(idx, InstBau::default)
+        self.instanzen
+            .eintrag(gruppe.to_owned(), Geordnet::default)
+            .eintrag(idx, InstBau::default)
     }
 
     fn nicht(&mut self, feld_id: &str, grund: impl Into<String>) {
@@ -290,38 +311,59 @@ impl Bau<'_> {
     }
 
     /// `_deklariere_instanz` (`est_mapping.py:559-601`).
-    fn instanz_feld(&mut self, basis: &str, idx: u64, feld_id: &str, sfeld: &SnapshotFeld, b: &Bindung) -> Ergebnis<()> {
+    fn instanz_feld(
+        &mut self,
+        basis: &str,
+        idx: u64,
+        feld_id: &str,
+        sfeld: &SnapshotFeld,
+        b: &Bindung,
+    ) -> Ergebnis<()> {
         let fehler = wert_fehler(feld_id);
         if sfeld.zustand != Zustand::Bestaetigt {
-            let grund =
-                format!("Instanz-Wert {} — Pflicht-Bestätigung (Zwei-Signal) fehlt", zustand_text(sfeld.zustand));
+            let grund = format!(
+                "Instanz-Wert {} — Pflicht-Bestätigung (Zwei-Signal) fehlt",
+                zustand_text(sfeld.zustand)
+            );
             self.offen(feld_id, grund);
             return Ok(());
         }
         let gruppe = gruppe_von(b).unwrap_or_default();
         let wert = &sfeld.wert;
         self.instanz(gruppe, idx);
-        if let Some((ziel, _)) = DOKUMENTIERT_AGGREGAT.iter().find(|(_, q)| q.contains(&basis)) {
+        if let Some((ziel, _)) = DOKUMENTIERT_AGGREGAT
+            .iter()
+            .find(|(_, q)| q.contains(&basis))
+        {
             let beitrag = aggregat_beitrag(wert, ziel, b.typ).map_err(&fehler)?;
             let agg = self
                 .instanz(gruppe, idx)
                 .dokumentiert
                 .entry((*ziel).to_owned())
-                .or_insert_with(|| Aggregat { summe: 0, quell_felder: Vec::new() });
-            agg.summe =
-                agg.summe.checked_add(beitrag).ok_or_else(|| fehler(PyFehler::ueberlauf("Summe jenseits i64")))?;
+                .or_insert_with(|| Aggregat {
+                    summe: 0,
+                    quell_felder: Vec::new(),
+                });
+            agg.summe = agg
+                .summe
+                .checked_add(beitrag)
+                .ok_or_else(|| fehler(PyFehler::ueberlauf("Summe jenseits i64")))?;
             agg.quell_felder.push(feld_id.to_owned());
         } else if let Some(cfg) = VERZWEIGUNG.iter().find(|v| v.feld == basis) {
             let art_feld_inst = format!("{}__{idx}", cfg.art_feld);
             let art = self.snapshot.get(&art_feld_inst);
             match art.filter(|a| a.zustand == Zustand::Bestaetigt) {
-                None => self.offen(feld_id, format!("Instanz-Art ({art_feld_inst}) unbestätigt — Kz-Zweig offen")),
+                None => self.offen(
+                    feld_id,
+                    format!("Instanz-Art ({art_feld_inst}) unbestätigt — Kz-Zweig offen"),
+                ),
                 Some(art) => {
                     if let Some(kz) = nachschlagen(cfg.kz, &art.wert).map_err(&fehler)? {
                         let v = kz_wert(wert, kz, Some(b.typ)).map_err(&fehler)?;
                         self.instanz(gruppe, idx).felder.insert(kz.to_owned(), v);
                     } else {
-                        let grund = format!("Instanz-Art '{}' ohne Kz-Zweig", py::str_von(&art.wert));
+                        let grund =
+                            format!("Instanz-Art '{}' ohne Kz-Zweig", py::str_von(&art.wert));
                         self.nicht(feld_id, grund);
                     }
                 }
@@ -333,7 +375,10 @@ impl Bau<'_> {
             let v = kz_wert(wert, kz, Some(b.typ)).map_err(&fehler)?;
             self.instanz(gruppe, idx).felder.insert(kz.to_owned(), v);
         } else {
-            self.nicht(feld_id, format!("Instanz-Basis '{basis}' ohne elster_kz/Aggregat-Ziel"));
+            self.nicht(
+                feld_id,
+                format!("Instanz-Basis '{basis}' ohne elster_kz/Aggregat-Ziel"),
+            );
         }
         Ok(())
     }
@@ -348,10 +393,16 @@ impl Bau<'_> {
         partner: bool,
     ) -> Ergebnis<()> {
         let fehler = wert_fehler(feld_id);
-        let art = self.snapshot.get(cfg.art_feld).filter(|a| a.zustand == Zustand::Bestaetigt);
+        let art = self
+            .snapshot
+            .get(cfg.art_feld)
+            .filter(|a| a.zustand == Zustand::Bestaetigt);
         let Some(art) = art else {
             let grund = if partner {
-                format!("Partner-Renten-Art ({}) unbestätigt — Kz-Zweig offen", cfg.art_feld)
+                format!(
+                    "Partner-Renten-Art ({}) unbestätigt — Kz-Zweig offen",
+                    cfg.art_feld
+                )
             } else {
                 format!("Art ({}) unbestätigt — Kz-Zweig offen", cfg.art_feld)
             };
@@ -362,11 +413,18 @@ impl Bau<'_> {
         match nachschlagen(cfg.kz, &art.wert).map_err(&fehler)? {
             Some(kz) => {
                 let v = kz_wert(wert, kz, Some(b.typ)).map_err(&fehler)?;
-                let ziel = if partner { &mut self.person_b } else { &mut self.deklaration };
+                let ziel = if partner {
+                    &mut self.person_b
+                } else {
+                    &mut self.deklaration
+                };
                 ziel.insert(kz.to_owned(), v);
             }
             None if partner => {
-                self.nicht(feld_id, format!("Partner-Renten-Art '{art_text}' ohne Kz-Zweig"));
+                self.nicht(
+                    feld_id,
+                    format!("Partner-Renten-Art '{art_text}' ohne Kz-Zweig"),
+                );
                 self.offen(
                     feld_id,
                     format!(
@@ -378,7 +436,10 @@ impl Bau<'_> {
                 );
             }
             None => {
-                self.nicht(feld_id, format!("Art '{art_text}' ({}) ohne Kz-Zweig", cfg.art_feld));
+                self.nicht(
+                    feld_id,
+                    format!("Art '{art_text}' ({}) ohne Kz-Zweig", cfg.art_feld),
+                );
                 self.offen(
                     feld_id,
                     format!(
@@ -394,7 +455,11 @@ impl Bau<'_> {
 
     /// Klasse j — IBAN: Format, Pruefziffer, Laender-Weiche.
     fn iban(&mut self, feld_id: &str, wert: &Value) {
-        let norm: String = py::str_von(wert).chars().filter(|c| !py::ist_leerraum(*c)).collect::<String>().to_uppercase();
+        let norm: String = py::str_von(wert)
+            .chars()
+            .filter(|c| !py::ist_leerraum(*c))
+            .collect::<String>()
+            .to_uppercase();
         if !iban_muster(&norm) {
             self.offen(
                 feld_id,
@@ -403,9 +468,16 @@ impl Bau<'_> {
                  nicht geloggt.",
             );
         } else if !iban_pruefziffer_gueltig(&norm) {
-            self.offen(feld_id, "IBAN-Pruefziffer (ISO 13616, Modulo 97) ungueltig -- Wert nicht geloggt.");
+            self.offen(
+                feld_id,
+                "IBAN-Pruefziffer (ISO 13616, Modulo 97) ungueltig -- Wert nicht geloggt.",
+            );
         } else {
-            let kz = if norm.starts_with("DE") { "E0102102" } else { "E0102603" };
+            let kz = if norm.starts_with("DE") {
+                "E0102102"
+            } else {
+                "E0102603"
+            };
             self.deklaration.insert(kz.to_owned(), Value::String(norm));
         }
     }
@@ -414,13 +486,17 @@ impl Bau<'_> {
     fn feld(&mut self, feld_id: &str, sfeld: &SnapshotFeld, b: &Bindung) -> Ergebnis<()> {
         let fehler = wert_fehler(feld_id);
         if sfeld.zustand != Zustand::Bestaetigt {
-            let grund = format!("Wert {} — Pflicht-Bestätigung (Zwei-Signal) fehlt", zustand_text(sfeld.zustand));
+            let grund = format!(
+                "Wert {} — Pflicht-Bestätigung (Zwei-Signal) fehlt",
+                zustand_text(sfeld.zustand)
+            );
             self.offen(feld_id, grund);
             return Ok(());
         }
         let wert = &sfeld.wert;
         if let Some(kz) = suche(NEGATION, feld_id) {
-            self.deklaration.insert(kz.to_owned(), Value::Bool(!py::truthy(wert)));
+            self.deklaration
+                .insert(kz.to_owned(), Value::Bool(!py::truthy(wert)));
         } else if MULTIPLIKATION.contains(&feld_id) {
             let n = py::int(wert).map_err(&fehler)?;
             self.kind_anlagen = (1..=n.max(0)).map(|index| KindAnlage { index }).collect();
@@ -430,7 +506,10 @@ impl Bau<'_> {
                 .filter(|g| !g.is_empty())
                 .unwrap_or("Multiplikation -> kind_anlagen (Kinderzahl implizit)");
             self.nicht(feld_id, grund);
-        } else if let Some((ziel, _)) = DOKUMENTIERT_AGGREGAT.iter().find(|(_, q)| q.contains(&feld_id)) {
+        } else if let Some((ziel, _)) = DOKUMENTIERT_AGGREGAT
+            .iter()
+            .find(|(_, q)| q.contains(&feld_id))
+        {
             let beitrag = aggregat_beitrag(wert, ziel, b.typ).map_err(&fehler)?;
             if let Some((_, akku)) = self.agg_akku.iter_mut().find(|(z, _)| z == ziel) {
                 akku.push((feld_id.to_owned(), beitrag));
@@ -445,18 +524,26 @@ impl Bau<'_> {
         } else if let Some(cfg) = WERTEKODIERUNG.iter().find(|w| w.feld == feld_id) {
             match nachschlagen(cfg.code, wert).map_err(&fehler)? {
                 Some(code) => {
-                    self.deklaration.insert(cfg.kz.to_owned(), Value::String(code.to_owned()));
+                    self.deklaration
+                        .insert(cfg.kz.to_owned(), Value::String(code.to_owned()));
                 }
                 None => self.nicht_deklariert.push(Eintrag {
                     feld_id: feld_id.to_owned(),
-                    grund: format!("Wert '{}' ohne XSD-Code-Zuordnung ({})", py::str_von(wert), cfg.kz),
+                    grund: format!(
+                        "Wert '{}' ohne XSD-Code-Zuordnung ({})",
+                        py::str_von(wert),
+                        cfg.kz
+                    ),
                     hinweis: Some(cfg.hinweis_unbekannt.to_owned()),
                 }),
             }
         } else if feld_id == "stammdaten_iban" {
             self.iban(feld_id, wert);
-        } else if let Some(kz) = kz_von(b).filter(|k| NULL_UNZULAESSIG_KZ.contains(k) && py::gleich_null(wert)) {
-            let grund = format!("Wert 0: {kz} bleibt leer (XSD-Typ GanzzahlPos, eine 0 lehnt ERiC ab)");
+        } else if let Some(kz) =
+            kz_von(b).filter(|k| NULL_UNZULAESSIG_KZ.contains(k) && py::gleich_null(wert))
+        {
+            let grund =
+                format!("Wert 0: {kz} bleibt leer (XSD-Typ GanzzahlPos, eine 0 lehnt ERiC ab)");
             self.nicht(feld_id, grund);
         } else if let Some(kz) = kz_von(b) {
             let v = kz_wert(wert, kz, Some(b.typ)).map_err(&fehler)?;
@@ -465,7 +552,10 @@ impl Bau<'_> {
             let n = py::int(wert).map_err(&fehler)?;
             self.instanz("p23_veraeusserung", 1).rohdaten.insert(p23, n);
         } else {
-            let grund = b.elster_kz_grund.clone().unwrap_or_else(|| "kein elster_kz".to_owned());
+            let grund = b
+                .elster_kz_grund
+                .clone()
+                .unwrap_or_else(|| "kein elster_kz".to_owned());
             self.nicht(feld_id, grund);
         }
         Ok(())
@@ -478,7 +568,9 @@ fn iban_muster(s: &str) -> bool {
     (5..=34).contains(&b.len())
         && b.iter().take(2).all(u8::is_ascii_uppercase)
         && b.iter().skip(2).take(2).all(u8::is_ascii_digit)
-        && b.iter().skip(4).all(|c| c.is_ascii_digit() || c.is_ascii_uppercase())
+        && b.iter()
+            .skip(4)
+            .all(|c| c.is_ascii_digit() || c.is_ascii_uppercase())
 }
 
 /// ISO 13616 Pruefziffer (Modulo 97): erste vier Zeichen ans Ende, Buchstaben A=10..Z=35, Rest 1.
@@ -486,7 +578,9 @@ fn iban_pruefziffer_gueltig(iban: &str) -> bool {
     let (kopf, rumpf) = iban.split_at(4.min(iban.len()));
     let mut rest: u32 = 0;
     for c in rumpf.chars().chain(kopf.chars()) {
-        let Some(d) = c.to_digit(36) else { return false };
+        let Some(d) = c.to_digit(36) else {
+            return false;
+        };
         for ziffer in d.to_string().chars().filter_map(|z| z.to_digit(10)) {
             rest = (rest * 10 + ziffer) % 97;
         }
@@ -499,7 +593,9 @@ fn iban_pruefziffer_gueltig(iban: &str) -> bool {
 fn pflichtfelder_luecken(snapshot: &Felder) -> Vec<Eintrag> {
     let mut luecken = Vec::new();
     for (bedingung, version, felder) in PFLICHTFELDER {
-        if matches!(bedingung, PflichtBedingung::AlleOderKeins) && !felder.iter().any(|f| snapshot.contains_key(*f)) {
+        if matches!(bedingung, PflichtBedingung::AlleOderKeins)
+            && !felder.iter().any(|f| snapshot.contains_key(*f))
+        {
             continue;
         }
         for f in felder.iter().filter(|f| !snapshot.contains_key(**f)) {
@@ -518,8 +614,12 @@ fn pflichtfelder_luecken(snapshot: &Felder) -> Vec<Eintrag> {
 /// `_kap_alle_null`: jedes Feld fehlt oder ist bestaetigt 0.
 fn kap_alle_null(snapshot: &Felder, felder: &[&str]) -> Ergebnis<bool> {
     for f in felder {
-        let Some(sfeld) = snapshot.get(*f) else { continue };
-        if sfeld.zustand != Zustand::Bestaetigt || py::int(&sfeld.wert).map_err(wert_fehler(f))? != 0 {
+        let Some(sfeld) = snapshot.get(*f) else {
+            continue;
+        };
+        if sfeld.zustand != Zustand::Bestaetigt
+            || py::int(&sfeld.wert).map_err(wert_fehler(f))? != 0
+        {
             return Ok(false);
         }
     }
@@ -543,20 +643,30 @@ fn kap_alle_null(snapshot: &Felder, felder: &[&str]) -> Ergebnis<bool> {
 /// assert!(d.eingaben_konsistent());
 /// assert_eq!(d.deklaration.get("E0100001"), Some(&serde_json::json!(true)));
 /// ```
-pub fn deklariere(snapshot: &Felder, bindung: &BindungIndex<'_>, snapshot_id: Option<&str>) -> Ergebnis<Deklaration> {
+pub fn deklariere(
+    snapshot: &Felder,
+    bindung: &BindungIndex<'_>,
+    snapshot_id: Option<&str>,
+) -> Ergebnis<Deklaration> {
     if snapshot.contains_key("felder") || snapshot.contains_key("snapshot_id") {
         return Err(DeklarationsFehler::SnapshotObjekt);
     }
     let mut bau = Bau {
         snapshot,
         bindung,
-        deklaration: KONSTANTE_KZ.iter().map(|k| ((*k).to_owned(), Value::Bool(true))).collect(),
+        deklaration: KONSTANTE_KZ
+            .iter()
+            .map(|k| ((*k).to_owned(), Value::Bool(true)))
+            .collect(),
         kind_anlagen: Vec::new(),
         person_b: BTreeMap::new(),
         instanzen: Geordnet::default(),
         nicht_deklariert: Vec::new(),
         unvollstaendig: Vec::new(),
-        agg_akku: DOKUMENTIERT_AGGREGAT.iter().map(|(z, _)| (*z, Vec::new())).collect(),
+        agg_akku: DOKUMENTIERT_AGGREGAT
+            .iter()
+            .map(|(z, _)| (*z, Vec::new()))
+            .collect(),
     };
     let mut getroffen = 0_usize;
     for (feld_id, sfeld) in snapshot {
@@ -602,7 +712,8 @@ impl Bau<'_> {
     /// Bankverbindung: Exklusivitaet IBAN ↔ „keine Bankverbindung" (gemessen rc=610001002),
     /// Kontoinhaber E0101601 automatisch bei bestaetigter IBAN.
     fn bankverbindung(&mut self) {
-        let iban = self.deklaration.contains_key("E0102102") || self.deklaration.contains_key("E0102603");
+        let iban =
+            self.deklaration.contains_key("E0102102") || self.deklaration.contains_key("E0102603");
         let keine = self.deklaration.get("E0102002") == Some(&Value::Bool(true));
         if iban && keine {
             self.offen(
@@ -611,24 +722,31 @@ impl Bau<'_> {
                  (rc=610001002). Genau eines von beidem darf gelten.",
             );
         } else if iban {
-            self.deklaration.insert("E0101601".to_owned(), Value::Bool(true));
+            self.deklaration
+                .insert("E0101601".to_owned(), Value::Bool(true));
         }
     }
 
     /// Option A: KAP-Nullen beider Personen atomar unterdruecken.
     fn kap_nulldeklaration(&mut self) -> Ergebnis<()> {
-        if !(kap_alle_null(self.snapshot, KAP_FELDER_A)? && kap_alle_null(self.snapshot, KAP_FELDER_B)?) {
+        if !(kap_alle_null(self.snapshot, KAP_FELDER_A)?
+            && kap_alle_null(self.snapshot, KAP_FELDER_B)?)
+        {
             return Ok(());
         }
         for f in KAP_FELDER_A {
-            let Some(kz) = self.bindung.get(*f).and_then(|b| kz_von(b)) else { continue };
+            let Some(kz) = self.bindung.get(*f).and_then(|b| kz_von(b)) else {
+                continue;
+            };
             // Python: `deklaration.pop(kz, None) is not None` — ein gespeichertes `None` zaehlt nicht.
             if self.deklaration.remove(kz).is_some_and(|v| !v.is_null()) {
                 self.nicht(f, KAP_NULL_GRUND);
             }
         }
         for f in KAP_FELDER_B {
-            let Some(kz) = suche(PARTNER_INSTANZ, f) else { continue };
+            let Some(kz) = suche(PARTNER_INSTANZ, f) else {
+                continue;
+            };
             if self.person_b.remove(kz).is_some_and(|v| !v.is_null()) {
                 self.nicht(f, KAP_NULL_GRUND);
             }
@@ -643,7 +761,10 @@ impl Bau<'_> {
             .snapshot
             .get("veranlagung")
             .is_some_and(|v| v.zustand == Zustand::Bestaetigt && v.wert == "zusammen");
-        let antrag_kz = self.bindung.get("kap_antrag_guenstigerpruefung").and_then(|b| kz_von(b));
+        let antrag_kz = self
+            .bindung
+            .get("kap_antrag_guenstigerpruefung")
+            .and_then(|b| kz_von(b));
         if let (true, Some(kz)) = (zusammen, antrag_kz) {
             if let Some(w) = self.deklaration.get(kz).cloned() {
                 self.person_b.insert(kz.to_owned(), w);
@@ -660,7 +781,13 @@ impl Bau<'_> {
             let mut quell: Vec<String> = akku.iter().map(|(f, _)| f.clone()).collect();
             quell.sort();
             let summe = akku.iter().map(|(_, w)| *w).fold(0_i64, i64::wrapping_add);
-            out.insert((*ziel).to_owned(), Aggregat { summe, quell_felder: quell });
+            out.insert(
+                (*ziel).to_owned(),
+                Aggregat {
+                    summe,
+                    quell_felder: quell,
+                },
+            );
         }
         out
     }
@@ -668,7 +795,9 @@ impl Bau<'_> {
     /// § 23 Gewinn je Instanz = Preis − AK/HK − WK, dann an die Kz des Veraeusserungstyps.
     fn p23_gewinn(&mut self) -> Ergebnis<()> {
         const GRUPPE: &str = "p23_veraeusserung";
-        let Some(gruppe) = self.instanzen.get(&GRUPPE.to_owned()) else { return Ok(()) };
+        let Some(gruppe) = self.instanzen.get(&GRUPPE.to_owned()) else {
+            return Ok(());
+        };
         let gewinne: Vec<(u64, i64)> = gruppe
             .schluessel()
             .iter()
@@ -685,13 +814,23 @@ impl Bau<'_> {
             if gewinn == 0 {
                 continue;
             }
-            let art_feld = if idx == 1 { P23_ART_FELD.to_owned() } else { format!("{P23_ART_FELD}__{idx}") };
+            let art_feld = if idx == 1 {
+                P23_ART_FELD.to_owned()
+            } else {
+                format!("{P23_ART_FELD}__{idx}")
+            };
             let feld_id = format!("p23_veraeusserung__{idx}");
-            let Some(art) = self.snapshot.get(&art_feld).filter(|a| a.zustand == Zustand::Bestaetigt) else {
+            let Some(art) = self
+                .snapshot
+                .get(&art_feld)
+                .filter(|a| a.zustand == Zustand::Bestaetigt)
+            else {
                 self.offen(&feld_id, format!("{art_feld} unbestätigt — Kz-Zweig offen"));
                 continue;
             };
-            if let Some(kz) = nachschlagen(P23_GEWINN_KZ, &art.wert).map_err(wert_fehler(&feld_id))? {
+            if let Some(kz) =
+                nachschlagen(P23_GEWINN_KZ, &art.wert).map_err(wert_fehler(&feld_id))?
+            {
                 let v = cent_nach_kz(Cent::new(gewinn), kz).als_json();
                 self.instanz(GRUPPE, idx).felder.insert(kz.to_owned(), v);
             } else {

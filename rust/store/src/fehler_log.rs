@@ -44,7 +44,10 @@ mod stufe_tests {
     #[test]
     fn wire_form_ist_python_logging_getlevelname() {
         assert_eq!(serde_json::to_string(&Stufe::Fehler).unwrap(), "\"ERROR\"");
-        assert_eq!(serde_json::to_string(&Stufe::Warnung).unwrap(), "\"WARNING\"");
+        assert_eq!(
+            serde_json::to_string(&Stufe::Warnung).unwrap(),
+            "\"WARNING\""
+        );
         assert_eq!(serde_json::to_string(&Stufe::Debug).unwrap(), "\"DEBUG\"");
     }
 }
@@ -90,7 +93,9 @@ impl FallId {
     pub fn pruefe(fall_id: &str, pii_muster: &[regex::Regex]) -> Self {
         let form_ok = !fall_id.is_empty()
             && fall_id.len() <= 64
-            && fall_id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-');
+            && fall_id
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-');
         if !form_ok {
             return Self("<gesperrt:form>".to_string());
         }
@@ -98,7 +103,8 @@ impl FallId {
             return Self(GESPERRT_KEIN_FILTER.to_string());
         }
         let ist_pii = pii_muster.iter().any(|re| {
-            re.find(fall_id).is_some_and(|m| m.start() == 0 && m.end() == fall_id.len())
+            re.find(fall_id)
+                .is_some_and(|m| m.start() == 0 && m.end() == fall_id.len())
         });
         if ist_pii {
             return Self("<gesperrt:pii>".to_string());
@@ -195,8 +201,14 @@ mod tests {
     fn form_pruefung_sperrt_leerzeichen_und_ueberlaenge() {
         assert_eq!(FallId::pruefe("", &[]).als_str(), "<gesperrt:form>");
         assert_eq!(FallId::pruefe("a b", &[]).als_str(), "<gesperrt:form>");
-        assert_eq!(FallId::pruefe(&"a".repeat(65), &[]).als_str(), "<gesperrt:form>");
-        assert_eq!(FallId::pruefe("demo-1758901234567", &[]).als_str(), "<gesperrt:pii_filter_fehlt>");
+        assert_eq!(
+            FallId::pruefe(&"a".repeat(65), &[]).als_str(),
+            "<gesperrt:form>"
+        );
+        assert_eq!(
+            FallId::pruefe("demo-1758901234567", &[]).als_str(),
+            "<gesperrt:pii_filter_fehlt>"
+        );
     }
 
     #[test]
@@ -208,12 +220,16 @@ mod tests {
         );
         // Teiltreffer (Praefix+Ziffernfolge) ist WEDER Vollstaendig-Ziffer NOCH gesperrt --
         // dieselbe dokumentierte Restluecke wie in Python (Moduldoku Original: `kunde12345...`).
-        assert_eq!(FallId::pruefe("demo-12345678901234567890", &[iban_artig]).als_str(), "demo-12345678901234567890");
+        assert_eq!(
+            FallId::pruefe("demo-12345678901234567890", &[iban_artig]).als_str(),
+            "demo-12345678901234567890"
+        );
     }
 
     #[test]
     fn protokolliere_und_lies_roundtrip() {
-        let dir = std::env::temp_dir().join(format!("taxgraph-store-test-fehler-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("taxgraph-store-test-fehler-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let pfad = dir.join("fehler.log");
         let _ = std::fs::remove_file(&pfad);
@@ -223,7 +239,10 @@ mod tests {
             &Testfehler,
             Stufe::Fehler,
             Some(FallId::pruefe("demo-1", &[])),
-            Meta { anzahl: Some(3), ..Meta::default() },
+            Meta {
+                anzahl: Some(3),
+                ..Meta::default()
+            },
         )
         .unwrap();
         let eintraege = super::lies(&pfad).unwrap();

@@ -17,14 +17,23 @@ pub(crate) const MULTIPLIKATION: &[&str] = &["fam_anzahl_kinder"];
 /// Klasse a — dokumentierte Aggregation (Summe dokumentiert, NICHT deklariert).
 pub(crate) const DOKUMENTIERT_AGGREGAT: &[(&str, &[&str])] = &[(
     "E0703838",
-    &["vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand", "vv_sonstige_wk"],
+    &[
+        "vv_gebaeude_afa",
+        "vv_schuldzinsen",
+        "vv_erhaltungsaufwand",
+        "vv_sonstige_wk",
+    ],
 )];
 
 /// § 23 Rohdaten-Felder je Instanz; der Gewinn wird in der Deklaration berechnet.
-pub(crate) const P23_BETRAGSFELDER: &[&str] =
-    &["p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten", "p23_werbungskosten"];
+pub(crate) const P23_BETRAGSFELDER: &[&str] = &[
+    "p23_veraeusserungspreis",
+    "p23_anschaffung_herstellungskosten",
+    "p23_werbungskosten",
+];
 pub(crate) const P23_ART_FELD: &str = "p23_veraeusserungs_typ";
-pub(crate) const P23_GEWINN_KZ: &[(&str, &str)] = &[("grundstueck", "E0306801"), ("anderes_wg", "E0307701")];
+pub(crate) const P23_GEWINN_KZ: &[(&str, &str)] =
+    &[("grundstueck", "E0306801"), ("anderes_wg", "E0307701")];
 
 /// Ein Wert-Feld, dessen Kz vom Wert eines Art-Felds abhaengt (Klasse f / g×f).
 pub(crate) struct Verzweigung {
@@ -47,21 +56,39 @@ const RENTE_BEGINN: &[(&str, &str)] = &[
     ("private_leibrente", "E1801701"),
     ("sonstige_leibrente", "E1803202"),
 ];
-const VERAEUSSERUNG: &[(&str, &str)] =
-    &[("gewerbe", "E0801301"), ("selbstaendig", "E0804501"), ("land_forst", "E0901201")];
+const VERAEUSSERUNG: &[(&str, &str)] = &[
+    ("gewerbe", "E0801301"),
+    ("selbstaendig", "E0804501"),
+    ("land_forst", "E0901201"),
+];
 /// §§ 13-18: `land_forst` bewusst ohne Kz (Anlage L hat vier Kandidaten, Auswahl haengt an zwei
 /// fehlenden Feldern) → fail-closed.
 const GEWINN: &[(&str, &str)] = &[("gewerbe", "E0800302"), ("selbstaendig", "E0803202")];
-const GEWINN_BEZEICHNUNG: &[(&str, &str)] = &[("gewerbe", "E0800301"), ("selbstaendig", "E0803101")];
-const BASIS_KV: &[(&str, &str)] =
-    &[("gesetzlich_an", "E2001203"), ("gesetzlich_freiwillig", "E2001805"), ("privat", "E2003104")];
-const BASIS_PV: &[(&str, &str)] =
-    &[("gesetzlich_an", "E2001505"), ("gesetzlich_freiwillig", "E2002105"), ("privat", "E2003202")];
+const GEWINN_BEZEICHNUNG: &[(&str, &str)] =
+    &[("gewerbe", "E0800301"), ("selbstaendig", "E0803101")];
+const BASIS_KV: &[(&str, &str)] = &[
+    ("gesetzlich_an", "E2001203"),
+    ("gesetzlich_freiwillig", "E2001805"),
+    ("privat", "E2003104"),
+];
+const BASIS_PV: &[(&str, &str)] = &[
+    ("gesetzlich_an", "E2001505"),
+    ("gesetzlich_freiwillig", "E2002105"),
+    ("privat", "E2003202"),
+];
 
 /// Klasse f — Verzweigung (`est_mapping.py:261-326`).
 pub(crate) const VERZWEIGUNG: &[Verzweigung] = &[
-    Verzweigung { feld: "rentner_jahresrente", art_feld: "rentner_renten_art", kz: RENTE_WERT },
-    Verzweigung { feld: "rentner_renten_beginn_jahr", art_feld: "rentner_renten_art", kz: RENTE_BEGINN },
+    Verzweigung {
+        feld: "rentner_jahresrente",
+        art_feld: "rentner_renten_art",
+        kz: RENTE_WERT,
+    },
+    Verzweigung {
+        feld: "rentner_renten_beginn_jahr",
+        art_feld: "rentner_renten_art",
+        kz: RENTE_BEGINN,
+    },
     Verzweigung {
         feld: "rentner_veraeusserungsgewinn",
         art_feld: "rentner_veraeusserungs_betriebsart",
@@ -82,21 +109,45 @@ pub(crate) const VERZWEIGUNG: &[Verzweigung] = &[
             ("heizung_optimierung", "E0241701"),
         ],
     },
-    Verzweigung { feld: "einkuenfte_gewinn", art_feld: "gewinn_betriebsart", kz: GEWINN },
-    Verzweigung { feld: "gewinn_bezeichnung", art_feld: "gewinn_betriebsart", kz: GEWINN_BEZEICHNUNG },
-    Verzweigung { feld: "basis_kv", art_feld: "versicherungsart", kz: BASIS_KV },
-    Verzweigung { feld: "basis_pv", art_feld: "versicherungsart", kz: BASIS_PV },
+    Verzweigung {
+        feld: "einkuenfte_gewinn",
+        art_feld: "gewinn_betriebsart",
+        kz: GEWINN,
+    },
+    Verzweigung {
+        feld: "gewinn_bezeichnung",
+        art_feld: "gewinn_betriebsart",
+        kz: GEWINN_BEZEICHNUNG,
+    },
+    Verzweigung {
+        feld: "basis_kv",
+        art_feld: "versicherungsart",
+        kz: BASIS_KV,
+    },
+    Verzweigung {
+        feld: "basis_pv",
+        art_feld: "versicherungsart",
+        kz: BASIS_PV,
+    },
 ];
 
 /// Klasse g×f — Verzweigung Person B (`est_mapping.py:368-396`); Wert geht nach `person_b`.
 pub(crate) const PARTNER_VERZWEIGUNG: &[Verzweigung] = &[
-    Verzweigung { feld: "rentner_jahresrente_partner", art_feld: "rentner_renten_art_partner", kz: RENTE_WERT },
+    Verzweigung {
+        feld: "rentner_jahresrente_partner",
+        art_feld: "rentner_renten_art_partner",
+        kz: RENTE_WERT,
+    },
     Verzweigung {
         feld: "rentner_renten_beginn_jahr_partner",
         art_feld: "rentner_renten_art_partner",
         kz: RENTE_BEGINN,
     },
-    Verzweigung { feld: "einkuenfte_gewinn_partner", art_feld: "gewinn_betriebsart_partner", kz: GEWINN },
+    Verzweigung {
+        feld: "einkuenfte_gewinn_partner",
+        art_feld: "gewinn_betriebsart_partner",
+        kz: GEWINN,
+    },
     Verzweigung {
         feld: "gewinn_bezeichnung_partner",
         art_feld: "gewinn_betriebsart_partner",
@@ -107,8 +158,16 @@ pub(crate) const PARTNER_VERZWEIGUNG: &[Verzweigung] = &[
         art_feld: "rentner_veraeusserungs_betriebsart_partner",
         kz: VERAEUSSERUNG,
     },
-    Verzweigung { feld: "basis_kv_partner", art_feld: "versicherungsart_partner", kz: BASIS_KV },
-    Verzweigung { feld: "basis_pv_partner", art_feld: "versicherungsart_partner", kz: BASIS_PV },
+    Verzweigung {
+        feld: "basis_kv_partner",
+        art_feld: "versicherungsart_partner",
+        kz: BASIS_KV,
+    },
+    Verzweigung {
+        feld: "basis_pv_partner",
+        art_feld: "versicherungsart_partner",
+        kz: BASIS_PV,
+    },
 ];
 
 /// Klasse g — Person-B-Felder mit denselben Kz wie Person A (`est_mapping.py:332-364`).
@@ -183,8 +242,16 @@ pub(crate) const PFLICHTFELDER: &[(PflichtBedingung, &str, &[&str])] = &[
             "kist_konfession",
         ],
     ),
-    (PflichtBedingung::AlleOderKeins, "44.2.4.0", &["bruttoarbeitslohn", "steuerklasse", "p36_lohnsteuer"]),
-    (PflichtBedingung::AlleOderKeins, "44.2.4.0", &["vor_an_anteil_rv", "vor_ag_anteil_rv"]),
+    (
+        PflichtBedingung::AlleOderKeins,
+        "44.2.4.0",
+        &["bruttoarbeitslohn", "steuerklasse", "p36_lohnsteuer"],
+    ),
+    (
+        PflichtBedingung::AlleOderKeins,
+        "44.2.4.0",
+        &["vor_an_anteil_rv", "vor_ag_anteil_rv"],
+    ),
 ];
 
 /// Klasse i — Laien-Enum → amtlicher Religionsschluessel; „andere" bewusst ohne Code.
@@ -195,7 +262,11 @@ pub(crate) struct Wertekodierung {
     pub hinweis_unbekannt: &'static str,
 }
 
-const KONFESSION_CODE: &[(&str, &str)] = &[("keine", "11"), ("evangelisch", "02"), ("roemisch-katholisch", "03")];
+const KONFESSION_CODE: &[(&str, &str)] = &[
+    ("keine", "11"),
+    ("evangelisch", "02"),
+    ("roemisch-katholisch", "03"),
+];
 
 pub(crate) const WERTEKODIERUNG: &[Wertekodierung] = &[
     Wertekodierung {
@@ -221,5 +292,8 @@ davon unberuehrt.",
 
 /// Nachschlag in einer `(schluessel, wert)`-Tabelle.
 pub(crate) fn suche<'a>(tabelle: &'a [(&'a str, &'a str)], schluessel: &str) -> Option<&'a str> {
-    tabelle.iter().find(|(k, _)| *k == schluessel).map(|(_, v)| *v)
+    tabelle
+        .iter()
+        .find(|(k, _)| *k == schluessel)
+        .map(|(_, v)| *v)
 }

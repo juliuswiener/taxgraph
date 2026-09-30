@@ -57,7 +57,12 @@ pub fn uebernehme(
             continue;
         }
         let signal_1 = json!({"typ": "edaten", "quell_feld_id": s.feld_id, "quell_wert": s.wert, "kategorie": s.kategorie});
-        EdatenEvent { feld_id: s.feld_id.clone(), wert: s.wert.clone(), signal_1 }.schreibe(store, nachschlag, ts)?;
+        EdatenEvent {
+            feld_id: s.feld_id.clone(),
+            wert: s.wert.clone(),
+            signal_1,
+        }
+        .schreibe(store, nachschlag, ts)?;
         n += 1;
     }
     Ok(n)

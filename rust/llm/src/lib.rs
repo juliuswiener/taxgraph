@@ -28,6 +28,9 @@ pub mod py;
 pub mod schema;
 mod texte;
 
-pub use client::{Chat, Completion, Grund, HttpChat, Konfiguration, LlmFehler, Nachricht, Rolle, Schluessel, MAX_TOKENS};
+pub use client::{
+    Chat, Completion, Grund, HttpChat, Konfiguration, LlmFehler, Nachricht, Rolle, Schluessel,
+    MAX_TOKENS,
+};
 pub use kontoauszug::Kategorie;
 pub use parse::Antwort;

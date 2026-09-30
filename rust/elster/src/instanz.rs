@@ -19,7 +19,8 @@ use crate::tabellen::{NEGATION, PARTNER_INSTANZ, VERZWEIGUNG};
 fn instanz_re() -> Option<&'static regex::Regex> {
     static RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
     // Python `$` passt auch vor einem abschliessenden `\n` — daher `\n?\z`.
-    RE.get_or_init(|| regex::Regex::new(r"^([a-z][a-z0-9_]*)__([1-9][0-9]*)\n?\z").ok()).as_ref()
+    RE.get_or_init(|| regex::Regex::new(r"^([a-z][a-z0-9_]*)__([1-9][0-9]*)\n?\z").ok())
+        .as_ref()
 }
 
 /// `base__<n>` (n ≥ 1) → `(base, n)`; eine Basis-`feld_id` ohne Suffix → `None` (= Instanz 1).
@@ -65,22 +66,35 @@ pub struct Instanz {
 /// let store = store::Store::leer(2025, None);
 /// assert!(elster::instanzen(&store, &HashMap::new(), "rente").unwrap().is_empty());
 /// ```
-pub fn instanzen(store: &Store, bindung: &BindungIndex<'_>, gruppe: &str) -> Result<Vec<Instanz>, SnapshotFehler> {
+pub fn instanzen(
+    store: &Store,
+    bindung: &BindungIndex<'_>,
+    gruppe: &str,
+) -> Result<Vec<Instanz>, SnapshotFehler> {
     let (felder, _) = store.materialisiere(None)?;
     let mut vorkommen: BTreeMap<u64, BTreeMap<String, SnapshotFeld>> = BTreeMap::new();
     for (fid, sfeld) in felder {
         let (basis, idx) = parse_instanz(&fid).map_or((fid.as_str(), 1), |(b, i)| (b, i));
-        let ist_basis = bindung.get(basis).is_some_and(|b| b.instanz_gruppe.as_deref() == Some(gruppe));
+        let ist_basis = bindung
+            .get(basis)
+            .is_some_and(|b| b.instanz_gruppe.as_deref() == Some(gruppe));
         if ist_basis {
             // `x` und `x__1` landen beide auf Index 1; sortiert gewinnt `x__1` (wie in Python).
-            vorkommen.entry(idx).or_default().insert(basis.to_owned(), sfeld);
+            vorkommen
+                .entry(idx)
+                .or_default()
+                .insert(basis.to_owned(), sfeld);
         }
     }
     Ok(vorkommen
         .into_iter()
         .map(|(index, felder)| {
             let zustand = meet_zustand(felder.values().map(|f| f.zustand));
-            Instanz { index, felder, zustand }
+            Instanz {
+                index,
+                felder,
+                zustand,
+            }
         })
         .collect())
 }
@@ -106,8 +120,10 @@ pub struct Rueckgelesen {
 #[must_use]
 pub fn zuruecklesen(result: &Deklaration, bindung: &BindungIndex<'_>) -> Rueckgelesen {
     let kz_von = |b: &bindung::Bindung| b.elster_kz.clone().filter(|k| !k.is_empty());
-    let e_nach_feld: BTreeMap<String, &str> =
-        bindung.iter().filter_map(|(fid, b)| kz_von(b).map(|k| (k, fid.as_str()))).collect();
+    let e_nach_feld: BTreeMap<String, &str> = bindung
+        .iter()
+        .filter_map(|(fid, b)| kz_von(b).map(|k| (k, fid.as_str())))
+        .collect();
     let inst_kz_nach_feld: BTreeMap<String, &str> = bindung
         .iter()
         .filter(|(_, b)| b.instanz_gruppe.as_deref().is_some_and(|g| !g.is_empty()))

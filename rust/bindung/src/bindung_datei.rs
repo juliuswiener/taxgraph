@@ -84,7 +84,10 @@ impl<'de> Deserialize<'de> for Quelle {
                 ))
             }
         };
-        Ok(Self { regel_id: roh.regel_id, bindungspunkt })
+        Ok(Self {
+            regel_id: roh.regel_id,
+            bindungspunkt,
+        })
     }
 }
 
@@ -241,25 +244,43 @@ impl Bindung {
             return Err(BindungFehler::UngueltigeFeldId(self.feld_id.clone()));
         }
         if self.vz_gueltigkeit.is_empty() {
-            return Err(BindungFehler::LeereVzGueltigkeit { feld_id: self.feld_id.clone() });
+            return Err(BindungFehler::LeereVzGueltigkeit {
+                feld_id: self.feld_id.clone(),
+            });
         }
-        if self.askable && self.fragetext_laie.as_ref().is_none_or(|s| s.chars().count() < 5) {
-            return Err(BindungFehler::AskableOhneFragetext { feld_id: self.feld_id.clone() });
+        if self.askable
+            && self
+                .fragetext_laie
+                .as_ref()
+                .is_none_or(|s| s.chars().count() < 5)
+        {
+            return Err(BindungFehler::AskableOhneFragetext {
+                feld_id: self.feld_id.clone(),
+            });
         }
         if matches!(self.typ, Feldtyp::Enum) && self.enum_werte.is_none() {
-            return Err(BindungFehler::EnumOhneWerte { feld_id: self.feld_id.clone() });
+            return Err(BindungFehler::EnumOhneWerte {
+                feld_id: self.feld_id.clone(),
+            });
         }
         match &self.elster_kz {
             None if self.elster_kz_grund.is_none() => {
-                return Err(BindungFehler::KzNullOhneGrund { feld_id: self.feld_id.clone() })
+                return Err(BindungFehler::KzNullOhneGrund {
+                    feld_id: self.feld_id.clone(),
+                })
             }
             Some(kz) if !ist_gueltige_elster_kz(kz) => {
-                return Err(BindungFehler::KzFormat { feld_id: self.feld_id.clone(), kz: kz.clone() })
+                return Err(BindungFehler::KzFormat {
+                    feld_id: self.feld_id.clone(),
+                    kz: kz.clone(),
+                })
             }
             _ => {}
         }
         if self.frage_invertiert && !(matches!(self.typ, Feldtyp::Bool) && self.askable) {
-            return Err(BindungFehler::InvertiertOhneBoolAskable { feld_id: self.feld_id.clone() });
+            return Err(BindungFehler::InvertiertOhneBoolAskable {
+                feld_id: self.feld_id.clone(),
+            });
         }
         Ok(())
     }
@@ -306,7 +327,11 @@ impl<'de> Deserialize<'de> for Luecke {
                 ))
             }
         };
-        Ok(Self { regel_id: roh.regel_id, bindungspunkt, grund: roh.grund })
+        Ok(Self {
+            regel_id: roh.regel_id,
+            bindungspunkt,
+            grund: roh.grund,
+        })
     }
 }
 
@@ -363,10 +388,14 @@ pub struct BindungDatei {
 /// # Errors
 /// [`BindungFehler`] bei I/O-, YAML- oder Validierungsfehlern.
 pub fn lade_bindung(pfad: &Path) -> Result<BindungDatei, BindungFehler> {
-    let text = std::fs::read_to_string(pfad)
-        .map_err(|e| BindungFehler::Io { pfad: pfad.to_path_buf(), nachricht: e.to_string() })?;
-    let datei: BindungDatei = serde_yaml_ng::from_str(&text)
-        .map_err(|e| BindungFehler::Yaml { pfad: pfad.to_path_buf(), nachricht: e.to_string() })?;
+    let text = std::fs::read_to_string(pfad).map_err(|e| BindungFehler::Io {
+        pfad: pfad.to_path_buf(),
+        nachricht: e.to_string(),
+    })?;
+    let datei: BindungDatei = serde_yaml_ng::from_str(&text).map_err(|e| BindungFehler::Yaml {
+        pfad: pfad.to_path_buf(),
+        nachricht: e.to_string(),
+    })?;
     for b in &datei.bindungen {
         b.validieren()?;
     }
@@ -401,6 +430,9 @@ mod tests {
     fn doppelte_yaml_schluessel_werden_abgewiesen() {
         let yaml = "a: 1\na: 2\n";
         let ergebnis: Result<serde_yaml_ng::Value, _> = serde_yaml_ng::from_str(yaml);
-        assert!(ergebnis.is_err(), "serde_yaml_ng haette doppelte Schluessel abweisen muessen");
+        assert!(
+            ergebnis.is_err(),
+            "serde_yaml_ng haette doppelte Schluessel abweisen muessen"
+        );
     }
 }

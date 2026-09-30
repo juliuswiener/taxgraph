@@ -34,8 +34,8 @@ pub enum PersistenzFehler {
 /// # Errors
 /// [`PersistenzFehler::Lesen`]/[`PersistenzFehler::Format`].
 pub fn lade(pfad: &Path) -> Result<StoreDatei, PersistenzFehler> {
-    let text =
-        std::fs::read_to_string(pfad).map_err(|e| PersistenzFehler::Lesen(pfad.to_path_buf(), e))?;
+    let text = std::fs::read_to_string(pfad)
+        .map_err(|e| PersistenzFehler::Lesen(pfad.to_path_buf(), e))?;
     serde_yaml_ng::from_str(&text).map_err(|e| PersistenzFehler::Format(pfad.to_path_buf(), e))
 }
 
@@ -47,8 +47,10 @@ pub fn lade(pfad: &Path) -> Result<StoreDatei, PersistenzFehler> {
 /// [`PersistenzFehler::Schreiben`]/[`PersistenzFehler::Serialisieren`], wenn Tempfile, Schreiben
 /// oder `rename` scheitern.
 pub fn speichere(pfad: &Path, datei: &StoreDatei) -> Result<(), PersistenzFehler> {
-    let verzeichnis =
-        pfad.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or_else(|| Path::new("."));
+    let verzeichnis = pfad
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
     std::fs::create_dir_all(verzeichnis)?;
     let dateiname = pfad.file_name().and_then(|n| n.to_str()).unwrap_or("store");
     let temp_pfad = verzeichnis.join(format!(".{dateiname}.{}.tmp", std::process::id()));
@@ -87,7 +89,10 @@ mod tests {
     #[test]
     fn speichere_und_lade_roundtrip_mit_modus_0600() {
         use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("taxgraph-store-test-persistenz-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-{}",
+            std::process::id()
+        ));
         std::fs::create_dir_all(&dir).unwrap();
         let pfad = dir.join("fall.json");
         let original = testdatei();
@@ -102,10 +107,17 @@ mod tests {
 
     #[test]
     fn lade_liest_json_als_teilmenge_von_yaml() {
-        let dir = std::env::temp_dir().join(format!("taxgraph-store-test-persistenz-json-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-json-{}",
+            std::process::id()
+        ));
         std::fs::create_dir_all(&dir).unwrap();
         let pfad = dir.join("roh.json");
-        std::fs::write(&pfad, r#"{"version":1,"veranlagungszeitraum":2026,"events":[],"snapshots":[]}"#).unwrap();
+        std::fs::write(
+            &pfad,
+            r#"{"version":1,"veranlagungszeitraum":2026,"events":[],"snapshots":[]}"#,
+        )
+        .unwrap();
         let geladen = lade(&pfad).unwrap();
         assert_eq!(geladen.veranlagungszeitraum, Veranlagungsjahr(2026));
         std::fs::remove_dir_all(&dir).ok();

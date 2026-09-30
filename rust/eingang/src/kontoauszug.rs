@@ -37,11 +37,61 @@ pub fn zielfeld(k: Kategorie) -> &'static str {
 }
 
 const SCHLUESSELWOERTER: [(Kategorie, &[&str]); 5] = [
-    (Kategorie::Handwerker, &["maler", "sanitär", "elektr", "dachdeck", "handwerk", "installat", "klempner", "heizung", "renovier", "modernisier"]),
-    (Kategorie::Dienstleistung, &["reinigung", "putzhilfe", "gartenpfleg", "hausmeister", "gebäudereinig", "fensterputz", "winterdienst"]),
-    (Kategorie::Minijob, &["minijob", "haushaltshilfe", "minijob-zentrale"]),
-    (Kategorie::Spende, &["spende", "zuwendung", "hilfswerk", "stiftung", " e.v", "e. v.", "tierheim", "unicef", "rotes kreuz"]),
-    (Kategorie::Vorsorge, &["rentenversicherung", "rürup", "basisrente", "altersvorsorge", "rürup-rente"]),
+    (
+        Kategorie::Handwerker,
+        &[
+            "maler",
+            "sanitär",
+            "elektr",
+            "dachdeck",
+            "handwerk",
+            "installat",
+            "klempner",
+            "heizung",
+            "renovier",
+            "modernisier",
+        ],
+    ),
+    (
+        Kategorie::Dienstleistung,
+        &[
+            "reinigung",
+            "putzhilfe",
+            "gartenpfleg",
+            "hausmeister",
+            "gebäudereinig",
+            "fensterputz",
+            "winterdienst",
+        ],
+    ),
+    (
+        Kategorie::Minijob,
+        &["minijob", "haushaltshilfe", "minijob-zentrale"],
+    ),
+    (
+        Kategorie::Spende,
+        &[
+            "spende",
+            "zuwendung",
+            "hilfswerk",
+            "stiftung",
+            " e.v",
+            "e. v.",
+            "tierheim",
+            "unicef",
+            "rotes kreuz",
+        ],
+    ),
+    (
+        Kategorie::Vorsorge,
+        &[
+            "rentenversicherung",
+            "rürup",
+            "basisrente",
+            "altersvorsorge",
+            "rürup-rente",
+        ],
+    ),
 ];
 
 /// `klassifiziere_det(zweck)`: erste Kategorie, deren Schluesselwort im kleingeschriebenen
@@ -54,7 +104,10 @@ const SCHLUESSELWOERTER: [(Kategorie, &[&str]); 5] = [
 #[must_use]
 pub fn klassifiziere_det(zweck: &str) -> Option<Kategorie> {
     let z = zweck.to_lowercase();
-    SCHLUESSELWOERTER.iter().find(|(_, keys)| keys.iter().any(|k| z.contains(k))).map(|(k, _)| *k)
+    SCHLUESSELWOERTER
+        .iter()
+        .find(|(_, keys)| keys.iter().any(|k| z.contains(k)))
+        .map(|(k, _)| *k)
 }
 
 /// Eine Buchung. `datum` bleibt roher JSON-Wert: der JSON-Zweig reicht ihn unveraendert in
@@ -98,7 +151,10 @@ pub fn py_float(s: &str) -> Option<f64> {
     let b = s.as_bytes();
     for (i, &c) in b.iter().enumerate() {
         if c == b'_' {
-            let davor = i.checked_sub(1).and_then(|j| b.get(j)).is_some_and(u8::is_ascii_digit);
+            let davor = i
+                .checked_sub(1)
+                .and_then(|j| b.get(j))
+                .is_some_and(u8::is_ascii_digit);
             let danach = b.get(i + 1).is_some_and(u8::is_ascii_digit);
             if !(davor && danach) {
                 return None;
@@ -163,11 +219,25 @@ pub fn parse_csv(text: &str) -> Result<Vec<Transaktion>, KontoauszugFehler> {
             None => norm.push((k, f.clone())),
         }
     }
-    let spalte = |aliase: &[&str]| aliase.iter().find_map(|a| norm.iter().find(|(n, _)| n == a).map(|(_, f)| f.clone()));
+    let spalte = |aliase: &[&str]| {
+        aliase
+            .iter()
+            .find_map(|a| norm.iter().find(|(n, _)| n == a).map(|(_, f)| f.clone()))
+    };
     let c_dat = spalte(&["datum", "buchungstag", "buchungsdatum", "date"]);
     let c_bet = spalte(&["betrag", "umsatz", "amount", "betrag (eur)"]);
-    let c_zwk = spalte(&["verwendungszweck", "buchungstext", "zweck", "beschreibung", "description"]);
-    let wert = |z: &csv::Zeile, c: &Option<String>| c.as_ref().and_then(|c| z.get(c).cloned().flatten()).unwrap_or_default();
+    let c_zwk = spalte(&[
+        "verwendungszweck",
+        "buchungstext",
+        "zweck",
+        "beschreibung",
+        "description",
+    ]);
+    let wert = |z: &csv::Zeile, c: &Option<String>| {
+        c.as_ref()
+            .and_then(|c| z.get(c).cloned().flatten())
+            .unwrap_or_default()
+    };
     let mut out = Vec::new();
     for z in &zeilen {
         let betrag_roh = wert(z, &c_bet);
@@ -204,11 +274,20 @@ pub fn aus_json(liste: &Value) -> Result<Vec<Transaktion>, KontoauszugFehler> {
         .iter()
         .enumerate()
         .map(|(index, tx)| {
-            let o = tx.as_object().ok_or(KontoauszugFehler::TransaktionUngueltig { index })?;
+            let o = tx
+                .as_object()
+                .ok_or(KontoauszugFehler::TransaktionUngueltig { index })?;
             let betrag = match o.get("betrag").map_or(PyInt::Wert(0), py::py_int) {
                 PyInt::Wert(b) => b,
-                PyInt::Ueberlauf => return Err(KontoauszugFehler::BetragUeberlauf(format!("{:?}", o.get("betrag")))),
-                PyInt::WertFehler | PyInt::TypFehler => return Err(KontoauszugFehler::BetragUngueltig { index }),
+                PyInt::Ueberlauf => {
+                    return Err(KontoauszugFehler::BetragUeberlauf(format!(
+                        "{:?}",
+                        o.get("betrag")
+                    )))
+                }
+                PyInt::WertFehler | PyInt::TypFehler => {
+                    return Err(KontoauszugFehler::BetragUngueltig { index })
+                }
             };
             let verwendungszweck = match o.get("verwendungszweck") {
                 None => String::new(),
@@ -218,14 +297,21 @@ pub fn aus_json(liste: &Value) -> Result<Vec<Transaktion>, KontoauszugFehler> {
                 Some(v) if !py::wahr(v) => String::new(),
                 Some(_) => return Err(KontoauszugFehler::TransaktionUngueltig { index }),
             };
-            Ok(Transaktion { datum: o.get("datum").cloned().unwrap_or_else(|| json!("")), betrag, verwendungszweck })
+            Ok(Transaktion {
+                datum: o.get("datum").cloned().unwrap_or_else(|| json!("")),
+                betrag,
+                verwendungszweck,
+            })
         })
         .collect()
 }
 
-static SALDO: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"(?i)(kontostand|saldo)\b|\bzwischensumme\b"));
-static DATUM_ZEILE: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"^(\d{2}\.\d{2}\.\d{4})\s+(.*)$"));
-static BETRAG_TOKEN: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"[+-]?\d{1,3}(?:\.\d{3})*,\d{2}"));
+static SALDO: LazyLock<PyRegex> =
+    LazyLock::new(|| PyRegex::neu(r"(?i)(kontostand|saldo)\b|\bzwischensumme\b"));
+static DATUM_ZEILE: LazyLock<PyRegex> =
+    LazyLock::new(|| PyRegex::neu(r"^(\d{2}\.\d{2}\.\d{4})\s+(.*)$"));
+static BETRAG_TOKEN: LazyLock<PyRegex> =
+    LazyLock::new(|| PyRegex::neu(r"[+-]?\d{1,3}(?:\.\d{3})*,\d{2}"));
 static EUR_ENDE: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"(?i)\s*(?:EUR|€)\s*$"));
 static LEERRAUM: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"\s+"));
 
@@ -240,7 +326,11 @@ static LEERRAUM: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"\s+"));
 ///
 /// # Errors
 /// [`KontoauszugFehler::BetragUeberlauf`].
-pub fn parse_pdf_zeilen(text: &str, conf: &crate::ocr::ConfMap, schwelle: f64) -> Result<(Vec<Transaktion>, usize), KontoauszugFehler> {
+pub fn parse_pdf_zeilen(
+    text: &str,
+    conf: &crate::ocr::ConfMap,
+    schwelle: f64,
+) -> Result<(Vec<Transaktion>, usize), KontoauszugFehler> {
     let mut out = Vec::new();
     let mut verworfen = 0;
     for (i, zeile) in py::splitlines(text).into_iter().enumerate() {
@@ -251,7 +341,10 @@ pub fn parse_pdf_zeilen(text: &str, conf: &crate::ocr::ConfMap, schwelle: f64) -
         match SALDO.sucht(z) {
             Some(false) => {}
             Some(true) => {
-                if BETRAG_TOKEN.finde_alle(z).is_none_or(|b| b.iter().any(|t| t.starts_with('-'))) {
+                if BETRAG_TOKEN
+                    .finde_alle(z)
+                    .is_none_or(|b| b.iter().any(|t| t.starts_with('-')))
+                {
                     verworfen += 1;
                 }
                 continue;
@@ -261,7 +354,9 @@ pub fn parse_pdf_zeilen(text: &str, conf: &crate::ocr::ConfMap, schwelle: f64) -
                 continue;
             }
         }
-        let Some(Some(gruppen)) = DATUM_ZEILE.gruppen(z) else { continue };
+        let Some(Some(gruppen)) = DATUM_ZEILE.gruppen(z) else {
+            continue;
+        };
         let (datum, rest) = match gruppen.as_slice() {
             [Some(d), Some(r)] => (d.clone(), r.clone()),
             _ => continue,
@@ -281,9 +376,17 @@ pub fn parse_pdf_zeilen(text: &str, conf: &crate::ocr::ConfMap, schwelle: f64) -
             continue;
         }
         let zweck = rest.replacen(betrag.as_str(), "", 1);
-        let zweck = EUR_ENDE.ersetze(&zweck, |_| String::new()).map_or(zweck.clone(), |(t, _)| t);
-        let zweck = LEERRAUM.ersetze(&zweck, |_| " ".to_owned()).map_or(zweck.clone(), |(t, _)| t);
-        out.push(Transaktion { datum: Value::String(datum), betrag: eur_cent_signed(betrag)?, verwendungszweck: py::strip(&zweck).to_owned() });
+        let zweck = EUR_ENDE
+            .ersetze(&zweck, |_| String::new())
+            .map_or(zweck.clone(), |(t, _)| t);
+        let zweck = LEERRAUM
+            .ersetze(&zweck, |_| " ".to_owned())
+            .map_or(zweck.clone(), |(t, _)| t);
+        out.push(Transaktion {
+            datum: Value::String(datum),
+            betrag: eur_cent_signed(betrag)?,
+            verwendungszweck: py::strip(&zweck).to_owned(),
+        });
     }
     Ok((out, verworfen))
 }
@@ -360,14 +463,25 @@ pub fn uebernehme(
         if bindung.get(feld).is_none() || aktiv.contains(feld) {
             continue;
         }
-        let betrag_abs = tx.betrag.checked_abs().ok_or_else(|| KontoauszugFehler::BetragUeberlauf(tx.betrag.to_string()))?;
+        let betrag_abs = tx
+            .betrag
+            .checked_abs()
+            .ok_or_else(|| KontoauszugFehler::BetragUeberlauf(tx.betrag.to_string()))?;
         let signal_1 = json!({"typ": "kontoauszug", "datum": tx.datum, "betrag": tx.betrag,
             "verwendungszweck": pii::maskiere(zweck).as_str(), "kategorie": kategorie.als_str(),
             "quelle": if det.is_some() { "heuristik" } else { "llm" }});
-        let v = VorschlagEvent { quelle: Quelle::Kontoauszug, feld_id: feld.to_owned(), wert: json!(betrag_abs), signal_1 };
+        let v = VorschlagEvent {
+            quelle: Quelle::Kontoauszug,
+            feld_id: feld.to_owned(),
+            wert: json!(betrag_abs),
+            signal_1,
+        };
         v.schreibe(store, Some(katalog), bindung, ts)?;
         aktiv.insert(feld.to_owned());
         n += 1;
     }
-    Ok(Uebernahme { uebernommen: n, llm_uebersprungen: uebersprungen })
+    Ok(Uebernahme {
+        uebernommen: n,
+        llm_uebersprungen: uebersprungen,
+    })
 }

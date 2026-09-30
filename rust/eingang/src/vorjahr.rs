@@ -41,10 +41,13 @@ pub fn uebertragbare_felder(bindung: BindungNachschlag<'_>) -> BTreeMap<String, 
         .alle()
         .filter_map(|(fid, b)| {
             b.vorjahr.map(|v| {
-                (fid.to_owned(), match v {
-                    Vorjahr::Uebernehmbar => "uebernehmbar",
-                    Vorjahr::Vorschlag => "vorschlag",
-                })
+                (
+                    fid.to_owned(),
+                    match v {
+                        Vorjahr::Uebernehmbar => "uebernehmbar",
+                        Vorjahr::Vorschlag => "vorschlag",
+                    },
+                )
             })
         })
         .collect()
@@ -84,15 +87,29 @@ pub fn uebernehme(
     let aktiv: HashSet<String> = store.aktive().map(|(f, _)| f.to_owned()).collect();
     let mut n = 0;
     for (fid, kat) in uebertragbare_felder(bindung) {
-        let Some(vf) = vorjahr_felder.get(&fid).filter(|v| v.zustand.as_deref() == Some("bestaetigt")) else { continue };
+        let Some(vf) = vorjahr_felder
+            .get(&fid)
+            .filter(|v| v.zustand.as_deref() == Some("bestaetigt"))
+        else {
+            continue;
+        };
         if aktiv.contains(&fid) {
             continue;
         }
         let signal_1 = json!({"typ": "vorjahr", "vz": vorjahr_vz, "quell_feld_id": fid, "quell_wert": vf.wert, "kategorie": kat});
-        VorschlagEvent { quelle: Quelle::Vorjahr, feld_id: fid.clone(), wert: vf.wert.clone(), signal_1 }.schreibe(store, None, bindung, ts)?;
+        VorschlagEvent {
+            quelle: Quelle::Vorjahr,
+            feld_id: fid.clone(),
+            wert: vf.wert.clone(),
+            signal_1,
+        }
+        .schreibe(store, None, bindung, ts)?;
         n += 1;
     }
-    Ok(VorjahrErgebnis { uebertragen: n, referenz: referenzwert_verlustvortrag(vorjahr_felder) })
+    Ok(VorjahrErgebnis {
+        uebertragen: n,
+        referenz: referenzwert_verlustvortrag(vorjahr_felder),
+    })
 }
 
 /// `referenzwert_verlustvortrag`: `{"verlustvortrag_bestand": {"wert": …}}`, nur bei
@@ -104,7 +121,11 @@ pub fn uebernehme(
 /// assert_eq!(eingang::vorjahr::referenzwert_verlustvortrag(&f), Some(serde_json::json!({"verlustvortrag_bestand": {"wert": 5}})));
 /// ```
 #[must_use]
-pub fn referenzwert_verlustvortrag(vorjahr_felder: &BTreeMap<String, VorjahrFeld>) -> Option<Value> {
-    let vf = vorjahr_felder.get("verlustvortrag_bestand").filter(|v| v.zustand.as_deref() == Some("bestaetigt"))?;
+pub fn referenzwert_verlustvortrag(
+    vorjahr_felder: &BTreeMap<String, VorjahrFeld>,
+) -> Option<Value> {
+    let vf = vorjahr_felder
+        .get("verlustvortrag_bestand")
+        .filter(|v| v.zustand.as_deref() == Some("bestaetigt"))?;
     Some(json!({"verlustvortrag_bestand": {"wert": vf.wert}}))
 }

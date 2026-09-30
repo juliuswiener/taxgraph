@@ -47,8 +47,12 @@ pub struct KohortenDatei {
 /// # Errors
 /// [`KohortenFehler`] bei I/O- oder YAML-Fehlern.
 pub fn lade_kohorten(pfad: &Path) -> Result<KohortenDatei, KohortenFehler> {
-    let text = std::fs::read_to_string(pfad)
-        .map_err(|e| KohortenFehler::Io { pfad: pfad.to_path_buf(), nachricht: e.to_string() })?;
-    serde_yaml_ng::from_str(&text)
-        .map_err(|e| KohortenFehler::Yaml { pfad: pfad.to_path_buf(), nachricht: e.to_string() })
+    let text = std::fs::read_to_string(pfad).map_err(|e| KohortenFehler::Io {
+        pfad: pfad.to_path_buf(),
+        nachricht: e.to_string(),
+    })?;
+    serde_yaml_ng::from_str(&text).map_err(|e| KohortenFehler::Yaml {
+        pfad: pfad.to_path_buf(),
+        nachricht: e.to_string(),
+    })
 }

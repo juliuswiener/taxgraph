@@ -29,12 +29,19 @@ fn bemessungsgrundlage(e: &P101Eingabe) -> Result<i64, EngineFehler> {
     let mut ep_ab_21 = e.entfernungspauschale_ab_21km.get();
     if e.ist_arbeitnehmer {
         let ueber = ok(
-            e.werbungskosten_gesamt.get().checked_sub(e.arbeitnehmer_pauschbetrag.get()),
+            e.werbungskosten_gesamt
+                .get()
+                .checked_sub(e.arbeitnehmer_pauschbetrag.get()),
             "p101 wk",
         )?;
         ep_ab_21 = ep_ab_21.min(ueber.max(0));
     }
-    let unterschreitung = ok(e.grundfreibetrag.get().checked_sub(e.zu_versteuerndes_einkommen.get()), "p101 gfb")?;
+    let unterschreitung = ok(
+        e.grundfreibetrag
+            .get()
+            .checked_sub(e.zu_versteuerndes_einkommen.get()),
+        "p101 gfb",
+    )?;
     Ok(ep_ab_21.min(unterschreitung.max(0)))
 }
 
@@ -56,7 +63,11 @@ fn bemessungsgrundlage(e: &P101Eingabe) -> Result<i64, EngineFehler> {
 /// ```
 pub fn p101_mobilitaetspraemie(e: &P101Eingabe) -> Result<Euro, EngineFehler> {
     let bg = bemessungsgrundlage(e)?;
-    ok(bg.checked_mul(14).and_then(|x| x.checked_div_euclid(100)), "p101").map(Euro::new)
+    ok(
+        bg.checked_mul(14).and_then(|x| x.checked_div_euclid(100)),
+        "p101",
+    )
+    .map(Euro::new)
 }
 
 /// `catala_p101_mobilitaetspraemie_cent` -- § 101 S. 4 `EStG`: 14 % der Bemessungsgrundlage,

@@ -13,7 +13,12 @@
 //! SICHERHEIT: reale Fälle sind echte Steuerdaten. Nur lokal lesen, nur Zählwerte ausgeben.
 //!
 //!   `PARITY`=1 `cargo` test -p parity --test `intervall_paritaet` -- --nocapture
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic
+)]
 
 use std::collections::{BTreeMap, HashSet};
 use std::convert::Infallible;
@@ -21,7 +26,10 @@ use std::sync::{Mutex, OnceLock};
 
 use bindung::{Bindung, SlotBeitrag};
 use domain::{Achsenwert, Cent, Euro, Feldtyp, Herkunft, PruefTiefe, Zustand};
-use intervall::{bescheid_via_slots, intervall, AchsenBindung, IntervallErgebnis, IntervallFehler, SlotFehler, Spanne, Werte};
+use intervall::{
+    bescheid_via_slots, intervall, AchsenBindung, IntervallErgebnis, IntervallFehler, SlotFehler,
+    Spanne, Werte,
+};
 use parity::Oracle;
 use proptest::prelude::*;
 use serde_json::{json, Value};
@@ -42,14 +50,18 @@ fn faelle_verzeichnis() -> std::path::PathBuf {
     match std::env::var("TAXGRAPH_DATEN") {
         Ok(p) if !p.trim().is_empty() => std::path::PathBuf::from(p.trim()).join("faelle"),
         _ => match std::env::var("XDG_DATA_HOME") {
-            Ok(x) if !x.trim().is_empty() => std::path::PathBuf::from(x.trim()).join("taxgraph/faelle"),
+            Ok(x) if !x.trim().is_empty() => {
+                std::path::PathBuf::from(x.trim()).join("taxgraph/faelle")
+            }
             _ => home.join(".local/share/taxgraph/faelle"),
         },
     }
 }
 
 fn walk_json(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
-    let Ok(read) = std::fs::read_dir(dir) else { return Vec::new() };
+    let Ok(read) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for e in read.flatten() {
         let p = e.path();
@@ -67,7 +79,10 @@ fn bindungen() -> &'static [Bindung] {
     static CELL: OnceLock<Vec<Bindung>> = OnceLock::new();
     CELL.get_or_init(|| {
         let reg = bindung::lade_registry(&repo_root().join("produkt/bindung")).expect("registry");
-        reg.dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect()
+        reg.dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect()
     })
 }
 
@@ -77,13 +92,24 @@ fn oracle() -> &'static Mutex<Oracle> {
 }
 
 fn frage(anfrage: &Value) -> Value {
-    let antwort = oracle().lock().unwrap().call_json(anfrage).expect("orakel antwortet");
-    antwort.get("ok").cloned().unwrap_or_else(|| json!({ "err": antwort["err"] }))
+    let antwort = oracle()
+        .lock()
+        .unwrap()
+        .call_json(anfrage)
+        .expect("orakel antwortet");
+    antwort
+        .get("ok")
+        .cloned()
+        .unwrap_or_else(|| json!({ "err": antwort["err"] }))
 }
 
 fn herkunft() -> Herkunft {
     let a = Achsenwert::new("parity").unwrap();
-    Herkunft { herkunft: a.clone(), pruef_tiefe: PruefTiefe::Ungeprueft, haftung: a }
+    Herkunft {
+        herkunft: a.clone(),
+        pruef_tiefe: PruefTiefe::Ungeprueft,
+        haftung: a,
+    }
 }
 
 // ------------------------------------------------------------------ synthetische Engine
@@ -145,10 +171,14 @@ fn slots_json(r: Result<Cent, SlotFehler<Infallible>>) -> Value {
 /// `bescheid_via_slots` für beide Einheiten, Rust-Seite.
 fn via_slots_rust(bindung: &[AchsenBindung], werte: &Werte, quantitaet: &str) -> Value {
     if quantitaet == "festzusetzende_est" {
-        let f = bescheid_via_slots(bindung, |s| Ok::<_, Infallible>(Euro::new(synth(s.iter().map(|(k, v)| (k.as_str(), v))))));
+        let f = bescheid_via_slots(bindung, |s| {
+            Ok::<_, Infallible>(Euro::new(synth(s.iter().map(|(k, v)| (k.as_str(), v)))))
+        });
         slots_json(f(werte))
     } else {
-        let f = bescheid_via_slots(bindung, |s| Ok::<_, Infallible>(Cent::new(synth(s.iter().map(|(k, v)| (k.as_str(), v))))));
+        let f = bescheid_via_slots(bindung, |s| {
+            Ok::<_, Infallible>(Cent::new(synth(s.iter().map(|(k, v)| (k.as_str(), v)))))
+        });
         slots_json(f(werte))
     }
 }
@@ -178,7 +208,11 @@ fn buche(bilanz: &mut Bilanz, name: &'static str, rust: &Value, py: &Value) {
     if rust != py {
         z.diffs += 1;
         if z.diffs <= 3 {
-            eprintln!("ABWEICHUNG {name}: rust_len={} py_len={}", rust.to_string().len(), py.to_string().len());
+            eprintln!(
+                "ABWEICHUNG {name}: rust_len={} py_len={}",
+                rust.to_string().len(),
+                py.to_string().len()
+            );
         }
     }
 }
@@ -187,7 +221,10 @@ fn berichte(titel: &str, bilanz: &Bilanz) -> usize {
     println!("== {titel}");
     let mut summe = 0;
     for (name, z) in bilanz {
-        println!("  {name:<34} faelle={:>6} fehler={:>5} zahl={:>5} diffs={}", z.faelle, z.fehler, z.zahl, z.diffs);
+        println!(
+            "  {name:<34} faelle={:>6} fehler={:>5} zahl={:>5} diffs={}",
+            z.faelle, z.fehler, z.zahl, z.diffs
+        );
         summe += z.diffs;
     }
     summe
@@ -219,11 +256,19 @@ fn sicht_gleich() {
     println!("sicht: {} Bindungen gleich", ids.len());
 }
 
-fn pruefe_intervall(bilanz: &mut Bilanz, name: &'static str, felder: &Felder, auswahl: &[&Bindung], cap: usize) {
+fn pruefe_intervall(
+    bilanz: &mut Bilanz,
+    name: &'static str,
+    felder: &Felder,
+    auswahl: &[&Bindung],
+    cap: usize,
+) {
     let achsen: Vec<AchsenBindung> = auswahl.iter().map(|b| AchsenBindung::from(*b)).collect();
     let ids: Vec<&str> = auswahl.iter().map(|b| b.feld_id.as_str()).collect();
-    let py = frage(&json!({"fn": "intervall.intervall", "snapshot": felder, "bindung_ids": ids, "cap": cap,
-        "snapshot_id": "sid"}));
+    let py = frage(
+        &json!({"fn": "intervall.intervall", "snapshot": felder, "bindung_ids": ids, "cap": cap,
+        "snapshot_id": "sid"}),
+    );
     let rust = iv_json(&intervall(felder, &achsen, bescheid, cap, Some("sid")));
     buche(bilanz, name, &rust, &py);
 }
@@ -241,16 +286,30 @@ fn reale_faelle() {
     // keine rohe Fallback-Faltung mehr noetig.
     for pfad in walk_json(&faelle_verzeichnis()) {
         dateien += 1;
-        let d = store::lade(&pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
+        let d =
+            store::lade(&pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
         let (felder, _) = store::Store::aus_datei(d).materialisiere(None).unwrap();
         n += 1;
         // A: nur Felder mit Snapshot-Wert oder Bereich -> meist eine echte Zahl.
         let a: Vec<&Bindung> = bindungen()
             .iter()
-            .filter(|b| felder.contains_key(&b.feld_id) || (matches!(b.typ, Feldtyp::Cent | Feldtyp::Int) && b.bereich.is_some()))
+            .filter(|b| {
+                felder.contains_key(&b.feld_id)
+                    || (matches!(b.typ, Feldtyp::Cent | Feldtyp::Int) && b.bereich.is_some())
+            })
             .collect();
         for cap in [256, 8] {
-            pruefe_intervall(&mut bilanz, if cap == 256 { "intervall A cap256" } else { "intervall A cap8" }, &felder, &a, cap);
+            pruefe_intervall(
+                &mut bilanz,
+                if cap == 256 {
+                    "intervall A cap256"
+                } else {
+                    "intervall A cap8"
+                },
+                &felder,
+                &a,
+                cap,
+            );
         }
         // B: alle Bindungen (meist nicht fixierbar).
         let b: Vec<&Bindung> = bindungen().iter().collect();
@@ -263,10 +322,20 @@ fn reale_faelle() {
             }
         }
         for q in ["festzusetzende_est", "gewst_cent"] {
-            let py = frage(&json!({"fn": "intervall.bescheid_via_slots", "bindung_ids": alle_ids, "quantitaet": q,
-                "feld_werte": werte_json(&werte)}));
-            buche(&mut bilanz, if q == "gewst_cent" { "via_slots cent" } else { "via_slots euro" },
-                &via_slots_rust(&alle_achsen, &werte, q), &py);
+            let py = frage(
+                &json!({"fn": "intervall.bescheid_via_slots", "bindung_ids": alle_ids, "quantitaet": q,
+                "feld_werte": werte_json(&werte)}),
+            );
+            buche(
+                &mut bilanz,
+                if q == "gewst_cent" {
+                    "via_slots cent"
+                } else {
+                    "via_slots euro"
+                },
+                &via_slots_rust(&alle_achsen, &werte, q),
+                &py,
+            );
         }
     }
     println!("reale Faelle: {dateien} Dateien, {n} Snapshots");
@@ -284,7 +353,8 @@ fn wert() -> impl Strategy<Value = Value> {
         any::<bool>().prop_map(Value::Bool),
         (-60_i64..60).prop_map(Value::from),
         (-10_i64.pow(12)..10_i64.pow(12)).prop_map(Value::from),
-        prop::sample::select(vec!["", "a", "bbb", "zusammen"]).prop_map(|s| Value::String(s.to_owned())),
+        prop::sample::select(vec!["", "a", "bbb", "zusammen"])
+            .prop_map(|s| Value::String(s.to_owned())),
     ]
 }
 
@@ -301,38 +371,64 @@ fn slot_wert() -> impl Strategy<Value = Value> {
 
 /// `(Rust-Sicht, Python-Eintrag)` je synthetischer Bindung.
 fn achse(i: usize) -> impl Strategy<Value = (AchsenBindung, Value)> {
-    let typ = prop::sample::select(vec![Feldtyp::Bool, Feldtyp::Enum, Feldtyp::Int, Feldtyp::Cent, Feldtyp::Text, Feldtyp::Datum]);
-    let enum_werte = prop::collection::vec(prop::sample::select(vec!["a", "bb", "ccc", "dddd"]), 0..4);
+    let typ = prop::sample::select(vec![
+        Feldtyp::Bool,
+        Feldtyp::Enum,
+        Feldtyp::Int,
+        Feldtyp::Cent,
+        Feldtyp::Text,
+        Feldtyp::Datum,
+    ]);
+    let enum_werte =
+        prop::collection::vec(prop::sample::select(vec!["a", "bb", "ccc", "dddd"]), 0..4);
     let bereich = prop::option::weighted(0.7, (-60_i64..60, -60_i64..60));
     // Slot: exakt-Pool s*, summand-Pool t* (getrennt: `str + str` ist außerhalb des Wertebereichs),
     // oder geltungsbedingung.
-    let slot = prop::sample::select(vec![Some(("s1", false)), Some(("s2", false)), Some(("t1", true)), Some(("t2", true)), None]);
-    (typ, enum_werte, bereich, slot, prop::bool::weighted(0.85), 0_usize..4).prop_map(move |(typ, ew, bereich, slot, askable, suffix)| {
-        let feld_id = format!("f{i}{}", "z".repeat(suffix));
-        let ew: Vec<String> = ew.into_iter().map(str::to_owned).collect();
-        let a = AchsenBindung {
-            feld_id: feld_id.clone(),
-            typ,
-            askable,
-            enum_werte: ew.clone(),
-            bereich,
-            signatur_slot: slot.map(|(s, _)| s.to_owned()),
-            slot_beitrag: if slot.is_some_and(|(_, summand)| summand) { SlotBeitrag::Summand } else { SlotBeitrag::Exakt },
-        };
-        let mut py = json!({"feld_id": feld_id, "typ": typ.als_str(), "askable": askable,
+    let slot = prop::sample::select(vec![
+        Some(("s1", false)),
+        Some(("s2", false)),
+        Some(("t1", true)),
+        Some(("t2", true)),
+        None,
+    ]);
+    (
+        typ,
+        enum_werte,
+        bereich,
+        slot,
+        prop::bool::weighted(0.85),
+        0_usize..4,
+    )
+        .prop_map(move |(typ, ew, bereich, slot, askable, suffix)| {
+            let feld_id = format!("f{i}{}", "z".repeat(suffix));
+            let ew: Vec<String> = ew.into_iter().map(str::to_owned).collect();
+            let a = AchsenBindung {
+                feld_id: feld_id.clone(),
+                typ,
+                askable,
+                enum_werte: ew.clone(),
+                bereich,
+                signatur_slot: slot.map(|(s, _)| s.to_owned()),
+                slot_beitrag: if slot.is_some_and(|(_, summand)| summand) {
+                    SlotBeitrag::Summand
+                } else {
+                    SlotBeitrag::Exakt
+                },
+            };
+            let mut py = json!({"feld_id": feld_id, "typ": typ.als_str(), "askable": askable,
             "quelle": match slot { Some((s, _)) => json!({"regel_id": "r", "signatur_slot": s}),
                                    None => json!({"regel_id": "r", "geltungsbedingung": "g"}) }});
-        if !ew.is_empty() || typ == Feldtyp::Enum {
-            py["enum_werte"] = json!(ew);
-        }
-        if let Some((lo, hi)) = bereich {
-            py["bereich"] = json!({"min": lo, "max": hi});
-        }
-        if a.slot_beitrag == SlotBeitrag::Summand {
-            py["slot_beitrag"] = json!("summand");
-        }
-        (a, py)
-    })
+            if !ew.is_empty() || typ == Feldtyp::Enum {
+                py["enum_werte"] = json!(ew);
+            }
+            if let Some((lo, hi)) = bereich {
+                py["bereich"] = json!({"min": lo, "max": hi});
+            }
+            if a.slot_beitrag == SlotBeitrag::Summand {
+                py["slot_beitrag"] = json!("summand");
+            }
+            (a, py)
+        })
 }
 
 type Fall = (Vec<(AchsenBindung, Value)>, Felder, usize, Werte);
@@ -341,7 +437,8 @@ fn fall() -> impl Strategy<Value = Fall> {
     (0_usize..8)
         .prop_flat_map(|n| {
             let achsen: Vec<_> = (0..n).map(achse).collect();
-            let snap = prop::collection::vec(prop::option::of((wert(), prop::bool::weighted(0.4))), n);
+            let snap =
+                prop::collection::vec(prop::option::of((wert(), prop::bool::weighted(0.4))), n);
             let fw = prop::collection::vec((any::<u8>(), slot_wert()), 0..8);
             (achsen, snap, 0_usize..300, fw)
         })
@@ -349,15 +446,32 @@ fn fall() -> impl Strategy<Value = Fall> {
             let mut felder = Felder::new();
             for ((a, _), s) in achsen.iter().zip(snap) {
                 if let Some((w, bestaetigt)) = s {
-                    let zustand = if bestaetigt { Zustand::Bestaetigt } else { Zustand::Vorlaeufig };
-                    felder.insert(a.feld_id.clone(), SnapshotFeld { wert: w, zustand, herkunft: herkunft().into() });
+                    let zustand = if bestaetigt {
+                        Zustand::Bestaetigt
+                    } else {
+                        Zustand::Vorlaeufig
+                    };
+                    felder.insert(
+                        a.feld_id.clone(),
+                        SnapshotFeld {
+                            wert: w,
+                            zustand,
+                            herkunft: herkunft().into(),
+                        },
+                    );
                 }
             }
             // feld_werte fuer den Slot-Adapter: Index n = unbekanntes Feld (KeyError-Pfad).
             let mut werte = Werte::neu();
             for (u, w) in fw {
-                let i = if u < 25 { achsen.len() } else { usize::from(u) % achsen.len().max(1) };
-                let fid = achsen.get(i).map_or_else(|| "unbekannt".to_owned(), |(a, _)| a.feld_id.clone());
+                let i = if u < 25 {
+                    achsen.len()
+                } else {
+                    usize::from(u) % achsen.len().max(1)
+                };
+                let fid = achsen
+                    .get(i)
+                    .map_or_else(|| "unbekannt".to_owned(), |(a, _)| a.feld_id.clone());
                 werte.setze(&fid, w);
             }
             (achsen, felder, cap, werte)
@@ -370,7 +484,10 @@ fn generierte_faelle() {
         return;
     }
     let bilanz = Mutex::new(Bilanz::new());
-    let mut runner = proptest::test_runner::TestRunner::new(ProptestConfig { cases: 1000, ..ProptestConfig::default() });
+    let mut runner = proptest::test_runner::TestRunner::new(ProptestConfig {
+        cases: 1000,
+        ..ProptestConfig::default()
+    });
     runner
         .run(&fall(), |(achsen, felder, cap, werte)| {
             let rust_b: Vec<AchsenBindung> = achsen.iter().map(|(a, _)| a.clone()).collect();
@@ -396,8 +513,14 @@ fn generierte_faelle() {
     let bilanz = bilanz.into_inner().unwrap();
     assert_eq!(berichte("generierte Faelle (1000)", &bilanz), 0);
     assert!(bilanz["intervall"].faelle > 900);
-    assert!(bilanz["intervall"].zahl > 300, "Generator trifft den Zahl-Pfad zu selten");
-    assert!(bilanz["via_slots euro"].zahl > 400, "Generator trifft den Slot-Erfolgspfad zu selten");
+    assert!(
+        bilanz["intervall"].zahl > 300,
+        "Generator trifft den Zahl-Pfad zu selten"
+    );
+    assert!(
+        bilanz["via_slots euro"].zahl > 400,
+        "Generator trifft den Slot-Erfolgspfad zu selten"
+    );
 }
 
 #[test]
@@ -405,13 +528,28 @@ fn negativkontrolle() {
     if skip() {
         return;
     }
-    let a = AchsenBindung { feld_id: "tage".into(), typ: Feldtyp::Int, askable: true, enum_werte: vec![],
-        bereich: Some((0, 10)), signatur_slot: Some("tage".into()), slot_beitrag: SlotBeitrag::Exakt };
+    let a = AchsenBindung {
+        feld_id: "tage".into(),
+        typ: Feldtyp::Int,
+        askable: true,
+        enum_werte: vec![],
+        bereich: Some((0, 10)),
+        signatur_slot: Some("tage".into()),
+        slot_beitrag: SlotBeitrag::Exakt,
+    };
     let py_b = json!([{"feld_id": "tage", "typ": "int", "askable": true, "bereich": {"min": 0, "max": 10},
         "quelle": {"regel_id": "r", "signatur_slot": "tage"}}]);
     let felder = Felder::new();
-    let py = frage(&json!({"fn": "intervall.intervall", "snapshot": felder, "bindung": py_b, "cap": 256}));
-    let mut rust = iv_json(&intervall(&felder, std::slice::from_ref(&a), bescheid, 256, None));
+    let py = frage(
+        &json!({"fn": "intervall.intervall", "snapshot": felder, "bindung": py_b, "cap": 256}),
+    );
+    let mut rust = iv_json(&intervall(
+        &felder,
+        std::slice::from_ref(&a),
+        bescheid,
+        256,
+        None,
+    ));
     let mut bilanz = Bilanz::new();
     buche(&mut bilanz, "unveraendert", &rust, &py);
     let min = rust["intervall"]["min_cent"].as_i64().unwrap();
@@ -419,12 +557,24 @@ fn negativkontrolle() {
     buche(&mut bilanz, "min_cent + 1", &rust, &py);
     let mut w = Werte::neu();
     w.setze("tage", 7.into());
-    let py = frage(&json!({"fn": "intervall.bescheid_via_slots", "bindung": py_b, "quantitaet": "festzusetzende_est",
-        "feld_werte": werte_json(&w)}));
+    let py = frage(
+        &json!({"fn": "intervall.bescheid_via_slots", "bindung": py_b, "quantitaet": "festzusetzende_est",
+        "feld_werte": werte_json(&w)}),
+    );
     let r = via_slots_rust(std::slice::from_ref(&a), &w, "festzusetzende_est");
     buche(&mut bilanz, "via_slots unveraendert", &r, &py);
-    buche(&mut bilanz, "via_slots + 1 Cent", &json!(r.as_i64().unwrap() + 1), &py);
-    buche(&mut bilanz, "via_slots Einheit Cent statt Euro", &via_slots_rust(std::slice::from_ref(&a), &w, "gewst_cent"), &py);
+    buche(
+        &mut bilanz,
+        "via_slots + 1 Cent",
+        &json!(r.as_i64().unwrap() + 1),
+        &py,
+    );
+    buche(
+        &mut bilanz,
+        "via_slots Einheit Cent statt Euro",
+        &via_slots_rust(std::slice::from_ref(&a), &w, "gewst_cent"),
+        &py,
+    );
     berichte("Negativkontrolle", &bilanz);
     assert_eq!(bilanz["unveraendert"].diffs, 0);
     assert_eq!(bilanz["via_slots unveraendert"].diffs, 0);

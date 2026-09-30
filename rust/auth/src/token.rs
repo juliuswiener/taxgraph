@@ -22,8 +22,15 @@ pub struct Claims {
 }
 
 /// Signiert `claims` mit HS256.
-pub(crate) fn signiere(claims: &Claims, geheimnis: &str) -> Result<String, jsonwebtoken::errors::Error> {
-    jsonwebtoken::encode(&Header::new(Algorithm::HS256), claims, &EncodingKey::from_secret(geheimnis.as_bytes()))
+pub(crate) fn signiere(
+    claims: &Claims,
+    geheimnis: &str,
+) -> Result<String, jsonwebtoken::errors::Error> {
+    jsonwebtoken::encode(
+        &Header::new(Algorithm::HS256),
+        claims,
+        &EncodingKey::from_secret(geheimnis.as_bytes()),
+    )
 }
 
 /// Geprueftes Token-Payload oder `None` — `jwt.decode(token, secret, algorithms=["HS256"])`
@@ -37,9 +44,15 @@ pub(crate) fn pruefe(token: &str, geheimnis: &str, jetzt: i64) -> Option<Map<Str
     validierung.validate_nbf = false;
     validierung.validate_aud = false;
     validierung.leeway = 0;
-    let daten =
-        jsonwebtoken::decode::<Value>(token, &DecodingKey::from_secret(geheimnis.as_bytes()), &validierung).ok()?;
-    let Value::Object(payload) = daten.claims else { return None };
+    let daten = jsonwebtoken::decode::<Value>(
+        token,
+        &DecodingKey::from_secret(geheimnis.as_bytes()),
+        &validierung,
+    )
+    .ok()?;
+    let Value::Object(payload) = daten.claims else {
+        return None;
+    };
     claims_gueltig(&payload, jetzt).then_some(payload)
 }
 
@@ -80,7 +93,11 @@ fn claims_gueltig(p: &Map<String, Value>, jetzt: i64) -> bool {
 fn py_int(v: &Value) -> Option<i64> {
     match v {
         Value::Bool(b) => Some(i64::from(*b)),
-        Value::Number(n) => n.as_i64().or_else(|| n.as_f64().filter(|f| f.is_finite()).map(|f| f.trunc() as i64)),
+        Value::Number(n) => n.as_i64().or_else(|| {
+            n.as_f64()
+                .filter(|f| f.is_finite())
+                .map(|f| f.trunc() as i64)
+        }),
         Value::String(s) => {
             let s = s.trim();
             let rumpf = s.strip_prefix(['+', '-']).unwrap_or(s);

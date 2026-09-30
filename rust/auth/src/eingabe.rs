@@ -59,11 +59,15 @@ impl fmt::Display for Username {
 #[must_use]
 pub fn ist_gueltiger_username(roh: &str) -> bool {
     let mut zeichen = roh.chars();
-    let Some(erstes) = zeichen.next() else { return false };
+    let Some(erstes) = zeichen.next() else {
+        return false;
+    };
     let rest: Vec<char> = zeichen.collect();
     erstes.is_ascii_alphabetic()
         && (2..=31).contains(&rest.len())
-        && rest.iter().all(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-')
+        && rest
+            .iter()
+            .all(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-')
 }
 
 /// `_PW_RE.fullmatch(roh)` als Praedikat: 8–128 Codepunkte, keiner davon `\n`.
@@ -101,14 +105,22 @@ impl Anmeldung {
     /// wirft dort `TypeError`/`AttributeError`, der Server antwortet 500).
     pub fn aus_body(body: &serde_json::Value) -> Result<Self, AuthFehler> {
         let feld = |name: &str| body.get(name);
-        let fehlend: Vec<&'static str> =
-            ["password", "username"].into_iter().filter(|n| feld(n).is_none()).collect();
+        let fehlend: Vec<&'static str> = ["password", "username"]
+            .into_iter()
+            .filter(|n| feld(n).is_none())
+            .collect();
         if !fehlend.is_empty() {
             return Err(AuthFehler::PflichtfelderFehlen(fehlend));
         }
         let text = |name: &'static str| {
-            feld(name).and_then(serde_json::Value::as_str).map(str::to_owned).ok_or(AuthFehler::FeldKeinText(name))
+            feld(name)
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned)
+                .ok_or(AuthFehler::FeldKeinText(name))
         };
-        Ok(Self { username: text("username")?, password: text("password")? })
+        Ok(Self {
+            username: text("username")?,
+            password: text("password")?,
+        })
     }
 }

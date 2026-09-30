@@ -45,7 +45,12 @@ fn zerlege(s: &str) -> Option<Result<(bool, String, i64), ()>> {
         None => (rest, 0),
     };
     let (ganz, bruch) = mantisse.split_once('.').unwrap_or((mantisse, ""));
-    let gueltig = |t: &str| !t.starts_with('_') && !t.ends_with('_') && !t.contains("__") && t.bytes().all(|b| b.is_ascii_digit() || b == b'_');
+    let gueltig = |t: &str| {
+        !t.starts_with('_')
+            && !t.ends_with('_')
+            && !t.contains("__")
+            && t.bytes().all(|b| b.is_ascii_digit() || b == b'_')
+    };
     if (ganz.is_empty() && bruch.is_empty()) || !gueltig(ganz) || !gueltig(bruch) {
         return None;
     }
@@ -101,7 +106,9 @@ fn runde_half_even(ziffern: &str, behalte: usize) -> (String, bool) {
 /// # Errors
 /// [`VastFehler`].
 pub fn cent(euro_text: Option<&str>) -> Result<Option<i64>, VastFehler> {
-    let Some(roh) = euro_text else { return Ok(None) };
+    let Some(roh) = euro_text else {
+        return Ok(None);
+    };
     let s = py::ascii_ziffern(py::strip(roh)).replace(',', ".");
     if s.is_empty() {
         return Ok(None);
@@ -121,7 +128,11 @@ pub fn cent(euro_text: Option<&str>) -> Result<Option<i64>, VastFehler> {
     if koeff.len() > GENAUIGKEIT {
         let weg = koeff.len() - GENAUIGKEIT;
         let (k, ueber) = runde_half_even(&koeff, GENAUIGKEIT);
-        koeff = if ueber { k.get(..GENAUIGKEIT).unwrap_or(&k).to_owned() } else { k };
+        koeff = if ueber {
+            k.get(..GENAUIGKEIT).unwrap_or(&k).to_owned()
+        } else {
+            k
+        };
         exp += i64::try_from(weg).unwrap_or(0) + i64::from(ueber);
     }
     // Mehr als 19 Vorkommastellen passen in kein `i64`; weniger als 0,1 rundet auf 0. Beide
@@ -139,7 +150,9 @@ pub fn cent(euro_text: Option<&str>) -> Result<Option<i64>, VastFehler> {
             std::cmp::Ordering::Less => runde_half_even(&koeff, koeff.len() - nachkomma).0,
         }
     };
-    let wert: i64 = betrag.parse().map_err(|_| VastFehler::Ueberlauf(roh.to_owned()))?;
+    let wert: i64 = betrag
+        .parse()
+        .map_err(|_| VastFehler::Ueberlauf(roh.to_owned()))?;
     Ok(Some(if neg { -wert } else { wert }))
 }
 
@@ -147,17 +160,46 @@ pub fn cent(euro_text: Option<&str>) -> Result<Option<i64>, VastFehler> {
 pub const LSTB: [(&str, &str, &str); 8] = [
     ("BruttoArbLohn", "bruttoarbeitslohn", "Bruttoarbeitslohn"),
     ("LSteuer", "p36_lohnsteuer", "einbehaltene Lohnsteuer"),
-    ("ArbnKiSteuer", "kist_gezahlt", "einbehaltene Kirchensteuer des Arbeitnehmers"),
-    ("LeistungenProgVorbeh", "p32b_progressionseinkuenfte", "Leistungen, die dem Progressionsvorbehalt unterliegen"),
-    ("ArbnAnteilRenVers", "vor_an_anteil_rv", "Arbeitnehmeranteil zur gesetzlichen Rentenversicherung"),
-    ("ArbgAnteilRenVers", "vor_ag_anteil_rv", "Arbeitgeberanteil zur gesetzlichen Rentenversicherung"),
-    ("ArbnAnteilKrankVers", "basis_kv", "Arbeitnehmerbeiträge zur gesetzlichen Krankenversicherung (LStB Nr. 25)"),
-    ("ArbnAnteilPflegVers", "basis_pv", "Arbeitnehmerbeiträge zur sozialen Pflegeversicherung (LStB Nr. 26)"),
+    (
+        "ArbnKiSteuer",
+        "kist_gezahlt",
+        "einbehaltene Kirchensteuer des Arbeitnehmers",
+    ),
+    (
+        "LeistungenProgVorbeh",
+        "p32b_progressionseinkuenfte",
+        "Leistungen, die dem Progressionsvorbehalt unterliegen",
+    ),
+    (
+        "ArbnAnteilRenVers",
+        "vor_an_anteil_rv",
+        "Arbeitnehmeranteil zur gesetzlichen Rentenversicherung",
+    ),
+    (
+        "ArbgAnteilRenVers",
+        "vor_ag_anteil_rv",
+        "Arbeitgeberanteil zur gesetzlichen Rentenversicherung",
+    ),
+    (
+        "ArbnAnteilKrankVers",
+        "basis_kv",
+        "Arbeitnehmerbeiträge zur gesetzlichen Krankenversicherung (LStB Nr. 25)",
+    ),
+    (
+        "ArbnAnteilPflegVers",
+        "basis_pv",
+        "Arbeitnehmerbeiträge zur sozialen Pflegeversicherung (LStB Nr. 26)",
+    ),
 ];
 
 /// `LSTB_SUMMEN`: Zielfeld ← mehrere Beleg-Elemente.
-pub const LSTB_SUMMEN: [(&str, &[(&str, &str)]); 1] =
-    [("vorsorge_arbeitslosenversicherung", &[("ArbnAnteilArblVers", "Arbeitnehmerbeiträge zur Arbeitslosenversicherung")])];
+pub const LSTB_SUMMEN: [(&str, &[(&str, &str)]); 1] = [(
+    "vorsorge_arbeitslosenversicherung",
+    &[(
+        "ArbnAnteilArblVers",
+        "Arbeitnehmerbeiträge zur Arbeitslosenversicherung",
+    )],
+)];
 
 /// `LERSL_BETRAG_FELD`.
 pub const LERSL_BETRAG_FELD: &str = "p32b_progressionseinkuenfte";
@@ -172,7 +214,9 @@ pub const LERSL_BETRAG_FELD: &str = "p32b_progressionseinkuenfte";
 ///
 /// # Errors
 /// [`VastFehler`] beim ersten nicht lesbaren Betrag.
-pub fn aus_lstb(werte: &std::collections::BTreeMap<String, String>) -> Result<Vec<EdatenSatz>, VastFehler> {
+pub fn aus_lstb(
+    werte: &std::collections::BTreeMap<String, String>,
+) -> Result<Vec<EdatenSatz>, VastFehler> {
     let mut raus = Vec::new();
     for (feld_id, quellen) in LSTB_SUMMEN {
         let mut besetzt = Vec::new();
@@ -184,12 +228,27 @@ pub fn aus_lstb(werte: &std::collections::BTreeMap<String, String>) -> Result<Ve
         if besetzt.is_empty() {
             continue;
         }
-        let kat = format!("LStB: {}", besetzt.iter().map(|(n, _, d)| format!("{d} ({n})")).collect::<Vec<_>>().join(" + "));
-        raus.push(EdatenSatz { feld_id: feld_id.to_owned(), wert: besetzt.iter().map(|(_, c, _)| c).sum(), kategorie: kat });
+        let kat = format!(
+            "LStB: {}",
+            besetzt
+                .iter()
+                .map(|(n, _, d)| format!("{d} ({n})"))
+                .collect::<Vec<_>>()
+                .join(" + ")
+        );
+        raus.push(EdatenSatz {
+            feld_id: feld_id.to_owned(),
+            wert: besetzt.iter().map(|(_, c, _)| c).sum(),
+            kategorie: kat,
+        });
     }
     for (vast, feld_id, doku) in LSTB {
         if let Some(c) = cent(werte.get(vast).map(String::as_str))? {
-            raus.push(EdatenSatz { feld_id: feld_id.to_owned(), wert: c, kategorie: format!("LStB/{vast}: {doku}") });
+            raus.push(EdatenSatz {
+                feld_id: feld_id.to_owned(),
+                wert: c,
+                kategorie: format!("LStB/{vast}: {doku}"),
+            });
         }
     }
     Ok(raus)
@@ -218,8 +277,12 @@ pub fn aus_lersl(leistungen: &[Leistung]) -> Result<Vec<EdatenSatz>, VastFehler>
     let mut summe: i64 = 0;
     let mut arten = std::collections::BTreeSet::new();
     for l in leistungen {
-        let Some(c) = cent(l.betrag.as_deref())? else { continue };
-        summe = summe.checked_add(c).ok_or_else(|| VastFehler::Ueberlauf(l.betrag.clone().unwrap_or_default()))?;
+        let Some(c) = cent(l.betrag.as_deref())? else {
+            continue;
+        };
+        summe = summe
+            .checked_add(c)
+            .ok_or_else(|| VastFehler::Ueberlauf(l.betrag.clone().unwrap_or_default()))?;
         let art = py::strip(l.art.as_deref().unwrap_or(""));
         if !art.is_empty() {
             arten.insert(art.to_owned());
@@ -233,7 +296,11 @@ pub fn aus_lersl(leistungen: &[Leistung]) -> Result<Vec<EdatenSatz>, VastFehler>
         kat.push_str(" — ");
         kat.push_str(&arten.into_iter().collect::<Vec<_>>().join(", "));
     }
-    Ok(vec![EdatenSatz { feld_id: LERSL_BETRAG_FELD.to_owned(), wert: summe, kategorie: kat }])
+    Ok(vec![EdatenSatz {
+        feld_id: LERSL_BETRAG_FELD.to_owned(),
+        wert: summe,
+        kategorie: kat,
+    }])
 }
 
 #[cfg(test)]

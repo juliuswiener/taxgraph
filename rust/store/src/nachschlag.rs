@@ -46,7 +46,8 @@ impl<'a> BindungNachschlag<'a> {
     /// Aufrufer — hier nur der Nachschlag selbst).
     #[must_use]
     pub fn basis_eintrag(&self, feld_id: &str) -> Option<&'a Bindung> {
-        self.get(feld_id).or_else(|| instanz_basis(feld_id).and_then(|b| self.get(b)))
+        self.get(feld_id)
+            .or_else(|| instanz_basis(feld_id).and_then(|b| self.get(b)))
     }
 
     /// Alle Bindungen mit ihrem `feld_id` (`store.py:529`, `_rechne_ab`: `for ziel, eintrag in

@@ -67,21 +67,42 @@ pub struct DialogErgebnis {
 
 impl DialogErgebnis {
     fn leer(aussagen: Vec<Aussage>) -> Self {
-        Self { vorschlaege: Vec::new(), antwort: String::new(), unsicher: false, aussagen, rueckfragen: Vec::new(), rueckfragen_zurueckgestellt: 0 }
+        Self {
+            vorschlaege: Vec::new(),
+            antwort: String::new(),
+            unsicher: false,
+            aussagen,
+            rueckfragen: Vec::new(),
+            rueckfragen_zurueckgestellt: 0,
+        }
     }
 }
 
 /// `_teilergebnis`: die Aussagen mit ihren Regeln und einem Ausfall-Status.
-fn teilergebnis(mut aussagen: Vec<Aussage>, zuordnungen: &BTreeMap<i64, Vec<String>>, status: AussageStatus) -> DialogErgebnis {
+fn teilergebnis(
+    mut aussagen: Vec<Aussage>,
+    zuordnungen: &BTreeMap<i64, Vec<String>>,
+    status: AussageStatus,
+) -> DialogErgebnis {
     for (i, a) in aussagen.iter_mut().enumerate() {
-        a.regeln = i64::try_from(i).ok().and_then(|k| zuordnungen.get(&k)).cloned().unwrap_or_default();
+        a.regeln = i64::try_from(i)
+            .ok()
+            .and_then(|k| zuordnungen.get(&k))
+            .cloned()
+            .unwrap_or_default();
         a.status = status;
     }
     DialogErgebnis::leer(aussagen)
 }
 
 fn py_liste(k: &[&str]) -> String {
-    format!("[{}]", k.iter().map(|s| format!("'{s}'")).collect::<Vec<_>>().join(", "))
+    format!(
+        "[{}]",
+        k.iter()
+            .map(|s| format!("'{s}'"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    )
 }
 
 /// Der Dialog. `gruppen` = `(gruppe, anzahl_feld)` aus `lade_instanz_gruppen()`.
@@ -112,25 +133,99 @@ pub fn llm_dialog(
     }
     let (gefiltert, kategorien) = pii::filtere(freitext);
     let (kontext_gefiltert, kategorien_k) = pii::filtere(kontext);
-    let kopf = format!(
-        "pii_kategorien={}, kontext_kategorien={}, textlaenge_vor={}, textlaenge_nach={}",
-        py_liste(&kategorien),
-        py_liste(&kategorien_k),
-        crate::py::laenge(freitext),
-        crate::py::laenge(gefiltert.as_str())
-    );
-    let melde = |teil: String| protokoll.melde(&format!("{kopf}, {teil}"));
-    let gescheitert = |stufe: u8, e: &LlmFehler| {
-        let grund = if e.grund().is_empty() { "sonstiger_fehler" } else { e.grund() };
-        melde(format!("stufe={stufe}, ergebnis=kein_ergebnis, grund={grund}, versuche={}, provider=''", e.versuche()));
-        protokoll.mitschnitt(stufe, "ausgefallen", &json!({"grund": grund, "versuche": e.versuche(), "provider": ""}));
+    let m = Melder {
+        kopf: format!(
+            "pii_kategorien={}, kontext_kategorien={}, textlaenge_vor={}, textlaenge_nach={}",
+            py_liste(&kategorien),
+            py_liste(&kategorien_k),
+            crate::py::laenge(freitext),
+            crate::py::laenge(gefiltert.as_str())
+        ),
+        protokoll,
     };
 
-    // Stufe 1
-    let c1 = chat.complete(&prompt::aussagen_prompt(&gefiltert), Some(&schema::AUSSAGEN_SCHEMA)).inspect_err(|e| gescheitert(1, e))?;
-    let mut aussagen = parse::aussagen_parse(&c1.text, &gefiltert).oder_leer_wie_python();
-    protokoll.mitschnitt(1, "aussagen", &serde_json::to_value(&aussagen).unwrap_or_default());
-    melde(format!(
+    let aussagen = stufe_aussagen(chat, &gefiltert, &m)?;
+    let je_regel = gates::felder_je_regel(katalog);
+    let Some(zuordnung) = stufe_themen(chat, &gefiltert, &aussagen, &je_regel, &m) else {
+        return Ok(teilergebnis(
+            aussagen,
+            &BTreeMap::new(),
+            AussageStatus::ThemenAusgefallen,
+        ));
+    };
+    let eng = !zuordnung.getroffen.is_empty();
+    let kat3 = gates::mit_zaehlfeldern(
+        katalog_stufe3(&zuordnung, &je_regel, katalog),
+        katalog,
+        gruppen,
+    );
+    let c3 = match chat.complete(
+        &prompt::dialog_prompt(&gefiltert, &kat3, &kontext_gefiltert, &aussagen),
+        Some(&schema::DIALOG_SCHEMA),
+    ) {
+        Ok(c) => c,
+        Err(e) => {
+            m.gescheitert(3, &e);
+            return Ok(teilergebnis(
+                aussagen,
+                &zuordnung.je_aussage,
+                AussageStatus::WerteAusgefallen,
+            ));
+        }
+    };
+    Ok(stufe_werte(
+        &c3, &gefiltert, aussagen, &zuordnung, &kat3, eng, &m,
+    ))
+}
+
+/// Audit-Kopf und Ausfall-Meldung, gemeinsam fuer alle drei Stufen.
+struct Melder<'a> {
+    kopf: String,
+    protokoll: &'a dyn Protokoll,
+}
+
+impl Melder<'_> {
+    fn melde(&self, teil: &str) {
+        self.protokoll.melde(&format!("{}, {teil}", self.kopf));
+    }
+
+    fn gescheitert(&self, stufe: u8, e: &LlmFehler) {
+        let grund = if e.grund().is_empty() {
+            "sonstiger_fehler"
+        } else {
+            e.grund()
+        };
+        self.melde(&format!(
+            "stufe={stufe}, ergebnis=kein_ergebnis, grund={grund}, versuche={}, provider=''",
+            e.versuche()
+        ));
+        self.protokoll.mitschnitt(
+            stufe,
+            "ausgefallen",
+            &json!({"grund": grund, "versuche": e.versuche(), "provider": ""}),
+        );
+    }
+}
+
+/// Stufe 1: Aussagen ohne Katalog. Ein Ausfall geht als Fehler an den Aufrufer.
+fn stufe_aussagen(
+    chat: &dyn Chat,
+    gefiltert: &pii::Gefiltert,
+    m: &Melder<'_>,
+) -> Result<Vec<Aussage>, LlmFehler> {
+    let c1 = chat
+        .complete(
+            &prompt::aussagen_prompt(gefiltert),
+            Some(&schema::AUSSAGEN_SCHEMA),
+        )
+        .inspect_err(|e| m.gescheitert(1, e))?;
+    let aussagen = parse::aussagen_parse(&c1.text, gefiltert).oder_leer_wie_python();
+    m.protokoll.mitschnitt(
+        1,
+        "aussagen",
+        &serde_json::to_value(&aussagen).unwrap_or_default(),
+    );
+    m.melde(&format!(
         "stufe=1, aussagen={}, aussagen_ohne_beleg={}, inhalt_laenge={}, provider='{}', finish='{}'",
         aussagen.len(),
         aussagen.iter().filter(|a| a.beleg.is_empty()).count(),
@@ -138,66 +233,116 @@ pub fn llm_dialog(
         c1.provider,
         c1.finish
     ));
+    Ok(aussagen)
+}
 
-    // Stufe 2
-    let je_regel = gates::felder_je_regel(katalog);
-    let mut verfuegbar: Vec<String> = je_regel.iter().map(|(r, _)| r.clone()).filter(|r| !r.is_empty()).collect();
+/// Stufe 2: Aussagen auf Regeln abbilden. `None` = Stufe ausgefallen (Teilergebnis).
+fn stufe_themen(
+    chat: &dyn Chat,
+    gefiltert: &pii::Gefiltert,
+    aussagen: &[Aussage],
+    je_regel: &[(String, Vec<&KatalogFeld>)],
+    m: &Melder<'_>,
+) -> Option<parse::Zuordnung> {
+    let mut verfuegbar: Vec<String> = je_regel
+        .iter()
+        .map(|(r, _)| r.clone())
+        .filter(|r| !r.is_empty())
+        .collect();
     verfuegbar.sort();
-    let mut zuordnung = parse::Zuordnung::default();
-    if !verfuegbar.is_empty() {
-        let nachrichten = prompt::themen_prompt(&gefiltert, &aussagen, &prompt::regel_zeilen(&je_regel, &verfuegbar));
-        let c2 = match chat.complete(&nachrichten, Some(&schema::ZUORDNUNG_SCHEMA)) {
-            Ok(c) => c,
-            Err(e) => {
-                gescheitert(2, &e);
-                return Ok(teilergebnis(aussagen, &BTreeMap::new(), AussageStatus::ThemenAusgefallen));
-            }
-        };
-        let erlaubt: HashSet<String> = verfuegbar.iter().cloned().collect();
-        zuordnung = parse::zuordnung_parse(&c2.text, &erlaubt, aussagen.len()).oder_leer_wie_python();
-        protokoll.mitschnitt(2, "zuordnungen", &serde_json::to_value(&zuordnung).unwrap_or_default());
-        melde(format!(
-            "stufe=2, aussagen={}, zugeordnet={}, regeln={}/{}, inhalt_laenge={}, provider='{}', finish='{}'",
-            aussagen.len(),
-            zuordnung.je_aussage.len(),
-            zuordnung.getroffen.len(),
-            verfuegbar.len(),
-            crate::py::laenge(&c2.text),
-            c2.provider,
-            c2.finish
-        ));
+    if verfuegbar.is_empty() {
+        return Some(parse::Zuordnung::default());
     }
-
-    // Stufe 3
-    let eng = !zuordnung.getroffen.is_empty();
-    let kat3: Vec<&KatalogFeld> = if eng {
-        let aus = |r: &str| je_regel.iter().find(|(k, _)| k == r).map(|(_, v)| v.clone()).unwrap_or_default();
-        zuordnung.getroffen.iter().flat_map(|r| aus(r)).chain(aus("")).collect()
-    } else {
-        katalog.iter().collect()
-    };
-    let kat3 = gates::mit_zaehlfeldern(kat3, katalog, gruppen);
-    let c3 = match chat.complete(&prompt::dialog_prompt(&gefiltert, &kat3, &kontext_gefiltert, &aussagen), Some(&schema::DIALOG_SCHEMA)) {
+    let nachrichten = prompt::themen_prompt(
+        gefiltert,
+        aussagen,
+        &prompt::regel_zeilen(je_regel, &verfuegbar),
+    );
+    let c2 = match chat.complete(&nachrichten, Some(&schema::ZUORDNUNG_SCHEMA)) {
         Ok(c) => c,
         Err(e) => {
-            gescheitert(3, &e);
-            return Ok(teilergebnis(aussagen, &zuordnung.je_aussage, AussageStatus::WerteAusgefallen));
+            m.gescheitert(2, &e);
+            return None;
         }
     };
-    let (behalten, verworfen) = gates::beleg_geprueft(parse::chat_parse(&c3.text).oder_leer_wie_python(), &gefiltert);
+    let erlaubt: HashSet<String> = verfuegbar.iter().cloned().collect();
+    let zuordnung =
+        parse::zuordnung_parse(&c2.text, &erlaubt, aussagen.len()).oder_leer_wie_python();
+    m.protokoll.mitschnitt(
+        2,
+        "zuordnungen",
+        &serde_json::to_value(&zuordnung).unwrap_or_default(),
+    );
+    m.melde(&format!(
+        "stufe=2, aussagen={}, zugeordnet={}, regeln={}/{}, inhalt_laenge={}, provider='{}', finish='{}'",
+        aussagen.len(),
+        zuordnung.je_aussage.len(),
+        zuordnung.getroffen.len(),
+        verfuegbar.len(),
+        crate::py::laenge(&c2.text),
+        c2.provider,
+        c2.finish
+    ));
+    Some(zuordnung)
+}
+
+/// Katalog fuer Stufe 3: nur die Felder der getroffenen Regeln (plus regellose), sonst alle.
+fn katalog_stufe3<'a>(
+    zuordnung: &parse::Zuordnung,
+    je_regel: &[(String, Vec<&'a KatalogFeld>)],
+    katalog: &'a [KatalogFeld],
+) -> Vec<&'a KatalogFeld> {
+    if zuordnung.getroffen.is_empty() {
+        return katalog.iter().collect();
+    }
+    let aus = |r: &str| {
+        je_regel
+            .iter()
+            .find(|(k, _)| k == r)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default()
+    };
+    zuordnung
+        .getroffen
+        .iter()
+        .flat_map(|r| aus(r))
+        .chain(aus(""))
+        .collect()
+}
+
+/// Stufe 3 auswerten: Vorschlaege, Rueckfragen, Antwort, Status je Aussage.
+fn stufe_werte(
+    c3: &crate::client::Completion,
+    gefiltert: &pii::Gefiltert,
+    mut aussagen: Vec<Aussage>,
+    zuordnung: &parse::Zuordnung,
+    kat3: &[&KatalogFeld],
+    eng: bool,
+    m: &Melder<'_>,
+) -> DialogErgebnis {
+    let (behalten, verworfen) = gates::beleg_geprueft(
+        parse::chat_parse(&c3.text).oder_leer_wie_python(),
+        gefiltert,
+    );
     let rueckfragen = parse::rueckfragen_parse(&c3.text, kat3.len()).oder_leer_wie_python();
-    let (rueckfragen, geloest) = gates::rueckfragen_gebunden(rueckfragen, &kat3);
+    let (rueckfragen, geloest) = gates::rueckfragen_gebunden(rueckfragen, kat3);
     let (rueckfragen, zurueckgestellt) = gates::rueckfragen_gebuendelt(rueckfragen);
     let behalten = gates::rueckfrage_verdraengt(behalten, &rueckfragen);
     let (antwort, unsicher) = parse::antwort_parse(&c3.text).oder_leer_wie_python();
-    gates::status_setzen(&mut aussagen, &zuordnung.je_aussage, &behalten, &verworfen, &rueckfragen);
-    protokoll.mitschnitt(
+    gates::status_setzen(
+        &mut aussagen,
+        &zuordnung.je_aussage,
+        &behalten,
+        &verworfen,
+        &rueckfragen,
+    );
+    m.protokoll.mitschnitt(
         3,
         "ergebnis",
         &json!({"vorschlaege": behalten, "ohne_beleg_verworfen": verworfen, "rueckfragen": rueckfragen,
                 "rueckfragen_geloest": geloest, "antwort": antwort, "unsicher": unsicher, "aussagen": aussagen}),
     );
-    melde(format!(
+    m.melde(&format!(
         "stufe=3, katalog={}, katalog_felder={}, vorschlaege={}, ohne_beleg_verworfen={}, rueckfragen={}, rueckfragen_zurueckgestellt={zurueckgestellt}, rueckfragen_geloest={}, offen={}, antwortlaenge={}, unsicher={}, inhalt_laenge={}, provider='{}', finish='{}'",
         if eng { "eng" } else { "voll" },
         kat3.len(),
@@ -212,5 +357,12 @@ pub fn llm_dialog(
         c3.provider,
         c3.finish
     ));
-    Ok(DialogErgebnis { vorschlaege: behalten, antwort, unsicher, aussagen, rueckfragen, rueckfragen_zurueckgestellt: zurueckgestellt })
+    DialogErgebnis {
+        vorschlaege: behalten,
+        antwort,
+        unsicher,
+        aussagen,
+        rueckfragen,
+        rueckfragen_zurueckgestellt: zurueckgestellt,
+    }
 }

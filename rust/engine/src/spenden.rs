@@ -25,8 +25,11 @@ pub struct SpendenAbzugEingabe {
 /// assert_eq!(ergebnis, Cent::new(10_000));
 /// ```
 pub fn berechnen(eingabe: SpendenAbzugEingabe) -> Result<Cent, CatalaFehler> {
-    catala_sys::spenden_abzug(eingabe.zuwendungen.get(), eingabe.gesamtbetrag_der_einkuenfte.get())
-        .map(Cent::new)
+    catala_sys::spenden_abzug(
+        eingabe.zuwendungen.get(),
+        eingabe.gesamtbetrag_der_einkuenfte.get(),
+    )
+    .map(Cent::new)
 }
 
 #[cfg(test)]

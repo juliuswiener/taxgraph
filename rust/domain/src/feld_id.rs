@@ -59,8 +59,9 @@ impl BasisId {
     /// ```
     pub fn new(s: impl Into<String>) -> Result<Self, FeldIdFehler> {
         let s = s.into();
-        let gueltiger_zeichensatz =
-            !s.is_empty() && s.len() <= 64 && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_');
+        let gueltiger_zeichensatz = !s.is_empty()
+            && s.len() <= 64
+            && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_');
         if !gueltiger_zeichensatz || instanz_suffix(&s).is_some() {
             return Err(FeldIdFehler::UngueltigeBasis(s));
         }
@@ -98,7 +99,10 @@ impl FeldId {
     /// ```
     #[must_use]
     pub const fn erste_instanz(basis: BasisId) -> Self {
-        Self { basis, instanz: NonZeroU16::MIN }
+        Self {
+            basis,
+            instanz: NonZeroU16::MIN,
+        }
     }
 
     /// Instanz `n` (n >= 2) einer Basis-Feld-Id.
@@ -165,7 +169,8 @@ impl FromStr for FeldId {
                 if hat_fuehrende_null || n < 2 {
                     return Err(FeldIdFehler::UngueltigeInstanz(s.to_owned()));
                 }
-                let instanz = NonZeroU16::new(n).ok_or_else(|| FeldIdFehler::UngueltigeInstanz(s.to_owned()))?;
+                let instanz = NonZeroU16::new(n)
+                    .ok_or_else(|| FeldIdFehler::UngueltigeInstanz(s.to_owned()))?;
                 Self::instanz(BasisId::new(basis)?, instanz)
             }
             None => Ok(Self::erste_instanz(BasisId::new(s)?)),
@@ -179,9 +184,8 @@ mod tests {
     use proptest::prelude::*;
 
     fn gueltige_basis() -> impl Strategy<Value = String> {
-        "[a-z][a-z0-9_]{0,20}".prop_filter("kein __<Zahl>-Suffix", |s| {
-            BasisId::new(s.clone()).is_ok()
-        })
+        "[a-z][a-z0-9_]{0,20}"
+            .prop_filter("kein __<Zahl>-Suffix", |s| BasisId::new(s.clone()).is_ok())
     }
 
     proptest! {

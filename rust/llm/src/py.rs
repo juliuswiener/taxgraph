@@ -77,7 +77,9 @@ impl PyRegex {
     #[must_use]
     pub fn finde_alle(&self, text: &str) -> Option<Vec<String>> {
         let re = self.0.as_ref()?;
-        re.find_iter(text).map(|m| m.ok().map(|m| m.as_str().to_owned())).collect()
+        re.find_iter(text)
+            .map(|m| m.ok().map(|m| m.as_str().to_owned()))
+            .collect()
     }
 
     /// `pattern.match(text)` bzw. `pattern.search(text)`: Gruppen des ersten Treffers.
@@ -91,7 +93,12 @@ impl PyRegex {
     pub fn gruppen(&self, text: &str) -> Option<Option<Vec<Option<String>>>> {
         let re = self.0.as_ref()?;
         let caps = re.captures(text).ok()?;
-        Some(caps.map(|c| c.iter().skip(1).map(|g| g.map(|m| m.as_str().to_owned())).collect()))
+        Some(caps.map(|c| {
+            c.iter()
+                .skip(1)
+                .map(|g| g.map(|m| m.as_str().to_owned()))
+                .collect()
+        }))
     }
 
     /// `pattern.subn(ersatz, text)`: `(neuer_text, anzahl)`; `ersatz` bekommt die Gruppen
@@ -102,7 +109,11 @@ impl PyRegex {
     /// let (t, n) = r.ersetze("a 123 b 45", |g| format!("{}*", g[0].as_deref().unwrap_or(""))).unwrap();
     /// assert_eq!((t.as_str(), n), ("a 1* b 4*", 2));
     /// ```
-    pub fn ersetze(&self, text: &str, ersatz: impl Fn(&[Option<String>]) -> String) -> Option<(String, usize)> {
+    pub fn ersetze(
+        &self,
+        text: &str,
+        ersatz: impl Fn(&[Option<String>]) -> String,
+    ) -> Option<(String, usize)> {
         let re = self.0.as_ref()?;
         let mut out = String::with_capacity(text.len());
         let mut letzte = 0;
@@ -110,8 +121,11 @@ impl PyRegex {
         for caps in re.captures_iter(text) {
             let caps = caps.ok()?;
             let ganz = caps.get(0)?;
-            let gruppen: Vec<Option<String>> =
-                caps.iter().skip(1).map(|g| g.map(|m| m.as_str().to_owned())).collect();
+            let gruppen: Vec<Option<String>> = caps
+                .iter()
+                .skip(1)
+                .map(|g| g.map(|m| m.as_str().to_owned()))
+                .collect();
             out.push_str(text.get(letzte..ganz.start())?);
             out.push_str(&ersatz(&gruppen));
             letzte = ganz.end();
@@ -135,14 +149,17 @@ pub fn ist_wortzeichen(c: char) -> bool {
     let mut puffer = [0u8; 4];
     // Kompiliert das Muster nicht (unerreichbar, Test haelt es fest), gilt jedes Zeichen als
     // Wortzeichen — kurze Belege fallen dann durch das Gate (fail-closed).
-    WORT.as_ref().is_none_or(|r| r.is_match(c.encode_utf8(&mut puffer)))
+    WORT.as_ref()
+        .is_none_or(|r| r.is_match(c.encode_utf8(&mut puffer)))
 }
 
 /// Ist `c` eine Unicode-Dezimalziffer (`\p{Nd}`, Pythons `str.isdecimal()`)?
 fn ist_nd(c: char) -> bool {
-    static ND: std::sync::LazyLock<Option<regex::Regex>> = std::sync::LazyLock::new(|| regex::Regex::new(r"^\p{Nd}$").ok());
+    static ND: std::sync::LazyLock<Option<regex::Regex>> =
+        std::sync::LazyLock::new(|| regex::Regex::new(r"^\p{Nd}$").ok());
     let mut puffer = [0u8; 4];
-    ND.as_ref().is_some_and(|r| r.is_match(c.encode_utf8(&mut puffer)))
+    ND.as_ref()
+        .is_some_and(|r| r.is_match(c.encode_utf8(&mut puffer)))
 }
 
 /// Wert einer Dezimalziffer. Unicode legt `Nd`-Zeichen in lueckenlosen Zehnerfolgen 0–9 ab, und
@@ -156,7 +173,11 @@ fn ziffernwert(c: char) -> Option<u32> {
         return None;
     }
     let mut start = u32::from(c);
-    while let Some(davor) = start.checked_sub(1).and_then(char::from_u32).filter(|d| ist_nd(*d)) {
+    while let Some(davor) = start
+        .checked_sub(1)
+        .and_then(char::from_u32)
+        .filter(|d| ist_nd(*d))
+    {
         start = u32::from(davor);
     }
     Some((u32::from(c) - start) % 10)
@@ -175,7 +196,13 @@ pub fn ascii_ziffern(s: &str) -> std::borrow::Cow<'_, str> {
         return std::borrow::Cow::Borrowed(s);
     }
     std::borrow::Cow::Owned(
-        s.chars().map(|c| ziffernwert(c).and_then(|w| char::from_digit(w, 10)).unwrap_or(c)).collect(),
+        s.chars()
+            .map(|c| {
+                ziffernwert(c)
+                    .and_then(|w| char::from_digit(w, 10))
+                    .unwrap_or(c)
+            })
+            .collect(),
     )
 }
 
@@ -228,8 +255,20 @@ pub fn split_leer(s: &str) -> Vec<&str> {
 /// ```
 #[must_use]
 pub fn splitlines(s: &str) -> Vec<&str> {
-    let ist_umbruch =
-        |c: char| matches!(c, '\n' | '\r' | '\x0b' | '\x0c' | '\x1c' | '\x1d' | '\x1e' | '\u{85}' | '\u{2028}' | '\u{2029}');
+    let ist_umbruch = |c: char| {
+        matches!(
+            c,
+            '\n' | '\r'
+                | '\x0b'
+                | '\x0c'
+                | '\x1c'
+                | '\x1d'
+                | '\x1e'
+                | '\u{85}'
+                | '\u{2028}'
+                | '\u{2029}'
+        )
+    };
     let mut out = Vec::new();
     let mut start = 0;
     let mut iter = s.char_indices().peekable();
@@ -335,7 +374,10 @@ pub fn py_repr(v: &Value) -> String {
         Value::Array(a) => format!("[{}]", a.iter().map(py_repr).collect::<Vec<_>>().join(", ")),
         Value::Object(o) => format!(
             "{{{}}}",
-            o.iter().map(|(k, v)| format!("{}: {}", py_repr_str(k), py_repr(v))).collect::<Vec<_>>().join(", ")
+            o.iter()
+                .map(|(k, v)| format!("{}: {}", py_repr_str(k), py_repr(v)))
+                .collect::<Vec<_>>()
+                .join(", ")
         ),
     }
 }
@@ -347,7 +389,11 @@ pub fn py_repr(v: &Value) -> String {
 /// ```
 #[must_use]
 pub fn py_repr_str(s: &str) -> String {
-    let quote = if s.contains('\'') && !s.contains('"') { '"' } else { '\'' };
+    let quote = if s.contains('\'') && !s.contains('"') {
+        '"'
+    } else {
+        '\''
+    };
     let mut out = String::with_capacity(s.len() + 2);
     out.push(quote);
     for c in s.chars() {
@@ -386,7 +432,9 @@ fn ist_druckbar(c: char) -> bool {
     if c == ' ' {
         return true;
     }
-    !(c.is_control() || c.is_whitespace() || matches!(c, '\u{ad}' | '\u{200b}'..='\u{200f}' | '\u{2028}'..='\u{202e}' | '\u{2060}'..='\u{2064}' | '\u{feff}'))
+    !(c.is_control()
+        || c.is_whitespace()
+        || matches!(c, '\u{ad}' | '\u{200b}'..='\u{200f}' | '\u{2028}'..='\u{202e}' | '\u{2060}'..='\u{2064}' | '\u{feff}'))
 }
 
 /// `repr(float)` in Pythons Kurzform: kuerzeste Ziffernfolge, Festkomma fuer Exponenten
@@ -409,25 +457,43 @@ pub fn py_float_repr(f: f64) -> String {
     let wiss = format!("{f:e}");
     let (mantisse, exp) = wiss.split_once('e').unwrap_or((&wiss, "0"));
     let exp: i32 = exp.parse().unwrap_or(0);
-    let (vorzeichen, mantisse) = mantisse.strip_prefix('-').map_or(("", mantisse), |m| ("-", m));
+    let (vorzeichen, mantisse) = mantisse
+        .strip_prefix('-')
+        .map_or(("", mantisse), |m| ("-", m));
     let ziffern: String = mantisse.chars().filter(char::is_ascii_digit).collect();
     if (-4..16).contains(&exp) {
         let punkt = exp + 1;
         let fest = if punkt <= 0 {
-            format!("0.{}{}", "0".repeat(usize::try_from(-punkt).unwrap_or(0)), ziffern)
+            format!(
+                "0.{}{}",
+                "0".repeat(usize::try_from(-punkt).unwrap_or(0)),
+                ziffern
+            )
         } else {
             let p = usize::try_from(punkt).unwrap_or(0);
             if ziffern.len() <= p {
                 format!("{}{}.0", ziffern, "0".repeat(p - ziffern.len()))
             } else {
-                format!("{}.{}", ziffern.get(..p).unwrap_or(""), ziffern.get(p..).unwrap_or(""))
+                format!(
+                    "{}.{}",
+                    ziffern.get(..p).unwrap_or(""),
+                    ziffern.get(p..).unwrap_or("")
+                )
             }
         };
         format!("{vorzeichen}{fest}")
     } else {
         let (kopf, rest) = ziffern.split_at(1.min(ziffern.len()));
-        let m = if rest.is_empty() { kopf.to_owned() } else { format!("{kopf}.{rest}") };
-        let e = if exp < 0 { format!("-{:02}", -exp) } else { format!("+{exp:02}") };
+        let m = if rest.is_empty() {
+            kopf.to_owned()
+        } else {
+            format!("{kopf}.{rest}")
+        };
+        let e = if exp < 0 {
+            format!("-{:02}", -exp)
+        } else {
+            format!("+{exp:02}")
+        };
         format!("{vorzeichen}{m}e{e}")
     }
 }
@@ -503,7 +569,9 @@ pub fn py_int_text(s: &str) -> PyInt {
     if !ok {
         return PyInt::WertFehler;
     }
-    s.replace('_', "").parse::<i64>().map_or(PyInt::Ueberlauf, PyInt::Wert)
+    s.replace('_', "")
+        .parse::<i64>()
+        .map_or(PyInt::Ueberlauf, PyInt::Wert)
 }
 
 /// Eine JSON-Objekt-Form, die ihre Quell-Reihenfolge behaelt (fuer `repr(dict)` in Prompts;
@@ -532,7 +600,11 @@ impl GeordneteMap {
     pub fn py_repr(&self) -> String {
         format!(
             "{{{}}}",
-            self.0.iter().map(|(k, v)| format!("{}: {}", py_repr_str(k), py_repr(v))).collect::<Vec<_>>().join(", ")
+            self.0
+                .iter()
+                .map(|(k, v)| format!("{}: {}", py_repr_str(k), py_repr(v)))
+                .collect::<Vec<_>>()
+                .join(", ")
         )
     }
 }
@@ -545,10 +617,16 @@ impl<'de> serde::Deserialize<'de> for GeordneteMap {
             fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.write_str("ein JSON-Objekt")
             }
-            fn visit_map<A: serde::de::MapAccess<'de>>(self, mut a: A) -> Result<GeordneteMap, A::Error> {
+            fn visit_map<A: serde::de::MapAccess<'de>>(
+                self,
+                mut a: A,
+            ) -> Result<GeordneteMap, A::Error> {
                 let mut paare = Vec::new();
                 while let Some((k, v)) = a.next_entry::<String, Value>()? {
-                    match paare.iter_mut().find(|(alt, _): &&mut (String, Value)| *alt == k) {
+                    match paare
+                        .iter_mut()
+                        .find(|(alt, _): &&mut (String, Value)| *alt == k)
+                    {
                         Some(eintrag) => eintrag.1 = v,
                         None => paare.push((k, v)),
                     }

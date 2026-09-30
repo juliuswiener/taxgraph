@@ -6,7 +6,12 @@
 //! in CI standardmaessig SKIP, lokal erzwingen:
 //!
 //!   `PARITY`=1 `cargo` test -p parity --test `tarif_paritaet` -- --nocapture
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic
+)]
 
 use catala_sys::{grundtarif, splittingtarif, Vz};
 use parity::{diff_grundtarif, diff_splittingtarif, Oracle};
@@ -58,8 +63,14 @@ fn tarif_paritaet_dense_sweep() {
         }
     }
 
-    eprintln!("tarif_paritaet_dense_sweep: {verglichen} Punkte verglichen, {} Abweichungen", abweichungen.len());
-    assert_eq!(verglichen, 24_327, "Sweep-Groesse muss REWRITE_PLAN.md §7s Zielzahl treffen");
+    eprintln!(
+        "tarif_paritaet_dense_sweep: {verglichen} Punkte verglichen, {} Abweichungen",
+        abweichungen.len()
+    );
+    assert_eq!(
+        verglichen, 24_327,
+        "Sweep-Groesse muss REWRITE_PLAN.md §7s Zielzahl treffen"
+    );
     assert!(abweichungen.is_empty(), "Abweichungen: {abweichungen:?}");
 }
 
@@ -126,6 +137,13 @@ fn negativkontrolle_erkennt_genau_eine_abweichung() {
         }
     }
 
-    eprintln!("negativkontrolle: {} Abweichungen gefunden (erwartet: 1)", abweichungen.len());
-    assert_eq!(abweichungen.len(), 1, "Kontrollprobe muss GENAU eine Abweichung finden");
+    eprintln!(
+        "negativkontrolle: {} Abweichungen gefunden (erwartet: 1)",
+        abweichungen.len()
+    );
+    assert_eq!(
+        abweichungen.len(),
+        1,
+        "Kontrollprobe muss GENAU eine Abweichung finden"
+    );
 }

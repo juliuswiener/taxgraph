@@ -1,8 +1,8 @@
 //! § 32a `EStG` Einkommensteuertarif (Grundtarif/Splittingtarif) und die End-to-end-Scopes
 //! `FestzusetzendeEst{Einzel,Zusammen,Gesamt,GesamtZusammen}`, plus die § 34 Abs. 1
 //! Fuenftelregelung (orchestriert den Tarif zweimal, KEIN eigener Catala-Scope).
-use catala_sys::{CatalaFehler, FestzusetzendeEstErgebnis};
 pub use catala_sys::Vz;
+use catala_sys::{CatalaFehler, FestzusetzendeEstErgebnis};
 use domain::Cent;
 
 /// Entscheidet, welcher der beiden Tarif-Scopes (Grundtarif/Splittingtarif) bzw. welcher der
@@ -196,7 +196,9 @@ impl GesamtEingabe {
             aussergewoehnliche_belastungen_cent: self.aussergewoehnliche_belastungen.get(),
             freibetraege_kinder_cent: self.freibetraege_kinder.get(),
             sonstige_abzuege_vom_einkommen_cent: self.sonstige_abzuege_vom_einkommen.get(),
-            anzurechnende_auslaendische_steuern_cent: self.anzurechnende_auslaendische_steuern.get(),
+            anzurechnende_auslaendische_steuern_cent: self
+                .anzurechnende_auslaendische_steuern
+                .get(),
             steuerermaessigungen_cent: self.steuerermaessigungen.get(),
             steuer_kapital_gesondert_cent: self.steuer_kapital_gesondert.get(),
             hinzurechnung_kindergeld_cent: self.hinzurechnung_kindergeld.get(),

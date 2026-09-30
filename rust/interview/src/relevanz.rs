@@ -57,7 +57,11 @@ impl Bedingungsstand {
                 Antwort::Bestaetigt(w) => alle_weichen_ab &= weicht_ab(w),
             }
         }
-        if alle_weichen_ab { Self::Ausgeschlossen } else { Self::Erfuellt }
+        if alle_weichen_ab {
+            Self::Ausgeschlossen
+        } else {
+            Self::Erfuellt
+        }
     }
 }
 
@@ -102,7 +106,11 @@ pub struct RegelRelevanz<'r> {
 /// assert!(rel.values().all(|r| r.status != Regelstatus::Ausgeschlossen));
 /// ```
 #[must_use]
-pub fn relevanz<'r>(store: &Store, sicht: &Sicht<'r>, graph: &Graph<'r>) -> BTreeMap<&'r str, RegelRelevanz<'r>> {
+pub fn relevanz<'r>(
+    store: &Store,
+    sicht: &Sicht<'r>,
+    graph: &Graph<'r>,
+) -> BTreeMap<&'r str, RegelRelevanz<'r>> {
     relevanz_mit(&Aktiv::aus(store), sicht, graph)
 }
 
@@ -129,14 +137,18 @@ pub(crate) fn relevanz_mit<'r>(
             let mut status = Regelstatus::Relevant;
             let mut offen = Vec::new();
             for cond in graph.regel_bedingungen(rid) {
-                let stand = bedingung_je_instanz(aktiv, sicht, graph, &cond.feld, |w| !py_eq(w, &cond.wert));
+                let stand = bedingung_je_instanz(aktiv, sicht, graph, &cond.feld, |w| {
+                    !py_eq(w, &cond.wert)
+                });
                 if stand == Bedingungsstand::Ausgeschlossen {
                     status = Regelstatus::Ausgeschlossen;
                 }
             }
             if status != Regelstatus::Ausgeschlossen {
                 for fid in gates {
-                    match bedingung_je_instanz(aktiv, sicht, graph, fid, |w| *w == Value::Bool(false)) {
+                    match bedingung_je_instanz(aktiv, sicht, graph, fid, |w| {
+                        *w == Value::Bool(false)
+                    }) {
                         Bedingungsstand::Offen => offen.push(fid),
                         Bedingungsstand::Ausgeschlossen => {
                             status = Regelstatus::Ausgeschlossen;
@@ -146,12 +158,23 @@ pub(crate) fn relevanz_mit<'r>(
                     }
                 }
                 if status != Regelstatus::Ausgeschlossen {
-                    status = if offen.is_empty() { Regelstatus::Relevant } else { Regelstatus::Unentschieden };
+                    status = if offen.is_empty() {
+                        Regelstatus::Relevant
+                    } else {
+                        Regelstatus::Unentschieden
+                    };
                 }
             }
             offen.sort_unstable();
             annahmen.sort_unstable();
-            (rid, RegelRelevanz { status, gates_offen: offen, annahmen_offen: annahmen })
+            (
+                rid,
+                RegelRelevanz {
+                    status,
+                    gates_offen: offen,
+                    annahmen_offen: annahmen,
+                },
+            )
         })
         .collect()
 }
@@ -174,7 +197,9 @@ pub(crate) fn relevanz_mit<'r>(
 pub fn gate_gewicht<'r>(sicht: &Sicht<'r>, graph: &Graph<'r>) -> HashMap<&'r str, usize> {
     let mut askable_je_regel: HashMap<&str, usize> = HashMap::new();
     for b in sicht.iter().filter(|b| b.askable) {
-        *askable_je_regel.entry(b.quelle.regel_id.as_str()).or_default() += 1;
+        *askable_je_regel
+            .entry(b.quelle.regel_id.as_str())
+            .or_default() += 1;
     }
     let zahl = |rid: &str| askable_je_regel.get(rid).copied().unwrap_or(0);
     sicht
@@ -182,11 +207,17 @@ pub fn gate_gewicht<'r>(sicht: &Sicht<'r>, graph: &Graph<'r>) -> HashMap<&'r str
         .filter(|b| b.askable)
         .map(|b: &'r Bindung| {
             let mut n = 0;
-            if matches!(b.quelle.bindungspunkt, Bindungspunkt::Geltungsbedingung(_)) && b.typ == Feldtyp::Bool {
+            if matches!(b.quelle.bindungspunkt, Bindungspunkt::Geltungsbedingung(_))
+                && b.typ == Feldtyp::Bool
+            {
                 // alle askable Felder der eigenen Regel ausser diesem
                 n += zahl(&b.quelle.regel_id).saturating_sub(1);
             }
-            n += graph.bedingte_regeln(&b.feld_id).iter().map(|rid| zahl(rid)).sum::<usize>();
+            n += graph
+                .bedingte_regeln(&b.feld_id)
+                .iter()
+                .map(|rid| zahl(rid))
+                .sum::<usize>();
             (b.feld_id.as_str(), n)
         })
         .collect()

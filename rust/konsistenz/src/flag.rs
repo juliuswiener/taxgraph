@@ -52,7 +52,11 @@ pub const FLAG_NEGIERT: [(&str, &[&str]); 7] = [
     ("kein_sonstige_partner", &["rentner_jahresrente_partner"]),
     (
         "kein_p23_verkauf",
-        &["p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten", "p23_werbungskosten"],
+        &[
+            "p23_veraeusserungspreis",
+            "p23_anschaffung_herstellungskosten",
+            "p23_werbungskosten",
+        ],
     ),
     (
         "kein_gewinn",
@@ -112,7 +116,9 @@ fn feld_name(basis: &str) -> &str {
         "verguetung_darlehen" => "Mitunternehmer-Vergütung (Darlehen)",
         "verguetung_ueberlassung" => "Mitunternehmer-Vergütung (Überlassung)",
         "p23_veraeusserungspreis" => "Veräußerungspreis (privater Verkauf)",
-        "p23_anschaffung_herstellungskosten" => "Anschaffungs-/Herstellungskosten (privater Verkauf)",
+        "p23_anschaffung_herstellungskosten" => {
+            "Anschaffungs-/Herstellungskosten (privater Verkauf)"
+        }
         "p23_werbungskosten" => "Werbungskosten (privater Verkauf)",
         andere => andere,
     }
@@ -179,8 +185,11 @@ fn ist_instanz_suffix(rest: &str) -> bool {
 /// ```
 #[must_use]
 pub fn instanz_feld_ids(felder: &Felder, basis: &str) -> Vec<String> {
-    let mut treffer: Vec<String> =
-        if felder.contains_key(basis) { vec![basis.to_owned()] } else { Vec::new() };
+    let mut treffer: Vec<String> = if felder.contains_key(basis) {
+        vec![basis.to_owned()]
+    } else {
+        Vec::new()
+    };
     let praefix = format!("{basis}__");
     treffer.extend(
         felder
@@ -214,7 +223,11 @@ fn betrag_text(wert: &Value) -> Option<String> {
     // sie mit Float-Repr formatieren.
     let n = ganzzahl(wert).filter(|n| *n > 0)?;
     // „Wert > 1000 gilt als Cent" (`flag_check.py:194`) — ohne Tausenderpunkt, anders als `eur`.
-    Some(if n > 1000 { format!("{} €", n.div_euclid(100)) } else { n.to_string() })
+    Some(if n > 1000 {
+        format!("{} €", n.div_euclid(100))
+    } else {
+        n.to_string()
+    })
 }
 
 /// Snapshot → Flag↔Einkunftsart-Widersprüche (`flag_check.py:124-201`).
@@ -237,8 +250,12 @@ pub fn flag_widersprueche<S: BuildHasher>(
         let flag_titel = flag_name(flag);
         for basis in basen {
             for feld_id in instanz_feld_ids(felder, basis) {
-                let Some(wert) = lies(felder, &feld_id).bestaetigt() else { continue };
-                let Some(betrag) = betrag_text(wert) else { continue };
+                let Some(wert) = lies(felder, &feld_id).bestaetigt() else {
+                    continue;
+                };
+                let Some(betrag) = betrag_text(wert) else {
+                    continue;
+                };
                 let feld_titel = feld_name(basis);
                 widersprueche.push(FlagWiderspruch {
                     flag,
@@ -280,9 +297,17 @@ mod tests {
 
     #[test]
     fn bestaetigt_false_und_vorlaeufig_ueberspringen() {
-        for (w, z) in [(json!(false), Zustand::Bestaetigt), (json!(true), Zustand::Vorlaeufig)] {
-            let s = snap(&[("kein_vuv", w, z), ("vv_einnahmen", json!(5000), Zustand::Bestaetigt)]);
-            assert!(flag_widersprueche::<std::hash::RandomState>(&s, None).iter().all(|x| x.flag != "kein_vuv"));
+        for (w, z) in [
+            (json!(false), Zustand::Bestaetigt),
+            (json!(true), Zustand::Vorlaeufig),
+        ] {
+            let s = snap(&[
+                ("kein_vuv", w, z),
+                ("vv_einnahmen", json!(5000), Zustand::Bestaetigt),
+            ]);
+            assert!(flag_widersprueche::<std::hash::RandomState>(&s, None)
+                .iter()
+                .all(|x| x.flag != "kein_vuv"));
         }
     }
 
@@ -294,6 +319,9 @@ mod tests {
             ("vv_einnahmen__02", json!(5), Zustand::Bestaetigt),
         ]);
         let w = flag_widersprueche::<std::hash::RandomState>(&s, None);
-        assert_eq!(w.iter().map(|x| x.feld_id.as_str()).collect::<Vec<_>>(), ["vv_einnahmen__2"]);
+        assert_eq!(
+            w.iter().map(|x| x.feld_id.as_str()).collect::<Vec<_>>(),
+            ["vv_einnahmen__2"]
+        );
     }
 }

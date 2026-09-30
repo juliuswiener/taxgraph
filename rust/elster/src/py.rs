@@ -24,13 +24,22 @@ pub struct PyFehler {
 
 impl PyFehler {
     pub(crate) fn typ(nachricht: impl Into<String>) -> Self {
-        Self { klasse: "TypeError", nachricht: nachricht.into() }
+        Self {
+            klasse: "TypeError",
+            nachricht: nachricht.into(),
+        }
     }
     pub(crate) fn wert(nachricht: impl Into<String>) -> Self {
-        Self { klasse: "ValueError", nachricht: nachricht.into() }
+        Self {
+            klasse: "ValueError",
+            nachricht: nachricht.into(),
+        }
     }
     pub(crate) fn ueberlauf(nachricht: impl Into<String>) -> Self {
-        Self { klasse: "OverflowError", nachricht: nachricht.into() }
+        Self {
+            klasse: "OverflowError",
+            nachricht: nachricht.into(),
+        }
     }
 }
 
@@ -82,7 +91,9 @@ pub(crate) fn int(v: &Value) -> Result<i64, PyFehler> {
                 return Err(PyFehler::wert("cannot convert float NaN to integer"));
             }
             if f.is_infinite() {
-                return Err(PyFehler::ueberlauf("cannot convert float infinity to integer"));
+                return Err(PyFehler::ueberlauf(
+                    "cannot convert float infinity to integer",
+                ));
             }
             let t = f.trunc();
             // i64-Grenzen als f64 sind exakt darstellbar (Zweierpotenzen).
@@ -101,7 +112,12 @@ pub(crate) fn int(v: &Value) -> Result<i64, PyFehler> {
 }
 
 fn int_aus_text(s: &str) -> Result<i64, PyFehler> {
-    let fehler = || PyFehler::wert(format!("invalid literal for int() with base 10: {}", repr_str(s)));
+    let fehler = || {
+        PyFehler::wert(format!(
+            "invalid literal for int() with base 10: {}",
+            repr_str(s)
+        ))
+    };
     let t = strip(s);
     let (negativ, rest) = match t.as_bytes().first() {
         Some(b'-') => (true, t.get(1..).unwrap_or("")),
@@ -148,7 +164,10 @@ pub(crate) fn repr(v: &Value) -> String {
         Value::Array(a) => format!("[{}]", a.iter().map(repr).collect::<Vec<_>>().join(", ")),
         Value::Object(o) => format!(
             "{{{}}}",
-            o.iter().map(|(k, w)| format!("{}: {}", repr_str(k), repr(w))).collect::<Vec<_>>().join(", ")
+            o.iter()
+                .map(|(k, w)| format!("{}: {}", repr_str(k), repr(w)))
+                .collect::<Vec<_>>()
+                .join(", ")
         ),
     }
 }
@@ -180,7 +199,11 @@ fn float_repr(f: f64) -> String {
             format!("0.{}{ziffern}", "0".repeat(exp_u - 1))
         }
     } else {
-        let mant = if rest.is_empty() { erste.to_owned() } else { format!("{erste}.{rest}") };
+        let mant = if rest.is_empty() {
+            erste.to_owned()
+        } else {
+            format!("{erste}.{rest}")
+        };
         let zeichen = if exp < 0 { '-' } else { '+' };
         format!("{mant}e{zeichen}{:02}", exp.unsigned_abs())
     };
@@ -193,7 +216,11 @@ fn float_repr(f: f64) -> String {
 /// gaengigen unsichtbaren Zeichen (NBSP, Soft-Hyphen, Zero-Width, Zeilen-/Absatztrenner, BOM)
 /// werden escaped, alles Uebrige bleibt. Upgrade: Unicode-Kategorien-Tabelle.
 pub(crate) fn repr_str(s: &str) -> String {
-    let quote = if s.contains('\'') && !s.contains('"') { '"' } else { '\'' };
+    let quote = if s.contains('\'') && !s.contains('"') {
+        '"'
+    } else {
+        '\''
+    };
     let mut out = String::with_capacity(s.len() + 2);
     out.push(quote);
     for c in s.chars() {
@@ -260,7 +287,10 @@ mod tests {
     fn repr_wie_python() {
         assert_eq!(repr_str("a'b"), "\"a'b\"");
         assert_eq!(repr_str("a'b\""), "'a\\'b\"'");
-        assert_eq!(repr(&json!([{"a": 1}, null, true])), "[{'a': 1}, None, True]");
+        assert_eq!(
+            repr(&json!([{"a": 1}, null, true])),
+            "[{'a': 1}, None, True]"
+        );
         assert_eq!(float_repr(1e16), "1e+16");
         assert_eq!(float_repr(1.5e-5), "1.5e-05");
         assert_eq!(float_repr(0.0001), "0.0001");

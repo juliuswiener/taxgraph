@@ -7,8 +7,8 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use domain::{Achsenwert, Feldzustand, Herkunft, HerkunftVektor, PruefTiefe, Schreiber, Zustand};
 use serde::{Deserialize, Serialize};
 
-use crate::abweisung::{self, Abweisung};
 use crate::ableitung;
+use crate::abweisung::{self, Abweisung};
 use crate::canonical::EventId;
 use crate::event::{Event, NeuesEvent, Signal};
 use crate::katalog::Katalog;
@@ -134,7 +134,11 @@ impl Veranlagungsjahr {
     /// Wert.
     #[must_use]
     pub fn als_i64_saettigend(self) -> i64 {
-        i64::try_from(self.0).unwrap_or(if self.0.is_positive() { i64::MAX } else { i64::MIN })
+        i64::try_from(self.0).unwrap_or(if self.0.is_positive() {
+            i64::MAX
+        } else {
+            i64::MIN
+        })
     }
 }
 
@@ -275,7 +279,9 @@ impl Store {
     /// `_aktives`, hier direkt ueber den gepflegten Index statt per Voll-Scan).
     #[must_use]
     pub fn aktives(&self, feld_id: &str) -> Option<&Event> {
-        self.aktiv.get(feld_id).and_then(|&idx| self.datei.events.get(idx))
+        self.aktiv
+            .get(feld_id)
+            .and_then(|&idx| self.datei.events.get(idx))
     }
 
     /// Alle aktiven Events (`feld_id`, Event), in unbestimmter Reihenfolge. Dieselbe Quelle wie
@@ -314,8 +320,9 @@ impl Store {
     ) -> Result<EventId, Abweisung> {
         Self::pruefe_auflage_a(neu)?;
         if let Some(typ) = neu.schreiber.vorschlag_typ() {
-            let katalog = katalog
-                .ok_or_else(|| Abweisung::KatalogFehlt { schreiber: neu.schreiber.to_string() })?;
+            let katalog = katalog.ok_or_else(|| Abweisung::KatalogFehlt {
+                schreiber: neu.schreiber.to_string(),
+            })?;
             if !katalog.erlaubt(typ, &neu.feld_id) {
                 return Err(Abweisung::KatalogNichtFreigegeben {
                     schreiber: neu.schreiber.to_string(),
@@ -354,7 +361,8 @@ impl Store {
     /// Auflage A (`store.py:262-324`): ein Vorschlags-Schreiber deklariert sich ehrlich
     /// (`herkunft`/`zustand`/`signal_2`) und darf (ausser `berechnet:`) nie `ersetzt` tragen.
     fn pruefe_auflage_a(neu: &NeuesEvent) -> Result<(), Abweisung> {
-        let Some((erwartete_herkunft, folge)) = abweisung::auflage_a_erwartung(&neu.schreiber) else {
+        let Some((erwartete_herkunft, folge)) = abweisung::auflage_a_erwartung(&neu.schreiber)
+        else {
             return Ok(());
         };
         // `zustand != vorlaeufig` UND `signal_2 is_some()` sind in Python zwei getrennte Checks;
@@ -370,7 +378,9 @@ impl Store {
             });
         }
         if abweisung::ersetzt_gesperrt(&neu.schreiber) && neu.ersetzt.is_some() {
-            return Err(Abweisung::AuflageAErsetztGuard { schreiber: neu.schreiber.to_string() });
+            return Err(Abweisung::AuflageAErsetztGuard {
+                schreiber: neu.schreiber.to_string(),
+            });
         }
         Ok(())
     }
@@ -384,8 +394,11 @@ impl Store {
                 // Schreibpfad ist `push_geprueft`, das Index und Vec gemeinsam pflegt). Ein
                 // fehlender Treffer hier ist strukturell unerreichbar; `and_then` behandelt ihn
                 // fail-open als "kein aktives Event" statt zu paniken.
-                if let Some(aktives_event) =
-                    self.aktiv.get(&neu.feld_id).and_then(|&idx| self.datei.events.get(idx)).map(|e| e.event_id)
+                if let Some(aktives_event) = self
+                    .aktiv
+                    .get(&neu.feld_id)
+                    .and_then(|&idx| self.datei.events.get(idx))
+                    .map(|e| e.event_id)
                 {
                     return Err(Abweisung::AktivesEventVorhanden {
                         feld_id: neu.feld_id.clone(),
@@ -412,12 +425,22 @@ impl Store {
     /// `store.py:393-444`, `_leite_ab`: eine bestaetigte Angabe oberhalb `beweist.ab` beantwortet
     /// die Existenzfrage `beweist.feld_id` gleich mit (nur wenn diese noch unbeantwortet ist,
     /// keine Kette — das abgeleitete Event durchlaeuft `leite_ab` nicht erneut).
-    fn leite_ab(&mut self, feld_id: &str, wert: &serde_json::Value, zustand: Zustand, bindung: BindungNachschlag<'_>) {
+    fn leite_ab(
+        &mut self,
+        feld_id: &str,
+        wert: &serde_json::Value,
+        zustand: Zustand,
+        bindung: BindungNachschlag<'_>,
+    ) {
         if zustand != Zustand::Bestaetigt {
             return;
         }
-        let Some(eintrag) = bindung.get(feld_id) else { return };
-        let Some(regel) = &eintrag.beweist else { return };
+        let Some(eintrag) = bindung.get(feld_id) else {
+            return;
+        };
+        let Some(regel) = &eintrag.beweist else {
+            return;
+        };
         let Some(zahl) = wert.as_f64() else { return };
         if zahl < regel.ab.unwrap_or(1.0) {
             return;
@@ -433,7 +456,10 @@ impl Store {
             zustand: Zustand::Bestaetigt,
             herkunft: berechnet_herkunft().into(),
             schreiber: Schreiber::Abgeleitet("beweist".to_string()),
-            signal: Some(Signal { signal_1: Some(None), signal_2: Some(format!("beweist@{feld_id}={wert}")) }),
+            signal: Some(Signal {
+                signal_1: Some(None),
+                signal_2: Some(format!("beweist@{feld_id}={wert}")),
+            }),
             ersetzt: None,
         };
         self.push_neu(event);
@@ -456,7 +482,9 @@ impl Store {
         let aktiv_snapshot = self.aktiv.clone();
         let mut neue_events = Vec::new();
         for (ziel, eintrag) in bindung.alle() {
-            let Some(regel) = &eintrag.ableitung else { continue };
+            let Some(regel) = &eintrag.ableitung else {
+                continue;
+            };
             let und = regel.und_feld.as_deref();
             if feld_id != regel.aus && Some(feld_id) != und {
                 continue;
@@ -467,7 +495,9 @@ impl Store {
             let quellwert: serde_json::Value = if regel.aus == feld_id {
                 wert.clone()
             } else {
-                let Some(qev) = aktiv_snapshot.get(&regel.aus).and_then(|&i| self.datei.events.get(i))
+                let Some(qev) = aktiv_snapshot
+                    .get(&regel.aus)
+                    .and_then(|&i| self.datei.events.get(i))
                 else {
                     continue;
                 };
@@ -477,16 +507,22 @@ impl Store {
                 qev.wert.clone()
             };
             if let Some(und_feld) = und {
-                let Some(ev) = aktiv_snapshot.get(und_feld).and_then(|&i| self.datei.events.get(i))
+                let Some(ev) = aktiv_snapshot
+                    .get(und_feld)
+                    .and_then(|&i| self.datei.events.get(i))
                 else {
                     continue;
                 };
-                let leer = ev.wert.is_null() || ev.wert == serde_json::json!("") || ev.wert == serde_json::json!(false);
+                let leer = ev.wert.is_null()
+                    || ev.wert == serde_json::json!("")
+                    || ev.wert == serde_json::json!(false);
                 if ev.zustand != Zustand::Bestaetigt || leer {
                     continue;
                 }
             }
-            let Some(neuer_wert) = ableitung::berechne(regel, &quellwert, vz) else { continue };
+            let Some(neuer_wert) = ableitung::berechne(regel, &quellwert, vz) else {
+                continue;
+            };
             neue_events.push(Event {
                 event_id: EventId::aus_bytes([0; 32]),
                 ts: jetzt_iso(),
@@ -495,7 +531,10 @@ impl Store {
                 zustand: Zustand::Bestaetigt,
                 herkunft: berechnet_herkunft().into(),
                 schreiber: Schreiber::Abgeleitet("ableitung".to_string()),
-                signal: Some(Signal { signal_1: Some(None), signal_2: Some(format!("ableitung@{}", regel.aus)) }),
+                signal: Some(Signal {
+                    signal_1: Some(None),
+                    signal_2: Some(format!("ableitung@{}", regel.aus)),
+                }),
                 ersetzt: None,
             });
         }
@@ -552,7 +591,11 @@ impl Store {
             }
             felder.insert(
                 e.feld_id.clone(),
-                SnapshotFeld { wert: e.wert.clone(), zustand: e.zustand, herkunft: e.herkunft.clone() },
+                SnapshotFeld {
+                    wert: e.wert.clone(),
+                    zustand: e.zustand,
+                    herkunft: e.herkunft.clone(),
+                },
             );
         }
         let sid = snapshot_id(&felder);
@@ -574,9 +617,12 @@ impl Store {
         let (felder, sid) = self.materialisiere(bis_event)?;
         let letztes = match bis_event {
             Some(id) => id,
-            None => {
-                self.datei.events.last().map(|e| e.event_id).ok_or(SnapshotFehler::LeererLogOhneBisEvent)?
-            }
+            None => self
+                .datei
+                .events
+                .last()
+                .map(|e| e.event_id)
+                .ok_or(SnapshotFehler::LeererLogOhneBisEvent)?,
         };
         let eric_befund = eric_befund.map(|e| EricBefund {
             gebunden_an: sid,
@@ -585,7 +631,13 @@ impl Store {
             gekappt_verdacht: e.gekappt_verdacht,
             fehler_anzahl: e.fehler_anzahl,
         });
-        let snap = Snapshot { snapshot_id: sid, ts: ts.unwrap_or_else(jetzt_iso), bis_event: letztes, felder, eric_befund };
+        let snap = Snapshot {
+            snapshot_id: sid,
+            ts: ts.unwrap_or_else(jetzt_iso),
+            bis_event: letztes,
+            felder,
+            eric_befund,
+        };
         self.datei.snapshots.push(snap);
         Ok(sid)
     }
@@ -613,8 +665,14 @@ fn snapshot_id(felder: &BTreeMap<String, SnapshotFeld>) -> EventId {
 
 /// Auflage T (Typ) + Auflage F (Format), `store.py:193-248`, `_pruefe_typ_konformitaet`.
 /// Unbekanntes `feld_id`: durchlassen, nicht raten (Team-Lead-Vorgabe).
-fn pruefe_bindung(feld_id: &str, wert: &serde_json::Value, bindung: BindungNachschlag<'_>) -> Result<(), Abweisung> {
-    let Some(eintrag) = bindung.basis_eintrag(feld_id) else { return Ok(()) };
+fn pruefe_bindung(
+    feld_id: &str,
+    wert: &serde_json::Value,
+    bindung: BindungNachschlag<'_>,
+) -> Result<(), Abweisung> {
+    let Some(eintrag) = bindung.basis_eintrag(feld_id) else {
+        return Ok(());
+    };
     if domain::Wert::aus_json(wert, eintrag.typ, eintrag.enum_werte.as_deref()).is_err() {
         return Err(Abweisung::TypInkonform {
             feld_id: feld_id.to_string(),
@@ -650,7 +708,11 @@ fn passt_muster(muster: &str, wert: &str) -> bool {
 /// Auflage F2/Magnitude (`store.py:341-358`, nur fuer Vorschlags-Schreiber): `abs(wert) >= 10^10`
 /// faengt eine vermutete EUR-statt-Cent-Verwechslung. Akzeptiert Zahl ODER numerischen String
 /// (LLM-Antworten liefern oft JSON-Strings); nicht-numerische Strings bleiben unangetastet.
-fn pruefe_magnitude(feld_id: &str, wert: &serde_json::Value, schreiber: &Schreiber) -> Result<(), Abweisung> {
+fn pruefe_magnitude(
+    feld_id: &str,
+    wert: &serde_json::Value,
+    schreiber: &Schreiber,
+) -> Result<(), Abweisung> {
     let zahl = match wert {
         serde_json::Value::Number(n) => n.as_f64(),
         serde_json::Value::String(s) => s.trim().parse::<f64>().ok(),
@@ -687,9 +749,9 @@ fn berechnet_herkunft() -> Herkunft {
 #[cfg(test)]
 mod tests {
     use super::Store;
-    use bindung::Bindung;
     use crate::event::NeuesEvent;
     use crate::nachschlag::BindungNachschlag;
+    use bindung::Bindung;
     use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
     use proptest::prelude::*;
     use serde_json::json;
@@ -715,7 +777,9 @@ mod tests {
         let neu = |wert: i64| NeuesEvent {
             feld_id: "ep_arbeitstage".to_string(),
             wert: json!(wert),
-            feldzustand: Feldzustand::Bestaetigt { signal_2: domain::Signal2::new("klick").unwrap() },
+            feldzustand: Feldzustand::Bestaetigt {
+                signal_2: domain::Signal2::new("klick").unwrap(),
+            },
             herkunft: mensch_herkunft(),
             schreiber: Schreiber::Mensch("julius".to_string()),
             signal_1: None,
@@ -724,7 +788,10 @@ mod tests {
         };
         assert!(store.append(&neu(220), None, bindung).is_ok());
         let fehler = store.append(&neu(230), None, bindung).unwrap_err();
-        assert!(matches!(fehler, crate::Abweisung::AktivesEventVorhanden { .. }));
+        assert!(matches!(
+            fehler,
+            crate::Abweisung::AktivesEventVorhanden { .. }
+        ));
     }
 
     #[test]
@@ -735,7 +802,9 @@ mod tests {
         let neu = |wert: i64, ersetzt: Option<crate::EventId>| NeuesEvent {
             feld_id: "ep_arbeitstage".to_string(),
             wert: json!(wert),
-            feldzustand: Feldzustand::Bestaetigt { signal_2: Signal2::new("klick").unwrap() },
+            feldzustand: Feldzustand::Bestaetigt {
+                signal_2: Signal2::new("klick").unwrap(),
+            },
             herkunft: mensch_herkunft(),
             schreiber: Schreiber::Mensch("julius".to_string()),
             signal_1: None,
@@ -793,7 +862,10 @@ mod tests {
         // Katalog verweigert schon vorher (leerer Katalog) -- das ist Auflage K1, nicht F2. Der
         // Test dokumentiert die Reihenfolge: K1 kommt zuerst.
         let fehler = store.append(&neu, Some(&katalog), bindung).unwrap_err();
-        assert!(matches!(fehler, crate::Abweisung::KatalogNichtFreigegeben { .. }));
+        assert!(matches!(
+            fehler,
+            crate::Abweisung::KatalogNichtFreigegeben { .. }
+        ));
     }
 
     proptest! {
@@ -849,7 +921,9 @@ mod tests {
         let neu = NeuesEvent {
             feld_id: "ep_arbeitstage".to_string(),
             wert: json!(220),
-            feldzustand: Feldzustand::Bestaetigt { signal_2: Signal2::new("klick").unwrap() },
+            feldzustand: Feldzustand::Bestaetigt {
+                signal_2: Signal2::new("klick").unwrap(),
+            },
             herkunft: mensch_herkunft(),
             schreiber: Schreiber::Mensch("julius".to_string()),
             signal_1: None,

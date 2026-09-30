@@ -32,7 +32,10 @@ static MUSTER: LazyLock<Muster> = LazyLock::new(|| Muster {
         ("iban", PyRegex::neu(IBAN)),
         ("steuer_id", PyRegex::neu(STEUER_ID)),
         ("kontonummer", PyRegex::neu(r"\b\d{8,}\b")),
-        ("datum", PyRegex::neu(r"\b(0[1-9]|[12]\d|3[01])\.(0[1-9]|1[0-2])\.\d{4}\b")),
+        (
+            "datum",
+            PyRegex::neu(r"\b(0[1-9]|[12]\d|3[01])\.(0[1-9]|1[0-2])\.\d{4}\b"),
+        ),
         (
             "plz_ort",
             PyRegex::neu(
@@ -45,7 +48,10 @@ static MUSTER: LazyLock<Muster> = LazyLock::new(|| Muster {
                 r"\b[A-ZÄÖÜ][a-zäöüß]+(?:straße|strasse|str\.)(?:\s+\d{1,4}[a-z]?)?|\b[A-ZÄÖÜ][a-zäöüß]+(?:weg|allee|platz|gasse|damm|ring|chaussee)(?:\s+\d{1,4}[a-z]?)",
             ),
         ),
-        ("anrede_name", PyRegex::neu(r"\b(?:Herr|Frau)\s+[A-ZÄÖÜ][a-zäöüß]+\b")),
+        (
+            "anrede_name",
+            PyRegex::neu(r"\b(?:Herr|Frau)\s+[A-ZÄÖÜ][a-zäöüß]+\b"),
+        ),
     ],
     art9: PyRegex::neu(
         "(?i)konfession|kirche|grad_der_behinderung|schwerbehind|gehbehind|behinderungsbedingte\
@@ -135,7 +141,12 @@ pub fn filtere(text: &str) -> (Gefiltert, Vec<&'static str>) {
                     text = neu;
                 }
             }
-            None => return (Gefiltert(PLATZHALTER.to_owned()), vec!["filter_abgebrochen"]),
+            None => {
+                return (
+                    Gefiltert(PLATZHALTER.to_owned()),
+                    vec!["filter_abgebrochen"],
+                )
+            }
         }
     }
     getroffen.sort_unstable();
@@ -177,7 +188,10 @@ pub fn maskiere(text: &str) -> Maskiert {
         .konto_iban
         .ersetze(text, |g| format!("{}****", erste(g)))
         .and_then(|(t, _)| m.konto_stnr.ersetze(&t, |_| "****".to_owned()))
-        .and_then(|(t, _)| m.konto_kto.ersetze(&t, |g| format!("{}****", crate::py::vorne(&erste(g), 2))));
+        .and_then(|(t, _)| {
+            m.konto_kto
+                .ersetze(&t, |g| format!("{}****", crate::py::vorne(&erste(g), 2)))
+        });
     Maskiert(schritt.map_or_else(|| "****".to_owned(), |(t, _)| t))
 }
 

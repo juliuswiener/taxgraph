@@ -32,7 +32,11 @@ pub enum ParamsWertFehler {
     #[error("{datei}: Schluessel {schluessel} fehlt")]
     SchluesselFehlt { datei: String, schluessel: String },
     #[error("{datei}: Schluessel {schluessel} ist keine {erwartet}")]
-    Typ { datei: String, schluessel: String, erwartet: &'static str },
+    Typ {
+        datei: String,
+        schluessel: String,
+        erwartet: &'static str,
+    },
 }
 
 /// Alle Parameterdateien der unterstuetzten Veranlagungszeitraeume plus die Kohortentabellen.
@@ -157,9 +161,12 @@ impl Params {
     }
 
     fn datei(&self, vz: Vz, datei: &str) -> Result<&ParamsDatei, ParamsWertFehler> {
-        self.jahre.get(&(vz.jahr(), datei.to_string())).ok_or_else(|| {
-            ParamsWertFehler::DateiFehlt { vz: vz.jahr(), datei: datei.to_string() }
-        })
+        self.jahre
+            .get(&(vz.jahr(), datei.to_string()))
+            .ok_or_else(|| ParamsWertFehler::DateiFehlt {
+                vz: vz.jahr(),
+                datei: datei.to_string(),
+            })
     }
 
     /// `p[schluessel]["wert"]` einer Jahresdatei, roh.
@@ -168,12 +175,18 @@ impl Params {
             datei: format!("{}/{datei}", vz.jahr()),
             schluessel: format!("{schluessel}.wert"),
         };
-        self.datei(vz, datei)?.werte.get(schluessel).and_then(|v| v.get("wert")).ok_or_else(fehlt)
+        self.datei(vz, datei)?
+            .werte
+            .get(schluessel)
+            .and_then(|v| v.get("wert"))
+            .ok_or_else(fehlt)
     }
 
     fn euro(&self, vz: Vz, datei: &str, schluessel: &str) -> Result<Euro, ParamsWertFehler> {
         let v = self.wert(vz, datei, schluessel)?;
-        ganzzahl(v).map(Euro::new).ok_or_else(|| typ(vz, datei, schluessel, "ganze Zahl"))
+        ganzzahl(v)
+            .map(Euro::new)
+            .ok_or_else(|| typ(vz, datei, schluessel, "ganze Zahl"))
     }
 
     fn ganz(&self, vz: Vz, datei: &str, schluessel: &str) -> Result<i64, ParamsWertFehler> {
@@ -244,7 +257,10 @@ impl Params {
     /// let p = bindung::Params::lade(&wurzel).unwrap();
     /// assert_eq!(p.entfernungspauschale(domain::Vz::Vz2024).unwrap().satz_bis_20_km, Decimal::new(30, 2));
     /// ```
-    pub fn entfernungspauschale(&self, vz: Vz) -> Result<EntfernungspauschaleSaetze, ParamsWertFehler> {
+    pub fn entfernungspauschale(
+        &self,
+        vz: Vz,
+    ) -> Result<EntfernungspauschaleSaetze, ParamsWertFehler> {
         let d = "entfernungspauschale.yaml";
         Ok(EntfernungspauschaleSaetze {
             satz_bis_20_km: self.dezimal(vz, d, "satz_bis_20_km")?,
@@ -315,7 +331,10 @@ impl Params {
     /// assert_eq!((k.prozentsatz, k.hoechstbetrag), (Decimal::new(132, 1), domain::Euro::new(627)));
     /// assert_eq!(p.altersentlastung_kohorte(1990).unwrap().hoechstbetrag, domain::Euro::new(1900));
     /// ```
-    pub fn altersentlastung_kohorte(&self, folgejahr: i64) -> Result<AltersentlastungKohorte, ParamsWertFehler> {
+    pub fn altersentlastung_kohorte(
+        &self,
+        folgejahr: i64,
+    ) -> Result<AltersentlastungKohorte, ParamsWertFehler> {
         let d = "altersentlastungsbetrag_p24a.yaml";
         let fehlt = |k: &str| ParamsWertFehler::SchluesselFehlt {
             datei: format!("kohorten/{d}"),
@@ -332,8 +351,14 @@ impl Params {
             return Err(fehlt("kohorten.<jahr>"));
         };
         let j = folgejahr.clamp(*min, *max);
-        let zeile = tabelle.get(Value::from(j)).ok_or_else(|| fehlt(&format!("kohorten.{j}")))?;
-        let feld = |k: &str| zeile.get(k).ok_or_else(|| fehlt(&format!("kohorten.{j}.{k}")));
+        let zeile = tabelle
+            .get(Value::from(j))
+            .ok_or_else(|| fehlt(&format!("kohorten.{j}")))?;
+        let feld = |k: &str| {
+            zeile
+                .get(k)
+                .ok_or_else(|| fehlt(&format!("kohorten.{j}.{k}")))
+        };
         let typfehler = |k: &str, erwartet| ParamsWertFehler::Typ {
             datei: format!("kohorten/{d}"),
             schluessel: format!("kohorten.{j}.{k}"),
@@ -353,30 +378,47 @@ impl Params {
 impl Params {
     /// `p[schluessel]` einer Jahresdatei ohne `wert`-Huelle (z. B. `pauschale_900: 900`).
     fn oben(&self, vz: Vz, datei: &str, schluessel: &str) -> Result<&Value, ParamsWertFehler> {
-        self.datei(vz, datei)?.werte.get(schluessel).ok_or_else(|| ParamsWertFehler::SchluesselFehlt {
-            datei: format!("{}/{datei}", vz.jahr()),
-            schluessel: schluessel.to_string(),
+        self.datei(vz, datei)?.werte.get(schluessel).ok_or_else(|| {
+            ParamsWertFehler::SchluesselFehlt {
+                datei: format!("{}/{datei}", vz.jahr()),
+                schluessel: schluessel.to_string(),
+            }
         })
     }
 
     fn oben_euro(&self, vz: Vz, datei: &str, schluessel: &str) -> Result<Euro, ParamsWertFehler> {
-        ganzzahl(self.oben(vz, datei, schluessel)?).map(Euro::new).ok_or_else(|| ParamsWertFehler::Typ {
-            datei: format!("{}/{datei}", vz.jahr()),
-            schluessel: schluessel.to_string(),
-            erwartet: "ganze Zahl",
-        })
+        ganzzahl(self.oben(vz, datei, schluessel)?)
+            .map(Euro::new)
+            .ok_or_else(|| ParamsWertFehler::Typ {
+                datei: format!("{}/{datei}", vz.jahr()),
+                schluessel: schluessel.to_string(),
+                erwartet: "ganze Zahl",
+            })
     }
 
     /// Staffel `{int: int}` ohne `wert`-Huelle.
-    fn oben_staffel(&self, vz: Vz, datei: &str, schluessel: &str) -> Result<BTreeMap<i64, Euro>, ParamsWertFehler> {
+    fn oben_staffel(
+        &self,
+        vz: Vz,
+        datei: &str,
+        schluessel: &str,
+    ) -> Result<BTreeMap<i64, Euro>, ParamsWertFehler> {
         let typfehler = || ParamsWertFehler::Typ {
             datei: format!("{}/{datei}", vz.jahr()),
             schluessel: schluessel.to_string(),
             erwartet: "Staffel {ganze Zahl: ganze Zahl}",
         };
-        let map = self.oben(vz, datei, schluessel)?.as_mapping().ok_or_else(typfehler)?;
+        let map = self
+            .oben(vz, datei, schluessel)?
+            .as_mapping()
+            .ok_or_else(typfehler)?;
         map.iter()
-            .map(|(k, v)| Ok((k.as_i64().ok_or_else(typfehler)?, Euro::new(ganzzahl(v).ok_or_else(typfehler)?))))
+            .map(|(k, v)| {
+                Ok((
+                    k.as_i64().ok_or_else(typfehler)?,
+                    Euro::new(ganzzahl(v).ok_or_else(typfehler)?),
+                ))
+            })
             .collect()
     }
 
@@ -394,15 +436,24 @@ impl Params {
 
     /// `kohorten[schluessel][feld]` als Dezimalzahl; `Ok(None)`, wenn die Zeile fehlt (Python
     /// `KeyError` -- der Aufrufer entscheidet).
-    fn kohorten_dezimal(&self, datei: &str, schluessel: i64, feld: &str) -> Result<Option<Decimal>, ParamsWertFehler> {
+    fn kohorten_dezimal(
+        &self,
+        datei: &str,
+        schluessel: i64,
+        feld: &str,
+    ) -> Result<Option<Decimal>, ParamsWertFehler> {
         let Some(zeile) = self.kohorten_tabelle(datei)?.get(Value::from(schluessel)) else {
             return Ok(None);
         };
-        zeile.get(feld).and_then(dezimalzahl).map(Some).ok_or_else(|| ParamsWertFehler::Typ {
-            datei: format!("kohorten/{datei}"),
-            schluessel: format!("kohorten.{schluessel}.{feld}"),
-            erwartet: "Dezimalzahl",
-        })
+        zeile
+            .get(feld)
+            .and_then(dezimalzahl)
+            .map(Some)
+            .ok_or_else(|| ParamsWertFehler::Typ {
+                datei: format!("kohorten/{datei}"),
+                schluessel: format!("kohorten.{schluessel}.{feld}"),
+                erwartet: "Dezimalzahl",
+            })
     }
 
     /// § 20 Abs. 9 S. 1 `EStG` Sparer-Pauschbetrag je Person (`sparer_pauschbetrag_p20_9.yaml`).
@@ -475,7 +526,10 @@ impl Params {
     /// let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
     /// assert_eq!(p.fahrtkostenpauschale_p33_2a(domain::Vz::Vz2025).unwrap().pauschale_4500, domain::Euro::new(4500));
     /// ```
-    pub fn fahrtkostenpauschale_p33_2a(&self, vz: Vz) -> Result<FahrtkostenPauschalen, ParamsWertFehler> {
+    pub fn fahrtkostenpauschale_p33_2a(
+        &self,
+        vz: Vz,
+    ) -> Result<FahrtkostenPauschalen, ParamsWertFehler> {
         let d = "fahrtkostenpauschale_p33_2a.yaml";
         Ok(FahrtkostenPauschalen {
             pauschale_900: self.oben_euro(vz, d, "pauschale_900")?,
@@ -588,7 +642,11 @@ impl Params {
     /// assert_eq!(p.rente_besteuerungsanteil(2004).unwrap(), None);
     /// ```
     pub fn rente_besteuerungsanteil(&self, jahr: i64) -> Result<Option<Decimal>, ParamsWertFehler> {
-        self.kohorten_dezimal("rente_besteuerungsanteil_p22.yaml", jahr, "besteuerungsanteil_prozent")
+        self.kohorten_dezimal(
+            "rente_besteuerungsanteil_p22.yaml",
+            jahr,
+            "besteuerungsanteil_prozent",
+        )
     }
 
     /// § 22 Nr. 1 S. 3 a bb `EStG` Ertragsanteil in Prozent je Alter bei Rentenbeginn
@@ -602,7 +660,11 @@ impl Params {
     /// assert_eq!(p.rente_ertragsanteil(0).unwrap(), Some(rust_decimal::Decimal::new(59, 0)));
     /// ```
     pub fn rente_ertragsanteil(&self, alter: i64) -> Result<Option<Decimal>, ParamsWertFehler> {
-        self.kohorten_dezimal("rente_ertragsanteil_p22.yaml", alter, "ertragsanteil_prozent")
+        self.kohorten_dezimal(
+            "rente_ertragsanteil_p22.yaml",
+            alter,
+            "ertragsanteil_prozent",
+        )
     }
 
     /// § 19 Abs. 2 S. 3 `EStG` Kohortenzeile je Versorgungsbeginn, ausserhalb der Tabelle
@@ -616,23 +678,35 @@ impl Params {
     /// assert_eq!(p.versorgungsfreibetrag_kohorte(2025).unwrap().zuschlag, domain::Euro::new(297));
     /// assert_eq!(p.versorgungsfreibetrag_kohorte(1990).unwrap().hoechstbetrag, domain::Euro::new(3000));
     /// ```
-    pub fn versorgungsfreibetrag_kohorte(&self, beginn: i64) -> Result<VersorgungsfreibetragKohorte, ParamsWertFehler> {
+    pub fn versorgungsfreibetrag_kohorte(
+        &self,
+        beginn: i64,
+    ) -> Result<VersorgungsfreibetragKohorte, ParamsWertFehler> {
         let d = "versorgungsfreibetrag_p19_2.yaml";
         let tabelle = self.kohorten_tabelle(d)?;
         let jahre: Vec<i64> = tabelle.keys().filter_map(Value::as_i64).collect();
-        let fehlt = |k: String| ParamsWertFehler::SchluesselFehlt { datei: format!("kohorten/{d}"), schluessel: k };
+        let fehlt = |k: String| ParamsWertFehler::SchluesselFehlt {
+            datei: format!("kohorten/{d}"),
+            schluessel: k,
+        };
         let (Some(min), Some(max)) = (jahre.iter().min(), jahre.iter().max()) else {
             return Err(fehlt("kohorten.<jahr>".to_string()));
         };
         let j = beginn.clamp(*min, *max);
-        let zeile = tabelle.get(Value::from(j)).ok_or_else(|| fehlt(format!("kohorten.{j}")))?;
+        let zeile = tabelle
+            .get(Value::from(j))
+            .ok_or_else(|| fehlt(format!("kohorten.{j}")))?;
         let typfehler = |k: &str, erwartet| ParamsWertFehler::Typ {
             datei: format!("kohorten/{d}"),
             schluessel: format!("kohorten.{j}.{k}"),
             erwartet,
         };
         let euro = |k: &str| {
-            zeile.get(k).and_then(ganzzahl).map(Euro::new).ok_or_else(|| typfehler(k, "ganze Zahl"))
+            zeile
+                .get(k)
+                .and_then(ganzzahl)
+                .map(Euro::new)
+                .ok_or_else(|| typfehler(k, "ganze Zahl"))
         };
         Ok(VersorgungsfreibetragKohorte {
             prozentsatz: zeile
@@ -677,7 +751,10 @@ fn dezimalzahl(v: &Value) -> Option<Decimal> {
 }
 
 fn yaml_dateien(dir: &Path) -> Result<Vec<PathBuf>, ParamsWertFehler> {
-    let io = |e: std::io::Error| ParamsFehler::Io { pfad: dir.to_path_buf(), nachricht: e.to_string() };
+    let io = |e: std::io::Error| ParamsFehler::Io {
+        pfad: dir.to_path_buf(),
+        nachricht: e.to_string(),
+    };
     let mut out = Vec::new();
     for eintrag in std::fs::read_dir(dir).map_err(io)? {
         let pfad = eintrag.map_err(io)?.path();
@@ -690,7 +767,9 @@ fn yaml_dateien(dir: &Path) -> Result<Vec<PathBuf>, ParamsWertFehler> {
 }
 
 fn dateiname(pfad: &Path) -> String {
-    pfad.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
+    pfad.file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -714,12 +793,21 @@ mod tests {
     #[test]
     fn kohorte_ueber_tabellenende_geklemmt() {
         let p = params();
-        assert_eq!(p.altersentlastung_kohorte(3000).unwrap(), p.altersentlastung_kohorte(2058).unwrap());
+        assert_eq!(
+            p.altersentlastung_kohorte(3000).unwrap(),
+            p.altersentlastung_kohorte(2058).unwrap()
+        );
     }
 
     #[test]
     fn verpflegung_kuerzungssaetze() {
         let v = params().verpflegung(Vz::Vz2024).unwrap();
-        assert_eq!((v.kuerzung_fruehstueck_prozent, v.kuerzung_mittag_abend_prozent), (20, 40));
+        assert_eq!(
+            (
+                v.kuerzung_fruehstueck_prozent,
+                v.kuerzung_mittag_abend_prozent
+            ),
+            (20, 40)
+        );
     }
 }

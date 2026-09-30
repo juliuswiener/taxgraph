@@ -35,7 +35,9 @@ pub fn meet_zustand(zustaende: impl IntoIterator<Item = Zustand>) -> Zustand {
 /// wirft das ein `KeyError`, bevor `herkunft`/`haftung` ueberhaupt gelesen werden. Rust bricht an
 /// derselben Stelle ab, statt eine erfundene `pruef_tiefe`/`haftung` einzusetzen.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
-#[error("Herkunfts-Vektor in Alt-Form (ohne pruef_tiefe/haftung) kann nicht gemeinsam gemeint werden")]
+#[error(
+    "Herkunfts-Vektor in Alt-Form (ohne pruef_tiefe/haftung) kann nicht gemeinsam gemeint werden"
+)]
 pub struct MeetFehler;
 
 /// Meet pro Achse: `herkunft`/`haftung` sind bei Uneinigkeit `"konflikt"` (nie automatisch
@@ -45,7 +47,9 @@ pub struct MeetFehler;
 ///
 /// # Errors
 /// [`MeetFehler`], wenn ein Vektor die Alt-Form traegt (s. [`HerkunftVektor`]/`store.py:71`).
-pub fn meet_herkunft(vektoren: impl IntoIterator<Item = HerkunftVektor>) -> Result<Herkunft, MeetFehler> {
+pub fn meet_herkunft(
+    vektoren: impl IntoIterator<Item = HerkunftVektor>,
+) -> Result<Herkunft, MeetFehler> {
     let vs: Vec<HerkunftVektor> = vektoren.into_iter().collect();
     if vs.is_empty() {
         return Ok(Herkunft {
@@ -54,18 +58,34 @@ pub fn meet_herkunft(vektoren: impl IntoIterator<Item = HerkunftVektor>) -> Resu
             haftung: achsenwert_bekannt_nicht_leer("system"),
         });
     }
-    let volle: Vec<&Herkunft> = vs.iter().map(HerkunftVektor::als_voll).collect::<Option<_>>().ok_or(MeetFehler)?;
+    let volle: Vec<&Herkunft> = vs
+        .iter()
+        .map(HerkunftVektor::als_voll)
+        .collect::<Option<_>>()
+        .ok_or(MeetFehler)?;
     // `vs` (und damit `volle`) ist hier nachweislich nicht leer (frueher return oben).
-    let Some((erster, rest)) = volle.split_first() else { return Err(MeetFehler) };
+    let Some((erster, rest)) = volle.split_first() else {
+        return Err(MeetFehler);
+    };
 
-    let herkunft = meet_achse(erster.herkunft.as_str(), rest.iter().map(|v| v.herkunft.as_str()));
-    let haftung = meet_achse(erster.haftung.as_str(), rest.iter().map(|v| v.haftung.as_str()));
+    let herkunft = meet_achse(
+        erster.herkunft.as_str(),
+        rest.iter().map(|v| v.herkunft.as_str()),
+    );
+    let haftung = meet_achse(
+        erster.haftung.as_str(),
+        rest.iter().map(|v| v.haftung.as_str()),
+    );
     let pruef_tiefe = volle
         .iter()
         .map(|v| v.pruef_tiefe)
         .fold(PruefTiefe::Amtlich, PruefTiefe::min);
 
-    Ok(Herkunft { herkunft, pruef_tiefe, haftung })
+    Ok(Herkunft {
+        herkunft,
+        pruef_tiefe,
+        haftung,
+    })
 }
 
 /// `Achsenwert` aus einem bekannt nicht-leeren `&str` — fuer die Meet-Identitaet und die
@@ -137,7 +157,9 @@ mod tests {
         }
 
         fn alt(herkunft: &str) -> HerkunftVektor {
-            HerkunftVektor::Alt(HerkunftAlt { herkunft: achsenwert_bekannt_nicht_leer(herkunft) })
+            HerkunftVektor::Alt(HerkunftAlt {
+                herkunft: achsenwert_bekannt_nicht_leer(herkunft),
+            })
         }
 
         #[test]
@@ -177,7 +199,11 @@ mod tests {
         /// rot.
         #[test]
         fn alt_vektor_im_gemisch_scheitert() {
-            let fehler = meet_herkunft([voll("mensch", PruefTiefe::Amtlich, "nutzer"), alt("vorjahr")]).unwrap_err();
+            let fehler = meet_herkunft([
+                voll("mensch", PruefTiefe::Amtlich, "nutzer"),
+                alt("vorjahr"),
+            ])
+            .unwrap_err();
             assert_eq!(fehler, MeetFehler);
         }
 

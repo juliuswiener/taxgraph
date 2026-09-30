@@ -26,7 +26,9 @@ mod wert;
 mod zustand;
 
 pub use feld_id::{BasisId, FeldId, FeldIdFehler};
-pub use herkunft::{Achsenwert, Herkunft, HerkunftAlt, HerkunftVektor, LeererAchsenwert, Schreiber, KONFLIKT};
+pub use herkunft::{
+    Achsenwert, Herkunft, HerkunftAlt, HerkunftVektor, LeererAchsenwert, Schreiber, KONFLIKT,
+};
 pub use meet::{meet_herkunft, meet_zustand, MeetFehler};
 pub use money::{Cent, CentUeberlauf, Euro};
 pub use sperrgrund::{Sperrgrund, UnbekannterSperrgrund, UNBEKANNTER_SPERRGRUND};
