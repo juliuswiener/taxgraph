@@ -437,6 +437,13 @@ def main() -> None:
             sys.stdout.write(json.dumps(elster_oracle.handle(req), ensure_ascii=False) + "\n")
             sys.stdout.flush()
             continue
+        if str(req.get("fn", "")).startswith("bescheid."):
+            # lazy wie oben: tools/parity/bescheid_oracle.py (rust/bescheid, Schritt 7)
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import bescheid_oracle  # noqa: E402
+            sys.stdout.write(json.dumps(bescheid_oracle.handle(req), ensure_ascii=False) + "\n")
+            sys.stdout.flush()
+            continue
         if str(req.get("fn", "")).startswith("schritt8."):
             # lazy wie oben: tools/parity/schritt8_oracle.py (rust/auth, rust/llm, rust/eingang)
             sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

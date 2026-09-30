@@ -91,6 +91,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "bescheid"
+version = "0.0.0"
+dependencies = [
+ "bindung",
+ "domain",
+ "elster",
+ "engine",
+ "intervall",
+ "serde_json",
+ "store",
+ "thiserror",
+]
+
+[[package]]
 name = "bindung"
 version = "0.0.0"
 dependencies = [
@@ -696,6 +710,7 @@ version = "0.0.0"
 dependencies = [
  "auth",
  "bcrypt",
+ "bescheid",
  "bindung",
  "catala-sys",
  "chrono",
