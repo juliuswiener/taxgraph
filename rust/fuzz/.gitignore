@@ -1,0 +1,5 @@
+target
+artifacts
+coverage
+# Laufkorpus waechst beim Fuzzen; nur der erzeugte Seed-Korpus unter seeds/ wird eingecheckt.
+corpus

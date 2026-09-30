@@ -1,0 +1,58 @@
+[package]
+name = "taxgraph-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+# Eigener Workspace: das Crate ist KEIN Mitglied von `rust/Cargo.toml`, `cargo build/clippy/test
+# --workspace` auf stable beruehrt es nicht. Die Lockdatei ist von `rust/Cargo.lock` abgeleitet.
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+serde_json = "=1.0.145"
+domain = { path = "../domain" }
+bindung = { path = "../bindung" }
+store = { path = "../store" }
+llm = { path = "../llm" }
+eingang = { path = "../eingang" }
+elster = { path = "../elster" }
+roxmltree = "=0.21.1"
+
+[[bin]]
+name = "llm"
+path = "fuzz_targets/llm.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "eingang"
+path = "fuzz_targets/eingang.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "elster"
+path = "fuzz_targets/elster.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "store"
+path = "fuzz_targets/store.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "bindung"
+path = "fuzz_targets/bindung.rs"
+test = false
+doc = false
+bench = false
