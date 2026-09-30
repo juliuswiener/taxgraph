@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["catala-sys", "domain", "bindung", "parity", "store", "engine", "elster", "interview", "konsistenz", "intervall", "auth", "llm", "eingang", "bescheid"]
+members = ["catala-sys", "domain", "bindung", "parity", "store", "engine", "elster", "interview", "konsistenz", "intervall", "auth", "llm", "eingang", "bescheid", "api"]
 
 [workspace.package]
 edition = "2021"
@@ -36,3 +36,8 @@ rustls = { version = "=0.23.45", default-features = false, features = ["ring", "
 webpki-roots = "=1.0.9"
 wait-timeout = "=0.2.1"
 tempfile = "=3.27.0"
+axum = { version = "=0.8.9", default-features = false, features = ["http1", "tokio"] }
+tokio = { version = "=1.53.1", features = ["rt-multi-thread", "macros", "net", "signal", "sync"] }
+tower = { version = "=0.5.3", default-features = false, features = ["util"] }
+http-body-util = "=0.1.5"
+utoipa = "=6.0.0"

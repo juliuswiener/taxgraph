@@ -136,7 +136,8 @@ pub fn anhaengen(
 ) -> Result<(), AuditFehler> {
     let eintrag = AuditEintrag {
         ts: jetzt_iso(),
-        user_id: user_id.unwrap_or("unbekannt").to_string(),
+        // Python: `user_id or "unbekannt"` — auch ein leerer Name wird `unbekannt`.
+        user_id: user_id.filter(|u| !u.is_empty()).unwrap_or("unbekannt").to_string(),
         action,
         fall_id: fall_id.map(str::to_string),
         detail: detail.map(str::to_string),

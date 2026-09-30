@@ -28,6 +28,7 @@ rust_decimal.workspace = true
 auth = { path = "../auth" }
 llm = { path = "../llm" }
 eingang = { path = "../eingang" }
+api = { path = "../api" }
 tempfile.workspace = true
 bcrypt.workspace = true
 chrono.workspace = true
