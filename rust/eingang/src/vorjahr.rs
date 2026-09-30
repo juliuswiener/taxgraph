@@ -27,6 +27,14 @@ pub struct VorjahrErgebnis {
 }
 
 /// `uebertragbare_felder(bindung)`: `feld_id → Kategorie`, sortiert.
+///
+/// ```
+/// use eingang::vorjahr::uebertragbare_felder;
+/// use store::BindungNachschlag;
+/// let nachschlag = BindungNachschlag::neu(eingang::doctest_bindung().unwrap());
+/// let felder = uebertragbare_felder(nachschlag);
+/// assert!(felder.values().all(|k| *k == "uebernehmbar" || *k == "vorschlag"));
+/// ```
 #[must_use]
 pub fn uebertragbare_felder(bindung: BindungNachschlag<'_>) -> BTreeMap<String, &'static str> {
     bindung
@@ -50,6 +58,22 @@ pub fn uebertragbare_felder(bindung: BindungNachschlag<'_>) -> BTreeMap<String, 
 ///
 /// # Errors
 /// [`SchreibFehler`] beim ersten abgewiesenen Feld.
+///
+/// ```
+/// use std::collections::BTreeMap;
+/// use eingang::vorjahr::{uebernehme, uebertragbare_felder, VorjahrFeld};
+/// use store::Store;
+/// use store::BindungNachschlag;
+/// let nachschlag = BindungNachschlag::neu(eingang::doctest_bindung().unwrap());
+/// let mut store = Store::leer(2026, None);
+/// // Ein Vorjahrsfeld ohne bestaetigten Zustand wird nie uebertragen.
+/// let offen: BTreeMap<String, VorjahrFeld> = uebertragbare_felder(nachschlag)
+///     .into_keys()
+///     .map(|f| (f, VorjahrFeld { wert: serde_json::json!(1), zustand: Some("vorlaeufig".into()) }))
+///     .collect();
+/// let erg = uebernehme(&mut store, &offen, nachschlag, 2025, None).unwrap();
+/// assert_eq!(erg.uebertragen, 0);
+/// ```
 pub fn uebernehme(
     store: &mut Store,
     vorjahr_felder: &BTreeMap<String, VorjahrFeld>,

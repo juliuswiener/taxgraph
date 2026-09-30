@@ -89,24 +89,55 @@ pub struct Deklaration {
 
 impl Deklaration {
     /// Vorlaeufige oder widerspruechliche Eingaben (fail-closed).
+    ///
+    /// ```
+    /// use std::collections::HashMap;
+    /// use elster::{deklariere, Felder};
+    /// let d = deklariere(&Felder::new(), &HashMap::new(), None).unwrap();
+    /// assert!(d.unvollstaendig().is_empty()); // nichts vorlaeufig, nichts widerspruechlich
+    /// ```
     #[must_use]
     pub fn unvollstaendig(&self) -> &[Eintrag] {
         &self.unvollstaendig
     }
 
     /// Wahr genau dann, wenn nichts vorlaeufig oder widerspruechlich ist.
+    ///
+    /// ```
+    /// use std::collections::HashMap;
+    /// use elster::{deklariere, Felder};
+    /// let d = deklariere(&Felder::new(), &HashMap::new(), None).unwrap();
+    /// assert!(d.eingaben_konsistent());
+    /// assert_eq!(d.eingaben_konsistent(), d.unvollstaendig().is_empty());
+    /// ```
     #[must_use]
     pub fn eingaben_konsistent(&self) -> bool {
         self.unvollstaendig.is_empty()
     }
 
     /// Fehlende Pflichtfelder (eigene Aussage, bewusst NICHT in `unvollstaendig`).
+    ///
+    /// ```
+    /// use std::collections::HashMap;
+    /// use elster::{deklariere, Felder};
+    /// let d = deklariere(&Felder::new(), &HashMap::new(), None).unwrap();
+    /// // Pflichtluecken sind eine eigene Aussage und machen die Eingaben nicht inkonsistent.
+    /// assert!(d.eingaben_konsistent());
+    /// assert!(!d.pflichtfelder_luecken().is_empty()); // ohne jede Angabe fehlen Pflichtfelder
+    /// ```
     #[must_use]
     pub fn pflichtfelder_luecken(&self) -> &[Eintrag] {
         &self.pflichtfelder_luecken
     }
 
     /// Instanzen einer Gruppe.
+    ///
+    /// ```
+    /// use std::collections::HashMap;
+    /// use elster::{deklariere, Felder};
+    /// let d = deklariere(&Felder::new(), &HashMap::new(), None).unwrap();
+    /// assert!(d.instanzen_der_gruppe("kind").is_empty());
+    /// ```
     #[must_use]
     pub fn instanzen_der_gruppe(&self, gruppe: &str) -> &[AnlageInstanz] {
         self.anlage_instanzen.iter().find(|(g, _)| g == gruppe).map_or(&[], |(_, v)| v.as_slice())

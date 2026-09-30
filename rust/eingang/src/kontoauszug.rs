@@ -309,6 +309,17 @@ pub struct Uebernahme {
 ///
 /// # Errors
 /// [`KontoauszugFehler`] (Store-Abweisung, Betragsueberlauf).
+///
+/// ```
+/// use eingang::kontoauszug::{uebernehme, Transaktion};
+/// use store::Store;
+/// use store::BindungNachschlag;
+/// let nachschlag = BindungNachschlag::neu(eingang::doctest_bindung().unwrap());
+/// let mut store = Store::leer(2025, None);
+/// let tx = Transaktion { datum: serde_json::json!("2025-03-01"), betrag: -1500, verwendungszweck: "Miete".into() };
+/// let erg = uebernehme(&mut store, &[tx], nachschlag, None, None, None).unwrap();
+/// assert_eq!(erg.llm_uebersprungen, 0); // ohne Klassifikator wird nichts uebersprungen
+/// ```
 pub fn uebernehme(
     store: &mut Store,
     transaktionen: &[Transaktion],

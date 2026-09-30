@@ -43,6 +43,10 @@ pub use relevanz::{gate_gewicht, relevanz, Bedingungsstand, RegelRelevanz, Regel
 pub use rollen::{relevante_kegel_felder, ring_bindung, rollen, AchsenBindung, AufbauBindung};
 
 /// Laedt die echte Registry fuer Doctests (`produkt/bindung`). Nicht Teil der API.
+///
+/// ```
+/// assert!(interview::doctest_registry().is_some());
+/// ```
 #[doc(hidden)]
 #[must_use]
 pub fn doctest_registry() -> Option<bindung::Registry> {

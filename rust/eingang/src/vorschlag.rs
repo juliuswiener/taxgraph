@@ -65,6 +65,16 @@ impl VorschlagEvent {
     ///
     /// # Errors
     /// [`SchreibFehler::Abweisung`], wenn eine Store-Auflage greift.
+    ///
+    /// ```
+    /// use eingang::vorschlag::{Quelle, VorschlagEvent};
+    /// use store::{BindungNachschlag, Store};
+    /// let leer = std::collections::HashMap::new();
+    /// let mut store = Store::leer(2025, None);
+    /// let ev = VorschlagEvent { quelle: Quelle::Vorjahr, feld_id: "unbekannt".into(), wert: serde_json::json!(1), signal_1: serde_json::json!({"typ": "vorjahr"}) };
+    /// ev.schreibe(&mut store, None, BindungNachschlag::neu(&leer), None).unwrap(); // landet als vorlaeufiges Event
+    /// assert_eq!(store.aktive().count(), 1);
+    /// ```
     pub fn schreibe(
         &self,
         store: &mut Store,
@@ -108,8 +118,27 @@ impl EdatenEvent {
     ///
     /// # Errors
     /// [`SchreibFehler::Abweisung`].
-    pub fn schreibe(&self, store: &mut Store, bindung: BindungNachschlag<'_>, ts: Option<&str>) -> Result<EventId, SchreibFehler> {
-        let herkunft = Herkunft { herkunft: achse("edaten")?, pruef_tiefe: PruefTiefe::Amtlich, haftung: achse("amt")? };
+    ///
+    /// ```
+    /// use eingang::vorschlag::EdatenEvent;
+    /// use store::{BindungNachschlag, Store};
+    /// let leer = std::collections::HashMap::new();
+    /// let mut store = Store::leer(2025, None);
+    /// let ev = EdatenEvent { feld_id: "unbekannt".into(), wert: serde_json::json!(1), signal_1: serde_json::json!({"typ": "edaten"}) };
+    /// // Ohne Bindung ist die Typpruefung offen; der Store nimmt das bestaetigte Event an.
+    /// assert!(ev.schreibe(&mut store, BindungNachschlag::neu(&leer), None).is_ok());
+    /// ```
+    pub fn schreibe(
+        &self,
+        store: &mut Store,
+        bindung: BindungNachschlag<'_>,
+        ts: Option<&str>,
+    ) -> Result<EventId, SchreibFehler> {
+        let herkunft = Herkunft {
+            herkunft: achse("edaten")?,
+            pruef_tiefe: PruefTiefe::Amtlich,
+            haftung: achse("amt")?,
+        };
         let neu = NeuesEvent {
             feld_id: self.feld_id.clone(),
             wert: self.wert.clone(),

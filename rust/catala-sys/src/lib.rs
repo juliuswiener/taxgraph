@@ -401,6 +401,13 @@ fn locked<T>(f: impl FnOnce() -> T) -> T {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::Vz;
+/// use catala_sys::grundtarif;
+/// assert_eq!(grundtarif(0, Vz::Vz2025).unwrap(), 0); // unter dem Grundfreibetrag
+/// assert!(grundtarif(6_000_000, Vz::Vz2025).unwrap() > grundtarif(5_000_000, Vz::Vz2025).unwrap());
+/// ```
 pub fn grundtarif(zve_cent: i64, vz: Vz) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out: i64 = 0;
@@ -417,6 +424,12 @@ pub fn grundtarif(zve_cent: i64, vz: Vz) -> Result<i64, CatalaFehler> {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::Vz;
+/// use catala_sys::{grundtarif, splittingtarif};
+/// assert_eq!(splittingtarif(10_000_000, Vz::Vz2025).unwrap(), 2 * grundtarif(5_000_000, Vz::Vz2025).unwrap());
+/// ```
 pub fn splittingtarif(zve_gemeinsam_cent: i64, vz: Vz) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out: i64 = 0;
@@ -431,6 +444,12 @@ pub fn splittingtarif(zve_gemeinsam_cent: i64, vz: Vz) -> Result<i64, CatalaFehl
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::Vz;
+/// use catala_sys::festzusetzende_est_einzel;
+/// assert!(festzusetzende_est_einzel(5_000_000, 0, 0, Vz::Vz2025).unwrap() > 0);
+/// ```
 pub fn festzusetzende_est_einzel(
     bruttoarbeitslohn_cent: i64,
     werbungskosten_cent: i64,
@@ -458,6 +477,11 @@ pub fn festzusetzende_est_einzel(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::spenden_abzug;
+/// assert_eq!(spenden_abzug(10_000, 1_000_000).unwrap(), 10_000); // unter dem Deckel voll abziehbar
+/// ```
 pub fn spenden_abzug(zuwendungen_cent: i64, gde_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out: i64 = 0;
@@ -472,7 +496,16 @@ pub fn spenden_abzug(zuwendungen_cent: i64, gde_cent: i64) -> Result<i64, Catala
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
-pub fn zumutbare_belastung(gde_cent: i64, anzahl_kinder: i64, splitting: bool) -> Result<i64, CatalaFehler> {
+///
+/// ```
+/// use catala_sys::zumutbare_belastung;
+/// assert!(zumutbare_belastung(6_000_000, 0, false).unwrap() > zumutbare_belastung(2_000_000, 0, false).unwrap());
+/// ```
+pub fn zumutbare_belastung(
+    gde_cent: i64,
+    anzahl_kinder: i64,
+    splitting: bool,
+) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out: i64 = 0;
         // SAFETY: siehe `spenden_abzug`.
@@ -487,6 +520,11 @@ pub fn zumutbare_belastung(gde_cent: i64, anzahl_kinder: i64, splitting: bool) -
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::agb_abzug;
+/// assert_eq!(agb_abzug(100, 500).unwrap(), 0); // unter der zumutbaren Belastung nichts abziehbar
+/// ```
 pub fn agb_abzug(agb_cent: i64, zumutbare_belastung_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out: i64 = 0;
@@ -501,6 +539,11 @@ pub fn agb_abzug(agb_cent: i64, zumutbare_belastung_cent: i64) -> Result<i64, Ca
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::kirchensteuerabzug;
+/// assert_eq!(kirchensteuerabzug(1_000, 300).unwrap(), 700); // Erstattung mindert den Abzug
+/// ```
 pub fn kirchensteuerabzug(gezahlt_cent: i64, erstattet_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out: i64 = 0;
@@ -516,6 +559,12 @@ pub fn kirchensteuerabzug(gezahlt_cent: i64, erstattet_cent: i64) -> Result<i64,
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::altersentlastungsbetrag;
+/// // Bemessung 3.000 EUR, 20,0 % (200/10), Hoechstbetrag 760 EUR → 600 EUR
+/// assert_eq!(altersentlastungsbetrag(200_000, 100_000, 200, 10, 76_000).unwrap(), 60_000);
+/// ```
 pub fn altersentlastungsbetrag(
     arbeitslohn_cent: i64,
     positive_andere_cent: i64,
@@ -545,6 +594,11 @@ pub fn altersentlastungsbetrag(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::entlastungsbetrag;
+/// assert_eq!(entlastungsbetrag(false, 2, 0).unwrap(), 0); // nicht alleinstehend: kein Anspruch
+/// ```
 pub fn entlastungsbetrag(
     alleinstehend: bool,
     anzahl_kinder: i64,
@@ -571,6 +625,12 @@ pub fn entlastungsbetrag(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::familienleistungsausgleich;
+/// // Freibetrag guenstiger: mit-Steuer plus Kindergeld
+/// assert_eq!(familienleistungsausgleich(1_000_000, 900_000, 30_000).unwrap(), 930_000);
+/// ```
 pub fn familienleistungsausgleich(
     est_ohne_cent: i64,
     est_mit_cent: i64,
@@ -591,6 +651,11 @@ pub fn familienleistungsausgleich(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::verbilligte_vermietung_wk;
+/// assert_eq!(verbilligte_vermietung_wk(100_000, 100, 1).unwrap(), 100_000); // 100 % Entgelt: voll abziehbar
+/// ```
 pub fn verbilligte_vermietung_wk(
     werbungskosten_cent: i64,
     entgelt_quote_num: i64,
@@ -612,6 +677,11 @@ pub fn verbilligte_vermietung_wk(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::kranken_pflege_vorsorge;
+/// assert_eq!(kranken_pflege_vorsorge(50_000, 0, false).unwrap(), 50_000);
+/// ```
 pub fn kranken_pflege_vorsorge(
     basis_cent: i64,
     weitere_cent: i64,
@@ -632,6 +702,11 @@ pub fn kranken_pflege_vorsorge(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::berufsausbildung;
+/// assert_eq!(berufsausbildung(10_000).unwrap(), 10_000); // unter dem Hoechstbetrag voll abziehbar
+/// ```
 pub fn berufsausbildung(aufwendungen_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out: i64 = 0;
@@ -646,6 +721,11 @@ pub fn berufsausbildung(aufwendungen_cent: i64) -> Result<i64, CatalaFehler> {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::betriebs_freibetrag;
+/// assert_eq!(betriebs_freibetrag(16_000_000).unwrap(), 2_100_000); // Teilabschmelzung ueber 136.000 EUR
+/// ```
 pub fn betriebs_freibetrag(veraeusserungsgewinn_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out: i64 = 0;
@@ -660,7 +740,15 @@ pub fn betriebs_freibetrag(veraeusserungsgewinn_cent: i64) -> Result<i64, Catala
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
-pub fn euer_gewinn(betriebseinnahmen_cent: i64, betriebsausgaben_cent: i64) -> Result<i64, CatalaFehler> {
+///
+/// ```
+/// use catala_sys::euer_gewinn;
+/// assert_eq!(euer_gewinn(3_000_000, 5_000_000).unwrap(), -2_000_000); // Ausgaben ueber Einnahmen: Verlust
+/// ```
+pub fn euer_gewinn(
+    betriebseinnahmen_cent: i64,
+    betriebsausgaben_cent: i64,
+) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out: i64 = 0;
         // SAFETY: siehe `spenden_abzug`.
@@ -675,6 +763,11 @@ pub fn euer_gewinn(betriebseinnahmen_cent: i64, betriebsausgaben_cent: i64) -> R
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::mitunternehmer_einkuenfte;
+/// assert_eq!(mitunternehmer_einkuenfte(1_000_000, 1_200_000, 300_000, 500_000).unwrap(), 3_000_000);
+/// ```
 pub fn mitunternehmer_einkuenfte(
     gewinnanteil_cent: i64,
     verguetung_taetigkeit_cent: i64,
@@ -702,6 +795,11 @@ pub fn mitunternehmer_einkuenfte(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::gwg_sofortabzug;
+/// assert_eq!(gwg_sofortabzug(80_100).unwrap(), 0); // ueber 800 EUR kein Sofortabzug
+/// ```
 pub fn gwg_sofortabzug(anschaffungskosten_netto_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out: i64 = 0;
@@ -716,6 +814,11 @@ pub fn gwg_sofortabzug(anschaffungskosten_netto_cent: i64) -> Result<i64, Catala
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::verlustvortrag_abzug;
+/// assert_eq!(verlustvortrag_abzug(5_000_000, 6_000_000, false).unwrap(), 5_000_000); // auf das GdE gekappt
+/// ```
 pub fn verlustvortrag_abzug(
     gde_cent: i64,
     bestand_cent: i64,
@@ -738,6 +841,11 @@ pub fn verlustvortrag_abzug(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::ermaessigter_durchschnittssatz;
+/// assert_eq!(ermaessigter_durchschnittssatz(10_000_000, 20_000_000, 100_000_000).unwrap(), 1_400_000);
+/// ```
 pub fn ermaessigter_durchschnittssatz(
     ao_cent: i64,
     est_gesamt_zzgl_progression_cent: i64,
@@ -762,6 +870,16 @@ pub fn ermaessigter_durchschnittssatz(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::{entfernungspauschale, EntfernungspauschaleEingabe};
+/// let e = entfernungspauschale(EntfernungspauschaleEingabe {
+///     entfernung_km_roh_num: 106, entfernung_km_roh_den: 10, arbeitstage: 200,
+///     eigenes_oder_ueberlassenes_kfz: false, oepnv_kosten_jahr_cent: 0,
+///     satz_bis_20_km_cent: 30, satz_ab_21_km_cent: 38, staffelgrenze_km: 20, hoechstbetrag_cent: 450_000,
+/// }).unwrap();
+/// assert_eq!(e.entfernungspauschale_cent, 60_000); // 10 volle km × 0,30 EUR × 200 Tage
+/// ```
 pub fn entfernungspauschale(
     eingabe: EntfernungspauschaleEingabe,
 ) -> Result<EntfernungspauschaleErgebnis, CatalaFehler> {
@@ -795,7 +913,19 @@ pub fn entfernungspauschale(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
-pub fn raumkostenabzug(eingabe: RaumkostenabzugEingabe) -> Result<RaumkostenabzugErgebnis, CatalaFehler> {
+///
+/// ```
+/// use catala_sys::{raumkostenabzug, RaumkostenabzugEingabe};
+/// let r = raumkostenabzug(RaumkostenabzugEingabe {
+///     arbeitszimmer_vorhanden: false, ist_mittelpunkt: false, tatsaechliche_aufwendungen_cent: 0,
+///     jahrespauschale_gewaehlt: false, monate_ohne_mittelpunkt: 0, homeoffice_tage: 120,
+///     jahrespauschale_cent: 126_000, tagespauschale_pro_tag_cent: 600, tagespauschale_hoechstbetrag_cent: 126_000,
+/// }).unwrap();
+/// assert_eq!(r.abzug_gesamt_cent, 72_000); // 120 Tage × 6 EUR
+/// ```
+pub fn raumkostenabzug(
+    eingabe: RaumkostenabzugEingabe,
+) -> Result<RaumkostenabzugErgebnis, CatalaFehler> {
     locked(|| {
         let ffi_in = TgRaumkostenabzugInFfi {
             arbeitszimmer_vorhanden: i32::from(eingabe.arbeitszimmer_vorhanden),
@@ -827,6 +957,13 @@ pub fn raumkostenabzug(eingabe: RaumkostenabzugEingabe) -> Result<Raumkostenabzu
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::Vz;
+/// use catala_sys::festzusetzende_est_einzel_voll;
+/// let v = festzusetzende_est_einzel_voll(5_000_000, 0, 0, Vz::Vz2025).unwrap();
+/// assert!(v.zu_versteuerndes_einkommen_cent < 5_000_000 && v.festzusetzende_est_cent > 0);
+/// ```
 pub fn festzusetzende_est_einzel_voll(
     bruttoarbeitslohn_cent: i64,
     werbungskosten_cent: i64,
@@ -856,6 +993,12 @@ pub fn festzusetzende_est_einzel_voll(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::Vz;
+/// use catala_sys::festzusetzende_est_zusammen;
+/// assert!(festzusetzende_est_zusammen(6_000_000, 0, 0, 0, 0, Vz::Vz2025).unwrap() > 0);
+/// ```
 // Die a/b-Paarung bildet die zwei Ehepartner ab, nicht austauschbare Varianten eines Namens.
 #[allow(clippy::similar_names)]
 pub fn festzusetzende_est_zusammen(
@@ -891,6 +1034,21 @@ pub fn festzusetzende_est_zusammen(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::festzusetzende_est_gesamt;
+/// use catala_sys::{GesamtEingabe, Vz};
+/// let eingabe = GesamtEingabe {
+///     einkuenfte_nichtselbststaendig_cent: 6_000_000, einkuenfte_kapitalvermoegen_cent: 0,
+///     einkuenfte_vermietung_cent: 0, einkuenfte_sonstige_cent: 0, einkuenfte_gewinn_cent: 0,
+///     altersentlastungsbetrag_cent: 0, entlastungsbetrag_alleinerziehende_cent: 0, sonderausgaben_cent: 0,
+///     aussergewoehnliche_belastungen_cent: 0, freibetraege_kinder_cent: 0,
+///     sonstige_abzuege_vom_einkommen_cent: 0, anzurechnende_auslaendische_steuern_cent: 0,
+///     steuerermaessigungen_cent: 0, steuer_kapital_gesondert_cent: 0, hinzurechnung_kindergeld_cent: 0,
+///     hinzurechnung_zulage_cent: 0, tarif_modifiziert: false, tarifliche_est_modifiziert_cent: 0,
+/// };
+/// assert!(festzusetzende_est_gesamt(eingabe, Vz::Vz2025).unwrap().festzusetzende_est_cent > 0);
+/// ```
 pub fn festzusetzende_est_gesamt(
     eingabe: GesamtEingabe,
     vz: Vz,
@@ -909,6 +1067,23 @@ pub fn festzusetzende_est_gesamt(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::{festzusetzende_est_gesamt, festzusetzende_est_gesamt_zusammen};
+/// use catala_sys::{GesamtEingabe, Vz};
+/// let eingabe = GesamtEingabe {
+///     einkuenfte_nichtselbststaendig_cent: 6_000_000, einkuenfte_kapitalvermoegen_cent: 0,
+///     einkuenfte_vermietung_cent: 0, einkuenfte_sonstige_cent: 0, einkuenfte_gewinn_cent: 0,
+///     altersentlastungsbetrag_cent: 0, entlastungsbetrag_alleinerziehende_cent: 0, sonderausgaben_cent: 0,
+///     aussergewoehnliche_belastungen_cent: 0, freibetraege_kinder_cent: 0,
+///     sonstige_abzuege_vom_einkommen_cent: 0, anzurechnende_auslaendische_steuern_cent: 0,
+///     steuerermaessigungen_cent: 0, steuer_kapital_gesondert_cent: 0, hinzurechnung_kindergeld_cent: 0,
+///     hinzurechnung_zulage_cent: 0, tarif_modifiziert: false, tarifliche_est_modifiziert_cent: 0,
+/// };
+/// let einzel = festzusetzende_est_gesamt(eingabe, Vz::Vz2025).unwrap();
+/// let zusammen = festzusetzende_est_gesamt_zusammen(eingabe, Vz::Vz2025).unwrap();
+/// assert!(zusammen.festzusetzende_est_cent <= einzel.festzusetzende_est_cent); // Splittingvorteil
+/// ```
 pub fn festzusetzende_est_gesamt_zusammen(
     eingabe: GesamtEingabe,
     vz: Vz,
@@ -931,6 +1106,14 @@ pub fn festzusetzende_est_gesamt_zusammen(
 ///
 /// # Errors
 /// Reicht I/O-Fehler von `sh`/`find`/`sort`/`sha256sum` durch.
+///
+/// ```
+/// use catala_sys::recompute_source_hash;
+/// let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+/// let h = recompute_source_hash(&repo).unwrap();
+/// assert_eq!(h.len(), 64); // sha256 in Hex
+/// assert!(h.bytes().all(|b| b.is_ascii_hexdigit()));
+/// ```
 pub fn recompute_source_hash(repo_root: &std::path::Path) -> std::io::Result<String> {
     let script = format!(
         "find {root} -name '*.catala_en' -print0 | sort -z | xargs -0 cat | sha256sum | cut -d' ' -f1",

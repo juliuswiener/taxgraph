@@ -240,6 +240,17 @@ pub(crate) fn status_setzen(
 
 /// `_felder_je_regel`: `regel_id → Felder`, in Erst-Auftritts-Reihenfolge; ohne `regel_id` →
 /// `""`.
+///
+/// ```
+/// use llm::gates::KatalogFeld;
+/// let feld = |id: &str, regel: Option<&str>, gruppe: Option<&str>| -> KatalogFeld {
+///     serde_json::from_value(serde_json::json!({"feld_id": id, "regel_id": regel, "instanz_gruppe": gruppe})).unwrap()
+/// };
+/// use llm::gates::felder_je_regel;
+/// let katalog = [feld("a", Some("r1"), None), feld("b", Some("r2"), None), feld("c", Some("r1"), None)];
+/// let je = felder_je_regel(&katalog);
+/// assert_eq!(je.iter().map(|(r, f)| (r.as_str(), f.len())).collect::<Vec<_>>(), [("r1", 2), ("r2", 1)]);
+/// ```
 #[must_use]
 pub fn felder_je_regel(katalog: &[KatalogFeld]) -> Vec<(String, Vec<&KatalogFeld>)> {
     let mut je: Vec<(String, Vec<&KatalogFeld>)> = Vec::new();
@@ -255,6 +266,20 @@ pub fn felder_je_regel(katalog: &[KatalogFeld]) -> Vec<(String, Vec<&KatalogFeld
 
 /// `_mit_zaehlfeldern(kat3, katalog)` in beide Richtungen; `gruppen` = `(gruppe, anzahl_feld)`
 /// in `lade_instanz_gruppen()`-Reihenfolge.
+///
+/// ```
+/// use llm::gates::KatalogFeld;
+/// let feld = |id: &str, regel: Option<&str>, gruppe: Option<&str>| -> KatalogFeld {
+///     serde_json::from_value(serde_json::json!({"feld_id": id, "regel_id": regel, "instanz_gruppe": gruppe})).unwrap()
+/// };
+/// use llm::gates::mit_zaehlfeldern;
+/// let katalog = [feld("kind_name", None, Some("kind")), feld("fam_anzahl_kinder", None, None)];
+/// let gruppen = [("kind".to_owned(), "fam_anzahl_kinder".to_owned())];
+/// // Ein Instanzfeld ohne sein Zaehlfeld wuerde die Frage ins Leere stellen: das Zaehlfeld kommt dazu.
+/// let mit = mit_zaehlfeldern(vec![&katalog[0]], &katalog, &gruppen);
+/// assert!(mit.iter().any(|f| f.feld_id == "fam_anzahl_kinder"));
+/// assert_eq!(mit_zaehlfeldern(vec![&katalog[0]], &katalog, &[]).len(), 1); // ohne Gruppen unveraendert
+/// ```
 #[must_use]
 pub fn mit_zaehlfeldern<'a>(kat3: Vec<&'a KatalogFeld>, katalog: &'a [KatalogFeld], gruppen: &[(String, String)]) -> Vec<&'a KatalogFeld> {
     if gruppen.is_empty() {

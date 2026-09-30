@@ -208,6 +208,13 @@ fn pdftotext(pfad: &str) -> Result<String, OcrFehler> {
 ///
 /// # Errors
 /// [`OcrFehler`].
+///
+/// ```
+/// use eingang::ocr::lies_kontoauszug_pdf;
+/// // PARITÄT: eine nicht lesbare Datei liefert leeren Text statt eines Fehlers (Python: `pdftotext` ohne Ausgabe).
+/// let (text, konfidenz) = lies_kontoauszug_pdf("/gibt/es/nicht.pdf").unwrap();
+/// assert!(text.is_empty() && konfidenz.is_empty());
+/// ```
 pub fn lies_kontoauszug_pdf(pfad: &str) -> Result<(String, ConfMap), OcrFehler> {
     let text = pdftotext(pfad)?.replace('\x07', " ");
     if llm::py::strip(&text).is_empty() {
@@ -229,6 +236,16 @@ pub fn lies_kontoauszug_pdf(pfad: &str) -> Result<(String, ConfMap), OcrFehler> 
 ///
 /// # Errors
 /// [`OcrFehler`].
+///
+/// ```
+/// use std::io::Write;
+/// use eingang::ocr::lies_beleg_text;
+/// let mut datei = tempfile::Builder::new().suffix(".txt").tempfile().unwrap();
+/// write!(datei, "Lohnsteuerbescheinigung\r\nNr. 3 45.000,00").unwrap();
+/// let (text, konfidenz) = lies_beleg_text(datei.path().to_str().unwrap()).unwrap();
+/// assert_eq!(text, "Lohnsteuerbescheinigung\nNr. 3 45.000,00"); // Zeilenenden normalisiert
+/// assert!(konfidenz.is_empty()); // Klartext hat keine OCR-Konfidenz
+/// ```
 pub fn lies_beleg_text(pfad: &str) -> Result<(String, ConfMap), OcrFehler> {
     if pfad.to_lowercase().ends_with(".txt") {
         let text = std::fs::read_to_string(pfad)?;

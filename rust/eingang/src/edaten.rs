@@ -26,7 +26,23 @@ pub struct Satz {
 ///
 /// # Errors
 /// [`SchreibFehler`] beim ersten abgewiesenen Satz (vorherige bleiben geschrieben, wie Python).
-pub fn uebernehme(store: &mut Store, saetze: &[Satz], ts: Option<&str>, bindung: Option<BindungNachschlag<'_>>) -> Result<usize, SchreibFehler> {
+///
+/// ```
+/// use eingang::edaten::{uebernehme, Satz};
+/// use store::Store;
+/// use store::BindungNachschlag;
+/// let nachschlag = BindungNachschlag::neu(eingang::doctest_bindung().unwrap());
+/// let mut store = Store::leer(2025, None);
+/// // Ein Satz fuer ein Feld ohne Bindung wird uebersprungen (nicht geraten).
+/// let satz = Satz { feld_id: "gibt_es_nicht".into(), wert: serde_json::json!(1), kategorie: serde_json::Value::Null };
+/// assert_eq!(uebernehme(&mut store, &[satz], None, Some(nachschlag)).unwrap(), 0);
+/// ```
+pub fn uebernehme(
+    store: &mut Store,
+    saetze: &[Satz],
+    ts: Option<&str>,
+    bindung: Option<BindungNachschlag<'_>>,
+) -> Result<usize, SchreibFehler> {
     let leer = HashMap::new();
     let nachschlag = bindung.unwrap_or_else(|| BindungNachschlag::neu(&leer));
     // Python liest `aktiv` EINMAL vorab und ergaenzt es NICHT: ein doppelter Satz im selben

@@ -110,6 +110,14 @@ fn anker(hs: &str) -> Anker {
 
 /// `beleg_felder(bindung, typ)`: `feld_id → Anker` fuer `cent`-Felder, deren `herkunft_slots`
 /// mit dem Typ-Praefix beginnen (der letzte passende Eintrag gewinnt).
+///
+/// ```
+/// use eingang::beleg::{beleg_felder, BelegTyp};
+/// use store::BindungNachschlag;
+/// let nachschlag = BindungNachschlag::neu(eingang::doctest_bindung().unwrap());
+/// let felder = beleg_felder(nachschlag, BelegTyp::Lstb);
+/// assert!(!felder.is_empty()); // die Lohnsteuerbescheinigung speist mindestens ein Cent-Feld
+/// ```
 #[must_use]
 pub fn beleg_felder(bindung: BindungNachschlag<'_>, typ: BelegTyp) -> BTreeMap<String, Anker> {
     let mut out = BTreeMap::new();
@@ -155,6 +163,17 @@ pub struct Kandidat {
 
 /// `extrahiere(text, bindung, confidence_map=)`: Kandidaten sortiert nach `feld_id`; kein Typ →
 /// leer; nicht gefundenes Feld → weggelassen.
+///
+/// ```
+/// use std::collections::BTreeMap;
+/// use eingang::beleg::{extrahiere, BelegTyp};
+/// use store::BindungNachschlag;
+/// let nachschlag = BindungNachschlag::neu(eingang::doctest_bindung().unwrap());
+/// let text = "Lohnsteuerbescheinigung 2025\nNr. 3 45.000,00";
+/// let kandidaten = extrahiere(text, nachschlag, &BTreeMap::new());
+/// assert!(kandidaten.iter().all(|k| k.beleg_typ == BelegTyp::Lstb));
+/// assert!(extrahiere("irgendein Text", nachschlag, &BTreeMap::new()).is_empty()); // kein Typ: nichts raten
+/// ```
 #[must_use]
 pub fn extrahiere(text: &str, bindung: BindungNachschlag<'_>, conf: &BTreeMap<String, f64>) -> Vec<Kandidat> {
     let Some(typ) = erkenne_beleg_typ(text) else { return Vec::new() };
@@ -191,6 +210,18 @@ pub fn extrahiere(text: &str, bindung: BindungNachschlag<'_>, conf: &BTreeMap<St
 /// # Errors
 /// [`SchreibFehler`] beim ersten abgewiesenen Kandidaten (vorherige bleiben geschrieben, wie in
 /// Python).
+///
+/// ```
+/// use std::collections::BTreeMap;
+/// use eingang::beleg::{extrahiere, schreibe_kandidaten};
+/// use store::Store;
+/// use store::BindungNachschlag;
+/// let nachschlag = BindungNachschlag::neu(eingang::doctest_bindung().unwrap());
+/// let kandidaten = extrahiere("Lohnsteuerbescheinigung 2025\nNr. 3 45.000,00", nachschlag, &BTreeMap::new());
+/// let mut store = Store::leer(2025, None);
+/// let ids = schreibe_kandidaten(&mut store, &kandidaten, "beleg.pdf", nachschlag, None).unwrap();
+/// assert_eq!(ids.len(), kandidaten.len()); // je Kandidat ein vorlaeufiges Event
+/// ```
 pub fn schreibe_kandidaten(
     store: &mut Store,
     kandidaten: &[Kandidat],
