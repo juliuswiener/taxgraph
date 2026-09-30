@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import functools
 import glob
-import json
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))

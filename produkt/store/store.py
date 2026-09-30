@@ -14,9 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
-import tempfile
 from datetime import datetime, timezone
 
 # ------------------------------------------------------------------ Content-Adressierung
@@ -46,7 +44,6 @@ def _now() -> str:
 
 # ------------------------------------------------------------------ Typ-Algebra (Julius #2)
 
-_ZUSTAND_ORD = {"vorlaeufig": 0, "bestaetigt": 1}
 _PRUEF_ORD = {"ungeprueft": 0, "plausibilisiert": 1, "orakel_bestaetigt": 2, "amtlich": 3}
 _PRUEF_INV = {v: k for k, v in _PRUEF_ORD.items()}
 KONFLIKT = "konflikt"

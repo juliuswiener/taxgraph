@@ -1699,7 +1699,7 @@ def _harte_jahreszahlen(daten):
 
 def test_o_keine_harte_jahreszahl_in_vz_abhaengigem_text(daten):
     """fragetext_laie/hilfe_kurz werden nirgends mit dem VZ formatiert (api.py:2351/:2818,
-    api_llm.py:30, fragekatalog.py reichen den String unveraendert durch) — eine feste
+    api_llm.py:30 reichen den String unveraendert durch) — eine feste
     Jahreszahl im Text ist deshalb in jedem VZ ausser dem genannten falsch. Fund
     am_afa_ist_anschaffungsjahr (2026-08-12): Frage nannte 2026 fest, im VZ 2025 wurde nach
     dem falschen Jahr gefragt. Ausnahmen (Formatbeispiel/Rechtstatsache) stehen benannt und

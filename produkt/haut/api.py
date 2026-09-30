@@ -18,7 +18,6 @@ from __future__ import annotations
 import base64
 import json
 import os
-import re
 import subprocess   # nur für subprocess.TimeoutExpired am OCR-Endpunkt — api.py startet selbst
                     # keinen Unterprozess (das tun die Writer unter produkt/eingang/)
 import sys
@@ -46,8 +45,6 @@ _relevante_kegel_felder = BR.relevante_kegel_felder
 _ring_bindungen = BR.rollen
 import intervall as IV      # noqa: E402
 import est_mapping as EM    # noqa: E402
-import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche, dev-2)
-import partner_check as PC  # noqa: E402  (Partner-Behinderungsfeld↔Zusammenveranlagung, dev-2)
 import vorjahr_writer as VW  # noqa: E402  (Vorjahres-Übernahme, dev-2 Store-Writer)
 import elster_xml as EX      # noqa: E402  (P3.2 Deklaration → ELSTER-Submission-XML)
 from api_constants import *  # noqa: E402, F401, F403  (55 Feld-Konstanten + Scheiben)

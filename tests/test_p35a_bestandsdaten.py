@@ -8,7 +8,7 @@ verlangt und die blosse Summe mit rc=610001002 ablehnt.
 DIESE DATEI DECKT DEN UEBERGANG AB, nicht den Normalfall (der steht in
 test_checkest_feldmatrix.py scharf gegen checkESt).
 
-Warum es ihn braucht: `askable` steuert nur das Dialog-Layer (api_llm, traverser, fragekatalog)
+Warum es ihn braucht: `askable` steuert nur das Dialog-Layer (api_llm, traverser)
 und blockiert KEINEN direkten /event-Write — gemessen, ein Flat-Event auf ein askable:false-Feld
 wird weiterhin angenommen. Ein Fall, der vor der Umstellung eine Summe bestaetigt hat, traegt
 sie also weiter im Store, und es war offen, was daraus wird.

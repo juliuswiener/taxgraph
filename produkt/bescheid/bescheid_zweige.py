@@ -21,33 +21,14 @@ for _sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/unsi
 import intervall as IV      # noqa: E402
 import est_mapping as EM    # noqa: E402
 import fehler_log           # noqa: E402 — Fehler-Protokoll (Metadaten only, nie str(exception))
-import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche)
-import partner_check as PC  # noqa: E402  (Partner-Behinderungsfeld↔Zusammenveranlagung)
 from api_constants import (  # noqa: E402
-    AN_GESAMT_FLAGS,
-    AN_GESAMT_PARTNER,
     ARBEITSMITTEL_KOSTEN,
     DHF_BEDINGUNGEN,
     DHF_KOSTEN,
-    EUER_KOMPONENTEN,
-    GESAMT_PARTNER_19,
-    GESAMT_PARTNER_KAP,
-    KAP_ERTRAEGE,
-    KAP_ERTRAEGE_PARTNER,
-    KAP_TOEPFE,
-    KAP_TOEPFE_PARTNER,
-    MITU_FELDER,
-    RENTNER_22,
-    RENTNER_22_PARTNER,
-    RENTNER_AA_ARTEN,
     UEBERNACHTUNG_BEDINGUNGEN,
     UEBERNACHTUNG_KOSTEN,
     VERPFLEGUNG_TAGE,
     VERPFLEGUNG_TAGE_NACH_FRIST,
-    VOR_FELDER,
-    VOR_PARTNER_FELDER,
-    VV_GESAMT_FELDER,
-    dba_methode_fuer,
 )
 
 
@@ -61,7 +42,6 @@ from bescheid_abzuege import (  # noqa: E402
 )
 from bescheid_einkuenfte import (  # noqa: E402
     _gewinn_partner_anteil,
-    _gwg_sofortabzug_summe,
     _laufender_gewinn,
     _p20_kapitaleinkuenfte,
     _p23_ansonsten_einkuenfte,
@@ -852,7 +832,6 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # §32b Progressionsvorbehalt (Stufe-1, Lohnersatz, Post-Engine-Wrapper)
         pe_raw = _c("p32b_progressionseinkuenfte") // 100
         pe_active = pe_raw > 0
-        p35_active = p35_messbetrag_ges > 0 and p35_zaehler_ges > 0 and p35_nenner > 0
         # §32b×§34-Koinzidenz-Guard: Post-Engine §32b NACH §34 (tarif_modifiziert).
         # Bewegt: Guard in _an_gesamt_sperrgrund sperrt p32b_kombi_offen bei Co-Präsenz.
 

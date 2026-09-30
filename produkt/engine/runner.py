@@ -16,7 +16,6 @@ Run: python golden/runner.py   (or: make golden)
 from __future__ import annotations
 
 import functools
-import glob
 import os
 import re
 import sys

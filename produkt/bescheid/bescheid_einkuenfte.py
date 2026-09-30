@@ -18,34 +18,14 @@ for _sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/unsi
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import intervall as IV      # noqa: E402
 import est_mapping as EM    # noqa: E402
-import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche)
-import partner_check as PC  # noqa: E402  (Partner-Behinderungsfeld↔Zusammenveranlagung)
 from api_constants import (  # noqa: E402
-    AN_GESAMT_FLAGS,
-    AN_GESAMT_PARTNER,
-    ARBEITSMITTEL_KOSTEN,
-    DHF_BEDINGUNGEN,
-    DHF_KOSTEN,
-    GESAMT_PARTNER_19,
-    GESAMT_PARTNER_KAP,
     GEWINN_QUELLEN_MENGEN,
     KAP_ERTRAEGE,
     KAP_ERTRAEGE_PARTNER,
     KAP_TOEPFE,
     KAP_TOEPFE_PARTNER,
     MITU_FELDER,
-    RENTNER_22,
-    RENTNER_22_PARTNER,
-    RENTNER_AA_ARTEN,
-    UEBERNACHTUNG_BEDINGUNGEN,
-    UEBERNACHTUNG_KOSTEN,
-    VERPFLEGUNG_TAGE,
-    VERPFLEGUNG_TAGE_NACH_FRIST,
-    VOR_FELDER,
-    VOR_PARTNER_FELDER,
-    VV_GESAMT_FELDER,
     dba_methode_fuer,
 )
 

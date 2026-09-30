@@ -18,7 +18,6 @@ for _sub in ("produkt/haut", "produkt/store", "produkt/traverser", "produkt/unsi
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import intervall as IV      # noqa: E402
 import est_mapping as EM    # noqa: E402
 import flag_check as FC     # noqa: E402  (Flag↔Einkunftsart-Widersprüche)
 import partner_check as PC  # noqa: E402  (Partner-Behinderungsfeld↔Zusammenveranlagung)
@@ -37,7 +36,6 @@ from api_constants import (  # noqa: E402
     KAP_ERTRAEGE_PARTNER,
     KAP_TOEPFE,
     KAP_TOEPFE_PARTNER,
-    MITU_FELDER,
     RENTNER_22,
     RENTNER_22_PARTNER,
     RENTNER_AA_ARTEN,
@@ -49,7 +47,6 @@ from api_constants import (  # noqa: E402
     VOR_FELDER,
     VOR_PARTNER_FELDER,
     VV_GESAMT_FELDER,
-    dba_methode_fuer,
 )
 
 
@@ -1002,7 +999,6 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # was bei vorhandenem (aber nicht gestütztem) DBA-Sachverhalt legitim = kein silent Over-tax.
         # Die GATES treffen nur die Fälle, wo der Nutzer aktiv DBA-Werte gesetzt hat, die diese
         # Scheibe nicht rechenbar macht → fail-closed (= keine stille 0-Anrechnung).
-        dba_methode = (felder.get("dba_methode") or {}).get("wert")
         dba_mehrere = (felder.get("dba_mehrere_staaten") or {}).get("wert")
         if dba_mehrere is True:
             return "dba_multi_country_offen"
