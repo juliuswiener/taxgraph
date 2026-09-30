@@ -135,9 +135,14 @@ Vollständige Tabellen: Audit A §1/§3, Audit B §2/§3. Die tragenden:
 | ERiC grün nur bei rc==0 | `checkest_gate.py:66-92` | `enum EricRc` |
 | Owner-Check vor Fall-Zugriff | `api.py:114-127` je Handler | Extractor `EigenerFall`; Handler ohne ihn bekommen keinen `Fall` |
 
-**Parität vor Korrektur.** Wo Python nachweislich falsch ist, baut Rust zuerst das Python-Verhalten
-nach und markiert die Stelle mit `// PARITÄT:` plus Befund. Korrektur danach in eigenem Commit mit
-erklärtem Fixture-Diff. Bekannte Fälle:
+**Korrektheit vor Parität** (Entscheidung Julius 2026-09-30, ersetzt „Parität vor Korrektur").
+Maßstab ist das korrekte Steuerergebnis und korrektes Verhalten gegenüber dem Nutzer, nicht Python.
+Der Python-Vergleich bleibt Pflicht — als Messinstrument gegen *unbeabsichtigte* Abweichungen.
+Eine *gewollte* Abweichung braucht: (1) Eintrag in der Abweichungsliste des jeweiligen Parity-Tests
+mit Begründung (Gesetzesstelle aus `sources/` oder Nutzerwirkung), (2) einen Test, der das korrekte
+Verhalten festhält, (3) Erklärung in der Commit-Nachricht. Bestehende `// PARITÄT:`-Nachbauten
+nachweislich falschen Verhaltens werden korrigiert, sobald ihr Modul angefasst wird; wo unklar ist,
+was korrekt ist, bleibt Python und die Stelle geht als Frage an Julius. Bekannte Fälle:
 
 | # | Befund | Anker |
 |---|---|---|
@@ -239,6 +244,23 @@ Nachmessung 2026-09-30 (HEAD `bb00573`, Grep über `rust/*/src`) gegen die Ziels
 | End-to-End Eingabe → Berechnung → Bescheid → ELSTER-XML | 0 | einige Hauptflüsse, XML gegen XSD |
 | Property-Tests reiner Rechenlogik | nur Parität per proptest | Schranken, Monotonie, Roundtrips, Symmetrie der Zweige |
 
+**9b-B Typisierung** (Plan 2026-09-30, Entscheidungen Julius übernommen). Zwei Schichten an der
+Store-Grenze: `domain::PyWert` (verlustfreies typisiertes Abbild des Python-Werts; die heute sechsfach
+nachgebaute Python-Semantik `int()`/Wahrheitswert/`isinstance`/`==`/`repr` genau einmal, exhaustiv) und
+`Lage<T>` = `Fehlt | Null | Gueltig(T) | Abweichend(&PyWert)` gegen den Bindungstyp. Commits blattzuerst
+(Strangler, neuer Typ neben dem alten, Alt-Typ am Ende weg):
+K0 Messung der Wertformen in 192 Stores + Golden · K1 `domain` (PyWert, Lage, Kz, VorschlagTyp, FallId;
+Äquivalenz-Proptest gegen die Alt-Helfer) · K2 `store` (typisierte Felder; `event_id`-Roundtrip über alle
+realen Stores Pflicht) · K3 `interview` · K4 `konsistenz` · K5 `elster` · K6+K7a `intervall` + `bescheid`-Helfer
+· K7b `bescheid` `Lage<Enum>` + `Quantitaet` · K7c Geldpfade · K8 Alt-Typen entfernen, Grep-Gates
+(`serde_json::Value` in bescheid/konsistenz/intervall/interview = 0; `_ =>` auf Domain-Enums = 0) · K9 `&str`-Rest.
+Entscheidungen: `Lage<T>` nur für Enum-Felder (Veranlagung, Konfession, Bundesland, Rentenart) und
+Cent-Summen in `bescheid`, voller bindungstypisierter Snapshot nach Cutover · `auth`/`audit`-Newtypes
+(`Username`, `FallId`) in 9c mit den API-Handlern · Listen/Objekte und Ganzzahlen > u64 in Fremddaten
+bleiben ladbar, Grenze dokumentiert · `PyWert` in `domain` · 8 Nachschlage-Schlüssel bleiben `&str`.
+Korrigierter Messstand: 92 `pub fn` mit `&str` (≈32 tragen Regeln); 75 `_ =>`, davon 7 auf Domain-Enums,
+35 auf `Value`, 28 legitim. Grob 13–18 Worker-Läufe; Risiko hoch bei K2 (`event_id`) und K6/K7a (Breite).
+
 Arbeitsregeln ab jetzt: ein Commit je Schritt; nach jedem Schritt `cargo build`, `cargo clippy -- -D warnings`,
 `cargo test` und **alle** Parity-Suiten; jeder nicht portierte Python-Test nennt in Commit-Nachricht und
 `rust/TESTMAP.tsv` den Typ oder die Property, die ihn ersetzt; Routen, Payloads, Fehlerformate,
@@ -250,7 +272,7 @@ Bescheid-Text und XML bleiben identisch, jeder Fixture-Diff wird im Commit erkl�
 
 | # | Frage | Gewählter Standard |
 |---|---|---|
-| F1 | Negativformat P1 korrigieren? | Erst Parität, dann Korrektur-Commit mit Fixture-Diff |
+| F1 | Negativformat P1 korrigieren? | Ja, korrekt bauen (Korrektheit vor Parität, §4); Abweichung mit Fixture-Diff im Commit erklärt |
 | F2 | Instanz `x__1`: welche Regel? | Traverser-Regel (`__1` ist keine Instanz); `est_mapping`-Aufrufstellen per Parität prüfen |
 | F3 | Hartkodierte Gesetzeswerte (`runner.py:462-467,1052,1703-1706`) nach `params/`? | Port übernimmt sie als benannte `const` mit § im Doc-Kommentar; Umzug separat |
 | F4 | `versand.py` (Echtversand) portieren? | Nein — Julius-Vorbehalt |
