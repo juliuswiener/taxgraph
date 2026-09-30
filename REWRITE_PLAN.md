@@ -114,6 +114,7 @@ Vollständige Tabellen: Audit A §1/§3, Audit B §2/§3. Die tragenden:
 | Invariante | Heute erzwungen | Rust |
 |---|---|---|
 | Geld in ganzen Cent; Euro nur an der Catala-Naht | Konvention, `// 100` an >100 Stellen | `Cent(i64)`, `Euro(i64)`, private Felder; `Cent::floor_euro()` = `div_euclid(100)` (Python `//` rundet gegen −∞, Rust `/` gegen 0 — tragend bei Verlusten, `bescheid_einkuenfte.py:292`) |
+| Sätze, km, Zwischenprodukte exakt; kein Float für Geld | Python-`float`/`Decimal` gemischt | `Decimal` nur in Newtypes (`Satz`, `Km` …); `Decimal → Cent` nur über benannte Rundungsfunktionen je Rechtsgrundlage. Vault `decisions/rust-port-geld-cent-saetze-decimal.md` |
 | Rückgabe-Einheit je Funktion | String-Tabelle `intervall.NATIV_EINHEIT` (`intervall.py:36`) | Rückgabetyp `Euro` oder `Cent`; Tabelle entfällt |
 | Feldzustand offen / vorläufig / bestätigt | Strings + Abwesenheit, überall | `enum Feldzustand` |
 | `bestaetigt` braucht `signal_2` | `store.py:365` | `Bestaetigt { signal_2: Signal2 }`, `Signal2` nicht leer |
@@ -214,10 +215,34 @@ damit genau der End-to-End-Test „Frontend gegen Rust-API" aus Phase 4.
 | 6 | `elster` (Deklaration, Kz-Format, XML, ERiC) | XML byte-gleich; XSD-valide |
 | 7 | `bescheid` | Parität `/ergebnis` auf allen Golden-Fällen |
 | 8 | `eingang`, `llm`, `auth` | Parität |
-| 9 | `api` (axum, utoipa) + Frontend-E2E | Kontrakttest, Playwright gegen Rust |
+| 9a | `api`-Gerüst: 24 Routen, Auth, `EigenerFall`, Fehlerformate, HTTP-Differenz-Harness | Harness 0 Abweichungen auf den implementierten Routen |
+| 9b | **Härtung aller portierten Crates** (Entscheidung Julius 2026-09-30, vor 9c) | siehe unten |
+| 9c | `api`-Handler lesen/schreiben + Frontend-E2E | Kontrakttest, Playwright gegen Rust |
 | 10 | Cutover — **nur bei vollständiger Parität** | 10 000 generiert |
 
 Scheitert ein Schritt nach drei Versuchen, wird er zurückgenommen und im Bericht geführt.
+
+### Schritt 9b — Härtung (Abnahme je Crate, ein Commit je Crate)
+
+Nachmessung 2026-09-30 (HEAD `bb00573`, Grep über `rust/*/src`) gegen Julius' Zielstandards:
+
+| Standard | Stand | Ziel |
+|---|---|---|
+| Nichts Untypisiertes nach innen | `bescheid` rechnet auf `serde_json::Value`-Feldern; die meisten der 75 `_ =>`-Arme stehen auf `Value` | `Felder` an der Grenze einmal in typisierte Structs parsen; Python-Eigenheiten (`bool` als `int`, `TypeError` bei Text) als benannte Varianten des Parse-Ergebnisses, Parität über diesen Adapter |
+| Kein roher String über Modulgrenzen | 78 `pub fn` mit `&str`-Parameter (z. B. `bescheid_fn(quantitaet: &str)`) | Newtypes/Enums, wo der String Regeln trägt |
+| Domain-Enums exhaustiv, kein `_` | 75 `_ =>` (Mehrzahl auf `Value`) | keiner auf Domain-Enums |
+| Kein Float für Geld | 2 Geld-Pfade in `bescheid` | 0; Regel §4 |
+| `debug_assert!` für Invarianten | 0 | an nicht offensichtlichen Invarianten |
+| Ein Doctest je `pub fn` | u. a. bescheid 2/43, store 5/44, catala-sys 0/26 | vollständig |
+| 22 xfail als `#[ignore = "Grund"]` | 0 | 22 |
+| `cargo fuzz` für externe Parser | 0 | XML, Uploads (CSV/PDF/Beleg), LLM-Ausgabe, API-Payloads |
+| End-to-End Eingabe → Berechnung → Bescheid → ELSTER-XML | 0 | einige Hauptflüsse, XML gegen XSD |
+| Property-Tests reiner Rechenlogik | nur Parität per proptest | Schranken, Monotonie, Roundtrips, Symmetrie der Zweige |
+
+Arbeitsregeln ab jetzt: ein Commit je Schritt; nach jedem Schritt `cargo build`, `cargo clippy -- -D warnings`,
+`cargo test` und **alle** Parity-Suiten; jeder nicht portierte Python-Test nennt in Commit-Nachricht und
+`rust/TESTMAP.tsv` den Typ oder die Property, die ihn ersetzt; Routen, Payloads, Fehlerformate,
+Bescheid-Text und XML bleiben identisch, jeder Fixture-Diff wird im Commit erklärt.
 
 ---
 
