@@ -8,7 +8,7 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 
 ---
 
-## Fortschritt (Stand 2026-10-01, HEAD `2f9cd2d`)
+## Fortschritt (Stand 2026-10-01, HEAD `2c17f70`)
 
 | Schritt | Stand | Commits |
 |---|---|---|
@@ -18,7 +18,8 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 | 9b-A Härtung additiv | fertig für bescheid, engine (Doctests, `debug_assert!`, Properties, kein `f64` für Geld); Doctests in catala-sys, eingang, elster, llm, interview | `b149f1f` · `9e2b00d` · `b047e7c` |
 | 9b-F Fuzz | fertig: `rust/fuzz` (nightly, nicht im Workspace), 5 Targets | `d2e1e15` |
 | Format | `cargo fmt --all`, `llm_dialog` geteilt | `2f9cd2d` |
-| **9b-B Typisierung** | **als nächstes**: K0 → K9 (§7) | — |
+| Steuerzeichen-Fix | fertig in Python **und** Rust: Abweisen beim Speichern, `erzeuge_xml` fail-closed, Fuzz-Skip entfernt | `2c17f70` |
+| **9b-B Typisierung** | K0 fertig (Vault `research/taxgraph-wertformen-echte-stores`); **K1 `domain` läuft**; dann K2 → K9 (§7) | `a993b91` |
 | 9b Rest | `debug_assert!`/Properties für übrige Crates; 22 xfail als `#[ignore]`; End-to-End Eingabe → XML | — |
 | 9c `api`-Handler | offen (danach), inkl. `Username`/`FallId`-Newtypes | — |
 | 10 Cutover | offen | — |
@@ -27,13 +28,17 @@ Gates auf `2f9cd2d`: `cargo build`, `clippy --workspace --all-targets -D warning
 727 Tests, `cargo +nightly fuzz build`, alle 17 Parity-Suiten (`PARITY=1`) grün. Volle Nachmessung
 ≈ 20 min; Skript-Muster: jede Suite einzeln `PARITY=1 cargo test -p parity --test <name> -- --test-threads 3`.
 
-**Entschieden, noch nicht umgesetzt:**
-- **Steuerzeichen im ELSTER-XML** (Fuzz-Fund, `rust/elster/src/xml.rs:247`, Python `elster_xml.py` identisch):
-  Steuerzeichen (XML-1.0-unzulässig) in `typ: text` beim Speichern abweisen (Auflage T, Rust
-  `domain/src/wert.rs` bzw. `store::pruefe_bindung`, Python `store.py:_typ_konform` Z. 188) **und**
-  `erzeuge_xml` fail-closed (`XmlFehler`). Auch im Python-Produkt, weil es bis zum Cutover live ist.
-  Danach den Skip im Fuzz-Target `elster` entfernen; Regression `rust/fuzz/regressions/elster/`.
-  Vault-Ticket `elster-xml-steuerzeichen-im-textwert`.
+**Für 9c festgehalten (aus dem Steuerzeichen-Fix, `2c17f70`):**
+- Abweisung eines Textwerts: `/event`, `/vorjahr`, `/entfernung` → 422; `/chat` → Eintrag in
+  `abgelehnt_gruende`; `/einreichen` → 422 `{"eingereicht": false, "grund": "xml_nicht_baubar", "detail": …}`.
+- `/vorjahr`: Python erzeugt keinen Teilimport, weil erst geprüft und dann gespeichert wird. Der Writer ist
+  aber nicht atomar — der Rust-Handler muss diese Reihenfolge übernehmen.
+- `/chat`: die Gründe nennen bei übrigen Typfehlern den Wert (Vault-Ticket
+  `chat-ablehnungsgrund-enthaelt-den-wert`), spätestens beim Portieren entscheiden.
+
+**Offen bei Julius:** Das ELSTER-Schema erlaubt in Textfeldern nur den Zeichensatz „Standard_E_V2",
+strenger als XML 1.0 (Vault-Ticket `elster-zeichensatz-strenger-als-xml`): abweisen, umschreiben und
+melden, oder nur warnen.
 
 **Kleinere offene Befunde:** `eingang::beleg::extrahiere` kompiliert Regex je Aufruf (73–87 ms);
 `eingang::ocr::lies_kontoauszug_pdf` liefert bei fehlender Datei `Ok(leer)`; Float-Rentenfreibetrag
