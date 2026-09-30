@@ -8,6 +8,40 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 
 ---
 
+## Fortschritt (Stand 2026-10-01, HEAD `2f9cd2d`)
+
+| Schritt | Stand | Commits |
+|---|---|---|
+| 1–6, 8 | fertig: catala-sys, domain, bindung, store, engine, interview, konsistenz, intervall, elster, auth, llm, eingang | bis `f165889` |
+| 7 `bescheid` | fertig | `75d8955` abzuege/einkuenfte · `5c6418b` deklaration · `da0cc0d` zweige + `bescheid_fn` |
+| 9a `api`-Gerüst | fertig: 24 Routen (9 fertig, 15 Stubs `501 nicht_portiert`), `EigenerFall`, HTTP-Differenz-Harness | `054a281` |
+| 9b-A Härtung additiv | fertig für bescheid, engine (Doctests, `debug_assert!`, Properties, kein `f64` für Geld); Doctests in catala-sys, eingang, elster, llm, interview | `b149f1f` · `9e2b00d` · `b047e7c` |
+| 9b-F Fuzz | fertig: `rust/fuzz` (nightly, nicht im Workspace), 5 Targets | `d2e1e15` |
+| Format | `cargo fmt --all`, `llm_dialog` geteilt | `2f9cd2d` |
+| **9b-B Typisierung** | **als nächstes**: K0 → K9 (§7) | — |
+| 9b Rest | `debug_assert!`/Properties für übrige Crates; 22 xfail als `#[ignore]`; End-to-End Eingabe → XML | — |
+| 9c `api`-Handler | offen (danach), inkl. `Username`/`FallId`-Newtypes | — |
+| 10 Cutover | offen | — |
+
+Gates auf `2f9cd2d`: `cargo build`, `clippy --workspace --all-targets -D warnings`, `fmt --all --check`,
+727 Tests, `cargo +nightly fuzz build`, alle 17 Parity-Suiten (`PARITY=1`) grün. Volle Nachmessung
+≈ 20 min; Skript-Muster: jede Suite einzeln `PARITY=1 cargo test -p parity --test <name> -- --test-threads 3`.
+
+**Entschieden, noch nicht umgesetzt:**
+- **Steuerzeichen im ELSTER-XML** (Fuzz-Fund, `rust/elster/src/xml.rs:247`, Python `elster_xml.py` identisch):
+  Steuerzeichen (XML-1.0-unzulässig) in `typ: text` beim Speichern abweisen (Auflage T, Rust
+  `domain/src/wert.rs` bzw. `store::pruefe_bindung`, Python `store.py:_typ_konform` Z. 188) **und**
+  `erzeuge_xml` fail-closed (`XmlFehler`). Auch im Python-Produkt, weil es bis zum Cutover live ist.
+  Danach den Skip im Fuzz-Target `elster` entfernen; Regression `rust/fuzz/regressions/elster/`.
+  Vault-Ticket `elster-xml-steuerzeichen-im-textwert`.
+
+**Kleinere offene Befunde:** `eingang::beleg::extrahiere` kompiliert Regex je Aufruf (73–87 ms);
+`eingang::ocr::lies_kontoauszug_pdf` liefert bei fehlender Datei `Ok(leer)`; Float-Rentenfreibetrag
+fehlt im Parity-Korpus (nur Unit-Tests); reale Fälle decken Kinder/§ 23/DBA kaum (Golden-Fälle vor Cutover);
+Mutationen überleben bei § 31-Gleichstand und `true` im Rentenbeginn-Jahr.
+
+---
+
 ## 0. Worum es geht
 
 Das Produkt (Fragen stellen, Steuer rechnen, Bescheid erklären, ELSTER-XML bauen) wird in Rust neu
