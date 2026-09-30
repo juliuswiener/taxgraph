@@ -224,7 +224,7 @@ Scheitert ein Schritt nach drei Versuchen, wird er zurückgenommen und im Berich
 
 ### Schritt 9b — Härtung (Abnahme je Crate, ein Commit je Crate)
 
-Nachmessung 2026-09-30 (HEAD `bb00573`, Grep über `rust/*/src`) gegen Julius' Zielstandards:
+Nachmessung 2026-09-30 (HEAD `bb00573`, Grep über `rust/*/src`) gegen die Zielstandards (§9):
 
 | Standard | Stand | Ziel |
 |---|---|---|
@@ -257,3 +257,77 @@ Bescheid-Text und XML bleiben identisch, jeder Fixture-Diff wird im Commit erkl�
 | F5 | Löschkandidaten in `pipeline/` | Nicht Teil des Ports |
 | F6 | Cutover löscht Python | Nur wenn Schritt 10 grün; sonst bleibt Python Referenz und der Bericht nennt die Lücke |
 | F7 | YAML-Crate (`serde_yaml` archiviert) | `serde_yaml_ng` oder `serde_norway` nach Doku-Check; Duplikat-Schlüssel-Verhalten per Test belegt |
+
+---
+
+## 9. Zielstandards (verbindlich)
+
+Vorgabe Julius, 2026-09-30, wörtlich übernommen. Sie gilt für jeden Schritt und für jede Abnahme.
+Wo der Plan davon abweicht, steht die Entscheidung als Fußnote dabei. Der Messstand gegen diese
+Standards und der Weg dorthin stehen in §7, Schritt 9b.
+
+### Types
+- Wrap validated values in newtypes with private fields and a fallible constructor. No raw String or
+  numbers across module boundaries when they carry rules. Money is rust_decimal::Decimal, never float.¹
+- Model states as enums, not flags or Option fields. Use typestate where operations are only valid in
+  certain states (e.g. a Bescheid that cannot be rendered before all Zweige are resolved). Match domain
+  enums exhaustively, no `_` arm.
+- Every external input is parsed once at the boundary into a typed struct: YAML (Bindungen, Regeln,
+  Parameter) via serde with `deny_unknown_fields`, API payloads, LLM responses, ELSTER data. Nothing
+  untyped travels inward.
+- YAML is validated at build time or first load. Invalid YAML is a data bug: list it, fix in a
+  separate commit.
+
+### Errors and panics
+- Library code returns `Result` with typed errors (thiserror), one error enum per area. No `unwrap`,
+  `expect`, direct indexing or `panic!` outside tests and main.
+- State non-obvious internal invariants with `debug_assert!`.
+
+### Lints
+```toml
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+panic = "deny"
+too_many_lines = "deny"
+pedantic = { level = "warn", priority = -1 }
+```
+Allow these inside `#[cfg(test)]`. `too_many_lines` replaces the Python size ratchets.
+
+### Tests to write
+- Golden tests: legal examples (Musterfälle), Bescheid text, ELSTER XML validated against XSD. Store as
+  data fixtures, not code. These are acceptance tests against the law and never get removed.
+- Parity tests: same input to Python and Rust, outputs must match, on all golden inputs plus
+  proptest-generated inputs. See Phase 1. (In diesem Plan: §5.)
+- Pure calculation logic: proptest properties (bounds, monotonicity, roundtrips, symmetry between Zweige).
+- Public API: one doctest per public function.
+- Main flows: a few end-to-end tests, Eingabe to Berechnung to Bescheid to ELSTER XML.
+- Parsers of external input (XML, uploads, LLM output): cargo fuzz target.
+- The 22 xfail tests: port as `#[ignore = "reason"]` with the reason.
+
+### Tests not to port
+- Tests of validation that a type or serde now rejects: wrong type, missing field, unknown key, out of range.
+- Tests of YAML shape.
+- Tests of getters, constructors without logic, glue code, framework wiring.
+- Tests coupled to Python implementation details or call order.
+- Groups of example tests that one property subsumes.
+
+### Working rules
+- Work on one module per step, in plan order. After every step run `cargo build`,
+  `cargo clippy -- -D warnings`, `cargo test`, and the parity harness for all ported modules. All must
+  pass before continuing.
+- A module is done only when its parity tests pass on every golden input and 1000 generated inputs.
+- For every Python test not ported, name the type or property that replaces it in the plan and the
+  commit message.
+- Keep routes, payload shapes, error formats, Bescheid text and XML output identical. Any fixture diff
+  must be explained in the commit message.
+- One commit per step.
+- If a step still fails verification after 3 fix attempts, revert it, note it in the report, and
+  continue with the next module.
+
+¹ **Entscheidung 2026-09-30 (Julius):** Beträge bleiben ganzzahlig `Cent`/`Euro`. Sätze, km und
+Zwischenprodukte sind `rust_decimal::Decimal` in Newtypes. Der Übergang `Decimal → Cent` läuft nur über
+benannte Rundungsfunktionen je Rechtsgrundlage. Kein Float für Geld. Grund: Rundungszwang, bitgleiche
+Parität zu Python/Catala, eindeutige Serialisierung (`event_id`). Siehe §4 und Vault
+`decisions/rust-port-geld-cent-saetze-decimal.md`.
