@@ -34,6 +34,7 @@ use domain::{Cent, Euro, Zustand};
 use elster::Instanz;
 use engine::zugriff::teil1::fehler::EngineFehler as EngineFehler1;
 use engine::zugriff::teil2::EngineFehler as EngineFehler2;
+use rust_decimal::Decimal;
 use serde_json::{Number, Value};
 use store::{SnapshotFehler, SnapshotFeld, Store};
 
@@ -75,6 +76,12 @@ pub enum BescheidFehler {
 impl BescheidFehler {
     /// Name der Python-Ausnahmeklasse an derselben Stelle; `None`: Python kennt hier keinen Fehler
     /// (Ueberlauf) oder der Engine-Fehler hat kein Python-Gegenstueck.
+    ///
+    /// ```
+    /// use bescheid::BescheidFehler;
+    /// assert_eq!(BescheidFehler::BindungFehlt.python_klasse(), Some("AttributeError"));
+    /// assert_eq!(BescheidFehler::Ueberlauf("Addition").python_klasse(), None);
+    /// ```
     #[must_use]
     pub fn python_klasse(&self) -> Option<&'static str> {
         match self {
@@ -102,6 +109,12 @@ pub struct Instanzquelle<'a> {
 
 impl<'a> Instanzquelle<'a> {
     /// Beide Quellen da? Die Python-Bedingung `store is not None and bindung is not None`.
+    ///
+    /// ```
+    /// use bescheid::Instanzquelle;
+    /// let q = Instanzquelle { store: None, bindung: None, nur_bestaetigt: true };
+    /// assert!(q.beide().is_none());
+    /// ```
     #[must_use]
     pub fn beide(&self) -> Option<(&'a Store, &'a BindungIndex<'a>)> {
         self.store.zip(self.bindung)
@@ -112,17 +125,51 @@ impl<'a> Instanzquelle<'a> {
     ///
     /// # Errors
     /// [`BescheidFehler::BindungFehlt`], [`BescheidFehler::Snapshot`].
+    ///
+    /// ```
+    /// use bescheid::{BescheidFehler, Instanzquelle};
+    /// let ohne_store = Instanzquelle { store: None, bindung: None, nur_bestaetigt: true };
+    /// assert!(ohne_store.instanzen("kind").unwrap().is_empty());
+    /// let st = bescheid::testhilfe::store(&[("kind_kv", serde_json::json!(1), true)]);
+    /// let ohne_bindung = Instanzquelle { store: Some(&st), bindung: None, nur_bestaetigt: true };
+    /// assert!(matches!(ohne_bindung.instanzen("kind"), Err(BescheidFehler::BindungFehlt)));
+    /// ```
     pub fn instanzen(&self, gruppe: &str) -> Result<Vec<Instanz>, BescheidFehler> {
         match (self.store, self.bindung) {
             (None, _) => Ok(Vec::new()),
             (Some(_), None) => Err(BescheidFehler::BindungFehlt),
-            (Some(s), Some(b)) => Ok(elster::instanzen(s, b, gruppe)?),
+            (Some(s), Some(b)) => {
+                let inst = elster::instanzen(s, b, gruppe)?;
+                // Invariante der Instanz-Naht: index-sortiert, je Index genau eine Instanz.
+                debug_assert!(inst.is_sorted_by(|a, b| a.index < b.index));
+                Ok(inst)
+            }
         }
     }
 
     /// Python `not nur_bestaetigt or inst["zustand"] == "bestaetigt"`.
+    ///
+    /// ```
+    /// use bescheid::testhilfe::{index, store};
+    /// use bescheid::Instanzquelle;
+    /// use serde_json::json;
+    /// let st = store(&[("kind_kv", json!(1), false)]);
+    /// let streng = Instanzquelle { store: Some(&st), bindung: Some(index()), nur_bestaetigt: true };
+    /// let offen = Instanzquelle { nur_bestaetigt: false, ..streng };
+    /// let inst = streng.instanzen("kind").unwrap();
+    /// assert!(!streng.zaehlt(&inst[0])); // vorläufig: bewegt die festgesetzte Steuer nie
+    /// assert!(offen.zaehlt(&inst[0]));
+    /// ```
     #[must_use]
     pub fn zaehlt(&self, inst: &Instanz) -> bool {
+        // Invariante der meet-Regel: eine bestaetigte Instanz hat nur bestaetigte Felder.
+        debug_assert!(
+            inst.zustand != Zustand::Bestaetigt
+                || inst
+                    .felder
+                    .values()
+                    .all(|f| f.zustand == Zustand::Bestaetigt)
+        );
         !self.nur_bestaetigt || inst.zustand == Zustand::Bestaetigt
     }
 }
@@ -147,6 +194,36 @@ pub(crate) fn zahl_int(n: &Number) -> Result<i64, BescheidFehler> {
     }
 }
 
+/// JSON-Zahl → exakte `Decimal` (Python `int`/`float` als Geld-Wert, kein `f64` mehr im Rechenweg).
+///
+/// PARITÄT: ein Float wird mit seinem binaeren Wert uebernommen (`from_f64_retain`), nicht ueber
+/// seine Kurzschreibweise; jenseits des `Decimal`-Bereichs (~7,9e28) saturiert der Wert mit
+/// Vorzeichen — alle Aufrufer fragen nur Vorzeichen und Schwellen.
+pub(crate) fn zahl_dezimal(n: &Number) -> Decimal {
+    if let Some(i) = n.as_i64() {
+        return Decimal::from(i);
+    }
+    if let Some(u) = n.as_u64() {
+        return Decimal::from(u);
+    }
+    n.as_f64().map_or(Decimal::ZERO, |x| {
+        Decimal::from_f64_retain(x).unwrap_or(if x.is_sign_negative() {
+            Decimal::MIN
+        } else {
+            Decimal::MAX
+        })
+    })
+}
+
+/// Summe zweier `Decimal`-Werte; bei Ueberlauf saturiert sie Richtung Vorzeichen von `b`.
+pub(crate) fn dezimal_plus(a: Decimal, b: Decimal) -> Decimal {
+    a.checked_add(b).unwrap_or(if b.is_sign_negative() {
+        Decimal::MIN
+    } else {
+        Decimal::MAX
+    })
+}
+
 /// `f.get(fid, {}).get("wert")`.
 pub(crate) fn wert<'a>(f: &'a Felder, fid: &str) -> Option<&'a Value> {
     f.get(fid).map(|x: &SnapshotFeld| &x.wert)
@@ -158,6 +235,15 @@ pub(crate) fn wert<'a>(f: &'a Felder, fid: &str) -> Option<&'a Value> {
 ///
 /// # Errors
 /// [`BescheidFehler::Ueberlauf`] bei Werten jenseits von `i64`.
+///
+/// ```
+/// use bescheid::{feld_int_oder_null, testhilfe::{felder, store}};
+/// use serde_json::json;
+/// let f = felder(&store(&[("a", json!(7), true), ("b", json!("text"), true)]));
+/// assert_eq!(feld_int_oder_null(&f, "a").unwrap(), 7);
+/// assert_eq!(feld_int_oder_null(&f, "b").unwrap(), 0); // nicht numerisch: 0 (PARITÄT: fail-open default)
+/// assert_eq!(feld_int_oder_null(&f, "fehlt").unwrap(), 0);
+/// ```
 pub fn feld_int_oder_null(f: &Felder, fid: &str) -> Result<i64, BescheidFehler> {
     zahl_oder_null(wert(f, fid))
 }
@@ -289,9 +375,20 @@ pub(crate) fn feld_euro_oder_null(f: &Felder, fid: &str) -> Result<Euro, Beschei
     Ok(cent_zu_euro(feld_int_oder_null(f, fid)?))
 }
 
-/// Gemeinsame Testhilfen: echte Params und Bindung, Stores aus Wert-Listen.
-#[cfg(test)]
-pub(crate) mod testhilfe {
+/// Gemeinsame Test- und Doctest-Hilfen: echte Params und Bindung, Stores aus Wert-Listen.
+///
+/// `pub` und versteckt, damit die Doctests der oeffentlichen Funktionen sie nutzen koennen (ein
+/// Doctest ist eine eigene Crate und sieht kein `cfg(test)`). Nicht Teil der stabilen API.
+#[doc(hidden)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    clippy::missing_panics_doc,
+    clippy::must_use_candidate
+)]
+pub mod testhilfe {
     use std::collections::HashMap;
     use std::path::PathBuf;
     use std::sync::OnceLock;
@@ -306,7 +403,13 @@ pub(crate) mod testhilfe {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
     }
 
-    pub(crate) fn params() -> &'static Params {
+    /// Die echten Jahresparameter aus `params/` (einmal geladen).
+    ///
+    /// ```
+    /// let p = bescheid::testhilfe::params();
+    /// assert!(p.grundfreibetrag(domain::Vz::Vz2025).is_ok());
+    /// ```
+    pub fn params() -> &'static Params {
         static P: OnceLock<Params> = OnceLock::new();
         P.get_or_init(|| Params::lade(&repo()).unwrap())
     }
@@ -322,13 +425,23 @@ pub(crate) mod testhilfe {
         })
     }
 
-    pub(crate) fn index() -> &'static BindungIndex<'static> {
+    /// Der Bindungs-Index ueber alle Laufzeit-Bindungen.
+    ///
+    /// ```
+    /// assert!(bescheid::testhilfe::index().contains_key("geburtsjahr"));
+    /// ```
+    pub fn index() -> &'static BindungIndex<'static> {
         static I: OnceLock<HashMap<String, &'static Bindung>> = OnceLock::new();
         I.get_or_init(|| store::baue_nachschlag(bindungen()))
     }
 
     /// Store aus `(feld_id, wert, bestaetigt)`; `event_id` ist der echte Hash des Inhalts.
-    pub(crate) fn store(events: &[(&str, Value, bool)]) -> Store {
+    ///
+    /// ```
+    /// let st = bescheid::testhilfe::store(&[("geburtsjahr", serde_json::json!(1960), true)]);
+    /// assert_eq!(bescheid::testhilfe::felder(&st).len(), 1);
+    /// ```
+    pub fn store(events: &[(&str, Value, bool)]) -> Store {
         let events: Vec<Value> = events
             .iter()
             .enumerate()
@@ -352,7 +465,26 @@ pub(crate) mod testhilfe {
         Store::aus_datei(datei)
     }
 
-    pub(crate) fn felder(store: &Store) -> Felder {
+    /// Leerer Gesamtfall (alle Betraege 0) fuer Doctests der Zweig-Hilfen.
+    ///
+    /// ```
+    /// let g = bescheid::testhilfe::leerer_gesamtfall(domain::Vz::Vz2025, true);
+    /// assert!(g.zusammenveranlagung && g.einkuenfte_gewinn.get() == 0);
+    /// ```
+    pub fn leerer_gesamtfall(
+        vz: domain::Vz,
+        zusammen: bool,
+    ) -> engine::zugriff::teil2::gesamt::GesamtfallEingabe {
+        crate::zweige::leerer_gesamtfall(vz, zusammen)
+    }
+
+    /// Der materialisierte Snapshot eines Stores.
+    ///
+    /// ```
+    /// let f = bescheid::testhilfe::felder(&bescheid::testhilfe::store(&[("a", serde_json::json!(1), false)]));
+    /// assert!(f.contains_key("a"));
+    /// ```
+    pub fn felder(store: &Store) -> Felder {
         store.materialisiere(None).unwrap().0
     }
 }

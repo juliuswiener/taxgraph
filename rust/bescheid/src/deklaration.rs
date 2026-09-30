@@ -40,6 +40,13 @@ pub struct Cfg {
 
 impl Cfg {
     /// `SCHEIBEN[scheibe]` (`api_constants.py:794`).
+    ///
+    /// ```
+    /// use bescheid::deklaration::Cfg;
+    /// use domain::Scheibe;
+    /// assert_eq!(Cfg::fuer(Scheibe::Ep), Cfg::fuer(Scheibe::Ep));
+    /// assert_ne!(Cfg::fuer(Scheibe::Gesamt), Cfg::fuer(Scheibe::RentnerGesamt));
+    /// ```
     #[must_use]
     pub const fn fuer(scheibe: Scheibe) -> Self {
         let leer = Self {
@@ -87,6 +94,13 @@ fn c2(f: &Felder, fid: &str) -> Result<i64, BescheidFehler> {
 ///
 /// PARITÄT: `Bestaetigt` ist kein Sperrgrund und hat in `SPERRGRUND_KLARTEXT` keinen Eintrag —
 /// Python liefert dafuer [`UNBEKANNTER_SPERRGRUND`], hier ebenso.
+///
+/// ```
+/// use bescheid::deklaration::sperrgrund_klartext;
+/// use domain::Sperrgrund;
+/// assert_eq!(sperrgrund_klartext(None), None);
+/// assert!(sperrgrund_klartext(Some(Sperrgrund::PartnerKonsistenzOffen)).is_some());
+/// ```
 #[must_use]
 pub fn sperrgrund_klartext(grund: Option<Sperrgrund>) -> Option<&'static str> {
     grund.map(|g| g.klartext().unwrap_or(UNBEKANNTER_SPERRGRUND))
@@ -94,6 +108,12 @@ pub fn sperrgrund_klartext(grund: Option<Sperrgrund>) -> Option<&'static str> {
 
 /// Wie [`sperrgrund_klartext`] fuer eine rohe Kennung (`grund: str` aus einer anderen Quelle als
 /// `an_gesamt_sperrgrund`): eine unbekannte Kennung liefert [`UNBEKANNTER_SPERRGRUND`].
+///
+/// ```
+/// use bescheid::deklaration::sperrgrund_klartext_text;
+/// assert_eq!(sperrgrund_klartext_text(None), None);
+/// assert_eq!(sperrgrund_klartext_text(Some("gibt_es_nicht")), Some(domain::UNBEKANNTER_SPERRGRUND));
+/// ```
 #[must_use]
 pub fn sperrgrund_klartext_text(grund: Option<&str>) -> Option<&'static str> {
     grund.map(|s| {
@@ -106,6 +126,14 @@ pub fn sperrgrund_klartext_text(grund: Option<&str>) -> Option<&'static str> {
 
 /// Die Angaben, die einen Widerspruchs-Sperrgrund ausloesen — leer bei allen anderen. Gegenstueck zu
 /// [`sperrgrund_klartext`]: wer den Grund liefert, sagt auch, WORAN er haengt.
+///
+/// ```
+/// use bescheid::deklaration::sperrgrund_felder;
+/// use bescheid::Felder;
+/// use domain::Sperrgrund;
+/// assert!(sperrgrund_felder(Some(Sperrgrund::DhfTatbestandOffen), &Felder::new()).is_empty());
+/// assert!(sperrgrund_felder(None, &Felder::new()).is_empty());
+/// ```
 #[must_use]
 pub fn sperrgrund_felder(grund: Option<Sperrgrund>, felder: &Felder) -> Vec<PartnerWiderspruch> {
     if grund == Some(Sperrgrund::PartnerKonsistenzOffen) {
@@ -120,6 +148,17 @@ pub fn sperrgrund_felder(grund: Option<Sperrgrund>, felder: &Felder) -> Vec<Part
 /// [`an_gesamt_sperrgrund`].
 ///
 /// PARITÄT: Pythons `isinstance(x, int)` laesst `True`/`False` als Beginnjahr durch.
+///
+/// ```
+/// use bescheid::deklaration::{rentenbeginn_offen_stand, Cfg};
+/// use bescheid::testhilfe::{felder, store};
+/// use domain::{Scheibe, Sperrgrund};
+/// use serde_json::json;
+/// let f = felder(&store(&[("rentner_jahresrente", json!(1_200_000), true)]));
+/// let cfg = Cfg::fuer(Scheibe::RentnerGesamt);
+/// assert_eq!(rentenbeginn_offen_stand(&f, Some(&cfg)), Some(Sperrgrund::RentenbeginnOffen));
+/// assert_eq!(rentenbeginn_offen_stand(&f, None), None);
+/// ```
 #[must_use]
 pub fn rentenbeginn_offen_stand(felder: &Felder, cfg: Option<&Cfg>) -> Option<Sperrgrund> {
     if !cfg.is_some_and(|c| c.rentner) {
@@ -140,6 +179,16 @@ pub fn rentenbeginn_offen_stand(felder: &Felder, cfg: Option<&Cfg>) -> Option<Sp
 /// keine Betraege sind (`typ` nicht `cent`/`int`).
 ///
 /// `bindung`: die Bindung der Scheibe (`_scheibe_bindung`).
+///
+/// ```
+/// use bescheid::deklaration::{vorlaeufige_ring_betraege, Cfg};
+/// use bescheid::testhilfe::{felder, index, store};
+/// use domain::Scheibe;
+/// use serde_json::json;
+/// let f = felder(&store(&[("p36_lohnsteuer", json!(500_000), false)]));
+/// let vorl = vorlaeufige_ring_betraege(&f, &Cfg::fuer(Scheibe::AnGesamt), index());
+/// assert!(vorl.contains(&"p36_lohnsteuer"));
+/// ```
 #[must_use]
 pub fn vorlaeufige_ring_betraege(
     felder: &Felder,
@@ -162,6 +211,11 @@ pub fn vorlaeufige_ring_betraege(
 
 /// Die Tabellen, wie Rust sie traegt, in der Form von `_deklaration_konstanten` im Orakel
 /// (`tools/parity/bescheid_oracle.py`): Grundlage von `konstanten_gleich` im Parity-Test.
+///
+/// ```
+/// use bescheid::deklaration::konstanten_json;
+/// assert!(konstanten_json()["tabellen"].is_object());
+/// ```
 #[doc(hidden)]
 #[must_use]
 pub fn konstanten_json() -> Value {

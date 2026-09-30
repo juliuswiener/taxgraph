@@ -70,6 +70,14 @@ pub struct Extras {
 ///
 /// Python: `wert if isinstance(wert, str) and wert else None`. Ein Feld ohne Eintrag, mit `null`,
 /// mit Zahl oder leerem Text ist "nicht angegeben" (kein "keine" als Vorgabe, s. Python-Docstring).
+///
+/// ```
+/// use bescheid::testhilfe::{felder, store};
+/// use bescheid::zweige::kist_konfession;
+/// use serde_json::json;
+/// assert_eq!(kist_konfession(&felder(&store(&[("kist_konfession", json!("rk"), true)]))), Some("rk"));
+/// assert_eq!(kist_konfession(&felder(&store(&[("kist_konfession", json!(""), true)]))), None);
+/// ```
 #[must_use]
 pub fn kist_konfession(felder: &Felder) -> Option<&str> {
     match felder.get("kist_konfession").map(|e| &e.wert) {
@@ -98,6 +106,19 @@ fn best_zahl<'a>(felder: &'a Felder, fid: &str) -> Option<&'a serde_json::Number
 ///
 /// # Errors
 /// [`BescheidFehler::Ueberlauf`], Accessor-Fehler.
+///
+/// ```
+/// use bescheid::testhilfe::{felder, store};
+/// use bescheid::zweige::abschlusszahlung_cent;
+/// use domain::Cent;
+/// use serde_json::json;
+/// let f = felder(&store(&[("p36_lohnsteuer", json!(100_000), true)]));
+/// // festgesetzte ESt 2.500 EUR, angerechnete Lohnsteuer 1.000 EUR → Abschlusszahlung 1.500 EUR
+/// assert_eq!(abschlusszahlung_cent(&f, Cent::new(250_000)).unwrap(), Some(Cent::new(150_000)));
+/// // ohne ein bestaetigtes Anrechnungsfeld gibt es keine Zahl
+/// let leer = felder(&store(&[("p36_lohnsteuer", json!(100_000), false)]));
+/// assert_eq!(abschlusszahlung_cent(&leer, Cent::new(250_000)).unwrap(), None);
+/// ```
 pub fn abschlusszahlung_cent(felder: &Felder, zahl_cent: Cent) -> R<Option<Cent>> {
     let ids = [
         "p36_lohnsteuer",
@@ -126,6 +147,24 @@ pub fn abschlusszahlung_cent(felder: &Felder, zahl_cent: Cent) -> R<Option<Cent>
 }
 
 /// Rechenweg-Kette nur, wenn ihre letzte Stufe exakt die ausgegebene Steuer `est` (EURO) ist.
+///
+/// ```
+/// use bescheid::zweige::{setze_kette, Extras};
+/// use bescheid::zweige::Kette;
+/// use domain::Euro;
+/// let kette = |est: i64| Kette {
+///     gesamtbetrag_der_einkuenfte: Euro::new(50_000),
+///     zu_versteuerndes_einkommen: Euro::new(45_000),
+///     tarifliche_est: Euro::new(est),
+///     festzusetzende_est: Euro::new(est),
+///     p31: None,
+/// };
+/// let mut extras = Extras::default();
+/// setze_kette(&mut extras, kette(9_000), Euro::new(1));
+/// assert!(extras.kette.is_none()); // letzte Stufe trifft die ausgegebene Steuer nicht
+/// setze_kette(&mut extras, kette(9_000), Euro::new(9_000));
+/// assert!(extras.kette.is_some());
+/// ```
 // ponytail: prueft nur die letzte Stufe (Python-Befund) — heben sich zwei Korrekturen auf den Euro
 // genau auf, stimmen die Zwischenstufen nicht. Upgrade: die Kette aus dem Endstand speisen.
 pub fn setze_kette(extras: &mut Extras, kette: Kette, est: Euro) {
@@ -155,12 +194,32 @@ fn tausender(n: i64) -> String {
 ///
 /// # Errors
 /// [`BescheidFehler::Ueberlauf`] bei `festzusetzende_est + kindergeld`.
+///
+/// ```
+/// use bescheid::zweige::{kette_p31, P31Sieger};
+/// use bescheid::zweige::Kette;
+/// use domain::Euro;
+/// let kette = |est: i64| Kette {
+///     gesamtbetrag_der_einkuenfte: Euro::new(50_000),
+///     zu_versteuerndes_einkommen: Euro::new(45_000),
+///     tarifliche_est: Euro::new(est),
+///     festzusetzende_est: Euro::new(est),
+///     p31: None,
+/// };
+/// let k = kette_p31(kette(9_000), kette(7_000), true, Euro::new(3_000)).unwrap();
+/// assert_eq!(k.festzusetzende_est, Euro::new(10_000)); // tarifliche Steuer + Kindergeld (§ 31 S. 4)
+/// assert_eq!(k.p31.unwrap().guenstiger, P31Sieger::Freibetraege);
+/// let k = kette_p31(kette(9_000), kette(7_000), false, Euro::new(3_000)).unwrap();
+/// assert_eq!(k.festzusetzende_est, Euro::new(9_000));
+/// ```
 pub fn kette_p31(
     kette_ohne: Kette,
     kette_mit: Kette,
     freibetraege_guenstiger: bool,
     kindergeld: Euro,
 ) -> R<Kette> {
+    // Kindergeld kommt aus den Jahresparametern; ein negativer Wert drehte die Gegenueberstellung.
+    debug_assert!(kindergeld.get() >= 0);
     let kg = tausender(kindergeld.get());
     if freibetraege_guenstiger {
         let mut kette = kette_mit;

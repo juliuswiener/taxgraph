@@ -1,11 +1,12 @@
 //! Der `gesamt_guard`-Zweig von `_an_gesamt_sperrgrund` (Scheiben `gesamt`, `rentner_gesamt`):
 //! Partner, Instanz-Vollstaendigkeit, Rente, Versorgung, § 33b, § 35a/§ 35c, GWG, Kinderbetreuung.
 use domain::Sperrgrund;
+use rust_decimal::Decimal;
 use serde_json::Value;
 use store::SnapshotFeld;
 
 use super::einkunft::{betrag_offen, dba_p32b_p16, flag_kapital_gewinn};
-use super::{bestaetigt, positiv, py_int_wert, werbungskosten, zahl_f64, Grund, K};
+use super::{bestaetigt, positiv, py_int_wert, werbungskosten, zahl_wert, Grund, K};
 use crate::deklaration::konstanten::{
     GESAMT_PARTNER_19, GESAMT_PARTNER_KAP, RENTNER_22, RENTNER_22_PARTNER, RENTNER_AA_ARTEN,
     VV_GESAMT_FELDER,
@@ -77,7 +78,7 @@ fn fixierung_offen(
     let (Some(beginn), Some(vz)) = (py_int_wert(beginn), k.vz) else {
         return false;
     };
-    art_aa && beginn < i64::from(vz.jahr()) && zahl_f64(rf).is_none()
+    art_aa && beginn < i64::from(vz.jahr()) && zahl_wert(rf).is_none()
 }
 
 /// Rentner-Scheibe: Fixierung und Vollstaendigkeit je Rente-Instanz, Person-B-Rente.
@@ -147,7 +148,8 @@ fn versorgung(f: &Felder) -> Option<Sperrgrund> {
     // `isinstance(x, int) and x > 0` — Pythons bool zaehlt als int (True > 0).
     let beginn_ok = py_int_wert(wert(f, "versorgung_beginn_jahr")).is_some_and(|b| b > 0)
         && bestaetigt(f, "versorgung_beginn_jahr");
-    let bmg_ok = zahl_f64(wert(f, "versorgung_bemessungsgrundlage")).is_some_and(|b| b > 0.0)
+    let bmg_ok = zahl_wert(wert(f, "versorgung_bemessungsgrundlage"))
+        .is_some_and(|b| b > Decimal::ZERO)
         && bestaetigt(f, "versorgung_bemessungsgrundlage");
     (!(beginn_ok && bmg_ok)).then_some(Sperrgrund::VersorgungsfreibetragOffen)
 }
@@ -180,7 +182,8 @@ fn behinderung_wahlrecht(k: &K<'_>) -> Grund {
     // GdB >= 20 nach bit-identischer Regel zu `catala_behinderten_pb`; kein Zahlwert = 0.
     let pb = |gdb: &str, hilflos: &str| {
         // PARITÄT: fail-open default — `_gdb_num = _gdb if Zahl else 0`: kein Zahlwert = GdB 0.
-        zahl_f64(wert(f, gdb)).unwrap_or(0.0) >= 20.0 || ist_true(wert(f, hilflos))
+        zahl_wert(wert(f, gdb)).unwrap_or(Decimal::ZERO) >= Decimal::from(20)
+            || ist_true(wert(f, hilflos))
     };
     if pb(
         "rentner_grad_der_behinderung",
@@ -270,14 +273,14 @@ fn gwg(k: &K<'_>) -> Grund {
     }
     for inst in k.q.instanzen("gwg")? {
         // PARITÄT: fail-open default — `_netto_i = _netto_v if Zahl else 0`: kein Zahlwert = 0.
-        let betrag = zahl_f64(
+        let betrag = zahl_wert(
             inst.felder
                 .get("gwg_anschaffungskosten_netto")
                 .map(|x| &x.wert),
         )
-        .unwrap_or(0.0);
+        .unwrap_or(Decimal::ZERO);
         // Ueber 800 EUR netto ist der Sofortabzug ausgeschlossen (Schwelle in Cent).
-        if betrag <= 0.0 || betrag > 80_000.0 {
+        if betrag <= Decimal::ZERO || betrag > Decimal::from(80_000) {
             continue;
         }
         let offen = |id: &str| {
@@ -287,7 +290,7 @@ fn gwg(k: &K<'_>) -> Grund {
         };
         if offen("gwg_bewegliches_selbstaendig_nutzbar")
             || offen("gwg_netto_ohne_vorsteuer")
-            || (betrag > 25_000.0 && offen("gwg_verzeichnis_ab_250"))
+            || (betrag > Decimal::from(25_000) && offen("gwg_verzeichnis_ab_250"))
         {
             return Ok(Some(Sperrgrund::GwgTatbestandOffen));
         }
@@ -304,7 +307,7 @@ fn kinderbetreuung(k: &K<'_>) -> Grund {
     for inst in k.q.instanzen("kind")? {
         let w = |id: &str| inst.felder.get(id).map(|x| &x.wert);
         // PARITÄT: fail-open default — kein Zahlwert = 0 (`_aufw_i`), die Instanz zaehlt nicht.
-        if zahl_f64(w("kinderbetreuungskosten")).unwrap_or(0.0) <= 0.0 {
+        if zahl_wert(w("kinderbetreuungskosten")).unwrap_or(Decimal::ZERO) <= Decimal::ZERO {
             continue;
         }
         // Nur ein bestaetigt qualifiziertes Kind erreicht den Ring ueberhaupt.

@@ -62,6 +62,16 @@ fn setze(f: &mut Felder, fid: &str, w: Value, h: &HerkunftVektor) {
 /// # Errors
 /// Nur i64-Ueberlauf ([`BescheidFehler::Ueberlauf`]); jede Python-Ausnahme, die Python im `try`
 /// schluckt, schluckt Rust hier ebenso.
+///
+/// ```
+/// use bescheid::deklaration::mit_ring_werten;
+/// use bescheid::testhilfe::params;
+/// use bescheid::Felder;
+/// use domain::Vz;
+/// let mut f = Felder::new();
+/// mit_ring_werten(&mut f, Some(Vz::Vz2025), params()).unwrap();
+/// assert!(f.is_empty()); // ohne Verpflegungs-/Kapital-Felder entsteht kein Ring-Wert
+/// ```
 pub fn mit_ring_werten(felder: &mut Felder, vz: Option<Vz>, p: &Params) -> R<()> {
     let h = berechnet_herkunft()?;
     verpflegung(felder, vz, p, &h)?;

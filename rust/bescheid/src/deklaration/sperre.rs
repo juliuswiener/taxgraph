@@ -33,6 +33,7 @@ mod werbungskosten;
 
 use domain::{Sperrgrund, Vz, Zustand};
 use konsistenz::{alleinerziehend_mit_zusammen, partner_ohne_zusammen};
+use rust_decimal::Decimal;
 use serde_json::Value;
 use store::SnapshotFeld;
 
@@ -40,8 +41,8 @@ use super::konstanten::{AN_GESAMT_FLAGS, AN_GESAMT_PARTNER, VOR_FELDER, VOR_PART
 use super::{c2, Cfg};
 use crate::abzuege::abs3_eligible;
 use crate::{
-    ist_false, ist_positive_zahl, ist_true, ist_zusammen, py_wahr, wert, BescheidFehler, Felder,
-    Instanzquelle,
+    ist_false, ist_positive_zahl, ist_true, ist_zusammen, py_wahr, wert, zahl_dezimal,
+    BescheidFehler, Felder, Instanzquelle,
 };
 
 /// Ergebnis der Guard-Funktionen: `None` = keine Sperre.
@@ -67,6 +68,23 @@ struct K<'a> {
 /// # Errors
 /// Snapshot-, Bindungs- und Ueberlauf-Fehler; Python-Ausnahmen (z. B. `TypeError` bei `str + int` in
 /// der Tage-Summe) als [`BescheidFehler::Python`].
+///
+/// ```
+/// use bescheid::deklaration::an_gesamt_sperrgrund;
+/// use bescheid::testhilfe::{felder, store};
+/// use bescheid::Instanzquelle;
+/// use domain::{Sperrgrund, Vz};
+/// use serde_json::json;
+/// let q = Instanzquelle { store: None, bindung: None, nur_bestaetigt: true };
+/// let leer = felder(&store(&[]));
+/// assert_eq!(an_gesamt_sperrgrund(&leer, None, Some(Vz::Vz2025), &q).unwrap(), None);
+/// // Verpflegungstage ohne bestaetigten Monat am Ort: der Ring sperrt statt zu raten.
+/// let f = felder(&store(&[("tage_24h", json!(5), true)]));
+/// assert_eq!(
+///     an_gesamt_sperrgrund(&f, None, Some(Vz::Vz2025), &q).unwrap(),
+///     Some(Sperrgrund::VerpflegungDreimonatsfristAufteilungOffen)
+/// );
+/// ```
 pub fn an_gesamt_sperrgrund(
     felder: &Felder,
     cfg: Option<&Cfg>,
@@ -192,9 +210,9 @@ fn ganzzahl(v: Option<&Value>) -> Option<i64> {
 }
 
 /// `isinstance(v, (int, float)) and not isinstance(v, bool)`.
-fn zahl_f64(v: Option<&Value>) -> Option<f64> {
+fn zahl_wert(v: Option<&Value>) -> Option<Decimal> {
     match v {
-        Some(Value::Number(n)) => n.as_f64(),
+        Some(Value::Number(n)) => Some(zahl_dezimal(n)),
         _ => None,
     }
 }

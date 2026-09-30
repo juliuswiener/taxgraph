@@ -2,14 +2,15 @@
 //! Verpflegung, Uebernachtung und Arbeitsmittel (§ 9 Abs. 1 Nr. 5/5a/6/7, Abs. 4a). Gilt fuer JEDE
 //! Scheibe, die diese Felder ring-verdrahtet.
 use domain::Sperrgrund;
+use rust_decimal::Decimal;
 use serde_json::Value;
 
-use super::{bestaetigt, ganzzahl, positiv, zahl_f64, Grund, K};
+use super::{bestaetigt, ganzzahl, positiv, zahl_wert, Grund, K};
 use crate::deklaration::konstanten::{
     ARBEITSMITTEL_KOSTEN, DHF_BEDINGUNGEN, DHF_KOSTEN, UEBERNACHTUNG_BEDINGUNGEN,
     UEBERNACHTUNG_KOSTEN, VERPFLEGUNG_TAGE, VERPFLEGUNG_TAGE_NACH_FRIST,
 };
-use crate::{ist_false, ist_true, wert, BescheidFehler, Felder};
+use crate::{dezimal_plus, ist_false, ist_true, wert, zahl_dezimal, BescheidFehler, Felder};
 
 /// Die vier Tatbestaende in Python-Reihenfolge; die erste Sperre gewinnt.
 pub(super) fn dhf_vpf_grund(k: &K<'_>) -> Grund {
@@ -38,12 +39,17 @@ fn dhf(f: &Felder) -> Option<Sperrgrund> {
     None
 }
 
-/// Python `sum((wert or 0) for ...)`: Ganzzahlen exakt, Floats getrennt (nur `> 0` und `== 0` werden gefragt).
+/// Python `sum((wert or 0) for ...)` als exakte `Decimal`-Summe (nur `> 0` und `== 0` werden gefragt).
+///
+/// PARITÄT: Python summiert Ganzzahlen exakt und Floats als `float`. Hier ist alles `Decimal`
+/// (Floats mit ihrem binaeren Wert, [`zahl_dezimal`]). Grenzfall: eine Float-Summe, die in Python
+/// durch Rundung einen Rest `!= 0` haette, der in `Decimal` exakt 0 ist (oder umgekehrt), wird nur
+/// bei Floats mit Nachkommastellen unterschiedlich — Store-Werte dieser Tage-Felder sind
+/// Ganzzahlen (Typ `zahl`), dort ist die Summe identisch. Der fruehere `f64::EPSILON`-Vergleich
+/// war strenger als Python (`== 0`) und entfaellt.
 #[derive(Default)]
 struct PySumme {
-    ganz: i128,
-    komma: f64,
-    ist_float: bool,
+    summe: Decimal,
 }
 
 impl PySumme {
@@ -53,17 +59,8 @@ impl PySumme {
     /// die Ausnahme steigt aus dem Guard auf (HTTP 500 in Python).
     fn addiere(&mut self, v: Option<&Value>) -> Result<(), BescheidFehler> {
         match v {
-            Some(Value::Bool(true)) => self.ganz += 1,
-            Some(Value::Number(n)) => {
-                if let Some(i) = n.as_i64() {
-                    self.ganz += i128::from(i);
-                } else if let Some(u) = n.as_u64() {
-                    self.ganz += i128::from(u);
-                } else if let Some(x) = n.as_f64() {
-                    self.komma += x;
-                    self.ist_float = true;
-                }
-            }
+            Some(Value::Bool(true)) => self.summe = dezimal_plus(self.summe, Decimal::ONE),
+            Some(Value::Number(n)) => self.summe = dezimal_plus(self.summe, zahl_dezimal(n)),
             Some(Value::String(s)) if !s.is_empty() => return Err(typfehler()),
             Some(Value::Array(a)) if !a.is_empty() => return Err(typfehler()),
             Some(Value::Object(o)) if !o.is_empty() => return Err(typfehler()),
@@ -72,21 +69,12 @@ impl PySumme {
         Ok(())
     }
 
-    #[allow(clippy::cast_precision_loss)] // Vergleich gegen 0, Groessenordnung genuegt
-    fn gesamt(&self) -> f64 {
-        if self.ist_float {
-            self.ganz as f64 + self.komma
-        } else {
-            self.ganz as f64
-        }
-    }
-
     fn positiv(&self) -> bool {
-        self.gesamt() > 0.0
+        self.summe > Decimal::ZERO
     }
 
     fn null(&self) -> bool {
-        self.gesamt().abs() < f64::EPSILON
+        self.summe.is_zero()
     }
 }
 
@@ -188,8 +176,8 @@ fn uebernachtung(f: &Felder) -> Option<Sperrgrund> {
 
 /// § 9 Abs. 1 Nr. 6/7 (GWG-Sofortabzug ≤ 800 EUR, sonst § 7-AfA). Schwelle in CENT (80.000).
 fn arbeitsmittel(f: &Felder) -> Option<Sperrgrund> {
-    let am = zahl_f64(wert(f, ARBEITSMITTEL_KOSTEN)).filter(|a| *a > 0.0)?;
-    if am <= 80_000.0 {
+    let am = zahl_wert(wert(f, ARBEITSMITTEL_KOSTEN)).filter(|a| *a > Decimal::ZERO)?;
+    if am <= Decimal::from(80_000) {
         // "is not True" auf dem Rohwert liess ein vorlaeufiges True durch (Naht-Fix).
         let gewaehlt = ist_true(wert(f, "am_gwg_sofortabzug_gewaehlt"))
             && bestaetigt(f, "am_gwg_sofortabzug_gewaehlt");
@@ -208,4 +196,49 @@ fn arbeitsmittel(f: &Felder) -> Option<Sperrgrund> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    fn summe_aus(werte: &[Value]) -> Result<PySumme, BescheidFehler> {
+        let mut s = PySumme::default();
+        for w in werte {
+            s.addiere(Some(w))?;
+        }
+        Ok(s)
+    }
+
+    /// `sum(wert or 0)`: Ganzzahlen, Floats und `True` mischen sich wie in Python.
+    #[test]
+    fn summe_mischt_ganzzahl_float_und_bool() {
+        let s = summe_aus(&[json!(2), json!(0.5), json!(true)]).unwrap();
+        assert!(s.positiv() && !s.null());
+        assert!(summe_aus(&[json!(0.5), json!(-0.5)]).unwrap().null()); // Python: 0.5 + -0.5 == 0
+        assert!(summe_aus(&[json!(false), Value::Null, json!("")])
+            .unwrap()
+            .null());
+    }
+
+    /// Grenzfall: Python `0.1 + 0.2 - 0.3 != 0` (5,6e-17); `Decimal` (binaerer Wert) ebenso ungleich 0.
+    #[test]
+    fn float_rest_ist_wie_in_python_ungleich_null() {
+        let s = summe_aus(&[json!(0.1), json!(0.2), json!(-0.3)]).unwrap();
+        assert!(!s.null() && s.positiv());
+    }
+
+    /// Nicht-leerer Text ist in Python `0 + "12"` = `TypeError`.
+    #[test]
+    fn text_ist_ein_typfehler() {
+        assert!(matches!(
+            summe_aus(&[json!(1), json!("12")]),
+            Err(BescheidFehler::Python {
+                klasse: "TypeError",
+                ..
+            })
+        ));
+    }
 }

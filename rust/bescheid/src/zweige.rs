@@ -45,6 +45,7 @@ pub use ausgaben::{
 pub use snapshot::{Bestaetigt, Marke, Roh, Snapshot};
 
 use self::rechnen::R;
+pub(crate) use self::tarif::leerer_gesamtfall;
 use crate::abzuege::oepnv_eur;
 use crate::{py_int, py_wahr, BescheidFehler, BindungIndex, Felder, Instanzquelle};
 
@@ -63,6 +64,12 @@ pub enum Quantitaet {
 
 impl Quantitaet {
     /// Der Python-Name; unbekannt (auch die entfernten `..._haushalt`/`..._agb`) → `None`.
+    ///
+    /// ```
+    /// use bescheid::zweige::Quantitaet;
+    /// assert_eq!(Quantitaet::aus_name("festzusetzende_est_gesamt"), Some(Quantitaet::FestzusetzendeEstGesamt));
+    /// assert_eq!(Quantitaet::aus_name("festzusetzende_est_haushalt"), None);
+    /// ```
     #[must_use]
     pub fn aus_name(name: &str) -> Option<Self> {
         match name {
@@ -92,6 +99,15 @@ pub type BescheidFn<'a> = Box<dyn Fn(&Werte) -> Result<Cent, SlotFehler<Bescheid
 /// `None`, wenn `quantitaet` unbekannt ist ("kein exponierter Accessor → ehrlich None").
 /// `felder` ist der materialisierte Snapshot; `nur_bestaetigt` waehlt `Snapshot<Bestaetigt>`
 /// (festgesetzte Steuer, Default in Python) oder `Snapshot<Roh>` (Estimate-Pfad).
+///
+/// ```
+/// use bescheid::testhilfe::{index, params};
+/// use bescheid::zweige::{bescheid_fn, Umgebung};
+/// use domain::Vz;
+/// let umg = Umgebung { achsen: &[], index: index(), params: params() };
+/// assert!(bescheid_fn("kein_accessor", Vz::Vz2025, &umg, None, None, true, None, None).is_none());
+/// assert!(bescheid_fn("festzusetzende_est", Vz::Vz2025, &umg, None, None, true, None, None).is_some());
+/// ```
 #[must_use]
 #[allow(clippy::too_many_arguments)] // Python-Signatur 1:1
 pub fn bescheid_fn<'a>(

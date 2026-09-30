@@ -45,6 +45,14 @@ pub struct Snapshot<Z: Marke> {
 
 impl Snapshot<Roh> {
     /// Ungefilterter Snapshot.
+    ///
+    /// ```
+    /// use bescheid::testhilfe::{felder, store};
+    /// use bescheid::zweige::Snapshot;
+    /// use serde_json::json;
+    /// let roh = Snapshot::roh(felder(&store(&[("a", json!(1), true), ("b", json!(2), false)])));
+    /// assert_eq!(roh.felder().len(), 2); // der Rohsnapshot behaelt Vorlaeufiges
+    /// ```
     #[must_use]
     pub fn roh(felder: Felder) -> Self {
         Self {
@@ -55,13 +63,24 @@ impl Snapshot<Roh> {
 
     /// DIE Filterstelle: `{fid: ev for ... if ev.get("zustand") == "bestaetigt"}`
     /// (`bescheid_zweige.py:1509`). Ein vorlaeufiger Wert ist danach absent.
+    ///
+    /// ```
+    /// use bescheid::testhilfe::{felder, store};
+    /// use bescheid::zweige::Snapshot;
+    /// use serde_json::json;
+    /// let fest = Snapshot::roh(felder(&store(&[("a", json!(1), true), ("b", json!(2), false)]))).nur_bestaetigt();
+    /// assert!(fest.felder().contains_key("a"));
+    /// assert!(!fest.felder().contains_key("b")); // vorlaeufig: fuer den Ring nicht vorhanden
+    /// ```
     #[must_use]
     pub fn nur_bestaetigt(self) -> Snapshot<Bestaetigt> {
         let felder = self
             .felder
             .into_iter()
             .filter(|(_, ev)| ev.zustand == Zustand::Bestaetigt)
-            .collect();
+            .collect::<Felder>();
+        // Die EINE Filterstelle des Rings: danach ist jedes Feld bestaetigt.
+        debug_assert!(felder.values().all(|ev| ev.zustand == Zustand::Bestaetigt));
         Snapshot {
             felder,
             _z: PhantomData,
@@ -71,6 +90,11 @@ impl Snapshot<Roh> {
 
 impl<Z: Marke> Snapshot<Z> {
     /// Die Felder, wie der Zweig sie liest (Python `f = felder or {}`).
+    ///
+    /// ```
+    /// use bescheid::{zweige::Snapshot, Felder};
+    /// assert!(Snapshot::roh(Felder::new()).felder().is_empty());
+    /// ```
     #[must_use]
     pub fn felder(&self) -> &Felder {
         &self.felder

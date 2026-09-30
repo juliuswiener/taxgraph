@@ -169,6 +169,7 @@ dependencies = [
  "engine",
  "intervall",
  "konsistenz",
+ "proptest",
  "rust_decimal",
  "serde_json",
  "store",
@@ -453,6 +454,7 @@ dependencies = [
  "bindung",
  "catala-sys",
  "domain",
+ "proptest",
  "rust_decimal",
  "thiserror",
 ]

@@ -58,6 +58,13 @@ pub fn abs3_eligible(f: &Felder, vz: Vz) -> Result<bool, BescheidFehler> {
 /// # Errors
 /// [`BescheidFehler::SlotFehlt`] (Python `KeyError`), [`BescheidFehler::Python`] bei einem Wert, den
 /// `int()` ablehnt.
+///
+/// ```
+/// use bescheid::abzuege::oepnv_eur;
+/// use intervall::Slots;
+/// let s: Slots = [("oepnv_kosten_jahr".to_owned(), serde_json::json!(-150))].into();
+/// assert_eq!(oepnv_eur(&s).unwrap().get(), -2); // Cent → Euro rundet gegen −∞
+/// ```
 pub fn oepnv_eur(slots: &Slots) -> Result<Euro, BescheidFehler> {
     let v = slots
         .get("oepnv_kosten_jahr")
@@ -75,6 +82,17 @@ fn kind_idnr_ok(felder: &Felder) -> bool {
 ///
 /// # Errors
 /// [`BescheidFehler::BindungFehlt`], [`BescheidFehler::Snapshot`], [`BescheidFehler::Ueberlauf`].
+///
+/// ```
+/// use bescheid::abzuege::kind_kv_pv_summe;
+/// use bescheid::testhilfe::{felder, index, params, store};
+/// use bescheid::Instanzquelle;
+/// use domain::{Cent, Euro, Vz};
+/// use serde_json::json;
+/// let st = store(&[("kind_idnr", json!("12345678901"), true), ("kind_kv", json!(1000), true), ("kind_pv", json!(500), true)]);
+/// let q = Instanzquelle { store: Some(&st), bindung: Some(index()), nur_bestaetigt: true };
+/// assert_eq!(kind_kv_pv_summe(&q).unwrap().get(), 1500);
+/// ```
 pub fn kind_kv_pv_summe(q: &Instanzquelle<'_>) -> Result<Cent, BescheidFehler> {
     let mut total = 0_i64;
     for inst in q.instanzen("kind")? {
@@ -95,6 +113,17 @@ pub fn kind_kv_pv_summe(q: &Instanzquelle<'_>) -> Result<Cent, BescheidFehler> {
 ///
 /// # Errors
 /// Wie [`kind_kv_pv_summe`], dazu Accessor-Fehler.
+///
+/// ```
+/// use bescheid::abzuege::kinderbetreuung_summe;
+/// use bescheid::testhilfe::{felder, index, params, store};
+/// use bescheid::Instanzquelle;
+/// use domain::{Cent, Euro, Vz};
+/// use serde_json::json;
+/// let st = store(&[("kind_unter_14_haushaltszugehoerig", json!(true), true), ("kinderbetreuungskosten", json!(400_000), true)]);
+/// let q = Instanzquelle { store: Some(&st), bindung: Some(index()), nur_bestaetigt: true };
+/// assert!(kinderbetreuung_summe(&q, Vz::Vz2025, params()).unwrap().get() > 0);
+/// ```
 pub fn kinderbetreuung_summe(
     q: &Instanzquelle<'_>,
     vz: Vz,
@@ -122,6 +151,17 @@ pub fn kinderbetreuung_summe(
 ///
 /// # Errors
 /// [`BescheidFehler::BindungFehlt`], [`BescheidFehler::Snapshot`].
+///
+/// ```
+/// use bescheid::abzuege::p10_1_5_gate_fehlend;
+/// use bescheid::testhilfe::{felder, index, params, store};
+/// use bescheid::Instanzquelle;
+/// use domain::{Cent, Euro, Vz};
+/// use serde_json::json;
+/// let st = store(&[("kinderbetreuungskosten", json!(1), true)]);
+/// let q = Instanzquelle { store: Some(&st), bindung: Some(index()), nur_bestaetigt: true };
+/// assert!(p10_1_5_gate_fehlend(&q).unwrap().contains("kind_unter_14_haushaltszugehoerig"));
+/// ```
 pub fn p10_1_5_gate_fehlend(
     q: &Instanzquelle<'_>,
 ) -> Result<BTreeSet<&'static str>, BescheidFehler> {
@@ -145,6 +185,18 @@ pub fn p10_1_5_gate_fehlend(
 ///
 /// # Errors
 /// Wie [`kinderbetreuung_summe`].
+///
+/// ```
+/// use bescheid::abzuege::schulgeld_summe;
+/// use bescheid::testhilfe::{felder, index, params, store};
+/// use bescheid::Instanzquelle;
+/// use domain::{Cent, Euro, Vz};
+/// use serde_json::json;
+/// let st = store(&[("schulgeld", json!(500_000), true)]);
+/// let q = Instanzquelle { store: Some(&st), bindung: Some(index()), nur_bestaetigt: true };
+/// let f = felder(&st);
+/// assert!(schulgeld_summe(&q, Vz::Vz2025, &f, params()).unwrap().get() > 0);
+/// ```
 pub fn schulgeld_summe(
     q: &Instanzquelle<'_>,
     vz: Vz,
@@ -183,6 +235,19 @@ pub struct KindPbDaten {
 ///
 /// # Errors
 /// [`BescheidFehler::BindungFehlt`], [`BescheidFehler::Snapshot`], [`BescheidFehler::Ueberlauf`].
+///
+/// ```
+/// use bescheid::abzuege::kind_behinderten_pb_daten;
+/// use bescheid::testhilfe::{felder, index, params, store};
+/// use bescheid::Instanzquelle;
+/// use domain::{Cent, Euro, Vz};
+/// use serde_json::json;
+/// let st = store(&[("kind_idnr", json!("12345678901"), true), ("kind_behinderten_pb_antrag", json!(true), true), ("kind_pb_nicht_selbst_genutzt", json!(true), true), ("kind_grad_der_behinderung", json!(50), true)]);
+/// let q = Instanzquelle { store: Some(&st), bindung: Some(index()), nur_bestaetigt: true };
+/// let daten = kind_behinderten_pb_daten(&q).unwrap();
+/// assert_eq!(daten.len(), 1);
+/// assert_eq!(daten[0].grad_der_behinderung, 50);
+/// ```
 pub fn kind_behinderten_pb_daten(
     q: &Instanzquelle<'_>,
 ) -> Result<Vec<KindPbDaten>, BescheidFehler> {
@@ -212,6 +277,17 @@ pub fn kind_behinderten_pb_daten(
 ///
 /// # Errors
 /// Wie [`kind_behinderten_pb_daten`], dazu Accessor-Fehler.
+///
+/// ```
+/// use bescheid::abzuege::p33b_kind_pauschbetraege;
+/// use bescheid::testhilfe::{felder, index, params, store};
+/// use bescheid::Instanzquelle;
+/// use domain::{Cent, Euro, Vz};
+/// use serde_json::json;
+/// let st = store(&[("kind_idnr", json!("12345678901"), true), ("kind_behinderten_pb_antrag", json!(true), true), ("kind_pb_nicht_selbst_genutzt", json!(true), true), ("kind_grad_der_behinderung", json!(50), true)]);
+/// let q = Instanzquelle { store: Some(&st), bindung: Some(index()), nur_bestaetigt: true };
+/// assert!(p33b_kind_pauschbetraege(&q, Vz::Vz2025, params()).unwrap().get() > 0);
+/// ```
 pub fn p33b_kind_pauschbetraege(
     q: &Instanzquelle<'_>,
     vz: Vz,
@@ -482,6 +558,19 @@ fn aussergewoehnliche_belastungen(
 ///
 /// # Errors
 /// Accessor-, Instanz- und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::abzuege::shared_steuer_sonder_agb;
+/// use bescheid::testhilfe::{felder, index, params, store};
+/// use bescheid::Instanzquelle;
+/// use domain::{Cent, Euro, Vz};
+/// use serde_json::json;
+/// use domain::Veranlagung;
+/// let f = felder(&store(&[("agb_aufwendungen", json!(1_000_000), true)]));
+/// let leer = Instanzquelle { store: None, bindung: Some(index()), nur_bestaetigt: true };
+/// let s = shared_steuer_sonder_agb(Euro::new(20_000), Euro::new(0), Veranlagung::Einzel, &f, Vz::Vz2025, &leer, params()).unwrap();
+/// assert!(s.aussergewoehnliche_belastungen.get() > 0);
+/// ```
 pub fn shared_steuer_sonder_agb(
     gde: Euro,
     ausserg: Euro,

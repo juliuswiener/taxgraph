@@ -353,7 +353,7 @@ where
 }
 
 /// Ein Gesamtfall, in dem jeder Betrag 0 ist — Python-`dict` ohne die Schluessel (`m(k)` = 0).
-pub(super) fn leerer_gesamtfall(vz: Vz, zusammen: bool) -> GesamtfallEingabe {
+pub(crate) fn leerer_gesamtfall(vz: Vz, zusammen: bool) -> GesamtfallEingabe {
     use engine::zugriff::teil2::rente::{
         EinkuenfteVersorgungEingabe, VersorgungsfreibetragEingabe,
     };

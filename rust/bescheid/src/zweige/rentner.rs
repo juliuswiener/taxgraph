@@ -5,6 +5,8 @@ use engine::zugriff::teil1::ermaessigungen::{p24a_altersentlastung, P24aAltersen
 use engine::zugriff::teil2::gesamt::{gesamt_gde, GesamtfallEingabe};
 use engine::zugriff::teil2::rente::{renten_einkuenfte, RentenEingabe, Rentenart};
 use intervall::Slots;
+use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 use serde_json::Value;
 
 use super::gesamt::{
@@ -19,7 +21,9 @@ use crate::einkuenfte::{
     gewinn_partner_anteil, laufender_gewinn, p20_kapitaleinkuenfte, p23_ansonsten_einkuenfte,
     p35_summen, shared_dba_sonstige,
 };
-use crate::{cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, py_wahr, wert, Felder};
+use crate::{
+    cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, py_wahr, wert, zahl_dezimal, Felder,
+};
 
 /// Rentenarten mit § 22 Nr. 1 S. 3 a aa (`AA_RENTEN_ARTEN`) bzw. bb (`BB_RENTEN_ARTEN`).
 const AA_RENTEN: [&str; 3] = [
@@ -31,21 +35,27 @@ const BB_RENTEN: [&str; 2] = ["private_leibrente", "sonstige_leibrente"];
 
 /// `rf // 100 if isinstance(rf, (int, float)) and not bool else None` (Naht-CENT → EURO).
 ///
-/// ponytail: Float-Rentenfreibetraege rechnen mit `f64::floor(x / 100)`, Python mit `//` auf Floats;
-/// beide stimmen fuer ganzzahlige Cent-Werte. Store-Werte dieses Feldes sind Ganzzahlen (Typ `cent`).
+/// PARITÄT: Python `//` auf einem Float ist `floor(x / 100)`. Hier: [`cent_zu_euro_dezimal`] auf dem
+/// exakten `Decimal` des Floats. Grenzfall: Python teilt in `float` (Rundung nach dem Teilen),
+/// `Decimal` teilt exakt; beide weichen nur ab, wenn `x / 100.0` in Float auf eine ganze Zahl
+/// aufrundet, obwohl `x < 100·n` — bei 64-Bit-Floats ausgeschlossen (Abstand des Vorgaengers
+/// >= 0,64 ulp der Quotienten). Store-Werte dieses Feldes sind ohnehin Ganzzahlen (Typ `cent`).
 fn rentenfreibetrag_euro(rf: Option<&Value>) -> Option<Euro> {
     match rf {
-        Some(Value::Number(n)) => Some(n.as_i64().map_or_else(
-            || cent_zu_euro_float(n.as_f64().unwrap_or(0.0)),
-            cent_zu_euro,
-        )),
+        Some(Value::Number(n)) => Some(
+            n.as_i64()
+                .map_or_else(|| cent_zu_euro_dezimal(zahl_dezimal(n)), cent_zu_euro),
+        ),
         _ => None,
     }
 }
 
-#[allow(clippy::cast_possible_truncation)] // Wert vorher auf Bereich begrenzt (Store-Ganzzahlen)
-fn cent_zu_euro_float(x: f64) -> Euro {
-    Euro::new((x / 100.0).floor().clamp(-9.0e18, 9.0e18) as i64)
+/// Rundungsfunktion § 22 Nr. 1 S. 3 a aa: Cent → volle Euro, abgerundet (`floor`, Python `// 100`).
+/// Saturiert bei ±9e18 Euro (Bereichsschutz wie zuvor; Store-Werte liegen weit darunter).
+fn cent_zu_euro_dezimal(cent: Decimal) -> Euro {
+    let grenze = Decimal::from(9_000_000_000_000_000_000_i64);
+    let euro = (cent / Decimal::ONE_HUNDRED).floor().clamp(-grenze, grenze);
+    Euro::new(euro.to_i64().unwrap_or(0))
 }
 
 /// Rentenart aus `renten_art` + den Feldern, die der jeweilige Zweig liest.
@@ -222,4 +232,38 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     rahmen(&lage, &g, r.a.solz, Modus::Rentner, |fb, info| {
         rentner_tarif::festzusetzende(&lage, &g, fb, info)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    /// Float-Rentenfreibetrag: Python `//` auf Float ist `floor` — auch bei negativen Werten, und
+    /// knapp unter einer ganzen Zahl (Paritaetsluecke: kein Korpusfall hat einen Float an dieser Stelle).
+    #[test]
+    fn rentenfreibetrag_float_rundet_wie_python_floor() {
+        let euro = |v: Value| rentenfreibetrag_euro(Some(&v));
+        assert_eq!(euro(json!(12345.0)), Some(Euro::new(123)));
+        assert_eq!(euro(json!(-150.5)), Some(Euro::new(-2)));
+        assert_eq!(euro(json!(299.999_999_999_999_94)), Some(Euro::new(2)));
+        assert_eq!(euro(json!(12345)), Some(Euro::new(123)));
+        assert_eq!(euro(json!("text")), None);
+        assert_eq!(rentenfreibetrag_euro(None), None);
+    }
+
+    /// Jenseits des `Euro`-Bereichs saturiert die Rundung, statt zu wrappen.
+    #[test]
+    fn cent_zu_euro_dezimal_saturiert() {
+        let riesig = Decimal::from(9_000_000_000_000_000_000_i64) * Decimal::from(1_000);
+        assert_eq!(
+            cent_zu_euro_dezimal(riesig),
+            Euro::new(9_000_000_000_000_000_000)
+        );
+        assert_eq!(
+            cent_zu_euro_dezimal(-riesig),
+            Euro::new(-9_000_000_000_000_000_000)
+        );
+    }
 }

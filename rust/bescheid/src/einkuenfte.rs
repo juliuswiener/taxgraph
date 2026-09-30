@@ -211,6 +211,18 @@ fn gwg_abzug(fi: &Felder) -> Result<Euro, BescheidFehler> {
 ///
 /// # Errors
 /// Instanz-, Accessor- und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::einkuenfte::gwg_sofortabzug_summe;
+/// use bescheid::testhilfe::{felder, store};
+/// use bescheid::Instanzquelle;
+/// use serde_json::json;
+/// let f = felder(&store(&[("gwg_anschaffungskosten_netto", json!(50_000), true)]));
+/// let q = Instanzquelle { store: None, bindung: None, nur_bestaetigt: true };
+/// assert_eq!(gwg_sofortabzug_summe(&f, &q).unwrap().get(), 500); // 500 EUR netto, Sofortabzug
+/// let zu_teuer = felder(&store(&[("gwg_anschaffungskosten_netto", json!(90_000), true)]));
+/// assert_eq!(gwg_sofortabzug_summe(&zu_teuer, &q).unwrap().get(), 0); // > 800 EUR: § 7-AfA
+/// ```
 pub fn gwg_sofortabzug_summe(f: &Felder, q: &Instanzquelle<'_>) -> Result<Euro, BescheidFehler> {
     if q.beide().is_none() {
         return gwg_abzug(f);
@@ -249,6 +261,15 @@ fn mitu_komponente(f: &Felder, suffix: &str) -> Result<Euro, BescheidFehler> {
 ///
 /// # Errors
 /// Accessor- und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::einkuenfte::laufender_gewinn_partner;
+/// use bescheid::testhilfe::{felder, store};
+/// use serde_json::json;
+/// let f = felder(&store(&[("einkuenfte_gewinn_partner", json!(5_000_000), true)]));
+/// let (gewinn, mitu) = laufender_gewinn_partner(&f).unwrap();
+/// assert_eq!((gewinn.get(), mitu.get()), (50_000, 0));
+/// ```
 pub fn laufender_gewinn_partner(f: &Felder) -> Result<(Euro, Euro), BescheidFehler> {
     let mitu = mitu_komponente(f, "_partner")?;
     Ok((
@@ -264,6 +285,17 @@ pub fn laufender_gewinn_partner(f: &Felder) -> Result<(Euro, Euro), BescheidFehl
 ///
 /// # Errors
 /// Instanz-, Accessor- und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::einkuenfte::laufender_gewinn;
+/// use bescheid::testhilfe::{felder, store};
+/// use bescheid::Instanzquelle;
+/// use serde_json::json;
+/// let f = felder(&store(&[("einkuenfte_gewinn", json!(3_000_000), true)]));
+/// let q = Instanzquelle { store: None, bindung: None, nur_bestaetigt: true };
+/// let (gewinn, mitu) = laufender_gewinn(&f, &q).unwrap();
+/// assert_eq!((gewinn.get(), mitu.get()), (30_000, 0));
+/// ```
 pub fn laufender_gewinn(f: &Felder, q: &Instanzquelle<'_>) -> Result<(Euro, Euro), BescheidFehler> {
     let gwg_summe = gwg_sofortabzug_summe(f, q)?;
     let mitu = mitu_komponente(f, "")?;
@@ -292,7 +324,10 @@ pub fn laufender_gewinn(f: &Felder, q: &Instanzquelle<'_>) -> Result<(Euro, Euro
     })?;
     if pv_frei.get() > 0 {
         let abzug = pv_frei.get().min(gewinn.get().max(0));
+        // Die PV-Freistellung (§ 3 Nr. 72) mindert nur einen positiven Gewinn, nie darunter.
+        debug_assert!((0..=pv_frei.get()).contains(&abzug));
         gewinn = Euro::new(minus(gewinn.get(), abzug)?);
+        debug_assert!(gewinn.get() >= 0 || abzug == 0);
     }
     Ok((gewinn, mitu))
 }
@@ -303,6 +338,16 @@ pub fn laufender_gewinn(f: &Felder, q: &Instanzquelle<'_>) -> Result<(Euro, Euro
 ///
 /// # Errors
 /// Accessor- und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::einkuenfte::gewinn_partner_anteil;
+/// use bescheid::testhilfe::{felder, store};
+/// use serde_json::json;
+/// let einzel = felder(&store(&[("einkuenfte_gewinn_partner", json!(5_000_000), true)]));
+/// assert_eq!(gewinn_partner_anteil(&einzel).unwrap().0.get(), 0); // nur bei Zusammenveranlagung
+/// let zusammen = felder(&store(&[("veranlagung", json!("zusammen"), true), ("einkuenfte_gewinn_partner", json!(5_000_000), true)]));
+/// assert_eq!(gewinn_partner_anteil(&zusammen).unwrap().0.get(), 50_000);
+/// ```
 pub fn gewinn_partner_anteil(f: &Felder) -> Result<(Euro, Euro, Euro), BescheidFehler> {
     let null = Euro::new(0);
     if !ist_zusammen(f) {
@@ -322,6 +367,8 @@ pub fn gewinn_partner_anteil(f: &Felder) -> Result<(Euro, Euro, Euro), BescheidF
     };
     // GEFLOORT bei 0: FB > vg darf keinen Phantom-Verlust erzeugen.
     let netto_vg = Euro::new(minus(vg_euro.get(), fb.get())?.max(0));
+    // Der Freibetrag gehoert zu einem Gewinn: ohne Gewinn kein Freibetrag, nie ein Phantom-Verlust.
+    debug_assert!(netto_vg.get() >= 0 && fb.get() >= 0);
     Ok((euro_plus(laufend, netto_vg)?, mitu, netto_vg))
 }
 
@@ -335,6 +382,16 @@ pub fn gewinn_partner_anteil(f: &Felder) -> Result<(Euro, Euro, Euro), BescheidF
 ///
 /// # Errors
 /// Accessor- und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::einkuenfte::p20_kapitaleinkuenfte;
+/// use bescheid::testhilfe::{felder, params, store};
+/// use domain::Vz;
+/// use serde_json::json;
+/// let f = felder(&store(&[("kap_kapitalertraege", json!(500_000), true)]));
+/// // 5.000 EUR Erträge abzüglich Sparer-Pauschbetrag 1.000 EUR
+/// assert_eq!(p20_kapitaleinkuenfte(&f, false, Vz::Vz2025, params()).unwrap().get(), 4_000);
+/// ```
 pub fn p20_kapitaleinkuenfte(
     f: &Felder,
     zusammen: bool,
@@ -389,6 +446,21 @@ pub fn p20_kapitaleinkuenfte(
 ///
 /// # Errors
 /// Instanz-, Accessor- und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::einkuenfte::p23_ansonsten_einkuenfte;
+/// use bescheid::testhilfe::{index, store};
+/// use bescheid::Instanzquelle;
+/// use serde_json::json;
+/// let st = store(&[
+///     ("p23_veraeusserungspreis", json!(500_000), true),
+///     ("p23_anschaffung_herstellungskosten", json!(300_000), true),
+/// ]);
+/// let q = Instanzquelle { store: Some(&st), bindung: Some(index()), nur_bestaetigt: true };
+/// assert_eq!(p23_ansonsten_einkuenfte(&q).unwrap().get(), 2_000); // Gewinn 2.000 EUR > Freigrenze 1.000 EUR
+/// let leer = Instanzquelle { store: None, bindung: None, nur_bestaetigt: true };
+/// assert_eq!(p23_ansonsten_einkuenfte(&leer).unwrap().get(), 0);
+/// ```
 pub fn p23_ansonsten_einkuenfte(q: &Instanzquelle<'_>) -> Result<Euro, BescheidFehler> {
     let null = Euro::new(0);
     if q.beide().is_none() {
@@ -418,6 +490,8 @@ pub fn p23_ansonsten_einkuenfte(q: &Instanzquelle<'_>) -> Result<Euro, BescheidF
             verlust_pvg = euro_plus(verlust_pvg, Euro::new(verlust))?;
         }
     }
+    // Gewinne und Verlustbetraege wachsen nur (je Instanz nur eine Seite, Betrag >= 0).
+    debug_assert!(gewinn_pvg.get() >= 0 && verlust_pvg.get() >= 0);
     let gesamtgewinn = Euro::new(minus(gewinn_pvg.get(), verlust_pvg.get())?);
     if p23_freigrenze(gesamtgewinn).get() <= 0 {
         return Ok(null);
@@ -449,6 +523,19 @@ pub struct DbaErgebnis {
 ///
 /// # Errors
 /// Accessor-, Python-`AttributeError`- (`dba_staat` kein Text) und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::einkuenfte::shared_dba_sonstige;
+/// use bescheid::testhilfe::{felder, leerer_gesamtfall, params, store};
+/// use domain::{Euro, Veranlagung, Vz};
+/// use serde_json::json;
+/// let f = felder(&store(&[("dba_auslaendische_einkuenfte", json!(1_000_000), true), ("dba_methode", json!("dba_freistellung"), true)]));
+/// let mut g = leerer_gesamtfall(Vz::Vz2025, false);
+/// let erg = shared_dba_sonstige(&mut g, Euro::new(50_000), Veranlagung::Einzel, &f, Vz::Vz2025, params()).unwrap();
+/// // Freistellung: keine Anrechnung, die Auslandseinkünfte gehen in den Progressionsvorbehalt
+/// assert_eq!(erg.dba_anrechnung.get(), 0);
+/// assert_eq!(erg.p32b_progressionseinkuenfte, Some(Euro::new(10_000)));
+/// ```
 pub fn shared_dba_sonstige(
     g: &mut GesamtfallEingabe,
     gde_p10d: Euro,
@@ -514,6 +601,17 @@ pub fn shared_dba_sonstige(
 ///
 /// # Errors
 /// Accessor- und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::einkuenfte::p35_partner_anteile;
+/// use bescheid::testhilfe::{felder, store};
+/// use serde_json::json;
+/// let einzel = felder(&store(&[("gewst_messbetrag_partner", json!(100_000), true)]));
+/// assert_eq!(p35_partner_anteile(&einzel).unwrap().1, 0);
+/// let zusammen = felder(&store(&[("veranlagung", json!("zusammen"), true), ("gewst_messbetrag_partner", json!(100_000), true), ("gewst_hebesatz_partner", json!(400), true)]));
+/// let (messbetrag, hebesatz, _zaehler) = p35_partner_anteile(&zusammen).unwrap();
+/// assert_eq!((messbetrag.get(), hebesatz), (1_000, 400));
+/// ```
 pub fn p35_partner_anteile(f: &Felder) -> Result<(Euro, i64, Euro), BescheidFehler> {
     if !ist_zusammen(f) {
         return Ok((Euro::new(0), 0, Euro::new(0)));
@@ -541,6 +639,13 @@ fn gewst_je_betrieb(messbetrag: Euro, hebesatz: i64) -> Result<i64, BescheidFehl
 ///
 /// # Errors
 /// [`BescheidFehler::Ueberlauf`].
+///
+/// ```
+/// use bescheid::einkuenfte::p35_gezahlte_gewst;
+/// use domain::Euro;
+/// // je Betrieb Messbetrag × Hebesatz / 100, dann summiert
+/// assert_eq!(p35_gezahlte_gewst(Euro::new(1_000), 400, Euro::new(500), 300).unwrap(), Euro::new(5_500));
+/// ```
 pub fn p35_gezahlte_gewst(
     messbetrag_a: Euro,
     hebesatz_a: i64,
@@ -558,6 +663,14 @@ pub fn p35_gezahlte_gewst(
 ///
 /// # Errors
 /// Accessor- und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::einkuenfte::p35_summen;
+/// use bescheid::Felder;
+/// use domain::Euro;
+/// let (mb, zaehler, gezahlt) = p35_summen(&Felder::new(), Euro::new(1_000), 400, Euro::new(20_000)).unwrap();
+/// assert_eq!((mb.get(), zaehler.get(), gezahlt.get()), (1_000, 20_000, 4_000));
+/// ```
 pub fn p35_summen(
     f: &Felder,
     messbetrag_a: Euro,
