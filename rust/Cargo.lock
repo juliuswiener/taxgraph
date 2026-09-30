@@ -99,6 +99,7 @@ dependencies = [
  "elster",
  "engine",
  "intervall",
+ "konsistenz",
  "serde_json",
  "store",
  "thiserror",

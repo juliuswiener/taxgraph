@@ -14,5 +14,6 @@ store = { path = "../store" }
 engine = { path = "../engine" }
 elster = { path = "../elster" }
 intervall = { path = "../intervall" }
+konsistenz = { path = "../konsistenz" }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

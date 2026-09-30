@@ -26,6 +26,7 @@
 )]
 
 pub mod abzuege;
+pub mod deklaration;
 pub mod einkuenfte;
 
 use domain::{Cent, Euro, Zustand};
