@@ -15,6 +15,18 @@ pub struct VerlustvortragEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::verlustvortrag::{berechnen, VerlustvortragEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(VerlustvortragEingabe {
+///     gesamtbetrag_einkuenfte: Cent::new(5_000_000),
+///     verlustvortrag_bestand: Cent::new(6_000_000),
+///     zusammenveranlagung: false,
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(5_000_000));
+/// ```
 pub fn berechnen(eingabe: VerlustvortragEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::verlustvortrag_abzug(
         eingabe.gesamtbetrag_einkuenfte.get(),

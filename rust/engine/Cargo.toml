@@ -13,3 +13,6 @@ domain = { path = "../domain" }
 bindung = { path = "../bindung" }
 rust_decimal = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }

@@ -17,6 +17,18 @@ pub struct FuenftelregelungEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::fuenftelregelung::{berechnen, FuenftelregelungEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(FuenftelregelungEingabe {
+///     ao_einkuenfte: Cent::new(10_000_000),
+///     est_gesamt_zzgl_progression: Cent::new(20_000_000),
+///     bemessungsgrundlage_durchschnitt: Cent::new(100_000_000),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(1_400_000));
+/// ```
 pub fn berechnen(eingabe: FuenftelregelungEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::ermaessigter_durchschnittssatz(
         eingabe.ao_einkuenfte.get(),

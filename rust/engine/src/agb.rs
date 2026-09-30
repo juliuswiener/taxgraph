@@ -14,6 +14,17 @@ pub struct AgbAbzugEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::agb::{berechnen, AgbAbzugEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(AgbAbzugEingabe {
+///     aussergewoehnliche_belastungen: Cent::new(100),
+///     zumutbare_belastung: Cent::new(500),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(0));
+/// ```
 pub fn berechnen(eingabe: AgbAbzugEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::agb_abzug(
         eingabe.aussergewoehnliche_belastungen.get(),

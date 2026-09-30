@@ -14,6 +14,17 @@ pub struct EuerEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::euer::{berechnen, EuerEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(EuerEingabe {
+///     betriebseinnahmen: Cent::new(3_000_000),
+///     betriebsausgaben: Cent::new(5_000_000),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(-2_000_000));
+/// ```
 pub fn berechnen(eingabe: EuerEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::euer_gewinn(eingabe.betriebseinnahmen.get(), eingabe.betriebsausgaben.get())
         .map(Cent::new)

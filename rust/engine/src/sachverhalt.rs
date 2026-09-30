@@ -56,6 +56,17 @@ impl Sachverhalt {
     ///
     /// # Errors
     /// Siehe [`SachverhaltFehler`].
+    ///
+    /// ```
+    /// use domain::Cent;
+    /// use engine::sachverhalt::Sachverhalt;
+    /// use engine::tarif::{grundtarif, Veranlagung, Vz};
+    /// let zve = Cent::new(5_000_000);
+    /// let ergebnis = Sachverhalt::Tarif { zve, vz: Vz::Vz2024, veranlagung: Veranlagung::Einzel }
+    ///     .berechnen()
+    ///     .unwrap();
+    /// assert_eq!(ergebnis, grundtarif(zve, Vz::Vz2024).unwrap());
+    /// ```
     pub fn berechnen(self) -> Result<Cent, SachverhaltFehler> {
         match self {
             Self::Gesamtfall {

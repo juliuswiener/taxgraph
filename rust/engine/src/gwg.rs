@@ -12,6 +12,16 @@ pub struct GwgEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::gwg::{berechnen, GwgEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(GwgEingabe {
+///     anschaffungskosten_netto: Cent::new(80_100),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(0));
+/// ```
 pub fn berechnen(eingabe: GwgEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::gwg_sofortabzug(eingabe.anschaffungskosten_netto.get()).map(Cent::new)
 }

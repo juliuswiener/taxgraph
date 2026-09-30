@@ -15,6 +15,24 @@ pub struct ZumutbareBelastungEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::zumutbare_belastung::{berechnen, ZumutbareBelastungEingabe};
+/// use domain::Cent;
+/// let niedrig = berechnen(ZumutbareBelastungEingabe {
+///     gesamtbetrag_der_einkuenfte: Cent::new(2_000_000),
+///     anzahl_kinder: 0,
+///     splitting: false,
+/// })
+/// .unwrap();
+/// let hoch = berechnen(ZumutbareBelastungEingabe {
+///     gesamtbetrag_der_einkuenfte: Cent::new(6_000_000),
+///     anzahl_kinder: 0,
+///     splitting: false,
+/// })
+/// .unwrap();
+/// assert!(hoch > niedrig);
+/// ```
 pub fn berechnen(eingabe: ZumutbareBelastungEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::zumutbare_belastung(
         eingabe.gesamtbetrag_der_einkuenfte.get(),

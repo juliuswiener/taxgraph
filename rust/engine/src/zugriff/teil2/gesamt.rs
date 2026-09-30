@@ -112,7 +112,13 @@ fn gesamt_out(e: &GesamtfallEingabe, p: &Params) -> Result<FestzusetzendeEstErge
 }
 
 fn floor(cent: i64) -> Euro {
-    Cent::new(cent).floor_euro()
+    let euro = Cent::new(cent).floor_euro();
+    // Abrunden gegen −∞: der Euro-Wert liegt hoechstens 99 Cent unter dem Cent-Wert.
+    debug_assert!({
+        let rest = i128::from(cent) - i128::from(euro.get()) * 100;
+        (0..100).contains(&rest)
+    });
+    euro
 }
 
 /// § 2 `EStG` festzusetzende Einkommensteuer, EURO (Cent abgerundet).
@@ -209,6 +215,13 @@ pub fn gesamt_kette(e: &GesamtfallEingabe, p: &Params) -> Result<GesamtKette, En
 
 /// Einzelveranlagung VZ 2025 mit 50.000 EUR nichtselbststaendigen Einkuenften, sonst alles 0
 /// -- Beispielwert fuer die Doku.
+///
+/// ```
+/// use engine::zugriff::teil2::gesamt::beispiel_gesamtfall;
+/// let e = beispiel_gesamtfall();
+/// assert_eq!(e.einkuenfte_nichtselbststaendig.get(), 50_000);
+/// assert!(!e.zusammenveranlagung);
+/// ```
 #[doc(hidden)]
 #[must_use]
 pub const fn beispiel_gesamtfall() -> GesamtfallEingabe {

@@ -24,6 +24,8 @@ pub fn zu_bruch(d: Decimal) -> Result<(i64, u64), DezimalUeberlauf> {
     let num = i64::try_from(d.mantissa()).map_err(|_| DezimalUeberlauf(d))?;
     let den = 10i64.checked_pow(d.scale()).ok_or(DezimalUeberlauf(d))?;
     let den = u64::try_from(den).map_err(|_| DezimalUeberlauf(d))?;
+    // Der Nenner ist eine Zehnerpotenz, nie 0 (Catala teilt durch ihn).
+    debug_assert!(den >= 1);
     Ok((num, den))
 }
 

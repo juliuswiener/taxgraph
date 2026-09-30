@@ -32,6 +32,24 @@ pub enum EntfernungspauschaleFehler {
 ///
 /// # Errors
 /// Siehe [`EntfernungspauschaleFehler`].
+///
+/// ```
+/// use engine::entfernungspauschale::{berechnen, EntfernungspauschaleEingabe};
+/// use domain::Cent;
+/// use rust_decimal::Decimal;
+/// let ergebnis = berechnen(EntfernungspauschaleEingabe {
+///     entfernung_km_roh: Decimal::new(106, 1),
+///     arbeitstage: 200,
+///     eigenes_oder_ueberlassenes_kfz: false,
+///     oepnv_kosten_jahr: Cent::new(0),
+///     satz_bis_20_km: Cent::new(30),
+///     satz_ab_21_km: Cent::new(38),
+///     staffelgrenze_km: 20,
+///     hoechstbetrag: Cent::new(450_000),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis.entfernungspauschale_cent, 60_000);
+/// ```
 pub fn berechnen(
     eingabe: EntfernungspauschaleEingabe,
 ) -> Result<EntfernungspauschaleErgebnis, EntfernungspauschaleFehler> {

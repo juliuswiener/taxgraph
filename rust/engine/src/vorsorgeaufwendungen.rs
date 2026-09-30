@@ -15,6 +15,18 @@ pub struct VorsorgeaufwendungenEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::vorsorgeaufwendungen::{berechnen, VorsorgeaufwendungenEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(VorsorgeaufwendungenEingabe {
+///     basis: Cent::new(50_000),
+///     weitere: Cent::new(0),
+///     mit_zuschuss: false,
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(50_000));
+/// ```
 pub fn berechnen(eingabe: VorsorgeaufwendungenEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::kranken_pflege_vorsorge(
         eingabe.basis.get(),

@@ -13,6 +13,17 @@ pub struct KirchensteuerabzugEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::kirchensteuer::{berechnen, KirchensteuerabzugEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(KirchensteuerabzugEingabe {
+///     gezahlte_kirchensteuer: Cent::new(1_000),
+///     erstattete_kirchensteuer: Cent::new(300),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(700));
+/// ```
 pub fn berechnen(eingabe: KirchensteuerabzugEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::kirchensteuerabzug(
         eingabe.gezahlte_kirchensteuer.get(),

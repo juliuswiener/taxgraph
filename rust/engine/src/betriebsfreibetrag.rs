@@ -12,6 +12,16 @@ pub struct BetriebsFreibetragEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::betriebsfreibetrag::{berechnen, BetriebsFreibetragEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(BetriebsFreibetragEingabe {
+///     veraeusserungsgewinn: Cent::new(16_000_000),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(2_100_000));
+/// ```
 pub fn berechnen(eingabe: BetriebsFreibetragEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::betriebs_freibetrag(eingabe.veraeusserungsgewinn.get()).map(Cent::new)
 }

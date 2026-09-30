@@ -39,6 +39,8 @@ pub fn behinderten_pb(e: &BehindertenPbEingabe, p: &Params) -> Result<Euro, Engi
         return Ok(Euro::new(0));
     }
     let stufe = (gdb.div_euclid(10) * 10).min(100);
+    // GdB ab 20: die Stufe ist ein Vielfaches von 10 zwischen 20 und 100.
+    debug_assert!((20..=100).contains(&stufe) && stufe % 10 == 0);
     v.gdb_staffel
         .get(&stufe)
         .copied()

@@ -21,6 +21,26 @@ pub struct ArbeitszimmerEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::arbeitszimmer::{berechnen, ArbeitszimmerEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(ArbeitszimmerEingabe {
+///     arbeitszimmer_vorhanden: false,
+///     ist_mittelpunkt: false,
+///     tatsaechliche_aufwendungen: Cent::new(0),
+///     jahrespauschale_gewaehlt: false,
+///     monate_ohne_mittelpunkt: 0,
+///     homeoffice_tage: 120,
+///     jahrespauschale: Cent::new(126_000),
+///     tagespauschale_pro_tag: Cent::new(600),
+///     tagespauschale_hoechstbetrag: Cent::new(126_000),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis.abzug_arbeitszimmer_cent, 0);
+/// assert_eq!(ergebnis.abzug_homeoffice_cent, 72_000);
+/// assert_eq!(ergebnis.abzug_gesamt_cent, 72_000);
+/// ```
 pub fn berechnen(eingabe: ArbeitszimmerEingabe) -> Result<RaumkostenabzugErgebnis, CatalaFehler> {
     catala_sys::raumkostenabzug(catala_sys::RaumkostenabzugEingabe {
         arbeitszimmer_vorhanden: eingabe.arbeitszimmer_vorhanden,

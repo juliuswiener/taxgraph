@@ -99,7 +99,14 @@ pub fn floor_div(a: i128, b: i128) -> Result<i128, EngineFehler> {
         return Err(EngineFehler::DivisionDurchNull);
     }
     let q = a / b;
-    Ok(if a % b != 0 && ((a < 0) != (b < 0)) { q - 1 } else { q })
+    let r = if a % b != 0 && ((a < 0) != (b < 0)) {
+        q - 1
+    } else {
+        q
+    };
+    // Floor-Division: bei positivem Teiler gilt r*b <= a < (r+1)*b.
+    debug_assert!(b < 0 || (r * b <= a && a < (r + 1) * b));
+    Ok(r)
 }
 
 /// `i128`-Zwischenwert als [`Euro`].

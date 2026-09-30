@@ -16,6 +16,19 @@ pub struct MitunternehmerEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::mitunternehmer::{berechnen, MitunternehmerEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(MitunternehmerEingabe {
+///     gewinnanteil: Cent::new(1_000_000),
+///     verguetung_taetigkeit: Cent::new(1_200_000),
+///     verguetung_darlehen: Cent::new(300_000),
+///     verguetung_ueberlassung: Cent::new(500_000),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(3_000_000));
+/// ```
 pub fn berechnen(eingabe: MitunternehmerEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::mitunternehmer_einkuenfte(
         eingabe.gewinnanteil.get(),

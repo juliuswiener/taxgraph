@@ -15,6 +15,17 @@ pub struct EntlastungsbetragEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::entlastungsbetrag::{berechnen, EntlastungsbetragEingabe};
+/// let ergebnis = berechnen(EntlastungsbetragEingabe {
+///     alleinstehend: false,
+///     anzahl_kinder: 2,
+///     monate_ohne_voraussetzung: 0,
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis.get(), 0);
+/// ```
 pub fn berechnen(eingabe: EntlastungsbetragEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::entlastungsbetrag(
         eingabe.alleinstehend,

@@ -28,7 +28,25 @@ pub enum AltersentlastungsbetragFehler {
 ///
 /// # Errors
 /// Siehe [`AltersentlastungsbetragFehler`].
-pub fn berechnen(eingabe: AltersentlastungsbetragEingabe) -> Result<Cent, AltersentlastungsbetragFehler> {
+///
+/// ```
+/// use engine::altersentlastungsbetrag::{berechnen, AltersentlastungsbetragEingabe};
+/// use domain::Cent;
+/// use rust_decimal::Decimal;
+/// // Grenzfall-Seed TestUnterHoechstbetrag: Bemessung 2000+1000=3000, Prozentsatz 20 %
+/// // (als Prozentzahl, das Modul teilt intern /100) -> 600 < Hoechstbetrag 760 -> 600.
+/// let ergebnis = berechnen(AltersentlastungsbetragEingabe {
+///     arbeitslohn: Cent::new(200_000),
+///     positive_andere_einkuenfte: Cent::new(100_000),
+///     prozentsatz: Decimal::new(200, 1),
+///     hoechstbetrag: Cent::new(76_000),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(60_000));
+/// ```
+pub fn berechnen(
+    eingabe: AltersentlastungsbetragEingabe,
+) -> Result<Cent, AltersentlastungsbetragFehler> {
     let (num, den) = dezimal::zu_bruch(eingabe.prozentsatz)?;
     let cent = catala_sys::altersentlastungsbetrag(
         eingabe.arbeitslohn.get(),

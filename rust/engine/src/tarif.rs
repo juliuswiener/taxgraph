@@ -17,6 +17,15 @@ pub enum Veranlagung {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use domain::Cent;
+/// use engine::tarif::{grundtarif, Vz};
+/// assert_eq!(grundtarif(Cent::new(0), Vz::Vz2025).unwrap(), Cent::new(0)); // unter dem Grundfreibetrag
+/// let niedrig = grundtarif(Cent::new(5_000_000), Vz::Vz2025).unwrap();
+/// let hoch = grundtarif(Cent::new(6_000_000), Vz::Vz2025).unwrap();
+/// assert!(hoch > niedrig && niedrig > Cent::new(0));
+/// ```
 pub fn grundtarif(zve: Cent, vz: Vz) -> Result<Cent, CatalaFehler> {
     catala_sys::grundtarif(zve.get(), vz).map(Cent::new)
 }
@@ -25,6 +34,14 @@ pub fn grundtarif(zve: Cent, vz: Vz) -> Result<Cent, CatalaFehler> {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use domain::Cent;
+/// use engine::tarif::{grundtarif, splittingtarif, Vz};
+/// // Splitting: das gemeinsame zvE wird halbiert, die Steuer des Halbbetrags verdoppelt.
+/// let halb = grundtarif(Cent::new(5_000_000), Vz::Vz2025).unwrap();
+/// assert_eq!(splittingtarif(Cent::new(10_000_000), Vz::Vz2025).unwrap().get(), 2 * halb.get());
+/// ```
 pub fn splittingtarif(zve_gemeinsam: Cent, vz: Vz) -> Result<Cent, CatalaFehler> {
     catala_sys::splittingtarif(zve_gemeinsam.get(), vz).map(Cent::new)
 }
@@ -42,6 +59,17 @@ pub struct FestzusetzendeEstEinzelEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use domain::Cent;
+/// use engine::tarif::{festzusetzende_est_einzel, FestzusetzendeEstEinzelEingabe, Vz};
+/// let est = festzusetzende_est_einzel(FestzusetzendeEstEinzelEingabe {
+///     bruttoarbeitslohn: Cent::new(5_000_000),
+///     werbungskosten: Cent::new(0),
+///     sonderausgaben: Cent::new(0),
+/// }, Vz::Vz2025).unwrap();
+/// assert!(est > Cent::new(0));
+/// ```
 pub fn festzusetzende_est_einzel(
     eingabe: FestzusetzendeEstEinzelEingabe,
     vz: Vz,
@@ -60,6 +88,18 @@ pub fn festzusetzende_est_einzel(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use domain::Cent;
+/// use engine::tarif::{festzusetzende_est_einzel_voll, FestzusetzendeEstEinzelEingabe, Vz};
+/// let voll = festzusetzende_est_einzel_voll(FestzusetzendeEstEinzelEingabe {
+///     bruttoarbeitslohn: Cent::new(5_000_000),
+///     werbungskosten: Cent::new(0),
+///     sonderausgaben: Cent::new(0),
+/// }, Vz::Vz2025).unwrap();
+/// assert!(voll.zu_versteuerndes_einkommen_cent < 5_000_000); // Pauschbetraege sind abgezogen
+/// assert!(voll.festzusetzende_est_cent > 0);
+/// ```
 pub fn festzusetzende_est_einzel_voll(
     eingabe: FestzusetzendeEstEinzelEingabe,
     vz: Vz,
@@ -88,6 +128,19 @@ pub struct FestzusetzendeEstZusammenEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use domain::Cent;
+/// use engine::tarif::{festzusetzende_est_zusammen, FestzusetzendeEstZusammenEingabe, Vz};
+/// let est = festzusetzende_est_zusammen(FestzusetzendeEstZusammenEingabe {
+///     bruttoarbeitslohn_a: Cent::new(6_000_000),
+///     werbungskosten_a: Cent::new(0),
+///     bruttoarbeitslohn_b: Cent::new(0),
+///     werbungskosten_b: Cent::new(0),
+///     sonderausgaben_gemeinsam: Cent::new(0),
+/// }, Vz::Vz2025).unwrap();
+/// assert!(est > Cent::new(0));
+/// ```
 pub fn festzusetzende_est_zusammen(
     eingabe: FestzusetzendeEstZusammenEingabe,
     vz: Vz,
@@ -160,6 +213,24 @@ impl GesamtEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::tarif::festzusetzende_est_gesamt;
+/// use domain::Cent;
+/// use engine::tarif::{GesamtEingabe, Vz};
+/// let n = Cent::new(0);
+/// let eingabe = GesamtEingabe {
+///     einkuenfte_nichtselbststaendig: Cent::new(6_000_000),
+///     einkuenfte_kapitalvermoegen: n, einkuenfte_vermietung: n, einkuenfte_sonstige: n,
+///     einkuenfte_gewinn: n, altersentlastungsbetrag: n, entlastungsbetrag_alleinerziehende: n,
+///     sonderausgaben: n, aussergewoehnliche_belastungen: n, freibetraege_kinder: n,
+///     sonstige_abzuege_vom_einkommen: n, anzurechnende_auslaendische_steuern: n,
+///     steuerermaessigungen: n, steuer_kapital_gesondert: n, hinzurechnung_kindergeld: n,
+///     hinzurechnung_zulage: n, tarif_modifiziert: false, tarifliche_est_modifiziert: n,
+/// };
+/// let e = festzusetzende_est_gesamt(eingabe, Vz::Vz2025).unwrap();
+/// assert!(e.festzusetzende_est_cent > 0);
+/// ```
 pub fn festzusetzende_est_gesamt(
     eingabe: GesamtEingabe,
     vz: Vz,
@@ -171,6 +242,25 @@ pub fn festzusetzende_est_gesamt(
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::tarif::{festzusetzende_est_gesamt, festzusetzende_est_gesamt_zusammen};
+/// use domain::Cent;
+/// use engine::tarif::{GesamtEingabe, Vz};
+/// let n = Cent::new(0);
+/// let eingabe = GesamtEingabe {
+///     einkuenfte_nichtselbststaendig: Cent::new(6_000_000),
+///     einkuenfte_kapitalvermoegen: n, einkuenfte_vermietung: n, einkuenfte_sonstige: n,
+///     einkuenfte_gewinn: n, altersentlastungsbetrag: n, entlastungsbetrag_alleinerziehende: n,
+///     sonderausgaben: n, aussergewoehnliche_belastungen: n, freibetraege_kinder: n,
+///     sonstige_abzuege_vom_einkommen: n, anzurechnende_auslaendische_steuern: n,
+///     steuerermaessigungen: n, steuer_kapital_gesondert: n, hinzurechnung_kindergeld: n,
+///     hinzurechnung_zulage: n, tarif_modifiziert: false, tarifliche_est_modifiziert: n,
+/// };
+/// let einzel = festzusetzende_est_gesamt(eingabe, Vz::Vz2025).unwrap();
+/// let zusammen = festzusetzende_est_gesamt_zusammen(eingabe, Vz::Vz2025).unwrap();
+/// assert!(zusammen.festzusetzende_est_cent <= einzel.festzusetzende_est_cent); // Splittingvorteil
+/// ```
 pub fn festzusetzende_est_gesamt_zusammen(
     eingabe: GesamtEingabe,
     vz: Vz,
@@ -228,6 +318,8 @@ pub fn fuenftel(eingabe: FuenftelEingabe) -> Result<Cent, FuenftelFehler> {
         if zve <= 0 {
             return Err(FuenftelFehler::ZveNichtPositiv);
         }
+        // Hier gilt ao > zve > 0: die ausserordentlichen Einkuenfte uebersteigen das zvE.
+        debug_assert!(zve > 0 && ao > zve);
         let est = tarif(zve.div_euclid(5))?;
         return Ok(Cent::new(5 * est));
     }

@@ -25,7 +25,21 @@ pub enum VerbilligteVermietungFehler {
 ///
 /// # Errors
 /// Siehe [`VerbilligteVermietungFehler`].
-pub fn berechnen(eingabe: VerbilligteVermietungEingabe) -> Result<Cent, VerbilligteVermietungFehler> {
+///
+/// ```
+/// use engine::verbilligte_vermietung::{berechnen, VerbilligteVermietungEingabe};
+/// use domain::Cent;
+/// use rust_decimal::Decimal;
+/// let ergebnis = berechnen(VerbilligteVermietungEingabe {
+///     werbungskosten: Cent::new(100_000),
+///     entgelt_quote_prozent: Decimal::new(100, 0),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(100_000));
+/// ```
+pub fn berechnen(
+    eingabe: VerbilligteVermietungEingabe,
+) -> Result<Cent, VerbilligteVermietungFehler> {
     let (num, den) = dezimal::zu_bruch(eingabe.entgelt_quote_prozent)?;
     let cent = catala_sys::verbilligte_vermietung_wk(eingabe.werbungskosten.get(), num, den)?;
     Ok(Cent::new(cent))

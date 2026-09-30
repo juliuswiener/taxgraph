@@ -16,6 +16,18 @@ pub struct FamilienleistungsausgleichEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::familienleistungsausgleich::{berechnen, FamilienleistungsausgleichEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(FamilienleistungsausgleichEingabe {
+///     est_ohne_freibetraege: Cent::new(1_000_000),
+///     est_mit_freibetraegen: Cent::new(900_000),
+///     kindergeld: Cent::new(30_000),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(930_000));
+/// ```
 pub fn berechnen(eingabe: FamilienleistungsausgleichEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::familienleistungsausgleich(
         eingabe.est_ohne_freibetraege.get(),

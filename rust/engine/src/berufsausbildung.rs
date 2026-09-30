@@ -12,6 +12,16 @@ pub struct BerufsausbildungEingabe {
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use engine::berufsausbildung::{berechnen, BerufsausbildungEingabe};
+/// use domain::Cent;
+/// let ergebnis = berechnen(BerufsausbildungEingabe {
+///     aufwendungen: Cent::new(10_000),
+/// })
+/// .unwrap();
+/// assert_eq!(ergebnis, Cent::new(10_000));
+/// ```
 pub fn berechnen(eingabe: BerufsausbildungEingabe) -> Result<Cent, CatalaFehler> {
     catala_sys::berufsausbildung(eingabe.aufwendungen.get()).map(Cent::new)
 }
