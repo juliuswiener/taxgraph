@@ -303,5 +303,10 @@ jobs:
       - name: cargo clippy (-D warnings)
         run: cd rust && cargo clippy --all-targets -- -D warnings
 
+      # Kein ERiC-Schema auf dem Runner (Lizenz, s. oben). bescheid/tests/einreichung_e2e.rs waere
+      # ohne Schema ROT; TAXGRAPH_OHNE_XSD=1 erlaubt das Fehlen, der Test prueft dann nur bis zum
+      # Writer. Byte-Vergleich mit Python und XSD laufen lokal (ERIC_DIR).
       - name: cargo test (Tarif-Paritaet ohne PARITY=1 -- no-op, gruen)
         run: cd rust && cargo test
+        env:
+          TAXGRAPH_OHNE_XSD: "1"

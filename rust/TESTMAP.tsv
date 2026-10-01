@@ -68,7 +68,7 @@ tests/test_ebilanz_katalog.py	215	10	0	TOOLING	ebilanz/katalog, linkbase	XBRL li
 tests/test_ehepaar_gegenprobe.py	167	2	0	GOLDEN	elster/elster_xml + bescheid	[deps: catala] Zusammenveranlagung 2x50k; minority: A/B symmetry property
 tests/test_eingangsfrage_zuerst.py	331	9	0	PROPERTY	produkt/traverser/traverser	existence before feature questions (same property as detailfrage)
 tests/test_einheiten.py	118	8	0	NOT_PORTED	produkt/engine/runner, intervall	[deps: catala] Cent/Euro newtypes -> unit mix does not compile
-tests/test_einreichen_durchstich.py	326	3	0	INTEGRATION	produkt/haut/api /einreichen + checkest_gate	[deps: eric,http-local]
+tests/test_einreichen_durchstich.py	326	3	0	INTEGRATION	produkt/haut/api /einreichen + checkest_gate	[deps: eric,http-local] einreichen() bis zum XML (Stammdaten, Ring-Werte, Guard, deklariere, erzeuge_xml) -> bescheid::deklaration::einreichungs_xml, rust/bescheid/tests/einreichung_e2e.rs: 3 Faelle byte-gleich Python, XSD-gueltig; ohne ERiC-Schema rot ausser TAXGRAPH_OHNE_XSD=1. checkESt (elster::validiere) danach und die Route (Stub nicht_portiert, rust/api/src/routen/schreiben.rs:25): nicht verdrahtet - Luecke offen
 tests/test_einreichen.py	381	15	0	INTEGRATION	produkt/haut/api /einreichen	[deps: eric partial] 57 monkeypatches -> trait fakes for Eric
 tests/test_einreichen_zusammen_person_b_idnr.py	267	2	0	INTEGRATION	produkt/haut/api /einreichen	[deps: eric,catala,http-local] regression person_b_idnr
 tests/test_elf_gewinnfelder_geld_fehlt_im_xml.py	212	3	6	PROPERTY	produkt/mapping/est_mapping + elster_xml	amount in Ring => in XML or documented reason (differential); xfail = known open bugs
