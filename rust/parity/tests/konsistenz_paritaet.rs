@@ -171,6 +171,10 @@ fn preflight_json(e: &k::PreflightErgebnis) -> Value {
 #[derive(Default)]
 struct Zaehler {
     faelle: usize,
+    /// Wie oft diese Zeile durch [`buche`] lief, also WIRKLICH zwei Werte verglich. Eine reine
+    /// Abdeckungszeile (nur `faelle`, s. `luecken_nicht_leer`) bleibt hier 0 -- der Waechter
+    /// beurteilt darum strukturell, nicht ueber eine Namensliste.
+    vergleiche: usize,
     nicht_leer: usize,
     diffs: usize,
 }
@@ -180,6 +184,7 @@ type Bilanz = BTreeMap<&'static str, Zaehler>;
 fn buche(bilanz: &mut Bilanz, name: &'static str, rust: &Value, py: &Value) {
     let z = bilanz.entry(name).or_default();
     z.faelle += 1;
+    z.vergleiche += 1;
     let leer = match rust {
         Value::Array(a) => a.is_empty(),
         Value::Object(o) => o.get("status").is_some_and(|s| s == "GREEN"),
@@ -212,6 +217,33 @@ fn berichte(titel: &str, bilanz: &Bilanz) -> usize {
         summe += z.diffs;
     }
     summe
+}
+
+/// Waechter gegen einen gruenen Lauf, der nichts belegt: eine Vergleichszeile, die nie einen
+/// Wert GESEHEN hat (`nicht_leer == 0`), kann nicht "0 Abweichungen" beweisen -- gruen und leer
+/// sehen identisch aus. Rot mit dem Namen jeder solchen Zeile.
+///
+/// Ticket `parity-lauf-gruen-ohne-dass-die-zeile-rechnet`. Der Waechter greift JE BLOCK: eine
+/// Zeile, die nur in einem Block rechnet, deckt die Luecke in einem anderen nicht.
+///
+/// Beurteilt werden nur VERGLEICHSzeilen (`vergleiche > 0`). Eine reine Abdeckungszeile, die
+/// nie zwei Werte gegeneinander hielt, kann nichts belegen und wird nicht beurteilt -- das ist
+/// eine Eigenschaft ihrer Bauart, keine Ausnahmeliste mit Namen.
+fn wache_rechnet(block: &str, bilanz: &Bilanz) {
+    let zu_beurteilen = bilanz.values().filter(|z| z.vergleiche > 0).count();
+    let leer: Vec<&str> = bilanz
+        .iter()
+        .filter(|(_, z)| z.vergleiche > 0 && z.nicht_leer == 0)
+        .map(|(n, _)| *n)
+        .collect();
+    assert!(
+        leer.is_empty(),
+        "{block}: {} von {} Vergleichszeilen sahen NIE einen Wert (nicht_leer == 0): [{}] \
+         -- ein gruener Lauf belegt fuer diese Zeilen nichts",
+        leer.len(),
+        zu_beurteilen,
+        leer.join(", ")
+    );
 }
 
 /// `vorjahr_referenz` → der Ganzzahl-Parameter von `plausibilitaets_widersprueche`
@@ -344,6 +376,7 @@ fn reale_faelle() {
         dateien > 0,
         "keine realen Faelle gefunden — Paritaet waere leer"
     );
+    wache_rechnet("reale Faelle", &bilanz);
     assert_eq!(berichte("reale Faelle", &bilanz), 0);
 }
 
@@ -570,6 +603,7 @@ fn generierte_faelle() {
         })
         .unwrap();
     let bilanz = bilanz.into_inner().unwrap();
+    wache_rechnet("generierte Faelle (1000)", &bilanz);
     assert_eq!(berichte("generierte Faelle (1000)", &bilanz), 0);
     assert!(
         bilanz["flag_widersprueche"].nicht_leer > 50,
