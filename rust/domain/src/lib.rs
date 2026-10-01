@@ -18,12 +18,14 @@
 mod fall_id;
 mod feld_id;
 mod herkunft;
+mod konfession;
 mod kz;
 mod lage;
 mod meet;
 mod money;
 mod py_text;
 mod py_wert;
+mod rentenart;
 mod sperrgrund;
 #[cfg(feature = "testhilfe")]
 pub mod testhilfe;
@@ -38,12 +40,14 @@ pub use feld_id::{BasisId, FeldId, FeldIdFehler};
 pub use herkunft::{
     Achsenwert, Herkunft, HerkunftAlt, HerkunftVektor, LeererAchsenwert, Schreiber, KONFLIKT,
 };
+pub use konfession::Konfession;
 pub use kz::{Kz, UngueltigeKz};
 pub use lage::Lage;
 pub use meet::{meet_herkunft, meet_zustand, MeetFehler};
 pub use money::{Cent, CentUeberlauf, Euro};
 pub use py_text::py_strip;
 pub use py_wert::{PyFehler, PyWert};
+pub use rentenart::Rentenart;
 pub use sperrgrund::{Sperrgrund, UnbekannterSperrgrund, UNBEKANNTER_SPERRGRUND};
 pub use veranlagung::{Person, Scheibe, UnbekannteScheibe, Veranlagung};
 pub use vorschlag_typ::{UnbekannterVorschlagTyp, VorschlagTyp};

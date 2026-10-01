@@ -597,10 +597,10 @@ pub fn ernte_est_mapping_kz(bindung: &BindungIndex<'_>) -> Result<Vec<KzPrueflin
     }
     for v in VERZWEIGUNG.iter().chain(PARTNER_VERZWEIGUNG) {
         let jahre = vz(v.feld)?;
-        for (art, kz) in v.kz {
+        for (art, kz) in v.kz.paare() {
             out.push(KzPruefling {
                 feld_id: format!("verzweigung:{}:{art}", v.feld),
-                elster_kz: (*kz).to_owned(),
+                elster_kz: kz.to_owned(),
                 vz_gueltigkeit: jahre.clone(),
             });
         }
