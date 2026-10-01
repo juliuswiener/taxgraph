@@ -196,6 +196,21 @@ struct Zaehler {
 
 type Bilanz = BTreeMap<&'static str, Zaehler>;
 
+/// Bekannt leere Vergleichszeilen, je Block. Massstab ist die ZAHL, nicht die Feldliste:
+/// [`Zaehler::zahl`] zaehlt nur, wenn `intervall.min_cent` wirklich eine Zahl ist.
+///
+/// - `intervall B alle`: **strukturell leer.** Der Zaehler laeuft nur, wenn `min_cent` eine Zahl
+///   ist; eine einzige nicht fixierbare Bindung setzt `min_offen=max_offen` und laesst `min_cent`
+///   auf `None`. Ueber alle 366 Achsen sind 341 askable, davon nur 42 mit Bereich -- die
+///   restlichen 299 nullen die Zeile in JEDEM Fall. Gemessen: 192 von 192 realen Faellen liefern
+///   null. Kann unter keinem realen Fall zaehlen. Grund gemeldet von `sperre`, 2026-10-01.
+const LEER_REALE: &[(&str, &str)] = &[
+    (
+        "intervall B alle",
+        "kann unter keinem realen Fall zaehlen (min_cent bleibt None)",
+    ),
+];
+
 fn buche(bilanz: &mut Bilanz, name: &'static str, rust: &Value, py: &Value) {
     let z = bilanz.entry(name).or_default();
     z.faelle += 1;
@@ -215,6 +230,18 @@ fn buche(bilanz: &mut Bilanz, name: &'static str, rust: &Value, py: &Value) {
             );
         }
     }
+}
+
+/// Die `zahl`-Zaehler aller Zeilen als [`parity::pin::Gesehen`].
+fn gesehen(bilanz: &Bilanz) -> parity::pin::Gesehen {
+    bilanz.iter().map(|(n, z)| (*n, z.zahl as u64)).collect()
+}
+
+/// Waechter gegen einen gruenen Lauf, der nichts belegt: eine Vergleichszeile, die nie eine
+/// ZAHL gesehen hat (`zahl == 0`), kann "0 Abweichungen" nicht beweisen -- gruen und leer sehen
+/// identisch aus. Gepinnte Zeilen stehen in der `LEER`-Liste des Blocks.
+fn wache_rechnet(block: &str, liste: &[(&str, &str)], bilanz: &Bilanz) {
+    parity::pin::pruefe(block, parity::pin::KORPUS, liste, &gesehen(bilanz));
 }
 
 fn berichte(titel: &str, bilanz: &Bilanz) -> usize {
@@ -341,6 +368,7 @@ fn reale_faelle() {
     println!("reale Faelle: {dateien} Dateien, {n} Snapshots");
     assert!(n > 0, "keine realen Faelle gefunden");
     let zahl_a = bilanz["intervall A cap256"].faelle;
+    wache_rechnet("reale Faelle", LEER_REALE, &bilanz);
     assert_eq!(berichte("reale Faelle", &bilanz), 0);
     assert!(zahl_a > 0);
 }

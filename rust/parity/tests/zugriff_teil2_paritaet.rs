@@ -143,6 +143,20 @@ impl Zaehler {
     }
 }
 
+/// Bekannt leere Korpus-Zeilen: eine Funktion, fuer die `rust/fixtures/corpus/runner/` keine
+/// Aufzeichnung traegt. Die Zeile ist NICHT strukturell leer -- der Korpus-Erzeuger schreibt nur
+/// gerufene Funktionen, und `catala_gewst` hat null Aufrufer in `tests/`. Von 68 Runner-Funktionen
+/// haben 65 Korpusdateien, drei nicht: `catala_gewst`, `catala_p101_mobilitaetspraemie`,
+/// `catala_raumkosten`.
+///
+/// Grund gemeldet von `sperre`, 2026-10-01 (Bericht `zwei-leere-zeilen.md`).
+const LEER_KORPUS: &[(&str, &str)] = &[
+    (
+        "gewst",
+        "Korpusquelle fehlt; Zweig sonst von generiert_georakel getragen (gewst 1000 0 37)",
+    ),
+];
+
 fn korpus(name: &str) -> Vec<Value> {
     let dir = repo_root().join("rust/fixtures/corpus/runner");
     let praefix = format!("catala_{name}.");
@@ -188,6 +202,7 @@ fn korpus_gegen_aufzeichnung_und_orakel() {
         return;
     }
     let mut summe = 0;
+    let mut gesehen = std::collections::BTreeMap::new();
     eprintln!(
         "{:<32} {:>6} {:>9} {:>9} {:>6}",
         "funktion", "faelle", "diff_rec", "diff_live", "err"
@@ -207,8 +222,19 @@ fn korpus_gegen_aufzeichnung_und_orakel() {
         for b in rec.beispiele.iter().chain(&liv.beispiele) {
             eprintln!("    {b}");
         }
+        gesehen.insert(*name, rec.faelle as u64);
         summe += rec.abweichungen + liv.abweichungen;
     }
+    // Eine Zeile ohne Korpus kann nichts belegen: sie vergleicht nichts und meldet
+    // "0 Abweichungen". Gepinnte Zeilen stehen in `LEER_KORPUS`. Die Pruefung laeuft EINMAL
+    // ueber alle Funktionen -- je Aufruf saehe sie nur eine und meldete den Rest als
+    // "gibt es nicht mehr".
+    parity::pin::pruefe(
+        "korpus_gegen_aufzeichnung_und_orakel",
+        parity::pin::KORPUS,
+        LEER_KORPUS,
+        &gesehen,
+    );
     assert_eq!(summe, 0, "Korpus-Abweichungen");
 }
 

@@ -57,10 +57,14 @@ pub fn pruefe(block: &str, korpus: &str, liste: &[(&str, &str)], gesehen: &Geseh
     let mut wieder_da: Vec<(&str, &str)> = Vec::new();
 
     for (name, n) in gesehen {
-        match (n, liste.iter().find(|(l, _)| l == name)) {
-            (0, None) => neu_leer.push(name),
-            (_, Some((l, grund))) => wieder_da.push((l, grund)),
-            (_, _) => {}
+        // Reihenfolge ist wesentlich: `(_, Some(..))` wuerde sonst auch `n == 0` schlucken und
+        // JEDE gelistete Zeile als "rechnet wieder" melden. Genau das ist am 2026-10-01 passiert
+        // -- der eigene Waechter war rot, wo er gruen sein musste.
+        match (liste.iter().find(|(l, _)| l == name), *n) {
+            (Some(_), 0) => {}
+            (Some((l, grund)), _) => wieder_da.push((l, grund)),
+            (None, 0) => neu_leer.push(name),
+            (None, _) => {}
         }
     }
     let verschwunden: Vec<&str> = liste

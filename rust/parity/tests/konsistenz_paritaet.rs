@@ -181,6 +181,29 @@ struct Zaehler {
 
 type Bilanz = BTreeMap<&'static str, Zaehler>;
 
+/// Bekannt leere Zeilen in `generierte Faelle (1000)`. `nicht_gerechnete_angaben` ist LEER PER BAUART,
+/// nicht per Korpus: `konsistenz/src/nicht_gerechnet.rs:10` ist `NICHT_GERECHNET = &[]`
+/// (seit 2026-09-26), und die Funktion filtert ueber genau diese Konstante -- sie kann nie
+/// etwas liefern. Das Python-Gegenstueck ist ebenso leer. Wird die Tabelle gefuellt, MUSS diese
+/// Zeile rechnen und der Eintrag hier fallen; sonst wird der Block rot (zweite Richtung).
+const LEER_GENERIERTE: &[(&str, &str)] = &[
+    ("nicht_gerechnete_angaben", "leer per Bauart: NICHT_GERECHNET = []"),
+];
+
+/// Bekannt leere Zeilen in `reale Faelle`.
+///
+/// - `nicht_gerechnete_angaben`: wie oben, leer per Bauart.
+/// - `alleinerziehend_mit_zusammen`: die Vorbedingung (`veranlagung=zusammen` UND
+///   `fam_alleinstehend=true`) trifft der reale Korpus nie; im generierte-Block rechnet die
+///   Zeile 72-mal von 1000.
+const LEER_REALE: &[(&str, &str)] = &[
+    ("nicht_gerechnete_angaben", "leer per Bauart: NICHT_GERECHNET = []"),
+    (
+        "alleinerziehend_mit_zusammen",
+        "realer Korpus trifft die Vorbedingung nicht; generierte: 72",
+    ),
+];
+
 fn buche(bilanz: &mut Bilanz, name: &'static str, rust: &Value, py: &Value) {
     let z = bilanz.entry(name).or_default();
     z.faelle += 1;
@@ -219,31 +242,28 @@ fn berichte(titel: &str, bilanz: &Bilanz) -> usize {
     summe
 }
 
-/// Waechter gegen einen gruenen Lauf, der nichts belegt: eine Vergleichszeile, die nie einen
-/// Wert GESEHEN hat (`nicht_leer == 0`), kann nicht "0 Abweichungen" beweisen -- gruen und leer
-/// sehen identisch aus. Rot mit dem Namen jeder solchen Zeile.
-///
-/// Ticket `parity-lauf-gruen-ohne-dass-die-zeile-rechnet`. Der Waechter greift JE BLOCK: eine
-/// Zeile, die nur in einem Block rechnet, deckt die Luecke in einem anderen nicht.
+/// Die `nicht_leer`-Zaehler der beurteilten Zeilen als [`parity::pin::Gesehen`].
 ///
 /// Beurteilt werden nur Vergleichszeilen (`vergleiche > 0`). Eine reine Abdeckungszeile, die
 /// nie zwei Werte gegeneinander hielt, kann nichts belegen und wird nicht beurteilt -- das ist
 /// eine Eigenschaft ihrer Bauart, keine Ausnahmeliste mit Namen.
-fn wache_rechnet(block: &str, bilanz: &Bilanz) {
-    let zu_beurteilen = bilanz.values().filter(|z| z.vergleiche > 0).count();
-    let leer: Vec<&str> = bilanz
+fn gesehen(bilanz: &Bilanz) -> parity::pin::Gesehen {
+    bilanz
         .iter()
-        .filter(|(_, z)| z.vergleiche > 0 && z.nicht_leer == 0)
-        .map(|(n, _)| *n)
-        .collect();
-    assert!(
-        leer.is_empty(),
-        "{block}: {} von {} Vergleichszeilen sahen NIE einen Wert (nicht_leer == 0): [{}] \
-         -- ein gruener Lauf belegt fuer diese Zeilen nichts",
-        leer.len(),
-        zu_beurteilen,
-        leer.join(", ")
-    );
+        .filter(|(_, z)| z.vergleiche > 0)
+        .map(|(n, z)| (*n, z.nicht_leer as u64))
+        .collect()
+}
+
+/// Waechter gegen einen gruenen Lauf, der nichts belegt: eine Vergleichszeile, die nie einen
+/// Wert GESEHEN hat (`nicht_leer == 0`), kann nicht "0 Abweichungen" beweisen -- gruen und leer
+/// sehen identisch aus.
+///
+/// Ticket `parity-lauf-gruen-ohne-dass-die-zeile-rechnet`. Der Waechter greift JE BLOCK: eine
+/// Zeile, die nur in einem Block rechnet, deckt die Luecke in einem anderen nicht.
+/// Gepinnte, heute nachweislich leere Zeilen stehen in der `LEER`-Liste des Blocks.
+fn wache_rechnet(block: &str, liste: &[(&str, &str)], bilanz: &Bilanz) {
+    parity::pin::pruefe(block, parity::pin::KORPUS, liste, &gesehen(bilanz));
 }
 
 /// `vorjahr_referenz` → der Ganzzahl-Parameter von `plausibilitaets_widersprueche`
@@ -376,7 +396,7 @@ fn reale_faelle() {
         dateien > 0,
         "keine realen Faelle gefunden — Paritaet waere leer"
     );
-    wache_rechnet("reale Faelle", &bilanz);
+    wache_rechnet("reale Faelle", LEER_REALE, &bilanz);
     assert_eq!(berichte("reale Faelle", &bilanz), 0);
 }
 
@@ -603,7 +623,7 @@ fn generierte_faelle() {
         })
         .unwrap();
     let bilanz = bilanz.into_inner().unwrap();
-    wache_rechnet("generierte Faelle (1000)", &bilanz);
+    wache_rechnet("generierte Faelle (1000)", LEER_GENERIERTE, &bilanz);
     assert_eq!(berichte("generierte Faelle (1000)", &bilanz), 0);
     assert!(
         bilanz["flag_widersprueche"].nicht_leer > 50,

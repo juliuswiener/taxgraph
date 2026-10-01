@@ -144,13 +144,12 @@ fn event_id_paritaet_ueber_bestandsdateien_falls_vorhanden() {
     }
     let verzeichnis = faelle_verzeichnis();
     let kandidaten: Vec<std::path::PathBuf> = walk_json(&verzeichnis);
-    if kandidaten.is_empty() {
-        eprintln!(
-            "event_id_paritaet_ueber_bestandsdateien: 0 Fall-Dateien unter {} -- Korpus-Luecke, dokumentiert statt verschwiegen.",
-            verzeichnis.display()
-        );
-        return;
-    }
+    assert!(
+        !kandidaten.is_empty(),
+        "event_id_paritaet_ueber_bestandsdateien: 0 Fall-Dateien unter {} -- ein Parity-Lauf \
+         ohne Korpus belegt nichts.",
+        verzeichnis.display()
+    );
     let erwartete_dateien = kandidaten.len() as u64;
     let mut oracle = Oracle::spawn(&repo_root()).expect("oracle.py startet");
     let mut dateien = 0u64;
@@ -220,13 +219,12 @@ fn lade_speichere_roundtrip_ueber_bestandsdateien_falls_vorhanden() {
     }
     let verzeichnis = faelle_verzeichnis();
     let kandidaten: Vec<std::path::PathBuf> = walk_json(&verzeichnis);
-    if kandidaten.is_empty() {
-        eprintln!(
-            "lade_speichere_roundtrip: 0 Fall-Dateien unter {} -- Korpus-Luecke, dokumentiert statt verschwiegen.",
-            verzeichnis.display()
-        );
-        return;
-    }
+    assert!(
+        !kandidaten.is_empty(),
+        "lade_speichere_roundtrip: 0 Fall-Dateien unter {} -- ein Parity-Lauf ohne Korpus \
+         belegt nichts.",
+        verzeichnis.display()
+    );
     let erwartete_dateien = kandidaten.len() as u64;
     let scratch = std::env::temp_dir().join(format!(
         "taxgraph-store-roundtrip-{}-{}",

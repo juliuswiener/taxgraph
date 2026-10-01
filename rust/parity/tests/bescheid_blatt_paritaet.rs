@@ -49,6 +49,50 @@ use proptest::test_runner::{Config, RngAlgorithm, TestRng, TestRunner};
 use serde_json::{json, Value};
 use store::{EventId, Store, StoreDatei};
 
+/// Bekannt leere Zeilen im Block `golden_faelle` -- Korpus `golden_cases.json`, nicht der
+/// Fall-Korpus, darum an [`parity::pin::KORPUS`] gebunden wie alle Listen hier.
+///
+/// Grund fuer alle 14: die Vorlage traegt Aggregat-Schluessel
+/// (`zu_versteuerndes_einkommen`, `gesamtfall`), das Blatt erwartet Feld-IDs. Die Zeile ist
+/// richtig gebaut und wird von ihrem Block nicht erreicht -- dieselben 14 rechnen im Block
+/// `generierte_faelle` derselben Suite (249/250/113/49/129/189/1064/982/247/677/243/48/242/378).
+const LEER_GOLDEN: &[(&str, &str)] = &[
+    ("abs3_eligible", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("gewinn_partner_anteil", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("gwg_sofortabzug_summe", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("kind_behinderten_pb_daten", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("kind_kv_pv_summe", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("kinderbetreuung_summe", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("laufender_gewinn", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("laufender_gewinn_partner", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("p10_1_5_gate_fehlend", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("p20_kapitaleinkuenfte", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("p23_ansonsten_einkuenfte", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("p33b_kind_pauschbetraege", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("p35_partner_anteile", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("schulgeld_summe", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+];
+
+/// Bekannt leere Zeilen im Block `reale_faelle`. Alle acht rechnen im Block
+/// `generierte_faelle` derselben Suite (Zahlen im Kommentar je Eintrag) -- es ist also
+/// KEINE tote Zeile, sondern eine, die der reale Korpus nicht ausloest.
+///
+/// Massstab ist der WERT, nicht die Feldliste. Zwei Felder (`kind_kv`,
+/// `rentner_rentenfreibetrag`) stehen nicht im Kegel und bewegen die Vergleichszahl
+/// trotzdem -- in allen sechs geprueften Faellen (gemessen von `gdb-bau`). Nach einer
+/// Feldliste gaelten 20 von 36 Varianten als blind, nach dem Wert 0 von 36. Wer hier
+/// eine Feldliste als Kriterium einbaut, meldet falschen Alarm.
+const LEER_REALE: &[(&str, &str)] = &[
+    ("gewinn_partner_anteil", "realer Korpus trifft den Zweig nicht; generierte: 250"),
+    ("kind_behinderten_pb_daten", "realer Korpus trifft den Zweig nicht; generierte: 49"),
+    ("kinderbetreuung_summe", "realer Korpus trifft den Zweig nicht; generierte: 189"),
+    ("laufender_gewinn_partner", "realer Korpus trifft den Zweig nicht; generierte: 982"),
+    ("p10_1_5_gate_fehlend", "realer Korpus trifft den Zweig nicht; generierte: 247"),
+    ("p23_ansonsten_einkuenfte", "realer Korpus trifft den Zweig nicht; generierte: 243"),
+    ("p33b_kind_pauschbetraege", "realer Korpus trifft den Zweig nicht; generierte: 48"),
+    ("shared_dba_sonstige", "realer Korpus trifft den Zweig nicht; generierte: 716"),
+];
+
 const FUNKTIONEN: &[&str] = &[
     "abs3_eligible",
     "oepnv_eur",
@@ -522,27 +566,24 @@ impl Bilanz {
         self.zeilen.values().map(|z| z.abw).sum()
     }
 
+    /// Die `nicht_leer`-Zaehler aller Zeilen als [`parity::pin::Gesehen`].
+    fn gesehen(&self) -> parity::pin::Gesehen {
+        self.zeilen
+            .iter()
+            .map(|(n, z)| (*n, z.nicht_leer))
+            .collect()
+    }
+
     /// Waechter gegen einen gruenen Lauf, der nichts belegt: eine Vergleichszeile, die nie
     /// einen Wert GESEHEN hat (`nicht-leer == 0`), kann nicht "0 Abweichungen" beweisen --
-    /// gruen und leer sehen identisch aus. Rot mit dem Namen jeder solchen Zeile.
+    /// gruen und leer sehen identisch aus.
     ///
     /// Ticket `parity-lauf-gruen-ohne-dass-die-zeile-rechnet`. Der Waechter greift JE BLOCK:
     /// eine Zeile, die nur in `golden_faelle` rechnet, deckt die Luecke in `reale_faelle` nicht.
-    fn wache_rechnet(&self, block: &str) {
-        let leer: Vec<&str> = self
-            .zeilen
-            .iter()
-            .filter(|(_, z)| z.nicht_leer == 0)
-            .map(|(n, _)| *n)
-            .collect();
-        assert!(
-            leer.is_empty(),
-            "{block}: {} von {} Vergleichszeilen sahen NIE einen Wert (nicht-leer == 0): [{}] \
-             -- ein gruener Lauf belegt fuer diese Zeilen nichts",
-            leer.len(),
-            self.zeilen.len(),
-            leer.join(", ")
-        );
+    /// Gepinnte, heute nachweislich leere Zeilen stehen in der `LEER`-Liste des Blocks -- mit
+    /// Grund und Korpus. Beide Richtungen sind streng (s. [`parity::pin::pruefe`]).
+    fn wache_rechnet(&self, block: &str, liste: &[(&str, &str)]) {
+        parity::pin::pruefe(block, parity::pin::KORPUS, liste, &self.gesehen());
     }
 }
 
@@ -632,16 +673,24 @@ fn args_real(f_zusammen: bool, variante: usize) -> Value {
             "einkuenfte_nichtselbststaendig": 60_000 - gde / 2, "sonderausgaben": 1_000}})
 }
 
+/// Ein Parity-Lauf ohne Korpus ist kein gruener Lauf: er vergleicht nichts und meldet
+/// "0 Abweichungen". Am 2026-10-01 kehrten vier Suiten bei leerem `TAXGRAPH_DATEN` still
+/// gruen zurueck (4 passed / 3 passed). Rot mit dem gefundenen Verzeichnis.
+fn korpus_pflicht(verzeichnis: &std::path::Path, dateien: usize, block: &str) {
+    assert!(
+        dateien > 0,
+        "{block}: 0 Fall-Dateien unter {} -- ein Parity-Lauf ohne Korpus belegt nichts. \
+         Korpus setzen oder den Lauf als korpuslos kennzeichnen.",
+        verzeichnis.display()
+    );
+}
 #[test]
 fn reale_faelle() {
     if skip() {
         return;
     }
     let dateien = walk_json(&faelle_verzeichnis());
-    if dateien.is_empty() {
-        eprintln!("reale_faelle: 0 Fall-Dateien — Korpus-Lücke, nicht verschwiegen");
-        return;
-    }
+    korpus_pflicht(&faelle_verzeichnis(), dateien.len(), "reale_faelle");
     let mut b = Bilanz::default();
     let (mut faelle, mut kein_store, mut vz_ersatz) = (0usize, 0usize, 0usize);
     let mut stoerung_offen = stoerung_an();
@@ -692,7 +741,7 @@ fn reale_faelle() {
         }
     }
     b.drucke("reale_faelle", faelle);
-    b.wache_rechnet("reale_faelle");
+    b.wache_rechnet("reale_faelle", LEER_REALE);
     eprintln!("reale_faelle: {} Dateien, {kein_store} ohne Store übersprungen, {vz_ersatz} mit VZ außerhalb 2024–2026 (Ersatz 2025)", dateien.len());
     assert!(faelle > 0);
     assert_eq!(
@@ -754,7 +803,7 @@ fn golden_faelle() {
         }
     }
     b.drucke("golden_faelle", n);
-    b.wache_rechnet("golden_faelle");
+    b.wache_rechnet("golden_faelle", LEER_GOLDEN);
     assert_eq!(n, faelle.len() * 2);
     assert_eq!(b.abweichungen(), 0);
 }
@@ -1241,7 +1290,7 @@ fn generierte_faelle() {
         Ok(())
     });
     b.borrow().drucke("generierte_faelle", n.get());
-    b.borrow().wache_rechnet("generierte_faelle");
+    b.borrow().wache_rechnet("generierte_faelle", &[]);
     ergebnis.unwrap();
     assert!(n.get() >= 1000);
 }
@@ -1312,7 +1361,7 @@ fn dba_methode_generiert() {
         })
         .unwrap();
     b.drucke("dba_methode_generiert", n.get());
-    b.wache_rechnet("dba_methode_generiert");
+    b.wache_rechnet("dba_methode_generiert", &[]);
     assert!(n.get() >= 1000);
     let z = &b.zeilen["dba_methode_fuer"];
     assert!(

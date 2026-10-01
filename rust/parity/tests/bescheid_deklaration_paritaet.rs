@@ -54,6 +54,33 @@ use proptest::test_runner::{Config, RngAlgorithm, TestRng, TestRunner};
 use serde_json::{json, Value};
 use store::{EventId, Store, StoreDatei};
 
+/// Bekannt leere Zeilen in `gezielte_faelle`. Der Block faehrt 12 handgebaute Faelle, die nur
+/// `an_gesamt_sperrgrund` pruefen; die vier Ring-Zeilen sind dort nicht erreichbar.
+///
+/// Grund je Eintrag: der Fall traegt nur die Felder fuer den Sperrgrund, nicht die Ring-Werte.
+const LEER_GEZIELTE: &[(&str, &str)] = &[
+    ("mit_ring_werten", "gezielter Fall traegt keine Ring-Werte"),
+    ("rentenbeginn_offen_stand", "gezielter Fall traegt keinen Rentenbeginn"),
+    ("sperrgrund_felder", "gezielter Fall traegt keine Sperrgrund-Feldliste"),
+    ("vorlaeufige_ring_betraege", "gezielter Fall traegt keine vorlaeufigen Ring-Betraege"),
+];
+
+/// Bekannt leere Zeilen in `golden_faelle`. Grund wie in `bescheid_blatt`: die Vorlage traegt
+/// Aggregat-Schluessel, der Ring erwartet Feld-IDs. `an_gesamt_sperrgrund` rechnet dort.
+/// Alle vier rechnen im Block `generierte_faelle` (14208/820/2794/5764).
+const LEER_GOLDEN: &[(&str, &str)] = &[
+    ("mit_ring_werten", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("rentenbeginn_offen_stand", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("sperrgrund_felder", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+    ("vorlaeufige_ring_betraege", "Vorlage traegt Aggregat-Schluessel, keine Feld-ID"),
+];
+
+/// Bekannt leere Zeilen in `reale_faelle`: der reale Korpus traegt keinen offenen Rentenbeginn.
+/// Keine tote Zeile -- im Block `generierte_faelle` derselben Suite rechnet sie 820-mal.
+const LEER_REALE: &[(&str, &str)] = &[
+    ("rentenbeginn_offen_stand", "realer Korpus traegt keinen offenen Rentenbeginn; generierte: 820"),
+];
+
 const FUNKTIONEN: &[&str] = &[
     "mit_ring_werten",
     "sperrgrund_felder",
@@ -518,27 +545,24 @@ impl Bilanz {
         self.zeilen.values().map(|z| z.abw).sum()
     }
 
+    /// Die `nicht_leer`-Zaehler aller Zeilen als [`parity::pin::Gesehen`].
+    fn gesehen(&self) -> parity::pin::Gesehen {
+        self.zeilen
+            .iter()
+            .map(|(n, z)| (*n, z.nicht_leer))
+            .collect()
+    }
+
     /// Waechter gegen einen gruenen Lauf, der nichts belegt: eine Vergleichszeile, die nie
     /// einen Wert GESEHEN hat (`nicht-leer == 0`), kann nicht "0 Abweichungen" beweisen --
-    /// gruen und leer sehen identisch aus. Rot mit dem Namen jeder solchen Zeile.
+    /// gruen und leer sehen identisch aus.
     ///
     /// Ticket `parity-lauf-gruen-ohne-dass-die-zeile-rechnet`. Der Waechter greift JE BLOCK:
     /// eine Zeile, die nur in `golden_faelle` rechnet, deckt die Luecke in `reale_faelle` nicht.
-    fn wache_rechnet(&self, block: &str) {
-        let leer: Vec<&str> = self
-            .zeilen
-            .iter()
-            .filter(|(_, z)| z.nicht_leer == 0)
-            .map(|(n, _)| *n)
-            .collect();
-        assert!(
-            leer.is_empty(),
-            "{block}: {} von {} Vergleichszeilen sahen NIE einen Wert (nicht-leer == 0): [{}] \
-             -- ein gruener Lauf belegt fuer diese Zeilen nichts",
-            leer.len(),
-            self.zeilen.len(),
-            leer.join(", ")
-        );
+    /// Gepinnte, heute nachweislich leere Zeilen stehen in der `LEER`-Liste des Blocks -- mit
+    /// Grund und Korpus. Beide Richtungen sind streng (s. [`parity::pin::pruefe`]).
+    fn wache_rechnet(&self, block: &str, liste: &[(&str, &str)]) {
+        parity::pin::pruefe(block, parity::pin::KORPUS, liste, &self.gesehen());
     }
 }
 
@@ -714,16 +738,24 @@ fn eigene_scheibe(roh: &Value) -> Option<&'static str> {
         .find(|s| roh["scheibe"] == *s)
 }
 
+/// Ein Parity-Lauf ohne Korpus ist kein gruener Lauf: er vergleicht nichts und meldet
+/// "0 Abweichungen". Am 2026-10-01 kehrten vier Suiten bei leerem `TAXGRAPH_DATEN` still
+/// gruen zurueck (4 passed / 3 passed). Rot mit dem gefundenen Verzeichnis.
+fn korpus_pflicht(verzeichnis: &std::path::Path, dateien: usize, block: &str) {
+    assert!(
+        dateien > 0,
+        "{block}: 0 Fall-Dateien unter {} -- ein Parity-Lauf ohne Korpus belegt nichts. \
+         Korpus setzen oder den Lauf als korpuslos kennzeichnen.",
+        verzeichnis.display()
+    );
+}
 #[test]
 fn reale_faelle() {
     if skip() {
         return;
     }
     let dateien = walk_json(&faelle_verzeichnis());
-    if dateien.is_empty() {
-        eprintln!("reale_faelle: 0 Fall-Dateien — Korpus-Lücke, nicht verschwiegen");
-        return;
-    }
+    korpus_pflicht(&faelle_verzeichnis(), dateien.len(), "reale_faelle");
     let mut b = Bilanz::default();
     let (mut kontexte, mut kein_store, mut vz_ersatz, mut stores) =
         (0_usize, 0_usize, 0_usize, 0_usize);
@@ -768,7 +800,7 @@ fn reale_faelle() {
         }
     }
     b.drucke("reale_faelle", kontexte);
-    b.wache_rechnet("reale_faelle");
+    b.wache_rechnet("reale_faelle", LEER_REALE);
     b.drucke_gruende();
     eprintln!("reale_faelle: {} Dateien, {stores} Stores, {kein_store} ohne Store übersprungen, {vz_ersatz} mit VZ außerhalb 2024–2026 (Ersatz 2025)", dateien.len());
     assert!(kontexte > 0);
@@ -829,7 +861,7 @@ fn golden_faelle() {
         }
     }
     b.drucke("golden_faelle", n);
-    b.wache_rechnet("golden_faelle");
+    b.wache_rechnet("golden_faelle", LEER_GOLDEN);
     b.drucke_gruende();
     assert!(n > 0);
     assert_eq!(b.abweichungen(), 0);
@@ -1400,7 +1432,7 @@ fn generierte_faelle() {
         Ok(())
     });
     b.borrow().drucke("generierte_faelle", kontexte.get());
-    b.borrow().wache_rechnet("generierte_faelle");
+    b.borrow().wache_rechnet("generierte_faelle", &[]);
     b.borrow().drucke_gruende();
     eprintln!(
         "generierte_faelle: {} Stores ({} im Float-Modus), {} Kontexte",
@@ -1663,7 +1695,7 @@ fn gezielte_faelle() {
         vergleiche(&mut b, &k, erwartet, true, false);
     }
     b.drucke("gezielte_faelle", faelle.len());
-    b.wache_rechnet("gezielte_faelle");
+    b.wache_rechnet("gezielte_faelle", LEER_GEZIELTE);
     eprintln!(
         "gezielte_faelle: {} Fälle, jeder trifft in Python den erwarteten Grund",
         faelle.len()

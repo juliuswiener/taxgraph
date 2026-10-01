@@ -909,13 +909,15 @@ fn append_sequence_replay_realer_faelle() {
     }
     let verzeichnis = faelle_verzeichnis();
     let kandidaten = walk_json(&verzeichnis);
-    if kandidaten.is_empty() {
-        eprintln!(
-            "append_sequence_replay_realer_faelle: 0 Fall-Dateien unter {} -- Korpus-Luecke.",
-            verzeichnis.display()
-        );
-        return;
-    }
+    // Ein Parity-Lauf ohne Korpus ist kein gruener Lauf: er vergleicht nichts und meldet
+    // "keine Abweichungen". Am 2026-10-01 kehrte diese Suite bei leerem `TAXGRAPH_DATEN`
+    // still gruen zurueck (3 passed).
+    assert!(
+        !kandidaten.is_empty(),
+        "append_sequence_replay_realer_faelle: 0 Fall-Dateien unter {} -- ein Parity-Lauf \
+         ohne Korpus belegt nichts.",
+        verzeichnis.display()
+    );
 
     let bindungen = alle_bindungen();
     let map = store::baue_nachschlag(bindungen);
