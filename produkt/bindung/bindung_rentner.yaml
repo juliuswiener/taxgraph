@@ -238,7 +238,14 @@ bindungen:
     quelle: {regel_id: p33b_behinderten_pauschbetrag, signatur_slot: grad_der_behinderung}
     typ: int
     einheit: null
-    bereich: {min: 20, max: 100, grund: "Grad der Behinderung (GdB) amtlich 20..100 in 10er-Schritten; ab 20 wird ein Pauschbetrag gewährt."}
+    # Das ELSTER-Schema laesst an E0109708 nur 17 Werte zu (pattern 20|25|...|100 in E10-2025.xsd).
+    # bereich bleibt die Spannweite fuer das Unsicherheits-Derivat; die ZULAESSIGEN Werte stehen in
+    # enum_werte und werden fail-closed geprueft (store._wert_erlaubt, Auflage T). Ohne die Liste
+    # liesse der Bereich jeden Zwischenwert durch, und ERiC weist dann die GANZE Erklaerung ab.
+    # Die 0 ist mit aufgefuehrt: sie heisst „nichts anzugeben" und kommt in 39 echten Faellen vor.
+    # _schreibe_kz laesst sie aus der Deklaration weg (Vault: decisions/speichern-lehnt-nullwerte-nicht-ab).
+    bereich: {min: 20, max: 100, grund: "Spannweite des Grads der Behinderung. Zulaessig sind nur die Werte in enum_werte — Zehner- und Fuenferschritte des amtlichen Musters."}
+    enum_werte: ["0", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95", "100"]
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Welchen Grad der Behinderung hat dein Schwerbehindertenausweis (eine Zahl zwischen 20 und 100)?"
@@ -461,7 +468,12 @@ bindungen:
     feld_bedingung: {feld: keine_behinderung_pflege_partner, wert: false, grund: "§ 33b Abs. 1 und 2 EStG setzen eine amtlich festgestellte Behinderung voraus, und der Pauschbetrag steht jedem Ehegatten fuer sich zu (§ 26b EStG rechnet die Einkuenfte zusammen, aendert aber nichts an den personenbezogenen Merkmalen). Ohne bestaetigte Behinderung des Partners ist fuer ihn kein Grad anzugeben. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: int
     einheit: null
-    bereich: {min: 20, max: 100, grund: "GdB des Ehe-/Lebenspartners, amtlich 20..100; jeder Ehegatte hat einen eigenen Behinderten-Pauschbetrag (§ 33b personenbezogen)."}
+    # Dieselben 17 Werte wie rentner_grad_der_behinderung: der Partner-Grad laeuft ueber dessen Kz
+    # E0109708 mit (est_mapping.PARTNER_INSTANZ, zweite Beh-Block-Instanz). Die beiden Felder MUESSEN
+    # dieselbe Werteliste tragen — sonst liesse eines durch, was das andere abweist.
+    # Die 0 ist mit aufgefuehrt: „nichts anzugeben", siehe das eigene Feld oben.
+    bereich: {min: 20, max: 100, grund: "Spannweite des Grads der Behinderung des Partners. Zulaessig sind nur die Werte in enum_werte — Zehner- und Fuenferschritte des amtlichen Musters."}
+    enum_werte: ["0", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95", "100"]
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Welchen Grad der Behinderung hat dein zusammen veranlagter Ehe-/Lebenspartner (eine Zahl zwischen 20 und 100)?"
