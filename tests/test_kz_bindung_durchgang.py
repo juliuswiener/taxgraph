@@ -438,9 +438,15 @@ def test_janein12_nein_wird_geschrieben_nicht_weggelassen(bindung):
     JaNein12 hat ZWEI echte Werte. Vorher ließ der Writer bei False in beiden Fällen das Element
     weg — bei JaNein12 verschwand damit eine gegebene Antwort, und checkESt beanstandete "Bitte
     geben Sie an, ob …". Betroffen war auch E0161607 (Wohnsitz der gepflegten Person).
+
+    `rentner_pflegegrad: 4` gehört zum Aufbau, nicht zur Aussage: seit der Pflegegrad-Kodierung
+    (Entscheidung pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen) fällt der ganze
+    Pflege-Block weg, wenn kein Grad 2..5 und kein Merkzeichen H bestätigt ist. Ohne den Grad
+    prüfte dieser Test also nicht mehr den JaNein12-Zweig, sondern den Block-Wegfall.
     """
     import re
     xml = _xml({"p35c_bereits_ermaessigung_frueher": False,
+                "rentner_pflegegrad": 4,
                 "rentner_gepflegter_wohnsitz_inland": False,
                 "rentner_gepflegter_hilflos": False}, bindung)
     flach = re.sub(r"<(/?)[a-zA-Z0-9]+:", r"<\1", xml)

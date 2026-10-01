@@ -450,6 +450,56 @@ def _kap_alle_null(snapshot: dict, felder: tuple) -> bool:
     return True
 
 
+# Der Pflege-Block § 33b Abs. 6 EStG (Gruppe AgB/Pflege_PB/Einz) als eingefrorene Kz-Menge.
+# Fundstelle: produkt/bindung/bindung_rentner.yaml:293-437 (sieben gebundene Felder), XSD-Pfade
+# gegen E10-2025.xsd. E0161901 ("weitere an der Pflege beteiligte Personen", maxOccurs 9) liegt in
+# derselben Gruppe und fehlt hier BEWUSST: kein Bindungsfeld, der Mapper schreibt es nie.
+# ponytail: feste Siebener-Menge, jahresunabhaengig, damit deklariere() ohne XSD laeuft und in jeder
+# Umgebung dieselbe Deklaration ergibt. Upgrade: aus dem XSD ableiten, sobald weitere Felder des
+# Blocks in die Bindung kommen. Gegen Drift wacht
+# test_pflegeblock_ist_die_gruppe_aus_dem_xsd (tests/test_bindungs_typ_vs_xsd_typ.py).
+PFLEGE_KZ = ("E0161606", "E0161808", "E0161607", "E0161506", "E0110601", "E0106507", "E0106603")
+_PFLEGE_GRAD_KZ = "E0161606"
+_PFLEGE_H_KZ = "E0161808"
+
+
+def _pflegeblock(deklaration: dict) -> None:
+    """Pflegegrad ausserhalb des XSD-Enums in der Deklaration aufloesen (Vault:
+    decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen, Punkte 1-3).
+
+    E0161606 kennt laut XSD nur "2", "3" und "4" ("4" = Pflegegrad 4 ODER 5); die Bindung nimmt
+    1..5 an, weil der Dialog auch Grad 0 und 1 annehmen muss. Drei Regeln:
+
+    1. Grad 5 -> 4. Schema und Gesetz (§ 33b Abs. 6 S. 3 EStG: "Pflegegrad 4 oder 5" = 1.800 EUR)
+       fassen beide zusammen.
+    2. Grad nicht in {2, 3, 4} und kein Merkzeichen H -> der ganze Block entfaellt. Es gibt keinen
+       Pauschbetrag, und ein Rest-Block ohne E0161606/E0161808 verletzt die ERiC-Regel 101100086
+       (FelderNichtGemeinsamAngegeben) — die ganze Erklaerung waere uneinreichbar.
+    3. Grad nicht in {2, 3, 4} MIT Merkzeichen H -> nur E0161606 entfaellt; E0161808 traegt den
+       Anspruch (§ 33b Abs. 6 S. 4 EStG: 1.800 EUR ohne Grad).
+
+    Die H-Pruefung ist `is True`, NICHT `in deklaration`: ein bestaetigtes "Nein" steht als False
+    in der Deklaration (sichtbar an E0106603=0 im XML). Wer die Abwesenheit prueft, haelt ein
+    "Nein" fuer ein "Ja" und laesst bei Grad 1 den Rest-Block stehen — genau der Fall, den ERiC
+    abweist.
+
+    Kein nicht_deklariert-Eintrag fuer die entfallenden Kz — anders als bei der KAP-Nulldeklaration
+    (dort verschwindet ein Betrag mit Steuerwirkung). Hier verliert der Nutzer nichts: unter Grad 2
+    ohne H gibt es keinen Pauschbetrag (Engine: pflege_staffel.get(1, 0) == 0), und mit H traegt
+    E0161808 ihn. Die Pruefanzeige meldete sonst in jedem der 26 echten Grad-0-Faelle "nicht alle
+    Werte stehen in der Erklaerung". Dieselbe Abwaegung wie bei der weggelassenen 0 (P9, Vault:
+    decisions/elster-null-in-kz-ohne-null-weglassen, Punkt 3)."""
+    if deklaration.get(_PFLEGE_GRAD_KZ) == 5:
+        deklaration[_PFLEGE_GRAD_KZ] = 4
+    if deklaration.get(_PFLEGE_GRAD_KZ) in (2, 3, 4):
+        return
+    if deklaration.get(_PFLEGE_H_KZ) is True:
+        deklaration.pop(_PFLEGE_GRAD_KZ, None)
+        return
+    for kz in PFLEGE_KZ:
+        deklaration.pop(kz, None)
+
+
 # Klasse PFLICHT — gepflegte, NICHT generierte Liste (Julius-Entscheidung 2026-08-30, s.
 # backlog/taxgraph/vollstaendig-blind-fuer-fehlende-pflichtfelder.md). Die XSD traegt bei ALLEN 19
 # Feldern mit elster_kz in der Referenz-Fixtur minOccurs="0" -- eine Ableitung aus dem Schema
@@ -861,6 +911,11 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             kz = PARTNER_INSTANZ.get(f)
             if kz and person_b.pop(kz, None) is not None:
                 nicht_deklariert.append({"feld_id": f, "grund": _KAP_NULL_GRUND})
+
+    # Pflege-Pauschbetrag § 33b Abs. 6: Pflegegrad ausserhalb des XSD-Enums aufloesen bzw. den
+    # Block fallen lassen (s. _pflegeblock). Wie die KAP-Nulldeklaration ein Nachlauf ueber die
+    # fertige Deklaration: die Regeln greifen ueber mehrere Kz desselben Blocks.
+    _pflegeblock(deklaration)
 
     # Antrag Guenstigerpruefung in die Person-B-Instanz spiegeln (§ 32d Abs. 6 S. 4: "Bei
     # zusammenveranlagten Ehegatten kann der Antrag nur fuer saemtliche Kapitalertraege beider

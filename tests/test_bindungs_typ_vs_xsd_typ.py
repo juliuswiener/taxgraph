@@ -45,6 +45,37 @@ requires_real_schema = pytest.mark.skipif(
 _E77_SCHEMA_2025 = X._find_schema(2025, "E77-{jahr}.xsd")
 
 
+@requires_real_schema
+def test_pflegeblock_ist_die_gruppe_aus_dem_xsd():
+    """Drift-Waechter fuer `est_mapping.PFLEGE_KZ` (Entscheidung pflegegrad-kodierung-elster,
+    Punkt 4: die Kz-Menge des Blocks wird eingefroren, mit ponytail: und Fundstelle).
+
+    Die Menge wird LIVE aus dem E10-2025.xsd abgeleitet: alle Kz, deren Schema-Pfad durch
+    `AgB/Pflege_PB/Einz` fuehrt. Verglichen wird gegen die eingefrorene Konstante — kommt ein
+    Feld des Blocks in die Bindung oder ein Kz ins Schema, faellt es hier auf.
+
+    Zwei Ausnahmen stehen namentlich: E0161901 ("weitere an der Pflege beteiligte Personen",
+    maxOccurs 9 in derselben Gruppe) ist bewusst NICHT in der Menge — kein Bindungsfeld, der
+    Mapper schreibt es nie. Umgekehrt darf kein Kz der Menge ausserhalb der Gruppe liegen.
+    """
+    import elster_xml as EX
+    pfade = EX.kz_pfade(2025)
+    in_gruppe = {kz for kz, p in pfade.items() if "Pflege_PB" in p}
+    eingefroren = set(EM.PFLEGE_KZ)
+    assert in_gruppe - eingefroren == {"E0161901"}, (
+        f"Kz der Gruppe AgB/Pflege_PB/Einz, die nicht in PFLEGE_KZ stehen: "
+        f"{sorted(in_gruppe - eingefroren)}")
+    assert eingefroren - in_gruppe == set(), (
+        f"PFLEGE_KZ enthaelt Kz ausserhalb der Gruppe: {sorted(eingefroren - in_gruppe)}")
+    # Die sieben Kz sind genau die gebundenen Felder des Blocks in bindung_rentner.yaml.
+    bindung = TR.lade_bindung()
+    gebunden = {b["elster_kz"] for b in bindung.values()
+                if b.get("elster_kz") and b["elster_kz"] in in_gruppe}
+    assert gebunden == eingefroren, (
+        f"Bindung und PFLEGE_KZ weichen ab: nur in der Bindung {sorted(gebunden - eingefroren)}, "
+        f"nur in PFLEGE_KZ {sorted(eingefroren - gebunden)}")
+
+
 def test_ist_ja_typ_erkennung():
     """Unit-Test: die 4 Ja-Typen + Nicht-Ja-Typen."""
     assert X.ist_ja_typ("Ja1BaseCType")
@@ -101,6 +132,22 @@ def test_bindungs_typ_vs_xsd_typ():
                 mismatches.append(
                     f"{feld_id}: typ={typ}, Kz {kz}, XSD type={meta['type_name']} "
                     f"(Ja-Typ, aber Betrag)")
+            # Schranke der Bindung gegen die XSD-enum (Vault: pflegegrad-kodierung-elster, Punkt 5).
+            # Durch diese Luecke lief `rentner_pflegegrad`: die Bindung nimmt 1..5 an, das Schema
+            # kennt nur {"2","3","4"} — und der Mapper schrieb den Wert unveraendert hinaus. ERiC
+            # weist dann die GANZE Erklaerung ab (rc=610001002).
+            # Geprueft wird JEDER Wert der Bindungsschranke, nicht der Beispielwert: der ist genau
+            # einer und lag mit Pflegegrad 3 IN der enum, der Defekt blieb unsichtbar.
+            # Zulaessig ist zweierlei: der Wert kommt nicht in der Kz an (der Mapper laesst ihn
+            # weg) ODER er kommt als gueltiger enum-Schluessel an (der Mapper bildet ihn ab).
+            bereich = b.get("bereich") or {}
+            if meta["enums"] and "min" in bereich and "max" in bereich:
+                for w in range(bereich["min"], bereich["max"] + 1):
+                    d = EM.deklariere({feld_id: {"wert": w, "zustand": "bestaetigt"}}, bindung)
+                    if kz in d["deklaration"] and str(d["deklaration"][kz]) not in meta["enums"]:
+                        mismatches.append(
+                            f"{feld_id}: typ={typ}, Kz {kz}, Bindung erlaubt {w}, XSD erlaubt nur "
+                            f"{meta['enums']} — deklariert als {d['deklaration'][kz]!r}")
         elif typ == "enum" and feld_id in EM.WERTEKODIERUNG:
             # Klasse i (est_mapping.WERTEKODIERUNG): enum_werte sind Laien-Vokabular, KEIN
             # 1:1-Passthrough — geprüft wird die ÜBERSETZUNG (die amtlichen Codes), nicht die

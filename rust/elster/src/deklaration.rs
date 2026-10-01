@@ -22,7 +22,7 @@ use crate::py::{self, PyFehler};
 use crate::tabellen::{
     suche, PflichtBedingung, Verzweigung, DOKUMENTIERT_AGGREGAT, KAP_FELDER_A, KAP_FELDER_B,
     KAP_NULL_GRUND, KONSTANTE_KZ, MULTIPLIKATION, NEGATION, P23_ART_FELD, P23_BETRAGSFELDER,
-    P23_GEWINN_KZ, PARTNER_INSTANZ, PARTNER_VERZWEIGUNG, PFLICHTFELDER, VERZWEIGUNG,
+    P23_GEWINN_KZ, PARTNER_INSTANZ, PARTNER_VERZWEIGUNG, PFLEGE_KZ, PFLICHTFELDER, VERZWEIGUNG,
     WERTEKODIERUNG,
 };
 
@@ -682,6 +682,7 @@ pub fn deklariere(
     let pflichtfelder_luecken = pflichtfelder_luecken(snapshot);
     bau.bankverbindung();
     bau.kap_nulldeklaration()?;
+    bau.pflegeblock();
     bau.antrag_person_b();
     let dokumentiert = bau.dokumentiert();
     bau.p23_gewinn()?;
@@ -743,6 +744,51 @@ impl Bau<'_> {
             }
         }
         Ok(())
+    }
+
+    /// Pflege-Pauschbetrag § 33b Abs. 6 EStG: Pflegegrad ausserhalb des XSD-Enums aufloesen bzw.
+    /// den Block fallen lassen (`_pflegeblock`, `est_mapping.py`). Vault:
+    /// `decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen`, Punkte 1-3.
+    ///
+    /// E0161606 kennt laut XSD nur „2", „3" und „4" („4" = Pflegegrad 4 ODER 5); die Bindung nimmt
+    /// 1..5 an, weil der Dialog auch Grad 0 und 1 annehmen muss. Drei Regeln:
+    ///
+    /// 1. Grad 5 → 4. Schema und Gesetz (§ 33b Abs. 6 S. 3 EStG: „Pflegegrad 4 oder 5" = 1.800 EUR)
+    ///    fassen beide zusammen.
+    /// 2. Grad nicht in {2, 3, 4} und kein Merkzeichen H → der ganze Block entfaellt. Es gibt
+    ///    keinen Pauschbetrag, und ein Rest-Block ohne E0161606/E0161808 verletzt die ERiC-Regel
+    ///    101100086 (`FelderNichtGemeinsamAngegeben`) — die ganze Erklaerung waere uneinreichbar.
+    /// 3. Grad nicht in {2, 3, 4} MIT Merkzeichen H → nur E0161606 entfaellt; E0161808 traegt den
+    ///    Anspruch (§ 33b Abs. 6 S. 4 EStG: 1.800 EUR ohne Grad).
+    ///
+    /// Die H-Pruefung ist `is True`, NICHT die Abwesenheit des Schluessels: ein bestaetigtes „Nein"
+    /// steht als `Bool(false)` in der Deklaration. Wer die Abwesenheit prueft, haelt ein „Nein"
+    /// fuer ein „Ja" und laesst bei Grad 1 den Rest-Block stehen — genau der Fall, den ERiC abweist.
+    ///
+    /// Kein `nicht_deklariert`-Eintrag fuer die entfallenden Kz: unter Grad 2 ohne H gibt es keinen
+    /// Pauschbetrag, mit H traegt E0161808 ihn. Die Pruefanzeige meldete sonst in jedem der 26
+    /// echten Grad-0-Faelle „nicht alle Werte stehen in der Erklaerung". Dieselbe Abwaegung wie bei
+    /// der weggelassenen 0 (P9, Vault: `decisions/elster-null-in-kz-ohne-null-weglassen`, Punkt 3).
+    fn pflegeblock(&mut self) {
+        let grad_kz = "E0161606";
+        let h_kz = "E0161808";
+        if self.deklaration.get(grad_kz) == Some(&Value::Number(5.into())) {
+            self.deklaration
+                .insert(grad_kz.to_owned(), Value::Number(4.into()));
+        }
+        if matches!(
+            self.deklaration.get(grad_kz),
+            Some(Value::Number(n)) if [2, 3, 4].iter().any(|g| n.as_i64() == Some(*g))
+        ) {
+            return;
+        }
+        if self.deklaration.get(h_kz) == Some(&Value::Bool(true)) {
+            self.deklaration.remove(grad_kz);
+            return;
+        }
+        for kz in PFLEGE_KZ {
+            self.deklaration.remove(*kz);
+        }
     }
 
     /// § 32d Abs. 6 S. 4 EStG: der Guenstigerpruefungs-Antrag gilt fuer beide Ehegatten und muss
@@ -872,6 +918,7 @@ mod tests {
         deklariere, gruppe_von, iban_muster, iban_pruefziffer_gueltig, Felder, Feldtyp,
         SnapshotFeld, Value, Zustand, PARTNER_VERZWEIGUNG, VERZWEIGUNG,
     };
+    use crate::tabellen::PFLEGE_KZ;
 
     #[test]
     fn iban_pruefziffer() {
@@ -879,6 +926,98 @@ mod tests {
         assert!(iban_pruefziffer_gueltig("DE89370400440532013000"));
         assert!(!iban_pruefziffer_gueltig("DE88370400440532013000"));
         assert!(!iban_muster("DE8937"[..3].to_string().as_str()));
+    }
+
+    /// Vault: `decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen`, Punkte 1-3.
+    /// Der Pflege-Block ueber die echte Bindung: fuenf Begleit-Kz, die Regel greift ueber mehrere
+    /// Kz gleichzeitig. Zwilling von `tests/test_pflegegrad_kodierung_elster.py` (Python).
+    ///
+    /// Die Faelle sind absichtlich vollstaendig: ein Mutant, der Regel 2 zu Regel 3 verkuerzt (nur
+    /// E0161606 weg), laesst die Kz-Menge „E0161606 fehlt" erfuellt — deshalb prueft der Test die
+    /// GANZE Menge des Blocks, nicht das Fehlen eines einzelnen Kz.
+    #[test]
+    fn pflegeblock_folgt_dem_xsd_enum() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert,
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let begleit: [(&str, Value); 5] = [
+            ("rentner_gepflegter_wohnsitz_inland", json!(true)),
+            ("rentner_pflege_weitere_personen", json!(0)),
+            ("rentner_gepflegter_idnr", json!("12345678911")),
+            ("rentner_gepflegter_angaben", json!("Muster")),
+            ("rentner_pflege_durch", json!("1")),
+        ];
+        let lauf = |grad: Option<i64>, h: Option<bool>| {
+            let mut felder = Felder::new();
+            for (f, w) in &begleit {
+                felder.insert((*f).to_owned(), feld(w.clone()));
+            }
+            if let Some(g) = grad {
+                felder.insert("rentner_pflegegrad".to_owned(), feld(json!(g)));
+            }
+            if let Some(h) = h {
+                felder.insert("rentner_gepflegter_hilflos".to_owned(), feld(json!(h)));
+            }
+            let d = deklariere(&felder, &index, None).unwrap();
+            let da: Vec<&str> = PFLEGE_KZ
+                .iter()
+                .copied()
+                .filter(|kz| d.deklaration.contains_key(*kz))
+                .collect();
+            (d.deklaration.get("E0161606").cloned(), da)
+        };
+
+        // Regel 1: Grad 5 wird auf „4" abgebildet, der Block bleibt vollstaendig.
+        // E0161808 zaehlt nur mit, wenn die Probe das Merkzeichen-Feld ueberhaupt setzt.
+        for grad in [2_i64, 3, 4] {
+            let (kz, block) = lauf(Some(grad), None);
+            assert_eq!(kz, Some(json!(grad)), "Grad {grad}");
+            assert_eq!(block.len(), PFLEGE_KZ.len() - 1, "Grad {grad}: {block:?}");
+            assert!(!block.contains(&"E0161808"), "Grad {grad}: {block:?}");
+        }
+        let (kz, block) = lauf(Some(5), None);
+        assert_eq!(kz, Some(json!(4)), "Grad 5 → 4");
+        assert_eq!(block.len(), PFLEGE_KZ.len() - 1);
+
+        // Regel 2: Grad ausserhalb {2,3,4} ohne Merkzeichen H → der GANZE Block entfaellt.
+        // `h: None` (Feld nie beantwortet) und `h: Some(false)` (bestaetigtes Nein) sind derselbe
+        // Fall — ein bestaetigtes Nein steht als Bool(false) in der Deklaration.
+        for (grad, h) in [
+            (Some(1), None),
+            (Some(0), None),
+            (Some(1), Some(false)),
+            (Some(0), Some(false)),
+            (None, Some(false)),
+        ] {
+            let (kz, block) = lauf(grad, h);
+            assert_eq!(kz, None, "Grad {grad:?}, H {h:?}");
+            assert!(block.is_empty(), "Grad {grad:?}, H {h:?}: {block:?}");
+        }
+
+        // Regel 3: Grad ausserhalb {2,3,4} MIT Merkzeichen H → nur E0161606 entfaellt, der Rest
+        // des Blocks bleibt (er beschreibt dieselbe gepflegte Person).
+        for grad in [Some(1_i64), Some(0)] {
+            let (kz, block) = lauf(grad, Some(true));
+            assert_eq!(kz, None, "Grad {grad:?}, H true");
+            assert_eq!(block.len(), PFLEGE_KZ.len() - 1, "Grad {grad:?}: {block:?}");
+            assert!(block.contains(&"E0161808"), "Grad {grad:?}: {block:?}");
+        }
     }
 
     /// P9 (Vault: `decisions/elster-null-in-kz-ohne-null-weglassen`): auch die Art-Verzweigung
