@@ -231,3 +231,68 @@ fn oder_null_positiv(f: &Felder, fid: &str) -> Result<bool, BescheidFehler> {
         _ => Ok(false),
     }
 }
+
+/// Aequivalenz der Lesehilfen mit `domain::PyWert` (D15), je D-Nummer ein Test.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{d3, json_wert, klasse, pruefe, py};
+    use proptest::prelude::*;
+    use rust_decimal::Decimal;
+    use serde_json::json;
+
+    use super::{ganzzahl, oder_null_positiv, py_int_wert, zahl_wert};
+    use crate::aequivalenz::{alt_klasse, d18, ein_feld, DEZIMAL};
+
+    /// Ausnahmen von `py_int_wert` und `ganzzahl`.
+    const SAETTIGUNG: &[&str] = &["D3"];
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn py_int_wert_wie_pywert(v in json_wert()) {
+            let (alt, neu) = (Ok(py_int_wert(Some(&v))), klasse(py(&v).int_mit_bool()));
+            pruefe(&v, &alt, &neu, || d3(&v, &neu), SAETTIGUNG)?;
+        }
+
+        #[test]
+        fn ganzzahl_wie_pywert(v in json_wert()) {
+            let (alt, neu) = (Ok(ganzzahl(Some(&v))), klasse(py(&v).int_ohne_bool()));
+            pruefe(&v, &alt, &neu, || d3(&v, &neu), SAETTIGUNG)?;
+        }
+
+        #[test]
+        fn zahl_wert_wie_pywert(v in json_wert()) {
+            let alt = zahl_wert(Some(&v)).map(Ok);
+            let neu = py(&v).zahl_ohne_bool().map(|z| klasse(z.dezimal()));
+            pruefe(&v, &alt, &neu, || d18(&alt, neu == Some(Err(None)), |d| Some(Ok(d))), DEZIMAL)?;
+        }
+
+        /// `(v or 0) > 0`.
+        #[test]
+        fn oder_null_positiv_wie_pywert(v in json_wert()) {
+            let alt = alt_klasse(oder_null_positiv(&ein_feld("x", v.clone(), true), "x"));
+            pruefe(&v, &alt, &klasse(py(&v).oder_null().gt_null()), Vec::new, &[])?;
+        }
+    }
+
+    /// D3: `2**64 - 1` ist in `CPython` ein exaktes `int`. Beide Alt-Helfer saettigen auf
+    /// `i64::MAX`, `PyWert` meldet die i64-Grenze.
+    #[test]
+    fn d3_saettigung() {
+        let v = json!(u64::MAX);
+        assert_eq!(py_int_wert(Some(&v)), Some(i64::MAX));
+        assert_eq!(ganzzahl(Some(&v)), Some(i64::MAX));
+        assert_eq!(klasse(py(&v).int_mit_bool()), Err(None));
+        assert_eq!(klasse(py(&v).int_ohne_bool()), Err(None));
+    }
+
+    /// D18: `Decimal(1e29)` ist in `CPython` exakt. Der Alt-Helfer saettigt still auf
+    /// `Decimal::MAX`, `PyWert` meldet die Decimal-Grenze.
+    #[test]
+    fn d18_dezimal_grenze() {
+        let v = json!(1e29);
+        assert_eq!(zahl_wert(Some(&v)), Some(Decimal::MAX));
+        assert_eq!(klasse(py(&v).dezimal()), Err(None));
+    }
+}

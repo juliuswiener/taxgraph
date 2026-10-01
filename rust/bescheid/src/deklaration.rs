@@ -252,3 +252,65 @@ pub fn konstanten_json() -> Value {
         .collect();
     json!({"tabellen": tabellen, "ring_kandidaten": ring, "cfg": cfg})
 }
+
+/// Aequivalenz von `c2` mit `int(v or 0)` (D15); Ausnahmeliste `crate::aequivalenz::INT`.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{ganzzahl_text, json_wert, Ergebnis};
+    use proptest::prelude::*;
+    use serde_json::{json, Value};
+
+    use super::c2;
+    use crate::aequivalenz::{alt_klasse, ein_feld, int_oder_null, int_oder_null_wie};
+
+    fn alt(v: &Value) -> Ergebnis<i64> {
+        alt_klasse(c2(&ein_feld("x", v.clone(), true), "x"))
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn c2_wie_pywert(v in json_wert()) {
+            int_oder_null_wie(&v, &alt(&v))?;
+        }
+
+        #[test]
+        fn c2_text_wie_pywert(s in ganzzahl_text()) {
+            let v = Value::String(s);
+            int_oder_null_wie(&v, &alt(&v))?;
+        }
+    }
+
+    /// D6: `int("٣" or 0)` ist in `CPython` 3.
+    #[test]
+    fn d6_nd_ziffer() {
+        let v = json!("\u{663}");
+        assert_eq!(alt(&v), Err(Some("ValueError")));
+        assert_eq!(int_oder_null(&v), Ok(3));
+    }
+
+    /// D11: `int(-2.0**63 or 0)` ist in `CPython` `i64::MIN`.
+    #[test]
+    fn d11_minus_2_hoch_63() {
+        let v = json!(-9_223_372_036_854_775_808.0);
+        assert_eq!(alt(&v), Err(None));
+        assert_eq!(int_oder_null(&v), Ok(i64::MIN));
+    }
+
+    /// D16: `int("\x1c42" or 0)` wirft in `CPython` `ValueError`.
+    #[test]
+    fn d16_steuerzeichen_am_rand() {
+        let v = json!("\u{1c}42");
+        assert_eq!(alt(&v), Ok(42));
+        assert_eq!(int_oder_null(&v), Err(Some("ValueError")));
+    }
+
+    /// D17: `int()` mit mehr als 4300 Ziffern wirft in `CPython` `ValueError`.
+    #[test]
+    fn d17_mehr_als_4300_ziffern() {
+        let v = json!(format!("{}5", "0".repeat(4300)));
+        assert_eq!(alt(&v), Ok(5));
+        assert_eq!(int_oder_null(&v), Err(Some("ValueError")));
+    }
+}

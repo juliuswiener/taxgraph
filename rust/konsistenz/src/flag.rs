@@ -325,3 +325,101 @@ mod tests {
         );
     }
 }
+
+/// Aequivalenz mit `domain::PyWert` (D15): Abweichungen nur mit D-Nummer aus der Liste des
+/// Helfers, je D-Nummer ein Test mit dem `CPython`-Verhalten.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{d3_d10, json_wert, pruefe, py};
+    use domain::PyWert;
+    use proptest::prelude::*;
+    use serde_json::json;
+
+    use super::betrag_text;
+
+    /// Ausnahmen von `betrag_text`.
+    const BETRAG: &[&str] = &["D3", "D10"];
+
+    /// `flag_check.py:194`: `f"{wert // 100} €"` auf einem Float — `CPythons` `float_divmod`
+    /// (`Objects/floatobject.c`), damit auch die Randfaelle der `//`-Division stimmen:
+    /// `fmod`, dann `(f - mod) / 100` und die `0.5`-Korrektur. Gemessen an 23 Floats bis 1e300
+    /// gegen 3.12.9 und 3.14.7: kein Unterschied (die naive Fassung `floor(f / 100.0)` trifft
+    /// dieselben 23).
+    fn gleit_floordiv(f: f64) -> String {
+        let rest = f % 100.0;
+        let div = (f - rest) / 100.0;
+        let mut floor = div.floor();
+        if div - floor > 0.5 {
+            floor += 1.0;
+        }
+        PyWert::Gleit(floor).py_str()
+    }
+
+    /// Das `CPython`-Modell von `flag_check.py:192-195`.
+    ///
+    /// `gt_null` ist die `isinstance(wert, (int, float)) and wert > 0`-Pruefung des Quells: es
+    /// nimmt `bool`, `int` und `float` an und wirft fuer alles andere `TypeError` (das Modell
+    /// antwortet dann wie der Alt-Helfer mit `None`). Der Resttext ist `str(wert)`, also
+    /// [`PyWert::py_str`] (`True`, `7`, `2.5`).
+    fn betrag_neu(w: &PyWert) -> Option<String> {
+        if w.gt_null() != Ok(true) {
+            return None;
+        }
+        Some(match w {
+            PyWert::Ganz(n) if *n > 1000 => format!("{} €", n / 100),
+            PyWert::GrossGanz(n) if *n > 1000 => format!("{} €", n / 100),
+            PyWert::Gleit(f) if *f > 1000.0 => format!("{} €", gleit_floordiv(*f)),
+            w => w.py_str(),
+        })
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn betrag_text_wie_pywert(v in json_wert()) {
+            let (alt, neu) = (betrag_text(&v), betrag_neu(&py(&v)));
+            pruefe(&v, &alt, &neu, || d3_d10(&v), BETRAG)?;
+        }
+    }
+
+    /// D3: `2**64 - 1` ist in `CPython` ein `int` und wird als Betrag formatiert. Der Alt-Helfer
+    /// liefert `None` (`ganzzahl` endet an `i64`), der Widerspruch entfaellt damit still.
+    #[test]
+    fn d3_ueber_i64() {
+        let v = json!(u64::MAX);
+        assert_eq!(betrag_text(&v), None);
+        assert_eq!(betrag_neu(&py(&v)), Some("184467440737095516 €".to_owned()));
+    }
+
+    /// D10: `float` zaehlt in `CPython` als Zahl (`isinstance(wert, (int, float))`). Der Alt-Helfer
+    /// liefert `None` (`ganzzahl` nimmt keine Floats), der Widerspruch entfaellt damit still.
+    /// 2.5 und 1500.0 sind der `isinstance`-Zweig und der Format-Zweig, gemessen an 3.12.9 und
+    /// 3.14.7 (`str(2.5)` = „2.5", `f"{1500.0 // 100} €"` = „15.0 €"); 1234.5 zeigt, dass die
+    /// `//`-Division des Quells abrundet und den Bruchteil verwirft.
+    #[test]
+    fn d10_float_ist_betrag() {
+        for (v, text) in [
+            (json!(2.5), "2.5"),
+            (json!(1500.0), "15.0 €"),
+            (json!(1234.5), "12.0 €"),
+        ] {
+            assert_eq!(betrag_text(&v), None);
+            assert_eq!(betrag_neu(&py(&v)), Some(text.to_owned()));
+        }
+    }
+
+    /// Das Praedikat und das Modell selbst: jede Zahl > 0 gilt, auch ein Float unter 1000 und
+    /// `True` (Python: `isinstance(True, int)`).
+    #[test]
+    fn d3_d10_predikat() {
+        assert_eq!(d3_d10(&json!(u64::MAX)), ["D3"]);
+        assert_eq!(d3_d10(&json!(1500.0)), ["D10"]);
+        assert!(d3_d10(&json!(1500)).is_empty());
+        assert_eq!(betrag_neu(&py(&json!(0.5))), Some("0.5".to_owned()));
+        assert_eq!(betrag_neu(&py(&json!(true))), Some("True".to_owned()));
+        assert_eq!(betrag_neu(&py(&json!(null))), None);
+        assert_eq!(betrag_neu(&py(&json!("1500"))), None);
+        assert_eq!(betrag_neu(&py(&json!(-1))), None);
+    }
+}

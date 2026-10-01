@@ -15,24 +15,38 @@
     )
 )]
 
+mod fall_id;
 mod feld_id;
 mod herkunft;
+mod kz;
+mod lage;
 mod meet;
 mod money;
+mod py_text;
+mod py_wert;
 mod sperrgrund;
+#[cfg(feature = "testhilfe")]
+pub mod testhilfe;
 mod veranlagung;
+mod vorschlag_typ;
 mod vz;
 mod wert;
 mod zustand;
 
+pub use fall_id::{FallId, UngueltigeFallId};
 pub use feld_id::{BasisId, FeldId, FeldIdFehler};
 pub use herkunft::{
     Achsenwert, Herkunft, HerkunftAlt, HerkunftVektor, LeererAchsenwert, Schreiber, KONFLIKT,
 };
+pub use kz::{Kz, UngueltigeKz};
+pub use lage::Lage;
 pub use meet::{meet_herkunft, meet_zustand, MeetFehler};
 pub use money::{Cent, CentUeberlauf, Euro};
+pub use py_text::py_strip;
+pub use py_wert::{PyFehler, PyWert};
 pub use sperrgrund::{Sperrgrund, UnbekannterSperrgrund, UNBEKANNTER_SPERRGRUND};
 pub use veranlagung::{Person, Scheibe, UnbekannteScheibe, Veranlagung};
+pub use vorschlag_typ::{UnbekannterVorschlagTyp, VorschlagTyp};
 pub use vz::{UngueltigeVz, Vz};
 pub use wert::{nur_xml_zeichen, Feldtyp, Wert, WertFehler};
 pub use zustand::{Feldzustand, LeeresSignal2, PruefTiefe, Signal2, Zustand};

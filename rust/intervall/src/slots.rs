@@ -132,3 +132,78 @@ where
             .map_err(|_| SlotFehler::Ueberlauf(String::new()))
     }
 }
+
+/// Aequivalenz mit `domain::PyWert` (D15): Abweichungen nur mit D-Nummer aus der Liste des
+/// Helfers, je D-Nummer ein Test mit dem `CPython`-Verhalten.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{d3_d10, json_wert, pruefe, py, Ergebnis};
+    use domain::PyWert;
+    use proptest::prelude::*;
+    use serde_json::{json, Value};
+
+    use super::als_int;
+
+    /// Ausnahmen von `als_int`.
+    const INT: &[&str] = &["D3", "D10"];
+
+    /// `CPython`s `0 + wert` aus `intervall.py:189` (`slots.get(slot, 0) + wert`): `bool` und
+    /// `int` bleiben `int` (`True == 1`), ein `int` ueber `i64::MAX` rechnet exakt weiter, `float`
+    /// bleibt `float`, alles andere wirft `TypeError`. `0 + -0.0` ist `0.0` (gemessen an 3.12.9 und
+    /// 3.14.7), deshalb `0.0 + f` statt `f`.
+    fn plus_null(w: &PyWert) -> Ergebnis<PyWert> {
+        match w {
+            PyWert::Bool(b) => Ok(PyWert::Ganz(i64::from(*b))),
+            PyWert::Ganz(n) => Ok(PyWert::Ganz(*n)),
+            PyWert::GrossGanz(u) => Ok(PyWert::GrossGanz(*u)),
+            PyWert::Gleit(f) => Ok(PyWert::Gleit(0.0 + *f)),
+            _ => Err(Some("TypeError")),
+        }
+    }
+
+    /// Beide Seiten als `repr`, weil `PyWert` kein `PartialEq` hat (Gleichheit ist dort `py_eq`)
+    /// und `Ganz(1)` von `Gleit(1.0)` getrennt bleiben muss. `als_int`s `None` wird zum
+    /// `TypeError`, den `CPython` fuer `0 + <Nichtzahl>` wirft; wo Python stattdessen weiterrechnet,
+    /// steht die Abweichung als D3 oder D10 in der Liste.
+    fn alt_repr(v: &Value) -> Ergebnis<String> {
+        als_int(v).map_or(Err(Some("TypeError")), |i| Ok(PyWert::Ganz(i).repr()))
+    }
+
+    fn neu_repr(v: &PyWert) -> Ergebnis<String> {
+        plus_null(v).map(|w| w.repr())
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn als_int_wie_pywert(v in json_wert()) {
+            let (alt, neu) = (alt_repr(&v), neu_repr(&py(&v)));
+            pruefe(&v, &alt, &neu, || d3_d10(&v), INT)?;
+        }
+    }
+
+    /// D3: `2**64 - 1` ist in `CPython` ein `int`, `0 + wert` bleibt exakt. Der Alt-Helfer liefert
+    /// `None` (`SummandNichtGanzzahl`).
+    #[test]
+    fn d3_ueber_i64() {
+        let v = json!(u64::MAX);
+        assert_eq!(als_int(&v), None);
+        assert_eq!(neu_repr(&py(&v)), Ok("18446744073709551615".to_owned()));
+    }
+
+    /// D10: ein `float` zaehlt in `CPython` als Zahl, `0 + wert` bleibt `float`. Der Alt-Helfer
+    /// liefert `None` (`SummandNichtGanzzahl`). Gemessen an 3.12.9 und 3.14.7: `0 + 2.5` ist
+    /// `2.5`, `0 + 1500.0` ist `1500.0`, `0 + -0.0` ist `0.0`.
+    #[test]
+    fn d10_float_ist_summand() {
+        for (v, text) in [
+            (json!(2.5), "2.5"),
+            (json!(1500.0), "1500.0"),
+            (json!(-0.0), "0.0"),
+        ] {
+            assert_eq!(als_int(&v), None);
+            assert_eq!(neu_repr(&py(&v)), Ok(text.to_owned()));
+        }
+    }
+}

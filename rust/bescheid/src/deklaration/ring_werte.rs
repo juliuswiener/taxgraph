@@ -414,3 +414,23 @@ fn p22_nr3(f: &mut Felder, h: &HerkunftVektor) -> R<()> {
     }
     Ok(())
 }
+
+/// Aequivalenz von `py_int_typ` mit `PyWert::int_mit_bool` (D15), ohne Ausnahme.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{json_wert, klasse, pruefe, py};
+    use proptest::prelude::*;
+
+    use super::py_int_typ;
+    use crate::aequivalenz::alt_klasse;
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn py_int_typ_wie_pywert(v in json_wert()) {
+            let neu = klasse(py(&v).int_mit_bool());
+            pruefe(&v, &alt_klasse(py_int_typ(&v)), &neu, Vec::new, &[])?;
+        }
+    }
+}

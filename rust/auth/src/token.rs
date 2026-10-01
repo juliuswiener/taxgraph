@@ -158,3 +158,120 @@ mod tests {
         assert_eq!(py_int(&json!(null)), None);
     }
 }
+
+/// Aequivalenz mit `domain::PyWert` (D15): Abweichungen nur mit D-Nummer aus der Liste des
+/// Helfers, je D-Nummer ein Test mit dem `CPython`-Verhalten.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{
+        ascii_fassung, d3, ganzzahl_text, json_wert, klasse, nd_ziffer, pruefe, py, viele_ziffern,
+    };
+    use proptest::prelude::*;
+    use serde_json::{json, Value};
+
+    use super::{py_int, py_wahr};
+
+    /// Ausnahmen von `py_int`. D19 ist fail-closed: `claims_gueltig` lehnt jedes `None` in `exp`,
+    /// `nbf` und `iat` ab, nur unser Secret signiert, und wir stellen keine Zeit ab 2^63 aus.
+    const INT: &[&str] = &["D3", "D6", "D17", "D19"];
+
+    /// `int(v)`, jeder Fehler als `None` wie in `py_int`.
+    fn int(v: &Value) -> Option<i64> {
+        py(v).int().ok()
+    }
+
+    /// D19: `v` ist ein Float mit Betrag ab 2^63, der Alt-Helfer saettigt ihn auf `i64::MAX` oder
+    /// `i64::MIN`, und `PyWert` meldet die i64-Grenze.
+    fn d19(v: &Value, alt: Option<i64>) -> bool {
+        let Some(f) = v
+            .as_f64()
+            .filter(|f| v.is_f64() && f.abs() >= 9_223_372_036_854_775_808.0)
+        else {
+            return false;
+        };
+        let saettigung = if f > 0.0 { i64::MAX } else { i64::MIN };
+        alt == Some(saettigung) && klasse(py(v).int()) == Err(None)
+    }
+
+    /// Die D-Nummern, unter denen `py_int(v)` `alt` liefert, wo [`int`] `neu` liefert.
+    fn ausnahmen(v: &Value, alt: Option<i64>, neu: Option<i64>) -> Vec<&'static str> {
+        let text = v.as_str();
+        if text.is_some_and(viele_ziffern) && neu.is_none() {
+            vec!["D17"]
+        } else if text.is_some_and(|s| {
+            nd_ziffer(s) && alt.is_none() && neu == int(&Value::from(ascii_fassung(s)))
+        }) {
+            vec!["D6"]
+        } else if d19(v, alt) {
+            vec!["D19"]
+        } else {
+            d3(v, &klasse(py(v).int()))
+        }
+    }
+
+    fn int_wie(v: &Value) -> Result<(), TestCaseError> {
+        let (alt, neu) = (py_int(v), int(v));
+        pruefe(v, &alt, &neu, || ausnahmen(v, alt, neu), INT)
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn py_wahr_wie_pywert(v in json_wert()) {
+            pruefe(&v, &py_wahr(&v), &py(&v).truthy(), Vec::new, &[])?;
+        }
+
+        #[test]
+        fn py_int_wie_pywert(v in json_wert()) {
+            int_wie(&v)?;
+        }
+
+        #[test]
+        fn py_int_text_wie_pywert(s in ganzzahl_text()) {
+            int_wie(&Value::String(s))?;
+        }
+    }
+
+    /// D3: `int(2**64 - 1)` ist in `CPython` exakt. Der Alt-Helfer saettigt auf `i64::MAX`,
+    /// `PyWert` meldet die i64-Grenze.
+    #[test]
+    fn d3_saettigung() {
+        let v = json!(u64::MAX);
+        assert_eq!(py_int(&v), Some(i64::MAX));
+        assert_eq!(klasse(py(&v).int()), Err(None));
+    }
+
+    /// D6: `int("٣")` ist in `CPython` 3.
+    #[test]
+    fn d6_nd_ziffer() {
+        let v = json!("\u{663}");
+        assert_eq!(py_int(&v), None);
+        assert_eq!(klasse(py(&v).int()), Ok(3));
+    }
+
+    /// D17: `int()` mit mehr als 4300 Ziffern wirft in `CPython` `ValueError`.
+    #[test]
+    fn d17_mehr_als_4300_ziffern() {
+        let v = json!(format!("{}5", "0".repeat(4300)));
+        assert_eq!(py_int(&v), Some(5));
+        assert_eq!(klasse(py(&v).int()), Err(Some("ValueError")));
+    }
+
+    /// D19: `int(1e19)` und `int(-1e19)` sind in `CPython` exakt. Der Alt-Helfer saettigt auf
+    /// `i64::MAX` und `i64::MIN`, `PyWert` meldet die i64-Grenze.
+    #[test]
+    fn d19_float_ab_2_hoch_63() {
+        for (f, saettigung) in [
+            (9_223_372_036_854_775_808.0, i64::MAX),
+            (1e19, i64::MAX),
+            (1e300, i64::MAX),
+            (-1e19, i64::MIN),
+            (-1e300, i64::MIN),
+        ] {
+            let v = json!(f);
+            assert_eq!(py_int(&v), Some(saettigung));
+            assert_eq!(klasse(py(&v).int()), Err(None));
+        }
+    }
+}

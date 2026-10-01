@@ -665,3 +665,146 @@ mod tests {
         assert_eq!(splitlines("a\n\nb"), vec!["a", "", "b"]);
     }
 }
+
+/// Aequivalenz mit `domain::PyWert` (D15): Abweichungen nur mit D-Nummer aus der Liste des
+/// Helfers, je D-Nummer ein Test mit dem `CPython`-Verhalten.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{
+        ganzzahl_text, int_ausnahmen, json_wert, klasse, pruefe, py, py_absteigend, text, Ergebnis,
+    };
+    use domain::{py_strip, PyWert};
+    use proptest::collection::btree_map;
+    use proptest::prelude::*;
+    use serde_json::{json, Map, Value};
+
+    use super::{
+        py_float_repr, py_int, py_repr, py_repr_str, py_str, strip, wahr, GeordneteMap, PyInt,
+    };
+
+    /// Ausnahmen von `py_int` und `py_int_text`.
+    const INT: &[&str] = &["D11", "D16", "D17"];
+    /// Ausnahmen von `py_repr`, `py_str` und `GeordneteMap::py_repr`.
+    const REPR: &[&str] = &["D8"];
+
+    /// `Ueberlauf` ist hier die i64-Grenze: `int(inf)` erreicht ein JSON-Wert nicht.
+    fn alt_int(v: &Value) -> Ergebnis<i64> {
+        match py_int(v) {
+            PyInt::Wert(i) => Ok(i),
+            PyInt::WertFehler => Err(Some("ValueError")),
+            PyInt::TypFehler => Err(Some("TypeError")),
+            PyInt::Ueberlauf => Err(None),
+        }
+    }
+
+    fn int_wie(v: &Value) -> Result<(), TestCaseError> {
+        let (alt, neu) = (alt_int(v), klasse(py(v).int()));
+        pruefe(v, &alt, &neu, || int_ausnahmen(v, &alt, &neu), INT)
+    }
+
+    /// D8: gleich, sobald `PyWert` die Reihenfolge des Alt-Helfers hat.
+    fn d8(alt: &str, gleich_geordnet: &str) -> Vec<&'static str> {
+        if alt == gleich_geordnet {
+            vec!["D8"]
+        } else {
+            Vec::new()
+        }
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn wahr_wie_pywert(v in json_wert()) {
+            pruefe(&v, &wahr(&v), &py(&v).truthy(), Vec::new, &[])?;
+        }
+
+        #[test]
+        fn strip_wie_pywert(s in text()) {
+            pruefe(&s, &strip(&s), &py_strip(&s), Vec::new, &[])?;
+        }
+
+        #[test]
+        fn int_wie_pywert(v in json_wert()) {
+            int_wie(&v)?;
+        }
+
+        #[test]
+        fn int_text_wie_pywert(s in ganzzahl_text()) {
+            int_wie(&Value::String(s))?;
+        }
+
+        #[test]
+        fn repr_wie_pywert(v in json_wert()) {
+            let alt = py_repr(&v);
+            pruefe(&v, &alt, &py_absteigend(&v).repr(), || d8(&alt, &py(&v).repr()), REPR)?;
+        }
+
+        #[test]
+        fn str_wie_pywert(v in json_wert()) {
+            let alt = py_str(&v);
+            pruefe(&v, &alt, &py_absteigend(&v).py_str(), || d8(&alt, &py(&v).py_str()), REPR)?;
+        }
+
+        #[test]
+        fn repr_str_wie_pywert(s in text()) {
+            pruefe(&s, &py_repr_str(&s), &PyWert::Text(s.clone()).repr(), Vec::new, &[])?;
+        }
+
+        #[test]
+        fn float_repr_wie_pywert(f in any::<f64>()) {
+            pruefe(&f, &py_float_repr(f), &PyWert::Gleit(f).repr(), Vec::new, &[])?;
+        }
+
+        /// Beide aussen absteigend; `GeordneteMap` haelt innen die sortierte Reihenfolge.
+        #[test]
+        fn geordnete_map_wie_pywert(m in btree_map(text(), json_wert(), 0..4)) {
+            let alt = GeordneteMap(m.iter().rev().map(|(k, w)| (k.clone(), w.clone())).collect())
+                .py_repr();
+            let innen_sortiert = PyWert::Objekt(m.iter().rev().map(|(k, w)| (k.clone(), py(w))).collect());
+            let v = Value::Object(m.into_iter().collect::<Map<_, _>>());
+            pruefe(&v, &alt, &py_absteigend(&v).repr(), || d8(&alt, &innen_sortiert.repr()), REPR)?;
+        }
+    }
+
+    /// D8: `repr(dict)` folgt in `CPython` auf jeder Ebene der Reihenfolge der Datei.
+    /// `GeordneteMap` haelt sie nur aussen, `py_repr` sortiert.
+    #[test]
+    fn d8_reihenfolge_der_datei() {
+        let datei = r#"{"z": {"b": 1, "a": 2}, "y": 0}"#;
+        let m: GeordneteMap = serde_json::from_str(datei).unwrap();
+        assert_eq!(m.py_repr(), "{'z': {'a': 2, 'b': 1}, 'y': 0}");
+        let v: Value = serde_json::from_str(datei).unwrap();
+        assert_eq!(py_repr(&v), "{'y': 0, 'z': {'a': 2, 'b': 1}}");
+        let w: PyWert = serde_json::from_str(datei).unwrap();
+        assert_eq!(w.repr(), "{'z': {'b': 1, 'a': 2}, 'y': 0}");
+    }
+
+    /// D11: `int(-2.0**63)` ist in `CPython` `i64::MIN`.
+    #[test]
+    fn d11_minus_2_hoch_63() {
+        let v = json!(-9_223_372_036_854_775_808.0);
+        assert_eq!(alt_int(&v), Err(None));
+        assert_eq!(klasse(py(&v).int()), Ok(i64::MIN));
+    }
+
+    /// D16: `int("\x1c42")` wirft in `CPython` `ValueError`, obwohl `str.strip()` U+001C entfernt.
+    #[test]
+    fn d16_steuerzeichen_am_rand() {
+        let v = json!("\u{1c}42");
+        assert_eq!(alt_int(&v), Ok(42));
+        assert_eq!(klasse(py(&v).int()), Err(Some("ValueError")));
+    }
+
+    /// D17: `int()` mit mehr als 4300 Ziffern wirft in `CPython` `ValueError`.
+    #[test]
+    fn d17_mehr_als_4300_ziffern() {
+        let nullen = json!(format!("{}5", "0".repeat(4300)));
+        let sieben = json!("7".repeat(4301));
+        assert_eq!(alt_int(&nullen), Ok(5));
+        assert_eq!(alt_int(&sieben), Err(None));
+        for v in [nullen, sieben] {
+            assert_eq!(klasse(py(&v).int()), Err(Some("ValueError")));
+        }
+    }
+}

@@ -215,3 +215,173 @@ mod tests {
         );
     }
 }
+
+/// Aequivalenz mit `domain::PyWert` (D15): Abweichungen nur mit D-Nummer aus der Liste des
+/// Helfers, je D-Nummer ein Test mit dem `CPython`-Verhalten.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{
+        ascii_fassung, ganzzahl_text, hat_d9, json_wert, klasse, nd_ziffer, ohne_d9, pruefe, py,
+        py_absteigend, text as zeichenkette, viele_ziffern,
+    };
+    use domain::PyWert;
+    use proptest::prelude::*;
+    use serde_json::{json, Value};
+
+    use super::{int, repr, repr_float, text, typname, wahr};
+
+    /// Ausnahmen von `int`.
+    const INT: &[&str] = &["D6", "D17"];
+    /// Ausnahmen von `repr` und `text`.
+    const REPR: &[&str] = &["D8", "D9"];
+
+    /// `int_dezimal()`, jeder Fehler als `None` wie in `int`.
+    fn int_neu(v: &Value) -> Option<String> {
+        py(v).int_dezimal().ok()
+    }
+
+    /// Die D-Nummern, unter denen `int(v)` `alt` liefert, wo [`int_neu`] `neu` liefert.
+    fn int_ausnahmen(v: &Value, alt: Option<&str>, neu: Option<&str>) -> Vec<&'static str> {
+        let Some(s) = v.as_str() else {
+            return Vec::new();
+        };
+        if viele_ziffern(s) && neu.is_none() {
+            vec!["D17"]
+        } else if nd_ziffer(s)
+            && alt.is_none()
+            && neu == int_neu(&Value::from(ascii_fassung(s))).as_deref()
+        {
+            vec!["D6"]
+        } else {
+            Vec::new()
+        }
+    }
+
+    fn int_wie(v: &Value) -> Result<(), TestCaseError> {
+        let (alt, neu) = (int(v), int_neu(v));
+        pruefe(
+            v,
+            &alt,
+            &neu,
+            || int_ausnahmen(v, alt.as_deref(), neu.as_deref()),
+            INT,
+        )
+    }
+
+    /// D8 und D9: `alt_von` gleicht `neu_von` mit sortierten Objekten (D8), sobald jedes Zeichen
+    /// aus D9 druckbar ist (D9).
+    fn repr_ausnahmen(
+        v: &Value,
+        alt_von: fn(&Value) -> String,
+        neu_von: fn(&PyWert) -> String,
+    ) -> Vec<&'static str> {
+        let d9 = hat_d9(v);
+        let v = if d9 { ohne_d9(v) } else { v.clone() };
+        let alt = alt_von(&v);
+        let mut d = if alt == neu_von(&py_absteigend(&v)) {
+            Vec::new()
+        } else if alt == neu_von(&py(&v)) {
+            vec!["D8"]
+        } else {
+            return Vec::new();
+        };
+        if d9 {
+            d.push("D9");
+        }
+        d
+    }
+
+    fn repr_wie(
+        v: &Value,
+        alt_von: fn(&Value) -> String,
+        neu_von: fn(&PyWert) -> String,
+    ) -> Result<(), TestCaseError> {
+        let (alt, neu) = (alt_von(v), neu_von(&py_absteigend(v)));
+        pruefe(v, &alt, &neu, || repr_ausnahmen(v, alt_von, neu_von), REPR)
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn typname_wie_pywert(v in json_wert()) {
+            pruefe(&v, &typname(&v), &py(&v).typname(), Vec::new, &[])?;
+        }
+
+        #[test]
+        fn wahr_wie_pywert(v in json_wert()) {
+            pruefe(&v, &wahr(&v), &py(&v).truthy(), Vec::new, &[])?;
+        }
+
+        #[test]
+        fn int_wie_pywert(v in json_wert()) {
+            int_wie(&v)?;
+        }
+
+        #[test]
+        fn int_text_wie_pywert(s in ganzzahl_text()) {
+            int_wie(&Value::String(s))?;
+        }
+
+        #[test]
+        fn repr_wie_pywert(v in json_wert()) {
+            repr_wie(&v, repr, PyWert::repr)?;
+        }
+
+        #[test]
+        fn text_wie_pywert(v in json_wert()) {
+            repr_wie(&v, text, PyWert::py_str)?;
+        }
+
+        /// `repr_text` ueber `repr` eines Texts.
+        #[test]
+        fn repr_text_wie_pywert(s in zeichenkette()) {
+            repr_wie(&Value::String(s), repr, PyWert::repr)?;
+        }
+
+        /// Nur endliche Floats: `repr_float` sieht nur Zahlen aus `serde_json`.
+        #[test]
+        fn repr_float_wie_pywert(f in any::<f64>().prop_filter("endlich", |f| f.is_finite())) {
+            pruefe(&f, &repr_float(f), &PyWert::Gleit(f).repr(), Vec::new, &[])?;
+        }
+    }
+
+    /// D6: `int("٣")` ist in `CPython` 3.
+    #[test]
+    fn d6_nd_ziffer() {
+        let v = json!("\u{663}");
+        assert_eq!(int(&v), None);
+        assert_eq!(int_neu(&v).as_deref(), Some("3"));
+    }
+
+    /// D8: `repr(dict)` folgt in `CPython` der Reihenfolge der Datei.
+    #[test]
+    fn d8_reihenfolge_der_datei() {
+        let datei = r#"{"b": 1, "a": 2}"#;
+        let v: Value = serde_json::from_str(datei).unwrap();
+        assert_eq!(repr(&v), "{'a': 2, 'b': 1}");
+        let w: PyWert = serde_json::from_str(datei).unwrap();
+        assert_eq!(w.repr(), "{'b': 1, 'a': 2}");
+    }
+
+    /// D9: `repr("\xa0")` escapet in `CPython` das geschuetzte Leerzeichen. Der Alt-Helfer escapet
+    /// nur Steuerzeichen (Cc).
+    #[test]
+    fn d9_nicht_druckbar() {
+        let v = json!("\u{a0}");
+        assert_eq!(repr(&v), "'\u{a0}'");
+        assert_eq!(py(&v).repr(), "'\\xa0'");
+    }
+
+    /// D17: `int()` mit mehr als 4300 Ziffern wirft in `CPython` `ValueError`.
+    #[test]
+    fn d17_mehr_als_4300_ziffern() {
+        let nullen = json!(format!("{}5", "0".repeat(4300)));
+        let sieben = "7".repeat(4301);
+        assert_eq!(int(&nullen).as_deref(), Some("5"));
+        assert_eq!(int(&json!(sieben)).as_deref(), Some(sieben.as_str()));
+        for v in [nullen, json!(sieben)] {
+            assert_eq!(klasse(py(&v).int_dezimal()), Err(Some("ValueError")));
+        }
+    }
+}

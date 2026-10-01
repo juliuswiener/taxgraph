@@ -14,4 +14,5 @@ interview = { path = "../interview" }
 serde_json = { workspace = true }
 
 [dev-dependencies]
+domain = { path = "../domain", features = ["testhilfe"] }
 proptest = { workspace = true }

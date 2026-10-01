@@ -8,9 +8,18 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+proptest = { workspace = true, optional = true }
+regex = { workspace = true }
+rust_decimal = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 
+[features]
+# `domain::testhilfe`: Generator fuer die Aequivalenz-Proptests der Alt-Helfer (D15). Nur als
+# dev-dependency einschalten: `domain = { path = "../domain", features = ["testhilfe"] }`.
+testhilfe = ["dep:proptest"]
+
 [dev-dependencies]
 proptest = { workspace = true }
+serde_yaml_ng = { workspace = true }
