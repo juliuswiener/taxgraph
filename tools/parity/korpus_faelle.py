@@ -23,15 +23,22 @@ GEBAUT WIRD UEBER DEN NUTZERPFAD, nicht am Modul vorbei:
 
 Damit traegt jeder Fall den vollen Pflicht-Kegel und stirbt nicht am KeyError.
 
-Die Faelle landen in `api.FAELLE` (XDG-Vorgabe: ~/.local/share/taxgraph/faelle). Eine
-vorhandene Datei wird NIE ueberschrieben — `fall_anlegen` antwortet 409, dieses Skript
-meldet das und macht weiter. Nicht loeschen, nicht ueberschreiben: der Bestand ist nicht
-neu beschaffbar.
+ZIEL IST NUR `$TAXGRAPH_DATEN/faelle`, und die Variable ist Pflicht. Ohne sie fiele
+`api.FAELLE` auf die XDG-Vorgabe zurueck (~/.local/share/taxgraph/faelle) — das ist die
+Fallliste, die das Produkt dem Nutzer zeigt. Genau dort lagen am 2026-10-01 die sechs Faelle,
+bis sie verschoben wurden. Eine vorhandene Datei wird NIE ueberschrieben — `fall_anlegen`
+antwortet 409, dieses Skript meldet das und macht weiter.
+
+Kein Audit-Eintrag: `fall_anlegen` protokolliert nur mit angemeldetem Nutzer, unter
+`TAXGRAPH_NO_AUTH=1` gibt es keinen, und `event` protokolliert nicht (gemessen: 0 Zeilen).
+
+Reproduzierbar im INHALT, nicht byte-gleich: `event_id` und `ts` entstehen beim Schreiben.
+Zwei Laeufe ergeben dieselben Felder, Werte und Zustaende, aber andere sha256-Summen.
 
 Aufruf (aus dem Repo-Wurzelverzeichnis):
 
-    python3 tools/parity/korpus_faelle.py            # anlegen, was fehlt
-    python3 tools/parity/korpus_faelle.py --probe    # nur zeigen, was angelegt wuerde
+    TAXGRAPH_DATEN=<eigenes Verzeichnis> python3 tools/parity/korpus_faelle.py
+    TAXGRAPH_DATEN=<eigenes Verzeichnis> python3 tools/parity/korpus_faelle.py --probe
 
 SICHERHEIT: erzeugte Faelle tragen ERFUNDENE Werte (keine echten Steuerdaten). Ausgegeben
 werden nur fall_id, Scheibe, Statuscode und Zaehlwerte — keine Werte, keine Betraege.
@@ -51,6 +58,14 @@ for _sub in ("produkt/haut", "produkt/store", "produkt/mapping", "produkt/traver
         sys.path.insert(0, _p)
 
 os.environ.setdefault("TAXGRAPH_NO_AUTH", "1")   # wie tests/conftest.py, sonst 401 auf /fall
+
+# VOR dem Import: `api_constants.FAELLE` wird beim Import aus `$TAXGRAPH_DATEN` bestimmt.
+# ponytail: prueft nur "gesetzt", nicht "zeigt woanders hin als die echte Fallliste" — ein
+# ausdrueckliches TAXGRAPH_DATEN=~/.local/share/taxgraph geht durch. Ausbau: realpath gegen
+# `api_constants._daten_wurzel()` ohne die Variable vergleichen.
+if not os.environ.get("TAXGRAPH_DATEN", "").strip():
+    sys.exit("TAXGRAPH_DATEN fehlt — ohne die Variable schriebe dieses Skript in die echte "
+             "Fallliste (~/.local/share/taxgraph/faelle). Setz ein eigenes Verzeichnis.")
 
 import api as API                    # noqa: E402
 from _kegel import kegel_fuer        # noqa: E402
@@ -122,8 +137,9 @@ DBA = dict(RUMPF, **{
     "dba_methode": "dba_anrechnung",
 })
 
-# § 31 Kinder — zwei Kinder mit KV/PV-Beitraegen. Die Betraege liegen AUSSERHALB des Kegels;
-# sie erreichen den Ring ueber den gefilterten Snapshot (werte="alle").
+# § 31 Kinder — zwei Kinder mit KV/PV-Beitraegen. Die Betraege liegen AUSSERHALB des Kegels und
+# bewegen die Zahl trotzdem in ALLEN sechs Parity-Varianten, auch bei werte="kegel": der Ring
+# liest Snapshot und Store, die `_bescheid_fn` beim Bau bekommt, nicht nur das `werte`-Dict.
 KINDER = dict(RUMPF, **{
     "kein_kind": False,
     "fam_anzahl_kinder": 2,
