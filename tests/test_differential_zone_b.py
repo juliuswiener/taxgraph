@@ -79,7 +79,7 @@ def test_zone_b_vermieter_pv(bindung):
     _b(s, "pv_anzahl_einheiten", 1)          # int, elster_kz=null → nicht_deklariert
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe(snap, bindung, result, xml, "ZoneB-VermieterPV")
@@ -136,7 +136,7 @@ def test_zone_b_kapital_mitunternehmer_afa(bindung):
     _b(s, "kap_verlust_sonstige_partner", 0)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe(snap, bindung, result, xml, "ZoneB-KapMUAfA")
@@ -174,7 +174,7 @@ def test_zone_b_am_p23(bindung):
     _b(s, "p23_werbungskosten", 500000)
     _b(s, "p23_veraeusserungs_typ", "grundstueck")       # steuert Kz
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe(snap, bindung, result, xml, "ZoneB-AM-P23")
@@ -209,7 +209,7 @@ def test_zone_b_gwg_topfd(bindung):
     _b(s, "gwg_anschaffungskosten_netto__2", 60000)  # Instanz 2 -> anlage_instanzen -> Topf d
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     # E6002301 darf NICHT im E10-XML landen (E77-Datenart, Topf d)
@@ -244,7 +244,7 @@ def test_zone_b_fund_sonstige_ba(bindung):
     _b(s, "sonstige_betriebsausgaben", 3000000)  # E6004901 -> deklaration, crasht
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
     funde = _pruefe(snap, bindung, result, xml, "ZoneB-SonstigeBA")
     assert not funde, (

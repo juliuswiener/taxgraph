@@ -95,7 +95,7 @@ def _p23_kz_in_person_b(bindung) -> set[str]:
     waeren nicht mehr noetig.
     """
     snap, sid = ST.materialisiere(_fall_zusammen_ein_verkauf("kopplung_person_b_messung"))
-    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid)
+    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid, vz=2025)
     p23_kz = {kz for eintrag in result.get("anlage_instanzen", {}).get("p23_veraeusserung", [])
               for kz in eintrag["felder"]}
     assert p23_kz, (

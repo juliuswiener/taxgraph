@@ -136,7 +136,7 @@ def hauptlauf(bindung):
     s = ST.leerer_store(2025, fall_id="elf-felder-geld-fehlt-hauptlauf")
     _basis(s, mit_elf=True)
     snap, sid = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid)
+    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid, vz=2025)
     assert result.get("eingaben_konsistent") is True, (
         "Fixture-Voraussetzung verletzt: eingaben_konsistent muss True sein, sonst wirft "
         "erzeuge_xml() vor jeder eigentlichen Pruefung.")
@@ -150,7 +150,7 @@ def leerlauf(bindung):
     s = ST.leerer_store(2025, fall_id="elf-felder-geld-fehlt-leerlauf")
     _basis(s, mit_elf=False)
     snap, sid = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid)
+    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid, vz=2025)
     assert result.get("eingaben_konsistent") is True
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID, snapshot=snap)
     return _kz_werte_aus_xml(xml)

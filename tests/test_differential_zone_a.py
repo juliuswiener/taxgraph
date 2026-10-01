@@ -75,7 +75,7 @@ def test_zone_a_reisekosten_keine_luecken(bindung):
     # dhf_finanzielle_beteiligung, dhf_keine_pflicht_dienstwohnung = bool -> ignoriert
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe_differential(snap, bindung, result, xml, "Zone A")

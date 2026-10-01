@@ -123,7 +123,7 @@ def _dekl_ohne(entfernen, felder_basis: dict, bindung: dict):
     felder = dict(felder_basis)
     for f in entfernen:
         felder.pop(f, None)
-    dekl = est_mapping.deklariere(felder, bindung)
+    dekl = est_mapping.deklariere(felder, bindung, vz=2025)
     try:
         xml = EX.erzeuge_xml(dekl, vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     except EX.XmlFehler as exc:
@@ -148,7 +148,7 @@ def test_fixturen_selbst_sind_sauber():
     unsauber = []
     for name, fixtur_fn in FIXTUREN:
         felder, sid = ST.materialisiere(fixtur_fn())
-        dekl = est_mapping.deklariere(felder, bindung, snapshot_id=sid)
+        dekl = est_mapping.deklariere(felder, bindung, snapshot_id=sid, vz=2025)
         xml = EX.erzeuge_xml(dekl, vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
         rc, antwort = CE.validate(xml, "ESt_2025")
         if rc != CE.RC_OK:

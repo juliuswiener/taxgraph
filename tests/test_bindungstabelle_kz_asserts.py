@@ -64,7 +64,7 @@ def test_e0108105_spenden_betrag_in_deklaration(all_bindings):
     assert all_bindings[fid]["elster_kz"] == "E0108105"
 
     snapshot = {fid: {"wert": wert_cent, "zustand": "bestaetigt"}}
-    result = deklariere(snapshot, {fid: all_bindings[fid]})
+    result = deklariere(snapshot, {fid: all_bindings[fid]}, vz=2025)
     dekl = result.get("deklaration", {})
 
     assert "E0108105" in dekl, f"E0108105 nicht in Deklaration: {dekl.keys()}"
@@ -78,7 +78,7 @@ def test_e0203611_ep_oepnv_kosten_in_deklaration(all_bindings):
     assert all_bindings[fid]["elster_kz"] == "E0203611"
 
     snapshot = {fid: {"wert": wert_cent, "zustand": "bestaetigt"}}
-    result = deklariere(snapshot, {fid: all_bindings[fid]})
+    result = deklariere(snapshot, {fid: all_bindings[fid]}, vz=2025)
     dekl = result.get("deklaration", {})
 
     assert "E0203611" in dekl, f"E0203611 nicht in Deklaration: {dekl.keys()}"
@@ -92,7 +92,7 @@ def test_e0205201_tage_ueber_8h_eintaegig_in_deklaration(all_bindings):
     assert all_bindings[fid]["elster_kz"] == "E0205201"
 
     snapshot = {fid: {"wert": wert_int, "zustand": "bestaetigt"}}
-    result = deklariere(snapshot, {fid: all_bindings[fid]})
+    result = deklariere(snapshot, {fid: all_bindings[fid]}, vz=2025)
     dekl = result.get("deklaration", {})
 
     assert "E0205201" in dekl, f"E0205201 nicht in Deklaration: {dekl.keys()}"
@@ -106,7 +106,7 @@ def test_e0205302_tage_an_abreise_in_deklaration(all_bindings):
     assert all_bindings[fid]["elster_kz"] == "E0205302"
 
     snapshot = {fid: {"wert": wert_int, "zustand": "bestaetigt"}}
-    result = deklariere(snapshot, {fid: all_bindings[fid]})
+    result = deklariere(snapshot, {fid: all_bindings[fid]}, vz=2025)
     dekl = result.get("deklaration", {})
 
     assert "E0205302" in dekl, f"E0205302 nicht in Deklaration: {dekl.keys()}"
@@ -120,7 +120,7 @@ def test_e0205409_tage_24h_in_deklaration(all_bindings):
     assert all_bindings[fid]["elster_kz"] == "E0205409"
 
     snapshot = {fid: {"wert": wert_int, "zustand": "bestaetigt"}}
-    result = deklariere(snapshot, {fid: all_bindings[fid]})
+    result = deklariere(snapshot, {fid: all_bindings[fid]}, vz=2025)
     dekl = result.get("deklaration", {})
 
     assert "E0205409" in dekl, f"E0205409 nicht in Deklaration: {dekl.keys()}"
@@ -134,7 +134,7 @@ def test_e0207611_dhf_unterkunftskosten_monat_in_deklaration(all_bindings):
     assert all_bindings[fid]["elster_kz"] == "E0207611"
 
     snapshot = {fid: {"wert": wert_cent, "zustand": "bestaetigt"}}
-    result = deklariere(snapshot, {fid: all_bindings[fid]})
+    result = deklariere(snapshot, {fid: all_bindings[fid]}, vz=2025)
     dekl = result.get("deklaration", {})
 
     assert "E0207611" in dekl, f"E0207611 nicht in Deklaration: {dekl.keys()}"
@@ -148,7 +148,7 @@ def test_e0505607_schulgeld_in_deklaration(all_bindings):
     assert all_bindings[fid]["elster_kz"] == "E0505607"
 
     snapshot = {fid: {"wert": wert_cent, "zustand": "bestaetigt"}}
-    result = deklariere(snapshot, {fid: all_bindings[fid]})
+    result = deklariere(snapshot, {fid: all_bindings[fid]}, vz=2025)
     dekl = result.get("deklaration", {})
 
     assert "E0505607" in dekl, f"E0505607 nicht in Deklaration: {dekl.keys()}"

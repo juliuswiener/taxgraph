@@ -77,7 +77,7 @@ def test_person_a_stammdaten_1_zu_1(bindung):
     _flags_einzel(s)
 
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     dekl = result["deklaration"]
 
     assert dekl["E0100201"] == "Maier"
@@ -99,7 +99,7 @@ def test_stammdaten_vorlaeufig_macht_unvollstaendig(bindung):
     _b(s, "stammdaten_nachname", "Maier", zustand="vorlaeufig")
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     assert result["eingaben_konsistent"] is False
     gruende = [u["feld_id"] for u in result["unvollstaendig"]]
     assert "stammdaten_nachname" in gruende
@@ -120,7 +120,7 @@ def test_person_b_stammdaten_direkt_in_deklaration(bindung):
     _flags_zusammen(s)
 
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
 
     assert result["deklaration"]["E0100901"] == "Maier"
     assert result["deklaration"]["E0100801"] == "Carolina"
@@ -144,7 +144,7 @@ def test_kist_konfession_wertekodierung(bindung, laie_wert, xsd_code):
     _b(s, "kist_bundesland", "bayern")
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     assert result["deklaration"]["E0100402"] == xsd_code
 
 
@@ -156,7 +156,7 @@ def test_kist_konfession_andere_fail_closed(bindung):
     _b(s, "kist_bundesland", "bayern")
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     assert "E0100402" not in result["deklaration"]
     gruende = [n["grund"] for n in result["nicht_deklariert"] if n["feld_id"] == "kist_konfession"]
     assert gruende and "andere" in gruende[0]
@@ -167,7 +167,7 @@ def test_kist_konfession_partner_wertekodierung(bindung):
     _b(s, "kist_konfession_partner", "roemisch-katholisch")
     _flags_zusammen(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     assert result["deklaration"]["E0101002"] == "03"
 
 
@@ -203,7 +203,7 @@ def test_stammdaten_im_xml(bindung):
     _flags_einzel(s)
 
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
     clean = xml.replace("ns0:", "").replace("ns1:", "")
 
@@ -232,7 +232,7 @@ def test_konfession_andere_nennt_dem_nutzer_den_ausweg(bindung):
     s = ST.leerer_store(2025, fall_id="konf_andere")
     _b(s, "kist_konfession", "andere")
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
 
     assert "E0100402" not in result["deklaration"], "geratener Religionsschluessel — nie tun"
     eintrag = next(x for x in result["nicht_deklariert"] if x["feld_id"] == "kist_konfession")
@@ -249,6 +249,6 @@ def test_konfession_bekannter_wert_hat_keinen_hinweis(bindung):
     s = ST.leerer_store(2025, fall_id="konf_ev")
     _b(s, "kist_konfession", "evangelisch")
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     assert result["deklaration"]["E0100402"] == "02"
     assert not [x for x in result["nicht_deklariert"] if x["feld_id"] == "kist_konfession"]

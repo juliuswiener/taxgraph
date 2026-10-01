@@ -94,7 +94,7 @@ def _deklariere(store):
     bindung = API._scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
     felder = API._mit_ring_werten(felder, 2025)
-    return est_mapping.deklariere(felder, bindung, snapshot_id=sid)
+    return est_mapping.deklariere(felder, bindung, snapshot_id=sid, vz=2025)
 
 
 # ---- 1) die Naht: person_b traegt den Antrag ---------------------------------------------

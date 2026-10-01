@@ -56,7 +56,7 @@ def _store_mit(felder: dict, vz=2025):
 def test_alle_fuenf_null_keine_kap_kz(bindung):
     felder = {f: 0 for f in EM.KAP_FELDER_A}
     snap, _ = ST.materialisiere(_store_mit(felder))
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     for kz in _KAP_KZ_A:
         assert kz not in r["deklaration"], f"{kz} haette unterdrueckt werden muessen"
     ndf = {x["feld_id"] for x in r["nicht_deklariert"]}
@@ -70,7 +70,7 @@ def test_alle_fuenf_null_bleibt_vollstaendig(bindung):
     """Die Unterdrückung ist kein fail-closed-Fall — die Erklärung bleibt vollständig."""
     felder = {f: 0 for f in EM.KAP_FELDER_A}
     snap, _ = ST.materialisiere(_store_mit(felder))
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     assert r["eingaben_konsistent"] is True
     assert not r["unvollstaendig"]
 
@@ -83,7 +83,7 @@ def test_ein_feld_positiv_alle_kz_bleiben(bindung):
     felder = {"kap_kapitalertraege": 500000, "kap_gewinn_aktien": 500000,
               "kap_verlust_aktien": 0, "kap_gewinn_sonstige": 0, "kap_verlust_sonstige": 0}
     snap, _ = ST.materialisiere(_store_mit(felder))
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     assert r["deklaration"]["E1900701"] == 5000
     assert r["deklaration"]["E1900901"] == 5000
     assert r["deklaration"]["E1901301"] == 0                    # echte Null bleibt deklariert
@@ -99,7 +99,7 @@ def test_nur_ein_feld_ungleich_null_reicht_zum_erhalt(bindung):
     felder = {"kap_kapitalertraege": 0, "kap_gewinn_aktien": 0, "kap_verlust_aktien": 0,
               "kap_gewinn_sonstige": 12300, "kap_verlust_sonstige": 0}
     snap, _ = ST.materialisiere(_store_mit(felder))
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     for kz in _KAP_KZ_A:
         assert kz in r["deklaration"]
         assert r["deklaration"][kz] == 0
@@ -110,7 +110,7 @@ def test_nur_ein_feld_ungleich_null_reicht_zum_erhalt(bindung):
 def test_zusammen_beide_null_beide_unterdrueckt(bindung):
     felder = {f: 0 for f in EM.KAP_FELDER_A} | {f: 0 for f in EM.KAP_FELDER_B}
     snap, _ = ST.materialisiere(_store_mit(felder))
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     for kz in _KAP_KZ_A:
         assert kz not in r["deklaration"]
         assert kz not in r["person_b"]
@@ -131,7 +131,7 @@ def test_zusammen_atomar_a_null_b_wert_beide_bleiben(bindung):
     felder["kap_verlust_aktien_partner"] = 0
     felder["kap_verlust_sonstige_partner"] = 0
     snap, _ = ST.materialisiere(_store_mit(felder))
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     for kz in _KAP_KZ_A:                                        # Person A NICHT unterdrückt
         assert kz in r["deklaration"], f"{kz} haette wegen Person B (Wert) NICHT unterdrueckt werden duerfen"
         assert r["deklaration"][kz] == 0
@@ -149,7 +149,7 @@ def test_zusammen_atomar_a_wert_b_null_beide_bleiben(bindung):
     for f in EM.KAP_FELDER_B:
         felder[f] = 0
     snap, _ = ST.materialisiere(_store_mit(felder))
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     assert r["deklaration"]["E1900701"] == 3000
     assert r["deklaration"]["E1900901"] == 3000
     for kz in _KAP_KZ_A:
@@ -169,7 +169,7 @@ def test_ein_feld_vorlaeufig_unterdrueckt_nichts(bindung):
         else:
             _b(s, f, 0)
     snap, _ = ST.materialisiere(s)
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     assert r["eingaben_konsistent"] is False
     for kz in ("E1900701", "E1901301", "E1901201"):             # die bestätigten Nullen bleiben deklariert
         assert kz in r["deklaration"]
@@ -182,7 +182,7 @@ def test_kap_gewinn_sonstige_bleibt_immer_unabhaengig_deklariert_grund(bindung):
     doppelte oder überschriebene Begründung."""
     felder = {f: 0 for f in EM.KAP_FELDER_A}
     snap, _ = ST.materialisiere(_store_mit(felder))
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     treffer = [x for x in r["nicht_deklariert"] if x["feld_id"] == "kap_gewinn_sonstige"]
     assert len(treffer) == 1
     assert "Modell-Mismatch" in treffer[0]["grund"]

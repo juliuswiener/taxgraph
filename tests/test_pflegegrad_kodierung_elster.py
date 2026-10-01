@@ -80,7 +80,7 @@ def _xml(felder):
     bindung = API._scheibe_bindung(store)
     snap, sid = ST.materialisiere(store)
     snap = API._mit_ring_werten(snap, 2025)
-    return EX.erzeuge_xml(est_mapping.deklariere(snap, bindung, snapshot_id=sid),
+    return EX.erzeuge_xml(est_mapping.deklariere(snap, bindung, snapshot_id=sid, vz=2025),
                           vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
 
 

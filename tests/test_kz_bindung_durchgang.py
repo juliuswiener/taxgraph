@@ -53,7 +53,7 @@ def xsd_index():
 
 def _xml(felder: dict, bindung: dict) -> str:
     snap = {fid: {"wert": w, "zustand": "bestaetigt"} for fid, w in felder.items()}
-    return EX.erzeuge_xml(est_mapping.deklariere(snap, bindung), vz=2025, hersteller_id=HID)
+    return EX.erzeuge_xml(est_mapping.deklariere(snap, bindung, vz=2025), vz=2025, hersteller_id=HID)
 
 
 def _pfad_im_xml(xml: str, pfad: tuple[str, ...], wert: str) -> bool:
@@ -951,7 +951,7 @@ def test_spenden_betrag_null_ohne_nicht_deklariert(bindung):
     ist kein verlorener Wert, sondern "nichts anzugeben" — kein nicht_deklariert-Eintrag. Der
     Spenden-Zweig schrieb bis P9 einen; mit Eintrag meldete die Prüfanzeige "nicht alle Werte".
     """
-    d = est_mapping.deklariere({"spenden_betrag": {"wert": 0, "zustand": "bestaetigt"}}, bindung)
+    d = est_mapping.deklariere({"spenden_betrag": {"wert": 0, "zustand": "bestaetigt"}}, bindung, vz=2025)
     assert "E0108105" not in d["deklaration"]
     assert d["nicht_deklariert"] == []
 
@@ -999,7 +999,7 @@ def test_null_bleibt_aus_jeder_kz_deren_xsd_typ_sie_verbietet(bindung):
                 proben += [{fid + i: w, cfg["art_feld"] + i: art} for art in cfg["kz"] for w in werte(fid)]
     durch = []
     for probe in proben:
-        d = est_mapping.deklariere({k: {"wert": w, "zustand": "bestaetigt"} for k, w in probe.items()}, bindung)
+        d = est_mapping.deklariere({k: {"wert": w, "zustand": "bestaetigt"} for k, w in probe.items()}, bindung, vz=2025)
         durch += [f"{kz} " + " ".join(f"{k}={w}" for k, w in probe.items()) for kz in nullen(d)]
     assert durch == [], f"0 in {len(durch)} Faellen durchgelassen, obwohl der XSD-Typ sie verbietet: {durch}"
 
@@ -1112,7 +1112,7 @@ def test_nicht_gerechnet_hinweis_nur_bei_echtem_betrag(bindung, monkeypatch):
     import check_nicht_gerechnet as CNG
 
     for feld in CNG.NICHT_GERECHNET:
-        dekl = est_mapping.deklariere({feld: {"wert": 20000, "zustand": "bestaetigt"}}, bindung)
+        dekl = est_mapping.deklariere({feld: {"wert": 20000, "zustand": "bestaetigt"}}, bindung, vz=2025)
         assert feld not in {e["feld_id"] for e in dekl["nicht_deklariert"]}, feld
 
     monkeypatch.setitem(CNG.NICHT_GERECHNET, "testfeld", "Testhinweis")

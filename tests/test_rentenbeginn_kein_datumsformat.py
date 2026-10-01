@@ -96,7 +96,7 @@ def _xml_text():
     _b(s, "veranlagung", "einzel")
     bindung = TR.lade_bindung()
     felder, sid = ST.materialisiere(s)
-    dekl = est_mapping.deklariere(felder, bindung, snapshot_id=sid)
+    dekl = est_mapping.deklariere(felder, bindung, snapshot_id=sid, vz=2025)
     # Dummy-Hersteller-ID: nur Textfeld im XML, kein ERiC-Aufruf in diesem Test (das
     # Format-Symptom ist am Text selbst pruefbar, s. Modul-Docstring).
     xml = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="74931", abgabefaehig=True, **_ABSENDER)
@@ -208,7 +208,7 @@ def test_rentenbeginn_partner_schreibt_datumsformat():
     _b(s, "veranlagung", "zusammen")
     bindung = TR.lade_bindung()
     felder, sid = ST.materialisiere(s)
-    dekl = est_mapping.deklariere(felder, bindung, snapshot_id=sid)
+    dekl = est_mapping.deklariere(felder, bindung, snapshot_id=sid, vz=2025)
     xml = EX.erzeuge_xml(dekl, vz=2025, hersteller_id="74931", abgabefaehig=True, **_ABSENDER)
     xml = xml if isinstance(xml, str) else xml.decode("utf-8")
 

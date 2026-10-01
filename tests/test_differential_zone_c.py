@@ -129,7 +129,7 @@ def test_differential_zone_c_rentner_ehepaar(bindung):
     _b(s, "vor_rv_ausserhalb_lstb_partner", 80000)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id="74931")
 
     funde = _pruefe_differential(snap, bindung, result, xml, "ZoneC-Rentner")
@@ -161,7 +161,7 @@ def test_differential_zone_c_veraeusserung(bindung):
     _b(s, "rentner_veraeusserungsgewinn", 15000000)  # 150.000 € → E0801301 via VERZWEIGUNG
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id="74931")
 
     funde = _pruefe_differential(snap, bindung, result, xml, "ZoneC-Veraeuss")
@@ -197,7 +197,7 @@ def test_differential_zone_c_p22_nr3(bindung):
     _b(s, "rentner_rentenfreibetrag", 0)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id="74931")
 
     funde = _pruefe_differential(snap, bindung, result, xml, "ZoneC-p22nr3")

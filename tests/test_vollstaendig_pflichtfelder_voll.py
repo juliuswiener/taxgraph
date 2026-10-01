@@ -60,7 +60,7 @@ def _ohne_feld(feld_id: str, felder_basis: dict, bindung: dict):
     """Wie _pruefe() in test_checkest_durchstich, aber mit GENAU EINEM Feld entfernt."""
     felder = dict(felder_basis)
     felder.pop(feld_id, None)
-    dekl = est_mapping.deklariere(felder, bindung)
+    dekl = est_mapping.deklariere(felder, bindung, vz=2025)
     try:
         xml = EX.erzeuge_xml(dekl, vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     except EX.XmlFehler as exc:

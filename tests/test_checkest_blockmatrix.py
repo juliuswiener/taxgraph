@@ -98,7 +98,7 @@ def _block_scharf(felder):
     snap, sid = ST.materialisiere(store)
     snap = API._mit_ring_werten(snap, 2025)
     try:
-        xml = EX.erzeuge_xml(est_mapping.deklariere(snap, bindung, snapshot_id=sid),
+        xml = EX.erzeuge_xml(est_mapping.deklariere(snap, bindung, snapshot_id=sid, vz=2025),
                              vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     except Exception as ex:
         return None, [f"WRITER-ABBRUCH: {type(ex).__name__}: {str(ex)[:200]}"]

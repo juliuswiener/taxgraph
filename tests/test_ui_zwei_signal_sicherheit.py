@@ -58,7 +58,7 @@ def test_s1_vorschlag_nicht_in_deklaration():
     s = _leer()
     _vorschlag(s, "agb_aufwendungen", 120000, "llm:chat", "llm_vorschlag")
     felder, _ = ST.materialisiere(s)
-    erg = EM.deklariere(felder, BINDUNG)
+    erg = EM.deklariere(felder, BINDUNG, vz=2025)
     assert "agb_aufwendungen" in {u["feld_id"] for u in erg["unvollstaendig"]}
     assert erg["eingaben_konsistent"] is False
 
@@ -74,7 +74,7 @@ def test_s2_bestaetigt_fliesst_in_deklaration():
                     schreiber="ui:laie", signal={"signal_1": None, "signal_2": "confirm@agb"},
                     ersetzt=ev["event_id"], ts=TS)
     felder, _ = ST.materialisiere(s)
-    erg = EM.deklariere(felder, BINDUNG)
+    erg = EM.deklariere(felder, BINDUNG, vz=2025)
     assert "agb_aufwendungen" not in {u["feld_id"] for u in erg["unvollstaendig"]}
 
 
@@ -156,7 +156,7 @@ def test_s6_steuersumme_eingabe_invariant():
     s = _leer()
     ev = _vorschlag(s, "spenden_betrag", 500000, "import:kontoauszug", "kontoauszug")
     felder, _ = ST.materialisiere(s)
-    erg_vor = EM.deklariere(felder, BINDUNG)
+    erg_vor = EM.deklariere(felder, BINDUNG, vz=2025)
     assert "spenden_betrag" in {u["feld_id"] for u in erg_vor["unvollstaendig"]}  # vorläufig → NICHT Steuer-Eingabe
     assert erg_vor["eingaben_konsistent"] is False
     ST.append_event(s, feld_id="spenden_betrag", wert=500000, zustand="bestaetigt",
@@ -164,7 +164,7 @@ def test_s6_steuersumme_eingabe_invariant():
                     schreiber="ui:laie", signal={"signal_1": None, "signal_2": "confirm@spende"},
                     ersetzt=ev["event_id"], ts=TS)
     felder2, _ = ST.materialisiere(s)
-    erg2 = EM.deklariere(felder2, BINDUNG)
+    erg2 = EM.deklariere(felder2, BINDUNG, vz=2025)
     assert "spenden_betrag" not in {u["feld_id"] for u in erg2["unvollstaendig"]}  # jetzt gültige Eingabe
 
 

@@ -1038,7 +1038,7 @@ def test_l_unbekannte_feld_id_in_deklariere():
         "test_geld": {"wert": 100000, "zustand": "bestaetigt"},
         "test_xxx_feld_fehlte": {"wert": 50000, "zustand": "bestaetigt"},
     }
-    ergebnis = EM.deklariere(snapshot, mini_bindung)
+    ergebnis = EM.deklariere(snapshot, mini_bindung, vz=2025)
 
     # (1) Bekanntes Feld landet in deklaration; unbekanntes Feld in unvollstaendig
     assert len([u for u in ergebnis["unvollstaendig"] if "nicht in der Bindungstabelle" in u.get("grund", "")]) > 0, (

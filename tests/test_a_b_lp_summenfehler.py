@@ -110,7 +110,7 @@ def _xml_fuer(fall_id, paare):
     for feld, wert in _BASIS_KEGEL + tuple(paare):
         _b(store, feld, wert)
     felder, sid = ST.materialisiere(store)
-    ergebnis = est_mapping.deklariere(felder, BINDUNG, snapshot_id=sid)
+    ergebnis = est_mapping.deklariere(felder, BINDUNG, snapshot_id=sid, vz=2025)
     xml_text = EX.erzeuge_xml(ergebnis, vz=2025, hersteller_id="TESTHID-NICHT-ECHT",
                                abgabefaehig=False)
     return ET.fromstring(xml_text)

@@ -107,7 +107,7 @@ def test_ehepaar_gegenprobe_beide_loehne_deklariert(bindung):
 
     # ===== Deklaration → XML =====
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     # ===== Extraktion E0200201 (Bruttolohn) =====
@@ -156,7 +156,7 @@ def test_ehepaar_gegenprobe_e0200201_haengt_nicht_nur_in_deklaration(bindung):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
     werte = _extrahiere_e0200201(xml)
 
