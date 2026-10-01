@@ -153,7 +153,7 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
     typ: text
-    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
     standardwert: "01.01-31.12"
     einheit: null
     askable: true
@@ -229,7 +229,7 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
     typ: text
-    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
     standardwert: "01.01-31.12"
     einheit: null
     askable: true
@@ -248,7 +248,7 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
     typ: text
-    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
     standardwert: "01.01-31.12"
     einheit: null
     askable: true
@@ -267,7 +267,7 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
     typ: text
-    muster: '^\d{2}\.\d{2}-\d{2}\.\d{2}$'
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
     standardwert: "01.01-31.12"
     einheit: null
     askable: true

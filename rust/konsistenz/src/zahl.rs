@@ -89,3 +89,73 @@ mod tests {
         assert!(!leer_nach_strip(" x "));
     }
 }
+
+/// Aequivalenz mit `domain::PyWert` (D15): Abweichungen nur mit D-Nummer aus der Liste des
+/// Helfers, je D-Nummer ein Test mit dem `CPython`-Verhalten.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{d3, json_wert, klasse, pruefe, py, text};
+    use domain::{py_strip, PyWert};
+    use proptest::prelude::*;
+    use serde_json::{json, Value};
+
+    use super::{ganzzahl, leer_nach_strip, zahl_gleich_null, zahl_gt0};
+
+    /// Ausnahmen von `ganzzahl`.
+    const GANZZAHL: &[&str] = &["D3"];
+    /// Ausnahmen von `zahl_gleich_null`.
+    const GLEICH_NULL: &[&str] = &["D13"];
+
+    /// D13: `False == 0`; der Alt-Helfer ueberlaesst `bool` dem Aufrufer.
+    fn d13(v: &Value) -> Vec<&'static str> {
+        if *v == Value::Bool(false) {
+            vec!["D13"]
+        } else {
+            Vec::new()
+        }
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn ganzzahl_wie_pywert(v in json_wert()) {
+            let (alt, neu) = (Ok(ganzzahl(&v)), klasse(py(&v).int_ohne_bool()));
+            pruefe(&v, &alt, &neu, || d3(&v, &neu), GANZZAHL)?;
+        }
+
+        #[test]
+        fn zahl_gt0_wie_pywert(v in json_wert()) {
+            let neu = py(&v).zahl_ohne_bool().is_some_and(|z| z.gt_null() == Ok(true));
+            pruefe(&v, &zahl_gt0(&v), &neu, Vec::new, &[])?;
+        }
+
+        #[test]
+        fn zahl_gleich_null_wie_pywert(v in json_wert()) {
+            let neu = py(&v).py_eq(&PyWert::Ganz(0));
+            pruefe(&v, &zahl_gleich_null(&v), &neu, || d13(&v), GLEICH_NULL)?;
+        }
+
+        #[test]
+        fn leer_nach_strip_wie_py_strip(s in text()) {
+            pruefe(&s, &leer_nach_strip(&s), &py_strip(&s).is_empty(), Vec::new, &[])?;
+        }
+    }
+
+    /// D3: `2**64 - 1` ist in `CPython` ein `int`. Der Alt-Helfer liefert `None`, `PyWert` meldet
+    /// die i64-Grenze.
+    #[test]
+    fn d3_ueber_i64() {
+        let v = json!(u64::MAX);
+        assert_eq!(ganzzahl(&v), None);
+        assert_eq!(klasse(py(&v).int_ohne_bool()), Err(None));
+    }
+
+    /// D13: `False == 0` ist in `CPython` wahr. Der Alt-Helfer liefert `false`.
+    #[test]
+    fn d13_false_gleich_null() {
+        let v = json!(false);
+        assert!(!zahl_gleich_null(&v));
+        assert!(py(&v).py_eq(&PyWert::Ganz(0)));
+    }
+}

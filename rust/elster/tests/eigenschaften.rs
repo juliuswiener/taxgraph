@@ -245,8 +245,23 @@ proptest! {
     }
 }
 
+/// Verbietet der XSD-Typ der Kz die 0? Typ `GanzzahlPos*` (Basis `xs:positiveInteger`) oder eine
+/// enumeration-/pattern-Facette ohne "0" (`GdB`, Pflegegrad).
+fn verbietet_null(meta: &HashMap<String, elster::KzMeta>, kz: &str) -> bool {
+    meta.get(kz).is_some_and(|m| {
+        m.type_name.starts_with("GanzzahlPos")
+            || (!m.enums.is_empty() && !m.enums.iter().any(|e| e == "0"))
+            || (!m.patterns.is_empty()
+                && !m.patterns.iter().any(|p| {
+                    regex::Regex::new(&format!("^(?:{p})$"))
+                        .unwrap()
+                        .is_match("0")
+                }))
+    })
+}
+
 /// Die handgepflegten Kz-Mengen gegen die aus dem XSD ABGELEITETEN Typen (Ersatz fuer die
-/// `ponytail`-Grenzen in `est_mapping.py:149-151,179-180`). Die Teilmengen-Beziehung ist hart;
+/// `ponytail`-Grenzen in `est_mapping.py:154-158,197-198`). Die Teilmengen-Beziehung ist hart;
 /// was das XSD zusaetzlich nahelegt, wird gezaehlt und ausgegeben (offene Punkte, s. Bericht).
 #[test]
 fn kz_mengen_aus_xsd() {
@@ -267,7 +282,7 @@ fn kz_mengen_aus_xsd() {
         );
     }
     for kz in elster::NULL_UNZULAESSIG_KZ {
-        assert!(typ(kz).starts_with("GanzzahlPos"), "{kz}: {}", typ(kz));
+        assert!(verbietet_null(&meta, kz), "{kz}: {}", typ(kz));
     }
     let cent_kz: Vec<&str> = bindungen()
         .iter()
@@ -294,4 +309,340 @@ fn kz_mengen_aus_xsd() {
         "[xsd-abgeleitet] GanzzahlPos-Typ ohne 0-Sperre={} {null_luecke:?}",
         null_luecke.len()
     );
+}
+
+/// P9 (Vault-Ticket `elster-xml-null-in-ganzzahlpos-kz`): eine 0 in einer Kz, deren XSD-Typ sie
+/// verbietet, macht das ganze XML schema-ungueltig (2026-10-01: 214 von 378 XML aus echten
+/// Faellen). Die Kz-Menge kommt aus dem XSD, nicht aus `NULL_UNZULAESSIG_KZ`: Typ `GanzzahlPos*`
+/// (Basis `xs:positiveInteger`) oder eine enumeration-/pattern-Facette ohne "0" (`GdB`, Pflegegrad).
+/// Geprueft wird jede Kz in allen drei Buckets, nicht nur die Kz des Feldes.
+#[test]
+fn null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet() {
+    let Some(pfad) = elster::finde_schema(2025, "E10-{jahr}.xsd") else {
+        println!("E10-2025.xsd fehlt — source_unavailable");
+        return;
+    };
+    let meta = elster::kz_meta(&pfad, "E10").unwrap();
+    // Jeder Schreibweg ueber die Bindung: 1:1, Instanz (`__2`), Person B (Klasse g); 50 Cent werden
+    // auf 0 Euro abgerundet. Die Art-Verzweigung (Klasse f) haengt an `pub(crate)`-Tabellen, sie
+    // prueft `art_verzweigung_schreibt_keine_verbotene_null` (`src/deklaration.rs`).
+    let durch: Vec<String> = bindungen()
+        .iter()
+        .filter(|b| matches!(b.typ, Feldtyp::Cent | Feldtyp::Int))
+        .flat_map(|b| {
+            let werte: &'static [i64] = if b.typ == Feldtyp::Cent {
+                &[0, 50]
+            } else {
+                &[0]
+            };
+            let instanz = b
+                .instanz_gruppe
+                .as_ref()
+                .map(|_| format!("{}__2", b.feld_id));
+            std::iter::once(b.feld_id.clone())
+                .chain(instanz)
+                .flat_map(move |s| werte.iter().map(move |&w| (s.clone(), w)))
+        })
+        .flat_map(|(schluessel, wert)| {
+            let d = deklariere(
+                &einzeln(&schluessel, json!(wert), Zustand::Bestaetigt),
+                index(),
+                None,
+            )
+            .unwrap();
+            let instanzen = d.anlage_instanzen.iter().flat_map(|(_, ii)| ii);
+            let kz: std::collections::BTreeSet<String> = [&d.deklaration, &d.person_b]
+                .into_iter()
+                .chain(instanzen.map(|i| &i.felder))
+                .flatten()
+                .filter(|(kz, v)| **v == json!(0) && verbietet_null(&meta, kz))
+                .map(|(kz, _)| kz.clone())
+                .collect();
+            kz.into_iter()
+                .map(move |kz| format!("{kz} {schluessel}={wert}"))
+        })
+        .collect();
+    assert!(
+        durch.is_empty(),
+        "0 in {} Faellen durchgelassen, obwohl der XSD-Typ sie verbietet: {durch:?}",
+        durch.len()
+    );
+}
+
+/// P9 (Vault: `decisions/elster-null-in-kz-ohne-null-weglassen`, Punkt 3): eine weggelassene 0
+/// ist kein verlorener Wert, sondern „nichts anzugeben" — kein `nicht_deklariert`-Eintrag. Der
+/// Spenden-Zweig schrieb bis P9 einen; mit Eintrag meldete die Pruefanzeige „nicht alle Werte".
+#[test]
+fn spende_null_ohne_nicht_deklariert() {
+    let d = deklariere(
+        &einzeln("spenden_betrag", json!(0), Zustand::Bestaetigt),
+        index(),
+        None,
+    )
+    .unwrap();
+    assert!(!d.deklaration.contains_key("E0108105"));
+    assert!(d.nicht_deklariert.is_empty(), "{:?}", d.nicht_deklariert);
+}
+// ------------------------------------------------- leere Huelle (Ankreuzfeld "Nein")
+
+/// Elemente im E10-Teil, die keinen Inhalt tragen ausser dem Person-Diskriminator — genau die
+/// Klasse, die checkESt mit "Der Kontext ... ist leer" beanstandet (gemessen 2026-10-01,
+/// ERiC 44.2.4.0). Strukturell, nicht ueber ERiC: ohne echte Hersteller-ID liefert checkESt
+/// rc=610301200 mit LEEREM Fehlerpuffer und saehe damit "fehlerfrei" aus.
+fn leere_huellen(xml: &str) -> Vec<String> {
+    let mut raus = Vec::new();
+    let mut tiefe = 0usize;
+    let mut im_e10 = false;
+    let mut stapel: Vec<(String, bool, bool)> = Vec::new(); // (Name, hat Kind, hat Text)
+    for zeile in xml.lines() {
+        let z = zeile.trim();
+        if z.starts_with("<E10 ") || z.starts_with("<E10>") {
+            im_e10 = true;
+            tiefe = 1;
+            continue;
+        }
+        if !im_e10 {
+            continue;
+        }
+        if z.starts_with("</E10>") {
+            break;
+        }
+        // Selbstschliessend: kein Kind, kein Text.
+        if let Some(name) = z
+            .strip_prefix('<')
+            .and_then(|r| r.split([' ', '/', '>']).next())
+        {
+            if z.ends_with("/>") {
+                if let Some((pname, _, _)) = stapel.last_mut() {
+                    let _ = pname;
+                }
+                raus.push(name.to_owned());
+                continue;
+            }
+            if let Some(rest) = z.strip_prefix(&format!("<{name}>")) {
+                // Eroeffnendes Tag mit Text auf derselben Zeile: kein leeres Element.
+                let text = rest.strip_suffix(&format!("</{name}>")).unwrap_or(rest);
+                if z.contains(&format!("</{name}>")) && !text.trim().is_empty() {
+                    continue;
+                }
+                stapel.push((name.to_owned(), false, false));
+                tiefe += 1;
+                continue;
+            }
+            // Eroeffnendes Tag mit Kindern (Rest der Zeile ist leer).
+            if z.ends_with('>') {
+                stapel.push((name.to_owned(), false, false));
+                tiefe += 1;
+                continue;
+            }
+        }
+        if let Some(name) = z.strip_prefix("</").and_then(|r| r.strip_suffix('>')) {
+            tiefe = tiefe.saturating_sub(1);
+            if let Some((kname, _, hat_text)) = stapel.pop() {
+                if kname == name && !hat_text {
+                    // Nur <Person>-Kinder? Dann Huelle, sonst nur ein leerer Blattname.
+                    raus.push(kname);
+                }
+            }
+        }
+    }
+    let _ = tiefe;
+    raus
+}
+
+/// Ankreuzfeld "Nein" darf keinen leeren Container hinterlassen.
+///
+/// Ohne den Fix steht `<Geh_Steh_Blind_Hilfl />` (bzw. mit nur `<Person>`) im XML, und
+/// checkESt weist die ganze Abgabe ab. Ticket: elster-leerer-container-neben-ankreuzfeld-nein.
+#[test]
+fn ankreuzfeld_nein_hinterlaesst_keine_leere_huelle() {
+    let f = einzeln(
+        "rentner_hilflos_blind_taubblind",
+        json!(false),
+        Zustand::Bestaetigt,
+    );
+    let d = deklariere(&f, index(), None).unwrap();
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        ..XmlOptionen::default()
+    };
+    let xml = erzeuge_xml(&d, &opt).unwrap();
+    let h = leere_huellen(&xml);
+    assert!(
+        h.is_empty(),
+        "leere Huelle(n) im XML: {h:?} — checkESt beanstandet sie mit 'Der Kontext ... ist leer'"
+    );
+}
+
+/// Gegenprobe: "Ja" fuellt den Container. Das Gate darf hier nicht anschlagen.
+#[test]
+fn gegenprobe_ja_fuellt_die_huelle() {
+    let f = einzeln(
+        "rentner_hilflos_blind_taubblind",
+        json!(true),
+        Zustand::Bestaetigt,
+    );
+    let d = deklariere(&f, index(), None).unwrap();
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        ..XmlOptionen::default()
+    };
+    let xml = erzeuge_xml(&d, &opt).unwrap();
+    let h = leere_huellen(&xml);
+    assert!(h.is_empty(), "leere Huelle(n) im XML: {h:?}");
+    assert!(
+        xml.contains("<Geh_Steh_Blind_Hilfl>"),
+        "Ja muss den Container fuellen"
+    );
+}
+
+/// Gegenprobe: wird das Feld gar nicht gestellt, entsteht ueberhaupt kein Container.
+#[test]
+fn gegenprobe_feld_nicht_gestellt_erzeugt_keine_huelle() {
+    let f = einzeln("stammdaten_nachname", json!("Muster"), Zustand::Bestaetigt);
+    let d = deklariere(&f, index(), None).unwrap();
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        ..XmlOptionen::default()
+    };
+    let xml = erzeuge_xml(&d, &opt).unwrap();
+    let h = leere_huellen(&xml);
+    assert!(h.is_empty(), "leere Huelle(n) im XML: {h:?}");
+}
+
+// ---------------------------------------------------------------- §35a: mehrere Posten je Topf
+//
+// Haushaltsnahe Aufwendungen (§ 35a EStG) haben drei Toepfe: Minijob, Dienstleistung, Handwerker.
+// Zwei Posten in einem Topf ergaben bis 2026-10-01 ein schema-ungueltiges XML: `<HA_35a>` traegt
+// `maxOccurs="1"` (E10-2025.xsd:8236), die Posten wiederholen sich ueber `<Einz>` darunter
+// (`maxOccurs="99"`, :10048). Ohne Eintrag in `INSTANZ_CONTAINER_TIEFER` fiel der Writer auf
+// `kz_pfad[..2]` zurueck — also auf `<HA_35a>` selbst — und wiederholte den ganzen Abschnitt.
+// xmllint: „Element HA_35a: This element is not expected". Von mehreren Posten erreichte nur
+// einer die Datei. Die Python-Seite prueft dasselbe in tests/test_elster_xml.py; hier steht die
+// Rust-Messung direkt, damit die Paritaet nicht zwei gleich falsche Seiten gruen nennt.
+
+fn zaehle_tag(xml: &str, tag: &str) -> usize {
+    xml.match_indices(&format!("<{tag}>")).count() + xml.match_indices(&format!("<{tag} ")).count()
+}
+
+fn posten_xml(gruppe: &str, art: &str, betrag: &str, werte: &[(i64, i64)]) -> String {
+    let felder: Felder = werte
+        .iter()
+        .enumerate()
+        .flat_map(|(i, (a, b))| {
+            let suffix = if i == 0 { String::new() } else { format!("__{}", i + 1) };
+            [
+                (
+                    format!("{art}{suffix}"),
+                    feld(json!(a.to_string()), Zustand::Bestaetigt),
+                ),
+                (
+                    format!("{betrag}{suffix}"),
+                    feld(json!(b), Zustand::Bestaetigt),
+                ),
+            ]
+        })
+        .collect();
+    let d = deklariere(&felder, index(), None).unwrap();
+    // Instanz 1 ist die BASIS-feld_id ohne Suffix und steht in `deklaration`; erst `__2` und
+    // hoeher landen in `anlage_instanzen` (`instanz.rs`). Der Ring muss also n-1 sehen.
+    assert_eq!(
+        d.instanzen_der_gruppe(gruppe).len(),
+        werte.len() - 1,
+        "{gruppe}: Instanzen jenseits der Basis",
+    );
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        ..XmlOptionen::default()
+    };
+    erzeuge_xml(&d, &opt).unwrap()
+}
+
+/// AK1 (Rust-Seite): ein Topf mit ZWEI Posten -> EIN `<HA_35a>` mit ZWEI `<Einz>`.
+#[test]
+fn hh_top_zwei_posten_ein_ha35a() {
+    for (gruppe, art, betrag) in [
+        ("hh_minijob", "hh_minijob_art", "hh_minijob_betrag"),
+        (
+            "hh_dienstleistung",
+            "hh_dienstleistung_art",
+            "hh_dienstleistung_betrag",
+        ),
+        (
+            "hh_handwerker",
+            "hh_handwerker_art",
+            "hh_handwerker_betrag",
+        ),
+    ] {
+        let xml = posten_xml(gruppe, art, betrag, &[(1, 120_000), (2, 80_000)]);
+        assert_eq!(
+            zaehle_tag(&xml, "HA_35a"),
+            1,
+            "{gruppe}: genau ein <HA_35a> erwartet"
+        );
+        assert_eq!(
+            zaehle_tag(&xml, "Einz"),
+            2,
+            "{gruppe}: zwei <Einz> erwartet"
+        );
+    }
+}
+
+/// AK2 (Rust-Seite): Gegenprobe — ein Posten bleibt ein `<HA_35a>` mit einem `<Einz>`.
+#[test]
+fn hh_top_ein_posten_bleibt_unveraendert() {
+    for (gruppe, art, betrag) in [
+        ("hh_minijob", "hh_minijob_art", "hh_minijob_betrag"),
+        (
+            "hh_dienstleistung",
+            "hh_dienstleistung_art",
+            "hh_dienstleistung_betrag",
+        ),
+        (
+            "hh_handwerker",
+            "hh_handwerker_art",
+            "hh_handwerker_betrag",
+        ),
+    ] {
+        let xml = posten_xml(gruppe, art, betrag, &[(1, 120_000)]);
+        assert_eq!(zaehle_tag(&xml, "HA_35a"), 1, "{gruppe}");
+        assert_eq!(zaehle_tag(&xml, "Einz"), 1, "{gruppe}");
+    }
+}
+
+/// AK5 (Rust-Seite): das erzeugte XML haelt das amtliche Schema. Ohne den Fix scheiterte genau
+/// das an `<HA_35a>` — der Test war damals rot (Gegenprobe im Bericht).
+#[test]
+fn hh_top_mehrere_posten_ist_xsd_valide() {
+    for vz in ["2024", "2025"] {
+        let jahr: i64 = vz.parse().unwrap();
+        let felder: Felder = [
+            (
+                "hh_minijob_art".to_owned(),
+                feld(json!("1"), Zustand::Bestaetigt),
+            ),
+            (
+                "hh_minijob_betrag".to_owned(),
+                feld(json!(120_000), Zustand::Bestaetigt),
+            ),
+            (
+                "hh_minijob_art__2".to_owned(),
+                feld(json!("2"), Zustand::Bestaetigt),
+            ),
+            (
+                "hh_minijob_betrag__2".to_owned(),
+                feld(json!(80_000), Zustand::Bestaetigt),
+            ),
+        ]
+        .into();
+        let d = deklariere(&felder, index(), None).unwrap();
+        let opt = XmlOptionen {
+            vz: jahr,
+            hersteller_id: Some("74931".to_owned()),
+            ..XmlOptionen::default()
+        };
+        let xml = erzeuge_xml(&d, &opt).unwrap();
+        let (ok, meldung) = elster::validiere_xsd_text(xml.as_bytes(), vz);
+        assert!(ok, "VZ {vz}: {meldung}");
+    }
 }

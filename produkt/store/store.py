@@ -196,9 +196,38 @@ def _typ_konform(wert, typ: str, enum_werte) -> bool:
         # laeufe erreichten mit genau diesem Format rc=0. Ein erster Anlauf prueste hier auf
         # ISO und haette damit JEDE echte Geburtsdatums-Eingabe mit 422 abgewiesen — die
         # Pruefung waere fail-closed gegen den eigenen dokumentierten Standard gewesen.
-        return isinstance(wert, str) and re.match(r"^\d{2}\.\d{2}\.\d{4}$", wert) is not None
+        # Ganzer Wert und nur 0-9 wie Rust (domain::Wert): `$` in re.match liess ein letztes \n
+        # durch, `\d` arabisch-indische Ziffern (Decision textfeld-format-aus-xsd-beim-speichern).
+        return isinstance(wert, str) and re.fullmatch(r"[0-9]{2}\.[0-9]{2}\.[0-9]{4}", wert) is not None
     if typ == "text":
-        return isinstance(wert, str) and nur_xml_zeichen(wert)
+        # Leer nie: jeder Text-Kz-Typ im Schema verlangt mindestens ein Zeichen.
+        return isinstance(wert, str) and wert != "" and nur_xml_zeichen(wert)
+    return True
+
+
+def _wert_erlaubt(wert, typ: str, enum_werte) -> bool:
+    """Typkonformitaet UND — wo die Bindung eine Werteliste fuehrt — Zugehoerigkeit zum Wertevorrat.
+
+    Die Werteliste galt bis 2026-10-01 nur fuer `typ: enum`: `_typ_konform` las sie in keinem
+    anderen Zweig. Ein `int`-Feld mit `enum_werte` war damit still wirkungslos — die Bindung sagte
+    eine Grenze zu, und der Schreibpfad kannte sie nicht.
+
+    Anlass: der Grad der Behinderung. Das ELSTER-Schema laesst an E0109708/E0505809 nur 17 Werte
+    zu (Zehn- und Fuenferschritte). Die Bindung fuehrte nur einen Bereich 20..100, also ging jeder
+    Zwischenwert wie 33 durch, und ERiC wies die GANZE Erklaerung ab (rc=610001002,
+    „The value '33' is not accepted by the pattern") — gemeldet erst beim Absenden.
+
+    Der Vergleich ist ein TEXTVERGLEICH wie bei typ=enum (`str(w) in enum_werte`), nicht
+    arithmetisch: die YAML-Liste traegt Zeichenketten, und Rust liest dieselbe Liste
+    (`domain::Wert::aus_json`). Damit urtheilen beide Seiten gleich.
+
+    Kein `enum_werte`: durchlassen. Die Liste ist eine ZUSAGE der Bindung, keine Vermutung —
+    dieselbe Regel wie beim fehlenden `typ` und beim fehlenden `muster` weiter unten.
+    """
+    if not _typ_konform(wert, typ, enum_werte):
+        return False
+    if typ in ("cent", "int") and enum_werte:
+        return str(wert) in enum_werte
     return True
 
 
@@ -237,7 +266,7 @@ def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
     typ = eintrag.get("typ")
     if typ not in _TYP_ORD:
         return   # kein/unerwarteter typ-Eintrag: durchlassen, nicht raten
-    if not _typ_konform(wert, typ, eintrag.get("enum_werte")):
+    if not _wert_erlaubt(wert, typ, eintrag.get("enum_werte")):
         # Ein Wert mit Steuerzeichen bleibt aus der Meldung: sie geht als 422-detail an den Nutzer
         # und ins Log (PII), das Zeichen selbst soll dort nicht landen. Der Ersatztext steht
         # wortgleich in Rust (store::pruefe_bindung).
@@ -258,8 +287,9 @@ def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
     #
     # Feld ohne `muster`: durchlassen. Das Muster ist eine ZUSAGE der Bindung, keine Vermutung —
     # wo keine steht, wird nichts geraten (dieselbe Regel wie beim fehlenden `typ` oben).
+    # fullmatch: das Muster gilt für den ganzen Wert, wie in Rust (`^(?:muster)$`) und im XSD.
     muster = eintrag.get("muster")
-    if muster and isinstance(wert, str) and not re.match(muster, wert):
+    if muster and isinstance(wert, str) and not re.fullmatch(muster, wert):
         raise ValueError(
             f"fail-closed (Format): {feld_id}={wert!r} passt nicht zum Muster '{muster}' der "
             "Bindung — ein formal falscher Wert wird spätestens beim Finanzamt abgelehnt.")

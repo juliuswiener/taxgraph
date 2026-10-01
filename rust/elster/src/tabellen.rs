@@ -190,6 +190,17 @@ pub(crate) const PARTNER_INSTANZ: &[(&str, &str)] = &[
     ("gewst_zu_zahlen_partner", "E0801704"),
 ];
 
+/// Der Pflege-Block § 33b Abs. 6 EStG (Gruppe `AgB/Pflege_PB/Einz`) als eingefrorene Kz-Menge.
+/// Fundstelle: `produkt/bindung/bindung_rentner.yaml:293-437` (sieben gebundene Felder), XSD-Pfade
+/// gegen E10-2025.xsd. E0161901 („weitere an der Pflege beteiligte Personen") liegt in derselben
+/// Gruppe und fehlt hier BEWUSST: kein Bindungsfeld, der Mapper schreibt es nie.
+/// ponytail: feste Siebener-Menge, jahresunabhaengig, damit `deklariere()` ohne XSD laeuft und in
+/// jeder Umgebung dieselbe Deklaration ergibt. Upgrade: aus dem XSD ableiten, sobald weitere
+/// Felder des Blocks in die Bindung kommen. Zwilling von `PFLEGE_KZ` (`est_mapping.py`).
+pub(crate) const PFLEGE_KZ: &[&str] = &[
+    "E0161606", "E0161808", "E0161607", "E0161506", "E0110601", "E0106507", "E0106603",
+];
+
 /// Option A (Julius-Entscheidung 2026-08-10): KAP-Felder, deren gemeinsame 0 nicht deklariert wird.
 pub(crate) const KAP_FELDER_A: &[&str] = &[
     "kap_kapitalertraege",

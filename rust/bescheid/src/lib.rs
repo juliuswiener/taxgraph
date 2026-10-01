@@ -488,3 +488,208 @@ pub mod testhilfe {
         store.materialisiere(None).unwrap().0
     }
 }
+
+/// Aequivalenz mit `domain::PyWert` (D15): Abweichungen nur mit D-Nummer aus der Liste des
+/// Helfers, je D-Nummer ein Test mit dem `CPython`-Verhalten. Die `pub(crate)`-Hilfen nutzen die
+/// Aequivalenz-Module der Untermodule.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{
+        ganzzahl_text, int_ausnahmen, json_wert, klasse, pruefe, py, text, zahl, Ergebnis,
+    };
+    use domain::{py_strip, Achsenwert, Herkunft, PruefTiefe, PyWert, Zustand};
+    use proptest::prelude::*;
+    use rust_decimal::Decimal;
+    use serde_json::{json, Number, Value};
+    use store::SnapshotFeld;
+
+    use super::{
+        feld_int_oder_null, ist_false, ist_positive_zahl, ist_true, positive_zahl, py_int,
+        py_leerraum, py_wahr, zahl_dezimal, zahl_int, zahl_oder_null, BescheidFehler, Felder,
+    };
+
+    /// Ausnahmen von `py_int` und von `int(v or 0)` (`c2`, `q_roh_cent`).
+    pub(crate) const INT: &[&str] = &["D6", "D11", "D16", "D17"];
+    /// Ausnahmen von `zahl_int`, `zahl_oder_null` und `feld_int_oder_null`.
+    const INT_ZAHL: &[&str] = &["D11"];
+    /// Ausnahmen von `zahl_dezimal`, `zahl_wert` und `rentenfreibetrag_euro`.
+    pub(crate) const DEZIMAL: &[&str] = &["D18"];
+
+    /// `r` mit der Python-Klasse statt des `BescheidFehler`.
+    pub(crate) fn alt_klasse<T>(r: Result<T, BescheidFehler>) -> Ergebnis<T> {
+        r.map_err(|e| e.python_klasse())
+    }
+
+    /// Ein Snapshot mit dem einen Feld `fid`.
+    pub(crate) fn ein_feld(fid: &str, wert: Value, bestaetigt: bool) -> Felder {
+        let achse = |s: &str| Achsenwert::new(s).unwrap();
+        let herkunft = Herkunft {
+            herkunft: achse("laie"),
+            pruef_tiefe: PruefTiefe::Ungeprueft,
+            haftung: achse("nutzer"),
+        };
+        let zustand = if bestaetigt {
+            Zustand::Bestaetigt
+        } else {
+            Zustand::Vorlaeufig
+        };
+        let feld = SnapshotFeld {
+            wert,
+            zustand,
+            herkunft: herkunft.into(),
+        };
+        Felder::from([(fid.to_owned(), feld)])
+    }
+
+    /// `int(v or 0)`.
+    pub(crate) fn int_oder_null(v: &Value) -> Ergebnis<i64> {
+        klasse(py(v).oder_null().int())
+    }
+
+    /// Ein Alt-Helfer auf `int(v or 0)` gegen [`int_oder_null`].
+    pub(crate) fn int_oder_null_wie(v: &Value, alt: &Ergebnis<i64>) -> Result<(), TestCaseError> {
+        let neu = int_oder_null(v);
+        pruefe(v, alt, &neu, || int_ausnahmen(v, alt, &neu), INT)
+    }
+
+    /// D18: `dezimal()` meldet die Decimal-Grenze (`grenze`), wo der Alt-Helfer auf `Decimal::MAX`
+    /// oder `Decimal::MIN` saettigt; `wie_alt` formt eine `Decimal` wie der Alt-Helfer.
+    pub(crate) fn d18<T: PartialEq>(
+        alt: &T,
+        grenze: bool,
+        wie_alt: impl Fn(Decimal) -> T,
+    ) -> Vec<&'static str> {
+        if grenze
+            && [Decimal::MAX, Decimal::MIN]
+                .into_iter()
+                .any(|d| *alt == wie_alt(d))
+        {
+            vec!["D18"]
+        } else {
+            Vec::new()
+        }
+    }
+
+    fn int_wie(v: &Value) -> Result<(), TestCaseError> {
+        let (alt, neu) = (alt_klasse(py_int(v)), klasse(py(v).int()));
+        pruefe(v, &alt, &neu, || int_ausnahmen(v, &alt, &neu), INT)
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn py_wahr_wie_pywert(v in json_wert()) {
+            pruefe(&v, &py_wahr(&v), &py(&v).truthy(), Vec::new, &[])?;
+        }
+
+        /// `wert is True` ist Identitaet, nicht `==`: nur `PyWert::Bool`.
+        #[test]
+        fn ist_true_false_wie_pywert(v in json_wert()) {
+            let w = py(&v);
+            pruefe(&v, &ist_true(Some(&v)), &matches!(w, PyWert::Bool(true)), Vec::new, &[])?;
+            pruefe(&v, &ist_false(Some(&v)), &matches!(w, PyWert::Bool(false)), Vec::new, &[])?;
+        }
+
+        #[test]
+        fn py_leerraum_wie_py_strip(s in text()) {
+            pruefe(&s, &s.trim_matches(py_leerraum), &py_strip(&s), Vec::new, &[])?;
+        }
+
+        #[test]
+        fn py_int_wie_pywert(v in json_wert()) {
+            int_wie(&v)?;
+        }
+
+        #[test]
+        fn py_int_text_wie_pywert(s in ganzzahl_text()) {
+            int_wie(&Value::String(s))?;
+        }
+
+        #[test]
+        fn zahl_int_wie_pywert(n in zahl()) {
+            let v = Value::Number(n.clone());
+            let (alt, neu) = (alt_klasse(zahl_int(&n)), klasse(py(&v).int()));
+            pruefe(&v, &alt, &neu, || int_ausnahmen(&v, &alt, &neu), INT_ZAHL)?;
+        }
+
+        /// `_c(fid)`: `int(v)` fuer eine Zahl ohne `bool`, sonst 0.
+        #[test]
+        fn zahl_oder_null_wie_pywert(v in json_wert()) {
+            let neu = py(&v).zahl_ohne_bool().map_or(Ok(0), |z| klasse(z.int()));
+            let feld = ein_feld("x", v.clone(), true);
+            for alt in [zahl_oder_null(Some(&v)), feld_int_oder_null(&feld, "x")].map(alt_klasse) {
+                pruefe(&v, &alt, &neu, || int_ausnahmen(&v, &alt, &neu), INT_ZAHL)?;
+            }
+        }
+
+        #[test]
+        fn ist_positive_zahl_wie_pywert(v in json_wert()) {
+            let neu = py(&v).zahl_ohne_bool().is_some_and(|z| z.gt_null() == Ok(true));
+            pruefe(&v, &ist_positive_zahl(Some(&v)), &neu, Vec::new, &[])?;
+        }
+
+        #[test]
+        fn positive_zahl_wie_pywert(v in json_wert()) {
+            let w = py(&v);
+            let neu = match w.zahl_ohne_bool() {
+                Some(z) if z.gt_null() == Ok(true) => klasse(z.int()).map(Some),
+                _ => Ok(None),
+            };
+            pruefe(&v, &alt_klasse(positive_zahl(Some(&v))), &neu, Vec::new, &[])?;
+        }
+
+        #[test]
+        fn zahl_dezimal_wie_pywert(n in zahl()) {
+            let v = Value::Number(n.clone());
+            let (alt, neu) = (Ok(zahl_dezimal(&n)), klasse(py(&v).dezimal()));
+            pruefe(&v, &alt, &neu, || d18(&alt, neu == Err(None), Ok), DEZIMAL)?;
+        }
+    }
+
+    /// D6: `int("٣")` ist in `CPython` 3.
+    #[test]
+    fn d6_nd_ziffer() {
+        let v = json!("\u{663}");
+        assert_eq!(alt_klasse(py_int(&v)), Err(Some("ValueError")));
+        assert_eq!(klasse(py(&v).int()), Ok(3));
+    }
+
+    /// D11: `int(-2.0**63)` ist in `CPython` `i64::MIN`.
+    #[test]
+    fn d11_minus_2_hoch_63() {
+        let v = json!(-9_223_372_036_854_775_808.0);
+        assert_eq!(alt_klasse(py_int(&v)), Err(None));
+        assert_eq!(alt_klasse(zahl_oder_null(Some(&v))), Err(None));
+        assert_eq!(klasse(py(&v).int()), Ok(i64::MIN));
+    }
+
+    /// D16: `int("\x1c42")` wirft in `CPython` `ValueError`, obwohl `str.strip()` U+001C entfernt.
+    #[test]
+    fn d16_steuerzeichen_am_rand() {
+        let v = json!("\u{1c}42");
+        assert_eq!(alt_klasse(py_int(&v)), Ok(42));
+        assert_eq!(klasse(py(&v).int()), Err(Some("ValueError")));
+    }
+
+    /// D17: `int()` mit mehr als 4300 Ziffern wirft in `CPython` `ValueError`.
+    #[test]
+    fn d17_mehr_als_4300_ziffern() {
+        let nullen = json!(format!("{}5", "0".repeat(4300)));
+        let sieben = json!("7".repeat(4301));
+        assert_eq!(alt_klasse(py_int(&nullen)), Ok(5));
+        assert_eq!(alt_klasse(py_int(&sieben)), Err(None));
+        for v in [nullen, sieben] {
+            assert_eq!(klasse(py(&v).int()), Err(Some("ValueError")));
+        }
+    }
+
+    /// D18: `Decimal(1e29)` ist in `CPython` exakt. Der Alt-Helfer saettigt still auf
+    /// `Decimal::MAX`, `PyWert` meldet die Decimal-Grenze.
+    #[test]
+    fn d18_dezimal_grenze() {
+        let n = Number::from_f64(1e29).unwrap();
+        assert_eq!(zahl_dezimal(&n), Decimal::MAX);
+        assert_eq!(klasse(py(&Value::Number(n)).dezimal()), Err(None));
+    }
+}

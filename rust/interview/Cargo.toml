@@ -16,4 +16,5 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+domain = { path = "../domain", features = ["testhilfe"] }
 proptest = { workspace = true }

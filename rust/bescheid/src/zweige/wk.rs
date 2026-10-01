@@ -242,3 +242,35 @@ pub(super) fn am_gesamt(f: &Felder) -> R<(Option<Euro>, Euro)> {
     let afa = am_afa(f, false)?.unwrap_or(Euro::new(0));
     Ok((am_gwg(f)?, afa))
 }
+
+/// Aequivalenz von `ist_int_ueber_3` mit `PyWert::int_ohne_bool` (D15), je D-Nummer ein Test.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{d3, json_wert, klasse, pruefe, py};
+    use proptest::prelude::*;
+    use serde_json::json;
+
+    use super::ist_int_ueber_3;
+
+    /// Ausnahmen von `ist_int_ueber_3`.
+    const UEBER_3: &[&str] = &["D3"];
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn ist_int_ueber_3_wie_pywert(v in json_wert()) {
+            let neu = klasse(py(&v).int_ohne_bool()).map(|i| i.is_some_and(|i| i > 3));
+            pruefe(&v, &Ok(ist_int_ueber_3(Some(&v))), &neu, || d3(&v, &neu), UEBER_3)?;
+        }
+    }
+
+    /// D3: `2**64 - 1 > 3` ist in `CPython` wahr. Der Alt-Helfer antwortet `true`, `PyWert` meldet
+    /// die i64-Grenze.
+    #[test]
+    fn d3_ueber_i64() {
+        let v = json!(u64::MAX);
+        assert!(ist_int_ueber_3(Some(&v)));
+        assert_eq!(klasse(py(&v).int_ohne_bool()), Err(None));
+    }
+}

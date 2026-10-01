@@ -130,9 +130,15 @@ def _laie(fld, wert, ersetzt=None):
 
 # -- Antwort-Generator, identisch zu tests/test_kein_kap_partner_vorab_sperre_und_ausweg.py (s.
 # dort fuer die Begruendung der festen Muster-Tabelle statt eines Regex-Sample-Generators).
+_TT_MM = r"(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)"
 _MUSTER_BEISPIELWERT = {
     r"^\d{2}\.\d{2}\.\d{4}$": "01.01.2000",
-    r"^\d{2}\.\d{2}-\d{2}\.\d{2}$": "01.01-31.12",
+    rf"^(?:{_TT_MM}-{_TT_MM})$": "01.01-31.12",
+    rf"^(?:{_TT_MM}\.)$": "31.12.",
+    r"^(?:[0-9]{11})$": "12345678901",
+    r"^(?:([0]{1}[1-9]{1}[0-9]{3})|([1-9]{1}[0-9]{4}))$": "10115",
+    r"^(?:[0-9]{1,4})$": "1",
+    r"^(?:[a-zA-Z]{4}([a-zA-Z]{2})[0-9a-zA-Z]{2}([0-9a-zA-Z]{3})?)$": "DEUTDEFF",
 }
 
 

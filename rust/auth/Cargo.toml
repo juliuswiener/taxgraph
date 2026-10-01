@@ -18,5 +18,6 @@ jsonwebtoken = { workspace = true }
 getrandom = { workspace = true }
 
 [dev-dependencies]
+domain = { path = "../domain", features = ["testhilfe"] }
 proptest = { workspace = true }
 tempfile = { workspace = true }

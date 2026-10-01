@@ -221,6 +221,56 @@ def test_abgewiesener_altwert_im_vorjahr_wird_uebersprungen(fall):
     assert not aktiv & {"ep_ziel_adresse", "kind_wohnsitz_inland_zeitraum"}
 
 
+# ------------------------------- ganzer Wert (Decision textfeld-format-aus-xsd-beim-speichern)
+
+def _speichere(fid, wert):
+    s = ST.leerer_store(2025, fall_id="sn-typ-ganz")
+    return ST.append_event(s, feld_id=fid, wert=wert, zustand="bestaetigt",
+                           herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                           schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"}, ts=TS,
+                           bindung=BINDUNG)
+
+
+def test_idnr_mit_zehn_ziffern_wird_abgelehnt():
+    """AK1: die IdNr hat im XSD genau 11 Ziffern (E0500406). Ohne `muster` nahm der Store jede
+    Zeichenfolge an; eine fehlende Ziffer fiel erst beim Finanzamt auf. Alle 17 Felder mit festem
+    Format prüft tests/test_bindungs_typ_vs_xsd_typ.py gegen das XSD selbst."""
+    with pytest.raises(ValueError, match="fail-closed \\(Format\\)"):
+        _speichere("kind_idnr", "1234567890")
+
+
+def test_muster_prueft_den_ganzen_wert():
+    """AK2: `re.match` mit `$` liess ein abschliessendes \\n durch, denn `$` trifft in Python auch
+    VOR einem letzten Zeilenumbruch. XSD und Rust (`$` = Textende) weisen den Wert ab. Jedes Feld
+    mit `muster` nimmt seinen beispielwert an und weist beispielwert + \\n ab."""
+    felder = sorted(f for f, e in BINDUNG.items() if e.get("muster"))
+    assert len(felder) >= 12, felder   # 8 Zeiträume und 4 Datumsfelder trugen schon vorher eins
+    durchgelassen = []
+    for fid in felder:
+        _speichere(fid, BINDUNG[fid]["beispielwert"])
+        try:
+            _speichere(fid, BINDUNG[fid]["beispielwert"] + "\n")
+            durchgelassen.append(fid)
+        except ValueError:
+            pass
+    assert not durchgelassen, f"beispielwert + \\n gespeichert: {durchgelassen}"
+
+
+def test_datum_prueft_den_ganzen_wert_mit_ziffern_0_bis_9():
+    """AK2: die Datumsprüfung urteilt über den ganzen Wert und kennt nur 0-9, wie Rust
+    (domain::Wert, ist_tt_mm_jjjj). `\\d` trifft in Python auch arabisch-indische Ziffern."""
+    for wert in ("12.04.1985\n", "١٢.٠٤.١٩٨٥"):
+        with pytest.raises(ValueError, match="fail-closed \\(Typ\\)"):
+            _speichere("stammdaten_geburtsdatum", wert)
+
+
+def test_leerer_text_wird_abgelehnt():
+    """AK3: jeder Text-Kz-Typ im Schema verlangt mindestens ein Zeichen. Ein leerer Wert sagt
+    nichts, was „nicht beantwortet“ nicht sagt; kein Produktpfad leert ein Feld mit ""."""
+    with pytest.raises(ValueError, match="fail-closed \\(Typ\\)"):
+        _speichere("stammdaten_nachname", "")
+
+
 def test_unbekanntes_feld_id_durchlaesst():
     """Team-Lead-Vorgabe Schritt 3: unbekanntes feld_id -> durchlassen, nicht raten."""
     s = ST.leerer_store(2025, fall_id="sn-typ-unbekannt")
@@ -229,6 +279,70 @@ def test_unbekanntes_feld_id_durchlaesst():
                          schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"}, ts=TS,
                          bindung=BINDUNG)
     assert ev["wert"] == "irgendwas"
+
+
+# ------------------------------------------------- Grad der Behinderung (Werteliste auf typ=int)
+#
+# Das ELSTER-Schema laesst an den beiden GdB-Kz nur 17 Werte zu (pattern 20|25|30|...|100,
+# E10-2025.xsd). Die Bindung fuehrte bis 2026-10-01 nur einen Bereich 20..100 — jeder
+# Zwischenwert wie 33 ging durch, ERiC wies dann die GANZE Erklaerung ab (rc=610001002,
+# „The value '33' is not accepted by the pattern"), und der Nutzer erfuhr es erst beim Absenden.
+#
+# Bis hierher war die Werteliste ueberhaupt nur fuer `typ: enum` wirksam: `_typ_konform` las sie in
+# keinem anderen Zweig. Ein `int`-Feld mit `enum_werte` sagte eine Grenze ZU, die der Schreibpfad
+# nicht kannte — eine Zusage ohne Durchsetzung (Vault:
+# decisions/grad-der-behinderung-folgt-dem-amtlichen-muster).
+
+_GDB_FELDER = ("rentner_grad_der_behinderung", "rentner_grad_der_behinderung_partner",
+               "kind_grad_der_behinderung")
+
+# Die 17 Werte des amtlichen Musters, und die 0 als „nichts anzugeben". Die Null ist NICHT im
+# Muster — sie steht in der Liste, weil sie in 39 echten Faellen als bestaetigter Wert liegt;
+# `_schreibe_kz` laesst sie aus der Deklaration weg (Vault:
+# decisions/speichern-lehnt-nullwerte-nicht-ab.md).
+_GDB_ERLAUBT = (0, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100)
+_GDB_VERBOTEN = (1, 19, 21, 33, 47, 61, 99, 101)
+
+
+def test_grad_der_behinderung_nimmt_die_amtlichen_werte():
+    """AK1: die drei GdB-Felder nehmen genau die Werte des amtlichen Musters an (plus die 0). Die
+    Gegenprobe gehoert dazu: 25 und 45 muessen durchgehen, nicht nur 33 abgewiesen werden."""
+    for fid in _GDB_FELDER:
+        for w in _GDB_ERLAUBT:
+            _speichere(fid, w)
+        for w in _GDB_VERBOTEN:
+            with pytest.raises(ValueError, match="fail-closed \\(Typ\\)"):
+                _speichere(fid, w)
+
+
+def test_grad_der_behinderung_abweisung_nennt_das_feld():
+    """AK2: ein Zwischenwert wird abgewiesen, BEVOR die Erklaerung entsteht, und die Meldung nennt
+    das Feld. ERiC nennt nur das Muster („The value '33' is not accepted by the pattern") — der
+    Nutzer sieht dann nicht, welches Feld gemeint ist."""
+    with pytest.raises(ValueError) as exc:
+        _speichere("rentner_grad_der_behinderung", 33)
+    assert "rentner_grad_der_behinderung" in str(exc.value)
+    assert "33" in str(exc.value)
+
+
+def test_grad_der_behinderung_in_der_deklaration_unveraendert():
+    """Die Sperre sitzt am Schreibpfad, nicht am Mapper: was durchkommt, geht unveraendert hinaus.
+    45 bleibt 45 in E0109708 — nicht gerundet auf 40. Der Ring stuft selbst (`min(100, gdb//10*10)`,
+    catala_behinderten_pb), die Deklaration nicht."""
+    import est_mapping as EM   # produkt/mapping liegt oben schon auf sys.path
+    for w in (25, 45, 100):
+        d = EM.deklariere({"rentner_grad_der_behinderung": {"wert": w, "zustand": "bestaetigt"}},
+                          BINDUNG)
+        assert str(d["deklaration"].get("E0109708")) == str(w), (w, d["deklaration"].get("E0109708"))
+
+
+def test_grad_der_behinderung_null_bleibt_gueltig():
+    """Die Null ist der Kern der Entscheidung speichern-kehnt-nullwerte-nicht-ab: sie heisst
+    „nichts anzugeben" und darf NICHT abgewiesen werden. Ohne die 0 in der Werteliste faellt fast
+    ein Drittel des echten Bestands durch (39 von 127 Eintragungen, gemessen 2026-10-01)."""
+    for fid in _GDB_FELDER:
+        _speichere(fid, 0)
+
 
 
 def test_typ_konform_spiegelt_test_store_typ_ok():
@@ -243,8 +357,10 @@ def test_typ_konform_spiegelt_test_store_typ_ok():
         (True, "bool", None, True), (1, "bool", None, False), ("true", "bool", None, False),
         ("einzel", "enum", ["einzel", "zusammen"], True), ("x", "enum", ["einzel", "zusammen"], False),
         ("12.04.1985", "datum", None, True), ("1985-04-12", "datum", None, False),
-        ("kein Datum", "datum", None, False),
+        ("kein Datum", "datum", None, False), ("12.04.1985\n", "datum", None, False),
+        ("١٢.٠٤.١٩٨٥", "datum", None, False),
         ("Text", "text", None, True), (5, "text", None, False), ("Maier\x00", "text", None, False),
+        ("", "text", None, False),
     ]
     for wert, typ, enum_werte, erwartet in faelle:
         assert ST._typ_konform(wert, typ, enum_werte) == erwartet == _typ_ok(wert, typ, enum_werte), (

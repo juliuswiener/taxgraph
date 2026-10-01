@@ -8,7 +8,7 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 
 ---
 
-## Fortschritt (Stand 2026-10-01, HEAD `2c17f70`)
+## Fortschritt (Stand 2026-10-01, HEAD `29d66c2`)
 
 | Schritt | Stand | Commits |
 |---|---|---|
@@ -19,7 +19,12 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 | 9b-F Fuzz | fertig: `rust/fuzz` (nightly, nicht im Workspace), 5 Targets | `d2e1e15` |
 | Format | `cargo fmt --all`, `llm_dialog` geteilt | `2f9cd2d` |
 | Steuerzeichen-Fix | fertig in Python **und** Rust: Abweisen beim Speichern, `erzeuge_xml` fail-closed, Fuzz-Skip entfernt | `2c17f70` |
-| **9b-B Typisierung** | K0 fertig (Vault `research/taxgraph-wertformen-echte-stores`); **K1 `domain` läuft**; dann K2 → K9 (§7) | `a993b91` |
+| Vorjahr überspringt Altwert | fertig in Python und `eingang` (Rust-Route bleibt Stub bis 9c) | `e64a8c4` |
+| Null in Kz ohne Null | fertig, Py **und** Rust: 384 echte Fälle, ungültig 214 → 38, Abweichungen 0 (Vault `decisions/elster-null-in-kz-ohne-null-weglassen`) | `3c7bb01` |
+| Textformat aus XSD beim Speichern | fertig, Py **und** Rust | `529eaa3` |
+| **9b-B Typisierung** | K0 fertig (Vault `research/taxgraph-wertformen-echte-stores`); **K1 `domain` fertig und nachgemessen** (794 Rust-Tests, 19 Parity-Suiten, 3403 Python-Tests, clippy 0, Mutation 2/2 rot); **K2 `store` Risikokarte fertig, Bau läuft** (3 Felddeklarationen + 9 Konstruktionen, `signal_1` eigene Staffel); dann K3 → K9 (§7) | `1f01bc7` |
+| Pflegegrad im XSD-Enum | fertig, Py **und** Rust: 5→4, Block-Wegfall ohne H, nur E0161606 weg mit H; xmllint invalide 38 → 22; Testloch Enum-Schranke geschlossen (Vault `decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen`) | `29d66c2` |
+| Wertformen-Messwerkzeug | fertig: `re.fullmatch` statt `re.match`, Regressionstest in `tests/` (Vault `decisions/wertformen-prueft-format-ueber-den-ganzen-wert`) | `3436fa9` |
 | 9b Rest | `debug_assert!`/Properties für übrige Crates; 22 xfail als `#[ignore]`; End-to-End Eingabe → XML | — |
 | 9c `api`-Handler | offen (danach), inkl. `Username`/`FallId`-Newtypes | — |
 | 10 Cutover | offen | — |
@@ -29,10 +34,13 @@ Gates auf `2f9cd2d`: `cargo build`, `clippy --workspace --all-targets -D warning
 ≈ 20 min; Skript-Muster: jede Suite einzeln `PARITY=1 cargo test -p parity --test <name> -- --test-threads 3`.
 
 **Für 9c festgehalten (aus dem Steuerzeichen-Fix, `2c17f70`):**
-- Abweisung eines Textwerts: `/event`, `/vorjahr`, `/entfernung` → 422; `/chat` → Eintrag in
+- Abweisung eines Textwerts: `/event`, `/entfernung` → 422; `/chat` → Eintrag in
   `abgelehnt_gruende`; `/einreichen` → 422 `{"eingereicht": false, "grund": "xml_nicht_baubar", "detail": …}`.
 - `/vorjahr`: Python erzeugt keinen Teilimport, weil erst geprüft und dann gespeichert wird. Der Writer ist
   aber nicht atomar — der Rust-Handler muss diese Reihenfolge übernehmen.
+- `/vorjahr` seit `e64a8c4`: eine Typ-/Format-Abweisung überspringt das Feld, Antwort 200 mit
+  `uebersprungen` (nur feld_ids); jede andere Abweisung 422. Der Handler gibt
+  `VorjahrErgebnis.uebersprungen` weiter (Vault `decisions/vorjahr-unpassenden-altwert-ueberspringen`).
 - `/chat`: die Gründe nennen bei übrigen Typfehlern den Wert (Vault-Ticket
   `chat-ablehnungsgrund-enthaelt-den-wert`), spätestens beim Portieren entscheiden.
 

@@ -267,3 +267,40 @@ mod tests {
         );
     }
 }
+
+/// Aequivalenz von `rentenfreibetrag_euro` mit `PyWert` (D15), je D-Nummer ein Test. `PyWert`
+/// ersetzt das Lesen; die Umrechnung Cent → Euro bleibt `cent_zu_euro_dezimal`.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{json_wert, klasse, pruefe, py};
+    use domain::Euro;
+    use proptest::prelude::*;
+    use serde_json::json;
+
+    use super::{cent_zu_euro_dezimal, rentenfreibetrag_euro};
+    use crate::aequivalenz::{d18, DEZIMAL};
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn rentenfreibetrag_euro_wie_pywert(v in json_wert()) {
+            let alt = rentenfreibetrag_euro(Some(&v)).map(Ok);
+            let neu = py(&v)
+                .zahl_ohne_bool()
+                .map(|z| klasse(z.dezimal()).map(cent_zu_euro_dezimal));
+            let wie_alt = |d| Some(Ok(cent_zu_euro_dezimal(d)));
+            pruefe(&v, &alt, &neu, || d18(&alt, neu == Some(Err(None)), wie_alt), DEZIMAL)?;
+        }
+    }
+
+    /// D18: `1e29 // 100` ist in `CPython` exakt. Der Alt-Helfer saettigt still auf 9e18 Euro,
+    /// `PyWert` meldet die Decimal-Grenze.
+    #[test]
+    fn d18_dezimal_grenze() {
+        let v = json!(1e29);
+        let grenze = Euro::new(9_000_000_000_000_000_000);
+        assert_eq!(rentenfreibetrag_euro(Some(&v)), Some(grenze));
+        assert_eq!(klasse(py(&v).dezimal()), Err(None));
+    }
+}

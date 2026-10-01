@@ -103,7 +103,7 @@ def abweichung(wert, fm: str, eintrag: dict | None) -> str | None:
         return f"{FORMEN[fm]} auf {typ} (Python-konform)"
     if ST._typ_konform(wert, typ, eintrag.get("enum_werte")):
         muster = eintrag.get("muster")
-        if muster and isinstance(wert, str) and not re.match(muster, wert):
+        if muster and isinstance(wert, str) and not re.fullmatch(muster, wert):
             return f"string verletzt muster auf {typ}"
         return None
     if fm == "text":

@@ -20,4 +20,5 @@ roxmltree = { workspace = true }
 libloading = { workspace = true }
 
 [dev-dependencies]
+domain = { path = "../domain", features = ["testhilfe"] }
 proptest = { workspace = true }

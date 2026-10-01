@@ -1,4 +1,4 @@
-//! Store-Snapshot → ELSTER-Deklaration (`est_mapping.py::deklariere`, `:604-923`).
+//! Store-Snapshot → ELSTER-Deklaration (`est_mapping.py::deklariere`, `:635-950`).
 //!
 //! Fail-closed (Auflage 3/C): nur BESTAETIGTE Werte werden deklariert; jedes vorlaeufige Feld
 //! landet in `unvollstaendig`, und [`Deklaration::eingaben_konsistent`] ist per Konstruktion genau
@@ -17,12 +17,12 @@ use store::SnapshotFeld;
 
 use crate::geordnet::Geordnet;
 use crate::instanz::parse_instanz;
-use crate::kz_format::{cent_nach_kz, kz_wert, KzBetrag, NULL_UNZULAESSIG_KZ};
+use crate::kz_format::{cent_nach_kz, schreibe_kz, KzBetrag};
 use crate::py::{self, PyFehler};
 use crate::tabellen::{
     suche, PflichtBedingung, Verzweigung, DOKUMENTIERT_AGGREGAT, KAP_FELDER_A, KAP_FELDER_B,
     KAP_NULL_GRUND, KONSTANTE_KZ, MULTIPLIKATION, NEGATION, P23_ART_FELD, P23_BETRAGSFELDER,
-    P23_GEWINN_KZ, PARTNER_INSTANZ, PARTNER_VERZWEIGUNG, PFLICHTFELDER, VERZWEIGUNG,
+    P23_GEWINN_KZ, PARTNER_INSTANZ, PARTNER_VERZWEIGUNG, PFLEGE_KZ, PFLICHTFELDER, VERZWEIGUNG,
     WERTEKODIERUNG,
 };
 
@@ -310,7 +310,7 @@ impl Bau<'_> {
         self.unvollstaendig.push(Eintrag::neu(feld_id, grund));
     }
 
-    /// `_deklariere_instanz` (`est_mapping.py:559-601`).
+    /// `_deklariere_instanz` (`est_mapping.py:590-632`).
     fn instanz_feld(
         &mut self,
         basis: &str,
@@ -359,8 +359,8 @@ impl Bau<'_> {
                 ),
                 Some(art) => {
                     if let Some(kz) = nachschlagen(cfg.kz, &art.wert).map_err(&fehler)? {
-                        let v = kz_wert(wert, kz, Some(b.typ)).map_err(&fehler)?;
-                        self.instanz(gruppe, idx).felder.insert(kz.to_owned(), v);
+                        let felder = &mut self.instanz(gruppe, idx).felder;
+                        schreibe_kz(felder, kz, wert, Some(b.typ)).map_err(&fehler)?;
                     } else {
                         let grund =
                             format!("Instanz-Art '{}' ohne Kz-Zweig", py::str_von(&art.wert));
@@ -372,8 +372,8 @@ impl Bau<'_> {
             let n = py::int(wert).map_err(&fehler)?;
             self.instanz(gruppe, idx).rohdaten.insert(p23, n);
         } else if let Some(kz) = kz_von(b) {
-            let v = kz_wert(wert, kz, Some(b.typ)).map_err(&fehler)?;
-            self.instanz(gruppe, idx).felder.insert(kz.to_owned(), v);
+            let felder = &mut self.instanz(gruppe, idx).felder;
+            schreibe_kz(felder, kz, wert, Some(b.typ)).map_err(&fehler)?;
         } else {
             self.nicht(
                 feld_id,
@@ -412,13 +412,12 @@ impl Bau<'_> {
         let art_text = py::str_von(&art.wert);
         match nachschlagen(cfg.kz, &art.wert).map_err(&fehler)? {
             Some(kz) => {
-                let v = kz_wert(wert, kz, Some(b.typ)).map_err(&fehler)?;
                 let ziel = if partner {
                     &mut self.person_b
                 } else {
                     &mut self.deklaration
                 };
-                ziel.insert(kz.to_owned(), v);
+                schreibe_kz(ziel, kz, wert, Some(b.typ)).map_err(&fehler)?;
             }
             None if partner => {
                 self.nicht(
@@ -482,7 +481,7 @@ impl Bau<'_> {
         }
     }
 
-    /// Ein Feld der Hauptschleife (`est_mapping.py:640-751`).
+    /// Ein Feld der Hauptschleife (`est_mapping.py:671-782`).
     fn feld(&mut self, feld_id: &str, sfeld: &SnapshotFeld, b: &Bindung) -> Ergebnis<()> {
         let fehler = wert_fehler(feld_id);
         if sfeld.zustand != Zustand::Bestaetigt {
@@ -519,8 +518,7 @@ impl Bau<'_> {
         } else if let Some(cfg) = PARTNER_VERZWEIGUNG.iter().find(|v| v.feld == feld_id) {
             self.verzweigung(feld_id, wert, b, cfg, true)?;
         } else if let Some(kz) = suche(PARTNER_INSTANZ, feld_id) {
-            let v = kz_wert(wert, kz, Some(b.typ)).map_err(&fehler)?;
-            self.person_b.insert(kz.to_owned(), v);
+            schreibe_kz(&mut self.person_b, kz, wert, Some(b.typ)).map_err(&fehler)?;
         } else if let Some(cfg) = WERTEKODIERUNG.iter().find(|w| w.feld == feld_id) {
             match nachschlagen(cfg.code, wert).map_err(&fehler)? {
                 Some(code) => {
@@ -539,15 +537,8 @@ impl Bau<'_> {
             }
         } else if feld_id == "stammdaten_iban" {
             self.iban(feld_id, wert);
-        } else if let Some(kz) =
-            kz_von(b).filter(|k| NULL_UNZULAESSIG_KZ.contains(k) && py::gleich_null(wert))
-        {
-            let grund =
-                format!("Wert 0: {kz} bleibt leer (XSD-Typ GanzzahlPos, eine 0 lehnt ERiC ab)");
-            self.nicht(feld_id, grund);
         } else if let Some(kz) = kz_von(b) {
-            let v = kz_wert(wert, kz, Some(b.typ)).map_err(&fehler)?;
-            self.deklaration.insert(kz.to_owned(), v);
+            schreibe_kz(&mut self.deklaration, kz, wert, Some(b.typ)).map_err(&fehler)?;
         } else if let Some(p23) = P23_BETRAGSFELDER.iter().find(|f| **f == feld_id) {
             let n = py::int(wert).map_err(&fehler)?;
             self.instanz("p23_veraeusserung", 1).rohdaten.insert(p23, n);
@@ -588,7 +579,7 @@ fn iban_pruefziffer_gueltig(iban: &str) -> bool {
     rest == 1
 }
 
-/// `_pflichtfelder_luecken` (`est_mapping.py:465-482`): sieht Feld-ABWESENHEIT, die die
+/// `_pflichtfelder_luecken` (`est_mapping.py:496-513`): sieht Feld-ABWESENHEIT, die die
 /// Hauptschleife per Konstruktion nicht sehen kann.
 fn pflichtfelder_luecken(snapshot: &Felder) -> Vec<Eintrag> {
     let mut luecken = Vec::new();
@@ -691,6 +682,7 @@ pub fn deklariere(
     let pflichtfelder_luecken = pflichtfelder_luecken(snapshot);
     bau.bankverbindung();
     bau.kap_nulldeklaration()?;
+    bau.pflegeblock();
     bau.antrag_person_b();
     let dokumentiert = bau.dokumentiert();
     bau.p23_gewinn()?;
@@ -752,6 +744,51 @@ impl Bau<'_> {
             }
         }
         Ok(())
+    }
+
+    /// Pflege-Pauschbetrag § 33b Abs. 6 EStG: Pflegegrad ausserhalb des XSD-Enums aufloesen bzw.
+    /// den Block fallen lassen (`_pflegeblock`, `est_mapping.py`). Vault:
+    /// `decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen`, Punkte 1-3.
+    ///
+    /// E0161606 kennt laut XSD nur „2", „3" und „4" („4" = Pflegegrad 4 ODER 5); die Bindung nimmt
+    /// 1..5 an, weil der Dialog auch Grad 0 und 1 annehmen muss. Drei Regeln:
+    ///
+    /// 1. Grad 5 → 4. Schema und Gesetz (§ 33b Abs. 6 S. 3 EStG: „Pflegegrad 4 oder 5" = 1.800 EUR)
+    ///    fassen beide zusammen.
+    /// 2. Grad nicht in {2, 3, 4} und kein Merkzeichen H → der ganze Block entfaellt. Es gibt
+    ///    keinen Pauschbetrag, und ein Rest-Block ohne E0161606/E0161808 verletzt die ERiC-Regel
+    ///    101100086 (`FelderNichtGemeinsamAngegeben`) — die ganze Erklaerung waere uneinreichbar.
+    /// 3. Grad nicht in {2, 3, 4} MIT Merkzeichen H → nur E0161606 entfaellt; E0161808 traegt den
+    ///    Anspruch (§ 33b Abs. 6 S. 4 EStG: 1.800 EUR ohne Grad).
+    ///
+    /// Die H-Pruefung ist `is True`, NICHT die Abwesenheit des Schluessels: ein bestaetigtes „Nein"
+    /// steht als `Bool(false)` in der Deklaration. Wer die Abwesenheit prueft, haelt ein „Nein"
+    /// fuer ein „Ja" und laesst bei Grad 1 den Rest-Block stehen — genau der Fall, den ERiC abweist.
+    ///
+    /// Kein `nicht_deklariert`-Eintrag fuer die entfallenden Kz: unter Grad 2 ohne H gibt es keinen
+    /// Pauschbetrag, mit H traegt E0161808 ihn. Die Pruefanzeige meldete sonst in jedem der 26
+    /// echten Grad-0-Faelle „nicht alle Werte stehen in der Erklaerung". Dieselbe Abwaegung wie bei
+    /// der weggelassenen 0 (P9, Vault: `decisions/elster-null-in-kz-ohne-null-weglassen`, Punkt 3).
+    fn pflegeblock(&mut self) {
+        let grad_kz = "E0161606";
+        let h_kz = "E0161808";
+        if self.deklaration.get(grad_kz) == Some(&Value::Number(5.into())) {
+            self.deklaration
+                .insert(grad_kz.to_owned(), Value::Number(4.into()));
+        }
+        if matches!(
+            self.deklaration.get(grad_kz),
+            Some(Value::Number(n)) if [2, 3, 4].iter().any(|g| n.as_i64() == Some(*g))
+        ) {
+            return;
+        }
+        if self.deklaration.get(h_kz) == Some(&Value::Bool(true)) {
+            self.deklaration.remove(grad_kz);
+            return;
+        }
+        for kz in PFLEGE_KZ {
+            self.deklaration.remove(*kz);
+        }
     }
 
     /// § 32d Abs. 6 S. 4 EStG: der Guenstigerpruefungs-Antrag gilt fuer beide Ehegatten und muss
@@ -872,7 +909,16 @@ impl Bau<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{iban_muster, iban_pruefziffer_gueltig};
+    use std::path::Path;
+
+    use domain::{Achsenwert, Herkunft, PruefTiefe};
+    use serde_json::json;
+
+    use super::{
+        deklariere, gruppe_von, iban_muster, iban_pruefziffer_gueltig, Felder, Feldtyp,
+        SnapshotFeld, Value, Zustand, PARTNER_VERZWEIGUNG, VERZWEIGUNG,
+    };
+    use crate::tabellen::PFLEGE_KZ;
 
     #[test]
     fn iban_pruefziffer() {
@@ -880,5 +926,181 @@ mod tests {
         assert!(iban_pruefziffer_gueltig("DE89370400440532013000"));
         assert!(!iban_pruefziffer_gueltig("DE88370400440532013000"));
         assert!(!iban_muster("DE8937"[..3].to_string().as_str()));
+    }
+
+    /// Vault: `decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen`, Punkte 1-3.
+    /// Der Pflege-Block ueber die echte Bindung: fuenf Begleit-Kz, die Regel greift ueber mehrere
+    /// Kz gleichzeitig. Zwilling von `tests/test_pflegegrad_kodierung_elster.py` (Python).
+    ///
+    /// Die Faelle sind absichtlich vollstaendig: ein Mutant, der Regel 2 zu Regel 3 verkuerzt (nur
+    /// E0161606 weg), laesst die Kz-Menge „E0161606 fehlt" erfuellt — deshalb prueft der Test die
+    /// GANZE Menge des Blocks, nicht das Fehlen eines einzelnen Kz.
+    #[test]
+    fn pflegeblock_folgt_dem_xsd_enum() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert,
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let begleit: [(&str, Value); 5] = [
+            ("rentner_gepflegter_wohnsitz_inland", json!(true)),
+            ("rentner_pflege_weitere_personen", json!(0)),
+            ("rentner_gepflegter_idnr", json!("12345678911")),
+            ("rentner_gepflegter_angaben", json!("Muster")),
+            ("rentner_pflege_durch", json!("1")),
+        ];
+        let lauf = |grad: Option<i64>, h: Option<bool>| {
+            let mut felder = Felder::new();
+            for (f, w) in &begleit {
+                felder.insert((*f).to_owned(), feld(w.clone()));
+            }
+            if let Some(g) = grad {
+                felder.insert("rentner_pflegegrad".to_owned(), feld(json!(g)));
+            }
+            if let Some(h) = h {
+                felder.insert("rentner_gepflegter_hilflos".to_owned(), feld(json!(h)));
+            }
+            let d = deklariere(&felder, &index, None).unwrap();
+            let da: Vec<&str> = PFLEGE_KZ
+                .iter()
+                .copied()
+                .filter(|kz| d.deklaration.contains_key(*kz))
+                .collect();
+            (d.deklaration.get("E0161606").cloned(), da)
+        };
+
+        // Regel 1: Grad 5 wird auf „4" abgebildet, der Block bleibt vollstaendig.
+        // E0161808 zaehlt nur mit, wenn die Probe das Merkzeichen-Feld ueberhaupt setzt.
+        for grad in [2_i64, 3, 4] {
+            let (kz, block) = lauf(Some(grad), None);
+            assert_eq!(kz, Some(json!(grad)), "Grad {grad}");
+            assert_eq!(block.len(), PFLEGE_KZ.len() - 1, "Grad {grad}: {block:?}");
+            assert!(!block.contains(&"E0161808"), "Grad {grad}: {block:?}");
+        }
+        let (kz, block) = lauf(Some(5), None);
+        assert_eq!(kz, Some(json!(4)), "Grad 5 → 4");
+        assert_eq!(block.len(), PFLEGE_KZ.len() - 1);
+
+        // Regel 2: Grad ausserhalb {2,3,4} ohne Merkzeichen H → der GANZE Block entfaellt.
+        // `h: None` (Feld nie beantwortet) und `h: Some(false)` (bestaetigtes Nein) sind derselbe
+        // Fall — ein bestaetigtes Nein steht als Bool(false) in der Deklaration.
+        for (grad, h) in [
+            (Some(1), None),
+            (Some(0), None),
+            (Some(1), Some(false)),
+            (Some(0), Some(false)),
+            (None, Some(false)),
+        ] {
+            let (kz, block) = lauf(grad, h);
+            assert_eq!(kz, None, "Grad {grad:?}, H {h:?}");
+            assert!(block.is_empty(), "Grad {grad:?}, H {h:?}: {block:?}");
+        }
+
+        // Regel 3: Grad ausserhalb {2,3,4} MIT Merkzeichen H → nur E0161606 entfaellt, der Rest
+        // des Blocks bleibt (er beschreibt dieselbe gepflegte Person).
+        for grad in [Some(1_i64), Some(0)] {
+            let (kz, block) = lauf(grad, Some(true));
+            assert_eq!(kz, None, "Grad {grad:?}, H true");
+            assert_eq!(block.len(), PFLEGE_KZ.len() - 1, "Grad {grad:?}: {block:?}");
+            assert!(block.contains(&"E0161808"), "Grad {grad:?}: {block:?}");
+        }
+    }
+
+    /// P9 (Vault: `decisions/elster-null-in-kz-ohne-null-weglassen`): auch die Art-Verzweigung
+    /// (Klasse f, g×f) schreibt keine 0 in eine Kz, deren XSD-Typ sie verbietet, auch nicht aus
+    /// 50 Cent abgerundet. Zwilling von `null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet`
+    /// (`tests/eigenschaften.rs`), der die `pub(crate)`-Tabellen nicht sieht. Die Kz-Menge kommt
+    /// live aus dem XSD 2025, nicht aus `NULL_UNZULAESSIG_KZ`.
+    #[test]
+    fn art_verzweigung_schreibt_keine_verbotene_null() {
+        let Some(xsd) = crate::finde_schema(2025, "E10-{jahr}.xsd") else {
+            println!("E10-2025.xsd fehlt — source_unavailable");
+            return;
+        };
+        let meta = crate::kz_meta(&xsd, "E10").unwrap();
+        let verbietet_null = |kz: &str| {
+            meta.get(kz).is_some_and(|m| {
+                m.type_name.starts_with("GanzzahlPos")
+                    || (!m.enums.is_empty() && !m.enums.iter().any(|e| e == "0"))
+                    || (!m.patterns.is_empty()
+                        && !m.patterns.iter().any(|p| {
+                            regex::Regex::new(&format!("^(?:{p})$"))
+                                .unwrap()
+                                .is_match("0")
+                        }))
+            })
+        };
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert,
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let mut durch = Vec::new();
+        for cfg in VERZWEIGUNG.iter().chain(PARTNER_VERZWEIGUNG) {
+            let b = index[cfg.feld];
+            let werte: &[i64] = if b.typ == Feldtyp::Cent {
+                &[0, 50]
+            } else {
+                &[0]
+            };
+            let suffixe: &[&str] = if gruppe_von(b).is_some() {
+                &["", "__2"]
+            } else {
+                &[""]
+            };
+            for i in suffixe {
+                for (art, _) in cfg.kz {
+                    for w in werte {
+                        let snapshot = Felder::from([
+                            (format!("{}{i}", cfg.feld), feld(json!(w))),
+                            (format!("{}{i}", cfg.art_feld), feld(json!(art))),
+                        ]);
+                        let d = deklariere(&snapshot, &index, None).unwrap();
+                        let instanzen = d.anlage_instanzen.iter().flat_map(|(_, ii)| ii);
+                        durch.extend(
+                            [&d.deklaration, &d.person_b]
+                                .into_iter()
+                                .chain(instanzen.map(|inst| &inst.felder))
+                                .flatten()
+                                .filter(|(kz, v)| **v == json!(0) && verbietet_null(kz))
+                                .map(|(kz, _)| format!("{kz} {}{i}={w} Art {art}", cfg.feld)),
+                        );
+                    }
+                }
+            }
+        }
+        assert!(
+            durch.is_empty(),
+            "0 in {} Faellen durchgelassen, obwohl der XSD-Typ sie verbietet: {durch:?}",
+            durch.len()
+        );
     }
 }

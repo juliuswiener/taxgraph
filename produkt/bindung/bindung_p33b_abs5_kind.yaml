@@ -25,7 +25,12 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    bereich: {min: 20, max: 100, grund: "Grad der Behinderung (GdB) amtlich 20..100 in 10er-Schritten"}
+    # Dieselben 17 Werte wie der eigene Grad (E0109708): das Kind-Kz E0505809 traegt im XSD dasselbe
+    # Muster 20|25|...|100. bereich bleibt die Spannweite fuer das Unsicherheits-Derivat; die
+    # zulaessigen Werte stehen in enum_werte und werden fail-closed geprueft (store._wert_erlaubt).
+    # Die 0 ist mit aufgefuehrt: sie heisst „nichts anzugeben".
+    bereich: {min: 20, max: 100, grund: "Spannweite des Grads der Behinderung des Kindes. Zulaessig sind nur die Werte in enum_werte — Zehner- und Fuenferschritte des amtlichen Musters."}
+    enum_werte: ["0", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95", "100"]
     fragetext_laie: "Welchen Grad der Behinderung hat dein Kind (eine Zahl zwischen 20 und 100)?"
     hilfe_kurz: "Steht im Feststellungsbescheid oder Schwerbehindertenausweis des Kindes. Je höher der Grad, desto höher der Pauschbetrag."
     beispielwert: 50

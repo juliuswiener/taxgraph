@@ -261,3 +261,24 @@ mod tests {
         assert_eq!(tausender(-1_234_567), "-1.234.567");
     }
 }
+
+/// Aequivalenz von `best_zahl` mit `PyWert::zahl_ohne_bool` (D15), ohne Ausnahme.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{json_wert, pruefe, py};
+    use proptest::prelude::*;
+
+    use super::best_zahl;
+    use crate::aequivalenz::ein_feld;
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn best_zahl_wie_pywert(v in json_wert(), bestaetigt in any::<bool>()) {
+            let alt = best_zahl(&ein_feld("x", v.clone(), bestaetigt), "x").is_some();
+            let neu = bestaetigt && py(&v).zahl_ohne_bool().is_some();
+            pruefe(&v, &alt, &neu, Vec::new, &[])?;
+        }
+    }
+}

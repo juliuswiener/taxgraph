@@ -41,6 +41,9 @@ Deklaration bindet an den `snapshot_id` (reproduzierbar).
   deklarierte Summe), NIE die Details (die sind aus der Deklaration nicht rekonstruierbar; der Store
   bleibt ihre Wahrheit). Ehrlich benannt, kein stiller Detail-Verlust.
 - **Berechnete:** nicht deklariert → nicht round-getripped (benannte Ausnahme).
+- **0 in einer Kz, deren XSD-Typ die 0 verbietet** (`_NULL_UNZULAESSIG_KZ`, 35 Kz): entfällt in der
+  Deklaration, der Round-Trip liest „fehlt" — eine 0 heißt dort „nichts anzugeben" (benannte
+  Ausnahme, Vault: `decisions/elster-null-in-kz-ohne-null-weglassen`).
 Das ist die mechanische Garantie „was der Store hält, steht so (oder als benannte Aggregation) in der
 Deklaration" — die Kehrseite der Bindungstabellen-Anker-Doktrin auf der Deklarationsseite.
 

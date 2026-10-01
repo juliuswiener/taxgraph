@@ -4,7 +4,8 @@ Jedes gebundene Kz muss in GENAU EINEN Prüfzweig fallen — ein Feld, das durch
 alle Zweige fällt (unbekannter typ), ist ein FEHLER, kein Skip:
 
   typ=bool   -> XSD MUSS ein Ja-Typ sein (Ja1 / JaX / JaNein12 / Ja2)
-  typ=cent/int -> XSD darf KEIN Ja-Typ sein
+  typ=cent/int -> XSD darf KEIN Ja-Typ sein; traegt das Kz eine enumeration oder
+                ein pattern, muss JEDER Wert der Bindungsschranke dazu passen
   typ=text   -> XSD-Facetten: xs:enumeration -> beispielwert MUSS ein
                 Enum-Wert sein; xs:pattern -> beispielwert MUSS alle
                 Patterns matchen; sonst Freitext ok
@@ -43,6 +44,37 @@ requires_real_schema = pytest.mark.skipif(
     reason="lokales ERiC-E10-2025.xsd nicht gefunden ($ERIC_DIR/~/02_Software/eric)")
 
 _E77_SCHEMA_2025 = X._find_schema(2025, "E77-{jahr}.xsd")
+
+
+@requires_real_schema
+def test_pflegeblock_ist_die_gruppe_aus_dem_xsd():
+    """Drift-Waechter fuer `est_mapping.PFLEGE_KZ` (Entscheidung pflegegrad-kodierung-elster,
+    Punkt 4: die Kz-Menge des Blocks wird eingefroren, mit ponytail: und Fundstelle).
+
+    Die Menge wird LIVE aus dem E10-2025.xsd abgeleitet: alle Kz, deren Schema-Pfad durch
+    `AgB/Pflege_PB/Einz` fuehrt. Verglichen wird gegen die eingefrorene Konstante — kommt ein
+    Feld des Blocks in die Bindung oder ein Kz ins Schema, faellt es hier auf.
+
+    Zwei Ausnahmen stehen namentlich: E0161901 ("weitere an der Pflege beteiligte Personen",
+    maxOccurs 9 in derselben Gruppe) ist bewusst NICHT in der Menge — kein Bindungsfeld, der
+    Mapper schreibt es nie. Umgekehrt darf kein Kz der Menge ausserhalb der Gruppe liegen.
+    """
+    import elster_xml as EX
+    pfade = EX.kz_pfade(2025)
+    in_gruppe = {kz for kz, p in pfade.items() if "Pflege_PB" in p}
+    eingefroren = set(EM.PFLEGE_KZ)
+    assert in_gruppe - eingefroren == {"E0161901"}, (
+        f"Kz der Gruppe AgB/Pflege_PB/Einz, die nicht in PFLEGE_KZ stehen: "
+        f"{sorted(in_gruppe - eingefroren)}")
+    assert eingefroren - in_gruppe == set(), (
+        f"PFLEGE_KZ enthaelt Kz ausserhalb der Gruppe: {sorted(eingefroren - in_gruppe)}")
+    # Die sieben Kz sind genau die gebundenen Felder des Blocks in bindung_rentner.yaml.
+    bindung = TR.lade_bindung()
+    gebunden = {b["elster_kz"] for b in bindung.values()
+                if b.get("elster_kz") and b["elster_kz"] in in_gruppe}
+    assert gebunden == eingefroren, (
+        f"Bindung und PFLEGE_KZ weichen ab: nur in der Bindung {sorted(gebunden - eingefroren)}, "
+        f"nur in PFLEGE_KZ {sorted(eingefroren - gebunden)}")
 
 
 def test_ist_ja_typ_erkennung():
@@ -101,6 +133,51 @@ def test_bindungs_typ_vs_xsd_typ():
                 mismatches.append(
                     f"{feld_id}: typ={typ}, Kz {kz}, XSD type={meta['type_name']} "
                     f"(Ja-Typ, aber Betrag)")
+            # Schranke der Bindung gegen die XSD-enum (Vault: pflegegrad-kodierung-elster, Punkt 5).
+            # Durch diese Luecke lief `rentner_pflegegrad`: die Bindung nimmt 1..5 an, das Schema
+            # kennt nur {"2","3","4"} — und der Mapper schrieb den Wert unveraendert hinaus. ERiC
+            # weist dann die GANZE Erklaerung ab (rc=610001002).
+            # Geprueft wird JEDER Wert der Bindungsschranke, nicht der Beispielwert: der ist genau
+            # einer und lag mit Pflegegrad 3 IN der enum, der Defekt blieb unsichtbar.
+            # Zulaessig ist zweierlei: der Wert kommt nicht in der Kz an (der Mapper laesst ihn
+            # weg) ODER er kommt als gueltiger enum-Schluessel an (der Mapper bildet ihn ab).
+            bereich = b.get("bereich") or {}
+            if meta["enums"] and "min" in bereich and "max" in bereich:
+                for w in range(bereich["min"], bereich["max"] + 1):
+                    d = EM.deklariere({feld_id: {"wert": w, "zustand": "bestaetigt"}}, bindung)
+                    if kz in d["deklaration"] and str(d["deklaration"][kz]) not in meta["enums"]:
+                        mismatches.append(
+                            f"{feld_id}: typ={typ}, Kz {kz}, Bindung erlaubt {w}, XSD erlaubt nur "
+                            f"{meta['enums']} — deklariert als {d['deklaration'][kz]!r}")
+            # Dieselbe Schranke gegen das XSD-pattern. 77 gebundene Zahl-Kz tragen eins, und bis
+            # 2026-10-01 sah dieser Zweig KEINES davon an — er las nur `meta["enums"]`. Ein Pruefer,
+            # der 77 Felder nicht ansieht, meldet trotzdem „bestanden" und sieht aus wie ein
+            # bestandener Pruefer.
+            #
+            # Geprueft wird die MENGE, DIE DIE BINDUNG DURCHLAESST — `enum_werte`, wo sie steht,
+            # sonst der Bereich; nicht der beispielwert. Der ist genau einer, und beim Pflegegrad
+            # lag er mit 3 IN der XSD-enum, waehrend 1, 2, 5 hindurchliefen.
+            #
+            # Ein stellenzahlbegrenzendes Muster ist KEINE Werteaufzaehlung: `.{1,3}` gegen einen
+            # Bereich bis 366 ist eine Obergrenze, kein Widerspruch. Der Zweig fragt deshalb nach
+            # dem Wert, nicht nach der Form des Musters — neun solche Kz bleiben gruen.
+            #
+            # Und er urteilt nur ueber Werte, die wirklich in der Kz ankommen: was `deklariere`
+            # weglaesst (0 auf einem Kz ohne Null), kann das Schema nicht verletzen.
+            durchgelassen = b.get("enum_werte")
+            if durchgelassen is None and "min" in bereich and "max" in bereich:
+                durchgelassen = [str(w) for w in range(bereich["min"], bereich["max"] + 1)]
+            if meta["patterns"] and durchgelassen:
+                for w in durchgelassen:
+                    d = EM.deklariere({feld_id: {"wert": int(w) if w.lstrip("-").isdigit() else w,
+                                                 "zustand": "bestaetigt"}}, bindung)
+                    if kz not in d["deklaration"]:
+                        continue
+                    v = str(d["deklaration"][kz])
+                    if not all(re.fullmatch(p, v) for p in meta["patterns"]):
+                        mismatches.append(
+                            f"{feld_id}: typ={typ}, Kz {kz}, Bindung erlaubt {w}, XSD pattern="
+                            f"{meta['patterns']} — deklariert als {v!r}")
         elif typ == "enum" and feld_id in EM.WERTEKODIERUNG:
             # Klasse i (est_mapping.WERTEKODIERUNG): enum_werte sind Laien-Vokabular, KEIN
             # 1:1-Passthrough — geprüft wird die ÜBERSETZUNG (die amtlichen Codes), nicht die
@@ -167,3 +244,45 @@ def test_bindungs_typ_vs_xsd_typ():
 
     assert not mismatches, (
         "Bindungs-Typ ↔ XSD-Typ Mismatches:\n" + "\n".join(mismatches))
+
+
+# Die 17 Felder der Decision textfeld-format-aus-xsd-beim-speichern: 9 ohne `muster`, 8 Zeiträume.
+_FORMAT_FELDER = {
+    "kind_idnr", "p33a_person_idnr", "rentner_gepflegter_idnr", "stammdaten_bic", "stammdaten_plz",
+    "stammdaten_hausnummer", "dhf_bestanden_bis", "p33a_unterstuetzungszeitraum", "p33a_zahlungszeitraum",
+    "kind_wohnsitz_inland_zeitraum", "kind_kindschaftsverh_zeitraum_a", "kind_kindschaftsverh_zeitraum_b",
+    "kind_anderer_elternteil_zeitraum", "kind_betreuung_zeitraum", "kind_betreuung_eigenanteil_zeitraum",
+    "kind_betreuung_kein_gemeinsamer_haushalt_zeitraum", "kind_betreuung_haushaltszugehoerigkeit_zeitraum",
+}
+
+
+@requires_real_schema
+@pytest.mark.parametrize("jahr", [2024, 2025])
+def test_textfeld_mit_festem_format_speichert_wie_das_xsd(jahr):
+    """AK1: ein Textfeld, dessen Kz im XSD ein Format-Pattern trägt, prüft beim Speichern genau
+    dieses Pattern. Das Pattern kommt live aus dem Schema des Jahres, über alle Ableitungsschritte
+    und mit Längen (tools/parity/xsd_muster.py). Speichern = store._pruefe_typ_konformitaet
+    (Auflage T + F). Beide urteilen auf beispielwert und Abwandlungen gleich."""
+    if X._find_schema(jahr) is None:
+        pytest.skip(f"lokales E10-{jahr}.xsd nicht gefunden")
+    sys.path.insert(0, os.path.join(ROOT, "tools", "parity"))
+    import xsd_muster as XM   # erst hier: nur dieser Test braucht das Messwerkzeug
+    bindung = TR.lade_bindung()
+    sch = XM.schema(jahr)
+    # Format-Pattern: ein Schritt mit Pattern, das weder Basis-Zeichensatz noch reine Länge ist.
+    paare = [(f, kz) for f, kz in XM.auswahl(bindung, ["text"])
+             if kz in sch and any(s["xsd"] and s["typ"] not in XM.BASIS
+                                  and not all(XM.LAENGE.fullmatch(p) for p in s["xsd"])
+                                  for s in sch[kz]["schritte"])]
+    assert _FORMAT_FELDER <= {f for f, _ in paare}, sorted(_FORMAT_FELDER - {f for f, _ in paare})
+    abweichend = []
+    for fid, kz in paare:
+        bw = bindung[fid]["beispielwert"]
+        proben = {"beispielwert": bw, **XM.proben(bw), "Zeichen weg": bw[:-1],
+                  "Ziffern->٣": re.sub("[0-9]", "٣", bw), "5-fach": bw * 5}
+        for name, wert in proben.items():
+            xsd_ok = not XM.verletzt(wert, sch[kz]["schritte"])
+            if XM.speichern_ok(fid, wert, bindung) != xsd_ok:
+                abweichend.append(f"{fid} (Kz {kz}) {name}: XSD {'nimmt an' if xsd_ok else 'weist ab'}, "
+                                  "Speichern nicht")
+    assert not abweichend, "Speichern urteilt anders als das XSD:\n" + "\n".join(abweichend)

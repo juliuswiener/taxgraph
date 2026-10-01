@@ -59,7 +59,7 @@ impl Feldtyp {
 }
 
 /// `TT.MM.JJJJ`: genau 10 ASCII-Zeichen, zwei Ziffern, Punkt, zwei Ziffern, Punkt, vier Ziffern
-/// (`store.py:187`: `re.match(r"^\d{2}\.\d{2}\.\d{4}$", wert)`). Prueft nur das Format, nicht die
+/// (`store.py::_typ_konform`: `re.fullmatch` mit `[0-9]`). Prueft nur das Format, nicht die
 /// Kalender-Gueltigkeit (der Python-Regex tut das auch nicht). Slice-Pattern statt Indexierung,
 /// damit `clippy::indexing_slicing` nicht greift.
 fn ist_tt_mm_jjjj(s: &str) -> bool {
@@ -116,6 +116,24 @@ impl Wert {
                 // `bool` ist in JSON (anders als in Python) ein eigener `Value`-Fall -- kein
                 // expliziter Bool-Ausschluss noetig, `as_i64` liefert fuer `Value::Bool` `None`.
                 let n = wert.as_i64().ok_or_else(inkonform)?;
+                // WERTELISTE auch auf Zahlen (2026-10-01). `enum_werte` galt bis dahin nur fuer
+                // `Feldtyp::Enum`; ein `int`-Feld MIT Liste war still wirkungslos -- die Bindung
+                // sagte eine Grenze zu, der Schreibpfad kannte sie nicht.
+                //
+                // Anlass: der Grad der Behinderung. Das ELSTER-Schema laesst an E0109708/E0505809
+                // nur 17 Werte zu (Zehn- und Fuenferschritte), die Bindung fuehrte nur einen Bereich
+                // 20..100. Ein Zwischenwert wie 33 ging durch, und ERiC wies die GANZE Erklaerung ab
+                // (rc=610001002). Python: `store._wert_erlaubt`, wortgleiche Semantik.
+                //
+                // Textvergleich wie bei `Enum` (`str(wert)` gegen die Liste) -- die YAML-Liste
+                // traegt Zeichenketten, und Python vergleicht ebenfalls `str(w)`. Damit urteilen
+                // beide Seiten gleich.
+                if let Some(ws) = enum_werte.filter(|w| !w.is_empty()) {
+                    let text = n.to_string();
+                    if !ws.iter().any(|w| w == &text) {
+                        return Err(WertFehler::UnbekannterEnumWert(text));
+                    }
+                }
                 Ok(if matches!(typ, Feldtyp::Cent) {
                     Self::Cent(n)
                 } else {
@@ -141,7 +159,8 @@ impl Wert {
             }
             Feldtyp::Text => wert
                 .as_str()
-                .filter(|s| nur_xml_zeichen(s))
+                // Leer nie: jeder Text-Kz-Typ im Schema verlangt mindestens ein Zeichen.
+                .filter(|s| !s.is_empty() && nur_xml_zeichen(s))
                 .map(|s| Self::Text(s.to_owned()))
                 .ok_or_else(inkonform),
         }
@@ -169,6 +188,45 @@ mod tests {
             Wert::Enum("ja".to_string())
         );
         assert!(Wert::aus_json(&json!("vielleicht"), Feldtyp::Enum, Some(&werte)).is_err());
+    }
+
+    #[test]
+    fn int_mit_werteliste_laesst_nur_die_gelisteten_werte_durch() {
+        // Grad der Behinderung: das XSD laesst an E0109708/E0505809 nur 17 Werte zu. Die Liste
+        // traegt Zeichenketten, das Feld verlangt eine Zahl -- verglichen wird der TEXT.
+        // Python: `store._wert_erlaubt`, dieselbe Semantik.
+        let gdb: Vec<String> = ["0", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65",
+                                "70", "75", "80", "85", "90", "95", "100"]
+            .iter().map(ToString::to_string).collect();
+        assert_eq!(
+            Wert::aus_json(&json!(45), Feldtyp::Int, Some(&gdb)).unwrap(),
+            Wert::Int(45)
+        );
+        assert_eq!(
+            Wert::aus_json(&json!(0), Feldtyp::Int, Some(&gdb)).unwrap(),
+            Wert::Int(0)
+        );
+        // Der Zwischenwert: ERiC wiese die GANZE Erklaerung ab ("The value '33' is not accepted
+        // by the pattern", rc=610001002).
+        assert!(Wert::aus_json(&json!(33), Feldtyp::Int, Some(&gdb)).is_err());
+        assert!(Wert::aus_json(&json!(101), Feldtyp::Int, Some(&gdb)).is_err());
+        // Der Textvergleich darf nicht auf die ZAHL hereinfallen: `"45"` ist ein JSON-String und
+        // damit kein `int`, auch wenn die Liste ihn fuehrt.
+        assert!(Wert::aus_json(&json!("45"), Feldtyp::Int, Some(&gdb)).is_err());
+    }
+
+    #[test]
+    fn int_ohne_werteliste_bleibt_frei() {
+        // Kein `enum_werte`: die Liste ist eine ZUSAGE der Bindung, keine Vermutung. Alle
+        // uebrigen Zahl-Felder (die grosse Mehrheit) bleiben unberuehrt.
+        assert_eq!(
+            Wert::aus_json(&json!(33), Feldtyp::Int, None).unwrap(),
+            Wert::Int(33)
+        );
+        assert_eq!(
+            Wert::aus_json(&json!(33), Feldtyp::Int, Some(&[])).unwrap(),
+            Wert::Int(33)
+        );
     }
 
     #[test]

@@ -251,3 +251,128 @@ impl<'s> Aktiv<'s> {
         self.events.iter().map(|(k, v)| (*k, *v))
     }
 }
+
+/// Aequivalenz mit `domain::PyWert` (D15): Abweichungen nur mit D-Nummer aus der Liste des
+/// Helfers, je D-Nummer ein Test mit dem `CPython`-Verhalten.
+#[cfg(test)]
+mod aequivalenz {
+    use bindung::InstanzGruppe;
+    use domain::testhilfe::{d3, json_wert, klasse, pruefe, py, py_absteigend, zahl, Ergebnis};
+    use proptest::prelude::*;
+    use serde_json::{json, Number, Value};
+
+    use super::{py_eq, Antwort, InstanzAnzahl};
+
+    /// Ausnahmen von `py_eq`.
+    const GLEICH: &[&str] = &["D14"];
+    /// Ausnahmen von `aus_zaehlfeld`.
+    const ANZAHL: &[&str] = &["D3"];
+
+    /// `v` mit jeder Zahl als Float und jedem `bool` als Ganzzahl. In Python gleich, ausser eine
+    /// Ganzzahl rundet als Float.
+    fn umgetypt(v: &Value) -> Value {
+        match v {
+            Value::Bool(b) => Value::from(u8::from(*b)),
+            Value::Number(n) => n
+                .as_f64()
+                .and_then(Number::from_f64)
+                .map_or_else(|| v.clone(), Value::Number),
+            Value::Array(l) => Value::Array(l.iter().map(umgetypt).collect()),
+            Value::Object(o) => {
+                Value::Object(o.iter().map(|(k, w)| (k.clone(), umgetypt(w))).collect())
+            }
+            w => w.clone(),
+        }
+    }
+
+    /// Paare fuer `==`: ein Wert und seine [`umgetypt`]-Fassung, zwei Zahlen, zwei Werte.
+    fn paar() -> impl Strategy<Value = (Value, Value)> {
+        prop_oneof![
+            json_wert().prop_map(|a| (umgetypt(&a), a)),
+            (zahl(), zahl()).prop_map(|(a, b)| (Value::Number(a), Value::Number(b))),
+            (json_wert(), json_wert()),
+        ]
+    }
+
+    /// D14: an derselben Stelle stehen eine Ganzzahl und ein gleicher Float ab 1,8e19.
+    fn d14(a: &Value, b: &Value) -> bool {
+        match (a, b) {
+            (Value::Array(x), Value::Array(y)) => x.iter().zip(y).any(|(p, q)| d14(p, q)),
+            (Value::Object(x), Value::Object(y)) => {
+                x.iter().any(|(k, p)| y.get(k).is_some_and(|q| d14(p, q)))
+            }
+            (Value::Number(x), Value::Number(y)) => {
+                x.is_f64() != y.is_f64()
+                    && x.as_f64().is_some_and(|f| f.abs() >= 1.8e19)
+                    && py(a).py_eq(&py(b))
+            }
+            _ => false,
+        }
+    }
+
+    /// `_anzahl_aus_eintrag` (`traverser.py:136-141`) mit `PyWert` fuer ein bestaetigtes `v`: nur
+    /// ein `int` ab 1 zaehlt, gekappt auf `max`.
+    fn anzahl(v: &Value, max: u32) -> Ergebnis<u16> {
+        let n = klasse(py(v).int_ohne_bool())?.filter(|n| *n >= 1);
+        Ok(n.map_or(1, |n| u16::try_from(n.min(i64::from(max))).unwrap_or(0)))
+    }
+
+    fn gruppe(max: u32) -> InstanzGruppe {
+        InstanzGruppe {
+            gruppe: "kind".to_owned(),
+            anzahl_feld: "anzahl_kinder".to_owned(),
+            etikett: String::new(),
+            max,
+            grund: String::new(),
+        }
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        /// Beide Richtungen; `PyWert` mit umgekehrter Schluessel-Reihenfolge (`dict` ohne
+        /// Reihenfolge).
+        #[test]
+        fn py_eq_wie_pywert((a, b) in paar()) {
+            for (x, y) in [(&a, &b), (&b, &a)] {
+                let (alt, neu) = (py_eq(x, y), py(x).py_eq(&py_absteigend(y)));
+                let d = || if !alt && neu && d14(x, y) { vec!["D14"] } else { Vec::new() };
+                pruefe(&(x, y), &alt, &neu, d, GLEICH)?;
+            }
+        }
+
+        /// `max` aus dem Schema-Bereich (`minimum: 1`), gepflegt sind hoechstens 9.
+        #[test]
+        fn aus_zaehlfeld_wie_pywert(v in json_wert(), max in 1u32..=20) {
+            let alt = Ok(InstanzAnzahl::aus_zaehlfeld(Antwort::Bestaetigt(&v), &gruppe(max)).get());
+            let neu = anzahl(&v, max);
+            pruefe(&v, &alt, &neu, || d3(&v, &neu), ANZAHL)?;
+        }
+    }
+
+    /// D3: `min(2**64 - 1, 9)` ist in `CPython` 9. Der Alt-Helfer liefert 9, `PyWert` meldet die
+    /// i64-Grenze.
+    #[test]
+    fn d3_ueber_i64() {
+        let v = json!(u64::MAX);
+        let alt = InstanzAnzahl::aus_zaehlfeld(Antwort::Bestaetigt(&v), &gruppe(9));
+        assert_eq!(alt.get(), 9);
+        assert_eq!(klasse(py(&v).int_ohne_bool()), Err(None));
+    }
+
+    /// D14: `18000000000000000000 == 1.8e19` ist in `CPython` wahr. Der Alt-Helfer vergleicht
+    /// Ganzzahl und Float nur unter 1,8e19.
+    #[test]
+    fn d14_ab_1_8e19() {
+        for (i, f) in [
+            (json!(18_000_000_000_000_000_000u64), json!(1.8e19)),
+            (
+                json!(18_446_744_073_709_549_568u64),
+                json!(18_446_744_073_709_549_568.0),
+            ),
+        ] {
+            assert!(!py_eq(&i, &f));
+            assert!(py(&i).py_eq(&py(&f)));
+        }
+    }
+}

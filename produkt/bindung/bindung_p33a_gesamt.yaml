@@ -152,6 +152,7 @@ bindungen:
     quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzungszeitraum}
     standardwert: "01.01-31.12"   # der Normalfall: das ganze Jahr. Ohne Vorgabe muss der Nutzer das Format raten (2026-08-26)
     typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
     einheit: null
     askable: true
     vorjahr: uebernehmbar
@@ -288,6 +289,7 @@ bindungen:
   - feld_id: p33a_person_idnr
     quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzte_person_idnr}
     typ: text
+    muster: '^(?:[0-9]{11})$'
     einheit: null
     askable: true
     vorjahr: uebernehmbar
@@ -306,6 +308,7 @@ bindungen:
     quelle: {regel_id: p33a_unterhalt, signatur_slot: zahlungszeitraum}
     standardwert: "01.01-31.12"   # der Normalfall: das ganze Jahr. Ohne Vorgabe muss der Nutzer das Format raten (2026-08-26)
     typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
     einheit: null
     askable: true
     vorjahr: uebernehmbar

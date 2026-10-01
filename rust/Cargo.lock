@@ -43,7 +43,9 @@ version = "0.0.0"
 dependencies = [
  "auth",
  "axum",
+ "domain",
  "http-body-util",
+ "proptest",
  "regex",
  "serde",
  "serde_json",
@@ -72,6 +74,7 @@ version = "0.0.0"
 dependencies = [
  "bcrypt",
  "chrono",
+ "domain",
  "getrandom 0.3.4",
  "jsonwebtoken",
  "proptest",
@@ -408,8 +411,11 @@ name = "domain"
 version = "0.0.0"
 dependencies = [
  "proptest",
+ "regex",
+ "rust_decimal",
  "serde",
  "serde_json",
+ "serde_yaml_ng",
  "thiserror",
 ]
 
@@ -830,6 +836,7 @@ checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
 name = "llm"
 version = "0.0.0"
 dependencies = [
+ "domain",
  "fancy-regex",
  "proptest",
  "regex",

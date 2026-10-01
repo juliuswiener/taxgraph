@@ -517,6 +517,29 @@ impl Bilanz {
     fn abweichungen(&self) -> u64 {
         self.zeilen.values().map(|z| z.abw).sum()
     }
+
+    /// Waechter gegen einen gruenen Lauf, der nichts belegt: eine Vergleichszeile, die nie
+    /// einen Wert GESEHEN hat (`nicht-leer == 0`), kann nicht "0 Abweichungen" beweisen --
+    /// gruen und leer sehen identisch aus. Rot mit dem Namen jeder solchen Zeile.
+    ///
+    /// Ticket `parity-lauf-gruen-ohne-dass-die-zeile-rechnet`. Der Waechter greift JE BLOCK:
+    /// eine Zeile, die nur in `golden_faelle` rechnet, deckt die Luecke in `reale_faelle` nicht.
+    fn wache_rechnet(&self, block: &str) {
+        let leer: Vec<&str> = self
+            .zeilen
+            .iter()
+            .filter(|(_, z)| z.nicht_leer == 0)
+            .map(|(n, _)| *n)
+            .collect();
+        assert!(
+            leer.is_empty(),
+            "{block}: {} von {} Vergleichszeilen sahen NIE einen Wert (nicht-leer == 0): [{}] \
+             -- ein gruener Lauf belegt fuer diese Zeilen nichts",
+            leer.len(),
+            self.zeilen.len(),
+            leer.join(", ")
+        );
+    }
 }
 
 /// Ein Kontext gegen Python und Rust; `stoere_erste` verfälscht das erste Rust-Ergebnis.
@@ -745,6 +768,7 @@ fn reale_faelle() {
         }
     }
     b.drucke("reale_faelle", kontexte);
+    b.wache_rechnet("reale_faelle");
     b.drucke_gruende();
     eprintln!("reale_faelle: {} Dateien, {stores} Stores, {kein_store} ohne Store übersprungen, {vz_ersatz} mit VZ außerhalb 2024–2026 (Ersatz 2025)", dateien.len());
     assert!(kontexte > 0);
@@ -805,6 +829,7 @@ fn golden_faelle() {
         }
     }
     b.drucke("golden_faelle", n);
+    b.wache_rechnet("golden_faelle");
     b.drucke_gruende();
     assert!(n > 0);
     assert_eq!(b.abweichungen(), 0);
@@ -1375,6 +1400,7 @@ fn generierte_faelle() {
         Ok(())
     });
     b.borrow().drucke("generierte_faelle", kontexte.get());
+    b.borrow().wache_rechnet("generierte_faelle");
     b.borrow().drucke_gruende();
     eprintln!(
         "generierte_faelle: {} Stores ({} im Float-Modus), {} Kontexte",
@@ -1637,6 +1663,7 @@ fn gezielte_faelle() {
         vergleiche(&mut b, &k, erwartet, true, false);
     }
     b.drucke("gezielte_faelle", faelle.len());
+    b.wache_rechnet("gezielte_faelle");
     eprintln!(
         "gezielte_faelle: {} Fälle, jeder trifft in Python den erwarteten Grund",
         faelle.len()
