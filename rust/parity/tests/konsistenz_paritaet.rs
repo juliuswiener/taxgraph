@@ -226,7 +226,7 @@ fn berichte(titel: &str, bilanz: &Bilanz) -> usize {
 /// Ticket `parity-lauf-gruen-ohne-dass-die-zeile-rechnet`. Der Waechter greift JE BLOCK: eine
 /// Zeile, die nur in einem Block rechnet, deckt die Luecke in einem anderen nicht.
 ///
-/// Beurteilt werden nur VERGLEICHSzeilen (`vergleiche > 0`). Eine reine Abdeckungszeile, die
+/// Beurteilt werden nur Vergleichszeilen (`vergleiche > 0`). Eine reine Abdeckungszeile, die
 /// nie zwei Werte gegeneinander hielt, kann nichts belegen und wird nicht beurteilt -- das ist
 /// eine Eigenschaft ihrer Bauart, keine Ausnahmeliste mit Namen.
 fn wache_rechnet(block: &str, bilanz: &Bilanz) {
