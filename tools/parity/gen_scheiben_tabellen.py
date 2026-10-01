@@ -121,6 +121,19 @@ def main() -> None:
             zeilen += _zeilenliste(f"SCHEIBEN_{up}_KEGEL", list(kegel), doc)
             zeilen.append("")
             gesehen.add(f"SCHEIBEN_{up}_KEGEL")
+            if s == "ep":
+                zeilen += [
+                    "// EINZIGE WAHRHEIT der vier `EP_FELDER`-Feldnamen in Rust. `EP_FELDER` selbst",
+                    "// wird hier NICHT als eigener `const` gefuehrt: der Python-Name kommt in ganz",
+                    "// `produkt/` nur noch in zwei Kommentaren vor (`bescheid_abzuege.py:36` Docstring,",
+                    "// `bescheid_zweige.py:489` Kommentar), kein Code liest ihn. Die Feldnamen liegen",
+                    "// verbatim in `SCHEIBEN_EP_KEGEL` und in `SCHEIBEN_N_VOR_GWG_TEIL_0_FELDER`.",
+                    "// ponytail: zwei Kopien derselben vier Namen statt einer geteilten Konstanten.",
+                    "// Deduplizieren hiesse, den Generator Teilausdruecke erkennen zu lassen -- das",
+                    "// beruehrt den Parity-Vertrag fuer vier gesparte Feldnamen. Ticket, nicht Bau.",
+                    "// Wer die Namen aendert, aendert BEIDE Stellen und `produkt/haut/api_constants.py`.",
+                    "",
+                ]
 
         teil = cfg.get("teil_ringe") or []
         for i, (tname, quant, tf) in enumerate(teil):

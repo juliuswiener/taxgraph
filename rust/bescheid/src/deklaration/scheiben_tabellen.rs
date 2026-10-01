@@ -25,6 +25,16 @@ pub(super) const SCHEIBEN_EP_KEGEL: [&str; 4] = [
     "ep_arbeitstage", "ep_entfernung_km", "ep_oepnv_kosten", "ep_eigenes_kfz",
 ];
 
+// EINZIGE WAHRHEIT der vier `EP_FELDER`-Feldnamen in Rust. `EP_FELDER` selbst
+// wird hier NICHT als eigener `const` gefuehrt: der Python-Name kommt in ganz
+// `produkt/` nur noch in zwei Kommentaren vor (`bescheid_abzuege.py:36` Docstring,
+// `bescheid_zweige.py:489` Kommentar), kein Code liest ihn. Die Feldnamen liegen
+// verbatim in `SCHEIBEN_EP_KEGEL` und in `SCHEIBEN_N_VOR_GWG_TEIL_0_FELDER`.
+// ponytail: zwei Kopien derselben vier Namen statt einer geteilten Konstanten.
+// Deduplizieren hiesse, den Generator Teilausdruecke erkennen zu lassen -- das
+// beruehrt den Parity-Vertrag fuer vier gesparte Feldnamen. Ticket, nicht Bau.
+// Wer die Namen aendert, aendert BEIDE Stellen und `produkt/haut/api_constants.py`.
+
 // `SCHEIBEN['n_vor_gwg']["felder"]` ist `None` -- die Feldliste kommt zur
 // Laufzeit aus `produkt/bindung/bindung_n_vor_gwg.yaml` (`Cfg::felder_datei`).
 
