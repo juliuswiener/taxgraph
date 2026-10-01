@@ -288,6 +288,73 @@ def test_meet_zustand_fail_closed():
     assert ST.meet_zustand(["bestaetigt", "vorlaeufig"]) == "vorlaeufig"   # ein vorlaeufig -> Aggregat vorlaeufig
 
 
+def test_meet_zustand_leerer_kegel_ist_bestaetigt():
+    """Der leere Kegel -- die Grenze des Riegels, auf der Python-Seite festgehalten.
+
+    Rust hat denselben Pin seit `3abbed6` (`domain::meet::tests::leeres_aggregat_ist_bestaetigt`).
+    Python hatte keinen: `grep -rn "meet_zustand([]" tests/` war 0 Treffer. Weil der Rust-Port
+    treu ist, trug Python denselben blinden Riegel -- nur ungesehen.
+
+    `meet_zustand([])` ist `"bestaetigt"` ("leeres Aggregat = neutral", `store.py:56`). Das ist
+    Absicht und bleibt so; dieser Test nagelt es fest, statt es zu aendern.
+
+    Bei einem LEEREN Kegel sperrt keine der beiden Haelften der `_feste_zahl`-Bedingung
+    (`api.py:206`):
+
+        len(zustaende) < len(scheibe_felder)  or  meet_zustand(zustaende) != "bestaetigt"
+               0        <         0  = falsch          []  =  "bestaetigt", also falsch
+
+    Beide Seiten sind Nullen. Die Zeile ist fuer diesen Aufruf wirkungslos. Was die vier
+    abbrechenden Scheiben rettet, ist ALLEIN die `slot_fn` (bzw. Lage 1 bei `n_vor_gwg`) --
+    nicht der Laengenvergleich. Der Vergleich ist um genau ein Feld zu schwach: `meet_zustand`
+    allein waere bei leerem UND einfeldrigem Kegel blind, der Vergleich faengt wenigstens den
+    einfeldrigen Fall (s. die Abgrenzung unten).
+
+    **Der leere Kegel ist im Betrieb nicht erreichbar.** `_feste_zahl` bekommt seinen Kegel aus
+    `cfg.get("kegel") or _scheibe_felder(store)` (`api.py:576`) -- nie leer. Und
+    `BR.relevante_kegel_felder` streicht nur Felder, deren Regel der Nutzer bestaetigt abbestellt
+    hat; erschoepfend gesucht bleibt als Minimum 15 von 28 Feldern auf `rentner_gesamt` uebrig
+    (an_gesamt 18/33, gesamt 20/35, ep 4/4). Dieser Test braucht deshalb einen direkten Aufruf.
+
+    Aendert jemand `meet_zustand`, sodass ein leeres Aggregat `"vorlaeufig"` liefert, wird
+    **allein dieser Test** rot. Live nachgemessen: `test_paket_a_e2e.py`,
+    `test_gate_naht_guard_liest_zustand.py` und `test_stille_null_offen.py` -- alle drei
+    beruehren `meet_zustand` -- blieben unter derselben Aenderung gruen. Der leere Meet war
+    in Python an keiner Stelle geprueft ausser hier.
+    """
+    # Der Pin: neutrales Element, kein Input-Kegel.
+    assert ST.meet_zustand([]) == "bestaetigt"
+    assert ST.meet_zustand(()) == "bestaetigt"
+    assert ST.meet_zustand(iter([])) == "bestaetigt"
+
+    # Die Identitaet: `bestaetigt` ist das neutrale Element des Meet.
+    assert ST.meet_zustand(["bestaetigt"]) == "bestaetigt"
+    assert ST.meet_zustand(["bestaetigt", "bestaetigt"]) == "bestaetigt"
+
+    # Und die Grenze, ausdruecklich: der Meet allein sperrt den leeren Kegel NICHT.
+    assert ST.meet_zustand([]) != "vorlaeufig"
+
+
+def test_meet_zustand_ab_einem_fehlenden_feld_greift_der_laengenvergleich():
+    """Die Abgrenzung: wo der Riegel anfaengt zu greifen.
+
+    Ohne diesen Fall zeigte der Test oben nur, dass etwas NICHT greift -- nicht, WO es greift.
+    Genau die Bedingung aus `api.py:206`, mit einem bestaetigten Feld gegen einen zweifeldrigen
+    Kegel:
+
+        len(["bestaetigt"]) < 2   ->  True, der Vergleich sperrt
+        meet_zustand(["bestaetigt"])  ->  "bestaetigt", der Meet sperrt NICHT
+
+    Der Laengenvergleich ist damit das, was den einfeldrigen Fall faengt -- der Meet allein
+    waere auch hier blind.
+    """
+    zustaende = ["bestaetigt"]
+    kegel = ["a", "b"]
+
+    assert ST.meet_zustand(zustaende) == "bestaetigt"   # der Meet sperrt nicht
+    assert len(zustaende) < len(kegel)                  # der Vergleich sperrt
+
+
 def test_meet_herkunft_konflikt_und_minimum():
     v1 = {"herkunft": "laie", "pruef_tiefe": "amtlich", "haftung": "nutzer"}
     v2 = {"herkunft": "beleg_import", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}
