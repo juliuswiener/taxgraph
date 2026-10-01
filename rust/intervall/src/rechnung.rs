@@ -94,13 +94,13 @@ fn fixwert(feld: Option<&SnapshotFeld>, b: &AchsenBindung) -> Option<PyWert> {
     if let Some(f) = feld {
         return Some(f.wert.clone());
     }
-    match (b.typ, b.bereich) {
-        (Feldtyp::Cent | Feldtyp::Int, Some((lo, hi))) => {
+    match b.typ {
+        Feldtyp::Cent | Feldtyp::Int => b.bereich.and_then(|(lo, hi)| {
             let mitte = (i128::from(lo) + i128::from(hi)).div_euclid(2);
             // Der Mittelpunkt zweier i64 liegt in i64.
             i64::try_from(mitte).ok().map(PyWert::Ganz)
-        }
-        _ => None,
+        }),
+        Feldtyp::Bool | Feldtyp::Enum | Feldtyp::Datum | Feldtyp::Text => None,
     }
 }
 
