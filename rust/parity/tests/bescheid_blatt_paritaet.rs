@@ -521,6 +521,29 @@ impl Bilanz {
     fn abweichungen(&self) -> u64 {
         self.zeilen.values().map(|z| z.abw).sum()
     }
+
+    /// Waechter gegen einen gruenen Lauf, der nichts belegt: eine Vergleichszeile, die nie
+    /// einen Wert GESEHEN hat (`nicht-leer == 0`), kann nicht "0 Abweichungen" beweisen --
+    /// gruen und leer sehen identisch aus. Rot mit dem Namen jeder solchen Zeile.
+    ///
+    /// Ticket `parity-lauf-gruen-ohne-dass-die-zeile-rechnet`. Der Waechter greift JE BLOCK:
+    /// eine Zeile, die nur in `golden_faelle` rechnet, deckt die Luecke in `reale_faelle` nicht.
+    fn wache_rechnet(&self, block: &str) {
+        let leer: Vec<&str> = self
+            .zeilen
+            .iter()
+            .filter(|(_, z)| z.nicht_leer == 0)
+            .map(|(n, _)| *n)
+            .collect();
+        assert!(
+            leer.is_empty(),
+            "{block}: {} von {} Vergleichszeilen sahen NIE einen Wert (nicht-leer == 0): [{}] \
+             -- ein gruener Lauf belegt fuer diese Zeilen nichts",
+            leer.len(),
+            self.zeilen.len(),
+            leer.join(", ")
+        );
+    }
 }
 
 /// Ein Fall gegen Python und Rust; `stoere_erste` verfälscht das erste Rust-Ergebnis (Negativkontrolle).
@@ -669,6 +692,7 @@ fn reale_faelle() {
         }
     }
     b.drucke("reale_faelle", faelle);
+    b.wache_rechnet("reale_faelle");
     eprintln!("reale_faelle: {} Dateien, {kein_store} ohne Store übersprungen, {vz_ersatz} mit VZ außerhalb 2024–2026 (Ersatz 2025)", dateien.len());
     assert!(faelle > 0);
     assert_eq!(
@@ -730,6 +754,7 @@ fn golden_faelle() {
         }
     }
     b.drucke("golden_faelle", n);
+    b.wache_rechnet("golden_faelle");
     assert_eq!(n, faelle.len() * 2);
     assert_eq!(b.abweichungen(), 0);
 }
@@ -1216,6 +1241,7 @@ fn generierte_faelle() {
         Ok(())
     });
     b.borrow().drucke("generierte_faelle", n.get());
+    b.borrow().wache_rechnet("generierte_faelle");
     ergebnis.unwrap();
     assert!(n.get() >= 1000);
 }
@@ -1286,6 +1312,7 @@ fn dba_methode_generiert() {
         })
         .unwrap();
     b.drucke("dba_methode_generiert", n.get());
+    b.wache_rechnet("dba_methode_generiert");
     assert!(n.get() >= 1000);
     let z = &b.zeilen["dba_methode_fuer"];
     assert!(
