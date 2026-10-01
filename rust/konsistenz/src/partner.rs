@@ -7,9 +7,10 @@
 //! Die Handliste bleibt eine Handliste (Parität). `domain::Veranlagung::Einzel { a }` macht
 //! Partnerdaten im RECHEN-Eingang unrepräsentierbar; der Store kann sie aber weiter halten
 //! (Korrektur auf „einzel" nach bestätigten Partnerwerten) — genau das meldet diese Prüfung.
+use domain::Veranlagung;
 use serde_json::Value;
 
-use crate::lesung::{lies, Felder};
+use crate::lesung::{lage_veranlagung, lies, Felder};
 use crate::zahl::zahl_gt0;
 
 /// Partnerfelder, die eine Zusammenveranlagung voraussetzen (`partner_check.py:17-29`).
@@ -68,7 +69,15 @@ pub fn partner_ohne_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> {
     let Some(veranlagung) = lies(felder, "veranlagung").bestaetigt() else {
         return Vec::new();
     };
-    if veranlagung.as_str() == Some("zusammen") {
+    // Typisiert statt `veranlagung.as_str() == Some("zusammen")`: die Entscheidung „ist das
+    // zusammen?" faellt jetzt in `Lage::veranlagung` (`domain/src/lage.rs:49`), nicht hier.
+    //
+    // PARITAET, an `partner_check.py:58` gemessen: Python bricht NUR bei exakt `"zusammen"` ab.
+    // Ein abweichender Wert (`"Zusammen"`, `5`, `true`) ist dort nicht `"zusammen"` und laeuft
+    // WEITER — deshalb steht hier `Some(Veranlagung::Zusammen)` und nicht „nicht abweichend".
+    // `Lage::Abweichend` verhaelt sich damit wie in Python; das Feld `veranlagung` unten traegt
+    // weiter den ROHEN Wert, weil Python ihn roh in das dict schreibt.
+    if matches!(lage_veranlagung(felder).0, Some(Veranlagung::Zusammen)) {
         return Vec::new();
     }
     PARTNER_FELDER
@@ -103,9 +112,15 @@ pub fn partner_ohne_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> {
 /// ```
 #[must_use]
 pub fn alleinerziehend_mit_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> {
-    let veranlagung = lies(felder, "veranlagung").bestaetigt();
     let alleinstehend = lies(felder, "fam_alleinstehend").bestaetigt();
-    if veranlagung.and_then(Value::as_str) != Some("zusammen")
+    // Dieselbe Typisierung wie oben, umgekehrte Richtung. PARITAET, an `partner_check.py:91`
+    // gemessen: Python laeuft NUR bei exakt `"zusammen"` weiter. Ein abweichender Wert ist dort
+    // `!= "zusammen"` und bricht ab; hier ist er `None` und bricht ebenso ab.
+    //
+    // Der rohe Wert wird nicht mehr gebraucht: der Guard laesst nur exakt "zusammen" durch,
+    // deshalb ist das Literal im `veranlagung`-Feld unten (wie in Python, das `veranlagung`
+    // dort roh einsetzt) beweisbar derselbe Text.
+    if !matches!(lage_veranlagung(felder).0, Some(Veranlagung::Zusammen))
         || alleinstehend != Some(&Value::Bool(true))
     {
         return Vec::new();

@@ -11,6 +11,7 @@ workspace = true
 domain = { path = "../domain" }
 store = { path = "../store" }
 interview = { path = "../interview" }
+serde = { workspace = true }
 serde_json = { workspace = true }
 
 [dev-dependencies]
