@@ -22,7 +22,7 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 | Vorjahr überspringt Altwert | fertig in Python und `eingang` (Rust-Route bleibt Stub bis 9c) | `e64a8c4` |
 | Null in Kz ohne Null | fertig, Py **und** Rust: 384 echte Fälle, ungültig 214 → 38, Abweichungen 0 (Vault `decisions/elster-null-in-kz-ohne-null-weglassen`) | `3c7bb01` |
 | Textformat aus XSD beim Speichern | fertig, Py **und** Rust | `529eaa3` |
-| **9b-B Typisierung** | K0 fertig (Vault `research/taxgraph-wertformen-echte-stores`); **K1 `domain` fertig und nachgemessen** (794 Rust-Tests, 19 Parity-Suiten, 3403 Python-Tests, clippy 0, Mutation 2/2 rot); **K2 `store` Risikokarte fertig, Bau läuft** (3 Felddeklarationen + 9 Konstruktionen, `signal_1` eigene Staffel); dann K3 → K9 (§7) | `1f01bc7` |
+| **9b-B Typisierung** | K0 fertig (Vault `research/taxgraph-wertformen-echte-stores`); **K1 `domain` fertig und nachgemessen** (794 Rust-Tests, 19 Parity-Suiten, 3403 Python-Tests, clippy 0, Mutation 2/2 rot); **K2 `store` fertig** (51 Dateien, Testlauf 936 passed / 7 failed, alle sieben = Wächter `wache_rechnet`, 0 Abweichungen; Rücknahme auf `77ea7a5` läuft); **K3 `interview` fertig gemessen — Risikokarte gegenstandslos**: `rust/interview` ist READ-ONLY, schreibt 0 Events, hat **keinen** Produktpfad-Konsumenten (nur `parity`+`konsistenz`; Nutzerpfad läuft über Python `traverser.py`); dann K4 → K9 (§7) | `1f01bc7` |
 | Pflegegrad im XSD-Enum | fertig, Py **und** Rust: 5→4, Block-Wegfall ohne H, nur E0161606 weg mit H; xmllint invalide 38 → 22; Testloch Enum-Schranke geschlossen (Vault `decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen`) | `29d66c2` |
 | Wertformen-Messwerkzeug | fertig: `re.fullmatch` statt `re.match`, Regressionstest in `tests/` (Vault `decisions/wertformen-prueft-format-ueber-den-ganzen-wert`) | `3436fa9` |
 | 9b Rest | `debug_assert!`/Properties für übrige Crates; 22 xfail als `#[ignore]`; End-to-End Eingabe → XML | — |
@@ -47,6 +47,13 @@ Gates auf `2f9cd2d`: `cargo build`, `clippy --workspace --all-targets -D warning
 **Offen bei Julius:** Das ELSTER-Schema erlaubt in Textfeldern nur den Zeichensatz „Standard_E_V2",
 strenger als XML 1.0 (Vault-Ticket `elster-zeichensatz-strenger-als-xml`): abweisen, umschreiben und
 melden, oder nur warnen.
+
+**Offen aus 2026-10-01 (gemessen, noch nicht entschieden):**
+- **Nutzerpfad-Karte** (`sperre`, in Arbeit): `rust/interview` ist fertig portiert und trägt **keinen** Nutzerpfad. Falls das für weitere Crates gilt, ist „fertig" in der Tabelle oben eine Aussage über den Code, nicht über das Produkt.
+- **Rentner-Scheibe** fragt Lohnsteuer ohne die zwei ERiC-Pflichtfelder. Beide naheliegenden Ausgänge falsch; entschieden ist (c): Ring zuerst. Vault-Ticket `rentner-scheibe-fragt-lohnsteuer-ohne-die-zwei-pflichtfelder`, `naht` leitet die Naht-Paare aus dem XSD ab.
+- **Audit-Leck** (`gdb-bau`, Fix läuft): `API.FAELLE` und `audit.AUDIT_DIR` sind zwei Modul-Globals, die halbe Isolierung leckt 1145 Zeilen ins Nutzerverzeichnis. 12 von 169 Wegwerf-Skripten tragen das Muster. Zweites Ticket: die `status`-Spalte steht bei fünf Aktionsnamen auf 500 trotz 409/422 am Client.
+- **Parity-Blindstellen** (Vault `decisions/parity-elster-vergleich-gegenstandslos-fuer-ring`): der ELSTER-Vergleich nimmt auf beiden Seiten denselben verkürzten Weg — für die Ring-Injektion 0 Aussage; die Komposition `mit_ring_werten → elster::deklariere` hat für Rust keine Zeile. `intervall`/„B alle" ist **strukturell leer** (299 von 366 Achsen nullen die Zeile, 192/192 NULL).
+- **Rundung der Abzugsposten** (`quellen`): 35a-Summe muss aus gerundeten Posten kommen.
 
 **Kleinere offene Befunde:** `eingang::beleg::extrahiere` kompiliert Regex je Aufruf (73–87 ms);
 `eingang::ocr::lies_kontoauszug_pdf` liefert bei fehlender Datei `Ok(leer)`; Float-Rentenfreibetrag
