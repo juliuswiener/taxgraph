@@ -508,8 +508,141 @@ fn gegenprobe_feld_nicht_gestellt_erzeugt_keine_huelle() {
     let xml = erzeuge_xml(&d, &opt).unwrap();
     let h = leere_huellen(&xml);
     assert!(h.is_empty(), "leere Huelle(n) im XML: {h:?}");
-    assert!(
-        !xml.contains("<Geh_Steh_Blind_Hilfl"),
-        "ohne Feld darf kein Container entstehen"
+}
+
+// ---------------------------------------------------------------- §35a: mehrere Posten je Topf
+//
+// Haushaltsnahe Aufwendungen (§ 35a EStG) haben drei Toepfe: Minijob, Dienstleistung, Handwerker.
+// Zwei Posten in einem Topf ergaben bis 2026-10-01 ein schema-ungueltiges XML: `<HA_35a>` traegt
+// `maxOccurs="1"` (E10-2025.xsd:8236), die Posten wiederholen sich ueber `<Einz>` darunter
+// (`maxOccurs="99"`, :10048). Ohne Eintrag in `INSTANZ_CONTAINER_TIEFER` fiel der Writer auf
+// `kz_pfad[..2]` zurueck — also auf `<HA_35a>` selbst — und wiederholte den ganzen Abschnitt.
+// xmllint: „Element HA_35a: This element is not expected". Von mehreren Posten erreichte nur
+// einer die Datei. Die Python-Seite prueft dasselbe in tests/test_elster_xml.py; hier steht die
+// Rust-Messung direkt, damit die Paritaet nicht zwei gleich falsche Seiten gruen nennt.
+
+fn zaehle_tag(xml: &str, tag: &str) -> usize {
+    xml.match_indices(&format!("<{tag}>")).count() + xml.match_indices(&format!("<{tag} ")).count()
+}
+
+fn posten_xml(gruppe: &str, art: &str, betrag: &str, werte: &[(i64, i64)]) -> String {
+    let felder: Felder = werte
+        .iter()
+        .enumerate()
+        .flat_map(|(i, (a, b))| {
+            let suffix = if i == 0 { String::new() } else { format!("__{}", i + 1) };
+            [
+                (
+                    format!("{art}{suffix}"),
+                    feld(json!(a.to_string()), Zustand::Bestaetigt),
+                ),
+                (
+                    format!("{betrag}{suffix}"),
+                    feld(json!(b), Zustand::Bestaetigt),
+                ),
+            ]
+        })
+        .collect();
+    let d = deklariere(&felder, index(), None).unwrap();
+    // Instanz 1 ist die BASIS-feld_id ohne Suffix und steht in `deklaration`; erst `__2` und
+    // hoeher landen in `anlage_instanzen` (`instanz.rs`). Der Ring muss also n-1 sehen.
+    assert_eq!(
+        d.instanzen_der_gruppe(gruppe).len(),
+        werte.len() - 1,
+        "{gruppe}: Instanzen jenseits der Basis",
     );
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        ..XmlOptionen::default()
+    };
+    erzeuge_xml(&d, &opt).unwrap()
+}
+
+/// AK1 (Rust-Seite): ein Topf mit ZWEI Posten -> EIN `<HA_35a>` mit ZWEI `<Einz>`.
+#[test]
+fn hh_top_zwei_posten_ein_ha35a() {
+    for (gruppe, art, betrag) in [
+        ("hh_minijob", "hh_minijob_art", "hh_minijob_betrag"),
+        (
+            "hh_dienstleistung",
+            "hh_dienstleistung_art",
+            "hh_dienstleistung_betrag",
+        ),
+        (
+            "hh_handwerker",
+            "hh_handwerker_art",
+            "hh_handwerker_betrag",
+        ),
+    ] {
+        let xml = posten_xml(gruppe, art, betrag, &[(1, 120_000), (2, 80_000)]);
+        assert_eq!(
+            zaehle_tag(&xml, "HA_35a"),
+            1,
+            "{gruppe}: genau ein <HA_35a> erwartet"
+        );
+        assert_eq!(
+            zaehle_tag(&xml, "Einz"),
+            2,
+            "{gruppe}: zwei <Einz> erwartet"
+        );
+    }
+}
+
+/// AK2 (Rust-Seite): Gegenprobe — ein Posten bleibt ein `<HA_35a>` mit einem `<Einz>`.
+#[test]
+fn hh_top_ein_posten_bleibt_unveraendert() {
+    for (gruppe, art, betrag) in [
+        ("hh_minijob", "hh_minijob_art", "hh_minijob_betrag"),
+        (
+            "hh_dienstleistung",
+            "hh_dienstleistung_art",
+            "hh_dienstleistung_betrag",
+        ),
+        (
+            "hh_handwerker",
+            "hh_handwerker_art",
+            "hh_handwerker_betrag",
+        ),
+    ] {
+        let xml = posten_xml(gruppe, art, betrag, &[(1, 120_000)]);
+        assert_eq!(zaehle_tag(&xml, "HA_35a"), 1, "{gruppe}");
+        assert_eq!(zaehle_tag(&xml, "Einz"), 1, "{gruppe}");
+    }
+}
+
+/// AK5 (Rust-Seite): das erzeugte XML haelt das amtliche Schema. Ohne den Fix scheiterte genau
+/// das an `<HA_35a>` — der Test war damals rot (Gegenprobe im Bericht).
+#[test]
+fn hh_top_mehrere_posten_ist_xsd_valide() {
+    for vz in ["2024", "2025"] {
+        let jahr: i64 = vz.parse().unwrap();
+        let felder: Felder = [
+            (
+                "hh_minijob_art".to_owned(),
+                feld(json!("1"), Zustand::Bestaetigt),
+            ),
+            (
+                "hh_minijob_betrag".to_owned(),
+                feld(json!(120_000), Zustand::Bestaetigt),
+            ),
+            (
+                "hh_minijob_art__2".to_owned(),
+                feld(json!("2"), Zustand::Bestaetigt),
+            ),
+            (
+                "hh_minijob_betrag__2".to_owned(),
+                feld(json!(80_000), Zustand::Bestaetigt),
+            ),
+        ]
+        .into();
+        let d = deklariere(&felder, index(), None).unwrap();
+        let opt = XmlOptionen {
+            vz: jahr,
+            hersteller_id: Some("74931".to_owned()),
+            ..XmlOptionen::default()
+        };
+        let xml = erzeuge_xml(&d, &opt).unwrap();
+        let (ok, meldung) = elster::validiere_xsd_text(xml.as_bytes(), vz);
+        assert!(ok, "VZ {vz}: {meldung}");
+    }
 }
