@@ -154,10 +154,17 @@ jobs:
       # pytest-xdist kommt aus requirements-ci.txt (e1fb69a) und wird oben installiert —
       # ohne das Plugin braeche dieser Schritt mit "unrecognized arguments: -n".
       # Lokal gemessen (12 Kerne): sequenziell 343 s, -n 6 71,6 s, gleiche 2229/3.
+      # TAXGRAPH_OHNE_XSD=1: der Runner hat kein ERiC-Schema (Lizenz, kein oeffentlicher
+      # Download). Seit 2026-10-01 (Log #142) ist ein fehlendes Schema LAUT ROT; uebersprungen
+      # wird nur, wenn dieser Aufrufer ausdruecklich sagt, dass hier kein ERiC liegen kann.
+      # Dieselbe Regel wie beim cargo-test-Schritt unten. Fehlt das Flag, wird der Job rot —
+      # das ist gewollt: die Entscheidung soll sichtbar sein, nicht still.
       - name: pytest tests/ (mit gebauter Catala-Toolchain)
         run: |
           eval $(opam env --switch=taxgraph --set-switch)
           python3 -m pytest tests/ -q -n 4 --dist loadfile
+        env:
+          TAXGRAPH_OHNE_XSD: "1"
 
   golden:
     runs-on: ubuntu-latest

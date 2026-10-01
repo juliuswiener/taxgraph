@@ -253,7 +253,7 @@ def gemessen(tmp_path_factory):
     return ergebnisse
 
 
-def test_gruenkontrolle_bestaetigter_topf_konsistent(gemessen):
+def test_gruenkontrolle_bestaetigter_topf_konsistent(gemessen, braucht_echtes_xsd):
     """Kontrollfall (KEIN xfail): kap_gewinn_sonstige VOLL bestaetigt erhoeht die Steuer, UND
     /deklaration + das echte XML zeigen dieselbe E1901401-Zahl, UND eingaben_konsistent=True.
     Beweist, dass die Messmechanik selbst funktioniert, bevor der 'leck'-Fall unten aussagekraeftig ist."""

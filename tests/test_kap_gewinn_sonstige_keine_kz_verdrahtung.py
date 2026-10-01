@@ -207,7 +207,7 @@ def test_gruenkontrolle_ring_rechnet_den_betrag_ein(gemessen):
     print(f"\n[kontrolle] delta zahl_cent = {delta} Cent ({delta/100:.2f} EUR) -- Ring rechnet mit")
 
 
-def test_1750_euro_landet_in_keiner_kz(gemessen):
+def test_1750_euro_landet_in_keiner_kz(gemessen, braucht_echtes_xsd):
     """DIE Kernaussage, exakt festgenagelt (kein bare xfail): der nicht_deklariert-Eintrag traegt
     woertlich den elster_kz_grund-Text aus der Bindung, und '1750' kommt im echten XML NULL Mal
     vor. Aendert sich einer der beiden Werte (Reparatur ODER Regression), faellt dieser Test mit

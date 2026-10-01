@@ -205,7 +205,7 @@ def gemessen(tmp_path_factory):
     return ergebnisse
 
 
-def test_gruenkontrolle_aggregat_konsistent(gemessen):
+def test_gruenkontrolle_aggregat_konsistent(gemessen, braucht_echtes_xsd):
     """Aggregat allein (Topf=0): Steuer steigt gegenueber der Kapital-Null-Baseline, UND E1900701
     zeigt im echten XML genau den deklarierten Betrag -- Steuer und Deklaration passen zueinander.
     Kein xfail: Kontrollfall, an dem die Messmechanik selbst geprueft wird, bevor der rote Fall
@@ -240,7 +240,7 @@ def test_gruenkontrolle_aggregat_konsistent(gemessen):
     "selben Lauf. Reparaturrichtung offen (eigenes Kz fuer den Topf, Aggregat mit einrechnen, "
     "oder E1900701 unterdruecken statt 0 zu schreiben) -- dieser Test bindet sich an keine "
     "davon, nur an den Widerspruch."))
-def test_topf_only_steuer_und_deklaration_widersprechen_sich(gemessen):
+def test_topf_only_steuer_und_deklaration_widersprechen_sich(gemessen, braucht_echtes_xsd):
     zero, red = gemessen["zero"], gemessen["red"]
 
     assert red["ergebnis"]["grund"] != "kapital_semantik_offen", (
