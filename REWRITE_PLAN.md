@@ -8,7 +8,7 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 
 ---
 
-## Fortschritt (Stand 2026-10-01, HEAD `29d66c2`)
+## Fortschritt (Stand 2026-10-01 23:55, HEAD `faef9ee`, 76 Commits ungepusht)
 
 | Schritt | Stand | Commits |
 |---|---|---|
@@ -22,14 +22,23 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 | Vorjahr überspringt Altwert | fertig in Python und `eingang` (Rust-Route bleibt Stub bis 9c) | `e64a8c4` |
 | Null in Kz ohne Null | fertig, Py **und** Rust: 384 echte Fälle, ungültig 214 → 38, Abweichungen 0 (Vault `decisions/elster-null-in-kz-ohne-null-weglassen`) | `3c7bb01` |
 | Textformat aus XSD beim Speichern | fertig, Py **und** Rust | `529eaa3` |
-| **9b-B Typisierung** | K0 fertig (Vault `research/taxgraph-wertformen-echte-stores`); **K1 `domain` fertig und nachgemessen** (794 Rust-Tests, 19 Parity-Suiten, 3403 Python-Tests, clippy 0, Mutation 2/2 rot); **K2 `store` fertig** (51 Dateien, Testlauf 936 passed / 7 failed, alle sieben = Wächter `wache_rechnet`, 0 Abweichungen; Rücknahme auf `77ea7a5` läuft); **K3 `interview` fertig gemessen — Risikokarte gegenstandslos**: `rust/interview` ist READ-ONLY, schreibt 0 Events, hat **keinen** Produktpfad-Konsumenten (nur `parity`+`konsistenz`; Nutzerpfad läuft über Python `traverser.py`); dann K4 → K9 (§7) | `1f01bc7` |
+| **9b-B Typisierung** | K0 fertig (Vault `research/taxgraph-wertformen-echte-stores`); **K1 `domain` fertig** (794 Rust-Tests, 19 Parity-Suiten, clippy 0, Mutation 2/2 rot); **K2 `store` trägt `PyWert` — gemergt** (`PyWert::zu_json` gibt `Result`, NaN/inf → `PyFehler::DezimalGrenze`, 56 Dateien); **K3 `interview` gegenstandslos** (READ-ONLY, 0 Events, kein Produktpfad-Konsument); **K4 `konsistenz` liest die Veranlagung typisiert — gemergt** (Fassung A: `Option<Veranlagung>` + `bool abweichend`, Log #119; Gegenprobe 1 rot); **nächster: K5 `elster`**, dann K6 → K9 (§7) | `1f01bc7` K1 · `ee46881` K4 · `bfb6a35` K2 |
+| Veranlagungsjahr in Rust-`elster` | fertig: `deklariere(snapshot, bindung, vz, id)` wählt die Null-Verbots-Liste je Jahr wie `est_mapping.null_unzulaessig` (0 → Fehler; 2024/2025 eigene Menge; 2026–2100 Vereinigung; sonst Fehler). `elster_paritaet reale_faelle` 4 → 0 Abweichungen (fall#52/#53 eg_huge/eg_neg). Gegenprobe am Aufrufort rot. Bericht `~/.cache/taxgraph-tmp/berichte/vz.md` | `d8d5f1f` · `faef9ee` |
+| End-to-End Eingabe → Bescheid → ELSTER-XML | fertig, byte-gleich Python, 3 Fixtures VZ 2025 gegen XSD | `479deb9` |
+| Python-xfail → Rust `#[ignore]` | fertig: 24 Gegenstücke in `rust/{api,bescheid,elster}/tests/offene_defekte.rs`, unter `--ignored` rot am Defekt — Ausnahme `p23_eric_prueft_zwei_verkaeufe`: im Hauptbaum grün, weil `.env*` eine echte Hersteller-ID trägt (Umgebungs-Gate, im `#[ignore]`-Grund benannt); `test_datenwurzel_ausserhalb_repo` als grüner Rust-Test (`api/tests/datenwurzel.rs`); TESTMAP nennt je xfail das Gegenstück. Unter K2 kompilierbar erst mit `faef9ee` | `90f91aa` · `faef9ee` |
+| GitHub-CI wieder grün machen | drei Ursachen, je eine behoben: Quell-Hash locale-abhängig (`LC_ALL=C`, `e94357f`); `ttsim-backend` ungepinnt (`==1.2.1`, eine Pin-Quelle + Wächter, `1993b8d`/`f057f70`-Merge); fehlendes ERiC-Schema → laut rot, Skip nur mit `TAXGRAPH_OHNE_XSD=1`, `ci.yml` setzt es (`5b77799`). Der `rust`-Job wäre auf `5b77799` an E0308 + 6 Clippy-Fehlern aus `90f91aa` rot gewesen, behoben in `faef9ee`. **In CI selbst nicht geprüft — nichts gepusht.** Vault `tickets/github-ci-seit-20-08-rot` | `e94357f` · `5b77799` |
+| Wackliger Test durch Ablage-Leck | fertig: `audit.AUDIT_DIR`/`api.FAELLE` enden an der Testdatei (autouse-Fixture in `tests/conftest.py`), Ursache pytest-randomly | `d1b0422` |
 | Pflegegrad im XSD-Enum | fertig, Py **und** Rust: 5→4, Block-Wegfall ohne H, nur E0161606 weg mit H; xmllint invalide 38 → 22; Testloch Enum-Schranke geschlossen (Vault `decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen`) | `29d66c2` |
 | Wertformen-Messwerkzeug | fertig: `re.fullmatch` statt `re.match`, Regressionstest in `tests/` (Vault `decisions/wertformen-prueft-format-ueber-den-ganzen-wert`) | `3436fa9` |
-| 9b Rest | `debug_assert!`/Properties für übrige Crates; 22 xfail als `#[ignore]`; End-to-End Eingabe → XML | — |
+| 9b Rest | `debug_assert!`/Properties für übrige Crates; `rust/elster/tests/eigenschaften.rs` ohne Schema: 7 rot, 3 still `return` → gleiche Regel wie Python (`TAXGRAPH_OHNE_XSD=1`); Wächter `test_ci_konfiguration` prüft die installierte Fassung nur für `gettsim`, nicht für `ttsim-backend` | — |
+| Format | `cargo fmt --all --check`: 33 Hunks in 14 fremden Dateien, bewusst vertagt (CI prüft nur clippy, Log #165) | — |
 | 9c `api`-Handler | offen (danach), inkl. `Username`/`FallId`-Newtypes | — |
 | 10 Cutover | offen | — |
 
-Gates auf `2f9cd2d`: `cargo build`, `clippy --workspace --all-targets -D warnings`, `fmt --all --check`,
+Gates auf `faef9ee` (2026-10-01 23:51, Instructor nachgemessen): `clippy --workspace --all-targets
+-D warnings` exit 0; `PARITY=1 cargo test --workspace` 992 passed / 0 failed / 26 ignored über 66
+Testbinaries; `rust/fuzz` `cargo check` grün; `make unit` 3478 passed / 0 failed (auf `5b77799`, außerhalb
+`rust/` kein Diff zu `faef9ee`). Gates auf `2f9cd2d`: `cargo build`, `clippy`, `fmt --all --check`,
 727 Tests, `cargo +nightly fuzz build`, alle 17 Parity-Suiten (`PARITY=1`) grün. Volle Nachmessung
 ≈ 20 min; Skript-Muster: jede Suite einzeln `PARITY=1 cargo test -p parity --test <name> -- --test-threads 3`.
 
@@ -51,7 +60,7 @@ melden, oder nur warnen.
 **Offen aus 2026-10-01 (gemessen, noch nicht entschieden):**
 - **Nutzerpfad-Karte** (`sperre`, in Arbeit): `rust/interview` ist fertig portiert und trägt **keinen** Nutzerpfad. Falls das für weitere Crates gilt, ist „fertig" in der Tabelle oben eine Aussage über den Code, nicht über das Produkt.
 - **Rentner-Scheibe** fragt Lohnsteuer ohne die zwei ERiC-Pflichtfelder. Beide naheliegenden Ausgänge falsch; entschieden ist (c): Ring zuerst. Vault-Ticket `rentner-scheibe-fragt-lohnsteuer-ohne-die-zwei-pflichtfelder`, `naht` leitet die Naht-Paare aus dem XSD ab.
-- **Audit-Leck** (`gdb-bau`, Fix läuft): `API.FAELLE` und `audit.AUDIT_DIR` sind zwei Modul-Globals, die halbe Isolierung leckt 1145 Zeilen ins Nutzerverzeichnis. 12 von 169 Wegwerf-Skripten tragen das Muster. Zweites Ticket: die `status`-Spalte steht bei fünf Aktionsnamen auf 500 trotz 409/422 am Client.
+- **Audit-Leck** (Fix `d1b0422`, Zeile „Wackliger Test" oben): `API.FAELLE` und `audit.AUDIT_DIR` sind zwei Modul-Globals, die halbe Isolierung leckt 1145 Zeilen ins Nutzerverzeichnis. 12 von 169 Wegwerf-Skripten tragen das Muster. Zweites Ticket: die `status`-Spalte steht bei fünf Aktionsnamen auf 500 trotz 409/422 am Client.
 - **Parity-Blindstellen** (Vault `decisions/parity-elster-vergleich-gegenstandslos-fuer-ring`): der ELSTER-Vergleich nimmt auf beiden Seiten denselben verkürzten Weg — für die Ring-Injektion 0 Aussage; die Komposition `mit_ring_werten → elster::deklariere` hat für Rust keine Zeile. `intervall`/„B alle" ist **strukturell leer** (299 von 366 Achsen nullen die Zeile, 192/192 NULL).
 - **Rundung der Abzugsposten** (`quellen`): 35a-Summe muss aus gerundeten Posten kommen.
 
