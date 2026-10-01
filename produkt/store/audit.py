@@ -19,14 +19,24 @@ from datetime import datetime, timezone
 # denselben Ort meinen, laufen auseinander (die Klasse, die in diesem Projekt schon mehrfach
 # Geld gekostet hat). Der Import ist lokal, weil produkt/haut nicht immer im sys.path liegt,
 # wenn der Store allein benutzt wird — dann greift der ausdrückliche Rückfall.
-def _standard_dir() -> str:
+def _fall_verzeichnis() -> str:
+    """Das Fallverzeichnis, wie es JETZT gilt — über die Fassade `api`, nicht über
+    `api_constants`.
+
+    Der Unterschied ist die halbe Isolierung, die am 2026-10-01 1145 Zeilen ins
+    Nutzerprotokoll geschrieben hat: `api` bindet `FAELLE` per `from api_constants import *`
+    als EIGENEN Namen. Wer die Fallakten umlenkt, schreibt `api.FAELLE = …` — und
+    `api_constants.FAELLE` bleibt stehen. Wer hier `api_constants` läse, folgte der Umlenkung
+    nicht und schriebe das Protokoll weiter neben die echten Fälle, während die Akten schon
+    im Tempverzeichnis liegen.
+    """
     try:
         import sys
         _h = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "haut")
         if _h not in sys.path:
             sys.path.insert(0, _h)
-        from api_constants import FAELLE
-        return FAELLE
+        import api
+        return api.FAELLE
     except Exception:                       # noqa: BLE001 — Store ohne Haut ist ein gültiger Fall
         xdg = os.environ.get("XDG_DATA_HOME", "").strip()
         basis = os.path.expanduser(xdg) if xdg else os.path.join(
@@ -34,11 +44,44 @@ def _standard_dir() -> str:
         return os.path.join(basis, "taxgraph", "faelle")
 
 
-AUDIT_DIR = os.environ.get("TAXGRAPH_AUDIT_DIR") or _standard_dir()
+def _standard_dir() -> str:
+    """Die Ablage, wie sie ohne ausdrückliche Umlenkung gilt. Zur AUFRUFZEIT bestimmt."""
+    return _fall_verzeichnis()
+
+
+# Beim Import festgehalten, damit `_ablage()` erkennt, ob jemand `AUDIT_DIR` absichtlich
+# umgebogen hat (Tests, Werkzeuge) — und nicht versehentlich den Importwert für eine Umlenkung
+# hält. Zwei Namen für eine Sache waren der Fehler; zwei Werte desselben Namens wären der
+# nächste, deshalb vergleicht `_ablage()` gegen genau diese eine Zahl.
+_AUDIT_DIR_IMPORT = os.environ.get("TAXGRAPH_AUDIT_DIR") or _standard_dir()
+
+# Bleibt ein gewöhnliches, beschreibbares Modul-Attribut: die Tests und `tools/parity`
+# lenken die Ablage so um, und `monkeypatch.setattr` stellt den Importwert wieder her.
+AUDIT_DIR = _AUDIT_DIR_IMPORT
+
+
+def _ablage() -> str:
+    """Das Verzeichnis, in das das Protokoll JETZT gehört.
+
+    Reihenfolge — jede Stufe gewinnt nur, wenn die vorige nicht greift:
+      1. `AUDIT_DIR` wurde ausdrücklich umgebogen (Tests, Werkzeuge). Der Vergleich gegen
+         `_AUDIT_DIR_IMPORT` ist nötig, weil `monkeypatch.setattr` beim Zurückstellen genau
+         diesen Wert schreibt: ein Vergleich auf „gesetzt?" wäre danach immer wahr und die
+         Ablage bliebe für den Rest des Prozesses eingefroren.
+      2. `$TAXGRAPH_AUDIT_DIR` — zur Aufrufzeit gelesen, nicht beim Import.
+      3. Sonst: das Fallverzeichnis, wie es jetzt steht. Damit biegt EIN Griff am
+         Datenverzeichnis das Protokoll mit um.
+    """
+    if AUDIT_DIR != _AUDIT_DIR_IMPORT:
+        return AUDIT_DIR
+    eigen = os.environ.get("TAXGRAPH_AUDIT_DIR", "").strip()
+    if eigen:
+        return os.path.expanduser(eigen)
+    return _standard_dir()
 
 
 def _audit_pfad() -> str:
-    return os.path.join(AUDIT_DIR, "audit.jsonl")
+    return os.path.join(_ablage(), "audit.jsonl")
 
 
 def append(user_id: str | None, action: str, fall_id: str | None = None,

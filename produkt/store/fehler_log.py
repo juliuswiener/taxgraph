@@ -51,11 +51,13 @@ unerkannt durch — kein heutiges Erzeugungsschema tut das. Ist `pii_filter` nic
 (Store ohne Haut, wie bei `AUDIT_DIR`), wird `fall_id` fail-closed verworfen, aber SICHTBAR
 markiert statt als `null` zu erscheinen — sonst sähe ein leeres Feld wie ein anderer Fehler aus.
 
-Ablage: neben den Falldaten, über audit.AUDIT_DIR statt einer zweiten Wegbeschreibung. Zwei
-Stellen, die denselben Ort meinen, laufen auseinander — die Klasse, die in diesem Projekt
-schon mehrfach Geld gekostet hat. Der Zugriff erfolgt zur AUFRUFZEIT (`audit.AUDIT_DIR`, kein
-`from audit import AUDIT_DIR`): ein from-Import bindet den Wert, nicht den Namen, und liefe an
-jedem Test vorbei, der die Ablage umlenkt.
+Ablage: neben den Falldaten, über audit._ablage() statt einer zweiten Wegbeschreibung — auch
+nicht über audit.AUDIT_DIR, denn das ist ein beim Import eingefrorener Wert. `_ablage()` löst
+denselben Ort zur AUFRUFZEIT auf und folgt einem umgebogenen Fallverzeichnis mit; ohne das
+schriebe dieses Protokoll weiter neben die echten Fälle, während die Akten schon woanders
+liegen (die halbe Isolierung vom 2026-10-01). Ein `from audit import …` schiede ebenfalls aus:
+ein from-Import bindet den Wert, nicht den Namen, und liefe an jedem Test vorbei, der die
+Ablage umlenkt.
 """
 from __future__ import annotations
 
@@ -130,7 +132,7 @@ def _sicherer_fall_id(fall_id):
 
 
 def _pfad() -> str:
-    return os.path.join(audit.AUDIT_DIR, "fehler.log")
+    return os.path.join(audit._ablage(), "fehler.log")
 
 
 def _handler_fuer(pfad: str) -> logging.Handler:

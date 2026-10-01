@@ -1040,7 +1040,7 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
         Browserfenster und war nach einem Neuladen weg. Eine Diagnose ohne den Wortlaut ist
         Ratearbeit — genau deshalb gibt es das hier, und genau deshalb ist es abschaltbar.
 
-        Ablage neben dem Audit (über `audit.AUDIT_DIR`, zur AUFRUFZEIT gelesen): dieselbe
+        Ablage neben dem Audit (über `audit._ablage()`, zur AUFRUFZEIT gelesen): dieselbe
         Wegbeschreibung, damit Tests, die die Ablage umlenken, auch diese Datei mitnehmen. Ein
         `from audit import AUDIT_DIR` bände den Wert statt des Namens und liefe an jeder Umlenkung
         vorbei. Rechte 0600 wie beim Audit — die Datei führt den Klartext einer Steuererklärung.

@@ -73,14 +73,16 @@ def schreibe(fall_id: str | None, art: str, inhalt) -> None:
                   einziges benanntes Feld ist der Zustand, in dem der Nutzer „noch offen" liest
                   und nicht erfährt, woran es liegt (Julius' neunter Befund vom 2026-08-27).
 
-    Ablage über `audit.AUDIT_DIR`, zur AUFRUFZEIT gelesen: dieselbe Wegbeschreibung wie beim Audit,
-    damit Tests, die die Ablage umlenken, diese Datei mitnehmen. Ein `from audit import AUDIT_DIR`
-    bände den Wert statt des Namens und liefe an jeder Umlenkung vorbei.
+    Ablage über `audit._ablage()`, zur AUFRUFZEIT gelesen: dieselbe Wegbeschreibung wie beim
+    Audit, damit Tests, die die Ablage umlenken, diese Datei mitnehmen. Ein `from audit import …`
+    bände den Wert statt des Namens und liefe an jeder Umlenkung vorbei. Und `audit.AUDIT_DIR`
+    allein genügt nicht: dieser Wert steht beim Import fest, sodass ein umgebogenes Fallverzeichnis
+    (die halbe Isolierung vom 2026-10-01) diese Datei neben den echten Fällen liegen liesse.
     """
     if not an():
         return
     try:
-        pfad = os.path.join(audit.AUDIT_DIR, DATEI)
+        pfad = os.path.join(audit._ablage(), DATEI)
         zeile = json.dumps({"ts": datetime.now(timezone.utc).isoformat(),
                             "fall": fall_id or AKTUELLER_FALL, "art": art, "inhalt": inhalt},
                            ensure_ascii=False, default=str)
