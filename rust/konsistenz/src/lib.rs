@@ -33,7 +33,7 @@ mod zahl;
 pub use flag::{
     flag_stand, flag_widersprueche, instanz_feld_ids, FlagStand, FlagWiderspruch, FLAG_NEGIERT,
 };
-pub use lesung::{lies, Felder, Lesung};
+pub use lesung::{lage_veranlagung, lies, Felder, Lesung};
 pub use nicht_gerechnet::{nicht_gerechnete_angaben, NichtGerechnet, NICHT_GERECHNET};
 pub use partner::{
     alleinerziehend_mit_zusammen, partner_ohne_zusammen, PartnerWiderspruch, PARTNER_FELDER,

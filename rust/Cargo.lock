@@ -811,6 +811,7 @@ dependencies = [
  "domain",
  "interview",
  "proptest",
+ "serde",
  "serde_json",
  "store",
 ]
