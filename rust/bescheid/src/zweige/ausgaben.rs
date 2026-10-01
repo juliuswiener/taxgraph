@@ -75,9 +75,16 @@ pub struct Extras {
 /// use bescheid::testhilfe::{felder, store};
 /// use bescheid::zweige::kist_konfession;
 /// use serde_json::json;
-/// assert_eq!(kist_konfession(&felder(&store(&[("kist_konfession", json!("rk"), true)]))), Some("rk"));
+/// assert_eq!(kist_konfession(&felder(&store(&[("kist_konfession", json!("evangelisch"), true)]))), Some("evangelisch"));
 /// assert_eq!(kist_konfession(&felder(&store(&[("kist_konfession", json!(""), true)]))), None);
 /// ```
+///
+/// ACHTUNG — dieser Leser prueft NICHT gegen `enum_werte`. `"gibt-es-nicht"` kaeme hier als
+/// `Some("gibt-es-nicht")` durch; der Riegel sitzt im Schreibpfad (`Store::append` ->
+/// `pruefe_bindung` -> `domain::Wert::aus_json`, `store.rs:335`/`wert.rs:126`). Der
+/// `testhilfe::store()` baut die `Felder` an diesem Pfad VORBEI — ein Wert ausserhalb der
+/// Bindung ist hier deshalb darstellbar, im Betrieb aber unerreichbar. Ein Beispielwert, den
+/// es nirgends gibt, lehrt das Falsche; deshalb steht hier ein echter `enum_werte`-Wert.
 #[must_use]
 pub fn kist_konfession(felder: &Felder) -> Option<&str> {
     match felder.get("kist_konfession").map(|e| &e.wert) {
