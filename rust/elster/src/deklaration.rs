@@ -9,7 +9,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use bindung::Bindung;
-use domain::{Cent, Feldtyp, PyWert, Zustand};
+use domain::{Cent, Feldtyp, Lage, PyWert, Veranlagung, Zustand};
 use serde::ser::SerializeMap;
 use serde::Serialize;
 use serde_json::Value;
@@ -821,15 +821,16 @@ impl Bau<'_> {
     /// § 32d Abs. 6 S. 4 EStG: der Guenstigerpruefungs-Antrag gilt fuer beide Ehegatten und muss
     /// im XML in beiden Person-Containern stehen.
     fn antrag_person_b(&mut self) {
-        let zusammen = self
-            .snapshot
-            .get("veranlagung")
-            // ponytail: `==` auf `PyWert` ist STRUKTURELL, nicht Pythons `==`. Vor K2 verglich
-            // `Value` hier einen Wert; `veranlagung` traegt im Bestand 136x Text und nie gemischt
-            // (gemessen), also bleibt die Polaritaet -- Befund B, eigene Entscheidung.
-            .is_some_and(|v| {
-                v.zustand == Zustand::Bestaetigt && v.wert == PyWert::Text("zusammen".to_owned())
-            });
+        // `est_mapping.py:1010`: `veranl.get("wert") == "zusammen"`. „Ist das zusammen?" entscheidet
+        // `Lage::veranlagung`; ein abweichender Wert (`"Zusammen"`, eine Liste) ist es auch in
+        // Python nicht, deshalb zaehlt nur `Lage::Gueltig`.
+        let zusammen = self.snapshot.get("veranlagung").is_some_and(|v| {
+            v.zustand == Zustand::Bestaetigt
+                && matches!(
+                    Lage::veranlagung(Some(&v.wert)),
+                    Lage::Gueltig(Veranlagung::Zusammen)
+                )
+        });
         let antrag_kz = self
             .bindung
             .get("kap_antrag_guenstigerpruefung")
@@ -1224,5 +1225,66 @@ mod tests {
             "0 in {} Faellen durchgelassen, obwohl der XSD-Typ sie verbietet: {durch:?}",
             durch.len()
         );
+    }
+
+    /// § 32d Abs. 6 S. 4 EStG (`est_mapping.py:1008-1012`): der Guenstigerpruefungs-Antrag steht
+    /// nur bei bestaetigter Zusammenveranlagung auch in `person_b`. Python vergleicht
+    /// `veranl.get("wert") == "zusammen"`: nur genau dieser Text, kein anderer Typ.
+    #[test]
+    fn antrag_spiegelt_nur_bei_bestaetigter_zusammenveranlagung() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let kz = index["kap_antrag_guenstigerpruefung"]
+            .elster_kz
+            .as_deref()
+            .unwrap();
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
+            wert: wert.into(),
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let gespiegelt = |veranlagung: Option<(Value, Zustand)>| {
+            let mut felder = Felder::from([(
+                "kap_antrag_guenstigerpruefung".to_owned(),
+                feld(json!(true), Zustand::Bestaetigt),
+            )]);
+            if let Some((w, z)) = veranlagung {
+                felder.insert("veranlagung".to_owned(), feld(w, z));
+            }
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            assert!(d.deklaration.contains_key(kz), "{:?}", d.deklaration);
+            match d.person_b.get(kz) {
+                Some(w) => {
+                    assert_eq!(Some(w), d.deklaration.get(kz));
+                    true
+                }
+                None => false,
+            }
+        };
+        assert!(gespiegelt(Some((json!("zusammen"), Zustand::Bestaetigt))));
+        for (w, z) in [
+            (json!("zusammen"), Zustand::Vorlaeufig),
+            (json!("einzel"), Zustand::Bestaetigt),
+            (json!("Zusammen"), Zustand::Bestaetigt),
+            (json!("zusammen "), Zustand::Bestaetigt),
+            (Value::Null, Zustand::Bestaetigt),
+            (json!(["zusammen"]), Zustand::Bestaetigt),
+            (json!({"wert": "zusammen"}), Zustand::Bestaetigt),
+        ] {
+            assert!(!gespiegelt(Some((w.clone(), z))), "{w} {z:?}");
+        }
+        assert!(!gespiegelt(None));
     }
 }
