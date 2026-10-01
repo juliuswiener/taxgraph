@@ -321,7 +321,10 @@ fn rust_run(c: &Ctx, name: &str) -> Result<Value, BescheidFehler> {
                 .map(|(id, v)| {
                     (
                         id.clone(),
-                        json!({"wert": v.wert, "zustand": serde_json::to_value(v.zustand).unwrap(),
+                        // K2/Auflage 2: `zu_json`, nicht `Serialize` fuer `PyWert` — die
+                        // Orakel-Form ist `canonical_json` mit der Sortierung von `Value`.
+                        json!({"wert": v.wert.zu_json().expect("Ring-Werte sind endlich"),
+                            "zustand": serde_json::to_value(v.zustand).unwrap(),
                             "herkunft": serde_json::to_value(&v.herkunft).unwrap()}),
                     )
                 })

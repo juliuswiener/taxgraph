@@ -14,8 +14,11 @@ use crate::py_text::{int_aus_text, repr_float, repr_str};
 
 /// Ein Wert, wie ihn `json.loads` oder `yaml.safe_load` liefert.
 ///
-/// Kein `PartialEq`: Gleichheit heisst hier [`PyWert::py_eq`] (Pythons `==`, mit `True == 1`).
-#[derive(Debug, Clone)]
+/// Fuer Pythons `==` gilt [`PyWert::py_eq`], NICHT das abgeleitete `PartialEq` (mit
+/// `True == 1`). Die strukturelle Gleichheit existiert nur, weil `store::Event` und
+/// `store::SnapshotFeld` sie fuer den Wire-Roundtrip ableiten -- sie ist KEIN Wertvergleich:
+/// `PyWert::Bool(false) == PyWert::Ganz(0)` ist dort falsch, `py_eq` sagt wahr.
+#[derive(Debug, Clone, PartialEq)]
 pub enum PyWert {
     /// `None`.
     Null,
@@ -399,6 +402,80 @@ impl PyWert {
         match self {
             Self::Text(s) => s.clone(),
             _ => self.repr(),
+        }
+    }
+    /// `PyWert` -> `serde_json::Value`, fuer die Hash-Grenze (`canonical_json` nimmt `&Value`).
+    ///
+    /// # Errors
+    /// [`PyFehler::DezimalGrenze`] bei NaN/+-inf -- Auflage 3: ein FEHLER, kein stiller
+    /// `null`-Wert, denn `null` ist nicht hash-gleich zu NaN. Der Fehler greift rekursiv, auch
+    /// fuer ein NaN in einer `Liste` oder einem `Objekt`.
+    ///
+    /// `Liste`/`Objekt` gehen ueber `serde_json::Value::Array`/`Object`. Ohne `preserve_order`
+    /// ist `serde_json::Map` eine `BTreeMap` und sortiert die Schluessel -- genau das tut
+    /// `canonical_json` in Python (`json.dumps(..., sort_keys=True)`, `store.py:24`) und genau
+    /// das tat die Vor-K2-Fassung, in der `SnapshotFeld.wert` ein `Value` war. Die
+    /// Einfuegereihenfolge von `PyWert::Objekt` geht damit NICHT in den Hash ein. Sie
+    /// wiederherzustellen waere der Fehler, nicht sie zu sortieren: ein abgeleitetes
+    /// `Serialize` fuer `PyWert` taete genau das (Auflage 1/2).
+    ///
+    /// Gemessen (2026-10-01): `store.py::materialisiere` nimmt `wert: [1]` an und liefert einen
+    /// gueltigen `snapshot_id`; die Vor-K2-Fassung lief mit demselben Generatorfall gruen. Ein
+    /// harter Fehler hier waere eine Paritaetsabweichung gegen das Orakel, kein Schutz.
+    pub fn zu_json(&self) -> Result<serde_json::Value, PyFehler> {
+        match self {
+            Self::Null => Ok(serde_json::Value::Null),
+            Self::Bool(b) => Ok(serde_json::Value::Bool(*b)),
+            Self::Ganz(n) => Ok(serde_json::Value::Number((*n).into())),
+            Self::GrossGanz(u) => Ok(serde_json::Value::Number((*u).into())),
+            Self::Gleit(f) => serde_json::Number::from_f64(*f)
+                .map(serde_json::Value::Number)
+                .ok_or_else(|| {
+                    PyFehler::DezimalGrenze(format!(
+                        "{f} ist in JSON nicht darstellbar (NaN/inf); canonical_json kennt \
+                         dafuer keinen Wert, und ein stiller null-Wert waere hash-fremd"
+                    ))
+                }),
+            Self::Text(s) => Ok(serde_json::Value::String(s.clone())),
+            Self::Liste(teile) => teile
+                .iter()
+                .map(Self::zu_json)
+                .collect::<Result<Vec<_>, _>>()
+                .map(serde_json::Value::Array),
+            Self::Objekt(paare) => paare
+                .iter()
+                .map(|(k, w)| Ok((k.clone(), w.zu_json()?)))
+                .collect::<Result<serde_json::Map<String, serde_json::Value>, PyFehler>>()
+                .map(serde_json::Value::Object),
+        }
+    }
+}
+
+/// `serde_json::Value` -> `PyWert`: die TOTALE Richtung. JSON ist eine Teilmenge dessen, was
+/// `PyWert` traegt — NaN, Betraege ueber `u64::MAX` und die Dict-Einfuegereihenfolge kommen in
+/// `Value` gar nicht erst vor. Die Gegenrichtung ist [`PyWert::zu_json`] und KANN scheitern.
+impl From<serde_json::Value> for PyWert {
+    fn from(v: serde_json::Value) -> Self {
+        match v {
+            serde_json::Value::Null => Self::Null,
+            serde_json::Value::Bool(b) => Self::Bool(b),
+            serde_json::Value::Number(n) => {
+                if let Some(i) = n.as_i64() {
+                    Self::Ganz(i)
+                } else if let Some(u) = n.as_u64() {
+                    Self::GrossGanz(u)
+                } else {
+                    // `Number` traegt genau eines von i64/u64/f64; hier bleibt nur f64. Der
+                    // Fallback ist NaN, nicht 0.0: NaN ist der Wert, den `zu_json` als nicht
+                    // darstellbar zurueckweist — 0.0 waere eine stille Falschaussage.
+                    Self::Gleit(n.as_f64().unwrap_or(f64::NAN))
+                }
+            }
+            serde_json::Value::String(s) => Self::Text(s),
+            serde_json::Value::Array(a) => Self::Liste(a.into_iter().map(Into::into).collect()),
+            serde_json::Value::Object(m) => {
+                Self::Objekt(m.into_iter().map(|(k, w)| (k, w.into())).collect())
+            }
         }
     }
 }
@@ -943,5 +1020,121 @@ mod tests {
             json(r#"{"z": {"y": []}, "a": -0.0}"#).repr(),
             "{'z': {'y': []}, 'a': -0.0}"
         );
+    }
+
+    /// Die zwei Gleichheiten auf `PyWert` fallen auseinander -- und zwar genau dort, wo
+    /// Pythons `True == 1` greift. Ohne diesen Test waere die Doku oben nur ein Kommentar.
+    ///
+    /// Das abgeleitete `PartialEq` ist STRUKTURELL und gehoert dem Wire-Roundtrip von
+    /// `store::Event`/`store::SnapshotFeld`. Jede Wertpruefung gehoert ueber `py_eq`.
+    #[test]
+    fn strukturelle_gleichheit_und_py_eq_fallen_auseinander() {
+        // Die zwei Faelle, in denen Pythons `==` wahr ist und die Struktur es nicht sieht.
+        assert_ne!(PyWert::Bool(false), PyWert::Ganz(0));
+        assert!(PyWert::Bool(false).py_eq(&PyWert::Ganz(0)));
+
+        assert_ne!(PyWert::Bool(true), PyWert::Ganz(1));
+        assert!(PyWert::Bool(true).py_eq(&PyWert::Ganz(1)));
+
+        // Und die Faelle, in denen beide dasselbe sagen -- damit der Test auch zeigt,
+        // dass er nicht einfach immer "auseinander" antwortet.
+        assert_eq!(PyWert::Ganz(0), PyWert::Ganz(0));
+        assert!(PyWert::Ganz(0).py_eq(&PyWert::Ganz(0)));
+        assert_eq!(PyWert::Null, PyWert::Null);
+        assert!(PyWert::Null.py_eq(&PyWert::Null));
+
+        // `Text("1")` ist in Python NICHT gleich `1`: beide Gleichheiten sagen hier falsch.
+        assert_ne!(PyWert::Text("1".into()), PyWert::Ganz(1));
+        assert!(!PyWert::Text("1".into()).py_eq(&PyWert::Ganz(1)));
+    }
+
+    /// Auflage 3: NaN/inf sind beim Rueckweg ein FEHLER, kein stiller `null`-Wert.
+    #[test]
+    fn zu_json_meldet_nan_und_inf_als_fehler() {
+        for f in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert!(
+                matches!(PyWert::Gleit(f).zu_json(), Err(PyFehler::DezimalGrenze(_))),
+                "{f} muss ein Fehler sein, kein Wert"
+            );
+        }
+        // Endliche Gleitwerte gehen durch.
+        assert_eq!(
+            PyWert::Gleit(1.5).zu_json().unwrap(),
+            serde_json::json!(1.5)
+        );
+    }
+
+    /// `Liste`/`Objekt` gehen nach JSON -- gemessen gegen `store.py::materialisiere`, das einen
+    /// Listenwert annimmt und einen gueltigen `snapshot_id` liefert.
+    #[test]
+    fn zu_json_traegt_liste_und_objekt() {
+        assert_eq!(
+            PyWert::Liste(vec![PyWert::Ganz(1)]).zu_json().unwrap(),
+            serde_json::json!([1])
+        );
+        assert_eq!(
+            PyWert::Liste(vec![]).zu_json().unwrap(),
+            serde_json::json!([])
+        );
+        assert_eq!(
+            PyWert::Objekt(vec![("a".into(), PyWert::Ganz(1))])
+                .zu_json()
+                .unwrap(),
+            serde_json::json!({"a": 1})
+        );
+    }
+
+    /// Die Schluessel eines `Objekt` gehen SORTIERT nach JSON, nicht in Einfuegereihenfolge:
+    /// `serde_json::Map` ist ohne `preserve_order` eine `BTreeMap`, und `canonical_json` in
+    /// Python sortiert ebenfalls (`store.py:24`). Waere es anders, aenderte sich der Hash.
+    #[test]
+    fn zu_json_sortiert_objekt_schluessel() {
+        let verdreht = PyWert::Objekt(vec![
+            ("b".into(), PyWert::Ganz(2)),
+            ("a".into(), PyWert::Ganz(1)),
+        ]);
+        let gerade = PyWert::Objekt(vec![
+            ("a".into(), PyWert::Ganz(1)),
+            ("b".into(), PyWert::Ganz(2)),
+        ]);
+        assert_eq!(
+            verdreht.zu_json().unwrap(),
+            serde_json::json!({"a": 1, "b": 2})
+        );
+        assert_eq!(
+            verdreht.zu_json().unwrap(),
+            gerade.zu_json().unwrap(),
+            "die Einfuegereihenfolge darf den Hash nicht erreichen"
+        );
+    }
+
+    /// Auflage 3 greift REKURSIV: ein NaN in einer Liste ist ein Fehler, kein stiller Wert.
+    /// Die Formen innerhalb tragen dieselbe Grenze wie aussen.
+    #[test]
+    fn zu_json_meldet_nan_auch_in_liste_und_objekt() {
+        let nan = || PyWert::Gleit(f64::NAN);
+        assert!(matches!(
+            PyWert::Liste(vec![PyWert::Ganz(1), nan()]).zu_json(),
+            Err(PyFehler::DezimalGrenze(_))
+        ));
+        assert!(matches!(
+            PyWert::Objekt(vec![("a".into(), nan())]).zu_json(),
+            Err(PyFehler::DezimalGrenze(_))
+        ));
+    }
+
+    /// Die drei Formen, die der reale Bestand traegt (11294/11294), gehen verlustfrei.
+    #[test]
+    fn zu_json_ist_verlustfrei_fuer_die_bestandsformen() {
+        assert_eq!(
+            PyWert::Bool(true).zu_json().unwrap(),
+            serde_json::json!(true)
+        );
+        assert_eq!(PyWert::Ganz(-7).zu_json().unwrap(), serde_json::json!(-7));
+        assert_eq!(
+            PyWert::Text("Maier".into()).zu_json().unwrap(),
+            serde_json::json!("Maier")
+        );
+        assert_eq!(PyWert::Null.zu_json().unwrap(), serde_json::Value::Null);
     }
 }

@@ -5,7 +5,7 @@
 use std::cell::{Cell, RefCell};
 
 use bindung::Params;
-use domain::{Cent, Euro, Vz};
+use domain::{Cent, Euro, PyWert, Vz};
 use engine::zugriff::teil1::ermaessigungen::{
     kist, p31_familienleistung, KistEingabe, P31FamilienleistungEingabe,
 };
@@ -16,7 +16,6 @@ use engine::zugriff::teil2::gesamt::{
 };
 use engine::zugriff::teil2::kapital::{kapital_steuer, KapitalSteuerEingabe};
 use engine::zugriff::teil2::solz::{solz, SolzEingabe};
-use serde_json::Value;
 
 use super::ausgaben::{kette_p31, kist_konfession, setze_kette, Extras, Kette};
 use super::rechnen::{add, mal, mal_div, max0, sub, R};
@@ -205,7 +204,7 @@ pub(super) fn kapital(l: &Lage<'_>, g2: &GesamtfallEingabe, est_raw: Euro) -> R<
     // zu viel Steuer; Python-Docstring `_kist_konfession`, bewusst nicht geaendert).
     let konfession = match l.f.get("kist_konfession").map(|e| &e.wert) {
         None => Some("keine"),
-        Some(Value::String(s)) => Some(s.as_str()),
+        Some(PyWert::Text(s)) => Some(s.as_str()),
         Some(_) => None,
     };
     if kap_st.get() == abgeltung {
@@ -242,7 +241,7 @@ pub(super) fn kapital(l: &Lage<'_>, g2: &GesamtfallEingabe, est_raw: Euro) -> R<
 /// `f.get("kist_bundesland", {}).get("wert", "")` als Text; ein Nicht-Text ist "in keiner Liste".
 fn kist_bundesland(f: &Felder) -> Option<&str> {
     match wert(f, "kist_bundesland") {
-        Some(Value::String(s)) => Some(s.as_str()),
+        Some(PyWert::Text(s)) => Some(s.as_str()),
         _ => None,
     }
 }
@@ -399,15 +398,13 @@ mod aequivalenz {
     use proptest::prelude::*;
     use serde_json::{json, Value};
 
-    use super::q_roh_cent;
-    use crate::aequivalenz::{alt_klasse, ein_feld, int_oder_null, int_oder_null_wie};
+    use crate::aequivalenz::{alt_klasse, int_oder_null, int_oder_null_wie};
+    use crate::vor_k2::int_oder_null_alt;
 
+    /// Die Vor-K2-Fassung von `q_roh_cent`. `q_roh_cent` selbst ist seit dem Port die Produktion —
+    /// dieser Helfer traegt die alte Gestalt und ist die einzige Seite, die die D-Nummern messt.
     fn alt(v: &Value) -> Ergebnis<i64> {
-        alt_klasse(q_roh_cent(&ein_feld(
-            "kap_q_auslaendische_steuer",
-            v.clone(),
-            true,
-        )))
+        alt_klasse(int_oder_null_alt(v))
     }
 
     proptest! {

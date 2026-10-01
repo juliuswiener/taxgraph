@@ -9,7 +9,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use bindung::Bindung;
-use domain::{Cent, Feldtyp, Zustand};
+use domain::{Cent, Feldtyp, PyWert, Zustand};
 use serde::ser::SerializeMap;
 use serde::Serialize;
 use serde_json::Value;
@@ -272,17 +272,17 @@ fn zustand_text(z: Zustand) -> &'static str {
 /// hashbar (`TypeError`), jeder andere Nicht-Text trifft keinen Schluessel.
 fn nachschlagen<'t>(
     tabelle: &'t [(&'t str, &'t str)],
-    wert: &Value,
+    wert: &PyWert,
 ) -> Result<Option<&'t str>, PyFehler> {
     match wert {
-        Value::String(s) => Ok(suche(tabelle, s)),
-        Value::Array(_) | Value::Object(_) => Err(PyFehler::typ("unhashable type")),
+        PyWert::Text(s) => Ok(suche(tabelle, s)),
+        PyWert::Liste(_) | PyWert::Objekt(_) => Err(PyFehler::typ("unhashable type")),
         _ => Ok(None),
     }
 }
 
 /// `_cent_nach_kz(int(wert), ziel) if typ == "cent" else int(wert)` (Klasse a).
-fn aggregat_beitrag(wert: &Value, ziel: &str, typ: Feldtyp) -> Result<i64, PyFehler> {
+fn aggregat_beitrag(wert: &PyWert, ziel: &str, typ: Feldtyp) -> Result<i64, PyFehler> {
     let n = py::int(wert)?;
     if typ != Feldtyp::Cent {
         return Ok(n);
@@ -362,8 +362,7 @@ impl Bau<'_> {
                         let felder = &mut self.instanz(gruppe, idx).felder;
                         schreibe_kz(felder, kz, wert, Some(b.typ)).map_err(&fehler)?;
                     } else {
-                        let grund =
-                            format!("Instanz-Art '{}' ohne Kz-Zweig", py::str_von(&art.wert));
+                        let grund = format!("Instanz-Art '{}' ohne Kz-Zweig", art.wert.py_str());
                         self.nicht(feld_id, grund);
                     }
                 }
@@ -387,7 +386,7 @@ impl Bau<'_> {
     fn verzweigung(
         &mut self,
         feld_id: &str,
-        wert: &Value,
+        wert: &PyWert,
         b: &Bindung,
         cfg: &Verzweigung,
         partner: bool,
@@ -409,7 +408,7 @@ impl Bau<'_> {
             self.offen(feld_id, grund);
             return Ok(());
         };
-        let art_text = py::str_von(&art.wert);
+        let art_text = art.wert.py_str();
         match nachschlagen(cfg.kz, &art.wert).map_err(&fehler)? {
             Some(kz) => {
                 let ziel = if partner {
@@ -453,8 +452,9 @@ impl Bau<'_> {
     }
 
     /// Klasse j — IBAN: Format, Pruefziffer, Laender-Weiche.
-    fn iban(&mut self, feld_id: &str, wert: &Value) {
-        let norm: String = py::str_von(wert)
+    fn iban(&mut self, feld_id: &str, wert: &PyWert) {
+        let norm: String = wert
+            .py_str()
             .chars()
             .filter(|c| !py::ist_leerraum(*c))
             .collect::<String>()
@@ -495,7 +495,7 @@ impl Bau<'_> {
         let wert = &sfeld.wert;
         if let Some(kz) = suche(NEGATION, feld_id) {
             self.deklaration
-                .insert(kz.to_owned(), Value::Bool(!py::truthy(wert)));
+                .insert(kz.to_owned(), Value::Bool(!wert.truthy()));
         } else if MULTIPLIKATION.contains(&feld_id) {
             let n = py::int(wert).map_err(&fehler)?;
             self.kind_anlagen = (1..=n.max(0)).map(|index| KindAnlage { index }).collect();
@@ -529,7 +529,7 @@ impl Bau<'_> {
                     feld_id: feld_id.to_owned(),
                     grund: format!(
                         "Wert '{}' ohne XSD-Code-Zuordnung ({})",
-                        py::str_von(wert),
+                        wert.py_str(),
                         cfg.kz
                     ),
                     hinweis: Some(cfg.hinweis_unbekannt.to_owned()),
@@ -797,7 +797,12 @@ impl Bau<'_> {
         let zusammen = self
             .snapshot
             .get("veranlagung")
-            .is_some_and(|v| v.zustand == Zustand::Bestaetigt && v.wert == "zusammen");
+            // ponytail: `==` auf `PyWert` ist STRUKTURELL, nicht Pythons `==`. Vor K2 verglich
+            // `Value` hier einen Wert; `veranlagung` traegt im Bestand 136x Text und nie gemischt
+            // (gemessen), also bleibt die Polaritaet -- Befund B, eigene Entscheidung.
+            .is_some_and(|v| {
+                v.zustand == Zustand::Bestaetigt && v.wert == PyWert::Text("zusammen".to_owned())
+            });
         let antrag_kz = self
             .bindung
             .get("kap_antrag_guenstigerpruefung")
@@ -871,7 +876,7 @@ impl Bau<'_> {
                 let v = cent_nach_kz(Cent::new(gewinn), kz).als_json();
                 self.instanz(GRUPPE, idx).felder.insert(kz.to_owned(), v);
             } else {
-                let grund = format!("p23-Typ '{}' ohne Kz-Zweig", py::str_von(&art.wert));
+                let grund = format!("p23-Typ '{}' ohne Kz-Zweig", art.wert.py_str());
                 self.nicht(&feld_id, grund);
             }
         }
@@ -947,7 +952,7 @@ mod tests {
         let index = store::baue_nachschlag(&bindungen);
         let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
         let feld = |wert: Value| SnapshotFeld {
-            wert,
+            wert: wert.into(),
             zustand: Zustand::Bestaetigt,
             herkunft: Herkunft {
                 herkunft: a("laie"),
@@ -1054,7 +1059,7 @@ mod tests {
         let index = store::baue_nachschlag(&bindungen);
         let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
         let feld = |wert: Value| SnapshotFeld {
-            wert,
+            wert: wert.into(),
             zustand: Zustand::Bestaetigt,
             herkunft: Herkunft {
                 herkunft: a("laie"),

@@ -4,10 +4,11 @@ use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 
 use bindung::{Bindung, Bindungspunkt, Vorjahr};
+use domain::PyWert;
 use serde_json::Value;
 use store::{Event, Store};
 
-use crate::antwort::{py_eq, Aktiv, Antwort};
+use crate::antwort::{Aktiv, Antwort};
 use crate::graph::{Graph, Sicht};
 use crate::instanz::instanz_unvollstaendig;
 use crate::relevanz::{
@@ -114,10 +115,11 @@ fn feld_ausgeschlossen(
         return false;
     };
     let stand = if let Some(nicht) = &bed.wert_nicht {
-        bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| py_eq(w, nicht))
+        let nicht = PyWert::from(nicht.clone());
+        bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| w.py_eq(&nicht))
     } else {
-        let soll = bed.wert.clone().unwrap_or(Value::Null);
-        bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| !py_eq(w, &soll))
+        let soll = PyWert::from(bed.wert.clone().unwrap_or(Value::Null));
+        bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| !w.py_eq(&soll))
     };
     stand == Bedingungsstand::Ausgeschlossen
 }

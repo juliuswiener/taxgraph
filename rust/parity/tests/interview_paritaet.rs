@@ -32,7 +32,7 @@ use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{Mutex, OnceLock};
 
 use bindung::{Bindung, Bindungspunkt, Registry, Vorjahr};
-use domain::{Achsenwert, BasisId, Feldtyp, Herkunft, PruefTiefe, Schreiber, Zustand};
+use domain::{Achsenwert, BasisId, Feldtyp, Herkunft, PruefTiefe, PyWert, Schreiber, Zustand};
 use interview::{Graph, Sicht};
 use proptest::test_runner::{Config, TestCaseError, TestRunner};
 use serde_json::{json, Value};
@@ -888,10 +888,14 @@ fn erzeuge_store(c: &mut Cursor<'_>) -> StoreDatei {
     for i in 0..c.range(45) {
         let feld_id = feld_fuer(c, p);
         let basis = feld_id.split("__").next().unwrap_or(&feld_id).to_owned();
-        let wert = graph()
-            .alle()
-            .get(&basis)
-            .map_or(json!(1), |b| wert_fuer(c, b, p));
+        // K2: `Event.wert` traegt `PyWert`; die Strategie liefert JSON, konvertiert wird EINMAL
+        // hier (`PyWert::from` ist total).
+        let wert = PyWert::from(
+            graph()
+                .alle()
+                .get(&basis)
+                .map_or(json!(1), |b| wert_fuer(c, b, p)),
+        );
         let herkunft = Herkunft {
             herkunft: Achsenwert::new(if c.range(4) == 0 { "vorjahr" } else { "laie" }).unwrap(),
             pruef_tiefe: [
@@ -904,7 +908,7 @@ fn erzeuge_store(c: &mut Cursor<'_>) -> StoreDatei {
         let signal = match c.range(3) {
             0 => None,
             1 => Some(Signal {
-                signal_1: Some(Some(json!("a"))),
+                signal_1: Some(Some(json!("a").into())),
                 signal_2: Some("b".to_owned()),
             }),
             _ => Some(Signal {
@@ -936,7 +940,11 @@ fn erzeuge_store(c: &mut Cursor<'_>) -> StoreDatei {
             signal,
             ersetzt,
         };
-        ev.event_id = ev.berechne_event_id();
+        // K2: `berechne_event_id` ist fallibel (NaN/inf). Die Strategie erzeugt nur endliche
+        // Werte, also ist ein Fehler hier ein Testfehler, kein erwarteter Pfad.
+        ev.event_id = ev
+            .berechne_event_id()
+            .expect("Strategie erzeugt nur endliche Werte");
         events.push(ev);
     }
     StoreDatei {

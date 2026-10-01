@@ -11,10 +11,13 @@
 use std::collections::HashSet;
 use std::hash::BuildHasher;
 
+use domain::PyWert;
 use serde_json::Value;
 
 use crate::lesung::{lies, Felder, Lesung};
-use crate::zahl::ganzzahl;
+use crate::zahl::als_json;
+#[cfg(test)]
+use crate::zahl::ganzzahl_alt;
 
 /// Flag → die echten Einkunfts-Betragsfelder derselben Art (`flag_check.py:20-74`), in
 /// Python-Reihenfolge. Die Reihenfolge bestimmt die Reihenfolge der Widersprüche.
@@ -160,7 +163,10 @@ pub fn flag_stand<S: BuildHasher>(
             Some(s) if !s.contains(flag) => FlagStand::NichtFragbar,
             _ => FlagStand::Unbeantwortet,
         },
-        l if l.bestaetigt() == Some(&Value::Bool(true)) => FlagStand::Ja,
+        // PARITAET: `flag_check.py:186` prueft `is not True` -- IDENTITAET, nicht Pythons `==`.
+        // Der strukturelle Vergleich ist hier die richtige Uebersetzung (`PyWert::Ganz(1)` faellt
+        // korrekt durch); `py_eq` waere falsch, weil es `1 == True` als wahr ansaehe.
+        l if l.bestaetigt() == Some(&PyWert::Bool(true)) => FlagStand::Ja,
         _ => FlagStand::Nein,
     }
 }
@@ -213,7 +219,31 @@ pub struct FlagWiderspruch {
 
 /// Der Betragstext eines negierten Feldes, oder `None`, wenn der Wert kein Betrag > 0 ist
 /// (`flag_check.py:192-195`: `isinstance(wert, (int, float)) and wert > 0`).
-fn betrag_text(wert: &Value) -> Option<String> {
+///
+/// Diese Fassung IST das `CPython`-Modell: `gt_null` bildet die `isinstance`-Pruefung des Quells
+/// nach (es nimmt `bool`, `int` und `float` an und wirft fuer alles andere `TypeError`), der
+/// Resttext ist `str(wert)`, also [`PyWert::py_str`]. `mod aequivalenz` misst sie deshalb direkt
+/// gegen die Vor-K2-Fassung [`betrag_text_alt`]; die D-Nummern D3 und D10 stehen dort als Liste.
+fn betrag_text(wert: &PyWert) -> Option<String> {
+    // PARITÄT: Python schließt `bool` hier NICHT aus — `True` ist eine 1 > 0 und erscheint als
+    // „True". `gt_null` nimmt `Bool` an, `int_dezimal` schreibt es als „1" bis „0"; der Text
+    // bleibt deshalb Pythons `str(wert)`.
+    if wert.gt_null() != Ok(true) {
+        return None;
+    }
+    match wert {
+        // „Wert > 1000 gilt als Cent" (`flag_check.py:194`) — ohne Tausenderpunkt, anders als `eur`.
+        PyWert::Ganz(n) if *n > 1000 => Some(format!("{} €", n.div_euclid(100))),
+        PyWert::GrossGanz(n) if *n > 1000 => Some(format!("{} €", n / 100)),
+        PyWert::Gleit(f) if *f > 1000.0 => Some(format!("{} €", gleit_floordiv(*f))),
+        w => Some(w.py_str()),
+    }
+}
+
+/// Die Fassung vor dem K2-Port: `Value` trennt `bool` von Zahlen, Floats fallen an `ganzzahl`
+/// durch.
+#[cfg(test)]
+fn betrag_text_alt(wert: &Value) -> Option<String> {
     // PARITÄT: Python schließt `bool` hier NICHT aus — `True` ist eine 1 > 0 und erscheint als
     // „True". Auf `cent`-Feldern verhindert Auflage T das; nachgebaut, weil billig.
     if *wert == Value::Bool(true) {
@@ -221,13 +251,32 @@ fn betrag_text(wert: &Value) -> Option<String> {
     }
     // PARITÄT: Floats zählen hier nicht als Betrag (Wertebereich, s. Crate-Doku); Python würde
     // sie mit Float-Repr formatieren.
-    let n = ganzzahl(wert).filter(|n| *n > 0)?;
-    // „Wert > 1000 gilt als Cent" (`flag_check.py:194`) — ohne Tausenderpunkt, anders als `eur`.
+    let n = ganzzahl_alt(wert).filter(|n| *n > 0)?;
     Some(if n > 1000 {
         format!("{} €", n.div_euclid(100))
     } else {
         n.to_string()
     })
+}
+
+/// `flag_check.py:194`: `f"{wert // 100} €"` auf einem Float — `CPythons` `float_divmod`
+/// (`Objects/floatobject.c`), damit auch die Randfaelle der `//`-Division stimmen:
+/// `fmod`, dann `(f - mod) / 100` und die `0.5`-Korrektur. Gemessen an 23 Floats bis 1e300
+/// gegen 3.12.9 und 3.14.7: kein Unterschied (die naive Fassung `floor(f / 100.0)` trifft
+/// dieselben 23).
+///
+/// ponytail: `inf` ergaebe in `CPython` `nan` (gemessen), hier bliebe `floor` bei `inf`. Beides
+/// ist im Store nicht darstellbar — `serde_json` weist `1e999` beim Laden als `NumberOutOfRange`
+/// ab, `store::Store::append` NaN/inf an der Append-Grenze (Auflage 3). Upgrade: ein `inf`-Zweig,
+/// falls je ein Pfad ohne diese beiden Waechter entsteht.
+fn gleit_floordiv(f: f64) -> String {
+    let rest = f % 100.0;
+    let div = (f - rest) / 100.0;
+    let mut floor = div.floor();
+    if div - floor > 0.5 {
+        floor += 1.0;
+    }
+    PyWert::Gleit(floor).py_str()
 }
 
 /// Snapshot → Flag↔Einkunftsart-Widersprüche (`flag_check.py:124-201`).
@@ -263,7 +312,7 @@ pub fn flag_widersprueche<S: BuildHasher>(
                         "Du hast angegeben, keine {flag_titel} zu haben — bei den {feld_titel} \
                          wurden aber {betrag} erfasst. Bitte prüfe, welche der beiden Angaben stimmt."
                     ),
-                    wert: wert.clone(),
+                    wert: als_json(wert),
                     feld_id,
                 });
             }
@@ -277,13 +326,12 @@ mod tests {
     use super::*;
     use crate::lesung::test_snap as snap;
     use domain::Zustand;
-    use serde_json::json;
 
     #[test]
     fn kein_vuv_widerspruch_und_text() {
         let s = snap(&[
-            ("kein_vuv", json!(true), Zustand::Bestaetigt),
-            ("vv_einnahmen", json!(1_200_000), Zustand::Bestaetigt),
+            ("kein_vuv", PyWert::Bool(true), Zustand::Bestaetigt),
+            ("vv_einnahmen", PyWert::Ganz(1_200_000), Zustand::Bestaetigt),
         ]);
         let w = flag_widersprueche::<std::hash::RandomState>(&s, None);
         assert_eq!(w.len(), 1);
@@ -298,12 +346,12 @@ mod tests {
     #[test]
     fn bestaetigt_false_und_vorlaeufig_ueberspringen() {
         for (w, z) in [
-            (json!(false), Zustand::Bestaetigt),
-            (json!(true), Zustand::Vorlaeufig),
+            (PyWert::Bool(false), Zustand::Bestaetigt),
+            (PyWert::Bool(true), Zustand::Vorlaeufig),
         ] {
             let s = snap(&[
                 ("kein_vuv", w, z),
-                ("vv_einnahmen", json!(5000), Zustand::Bestaetigt),
+                ("vv_einnahmen", PyWert::Ganz(5000), Zustand::Bestaetigt),
             ]);
             assert!(flag_widersprueche::<std::hash::RandomState>(&s, None)
                 .iter()
@@ -314,9 +362,9 @@ mod tests {
     #[test]
     fn instanzen_werden_gesehen() {
         let s = snap(&[
-            ("kein_vuv", json!(true), Zustand::Bestaetigt),
-            ("vv_einnahmen__2", json!(5), Zustand::Bestaetigt),
-            ("vv_einnahmen__02", json!(5), Zustand::Bestaetigt),
+            ("kein_vuv", PyWert::Bool(true), Zustand::Bestaetigt),
+            ("vv_einnahmen__2", PyWert::Ganz(5), Zustand::Bestaetigt),
+            ("vv_einnahmen__02", PyWert::Ganz(5), Zustand::Bestaetigt),
         ]);
         let w = flag_widersprueche::<std::hash::RandomState>(&s, None);
         assert_eq!(
@@ -331,71 +379,49 @@ mod tests {
 #[cfg(test)]
 mod aequivalenz {
     use domain::testhilfe::{d3_d10, json_wert, pruefe, py};
-    use domain::PyWert;
     use proptest::prelude::*;
     use serde_json::json;
 
-    use super::betrag_text;
+    use super::{betrag_text, betrag_text_alt};
 
-    /// Ausnahmen von `betrag_text`.
+    /// Ausnahmen der Vor-K2-Fassung `betrag_text_alt` gegen `CPython` — Auflage 1: die Liste
+    /// bleibt, auch wenn kein Fall im Bestand sie trifft. Sie ist die Falle fuer den ersten, der
+    /// es tut.
     const BETRAG: &[&str] = &["D3", "D10"];
-
-    /// `flag_check.py:194`: `f"{wert // 100} €"` auf einem Float — `CPythons` `float_divmod`
-    /// (`Objects/floatobject.c`), damit auch die Randfaelle der `//`-Division stimmen:
-    /// `fmod`, dann `(f - mod) / 100` und die `0.5`-Korrektur. Gemessen an 23 Floats bis 1e300
-    /// gegen 3.12.9 und 3.14.7: kein Unterschied (die naive Fassung `floor(f / 100.0)` trifft
-    /// dieselben 23).
-    fn gleit_floordiv(f: f64) -> String {
-        let rest = f % 100.0;
-        let div = (f - rest) / 100.0;
-        let mut floor = div.floor();
-        if div - floor > 0.5 {
-            floor += 1.0;
-        }
-        PyWert::Gleit(floor).py_str()
-    }
-
-    /// Das `CPython`-Modell von `flag_check.py:192-195`.
-    ///
-    /// `gt_null` ist die `isinstance(wert, (int, float)) and wert > 0`-Pruefung des Quells: es
-    /// nimmt `bool`, `int` und `float` an und wirft fuer alles andere `TypeError` (das Modell
-    /// antwortet dann wie der Alt-Helfer mit `None`). Der Resttext ist `str(wert)`, also
-    /// [`PyWert::py_str`] (`True`, `7`, `2.5`).
-    fn betrag_neu(w: &PyWert) -> Option<String> {
-        if w.gt_null() != Ok(true) {
-            return None;
-        }
-        Some(match w {
-            PyWert::Ganz(n) if *n > 1000 => format!("{} €", n / 100),
-            PyWert::GrossGanz(n) if *n > 1000 => format!("{} €", n / 100),
-            PyWert::Gleit(f) if *f > 1000.0 => format!("{} €", gleit_floordiv(*f)),
-            w => w.py_str(),
-        })
-    }
 
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(1_000))]
 
+        /// Die Produktion gegen die Vor-K2-Fassung, mit der D-Liste als einziger Erlaubnis.
+        ///
+        /// Der Test hat eine Annahme widerlegt, die ich beim Umbau hatte: die Produktion ist NICHT
+        /// abweichungsfrei gegen die Alt-Fassung. Bei `2^63` liefert sie
+        /// `Some("92233720368547758 €")` wie `CPython`, die Alt-Fassung `None`. Sie erbt die
+        /// D-Nummern also, statt sie zu tilgen — genau das ist der Zweck des Ports.
         #[test]
         fn betrag_text_wie_pywert(v in json_wert()) {
-            let (alt, neu) = (betrag_text(&v), betrag_neu(&py(&v)));
+            let (alt, neu) = (betrag_text_alt(&v), betrag_text(&py(&v)));
             pruefe(&v, &alt, &neu, || d3_d10(&v), BETRAG)?;
         }
     }
 
-    /// D3: `2**64 - 1` ist in `CPython` ein `int` und wird als Betrag formatiert. Der Alt-Helfer
-    /// liefert `None` (`ganzzahl` endet an `i64`), der Widerspruch entfaellt damit still.
+    /// D3: `2**64 - 1` ist in `CPython` ein `int` und wird als Betrag formatiert. Die Vor-K2-
+    /// Fassung liefert `None` (`ganzzahl_alt` endet an `i64`), der Widerspruch entfiel damit still.
+    /// Die Produktion ueber `PyWert::int_dezimal` trifft `CPython`.
     #[test]
     fn d3_ueber_i64() {
         let v = json!(u64::MAX);
-        assert_eq!(betrag_text(&v), None);
-        assert_eq!(betrag_neu(&py(&v)), Some("184467440737095516 €".to_owned()));
+        assert_eq!(betrag_text_alt(&v), None);
+        assert_eq!(
+            betrag_text(&py(&v)),
+            Some("184467440737095516 €".to_owned())
+        );
     }
 
-    /// D10: `float` zaehlt in `CPython` als Zahl (`isinstance(wert, (int, float))`). Der Alt-Helfer
-    /// liefert `None` (`ganzzahl` nimmt keine Floats), der Widerspruch entfaellt damit still.
-    /// 2.5 und 1500.0 sind der `isinstance`-Zweig und der Format-Zweig, gemessen an 3.12.9 und
-    /// 3.14.7 (`str(2.5)` = „2.5", `f"{1500.0 // 100} €"` = „15.0 €"); 1234.5 zeigt, dass die
+    /// D10: `float` zaehlt in `CPython` als Zahl (`isinstance(wert, (int, float))`). Die Vor-K2-
+    /// Fassung liefert `None` (`ganzzahl_alt` nimmt keine Floats), der Widerspruch entfiel damit
+    /// still. 2.5 und 1500.0 sind der `isinstance`-Zweig und der Format-Zweig, gemessen an 3.12.9
+    /// und 3.14.7 (`str(2.5)` = „2.5", `f"{1500.0 // 100} €"` = „15.0 €"); 1234.5 zeigt, dass die
     /// `//`-Division des Quells abrundet und den Bruchteil verwirft.
     #[test]
     fn d10_float_ist_betrag() {
@@ -404,22 +430,22 @@ mod aequivalenz {
             (json!(1500.0), "15.0 €"),
             (json!(1234.5), "12.0 €"),
         ] {
-            assert_eq!(betrag_text(&v), None);
-            assert_eq!(betrag_neu(&py(&v)), Some(text.to_owned()));
+            assert_eq!(betrag_text_alt(&v), None);
+            assert_eq!(betrag_text(&py(&v)), Some(text.to_owned()));
         }
     }
 
-    /// Das Praedikat und das Modell selbst: jede Zahl > 0 gilt, auch ein Float unter 1000 und
+    /// Das Praedikat und die Produktion selbst: jede Zahl > 0 gilt, auch ein Float unter 1000 und
     /// `True` (Python: `isinstance(True, int)`).
     #[test]
     fn d3_d10_predikat() {
         assert_eq!(d3_d10(&json!(u64::MAX)), ["D3"]);
         assert_eq!(d3_d10(&json!(1500.0)), ["D10"]);
         assert!(d3_d10(&json!(1500)).is_empty());
-        assert_eq!(betrag_neu(&py(&json!(0.5))), Some("0.5".to_owned()));
-        assert_eq!(betrag_neu(&py(&json!(true))), Some("True".to_owned()));
-        assert_eq!(betrag_neu(&py(&json!(null))), None);
-        assert_eq!(betrag_neu(&py(&json!("1500"))), None);
-        assert_eq!(betrag_neu(&py(&json!(-1))), None);
+        assert_eq!(betrag_text(&py(&json!(0.5))), Some("0.5".to_owned()));
+        assert_eq!(betrag_text(&py(&json!(true))), Some("True".to_owned()));
+        assert_eq!(betrag_text(&py(&json!(null))), None);
+        assert_eq!(betrag_text(&py(&json!("1500"))), None);
+        assert_eq!(betrag_text(&py(&json!(-1))), None);
     }
 }

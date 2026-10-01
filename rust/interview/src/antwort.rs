@@ -14,14 +14,17 @@ pub trait Eintrag {
     /// `vorlaeufig` oder `bestaetigt`.
     fn zustand(&self) -> Zustand;
     /// Der gespeicherte Wert.
-    fn wert(&self) -> &Value;
+    ///
+    /// [`domain::PyWert`], nicht `serde_json::Value`: die Zaehlregel hier ist Pythons
+    /// Semantik (`True` zaehlt als 1, `NaN` ist truthy), nicht Serialisierung.
+    fn wert(&self) -> &domain::PyWert;
 }
 
 impl Eintrag for Event {
     fn zustand(&self) -> Zustand {
         self.zustand
     }
-    fn wert(&self) -> &Value {
+    fn wert(&self) -> &domain::PyWert {
         &self.wert
     }
 }
@@ -30,7 +33,7 @@ impl Eintrag for SnapshotFeld {
     fn zustand(&self) -> Zustand {
         self.zustand
     }
-    fn wert(&self) -> &Value {
+    fn wert(&self) -> &domain::PyWert {
         &self.wert
     }
 }
@@ -46,7 +49,10 @@ pub enum Antwort<'e> {
     /// Kein Event oder `vorlaeufig`.
     Offen,
     /// `bestaetigt`, mit dem Wert.
-    Bestaetigt(&'e Value),
+    ///
+    /// [`domain::PyWert`]: wer hier liest, prueft einen Wert (`traverser.py`), er
+    /// serialisiert ihn nicht.
+    Bestaetigt(&'e domain::PyWert),
 }
 
 impl<'e> Antwort<'e> {
@@ -169,19 +175,24 @@ impl InstanzAnzahl {
     /// let reg = interview::doctest_registry().unwrap();
     /// let g = interview::Graph::aus_registry(&reg);
     /// let kind = g.instanz_gruppe("kind").unwrap();
-    /// let drei = serde_json::json!(3);
+    /// let drei = domain::PyWert::Ganz(3);
     /// assert_eq!(InstanzAnzahl::aus_zaehlfeld(Antwort::Bestaetigt(&drei), kind).get(), 3);
     /// assert_eq!(InstanzAnzahl::aus_zaehlfeld(Antwort::Offen, kind).get(), 1);
-    /// let viel = serde_json::json!(1000);
+    /// let viel = domain::PyWert::Ganz(1000);
     /// assert_eq!(InstanzAnzahl::aus_zaehlfeld(Antwort::Bestaetigt(&viel), kind).get(), u16::try_from(kind.max).unwrap());
     /// ```
     #[must_use]
     pub fn aus_zaehlfeld(antwort: Antwort<'_>, gruppe: &InstanzGruppe) -> Self {
-        let Antwort::Bestaetigt(Value::Number(n)) = antwort else {
+        // PARITAET: `int_ohne_bool` bildet Pythons `int(...)`-Sicht ab (ein `bool` zaehlt
+        // NICHT als Zahl -- der Alt-Pfad verlangte `Value::Number`), und `GrossGanz`
+        // saettigt auf `i64::MAX` wie vorher `n.as_u64().map(|_| i64::MAX)`.
+        let Antwort::Bestaetigt(w) = antwort else {
             return Self::EINS;
         };
-        let Some(n) = n.as_i64().or_else(|| n.as_u64().map(|_| i64::MAX)) else {
-            return Self::EINS;
+        let n = match w {
+            domain::PyWert::Ganz(n) => *n,
+            domain::PyWert::GrossGanz(_) => i64::MAX,
+            _ => return Self::EINS,
         };
         if n < 1 {
             return Self::EINS;
@@ -344,7 +355,8 @@ mod aequivalenz {
         /// `max` aus dem Schema-Bereich (`minimum: 1`), gepflegt sind hoechstens 9.
         #[test]
         fn aus_zaehlfeld_wie_pywert(v in json_wert(), max in 1u32..=20) {
-            let alt = Ok(InstanzAnzahl::aus_zaehlfeld(Antwort::Bestaetigt(&v), &gruppe(max)).get());
+            let w = py(&v);
+            let alt = Ok(InstanzAnzahl::aus_zaehlfeld(Antwort::Bestaetigt(&w), &gruppe(max)).get());
             let neu = anzahl(&v, max);
             pruefe(&v, &alt, &neu, || d3(&v, &neu), ANZAHL)?;
         }
@@ -355,7 +367,8 @@ mod aequivalenz {
     #[test]
     fn d3_ueber_i64() {
         let v = json!(u64::MAX);
-        let alt = InstanzAnzahl::aus_zaehlfeld(Antwort::Bestaetigt(&v), &gruppe(9));
+        let w = py(&v);
+        let alt = InstanzAnzahl::aus_zaehlfeld(Antwort::Bestaetigt(&w), &gruppe(9));
         assert_eq!(alt.get(), 9);
         assert_eq!(klasse(py(&v).int_ohne_bool()), Err(None));
     }

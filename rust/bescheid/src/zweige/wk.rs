@@ -2,13 +2,12 @@
 //! `_zweig_festzusetzende_est` (an_gesamt) und `_zweig_festzusetzende_est_gesamt` gemeinsam haben
 //! (`bescheid_zweige.py:227-297` und `:512-590`). Python baut ein `wk_input`-dict, dessen
 //! Schluessel-ANWESENHEIT die Zweige schaltet; hier ist jede Anwesenheit ein `Some`.
-use domain::{Cent, Euro, Vz};
+use domain::{Cent, Euro, PyWert, Vz};
 use engine::zugriff::teil1::afa::{p7_linear_afa, P7LinearAfaEingabe};
 use engine::zugriff::teil1::reisekosten::{DhfEingabe, UebernachtungEingabe, VerpflegungEingabe};
 use engine::zugriff::teil1::werbungskosten::EntfernungspauschaleEingabe;
 use intervall::Slots;
 use rust_decimal::Decimal;
-use serde_json::Value;
 
 use super::rechnen::R;
 use super::slot;
@@ -48,20 +47,22 @@ pub(super) struct WkTeile {
 }
 
 /// `Decimal(str(x))` fuer `entfernung_km_roh`.
-fn dezimal(v: &Value) -> R<Decimal> {
+///
+/// K2: `str(x)` ist [`PyWert::py_str`] — fuer Zahlen dasselbe wie `Value::Number::to_string`,
+/// fuer alles andere der `repr` (und damit wie bisher ein `ValueError`).
+fn dezimal(v: &PyWert) -> R<Decimal> {
     let fehler = || BescheidFehler::Python {
         klasse: "ValueError",
         was: "Decimal(str(entfernung_km_roh))",
     };
     match v {
-        Value::Number(n) => {
-            let t = n.to_string();
+        PyWert::Text(t) => Decimal::from_str_exact(t.trim()).map_err(|_| fehler()),
+        w => {
+            let t = w.py_str();
             Decimal::from_str_exact(&t)
                 .or_else(|_| Decimal::from_scientific(&t))
                 .map_err(|_| fehler())
         }
-        Value::String(t) => Decimal::from_str_exact(t.trim()).map_err(|_| fehler()),
-        _ => Err(fehler()),
     }
 }
 
@@ -92,8 +93,15 @@ fn alle_true(f: &Felder, ids: &[&str]) -> bool {
 }
 
 /// Python `isinstance(v, int) and not isinstance(v, bool) and v > 3`.
-fn ist_int_ueber_3(v: Option<&Value>) -> bool {
-    matches!(v, Some(Value::Number(n)) if n.as_i64().map_or(n.is_u64(), |i| i > 3))
+///
+/// ponytail: `GrossGanz` antwortet `true` statt zu melden (D3) — der Vergleich ist die einzige
+/// Nutzung des Werts, und `u64` ist immer > 3. Upgrade auf `Result`, falls hier je gerechnet wird.
+fn ist_int_ueber_3(v: Option<&PyWert>) -> bool {
+    match v {
+        Some(PyWert::Ganz(n)) => *n > 3,
+        Some(PyWert::GrossGanz(_)) => true,
+        _ => false,
+    }
 }
 
 /// dHf, Verpflegung und Uebernachtung nach den Tatbestands-Bedingungen der Zweige.
@@ -155,7 +163,7 @@ pub(super) fn wk_teile(f: &Felder, vz: Vz) -> R<WkTeile> {
     let bisher = c("uebernachtung_monate_bisher")?;
     let monate = c("uebernachtung_monate")?;
     let ueb = match wert(f, "uebernachtung_im_inland") {
-        Some(Value::Bool(inland))
+        Some(PyWert::Bool(inland))
             if c(UEBERNACHTUNG_KOSTEN)? > 0 && alle_true(f, &UEBERNACHTUNG_BEDINGUNGEN) =>
         {
             Some(UebernachtungEingabe {
@@ -246,11 +254,14 @@ pub(super) fn am_gesamt(f: &Felder) -> R<(Option<Euro>, Euro)> {
 /// Aequivalenz von `ist_int_ueber_3` mit `PyWert::int_ohne_bool` (D15), je D-Nummer ein Test.
 #[cfg(test)]
 mod aequivalenz {
-    use domain::testhilfe::{d3, json_wert, klasse, pruefe, py};
+    use domain::testhilfe::{d3, json_wert, klasse, pruefe, py, Ergebnis};
     use proptest::prelude::*;
+    use rust_decimal::Decimal;
     use serde_json::json;
 
-    use super::ist_int_ueber_3;
+    use super::{dezimal, ist_int_ueber_3};
+    use crate::aequivalenz::alt_klasse;
+    use crate::vor_k2::{dezimal_alt, ist_int_ueber_3_alt};
 
     /// Ausnahmen von `ist_int_ueber_3`.
     const UEBER_3: &[&str] = &["D3"];
@@ -258,10 +269,30 @@ mod aequivalenz {
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(1_000))]
 
+        /// Die Alt-Fassung gegen `CPython` — die Messung, die D3 festhaelt (Auflage 1).
         #[test]
-        fn ist_int_ueber_3_wie_pywert(v in json_wert()) {
+        fn ist_int_ueber_3_alt_wie_pywert(v in json_wert()) {
             let neu = klasse(py(&v).int_ohne_bool()).map(|i| i.is_some_and(|i| i > 3));
-            pruefe(&v, &Ok(ist_int_ueber_3(Some(&v))), &neu, || d3(&v, &neu), UEBER_3)?;
+            pruefe(&v, &Ok(ist_int_ueber_3_alt(Some(&v))), &neu, || d3(&v, &neu), UEBER_3)?;
+        }
+
+        /// Die Produktion gegen die Alt-Fassung: beide saettigen an derselben Stelle.
+        #[test]
+        fn ist_int_ueber_3_wie_alt(v in json_wert()) {
+            let w = py(&v);
+            let (alt, neu): (Ergebnis<bool>, Ergebnis<bool>) =
+                (Ok(ist_int_ueber_3_alt(Some(&v))), Ok(ist_int_ueber_3(Some(&w))));
+            pruefe(&v, &alt, &neu, Vec::new, &[])?;
+        }
+
+        /// `Decimal(str(x))`: die Alt-Fassung nimmt `Value::Number::to_string`, die Produktion
+        /// `PyWert::py_str`. Beide sind `str(x)` in `CPython` — kein Float-Formatierungsunterschied
+        /// (dafuer traegt `repr_float` seine eigene Messung), also ohne Ausnahmen.
+        #[test]
+        fn dezimal_wie_alt(v in json_wert()) {
+            let (alt, neu): (Ergebnis<Decimal>, Ergebnis<Decimal>) =
+                (alt_klasse(dezimal_alt(&v)), alt_klasse(dezimal(&py(&v))));
+            pruefe(&v, &alt, &neu, Vec::new, &[])?;
         }
     }
 
@@ -270,7 +301,8 @@ mod aequivalenz {
     #[test]
     fn d3_ueber_i64() {
         let v = json!(u64::MAX);
-        assert!(ist_int_ueber_3(Some(&v)));
+        assert!(ist_int_ueber_3_alt(Some(&v)));
+        assert!(ist_int_ueber_3(Some(&py(&v))));
         assert_eq!(klasse(py(&v).int_ohne_bool()), Err(None));
     }
 }

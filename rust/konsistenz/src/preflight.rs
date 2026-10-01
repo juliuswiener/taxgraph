@@ -11,6 +11,7 @@
 use std::collections::HashSet;
 use std::hash::BuildHasher;
 
+use domain::PyWert;
 use interview::Graph;
 use serde_json::Value;
 
@@ -19,7 +20,7 @@ use crate::lesung::{lies, Felder};
 use crate::nicht_gerechnet::{nicht_gerechnete_angaben, NichtGerechnet};
 use crate::partner::{alleinerziehend_mit_zusammen, partner_ohne_zusammen, PartnerWiderspruch};
 use crate::pauschalen::{pauschal_hinweise, PauschalHinweis};
-use crate::zahl::{eur, ganzzahl, leer_nach_strip};
+use crate::zahl::{als_text, eur, ganzzahl, leer_nach_strip};
 
 /// Die Betragsfelder, die der Ring liest (`produkt/haut/api_constants.py:748`,
 /// `RING_BETRAGSFELDER`). Dieselbe Menge wie die Klasse-C-Sperre in `_feste_zahl`, damit Sperre
@@ -452,11 +453,9 @@ fn gegen_brutto(felder: &Felder, brutto: i64, out: &mut Vec<PlausiWiderspruch>) 
 /// 2026-08-28: 0 € `KiSt` statt 1.053,36 € bei richtiger `ESt` — deshalb melden, nicht sperren.
 /// Ein Betrag von 0 € zählt nicht als Angabe; das Bundesland schon.
 fn konfession_offen(felder: &Felder, out: &mut Vec<PlausiWiderspruch>) {
+    // `isinstance(konfession, str) and konfession` — die leere Zeichenkette zaehlt nicht.
     let konfession = lies(felder, "kist_konfession").bestaetigt();
-    if konfession
-        .and_then(Value::as_str)
-        .is_some_and(|s| !s.is_empty())
-    {
+    if konfession.and_then(als_text).is_some_and(|s| !s.is_empty()) {
         return;
     }
     let bundesland = lies(felder, "kist_bundesland").bestaetigt();
@@ -469,10 +468,7 @@ fn konfession_offen(felder: &Felder, out: &mut Vec<PlausiWiderspruch>) {
     .find_map(|f| bestaetigter_betrag(felder, f).map(|b| (f, b)));
     let (feld_id, betrag) = match beleg {
         Some((f, b)) => (f, Some(b)),
-        None if bundesland
-            .and_then(Value::as_str)
-            .is_some_and(|s| !s.is_empty()) =>
-        {
+        None if bundesland.and_then(als_text).is_some_and(|s| !s.is_empty()) => {
             ("kist_bundesland", None)
         }
         None => return,
@@ -546,14 +542,19 @@ pub fn plausibilitaets_widersprueche(
             ));
         }
     }
+    // PARITAET: `preflight.py` prueft `keine_bank is True` (IDENTITAET) und
+    // `isinstance(iban, str)`. Der strukturelle Vergleich bzw. `als_text` bilden beides ab.
     let keine_bank = lies(felder, "stammdaten_keine_bankverbindung").bestaetigt();
-    if let (Some(Value::Bool(true)), Some(Value::String(iban))) =
-        (keine_bank, lies(felder, "stammdaten_iban").bestaetigt())
-    {
+    if let (Some(PyWert::Bool(true)), Some(iban)) = (
+        keine_bank,
+        lies(felder, "stammdaten_iban")
+            .bestaetigt()
+            .and_then(als_text),
+    ) {
         if !leer_nach_strip(iban) {
             out.push(widerspruch(
                 "stammdaten_iban",
-                Value::String(iban.clone()),
+                Value::String(iban.to_owned()),
                 None,
                 "Du hast angegeben, keine Bankverbindung für eine Erstattung angeben zu wollen — \
                  trotzdem ist eine Kontonummer (IBAN) erfasst. Ohne Konto kann das Finanzamt eine \

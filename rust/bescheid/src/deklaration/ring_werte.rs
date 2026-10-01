@@ -7,12 +7,11 @@
 //! signal_2: None}`. [`SnapshotFeld`] kennt beides nicht (Snapshot-Sicht = `wert`, `zustand`,
 //! `herkunft`); beide Werte sind konstant und der Writer liest sie nicht.
 use bindung::Params;
-use domain::{Achsenwert, Euro, Herkunft, HerkunftVektor, PruefTiefe, Vz, Zustand};
+use domain::{Achsenwert, Euro, Herkunft, HerkunftVektor, PruefTiefe, PyWert, Vz, Zustand};
 use elster::parse_instanz;
 use engine::zugriff::teil2::kapital::{
     kapital_verrechnung, sparer_pb, KapitalVerrechnungEingabe, SparerPbEingabe,
 };
-use serde_json::{json, Value};
 use store::SnapshotFeld;
 
 use super::c2;
@@ -43,7 +42,7 @@ pub(crate) fn berechnet_herkunft() -> R<HerkunftVektor> {
     }))
 }
 
-fn setze(f: &mut Felder, fid: &str, w: Value, h: &HerkunftVektor) {
+fn setze(f: &mut Felder, fid: &str, w: PyWert, h: &HerkunftVektor) {
     f.insert(
         fid.to_owned(),
         SnapshotFeld {
@@ -97,7 +96,7 @@ fn verpflegung(f: &mut Felder, vz: Option<Vz>, p: &Params, h: &HerkunftVektor) -
         Err(e) => return Err(e),
     };
     if kuerzung > 0 {
-        setze(f, "p9_4a_kuerzung_nach_entgelt", json!(kuerzung), h);
+        setze(f, "p9_4a_kuerzung_nach_entgelt", PyWert::Ganz(kuerzung), h);
     }
     Ok(())
 }
@@ -178,11 +177,11 @@ fn kap_antrag(f: &mut Felder, vz: Option<Vz>, p: &Params, h: &HerkunftVektor) ->
         Err(e) if e.python_klasse().is_some() => return Ok(()),
         Err(e) => return Err(e),
     };
-    setze(f, "kap_antrag_guenstigerpruefung", json!(true), h);
+    setze(f, "kap_antrag_guenstigerpruefung", PyWert::Bool(true), h);
     setze(
         f,
         "kap_sparer_pauschbetrag_genutzt",
-        json!(pb_genutzt_cent),
+        PyWert::Ganz(pb_genutzt_cent),
         h,
     );
     Ok(())
@@ -262,7 +261,7 @@ fn haushaltsnah(f: &mut Felder, h: &HerkunftVektor) -> R<()> {
     ] {
         let summe = instanz_summe(f, betrag_fid)?;
         if summe > 0 {
-            setze(f, summe_fid, json!(summe), h);
+            setze(f, summe_fid, PyWert::Ganz(summe), h);
         }
     }
     Ok(())
@@ -271,17 +270,21 @@ fn haushaltsnah(f: &mut Felder, h: &HerkunftVektor) -> R<()> {
 // ---------------------------------------------------------------- (7) Anlage V
 
 /// `isinstance(v, int)` — Pythons `bool` ist ein `int` (0/1).
-fn py_int_typ(v: &Value) -> R<Option<i64>> {
+///
+/// Ein `u64` ueber `i64::MAX` meldet wie bisher [`BescheidFehler::Ueberlauf`] (`int_mit_bool`
+/// traegt dieselbe Grenze als `I64Grenze`).
+fn py_int_typ(v: &PyWert) -> R<Option<i64>> {
     match v {
-        Value::Bool(b) => Ok(Some(i64::from(*b))),
-        Value::Number(n) if n.is_u64() && !n.is_i64() => Err(BescheidFehler::Ueberlauf("int")),
-        Value::Number(n) => Ok(n.as_i64()),
+        PyWert::Bool(b) => Ok(Some(i64::from(*b))),
+        PyWert::Ganz(n) => Ok(Some(*n)),
+        PyWert::GrossGanz(_) => Err(BescheidFehler::Ueberlauf("int")),
+        // `Gleit` ist kein `int` (`isinstance(2.0, int)` ist in CPython falsch), Text auch nicht.
         _ => Ok(None),
     }
 }
 
 /// Bestaetigtes Feld mit ganzzahligem Wert (Bool zaehlt): `(Wert als i64, Wert unveraendert)`.
-fn bestaetigt_int(f: &Felder, fid: &str) -> R<Option<(i64, Value)>> {
+fn bestaetigt_int(f: &Felder, fid: &str) -> R<Option<(i64, PyWert)>> {
     let Some(x) = f.get(fid).filter(|x| x.zustand == Zustand::Bestaetigt) else {
         return Ok(None);
     };
@@ -296,7 +299,7 @@ fn bestaetigt_ganz_oder_null(f: &Felder, fid: &str) -> R<i64> {
         return Ok(0);
     };
     match &x.wert {
-        Value::Bool(_) => Ok(0),
+        PyWert::Bool(_) => Ok(0),
         v => Ok(py_int_typ(v)?.unwrap_or(0)),
     }
 }
@@ -321,11 +324,11 @@ fn vermietung(f: &mut Felder, h: &HerkunftVektor) -> R<()> {
     let umlage = bestaetigt_ganz_oder_null(f, "vv_nebenkosten_umgelegt")?;
     // E0701401 = Summe ALLER Einnahmen (Mieten + Umlagen), E0700206 nur die der Wohnungs-Mieten.
     let gesamt = plus(einnahmen, umlage)?;
-    setze(f, "vv_einnahmen_summe_gesamt", json!(gesamt), h);
+    setze(f, "vv_einnahmen_summe_gesamt", PyWert::Ganz(gesamt), h);
     let ueberschuss = minus(gesamt, wk)?;
-    setze(f, "vv_summe_werbungskosten", json!(wk), h);
-    setze(f, "vv_ueberschuss", json!(ueberschuss), h);
-    setze(f, "vv_ueberschuss_person_a", json!(ueberschuss), h);
+    setze(f, "vv_summe_werbungskosten", PyWert::Ganz(wk), h);
+    setze(f, "vv_ueberschuss", PyWert::Ganz(ueberschuss), h);
+    setze(f, "vv_ueberschuss_person_a", PyWert::Ganz(ueberschuss), h);
     setze(f, "vv_mieteinnahmen_summe", einnahmen_wert, h);
     Ok(())
 }
@@ -361,8 +364,8 @@ fn einzelzeilen(f: &mut Felder, h: &HerkunftVektor) -> R<()> {
         .get("p35c_keine_doppelfoerderung")
         .filter(|x| x.zustand == Zustand::Bestaetigt)
     {
-        if let Value::Bool(b) = x.wert {
-            setze(f, "p35c_foerderung_in_anspruch", json!(!b), h);
+        if let PyWert::Bool(b) = x.wert {
+            setze(f, "p35c_foerderung_in_anspruch", PyWert::Bool(!b), h);
         }
     }
     Ok(())
@@ -389,7 +392,7 @@ fn gewerbesteuer(f: &mut Felder, h: &HerkunftVektor) -> R<()> {
                 .div_euclid(100)
                 .checked_mul(s)
                 .ok_or(BescheidFehler::Ueberlauf("gewst_zu_zahlen"))?;
-            setze(f, ziel, json!(zu_zahlen), h);
+            setze(f, ziel, PyWert::Ganz(zu_zahlen), h);
         }
     }
     Ok(())
@@ -410,7 +413,7 @@ fn p22_nr3(f: &mut Felder, h: &HerkunftVektor) -> R<()> {
     setze(f, "p22_nr3_einnahmen_einzelbetrag", einnahmen_wert, h);
     let werbungskosten = minus(einnahmen, einkuenfte)?;
     if werbungskosten > 0 {
-        setze(f, "p22_nr3_werbungskosten", json!(werbungskosten), h);
+        setze(f, "p22_nr3_werbungskosten", PyWert::Ganz(werbungskosten), h);
     }
     Ok(())
 }
@@ -423,14 +426,23 @@ mod aequivalenz {
 
     use super::py_int_typ;
     use crate::aequivalenz::alt_klasse;
+    use crate::vor_k2::py_int_typ_alt;
 
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(1_000))]
 
+        /// Die Alt-Fassung gegen `CPython` — hier entstehen keine D-Nummern: `GrossGanz` meldet
+        /// in beiden Fassungen `OverflowError`, und `Gleit`/Text sind in beiden kein `int`.
         #[test]
-        fn py_int_typ_wie_pywert(v in json_wert()) {
+        fn py_int_typ_alt_wie_pywert(v in json_wert()) {
             let neu = klasse(py(&v).int_mit_bool());
-            pruefe(&v, &alt_klasse(py_int_typ(&v)), &neu, Vec::new, &[])?;
+            pruefe(&v, &alt_klasse(py_int_typ_alt(&v)), &neu, Vec::new, &[])?;
+        }
+
+        /// Die Produktion gegen die Alt-Fassung.
+        #[test]
+        fn py_int_typ_wie_alt(v in json_wert()) {
+            pruefe(&v, &alt_klasse(py_int_typ_alt(&v)), &alt_klasse(py_int_typ(&py(&v))), Vec::new, &[])?;
         }
     }
 }

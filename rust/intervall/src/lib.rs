@@ -27,7 +27,6 @@ mod slots;
 
 use bindung::{Bindungspunkt, SlotBeitrag};
 use domain::Feldtyp;
-use serde_json::Value;
 
 pub use rechnung::{
     intervall, Beitrag, Intervall, IntervallErgebnis, IntervallFehler, Spanne, CAP_DEFAULT,
@@ -72,8 +71,12 @@ impl From<&bindung::Bindung> for AchsenBindung {
 /// Feldwerte in Einfügereihenfolge (`feld_id -> wert`). Die Reihenfolge trägt: teilen sich zwei
 /// `exakt`-Felder einen Slot (gemessen: 9 Slot-Namen, z. B. `monate`), gewinnt in
 /// [`bescheid_via_slots`] das spätere — wie beim Python-`dict`.
+///
+/// Der Wert ist [`domain::PyWert`], nicht `serde_json::Value`: hier wird gerechnet
+/// (`als_int` in `slots.rs` liest Pythons `int`-Sicht, `Bool` zählt als 0/1), nicht
+/// serialisiert. `PyWert` trägt genau diese Semantik.
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Werte(Vec<(String, Value)>);
+pub struct Werte(Vec<(String, domain::PyWert)>);
 
 impl Werte {
     /// Leere Werte.
@@ -89,13 +92,14 @@ impl Werte {
     /// Setzt `feld_id`; ein vorhandener Schlüssel behält seine Position (Python-`dict`).
     ///
     /// ```
+    /// use domain::PyWert;
     /// let mut w = intervall::Werte::neu();
-    /// w.setze("a", 1.into());
-    /// w.setze("b", 2.into());
-    /// w.setze("a", 3.into());
+    /// w.setze("a", PyWert::Ganz(1));
+    /// w.setze("b", PyWert::Ganz(2));
+    /// w.setze("a", PyWert::Ganz(3));
     /// assert_eq!(w.iter().map(|(k, _)| k).collect::<Vec<_>>(), ["a", "b"]);
     /// ```
-    pub fn setze(&mut self, feld_id: &str, wert: Value) {
+    pub fn setze(&mut self, feld_id: &str, wert: domain::PyWert) {
         match self.0.iter_mut().find(|(k, _)| k == feld_id) {
             Some((_, v)) => *v = wert,
             None => self.0.push((feld_id.to_owned(), wert)),
@@ -105,12 +109,13 @@ impl Werte {
     /// Wert zu `feld_id`.
     ///
     /// ```
+    /// use domain::PyWert;
     /// let mut w = intervall::Werte::neu();
-    /// w.setze("a", 1.into());
-    /// assert_eq!(w.get("a"), Some(&1.into()));
+    /// w.setze("a", PyWert::Ganz(1));
+    /// assert_eq!(w.get("a"), Some(&PyWert::Ganz(1)));
     /// ```
     #[must_use]
-    pub fn get(&self, feld_id: &str) -> Option<&Value> {
+    pub fn get(&self, feld_id: &str) -> Option<&domain::PyWert> {
         self.0.iter().find(|(k, _)| k == feld_id).map(|(_, v)| v)
     }
 
@@ -119,7 +124,7 @@ impl Werte {
     /// ```
     /// assert_eq!(intervall::Werte::neu().iter().count(), 0);
     /// ```
-    pub fn iter(&self) -> impl Iterator<Item = (&str, &Value)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &domain::PyWert)> {
         self.0.iter().map(|(k, v)| (k.as_str(), v))
     }
 }

@@ -4,9 +4,8 @@
 use std::collections::BTreeMap;
 
 use bindung::{AnkerRef, Bindungspunkt};
-use domain::{HerkunftVektor, Zustand};
+use domain::{HerkunftVektor, PyWert, Zustand};
 use serde::Serialize;
-use serde_json::Value;
 use store::{Event, EventId, Signal, Store};
 
 use crate::antwort::Aktiv;
@@ -32,11 +31,26 @@ impl<'r> From<&'r AnkerRef> for AnkerRefSicht<'r> {
     }
 }
 
+/// `wert` geht beim Serialisieren ueber den Konvertierer nach JSON -- wie [`store::Event`]
+/// selbst, aus demselben Grund (Auflage 1/2: die Schluesselsortierung, auf der `canonical_json`
+/// und damit jede `event_id` beruht, erhaelt nur der Umweg ueber `serde_json::Value`; ein
+/// `Serialize` fuer [`PyWert`] direkt braeche sie still).
+///
+/// ponytail: ein NaN/inf-Wert scheitert hier als Serialisierungsfehler. Im Store-Pfad kann er
+/// nicht entstehen -- der Konvertierer an der Append-Grenze weist ihn vorher ab.
+fn ser_wert<S: serde::Serializer>(w: &PyWert, s: S) -> Result<S::Ok, S::Error> {
+    use serde::ser::Error as _;
+    w.zu_json()
+        .map_err(|e| S::Error::custom(e.to_string()))?
+        .serialize(s)
+}
+
 /// Das Justification-Objekt eines Feldes: Store-Event + Bindung.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Justification<'s, 'r> {
     pub feld_id: &'s str,
-    pub wert: &'s Value,
+    #[serde(serialize_with = "ser_wert")]
+    pub wert: &'s PyWert,
     pub zustand: Zustand,
     /// `HerkunftVektor` statt der strengen `Herkunft`: passthrough des Store-Events, wie
     /// `traverser.py::justification`/`trace_ergebnis` `ev["herkunft"]` unveraendert ausgeben —

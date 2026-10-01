@@ -89,14 +89,16 @@ impl VorschlagEvent {
         };
         let neu = NeuesEvent {
             feld_id: self.feld_id.clone(),
-            wert: self.wert.clone(),
+            // K2: `NeuesEvent.wert` ist `PyWert`; `self.wert` bleibt `Value` (Feld dieses
+            // Structs, eigene Staffel). `From<Value> for PyWert` ist total.
+            wert: self.wert.clone().into(),
             feldzustand: Feldzustand::Vorlaeufig,
             // `.into()` bewusst: `NeuesEvent::herkunft` kann auf `HerkunftVektor` wechseln
             // (`From<Herkunft>`), dann bleibt diese Stelle unveraendert gueltig.
             #[allow(clippy::useless_conversion)]
             herkunft: herkunft.into(),
             schreiber: self.quelle.schreiber(),
-            signal_1: Some(self.signal_1.clone()),
+            signal_1: Some(self.signal_1.clone().into()),
             ersetzt: None,
             ts: ts.map(str::to_owned),
         };
@@ -141,7 +143,9 @@ impl EdatenEvent {
         };
         let neu = NeuesEvent {
             feld_id: self.feld_id.clone(),
-            wert: self.wert.clone(),
+            // K2: `NeuesEvent.wert` ist `PyWert`; `self.wert` bleibt `Value` (Feld dieses
+            // Structs, eigene Staffel). `From<Value> for PyWert` ist total.
+            wert: self.wert.clone().into(),
             feldzustand: Feldzustand::Bestaetigt {
                 signal_2: Signal2::new("edaten_uebermittelt")
                     .map_err(|_| SchreibFehler::Konstante)?,
@@ -151,7 +155,7 @@ impl EdatenEvent {
             #[allow(clippy::useless_conversion)]
             herkunft: herkunft.into(),
             schreiber: Schreiber::ImportElster,
-            signal_1: Some(self.signal_1.clone()),
+            signal_1: Some(self.signal_1.clone().into()),
             ersetzt: None,
             ts: ts.map(str::to_owned),
         };

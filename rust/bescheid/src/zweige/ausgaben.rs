@@ -4,10 +4,9 @@
 //!
 //! Python-`dict`-Semantik bleibt erhalten: ein Schluessel ist `None`, solange kein Lauf ihn gesetzt hat
 //! (`Schluessel absent = nicht rechenbar`, `_feste_zahl`), und spaetere Laeufe ueberschreiben.
-use domain::{Cent, Euro};
+use domain::{Cent, Euro, PyWert};
 use engine::zugriff::teil1::ermaessigungen::{p36_abschlusszahlung, P36AbschlusszahlungEingabe};
 use engine::zugriff::teil2::gesamt::GesamtKette;
-use serde_json::Value;
 
 use super::rechnen::R;
 use crate::{zahl_int, Felder};
@@ -81,26 +80,26 @@ pub struct Extras {
 ///
 /// ACHTUNG — dieser Leser prueft NICHT gegen `enum_werte`. `"gibt-es-nicht"` kaeme hier als
 /// `Some("gibt-es-nicht")` durch; der Riegel sitzt im Schreibpfad (`Store::append` ->
-/// `pruefe_bindung` -> `domain::Wert::aus_json`, `store.rs:335`/`wert.rs:126`). Der
+/// `pruefe_bindung` -> `domain::Wert::aus_pywert`, `store.rs:388`/`wert.rs:156`). Der
 /// `testhilfe::store()` baut die `Felder` an diesem Pfad VORBEI — ein Wert ausserhalb der
 /// Bindung ist hier deshalb darstellbar, im Betrieb aber unerreichbar. Ein Beispielwert, den
 /// es nirgends gibt, lehrt das Falsche; deshalb steht hier ein echter `enum_werte`-Wert.
 #[must_use]
 pub fn kist_konfession(felder: &Felder) -> Option<&str> {
     match felder.get("kist_konfession").map(|e| &e.wert) {
-        Some(Value::String(s)) if !s.is_empty() => Some(s.as_str()),
+        Some(PyWert::Text(s)) if !s.is_empty() => Some(s.as_str()),
         _ => None,
     }
 }
 
 /// Bestaetigter numerischer Wert (`isinstance(w, (int, float)) and not bool`), sonst `None`.
-fn best_zahl<'a>(felder: &'a Felder, fid: &str) -> Option<&'a serde_json::Number> {
+fn best_zahl<'a>(felder: &'a Felder, fid: &str) -> Option<&'a PyWert> {
     let e = felder.get(fid)?;
     if e.zustand != Zustand::Bestaetigt {
         return None;
     }
     match &e.wert {
-        Value::Number(n) => Some(n),
+        w @ (PyWert::Ganz(_) | PyWert::GrossGanz(_) | PyWert::Gleit(_)) => Some(w),
         _ => None,
     }
 }
@@ -138,7 +137,7 @@ pub fn abschlusszahlung_cent(felder: &Felder, zahl_cent: Cent) -> R<Option<Cent>
     if werte.iter().all(Option::is_none) {
         return Ok(None);
     }
-    let cent = |n: Option<&serde_json::Number>| -> R<Cent> {
+    let cent = |n: Option<&PyWert>| -> R<Cent> {
         // PARITÄT: fail-open default — absent = 0.
         n.map_or(Ok(Cent::new(0)), |n| zahl_int(n).map(Cent::new))
     };

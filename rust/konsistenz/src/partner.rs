@@ -7,11 +7,11 @@
 //! Die Handliste bleibt eine Handliste (Parität). `domain::Veranlagung::Einzel { a }` macht
 //! Partnerdaten im RECHEN-Eingang unrepräsentierbar; der Store kann sie aber weiter halten
 //! (Korrektur auf „einzel" nach bestätigten Partnerwerten) — genau das meldet diese Prüfung.
-use domain::Veranlagung;
+use domain::{Lage, PyWert, Veranlagung};
 use serde_json::Value;
 
 use crate::lesung::{lage_veranlagung, lies, Felder};
-use crate::zahl::zahl_gt0;
+use crate::zahl::{als_json, zahl_gt0};
 
 /// Partnerfelder, die eine Zusammenveranlagung voraussetzen (`partner_check.py:17-29`).
 /// `rentner_*_partner`: Instanz-Reuse derselben Kz E0109708/E0109706 wie Person A. Für die Rente
@@ -53,8 +53,13 @@ pub struct PartnerWiderspruch {
 }
 
 /// `_ist_gesetzt` (`partner_check.py:35-39`): `GdB` > 0 oder Merkzeichen `true`.
-fn ist_gesetzt(wert: &Value) -> bool {
-    *wert == Value::Bool(true) || zahl_gt0(wert)
+///
+/// PARITAET: der Quell prueft `wert is True` -- IDENTITAET, nicht Pythons `==`. Der strukturelle
+/// Vergleich ist die richtige Uebersetzung (`PyWert::Ganz(1)` faellt korrekt durch); `py_eq`
+/// waere falsch, weil es `1 == True` als wahr ansaehe. Der zweite Zweig schliesst `bool` in
+/// `CPython` ausdruecklich aus (`not isinstance(wert, bool)`), `zahl_gt0` bildet das nach.
+fn ist_gesetzt(wert: &PyWert) -> bool {
+    *wert == PyWert::Bool(true) || zahl_gt0(wert)
 }
 
 /// Partnerfeld bestätigt gesetzt UND Veranlagung bestätigt ≠ „zusammen" (`partner_check.py:42-76`).
@@ -74,10 +79,13 @@ pub fn partner_ohne_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> {
     //
     // PARITAET, an `partner_check.py:58` gemessen: Python bricht NUR bei exakt `"zusammen"` ab.
     // Ein abweichender Wert (`"Zusammen"`, `5`, `true`) ist dort nicht `"zusammen"` und laeuft
-    // WEITER — deshalb steht hier `Some(Veranlagung::Zusammen)` und nicht „nicht abweichend".
-    // `Lage::Abweichend` verhaelt sich damit wie in Python; das Feld `veranlagung` unten traegt
-    // weiter den ROHEN Wert, weil Python ihn roh in das dict schreibt.
-    if matches!(lage_veranlagung(felder).0, Some(Veranlagung::Zusammen)) {
+    // WEITER — deshalb steht hier `Lage::Gueltig(Veranlagung::Zusammen)` und nicht „nicht
+    // abweichend". `Lage::Abweichend` verhaelt sich damit wie in Python; das Feld `veranlagung`
+    // unten traegt weiter den ROHEN Wert, weil Python ihn roh in das dict schreibt.
+    if matches!(
+        lage_veranlagung(felder),
+        Lage::Gueltig(Veranlagung::Zusammen)
+    ) {
         return Vec::new();
     }
     PARTNER_FELDER
@@ -90,8 +98,8 @@ pub fn partner_ohne_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> {
             // jede feste Präposition-Artikel-Kombination beugte die Hälfte falsch.
             Some(PartnerWiderspruch {
                 feld_id,
-                wert: wert.clone(),
-                veranlagung: veranlagung.clone(),
+                wert: als_json(wert),
+                veranlagung: als_json(veranlagung),
                 grund: format!(
                     "Du hast etwas bei „{}“ eingetragen, aber keine Zusammenveranlagung gewählt. \
                      Partnerbezogene Angaben sind nur bei gemeinsamer Veranlagung möglich. Bitte \
@@ -115,13 +123,18 @@ pub fn alleinerziehend_mit_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> 
     let alleinstehend = lies(felder, "fam_alleinstehend").bestaetigt();
     // Dieselbe Typisierung wie oben, umgekehrte Richtung. PARITAET, an `partner_check.py:91`
     // gemessen: Python laeuft NUR bei exakt `"zusammen"` weiter. Ein abweichender Wert ist dort
-    // `!= "zusammen"` und bricht ab; hier ist er `None` und bricht ebenso ab.
+    // `!= "zusammen"` und bricht ab; hier ist er `Lage::Abweichend` und bricht ebenso ab.
     //
     // Der rohe Wert wird nicht mehr gebraucht: der Guard laesst nur exakt "zusammen" durch,
     // deshalb ist das Literal im `veranlagung`-Feld unten (wie in Python, das `veranlagung`
     // dort roh einsetzt) beweisbar derselbe Text.
-    if !matches!(lage_veranlagung(felder).0, Some(Veranlagung::Zusammen))
-        || alleinstehend != Some(&Value::Bool(true))
+    //
+    // PARITAET: `partner_check.py:91` prueft `alleinstehend is not True` -- IDENTITAET. Der
+    // strukturelle Vergleich ist die richtige Uebersetzung (`PyWert::Ganz(1)` faellt durch).
+    if !matches!(
+        lage_veranlagung(felder),
+        Lage::Gueltig(Veranlagung::Zusammen)
+    ) || alleinstehend != Some(&PyWert::Bool(true))
     {
         return Vec::new();
     }
@@ -141,20 +154,19 @@ mod tests {
     use super::*;
     use crate::lesung::test_snap as snap;
     use domain::Zustand::{Bestaetigt, Vorlaeufig};
-    use serde_json::json;
 
     #[test]
     fn gdb_partner_einzel_widerspruch() {
         let s = snap(&[
-            ("veranlagung", json!("einzel"), Bestaetigt),
+            ("veranlagung", PyWert::Text("einzel".to_owned()), Bestaetigt),
             (
                 "rentner_grad_der_behinderung_partner",
-                json!(50),
+                PyWert::Ganz(50),
                 Bestaetigt,
             ),
             (
                 "rentner_hilflos_blind_taubblind_partner",
-                json!(false),
+                PyWert::Bool(false),
                 Bestaetigt,
             ),
         ]);
@@ -168,10 +180,10 @@ mod tests {
     #[test]
     fn unbestaetigt_kein_widerspruch() {
         let s = snap(&[
-            ("veranlagung", json!("einzel"), Vorlaeufig),
+            ("veranlagung", PyWert::Text("einzel".to_owned()), Vorlaeufig),
             (
                 "rentner_grad_der_behinderung_partner",
-                json!(50),
+                PyWert::Ganz(50),
                 Bestaetigt,
             ),
         ]);
@@ -181,13 +193,17 @@ mod tests {
     #[test]
     fn alleinerziehend_nur_bei_zusammen() {
         let mut s = snap(&[
-            ("veranlagung", json!("zusammen"), Bestaetigt),
-            ("fam_alleinstehend", json!(true), Bestaetigt),
+            (
+                "veranlagung",
+                PyWert::Text("zusammen".to_owned()),
+                Bestaetigt,
+            ),
+            ("fam_alleinstehend", PyWert::Bool(true), Bestaetigt),
         ]);
         assert_eq!(alleinerziehend_mit_zusammen(&s).len(), 1);
         s = snap(&[
-            ("veranlagung", json!("einzel"), Bestaetigt),
-            ("fam_alleinstehend", json!(true), Bestaetigt),
+            ("veranlagung", PyWert::Text("einzel".to_owned()), Bestaetigt),
+            ("fam_alleinstehend", PyWert::Bool(true), Bestaetigt),
         ]);
         assert!(alleinerziehend_mit_zusammen(&s).is_empty());
     }

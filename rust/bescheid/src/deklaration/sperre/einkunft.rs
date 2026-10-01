@@ -2,9 +2,8 @@
 //! (`_an_gesamt_sperrgrund`, DBA bis `gewst_hebesatz_offen`).
 use std::collections::HashSet;
 
-use domain::Sperrgrund;
+use domain::{PyWert, Sperrgrund};
 use konsistenz::flag_widersprueche;
-use serde_json::Value;
 
 use super::{bestaetigt, oder_null_positiv, positiv, Grund, K};
 use crate::deklaration::konstanten::AGB_KIST;
@@ -94,7 +93,7 @@ fn gewinn(f: &Felder) -> Option<Sperrgrund> {
         return Some(Sperrgrund::GewinnQuelleOffen);
     }
     let land_forst =
-        matches!(wert(f, "gewinn_betriebsart"), Some(Value::String(s)) if s == "land_forst");
+        matches!(wert(f, "gewinn_betriebsart"), Some(PyWert::Text(s)) if s == "land_forst");
     if land_forst && quelle_positiv && !direktwert {
         return Some(Sperrgrund::LufEuerOffen);
     }
@@ -118,8 +117,8 @@ pub(super) fn betrag_offen(k: &K<'_>) -> Option<Sperrgrund> {
         return Some(Sperrgrund::UnterhaltBetragOffen);
     }
     // `wert not in (None, "keine")`
-    let konfession = !matches!(wert(f, "kist_konfession"), None | Some(Value::Null))
-        && !matches!(wert(f, "kist_konfession"), Some(Value::String(s)) if s == "keine");
+    let konfession = !matches!(wert(f, "kist_konfession"), None | Some(PyWert::Null))
+        && !matches!(wert(f, "kist_konfession"), Some(PyWert::Text(s)) if s == "keine");
     if konfession && AGB_KIST.iter().any(|a| !bestaetigt(f, a)) {
         return Some(Sperrgrund::KirchensteuerBetragOffen);
     }

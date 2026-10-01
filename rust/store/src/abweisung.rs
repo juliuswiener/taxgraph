@@ -8,6 +8,9 @@
 //! Zustand, den diese Pruefung in Python abfaengt, ist in Rust gar nicht erst konstruierbar
 //! (s. `crate::event::NeuesEvent`). Der zugehoerige Python-Test
 //! (`test_B_bestaetigt_ohne_signal_2_beim_ersetzen`) hat deshalb keine Rust-Entsprechung.
+//!
+//! EBENFALLS OHNE ENTSPRECHUNG: [`Abweisung::WertNichtDarstellbar`] (K2-Auflage 3, s. dort).
+//! `store.py` kennt keine solche Pruefung — sie ist eine Verschaerfung, keine Nachbildung.
 use domain::Schreiber;
 
 use crate::canonical::EventId;
@@ -63,6 +66,15 @@ pub enum Abweisung {
         schreiber: String,
         wert: String,
     },
+
+    /// K2-Auflage 3: `wert` oder `signal_1` geht nicht nach JSON — NaN/+-inf, auch innerhalb einer
+    /// `Liste`/eines `Objekt`. KEINE Entsprechung in `store.py`: `CPython` schreibt
+    /// NaN nackt in die Fallakte (B4, `api.py:157`; `json.dump` ohne `allow_nan=False` laesst
+    /// es durch). Hier fail-closed statt eines stillen `null`. Kommt im Bestand nicht vor
+    /// (gemessen: 11294/11294 sind bool/int/str), aber eine stille Konvertierung waere genau
+    /// die Fehlerklasse, die den `event_id` kostet.
+    #[error("fail-closed (Wert): {feld_id}={grund}")]
+    WertNichtDarstellbar { feld_id: String, grund: String },
 
     /// Auflage T (`store.py:228-231`, Stille-Null-Klasse): `wert` passt nicht zum Bindungstyp.
     #[error(

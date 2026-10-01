@@ -5,10 +5,9 @@ use std::collections::{BTreeMap, HashMap};
 use bindung::{Bindung, Bindungspunkt};
 use domain::Feldtyp;
 use serde::Serialize;
-use serde_json::Value;
 use store::Store;
 
-use crate::antwort::{py_eq, Aktiv, Antwort};
+use crate::antwort::{Aktiv, Antwort};
 use crate::graph::{Graph, Sicht};
 use crate::instanz::instanz_antworten;
 
@@ -41,15 +40,15 @@ impl Bedingungsstand {
     /// Aus den Instanz-Antworten.
     ///
     /// ```
+    /// use domain::PyWert;
     /// use interview::{Antwort, Bedingungsstand};
-    /// use serde_json::json;
-    /// let (nein, ja) = (json!(false), json!(true));
-    /// let weicht_ab = |w: &serde_json::Value| *w == json!(false);
+    /// let (nein, ja) = (PyWert::Bool(false), PyWert::Bool(true));
+    /// let weicht_ab = |w: &domain::PyWert| *w == domain::PyWert::Bool(false);
     /// assert_eq!(Bedingungsstand::aus(&[Antwort::Bestaetigt(&nein), Antwort::Offen], weicht_ab), Bedingungsstand::Offen);
     /// assert_eq!(Bedingungsstand::aus(&[Antwort::Bestaetigt(&nein), Antwort::Bestaetigt(&ja)], weicht_ab), Bedingungsstand::Erfuellt);
     /// assert_eq!(Bedingungsstand::aus(&[Antwort::Bestaetigt(&nein)], weicht_ab), Bedingungsstand::Ausgeschlossen);
     /// ```
-    pub fn aus(antworten: &[Antwort<'_>], weicht_ab: impl Fn(&Value) -> bool) -> Self {
+    pub fn aus(antworten: &[Antwort<'_>], weicht_ab: impl Fn(&domain::PyWert) -> bool) -> Self {
         let mut alle_weichen_ab = true;
         for a in antworten {
             match a {
@@ -72,7 +71,7 @@ pub(crate) fn bedingung_je_instanz(
     sicht: &Sicht<'_>,
     graph: &Graph<'_>,
     feld: &str,
-    weicht_ab: impl Fn(&Value) -> bool,
+    weicht_ab: impl Fn(&domain::PyWert) -> bool,
 ) -> Bedingungsstand {
     Bedingungsstand::aus(&instanz_antworten(aktiv, sicht, graph, feld), weicht_ab)
 }
@@ -137,17 +136,23 @@ pub(crate) fn relevanz_mit<'r>(
             let mut status = Regelstatus::Relevant;
             let mut offen = Vec::new();
             for cond in graph.regel_bedingungen(rid) {
-                let stand = bedingung_je_instanz(aktiv, sicht, graph, &cond.feld, |w| {
-                    !py_eq(w, &cond.wert)
-                });
+                // Einmal konvertieren, nicht je Instanz: `PyWert::py_eq` bildet Pythons `!=`
+                // ab (`interview::py_eq` tat dasselbe, s. proptest `py_eq_wie_pywert`).
+                let soll = domain::PyWert::from(cond.wert.clone());
+                let stand =
+                    bedingung_je_instanz(aktiv, sicht, graph, &cond.feld, |w| !w.py_eq(&soll));
                 if stand == Bedingungsstand::Ausgeschlossen {
                     status = Regelstatus::Ausgeschlossen;
                 }
             }
             if status != Regelstatus::Ausgeschlossen {
                 for fid in gates {
+                    // PARITAET: `traverser.py:328` prueft `w is False` -- IDENTITAET, nicht
+                    // Pythons `==`. Die strukturelle Gleichheit ist hier die richtige Uebersetzung
+                    // (`PyWert::Ganz(0)` faellt korrekt durch); `py_eq` waere an dieser Stelle
+                    // falsch, weil es `0 == False` als wahr ansaehe.
                     match bedingung_je_instanz(aktiv, sicht, graph, fid, |w| {
-                        *w == Value::Bool(false)
+                        *w == domain::PyWert::Bool(false)
                     }) {
                         Bedingungsstand::Offen => offen.push(fid),
                         Bedingungsstand::Ausgeschlossen => {

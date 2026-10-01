@@ -6,7 +6,7 @@
 use std::collections::BTreeSet;
 
 use bindung::Params;
-use domain::{Cent, Euro, Veranlagung, Vz};
+use domain::{Cent, Euro, PyWert, Veranlagung, Vz};
 use engine::zugriff::teil1::belastungen::{p33_agb, P33AgbEingabe, P33ZumutbarEingabe};
 use engine::zugriff::teil1::ermaessigungen::{p35a_haushaltsnahe, P35aHaushaltsnaheEingabe};
 use engine::zugriff::teil1::sonderausgaben::{
@@ -25,7 +25,6 @@ use engine::zugriff::teil2::sonderausgaben::{
     RealsplittingEingabe, SchulgeldEingabe,
 };
 use intervall::Slots;
-use serde_json::Value;
 
 use crate::{
     cent_zu_euro, euro_plus, feld_euro_oder_null, feld_int_oder_null, ist_false, ist_positive_zahl,
@@ -61,8 +60,9 @@ pub fn abs3_eligible(f: &Felder, vz: Vz) -> Result<bool, BescheidFehler> {
 ///
 /// ```
 /// use bescheid::abzuege::oepnv_eur;
+/// use domain::PyWert;
 /// use intervall::Slots;
-/// let s: Slots = [("oepnv_kosten_jahr".to_owned(), serde_json::json!(-150))].into();
+/// let s: Slots = [("oepnv_kosten_jahr".to_owned(), PyWert::Ganz(-150))].into();
 /// assert_eq!(oepnv_eur(&s).unwrap().get(), -2); // Cent → Euro rundet gegen −∞
 /// ```
 pub fn oepnv_eur(slots: &Slots) -> Result<Euro, BescheidFehler> {
@@ -74,7 +74,7 @@ pub fn oepnv_eur(slots: &Slots) -> Result<Euro, BescheidFehler> {
 
 /// `kind_idnr` ist ein Text mit mindestens 11 Zeichen (`not idnr or not str or len(idnr) < 11`).
 fn kind_idnr_ok(felder: &Felder) -> bool {
-    matches!(wert(felder, "kind_idnr"), Some(Value::String(s)) if s.chars().count() >= 11)
+    matches!(wert(felder, "kind_idnr"), Some(PyWert::Text(s)) if s.chars().count() >= 11)
 }
 
 /// § 10 Abs. 1 Nr. 3 S. 2: KV/PV-Beitraege des Kindes, `kind_kv + kind_pv` je Kind-Instanz, in CENT
@@ -630,7 +630,7 @@ mod tests {
 
     #[test]
     fn oepnv_rundet_gegen_minus_unendlich() {
-        let s: Slots = [("oepnv_kosten_jahr".to_owned(), json!(-150))].into();
+        let s: Slots = [("oepnv_kosten_jahr".to_owned(), PyWert::Ganz(-150))].into();
         assert_eq!(oepnv_eur(&s).unwrap(), Euro::new(-2));
         assert!(matches!(
             oepnv_eur(&Slots::new()),

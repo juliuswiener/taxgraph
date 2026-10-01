@@ -6,23 +6,23 @@
 //! Signal-Regel bereits im Typsystem erzwingt (`Feldzustand::Bestaetigt` traegt zwingend ein
 //! `Signal2` — der Python-Laufzeitfehler "zustand=bestaetigt braucht ein `signal_2`" kann in Rust
 //! gar nicht erst konstruiert werden).
-use domain::{Feldzustand, Herkunft, HerkunftVektor, Schreiber, Zustand};
+use domain::{Feldzustand, Herkunft, HerkunftVektor, PyFehler, PyWert, Schreiber, Zustand};
 use serde::{Deserialize, Serialize};
 
 use crate::canonical::EventId;
 
-/// Zwei-Signal-Beleg (`schema.json#/$defs/signal`). `signal_1` bleibt bewusst offenes JSON
-/// (String, Objekt oder `null` je nach Schreiber, s. Schema-Beschreibung); `signal_2` ist ein
+/// Zwei-Signal-Beleg (`schema.json#/$defs/signal`). `signal_1` bleibt bewusst offen (`PyWert`:
+/// String, Objekt oder `null` je nach Schreiber, s. Schema-Beschreibung); `signal_2` ist ein
 /// simpler `Option<String>` und NICHT `domain::Signal2` — eine geladene Bestandsdatei behaelt
 /// dieselbe Freiheit wie Pythons ungeprueftes `lade()`, die Signal2-Nichtleer-Regel gilt nur beim
 /// Schreiben (s. [`NeuesEvent`]).
 ///
-/// `signal_1` ist `Option<Option<Value>>` (doppeltes `Option`), nicht das naheliegende einfache
-/// `Option<Value>`: Gemessen ueber alle 192 realen Fallakten (Zaehlung, keine Werte) traegt der
+/// `signal_1` ist `Option<Option<PyWert>>` (doppeltes `Option`), nicht das naheliegende einfache
+/// `Option<PyWert>`: Gemessen ueber alle 192 realen Fallakten (Zaehlung, keine Werte) traegt der
 /// `signal`-Schluessel bei 11.294 Events IMMER den Schluessel `signal_1` — 10.298x mit explizitem
 /// `null`, 877x mit einem Wert. Bei 119 Events (einer frueheren Store-Schema-Version, strikte
 /// Teilmenge der 990 Alt-Herkunft-Events, s. `domain::HerkunftVektor`-Moduldoku) FEHLT der
-/// Schluessel `signal_1` komplett. Ein einfaches `Option<Value>` kann "Schluessel fehlt" und
+/// Schluessel `signal_1` komplett. Ein einfaches `Option<PyWert>` kann "Schluessel fehlt" und
 /// "Schluessel da, Wert `null`" nicht unterscheiden (beides deserialisiert zu `None`) — jeder
 /// Rueck-Write haette den fehlenden Schluessel lautlos durch ein explizites `null` ersetzt, byte-
 /// verschieden vom Original und damit `event_id`-fremd (`sha256(canonical_json(...))` haengt am
@@ -30,17 +30,15 @@ use crate::canonical::EventId;
 /// bei fehlendem Schluessel); innere Ebene = `null`/Wert. Python-Schreibpfad setzt den Schluessel
 /// IMMER (`store.py`: `signal or {"signal_1": None, ...}`), deshalb ist die aeussere Ebene beim
 /// Schreiben in diesem Crate immer `Some(...)` (s. Konstruktionsstellen).
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+///
+/// `Serialize` geht wie bei [`Event`] ueber den Konvertierer `PyWert -> Value` (s. dort).
+#[derive(Debug, Clone, Default, PartialEq, Deserialize)]
 pub struct Signal {
     // Bewusstes `Option<Option<T>>` (s. Typdoku oben: Schluessel-Anwesenheit vs. `null`-Wert
     // sind zwei verschiedene, real gemessene Zustaende, kein Sonderfall der Faelle 1-2).
     #[allow(clippy::option_option)]
-    #[serde(
-        default,
-        deserialize_with = "signal_1_praesenz",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub signal_1: Option<Option<serde_json::Value>>,
+    #[serde(default, deserialize_with = "signal_1_praesenz")]
+    pub signal_1: Option<Option<PyWert>>,
     #[serde(default)]
     pub signal_2: Option<String>,
 }
@@ -49,23 +47,49 @@ pub struct Signal {
 /// wuerde `null` und einen fehlenden Schluessel gleichermassen zu `None` zusammenfalten) — s.
 /// Typdoku oben.
 #[allow(clippy::option_option)]
-fn signal_1_praesenz<'de, D>(deserializer: D) -> Result<Option<Option<serde_json::Value>>, D::Error>
+fn signal_1_praesenz<'de, D>(deserializer: D) -> Result<Option<Option<PyWert>>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    Option::<serde_json::Value>::deserialize(deserializer).map(Some)
+    Option::<PyWert>::deserialize(deserializer).map(Some)
+}
+
+impl Signal {
+    /// `signal` als JSON. Ein fehlender `signal_1`-Schluessel bleibt fehlend, ein `null` bleibt
+    /// `null` (s. Typdoku); `signal_2` steht immer da, wie im abgeleiteten `Serialize` zuvor.
+    fn zu_json(&self) -> Result<serde_json::Value, PyFehler> {
+        let mut objekt = serde_json::Map::new();
+        if let Some(signal_1) = &self.signal_1 {
+            let wert = match signal_1 {
+                None => serde_json::Value::Null,
+                Some(w) => w.zu_json()?,
+            };
+            objekt.insert("signal_1".to_string(), wert);
+        }
+        objekt.insert("signal_2".to_string(), serde_json::json!(self.signal_2));
+        Ok(serde_json::Value::Object(objekt))
+    }
+}
+
+impl Serialize for Signal {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::Error as _;
+        self.zu_json()
+            .map_err(|e| S::Error::custom(e.to_string()))?
+            .serialize(serializer)
+    }
 }
 
 /// Ein Sachverhalts-Event, wie im Log gespeichert. Feldnamen/Optionalitaet 1:1
 /// `schema.json#/$defs/event`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Event {
     pub event_id: EventId,
     pub ts: String,
     pub feld_id: String,
     /// `schema.json`: `["number","string","boolean","null"]` — Typkonformitaet zum
     /// Bindungstyp ist Auflage T, keine JSON-Schema-Eigenschaft.
-    pub wert: serde_json::Value,
+    pub wert: domain::PyWert,
     pub zustand: Zustand,
     /// `HerkunftVektor` statt der strengen `Herkunft`: 32 reale Bestandsdateien (990 Events)
     /// tragen die Alt-Form ohne `pruef_tiefe`/`haftung` (s. `domain::HerkunftVektor`-Moduldoku).
@@ -78,29 +102,65 @@ pub struct Event {
     pub ersetzt: Option<EventId>,
 }
 
+/// `Event` serialisiert ueber den Konvertierer `PyWert -> Value` -- NICHT ueber ein
+/// abgeleitetes `Serialize`. Grund (Auflage 1/2): `canonical_json` erbt seine
+/// Schluesselsortierung von `serde_json::Map` (`BTreeMap`). Ein direktes Serialisieren von
+/// `PyWert::Objekt` uebernaehme dessen Einfuegereihenfolge und braeche jede `event_id`.
+/// Der Umweg ueber `Value` erhaelt die Sortierung; gemessen: 11294/11294 identisch.
+///
+/// ponytail: `wert` kann hier nicht scheitern (der Konvertierer an der Append-Grenze prueft),
+/// aber ein NaN/inf in `wert` oder `signal_1` wuerde als Serialisierungsfehler auftreten.
+/// Upgrade: eigener Feldfehler statt `serde`-Fehler, wenn die Form je real auftritt.
+impl Serialize for Event {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::Error as _;
+        let payload = self
+            .payload_ohne_event_id()
+            .map_err(|e| S::Error::custom(e.to_string()))?;
+        // `event_id` VOR den uebrigen Schluesseln; die Sortierung macht `Value` beim
+        // Serialisieren selbst, die Einfuegereihenfolge hier ist daher ohne Wirkung.
+        serde_json::Value::Object(
+            [(
+                "event_id".to_string(),
+                serde_json::Value::String(self.event_id.to_string()),
+            )]
+            .into_iter()
+            .chain(payload.as_object().cloned().unwrap_or_default())
+            .collect(),
+        )
+        .serialize(serializer)
+    }
+}
+
 impl Event {
     /// Das Event als `canonical_json`-Zahlwert OHNE `event_id` (`store.py:33`: `payload = {k: v
     /// for k, v in event.items() if k != "event_id"}`). Serialisierung kann nur scheitern, wenn
-    /// `wert` einen nicht-endlichen Float traegt — s. Moduldoku `canonical.rs`.
-    fn payload_ohne_event_id(&self) -> serde_json::Value {
-        serde_json::json!({
+    /// `wert` oder `signal_1` einen nicht-endlichen Float traegt — s. Moduldoku `canonical.rs`.
+    fn payload_ohne_event_id(&self) -> Result<serde_json::Value, PyFehler> {
+        let wert = self.wert.zu_json()?;
+        // `signal` ausdruecklich hier, nicht ueber `json!`: das ruft `Serialize` mit `unwrap` --
+        // ein NaN in `signal_1` waere eine Panik statt eines Fehlers.
+        let signal = self.signal.as_ref().map(Signal::zu_json).transpose()?;
+        Ok(serde_json::json!({
             "ts": self.ts,
             "feld_id": self.feld_id,
-            "wert": self.wert,
+            "wert": wert,
             "zustand": self.zustand,
             "herkunft": self.herkunft,
             "schreiber": self.schreiber,
-            "signal": self.signal,
+            "signal": signal,
             "ersetzt": self.ersetzt,
-        })
+        }))
     }
 
     /// Der content-adressierte `event_id` ueber die aktuellen Feldwerte (ohne `event_id`
     /// selbst). Zum Nachrechnen/Verifizieren; die Konstruktion via [`crate::store::Store::append`]
     /// setzt ihn bereits korrekt.
-    #[must_use]
-    pub fn berechne_event_id(&self) -> EventId {
-        EventId::von_json(&self.payload_ohne_event_id())
+    /// # Errors
+    /// [`PyFehler`], wenn `wert` oder `signal_1` nicht nach JSON geht (NaN/inf, auch in
+    /// `Liste`/`Objekt`).
+    pub fn berechne_event_id(&self) -> Result<EventId, PyFehler> {
+        Ok(EventId::von_json(&self.payload_ohne_event_id()?))
     }
 }
 
@@ -110,11 +170,11 @@ impl Event {
 #[derive(Debug, Clone)]
 pub struct NeuesEvent {
     pub feld_id: String,
-    pub wert: serde_json::Value,
+    pub wert: domain::PyWert,
     pub feldzustand: Feldzustand,
     pub herkunft: Herkunft,
     pub schreiber: Schreiber,
-    pub signal_1: Option<serde_json::Value>,
+    pub signal_1: Option<PyWert>,
     pub ersetzt: Option<EventId>,
     /// `None` -> `_now()` beim Anhaengen (Tests uebergeben einen festen Zeitstempel).
     pub ts: Option<String>,
@@ -151,7 +211,7 @@ mod tests {
             event_id: crate::EventId::von_json(&json!({"x": 1})),
             ts: "2026-07-17T14:00:00+00:00".to_string(),
             feld_id: "ep_arbeitstage".to_string(),
-            wert: json!(220),
+            wert: json!(220).into(),
             zustand: Zustand::Bestaetigt,
             herkunft: herkunft.into(),
             schreiber: "ui:laie".parse().unwrap(),
@@ -175,5 +235,26 @@ mod tests {
     fn berechne_event_id_ist_deterministisch() {
         let e = beispiel();
         assert_eq!(e.berechne_event_id(), e.berechne_event_id());
+    }
+
+    /// Die drei `signal_1`-Formen (Schluessel fehlt, `null`, Wert) ueberleben den Rueckweg; ein
+    /// NaN in `signal_1` wird ein Fehler, keine Panik im `json!` und kein stilles `null`.
+    #[test]
+    fn signal_1_formen_und_nan() {
+        for roh in [
+            json!({"signal_2": "klick@ui"}),
+            json!({"signal_1": null, "signal_2": null}),
+            json!({"signal_1": {"typ": "beleg", "ref": "b#1"}, "signal_2": null}),
+        ] {
+            let signal: Signal = serde_json::from_value(roh.clone()).unwrap();
+            assert_eq!(serde_json::to_value(&signal).unwrap(), roh);
+        }
+        let mut e = beispiel();
+        e.signal = Some(Signal {
+            signal_1: Some(Some(domain::PyWert::Gleit(f64::NAN))),
+            signal_2: None,
+        });
+        assert!(e.berechne_event_id().is_err());
+        assert!(serde_json::to_value(&e).is_err());
     }
 }
