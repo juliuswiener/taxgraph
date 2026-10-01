@@ -61,6 +61,11 @@ class OcrZuAufwendig(RuntimeError):
     Aufrufer nicht von einem vollständig gelesenen Beleg zu unterscheiden ist."""
 
 
+class PdfNichtLesbar(RuntimeError):
+    """pdftotext kann die Datei nicht öffnen (Exit weder 0 noch 3) — Regel und Begründung wie
+    kontoauszug_writer.PdfNichtLesbar."""
+
+
 _EUR = re.compile(r"\d{1,3}(?:\.\d{3})*,\d{2}")
 
 # Beleg-Typen (Stufe 1/1b/1c). hs_prefix = TYP-Tag im Bindungs-herkunft_slots (Provenienz + Typ-Scoping:
@@ -221,8 +226,12 @@ def lies_beleg_text(pfad: str) -> tuple[str, dict]:
     reinem Textlayer/.txt)."""
     if pfad.lower().endswith((".txt",)):
         return open(pfad, encoding="utf-8").read(), {}
-    txt = subprocess.run(["pdftotext", "-layout", pfad, "-"], capture_output=True, text=True,
-                         timeout=PDFTOTEXT_ZEITLIMIT_S).stdout
+    r = subprocess.run(["pdftotext", "-layout", pfad, "-"], capture_output=True, text=True,
+                       timeout=PDFTOTEXT_ZEITLIMIT_S)
+    if r.returncode not in (0, 3):
+        raise PdfNichtLesbar("Die Datei lässt sich nicht als PDF öffnen (kein PDF, beschädigt oder mit "
+                             "Passwort geschützt).")
+    txt = r.stdout
     if not txt.strip():
         # Ein einziger tesseract-Aufruf über das GANZE PDF — die Seitenzahl steht hier noch gar
         # nicht fest, deshalb greift statt des Seitendeckels ein entsprechend weiteres Zeitlimit.

@@ -387,3 +387,36 @@ def test_tesseract_rechnet_mit_einem_faden(monkeypatch, tmp_path, weg):
     # Nur Namen in die Meldung, nie Werte: die Umgebung trägt API-Schlüssel.
     abweichend = sorted(k for k in soll.keys() | env.keys() if env.get(k) != soll.get(k))
     assert not abweichend, f"{weg}: env= weicht von der Umgebung ab bei {abweichend}"
+
+
+# ------------------------------------------------- Verhalten: der pdftotext-Exit entscheidet, nicht der Text
+
+@pytest.mark.parametrize("exit_code", [1, 2, 3, 99, -9])
+@pytest.mark.parametrize("weg", ["kontoauszug_voll_scan", "beleg_voll_scan"])
+def test_pdftotext_exit_code(monkeypatch, tmp_path, weg, exit_code):
+    """Exit 3 (Rechte-Fehler) liefert keinen Text, die Seiten lassen sich aber rastern: weiter in die
+    Bilderkennung wie bei einem Scan. Jeder andere Code≠0 heißt „nicht lesbar" und ist ein Fehler —
+    vorher wurde daraus lautlos ein leerer Auszug. Vorgetäuscht, weil der poppler-Build dieser
+    Maschine die Rechte gar nicht prüft: ein kopiergeschütztes PDF endet dort mit Exit 0."""
+    modul, lies, _ = TESSERACT_WEGE[weg]
+    gerufen = []
+
+    def _fake_run(cmd, *a, **kw):
+        gerufen.append(cmd[0])
+        if cmd[0] == "pdftotext":
+            return subprocess.CompletedProcess(cmd, exit_code, stdout="", stderr="")
+        if cmd[0] == "pdftoppm":
+            open(cmd[-1] + "-1.png", "wb").close()
+            return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(modul.subprocess, "run", _fake_run)
+    pdf = tmp_path / "x.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+    if exit_code == 3:
+        lies(str(pdf))
+        assert "tesseract" in gerufen, f"{weg}: Exit 3 erreicht die Bilderkennung nicht: {gerufen}"
+    else:
+        with pytest.raises(modul.PdfNichtLesbar):
+            lies(str(pdf))
+        assert gerufen == ["pdftotext"], f"{weg}: nach Exit {exit_code} lief noch {gerufen[1:]}"

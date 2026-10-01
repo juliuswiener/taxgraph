@@ -8,7 +8,7 @@
 use std::collections::BTreeMap;
 use std::io::Read;
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
 use std::time::Duration;
 
 use wait_timeout::ChildExt;
@@ -36,6 +36,9 @@ pub enum OcrFehler {
     /// `OcrZuAufwendig` — 422, Meldung wortgleich.
     #[error("{0}")]
     ZuAufwendig(String),
+    /// `PdfNichtLesbar` — `pdftotext` kann die Datei nicht oeffnen (Exit weder 0 noch 3); 422.
+    #[error("Die Datei lässt sich nicht als PDF öffnen (kein PDF, beschädigt oder mit Passwort geschützt).")]
+    NichtLesbar,
     /// Werkzeug fehlt / startet nicht (Python: `FileNotFoundError`, 500).
     #[error("{befehl}: {nachricht}")]
     Start { befehl: String, nachricht: String },
@@ -51,9 +54,13 @@ pub enum OcrFehler {
     Io(#[from] std::io::Error),
 }
 
-/// `subprocess.run(befehl, capture_output=True, text=True, timeout=…, env=…).stdout` —
+/// `subprocess.run(befehl, capture_output=True, text=True, timeout=…, env=…)` → `(stdout, Exit)` —
 /// universelle Zeilenenden wie Pythons Textmodus (`\r\n`/`\r` → `\n`).
-fn lauf(befehl: &[&str], zeitlimit: Duration, ein_faden: bool) -> Result<String, OcrFehler> {
+fn lauf(
+    befehl: &[&str],
+    zeitlimit: Duration,
+    ein_faden: bool,
+) -> Result<(String, ExitStatus), OcrFehler> {
     let anzeige = format!(
         "[{}]",
         befehl
@@ -88,8 +95,7 @@ fn lauf(befehl: &[&str], zeitlimit: Duration, ein_faden: bool) -> Result<String,
         let mut puffer = Vec::new();
         stdout.read_to_end(&mut puffer).map(|_| puffer)
     });
-    let fertig = kind.wait_timeout(zeitlimit)?;
-    if fertig.is_none() {
+    let Some(status) = kind.wait_timeout(zeitlimit)? else {
         let _ = kind.kill();
         let _ = kind.wait();
         let _ = leser.join();
@@ -97,12 +103,12 @@ fn lauf(befehl: &[&str], zeitlimit: Duration, ein_faden: bool) -> Result<String,
             befehl: anzeige,
             sekunden: zeitlimit.as_secs(),
         });
-    }
+    };
     let bytes = leser
         .join()
         .map_err(|_| OcrFehler::KeinUtf8(anzeige.clone()))??;
     let text = String::from_utf8(bytes).map_err(|_| OcrFehler::KeinUtf8(anzeige))?;
-    Ok(text.replace("\r\n", "\n").replace('\r', "\n"))
+    Ok((text.replace("\r\n", "\n").replace('\r', "\n"), status))
 }
 
 /// `_textlayer_ist_plausibel`: mindestens 20 Zeichen nach `strip()`.
@@ -189,7 +195,7 @@ fn text_und_conf(zeilen: Vec<(String, f64)>) -> (String, ConfMap) {
 
 fn tesseract_tsv(bild: &Path) -> Result<Vec<(String, f64)>, OcrFehler> {
     let b = bild.to_string_lossy();
-    let tsv = lauf(
+    let (tsv, _) = lauf(
         &["tesseract", &b, "stdout", "-l", "deu", "tsv"],
         TESSERACT_ZEITLIMIT,
         true,
@@ -299,11 +305,18 @@ fn gemischt(
 }
 
 fn pdftotext(pfad: &str) -> Result<String, OcrFehler> {
-    lauf(
+    let (text, status) = lauf(
         &["pdftotext", "-layout", pfad, "-"],
         PDFTOTEXT_ZEITLIMIT,
         false,
-    )
+    )?;
+    // 3 = Rechte-Fehler (Kopierschutz): kein Text, die Seiten lassen sich aber rastern, also weiter
+    // in die OCR. Jeder andere Code, auch ein Signal, heisst „nicht lesbar" (1: kein oder kaputtes
+    // PDF, falsches Passwort; 2: Ausgabe; 99: sonstiges).
+    match status.code() {
+        Some(0 | 3) => Ok(text),
+        _ => Err(OcrFehler::NichtLesbar),
+    }
 }
 
 /// `lies_kontoauszug_pdf(pfad)`: Textlayer zuerst (BEL→Leerzeichen), sonst Voll-Scan.
@@ -312,10 +325,9 @@ fn pdftotext(pfad: &str) -> Result<String, OcrFehler> {
 /// [`OcrFehler`].
 ///
 /// ```
-/// use eingang::ocr::lies_kontoauszug_pdf;
-/// // PARITÄT: eine nicht lesbare Datei liefert leeren Text statt eines Fehlers (Python: `pdftotext` ohne Ausgabe).
-/// let (text, konfidenz) = lies_kontoauszug_pdf("/gibt/es/nicht.pdf").unwrap();
-/// assert!(text.is_empty() && konfidenz.is_empty());
+/// use eingang::ocr::{lies_kontoauszug_pdf, OcrFehler};
+/// // Eine Datei, die pdftotext nicht oeffnen kann, ist ein Fehler und kein leerer Auszug.
+/// assert!(matches!(lies_kontoauszug_pdf("/gibt/es/nicht.pdf"), Err(OcrFehler::NichtLesbar)));
 /// ```
 pub fn lies_kontoauszug_pdf(pfad: &str) -> Result<(String, ConfMap), OcrFehler> {
     let text = pdftotext(pfad)?.replace('\x07', " ");
@@ -360,7 +372,7 @@ pub fn lies_beleg_text(pfad: &str) -> Result<(String, ConfMap), OcrFehler> {
     if llm::py::strip(&text).is_empty() {
         let grenze = TESSERACT_ZEITLIMIT * u32::try_from(OCR_SEITEN_HOECHSTZAHL).unwrap_or(40);
         return Ok((
-            lauf(&["tesseract", pfad, "-", "-l", "deu"], grenze, true)?,
+            lauf(&["tesseract", pfad, "-", "-l", "deu"], grenze, true)?.0,
             ConfMap::new(),
         ));
     }

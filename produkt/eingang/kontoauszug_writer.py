@@ -84,6 +84,15 @@ class OcrZuAufwendig(RuntimeError):
     Genau diese Klasse hat hier schon Geld gekostet (slot-fail-open-get-default: eine falsche
     Zeile löschte 13.568 EUR, und der Zustand blieb "bestaetigt")."""
 
+
+class PdfNichtLesbar(RuntimeError):
+    """pdftotext kann die Datei nicht öffnen: kein PDF, beschädigt oder mit Passwort geschützt.
+
+    Vorher wurde daraus lautlos leerer Text, am Endpunkt 200 mit 0 Buchungen — vom Auszug ohne
+    Buchungen nicht zu unterscheiden. pdftotext-Exit: 0 gelesen; 3 Rechte-Fehler (Kopierschutz)
+    liefert keinen Text, die Seiten lassen sich aber rastern, also weiter in die OCR; jeder andere
+    Code (1 Datei nicht lesbar, 2 Ausgabe, 99 sonstiges, negativ Signal) ist dieser Fehler."""
+
 # Kategorie -> Ziel-feld_id (NUR MVP-Kategorien mit EXISTIERENDEM Feld; Instructor-Ruling 2026-07-18).
 # Andere Kategorien = benannte GAP (kein Vorschlag ohne Zielfeld).
 KATEGORIE_FELD = {
@@ -330,9 +339,12 @@ def lies_kontoauszug_pdf(pfad: str) -> tuple[str, dict]:
     Teil-Textlayer (z.B. Seite 1 Textlayer + Seite 2 Scan): pdftotext trennt Seiten mit \\x0c (ein
     Trailing-\\x0c auch nach der letzten Seite, daher [:-1]) — jede implausible Seite wird EINZELN
     nach-OCR't, plausible Seiten behalten ihren Textlayer (kein unnötiges Voll-Rastern)."""
-    text = subprocess.run(["pdftotext", "-layout", pfad, "-"], capture_output=True, text=True,
-                          timeout=PDFTOTEXT_ZEITLIMIT_S).stdout
-    text = _fix_bel(text)
+    r = subprocess.run(["pdftotext", "-layout", pfad, "-"], capture_output=True, text=True,
+                       timeout=PDFTOTEXT_ZEITLIMIT_S)
+    if r.returncode not in (0, 3):
+        raise PdfNichtLesbar("Die Datei lässt sich nicht als PDF öffnen (kein PDF, beschädigt oder mit "
+                             "Passwort geschützt).")
+    text = _fix_bel(r.stdout)
     if not text.strip():
         return _ocr_tesseract_zeilen(pfad)
 
