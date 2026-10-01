@@ -11,6 +11,9 @@
 //! Die `cfg`-Scheibe aus `api_constants.SCHEIBEN` ist [`Cfg`].
 mod konstanten;
 mod ring_werte;
+mod scheiben_tabellen;
+
+use scheiben_tabellen as tab;
 mod sperre;
 
 use domain::{Feldtyp, Scheibe, Sperrgrund, Zustand, UNBEKANNTER_SPERRGRUND};
@@ -27,6 +30,10 @@ use crate::{ist_positive_zahl, py_int, py_wahr, wert, BescheidFehler, BindungInd
 /// Die Teile von `SCHEIBEN[<name>]`, die `bescheid_deklaration.py` liest.
 ///
 /// Fuenf Scheiben existieren ([`Scheibe`]); eine neue braucht ohnehin neuen Python-Code.
+// Vier unabhaengige Scheiben-Schluessel aus `SCHEIBEN`, kein verkappter Zustandsautomat.
+// `guard` und `gesamt_guard` sind NICHT dasselbe: `an_gesamt` traegt `guard=true`,
+// `gesamt_guard=false` (gemessen 2026-10-01) -- zusammenlegen waere eine falsche Auskunft.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Cfg {
     scheibe: Scheibe,
@@ -36,6 +43,23 @@ pub struct Cfg {
     multi_objekt: Option<&'static str>,
     multi_rente: Option<&'static str>,
     fremd_arten: &'static [&'static str],
+    /// `SCHEIBEN[<name>]["felder"]`: die Feld-Ids der Scheibe. `None` heisst **nicht** "keine
+    /// Felder", sondern "lies [`Cfg::felder_datei`]" (`n_vor_gwg` ist die einzige solche Scheibe).
+    /// Ein Port, der `None` als leer liest, liefert 69 Felder weniger ohne Fehler.
+    felder: Option<&'static [&'static str]>,
+    /// `SCHEIBEN[<name>]["felder_datei"]`: die YAML, aus der `felder` kommt, wenn es `None` ist.
+    felder_datei: Option<&'static str>,
+    /// `SCHEIBEN[<name>]["kegel"]`: die Pflicht-Spannen-Achsen. `None` heisst "der volle
+    /// `felder`-Satz" (`_scheibe_felder`), nicht "kein Kegel".
+    kegel: Option<&'static [&'static str]>,
+    /// `SCHEIBEN[<name>]["gesamt_ring"]`: die Quantitaet des Scheiben-Gesamtbescheids, oder `None`
+    /// ("diese Scheibe hat keine Scheiben-Zahl"). `_feste_zahl` liest genau diesen Schluessel.
+    gesamt_ring: Option<&'static str>,
+    /// `SCHEIBEN[<name>].get("guard")`: ob der K2-Guard [`an_gesamt_sperrgrund`] ueberhaupt laeuft.
+    /// Fehlt der Schluessel, ist er `false` -- genau wie `cfg.get("guard")` in Python.
+    guard: bool,
+    /// `SCHEIBEN[<name>]["teil_ringe"]`: `(familie, quantitaet, felder)` je Teil-Ring.
+    teil_ringe: &'static [(&'static str, &'static str, &'static [&'static str])],
 }
 
 impl Cfg {
@@ -57,10 +81,38 @@ impl Cfg {
             multi_objekt: None,
             multi_rente: None,
             fremd_arten: &[],
+            felder: None,
+            felder_datei: None,
+            kegel: None,
+            gesamt_ring: None,
+            guard: false,
+            teil_ringe: &[],
         };
         match scheibe {
-            Scheibe::Ep | Scheibe::NVorGwg | Scheibe::AnGesamt => leer,
+            Scheibe::Ep => Self {
+                felder: Some(&tab::SCHEIBEN_EP_FELDER),
+                kegel: Some(&tab::SCHEIBEN_EP_KEGEL),
+                gesamt_ring: Some("abziehbarer_betrag"),
+                ..leer
+            },
+            // Die einzige Scheibe mit `felder = None`: die Feldliste kommt aus der YAML.
+            Scheibe::NVorGwg => Self {
+                felder_datei: Some("bindung_n_vor_gwg.yaml"),
+                teil_ringe: &tab::SCHEIBEN_N_VOR_GWG_TEIL_RINGE,
+                ..leer
+            },
+            Scheibe::AnGesamt => Self {
+                felder: Some(&tab::SCHEIBEN_AN_GESAMT_FELDER),
+                kegel: Some(&tab::SCHEIBEN_AN_GESAMT_KEGEL),
+                gesamt_ring: Some("festzusetzende_est"),
+                guard: true,
+                ..leer
+            },
             Scheibe::Gesamt => Self {
+                felder: Some(&tab::SCHEIBEN_GESAMT_FELDER),
+                kegel: Some(&tab::SCHEIBEN_GESAMT_KEGEL),
+                gesamt_ring: Some("festzusetzende_est_gesamt"),
+                guard: true,
                 gesamt_guard: true,
                 partner_19: true,
                 multi_objekt: Some("vv_objekt"),
@@ -68,6 +120,10 @@ impl Cfg {
                 ..leer
             },
             Scheibe::RentnerGesamt => Self {
+                felder: Some(&tab::SCHEIBEN_RENTNER_GESAMT_FELDER),
+                kegel: Some(&tab::SCHEIBEN_RENTNER_GESAMT_KEGEL),
+                gesamt_ring: Some("festzusetzende_est_rentner"),
+                guard: true,
                 gesamt_guard: true,
                 rentner: true,
                 multi_rente: Some("rente"),
@@ -75,6 +131,99 @@ impl Cfg {
                 ..leer
             },
         }
+    }
+}
+
+/// Ein Fehler beim Aufloesen der Scheiben-Feldliste: die Scheibe hat `felder = None`, aber keine
+/// `felder_datei`, unter der sie nachzuschlagen waere. Ein stiller Rueckfall auf "leer" waere die
+/// Auskunft "diese Scheibe hat keine Felder" -- falsch und ohne Signal.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("Scheibe {scheibe} hat felder=None, aber keine felder_datei")]
+pub struct FeldlisteFehler {
+    pub scheibe: Scheibe,
+}
+
+impl Cfg {
+    /// Die Feld-Ids der Scheibe, wie `api._scheibe_felder`: `cfg["felder"]`, sonst die `feld_id`s
+    /// aus `cfg["felder_datei"]` in Dateireihenfolge.
+    ///
+    /// `bindung` liefert die Feld-Ids der Datei; welche Datei, sagt [`Cfg::felder_datei`]. Ein
+    /// Aufrufer, der `felder()` ohne Bindung braucht, hat hier nichts zu suchen -- die Scheiben
+    /// `ep`, `an_gesamt`, `gesamt`, `rentner_gesamt` tragen ihre Liste selbst.
+    ///
+    /// # Errors
+    /// [`FeldlisteFehler`], wenn `felder` und `felder_datei` beide `None` sind.
+    pub fn felder(
+        &self,
+        datei_felder: impl FnOnce(&str) -> Vec<String>,
+    ) -> Result<Vec<String>, FeldlisteFehler> {
+        match (self.felder, self.felder_datei) {
+            (Some(f), _) => Ok(f.iter().map(|s| (*s).to_owned()).collect()),
+            (None, Some(d)) => Ok(datei_felder(d)),
+            (None, None) => Err(FeldlisteFehler {
+                scheibe: self.scheibe,
+            }),
+        }
+    }
+
+    /// `cfg["kegel"]`, oder der volle `felder`-Satz, wenn der Schluessel fehlt (`_scheibe_felder`
+    /// in `api.py:576`: `cfg.get("kegel") or _scheibe_felder(store)`).
+    ///
+    /// # Errors
+    /// Wie [`Cfg::felder`].
+    pub fn kegel(
+        &self,
+        datei_felder: impl FnOnce(&str) -> Vec<String>,
+    ) -> Result<Vec<String>, FeldlisteFehler> {
+        match self.kegel {
+            Some(k) => Ok(k.iter().map(|s| (*s).to_owned()).collect()),
+            None => self.felder(datei_felder),
+        }
+    }
+
+    /// `cfg["gesamt_ring"]`: die Quantitaet des Scheiben-Gesamtbescheids, `None` fuer `n_vor_gwg`.
+    #[must_use]
+    pub const fn gesamt_ring(&self) -> Option<&'static str> {
+        self.gesamt_ring
+    }
+
+    /// `cfg.get("guard")`: ob der K2-Guard laeuft. Fehlender Schluessel ist `false`.
+    #[must_use]
+    pub const fn guard(&self) -> bool {
+        self.guard
+    }
+
+    /// `cfg["teil_ringe"]`: `(familie, quantitaet, felder)` je Teil-Ring.
+    #[must_use]
+    pub const fn teil_ringe(
+        &self,
+    ) -> &'static [(&'static str, &'static str, &'static [&'static str])] {
+        self.teil_ringe
+    }
+
+    /// `cfg["felder_datei"]`: die YAML, aus der [`Cfg::felder`] liest, wenn `felder` `None` ist.
+    #[must_use]
+    pub const fn felder_datei(&self) -> Option<&'static str> {
+        self.felder_datei
+    }
+
+    /// `cfg["felder"]` als `Option`, ohne YAML-Aufloesung: `None` heisst "lies die Datei", nicht
+    /// "keine Felder". Wer die fertige Liste will, nimmt [`Cfg::felder`].
+    #[must_use]
+    pub const fn felder_roh(&self) -> Option<&'static [&'static str]> {
+        self.felder
+    }
+
+    /// `cfg["kegel"]` als `Option`, ohne Rueckfall auf `felder`: `None` heisst "der volle Satz".
+    #[must_use]
+    pub const fn kegel_roh(&self) -> Option<&'static [&'static str]> {
+        self.kegel
+    }
+
+    /// Die Scheibe, zu der diese `Cfg` gehoert.
+    #[must_use]
+    pub const fn scheibe(&self) -> Scheibe {
+        self.scheibe
     }
 }
 
@@ -246,7 +395,10 @@ pub fn konstanten_json() -> Value {
             (
                 s.als_str().to_owned(),
                 json!({"gesamt_guard": c.gesamt_guard, "rentner": c.rentner, "partner_19": c.partner_19,
-                    "multi_objekt": c.multi_objekt, "multi_rente": c.multi_rente, "fremd_arten": c.fremd_arten}),
+                    "multi_objekt": c.multi_objekt, "multi_rente": c.multi_rente, "fremd_arten": c.fremd_arten,
+                    "felder": c.felder, "kegel": c.kegel, "gesamt_ring": c.gesamt_ring, "guard": c.guard,
+                    "felder_datei": c.felder_datei,
+                    "teil_ringe": c.teil_ringe.iter().map(|(f, q, fs)| json!([f, q, fs])).collect::<Vec<_>>()}),
             )
         })
         .collect();

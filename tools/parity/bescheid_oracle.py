@@ -336,7 +336,15 @@ def _deklaration_konstanten():
         ring[name] = [f for f in AC.RING_BETRAGSFELDER if f not in kegel and f in felder]
         cfgs[name] = {"gesamt_guard": bool(cfg.get("gesamt_guard")), "rentner": bool(cfg.get("rentner")),
                       "partner_19": bool(cfg.get("partner_19")), "multi_objekt": cfg.get("multi_objekt"),
-                      "multi_rente": cfg.get("multi_rente"), "fremd_arten": list(cfg.get("fremd_arten", ()))}
+                      "multi_rente": cfg.get("multi_rente"), "fremd_arten": list(cfg.get("fremd_arten", ())),
+                      # Die fuenf Schluessel der vier Helfer (`_cfg`/`_scheibe_felder`/`_feste_zahl`).
+                      # `felder` bleibt hier `None`, wenn es das in Python ist -- die Aufloesung ueber
+                      # `felder_datei` ist Laufzeitverhalten, nicht Tabelleninhalt.
+                      "felder": list(cfg["felder"]) if cfg["felder"] is not None else None,
+                      "kegel": list(cfg["kegel"]) if cfg.get("kegel") is not None else None,
+                      "gesamt_ring": cfg.get("gesamt_ring"), "guard": bool(cfg.get("guard")),
+                      "felder_datei": cfg.get("felder_datei"),
+                      "teil_ringe": [[t[0], t[1], list(t[2])] for t in (cfg.get("teil_ringe") or [])]}
     return {"tabellen": tab, "ring_kandidaten": ring, "cfg": cfgs}
 
 

@@ -43,8 +43,12 @@ version = "0.0.0"
 dependencies = [
  "auth",
  "axum",
+ "bescheid",
+ "bindung",
  "domain",
  "http-body-util",
+ "intervall",
+ "interview",
  "proptest",
  "regex",
  "serde",
