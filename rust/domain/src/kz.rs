@@ -1,10 +1,10 @@
 //! ELSTER-Kennzahl: `E` und sieben ASCII-Ziffern.
 //!
-//! Dieselbe Regel wie die heutigen Rust-Pruefstellen `bindung_datei.rs:290` (Bindungs-Schema
-//! `schema.json:262`, `^E[0-9]{7}$`) und `xsd.rs:119` (`xsd_verify.py:30`, `^E\d{7}$`). Python ist
-//! an zwei Raendern weiter, gemessen 3.12.9 und 3.14.7: `$` laesst ein abschliessendes `\n` zu, und
-//! `\d` nimmt auch Nicht-ASCII-Ziffern (`E` + sieben arabisch-indische Ziffern). `Kz` folgt den
-//! Rust-Stellen.
+//! Die Regel steht nur in [`Kz::ist_gueltig`]. Die Pruefstellen `bindung_datei.rs` (Bindungs-Schema
+//! `schema.json:262`, `^E[0-9]{7}$`) und `xsd.rs` (`xsd_verify.py:30`, `^E\d{7}$`) rufen sie. Python
+//! ist an zwei Raendern weiter, gemessen 3.12.9 und 3.14.7: `$` laesst ein abschliessendes `\n` zu,
+//! und `\d` nimmt auch Nicht-ASCII-Ziffern (`E` + sieben arabisch-indische Ziffern). `Kz` bleibt
+//! bei der engeren Rust-Regel.
 use std::fmt;
 
 /// Eine geprueft gueltige Kennzahl, z. B. `E0100401`.
@@ -30,14 +30,40 @@ impl Kz {
     /// ```
     pub fn new(s: impl Into<String>) -> Result<Self, UngueltigeKz> {
         let s = s.into();
-        match s.as_bytes() {
-            [b'E', ziffern @ ..]
-                if ziffern.len() == 7 && ziffern.iter().all(u8::is_ascii_digit) =>
-            {
-                Ok(Self(s))
-            }
-            _ => Err(UngueltigeKz(s)),
+        if Self::ist_gueltig(&s) {
+            Ok(Self(s))
+        } else {
+            Err(UngueltigeKz(s))
         }
+    }
+
+    /// Die Kz-Regel `^E[0-9]{7}$`, ohne Allokation.
+    ///
+    /// ```
+    /// use domain::Kz;
+    /// assert!(Kz::ist_gueltig("E0100401"));
+    /// assert!(!Kz::ist_gueltig("E0100401\n"));
+    /// ```
+    #[must_use]
+    pub fn ist_gueltig(s: &str) -> bool {
+        match s.as_bytes() {
+            [b'E', ziffern @ ..] => ziffern.len() == 7 && ziffern.iter().all(u8::is_ascii_digit),
+            _ => false,
+        }
+    }
+
+    /// Text beginnt mit `E60`, dem Praefix der EUeR-Kz (`est_mapping.py:236`). Prueft nur den
+    /// Anfang, nicht die Kz-Regel.
+    ///
+    /// ```
+    /// use domain::Kz;
+    /// assert!(Kz::hat_e60_praefix("E6004901"));
+    /// assert!(!Kz::hat_e60_praefix("E0100401"));
+    /// assert!(Kz::hat_e60_praefix("E60"));
+    /// ```
+    #[must_use]
+    pub fn hat_e60_praefix(s: &str) -> bool {
+        s.starts_with("E60")
     }
 
     /// Die Kennzahl als `&str`.
