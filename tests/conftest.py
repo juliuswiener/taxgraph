@@ -109,18 +109,31 @@ def _dateien_die_catala_brauchen() -> list[str]:
     return treffer
 
 
-# ------------------------------------------- Fehlendes ERiC-Schema ist ein Skip, kein Fehler
+# ------------------------------------------- Fehlendes ERiC-Schema: laut rot, nur mit Flag ein Skip
 #
-# Das ERiC-XSD ist lizenzpflichtig: kein öffentlicher Download, in CI nicht vorhanden. Der
-# Workflow hält das seit jeher fest — "alle @requires_real_schema-Tests skippen hier graceful
-# weiter". Gemessen am 2026-08-18, als die Suite dort zum ersten Mal wirklich lief: das gilt
-# NUR für tests/test_xsd_verify.py, wo das Muster steht. 14 weitere Dateien kennen es nicht,
-# und 102 Tests scheiterten mit
-#     XmlFehler: E10-2025.xsd nicht gefunden — $ERIC_DIR setzen / ERiC-Doku entpacken.
+# Das ERiC-XSD ist lizenzpflichtig: kein öffentlicher Download, in CI nicht vorhanden. Hier stand
+# bis 2026-10-01 die Regel "Fehlendes ERiC-Schema ist ein Skip, kein Fehler" — also ein stiller
+# Skip. Sie ist am 2026-10-01 umgedreht worden (Entscheidung main, Log #142), weil ein stiller
+# Skip die ELSTER-Pruefung fuer immer unsichtbar macht: das Schema liegt NIE im Repo, CI hat es
+# also nie, und niemand sieht je, dass diese Tests nicht laufen.
 #
-# Dieselbe Klasse wie die 23 ungeguardeten runner-Importe darüber: eine Konvention, die an
-# genau einer Stelle durchgehalten wurde. Deshalb auch hier zentral und gemessen statt in 14
-# Dateien nachgezogen — eine Liste, die man an 15 Stellen pflegen muss, wird an einer gepflegt.
+# JETZT: ohne das Schema ist jeder Test, der es braucht, LAUT ROT. Uebersprungen wird nur, wenn
+# TAXGRAPH_OHNE_XSD=1 ausdruecklich gesetzt ist — dieselbe Regel wie auf der Rust-Seite
+# (rust/bescheid/tests/einreichung_e2e.rs:36-67, ci.yml:307-312). Das Flag ist eine sichtbare
+# Entscheidung "hier KANN kein ERiC liegen"; es ist keine stille Voreinstellung.
+#
+# Drei Wege führen zum selben Entscheid, alle drei hängen an der VORBEDINGUNG
+# (ERIC_SCHEMA_FEHLT), nie am Meldungstext allein:
+#   1. `_ist_fehlendes_eric_schema` — Ausnahme aus Produktcode (XmlFehler/AssertionError).
+#   2. `_skip_grund_ist_schema` — ein Skip, den eine Testdatei selbst auslöst (skipif-Marker oder
+#      pytest.skip), erkannt am Grund. Falschtreffer sind hier harmlos: die Umwandlung macht
+#      lauter, nie leiser.
+#   3. `braucht_echtes_xsd` — Fixture für Tests, die den Fehler NICHT als Ausnahme sehen, weil
+#      `api.einreichen()` ihn in eine 422-Antwort verwandelt (api.py:749-750). Diese Tests
+#      erkennen ihr eigenes Fehlen nicht; sie sagen es mit der Fixture an.
+#
+# Die Hersteller-ID bleibt UNBERUEHRT: sie ist ein anderes fehlendes Stück (ein Geheimnis, keine
+# Lizenzdatei), und ihre 62 Skips hängen weiter allein an ihrem eigenen Muster.
 #
 # ENG GEFASST, damit er keine echten Fehler frisst:
 #   - nur wenn das Schema WIRKLICH nirgends liegt (dieselbe Suche wie test_xsd_verify),
@@ -128,7 +141,7 @@ def _dateien_die_catala_brauchen() -> list[str]:
 #   - nur mit genau dieser Meldung.
 # Ist das Schema da (jeder lokale Lauf mit ERIC_DIR, `make eric-gate`), greift nichts davon,
 # und ein echter XSD-Fehler schlägt durch wie bisher — geprüft in
-# tests/test_ci_konfiguration.py::test_eric_skip_greift_nur_ohne_schema.
+# tests/test_ci_konfiguration.py::test_eric_skip_greift_nur_mit_dem_flag.
 def _eric_schema_fehlt() -> bool:
     for teil in ("produkt/mapping", "produkt/traverser"):
         p = os.path.join(_ROOT, teil)
@@ -143,6 +156,39 @@ def _eric_schema_fehlt() -> bool:
 
 ERIC_SCHEMA_FEHLT = _eric_schema_fehlt()
 _ERIC_MUSTER = "nicht gefunden — $ERIC_DIR setzen"
+
+# Das Flag, das den stillen Skip wieder erlaubt. Genau "1", wie auf der Rust-Seite
+# (einreichung_e2e.rs:55 `== Ok("1")`): ein "true"/"yes" ist NICHT dasselbe, sonst gaebe es
+# zwei Schreibweisen fuer eine Entscheidung.
+_OHNE_XSD = "TAXGRAPH_OHNE_XSD"
+
+
+def _ohne_xsd_erlaubt() -> bool:
+    """Hat der Aufrufer ausdruecklich gesagt, dass hier kein Schema liegen kann?"""
+    return os.environ.get(_OHNE_XSD) == "1"
+
+
+def _skip_grund_ist_schema(grund: str) -> bool:
+    """Ist dieser Skip-Grund das fehlende ERiC-Schema?
+
+    Für Skips, die eine TESTDATEI selbst auslöst — `@pytest.mark.skipif(_schema_da ...)` oder ein
+    direktes `pytest.skip("E10-2025.xsd nicht gefunden ...")`. Diese Skips entstehen, bevor Code
+    läuft; kein Ausnahme-Hook sieht sie.
+
+    Die ENTSCHEIDUNG haengt an der Vorbedingung ERIC_SCHEMA_FEHLT — die prueft der Aufrufer,
+    nicht diese Funktion. Hier wird nur gefragt, ob der Grund ueberhaupt vom Schema spricht.
+    Das genuegt: liegt das Schema da, wird diese Funktion nie befragt, und ein Grund, der das
+    Schema nennt, obwohl es da ist, kann gar nicht entstehen.
+
+    Deshalb ist der Vergleich bewusst grob (nur "xsd" oder "schema", Gross-/Kleinschreibung
+    egal). Greift er zu weit, wird ein Skip zur roten Zeile — sichtbar und korrigierbar. Greift
+    er zu eng, bleibt genau die stille Luecke, gegen die diese Regel gebaut ist.
+
+    Die ERiC-Bibliothek und die Hersteller-ID sind ein ANDERES fehlendes Stueck: ihre Gruende
+    nennen kein Schema ("ERiC oder Hersteller-ID fehlt — amtliche Pruefung nicht lauffaehig")
+    und bleiben darum unangetastet."""
+    g = grund.lower()
+    return "xsd" in g or "schema" in g
 
 # Zweiter Fall derselben Art, gefunden im nächsten CI-Lauf: neun Tests scheiterten mit
 #     XmlFehler: keine Hersteller-ID — $ELSTER_HERSTELLER_ID setzen (nie im Repo, nie im Code).
@@ -186,18 +232,103 @@ def _ist_fehlende_hersteller_id(fehler: BaseException) -> bool:
     return type(fehler).__name__ in ("XmlFehler", "AssertionError")
 
 
+@pytest.fixture
+def braucht_echtes_xsd():
+    """Fuer Tests, die ihr fehlendes Schema NICHT als Ausnahme sehen.
+
+    `api.einreichen()` faengt den XmlFehler ab und macht daraus eine 422-Antwort
+    (api.py:749-750, grund `xml_nicht_baubar`). Beim Test kommt nur `xml = None` an, und der
+    assert sagt "kein XML erfasst -- einreichen() vor erzeuge_xml() abgebrochen". Diese Meldung
+    traegt das Schema-Muster nicht, also greift der Ausnahme-Hook dort nicht — der Test muss
+    sein Fehlen selbst anmelden.
+
+    Ohne Schema ohne Flag: LAUT ROT. Mit TAXGRAPH_OHNE_XSD=1: skip wie jeder andere."""
+    if not ERIC_SCHEMA_FEHLT:
+        return
+    if _ohne_xsd_erlaubt():
+        pytest.skip(_XSD_FEHLT_TEXT)
+    pytest.fail(
+        f"ERiC-Schema fehlt und {_OHNE_XSD} ist nicht gesetzt. Dieser Test prueft das erzeugte "
+        f"XML; ohne Schema bricht `einreichen()` mit 422 `xml_nicht_baubar` ab und der Test "
+        f"saehe nur 'kein XML erfasst' — er wuerde also gruen aussehen, ohne geprueft zu haben. "
+        f"Seit 2026-10-01 (Log #142) ist das LAUT ROT. ERIC_DIR setzen, oder wo kein ERiC liegen "
+        f"kann (CI): {_OHNE_XSD}=1."
+    )
+
+
+_XSD_FEHLT_TEXT = (
+    "ERiC-XSD nicht verfügbar (lizenzpflichtig, $ERIC_DIR nicht gesetzt) — dieser Test braucht "
+    "das echte Schema. Ist es hier wirklich nicht zu beschaffen, dann setze TAXGRAPH_OHNE_XSD=1 "
+    "als ausdrueckliche Entscheidung; ohne das Flag ist dieser Test ROT."
+)
+
+
+def _fehlendes_schema_ueberspringen(fehler: BaseException) -> None:
+    """Skip nur mit Flag, sonst durchreichen. Ohne Schema und ohne Flag bleibt der Test rot."""
+    if not _ist_fehlendes_eric_schema(fehler):
+        return
+    if _ohne_xsd_erlaubt():
+        pytest.skip(_XSD_FEHLT_TEXT)
+    raise AssertionError(
+        f"ERiC-Schema fehlt und {_OHNE_XSD} ist nicht gesetzt. Seit 2026-10-01 (Log #142) ist das "
+        f"LAUT ROT statt eines stillen Skips: das Schema liegt nie im Repo, CI hat es nie, ein "
+        f"stiller Skip macht diese Pruefung fuer immer unsichtbar. ERIC_DIR auf die ERiC-"
+        f"Auslieferung setzen — oder, wo wirklich kein ERiC liegen kann (CI), {_OHNE_XSD}=1 "
+        f"setzen. Ursache: {fehler!r}"
+    ) from fehler
+
+
+# BEIDE Phasen: die 2 ERROR aus CI (test_elf_gewinnfelder..., Fixtures `hauptlauf`/`leerlauf`)
+# entstehen im SETUP; ein Hook nur auf der Call-Phase sieht sie nie.
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_setup(item):
+    try:
+        return (yield)
+    except Exception as e:
+        _fehlendes_schema_ueberspringen(e)
+        raise
+
+
 @pytest.hookimpl(wrapper=True)
 def pytest_runtest_call(item):
     try:
         return (yield)
     except Exception as e:
-        if _ist_fehlendes_eric_schema(e):
-            pytest.skip("ERiC-XSD nicht verfügbar (lizenzpflichtig, $ERIC_DIR nicht gesetzt) — "
-                        "dieser Test braucht das echte Schema")
+        _fehlendes_schema_ueberspringen(e)
         if _ist_fehlende_hersteller_id(e):
             pytest.skip("$ELSTER_HERSTELLER_ID nicht gesetzt (Geheimnis, nie im Repo) — "
                         "dieser Test baut ein vollständiges Übermittlungs-XML")
         raise
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Ein SKIP, den die Testdatei selbst gesetzt hat (skipif-Marker, direktes pytest.skip),
+    wird ohne Flag zur roten Zeile.
+
+    Ohne Schema entstehen so 47 Skips, ohne dass je Code lief: `_schema_da = ... is not None`
+    plus `@pytest.mark.skipif(not _schema_da)`. Der Ausnahme-Hook oben sieht sie nicht."""
+    report = yield
+    if report.skipped and ERIC_SCHEMA_FEHLT and not _ohne_xsd_erlaubt():
+        grund = ""
+        if isinstance(report.longrepr, tuple) and len(report.longrepr) == 3:
+            grund = report.longrepr[2]
+        else:
+            grund = str(report.longrepr)
+        if _skip_grund_ist_schema(grund):
+            report.outcome = "failed"
+            # Ein xfail-Test kommt hier als "skipped" mit `wasxfail` an. Bliebe das Attribut
+            # stehen, schriebe das junit-XML die rote Zeile als "skipped" (junitxml.py:195).
+            if hasattr(report, "wasxfail"):
+                del report.wasxfail
+            report.longrepr = (
+                str(item.nodeid),
+                None,
+                f"{grund}\n\nERiC-Schema fehlt und {_OHNE_XSD} ist nicht gesetzt — seit "
+                f"2026-10-01 (Log #142) ist das LAUT ROT statt eines stillen Skips. ERIC_DIR "
+                f"setzen, oder wo kein ERiC liegen kann: {_OHNE_XSD}=1.",
+            )
+    return report
 
 
 collect_ignore = []
