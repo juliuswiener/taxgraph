@@ -14,6 +14,13 @@ make snapshot-verify    pipeline/snapshot.py verify --all
 `make tests` runs under `OPAM_ENV` and `make golden` under `VENV312` — call those targets,
 not their commands directly, or the Catala toolchain and the 3.12 venv are missing.
 
+**`make unit` hängt nicht von `build-python` ab.** In einem frisch angelegten Worktree fehlen
+`_build/` und `oracle/gettsim/_catala/` (beide gitignored). Der Skip-Guard in
+`tests/conftest.py` greift nur bei direkten `runner`/`pkg`-Importen; die Testdateien, die
+`api`/`server` importieren, laufen trotzdem und scheitern an `engine_unavailable`. Ergebnis:
+117 failed statt eines ehrlichen Skips. Vor jedem Tor in einem neuen Worktree einmal
+`make build-python` laufen lassen. Gemessen 2026-10-01.
+
 A single test: `python3 -m pytest tests/path/to/test_x.py::test_name -q`.
 
 ## graphify — code graph
