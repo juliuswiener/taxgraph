@@ -47,10 +47,18 @@ def test_der_store_liegt_nicht_im_projektverzeichnis():
         f"Dort nimmt ihn jedes Sync- und Sicherungswerkzeug mit, das auf das Projekt zeigt.")
 
 
-def test_der_store_folgt_der_xdg_konvention():
+def test_der_store_folgt_der_xdg_konvention(monkeypatch):
     """Nicht irgendwo ausserhalb, sondern dort, wo Anwendungsdaten unter Linux hingehören —
-    damit Sicherungs- und Aufräum-Werkzeuge des Systems ihn finden können."""
-    faelle = str(pathlib.Path(AC.FAELLE).resolve())
+    damit Sicherungs- und Aufräum-Werkzeuge des Systems ihn finden können.
+
+    Die Behauptung gilt OHNE Umlenkung: `$TAXGRAPH_DATEN` wird entfernt und `_daten_wurzel()`
+    zur Aufrufzeit gefragt, nicht das beim Import gebundene `AC.FAELLE` — sonst war der Test
+    unter `TAXGRAPH_DATEN=korpus-rt` rot, ohne dass der Code falsch lag. Die Reihenfolge
+    `TAXGRAPH_DATEN` → XDG → `~` baut der Test bewusst NICHT nach (das waere ein Vergleich des
+    Codes mit seiner Kopie); dass `AC.FAELLE` und `_daten_wurzel()` uebereinstimmen, prueft
+    `test_faelle_und_daten_wurzel_laufen_nicht_auseinander`."""
+    monkeypatch.delenv("TAXGRAPH_DATEN", raising=False)
+    faelle = str((pathlib.Path(AC._daten_wurzel()) / "faelle").resolve())
     xdg = os.environ.get("XDG_DATA_HOME") or os.path.join(os.path.expanduser("~"),
                                                           ".local", "share")
     erwartet = str((pathlib.Path(xdg) / "taxgraph" / "faelle").resolve())
