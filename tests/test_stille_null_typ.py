@@ -332,7 +332,7 @@ def test_grad_der_behinderung_in_der_deklaration_unveraendert():
     import est_mapping as EM   # produkt/mapping liegt oben schon auf sys.path
     for w in (25, 45, 100):
         d = EM.deklariere({"rentner_grad_der_behinderung": {"wert": w, "zustand": "bestaetigt"}},
-                          BINDUNG)
+                          BINDUNG, vz=2025)
         assert str(d["deklaration"].get("E0109708")) == str(w), (w, d["deklaration"].get("E0109708"))
 
 

@@ -63,7 +63,7 @@ def test_zone_d_unterhalt_agb_keine_luecken(bindung):
     # int+null-kz bereits durch p33a_ausbildung_anzahl_kinder (Z.56) gedeckt
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe_differential(snap, bindung, result, xml, "Zone D Unterhalt/agB")
@@ -103,7 +103,7 @@ def test_zone_d_steuerermaeßigungen_keine_luecken(bindung):
     _b(s, "p35c_energieberater_aufwendungen", 80000)    # cent, null-kz -> nicht_deklariert
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe_differential(snap, bindung, result, xml, "Zone D Steuererm.")
@@ -142,7 +142,7 @@ def test_zone_d_sonderausgaben_anrechnung_keine_luecken(bindung):
     _b(s, "spenden_betrag", 30000)                       # cent, E0108105 -> 1:1 (Topf a)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe_differential(snap, bindung, result, xml, "Zone D SA/Anr.")
@@ -185,7 +185,7 @@ def test_zone_d_ausland_gewst_keine_luecken(bindung):
     _b(s, "gewst_messbetrag", 2024750)                    # cent, null-kz -> nicht_deklariert
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe_differential(snap, bindung, result, xml, "Zone D Ausland/GewSt")
@@ -231,7 +231,7 @@ def test_zone_d_zusammenveranlagung_keine_luecken(bindung):
     _b(s, "kinderbetreuungskosten", 600000)                # cent, E0506105 (per-Kind, 2026-08-06)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe_differential(snap, bindung, result, xml, "Zone D Zusammen")

@@ -118,7 +118,7 @@ def _pruefe_kernfeld(kernfeld_werte: dict) -> tuple[str, int | None, list[str]]:
     for feld_id, wert in kernfeld_werte.items():
         _b(s, feld_id, wert)
     snap, _sid = ST.materialisiere(s)
-    dekl = est_mapping.deklariere(snap, API._scheibe_bindung(s))
+    dekl = est_mapping.deklariere(snap, API._scheibe_bindung(s), vz=2025)
     try:
         xml = EX.erzeuge_xml(dekl, vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     except EX.XmlFehler as exc:

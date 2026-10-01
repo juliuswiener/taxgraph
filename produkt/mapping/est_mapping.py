@@ -148,28 +148,85 @@ _KOMMA_OHNE_E60_KZ = frozenset({
 # E0108405 und E0108701), und die GANZE Erklaerung ist uneinreichbar. In jeder dieser Kz heisst 0
 # "nichts anzugeben" (minOccurs 0) — _schreibe_kz laesst sie weg, an jeder Schreibstelle von
 # deklariere() (Vault: decisions/elster-null-in-kz-ohne-null-weglassen).
-# Die Menge ist aus dem XSD ABGELEITET (xsd_verify._resolve_kz_meta gegen E10-2025.xsd): jede
+# Die Mengen sind aus dem XSD ABGELEITET (xsd_verify._resolve_kz_meta je Jahres-XSD): jede
 # cent-/int-Kz auf einem Schreibweg von deklariere(), deren Typ die 0 verbietet. Kz mit Textwert
 # fehlen: "0,00" ist gueltig, ein Jahr 0 ("01.01.0000") nicht (bereich beim Speichern ungeprueft).
-# ponytail: eingefroren am 2026-10-01, jahresunabhaengig, damit deklariere() ohne XSD laeuft und in
-# jeder Umgebung dieselbe Deklaration ergibt. Grenze: E10-2024.xsd verbietet die 0 zusaetzlich in
-# E0106603 (Anzahl weiterer Pflegepersonen, GanzzahlPos); E10-2025.xsd erlaubt sie dort, und das
-# XSD-Label verlangt sie (bindung_rentner.yaml:428-430). Die Kz fehlt hier, eine 0 macht eine
-# Erklaerung 2024 also weiterhin ungueltig. Upgrade: eine Menge je VZ.
-# Drift faengt test_null_bleibt_aus_jeder_kz_deren_xsd_typ_sie_verbietet, der die Menge live aus
-# dem XSD 2025 ableitet. Neu ableiten, wenn eine cent-/int-Kz in die Bindung kommt oder ein neues
-# Jahres-XSD erscheint.
-_NULL_UNZULAESSIG_KZ = frozenset({
-    # 1:1, Instanz und Person B (Klasse g)
-    "E0108202", "E0108002", "E0207611", "E0203503", "E0203504", "E0801705", "E0107207", "E0107208",
-    "E0111215", "E0111214", "E0104109", "E0104108", "E0506104", "E0505809", "E0506105", "E0305201",
-    "E0240802", "E0242001", "E0240801", "E0241901", "E0109708", "E0161606", "E0205409", "E0205302",
-    "E0205201",
-    "E0108105",  # Spenden Zeile 5 (Sp_MB/Foerd_st_beg_Zw_Inl/Sum_Best, E10-2025.xsd:9138)
-    # Art-Verzweigung (Klasse f): § 35c-Massnahmen je Art
-    "E0241001", "E0241101", "E0241201", "E0241301", "E0241302", "E0241401", "E0241501", "E0241601",
-    "E0241701",
-})
+#
+# JE VERANLAGUNGSJAHR, seit 2026-10-01. Vorher war die Menge eine flache frozenset fuer alle
+# Jahre, und E10-2024.xsd verbietet die 0 zusaetzlich in E0106603 (Anzahl weiterer Pflegepersonen,
+# GanzzahlPos ohne Fuehrnull), waehrend E10-2025.xsd sie dort erlaubt und das XSD-Label sie sogar
+# verlangt (bindung_rentner.yaml:428-430). Eine Jahresmenge kann beides tragen; eine flache nicht.
+# Gemessen am 2026-10-01 gegen beide Schemata: 2024 hat 27 Kz auf dem Ganzzahl-Schreibweg, die die
+# 0 verbieten, 2025 hat 26 — Unterschied genau E0106603. Der gemeinsame Kern ist 26, die
+# Vereinigung 27. Mehr als diese eine Kz unterscheidet die Jahrgaenge NICHT.
+#
+# ponytail: eingefroren am 2026-10-01, je Jahr, damit deklariere() ohne XSD laeuft und in jeder
+# Umgebung dieselbe Deklaration ergibt. Die Jahresliste waechst nur, wenn ein Jahres-XSD
+# dazukommt. Drift faengt tests/test_null_verbot_je_vz.py, das die verbietende Menge live aus dem
+# Jahres-XSD ableitet und der Liste gegenueberstellt, in beide Richtungen.
+_NULL_UNZULAESSIG_KZ = {
+    2024: frozenset({
+        # 1:1, Instanz und Person B (Klasse g)
+        "E0108202", "E0108002", "E0207611", "E0203503", "E0203504", "E0801705", "E0107207",
+        "E0107208", "E0111215", "E0111214", "E0104109", "E0104108", "E0506104", "E0505809",
+        "E0506105", "E0305201", "E0240802", "E0242001", "E0240801", "E0241901", "E0109708",
+        "E0161606", "E0205409", "E0205302", "E0205201",
+        "E0108105",  # Spenden Zeile 5 (Sp_MB/Foerd_st_beg_Zw_Inl/Sum_Best)
+        # Art-Verzweigung (Klasse f): § 35c-Massnahmen je Art
+        "E0241001", "E0241101", "E0241201", "E0241301", "E0241302", "E0241401", "E0241501",
+        "E0241601", "E0241701",
+        # 2024 allein: Anzahl weiterer Pflegepersonen, GanzzahlPosOhneFuehrNull
+        # (E10-2024.xsd:9581). 2025 ist die 0 hier erlaubt — siehe die Menge unten.
+        "E0106603",
+    }),
+    2025: frozenset({
+        "E0108202", "E0108002", "E0207611", "E0203503", "E0203504", "E0801705", "E0107207",
+        "E0107208", "E0111215", "E0111214", "E0104109", "E0104108", "E0506104", "E0505809",
+        "E0506105", "E0305201", "E0240802", "E0242001", "E0240801", "E0241901", "E0109708",
+        "E0161606", "E0205409", "E0205302", "E0205201",
+        "E0108105",
+        "E0241001", "E0241101", "E0241201", "E0241301", "E0241302", "E0241401", "E0241501",
+        "E0241601", "E0241701",
+    }),
+}
+
+# _NULL_UNZULAESSIG_KZ_JE_JAHRE — die Vereinigung aller bekannten Jahresmengen. Wer sie liest,
+# statt eines Jahres, ist absichtlich zu streng: die Vereinigung sendet nie eine verbotene 0.
+_NULL_UNZULAESSIG_KZ_VEREINIGUNG = frozenset().union(*_NULL_UNZULAESSIG_KZ.values())
+
+
+def null_unzulaessig(vz: int) -> frozenset:
+    """Die Null-Verbots-Menge fuer ein Veranlagungsjahr. Fail-closed, ohne stillen Rueckfall.
+
+    Die Regel hat vier Faelle. Julius hat am 2026-10-01 die ersten drei festgelegt; der vierte
+    ist die Abgrenzung, die noetig wurde, weil der Fallkorpus Jahre wie -5 und 10^38 traegt.
+
+    1. `vz` fehlt, ist `None` oder `0` -> **Fehler**. `store.get("veranlagungszeitraum") or 0`
+       in `haut/api.py` liefert genau diese 0, wenn das Feld fehlt — sie darf nicht in eine
+       Jahresmenge greifen.
+    2. `vz` ist bekannt (2024, 2025) -> **seine eigene Menge**. Belegfall E0106603: 2024
+       verbietet die 0, 2025 erlaubt sie.
+    3. `vz` ist unbekannt aber plausibel (2026 bis 2100) -> **die Vereinigung aller bekannten
+       Jahre**. Das ist KEIN stiller Rueckfall, sondern eine benannte Regel: die Vereinigung
+       sendet nie eine verbotene 0. Der Preis ist eine moeglicherweise erlaubte 0, die wir
+       weglassen — und weil 0 in diesen Kz "nichts anzugeben" heisst (minOccurs 0), ist der
+       Verlust null. Das Produkt rechnet VZ 2026 (params/2026 ist vollstaendig); eine 2026er
+       Erklaerung laeuft heute bis ERiC und bekommt dort 610001042. Ein harter Fehler hier waere
+       ein Rueckschritt auf einem Pfad, der funktioniert.
+    4. `vz` ist unplausibel (unter 2024, oder ueber 2100 wie die 10^38 eines Korpusfalls) ->
+       **Fehler**. Sonst ginge 10^38 als "spaeter als 2025" durch und bekaeme die Vereinigung,
+       obwohl es kein Steuerjahr ist — eine stille Vorgabe durch die Hintertuer.
+    """
+    if vz is None or isinstance(vz, bool) or not isinstance(vz, int) or vz == 0:
+        raise ValueError(f"Veranlagungsjahr fehlt oder ist 0: {vz!r}. deklariere() braucht das "
+                         f"Jahr, weil die Null-Verbots-Liste je Jahr gilt. Fehlt das Feld "
+                         f"'veranlagungszeitraum' im Store?")
+    if vz in _NULL_UNZULAESSIG_KZ:
+        return _NULL_UNZULAESSIG_KZ[vz]
+    if 2026 <= vz <= 2100:
+        return _NULL_UNZULAESSIG_KZ_VEREINIGUNG
+    raise ValueError(f"Veranlagungsjahr {vz} ist kein Steuerjahr (erwartet 2024..2100). "
+                     f"deklariere() lehnt es ab, statt still eine Menge zu waehlen.")
 
 
 def _cent_nach_kz(wert: int, kz: str) -> int | str:
@@ -228,15 +285,19 @@ def _kz_wert(wert, kz: str, typ):
     return wert
 
 
-def _schreibe_kz(ziel: dict, kz: str, wert, typ) -> None:
+def _schreibe_kz(ziel: dict, kz: str, wert, typ, null_kz: frozenset) -> None:
     """Die eine Schreibstelle fuer Kz-Werte in deklariere(): ziel[kz] = _kz_wert(...), ausser der
-    Kz-Wert ist 0 und die Kz verbietet die 0 (_NULL_UNZULAESSIG_KZ). Erst umrechnen, dann pruefen:
-    1-99 Cent werden in einer abgerundeten Kz zur 0 und entfallen ebenso.
+    Kz-Wert ist 0 und die Kz verbietet die 0 (null_kz, die Menge DIESES Veranlagungsjahres).
+    Erst umrechnen, dann pruefen: 1-99 Cent werden in einer abgerundeten Kz zur 0 und entfallen
+    ebenso.
+
+    null_kz ist ein Pflichtargument, kein Modulzustand: die Menge kommt aus deklariere(vz=...)
+    und wird durchgereicht, damit an jeder Schreibstelle dieselbe Jahresmenge gilt.
 
     Kein nicht_deklariert-Eintrag: eine 0 ist kein verlorener Wert, sondern "nichts anzugeben".
     Mit Eintrag meldete die Pruefanzeige bei jeder weggelassenen 0 "nicht alle Werte"."""
     v = _kz_wert(wert, kz, typ)
-    if kz in _NULL_UNZULAESSIG_KZ and v == 0:
+    if kz in null_kz and v == 0:
         return
     ziel[kz] = v
 
@@ -638,12 +699,14 @@ def _aggregation_quellen() -> set:
 
 
 def _deklariere_instanz(basis: str, idx: int, feld_id: str, sfeld: dict, snapshot: dict, bindung: dict,
-                        anlage_instanzen: dict, unvollstaendig: list, nicht_deklariert: list) -> None:
+                        anlage_instanzen: dict, unvollstaendig: list, nicht_deklariert: list,
+                        null_kz: frozenset) -> None:
     """Routet EIN Instanz-Feld (base__n) in den anlage_instanzen-Bucket seiner Gruppe (Instanz-Reuse der
     Basis-Kz). fail-closed je Instanz: ein vorlaeufiges Instanz-Feld -> unvollständig (nicht deklariert).
     Reuse der Basis-Mapping-Logik: 1:1 (elster_kz) -> instanz.felder[kz]; Aggregat-Quelle -> instanz.
     dokumentiert[ziel] (Summe je Instanz); Art-Verzweigung (Klasse f) -> Kz hängt an der INSTANZ-Art
-    art_feld__idx (Multi-Rente: jede Rente-Instanz hat eigene renten_art -> eigener aa/bb-Kz)."""
+    art_feld__idx (Multi-Rente: jede Rente-Instanz hat eigene renten_art -> eigener aa/bb-Kz).
+    null_kz wird durchgereicht: die Jahresmenge gilt an JEDER Schreibstelle gleich."""
     b = bindung[basis]                                    # Aufrufer garantiert: basis instanz-fähig
     if sfeld.get("zustand") != "bestaetigt":
         unvollstaendig.append({"feld_id": feld_id,
@@ -669,26 +732,35 @@ def _deklariere_instanz(basis: str, idx: int, feld_id: str, sfeld: dict, snapsho
         else:
             kz = cfg["kz"].get(art["wert"])
             if kz:
-                _schreibe_kz(inst["felder"], kz, wert, b.get("typ"))
+                _schreibe_kz(inst["felder"], kz, wert, b.get("typ"), null_kz)
             else:
                 nicht_deklariert.append({"feld_id": feld_id,
                                          "grund": f"Instanz-Art '{art['wert']}' ohne Kz-Zweig"})
     elif basis in P23_BETRAGSFELDER:                     # Klasse h — §23 Rohdaten (still speichern, kein Kz)
         inst.setdefault("rohdaten", {})[basis] = int(wert)
     elif b.get("elster_kz"):                              # 1:1 je Instanz (Kz-Reuse der Basis)
-        _schreibe_kz(inst["felder"], b["elster_kz"], wert, b.get("typ"))
+        _schreibe_kz(inst["felder"], b["elster_kz"], wert, b.get("typ"), null_kz)
     else:
         nicht_deklariert.append({"feld_id": feld_id,
                                  "grund": f"Instanz-Basis '{basis}' ohne elster_kz/Aggregat-Ziel"})
 
 
-def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None) -> dict:
-    """snapshot: {feld_id -> {wert, zustand, herkunft}} (materialisiert). bindung: {feld_id -> Eintrag}."""
+def deklariere(snapshot: dict, bindung: dict, *, vz: int, snapshot_id: str | None = None) -> dict:
+    """snapshot: {feld_id -> {wert, zustand, herkunft}} (materialisiert). bindung: {feld_id -> Eintrag}.
+
+    vz: Veranlagungsjahr, PFLICHT. Es entscheidet, welche Kz eine 0 verbieten duerfen
+    (`null_unzulaessig(vz)`) — E0106603 verbietet sie 2024 und erlaubt sie 2025. Es gibt keinen
+    Vorgabewert, kein None und keinen Rueckfall: ein fehlendes oder unplausibles Jahr ist ein
+    Fehler, weil eine still gewaehlte Menge genau die Fehlerklasse waere, die diese Pruefung
+    abstellt (Julius-Entscheidung 2026-10-01).
+    """
     # Nachauflage D (Eingabe-Guard gegen Falsch-Grün): die falsche Eingabe-Ebene würde sonst STILL
     # ein leeres, vollstaendig=True-Ergebnis liefern. Erst die Snapshot-Objekt-Form abfangen ...
     if isinstance(snapshot, dict) and ("felder" in snapshot or "snapshot_id" in snapshot):
         raise ValueError("deklariere() erwartet die felder-Ebene (feld_id -> {wert, zustand, ...}), "
                          "NICHT das Snapshot-Objekt — übergib materialisiere()[0] bzw. snapshot['felder'].")
+
+    null_kz = null_unzulaessig(vz)      # fail-closed, VOR jeder Schreibstelle
 
     agg_quellen = _aggregation_quellen()
     deklaration: dict = {}
@@ -717,7 +789,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
         if basis is not None and bindung.get(basis, {}).get("instanz_gruppe"):
             getroffen += 1
             _deklariere_instanz(basis, parsed[1], feld_id, sfeld, snapshot, bindung,
-                                anlage_instanzen, unvollstaendig, nicht_deklariert)
+                                anlage_instanzen, unvollstaendig, nicht_deklariert, null_kz)
             continue
         b = bindung.get(feld_id)
         if b is None:
@@ -753,7 +825,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             else:
                 kz = cfg["kz"].get(art["wert"])
                 if kz:
-                    _schreibe_kz(deklaration, kz, wert, b.get("typ"))
+                    _schreibe_kz(deklaration, kz, wert, b.get("typ"), null_kz)
                 else:
                     grund = f"Art '{art['wert']}' ({cfg['art_feld']}) ohne Kz-Zweig"
                     nicht_deklariert.append({"feld_id": feld_id, "grund": grund})
@@ -772,7 +844,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             else:
                 kz = cfg["kz"].get(art["wert"])
                 if kz:
-                    _schreibe_kz(person_b, kz, wert, b.get("typ"))
+                    _schreibe_kz(person_b, kz, wert, b.get("typ"), null_kz)
                 else:
                     nicht_deklariert.append({"feld_id": feld_id,
                                              "grund": f"Partner-Renten-Art '{art['wert']}' ohne Kz-Zweig"})
@@ -807,7 +879,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
                                            "Einkunftsart des Partners ist bei uns noch nicht abgebbar — das "
                                            "liegt nicht an eurer Eingabe, ihr müsst hier nichts nachtragen."})
         elif feld_id in PARTNER_INSTANZ:                         # Klasse g (Person-Multiplikation, Instanz B)
-            _schreibe_kz(person_b, PARTNER_INSTANZ[feld_id], wert, b.get("typ"))
+            _schreibe_kz(person_b, PARTNER_INSTANZ[feld_id], wert, b.get("typ"), null_kz)
         elif feld_id in WERTEKODIERUNG:                          # Klasse i (Laien-Enum -> XSD-Code)
             cfg = WERTEKODIERUNG[feld_id]
             code = cfg["code"].get(wert)
@@ -836,7 +908,7 @@ def deklariere(snapshot: dict, bindung: dict, *, snapshot_id: str | None = None)
             else:
                 deklaration["E0102102" if iban_norm[:2] == "DE" else "E0102603"] = iban_norm
         elif b.get("elster_kz"):                                  # Klasse 1 / b (1:1)
-            _schreibe_kz(deklaration, b["elster_kz"], wert, b.get("typ"))
+            _schreibe_kz(deklaration, b["elster_kz"], wert, b.get("typ"), null_kz)
         elif feld_id in P23_BETRAGSFELDER:                  # Klasse h — §23 Instanz-1-Rohdaten: in p23_veraeusserung sammeln
             anlage_instanzen.setdefault("p23_veraeusserung", {}).setdefault(
                 1, {"index": 1, "felder": {}, "dokumentiert": {}}).setdefault("rohdaten", {})[feld_id] = int(wert)

@@ -173,7 +173,7 @@ def test_kontrolle_ein_verkauf_ist_xsd_valide(bindung, tmp_path):
     """Kontrolle (main-Auflage): ein Fix, der den Normalfall verschiebt, ist keiner. Ein Verkauf
     -> genau ein <SO>, ein <Grdst>, ein <Einz>, XSD-valide -- unveraendert vor UND nach dem Fix."""
     snap, sid = ST.materialisiere(_fall("p23_kontrolle_ein_verkauf", 1))
-    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid)
+    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid, vz=2025)
     assert result.get("eingaben_konsistent") is True, result.get("unvollstaendig")
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID, snapshot=snap)
     n_so, n_grdst, n_einz = xml.count("<SO"), xml.count("<Grdst"), xml.count("<Einz")
@@ -199,7 +199,7 @@ def test_zwei_verkaeufe_gleiche_person_ist_xsd_valide(bindung, tmp_path):
     maxOccurs=99, E10-2025.xsd:22231) -- der xfail-Marker ist im selben Commit gefallen
     (XPASS(strict) beobachtet, nicht angenommen), nicht nur entfernt."""
     snap, sid = ST.materialisiere(_fall("p23_messung_zwei_verkaeufe", 2))
-    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid)
+    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid, vz=2025)
     assert result.get("eingaben_konsistent") is True, result.get("unvollstaendig")
     ai = result.get("anlage_instanzen", {}).get("p23_veraeusserung", [])
     assert len(ai) == 2, f"Erwartet 2 anlage_instanzen[p23_veraeusserung]-Eintraege, erhalten: {ai}"
@@ -225,7 +225,7 @@ def test_drei_verkaeufe_gleiche_person_liefert_drei_einz(bindung, tmp_path):
     wie die Personenachse (max. 2 Personen) -- bei drei Verkaeufen derselben Person kann das
     nicht mehr sein. Drei Verkaeufe -> EIN <SO>, EIN <Grdst>, DREI <Einz>, schema-valide."""
     snap, sid = ST.materialisiere(_fall("p23_zusatzprobe_drei_verkaeufe", 3))
-    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid)
+    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid, vz=2025)
     assert result.get("eingaben_konsistent") is True, result.get("unvollstaendig")
     ai = result.get("anlage_instanzen", {}).get("p23_veraeusserung", [])
     assert len(ai) == 3, f"Erwartet 3 anlage_instanzen[p23_veraeusserung]-Eintraege, erhalten: {ai}"
@@ -269,7 +269,7 @@ def test_eric_hat_ueberhaupt_geantwortet_zwei_verkaeufe(bindung):
     falsch-gruen, und ein Marker auf nur RC_HERSTELLER_GESPERRT waere blind fuer die anderen drei
     NICHT-GEPRUEFT-Klassen)."""
     snap, sid = ST.materialisiere(_fall("p23_eric_gate_zwei_verkaeufe", 2))
-    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid)
+    result = est_mapping.deklariere(snap, bindung, snapshot_id=sid, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID, snapshot=snap)
     rc, _antwort = CE.validate(xml, "ESt_2025")
     klasse = CE.klassifiziere_rc(rc)

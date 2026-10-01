@@ -52,7 +52,7 @@ def test_q_unbeantwortet_kein_kz(bindung):
     felder = {"kap_kapitalertraege": 500000, "kap_gewinn_aktien": 0, "kap_verlust_aktien": 0,
               "kap_gewinn_sonstige": 0, "kap_verlust_sonstige": 0}
     snap, _ = ST.materialisiere(_store_mit(felder))
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     assert "E1905101" not in r["deklaration"], (
         "E1905101 (Zeile 41, anrechenbare auslaendische Steuer) deklariert, obwohl q nie "
         "beantwortet wurde — Kz ohne erklaerten Sachverhalt.")
@@ -77,7 +77,7 @@ def test_q_beantwortet_kz_erscheint(bindung):
               "kap_gewinn_sonstige": 0, "kap_verlust_sonstige": 0,
               "kap_q_auslaendische_steuer": 10000}
     snap, _ = ST.materialisiere(_store_mit(felder))
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     assert r["deklaration"].get("E1905101") == "100,00", (
         f"E1905101 fehlt oder falsches Format: {r['deklaration'].get('E1905101')!r} != '100,00'. "
         f"deklaration={r['deklaration']}")
@@ -94,7 +94,7 @@ def test_q_null_beantwortet_kz_bleibt(bindung):
               "kap_gewinn_sonstige": 0, "kap_verlust_sonstige": 0,
               "kap_q_auslaendische_steuer": 0}
     snap, _ = ST.materialisiere(_store_mit(felder))
-    r = EM.deklariere(snap, bindung)
+    r = EM.deklariere(snap, bindung, vz=2025)
     assert r["deklaration"].get("E1905101") == "0,00", (
         f"E1905101 sollte als echte Null im Dezimalformat bleiben: "
         f"{r['deklaration'].get('E1905101')!r} != '0,00'")

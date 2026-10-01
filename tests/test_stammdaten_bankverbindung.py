@@ -85,7 +85,7 @@ def test_iban_inland_wird_deklariert(bindung):
     _b(s, "stammdaten_iban", IBAN_INLAND)
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     dekl = result["deklaration"]
 
     assert dekl["E0102102"] == IBAN_INLAND
@@ -101,7 +101,7 @@ def test_iban_leerzeichen_werden_entfernt_und_normalisiert(bindung):
     _b(s, "stammdaten_iban", "DE02 1203 0000 0000 2020 51")
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     assert result["deklaration"]["E0102102"] == IBAN_INLAND
     assert result["eingaben_konsistent"] is True
 
@@ -114,7 +114,7 @@ def test_iban_ausland_mit_bic(bindung):
     _b(s, "stammdaten_bic", BIC_AUSLAND)
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     dekl = result["deklaration"]
 
     assert dekl["E0102603"] == IBAN_AUSLAND
@@ -134,7 +134,7 @@ def test_iban_ausland_ohne_bic_bleibt_vollstaendig(bindung):
     _b(s, "stammdaten_iban", IBAN_AUSLAND)
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
 
     assert result["eingaben_konsistent"] is True
     assert result["deklaration"]["E0102603"] == IBAN_AUSLAND
@@ -148,7 +148,7 @@ def test_keine_bankverbindung_variante(bindung):
     _b(s, "stammdaten_keine_bankverbindung", True)
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     assert result["deklaration"]["E0102002"] is True
     assert "E0102102" not in result["deklaration"]
     assert "E0102603" not in result["deklaration"]
@@ -165,7 +165,7 @@ def test_iban_und_keine_bankverbindung_gleichzeitig_fail_closed(bindung):
     _b(s, "stammdaten_keine_bankverbindung", True)
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
 
     assert result["eingaben_konsistent"] is False
     gruende = [u["feld_id"] for u in result["unvollstaendig"]]
@@ -182,7 +182,7 @@ def test_weder_iban_noch_keine_bankverbindung_deklariere_bleibt_unberuehrt(bindu
     _stammdaten_ohne_bankverbindung(s)
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     assert result["eingaben_konsistent"] is True
     assert "E0102002" not in result["deklaration"]
     assert "E0102102" not in result["deklaration"]
@@ -199,7 +199,7 @@ def test_weder_iban_noch_keine_bankverbindung_blockiert_abgabe(bindung):
     _b(s, "kist_konfession", "keine")
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     assert result["eingaben_konsistent"] is True  # deklariere() selbst sieht keinen Fehler (s.o.)
 
     with pytest.raises(EX.XmlFehler, match="Bankverbindungs-Entscheidung"):
@@ -218,7 +218,7 @@ def test_nicht_abgabefaehig_erlaubt_schweigen(bindung):
     _b(s, "kist_konfession", "keine")
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)  # abgabefaehig default False
     assert "<E0102002>" not in xml.replace("ns0:", "").replace("ns1:", "")
 
@@ -230,7 +230,7 @@ def test_iban_falsches_muster_fail_closed(bindung):
     _b(s, "stammdaten_iban", "1E02120300000000202051")  # Laendercode kein Buchstabe -> Musterverstoss
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     assert result["eingaben_konsistent"] is False
     gruende = [u["grund"] for u in result["unvollstaendig"] if u["feld_id"] == "stammdaten_iban"]
     assert gruende and "Muster" in gruende[0]
@@ -245,7 +245,7 @@ def test_iban_falsche_pruefziffer_fail_closed(bindung):
     _b(s, "stammdaten_iban", kaputt)
     _flags_einzel(s)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     assert result["eingaben_konsistent"] is False
     gruende = [u["grund"] for u in result["unvollstaendig"] if u["feld_id"] == "stammdaten_iban"]
     assert gruende and "Pruefziffer" in gruende[0]
@@ -262,7 +262,7 @@ def test_iban_pii_nie_in_fehlermeldung(bindung):
         _b(s, "stammdaten_iban", wert)
         _flags_einzel(s)
         snap, _ = ST.materialisiere(s)
-        result = EM.deklariere(snap, bindung)
+        result = EM.deklariere(snap, bindung, vz=2025)
         alle_gruende = " ".join(u["grund"] for u in result["unvollstaendig"])
         alle_gruende += " ".join(n["grund"] for n in result["nicht_deklariert"])
         assert wert.upper().replace(" ", "") not in alle_gruende.upper(), (

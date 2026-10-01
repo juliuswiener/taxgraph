@@ -211,7 +211,7 @@ def test_differential_einzel_keine_luecken(bindung):
     _b(s, "fam_alleinstehend", True)              # Klasse d (Negation)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe_differential(snap, bindung, result, xml, "Einzel")
@@ -263,7 +263,7 @@ def test_differential_zusammen_keine_luecken(bindung):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe_differential(snap, bindung, result, xml, "Zusammen")
@@ -304,7 +304,7 @@ def test_differential_rentner_keine_luecken(bindung):
     _b(s, "kein_sonstige", False)  # Renten = sonstige Einkünfte
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe_differential(snap, bindung, result, xml, "Rentner")
@@ -335,7 +335,7 @@ def test_differential_kinder_keine_luecken(bindung):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe_differential(snap, bindung, result, xml, "Kinder")
@@ -362,7 +362,7 @@ def test_differential_gewinneinkuenfte_keine_luecken(bindung):
     _b(s, "vor_rv_ausserhalb_lstb", 100000)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     funde = _pruefe_differential(snap, bindung, result, xml, "Gewinn")
@@ -376,7 +376,7 @@ def test_differential_gewinneinkuenfte_keine_luecken(bindung):
 def test_differential_mutation_kz_entfernt(bindung):
     """Gegenprobe: E0200201 aus der Deklaration entfernt (als fiele es still weg) -> Fund."""
     snap, _ = ST.materialisiere(_store_basic(bindung))
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     # Mutation: E0200201 aus der deklaration entfernen
     if "E0200201" in result["deklaration"]:
         del result["deklaration"]["E0200201"]

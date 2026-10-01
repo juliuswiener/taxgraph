@@ -187,7 +187,7 @@ def _xml_bauen(bindung, felder: dict) -> tuple[dict, str]:
     for fid, wert in {**_STAMM, **_BASIS, **felder}.items():
         _b(s, fid, wert)
     snap, _ = ST.materialisiere(s)
-    result = EM.deklariere(snap, bindung)
+    result = EM.deklariere(snap, bindung, vz=2025)
     xml_text = EX.erzeuge_xml(result, vz=2025, hersteller_id="74931",
                               empfaenger_finanzamt="9181", abgabefaehig=False)
     return result, xml_text

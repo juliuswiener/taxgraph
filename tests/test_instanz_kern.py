@@ -57,7 +57,7 @@ def _snap(felder: dict, vorlaeufig: tuple = ()) -> dict:
 def test_instanz_1zu1_reuse_ueber_n():
     """Instanz 1 = Basis (deklaration, unverändert); __2/__3 = anlage_instanzen mit DERSELBEN Kz (Reuse)."""
     r = EM.deklariere(_snap({"vv_einnahmen": 100000, "vv_einnahmen__2": 200000, "vv_einnahmen__3": 300000}),
-                      BINDUNG)
+                      BINDUNG, vz=2025)
     assert r["deklaration"]["E0700201"] == 100000              # Instanz 1 unverändert in der Haupt-Deklaration
     inst = r["anlage_instanzen"]["vv_objekt"]
     assert [e["index"] for e in inst] == [2, 3]                # index-sortiert
@@ -68,7 +68,7 @@ def test_instanz_1zu1_reuse_ueber_n():
 
 def test_instanz_1_nicht_in_anlage_instanzen():
     """Ohne __n-Feld ist anlage_instanzen leer (reiner Einzel-Objekt-Fall = Null-Regression)."""
-    r = EM.deklariere(_snap({"vv_einnahmen": 100000}), BINDUNG)
+    r = EM.deklariere(_snap({"vv_einnahmen": 100000}), BINDUNG, vz=2025)
     assert r["anlage_instanzen"] == {}
     assert r["deklaration"]["E0700201"] == 100000
 
@@ -78,7 +78,7 @@ def test_instanz_1_nicht_in_anlage_instanzen():
 def test_instanz_aggregat_je_objekt():
     """Die WK-Aggregat-Quellen summieren PRO Instanz auf E0703838 (dokumentiert, nicht deklariert)."""
     r = EM.deklariere(_snap({"vv_gebaeude_afa__2": 30000, "vv_schuldzinsen__2": 20000,
-                             "vv_gebaeude_afa__3": 40000}), BINDUNG)
+                             "vv_gebaeude_afa__3": 40000}), BINDUNG, vz=2025)
     inst = {e["index"]: e for e in r["anlage_instanzen"]["vv_objekt"]}
     assert inst[2]["dokumentiert"]["E0703838"]["summe"] == 50000           # je Objekt getrennt
     assert inst[2]["dokumentiert"]["E0703838"]["quell_felder"] == ["vv_gebaeude_afa__2", "vv_schuldzinsen__2"]
@@ -90,7 +90,7 @@ def test_instanz_aggregat_je_objekt():
 
 def test_instanz_roundtrip_1zu1_und_aggregat():
     r = EM.deklariere(_snap({"vv_einnahmen": 100000, "vv_einnahmen__2": 200000,
-                             "vv_gebaeude_afa__2": 30000, "vv_schuldzinsen__2": 20000}), BINDUNG)
+                             "vv_gebaeude_afa__2": 30000, "vv_schuldzinsen__2": 20000}), BINDUNG, vz=2025)
     rt = EM.zuruecklesen(r, BINDUNG)
     assert rt["felder"]["vv_einnahmen"] == 100000              # Instanz 1 (Basis)
     assert rt["felder"]["vv_einnahmen__2"] == 200000           # Instanz 2 invertierbar (1:1)
@@ -102,7 +102,7 @@ def test_instanz_roundtrip_1zu1_und_aggregat():
 
 def test_instanz_fail_closed_vorlaeufig():
     """Ein vorläufiges Instanz-Feld -> unvollständig, NICHT im Bucket, Gesamt vollstaendig=False."""
-    r = EM.deklariere(_snap({"vv_einnahmen__2": 200000}, vorlaeufig=("vv_einnahmen__2",)), BINDUNG)
+    r = EM.deklariere(_snap({"vv_einnahmen__2": 200000}, vorlaeufig=("vv_einnahmen__2",)), BINDUNG, vz=2025)
     assert r["eingaben_konsistent"] is False
     assert "vv_einnahmen__2" in {x["feld_id"] for x in r["unvollstaendig"]}
     assert r["anlage_instanzen"] == {}                         # vorläufige Instanz nie im Bucket
@@ -112,7 +112,7 @@ def test_instanz_fail_closed_vorlaeufig():
 
 def test_instanz_basis_nicht_instanzfaehig_fail_closed():
     """solo_feld__2 (Basis ohne instanz_gruppe) wird NICHT still als Instanz deklariert -> fail-closed."""
-    r = EM.deklariere(_snap({"solo_feld": "x", "solo_feld__2": "y"}), BINDUNG)
+    r = EM.deklariere(_snap({"solo_feld": "x", "solo_feld__2": "y"}), BINDUNG, vz=2025)
     assert r["anlage_instanzen"] == {}                         # nicht als Instanz behandelt
     assert "solo_feld__2" in {x["feld_id"] for x in r["nicht_deklariert"]}   # bewusst nicht deklariert
     assert r["deklaration"]["E0100082"] == "x"                # Basis (Instanz 1) unverändert
@@ -123,7 +123,7 @@ def test_instanz_basis_nicht_instanzfaehig_fail_closed():
 def test_instanz_kz_reuse_kein_phantom():
     """Alle in anlage_instanzen verwendeten Kz sind Basis-1:1-Kz (Instanz-Reuse), kein neues/Phantom-Kz —
     die Drift-Phantom-Prüfung (Assertion 3) bleibt gültig, weil Instanz-Kz aus der erlaubten Menge stammen."""
-    r = EM.deklariere(_snap({"vv_einnahmen__2": 200000, "vv_einnahmen__3": 300000}), BINDUNG)
+    r = EM.deklariere(_snap({"vv_einnahmen__2": 200000, "vv_einnahmen__3": 300000}), BINDUNG, vz=2025)
     basis_kz = {b["elster_kz"] for b in BINDUNG.values() if b.get("elster_kz")}
     inst_kz = {kz for grp in r["anlage_instanzen"].values() for e in grp for kz in e["felder"]}
     assert inst_kz and inst_kz <= basis_kz, f"Instanz-Kz ohne Basis-Entsprechung (Phantom): {inst_kz - basis_kz}"
@@ -146,7 +146,7 @@ def test_store_feld_id_pattern_unveraendert_akzeptiert_instanz():
     felder, _ = ST.materialisiere(s)
     assert felder["vv_einnahmen__2"]["wert"] == 200000        # der Store speichert/materialisiert es normal
     # und der Roundtrip durch est_mapping findet die Instanz wieder
-    r = EM.deklariere(felder, BINDUNG)
+    r = EM.deklariere(felder, BINDUNG, vz=2025)
     assert r["anlage_instanzen"]["vv_objekt"][0]["felder"]["E0700201"] == 200000
 
 
@@ -169,12 +169,12 @@ def test_hash_separator_wuerde_store_gate_brechen():
 
 def test_instanz_determinismus():
     snap = _snap({"vv_einnahmen": 100000, "vv_einnahmen__2": 200000, "vv_gebaeude_afa__2": 30000})
-    assert EM.deklariere(snap, BINDUNG) == EM.deklariere(snap, BINDUNG)
+    assert EM.deklariere(snap, BINDUNG, vz=2025) == EM.deklariere(snap, BINDUNG, vz=2025)
 
 
 def test_neg_instanz_verfaelscht_bricht_roundtrip():
     """Manipulierter Instanz-Wert -> Round-Trip weicht ab (kein stiller Durchlauf)."""
-    r = EM.deklariere(_snap({"vv_einnahmen__2": 200000}), BINDUNG)
+    r = EM.deklariere(_snap({"vv_einnahmen__2": 200000}), BINDUNG, vz=2025)
     r2 = copy.deepcopy(r)
     r2["anlage_instanzen"]["vv_objekt"][0]["felder"]["E0700201"] += 1
     rt = EM.zuruecklesen(r2, BINDUNG)

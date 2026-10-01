@@ -109,7 +109,7 @@ def test_feld_id_global_eindeutig():
 # ---- Assertion 1: jedes eingetragene Kz wird deklariert ----------------------
 
 def test_jedes_eingetragene_kz_wird_deklariert(merged):
-    r = EM.deklariere(_snapshot(merged), merged)
+    r = EM.deklariere(_snapshot(merged), merged, vz=2025)
     unter = [fid for fid, b in merged.items()
              if b.get("askable") and b.get("elster_kz") and b["elster_kz"] not in r["deklaration"]]
     assert not unter, f"eingetragene Kz fallen still aus est_mapping (Unter-Deklaration): {unter}"
@@ -118,7 +118,7 @@ def test_jedes_eingetragene_kz_wird_deklariert(merged):
 # ---- Assertion 2: jedes null-Kz-Feld ist bewusst GAP oder Transform-Quelle ---
 
 def test_jedes_null_kz_feld_ist_gap_oder_transform(merged):
-    r = EM.deklariere(_snapshot(merged), merged)
+    r = EM.deklariere(_snapshot(merged), merged, vz=2025)
     nd = {x["feld_id"] for x in r["nicht_deklariert"]}
     tq = _transform_quellen()
     verschwunden = [fid for fid, b in merged.items()
@@ -130,7 +130,7 @@ def test_jedes_null_kz_feld_ist_gap_oder_transform(merged):
 # ---- Assertion 3: kein Phantom-Kz in der Deklaration -------------------------
 
 def test_kein_phantom_kz_in_deklaration(merged):
-    r = EM.deklariere(_snapshot(merged), merged)
+    r = EM.deklariere(_snapshot(merged), merged, vz=2025)
     erlaubt = _erlaubte_kz(merged)
     phantome = [kz for kz in r["deklaration"] if kz not in erlaubt]
     assert not phantome, f"Phantom-Kz in deklaration ohne Bindungs-/Transform-Herkunft: {phantome}"
@@ -165,7 +165,7 @@ def test_transform_konfig_konsistent(merged):
 def test_neg_kz_wegnahme_wird_rot(merged):
     """(a) Ein eingetragenes Kz aus der Deklaration entfernt -> Abdeckungs-Prüfung (Assertion 1)
     findet die Unter-Deklaration. Tamper am lokalen Ergebnis, keine Quelldatei berührt."""
-    r = EM.deklariere(_snapshot(merged), merged)
+    r = EM.deklariere(_snapshot(merged), merged, vz=2025)
     opfer = next(b["elster_kz"] for b in merged.values()
                  if b.get("elster_kz") and b["elster_kz"] in r["deklaration"])
     r["deklaration"].pop(opfer)                                    # TAMPER
@@ -177,7 +177,7 @@ def test_neg_kz_wegnahme_wird_rot(merged):
 def test_neg_null_kz_als_enr_wird_rot(merged):
     """(b) Ein erfundenes E-Nr in der Deklaration -> Phantom-Prüfung (Assertion 3) schlägt an.
     Steht für den Über-Deklarations-/null→E-Nr-Fall. Tamper am lokalen Ergebnis."""
-    r = EM.deklariere(_snapshot(merged), merged)
+    r = EM.deklariere(_snapshot(merged), merged, vz=2025)
     erlaubt = _erlaubte_kz(merged)
     r["deklaration"]["E9999999"] = 1                              # TAMPER (erfundenes Kz)
     phantome = [kz for kz in r["deklaration"] if kz not in erlaubt]

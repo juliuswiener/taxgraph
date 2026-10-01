@@ -109,10 +109,10 @@ def test_keine_null_in_einem_kz_das_sie_im_jahr_verbietet(jahr):
     schreibweg = _ganzzahl_schreibweg(jahr, meta)
 
     luecke = sorted(kz for kz in schreibweg & V
-                    if kz not in EM._NULL_UNZULAESSIG_KZ)
+                    if kz not in EM.null_unzulaessig(jahr))
     assert not luecke, (
         f"VZ {jahr}: {len(luecke)} Kz verbieten die 0 laut E10-{jahr}.xsd, stehen aber nicht in "
-        f"_NULL_UNZULAESSIG_KZ — eine 0 geht dort hinaus und macht die Erklaerung "
+        f"der Jahresmenge — eine 0 geht dort hinaus und macht die Erklaerung "
         f"uneinreichbar: {luecke}")
 
 
@@ -135,10 +135,10 @@ def test_liste_unterdrueckt_keinen_erlaubten_wert(jahr):
 
     # Alle Listen-Kz, nicht nur die des Bindungs-Schreibwegs: die neun § 35c-Kz der
     # Art-Verzweigung stehen in keiner Bindung, werden aber ebenso unterdrueckt.
-    zu_streng = sorted(kz for kz in EM._NULL_UNZULAESSIG_KZ
+    zu_streng = sorted(kz for kz in EM.null_unzulaessig(jahr)
                        if kz in meta and kz not in V)
     assert not zu_streng, (
-        f"VZ {jahr}: {len(zu_streng)} Kz stehen in _NULL_UNZULAESSIG_KZ, obwohl E10-{jahr}.xsd "
+        f"VZ {jahr}: {len(zu_streng)} Kz stehen in der Jahresmenge, obwohl E10-{jahr}.xsd "
         f"die 0 dort erlaubt — ein gehoerender Wert wird unterdrueckt: {zu_streng}")
 
 
@@ -169,3 +169,101 @@ def test_e0106603_ist_der_gemessene_fall():
     assert feld, "rentner_pflege_weitere_personen fehlt in der Bindung"
     assert feld["kz"] == "E0106603"
     assert {"2024", "2025"} <= feld["vz"], feld["vz"]
+
+
+# ---- Der Zugriff selbst: drei Faelle, kein stiller Rueckfall -----------------
+# Die Jahresdrift ist nur die Haelfte. Die andere Haelfte ist, dass ein Jahr, das die
+# Zuordnung nicht kennt, NICHT stillschweigend eine fremde Menge bekommt.
+
+
+def test_unbekanntes_jahr_bekommt_die_vereinigung_nicht_den_fehler():
+    """VZ 2026 und spaeter: die VEREINIGUNG aller bekannten Jahre, kein Fehler.
+
+    Das Produkt rechnet VZ 2026 (params/2026 ist vollstaendig); eine 2026er Erklaerung laeuft
+    heute bis ERiC und bekommt dort 610001042. Ein harter Fehler hier waere ein Rueckschritt auf
+    einem Pfad, der funktioniert. Der Preis ist eine erlaubte 0, die weggelassen wird — und weil
+    0 in diesen Kz "nichts anzugeben" heisst (minOccurs 0), ist der Verlust null.
+    """
+    for jahr in (2026, 2027, 2030, 2100):
+        menge = EM.null_unzulaessig(jahr)
+        assert menge, f"VZ {jahr} lieferte eine leere Menge — das waere der stille Rueckfall"
+        assert "E0106603" in menge, (
+            f"VZ {jahr} traegt E0106603 nicht — die Vereinigung muss die 2024er Sicht enthalten, "
+            "sonst geht dort eine 0 hinaus, die 2024 verbietet")
+
+
+def test_vereinigung_ist_obermenge_jeder_einzelmenge():
+    """Maschinell, nicht abgeschrieben: die Vereinigung wird gegen die Einzelmengen gehalten.
+
+    Eine handgepflegte Vereinigungsmenge driftet beim naechsten Jahres-XSD still auseinander.
+    Dieser Test leitet sie aus `_NULL_UNZULAESSIG_KZ` selbst ab und prueft die Teilmengen-
+    beziehung fuer JEDES gefuehrte Jahr.
+    """
+    vereinigung = EM.null_unzulaessig(2026)
+    assert EM._NULL_UNZULAESSIG_KZ, "keine Jahresmengen vorhanden"
+    for jahr, menge in EM._NULL_UNZULAESSIG_KZ.items():
+        fehlend = sorted(menge - vereinigung)
+        assert not fehlend, (
+            f"die Vereinigung (VZ 2026) ist keine Obermenge der Menge fuer VZ {jahr} — "
+            f"{len(fehlend)} Kz fehlen: {fehlend}")
+    # Und die Vereinigung ist echt groesser als jede Einzelmenge, sonst prueft der Test nichts.
+    assert any(len(vereinigung) > len(m) for m in EM._NULL_UNZULAESSIG_KZ.values()), (
+        "die Vereinigung ist so gross wie jede Einzelmenge — dann traegt sie keinen Jahresbezug")
+
+
+def test_fehlendes_oder_nulljahr_ist_ein_fehler():
+    """Fail-closed in der anderen Richtung: kein Jahr, Jahr 0, kein Steuerjahr -> Fehler.
+
+    `store.get("veranlagungszeitraum") or 0` in haut/api.py liefert die 0, wenn das Feld fehlt.
+    Sie darf nicht in eine Jahresmenge greifen. Und die 10^38 eines Korpusfalls ist kein
+    "spaeter als 2025" — sie darf die Vereinigung nicht durch die Hintertuer bekommen.
+    """
+    for schlecht in (None, 0, -5, 1900, 2101, 10**38, True, "2025", 2025.0):
+        with pytest.raises(ValueError):
+            EM.null_unzulaessig(schlecht)
+    # Gegenprobe: die gueltigen Jahre werfen NICHT.
+    for gut in (2024, 2025, 2026, 2100):
+        assert EM.null_unzulaessig(gut)
+
+
+def test_deklariere_ohne_vz_ist_ein_fehler():
+    """vz ist Pflicht-Schluesselwort an deklariere() — kein Vorgabewert, kein None, kein
+    Rueckfall auf 2025. Ohne diesen Test waere ein spaeterer Vorgabewert unbemerkt."""
+    with pytest.raises(TypeError):
+        EM.deklariere({}, {})                      # vz fehlt ganz
+    with pytest.raises(ValueError):
+        EM.deklariere({}, {}, vz=0)                # Jahr 0 = "Feld fehlt im Store"
+    with pytest.raises(ValueError):
+        EM.deklariere({}, {}, vz=10**38)           # der Korpusfall, kein Steuerjahr
+
+
+def test_der_belegfall_am_echten_schreibweg():
+    """E0106603 durch das ECHTE deklariere(), nicht nur durch den Zugriff.
+
+    Das ist die Probe, die zaehlt: 2024 wird die 0 unterdrueckt, 2025 geht sie hinaus.
+    Ein Zugriff, der die richtigen Mengen liefert, aber am Schreibweg nicht ankommt, waere
+    die haelfte des Fixes — und saehe im Zugriffstest trotzdem gruen aus.
+    """
+    bindung = _bindung_oder_skip()
+    probe = {
+        "rentner_pflege_weitere_personen": {"wert": 0, "zustand": "bestaetigt", "herkunft": "t"},
+        "rentner_pflegegrad": {"wert": 3, "zustand": "bestaetigt", "herkunft": "t"},
+    }
+    d24 = EM.deklariere(probe, bindung, vz=2024)["deklaration"]
+    d25 = EM.deklariere(probe, bindung, vz=2025)["deklaration"]
+    assert "E0106603" not in d24, (
+        "VZ 2024: die 0 ging in E0106603 hinaus, obwohl E10-2024.xsd sie verbietet — "
+        "die Erklaerung waere uneinreichbar")
+    assert d25.get("E0106603") == 0, (
+        f"VZ 2025: die 0 fehlt in E0106603, obwohl E10-2025.xsd sie verlangt "
+        f"(geschrieben: {d25.get('E0106603')!r})")
+    # Gegenprobe mit einer NICHT-null: 2024 muss sehr wohl schreiben, sonst unterdrueckt
+    # der Fix den ganzen Schreibweg statt nur die Null.
+    probe["rentner_pflege_weitere_personen"]["wert"] = 2
+    assert EM.deklariere(probe, bindung, vz=2024)["deklaration"]["E0106603"] == 2
+
+
+def _bindung_oder_skip():
+    sys.path.insert(0, str(ROOT / "produkt" / "traverser"))
+    import traverser as TR   # noqa: PLC0415
+    return TR.lade_bindung()

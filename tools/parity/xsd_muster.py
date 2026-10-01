@@ -244,9 +244,17 @@ def messe(faelle: str, golden: str, bindung: dict, paare: list) -> dict:
         for fid, e in ST._aktives(store).items():
             zaehle(m["aktiv"], i, f"{e.get('schreiber')}{vz_zusatz}", jahr, fid, e.get("wert"))
         try:
-            d = EM.deklariere(ST.materialisiere(store)[0], bindung)
+            # vz ist PFLICHT und wird NICHT auf schema_jahr() gerundet: ein Store ohne
+            # brauchbares Steuerjahr (hier: -5, 10^38) soll laut scheitern und im
+            # fehler-Zaehler landen, statt still die 2025er Null-Verbots-Menge zu bekommen.
+            d = EM.deklariere(ST.materialisiere(store)[0], bindung, vz=vz)
         except Exception as e:  # noqa: BLE001 -- Messung, kein Produktpfad: zaehlen statt abbrechen
-            m["fehler"][f"deklariere wirft {type(e).__name__}"] += 1
+            # Die JAHRESZAHL in den Schluessel, nicht nur die Ausnahmeart: "ValueError: 2" sagt
+            # nicht, welche zwei Stores abgewiesen wurden. Zwei Jahre, die es nicht gibt (-5 und
+            # 10^38), sind selbst ein Befund ueber den Korpus und muessen im Bericht stehen.
+            # ponytail: die Jahreszahl ist kein PII (kein Wert, keine Fall-ID), sondern der
+            # Store-Schluessel veranlagungszeitraum.
+            m["fehler"][f"deklariere wirft {type(e).__name__} bei VZ {vz!r}"] += 1
             continue
         # api.einreichen baut das XML nur bei eingaben_konsistent. Davor und im Bau sperren weitere
         # Pruefungen (Scheibe, Ring, Absender, Bankverbindung): konsistent heisst nicht "erreicht ERiC".

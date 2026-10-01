@@ -144,7 +144,7 @@ def test_bindungs_typ_vs_xsd_typ():
             bereich = b.get("bereich") or {}
             if meta["enums"] and "min" in bereich and "max" in bereich:
                 for w in range(bereich["min"], bereich["max"] + 1):
-                    d = EM.deklariere({feld_id: {"wert": w, "zustand": "bestaetigt"}}, bindung)
+                    d = EM.deklariere({feld_id: {"wert": w, "zustand": "bestaetigt"}}, bindung, vz=2025)
                     if kz in d["deklaration"] and str(d["deklaration"][kz]) not in meta["enums"]:
                         mismatches.append(
                             f"{feld_id}: typ={typ}, Kz {kz}, Bindung erlaubt {w}, XSD erlaubt nur "
@@ -170,7 +170,7 @@ def test_bindungs_typ_vs_xsd_typ():
             if meta["patterns"] and durchgelassen:
                 for w in durchgelassen:
                     d = EM.deklariere({feld_id: {"wert": int(w) if w.lstrip("-").isdigit() else w,
-                                                 "zustand": "bestaetigt"}}, bindung)
+                                                 "zustand": "bestaetigt"}}, bindung, vz=2025)
                     if kz not in d["deklaration"]:
                         continue
                     v = str(d["deklaration"][kz])

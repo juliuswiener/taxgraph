@@ -668,7 +668,7 @@ def deklaration(fall_id: str) -> tuple[int, dict]:
     felder, sid = ST.materialisiere(store)
     vz = int(store.get("veranlagungszeitraum") or 0)
     felder = _mit_ring_werten(felder, vz)
-    result = EM.deklariere(felder, bindung, snapshot_id=sid)
+    result = EM.deklariere(felder, bindung, vz=vz, snapshot_id=sid)
     return 200, {"fall_id": fall_id, **result}
 
 
@@ -727,7 +727,7 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
             return 409, {"fall_id": fall_id, "eingereicht": False, "grund": sperr,
                          "hinweis": "Die Deklaration kann nicht erstellt werden, weil eine erforderliche Angabe fehlt."}
 
-    result = EM.deklariere(felder, bindung, snapshot_id=sid)
+    result = EM.deklariere(felder, bindung, vz=vz, snapshot_id=sid)
     if not result["eingaben_konsistent"]:
         return 409, {"fall_id": fall_id, "eingereicht": False, "grund": "deklaration_unvollstaendig",
                      "unvollstaendig": result["unvollstaendig"]}

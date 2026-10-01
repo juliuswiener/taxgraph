@@ -92,7 +92,7 @@ def test_person_b_echter_bucket_wechselseitig(bindung):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
     clean = xml.replace("ns0:", "").replace("ns1:", "")
 
@@ -142,7 +142,7 @@ def test_person_b_xsd_valide(bindung, tmp_path):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     pfad = str(tmp_path / "person_b.xml")
@@ -182,7 +182,7 @@ def test_gewinneinkuenfte_partner_kommt_im_xml_an(bindung):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
     clean = xml.replace("ns0:", "").replace("ns1:", "")
 
@@ -239,7 +239,7 @@ def test_gewinneinkuenfte_partner_xsd_valide(bindung, tmp_path):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     pfad = str(tmp_path / "gewinn_partner.xml")
@@ -265,7 +265,7 @@ def test_mitunternehmer_partner_faellt_in_nicht_deklariert(bindung):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
 
     nd_ids = {x["feld_id"] for x in result.get("nicht_deklariert", [])}
     for fid in ("gewinnanteil_partner", "verguetung_taetigkeit_partner",
@@ -322,7 +322,7 @@ def test_nur_person_b_keine_leere_person_a_huelle(bindung):
     <Person>PersonB</Person> tragen UND Person Bs Wert enthalten — nicht Person Bs Wert
     unter PersonA."""
     snap, _ = ST.materialisiere(_fall_nur_partner_hat_lohn("nur_b_lohn"))
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     assert result["person_b"], "Vorbedingung: person_b-Bucket muss befuellt sein"
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
@@ -345,7 +345,7 @@ def test_person_a_belegt_container_dann_bleibt_person_b_instanz_1(bindung):
     s = _fall_nur_partner_hat_lohn("beide_lohn")
     _b(s, "bruttoarbeitslohn", 5000000)              # jetzt hat auch Person A Lohn
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     n_container = _container(xml, "N")
@@ -360,7 +360,7 @@ def test_nur_person_b_xsd_valide(bindung, tmp_path):
     """Die Person-B-in-Instanz-0-Form gegen das amtliche Schema — das XSD fuehrt auf den
     Person-Containern eigene Bedingungen, die eine verschobene Instanz brechen koennte."""
     snap, _ = ST.materialisiere(_fall_nur_partner_hat_lohn("nur_b_lohn_xsd"))
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
     pfad = str(tmp_path / "nur_person_b.xml")
     with open(pfad, "w", encoding="utf-8") as f:
@@ -387,7 +387,7 @@ def test_kind_instanzen_zwei_kinder(bindung):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
     clean = xml.replace("ns0:", "").replace("ns1:", "")
 
@@ -416,7 +416,7 @@ def test_kind_instanzen_xsd_valide(bindung, tmp_path):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     pfad = str(tmp_path / "kind_instanzen.xml")
@@ -443,7 +443,7 @@ def test_kinderzahl_waecher_fail_closed(bindung):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     with pytest.raises(EX.XmlFehler, match="Kinderzahl behauptet 3"):
         EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
@@ -460,7 +460,7 @@ def test_kinderzahl_konsistent_ohne_kinder(bindung):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     # Sollte ohne Fehler durchgehen (kind_anlagen leer -> kein Check)
     assert "kind_anlagen" in result and not result["kind_anlagen"]
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
@@ -484,7 +484,7 @@ def test_person_a_b_ordnung_schema_valide(bindung, tmp_path):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
 
     pfad = str(tmp_path / "ordnung_a_b.xml")
@@ -523,7 +523,7 @@ def test_person_a_und_b_haben_unterschiedliche_kz(bindung):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
     clean = xml.replace("ns0:", "").replace("ns1:", "")
 
@@ -568,7 +568,7 @@ def test_vv_objekt_zwei_instanzen(bindung):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
     clean = xml.replace("ns0:", "").replace("ns1:", "")
 
@@ -612,7 +612,7 @@ def test_vv_objekt_xsd_valide(bindung, tmp_path):
     _b(s, "kein_sonstige", True)
 
     snap, _ = ST.materialisiere(s)
-    result = est_mapping.deklariere(snap, bindung)
+    result = est_mapping.deklariere(snap, bindung, vz=2025)
     xml = EX.erzeuge_xml(result, vz=2025, hersteller_id=HID)
     pfad = str(tmp_path / "vv_instanzen.xml")
     with open(pfad, "w", encoding="utf-8") as f:

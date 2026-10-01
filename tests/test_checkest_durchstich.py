@@ -282,7 +282,7 @@ def _pruefe(store) -> tuple[int, list[str], str]:
     """
     snap, _ = ST.materialisiere(store)
     snap = BD._mit_ring_werten(snap, vz=2025)
-    xml = EX.erzeuge_xml(est_mapping.deklariere(snap, TR.lade_bindung()),
+    xml = EX.erzeuge_xml(est_mapping.deklariere(snap, TR.lade_bindung(), vz=2025),
                          vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     rc, antwort = CE.validate(xml, "ESt_2025")
     texte = [" ".join(t.split())
@@ -465,7 +465,7 @@ def test_steuernummer_ableitung_liefert_dieselbe_amtliche_fehlerzahl():
     expliziten Parameter aus _ABSENDER. Sonst waere die Ableitung nur syntaktisch aequivalent,
     nicht amtlich."""
     snap, _ = ST.materialisiere(_fall_einzel())
-    dekl = est_mapping.deklariere(snap, TR.lade_bindung())
+    dekl = est_mapping.deklariere(snap, TR.lade_bindung(), vz=2025)
     absender_ohne_stnr = {k: v for k, v in _ABSENDER.items() if k != "absender_steuernummer"}
 
     xml_explizit = EX.erzeuge_xml(dekl, vz=2025, hersteller_id=_HID, abgabefaehig=True,
@@ -516,7 +516,7 @@ def test_spenden_zeile_5_besteht_die_amtliche_pruefung(name, spenden, mit_zeile_
     """Zeile 5 mit Betrag, Zeile 5 leer bei 0, Zeile 11 nie: jeweils amtlich rc=0."""
     store = _fall_einzel_mit_spenden(f"durchstich_{name}", spenden)
     snap, _ = ST.materialisiere(store)
-    dekl = est_mapping.deklariere(BD._mit_ring_werten(snap, vz=2025), TR.lade_bindung())
+    dekl = est_mapping.deklariere(BD._mit_ring_werten(snap, vz=2025), TR.lade_bindung(), vz=2025)
     # Vorbedingung: der Fall traegt, was er messen soll
     assert ("E0108105" in dekl["deklaration"]) is mit_zeile_5, dekl["nicht_deklariert"]
     rc, texte, _ = _pruefe(store)

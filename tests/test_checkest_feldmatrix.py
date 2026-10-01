@@ -78,7 +78,7 @@ def _scharf(store) -> tuple[int, list[str]]:
     bindung = API._scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
     felder = API._mit_ring_werten(felder, 2025)
-    xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid),
+    xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid, vz=2025),
                          vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     rc, antwort = CE.validate(xml, "ESt_2025")
     texte = [" ".join(t.split())
@@ -221,7 +221,7 @@ def test_kap_antrag_ist_inert_ohne_kapitalertraege(hid_attrappe):
         bindung = API._scheibe_bindung(store)
         felder, sid = ST.materialisiere(store)
         felder = API._mit_ring_werten(felder, 2025)
-        xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid),
+        xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid, vz=2025),
                              vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
         return "E1900401" in xml, "E1901401" in xml
 
@@ -295,7 +295,7 @@ def test_p36_kap_anrechnung_kz_inert_ohne_angabe(hid_attrappe):
         bindung = API._scheibe_bindung(store)
         felder, sid = ST.materialisiere(store)
         felder = API._mit_ring_werten(felder, 2025)
-        xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid),
+        xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid, vz=2025),
                              vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
         return "E1904701" in xml, "E1904901" in xml, "E1904801" in xml
 
@@ -335,9 +335,9 @@ def test_matrix_geht_durch_den_ring_pfad():
     bindung = API._scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
 
-    ohne = est_mapping.deklariere(dict(felder), bindung, snapshot_id=sid)
+    ohne = est_mapping.deklariere(dict(felder), bindung, snapshot_id=sid, vz=2025)
     mit_ring = API._mit_ring_werten(felder, 2025)
-    mit = est_mapping.deklariere(mit_ring, bindung, snapshot_id=sid)
+    mit = est_mapping.deklariere(mit_ring, bindung, snapshot_id=sid, vz=2025)
 
     kuerzung = (mit_ring.get("p9_4a_kuerzung_nach_entgelt") or {}).get("wert")
     assert kuerzung and kuerzung > 0, (
@@ -435,7 +435,7 @@ def test_p35a_ohne_daten_kein_einz_und_keine_sum_im_xml(hid_attrappe):
     bindung = API._scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
     felder = API._mit_ring_werten(felder, 2025)
-    xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid),
+    xml = EX.erzeuge_xml(est_mapping.deklariere(felder, bindung, snapshot_id=sid, vz=2025),
                          vz=2025, hersteller_id=_HID, abgabefaehig=True, **_ABSENDER)
     for kz in ("E0104109", "E0104206", "E0104108",   # Minijob (Sum, Art, Betrag)
                "E0107208", "E0107206", "E0107207",   # Dienstleistung
