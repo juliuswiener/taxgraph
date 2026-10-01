@@ -9,6 +9,7 @@
 //!
 //! Sperrgruende sind [`domain::Sperrgrund`]; ihr Klartext liegt dort (exhaustiver `match`).
 //! Die `cfg`-Scheibe aus `api_constants.SCHEIBEN` ist [`Cfg`].
+mod feste_zahl;
 mod konstanten;
 mod ring_werte;
 mod scheiben_tabellen;
@@ -20,6 +21,7 @@ use domain::{Feldtyp, Scheibe, Sperrgrund, Zustand, UNBEKANNTER_SPERRGRUND};
 use konsistenz::{partner_ohne_zusammen, PartnerWiderspruch};
 use serde_json::{json, Value};
 
+pub use feste_zahl::{feste_zahl, FesteZahl, KeineZahl, KeineZahlGrund};
 pub use ring_werte::mit_ring_werten;
 pub use sperre::an_gesamt_sperrgrund;
 
