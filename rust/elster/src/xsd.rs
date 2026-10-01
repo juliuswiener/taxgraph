@@ -8,6 +8,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
+use domain::Kz;
 use roxmltree::{Document, Node};
 use serde::Serialize;
 
@@ -115,10 +116,9 @@ fn kinder<'a, 'i>(n: Node<'a, 'i>) -> impl Iterator<Item = Node<'a, 'i>> {
     n.children().filter(Node::is_element)
 }
 
-/// `^E\d{7}$`
+/// `^E\d{7}$`; die Regel steht in [`Kz::ist_gueltig`].
 fn ist_kz(name: &str) -> bool {
-    let b = name.as_bytes();
-    b.len() == 8 && b.first() == Some(&b'E') && b.iter().skip(1).all(u8::is_ascii_digit)
+    Kz::ist_gueltig(name)
 }
 
 /// Python `node.get("name") or node.get("ref")`.
@@ -597,10 +597,10 @@ pub fn ernte_est_mapping_kz(bindung: &BindungIndex<'_>) -> Result<Vec<KzPrueflin
     }
     for v in VERZWEIGUNG.iter().chain(PARTNER_VERZWEIGUNG) {
         let jahre = vz(v.feld)?;
-        for (art, kz) in v.kz {
+        for (art, kz) in v.kz.paare() {
             out.push(KzPruefling {
                 feld_id: format!("verzweigung:{}:{art}", v.feld),
-                elster_kz: (*kz).to_owned(),
+                elster_kz: kz.to_owned(),
                 vz_gueltigkeit: jahre.clone(),
             });
         }
@@ -620,6 +620,11 @@ pub fn ernte_est_mapping_kz(bindung: &BindungIndex<'_>) -> Result<Vec<KzPrueflin
 }
 
 /// Datenart-Routing nach Kz-Praefix: `E60…` gegen E77 (Anlage EUeR), sonst E10.
+///
+/// ponytail: bleibt Python-treu bei `kz[1:3] == "60"` (`xsd_verify.py:79`), nicht
+/// [`Kz::hat_e60_praefix`]. Beide Regeln sind nur fuer gueltige Kz gleich (`X6000000`: hier E77,
+/// dort kein E60); `get(1..3)` zaehlt zudem Bytes, Python Zeichen. Die Bindung lehnt ungueltige Kz
+/// schon beim Laden ab (`bindung_datei.rs:272`). Angleichung mit K9 (Kz an der Quelle).
 fn datenart(kz: &str) -> (&'static str, &'static str) {
     if kz.get(1..3) == Some("60") {
         ("E77-{jahr}.xsd", "E77")

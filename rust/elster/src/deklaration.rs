@@ -9,7 +9,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use bindung::Bindung;
-use domain::{Cent, Feldtyp, PyWert, Zustand};
+use domain::{Cent, Feldtyp, Lage, PyWert, Veranlagung, Zustand};
 use serde::ser::SerializeMap;
 use serde::Serialize;
 use serde_json::Value;
@@ -20,7 +20,7 @@ use crate::instanz::parse_instanz;
 use crate::kz_format::{cent_nach_kz, null_unzulaessig, schreibe_kz, KzBetrag};
 use crate::py::{self, PyFehler};
 use crate::tabellen::{
-    suche, PflichtBedingung, Verzweigung, DOKUMENTIERT_AGGREGAT, KAP_FELDER_A, KAP_FELDER_B,
+    suche, ArtKz, PflichtBedingung, Verzweigung, DOKUMENTIERT_AGGREGAT, KAP_FELDER_A, KAP_FELDER_B,
     KAP_NULL_GRUND, KONSTANTE_KZ, MULTIPLIKATION, NEGATION, P23_ART_FELD, P23_BETRAGSFELDER,
     P23_GEWINN_KZ, PARTNER_INSTANZ, PARTNER_VERZWEIGUNG, PFLEGE_KZ, PFLICHTFELDER, VERZWEIGUNG,
     WERTEKODIERUNG,
@@ -278,16 +278,44 @@ fn zustand_text(z: Zustand) -> &'static str {
     }
 }
 
-/// Python `dict.get(wert)` auf einer Tabelle mit Text-Schluesseln: Listen/Objekte sind nicht
-/// hashbar (`TypeError`), jeder andere Nicht-Text trifft keinen Schluessel.
+/// Python `dict.get(wert)` hasht den Schluessel vor der Suche: Listen/Objekte sind nicht hashbar
+/// (`TypeError`), jeder andere Wert ist es.
+fn hashbar(wert: &PyWert) -> Result<(), PyFehler> {
+    match wert {
+        PyWert::Liste(_) | PyWert::Objekt(_) => Err(PyFehler::typ("unhashable type")),
+        _ => Ok(()),
+    }
+}
+
+/// Python `dict.get(wert)` auf einer Tabelle mit Text-Schluesseln: jeder Nicht-Text trifft keinen
+/// Schluessel.
 fn nachschlagen<'t>(
     tabelle: &'t [(&'t str, &'t str)],
     wert: &PyWert,
 ) -> Result<Option<&'t str>, PyFehler> {
-    match wert {
-        PyWert::Text(s) => Ok(suche(tabelle, s)),
-        PyWert::Liste(_) | PyWert::Objekt(_) => Err(PyFehler::typ("unhashable type")),
-        _ => Ok(None),
+    hashbar(wert)?;
+    Ok(match wert {
+        PyWert::Text(s) => suche(tabelle, s),
+        _ => None,
+    })
+}
+
+/// Python `dict.get(wert)` auf einer Tabelle, deren Schluessel genau die Werte des Enums sind.
+/// `Lage::Abweichend` fasst Text ohne Schluessel, Null/Bool/Zahl und Liste/Objekt zusammen; nur
+/// Liste/Objekt bleibt `TypeError`.
+fn nachschlagen_enum<T>(lage: Lage<'_, T>) -> Result<Option<T>, PyFehler> {
+    match lage {
+        Lage::Gueltig(t) => Ok(Some(t)),
+        Lage::Abweichend(w) => hashbar(w).map(|()| None),
+        Lage::Fehlt | Lage::Null => Ok(None),
+    }
+}
+
+/// Die Kz zum Art-Wert einer [`Verzweigung`].
+fn art_kz(kz: ArtKz, art: &PyWert) -> Result<Option<&'static str>, PyFehler> {
+    match kz {
+        ArtKz::Rente(tabelle) => Ok(nachschlagen_enum(Lage::rentenart(Some(art)))?.map(tabelle)),
+        ArtKz::Text(tabelle) => nachschlagen(tabelle, art),
     }
 }
 
@@ -368,7 +396,7 @@ impl Bau<'_> {
                     format!("Instanz-Art ({art_feld_inst}) unbestätigt — Kz-Zweig offen"),
                 ),
                 Some(art) => {
-                    if let Some(kz) = nachschlagen(cfg.kz, &art.wert).map_err(&fehler)? {
+                    if let Some(kz) = art_kz(cfg.kz, &art.wert).map_err(&fehler)? {
                         // Vor dem mutablen Borrow kopieren: `null_kz` ist `&'static`.
                         let null_kz = self.null_kz;
                         let felder = &mut self.instanz(gruppe, idx).felder;
@@ -422,7 +450,7 @@ impl Bau<'_> {
             return Ok(());
         };
         let art_text = art.wert.py_str();
-        match nachschlagen(cfg.kz, &art.wert).map_err(&fehler)? {
+        match art_kz(cfg.kz, &art.wert).map_err(&fehler)? {
             Some(kz) => {
                 let ziel = if partner {
                     &mut self.person_b
@@ -534,7 +562,8 @@ impl Bau<'_> {
             schreibe_kz(&mut self.person_b, kz, wert, Some(b.typ), self.null_kz)
                 .map_err(&fehler)?;
         } else if let Some(cfg) = WERTEKODIERUNG.iter().find(|w| w.feld == feld_id) {
-            match nachschlagen(cfg.code, wert).map_err(&fehler)? {
+            let konfession = nachschlagen_enum(Lage::konfession(Some(wert))).map_err(&fehler)?;
+            match konfession.and_then(cfg.code) {
                 Some(code) => {
                     self.deklaration
                         .insert(cfg.kz.to_owned(), Value::String(code.to_owned()));
@@ -821,15 +850,16 @@ impl Bau<'_> {
     /// § 32d Abs. 6 S. 4 EStG: der Guenstigerpruefungs-Antrag gilt fuer beide Ehegatten und muss
     /// im XML in beiden Person-Containern stehen.
     fn antrag_person_b(&mut self) {
-        let zusammen = self
-            .snapshot
-            .get("veranlagung")
-            // ponytail: `==` auf `PyWert` ist STRUKTURELL, nicht Pythons `==`. Vor K2 verglich
-            // `Value` hier einen Wert; `veranlagung` traegt im Bestand 136x Text und nie gemischt
-            // (gemessen), also bleibt die Polaritaet -- Befund B, eigene Entscheidung.
-            .is_some_and(|v| {
-                v.zustand == Zustand::Bestaetigt && v.wert == PyWert::Text("zusammen".to_owned())
-            });
+        // `est_mapping.py:1010`: `veranl.get("wert") == "zusammen"`. „Ist das zusammen?" entscheidet
+        // `Lage::veranlagung`; ein abweichender Wert (`"Zusammen"`, eine Liste) ist es auch in
+        // Python nicht, deshalb zaehlt nur `Lage::Gueltig`.
+        let zusammen = self.snapshot.get("veranlagung").is_some_and(|v| {
+            v.zustand == Zustand::Bestaetigt
+                && matches!(
+                    Lage::veranlagung(Some(&v.wert)),
+                    Lage::Gueltig(Veranlagung::Zusammen)
+                )
+        });
         let antrag_kz = self
             .bindung
             .get("kap_antrag_guenstigerpruefung")
@@ -944,7 +974,7 @@ mod tests {
     use std::collections::HashMap;
     use std::path::Path;
 
-    use domain::{Achsenwert, Herkunft, PruefTiefe};
+    use domain::{Achsenwert, Herkunft, Konfession, PruefTiefe, Rentenart};
     use serde_json::json;
 
     use super::{
@@ -1197,7 +1227,7 @@ mod tests {
                 &[""]
             };
             for i in suffixe {
-                for (art, _) in cfg.kz {
+                for (art, _) in cfg.kz.paare() {
                     for w in werte {
                         let snapshot = Felder::from([
                             (format!("{}{i}", cfg.feld), feld(json!(w))),
@@ -1224,5 +1254,196 @@ mod tests {
             "0 in {} Faellen durchgelassen, obwohl der XSD-Typ sie verbietet: {durch:?}",
             durch.len()
         );
+    }
+
+    /// § 32d Abs. 6 S. 4 EStG (`est_mapping.py:1008-1012`): der Guenstigerpruefungs-Antrag steht
+    /// nur bei bestaetigter Zusammenveranlagung auch in `person_b`. Python vergleicht
+    /// `veranl.get("wert") == "zusammen"`: nur genau dieser Text, kein anderer Typ.
+    #[test]
+    fn antrag_spiegelt_nur_bei_bestaetigter_zusammenveranlagung() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let kz = index["kap_antrag_guenstigerpruefung"]
+            .elster_kz
+            .as_deref()
+            .unwrap();
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
+            wert: wert.into(),
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let gespiegelt = |veranlagung: Option<(Value, Zustand)>| {
+            let mut felder = Felder::from([(
+                "kap_antrag_guenstigerpruefung".to_owned(),
+                feld(json!(true), Zustand::Bestaetigt),
+            )]);
+            if let Some((w, z)) = veranlagung {
+                felder.insert("veranlagung".to_owned(), feld(w, z));
+            }
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            assert!(d.deklaration.contains_key(kz), "{:?}", d.deklaration);
+            match d.person_b.get(kz) {
+                Some(w) => {
+                    assert_eq!(Some(w), d.deklaration.get(kz));
+                    true
+                }
+                None => false,
+            }
+        };
+        assert!(gespiegelt(Some((json!("zusammen"), Zustand::Bestaetigt))));
+        for (w, z) in [
+            (json!("zusammen"), Zustand::Vorlaeufig),
+            (json!("einzel"), Zustand::Bestaetigt),
+            (json!("Zusammen"), Zustand::Bestaetigt),
+            (json!("zusammen "), Zustand::Bestaetigt),
+            (Value::Null, Zustand::Bestaetigt),
+            (json!(["zusammen"]), Zustand::Bestaetigt),
+            (json!({"wert": "zusammen"}), Zustand::Bestaetigt),
+        ] {
+            assert!(!gespiegelt(Some((w.clone(), z))), "{w} {z:?}");
+        }
+        assert!(!gespiegelt(None));
+    }
+
+    /// Python `dict.get(wert)` an allen drei Aufrufstellen der Enum-Felder: Konfession (`feld`),
+    /// Rentenart als Instanz (`instanz_feld`) und beim Partner (`verzweigung`). Drei
+    /// Nicht-Treffer bleiben getrennt: Text ohne Schluessel und Null/Bool/Zahl geben keinen Code,
+    /// Liste und Objekt sind `TypeError` (nicht hashbar).
+    #[test]
+    fn enum_felder_schlagen_nach_wie_python_dict_get() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: &Value| SnapshotFeld {
+            wert: wert.clone().into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let lauf = |paare: &[(&str, Value)]| {
+            let felder: Felder = paare
+                .iter()
+                .map(|(f, w)| ((*f).to_owned(), feld(w)))
+                .collect();
+            deklariere(&felder, &index, 2025, None)
+        };
+        let rente = |art: &Value| {
+            [
+                ("rentner_jahresrente__1", json!(1_200_000)),
+                ("rentner_renten_art__1", art.clone()),
+            ]
+        };
+        let partner = |art: &Value| {
+            [
+                ("rentner_jahresrente_partner", json!(1_200_000)),
+                ("rentner_renten_art_partner", art.clone()),
+            ]
+        };
+
+        for (wert, code) in [
+            ("keine", Some("11")),
+            ("evangelisch", Some("02")),
+            ("roemisch-katholisch", Some("03")),
+            ("andere", None),
+            ("Evangelisch", None),
+        ] {
+            let d = lauf(&[("kist_konfession", json!(wert))]).unwrap();
+            assert_eq!(
+                d.deklaration.get("E0100402"),
+                code.map(|c| json!(c)).as_ref(),
+                "{wert}"
+            );
+        }
+        for (art, kz) in [
+            ("gesetzliche_rente", Some("E1800301")),
+            ("berufsstaendische_versorgung", Some("E1800301")),
+            ("private_basisrente", Some("E1800301")),
+            ("private_leibrente", Some("E1801601")),
+            ("sonstige_leibrente", Some("E1803102")),
+            ("andere", None),
+        ] {
+            let kz: Vec<&str> = kz.into_iter().collect();
+            let d = lauf(&rente(&json!(art))).unwrap();
+            let inst: Vec<&String> = d
+                .anlage_instanzen
+                .iter()
+                .flat_map(|(_, ii)| ii)
+                .flat_map(|i| i.felder.keys())
+                .collect();
+            assert_eq!(inst, kz, "Instanz {art}");
+            let d = lauf(&partner(&json!(art))).unwrap();
+            assert_eq!(d.person_b.keys().collect::<Vec<_>>(), kz, "Partner {art}");
+        }
+        for (wert, typ_fehler) in [
+            (Value::Null, false),
+            (json!(true), false),
+            (json!(3), false),
+            (json!(["keine"]), true),
+            (json!({"gesetzliche_rente": 1}), true),
+        ] {
+            for paare in [
+                vec![("kist_konfession", wert.clone())],
+                rente(&wert).to_vec(),
+                partner(&wert).to_vec(),
+            ] {
+                let feld_id = paare[0].0;
+                match lauf(&paare) {
+                    Err(e) => assert!(
+                        typ_fehler && e.python_klasse() == "TypeError",
+                        "{feld_id} {wert}: {e}"
+                    ),
+                    Ok(d) => {
+                        assert!(!typ_fehler, "{feld_id} {wert}: kein TypeError");
+                        assert!(
+                            d.nicht_deklariert.iter().any(|e| e.feld_id == feld_id),
+                            "{feld_id} {wert}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /// Die Domain-Enums sind genau die `enum_werte` der Bindung, in deren Reihenfolge, fuer
+    /// Person A und den Partner. `ArtKz::paare` und damit die Kz-Prueflinge folgen dieser Folge.
+    #[test]
+    fn enum_typen_sind_die_bindungswerte() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let werte = |f: &str| index[f].enum_werte.clone().unwrap();
+        for f in ["kist_konfession", "kist_konfession_partner"] {
+            assert_eq!(werte(f), Konfession::ALLE.map(Konfession::als_str), "{f}");
+        }
+        for f in ["rentner_renten_art", "rentner_renten_art_partner"] {
+            assert_eq!(werte(f), Rentenart::ALLE.map(Rentenart::als_str), "{f}");
+        }
     }
 }

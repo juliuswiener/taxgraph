@@ -10,7 +10,7 @@
 //! fuer jede dieser vier Regeln haette denselben Effekt bei deutlich mehr Code gehabt.
 use std::path::{Path, PathBuf};
 
-use domain::Feldtyp;
+use domain::{Feldtyp, Kz};
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -286,12 +286,9 @@ impl Bindung {
     }
 }
 
-/// `^E[0-9]{7}$`, ohne Regex-Abhaengigkeit.
+/// `^E[0-9]{7}$`; die Regel steht in [`Kz::ist_gueltig`].
 fn ist_gueltige_elster_kz(s: &str) -> bool {
-    match s.as_bytes() {
-        [b'E', rest @ ..] => rest.len() == 7 && rest.iter().all(u8::is_ascii_digit),
-        _ => false,
-    }
+    Kz::ist_gueltig(s)
 }
 
 /// Slot/Geltungsbedingung einer Scheiben-Regel ohne Bindung, mit Grund (`$defs/luecke`).

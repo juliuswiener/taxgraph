@@ -1,6 +1,8 @@
 //! Transform-Tabellen der Deklaration (`est_mapping.py:214-517`). Die Begruendung je Eintrag
 //! steht im Python-Original an derselben Stelle; hier nur, was den Port betrifft.
 
+use domain::{Konfession, Rentenart};
+
 /// Kz, die jede Deklaration unbedingt setzt (`Art_Erkl` E0100001, Julius-Entscheidung
 /// 2026-08-10: das Produkt erzeugt nur Einkommensteuererklaerungen).
 pub const KONSTANTE_KZ: &[&str] = &["E0100001"];
@@ -39,23 +41,49 @@ pub(crate) const P23_GEWINN_KZ: &[(&str, &str)] =
 pub(crate) struct Verzweigung {
     pub feld: &'static str,
     pub art_feld: &'static str,
-    pub kz: &'static [(&'static str, &'static str)],
+    pub kz: ArtKz,
 }
 
-const RENTE_WERT: &[(&str, &str)] = &[
-    ("gesetzliche_rente", "E1800301"),
-    ("berufsstaendische_versorgung", "E1800301"),
-    ("private_basisrente", "E1800301"),
-    ("private_leibrente", "E1801601"),
-    ("sonstige_leibrente", "E1803102"),
-];
-const RENTE_BEGINN: &[(&str, &str)] = &[
-    ("gesetzliche_rente", "E1800501"),
-    ("berufsstaendische_versorgung", "E1800501"),
-    ("private_basisrente", "E1800501"),
-    ("private_leibrente", "E1801701"),
-    ("sonstige_leibrente", "E1803202"),
-];
+/// Die Kz je Art-Wert. Die Rentenart ist ein Domain-Enum; die uebrigen Art-Felder bleiben
+/// Text-Tabellen (`REWRITE_PLAN` §7, 9b-B: `Lage<T>` nur fuer Veranlagung, Konfession, Bundesland
+/// und Rentenart).
+#[derive(Clone, Copy)]
+pub(crate) enum ArtKz {
+    Rente(fn(Rentenart) -> &'static str),
+    Text(&'static [(&'static str, &'static str)]),
+}
+
+impl ArtKz {
+    /// Alle `(Art-Wert, Kz)`-Paare; die Rentenart in der Reihenfolge der Bindung.
+    pub(crate) fn paare(self) -> Vec<(&'static str, &'static str)> {
+        match self {
+            Self::Rente(kz) => Rentenart::ALLE
+                .into_iter()
+                .map(|r| (r.als_str(), kz(r)))
+                .collect(),
+            Self::Text(tabelle) => tabelle.to_vec(),
+        }
+    }
+}
+
+const fn rente_wert(art: Rentenart) -> &'static str {
+    match art {
+        Rentenart::GesetzlicheRente
+        | Rentenart::BerufsstaendischeVersorgung
+        | Rentenart::PrivateBasisrente => "E1800301",
+        Rentenart::PrivateLeibrente => "E1801601",
+        Rentenart::SonstigeLeibrente => "E1803102",
+    }
+}
+const fn rente_beginn(art: Rentenart) -> &'static str {
+    match art {
+        Rentenart::GesetzlicheRente
+        | Rentenart::BerufsstaendischeVersorgung
+        | Rentenart::PrivateBasisrente => "E1800501",
+        Rentenart::PrivateLeibrente => "E1801701",
+        Rentenart::SonstigeLeibrente => "E1803202",
+    }
+}
 const VERAEUSSERUNG: &[(&str, &str)] = &[
     ("gewerbe", "E0801301"),
     ("selbstaendig", "E0804501"),
@@ -82,22 +110,22 @@ pub(crate) const VERZWEIGUNG: &[Verzweigung] = &[
     Verzweigung {
         feld: "rentner_jahresrente",
         art_feld: "rentner_renten_art",
-        kz: RENTE_WERT,
+        kz: ArtKz::Rente(rente_wert),
     },
     Verzweigung {
         feld: "rentner_renten_beginn_jahr",
         art_feld: "rentner_renten_art",
-        kz: RENTE_BEGINN,
+        kz: ArtKz::Rente(rente_beginn),
     },
     Verzweigung {
         feld: "rentner_veraeusserungsgewinn",
         art_feld: "rentner_veraeusserungs_betriebsart",
-        kz: VERAEUSSERUNG,
+        kz: ArtKz::Text(VERAEUSSERUNG),
     },
     Verzweigung {
         feld: "p35c_massnahme_einzelbetrag",
         art_feld: "p35c_massnahme_art",
-        kz: &[
+        kz: ArtKz::Text(&[
             ("waende", "E0241001"),
             ("dach", "E0241101"),
             ("geschossdecken", "E0241201"),
@@ -107,27 +135,27 @@ pub(crate) const VERZWEIGUNG: &[Verzweigung] = &[
             ("heizung", "E0241501"),
             ("digital", "E0241601"),
             ("heizung_optimierung", "E0241701"),
-        ],
+        ]),
     },
     Verzweigung {
         feld: "einkuenfte_gewinn",
         art_feld: "gewinn_betriebsart",
-        kz: GEWINN,
+        kz: ArtKz::Text(GEWINN),
     },
     Verzweigung {
         feld: "gewinn_bezeichnung",
         art_feld: "gewinn_betriebsart",
-        kz: GEWINN_BEZEICHNUNG,
+        kz: ArtKz::Text(GEWINN_BEZEICHNUNG),
     },
     Verzweigung {
         feld: "basis_kv",
         art_feld: "versicherungsart",
-        kz: BASIS_KV,
+        kz: ArtKz::Text(BASIS_KV),
     },
     Verzweigung {
         feld: "basis_pv",
         art_feld: "versicherungsart",
-        kz: BASIS_PV,
+        kz: ArtKz::Text(BASIS_PV),
     },
 ];
 
@@ -136,37 +164,37 @@ pub(crate) const PARTNER_VERZWEIGUNG: &[Verzweigung] = &[
     Verzweigung {
         feld: "rentner_jahresrente_partner",
         art_feld: "rentner_renten_art_partner",
-        kz: RENTE_WERT,
+        kz: ArtKz::Rente(rente_wert),
     },
     Verzweigung {
         feld: "rentner_renten_beginn_jahr_partner",
         art_feld: "rentner_renten_art_partner",
-        kz: RENTE_BEGINN,
+        kz: ArtKz::Rente(rente_beginn),
     },
     Verzweigung {
         feld: "einkuenfte_gewinn_partner",
         art_feld: "gewinn_betriebsart_partner",
-        kz: GEWINN,
+        kz: ArtKz::Text(GEWINN),
     },
     Verzweigung {
         feld: "gewinn_bezeichnung_partner",
         art_feld: "gewinn_betriebsart_partner",
-        kz: GEWINN_BEZEICHNUNG,
+        kz: ArtKz::Text(GEWINN_BEZEICHNUNG),
     },
     Verzweigung {
         feld: "rentner_veraeusserungsgewinn_partner",
         art_feld: "rentner_veraeusserungs_betriebsart_partner",
-        kz: VERAEUSSERUNG,
+        kz: ArtKz::Text(VERAEUSSERUNG),
     },
     Verzweigung {
         feld: "basis_kv_partner",
         art_feld: "versicherungsart_partner",
-        kz: BASIS_KV,
+        kz: ArtKz::Text(BASIS_KV),
     },
     Verzweigung {
         feld: "basis_pv_partner",
         art_feld: "versicherungsart_partner",
-        kz: BASIS_PV,
+        kz: ArtKz::Text(BASIS_PV),
     },
 ];
 
@@ -269,21 +297,24 @@ pub(crate) const PFLICHTFELDER: &[(PflichtBedingung, &str, &[&str])] = &[
 pub(crate) struct Wertekodierung {
     pub feld: &'static str,
     pub kz: &'static str,
-    pub code: &'static [(&'static str, &'static str)],
+    pub code: fn(Konfession) -> Option<&'static str>,
     pub hinweis_unbekannt: &'static str,
 }
 
-const KONFESSION_CODE: &[(&str, &str)] = &[
-    ("keine", "11"),
-    ("evangelisch", "02"),
-    ("roemisch-katholisch", "03"),
-];
+const fn konfession_code(k: Konfession) -> Option<&'static str> {
+    match k {
+        Konfession::Keine => Some("11"),
+        Konfession::Evangelisch => Some("02"),
+        Konfession::RoemischKatholisch => Some("03"),
+        Konfession::Andere => None,
+    }
+}
 
 pub(crate) const WERTEKODIERUNG: &[Wertekodierung] = &[
     Wertekodierung {
         feld: "kist_konfession",
         kz: "E0100402",
-        code: KONFESSION_CODE,
+        code: konfession_code,
         hinweis_unbekannt: "Ihre Konfession laesst sich nicht automatisch dem amtlichen \
 Religionsschluessel zuordnen. Der amtliche Schluessel unterscheidet rund zwanzig einzelne \
 Koerperschaften, viele davon regional (etwa juedische Gemeinden je nach Bundesland). Bitte tragen Sie \
@@ -293,7 +324,7 @@ Uebrige Ihrer Erklaerung bleibt davon unberuehrt.",
     Wertekodierung {
         feld: "kist_konfession_partner",
         kz: "E0101002",
-        code: KONFESSION_CODE,
+        code: konfession_code,
         hinweis_unbekannt: "Die Konfession Ihres Ehegatten laesst sich nicht automatisch dem amtlichen \
 Religionsschluessel zuordnen (rund zwanzig Koerperschaften, viele regional). Bitte in Mein ELSTER \
 nachtragen oder eine der angebotenen waehlen, falls sie zutrifft. Alles Uebrige Ihrer Erklaerung bleibt \

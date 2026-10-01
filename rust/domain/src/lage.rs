@@ -6,9 +6,10 @@
 //! [`Lage::Abweichend`] lesbar, statt die Datei unladbar zu machen. Die Schreibpruefung
 //! (`store.py:167-190`, `_typ_konform`) bleibt davon unberuehrt.
 //!
-//! Konstruktoren gibt es fuer [`Veranlagung`] und [`Cent`]. Konfession, Bundesland und Rentenart
-//! haben noch kein Enum in `domain`; Text-Felder bekommen kein `Lage` (Laden prueft kein `muster`).
-use crate::{Cent, PyWert, Veranlagung};
+//! Konstruktoren gibt es fuer [`Veranlagung`], [`Konfession`], [`Rentenart`] und [`Cent`].
+//! Bundesland hat noch kein Enum in `domain`; Text-Felder bekommen kein `Lage` (Laden prueft kein
+//! `muster`).
+use crate::{Cent, Konfession, PyWert, Rentenart, Veranlagung};
 
 /// Ein Feld, gelesen gegen seinen Bindungstyp `T`.
 #[derive(Debug, Clone, Copy)]
@@ -55,6 +56,46 @@ impl<'a> Lage<'a, Veranlagung> {
     }
 }
 
+impl<'a> Lage<'a, Konfession> {
+    /// Bindung `typ: enum` mit den vier Werten von [`Konfession::ALLE`]; exakter Textvergleich
+    /// `wert in enum_werte` (`store.py:190`).
+    ///
+    /// ```
+    /// use domain::{Konfession, Lage, PyWert};
+    /// let w = PyWert::Text("roemisch-katholisch".into());
+    /// assert!(matches!(Lage::konfession(Some(&w)), Lage::Gueltig(Konfession::RoemischKatholisch)));
+    /// let w = PyWert::Text("Evangelisch".into());
+    /// assert!(matches!(Lage::konfession(Some(&w)), Lage::Abweichend(_)));
+    /// ```
+    #[must_use]
+    pub fn konfession(wert: Option<&'a PyWert>) -> Self {
+        Self::aus(wert, |w| match w {
+            PyWert::Text(s) => Konfession::ALLE.into_iter().find(|k| k.als_str() == s),
+            _ => None,
+        })
+    }
+}
+
+impl<'a> Lage<'a, Rentenart> {
+    /// Bindung `typ: enum` mit den fuenf Werten von [`Rentenart::ALLE`]; exakter Textvergleich
+    /// `wert in enum_werte` (`store.py:190`).
+    ///
+    /// ```
+    /// use domain::{Lage, PyWert, Rentenart};
+    /// let w = PyWert::Text("private_leibrente".into());
+    /// assert!(matches!(Lage::rentenart(Some(&w)), Lage::Gueltig(Rentenart::PrivateLeibrente)));
+    /// let w = PyWert::Liste(vec![w]);
+    /// assert!(matches!(Lage::rentenart(Some(&w)), Lage::Abweichend(_)));
+    /// ```
+    #[must_use]
+    pub fn rentenart(wert: Option<&'a PyWert>) -> Self {
+        Self::aus(wert, |w| match w {
+            PyWert::Text(s) => Rentenart::ALLE.into_iter().find(|r| r.als_str() == s),
+            _ => None,
+        })
+    }
+}
+
 impl<'a> Lage<'a, Cent> {
     /// Bindung `typ: cent`: Python `isinstance(wert, int) and not isinstance(wert, bool)`
     /// (`store.py:174`). Rust-Grenze: `Cent` ist `i64`. Eine Ganzzahl ueber `i64::MAX`
@@ -79,7 +120,7 @@ impl<'a> Lage<'a, Cent> {
 #[cfg(test)]
 mod tests {
     use super::Lage;
-    use crate::{Cent, PyWert, Veranlagung};
+    use crate::{Cent, Konfession, PyWert, Rentenart, Veranlagung};
 
     /// `_typ_konform(w, "enum", ["einzel", "zusammen"])`, gemessen 3.12.9 und 3.14.7: `True` nur
     /// fuer `"einzel"` und `"zusammen"`; `False` fuer jeden Wert der Schleife unten.
@@ -126,6 +167,46 @@ mod tests {
             PyWert::Text("1500".into()),
         ] {
             assert!(matches!(Lage::cent(Some(&w)), Lage::Abweichend(_)), "{w:?}");
+        }
+    }
+
+    /// `wert in enum_werte` (`store.py:190`): jeder Bindungswert ist `Gueltig` als genau sein
+    /// Enum-Wert, jede Abwandlung und jeder Nicht-Text ist `Abweichend`.
+    #[test]
+    fn konfession_und_rentenart_nur_exakter_text() {
+        for k in Konfession::ALLE {
+            let w = PyWert::Text(k.als_str().into());
+            assert!(
+                matches!(Lage::konfession(Some(&w)), Lage::Gueltig(g) if g == k),
+                "{k:?}"
+            );
+        }
+        for r in Rentenart::ALLE {
+            let w = PyWert::Text(r.als_str().into());
+            assert!(
+                matches!(Lage::rentenart(Some(&w)), Lage::Gueltig(g) if g == r),
+                "{r:?}"
+            );
+        }
+        assert!(matches!(Lage::konfession(None), Lage::Fehlt));
+        assert!(matches!(Lage::rentenart(Some(&PyWert::Null)), Lage::Null));
+        for w in [
+            PyWert::Text("Evangelisch".into()),
+            PyWert::Text("roemisch_katholisch".into()),
+            PyWert::Text("gesetzliche_rente ".into()),
+            PyWert::Text("leibrente".into()),
+            PyWert::Bool(true),
+            PyWert::Ganz(3),
+            PyWert::Liste(vec![PyWert::Text("keine".into())]),
+        ] {
+            assert!(
+                matches!(Lage::konfession(Some(&w)), Lage::Abweichend(_)),
+                "{w:?}"
+            );
+            assert!(
+                matches!(Lage::rentenart(Some(&w)), Lage::Abweichend(_)),
+                "{w:?}"
+            );
         }
     }
 }

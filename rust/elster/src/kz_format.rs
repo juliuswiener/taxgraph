@@ -8,7 +8,7 @@
 
 use std::collections::BTreeMap;
 
-use domain::{Cent, Euro, Feldtyp};
+use domain::{Cent, Euro, Feldtyp, Kz};
 use serde_json::Value;
 
 use crate::py::{self, PyFehler};
@@ -158,7 +158,7 @@ pub enum KzFormat {
 /// ```
 #[must_use]
 pub fn kz_format(kz: &str) -> KzFormat {
-    if kz.starts_with("E60") || KOMMA_OHNE_E60_KZ.contains(&kz) {
+    if Kz::hat_e60_praefix(kz) || KOMMA_OHNE_E60_KZ.contains(&kz) {
         KzFormat::KommaCent
     } else if ABZUGS_KZ.contains(&kz) {
         KzFormat::EuroAufgerundet

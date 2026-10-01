@@ -131,7 +131,7 @@ pub fn zuruecklesen(result: &Deklaration, bindung: &BindungIndex<'_>) -> Rueckge
         .collect();
     let mut e_nach_verzweigung: BTreeMap<&str, &str> = BTreeMap::new();
     for v in VERZWEIGUNG {
-        for (_, kz) in v.kz {
+        for (_, kz) in v.kz.paare() {
             e_nach_verzweigung.insert(kz, v.feld);
         }
     }
