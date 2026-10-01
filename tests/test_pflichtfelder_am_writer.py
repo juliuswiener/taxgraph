@@ -59,7 +59,8 @@ def _deklariere(paare):
                         schreiber="ui:laie", signal={"signal_1": None, "signal_2": "x"},
                         ts="2026-10-01T00:00:00Z")
     felder, sid = ST.materialisiere(s)
-    return EM.deklariere(felder, TR.lade_bindung(), snapshot_id=sid), felder
+    return EM.deklariere(felder, TR.lade_bindung(), vz=s["veranlagungszeitraum"],
+                         snapshot_id=sid), felder
 
 
 def _schreibe(paare, tmp_path):

@@ -47,7 +47,9 @@ def _fall(req: dict) -> dict:
     if req.get("nur_bestaetigt"):
         felder = {k: v for k, v in felder.items() if v.get("zustand") == "bestaetigt"}
     out = {"snapshot_id": sid, "n_felder": len(felder)}
-    dekl = _fang(EM.deklariere, felder, bindung, snapshot_id=sid)
+    # vz wie haut/api.py aus dem Fall; fehlt es, wird es 0 und deklariere wirft (null_unzulaessig).
+    vz = int(store.get("veranlagungszeitraum") or 0)
+    dekl = _fang(EM.deklariere, felder, bindung, vz=vz, snapshot_id=sid)
     out["deklariere"] = dekl
     if "ok" in dekl:
         out["zuruecklesen"] = _fang(EM.zuruecklesen, dekl["ok"], bindung)
