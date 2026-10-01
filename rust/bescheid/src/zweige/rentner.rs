@@ -21,7 +21,8 @@ use crate::einkuenfte::{
     p35_summen, shared_dba_sonstige,
 };
 use crate::{
-    cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, py_wahr, wert, zahl_dezimal, Felder,
+    cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, feld_veranlagung, wert, zahl_dezimal,
+    Felder,
 };
 
 /// Rentenarten mit § 22 Nr. 1 S. 3 a aa (`AA_RENTEN_ARTEN`) bzw. bb (`BB_RENTEN_ARTEN`).
@@ -146,8 +147,8 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     let (f, vz, p) = (r.f(), r.vz(), r.p());
     let q = r.q();
     let mut renten = renten_summe(r)?;
-    let zusammen_feld = VeranlagungWert::aus(wert(f, "veranlagung")).zusammen();
-    if zusammen_feld && wert(f, "rentner_renten_art_partner").is_some_and(py_wahr) {
+    let zusammen_feld = VeranlagungWert::aus(feld_veranlagung(f)).zusammen();
+    if zusammen_feld && wert(f, "rentner_renten_art_partner").is_some_and(PyWert::truthy) {
         renten = add(renten, renten_partner(f, vz, p)?)?;
     }
     // § 33b Behinderten-/Pflege-/Hinterbliebenen-PB, Kind-Uebertragung, Ehegatte.
@@ -177,7 +178,7 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     )?;
     let ent = entlastung_24b(f)?;
     let (gewinn_partner, _mitu_partner, netto_vg_partner) = gewinn_partner_anteil(f)?;
-    let veranlagung = VeranlagungWert::aus_oder_einzel(wert(f, "veranlagung"));
+    let veranlagung = VeranlagungWert::aus_oder_einzel(feld_veranlagung(f));
     let zusammen = veranlagung.zusammen();
     let mut g = GesamtfallEingabe {
         einkuenfte_sonstige: renten,

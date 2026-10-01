@@ -19,7 +19,7 @@
 use std::cell::{Cell, RefCell};
 
 use bindung::Params;
-use domain::{Cent, Euro, PyWert, Veranlagung, Vz};
+use domain::{Cent, Euro, Lage, PyWert, Veranlagung, Vz};
 use engine::tarif::Veranlagung as TarifVeranlagung;
 use engine::zugriff::teil1::werbungskosten::{entfernungspauschale, EntfernungspauschaleEingabe};
 use intervall::{bescheid_via_slots, AchsenBindung, SlotFehler, Slots, Werte};
@@ -46,7 +46,7 @@ pub use snapshot::{Bestaetigt, Marke, Roh, Snapshot};
 use self::rechnen::R;
 pub(crate) use self::tarif::leerer_gesamtfall;
 use crate::abzuege::oepnv_eur;
-use crate::{py_int, py_wahr, BescheidFehler, BindungIndex, Felder, Instanzquelle};
+use crate::{py_int, BescheidFehler, BindungIndex, Felder, Instanzquelle};
 
 /// Die vier Quantitaeten, die `_bescheid_fn` rechnet (Python: String-Vergleich, alles andere `None`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -206,7 +206,7 @@ fn abziehbarer_betrag<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<Euro> {
     let arbeitstage = py_int(slot(slots, "arbeitstage")?)?;
     let km = py_int(slot(slots, "entfernung_km_roh")?)?;
     let oepnv = oepnv_eur(slots)?;
-    let kfz = py_wahr(slot(slots, "eigenes_oder_ueberlassenes_kfz")?);
+    let kfz = slot(slots, "eigenes_oder_ueberlassenes_kfz")?.truthy();
     Ok(entfernungspauschale(
         &EntfernungspauschaleEingabe {
             veranlagungszeitraum: r.vz(),
@@ -231,19 +231,21 @@ pub(crate) enum VeranlagungWert {
 }
 
 impl VeranlagungWert {
-    fn aus(v: Option<&PyWert>) -> Self {
-        match v {
-            Some(PyWert::Text(s)) if s == "zusammen" => Self::Zusammen,
-            Some(PyWert::Text(s)) if s == "einzel" => Self::Einzel,
-            _ => Self::Unbekannt,
+    /// `Fehlt`, `Null` und `Abweichend` sind `Unbekannt`, wie vor K7a der `_`-Arm.
+    fn aus(l: Lage<'_, Veranlagung>) -> Self {
+        match l {
+            Lage::Gueltig(Veranlagung::Einzel) => Self::Einzel,
+            Lage::Gueltig(Veranlagung::Zusammen) => Self::Zusammen,
+            Lage::Fehlt | Lage::Null | Lage::Abweichend(_) => Self::Unbekannt,
         }
     }
 
     /// Python `_b("veranlagung") or "einzel"`: ein falsy Wert ist "einzel".
-    fn aus_oder_einzel(v: Option<&PyWert>) -> Self {
-        match v {
-            Some(w) if crate::py_wahr(w) => Self::aus(v),
-            _ => Self::Einzel,
+    fn aus_oder_einzel(l: Lage<'_, Veranlagung>) -> Self {
+        match l {
+            Lage::Fehlt | Lage::Null => Self::Einzel,
+            Lage::Abweichend(w) if !w.truthy() => Self::Einzel,
+            Lage::Gueltig(_) | Lage::Abweichend(_) => Self::aus(l),
         }
     }
 
@@ -269,6 +271,46 @@ impl VeranlagungWert {
                 klasse: "ValueError",
                 was: "unknown veranlagung",
             }),
+        }
+    }
+}
+
+/// K7a: `VeranlagungWert` liest ueber `Lage`. Die Alt-Fassungen verglichen `PyWert` direkt und
+/// fingen den Rest mit `_ =>`; `Fehlt`, `Null` und `Abweichend` muessen dasselbe liefern.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::{pruefe, py};
+    use domain::{Lage, PyWert};
+    use proptest::prelude::*;
+
+    use super::VeranlagungWert;
+    use crate::aequivalenz::veranlagung_json;
+
+    fn aus_alt(v: Option<&PyWert>) -> VeranlagungWert {
+        match v {
+            Some(PyWert::Text(s)) if s == "zusammen" => VeranlagungWert::Zusammen,
+            Some(PyWert::Text(s)) if s == "einzel" => VeranlagungWert::Einzel,
+            _ => VeranlagungWert::Unbekannt,
+        }
+    }
+
+    fn aus_oder_einzel_alt(v: Option<&PyWert>) -> VeranlagungWert {
+        match v {
+            Some(w) if w.truthy() => aus_alt(v),
+            _ => VeranlagungWert::Einzel,
+        }
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        #[test]
+        fn veranlagung_wie_alt(v in veranlagung_json()) {
+            let w = v.as_ref().map(py);
+            let l = Lage::veranlagung(w.as_ref());
+            pruefe(&v, &aus_alt(w.as_ref()), &VeranlagungWert::aus(l), Vec::new, &[])?;
+            let (alt, neu) = (aus_oder_einzel_alt(w.as_ref()), VeranlagungWert::aus_oder_einzel(l));
+            pruefe(&v, &alt, &neu, Vec::new, &[])?;
         }
     }
 }

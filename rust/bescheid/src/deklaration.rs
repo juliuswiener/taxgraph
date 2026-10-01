@@ -31,7 +31,7 @@ pub use sperre::an_gesamt_sperrgrund;
 
 use ring_werte::berechnet_herkunft;
 
-use crate::{ist_positive_zahl, py_int, py_wahr, wert, BescheidFehler, BindungIndex, Felder};
+use crate::{ist_positive_zahl, py_int, wert, BescheidFehler, BindungIndex, Felder};
 
 /// Die Teile von `SCHEIBEN[<name>]`, die `bescheid_deklaration.py` liest.
 ///
@@ -239,7 +239,7 @@ impl Cfg {
 /// Text ist ein `ValueError`, eine Liste ein `TypeError` (Python-Ausnahme, kein Default).
 fn c2(f: &Felder, fid: &str) -> Result<i64, BescheidFehler> {
     match wert(f, fid) {
-        Some(v) if py_wahr(v) => py_int(v),
+        Some(v) if v.truthy() => py_int(v),
         _ => Ok(0),
     }
 }

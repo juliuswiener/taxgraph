@@ -40,8 +40,8 @@ use super::konstanten::{AN_GESAMT_FLAGS, AN_GESAMT_PARTNER, VOR_FELDER, VOR_PART
 use super::{c2, Cfg};
 use crate::abzuege::abs3_eligible;
 use crate::{
-    ist_false, ist_positive_zahl, ist_true, ist_zusammen, py_wahr, wert, zahl_dezimal,
-    BescheidFehler, Felder, Instanzquelle,
+    ist_false, ist_positive_zahl, ist_true, ist_zusammen, wert, zahl_dezimal, BescheidFehler,
+    Felder, Instanzquelle,
 };
 
 /// Ergebnis der Guard-Funktionen: `None` = keine Sperre.
@@ -226,7 +226,7 @@ fn oder_null_positiv(f: &Felder, fid: &str) -> Result<bool, BescheidFehler> {
     match wert(f, fid) {
         Some(v) if v.zahl_ohne_bool().is_some() => Ok(ist_positive_zahl(wert(f, fid))),
         Some(PyWert::Bool(b)) => Ok(*b),
-        Some(v) if py_wahr(v) => Err(BescheidFehler::Python {
+        Some(v) if v.truthy() => Err(BescheidFehler::Python {
             klasse: "TypeError",
             was: "'>' zwischen Text/Liste und int",
         }),

@@ -13,8 +13,7 @@ use super::rechnen::R;
 use super::slot;
 use crate::abzuege::oepnv_eur;
 use crate::{
-    cent_zu_euro, feld_int_oder_null, ist_true, py_int, py_wahr, summe, wert, BescheidFehler,
-    Felder,
+    cent_zu_euro, feld_int_oder_null, ist_true, py_int, summe, wert, BescheidFehler, Felder,
 };
 
 const DHF_KOSTEN: &str = "dhf_unterkunftskosten_monat";
@@ -83,7 +82,7 @@ pub(super) fn ep_eingabe(vz: Vz, slots: &Slots) -> R<EntfernungspauschaleEingabe
         veranlagungszeitraum: vz,
         entfernung_km_roh: entfernung,
         arbeitstage: py_int(arbeitstage)?,
-        eigenes_oder_ueberlassenes_kfz: py_wahr(kfz),
+        eigenes_oder_ueberlassenes_kfz: kfz.truthy(),
         oepnv_kosten_jahr: oepnv,
     })
 }
