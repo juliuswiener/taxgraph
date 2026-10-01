@@ -4,7 +4,9 @@
 //! keine zweite Implementierung.
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use domain::{Achsenwert, Feldzustand, Herkunft, HerkunftVektor, PruefTiefe, Schreiber, Zustand};
+use domain::{
+    Achsenwert, Feldzustand, Herkunft, HerkunftVektor, PruefTiefe, PyWert, Schreiber, Zustand,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::ableitung;
@@ -49,11 +51,30 @@ pub struct StoreDatei {
     /// `produkt/eingang/vorjahr_writer.py`), z. B. `{"verlustvortrag_bestand": {"wert": ...}}` —
     /// `schema.json` selbst laesst die Objektform bewusst offen ("Heute nur
     /// `verlustvortrag_bestand`", weitere Vergleichsgroessen sind absehbar), deshalb roh als
-    /// `serde_json::Value` statt vorab auf die heutige eine Unterstruktur festgelegt. Gemessen:
+    /// `PyWert` statt vorab auf die heutige eine Unterstruktur festgelegt. Gemessen:
     /// 0 der 192 realen Fallakten tragen sie (kein bisher verknuepfter Vorjahres-Fall im Bestand);
     /// Python KANN sie trotzdem schreiben — bisher in `StoreDatei` gefehlt.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vorjahr_referenz: Option<serde_json::Value>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "vorjahr_referenz_als_json"
+    )]
+    pub vorjahr_referenz: Option<PyWert>,
+}
+
+/// `vorjahr_referenz` ueber den Konvertierer `PyWert -> Value`, wie `Event` (s. dort): `PyWert`
+/// hat bewusst kein `Serialize`. Ein NaN/inf wird ein Serialisierungsfehler, nie ein `null`.
+#[allow(clippy::ref_option, reason = "`serialize_with` verlangt `&Feldtyp`")]
+fn vorjahr_referenz_als_json<S: serde::Serializer>(
+    wert: &Option<PyWert>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    use serde::ser::Error as _;
+    wert.as_ref()
+        .map(PyWert::zu_json)
+        .transpose()
+        .map_err(|e| S::Error::custom(e.to_string()))?
+        .serialize(serializer)
 }
 
 /// Das `veranlagungszeitraum`-Feld einer Store-Datei — RAW wie Python (`int(...)`, `store.py:79`),
@@ -149,11 +170,28 @@ impl From<i64> for Veranlagungsjahr {
 }
 
 /// Materialisierter Feldwert innerhalb eines Snapshots (`schema.json#/$defs/snapshot_feld`).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct SnapshotFeld {
-    pub wert: serde_json::Value,
+    pub wert: domain::PyWert,
     pub zustand: Zustand,
     pub herkunft: HerkunftVektor,
+}
+
+/// `SnapshotFeld` serialisiert wie [`crate::event::Event`] ueber den Konvertierer
+/// `PyWert -> Value` — NICHT ueber ein abgeleitetes `Serialize`. `snapshot_id` ist
+/// `sha256(canonical_json(felder))` und erbt die Schluesselsortierung von `serde_json::Map`
+/// (`BTreeMap`); ein direktes Serialisieren von `PyWert::Objekt` uebernaehme dessen
+/// Einfuegereihenfolge (Auflage 1/2, s. `Event`).
+impl Serialize for SnapshotFeld {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::Error as _;
+        serde_json::json!({
+            "wert": self.wert.zu_json().map_err(|e| S::Error::custom(e.to_string()))?,
+            "zustand": self.zustand,
+            "herkunft": self.herkunft,
+        })
+        .serialize(serializer)
+    }
 }
 
 /// ELSTER-Pruefergebnis-Klasse (`schema.json#/$defs/eric_befund.klasse`).
@@ -204,7 +242,7 @@ pub struct Snapshot {
 }
 
 /// Fehler aus [`Store::materialisiere`]/[`Store::erzeuge_snapshot`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum SnapshotFehler {
     /// `store.py:591`: `bis_event` steht nicht im Log.
     #[error("bis_event {0} nicht im Log")]
@@ -213,6 +251,11 @@ pub enum SnapshotFehler {
     /// `IndexError`. Hier ein expliziter Fehler statt eines Absturzes (fail-closed statt Panik).
     #[error("erzeuge_snapshot ohne bis_event auf einem leeren Log")]
     LeererLogOhneBisEvent,
+    /// K2-Auflage 3: ein Feldwert geht nicht nach JSON (NaN/+-inf, auch in `Liste`/`Objekt`).
+    /// KEIN stiller `null`-Fallback: der ergaebe eine `snapshot_id` ueber `null`, die zu keinem
+    /// Event passt — der Fehler waere dann ein falscher Hash, kein sichtbarer Ausfall.
+    #[error("Snapshot-Wert nicht darstellbar: {0}")]
+    WertNichtDarstellbar(String),
 }
 
 /// Der Sachverhalts-Store. `events`/`snapshots` liegen in [`StoreDatei`]; `aktiv` ist der private
@@ -319,6 +362,16 @@ impl Store {
         bindung: BindungNachschlag<'_>,
     ) -> Result<EventId, Abweisung> {
         Self::pruefe_auflage_a(neu)?;
+        // K2-Auflage 3: der Wert muss nach JSON gehen, sonst gibt es keinen `event_id`. Geprueft
+        // EINMAL hier, vor den Auflagen, die den Wert lesen: NaN/inf ist ein Fehler, kein stiller
+        // Wert, und die Fehlerklasse haengt nicht davon ab, welche Auflage ihn zuerst saehe.
+        neu.wert
+            .zu_json()
+            .map_err(|e| Abweisung::WertNichtDarstellbar {
+                feld_id: neu.feld_id.clone(),
+                grund: e.to_string(),
+            })?;
+        let wert = &neu.wert;
         if let Some(typ) = neu.schreiber.vorschlag_typ() {
             let katalog = katalog.ok_or_else(|| Abweisung::KatalogFehlt {
                 schreiber: neu.schreiber.to_string(),
@@ -330,9 +383,9 @@ impl Store {
                     typ,
                 });
             }
-            pruefe_magnitude(&neu.feld_id, &neu.wert, &neu.schreiber)?;
+            pruefe_magnitude(&neu.feld_id, wert, &neu.schreiber)?;
         }
-        pruefe_bindung(&neu.feld_id, &neu.wert, bindung)?;
+        pruefe_bindung(&neu.feld_id, wert, bindung)?;
         self.pruefe_auflage_b(neu)?;
 
         let signal =
@@ -350,11 +403,11 @@ impl Store {
             signal: Some(signal),
             ersetzt: neu.ersetzt,
         };
-        let event_id = self.push_neu(event);
+        let event_id = self.push_neu(event)?;
 
         let vz = self.datei.veranlagungszeitraum.als_i64_saettigend();
-        self.leite_ab(&neu.feld_id, &neu.wert, neu.zustand(), bindung);
-        self.rechne_ab(&neu.feld_id, &neu.wert, neu.zustand(), bindung, vz);
+        self.leite_ab(&neu.feld_id, wert, neu.zustand(), bindung)?;
+        self.rechne_ab(&neu.feld_id, wert, neu.zustand(), bindung, vz)?;
         Ok(event_id)
     }
 
@@ -425,59 +478,69 @@ impl Store {
     /// `store.py:393-444`, `_leite_ab`: eine bestaetigte Angabe oberhalb `beweist.ab` beantwortet
     /// die Existenzfrage `beweist.feld_id` gleich mit (nur wenn diese noch unbeantwortet ist,
     /// keine Kette — das abgeleitete Event durchlaeuft `leite_ab` nicht erneut).
+    /// # Errors
+    /// [`Abweisung::WertNichtDarstellbar`], wenn der abgeleitete `wert` nicht nach JSON geht.
     fn leite_ab(
         &mut self,
         feld_id: &str,
-        wert: &serde_json::Value,
+        wert: &PyWert,
         zustand: Zustand,
         bindung: BindungNachschlag<'_>,
-    ) {
+    ) -> Result<(), Abweisung> {
         if zustand != Zustand::Bestaetigt {
-            return;
+            return Ok(());
         }
         let Some(eintrag) = bindung.get(feld_id) else {
-            return;
+            return Ok(());
         };
         let Some(regel) = &eintrag.beweist else {
-            return;
+            return Ok(());
         };
-        let Some(zahl) = wert.as_f64() else { return };
+        let Some(zahl) = zahl_als_f64(wert) else {
+            return Ok(());
+        };
         if zahl < regel.ab.unwrap_or(1.0) {
-            return;
+            return Ok(());
         }
         if bindung.get(&regel.feld_id).is_none() || self.aktiv.contains_key(&regel.feld_id) {
-            return;
+            return Ok(());
         }
         let event = Event {
             event_id: EventId::aus_bytes([0; 32]),
             ts: jetzt_iso(),
             feld_id: regel.feld_id.clone(),
-            wert: regel.wert.clone(),
+            wert: regel.wert.clone().into(),
             zustand: Zustand::Bestaetigt,
             herkunft: berechnet_herkunft().into(),
             schreiber: Schreiber::Abgeleitet("beweist".to_string()),
             signal: Some(Signal {
                 signal_1: Some(None),
-                signal_2: Some(format!("beweist@{feld_id}={wert}")),
+                // Python `f"...={wert}"` ist `str(wert)`. Fuer `int` ist das derselbe Text wie
+                // vorher die JSON-Darstellung; fuer `float` folgt er jetzt Python (`1e+16`, wo
+                // JSON `1e16` schrieb) -- `signal_2` geht in den `event_id`.
+                signal_2: Some(format!("beweist@{feld_id}={}", wert.py_str())),
             }),
             ersetzt: None,
         };
-        self.push_neu(event);
+        self.push_neu(event)?;
+        Ok(())
     }
 
     /// `store.py:503-572`, `_rechne_ab`: Felder mit `ableitung`-Regel, deren Quelle ODER
     /// `und_feld` gerade bestaetigt wurde, werden berechnet (ZWEI Ausloeser). Liest `aktiv`
     /// EINMAL vor der Schleife (`store.py:529-531`: "keine Kette").
+    /// # Errors
+    /// [`Abweisung::WertNichtDarstellbar`], wenn ein abgeleiteter `wert` nicht nach JSON geht.
     fn rechne_ab(
         &mut self,
         feld_id: &str,
-        wert: &serde_json::Value,
+        wert: &PyWert,
         zustand: Zustand,
         bindung: BindungNachschlag<'_>,
         vz: i64,
-    ) {
+    ) -> Result<(), Abweisung> {
         if zustand != Zustand::Bestaetigt {
-            return;
+            return Ok(());
         }
         let aktiv_snapshot = self.aktiv.clone();
         let mut neue_events = Vec::new();
@@ -492,8 +555,8 @@ impl Store {
             if aktiv_snapshot.contains_key(ziel) {
                 continue;
             }
-            let quellwert: serde_json::Value = if regel.aus == feld_id {
-                wert.clone()
+            let quellwert = if regel.aus == feld_id {
+                wert
             } else {
                 let Some(qev) = aktiv_snapshot
                     .get(&regel.aus)
@@ -504,7 +567,7 @@ impl Store {
                 if qev.zustand != Zustand::Bestaetigt {
                     continue;
                 }
-                qev.wert.clone()
+                &qev.wert
             };
             if let Some(und_feld) = und {
                 let Some(ev) = aktiv_snapshot
@@ -513,21 +576,33 @@ impl Store {
                 else {
                     continue;
                 };
-                let leer = ev.wert.is_null()
-                    || ev.wert == serde_json::json!("")
-                    || ev.wert == serde_json::json!(false);
+                // ponytail: `store.py:577` prueft `wert in (None, "", False)` mit Pythons
+                // `==` — dort zaehlen auch `0` und `0.0` als leer, hier nicht. Die Divergenz
+                // ist aelter als K2 (sie stand schon auf `Value`) und wird im heutigen Bestand
+                // nicht ausgeloest. Upgrade: `PyWert::py_eq` gegen `Null`/`Text("")`/`Bool(false)`,
+                // nach einer Messung ueber die Nullwerte des Bestands (s. Risikokarte).
+                //
+                // ponytail: strukturelle Gleichheit auf `PyWert` ist Wire-Roundtrip, KEIN
+                // Wertvergleich — jede Wertpruefung gehoert ueber `py_eq`. Der strukturelle
+                // Match hier ist die bewusste, auftragsgemaesse Wahl (Divergenz nicht
+                // reparieren), kein Vorbild fuer neue Vergleiche.
+                let leer = match &ev.wert {
+                    domain::PyWert::Null | domain::PyWert::Bool(false) => true,
+                    domain::PyWert::Text(s) => s.is_empty(),
+                    _ => false,
+                };
                 if ev.zustand != Zustand::Bestaetigt || leer {
                     continue;
                 }
             }
-            let Some(neuer_wert) = ableitung::berechne(regel, &quellwert, vz) else {
+            let Some(neuer_wert) = ableitung::berechne(regel, quellwert, vz) else {
                 continue;
             };
             neue_events.push(Event {
                 event_id: EventId::aus_bytes([0; 32]),
                 ts: jetzt_iso(),
                 feld_id: ziel.to_string(),
-                wert: neuer_wert,
+                wert: neuer_wert.into(),
                 zustand: Zustand::Bestaetigt,
                 herkunft: berechnet_herkunft().into(),
                 schreiber: Schreiber::Abgeleitet("ableitung".to_string()),
@@ -539,15 +614,24 @@ impl Store {
             });
         }
         for event in neue_events {
-            self.push_neu(event);
+            self.push_neu(event)?;
         }
+        Ok(())
     }
 
     /// Berechnet den `event_id` und haengt an (Ableitungen und `append` teilen sich diesen einen
     /// Pfad, s. Modul-Dokumentation).
-    fn push_neu(&mut self, mut event: Event) -> EventId {
-        event.event_id = event.berechne_event_id();
-        self.push_geprueft(event)
+    /// # Errors
+    /// [`Abweisung::WertNichtDarstellbar`], wenn `event.wert` nicht nach JSON geht.
+    fn push_neu(&mut self, mut event: Event) -> Result<EventId, Abweisung> {
+        event.event_id =
+            event
+                .berechne_event_id()
+                .map_err(|e| Abweisung::WertNichtDarstellbar {
+                    feld_id: event.feld_id.clone(),
+                    grund: e.to_string(),
+                })?;
+        Ok(self.push_geprueft(event))
     }
 
     /// Haengt ein bereits geprueftes Event an und pflegt den `aktiv`-Index nach. PRIVAT: NUR
@@ -598,7 +682,7 @@ impl Store {
                 },
             );
         }
-        let sid = snapshot_id(&felder);
+        let sid = snapshot_id(&felder)?;
         Ok((felder, sid))
     }
 
@@ -656,46 +740,55 @@ fn baue_aktiv_index(events: &[Event]) -> HashMap<String, usize> {
 }
 
 /// `store.py:37-38`, `snapshot_id`: `sha256(canonical_json(felder))`.
-fn snapshot_id(felder: &BTreeMap<String, SnapshotFeld>) -> EventId {
-    // Kann nur an derselben (unerreichbaren) NaN-Float-Invariante scheitern wie `canonical_json`
-    // (s. `canonical.rs`-Moduldoku) -- `Value::Null` als total harmloser, nie erreichter Fallback.
-    let value = serde_json::to_value(felder).unwrap_or(serde_json::Value::Null);
-    EventId::von_json(&value)
+///
+/// # Errors
+/// [`SnapshotFehler::WertNichtDarstellbar`], wenn ein Feldwert nicht nach JSON geht. Der
+/// frueher hier stehende `unwrap_or(Value::Null)` waere nach der K2-Umstellung genau die
+/// stille Konvertierung, die Auflage 3 verbietet: er ergaebe eine `snapshot_id` ueber `null`.
+fn snapshot_id(felder: &BTreeMap<String, SnapshotFeld>) -> Result<EventId, SnapshotFehler> {
+    let value = serde_json::to_value(felder)
+        .map_err(|e| SnapshotFehler::WertNichtDarstellbar(e.to_string()))?;
+    Ok(EventId::von_json(&value))
 }
 
 /// Auflage T (Typ) + Auflage F (Format), `store.py:193-248`, `_pruefe_typ_konformitaet`.
 /// Unbekanntes `feld_id`: durchlassen, nicht raten (Team-Lead-Vorgabe).
+///
+/// Der Wert erscheint in der Meldung als `repr` wie in Python (`repr(wert)`, `{wert!r}`), nicht
+/// als JSON-Text: ein Text steht in einfachen Anfuehrungszeichen, `true` als `True`.
 fn pruefe_bindung(
     feld_id: &str,
-    wert: &serde_json::Value,
+    wert: &PyWert,
     bindung: BindungNachschlag<'_>,
 ) -> Result<(), Abweisung> {
     let Some(eintrag) = bindung.basis_eintrag(feld_id) else {
         return Ok(());
     };
-    if domain::Wert::aus_json(wert, eintrag.typ, eintrag.enum_werte.as_deref()).is_err() {
+    let text = match wert {
+        PyWert::Text(s) => Some(s.as_str()),
+        _ => None,
+    };
+    if domain::Wert::aus_pywert(wert, eintrag.typ, eintrag.enum_werte.as_deref()).is_err() {
         // Ein Wert mit Steuerzeichen bleibt aus der Meldung (422-detail an Nutzer und Log, PII);
         // der Ersatztext steht wortgleich in `store.py::_pruefe_typ_konformitaet`.
-        let steuerzeichen = wert.as_str().is_some_and(|s| !domain::nur_xml_zeichen(s));
+        let steuerzeichen = text.is_some_and(|s| !domain::nur_xml_zeichen(s));
         return Err(Abweisung::TypInkonform {
             feld_id: feld_id.to_string(),
             wert: if steuerzeichen {
                 "[Steuerzeichen im Text, Wert nicht geloggt]".to_string()
             } else {
-                wert.to_string()
+                wert.repr()
             },
             typ: eintrag.typ.als_str(),
         });
     }
-    if let Some(muster) = &eintrag.muster {
-        if let Some(s) = wert.as_str() {
-            if !passt_muster(muster, s) {
-                return Err(Abweisung::FormatInkonform {
-                    feld_id: feld_id.to_string(),
-                    wert: wert.to_string(),
-                    muster: muster.clone(),
-                });
-            }
+    if let (Some(muster), Some(s)) = (&eintrag.muster, text) {
+        if !passt_muster(muster, s) {
+            return Err(Abweisung::FormatInkonform {
+                feld_id: feld_id.to_string(),
+                wert: wert.repr(),
+                muster: muster.clone(),
+            });
         }
     }
     Ok(())
@@ -714,26 +807,40 @@ fn passt_muster(muster: &str, wert: &str) -> bool {
 /// Auflage F2/Magnitude (`store.py:341-358`, nur fuer Vorschlags-Schreiber): `abs(wert) >= 10^10`
 /// faengt eine vermutete EUR-statt-Cent-Verwechslung. Akzeptiert Zahl ODER numerischen String
 /// (LLM-Antworten liefern oft JSON-Strings); nicht-numerische Strings bleiben unangetastet.
-fn pruefe_magnitude(
-    feld_id: &str,
-    wert: &serde_json::Value,
-    schreiber: &Schreiber,
-) -> Result<(), Abweisung> {
+///
+/// ponytail: `trim().parse` liest weder `1_000` noch Nicht-ASCII-Ziffern, Pythons `float()` schon
+/// (gemessen: `"1_0000000000"` weist Python ab, hier laeuft es durch). Ausbau: `py_float` aus
+/// `eingang::kontoauszug` nach `domain` heben und hier rufen.
+fn pruefe_magnitude(feld_id: &str, wert: &PyWert, schreiber: &Schreiber) -> Result<(), Abweisung> {
     let zahl = match wert {
-        serde_json::Value::Number(n) => n.as_f64(),
-        serde_json::Value::String(s) => s.trim().parse::<f64>().ok(),
-        _ => None,
+        PyWert::Text(s) => s.trim().parse::<f64>().ok(),
+        _ => zahl_als_f64(wert),
     };
     if let Some(z) = zahl {
         if z.abs() >= 10_000_000_000.0 {
             return Err(Abweisung::Magnitude {
                 feld_id: feld_id.to_string(),
                 schreiber: schreiber.to_string(),
-                wert: wert.to_string(),
+                wert: wert.repr(),
             });
         }
     }
     Ok(())
+}
+
+/// Python `isinstance(wert, (int, float)) and not isinstance(wert, bool)` als `f64`: dieselbe
+/// Menge, die vorher `serde_json::Value::as_f64` durchliess (`Bool`/Text/`null` sind keine Zahl).
+#[allow(
+    clippy::cast_precision_loss,
+    reason = "wie `Value::as_f64`; die Schwellen (`beweist.ab`, 10^10) liegen weit unter 2^53"
+)]
+fn zahl_als_f64(wert: &PyWert) -> Option<f64> {
+    match *wert {
+        PyWert::Ganz(n) => Some(n as f64),
+        PyWert::GrossGanz(u) => Some(u as f64),
+        PyWert::Gleit(f) => Some(f),
+        _ => None,
+    }
 }
 
 /// `{herkunft: "berechnet", pruef_tiefe: ungeprueft, haftung: "nutzer"}` — Herkunft jeder
@@ -782,7 +889,7 @@ mod tests {
         let bindung = BindungNachschlag::neu(&map);
         let neu = |wert: i64| NeuesEvent {
             feld_id: "ep_arbeitstage".to_string(),
-            wert: json!(wert),
+            wert: json!(wert).into(),
             feldzustand: Feldzustand::Bestaetigt {
                 signal_2: domain::Signal2::new("klick").unwrap(),
             },
@@ -807,7 +914,7 @@ mod tests {
         let bindung = BindungNachschlag::neu(&map);
         let neu = |wert: i64, ersetzt: Option<crate::EventId>| NeuesEvent {
             feld_id: "ep_arbeitstage".to_string(),
-            wert: json!(wert),
+            wert: json!(wert).into(),
             feldzustand: Feldzustand::Bestaetigt {
                 signal_2: Signal2::new("klick").unwrap(),
             },
@@ -829,7 +936,7 @@ mod tests {
         let bindung = BindungNachschlag::neu(&map);
         let neu = NeuesEvent {
             feld_id: "ep_arbeitstage".to_string(),
-            wert: json!(220),
+            wert: json!(220).into(),
             feldzustand: Feldzustand::Vorlaeufig,
             herkunft: Herkunft {
                 herkunft: Achsenwert::new("llm_vorschlag").unwrap(),
@@ -853,7 +960,7 @@ mod tests {
         let katalog = crate::Katalog::aus_bindungen(std::iter::empty());
         let neu = NeuesEvent {
             feld_id: "kap_zinsen".to_string(),
-            wert: json!(12_000_000_000i64),
+            wert: json!(12_000_000_000i64).into(),
             feldzustand: Feldzustand::Vorlaeufig,
             herkunft: Herkunft {
                 herkunft: Achsenwert::new("berechnet").unwrap(),
@@ -874,6 +981,26 @@ mod tests {
         ));
     }
 
+    /// E2 (K2): F2 liest numerischen Text wie Python (`store.py:396-402`: `float(wert)`, bei
+    /// `ValueError` durchgelassen). Die Inventur nahm `TypeError` an und riet, die Kulanz zu
+    /// entfernen; dann liefe `"12000000000"` an F2 vorbei.
+    #[test]
+    fn magnitude_liest_numerischen_text_wie_python() {
+        let schreiber = Schreiber::Berechnet("maps".to_string());
+        let pruefe = |s: &str| {
+            super::pruefe_magnitude("kap_zinsen", &domain::PyWert::Text(s.into()), &schreiber)
+        };
+        for zu_gross in [" 12000000000\n", "-1e10"] {
+            assert!(
+                matches!(pruefe(zu_gross), Err(crate::Abweisung::Magnitude { .. })),
+                "{zu_gross:?}"
+            );
+        }
+        for durch in ["9999999999", "DE89370400440532013000"] {
+            assert!(pruefe(durch).is_ok(), "{durch:?}");
+        }
+    }
+
     #[test]
     fn text_mit_steuerzeichen_wird_abgewiesen_auflage_t() {
         // Ticket elster-xml-steuerzeichen-im-textwert: echte Bindung, typ=text.
@@ -888,7 +1015,7 @@ mod tests {
         let mut store = Store::leer(2025, None);
         let neu = NeuesEvent {
             feld_id: "stammdaten_nachname".to_string(),
-            wert: json!("Maier\u{0}"),
+            wert: json!("Maier\u{0}").into(),
             feldzustand: Feldzustand::Bestaetigt {
                 signal_2: Signal2::new("klick").unwrap(),
             },
@@ -924,7 +1051,7 @@ mod tests {
     fn mensch_bestaetigt(feld_id: &str, wert: &str) -> NeuesEvent {
         NeuesEvent {
             feld_id: feld_id.to_string(),
-            wert: json!(wert),
+            wert: json!(wert).into(),
             feldzustand: Feldzustand::Bestaetigt {
                 signal_2: Signal2::new("klick").unwrap(),
             },
@@ -995,7 +1122,7 @@ mod tests {
                 let vor = store.events().len();
                 let neu = NeuesEvent {
                     feld_id: feld_id.to_string(),
-                    wert: json!(wert),
+                    wert: json!(wert).into(),
                     feldzustand: Feldzustand::Vorlaeufig,
                     herkunft: mensch_herkunft(),
                     schreiber: Schreiber::Mensch("julius".to_string()),
@@ -1030,7 +1157,7 @@ mod tests {
         let irgendein_id = crate::EventId::von_json(&json!({"nie": "im log"}));
         let neu = NeuesEvent {
             feld_id: "ep_arbeitstage".to_string(),
-            wert: json!(220),
+            wert: json!(220).into(),
             feldzustand: Feldzustand::Bestaetigt {
                 signal_2: Signal2::new("klick").unwrap(),
             },
@@ -1042,5 +1169,42 @@ mod tests {
         };
         let fehler = store.append(&neu, None, bindung).unwrap_err();
         assert!(matches!(fehler, crate::Abweisung::ErsetztZielUnbekannt(_)));
+    }
+
+    /// K2-Auflage 3: NaN/inf im `wert` (auch verschachtelt) und in `signal_1` weist `append` ab,
+    /// statt ein stilles `null` zu schreiben; der Log bleibt leer.
+    #[test]
+    fn nicht_darstellbarer_wert_wird_abgewiesen_k2_auflage_3() {
+        use domain::PyWert;
+        let mut store = Store::leer(2025, None);
+        let map = leere_bindung();
+        let bindung = BindungNachschlag::neu(&map);
+        let neu = |wert: PyWert, signal_1: Option<PyWert>| NeuesEvent {
+            feld_id: "ep_arbeitstage".to_string(),
+            wert,
+            feldzustand: Feldzustand::Bestaetigt {
+                signal_2: Signal2::new("klick").unwrap(),
+            },
+            herkunft: mensch_herkunft(),
+            schreiber: Schreiber::Mensch("julius".to_string()),
+            signal_1,
+            ersetzt: None,
+            ts: Some("2026-01-01T00:00:00+00:00".to_string()),
+        };
+        let nan = || PyWert::Gleit(f64::NAN);
+        let liste = PyWert::Liste(vec![PyWert::Ganz(1), PyWert::Gleit(f64::INFINITY)]);
+        let objekt = PyWert::Objekt(vec![("quell_wert".to_string(), nan())]);
+        for fall in [
+            neu(nan(), None),
+            neu(liste, None),
+            neu(PyWert::Ganz(220), Some(objekt)),
+        ] {
+            let fehler = store.append(&fall, None, bindung).unwrap_err();
+            assert!(
+                matches!(fehler, crate::Abweisung::WertNichtDarstellbar { .. }),
+                "{fehler:?}"
+            );
+        }
+        assert!(store.events().is_empty());
     }
 }

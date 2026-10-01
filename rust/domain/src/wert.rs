@@ -6,6 +6,8 @@
 //! Laufzeit-Prüfung mehr, die man vergessen kann.
 use serde::{Deserialize, Serialize};
 
+use crate::PyWert;
+
 /// Die Bindungs-Typmenge (`store.py:164`: `_TYP_ORD`), in derselben Reihenfolge.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -89,33 +91,40 @@ pub fn nur_xml_zeichen(s: &str) -> bool {
 }
 
 impl Wert {
-    /// Parst einen JSON-Wert gegen einen Bindungstyp (Auflage T). `enum_werte` ist nur bei
-    /// `typ == Enum` relevant.
+    /// Parst einen gespeicherten Wert gegen einen Bindungstyp (Auflage T). `enum_werte` ist nur
+    /// bei `typ == Enum` relevant.
     ///
     /// # Errors
-    /// [`WertFehler`], wenn der JSON-Wert nicht zum deklarierten Typ passt.
+    /// [`WertFehler`], wenn der Wert nicht zum deklarierten Typ passt.
     ///
     /// ```
-    /// use domain::{Feldtyp, Wert};
-    /// let v = Wert::aus_json(&serde_json::json!(1500), Feldtyp::Cent, None).unwrap();
+    /// use domain::{Feldtyp, PyWert, Wert};
+    /// let v = Wert::aus_pywert(&PyWert::Ganz(1500), Feldtyp::Cent, None).unwrap();
     /// assert_eq!(v, Wert::Cent(1500));
-    /// assert!(Wert::aus_json(&serde_json::json!("1500"), Feldtyp::Cent, None).is_err());
-    /// assert!(Wert::aus_json(&serde_json::json!(true), Feldtyp::Cent, None).is_err());
+    /// assert!(Wert::aus_pywert(&PyWert::Text("1500".into()), Feldtyp::Cent, None).is_err());
+    /// assert!(Wert::aus_pywert(&PyWert::Bool(true), Feldtyp::Cent, None).is_err());
     /// ```
-    pub fn aus_json(
-        wert: &serde_json::Value,
+    pub fn aus_pywert(
+        wert: &PyWert,
         typ: Feldtyp,
         enum_werte: Option<&[String]>,
     ) -> Result<Self, WertFehler> {
         let inkonform = || WertFehler::TypInkonform {
-            wert: wert.to_string(),
+            wert: wert.repr(),
             typ: typ.als_str(),
+        };
+        let text = match wert {
+            PyWert::Text(s) => Some(s.as_str()),
+            _ => None,
         };
         match typ {
             Feldtyp::Cent | Feldtyp::Int => {
-                // `bool` ist in JSON (anders als in Python) ein eigener `Value`-Fall -- kein
-                // expliziter Bool-Ausschluss noetig, `as_i64` liefert fuer `Value::Bool` `None`.
-                let n = wert.as_i64().ok_or_else(inkonform)?;
+                // Nur `Ganz`, wie vorher `as_i64` auf dem JSON-Wert: `Bool` ist ein eigener Fall
+                // (Pythons `isinstance(True, int)` greift nicht), `Gleit` ist auch als `1500.0`
+                // kein `int`, `GrossGanz` liegt ueber `i64::MAX`.
+                let PyWert::Ganz(n) = *wert else {
+                    return Err(inkonform());
+                };
                 // WERTELISTE auch auf Zahlen (2026-10-01). `enum_werte` galt bis dahin nur fuer
                 // `Feldtyp::Enum`; ein `int`-Feld MIT Liste war still wirkungslos -- die Bindung
                 // sagte eine Grenze zu, der Schreibpfad kannte sie nicht.
@@ -140,9 +149,12 @@ impl Wert {
                     Self::Int(n)
                 })
             }
-            Feldtyp::Bool => wert.as_bool().map(Self::Bool).ok_or_else(inkonform),
+            Feldtyp::Bool => match *wert {
+                PyWert::Bool(b) => Ok(Self::Bool(b)),
+                _ => Err(inkonform()),
+            },
             Feldtyp::Enum => {
-                let s = wert.as_str().ok_or_else(inkonform)?;
+                let s = text.ok_or_else(inkonform)?;
                 if enum_werte.is_some_and(|ws| ws.iter().any(|w| w == s)) {
                     Ok(Self::Enum(s.to_owned()))
                 } else {
@@ -150,15 +162,14 @@ impl Wert {
                 }
             }
             Feldtyp::Datum => {
-                let s = wert.as_str().ok_or_else(inkonform)?;
+                let s = text.ok_or_else(inkonform)?;
                 if ist_tt_mm_jjjj(s) {
                     Ok(Self::Datum(s.to_owned()))
                 } else {
                     Err(WertFehler::UngueltigesDatum(s.to_owned()))
                 }
             }
-            Feldtyp::Text => wert
-                .as_str()
+            Feldtyp::Text => text
                 // Leer nie: jeder Text-Kz-Typ im Schema verlangt mindestens ein Zeichen.
                 .filter(|s| !s.is_empty() && nur_xml_zeichen(s))
                 .map(|s| Self::Text(s.to_owned()))
@@ -176,18 +187,20 @@ mod tests {
     fn bool_wird_nicht_als_cent_durchgelassen() {
         // Die Python-Falle (`isinstance(True, int)`) existiert in JSON nicht, aber der Test
         // haelt die Parity trotzdem fest: `true`/`false` sind nie ein gueltiger cent/int-Wert.
-        assert!(Wert::aus_json(&json!(true), Feldtyp::Cent, None).is_err());
-        assert!(Wert::aus_json(&json!(false), Feldtyp::Int, None).is_err());
+        assert!(Wert::aus_pywert(&json!(true).into(), Feldtyp::Cent, None).is_err());
+        assert!(Wert::aus_pywert(&json!(false).into(), Feldtyp::Int, None).is_err());
     }
 
     #[test]
     fn enum_akzeptiert_nur_gelistete_werte() {
         let werte = vec!["ja".to_string(), "nein".to_string()];
         assert_eq!(
-            Wert::aus_json(&json!("ja"), Feldtyp::Enum, Some(&werte)).unwrap(),
+            Wert::aus_pywert(&json!("ja").into(), Feldtyp::Enum, Some(&werte)).unwrap(),
             Wert::Enum("ja".to_string())
         );
-        assert!(Wert::aus_json(&json!("vielleicht"), Feldtyp::Enum, Some(&werte)).is_err());
+        assert!(
+            Wert::aus_pywert(&json!("vielleicht").into(), Feldtyp::Enum, Some(&werte)).is_err()
+        );
     }
 
     #[test]
@@ -199,20 +212,20 @@ mod tests {
                                 "70", "75", "80", "85", "90", "95", "100"]
             .iter().map(ToString::to_string).collect();
         assert_eq!(
-            Wert::aus_json(&json!(45), Feldtyp::Int, Some(&gdb)).unwrap(),
+            Wert::aus_pywert(&json!(45).into(), Feldtyp::Int, Some(&gdb)).unwrap(),
             Wert::Int(45)
         );
         assert_eq!(
-            Wert::aus_json(&json!(0), Feldtyp::Int, Some(&gdb)).unwrap(),
+            Wert::aus_pywert(&json!(0).into(), Feldtyp::Int, Some(&gdb)).unwrap(),
             Wert::Int(0)
         );
         // Der Zwischenwert: ERiC wiese die GANZE Erklaerung ab ("The value '33' is not accepted
         // by the pattern", rc=610001002).
-        assert!(Wert::aus_json(&json!(33), Feldtyp::Int, Some(&gdb)).is_err());
-        assert!(Wert::aus_json(&json!(101), Feldtyp::Int, Some(&gdb)).is_err());
+        assert!(Wert::aus_pywert(&json!(33).into(), Feldtyp::Int, Some(&gdb)).is_err());
+        assert!(Wert::aus_pywert(&json!(101).into(), Feldtyp::Int, Some(&gdb)).is_err());
         // Der Textvergleich darf nicht auf die ZAHL hereinfallen: `"45"` ist ein JSON-String und
         // damit kein `int`, auch wenn die Liste ihn fuehrt.
-        assert!(Wert::aus_json(&json!("45"), Feldtyp::Int, Some(&gdb)).is_err());
+        assert!(Wert::aus_pywert(&json!("45").into(), Feldtyp::Int, Some(&gdb)).is_err());
     }
 
     #[test]
@@ -220,26 +233,26 @@ mod tests {
         // Kein `enum_werte`: die Liste ist eine ZUSAGE der Bindung, keine Vermutung. Alle
         // uebrigen Zahl-Felder (die grosse Mehrheit) bleiben unberuehrt.
         assert_eq!(
-            Wert::aus_json(&json!(33), Feldtyp::Int, None).unwrap(),
+            Wert::aus_pywert(&json!(33).into(), Feldtyp::Int, None).unwrap(),
             Wert::Int(33)
         );
         assert_eq!(
-            Wert::aus_json(&json!(33), Feldtyp::Int, Some(&[])).unwrap(),
+            Wert::aus_pywert(&json!(33).into(), Feldtyp::Int, Some(&[])).unwrap(),
             Wert::Int(33)
         );
     }
 
     #[test]
     fn datum_verlangt_tt_mm_jjjj_nicht_iso() {
-        assert!(Wert::aus_json(&json!("05.05.1955"), Feldtyp::Datum, None).is_ok());
-        assert!(Wert::aus_json(&json!("1955-05-05"), Feldtyp::Datum, None).is_err());
+        assert!(Wert::aus_pywert(&json!("05.05.1955").into(), Feldtyp::Datum, None).is_ok());
+        assert!(Wert::aus_pywert(&json!("1955-05-05").into(), Feldtyp::Datum, None).is_err());
     }
 
     #[test]
     fn text_ohne_xml_zeichen_wird_abgewiesen() {
         // Ticket elster-xml-steuerzeichen-im-textwert: NUL liegt ausserhalb der XML-1.0-Char-
         // Produktion und machte das ELSTER-XML kaputt.
-        assert!(Wert::aus_json(&json!("Maier"), Feldtyp::Text, None).is_ok());
-        assert!(Wert::aus_json(&json!("Maier\u{0}"), Feldtyp::Text, None).is_err());
+        assert!(Wert::aus_pywert(&json!("Maier").into(), Feldtyp::Text, None).is_ok());
+        assert!(Wert::aus_pywert(&json!("Maier\u{0}").into(), Feldtyp::Text, None).is_err());
     }
 }

@@ -25,7 +25,7 @@ use std::convert::Infallible;
 use std::sync::{Mutex, OnceLock};
 
 use bindung::{Bindung, SlotBeitrag};
-use domain::{Achsenwert, Cent, Euro, Feldtyp, Herkunft, PruefTiefe, Zustand};
+use domain::{Achsenwert, Cent, Euro, Feldtyp, Herkunft, PruefTiefe, PyWert, Zustand};
 use intervall::{
     bescheid_via_slots, intervall, AchsenBindung, IntervallErgebnis, IntervallFehler, SlotFehler,
     Spanne, Werte,
@@ -114,11 +114,11 @@ fn herkunft() -> Herkunft {
 
 // ------------------------------------------------------------------ synthetische Engine
 
-fn zahl(v: &Value) -> i128 {
+fn zahl(v: &PyWert) -> i128 {
     match v {
-        Value::Bool(b) => i128::from(*b),
-        Value::Number(n) => n.as_i64().map_or(0, i128::from),
-        Value::String(s) => i128::try_from(s.chars().count()).unwrap(),
+        PyWert::Bool(b) => i128::from(*b),
+        PyWert::Ganz(n) => i128::from(*n),
+        PyWert::Text(s) => i128::try_from(s.chars().count()).unwrap(),
         _ => 0,
     }
 }
@@ -127,7 +127,7 @@ fn gewicht(name: &str) -> i128 {
     i128::from(name.bytes().map(u64::from).sum::<u64>() % 7) - 3
 }
 
-fn synth<'a>(paare: impl Iterator<Item = (&'a str, &'a Value)>) -> i64 {
+fn synth<'a>(paare: impl Iterator<Item = (&'a str, &'a PyWert)>) -> i64 {
     i64::try_from(paare.map(|(k, v)| gewicht(k) * zahl(v)).sum::<i128>()).expect("synth in i64")
 }
 
@@ -170,14 +170,20 @@ fn slots_json(r: Result<Cent, SlotFehler<Infallible>>) -> Value {
 
 /// `bescheid_via_slots` für beide Einheiten, Rust-Seite.
 fn via_slots_rust(bindung: &[AchsenBindung], werte: &Werte, quantitaet: &str) -> Value {
+    // `Slots` ist `BTreeMap<String, PyWert>`; `synth` will `&str`, also entpackt der Aufruf.
+    let paare = |s: &intervall::Slots| -> Vec<(String, PyWert)> {
+        s.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+    };
     if quantitaet == "festzusetzende_est" {
         let f = bescheid_via_slots(bindung, |s| {
-            Ok::<_, Infallible>(Euro::new(synth(s.iter().map(|(k, v)| (k.as_str(), v)))))
+            let p = paare(s);
+            Ok::<_, Infallible>(Euro::new(synth(p.iter().map(|(k, v)| (k.as_str(), v)))))
         });
         slots_json(f(werte))
     } else {
         let f = bescheid_via_slots(bindung, |s| {
-            Ok::<_, Infallible>(Cent::new(synth(s.iter().map(|(k, v)| (k.as_str(), v)))))
+            let p = paare(s);
+            Ok::<_, Infallible>(Cent::new(synth(p.iter().map(|(k, v)| (k.as_str(), v)))))
         });
         slots_json(f(werte))
     }
@@ -257,8 +263,17 @@ fn berichte(titel: &str, bilanz: &Bilanz) -> usize {
     summe
 }
 
+/// K2: `Werte` traegt `PyWert`; die Orakel-Grenze ist JSON, also konvertiert `zu_json` hier
+/// EINMAL. `expect` ist zulaessig: die Strategie erzeugt nur endliche Werte (kein NaN/inf).
 fn werte_json(w: &Werte) -> Value {
-    w.iter().map(|(k, v)| json!([k, v])).collect()
+    w.iter()
+        .map(|(k, v)| {
+            json!([
+                k,
+                v.zu_json().expect("Strategie erzeugt nur endliche Werte")
+            ])
+        })
+        .collect()
 }
 
 // ------------------------------------------------------------------ Tests
@@ -482,7 +497,7 @@ fn fall() -> impl Strategy<Value = Fall> {
                     felder.insert(
                         a.feld_id.clone(),
                         SnapshotFeld {
-                            wert: w,
+                            wert: PyWert::from(w),
                             zustand,
                             herkunft: herkunft().into(),
                         },
@@ -500,7 +515,7 @@ fn fall() -> impl Strategy<Value = Fall> {
                 let fid = achsen
                     .get(i)
                     .map_or_else(|| "unbekannt".to_owned(), |(a, _)| a.feld_id.clone());
-                werte.setze(&fid, w);
+                werte.setze(&fid, PyWert::from(w));
             }
             (achsen, felder, cap, werte)
         })
@@ -584,7 +599,7 @@ fn negativkontrolle() {
     rust["intervall"]["min_cent"] = (min + 1).into();
     buche(&mut bilanz, "min_cent + 1", &rust, &py);
     let mut w = Werte::neu();
-    w.setze("tage", 7.into());
+    w.setze("tage", PyWert::Ganz(7));
     let py = frage(
         &json!({"fn": "intervall.bescheid_via_slots", "bindung": py_b, "quantitaet": "festzusetzende_est",
         "feld_werte": werte_json(&w)}),

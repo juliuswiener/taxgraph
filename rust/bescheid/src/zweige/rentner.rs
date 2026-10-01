@@ -1,13 +1,12 @@
 //! `_zweig_festzusetzende_est_rentner` (`bescheid_zweige.py:1072-1480`), Teil 1: § 22-Renten,
 //! § 33b, Gewinn, § 24a/§ 24b und der Aufbau des Gesamtfalls. Tarif-Teil: `rentner_tarif.rs`.
-use domain::{Euro, Vz};
+use domain::{Euro, PyWert, Vz};
 use engine::zugriff::teil1::ermaessigungen::{p24a_altersentlastung, P24aAltersentlastungEingabe};
 use engine::zugriff::teil2::gesamt::{gesamt_gde, GesamtfallEingabe};
 use engine::zugriff::teil2::rente::{renten_einkuenfte, RentenEingabe, Rentenart};
 use intervall::Slots;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
-use serde_json::Value;
 
 use super::gesamt::{
     entlastung_24b, gde_fall, kist_ueberhang, netto_vg, nr3_euro, p35_person_a, pauschbetraege_a,
@@ -40,13 +39,11 @@ const BB_RENTEN: [&str; 2] = ["private_leibrente", "sonstige_leibrente"];
 /// `Decimal` teilt exakt; beide weichen nur ab, wenn `x / 100.0` in Float auf eine ganze Zahl
 /// aufrundet, obwohl `x < 100·n` — bei 64-Bit-Floats ausgeschlossen (Abstand des Vorgaengers
 /// >= 0,64 ulp der Quotienten). Store-Werte dieses Feldes sind ohnehin Ganzzahlen (Typ `cent`).
-fn rentenfreibetrag_euro(rf: Option<&Value>) -> Option<Euro> {
-    match rf {
-        Some(Value::Number(n)) => Some(
-            n.as_i64()
-                .map_or_else(|| cent_zu_euro_dezimal(zahl_dezimal(n)), cent_zu_euro),
-        ),
-        _ => None,
+fn rentenfreibetrag_euro(rf: Option<&PyWert>) -> Option<Euro> {
+    match rf.and_then(PyWert::zahl_ohne_bool) {
+        Some(PyWert::Ganz(n)) => Some(cent_zu_euro(*n)),
+        Some(w) => Some(cent_zu_euro_dezimal(zahl_dezimal(w))),
+        None => None,
     }
 }
 
@@ -59,12 +56,12 @@ fn cent_zu_euro_dezimal(cent: Decimal) -> Euro {
 }
 
 /// Rentenart aus `renten_art` + den Feldern, die der jeweilige Zweig liest.
-fn rentenart(art: Option<&Value>, beginn: i64, alter: i64, rf: Option<Euro>) -> Rentenart {
+fn rentenart(art: Option<&PyWert>, beginn: i64, alter: i64, rf: Option<Euro>) -> Rentenart {
     match art {
-        Some(Value::String(s)) if BB_RENTEN.contains(&s.as_str()) => Rentenart::Bb {
+        Some(PyWert::Text(s)) if BB_RENTEN.contains(&s.as_str()) => Rentenart::Bb {
             alter_bei_rentenbeginn: alter,
         },
-        Some(Value::String(s)) if AA_RENTEN.contains(&s.as_str()) => Rentenart::Aa {
+        Some(PyWert::Text(s)) if AA_RENTEN.contains(&s.as_str()) => Rentenart::Aa {
             renten_beginn_jahr: beginn,
             rentenfreibetrag: rf,
         },
@@ -77,11 +74,10 @@ fn rentenart(art: Option<&Value>, beginn: i64, alter: i64, rf: Option<Euro>) -> 
 /// PARITÄT: ein unbeantwortetes `rentner_renten_beginn_jahr` (kein `int`) gibt 0 statt eines Fehlers.
 /// Python `isinstance(x, int)` gilt auch fuer `bool` — hier ebenso.
 fn rente_instanz(fi: &Felder, vz: Vz, p: &bindung::Params) -> R<Euro> {
-    let beginn_ist_int = match wert(fi, "rentner_renten_beginn_jahr") {
-        Some(Value::Number(n)) => n.is_i64() || n.is_u64(),
-        Some(Value::Bool(_)) => true,
-        _ => false,
-    };
+    let beginn_ist_int = matches!(
+        wert(fi, "rentner_renten_beginn_jahr"),
+        Some(PyWert::Bool(_) | PyWert::Ganz(_) | PyWert::GrossGanz(_))
+    );
     if !beginn_ist_int {
         return Ok(Euro::new(0));
     }
@@ -236,7 +232,7 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
+    use serde_json::{json, Value};
 
     use super::*;
 
@@ -244,7 +240,7 @@ mod tests {
     /// knapp unter einer ganzen Zahl (Paritaetsluecke: kein Korpusfall hat einen Float an dieser Stelle).
     #[test]
     fn rentenfreibetrag_float_rundet_wie_python_floor() {
-        let euro = |v: Value| rentenfreibetrag_euro(Some(&v));
+        let euro = |v: Value| rentenfreibetrag_euro(Some(&domain::testhilfe::py(&v)));
         assert_eq!(euro(json!(12345.0)), Some(Euro::new(123)));
         assert_eq!(euro(json!(-150.5)), Some(Euro::new(-2)));
         assert_eq!(euro(json!(299.999_999_999_999_94)), Some(Euro::new(2)));
@@ -279,18 +275,30 @@ mod aequivalenz {
 
     use super::{cent_zu_euro_dezimal, rentenfreibetrag_euro};
     use crate::aequivalenz::{d18, DEZIMAL};
+    use crate::vor_k2::rentenfreibetrag_euro_alt;
+
+    /// Die Alt-Fassung gegen `CPython` — die Messung, die D18 festhaelt (Auflage 1).
+    fn alt(v: &serde_json::Value) -> Option<domain::testhilfe::Ergebnis<Euro>> {
+        rentenfreibetrag_euro_alt(Some(v), cent_zu_euro_dezimal).map(Ok)
+    }
 
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(1_000))]
 
         #[test]
-        fn rentenfreibetrag_euro_wie_pywert(v in json_wert()) {
-            let alt = rentenfreibetrag_euro(Some(&v)).map(Ok);
+        fn rentenfreibetrag_euro_alt_wie_pywert(v in json_wert()) {
             let neu = py(&v)
                 .zahl_ohne_bool()
                 .map(|z| klasse(z.dezimal()).map(cent_zu_euro_dezimal));
             let wie_alt = |d| Some(Ok(cent_zu_euro_dezimal(d)));
-            pruefe(&v, &alt, &neu, || d18(&alt, neu == Some(Err(None)), wie_alt), DEZIMAL)?;
+            pruefe(&v, &alt(&v), &neu, || d18(&alt(&v), neu == Some(Err(None)), wie_alt), DEZIMAL)?;
+        }
+
+        /// Die Produktion gegen die Alt-Fassung: gleiche Saettigung, also ohne Ausnahmen.
+        #[test]
+        fn rentenfreibetrag_euro_wie_alt(v in json_wert()) {
+            let w = py(&v);
+            pruefe(&v, &alt(&v), &rentenfreibetrag_euro(Some(&w)).map(Ok), Vec::new, &[])?;
         }
     }
 
@@ -300,7 +308,8 @@ mod aequivalenz {
     fn d18_dezimal_grenze() {
         let v = json!(1e29);
         let grenze = Euro::new(9_000_000_000_000_000_000);
-        assert_eq!(rentenfreibetrag_euro(Some(&v)), Some(grenze));
+        assert_eq!(alt(&v), Some(Ok(grenze)));
+        assert_eq!(rentenfreibetrag_euro(Some(&py(&v))), Some(grenze));
         assert_eq!(klasse(py(&v).dezimal()), Err(None));
     }
 }

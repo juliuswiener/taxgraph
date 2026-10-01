@@ -91,7 +91,7 @@ fn intervall_ist_erreichbar() {
         &std::collections::BTreeMap::new(),
         &[b],
         |w| Ok::<_, std::convert::Infallible>(Cent::new(
-            w.get("tage").and_then(serde_json::Value::as_i64).unwrap_or(0) * 100,
+            w.get("tage").and_then(|v| v.int().ok()).unwrap_or(0) * 100,
         )),
         intervall::CAP_DEFAULT,
         None,

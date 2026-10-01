@@ -1,8 +1,7 @@
 //! Der `gesamt_guard`-Zweig von `_an_gesamt_sperrgrund` (Scheiben `gesamt`, `rentner_gesamt`):
 //! Partner, Instanz-Vollstaendigkeit, Rente, Versorgung, § 33b, § 35a/§ 35c, GWG, Kinderbetreuung.
-use domain::Sperrgrund;
+use domain::{PyWert, Sperrgrund};
 use rust_decimal::Decimal;
-use serde_json::Value;
 use store::SnapshotFeld;
 
 use super::einkunft::{betrag_offen, dba_p32b_p16, flag_kapital_gewinn};
@@ -70,11 +69,11 @@ fn multi_objekt(k: &K<'_>, cfg: &Cfg) -> Grund {
 /// kein Freibetrag (Zahl, kein Bool) → die Euro-Fixierung fehlt.
 fn fixierung_offen(
     k: &K<'_>,
-    art: Option<&Value>,
-    beginn: Option<&Value>,
-    rf: Option<&Value>,
+    art: Option<&PyWert>,
+    beginn: Option<&PyWert>,
+    rf: Option<&PyWert>,
 ) -> bool {
-    let art_aa = matches!(art, Some(Value::String(s)) if RENTNER_AA_ARTEN.contains(&s.as_str()));
+    let art_aa = matches!(art, Some(PyWert::Text(s)) if RENTNER_AA_ARTEN.contains(&s.as_str()));
     let (Some(beginn), Some(vz)) = (py_int_wert(beginn), k.vz) else {
         return false;
     };
@@ -164,7 +163,7 @@ fn kind_pb_uebertragen(k: &K<'_>) -> Result<bool, BescheidFehler> {
             continue;
         }
         let w = |id: &str| inst.felder.get(id).map(|x| &x.wert);
-        let idnr_lang = matches!(w("kind_idnr"), Some(Value::String(s)) if s.chars().count() >= 11);
+        let idnr_lang = matches!(w("kind_idnr"), Some(PyWert::Text(s)) if s.chars().count() >= 11);
         if idnr_lang
             && ist_true(w("kind_behinderten_pb_antrag"))
             && ist_true(w("kind_pb_nicht_selbst_genutzt"))
@@ -316,7 +315,7 @@ fn kinderbetreuung(k: &K<'_>) -> Grund {
         }
         let ja_und_bestaetigt = |id: &str| {
             inst.felder.get(id).is_some_and(|x| {
-                x.zustand == domain::Zustand::Bestaetigt && x.wert == Value::Bool(true)
+                x.zustand == domain::Zustand::Bestaetigt && x.wert == PyWert::Bool(true)
             })
         };
         if !ja_und_bestaetigt("kind_betreuung_reine_betreuung") {

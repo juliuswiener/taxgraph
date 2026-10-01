@@ -26,7 +26,7 @@ use std::collections::{BTreeMap, HashSet};
 use std::sync::{Mutex, OnceLock};
 
 use bindung::Bindung;
-use domain::{Achsenwert, Herkunft, PruefTiefe, Zustand};
+use domain::{Achsenwert, Herkunft, PruefTiefe, PyWert, Zustand};
 use konsistenz as k;
 use parity::Oracle;
 use proptest::prelude::*;
@@ -551,7 +551,7 @@ fn fall() -> impl Strategy<Value = Fall> {
                 felder.insert(
                     f.to_owned(),
                     SnapshotFeld {
-                        wert: w,
+                        wert: PyWert::from(w),
                         zustand,
                         herkunft: herkunft().into(),
                     },
@@ -589,7 +589,7 @@ fn fall() -> impl Strategy<Value = Fall> {
                     felder.insert(
                         f.to_owned(),
                         SnapshotFeld {
-                            wert: w.into(),
+                            wert: PyWert::Ganz(w),
                             zustand: Zustand::Bestaetigt,
                             herkunft: herkunft().into(),
                         },
@@ -662,7 +662,7 @@ fn negativkontrolle() {
         felder.insert(
             f.to_owned(),
             SnapshotFeld {
-                wert: w,
+                wert: PyWert::from(w),
                 zustand: Zustand::Bestaetigt,
                 herkunft: herkunft().into(),
             },

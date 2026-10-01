@@ -1,9 +1,8 @@
 //! `_dhf_vpf_grund` (`bescheid_deklaration.py`, geschachtelt in `_an_gesamt_sperrgrund`): dHf,
 //! Verpflegung, Uebernachtung und Arbeitsmittel (§ 9 Abs. 1 Nr. 5/5a/6/7, Abs. 4a). Gilt fuer JEDE
 //! Scheibe, die diese Felder ring-verdrahtet.
-use domain::Sperrgrund;
+use domain::{PyWert, Sperrgrund};
 use rust_decimal::Decimal;
-use serde_json::Value;
 
 use super::{bestaetigt, ganzzahl, positiv, zahl_wert, Grund, K};
 use crate::deklaration::konstanten::{
@@ -57,13 +56,17 @@ impl PySumme {
     ///
     /// PARITÄT: ein nicht-leerer Text oder eine nicht-leere Liste ist `0 + "12"` = `TypeError` —
     /// die Ausnahme steigt aus dem Guard auf (HTTP 500 in Python).
-    fn addiere(&mut self, v: Option<&Value>) -> Result<(), BescheidFehler> {
+    fn addiere(&mut self, v: Option<&PyWert>) -> Result<(), BescheidFehler> {
         match v {
-            Some(Value::Bool(true)) => self.summe = dezimal_plus(self.summe, Decimal::ONE),
-            Some(Value::Number(n)) => self.summe = dezimal_plus(self.summe, zahl_dezimal(n)),
-            Some(Value::String(s)) if !s.is_empty() => return Err(typfehler()),
-            Some(Value::Array(a)) if !a.is_empty() => return Err(typfehler()),
-            Some(Value::Object(o)) if !o.is_empty() => return Err(typfehler()),
+            // `PyWert` trennt `Bool` von `Ganz` (JSON nicht): `True` ist `1`, `1` ist `1` — beide
+            // Zweige sind derselbe `Decimal::ONE`-Fall bzw. derselbe Zahlen-Fall.
+            Some(PyWert::Bool(true)) => self.summe = dezimal_plus(self.summe, Decimal::ONE),
+            Some(w) if w.zahl_ohne_bool().is_some() => {
+                self.summe = dezimal_plus(self.summe, zahl_dezimal(w));
+            }
+            Some(PyWert::Text(s)) if !s.is_empty() => return Err(typfehler()),
+            Some(PyWert::Liste(l)) if !l.is_empty() => return Err(typfehler()),
+            Some(PyWert::Objekt(o)) if !o.is_empty() => return Err(typfehler()),
             _ => {}
         }
         Ok(())
@@ -156,7 +159,7 @@ fn uebernachtung(f: &Felder) -> Option<Sperrgrund> {
     if !positiv(f, UEBERNACHTUNG_KOSTEN) {
         return None;
     }
-    let ort_ist_bool = matches!(wert(f, "uebernachtung_im_inland"), Some(Value::Bool(_)));
+    let ort_ist_bool = matches!(wert(f, "uebernachtung_im_inland"), Some(PyWert::Bool(_)));
     if !ort_ist_bool
         || !bestaetigt(f, "uebernachtung_im_inland")
         || UEBERNACHTUNG_BEDINGUNGEN.iter().any(|b| !bestaetigt(f, b))
@@ -200,14 +203,14 @@ fn arbeitsmittel(f: &Felder) -> Option<Sperrgrund> {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
+    use serde_json::{json, Value};
 
     use super::*;
 
     fn summe_aus(werte: &[Value]) -> Result<PySumme, BescheidFehler> {
         let mut s = PySumme::default();
         for w in werte {
-            s.addiere(Some(w))?;
+            s.addiere(Some(&domain::testhilfe::py(w)))?;
         }
         Ok(s)
     }
@@ -218,9 +221,8 @@ mod tests {
         let s = summe_aus(&[json!(2), json!(0.5), json!(true)]).unwrap();
         assert!(s.positiv() && !s.null());
         assert!(summe_aus(&[json!(0.5), json!(-0.5)]).unwrap().null()); // Python: 0.5 + -0.5 == 0
-        assert!(summe_aus(&[json!(false), Value::Null, json!("")])
-            .unwrap()
-            .null());
+        let feld = summe_aus(&[json!(false), Value::Null, json!("")]).unwrap();
+        assert!(feld.null());
     }
 
     /// Grenzfall: Python `0.1 + 0.2 - 0.3 != 0` (5,6e-17); `Decimal` (binaerer Wert) ebenso ungleich 0.

@@ -40,7 +40,7 @@ use bescheid::abzuege::{self, KindPbDaten};
 use bescheid::einkuenfte as ek;
 use bescheid::{BescheidFehler, Felder, Instanzquelle};
 use bindung::{Bindung, Params};
-use domain::{Euro, Veranlagung, Vz};
+use domain::{Euro, PyWert, Veranlagung, Vz};
 use engine::zugriff::teil2::gesamt::GesamtfallEingabe;
 use engine::zugriff::teil2::rente::{EinkuenfteVersorgungEingabe, VersorgungsfreibetragEingabe};
 use parity::Oracle;
@@ -308,9 +308,15 @@ fn rust_run(c: &Ctx, name: &str) -> Result<Value, BescheidFehler> {
     Ok(match name {
         "abs3_eligible" => json!(abzuege::abs3_eligible(&c.f, c.vz)?),
         "oepnv_eur" => {
+            // K2: `Slots` traegt `PyWert`; die Orakel-Seite liefert JSON, also konvertiert
+            // `PyWert::from` (total) hier EINMAL an der Grenze.
             let slots = c.args["slots"]
                 .as_object()
-                .map(|m| m.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+                .map(|m| {
+                    m.iter()
+                        .map(|(k, v)| (k.clone(), PyWert::from(v.clone())))
+                        .collect()
+                })
                 .unwrap_or_default();
             eu(abzuege::oepnv_eur(&slots)?)
         }
@@ -404,10 +410,14 @@ fn rust_run(c: &Ctx, name: &str) -> Result<Value, BescheidFehler> {
                 "anzurechnende_auslaendische_steuern": g.anzurechnende_auslaendische_steuern.get(),
                 "p32b_progressionseinkuenfte": r.p32b_progressionseinkuenfte.map(Euro::get)})
         }
-        "dba_methode_fuer" => json!(ek::dba_methode_fuer(
-            c.args.get("staat"),
-            c.args.get("einkunftsart")
-        )?),
+        "dba_methode_fuer" => {
+            // K2: die Argumente gehen als Text in die Bindung; `null` bleibt `None`.
+            let t = |k: &str| c.args.get(k).map(|v| PyWert::from(v.clone()));
+            json!(ek::dba_methode_fuer(
+                t("staat").as_ref(),
+                t("einkunftsart").as_ref()
+            )?)
+        }
         other => panic!("unbekannte Funktion {other}"),
     })
 }
@@ -621,7 +631,7 @@ fn konstanten_gleich() {
             .find(|m| m[0] == iso)
             .map_or("anrechnung", |m| m[1].as_str().unwrap());
         assert_eq!(
-            ek::dba_methode_fuer(Some(&json!(staat)), None).unwrap(),
+            ek::dba_methode_fuer(Some(&PyWert::Text(staat.to_owned())), None).unwrap(),
             methode,
             "staat {staat}"
         );
@@ -634,7 +644,11 @@ fn konstanten_gleich() {
             p[1].as_str().unwrap(),
         );
         assert_eq!(
-            ek::dba_methode_fuer(Some(&json!(staat)), Some(&json!(art))).unwrap(),
+            ek::dba_methode_fuer(
+                Some(&PyWert::Text(staat.to_owned())),
+                Some(&PyWert::Text(art.to_owned()))
+            )
+            .unwrap(),
             m
         );
         n += 1;
@@ -689,7 +703,7 @@ fn reale_faelle() {
         let (felder, _) = Store::aus_datei(datei).materialisiere(None).unwrap();
         let f_zusammen = felder
             .get("veranlagung")
-            .is_some_and(|f| f.wert == "zusammen");
+            .is_some_and(|f| f.wert == PyWert::Text("zusammen".to_owned()));
         for nur in [true, false] {
             for variante in 0..2 {
                 let fall = Fall {

@@ -30,7 +30,9 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use bindung::Bindung;
-use domain::{Achsenwert, Feldtyp, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2, Zustand};
+use domain::{
+    Achsenwert, Feldtyp, Feldzustand, Herkunft, PruefTiefe, PyWert, Schreiber, Signal2, Zustand,
+};
 use elster::{Felder, XmlOptionen};
 use parity::Oracle;
 use proptest::prelude::*;
@@ -952,7 +954,7 @@ fn generiere_store(c: &mut Cursor) -> StoreDatei {
         let bestaetigt = alle_bestaetigt || c.chance(80);
         let neu = NeuesEvent {
             feld_id,
-            wert: wert_fuer(c, b),
+            wert: PyWert::from(wert_fuer(c, b)),
             feldzustand: if bestaetigt {
                 Feldzustand::Bestaetigt {
                     signal_2: signal.clone(),
@@ -971,7 +973,7 @@ fn generiere_store(c: &mut Cursor) -> StoreDatei {
     if !sauber && c.chance(10) {
         let neu = NeuesEvent {
             feld_id: "kein_bindungsfeld_x".to_owned(),
-            wert: json!(1),
+            wert: PyWert::Ganz(1),
             feldzustand: Feldzustand::Bestaetigt { signal_2: signal },
             herkunft: herkunft_mensch(),
             schreiber: Schreiber::Mensch("julius".to_owned()),

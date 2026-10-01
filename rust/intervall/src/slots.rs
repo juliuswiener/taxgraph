@@ -7,13 +7,15 @@
 use std::collections::{BTreeMap, HashMap};
 
 use bindung::SlotBeitrag;
+use domain::PyWert;
 use domain::{Cent, CentUeberlauf, Euro};
-use serde_json::Value;
 
 use crate::{AchsenBindung, Werte};
 
 /// Slot-Werte `signatur_slot -> wert`, wie die Engine-Funktion sie liest.
-pub type Slots = BTreeMap<String, Value>;
+///
+/// [`PyWert`], weil hier addiert wird und `als_int` Pythons `int`-Sicht liest.
+pub type Slots = BTreeMap<String, PyWert>;
 
 /// Ergebnis-Einheit einer Engine-Funktion, verlustfrei nach Cent.
 pub trait NahtEinheit {
@@ -62,10 +64,17 @@ pub enum SlotFehler<E: std::error::Error + 'static> {
 }
 
 /// Python-`int`-Sicht eines Werts für `+`: Ganzzahl oder `bool` (0/1).
-fn als_int(v: &Value) -> Option<i64> {
+///
+/// ponytail: `Gleit` liefert hier `None` (wie `Value::as_i64` vorher) — Pythons `+`
+/// auf einem Float ergaebe eine Float-Summe. Unerreichbar, weil Summanden-Felder
+/// durchweg `typ: cent` sind (gemessen 22 von 22, s. `SlotFehler::SummandNichtGanzzahl`).
+/// Upgrade: `PyWert::int_mit_bool` und einen Float-Zweig, wenn je ein Float-Summand auftritt.
+fn als_int(v: &PyWert) -> Option<i64> {
     match v {
-        Value::Bool(b) => Some(i64::from(*b)),
-        _ => v.as_i64(),
+        PyWert::Bool(b) => Some(i64::from(*b)),
+        PyWert::Ganz(n) => Some(*n),
+        PyWert::GrossGanz(u) => i64::try_from(*u).ok(),
+        _ => None,
     }
 }
 
@@ -76,17 +85,17 @@ fn als_int(v: &Value) -> Option<i64> {
 ///   spätere Feld gewinnt.
 ///
 /// ```
-/// use domain::Cent;
+/// use domain::{Cent, PyWert};
 /// use intervall::{bescheid_via_slots, AchsenBindung, Werte};
 /// let b = |f: &str| AchsenBindung { feld_id: f.into(), typ: domain::Feldtyp::Cent, askable: true,
 ///     enum_werte: vec![], bereich: None, signatur_slot: Some("gesamt".into()),
 ///     slot_beitrag: bindung::SlotBeitrag::Summand };
 /// let bindung = [b("an"), b("ag")];
 /// let f = bescheid_via_slots(&bindung, |s| Ok::<_, std::convert::Infallible>(
-///     Cent::new(s.get("gesamt").and_then(|v| v.as_i64()).unwrap_or(0))));
+///     Cent::new(s.get("gesamt").and_then(|v| v.int().ok()).unwrap_or(0))));
 /// let mut w = Werte::neu();
-/// w.setze("an", 100.into());
-/// w.setze("ag", 40.into());
+/// w.setze("an", PyWert::Ganz(100));
+/// w.setze("ag", PyWert::Ganz(40));
 /// assert_eq!(f(&w).unwrap(), Cent::new(140));
 /// ```
 pub fn bescheid_via_slots<'b, T, E, F>(
@@ -119,7 +128,7 @@ where
                         .0
                         .checked_add(summe.1)
                         .ok_or_else(|| SlotFehler::Ueberlauf(slot.clone()))?;
-                    slots.insert(slot.clone(), summe.into());
+                    slots.insert(slot.clone(), PyWert::Ganz(summe));
                 }
                 SlotBeitrag::Exakt => {
                     slots.insert(slot.clone(), wert.clone());
@@ -140,7 +149,7 @@ mod aequivalenz {
     use domain::testhilfe::{d3_d10, json_wert, pruefe, py, Ergebnis};
     use domain::PyWert;
     use proptest::prelude::*;
-    use serde_json::{json, Value};
+    use serde_json::json;
 
     use super::als_int;
 
@@ -161,11 +170,12 @@ mod aequivalenz {
         }
     }
 
-    /// Beide Seiten als `repr`, weil `PyWert` kein `PartialEq` hat (Gleichheit ist dort `py_eq`)
-    /// und `Ganz(1)` von `Gleit(1.0)` getrennt bleiben muss. `als_int`s `None` wird zum
+    /// Beide Seiten als `repr`, weil `Ganz(1)` von `Gleit(1.0)` getrennt bleiben muss -- das
+    /// abgeleitete `PartialEq` auf `PyWert` ist strukturell, nicht Pythons `==` (s. `py_eq`).
+    /// `als_int`s `None` wird zum
     /// `TypeError`, den `CPython` fuer `0 + <Nichtzahl>` wirft; wo Python stattdessen weiterrechnet,
     /// steht die Abweichung als D3 oder D10 in der Liste.
-    fn alt_repr(v: &Value) -> Ergebnis<String> {
+    fn alt_repr(v: &PyWert) -> Ergebnis<String> {
         als_int(v).map_or(Err(Some("TypeError")), |i| Ok(PyWert::Ganz(i).repr()))
     }
 
@@ -178,7 +188,8 @@ mod aequivalenz {
 
         #[test]
         fn als_int_wie_pywert(v in json_wert()) {
-            let (alt, neu) = (alt_repr(&v), neu_repr(&py(&v)));
+            let w = py(&v);
+            let (alt, neu) = (alt_repr(&w), neu_repr(&w));
             pruefe(&v, &alt, &neu, || d3_d10(&v), INT)?;
         }
     }
@@ -188,8 +199,9 @@ mod aequivalenz {
     #[test]
     fn d3_ueber_i64() {
         let v = json!(u64::MAX);
-        assert_eq!(als_int(&v), None);
-        assert_eq!(neu_repr(&py(&v)), Ok("18446744073709551615".to_owned()));
+        let w = py(&v);
+        assert_eq!(als_int(&w), None);
+        assert_eq!(neu_repr(&w), Ok("18446744073709551615".to_owned()));
     }
 
     /// D10: ein `float` zaehlt in `CPython` als Zahl, `0 + wert` bleibt `float`. Der Alt-Helfer
@@ -202,8 +214,9 @@ mod aequivalenz {
             (json!(1500.0), "1500.0"),
             (json!(-0.0), "0.0"),
         ] {
-            assert_eq!(als_int(&v), None);
-            assert_eq!(neu_repr(&py(&v)), Ok(text.to_owned()));
+            let w = py(&v);
+            assert_eq!(als_int(&w), None);
+            assert_eq!(neu_repr(&w), Ok(text.to_owned()));
         }
     }
 }

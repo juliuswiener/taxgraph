@@ -60,7 +60,7 @@
 use std::sync::{Mutex, OnceLock};
 
 use bindung::Bindung;
-use domain::{Achsenwert, Feldtyp, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
+use domain::{Achsenwert, Feldtyp, Feldzustand, Herkunft, PruefTiefe, PyWert, Schreiber, Signal2};
 use parity::{AppendCallErgebnis, Oracle};
 use proptest::prelude::*;
 use serde_json::{json, Value};
@@ -426,11 +426,11 @@ fn zu_neues_event(spec: &AufrufSpec) -> Result<NeuesEvent, &'static str> {
     };
     Ok(NeuesEvent {
         feld_id: spec.feld_id.clone(),
-        wert: spec.wert.clone(),
+        wert: PyWert::from(spec.wert.clone()),
         feldzustand,
         herkunft: spec.herkunft.clone(),
         schreiber: spec.schreiber.clone(),
-        signal_1: spec.signal_1.clone(),
+        signal_1: spec.signal_1.clone().map(PyWert::from),
         ersetzt: spec.ersetzt,
         ts: Some(spec.ts.clone()),
     })
@@ -443,6 +443,10 @@ fn abweisung_klasse(a: &Abweisung) -> &'static str {
         Abweisung::KatalogFehlt { .. } => "KatalogFehlt",
         Abweisung::KatalogNichtFreigegeben { .. } => "KatalogNichtFreigegeben",
         Abweisung::Magnitude { .. } => "Magnitude",
+        // K2-Auflage 3: kein Gegenstueck in `store.py` (CPython schreibt NaN nackt, B4). Die
+        // Strategie erzeugt keine NaN/inf-Werte, also ist der Arm hier unerreichbar — er steht
+        // trotzdem da, damit ein neuer Wert-Typ den Compiler trifft statt still durchzulaufen.
+        Abweisung::WertNichtDarstellbar { .. } => "WertNichtDarstellbar",
         Abweisung::TypInkonform { .. } => "TypInkonform",
         Abweisung::FormatInkonform { .. } => "FormatInkonform",
         Abweisung::AktivesEventVorhanden { .. } => "AktivesEventVorhanden",
@@ -886,10 +890,13 @@ fn d20_reihenfolge_typ_vor_signal() {
 }
 
 /// Der Orakel-Aufruf eines einzelnen Events (ohne `event_id`, mit Signal aufgeloest).
+///
+/// K2/Auflage 2: `wert` geht ueber [`PyWert::zu_json`], NICHT ueber ein `Serialize` von `PyWert` —
+/// die Orakel-Form ist `canonical_json`, und die erbt die Schluesselsortierung von `Value`.
 fn call_json(event: &Event, signal: &Signal) -> Value {
     json!({
         "feld_id": event.feld_id,
-        "wert": event.wert,
+        "wert": event.wert.zu_json().expect("Store-Werte sind endlich (serde_json lehnt inf ab)"),
         "zustand": event.zustand,
         "herkunft": event.herkunft,
         "schreiber": event.schreiber.to_string(),

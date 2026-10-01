@@ -13,7 +13,7 @@
 //!
 //! PARITAET (Restrisiko, dokumentiert statt geloest): Gleitkommazahlen. `domain::Wert` kennt
 //! keinen Float-Fall, und Auflage T weist einen Float fuer jedes GEBUNDENE `typ=cent/int`-Feld
-//! zurueck (`domain::Wert::aus_json`). Ein Float kann store-seitig nur bei einem UNBEKANNTEN
+//! zurueck (`domain::Wert::aus_pywert`). Ein Float kann store-seitig nur bei einem UNBEKANNTEN
 //! `feld_id` auftreten (Auflage T laesst dann durch, s. `abweisung::pruefe_typ_konformitaet`).
 //! Pythons `repr()`-Fliesskommaformatierung und `serde_json`s Float-Formatierung sind fuer diesen
 //! Fall nicht Byte-fuer-Byte verglichen; ein Store mit einem Float auf einem ungebundenen Feld

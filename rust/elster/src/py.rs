@@ -1,7 +1,13 @@
-//! Python-Semantik auf `serde_json::Value` fuer die Stellen, an denen `est_mapping.py` und
-//! `elster_xml.py` rohe Store-Werte anfassen (`int(wert)`, `bool(wert)`, `str(wert)`, `wert == 0`,
-//! `repr(...)` in Fehlermeldungen). Die Store-Werte sind JSON; der Port bildet genau die Python-
-//! Operationen nach, die das Original auf ihnen ausfuehrt — nicht mehr.
+//! Python-Semantik fuer die Stellen, an denen `est_mapping.py` und `elster_xml.py` Werte anfassen.
+//!
+//! ZWEI WELTEN, seit K2 getrennt:
+//!
+//! - **Store-Werte** sind [`domain::PyWert`] (seit K2 Staffel 1) und tragen ihre Python-Semantik
+//!   selbst (`PyWert::int`, `::truthy`, `::py_str`, `::repr`). Wer hier liest, ruft sie direkt;
+//!   [`int`] ist nur noch der Klassen-Mapping-Wrapper nach [`PyFehler`].
+//! - **Deklarations-Werte** sind JSON (`BTreeMap<String, Value>`) und gehen in die XML-Ausgabe.
+//!   Dafuer bleiben [`truthy`], [`str_von`], [`repr`], [`repr_str`], [`strip`], [`gleich_null`]
+//!   auf `Value` -- die Deklaration IST JSON, hier gibt es nichts zu typisieren.
 //!
 //! ponytail: `py_int` kennt nur ASCII-Ziffern und `i64`; Python akzeptiert jede Unicode-Ziffer
 //! (Kategorie Nd) und rechnet unbeschraenkt. Beides erreicht ein Store-Wert nur ausserhalb von
@@ -29,6 +35,9 @@ impl PyFehler {
             nachricht: nachricht.into(),
         }
     }
+    /// Nur noch von der VOR-K2-Testreferenz ([`int_alt`], [`int_aus_text`]) gebraucht: der
+    /// Produktionspfad geht ueber `PyWert::int` und mappt [`domain::PyFehler`] in [`PyFehler::from`].
+    #[cfg(test)]
     pub(crate) fn wert(nachricht: impl Into<String>) -> Self {
         Self {
             klasse: "ValueError",
@@ -39,6 +48,31 @@ impl PyFehler {
         Self {
             klasse: "OverflowError",
             nachricht: nachricht.into(),
+        }
+    }
+}
+
+/// `domain::PyFehler` -> die Klasse, die `CPython` an derselben Stelle wirft.
+///
+/// ponytail: `domain::PyFehler::I64Grenze` und `::DezimalGrenze` sind Rust-Grenzen OHNE
+/// Python-Klasse -- `python_klasse()` sagt dort `None`, weil Python exakt weiterrechnet (D3/D4).
+/// [`PyFehler::klasse`] ist aber `&'static str`: das Paritaetskriterium des Orakels kennt kein
+/// "keine Klasse" (anders als `bescheid::BescheidFehler::python_klasse`, das `Option` ist).
+/// `I64Grenze` => `OverflowError` erhaelt genau das, was `elster::py::int` vor dem K2-Port
+/// meldete (D4, dort dokumentiert); `DezimalGrenze` => `ValueError` entspricht
+/// `int(float('nan'))`. Beide sind im Bestand nicht erreichbar (gemessen: 0 von 11294 Events
+/// tragen `GrossGanz` oder `Gleit`). Upgrade: `klasse: Option<&'static str>`, wenn ein realer
+/// Fall eine der beiden trifft.
+impl From<domain::PyFehler> for PyFehler {
+    fn from(e: domain::PyFehler) -> Self {
+        let klasse = match e.python_klasse() {
+            Some(k) => k,
+            None if matches!(e, domain::PyFehler::I64Grenze(_)) => "OverflowError",
+            None => "ValueError",
+        };
+        Self {
+            klasse,
+            nachricht: e.to_string(),
         }
     }
 }
@@ -75,8 +109,22 @@ pub(crate) fn strip(s: &str) -> &str {
     s.trim_matches(ist_leerraum)
 }
 
-/// Python `int(wert)`.
-pub(crate) fn int(v: &Value) -> Result<i64, PyFehler> {
+/// Python `int(store_wert)`: [`domain::PyWert::int`] mit dem Klassen-Mapping nach [`PyFehler`].
+///
+/// # Errors
+/// Wie `CPython`; die Rust-Grenzen ohne Python-Klasse s. [`PyFehler::from`].
+pub(crate) fn int(w: &domain::PyWert) -> Result<i64, PyFehler> {
+    w.int().map_err(PyFehler::from)
+}
+
+/// Die VOR-K2-Implementierung von `int` auf `Value`, nur noch Testreferenz.
+///
+/// Die D-Liste (D4, D6, D12, D16, D17) ist die Differenz zwischen IHR und [`domain::PyWert::int`].
+/// Im Produktpfad ist sie durch [`int`] ersetzt; hier haelt sie die Faelle fest, die der erste
+/// reale Treffer treffen wuerde. Im Bestand ist keiner erreichbar (gemessen: 0 von 11294 Events
+/// tragen `GrossGanz`, `Gleit`, eine Nd-Ziffer, ein unsortiertes Objekt oder >4300 Ziffern).
+#[cfg(test)]
+fn int_alt(v: &Value) -> Result<i64, PyFehler> {
     match v {
         Value::Bool(b) => Ok(i64::from(*b)),
         Value::Number(n) => {
@@ -111,6 +159,8 @@ pub(crate) fn int(v: &Value) -> Result<i64, PyFehler> {
     }
 }
 
+/// Der Textzweig der VOR-K2-Implementierung (Testreferenz, s. [`int_alt`]).
+#[cfg(test)]
 fn int_aus_text(s: &str) -> Result<i64, PyFehler> {
     let fehler = || {
         PyFehler::wert(format!(
@@ -270,17 +320,36 @@ fn druckbar(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{float_repr, int, repr, repr_str};
+    use super::{float_repr, int, int_alt, repr, repr_str};
     use serde_json::json;
 
     #[test]
     fn int_wie_python() {
-        assert_eq!(int(&json!(" -1_000 ")).unwrap(), -1000);
-        assert_eq!(int(&json!(true)).unwrap(), 1);
-        assert_eq!(int(&json!(3.9)).unwrap(), 3);
-        assert_eq!(int(&json!(-3.9)).unwrap(), -3);
-        assert_eq!(int(&json!("1_")).unwrap_err().klasse, "ValueError");
-        assert_eq!(int(&json!(null)).unwrap_err().klasse, "TypeError");
+        // Der Produktionspfad (`int` -> `PyWert::int`) gegen die VOR-K2-Referenz.
+        for v in [
+            json!(" -1_000 "),
+            json!(true),
+            json!(3.9),
+            json!(-3.9),
+            json!("1_"),
+            json!(null),
+        ] {
+            let alt = int_alt(&v).map_err(|e| e.klasse);
+            let neu = int(&domain::PyWert::from(v.clone())).map_err(|e| e.klasse);
+            assert_eq!(alt, neu, "int({v})");
+        }
+        assert_eq!(
+            int(&domain::PyWert::Text(" -1_000 ".into())).unwrap(),
+            -1000
+        );
+        assert_eq!(int(&domain::PyWert::Bool(true)).unwrap(), 1);
+        assert_eq!(int(&domain::PyWert::Gleit(3.9)).unwrap(), 3);
+        assert_eq!(int(&domain::PyWert::Gleit(-3.9)).unwrap(), -3);
+        assert_eq!(
+            int(&domain::PyWert::Text("1_".into())).unwrap_err().klasse,
+            "ValueError"
+        );
+        assert_eq!(int(&domain::PyWert::Null).unwrap_err().klasse, "TypeError");
     }
 
     #[test]
@@ -310,15 +379,17 @@ mod aequivalenz {
     use proptest::prelude::*;
     use serde_json::{json, Value};
 
-    use super::{gleich_null, int, repr, repr_str, str_von, strip, truthy};
+    use super::{gleich_null, int_alt, repr, repr_str, str_von, strip, truthy};
 
     /// Ausnahmen von `int`.
     const INT: &[&str] = &["D4", "D6", "D12", "D16", "D17"];
     /// Ausnahmen von `repr` und `str_von`.
     const REPR: &[&str] = &["D8"];
 
+    /// Die VOR-K2-Referenz, NICHT der Produktionspfad: `int` delegiert seit K2 an
+    /// `PyWert::int`, ein Vergleich gegen ihn waere leer.
     fn alt_int(v: &Value) -> Ergebnis<i64> {
-        int(v).map_err(|e| Some(e.klasse))
+        int_alt(v).map_err(|e| Some(e.klasse))
     }
 
     fn int_wie(v: &Value) -> Result<(), TestCaseError> {

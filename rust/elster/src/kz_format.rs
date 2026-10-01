@@ -202,14 +202,18 @@ pub fn kz_wert(wert: &Value, kz: &str, typ: Option<Feldtyp>) -> Result<Value, Py
 /// Kein `nicht_deklariert`-Eintrag: eine 0 ist kein verlorener Wert, sondern „nichts anzugeben".
 ///
 /// # Errors
-/// Wie [`kz_wert`].
+/// Wie [`kz_wert`], dazu `OverflowError`/`ValueError`, wenn der Store-Wert nicht nach JSON geht
+/// (NaN/+-inf; im Bestand gemessen 0 von 11294 Events).
 pub(crate) fn schreibe_kz(
     ziel: &mut BTreeMap<String, Value>,
     kz: &str,
-    wert: &Value,
+    wert: &domain::PyWert,
     typ: Option<Feldtyp>,
 ) -> Result<(), PyFehler> {
-    let v = kz_wert(wert, kz, typ)?;
+    // DIE Grenze Store -> Deklaration: einmal konvertieren, danach laeuft die unveraenderte
+    // Value-Kette (`kz_wert`, `gleich_null`) -- die Deklaration IST JSON.
+    let wert = wert.zu_json().map_err(PyFehler::from)?;
+    let v = kz_wert(&wert, kz, typ)?;
     if NULL_UNZULAESSIG_KZ.contains(&kz) && py::gleich_null(&v) {
         return Ok(());
     }

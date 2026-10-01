@@ -122,4 +122,68 @@ mod tests {
         assert_eq!(geladen.veranlagungszeitraum, Veranlagungsjahr(2026));
         std::fs::remove_dir_all(&dir).ok();
     }
+
+    /// `vorjahr_referenz` ist `PyWert` (K2): der Rueckweg ist verlustfrei, NaN wird ein Fehler,
+    /// nie ein stilles `null`.
+    #[test]
+    fn vorjahr_referenz_roundtrip_und_nan() {
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-vorjahr-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("fall.json");
+        let mut datei = testdatei();
+        let referenz = serde_json::json!({"verlustvortrag_bestand": {"wert": 150_000}});
+        datei.vorjahr_referenz = Some(referenz.into());
+        speichere(&pfad, &datei).unwrap();
+        assert_eq!(
+            lade(&pfad).unwrap().vorjahr_referenz,
+            datei.vorjahr_referenz
+        );
+        datei.vorjahr_referenz = Some(domain::PyWert::Gleit(f64::NAN));
+        assert!(serde_json::to_value(&datei).is_err());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// B4: `CPython` schreibt NaN/Infinity nackt in die Fallakte (`api.py:157`, `json.dump` ohne
+    /// `allow_nan=False`) und liest sie mit `json.load` als Float zurueck, `1e400` als `inf`.
+    /// `lade` liest dieselben Token per YAML als Text. Der Test verlangt das `CPython`-Verhalten.
+    #[test]
+    #[ignore = "B4: lade liest NaN/Infinity/1e400 als Text, CPython als Float (nicht Teil von K2)"]
+    fn b4_nan_und_infinity_laden_als_float_wie_cpython() {
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-b4-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("b4.json");
+        let vorlage = concat!(
+            r#"{"version":1,"veranlagungszeitraum":2025,"snapshots":[],"events":[{"event_id":"ID","#,
+            r#""ts":"2026-01-01T00:00:00+00:00","feld_id":"ep_arbeitstage","wert":WERT,"#,
+            r#""zustand":"bestaetigt","herkunft":{"herkunft":"mensch","pruef_tiefe":"ungeprueft","#,
+            r#""haftung":"nutzer"},"schreiber":"julius","signal":{"signal_1":null,"signal_2":"k"},"#,
+            r#""ersetzt":null}]}"#
+        );
+        for (token, erwartet) in [
+            ("NaN", f64::NAN),
+            ("Infinity", f64::INFINITY),
+            ("-Infinity", f64::NEG_INFINITY),
+            ("1e400", f64::INFINITY),
+        ] {
+            let text = vorlage
+                .replace("ID", &"0".repeat(64))
+                .replace("WERT", token);
+            std::fs::write(&pfad, text).unwrap();
+            let datei = lade(&pfad).unwrap();
+            let wert = &datei.events[0].wert;
+            let wie_cpython = match *wert {
+                domain::PyWert::Gleit(f) if erwartet.is_nan() => f.is_nan(),
+                domain::PyWert::Gleit(f) => f.to_bits() == erwartet.to_bits(),
+                _ => false,
+            };
+            assert!(wie_cpython, "{token}: {wert:?} statt Float wie CPython");
+        }
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }

@@ -13,7 +13,7 @@ use bescheid::testhilfe::{felder, index, params, store};
 use bescheid::zweige::{bescheid_fn, Umgebung};
 use bescheid::Felder;
 use bindung::SlotBeitrag;
-use domain::{Feldtyp, Vz};
+use domain::{Feldtyp, PyWert, Vz};
 use intervall::{AchsenBindung, Werte};
 use proptest::prelude::*;
 use serde_json::{json, Value};
@@ -82,12 +82,12 @@ fn est(f: &Felder, l: Lauf, nur_bestaetigt: bool) -> i64 {
     )
     .expect("Quantitaet bekannt");
     let mut w = Werte::neu();
-    w.setze("arbeitstage", json!(l.arbeitstage));
-    w.setze("entfernung_km_roh", json!(l.km));
-    w.setze("oepnv_kosten_jahr", json!(0));
-    w.setze("eigenes_oder_ueberlassenes_kfz", json!(true));
-    w.setze("bruttoarbeitslohn", json!(l.brutto_cent));
-    w.setze("veranlagung", json!("einzel"));
+    w.setze("arbeitstage", PyWert::Ganz(l.arbeitstage));
+    w.setze("entfernung_km_roh", PyWert::Ganz(l.km));
+    w.setze("oepnv_kosten_jahr", PyWert::Ganz(0));
+    w.setze("eigenes_oder_ueberlassenes_kfz", PyWert::Bool(true));
+    w.setze("bruttoarbeitslohn", PyWert::Ganz(l.brutto_cent));
+    w.setze("veranlagung", PyWert::Text("einzel".to_owned()));
     rechne(&w).expect("Zweig rechnet").get()
 }
 

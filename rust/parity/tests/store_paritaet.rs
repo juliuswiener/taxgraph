@@ -163,7 +163,9 @@ fn event_id_paritaet_ueber_bestandsdateien_falls_vorhanden() {
             store::lade(&pfad).unwrap_or_else(|e| panic!("store::lade({}): {e}", pfad.display()));
         dateien += 1;
         for event in &datei.events {
-            if event.berechne_event_id() != event.event_id {
+            // K2: `berechne_event_id` ist fallibel (NaN/inf → Fehler statt stiller `null`). Ein
+            // Fehler ist hier ein Diff, kein Abbruch: er zaehlt wie eine Abweichung.
+            if event.berechne_event_id() != Ok(event.event_id) {
                 selbst_diffs += 1;
             }
             let payload = serde_json::to_value(event).expect("Event serialisiert");

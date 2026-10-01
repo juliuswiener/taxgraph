@@ -19,12 +19,11 @@
 use std::cell::{Cell, RefCell};
 
 use bindung::Params;
-use domain::{Cent, Euro, Veranlagung, Vz};
+use domain::{Cent, Euro, PyWert, Veranlagung, Vz};
 use engine::tarif::Veranlagung as TarifVeranlagung;
 use engine::zugriff::teil1::werbungskosten::{entfernungspauschale, EntfernungspauschaleEingabe};
 use intervall::{bescheid_via_slots, AchsenBindung, SlotFehler, Slots, Werte};
 use rust_decimal::Decimal;
-use serde_json::Value;
 use store::Store;
 
 mod an_gesamt;
@@ -195,7 +194,7 @@ fn baue<'a, Z: Marke + 'a>(q: Quantitaet, a: Ausgang<'a>, snap: Snapshot<Z>) -> 
 }
 
 /// `slots[k]` (`KeyError`, wenn der Slot fehlt).
-fn slot<'s>(slots: &'s Slots, k: &str) -> R<&'s Value> {
+fn slot<'s>(slots: &'s Slots, k: &str) -> R<&'s PyWert> {
     slots
         .get(k)
         .ok_or_else(|| BescheidFehler::SlotFehlt(k.to_owned()))
@@ -232,16 +231,16 @@ pub(crate) enum VeranlagungWert {
 }
 
 impl VeranlagungWert {
-    fn aus(v: Option<&Value>) -> Self {
+    fn aus(v: Option<&PyWert>) -> Self {
         match v {
-            Some(Value::String(s)) if s == "zusammen" => Self::Zusammen,
-            Some(Value::String(s)) if s == "einzel" => Self::Einzel,
+            Some(PyWert::Text(s)) if s == "zusammen" => Self::Zusammen,
+            Some(PyWert::Text(s)) if s == "einzel" => Self::Einzel,
             _ => Self::Unbekannt,
         }
     }
 
     /// Python `_b("veranlagung") or "einzel"`: ein falsy Wert ist "einzel".
-    fn aus_oder_einzel(v: Option<&Value>) -> Self {
+    fn aus_oder_einzel(v: Option<&PyWert>) -> Self {
         match v {
             Some(w) if crate::py_wahr(w) => Self::aus(v),
             _ => Self::Einzel,

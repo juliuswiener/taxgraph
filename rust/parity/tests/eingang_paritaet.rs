@@ -879,7 +879,7 @@ fn vorbelegen(s: &mut Store, fid: &str) {
     let leer = HashMap::new();
     let neu = store::NeuesEvent {
         feld_id: fid.to_owned(),
-        wert: json!(1),
+        wert: domain::PyWert::Ganz(1),
         feldzustand: domain::Feldzustand::Vorlaeufig,
         herkunft: domain::Herkunft {
             herkunft: domain::Achsenwert::new("laie").unwrap(),

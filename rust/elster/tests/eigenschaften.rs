@@ -48,7 +48,7 @@ fn laie_herkunft() -> Herkunft {
 
 fn feld(wert: Value, zustand: Zustand) -> SnapshotFeld {
     SnapshotFeld {
-        wert,
+        wert: wert.into(),
         zustand,
         herkunft: laie_herkunft().into(),
     }
@@ -226,7 +226,7 @@ proptest! {
         for (b, bestaetigt) in gruppe.iter().zip(&zustaende) {
             let neu = store::NeuesEvent {
                 feld_id: format!("{}__{idx}", b.feld_id),
-                wert: beispiel(b),
+                wert: beispiel(b).into(),
                 feldzustand: if *bestaetigt { domain::Feldzustand::Bestaetigt { signal_2: signal.clone() } } else { domain::Feldzustand::Vorlaeufig },
                 herkunft: laie_herkunft(),
                 schreiber: domain::Schreiber::Mensch("t".to_owned()),

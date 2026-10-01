@@ -1,7 +1,7 @@
 //! `_zweig_festzusetzende_est_gesamt` (`bescheid_zweige.py:414-1069`), Teil 1: der Aufbau des
 //! Gesamtfalls `g` aus Einkuenften, Freibetraegen und Abzuegen. Der Tarif-Teil (`_festzusetzende`,
 //! § 31, SolZ, KiSt) steht in `gesamt_tarif.rs`.
-use domain::{Euro, Vz};
+use domain::{Euro, PyWert, Vz};
 use engine::zugriff::teil1::einkuenfte::{
     einkuenfte_nichtselbststaendig, p16_4_freibetrag, p21_2_verbilligt, vermietung_einkuenfte,
     EinkuenfteNichtselbststaendigEingabe, P164FreibetragEingabe, P212VerbilligtEingabe,
@@ -23,7 +23,6 @@ use engine::zugriff::teil2::rente::{
 };
 use engine::zugriff::teil2::sonstige::p22_nr3_einkuenfte;
 use intervall::Slots;
-use serde_json::Value;
 
 use super::rechnen::{add, max0, sub, summe_euro, R};
 use super::tarif::{leerer_gesamtfall, rahmen, Lage, Modus, P35};
@@ -52,11 +51,8 @@ fn vv_objekt(fi: &Felder) -> R<Euro> {
         sonstige_werbungskosten: ci("vv_sonstige_wk")?,
     })?;
     // § 21 Abs. 2: verbilligte Wohnraumvermietung (Entgelt < 66 %) → WK nur anteilig.
-    let quote_raw = match wert(fi, "vv_entgelt_quote_prozent") {
-        Some(Value::Number(n)) => Some(n),
-        _ => None,
-    };
-    if quote_raw.is_some_and(|n| n.as_i64() == Some(0) || n.as_f64() == Some(0.0)) {
+    let quote_raw = wert(fi, "vv_entgelt_quote_prozent").and_then(PyWert::zahl_ohne_bool);
+    if quote_raw.is_some_and(|n| n.py_eq(&PyWert::Ganz(0))) {
         return ci("vv_einnahmen"); // unentgeltlich → Einnahmen ohne WK, kein Verlust
     }
     // PARITÄT: fail-open default — absent = 100 (nicht verbilligt).
@@ -226,7 +222,7 @@ fn einkuenfte_ns<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots, ns_wk: Euro, zusammen
     let alter = c("versorgung_alter_bei_beginn")?;
     // § 19 Abs. 2 S. 2 Nr. 2 Alters-Gate: nur bei altersgrenze_sonstige (63. Lj, 60. bei GdB >= 50).
     let mut gate_erfuellt = true;
-    if matches!(wert(f, "versorgung_art"), Some(Value::String(s)) if s == "altersgrenze_sonstige")
+    if matches!(wert(f, "versorgung_art"), Some(PyWert::Text(s)) if s == "altersgrenze_sonstige")
         && alter > 0
     {
         let grenze = if c("rentner_grad_der_behinderung")? >= 50 {
@@ -316,7 +312,7 @@ pub(super) fn vorsorge_slots(f: &Felder, zusammen: bool) -> R<(Euro, Euro)> {
 /// § 35: `(messbetrag_a, hebesatz_a, zaehler_a)` — der Zaehler ist der laufende Gewerbe-Gewinn nur bei
 /// `gewinn_betriebsart == gewerbe`, sonst der § 15-Mitunternehmeranteil.
 pub(super) fn p35_person_a(f: &Felder, laufender: Euro, mitu: Euro) -> R<(Euro, i64, Euro)> {
-    let gewerbe = matches!(wert(f, "gewinn_betriebsart"), Some(Value::String(s)) if s == "gewerbe");
+    let gewerbe = matches!(wert(f, "gewinn_betriebsart"), Some(PyWert::Text(s)) if s == "gewerbe");
     let zaehler = max0(if gewerbe { laufender } else { mitu });
     Ok((
         feld_euro_oder_null(f, "gewst_messbetrag")?,

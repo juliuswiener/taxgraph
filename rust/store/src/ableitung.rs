@@ -1,6 +1,7 @@
 //! Datums-Ableitungen fuer `_rechne_ab` (`store.py:447-500`, `_jahr`/`_monat_tag`/`_berechne`).
 //! Reine Funktionen, keine Store-Abhaengigkeit — [`crate::store::Store`] ruft sie auf.
 use bindung::{Ableitung, AbleitungArt};
+use domain::PyWert;
 
 /// Jahreszahl aus einem Datum — ISO (`JJJJ-MM-TT`) oder deutsch (`TT.MM.JJJJ`), sonst `None`
 /// (`store.py:447-455`, `_jahr`). Formatpruefung nur ueber Ziffern-an-der-richtigen-Stelle, wie
@@ -55,11 +56,13 @@ fn zweistellig(a: u8, b: u8) -> Option<u32> {
 }
 
 /// Der abgeleitete Wert, oder `None`, wenn er sich nicht sicher bestimmen laesst (`store.py:468-500`,
-/// `_berechne`). `wert` muss ein String sein (Datum) — jeder andere JSON-Typ liefert `None`, wie
+/// `_berechne`). `wert` muss ein String sein (Datum) — jeder andere Typ liefert `None`, wie
 /// Pythons `_jahr`/`_monat_tag` (`isinstance(wert, str)`-Wache).
 #[must_use]
-pub fn berechne(regel: &Ableitung, wert: &serde_json::Value, vz: i64) -> Option<serde_json::Value> {
-    let wert_str = wert.as_str()?;
+pub fn berechne(regel: &Ableitung, wert: &PyWert, vz: i64) -> Option<serde_json::Value> {
+    let PyWert::Text(wert_str) = wert else {
+        return None;
+    };
     match regel.art {
         AbleitungArt::AlterUnterAmJahresende => {
             let jahr = jahr_aus_datum(wert_str)?;
@@ -124,19 +127,25 @@ mod tests {
         // "vor Beginn des Kalenderjahres das 64. Lebensjahr vollendet" (§ 24a S. 3 EStG):
         // wer am 01.01.1961 geboren ist, vollendet das 64. Lebensjahr mit Ablauf des 31.12.2024.
         let r = regel(AbleitungArt::AlterAmJahresbeginnErreicht, Some(64.0));
-        assert_eq!(berechne(&r, &json!("01.01.1961"), 2025), Some(json!(true)));
-        assert_eq!(berechne(&r, &json!("02.01.1961"), 2025), Some(json!(false)));
+        assert_eq!(
+            berechne(&r, &json!("01.01.1961").into(), 2025),
+            Some(json!(true))
+        );
+        assert_eq!(
+            berechne(&r, &json!("02.01.1961").into(), 2025),
+            Some(json!(false))
+        );
     }
 
     #[test]
     fn uebernahme_ist_immer_none() {
         let r = regel(AbleitungArt::Uebernahme, None);
-        assert_eq!(berechne(&r, &json!("05.05.1955"), 2025), None);
+        assert_eq!(berechne(&r, &json!("05.05.1955").into(), 2025), None);
     }
 
     #[test]
     fn nicht_string_wert_liefert_none() {
         let r = regel(AbleitungArt::JahrAusDatum, None);
-        assert_eq!(berechne(&r, &json!(1955), 2025), None);
+        assert_eq!(berechne(&r, &json!(1955).into(), 2025), None);
     }
 }

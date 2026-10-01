@@ -36,7 +36,7 @@ fn event(i: usize, feld_id: &str, wert: Value, zustand: Zustand) -> Event {
         event_id: EventId::aus_bytes([0; 32]),
         ts: format!("2026-09-29T10:00:{:02}Z", i % 60),
         feld_id: feld_id.to_owned(),
-        wert,
+        wert: wert.into(),
         zustand,
         herkunft: Herkunft {
             herkunft: Achsenwert::new("laie").unwrap(),
@@ -48,7 +48,7 @@ fn event(i: usize, feld_id: &str, wert: Value, zustand: Zustand) -> Event {
         signal: None,
         ersetzt: None,
     };
-    e.event_id = e.berechne_event_id();
+    e.event_id = e.berechne_event_id().expect("Testwert ist darstellbar");
     e
 }
 
@@ -131,7 +131,7 @@ proptest! {
 
     #[test]
     fn ausschluss_nur_wenn_jede_instanz_bestaetigt_abweicht(stand in proptest::collection::vec(0..3u8, 1..6)) {
-        let (ja, nein) = (json!(true), json!(false));
+        let (ja, nein) = (domain::PyWert::Bool(true), domain::PyWert::Bool(false));
         let antworten: Vec<Antwort> = stand
             .iter()
             .map(|s| match s {
@@ -140,7 +140,7 @@ proptest! {
                 _ => Antwort::Bestaetigt(&nein),
             })
             .collect();
-        let ergebnis = Bedingungsstand::aus(&antworten, |w| *w == Value::Bool(false));
+        let ergebnis = Bedingungsstand::aus(&antworten, |w| *w == domain::PyWert::Bool(false));
         let erwartet = if stand.contains(&0) {
             Bedingungsstand::Offen
         } else if stand.iter().all(|s| *s == 2) {

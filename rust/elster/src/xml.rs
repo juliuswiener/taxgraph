@@ -426,10 +426,10 @@ fn leite_absender_ab(
 /// `_leite_steuernummer_ab`: nur ein BESTAETIGTER Wert zaehlt.
 fn leite_steuernummer_ab(snapshot: &Felder) -> Option<String> {
     let feld = snapshot.get("stammdaten_steuernummer")?;
-    if feld.zustand != domain::Zustand::Bestaetigt || !py::truthy(&feld.wert) {
+    if feld.zustand != domain::Zustand::Bestaetigt || !feld.wert.truthy() {
         return None;
     }
-    Some(py::str_von(&feld.wert))
+    Some(feld.wert.py_str())
 }
 
 /// `^[0-9]{4}0[0-9]{8}$` (Python-`$`: ein abschliessendes `\n` passt mit).

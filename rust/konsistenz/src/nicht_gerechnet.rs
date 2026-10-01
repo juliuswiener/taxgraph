@@ -29,8 +29,9 @@ pub fn nicht_gerechnete_angaben(felder: &Felder) -> Vec<NichtGerechnet> {
         .iter()
         .filter(|(fid, _)| {
             // `isinstance(wert, int) and not isinstance(wert, bool) and wert > 0`; ein
-            // bestätigtes `null` ist kein int.
-            matches!(lies(felder, fid), Lesung::Bestaetigt(w) if w.as_i64().is_some_and(|n| n > 0))
+            // bestätigtes `null` ist kein int. `int_ohne_bool` ist genau diese Zeile Pythons.
+            matches!(lies(felder, fid), Lesung::Bestaetigt(w)
+                if w.int_ohne_bool().is_ok_and(|n| n.is_some_and(|n| n > 0)))
         })
         .map(|&(feld_id, hinweis)| NichtGerechnet { feld_id, hinweis })
         .collect()

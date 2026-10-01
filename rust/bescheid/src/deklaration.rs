@@ -20,7 +20,7 @@ mod scheiben_tabellen;
 use scheiben_tabellen as tab;
 mod sperre;
 
-use domain::{Feldtyp, Scheibe, Sperrgrund, Zustand, UNBEKANNTER_SPERRGRUND};
+use domain::{Feldtyp, PyWert, Scheibe, Sperrgrund, Zustand, UNBEKANNTER_SPERRGRUND};
 use konsistenz::{partner_ohne_zusammen, PartnerWiderspruch};
 use serde_json::{json, Value};
 
@@ -319,11 +319,11 @@ pub fn rentenbeginn_offen_stand(felder: &Felder, cfg: Option<&Cfg>) -> Option<Sp
     if !cfg.is_some_and(|c| c.rentner) {
         return None;
     }
-    let beginn_ist_int = match wert(felder, "rentner_renten_beginn_jahr") {
-        Some(Value::Bool(_)) => true,
-        Some(Value::Number(n)) => n.is_i64() || n.is_u64(),
-        _ => false,
-    };
+    // `isinstance(beginn, int)`: `bool` zaehlt in `CPython` als `int`. `Gleit` nicht, Text nicht.
+    let beginn_ist_int = matches!(
+        wert(felder, "rentner_renten_beginn_jahr"),
+        Some(PyWert::Bool(_) | PyWert::Ganz(_) | PyWert::GrossGanz(_))
+    );
     (ist_positive_zahl(wert(felder, "rentner_jahresrente")) && !beginn_ist_int)
         .then_some(Sperrgrund::RentenbeginnOffen)
 }
@@ -418,11 +418,13 @@ mod aequivalenz {
     use proptest::prelude::*;
     use serde_json::{json, Value};
 
-    use super::c2;
-    use crate::aequivalenz::{alt_klasse, ein_feld, int_oder_null, int_oder_null_wie};
+    use crate::aequivalenz::{alt_klasse, int_oder_null, int_oder_null_wie};
+    use crate::vor_k2::int_oder_null_alt;
 
+    /// Die Vor-K2-Fassung von `c2`. `c2` selbst ist seit dem Port die Produktion — dieser Helfer
+    /// traegt die alte Gestalt und ist die einzige Seite, die die D-Nummern messen darf.
     fn alt(v: &Value) -> Ergebnis<i64> {
-        alt_klasse(c2(&ein_feld("x", v.clone(), true), "x"))
+        alt_klasse(int_oder_null_alt(v))
     }
 
     proptest! {

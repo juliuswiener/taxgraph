@@ -1,8 +1,7 @@
 //! `intervall()` (`intervall.py:59-163`).
 use std::collections::BTreeMap;
 
-use domain::{Cent, Feldtyp, Zustand};
-use serde_json::Value;
+use domain::{Cent, Feldtyp, PyWert, Zustand};
 use store::SnapshotFeld;
 
 use crate::{AchsenBindung, Werte};
@@ -72,17 +71,17 @@ pub enum IntervallFehler<E: std::error::Error + 'static> {
 }
 
 /// Extremwerte je Typ; `None` = keine numerische Achse oder unbeschränkt (`intervall.py:59-69`).
-fn extremwerte(b: &AchsenBindung) -> Option<Vec<Value>> {
+fn extremwerte(b: &AchsenBindung) -> Option<Vec<PyWert>> {
     match b.typ {
-        Feldtyp::Bool => Some(vec![Value::Bool(false), Value::Bool(true)]),
-        Feldtyp::Enum => Some(b.enum_werte.iter().cloned().map(Value::String).collect()),
+        Feldtyp::Bool => Some(vec![PyWert::Bool(false), PyWert::Bool(true)]),
+        Feldtyp::Enum => Some(b.enum_werte.iter().cloned().map(PyWert::Text).collect()),
         Feldtyp::Cent | Feldtyp::Int => b.bereich.map(|(lo, hi)| {
             // `sorted({min, max})`: bei min == max genau ein Wert.
             let (a, z) = (lo.min(hi), lo.max(hi));
             if a == z {
-                vec![a.into()]
+                vec![PyWert::Ganz(a)]
             } else {
-                vec![a.into(), z.into()]
+                vec![PyWert::Ganz(a), PyWert::Ganz(z)]
             }
         }),
         Feldtyp::Datum | Feldtyp::Text => None,
@@ -91,7 +90,7 @@ fn extremwerte(b: &AchsenBindung) -> Option<Vec<Value>> {
 
 /// Fixierwert eines unsicheren Felds: Vorschlag, sonst `bereich`-Mittelpunkt, sonst `None` =
 /// nicht fixierbar (`intervall.py:72-81`). Mittelpunkt `(min + max) // 2` rundet gegen −∞.
-fn fixwert(feld: Option<&SnapshotFeld>, b: &AchsenBindung) -> Option<Value> {
+fn fixwert(feld: Option<&SnapshotFeld>, b: &AchsenBindung) -> Option<PyWert> {
     if let Some(f) = feld {
         return Some(f.wert.clone());
     }
@@ -99,7 +98,7 @@ fn fixwert(feld: Option<&SnapshotFeld>, b: &AchsenBindung) -> Option<Value> {
         (Feldtyp::Cent | Feldtyp::Int, Some((lo, hi))) => {
             let mitte = (i128::from(lo) + i128::from(hi)).div_euclid(2);
             // Der Mittelpunkt zweier i64 liegt in i64.
-            i64::try_from(mitte).ok().map(Value::from)
+            i64::try_from(mitte).ok().map(PyWert::Ganz)
         }
         _ => None,
     }
@@ -108,7 +107,7 @@ fn fixwert(feld: Option<&SnapshotFeld>, b: &AchsenBindung) -> Option<Value> {
 /// Einteilung der askable Felder (`intervall.py:89-110`).
 struct Einteilung {
     basis: Werte,
-    achsen: BTreeMap<String, Vec<Value>>,
+    achsen: BTreeMap<String, Vec<PyWert>>,
     offen: Vec<String>,
     nicht_fix: Vec<String>,
 }
@@ -193,7 +192,7 @@ where
     E: std::error::Error + 'static,
     F: FnMut(&Werte) -> Result<Cent, E>,
 {
-    let achsen: Vec<&Vec<Value>> = top.iter().filter_map(|fid| e.achsen.get(*fid)).collect();
+    let achsen: Vec<&Vec<PyWert>> = top.iter().filter_map(|fid| e.achsen.get(*fid)).collect();
     let mut index = vec![0_usize; achsen.len()];
     let mut grenzen: Option<(Cent, Cent)> = None;
     loop {
@@ -243,7 +242,7 @@ where
 ///     enum_werte: vec![], bereich: Some((0, 10)), signatur_slot: Some("tage".into()),
 ///     slot_beitrag: bindung::SlotBeitrag::Exakt };
 /// let r = intervall(&Default::default(), &[b], |w| {
-///     Ok::<_, std::convert::Infallible>(Cent::new(w.get("tage").and_then(|v| v.as_i64()).unwrap_or(0) * 100))
+///     Ok::<_, std::convert::Infallible>(Cent::new(w.get("tage").and_then(|v| v.int().ok()).unwrap_or(0) * 100))
 /// }, CAP_DEFAULT, None).unwrap();
 /// assert_eq!(r.intervall.spanne, Spanne::Zahl { min: Cent::new(0), max: Cent::new(1000), offen: false });
 /// ```
@@ -316,12 +315,13 @@ mod tests {
     use bindung::SlotBeitrag;
     use domain::{Achsenwert, Herkunft, PruefTiefe};
     use proptest::prelude::*;
+    use serde_json::Value;
     use std::convert::Infallible;
 
     fn feld(wert: Value, zustand: Zustand) -> SnapshotFeld {
         let a = Achsenwert::new("t").unwrap();
         SnapshotFeld {
-            wert,
+            wert: wert.into(),
             zustand,
             herkunft: Herkunft {
                 herkunft: a.clone(),
@@ -338,9 +338,10 @@ mod tests {
         let mut s: i64 = 0;
         for (i, (k, v)) in w.iter().enumerate() {
             let n = match v {
-                Value::Bool(b) => i64::from(*b),
-                Value::String(t) => i64::try_from(t.len()).unwrap(),
-                _ => v.as_i64().unwrap_or(0),
+                PyWert::Bool(b) => i64::from(*b),
+                PyWert::Text(t) => i64::try_from(t.len()).unwrap(),
+                PyWert::Ganz(n) => *n,
+                _ => 0,
             };
             let g = i64::try_from(k.len() % 5).unwrap() - 2 + i64::try_from(i % 2).unwrap();
             s += g * n;

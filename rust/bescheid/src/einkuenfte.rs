@@ -4,7 +4,7 @@
 //! Quelle: `produkt/bescheid/bescheid_einkuenfte.py` plus die dort importierten Konstanten und
 //! `dba_methode_fuer` aus `produkt/haut/api_constants.py` (im Rust-Baum bisher nicht vorhanden).
 use bindung::Params;
-use domain::{Euro, Veranlagung, Vz};
+use domain::{Euro, PyWert, Veranlagung, Vz};
 use engine::zugriff::teil1::afa::{p6_2_gwg, P62GwgEingabe};
 use engine::zugriff::teil1::einkuenfte::{
     euer_gewinn, mitunternehmer_einkuenfte, p16_4_freibetrag, p3_nr72_photovoltaik,
@@ -23,7 +23,6 @@ use engine::zugriff::teil2::p23::{
 };
 use engine::zugriff::teil2::p33::{p33a_ausbildungsfreibetrag, p33a_unterhalt, UnterhaltEingabe};
 use engine::zugriff::teil2::sonstige::{p34c_1, AuslaendischeSteuerEingabe};
-use serde_json::Value;
 
 use crate::{
     cent_zu_euro, euro_plus, feld_euro_oder_null, feld_int_oder_null, ist_false, ist_true,
@@ -123,9 +122,9 @@ const DBA_METHODE_ART: [((&str, &str), &str); 10] = [
 
 /// Python `x.strip().lower()` fuer einen Text-Wert; jeder andere truthy Typ ist ein
 /// `AttributeError` (`.strip()` existiert nur auf `str`).
-fn strip_lower(v: &Value) -> Result<String, BescheidFehler> {
+fn strip_lower(v: &PyWert) -> Result<String, BescheidFehler> {
     match v {
-        Value::String(s) => Ok(s.trim_matches(py_leerraum).to_lowercase()),
+        PyWert::Text(s) => Ok(s.trim_matches(py_leerraum).to_lowercase()),
         _ => Err(BescheidFehler::Python {
             klasse: "AttributeError",
             was: "strip() auf Nicht-Text",
@@ -134,7 +133,7 @@ fn strip_lower(v: &Value) -> Result<String, BescheidFehler> {
 }
 
 /// `dba_staat_iso`: Enum-Wert von `dba_staat` → ISO-Code; Unbekanntes bleibt unveraendert.
-fn dba_staat_iso(staat: Option<&Value>) -> Result<String, BescheidFehler> {
+fn dba_staat_iso(staat: Option<&PyWert>) -> Result<String, BescheidFehler> {
     let Some(v) = staat.filter(|v| py_wahr(v)) else {
         return Ok(String::new());
     };
@@ -154,14 +153,15 @@ fn dba_staat_iso(staat: Option<&Value>) -> Result<String, BescheidFehler> {
 ///
 /// ```
 /// use bescheid::einkuenfte::dba_methode_fuer;
-/// use serde_json::json;
-/// assert_eq!(dba_methode_fuer(Some(&json!("Österreich")), None).unwrap(), "freistellung");
-/// assert_eq!(dba_methode_fuer(Some(&json!("polen")), Some(&json!("Dividenden"))).unwrap(), "anrechnung");
+/// use domain::PyWert;
+/// let t = |s: &str| PyWert::Text(s.to_owned());
+/// assert_eq!(dba_methode_fuer(Some(&t("Österreich")), None).unwrap(), "freistellung");
+/// assert_eq!(dba_methode_fuer(Some(&t("polen")), Some(&t("Dividenden"))).unwrap(), "anrechnung");
 /// assert_eq!(dba_methode_fuer(None, None).unwrap(), "anrechnung");
 /// ```
 pub fn dba_methode_fuer(
-    staat: Option<&Value>,
-    einkunftsart: Option<&Value>,
+    staat: Option<&PyWert>,
+    einkunftsart: Option<&PyWert>,
 ) -> Result<&'static str, BescheidFehler> {
     let s = dba_staat_iso(staat)?;
     if s.is_empty() {
@@ -563,7 +563,7 @@ pub fn shared_dba_sonstige(
     let gezahlt = feld_euro_oder_null(f, "dba_gezahlte_auslaendische_steuer")?;
     let ausland = feld_euro_oder_null(f, "dba_auslaendische_einkuenfte")?;
     // Python berechnet die Methode IMMER (auch wenn kein Zweig sie braucht) — sie kann werfen.
-    let methode = if matches!(wert(f, "dba_methode"), Some(Value::String(s)) if s == "dba_freistellung")
+    let methode = if matches!(wert(f, "dba_methode"), Some(PyWert::Text(s)) if s == "dba_freistellung")
     {
         "freistellung"
     } else {
@@ -618,7 +618,7 @@ pub fn p35_partner_anteile(f: &Felder) -> Result<(Euro, i64, Euro), BescheidFehl
     }
     let (laufend, mitu) = laufender_gewinn_partner(f)?;
     let gewerbe =
-        matches!(wert(f, "gewinn_betriebsart_partner"), Some(Value::String(s)) if s == "gewerbe");
+        matches!(wert(f, "gewinn_betriebsart_partner"), Some(PyWert::Text(s)) if s == "gewerbe");
     let zaehler = Euro::new(if gewerbe { laufend.get() } else { mitu.get() }.max(0));
     // PARITÄT: fail-open default — fehlender Messbetrag/Hebesatz = 0.
     Ok((
@@ -687,14 +687,18 @@ pub fn p35_summen(
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
+    use serde_json::{json, Value};
 
     use super::*;
     use crate::testhilfe::{felder, index, params, store};
+    use domain::testhilfe::py;
 
     #[test]
     fn dba_methode_wie_python() {
-        let m = |s: Value, a: Option<Value>| dba_methode_fuer(Some(&s), a.as_ref());
+        let m = |s: Value, a: Option<Value>| {
+            let (s, a) = (py(&s), a.as_ref().map(py));
+            dba_methode_fuer(Some(&s), a.as_ref())
+        };
         assert_eq!(m(json!(" ÖSTERREICH "), None).unwrap(), "freistellung");
         assert_eq!(m(json!("Türkei"), None).unwrap(), "anrechnung");
         assert_eq!(

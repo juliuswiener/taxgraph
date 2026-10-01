@@ -59,7 +59,7 @@ impl<'a> Lage<'a, Cent> {
     /// Bindung `typ: cent`: Python `isinstance(wert, int) and not isinstance(wert, bool)`
     /// (`store.py:174`). Rust-Grenze: `Cent` ist `i64`. Eine Ganzzahl ueber `i64::MAX`
     /// ([`PyWert::GrossGanz`]) nimmt Python an, hier ist sie `Abweichend` — wie in der
-    /// Rust-Schreibpruefung `Wert::aus_json` (`as_i64`).
+    /// Rust-Schreibpruefung `Wert::aus_pywert` (nur `PyWert::Ganz`).
     ///
     /// ```
     /// use domain::{Cent, Lage, PyWert};

@@ -1,9 +1,10 @@
 //! Vergessene Pauschalen (`produkt/konsistenz/check_pauschalen.py`). Weiche Hinweise, keine
 //! Widersprüche: eine Einkunftsquelle ist bestätigt, das Feld für die zugehörige Pauschale fehlt.
+use domain::PyWert;
 use serde_json::Value;
 
 use crate::lesung::{lies, Felder};
-use crate::zahl::{leer_nach_strip, zahl_gleich_null, zahl_gt0};
+use crate::zahl::{als_json, als_text, leer_nach_strip, zahl_gleich_null, zahl_gt0};
 
 /// Ein Pauschal-Check (`check_pauschalen.py:19-44`).
 #[derive(Debug, Clone, Copy)]
@@ -65,11 +66,16 @@ pub struct PauschalHinweis {
 
 /// `_pauschal_feld_ist_leer` (`check_pauschalen.py:53-61`): fehlt, unbestätigt, `null`, `false`,
 /// `0` oder nur Leerraum.
+///
+/// Die drei Zweige des Quells in seiner Reihenfolge: `w is None or w is False or w == 0`. Das
+/// erste `is` ist Identität auf `False` (strukturell), das zweite `==` ist Pythons Vergleich
+/// (`zahl_gleich_null`, das `bool` ausklammert — `True == 0` ist in `CPython` falsch).
 fn ist_leer(felder: &Felder, feld_id: &str) -> bool {
     match lies(felder, feld_id).bestaetigt() {
-        None | Some(Value::Bool(false)) => true,
-        Some(Value::String(s)) => leer_nach_strip(s),
-        Some(w) => zahl_gleich_null(w),
+        None | Some(PyWert::Bool(false)) => true,
+        Some(w) if zahl_gleich_null(w) => true,
+        // `isinstance(w, str) and not w.strip()` — alles, was kein Text ist, ist nicht leer.
+        Some(w) => als_text(w).is_some_and(leer_nach_strip),
     }
 }
 
@@ -90,7 +96,7 @@ pub fn pauschal_hinweise(felder: &Felder) -> Vec<PauschalHinweis> {
                 lies(felder, fid)
                     .bestaetigt()
                     .filter(|w| zahl_gt0(w))
-                    .map(|w| (fid, w.clone()))
+                    .map(|w| (fid, als_json(w)))
             })
             .collect();
         if ausloeser.is_empty() {
@@ -123,25 +129,24 @@ mod tests {
     use super::*;
     use crate::lesung::test_snap as snap;
     use domain::Zustand::{Bestaetigt, Vorlaeufig};
-    use serde_json::json;
 
     #[test]
     fn vv_wk_ein_feld_reicht() {
         let s = snap(&[
-            ("vv_einnahmen", json!(100), Bestaetigt),
-            ("vv_schuldzinsen", json!(5), Bestaetigt),
+            ("vv_einnahmen", PyWert::Ganz(100), Bestaetigt),
+            ("vv_schuldzinsen", PyWert::Ganz(5), Bestaetigt),
         ]);
         assert!(pauschal_hinweise(&s).is_empty());
         let s = snap(&[
-            ("vv_einnahmen", json!(100), Bestaetigt),
-            ("vv_schuldzinsen", json!(5), Vorlaeufig),
+            ("vv_einnahmen", PyWert::Ganz(100), Bestaetigt),
+            ("vv_schuldzinsen", PyWert::Ganz(5), Vorlaeufig),
         ]);
         assert_eq!(pauschal_hinweise(&s)[0].fehlende_felder.len(), 3);
     }
 
     #[test]
     fn bool_ist_kein_ausloeser() {
-        let s = snap(&[("bruttoarbeitslohn", json!(true), Bestaetigt)]);
+        let s = snap(&[("bruttoarbeitslohn", PyWert::Bool(true), Bestaetigt)]);
         assert!(pauschal_hinweise(&s).is_empty());
     }
 }
