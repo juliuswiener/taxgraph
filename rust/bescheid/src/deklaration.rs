@@ -5,10 +5,13 @@
 //! - [`an_gesamt_sperrgrund`] (`_an_gesamt_sperrgrund`): der K2-Guard, liefert einen
 //!   [`Sperrgrund`] oder `None`,
 //! - [`sperrgrund_klartext`], [`sperrgrund_felder`], [`rentenbeginn_offen_stand`],
-//!   [`vorlaeufige_ring_betraege`].
+//!   [`vorlaeufige_ring_betraege`],
+//! - [`einreichungs_xml`] (`api.einreichen` bis zum XML): Ring-Werte, Guard, `deklariere` und
+//!   `erzeuge_xml` in Pythons Reihenfolge.
 //!
 //! Sperrgruende sind [`domain::Sperrgrund`]; ihr Klartext liegt dort (exhaustiver `match`).
 //! Die `cfg`-Scheibe aus `api_constants.SCHEIBEN` ist [`Cfg`].
+mod einreichung;
 mod feste_zahl;
 mod konstanten;
 mod ring_werte;
@@ -21,6 +24,7 @@ use domain::{Feldtyp, Scheibe, Sperrgrund, Zustand, UNBEKANNTER_SPERRGRUND};
 use konsistenz::{partner_ohne_zusammen, PartnerWiderspruch};
 use serde_json::{json, Value};
 
+pub use einreichung::{einreichungs_xml, EinreichFehler, Einreichung};
 pub use feste_zahl::{feste_zahl, FesteZahl, KeineZahl, KeineZahlGrund};
 pub use ring_werte::mit_ring_werten;
 pub use sperre::an_gesamt_sperrgrund;

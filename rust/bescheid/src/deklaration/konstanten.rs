@@ -54,6 +54,21 @@ pub(super) const RENTNER_AA_ARTEN: [&str; 3] = [
     "berufsstaendische_versorgung",
     "private_basisrente",
 ];
+/// `STAMMDATEN_FELDER` (liest `api.einreichen`, nicht `bescheid_deklaration.py`).
+pub(super) const STAMMDATEN_FELDER: [&str; 12] = [
+    "stammdaten_nachname",
+    "stammdaten_vorname",
+    "stammdaten_geburtsdatum",
+    "stammdaten_strasse",
+    "stammdaten_hausnummer",
+    "stammdaten_plz",
+    "stammdaten_wohnort",
+    "stammdaten_keine_bankverbindung",
+    "stammdaten_iban",
+    "stammdaten_bic",
+    "stammdaten_art_est_erklaerung",
+    "stammdaten_steuernummer",
+];
 /// `UEBERNACHTUNG_BEDINGUNGEN`.
 pub(super) const UEBERNACHTUNG_BEDINGUNGEN: [&str; 3] = [
     "uebernachtung_auswaerts",
@@ -106,6 +121,7 @@ pub(super) fn alle() -> Vec<(&'static str, &'static [&'static str])> {
         ("RENTNER_22", &RENTNER_22),
         ("RENTNER_22_PARTNER", &RENTNER_22_PARTNER),
         ("RENTNER_AA_ARTEN", &RENTNER_AA_ARTEN),
+        ("STAMMDATEN_FELDER", &STAMMDATEN_FELDER),
         ("UEBERNACHTUNG_BEDINGUNGEN", &UEBERNACHTUNG_BEDINGUNGEN),
         ("VERPFLEGUNG_TAGE", &VERPFLEGUNG_TAGE),
         ("VERPFLEGUNG_TAGE_NACH_FRIST", &VERPFLEGUNG_TAGE_NACH_FRIST),
