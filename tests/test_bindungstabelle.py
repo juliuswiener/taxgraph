@@ -1820,13 +1820,14 @@ def test_a_kein_doppelter_schluessel_im_feldblock():
     assert not treffer, "doppelte Schlüssel im selben Feldblock:\n  " + "\n  ".join(treffer)
 
 
-# _ABZUGS_KZ-Eintraege, die KEIN Bindungsfeld tragen. Sie sind sachlich richtig klassifiziert
-# (V+V-Werbungskosten, KV/PV-Beitraege), aber die Bindung nutzt inzwischen andere Kz. Stehen
+# _ABZUGS_KZ-Eintraege, die KEIN Bindungsfeld tragen. Sachlich richtig klassifiziert
+# (V+V-Werbungskosten), aber die Bindung nutzt inzwischen eine andere Kz. Stehen
 # gelassen, weil ein Kz ohne Feld nie nachgeschlagen wird und die Klassifikation erhalten bleibt,
-# falls eines der Felder spaeter doch gebunden wird — s. Kommentar in est_mapping.py.
+# falls das Feld spaeter doch gebunden wird — s. Kommentar in est_mapping.py.
+# Die sechs KV/PV-Kz standen bis 2026-10-02 auch hier. Sie schreibt die KV/PV-Weiche
+# basis_kv/basis_pv (VERZWEIGUNG); der Test sah Art-Verzweigungen bis dahin nicht.
 ABZUGS_KZ_OHNE_FELD = {
     "E0703838",  # V+V Werbungskosten — abgeloest durch E0705701, das bis 2026-08-19 fehlte
-    "E2001203", "E2001505", "E2001805", "E2002105", "E2003104", "E2003202",  # KV/PV-Beitraege
 }
 
 
@@ -1854,6 +1855,11 @@ def test_p_abzugs_kz_deckt_die_bindung(daten):
     import est_mapping as M
 
     gebunden = {b["elster_kz"] for d in daten.values() for b in d["bindungen"] if b.get("elster_kz")}
+    # Art-Verzweigung (Klasse f): das Feld traegt keine elster_kz, die Kz waehlt VERZWEIGUNG nach
+    # der Art. So schreibt p35c_massnahme_einzelbetrag die neun § 35c-Kz E0241001..E0241701.
+    felder = {b["feld_id"] for d in daten.values() for b in d["bindungen"]}
+    gebunden |= {kz for basis, cfg in M.VERZWEIGUNG.items() if basis in felder
+                 for kz in cfg["kz"].values()}
     verwaist = sorted(set(M._ABZUGS_KZ) - gebunden - ABZUGS_KZ_OHNE_FELD)
     assert not verwaist, (
         f"_ABZUGS_KZ nennt Kennzahlen, die kein Bindungsfeld traegt: {verwaist}. Entweder ist "

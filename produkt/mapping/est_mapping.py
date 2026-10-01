@@ -67,8 +67,8 @@ _ABZUGS_KZ = frozenset({
     # Betrag, der das Einkommen mindert; abgerundet fiel er um bis zu 99 Cent zu niedrig aus,
     # also zu Ungunsten der steuerpflichtigen Person — gegen die Regel, die oben zitiert steht.
     #
-    # Einzelposten sind BEWUSST NICHT dabei: bei § 35a traegt die Summe (E0104109) das ceiling,
-    # der Einzelposten (E0104108) nicht. Das ist konsistent — abzugswirksam ist die Summe.
+    # Einzelposten blieben damals BEWUSST draussen (abzugswirksam ist die Summe). Das hielt ERiC
+    # nicht stand, s. Nachtrag 2026-10-02 unten.
     "E0107601",  # Kirchensteuer gezahlt (§10 Abs.1 Nr.4, Sonderausgabe) (ceiling)
     "E0108202",  # Berufsausbildung Summe (§10 Abs.1 Nr.7, Sonderausgabe) (ceiling)
     "E0108105",  # Spenden Zeile 5 (§10b Abs.1, Sonderausgabe) (ceiling) — bis 2026-09-26 stand
@@ -85,6 +85,20 @@ _ABZUGS_KZ = frozenset({
     "E0305201",  # §22 Nr.3 Werbungskosten zu den Einnahmen (ceiling)
     "E0241901",  # §35c Sanierungsaufwendungen (ceiling)
     "E0242001",  # §35c Energieberater-Aufwendungen (ceiling)
+
+    # ---- Nachtrag 2026-10-02: die vierzehn Einzelposten zu Summen oben ----
+    # ERiC prueft jede Summe gegen ihre Posten: § 35c und Berufsausbildung ohne Toleranz
+    # (rc=610001002 schon ab 1 EUR), § 35a mit 2 EUR, Kinderbetreuung mit 5 EUR. Rundete die Summe
+    # auf und der Posten ab, machte bei § 35c und Berufsausbildung schon EIN Cent-Betrag die ganze
+    # Erklaerung uneinreichbar. Die § 35a-Summe entsteht zusaetzlich aus den gerundeten Posten
+    # (_P35A_SUMME_AUS_POSTEN). Vault: decisions/aufwand-einzelposten-aufrunden-summe-aus-posten.
+    "E0108002",  # Berufsausbildung Einzelposten (zu E0108202) (ceiling)
+    "E0104108",  # §35a Minijob Einzelposten (zu E0104109) (ceiling)
+    "E0107207",  # §35a Dienstleistung Einzelposten (zu E0107208) (ceiling)
+    "E0111214",  # §35a Handwerker Einzelposten (zu E0111215) (ceiling)
+    "E0506104",  # Kinderbetreuung Einzelbetrag (zu E0506105) (ceiling)
+    "E0241001", "E0241101", "E0241201", "E0241301", "E0241302",  # §35c je Massnahmenart
+    "E0241401", "E0241501", "E0241601", "E0241701",              # (zu E0241901) (ceiling)
 })
 
 # SIEBEN EINTRAEGE OBEN TRAGEN KEIN BINDUNGSFELD (Stand 2026-08-19): E0703838, E2001203,
@@ -100,6 +114,9 @@ _ABZUGS_KZ = frozenset({
 # gebunden wird. Was fehlte, war nicht der Eintrag, sondern die Pruefung, ob die Liste noch auf
 # die Bindung passt — die steht jetzt als test_p_abzugs_kz_deckt_die_bindung in
 # tests/test_bindungstabelle.py.
+#
+# Nachtrag 2026-10-02: verwaist ist nur E0703838. Die sechs KV/PV-Kz schreibt die KV/PV-Weiche
+# basis_kv/basis_pv (VERZWEIGUNG unten); der Test sah Art-Verzweigungen bis dahin nicht.
 #
 # NICHT AUFGENOMMEN, WEIL DORT GAR NICHT GERUNDET WIRD: die EUeR-Kennzahlen E6004901 (uebrige
 # Betriebsausgaben) und E6002301 (geringwertige Wirtschaftsgueter). Sie sind sachlich
@@ -745,6 +762,17 @@ def _deklariere_instanz(basis: str, idx: int, feld_id: str, sfeld: dict, snapsho
                                  "grund": f"Instanz-Basis '{basis}' ohne elster_kz/Aggregat-Ziel"})
 
 
+# § 35a: (Summen-Kz, Posten-Kz). Die Summe ist die Summe der GERUNDETEN Posten (Vordruck Zeile 9:
+# "+ ... ="), nicht die aufgerundete Rohsumme aus dem Ring. Sonst standen bei 4 x 100,01 EUR vier
+# Posten zu 101 gegen eine Summe von 401: Differenz 3, ERiC toleriert 2 (rc=610001002).
+# Vault: decisions/aufwand-einzelposten-aufrunden-summe-aus-posten.
+# ponytail: feste Liste, dieselben drei Toepfe wie bescheid_deklaration._mit_ring_werten (4). Ein
+# vierter Topf, dessen Summe die Engine aus Posten bildet, braucht hier und in
+# rust/elster/src/deklaration.rs einen Eintrag; ab dann lohnt es, die Paare aus der Bindung
+# abzuleiten (askable:false-Summe + instanz_gruppe des Betragsfelds).
+_P35A_SUMME_AUS_POSTEN = (("E0104109", "E0104108"), ("E0107208", "E0107207"), ("E0111215", "E0111214"))
+
+
 def deklariere(snapshot: dict, bindung: dict, *, vz: int, snapshot_id: str | None = None) -> dict:
     """snapshot: {feld_id -> {wert, zustand, herkunft}} (materialisiert). bindung: {feld_id -> Eintrag}.
 
@@ -1056,6 +1084,16 @@ def deklariere(snapshot: dict, bindung: dict, *, vz: int, snapshot_id: str | Non
             eintraege.append(eintrag)
         if eintraege:                                     # leere Gruppe (alle Instanzen fail-closed) weglassen
             anlage_instanzen_out[gruppe] = eintraege
+
+    # § 35a: Summen-Kz = Summe der gerundeten Posten-Kz (Instanz 1 in deklaration, 2..N in den
+    # Instanzen). Ersetzt wird nur eine vorhandene Summe und nur durch einen Betrag > 0, wie im Ring.
+    # Ohne Posten bleibt ein Bestandswert stehen (tests/test_p35a_bestandsdaten.py).
+    for summe_kz, posten_kz in _P35A_SUMME_AUS_POSTEN:
+        posten = [deklaration[posten_kz]] if posten_kz in deklaration else []
+        posten += [inst["felder"][posten_kz] for eintraege in anlage_instanzen_out.values()
+                   for inst in eintraege if posten_kz in inst["felder"]]
+        if summe_kz in deklaration and sum(posten) > 0:
+            deklaration[summe_kz] = sum(posten)
 
     return {
         "basis_snapshot": snapshot_id,

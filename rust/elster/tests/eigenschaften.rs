@@ -721,6 +721,68 @@ fn hh_top_mehrere_posten_ist_xsd_valide() {
     }
 }
 
+/// R2 (Rust-Seite): die § 35a-Summe ist die Summe der GERUNDETEN Posten. 4 × 100,01 € ergeben
+/// vier Posten zu 101 und die Summe 404, nicht die aufgerundete Rohsumme 401. Das Summenfeld
+/// traegt die Rohsumme, wie der Ring sie einhaengt. Python: `tests/test_aufwand_einzel_kz_rundung.py`.
+#[test]
+fn hh_summe_ist_die_summe_der_gerundeten_posten() {
+    for (gruppe, summe, betrag, posten_kz, summe_kz) in [
+        (
+            "hh_minijob",
+            "hh_minijob_aufwendungen",
+            "hh_minijob_betrag",
+            "E0104108",
+            "E0104109",
+        ),
+        (
+            "hh_dienstleistung",
+            "hh_dienstleistungen",
+            "hh_dienstleistung_betrag",
+            "E0107207",
+            "E0107208",
+        ),
+        (
+            "hh_handwerker",
+            "hh_handwerker_arbeitskosten",
+            "hh_handwerker_betrag",
+            "E0111214",
+            "E0111215",
+        ),
+    ] {
+        let mut felder: Felder = (1..=4)
+            .map(|i| {
+                let suffix = if i == 1 {
+                    String::new()
+                } else {
+                    format!("__{i}")
+                };
+                (
+                    format!("{betrag}{suffix}"),
+                    feld(json!(10_001), Zustand::Bestaetigt),
+                )
+            })
+            .collect();
+        felder.insert(summe.to_owned(), feld(json!(40_004), Zustand::Bestaetigt));
+        let d = deklariere(&felder, index(), 2025, None).unwrap();
+        let posten: Vec<&Value> = d
+            .deklaration
+            .get(posten_kz)
+            .into_iter()
+            .chain(
+                d.instanzen_der_gruppe(gruppe)
+                    .iter()
+                    .filter_map(|i| i.felder.get(posten_kz)),
+            )
+            .collect();
+        assert_eq!(posten, vec![&json!(101); 4], "{gruppe}: Posten");
+        assert_eq!(d.deklaration.get(summe_kz), Some(&json!(404)), "{gruppe}");
+    }
+    // Ohne Posten bleibt die Summe stehen (Bestandswert, `tests/test_p35a_bestandsdaten.py`).
+    let felder = einzeln("hh_handwerker_arbeitskosten", json!(300_050), Zustand::Bestaetigt);
+    let d = deklariere(&felder, index(), 2025, None).unwrap();
+    assert_eq!(d.deklaration.get("E0111215"), Some(&json!(3001)));
+}
+
 /// Was das Vorsatz-Seitengate verlangt: Name, Anschrift, Bankentscheidung, Steuernummer.
 fn seitengate() -> Vec<(&'static str, Value)> {
     vec![
