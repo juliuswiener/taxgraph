@@ -1290,6 +1290,14 @@ fn generierte_faelle() {
         Ok(())
     });
     b.borrow().drucke("generierte_faelle", n.get());
+    // Der Zaehler traegt seinen Wert: ohne diese Zeile druckte der Lauf "Abweichungen
+    // gesamt: N" und meldete bei N>0 dasselbe wie bei N=0. Der Delta-Check im Closure
+    // darueber faengt nur eine AENDERUNG, keine konstante Verschiebung.
+    assert_eq!(
+        b.borrow().abweichungen(),
+        0,
+        "generierte_faelle: Abweichungen (Anzahl s. o.)"
+    );
     b.borrow().wache_rechnet("generierte_faelle", &[]);
     ergebnis.unwrap();
     assert!(n.get() >= 1000);
@@ -1361,6 +1369,11 @@ fn dba_methode_generiert() {
         })
         .unwrap();
     b.drucke("dba_methode_generiert", n.get());
+    assert_eq!(
+        b.abweichungen(),
+        0,
+        "dba_methode_generiert: Abweichungen (Anzahl s. o.)"
+    );
     b.wache_rechnet("dba_methode_generiert", &[]);
     assert!(n.get() >= 1000);
     let z = &b.zeilen["dba_methode_fuer"];

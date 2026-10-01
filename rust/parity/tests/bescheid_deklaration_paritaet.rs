@@ -1432,6 +1432,11 @@ fn generierte_faelle() {
         Ok(())
     });
     b.borrow().drucke("generierte_faelle", kontexte.get());
+    assert_eq!(
+        b.borrow().abweichungen(),
+        0,
+        "generierte_faelle: Abweichungen (Anzahl s. o.)"
+    );
     b.borrow().wache_rechnet("generierte_faelle", &[]);
     b.borrow().drucke_gruende();
     eprintln!(
