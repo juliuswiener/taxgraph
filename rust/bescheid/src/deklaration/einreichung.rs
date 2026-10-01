@@ -154,10 +154,15 @@ pub fn einreichungs_xml(
             return Err(EinreichFehler::Gesperrt(grund));
         }
     }
-    // ponytail: `deklariere` kennt noch kein `vz`, seine Null-Verbots-Menge ist die von VZ 2025. In
-    // VZ 2024 schreibt Rust deshalb `E0106603=0`, Python laesst die Kz weg. Upgrade: der
-    // Jahressatz-Port reicht `vz` hier durch, dem einzigen Aufruf im Produktcode.
-    let deklaration = deklariere(&felder, &bindung, Some(&sid.to_string()))?;
+    // Das Jahr kommt aus dem FALL, nie als stiller Vorgabewert: `store.veranlagungszeitraum()`.
+    // `deklariere` prueft es erneut (`null_unzulaessig`, `est_mapping.py:198-229`) und weist es
+    // ab, wenn es fehlt, 0 oder unplausibel ist — dieselbe Stelle wie `EM.deklariere(vz=...)`.
+    let deklaration = deklariere(
+        &felder,
+        &bindung,
+        i64::from(vz.jahr()),
+        Some(&sid.to_string()),
+    )?;
     if !deklaration.eingaben_konsistent() {
         return Err(EinreichFehler::DeklarationUnvollstaendig(
             deklaration.unvollstaendig().to_vec(),

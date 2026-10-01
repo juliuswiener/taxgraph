@@ -21,7 +21,9 @@ fuzz_target!(|data: &[u8]| {
                 felder_aus_zeilen(rest)
             };
             let bindung = taxgraph_fuzz::nachschlag();
-            let Ok(d) = elster::deklariere(&felder, bindung, None) else { return };
+            // Kein Store in diesem Ziel, also kein Falljahr: ein festes Jahr haelt das Ziel bei
+            // seiner Aufgabe (Robustheit), nicht bei der Jahresregel.
+            let Ok(d) = elster::deklariere(&felder, bindung, 2025, None) else { return };
             let _ = elster::zuruecklesen(&d, bindung);
             let opt = XmlOptionen { hersteller_id: Some("00000".into()), snapshot: Some(&felder), ..XmlOptionen::default() };
             if let Ok(xml) = elster::erzeuge_xml(&d, &opt) {

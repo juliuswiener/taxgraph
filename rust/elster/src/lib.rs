@@ -47,8 +47,8 @@ pub use eric::{
 };
 pub use instanz::{instanzen, parse_instanz, zuruecklesen, Instanz, Rueckgelesen};
 pub use kz_format::{
-    cent_nach_kz, jahr_aus_kz_wert, kz_format, kz_wert, KzBetrag, KzFormat, ABZUGS_KZ, DATUMS_KZ,
-    KOMMA_OHNE_E60_KZ, NULL_UNZULAESSIG_KZ,
+    cent_nach_kz, jahr_aus_kz_wert, kz_format, kz_wert, null_unzulaessig, KzBetrag, KzFormat,
+    ABZUGS_KZ, DATUMS_KZ, KOMMA_OHNE_E60_KZ, NULL_UNZULAESSIG_KZ_VEREINIGUNG,
 };
 pub use py::PyFehler;
 pub use tabellen::{IBAN_TRANSFORM_ZIEL_KZ, KONSTANTE_KZ};

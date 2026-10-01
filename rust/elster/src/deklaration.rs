@@ -17,7 +17,7 @@ use store::SnapshotFeld;
 
 use crate::geordnet::Geordnet;
 use crate::instanz::parse_instanz;
-use crate::kz_format::{cent_nach_kz, schreibe_kz, KzBetrag};
+use crate::kz_format::{cent_nach_kz, null_unzulaessig, schreibe_kz, KzBetrag};
 use crate::py::{self, PyFehler};
 use crate::tabellen::{
     suche, PflichtBedingung, Verzweigung, DOKUMENTIERT_AGGREGAT, KAP_FELDER_A, KAP_FELDER_B,
@@ -98,7 +98,7 @@ impl Deklaration {
     /// ```
     /// use std::collections::HashMap;
     /// use elster::{deklariere, Felder};
-    /// let d = deklariere(&Felder::new(), &HashMap::new(), None).unwrap();
+    /// let d = deklariere(&Felder::new(), &HashMap::new(), 2025, None).unwrap();
     /// assert!(d.unvollstaendig().is_empty()); // nichts vorlaeufig, nichts widerspruechlich
     /// ```
     #[must_use]
@@ -111,7 +111,7 @@ impl Deklaration {
     /// ```
     /// use std::collections::HashMap;
     /// use elster::{deklariere, Felder};
-    /// let d = deklariere(&Felder::new(), &HashMap::new(), None).unwrap();
+    /// let d = deklariere(&Felder::new(), &HashMap::new(), 2025, None).unwrap();
     /// assert!(d.eingaben_konsistent());
     /// assert_eq!(d.eingaben_konsistent(), d.unvollstaendig().is_empty());
     /// ```
@@ -125,7 +125,7 @@ impl Deklaration {
     /// ```
     /// use std::collections::HashMap;
     /// use elster::{deklariere, Felder};
-    /// let d = deklariere(&Felder::new(), &HashMap::new(), None).unwrap();
+    /// let d = deklariere(&Felder::new(), &HashMap::new(), 2025, None).unwrap();
     /// // Pflichtluecken sind eine eigene Aussage und machen die Eingaben nicht inkonsistent.
     /// assert!(d.eingaben_konsistent());
     /// assert!(!d.pflichtfelder_luecken().is_empty()); // ohne jede Angabe fehlen Pflichtfelder
@@ -140,7 +140,7 @@ impl Deklaration {
     /// ```
     /// use std::collections::HashMap;
     /// use elster::{deklariere, Felder};
-    /// let d = deklariere(&Felder::new(), &HashMap::new(), None).unwrap();
+    /// let d = deklariere(&Felder::new(), &HashMap::new(), 2025, None).unwrap();
     /// assert!(d.instanzen_der_gruppe("kind").is_empty());
     /// ```
     #[must_use]
@@ -203,6 +203,13 @@ pub enum DeklarationsFehler {
          deklariere() liefert kein stilles Leer-Ergebnis."
     )]
     KeinFeldGebunden,
+    /// Das Veranlagungsjahr fehlt, ist 0 oder unplausibel (`est_mapping.py:220-229`,
+    /// [`null_unzulaessig`]).
+    ///
+    /// Eigene Variante, damit die Python-Klasse `ValueError` an der richtigen Stelle steht —
+    /// `Wert { feld_id, .. }` verlangt ein Feld, hier gibt es keines.
+    #[error("{0}")]
+    Jahr(PyFehler),
     /// Ein Store-Wert passt nicht zu der Operation, die das Original auf ihm ausfuehrt.
     #[error("Feld {feld_id}: {fehler}")]
     Wert { feld_id: String, fehler: PyFehler },
@@ -218,7 +225,7 @@ impl DeklarationsFehler {
     pub fn python_klasse(&self) -> &'static str {
         match self {
             Self::SnapshotObjekt | Self::KeinFeldGebunden => "ValueError",
-            Self::Wert { fehler, .. } => fehler.klasse,
+            Self::Jahr(fehler) | Self::Wert { fehler, .. } => fehler.klasse,
         }
     }
 }
@@ -233,6 +240,9 @@ struct InstBau {
 struct Bau<'a> {
     snapshot: &'a Felder,
     bindung: &'a BindungIndex<'a>,
+    /// Die Null-Verbots-Menge DIESES Veranlagungsjahres ([`null_unzulaessig`]), durchgereicht an
+    /// jede Schreibstelle (`_schreibe_kz(…, null_kz)`, `est_mapping.py:288-302`).
+    null_kz: &'static [&'static str],
     deklaration: BTreeMap<String, Value>,
     kind_anlagen: Vec<KindAnlage>,
     person_b: BTreeMap<String, Value>,
@@ -359,8 +369,10 @@ impl Bau<'_> {
                 ),
                 Some(art) => {
                     if let Some(kz) = nachschlagen(cfg.kz, &art.wert).map_err(&fehler)? {
+                        // Vor dem mutablen Borrow kopieren: `null_kz` ist `&'static`.
+                        let null_kz = self.null_kz;
                         let felder = &mut self.instanz(gruppe, idx).felder;
-                        schreibe_kz(felder, kz, wert, Some(b.typ)).map_err(&fehler)?;
+                        schreibe_kz(felder, kz, wert, Some(b.typ), null_kz).map_err(&fehler)?;
                     } else {
                         let grund = format!("Instanz-Art '{}' ohne Kz-Zweig", art.wert.py_str());
                         self.nicht(feld_id, grund);
@@ -371,8 +383,9 @@ impl Bau<'_> {
             let n = py::int(wert).map_err(&fehler)?;
             self.instanz(gruppe, idx).rohdaten.insert(p23, n);
         } else if let Some(kz) = kz_von(b) {
+            let null_kz = self.null_kz;
             let felder = &mut self.instanz(gruppe, idx).felder;
-            schreibe_kz(felder, kz, wert, Some(b.typ)).map_err(&fehler)?;
+            schreibe_kz(felder, kz, wert, Some(b.typ), null_kz).map_err(&fehler)?;
         } else {
             self.nicht(
                 feld_id,
@@ -416,7 +429,7 @@ impl Bau<'_> {
                 } else {
                     &mut self.deklaration
                 };
-                schreibe_kz(ziel, kz, wert, Some(b.typ)).map_err(&fehler)?;
+                schreibe_kz(ziel, kz, wert, Some(b.typ), self.null_kz).map_err(&fehler)?;
             }
             None if partner => {
                 self.nicht(
@@ -518,7 +531,8 @@ impl Bau<'_> {
         } else if let Some(cfg) = PARTNER_VERZWEIGUNG.iter().find(|v| v.feld == feld_id) {
             self.verzweigung(feld_id, wert, b, cfg, true)?;
         } else if let Some(kz) = suche(PARTNER_INSTANZ, feld_id) {
-            schreibe_kz(&mut self.person_b, kz, wert, Some(b.typ)).map_err(&fehler)?;
+            schreibe_kz(&mut self.person_b, kz, wert, Some(b.typ), self.null_kz)
+                .map_err(&fehler)?;
         } else if let Some(cfg) = WERTEKODIERUNG.iter().find(|w| w.feld == feld_id) {
             match nachschlagen(cfg.code, wert).map_err(&fehler)? {
                 Some(code) => {
@@ -538,7 +552,8 @@ impl Bau<'_> {
         } else if feld_id == "stammdaten_iban" {
             self.iban(feld_id, wert);
         } else if let Some(kz) = kz_von(b) {
-            schreibe_kz(&mut self.deklaration, kz, wert, Some(b.typ)).map_err(&fehler)?;
+            schreibe_kz(&mut self.deklaration, kz, wert, Some(b.typ), self.null_kz)
+                .map_err(&fehler)?;
         } else if let Some(p23) = P23_BETRAGSFELDER.iter().find(|f| **f == feld_id) {
             let n = py::int(wert).map_err(&fehler)?;
             self.instanz("p23_veraeusserung", 1).rohdaten.insert(p23, n);
@@ -622,29 +637,41 @@ fn kap_alle_null(snapshot: &Felder, felder: &[&str]) -> Ergebnis<bool> {
 /// Nur bestaetigte Felder werden deklariert; der Rest steht mit Grund in
 /// [`Deklaration::unvollstaendig`] bzw. `nicht_deklariert`.
 ///
+/// `vz` ist das Veranlagungsjahr, PFLICHT. Es entscheidet, welche Kz eine 0 verbieten duerfen
+/// ([`null_unzulaessig`]) — E0106603 verbietet sie 2024 und erlaubt sie 2025. Es gibt keinen
+/// Vorgabewert, kein `None` und keinen Rueckfall: ein fehlendes oder unplausibles Jahr ist ein
+/// Fehler, weil eine still gewaehlte Menge genau die Fehlerklasse waere, die diese Pruefung
+/// abstellt (Julius-Entscheidung 2026-10-01, festgehalten in `est_mapping.py::null_unzulaessig`).
+///
 /// # Errors
-/// [`DeklarationsFehler`], wenn die Eingabe-Ebene falsch ist oder ein Store-Wert nicht zu der
-/// Operation passt, die das Original auf ihm ausfuehrt (Python-Ausnahme an derselben Stelle).
+/// [`DeklarationsFehler`], wenn die Eingabe-Ebene falsch ist, das Jahr fehlt/0/unplausibel ist,
+/// oder ein Store-Wert nicht zu der Operation passt, die das Original auf ihm ausfuehrt
+/// (Python-Ausnahme an derselben Stelle).
 ///
 /// ```
 /// use std::collections::HashMap;
 /// use elster::{deklariere, Felder};
 /// let leer = Felder::new();
-/// let d = deklariere(&leer, &HashMap::new(), None).unwrap();
+/// let d = deklariere(&leer, &HashMap::new(), 2025, None).unwrap();
 /// assert!(d.eingaben_konsistent());
 /// assert_eq!(d.deklaration.get("E0100001"), Some(&serde_json::json!(true)));
+/// assert!(deklariere(&leer, &HashMap::new(), 0, None).is_err());
 /// ```
 pub fn deklariere(
     snapshot: &Felder,
     bindung: &BindungIndex<'_>,
+    vz: i64,
     snapshot_id: Option<&str>,
 ) -> Ergebnis<Deklaration> {
     if snapshot.contains_key("felder") || snapshot.contains_key("snapshot_id") {
         return Err(DeklarationsFehler::SnapshotObjekt);
     }
+    // fail-closed, VOR jeder Schreibstelle (`est_mapping.py:763`).
+    let null_kz = null_unzulaessig(vz).map_err(DeklarationsFehler::Jahr)?;
     let mut bau = Bau {
         snapshot,
         bindung,
+        null_kz,
         deklaration: KONSTANTE_KZ
             .iter()
             .map(|k| ((*k).to_owned(), Value::Bool(true)))
@@ -914,6 +941,7 @@ impl Bau<'_> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::path::Path;
 
     use domain::{Achsenwert, Herkunft, PruefTiefe};
@@ -931,6 +959,90 @@ mod tests {
         assert!(iban_pruefziffer_gueltig("DE89370400440532013000"));
         assert!(!iban_pruefziffer_gueltig("DE88370400440532013000"));
         assert!(!iban_muster("DE8937"[..3].to_string().as_str()));
+    }
+
+    /// Die Jahresregel selbst (`null_unzulaessig`, `est_mapping.py:198-229`). Ohne diesen Test
+    /// bliebe die Regel unbelegt: `deklariere` allein prueft nur, dass sie ueberhaupt greift.
+    ///
+    /// Die zwei Korpusfaelle sind die Gegenprobe zur stillen Vorgabe — `eg_huge.json` traegt
+    /// vz 10^38−1, `eg_neg.json` vz −5; beide muessen `ValueError` geben. Sonst ginge 10^38 als
+    /// „spaeter als 2025" durch und bekaeme die Vereinigungsmenge.
+    #[test]
+    fn null_verbot_gilt_je_veranlagungsjahr() {
+        // 1. Fehlendes Jahr: die 0 aus `store.get(...) or 0`. Fail-closed, KEINE Menge.
+        let fehlt = deklariere(&Felder::new(), &HashMap::new(), 0, None).unwrap_err();
+        assert_eq!(fehlt.python_klasse(), "ValueError", "{fehlt}");
+        assert!(fehlt.to_string().contains("fehlt oder ist 0"), "{fehlt}");
+
+        // 2. Unplausible Jahre: unter 2024 und die 10^38 des Korpusfalls.
+        //
+        // `eg_huge.json` traegt 99999999999999999999999999999999999999; auf dem Weg hierher
+        // saettigt `Veranlagungsjahr::als_i64_saettigend` das auf `i64::MAX` — derselbe Zweig.
+        for vz in [-5_i64, 2023, i64::MAX, i64::MIN] {
+            let e = deklariere(&Felder::new(), &HashMap::new(), vz, None).unwrap_err();
+            assert_eq!(e.python_klasse(), "ValueError", "vz {vz}: {e}");
+            assert!(e.to_string().contains("kein Steuerjahr"), "vz {vz}: {e}");
+        }
+
+        // 3. Der Belegfall der Jahresspanne: E0106603 verbietet die 0 nur 2024.
+        //
+        // `rentner_pflege_weitere_personen` traegt XSD-Label „ist eine 0 einzutragen" und
+        // `beispielwert: 0`; 2024 zwingt das XSD die 0 dennoch in einen Typ ohne 0. Beide Welten
+        // lassen die Kz darum 2024 weg und schreiben sie 2025.
+        //
+        // Der Pflege-Block raeumt E0106603 ohne Pflegegrad weg (`pflegeblock`); die Begleit-Kz
+        // halten ihn zusammen, wie in `pflegeblock_folgt_dem_xsd_enum`.
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let mut felder = Felder::new();
+        for (f, w) in [
+            ("rentner_gepflegter_wohnsitz_inland", json!(true)),
+            ("rentner_pflege_weitere_personen", json!(0)),
+            ("rentner_gepflegter_idnr", json!("12345678911")),
+            ("rentner_gepflegter_angaben", json!("Muster")),
+            ("rentner_pflege_durch", json!("1")),
+            ("rentner_pflegegrad", json!(3)),
+        ] {
+            felder.insert(f.to_owned(), feld(w));
+        }
+        let mit_null = |vz: i64| {
+            deklariere(&felder, &index, vz, None)
+                .unwrap()
+                .deklaration
+                .get("E0106603")
+                .cloned()
+        };
+        assert_eq!(mit_null(2024), None, "2024 verbietet die 0 in E0106603");
+        assert_eq!(mit_null(2025), Some(json!(0)), "2025 verlangt sie sogar");
+
+        // 4. Unbekanntes aber plausibles Jahr: die Vereinigung — zu streng, nie zu lax.
+        let vereinigung = crate::null_unzulaessig(2026).unwrap();
+        for jahr in [2024_i64, 2025] {
+            for kz in crate::null_unzulaessig(jahr).unwrap() {
+                assert!(
+                    vereinigung.contains(kz),
+                    "{kz} aus {jahr} fehlt in der Vereinigung"
+                );
+            }
+        }
+        assert_eq!(mit_null(2026), None, "2026 erbt die 0-Sperre von 2024");
     }
 
     /// Vault: `decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen`, Punkte 1-3.
@@ -979,7 +1091,10 @@ mod tests {
             if let Some(h) = h {
                 felder.insert("rentner_gepflegter_hilflos".to_owned(), feld(json!(h)));
             }
-            let d = deklariere(&felder, &index, None).unwrap();
+            // VZ 2025: bis auf E0106603 tragen die Kz dieses Blocks (E0161606, E0161808,
+            // PFLEGE_KZ) in beiden Jahresmengen dieselbe 0-Sperre. E0106603 ist der Belegfall der
+            // Jahresspanne und steht in `null_verbot_gilt_je_veranlagungsjahr`.
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
             let da: Vec<&str> = PFLEGE_KZ
                 .iter()
                 .copied()
@@ -1029,7 +1144,7 @@ mod tests {
     /// (Klasse f, g×f) schreibt keine 0 in eine Kz, deren XSD-Typ sie verbietet, auch nicht aus
     /// 50 Cent abgerundet. Zwilling von `null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet`
     /// (`tests/eigenschaften.rs`), der die `pub(crate)`-Tabellen nicht sieht. Die Kz-Menge kommt
-    /// live aus dem XSD 2025, nicht aus `NULL_UNZULAESSIG_KZ`.
+    /// live aus dem XSD 2025, nicht aus `null_unzulaessig`.
     #[test]
     fn art_verzweigung_schreibt_keine_verbotene_null() {
         let Some(xsd) = crate::finde_schema(2025, "E10-{jahr}.xsd") else {
@@ -1088,7 +1203,9 @@ mod tests {
                             (format!("{}{i}", cfg.feld), feld(json!(w))),
                             (format!("{}{i}", cfg.art_feld), feld(json!(art))),
                         ]);
-                        let d = deklariere(&snapshot, &index, None).unwrap();
+                        // VZ 2025: die neun §35c-Kz der Art-Verzweigung (E0241001…) tragen in
+                        // beiden Jahresmengen dieselbe 0-Sperre.
+                        let d = deklariere(&snapshot, &index, 2025, None).unwrap();
                         let instanzen = d.anlage_instanzen.iter().flat_map(|(_, ii)| ii);
                         durch.extend(
                             [&d.deklaration, &d.person_b]

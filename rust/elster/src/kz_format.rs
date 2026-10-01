@@ -47,19 +47,90 @@ pub const KOMMA_OHNE_E60_KZ: &[&str] = &[
 /// Instanz und Person B; Spenden; die neun §35c-Kz der Art-Verzweigung). Kz mit Textwert fehlen:
 /// `"0,00"` ist gueltig, ein Jahr 0 (`"01.01.0000"`) nicht (`bereich` beim Speichern ungeprueft).
 ///
-/// ponytail: eingefroren am 2026-10-01, jahresunabhaengig, damit `deklariere` ohne XSD laeuft.
-/// Grenze: `E10-2024.xsd` verbietet die 0 zusaetzlich in E0106603 (Anzahl weiterer
-/// Pflegepersonen); 2025 ist sie dort erlaubt und laut XSD-Label einzutragen. Upgrade: eine Menge
-/// je VZ. Drift faengt `null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet` (`tests/eigenschaften.rs`)
-/// und fuer die Art-Verzweigung `art_verzweigung_schreibt_keine_verbotene_null`
-/// (`deklaration.rs`); beide leiten die Menge live aus dem XSD 2025 ab.
-pub const NULL_UNZULAESSIG_KZ: &[&str] = &[
-    "E0108202", "E0108002", "E0207611", "E0203503", "E0203504", "E0801705", "E0107207", "E0107208",
-    "E0111215", "E0111214", "E0104109", "E0104108", "E0506104", "E0505809", "E0506105", "E0305201",
-    "E0240802", "E0242001", "E0240801", "E0241901", "E0109708", "E0161606", "E0205409", "E0205302",
-    "E0205201", "E0108105", "E0241001", "E0241101", "E0241201", "E0241301", "E0241302", "E0241401",
-    "E0241501", "E0241601", "E0241701",
+/// JE VERANLAGUNGSJAHR, seit 2026-10-01 (`est_mapping.py:167-191`). Vorher war die Menge flach
+/// fuer alle Jahre. `E10-2024.xsd` verbietet die 0 zusaetzlich in E0106603 (Anzahl weiterer
+/// Pflegepersonen), waehrend `E10-2025.xsd` sie dort erlaubt und das XSD-Label sie sogar verlangt
+/// (`bindung_rentner.yaml`). Beide Mengen sind aus `est_mapping.py` uebernommen: 2024 hat 36 Kz,
+/// 2025 hat 35 und ist Teilmenge von 2024 — der Unterschied ist genau E0106603.
+///
+/// ponytail: eingefroren am 2026-10-01, je Jahr, damit `deklariere` ohne XSD laeuft und in jeder
+/// Umgebung dieselbe Deklaration ergibt. Die Jahresliste waechst nur, wenn ein Jahres-XSD
+/// dazukommt. Drift faengt `kz_mengen_aus_xsd` (`tests/eigenschaften.rs`): jede Kz beider Mengen
+/// gegen das Schema ihres Jahres. Die Gegenrichtung (keine verbietende Kz fehlt) leiten
+/// `null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet` und fuer die Art-Verzweigung
+/// `art_verzweigung_schreibt_keine_verbotene_null` (`deklaration.rs`) live aus dem XSD 2025 ab.
+/// Fuer 2024 prueft sie niemand; Upgrade: beide Tests ueber die Jahresliste laufen lassen.
+const NULL_UNZULAESSIG_KZ_2024: &[&str] = &[
+    "E0104108", "E0104109", "E0106603", "E0107207", "E0107208", "E0108002", "E0108105", "E0108202",
+    "E0109708", "E0111214", "E0111215", "E0161606", "E0203503", "E0203504", "E0205201", "E0205302",
+    "E0205409", "E0207611", "E0240801", "E0240802", "E0241001", "E0241101", "E0241201", "E0241301",
+    "E0241302", "E0241401", "E0241501", "E0241601", "E0241701", "E0241901", "E0242001", "E0305201",
+    "E0505809", "E0506104", "E0506105", "E0801705",
 ];
+
+/// Die Jahresmenge 2025 — siehe [`NULL_UNZULAESSIG_KZ_2024`]. Teilmenge von 2024.
+const NULL_UNZULAESSIG_KZ_2025: &[&str] = &[
+    "E0104108", "E0104109", "E0107207", "E0107208", "E0108002", "E0108105", "E0108202", "E0109708",
+    "E0111214", "E0111215", "E0161606", "E0203503", "E0203504", "E0205201", "E0205302", "E0205409",
+    "E0207611", "E0240801", "E0240802", "E0241001", "E0241101", "E0241201", "E0241301", "E0241302",
+    "E0241401", "E0241501", "E0241601", "E0241701", "E0241901", "E0242001", "E0305201", "E0505809",
+    "E0506104", "E0506105", "E0801705",
+];
+
+/// Die Vereinigung aller bekannten Jahresmengen (`est_mapping.py:193-195`). Wer sie liest, statt
+/// eines Jahres, ist absichtlich zu streng: die Vereinigung sendet nie eine verbotene 0.
+pub const NULL_UNZULAESSIG_KZ_VEREINIGUNG: &[&str] = NULL_UNZULAESSIG_KZ_2024;
+
+/// Kz, in die `schreibe_kz` keine 0 schreibt, fuer dieses Veranlagungsjahr — die Regel hat vier
+/// Faelle (`est_mapping.py:198-229`, `null_unzulaessig`).
+///
+/// 1. `vz` fehlt, ist `0` oder keine ganze Zahl → **Fehler**. `store.get("veranlagungszeitraum")
+///    or 0` in `haut/api.py` liefert genau diese 0, wenn das Feld fehlt — sie darf nicht in eine
+///    Jahresmenge greifen.
+/// 2. `vz` ist bekannt (2024, 2025) → **seine eigene Menge**. Belegfall E0106603: 2024 verbietet
+///    die 0, 2025 erlaubt sie.
+/// 3. `vz` ist unbekannt aber plausibel (2026 bis 2100) → **die Vereinigung aller bekannten
+///    Jahre**. Das ist KEIN stiller Rueckfall, sondern eine benannte Regel: die Vereinigung sendet
+///    nie eine verbotene 0. Der Preis ist eine moeglicherweise erlaubte 0, die wir weglassen — und
+///    weil 0 in diesen Kz „nichts anzugeben" heisst (`minOccurs 0`), ist der Verlust null. Das
+///    Produkt rechnet VZ 2026 (`params/2026` ist vollstaendig); eine 2026er Erklaerung laeuft
+///    heute bis ERiC und bekommt dort 610001042. Ein harter Fehler hier waere ein Rueckschritt auf
+///    einem Pfad, der funktioniert.
+/// 4. `vz` ist unplausibel (unter 2024, oder ueber 2100 wie die 10^38 eines Korpusfalls) →
+///    **Fehler**. Sonst ginge 10^38 als „spaeter als 2025" durch und bekaeme die Vereinigung,
+///    obwohl es kein Steuerjahr ist — eine stille Vorgabe durch die Hintertuer.
+///
+/// PARITÄT: Python prueft `isinstance(vz, bool)` gesondert, weil `True == 1` und `bool` ein
+/// `int`-Untertyp ist. Hier traegt [`crate::deklariere`] das Jahr als `i64`, ein `bool` ist also
+/// gar nicht darstellbar — die Pruefung entfaellt, statt sie zu vergessen.
+///
+/// # Errors
+/// [`PyFehler`] mit Klasse `ValueError`, genau wo `est_mapping.py` wirft: fehlendes/0-Jahr und
+/// unplausibles Jahr. Der Korpusfall `eg_huge.json` (vz 10^38−1) und `eg_neg.json` (vz −5)
+/// erreichen diesen Fehler ueber `deklariere`, sobald das Jahr aus dem Fall kommt.
+pub fn null_unzulaessig(vz: i64) -> Result<&'static [&'static str], PyFehler> {
+    if vz == 0 {
+        return Err(PyFehler {
+            klasse: "ValueError",
+            nachricht: format!(
+                "Veranlagungsjahr fehlt oder ist 0: {vz}. deklariere() braucht das Jahr, weil die \
+                 Null-Verbots-Liste je Jahr gilt. Fehlt das Feld 'veranlagungszeitraum' im Store?"
+            ),
+        });
+    }
+    match vz {
+        2024 => Ok(NULL_UNZULAESSIG_KZ_2024),
+        2025 => Ok(NULL_UNZULAESSIG_KZ_2025),
+        2026..=2100 => Ok(NULL_UNZULAESSIG_KZ_VEREINIGUNG),
+        _ => Err(PyFehler {
+            klasse: "ValueError",
+            nachricht: format!(
+                "Veranlagungsjahr {vz} ist kein Steuerjahr (erwartet 2024..2100). deklariere() \
+                 lehnt es ab, statt still eine Menge zu waehlen."
+            ),
+        }),
+    }
+}
 
 /// Datums-Kz, in die ein Jahres-Wert als `01.01.JJJJ` geschrieben wird (`est_mapping.py:199`).
 /// Aus dem XSD abgeleitet (Datums-Typ ∩ Kz-Literale des Moduls).
@@ -194,12 +265,16 @@ pub fn kz_wert(wert: &Value, kz: &str, typ: Option<Feldtyp>) -> Result<Value, Py
     Ok(wert.clone())
 }
 
-/// Die eine Schreibstelle fuer Kz-Werte in `deklariere` (`_schreibe_kz`, `est_mapping.py:231-241`):
+/// Die eine Schreibstelle fuer Kz-Werte in `deklariere` (`_schreibe_kz`, `est_mapping.py:288-302`):
 /// `ziel[kz] = kz_wert(…)`, ausser der Kz-Wert ist 0 und die Kz verbietet die 0
-/// ([`NULL_UNZULAESSIG_KZ`]). Erst umrechnen, dann pruefen: 1-99 Cent werden in einer
-/// abgerundeten Kz zur 0 und entfallen ebenso.
+/// (`null_kz`, die Menge DIESES Veranlagungsjahres). Erst umrechnen, dann pruefen: 1-99 Cent
+/// werden in einer abgerundeten Kz zur 0 und entfallen ebenso.
+///
+/// `null_kz` kommt aus [`deklariere`](crate::deklariere) und wird durchgereicht, damit an jeder
+/// Schreibstelle dieselbe Jahresmenge gilt — kein Modulzustand.
 ///
 /// Kein `nicht_deklariert`-Eintrag: eine 0 ist kein verlorener Wert, sondern „nichts anzugeben".
+/// Mit Eintrag meldete die Pruefanzeige bei jeder weggelassenen 0 „nicht alle Werte".
 ///
 /// # Errors
 /// Wie [`kz_wert`], dazu `OverflowError`/`ValueError`, wenn der Store-Wert nicht nach JSON geht
@@ -209,12 +284,13 @@ pub(crate) fn schreibe_kz(
     kz: &str,
     wert: &domain::PyWert,
     typ: Option<Feldtyp>,
+    null_kz: &[&str],
 ) -> Result<(), PyFehler> {
     // DIE Grenze Store -> Deklaration: einmal konvertieren, danach laeuft die unveraenderte
     // Value-Kette (`kz_wert`, `gleich_null`) -- die Deklaration IST JSON.
     let wert = wert.zu_json().map_err(PyFehler::from)?;
     let v = kz_wert(&wert, kz, typ)?;
-    if NULL_UNZULAESSIG_KZ.contains(&kz) && py::gleich_null(&v) {
+    if null_kz.contains(&kz) && py::gleich_null(&v) {
         return Ok(());
     }
     ziel.insert(kz.to_owned(), v);

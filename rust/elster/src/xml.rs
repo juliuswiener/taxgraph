@@ -645,7 +645,7 @@ fn eingaben_pruefen(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<(), X
 /// ```
 /// use std::collections::HashMap;
 /// use elster::{deklariere, erzeuge_xml, Felder, XmlOptionen};
-/// let d = deklariere(&Felder::new(), &HashMap::new(), None).unwrap();
+/// let d = deklariere(&Felder::new(), &HashMap::new(), 2025, None).unwrap();
 /// let opt = XmlOptionen { hersteller_id: Some("00000".into()), ..XmlOptionen::default() };
 /// if elster::finde_schema(2025, "E10-{jahr}.xsd").is_some() {
 ///     let xml = erzeuge_xml(&d, &opt).unwrap();
