@@ -26,11 +26,19 @@ Ein grüner Test, der nie rot war, beweist nichts.
 WAS DIESER TEST AUSDRÜCKLICH NICHT BEHAUPTET:
   Nicht, dass die Kürzungsrechnung in jeder Reihenfolge richtig ist (Deckel S. 8 HS 3 vor
   Entgelt S. 10 — separat gemessen, Bericht AK2). Nicht, dass ein Bestandsfall betroffen ist:
-  der Bestand trägt in 17 Fällen Verpflegungs-Felder, aber 0 gestellte Mahlzeiten, die
+  der Bestand trägt in 23 Fällen Verpflegungs-Felder, aber 0 gestellte Mahlzeiten, die
   Kürzung ist dort gesetzlich richtig 0. Dieser Test misst die Naht, nicht den Schaden.
+  Die 23 hielten bis 2026-10-01 nur im Commit-Text; test_bestand_hat_keine_kuerzung misst sie.
+
+DER BESTAND IST EINE LEBENDE MENGE. Die Falldateien unter api_constants.FAELLE
+($TAXGRAPH_DATEN/faelle bzw. ~/.local/share/taxgraph/faelle) entstehen im Entwicklungsbetrieb
+weiter — 115 im August 2026, 77 im September. test_bestand_hat_keine_kuerzung pinnt den Nenner
+deshalb mit einer Zahl, die veralten KANN; sie ist vom 2026-10-01 und wird von Hand
+nachgezogen. Der Test sagt das in seiner Fehlermeldung — er ist ein Wecker, kein Gesetz.
 """
 from __future__ import annotations
 
+import glob
 import json
 import os
 import sys
@@ -42,7 +50,8 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-for _sub in ("produkt/haut", "produkt/eingang", "produkt/store", "produkt/mapping", "golden"):
+for _sub in ("produkt/haut", "produkt/eingang", "produkt/store", "produkt/mapping", "golden",
+             "produkt/engine"):
     sys.path.insert(0, os.path.join(ROOT, _sub))
 
 os.environ["TAXGRAPH_NO_AUTH"] = "1"   # wie tests/conftest.py — sonst 401 auf /fall
@@ -189,6 +198,136 @@ def gemessen(tmp_path_factory):
 
 def _kz(gemessen, fall):
     return gemessen[fall]["deklaration"]["deklaration"].get("E0205508")
+
+
+# --------------------------------------------------------------------------- Bestandsmessung
+# Die zweite Ebene dieses Befunds: der Ring rechnet richtig — nur rechnet er im Bestand nichts
+# zu rechnen. Diese zwei Tests halten das fest, ohne einen Server: sie lesen die echten
+# Falldateien und rufen DIESELBE Funktion, die bescheid_deklaration._mit_ring_werten ruft.
+#
+# Warum ohne Server: die Kürzung ist dort gesetzlich 0, es gibt also kein XML zu vergleichen.
+# Was hier geprüft wird, ist der Nenner — nicht "es kam nichts an" (das wäre auch bei einem
+# kaputten Ring grün), sondern "es gab nichts zu kürzen, und das lag an der Mahlzeit".
+
+NENNER_STAND = 23        # 2026-10-01: Fälle mit Verpflegungs-Feldern, alle mit 0 Mahlzeiten
+TAGE_KZ = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig")
+MAHLZEITEN_KZ = ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
+                 "vpf_abendessen_gestellt_anzahl")
+FELDER_VPF = TAGE_KZ + MAHLZEITEN_KZ + ("vpf_mahlzeiten_gezahltes_entgelt",
+                                        "vpf_steuerfreie_erstattung_betrag",
+                                        "vpf_keine_mahlzeitengestellung")
+
+
+def _bestand_felder():
+    """Je Fall die materialisierten felder — nur für Fälle mit Verpflegungs-Feldern.
+
+    Die Projektion kommt aus store.materialisiere (derselbe Weg wie api.deklaration), nicht
+    aus einer eigenen ersetzt-Auflösung. Ein Fall mit fremdem VZ (Testfixture, 2099) fliegt
+    raus: der Ring würde dort an fehlenden Params scheitern, und die Aussage gilt dem Bestand
+    der drei unterstützten Jahrgänge (runner.VZ_ENUM).
+    """
+    import store as ST
+    import api_constants as AK
+    dateien = sorted(glob.glob(os.path.join(AK.FAELLE, "*.json")))
+    if not dateien:
+        pytest.skip(f"Kein Bestand unter {AK.FAELLE} — dieser Test prüft dann NICHTS. "
+                    f"SKIP statt stillem PASS, damit ein leerer Bestand nicht sauber aussieht.")
+    raus = []
+    for pfad in dateien:
+        with open(pfad, encoding="utf-8") as f:
+            store = json.load(f)
+        if store.get("veranlagungszeitraum") not in (2024, 2025, 2026):
+            continue
+        felder, _sid = ST.materialisiere(store)
+        if any(f in felder for f in FELDER_VPF):
+            raus.append((store["veranlagungszeitraum"], felder))
+    return dateien, raus
+
+
+def _kuerzung_cent(felder: dict, vz: int) -> int:
+    """Dieselbe Funktion, die der Produktweg ruft — ohne except: 0.
+
+    Mitzählbar bleibt sie nicht: eine Ausnahme ist hier ein Fehler und keine Null. In
+    bescheid_deklaration._mit_ring_werten steht das try/except (dort ist eine 0 der sichere
+    Ausgang); im Test würde es "grün" und "Ring tot" ununterscheidbar machen.
+    """
+    import runner as RN
+    return RN._verpflegung_kuerzung_cent({fid: e["wert"] for fid, e in felder.items()}, vz)
+
+
+def test_bestand_hat_keine_kuerzung():
+    """Die Zahl aus dem Commit-Text, jetzt gemessen: 0 Kürzung in 23 Fällen mit Mahlzeiten-Feldern.
+
+    Der Befund vom 2026-10-01 war: der Bestand trägt Verpflegungs-Felder, aber keine gestellte
+    Mahlzeit — die Kürzung ist dort gesetzlich richtig 0. Das stand nur im Commit; kein Test
+    hielt es fest. Damit war "0 Kürzung" von "Ring rechnet nichts" nicht zu unterscheiden,
+    denn beide liefern 0.
+
+    Beide Zahlen sind vom 2026-10-01 und können veralten: der Bestand wächst. Wird dieser Test
+    rot, ist zuerst zu prüfen, ob ein echter Fall mit gestellter Mahlzeit dazugekommen ist —
+    dann ist die rote Zahl der Befund und nicht der Test.
+    """
+    dateien, bestand = _bestand_felder()
+
+    assert len(bestand) == NENNER_STAND, (
+        f"Nenner verschoben: {len(bestand)} Fälle mit Verpflegungs-Feldern unter {len(dateien)} "
+        f"Falldateien, festgehalten waren {NENNER_STAND} (2026-10-01). Prüf zuerst, ob ein neuer "
+        f"Fall dabei ist (dann NENNER_STAND nachziehen) — oder ob ein Feld aus FELDER_VPF aus "
+        f"der Bindung fiel.")
+
+    mit_mahlfeld = [(vz, f) for vz, f in bestand if any(k in f for k in MAHLZEITEN_KZ)]
+    werte = sorted({f[k]["wert"] for _vz, f in mit_mahlfeld for k in MAHLZEITEN_KZ if k in f})
+    assert werte == [0], (
+        f"Ein Bestandsfall trägt eine gestellte Mahlzeit: Werte {werte} in {len(mit_mahlfeld)} "
+        f"Fällen mit Mahlzeiten-Anzahl-Feld. Dann ist die Null unten NICHT mehr gesetzlich "
+        f"richtig, sondern ein Fund — und zwar einer für den XML-Weg, nicht für diesen Test.")
+
+    summe = sum(_kuerzung_cent(f, vz) for vz, f in bestand)
+    assert summe == 0, (
+        f"Der Ring kürzt im Bestand {summe} Cent. Bei {len(bestand)} Fällen mit "
+        f"Verpflegungs-Feldern und durchweg 0 gestellten Mahlzeiten darf das nicht sein — "
+        f"entweder rechnet _verpflegung_kuerzung_cent aus einem anderen Feld, oder ein Fall "
+        f"trägt doch eine Mahlzeit.")
+
+
+def test_kuerzung_wird_positiv_sobald_eine_mahlzeit_gestellt_ist():
+    """Die Geschwisterprüfung, über den echten Schreibpfad: ein gestelltes Frühstück kürzt.
+
+    Ohne sie wäre test_bestand_hat_keine_kuerzung auch dann grün, wenn
+    _verpflegung_kuerzung_cent konstant 0 zurückgäbe — genau die Verwechslung, die der
+    Auftrag beheben will ("sonst ist grün und leer wieder nicht zu unterscheiden").
+
+    Gebaut wird ein Store mit GENAU EINEM Event und dieses durch store.materialisiere
+    geschickt — derselbe Weg, den api.deklaration nimmt. Ein Fall mit 28-Tage-Pauschale
+    (tage_24h=1, 2800 Cent) und einem Frühstück: der Deckel (S. 8 HS 3) kann hier nicht
+    greifen, also ist die Erwartung exakt, nicht nur "größer als 0".
+
+    560 Cent = 20 % von 28 EUR, der Satz aus runner._verpflegung_roh_cent. Die Zahl steht
+    hier als Literal: ein Test, der seine Erwartung aus derselben Funktion zieht, die er
+    prüft, prüft nichts.
+    """
+    import store as ST
+    store = ST.leerer_store(2025)
+    ST.append_event(store, feld_id="tage_24h", wert=1, zustand="bestaetigt",
+                    herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft",
+                              "haftung": "nutzer"},
+                    schreiber="ui:laie",
+                    signal={"signal_1": None, "signal_2": "ok@tage_24h"})
+    ohne = _kuerzung_cent(ST.materialisiere(store)[0], 2025)
+
+    ST.append_event(store, feld_id="vpf_fruehstuecke_gestellt_anzahl", wert=1,
+                    zustand="bestaetigt",
+                    herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft",
+                              "haftung": "nutzer"},
+                    schreiber="ui:laie",
+                    signal={"signal_1": None, "signal_2": "ok@vpf_fruehstuecke"})
+    mit = _kuerzung_cent(ST.materialisiere(store)[0], 2025)
+
+    assert ohne == 0, f"Ohne Mahlzeit darf nichts gekürzt werden: {ohne} Cent"
+    assert mit - ohne == 560, (
+        f"Ein gestelltes Frühstück ändert die Kürzung um {mit - ohne} Cent statt um 560 "
+        f"({ohne} -> {mit}). Der Ring zählt das Mahlzeiten-Feld nicht — dann ist die Null im "
+        f"Bestand kein Befund über den Bestand, sondern ein blinder Fleck.")
 
 
 def test_baseline_ohne_mahlzeiten_hat_keine_kuerzung(gemessen):
