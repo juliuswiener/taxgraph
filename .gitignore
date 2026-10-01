@@ -62,3 +62,7 @@ graphify-out/
 # Rust-Port (REWRITE_PLAN.md) — Build-Artefakte, nicht rust/catala-sys/generated/ (das ist
 # committed, siehe rust/catala-sys/gen.sh).
 rust/target/
+
+# Laufzeitzustand des Startskripts `scripts/starte-api.sh` — Datenverzeichnis, Nutzerdatei
+# und Audit des lokal gestarteten Dienstes. Gehört keinem Lauf, den man aufbewahrt.
+.start/

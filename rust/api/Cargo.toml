@@ -16,6 +16,10 @@ name = "taxgraph-api"
 path = "src/main.rs"
 
 [dependencies]
+bescheid = { path = "../bescheid" }
+bindung = { path = "../bindung" }
+interview = { path = "../interview" }
+intervall = { path = "../intervall" }
 store = { path = "../store" }
 auth = { path = "../auth" }
 axum = { workspace = true }

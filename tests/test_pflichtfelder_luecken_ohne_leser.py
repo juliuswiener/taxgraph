@@ -187,7 +187,7 @@ def test_abgabegate_nennt_die_pflichtfeldluecke_selbst(base):
     "Lohnsteuer eintraegt, bekommt die zwei als fehlend gemeldet und kann sie auf "
     "dieser Scheibe nicht beantworten. ERiC verlangt sie trotzdem (rc=610001002, "
     "gemessen 2026-10-01). Erwartet: jede gemeldete Luecke ist im Kegel beantwortbar."))
-def test_jede_gemeldete_luecke_ist_im_kegel_beantwortbar(base):
+def test_rentner_gesamt_meldet_keine_felder_die_sein_kegel_nie_fragt(base):
     """Eine Luecke, die die laufende Scheibe nie fragt, ist keine Hilfe, sondern eine Sackgasse.
 
     Gemessen am 2026-10-01 (HEAD `1065e25`, echtes ERiC 44.2.4.0) an genau diesem Fall:

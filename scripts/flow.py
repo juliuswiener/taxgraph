@@ -68,6 +68,9 @@ def zeige(eintraege: list[dict]) -> None:
                 print(f"          {q['feld_id']:42s}{inst} {q.get('frage', '')[:74]}")
 
         elif art == "antwort":
+            # Der Zweig zeigt fuenf der sechs Werte des `antwort`-Eintrags; alle sechs stehen im
+            # Fall. `zustand` folgt mit dem Leser — er unterscheidet bestaetigt von vorlaeufig,
+            # und diese Auskunft fehlt spaeter. Kein Verlust-Auffangnetz, sondern eine Auswahl.
             weg = (i.get("weg") or "").split("@")[0] or ""
             marke = SCHIRME.get(weg) or (
                 "KI-Vorschlag" if str(i.get("schreiber", "")).startswith("llm")
