@@ -383,3 +383,133 @@ fn spende_null_ohne_nicht_deklariert() {
     assert!(!d.deklaration.contains_key("E0108105"));
     assert!(d.nicht_deklariert.is_empty(), "{:?}", d.nicht_deklariert);
 }
+// ------------------------------------------------- leere Huelle (Ankreuzfeld "Nein")
+
+/// Elemente im E10-Teil, die keinen Inhalt tragen ausser dem Person-Diskriminator — genau die
+/// Klasse, die checkESt mit "Der Kontext ... ist leer" beanstandet (gemessen 2026-10-01,
+/// ERiC 44.2.4.0). Strukturell, nicht ueber ERiC: ohne echte Hersteller-ID liefert checkESt
+/// rc=610301200 mit LEEREM Fehlerpuffer und saehe damit "fehlerfrei" aus.
+fn leere_huellen(xml: &str) -> Vec<String> {
+    let mut raus = Vec::new();
+    let mut tiefe = 0usize;
+    let mut im_e10 = false;
+    let mut stapel: Vec<(String, bool, bool)> = Vec::new(); // (Name, hat Kind, hat Text)
+    for zeile in xml.lines() {
+        let z = zeile.trim();
+        if z.starts_with("<E10 ") || z.starts_with("<E10>") {
+            im_e10 = true;
+            tiefe = 1;
+            continue;
+        }
+        if !im_e10 {
+            continue;
+        }
+        if z.starts_with("</E10>") {
+            break;
+        }
+        // Selbstschliessend: kein Kind, kein Text.
+        if let Some(name) = z
+            .strip_prefix('<')
+            .and_then(|r| r.split([' ', '/', '>']).next())
+        {
+            if z.ends_with("/>") {
+                if let Some((pname, _, _)) = stapel.last_mut() {
+                    let _ = pname;
+                }
+                raus.push(name.to_owned());
+                continue;
+            }
+            if let Some(rest) = z.strip_prefix(&format!("<{name}>")) {
+                // Eroeffnendes Tag mit Text auf derselben Zeile: kein leeres Element.
+                let text = rest.strip_suffix(&format!("</{name}>")).unwrap_or(rest);
+                if z.contains(&format!("</{name}>")) && !text.trim().is_empty() {
+                    continue;
+                }
+                stapel.push((name.to_owned(), false, false));
+                tiefe += 1;
+                continue;
+            }
+            // Eroeffnendes Tag mit Kindern (Rest der Zeile ist leer).
+            if z.ends_with('>') {
+                stapel.push((name.to_owned(), false, false));
+                tiefe += 1;
+                continue;
+            }
+        }
+        if let Some(name) = z.strip_prefix("</").and_then(|r| r.strip_suffix('>')) {
+            tiefe = tiefe.saturating_sub(1);
+            if let Some((kname, _, hat_text)) = stapel.pop() {
+                if kname == name && !hat_text {
+                    // Nur <Person>-Kinder? Dann Huelle, sonst nur ein leerer Blattname.
+                    raus.push(kname);
+                }
+            }
+        }
+    }
+    let _ = tiefe;
+    raus
+}
+
+/// Ankreuzfeld "Nein" darf keinen leeren Container hinterlassen.
+///
+/// Ohne den Fix steht `<Geh_Steh_Blind_Hilfl />` (bzw. mit nur `<Person>`) im XML, und
+/// checkESt weist die ganze Abgabe ab. Ticket: elster-leerer-container-neben-ankreuzfeld-nein.
+#[test]
+fn ankreuzfeld_nein_hinterlaesst_keine_leere_huelle() {
+    let f = einzeln(
+        "rentner_hilflos_blind_taubblind",
+        json!(false),
+        Zustand::Bestaetigt,
+    );
+    let d = deklariere(&f, index(), None).unwrap();
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        ..XmlOptionen::default()
+    };
+    let xml = erzeuge_xml(&d, &opt).unwrap();
+    let h = leere_huellen(&xml);
+    assert!(
+        h.is_empty(),
+        "leere Huelle(n) im XML: {h:?} — checkESt beanstandet sie mit 'Der Kontext ... ist leer'"
+    );
+}
+
+/// Gegenprobe: "Ja" fuellt den Container. Das Gate darf hier nicht anschlagen.
+#[test]
+fn gegenprobe_ja_fuellt_die_huelle() {
+    let f = einzeln(
+        "rentner_hilflos_blind_taubblind",
+        json!(true),
+        Zustand::Bestaetigt,
+    );
+    let d = deklariere(&f, index(), None).unwrap();
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        ..XmlOptionen::default()
+    };
+    let xml = erzeuge_xml(&d, &opt).unwrap();
+    let h = leere_huellen(&xml);
+    assert!(h.is_empty(), "leere Huelle(n) im XML: {h:?}");
+    assert!(
+        xml.contains("<Geh_Steh_Blind_Hilfl>"),
+        "Ja muss den Container fuellen"
+    );
+}
+
+/// Gegenprobe: wird das Feld gar nicht gestellt, entsteht ueberhaupt kein Container.
+#[test]
+fn gegenprobe_feld_nicht_gestellt_erzeugt_keine_huelle() {
+    let f = einzeln("stammdaten_nachname", json!("Muster"), Zustand::Bestaetigt);
+    let d = deklariere(&f, index(), None).unwrap();
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        ..XmlOptionen::default()
+    };
+    let xml = erzeuge_xml(&d, &opt).unwrap();
+    let h = leere_huellen(&xml);
+    assert!(h.is_empty(), "leere Huelle(n) im XML: {h:?}");
+    assert!(
+        !xml.contains("<Geh_Steh_Blind_Hilfl"),
+        "ohne Feld darf kein Container entstehen"
+    );
+}

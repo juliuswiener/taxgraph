@@ -188,6 +188,13 @@ struct Instanzwahl<'p> {
 }
 
 /// `_einhaengen` (`elster_xml.py:201-306`): Pfad anlegen (idempotent), Blatt setzen.
+///
+/// Die Entscheidung "Blatt oder nicht" faellt VOR dem Anlegen des Pfades — zweistufig, weil
+/// `knoten` die `&mut`-Referenz bis zum Ende haelt und ein nachtraegliches Abraeumen sonst
+/// doppelt borrowt (E0382/E0499). Ein Ankreuzfeld (Ja1/JaX) mit "Nein" ergibt kein Element;
+/// wuerde der Pfad trotzdem gebaut, bliebe sein Container leer stehen und checkESt weist die
+/// ganze Abgabe ab (gemessen 2026-10-01, ERiC 44.2.4.0):
+/// „Der Kontext `/AgB[1]/Beh[1]/Geh_Steh_Blind_Hilfl[1]` ist leer."
 fn einhaengen(
     e10: &mut Knoten,
     pfad: &[String],
@@ -196,6 +203,12 @@ fn einhaengen(
     kz_meta: &HashMap<String, KzMeta>,
     instanz: Option<&Instanzwahl<'_>>,
 ) -> Result<(), XmlFehler> {
+    // Stufe 1: entscheiden. `Ok(None)` heisst "kein Blatt" — der Pfad wird gar nicht erst gebaut.
+    let Some(text) = blatt_text(pfad.last(), wert, kz_meta) else {
+        return Ok(());
+    };
+
+    // Stufe 2: anlegen und einhaengen.
     let mut knoten = e10;
     let innen = pfad.len().saturating_sub(1);
     for i in 1..innen {
@@ -234,24 +247,32 @@ fn einhaengen(
     let Some(kz_name) = pfad.last() else {
         return Ok(());
     };
-    // Ja-Typ: True → erster enum-Wert; False → bei JaNein12 der zweite ("2" = Nein, eine echte
-    // Antwort), bei Ankreuzfeldern (Ja1/JaX) weglassen (gemessen 2026-08-16).
+    knoten.kinder.push(Knoten::blatt(kz_name, text));
+    Ok(())
+}
+
+/// Stufe 1 von [`einhaengen`]: den Blatt-Text bestimmen, oder `None`, wenn kein Element
+/// entstehen darf.
+///
+/// Ja-Typ: True → erster enum-Wert; False → bei `JaNein12` der zweite ("2" = Nein, eine echte
+/// Antwort), bei Ankreuzfeldern (Ja1/JaX) weglassen (gemessen 2026-08-16). `None` ist damit
+/// die einzige Stelle, an der ein Kz bewusst nichts in die Deklaration eintraegt.
+fn blatt_text(
+    kz_name: Option<&String>,
+    wert: &Value,
+    kz_meta: &HashMap<String, KzMeta>,
+) -> Option<String> {
+    let kz_name = kz_name?;
     if let (Some(km), Value::Bool(b)) = (kz_meta.get(kz_name), wert) {
         if km.is_ja {
-            let text = if *b {
-                km.enums.first().map_or("X", String::as_str)
+            return if *b {
+                Some(km.enums.first().map_or("X", String::as_str).to_owned())
             } else {
-                match km.enums.get(1) {
-                    Some(nein) => nein.as_str(),
-                    None => return Ok(()),
-                }
+                km.enums.get(1).cloned()
             };
-            knoten.kinder.push(Knoten::blatt(kz_name, text));
-            return Ok(());
         }
     }
-    knoten.kinder.push(Knoten::blatt(kz_name, wert_text(wert)));
-    Ok(())
+    Some(wert_text(wert))
 }
 
 // ---------------------------------------------------------------- Serialisierung

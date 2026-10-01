@@ -226,7 +226,30 @@ def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
 
     Ja-Typ-Handling (mit `kz_meta`): True → enum-Wert ("1"/"X"), False → Element weglassen.
     Kz ohne Ja-Typ oder ohne kz_meta-Info werden normal über _wert_text gerendert.
+
+    Die Entscheidung "Blatt oder nicht" fällt VOR dem Anlegen des Pfades. Das ist kein
+    Schönheitsdetail: ein Ankreuzfeld (Ja1/JaX) mit "Nein" ergibt kein Element — würde der Pfad
+    trotzdem gebaut, bliebe sein Container leer stehen, und checkESt weist die ganze Abgabe ab
+    (gemessen 2026-10-01, ERiC 44.2.4.0):
+    „Der Kontext '/AgB[1]/Beh[1]/Geh_Steh_Blind_Hilfl[1]' ist leer."
+
+    Vorher lief die Prüfung NACH der Schleife, also nach dem Anlegen — das war die Hülle.
     """
+    kz_name = pfad[-1]
+
+    # Erst entscheiden, dann anlegen (s. Docstring).
+    text = _wert_text(wert)
+    if kz_meta and kz_name in kz_meta:
+        km = kz_meta[kz_name]
+        if km["is_ja"] and isinstance(wert, bool):
+            enums = km["enums"] or []
+            if wert is True:
+                text = enums[0] if enums else "X"
+            elif len(enums) >= 2:
+                text = enums[1]          # "2" = Nein, eine echte Antwort
+            else:
+                return                   # Ankreuzfeld: Nein = weglassen, Pfad bleibt unangelegt
+
     knoten = wurzel
     inst = instanz or {}
     for i, name in enumerate(pfad[1:-1], start=1):
@@ -280,32 +303,8 @@ def _einhaengen(wurzel: ET.Element, pfad: tuple, wert, ns: str,
                     ET.SubElement(kind, f"{{{ns}}}{pflicht_name}").text = vorgabe
             knoten = kind
 
-    kz_name = pfad[-1]
-    # Ja-Typ: True → erster enum-Wert. Bei False hängt es an der TYP-FAMILIE, und das ist kein
-    # Detail (gemessen 2026-08-16):
-    #   Ja1/JaX  (enums ['1'] bzw. ['X'])      Ankreuzfeld — "Nein" IST das Weglassen.
-    #   JaNein12 (enums ['1','2'])             Zwei echte Werte. Das Formular fragt "ob", und
-    #                                          "2" = Nein ist eine ANTWORT, kein leeres Feld.
-    # Vorher wurde beides gleich behandelt: False ließ das Element in jedem Fall weg. Bei
-    # JaNein12 verschwand damit eine gegebene Antwort lautlos — und checkESt beanstandet genau
-    # das ("Bitte geben Sie an, ob …"). Betroffen waren u.a. E0240803/E0240902 (Anlage
-    # Energetische Maßnahmen) und E0161607 (Wohnsitz der gepflegten Person).
-    if kz_meta and kz_name in kz_meta:
-        km = kz_meta[kz_name]
-        if km["is_ja"] and isinstance(wert, bool):
-            enums = km["enums"] or []
-            if wert is True:
-                text = enums[0] if enums else "X"
-            elif len(enums) >= 2:
-                text = enums[1]          # "2" = Nein, eine echte Antwort
-            else:
-                return                   # Ankreuzfeld: Nein = weglassen
-            blatt = ET.SubElement(knoten, f"{{{ns}}}{kz_name}")
-            blatt.text = text
-            return
-
     blatt = ET.SubElement(knoten, f"{{{ns}}}{kz_name}")
-    blatt.text = _wert_text(wert)
+    blatt.text = text
 
 
 # Absender-Werte fuer den Vorsatz-Block sind KEINE zweite Wahrheit: dieselben Angaben stehen
