@@ -209,7 +209,16 @@ def _kz(gemessen, fall):
 # Was hier geprüft wird, ist der Nenner — nicht "es kam nichts an" (das wäre auch bei einem
 # kaputten Ring grün), sondern "es gab nichts zu kürzen, und das lag an der Mahlzeit".
 
-NENNER_STAND = 23        # 2026-10-01: Fälle mit Verpflegungs-Feldern, alle mit 0 Mahlzeiten
+NENNER_STAND = 23        # 2026-10-01 12:38 (Commit f7bb8cb): Fälle mit Verpflegungs-Feldern,
+                         # alle mit 0 Mahlzeiten.
+                         # ROT SEIT 2026-10-01 14:07 — und das ist der Befund, nicht der Fehler:
+                         # der Bestand ist um zan_g.json gewachsen, angelegt 14:07, Teil eines
+                         # Wegwerf-Skripts eines anderen Workers, das in die echten Nutzerdaten
+                         # geschrieben hat (15 Dateien zwischen 14:06 und 14:07). Der Fall trägt
+                         # nur Tages-Kz, alle 0, KEINE Mahlzeiten — sachlich gehört er in den
+                         # Nenner, aber er ist keine Nutzerdaten-Probe. Das Aufräumen läuft; bis
+                         # dahin misst dieser Test die Verunreinigung mit. NICHT auf 24 ziehen:
+                         # das macht sie dauerhaft und der Test fällt nach dem Aufräumen wieder um.
 TAGE_KZ = ("tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig")
 MAHLZEITEN_KZ = ("vpf_fruehstuecke_gestellt_anzahl", "vpf_mittagessen_gestellt_anzahl",
                  "vpf_abendessen_gestellt_anzahl")

@@ -59,9 +59,19 @@ def test_cache_liefert_denselben_inhalt_wie_ungecachter_read():
     assert gecacht == roh
 
 
-def test_zwei_fragen_laeufe_lesen_die_datei_nur_beim_ersten_mal():
+def test_zwei_fragen_laeufe_lesen_die_datei_nur_beim_ersten_mal(tmp_path, monkeypatch):
     """Der eigentliche Nutzerpfad: zwei API.fragen()-Aufrufe auf demselben Fall duerfen in der
-    zweiten Runde keine einzige neue Parameter-Datei von Platte laden (misses bleibt konstant)."""
+    zweiten Runde keine einzige neue Parameter-Datei von Platte laden (misses bleibt konstant).
+
+    GELENKT SEIT 2026-10-01: dieser Test legte seinen Fall ueber API.speichere_fall in der ECHTEN
+    Nutzerdatenwurzel ab (api_constants.FAELLE) und raeumte ihn im finally wieder weg. Das war
+    kein Testfall, das war ein Schreibvorgang in echte Steuerdaten — und es flog nur deshalb nie
+    auf, weil der Test seine eigene Datei danach selbst loeschte. Der vierte Waechter in
+    tests/conftest.py blockt genau das (er wurde am 2026-10-01 gebaut, nachdem ein fremdes
+    Skript 15 Falldateien dort abgelegt hatte). Ohne diese Umlenkung faellt der Test jetzt —
+    zu Recht. Geprueft wird der Cache, nicht der Speicherort.
+    """
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
     RUNNER._load_yaml_path.cache_clear()
     fall_id = "test_runner_param_cache_fragen"
     pfad = API._fall_pfad(fall_id)

@@ -409,3 +409,70 @@ def _kein_schreiben_in_den_echten_user_store(request, monkeypatch):
         'str(tmp_path / "users.json")) im Test/Fixture setzen -- so machen es '
         "test_ui_login.py und test_authz_fail_closed.py."
     )
+
+
+# ------------------------------------------- Wache 4: das echte Fallverzeichnis
+#
+# Anlass (Befund 2026-10-01): in $XDG_DATA_HOME/taxgraph/faelle standen 15 Falldateien,
+# angelegt zwischen 14:06 und 14:07 an einem Nachmittag, mit Wegwerf-Namen (zan_g, xgesa,
+# zrent, wgesa, ...). Ein Worker-Skript hatte in die ECHTEN Nutzerdaten geschrieben. Sichtbar
+# wurde es, weil tests/test_verpflegung_kuerzung_erreicht_xml.py den Bestand ZAEHLT und um
+# eine Datei danebenlag -- der einzige Grund, warum es ueberhaupt auffiel.
+#
+# Dieselbe Fehlklasse wie die drei Wachen darueber, und derselbe Grund fuer eine Laufzeit-Wache
+# statt eines Greps: die 15 Dateien sind von den 192 echten STRUKTURELL nicht zu unterscheiden
+# (gleiche Schluessel, gleiche Form, version 1). Ein Muster im Dateinamen haette sie gefunden,
+# ein Muster im Inhalt nicht -- und der naechste Verursacher waehlt einen anderen Namen.
+#
+# Angebunden an den EINEN Schreibpfad: api.speichere_fall (produkt/haut/api.py:146). Verifiziert
+# -- die acht weiteren Aufrufe in api.py gehen alle durch diese Funktion, und ein zweiter
+# Schreiber existiert nicht. LESEN wird bewusst NICHT bewacht: drei Gates (test_store_korpus,
+# test_verpflegung_kuerzung_erreicht_xml, test_datenwurzel_ausserhalb_repo) pruefen den echten
+# Bestand, und das ist ihre Aufgabe. Sie in tmp_path umzulenken wuerde sie auf einen leeren
+# Korpus zeigen lassen -- gruen per Konstruktion, genau die Krankheit, gegen die sie gebaut sind.
+#
+# _HAUT liegt oben schon auf sys.path (Zeile 38-40) -- dieselbe Stelle, an der server.py
+# importiert wird.
+import api as _api                # noqa: E402 — echtes Modul-Attribut, wie _audit/_auth oben
+import api_constants as _AC       # noqa: E402 — AC.FAELLE ist die Wurzel, die _api.FAELLE haelt
+
+_REAL_FAELLE = os.path.abspath(_AC.FAELLE)
+
+
+@pytest.fixture(autouse=True)
+def _kein_schreiben_in_das_echte_fallverzeichnis(request, monkeypatch):
+    """Umwickelt api.speichere_fall fuer JEDEN Test und prueft den zur AUFRUFZEIT
+    aufgeloesten Pfad -- direkt oder indirekt ueber Produktcode (HTTP-Endpunkte,
+    fall_anlegen, event_schreiben).
+
+    Pfad zur Aufrufzeit ueber `_api.FAELLE` aufloesen, nicht beim Import binden:
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path)) im Test MUSS wirken, sonst
+    beschuldigt die Wache jeden umlenkenden Test faelschlich (dieselbe Naht, die
+    tests/test_split_naht_gate.py eigens absichert).
+
+    Treffer BLOCKEN statt durchreichen, und erst NACH yield asserten -- server.py
+    faengt Exceptions aus dem Request-Dispatch breit ab, ein raise im Wrapper wuerde
+    als generisches 500 verschluckt statt den Test klar rot zu machen.
+
+    In die Meldung kommt die fall_id, NICHT der store: darin stehen Steuer-ID,
+    Einkommen und IBAN. Die fall_id ist ein Kuerzel, kein Personenbezug.
+    """
+    treffer: list[str] = []
+    echtes_speichern = _api.speichere_fall
+
+    def _wache(fall_id, store, *args, **kwargs):
+        pfad = os.path.abspath(os.path.join(_api.FAELLE, f"{fall_id}.json"))
+        if os.path.dirname(pfad) == _REAL_FAELLE:
+            treffer.append(f"fall_id={fall_id!r} pfad={pfad!r}")
+            return None  # geblockt -- echte Datei unangetastet
+        return echtes_speichern(fall_id, store, *args, **kwargs)
+
+    monkeypatch.setattr(_api, "speichere_fall", _wache)
+    yield
+    assert not treffer, (
+        f"{request.node.nodeid} hat versucht, in das ECHTE Fallverzeichnis zu schreiben "
+        f"({_REAL_FAELLE}): " + "; ".join(treffer) + ". Schreibvorgang wurde geblockt, "
+        "die Datei ist unangetastet. Fix: monkeypatch.setattr(api, 'FAELLE', "
+        "str(tmp_path / 'faelle')) im Test/Fixture setzen -- so machen es "
+        "test_stille_null_typ.py und test_kap_deklaration_vorlaeufig_leck_ohne_bestaetigung.py."
+    )
