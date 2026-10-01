@@ -38,20 +38,26 @@ def _fall_verzeichnis() -> str:
         import api
         return api.FAELLE
     except Exception:                       # noqa: BLE001 — Store ohne Haut ist ein gültiger Fall
-        # Ohne Haut wird die Wurzel HIER gebaut. Sie muss dieselbe sein, die `api_constants`
-        # nähme — sonst zeigen die zwei Wege auseinander, und das Protokoll landete neben den
-        # echten Fällen, während ein Werkzeug seine Akten woandershin schreibt (dieselbe halbe
-        # Isolierung wie am 2026-10-01, eine Ebene tiefer). Deshalb wird `TAXGRAPH_DATEN` HIER
-        # genauso gelesen wie dort: es ist die Variable, mit der dieses Projekt seine Daten
-        # umlenkt, und ein Rückfall, der sie nicht kennt, fällt genau dann auf, wenn jemand sie
-        # setzt. Die Reihenfolge ist bewusst dieselbe (eigene Variable, dann XDG, dann ~).
-        eigen = os.environ.get("TAXGRAPH_DATEN", "").strip()
-        if eigen:
-            return os.path.join(os.path.expanduser(eigen), "faelle")
-        xdg = os.environ.get("XDG_DATA_HOME", "").strip()
-        basis = os.path.expanduser(xdg) if xdg else os.path.join(
-            os.path.expanduser("~"), ".local", "share")
-        return os.path.join(basis, "taxgraph", "faelle")
+        # EINE Quelle statt einer zweiten Implementierung: zuerst `api_constants._daten_wurzel()`,
+        # dieselbe Funktion, nach der die Akten gehen. Gemessen 2026-10-01: ohne `$TAXGRAPH_DATEN`
+        # im Rueckfall lieferte dieser Zweig `~/.local/share/taxgraph/faelle` — den ECHTEN
+        # Nutzerpfad, waehrend der Aufrufer sich in `/tmp` waehnte (e97f8f5 fand dasselbe).
+        try:
+            import api_constants
+            return os.path.join(api_constants._daten_wurzel(), "faelle")
+        except Exception:                   # noqa: BLE001 — auch die Haut fehlt: letzter Rueckfall
+            # Nur wenn `produkt/haut` ganz fehlt, wird die Wurzel HIER gebaut — dann in derselben
+            # Reihenfolge wie `_daten_wurzel()` (eigene Variable, dann XDG, dann ~). Ein Rueckfall,
+            # der `TAXGRAPH_DATEN` nicht kennt, faellt genau dann auf, wenn jemand sie setzt.
+            # ponytail: zweite Fassung der Reihenfolge, nur fuer den Fall ohne Haut; der Test
+            # test_audit_letzter_rueckfall_kennt_taxgraph_daten haelt sie an der ersten fest.
+            eigen = os.environ.get("TAXGRAPH_DATEN", "").strip()
+            if eigen:
+                return os.path.join(os.path.expanduser(eigen), "faelle")
+            xdg = os.environ.get("XDG_DATA_HOME", "").strip()
+            basis = os.path.expanduser(xdg) if xdg else os.path.join(
+                os.path.expanduser("~"), ".local", "share")
+            return os.path.join(basis, "taxgraph", "faelle")
 
 
 def _standard_dir() -> str:

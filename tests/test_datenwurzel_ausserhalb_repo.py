@@ -239,3 +239,101 @@ def test_fingerabdruck_faellt_wenn_eine_fremde_datei_dazukommt():
     assert _fingerabdruck(list(reversed(festgehalten))) == _fingerabdruck(festgehalten), (
         "Die Reihenfolge darf den Fingerabdruck nicht ändern — sonst kommt die Rot-Meldung "
         "auch ohne Bestandsänderung.")
+
+
+@pytest.mark.xfail(
+    strict=True, raises=AssertionError,
+    reason="Die zwei Repraesentationen laufen auseinander, und das ist derzeit NICHT schliessbar: "
+           "`api.FAELLE` ist der patchbare Seam von 143 Teststellen, ein Modul-Global also, "
+           "waehrend `_daten_wurzel()` bei jedem Aufruf rechnet. Siehe Moduldocstring.")
+def test_faelle_und_daten_wurzel_laufen_nicht_auseinander(monkeypatch, tmp_path):
+    """Zwei Repraesentationen derselben Sache: `FAELLE` beim Import gebunden,
+    `_daten_wurzel()` bei jedem Aufruf. Wer die Umgebungsvariable nach dem Import setzt,
+    bekommt zwei Orte.
+
+    `naht` hat das gemessen (2026-10-01): in einem frischen Prozess wirkt `$TAXGRAPH_DATEN`
+    sofort (207 vs. 0), in einem laufenden nicht (207/207).
+
+    WARUM DAS EIN xfail(strict) IST UND KEIN FIX — gemessen, nicht vermutet:
+
+      1. Der Fixort waere `api_constants` NICHT. Produktionsleser ist `api.FAELLE`
+         (`api.py:135/154/155/1317`), gebunden per `from api_constants import *` als EIGENER
+         Name (`api.py:50`). `api` hat kein `__getattr__`.
+      2. Ein PEP-562-`__getattr__` in `api_constants` folgt der Umgebung fuer `AC.FAELLE`,
+         laesst `api.FAELLE` aber stehen — gemessen. Und es erreicht den Produktionsleser
+         ohnehin nicht: eine Funktion IM selben Modul, die `FAELLE` als Global liest, findet
+         den Namen nicht mehr (`NameError`), weil PEP 562 nur den Attributzugriff von aussen
+         bedient.
+      3. Ein `__getattr__` in `api` waere nicht dauerhaft: `monkeypatch.undo` schreibt den
+         alten Wert INS Modul-Dict zurueck und schattet den Hook fuer den Rest des Prozesses
+         ab — gemessen: danach bleibt `api.FAELLE` stehen. Bei 143 Patchstellen waere das
+         eine subtilere Falle als der Ist-Zustand.
+
+    Der Seam zu schliessen hiesse, 143 Teststellen von `api.FAELLE` auf eine Funktion
+    umzustellen. Das ist eine Entscheidung, keine Reparatur — und keine, die dieser Auftrag
+    trifft. Bis dahin haelt dieser Eintrag den Ist-Zustand fest. Er kippt auf XPASS, sobald
+    jemand den Seam wirklich umbaut, und erzwingt dann Aufmerksamkeit.
+    """
+    monkeypatch.setenv("TAXGRAPH_DATEN", str(tmp_path / "probe"))
+    aus_variable = AC.FAELLE
+    aus_rechnung = os.path.join(AC._daten_wurzel(), "faelle")
+    assert aus_variable == aus_rechnung, (
+        f"FAELLE steht auf {aus_variable}, _daten_wurzel() sagt {aus_rechnung} — "
+        f"zwei Orte fuer dieselben Steuerdaten.")
+
+
+def test_audit_rueckfall_kennt_taxgraph_daten(monkeypatch):
+    """Der Rueckfallzweig in `audit._fall_verzeichnis()` reimplementiert die Datenwurzel und
+    laesst `$TAXGRAPH_DATEN` weg. Er greift, wenn `api` nicht importierbar ist — ein gueltiger
+    Fall (Store ohne Haut, `fehler_log.py` nutzt dieselbe Ablage).
+
+    Gemessen 2026-10-01: mit `TAXGRAPH_DATEN=/tmp/probe` und blockiertem `api`-Import liefert
+    `audit._fall_verzeichnis()` `~/.local/share/taxgraph/faelle` — also den ECHTEN Nutzerpfad,
+    waehrend der Aufrufer sich in `/tmp` waehnt. Dieselbe Bauart wie das Leck vom 2026-10-01
+    (1145 Zeilen ins echte Protokoll), nur die andere Haelfte: dort war der Importwert
+    eingefroren, hier wird die Wurzel gar nicht erst gefragt.
+
+    Die gemeinsame Funktion ist `api_constants._daten_wurzel()`. Zwei Implementierungen
+    derselben Sache laufen auseinander — eine davon kennt die Ueberschreibung nicht."""
+    sys.path.insert(0, str(ROOT / "produkt" / "store"))
+    import audit
+
+    monkeypatch.setenv("TAXGRAPH_DATEN", "/tmp/gdb3-probe")
+    monkeypatch.delenv("XDG_DATA_HOME", raising=False)
+
+    # `sys.modules["api"] = None` laesst `import api` ImportError werfen (CPython-Verhalten) —
+    # genau der Zweig "Store ohne Haut". Bewusst OHNE `importlib.reload(audit)`: ein reload im
+    # Test rechnet `_AUDIT_DIR_IMPORT` mit noch gesetztem `$TAXGRAPH_DATEN` und friert den
+    # Probewert in ein fremdes Modul ein. Gemessen: genau das machte
+    # `test_das_pruefprotokoll_liegt_bei_den_falldaten` in derselben Datei rot, sobald dieser
+    # Test davor lief — ein Test, der einen anderen umbringt. Kein reload, kein Leck.
+    monkeypatch.setitem(sys.modules, "api", None)
+
+    folgt = audit._fall_verzeichnis()
+    erwartet = os.path.join("/tmp/gdb3-probe", "faelle")
+    assert folgt == erwartet, (
+        f"audit._fall_verzeichnis() sagt {folgt}, die Datenwurzel sagt {erwartet} — "
+        f"das Protokoll schreibt dann in den echten Nutzerpfad, waehrend die Akten "
+        f"woanders liegen. `$TAXGRAPH_DATEN` fehlt im Rueckfallzweig.")
+
+
+def test_audit_letzter_rueckfall_kennt_taxgraph_daten(monkeypatch):
+    """Die innerste Stufe: `api` UND `api_constants` fehlen (Store ganz ohne Haut). Dann baut
+    `audit._fall_verzeichnis()` die Wurzel selbst — und muss `$TAXGRAPH_DATEN` dabei kennen.
+
+    Der Schutz kam mit e97f8f5. Beim Zusammenfuehren mit der Fassung `api_constants._daten_wurzel()`
+    (3870310) wanderte er eine Ebene tiefer; ohne diesen Test koennte er dort still verschwinden,
+    weil `test_audit_rueckfall_kennt_taxgraph_daten` und
+    `test_audit_folgt_fallverzeichnis.py::test_rueckfall_ohne_haut_kennt_taxgraph_daten` nur `api`
+    blockieren und damit in der mittleren Stufe enden."""
+    sys.path.insert(0, str(ROOT / "produkt" / "store"))
+    import audit
+
+    monkeypatch.setenv("TAXGRAPH_DATEN", "/tmp/gdb3-probe-innen")
+    monkeypatch.delenv("XDG_DATA_HOME", raising=False)
+    monkeypatch.setitem(sys.modules, "api", None)
+    monkeypatch.setitem(sys.modules, "api_constants", None)
+
+    assert audit._fall_verzeichnis() == os.path.join("/tmp/gdb3-probe-innen", "faelle"), (
+        "Der letzte Rueckfall (Store ohne Haut) kennt `$TAXGRAPH_DATEN` nicht — das Protokoll "
+        "landet dann im echten Nutzerpfad, waehrend die Akten unter der Umlenkung liegen.")
