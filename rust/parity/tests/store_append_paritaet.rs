@@ -32,6 +32,20 @@
 //!   typ-korrekten Wert generiert, so dass in Python ebenfalls die Zwei-Signal-Pruefung zuerst
 //!   greift.
 //!
+//! **D20 — die Reihenfolge der beiden Schreibpfad-Pruefungen divergiert.** Python prueft Auflage T
+//! (Typ) vor dem Zwei-Signal (`store.py:409` gegen `:412`), Rust kann `Feldzustand::Bestaetigt`
+//! ohne gueltiges `signal_2` gar nicht konstruieren — das Signal kommt also zuerst. Treffen beide
+//! Fehler zusammen, meldet Python `TypInkonform` und Rust `ZweiSignalFehlend`. Beide Seiten weisen
+//! ab, beide fail-closed; nur die KLASSE divergiert. Gemessen 2026-10-01 an `bruttoarbeitslohn` mit
+//! `"50000"` und leerem `signal_2`: Python `TypInkonform`, Rust `ZweiSignalFehlend` — ohne jeden
+//! Bezug zum Grad der Behinderung, die Abweichung ist also nicht durch ihn entstanden, sondern nur
+//! durch ihn erreichbar geworden (ein Wert mit Werteliste auf `typ: int` ist der erste Fall, in dem
+//! ein typ-korrekt aussehender Generatorwert typ-INKONFORM sein kann).
+//!
+//! Nicht angeglichen: die Angleichung muesste den Typ umbauen, der die Zusage im Typsystem traegt,
+//! und genau das ist der Grund, warum sie funktioniert. Korrektheit vor Paritaet: der Fall steht in
+//! `d20_reihenfolge_typ_vor_signal` fest.
+//!
 //! Braucht die Catala-Opam-Toolchain + `python3` mit Repo-Umfeld -- in CI standardmaessig SKIP:
 //!
 //!   `PARITY`=1 `cargo` test -p parity --test `store_append_paritaet` -- --nocapture
@@ -301,7 +315,26 @@ fn nicht_vorschlag_schreiber(cursor: &mut Cursor) -> Schreiber {
 
 fn wert_korrekt(cursor: &mut Cursor, feld: &Bindung) -> Value {
     match feld.typ {
-        Feldtyp::Cent | Feldtyp::Int => zufallszahl(cursor, 1_000_000),
+        // `enum_werte` gibt es seit 2026-10-01 auch auf `cent`/`int` (Grad der Behinderung: das
+        // XSD laesst an E0109708/E0505809 nur 17 Werte zu). Die Funktion heisst `wert_korrekt` --
+        // eine Zufallszahl ist fuer so ein Feld KEIN korrekter Wert mehr.
+        //
+        // Die Liste traegt Zeichenketten (die YAML-Werteliste ist eine Textliste), das Feld
+        // verlangt aber eine ZAHL: `json!("50")` waere an einem `typ: int` genauso falsch wie eine
+        // 33 und wurde von beiden Seiten als Typfehler abgewiesen. Deshalb wird geparst, und nur
+        // was sich als Ganzzahl lesen laesst, kommt in Frage.
+        Feldtyp::Cent | Feldtyp::Int => {
+            let zahlen: Vec<i64> = feld
+                .enum_werte
+                .as_ref()
+                .map(|w| w.iter().filter_map(|s| s.parse::<i64>().ok()).collect())
+                .unwrap_or_default();
+            if zahlen.is_empty() {
+                zufallszahl(cursor, 1_000_000)
+            } else {
+                json!(zahlen[cursor.range(zahlen.len())])
+            }
+        }
         Feldtyp::Bool => json!(cursor.bool()),
         Feldtyp::Enum => feld
             .enum_werte
@@ -775,6 +808,81 @@ proptest! {
         }
         prop_assert_eq!(rust_aktiv, python.aktive_event_ids, "aktive_event_ids weichen ab");
     }
+}
+
+/// D20 — die Reihenfolge der beiden Schreibpfad-Pruefungen divergiert (s. Moduldoku).
+///
+/// Ein Wert, der typ-INKONFORM ist, zusammen mit `zustand=bestaetigt` und LEEREM `signal_2`:
+/// Python meldet `TypInkonform` (Auflage T steht in `store.py:409` vor dem Zwei-Signal in `:412`),
+/// Rust kommt gar nicht bis `Store::append` — `zu_neues_event` baut `Feldzustand::Bestaetigt`
+/// nicht ohne gueltiges `signal_2` und meldet `ZweiSignalFehlend`.
+///
+/// Dieser Test haelt die Abweichung FEST, er behebt sie nicht. Wird sie je angeglichen, faellt er
+/// um und zwingt zur Entscheidung: Moduldoku und dieser Test gehen zusammen.
+#[test]
+fn d20_reihenfolge_typ_vor_signal() {
+    if skip_ohne_parity_env() {
+        eprintln!("PARITY!=1 -- uebersprungen (braucht Catala-Toolchain + Python-Umfeld)");
+        return;
+    }
+    let bindungen = alle_bindungen();
+    let map = store::baue_nachschlag(bindungen);
+    let nachschlag = store::BindungNachschlag::neu(&map);
+    let katalog = Katalog::aus_bindungen(bindungen);
+
+    // Typ-inkonform: eine ZAHL als JSON-String auf einem `typ: cent`-Feld. Kein GdB-Bezug — die
+    // Abweichung gibt es unabhaengig von der Werteliste, der GdB macht sie nur erreichbar.
+    let feld_id = "bruttoarbeitslohn";
+    assert!(
+        bindungen.iter().any(|b| b.feld_id == feld_id),
+        "Bindungsfeld {feld_id} fehlt"
+    );
+    let spec = AufrufSpec {
+        feld_id: feld_id.to_string(),
+        wert: json!("50000"),
+        zustand: "bestaetigt",
+        signal_2: None,
+        herkunft: herkunft("laie", "nutzer"),
+        schreiber: Schreiber::Mensch("julius".to_string()),
+        signal_1: None,
+        ersetzt: None,
+        ts: "2026-01-01T00:00:00+00:00".to_string(),
+    };
+
+    // Rust: die Konstruktion scheitert, bevor der Store ueberhaupt prueft.
+    let rust_klasse = match zu_neues_event(&spec) {
+        Err(label) => label,
+        Ok(neu) => match Store::leer(2025, None).append(&neu, Some(&katalog), nachschlag) {
+            Ok(_) => "Erfolg",
+            Err(abw) => abweisung_klasse(&abw),
+        },
+    };
+    assert_eq!(
+        rust_klasse, "ZweiSignalFehlend",
+        "Rust meldete {rust_klasse}; die Abweichung D20 hat sich verschoben"
+    );
+
+    // Python: meldet dieselbe Eingabe als Typfehler.
+    let initial_json = serde_json::to_value(Store::leer(2025, None).datei())
+        .expect("leerer Store serialisiert");
+    let calls = vec![zu_call_json(&spec)];
+    let python = {
+        let mut guard = oracle_singleton().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        guard.append_sequence(&initial_json, &calls).expect("Orakel-Aufruf laeuft durch")
+    };
+    let python_klasse = match python.results.first() {
+        Some(AppendCallErgebnis::Fehler { err }) => err.clone(),
+        other => panic!("Python nahm die Eingabe an oder scheiterte anders: {other:?}"),
+    };
+    assert_eq!(
+        python_klasse, "TypInkonform",
+        "Python meldete {python_klasse}; die Abweichung D20 hat sich verschoben"
+    );
+
+    assert_ne!(
+        rust_klasse, python_klasse,
+        "D20 ist angeglichen -- Moduldoku und dieser Test gehoeren dann entfernt"
+    );
 }
 
 /// Der Orakel-Aufruf eines einzelnen Events (ohne `event_id`, mit Signal aufgeloest).

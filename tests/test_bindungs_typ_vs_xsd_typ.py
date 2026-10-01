@@ -4,7 +4,8 @@ Jedes gebundene Kz muss in GENAU EINEN Prüfzweig fallen — ein Feld, das durch
 alle Zweige fällt (unbekannter typ), ist ein FEHLER, kein Skip:
 
   typ=bool   -> XSD MUSS ein Ja-Typ sein (Ja1 / JaX / JaNein12 / Ja2)
-  typ=cent/int -> XSD darf KEIN Ja-Typ sein
+  typ=cent/int -> XSD darf KEIN Ja-Typ sein; traegt das Kz eine enumeration oder
+                ein pattern, muss JEDER Wert der Bindungsschranke dazu passen
   typ=text   -> XSD-Facetten: xs:enumeration -> beispielwert MUSS ein
                 Enum-Wert sein; xs:pattern -> beispielwert MUSS alle
                 Patterns matchen; sonst Freitext ok
@@ -148,6 +149,35 @@ def test_bindungs_typ_vs_xsd_typ():
                         mismatches.append(
                             f"{feld_id}: typ={typ}, Kz {kz}, Bindung erlaubt {w}, XSD erlaubt nur "
                             f"{meta['enums']} — deklariert als {d['deklaration'][kz]!r}")
+            # Dieselbe Schranke gegen das XSD-pattern. 77 gebundene Zahl-Kz tragen eins, und bis
+            # 2026-10-01 sah dieser Zweig KEINES davon an — er las nur `meta["enums"]`. Ein Pruefer,
+            # der 77 Felder nicht ansieht, meldet trotzdem „bestanden" und sieht aus wie ein
+            # bestandener Pruefer.
+            #
+            # Geprueft wird die MENGE, DIE DIE BINDUNG DURCHLAESST — `enum_werte`, wo sie steht,
+            # sonst der Bereich; nicht der beispielwert. Der ist genau einer, und beim Pflegegrad
+            # lag er mit 3 IN der XSD-enum, waehrend 1, 2, 5 hindurchliefen.
+            #
+            # Ein stellenzahlbegrenzendes Muster ist KEINE Werteaufzaehlung: `.{1,3}` gegen einen
+            # Bereich bis 366 ist eine Obergrenze, kein Widerspruch. Der Zweig fragt deshalb nach
+            # dem Wert, nicht nach der Form des Musters — neun solche Kz bleiben gruen.
+            #
+            # Und er urteilt nur ueber Werte, die wirklich in der Kz ankommen: was `deklariere`
+            # weglaesst (0 auf einem Kz ohne Null), kann das Schema nicht verletzen.
+            durchgelassen = b.get("enum_werte")
+            if durchgelassen is None and "min" in bereich and "max" in bereich:
+                durchgelassen = [str(w) for w in range(bereich["min"], bereich["max"] + 1)]
+            if meta["patterns"] and durchgelassen:
+                for w in durchgelassen:
+                    d = EM.deklariere({feld_id: {"wert": int(w) if w.lstrip("-").isdigit() else w,
+                                                 "zustand": "bestaetigt"}}, bindung)
+                    if kz not in d["deklaration"]:
+                        continue
+                    v = str(d["deklaration"][kz])
+                    if not all(re.fullmatch(p, v) for p in meta["patterns"]):
+                        mismatches.append(
+                            f"{feld_id}: typ={typ}, Kz {kz}, Bindung erlaubt {w}, XSD pattern="
+                            f"{meta['patterns']} — deklariert als {v!r}")
         elif typ == "enum" and feld_id in EM.WERTEKODIERUNG:
             # Klasse i (est_mapping.WERTEKODIERUNG): enum_werte sind Laien-Vokabular, KEIN
             # 1:1-Passthrough — geprüft wird die ÜBERSETZUNG (die amtlichen Codes), nicht die
