@@ -5,23 +5,11 @@
 //! Reihenfolge ist Semantik: Lage 1 vor Lage 3. `_ergebnis_roh` prueft sie zuerst.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-use std::sync::OnceLock;
-
 use bescheid::deklaration::{feste_zahl, Cfg, KeineZahl};
 use bescheid::testhilfe::{felder, index, params, store};
 use bescheid::zweige::Umgebung;
 use domain::{Scheibe, Vz};
-use interview::Graph;
 use serde_json::json;
-
-fn graph() -> &'static Graph<'static> {
-    static CELL: OnceLock<Graph<'static>> = OnceLock::new();
-    static REG: OnceLock<bindung::Registry> = OnceLock::new();
-    CELL.get_or_init(|| {
-        let reg = REG.get_or_init(|| interview::doctest_registry().unwrap());
-        Graph::aus_registry(reg)
-    })
-}
 
 fn umgebung() -> Umgebung<'static> {
     Umgebung {
@@ -190,79 +178,6 @@ fn lage_4_waere_erreichbar_wenn_der_name_unbekannt_waere() {
     );
 }
 
-/// Der leere Kegel -- je Scheibe gemessen, und der Port ist **treu**.
-///
-/// `meet_zustand([])` ist `Bestaetigt` ("leeres Aggregat = neutral", `store.py:56`), und
-/// `0 < 0` ist falsch: der Laengenvergleich `len(zustaende) < len(kegel)` greift bei einem
-/// LEEREN Kegel **nicht**. Was dann geschieht, ist je Scheibe verschieden -- und der Rust-Port
-/// spiegelt es, statt es zu glaetten:
-///
-/// | Scheibe | Python (live) | Rust |
-/// |---|---|---|
-/// | `ep`, `an_gesamt`, `gesamt` | `KeyError` aus der `slot_fn` | `Err(SlotFehlt(_))` |
-/// | `n_vor_gwg` | Lage 1, kein Accessor | `Ok(Err(KeinScheibenGesamtbescheid))` |
-/// | `rentner_gesamt` | `(0, 0, extras)` -- **eine Zahl** | `Ok(Ok(Cent(0)))` |
-///
-/// Der letzte Fall ist der Befund: `rentner_gesamt` gibt mit voellig leerem Input eine Zahl
-/// frei. Das ist **kein Portfehler** -- Python tut dasselbe. Es gehoert der Python-Seite und
-/// ist als eigener Befund gemeldet.
-///
-/// **Erreichbar ist der Fall im Betrieb nicht.** `relevante_kegel_felder` streicht nur Felder,
-/// deren Regel der Nutzer bestaetigt abbestellt hat; der rentner-Kegel traegt 28 Felder aus 12
-/// Regeln, und erschoepfend gesucht bleibt als Minimum **15** uebrig (`ep` 4/4, `an_gesamt` 18/33,
-/// `gesamt` 20/35). Der leere Kegel braucht also einen kuenstlichen Aufruf.
-#[test]
-fn leerer_kegel_je_scheibe_wie_python() {
-    let leer = felder(&store(&[]));
-    let g = Some(graph());
-
-    // Fail-closed: der Meet geht durch, die slot_fn findet ihren Slot nicht.
-    for (s, slot) in [
-        (Scheibe::Ep, "arbeitstage"),
-        (Scheibe::AnGesamt, "arbeitstage"),
-        (Scheibe::Gesamt, "veranlagung"),
-    ] {
-        let r = feste_zahl(&leer, &Cfg::fuer(s), Vz::Vz2025, &[], &umgebung(), None, g);
-        match r {
-            Err(bescheid::BescheidFehler::SlotFehlt(f)) => {
-                assert_eq!(f, slot, "{s}: unerwarteter Slot");
-            }
-            // Der Laengenvergleich koennte den Fall auch fangen -- die andere ehrliche
-            // Antwort. Eine ZAHL ist keine davon.
-            Ok(Err(gr)) => assert_eq!(gr.grund, KeineZahl::InputKegelNichtBestaetigt),
-            other => panic!("{s}: leerer Kegel gab keine Sperre: {other:?}"),
-        }
-    }
-
-    // `n_vor_gwg` traegt keinen Gesamt-Accessor -- Lage 1, noch vor dem Kegel.
-    let r = feste_zahl(
-        &leer,
-        &Cfg::fuer(Scheibe::NVorGwg),
-        Vz::Vz2025,
-        &[],
-        &umgebung(),
-        None,
-        g,
-    )
-    .unwrap();
-    assert_eq!(r.unwrap_err().grund, KeineZahl::KeinScheibenGesamtbescheid);
-
-    // Der Befund, festgehalten statt wegglaettet: hier kommt eine ZAHL heraus.
-    let r = feste_zahl(
-        &leer,
-        &Cfg::fuer(Scheibe::RentnerGesamt),
-        Vz::Vz2025,
-        &[],
-        &umgebung(),
-        None,
-        g,
-    );
-    match r {
-        Ok(Ok(z)) => assert_eq!(
-            z.zahl,
-            domain::Cent::new(0),
-            "rentner_gesamt mit leerem Kegel -- Python liefert (0, 0, ...)"
-        ),
-        other => panic!("rentner_gesamt: der treue Port muesste Cent(0) liefern, war {other:?}"),
-    }
-}
+// Der leere Kegel hat eine eigene Datei: `znull_kegel.rs`. Er ist ein **Pin** auf einen
+// gemessenen, im Betrieb nicht erreichbaren Sonderfall -- und gehoert damit nicht in die
+// Datei, die die vier Lagen von `_feste_zahl` prueft.
