@@ -79,8 +79,20 @@ E10_AUSSCHLUSS_DATENART: dict[str, str] = {
 #   p23_veraeusserung: <SO> traegt maxOccurs=1 (E10-2025.xsd:8298), "mehrere Verkaeufe EINER
 #                       Person" wiederholt sich stattdessen ueber <Einz> INNERHALB EINES
 #                       <Grdst>/<And_WG> (maxOccurs=99, E10-2025.xsd:22231).
+#   hh_minijob/hh_dienstleistung/hh_handwerker: <HA_35a> traegt maxOccurs=1 (E10-2025.xsd:8236),
+#                       die Posten wiederholen sich ueber <Einz> INNERHALB von
+#                       <St_Erm>/<Minijobs>|<DL>|<Handw_L> (maxOccurs=99, E10-2025.xsd:10048).
+#                       Ohne Eintrag fiel der Code auf `kz_path[:2]` zurueck, also auf <HA_35a>
+#                       selbst — der ganze Abschnitt wiederholte sich, und ERiC weist die GANZE
+#                       Erklaerung ab ("Element HA_35a: This element is not expected"). Gemessen
+#                       2026-10-01: ein Topf mit zwei Posten ergab zwei <HA_35a> mit je einem
+#                       <Einz> statt einem <HA_35a> mit zwei <Einz>; von mehreren Posten erreichte
+#                       nur einer die Datei.
 INSTANZ_CONTAINER_TIEFER: dict[str, str] = {
     "p23_veraeusserung": "Einz",
+    "hh_minijob": "Einz",
+    "hh_dienstleistung": "Einz",
+    "hh_handwerker": "Einz",
 }
 
 

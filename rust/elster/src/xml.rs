@@ -28,8 +28,15 @@ pub const TESTMERKER_ERIC: &str = "700000004";
 
 /// Kz aus `anlage_instanzen`/`deklaration`, die in eine andere Datenart gehoeren (E60xx → E77).
 const E10_AUSSCHLUSS_DATENART: &[&str] = &["E6002301", "E6004901"];
-/// Gruppen, deren Wiederholung tiefer als am E10-Direktkind haengt (`<SO>` maxOccurs=1).
-const INSTANZ_CONTAINER_TIEFER: &[(&str, &str)] = &[("p23_veraeusserung", "Einz")];
+/// Gruppen, deren Wiederholung tiefer als am E10-Direktkind haengt (`<SO>` maxOccurs=1,
+/// `<HA_35a>` maxOccurs=1 — die Posten wiederholen sich ueber `<Einz>` darunter).
+/// Muss mit `elster_xml.py::INSTANZ_CONTAINER_TIEFER` wortgleich sein (Paritaetskriterium).
+const INSTANZ_CONTAINER_TIEFER: &[(&str, &str)] = &[
+    ("p23_veraeusserung", "Einz"),
+    ("hh_minijob", "Einz"),
+    ("hh_dienstleistung", "Einz"),
+    ("hh_handwerker", "Einz"),
+];
 /// Skalare Pflicht-Diskriminatoren ohne Kz.
 const PFLICHT_DEFAULT: &[(&str, &str)] = &[("Person", "PersonA"), ("Laufende_Nummer_V", "1")];
 /// Pflicht-Kinder mit XSD-unique-Bedingung: je Instanz 1, 2, 3 …

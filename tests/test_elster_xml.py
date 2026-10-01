@@ -181,6 +181,89 @@ def test_minimalfall_ist_xsd_valide(tmp_path):
     assert ok, meldung
 
 
+# ------------------------------------------------- §35a: mehrere Posten je Topf (AK1-AK3)
+#
+# Haushaltsnahe Aufwendungen (§ 35a EStG) haben drei Töpfe: Minijob, Dienstleistung, Handwerker.
+# Wer in einem Topf zwei Posten angibt, bekam bis 2026-10-01 ein ungültiges XML: <HA_35a> trägt
+# im Schema maxOccurs="1" (E10-2025.xsd:8236), die Posten wiederholen sich über <Einz> darunter
+# (maxOccurs="99", :10048). Ohne Eintrag in INSTANZ_CONTAINER_TIEFER fiel der Writer auf
+# `kz_path[:2]` zurück — also auf <HA_35a> selbst — und wiederholte den ganzen Abschnitt.
+# xmllint: „Element HA_35a: This element is not expected". Von mehreren Posten erreichte nur
+# einer die Datei. Entschieden in decisions/p35a-posten-als-einz-unter-einem-ha35a.md.
+
+_HH_TOEPFE = {
+    # gruppe: (Art-Kz, Betrag-Kz) — beide sitzen unter <St_Erm>/<Topf>/<Einz>
+    "hh_minijob": ("E0104206", "E0104108"),
+    "hh_dienstleistung": ("E0104206", "E0104108"),
+    "hh_handwerker": ("E0111217", "E0111214"),
+}
+
+
+def _hh_result(gruppe: str, posten: list[dict]) -> dict:
+    """Ein §35a-Topf mit N Posten, wie est_mapping.deklariere() ihn liefert."""
+    return {
+        "eingaben_konsistent": True,
+        "deklaration": {"E0100001": True},
+        "person_b": {},
+        "anlage_instanzen": {
+            gruppe: [{"index": i + 1, "felder": dict(p)} for i, p in enumerate(posten)]
+        },
+        "kind_anlagen": [],
+    }
+
+
+def _zaehle(xml: str, tag: str) -> int:
+    return len(re.findall(rf"<{tag}[ >]", xml))
+
+
+def test_hh_top_zwei_posten_ein_ha35a():
+    """AK1: ein §35a-Topf mit zwei Posten erzeugt genau EIN <HA_35a> mit ZWEI <Einz>-Kindern.
+
+    Geprüft für alle drei Töpfe: die Gruppe steht in INSTANZ_CONTAINER_TIEFER, nicht der
+    Elementname — „Einz" allein wäre mehrdeutig (er kehrt im E10-Schema vielfach wieder)."""
+    for gruppe, (art_kz, betrag_kz) in _HH_TOEPFE.items():
+        xml = EX.erzeuge_xml(_hh_result(gruppe, [
+            {art_kz: "1", betrag_kz: 120000},
+            {art_kz: "2", betrag_kz: 80000},
+        ]), vz=2025, hersteller_id=HID)
+        assert _zaehle(xml, "HA_35a") == 1, f"{gruppe}: {_zaehle(xml, 'HA_35a')} HA_35a"
+        assert _zaehle(xml, "Einz") == 2, f"{gruppe}: {_zaehle(xml, 'Einz')} Einz"
+        # Beide Posten stehen wirklich drin — nicht zwei Hüllen um einen Wert.
+        assert "120000" in xml and "80000" in xml, gruppe
+
+
+def test_hh_top_ein_posten_bleibt_unveraendert():
+    """AK2: Gegenprobe zu AK1 — ein Posten ergibt weiter genau ein <HA_35a> mit einem <Einz>.
+    Ohne diese Probe belegt AK1 nur, dass sich etwas geändert hat."""
+    for gruppe, (art_kz, betrag_kz) in _HH_TOEPFE.items():
+        xml = EX.erzeuge_xml(_hh_result(gruppe, [{art_kz: "1", betrag_kz: 120000}]), vz=2025,
+                             hersteller_id=HID)
+        assert _zaehle(xml, "HA_35a") == 1, gruppe
+        assert _zaehle(xml, "Einz") == 1, gruppe
+
+
+@braucht_xsd
+def test_hh_top_mehrere_posten_ist_xsd_valide(tmp_path):
+    """AK5 (Python-Seite): das erzeugte XML hält das amtliche Schema. Vor dem Fix scheiterte
+    genau das an <HA_35a> (maxOccurs=1) — der Test wäre damals rot gewesen."""
+    pfad = str(tmp_path / "hh.xml")
+    EX.schreibe_xml(_hh_result("hh_minijob", [
+        {"E0104206": "1", "E0104108": 120000},
+        {"E0104206": "2", "E0104108": 80000},
+    ]), pfad, vz=2025, hersteller_id=HID)
+    ok, meldung = VX.validate(pfad, "2025")
+    assert ok, meldung
+
+
+def test_instanz_container_tiefer_verdraengt_p23_nicht():
+    """AK3: `p23_veraeusserung` muss seinen Eintrag behalten. Der Fix fügt drei Gruppen hinzu,
+    er ersetzt keine — ein `dict`-Literal, das den bestehenden Schlüssel überschriebe, fiele
+    hier auf."""
+    assert EX.INSTANZ_CONTAINER_TIEFER["p23_veraeusserung"] == "Einz"
+    for gruppe in _HH_TOEPFE:
+        assert EX.INSTANZ_CONTAINER_TIEFER[gruppe] == "Einz"
+
+
 @braucht_xsd
 def test_mehrere_anlagen_sind_xsd_valide(tmp_path):
     """ESt1A + Anlage N gleichzeitig — prüft Container-Anlage über Anlagengrenzen."""
