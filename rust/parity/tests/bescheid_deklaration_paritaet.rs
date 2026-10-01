@@ -114,22 +114,6 @@ fn faelle_verzeichnis() -> std::path::PathBuf {
     }
 }
 
-fn walk_json(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
-    let Ok(read) = std::fs::read_dir(dir) else {
-        return Vec::new();
-    };
-    let mut out = Vec::new();
-    for e in read.flatten() {
-        let p = e.path();
-        if p.is_dir() {
-            out.extend(walk_json(&p));
-        } else if p.extension().is_some_and(|x| x == "json") {
-            out.push(p);
-        }
-    }
-    out.sort();
-    out
-}
 
 fn params() -> &'static Params {
     static P: OnceLock<Params> = OnceLock::new();
@@ -739,34 +723,21 @@ fn eigene_scheibe(roh: &Value) -> Option<&'static str> {
 }
 
 /// Ein Parity-Lauf ohne Korpus ist kein gruener Lauf: er vergleicht nichts und meldet
-/// "0 Abweichungen". Am 2026-10-01 kehrten vier Suiten bei leerem `TAXGRAPH_DATEN` still
-/// gruen zurueck (4 passed / 3 passed). Rot mit dem gefundenen Verzeichnis.
-fn korpus_pflicht(verzeichnis: &std::path::Path, dateien: usize, block: &str) {
-    assert!(
-        dateien > 0,
-        "{block}: 0 Fall-Dateien unter {} -- ein Parity-Lauf ohne Korpus belegt nichts. \
-         Korpus setzen oder den Lauf als korpuslos kennzeichnen.",
-        verzeichnis.display()
-    );
-}
 #[test]
 fn reale_faelle() {
     if skip() {
         return;
     }
-    let dateien = walk_json(&faelle_verzeichnis());
-    korpus_pflicht(&faelle_verzeichnis(), dateien.len(), "reale_faelle");
+    // EIN gemeinsamer Leser, der ZAEHLT (s. parity::korpus). Die frueher hier gestandene
+    // stille `continue` machte einen Lauf auf einem Bruchteil des Korpus gruen.
+    let korpus = parity::korpus::Korpus::lies(&faelle_verzeichnis());
+    korpus.pflicht(&faelle_verzeichnis(), "reale_faelle");
     let mut b = Bilanz::default();
     let (mut kontexte, mut kein_store, mut vz_ersatz, mut stores) =
         (0_usize, 0_usize, 0_usize, 0_usize);
     let mut stoerung_offen = stoerung_an();
-    for pfad in &dateien {
-        let Ok(text) = std::fs::read_to_string(pfad) else {
-            continue;
-        };
-        let Ok(roh) = serde_json::from_str::<Value>(&text) else {
-            continue;
-        };
+    for (_pfad, roh) in &korpus.gelesen {
+        let roh = roh.clone();
         if roh.get("events").is_none() {
             kein_store += 1;
             continue;
@@ -802,7 +773,13 @@ fn reale_faelle() {
     b.drucke("reale_faelle", kontexte);
     b.wache_rechnet("reale_faelle", LEER_REALE);
     b.drucke_gruende();
-    eprintln!("reale_faelle: {} Dateien, {stores} Stores, {kein_store} ohne Store übersprungen, {vz_ersatz} mit VZ außerhalb 2024–2026 (Ersatz 2025)", dateien.len());
+    eprintln!(
+        "reale_faelle: {} von {} Dateien GELESEN, {stores} Stores, {kein_store} ohne Store \
+         übersprungen, {vz_ersatz} mit VZ außerhalb 2024–2026 (Ersatz 2025), {} unlesbar",
+        korpus.gelesen_zahl(),
+        korpus.gefunden.len(),
+        korpus.uebersprungen.len()
+    );
     assert!(kontexte > 0);
     assert_eq!(
         b.abweichungen(),

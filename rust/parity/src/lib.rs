@@ -10,6 +10,7 @@
     )
 )]
 
+pub mod korpus;
 pub mod pin;
 
 use std::io::{BufRead, BufReader, Write};
