@@ -9,7 +9,7 @@ use engine::zugriff::teil1::ermaessigungen::{p36_abschlusszahlung, P36Abschlussz
 use engine::zugriff::teil2::gesamt::GesamtKette;
 
 use super::rechnen::R;
-use crate::{zahl_int, Felder};
+use crate::{wert, zahl_int, Felder};
 use domain::Zustand;
 
 /// Wer die Guenstigerpruefung § 31 gewonnen hat (`kette["p31"]["guenstiger"]`).
@@ -86,7 +86,7 @@ pub struct Extras {
 /// es nirgends gibt, lehrt das Falsche; deshalb steht hier ein echter `enum_werte`-Wert.
 #[must_use]
 pub fn kist_konfession(felder: &Felder) -> Option<&str> {
-    match felder.get("kist_konfession").map(|e| &e.wert) {
+    match wert(felder, "kist_konfession") {
         Some(PyWert::Text(s)) if !s.is_empty() => Some(s.as_str()),
         _ => None,
     }

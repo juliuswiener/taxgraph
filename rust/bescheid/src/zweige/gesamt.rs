@@ -329,7 +329,8 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
     let (f, vz, p) = (r.f(), r.vz(), r.p());
     let q = r.q();
     let vv = vv_summe(r)?;
-    let veranlagung = VeranlagungWert::aus(Some(slot(slots, "veranlagung")?));
+    let veranlagung =
+        VeranlagungWert::aus(domain::Lage::veranlagung(Some(slot(slots, "veranlagung")?)));
     let zusammen = veranlagung.zusammen();
     let mut g = GesamtfallEingabe {
         einkuenfte_vermietung: vv,

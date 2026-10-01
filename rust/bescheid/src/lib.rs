@@ -30,7 +30,7 @@ pub mod deklaration;
 pub mod einkuenfte;
 pub mod zweige;
 
-use domain::{Cent, Euro, PyWert, Zustand};
+use domain::{Cent, Euro, Lage, PyWert, Veranlagung, Zustand};
 use elster::Instanz;
 use engine::zugriff::teil1::fehler::EngineFehler as EngineFehler1;
 use engine::zugriff::teil2::EngineFehler as EngineFehler2;
@@ -240,6 +240,11 @@ pub(crate) fn wert<'a>(f: &'a Felder, fid: &str) -> Option<&'a PyWert> {
     f.get(fid).map(|x: &SnapshotFeld| &x.wert)
 }
 
+/// `veranlagung` gegen seinen Bindungstyp: der typisierte Zugriff neben [`wert`] (Strangler, K7a).
+pub(crate) fn feld_veranlagung(f: &Felder) -> Lage<'_, Veranlagung> {
+    Lage::veranlagung(wert(f, "veranlagung"))
+}
+
 /// Python `_c(fid)`: `int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0`.
 ///
 /// PARITÄT: fail-open default — ein fehlendes oder nicht-numerisches Feld ist 0, kein Fehler.
@@ -296,12 +301,7 @@ pub(crate) fn ist_false(v: Option<&PyWert>) -> bool {
 
 /// Python `wert == "zusammen"` (`veranlagung`).
 pub(crate) fn ist_zusammen(f: &Felder) -> bool {
-    matches!(wert(f, "veranlagung"), Some(PyWert::Text(s)) if s == "zusammen")
-}
-
-/// Python-Wahrheitswert eines Store-Werts (`not x`).
-pub(crate) fn py_wahr(v: &PyWert) -> bool {
-    v.truthy()
+    matches!(feld_veranlagung(f), Lage::Gueltig(Veranlagung::Zusammen))
 }
 
 /// Pythons `int(x)` fuer einen Slot- oder Store-Wert: Bool, Zahl, Text mit Vorzeichen/Ziffern/`_`.
@@ -715,8 +715,8 @@ mod aequivalenz {
         py_wahr_alt, zahl_dezimal_alt, zahl_int_alt, zahl_oder_null_alt,
     };
     use super::{
-        feld_int_oder_null, ist_false, ist_positive_zahl, ist_true, positive_zahl, py_int,
-        py_leerraum, py_wahr, zahl_dezimal, zahl_int, zahl_oder_null, BescheidFehler, Felder,
+        feld_int_oder_null, ist_false, ist_positive_zahl, ist_true, ist_zusammen, positive_zahl,
+        py_int, py_leerraum, wert, zahl_dezimal, zahl_int, zahl_oder_null, BescheidFehler, Felder,
     };
 
     /// Ausnahmen von `py_int` und von `int(v or 0)` (`c2`, `q_roh_cent`).
@@ -782,6 +782,23 @@ mod aequivalenz {
         }
     }
 
+    /// Ein Wert fuer `veranlagung`, `None` = Feld fehlt. Die festen Werte treffen jede `Lage`;
+    /// der falsy-Zweig von `Abweichend` (`""`, `false`, `0`) bekommt eigene Treffer.
+    pub(crate) fn veranlagung_json() -> impl Strategy<Value = Option<Value>> {
+        let fest = vec![
+            json!("einzel"),
+            json!("zusammen"),
+            json!("einzel "),
+            json!(" zusammen"),
+            json!("Zusammen"),
+            json!(""),
+            Value::Null,
+            json!(false),
+            json!(0),
+        ];
+        proptest::option::of(prop_oneof![2 => proptest::sample::select(fest), 1 => json_wert()])
+    }
+
     /// Die Alt-Fassung gegen `CPython` — die Messung, die die D-Nummern festhaelt (Auflage 1).
     fn int_wie_alt(v: &Value) -> Result<(), TestCaseError> {
         let (alt, neu) = (alt_klasse(py_int_alt(v)), klasse(py(v).int()));
@@ -803,14 +820,8 @@ mod aequivalenz {
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(1_000))]
 
-        /// Die Produktion gegen die Alt-Fassung: ohne Ausnahmen, weil `truthy` Pythons `bool(x)`
-        /// unveraendert abbildet.
-        #[test]
-        fn py_wahr_wie_alt(v in json_wert()) {
-            pruefe(&v, &py_wahr_alt(&v), &py_wahr(&py(&v)), Vec::new, &[])?;
-        }
-
-        /// Die Alt-Fassung gegen `CPython`.
+        /// Die Alt-Fassung gegen `CPython`. Die Produktion ruft `truthy` seit K7a direkt: ohne
+        /// Ausnahmen, weil `truthy` Pythons `bool(x)` unveraendert abbildet.
         #[test]
         fn py_wahr_alt_wie_pywert(v in json_wert()) {
             pruefe(&v, &py_wahr_alt(&v), &py(&v).truthy(), Vec::new, &[])?;
@@ -827,6 +838,14 @@ mod aequivalenz {
             pruefe(&v, &alt_f, &neu_f, Vec::new, &[])?;
             pruefe(&v, &alt_t, &matches!(w, PyWert::Bool(true)), Vec::new, &[])?;
             pruefe(&v, &alt_f, &matches!(w, PyWert::Bool(false)), Vec::new, &[])?;
+        }
+
+        /// K7a: `ist_zusammen` liest ueber `Lage`; die Fassung davor verglich den Text direkt.
+        #[test]
+        fn ist_zusammen_wie_alt(v in veranlagung_json()) {
+            let f = v.clone().map_or_else(Felder::new, |w| ein_feld("veranlagung", w, true));
+            let alt = matches!(wert(&f, "veranlagung"), Some(PyWert::Text(s)) if s == "zusammen");
+            pruefe(&v, &alt, &ist_zusammen(&f), Vec::new, &[])?;
         }
 
         #[test]

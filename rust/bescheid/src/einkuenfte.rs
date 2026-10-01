@@ -26,8 +26,8 @@ use engine::zugriff::teil2::sonstige::{p34c_1, AuslaendischeSteuerEingabe};
 
 use crate::{
     cent_zu_euro, euro_plus, feld_euro_oder_null, feld_int_oder_null, ist_false, ist_true,
-    ist_zusammen, minus, plus, py_leerraum, py_wahr, summe, wert, zahl_oder_null, BescheidFehler,
-    Felder, Instanzquelle,
+    ist_zusammen, minus, plus, py_leerraum, summe, wert, zahl_oder_null, BescheidFehler, Felder,
+    Instanzquelle,
 };
 
 // ---------------------------------------------------------------- Konstanten (api_constants.py)
@@ -134,7 +134,7 @@ fn strip_lower(v: &PyWert) -> Result<String, BescheidFehler> {
 
 /// `dba_staat_iso`: Enum-Wert von `dba_staat` → ISO-Code; Unbekanntes bleibt unveraendert.
 fn dba_staat_iso(staat: Option<&PyWert>) -> Result<String, BescheidFehler> {
-    let Some(v) = staat.filter(|v| py_wahr(v)) else {
+    let Some(v) = staat.filter(|v| v.truthy()) else {
         return Ok(String::new());
     };
     let s = strip_lower(v)?;
@@ -167,7 +167,7 @@ pub fn dba_methode_fuer(
     if s.is_empty() {
         return Ok("anrechnung");
     }
-    if let Some(art) = einkunftsart.filter(|v| py_wahr(v)) {
+    if let Some(art) = einkunftsart.filter(|v| v.truthy()) {
         let art = strip_lower(art)?;
         if let Some((_, methode)) = DBA_METHODE_ART
             .iter()

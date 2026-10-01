@@ -21,7 +21,7 @@ use super::ausgaben::{kette_p31, kist_konfession, setze_kette, Extras, Kette};
 use super::rechnen::{add, mal, mal_div, max0, sub, R};
 use super::VeranlagungWert;
 use crate::abzuege::abs3_eligible;
-use crate::{ist_true, py_int, py_wahr, wert, BescheidFehler, Felder};
+use crate::{ist_true, py_int, wert, BescheidFehler, Felder};
 
 /// KiSt-Konfessionen mit Steuererhebung (`runner._KIST_KONFESSION_STEUERERHEBEND`).
 const KIST_STEUERERHEBEND: [&str; 2] = ["evangelisch", "roemisch-katholisch"];
@@ -168,7 +168,7 @@ pub(super) struct Kapital {
 fn q_roh_cent(f: &Felder) -> R<i64> {
     // PARITÄT: fail-open default — ein falsy Wert ist 0.
     match wert(f, "kap_q_auslaendische_steuer") {
-        Some(v) if py_wahr(v) => py_int(v),
+        Some(v) if v.truthy() => py_int(v),
         _ => Ok(0),
     }
 }
@@ -202,7 +202,7 @@ pub(super) fn kapital(l: &Lage<'_>, g2: &GesamtfallEingabe, est_raw: Euro) -> R<
     let mut kist_kap_cent = 0_i64;
     // PARITÄT: fail-open default — fehlende Konfession = "keine" (§ 32d-Ermaessigung entfaellt,
     // zu viel Steuer; Python-Docstring `_kist_konfession`, bewusst nicht geaendert).
-    let konfession = match l.f.get("kist_konfession").map(|e| &e.wert) {
+    let konfession = match wert(l.f, "kist_konfession") {
         None => Some("keine"),
         Some(PyWert::Text(s)) => Some(s.as_str()),
         Some(_) => None,
