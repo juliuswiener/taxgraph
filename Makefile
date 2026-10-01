@@ -51,8 +51,14 @@ unit:
 ## verschluesselung-steuerdaten-im-klartext). Der Wert MUSS mit api_constants._daten_wurzel()
 ## uebereinstimmen — laufen die beiden auseinander, sichert `make backup` ein leeres Verzeichnis
 ## und meldet Erfolg. Genau das prueft tests/test_datenwurzel_ausserhalb_repo.py.
+##
+## Die Reihenfolge ist DREISTUFIG und muss die von _daten_wurzel() sein: $TAXGRAPH_DATEN, dann
+## $XDG_DATA_HOME, dann ~/.local/share. Bis 2026-10-01 fehlte die erste Stufe hier: mit
+## TAXGRAPH_DATEN=korpus-rt sicherte `make backup` weiter ~/.local/share/taxgraph, waehrend der
+## Code nach korpus-rt schrieb — beide Pfade existierten (207 bzw. 192 Dateien), der Fehler war
+## also stumm. `?=` bleibt: FAELLE_ROOT per Kommandozeile schlaegt alle drei Stufen.
 BACKUP_DIR  ?= $(abspath $(CURDIR)/../taxgraph-backups)
-FAELLE_ROOT ?= $(if $(XDG_DATA_HOME),$(XDG_DATA_HOME),$(HOME)/.local/share)/taxgraph
+FAELLE_ROOT ?= $(if $(TAXGRAPH_DATEN),$(TAXGRAPH_DATEN),$(if $(XDG_DATA_HOME),$(XDG_DATA_HOME),$(HOME)/.local/share)/taxgraph)
 AUTH_USERS  ?= produkt/auth/users.json
 
 backup:
