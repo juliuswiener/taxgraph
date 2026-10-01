@@ -8,7 +8,7 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 
 ---
 
-## Fortschritt (Stand 2026-10-01, HEAD `e64a8c4`)
+## Fortschritt (Stand 2026-10-01, HEAD `1f01bc7`)
 
 | Schritt | Stand | Commits |
 |---|---|---|
@@ -20,8 +20,9 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 | Format | `cargo fmt --all`, `llm_dialog` geteilt | `2f9cd2d` |
 | Steuerzeichen-Fix | fertig in Python **und** Rust: Abweisen beim Speichern, `erzeuge_xml` fail-closed, Fuzz-Skip entfernt | `2c17f70` |
 | Vorjahr überspringt Altwert | fertig in Python und `eingang` (Rust-Route bleibt Stub bis 9c) | `e64a8c4` |
-| Laufend neben K1 | 0 in Kz ohne 0 weglassen (Py+Rust) · Textformat aus XSD beim Speichern (Py+Rust) | — |
-| **9b-B Typisierung** | K0 fertig (Vault `research/taxgraph-wertformen-echte-stores`); **K1 `domain` läuft**; dann K2 → K9 (§7) | `a993b91` |
+| Null in Kz ohne Null | fertig, Py **und** Rust: 384 echte Fälle, ungültig 214 → 38, Abweichungen 0 (Vault `decisions/elster-null-in-kz-ohne-null-weglassen`) | `3c7bb01` |
+| Textformat aus XSD beim Speichern | fertig, Py **und** Rust | `529eaa3` |
+| **9b-B Typisierung** | K0 fertig (Vault `research/taxgraph-wertformen-echte-stores`); **K1 `domain` fertig und nachgemessen** (794 Rust-Tests, 19 Parity-Suiten, 3403 Python-Tests, clippy 0, Mutation 2/2 rot); dann K2 → K9 (§7) | `1f01bc7` |
 | 9b Rest | `debug_assert!`/Properties für übrige Crates; 22 xfail als `#[ignore]`; End-to-End Eingabe → XML | — |
 | 9c `api`-Handler | offen (danach), inkl. `Username`/`FallId`-Newtypes | — |
 | 10 Cutover | offen | — |
