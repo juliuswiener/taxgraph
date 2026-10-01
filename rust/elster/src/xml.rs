@@ -596,6 +596,34 @@ fn baue_instanz_map<'d>(
     Ok(map)
 }
 
+/// Offene Eingaben, dann — nur auf dem Abgabe-Pfad — fehlende Pflichtfelder. Konsistent heisst
+/// nur "nichts widerspricht sich", ein leerer Store ist das auch; ob das Noetige da ist, sagen
+/// die Pflichtluecken (Python: `pflichtfelder_vollstaendig`, `elster_xml.py::erzeuge_xml`).
+fn eingaben_pruefen(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<(), XmlFehler> {
+    if !result.eingaben_konsistent() {
+        let offen = result.unvollstaendig();
+        let erste = serde_json::to_value(offen.get(..3).unwrap_or(offen)).unwrap_or(Value::Null);
+        return Err(XmlFehler(format!(
+            "Deklaration unvollständig ({} offene Pflichtfelder) — kein Submission-XML. Erste: {}",
+            offen.len(),
+            py::repr(&erste)
+        )));
+    }
+    if !opt.abgabefaehig || result.pflichtfelder_luecken().is_empty() {
+        return Ok(());
+    }
+    let fehlend: Vec<&str> = result
+        .pflichtfelder_luecken()
+        .iter()
+        .map(|e| e.feld_id.as_str())
+        .collect();
+    let fehlend = serde_json::to_value(fehlend).unwrap_or(Value::Null);
+    Err(XmlFehler(format!(
+        "abgabefaehig=True verlangt pflichtfelder_vollstaendig=True — fehlend: {}. checkESt lehnt das XML sonst ab (rc=610001002).",
+        py::repr(&fehlend)
+    )))
+}
+
 /// Deklaration → ELSTER-Submission-XML (`elster_xml.py::erzeuge_xml`).
 ///
 /// Buckets: `deklaration` (Person A, Instanz 0), `person_b` (Person-Container, Instanz 1 — oder
@@ -604,8 +632,8 @@ fn baue_instanz_map<'d>(
 ///
 /// # Errors
 /// [`XmlFehler`] bei offenen Eingaben, fehlender Hersteller-ID, fehlendem Schema, Kz ohne
-/// Schema-Pfad, inkonsistenter Kinderzahl und — mit `abgabefaehig` — fehlender
-/// Bankverbindungs-Entscheidung, fehlendem Absender oder ungueltiger Steuernummer.
+/// Schema-Pfad, inkonsistenter Kinderzahl und — mit `abgabefaehig` — fehlenden Pflichtfeldern,
+/// fehlender Bankverbindungs-Entscheidung, fehlendem Absender oder ungueltiger Steuernummer.
 ///
 /// ```
 /// use std::collections::HashMap;
@@ -618,15 +646,7 @@ fn baue_instanz_map<'d>(
 /// }
 /// ```
 pub fn erzeuge_xml(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<String, XmlFehler> {
-    if !result.eingaben_konsistent() {
-        let offen = result.unvollstaendig();
-        let erste = serde_json::to_value(offen.get(..3).unwrap_or(offen)).unwrap_or(Value::Null);
-        return Err(XmlFehler(format!(
-            "Deklaration unvollständig ({} offene Pflichtfelder) — kein Submission-XML. Erste: {}",
-            offen.len(),
-            py::repr(&erste)
-        )));
-    }
+    eingaben_pruefen(result, opt)?;
     let dekl = &result.deklaration;
     if dekl.is_empty() {
         return Err(XmlFehler(

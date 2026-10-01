@@ -496,6 +496,16 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
         offen = result.get("unvollstaendig", [])
         raise XmlFehler(f"Deklaration unvollständig ({len(offen)} offene Pflichtfelder) — "
                         f"kein Submission-XML. Erste: {offen[:3]}")
+    # Konsistent heisst nur "nichts widerspricht sich" — ein leerer Store ist das auch. Ob das
+    # Noetige da ist, sagt `pflichtfelder_vollstaendig` (est_mapping.PFLICHTFELDER). Gemessen
+    # 2026-10-01: Name, Anschrift, Bank und StNr da, Geburtsdatum und Konfession nicht -> das
+    # Vorsatz-Gate unten liess das XML durch, checkESt lehnte mit rc=610001002 ab. Nur auf dem
+    # Abgabe-Pfad: ohne Vorsatz ist das XML ohnehin nicht abgabefaehig, und die Teil-XML der
+    # Tests und der Paritaet bleiben baubar (s. tests/test_pflichtfelder_am_writer.py).
+    if abgabefaehig and result.get("pflichtfelder_vollstaendig", False) is not True:
+        fehlend = [e["feld_id"] for e in result.get("pflichtfelder_luecken", [])]
+        raise XmlFehler(f"abgabefaehig=True verlangt pflichtfelder_vollstaendig=True — "
+                        f"fehlend: {fehlend}. checkESt lehnt das XML sonst ab (rc=610001002).")
     deklaration = result.get("deklaration") or {}
     if not deklaration:
         raise XmlFehler("leere Deklaration — nichts zu übermitteln.")

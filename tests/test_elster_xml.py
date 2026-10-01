@@ -57,7 +57,8 @@ braucht_eric = pytest.mark.skipif(
 
 
 def _dekl(**kz) -> dict:
-    return {"eingaben_konsistent": True, "deklaration": dict(kz)}
+    return {"eingaben_konsistent": True, "pflichtfelder_vollstaendig": True,
+            "deklaration": dict(kz)}
 
 
 def _schreibe(tmp_path, result, **kw) -> str:
