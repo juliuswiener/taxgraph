@@ -940,6 +940,85 @@ def test_spenden_betrag_null_bleibt_aus_dem_xml(bindung):
     assert _pfad_im_xml(_xml({"spenden_betrag": 30050}, bindung), _ZEILE_5[1:] + ("E0108105",), "301")
 
 
+def test_spenden_betrag_null_ohne_nicht_deklariert(bindung):
+    """P9 (Vault: decisions/elster-null-in-kz-ohne-null-weglassen, Punkt 3): eine weggelassene 0
+    ist kein verlorener Wert, sondern "nichts anzugeben" — kein nicht_deklariert-Eintrag. Der
+    Spenden-Zweig schrieb bis P9 einen; mit Eintrag meldete die Prüfanzeige "nicht alle Werte".
+    """
+    d = est_mapping.deklariere({"spenden_betrag": {"wert": 0, "zustand": "bestaetigt"}}, bindung)
+    assert "E0108105" not in d["deklaration"]
+    assert d["nicht_deklariert"] == []
+
+
+def test_null_bleibt_aus_jeder_kz_deren_xsd_typ_sie_verbietet(bindung):
+    """P9 (Vault-Ticket elster-xml-null-in-ganzzahlpos-kz): eine 0 in einer Kz, deren XSD-Typ sie
+    verbietet, macht die ganze Erklärung schema-ungültig. Gemessen 2026-10-01 an 192 echten Fällen:
+    214 von 378 XML ungültig. Bis P9 sperrte die Handliste _NULL_UNZULAESSIG_KZ nur E0108105.
+
+    Die Kz-Menge kommt aus dem XSD, nicht aus einer Handliste: Typ GanzzahlPos* (Basis
+    xs:positiveInteger, 153 Kz in E10-2025, gleich dem Urteil von libxml2) oder eine
+    enumeration-/pattern-Facette, die "0" nicht zulässt (GdB 20..100, Pflegegrad {2,3,4}).
+
+    Geprüft wird jeder Schreibweg von deklariere(), nicht nur der 1:1-Zweig mit der Sperre: Instanz
+    (__2), Person B (Klasse g), Art-Verzweigung (Klasse f, g×f). Dazu 50 Cent: abgerundet auf 0 €.
+    """
+    import re
+    schema = XV._find_schema(2025)
+    if not schema:
+        pytest.skip("E10-2025.xsd nicht gefunden — $ERIC_DIR setzen")
+    meta = XV._resolve_kz_meta(schema)
+
+    def verbietet_null(m):
+        return (m["type_name"].startswith("GanzzahlPos")
+                or bool(m["enums"]) and "0" not in m["enums"]
+                or bool(m["patterns"]) and not any(re.fullmatch(p, "0") for p in m["patterns"]))
+
+    def nullen(d):
+        felder = [d.get("deklaration") or {}, d.get("person_b") or {}]
+        felder += [i["felder"] for ii in (d.get("anlage_instanzen") or {}).values() for i in ii]
+        return sorted({kz for f in felder for kz, w in f.items()
+                       if w == 0 and not isinstance(w, bool) and kz in meta and verbietet_null(meta[kz])})
+
+    def werte(fid):
+        return (0, 50) if bindung[fid]["typ"] == "cent" else (0,)
+
+    proben = []
+    for fid, b in sorted(bindung.items()):
+        if b.get("typ") in ("cent", "int"):
+            for s in (fid, f"{fid}__2") if b.get("instanz_gruppe") else (fid,):
+                proben += [{s: w} for w in werte(fid)]
+    for karte in (est_mapping.VERZWEIGUNG, est_mapping.PARTNER_VERZWEIGUNG):
+        for fid, cfg in sorted(karte.items()):
+            for i in ("", "__2") if bindung[fid].get("instanz_gruppe") else ("",):
+                proben += [{fid + i: w, cfg["art_feld"] + i: art} for art in cfg["kz"] for w in werte(fid)]
+    durch = []
+    for probe in proben:
+        d = est_mapping.deklariere({k: {"wert": w, "zustand": "bestaetigt"} for k, w in probe.items()}, bindung)
+        durch += [f"{kz} " + " ".join(f"{k}={w}" for k, w in probe.items()) for kz in nullen(d)]
+    assert durch == [], f"0 in {len(durch)} Faellen durchgelassen, obwohl der XSD-Typ sie verbietet: {durch}"
+
+
+def test_xml_mit_null_in_ganzzahlpos_kz_ist_schema_valide(bindung, tmp_path):
+    """P9: ein Dokument mit den häufigsten Fehlerstellen der echten Fälle (2026-10-01:
+    E0203503/E0203504 in 139, E0506105 in 122, E0108202/E0242001 in 116 von 378 XML; dazu GdB
+    und Pflegegrad) muss xmllint bestehen. Wer 0 angibt, hat nichts zu erklären; die Kz bleibt weg.
+
+    Der Kontrollfall mit Werten ungleich 0 ist valide: der Unterschied ist allein die 0.
+    """
+    import validate_xsd as VX
+    if not VX.find_schema("2025"):
+        pytest.skip("elster11_E10_2025_extern.xsd nicht gefunden — ERIC_DIR setzen")
+
+    felder = {"ep_arbeitstage": 220, "ep_entfernung_km": 15, "kinderbetreuungskosten": 100000,
+              "berufsausbildung_aufwendungen": 120000, "p35c_energieberater_aufwendungen": 150000,
+              "rentner_grad_der_behinderung": 50, "rentner_pflegegrad": 2}
+    for name, werte in (("kontrolle", felder), ("null", dict.fromkeys(felder, 0))):
+        ziel = tmp_path / f"{name}.xml"
+        ziel.write_text(_xml(werte, bindung), encoding="utf-8")
+        ok, meldung = VX.validate(str(ziel), "2025")
+        assert ok, f"{name}: XML nicht schema-valide: {meldung}"
+
+
 # ELSTER-Regel 100800013 (Jahresdokumentation E10 2025, Blatt "G - Regeln", Typ Fehler):
 # [E0801704] UngleichMitToleranz1 {[E0801606] * {[E0801705] / 100}}. checkESt lehnte die ersten
 # beiden Fälle ab (2026-09-26), die Kontrolle nicht.

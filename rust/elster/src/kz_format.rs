@@ -1,10 +1,12 @@
 //! Kz-Format: wie ein Store-Wert in eine ELSTER-Kennzahl geschrieben wird
-//! (`est_mapping.py:31-211`, `_cent_nach_kz`, `_kz_wert`, `_jahr_aus_kz_wert`).
+//! (`est_mapping.py:31-241`, `_cent_nach_kz`, `_kz_wert`, `_schreibe_kz`, `_jahr_aus_kz_wert`).
 //!
 //! Rundung „zu Ihren Gunsten" (Anleitung ESt 1 A 2025, `anl_est1a_2025.txt:269-274`):
 //! Einnahmen/Einkuenfte werden abgerundet, Abzuege/Aufwendungen/Verluste aufgerundet. Kz vom
 //! XSD-Typ Dezimal mit zwei Nachkommastellen (`E60…` und die Liste [`KOMMA_OHNE_E60_KZ`]) werden
 //! nicht gerundet, sondern exakt als `"N,NN"` geschrieben.
+
+use std::collections::BTreeMap;
 
 use domain::{Cent, Euro, Feldtyp};
 use serde_json::Value;
@@ -33,13 +35,33 @@ pub const KOMMA_OHNE_E60_KZ: &[&str] = &[
     "E0200301", "E0200501", "E1904701", "E1904901", "E1904801", "E1905101",
 ];
 
-/// Kz vom XSD-Typ `GanzzahlPos`, an denen ERiC eine 0 ablehnt (`est_mapping.py:152-154`).
+/// Kz, deren XSD-Typ eine 0 verbietet (`est_mapping.py:145-172`): `GanzzahlPos*` (Basis
+/// `xs:positiveInteger`) oder eine Facette ohne `"0"` (`GdB` E0109708/E0505809: Muster
+/// `20|25|…|100`; Pflegegrad E0161606: Aufzaehlung 2/3/4). ERiC lehnt eine 0 dort ab, und die
+/// ganze Erklaerung ist uneinreichbar. In jeder dieser Kz heisst 0 „nichts anzugeben"
+/// (`minOccurs 0`); `schreibe_kz` laesst sie weg (Vault:
+/// `decisions/elster-null-in-kz-ohne-null-weglassen`).
 ///
-/// ponytail: nur die Spenden-Kz; 14 weitere cent-Kz der Bindung tragen denselben Typ (gezaehlt
-/// 2026-09-26). Upgrade: Menge aus [`crate::xsd::kz_meta`] ableiten.
-pub const NULL_UNZULAESSIG_KZ: &[&str] = &["E0108105"];
+/// Aus dem XSD abgeleitet ([`crate::xsd::kz_meta`] gegen `E10-2025.xsd`): jede cent-/int-Kz auf
+/// einem Schreibweg von `deklariere`, deren Typ die 0 verbietet; Reihenfolge wie in Python (1:1,
+/// Instanz und Person B; Spenden; die neun §35c-Kz der Art-Verzweigung). Kz mit Textwert fehlen:
+/// `"0,00"` ist gueltig, ein Jahr 0 (`"01.01.0000"`) nicht (`bereich` beim Speichern ungeprueft).
+///
+/// ponytail: eingefroren am 2026-10-01, jahresunabhaengig, damit `deklariere` ohne XSD laeuft.
+/// Grenze: `E10-2024.xsd` verbietet die 0 zusaetzlich in E0106603 (Anzahl weiterer
+/// Pflegepersonen); 2025 ist sie dort erlaubt und laut XSD-Label einzutragen. Upgrade: eine Menge
+/// je VZ. Drift faengt `null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet` (`tests/eigenschaften.rs`)
+/// und fuer die Art-Verzweigung `art_verzweigung_schreibt_keine_verbotene_null`
+/// (`deklaration.rs`); beide leiten die Menge live aus dem XSD 2025 ab.
+pub const NULL_UNZULAESSIG_KZ: &[&str] = &[
+    "E0108202", "E0108002", "E0207611", "E0203503", "E0203504", "E0801705", "E0107207", "E0107208",
+    "E0111215", "E0111214", "E0104109", "E0104108", "E0506104", "E0505809", "E0506105", "E0305201",
+    "E0240802", "E0242001", "E0240801", "E0241901", "E0109708", "E0161606", "E0205409", "E0205302",
+    "E0205201", "E0108105", "E0241001", "E0241101", "E0241201", "E0241301", "E0241302", "E0241401",
+    "E0241501", "E0241601", "E0241701",
+];
 
-/// Datums-Kz, in die ein Jahres-Wert als `01.01.JJJJ` geschrieben wird (`est_mapping.py:181`).
+/// Datums-Kz, in die ein Jahres-Wert als `01.01.JJJJ` geschrieben wird (`est_mapping.py:199`).
 /// Aus dem XSD abgeleitet (Datums-Typ ∩ Kz-Literale des Moduls).
 pub const DATUMS_KZ: &[&str] = &["E1800501", "E1801701", "E1803202"];
 
@@ -54,7 +76,7 @@ pub enum KzFormat {
     KommaCent,
 }
 
-/// Das Format einer Kz (`_cent_nach_kz`-Weiche, `est_mapping.py:161-165`).
+/// Das Format einer Kz (`_cent_nach_kz`-Weiche, `est_mapping.py:179-183`).
 ///
 /// ```
 /// use elster::{kz_format, KzFormat};
@@ -112,7 +134,7 @@ fn komma_text(c: Cent) -> String {
     format!("{euro},{rest:02}")
 }
 
-/// Store-Cent → Kz-Betrag (`_cent_nach_kz`, `est_mapping.py:157-165`).
+/// Store-Cent → Kz-Betrag (`_cent_nach_kz`, `est_mapping.py:175-183`).
 ///
 /// ```
 /// use domain::{Cent, Euro};
@@ -133,7 +155,7 @@ pub fn cent_nach_kz(cent: Cent, kz: &str) -> KzBetrag {
     }
 }
 
-/// Store-Wert → Kz-Wert (`_kz_wert`, `est_mapping.py:198-210`): `cent` gerundet, Jahr in einer
+/// Store-Wert → Kz-Wert (`_kz_wert`, `est_mapping.py:216-228`): `cent` gerundet, Jahr in einer
 /// Datums-Kz als `01.01.JJJJ`, alles andere unveraendert.
 ///
 /// Der 01.01. ist eine Annahme, keine Kenntnis: der Nutzer nennt das Jahr des Rentenbeginns.
@@ -172,7 +194,30 @@ pub fn kz_wert(wert: &Value, kz: &str, typ: Option<Feldtyp>) -> Result<Value, Py
     Ok(wert.clone())
 }
 
-/// Umkehrung zu [`kz_wert`] fuer Datums-Kz (`_jahr_aus_kz_wert`, `est_mapping.py:183-194`):
+/// Die eine Schreibstelle fuer Kz-Werte in `deklariere` (`_schreibe_kz`, `est_mapping.py:231-241`):
+/// `ziel[kz] = kz_wert(…)`, ausser der Kz-Wert ist 0 und die Kz verbietet die 0
+/// ([`NULL_UNZULAESSIG_KZ`]). Erst umrechnen, dann pruefen: 1-99 Cent werden in einer
+/// abgerundeten Kz zur 0 und entfallen ebenso.
+///
+/// Kein `nicht_deklariert`-Eintrag: eine 0 ist kein verlorener Wert, sondern „nichts anzugeben".
+///
+/// # Errors
+/// Wie [`kz_wert`].
+pub(crate) fn schreibe_kz(
+    ziel: &mut BTreeMap<String, Value>,
+    kz: &str,
+    wert: &Value,
+    typ: Option<Feldtyp>,
+) -> Result<(), PyFehler> {
+    let v = kz_wert(wert, kz, typ)?;
+    if NULL_UNZULAESSIG_KZ.contains(&kz) && py::gleich_null(&v) {
+        return Ok(());
+    }
+    ziel.insert(kz.to_owned(), v);
+    Ok(())
+}
+
+/// Umkehrung zu [`kz_wert`] fuer Datums-Kz (`_jahr_aus_kz_wert`, `est_mapping.py:201-212`):
 /// `"TT.MM.JJJJ"` → Jahr, sonst unveraendert.
 ///
 /// ```

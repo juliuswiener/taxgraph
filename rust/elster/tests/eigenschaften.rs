@@ -245,8 +245,23 @@ proptest! {
     }
 }
 
+/// Verbietet der XSD-Typ der Kz die 0? Typ `GanzzahlPos*` (Basis `xs:positiveInteger`) oder eine
+/// enumeration-/pattern-Facette ohne "0" (`GdB`, Pflegegrad).
+fn verbietet_null(meta: &HashMap<String, elster::KzMeta>, kz: &str) -> bool {
+    meta.get(kz).is_some_and(|m| {
+        m.type_name.starts_with("GanzzahlPos")
+            || (!m.enums.is_empty() && !m.enums.iter().any(|e| e == "0"))
+            || (!m.patterns.is_empty()
+                && !m.patterns.iter().any(|p| {
+                    regex::Regex::new(&format!("^(?:{p})$"))
+                        .unwrap()
+                        .is_match("0")
+                }))
+    })
+}
+
 /// Die handgepflegten Kz-Mengen gegen die aus dem XSD ABGELEITETEN Typen (Ersatz fuer die
-/// `ponytail`-Grenzen in `est_mapping.py:149-151,179-180`). Die Teilmengen-Beziehung ist hart;
+/// `ponytail`-Grenzen in `est_mapping.py:154-158,197-198`). Die Teilmengen-Beziehung ist hart;
 /// was das XSD zusaetzlich nahelegt, wird gezaehlt und ausgegeben (offene Punkte, s. Bericht).
 #[test]
 fn kz_mengen_aus_xsd() {
@@ -267,7 +282,7 @@ fn kz_mengen_aus_xsd() {
         );
     }
     for kz in elster::NULL_UNZULAESSIG_KZ {
-        assert!(typ(kz).starts_with("GanzzahlPos"), "{kz}: {}", typ(kz));
+        assert!(verbietet_null(&meta, kz), "{kz}: {}", typ(kz));
     }
     let cent_kz: Vec<&str> = bindungen()
         .iter()
@@ -294,4 +309,77 @@ fn kz_mengen_aus_xsd() {
         "[xsd-abgeleitet] GanzzahlPos-Typ ohne 0-Sperre={} {null_luecke:?}",
         null_luecke.len()
     );
+}
+
+/// P9 (Vault-Ticket `elster-xml-null-in-ganzzahlpos-kz`): eine 0 in einer Kz, deren XSD-Typ sie
+/// verbietet, macht das ganze XML schema-ungueltig (2026-10-01: 214 von 378 XML aus echten
+/// Faellen). Die Kz-Menge kommt aus dem XSD, nicht aus `NULL_UNZULAESSIG_KZ`: Typ `GanzzahlPos*`
+/// (Basis `xs:positiveInteger`) oder eine enumeration-/pattern-Facette ohne "0" (`GdB`, Pflegegrad).
+/// Geprueft wird jede Kz in allen drei Buckets, nicht nur die Kz des Feldes.
+#[test]
+fn null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet() {
+    let Some(pfad) = elster::finde_schema(2025, "E10-{jahr}.xsd") else {
+        println!("E10-2025.xsd fehlt — source_unavailable");
+        return;
+    };
+    let meta = elster::kz_meta(&pfad, "E10").unwrap();
+    // Jeder Schreibweg ueber die Bindung: 1:1, Instanz (`__2`), Person B (Klasse g); 50 Cent werden
+    // auf 0 Euro abgerundet. Die Art-Verzweigung (Klasse f) haengt an `pub(crate)`-Tabellen, sie
+    // prueft `art_verzweigung_schreibt_keine_verbotene_null` (`src/deklaration.rs`).
+    let durch: Vec<String> = bindungen()
+        .iter()
+        .filter(|b| matches!(b.typ, Feldtyp::Cent | Feldtyp::Int))
+        .flat_map(|b| {
+            let werte: &'static [i64] = if b.typ == Feldtyp::Cent {
+                &[0, 50]
+            } else {
+                &[0]
+            };
+            let instanz = b
+                .instanz_gruppe
+                .as_ref()
+                .map(|_| format!("{}__2", b.feld_id));
+            std::iter::once(b.feld_id.clone())
+                .chain(instanz)
+                .flat_map(move |s| werte.iter().map(move |&w| (s.clone(), w)))
+        })
+        .flat_map(|(schluessel, wert)| {
+            let d = deklariere(
+                &einzeln(&schluessel, json!(wert), Zustand::Bestaetigt),
+                index(),
+                None,
+            )
+            .unwrap();
+            let instanzen = d.anlage_instanzen.iter().flat_map(|(_, ii)| ii);
+            let kz: std::collections::BTreeSet<String> = [&d.deklaration, &d.person_b]
+                .into_iter()
+                .chain(instanzen.map(|i| &i.felder))
+                .flatten()
+                .filter(|(kz, v)| **v == json!(0) && verbietet_null(&meta, kz))
+                .map(|(kz, _)| kz.clone())
+                .collect();
+            kz.into_iter()
+                .map(move |kz| format!("{kz} {schluessel}={wert}"))
+        })
+        .collect();
+    assert!(
+        durch.is_empty(),
+        "0 in {} Faellen durchgelassen, obwohl der XSD-Typ sie verbietet: {durch:?}",
+        durch.len()
+    );
+}
+
+/// P9 (Vault: `decisions/elster-null-in-kz-ohne-null-weglassen`, Punkt 3): eine weggelassene 0
+/// ist kein verlorener Wert, sondern „nichts anzugeben" — kein `nicht_deklariert`-Eintrag. Der
+/// Spenden-Zweig schrieb bis P9 einen; mit Eintrag meldete die Pruefanzeige „nicht alle Werte".
+#[test]
+fn spende_null_ohne_nicht_deklariert() {
+    let d = deklariere(
+        &einzeln("spenden_betrag", json!(0), Zustand::Bestaetigt),
+        index(),
+        None,
+    )
+    .unwrap();
+    assert!(!d.deklaration.contains_key("E0108105"));
+    assert!(d.nicht_deklariert.is_empty(), "{:?}", d.nicht_deklariert);
 }
