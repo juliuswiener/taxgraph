@@ -249,7 +249,7 @@ def test_erreichbarkeit_vorlaeufig_via_import_vorjahr(gemessen):
     assert gemessen["leck"]["tage_24h_zustand"] == "vorlaeufig", gemessen["leck"]
 
 
-def test_gruenkontrolle_bestaetigte_tage_konsistent(gemessen):
+def test_gruenkontrolle_bestaetigte_tage_konsistent(gemessen, braucht_echtes_xsd):
     """Kontrollfall (KEIN xfail): tage_24h+Mahlzeiten-Anzahl VOLL bestaetigt senken die Steuer
     (Pauschale > AN-Pauschbetrag), UND /deklaration + das echte XML zeigen dieselben E0205409/
     E0205508-Zahlen, UND eingaben_konsistent=True. Beweist, dass die Messmechanik selbst

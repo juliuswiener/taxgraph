@@ -362,29 +362,56 @@ def test_guard_findet_die_catala_gebundenen_dateien():
     assert all(n.startswith("test_") and n.endswith(".py") for n in gefunden)
 
 
-def test_eric_skip_greift_nur_ohne_schema():
-    """Der ERiC-Skip-Hook darf ausschliesslich greifen, wenn das Schema wirklich fehlt.
+def test_eric_skip_greift_nur_mit_dem_flag():
+    """Die Regel vom 2026-10-01 (Log #142), festgenagelt: fehlendes ERiC-Schema ist LAUT ROT.
 
-    102 Tests scheiterten in CI daran, dass das lizenzpflichtige ERiC-XSD dort nicht liegt. Sie
-    zu überspringen ist richtig — sie in einer Umgebung MIT Schema zu überspringen wäre der
-    Schaden: dann verschwände die halbe ELSTER-Prüfung lautlos, und ein echter XSD-Fehler sähe
-    aus wie eine fehlende Lizenzdatei. Genau diese Richtung prüft dieser Test."""
+    Uebersprungen wird nur, wenn TAXGRAPH_OHNE_XSD=1 ausdruecklich gesetzt ist. Der Grund steht
+    in conftest: ein stiller Skip macht die ELSTER-Pruefung fuer immer unsichtbar, weil das
+    Schema nie im Repo liegt und CI es nie hat. Bis 2026-10-01 pinnte dieser Test die alte
+    Regel (ohne Schema IMMER Skip).
+
+    Die Vorbedingung ERIC_SCHEMA_FEHLT wird GESETZT, nicht gelesen: sonst prueft der Test auf
+    jedem Rechner mit Schema nur die eine Haelfte und in CI nur die andere. Ein Skip darf nicht
+    aus dem Test entweichen: in CI (Flag=1) meldete sich der Test sonst selbst als
+    uebersprungen, genau dann, wenn das Gate kaputt ist."""
     sys.path.insert(0, HERE)
     import conftest                       # noqa: E402
 
-    class _Attrappe(Exception):
+    class _XmlFehler(Exception):
         pass
-    _Attrappe.__name__ = "XmlFehler"      # der Hook prüft den Typnamen, nicht die Klasse
-    echte_meldung = "E10-2025.xsd nicht gefunden — $ERIC_DIR setzen / ERiC-Doku entpacken."
+    _XmlFehler.__name__ = "XmlFehler"     # der Hook prüft den Typnamen, nicht die Klasse
+    echte = _XmlFehler("E10-2025.xsd nicht gefunden — $ERIC_DIR setzen / ERiC-Doku entpacken.")
 
-    if conftest.ERIC_SCHEMA_FEHLT:
-        assert conftest._ist_fehlendes_eric_schema(_Attrappe(echte_meldung)), (
-            "ohne Schema erkennt der Hook den ERiC-Fehler nicht — dann bleiben die 102 Tests rot")
-    else:
-        assert not conftest._ist_fehlendes_eric_schema(_Attrappe(echte_meldung)), (
-            "das Schema ist vorhanden, der Hook würde trotzdem überspringen — so verschwände "
-            "die ELSTER-Prüfung lautlos, und ein echter XSD-Fehler sähe aus wie eine fehlende "
-            "Lizenzdatei")
+    def ausgang(schema_fehlt, flag, fehler=echte):
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(conftest, "ERIC_SCHEMA_FEHLT", schema_fehlt)
+            if flag is None:
+                mp.delenv("TAXGRAPH_OHNE_XSD", raising=False)
+            else:
+                mp.setenv("TAXGRAPH_OHNE_XSD", flag)
+            try:
+                conftest._fehlendes_schema_ueberspringen(fehler)
+            except pytest.skip.Exception:
+                return "skip"
+            except AssertionError:
+                return "rot"
+            return "durch"
+
+    for flag in (None, "1"):
+        assert ausgang(False, flag) == "durch", (
+            "das Schema liegt vor, aber das Gate hat die echte ERiC-Meldung angefasst — so "
+            "verschwindet die ELSTER-Pruefung lautlos, und ein echter XSD-Fehler saehe aus wie "
+            "eine fehlende Lizenzdatei")
+    assert ausgang(True, None) == "rot", (
+        "ohne TAXGRAPH_OHNE_XSD kam kein lautes Rot — der stille Skip ist zurueck")
+    assert ausgang(True, "1") == "skip", "mit TAXGRAPH_OHNE_XSD=1 wurde nicht uebersprungen"
+    # Nur "1" zaehlt, wie auf der Rust-Seite (einreichung_e2e.rs:55).
+    for wert in ("true", "yes", "0", ""):
+        assert ausgang(True, wert) == "rot", f"TAXGRAPH_OHNE_XSD={wert!r} hat uebersprungen"
+    # Ein inhaltlicher XmlFehler wird nie angefasst, auch mit Flag: der Aufrufer reicht die
+    # ORIGINAL-Ausnahme durch.
+    assert ausgang(True, "1", _XmlFehler("Pflichtfeld E0100082 fehlt im Container")) == "durch", (
+        "ein inhaltlicher XmlFehler wurde angefasst — er muss unveraendert durchkommen")
 
 
 def test_eric_skip_frisst_keine_fremden_fehler():
@@ -411,6 +438,38 @@ def test_eric_skip_frisst_keine_fremden_fehler():
     assert not conftest._ist_fehlendes_eric_schema(
         AssertionError("erwartet 4711, war 0")), \
         "ein gewöhnlicher AssertionError wird übersprungen — so wird jede rote Zahl grün"
+
+
+def test_skip_grund_erkennt_das_schema_und_nichts_sonst():
+    """Die zweite Haelfte des Gates: Skips, die eine TESTDATEI selbst setzt.
+
+    Ohne Schema entstehen 47 solche Skips aus `@pytest.mark.skipif(not _schema_da)`. Sie
+    entstehen, bevor Code laeuft — kein Ausnahme-Hook sieht sie. `_skip_grund_ist_schema`
+    erkennt sie am Grund, `pytest_runtest_makereport` macht sie ohne Flag rot."""
+    sys.path.insert(0, HERE)
+    import conftest                       # noqa: E402
+
+    erkannt = [
+        "E10-2025.xsd oder xmllint fehlt — XSD-Gate nicht lauffähig",
+        "lokales ERiC-E10-2025.xsd nicht gefunden ($ERIC_DIR/~/02_Software/eric)",
+        "E10-2025.xsd nicht gefunden — $ERIC_DIR setzen",
+        "ERiC-Schemaverzeichnis nicht vorhanden ($ERIC_DIR / ~/02_Software/eric)",
+        "elster11_E10_2025_extern.xsd nicht gefunden",
+    ]
+    for grund in erkannt:
+        assert conftest._skip_grund_ist_schema(grund), f"nicht erkannt: {grund!r}"
+
+    # Die Hersteller-ID ist ein ANDERES fehlendes Stueck und darf hier nicht mitlaufen: sie
+    # haengt an ihrem eigenen Muster und wird von diesem Gate nicht angefasst.
+    nicht_erkannt = [
+        "ERiC oder Hersteller-ID fehlt — amtliche Pruefung nicht lauffaehig "
+        "(credential-freies CI)",
+        "keine Eingangsfrage vorhanden",
+        "oracle/.venv312 nicht vorhanden — Metadaten nicht lesbar",
+        "bescheid_deklaration.py:837-838 (gewinn_quelle_offen) prueft _positiv('einkuenfte')",
+    ]
+    for grund in nicht_erkannt:
+        assert not conftest._skip_grund_ist_schema(grund), f"falsch erkannt: {grund!r}"
 
 
 def test_hersteller_id_skip_ist_genauso_eng():
