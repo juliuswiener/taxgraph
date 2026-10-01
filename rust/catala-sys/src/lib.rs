@@ -1123,9 +1123,10 @@ pub fn festzusetzende_est_gesamt_zusammen(
 }
 
 /// Sha256 ueber die sortierten `rules/**/*.catala_en`-Inhalte unterhalb von `repo_root`,
-/// exakt wie `gen.sh` sie berechnet (`find ... -print0 | sort -z | xargs -0 cat | sha256sum`).
+/// exakt wie `gen.sh` sie berechnet (`find ... -print0 | LC_ALL=C sort -z | xargs -0 cat | sha256sum`).
 /// Shellt bewusst zu `sha256sum` statt eine zweite Implementierung zu pflegen, die von
-/// `gen.sh` abweichen koennte.
+/// `gen.sh` abweichen koennte. `LC_ALL=C` sortiert nach Bytes: ohne es haengt die Reihenfolge
+/// von der Locale des Aufrufers ab (`en_US`/`de_DE` gegen `C.UTF-8` auf dem CI-Runner).
 ///
 /// # Errors
 /// Reicht I/O-Fehler von `sh`/`find`/`sort`/`sha256sum` durch.
@@ -1139,7 +1140,7 @@ pub fn festzusetzende_est_gesamt_zusammen(
 /// ```
 pub fn recompute_source_hash(repo_root: &std::path::Path) -> std::io::Result<String> {
     let script = format!(
-        "find {root} -name '*.catala_en' -print0 | sort -z | xargs -0 cat | sha256sum | cut -d' ' -f1",
+        "find {root} -name '*.catala_en' -print0 | LC_ALL=C sort -z | xargs -0 cat | sha256sum | cut -d' ' -f1",
         root = shell_quote(&repo_root.join("rules")),
     );
     let output = std::process::Command::new("sh")
