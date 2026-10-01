@@ -476,3 +476,36 @@ def _kein_schreiben_in_das_echte_fallverzeichnis(request, monkeypatch):
         "str(tmp_path / 'faelle')) im Test/Fixture setzen -- so machen es "
         "test_stille_null_typ.py und test_kap_deklaration_vorlaeufig_leck_ohne_bestaetigung.py."
     )
+
+
+# ------------------------------------------- Ablage endet an der Testdatei
+#
+# Anlass (Befund 2026-10-01): test_datenwurzel_ausserhalb_repo.py::test_das_pruefprotokoll_
+# liegt_bei_den_falldaten war rot, sobald eine der fuenf Dateien unten VOR ihr im selben Prozess
+# lief -- audit.AUDIT_DIR zeigte dann auf deren pytest-*/faelle0. Fuenf Modul-Fixtures lenken
+# api.FAELLE und audit.AUDIT_DIR per Zuweisung um und setzen beide nie zurueck:
+# test_verpflegung_kuerzung_erreicht_xml, test_p20_gewinn_sonstige_e1900701_widerspruch,
+# test_kap_gewinn_sonstige_keine_kz_verdrahtung, test_kap_deklaration_vorlaeufig_leck_ohne_
+# bestaetigung, test_verpflegung_kuerzung_deklaration_vorlaeufig_widerspruch. pytest-randomly
+# mischt die Dateien bei jedem Lauf neu, darum war es nur manchmal rot (gemessen 5 von 8).
+#
+# Der Schaden reicht weiter als der eine Test: ein umgebogenes AUDIT_DIR gewinnt in
+# audit._ablage() gegen alles andere. Ein Test ohne eigene Umlenkung schrieb Protokoll und
+# Falldaten still in ein fremdes Temp-Verzeichnis, und die Wachen oben schlugen nur in den
+# Reihenfolgen an, in denen kein Verursacher vor ihm lief.
+#
+# EIN Ruecksetzen hier statt fuenf Einzelreparaturen -- der naechste Verursacher schreibt
+# dieselbe Zeile wieder. api_constants.FAELLE bleibt draussen: kein Test lenkt es um (grep
+# leer). Modul-Scope und autouse: pytest baut diese Fixture vor jeder Modul-Fixture der Datei
+# auf und nach ihr ab, das Ruecksetzen laeuft also nach dem letzten Test der Datei. Waechter:
+# tests/test_ablage_endet_an_der_testdatei.py.
+#
+# ponytail: die Grenze ist die Testdatei. Wer INNERHALB einer Datei per Zuweisung umlenkt,
+# leckt weiter in die folgenden Tests derselben Datei -- dort monkeypatch nehmen. Ein
+# Ruecksetzen pro Test ersetzt diese Fixture nicht: es saehe die Umlenkung einer Modul-Fixture
+# schon als Ausgangswert.
+@pytest.fixture(scope="module", autouse=True)
+def _ablage_endet_an_der_testdatei():
+    vorher = _audit.AUDIT_DIR, _api.FAELLE
+    yield
+    _audit.AUDIT_DIR, _api.FAELLE = vorher
