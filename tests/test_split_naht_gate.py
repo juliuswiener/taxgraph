@@ -251,7 +251,16 @@ def _naehte(quelltexte: dict[str, str], alle_texte: dict[str, str]) -> list[dict
         except SyntaxError:
             continue
         geladen = _geladene_namen(quelle)
-        for n in baum.body:
+        # ast.walk, NICHT baum.body: ein `from X import Y` INNERHALB einer Funktion ist
+        # dieselbe Wert-Bindung, nur spaeter gebunden — sie laeuft bei JEDEM Aufruf neu und
+        # bindet den dann gueltigen Wert, sodass ein Patch vor dem ersten Aufruf greift und
+        # einer danach nicht. Am 2026-10-01 gemessen (HEAD 278b253): mit `baum.body` 0
+        # Treffer fuer `def sende(): from pii_filter import filtere`, mit `ast.walk` 1.
+        #
+        # NUR HIER. `_definitionen()` bleibt auf `baum.body`: eine Bindung auf Modulebene ist
+        # das, was ein `from X import Y` abschreibt. Mit `ast.walk` faenge sie lokal gebundene
+        # Namen und die Regel rauschte.
+        for n in ast.walk(baum):
             if not isinstance(n, ast.ImportFrom) or n.module is None:
                 continue
             ziele = [k for k in bekannt if k == n.module or k.endswith("." + n.module)]
@@ -350,6 +359,68 @@ def test_regel_schweigt_bei_reinem_reexport_und_bei_unberuehrtem_namen():
         ("produkt/fassade.py", "rechner", False)], (
         "entweder wurde der Re-Export als benutzt gemeldet (dann ist die Ausnahme unten "
         "wertlos) oder `starr` fälschlich als Naht (dann meldet die Regel Rauschen)")
+
+
+def test_regel_faengt_auch_den_import_in_einer_funktion():
+    """`from X import Y` INNERHALB einer Funktion ist dieselbe Wert-Bindung, nur spaeter
+    gebunden — und war ungemeldet, solange die Regel ueber `baum.body` lief und damit nur
+    die Modulebene sah.
+
+    Gemessen am 2026-10-01 gegen die ausgelieferte Regel (HEAD 278b253) mit diesem
+    synthetischen Baum: funktionslokal **0** Treffer, modulweit **1**. Der Fix ist deshalb
+    genau eine Zeile — `ast.walk(baum)` statt `baum.body` — und NUR im Import-Scan;
+    `_definitionen()` bleibt auf Modulebene, sonst faengt sie lokal gebundene Namen.
+
+    Der Funktions-Import ist der gefaehrlichere von beiden: er laeuft bei JEDEM Aufruf neu
+    und bindet den dann gueltigen Wert. Ein Patch vor dem ersten Aufruf greift, einer danach
+    nicht — zwei Laeufe desselben Codes verhalten sich verschieden."""
+    quell = {
+        "produkt.haut.spaet": (
+            "def sende(text):\n"
+            "    from pii_filter import filtere\n"
+            "    return filtere(text)[0]\n"),
+    }
+    alle = dict(quell)
+    alle["produkt.haut.pii_filter"] = "def filtere(text):\n    return text, []\n"
+    alle["tests.test_probe"] = (
+        "import pii_filter\n\n\n"
+        "def probe(monkeypatch):\n"
+        "    monkeypatch.setattr(pii_filter, \"filtere\", lambda t: t)\n")
+
+    assert [(n["datei"], n["name"], n["benutzt_selbst"]) for n in _naehte(quell, alle)] == [
+        ("produkt/haut/spaet.py", "filtere", True)], (
+        "der Import INNERHALB der Funktion wurde nicht gemeldet — die Regel sieht nur die "
+        "Modulebene (baum.body statt ast.walk)")
+
+
+def test_regel_schweigt_bei_der_richtigen_bauart_import_modul():
+    """Die Gegenprobe, und der Grund, warum die Regel nicht breiter sein darf:
+    `import X` + `X.Y(...)` ist die KORREKTE Bauart — hier trifft ein Patch auf `X.Y` genau
+    die Stelle, die gelesen wird. Eine Regel, die auch `ast.Import` mitlaese, meldete jede
+    umgebogene Basis im Repo.
+
+    Beleg, dass sie strukturell schweigt und nicht durch einen Filter: die Regel laeuft ueber
+    `ast.ImportFrom`. `import X` erzeugt einen `ast.Import`-Knoten, der nie angeschaut wird.
+
+    Gemessen am 2026-10-01 gegen HEAD 278b253 (`produkt/`): **174** `ast.Import`-Fundstellen,
+    davon **30**, bei denen die Regel feuerte — alle 30 waeren Fehlalarme, denn `X.Y(...)`
+    liest den Namen erst zur Aufrufzeit und folgt jedem Patch. Die gebaute Regel meldet 0."""
+    quell = {
+        "produkt.haut.sender": (
+            "import pii_filter\n\n\n"
+            "def sende(text):\n"
+            "    return pii_filter.filtere(text)[0]\n"),
+    }
+    alle = dict(quell)
+    alle["produkt.haut.pii_filter"] = "def filtere(text):\n    return text, []\n"
+    alle["tests.test_probe"] = (
+        "import pii_filter\n\n\n"
+        "def probe(monkeypatch):\n"
+        "    monkeypatch.setattr(pii_filter, \"filtere\", lambda t: t)\n")
+
+    assert _naehte(quell, alle) == [], (
+        "die Regel meldet `import pii_filter` + `pii_filter.filtere(...)` — das ist die "
+        "richtige Bauart, kein Fehlalarm erlaubt")
 
 
 def test_from_import_auf_umgebogene_namen_nur_benannte_ausnahmen():
