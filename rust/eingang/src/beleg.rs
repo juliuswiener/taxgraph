@@ -2,7 +2,7 @@
 //! bestaetigung, Handwerker-/Dienstleistungsrechnung, Minijob-Bescheinigung → Kandidatenwerte →
 //! vorlaeufige Vorschlaege. Deterministisch, ohne LLM; nicht gefunden = Luecke, nie geraten.
 use std::collections::BTreeMap;
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock, Mutex};
 
 use llm::py::{self, PyInt, PyRegex};
 use serde::Serialize;
@@ -97,6 +97,24 @@ impl Anker {
 
 static NR: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"Nr\.?\s*(\d+)"));
 static EUR: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"\d{1,3}(?:\.\d{3})*,\d{2}"));
+// ponytail: unbegrenzt, die Schluessel kommen nur aus der Bindung (endlich, nie aus dem Text);
+// eine Obergrenze wie re._MAXCACHE erst, wenn Text-Werte zu Schluesseln werden.
+static NR_MUSTER: Mutex<BTreeMap<String, Arc<PyRegex>>> = Mutex::new(BTreeMap::new());
+
+/// `re.compile(rf"(?:Nr\.?\s*{re.escape(nr)}\b|(?:^|\s){re.escape(nr)}\.(?!\d))")` — einmal je
+/// Nummer wie Pythons `re._cache`. Je Aufruf neu kompiliert kostete ein Lohnsteuer-Beleg mit fuenf
+/// Nr-Ankern 5 ms (Release) bzw. 53 ms (Debug).
+fn nr_muster(nr: &str) -> Arc<PyRegex> {
+    let mut muster = NR_MUSTER
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    Arc::clone(muster.entry(nr.to_owned()).or_insert_with(|| {
+        let e = regex::escape(nr);
+        Arc::new(PyRegex::neu(&format!(
+            r"(?:Nr\.?\s*{e}\b|(?:^|\s){e}\.(?!\d))"
+        )))
+    }))
+}
 
 /// `_anker(hs)`.
 fn anker(hs: &str) -> Anker {
@@ -191,8 +209,7 @@ pub fn extrahiere(
         .filter_map(|(fid, a)| {
             let treffer = match &a {
                 Anker::Nr(nr) => {
-                    let e = regex::escape(nr);
-                    let muster = PyRegex::neu(&format!(r"(?:Nr\.?\s*{e}\b|(?:^|\s){e}\.(?!\d))"));
+                    let muster = nr_muster(nr);
                     // Laufzeitfehler: Zeile gilt als nicht passend (Luecke statt Rate-Wert).
                     finde(text, |z| muster.sucht(z).unwrap_or(false))
                 }
@@ -248,4 +265,45 @@ pub fn schreibe_kandidaten(
                 .schreibe(store, Some(&katalog), bindung, ts)
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+    use std::sync::Arc;
+
+    use store::BindungNachschlag;
+
+    use super::{beleg_felder, extrahiere, Anker, BelegTyp, NR_MUSTER};
+
+    /// `extrahiere` legt jedes Nr-Muster einmal im Cache ab; der zweite Aufruf kompiliert keines
+    /// neu und liefert dieselben Kandidaten.
+    #[test]
+    fn nr_muster_einmal_je_nummer() {
+        let nachschlag = BindungNachschlag::neu(crate::doctest_bindung().unwrap());
+        let nummern: Vec<String> = beleg_felder(nachschlag, BelegTyp::Lstb)
+            .into_values()
+            .filter_map(|a| match a {
+                Anker::Nr(nr) => Some(nr),
+                Anker::Label(_) => None,
+            })
+            .collect();
+        assert!(!nummern.is_empty());
+        let im_cache = || {
+            let cache = NR_MUSTER.lock().unwrap();
+            nummern
+                .iter()
+                .map(|nr| cache.get(nr).cloned())
+                .collect::<Option<Vec<_>>>()
+        };
+        let text = "Lohnsteuerbescheinigung 2025\nNr. 3 45.000,00";
+        let erst = extrahiere(text, nachschlag, &BTreeMap::new());
+        let muster = im_cache().expect("extrahiere legt jedes Nr-Muster im Cache ab");
+        assert_eq!(extrahiere(text, nachschlag, &BTreeMap::new()), erst);
+        let danach = im_cache().unwrap();
+        assert!(
+            muster.iter().zip(&danach).all(|(a, b)| Arc::ptr_eq(a, b)),
+            "zweiter Aufruf hat ein Nr-Muster neu kompiliert"
+        );
+    }
 }

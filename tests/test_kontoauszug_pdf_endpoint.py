@@ -15,6 +15,8 @@ Deckt:
                                                pdftotext-Extraktion → echte parse_pdf_zeilen → Store.
                                                Deckt die Naht Endpoint→Extraktion, die die obigen
                                                Fake-Tests bewusst NICHT prüfen.
+  - test_pdf_nicht_lesbar_422 ............... TRUE e2e: kein oder kaputtes PDF (pdftotext Exit 1)
+                                               → ApiError(422) statt 200 mit 0 Buchungen.
 """
 from __future__ import annotations
 
@@ -116,3 +118,15 @@ def test_pdf_true_e2e_textlayer_extraktion(fall, tmp_path):
     aktiv = ST._aktives(API.lade_fall(fall))
     assert aktiv["spenden_betrag"]["wert"] == 20000
     assert aktiv["spenden_betrag"]["signal"]["signal_1"]["quelle"] == "heuristik"
+
+
+@pytest.mark.parametrize("inhalt", [b"kein pdf, nur Text\n", b"%PDF-1.4\n%%EOF\n", bytes(range(256)) * 8],
+                         ids=["kein-pdf", "leerer-pdf-rumpf", "zufallsbytes"])
+def test_pdf_nicht_lesbar_422(fall, inhalt):
+    """TRUE e2e OHNE Fakes: eine Datei, die pdftotext nicht öffnen kann (Exit 1), ist ein Fehler und
+    KEIN leerer Auszug. Vorher antwortete der Endpunkt 200 mit 0 Buchungen — der Nutzer konnte das
+    nicht von einem Auszug ohne Buchungen unterscheiden."""
+    with pytest.raises(API.ApiError) as exc:
+        API.kontoauszug(fall, {"format": "pdf", "inhalt": base64.b64encode(inhalt).decode("ascii")})
+    assert exc.value.status == 422
+    assert "nicht lesbar" in str(exc.value)

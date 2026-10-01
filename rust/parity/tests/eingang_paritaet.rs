@@ -4,7 +4,8 @@
 //!   Teil mit LLM-Rueckfall) + 300 JSON-Auszuege → Transaktionen, `(uebernommen, uebersprungen)`,
 //!   Store-Events byte-gleich (inkl. `event_id`); dazu Betrag-Parser, PDF-Zeilen, tesseract-TSV.
 //! - `pdf_ocr`: selbst erzeugte PDFs (Textlayer, Bild-Scan, gemischt, 41 Bildseiten) durch
-//!   beide `lies_*`-Pfade (echte Unterprozesse `pdftotext`/`pdftoppm`/`tesseract`).
+//!   beide `lies_*`-Pfade (echte Unterprozesse `pdftotext`/`pdftoppm`/`tesseract`); dazu vier
+//!   Dateien, die `pdftotext` nicht oeffnen kann (fehlt, leer, kein PDF, Zufallsbytes).
 //! - `beleg`: Fixture-Texte aus `tests/fixtures/` + 500 generierte → Kandidaten + Events.
 //! - `vorjahr_vast_edaten`: 500 Vorjahres-Faelle, Betraege/LStB/LErsL, 500 eDaten-Laeufe.
 //!
@@ -643,6 +644,9 @@ fn ocr_json(r: &Result<(String, eingang::ocr::ConfMap), eingang::ocr::OcrFehler>
     match r {
         Ok((t, c)) => json!({"ok": [t, c]}),
         Err(eingang::ocr::OcrFehler::ZuAufwendig(m)) => json!({"err": "OcrZuAufwendig", "msg": m}),
+        Err(e @ eingang::ocr::OcrFehler::NichtLesbar) => {
+            json!({"err": "PdfNichtLesbar", "msg": e.to_string()})
+        }
         Err(e) => json!({"err": format!("{e:?}")}),
     }
 }
@@ -740,13 +744,54 @@ fn pdf_ocr() {
             println!("  pdf {name:<16} {}", ocr_json(&konto));
         }
     }
+    // pdftotext Exit 1: beide Leser melden auf beiden Seiten denselben Fehler, kein leeres Ergebnis.
+    let kaputt: Vec<(&str, Option<Vec<u8>>)> = vec![
+        ("fehlt", None),
+        ("leer", Some(Vec::new())),
+        ("kein pdf", Some(b"kein pdf, nur Text\n".to_vec())),
+        (
+            "zufallsbytes",
+            Some((0..=255u8).cycle().take(2048).collect()),
+        ),
+    ];
+    for (name, bytes) in &kaputt {
+        let pfad = dir
+            .path()
+            .join(format!("kaputt_{}.pdf", name.replace(' ', "_")));
+        if let Some(b) = bytes {
+            std::fs::write(&pfad, b).unwrap();
+        }
+        let p = pfad.to_string_lossy().to_string();
+        let py = frage(&json!({"fn": "schritt8.eingang.pdf", "pfad": p}));
+        let konto = eingang::ocr::lies_kontoauszug_pdf(&p);
+        let beleg = eingang::ocr::lies_beleg_text(&p);
+        assert!(
+            matches!(
+                (&konto, &beleg),
+                (
+                    Err(eingang::ocr::OcrFehler::NichtLesbar),
+                    Err(eingang::ocr::OcrFehler::NichtLesbar)
+                )
+            ),
+            "{name}: {} / {}",
+            ocr_json(&konto),
+            ocr_json(&beleg)
+        );
+        z.pruefe(
+            &format!("{name}: kontoauszug"),
+            &ocr_json(&konto),
+            &py["konto"],
+        );
+        z.pruefe(&format!("{name}: beleg"), &ocr_json(&beleg), &py["beleg"]);
+        println!("  pdf {name:<16} {}", ocr_json(&konto));
+    }
     let mut neg = Zaehler::default();
     neg.pruefe(
         "negativ",
         &json!({"err": "OcrZuAufwendig", "msg": "x"}),
         &json!({"err": "OcrZuAufwendig", "msg": "y"}),
     );
-    println!("pdf_ocr: {} PDFs, {} Vergleiche (je Datei beide Leser + Buchungen); Abweichungen {}; Negativkontrolle {}", faelle.len(), z.faelle, z.abw, neg.abw);
+    println!("pdf_ocr: {} PDFs + {} kaputte, {} Vergleiche (je Datei beide Leser + Buchungen); Abweichungen {}; Negativkontrolle {}", faelle.len(), kaputt.len(), z.faelle, z.abw, neg.abw);
     assert_eq!(neg.abw, 1);
     assert_eq!(z.abw, 0);
 }

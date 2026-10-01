@@ -1002,12 +1002,13 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
                 fh.write(pdf_bytes)
             try:
                 text, conf_map = KW.lies_kontoauszug_pdf(pfad)
-            except (subprocess.TimeoutExpired, KW.OcrZuAufwendig) as e:
+            except (subprocess.TimeoutExpired, KW.OcrZuAufwendig, KW.PdfNichtLesbar) as e:
                 # Der Server ist einfädig; ein hängendes pdftoppm/tesseract legt ihn ganz still
                 # (Audit res-ocr-subprocess-no-timeout). Die Zeitlimits im Writer brechen das ab,
                 # hier wird daraus eine Antwort, die der Nutzer versteht — 422, weil die Ursache
                 # in aller Regel die eingereichte Datei ist und er handeln kann (kürzen, als CSV
-                # exportieren), nicht ein vorübergehender Systemzustand.
+                # exportieren), nicht ein vorübergehender Systemzustand. Für eine Datei, die
+                # pdftotext gar nicht öffnen kann, gilt dasselbe.
                 raise ApiError(422, f"Kontoauszug nicht lesbar: {e}")
             tx, n_verworfen = KW.parse_pdf_zeilen(text, conf_map)
         finally:
