@@ -306,7 +306,15 @@ fn vergleiche_fall(
         "snapshot_id",
         (py["snapshot_id"] != json!(sid.to_string())).then(String::new),
     );
-    let rust = elster::deklariere(&felder, index(), Some(&sid.to_string()));
+    // Das Jahr kommt aus dem FALL, nie aus `vz_fuer_xml`: der Helfer ersetzt jedes Jahr
+    // ausserhalb 2024–2026 durch 2025 und verdeckte genau die Abweichung, die
+    // `null_unzulaessig` sichtbar macht.
+    let rust = elster::deklariere(
+        &felder,
+        index(),
+        datei.veranlagungszeitraum.als_i64_saettigend(),
+        Some(&sid.to_string()),
+    );
     match (&rust, py["deklariere"].get("ok")) {
         (Ok(d), Some(p)) => {
             z.dekl_ok += 1;
@@ -1111,10 +1119,10 @@ fn checkest_stichprobe() {
         });
         let store = Store::aus_datei(datei.clone());
         let (felder, sid) = store.materialisiere(None).unwrap();
-        let Ok(d) = elster::deklariere(&felder, index(), Some(&sid.to_string())) else {
+        let vz = datei.veranlagungszeitraum.als_i64_saettigend();
+        let Ok(d) = elster::deklariere(&felder, index(), vz, Some(&sid.to_string())) else {
             continue;
         };
-        let vz = datei.veranlagungszeitraum.als_i64_saettigend();
         let abgabe = proben.len().is_multiple_of(2);
         let Ok(r) = rust_xml(&d, &felder, vz, abgabe, &hid) else {
             continue;
@@ -1189,9 +1197,12 @@ fn negativkontrolle() {
     let (felder, sid) = Store::aus_datei(datei.clone())
         .materialisiere(None)
         .unwrap();
-    let mut d =
-        serde_json::to_value(elster::deklariere(&felder, index(), Some(&sid.to_string())).unwrap())
-            .unwrap();
+    // Dieselbe Jahresquelle wie `vergleiche_fall` und der Oracle (`store.veranlagungszeitraum`).
+    let vz = datei.veranlagungszeitraum.als_i64_saettigend();
+    let mut d = serde_json::to_value(
+        elster::deklariere(&felder, index(), vz, Some(&sid.to_string())).unwrap(),
+    )
+    .unwrap();
     d["deklaration"]["E0100001"] = json!(false);
     let py = frage(
         &json!({"fn": "elster.fall", "store": serde_json::to_value(&datei).unwrap(), "gruppen": []}),

@@ -114,7 +114,7 @@ pub struct Rueckgelesen {
 /// ```
 /// use std::collections::HashMap;
 /// use elster::{deklariere, zuruecklesen, Felder};
-/// let d = deklariere(&Felder::new(), &HashMap::new(), None).unwrap();
+/// let d = deklariere(&Felder::new(), &HashMap::new(), 2025, None).unwrap();
 /// assert!(zuruecklesen(&d, &HashMap::new()).felder.is_empty());
 /// ```
 #[must_use]

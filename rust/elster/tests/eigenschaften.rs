@@ -82,6 +82,7 @@ fn vorlaeufig_deklariert_nie() {
         let d = deklariere(
             &einzeln(&b.feld_id, beispiel(b), Zustand::Vorlaeufig),
             index(),
+            2025,
             None,
         )
         .unwrap();
@@ -116,6 +117,7 @@ fn steuerzeichen_im_textwert_ist_harter_fehler() {
             Zustand::Bestaetigt,
         ),
         index(),
+        2025,
         None,
     )
     .unwrap();
@@ -139,6 +141,7 @@ fn steuerzeichen_im_textwert_ist_harter_fehler() {
             Zustand::Bestaetigt,
         ),
         index(),
+        2025,
         None,
     )
     .unwrap();
@@ -166,6 +169,7 @@ fn round_trip_eins_zu_eins() {
         let d = deklariere(
             &einzeln(&b.feld_id, wert.clone(), Zustand::Bestaetigt),
             index(),
+            2025,
             None,
         )
         .unwrap();
@@ -203,7 +207,7 @@ proptest! {
             .collect();
         let b = cent[i % cent.len()];
         let kz = b.elster_kz.as_deref().unwrap();
-        let d = deklariere(&einzeln(&b.feld_id, json!(c), Zustand::Bestaetigt), index(), None).unwrap();
+        let d = deklariere(&einzeln(&b.feld_id, json!(c), Zustand::Bestaetigt), index(), 2025, None).unwrap();
         if let Some(v) = d.deklaration.get(kz).or_else(|| d.person_b.get(kz)) {
             prop_assert_eq!(v, &cent_nach_kz(Cent::new(c), kz).als_json());
             match (kz_format(kz), v.as_i64()) {
@@ -281,8 +285,19 @@ fn kz_mengen_aus_xsd() {
             typ(kz)
         );
     }
-    for kz in elster::NULL_UNZULAESSIG_KZ {
+    // Die Jahresmengen sind aus dem XSD ABGELEITET und eingefroren. Beide Jahrgaenge werden
+    // geprueft: 2025 gegen DIESES Schema, 2024 gegen `E10-2024.xsd` (die Kz, die nur 2024
+    // verbietet — E0106603 —, stehen dort und nicht hier).
+    for kz in elster::null_unzulaessig(2025).unwrap() {
         assert!(verbietet_null(&meta, kz), "{kz}: {}", typ(kz));
+    }
+    if let Some(pfad24) = elster::finde_schema(2024, "E10-{jahr}.xsd") {
+        let meta24 = elster::kz_meta(&pfad24, "E10").unwrap();
+        for kz in elster::null_unzulaessig(2024).unwrap() {
+            assert!(verbietet_null(&meta24, kz), "2024 {kz}: {}", typ(kz));
+        }
+    } else {
+        println!("E10-2024.xsd fehlt — die 2024er Menge ungeprueft (source_unavailable)");
     }
     let cent_kz: Vec<&str> = bindungen()
         .iter()
@@ -298,7 +313,8 @@ fn kz_mengen_aus_xsd() {
         .iter()
         .copied()
         .filter(|kz| {
-            typ(kz).starts_with("GanzzahlPos") && !elster::NULL_UNZULAESSIG_KZ.contains(kz)
+            typ(kz).starts_with("GanzzahlPos")
+                && !elster::null_unzulaessig(2025).unwrap().contains(kz)
         })
         .collect();
     println!(
@@ -313,7 +329,7 @@ fn kz_mengen_aus_xsd() {
 
 /// P9 (Vault-Ticket `elster-xml-null-in-ganzzahlpos-kz`): eine 0 in einer Kz, deren XSD-Typ sie
 /// verbietet, macht das ganze XML schema-ungueltig (2026-10-01: 214 von 378 XML aus echten
-/// Faellen). Die Kz-Menge kommt aus dem XSD, nicht aus `NULL_UNZULAESSIG_KZ`: Typ `GanzzahlPos*`
+/// Faellen). Die Kz-Menge kommt aus dem XSD, nicht aus `null_unzulaessig`: Typ `GanzzahlPos*`
 /// (Basis `xs:positiveInteger`) oder eine enumeration-/pattern-Facette ohne "0" (`GdB`, Pflegegrad).
 /// Geprueft wird jede Kz in allen drei Buckets, nicht nur die Kz des Feldes.
 #[test]
@@ -347,6 +363,7 @@ fn null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet() {
             let d = deklariere(
                 &einzeln(&schluessel, json!(wert), Zustand::Bestaetigt),
                 index(),
+                2025,
                 None,
             )
             .unwrap();
@@ -377,6 +394,7 @@ fn spende_null_ohne_nicht_deklariert() {
     let d = deklariere(
         &einzeln("spenden_betrag", json!(0), Zustand::Bestaetigt),
         index(),
+        2025,
         None,
     )
     .unwrap();
@@ -461,7 +479,7 @@ fn ankreuzfeld_nein_hinterlaesst_keine_leere_huelle() {
         json!(false),
         Zustand::Bestaetigt,
     );
-    let d = deklariere(&f, index(), None).unwrap();
+    let d = deklariere(&f, index(), 2025, None).unwrap();
     let opt = XmlOptionen {
         hersteller_id: Some("74931".to_owned()),
         ..XmlOptionen::default()
@@ -482,7 +500,7 @@ fn gegenprobe_ja_fuellt_die_huelle() {
         json!(true),
         Zustand::Bestaetigt,
     );
-    let d = deklariere(&f, index(), None).unwrap();
+    let d = deklariere(&f, index(), 2025, None).unwrap();
     let opt = XmlOptionen {
         hersteller_id: Some("74931".to_owned()),
         ..XmlOptionen::default()
@@ -500,7 +518,7 @@ fn gegenprobe_ja_fuellt_die_huelle() {
 #[test]
 fn gegenprobe_feld_nicht_gestellt_erzeugt_keine_huelle() {
     let f = einzeln("stammdaten_nachname", json!("Muster"), Zustand::Bestaetigt);
-    let d = deklariere(&f, index(), None).unwrap();
+    let d = deklariere(&f, index(), 2025, None).unwrap();
     let opt = XmlOptionen {
         hersteller_id: Some("74931".to_owned()),
         ..XmlOptionen::default()
@@ -543,7 +561,7 @@ fn posten_xml(gruppe: &str, art: &str, betrag: &str, werte: &[(i64, i64)]) -> St
             ]
         })
         .collect();
-    let d = deklariere(&felder, index(), None).unwrap();
+    let d = deklariere(&felder, index(), 2025, None).unwrap();
     // Instanz 1 ist die BASIS-feld_id ohne Suffix und steht in `deklaration`; erst `__2` und
     // hoeher landen in `anlage_instanzen` (`instanz.rs`). Der Ring muss also n-1 sehen.
     assert_eq!(
@@ -635,7 +653,7 @@ fn hh_top_mehrere_posten_ist_xsd_valide() {
             ),
         ]
         .into();
-        let d = deklariere(&felder, index(), None).unwrap();
+        let d = deklariere(&felder, index(), 2025, None).unwrap();
         let opt = XmlOptionen {
             vz: jahr,
             hersteller_id: Some("74931".to_owned()),
@@ -669,7 +687,7 @@ fn bestaetigt(paare: &[(&str, Value)]) -> Felder {
 }
 
 fn abgabe_xml(f: &Felder) -> Result<String, elster::XmlFehler> {
-    let d = deklariere(f, index(), None).unwrap();
+    let d = deklariere(f, index(), 2025, None).unwrap();
     let opt = XmlOptionen {
         hersteller_id: Some("74931".to_owned()),
         abgabefaehig: true,

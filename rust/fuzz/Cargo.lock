@@ -244,6 +244,8 @@ dependencies = [
 name = "domain"
 version = "0.0.0"
 dependencies = [
+ "regex",
+ "rust_decimal",
  "serde",
  "serde_json",
  "thiserror",

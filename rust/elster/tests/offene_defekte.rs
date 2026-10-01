@@ -24,6 +24,11 @@ use elster::{deklariere, erzeuge_xml, Deklaration, Felder, XmlOptionen};
 use serde_json::{json, Value};
 use store::SnapshotFeld;
 
+/// Das Jahr fuer `deklariere`. Kein Fall hier traegt ein eigenes: die Python-Vorlagen laufen
+/// alle mit 2025 (`vz=2025` bzw. `"veranlagungszeitraum": 2025`), und `xml` baut mit
+/// `XmlOptionen::default()`, also auch fuer 2025.
+const VZ: i64 = 2025;
+
 fn bindungen() -> &'static [Bindung] {
     static CELL: OnceLock<Vec<Bindung>> = OnceLock::new();
     CELL.get_or_init(|| {
@@ -54,7 +59,7 @@ fn bestaetigt(paare: &[(&str, Value)]) -> Felder {
                 haftung: a("nutzer"),
             };
             let feld = SnapshotFeld {
-                wert: wert.clone(),
+                wert: wert.clone().into(),
                 zustand: Zustand::Bestaetigt,
                 herkunft: herkunft.into(),
             };
@@ -122,14 +127,14 @@ const AB_LP: [(&str, &str, i64, &str, i64); 5] = [
     ),
 ];
 
-/// `test_a_b_lp_summenfehler.py`: A_B_LP hat laut E10-2025.xsd keinen Person-Diskriminator, das
+/// `test_a_b_lp_summenfehler.py`: `A_B_LP` hat laut E10-2025.xsd keinen Person-Diskriminator, das
 /// Sum-Kz ist die gemeinsame Summe beider Ehegatten. Kontrolle: nur Person A traegt ihren Betrag.
 fn ab_lp_summe(kz: &str) {
     let (_, feld_a, cent_a, feld_b, cent_b) = *AB_LP.iter().find(|k| k.0 == kz).unwrap();
     let sum_kz = |paare: &[(&str, Value)]| {
         let mut alle = vec![("veranlagung", json!("zusammen"))];
         alle.extend_from_slice(paare);
-        let d = deklariere(&bestaetigt(&alle), index(), None).unwrap();
+        let d = deklariere(&bestaetigt(&alle), index(), VZ, None).unwrap();
         texte(&xml(&d, "TESTHID-NICHT-ECHT", None), kz)
     };
     let nur_a = sum_kz(&[(feld_a, json!(cent_a))]);
@@ -297,7 +302,7 @@ fn elf_lauf(mit_elf: bool) -> BTreeMap<String, Vec<String>> {
         paare.extend(elf().into_iter().map(|(f, c)| (f, json!(c))));
     }
     let felder = bestaetigt(&paare);
-    let d = deklariere(&felder, index(), None).unwrap();
+    let d = deklariere(&felder, index(), VZ, None).unwrap();
     assert!(
         d.eingaben_konsistent(),
         "KONTROLLE: eingaben_konsistent (mit_elf={mit_elf}): {:?}",
@@ -385,7 +390,7 @@ fn p23_partner_felder(mit_partner: bool) -> Felder {
 
 /// `_xml_bauen`: Deklaration und echtes Uebermittlungs-XML.
 fn p23_partner_xml(mit_partner: bool) -> String {
-    let d = deklariere(&p23_partner_felder(mit_partner), index(), None).unwrap();
+    let d = deklariere(&p23_partner_felder(mit_partner), index(), VZ, None).unwrap();
     assert!(
         d.eingaben_konsistent(),
         "KONTROLLE: eingaben_konsistent (mit_partner={mit_partner}): {:?}",
@@ -403,7 +408,7 @@ fn so_person_betrag(xml: &str) -> (usize, BTreeSet<(String, String)>) {
     let mut paare = BTreeSet::new();
     for grdst in so
         .iter()
-        .flat_map(|s| s.descendants())
+        .flat_map(roxmltree::Node::descendants)
         .filter(|n| heisst(n, "Grdst"))
     {
         let person = grdst
@@ -426,7 +431,7 @@ fn paare(liste: &[(&str, &str)]) -> BTreeSet<(String, String)> {
         .collect()
 }
 
-/// Kontrolle beider § 23-Tests: ein Verkauf von Person A → ein `<SO>`, (PersonA, 45000).
+/// Kontrolle beider § 23-Tests: ein Verkauf von Person A → ein `<SO>`, (`PersonA`, 45000).
 fn p23_kontrolle_person_a() {
     let (anzahl_so, gefunden) = so_person_betrag(&p23_partner_xml(false));
     assert_eq!(anzahl_so, 1, "KONTROLLE: ein Verkauf, Anzahl <SO>");
@@ -546,7 +551,7 @@ fn p23_eric_prueft_zwei_verkaeufe() {
         }
     }
     let felder = bestaetigt(&paare);
-    let d = deklariere(&felder, index(), None).unwrap();
+    let d = deklariere(&felder, index(), VZ, None).unwrap();
     let xml = xml(&d, &hersteller_id(), Some(&felder));
     let (rc, _antwort) = elster::validiere(xml.as_bytes(), "ESt_2025")
         .unwrap_or_else(|e| panic!("KONTROLLE: ERiC laedt nicht: {e:?}"));
@@ -574,7 +579,7 @@ fn gewinn_deklaration(betriebsart: &str, bezeichnung: &str) -> Deklaration {
         ("kein_p23_verkauf", json!(true)),
         ("kein_gewinn", json!(false)),
     ]);
-    deklariere(&felder, index(), None).unwrap()
+    deklariere(&felder, index(), VZ, None).unwrap()
 }
 
 /// Kz mit dem Wert 30000 (Python: `v == 30000`, int und float gleich).

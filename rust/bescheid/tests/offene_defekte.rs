@@ -157,7 +157,7 @@ fn ring_felder(f: &Fall) -> Felder {
 
 /// `deklaration` (`api.py:664`) ohne HTTP: Ring-Werte, dann `elster::deklariere`. Ohne Guard.
 fn deklaration(f: &Fall) -> elster::Deklaration {
-    elster::deklariere(&ring_felder(f), &f.index, None).unwrap()
+    elster::deklariere(&ring_felder(f), &f.index, i64::from(VZ.jahr()), None).unwrap()
 }
 
 /// Die Feldmenge der Scheibe als `HashSet` — die Sicht, die `flag_widersprueche` als
@@ -292,7 +292,7 @@ fn gewinn_quelle_offen_selbstaendig() {
     gewinn_quelle("selbstaendig");
 }
 
-/// Direktwert 0 neben positiver EUeR: `grund`, `zahl_cent` und der Kz-Wert der Deklaration.
+/// Direktwert 0 neben positiver `EUeR`: `grund`, `zahl_cent` und der Kz-Wert der Deklaration.
 fn luf_euer_lauf(betriebsart: &str, kz: &str) -> (Grund, Option<i64>, Option<Value>) {
     let mut paare = gewinn_basis(betriebsart);
     paare.extend(euer());
@@ -617,7 +617,7 @@ fn rente_b_voll() -> [(&'static str, Value); 4] {
 }
 
 /// Die Scheiben-Zugehoerigkeit beider Felder — die Messung, an der beide Python-`xfail`s
-/// scheitern (dort HTTP 400 „feld_id nicht in dieser Scheibe", `api.py:509`).
+/// scheitern (dort HTTP 400 „`feld_id` nicht in dieser Scheibe", `api.py:509`).
 ///
 /// Der Bau ist `Cfg::fuer(scheibe).felder()` — dieselbe Liste, die `api.py::event()` gegen die
 /// Feld-Id prueft und die `_scheibe_bindung` als `scheibe_felder` an `flag_widersprueche` gibt.

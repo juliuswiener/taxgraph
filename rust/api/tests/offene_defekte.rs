@@ -229,7 +229,7 @@ async fn kontrolle_das_einreichen_erreicht_den_fall() {
 ///
 /// Der Fall ohne `bruttoarbeitslohn` bleibt `eingaben_konsistent` (die vorhandenen Angaben sind
 /// stimmig); `pflichtfelder_luecken` kennt die Luecke, `unvollstaendig` nicht. Weil `einreichen`
-/// in Python nur `eingaben_konsistent` liest (`api.py:731`), laeuft der Fall bis ERiC durch und
+/// in Python nur `eingaben_konsistent` liest (`api.py:731`), laeuft der Fall bis `ERiC` durch und
 /// der Nutzer bekommt eine Fremdmeldung statt unseres Feldnamens.
 #[tokio::test]
 #[ignore = "POST /einreichen ist 501-Stub (api/src/routen/schreiben.rs:25); nach der Portierung fehlt der Leser von pflichtfelder_luecken (elster::Deklaration hat den Accessor, kein Handler ruft ihn). Erwartet 409 'deklaration_unvollstaendig' mit bruttoarbeitslohn. Python: test_pflichtfelder_luecken_ohne_leser.py::test_abgabegate_nennt_die_pflichtfeldluecke_selbst. Vault: tickets/zwei-vollstaendigkeitsbegriffe-einer-davon-gelesen.md. Rot sehen: --ignored"]
