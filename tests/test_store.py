@@ -8,7 +8,6 @@ from __future__ import annotations
 import glob
 import json
 import os
-import re
 import sys
 
 import pytest
@@ -61,10 +60,12 @@ def _typ_ok(wert, typ, enum_werte) -> bool:
     if typ == "datum":
         # TT.MM.JJJJ — amtliches ELSTER-Format, kein ISO. Muss mit store._typ_konform
         # uebereinstimmen; test_typ_konform_spiegelt_test_store_typ_ok haelt beide synchron.
-        return isinstance(wert, str) and bool(re.match(r"^\d{2}\.\d{2}\.\d{4}$", wert))
+        # Ohne Regex formuliert (Spiegel): genau 10 Zeichen, Punkte an 2 und 5, sonst nur 0-9.
+        return (isinstance(wert, str) and len(wert) == 10 and wert[2] + wert[5] == ".."
+                and all(c in "0123456789" for c in wert[:2] + wert[3:5] + wert[6:]))
     if typ == "text":
         # XML-1.0-Char-Produktion, bewusst anders formuliert als store.nur_xml_zeichen (Spiegel).
-        return isinstance(wert, str) and all(
+        return isinstance(wert, str) and len(wert) > 0 and all(
             c in "\t\n\r" or " " <= c <= "\ud7ff" or "\ue000" <= c <= "\ufffd" or c >= "\U00010000"
             for c in wert)
     return False

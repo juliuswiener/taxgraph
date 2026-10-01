@@ -196,9 +196,12 @@ def _typ_konform(wert, typ: str, enum_werte) -> bool:
         # laeufe erreichten mit genau diesem Format rc=0. Ein erster Anlauf prueste hier auf
         # ISO und haette damit JEDE echte Geburtsdatums-Eingabe mit 422 abgewiesen — die
         # Pruefung waere fail-closed gegen den eigenen dokumentierten Standard gewesen.
-        return isinstance(wert, str) and re.match(r"^\d{2}\.\d{2}\.\d{4}$", wert) is not None
+        # Ganzer Wert und nur 0-9 wie Rust (domain::Wert): `$` in re.match liess ein letztes \n
+        # durch, `\d` arabisch-indische Ziffern (Decision textfeld-format-aus-xsd-beim-speichern).
+        return isinstance(wert, str) and re.fullmatch(r"[0-9]{2}\.[0-9]{2}\.[0-9]{4}", wert) is not None
     if typ == "text":
-        return isinstance(wert, str) and nur_xml_zeichen(wert)
+        # Leer nie: jeder Text-Kz-Typ im Schema verlangt mindestens ein Zeichen.
+        return isinstance(wert, str) and wert != "" and nur_xml_zeichen(wert)
     return True
 
 
@@ -258,8 +261,9 @@ def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
     #
     # Feld ohne `muster`: durchlassen. Das Muster ist eine ZUSAGE der Bindung, keine Vermutung —
     # wo keine steht, wird nichts geraten (dieselbe Regel wie beim fehlenden `typ` oben).
+    # fullmatch: das Muster gilt für den ganzen Wert, wie in Rust (`^(?:muster)$`) und im XSD.
     muster = eintrag.get("muster")
-    if muster and isinstance(wert, str) and not re.match(muster, wert):
+    if muster and isinstance(wert, str) and not re.fullmatch(muster, wert):
         raise ValueError(
             f"fail-closed (Format): {feld_id}={wert!r} passt nicht zum Muster '{muster}' der "
             "Bindung — ein formal falscher Wert wird spätestens beim Finanzamt abgelehnt.")

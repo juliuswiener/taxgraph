@@ -6,7 +6,7 @@
 //! Zwei Tests:
 //! - `append_sequence_paritaet_ueber_zufaellige_aufruf_sequenzen`: 1000 proptest-Faelle, je 1..=20
 //!   Aufrufe gegen einen anfangs LEEREN Store. Statt frei-random Feldkombinationen (die meist nur
-//!   `TypInkonform` treffen wuerden) generiert ein Satz von ~14 benannten Szenario-Funktionen
+//!   `TypInkonform` treffen wuerden) generiert ein Satz von ~16 benannten Szenario-Funktionen
 //!   gezielt Auflage-A/K1/F2/T/F/B-Faelle -- jede Funktion liest den bisherigen `Store`-Zustand nur
 //!   ueber dessen OEFFENTLICHE API (`events()`/`aktives()`), keine zusaetzliche Buchfuehrung.
 //! - `append_sequence_replay_realer_faelle`: jede reale Fall-Datei unter `faelle_verzeichnis()`
@@ -309,14 +309,18 @@ fn wert_korrekt(cursor: &mut Cursor, feld: &Bindung) -> Value {
             .filter(|w| !w.is_empty())
             .map_or(json!("x"), |w| json!(w[cursor.range(w.len())])),
         Feldtyp::Datum => json!("05.05.1990"),
-        // Ein `muster` (Format-Regex, Auflage F) macht "text" ungueltig -- der `standardwert`
-        // erfuellt sein eigenes `muster` immer (s. `produkt/bindung/*.yaml`, z. B.
-        // `kind_kindschaftsverh_zeitraum_b`: `^\d{2}\.\d{2}-\d{2}\.\d{2}$` / `"01.01-31.12"`).
-        Feldtyp::Text => feld
-            .muster
-            .as_ref()
-            .and_then(|_| feld.standardwert.clone())
-            .unwrap_or_else(|| json!("text")),
+        // Ein `muster` (Format-Regex, Auflage F) macht "text" ungueltig -- `standardwert` und
+        // `beispielwert` erfuellen ihr `muster` (z. B. `kind_kindschaftsverh_zeitraum_b`:
+        // `"01.01-31.12"`; `kind_idnr` hat keinen `standardwert`). Belegt fuer jedes Feld mit
+        // `muster` in `tests/test_stille_null_typ.py::test_muster_prueft_den_ganzen_wert`.
+        Feldtyp::Text => feld.muster.as_ref().map_or_else(
+            || json!("text"),
+            |_| {
+                feld.standardwert
+                    .clone()
+                    .unwrap_or_else(|| feld.beispielwert.clone())
+            },
+        ),
     }
 }
 
@@ -539,6 +543,39 @@ fn szenario_format(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
     Some(spec)
 }
 
+/// Decision textfeld-format-aus-xsd-beim-speichern, Punkt 3: `muster` und Datumspruefung
+/// urteilen ueber den GANZEN Wert. Pythons `re.match` mit `$` liess ein abschliessendes `\n`
+/// durch, Rust nie.
+fn szenario_zeilenumbruch(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
+    let kandidaten: Vec<&&Bindung> = pools
+        .alle
+        .iter()
+        .filter(|b| b.muster.is_some() || b.typ == Feldtyp::Datum)
+        .collect();
+    let feld = **waehle(cursor, &kandidaten)?;
+    let korrekt = wert_korrekt(cursor, feld);
+    let mut spec = leer_spec();
+    spec.feld_id.clone_from(&feld.feld_id);
+    spec.wert = json!(format!("{}\n", korrekt.as_str()?));
+    spec.schreiber = nicht_vorschlag_schreiber(cursor);
+    Some(spec)
+}
+
+/// Punkt 4: leerer Text (`typ: text`, Laenge 0) wird abgewiesen, mit und ohne `muster`.
+fn szenario_leerer_text(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
+    let kandidaten: Vec<&&Bindung> = pools
+        .alle
+        .iter()
+        .filter(|b| b.typ == Feldtyp::Text)
+        .collect();
+    let feld = **waehle(cursor, &kandidaten)?;
+    let mut spec = leer_spec();
+    spec.feld_id.clone_from(&feld.feld_id);
+    spec.wert = json!("");
+    spec.schreiber = nicht_vorschlag_schreiber(cursor);
+    Some(spec)
+}
+
 fn szenario_zwei_signal_fehlend(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
     let feld = *waehle(cursor, &pools.alle)?;
     let mut spec = leer_spec();
@@ -647,7 +684,7 @@ fn baue_aufruf(
     salt: u64,
     ts: &str,
 ) -> AufrufSpec {
-    let versuch = match cursor.range(13) {
+    let versuch = match cursor.range(15) {
         0 => szenario_vorschlag_gluecklich(cursor, pools),
         1 => szenario_auflage_a_verletzt(cursor, pools),
         2 => szenario_ersetzt_guard(cursor, pools, store),
@@ -660,6 +697,8 @@ fn baue_aufruf(
         9 => szenario_ersetzt_unbekannt(cursor, pools, salt),
         10 => szenario_ersetzt_mismatch(cursor, pools, store),
         11 => szenario_ersetzt_erfolg(cursor, pools, store),
+        12 => szenario_zeilenumbruch(cursor, pools),
+        13 => szenario_leerer_text(cursor, pools),
         _ => szenario_ersetzt_bereits(cursor, store),
     };
     let mut spec = versuch

@@ -1143,6 +1143,7 @@ bindungen:
   - feld_id: stammdaten_hausnummer
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_hausnummer}
     typ: text
+    muster: '^(?:[0-9]{1,4})$'   # E10-2025.xsd: [0-9]+ mit Laenge 1-4 (Rust-regex kennt kein Lookahead)
     einheit: null
     askable: true
     vorjahr: uebernehmbar
@@ -1160,6 +1161,7 @@ bindungen:
   - feld_id: stammdaten_plz
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_plz}
     typ: text
+    muster: '^(?:([0]{1}[1-9]{1}[0-9]{3})|([1-9]{1}[0-9]{4}))$'
     einheit: null
     askable: true
     vorjahr: uebernehmbar
@@ -1239,10 +1241,11 @@ bindungen:
   - feld_id: stammdaten_bic
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_bic}
     typ: text
+    muster: '^(?:[a-zA-Z]{4}([a-zA-Z]{2})[0-9a-zA-Z]{2}([0-9a-zA-Z]{3})?)$'
     einheit: null
     askable: true
     fragetext_laie: "Wie lautet der BIC deiner Bank (nur bei einer ausländischen Bankverbindung)?"
-    hilfe_kurz: "Nur nötig, wenn deine IBAN NICHT mit 'DE' beginnt (ausländisches Geldinstitut). Bei einer deutschen IBAN leer lassen."
+    hilfe_kurz: "Nur nötig, wenn deine IBAN NICHT mit 'DE' beginnt (ausländisches Geldinstitut). Bei einer deutschen IBAN leer lassen. Der BIC hat 8 oder 11 Zeichen, ohne Leerzeichen."
     beispielwert: "PBNKDEFF370"
     herkunft_slots: null
     elster_kz: E0102201

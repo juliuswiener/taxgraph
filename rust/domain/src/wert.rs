@@ -59,7 +59,7 @@ impl Feldtyp {
 }
 
 /// `TT.MM.JJJJ`: genau 10 ASCII-Zeichen, zwei Ziffern, Punkt, zwei Ziffern, Punkt, vier Ziffern
-/// (`store.py:187`: `re.match(r"^\d{2}\.\d{2}\.\d{4}$", wert)`). Prueft nur das Format, nicht die
+/// (`store.py::_typ_konform`: `re.fullmatch` mit `[0-9]`). Prueft nur das Format, nicht die
 /// Kalender-Gueltigkeit (der Python-Regex tut das auch nicht). Slice-Pattern statt Indexierung,
 /// damit `clippy::indexing_slicing` nicht greift.
 fn ist_tt_mm_jjjj(s: &str) -> bool {
@@ -141,7 +141,8 @@ impl Wert {
             }
             Feldtyp::Text => wert
                 .as_str()
-                .filter(|s| nur_xml_zeichen(s))
+                // Leer nie: jeder Text-Kz-Typ im Schema verlangt mindestens ein Zeichen.
+                .filter(|s| !s.is_empty() && nur_xml_zeichen(s))
                 .map(|s| Self::Text(s.to_owned()))
                 .ok_or_else(inkonform),
         }

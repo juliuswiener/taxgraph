@@ -259,6 +259,12 @@ def _append_sequence(req: dict) -> dict:
     Store unveraendert (store.py haengt nur bei Erfolg an) -- Rueckgabe zeigt PRO Aufruf entweder
     den neuen `event_id` oder eine Fehlerklasse (s. `_fehlerklasse`)."""
     store = req["store"]
+    # Instanz-Felder (base__n) prueft store._pruefe_typ_konformitaet nur mit importierbarem
+    # est_mapping, sonst laufen sie ungeprueft durch. api.py:29 legt produkt/mapping auf sys.path,
+    # Rust loest base__n immer auf (store::instanz_basis) -- ohne den Pfad wiche das Orakel ab.
+    mapping = os.path.join(ROOT, "produkt", "mapping")
+    if mapping not in sys.path:
+        sys.path.insert(0, mapping)
     bindung = _TR.lade_bindung()
     katalog = _ST.lade_katalog(bindung)
     ergebnisse = []

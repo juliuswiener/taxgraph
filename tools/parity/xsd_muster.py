@@ -383,15 +383,17 @@ def main(argv=None) -> int:
     return 0
 
 
-# Kalibrierung: (feld_id, Wert, erwartete Klassen; leer = schema-gueltig). Die Zeitraum-Felder tragen ein
-# `muster`; dessen `$` laesst in re.match ein abschliessendes \n durch, das XSD nicht.
+# Kalibrierung: (feld_id, Wert, erwartete Klassen; leer = schema-gueltig). Speichern weist seit der Decision
+# textfeld-format-aus-xsd-beim-speichern Format-Verletzungen und leeren Text ab, Freitext-Laenge, \n und
+# Zeichensatz nicht.
 KALIBRIERUNG = [("stammdaten_nachname", "x" * 26, {"Laenge"}), ("stammdaten_vorname", "a\nb", {"Zeilenumbruch"}),
                 ("stammdaten_wohnort", "Łódź", {"Zeichensatz"}), ("stammdaten_strasse", "", {"leer"}),
                 ("stammdaten_plz", "1234", {"Format", "Laenge"}), ("stammdaten_hausnummer", "12a", {"Format"}),
                 ("stammdaten_bic", "null", {"Format"}), ("kind_idnr", "1234567890", {"Format"}),
                 ("kind_kindschaftsverh_zeitraum_a", "01.01-31.12\n", {"Format"}),
                 ("kind_wohnsitz_inland_zeitraum", "1.1.-31.12.", {"Format"}), ("kind_vorname", "Müller", set())]
-SPEICHERN_WEIST_AB = {"kind_wohnsitz_inland_zeitraum"}   # einziges Feld, dessen `muster` den Wert abweist
+SPEICHERN_WEIST_AB = {"stammdaten_strasse", "stammdaten_plz", "stammdaten_hausnummer", "stammdaten_bic", "kind_idnr",
+                      "kind_kindschaftsverh_zeitraum_a", "kind_wohnsitz_inland_zeitraum"}
 
 
 def selbsttest(bindung: dict) -> int:
@@ -406,9 +408,9 @@ def selbsttest(bindung: dict) -> int:
     name = schema(2025)["E0100201"]
     zeichensatz = [p for s in name["schritte"] if s["typ"] == "StringZUBaseCType" for p in s["xsd"]]
     assert zeichensatz and not set(zeichensatz) & set(name["verify"]), "xsd_verify meldet Standard_E_V2 doch"
-    assert "+\\n" in urteil("kind_kindschaftsverh_zeitraum_a", "E0500601", bindung).partition(": ")[2].split(", ")
-    assert {"+ł", "leer", "1000 Zeichen"} <= set(urteil("stammdaten_nachname", "E0100201", bindung)
-                                                 .partition(": ")[2].split(", "))
+    assert urteil("kind_kindschaftsverh_zeitraum_a", "E0500601", bindung) == "Speichern = XSD auf allen Proben"
+    assert set(urteil("stammdaten_nachname", "E0100201", bindung).partition(": ")[2].split(", ")) == {
+        "+\\n", "+ł", "1000 Zeichen"}
     events = [{"event_id": f"{n:064x}", "ts": "2026-10-01T00:00:00+00:00", "feld_id": fid, "wert": wert,
                "zustand": "bestaetigt", "schreiber": "kalibrierung",
                "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "ersetzt": None}

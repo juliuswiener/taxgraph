@@ -270,6 +270,7 @@ bindungen:
   - feld_id: dhf_bestanden_bis
     quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: beruflich_veranlasste_doppelte_haushaltsfuehrung}
     typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)\.)$'
     einheit: null
     askable: true
     vorjahr: uebernehmbar

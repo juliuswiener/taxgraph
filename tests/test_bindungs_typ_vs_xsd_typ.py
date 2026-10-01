@@ -167,3 +167,45 @@ def test_bindungs_typ_vs_xsd_typ():
 
     assert not mismatches, (
         "Bindungs-Typ ↔ XSD-Typ Mismatches:\n" + "\n".join(mismatches))
+
+
+# Die 17 Felder der Decision textfeld-format-aus-xsd-beim-speichern: 9 ohne `muster`, 8 Zeiträume.
+_FORMAT_FELDER = {
+    "kind_idnr", "p33a_person_idnr", "rentner_gepflegter_idnr", "stammdaten_bic", "stammdaten_plz",
+    "stammdaten_hausnummer", "dhf_bestanden_bis", "p33a_unterstuetzungszeitraum", "p33a_zahlungszeitraum",
+    "kind_wohnsitz_inland_zeitraum", "kind_kindschaftsverh_zeitraum_a", "kind_kindschaftsverh_zeitraum_b",
+    "kind_anderer_elternteil_zeitraum", "kind_betreuung_zeitraum", "kind_betreuung_eigenanteil_zeitraum",
+    "kind_betreuung_kein_gemeinsamer_haushalt_zeitraum", "kind_betreuung_haushaltszugehoerigkeit_zeitraum",
+}
+
+
+@requires_real_schema
+@pytest.mark.parametrize("jahr", [2024, 2025])
+def test_textfeld_mit_festem_format_speichert_wie_das_xsd(jahr):
+    """AK1: ein Textfeld, dessen Kz im XSD ein Format-Pattern trägt, prüft beim Speichern genau
+    dieses Pattern. Das Pattern kommt live aus dem Schema des Jahres, über alle Ableitungsschritte
+    und mit Längen (tools/parity/xsd_muster.py). Speichern = store._pruefe_typ_konformitaet
+    (Auflage T + F). Beide urteilen auf beispielwert und Abwandlungen gleich."""
+    if X._find_schema(jahr) is None:
+        pytest.skip(f"lokales E10-{jahr}.xsd nicht gefunden")
+    sys.path.insert(0, os.path.join(ROOT, "tools", "parity"))
+    import xsd_muster as XM   # erst hier: nur dieser Test braucht das Messwerkzeug
+    bindung = TR.lade_bindung()
+    sch = XM.schema(jahr)
+    # Format-Pattern: ein Schritt mit Pattern, das weder Basis-Zeichensatz noch reine Länge ist.
+    paare = [(f, kz) for f, kz in XM.auswahl(bindung, ["text"])
+             if kz in sch and any(s["xsd"] and s["typ"] not in XM.BASIS
+                                  and not all(XM.LAENGE.fullmatch(p) for p in s["xsd"])
+                                  for s in sch[kz]["schritte"])]
+    assert _FORMAT_FELDER <= {f for f, _ in paare}, sorted(_FORMAT_FELDER - {f for f, _ in paare})
+    abweichend = []
+    for fid, kz in paare:
+        bw = bindung[fid]["beispielwert"]
+        proben = {"beispielwert": bw, **XM.proben(bw), "Zeichen weg": bw[:-1],
+                  "Ziffern->٣": re.sub("[0-9]", "٣", bw), "5-fach": bw * 5}
+        for name, wert in proben.items():
+            xsd_ok = not XM.verletzt(wert, sch[kz]["schritte"])
+            if XM.speichern_ok(fid, wert, bindung) != xsd_ok:
+                abweichend.append(f"{fid} (Kz {kz}) {name}: XSD {'nimmt an' if xsd_ok else 'weist ab'}, "
+                                  "Speichern nicht")
+    assert not abweichend, "Speichern urteilt anders als das XSD:\n" + "\n".join(abweichend)

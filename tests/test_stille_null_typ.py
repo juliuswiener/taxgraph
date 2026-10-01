@@ -221,6 +221,56 @@ def test_abgewiesener_altwert_im_vorjahr_wird_uebersprungen(fall):
     assert not aktiv & {"ep_ziel_adresse", "kind_wohnsitz_inland_zeitraum"}
 
 
+# ------------------------------- ganzer Wert (Decision textfeld-format-aus-xsd-beim-speichern)
+
+def _speichere(fid, wert):
+    s = ST.leerer_store(2025, fall_id="sn-typ-ganz")
+    return ST.append_event(s, feld_id=fid, wert=wert, zustand="bestaetigt",
+                           herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                           schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"}, ts=TS,
+                           bindung=BINDUNG)
+
+
+def test_idnr_mit_zehn_ziffern_wird_abgelehnt():
+    """AK1: die IdNr hat im XSD genau 11 Ziffern (E0500406). Ohne `muster` nahm der Store jede
+    Zeichenfolge an; eine fehlende Ziffer fiel erst beim Finanzamt auf. Alle 17 Felder mit festem
+    Format prüft tests/test_bindungs_typ_vs_xsd_typ.py gegen das XSD selbst."""
+    with pytest.raises(ValueError, match="fail-closed \\(Format\\)"):
+        _speichere("kind_idnr", "1234567890")
+
+
+def test_muster_prueft_den_ganzen_wert():
+    """AK2: `re.match` mit `$` liess ein abschliessendes \\n durch, denn `$` trifft in Python auch
+    VOR einem letzten Zeilenumbruch. XSD und Rust (`$` = Textende) weisen den Wert ab. Jedes Feld
+    mit `muster` nimmt seinen beispielwert an und weist beispielwert + \\n ab."""
+    felder = sorted(f for f, e in BINDUNG.items() if e.get("muster"))
+    assert len(felder) >= 12, felder   # 8 Zeiträume und 4 Datumsfelder trugen schon vorher eins
+    durchgelassen = []
+    for fid in felder:
+        _speichere(fid, BINDUNG[fid]["beispielwert"])
+        try:
+            _speichere(fid, BINDUNG[fid]["beispielwert"] + "\n")
+            durchgelassen.append(fid)
+        except ValueError:
+            pass
+    assert not durchgelassen, f"beispielwert + \\n gespeichert: {durchgelassen}"
+
+
+def test_datum_prueft_den_ganzen_wert_mit_ziffern_0_bis_9():
+    """AK2: die Datumsprüfung urteilt über den ganzen Wert und kennt nur 0-9, wie Rust
+    (domain::Wert, ist_tt_mm_jjjj). `\\d` trifft in Python auch arabisch-indische Ziffern."""
+    for wert in ("12.04.1985\n", "١٢.٠٤.١٩٨٥"):
+        with pytest.raises(ValueError, match="fail-closed \\(Typ\\)"):
+            _speichere("stammdaten_geburtsdatum", wert)
+
+
+def test_leerer_text_wird_abgelehnt():
+    """AK3: jeder Text-Kz-Typ im Schema verlangt mindestens ein Zeichen. Ein leerer Wert sagt
+    nichts, was „nicht beantwortet“ nicht sagt; kein Produktpfad leert ein Feld mit ""."""
+    with pytest.raises(ValueError, match="fail-closed \\(Typ\\)"):
+        _speichere("stammdaten_nachname", "")
+
+
 def test_unbekanntes_feld_id_durchlaesst():
     """Team-Lead-Vorgabe Schritt 3: unbekanntes feld_id -> durchlassen, nicht raten."""
     s = ST.leerer_store(2025, fall_id="sn-typ-unbekannt")
@@ -243,8 +293,10 @@ def test_typ_konform_spiegelt_test_store_typ_ok():
         (True, "bool", None, True), (1, "bool", None, False), ("true", "bool", None, False),
         ("einzel", "enum", ["einzel", "zusammen"], True), ("x", "enum", ["einzel", "zusammen"], False),
         ("12.04.1985", "datum", None, True), ("1985-04-12", "datum", None, False),
-        ("kein Datum", "datum", None, False),
+        ("kein Datum", "datum", None, False), ("12.04.1985\n", "datum", None, False),
+        ("١٢.٠٤.١٩٨٥", "datum", None, False),
         ("Text", "text", None, True), (5, "text", None, False), ("Maier\x00", "text", None, False),
+        ("", "text", None, False),
     ]
     for wert, typ, enum_werte, erwartet in faelle:
         assert ST._typ_konform(wert, typ, enum_werte) == erwartet == _typ_ok(wert, typ, enum_werte), (

@@ -96,11 +96,19 @@ def _laie(fld, wert, ersetzt=None):
 # alle mit demselben Regex-String; repo-weit (produkt/bindung/*.yaml, alle Dateien) gibt es genau
 # ZWEI unterschiedliche `muster`-Strings ueberhaupt (12 Vorkommen gesamt). Eine feste Tabelle statt
 # eines Regex-Sample-Generators: kuerzer, lesbar, und haengt nicht an privaten CPython-Interna
-# (re._parser/re._constants), die sich versionslos aendern koennen. Ein drittes, unbekanntes
+# (re._parser/re._constants), die sich versionslos aendern koennen. Ein weiteres, unbekanntes
 # Muster faellt fail-closed auf einen AssertionError statt auf einen erratenen Wert.
+# Seit der Decision textfeld-format-aus-xsd-beim-speichern stehen die XSD-Patterns selbst in der
+# Bindung: sieben Muster-Strings, Zeitraum und TT.MM. mit Tag 01-31 und Monat 01-12.
+_TT_MM = r"(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)"
 _MUSTER_BEISPIELWERT = {
     r"^\d{2}\.\d{2}\.\d{4}$": "01.01.2000",          # TT.MM.JJJJ (Datum)
-    r"^\d{2}\.\d{2}-\d{2}\.\d{2}$": "01.01-31.12",   # TT.MM-TT.MM (Zeitraum ohne Jahr)
+    rf"^(?:{_TT_MM}-{_TT_MM})$": "01.01-31.12",      # TT.MM-TT.MM (Zeitraum ohne Jahr)
+    rf"^(?:{_TT_MM}\.)$": "31.12.",                  # TT.MM. (dhf_bestanden_bis)
+    r"^(?:[0-9]{11})$": "12345678901",               # IdNr
+    r"^(?:([0]{1}[1-9]{1}[0-9]{3})|([1-9]{1}[0-9]{4}))$": "10115",               # PLZ
+    r"^(?:[0-9]{1,4})$": "1",                        # Hausnummer
+    r"^(?:[a-zA-Z]{4}([a-zA-Z]{2})[0-9a-zA-Z]{2}([0-9a-zA-Z]{3})?)$": "DEUTDEFF",  # BIC
 }
 
 
@@ -109,7 +117,7 @@ def _wert_zu_muster(muster: str) -> str:
     if wert is None:
         raise AssertionError(
             f"Kein Beispielwert fuer unbekanntes Muster {muster!r} hinterlegt -- "
-            f"_MUSTER_BEISPIELWERT ergaenzen (produkt/bindung/*.yaml hat aktuell nur die zwei "
+            f"_MUSTER_BEISPIELWERT ergaenzen (produkt/bindung/*.yaml hat aktuell nur die "
             f"oben eingetragenen Muster).")
     return wert
 

@@ -701,15 +701,14 @@ fn pruefe_bindung(
     Ok(())
 }
 
-/// `re.match(muster, wert)` (Python) matcht ab Position 0, nicht zwingend bis Stringende —
-/// `^(?:muster)` bildet das in der `regex`-Crate nach. Alle echten `muster`-Werte im Repo sind
-/// bereits selbst mit `^` verankert (`grep muster: produkt/bindung/*.yaml`, Stand 2026-09-29).
+/// `re.fullmatch(muster, wert)` (Python): das `muster` gilt fuer den ganzen Wert, auch wenn es
+/// selbst kein `$` traegt. `^(?:muster)$` bildet das in der `regex`-Crate nach (`$` = Textende).
 ///
-/// PARITAET: ein syntaktisch ungueltiges `muster` liesse Pythons `re.match` mit einer Ausnahme
+/// PARITAET: ein syntaktisch ungueltiges `muster` liesse Pythons `re.fullmatch` mit einer Ausnahme
 /// abbrechen (kein abgefangener Auflage-F-Fall dort). Hier fail-closed statt Absturz: ein
 /// solcher Wert gilt als nicht passend, nie stillschweigend durchgelassen.
 fn passt_muster(muster: &str, wert: &str) -> bool {
-    regex::Regex::new(&format!("^(?:{muster})")).is_ok_and(|re| re.is_match(wert))
+    regex::Regex::new(&format!("^(?:{muster})$")).is_ok_and(|re| re.is_match(wert))
 }
 
 /// Auflage F2/Magnitude (`store.py:341-358`, nur fuer Vorschlags-Schreiber): `abs(wert) >= 10^10`
@@ -909,6 +908,73 @@ mod tests {
         assert!(
             !meldung.contains("Maier") && !meldung.contains('\u{0}'),
             "{meldung}"
+        );
+    }
+
+    fn echte_bindungen() -> Vec<Bindung> {
+        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect()
+    }
+
+    fn mensch_bestaetigt(feld_id: &str, wert: &str) -> NeuesEvent {
+        NeuesEvent {
+            feld_id: feld_id.to_string(),
+            wert: json!(wert),
+            feldzustand: Feldzustand::Bestaetigt {
+                signal_2: Signal2::new("klick").unwrap(),
+            },
+            herkunft: mensch_herkunft(),
+            schreiber: Schreiber::Mensch("julius".to_string()),
+            signal_1: None,
+            ersetzt: None,
+            ts: Some("2026-01-01T00:00:00+00:00".to_string()),
+        }
+    }
+
+    #[test]
+    fn muster_prueft_den_ganzen_wert_auflage_f() {
+        // Decision textfeld-format-aus-xsd-beim-speichern, Punkt 3: das `muster` gilt fuer den
+        // ganzen Wert wie Pythons `re.fullmatch`, auch wenn es selbst kein `$` traegt.
+        let mut idnr = echte_bindungen()
+            .into_iter()
+            .find(|b| b.feld_id == "kind_idnr")
+            .unwrap();
+        idnr.muster = Some("[0-9]{11}".to_string());
+        let bindungen = [idnr];
+        let map = crate::baue_nachschlag(&bindungen);
+        let bindung = BindungNachschlag::neu(&map);
+        let gut = mensch_bestaetigt("kind_idnr", "12345678901");
+        assert!(Store::leer(2025, None).append(&gut, None, bindung).is_ok());
+        for wert in ["12345678901\n", "123456789012"] {
+            let neu = mensch_bestaetigt("kind_idnr", wert);
+            let fehler = Store::leer(2025, None)
+                .append(&neu, None, bindung)
+                .unwrap_err();
+            assert!(
+                matches!(fehler, crate::Abweisung::FormatInkonform { .. }),
+                "{wert:?}: {fehler}"
+            );
+        }
+    }
+
+    #[test]
+    fn leerer_text_wird_abgewiesen_auflage_t() {
+        // Decision textfeld-format-aus-xsd-beim-speichern, Punkt 4: jeder Text-Kz-Typ im Schema
+        // verlangt mindestens ein Zeichen.
+        let bindungen = echte_bindungen();
+        let map = crate::baue_nachschlag(&bindungen);
+        let neu = mensch_bestaetigt("stammdaten_nachname", "");
+        let fehler = Store::leer(2025, None)
+            .append(&neu, None, BindungNachschlag::neu(&map))
+            .unwrap_err();
+        assert!(
+            matches!(fehler, crate::Abweisung::TypInkonform { .. }),
+            "{fehler}"
         );
     }
 

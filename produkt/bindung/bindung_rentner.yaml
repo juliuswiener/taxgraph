@@ -381,6 +381,7 @@ bindungen:
   - feld_id: rentner_gepflegter_idnr
     quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: idnr_der_gepflegten_person}
     typ: text
+    muster: '^(?:[0-9]{11})$'
     einheit: null
     askable: true
     vorjahr: uebernehmbar
