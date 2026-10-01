@@ -90,7 +90,10 @@ mkdir -p "$OUT_DIR"
 cp "$BUILD_ROOT"/_target/rust-c/c/*.c "$BUILD_ROOT"/_target/rust-c/c/*.h "$OUT_DIR/"
 cp "$BUILD_ROOT"/_build/libcatala/c/*.c "$BUILD_ROOT"/_build/libcatala/c/*.h "$OUT_DIR/"
 
-find "$REPO_ROOT/rules" -name '*.catala_en' -print0 | sort -z \
+# LC_ALL=C: byte order. en_US/de_DE collation skips '/' and '_' at first level, so `p10/…` sorts
+# after `p10_1…` there but before it under C.UTF-8 (the CI runner) — a different hash for the same
+# rules/. Must stay identical to recompute_source_hash (src/lib.rs).
+find "$REPO_ROOT/rules" -name '*.catala_en' -print0 | LC_ALL=C sort -z \
   | xargs -0 cat | sha256sum | cut -d' ' -f1 > "$OUT_DIR/SOURCE_HASH"
 
 echo "generated/ refreshed: $(find "$OUT_DIR" -type f | wc -l) files, SOURCE_HASH=$(cat "$OUT_DIR/SOURCE_HASH")"
