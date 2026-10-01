@@ -296,3 +296,64 @@ def test_gestarteter_dienst_legt_akte_und_protokoll_an_denselben_ort(tmp_path):
         f"Das Protokoll liegt weiter im Nutzerverzeichnis, obwohl die Akte nach {ziel} ging: "
         f"{daneben}. Ein Griff am Datenverzeichnis muss BEIDE umlenken."
     )
+
+
+# --------------------------------------------------------------------------------------
+# Ebene 3: der Rueckfall ohne Haut. Laden ueber `produkt/store` allein.
+# --------------------------------------------------------------------------------------
+
+# Der Rueckfall greift, wenn `api` nicht importierbar ist — das kommt vor, wenn ein Werkzeug nur
+# `produkt/store` einbindet. Der Starter blockiert den Import, statt ihn zu erzwingen: nur so
+# ist der Zweig ueberhaupt erreichbar, und nur so misst der Test ihn und nicht die Hauptstrasse.
+_RUECKFALL_STARTER = r'''
+import builtins, os, sys
+R = sys.argv[1]
+sys.path.insert(0, os.path.join(R, "produkt", "store"))
+
+echt = builtins.__import__
+def ohne_api(name, *a, **k):
+    if name == "api":
+        raise ImportError("api blockiert — der Rueckfall soll greifen")
+    return echt(name, *a, **k)
+builtins.__import__ = ohne_api
+
+import audit
+print(f"ZIEL={audit._fall_verzeichnis()}", flush=True)
+'''
+
+
+def test_rueckfall_ohne_haut_kennt_taxgraph_daten(tmp_path):
+    """Der Rueckfall in `audit.py` muss DIESELBE Wurzel lesen wie `api_constants`.
+
+    Ohne Haut (`api` nicht importierbar) baut der Store den Pfad selbst. Bis 2026-10-01 las er
+    dafuer nur `XDG_DATA_HOME` — `TAXGRAPH_DATEN`, die Variable mit der dieses Projekt seine
+    Daten umlenkt, kannte er nicht. Bei gesetztem `TAXGRAPH_DATEN` zeigten die beiden Wege
+    damit auseinander: die Akten unter der einen Wurzel, das Protokoll unter der anderen.
+    Dieselbe halbe Isolierung wie am Vormittag, eine Ebene tiefer.
+
+    Geprueft wird gegen den Ort, den `api_constants._daten_wurzel()` mit derselben Umgebung
+    nennt: die Aussage ist „beide Wege zeigen auf dieselbe Wurzel", und die kann nur der
+    Vergleich liefern. Der Erwartungswert wird deshalb aus `api_constants` geholt und nicht im
+    Test nachgebaut — sonst pruefte der Test seine eigene Annahme.
+    """
+    import api_constants as _ac  # noqa: F401 — nur zur Doku: dieselbe Wurzel, s. Docstring
+
+    wurzel = tmp_path / "gewaehlt"
+    env = dict(os.environ, TAXGRAPH_DATEN=str(wurzel), PYTHONUNBUFFERED="1")
+    env.pop("TAXGRAPH_AUDIT_DIR", None)
+    env.pop("XDG_DATA_HOME", None)      # der alte Weg darf nicht zufaellig dasselbe liefern
+    lauf = subprocess.run([sys.executable, "-c", _RUECKFALL_STARTER, ROOT],
+                          cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
+    assert lauf.returncode == 0, f"Starter scheiterte: {lauf.stdout} {lauf.stderr}"
+    zeile = next((z for z in lauf.stdout.splitlines() if z.startswith("ZIEL=")), None)
+    assert zeile, f"Starter meldete kein Ziel: {lauf.stdout!r}"
+    rueckfall = zeile[len("ZIEL="):]
+
+    # `api_constants` hat TAXGRAPH_DATEN beim IMPORT gelesen. Der Erwartungswert kommt deshalb
+    # aus der Wurzel, die der Test selbst gesetzt hat — dieselbe Rechnung, gegen die gemessen wird.
+    eigener = os.path.join(str(wurzel), "faelle")
+    assert os.path.abspath(rueckfall) == os.path.abspath(eigener), (
+        f"Der Rueckfall nennt {rueckfall}, `api_constants` mit TAXGRAPH_DATEN={wurzel} nennt "
+        f"{eigener}. Der Rueckfall kennt die Umgebungsvariable des Produkts nicht — dieselbe "
+        "halbe Isolierung, eine Ebene tiefer."
+    )

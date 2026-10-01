@@ -312,8 +312,12 @@ def test_die_nutzereingabe_laeuft_genau_einmal_durch_den_filter(konfiguriert, mo
     Gezählt wird deshalb der Durchgang über DIE NACHRICHT, nicht jeder Aufruf der Funktion: die
     Aussagen aus Stufe 1 gehen zusätzlich durch (s. Test darunter), und das ist etwas anderes."""
     aufrufe = []
-    echt = api_llm.filtere
-    monkeypatch.setattr(api_llm, "filtere", lambda t: (aufrufe.append(t), echt(t))[1])
+    import pii_filter
+    # Am QUELLNAMEN gepatcht (seit 2026-10-01): api_llm haelt keine Wert-Kopie mehr, sondern
+    # liest `pii_filter.filtere` zur Aufrufzeit. Ein Patch auf `api_llm.filtere` traefe einen
+    # Namen, den es nicht mehr gibt — der Test faellt dann mit AttributeError statt zu pruefen.
+    echt = pii_filter.filtere
+    monkeypatch.setattr(pii_filter, "filtere", lambda t: (aufrufe.append(t), echt(t))[1])
     _stufen(monkeypatch, s1=S1, s2=S2, s3=_s3())
     api_llm._llm_dialog(TEXT, KATALOG, user_id="prüfer")
     assert aufrufe.count(TEXT) == 1, f"Die Nachricht lief {aufrufe.count(TEXT)}× durch: {aufrufe}"

@@ -13,12 +13,21 @@ grün (siehe (b)).
 (b) DYNAMISCH: FAELLE per setattr umbiegen MUSS die Schreibfunktion wirklich umlenken —
     nicht nur den Lesepfad, der bei einer Wert-Kopie ebenso falsch, aber intern konsistent
     wäre und den Roundtrip grün ließe.
+(c) STATISCH: `from X import Y` auf einen Namen, den jemand zur Laufzeit umbiegt. Das ist
+    die ZWEITE HÄLFTE derselben Fehlerklasse: (a) fängt `import *`, also alle Namen auf
+    einmal; ein einzelner `from X import Y` war bis 2026-10-01 unsichtbar. Am 2026-10-01
+    zweimal real geworden — `api_llm.py:25 from pii_filter import filtere` (ein Test, der
+    `pii_filter.filtere` patcht, war STILL WIRKUNGSLOS: der PII-Filter lief ungefiltert an
+    den Anbieter und der Test blieb grün) und `audit.py:37` (dieselbe Bauart, 1145 Zeilen
+    ins Nutzerprotokoll). Die Regel ist in (c) gemessen, nicht geraten: siehe
+    FROM_IMPORT_AUSNAHMEN und den Positiv-Test daneben.
 """
 
 from __future__ import annotations
 
 import ast
 import os
+import re
 import sys
 import pathlib
 
@@ -119,3 +128,256 @@ def test_faelle_setattr_erreicht_fall_anlegen(tmp_path, monkeypatch):
     assert erwartete_datei.exists(), (
         f"fall_anlegen hat NICHT in {tmp_path / 'faelle'} geschrieben — FAELLE-Mutation kam "
         "nicht an")
+
+
+# ------------------------------------- (c) STATISCH: `from X import Y` auf laufzeit-veraenderliche Werte
+#
+# Die zweite Hälfte derselben Fehlerklasse. (a) fängt `import *`, also alle Namen auf einmal.
+# `from X import Y` auf EINEN Namen war bis 2026-10-01 unsichtbar — und ist zweimal real
+# geworden: `api_llm.py:25` (PII-Filter) und `audit.py:37` (Protokollpfad).
+#
+# DIE REGEL, wie sie gemessen wurde (nicht geraten):
+#   Ein `from X import Y` unter produkt/ ist eine Naht, wenn
+#     (i)  Y im Quellmodul X überhaupt existiert (Global ODER def/class), UND
+#     (ii) irgendwo im Repo `m.Y = …` oder `setattr(m, "Y", …)` steht.
+#   (ii) ist das Symptom: jemand biegt den Namen um, den er für den Wert hält, und trifft
+#   nur seine eigene Kopie. Wo niemand umbiegt, ist es keine Naht — eine Konstante, die
+#   niemand anfasst, kann nicht auseinanderlaufen.
+#
+# BREITE, gemessen am 2026-10-01 gegen HEAD (12.463 Knoten, produkt/ + tests/ + reports/):
+#   ohne Bedingung (ii):  58 Meldungen  → als Tor unbrauchbar, wird abgeschaltet
+#   mit  Bedingung (ii):   2 Meldungen  → davon 1 echte Falle, 1 reiner Re-Export
+# Bedingung (ii) ist also das, was die Regel scharf hält — nicht (iii) „benutzt den Namen
+# selbst", die nur noch 1 daraus macht. Die 2. Meldung wird deshalb NICHT weggeregelt,
+# sondern benannt: siehe FROM_IMPORT_AUSNAHMEN, und die Begründung dort wird nachgeprüft.
+
+_UMBIEGER = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\s*=(?!=)")
+_UMBIEGER_SETATTR = re.compile(
+    r"setattr\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*[\"']([A-Za-z_][A-Za-z0-9_]*)[\"']")
+
+_SCAN_AUS = {"_build", ".git", "target", "__pycache__", "site-packages",
+             "graphify-out", "node_modules", ".venv", "venv"}
+
+# Benannte Ausnahmen — jeder Eintrag ist (Datei, Quellmodul, Name) und MUSS eine Begründung
+# tragen. Die Begründung ist kein Kommentar: `benutzt_selbst` wird nachgeprüft, damit die
+# Ausnahme nicht stillschweigend falsch wird, wenn jemand den Namen später doch aufruft.
+FROM_IMPORT_AUSNAHMEN: dict[tuple[str, str, str], dict] = {
+    ("produkt/bescheid/bescheid.py", "bescheid_deklaration", "_an_gesamt_sperrgrund"): {
+        "benutzt_selbst": False,
+        "warum": (
+            "Reiner Re-Export: bescheid.py holt den Namen nur in seinen Namensraum, damit "
+            "`from bescheid import …` ihn findet (kein __init__.py, bescheid.py IST die "
+            "Paketfassade). Die Datei RUFT ihn nicht selbst auf — die vier echten Aufrufe "
+            "stehen alle in produkt/haut/api.py:350/471/580/725, und api.py importiert den "
+            "Namen SELBST aus bescheid_deklaration (api.py:62). Beide Umbieger "
+            "(tests/test_kein_vuv_unbeantwortet_durchlaesst_guard.py:190, "
+            "reports/repro/repro_rentner_partner_beginn_jahr_500.py:151) schreiben deshalb "
+            "`api._an_gesamt_sperrgrund` — genau den Namen, den die Aufrufe lesen. Kein "
+            "Pfad führt durch die Kopie in bescheid.py, also kann sie heute niemanden "
+            "täuschen. Wird der Name dort später aufgerufen, wird `benutzt_selbst` True "
+            "und dieser Test rot — die Ausnahme kann nicht verrotten."),
+    },
+}
+
+
+def _modul_von(rel: str) -> str:
+    return rel[:-3].replace("/", ".")
+
+
+def _scan_dateien(wurzel: pathlib.Path) -> list[pathlib.Path]:
+    return sorted(p for p in wurzel.rglob("*.py")
+                  if not any(t in p.parts for t in _SCAN_AUS))
+
+
+def _definitionen(texte: dict[str, str]):
+    """(Modul-Globals, def/class) je Modul — nur auf Modulebene, denn nur dort entsteht
+    eine Bindung, die ein `from X import Y` abschreibt."""
+    from collections import defaultdict
+    globals_: dict[str, dict[str, int]] = defaultdict(dict)
+    defs: dict[str, set[str]] = defaultdict(set)
+    for mod, quelle in texte.items():
+        try:
+            baum = ast.parse(quelle)
+        except SyntaxError:
+            continue
+        for n in baum.body:
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                defs[mod].add(n.name)
+            elif isinstance(n, ast.Assign):
+                for t in n.targets:
+                    if isinstance(t, ast.Name):
+                        globals_[mod][t.id] = n.lineno
+            elif isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name):
+                globals_[mod][n.target.id] = n.lineno
+    return globals_, defs
+
+
+def _umbiegende_namen(texte: dict[str, str]) -> set[str]:
+    """Alle Namen, die irgendwo per `m.Y = …` oder `setattr(m, "Y", …)` umgebogen werden."""
+    raus: set[str] = set()
+    for quelle in texte.values():
+        for rx in (_UMBIEGER, _UMBIEGER_SETATTR):
+            for m in rx.finditer(quelle):
+                raus.add(m.group(2))
+    return raus
+
+
+def _geladene_namen(quelle: str) -> set[str]:
+    """Namen, die das Modul selbst LIEST.
+
+    `from x import y` erzeugt KEINEN Name-Knoten (nur einen `alias`) — hier darf also
+    nichts verworfen werden. Genau dieser Fehler hat die erste Messung auf 0 gedrückt,
+    obwohl api_llm.py `pii_filter.filtere(...)` dreimal aufruft."""
+    try:
+        baum = ast.parse(quelle)
+    except SyntaxError:
+        return set()
+    return {n.id for n in ast.walk(baum)
+            if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}
+
+
+def _naehte(quelltexte: dict[str, str], alle_texte: dict[str, str]) -> list[dict]:
+    """Alle `from X import Y`-Nähte in `quelltexte`, gemessen gegen `alle_texte`.
+
+    Reine Funktion über Textabbildungen, damit die Positiv-Prüfung sie mit einem
+    synthetischen Baum füttern kann — ein Tor, das nie gefeuert hat, ist unbewiesen."""
+    globals_, defs = _definitionen(alle_texte)
+    umgebogen = _umbiegende_namen(alle_texte)
+    bekannt = set(globals_) | set(defs)
+    treffer = []
+    for mod, quelle in quelltexte.items():
+        try:
+            baum = ast.parse(quelle)
+        except SyntaxError:
+            continue
+        geladen = _geladene_namen(quelle)
+        for n in baum.body:
+            if not isinstance(n, ast.ImportFrom) or n.module is None:
+                continue
+            ziele = [k for k in bekannt if k == n.module or k.endswith("." + n.module)]
+            for a in n.names:
+                if a.name == "*":
+                    continue
+                if not any(a.name in globals_[z] or a.name in defs[z] for z in ziele):
+                    continue
+                if a.name not in umgebogen:
+                    continue
+                treffer.append({
+                    "datei": mod.replace(".", "/") + ".py",
+                    "zeile": n.lineno,
+                    "quelle": n.module,
+                    "name": a.name,
+                    "lokal": a.asname or a.name,
+                    "benutzt_selbst": (a.asname or a.name) in geladen,
+                    "definiert_in": sorted(z for z in ziele if a.name in defs[z]) or sorted(ziele),
+                })
+    return treffer
+
+
+def _echte_naehte() -> list[dict]:
+    wurzel = pathlib.Path(ROOT)
+    alle = {_modul_von(str(p.relative_to(wurzel))): p.read_text(encoding="utf-8")
+            for p in _scan_dateien(wurzel)}
+    quell = {m: t for m, t in alle.items() if m.startswith("produkt.")}
+    return _naehte(quell, alle)
+
+
+# ---- Positiv-Prüfungen: die Regel MUSS feuern, wenn die Falle da ist.
+
+def test_regel_faengt_from_import_auf_umgebogenen_namen():
+    """Synthetischer Baum mit genau der Falle vom 2026-10-01: das Quellmodul wird gepatcht,
+    das importierende Modul hält eine Wert-Kopie und benutzt sie. Die Regel muss das
+    melden — sonst beweist ein grüner Lauf am echten Baum nichts."""
+    quell = {
+        "produkt.haut.sender": (
+            "from pii_filter import filtere\n\n\n"
+            "def sende(text):\n"
+            "    return filtere(text)[0]\n"),
+    }
+    alle = dict(quell)
+    alle["produkt.haut.pii_filter"] = "def filtere(text):\n    return text, []\n"
+    alle["tests.test_probe"] = (
+        "import pii_filter\n\n\n"
+        "def probe(monkeypatch):\n"
+        "    monkeypatch.setattr(pii_filter, \"filtere\", lambda t: t)\n")
+
+    gefunden = _naehte(quell, alle)
+
+    assert [(n["datei"], n["name"], n["benutzt_selbst"]) for n in gefunden] == [
+        ("produkt/haut/sender.py", "filtere", True)], (
+        "die Regel hat die synthetische Falle NICHT gemeldet — dann ist sie am echten Baum "
+        "unbewiesen")
+
+
+def test_regel_faengt_auch_die_alias_form():
+    """`from X import Y as Z` ist dieselbe Wert-Bindung, nur umbenannt. Der Umbieger trifft
+    den QUELLNAMEN (`X.Y`), benutzt wird der LOKALE (`Z`) — beides muss die Regel trennen."""
+    quell = {
+        "produkt.haut.sender": (
+            "from pii_filter import filtere as siebe\n\n\n"
+            "def sende(text):\n"
+            "    return siebe(text)[0]\n"),
+    }
+    alle = dict(quell)
+    alle["produkt.haut.pii_filter"] = "def filtere(text):\n    return text, []\n"
+    alle["tests.test_probe"] = "import pii_filter\npii_filter.filtere = lambda t: t\n"
+
+    assert [(n["name"], n["lokal"], n["benutzt_selbst"]) for n in _naehte(quell, alle)] == [
+        ("filtere", "siebe", True)]
+
+
+def test_regel_schweigt_bei_reinem_reexport_und_bei_unberuehrtem_namen():
+    """Zwei Gegenproben in einem: (1) ein reiner Re-Export (`__all__`, kein Aufruf) wird als
+    `benutzt_selbst=False` gemeldet — die Ausnahme in FROM_IMPORT_AUSNAHMEN ist damit keine
+    Behauptung, sondern ein Messwert. (2) Ein Name, den niemand umbiegt, ist keine Naht."""
+    quell = {
+        "produkt.fassade": (
+            "from kern import rechner\n\n"
+            "__all__ = [\"rechner\"]\n"),
+        "produkt.unberuehrt": (
+            "from kern import starr\n\n\n"
+            "def nutze():\n"
+            "    return starr()\n"),
+    }
+    alle = dict(quell)
+    alle["produkt.kern"] = (
+        "def rechner():\n    return 1\n\n\ndef starr():\n    return 2\n")
+    alle["tests.test_probe"] = "import kern\nkern.rechner = lambda: 9\n"
+
+    gefunden = _naehte(quell, alle)
+
+    assert [(n["datei"], n["name"], n["benutzt_selbst"]) for n in gefunden] == [
+        ("produkt/fassade.py", "rechner", False)], (
+        "entweder wurde der Re-Export als benutzt gemeldet (dann ist die Ausnahme unten "
+        "wertlos) oder `starr` fälschlich als Naht (dann meldet die Regel Rauschen)")
+
+
+def test_from_import_auf_umgebogene_namen_nur_benannte_ausnahmen():
+    """Am ECHTEN Baum: jede gemeldete Naht muss benannt sein, und jede Ausnahme muss die
+    Begründung tragen, die sie behauptet."""
+    gefunden = {(n["datei"], n["quelle"], n["name"]): n for n in _echte_naehte()}
+    ausnahmen = {(d, q, nm) for (d, q, nm) in FROM_IMPORT_AUSNAHMEN}
+
+    unerlaubt = sorted(set(gefunden) - ausnahmen)
+    assert not unerlaubt, (
+        "neue ungeprüfte `from X import Y`-Naht auf einen umgebogenen Namen:\n  " +
+        "\n  ".join(
+            f"{d}:{gefunden[(d, q, nm)]['zeile']} from {q} import {nm} "
+            f"(benutzt_selbst={gefunden[(d, q, nm)]['benutzt_selbst']})"
+            for d, q, nm in unerlaubt) +
+        "\nEntweder auf `import X` + `X.Y(...)` zur AUFRUFZEIT umbauen (das Muster von "
+        "audit._ablage() und api_llm) — oder in FROM_IMPORT_AUSNAHMEN aufnehmen, NACHDEM "
+        "geprüft ist, dass kein Pfad durch die Kopie führt.")
+
+    fehlend = sorted(ausnahmen - set(gefunden))
+    assert not fehlend, (
+        f"Ausnahme {fehlend} wird nicht mehr gemeldet — aus FROM_IMPORT_AUSNAHMEN streichen.")
+
+    for schluessel, eintrag in FROM_IMPORT_AUSNAHMEN.items():
+        naht = gefunden[schluessel]
+        assert naht["benutzt_selbst"] == eintrag["benutzt_selbst"], (
+            f"{schluessel[0]} BENUTZT {schluessel[2]} jetzt selbst "
+            f"(benutzt_selbst={naht['benutzt_selbst']}, Ausnahme sagt "
+            f"{eintrag['benutzt_selbst']}). Die Begründung 'reiner Re-Export' stimmt nicht "
+            f"mehr: die Kopie wird jetzt aufgerufen und kann einen Patch verdecken. "
+            f"Umbauen oder die Ausnahme neu begründen.")

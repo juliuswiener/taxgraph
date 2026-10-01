@@ -38,6 +38,16 @@ def _fall_verzeichnis() -> str:
         import api
         return api.FAELLE
     except Exception:                       # noqa: BLE001 — Store ohne Haut ist ein gültiger Fall
+        # Ohne Haut wird die Wurzel HIER gebaut. Sie muss dieselbe sein, die `api_constants`
+        # nähme — sonst zeigen die zwei Wege auseinander, und das Protokoll landete neben den
+        # echten Fällen, während ein Werkzeug seine Akten woandershin schreibt (dieselbe halbe
+        # Isolierung wie am 2026-10-01, eine Ebene tiefer). Deshalb wird `TAXGRAPH_DATEN` HIER
+        # genauso gelesen wie dort: es ist die Variable, mit der dieses Projekt seine Daten
+        # umlenkt, und ein Rückfall, der sie nicht kennt, fällt genau dann auf, wenn jemand sie
+        # setzt. Die Reihenfolge ist bewusst dieselbe (eigene Variable, dann XDG, dann ~).
+        eigen = os.environ.get("TAXGRAPH_DATEN", "").strip()
+        if eigen:
+            return os.path.join(os.path.expanduser(eigen), "faelle")
         xdg = os.environ.get("XDG_DATA_HOME", "").strip()
         basis = os.path.expanduser(xdg) if xdg else os.path.join(
             os.path.expanduser("~"), ".local", "share")
