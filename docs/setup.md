@@ -63,8 +63,16 @@ Es werden zwei virtuelle Umgebungen genutzt (System-Python bleibt unangetastet):
 ```bash
 # uv wird als Environment-Manager verwendet (schnell, reproduzierbar)
 uv venv oracle/.venv312 --python 3.12
-uv pip install --python oracle/.venv312/bin/python gettsim   # zieht 1.2.1
+uv pip install --python oracle/.venv312/bin/python \
+  gettsim==1.2 ttsim-backend==1.2.1
 ```
+
+Hier stehen DIESELBEN zwei Pins wie in `requirements-oracle.txt` (`make gettsim-crosscheck`
+liest sie von dort). Beide Stellen sind noetig: `gettsim 1.2` verlangt nur
+`ttsim-backend>=1.2`, und ein freies `gettsim` zieht heute `1.3.1` **mit** `ttsim-backend 1.3.2`
+— der Harness kennt die neue Schnittstelle nicht und `golden_crosscheck.py` bricht mit
+`ValueError: The following data columns are missing.` ab. Warum die Version hier ein
+Zahlenwert ist und kein Ablaufdetail, steht in `requirements-oracle.txt` oben.
 
 `scripts/install-gettsim.sh` legt die 3.11-Umgebung an; fuer den Differentialtest
 ist die 3.12-Umgebung noetig (Kommandos oben).
