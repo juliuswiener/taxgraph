@@ -23,6 +23,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "store"))
 import store as ST   # noqa: E402
 
+# Die zwei Abweisungen der Wertprüfung (store._pruefe_typ_konformitaet, Auflage T und F; Rust:
+# Abweisung::TypInkonform/FormatInkonform). Nur sie überspringt die Übernahme, jede andere bricht ab
+# (decisions/vorjahr-unpassenden-altwert-ueberspringen).
+_PRUEF_ABWEISUNG = ("fail-closed (Typ)", "fail-closed (Format)")
+
 
 def uebertragbare_felder(bindung: dict) -> dict:
     """{feld_id -> kategorie} für alle Felder mit gesetztem vorjahr-Flag (uebernehmbar|vorschlag)."""
@@ -30,14 +35,19 @@ def uebertragbare_felder(bindung: dict) -> dict:
 
 
 def uebernehme_vorjahr(neuer_store: dict, vorjahr_felder: dict, bindung: dict, *,
-                       vorjahr_vz: int, ts: str | None = None) -> int:
+                       vorjahr_vz: int, ts: str | None = None) -> tuple[int, list[str]]:
     """Überträgt je vorjahr-flagged Feld mit BESTÄTIGTEM Vorjahres-Wert ein vorlaeufiges Event in
     neuer_store. vorjahr_felder = materialisierte felder-Ebene (feld_id -> {wert, zustand, herkunft}) des
-    Vorjahres-Store. Gibt die Anzahl übertragener Felder zurück. Überträgt NICHT, wenn im neuen Store schon
-    ein aktives Event für das Feld liegt (One-Active-Event bleibt gewahrt — der Nutzer/Beleg hat Vorrang)."""
+    Vorjahres-Store. Gibt (anzahl_uebertragen, uebersprungen) zurück. Überträgt NICHT, wenn im neuen Store schon
+    ein aktives Event für das Feld liegt (One-Active-Event bleibt gewahrt — der Nutzer/Beleg hat Vorrang).
+
+    uebersprungen = die feld_ids (sortiert), deren Vorjahres-Wert die heutige Wertprüfung abweist: ein
+    Altwert, gespeichert vor dieser Prüfung. Das Feld bleibt leer, die übrigen kommen trotzdem an. Der
+    Aufrufer meldet nur die feld_ids — die Abweisung des Stores nennt den Wert (PII)."""
     flags = uebertragbare_felder(bindung)
     aktiv = set(ST._aktives(neuer_store))            # feld_ids mit schon aktivem Event (nicht überschreiben)
     n = 0
+    uebersprungen = []
     for fid, kat in flags.items():
         vf = vorjahr_felder.get(fid)
         if vf is None or vf.get("zustand") != "bestaetigt":
@@ -47,14 +57,20 @@ def uebernehme_vorjahr(neuer_store: dict, vorjahr_felder: dict, bindung: dict, *
         wert = vf["wert"]
         sig1 = {"typ": "vorjahr", "vz": vorjahr_vz, "quell_feld_id": fid,
                 "quell_wert": wert, "kategorie": kat}
-        ST.append_event(neuer_store, feld_id=fid, wert=wert, zustand="vorlaeufig",
-                        herkunft={"herkunft": "vorjahr", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
-                        schreiber="import:vorjahr",
-                        signal={"signal_1": sig1, "signal_2": None}, ts=ts,
-                        # Auflage T (Stille-Null-Klasse): gerade Vorjahres-Altbestände können vor
-                        # dieser Pruefung geschrieben worden sein — bindung liegt hier schon vor
-                        # (uebertragbare_felder() braucht sie ohnehin), also mitgeben statt Luecke lassen.
-                        bindung=bindung)
+        try:
+            ST.append_event(neuer_store, feld_id=fid, wert=wert, zustand="vorlaeufig",
+                            herkunft={"herkunft": "vorjahr", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                            schreiber="import:vorjahr",
+                            signal={"signal_1": sig1, "signal_2": None}, ts=ts,
+                            # Auflage T (Stille-Null-Klasse): gerade Vorjahres-Altbestände können vor
+                            # dieser Pruefung geschrieben worden sein — bindung liegt hier schon vor
+                            # (uebertragbare_felder() braucht sie ohnehin), also mitgeben statt Luecke lassen.
+                            bindung=bindung)
+        except ValueError as e:
+            if not str(e).startswith(_PRUEF_ABWEISUNG):
+                raise
+            uebersprungen.append(fid)
+            continue
         n += 1
     # Verlustvortrag traegt bewusst kein vorjahr-Flag (s. Docstring oben), deshalb separat: eine
     # reine Vergleichsgroesse fuer preflight.plausibilitaets_widersprueche(), kein Formular-
@@ -62,7 +78,7 @@ def uebernehme_vorjahr(neuer_store: dict, vorjahr_felder: dict, bindung: dict, *
     ref = referenzwert_verlustvortrag(vorjahr_felder)
     if ref is not None:
         neuer_store["vorjahr_referenz"] = {"verlustvortrag_bestand": ref}
-    return n
+    return n, sorted(uebersprungen)
 
 
 def referenzwert_verlustvortrag(vorjahr_felder: dict) -> dict | None:

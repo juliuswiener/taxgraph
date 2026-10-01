@@ -929,7 +929,9 @@ def vorjahr(fall_id: str, body: dict) -> tuple[int, dict]:
     """Vorjahr-Übernahme (dev-2s vorjahr_writer): überträgt die vorjahr-flagged, im Vorjahres-Fall
     BESTÄTIGTEN Felder als VORLÄUFIGE Vorschläge (herkunft=vorjahr) in den aktuellen Fall — der Nutzer
     bestätigt/überschreibt (Zwei-Signal). Der Store-Guard ^import:vorjahr erzwingt vorläufig strukturell;
-    schon belegte Felder bleiben unangetastet (One-Active-Event)."""
+    schon belegte Felder bleiben unangetastet (One-Active-Event). Einen Altwert, den die heutige
+    Wertprüfung abweist, überspringt die Übernahme; `uebersprungen` nennt seine feld_id, nie den Wert
+    (decisions/vorjahr-unpassenden-altwert-ueberspringen)."""
     _fall_owner_check(fall_id)
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
@@ -948,14 +950,15 @@ def vorjahr(fall_id: str, body: dict) -> tuple[int, dict]:
     vj_store = lade_fall(vj_id)                           # 404, wenn der Vorjahres-Fall fehlt
     vj_felder, _ = ST.materialisiere(vj_store)
     try:
-        n = VW.uebernehme_vorjahr(store, vj_felder, bindung,
-                                  vorjahr_vz=int(vj_store.get("veranlagungszeitraum", 0)))
+        n, uebersprungen = VW.uebernehme_vorjahr(store, vj_felder, bindung,
+                                                 vorjahr_vz=int(vj_store.get("veranlagungszeitraum", 0)))
     except ValueError as e:
-        # fail-closed-Abweisung des Stores (z. B. Auflage T: Steuerzeichen im Alt-Fall) -> 422 wie
-        # /event. Gespeichert ist dann nichts: speichere_fall() läuft erst nach der ganzen Übernahme.
+        # Typ-/Format-Abweisungen überspringt schon der Writer. Hier landet jede andere fail-closed-
+        # Abweisung des Stores -> 422 wie /event. Gespeichert ist dann nichts: speichere_fall() läuft
+        # erst nach der ganzen Übernahme.
         raise ApiError(422, str(e))
     speichere_fall(fall_id, store)
-    return 200, {"uebernommen": n, "vorjahr_fall_id": vj_id}
+    return 200, {"uebernommen": n, "uebersprungen": uebersprungen, "vorjahr_fall_id": vj_id}
 
 
 def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:

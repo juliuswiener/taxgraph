@@ -913,7 +913,11 @@ fn vorjahr_vast_edaten() {
         json!(0),
         json!("verheiratet"),
         json!(-5),
+        // Altwerte, die die heutige Wertpruefung abweist (Steuerzeichen, Musterverstoss)
+        json!("Maier\u{0}"),
+        json!("01.01-31.122"),
     ];
+    let mut mit_uebersprungen = 0;
     for _ in 0..500 {
         let mut felder = serde_json::Map::new();
         for _ in 0..r.n(12) {
@@ -939,7 +943,10 @@ fn vorjahr_vast_edaten() {
         let vf: BTreeMap<String, eingang::vorjahr::VorjahrFeld> =
             serde_json::from_value(Value::Object(felder.clone())).unwrap();
         let rust = match eingang::vorjahr::uebernehme(&mut s, &vf, nachschlag(), 2025, Some(TS)) {
-            Ok(e) => json!({"r": {"ok": e.uebertragen}, "referenz": e.referenz}),
+            Ok(e) => {
+                mit_uebersprungen += usize::from(!e.uebersprungen.is_empty());
+                json!({"r": {"ok": [e.uebertragen, e.uebersprungen]}, "referenz": e.referenz})
+            }
             Err(_) => json!({"r": {"err": true}}),
         };
         let py_r = if py["r"].get("err").is_some() {
@@ -947,7 +954,8 @@ fn vorjahr_vast_edaten() {
         } else {
             py["r"].clone()
         };
-        // Bei Abweisung bricht Python mitten in der Schleife ab (andere Reihenfolge als Rust); nur die Klasse zaehlt.
+        // Typ-/Format-Abweisungen ueberspringen beide Seiten, das Ergebnis ist voll vergleichbar. Jede
+        // andere Abweisung bricht in Python mitten in der Schleife ab (andere Reihenfolge als Rust); nur die Klasse zaehlt.
         if py_r.get("err").is_some() {
             z.pruefe(&format!("vorjahr {felder:?}"), &rust["r"], &py_r);
         } else {
@@ -1093,8 +1101,12 @@ fn vorjahr_vast_edaten() {
         &json!({"ok": eingang::vast::cent(Some("45000.00")).unwrap().unwrap() + 1}),
         &py["cent"][0],
     );
-    println!("vorjahr+vast+edaten: {} Vergleiche (500 Vorjahr, {} Betraege, 300 LStB, 300 LErsL, 500 eDaten); Abweichungen {}; dokumentiert {}; Negativkontrolle {}",
-        z.faelle, betraege.len(), z.abw, z.dokumentiert, neg.abw);
+    println!("vorjahr+vast+edaten: {} Vergleiche (500 Vorjahr, davon {} mit uebersprungenem Altwert, {} Betraege, 300 LStB, 300 LErsL, 500 eDaten); Abweichungen {}; dokumentiert {}; Negativkontrolle {}",
+        z.faelle, mit_uebersprungen, betraege.len(), z.abw, z.dokumentiert, neg.abw);
     assert_eq!(neg.abw, 1);
     assert_eq!(z.abw, 0);
+    assert!(
+        mit_uebersprungen > 0,
+        "kein Vorjahresfall mit uebersprungenem Altwert erzeugt"
+    );
 }

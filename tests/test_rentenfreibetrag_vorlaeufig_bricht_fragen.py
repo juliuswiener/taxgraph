@@ -130,7 +130,7 @@ def _bestaetigt(feld_id, wert):
 def _vorjahr_vorlaeufig(feld_id, wert):
     """Exakter Store-Kontrakt für import:vorjahr (store.py, Auflage A): herkunft=vorjahr,
     zustand=vorlaeufig, signal_2=None -- derselbe Kanal, den POST /fall/{id}/vorjahr über die Haut
-    tatsächlich schreibt (vorjahr_writer.uebernehme_vorjahr, Zeile 50-57)."""
+    tatsächlich schreibt (vorjahr_writer.uebernehme_vorjahr, Zeile 61-68)."""
     return {"feld_id": feld_id, "wert": wert, "zustand": "vorlaeufig",
             "herkunft": {"herkunft": "vorjahr"}, "schreiber": "import:vorjahr",
             "signal": {"signal_1": {"typ": "vorjahr", "vz": 2024}, "signal_2": None}}

@@ -195,26 +195,30 @@ def test_steuerzeichen_im_text_ist_422_an_event(fall):
     assert "Maier" not in meldung and "\x00" not in meldung, meldung
 
 
-def test_steuerzeichen_im_vorjahr_ist_422_ohne_teilimport(fall):
-    """Ein Alt-Vorjahresfall (vor dieser Prüfung gespeichert) trägt NUL in einem Textfeld:
-    /vorjahr antwortet 422 wie /event statt 500. Der Zielfall bleibt unverändert — auch die zwei
-    Felder, die der Writer VOR dem Abbruch schon angehängt hatte (Übernahme in Bindungs-
-    reihenfolge), erreichen die Platte nicht: speichere_fall() läuft erst nach der Übernahme."""
+def test_abgewiesener_altwert_im_vorjahr_wird_uebersprungen(fall):
+    """Ein Alt-Vorjahresfall (vor diesen Prüfungen gespeichert) trägt NUL in einem Textfeld und einen
+    Zeitraum, der nicht aufs Muster passt. /vorjahr übernimmt die übrigen Felder, speichert den Fall
+    und nennt die zwei übersprungenen feld_ids, nie ihren Wert (decisions/vorjahr-unpassenden-
+    altwert-ueberspringen). Bis 2026-10-01 brach die ganze Übernahme mit 422 ab, und die Meldung
+    eines Formatfehlers nannte den Wert."""
     st, r = API.fall_anlegen({"scheibe": "gesamt", "veranlagungszeitraum": 2024, "fall_id": "sn-typ-vj"})
     assert st == 201, r
     vj = API.lade_fall("sn-typ-vj")
     for fid, wert in (("vv_einnahmen", 120000), ("bruttoarbeitslohn", 5000000),
-                      ("ep_ziel_adresse", "Werkstr. 1\x00")):
+                      ("ep_ziel_adresse", "Werkstr. 1\x00"),
+                      ("kind_wohnsitz_inland_zeitraum", "01.01-31.122")):
         ST.append_event(vj, feld_id=fid, wert=wert, zustand="bestaetigt",   # ohne bindung= wie ein Alt-Store
                         herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
                         schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"}, ts=TS)
     API.speichere_fall("sn-typ-vj", vj)
-    vorher = API.lade_fall(fall)
-    with pytest.raises(API.ApiError) as exc:
-        API.vorjahr(fall, {"vorjahr_fall_id": "sn-typ-vj"})
-    assert exc.value.status == 422
-    assert "ep_ziel_adresse" in str(exc.value) and "Werkstr" not in str(exc.value)
-    assert API.lade_fall(fall) == vorher
+    st, r = API.vorjahr(fall, {"vorjahr_fall_id": "sn-typ-vj"})
+    assert st == 200, r
+    assert r["uebernommen"] == 2, r
+    assert r["uebersprungen"] == ["ep_ziel_adresse", "kind_wohnsitz_inland_zeitraum"], r
+    assert "Werkstr" not in repr(r) and "31.122" not in repr(r), r
+    aktiv = set(ST._aktives(API.lade_fall(fall)))
+    assert {"vv_einnahmen", "bruttoarbeitslohn"} <= aktiv
+    assert not aktiv & {"ep_ziel_adresse", "kind_wohnsitz_inland_zeitraum"}
 
 
 def test_unbekanntes_feld_id_durchlaesst():

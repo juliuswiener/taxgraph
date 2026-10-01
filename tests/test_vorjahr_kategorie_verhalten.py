@@ -54,7 +54,7 @@ def test_uebernehmbar_mit_vorjahreswert_verschwindet_aus_fragen(bindung):
     _bestaetigt(vj, "rentner_renten_beginn_jahr", 2015)
     vj_felder, _ = ST.materialisiere(vj)
     neu = ST.leerer_store(2025, fall_id="vjk-a-neu")
-    n = VW.uebernehme_vorjahr(neu, vj_felder, bindung, vorjahr_vz=2024, ts=TS)
+    n, _ = VW.uebernehme_vorjahr(neu, vj_felder, bindung, vorjahr_vz=2024, ts=TS)
     assert n >= 1
     fragen = TR.naechste_fragen(neu, bindung)
     assert "rentner_renten_beginn_jahr" not in fragen
@@ -70,7 +70,7 @@ def test_vorschlag_mit_vorjahreswert_bleibt_frage_mit_kategorie(bindung):
     _bestaetigt(vj, "rentner_jahresrente", 1800000)
     vj_felder, _ = ST.materialisiere(vj)
     neu = ST.leerer_store(2025, fall_id="vjk-b-neu")
-    n = VW.uebernehme_vorjahr(neu, vj_felder, bindung, vorjahr_vz=2024, ts=TS)
+    n, _ = VW.uebernehme_vorjahr(neu, vj_felder, bindung, vorjahr_vz=2024, ts=TS)
     assert n >= 1
     fragen = TR.naechste_fragen(neu, bindung)
     assert "rentner_jahresrente" in fragen

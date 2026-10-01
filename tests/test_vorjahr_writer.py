@@ -65,7 +65,7 @@ def test_uebernahme_flagged_als_vorlaeufig(bindung):
     _bestaetigt(vj, "bruttoarbeitslohn", 4000000)        # vorschlag
     vj_felder, _ = ST.materialisiere(vj)
     neu = ST.leerer_store(2025, fall_id="neu")
-    n = VW.uebernehme_vorjahr(neu, vj_felder, bindung, vorjahr_vz=2024, ts=TS)
+    n, _ = VW.uebernehme_vorjahr(neu, vj_felder, bindung, vorjahr_vz=2024, ts=TS)
     nf, _ = ST.materialisiere(neu)
     assert n >= 2
     assert nf["veranlagung"]["zustand"] == "vorlaeufig"                    # NIE bestaetigt
@@ -99,7 +99,7 @@ def test_nur_bestaetigte_vorjahres_werte(bindung):
                     schreiber="ui:laie", signal={"signal_1": None, "signal_2": None}, ts=TS)
     vj_felder, _ = ST.materialisiere(vj)
     neu = ST.leerer_store(2025, fall_id="neu-vorl")
-    n = VW.uebernehme_vorjahr(neu, vj_felder, bindung, vorjahr_vz=2024, ts=TS)
+    n, _ = VW.uebernehme_vorjahr(neu, vj_felder, bindung, vorjahr_vz=2024, ts=TS)
     assert n == 0 and "bruttoarbeitslohn" not in ST._aktives(neu)
 
 
@@ -176,3 +176,43 @@ def test_referenzwert_verlustvortrag_ignoriert_vorlaeufigen_wert():
 
 def test_referenzwert_verlustvortrag_ohne_wert_ist_none():
     assert VW.referenzwert_verlustvortrag({}) is None
+
+
+# ---- (9) Altwert, den die heutige Wertprüfung abweist ---------------------------
+# decisions/vorjahr-unpassenden-altwert-ueberspringen: ein Vorjahres-Fall kann Werte tragen, die vor
+# einer heutigen Prüfung gespeichert wurden. Einer davon darf die übrigen Vorschläge nicht mitreißen;
+# gemeldet wird die feld_id, nie der Wert.
+
+def test_abgewiesener_altwert_wird_uebersprungen(bindung):
+    vj = ST.leerer_store(2024, fall_id="vj-alt")              # ohne bindung= wie ein Alt-Store
+    _bestaetigt(vj, "veranlagung", "zusammen")
+    _bestaetigt(vj, "bruttoarbeitslohn", 4000000)
+    _bestaetigt(vj, "stammdaten_nachname", "Maier\x00")              # Auflage T: Steuerzeichen
+    _bestaetigt(vj, "kind_wohnsitz_inland_zeitraum", "01.01-31.122")  # Auflage F: Muster
+    vj_felder, _ = ST.materialisiere(vj)
+    neu = ST.leerer_store(2025, fall_id="neu-alt")
+    n, uebersprungen = VW.uebernehme_vorjahr(neu, vj_felder, bindung, vorjahr_vz=2024, ts=TS)
+    assert (n, uebersprungen) == (2, ["kind_wohnsitz_inland_zeitraum", "stammdaten_nachname"])
+    assert set(ST._aktives(neu)) == {"veranlagung", "bruttoarbeitslohn"}
+
+
+def test_andere_abweisung_bricht_weiter_ab(bindung, monkeypatch):
+    """Nur die Wertprüfung (Typ/Format) wird übersprungen. Eine andere Abweisung erreicht diese
+    Stelle heute nicht (der Writer setzt herkunft/zustand selbst und prüft vorher auf ein aktives
+    Event), darum hier eingespielt: käme eine hinzu, bricht sie ab statt still zu fehlen."""
+    vj = ST.leerer_store(2024, fall_id="vj-b")
+    _bestaetigt(vj, "veranlagung", "zusammen")
+    _bestaetigt(vj, "bruttoarbeitslohn", 4000000)
+    vj_felder, _ = ST.materialisiere(vj)
+    echt = ST.append_event
+
+    def mit_auflage_b(store, **kw):
+        if kw["feld_id"] == "bruttoarbeitslohn":
+            raise ValueError("fail-closed (B): bruttoarbeitslohn hat schon ein aktives Event; "
+                             "Überschreiben braucht ersetzt=x.")
+        return echt(store, **kw)
+
+    monkeypatch.setattr(VW.ST, "append_event", mit_auflage_b)
+    with pytest.raises(ValueError, match=r"fail-closed \(B\)"):
+        VW.uebernehme_vorjahr(ST.leerer_store(2025, fall_id="neu-b"), vj_felder, bindung,
+                              vorjahr_vz=2024, ts=TS)
