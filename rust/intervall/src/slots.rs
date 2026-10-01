@@ -63,19 +63,15 @@ pub enum SlotFehler<E: std::error::Error + 'static> {
     Slot(E),
 }
 
-/// Python-`int`-Sicht eines Werts für `+`: Ganzzahl oder `bool` (0/1).
+/// Python-`int`-Sicht eines Werts für `+`: Ganzzahl oder `bool` (0/1), über
+/// [`PyWert::int_mit_bool`]; eine Ganzzahl über `i64::MAX` liefert `None` (D3).
 ///
 /// ponytail: `Gleit` liefert hier `None` (wie `Value::as_i64` vorher) — Pythons `+`
 /// auf einem Float ergaebe eine Float-Summe. Unerreichbar, weil Summanden-Felder
 /// durchweg `typ: cent` sind (gemessen 22 von 22, s. `SlotFehler::SummandNichtGanzzahl`).
-/// Upgrade: `PyWert::int_mit_bool` und einen Float-Zweig, wenn je ein Float-Summand auftritt.
+/// Upgrade: ein Float-Zweig, wenn je ein Float-Summand auftritt.
 fn als_int(v: &PyWert) -> Option<i64> {
-    match v {
-        PyWert::Bool(b) => Some(i64::from(*b)),
-        PyWert::Ganz(n) => Some(*n),
-        PyWert::GrossGanz(u) => i64::try_from(*u).ok(),
-        _ => None,
-    }
+    v.int_mit_bool().ok().flatten()
 }
 
 /// Baut `bescheid_fn(feld_werte)` aus einer slot-basierten Engine-Funktion. Rein, ohne Zustand.
