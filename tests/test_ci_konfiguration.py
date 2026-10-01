@@ -225,21 +225,52 @@ def test_catala_version_ist_festgenagelt_und_passt_zum_cache_schluessel():
         f"läuft eine andere Version als die, die der Schlüssel benennt.")
 
 
-def _gepinnte_gettsim_version() -> str:
+def _gepinnte_version(paket: str) -> str:
     zeilen = [z.split("#")[0].strip() for z in REQ_ORACLE.read_text(encoding="utf-8").splitlines()]
-    gettsim = [z for z in zeilen if z.lower().startswith("gettsim")]
-    assert gettsim, "gettsim steht nicht in requirements-oracle.txt"
-    assert "==" in gettsim[0], (
-        f"gettsim ist nicht exakt festgenagelt: {gettsim[0]!r} — bei einem Oracle ist die "
+    treffer = [z for z in zeilen if re.split(r"[<>=!~\[]", z)[0].strip().lower() == paket]
+    assert treffer, f"{paket} steht nicht in requirements-oracle.txt"
+    gepinnt = re.fullmatch(rf"{re.escape(paket)}\s*==\s*([\w.+!-]+)", treffer[0], re.I)
+    assert gepinnt, (
+        f"{paket} ist nicht exakt festgenagelt: {treffer[0]!r} — bei einem Oracle ist die "
         f"Version ein Zahlenwert, kein Ablaufdetail")
-    return gettsim[0].split("==", 1)[1].strip()
+    return gepinnt.group(1)
 
 
 def test_gettsim_ist_exakt_festgenagelt():
     """Das Vergleichs-Oracle bestimmt, welche Abweichung als bekannt gilt. Eine neue Fassung
     verschiebt die Vergleichsbasis stillschweigend — schlimmstenfalls zeigt eine
-    Allowlist-Zeile ins Leere und deckt fortan eine ECHTE Abweichung mit ab."""
-    assert _gepinnte_gettsim_version()
+    Allowlist-Zeile ins Leere und deckt fortan eine ECHTE Abweichung mit ab.
+
+    Dasselbe gilt für ttsim-backend, das Rechenwerk unter GETTSIM: gettsim 1.2 verlangt es nur
+    nach unten begrenzt, und die Fassung vom 2026-08-20 liess den Crosscheck ohne Änderung bei
+    uns rot werden. Hier prüfte erst nur die gettsim-Zeile — ein offenes `>=` beim Rechenwerk
+    blieb grün."""
+    for paket in ("gettsim", "ttsim-backend"):
+        assert _gepinnte_version(paket)
+
+
+# Ein Versions-Spezifizierer an gettsim/ttsim-backend, z.B. `gettsim==1.2` oder `ttsim-backend<1.3`.
+# Die Ziffer danach ist Pflicht: ohne sie traf `echo "=== install gettsim ==="` (gemessen).
+# ponytail: eine Version aus einer Variable (`gettsim==$V`) sieht das Muster nicht; reicht, solange
+# kein Weg so installiert — sonst die Variable mitprüfen.
+_NEBEN_PIN = re.compile(r"\b(gettsim|ttsim[-_.]backend)\s*(===?|[<>!~]=|[<>])\s*\d", re.I)
+
+
+def test_kein_installationsweg_nennt_eine_eigene_oracle_version():
+    """Die Pins standen an DREI Orten — requirements-oracle.txt, docs/setup.md und
+    scripts/install-gettsim.sh —, und nichts hielt sie gleich. Der Doku-Weg zog deshalb eine
+    andere GETTSIM-Fassung als die CI und scheiterte mit einem anderen Fehler. Jetzt installiert
+    jeder Weg `-r requirements-oracle.txt` wie ci.yml; eine Version steht nur noch dort."""
+    wege = [CI, REQ_CI, ROOT / "docs" / "setup.md", ROOT / "Makefile",
+            *sorted((ROOT / "scripts").glob("*.sh"))]
+    neben = [f"{p.relative_to(ROOT)}:{n}: {z.strip()}"
+             for p in wege
+             for n, z in enumerate(p.read_text(encoding="utf-8").splitlines(), 1)
+             if _NEBEN_PIN.search(z)]
+    assert not neben, (
+        "Version für gettsim/ttsim-backend ausserhalb von requirements-oracle.txt — dieser Weg "
+        "installiert sonst eine andere Vergleichsbasis als die CI. Statt eines eigenen Pins "
+        "`-r requirements-oracle.txt` installieren:\n  " + "\n  ".join(neben))
 
 
 def test_gepinnte_gettsim_version_ist_die_installierbare():
@@ -265,7 +296,7 @@ def test_gepinnte_gettsim_version_ist_die_installierbare():
     if ergebnis.returncode != 0:
         pytest.skip(f"gettsim im venv312 nicht installiert: {ergebnis.stderr.strip()[:120]}")
     installiert = ergebnis.stdout.strip()
-    gepinnt = _gepinnte_gettsim_version()
+    gepinnt = _gepinnte_version("gettsim")
     assert gepinnt == installiert, (
         f"requirements-oracle.txt pinnt gettsim=={gepinnt}, installiert ist laut Metadaten "
         f"{installiert}. Wurde die Zahl aus `gettsim.__version__` abgeschrieben? Die weicht ab "

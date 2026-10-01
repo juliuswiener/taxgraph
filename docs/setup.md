@@ -63,19 +63,17 @@ Es werden zwei virtuelle Umgebungen genutzt (System-Python bleibt unangetastet):
 ```bash
 # uv wird als Environment-Manager verwendet (schnell, reproduzierbar)
 uv venv oracle/.venv312 --python 3.12
-uv pip install --python oracle/.venv312/bin/python \
-  gettsim==1.2 ttsim-backend==1.2.1
+uv pip install --python oracle/.venv312/bin/python -r requirements-oracle.txt
 ```
 
-Hier stehen DIESELBEN zwei Pins wie in `requirements-oracle.txt` (`make gettsim-crosscheck`
-liest sie von dort). Beide Stellen sind noetig: `gettsim 1.2` verlangt nur
-`ttsim-backend>=1.2`, und ein freies `gettsim` zieht heute `1.3.1` **mit** `ttsim-backend 1.3.2`
-— der Harness kennt die neue Schnittstelle nicht und `golden_crosscheck.py` bricht mit
-`ValueError: The following data columns are missing.` ab. Warum die Version hier ein
-Zahlenwert ist und kein Ablaufdetail, steht in `requirements-oracle.txt` oben.
+Das ist derselbe Schritt wie in der CI (`ci.yml`, Schritt `venv312 mit GETTSIM`). Die
+Versionen von `gettsim` und `ttsim-backend` stehen NUR in `requirements-oracle.txt`; dort steht
+auch, warum sie Zahlenwerte sind und kein Ablaufdetail. Die Datei bringt ausserdem `bcrypt` und
+`PyJWT` mit — ohne sie scheitert `make gettsim-crosscheck` schon beim Sammeln der Tests, weil
+`tests/conftest.py` `server` importiert. `tests/test_ci_konfiguration.py` prueft, dass kein
+anderer Installationsweg eine eigene Version nennt.
 
-`scripts/install-gettsim.sh` legt die 3.11-Umgebung an; fuer den Differentialtest
-ist die 3.12-Umgebung noetig (Kommandos oben).
+`scripts/install-gettsim.sh` fuehrt genau diese zwei Kommandos aus.
 
 ## 3. Differentialtest ausfuehren
 

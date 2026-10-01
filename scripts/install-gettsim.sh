@@ -10,11 +10,10 @@ echo "=== create venv oracle/.venv312 (Python 3.12) ==="
 uv venv oracle/.venv312 --python 3.12
 
 echo "=== install gettsim ==="
-# Dieselben zwei Pins wie requirements-oracle.txt. Beide noetig: gettsim 1.2 verlangt nur
-# `ttsim-backend>=1.2`, und ein freies gettsim zieht heute 1.3.1 mit ttsim-backend 1.3.2 --
-# der Harness kennt die neue Schnittstelle nicht (ValueError: data columns are missing).
-# Hebung nur beide zusammen, mit Harness-Anpassung (requirements-oracle.txt, Kommentar oben).
-uv pip install --python oracle/.venv312/bin/python gettsim==1.2 ttsim-backend==1.2.1
+# Dieselbe Datei wie die CI (ci.yml, Schritt "venv312 mit GETTSIM"): die Versionen von gettsim
+# und ttsim-backend stehen NUR dort, mit Begruendung im Kopf der Datei. Sie bringt auch
+# bcrypt/PyJWT mit, ohne die schon das Sammeln von tests/ scheitert (conftest importiert server).
+uv pip install --python oracle/.venv312/bin/python -r requirements-oracle.txt
 
 echo "=== versions ==="
 # Metadaten, NICHT `gettsim.__version__`: das Modul meldet 1.2.1, waehrend die Distribution
