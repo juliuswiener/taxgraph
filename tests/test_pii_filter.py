@@ -223,16 +223,18 @@ class TestNoFalsePositives:
 
 # --------------------------------------------------------------- Naht-Mutationsprobe
 class TestNaht:
-    def test_filter_ist_im_echten_pfad_verdrahtet(self, monkeypatch):
+    def test_filter_ist_im_echten_pfad_verdrahtet(self, monkeypatch, tmp_path):
         """Setzt raise RuntimeError('NAHT') am Anfang von filtere — der Test
         muss über den echten /chat-Pfad (api.chat) fallen, nicht nur pii_filter.py.
         Fällt nur test_pii_filter.py, ist die Naht ungetestet."""
-        # api_llm importiert filtere direkt (from pii_filter import filtere)
-        # → api_llm.filtere monkeypatchen, nicht pii_filter.filtere
+        import pii_filter
+
+        monkeypatch.setattr(AUDIT, "AUDIT_DIR", str(tmp_path))   # nie ins echte audit.jsonl
+
         def kaputt(text):
             raise RuntimeError("NAHT — Filter im Pfad bestätigt")
 
-        monkeypatch.setattr(api_llm, "filtere", kaputt)
+        monkeypatch.setattr(pii_filter, "filtere", kaputt)
 
         # _llm_dialog muss filtere aufrufen → NAHT
         import llm_client
@@ -241,6 +243,50 @@ class TestNaht:
 
         with pytest.raises(RuntimeError, match="NAHT"):
             api_llm._llm_dialog("Hallo Welt", [], user_id="test")
+
+    def test_patch_am_quellnamen_erreicht_den_echten_pfad(self, monkeypatch, tmp_path):
+        """DIE NAHT SELBST: `pii_filter.filtere` gepatcht MUSS im echten Pfad ankommen.
+
+        Am 2026-10-01 gemessen: `api_llm.py:25` band `filtere` per `from pii_filter import
+        filtere` als EIGENEN Namen. Ein Test, der `pii_filter.filtere` umbog, war damit STILL
+        WIRKUNGSLOS — der echte Pfad rief weiter das Original, der PII-Filter lief ungefiltert,
+        und der Test blieb grün. Dieselbe Bauart wie das Ablage-Leck, eine Ebene tiefer, auf
+        einem DATENSCHUTZPFAD: was hier still durchgeht, geht an den LLM-Anbieter.
+
+        Der Test prüft deshalb den QUELLNAMEN, nicht den gebundenen: er schickt einen Text mit
+        IBAN durch `_llm_dialog` und belegt am Modell-Argument, dass die Maskierung des
+        gepatchten Filters angekommen ist. Ohne den Umbau sieht der Pfad den Patch nicht.
+        """
+        import pii_filter
+
+        monkeypatch.setattr(AUDIT, "AUDIT_DIR", str(tmp_path))   # nie ins echte audit.jsonl
+
+        # Ein Filter, der NICHT maskiert, sondern markernt — so ist am Modell-Argument
+        # ablesbar, WER den Text zuletzt angefasst hat (Original oder Patch).
+        def markiere(text):
+            return f"<gepatcht>{text}", ["probe"]
+
+        monkeypatch.setattr(pii_filter, "filtere", markiere)
+
+        import llm_client
+        gesehen: list[str] = []
+
+        def merke(rolle, messages, fixture_id=None, schema=None):
+            for m in messages:
+                gesehen.append(m.get("content", ""))
+            return llm_client.Completion(text='{"aussagen": []}', provider="TestAnbieter",
+                                         finish="stop")
+
+        monkeypatch.setattr(llm_client, "complete", merke)
+
+        api_llm._llm_dialog("IBAN DE12500105170648489890", [], user_id="test")
+
+        assert any("<gepatcht>" in g for g in gesehen), (
+            "Der Patch auf `pii_filter.filtere` ist im echten Pfad NICHT angekommen. "
+            "`api_llm` haelt eine eigene Wert-Kopie des Filters (from-Import) — der echte "
+            "Pfad rief das Original, der Patch war wirkungslos. Genau diese Bauart liess "
+            "einen Test gruen bleiben, waehrend der PII-Filter ungefiltert lief."
+        )
 
 
 # --------------------------------------------------------------- Kategorien-Reihenfolge

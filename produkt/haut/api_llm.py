@@ -21,8 +21,14 @@ import re
 import audit  # noqa: E402 — P1.6 Audit-Log (sys.path via api.py)
 import flow  # noqa: E402 — Fluss-Mitschnitt, nur mit TAXGRAPH_FLOW=1
 import kontoauszug_writer as KW
+import pii_filter  # noqa: E402 — PII-Filter vor ausgehendem LLM-Call. MODUL, nicht Name:
+# `from pii_filter import filtere` bände den WERT beim Import. Ein Test, der
+# `pii_filter.filtere` umbiegt, wäre dann still wirkungslos — der echte Pfad riefe weiter das
+# Original (nachgewiesen am 2026-10-01, tests/test_pii_filter.py::TestNaht). Auf einem
+# Datenschutzpfad ist das die teuerste Bauart: der Filter liefe ungefiltert an den Anbieter,
+# und der Test bliebe grün. Der Zugriff unten ist `pii_filter.filtere(...)`, also zur
+# AUFRUFZEIT — dieselbe Naht wie `audit._ablage()` und `api_auth._AUTH_USER`.
 import traverser as TR  # noqa: E402 — nur lade_instanz_gruppen (Zählfeld je Instanz-Gruppe)
-from pii_filter import filtere  # noqa: E402 — PII-Filter vor ausgehendem LLM-Call
 
 # Exception für Exception-Handling in api.py (ohne dass api.py selbst llm_client importiert)
 try:
@@ -698,7 +704,7 @@ def _aussagen_parse(text: str, freitext: str) -> list[dict]:
     for a in j["aussagen"]:
         if not isinstance(a, dict):
             continue
-        satz = filtere(str(a.get("text", "")).strip()[:300])[0]
+        satz = pii_filter.filtere(str(a.get("text", "")).strip()[:300])[0]
         if not satz:
             continue
         beleg = str(a.get("beleg", ""))[:300]
@@ -1013,8 +1019,8 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
     # Stufe 1 bzw. auf `gefiltert` — der Rohtext verlässt dieses Haus an keiner der drei Stellen.
     # Die Aussagen aus Stufe 1 sind aus dem gefilterten Text gebildet; was der Filter entfernt hat,
     # hat das Modell nie gesehen und kann es folglich nicht zurückschreiben.
-    gefiltert, kategorien = filtere(freitext)
-    kontext_gefiltert, kategorien_k = filtere(kontext) if kontext else ("", [])
+    gefiltert, kategorien = pii_filter.filtere(freitext)
+    kontext_gefiltert, kategorien_k = pii_filter.filtere(kontext) if kontext else ("", [])
     import llm_client
     kopf = (f"pii_kategorien={kategorien}, kontext_kategorien={kategorien_k}, "
             f"textlaenge_vor={len(freitext)}, textlaenge_nach={len(gefiltert)}")
