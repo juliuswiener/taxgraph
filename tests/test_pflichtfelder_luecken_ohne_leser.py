@@ -1,13 +1,16 @@
-"""ROTES GATE: `pflichtfelder_luecken` wird geschrieben und von keiner Produktstelle gelesen.
+"""`pflichtfelder_luecken` wird geschrieben und von keiner Produktstelle gelesen.
 
 Warum es das gibt
 -----------------
-`EM.deklariere()` liefert 12 Schluessel. Fuenf davon liest keine Produktstelle:
-`basis_snapshot`, `vollstaendig`, `pflichtfelder_luecken`, `pflichtfelder_vollstaendig`
-und `dokumentiert`. `pflichtfelder_luecken` ist der einzige mit einer eigenen,
-unersetzlichen Aussage: er kennt die FELD-ABWESENHEIT gegen die gepflegte
-PFLICHTFELDER-Liste, die die Hauptschleife in `deklariere()` per Konstruktion nie
-sehen kann (`produkt/mapping/est_mapping.py:546`).
+`EM.deklariere()` liefert 12 Schluessel. Vier davon liest keine Produktstelle:
+`basis_snapshot`, `vollstaendig`, `pflichtfelder_luecken`,
+`pflichtfelder_vollstaendig`. `dokumentiert` liest nur `zuruecklesen()`, und das ruft
+kein Produktpfad auf — fuenf ohne Produktleser.
+
+`pflichtfelder_luecken` ist der einzige unter ihnen mit einer eigenen, unersetzlichen
+Aussage: er kennt die FELD-ABWESENHEIT gegen die gepflegte PFLICHTFELDER-Liste, die die
+Hauptschleife in `deklariere()` per Konstruktion nie sehen kann
+(`produkt/mapping/est_mapping.py:546`).
 
 Gemessen am 2026-10-01 (HEAD `1065e25`, Korpus 192 Fallakten):
 
@@ -21,8 +24,23 @@ Gemessen am 2026-10-01 (HEAD `1065e25`, Korpus 192 Fallakten):
   Bedingung „mindestens eines der Gruppe" und bekommt zwei Felder als fehlend gemeldet,
   die diese Scheibe nie fragt.
 
-Der Test geht ueber den ECHTEN Weg (POST /fall -> POST /event -> POST /einreichen),
+Die Tests gehen ueber den ECHTEN Weg (POST /fall -> POST /event -> POST /einreichen),
 nicht ueber den Direktaufruf von `deklariere()`. Nur so zaehlt, was der Nutzer sieht.
+
+xfail(strict=True, raises=AssertionError) statt „einfach rot" — wie in
+tests/test_luf_gewinn_kz_fehlt.py: ein dauerhaft roter Test im Baum zerstoert das Signal
+„rot heisst, etwas ist kaputtgegangen", und unter `make unit` bricht er die volle Suite
+ab. `raises=` ist Pflicht, nicht Zierde: es nagelt fest, WORAN der Test scheitert, nicht
+nur DASS er scheitert. Sobald ein Leser gebaut wird, kippt der Test auf XPASS und
+erzwingt Aufmerksamkeit.
+
+Die Vorbedingungs-Assertions in beiden xfail-Tests stehen VOR der roten: sie belegen,
+dass der Fall ueberhaupt so gebaut ist, wie der Befund ihn beschreibt. Scheitern sie,
+ist das ein ERROR und kein xfail — die Vorbedingung ist dann gebrochen und nicht der
+Defekt bestaetigt.
+
+Die dritte Funktion hier ist KEIN xfail: die Kontrollzeile muss gruen bleiben, sonst
+misst die Datei „irgendetwas ist kaputt" statt der fehlenden Leser.
 """
 from __future__ import annotations
 
@@ -103,6 +121,26 @@ def _fall(base, fid, scheibe, felder):
         assert st in (200, 201), f"POST /event {f} -> {st} {b}"
 
 
+def test_kontrollzeile_vollstaendiger_fall_hat_keine_luecke(base):
+    """GRUEN, kein xfail. Die Kontrolle fuer die beiden Tests darunter.
+
+    Ohne diese Zeile misst die Datei nicht die fehlenden Leser, sondern nur, dass
+    irgendetwas nicht geht: `pflichtfelder_luecken` muss auf `gesamt` leer sein, wenn
+    alle 12 Felder beantwortet sind. Faellt das hier um, ist die Messmechanik hin.
+    """
+    _fall(base, "pl0", "gesamt", list(_VOLL))
+    st, b = _req(base, "GET", "/fall/pl0/deklaration")
+    assert st == 200, f"GET /deklaration -> {st} {b}"
+    assert [e["feld_id"] for e in (b.get("pflichtfelder_luecken") or [])] == [], (
+        "Vollstaendiger Fall darf keine Pflichtfeldluecke melden.")
+    assert b.get("eingaben_konsistent") is True, (
+        "Vollstaendiger Fall muss stimmig sein.")
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
+    "`einreichen()` befragt nur `eingaben_konsistent`, nicht `pflichtfelder_luecken`. "
+    "Der Fall faellt bis ERiC durch und der Nutzer liest eine Fremdmeldung statt des "
+    "Feldnamens. Erwartet 409 'deklaration_unvollstaendig'."))
 def test_abgabegate_nennt_die_pflichtfeldluecke_selbst(base):
     """Das Abgabe-Gate muss `pflichtfelder_luecken` befragen — heute tut es das nicht.
 
@@ -126,7 +164,7 @@ def test_abgabegate_nennt_die_pflichtfeldluecke_selbst(base):
     #   mit Hersteller-ID  -> 422 plausibilitaet_verletzt, rc=610001002 (ERiC urteilt)
     #   ohne Hersteller-ID -> 422 xml_nicht_baubar (der Absender-Block bricht ab)
     # Erwartet ist 409 mit `deklaration_unvollstaendig` — dem Grund, den nur
-    # `pflichtfelder_luecken` kennt. Der Test ist damit in beiden Umgebungen rot.
+    # `pflichtfelder_luecken` kennt. Damit xfail in beiden Umgebungen.
     assert st == 409 and b.get("grund") == "deklaration_unvollstaendig", (
         f"Erwartet 409 'deklaration_unvollstaendig', erhalten {st} ({b.get('grund')}, "
         f"rc={b.get('rc')}). Ohne Leser von `pflichtfelder_luecken` faellt der Fall bis "
@@ -136,6 +174,10 @@ def test_abgabegate_nennt_die_pflichtfeldluecke_selbst(base):
         "Der Grund muss die Luecke nennen, die `pflichtfelder_luecken` kennt.")
 
 
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
+    "`_pflichtfelder_luecken()` prueft gegen die ungefilterte PFLICHTFELDER-Liste "
+    "statt gegen den Kegel der laufenden Scheibe: `rentner_gesamt` meldet zwei Felder "
+    "als fehlend, die es nie fragen kann."))
 def test_rentner_gesamt_meldet_keine_felder_die_sein_kegel_nie_fragt(base):
     """FALSCHALARM: `rentner_gesamt` kann zwei der drei Gruppenfelder nie liefern.
 
@@ -143,7 +185,7 @@ def test_rentner_gesamt_meldet_keine_felder_die_sein_kegel_nie_fragt(base):
     nicht `steuerklasse`. Wer die Lohnsteuer eintraegt, erfuellt „mindestens eines der
     Gruppe" und bekommt die beiden unerreichbaren Felder als fehlend gemeldet.
 
-    Rot, solange `_pflichtfelder_luecken()` gegen die ungefilterte PFLICHTFELDER-Liste
+    xfail, solange `_pflichtfelder_luecken()` gegen die ungefilterte PFLICHTFELDER-Liste
     prueft statt gegen den Kegel der laufenden Scheibe.
     """
     _fall(base, "pl2", "rentner_gesamt",
@@ -151,6 +193,9 @@ def test_rentner_gesamt_meldet_keine_felder_die_sein_kegel_nie_fragt(base):
     st, b = _req(base, "GET", "/fall/pl2/deklaration")
     assert st == 200, f"GET /deklaration -> {st} {b}"
     luecken = [e["feld_id"] for e in (b.get("pflichtfelder_luecken") or [])]
+    # Vorbedingung: die Lohnsteuer ist beantwortet und liegt im Kegel, die Gruppe greift.
+    assert "p36_lohnsteuer" not in luecken, (
+        "Vorbedingung: p36_lohnsteuer ist beantwortet und im Kegel von 'rentner_gesamt'.")
     unerreichbar = sorted(set(luecken) & {"bruttoarbeitslohn", "steuerklasse"})
     assert not unerreichbar, (
         f"Als fehlend gemeldet, obwohl auf 'rentner_gesamt' nicht beantwortbar: "
