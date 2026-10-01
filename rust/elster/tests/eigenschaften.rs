@@ -8,6 +8,7 @@
 )]
 
 use std::collections::HashMap;
+use std::io::Write;
 use std::sync::OnceLock;
 
 use bindung::Bindung;
@@ -35,6 +36,45 @@ fn bindungen() -> &'static [Bindung] {
 fn index() -> &'static HashMap<String, &'static Bindung> {
     static CELL: OnceLock<HashMap<String, &'static Bindung>> = OnceLock::new();
     CELL.get_or_init(|| store::baue_nachschlag(bindungen()))
+}
+
+/// Liegen beide Schemas fuer `vz`? Fehlt eines, ist das rot, ausser `TAXGRAPH_OHNE_XSD=1` —
+/// dieselbe Regel wie `tests/conftest.py`.
+///
+/// ponytail: Rumpf wortgleich mit `schemas_da` in `bescheid/tests/einreichung_e2e.rs`; verlangt
+/// auch das `extern`-XSD, wo ein Test nur `E10-<vz>.xsd` liest (die Auslieferung bringt beide).
+/// Braucht ein dritter Ort die Regel (etwa `src/deklaration.rs`), gehoert sie nach
+/// `elster::testhilfe` hinter ein Feature.
+fn schemas_da(vz: i64) -> bool {
+    let fehlt: Vec<String> = [
+        (
+            format!("E10-{vz}.xsd"),
+            elster::finde_schema(vz, "E10-{jahr}.xsd"),
+        ),
+        (
+            format!("elster11_E10_{vz}_extern.xsd"),
+            elster::finde_xsd_schema(&vz.to_string()),
+        ),
+    ]
+    .into_iter()
+    .filter_map(|(name, pfad)| pfad.is_none().then_some(name))
+    .collect();
+    if fehlt.is_empty() {
+        return true;
+    }
+    assert!(
+        std::env::var("TAXGRAPH_OHNE_XSD").as_deref() == Ok("1"),
+        "ERiC-Schema fehlt: {fehlt:?}. ERIC_DIR auf die ERiC-Auslieferung setzen; \
+         TAXGRAPH_OHNE_XSD=1 nur, wo kein ERiC liegen kann (CI)."
+    );
+    // Direkt auf stderr: `eprintln!` faengt libtest ein, die CI saehe den Verzicht sonst nie.
+    #[allow(clippy::explicit_write)]
+    writeln!(
+        std::io::stderr(),
+        "TAXGRAPH_OHNE_XSD=1: {fehlt:?} fehlt, XML und XSD NICHT geprueft"
+    )
+    .unwrap();
+    false
 }
 
 fn laie_herkunft() -> Herkunft {
@@ -106,8 +146,7 @@ fn vorlaeufig_deklariert_nie() {
 /// elster-xml-steuerzeichen-im-textwert, `fuzz/regressions/elster/xml-nul-im-textwert.bin`).
 #[test]
 fn steuerzeichen_im_textwert_ist_harter_fehler() {
-    if elster::finde_schema(2025, "E10-{jahr}.xsd").is_none() {
-        println!("E10-2025.xsd fehlt — source_unavailable");
+    if !schemas_da(2025) {
         return;
     }
     let d = deklariere(
@@ -269,10 +308,10 @@ fn verbietet_null(meta: &HashMap<String, elster::KzMeta>, kz: &str) -> bool {
 /// was das XSD zusaetzlich nahelegt, wird gezaehlt und ausgegeben (offene Punkte, s. Bericht).
 #[test]
 fn kz_mengen_aus_xsd() {
-    let Some(pfad) = elster::finde_schema(2025, "E10-{jahr}.xsd") else {
-        println!("E10-2025.xsd fehlt — source_unavailable");
+    if !schemas_da(2025) {
         return;
-    };
+    }
+    let pfad = elster::finde_schema(2025, "E10-{jahr}.xsd").unwrap();
     let meta = elster::kz_meta(&pfad, "E10").unwrap();
     let typ = |kz: &str| meta.get(kz).map_or("", |m| m.type_name.as_str());
     for kz in elster::DATUMS_KZ {
@@ -291,13 +330,12 @@ fn kz_mengen_aus_xsd() {
     for kz in elster::null_unzulaessig(2025).unwrap() {
         assert!(verbietet_null(&meta, kz), "{kz}: {}", typ(kz));
     }
-    if let Some(pfad24) = elster::finde_schema(2024, "E10-{jahr}.xsd") {
+    if schemas_da(2024) {
+        let pfad24 = elster::finde_schema(2024, "E10-{jahr}.xsd").unwrap();
         let meta24 = elster::kz_meta(&pfad24, "E10").unwrap();
         for kz in elster::null_unzulaessig(2024).unwrap() {
             assert!(verbietet_null(&meta24, kz), "2024 {kz}: {}", typ(kz));
         }
-    } else {
-        println!("E10-2024.xsd fehlt — die 2024er Menge ungeprueft (source_unavailable)");
     }
     let cent_kz: Vec<&str> = bindungen()
         .iter()
@@ -334,10 +372,10 @@ fn kz_mengen_aus_xsd() {
 /// Geprueft wird jede Kz in allen drei Buckets, nicht nur die Kz des Feldes.
 #[test]
 fn null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet() {
-    let Some(pfad) = elster::finde_schema(2025, "E10-{jahr}.xsd") else {
-        println!("E10-2025.xsd fehlt — source_unavailable");
+    if !schemas_da(2025) {
         return;
-    };
+    }
+    let pfad = elster::finde_schema(2025, "E10-{jahr}.xsd").unwrap();
     let meta = elster::kz_meta(&pfad, "E10").unwrap();
     // Jeder Schreibweg ueber die Bindung: 1:1, Instanz (`__2`), Person B (Klasse g); 50 Cent werden
     // auf 0 Euro abgerundet. Die Art-Verzweigung (Klasse f) haengt an `pub(crate)`-Tabellen, sie
@@ -474,6 +512,9 @@ fn leere_huellen(xml: &str) -> Vec<String> {
 /// checkESt weist die ganze Abgabe ab. Ticket: elster-leerer-container-neben-ankreuzfeld-nein.
 #[test]
 fn ankreuzfeld_nein_hinterlaesst_keine_leere_huelle() {
+    if !schemas_da(2025) {
+        return;
+    }
     let f = einzeln(
         "rentner_hilflos_blind_taubblind",
         json!(false),
@@ -495,6 +536,9 @@ fn ankreuzfeld_nein_hinterlaesst_keine_leere_huelle() {
 /// Gegenprobe: "Ja" fuellt den Container. Das Gate darf hier nicht anschlagen.
 #[test]
 fn gegenprobe_ja_fuellt_die_huelle() {
+    if !schemas_da(2025) {
+        return;
+    }
     let f = einzeln(
         "rentner_hilflos_blind_taubblind",
         json!(true),
@@ -517,6 +561,9 @@ fn gegenprobe_ja_fuellt_die_huelle() {
 /// Gegenprobe: wird das Feld gar nicht gestellt, entsteht ueberhaupt kein Container.
 #[test]
 fn gegenprobe_feld_nicht_gestellt_erzeugt_keine_huelle() {
+    if !schemas_da(2025) {
+        return;
+    }
     let f = einzeln("stammdaten_nachname", json!("Muster"), Zustand::Bestaetigt);
     let d = deklariere(&f, index(), 2025, None).unwrap();
     let opt = XmlOptionen {
@@ -579,6 +626,9 @@ fn posten_xml(gruppe: &str, art: &str, betrag: &str, werte: &[(i64, i64)]) -> St
 /// AK1 (Rust-Seite): ein Topf mit ZWEI Posten -> EIN `<HA_35a>` mit ZWEI `<Einz>`.
 #[test]
 fn hh_top_zwei_posten_ein_ha35a() {
+    if !schemas_da(2025) {
+        return;
+    }
     for (gruppe, art, betrag) in [
         ("hh_minijob", "hh_minijob_art", "hh_minijob_betrag"),
         (
@@ -609,6 +659,9 @@ fn hh_top_zwei_posten_ein_ha35a() {
 /// AK2 (Rust-Seite): Gegenprobe — ein Posten bleibt ein `<HA_35a>` mit einem `<Einz>`.
 #[test]
 fn hh_top_ein_posten_bleibt_unveraendert() {
+    if !schemas_da(2025) {
+        return;
+    }
     for (gruppe, art, betrag) in [
         ("hh_minijob", "hh_minijob_art", "hh_minijob_betrag"),
         (
@@ -634,6 +687,9 @@ fn hh_top_ein_posten_bleibt_unveraendert() {
 fn hh_top_mehrere_posten_ist_xsd_valide() {
     for vz in ["2024", "2025"] {
         let jahr: i64 = vz.parse().unwrap();
+        if !schemas_da(jahr) {
+            continue;
+        }
         let felder: Felder = [
             (
                 "hh_minijob_art".to_owned(),
@@ -732,6 +788,9 @@ fn seitengate_voll_aber_geburtsdatum_und_konfession_fehlen() {
 /// Gegenprobe: ohne sie waere eine Pruefung, die alles ablehnt, ebenfalls gruen.
 #[test]
 fn gegenprobe_vollstaendiger_store_ergibt_das_xml() {
+    if !schemas_da(2025) {
+        return;
+    }
     let mut paare = seitengate();
     paare.push(("stammdaten_geburtsdatum", json!("05.05.1955")));
     paare.push(("kist_konfession", json!("keine")));

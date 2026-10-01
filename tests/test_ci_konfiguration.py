@@ -284,24 +284,29 @@ def test_gepinnte_gettsim_version_ist_die_installierbare():
 
     Der Test liest die INSTALLIERTE Metadaten-Version aus dem venv312 und vergleicht. Ohne
     venv312 (jeder CI-Job ausser dem Crosscheck, frischer Checkout) übersprungen — die
-    Alternative wäre eine Netzabfrage bei PyPI in einer Unit-Suite."""
+    Alternative wäre eine Netzabfrage bei PyPI in einer Unit-Suite.
+
+    Dasselbe gilt für ttsim-backend, das Rechenwerk unter GETTSIM, seit es gepinnt ist. Hier
+    prüfte erst nur gettsim — ein ttsim-backend-Pin neben der installierten Fassung blieb grün
+    (gemessen 2026-10-02 mit verstelltem Pin 1.2 statt 1.2.1)."""
     venv_py = ROOT / "oracle" / ".venv312" / "bin" / "python"
     if not venv_py.exists():
         pytest.skip("oracle/.venv312 nicht vorhanden — Metadaten nicht lesbar")
     import subprocess
-    ergebnis = subprocess.run(
-        [str(venv_py), "-c",
-         "import importlib.metadata as m; print(m.version('gettsim'))"],
-        capture_output=True, text=True, timeout=30)
-    if ergebnis.returncode != 0:
-        pytest.skip(f"gettsim im venv312 nicht installiert: {ergebnis.stderr.strip()[:120]}")
-    installiert = ergebnis.stdout.strip()
-    gepinnt = _gepinnte_version("gettsim")
-    assert gepinnt == installiert, (
-        f"requirements-oracle.txt pinnt gettsim=={gepinnt}, installiert ist laut Metadaten "
-        f"{installiert}. Wurde die Zahl aus `gettsim.__version__` abgeschrieben? Die weicht ab "
-        f"— pip und uv kennen nur die Metadaten-Version, und ein Pin auf die andere lässt den "
-        f"CI-Job mit 'no version of gettsim=={gepinnt}' scheitern.")
+    for paket in ("gettsim", "ttsim-backend"):
+        ergebnis = subprocess.run(
+            [str(venv_py), "-c",
+             f"import importlib.metadata as m; print(m.version({paket!r}))"],
+            capture_output=True, text=True, timeout=30)
+        if ergebnis.returncode != 0:
+            pytest.skip(f"{paket} im venv312 nicht installiert: {ergebnis.stderr.strip()[:120]}")
+        installiert = ergebnis.stdout.strip()
+        gepinnt = _gepinnte_version(paket)
+        assert gepinnt == installiert, (
+            f"requirements-oracle.txt pinnt {paket}=={gepinnt}, installiert ist laut Metadaten "
+            f"{installiert}. Wurde die Zahl aus dem `__version__` des Moduls abgeschrieben? Die "
+            f"weicht ab — pip und uv kennen nur die Metadaten-Version, und ein Pin auf die andere "
+            f"lässt den CI-Job mit 'no version of {paket}=={gepinnt}' scheitern.")
 
 
 # ------------------------------------------------------------ Betrieb: Grenzen und Rechte
