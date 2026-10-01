@@ -646,3 +646,77 @@ fn hh_top_mehrere_posten_ist_xsd_valide() {
         assert!(ok, "VZ {vz}: {meldung}");
     }
 }
+
+/// Was das Vorsatz-Seitengate verlangt: Name, Anschrift, Bankentscheidung, Steuernummer.
+fn seitengate() -> Vec<(&'static str, Value)> {
+    vec![
+        ("stammdaten_nachname", json!("Maier")),
+        ("stammdaten_vorname", json!("Hans")),
+        ("stammdaten_strasse", json!("Musterstr.")),
+        ("stammdaten_hausnummer", json!("5")),
+        ("stammdaten_plz", json!("55555")),
+        ("stammdaten_wohnort", json!("Musterort")),
+        ("stammdaten_keine_bankverbindung", json!(true)),
+        ("stammdaten_steuernummer", json!("9181081508155")),
+    ]
+}
+
+fn bestaetigt(paare: &[(&str, Value)]) -> Felder {
+    paare
+        .iter()
+        .map(|(id, w)| ((*id).to_owned(), feld(w.clone(), Zustand::Bestaetigt)))
+        .collect()
+}
+
+fn abgabe_xml(f: &Felder) -> Result<String, elster::XmlFehler> {
+    let d = deklariere(f, index(), None).unwrap();
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        abgabefaehig: true,
+        snapshot: Some(f),
+        ..XmlOptionen::default()
+    };
+    erzeuge_xml(&d, &opt)
+}
+
+/// Umfangs-Pruefung am Writer (Original: `tests/test_pflichtfelder_am_writer.py`). Ein leerer
+/// Store widerspricht sich nicht, also ist er konsistent — abgabefaehig ist er nicht.
+#[test]
+fn leerer_store_ergibt_kein_abgabefaehiges_xml() {
+    let fehler = abgabe_xml(&Felder::new()).unwrap_err();
+    assert!(fehler.0.contains("pflichtfelder_vollstaendig"), "{fehler}");
+    for id in [
+        "stammdaten_nachname",
+        "stammdaten_vorname",
+        "stammdaten_geburtsdatum",
+        "stammdaten_strasse",
+        "stammdaten_plz",
+        "stammdaten_wohnort",
+        "kist_konfession",
+    ] {
+        assert!(fehler.0.contains(id), "{id} fehlt in der Meldung: {fehler}");
+    }
+}
+
+/// Der Fall, den vorher erst ERiC fing (gemessen 2026-10-01, rc=610001002): alles fuer den
+/// Vorsatz da, Geburtsdatum und Konfession nicht. Das Seitengate sieht diese zwei nicht.
+#[test]
+fn seitengate_voll_aber_geburtsdatum_und_konfession_fehlen() {
+    let fehler = abgabe_xml(&bestaetigt(&seitengate())).unwrap_err();
+    assert_eq!(
+        fehler.0,
+        "abgabefaehig=True verlangt pflichtfelder_vollstaendig=True — fehlend: \
+         ['stammdaten_geburtsdatum', 'kist_konfession']. checkESt lehnt das XML sonst ab \
+         (rc=610001002)."
+    );
+}
+
+/// Gegenprobe: ohne sie waere eine Pruefung, die alles ablehnt, ebenfalls gruen.
+#[test]
+fn gegenprobe_vollstaendiger_store_ergibt_das_xml() {
+    let mut paare = seitengate();
+    paare.push(("stammdaten_geburtsdatum", json!("05.05.1955")));
+    paare.push(("kist_konfession", json!("keine")));
+    let xml = abgabe_xml(&bestaetigt(&paare)).unwrap();
+    assert!(xml.contains("<Vorsatz>"));
+}
