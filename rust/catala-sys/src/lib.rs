@@ -47,6 +47,9 @@ fn ergebnis<T>(rc: i32, wert: T, vz_code: i32) -> Result<T, CatalaFehler> {
 /// Wie [`ergebnis`], fuer Scopes ohne `Veranlagungszeitraum`-Parameter (der `TG_ERR_VZ`-Zweig
 /// ist fuer diese Scopes unerreichbar, weil ihr `tg_*`-Wrapper `tg_vz()` nie aufruft).
 fn ergebnis_ohne_vz<T>(rc: i32, wert: T) -> Result<T, CatalaFehler> {
+    // Ein anderer Code hiesse: C-Wrapper und Rust-Seite passen nicht mehr zusammen. Unten kaeme
+    // er still als `Assertion` an.
+    debug_assert!(matches!(rc, 0 | 1));
     if rc == 0 {
         Ok(wert)
     } else {
@@ -963,6 +966,13 @@ pub fn raumkostenabzug(
         let mut ffi_out = TgRaumkostenabzugOutFfi::default();
         // SAFETY: siehe `entfernungspauschale`.
         let rc = unsafe { tg_raumkostenabzug(&raw const ffi_in, &raw mut ffi_out) };
+        // Catala setzt `abzug_gesamt` gleich der Summe der Teile. Sonst ist ein Feld im C-Struct
+        // verrutscht, oder `mpz_get_si` hat einen Wert jenseits von `i64` abgeschnitten.
+        debug_assert_eq!(
+            i128::from(ffi_out.abzug_gesamt_cents),
+            i128::from(ffi_out.abzug_arbeitszimmer_cents)
+                + i128::from(ffi_out.abzug_homeoffice_cents)
+        );
         ergebnis_ohne_vz(
             rc,
             RaumkostenabzugErgebnis {
