@@ -221,9 +221,7 @@ fn nach_vordruck<'r>(
         let mit: Vec<&Bindung> = gruppe
             .iter()
             .copied()
-            .filter(|b| {
-                b.elster_kz.as_deref().is_some_and(|kz| !kz.is_empty()) && klasse(b) == Some(k)
-            })
+            .filter(|b| b.elster_kz.is_some() && klasse(b) == Some(k))
             .collect();
         if mit.len() < 2 {
             continue;

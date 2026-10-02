@@ -142,7 +142,7 @@ pub fn einreichungs_xml(
         &felder,
         &bindung,
         i64::from(vz.jahr()),
-        Some(&sid.to_string()),
+        Some(&sid),
     )?;
     if !deklaration.eingaben_konsistent() {
         return Err(EinreichFehler::DeklarationUnvollstaendig(

@@ -5,15 +5,21 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
+use domain::Vz;
+
 use crate::xsd::finde_datei;
 
 /// Rahmen-Schema `elster11_E10_<vz>_extern.xsd` unter den ERiC-Wurzeln.
 ///
 /// ```
-/// assert!(elster::finde_xsd_schema("1999").is_none());
+/// use domain::Vz;
+/// // Mit der ERiC-Auslieferung liegt das Schema, ohne sie nicht.
+/// if let Some(pfad) = elster::finde_xsd_schema(Vz::Vz2025) {
+///     assert!(pfad.ends_with("elster11_E10_2025_extern.xsd"));
+/// }
 /// ```
 #[must_use]
-pub fn finde_xsd_schema(vz: &str) -> Option<PathBuf> {
+pub fn finde_xsd_schema(vz: Vz) -> Option<PathBuf> {
     finde_datei(&format!("elster11_E10_{vz}_extern.xsd"))
 }
 
@@ -29,7 +35,7 @@ enum Quelle<'a> {
     Text(&'a [u8]),
 }
 
-fn validiere(quelle: &Quelle<'_>, vz: &str) -> (bool, String) {
+fn validiere(quelle: &Quelle<'_>, vz: Vz) -> (bool, String) {
     let Some(bin) = xmllint() else {
         return (
             false,
@@ -80,21 +86,23 @@ fn validiere(quelle: &Quelle<'_>, vz: &str) -> (bool, String) {
 /// `(ok, meldung)`; `ok` genau dann, wenn `xmllint` die Datei gegen das E10-`vz`-Schema annimmt.
 ///
 /// ```
-/// let (ok, _meldung) = elster::validiere_xsd(std::path::Path::new("/gibt/es/nicht.xml"), "2025");
+/// use domain::Vz;
+/// let (ok, _meldung) = elster::validiere_xsd(std::path::Path::new("/gibt/es/nicht.xml"), Vz::Vz2025);
 /// assert!(!ok);
 /// ```
 #[must_use]
-pub fn validiere_xsd(xml_pfad: &Path, vz: &str) -> (bool, String) {
+pub fn validiere_xsd(xml_pfad: &Path, vz: Vz) -> (bool, String) {
     validiere(&Quelle::Datei(xml_pfad), vz)
 }
 
 /// Wie [`validiere_xsd`], das XML kommt ueber stdin (keine Datei auf der Platte).
 ///
 /// ```
-/// let (ok, _meldung) = elster::validiere_xsd_text(b"<kaputt", "2025");
+/// use domain::Vz;
+/// let (ok, _meldung) = elster::validiere_xsd_text(b"<kaputt", Vz::Vz2025);
 /// assert!(!ok);
 /// ```
 #[must_use]
-pub fn validiere_xsd_text(xml: &[u8], vz: &str) -> (bool, String) {
+pub fn validiere_xsd_text(xml: &[u8], vz: Vz) -> (bool, String) {
     validiere(&Quelle::Text(xml), vz)
 }

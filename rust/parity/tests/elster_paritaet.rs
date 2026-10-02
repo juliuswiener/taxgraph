@@ -325,7 +325,7 @@ fn vergleiche_fall(
         &felder,
         index(),
         datei.veranlagungszeitraum.als_i64_saettigend(),
-        Some(&sid.to_string()),
+        Some(&sid),
     );
     match (&rust, py["deklariere"].get("ok")) {
         (Ok(d), Some(p)) => {
@@ -408,7 +408,11 @@ fn vergleiche_xml(
                     w
                 });
             }
-            let (ok, meldung) = elster::validiere_xsd_text(r.as_bytes(), &vz.to_string());
+            let schema_vz = u16::try_from(vz)
+                .ok()
+                .and_then(|j| domain::Vz::try_from(j).ok())
+                .expect("vz_fuer_xml liefert 2024..=2026");
+            let (ok, meldung) = elster::validiere_xsd_text(r.as_bytes(), schema_vz);
             if ok {
                 z.xsd_valide += 1;
             } else {
@@ -515,9 +519,10 @@ fn kz_format_sweep() {
             &json!({"fn": "elster.cent_sweep", "kz": kz, "von": von, "bis": bis, "schritt": schritt}),
         );
         let py = py.as_array().expect("Liste");
+        let kz_typ = domain::Kz::new(kz).unwrap();
         let rust: Vec<Value> = (von..=bis)
             .step_by(schritt)
-            .map(|c| elster::cent_nach_kz(domain::Cent::new(c), kz).als_json())
+            .map(|c| elster::cent_nach_kz(domain::Cent::new(c), &kz_typ).als_json())
             .collect();
         assert_eq!(rust.len(), py.len(), "{kz}: Laenge");
         n += rust.len();
@@ -587,7 +592,8 @@ fn kz_wert_sweep() {
         let typ = f[2]
             .as_str()
             .map(|t| serde_json::from_value::<Feldtyp>(json!(t)).unwrap());
-        let r = match elster::kz_wert(&f[0], f[1].as_str().unwrap(), typ) {
+        let kz = domain::Kz::new(f[1].as_str().unwrap()).unwrap();
+        let r = match elster::kz_wert(&f[0], &kz, typ) {
             Ok(v) => json!({"ok": v}),
             Err(e) => json!({"err": e.klasse}),
         };
@@ -616,7 +622,8 @@ fn kz_wert_sweep() {
     .collect();
     let pj = frage(&json!({"fn": "elster.jahr_aus_kz_wert", "faelle": jahr_faelle}));
     for (f, p) in jahr_faelle.iter().zip(pj.as_array().unwrap()) {
-        let r = elster::jahr_aus_kz_wert(&f[0], f[1].as_str().unwrap());
+        let kz = domain::Kz::new(f[1].as_str().unwrap()).unwrap();
+        let r = elster::jahr_aus_kz_wert(&f[0], &kz);
         if &r != p {
             diffs += 1;
             println!("  ABWEICHUNG _jahr_aus_kz_wert{f}: rust={r} py={p}");
@@ -747,9 +754,9 @@ fn schema_und_werkzeug() {
     let mut prueflinge: Vec<elster::KzPruefling> = bindungen()
         .iter()
         .filter_map(|b| {
-            b.elster_kz.clone().map(|kz| elster::KzPruefling {
+            b.elster_kz.as_ref().map(|kz| elster::KzPruefling {
                 feld_id: b.feld_id.clone(),
-                elster_kz: kz,
+                elster_kz: kz.to_string(),
                 vz_gueltigkeit: b.vz_gueltigkeit.clone(),
             })
         })
@@ -1166,7 +1173,7 @@ fn checkest_stichprobe() {
         let store = Store::aus_datei(datei.clone());
         let (felder, sid) = store.materialisiere(None).unwrap();
         let vz = datei.veranlagungszeitraum.als_i64_saettigend();
-        let Ok(d) = elster::deklariere(&felder, index(), vz, Some(&sid.to_string())) else {
+        let Ok(d) = elster::deklariere(&felder, index(), vz, Some(&sid)) else {
             continue;
         };
         let abgabe = proben.len().is_multiple_of(2);
@@ -1211,7 +1218,10 @@ fn negativkontrolle() {
         &json!({"fn": "elster.cent_sweep", "kz": "E0705701", "von": -500, "bis": 500, "schritt": 1}),
     );
     let mut rust: Vec<Value> = (-500..=500)
-        .map(|c| elster::cent_nach_kz(domain::Cent::new(c), "E0705701").als_json())
+        .map(|c| {
+            elster::cent_nach_kz(domain::Cent::new(c), &domain::Kz::new("E0705701").unwrap())
+                .als_json()
+        })
         .collect();
     assert_eq!(json!(rust), py, "Ausgangslage gleich");
     rust[600] = json!(rust[600].as_i64().unwrap() + 1);
@@ -1246,7 +1256,7 @@ fn negativkontrolle() {
     // Dieselbe Jahresquelle wie `vergleiche_fall` und der Oracle (`store.veranlagungszeitraum`).
     let vz = datei.veranlagungszeitraum.als_i64_saettigend();
     let mut d = serde_json::to_value(
-        elster::deklariere(&felder, index(), vz, Some(&sid.to_string())).unwrap(),
+        elster::deklariere(&felder, index(), vz, Some(&sid)).unwrap(),
     )
     .unwrap();
     d["deklaration"]["E0100001"] = json!(false);

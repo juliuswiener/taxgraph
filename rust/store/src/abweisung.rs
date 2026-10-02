@@ -137,7 +137,10 @@ pub fn auflage_a_erwartung(schreiber: &Schreiber) -> Option<(&'static str, &'sta
             "berechnet",
             "ein berechneter/abgeleiteter Vorschlag bestätigt nie direkt.",
         )),
-        _ => None,
+        Schreiber::ImportElster
+        | Schreiber::Engine
+        | Schreiber::Abgeleitet(_)
+        | Schreiber::Mensch(_) => None,
     }
 }
 

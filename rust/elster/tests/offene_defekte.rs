@@ -19,7 +19,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::OnceLock;
 
 use bindung::Bindung;
-use domain::{Achsenwert, Herkunft, PruefTiefe, Zustand};
+use domain::{Achsenwert, Herkunft, PruefTiefe, Vz, Zustand};
 use elster::{deklariere, erzeuge_xml, Deklaration, Felder, XmlOptionen};
 use serde_json::{json, Value};
 use store::SnapshotFeld;
@@ -467,12 +467,12 @@ fn p23_partner_verkauf_traegt_person_b() {
 #[ignore = "Schema-Gueltigkeit war ein Stellvertretermerkmal: xmllint akzeptiert das Zwei-Verkaeufe-XML seit fa9453d, die Personenachse bleibt falsch (<Einz> traegt kein Person-Feld). Python: test_p23_partner_verkauf_still_unter_person_a_eingereicht.py::test_person_a_und_partner_verkauf_ist_heute_xsd_valide_aber_personenachse_falsch. Vault: audits/p23-stellvertretermerkmal-hoert-auf-zu-stellvertreten.md. Rot sehen: --ignored"]
 fn p23_partner_verkauf_xsd_valide_aber_personenachse_falsch() {
     assert!(
-        elster::finde_xsd_schema("2025").is_some(),
+        elster::finde_xsd_schema(Vz::Vz2025).is_some(),
         "KONTROLLE: elster11_E10_2025_extern.xsd fehlt - source_unavailable"
     );
     p23_kontrolle_person_a();
     let xml = p23_partner_xml(true);
-    let (ok, meldung) = elster::validiere_xsd_text(xml.as_bytes(), "2025");
+    let (ok, meldung) = elster::validiere_xsd_text(xml.as_bytes(), Vz::Vz2025);
     assert!(
         ok,
         "KONTROLLE: xmllint akzeptiert das Dokument (fa9453d): {meldung}"

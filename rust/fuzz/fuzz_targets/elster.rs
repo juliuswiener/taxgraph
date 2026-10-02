@@ -36,11 +36,13 @@ fuzz_target!(|data: &[u8]| {
             let Ok(text) = std::str::from_utf8(rest) else { return };
             let _ = elster::parse_instanz(text);
             let (kz, wert) = text.split_once('\n').unwrap_or((text, ""));
-            let _ = elster::kz_format(kz);
+            // Die drei Kz-Funktionen nehmen &Kz; ein Text, der keine Kz ist, erreicht sie nicht.
+            let Ok(kz) = domain::Kz::new(kz) else { return };
+            let _ = elster::kz_format(&kz);
             let j = serde_json::from_str::<serde_json::Value>(wert).unwrap_or(serde_json::Value::String(wert.to_owned()));
-            let _ = elster::jahr_aus_kz_wert(&j, kz);
+            let _ = elster::jahr_aus_kz_wert(&j, &kz);
             for typ in [None, Some(domain::Feldtyp::Cent), Some(domain::Feldtyp::Int), Some(domain::Feldtyp::Text)] {
-                let _ = elster::kz_wert(&j, kz, typ);
+                let _ = elster::kz_wert(&j, &kz, typ);
             }
         }
     }

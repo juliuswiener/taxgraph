@@ -27,8 +27,6 @@ pub enum BindungFehler {
     EnumOhneWerte { feld_id: String },
     #[error("{feld_id}: elster_kz=null braucht elster_kz_grund")]
     KzNullOhneGrund { feld_id: String },
-    #[error("{feld_id}: elster_kz {kz:?} passt nicht auf ^E[0-9]{{7}}$")]
-    KzFormat { feld_id: String, kz: String },
     #[error("{feld_id}: frage_invertiert=true braucht typ=bool und askable=true")]
     InvertiertOhneBoolAskable { feld_id: String },
     #[error("ungueltige feld_id {0:?} (erwartet ^[a-z][a-z0-9_]*$)")]
@@ -220,7 +218,7 @@ pub struct Bindung {
     #[serde(default)]
     pub vorschlagbar_von: Vec<VorschlagsSchreiber>,
     pub instanz_gruppe: Option<String>,
-    pub elster_kz: Option<String>,
+    pub elster_kz: Option<Kz>,
     pub elster_kz_grund: Option<String>,
     pub kz_status: Option<KzStatus>,
     pub vz_gueltigkeit: Vec<i64>,
@@ -263,19 +261,10 @@ impl Bindung {
                 feld_id: self.feld_id.clone(),
             });
         }
-        match &self.elster_kz {
-            None if self.elster_kz_grund.is_none() => {
-                return Err(BindungFehler::KzNullOhneGrund {
-                    feld_id: self.feld_id.clone(),
-                })
-            }
-            Some(kz) if !ist_gueltige_elster_kz(kz) => {
-                return Err(BindungFehler::KzFormat {
-                    feld_id: self.feld_id.clone(),
-                    kz: kz.clone(),
-                })
-            }
-            _ => {}
+        if self.elster_kz.is_none() && self.elster_kz_grund.is_none() {
+            return Err(BindungFehler::KzNullOhneGrund {
+                feld_id: self.feld_id.clone(),
+            });
         }
         if self.frage_invertiert && !(matches!(self.typ, Feldtyp::Bool) && self.askable) {
             return Err(BindungFehler::InvertiertOhneBoolAskable {
@@ -284,11 +273,6 @@ impl Bindung {
         }
         Ok(())
     }
-}
-
-/// `^E[0-9]{7}$`; die Regel steht in [`Kz::ist_gueltig`].
-fn ist_gueltige_elster_kz(s: &str) -> bool {
-    Kz::ist_gueltig(s)
 }
 
 /// Slot/Geltungsbedingung einer Scheiben-Regel ohne Bindung, mit Grund (`$defs/luecke`).
@@ -401,7 +385,7 @@ pub fn lade_bindung(pfad: &Path) -> Result<BindungDatei, BindungFehler> {
 
 #[cfg(test)]
 mod tests {
-    use super::{ist_gueltige_elster_kz, ist_gueltige_feld_id};
+    use super::{ist_gueltige_feld_id, BindungDatei};
 
     #[test]
     fn feld_id_zeichensatz() {
@@ -412,11 +396,26 @@ mod tests {
         assert!(!ist_gueltige_feld_id(""));
     }
 
+    /// Die Kz-Regel `^E[0-9]{7}$` wirkt beim Laden: eine ungueltige `elster_kz` scheitert in
+    /// `serde` und nennt den Text, statt als `String` bis in `elster` zu laufen.
     #[test]
-    fn elster_kz_format() {
-        assert!(ist_gueltige_elster_kz("E0123456"));
-        assert!(!ist_gueltige_elster_kz("E012345"));
-        assert!(!ist_gueltige_elster_kz("e0123456"));
+    fn ungueltige_elster_kz_scheitert_beim_laden() {
+        let yaml = |kz: &str| {
+            format!(
+                "version: 1\nscheibe: test\nbindungen:\n  - feld_id: testfeld\n    \
+                 quelle: {{regel_id: r, signatur_slot: s}}\n    typ: bool\n    askable: false\n    \
+                 hilfe_kurz: T\n    beispielwert: true\n    elster_kz: \"{kz}\"\n    \
+                 vz_gueltigkeit: [2025]\n    anker_ref: {{quelle: Q, zitatanker: Z}}\n"
+            )
+        };
+        assert!(serde_yaml_ng::from_str::<BindungDatei>(&yaml("E0123456")).is_ok());
+        for kz in ["E012345", "e0123456", "E06004901", ""] {
+            let fehler = serde_yaml_ng::from_str::<BindungDatei>(&yaml(kz)).unwrap_err();
+            assert!(
+                fehler.to_string().contains(&format!("ungueltige Kz {kz:?}")),
+                "{kz:?}: {fehler}"
+            );
+        }
     }
 
     /// Grund fuer die Wahl von `serde_yaml_ng` (statt z.B. `serde_yaml`, unmaintained seit
