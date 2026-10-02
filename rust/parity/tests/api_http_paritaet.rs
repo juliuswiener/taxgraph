@@ -8,11 +8,14 @@
 //!
 //! - `handgeschrieben`: Szenarien je Route inkl. Fehlerfaelle, Auth-Modus und `TAXGRAPH_NO_AUTH=1`.
 //! - `zufallsfolgen`: proptest-Folgen (Standard 1000) ueber die in 9a fertigen Routen.
+//! - `generatoren`: echte Eingaben fuer die Routen aus Stufe 1–3 (9c), Untergrenze je Route.
 //! - `negativkontrolle`: eine gestoerte Rust-Antwort MUSS als Abweichung auffallen.
 //! - `dokumentierte_abweichungen`: was diese Stufe bewusst NICHT angleicht, mit Beleg.
 //!
-//! Stub-Routen (`501 nicht_portiert`) zaehlen nicht als Abweichung, werden aber je Route gezaehlt
-//! und gedruckt. Sobald D2/D3 eine Route portieren, vergleicht der Harness sie von selbst.
+//! Noch nicht portierte Routen stehen in `NICHT_PORTIERT`: ihre `501` wird je Route gezaehlt, nicht
+//! verglichen; eine `501` ausserhalb der Liste ist eine Abweichung. Routen aus `UNTERGRENZE` gehen
+//! danach an Python, das den Rumpf ausfuehrt. Beim Port fliegt die Route aus der Liste, und der
+//! Harness vergleicht sie von selbst.
 //!
 //! `PARITY=1 cargo test -p parity --test api_http_paritaet -- --nocapture --test-threads=1`
 //! Stoerung zum Zeigen der Rotfaerbung: `PARITY_STOERUNG=1` (veraendert EINE Rust-Antwort).
@@ -51,6 +54,44 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
     ("users.password_hash", "bcrypt-Salz ist zufaellig"),
     ("users.created_at", "Zeitstempel der Registrierung"),
     ("fehler.log", "nur Anzahl und `ort`: Typ (Python-Klasse gegen Rust-Typname), Aufrufstelle und die PII-gefilterte Fall-Kennung unterscheiden sich im Bau"),
+];
+
+/// Routen, fuer die Rust heute `501 nicht_portiert` antwortet (AK3 in 9c). Beim Port fliegt die
+/// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
+const NICHT_PORTIERT: &[&str] = &[
+    "GET /fall/{id}/fragen",
+    "GET /fall/{id}/stand",
+    "GET /fall/{id}/feld/{fid}/warum",
+    "GET /fall/{id}/feld/{fid}/frage",
+    "GET /fall/{id}/ergebnis",
+    "GET /fall/{id}/preflight",
+    "GET /fall/{id}/deklaration",
+    "GET /fall/{id}/graph",
+    "POST /fall/{id}/event",
+    "POST /fall/{id}/flow",
+    "POST /fall/{id}/vorjahr",
+    "POST /fall/{id}/einreichen",
+    "POST /fall/{id}/chat",
+    "POST /fall/{id}/entfernung",
+    "POST /fall/{id}/kontoauszug",
+];
+
+/// Stufe 1–3 (AK1 in 9c): Untergrenze der Rumpf-Erreichungen je Route im Test `generatoren`, gleich
+/// der Zahl seiner Faelle, die den Rumpf erreichen sollen; faellt einer aus, wird der Test rot. Nur
+/// diese Routen gehen nach einer Rust-`501` an Python. Stufe 4 (einreichen, chat, entfernung,
+/// kontoauszug) riefe dort `ERiC`, das LLM oder ORS.
+const UNTERGRENZE: &[(&str, usize)] = &[
+    ("GET /fall/{id}/fragen", 3),
+    ("GET /fall/{id}/stand", 3),
+    ("GET /fall/{id}/feld/{fid}/warum", 4),
+    ("GET /fall/{id}/feld/{fid}/frage", 4),
+    ("GET /fall/{id}/ergebnis", 3),
+    ("GET /fall/{id}/preflight", 3),
+    ("GET /fall/{id}/deklaration", 3),
+    ("GET /fall/{id}/graph", 3),
+    ("POST /fall/{id}/event", 12),
+    ("POST /fall/{id}/flow", 2),
+    ("POST /fall/{id}/vorjahr", 2),
 ];
 
 // ---------------------------------------------------------------- Umgebung
@@ -109,7 +150,8 @@ impl Drop for Server {
 /// Startet einen Server. Die Umgebung ist vollstaendig gesetzt, damit `.env*` im Repo-Wurzelverzeichnis
 /// (werden von beiden Mains geladen, nur fuer fehlende Schluessel) nichts veraendert; LLM- und
 /// Karten-Schluessel sind leer, damit kein Stub-Handler in Python nach draussen telefoniert.
-fn starte(art: &'static str, wurzel: &Path, no_auth: bool, seed: &Path) -> Server {
+/// `flow`: `TAXGRAPH_FLOW=1`, sonst antwortet `POST /flow` nur `{"mitgeschrieben": false}`.
+fn starte(art: &'static str, wurzel: &Path, no_auth: bool, flow: bool, seed: &Path) -> Server {
     let daten = wurzel.join(art);
     let faelle = daten.join("faelle");
     std::fs::create_dir_all(&faelle).unwrap();
@@ -132,7 +174,7 @@ fn starte(art: &'static str, wurzel: &Path, no_auth: bool, seed: &Path) -> Serve
         .env("TAXGRAPH_USER_STORE", daten.join("users.json"))
         .env("TAXGRAPH_JWT_SECRET", GEHEIMNIS)
         .env("TAXGRAPH_NO_AUTH", if no_auth { "1" } else { "0" })
-        .env("TAXGRAPH_FLOW", "0")
+        .env("TAXGRAPH_FLOW", if flow { "1" } else { "0" })
         .env("TAXGRAPH_KI_DEBUG", "0")
         .env("LLM_API_KEY", "")
         .env("LLM_API_BASE", "")
@@ -314,6 +356,36 @@ struct Stat {
     /// Wie oft welcher Status je Anfrageart (erstes Wort des Titels) vorkam — der Beleg, dass die
     /// Folgen die Erfolgs- UND die Fehlerpfade erreichen.
     codes: BTreeMap<String, usize>,
+    /// Rumpf-Erreichungen je Route aus `UNTERGRENZE`, s. `Stat::zaehle`.
+    erreicht: BTreeMap<String, usize>,
+}
+
+impl Stat {
+    /// Zaehlt `a` als Rumpf-Erreichung, wenn es eine Route aus `UNTERGRENZE` trifft und Python 2xx
+    /// antwortet, ohne den Leerpfad von `flow.melde_ui` (`TAXGRAPH_FLOW=0`). 400 und 422 zaehlen
+    /// nicht: sonst erreichte ein leerer Rumpf `{}` event und vorjahr.
+    fn zaehle(&mut self, a: &Anfrage, py: &Antwort) {
+        let ok = (200..300).contains(&py.status)
+            && json_body(py) != Some(json!({"mitgeschrieben": false}));
+        if let Some(r) = route(a).filter(|r| ok && UNTERGRENZE.iter().any(|(u, _)| u == r)) {
+            *self.erreicht.entry(r).or_default() += 1;
+        }
+    }
+}
+
+/// Die Route aus `api::routen::EINTRAEGE`, die den Pfad bedient, als `"GET /fall/{id}/stand"`.
+fn route(a: &Anfrage) -> Option<String> {
+    let teile: Vec<&str> = a.pfad.split('/').collect();
+    api::routen::EINTRAEGE.iter().find_map(|e| {
+        let muster: Vec<&str> = e.axum_pfad.split('/').collect();
+        (e.methode == a.methode
+            && muster.len() == teile.len()
+            && muster
+                .iter()
+                .zip(&teile)
+                .all(|(m, t)| m.starts_with('{') || m == t))
+        .then(|| format!("{} {}", e.methode, e.axum_pfad))
+    })
 }
 
 /// Eine angehaengte Protokolldatei; liefert je Aufruf nur die neuen Zeilen.
@@ -464,9 +536,9 @@ struct Paar {
 }
 
 impl Paar {
-    fn neu(wurzel: &Path, no_auth: bool, seed: &Path) -> Self {
-        let py = starte("python", wurzel, no_auth, seed);
-        let rs = starte("rust", wurzel, no_auth, seed);
+    fn neu(wurzel: &Path, no_auth: bool, flow: bool, seed: &Path) -> Self {
+        let py = starte("python", wurzel, no_auth, flow, seed);
+        let rs = starte("rust", wurzel, no_auth, flow, seed);
         let logs = [
             Log::neu(py.faelle().join("audit.jsonl")),
             Log::neu(rs.faelle().join("audit.jsonl")),
@@ -483,10 +555,11 @@ impl Paar {
         }
     }
 
-    /// Rust zuerst: antwortet es `501 nicht_portiert`, bekommt Python die Anfrage NICHT. Sonst
-    /// liefe dort die echte Logik (schreibt in den Fall, ruft Dienste) und die Verzeichnisse
-    /// gingen auseinander — ohne dass einer der beiden Server falsch waere.
-    fn anfrage(&mut self, a: &Anfrage, modus: Modus) {
+    /// Rust zuerst: antwortet es `501 nicht_portiert`, zaehlt die Route statt eines Vergleichs.
+    /// Routen aus `UNTERGRENZE` gehen dann an Python, das den Rumpf ausfuehrt; schreibt es in den
+    /// Fall, bekommt Rust die Datei gespiegelt. Sonst gingen die Verzeichnisse auseinander, ohne
+    /// dass einer der beiden Server falsch waere. Rueckgabe: der JSON-Body von Python.
+    fn anfrage(&mut self, a: &Anfrage, modus: Modus) -> Option<Value> {
         let mut rs = sende(self.rs.port, a);
         self.stat.anfragen += 1;
         if self.stoerung_bei == Some(self.stat.anfragen) {
@@ -499,12 +572,36 @@ impl Paar {
             .filter(|_| rs.status == 501)
             .filter(|b| b["fehler"] == "nicht_portiert");
         if let Some(b) = stub {
-            *self
-                .stat
-                .stubs
-                .entry(b["route"].as_str().unwrap_or("?").to_owned())
-                .or_default() += 1;
-            return;
+            let r = b["route"].as_str().unwrap_or("?");
+            *self.stat.stubs.entry(r.to_owned()).or_default() += 1;
+            let wohin = format!("{} {} [{}]", a.methode, a.pfad, a.titel);
+            if !NICHT_PORTIERT.contains(&r) {
+                let d = format!("{wohin}: 501 ausserhalb NICHT_PORTIERT");
+                self.stat.abweichungen.push(d);
+            }
+            if !NICHT_PORTIERT.contains(&r) || !UNTERGRENZE.iter().any(|(u, _)| *u == r) {
+                return None;
+            }
+            let id = a.pfad.split('/').nth(2).unwrap_or_default();
+            let akte = |s: &Server| {
+                let roh = std::fs::read(s.faelle().join(format!("{id}.json"))).ok()?;
+                serde_json::from_slice::<Value>(&roh).ok()
+            };
+            let vorher = akte(&self.py);
+            let py = sende(self.py.port, a);
+            // Audit und Fehlerlog des Python-Rumpfs haben (noch) kein Rust-Gegenstueck.
+            let _ = (py_audit.neue(), py_fehler.neue());
+            if akte(&self.py) != vorher {
+                if akte(&self.rs) != vorher {
+                    let d = format!("{wohin}: Fall-Datei schon vor dem Spiegeln verschieden");
+                    self.stat.abweichungen.push(d);
+                }
+                let datei = format!("{id}.json");
+                std::fs::copy(self.py.faelle().join(&datei), self.rs.faelle().join(&datei))
+                    .unwrap();
+            }
+            self.stat.zaehle(a, &py);
+            return json_body(&py);
         }
         let art = a.titel.split_whitespace().next().unwrap_or("").to_owned();
         *self
@@ -542,6 +639,8 @@ impl Paar {
                 d.join("; ")
             ));
         }
+        self.stat.zaehle(a, &py);
+        json_body(&py)
     }
 
     fn zustand_vergleichen(&mut self, wo: &str) {
@@ -575,6 +674,10 @@ impl Paar {
         );
         for (route, n) in &s.stubs {
             println!("  nicht portiert: {n:4} x {route}");
+        }
+        for (route, _) in UNTERGRENZE {
+            let n = s.erreicht.get(*route).unwrap_or(&0);
+            println!("  Rumpf erreicht: {n:4} x {route}");
         }
         let codes: Vec<String> = s.codes.iter().map(|(k, n)| format!("{k}:{n}")).collect();
         println!("  Status je Art (Rust): {}", codes.join(" "));
@@ -961,8 +1064,8 @@ fn handgeschrieben_auth(p: &mut Paar) {
         }
         for r in post_stubs {
             for id in ["h1", "seed_b", "gibtsnicht"] {
-                let x =
-                    po(&format!("POST {r} als {wer}"), &format!("/fall/{id}/{r}")).json(&json!({}));
+                let x = po(&format!("POST {r} als {wer}"), &format!("/fall/{id}/{r}"))
+                    .json(&koerper(r, "seed_a"));
                 a!(tok.map_or(x.clone(), |t| x.token(t)));
             }
         }
@@ -1078,7 +1181,7 @@ fn handgeschrieben() {
         ("ohne_auth", true, handgeschrieben_ohne_auth),
     ] {
         let wurzel = tmp.path().join(name);
-        let mut p = Paar::neu(&wurzel, no_auth, &seed);
+        let mut p = Paar::neu(&wurzel, no_auth, false, &seed);
         lauf(&mut p);
         p.bericht(&format!("handgeschrieben/{name}"));
         stats.push((name, p.stat.abweichungen.len(), p.stat.verglichen));
@@ -1237,7 +1340,8 @@ impl Ctx {
     }
 }
 
-const STUBS: [(&str, &str); 15] = [
+/// Die Routen unter `/fall/{id}/` fuer `Op::Stub`; welche davon portiert sind, sagt `NICHT_PORTIERT`.
+const FALL_ROUTEN: [(&str, &str); 15] = [
     ("GET", "fragen"),
     ("GET", "stand"),
     ("GET", "feld/x1/warum"),
@@ -1317,13 +1421,17 @@ fn op_zu_anfrage(op: &Op, c: &Ctx) -> Anfrage {
             *w,
         ),
         Op::Stub(w, r, i) => {
-            let (m, route) = STUBS[usize::from(*r)];
+            let (m, route) = FALL_ROUTEN[usize::from(*r)];
             let a = Anfrage::neu(
                 &format!("stub {route}"),
                 m,
                 &format!("/fall/{}/{route}", c.id(*i)),
             );
-            let a = if m == "POST" { a.json(&json!({})) } else { a };
+            let a = if m == "POST" {
+                a.json(&koerper(route, &c.id((*i + 1) % 4)))
+            } else {
+                a
+            };
             c.mit(a, *w)
         }
         Op::Unbekannt(v) => {
@@ -1390,7 +1498,7 @@ fn zufallsfolgen() {
     let tmp = tempfile::tempdir().unwrap();
     let seed = tmp.path().join("seed");
     schreibe_seed(&seed);
-    let mut p = Paar::neu(tmp.path(), false, &seed);
+    let mut p = Paar::neu(tmp.path(), false, false, &seed);
     for (n, folge) in folgen.iter().enumerate() {
         let c = Ctx {
             praefix: format!("p{n}_"),
@@ -1427,6 +1535,127 @@ fn zufallsfolgen() {
     );
 }
 
+// ---------------------------------------------------------------- Generatoren (9c)
+
+/// Ein Event wie aus der Oberflaeche, per Klick bestaetigt. `ts` steht fest: die `event_id` ist
+/// ein Hash ueber das Event (`store.py:28`) und bleibt so je Lauf gleich.
+fn ereignis(feld: &str, wert: &Value, ersetzt: Option<&str>) -> Value {
+    json!({"feld_id": feld, "wert": wert, "zustand": "bestaetigt", "schreiber": "ui:paritaet",
+        "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": format!("klick@{feld}")},
+        "ts": "2026-01-01T00:00:00+00:00", "ersetzt": ersetzt})
+}
+
+/// Ein nicht leerer Body je POST-Route aus Stufe 1–3; `quelle` ist der Vorjahres-Fall. Stufe 4
+/// bekommt `{}`: sie geht nie an Python (s. `UNTERGRENZE`).
+fn koerper(route: &str, quelle: &str) -> Value {
+    match route {
+        "event" => ereignis("ep_arbeitstage", &json!(220), None),
+        "flow" => json!({"art": "weg_gewaehlt", "inhalt": {"weg": "fragebogen"}}),
+        "vorjahr" => json!({"vorjahr_fall_id": quelle}),
+        _ => json!({}),
+    }
+}
+
+/// Echte Eingaben fuer Stufe 1–3 (9c): vier eigene Faelle in zwei Scheiben, Events auf mehreren
+/// Feldern samt Ersetzung, Vorjahr-Uebernahme aus einer zweiten Fallakte, UI-Meldungen mit
+/// `TAXGRAPH_FLOW=1`, dann jede Lese-Route. Jede Route erreicht ihren Rumpf so oft, wie
+/// `UNTERGRENZE` verlangt.
+#[test]
+fn generatoren() {
+    if skip() {
+        return;
+    }
+    let tmp = tempfile::tempdir().unwrap();
+    let seed = tmp.path().join("seed");
+    schreibe_seed(&seed);
+    let mut p = Paar::neu(tmp.path(), false, true, &seed);
+    let alice = token("alice", GEHEIMNIS);
+    let mut a = |m: &str, pfad: &str, body: Option<Value>| {
+        let x = Anfrage::neu(&format!("gen {m} {pfad}"), m, pfad).token(&alice);
+        p.anfrage(&body.map_or(x.clone(), |b| x.json(&b)), Modus::Voll)
+    };
+    for (id, scheibe, vz) in [
+        ("g_ep", "ep", 2025),
+        ("g_vj", "ep", 2024),
+        ("g_neu", "ep", 2025),
+        ("g_ges", "gesamt", 2025),
+    ] {
+        let b = json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": vz});
+        a("POST", "/fall", Some(b));
+    }
+    let mut erster = None;
+    for (id, feld, wert) in [
+        ("g_ep", "ep_arbeitstage", json!(220)),
+        ("g_ep", "ep_entfernung_km", json!(30)),
+        ("g_ep", "ep_eigenes_kfz", json!(true)),
+        ("g_ep", "ep_oepnv_kosten", json!(0)),
+        ("g_ep", "ep_ziel_des_weges", json!("1")),
+        (
+            "g_ep",
+            "ep_ziel_adresse",
+            json!("80331 München, Marienplatz 1"),
+        ),
+        ("g_vj", "ep_entfernung_km", json!(25)),
+        ("g_vj", "ep_eigenes_kfz", json!(true)),
+        ("g_ges", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_ges", "veranlagung", json!("einzel")),
+        ("g_ges", "ep_arbeitstage", json!(230)),
+    ] {
+        let pfad = format!("/fall/{id}/event");
+        let b = a("POST", &pfad, Some(ereignis(feld, &wert, None)));
+        erster = erster.or_else(|| b?["event_id"].as_str().map(str::to_owned));
+    }
+    // Ersetzung des ersten Events; dasselbe Feld ohne `ersetzt` weist der Store ab (422).
+    let ersetzung = ereignis("ep_arbeitstage", &json!(210), erster.as_deref());
+    a("POST", "/fall/g_ep/event", Some(ersetzung));
+    let ohne = ereignis("ep_arbeitstage", &json!(230), None);
+    a("POST", "/fall/g_ep/event", Some(ohne));
+    // Das zweite Mal uebernimmt nichts: die Felder sind schon belegt.
+    let vj = koerper("vorjahr", "g_vj");
+    for soll in [2, 0] {
+        let b = a("POST", "/fall/g_neu/vorjahr", Some(vj.clone()));
+        assert_eq!(b.unwrap()["uebernommen"], soll, "Vorjahr g_neu aus g_vj");
+    }
+    for b in [
+        koerper("flow", ""),
+        json!({"art": "pruefliste_weiter", "inhalt": {"offen": ["ep_arbeitstage"]}}),
+        json!({"art": "erfunden", "inhalt": {}}),
+    ] {
+        a("POST", "/fall/g_ep/flow", Some(b));
+    }
+    for id in ["g_ep", "g_neu", "g_ges"] {
+        for r in [
+            "stand",
+            "fragen",
+            "ergebnis",
+            "graph",
+            "deklaration",
+            "preflight",
+        ] {
+            a("GET", &format!("/fall/{id}/{r}"), None);
+        }
+    }
+    for (id, feld) in [
+        ("g_ep", "ep_arbeitstage"),
+        ("g_ep", "ep_eigenes_kfz"),
+        ("g_neu", "ep_entfernung_km"),
+        ("g_ges", "bruttoarbeitslohn"),
+    ] {
+        for r in ["warum", "frage"] {
+            a("GET", &format!("/fall/{id}/feld/{feld}/{r}"), None);
+        }
+    }
+    p.zustand_vergleichen("am Ende");
+    p.bericht("generatoren");
+    assert!(p.stat.abweichungen.is_empty(), "{:?}", p.stat.abweichungen);
+    let zu_wenig: Vec<_> = UNTERGRENZE
+        .iter()
+        .filter(|(r, n)| p.stat.erreicht.get(*r).copied().unwrap_or(0) < *n)
+        .collect();
+    assert!(zu_wenig.is_empty(), "Untergrenze verfehlt: {zu_wenig:?}");
+}
+
 // ---------------------------------------------------------------- Wirksamkeit und Grenzen
 
 /// Negativkontrolle: stoert `anfrage` die Rust-Antwort, MUSS eine Abweichung gemeldet werden.
@@ -1438,7 +1667,7 @@ fn negativkontrolle() {
     let tmp = tempfile::tempdir().unwrap();
     let seed = tmp.path().join("seed");
     schreibe_seed(&seed);
-    let mut p = Paar::neu(tmp.path(), false, &seed);
+    let mut p = Paar::neu(tmp.path(), false, false, &seed);
     p.stoerung_bei = Some(2);
     p.anfrage(&Anfrage::neu("health", "GET", "/health"), Modus::Voll);
     assert!(
@@ -1475,7 +1704,7 @@ fn dokumentierte_abweichungen() {
     let tmp = tempfile::tempdir().unwrap();
     let seed = tmp.path().join("seed");
     schreibe_seed(&seed);
-    let p = Paar::neu(tmp.path(), false, &seed);
+    let p = Paar::neu(tmp.path(), false, false, &seed);
     let alice = token("alice", GEHEIMNIS);
     let zweimal = |a: &Anfrage| (sende(p.py.port, a), sende(p.rs.port, a));
     // 1. Content-Length keine Zahl: hyper antwortet vor der Anwendung, leerer Body.
