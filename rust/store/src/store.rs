@@ -81,21 +81,19 @@ fn vorjahr_referenz_als_json<S: serde::Serializer>(
 /// keine Bereichspruefung beim Laden. Gemessen ueber alle 192 realen Fallakten unter
 /// `~/.local/share/taxgraph/faelle/` (Zaehlung, kein Wert ausserhalb dieses Kommentars
 /// festgehalten): neben sinnvollen Werten und Ausreissern wie `-5`/`2099` (beide passen in
-/// `i64`) traegt EINE Datei einen 40-stelligen Wert (`99999999999999999999999999999999999999`),
+/// `i64`) traegt EINE Datei einen 38-stelligen Wert (`99999999999999999999999999999999999999`),
 /// der `i64` ueberlaeuft — genau der Grund, warum `store::lade` diese Datei bisher ablehnte.
 ///
-/// Eine ZWEITE Datei traegt den Wert als JSON-Zahl in Exponentialschreibweise (Mantisse +
-/// `e`/`E`-Exponent, kein Wert hier festgehalten). `serde_yaml_ng` (der Parser von
-/// `persistenz::lade`, s. o.) loest das schon als
-/// Ganzzahl auf — `store::lade` laedt diese Datei bereits fehlerfrei. `serde_json` (von
-/// Parity-Tests fuer den rohen Python-Vergleich genutzt) liest denselben Token dagegen als
-/// `f64` und scheiterte bisher an `i128`s Standard-`Deserialize` (kein `visit_f64`). Die
-/// [`Deserialize`]-Impl unten faengt beide Zahl-Formen ab (`i128`-Varianten direkt, `f64` durch
-/// Abschneiden Richtung Null wie Pythons `int(float)`) — deserializer-unabhaengig, wie Pythons
-/// eigene `int(...)`-Koerzion an den Verwendungsstellen.
+/// Einen `veranlagungszeitraum` in Exponentialschreibweise (z. B. `2.025e3`) traegt keine Akte,
+/// gemessen 2026-10-02: 0 in 192 unter `faelle/`, 0 in den 15 Akten der Quarantaene daneben
+/// (`quarantaene-2026-10-01-kegel-testlauf/`). `persistenz::lade` liest mit
+/// `serde_json::from_str` nur Ziffern und weist `2.025e3` als `PersistenzFehler::Format` ab;
+/// `json.load` liest `2025.0`. Liefert ein Deserializer die Zahl als `f64` (z. B.
+/// `serde_json::from_value` in den Parity-Tests), schneidet die [`Deserialize`]-Impl unten
+/// Richtung Null ab wie Pythons `int(float)`.
 ///
 /// ponytail: `i128` statt Pythons echtem, beliebig grossem `int` — deckt jeden gemessenen Wert
-/// (auch den 40-stelligen) mit weitem Rand; ein noch groesserer Wert wird beim Laden zu einem
+/// (auch den 38-stelligen) mit weitem Rand; ein noch groesserer Wert wird beim Laden zu einem
 /// benannten Deserialisierungsfehler (serde meldet den Ueberlauf explizit), nicht zu einem
 /// stillen Wrap.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
@@ -138,9 +136,9 @@ impl<'de> Deserialize<'de> for Veranlagungsjahr {
                 Ok(Veranlagungsjahr(v.trunc() as i128))
             }
         }
-        // Derselbe getypte Hint wie die vorherige derive-Deserialize (i128::deserialize ruft
-        // intern deserialize_i128 auf) — die bereits bewiesene YAML-Ladung bleibt unveraendert,
-        // nur `visit_f64` kommt als Fallback hinzu.
+        // Derselbe getypte Hint wie `i128::deserialize`: `serde_json::from_str` liest die
+        // Ganzzahl exakt, auch ueber `u64` (`persistenz::lade`). `visit_f64` greift nur, wo der
+        // Deserializer eine Kommazahl liefert, z. B. `serde_json::from_value`.
         deserializer.deserialize_i128(BesucherJahr)
     }
 }
@@ -148,10 +146,10 @@ impl<'de> Deserialize<'de> for Veranlagungsjahr {
 impl Veranlagungsjahr {
     /// Fuer Aufrufer, die den (bewusst engeren) `i64`-Bereich brauchen — [`Store::leer`] und die
     /// Datums-Ableitung ([`ableitung::berechne`], `vz: i64`). Saettigt an den `i64`-Grenzen statt
-    /// zu ueberlaufen: betrifft praktisch nur die eine gemessene 40-stellige Datei, deren Wert
+    /// zu ueberlaufen: betrifft praktisch nur die eine gemessene 38-stellige Datei, deren Wert
     /// fuer jede reale Ableitungsregel ohnehin weit ausserhalb jeder sinnvollen Jahresspanne
     /// liegt — ein gesaettigtes `i64::MAX` fuehrt zu denselben "viel zu weit in der Zukunft"-
-    /// Vergleichsergebnissen wie Pythons unbeschraenkte Arithmetik mit dem echten 40-stelligen
+    /// Vergleichsergebnissen wie Pythons unbeschraenkte Arithmetik mit dem echten 38-stelligen
     /// Wert.
     ///
     /// ```

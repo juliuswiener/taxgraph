@@ -41,3 +41,6 @@ tokio = { version = "=1.53.1", features = ["rt-multi-thread", "macros", "net", "
 tower = { version = "=0.5.3", default-features = false, features = ["util"] }
 http-body-util = "=0.1.5"
 utoipa = "=6.0.0"
+
+[profile.dev]
+debug = "line-tables-only"
