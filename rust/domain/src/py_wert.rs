@@ -897,6 +897,12 @@ mod tests {
             (json("[1]"), json("[true]")),
             (json(r#"{"a": 1, "b": 2}"#), json(r#"{"b": 2, "a": 1.0}"#)),
             (PyWert::Null, PyWert::Null),
+            // D14, ab 1,8e19: eine Ganzzahl und der Float, der sie exakt trifft, sind gleich. Die
+            // alte Helfer-Grenze (`interview::py_eq`, geloescht) verglich dort nie; 2^64 - 2048
+            // ist die groesste solche Ganzzahl unter 2^64.
+            (json("18000000000000000000"), json("1.8e19")),
+            (json("18446744073709549568"), json("18446744073709549568.0")),
+            (json("[18000000000000000000]"), json("[1.8e19]")),
         ];
         for (a, b) in &wahr {
             assert!(a.py_eq(b) && b.py_eq(a), "{a:?} == {b:?}");

@@ -136,8 +136,7 @@ pub(crate) fn relevanz_mit<'r>(
             let mut status = Regelstatus::Relevant;
             let mut offen = Vec::new();
             for cond in graph.regel_bedingungen(rid) {
-                // Einmal konvertieren, nicht je Instanz: `PyWert::py_eq` bildet Pythons `!=`
-                // ab (`interview::py_eq` tat dasselbe, s. proptest `py_eq_wie_pywert`).
+                // Einmal konvertieren, nicht je Instanz: `PyWert::py_eq` bildet Pythons `!=` ab.
                 let soll = domain::PyWert::from(cond.wert.clone());
                 let stand =
                     bedingung_je_instanz(aktiv, sicht, graph, &cond.feld, |w| !w.py_eq(&soll));
