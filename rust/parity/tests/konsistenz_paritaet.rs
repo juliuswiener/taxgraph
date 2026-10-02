@@ -112,15 +112,21 @@ fn frage(anfrage: &Value) -> Value {
 
 // ------------------------------------------------------------------ Rust-Ergebnis → Python-Form
 
+/// Scheitert nur an NaN/inf: die weist `store::Store::append` ab (Auflage 3), `1e999` lehnt
+/// `serde_json` schon beim Laden ab.
+fn wert_json(w: &PyWert) -> Value {
+    w.zu_json().expect("Store-Wert ist darstellbar (Auflage 3)")
+}
+
 fn flag_json(v: &[k::FlagWiderspruch]) -> Value {
     v.iter()
-        .map(|w| json!({"flag": w.flag, "feld_id": w.feld_id, "wert": w.wert, "grund": w.grund}))
+        .map(|w| json!({"flag": w.flag, "feld_id": w.feld_id, "wert": wert_json(&w.wert), "grund": w.grund}))
         .collect()
 }
 
 fn partner_json(v: &[k::PartnerWiderspruch]) -> Value {
     v.iter()
-        .map(|w| json!({"feld_id": w.feld_id, "wert": w.wert, "veranlagung": w.veranlagung, "grund": w.grund}))
+        .map(|w| json!({"feld_id": w.feld_id, "wert": wert_json(&w.wert), "veranlagung": wert_json(&w.veranlagung), "grund": w.grund}))
         .collect()
 }
 
@@ -128,7 +134,7 @@ fn pauschal_json(v: &[k::PauschalHinweis]) -> Value {
     v.iter()
         .map(|h| {
             json!({"check_id": h.check_id, "label": h.label, "hinweis": h.hinweis,
-                "ausloeser_felder": h.ausloeser_felder.iter().map(|(f, w)| json!({"feld_id": f, "wert": w})).collect::<Vec<_>>(),
+                "ausloeser_felder": h.ausloeser_felder.iter().map(|(f, w)| json!({"feld_id": f, "wert": wert_json(w)})).collect::<Vec<_>>(),
                 "fehlende_felder": h.fehlende_felder})
         })
         .collect()
@@ -143,7 +149,7 @@ fn nicht_gerechnet_json(v: &[k::NichtGerechnet]) -> Value {
 fn plausi_json(v: &[k::PlausiWiderspruch]) -> Value {
     v.iter()
         .map(|w| {
-            let mut o = json!({"feld_id": w.feld_id, "wert": w.wert, "grund": w.grund});
+            let mut o = json!({"feld_id": w.feld_id, "wert": wert_json(&w.wert), "grund": w.grund});
             if let Some(b) = w.bezug {
                 o["bezug"] = b.into();
             }
@@ -677,7 +683,7 @@ fn negativkontrolle() {
     rust[0].grund.push('x');
     buche(&mut bilanz, "grund + 1 Zeichen", &flag_json(&rust), &py);
     rust[0].grund.pop();
-    rust[0].wert = json!(1_200_001);
+    rust[0].wert = PyWert::Ganz(1_200_001);
     buche(&mut bilanz, "wert + 1 Cent", &flag_json(&rust), &py);
     let py = frage(
         &json!({"fn": "konsistenz.preflight", "snapshot": snap, "bindung": null, "vorjahr_referenz": null}),

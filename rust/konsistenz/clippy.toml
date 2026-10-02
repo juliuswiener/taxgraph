@@ -1,0 +1,5 @@
+# Tor 2 (REWRITE_PLAN §7, K8). Testcode nimmt `lib.rs` per `cfg_attr(test, allow(...))` aus.
+disallowed-types = [
+    { path = "serde_json::Value", reason = "Tor 2: Pruefungen tragen PyWert, JSON baut der Aufrufer (PyWert::zu_json)" },
+    { path = "serde_json::Map", reason = "Tor 2: Pruefungen tragen PyWert, JSON baut der Aufrufer (PyWert::zu_json)" },
+]

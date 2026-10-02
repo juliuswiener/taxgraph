@@ -8,10 +8,9 @@
 //! Partnerdaten im RECHEN-Eingang unrepräsentierbar; der Store kann sie aber weiter halten
 //! (Korrektur auf „einzel" nach bestätigten Partnerwerten) — genau das meldet diese Prüfung.
 use domain::{Lage, PyWert, Veranlagung};
-use serde_json::Value;
 
 use crate::lesung::{lage_veranlagung, lies, Felder};
-use crate::zahl::{als_json, zahl_gt0};
+use crate::zahl::zahl_gt0;
 
 /// Partnerfelder, die eine Zusammenveranlagung voraussetzen (`partner_check.py:17-29`).
 /// `rentner_*_partner`: Instanz-Reuse derselben Kz E0109708/E0109706 wie Person A. Für die Rente
@@ -45,9 +44,9 @@ fn partner_name(feld_id: &str) -> &str {
 #[derive(Debug, Clone, PartialEq)]
 pub struct PartnerWiderspruch {
     pub feld_id: &'static str,
-    pub wert: Value,
+    pub wert: PyWert,
     /// Der bestätigte Veranlagungswert, wie im Snapshot.
-    pub veranlagung: Value,
+    pub veranlagung: PyWert,
     /// Klartext, byte-gleich zu Python.
     pub grund: String,
 }
@@ -98,8 +97,8 @@ pub fn partner_ohne_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> {
             // jede feste Präposition-Artikel-Kombination beugte die Hälfte falsch.
             Some(PartnerWiderspruch {
                 feld_id,
-                wert: als_json(wert),
-                veranlagung: als_json(veranlagung),
+                wert: wert.clone(),
+                veranlagung: veranlagung.clone(),
                 grund: format!(
                     "Du hast etwas bei „{}“ eingetragen, aber keine Zusammenveranlagung gewählt. \
                      Partnerbezogene Angaben sind nur bei gemeinsamer Veranlagung möglich. Bitte \
@@ -145,8 +144,8 @@ pub fn alleinerziehend_mit_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> 
     ));
     vec![PartnerWiderspruch {
         feld_id: "fam_alleinstehend",
-        wert: Value::Bool(true),
-        veranlagung: Value::String("zusammen".to_owned()),
+        wert: PyWert::Bool(true),
+        veranlagung: PyWert::Text("zusammen".to_owned()),
         grund: "Du hast angegeben, alleinstehend zu sein — aber auch eine gemeinsame Veranlagung \
                 mit deinem Partner gewählt. Der Entlastungsbetrag für Alleinerziehende setzt \
                 voraus, dass du nicht zusammenveranlagt bist. Bitte prüfe deine Angaben."

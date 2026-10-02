@@ -12,10 +12,10 @@ use std::collections::HashSet;
 use std::hash::BuildHasher;
 
 use domain::PyWert;
+#[cfg(test)]
 use serde_json::Value;
 
 use crate::lesung::{lies, Felder, Lesung};
-use crate::zahl::als_json;
 #[cfg(test)]
 use crate::zahl::ganzzahl_alt;
 
@@ -164,10 +164,10 @@ pub fn flag_stand<S: BuildHasher>(
             _ => FlagStand::Unbeantwortet,
         },
         // PARITAET: `flag_check.py:186` prueft `is not True` -- IDENTITAET, nicht Pythons `==`.
-        // Der strukturelle Vergleich ist hier die richtige Uebersetzung (`PyWert::Ganz(1)` faellt
-        // korrekt durch); `py_eq` waere falsch, weil es `1 == True` als wahr ansaehe.
-        l if l.bestaetigt() == Some(&PyWert::Bool(true)) => FlagStand::Ja,
-        _ => FlagStand::Nein,
+        // Das Muster ist hier die richtige Uebersetzung (`PyWert::Ganz(1)` faellt korrekt
+        // durch); `py_eq` waere falsch, weil es `1 == True` als wahr ansaehe.
+        Lesung::Bestaetigt(PyWert::Bool(true)) => FlagStand::Ja,
+        Lesung::Vorlaeufig(_) | Lesung::Bestaetigt(_) => FlagStand::Nein,
     }
 }
 
@@ -212,7 +212,7 @@ pub struct FlagWiderspruch {
     pub flag: &'static str,
     pub feld_id: String,
     /// Der bestätigte Wert, wie im Snapshot.
-    pub wert: Value,
+    pub wert: PyWert,
     /// Klartext für den Nutzer, byte-gleich zu Python.
     pub grund: String,
 }
@@ -315,7 +315,7 @@ pub fn flag_widersprueche<S: BuildHasher>(
                         "Du hast angegeben, keine {flag_titel} zu haben — bei den {feld_titel} \
                          wurden aber {betrag} erfasst. Bitte prüfe, welche der beiden Angaben stimmt."
                     ),
-                    wert: als_json(wert),
+                    wert: wert.clone(),
                     feld_id,
                 });
             }

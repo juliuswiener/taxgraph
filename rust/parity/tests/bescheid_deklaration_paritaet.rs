@@ -335,7 +335,10 @@ fn rust_run(c: &Ctx, name: &str) -> Result<Value, BescheidFehler> {
             dk::sperrgrund_felder(Some(Sperrgrund::PartnerKonsistenzOffen), &c.f)
                 .into_iter()
                 .map(|w| {
-                    json!({"feld_id": w.feld_id, "wert": w.wert, "veranlagung": w.veranlagung, "grund": w.grund})
+                    json!({"feld_id": w.feld_id,
+                        "wert": w.wert.zu_json().expect("Store-Wert ist darstellbar (Auflage 3)"),
+                        "veranlagung": w.veranlagung.zu_json().expect("Store-Wert ist darstellbar (Auflage 3)"),
+                        "grund": w.grund})
                 })
                 .collect(),
         ),
