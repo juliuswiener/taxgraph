@@ -8,7 +8,7 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 
 ---
 
-## Fortschritt (Stand 2026-10-01 23:55, HEAD `faef9ee`, 76 Commits ungepusht)
+## Fortschritt (Stand 2026-10-02 03:10, HEAD `86e9c91`, 95 Commits ungepusht)
 
 | Schritt | Stand | Commits |
 |---|---|---|
@@ -22,7 +22,10 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 | Vorjahr überspringt Altwert | fertig in Python und `eingang` (Rust-Route bleibt Stub bis 9c) | `e64a8c4` |
 | Null in Kz ohne Null | fertig, Py **und** Rust: 384 echte Fälle, ungültig 214 → 38, Abweichungen 0 (Vault `decisions/elster-null-in-kz-ohne-null-weglassen`) | `3c7bb01` |
 | Textformat aus XSD beim Speichern | fertig, Py **und** Rust | `529eaa3` |
-| **9b-B Typisierung** | K0 fertig (Vault `research/taxgraph-wertformen-echte-stores`); **K1 `domain` fertig** (794 Rust-Tests, 19 Parity-Suiten, clippy 0, Mutation 2/2 rot); **K2 `store` trägt `PyWert` — gemergt** (`PyWert::zu_json` gibt `Result`, NaN/inf → `PyFehler::DezimalGrenze`, 56 Dateien); **K3 `interview` gegenstandslos** (READ-ONLY, 0 Events, kein Produktpfad-Konsument); **K4 `konsistenz` liest die Veranlagung typisiert — gemergt** (Fassung A: `Option<Veranlagung>` + `bool abweichend`, Log #119; Gegenprobe 1 rot); **nächster: K5 `elster`**, dann K6 → K9 (§7) | `1f01bc7` K1 · `ee46881` K4 · `bfb6a35` K2 |
+| **9b-B Typisierung** | K0 fertig (Vault `research/taxgraph-wertformen-echte-stores`); **K1 `domain` fertig** (794 Rust-Tests, 19 Parity-Suiten, clippy 0, Mutation 2/2 rot); **K2 `store` trägt `PyWert` — gemergt** (`PyWert::zu_json` gibt `Result`, NaN/inf → `PyFehler::DezimalGrenze`, 56 Dateien); **K3 `interview` gegenstandslos** (READ-ONLY, 0 Events, kein Produktpfad-Konsument); **K4 `konsistenz` liest die Veranlagung typisiert — gemergt** (Fassung A: `Option<Veranlagung>` + `bool abweichend`, Log #119; Gegenprobe 1 rot); **K5 `elster` gemergt** (Veranlagung über `Lage`, `Konfession`/`Rentenart` als `domain`-Enums, Kz-Regel nur in `domain::Kz`); **K6 `intervall` gemergt**; **K7a `bescheid`-Helfer gemergt** (`VeranlagungWert` über `Lage`, exhaustiv; `py_wahr` entfernt); K7b in Arbeit (Konfession/Rentenart; Bundesland → K9 mit `engine::KistEingabe`; `Quantitaet` nur gemessen, 8 Stellen); dann K7c → K9 (§7) | `1f01bc7` K1 · `ee46881` K4 · `bfb6a35` K2 · `7f81242` K6 · `91204fd` K7a · `200415d` K5 |
+| Aufwands-Einzelposten runden auf | fertig, Py **und** Rust: 14 Einzelposten-Kz runden wie ihre Summen auf, § 35a-Summen aus den gerundeten Posten; ERiC rc=0 statt 610001002 (Vault `decisions/aufwand-einzelposten-aufrunden-summe-aus-posten`) | `a46e525` |
+| Kaputtes PDF / Beleg-Regex | fertig, Py **und** Rust: `pdftotext`-Exit ≠ 0/3 (auch fehlende Datei, Exit 1) → `/kontoauszug` 422 statt 0 Buchungen; Nr-Anker-Regex einmal je Nummer (≈ 40×). Reiner Scan als Beleg liest leer: Vault-Ticket `beleg-pdf-ohne-textlayer-wird-leer-gelesen` (kein Produktpfad) | `908820e` |
+| Stille Schema-Skips | fertig: alle Rust-Tests, die das ERiC-Schema brauchen, fragen `elster::testhilfe::schemas_da` — ohne Schema rot, Skip nur mit `TAXGRAPH_OHNE_XSD=1`. Offen: XSD-Pfad ohne Schema ungetestet, ein Test besteht leer, Rundungs-Sweep einseitig (Vault `decisions/elster-testluecken-mit-eigener-probe-schliessen`, in Arbeit) | `86e9c91` |
 | Veranlagungsjahr in Rust-`elster` | fertig: `deklariere(snapshot, bindung, vz, id)` wählt die Null-Verbots-Liste je Jahr wie `est_mapping.null_unzulaessig` (0 → Fehler; 2024/2025 eigene Menge; 2026–2100 Vereinigung; sonst Fehler). `elster_paritaet reale_faelle` 4 → 0 Abweichungen (fall#52/#53 eg_huge/eg_neg). Gegenprobe am Aufrufort rot. Bericht `~/.cache/taxgraph-tmp/berichte/vz.md` | `d8d5f1f` · `faef9ee` |
 | End-to-End Eingabe → Bescheid → ELSTER-XML | fertig, byte-gleich Python, 3 Fixtures VZ 2025 gegen XSD | `479deb9` |
 | Python-xfail → Rust `#[ignore]` | fertig: 24 Gegenstücke in `rust/{api,bescheid,elster}/tests/offene_defekte.rs`, unter `--ignored` rot am Defekt — Ausnahme `p23_eric_prueft_zwei_verkaeufe`: im Hauptbaum grün, weil `.env*` eine echte Hersteller-ID trägt (Umgebungs-Gate, im `#[ignore]`-Grund benannt); `test_datenwurzel_ausserhalb_repo` als grüner Rust-Test (`api/tests/datenwurzel.rs`); TESTMAP nennt je xfail das Gegenstück. Unter K2 kompilierbar erst mit `faef9ee` | `90f91aa` · `faef9ee` |
@@ -30,7 +33,7 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 | Wackliger Test durch Ablage-Leck | fertig: `audit.AUDIT_DIR`/`api.FAELLE` enden an der Testdatei (autouse-Fixture in `tests/conftest.py`), Ursache pytest-randomly | `d1b0422` |
 | Pflegegrad im XSD-Enum | fertig, Py **und** Rust: 5→4, Block-Wegfall ohne H, nur E0161606 weg mit H; xmllint invalide 38 → 22; Testloch Enum-Schranke geschlossen (Vault `decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen`) | `29d66c2` |
 | Wertformen-Messwerkzeug | fertig: `re.fullmatch` statt `re.match`, Regressionstest in `tests/` (Vault `decisions/wertformen-prueft-format-ueber-den-ganzen-wert`) | `3436fa9` |
-| 9b Rest | `debug_assert!`/Properties für übrige Crates; `rust/elster/tests/eigenschaften.rs` ohne Schema: 7 rot, 3 still `return` → gleiche Regel wie Python (`TAXGRAPH_OHNE_XSD=1`); Wächter `test_ci_konfiguration` prüft die installierte Fassung nur für `gettsim`, nicht für `ttsim-backend` | — |
+| 9b Rest | in Arbeit: Doctests/`debug_assert!`/Properties für store, konsistenz, auth, llm, eingang, catala-sys, interview, intervall, engine, api; Wächter `test_ci_konfiguration` prüft die installierte Fassung nur für `gettsim`, nicht für `ttsim-backend` | — |
 | Format | `cargo fmt --all --check`: 33 Hunks in 14 fremden Dateien, bewusst vertagt (CI prüft nur clippy, Log #165) | — |
 | 9c `api`-Handler | offen (danach), inkl. `Username`/`FallId`-Newtypes | — |
 | 10 Cutover | offen | — |
@@ -62,10 +65,7 @@ melden, oder nur warnen.
 - **Rentner-Scheibe** fragt Lohnsteuer ohne die zwei ERiC-Pflichtfelder. Beide naheliegenden Ausgänge falsch; entschieden ist (c): Ring zuerst. Vault-Ticket `rentner-scheibe-fragt-lohnsteuer-ohne-die-zwei-pflichtfelder`, `naht` leitet die Naht-Paare aus dem XSD ab.
 - **Audit-Leck** (Fix `d1b0422`, Zeile „Wackliger Test" oben): `API.FAELLE` und `audit.AUDIT_DIR` sind zwei Modul-Globals, die halbe Isolierung leckt 1145 Zeilen ins Nutzerverzeichnis. 12 von 169 Wegwerf-Skripten tragen das Muster. Zweites Ticket: die `status`-Spalte steht bei fünf Aktionsnamen auf 500 trotz 409/422 am Client.
 - **Parity-Blindstellen** (Vault `decisions/parity-elster-vergleich-gegenstandslos-fuer-ring`): der ELSTER-Vergleich nimmt auf beiden Seiten denselben verkürzten Weg — für die Ring-Injektion 0 Aussage; die Komposition `mit_ring_werten → elster::deklariere` hat für Rust keine Zeile. `intervall`/„B alle" ist **strukturell leer** (299 von 366 Achsen nullen die Zeile, 192/192 NULL).
-- **Rundung der Abzugsposten** (`quellen`): 35a-Summe muss aus gerundeten Posten kommen.
-
-**Kleinere offene Befunde:** `eingang::beleg::extrahiere` kompiliert Regex je Aufruf (73–87 ms);
-`eingang::ocr::lies_kontoauszug_pdf` liefert bei fehlender Datei `Ok(leer)`; Float-Rentenfreibetrag
+**Kleinere offene Befunde:** Float-Rentenfreibetrag
 fehlt im Parity-Korpus (nur Unit-Tests); reale Fälle decken Kinder/§ 23/DBA kaum (Golden-Fälle vor Cutover);
 Mutationen überleben bei § 31-Gleichstand und `true` im Rentenbeginn-Jahr.
 
