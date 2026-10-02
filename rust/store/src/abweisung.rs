@@ -68,11 +68,11 @@ pub enum Abweisung {
     },
 
     /// K2-Auflage 3: `wert` oder `signal_1` geht nicht nach JSON — NaN/+-inf, auch innerhalb einer
-    /// `Liste`/eines `Objekt`. KEINE Entsprechung in `store.py`: `CPython` schreibt
-    /// NaN nackt in die Fallakte (B4, `api.py:157`; `json.dump` ohne `allow_nan=False` laesst
-    /// es durch). Hier fail-closed statt eines stillen `null`. Kommt im Bestand nicht vor
-    /// (gemessen: 11294/11294 sind bool/int/str), aber eine stille Konvertierung waere genau
-    /// die Fehlerklasse, die den `event_id` kostet.
+    /// `Liste`/eines `Objekt`. KEINE Entsprechung in `store.py`; Python haelt NaN an der Tuer auf
+    /// (`server.py`, 400) und beim Schreiben (`speichere_fall` mit `allow_nan=False`,
+    /// `api.py:159`; die Akte bleibt alt, B4). Hier fail-closed statt eines stillen `null`. Kommt
+    /// im Bestand nicht vor (gemessen: 11294/11294 sind bool/int/str), aber eine stille
+    /// Konvertierung waere genau die Fehlerklasse, die den `event_id` kostet.
     #[error("fail-closed (Wert): {feld_id}={grund}")]
     WertNichtDarstellbar { feld_id: String, grund: String },
 

@@ -402,4 +402,42 @@ mod tests {
             Some(domain::PyWert::Gleit(18_446_744_073_709_551_616.0))
         );
     }
+
+    /// Grenze: ein Struct-Feld zweimal, oben (`veranlagungszeitraum`) oder im Event (`wert`),
+    /// sperrt die ganze Akte als `PersistenzFehler::Format` mit dem Feldnamen. `json.load` laedt
+    /// sie, der letzte Wert gewinnt. Gemessen 2026-10-02: 0 von 192 realen Akten tragen einen
+    /// doppelten Schluessel. Ein doppelter Schluessel in einem `wert`-Objekt laedt wie in Python
+    /// (D8, `domain/src/py_wert.rs`).
+    #[test]
+    fn doppeltes_struct_feld_sperrt_mit_namen() {
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-doppelt-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("doppelt.json");
+        let falsch: Vec<String> = [
+            ("wert", akte_mit("2025", r#"1,"wert":2"#)),
+            (
+                "veranlagungszeitraum",
+                akte_mit(r#"2025,"veranlagungszeitraum":2026"#, "1"),
+            ),
+        ]
+        .into_iter()
+        .filter_map(|(feld, akte)| {
+            std::fs::write(&pfad, akte).unwrap();
+            match lade(&pfad) {
+                Err(PersistenzFehler::Format(_, e))
+                    if e.to_string()
+                        .starts_with(&format!("duplicate field `{feld}`")) =>
+                {
+                    None
+                }
+                anders => Some(format!("{feld}: {anders:?}")),
+            }
+        })
+        .collect();
+        std::fs::remove_dir_all(&dir).ok();
+        assert!(falsch.is_empty(), "{falsch:#?}");
+    }
 }
