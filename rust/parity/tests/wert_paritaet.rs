@@ -24,6 +24,12 @@
 //!   `int(text)` traegt ein `repr`, das Cf/Co/Cn nicht escapet (ponytail an `repr_str`).
 //! - `int_text_sweep_gegen_cpython`: `int(c + "7" + c)` fuer jeden der 1.112.064 Skalarwerte.
 //!
+//! Die Typfragen (`truthy`, `typname`, `gt_null`, `int_mit_bool`, `int_ohne_bool`,
+//! `zahl_ohne_bool`, `oder_null`, `PyFehler::python_klasse`): je ein Test, alle auf denselben
+//! 4.291 Werten (die von `int` und zwoelf Zusatzwerte). Antwort, Klasse und `str(e)` (der
+//! `TypeError` von `x > 0`) muessen stimmen; `int_mit_bool` und `int_ohne_bool` melden wie `int`
+//! die Rust-Grenze ueber `i64`.
+//!
 //! Braucht `python3` mit dem Repo-Umfeld (`oracle.py` importiert die Catala-Pakete eager) -- in CI
 //! standardmaessig SKIP, lokal erzwingen:
 //!
@@ -697,13 +703,8 @@ fn int_gegen_cpython() {
         *je_klasse
             .entry(klasse(p).unwrap_or("ok").to_owned())
             .or_default() += 1;
-        let soll_int: Ant = match p {
-            Ok(Value::String(s)) if s.parse::<i64>().is_err() => {
-                ueber_i64 += 1;
-                Err(("-".to_owned(), String::new()))
-            }
-            _ => p.clone(),
-        };
+        let soll_int = mit_rust_grenze(p);
+        ueber_i64 += usize::from(&soll_int != p);
         let dezimal = ant_rust(w.int_dezimal(), Value::String);
         let ganz = ant_rust(w.int(), |n| Value::String(n.to_string()));
         for (was, ist, soll) in [("int_dezimal", &dezimal, p), ("int", &ganz, &soll_int)] {
@@ -833,4 +834,248 @@ fn int_text_sweep_gegen_cpython() {
     } else {
         assert_eq!(zu_viel.len(), 80, "{zu_viel:?}");
     }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Block C: die Pruefungen und Typfragen auf `PyWert` -- `truthy`, `typname`, `gt_null`,
+// `int_mit_bool`, `int_ohne_bool`, `zahl_ohne_bool`, `oder_null` und `PyFehler::python_klasse`.
+
+/// Zusaetzliche Werte fuer die Typfragen: Texte, die wie Zahlen oder Wahrheitswerte aussehen, und
+/// Behaelter, die leer aussehen.
+fn typ_extra() -> Vec<PyWert> {
+    let text = |t: &str| Text(t.to_owned());
+    vec![
+        text(" "),
+        text("0"),
+        text("False"),
+        text("None"),
+        text("0.0"),
+        Gleit(1e-300),
+        Gleit(-5e-324),
+        Gleit(-f64::MIN_POSITIVE),
+        liste(vec![liste(vec![])]),
+        liste(vec![Null, Null]),
+        objekt(vec![("", Null)]),
+        objekt(vec![("a", liste(vec![]))]),
+    ]
+}
+
+/// Alle Werte der Typfragen: die Werte von `int` (Skalare, Behaelter, Floats, Texte) und `typ_extra`.
+fn typ_werte() -> Vec<PyWert> {
+    let mut v = int_werte();
+    v.extend(typ_extra());
+    v
+}
+
+/// `CPython`s Antwort, wenn `int` oder `int_mit_bool` eine Ganzzahl ausserhalb von `i64` meldet:
+/// die Rust-Grenze (D3, D4) statt des exakten Werts.
+fn mit_rust_grenze(p: &Ant) -> Ant {
+    match p {
+        Ok(Value::String(s)) if s.parse::<i64>().is_err() => Err(("-".to_owned(), String::new())),
+        _ => p.clone(),
+    }
+}
+
+/// Fragt `CPython` nach `op(x)` fuer jedes `x` in `werte` und haelt `rust(x)` daneben. Gibt die
+/// Abweichungen und die Zahl der Antworten je Art (`ok` oder Klasse) zurueck. `ganz`: die Antwort
+/// ist eine Ganzzahl als Dezimaltext, und ausserhalb von `i64` gilt die Rust-Grenze.
+fn gegen_cpython(
+    op: &str,
+    ganz: bool,
+    werte: &[PyWert],
+    rust: impl Fn(&PyWert) -> Ant,
+) -> (Vec<String>, std::collections::BTreeMap<String, usize>) {
+    let py = fragen(op, werte);
+    let mut abw = Vec::new();
+    let mut je_art = std::collections::BTreeMap::new();
+    for (w, p) in werte.iter().zip(&py) {
+        *je_art
+            .entry(klasse(p).unwrap_or("ok").to_owned())
+            .or_default() += 1;
+        let soll = if ganz { mit_rust_grenze(p) } else { p.clone() };
+        let ist = rust(w);
+        if !gleich(&ist, &soll) {
+            abw.push(format!("{w:?}: Rust {ist:?}, CPython {soll:?}"));
+        }
+    }
+    (abw, je_art)
+}
+
+fn pruefe_op(
+    op: &str,
+    ganz: bool,
+    rust: impl Fn(&PyWert) -> Ant,
+    erwartete_arten: &[(&str, usize)],
+) {
+    if skip() {
+        return;
+    }
+    let werte = typ_werte();
+    let (abw, je_art) = gegen_cpython(op, ganz, &werte, rust);
+    println!(
+        "{op}: {} Werte, Antworten {je_art:?}, {} Abweichungen",
+        werte.len(),
+        abw.len()
+    );
+    assert!(
+        abw.is_empty(),
+        "{op}: {} Abweichungen, erste: {:#?}",
+        abw.len(),
+        &abw[..abw.len().min(20)]
+    );
+    // Das Orakel sagt nicht nur eine Art von Antwort (sonst waere "alles gleich" wertlos).
+    for (art, mindestens) in erwartete_arten {
+        assert!(
+            je_art.get(*art).copied().unwrap_or(0) >= *mindestens,
+            "{op}: {je_art:?}"
+        );
+    }
+}
+
+#[test]
+fn truthy_gegen_cpython() {
+    let wahr = |v: bool| Ok(Value::Bool(v));
+    pruefe_op("wert.truthy", false, |w| wahr(w.truthy()), &[("ok", 1000)]);
+    if skip() {
+        return;
+    }
+    // Beide Antworten kommen vor.
+    let werte = typ_werte();
+    let py = fragen("wert.truthy", &werte);
+    assert!(py.contains(&Ok(Value::Bool(true))) && py.contains(&Ok(Value::Bool(false))));
+}
+
+#[test]
+fn typname_gegen_cpython() {
+    pruefe_op(
+        "wert.typname",
+        false,
+        |w| Ok(Value::String(w.typname().to_owned())),
+        &[("ok", 1000)],
+    );
+    if skip() {
+        return;
+    }
+    // Alle sieben Typnamen kommen vor.
+    let py = fragen("wert.typname", &typ_werte());
+    for name in ["NoneType", "bool", "int", "float", "str", "list", "dict"] {
+        assert!(py.contains(&Ok(Value::String(name.to_owned()))), "{name}");
+    }
+}
+
+/// `x > 0`: der Wahrheitswert, oder der `TypeError` mit dem Wortlaut von `CPython`.
+#[test]
+fn gt_null_gegen_cpython() {
+    pruefe_op(
+        "wert.gt_null",
+        false,
+        |w| ant_rust(w.gt_null(), Value::Bool),
+        &[("ok", 100), ("TypeError", 1000)],
+    );
+}
+
+/// `x if isinstance(x, int) else None`: `bool` zaehlt als `int` (D10).
+#[test]
+fn int_mit_bool_gegen_cpython() {
+    pruefe_op(
+        "wert.int_mit_bool",
+        true,
+        |w| {
+            ant_rust(w.int_mit_bool(), |o| {
+                o.map_or(Value::Null, |n| Value::String(n.to_string()))
+            })
+        },
+        &[("ok", 1000)],
+    );
+}
+
+/// `x if isinstance(x, int) and not isinstance(x, bool) else None` (D10).
+#[test]
+fn int_ohne_bool_gegen_cpython() {
+    pruefe_op(
+        "wert.int_ohne_bool",
+        true,
+        |w| {
+            ant_rust(w.int_ohne_bool(), |o| {
+                o.map_or(Value::Null, |n| Value::String(n.to_string()))
+            })
+        },
+        &[("ok", 1000)],
+    );
+}
+
+/// `x if isinstance(x, (int, float)) and not isinstance(x, bool) else None`: `CPython` gibt `x`
+/// selbst zurueck, `zahl_ohne_bool` einen Verweis auf `self`.
+#[test]
+fn zahl_ohne_bool_gegen_cpython() {
+    pruefe_op(
+        "wert.zahl_ohne_bool",
+        false,
+        |w| Ok(Value::Bool(w.zahl_ohne_bool().is_some())),
+        &[("ok", 1000)],
+    );
+    if skip() {
+        return;
+    }
+    for w in typ_werte() {
+        if let Some(z) = w.zahl_ohne_bool() {
+            assert!(std::ptr::eq(z, std::ptr::from_ref(&w)), "{w:?}");
+        }
+    }
+}
+
+/// `x or 0`: `x` selbst, wenn es wahr ist, sonst die Ganzzahl 0 -- im Draht-Format verglichen.
+#[test]
+fn oder_null_gegen_cpython() {
+    pruefe_op(
+        "wert.oder_null",
+        false,
+        |w| Ok(draht(w.oder_null())),
+        &[("ok", 1000)],
+    );
+}
+
+/// `PyFehler::python_klasse` gegen `type(e).__name__`: `TypeError`, `ValueError` und `OverflowError`
+/// kommen von `CPython`; `I64Grenze` und `DezimalGrenze` sind Rust-Grenzen und tragen keine Klasse.
+#[test]
+fn python_klasse_gegen_cpython() {
+    if skip() {
+        return;
+    }
+    let werte = vec![
+        Null,
+        Text("x".to_owned()),
+        Gleit(f64::INFINITY),
+        Gleit(f64::NAN),
+    ];
+    let py = fragen("wert.int", &werte);
+    let rust: Vec<Option<&str>> = werte
+        .iter()
+        .map(|w| w.int_dezimal().err().and_then(|e| e.python_klasse()))
+        .collect();
+    let python: Vec<String> = py
+        .iter()
+        .map(|p| klasse(p).unwrap_or("ok").to_owned())
+        .collect();
+    assert_eq!(
+        python,
+        ["TypeError", "ValueError", "OverflowError", "ValueError"]
+    );
+    assert_eq!(
+        rust,
+        [
+            Some("TypeError"),
+            Some("ValueError"),
+            Some("OverflowError"),
+            Some("ValueError")
+        ]
+    );
+    // Ueber `i64` hinaus rechnet `CPython` weiter: dort gibt es keine Ausnahme und keine Klasse.
+    assert_eq!(
+        fragen("wert.int", &[GrossGanz(u64::MAX)])[0],
+        Ok(json!("18446744073709551615"))
+    );
+    let grenze = GrossGanz(u64::MAX).int().unwrap_err();
+    assert_eq!(grenze.python_klasse(), None);
+    assert!(matches!(grenze, PyFehler::I64Grenze(_)));
 }

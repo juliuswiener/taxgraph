@@ -8,6 +8,10 @@
 - `wert.int`: `{"werte": [wert, ...]}`. Antwort `{"ok": [<Antwort>, ...]}`, je Wert `{"ok": "<dezimal>"}`
   fuer `int(x)` oder `{"err": "<Klasse>", "msg": "<str(exc)>"}`.
 - `wert.int_text_sweep`: `int(c + "7" + c)` fuer jeden Skalarwert `c`, kompakt (siehe `_int_text_sweep`).
+- `wert.truthy`, `typname`, `gt_null`, `int_mit_bool`, `int_ohne_bool`, `zahl_ohne_bool`, `oder_null`:
+  `{"werte": [wert, ...]}` wie `wert.int`; je Wert `bool(x)`, `type(x).__name__`, `x > 0`, `x if
+  isinstance(x, int) else None`, `... and not isinstance(x, bool)`, `isinstance(x, (int, float)) and not
+  isinstance(x, bool)` (als Wahrheitswert) und `x or 0` (im Draht-Format, siehe `kodiere`).
 
 Draht-Format (kein Wert reist als JSON-Zahl, denn `json.loads` kennt weder NaN noch `u64`-exakte
 Floats im Rust-Sinn): `null`, `true`/`false`, Text und Liste wie JSON; `{"i": "<dezimal>"}` eine
@@ -102,7 +106,60 @@ def _int_text_sweep(req: dict) -> dict:
             "vorlage_ausnahmen": ausnahmen, "klassen": klassen}
 
 
-HANDLER = {"py_eq": _py_eq, "py_eq_json": _py_eq_json, "int": _int, "int_text_sweep": _int_text_sweep}
+def kodiere(x):
+    """Umkehr von `wert()`: ein Python-Wert im Draht-Format."""
+    if x is None or isinstance(x, (bool, str)):
+        return x
+    if isinstance(x, int):
+        return {"i": str(x)}
+    if isinstance(x, float):
+        return {"f": struct.pack(">d", x).hex()}
+    if isinstance(x, list):
+        return [kodiere(v) for v in x]
+    return {"o": [[k, kodiere(v)] for k, v in x.items()]}
+
+
+def _truthy(req: dict) -> list:
+    return _je_wert(req, bool)
+
+
+def _typname(req: dict) -> list:
+    return _je_wert(req, lambda x: type(x).__name__)
+
+
+def _gt_null(req: dict) -> list:
+    return _je_wert(req, lambda x: x > 0)
+
+
+def _int_mit_bool(req: dict) -> list:
+    return _je_wert(req, lambda x: str(int(x)) if isinstance(x, int) else None)
+
+
+def _int_ohne_bool(req: dict) -> list:
+    return _je_wert(req, lambda x: str(int(x)) if isinstance(x, int) and not isinstance(x, bool) else None)
+
+
+def _zahl_ohne_bool(req: dict) -> list:
+    return _je_wert(req, lambda x: isinstance(x, (int, float)) and not isinstance(x, bool))
+
+
+def _oder_null(req: dict) -> list:
+    return _je_wert(req, lambda x: kodiere(x or 0))
+
+
+HANDLER = {
+    "py_eq": _py_eq,
+    "py_eq_json": _py_eq_json,
+    "int": _int,
+    "int_text_sweep": _int_text_sweep,
+    "truthy": _truthy,
+    "typname": _typname,
+    "gt_null": _gt_null,
+    "int_mit_bool": _int_mit_bool,
+    "int_ohne_bool": _int_ohne_bool,
+    "zahl_ohne_bool": _zahl_ohne_bool,
+    "oder_null": _oder_null,
+}
 
 
 def handle(req: dict) -> dict:
