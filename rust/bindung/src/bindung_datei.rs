@@ -163,8 +163,8 @@ pub struct Beweist {
 #[serde(deny_unknown_fields)]
 pub struct FeldBedingung {
     pub feld: String,
-    /// Nur eines von `wert`/`wert_nicht` ist gesetzt (Schema: nur `feld` + `grund` sind
-    /// Pflicht) -- ausgeschrieben statt XOR-Typ, weil hier (anders als bei `Quelle`) keine
+    /// Genau eines von `wert`/`wert_nicht` ist gesetzt (Schema: `oneOf`, Rust prueft es nicht
+    /// nach) -- ausgeschrieben statt XOR-Typ, weil hier (anders als bei `Quelle`) keine
     /// nachgeschaltete Regel darauf angewiesen ist, dass genau eines gesetzt ist.
     pub wert: Option<Value>,
     pub grund: String,
