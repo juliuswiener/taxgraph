@@ -35,7 +35,7 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 | Wertformen-Messwerkzeug | fertig: `re.fullmatch` statt `re.match`, Regressionstest in `tests/` (Vault `decisions/wertformen-prueft-format-ueber-den-ganzen-wert`) | `3436fa9` |
 | 9b Rest | `store` gemergt (`9cbaf76`: 39 Doctests, Eigenschaften P1–P6, `debug_assert!` „ein aktives Event je Feld"; zwei Befunde als `#[ignore]`: `EventId::parse` nimmt Großbuchstaben, YAML-Leser verträgt DEL/C1 nicht → Vault-Backlog `rust-server-laedt-fallakte-als-yaml-statt-json`). In Arbeit: Doctests/`debug_assert!`/Properties für konsistenz, interview, intervall, engine (Worker `haertung`) und auth, catala-sys, llm, eingang (Worker `schemaskip`); `api` mit 9c (Handler werden dort neu geschrieben); Wächter `test_ci_konfiguration` prüft die installierte Fassung nur für `gettsim`, nicht für `ttsim-backend` | — |
 | Format | `cargo fmt --all --check`: 33 Hunks in 14 fremden Dateien, bewusst vertagt (CI prüft nur clippy, Log #165) | — |
-| 9c `api`-Handler | offen (danach), inkl. `Username`/`FallId`-Newtypes; Landkarte je Stub-Route in Arbeit (nur Messung) | — |
+| 9c `api`-Handler | offen (danach), inkl. `Username`/`FallId`-Newtypes; Landkarte gemessen (15 Routen, Bericht `berichte/9c-karte.md`); Harness-Generator je Route vor dem Port (in Arbeit), `flow` wird mitportiert, Handler erst nach dem JSON-Leser (Vault `decisions/rust-9c-generator-je-route-und-flow-portieren`) | — |
 | 10 Cutover | offen | — |
 
 Gates auf `faef9ee` (2026-10-01 23:51, Instructor nachgemessen): `clippy --workspace --all-targets
@@ -56,9 +56,10 @@ Testbinaries; `rust/fuzz` `cargo check` grün; `make unit` 3478 passed / 0 faile
 - `/chat`: die Gründe nennen bei übrigen Typfehlern den Wert (Vault-Ticket
   `chat-ablehnungsgrund-enthaelt-den-wert`), spätestens beim Portieren entscheiden.
 
-**Offen bei Julius:** Das ELSTER-Schema erlaubt in Textfeldern nur den Zeichensatz „Standard_E_V2",
-strenger als XML 1.0 (Vault-Ticket `elster-zeichensatz-strenger-als-xml`): abweisen, umschreiben und
-melden, oder nur warnen.
+**Entschieden (Julius, 2026-10-01), nicht gebaut:** Das ELSTER-Schema erlaubt in Textfeldern nur den
+Zeichensatz „Standard_E_V2", strenger als XML 1.0. Ein Zeichen ausserhalb wird beim Speichern
+abgewiesen, die Meldung nennt Zeichen und Vorschlag, Py **und** Rust (Vault
+`decisions/elster-zeichensatz-beim-speichern-abweisen`, Backlog `elster-zeichensatz-strenger-als-xml`).
 
 **Offen aus 2026-10-01 (gemessen, noch nicht entschieden):**
 - **Nutzerpfad-Karte** (`sperre`, in Arbeit): `rust/interview` ist fertig portiert und trägt **keinen** Nutzerpfad. Falls das für weitere Crates gilt, ist „fertig" in der Tabelle oben eine Aussage über den Code, nicht über das Produkt.
