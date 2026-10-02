@@ -87,16 +87,6 @@ fn repr_text(s: &str) -> String {
     aus
 }
 
-/// `repr(float)`: `1.0`, `1e+16`, `1e-05` (Rust schreibt `1e16`, `1e-5`).
-fn repr_float(f: f64) -> String {
-    let rust = format!("{f:?}");
-    let Some((mantisse, exp)) = rust.split_once('e') else {
-        return rust;
-    };
-    let (vorzeichen, ziffern) = exp.strip_prefix('-').map_or(('+', exp), |z| ('-', z));
-    format!("{mantisse}e{vorzeichen}{ziffern:0>2}")
-}
-
 /// `repr(x)` für einen aus JSON gelesenen Wert.
 ///
 /// ```
@@ -114,7 +104,7 @@ pub fn repr(v: &Value) -> String {
         Value::Number(n) => n
             .as_f64()
             .filter(|_| n.is_f64())
-            .map_or_else(|| n.to_string(), repr_float),
+            .map_or_else(|| n.to_string(), domain::repr_float),
         Value::String(s) => repr_text(s),
         Value::Array(a) => format!("[{}]", a.iter().map(repr).collect::<Vec<_>>().join(", ")),
         Value::Object(o) => {
@@ -221,14 +211,14 @@ mod tests {
 #[cfg(test)]
 mod aequivalenz {
     use domain::testhilfe::{
-        ascii_fassung, ganzzahl_text, hat_d9, json_wert, klasse, nd_ziffer, ohne_d9, pruefe, py,
-        py_absteigend, text as zeichenkette, viele_ziffern,
+        ascii_fassung, ganzzahl_text, gleitzahl, hat_d9, json_wert, klasse, nd_ziffer, ohne_d9,
+        pruefe, pruefe_repr_float, py, py_absteigend, text as zeichenkette, viele_ziffern,
     };
     use domain::PyWert;
     use proptest::prelude::*;
     use serde_json::{json, Value};
 
-    use super::{int, repr, repr_float, text, typname, wahr};
+    use super::{int, repr, text, typname, wahr};
 
     /// Ausnahmen von `int`.
     const INT: &[&str] = &["D6", "D17"];
@@ -339,10 +329,12 @@ mod aequivalenz {
             repr_wie(&Value::String(s), repr, PyWert::repr)?;
         }
 
-        /// Nur endliche Floats: `repr_float` sieht nur Zahlen aus `serde_json`.
+        /// Nur endliche Floats (`gleitzahl`): `repr` sieht nur Zahlen aus `serde_json`. Die Ziffernwahl
+        /// ist die einzige in `domain::repr_float`; das Orakel ist ryu (`CPython`-gleich), auch an den
+        /// exakten Gleichstaenden, an denen `{:e}` und `{:?}` von `std` aufrunden.
         #[test]
-        fn repr_float_wie_pywert(f in any::<f64>().prop_filter("endlich", |f| f.is_finite())) {
-            pruefe(&f, &repr_float(f), &PyWert::Gleit(f).repr(), Vec::new, &[])?;
+        fn repr_float_wie_pywert(f in gleitzahl()) {
+            pruefe_repr_float(f, &repr(&json!(f)))?;
         }
     }
 

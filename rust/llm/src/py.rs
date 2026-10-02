@@ -367,7 +367,7 @@ pub fn py_repr(v: &Value) -> String {
         Value::Number(n) => match (n.as_i64(), n.as_u64(), n.as_f64()) {
             (Some(i), _, _) => i.to_string(),
             (None, Some(u), _) => u.to_string(),
-            (None, None, Some(f)) => py_float_repr(f),
+            (None, None, Some(f)) => domain::repr_float(f),
             _ => n.to_string(),
         },
         Value::String(s) => py_repr_str(s),
@@ -435,67 +435,6 @@ fn ist_druckbar(c: char) -> bool {
     !(c.is_control()
         || c.is_whitespace()
         || matches!(c, '\u{ad}' | '\u{200b}'..='\u{200f}' | '\u{2028}'..='\u{202e}' | '\u{2060}'..='\u{2064}' | '\u{feff}'))
-}
-
-/// `repr(float)` in Pythons Kurzform: kuerzeste Ziffernfolge, Festkomma fuer Exponenten
-/// `-4 <= e < 16`, sonst `d.ddde+XX`.
-///
-/// ```
-/// assert_eq!(llm::py::py_float_repr(1e16), "1e+16");
-/// assert_eq!(llm::py::py_float_repr(1e15), "1000000000000000.0");
-/// assert_eq!(llm::py::py_float_repr(1.5e-7), "1.5e-07");
-/// assert_eq!(llm::py::py_float_repr(0.0001), "0.0001");
-/// ```
-#[must_use]
-pub fn py_float_repr(f: f64) -> String {
-    if f.is_nan() {
-        return "nan".into();
-    }
-    if f.is_infinite() {
-        return if f > 0.0 { "inf".into() } else { "-inf".into() };
-    }
-    let wiss = format!("{f:e}");
-    let (mantisse, exp) = wiss.split_once('e').unwrap_or((&wiss, "0"));
-    let exp: i32 = exp.parse().unwrap_or(0);
-    let (vorzeichen, mantisse) = mantisse
-        .strip_prefix('-')
-        .map_or(("", mantisse), |m| ("-", m));
-    let ziffern: String = mantisse.chars().filter(char::is_ascii_digit).collect();
-    if (-4..16).contains(&exp) {
-        let punkt = exp + 1;
-        let fest = if punkt <= 0 {
-            format!(
-                "0.{}{}",
-                "0".repeat(usize::try_from(-punkt).unwrap_or(0)),
-                ziffern
-            )
-        } else {
-            let p = usize::try_from(punkt).unwrap_or(0);
-            if ziffern.len() <= p {
-                format!("{}{}.0", ziffern, "0".repeat(p - ziffern.len()))
-            } else {
-                format!(
-                    "{}.{}",
-                    ziffern.get(..p).unwrap_or(""),
-                    ziffern.get(p..).unwrap_or("")
-                )
-            }
-        };
-        format!("{vorzeichen}{fest}")
-    } else {
-        let (kopf, rest) = ziffern.split_at(1.min(ziffern.len()));
-        let m = if rest.is_empty() {
-            kopf.to_owned()
-        } else {
-            format!("{kopf}.{rest}")
-        };
-        let e = if exp < 0 {
-            format!("-{:02}", -exp)
-        } else {
-            format!("+{exp:02}")
-        };
-        format!("{vorzeichen}{m}e{e}")
-    }
 }
 
 /// Pythons `int(x)` fuer einen JSON-Wert.
@@ -650,7 +589,8 @@ impl<'de> serde::Deserialize<'de> for GeordneteMap {
 
 #[cfg(test)]
 mod tests {
-    use super::{py_float_repr, splitlines, PyRegex};
+    use super::{py_repr, splitlines, PyRegex};
+    use serde_json::json;
 
     #[test]
     fn wortgrenze_wie_python_bei_hochzahl_und_marke() {
@@ -662,10 +602,10 @@ mod tests {
 
     #[test]
     fn float_repr_randfaelle() {
-        assert_eq!(py_float_repr(100.0), "100.0");
-        assert_eq!(py_float_repr(-0.5), "-0.5");
-        assert_eq!(py_float_repr(1.5e300), "1.5e+300");
-        assert_eq!(py_float_repr(123_456.789), "123456.789");
+        assert_eq!(py_repr(&json!(100.0)), "100.0");
+        assert_eq!(py_repr(&json!(-0.5)), "-0.5");
+        assert_eq!(py_repr(&json!(1.5e300)), "1.5e+300");
+        assert_eq!(py_repr(&json!(123_456.789)), "123456.789");
     }
 
     #[test]
@@ -681,7 +621,8 @@ mod tests {
 #[cfg(test)]
 mod aequivalenz {
     use domain::testhilfe::{
-        ganzzahl_text, int_ausnahmen, json_wert, klasse, pruefe, py, py_absteigend, text, Ergebnis,
+        ganzzahl_text, gleitzahl, int_ausnahmen, json_wert, klasse, pruefe, pruefe_repr_float, py,
+        py_absteigend, text, Ergebnis,
     };
     use domain::{py_strip, PyWert};
     use proptest::collection::{btree_map, vec};
@@ -689,7 +630,7 @@ mod aequivalenz {
     use serde_json::{json, Map, Value};
 
     use super::{
-        py_float_repr, py_int, py_repr, py_repr_str, py_str, strip, wahr, GeordneteMap, PyInt,
+        py_int, py_repr, py_repr_str, py_str, strip, wahr, GeordneteMap, PyInt,
     };
 
     /// Ausnahmen von `py_int` und `py_int_text`.
@@ -761,9 +702,11 @@ mod aequivalenz {
             pruefe(&s, &py_repr_str(&s), &PyWert::Text(s.clone()).repr(), Vec::new, &[])?;
         }
 
+        /// Die Ziffernwahl ist die einzige in `domain::repr_float`; das Orakel ist ryu (`CPython`-gleich),
+        /// auch an den exakten Gleichstaenden, an denen `{:e}` von `std` aufrundet.
         #[test]
-        fn float_repr_wie_pywert(f in any::<f64>()) {
-            pruefe(&f, &py_float_repr(f), &PyWert::Gleit(f).repr(), Vec::new, &[])?;
+        fn float_repr_wie_pywert(f in gleitzahl()) {
+            pruefe_repr_float(f, &py_repr(&json!(f)))?;
         }
 
         /// Beide aussen absteigend; `GeordneteMap` haelt innen die sortierte Reihenfolge.
