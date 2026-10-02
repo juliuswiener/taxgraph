@@ -17,13 +17,24 @@
 //! gegen jeden Nachbartest, der `aus_env()` liest.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
+use std::sync::{Mutex, MutexGuard, PoisonError};
+
 use api::konfig::Konfig;
 
-/// Setzt Variablen und stellt den vorherigen Wert wieder her — auch beim Panic.
-struct Umgebung(Vec<(&'static str, Option<std::ffi::OsString>)>);
+/// Beide Tests setzen die Prozess-Umgebung; ohne diese Sperre liefen sie als Threads desselben
+/// Binaers ineinander (gemessen: 1 von 6 Laeufen rot, `faelle` aus dem Nachbartest).
+static UMGEBUNG: Mutex<()> = Mutex::new(());
+
+/// Setzt Variablen und stellt den vorherigen Wert wieder her — auch beim Panic. Haelt die Sperre
+/// bis nach dem Zuruecksetzen (Felder fallen nach `Drop::drop`).
+struct Umgebung(
+    Vec<(&'static str, Option<std::ffi::OsString>)>,
+    #[allow(dead_code)] MutexGuard<'static, ()>,
+);
 
 impl Umgebung {
     fn neue(paare: &[(&'static str, Option<&str>)]) -> Self {
+        let sperre = UMGEBUNG.lock().unwrap_or_else(PoisonError::into_inner);
         let alt = paare
             .iter()
             .map(|(k, _)| (*k, std::env::var_os(k)))
@@ -34,7 +45,7 @@ impl Umgebung {
                 None => std::env::remove_var(k),
             }
         }
-        Self(alt)
+        Self(alt, sperre)
     }
 }
 
