@@ -320,7 +320,13 @@ jobs:
       # Fehlen. einreichung_e2e prueft dann nur bis zum Writer, eigenschaften ueberspringt seine
       # zehn Schema-Tests, elster einen Unit-Test und fuenf Doctests. Byte-Vergleich mit Python
       # und XSD laufen lokal (ERIC_DIR).
+      #
+      # --no-fail-fast: ohne das Flag bricht cargo beim ersten roten Ziel ab, und alles danach
+      # laeuft nie -- spaetere Testziele UND die Doctests aller Crates, die cargo zuletzt faehrt.
+      # So verdeckte `parity --lib` am 2026-10-02 den roten eingang-Doctest (Lauf 36985004342:
+      # kein einziges "Doc-tests" im Log). Der Job-Status bleibt rot, sobald ein Ziel rot ist
+      # (exit 101); neu ist nur, dass ein Lauf ALLE roten Ziele zeigt statt eines je Push.
       - name: cargo test (Tarif-Paritaet ohne PARITY=1 -- no-op, gruen)
-        run: cd rust && cargo test
+        run: cd rust && cargo test --no-fail-fast
         env:
           TAXGRAPH_OHNE_XSD: "1"
