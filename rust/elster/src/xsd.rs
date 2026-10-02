@@ -718,3 +718,108 @@ pub fn pruefe_bindung(prueflinge: &[KzPruefling]) -> Result<Pruefbericht, XsdFeh
         exit_code: i32::from(!(alle_ok && abbrueche == 0)),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use super::{kz_meta, xsd_walk, KzMeta};
+
+    /// Selbst gebaut, kein amtliches Schema (Lizenz). Nur die Konstrukte, die der Walk in E10/E77
+    /// sieht: benannte Typen, `xs:sequence`, Facetten ueber `restriction`/`extension` mit
+    /// `base`-Kette.
+    ///
+    /// ponytail: ohne `xs:choice`/`xs:all`/`xs:group`/`ref`/Inline-`complexType` — 0 Vorkommen in
+    /// E10 2020-2025 und E77 2021-2025 (gemessen 2026-10-02), diese Zweige bleiben ungeprueft.
+    /// Bringt ein neues Schema eins, hier ein Vorkommen ergaenzen.
+    const MINI_XSD: &str = r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="E10" type="E10CType"/>
+  <xs:complexType name="E10CType">
+    <xs:sequence>
+      <xs:element name="E0100001" type="Ja1BaseCType"/>
+      <xs:element name="V" type="VCType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="VCType">
+    <xs:sequence>
+      <xs:element name="E0100002" type="GanzzahlPosCType_RABE"/>
+      <xs:element name="E0100001" type="Ja1BaseCType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="Ja1BaseCType">
+    <xs:simpleContent>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="1"/>
+      </xs:restriction>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="GanzzahlPosCType_RABE">
+    <xs:simpleContent>
+      <xs:extension base="GanzzahlPosCType"/>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="GanzzahlPosCType">
+    <xs:simpleContent>
+      <xs:restriction base="xs:string">
+        <xs:pattern value="[1-9].*"/>
+      </xs:restriction>
+    </xs:simpleContent>
+  </xs:complexType>
+</xs:schema>"#;
+
+    /// Vault `decisions/elster-testluecken-mit-eigener-probe-schliessen` (2): `xsd_walk`, `kz_meta`
+    /// und `ist_kz` laufen gegen `MINI_XSD`, ohne ERiC — also auch in der CI.
+    #[test]
+    fn mini_xsd_liefert_kz_pfade_und_typen_ohne_eric() {
+        let pfad = std::env::temp_dir().join(format!(
+            "taxgraph-elster-test-mini-{}.xsd",
+            std::process::id()
+        ));
+        std::fs::write(&pfad, MINI_XSD).unwrap();
+        let (walk, meta) = (xsd_walk(&pfad, "E10"), kz_meta(&pfad, "E10"));
+        std::fs::remove_file(&pfad).unwrap();
+        let texte = |t: &[&str]| t.iter().copied().map(String::from).collect::<Vec<_>>();
+        assert_eq!(
+            walk.unwrap(),
+            (
+                vec![
+                    (
+                        "E0100001".to_owned(),
+                        vec![
+                            texte(&["E10", "E0100001"]),
+                            texte(&["E10", "V", "E0100001"])
+                        ]
+                    ),
+                    (
+                        "E0100002".to_owned(),
+                        vec![texte(&["E10", "V", "E0100002"])]
+                    ),
+                ],
+                0
+            )
+        );
+        assert_eq!(
+            meta.unwrap(),
+            HashMap::from([
+                (
+                    "E0100001".to_owned(),
+                    KzMeta {
+                        type_name: "Ja1BaseCType".to_owned(),
+                        enums: texte(&["1"]),
+                        patterns: Vec::new(),
+                        is_ja: true,
+                    }
+                ),
+                (
+                    "E0100002".to_owned(),
+                    KzMeta {
+                        type_name: "GanzzahlPosCType_RABE".to_owned(),
+                        enums: Vec::new(),
+                        patterns: texte(&["[1-9].*"]),
+                        is_ja: false,
+                    }
+                ),
+            ])
+        );
+    }
+}
