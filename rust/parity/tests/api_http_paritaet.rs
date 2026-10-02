@@ -1108,6 +1108,15 @@ fn handgeschrieben_auth(p: &mut Paar) {
     .token(&alice));
     a!(g("ready am Ende", "/ready"));
     p.zustand_vergleichen("nach den Szenarien (Auth)");
+    // Jede Route aus NICHT_PORTIERT kommt oben zur 501. Bleibt sie aus, ist die Route portiert und
+    // ihre Zeile veraltet; der Vergleich allein merkte das nicht (Befund 4 in 9c).
+    for r in NICHT_PORTIERT
+        .iter()
+        .filter(|r| !p.stat.stubs.contains_key(**r))
+    {
+        let d = format!("{r}: steht in NICHT_PORTIERT, lieferte aber keine 501");
+        p.stat.abweichungen.push(d);
+    }
 }
 
 fn handgeschrieben_ohne_auth(p: &mut Paar) {
