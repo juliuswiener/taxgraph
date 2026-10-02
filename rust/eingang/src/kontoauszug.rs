@@ -174,6 +174,13 @@ pub fn py_float(s: &str) -> Option<f64> {
 ///
 /// # Errors
 /// [`KontoauszugFehler::BetragUeberlauf`] fuer `inf` und Werte ausserhalb `i64`.
+///
+/// PARITÄT: rechnet in `f64` wie Pythons `int(round(float(s) * 100))`. Unter 2^51 Cent (etwa
+/// 22,5 Billionen €) trifft das jeden Zwei-Stellen-Betrag: in Python je 200 000 Werte 2^50 bis
+/// 2^51 Cent 0 daneben, 2^51 bis 2^52 Cent 13 982 daneben (`berichte/haertung2.md` Befund 5).
+///
+/// ponytail: `f64` traegt bis 2^51 Cent; darueber Cent per Dezimal-Parser statt Float (Vault
+/// `decisions/rust-port-geld-cent-saetze-decimal`).
 pub fn eur_cent_signed(roh: &str) -> Result<i64, KontoauszugFehler> {
     let s = py::strip(roh).replace(['€', ' '], "");
     let neg = s.starts_with('-');
