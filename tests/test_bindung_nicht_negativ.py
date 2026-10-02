@@ -6,8 +6,9 @@ Backlog negativer-aufwand-umgeht-pflichtfrage. Gemessen (Worker authfix, 2026-10
 Beträge > 0 und entfiel, ELSTER lehnte die Erklärung erst bei der Abgabe ab ("Unzulässiges Vorzeichen").
 
 `nicht_negativ: true` steht an 42 Cent-Feldern, deren Schematyp kein Minus kennt (NichtNeg/Pos, E10-2025.xsd),
-an 8 Partner-Spiegeln ohne eigenes Kz und an dem int-Feld `ep_entfernung_km` (Folge 1, Punkt 3: E0203504,
-GanzzahlPos…, das einzige int-Feld ohne `bereich` mit solchem Schematyp). Der Store weist ein Minus dort
+an 8 Partner-Spiegeln ohne eigenes Kz, an dem int-Feld `ep_entfernung_km` (Folge 1, Punkt 3: E0203504,
+GanzzahlPos…, das einzige int-Feld ohne `bereich` mit solchem Schematyp) und an `p35c_massnahme_einzelbetrag`
+(ohne eigenes Kz, aber alle neun Zweige der Art-Verzweigung sind GanzzahlPos…). Der Store weist ein Minus dort
 beim Schreiben ab (422, Auflage V),
 0 und Positives gehen durch, Laden prüft nie. Die vier Verlustfelder, zwei Differenzfelder und 74 unklare
 Felder tragen es nicht.
@@ -16,8 +17,9 @@ ponytail: die 74 unklaren Felder (23 mit XSD-Minus ohne Differenz im Bindungstex
 Attribut erst bei eigenem Beleg; `test_schema_kennt_minus_nicht_aber_bindung_sperrt_es` hält nur die
 Gegenrichtung fest (kein Attribut ohne Schemagrund). Obergrenze: die Namens-Heuristik liest den Typnamen
 (NichtNeg/Pos), nicht das Muster — das Muster steckt im Basistyp. Der Upgrade steht seit Folge 1 da:
-`test_kein_zahlfeld_mit_schematyp_ohne_minus_ist_unmarkiert` löst die Vererbungskette auf und fand 0 verfehlte
-Felder (25 Kz-Felder ohne Attribut, alle mit Minus im Schema; 55 ohne Kz haben keinen Schematyp)."""
+`test_kein_zahlfeld_mit_schematyp_ohne_minus_ist_unmarkiert` löst die Vererbungskette und die Zweige der
+Art-Verzweigung auf: 0 Felder mit eigenem Kz verfehlt (25, alle mit Minus im Schema), 1 Feld über die Verzweigung
+verfehlt (`p35c_massnahme_einzelbetrag`, jetzt markiert). Belege je Feld: berichte/haertung8-folge1-cent-felder.tsv."""
 from __future__ import annotations
 
 import functools
@@ -34,6 +36,7 @@ for _sub in ("produkt/store", "produkt/mapping", "produkt/traverser"):
 
 import api as API  # noqa: E402
 import store as ST  # noqa: E402
+import est_mapping as EM  # noqa: E402
 import traverser as TR  # noqa: E402
 import xsd_verify as X  # noqa: E402
 from test_paket_b_e2e_http import _laie, _req, base  # noqa: E402,F401 — Fixture
@@ -104,13 +107,28 @@ def _typ_index() -> dict:
     return index
 
 
-def _kette_kennt_kein_minus(feld_id: str):
-    """Urteil über die GANZE Vererbungskette des Schematyps, nicht über den Typnamen: True, wenn der Grundtyp
-    (nonNegativeInteger/positiveInteger) oder ein Muster der Kette kein Minus zulässt. Die Muster EINES Schritts
-    sind Alternativen, die Schritte gelten zugleich. None ohne Kz oder ohne Schemaeintrag."""
+def _kz_des_felds(feld_id: str) -> list:
+    """Das eigene Kz, sonst alle Kz der Art-Verzweigung (est_mapping VERZWEIGUNG / PARTNER_VERZWEIGUNG: das Kz
+    hängt an einem Art-Feld, `elster_kz` der Bindung ist null)."""
     kz = BINDUNG[feld_id].get("elster_kz")
-    if not isinstance(kz, str) or not kz.startswith("E"):
+    if isinstance(kz, str) and kz.startswith("E"):
+        return [kz]
+    zweige = EM.VERZWEIGUNG.get(feld_id) or EM.PARTNER_VERZWEIGUNG.get(feld_id)
+    return sorted(set(zweige["kz"].values())) if zweige else []
+
+
+def _kette_kennt_kein_minus(feld_id: str):
+    """Urteil über die GANZE Vererbungskette des Schematyps, nicht über den Typnamen. Bei einer Art-Verzweigung gilt
+    "kein Minus" nur, wenn es für JEDEN Zweig gilt. None ohne Kz oder ohne Schemaeintrag."""
+    urteile = [_kz_kennt_kein_minus(kz) for kz in _kz_des_felds(feld_id)]
+    if not urteile or None in urteile:
         return None
+    return all(urteile)
+
+
+def _kz_kennt_kein_minus(kz: str):
+    """True, wenn der Grundtyp (nonNegativeInteger/positiveInteger) oder ein Muster der Kette des Kz-Typs kein Minus
+    zulässt. Die Muster EINES Schritts sind Alternativen, die Schritte gelten zugleich."""
     start = X._datenart_fuer_kz(kz)[1]
     m = _kz_meta().get(start, {}).get(kz)
     if m is None:
@@ -134,20 +152,27 @@ def _kette_kennt_kein_minus(feld_id: str):
 
 
 def test_kein_zahlfeld_mit_schematyp_ohne_minus_ist_unmarkiert(braucht_echtes_xsd):
-    """Folge 1, Punkt 3 (haertung8, 2026-10-02): die Kette bis zum Grundtyp, nicht der Typname. Gemessen: von den
-    80 Cent-Feldern ohne Attribut haben 25 ein Kz, und bei allen 25 lässt der Schematyp ein Minus zu (Grundtyp
-    xs:integer, Muster `-?...`); 55 haben kein Kz. Die Namens-Heuristik oben hat also keines verfehlt. Hier steht
-    die Gegenrichtung als Dauerprüfung: ein künftiges Schema mit einem Typ, den der Name nicht verrät, wird rot.
+    """Folge 1, Punkt 3 (haertung8, 2026-10-02): die Kette bis zum Grundtyp, nicht der Typname, und bei einer
+    Art-Verzweigung alle Zweige. Gemessen: von den 80 Cent-Feldern ohne Attribut haben 25 ein eigenes Kz, und bei
+    allen 25 lässt der Schematyp ein Minus zu (Grundtyp xs:integer, Muster `-?...`). Von den 55 ohne eigenes Kz
+    bilden 15 auf Kz ab (Verzweigung, Partner-Kz): 12 erlauben in jedem Zweig ein Minus, 2 gemischt
+    (rentner_veraeusserungsgewinn: gewerbe/land_forst NichtNeg, selbstaendig nicht), 1 in KEINEM Zweig —
+    `p35c_massnahme_einzelbetrag` (neun Zweige, alle GanzzahlPos…), das die Namens-Heuristik oben verfehlte, weil
+    ihr `elster_kz` null ist. Der Rest (40) hat keine Abbildung oder ist Summand einer Summe. Hier steht die
+    Gegenrichtung als Dauerprüfung: ein künftiges Schema mit einem Typ, den der Name nicht verrät, wird rot.
     Zahlfelder mit `bereich` fehlen hier: ihr Minimum deckt das Minus."""
     zahl = [f for f, b in sorted(BINDUNG.items()) if b.get("typ") in ("cent", "int") and not b.get("bereich")]
     urteil = {f: _kette_kennt_kein_minus(f) for f in zahl}
     unmarkiert = [f for f, kein_minus in urteil.items() if kein_minus and not BINDUNG[f].get("nicht_negativ")]
     assert unmarkiert == [], f"Schematyp ohne Minus, aber ohne nicht_negativ: {unmarkiert}"
     # Kontrolle (ein Null-Ergebnis zählt erst, wenn die Prüfung etwas findet): dieselbe Funktion erkennt jedes der
-    # 43 markierten Felder mit Kz (42 Cent + ep_entfernung_km) als "kein Minus".
-    markiert_mit_kz = [f for f in MIT_ATTRIBUT if BINDUNG[f].get("elster_kz")]
-    assert len(markiert_mit_kz) == 43, markiert_mit_kz
-    assert [f for f in markiert_mit_kz if not _kette_kennt_kein_minus(f)] == []
+    # 44 markierten Felder mit Schematyp (42 Cent mit Kz + ep_entfernung_km + p35c_massnahme_einzelbetrag) als
+    # "kein Minus".
+    markiert = [f for f in MIT_ATTRIBUT if _kz_des_felds(f)]
+    assert len(markiert) == 44, markiert
+    assert [f for f in markiert if not _kette_kennt_kein_minus(f)] == []
+    # Die Zweig-Logik unterscheidet etwas: gemischte Zweige sind NICHT "kein Minus".
+    assert _kette_kennt_kein_minus("rentner_veraeusserungsgewinn") is False
 
 
 def test_int_feld_ohne_bereich_mit_schematyp_ohne_minus_traegt_nicht_negativ(braucht_echtes_xsd):
@@ -174,8 +199,8 @@ def test_partner_spiegel_ohne_kz_folgt_dem_grundfeld():
 
 
 def test_attribut_steht_nur_an_zahlfeldern_und_die_verlustfelder_tragen_es_nicht():
-    assert len(MIT_ATTRIBUT) == 51, (f"42 Cent-Schematypen ohne Minus + 8 Partner-Spiegel + ep_entfernung_km, "
-                                     f"gezählt {len(MIT_ATTRIBUT)}")
+    assert len(MIT_ATTRIBUT) == 52, (f"42 Cent-Schematypen ohne Minus + 8 Partner-Spiegel + ep_entfernung_km + "
+                                     f"p35c_massnahme_einzelbetrag, gezählt {len(MIT_ATTRIBUT)}")
     assert [f for f in MIT_ATTRIBUT if BINDUNG[f].get("typ") not in ("cent", "int")] == []
     assert [f for f in VERLUSTFELDER if f in MIT_ATTRIBUT] == []
 
