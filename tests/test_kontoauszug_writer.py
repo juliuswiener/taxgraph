@@ -106,11 +106,23 @@ def test_parse_csv_deutsche_betraege():
                 "12.03.2025;-480,00;Malermeister Schmidt Renovierung\n"
                 "15.03.2025;-1.234,56;Spende Tierheim e.V.\n"
                 "31.03.2025;2.500,00;Gehalt Arbeitgeber\n")
-    tx = KW.parse_csv(csv_text)
-    assert len(tx) == 3
+    tx, verworfen = KW.parse_csv(csv_text)
+    assert len(tx) == 3 and verworfen == 0
     assert tx[0]["betrag"] == -48000 and "Malermeister" in tx[0]["verwendungszweck"]
     assert tx[1]["betrag"] == -123456
     assert tx[2]["betrag"] == 250000                 # Einnahme positiv
+
+
+# Vault decisions/kontoauszug-betrag-cent-genau-oder-verworfen; Rust-Gegenstück
+# rust/eingang/src/kontoauszug.rs `tests::betrag_tabelle`.
+@pytest.mark.parametrize("roh, cent", [
+    ("1.234,56", 123456), ("-480,00", -48000), ("480,5", 48050), ("480", 48000),
+    ("480.00", 48000), ("480.5", 48050), ("-1200,00 €", -120000), ("92233720368547758,07", 2**63 - 1),
+    ("-1.234", None), ("1e3", None), ("inf", None), ("abc", None), ("1,2,3", None),
+    ("1.234.567", None), ("480,055", None), ("92233720368547758,08", None),
+])
+def test_eur_cent_signed_tabelle(roh, cent):
+    assert KW._eur_cent_signed(roh) == cent
 
 
 # ---- Keyword-Klassifikation --------------------------------------------------

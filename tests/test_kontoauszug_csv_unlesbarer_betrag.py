@@ -1,22 +1,19 @@
-"""Eine CSV-Zeile mit unlesbarem Betrag verschwindet still (Vault
-tickets/kontoauszug-zeile-mit-unlesbarem-betrag-verschwindet-still.md, gemessen 2026-10-02).
+"""Eine CSV-Zeile mit unlesbarem Betrag verschwand still (Vault
+backlog/taxgraph/kontoauszug-zeile-mit-unlesbarem-betrag-verschwindet-still.md, gemessen 2026-10-02).
 
-`_eur_cent_signed` liefert für `abc` und `1,2,3` den Betrag 0; `uebernehme_kontoauszug` überspringt
-jeden Betrag >= 0; der CSV-Zweig in `api.kontoauszug` zählt nichts nach `verworfen`. Die Antwort
-nennt die Zeile nur in `transaktionen`, ein `hinweis` entsteht nicht. Die Oberfläche zeigt nur
-`uebernommen`, `transaktionen` und `hinweis` (`app.js` `kontoauszugHochladen`) — der Nutzer sieht
-also nicht, dass eine Ausgabe fehlt.
+Vorher lieferte `_eur_cent_signed` für `abc` und `1,2,3` den Betrag 0; `uebernehme_kontoauszug`
+übersprang jeden Betrag >= 0; der CSV-Zweig in `api.kontoauszug` zählte nichts nach `verworfen`.
+Die Oberfläche zeigt nur `uebernommen`, `transaktionen` und `hinweis` (`app.js`
+`kontoauszugHochladen`) — der Nutzer sah also nicht, dass eine Ausgabe fehlt.
 
 Verlangt ist nur, was in jeder Lösung gilt: beide Zeilen zählen in `verworfen`, und der `hinweis`
 nennt den Betrag als Grund. Den Wortlaut legt der Test nicht fest.
 
-xfail(strict=True, raises=AssertionError) wie tests/test_luf_gewinn_kz_fehlt.py. Die Kontrolle
-daneben MUSS grün bleiben: sie belegt, dass der Upload selbst funktioniert und der rote Test den
-Betrag misst, nicht die Route. Rust-Gegenstück: rust/api/tests/offene_defekte.rs
-`kontoauszug_unlesbarer_betrag_steht_in_verworfen`."""
+Die Kontrolle daneben MUSS grün bleiben: sie belegt, dass der Upload selbst funktioniert und der
+Test den Betrag misst, nicht die Route. Rust-Gegenstück: rust/api/tests/offene_defekte.rs
+`kontoauszug_unlesbarer_betrag_steht_in_verworfen` (ignoriert, Route 501) und die Regel selbst in
+rust/eingang/src/kontoauszug.rs `tests::csv_unlesbarer_betrag_zaehlt_in_verworfen`."""
 from __future__ import annotations
-
-import pytest
 
 from test_paket_b_e2e_http import _req, base  # noqa: F401 — Fixture und HTTP-Helfer der Suite
 
@@ -39,8 +36,6 @@ def test_kontrolle_lesbare_zeile_wird_uebernommen(base):
     assert (b["transaktionen"], b["uebernommen"], b["verworfen"]) == (1, 1, 0)
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="Ticket kontoauszug-zeile-mit-unlesbarem-betrag-verschwindet-still")
 def test_unlesbarer_betrag_steht_in_verworfen_mit_grund(base):
     b = _hochladen(base, "ka-unlesbar", KOPF + LESBAR + UNLESBAR)
     assert b["uebernommen"] == 1, b

@@ -977,7 +977,7 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
     import kontoauszug_writer as KW
     n_verworfen = 0
     if fmt == "csv":
-        tx = KW.parse_csv(inhalt if isinstance(inhalt, str) else "")
+        tx, n_verworfen = KW.parse_csv(inhalt if isinstance(inhalt, str) else "")
     elif fmt == "json":
         try:
             tx = inhalt if isinstance(inhalt, list) else json.loads(inhalt or "[]")
@@ -1023,7 +1023,8 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
     out = {"uebernommen": n, "transaktionen": len(tx), "verworfen": n_verworfen}
     hinweise = []
     if n_verworfen > 0:
-        hinweise.append(f"{n_verworfen} Zeile(n) unsicher erkannt (Confidence < 60%) — bitte manuell prüfen/nachtragen.")
+        grund = "mit unlesbarem Betrag verworfen" if fmt == "csv" else "unsicher erkannt (Confidence < 60%)"
+        hinweise.append(f"{n_verworfen} Zeile(n) {grund} — bitte manuell prüfen/nachtragen.")
     if llm_uebersprungen > 0:
         # Ohne diesen Hinweis wäre der Deckel eine stille Kürzung: die übersprungenen Buchungen
         # sehen im Store aus wie geprüft-und-unklar, und der Nutzer hielte einen halb angesehenen
