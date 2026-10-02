@@ -1657,6 +1657,15 @@ fn gezielte_faelle() {
                 ("rentner_alter_bei_rentenbeginn_partner", json!(65), true),
             ],
         ),
+        // § 35: der Hebesatz des Partner-Betriebs fehlt wie der von Person A.
+        (
+            "gewst_hebesatz_offen",
+            "gesamt",
+            vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+            ],
+        ),
     ];
     // Kontrollfall: dieselben Angaben mit beantworteten Fragen sperren NICHT (kein "immer gleicher Grund").
     faelle.push((

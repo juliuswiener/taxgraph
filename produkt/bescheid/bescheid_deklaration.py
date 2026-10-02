@@ -1132,6 +1132,10 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # (over-tax-safe opt-out, feuert NICHT). Feld-präsenz-getrieben; Scheiben ohne die Felder → _positiv=False.
         if _positiv("gewst_messbetrag") and (felder.get("gewst_hebesatz") or {}).get("zustand") != "bestaetigt":
             return "gewst_hebesatz_offen"
+        # Person B: derselbe Spiegel für den Betrieb des Ehegatten, nur bei zusammen (sonst rechnet der Ring ihn nicht).
+        if (felder.get("veranlagung", {}).get("wert") == "zusammen" and _positiv("gewst_messbetrag_partner")
+                and (felder.get("gewst_hebesatz_partner") or {}).get("zustand") != "bestaetigt"):
+            return "gewst_hebesatz_offen"
         # Person B (#4): bei Zusammenveranlagung braucht der Ring den vollständig BESTÄTIGTEN Person-B-
         # Kegel (Bruttolohn + IdNr) — sonst kein halber Ehepaar-Bescheid (K2). Bei einzel irrelevant.
         if cfg.get("partner_19") and felder.get("veranlagung", {}).get("wert") == "zusammen":
