@@ -61,7 +61,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
 const NICHT_PORTIERT: &[&str] = &[
     "GET /fall/{id}/fragen",
-    "GET /fall/{id}/feld/{fid}/warum",
     "GET /fall/{id}/feld/{fid}/frage",
     "GET /fall/{id}/ergebnis",
     "GET /fall/{id}/preflight",
@@ -82,7 +81,7 @@ const NICHT_PORTIERT: &[&str] = &[
 const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/fragen", 3),
     ("GET /fall/{id}/stand", 7),
-    ("GET /fall/{id}/feld/{fid}/warum", 4),
+    ("GET /fall/{id}/feld/{fid}/warum", 10),
     ("GET /fall/{id}/feld/{fid}/frage", 4),
     ("GET /fall/{id}/ergebnis", 3),
     ("GET /fall/{id}/preflight", 3),
@@ -1604,6 +1603,24 @@ fn ereignis(feld: &str, wert: &Value, ersetzt: Option<&str>) -> Value {
         "ts": "2026-01-01T00:00:00+00:00", "ersetzt": ersetzt})
 }
 
+/// Ein Vorschlag des LLM: `vorlaeufig`, Schreiber `llm:`, Herkunft `llm_vorschlag` (Auflage A).
+fn ereignis_llm(feld: &str, wert: &Value) -> Value {
+    json!({"feld_id": feld, "wert": wert, "zustand": "vorlaeufig", "schreiber": "llm:paritaet",
+        "herkunft": {"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": null},
+        "ts": "2026-01-01T00:00:00+00:00", "ersetzt": null})
+}
+
+/// Ein Beleg-Import: `vorlaeufig` (ein Import bestaetigt nie direkt), `signal_1` ist ein
+/// Herkunfts-Objekt mit Umlaut und Euro-Zeichen im Rohtext.
+fn ereignis_beleg(feld: &str, wert: &Value) -> Value {
+    json!({"feld_id": feld, "wert": wert, "zustand": "vorlaeufig", "schreiber": "import:beleg",
+        "herkunft": {"herkunft": "beleg_import", "pruef_tiefe": "plausibilisiert", "haftung": "nutzer"},
+        "signal": {"signal_1": {"typ": "beleg", "ref": "b1", "confidence": 0.92, "roh_text": "Zinsen: 1.500,00 €"},
+                   "signal_2": null},
+        "ts": "2026-01-01T00:00:00+00:00", "ersetzt": null})
+}
+
 /// Ein nicht leerer Body je POST-Route aus Stufe 1–3; `quelle` ist der Vorjahres-Fall. Stufe 4
 /// bekommt `{}`: sie geht nie an Python (s. `UNTERGRENZE`).
 fn koerper(route: &str, quelle: &str) -> Value {
@@ -1642,6 +1659,10 @@ fn generatoren() {
         ("g_rent", "rentner_gesamt", 2025),
         ("g_rent2", "rentner_gesamt", 2025),
         ("g_vor", "n_vor_gwg", 2025),
+        // Herkunftsformen und Zustaende fuer `warum`/`graph`; `g_aussen` bekommt weiter unten die
+        // Scheibe `ep` (Scheiben-Wechsel von Hand) und behaelt ein Feld, das dort keine Bindung hat.
+        ("g_wz", "gesamt", 2025),
+        ("g_aussen", "gesamt", 2025),
     ] {
         let b = json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": vz});
         a("POST", "/fall", Some(b));
@@ -1683,6 +1704,34 @@ fn generatoren() {
         let b = a("POST", &pfad, Some(ereignis(feld, &wert, None)));
         erster = erster.or_else(|| b?["event_id"].as_str().map(str::to_owned));
     }
+    for (id, ev) in [
+        ("g_wz", ereignis_llm("ep_oepnv_kosten", &json!(120))),
+        (
+            "g_wz",
+            ereignis_beleg("kap_kapitalertraege", &json!(150_000)),
+        ),
+        (
+            "g_wz",
+            ereignis("stammdaten_nachname", &json!("Müller-Lüdenscheidt"), None),
+        ),
+        ("g_wz", ereignis("kein_kap", &json!(true), None)),
+        ("g_aussen", ereignis("ep_arbeitstage", &json!(200), None)),
+        (
+            "g_aussen",
+            ereignis("bruttoarbeitslohn", &json!(3_000_000), None),
+        ),
+    ] {
+        a("POST", &format!("/fall/{id}/event"), Some(ev));
+    }
+    // Scheiben-Wechsel von Hand, in beiden Verzeichnissen gleich: `bruttoarbeitslohn` hat in `ep`
+    // keine Bindung mehr. Der Store laesst so ein Event nicht ueber `POST /event` zu (400), eine
+    // vorhandene Akte kann es dennoch tragen.
+    for art in ["python", "rust"] {
+        let pfad = tmp.path().join(art).join("faelle").join("g_aussen.json");
+        let mut akte: Value = serde_json::from_slice(&std::fs::read(&pfad).unwrap()).unwrap();
+        akte["scheibe"] = json!("ep");
+        std::fs::write(&pfad, serde_json::to_vec(&akte).unwrap()).unwrap();
+    }
     // Ersetzung des ersten Events; dasselbe Feld ohne `ersetzt` weist der Store ab (422).
     let ersetzung = ereignis("ep_arbeitstage", &json!(210), erster.as_deref());
     a("POST", "/fall/g_ep/event", Some(ersetzung));
@@ -1713,7 +1762,7 @@ fn generatoren() {
     let mut engines: BTreeMap<String, usize> = BTreeMap::new();
     let mut gruende: Vec<String> = vec![];
     for id in [
-        "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_vor",
+        "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_vor", "g_wz", "g_aussen",
     ] {
         for r in [
             "stand",
@@ -1741,6 +1790,17 @@ fn generatoren() {
         ("g_ep", "ep_eigenes_kfz"),
         ("g_neu", "ep_entfernung_km"),
         ("g_ges", "bruttoarbeitslohn"),
+        // `warum`: LLM-Vorschlag, Beleg-Import, Text mit Umlaut, Bool, Feld ausserhalb der Scheibe.
+        ("g_ep", "ep_oepnv_kosten"),
+        ("g_wz", "ep_oepnv_kosten"),
+        ("g_wz", "kap_kapitalertraege"),
+        ("g_wz", "stammdaten_nachname"),
+        ("g_wz", "kein_kap"),
+        ("g_aussen", "bruttoarbeitslohn"),
+        // Ohne Event (404), unbekanntes Feld (404), Grossbuchstaben im Namen (404 mit `repr`).
+        ("g_neu", "ep_ziel_adresse"),
+        ("g_ges", "nicht_da_feld"),
+        ("g_ep", "ABC_Gross"),
     ] {
         for r in ["warum", "frage"] {
             a("GET", &format!("/fall/{id}/feld/{feld}/{r}"), None);

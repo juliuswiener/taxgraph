@@ -28,12 +28,20 @@ pub async fn stand(State(z): State<Zustand>, fall: EigenerFall) -> Result<Antwor
     crate::stand::stand(&z, fall.id(), fall.store())
 }
 
-/// `GET /fall/{id}/feld/{fid}/warum` — `api.warum` (`api.py:547`).
+/// `GET /fall/{id}/feld/{fid}/warum` — `api.warum` (`api.py:548`), Rumpf in [`crate::warum::warum`].
 ///
 /// # Errors
-/// Wie [`fragen`].
-pub async fn warum(_fall: EigenerFall, _treffer: Treffer) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("GET /fall/{id}/feld/{fid}/warum"))
+/// Die Fehler des Owner-Checks (401/403/404) und die von `api.warum`.
+pub async fn warum(
+    State(z): State<Zustand>,
+    fall: EigenerFall,
+    treffer: Treffer,
+) -> Result<Antwort, ApiFehler> {
+    // Das Muster (`fid!`) verlangt die Gruppe; fehlt sie, ist der Dispatcher kaputt.
+    let fid = treffer.fid.as_deref().ok_or_else(|| {
+        ApiFehler::unerwartet("RuntimeError", "Dispatcher hat `fid` nicht gesetzt")
+    })?;
+    crate::warum::warum(&z, fall.id(), fall.store(), fid)
 }
 
 /// `GET /fall/{id}/feld/{fid}/frage` — `api.frage_einzeln` (`api.py:360`).
