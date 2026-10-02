@@ -7,6 +7,13 @@ use bindung::Bindung;
 
 /// `base__<n>` (n>=1) -> `base`; eine Basis-`feld_id` ohne Suffix -> `None` (= Instanz 1).
 /// Byte-identisches Pendant zu `_INSTANZ_RE = re.compile(r"^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[1-9][0-9]*)$")`.
+///
+/// ```
+/// use store::instanz_basis;
+/// assert_eq!(instanz_basis("kind_idnr__2"), Some("kind_idnr"));
+/// assert_eq!(instanz_basis("kind_idnr"), None);
+/// assert_eq!(instanz_basis("kind_idnr__02"), None);
+/// ```
 #[must_use]
 pub fn instanz_basis(feld_id: &str) -> Option<&str> {
     let (basis, idx) = feld_id.rsplit_once("__")?;
@@ -30,12 +37,28 @@ pub struct BindungNachschlag<'a> {
 }
 
 impl<'a> BindungNachschlag<'a> {
+    /// ```
+    /// use std::collections::HashMap;
+    /// let leer: HashMap<String, &bindung::Bindung> = HashMap::new();
+    /// let nachschlag = store::BindungNachschlag::neu(&leer);
+    /// assert!(nachschlag.basis_eintrag("kind_idnr").is_none());
+    /// ```
     #[must_use]
     pub fn neu(by_feld_id: &'a HashMap<String, &'a Bindung>) -> Self {
         Self { by_feld_id }
     }
 
     /// Direkter Nachschlag ohne Instanz-Aufloesung.
+    ///
+    /// ```
+    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad).unwrap()
+    /// #     .dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect();
+    /// let map = store::baue_nachschlag(&bindungen);
+    /// let nachschlag = store::BindungNachschlag::neu(&map);
+    /// assert_eq!(nachschlag.get("kind_idnr").unwrap().feld_id, "kind_idnr");
+    /// assert!(nachschlag.get("kind_idnr__2").is_none());
+    /// ```
     #[must_use]
     pub fn get(&self, feld_id: &str) -> Option<&'a Bindung> {
         self.by_feld_id.get(feld_id).copied()
@@ -44,6 +67,16 @@ impl<'a> BindungNachschlag<'a> {
     /// `feld_id` direkt, sonst dessen Instanz-Basis (`store.py:213-224`:
     /// `_pruefe_typ_konformitaet`, "unbekanntes `feld_id`: durchlassen, nicht raten" bleibt beim
     /// Aufrufer — hier nur der Nachschlag selbst).
+    ///
+    /// ```
+    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad).unwrap()
+    /// #     .dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect();
+    /// let map = store::baue_nachschlag(&bindungen);
+    /// let nachschlag = store::BindungNachschlag::neu(&map);
+    /// assert_eq!(nachschlag.basis_eintrag("kind_idnr__2").unwrap().feld_id, "kind_idnr");
+    /// assert!(nachschlag.basis_eintrag("gibt_es_nicht__2").is_none());
+    /// ```
     #[must_use]
     pub fn basis_eintrag(&self, feld_id: &str) -> Option<&'a Bindung> {
         self.get(feld_id)
@@ -53,6 +86,16 @@ impl<'a> BindungNachschlag<'a> {
     /// Alle Bindungen mit ihrem `feld_id` (`store.py:529`, `_rechne_ab`: `for ziel, eintrag in
     /// bindung.items()` durchsucht JEDEN Eintrag nach einer `ableitung`-Regel, nicht nur den
     /// eines einzelnen `feld_id`).
+    ///
+    /// ```
+    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad).unwrap()
+    /// #     .dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect();
+    /// let map = store::baue_nachschlag(&bindungen);
+    /// let nachschlag = store::BindungNachschlag::neu(&map);
+    /// assert_eq!(nachschlag.alle().count(), bindungen.len());
+    /// assert!(nachschlag.alle().all(|(feld_id, b)| feld_id == b.feld_id));
+    /// ```
     pub fn alle(&self) -> impl Iterator<Item = (&'a str, &'a Bindung)> + '_ {
         self.by_feld_id.iter().map(|(k, v)| (k.as_str(), *v))
     }
@@ -60,6 +103,20 @@ impl<'a> BindungNachschlag<'a> {
 
 /// Baut die flache `feld_id -> &Bindung`-Map aus allen geladenen `BindungDatei`s
 /// (`registry::Registry`).
+///
+/// ```
+/// let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+/// let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+///     .unwrap()
+///     .dateien
+///     .into_iter()
+///     .flat_map(|(_, d)| d.bindungen)
+///     .collect();
+/// let map = store::baue_nachschlag(&bindungen);
+/// // `lade_registry` weist eine doppelte `feld_id` ab, die Map verliert also keinen Eintrag.
+/// assert_eq!(map.len(), bindungen.len());
+/// assert_eq!(map["kind_idnr"].feld_id, "kind_idnr");
+/// ```
 #[must_use]
 pub fn baue_nachschlag(bindungen: &[Bindung]) -> HashMap<String, &Bindung> {
     bindungen.iter().map(|b| (b.feld_id.clone(), b)).collect()

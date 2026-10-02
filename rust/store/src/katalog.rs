@@ -23,6 +23,17 @@ impl Katalog {
     /// Baut den Katalog aus allen Bindungen einer Registry (`store.py:139-162`: je Feld
     /// `vorschlagbar_von` fuer beleg/kontoauszug/maps direkt uebernehmen, `llm` zusaetzlich aus
     /// JEDEM `askable`-Feld ausser `LLM_NICHT_VORSCHLAGBAR`).
+    ///
+    /// ```
+    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad).unwrap()
+    /// #     .dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect();
+    /// let katalog = store::Katalog::aus_bindungen(&bindungen);
+    /// // kap_kapitalertraege: `vorschlagbar_von: [beleg]`, `askable: true`
+    /// assert!(katalog.erlaubt("beleg", "kap_kapitalertraege"));
+    /// assert!(katalog.erlaubt("llm", "kap_kapitalertraege"));
+    /// assert!(!katalog.erlaubt("kontoauszug", "kap_kapitalertraege"));
+    /// ```
     #[must_use]
     pub fn aus_bindungen<'a>(bindungen: impl IntoIterator<Item = &'a Bindung>) -> Self {
         let mut k = Self::default();
@@ -46,6 +57,16 @@ impl Katalog {
     /// Darf `schreiber_typ` (`"llm"`/`"beleg"`/`"kontoauszug"`/`"maps"`) `feld_id` vorschlagen?
     /// Ein unbekannter Typ ist fail-closed nie erlaubt (`store.py:336`:
     /// `katalog.get(typ, frozenset())`).
+    ///
+    /// ```
+    /// assert!(!store::Katalog::default().erlaubt("beleg", "kap_kapitalertraege"));
+    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad).unwrap()
+    /// #     .dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect();
+    /// let katalog = store::Katalog::aus_bindungen(&bindungen);
+    /// assert!(katalog.erlaubt("beleg", "kap_kapitalertraege"));
+    /// assert!(!katalog.erlaubt("Beleg", "kap_kapitalertraege")); // unbekannter Typ
+    /// ```
     #[must_use]
     pub fn erlaubt(&self, schreiber_typ: &str, feld_id: &str) -> bool {
         match schreiber_typ {

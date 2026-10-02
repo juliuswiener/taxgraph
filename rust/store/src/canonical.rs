@@ -40,6 +40,14 @@ pub fn canonical_json(value: &serde_json::Value) -> String {
 }
 
 /// sha256(text) als Hex-String (Kleinbuchstaben, wie Pythons `hexdigest()`).
+///
+/// ```
+/// // python3 -c 'import hashlib; print(hashlib.sha256(b"abc").hexdigest())'
+/// assert_eq!(
+///     store::sha256_hex("abc"),
+///     "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+/// );
+/// ```
 #[must_use]
 pub fn sha256_hex(text: &str) -> String {
     use std::fmt::Write as _;
@@ -66,11 +74,19 @@ pub enum EventIdFehler {
 }
 
 impl EventId {
+    /// ```
+    /// let id = store::EventId::aus_bytes([0xab; 32]);
+    /// assert_eq!(id.to_string(), "ab".repeat(32));
+    /// ```
     #[must_use]
     pub fn aus_bytes(bytes: [u8; 32]) -> Self {
         Self(bytes)
     }
 
+    /// ```
+    /// let id = store::EventId::aus_bytes([7; 32]);
+    /// assert_eq!(id.als_bytes(), &[7; 32]);
+    /// ```
     #[must_use]
     pub fn als_bytes(&self) -> &[u8; 32] {
         &self.0
@@ -96,6 +112,14 @@ impl EventId {
 
     /// # Errors
     /// [`EventIdFehler`], wenn `s` nicht aus genau 64 Hex-Zeichen besteht.
+    ///
+    /// ```
+    /// use store::{EventId, EventIdFehler};
+    /// let id = EventId::von_json(&serde_json::json!({"a": 1}));
+    /// assert_eq!(EventId::parse(&id.to_string()), Ok(id));
+    /// assert_eq!(EventId::parse("abc"), Err(EventIdFehler::FalscheLaenge(3)));
+    /// assert_eq!(EventId::parse(&"zz".repeat(32)), Err(EventIdFehler::UngueltigesHex));
+    /// ```
     pub fn parse(s: &str) -> Result<Self, EventIdFehler> {
         if s.len() != 64 {
             return Err(EventIdFehler::FalscheLaenge(s.len()));

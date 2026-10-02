@@ -159,6 +159,31 @@ impl Event {
     /// # Errors
     /// [`PyFehler`], wenn `wert` oder `signal_1` nicht nach JSON geht (NaN/inf, auch in
     /// `Liste`/`Objekt`).
+    ///
+    /// ```
+    /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
+    /// # let neu = store::NeuesEvent {
+    /// #     feld_id: "ep_arbeitstage".to_string(),
+    /// #     wert: serde_json::json!(220).into(),
+    /// #     feldzustand: Feldzustand::Bestaetigt { signal_2: Signal2::new("klick").unwrap() },
+    /// #     herkunft: Herkunft {
+    /// #         herkunft: Achsenwert::new("mensch").unwrap(),
+    /// #         pruef_tiefe: PruefTiefe::Ungeprueft,
+    /// #         haftung: Achsenwert::new("nutzer").unwrap(),
+    /// #     },
+    /// #     schreiber: Schreiber::Mensch("julius".to_string()),
+    /// #     signal_1: None,
+    /// #     ersetzt: None,
+    /// #     ts: Some("2026-01-01T00:00:00+00:00".to_string()),
+    /// # };
+    /// let leer = std::collections::HashMap::new();
+    /// let mut s = store::Store::leer(2025, None);
+    /// let id = s.append(&neu, None, store::BindungNachschlag::neu(&leer)).unwrap();
+    /// let mut event = s.events()[0].clone();
+    /// assert_eq!(event.berechne_event_id(), Ok(id));
+    /// event.wert = domain::PyWert::Gleit(f64::NAN);
+    /// assert!(event.berechne_event_id().is_err());
+    /// ```
     pub fn berechne_event_id(&self) -> Result<EventId, PyFehler> {
         Ok(EventId::von_json(&self.payload_ohne_event_id()?))
     }
@@ -181,11 +206,51 @@ pub struct NeuesEvent {
 }
 
 impl NeuesEvent {
+    /// ```
+    /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2, Zustand};
+    /// # let mut neu = store::NeuesEvent {
+    /// #     feld_id: "ep_arbeitstage".to_string(),
+    /// #     wert: serde_json::json!(220).into(),
+    /// #     feldzustand: Feldzustand::Vorlaeufig,
+    /// #     herkunft: Herkunft {
+    /// #         herkunft: Achsenwert::new("mensch").unwrap(),
+    /// #         pruef_tiefe: PruefTiefe::Ungeprueft,
+    /// #         haftung: Achsenwert::new("nutzer").unwrap(),
+    /// #     },
+    /// #     schreiber: Schreiber::Mensch("julius".to_string()),
+    /// #     signal_1: None,
+    /// #     ersetzt: None,
+    /// #     ts: None,
+    /// # };
+    /// assert_eq!(neu.zustand(), Zustand::Vorlaeufig);
+    /// neu.feldzustand = Feldzustand::Bestaetigt { signal_2: Signal2::new("klick").unwrap() };
+    /// assert_eq!(neu.zustand(), Zustand::Bestaetigt);
+    /// ```
     #[must_use]
     pub fn zustand(&self) -> Zustand {
         self.feldzustand.zustand()
     }
 
+    /// ```
+    /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
+    /// # let mut neu = store::NeuesEvent {
+    /// #     feld_id: "ep_arbeitstage".to_string(),
+    /// #     wert: serde_json::json!(220).into(),
+    /// #     feldzustand: Feldzustand::Vorlaeufig,
+    /// #     herkunft: Herkunft {
+    /// #         herkunft: Achsenwert::new("mensch").unwrap(),
+    /// #         pruef_tiefe: PruefTiefe::Ungeprueft,
+    /// #         haftung: Achsenwert::new("nutzer").unwrap(),
+    /// #     },
+    /// #     schreiber: Schreiber::Mensch("julius".to_string()),
+    /// #     signal_1: None,
+    /// #     ersetzt: None,
+    /// #     ts: None,
+    /// # };
+    /// assert_eq!(neu.signal_2_roh(), None);
+    /// neu.feldzustand = Feldzustand::Bestaetigt { signal_2: Signal2::new("klick").unwrap() };
+    /// assert_eq!(neu.signal_2_roh(), Some("klick"));
+    /// ```
     #[must_use]
     pub fn signal_2_roh(&self) -> Option<&str> {
         match &self.feldzustand {
