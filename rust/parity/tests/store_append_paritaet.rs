@@ -443,9 +443,10 @@ fn abweisung_klasse(a: &Abweisung) -> &'static str {
         Abweisung::KatalogFehlt { .. } => "KatalogFehlt",
         Abweisung::KatalogNichtFreigegeben { .. } => "KatalogNichtFreigegeben",
         Abweisung::Magnitude { .. } => "Magnitude",
-        // K2-Auflage 3: kein Gegenstueck in `store.py` (CPython schreibt NaN nackt, B4). Die
-        // Strategie erzeugt keine NaN/inf-Werte, also ist der Arm hier unerreichbar — er steht
-        // trotzdem da, damit ein neuer Wert-Typ den Compiler trifft statt still durchzulaufen.
+        // K2-Auflage 3: kein Gegenstueck in `store.py` (Python haelt NaN an der Tuer und beim
+        // Schreiben auf, B4). Die Strategie erzeugt keine NaN/inf-Werte, also ist der Arm hier
+        // unerreichbar — er steht trotzdem da, damit ein neuer Wert-Typ den Compiler trifft statt
+        // still durchzulaufen.
         Abweisung::WertNichtDarstellbar { .. } => "WertNichtDarstellbar",
         Abweisung::TypInkonform { .. } => "TypInkonform",
         Abweisung::FormatInkonform { .. } => "FormatInkonform",
