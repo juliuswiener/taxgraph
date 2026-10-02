@@ -60,7 +60,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 /// Routen, fuer die Rust heute `501 nicht_portiert` antwortet (AK3 in 9c). Beim Port fliegt die
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
 const NICHT_PORTIERT: &[&str] = &[
-    "GET /fall/{id}/feld/{fid}/frage",
     "GET /fall/{id}/deklaration",
     "POST /fall/{id}/event",
     "POST /fall/{id}/vorjahr",
@@ -78,7 +77,7 @@ const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/fragen", 14),
     ("GET /fall/{id}/stand", 7),
     ("GET /fall/{id}/feld/{fid}/warum", 10),
-    ("GET /fall/{id}/feld/{fid}/frage", 4),
+    ("GET /fall/{id}/feld/{fid}/frage", 677),
     ("GET /fall/{id}/ergebnis", 26),
     ("GET /fall/{id}/preflight", 17),
     ("GET /fall/{id}/deklaration", 3),
@@ -2091,6 +2090,8 @@ fn generatoren() {
     let mut gruende: Vec<String> = vec![];
     let mut fragen_je_fall: Vec<(&str, usize)> = vec![];
     let mut fragen_gruende: Vec<String> = vec![];
+    // Die Felder der Queue je Fall: `frage` fragt danach jedes davon einzeln ab.
+    let mut queue_felder: Vec<(&str, Vec<(String, bool)>)> = vec![];
     let mut ergebnisse: Vec<Value> = vec![];
     for id in [
         "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_rent3", "g_vor", "g_wz",
@@ -2113,6 +2114,18 @@ fn generatoren() {
                     .as_ref()
                     .map_or(0, |b| b["fragen"].as_array().map_or(0, Vec::len));
                 fragen_je_fall.push((id, n));
+                queue_felder.push((
+                    id,
+                    b.iter()
+                        .flat_map(|b| b["fragen"].as_array().into_iter().flatten())
+                        .filter_map(|f| {
+                            Some((
+                                f["feld_id"].as_str()?.to_owned(),
+                                f["instanz_etikett"].as_str().is_some_and(|e| !e.is_empty()),
+                            ))
+                        })
+                        .collect(),
+                ));
                 fragen_gruende
                     .extend(b.and_then(|b| b["ring_gesperrt"].as_str().map(str::to_owned)));
             }
@@ -2217,6 +2230,29 @@ fn generatoren() {
             a("GET", &format!("/fall/{id}/feld/{feld}/{r}"), None);
         }
     }
+    // `frage` zu jedem Feld der Queue dieser Faelle: Bereich mit und ohne Grund, Aufzaehlungen,
+    // Muster, Standardwerte, Vorjahr-Kategorie, Instanz-Etikett. Ein Feld mit Instanz-Etikett wird
+    // zusaetzlich mit `__1` gefragt (Aufloesung auf das Basisfeld).
+    let mut frage_felder = 0_usize;
+    let mut frage_instanz = 0_usize;
+    for (id, felder) in &queue_felder {
+        if !["g_wz", "g_rent3", "g_an2", "g_vor", "g_neu", "g_aussen"].contains(id) {
+            continue;
+        }
+        for (fid, instanz) in felder {
+            a("GET", &format!("/fall/{id}/feld/{fid}/frage"), None);
+            frage_felder += 1;
+            if *instanz {
+                a("GET", &format!("/fall/{id}/feld/{fid}__1/frage"), None);
+                frage_instanz += 1;
+            }
+        }
+    }
+    // Instanz-Suffix an einem Feld ohne Instanz, am unbekannten Feld und mit nicht-numerischem Suffix.
+    for fid in ["ep_arbeitstage__1", "nicht_da_feld__2", "ep_arbeitstage__x"] {
+        a("GET", &format!("/fall/g_ep/feld/{fid}/frage"), None);
+    }
+    println!("  frage: Felder der Queue {frage_felder}, davon mit __1 zusaetzlich {frage_instanz}");
     // `flow` mit rohem Text: Reihenfolge der Schluessel, doppelte Schluessel, Zahlenschreibweisen und
     // Escapes — Wege, die ein `json!`-`Value` (sortiert) im Test verschluckte.
     for text in [

@@ -44,12 +44,20 @@ pub async fn warum(
     crate::warum::warum(&z, fall.id(), fall.store(), fid)
 }
 
-/// `GET /fall/{id}/feld/{fid}/frage` — `api.frage_einzeln` (`api.py:360`).
+/// `GET /fall/{id}/feld/{fid}/frage` — `api.frage_einzeln` (`api.py:361`), Rumpf in
+/// [`crate::fragen::frage_einzeln`].
 ///
 /// # Errors
-/// Wie [`fragen`].
-pub async fn frage_einzeln(_fall: EigenerFall, _treffer: Treffer) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("GET /fall/{id}/feld/{fid}/frage"))
+/// Die Fehler des Owner-Checks (401/403/404) und die von `api.frage_einzeln`.
+pub async fn frage_einzeln(
+    State(z): State<Zustand>,
+    fall: EigenerFall,
+    treffer: Treffer,
+) -> Result<Antwort, ApiFehler> {
+    let fid = treffer.fid.as_deref().ok_or_else(|| {
+        ApiFehler::unerwartet("RuntimeError", "Dispatcher hat `fid` nicht gesetzt")
+    })?;
+    crate::fragen::frage_einzeln(&z, fall.id(), fall.store(), fid)
 }
 
 /// `GET /fall/{id}/ergebnis` — `api.ergebnis` (`api.py:558`, `_ergebnis_roh`), Rumpf in

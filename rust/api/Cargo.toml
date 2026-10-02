@@ -24,6 +24,7 @@ konsistenz = { path = "../konsistenz" }
 store = { path = "../store" }
 auth = { path = "../auth" }
 domain = { path = "../domain" }
+elster = { path = "../elster" }
 engine = { path = "../engine" }
 axum = { workspace = true }
 tokio = { workspace = true }

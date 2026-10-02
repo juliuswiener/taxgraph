@@ -10,6 +10,7 @@ use bescheid::zweige::Umgebung;
 use bescheid::{BescheidFehler, BindungIndex, Felder, Instanzquelle};
 use bindung::{Bindung, Vorjahr};
 use domain::{FallId, PyWert, Sperrgrund, Vz};
+use elster::parse_instanz;
 use engine::zugriff::teil2::EngineFehler;
 use intervall::{AchsenBindung, Beitrag, IntervallFehler, SlotFehler};
 use interview::AnkerRefSicht;
@@ -171,6 +172,31 @@ pub(crate) fn frage_metadaten(
             Vorjahr::Vorschlag => "vorschlag",
         }),
     }))
+}
+
+/// `api.frage_einzeln(fall_id, feld_id)` (`api.py:361`) nach dem Owner-Check: die Frage zu EINEM
+/// Feld, auch einem beantworteten. `feld_id__n` wird auf das Basisfeld aufgeloest.
+///
+/// # Errors
+/// 400/500 aus Scheibe und Bindung; 404, wenn das Basisfeld nicht in der Scheibe steht.
+pub fn frage_einzeln(
+    z: &Zustand,
+    fall_id: &FallId,
+    store: &Store,
+    feld_id: &str,
+) -> Result<Antwort, ApiFehler> {
+    let sb = z.scheibe_bindung(store)?;
+    let basis = parse_instanz(feld_id).map_or(feld_id, |(basis, _)| basis);
+    if !sb.index.contains_key(basis) {
+        return Err(ApiFehler::status(
+            404,
+            format!("Feld {} nicht in dieser Scheibe", repr(&json!(feld_id))),
+        ));
+    }
+    Ok(Antwort::neu(
+        200,
+        json!({"fall_id": fall_id.as_str(), "frage": frage_metadaten(basis, &sb, store)?}),
+    ))
 }
 
 /// `api.fragen(fall_id)` nach dem Owner-Check.

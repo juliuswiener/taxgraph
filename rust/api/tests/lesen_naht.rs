@@ -339,3 +339,79 @@ async fn ergebnis_offen_dann_zahl() {
     assert_eq!(zahl["kette"], Value::Null);
     assert!(zahl["trace"]["regeln"]["p09_entfernungspauschale"].is_array());
 }
+
+/// `frage`: auch ein beantwortetes Feld bekommt seine Frage; `feld_id__n` loest sich auf das
+/// Basisfeld auf; ein Feld ausserhalb der Scheibe ist 404 mit Pythons Text (`!r` der ganzen Kennung).
+#[tokio::test]
+async fn frage_einzeln_loest_die_instanz_auf() {
+    let d = dienst();
+    let token = fall_anlegen(&d).await;
+    event_anhaengen(&d, "ep_arbeitstage", 220);
+    let (status, basis) = sende(
+        &d,
+        "GET",
+        "/fall/sonde/feld/ep_arbeitstage/frage",
+        &token,
+        None,
+    )
+    .await;
+    assert_eq!(status, 200, "{basis}");
+    assert_eq!(basis["fall_id"], "sonde");
+    let frage = basis["frage"].as_object().unwrap();
+    let mut schluessel: Vec<&str> = frage.keys().map(String::as_str).collect();
+    schluessel.sort_unstable();
+    assert_eq!(
+        schluessel,
+        [
+            "anker_ref",
+            "beispielwert",
+            "bereich",
+            "einheit",
+            "enum_labels",
+            "enum_werte",
+            "feld_id",
+            "frage_invertiert",
+            "fragetext_laie",
+            "hilfe_kurz",
+            "instanz_anzahl",
+            "instanz_etikett",
+            "muster",
+            "regel_id",
+            "screening",
+            "standardwert",
+            "typ",
+            "vorjahr_kategorie",
+        ]
+    );
+    assert_eq!(frage["feld_id"], "ep_arbeitstage");
+    assert_eq!(
+        (&frage["instanz_anzahl"], &frage["instanz_etikett"]),
+        (&json!(1), &json!(""))
+    );
+    // Mit Instanz-Suffix dieselbe Frage zum Basisfeld, nicht zur Kennung mit Suffix.
+    let (status, mit_suffix) = sende(
+        &d,
+        "GET",
+        "/fall/sonde/feld/ep_arbeitstage__2/frage",
+        &token,
+        None,
+    )
+    .await;
+    assert_eq!(status, 200, "{mit_suffix}");
+    assert_eq!(mit_suffix, basis);
+    for fid in ["nicht_da__2", "bruttoarbeitslohn"] {
+        let (status, fehler) = sende(
+            &d,
+            "GET",
+            &format!("/fall/sonde/feld/{fid}/frage"),
+            &token,
+            None,
+        )
+        .await;
+        assert_eq!(status, 404, "{fehler}");
+        assert_eq!(
+            fehler,
+            json!({"fehler": format!("Feld '{fid}' nicht in dieser Scheibe")})
+        );
+    }
+}
