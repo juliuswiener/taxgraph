@@ -18,7 +18,7 @@ use crate::store::StoreDatei;
 pub enum PersistenzFehler {
     #[error("store-datei {0} konnte nicht gelesen werden: {1}")]
     Lesen(PathBuf, std::io::Error),
-    #[error("store-datei {0} ist kein gueltiges JSON: {1}")]
+    #[error("store-datei {0} {}", format_grund(.1))]
     Format(PathBuf, serde_json::Error),
     #[error("store-datei {pfad} enthaelt {form:?} in Zeile {zeile}, Spalte {spalte}")]
     Sperrform {
@@ -31,6 +31,22 @@ pub enum PersistenzFehler {
     Schreiben(#[from] std::io::Error),
     #[error("store-datei konnte nicht serialisiert werden: {0}")]
     Serialisieren(#[from] serde_json::Error),
+}
+
+/// Was an der Datei wirklich falsch ist. `serde_json` meldet mit demselben Fehlertyp ein
+/// Syntaxproblem (kein JSON), einen abgeschnittenen Text und gueltiges JSON mit falscher Form
+/// (fehlendes oder doppeltes Feld, falscher Typ); nur die ersten beiden sind „kein gueltiges JSON".
+/// Zeile und Spalte stehen in `{e}`.
+fn format_grund(e: &serde_json::Error) -> String {
+    use serde_json::error::Category;
+    match e.classify() {
+        Category::Syntax => format!("ist kein gueltiges JSON: {e}"),
+        Category::Eof => format!("ist kein gueltiges JSON, der Text endet zu frueh: {e}"),
+        Category::Data => {
+            format!("ist gueltiges JSON, hat aber nicht die Form einer Fallakte: {e}")
+        }
+        Category::Io => format!("konnte nicht als JSON gelesen werden: {e}"),
+    }
 }
 
 /// Zahlform, die `json.load` still als Zahl liest und [`lade`] unter `events` abweist.
@@ -401,6 +417,55 @@ mod tests {
             datei.vorjahr_referenz,
             Some(domain::PyWert::Gleit(18_446_744_073_709_551_616.0))
         );
+    }
+
+    /// Wortlaut von `PersistenzFehler::Format`: „kein gueltiges JSON" nur fuer Syntax und
+    /// abgeschnittenen Text; gueltiges JSON mit falscher Form (fehlendes Feld, falscher Typ,
+    /// doppeltes Feld) sagt das so. Jede Meldung nennt Zeile und Spalte.
+    #[test]
+    fn format_meldung_unterscheidet_syntax_abbruch_und_form() {
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-wortlaut-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("wortlaut.json");
+        let falsch: Vec<String> = [
+            ("{\"version\":1,}", "ist kein gueltiges JSON: ", true),
+            (
+                "{\"version\":1,",
+                "kein gueltiges JSON, der Text endet zu frueh: ",
+                true,
+            ),
+            (
+                "{\"foo\":1}",
+                "ist gueltiges JSON, hat aber nicht die Form einer Fallakte: ",
+                false,
+            ),
+            (
+                "[]",
+                "ist gueltiges JSON, hat aber nicht die Form einer Fallakte: ",
+                false,
+            ),
+            (
+                r#"{"version":"eins","veranlagungszeitraum":2025,"snapshots":[],"events":[]}"#,
+                "ist gueltiges JSON, hat aber nicht die Form einer Fallakte: ",
+                false,
+            ),
+        ]
+        .into_iter()
+        .filter_map(|(text, erwartet, ist_kein_json)| {
+            std::fs::write(&pfad, text).unwrap();
+            let meldung = lade(&pfad).err().map(|e| e.to_string()).unwrap_or_default();
+            let ok = meldung.contains(erwartet)
+                && meldung.contains("line ")
+                && meldung.contains("column ")
+                && meldung.contains("kein gueltiges JSON") == ist_kein_json;
+            (!ok).then(|| format!("{text}: {meldung}"))
+        })
+        .collect();
+        std::fs::remove_dir_all(&dir).ok();
+        assert!(falsch.is_empty(), "{falsch:#?}");
     }
 
     /// Grenze: ein Struct-Feld zweimal, oben (`veranlagungszeitraum`) oder im Event (`wert`),
