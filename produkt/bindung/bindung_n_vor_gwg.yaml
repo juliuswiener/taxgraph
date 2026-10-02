@@ -27,6 +27,7 @@ bindungen:
     vorschlagbar_von: [maps]
     quelle: {regel_id: p09_entfernungspauschale, signatur_slot: entfernung_km_roh}
     typ: int
+    nicht_negativ: true
     einheit: km
     askable: true
     vorjahr: uebernehmbar
@@ -44,6 +45,7 @@ bindungen:
     vorschlagbar_von: [beleg]
     quelle: {regel_id: p09_entfernungspauschale, signatur_slot: oepnv_kosten_jahr}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -131,6 +133,7 @@ bindungen:
   - feld_id: dhf_unterkunftskosten_monat
     quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, signatur_slot: unterkunftskosten_monat}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -530,6 +533,7 @@ bindungen:
   - feld_id: p9_4a_kuerzung_nach_entgelt
     quelle: {regel_id: p9_4a_verpflegungsmehraufwand, geltungsbedingung: mahlzeitengestellung_kuerzung}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: false
     fragetext_laie: null
@@ -1347,6 +1351,7 @@ bindungen:
     instanz_gruppe: gwg
     quelle: {regel_id: p6_2_gwg_sofortabzug, signatur_slot: anschaffungskosten_netto}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag

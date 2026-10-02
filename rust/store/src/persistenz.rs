@@ -18,7 +18,7 @@ use crate::store::StoreDatei;
 pub enum PersistenzFehler {
     #[error("store-datei {0} konnte nicht gelesen werden: {1}")]
     Lesen(PathBuf, std::io::Error),
-    #[error("store-datei {0} ist kein gueltiges JSON: {1}")]
+    #[error("store-datei {0} {}", format_grund(.1))]
     Format(PathBuf, serde_json::Error),
     #[error("store-datei {pfad} enthaelt {form:?} in Zeile {zeile}, Spalte {spalte}")]
     Sperrform {
@@ -31,6 +31,22 @@ pub enum PersistenzFehler {
     Schreiben(#[from] std::io::Error),
     #[error("store-datei konnte nicht serialisiert werden: {0}")]
     Serialisieren(#[from] serde_json::Error),
+}
+
+/// Was an der Datei wirklich falsch ist. `serde_json` meldet mit demselben Fehlertyp ein
+/// Syntaxproblem (kein JSON), einen abgeschnittenen Text und gueltiges JSON mit falscher Form
+/// (fehlendes oder doppeltes Feld, falscher Typ); nur die ersten beiden sind „kein gueltiges JSON".
+/// Zeile und Spalte stehen in `{e}`.
+fn format_grund(e: &serde_json::Error) -> String {
+    use serde_json::error::Category;
+    match e.classify() {
+        Category::Syntax => format!("ist kein gueltiges JSON: {e}"),
+        Category::Eof => format!("ist kein gueltiges JSON, der Text endet zu frueh: {e}"),
+        Category::Data => {
+            format!("ist gueltiges JSON, hat aber nicht die Form einer Fallakte: {e}")
+        }
+        Category::Io => format!("konnte nicht als JSON gelesen werden: {e}"),
+    }
 }
 
 /// Zahlform, die `json.load` still als Zahl liest und [`lade`] unter `events` abweist.
@@ -401,6 +417,133 @@ mod tests {
             datei.vorjahr_referenz,
             Some(domain::PyWert::Gleit(18_446_744_073_709_551_616.0))
         );
+    }
+
+    /// Laden prueft nie (Vault `decisions/geldfeld-ohne-minus-im-schema-lehnt-minus-bei-eingabe-ab`
+    /// Punkt 3, `decisions/zahl-ausserhalb-des-bereichs-wird-beim-speichern-abgewiesen-die-null-
+    /// nicht` Punkt 3): eine Akte mit einem Minus in einem `nicht_negativ`-Feld oder einer Zahl
+    /// ausserhalb von `bereich` laedt wie bisher.
+    #[test]
+    fn akte_mit_minus_und_wert_ausserhalb_bereich_laedt_weiter() {
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-minus-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("minus.json");
+        for (feld, wert) in [
+            ("hh_handwerker_betrag", "-5000000"),
+            ("fam_anzahl_kinder", "99"),
+        ] {
+            let akte = akte_mit("2025", wert).replace("ep_arbeitstage", feld);
+            std::fs::write(&pfad, akte).unwrap();
+            let datei = lade(&pfad).unwrap();
+            assert_eq!(datei.events[0].feld_id, feld);
+        }
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// AK3 (Vault `decisions/tuer-und-speicher-weisen-ab-was-die-fallakte-nicht-exakt-halten-
+    /// kann`, Punkt 2): jedes Event, das der Python-Schreibweg annimmt, laedt der Leser; was Python
+    /// abweist, lehnt der Leser ab oder liest es nur, weil er einen Zusatz still verwirft
+    /// (`rust_laedt` dokumentiert, welches von beiden). Gemeinsame Tabelle mit
+    /// `tests/test_begleitfelder_form.py`: `rust/fixtures/begleitfelder_formen.json`.
+    #[test]
+    fn begleitfelder_formen_laden_wie_die_tabelle_sagt() {
+        use serde_json::{json, Value};
+        let tabelle: Value =
+            serde_json::from_str(include_str!("../../fixtures/begleitfelder_formen.json")).unwrap();
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-formen-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("formen.json");
+        let faelle = tabelle["faelle"].as_array().unwrap();
+        assert!(faelle.len() >= 30, "Tabelle zu klein: {}", faelle.len());
+        let falsch: Vec<String> = faelle
+            .iter()
+            .filter_map(|fall| {
+                let name = fall["name"].as_str().unwrap();
+                let angenommen = fall["python"] == "angenommen";
+                // Was Python bei einem angenommenen Aufruf SPEICHERT: fehlendes/null `ts` wird zur
+                // Zeit, fehlendes/null/leeres `signal` zum Standard-Signal. Ein abgewiesener Aufruf
+                // wird nie gespeichert; sein Wortlaut geht unveraendert an den Leser.
+                let ts = match fall.get("ts") {
+                    Some(v) if !(angenommen && v.is_null()) => v.clone(),
+                    _ => tabelle["standard_ts"].clone(),
+                };
+                let signal = match fall.get("signal") {
+                    Some(v) if !(angenommen && (v.is_null() || v == &json!({}))) => Some(v.clone()),
+                    _ if angenommen => Some(tabelle["standard_signal"].clone()),
+                    _ => None,
+                };
+                let mut event = json!({
+                    "event_id": "0".repeat(64), "ts": ts, "feld_id": "ep_arbeitstage", "wert": 1,
+                    "zustand": "bestaetigt", "herkunft": fall["herkunft"], "schreiber": "julius",
+                    "ersetzt": null,
+                });
+                if let Some(s) = signal {
+                    event["signal"] = s;
+                }
+                let akte = json!({"version": 1, "veranlagungszeitraum": 2025, "snapshots": [], "events": [event]});
+                std::fs::write(&pfad, akte.to_string()).unwrap();
+                let laedt = lade(&pfad).is_ok();
+                let erwartet = angenommen || fall["rust_laedt"] == true;
+                (laedt != erwartet).then(|| format!("{name}: laedt={laedt}, erwartet={erwartet}"))
+            })
+            .collect();
+        std::fs::remove_dir_all(&dir).ok();
+        assert!(falsch.is_empty(), "{falsch:#?}");
+    }
+
+    /// Wortlaut von `PersistenzFehler::Format`: „kein gueltiges JSON" nur fuer Syntax und
+    /// abgeschnittenen Text; gueltiges JSON mit falscher Form (fehlendes Feld, falscher Typ,
+    /// doppeltes Feld) sagt das so. Jede Meldung nennt Zeile und Spalte.
+    #[test]
+    fn format_meldung_unterscheidet_syntax_abbruch_und_form() {
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-wortlaut-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("wortlaut.json");
+        let falsch: Vec<String> = [
+            ("{\"version\":1,}", "ist kein gueltiges JSON: ", true),
+            (
+                "{\"version\":1,",
+                "kein gueltiges JSON, der Text endet zu frueh: ",
+                true,
+            ),
+            (
+                "{\"foo\":1}",
+                "ist gueltiges JSON, hat aber nicht die Form einer Fallakte: ",
+                false,
+            ),
+            (
+                "[]",
+                "ist gueltiges JSON, hat aber nicht die Form einer Fallakte: ",
+                false,
+            ),
+            (
+                r#"{"version":"eins","veranlagungszeitraum":2025,"snapshots":[],"events":[]}"#,
+                "ist gueltiges JSON, hat aber nicht die Form einer Fallakte: ",
+                false,
+            ),
+        ]
+        .into_iter()
+        .filter_map(|(text, erwartet, ist_kein_json)| {
+            std::fs::write(&pfad, text).unwrap();
+            let meldung = lade(&pfad).err().map(|e| e.to_string()).unwrap_or_default();
+            let ok = meldung.contains(erwartet)
+                && meldung.contains("line ")
+                && meldung.contains("column ")
+                && meldung.contains("kein gueltiges JSON") == ist_kein_json;
+            (!ok).then(|| format!("{text}: {meldung}"))
+        })
+        .collect();
+        std::fs::remove_dir_all(&dir).ok();
+        assert!(falsch.is_empty(), "{falsch:#?}");
     }
 
     /// Grenze: ein Struct-Feld zweimal, oben (`veranlagungszeitraum`) oder im Event (`wert`),

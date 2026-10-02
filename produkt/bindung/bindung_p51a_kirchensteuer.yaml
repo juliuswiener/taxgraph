@@ -42,6 +42,7 @@ bindungen:
       signatur_slot: kirchensteuer_arbeitgeber
     feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     fragetext_laie: "Wie viel Kirchensteuer wurde im Jahr von deinem Arbeitgeber einbehalten (nur falls kirchensteuerpflichtig)?"

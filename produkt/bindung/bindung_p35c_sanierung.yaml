@@ -11,6 +11,7 @@ bindungen:
   - feld_id: p35c_sanierungsaufwendungen
     quelle: {regel_id: p35c_sanierung_ermaessigung, signatur_slot: sanierungsaufwendungen}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -261,6 +262,7 @@ bindungen:
   - feld_id: p35c_massnahme_einzelbetrag
     quelle: {regel_id: p35c_sanierung_ermaessigung, geltungsbedingung: fachunternehmen_bescheinigung}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: false
     vorjahr: uebernehmbar

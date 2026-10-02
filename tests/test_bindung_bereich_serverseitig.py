@@ -6,9 +6,12 @@ nimmt min-1 und max+1 mit 201 an, außer bei den drei Feldern mit `enum_werte` (
 store._wert_erlaubt). Danach rechnet der Ring still mit dem Wert, z. B. -1 auszubildende Kinder (§ 33a)
 oder 367 Arbeitstage (Entfernungspauschale).
 
-Verlangt ist nur, was in jeder Lösung gilt, die den Bereich als Zusage nimmt: ein Wert außerhalb wird
-beim Schreiben abgewiesen (4xx), oder der Ring liefert keine Zahl. Die drei enum-Felder sind die
-Kontrolle und MÜSSEN grün bleiben: sie belegen, dass der Test die Abweisung misst.
+Seit 2026-10-02 (decisions/zahl-ausserhalb-des-bereichs-wird-beim-speichern-abgewiesen-die-null-nicht)
+weist der Store beim Schreiben jede Zahl AUSSERHALB von min..max ab (422), außer der 0: sie heißt bei diesen
+Feldern „nichts anzugeben" und bleibt auch unter einem Minimum > 0 zulässig
+(decisions/speichern-lehnt-nullwerte-nicht-ab). Darum prüft der erste Test min-1 und max+1 nur dort, wo
+der Wert nicht 0 ist (11 Felder mit min 1 haben min-1 == 0), und der zweite Test hält die 0 fest.
+Die drei enum-Felder sind die Kontrolle: sie wurden schon vorher über `enum_werte` abgewiesen.
 
 Daneben: zwei Werte INNERHALB des Bereichs enden in HTTP 500 auf /ergebnis und /stand —
 rentner_renten_beginn_jahr nach dem VZ (runner.catala_renten_einkuenfte wirft
@@ -25,6 +28,7 @@ import urllib.request
 import pytest
 import yaml
 
+import store as ST  # conftest legt produkt/store auf sys.path
 from test_paket_b_e2e_http import _gesamt_kegel, _laie, _rentner_kegel, base  # noqa: F401 — Fixture
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -71,11 +75,10 @@ def _fall(base, fall_id, fid, wert, kegel=None):
 
 
 def _faelle():
-    for fid, lo, hi, enum in FELDER:
+    for fid, lo, hi, _enum in FELDER:
         for name, w in (("min-1", lo - 1), ("max+1", hi + 1)):
-            marks = () if enum else pytest.mark.xfail(
-                strict=True, raises=AssertionError, reason="bereich nur im Browser geprüft (gemessen 2026-10-02)")
-            yield pytest.param(fid, w, lo if w < lo else hi, id=f"{fid}-{name}", marks=marks)
+            if w != 0:   # die 0 unter min bleibt zulässig, s. test_null_unter_minimum_wird_angenommen
+                yield pytest.param(fid, w, lo if w < lo else hi, id=f"{fid}-{name}")
 
 
 def test_es_sind_42_bereich_felder_davon_3_enum():
@@ -83,17 +86,74 @@ def test_es_sind_42_bereich_felder_davon_3_enum():
 
 
 @pytest.mark.parametrize("fid,wert,nachbar", list(_faelle()))
-def test_wert_ausserhalb_bereich_wird_abgewiesen_oder_sperrt(base, fid, wert, nachbar):
+def test_wert_ausserhalb_bereich_wird_abgewiesen(base, fid, wert, nachbar):
+    """422 beim Schreiben (AK1). Die alte Zweitlösung „oder der Ring sperrt" gilt nicht mehr: nur die
+    Abweisung am Schreibweg schließt auch die KI und den direkten Aufruf. `nachbar` (der Randwert im
+    Bereich) wird angenommen und rechnet ohne 500 — die Prüfung weist nicht zu viel ab."""
     st_feld, (st_erg, erg), _ = _fall(base, f"b-{fid}-{wert}".replace("_", "-"), fid, wert)
+    assert st_feld == 422, f"{fid}={wert}: Event {st_feld}"
     assert st_erg < 500, erg
-    if 400 <= st_feld < 500:
-        return
-    # Eine Sperre zählt nur, wenn der Nachbar im Bereich nicht genauso sperrt: tage_24h u. a. sperren im
-    # Grundfall auch mit 366 (verpflegung_dreimonatsfrist_aufteilung_offen), das wäre kein Beleg.
-    _, (_, im_bereich), _ = _fall(base, f"n-{fid}-{nachbar}".replace("_", "-"), fid, nachbar)
-    assert erg.get("zahl_cent") is None and erg.get("grund") != im_bereich.get("grund"), (
-        f"{fid}={wert}: Event {st_feld}, Ring {erg.get('zahl_cent')} Cent ({erg.get('grund')}); "
-        f"{fid}={nachbar}: {im_bereich.get('zahl_cent')} Cent ({im_bereich.get('grund')})")
+    st_nachbar, (st_erg_n, erg_n), _ = _fall(base, f"n-{fid}-{nachbar}".replace("_", "-"), fid, nachbar)
+    assert st_nachbar == 201, f"{fid}={nachbar} (Rand im Bereich): Event {st_nachbar}"
+    assert st_erg_n < 500, erg_n
+
+
+@pytest.mark.parametrize("fid,lo", [(f, lo) for f, lo, _hi, enum in FELDER if lo > 0 and not enum])
+def test_null_unter_minimum_wird_angenommen(base, fid, lo):
+    """AK2: die 0 heißt bei diesen Feldern „nichts anzugeben" (129 Werte in 51 echten Akten,
+    decisions/speichern-lehnt-nullwerte-nicht-ab) und bleibt auch unter einem Minimum > 0 zulässig.
+    Was die Rechnung mit ihr tut, regeln die Sperren, nicht der Speicher. Hier nur der Schreibweg."""
+    st_feld, (st_erg, erg), _ = _fall(base, f"null-{fid}".replace("_", "-"), fid, 0)
+    assert st_feld == 201, f"{fid}=0 (min {lo}): Event {st_feld}"
+    assert st_erg < 500, erg
+
+
+def test_abweisung_nennt_feld_wert_und_bereich(base):
+    """Die 422-Meldung trägt Feldname, Wert und Bereich (AK1) und sagt „Bereich" statt „Typ"."""
+    assert _http(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                         "fall_id": "meldung-bereich"})[0] == 201
+    st, body = _http(base, "POST", "/fall/meldung-bereich/event", _laie("fam_anzahl_kinder", -1))
+    assert st == 422, body
+    assert "fail-closed (Bereich)" in body["fehler"] and "fam_anzahl_kinder=-1" in body["fehler"], body
+    assert "0 bis 20" in body["fehler"], body
+
+
+def _bindung_mit_bereich():
+    return {"zahl": {"typ": "int", "bereich": {"min": 1, "max": 5}},
+            "betrag": {"typ": "cent", "bereich": {"min": -100, "max": 100}},
+            "ohne": {"typ": "int"}}
+
+
+def _schreibe(feld_id, wert, bindung=None):
+    st = ST.leerer_store(2025, fall_id="bereich-store")
+    return ST.append_event(
+        st, feld_id=feld_id, wert=wert, zustand="bestaetigt",
+        herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"},
+        bindung=bindung or _bindung_mit_bereich())
+
+
+@pytest.mark.parametrize("feld_id,wert", [("zahl", 1), ("zahl", 5), ("zahl", 0), ("betrag", -100),
+                                           ("betrag", 100), ("betrag", 0), ("ohne", 999), ("zahl__2", 3),
+                                           ("unbekannt", 12345)])
+def test_store_nimmt_wert_im_bereich_die_null_und_felder_ohne_bereich(feld_id, wert):
+    assert _schreibe(feld_id, wert)["wert"] == wert
+
+
+@pytest.mark.parametrize("feld_id,wert", [("zahl", 6), ("zahl", -1), ("betrag", 101), ("betrag", -101),
+                                           ("zahl__2", 6)])
+def test_store_weist_wert_ausserhalb_ab(feld_id, wert):
+    with pytest.raises(ValueError, match=r"^fail-closed \(Bereich\): "):
+        _schreibe(feld_id, wert)
+
+
+def test_store_ohne_bindung_prueft_nichts():
+    """Die Prüfung hängt wie Auflage T an `bindung=`: Bestandsaufrufe ohne sie bleiben, Laden prüft nie."""
+    st = ST.leerer_store(2025, fall_id="bereich-ohne")
+    ev = ST.append_event(st, feld_id="zahl", wert=99, zustand="bestaetigt",
+                         herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                         schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"})
+    assert ev["wert"] == 99
 
 
 LEIBRENTE = _rentner_kegel(renten_art="private_leibrente")

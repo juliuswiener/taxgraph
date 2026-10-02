@@ -112,7 +112,56 @@ async fn lies_koerper(h: &HeaderMap, body: Body) -> Result<(Value, Bytes), Box<R
         .map_err(|_| Box::new(fehler_json(400, "ungültiges JSON im Body")))?;
     let wert = serde_json::from_slice(&roh)
         .map_err(|_| Box::new(fehler_json(400, "ungültiges JSON im Body")))?;
+    if hat_ganzzahl_ausserhalb_i64(&roh) {
+        return Err(Box::new(fehler_json(400, "ungültiges JSON im Body")));
+    }
     Ok((wert, roh))
+}
+
+/// Steht im (schon als JSON gelesenen) Rumpf irgendwo eine Ganzzahl ausserhalb von `i64`?
+///
+/// PARITÄT zu `server.py::_ganzzahl_im_i64` (`json.loads(parse_int=…)`): Python liest eine
+/// Ganzzahl beliebiger Länge exakt, `serde_json` ohne `arbitrary_precision` (D1) läse eine über
+/// `u64` still als gerundetes `f64`, und der Fallakten-Leser sperrt sie. Die Tür weist sie darum an
+/// JEDER Stelle des Rumpfs ab (Vault `decisions/tuer-und-speicher-weisen-ab-was-die-fallakte-nicht-
+/// exakt-halten-kann`, Punkt 1); `i64::MIN` und `i64::MAX` gehen durch. Eine Zahl mit `.`, `e` oder
+/// `E` ist eine Kommazahl und zählt nicht.
+fn hat_ganzzahl_ausserhalb_i64(roh: &[u8]) -> bool {
+    let mut in_text = false;
+    let mut maskiert = false;
+    let mut i = 0;
+    while let Some(&b) = roh.get(i) {
+        if in_text {
+            match (maskiert, b) {
+                (true, _) => maskiert = false,
+                (false, b'\\') => maskiert = true,
+                (false, b'"') => in_text = false,
+                _ => {}
+            }
+            i += 1;
+        } else if b == b'"' {
+            in_text = true;
+            i += 1;
+        } else if b == b'-' || b.is_ascii_digit() {
+            let ende = roh
+                .get(i..)
+                .unwrap_or_default()
+                .iter()
+                .position(|c| {
+                    !(c.is_ascii_digit() || matches!(c, b'-' | b'+' | b'.' | b'e' | b'E'))
+                })
+                .map_or(roh.len(), |n| i + n);
+            let token = roh.get(i..ende).unwrap_or_default();
+            let ganzzahl = token.iter().all(|c| c.is_ascii_digit() || *c == b'-');
+            if ganzzahl && std::str::from_utf8(token).map_or(true, |t| t.parse::<i64>().is_err()) {
+                return true;
+            }
+            i = ende;
+        } else {
+            i += 1;
+        }
+    }
+    false
 }
 
 /// `_extract_user` (`server.py:167`): `Authorization`, optional `Bearer `, dann `verify_token`.
@@ -287,10 +336,61 @@ pub async fn nicht_erreicht(req: Request) -> Response {
 
 #[cfg(test)]
 mod tests {
-    use super::{routen, EINTRAEGE};
+    use axum::body::Body;
+    use axum::http::{header, HeaderMap, HeaderValue};
+
+    use super::{hat_ganzzahl_ausserhalb_i64, lies_koerper, routen, EINTRAEGE};
+
+    /// Die Tür selbst: derselbe Rumpf, einmal ausserhalb und einmal an der Grenze von `i64`.
+    #[tokio::test]
+    async fn die_tuer_weist_eine_ganzzahl_ausserhalb_i64_mit_400_ab() {
+        let sende = |roh: &'static str| async move {
+            let mut h = HeaderMap::new();
+            h.insert(
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("application/json"),
+            );
+            h.insert(header::CONTENT_LENGTH, HeaderValue::from(roh.len()));
+            lies_koerper(&h, Body::from(roh)).await
+        };
+        let abgewiesen = sende(r#"{"wert": 18446744073709551616}"#)
+            .await
+            .unwrap_err();
+        assert_eq!(abgewiesen.status(), 400);
+        let (gelesen, _) = sende(r#"{"wert": 9223372036854775807}"#).await.unwrap();
+        assert_eq!(gelesen["wert"], 9_223_372_036_854_775_807_i64);
+    }
 
     #[test]
     fn alle_muster_kompilieren() {
         assert_eq!(routen().len(), EINTRAEGE.len());
+    }
+
+    /// Tür-Parität zu `tests/test_nan_im_rumpf_erreicht_die_akte_nicht.py::test_ganzzahl_*`.
+    #[test]
+    fn ganzzahl_ausserhalb_i64_wird_an_jeder_stelle_gefunden() {
+        let aussen = |s: &str| hat_ganzzahl_ausserhalb_i64(s.as_bytes());
+        for roh in [
+            r#"{"wert": 18446744073709551616}"#,
+            r#"{"wert": 9223372036854775808}"#,
+            r#"{"wert": -9223372036854775809}"#,
+            r#"{"signal": {"signal_1": 18446744073709551616, "signal_2": null}}"#,
+            r#"{"liste": [1, 2, -18446744073709551617]}"#,
+            r#"{"veranlagungszeitraum": 99999999999999999999999999}"#,
+        ] {
+            assert!(aussen(roh), "{roh}");
+        }
+        for roh in [
+            r#"{"wert": 9223372036854775807}"#,
+            r#"{"wert": -9223372036854775808}"#,
+            r#"{"wert": 0, "x": -0, "y": 12}"#,
+            r#"{"wert": 18446744073709551616.0}"#,
+            r#"{"wert": 1e400}"#,
+            r#"{"text": "18446744073709551616 und \" 99999999999999999999"}"#,
+            r#"{"ts": "2026-01-01T00:00:00+00:00", "wert": 1.5e3}"#,
+            "{}",
+        ] {
+            assert!(!aussen(roh), "{roh}");
+        }
     }
 }
