@@ -265,6 +265,9 @@ fn betrag_text_alt(wert: &Value) -> Option<String> {
 /// gegen 3.12.9 und 3.14.7: kein Unterschied (die naive Fassung `floor(f / 100.0)` trifft
 /// dieselben 23).
 ///
+/// PARITÄT: bleibt `f64` wie Python, denn das Ergebnis ist nur Anzeige-Text, kein Betrag
+/// (Vault `decisions/rust-port-geld-cent-saetze-decimal`, Nachtrag 2026-10-02).
+///
 /// ponytail: `inf` ergaebe in `CPython` `nan` (gemessen), hier bliebe `floor` bei `inf`. Beides
 /// ist im Store nicht darstellbar — `serde_json` weist `1e999` beim Laden als `NumberOutOfRange`
 /// ab, `store::Store::append` NaN/inf an der Append-Grenze (Auflage 3). Upgrade: ein `inf`-Zweig,
