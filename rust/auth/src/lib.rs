@@ -20,7 +20,7 @@ mod token;
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Mutex, PoisonError};
 
 use serde_json::Value;
 use store::audit::AuditAktion;
@@ -252,7 +252,14 @@ impl Auth {
     pub fn pruefe_token(&self, token: &str) -> Option<String> {
         let payload = token::pruefe(token, &self.geheimnis, jetzt())?;
         let jti = payload.get("jti").and_then(Value::as_str).unwrap_or("");
-        if self.gesperrt.lock().is_ok_and(|g| g.contains(jti)) {
+        // Eine vergiftete Sperre (ein Thread panickte mit ihr) bleibt lesbar: still durchlassen
+        // hiesse, ein abgemeldetes Token gilt wieder.
+        if self
+            .gesperrt
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .contains(jti)
+        {
             return None;
         }
         payload
@@ -283,12 +290,10 @@ impl Auth {
             .and_then(Value::as_str)
             .unwrap_or("")
             .to_owned();
-        if let Ok(mut g) = self.gesperrt.lock() {
-            g.insert(jti);
-        }
-        // `pruefe_token` liest `jti` selbst und uebergeht eine vergiftete Sperre still; danach
-        // muss es dieses Token ablehnen, sonst bliebe es nach dem Logout gueltig.
-        debug_assert!(self.pruefe_token(token).is_none());
+        self.gesperrt
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .insert(jti);
         let sub = payload
             .get("sub")
             .and_then(Value::as_str)
@@ -381,5 +386,22 @@ mod tests {
         let b = Auth::neu("zwei".into(), "/x".into(), None);
         let t = a.stelle_aus("julius").unwrap();
         assert!(b.pruefe_token(&t).is_none());
+    }
+
+    #[test]
+    fn logout_sperrt_auch_mit_vergifteter_sperre() {
+        let a = Auth::neu("s".into(), "/x".into(), None);
+        let t = a.stelle_aus("julius").unwrap();
+        std::thread::scope(|s| {
+            let _ = s
+                .spawn(|| {
+                    let _g = a.gesperrt.lock();
+                    panic!("vergiftet die Sperre");
+                })
+                .join();
+        });
+        assert!(a.gesperrt.is_poisoned());
+        assert_eq!(a.logout(&t).as_deref(), Some("julius"));
+        assert!(a.pruefe_token(&t).is_none());
     }
 }
