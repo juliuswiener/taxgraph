@@ -355,12 +355,12 @@ async fn kontrolle_der_kontoauszug_erreicht_den_fall() {
 /// `test_kontoauszug_csv_unlesbarer_betrag.py::test_unlesbarer_betrag_steht_in_verworfen_mit_grund`:
 /// eine CSV-Zeile mit unlesbarem Betrag muss in `verworfen` zaehlen und im `hinweis` stehen.
 ///
-/// `eingang::kontoauszug::eur_cent_signed` liefert fuer `abc` und `1,2,3` `Ok(0)`, `uebernehme`
-/// ueberspringt jeden Betrag `>= 0`, `parse_csv` kennt kein `verworfen` (gemessen 2026-10-02,
-/// `berichte/authfix.md` 4a). Den Wortlaut des Grundes legt der Test nicht fest, nur dass er den
-/// Betrag nennt.
+/// `eingang::kontoauszug::parse_csv` liefert die Zahl der verworfenen Zeilen als zweiten Wert
+/// (Regel getestet in `eingang` `tests::csv_unlesbarer_betrag_zaehlt_in_verworfen`); die Route
+/// muss sie nach `verworfen` und in den `hinweis` reichen. Den Wortlaut des Grundes legt der Test
+/// nicht fest, nur dass er den Betrag nennt.
 #[tokio::test]
-#[ignore = "POST /kontoauszug ist 501-Stub (api/src/routen/schreiben.rs:66); nach der Portierung zaehlt der CSV-Zweig unlesbare Betraege nicht nach verworfen (eingang::kontoauszug::eur_cent_signed liefert Ok(0), uebernehme ueberspringt >= 0). Erwartet verworfen=2 und einen hinweis mit 'Betrag'. Python: test_kontoauszug_csv_unlesbarer_betrag.py::test_unlesbarer_betrag_steht_in_verworfen_mit_grund. Vault: tickets/kontoauszug-zeile-mit-unlesbarem-betrag-verschwindet-still.md. Rot sehen: --ignored"]
+#[ignore = "POST /kontoauszug ist 501-Stub (api/src/routen/schreiben.rs:66); die Portierung muss den zweiten Wert von eingang::kontoauszug::parse_csv nach verworfen reichen. Erwartet verworfen=2 und einen hinweis mit 'Betrag'. Python: test_kontoauszug_csv_unlesbarer_betrag.py::test_unlesbarer_betrag_steht_in_verworfen_mit_grund. Vault: backlog/taxgraph/kontoauszug-zeile-mit-unlesbarem-betrag-verschwindet-still.md. Rot sehen: --ignored"]
 async fn kontoauszug_unlesbarer_betrag_steht_in_verworfen() {
     let d = dienst();
     let (status, json, text) = kontoauszug_hochladen(&d, "unlesbar").await;

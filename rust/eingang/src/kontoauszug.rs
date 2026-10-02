@@ -164,59 +164,53 @@ pub fn py_float(s: &str) -> Option<f64> {
     s.replace('_', "").parse().ok()
 }
 
-/// `_eur_cent_signed(s)`: `'-480,00'`/`'1.234,56'` → Cent mit Vorzeichen; nicht lesbar → 0.
+/// Nur eindeutige Cent-Schreibweisen (Vault `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`):
+/// deutsch mit Tausenderpunkten und Komma (`1.234,56`), sonst Komma oder Punkt mit hoechstens
+/// zwei Stellen (`480,5`/`480.00`/`480`). Gleiches Muster wie `_BETRAG_RE` in Python.
+static BETRAG_CSV: LazyLock<PyRegex> = LazyLock::new(|| {
+    PyRegex::neu(r"^(?:(\d{1,3}(?:\.\d{3})+),(\d{1,2})|(\d+)(?:[,.](\d{1,2}))?)$")
+});
+
+/// `_eur_cent_signed(s)`: `'-480,00'`/`'1.234,56'` → Cent mit Vorzeichen; unlesbar → `None`
+/// (u. a. `1e3`, `-1.234`, `1,2,3`, `inf` und Werte ausserhalb `i64`). Ganzzahlig, ohne `f64`.
 ///
 /// ```
-/// assert_eq!(eingang::kontoauszug::eur_cent_signed("-1.234,56 €").unwrap(), -123_456);
-/// assert_eq!(eingang::kontoauszug::eur_cent_signed("abc").unwrap(), 0);
-/// assert!(eingang::kontoauszug::eur_cent_signed("inf").is_err());
+/// assert_eq!(eingang::kontoauszug::eur_cent_signed("-1.234,56 €"), Some(-123_456));
+/// assert_eq!(eingang::kontoauszug::eur_cent_signed("-1.234"), None);
+/// assert_eq!(eingang::kontoauszug::eur_cent_signed("1e3"), None);
 /// ```
-///
-/// # Errors
-/// [`KontoauszugFehler::BetragUeberlauf`] fuer `inf` und Werte ausserhalb `i64`.
-///
-/// PARITÄT: rechnet in `f64` wie Pythons `int(round(float(s) * 100))`. Unter 2^51 Cent (etwa
-/// 22,5 Billionen €) trifft das jeden Zwei-Stellen-Betrag: in Python je 200 000 Werte 2^50 bis
-/// 2^51 Cent 0 daneben, 2^51 bis 2^52 Cent 13 982 daneben (`berichte/haertung2.md` Befund 5).
-///
-/// ponytail: `f64` traegt bis 2^51 Cent; darueber Cent per Dezimal-Parser statt Float (Vault
-/// `decisions/rust-port-geld-cent-saetze-decimal`).
-pub fn eur_cent_signed(roh: &str) -> Result<i64, KontoauszugFehler> {
+#[must_use]
+pub fn eur_cent_signed(roh: &str) -> Option<i64> {
     let s = py::strip(roh).replace(['€', ' '], "");
     let neg = s.starts_with('-');
-    let s = s.trim_start_matches(['+', '-']);
-    let s = if s.contains(',') && s.contains('.') {
-        s.replace('.', "").replacen(',', ".", usize::MAX)
-    } else {
-        s.replace(',', ".")
-    };
-    let Some(f) = py_float(&s) else { return Ok(0) };
-    if f.is_nan() {
-        return Ok(0);
-    }
-    let gerundet = (f * 100.0).round_ties_even();
-    if !gerundet.is_finite() || gerundet.abs() >= 9.223_372_036_854_776e18 {
-        return Err(KontoauszugFehler::BetragUeberlauf(roh.to_owned()));
-    }
-    #[allow(clippy::cast_possible_truncation)] // ganzzahlig und im Bereich, oben geprueft
-    let cent = gerundet as i64;
-    Ok(if neg { -cent } else { cent })
+    // Python liest Dezimalziffern jeder Schrift (`\d`, `int`); hier vorher auf ASCII abgebildet.
+    let s = py::ascii_ziffern(s.trim_start_matches(['+', '-']));
+    let g = BETRAG_CSV.gruppen(&s)??;
+    let feld = |i: usize| g.get(i).cloned().flatten();
+    let ganz = feld(0).or_else(|| feld(2))?.replace('.', "");
+    let bruch = format!("{:0<2}", feld(1).or_else(|| feld(3)).unwrap_or_default());
+    let cent = ganz
+        .parse::<i64>()
+        .ok()?
+        .checked_mul(100)?
+        .checked_add(bruch.parse().ok()?)?;
+    Some(if neg { -cent } else { cent })
 }
 
 /// `parse_csv(text)`: `;`-getrennt, Spalten per Alias (case-insensitiv), Zeilen ohne Betrag
-/// uebersprungen.
+/// uebersprungen, Zeilen mit unlesbarem Betrag gezaehlt (zweiter Wert).
 ///
 /// ```
-/// let tx = eingang::kontoauszug::parse_csv("Buchungstag;Betrag;Verwendungszweck\n01.03.2025;-480,00;Maler\n").unwrap();
-/// assert_eq!(tx[0].betrag, -48000);
+/// let (tx, verworfen) = eingang::kontoauszug::parse_csv("Buchungstag;Betrag;Verwendungszweck\n01.03.2025;-480,00;Maler\n02.03.2025;1e3;X\n").unwrap();
+/// assert_eq!((tx[0].betrag, verworfen), (-48000, 1));
 /// ```
 ///
 /// # Errors
-/// [`KontoauszugFehler::Csv`] / [`KontoauszugFehler::BetragUeberlauf`].
-pub fn parse_csv(text: &str) -> Result<Vec<Transaktion>, KontoauszugFehler> {
+/// [`KontoauszugFehler::Csv`].
+pub fn parse_csv(text: &str) -> Result<(Vec<Transaktion>, usize), KontoauszugFehler> {
     let (kopf, zeilen, csv_fehler) = csv::dict_reader(text, ';');
     if kopf.is_empty() {
-        return csv_fehler.map_or(Ok(Vec::new()), |e| Err(e.into()));
+        return csv_fehler.map_or(Ok((Vec::new(), 0)), |e| Err(e.into()));
     }
     let mut norm: Vec<(String, String)> = Vec::new();
     for f in &kopf {
@@ -246,20 +240,25 @@ pub fn parse_csv(text: &str) -> Result<Vec<Transaktion>, KontoauszugFehler> {
             .unwrap_or_default()
     };
     let mut out = Vec::new();
+    let mut verworfen = 0;
     for z in &zeilen {
         let betrag_roh = wert(z, &c_bet);
         if c_bet.is_none() || py::strip(&betrag_roh).is_empty() {
             continue;
         }
+        let Some(betrag) = eur_cent_signed(&betrag_roh) else {
+            verworfen += 1;
+            continue;
+        };
         out.push(Transaktion {
             datum: Value::String(py::strip(&wert(z, &c_dat)).to_owned()),
-            betrag: eur_cent_signed(&betrag_roh)?,
+            betrag,
             verwendungszweck: py::strip(&wert(z, &c_zwk)).to_owned(),
         });
     }
     // Der `csv.Error` kommt in Python erst beim Lesen der Zeile, in der er steckt — also nach
-    // allen frueheren Zeilen (und deren Betragsfehlern).
-    csv_fehler.map_or(Ok(out), |e| Err(e.into()))
+    // allen frueheren Zeilen.
+    csv_fehler.map_or(Ok((out, verworfen)), |e| Err(e.into()))
 }
 
 /// JSON-Zweig (`api.py:973-979` + `int(tx.get("betrag", 0))`): Liste von Objekten. Anders als
@@ -327,17 +326,15 @@ static LEERRAUM: LazyLock<PyRegex> = LazyLock::new(|| PyRegex::neu(r"\s+"));
 /// Ein Regex-Laufzeitfehler verwirft die Zeile (fail-closed).
 ///
 /// ```
-/// let (tx, verworfen) = eingang::kontoauszug::parse_pdf_zeilen("01.03.2025 Maler Huber -480,00 EUR\nSaldo -1,00", &Default::default(), 0.6).unwrap();
+/// let (tx, verworfen) = eingang::kontoauszug::parse_pdf_zeilen("01.03.2025 Maler Huber -480,00 EUR\nSaldo -1,00", &Default::default(), 0.6);
 /// assert_eq!((tx[0].betrag, tx[0].verwendungszweck.as_str(), verworfen), (-48000, "Maler Huber", 1));
 /// ```
-///
-/// # Errors
-/// [`KontoauszugFehler::BetragUeberlauf`].
+#[must_use]
 pub fn parse_pdf_zeilen(
     text: &str,
     conf: &crate::ocr::ConfMap,
     schwelle: f64,
-) -> Result<(Vec<Transaktion>, usize), KontoauszugFehler> {
+) -> (Vec<Transaktion>, usize) {
     let mut out = Vec::new();
     let mut verworfen = 0;
     for (i, zeile) in py::splitlines(text).into_iter().enumerate() {
@@ -382,6 +379,11 @@ pub fn parse_pdf_zeilen(
             verworfen += 1;
             continue;
         }
+        // Nur ausserhalb `i64`; das Token ist sonst lesbar.
+        let Some(cent) = eur_cent_signed(betrag) else {
+            verworfen += 1;
+            continue;
+        };
         let zweck = rest.replacen(betrag.as_str(), "", 1);
         let zweck = EUR_ENDE
             .ersetze(&zweck, |_| String::new())
@@ -391,11 +393,11 @@ pub fn parse_pdf_zeilen(
             .map_or(zweck.clone(), |(t, _)| t);
         out.push(Transaktion {
             datum: Value::String(datum),
-            betrag: eur_cent_signed(betrag)?,
+            betrag: cent,
             verwendungszweck: py::strip(&zweck).to_owned(),
         });
     }
-    Ok((out, verworfen))
+    (out, verworfen)
 }
 
 /// LLM-Rueckfall: maskierter Zweck und Betrag → Kategorie oder `None` (unklassifiziert).
@@ -497,16 +499,65 @@ pub fn uebernehme(
 mod tests {
     use proptest::prelude::*;
 
-    use super::eur_cent_signed;
+    use super::{eur_cent_signed, parse_csv};
+
+    /// Vault `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`; Python-Gegenstueck
+    /// `tests/test_kontoauszug_writer.py::test_eur_cent_signed_tabelle`.
+    #[test]
+    fn betrag_tabelle() {
+        for (roh, cent) in [
+            ("1.234,56", Some(123_456)),
+            ("-480,00", Some(-48_000)),
+            ("480,5", Some(48_050)),
+            ("480", Some(48_000)),
+            ("480.00", Some(48_000)),
+            ("480.5", Some(48_050)),
+            ("-1200,00 €", Some(-120_000)),
+            ("92233720368547758,07", Some(i64::MAX)),
+            ("-1.234", None),
+            ("1e3", None),
+            ("inf", None),
+            ("abc", None),
+            ("1,2,3", None),
+            ("1.234.567", None),
+            ("480,055", None),
+            ("92233720368547758,08", None),
+        ] {
+            assert_eq!(eur_cent_signed(roh), cent, "{roh:?}");
+        }
+        // Lange Ziffernfolgen (Python: int() liest hoechstens 4300 Ziffern, fuehrende Nullen zaehlen nicht).
+        for (roh, cent) in [
+            ("1".repeat(4301), None),
+            (format!("{}1,00", "0".repeat(5000)), Some(100)),
+            (format!("{}1,00", "٠".repeat(5000)), Some(100)),
+            (format!("1{},00", ".000".repeat(1500)), None),
+        ] {
+            assert_eq!(eur_cent_signed(&roh), cent, "{} Zeichen", roh.len());
+        }
+    }
+
+    /// AK1: eine Zeile mit unlesbarem Betrag zaehlt in `verworfen`, die lesbare bleibt.
+    #[test]
+    fn csv_unlesbarer_betrag_zaehlt_in_verworfen() {
+        let csv = "datum;betrag;verwendungszweck\n\
+            15.03.2025;-1200,00;Ruerup-Rente Jahresbeitrag Basisrente\n\
+            16.03.2025;abc;Ruerup-Rente Nachzahlung Basisrente\n\
+            17.03.2025;1,2,3;Ruerup-Rente Sonderzahlung Basisrente\n";
+        let Ok((tx, verworfen)) = parse_csv(csv) else {
+            panic!("parse_csv scheitert")
+        };
+        let betraege: Vec<i64> = tx.iter().map(|t| t.betrag).collect();
+        assert_eq!((betraege, verworfen), (vec![-120_000], 2));
+    }
 
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(1_000))]
 
-        /// Zwei Nachkommastellen bis 10^12 Euro: `f64` trifft den Cent genau, mit Punkt, Komma,
-        /// Tausenderpunkten und Euro-Zeichen.
+        /// Zwei Nachkommastellen ueber den ganzen `i64`-Bereich: der Ganzzahl-Parser trifft den
+        /// Cent genau, mit Punkt, Komma, Tausenderpunkten und Euro-Zeichen.
         #[test]
         fn eur_cent_signed_zwei_stellen_centgenau(
-            c in prop_oneof![-10_000_i64..10_000, -100_000_000_000_000_i64..100_000_000_000_000],
+            c in prop_oneof![-10_000_i64..10_000, -i64::MAX..=i64::MAX],
             komma in any::<bool>(),
             tausender in any::<bool>(),
             euro in any::<bool>(),
@@ -526,7 +577,7 @@ mod tests {
                 if komma { ',' } else { '.' },
                 if euro { " €" } else { "" }
             );
-            prop_assert_eq!(eur_cent_signed(&text).unwrap(), c);
+            prop_assert_eq!(eur_cent_signed(&text), Some(c));
         }
     }
 }

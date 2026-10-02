@@ -25,6 +25,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "store"))
@@ -205,13 +206,14 @@ def klassifiziere_det(verwendungszweck: str) -> str | None:
     return None
 
 
-def parse_csv(text: str) -> list[dict]:
+def parse_csv(text: str) -> tuple[list[dict], int]:
     """Deterministischer CSV-Parser (Bank-Export). Erwartet Spalten datum/betrag/verwendungszweck
-    (case-insensitiv, gängige Alias-Namen). Betrag in Euro (Komma/Punkt) → Cent (signed). Kein LLM."""
-    out = []
+    (case-insensitiv, gängige Alias-Namen). Betrag in Euro (Komma/Punkt) → Cent (signed). Kein LLM.
+    → (transaktionen, n_verworfen); eine Zeile mit unlesbarem Betrag zählt in n_verworfen."""
+    out, n_verworfen = [], 0
     reader = csv.DictReader(io.StringIO(text), delimiter=";")
     if not reader.fieldnames:
-        return out
+        return out, n_verworfen
     norm = {(f or "").strip().lower(): f for f in reader.fieldnames}
     def col(*aliases):
         for a in aliases:
@@ -224,27 +226,41 @@ def parse_csv(text: str) -> list[dict]:
     for row in reader:
         if c_bet is None or not (row.get(c_bet) or "").strip():
             continue
+        betrag = _eur_cent_signed(row.get(c_bet, ""))
+        if betrag is None:
+            n_verworfen += 1
+            continue
         out.append({
             "datum": (row.get(c_dat) or "").strip() if c_dat else "",
-            "betrag": _eur_cent_signed(row.get(c_bet, "")),
+            "betrag": betrag,
             "verwendungszweck": (row.get(c_zwk) or "").strip() if c_zwk else "",
         })
-    return out
+    return out, n_verworfen
 
 
-def _eur_cent_signed(s: str) -> int:
-    """'-480,00' / '-480.00' / '1.234,56' → signed Cent."""
+# Nur eindeutige Cent-Schreibweisen (Vault decisions/kontoauszug-betrag-cent-genau-oder-verworfen):
+# deutsch mit Tausenderpunkten und Komma (1.234,56), sonst Komma oder Punkt mit höchstens zwei
+# Stellen (480,5 / 480.00 / 480). Unlesbar u. a. 1e3, -1.234 (Tausender oder Dezimal?), 1,2,3, inf.
+_BETRAG_RE = re.compile(r'(\d{1,3}(?:\.\d{3})+),(\d{1,2})|(\d+)(?:[,.](\d{1,2}))?')
+_I64_MAX = 2**63 - 1
+
+
+def _eur_cent_signed(s: str) -> int | None:
+    """'-480,00' / '-480.00' / '1.234,56' → signed Cent; unlesbar → None. Ganzzahlig, ohne float."""
     s = (s or "").strip().replace("€", "").replace(" ", "")
     neg = s.startswith("-")
-    s = s.lstrip("+-")
-    if "," in s and "." in s:            # 1.234,56 (deutsch)
-        s = s.replace(".", "").replace(",", ".")
-    elif "," in s:                        # 480,00
-        s = s.replace(",", ".")
-    try:
-        cent = int(round(float(s) * 100))
-    except ValueError:
-        return 0
+    m = _BETRAG_RE.fullmatch(s.lstrip("+-"))
+    if not m:
+        return None
+    tausender, bruch_de, ganz, bruch = m.groups()
+    # Ziffern jeder Schrift auf ASCII wie Rust (py::ascii_ziffern), führende Nullen weg: int() liest
+    # höchstens 4300 Ziffern, und ab 20 Ziffern ist der Betrag ohnehin über i64.
+    ganz = "".join(str(unicodedata.decimal(z)) for z in (tausender or ganz).replace(".", "")).lstrip("0")
+    if len(ganz) > 19:
+        return None
+    cent = int(ganz or "0") * 100 + int((bruch_de or bruch or "").ljust(2, "0"))
+    if cent > _I64_MAX:                   # PARITÄT: Rust rechnet in i64; darüber unlesbar wie dort
+        return None
     return -cent if neg else cent
 
 
@@ -299,12 +315,16 @@ def parse_pdf_zeilen(text: str, conf_map: dict, schwelle: float = 0.6) -> tuple[
             n_verworfen += 1                             # unsicher (OCR) -> NICHT raten
             continue
         betrag_str = betraege[0]
+        betrag = _eur_cent_signed(betrag_str)
+        if betrag is None:
+            n_verworfen += 1                             # nur ausserhalb i64; das Token ist sonst lesbar
+            continue
         zweck = rest.replace(betrag_str, "", 1)
         zweck = re.sub(r'\s*(?:EUR|€)\s*$', '', zweck, flags=re.I)
         zweck = re.sub(r'\s+', ' ', zweck).strip()
         transaktionen.append({
             "datum": m.group(1),
-            "betrag": _eur_cent_signed(betrag_str),
+            "betrag": betrag,
             "verwendungszweck": zweck,
         })
     return transaktionen, n_verworfen
