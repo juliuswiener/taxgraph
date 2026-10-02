@@ -2,7 +2,7 @@
 use domain::{Euro, Vz};
 
 use bindung::Params;
-use rust_decimal::Decimal;
+use rust_decimal::{Decimal, RoundingStrategy};
 
 use super::{euro, z, EngineFehler};
 
@@ -35,23 +35,20 @@ pub struct RentenEingabe {
     pub jahresrente: Euro,
 }
 
-/// Python `round(prozent * 10)` auf dem YAML-Float (`_renten_stpfl`,
-/// `catala_p19_2_versorgungsfreibetrag`).
+/// Python `round(prozent * 10)` (`_renten_stpfl`, `catala_p19_2_versorgungsfreibetrag`), exakt:
+/// Zehntelprozent, half-even gerundet wie Pythons `round`.
 ///
-/// `bindung` liest den Float als kuerzeste Dezimaldarstellung; Zurueckparsen liefert genau den
-/// `f64`, den Python haelt. `(v * 10.0).round_ties_even()` ist dieselbe IEEE-754-Operation wie
-/// Pythons `round` (half-even). Danach ist alles exakte Ganzzahlarithmetik -- bitgleich zu
-/// Python. Beweis ueber den ganzen Tabellen-Definitionsbereich: `kohorten_exhaustiv` in
-/// `rust/parity/tests/zugriff_teil2_paritaet.rs`.
+/// PARITÄT, bewusst: Python rundet das Float-Produkt `prozent * 10`. Trifft das genau ,5, der
+/// Dezimalwert aber nicht, weicht Python ab (Test `zehntel_rundet_den_dezimalwert`). Kein
+/// Tabellenwert liegt so: `kohorten_exhaustiv` in `rust/parity/tests/zugriff_teil2_paritaet.rs`
+/// prueft den ganzen Tabellen-Definitionsbereich.
 fn zehntel(prozent: Decimal) -> Result<i128, EngineFehler> {
-    let v: f64 = prozent.to_string().parse().map_err(|_| super::UEBERLAUF)?;
-    let r = (v * 10.0).round_ties_even();
-    if !r.is_finite() || r.abs() > 1e15 {
-        return Err(super::UEBERLAUF);
-    }
-    // ponytail: |r| <= 1e15 < 2^53 und ganzzahlig, `as` schneidet nichts ab.
-    #[allow(clippy::cast_possible_truncation)]
-    Ok(i128::from(r as i64))
+    prozent
+        .checked_mul(Decimal::TEN)
+        .map(|v| v.round_dp_with_strategy(0, RoundingStrategy::MidpointNearestEven))
+        .and_then(|v| i64::try_from(v).ok())
+        .map(i128::from)
+        .ok_or(super::UEBERLAUF)
 }
 
 /// `jahresrente * round(prozent * 10) // 1000` -- Python `_renten_stpfl`.
@@ -209,4 +206,18 @@ pub fn einkuenfte_versorgung(
     let rest = (z(e.versorgung_jahresrente) - vfb).max(0);
     let pausch = VERSORGUNG_PAUSCHBETRAG.min(rest);
     euro((rest - pausch).max(0))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::zehntel;
+    use rust_decimal::Decimal;
+
+    /// PARITÄT, bewusst: Python `round(0.8500000000000001 * 10)` rundet das Float-Produkt 8.5
+    /// half-even auf 8; exakt ist 8.500000000000001 -> 9. Kein Tabellenwert liegt so
+    /// (`kohorten_exhaustiv`).
+    #[test]
+    fn zehntel_rundet_den_dezimalwert() {
+        assert_eq!(zehntel(Decimal::new(8_500_000_000_000_001, 16)).unwrap(), 9);
+    }
 }

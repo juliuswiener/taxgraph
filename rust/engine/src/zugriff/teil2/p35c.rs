@@ -1,8 +1,9 @@
 //! § 35c `EStG` -- energetische Sanierung (`runner.py`, reines Python). Saetze und
 //! Hoechstbetraege hartkodiert wie in Python (7 %/6 %, 14.000/12.000, 50 %).
 use domain::{Cent, Euro};
+use rust_decimal::Decimal;
 
-use super::{cent, euro, int_mal_float, z, EngineFehler};
+use super::{cent, euro, int_mal_satz, z, EngineFehler};
 
 /// Eingabe fuer [`p35c_sanierung`] und [`p35c_ermaessigung_cent`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -16,7 +17,8 @@ pub struct SanierungEingabe {
 /// § 35c Abs. 1 `EStG`: Sanierungsermaessigung, EURO. `min(int(aufw x 0.07), 14.000)`, im
 /// uebernaechsten Foerderjahr `min(int(aufw x 0.06), 12.000)`.
 ///
-/// PARITÄT: Float-Satz wie Python.
+/// PARITÄT: exakt, Python rechnet den Satz als Float. Abweichung erst ab
+/// |aufw| = 914.793.674.309.657 EUR, s. `int_mal_satz`.
 ///
 /// # Errors
 /// [`EngineFehler::Ueberlauf`] jenseits von `i64`.
@@ -29,11 +31,11 @@ pub struct SanierungEingabe {
 /// ```
 pub fn p35c_sanierung(e: &SanierungEingabe) -> Result<Euro, EngineFehler> {
     let (satz, hoechst) = if e.ist_uebernaechstes_foerderjahr {
-        (0.06, 12_000)
+        (Decimal::new(6, 2), 12_000)
     } else {
-        (0.07, 14_000)
+        (Decimal::new(7, 2), 14_000)
     };
-    euro(int_mal_float(e.sanierungsaufwendungen, satz)?.min(hoechst))
+    euro(int_mal_satz(e.sanierungsaufwendungen, satz)?.min(hoechst))
 }
 
 /// § 35c Abs. 1 `EStG` als CENT-Zweig von `catala_est` (`runner.py`
@@ -63,7 +65,8 @@ pub fn p35c_ermaessigung_cent(e: &SanierungEingabe) -> Result<Cent, EngineFehler
 
 /// § 35c Abs. 1 S. 4 `EStG`: Energieberater 50 %, EURO. `int(aufw x 0.50)`.
 ///
-/// `energieberater_aufwendungen`: PARITÄT: Python setzt fehlend = 0.
+/// `energieberater_aufwendungen`: PARITÄT: Python setzt fehlend = 0. Exakt, Python rechnet den
+/// Satz als Float; Abweichung erst ab |aufw| = 2^53 + 3 EUR, s. `int_mal_satz`.
 ///
 /// # Errors
 /// [`EngineFehler::Ueberlauf`] jenseits von `i64`.
@@ -74,7 +77,10 @@ pub fn p35c_ermaessigung_cent(e: &SanierungEingabe) -> Result<Cent, EngineFehler
 /// assert_eq!(p35c_energieberater(Euro::new(1001)).unwrap(), Euro::new(500));
 /// ```
 pub fn p35c_energieberater(energieberater_aufwendungen: Euro) -> Result<Euro, EngineFehler> {
-    euro(int_mal_float(energieberater_aufwendungen, 0.50)?)
+    euro(int_mal_satz(
+        energieberater_aufwendungen,
+        Decimal::new(50, 2),
+    )?)
 }
 
 /// Eingabe fuer [`p35c_jahresdeckel`].
@@ -108,4 +114,25 @@ pub fn p35c_jahresdeckel(e: &JahresdeckelEingabe) -> Result<Euro, EngineFehler> 
     };
     let summe = z(e.sanierung_ermaessigung) + z(e.energieberater_ermaessigung);
     euro(if summe > hb { hb } else { summe })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{p35c_energieberater, p35c_sanierung, SanierungEingabe};
+    use domain::Euro;
+
+    /// PARITÄT, bewusst: hier rechnet Python `int(aufw * satz)` in `float` und verfehlt den exakten
+    /// Wert (Grenzen in der Doku von `int_mal_satz`).
+    #[test]
+    fn exakt_wo_python_float_abweicht() {
+        // Python: int((2**53 + 3) * 0.50) == 2**52 + 2
+        let energieberater = p35c_energieberater(Euro::new((1 << 53) + 3)).unwrap();
+        assert_eq!(energieberater, Euro::new((1 << 52) + 1));
+        // Python: int(-914793674309657 * 0.07) == -64035557201676
+        let e = SanierungEingabe {
+            sanierungsaufwendungen: Euro::new(-914_793_674_309_657),
+            ist_uebernaechstes_foerderjahr: false,
+        };
+        assert_eq!(p35c_sanierung(&e).unwrap(), Euro::new(-64_035_557_201_675));
+    }
 }
