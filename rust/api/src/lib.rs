@@ -17,17 +17,23 @@
 
 pub mod antwort;
 mod anzeige;
+pub mod deklaration;
 pub mod dispatch;
 pub mod eigener_fall;
 pub mod enum_labels;
+pub mod ergebnis;
 pub mod fehler;
 pub mod flow;
+pub mod fragen;
+pub mod graph;
 pub mod konfig;
 pub mod openapi;
+pub mod preflight;
 pub mod python;
 pub mod routen;
 pub mod schema;
 pub mod stand;
+pub mod warum;
 pub mod zustand;
 
 pub use antwort::Antwort;

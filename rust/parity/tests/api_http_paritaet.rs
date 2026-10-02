@@ -60,13 +60,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 /// Routen, fuer die Rust heute `501 nicht_portiert` antwortet (AK3 in 9c). Beim Port fliegt die
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
 const NICHT_PORTIERT: &[&str] = &[
-    "GET /fall/{id}/fragen",
-    "GET /fall/{id}/feld/{fid}/warum",
-    "GET /fall/{id}/feld/{fid}/frage",
-    "GET /fall/{id}/ergebnis",
-    "GET /fall/{id}/preflight",
-    "GET /fall/{id}/deklaration",
-    "GET /fall/{id}/graph",
     "POST /fall/{id}/event",
     "POST /fall/{id}/vorjahr",
     "POST /fall/{id}/einreichen",
@@ -80,14 +73,14 @@ const NICHT_PORTIERT: &[&str] = &[
 /// diese Routen gehen nach einer Rust-`501` an Python. Stufe 4 (einreichen, chat, entfernung,
 /// kontoauszug) riefe dort `ERiC`, das LLM oder ORS.
 const UNTERGRENZE: &[(&str, usize)] = &[
-    ("GET /fall/{id}/fragen", 3),
+    ("GET /fall/{id}/fragen", 14),
     ("GET /fall/{id}/stand", 7),
-    ("GET /fall/{id}/feld/{fid}/warum", 4),
-    ("GET /fall/{id}/feld/{fid}/frage", 4),
-    ("GET /fall/{id}/ergebnis", 3),
-    ("GET /fall/{id}/preflight", 3),
-    ("GET /fall/{id}/deklaration", 3),
-    ("GET /fall/{id}/graph", 3),
+    ("GET /fall/{id}/feld/{fid}/warum", 10),
+    ("GET /fall/{id}/feld/{fid}/frage", 677),
+    ("GET /fall/{id}/ergebnis", 26),
+    ("GET /fall/{id}/preflight", 17),
+    ("GET /fall/{id}/deklaration", 17),
+    ("GET /fall/{id}/graph", 9),
     ("POST /fall/{id}/event", 12),
     ("POST /fall/{id}/flow", 2),
     ("POST /fall/{id}/vorjahr", 2),
@@ -1604,6 +1597,24 @@ fn ereignis(feld: &str, wert: &Value, ersetzt: Option<&str>) -> Value {
         "ts": "2026-01-01T00:00:00+00:00", "ersetzt": ersetzt})
 }
 
+/// Ein Vorschlag des LLM: `vorlaeufig`, Schreiber `llm:`, Herkunft `llm_vorschlag` (Auflage A).
+fn ereignis_llm(feld: &str, wert: &Value) -> Value {
+    json!({"feld_id": feld, "wert": wert, "zustand": "vorlaeufig", "schreiber": "llm:paritaet",
+        "herkunft": {"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": null},
+        "ts": "2026-01-01T00:00:00+00:00", "ersetzt": null})
+}
+
+/// Ein Beleg-Import: `vorlaeufig` (ein Import bestaetigt nie direkt), `signal_1` ist ein
+/// Herkunfts-Objekt mit Umlaut und Euro-Zeichen im Rohtext.
+fn ereignis_beleg(feld: &str, wert: &Value) -> Value {
+    json!({"feld_id": feld, "wert": wert, "zustand": "vorlaeufig", "schreiber": "import:beleg",
+        "herkunft": {"herkunft": "beleg_import", "pruef_tiefe": "plausibilisiert", "haftung": "nutzer"},
+        "signal": {"signal_1": {"typ": "beleg", "ref": "b1", "confidence": 0.92, "roh_text": "Zinsen: 1.500,00 €"},
+                   "signal_2": null},
+        "ts": "2026-01-01T00:00:00+00:00", "ersetzt": null})
+}
+
 /// Ein nicht leerer Body je POST-Route aus Stufe 1–3; `quelle` ist der Vorjahres-Fall. Stufe 4
 /// bekommt `{}`: sie geht nie an Python (s. `UNTERGRENZE`).
 fn koerper(route: &str, quelle: &str) -> Value {
@@ -1613,6 +1624,137 @@ fn koerper(route: &str, quelle: &str) -> Value {
         "vorjahr" => json!({"vorjahr_fall_id": quelle}),
         _ => json!({}),
     }
+}
+
+/// Der Pflicht-Kegel von `an_gesamt` (33 Felder, `SCHEIBEN['an_gesamt']['kegel']`) mit neutralen
+/// Werten, ohne `ep_arbeitstage`, `fam_anzahl_kinder` und `dhf_monate`. Alle Achsen, die dann noch
+/// offen sind, haben einen `bereich`: der Ring rechnet, und `fragen` bekommt Gewichte.
+fn kegel_an() -> Vec<(&'static str, Value)> {
+    vec![
+        ("bruttoarbeitslohn", json!(4_000_000)),
+        ("veranlagung", json!("einzel")),
+        ("ep_entfernung_km", json!(30)),
+        ("ep_oepnv_kosten", json!(0)),
+        ("ep_eigenes_kfz", json!(true)),
+        ("vor_an_anteil_rv", json!(0)),
+        ("vor_ag_anteil_rv", json!(0)),
+        ("vor_rv_ausserhalb_lstb", json!(0)),
+        ("versicherungsart", json!("gesetzlich_an")),
+        ("basis_kv", json!(0)),
+        ("basis_pv", json!(0)),
+        ("vorsorge_arbeitslosenversicherung", json!(0)),
+        ("vorsorge_erwerbsunfaehigkeit", json!(0)),
+        ("vorsorge_unfall_haftpflicht", json!(0)),
+        ("vorsorge_rv_alt_mit_ueberschuss", json!(0)),
+        ("vorsorge_rv_alt_ohne_ueberschuss", json!(0)),
+        ("mit_anspruch_auf_zuschuss", json!(false)),
+        ("dhf_unterkunftskosten_monat", json!(0)),
+        ("dhf_im_inland", json!(false)),
+        ("dhf_beruflich_veranlasst", json!(false)),
+        ("dhf_eigener_hausstand", json!(false)),
+        ("dhf_finanzielle_beteiligung", json!(false)),
+        ("tage_24h", json!(1)),
+        ("tage_an_abreise", json!(1)),
+        ("tage_ueber_8h_eintaegig", json!(1)),
+        ("kein_gewinn", json!(true)),
+        ("kein_kap", json!(true)),
+        ("kein_vuv", json!(true)),
+        ("kein_sonstige", json!(true)),
+        ("verlustvortrag_bestand", json!(0)),
+    ]
+}
+
+/// `kegel_an` vollstaendig: dazu `ep_arbeitstage`, `fam_anzahl_kinder`, `dhf_monate` und die zwei
+/// Verpflegungs-Angaben, die den Guard (§ 9 Abs. 4a) zufriedenstellen. `/ergebnis` nennt eine Zahl.
+fn kegel_an_voll() -> Vec<(&'static str, Value)> {
+    let mut k = kegel_an();
+    k.extend([
+        ("ep_arbeitstage", json!(220)),
+        ("fam_anzahl_kinder", json!(0)),
+        ("dhf_monate", json!(0)),
+        ("vpf_monate_am_ort", json!(2)),
+        ("vpf_keine_mahlzeitengestellung", json!(true)),
+    ]);
+    k
+}
+
+/// Der Pflicht-Kegel von `gesamt` (35 Felder), vollstaendig bestaetigt: Lohn, V+V, Kapital ohne
+/// Betraege. `/ergebnis` nennt eine Zahl und die Rechenweg-Kette.
+fn kegel_gesamt() -> Vec<(&'static str, Value)> {
+    vec![
+        ("vv_einnahmen", json!(1_000_000)),
+        ("vv_gebaeude_afa", json!(100_000)),
+        ("vv_schuldzinsen", json!(50_000)),
+        ("vv_erhaltungsaufwand", json!(0)),
+        ("vv_sonstige_wk", json!(0)),
+        ("vv_entgelt_quote_prozent", json!(100)),
+        ("veranlagung", json!("einzel")),
+        ("bruttoarbeitslohn", json!(4_000_000)),
+        ("ep_arbeitstage", json!(220)),
+        ("ep_entfernung_km", json!(30)),
+        ("ep_oepnv_kosten", json!(0)),
+        ("ep_eigenes_kfz", json!(true)),
+        ("vor_an_anteil_rv", json!(0)),
+        ("vor_ag_anteil_rv", json!(0)),
+        ("vor_rv_ausserhalb_lstb", json!(0)),
+        ("versicherungsart", json!("gesetzlich_an")),
+        ("basis_kv", json!(0)),
+        ("basis_pv", json!(0)),
+        ("vorsorge_arbeitslosenversicherung", json!(0)),
+        ("vorsorge_erwerbsunfaehigkeit", json!(0)),
+        ("vorsorge_unfall_haftpflicht", json!(0)),
+        ("vorsorge_rv_alt_mit_ueberschuss", json!(0)),
+        ("vorsorge_rv_alt_ohne_ueberschuss", json!(0)),
+        ("mit_anspruch_auf_zuschuss", json!(false)),
+        ("kap_kapitalertraege", json!(0)),
+        ("kap_gewinn_aktien", json!(0)),
+        ("kap_verlust_aktien", json!(0)),
+        ("kap_gewinn_sonstige", json!(0)),
+        ("kap_verlust_sonstige", json!(0)),
+        ("kein_gewinn", json!(true)),
+        ("kein_kap", json!(true)),
+        ("kein_vuv", json!(false)),
+        ("kein_sonstige", json!(true)),
+        ("agb_zwangslaeufig", json!(false)),
+        ("agb_notwendig_angemessen", json!(false)),
+    ]
+}
+
+/// Der Pflicht-Kegel von `rentner_gesamt` (28 Felder), vollstaendig bestaetigt, als aa-Rente mit
+/// Beginn `beginn` und OHNE `rentner_rentenfreibetrag`. Beginn 2020: der Guard sperrt mit
+/// `rentenfreibetrag_fixierung_offen`, und der Ring wirft `RentenfreibetragFixierungOffen`, sobald
+/// er rechnet. Beginn 2025 (Erstjahr): `/ergebnis` nennt eine Zahl.
+fn kegel_rentner(beginn: i64) -> Vec<(&'static str, Value)> {
+    vec![
+        ("rentner_renten_art", json!("gesetzliche_rente")),
+        ("rentner_jahresrente", json!(1_200_000)),
+        ("rentner_renten_beginn_jahr", json!(beginn)),
+        ("rentner_alter_bei_rentenbeginn", json!(65)),
+        ("rentner_grad_der_behinderung", json!(50)),
+        ("rentner_hilflos_blind_taubblind", json!(false)),
+        ("rentner_pflegegrad", json!(1)),
+        ("rentner_gepflegter_hilflos", json!(false)),
+        ("rentner_hinterbliebenenbezuege", json!(false)),
+        ("veranlagung", json!("einzel")),
+        ("kein_gewinn", json!(true)),
+        ("kein_kap", json!(true)),
+        ("kein_vuv", json!(true)),
+        ("kein_sonstige", json!(false)),
+        ("vor_an_anteil_rv", json!(0)),
+        ("vor_ag_anteil_rv", json!(0)),
+        ("vor_rv_ausserhalb_lstb", json!(0)),
+        ("versicherungsart", json!("gesetzlich_an")),
+        ("basis_kv", json!(0)),
+        ("basis_pv", json!(0)),
+        ("vorsorge_arbeitslosenversicherung", json!(0)),
+        ("vorsorge_erwerbsunfaehigkeit", json!(0)),
+        ("vorsorge_unfall_haftpflicht", json!(0)),
+        ("vorsorge_rv_alt_mit_ueberschuss", json!(0)),
+        ("vorsorge_rv_alt_ohne_ueberschuss", json!(0)),
+        ("mit_anspruch_auf_zuschuss", json!(false)),
+        ("agb_zwangslaeufig", json!(false)),
+        ("agb_notwendig_angemessen", json!(false)),
+    ]
 }
 
 /// Echte Eingaben fuer Stufe 1–3 (9c): vier eigene Faelle in zwei Scheiben, Events auf mehreren
@@ -1641,7 +1783,58 @@ fn generatoren() {
         ("g_an", "an_gesamt", 2025),
         ("g_rent", "rentner_gesamt", 2025),
         ("g_rent2", "rentner_gesamt", 2025),
+        // aa-Folgejahr ohne fixierten Rentenfreibetrag: der Ring wirft, `fragen` bleibt vollstaendig.
+        ("g_rent3", "rentner_gesamt", 2025),
+        // `fragen` mit Gewichten aus dem Ring: `g_an2` (Gesamt-Ring, trotz Sperrgrund), `g_ep2` und
+        // `g_vor2` (Gesamt-Ring von `ep`, Teil-Ring von `n_vor_gwg`), je mit einer offenen Achse.
+        ("g_an2", "an_gesamt", 2025),
+        // `ergebnis` mit Zahl: g_an3 (voller Kegel, kein SolZ), g_an4 (dazu Lohnsteuer und
+        // Konfession: KiSt und Abschlusszahlung), g_an5 (vorlaeufige Lohnsteuer sperrt die Zahl),
+        // g_ges2 (Kette), g_ges3 (Kinder: Guenstigerpruefung § 31), g_ges4/g_ges5/g_ges6 (offene
+        // Hinweise trotz Zahl: Gate fehlt, vorlaeufiges Kind-Feld, vorlaeufiger Verkaufspreis),
+        // g_rent4 (Rentner im Erstjahr, Erstattung).
+        ("g_an3", "an_gesamt", 2025),
+        ("g_an4", "an_gesamt", 2025),
+        ("g_an5", "an_gesamt", 2025),
+        ("g_ges2", "gesamt", 2025),
+        ("g_ges3", "gesamt", 2025),
+        ("g_ges4", "gesamt", 2025),
+        ("g_ges5", "gesamt", 2025),
+        ("g_ges6", "gesamt", 2025),
+        // g_ges7: zusammen mit Partner und hohem Einkommen (Freibetrag guenstiger als Kindergeld),
+        // g_ges8: `vv_wohnzwecke` verneint nimmt `vv_entgelt_quote_prozent` aus dem Kegel,
+        // g_ges9: dieselbe Quote fehlt, ohne dass die Regel abbestellt ist.
+        ("g_ges7", "gesamt", 2025),
+        ("g_ges8", "gesamt", 2025),
+        ("g_ges9", "gesamt", 2025),
+        ("g_rent4", "rentner_gesamt", 2025),
+        ("g_ep2", "ep", 2025),
+        ("g_vor2", "n_vor_gwg", 2025),
         ("g_vor", "n_vor_gwg", 2025),
+        // Herkunftsformen und Zustaende fuer `warum`/`graph`; `g_aussen` bekommt weiter unten die
+        // Scheibe `ep` (Scheiben-Wechsel von Hand) und behaelt ein Feld, das dort keine Bindung hat.
+        ("g_wz", "gesamt", 2025),
+        ("g_aussen", "gesamt", 2025),
+        // `preflight`: ein roter Fall mit je einem Widerspruch, `g_pf_ae` fuer § 24b, `g_pf_gelb`
+        // (nur Hinweise), zwei gruene (leer, und mit Angaben, die nichts melden), `g_pf_un` ohne
+        // Flag-Antwort auf `gesamt`, `g_pf_nf` mit demselben Betrag auf `ep` (Flag dort nicht fragbar),
+        // `g_vj_vv` als Vorjahr mit Verlustvortrag.
+        ("g_vj_vv", "gesamt", 2024),
+        ("g_pf_rot", "gesamt", 2025),
+        ("g_pf_ae", "gesamt", 2025),
+        ("g_pf_gelb", "gesamt", 2025),
+        ("g_pf_gruen", "gesamt", 2025),
+        ("g_pf_leer", "gesamt", 2025),
+        ("g_pf_un", "gesamt", 2025),
+        ("g_pf_nf", "gesamt", 2025),
+        // `deklaration`: g_dk speist jede Ring-Einspeisung, g_dk2 ist zusammen mit Partner; g_vz0,
+        // g_vz23 und g_vz27 bekommen unten von Hand das Jahr 0, 2023 (kein Steuerjahr) und 2027 (ohne
+        // Parameter: der Ring schluckt es, die Deklaration rechnet).
+        ("g_dk", "gesamt", 2025),
+        ("g_dk2", "gesamt", 2025),
+        ("g_vz0", "gesamt", 2025),
+        ("g_vz23", "gesamt", 2025),
+        ("g_vz27", "gesamt", 2025),
     ] {
         let b = json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": vz});
         a("POST", "/fall", Some(b));
@@ -1674,6 +1867,19 @@ fn generatoren() {
         // Ohne `kein_sonstige = false` sperrt schon der Flag-Guard; erst damit bleibt der Rentenbeginn.
         ("g_rent2", "rentner_jahresrente", json!(1_200_000)),
         ("g_rent2", "kein_sonstige", json!(false)),
+        // g_ep2/g_vor2: alles bestaetigt ausser `ep_arbeitstage` (offene Achse mit `bereich`).
+        ("g_ep2", "ep_entfernung_km", json!(30)),
+        ("g_ep2", "ep_oepnv_kosten", json!(0)),
+        ("g_ep2", "ep_eigenes_kfz", json!(true)),
+        ("g_ep2", "ep_ziel_des_weges", json!("1")),
+        (
+            "g_ep2",
+            "ep_ziel_adresse",
+            json!("80331 München, Marienplatz 1"),
+        ),
+        ("g_vor2", "ep_entfernung_km", json!(30)),
+        ("g_vor2", "ep_oepnv_kosten", json!(0)),
+        ("g_vor2", "ep_eigenes_kfz", json!(true)),
         // n_vor_gwg liest seine Felder aus der YAML und rechnet nur den Teil-Ring.
         ("g_vor", "ep_arbeitstage", json!(220)),
         ("g_vor", "ep_entfernung_km", json!(30)),
@@ -1682,6 +1888,264 @@ fn generatoren() {
         let pfad = format!("/fall/{id}/event");
         let b = a("POST", &pfad, Some(ereignis(feld, &wert, None)));
         erster = erster.or_else(|| b?["event_id"].as_str().map(str::to_owned));
+    }
+    // Die zwei Kegel: `g_an2` mit `ep_arbeitstage` (eine offene Achse je `bereich`), `g_rent3` voll.
+    let mit_kinder = || {
+        let mut k = kegel_gesamt();
+        k.push(("fam_anzahl_kinder", json!(2)));
+        k
+    };
+    let mut kegel: Vec<(&str, &str, Value)> = vec![];
+    let mut fuege = |id: &'static str, k: Vec<(&'static str, Value)>| {
+        kegel.extend(k.into_iter().map(|(f, w)| (id, f, w)));
+    };
+    fuege("g_an2", {
+        let mut k = kegel_an();
+        k.push(("ep_arbeitstage", json!(220)));
+        k
+    });
+    fuege("g_rent3", kegel_rentner(2020));
+    for id in ["g_an3", "g_an4", "g_an5"] {
+        fuege(id, kegel_an_voll());
+    }
+    fuege(
+        "g_an4",
+        vec![
+            ("p36_lohnsteuer", json!(500_000)),
+            ("kist_konfession", json!("evangelisch")),
+        ],
+    );
+    fuege("g_ges2", kegel_gesamt());
+    fuege("g_ges3", mit_kinder());
+    fuege("g_ges4", {
+        let mut k = mit_kinder();
+        k.push(("kinderbetreuungskosten", json!(120_000)));
+        k
+    });
+    fuege("g_ges5", mit_kinder());
+    fuege("g_ges6", kegel_gesamt());
+    fuege("g_ges7", {
+        let mut k = mit_kinder();
+        for e in &mut k {
+            match e.0 {
+                "veranlagung" => e.1 = json!("zusammen"),
+                "bruttoarbeitslohn" => e.1 = json!(40_000_000),
+                _ => {}
+            }
+        }
+        k.extend([
+            ("bruttoarbeitslohn_partner", json!(3_000_000)),
+            ("kap_kapitalertraege_partner", json!(0)),
+            ("kap_gewinn_aktien_partner", json!(0)),
+            ("kap_gewinn_sonstige_partner", json!(0)),
+            ("kap_verlust_aktien_partner", json!(0)),
+            ("kap_verlust_sonstige_partner", json!(0)),
+        ]);
+        k
+    });
+    let ohne_quote = || {
+        let mut k = kegel_gesamt();
+        k.retain(|(f, _)| *f != "vv_entgelt_quote_prozent");
+        k
+    };
+    fuege("g_ges8", {
+        let mut k = ohne_quote();
+        k.push(("vv_wohnzwecke", json!(false)));
+        k
+    });
+    fuege("g_ges9", ohne_quote());
+    fuege("g_rent4", {
+        let mut k = kegel_rentner(2025);
+        k.push(("p36_lohnsteuer", json!(1_000)));
+        k
+    });
+    for (id, feld, wert) in kegel {
+        let pfad = format!("/fall/{id}/event");
+        a("POST", &pfad, Some(ereignis(feld, &wert, None)));
+    }
+    // Vorlaeufige Angaben neben vollstaendigem Kegel (LLM-Vorschlag, kein signal_2).
+    for (id, feld, wert) in [
+        ("g_an5", "p36_lohnsteuer", 500_000),
+        ("g_ges5", "kinderbetreuungskosten", 120_000),
+        ("g_ges6", "p23_veraeusserungspreis", 50_000_000),
+    ] {
+        let pfad = format!("/fall/{id}/event");
+        a("POST", &pfad, Some(ereignis_llm(feld, &json!(wert))));
+    }
+    for (id, ev) in [
+        ("g_wz", ereignis_llm("ep_oepnv_kosten", &json!(120))),
+        (
+            "g_wz",
+            ereignis_beleg("kap_kapitalertraege", &json!(150_000)),
+        ),
+        (
+            "g_wz",
+            ereignis("stammdaten_nachname", &json!("Müller-Lüdenscheidt"), None),
+        ),
+        ("g_wz", ereignis("kein_kap", &json!(true), None)),
+        ("g_aussen", ereignis("ep_arbeitstage", &json!(200), None)),
+        (
+            "g_aussen",
+            ereignis("bruttoarbeitslohn", &json!(3_000_000), None),
+        ),
+    ] {
+        a("POST", &format!("/fall/{id}/event"), Some(ev));
+    }
+    // Das Vorjahr mit bestaetigtem Verlustvortrag; `POST /vorjahr` legt `vorjahr_referenz` an, gegen
+    // die `preflight` den neuen Bestand prueft. Erst danach kommt der hoehere Bestand in `g_pf_rot`.
+    let mut abgewiesen: Vec<String> = vec![];
+    let ev = ereignis("verlustvortrag_bestand", &json!(100_000), None);
+    if a("POST", "/fall/g_vj_vv/event", Some(ev)).is_none() {
+        abgewiesen.push("g_vj_vv/verlustvortrag_bestand".to_owned());
+    }
+    let b = a(
+        "POST",
+        "/fall/g_pf_rot/vorjahr",
+        Some(koerper("vorjahr", "g_vj_vv")),
+    );
+    assert!(b.is_some(), "Vorjahr g_pf_rot aus g_vj_vv abgewiesen");
+    for (id, feld, wert) in [
+        // Rot: je ein Widerspruch aus jedem Bereich, ausser § 24b (`g_pf_ae`).
+        ("g_pf_rot", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_pf_rot", "p36_lohnsteuer", json!(5_000_000)),
+        ("g_pf_rot", "kist_gezahlt", json!(1_500_000)),
+        ("g_pf_rot", "kirchensteuer_arbeitgeber", json!(5_000)),
+        ("g_pf_rot", "kein_kap", json!(true)),
+        ("g_pf_rot", "kap_kapitalertraege", json!(10_000)),
+        ("g_pf_rot", "veranlagung", json!("einzel")),
+        ("g_pf_rot", "kap_kapitalertraege_partner", json!(20_000)),
+        ("g_pf_rot", "fam_anzahl_kinder", json!(3)),
+        ("g_pf_rot", "kind_vorname", json!("Anna")),
+        ("g_pf_rot", "schulgeld", json!(20_000_000)),
+        ("g_pf_rot", "schulgeld__2", json!(5_000)),
+        ("g_pf_rot", "stammdaten_keine_bankverbindung", json!(true)),
+        (
+            "g_pf_rot",
+            "stammdaten_iban",
+            json!("DE89370400440532013000"),
+        ),
+        ("g_pf_rot", "verlustvortrag_bestand", json!(500_000)),
+        ("g_pf_ae", "veranlagung", json!("zusammen")),
+        ("g_pf_ae", "fam_alleinstehend", json!(true)),
+        ("g_pf_gelb", "bruttoarbeitslohn", json!(3_000_000)),
+        ("g_pf_gelb", "kein_vuv", json!(false)),
+        ("g_pf_gelb", "vv_einnahmen", json!(1_000_000)),
+        ("g_pf_gruen", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_pf_gruen", "ep_arbeitstage", json!(220)),
+        ("g_pf_gruen", "p36_lohnsteuer", json!(500_000)),
+        // Kein Flag beantwortet: auf `gesamt` ein Widerspruch, auf `ep` (s. u.) nicht.
+        ("g_pf_un", "kap_kapitalertraege", json!(10_000)),
+        ("g_pf_nf", "kap_kapitalertraege", json!(10_000)),
+    ] {
+        let ev = ereignis(feld, &wert, None);
+        if a("POST", &format!("/fall/{id}/event"), Some(ev)).is_none() {
+            abgewiesen.push(format!("{id}/{feld}"));
+        }
+    }
+    // `deklaration`: je Ring-Einspeisung (`mit_ring_werten`) ein Satz Felder auf `gesamt`:
+    // Verpflegungskuerzung (E0205508), Kapital-Antrag (E1900401/E1901401), haushaltsnahe Summen,
+    // V+V-Summen samt dokumentiertem Aggregat, Einzelzeilen (§ 35c, GewSt, § 22 Nr. 3,
+    // Berufsausbildung), § 23-Instanzen und Kinder.
+    for (id, feld, wert) in [
+        ("g_dk", "bruttoarbeitslohn", json!(6_000_000)),
+        ("g_dk", "veranlagung", json!("einzel")),
+        ("g_dk", "tage_24h", json!(20)),
+        ("g_dk", "tage_an_abreise", json!(2)),
+        ("g_dk", "tage_ueber_8h_eintaegig", json!(3)),
+        ("g_dk", "vpf_fruehstuecke_gestellt_anzahl", json!(5)),
+        ("g_dk", "vpf_mittagessen_gestellt_anzahl", json!(3)),
+        ("g_dk", "vpf_abendessen_gestellt_anzahl", json!(2)),
+        ("g_dk", "vpf_mahlzeiten_gezahltes_entgelt", json!(0)),
+        ("g_dk", "kap_kapitalertraege", json!(500_000)),
+        ("g_dk", "kap_gewinn_aktien", json!(300_000)),
+        ("g_dk", "hh_minijob_betrag", json!(40_000)),
+        ("g_dk", "hh_minijob_betrag__2", json!(10_000)),
+        ("g_dk", "hh_dienstleistung_betrag", json!(120_000)),
+        ("g_dk", "hh_handwerker_betrag", json!(200_000)),
+        ("g_dk", "vv_einnahmen", json!(1_000_000)),
+        ("g_dk", "vv_gebaeude_afa", json!(100_000)),
+        ("g_dk", "vv_schuldzinsen", json!(50_000)),
+        ("g_dk", "vv_nebenkosten_umgelegt", json!(80_000)),
+        ("g_dk", "p35c_sanierungsaufwendungen", json!(1_000_000)),
+        ("g_dk", "p35c_keine_doppelfoerderung", json!(true)),
+        ("g_dk", "gewst_messbetrag", json!(50_000)),
+        ("g_dk", "gewst_hebesatz", json!(400)),
+        ("g_dk", "p22_nr3_einnahmen", json!(100_000)),
+        ("g_dk", "p22_nr3_einkuenfte", json!(40_000)),
+        ("g_dk", "berufsausbildung_aufwendungen", json!(600_000)),
+        ("g_dk", "p23_veraeusserungs_typ", json!("grundstueck")),
+        ("g_dk", "p23_veraeusserungspreis", json!(20_000_000)),
+        (
+            "g_dk",
+            "p23_anschaffung_herstellungskosten",
+            json!(10_000_000),
+        ),
+        ("g_dk", "p23_werbungskosten", json!(100_000)),
+        ("g_dk", "p23_veraeusserungs_typ__2", json!("anderes_wg")),
+        ("g_dk", "p23_veraeusserungspreis__2", json!(5_000_000)),
+        ("g_dk", "fam_anzahl_kinder", json!(2)),
+        ("g_dk", "kind_vorname", json!("Anna")),
+        ("g_dk", "kind_vorname__2", json!("Ben")),
+        ("g_dk2", "veranlagung", json!("zusammen")),
+        ("g_dk2", "bruttoarbeitslohn", json!(5_000_000)),
+        ("g_dk2", "bruttoarbeitslohn_partner", json!(3_000_000)),
+        ("g_dk2", "kein_kap", json!(false)),
+        ("g_dk2", "kap_kapitalertraege", json!(200_000)),
+        ("g_dk2", "kap_kapitalertraege_partner", json!(100_000)),
+        ("g_dk2", "gewst_messbetrag", json!(50_000)),
+        ("g_dk2", "gewst_hebesatz", json!(400)),
+        ("g_dk2", "gewst_messbetrag_partner", json!(30_000)),
+        ("g_dk2", "gewst_hebesatz_partner", json!(380)),
+        ("g_vz0", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_vz23", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_vz27", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_vz27", "kap_kapitalertraege", json!(500_000)),
+        ("g_vz27", "tage_24h", json!(10)),
+        ("g_vz27", "vpf_fruehstuecke_gestellt_anzahl", json!(3)),
+    ] {
+        let ev = ereignis(feld, &wert, None);
+        if a("POST", &format!("/fall/{id}/event"), Some(ev)).is_none() {
+            abgewiesen.push(format!("{id}/{feld}"));
+        }
+    }
+    let ev = ereignis_llm("agb_aufwendungen", &json!(50_000));
+    if a("POST", "/fall/g_pf_gelb/event", Some(ev)).is_none() {
+        abgewiesen.push("g_pf_gelb/agb_aufwendungen".to_owned());
+    }
+    assert!(
+        abgewiesen.is_empty(),
+        "Events der preflight- und deklaration-Faelle abgewiesen: {abgewiesen:?}"
+    );
+    // Scheiben-Wechsel von Hand, in beiden Verzeichnissen gleich: `bruttoarbeitslohn` hat in `ep`
+    // keine Bindung mehr. Der Store laesst so ein Event nicht ueber `POST /event` zu (400), eine
+    // vorhandene Akte kann es dennoch tragen.
+    for (art, id) in ["python", "rust"]
+        .into_iter()
+        .flat_map(|art| ["g_aussen", "g_pf_nf"].map(|id| (art, id)))
+    {
+        let pfad = tmp
+            .path()
+            .join(art)
+            .join("faelle")
+            .join(format!("{id}.json"));
+        let mut akte: Value = serde_json::from_slice(&std::fs::read(&pfad).unwrap()).unwrap();
+        akte["scheibe"] = json!("ep");
+        std::fs::write(&pfad, serde_json::to_vec(&akte).unwrap()).unwrap();
+    }
+    // Jahr von Hand: 0 und 2023 lassen `deklariere` scheitern, 2027 hat keine Parameter (Ring-Werte
+    // ohne Jahr, die Deklaration rechnet trotzdem).
+    for (art, (id, vz)) in ["python", "rust"]
+        .into_iter()
+        .flat_map(|art| [("g_vz0", 0), ("g_vz23", 2023), ("g_vz27", 2027)].map(|f| (art, f)))
+    {
+        let pfad = tmp
+            .path()
+            .join(art)
+            .join("faelle")
+            .join(format!("{id}.json"));
+        let mut akte: Value = serde_json::from_slice(&std::fs::read(&pfad).unwrap()).unwrap();
+        akte["veranlagungszeitraum"] = json!(vz);
+        std::fs::write(&pfad, serde_json::to_vec(&akte).unwrap()).unwrap();
     }
     // Ersetzung des ersten Events; dasselbe Feld ohne `ersetzt` weist der Store ab (422).
     let ersetzung = ereignis("ep_arbeitstage", &json!(210), erster.as_deref());
@@ -1712,17 +2176,17 @@ fn generatoren() {
     a("POST", "/fall/g_vj/flow", None);
     let mut engines: BTreeMap<String, usize> = BTreeMap::new();
     let mut gruende: Vec<String> = vec![];
+    let mut fragen_je_fall: Vec<(&str, usize)> = vec![];
+    let mut fragen_gruende: Vec<String> = vec![];
+    // Die Felder der Queue je Fall: `frage` fragt danach jedes davon einzeln ab.
+    let mut queue_felder: Vec<(&str, Vec<(String, bool)>)> = vec![];
+    let mut ergebnisse: Vec<Value> = vec![];
+    let mut deklarationen: Vec<Value> = vec![];
     for id in [
-        "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_vor",
+        "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_rent3", "g_vor", "g_wz",
+        "g_aussen", "g_an2", "g_ep2", "g_vor2", "g_pf_rot", "g_dk", "g_dk2",
     ] {
-        for r in [
-            "stand",
-            "fragen",
-            "ergebnis",
-            "graph",
-            "deklaration",
-            "preflight",
-        ] {
+        for r in ["stand", "fragen", "ergebnis", "graph", "deklaration"] {
             let b = a("GET", &format!("/fall/{id}/{r}"), None);
             if r == "stand" {
                 let e = b
@@ -1730,9 +2194,109 @@ fn generatoren() {
                     .and_then(|b| b["engine"].as_str().map(str::to_owned));
                 *engines.entry(e.unwrap_or_default()).or_default() += 1;
                 gruende.extend(b.and_then(|b| b["ring_gesperrt"].as_str().map(str::to_owned)));
+            } else if r == "ergebnis" {
+                ergebnisse.extend(b);
+            } else if r == "deklaration" {
+                deklarationen.extend(b);
+            } else if r == "fragen" {
+                // Fragen je Antwort und der Sperrgrund, den `fragen` selbst meldet (ohne den
+                // Rentenbeginn-Zweig von `stand`).
+                let n = b
+                    .as_ref()
+                    .map_or(0, |b| b["fragen"].as_array().map_or(0, Vec::len));
+                fragen_je_fall.push((id, n));
+                queue_felder.push((
+                    id,
+                    b.iter()
+                        .flat_map(|b| b["fragen"].as_array().into_iter().flatten())
+                        .filter_map(|f| {
+                            Some((
+                                f["feld_id"].as_str()?.to_owned(),
+                                f["instanz_etikett"].as_str().is_some_and(|e| !e.is_empty()),
+                            ))
+                        })
+                        .collect(),
+                ));
+                fragen_gruende
+                    .extend(b.and_then(|b| b["ring_gesperrt"].as_str().map(str::to_owned)));
             }
         }
     }
+    println!("  fragen: Anzahl je Fall {fragen_je_fall:?}, Sperrgruende {fragen_gruende:?}");
+    for id in [
+        "g_an3", "g_an4", "g_an5", "g_ges2", "g_ges3", "g_ges4", "g_ges5", "g_ges6", "g_ges7",
+        "g_ges8", "g_ges9", "g_rent4",
+    ] {
+        ergebnisse.extend(a("GET", &format!("/fall/{id}/ergebnis"), None));
+    }
+    // Was Pythons `/ergebnis` in diesen Faellen sagt: gezaehlt wird der Inhalt der Antwort, nicht dass
+    // 200 zurueckkam. `engine_unavailable` bleibt ungezaehlt: jede Scheibe mit Ring hat einen Accessor.
+    let mut ergebnis_gruende: BTreeMap<String, usize> = BTreeMap::new();
+    for e in &ergebnisse {
+        *ergebnis_gruende
+            .entry(e["grund"].as_str().unwrap_or_default().to_owned())
+            .or_default() += 1;
+    }
+    let mit = |k: &str| ergebnisse.iter().filter(|e| !e[k].is_null()).count();
+    let mit_offen = ergebnisse
+        .iter()
+        .filter(|e| {
+            e["grund"] == "bestaetigt" && e["offen"].as_array().is_some_and(|o| !o.is_empty())
+        })
+        .count();
+    let mit_p31 = ergebnisse
+        .iter()
+        .filter(|e| !e["kette"]["p31"].is_null())
+        .count();
+    let mit_freibetrag = ergebnisse
+        .iter()
+        .filter(|e| e["kette"]["p31"]["guenstiger"] == "freibetraege")
+        .count();
+    println!(
+        "  ergebnis: Gruende {ergebnis_gruende:?}, zahl {} solz {} kist {} abschluss {} kette {} p31 {mit_p31} \
+         offen trotz Zahl {mit_offen} sperr_felder {} trace {}",
+        mit("zahl_cent"), mit("solz_cent"), mit("kist_cent"), mit("abschlusszahlung_cent"),
+        mit("kette"), mit("sperr_felder"), mit("trace"),
+    );
+    // `preflight` auf allen Faellen: welche Ampeln und Bereiche Pythons Antworten tragen, gezaehlt
+    // wird, was die Antwort enthaelt — nicht, dass 200 zurueckkam.
+    let mut ampeln: BTreeMap<String, usize> = BTreeMap::new();
+    let mut bereiche: BTreeMap<String, usize> = BTreeMap::new();
+    for id in [
+        "g_ep",
+        "g_neu",
+        "g_ges",
+        "g_an",
+        "g_rent",
+        "g_rent2",
+        "g_vor",
+        "g_wz",
+        "g_aussen",
+        "g_vj_vv",
+        "g_pf_rot",
+        "g_pf_ae",
+        "g_pf_gelb",
+        "g_pf_gruen",
+        "g_pf_leer",
+        "g_pf_un",
+        "g_pf_nf",
+    ] {
+        let Some(b) = a("GET", &format!("/fall/{id}/preflight"), None) else {
+            continue;
+        };
+        *ampeln
+            .entry(b["status"].as_str().unwrap_or_default().to_owned())
+            .or_default() += 1;
+        for i in b["items"].as_array().into_iter().flatten() {
+            let schluessel = format!(
+                "{}/{}",
+                i["typ"].as_str().unwrap_or_default(),
+                i["bereich"].as_str().unwrap_or_default()
+            );
+            *bereiche.entry(schluessel).or_default() += 1;
+        }
+    }
+    println!("  preflight: Ampeln {ampeln:?}, Items je Bereich {bereiche:?}");
     // `engine` aus Pythons Antwort; Rust ist dieselbe Antwort (sonst waere eine Abweichung gemeldet).
     // Gezaehlt wird, welche Rechenwege `stand` erreicht — nicht, dass 200 zurueckkam.
     println!("  stand: engine je Antwort {engines:?}, Sperrgruende {gruende:?}");
@@ -1741,11 +2305,78 @@ fn generatoren() {
         ("g_ep", "ep_eigenes_kfz"),
         ("g_neu", "ep_entfernung_km"),
         ("g_ges", "bruttoarbeitslohn"),
+        // `warum`: LLM-Vorschlag, Beleg-Import, Text mit Umlaut, Bool, Feld ausserhalb der Scheibe.
+        ("g_ep", "ep_oepnv_kosten"),
+        ("g_wz", "ep_oepnv_kosten"),
+        ("g_wz", "kap_kapitalertraege"),
+        ("g_wz", "stammdaten_nachname"),
+        ("g_wz", "kein_kap"),
+        ("g_aussen", "bruttoarbeitslohn"),
+        // Ohne Event (404), unbekanntes Feld (404), Grossbuchstaben im Namen (404 mit `repr`).
+        ("g_neu", "ep_ziel_adresse"),
+        ("g_ges", "nicht_da_feld"),
+        ("g_ep", "ABC_Gross"),
     ] {
         for r in ["warum", "frage"] {
             a("GET", &format!("/fall/{id}/feld/{feld}/{r}"), None);
         }
     }
+    // `frage` zu jedem Feld der Queue dieser Faelle: Bereich mit und ohne Grund, Aufzaehlungen,
+    // Muster, Standardwerte, Vorjahr-Kategorie, Instanz-Etikett. Ein Feld mit Instanz-Etikett wird
+    // zusaetzlich mit `__1` gefragt (Aufloesung auf das Basisfeld).
+    let mut frage_felder = 0_usize;
+    let mut frage_instanz = 0_usize;
+    for (id, felder) in &queue_felder {
+        if !["g_wz", "g_rent3", "g_an2", "g_vor", "g_neu", "g_aussen"].contains(id) {
+            continue;
+        }
+        for (fid, instanz) in felder {
+            a("GET", &format!("/fall/{id}/feld/{fid}/frage"), None);
+            frage_felder += 1;
+            if *instanz {
+                a("GET", &format!("/fall/{id}/feld/{fid}__1/frage"), None);
+                frage_instanz += 1;
+            }
+        }
+    }
+    // Instanz-Suffix an einem Feld ohne Instanz, am unbekannten Feld und mit nicht-numerischem Suffix.
+    for fid in ["ep_arbeitstage__1", "nicht_da_feld__2", "ep_arbeitstage__x"] {
+        a("GET", &format!("/fall/g_ep/feld/{fid}/frage"), None);
+    }
+    for id in ["g_vz0", "g_vz23", "g_vz27"] {
+        deklarationen.extend(a("GET", &format!("/fall/{id}/deklaration"), None));
+    }
+    // `deklaration`: welche Kz und welche Bereiche der Antwort Pythons Antworten tragen.
+    let mut kz_je: BTreeMap<String, usize> = BTreeMap::new();
+    for d in &deklarationen {
+        for k in d["deklaration"]
+            .as_object()
+            .into_iter()
+            .flatten()
+            .map(|(k, _)| k)
+        {
+            *kz_je.entry(k.clone()).or_default() += 1;
+        }
+    }
+    let gefuellt = |k: &str| {
+        deklarationen
+            .iter()
+            .filter(|d| match &d[k] {
+                Value::Array(a) => !a.is_empty(),
+                Value::Object(o) => !o.is_empty(),
+                _ => false,
+            })
+            .count()
+    };
+    println!(
+        "  deklaration: {} Antworten, Kz je Antwort {kz_je:?}, person_b {} kind_anlagen {} anlage_instanzen {} \
+         dokumentiert {} nicht_deklariert {} unvollstaendig {} luecken {} vollstaendig {}",
+        deklarationen.len(), gefuellt("person_b"), gefuellt("kind_anlagen"), gefuellt("anlage_instanzen"),
+        gefuellt("dokumentiert"), gefuellt("nicht_deklariert"), gefuellt("unvollstaendig"),
+        gefuellt("pflichtfelder_luecken"),
+        deklarationen.iter().filter(|d| d["vollstaendig"] == json!(true)).count(),
+    );
+    println!("  frage: Felder der Queue {frage_felder}, davon mit __1 zusaetzlich {frage_instanz}");
     // `flow` mit rohem Text: Reihenfolge der Schluessel, doppelte Schluessel, Zahlenschreibweisen und
     // Escapes — Wege, die ein `json!`-`Value` (sortiert) im Test verschluckte.
     for text in [
@@ -1771,6 +2402,99 @@ fn generatoren() {
             "stand erreicht den Rechenweg {e:?} zu selten: {engines:?}"
         );
     }
+    // Der Ring wirft hier (`RentenfreibetragFixierungOffen`), und die Liste bleibt trotzdem voll.
+    assert!(
+        fragen_gruende
+            .iter()
+            .any(|g| g == "rentenfreibetrag_fixierung_offen"),
+        "fragen meldet nie den Sperrgrund der Fixierung: {fragen_gruende:?}"
+    );
+    assert!(
+        fragen_je_fall
+            .iter()
+            .any(|(id, n)| *id == "g_rent3" && *n > 100),
+        "fragen: g_rent3 ohne volle Liste: {fragen_je_fall:?}"
+    );
+    for g in [
+        "bestaetigt",
+        "input_kegel_nicht_bestaetigt",
+        "ring_betrag_vorlaeufig",
+        "kein_scheiben_gesamtbescheid",
+        "dhf_tatbestand_offen",
+        "partner_konsistenz_offen",
+    ] {
+        assert!(
+            ergebnis_gruende.contains_key(g),
+            "ergebnis meldet nie den Grund {g:?}: {ergebnis_gruende:?}"
+        );
+    }
+    assert!(
+        mit("kist_cent") >= 1 && mit("abschlusszahlung_cent") >= 2 && mit("kette") >= 3,
+        "ergebnis: zu wenige Zahlen mit KiSt, Abschlusszahlung oder Kette"
+    );
+    assert!(
+        mit_p31 >= 2 && mit_freibetrag >= 1 && mit_offen >= 3,
+        "ergebnis: p31 {mit_p31}, davon Freibetrag {mit_freibetrag}, offen {mit_offen}"
+    );
+    assert!(
+        mit("sperr_felder") >= 2,
+        "ergebnis: zu wenige Sperrgruende mit Feldern"
+    );
+    for ampel in ["RED", "AMBER", "GREEN"] {
+        assert!(
+            ampeln.get(ampel).copied().unwrap_or(0) >= 1,
+            "preflight meldet nie {ampel:?}: {ampeln:?}"
+        );
+    }
+    // `nicht_gerechnet` fehlt mit Absicht: `NICHT_GERECHNET` ist leer, der Bereich bleibt leer.
+    for bereich in [
+        "widerspruch/flag",
+        "widerspruch/partner",
+        "widerspruch/alleinerziehend",
+        "widerspruch/plausibilitaet",
+        "hinweis/pauschale",
+        "hinweis/betrag_vorlaeufig",
+    ] {
+        let n = bereiche.get(bereich).copied().unwrap_or(0);
+        assert!(n >= 1, "preflight liefert nie {bereich}: {bereiche:?}");
+    }
+    assert!(
+        bereiche
+            .get("widerspruch/plausibilitaet")
+            .copied()
+            .unwrap_or(0)
+            >= 6,
+        "preflight: zu wenige Plausibilitaets-Widersprueche: {bereiche:?}"
+    );
+    // `deklaration`: jede Einspeisung von `mit_ring_werten` erscheint als Kz in einer Antwort.
+    for (kz, was) in [
+        ("E0205508", "Verpflegungskuerzung"),
+        ("E1900401", "Kapital-Antrag"),
+        ("E1901401", "genutzter Sparer-Pauschbetrag"),
+        ("E0104109", "haushaltsnah Minijob"),
+        ("E0107208", "haushaltsnah Dienstleistung"),
+        ("E0111215", "haushaltsnah Handwerker"),
+        ("E0701401", "V+V Einnahmen gesamt"),
+        ("E0705701", "V+V Werbungskosten"),
+        ("E0701601", "V+V Ueberschuss"),
+        ("E0700206", "V+V Mieteinnahmen"),
+        ("E0305104", "§ 22 Nr. 3 Einnahmen"),
+        ("E0305201", "§ 22 Nr. 3 Werbungskosten"),
+        ("E0108002", "Berufsausbildung"),
+        ("E0240902", "§ 35c Foerderung"),
+        ("E0801704", "GewSt zu zahlen"),
+    ] {
+        assert!(
+            kz_je.contains_key(kz),
+            "deklaration: {kz} ({was}) kommt in keiner Antwort vor: {kz_je:?}"
+        );
+    }
+    assert!(
+        gefuellt("dokumentiert") >= 1
+            && gefuellt("anlage_instanzen") >= 1
+            && gefuellt("person_b") >= 1,
+        "deklaration: Aggregat, Anlage-Instanz oder Person B fehlt in allen Antworten"
+    );
     // Der Rentenbeginn sperrt nur, wenn der Guard davor nichts findet — ein eigener Weg in `stand`.
     for g in ["rentenbeginn_offen", "flag_konsistenz_offen"] {
         assert!(
