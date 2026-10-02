@@ -54,14 +54,14 @@ fn mit_status(status: u16) -> StatusCode {
     StatusCode::from_u16(status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
 }
 
-/// `json.dumps(obj, ensure_ascii=False)` als Antwort mit allen Headern von `_json`.
+/// `json.dumps(obj, ensure_ascii=False)` als Antwort mit allen Headern von `_json`; ist der Body
+/// nicht serialisierbar, eine 500 mit leerem Rumpf statt einer 200 mit leerem JSON.
 #[must_use]
 pub fn json_antwort(status: u16, body: &Value) -> Response {
-    bytes_antwort(
-        status,
-        "application/json; charset=utf-8",
-        auth::py_json(body).into_bytes(),
-    )
+    match auth::py_json(body) {
+        Ok(text) => bytes_antwort(status, "application/json; charset=utf-8", text.into_bytes()),
+        Err(_) => bytes_antwort(500, "application/json; charset=utf-8", Vec::new()),
+    }
 }
 
 /// Rumpf plus `Content-Type`, `Content-Length` und die drei Sicherheits-Header.
