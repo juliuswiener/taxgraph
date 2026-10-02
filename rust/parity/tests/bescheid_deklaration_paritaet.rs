@@ -1657,6 +1657,34 @@ fn gezielte_faelle() {
                 ("rentner_alter_bei_rentenbeginn_partner", json!(65), true),
             ],
         ),
+        // § 22 bb sperrt nach dem VZ wie aa; vor dem VZ ohne Freibetrag sperrt bb nicht (kein Freibetrag).
+        (
+            "rentenbeginn_nach_vz",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("private_leibrente"), true),
+                ("rentner_renten_beginn_jahr", json!(2026), true),
+            ],
+        ),
+        (
+            "rentenbeginn_nach_vz",
+            "rentner_gesamt",
+            vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("rentner_renten_art_partner", json!("sonstige_leibrente"), true),
+                ("rentner_jahresrente_partner", json!(1_200_000), true),
+                ("rentner_renten_beginn_jahr_partner", json!(2026), true),
+                ("rentner_alter_bei_rentenbeginn_partner", json!(65), true),
+            ],
+        ),
+        (
+            "(keine Sperre)",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("private_leibrente"), true),
+                ("rentner_renten_beginn_jahr", json!(2024), true),
+            ],
+        ),
         // § 35: der Hebesatz des Partner-Betriebs fehlt wie der von Person A.
         (
             "gewst_hebesatz_offen",

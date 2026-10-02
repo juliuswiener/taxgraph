@@ -113,6 +113,20 @@ def test_rentenbeginn_nach_vz_sperrt_benannt(base):
     assert (erg.get("zahl_cent"), erg.get("grund")) == (None, "rentenbeginn_nach_vz"), erg
 
 
+@pytest.mark.parametrize("art", ["private_leibrente", "sonstige_leibrente"])
+@pytest.mark.parametrize("beginn", [2026, 2025, 2024])
+def test_leibrente_sperrt_nur_mit_beginn_nach_vz(base, art, beginn):
+    """bb (Ertragsanteil) wie aa: nach dem VZ gibt es noch keine Rente in diesem Jahr (Vault-Entscheid
+    partner-hebesatz-und-leibrente-nach-dem-steuerjahr-sperren-wie-ihr-gegenstueck). Im und vor dem VZ
+    rechnet bb wie bisher; bb kennt keinen Rentenfreibetrag, also auch keine Fixierungssperre."""
+    kegel = _rentner_kegel(renten_art=art, alter=65)
+    _, (_, erg), _ = _fall(base, f"bb-{art}-{beginn}".replace("_", "-"), "rentner_renten_beginn_jahr", beginn, kegel)
+    if beginn > 2025:
+        assert (erg.get("zahl_cent"), erg.get("grund")) == (None, "rentenbeginn_nach_vz"), erg
+    else:
+        assert erg.get("zahl_cent") is not None, erg
+
+
 # 2 Mio. EUR Leibrente: erst dann trägt 1 % gegen 2 % Ertragsanteil eine Steuer, die sich unterscheidet.
 GROSSE_LEIBRENTE = _rentner_kegel(renten_art="private_leibrente", jahresrente=200000000)
 
