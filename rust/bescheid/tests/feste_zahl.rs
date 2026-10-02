@@ -3,7 +3,12 @@
 //! rechnet sie durch Nachfragen wieder auseinander; hier traegt das Ergebnis den Grund.
 //!
 //! Reihenfolge ist Semantik: Lage 1 vor Lage 3. `_ergebnis_roh` prueft sie zuerst.
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::disallowed_types
+)]
 
 use bescheid::deklaration::{feste_zahl, Cfg, KeineZahl};
 use bescheid::testhilfe::{felder, index, params, store};

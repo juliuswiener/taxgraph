@@ -641,7 +641,7 @@ fn konstanten_gleich() {
         return;
     }
     let py = frage_roh(&json!({"fn": "bescheid.konstanten"}));
-    let rust = dk::konstanten_json();
+    let rust = dk::testhilfe::konstanten_json();
     assert_eq!(py["deklaration"], rust, "Tabellen weichen ab");
     let n = rust["tabellen"].as_object().unwrap().len();
     let ring: usize = rust["ring_kandidaten"]

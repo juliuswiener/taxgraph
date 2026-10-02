@@ -278,7 +278,7 @@ mod aequivalenz {
 
     use super::{cent_zu_euro_dezimal, rentenart, rentenfreibetrag_euro, Rentenart};
     use crate::aequivalenz::{d18, enum_json, DEZIMAL};
-    use crate::deklaration::konstanten_json;
+    use crate::deklaration::testhilfe::konstanten_json;
     use crate::vor_k2::rentenfreibetrag_euro_alt;
 
     /// Die Alt-Fassung gegen `CPython` — die Messung, die D18 festhaelt (Auflage 1).
