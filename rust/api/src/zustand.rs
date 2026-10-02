@@ -8,7 +8,8 @@ use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use bescheid::deklaration::{scheibe_bindung, Cfg};
 use bescheid::BindungIndex;
-use bindung::Bindung;
+use bindung::{Params, Registry};
+use interview::{Graph, Sicht};
 use serde_json::{json, Value};
 use store::Store;
 
@@ -24,13 +25,27 @@ pub struct Zustand {
     pub auth: Arc<Auth>,
     pub(crate) sperre: Arc<tokio::sync::Mutex<()>>,
     bindungen: Arc<OnceLock<Bindungen>>,
+    params: Arc<OnceLock<Params>>,
 }
 
 /// `TR.lade_bindung()` und `api._datei_felder`: alle `bindung_*.yaml`, einmal je Prozess geladen.
 struct Bindungen {
-    alle: Vec<Bindung>,
+    registry: Registry,
     /// Dateiname → `feld_id`s in Dateireihenfolge.
     je_datei: HashMap<String, Vec<String>>,
+}
+
+/// Was `_cfg(store)` und `_scheibe_bindung(store)` zusammen liefern, in den Formen, die ihre
+/// Leser brauchen: `index` fuer `bescheid`/`elster` (Schluesselmenge), `sicht` fuer `interview`
+/// (Scheibenreihenfolge, Python-`dict`), `graph` fuer die bindungsweiten Tabellen.
+#[derive(Debug)]
+pub struct ScheibenBindung<'a> {
+    pub cfg: Cfg,
+    /// Die Felder der Scheibe in Scheibenreihenfolge (`_scheibe_felder`).
+    pub felder: Vec<String>,
+    pub index: BindungIndex<'a>,
+    pub sicht: Sicht<'a>,
+    pub graph: Graph<'a>,
 }
 
 impl Zustand {
@@ -43,6 +58,7 @@ impl Zustand {
             auth: Arc::new(auth),
             sperre: Arc::new(tokio::sync::Mutex::new(())),
             bindungen: Arc::new(OnceLock::new()),
+            params: Arc::new(OnceLock::new()),
         }
     }
 
@@ -52,7 +68,7 @@ impl Zustand {
     /// # Errors
     /// 400 bei unbekannter Scheibe, 500 bei unvollstaendiger Bindung, beide mit Pythons Wortlaut;
     /// eine unlesbare Bindung ist eine unerwartete Ausnahme.
-    pub fn scheibe_bindung(&self, store: &Store) -> Result<(Cfg, BindungIndex<'_>), ApiFehler> {
+    pub fn scheibe_bindung(&self, store: &Store) -> Result<ScheibenBindung<'_>, ApiFehler> {
         let cfg = Cfg::der_akte(store)?;
         let b = self.bindungen()?;
         // Eine fehlende Datei ist `FileNotFoundError` wie bei Pythons `open`, nie eine leere
@@ -67,7 +83,12 @@ impl Zustand {
             })
             .map_err(|e| ApiFehler::unerwartet("KeyError", e.to_string()))?;
         if let Some(datei) = fehlt {
-            let pfad = self.konfig.wurzel.join("produkt").join("bindung").join(datei);
+            let pfad = self
+                .konfig
+                .wurzel
+                .join("produkt")
+                .join("bindung")
+                .join(datei);
             return Err(ApiFehler::unerwartet(
                 "FileNotFoundError",
                 format!(
@@ -76,8 +97,25 @@ impl Zustand {
                 ),
             ));
         }
-        let bindung = scheibe_bindung(&felder, &store::baue_nachschlag(&b.alle))?;
-        Ok((cfg, bindung))
+        let nachschlag: BindungIndex<'_> = b
+            .registry
+            .dateien
+            .iter()
+            .flat_map(|(_, d)| &d.bindungen)
+            .map(|x| (x.feld_id.clone(), x))
+            .collect();
+        let index = scheibe_bindung(&felder, &nachschlag)?;
+        let graph = Graph::aus_registry(&b.registry);
+        let sicht = graph
+            .sicht(felder.iter().map(String::as_str))
+            .map_err(|e| ApiFehler::unerwartet("KeyError", e.to_string()))?;
+        Ok(ScheibenBindung {
+            cfg,
+            felder,
+            index,
+            sicht,
+            graph,
+        })
     }
 
     fn bindungen(&self) -> Result<&Bindungen, ApiFehler> {
@@ -86,19 +124,33 @@ impl Zustand {
         }
         // PARITÄT: Python meldet hier den Typ der YAML- oder OS-Ausnahme; die Registry prueft
         // strenger (doppelte `feld_id`). Beides trifft nur ein kaputtes Repo.
-        let reg = bindung::lade_registry(&self.konfig.wurzel.join("produkt").join("bindung"))
+        let registry = bindung::lade_registry(&self.konfig.wurzel.join("produkt").join("bindung"))
             .map_err(|e| ApiFehler::unerwartet("OSError", e.to_string()))?;
-        let mut b = Bindungen {
-            alle: Vec::new(),
-            je_datei: HashMap::new(),
-        };
-        for (pfad, datei) in reg.dateien {
-            let name = pfad.file_name().map(|n| n.to_string_lossy().into_owned());
-            let ids = datei.bindungen.iter().map(|x| x.feld_id.clone()).collect();
-            b.je_datei.insert(name.unwrap_or_default(), ids);
-            b.alle.extend(datei.bindungen);
+        let je_datei = registry
+            .dateien
+            .iter()
+            .map(|(pfad, datei)| {
+                let name = pfad.file_name().map(|n| n.to_string_lossy().into_owned());
+                let ids = datei.bindungen.iter().map(|x| x.feld_id.clone()).collect();
+                (name.unwrap_or_default(), ids)
+            })
+            .collect();
+        Ok(self
+            .bindungen
+            .get_or_init(|| Bindungen { registry, je_datei }))
+    }
+
+    /// Die Jahresparameter aus `params/`, einmal je Prozess geladen.
+    ///
+    /// # Errors
+    /// Eine unlesbare oder unvollstaendige `params/`-Datei ist eine unerwartete Ausnahme.
+    pub fn params(&self) -> Result<&Params, ApiFehler> {
+        if let Some(p) = self.params.get() {
+            return Ok(p);
         }
-        Ok(self.bindungen.get_or_init(|| b))
+        let p = Params::lade(&self.konfig.wurzel)
+            .map_err(|e| ApiFehler::unerwartet("OSError", e.to_string()))?;
+        Ok(self.params.get_or_init(|| p))
     }
 
     /// Zustand aus der Umgebung: `TAXGRAPH_JWT_SECRET`, `TAXGRAPH_USER_STORE` wie `auth.py:18-23`.

@@ -5,10 +5,12 @@
 //! Harness bleiben unberührt. `warum`/`frage_einzeln` lesen `Treffer::fid` (`m["fid"]`).
 #![allow(clippy::unused_async)] // die Stubs warten nicht; die echten Handler tun es.
 
+use axum::extract::State;
+
 use crate::antwort::Antwort;
 use crate::eigener_fall::EigenerFall;
 use crate::fehler::ApiFehler;
-use crate::zustand::Treffer;
+use crate::zustand::{Treffer, Zustand};
 
 /// `GET /fall/{id}/fragen` — `api.fragen` (`api.py:342`).
 ///
@@ -18,12 +20,12 @@ pub async fn fragen(_fall: EigenerFall) -> Result<Antwort, ApiFehler> {
     Ok(Antwort::nicht_portiert("GET /fall/{id}/fragen"))
 }
 
-/// `GET /fall/{id}/stand` — `api.stand` (`api.py:447`).
+/// `GET /fall/{id}/stand` — `api.stand` (`api.py:447`), Rumpf in [`crate::stand::stand`].
 ///
 /// # Errors
-/// Wie [`fragen`].
-pub async fn stand(_fall: EigenerFall) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("GET /fall/{id}/stand"))
+/// Die Fehler des Owner-Checks (401/403/404) und die von `api.stand`.
+pub async fn stand(State(z): State<Zustand>, fall: EigenerFall) -> Result<Antwort, ApiFehler> {
+    crate::stand::stand(&z, fall.id(), fall.store())
 }
 
 /// `GET /fall/{id}/feld/{fid}/warum` — `api.warum` (`api.py:547`).

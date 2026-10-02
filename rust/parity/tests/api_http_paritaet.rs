@@ -60,7 +60,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
 const NICHT_PORTIERT: &[&str] = &[
     "GET /fall/{id}/fragen",
-    "GET /fall/{id}/stand",
     "GET /fall/{id}/feld/{fid}/warum",
     "GET /fall/{id}/feld/{fid}/frage",
     "GET /fall/{id}/ergebnis",
@@ -82,7 +81,7 @@ const NICHT_PORTIERT: &[&str] = &[
 /// kontoauszug) riefe dort `ERiC`, das LLM oder ORS.
 const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/fragen", 3),
-    ("GET /fall/{id}/stand", 3),
+    ("GET /fall/{id}/stand", 7),
     ("GET /fall/{id}/feld/{fid}/warum", 4),
     ("GET /fall/{id}/feld/{fid}/frage", 4),
     ("GET /fall/{id}/ergebnis", 3),
@@ -1596,6 +1595,10 @@ fn generatoren() {
         ("g_vj", "ep", 2024),
         ("g_neu", "ep", 2025),
         ("g_ges", "gesamt", 2025),
+        ("g_an", "an_gesamt", 2025),
+        ("g_rent", "rentner_gesamt", 2025),
+        ("g_rent2", "rentner_gesamt", 2025),
+        ("g_vor", "n_vor_gwg", 2025),
     ] {
         let b = json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": vz});
         a("POST", "/fall", Some(b));
@@ -1617,6 +1620,21 @@ fn generatoren() {
         ("g_ges", "bruttoarbeitslohn", json!(4_000_000)),
         ("g_ges", "veranlagung", json!("einzel")),
         ("g_ges", "ep_arbeitstage", json!(230)),
+        // an_gesamt: ein dHf-Feld ueber null sperrt den Ring (K2-Guard), `engine` ist `gesperrt`.
+        ("g_an", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_an", "veranlagung", json!("einzel")),
+        ("g_an", "dhf_unterkunftskosten_monat", json!(50_000)),
+        // rentner_gesamt: mit Rentenbeginn rechnet der Ring, ohne ihn sperrt `rentenbeginn_offen`.
+        ("g_rent", "rentner_jahresrente", json!(1_200_000)),
+        ("g_rent", "rentner_renten_beginn_jahr", json!(2015)),
+        ("g_rent", "veranlagung", json!("einzel")),
+        // Ohne `kein_sonstige = false` sperrt schon der Flag-Guard; erst damit bleibt der Rentenbeginn.
+        ("g_rent2", "rentner_jahresrente", json!(1_200_000)),
+        ("g_rent2", "kein_sonstige", json!(false)),
+        // n_vor_gwg liest seine Felder aus der YAML und rechnet nur den Teil-Ring.
+        ("g_vor", "ep_arbeitstage", json!(220)),
+        ("g_vor", "ep_entfernung_km", json!(30)),
+        ("g_vor", "ep_eigenes_kfz", json!(true)),
     ] {
         let pfad = format!("/fall/{id}/event");
         let b = a("POST", &pfad, Some(ereignis(feld, &wert, None)));
@@ -1640,7 +1658,11 @@ fn generatoren() {
     ] {
         a("POST", "/fall/g_ep/flow", Some(b));
     }
-    for id in ["g_ep", "g_neu", "g_ges"] {
+    let mut engines: BTreeMap<String, usize> = BTreeMap::new();
+    let mut gruende: Vec<String> = vec![];
+    for id in [
+        "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_vor",
+    ] {
         for r in [
             "stand",
             "fragen",
@@ -1649,9 +1671,19 @@ fn generatoren() {
             "deklaration",
             "preflight",
         ] {
-            a("GET", &format!("/fall/{id}/{r}"), None);
+            let b = a("GET", &format!("/fall/{id}/{r}"), None);
+            if r == "stand" {
+                let e = b
+                    .as_ref()
+                    .and_then(|b| b["engine"].as_str().map(str::to_owned));
+                *engines.entry(e.unwrap_or_default()).or_default() += 1;
+                gruende.extend(b.and_then(|b| b["ring_gesperrt"].as_str().map(str::to_owned)));
+            }
         }
     }
+    // `engine` aus Pythons Antwort; Rust ist dieselbe Antwort (sonst waere eine Abweichung gemeldet).
+    // Gezaehlt wird, welche Rechenwege `stand` erreicht — nicht, dass 200 zurueckkam.
+    println!("  stand: engine je Antwort {engines:?}, Sperrgruende {gruende:?}");
     for (id, feld) in [
         ("g_ep", "ep_arbeitstage"),
         ("g_ep", "ep_eigenes_kfz"),
@@ -1665,11 +1697,73 @@ fn generatoren() {
     p.zustand_vergleichen("am Ende");
     p.bericht("generatoren");
     assert!(p.stat.abweichungen.is_empty(), "{:?}", p.stat.abweichungen);
+    for e in ["catala", "catala_teilweise", "gesperrt"] {
+        assert!(
+            engines.get(e).copied().unwrap_or(0) >= 1,
+            "stand erreicht den Rechenweg {e:?} zu selten: {engines:?}"
+        );
+    }
+    // Der Rentenbeginn sperrt nur, wenn der Guard davor nichts findet — ein eigener Weg in `stand`.
+    for g in ["rentenbeginn_offen", "flag_konsistenz_offen"] {
+        assert!(
+            gruende.iter().any(|x| x == g),
+            "stand meldet nie den Sperrgrund {g:?}: {gruende:?}"
+        );
+    }
     let zu_wenig: Vec<_> = UNTERGRENZE
         .iter()
         .filter(|(r, n)| p.stat.erreicht.get(*r).copied().unwrap_or(0) < *n)
         .collect();
     assert!(zu_wenig.is_empty(), "Untergrenze verfehlt: {zu_wenig:?}");
+}
+
+/// `ENUM_LABELS` aus `api_constants.py`, wie das Modul sie nach dem Laden haelt (samt der
+/// `setdefault`-Ableitungen), als `[[feld, [[wert, text], ...]], ...]` in Einfuegereihenfolge.
+const ENUM_LABELS_PY: &str = r#"
+import importlib.util, json, sys
+spec = importlib.util.spec_from_file_location("ac", "produkt/haut/api_constants.py")
+ac = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(ac)
+json.dump([[f, [[w, t] for w, t in l.items()]] for f, l in ac.ENUM_LABELS.items()], sys.stdout)
+"#;
+
+/// Die erzeugte Tabelle `api::enum_labels` ist die Tabelle aus `api_constants.py`: Schluessel,
+/// Werte, Texte und Reihenfolge. Aendert sich Python, wird dieser Test rot, bis
+/// `tools/parity/gen_enum_labels.py` neu laeuft.
+#[test]
+fn enum_labels_gleich() {
+    if skip() {
+        return;
+    }
+    let aus = Command::new("python3")
+        .args(["-c", ENUM_LABELS_PY])
+        .current_dir(repo_root())
+        .output()
+        .unwrap();
+    assert!(
+        aus.status.success(),
+        "{}",
+        String::from_utf8_lossy(&aus.stderr)
+    );
+    let py: Value = serde_json::from_slice(&aus.stdout).unwrap();
+    let rust: Value = api::enum_labels::ENUM_LABELS
+        .iter()
+        .map(|(f, l)| json!([f, l.iter().map(|(w, t)| json!([w, t])).collect::<Vec<_>>()]))
+        .collect();
+    assert_eq!(
+        py, rust,
+        "ENUM_LABELS weicht ab: python3 tools/parity/gen_enum_labels.py"
+    );
+    let werte: usize = rust
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e[1].as_array().unwrap().len())
+        .sum();
+    println!(
+        "enum_labels_gleich: {} Felder, {werte} Werte, 0 Abweichungen",
+        rust.as_array().unwrap().len()
+    );
 }
 
 // ---------------------------------------------------------------- Wirksamkeit und Grenzen
@@ -1734,6 +1828,27 @@ fn dokumentierte_abweichungen() {
     );
     assert_eq!((py.status, rs.status), (400, 400));
     assert_ne!(py.body, rs.body);
+    // 1b. `stand` auf einer Akte mit Jahr 10^38 (9c, Stufe 2, gewollte Abweichung): Python rechnet mit
+    //     jedem `int` weiter und antwortet 200 mit einer Spanne fuer ein Jahr ohne Parameter; Rust
+    //     kennt nur 2024-2026 (`domain::Vz`) und antwortet 500 statt einer Zahl fuer ein falsches Jahr.
+    //     Eine solche Akte entsteht nur von Hand (`POST /fall` prueft `params/`).
+    let (py, rs) =
+        zweimal(&Anfrage::neu("stand seed_big", "GET", "/fall/seed_big/stand").token(&alice));
+    println!(
+        "  stand seed_big: py={} {} | rs={} {}",
+        py.status,
+        String::from_utf8_lossy(&py.body)
+            .chars()
+            .take(200)
+            .collect::<String>(),
+        rs.status,
+        String::from_utf8_lossy(&rs.body)
+            .chars()
+            .take(200)
+            .collect::<String>()
+    );
+    assert_eq!((py.status, rs.status), (200, 500));
+    assert!(String::from_utf8_lossy(&rs.body).contains("kein unterstuetzter Veranlagungszeitraum"));
     // 2. Jahr ausserhalb von i64 bei DELETE: Python gibt die Ganzzahl, Rust einen Float.
     let (py, rs) =
         zweimal(&Anfrage::neu("DELETE seed_big", "DELETE", "/fall/seed_big").token(&alice));

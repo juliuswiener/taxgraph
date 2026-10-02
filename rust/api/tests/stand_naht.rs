@@ -1,12 +1,8 @@
-//! ROTES GATE fuer die Naht `GET /fall/{id}/stand`: der Endpunkt antwortet heute
-//! `501 nicht_portiert` (`routen/lesen.rs:24`). Dieser Test fordert die echte Antwort.
+//! GATE fuer die Naht `GET /fall/{id}/stand`: der Endpunkt rechnet (`stand::stand`), er antwortet
+//! nicht mehr `501 nicht_portiert`. Er war die Probe vor dem Port und blieb als Gestalt-Test.
 //!
-//! Er ist die Probe, nicht die Loesung: er haelt fest, WAS fehlt, und faellt, sobald der
-//! Stub durch einen rechnenden Handler ersetzt wird. Bis dahin ist er `#[ignore]` mit der
-//! Zahl der fehlenden Abhaengigkeiten — ein dauerhaft roter Test zerstoert das Signal
-//! „rot heisst, etwas ist kaputtgegangen" (Repo-Konvention, s. `73d4245`).
-//!
-//! Rot sehen:  `cargo test -p api --test stand_naht -- --ignored`
+//! Die Zahlen prueft der Differenz-Harness (`rust/parity/tests/api_http_paritaet.rs`) gegen Python;
+//! dieser Test haelt die Gestalt aus `api.stand` (`api.py:490`) ohne Python fest.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -118,9 +114,9 @@ fn scheibe_bindung_wie_python() {
         ("gesamt", 350),
         ("rentner_gesamt", 247),
     ] {
-        let (cfg, bindung) = d.zustand.scheibe_bindung(&akte(Some(scheibe))).unwrap();
-        assert_eq!(cfg.scheibe().to_string(), scheibe);
-        assert_eq!(bindung.len(), n, "{scheibe}");
+        let sb = d.zustand.scheibe_bindung(&akte(Some(scheibe))).unwrap();
+        assert_eq!(sb.cfg.scheibe().to_string(), scheibe);
+        assert_eq!(sb.index.len(), n, "{scheibe}");
     }
 }
 
@@ -171,7 +167,10 @@ fn leere_bindung_ist_ein_fehler_nie_eine_leere_scheibe() {
     match d.zustand.scheibe_bindung(&akte(Some("ep"))) {
         Err(ApiFehler::Status(500, m)) => assert_eq!(
             m,
-            format!("Bindungstabelle unvollständig für Scheibe: [{}]", liste.join(", "))
+            format!(
+                "Bindungstabelle unvollständig für Scheibe: [{}]",
+                liste.join(", ")
+            )
         ),
         anders => panic!("ep: {anders:?}"),
     }
@@ -211,13 +210,12 @@ async fn kontrolle_der_fall_wird_erreicht() {
     }
 }
 
-/// DIE NAHT: `stand` rechnet, statt 501 zu liefern.
+/// DIE NAHT: `stand` rechnet, statt 501 zu liefern (vorher `#[ignore]`, rot mit `--ignored`).
 ///
 /// Geprueft wird die Gestalt aus `api.stand` (`api.py:489`), nicht ein Zahlwert — ein Zahlwert
 /// haengt am Korpus. `engine` ist einer von vier Werten; der leere Fall hat einen Ring, also
 /// ist `catala` die erwartete ehrliche Antwort (kein Fake-Gruen).
 #[tokio::test]
-#[ignore = "Naht nicht gezogen: GET /stand ist 501. Fehlende Abhaengigkeiten im Bericht startbares-ziel.md: 95 Konstanten / 333 Zeilen SCHEIBEN aus api_constants.py, 4 Crate-Abhaengigkeiten (bindung, interview, intervall, bescheid) und die Cfg-Erweiterung. Rot sehen: --ignored"]
 async fn stand_rechnet_statt_501() {
     let d = dienst();
     let token = fall_anlegen(&d).await;
