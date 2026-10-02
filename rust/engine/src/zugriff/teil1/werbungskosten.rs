@@ -82,6 +82,10 @@ pub struct EntfernungspauschaleEingabe {
 }
 
 /// Euro-Satz je km (`0.30`) in Cent. Python: `Money(f"{satz:.2f}")`.
+///
+/// Rechtsgrundlage: § 9 Abs. 1 S. 3 Nr. 4 S. 2 `EStG` nennt den Satz in ganzen Cent (0,38 Euro),
+/// die Staffel fuer VZ 2024/2025 ebenso (0,30/0,38 Euro). Ein Satz zwischen zwei Cent ist kein
+/// Gesetzeswert, daher [`EngineFehler::NichtCentGenau`] statt einer Rundung.
 fn satz_cent(satz: Satz) -> Result<Cent, EngineFehler> {
     let c = satz.get() * Decimal::ONE_HUNDRED;
     if !c.fract().is_zero() {
@@ -126,6 +130,9 @@ pub fn entfernungspauschale(
 }
 
 /// Euro-Satz in ganzen Cent, abgeschnitten. Python: `int(Decimal(str(satz)) * 100)`.
+///
+/// Rechtsgrundlage wie [`satz_cent`]: § 9 Abs. 1 S. 3 Nr. 4 S. 2 `EStG` nennt ganze Cent, das
+/// Abschneiden aendert keinen Gesetzeswert. PARITÄT: es bildet nur Pythons `int()` nach.
 fn satz_cent_abgeschnitten(satz: Satz) -> Result<i64, EngineFehler> {
     i64::try_from((satz.get() * Decimal::ONE_HUNDRED).trunc())
         .map_err(|_| EngineFehler::Ueberlauf("Satz->Cent"))
@@ -152,9 +159,7 @@ fn satz_cent_abgeschnitten(satz: Satz) -> Result<i64, EngineFehler> {
 /// ```
 pub fn ep_ab_21km(e: &EntfernungspauschaleEingabe, p: &Params) -> Result<Euro, EngineFehler> {
     let r = p.entfernungspauschale(e.veranlagungszeitraum)?;
-    // § 9 Abs. 1 S. 3 Nr. 4 S. 4: nur volle Entfernungs-km (int() schneidet Richtung 0 ab).
-    let km_voll = i64::try_from(e.entfernung_km_roh.get().trunc())
-        .map_err(|_| EngineFehler::Ueberlauf("km"))?;
+    let km_voll = ok(e.entfernung_km_roh.volle_km(), "km")?;
     let grenze = r.staffelgrenze_km;
     let satz_ab21_ct = satz_cent_abgeschnitten(r.satz_ab_21_km)?;
     let satz_bis20_ct = satz_cent_abgeschnitten(r.satz_bis_20_km)?;

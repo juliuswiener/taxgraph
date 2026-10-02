@@ -38,6 +38,11 @@ pub struct RentenEingabe {
 /// Python `round(prozent * 10)` (`_renten_stpfl`, `catala_p19_2_versorgungsfreibetrag`), exakt:
 /// Zehntelprozent, half-even gerundet wie Pythons `round`.
 ///
+/// Rechtsgrundlage: Die Tabellen in § 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa S. 3
+/// (Besteuerungsanteil) und § 19 Abs. 2 S. 3 `EStG` (Versorgungsfreibetrag) nennen Prozent mit
+/// einer Nachkommastelle, Doppelbuchst. bb S. 4 (Ertragsanteil) ganze Prozent. Als Zehntelprozent
+/// ist jeder Tabellenwert exakt, die Rundung aendert keinen.
+///
 /// PARITÄT, bewusst: Python rundet das Float-Produkt `prozent * 10`. Trifft das genau ,5, der
 /// Dezimalwert aber nicht, weicht Python ab (Test `zehntel_rundet_den_dezimalwert`). Kein
 /// Tabellenwert liegt so: `kohorten_exhaustiv` in `rust/parity/tests/zugriff_teil2_paritaet.rs`

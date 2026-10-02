@@ -188,6 +188,23 @@ impl Km {
     pub const fn get(self) -> Decimal {
         self.0
     }
+
+    /// Volle Kilometer: ein angefangener km bleibt unberuecksichtigt, abgeschnitten Richtung 0
+    /// wie Pythons `int()`. `None` ausserhalb von `i64`.
+    ///
+    /// Rechtsgrundlage: § 9 Abs. 1 S. 3 Nr. 4 S. 2 `EStG` (Pauschale "für jeden vollen Kilometer
+    /// der Entfernung"); BMF v. 18.11.2021, Rz. 12.
+    ///
+    /// ```
+    /// use domain::Km;
+    /// use rust_decimal::Decimal;
+    /// assert_eq!(Km::new(Decimal::new(209, 1)).volle_km(), Some(20));
+    /// assert_eq!(Km::new(Decimal::new(-5, 1)).volle_km(), Some(0));
+    /// ```
+    #[must_use]
+    pub fn volle_km(self) -> Option<i64> {
+        i64::try_from(self.0.trunc()).ok()
+    }
 }
 
 impl fmt::Display for Cent {
