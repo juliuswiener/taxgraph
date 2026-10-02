@@ -119,8 +119,9 @@ def _dateien_die_catala_brauchen() -> list[str]:
 #
 # JETZT: ohne das Schema ist jeder Test, der es braucht, LAUT ROT. Uebersprungen wird nur, wenn
 # TAXGRAPH_OHNE_XSD=1 ausdruecklich gesetzt ist — dieselbe Regel wie auf der Rust-Seite
-# (rust/bescheid/tests/einreichung_e2e.rs:36-67, ci.yml:307-312). Das Flag ist eine sichtbare
-# Entscheidung "hier KANN kein ERiC liegen"; es ist keine stille Voreinstellung.
+# (`elster::testhilfe::schemas_da` in rust/elster/src/testhilfe.rs, rust-Job in ci.yml). Das
+# Flag ist eine sichtbare Entscheidung "hier KANN kein ERiC liegen"; es ist keine stille
+# Voreinstellung.
 #
 # Drei Wege führen zum selben Entscheid, alle drei hängen an der VORBEDINGUNG
 # (ERIC_SCHEMA_FEHLT), nie am Meldungstext allein:
@@ -158,7 +159,7 @@ ERIC_SCHEMA_FEHLT = _eric_schema_fehlt()
 _ERIC_MUSTER = "nicht gefunden — $ERIC_DIR setzen"
 
 # Das Flag, das den stillen Skip wieder erlaubt. Genau "1", wie auf der Rust-Seite
-# (einreichung_e2e.rs:55 `== Ok("1")`): ein "true"/"yes" ist NICHT dasselbe, sonst gaebe es
+# (rust/elster/src/testhilfe.rs `== Ok("1")`): ein "true"/"yes" ist NICHT dasselbe, sonst gaebe es
 # zwei Schreibweisen fuer eine Entscheidung.
 _OHNE_XSD = "TAXGRAPH_OHNE_XSD"
 

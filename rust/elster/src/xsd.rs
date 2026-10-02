@@ -245,11 +245,11 @@ pub type KzFundstellen = Vec<(String, Vec<Vec<String>>)>;
 /// [`XsdFehler`], wenn das Schema nicht lesbar ist oder `start` fehlt.
 ///
 /// ```
-/// if let Some(p) = elster::finde_schema(2025, "E10-{jahr}.xsd") {
-///     let (kz, abbrueche) = elster::xsd_walk(&p, "E10").unwrap();
-///     assert!(kz.len() > 2000);
-///     assert_eq!(abbrueche, 0);
-/// }
+/// # if !elster::testhilfe::schemas_da(2025) { return; }
+/// let p = elster::finde_schema(2025, "E10-{jahr}.xsd").unwrap();
+/// let (kz, abbrueche) = elster::xsd_walk(&p, "E10").unwrap();
+/// assert!(kz.len() > 2000);
+/// assert_eq!(abbrueche, 0);
 /// ```
 pub fn xsd_walk(pfad: &Path, start: &str) -> Result<(KzFundstellen, usize), XsdFehler> {
     let text = lies(pfad)?;
@@ -461,10 +461,10 @@ pub struct SchemaInfo {
 /// [`XsdFehler`], s. [`xsd_walk`].
 ///
 /// ```
-/// if let Some(p) = elster::finde_schema(2025, "E10-{jahr}.xsd") {
-///     let info = elster::schema_info(&p).unwrap();
-///     assert!(info.pflicht.contains_key(&vec!["E10".to_string(), "V".to_string()]));
-/// }
+/// # if !elster::testhilfe::schemas_da(2025) { return; }
+/// let p = elster::finde_schema(2025, "E10-{jahr}.xsd").unwrap();
+/// let info = elster::schema_info(&p).unwrap();
+/// assert!(info.pflicht.contains_key(&vec!["E10".to_string(), "V".to_string()]));
 /// ```
 pub fn schema_info(pfad: &Path) -> Result<SchemaInfo, XsdFehler> {
     let (roh, _) = xsd_walk(pfad, "E10")?;
@@ -514,9 +514,9 @@ pub fn schema_info(pfad: &Path) -> Result<SchemaInfo, XsdFehler> {
 /// [`XsdFehler`], s. [`xsd_walk`].
 ///
 /// ```
-/// if let Some(p) = elster::finde_schema(2025, "E10-{jahr}.xsd") {
-///     assert!(elster::kz_meta(&p, "E10").unwrap()["E0100001"].is_ja);
-/// }
+/// # if !elster::testhilfe::schemas_da(2025) { return; }
+/// let p = elster::finde_schema(2025, "E10-{jahr}.xsd").unwrap();
+/// assert!(elster::kz_meta(&p, "E10").unwrap()["E0100001"].is_ja);
 /// ```
 pub fn kz_meta(pfad: &Path, start: &str) -> Result<HashMap<String, KzMeta>, XsdFehler> {
     let text = lies(pfad)?;

@@ -8,11 +8,11 @@
 )]
 
 use std::collections::HashMap;
-use std::io::Write;
 use std::sync::OnceLock;
 
 use bindung::Bindung;
 use domain::{Achsenwert, Cent, Feldtyp, Herkunft, PruefTiefe, Zustand};
+use elster::testhilfe::schemas_da;
 use elster::{
     cent_nach_kz, deklariere, erzeuge_xml, kz_format, zuruecklesen, Felder, KzFormat, XmlOptionen,
 };
@@ -36,45 +36,6 @@ fn bindungen() -> &'static [Bindung] {
 fn index() -> &'static HashMap<String, &'static Bindung> {
     static CELL: OnceLock<HashMap<String, &'static Bindung>> = OnceLock::new();
     CELL.get_or_init(|| store::baue_nachschlag(bindungen()))
-}
-
-/// Liegen beide Schemas fuer `vz`? Fehlt eines, ist das rot, ausser `TAXGRAPH_OHNE_XSD=1` —
-/// dieselbe Regel wie `tests/conftest.py`.
-///
-/// ponytail: Rumpf wortgleich mit `schemas_da` in `bescheid/tests/einreichung_e2e.rs`; verlangt
-/// auch das `extern`-XSD, wo ein Test nur `E10-<vz>.xsd` liest (die Auslieferung bringt beide).
-/// Braucht ein dritter Ort die Regel (etwa `src/deklaration.rs`), gehoert sie nach
-/// `elster::testhilfe` hinter ein Feature.
-fn schemas_da(vz: i64) -> bool {
-    let fehlt: Vec<String> = [
-        (
-            format!("E10-{vz}.xsd"),
-            elster::finde_schema(vz, "E10-{jahr}.xsd"),
-        ),
-        (
-            format!("elster11_E10_{vz}_extern.xsd"),
-            elster::finde_xsd_schema(&vz.to_string()),
-        ),
-    ]
-    .into_iter()
-    .filter_map(|(name, pfad)| pfad.is_none().then_some(name))
-    .collect();
-    if fehlt.is_empty() {
-        return true;
-    }
-    assert!(
-        std::env::var("TAXGRAPH_OHNE_XSD").as_deref() == Ok("1"),
-        "ERiC-Schema fehlt: {fehlt:?}. ERIC_DIR auf die ERiC-Auslieferung setzen; \
-         TAXGRAPH_OHNE_XSD=1 nur, wo kein ERiC liegen kann (CI)."
-    );
-    // Direkt auf stderr: `eprintln!` faengt libtest ein, die CI saehe den Verzicht sonst nie.
-    #[allow(clippy::explicit_write)]
-    writeln!(
-        std::io::stderr(),
-        "TAXGRAPH_OHNE_XSD=1: {fehlt:?} fehlt, XML und XSD NICHT geprueft"
-    )
-    .unwrap();
-    false
 }
 
 fn laie_herkunft() -> Herkunft {

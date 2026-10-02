@@ -31,6 +31,9 @@ mod instanz;
 mod kz_format;
 mod py;
 mod tabellen;
+#[doc(hidden)]
+#[allow(clippy::unwrap_used)]
+pub mod testhilfe;
 mod xml;
 mod xmllint;
 mod xsd;
