@@ -408,7 +408,11 @@ fn vergleiche_xml(
                     w
                 });
             }
-            let (ok, meldung) = elster::validiere_xsd_text(r.as_bytes(), &vz.to_string());
+            let schema_vz = u16::try_from(vz)
+                .ok()
+                .and_then(|j| domain::Vz::try_from(j).ok())
+                .expect("vz_fuer_xml liefert 2024..=2026");
+            let (ok, meldung) = elster::validiere_xsd_text(r.as_bytes(), schema_vz);
             if ok {
                 z.xsd_valide += 1;
             } else {

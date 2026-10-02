@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use bindung::Bindung;
-use domain::{Achsenwert, Cent, Feldtyp, Herkunft, PruefTiefe, Zustand};
+use domain::{Achsenwert, Cent, Feldtyp, Herkunft, PruefTiefe, Vz, Zustand};
 use elster::testhilfe::schemas_da;
 use elster::{
     cent_nach_kz, deklariere, erzeuge_xml, kz_format, zuruecklesen, Felder, KzFormat, XmlOptionen,
@@ -646,8 +646,8 @@ fn hh_top_ein_posten_bleibt_unveraendert() {
 /// das an `<HA_35a>` — der Test war damals rot (Gegenprobe im Bericht).
 #[test]
 fn hh_top_mehrere_posten_ist_xsd_valide() {
-    for vz in ["2024", "2025"] {
-        let jahr: i64 = vz.parse().unwrap();
+    for vz in [Vz::Vz2024, Vz::Vz2025] {
+        let jahr = i64::from(vz.jahr());
         if !schemas_da(jahr) {
             continue;
         }
