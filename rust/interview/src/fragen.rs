@@ -180,6 +180,12 @@ fn nach_themen<'r>(
             out.extend(gruppe.iter().map(|b| b.feld_id.as_str()));
         }
     }
+    // Guenstiger-sicher: jedes Feld genau einmal, kein Thema verloren oder doppelt gesetzt.
+    debug_assert_eq!(
+        out.len(),
+        felder.len(),
+        "Themenfolge verliert oder verdoppelt Felder"
+    );
     out
 }
 

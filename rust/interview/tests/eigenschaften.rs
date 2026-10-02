@@ -4,6 +4,7 @@
 //!    Basisfeld aendert die Queue nicht.
 //! 2. Die Queue enthaelt nur askable Felder der Sicht, jedes hoechstens einmal.
 //! 3. Eine Bedingung schliesst erst aus, wenn JEDE Instanz bestaetigt abweicht.
+//! 4. Themen schichtweise nach Tiefe, gegen eine unabhaengige Formulierung von `_themen_folge`.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -87,6 +88,62 @@ fn wert(k: usize) -> Value {
         .clone()
 }
 
+/// Thema eines Felds der Sicht (`quelle.regel_id`).
+fn thema(f: &str) -> &'static str {
+    graph()
+        .alle()
+        .get(f)
+        .map_or("", |b| b.quelle.regel_id.as_str())
+}
+
+/// Voraussetzungen je Thema der Queue nach `traverser.py:650-683`: Feld einer Regelbedingung,
+/// `ableitung.aus`, Zaehlfeld der Instanz-Gruppe. Nur Themen, die selbst in der Queue stehen.
+fn voraussetzungen(q: &[&'static str]) -> HashMap<&'static str, HashSet<&'static str>> {
+    let da: HashSet<&str> = q.iter().map(|f| thema(f)).collect();
+    let mut vor: HashMap<&'static str, HashSet<&'static str>> = HashMap::new();
+    for &f in q {
+        let (t, b) = (thema(f), graph().alle().get(f).unwrap());
+        let quellen = graph()
+            .regel_bedingungen(t)
+            .iter()
+            .map(|c| c.feld.as_str())
+            .chain(b.ableitung.as_ref().map(|a| a.aus.as_str()))
+            .chain(
+                b.instanz_gruppe
+                    .as_deref()
+                    .and_then(|g| graph().instanz_gruppe(g))
+                    .map(|g| g.anzahl_feld.as_str()),
+            );
+        for v in quellen.map(thema) {
+            if !v.is_empty() && v != t && da.contains(v) {
+                vor.entry(t).or_default().insert(v);
+            }
+        }
+    }
+    vor
+}
+
+/// Laengste Kette von Voraussetzungen, rekursiv statt in Runden. Ein Ring zaehlt unendlich.
+fn tiefe(
+    t: &'static str,
+    vor: &HashMap<&'static str, HashSet<&'static str>>,
+    pfad: &mut Vec<&'static str>,
+) -> usize {
+    if pfad.contains(&t) {
+        return usize::MAX;
+    }
+    pfad.push(t);
+    let d = vor
+        .get(t)
+        .into_iter()
+        .flatten()
+        .map(|v| tiefe(v, vor, pfad).saturating_add(1))
+        .max()
+        .unwrap_or(0);
+    pfad.pop();
+    d
+}
+
 proptest! {
     #![proptest_config(ProptestConfig { cases: 200, failure_persistence: None, ..ProptestConfig::default() })]
 
@@ -149,5 +206,36 @@ proptest! {
             Bedingungsstand::Erfuellt
         };
         prop_assert_eq!(ergebnis, erwartet);
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { cases: 1_000, failure_persistence: None, ..ProptestConfig::default() })]
+
+    /// `_themen_folge` (`traverser.py:723-733`) setzt in Runde k genau die Themen der Tiefe k, den
+    /// Ring-Rest zuletzt. Also steht jedes Thema am Stueck, und die Tiefe faellt entlang der Queue
+    /// nie. Daraus folgt: jedes Thema steht hinter allen seinen Voraussetzungen.
+    #[test]
+    fn themen_schichtweise_nach_tiefe(basis in basis_events()) {
+        let felder: Vec<&str> = graph().alle().feld_ids().collect();
+        let events: Vec<Event> = basis
+            .iter()
+            .enumerate()
+            .map(|(i, (f, k, best))| {
+                let z = if *best { Zustand::Bestaetigt } else { Zustand::Vorlaeufig };
+                event(i, felder[f % felder.len()], wert(*k), z)
+            })
+            .collect();
+        let q = queue(&store(events));
+        let mut folge: Vec<&'static str> = q.iter().map(|f| thema(f)).collect();
+        folge.dedup();
+        let vor = voraussetzungen(&q);
+        let tiefen: Vec<usize> = folge.iter().map(|t| tiefe(t, &vor, &mut Vec::new())).collect();
+        prop_assert_eq!(folge.iter().collect::<HashSet<_>>().len(), folge.len(), "Thema zerteilt: {:?}", folge);
+        prop_assert!(
+            tiefen.windows(2).all(|w| w[0] <= w[1]),
+            "Tiefe faellt: {:?}",
+            folge.iter().zip(&tiefen).collect::<Vec<_>>()
+        );
     }
 }

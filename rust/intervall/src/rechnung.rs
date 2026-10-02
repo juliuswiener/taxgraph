@@ -192,6 +192,11 @@ where
     E: std::error::Error + 'static,
     F: FnMut(&Werte) -> Result<Cent, E>,
 {
+    // Das `zip` unten paart nach Position: ein Top-Feld ohne Achse verschöbe alle folgenden.
+    debug_assert!(
+        top.iter().all(|fid| e.achsen.contains_key(*fid)),
+        "Top-Feld ohne Achse: {top:?}"
+    );
     let achsen: Vec<&Vec<PyWert>> = top.iter().filter_map(|fid| e.achsen.get(*fid)).collect();
     let mut index = vec![0_usize; achsen.len()];
     let mut grenzen: Option<(Cent, Cent)> = None;
@@ -316,7 +321,10 @@ mod tests {
     use domain::{Achsenwert, Herkunft, PruefTiefe};
     use proptest::prelude::*;
     use serde_json::Value;
+    use std::cmp::Reverse;
+    use std::collections::{hash_map::DefaultHasher, BTreeSet};
     use std::convert::Infallible;
+    use std::hash::{Hash, Hasher};
 
     fn feld(wert: Value, zustand: Zustand) -> SnapshotFeld {
         let a = Achsenwert::new("t").unwrap();
@@ -390,6 +398,157 @@ mod tests {
             }
             (bindung, felder)
         })
+    }
+
+    /// Streuwert als Steuer: jede Belegung bekommt ihre eigene Zahl. Eine fehlende, doppelte oder
+    /// falsch belegte Kombination verschiebt min oder max.
+    fn streu(salz: u64, w: &BTreeMap<String, PyWert>) -> Cent {
+        let mut h = DefaultHasher::new();
+        (salz, format!("{w:?}")).hash(&mut h);
+        Cent::new(i64::try_from(h.finish() % 2001).unwrap() - 1000)
+    }
+
+    /// min und max der Steuer über alle Belegungen der gewählten Achsen, der Rest auf der Basis.
+    fn raum(
+        salz: u64,
+        basis: &BTreeMap<String, PyWert>,
+        wahl: &[&(String, Vec<PyWert>)],
+    ) -> (Cent, Cent) {
+        let mut punkte = vec![basis.clone()];
+        for (fid, ex) in wahl {
+            punkte = punkte
+                .iter()
+                .flat_map(|p| {
+                    ex.iter().map(move |v| {
+                        let mut q = p.clone();
+                        q.insert(fid.clone(), v.clone());
+                        q
+                    })
+                })
+                .collect();
+        }
+        let s: Vec<Cent> = punkte.iter().map(|p| streu(salz, p)).collect();
+        (*s.iter().min().unwrap(), *s.iter().max().unwrap())
+    }
+
+    /// `intervall.py:84-163` neu formuliert: Mittelpunkt als `a + (z - a) / 2`, Extremwerte als
+    /// Menge, Raum per Schleife über Belegungen statt Zähler, Top-K als längster Präfix unter dem
+    /// Deckel.
+    fn nachgerechnet(
+        bindung: &[AchsenBindung],
+        felder: &BTreeMap<String, SnapshotFeld>,
+        cap: usize,
+        salz: u64,
+    ) -> IntervallErgebnis {
+        let mut basis = BTreeMap::new();
+        let (mut achsen, mut offen, mut nicht_fix) = (Vec::new(), Vec::new(), Vec::new());
+        for b in bindung.iter().filter(|b| b.askable) {
+            let snap = felder.get(&b.feld_id);
+            if let Some(f) = snap.filter(|f| f.zustand == Zustand::Bestaetigt) {
+                basis.insert(b.feld_id.clone(), f.wert.clone());
+                continue;
+            }
+            let zahl = b
+                .bereich
+                .filter(|_| matches!(b.typ, Feldtyp::Cent | Feldtyp::Int));
+            let mitte =
+                zahl.map(|(lo, hi)| PyWert::Ganz(lo.min(hi) + (lo.max(hi) - lo.min(hi)) / 2));
+            let Some(fix) = snap.map(|f| f.wert.clone()).or(mitte) else {
+                nicht_fix.push(b.feld_id.clone());
+                offen.push(b.feld_id.clone());
+                continue;
+            };
+            basis.insert(b.feld_id.clone(), fix);
+            let ex: Option<Vec<PyWert>> = match b.typ {
+                Feldtyp::Bool => Some(vec![PyWert::Bool(false), PyWert::Bool(true)]),
+                Feldtyp::Enum => Some(b.enum_werte.iter().cloned().map(PyWert::Text).collect()),
+                _ => zahl.map(|(lo, hi)| {
+                    BTreeSet::from([lo, hi])
+                        .into_iter()
+                        .map(PyWert::Ganz)
+                        .collect()
+                }),
+            };
+            match ex {
+                Some(ex) => achsen.push((b.feld_id.clone(), ex)),
+                None => offen.push(b.feld_id.clone()),
+            }
+        }
+        offen.sort();
+        nicht_fix.sort();
+        let mut iv = Intervall {
+            spanne: Spanne::NichtFixierbar,
+            gedeckelt: false,
+            exakt_bzgl_top_k: 0,
+            rest_felder: Vec::new(),
+            offene_achsen: offen.clone(),
+            nicht_fixierbar: nicht_fix.clone(),
+        };
+        if !nicht_fix.is_empty() {
+            return IntervallErgebnis {
+                basis_snapshot: None,
+                intervall: iv,
+                beitraege: Vec::new(),
+            };
+        }
+        let mut beitraege: Vec<Beitrag> = achsen
+            .iter()
+            .map(|a| {
+                let (min, max) = raum(salz, &basis, &[a]);
+                Beitrag {
+                    feld_id: a.0.clone(),
+                    spanne: max.checked_sub(min).unwrap(),
+                    min,
+                    max,
+                }
+            })
+            .collect();
+        beitraege.sort_by_key(|b| (Reverse(b.spanne), b.feld_id.clone()));
+        let achse = |fid: &str| achsen.iter().find(|a| a.0 == fid).unwrap();
+        let groesse = |k: usize| -> usize {
+            beitraege[..k]
+                .iter()
+                .map(|b| achse(&b.feld_id).1.len())
+                .product()
+        };
+        let k = (0..=beitraege.len())
+            .rev()
+            .find(|&k| groesse(k) <= cap)
+            .unwrap_or(0);
+        let top: Vec<_> = beitraege[..k].iter().map(|b| achse(&b.feld_id)).collect();
+        let (min, max) = raum(salz, &basis, &top);
+        iv.spanne = Spanne::Zahl {
+            min,
+            max,
+            offen: !offen.is_empty(),
+        };
+        iv.exakt_bzgl_top_k = k;
+        iv.rest_felder = beitraege[k..].iter().map(|b| b.feld_id.clone()).collect();
+        iv.rest_felder.sort();
+        iv.gedeckelt = !iv.rest_felder.is_empty();
+        IntervallErgebnis {
+            basis_snapshot: None,
+            intervall: iv,
+            beitraege,
+        }
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        /// Gegen die unabhängige Formulierung [`nachgerechnet`], ganzes Ergebnis. Der Deckel reicht
+        /// von 0 bis über den größten Raum (2^6 = 64).
+        #[test]
+        fn wie_nachgerechnet((bindung, felder) in fall(), cap in 0_usize..80, salz in any::<u64>()) {
+            let steuer = |w: &Werte| {
+                let w = w.iter().map(|(k, v)| (k.to_owned(), v.clone())).collect();
+                Ok::<_, Infallible>(streu(salz, &w))
+            };
+            prop_assert_eq!(
+                intervall(&felder, &bindung, steuer, cap, None).unwrap(),
+                nachgerechnet(&bindung, &felder, cap, salz)
+            );
+        }
     }
 
     proptest! {
