@@ -128,10 +128,12 @@ pub(super) fn betrag_offen(k: &K<'_>) -> Option<Sperrgrund> {
         return Some(Sperrgrund::KirchensteuerBetragOffen);
     }
     // § 35: Person A; Person B nur bei zusammen (sonst rechnet der Ring den Partner-Betrieb nicht).
-    // Ein bestaetigter Hebesatz 0 sperrt wie ein fehlender (§ 16 Abs. 4 S. 2 GewStG, Julius 2026-10-02).
+    // Ein bestaetigter Hebesatz <= 0 sperrt wie ein fehlender (§ 16 Abs. 4 S. 2 GewStG, Julius und
+    // main 2026-10-02).
     let offen = |mb: &str, hs: &str| {
         positiv(f, mb)
-            && (!bestaetigt(f, hs) || zahl_wert(wert(f, hs)).is_some_and(|z| z.is_zero()))
+            && (!bestaetigt(f, hs)
+                || zahl_wert(wert(f, hs)).is_some_and(|z| z.is_zero() || z.is_sign_negative()))
     };
     realsplitting_fahrtkosten(f).or_else(|| {
         (offen("gewst_messbetrag", "gewst_hebesatz")

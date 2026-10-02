@@ -793,9 +793,9 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         v = felder.get(f)
         w = v and v.get("wert")
         return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
-    def _null(f):
+    def _hoechstens_null(f):
         w = (felder.get(f) or {}).get("wert")
-        return isinstance(w, (int, float)) and not isinstance(w, bool) and w == 0
+        return isinstance(w, (int, float)) and not isinstance(w, bool) and w <= 0
     def _dhf_vpf_grund():
         # dHf/Verpflegung §9-WK-Tatbestand — fail-closed (K2). Gilt für JEDE Scheibe, die diese Felder
         # ring-verdrahtet: an_gesamt (catala_est) UND der gesamt/rentner-WK-Pfad (B1, catala_werbungskosten_n).
@@ -1136,14 +1136,15 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # über-creditete bei Hebesatz < 400 % = Under-tax) → gewst_hebesatz_offen. Kein gewst_messbetrag = kein § 35
         # (over-tax-safe opt-out, feuert NICHT). Feld-präsenz-getrieben; Scheiben ohne die Felder → _positiv=False.
         # Ein bestätigter Hebesatz 0 sperrt wie ein fehlender: § 16 Abs. 4 S. 2 GewStG kennt keine 0 (Julius
-        # 2026-10-02, Entscheid partner-hebesatz-… Punkt 3). Bei Messbetrag 0 bleibt er wirkungslos.
+        # 2026-10-02, Entscheid partner-hebesatz-… Punkt 3), ein negativer erst recht nicht (main 2026-10-02:
+        # alte Akten sind schon gespeichert, die Tür ersetzt das nicht). Bei Messbetrag 0 bleibt er wirkungslos.
         if _positiv("gewst_messbetrag") and ((felder.get("gewst_hebesatz") or {}).get("zustand") != "bestaetigt"
-                                              or _null("gewst_hebesatz")):
+                                              or _hoechstens_null("gewst_hebesatz")):
             return "gewst_hebesatz_offen"
         # Person B: derselbe Spiegel für den Betrieb des Ehegatten, nur bei zusammen (sonst rechnet der Ring ihn nicht).
         if (felder.get("veranlagung", {}).get("wert") == "zusammen" and _positiv("gewst_messbetrag_partner")
                 and ((felder.get("gewst_hebesatz_partner") or {}).get("zustand") != "bestaetigt"
-                     or _null("gewst_hebesatz_partner"))):
+                     or _hoechstens_null("gewst_hebesatz_partner"))):
             return "gewst_hebesatz_offen"
         # Person B (#4): bei Zusammenveranlagung braucht der Ring den vollständig BESTÄTIGTEN Person-B-
         # Kegel (Bruttolohn + IdNr) — sonst kein halber Ehepaar-Bescheid (K2). Bei einzel irrelevant.
