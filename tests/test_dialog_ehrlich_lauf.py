@@ -97,7 +97,7 @@ def _durchklicken(scheibe: str):
             f"Für {fid} (typ={bindung.get(fid, {}).get('typ')!r}) lässt sich keine Antwort "
             f"bilden — der Dialog stellt eine Frage, die dieser Test nicht beantworten kann.")
         ST.append_event(store=store, feld_id=fid, wert=wert, zustand="bestaetigt",
-                        herkunft={"quelle": "ehrlich_lauf"}, schreiber="ui:laie",
+                        herkunft={"herkunft": "ehrlich_lauf", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, schreiber="ui:laie",
                         signal={"signal_1": None, "signal_2": f"ok@{fid}"},
                         ts="2026-08-13T12:00:00Z")
         gestellt.append(fid)

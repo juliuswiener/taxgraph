@@ -326,6 +326,7 @@ bindungen:
   - feld_id: p33a_unterhalt_kv_pv
     quelle: {regel_id: p33a_unterhalt, signatur_slot: kv_pv_beitraege}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: uebernehmbar

@@ -240,7 +240,7 @@ def test_beide_fragen_stehen_im_dialog(scheibe):
     bindung = API._scheibe_bindung(store)
     for feld, wert in [(UNTER_14, True), (BETRAG, SECHTAUSEND)]:
         ST.append_event(store=store, feld_id=feld, wert=wert, zustand="bestaetigt",
-                        herkunft={"quelle": "kbk_dialog"}, schreiber="ui:laie",
+                        herkunft={"herkunft": "kbk_dialog", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, schreiber="ui:laie",
                         signal={"signal_1": None, "signal_2": f"ok@{feld}"},
                         ts="2026-09-26T12:00:00Z")
     queue = TR.naechste_fragen(store, bindung)

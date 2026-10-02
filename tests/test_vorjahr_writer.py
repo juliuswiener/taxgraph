@@ -189,10 +189,13 @@ def test_abgewiesener_altwert_wird_uebersprungen(bindung):
     _bestaetigt(vj, "bruttoarbeitslohn", 4000000)
     _bestaetigt(vj, "stammdaten_nachname", "Maier\x00")              # Auflage T: Steuerzeichen
     _bestaetigt(vj, "kind_wohnsitz_inland_zeitraum", "01.01-31.122")  # Auflage F: Muster
+    _bestaetigt(vj, "geburtsjahr", 1899)                              # Auflage W: Bereich 1900..2010
+    _bestaetigt(vj, "hh_handwerker_betrag", -5000)                    # Auflage V: Betrag ohne Minus
     vj_felder, _ = ST.materialisiere(vj)
     neu = ST.leerer_store(2025, fall_id="neu-alt")
     n, uebersprungen = VW.uebernehme_vorjahr(neu, vj_felder, bindung, vorjahr_vz=2024, ts=TS)
-    assert (n, uebersprungen) == (2, ["kind_wohnsitz_inland_zeitraum", "stammdaten_nachname"])
+    assert (n, uebersprungen) == (2, ["geburtsjahr", "hh_handwerker_betrag",
+                                      "kind_wohnsitz_inland_zeitraum", "stammdaten_nachname"])
     assert set(ST._aktives(neu)) == {"veranlagung", "bruttoarbeitslohn"}
 
 

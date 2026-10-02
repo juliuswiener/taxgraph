@@ -17,13 +17,24 @@
 //! gegen jeden Nachbartest, der `aus_env()` liest.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
+use std::sync::{Mutex, MutexGuard, PoisonError};
+
 use api::konfig::Konfig;
 
-/// Setzt Variablen und stellt den vorherigen Wert wieder her — auch beim Panic.
-struct Umgebung(Vec<(&'static str, Option<std::ffi::OsString>)>);
+/// Beide Tests setzen die Prozess-Umgebung; ohne diese Sperre liefen sie als Threads desselben
+/// Binaers ineinander (gemessen: 1 von 6 Laeufen rot, `faelle` aus dem Nachbartest).
+static UMGEBUNG: Mutex<()> = Mutex::new(());
+
+/// Setzt Variablen und stellt den vorherigen Wert wieder her — auch beim Panic. Haelt die Sperre
+/// bis nach dem Zuruecksetzen (Felder fallen nach `Drop::drop`).
+struct Umgebung(
+    Vec<(&'static str, Option<std::ffi::OsString>)>,
+    #[allow(dead_code)] MutexGuard<'static, ()>,
+);
 
 impl Umgebung {
     fn neue(paare: &[(&'static str, Option<&str>)]) -> Self {
+        let sperre = UMGEBUNG.lock().unwrap_or_else(PoisonError::into_inner);
         let alt = paare
             .iter()
             .map(|(k, _)| (*k, std::env::var_os(k)))
@@ -34,7 +45,7 @@ impl Umgebung {
                 None => std::env::remove_var(k),
             }
         }
-        Self(alt)
+        Self(alt, sperre)
     }
 }
 
@@ -99,5 +110,28 @@ fn xdg_konvention_und_leerzeichen_zaehlen_wie_ungesetzt() {
         Konfig::aus_env().faelle,
         xdg.join("taxgraph").join("faelle"),
         "ein nur-Leerzeichen-TAXGRAPH_DATEN muss wie 'nicht gesetzt' wirken (getrimmt, nicht-leer)"
+    );
+}
+
+/// `strip()` in `api_constants._daten_wurzel` (`api_constants.py:32`) nimmt auch U+001C..U+001F
+/// weg, `str::trim` nicht: `"\x1c/pfad\x1f"` ist dort `"/pfad"`, `"\x1c\x1f"` leer (gemessen
+/// 2026-10-02 mit `python3 -c`).
+#[test]
+fn steuerzeichen_am_rand_zaehlen_wie_leerzeichen() {
+    let probe = tempfile::tempdir().unwrap();
+    let a = probe.path().join("a");
+    let xdg = probe.path().join("xdg");
+    let umrandet = format!("\u{1c}{}\u{1f}", a.to_str().unwrap());
+    let erste = Umgebung::neue(&[("TAXGRAPH_DATEN", Some(&umrandet)), ("XDG_DATA_HOME", None)]);
+    assert_eq!(Konfig::aus_env().faelle, a.join("faelle"));
+    drop(erste);
+    let _zweite = Umgebung::neue(&[
+        ("TAXGRAPH_DATEN", Some("\u{1c}\u{1f}")),
+        ("XDG_DATA_HOME", Some(xdg.to_str().unwrap())),
+    ]);
+    assert_eq!(
+        Konfig::aus_env().faelle,
+        xdg.join("taxgraph").join("faelle"),
+        "nur Steuerzeichen in TAXGRAPH_DATEN zaehlen wie 'nicht gesetzt'"
     );
 }

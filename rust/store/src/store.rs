@@ -450,7 +450,7 @@ impl Store {
             .filter_map(|(fid, &idx)| self.datei.events.get(idx).map(|e| (fid.as_str(), e)))
     }
 
-    /// Prueft die Auflagen A/K1/F2/T/F/B und haengt bei Erfolg ein Event an (`store.py:251-390`,
+    /// Prueft die Auflagen A/K1/F2/T/V/W/F/B und haengt bei Erfolg ein Event an (`store.py:251-390`,
     /// `append_event`). Gibt den `event_id` des neuen Events zurueck.
     ///
     /// PARITAET: `bindung` ist in Rust ein PFLICHT-Parameter (Python: `bindung: dict | None =
@@ -969,7 +969,7 @@ fn snapshot_id(felder: &BTreeMap<String, SnapshotFeld>) -> Result<EventId, Snaps
     Ok(EventId::von_json(&value))
 }
 
-/// Auflage T (Typ) + Auflage F (Format), `store.py:193-248`, `_pruefe_typ_konformitaet`.
+/// Auflage T (Typ) + Auflage V (Vorzeichen) + Auflage W (Wertebereich) + Auflage F (Format), `store.py:193-248`, `_pruefe_typ_konformitaet`.
 /// Unbekanntes `feld_id`: durchlassen, nicht raten (Team-Lead-Vorgabe).
 ///
 /// Der Wert erscheint in der Meldung als `repr` wie in Python (`repr(wert)`, `{wert!r}`), nicht
@@ -986,19 +986,47 @@ fn pruefe_bindung(
         PyWert::Text(s) => Some(s.as_str()),
         _ => None,
     };
-    if domain::Wert::aus_pywert(wert, eintrag.typ, eintrag.enum_werte.as_deref()).is_err() {
-        // Ein Wert mit Steuerzeichen bleibt aus der Meldung (422-detail an Nutzer und Log, PII);
-        // der Ersatztext steht wortgleich in `store.py::_pruefe_typ_konformitaet`.
-        let steuerzeichen = text.is_some_and(|s| !domain::nur_xml_zeichen(s));
-        return Err(Abweisung::TypInkonform {
-            feld_id: feld_id.to_string(),
-            wert: if steuerzeichen {
-                "[Steuerzeichen im Text, Wert nicht geloggt]".to_string()
-            } else {
-                wert.repr()
-            },
-            typ: eintrag.typ.als_str(),
-        });
+    let zahl = match domain::Wert::aus_pywert(wert, eintrag.typ, eintrag.enum_werte.as_deref()) {
+        Ok(domain::Wert::Cent(n) | domain::Wert::Int(n)) => Some(n),
+        Ok(_) => None,
+        Err(_) => {
+            // Ein Wert mit Steuerzeichen bleibt aus der Meldung (422-detail an Nutzer und Log,
+            // PII); der Ersatztext steht wortgleich in `store.py::_pruefe_typ_konformitaet`.
+            let steuerzeichen = text.is_some_and(|s| !domain::nur_xml_zeichen(s));
+            return Err(Abweisung::TypInkonform {
+                feld_id: feld_id.to_string(),
+                wert: if steuerzeichen {
+                    "[Steuerzeichen im Text, Wert nicht geloggt]".to_string()
+                } else {
+                    wert.repr()
+                },
+                typ: eintrag.typ.als_str(),
+            });
+        }
+    };
+    // Auflage V (Vorzeichen): `nicht_negativ` heisst, der Schematyp des Kz kennt kein Minus
+    // (Vault `decisions/geldfeld-ohne-minus-im-schema-lehnt-minus-bei-eingabe-ab`). Die 0 und
+    // Positives gehen durch, Laden prueft nie.
+    if let (Some(n), true) = (zahl, eintrag.nicht_negativ) {
+        if n < 0 {
+            return Err(Abweisung::NegativerBetrag {
+                feld_id: feld_id.to_string(),
+                wert: n,
+            });
+        }
+    }
+    // Auflage W (Wertebereich): nur eine Zahl AUSSERHALB von `bereich`, die nicht 0 ist. Die 0
+    // heisst bei diesen Feldern "nichts anzugeben" und bleibt zulaessig, auch unter einem Minimum
+    // ueber 0 (Vault `decisions/speichern-lehnt-nullwerte-nicht-ab`). Laden prueft nie.
+    if let (Some(n), Some(bereich)) = (zahl, &eintrag.bereich) {
+        if n != 0 && !(bereich.min..=bereich.max).contains(&n) {
+            return Err(Abweisung::WertAusserhalbBereich {
+                feld_id: feld_id.to_string(),
+                wert: n,
+                min: bereich.min,
+                max: bereich.max,
+            });
+        }
     }
     if let (Some(muster), Some(s)) = (&eintrag.muster, text) {
         if !passt_muster(muster, s) {
@@ -1320,6 +1348,104 @@ mod tests {
         assert!(
             matches!(fehler, crate::Abweisung::TypInkonform { .. }),
             "{fehler}"
+        );
+    }
+
+    /// Auflage V (Vault `decisions/geldfeld-ohne-minus-im-schema-lehnt-minus-bei-eingabe-ab`): eine
+    /// negative Zahl an einem Feld mit `nicht_negativ` wird abgewiesen; 0 und Positives gehen durch;
+    /// ein Verlustfeld (`einkuenfte_gewinn`) nimmt das Minus weiter. Meldung wortgleich zu Python.
+    #[test]
+    fn negativer_betrag_wird_abgewiesen_die_null_und_verlustfelder_nicht_auflage_v() {
+        let bindungen = echte_bindungen();
+        let map = crate::baue_nachschlag(&bindungen);
+        let bindung = BindungNachschlag::neu(&map);
+        let schreibe = |feld: &str, n: i64| {
+            let mut neu = mensch_bestaetigt(feld, "");
+            neu.wert = json!(n).into();
+            Store::leer(2025, None).append(&neu, None, bindung)
+        };
+        for (feld, n) in [
+            ("hh_handwerker_betrag", 0),
+            ("hh_handwerker_betrag", 5_000_000),
+            ("hh_handwerker_betrag__2", 1),
+            ("gewst_messbetrag_partner", 0),
+            ("einkuenfte_gewinn", -5_000_000),
+            ("einkuenfte_gewinn_partner", -1),
+            ("gewinnanteil", -1),
+        ] {
+            assert!(
+                schreibe(feld, n).is_ok(),
+                "{feld}={n}: {:?}",
+                schreibe(feld, n)
+            );
+        }
+        for (feld, n) in [
+            ("hh_handwerker_betrag", -5_000_000),
+            ("hh_handwerker_betrag__2", -1),
+            ("gewst_messbetrag_partner", -1),
+            ("spenden_betrag", -1),
+        ] {
+            let fehler = schreibe(feld, n).unwrap_err();
+            assert!(
+                matches!(&fehler, crate::Abweisung::NegativerBetrag { feld_id, wert }
+                    if feld_id == feld && *wert == n),
+                "{feld}={n}: {fehler}"
+            );
+        }
+        assert_eq!(
+            schreibe("hh_handwerker_betrag", -5_000_000).unwrap_err().to_string(),
+            "fail-closed (Vorzeichen): hh_handwerker_betrag=-5000000 darf nicht negativ sein — das \
+             Feld kennt im amtlichen ELSTER-Schema kein Minus, die Erklärung würde dort abgelehnt."
+        );
+    }
+
+    /// Auflage W (Vault `decisions/zahl-ausserhalb-des-bereichs-wird-beim-speichern-abgewiesen-
+    /// die-null-nicht`): eine Zahl ausserhalb `bereich` wird abgewiesen, die Raender und die 0
+    /// (auch unter einem Minimum ueber 0) werden angenommen. Meldung wortgleich zu Python.
+    #[test]
+    fn wert_ausserhalb_des_bereichs_wird_abgewiesen_die_null_nicht_auflage_w() {
+        let bindungen = echte_bindungen();
+        let map = crate::baue_nachschlag(&bindungen);
+        let bindung = BindungNachschlag::neu(&map);
+        let schreibe = |feld: &str, n: i64| {
+            let mut neu = mensch_bestaetigt(feld, "");
+            neu.wert = json!(n).into();
+            Store::leer(2025, None).append(&neu, None, bindung)
+        };
+        for (feld, n) in [
+            ("gewst_hebesatz", 1),
+            ("gewst_hebesatz", 999),
+            ("gewst_hebesatz", 0),
+            ("fam_anzahl_kinder", 0),
+            ("fam_anzahl_kinder", 20),
+            ("geburtsjahr", 0),
+            ("gewst_hebesatz__2", 999),
+        ] {
+            assert!(
+                schreibe(feld, n).is_ok(),
+                "{feld}={n}: {:?}",
+                schreibe(feld, n)
+            );
+        }
+        for (feld, n, min, max) in [
+            ("gewst_hebesatz", -1, 1, 999),
+            ("gewst_hebesatz", 1000, 1, 999),
+            ("fam_anzahl_kinder", -1, 0, 20),
+            ("fam_anzahl_kinder", 21, 0, 20),
+            ("geburtsjahr", 1899, 1900, 2010),
+            ("gewst_hebesatz__2", 1000, 1, 999),
+        ] {
+            let fehler = schreibe(feld, n).unwrap_err();
+            assert!(
+                matches!(&fehler, crate::Abweisung::WertAusserhalbBereich { feld_id, wert, min: a, max: b }
+                    if feld_id == feld && *wert == n && *a == min && *b == max),
+                "{feld}={n}: {fehler}"
+            );
+        }
+        assert_eq!(
+            schreibe("fam_anzahl_kinder", -1).unwrap_err().to_string(),
+            "fail-closed (Bereich): fam_anzahl_kinder=-1 liegt ausserhalb des erlaubten Bereichs \
+             0 bis 20 der Bindung."
         );
     }
 

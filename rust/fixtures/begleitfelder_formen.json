@@ -1,0 +1,41 @@
+{
+  "_hinweis": "Gemeinsame Tabelle fuer Python (produkt/store/store.py, _pruefe_begleitfelder, tests/test_begleitfelder_form.py) und Rust (rust/store/src/persistenz.rs, Test begleitfelder_formen_laden_wie_die_tabelle_sagt). Vault decisions/tuer-und-speicher-weisen-ab-was-die-fallakte-nicht-exakt-halten-kann, Punkt 2. Je Fall die Eingabe von ts, herkunft und signal; fehlt ein Schluessel, fehlt das Feld im Aufruf. python = was append_event tut; rust_laedt = ob der Rust-Leser (lade) ein Event mit genau dieser Form liest (nur bei abgewiesenen Faellen angegeben: dort dokumentiert es, WARUM sie abgewiesen werden; jeder angenommene Fall MUSS laden). Ein true bei einem abgewiesenen Fall heisst: der Leser liest die Form, aber anders als gemeint — er verwirft einen Zusatzschluessel (herkunft_voll_mit_zusatzschluessel) oder liest eine Liste als Felder des Signals (signal_liste, signal_leere_liste); beim Neuschreiben aenderte sich die event_id.",
+  "standard_ts": "2026-01-01T00:00:00+00:00",
+  "standard_signal": {"signal_1": null, "signal_2": null},
+  "faelle": [
+    {"name": "voll", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "angenommen"},
+    {"name": "ts_fehlt", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "angenommen"},
+    {"name": "ts_null", "ts": null, "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "angenommen"},
+    {"name": "signal_fehlt", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "python": "angenommen"},
+    {"name": "signal_null", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": null, "python": "angenommen"},
+    {"name": "signal_leeres_objekt", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": {}, "python": "angenommen"},
+    {"name": "signal_1_objekt", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": {"signal_1": {"typ": "maps", "km": 12}, "signal_2": null}, "python": "angenommen"},
+    {"name": "herkunft_alt_form", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "angenommen"},
+    {"name": "pruef_tiefe_amtlich", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "amt", "pruef_tiefe": "amtlich", "haftung": "amt"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "angenommen"},
+
+    {"name": "ts_zahl", "ts": 5, "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "ts_wahr", "ts": true, "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "ts_liste", "ts": [], "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "ts_objekt", "ts": {}, "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+
+    {"name": "herkunft_text", "ts": "2026-01-01T00:00:00+00:00", "herkunft": "laie", "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "herkunft_null", "ts": "2026-01-01T00:00:00+00:00", "herkunft": null, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "herkunft_voll_mit_zusatzschluessel", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer", "x": 1}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": true},
+    {"name": "herkunft_alt_mit_zusatzschluessel", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "x": 1}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "herkunft_nur_zwei_schluessel", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "herkunft_ohne_herkunft_schluessel", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "pruef_tiefe_unbekannt", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "foo", "haftung": "nutzer"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "pruef_tiefe_zahl", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": 5, "haftung": "nutzer"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "herkunft_achse_zahl", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": 5, "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "haftung_leer", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": ""}, "signal": {"signal_1": null, "signal_2": "ok"}, "python": "abgewiesen", "rust_laedt": false},
+
+    {"name": "signal_zahl", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": 5, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "signal_text", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": "x", "python": "abgewiesen", "rust_laedt": false},
+    {"name": "signal_liste", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": [1], "python": "abgewiesen", "rust_laedt": true},
+    {"name": "signal_wahr", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": true, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "signal_null_zahl", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": 0, "python": "abgewiesen", "rust_laedt": false},
+    {"name": "signal_leerer_text", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": "", "python": "abgewiesen", "rust_laedt": false},
+    {"name": "signal_leere_liste", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": [], "python": "abgewiesen", "rust_laedt": true},
+    {"name": "signal_falsch", "ts": "2026-01-01T00:00:00+00:00", "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "signal": false, "python": "abgewiesen", "rust_laedt": false}
+  ]
+}

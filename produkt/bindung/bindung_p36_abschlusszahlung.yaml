@@ -21,6 +21,7 @@ bindungen:
   - feld_id: p36_lohnsteuer
     quelle: {regel_id: p36_2_anrechnung, signatur_slot: lohnsteuer}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     fragetext_laie: "Wie viel Lohnsteuer hat dein Arbeitgeber im Jahr für dich abgeführt?"
@@ -57,6 +58,7 @@ bindungen:
     quelle: {regel_id: p36_2_anrechnung, signatur_slot: kapitalertragsteuer}
     feld_bedingung: {feld: kein_kap, wert: false, grund: "§ 36 Abs. 2 Nr. 2 EStG rechnet die einbehaltene Kapitalertragsteuer auf die Einkommensteuer an. `kein_kap` erhebt, ob es ueberhaupt Kapitalertraege gab — ohne sie hat weder Bank noch Broker etwas einbehalten, und es ist nichts anzurechnen. Das Feld sitzt in p36_2_anrechnung neben der Lohnsteuer, die fuer jeden Arbeitnehmer gilt; die Regel darf deshalb nicht als ganze entfallen."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     fragetext_laie: "Wie viel Steuer haben deine Bank oder dein Broker im Jahr direkt einbehalten?"
@@ -75,6 +77,7 @@ bindungen:
     quelle: {regel_id: p36_2_anrechnung, signatur_slot: kapitalertragsteuer_solz}
     feld_bedingung: {feld: kein_kap, wert: false, grund: "§ 36 Abs. 2 Nr. 2 EStG rechnet die einbehaltene Kapitalertragsteuer auf die Einkommensteuer an. `kein_kap` erhebt, ob es ueberhaupt Kapitalertraege gab — ohne sie hat weder Bank noch Broker etwas einbehalten, und es ist nichts anzurechnen. Das Feld sitzt in p36_2_anrechnung neben der Lohnsteuer, die fuer jeden Arbeitnehmer gilt; die Regel darf deshalb nicht als ganze entfallen."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     fragetext_laie: "Wie viel Solidaritätszuschlag zur Kapitalertragsteuer wurde einbehalten?"
@@ -93,6 +96,7 @@ bindungen:
     quelle: {regel_id: p36_2_anrechnung, signatur_slot: kapitalertragsteuer_kist}
     feld_bedingung: {feld: kein_kap, wert: false, grund: "§ 36 Abs. 2 Nr. 2 EStG rechnet die einbehaltene Kapitalertragsteuer auf die Einkommensteuer an. `kein_kap` erhebt, ob es ueberhaupt Kapitalertraege gab — ohne sie hat weder Bank noch Broker etwas einbehalten, und es ist nichts anzurechnen. Das Feld sitzt in p36_2_anrechnung neben der Lohnsteuer, die fuer jeden Arbeitnehmer gilt; die Regel darf deshalb nicht als ganze entfallen."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     fragetext_laie: "Wie viel Kirchensteuer zur Kapitalertragsteuer wurde einbehalten?"

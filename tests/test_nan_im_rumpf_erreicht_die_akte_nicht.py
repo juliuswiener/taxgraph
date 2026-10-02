@@ -2,6 +2,11 @@
 weist sie ab wie die Rust-Tür (rust/api/src/dispatch.rs, lies_koerper): 400 "ungültiges JSON
 im Body", gleicher Status, gleicher Wortlaut.
 
+Ebenso eine Ganzzahl außerhalb von i64 an JEDER Stelle des Rumpfs (Backlog
+python-schreibt-ganzzahl-ueber-i64-in-die-fallakte; unten, test_ganzzahl_*): Python liest sie exakt,
+Rust (ohne arbitrary_precision) nur gerundet als f64, und der Rust-Lader sperrt sie. Die Rust-Tür
+(lies_koerper) kennt diese Abweisung noch nicht, siehe Bericht haertung8.
+
 Der Fund (Backlog falldatei-mit-nan-liest-rust-als-text, AK4, gemessen 2026-10-02): json.loads
 nimmt NaN und Infinity als Literal an, 1e400 wird still zu inf. Je Zeile des Berichts an main:
 
@@ -171,3 +176,47 @@ def test_n2_gescheitertes_schreiben_laesst_keine_teil_datei(tmp_path, monkeypatc
     with pytest.raises(ValueError):
         API.speichere_fall("f1", {"events": [{"ts": float("nan")}]})
     assert os.listdir(tmp_path) == ["f1.json"]
+
+
+# ------------------------------------------------------------------ Ganzzahl außerhalb von i64
+
+I64_MAX, I64_MIN = 2**63 - 1, -(2**63)
+AUSSERHALB_I64 = ["18446744073709551616", "9223372036854775808", "-9223372036854775809",
+                  "-18446744073709551617", "9" * 5000]
+
+
+@pytest.mark.parametrize("stelle, literal", [("wert", "18446744073709551616"),
+                                             ("wert", "-9223372036854775809"),
+                                             ("signal_1", "18446744073709551616"),
+                                             ("signal_1", "9223372036854775808"),
+                                             ("ersetzt", "-18446744073709551617"),
+                                             ("wert", "9" * 5000)])
+def test_ganzzahl_ausserhalb_i64_scheitert_an_der_tuer(fall, stelle, literal):
+    """An jeder Zahlstelle unter `events`, auch dort, wo kein Typ-Check hinsieht. Vorher 201 und die
+    Zahl stand exakt in der Akte; Rust sperrte sie dann beim Laden (Sonden p5, p6, p16, haertung)."""
+    ev = _vorl("ep_arbeitstage", 200)
+    rumpf = {"wert": {**ev, "wert": "@L@"},
+             "signal_1": {**ev, "signal": {"signal_1": "@L@", "signal_2": None}},
+             "ersetzt": {**ev, "ersetzt": "@L@"}}[stelle]
+    vorher = _akte()
+    assert _roh(fall, "/fall/f1/event", rumpf, literal) == TUER
+    assert _akte() == vorher
+
+
+@pytest.mark.parametrize("literal", AUSSERHALB_I64[:3])
+def test_ganzzahl_ausserhalb_i64_als_veranlagungszeitraum_scheitert_an_der_tuer(base, literal):
+    rumpf = {"fall_id": "f2", "scheibe": "ep", "veranlagungszeitraum": "@L@"}
+    assert _roh(base, "/fall", rumpf, literal) == TUER
+    assert not os.path.exists(os.path.join(API.FAELLE, "f2.json"))
+
+
+@pytest.mark.parametrize("literal", [str(I64_MAX), str(I64_MIN)])
+def test_i64_grenzen_selbst_passieren_die_tuer(fall, literal):
+    """Kontrolle: i64::MAX und i64::MIN gehen durch. Ohne diese Zeile bestünden die Tests oben auch
+    mit einer Tür, die jede große Zahl abweist. `signal_1` nimmt jeden JSON-Wert, `wert` auf einem
+    Feld ohne Vorzeichen- und Bereichsgrenze jede Zahl, die Auflage T zulässt."""
+    status, antwort = _roh(fall, "/fall/f1/event",
+                           {**_vorl("ep_arbeitstage", 200), "signal": {"signal_1": "@L@", "signal_2": None}},
+                           literal)
+    assert status == 201, antwort
+

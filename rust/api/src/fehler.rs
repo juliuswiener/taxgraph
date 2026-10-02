@@ -4,6 +4,7 @@ use axum::response::{IntoResponse, Response};
 use serde_json::json;
 
 use crate::antwort::json_antwort;
+use crate::python::repr;
 
 /// Was ein Handler statt einer [`crate::Antwort`] liefern kann.
 #[derive(Debug)]
@@ -88,6 +89,23 @@ impl From<store::PersistenzFehler> for ApiFehler {
             store::PersistenzFehler::Serialisieren(_) => "TypeError",
         };
         Self::unerwartet(typ, e.to_string())
+    }
+}
+
+impl From<bescheid::deklaration::ScheibenFehler> for ApiFehler {
+    /// `ApiError(400|500, …)` aus `_cfg`/`_scheibe_bindung`, mit Pythons `repr`.
+    fn from(e: bescheid::deklaration::ScheibenFehler) -> Self {
+        use bescheid::deklaration::ScheibenFehler as S;
+        match e {
+            S::Unbekannt(s) => Self::status(400, format!("unbekannte Scheibe {}", repr(&json!(s)))),
+            S::BindungUnvollstaendig(f) => Self::status(
+                500,
+                format!(
+                    "Bindungstabelle unvollständig für Scheibe: {}",
+                    repr(&json!(f))
+                ),
+            ),
+        }
     }
 }
 

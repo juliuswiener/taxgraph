@@ -10,6 +10,7 @@ bindungen:
     vorschlagbar_von: [beleg]
     quelle: {regel_id: p20_9_sparer_pauschbetrag, signatur_slot: kapitalertraege}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -27,6 +28,7 @@ bindungen:
   - feld_id: kap_gewinn_aktien
     quelle: {regel_id: p20_6_verlustverrechnung, signatur_slot: gewinn_aktien}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -43,6 +45,7 @@ bindungen:
   - feld_id: kap_verlust_aktien
     quelle: {regel_id: p20_6_verlustverrechnung, signatur_slot: verlust_aktien}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -77,6 +80,7 @@ bindungen:
   - feld_id: kap_verlust_sonstige
     quelle: {regel_id: p20_6_verlustverrechnung, signatur_slot: verlust_sonstige}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -128,6 +132,7 @@ bindungen:
   - feld_id: kap_sparer_pauschbetrag_genutzt
     quelle: {regel_id: p20_9_sparer_pauschbetrag, geltungsbedingung: sparer_pb_1000_2000_konstante}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: false
     fragetext_laie: null
@@ -193,6 +198,7 @@ bindungen:
     # Kreuz `kein_kap` fragt woertlich nach „dir" und konnte diese Felder deshalb nicht abschalten.
     feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 EStG setzt Einkuenfte aus Kapitalvermoegen voraus, und § 26b EStG ermittelt sie je Ehegatten getrennt — jeder hat eine eigene Steuerbescheinigung und einen eigenen Sparer-Pauschbetrag. Ohne bestaetigte Kapitalertraege des Partners gibt es zu dessen Anlage KAP nichts zu erklaeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -211,6 +217,7 @@ bindungen:
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_gewinn_aktien_partner}
     feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 Abs. 2 S. 1 Nr. 1 EStG erfasst Gewinne aus der Veraeusserung von Aktien als Einkuenfte aus Kapitalvermoegen, und § 26b EStG ermittelt sie je Ehegatten getrennt. Ohne bestaetigte Kapitalertraege des Partners gibt es zu dessen Anlage KAP nichts zu erklaeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -229,6 +236,7 @@ bindungen:
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_verlust_aktien_partner}
     feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 Abs. 6 S. 4 EStG verrechnet Verluste aus Aktien nur mit Gewinnen aus Aktien, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte Kapitalertraege des Partners gibt es weder Gewinne noch Verluste, die zu verrechnen waeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -247,6 +255,7 @@ bindungen:
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_verlust_sonstige_partner}
     feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 Abs. 6 EStG verrechnet Verluste aus Kapitalvermoegen, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte Kapitalertraege des Partners gibt es weder Gewinne noch Verluste, die zu verrechnen waeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -519,6 +528,7 @@ bindungen:
     instanz_gruppe: vv_objekt
     quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: uebernehmbar

@@ -10,7 +10,7 @@ use elster::{
 use store::{SnapshotFehler, Store};
 
 use super::konstanten::STAMMDATEN_FELDER;
-use super::{an_gesamt_sperrgrund, mit_ring_werten, Cfg};
+use super::{an_gesamt_sperrgrund, mit_ring_werten, scheibe_bindung, Cfg, ScheibenFehler};
 use crate::{BescheidFehler, BindungIndex, Instanzquelle};
 
 /// Was `api.einreichen` vor der ERiC-Pruefung in der Hand haelt.
@@ -27,12 +27,9 @@ pub struct Einreichung {
 /// Warum `api.einreichen` kein XML erreicht; je Variante die Python-Antwort an derselben Stelle.
 #[derive(Debug, thiserror::Error)]
 pub enum EinreichFehler {
-    /// `_cfg`: 400 `unbekannte Scheibe`.
-    #[error("unbekannte Scheibe {0:?}")]
-    ScheibeUnbekannt(Option<String>),
-    /// `_scheibe_bindung`: 500 `Bindungstabelle unvollständig für Scheibe`.
-    #[error("Bindungstabelle unvollständig für Scheibe: {0:?}")]
-    BindungUnvollstaendig(Vec<&'static str>),
+    /// `_cfg` (400) oder `_scheibe_bindung` (500).
+    #[error(transparent)]
+    Scheibe(#[from] ScheibenFehler),
     /// `ST.materialisiere`: `ValueError`, 500.
     #[error(transparent)]
     Snapshot(#[from] SnapshotFehler),
@@ -103,28 +100,12 @@ pub fn einreichungs_xml(
     empfaenger_land: &str,
     hersteller_id: Option<String>,
 ) -> Result<Einreichung, EinreichFehler> {
-    let roh = store.datei().scheibe.as_deref();
-    let cfg = roh
-        .and_then(|s| s.parse::<Scheibe>().ok())
-        .map(Cfg::fuer)
-        .ok_or_else(|| EinreichFehler::ScheibeUnbekannt(roh.map(str::to_owned)))?;
+    let cfg = Cfg::der_akte(store)?;
     // PARITÄT: `n_vor_gwg` traegt `felder=None`; Python liest die Liste aus der YAML, hier bleibt
     // die Bindung leer. Die Stammdaten-Pruefung weist die Scheibe in beiden Welten ab
     // (`cfg.get("felder") or ()`), bevor jemand die Bindung liest.
     let scheiben_felder = cfg.felder_roh().unwrap_or_default();
-    let mut bindung = BindungIndex::new();
-    let mut fehlend = Vec::new();
-    for f in scheiben_felder {
-        match index.get(*f) {
-            Some(b) => {
-                bindung.insert((*f).to_owned(), *b);
-            }
-            None => fehlend.push(*f),
-        }
-    }
-    if !fehlend.is_empty() {
-        return Err(EinreichFehler::BindungUnvollstaendig(fehlend));
-    }
+    let bindung = scheibe_bindung(scheiben_felder, index)?;
     let (mut felder, sid) = store.materialisiere(None)?;
     let fehlende_stammdatenfelder: Vec<&'static str> = STAMMDATEN_FELDER
         .iter()

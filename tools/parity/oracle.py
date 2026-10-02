@@ -236,6 +236,10 @@ def _fehlerklasse(msg: str) -> str:
         return "TypInkonform"
     if msg.startswith("fail-closed (Format):"):
         return "FormatInkonform"
+    if msg.startswith("fail-closed (Vorzeichen):"):
+        return "NegativerBetrag"
+    if msg.startswith("fail-closed (Bereich):"):
+        return "WertAusserhalbBereich"
     if "braucht ein signal_2" in msg:
         return "ZweiSignalFehlend"
     if "hat schon ein aktives Event" in msg:
@@ -459,6 +463,13 @@ def main() -> None:
             sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
             import schritt8_oracle  # noqa: E402
             sys.stdout.write(json.dumps(schritt8_oracle.handle(req), ensure_ascii=False) + "\n")
+            sys.stdout.flush()
+            continue
+        if str(req.get("fn", "")).startswith("flow."):
+            # lazy wie oben: tools/parity/flow_oracle.py (rust/api/src/flow.rs, Schritt 9c/0e)
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import flow_oracle  # noqa: E402
+            sys.stdout.write(json.dumps(flow_oracle.handle(req), ensure_ascii=False) + "\n")
             sys.stdout.flush()
             continue
         try:

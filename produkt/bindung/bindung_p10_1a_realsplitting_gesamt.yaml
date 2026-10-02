@@ -10,6 +10,7 @@ bindungen:
     vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p10_1a_realsplitting, signatur_slot: unterhaltsleistungen}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -33,6 +34,7 @@ bindungen:
     vorschlagbar_von: [beleg]
     quelle: {regel_id: p10_1a_realsplitting, signatur_slot: kv_pv_beitraege}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -63,6 +65,7 @@ bindungen:
     # Summand — deshalb ist `slot_beitrag` bewusst NICHT auf summand gesetzt.
     quelle: {regel_id: p10_1a_realsplitting, signatur_slot: kv_krankengeld}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag

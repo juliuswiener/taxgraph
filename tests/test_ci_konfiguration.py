@@ -24,6 +24,7 @@ import os
 import pathlib
 import re
 import sys
+import tomllib
 
 import pytest
 
@@ -307,6 +308,51 @@ def test_gepinnte_gettsim_version_ist_die_installierbare():
             f"{installiert}. Wurde die Zahl aus dem `__version__` des Moduls abgeschrieben? Die "
             f"weicht ab — pip und uv kennen nur die Metadaten-Version, und ein Pin auf die andere "
             f"lässt den CI-Job mit 'no version of {paket}=={gepinnt}' scheitern.")
+
+
+# ------------------------------------------------------------ Rust: Optimierungsstufe der Tests
+
+RUST_WURZEL = ROOT / "rust" / "Cargo.toml"
+
+
+def _rust_dev_profil() -> dict:
+    return tomllib.loads(RUST_WURZEL.read_text(encoding="utf-8")).get("profile", {}).get("dev", {})
+
+
+def test_rust_tests_laufen_mit_opt_level_1_und_pruefungen_bleiben_an():
+    """Ohne `opt-level = 1` laufen die Rust-Parity-Läufe um den Faktor 2 bis 5 langsamer (Zahlen
+    im Kommentar in rust/Cargo.toml). Die Stufe darf nicht still verschwinden — und sie darf
+    die Laufzeitprüfungen nicht mitnehmen: `debug-assertions` und `overflow-checks` fangen
+    Überläufe und verletzte Annahmen in Geldrechnung. Cargo schaltet sie bei opt-level 1
+    nicht von selbst aus; ein `= false` im Profil wäre eine ausdrückliche Entscheidung."""
+    dev = _rust_dev_profil()
+    assert dev.get("opt-level") == 1, (
+        f"[profile.dev] opt-level ist {dev.get('opt-level')!r}, nicht 1 — die Parity-Läufe "
+        f"werden wieder 2- bis 5-mal so langsam, und der rust-Job der CI baut ohne die Stufe")
+    for schalter in ("debug-assertions", "overflow-checks"):
+        assert dev.get(schalter, True) is True, (
+            f"[profile.dev] {schalter} ist ausgeschaltet — Überlauf und verletzte Annahmen "
+            f"in der Geldrechnung bleiben in den Tests unbemerkt")
+
+
+def test_der_rust_cache_schluessel_kennt_die_optimierungsstufe():
+    """Zwei Repräsentationen derselben Einstellung, die auseinanderlaufen können — dieselbe
+    Bauart wie der catala-Cache-Schlüssel oben.
+
+    Der rust-Job cacht `rust/target` unter einem Schlüssel. Steht darin nur `Cargo.lock`, kennt
+    der Schlüssel das Profil nicht: nach einer Änderung der Stufe findet der Job den alten,
+    mit opt-level 0 gebauten Cache, cargo baut alles neu (die Stufe steckt im Hash jedes
+    Artefakts), und bei einem Treffer schreibt actions/cache nie neu. Der Cache bliebe für
+    immer wertlos, und jeder Lauf zahlte Herunterladen UND vollen Neubau."""
+    schritte = _jobs()["rust"]["steps"]
+    caches = [s for s in schritte if str(s.get("uses", "")).startswith("actions/cache@")]
+    assert len(caches) == 1, f"der rust-Job hat {len(caches)} Cache-Schritte statt einem"
+    cache = caches[0]
+    assert "rust/target" in str(cache["with"]["path"]), "der rust-Job cacht rust/target nicht mehr"
+    schluessel = str(cache["with"]["key"])
+    assert "rust/Cargo.toml" in schluessel, (
+        f"der Cache-Schlüssel {schluessel!r} hängt nicht an rust/Cargo.toml, wo das Profil steht — "
+        f"nach einer Änderung der Optimierungsstufe bleibt der alte Cache stehen")
 
 
 # ------------------------------------------------------------ Betrieb: Grenzen und Rechte

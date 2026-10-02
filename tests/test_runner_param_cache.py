@@ -109,7 +109,7 @@ def test_zwei_fragen_laeufe_lesen_die_datei_nur_beim_ersten_mal(tmp_path, monkey
             else:
                 wert = 1000
             ST.append_event(store=store, feld_id=fid, wert=wert, zustand="bestaetigt",
-                            herkunft={"quelle": "test_runner_param_cache"}, schreiber="ui:laie",
+                            herkunft={"herkunft": "test_runner_param_cache", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, schreiber="ui:laie",
                             signal={"signal_1": None, "signal_2": f"ok@{fid}"},
                             ts="2026-08-17T12:00:00Z")
         # Die Schleife oben beantwortet nur, was der Traverser ANBIETET. Der Kegel ist aber
@@ -120,7 +120,7 @@ def test_zwei_fragen_laeufe_lesen_die_datei_nur_beim_ersten_mal(tmp_path, monkey
         nachschlag = [(f, w) for f, w in kegel_fuer("gesamt") if f not in beantwortet]
         for fid, wert in nachschlag:
             ST.append_event(store=store, feld_id=fid, wert=wert, zustand="bestaetigt",
-                            herkunft={"quelle": "test_runner_param_cache"}, schreiber="ui:laie",
+                            herkunft={"herkunft": "test_runner_param_cache", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, schreiber="ui:laie",
                             signal={"signal_1": None, "signal_2": f"ok@{fid}"},
                             ts="2026-08-17T12:00:00Z")
         fehlt = fehlende_kegel_felder("gesamt", set(beantwortet) | {f for f, _ in nachschlag})

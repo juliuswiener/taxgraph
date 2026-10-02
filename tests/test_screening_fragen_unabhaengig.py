@@ -51,7 +51,7 @@ def _fall(**setz):
     store["scheibe"] = "gesamt"
     for k, v in setz.items():
         ST.append_event(store=store, feld_id=k, wert=v, zustand="bestaetigt",
-                        herkunft={"quelle": "test"}, schreiber="ui:laie",
+                        herkunft={"herkunft": "test", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, schreiber="ui:laie",
                         signal={"signal_1": None, "signal_2": f"ok@{k}"},
                         ts="2026-08-14T10:00:00Z")
     return store, API._scheibe_bindung(store)
