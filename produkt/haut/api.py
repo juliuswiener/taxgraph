@@ -1016,6 +1016,7 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
             os.unlink(pfad)
     else:
         raise ApiError(400, "format muss csv, json oder pdf sein")
+    tx, n_verworfen = KW.verwirf_unlesbare_betraege(tx, n_verworfen)   # nie 500, nie der ganze Auszug weg
     # katalog GLOBAL (dev-2-Kontrakt): Enforcement decoupled vom per-Scheibe-Targeting.
     n, llm_uebersprungen = KW.uebernehme_kontoauszug(
         store, tx, bindung, llm_klassifikator=api_llm._kontoauszug_llm_klassifikator(),
@@ -1024,8 +1025,7 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
     out = {"uebernommen": n, "transaktionen": len(tx), "verworfen": n_verworfen}
     hinweise = []
     if n_verworfen > 0:
-        grund = "mit unlesbarem Betrag verworfen" if fmt == "csv" else "unsicher erkannt (Confidence < 60%)"
-        hinweise.append(f"{n_verworfen} Zeile(n) {grund} — bitte manuell prüfen/nachtragen.")
+        hinweise.append(KW.hinweis_verworfen(n_verworfen, fmt))
     if llm_uebersprungen > 0:
         # Ohne diesen Hinweis wäre der Deckel eine stille Kürzung: die übersprungenen Buchungen
         # sehen im Store aus wie geprüft-und-unklar, und der Nutzer hielte einen halb angesehenen
