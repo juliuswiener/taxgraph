@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 26641d99622778be6204973d299ba273a946cefe7e2758a81c8364c37dbadbe7 # shrinks to v = Some(String("private_basisrente")), beginn = 0, alter = 0, rf = None
+cc da169390222201c86a72b25422511c7ec2269d2686c129e9394cafce27aee214 # shrinks to v = Some(Bool(false)), beginn = 0, alter = 0, rf = None

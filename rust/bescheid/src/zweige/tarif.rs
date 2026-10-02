@@ -5,7 +5,7 @@
 use std::cell::{Cell, RefCell};
 
 use bindung::Params;
-use domain::{Cent, Euro, PyWert, Vz};
+use domain::{Cent, Euro, Konfession, PyWert, Vz};
 use engine::zugriff::teil1::ermaessigungen::{
     kist, p31_familienleistung, KistEingabe, P31FamilienleistungEingabe,
 };
@@ -23,8 +23,6 @@ use super::VeranlagungWert;
 use crate::abzuege::abs3_eligible;
 use crate::{ist_true, py_int, wert, BescheidFehler, Felder};
 
-/// KiSt-Konfessionen mit Steuererhebung (`runner._KIST_KONFESSION_STEUERERHEBEND`).
-const KIST_STEUERERHEBEND: [&str; 2] = ["evangelisch", "roemisch-katholisch"];
 /// Laender mit 8 % (`runner._KIST_BY_BW`).
 const KIST_8_PROZENT: [&str; 2] = ["bayern", "baden_wuerttemberg"];
 
@@ -200,16 +198,9 @@ pub(super) fn kapital(l: &Lage<'_>, g2: &GesamtfallEingabe, est_raw: Euro) -> R<
     let guenstiger = kap_st.get() < abgeltung;
     let mut kap_st_k = kap_st;
     let mut kist_kap_cent = 0_i64;
-    // PARITÄT: fail-open default — fehlende Konfession = "keine" (§ 32d-Ermaessigung entfaellt,
-    // zu viel Steuer; Python-Docstring `_kist_konfession`, bewusst nicht geaendert).
-    let konfession = match wert(l.f, "kist_konfession") {
-        None => Some("keine"),
-        Some(PyWert::Text(s)) => Some(s.as_str()),
-        Some(_) => None,
-    };
     if kap_st.get() == abgeltung {
         let q_eur = (q_roh_cent(l.f)?.div_euclid(100)).min(kap_st.get());
-        if konfession.is_some_and(|k| KIST_STEUERERHEBEND.contains(&k)) {
+        if kist_steuererhebend(l.f) {
             let ksatz = if kist_bundesland(l.f).is_some_and(|b| KIST_8_PROZENT.contains(&b)) {
                 8
             } else {
@@ -236,6 +227,21 @@ pub(super) fn kapital(l: &Lage<'_>, g2: &GesamtfallEingabe, est_raw: Euro) -> R<
             guenstiger,
         },
     ))
+}
+
+/// `f.get("kist_konfession", {}).get("wert", "keine") in runner._KIST_KONFESSION_STEUERERHEBEND`.
+///
+/// PARITÄT: fail-open default — fehlende Konfession = "keine" (§ 32d-Ermaessigung entfaellt,
+/// zu viel Steuer; Python-Docstring `_kist_konfession`, bewusst nicht geaendert). `null` und ein
+/// Wert ausserhalb der `enum_werte` stehen ebenso in keiner Liste.
+fn kist_steuererhebend(f: &Felder) -> bool {
+    match domain::Lage::konfession(wert(f, "kist_konfession")) {
+        domain::Lage::Gueltig(Konfession::Evangelisch | Konfession::RoemischKatholisch) => true,
+        domain::Lage::Fehlt
+        | domain::Lage::Null
+        | domain::Lage::Gueltig(Konfession::Keine | Konfession::Andere)
+        | domain::Lage::Abweichend(_) => false,
+    }
 }
 
 /// `f.get("kist_bundesland", {}).get("wert", "")` als Text; ein Nicht-Text ist "in keiner Liste".
@@ -392,19 +398,33 @@ pub(crate) fn leerer_gesamtfall(vz: Vz, zusammen: bool) -> GesamtfallEingabe {
 }
 
 /// Aequivalenz von `q_roh_cent` mit `int(v or 0)` (D15); Ausnahmeliste `crate::aequivalenz::INT`.
+/// Dazu `kist_steuererhebend` gegen seine Fassung vor K7b.
 #[cfg(test)]
 mod aequivalenz {
-    use domain::testhilfe::{ganzzahl_text, json_wert, Ergebnis};
+    use domain::testhilfe::{ganzzahl_text, json_wert, pruefe, Ergebnis};
+    use domain::{Konfession, PyWert};
     use proptest::prelude::*;
     use serde_json::{json, Value};
 
-    use crate::aequivalenz::{alt_klasse, int_oder_null, int_oder_null_wie};
+    use super::kist_steuererhebend;
+    use crate::aequivalenz::{alt_klasse, ein_feld, enum_json, int_oder_null, int_oder_null_wie};
     use crate::vor_k2::int_oder_null_alt;
+    use crate::{wert, Felder};
 
     /// Die Vor-K2-Fassung von `q_roh_cent`. `q_roh_cent` selbst ist seit dem Port die Produktion —
     /// dieser Helfer traegt die alte Gestalt und ist die einzige Seite, die die D-Nummern messt.
     fn alt(v: &Value) -> Ergebnis<i64> {
         alt_klasse(int_oder_null_alt(v))
+    }
+
+    /// Die Fassung vor K7b: Text gegen `KIST_STEUERERHEBEND`, fehlend = "keine", Nicht-Text = `None`.
+    fn steuererhebend_alt(f: &Felder) -> bool {
+        let konfession = match wert(f, "kist_konfession") {
+            None => Some("keine"),
+            Some(PyWert::Text(s)) => Some(s.as_str()),
+            Some(_) => None,
+        };
+        konfession.is_some_and(|k| ["evangelisch", "roemisch-katholisch"].contains(&k))
     }
 
     proptest! {
@@ -413,6 +433,13 @@ mod aequivalenz {
         #[test]
         fn q_roh_cent_wie_pywert(v in json_wert()) {
             int_oder_null_wie(&v, &alt(&v))?;
+        }
+
+        /// K7b: `kist_steuererhebend` liest ueber `Lage`; die Fassung davor verglich den Text.
+        #[test]
+        fn kist_steuererhebend_wie_alt(v in enum_json(Konfession::ALLE.map(Konfession::als_str))) {
+            let f = v.clone().map_or_else(Felder::new, |w| ein_feld("kist_konfession", w, true));
+            pruefe(&v, &steuererhebend_alt(&f), &kist_steuererhebend(&f), Vec::new, &[])?;
         }
 
         #[test]

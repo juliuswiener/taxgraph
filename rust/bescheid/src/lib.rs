@@ -799,6 +799,26 @@ mod aequivalenz {
         proptest::option::of(prop_oneof![2 => proptest::sample::select(fest), 1 => json_wert()])
     }
 
+    /// Ein Wert fuer ein Enum-Feld mit den Bindungswerten `werte`, `None` = Feld fehlt. Je Wert:
+    /// exakt (`Gueltig`), mit Leerraum, gross geschrieben, in Liste und in Objekt (`Abweichend`);
+    /// dazu `null` und die falsy-Werte `""`, `false`, `0`, `[]` (K7b).
+    pub(crate) fn enum_json(
+        werte: impl IntoIterator<Item = &'static str>,
+    ) -> impl Strategy<Value = Option<Value>> {
+        let mut fest = vec![json!(""), Value::Null, json!(false), json!(0), json!([])];
+        for w in werte {
+            fest.extend([
+                json!(w),
+                json!(format!(" {w}")),
+                json!(format!("{w} ")),
+                json!(w.to_uppercase()),
+                json!([w]),
+                json!({ "wert": w }),
+            ]);
+        }
+        proptest::option::of(prop_oneof![2 => proptest::sample::select(fest), 1 => json_wert()])
+    }
+
     /// Die Alt-Fassung gegen `CPython` — die Messung, die die D-Nummern festhaelt (Auflage 1).
     fn int_wie_alt(v: &Value) -> Result<(), TestCaseError> {
         let (alt, neu) = (alt_klasse(py_int_alt(v)), klasse(py(v).int()));
