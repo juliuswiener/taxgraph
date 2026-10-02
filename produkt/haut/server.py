@@ -65,6 +65,25 @@ def _nur_endlich(text: str) -> float:
     return zahl
 
 
+_I64_MIN, _I64_MAX = -(2**63), 2**63 - 1
+
+
+def _ganzzahl_im_i64(text: str) -> int:
+    """parse_int für den Rumpf. Python liest eine Ganzzahl beliebiger Länge exakt, die Rust-Fassung
+    (serde_json ohne arbitrary_precision) läse eine über i64/u64 still als gerundetes f64, und die
+    Rust-Fassung der Fallakte sperrt sie beim Laden. Eine Zahl, die die Akte nicht exakt halten
+    kann, kommt deshalb nicht hinein — an JEDER Stelle des Rumpfs (wert, signal.signal_1, vz …); eine
+    Grenze im Typ-Check deckte nur `wert` (decisions/tuer-und-speicher-weisen-ab-was-die-fallakte-nicht-
+    exakt-halten-kann, Punkt 1). i64::MIN und i64::MAX selbst gehen durch.
+    tests/test_nan_im_rumpf_erreicht_die_akte_nicht.py."""
+    if len(text) > 20:      # "-9223372036854775808" hat 20 Zeichen; so baut kein 5000-stelliger Text erst eine int
+        raise ValueError(f"Ganzzahl ausserhalb von i64 ({len(text)} Zeichen)")
+    zahl = int(text)
+    if not _I64_MIN <= zahl <= _I64_MAX:
+        raise ValueError(f"Ganzzahl ausserhalb von i64: {text}")
+    return zahl
+
+
 _CTYPE = {".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8",
           ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8"}
 
@@ -235,8 +254,8 @@ class Handler(BaseHTTPRequestHandler):
                     # Nur UTF-8 ohne BOM, wie die Rust-Tür (serde_json::from_slice): json.loads auf
                     # Bytes nähme auch UTF-16 und BOM an. Einziger Client ist der Browser (UTF-8).
                     body = json.loads(roh.decode("utf-8"), parse_constant=_nur_endlich,
-                                      parse_float=_nur_endlich)
-                except ValueError:  # JSONDecodeError, UnicodeDecodeError und _nur_endlich
+                                      parse_float=_nur_endlich, parse_int=_ganzzahl_im_i64)
+                except ValueError:  # JSONDecodeError, UnicodeDecodeError, _nur_endlich, _ganzzahl_im_i64
                     self._json(400, {"fehler": "ungültiges JSON im Body"})
                     return
         # JWT-Kontext für DIESEN Request setzen (single-threaded → Modul-Variable sicher)
