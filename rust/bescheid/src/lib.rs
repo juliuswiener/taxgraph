@@ -21,7 +21,8 @@
         clippy::unwrap_used,
         clippy::expect_used,
         clippy::indexing_slicing,
-        clippy::panic
+        clippy::panic,
+        clippy::disallowed_types
     )
 )]
 
@@ -601,7 +602,8 @@ pub(crate) fn feld_euro_oder_null(f: &Felder, fid: &str) -> Result<Euro, Beschei
     clippy::indexing_slicing,
     clippy::panic,
     clippy::missing_panics_doc,
-    clippy::must_use_candidate
+    clippy::must_use_candidate,
+    clippy::disallowed_types
 )]
 pub mod testhilfe {
     use std::collections::HashMap;

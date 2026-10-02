@@ -22,7 +22,6 @@ mod sperre;
 
 use domain::{Feldtyp, PyWert, Scheibe, Sperrgrund, Zustand, UNBEKANNTER_SPERRGRUND};
 use konsistenz::{partner_ohne_zusammen, PartnerWiderspruch};
-use serde_json::{json, Value};
 
 pub use einreichung::{einreichungs_xml, EinreichFehler, Einreichung};
 pub use feste_zahl::{feste_zahl, FesteZahl, KeineZahl, KeineZahlGrund};
@@ -364,51 +363,62 @@ pub fn vorlaeufige_ring_betraege(
         .collect()
 }
 
-/// Die Tabellen, wie Rust sie traegt, in der Form von `_deklaration_konstanten` im Orakel
-/// (`tools/parity/bescheid_oracle.py`): Grundlage von `konstanten_gleich` im Parity-Test.
-///
-/// ```
-/// use bescheid::deklaration::konstanten_json;
-/// assert!(konstanten_json()["tabellen"].is_object());
-/// ```
+/// Test- und Doctest-Hilfe der Deklaration, `pub` und versteckt wie `bescheid::testhilfe`. Ein
+/// Kindmodul, weil es die privaten Tabellen und `Cfg`-Felder liest. Tor 2 (`clippy.toml`) nimmt es
+/// aus; die Produktion ruft es nicht. Nicht Teil der stabilen API.
 #[doc(hidden)]
-#[must_use]
-pub fn konstanten_json() -> Value {
-    let tabellen: serde_json::Map<String, Value> = konstanten::alle()
-        .into_iter()
-        .map(|(n, t)| (n.to_owned(), json!(t)))
-        .collect();
-    let scheiben = [
-        Scheibe::Ep,
-        Scheibe::NVorGwg,
-        Scheibe::AnGesamt,
-        Scheibe::Gesamt,
-        Scheibe::RentnerGesamt,
-    ];
-    let ring: serde_json::Map<String, Value> = scheiben
-        .iter()
-        .map(|s| {
-            (
-                s.als_str().to_owned(),
-                json!(konstanten::ring_kandidaten(*s)),
-            )
-        })
-        .collect();
-    let cfg: serde_json::Map<String, Value> = scheiben
-        .iter()
-        .map(|s| {
-            let c = Cfg::fuer(*s);
-            (
-                s.als_str().to_owned(),
-                json!({"gesamt_guard": c.gesamt_guard, "rentner": c.rentner, "partner_19": c.partner_19,
-                    "multi_objekt": c.multi_objekt, "multi_rente": c.multi_rente, "fremd_arten": c.fremd_arten,
-                    "felder": c.felder, "kegel": c.kegel, "gesamt_ring": c.gesamt_ring, "guard": c.guard,
-                    "felder_datei": c.felder_datei,
-                    "teil_ringe": c.teil_ringe.iter().map(|(f, q, fs)| json!([f, q, fs])).collect::<Vec<_>>()}),
-            )
-        })
-        .collect();
-    json!({"tabellen": tabellen, "ring_kandidaten": ring, "cfg": cfg})
+#[allow(clippy::disallowed_types)]
+pub mod testhilfe {
+    use domain::Scheibe;
+    use serde_json::{json, Value};
+
+    use super::{konstanten, Cfg};
+
+    /// Die Tabellen, wie Rust sie traegt, in der Form von `_deklaration_konstanten` im Orakel
+    /// (`tools/parity/bescheid_oracle.py`): Grundlage von `konstanten_gleich` im Parity-Test.
+    ///
+    /// ```
+    /// use bescheid::deklaration::testhilfe::konstanten_json;
+    /// assert!(konstanten_json()["tabellen"].is_object());
+    /// ```
+    #[must_use]
+    pub fn konstanten_json() -> Value {
+        let tabellen: serde_json::Map<String, Value> = konstanten::alle()
+            .into_iter()
+            .map(|(n, t)| (n.to_owned(), json!(t)))
+            .collect();
+        let scheiben = [
+            Scheibe::Ep,
+            Scheibe::NVorGwg,
+            Scheibe::AnGesamt,
+            Scheibe::Gesamt,
+            Scheibe::RentnerGesamt,
+        ];
+        let ring: serde_json::Map<String, Value> = scheiben
+            .iter()
+            .map(|s| {
+                (
+                    s.als_str().to_owned(),
+                    json!(konstanten::ring_kandidaten(*s)),
+                )
+            })
+            .collect();
+        let cfg: serde_json::Map<String, Value> = scheiben
+            .iter()
+            .map(|s| {
+                let c = Cfg::fuer(*s);
+                (
+                    s.als_str().to_owned(),
+                    json!({"gesamt_guard": c.gesamt_guard, "rentner": c.rentner, "partner_19": c.partner_19,
+                        "multi_objekt": c.multi_objekt, "multi_rente": c.multi_rente, "fremd_arten": c.fremd_arten,
+                        "felder": c.felder, "kegel": c.kegel, "gesamt_ring": c.gesamt_ring, "guard": c.guard,
+                        "felder_datei": c.felder_datei,
+                        "teil_ringe": c.teil_ringe.iter().map(|(f, q, fs)| json!([f, q, fs])).collect::<Vec<_>>()}),
+                )
+            })
+            .collect();
+        json!({"tabellen": tabellen, "ring_kandidaten": ring, "cfg": cfg})
+    }
 }
 
 /// Aequivalenz von `c2` mit `int(v or 0)` (D15); Ausnahmeliste `crate::aequivalenz::INT`.

@@ -1,0 +1,6 @@
+# Tor 2 (REWRITE_PLAN §7, K8). Testcode nimmt `lib.rs` per `cfg_attr(test, allow(...))` aus, die
+# Module `testhilfe` (`lib.rs`, `deklaration.rs`) ihr eigenes `allow`.
+disallowed-types = [
+    { path = "serde_json::Value", reason = "Tor 2: bescheid liest PyWert, Value nur in Modulen testhilfe" },
+    { path = "serde_json::Map", reason = "Tor 2: bescheid liest PyWert, Value nur in Modulen testhilfe" },
+]

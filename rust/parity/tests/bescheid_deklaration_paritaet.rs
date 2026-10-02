@@ -335,7 +335,10 @@ fn rust_run(c: &Ctx, name: &str) -> Result<Value, BescheidFehler> {
             dk::sperrgrund_felder(Some(Sperrgrund::PartnerKonsistenzOffen), &c.f)
                 .into_iter()
                 .map(|w| {
-                    json!({"feld_id": w.feld_id, "wert": w.wert, "veranlagung": w.veranlagung, "grund": w.grund})
+                    json!({"feld_id": w.feld_id,
+                        "wert": w.wert.zu_json().expect("Store-Wert ist darstellbar (Auflage 3)"),
+                        "veranlagung": w.veranlagung.zu_json().expect("Store-Wert ist darstellbar (Auflage 3)"),
+                        "grund": w.grund})
                 })
                 .collect(),
         ),
@@ -638,7 +641,7 @@ fn konstanten_gleich() {
         return;
     }
     let py = frage_roh(&json!({"fn": "bescheid.konstanten"}));
-    let rust = dk::konstanten_json();
+    let rust = dk::testhilfe::konstanten_json();
     assert_eq!(py["deklaration"], rust, "Tabellen weichen ab");
     let n = rust["tabellen"].as_object().unwrap().len();
     let ring: usize = rust["ring_kandidaten"]

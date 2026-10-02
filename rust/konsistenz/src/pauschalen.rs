@@ -1,10 +1,9 @@
 //! Vergessene Pauschalen (`produkt/konsistenz/check_pauschalen.py`). Weiche Hinweise, keine
 //! Widersprüche: eine Einkunftsquelle ist bestätigt, das Feld für die zugehörige Pauschale fehlt.
 use domain::PyWert;
-use serde_json::Value;
 
 use crate::lesung::{lies, Felder};
-use crate::zahl::{als_json, als_text, leer_nach_strip, zahl_gleich_null, zahl_gt0};
+use crate::zahl::{als_text, leer_nach_strip, zahl_gleich_null, zahl_gt0};
 
 /// Ein Pauschal-Check (`check_pauschalen.py:19-44`).
 #[derive(Debug, Clone, Copy)]
@@ -60,7 +59,7 @@ pub struct PauschalHinweis {
     pub label: &'static str,
     pub hinweis: &'static str,
     /// Auslösende Felder mit ihrem bestätigten Wert.
-    pub ausloeser_felder: Vec<(&'static str, Value)>,
+    pub ausloeser_felder: Vec<(&'static str, PyWert)>,
     pub fehlende_felder: Vec<&'static str>,
 }
 
@@ -89,14 +88,14 @@ fn ist_leer(felder: &Felder, feld_id: &str) -> bool {
 pub fn pauschal_hinweise(felder: &Felder) -> Vec<PauschalHinweis> {
     let mut hinweise = Vec::new();
     for check in &PAUSCHAL_CHECKS {
-        let ausloeser: Vec<(&'static str, Value)> = check
+        let ausloeser: Vec<(&'static str, PyWert)> = check
             .ausloeser_felder
             .iter()
             .filter_map(|&fid| {
                 lies(felder, fid)
                     .bestaetigt()
                     .filter(|w| zahl_gt0(w))
-                    .map(|w| (fid, als_json(w)))
+                    .map(|w| (fid, w.clone()))
             })
             .collect();
         if ausloeser.is_empty() {

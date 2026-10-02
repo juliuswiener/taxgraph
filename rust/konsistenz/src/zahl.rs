@@ -5,6 +5,7 @@
 //! ist die Referenz, gegen die `mod aequivalenz` misst, und sie hält die D-Liste lebendig
 //! (Auflage 1 — die Falle für den ersten Fall, der sie trifft).
 use domain::PyWert;
+#[cfg(test)]
 use serde_json::Value;
 
 /// `isinstance(w, int) and not isinstance(w, bool)`, beschränkt auf `i64`.
@@ -33,30 +34,6 @@ pub(crate) fn als_text(w: &PyWert) -> Option<&str> {
         PyWert::Text(s) => Some(s),
         _ => None,
     }
-}
-
-/// Store-Wert → JSON, für die Ausgabetypen dieses Crates.
-///
-/// Die Ausgabetypen bleiben `serde_json::Value`: `parity` baut ihr JSON von Hand
-/// (`json!({"wert": w.wert})`), `bescheid` liest nur `.is_empty()`. Auflage 2 verbietet ein
-/// `Serialize` für `PyWert`, also konvertiert jede Prüfung EINMAL an ihrer Konstruktionsstelle.
-///
-/// Die Konvertierung kann nach Auflage 3 nicht scheitern: `store::Store::append` weist NaN/inf
-/// (auch in `Liste`/`Objekt`) an der Append-Grenze ab, und `serde_json` lehnt `1e999` beim Laden
-/// als `NumberOutOfRange` ab. Ein Wert aus einer Fallakte ist damit immer darstellbar.
-///
-/// ponytail: `expect` statt Fehler-Rückgabe, weil kein Aufrufer einen Fehler tragen kann.
-/// `Value::Null` wäre an dieser Stelle die verbotene stille Konvertierung — der Widerspruch
-/// behauptete dann einen Wert, den er nicht hat. Ein Absturz ist bei einer Steuererklärung das
-/// kleinere Übel. Upgrade: `Result` in den Ausgabetypen, falls je ein Pfad entsteht, der
-/// ungeprüft in den Store schreibt.
-#[allow(
-    clippy::expect_used,
-    reason = "Auflage 3 an der Append-Grenze macht den Fehler unerreichbar"
-)]
-pub(crate) fn als_json(w: &PyWert) -> Value {
-    w.zu_json()
-        .expect("Store-Wert ist darstellbar (Auflage 3 an der Append-Grenze)")
 }
 
 /// `str.isspace()` je Zeichen. Rusts `char::is_whitespace` kennt `\x1c`..`\x1f` nicht, Python
@@ -128,24 +105,9 @@ pub(crate) fn zahl_gleich_null_alt(v: &Value) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{als_json, eur, leer_nach_strip, zahl_gleich_null, zahl_gt0};
+    use super::{eur, leer_nach_strip, zahl_gleich_null, zahl_gt0};
     use domain::testhilfe::py;
     use serde_json::json;
-
-    /// Die Ausgabegrenze ist total für alles, was aus einer Fallakte kommen kann.
-    #[test]
-    fn als_json_trifft_die_store_formen() {
-        for v in [
-            json!(null),
-            json!(true),
-            json!(-5),
-            json!(u64::MAX),
-            json!(2.5),
-            json!("x"),
-        ] {
-            assert_eq!(als_json(&py(&v)), v);
-        }
-    }
 
     #[test]
     fn eur_gruppiert_wie_python() {

@@ -21,8 +21,8 @@ pub enum Lesung<'a> {
     /// Vorhanden, aber nur vorläufig: zählt nicht als Beleg.
     ///
     /// [`PyWert`], nicht `serde_json::Value`: hier wird geprüft (`is True`, `> 0`, `strip`),
-    /// nicht serialisiert. Die Ausgabetypen der Prüfungen bleiben JSON und konvertieren einmal
-    /// an ihrer Grenze.
+    /// nicht serialisiert. Auch die Ausgabetypen der Prüfungen tragen `PyWert`; JSON baut erst
+    /// der Aufrufer (`PyWert::zu_json`).
     Vorlaeufig(&'a PyWert),
     /// Vom Menschen bestätigt.
     Bestaetigt(&'a PyWert),
@@ -118,7 +118,7 @@ impl<'a> Lesung<'a> {
     pub fn bestaetigt(self) -> Option<&'a PyWert> {
         match self {
             Self::Bestaetigt(v) if !matches!(v, PyWert::Null) => Some(v),
-            _ => None,
+            Self::Fehlt | Self::Vorlaeufig(_) | Self::Bestaetigt(_) => None,
         }
     }
 }

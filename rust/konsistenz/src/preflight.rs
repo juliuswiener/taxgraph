@@ -13,7 +13,6 @@ use std::hash::BuildHasher;
 
 use domain::PyWert;
 use interview::Graph;
-use serde_json::Value;
 
 use crate::flag::{flag_widersprueche, FlagWiderspruch};
 use crate::lesung::{lies, Felder};
@@ -197,7 +196,7 @@ const KIST_ABGLEICH_FAKTOR: i128 = 10;
 pub struct PlausiWiderspruch {
     pub feld_id: String,
     /// Der geprüfte Wert (Betrag, IBAN, Anzahl — bei der Konfession `null`).
-    pub wert: Value,
+    pub wert: PyWert,
     pub bezug: Option<i64>,
     pub grund: String,
 }
@@ -301,11 +300,13 @@ pub fn unvollstaendige_instanzen(felder: &Felder, graph: &Graph<'_>) -> Vec<Plau
             debug_assert!(
                 !l.fehlend.is_empty() && l.vorhanden.len() + l.fehlend.len() == usize::from(l.anzahl)
             );
-            let vorhanden = l.vorhanden.len();
+            // Python `len()`, also `int` (`preflight.py:157`). Höchstens `anzahl` (u16) Einträge:
+            // der Ersatzwert ist unerreichbar.
+            let vorhanden = i64::try_from(l.vorhanden.len()).unwrap_or(i64::MAX);
             let fehlt = aufzaehlung(l.etikett, &l.fehlend);
             PlausiWiderspruch {
                 feld_id: l.feld_id.to_owned(),
-                wert: Value::from(vorhanden),
+                wert: PyWert::Ganz(vorhanden),
                 bezug: Some(i64::from(l.anzahl)),
                 grund: format!(
                     "Angegeben hast du {}, ausgefüllt sind {vorhanden}: auf die Frage »{}« fehlt die \
@@ -389,7 +390,12 @@ fn schulgeld_felder(felder: &Felder) -> Vec<(&str, i64)> {
         .collect()
 }
 
-fn widerspruch(feld_id: &str, wert: Value, bezug: Option<i64>, grund: String) -> PlausiWiderspruch {
+fn widerspruch(
+    feld_id: &str,
+    wert: PyWert,
+    bezug: Option<i64>,
+    grund: String,
+) -> PlausiWiderspruch {
     PlausiWiderspruch {
         feld_id: feld_id.to_owned(),
         wert,
@@ -405,7 +411,7 @@ fn gegen_brutto(felder: &Felder, brutto: i64, out: &mut Vec<PlausiWiderspruch>) 
     {
         out.push(widerspruch(
             "p36_lohnsteuer",
-            lohnsteuer.into(),
+            PyWert::Ganz(lohnsteuer),
             Some(brutto),
             format!(
                 "Bei einem Bruttoarbeitslohn von {} kann dein Arbeitgeber nicht {} Lohnsteuer \
@@ -422,7 +428,7 @@ fn gegen_brutto(felder: &Felder, brutto: i64, out: &mut Vec<PlausiWiderspruch>) 
         ("vor_ag_anteil_rv", "der Anteil deines Arbeitgebers"),
     ] {
         if let Some(beitrag) = bestaetigter_betrag(felder, feld_id).filter(|b| *b > brutto) {
-            out.push(widerspruch(feld_id, beitrag.into(), Some(brutto), format!(
+            out.push(widerspruch(feld_id, PyWert::Ganz(beitrag), Some(brutto), format!(
                 "Bei einem Bruttoarbeitslohn von {} können die Rentenversicherungsbeiträge nicht {} \
                  betragen ({name}). Die Beiträge sind ein Anteil des Lohns und damit immer kleiner \
                  als der Lohn. Bitte prüfe, welche der beiden Zahlen stimmt.",
@@ -438,7 +444,7 @@ fn gegen_brutto(felder: &Felder, brutto: i64, out: &mut Vec<PlausiWiderspruch>) 
         {
             out.push(widerspruch(
                 feld_id,
-                kist.into(),
+                PyWert::Ganz(kist),
                 Some(brutto),
                 format!(
                     "Bei einem Bruttoarbeitslohn von {} sind {} {name} Kirchensteuer sehr \
@@ -483,7 +489,7 @@ fn konfession_offen(felder: &Felder, out: &mut Vec<PlausiWiderspruch>) {
     };
     out.push(widerspruch(
         feld_id,
-        betrag.map_or(Value::Null, Value::from),
+        betrag.map_or(PyWert::Null, PyWert::Ganz),
         None,
         format!(
         "Du hast {womit} — ob du einer Kirche angehörst, die Kirchensteuer erhebt, ist aber noch \
@@ -517,7 +523,7 @@ pub fn plausibilitaets_widersprueche(
         if betrag > SCHULGELD_SCHWELLE_CENT {
             out.push(widerspruch(
                 feld_id,
-                betrag.into(),
+                PyWert::Ganz(betrag),
                 None,
                 format!(
                 "{} Schulgeld für ein Kind in einem Jahr ist ungewöhnlich hoch. Absetzbar sind 30 \
@@ -536,7 +542,7 @@ pub fn plausibilitaets_widersprueche(
         {
             out.push(widerspruch(
                 "kist_gezahlt",
-                gezahlt.into(),
+                PyWert::Ganz(gezahlt),
                 Some(einbehalten),
                 format!(
                 "Dein Arbeitgeber hat {} Kirchensteuer einbehalten, gezahlt hast du nach deiner \
@@ -558,7 +564,7 @@ pub fn plausibilitaets_widersprueche(
         if !leer_nach_strip(iban) {
             out.push(widerspruch(
                 "stammdaten_iban",
-                Value::String(iban.to_owned()),
+                PyWert::Text(iban.to_owned()),
                 None,
                 "Du hast angegeben, keine Bankverbindung für eine Erstattung angeben zu wollen — \
                  trotzdem ist eine Kontonummer (IBAN) erfasst. Ohne Konto kann das Finanzamt eine \
@@ -574,7 +580,7 @@ pub fn plausibilitaets_widersprueche(
         bestaetigter_betrag(felder, "verlustvortrag_bestand"),
     ) {
         if neu > alt {
-            out.push(widerspruch("verlustvortrag_bestand", neu.into(), Some(alt), format!(
+            out.push(widerspruch("verlustvortrag_bestand", PyWert::Ganz(neu), Some(alt), format!(
                 "Im letzten verknüpften Vorjahr stand dein Verlustvortrag bei {}, jetzt gibst du {} \
                  an. Der Vortrag wird normalerweise von Jahr zu Jahr weniger, weil ein Teil davon \
                  verrechnet wird — ein Anstieg ist nur richtig, wenn im Vorjahr ein neuer Verlust \
