@@ -2,7 +2,7 @@
 //! `_zweig_festzusetzende_est` (an_gesamt) und `_zweig_festzusetzende_est_gesamt` gemeinsam haben
 //! (`bescheid_zweige.py:227-297` und `:512-590`). Python baut ein `wk_input`-dict, dessen
 //! Schluessel-ANWESENHEIT die Zweige schaltet; hier ist jede Anwesenheit ein `Some`.
-use domain::{Cent, Euro, PyWert, Vz};
+use domain::{Cent, Euro, Km, PyWert, Vz};
 use engine::zugriff::teil1::afa::{p7_linear_afa, P7LinearAfaEingabe};
 use engine::zugriff::teil1::reisekosten::{DhfEingabe, UebernachtungEingabe, VerpflegungEingabe};
 use engine::zugriff::teil1::werbungskosten::EntfernungspauschaleEingabe;
@@ -49,17 +49,20 @@ pub(super) struct WkTeile {
 ///
 /// K2: `str(x)` ist [`PyWert::py_str`] — fuer Zahlen dasselbe wie `Value::Number::to_string`,
 /// fuer alles andere der `repr` (und damit wie bisher ein `ValueError`).
-fn dezimal(v: &PyWert) -> R<Decimal> {
+fn dezimal(v: &PyWert) -> R<Km> {
     let fehler = || BescheidFehler::Python {
         klasse: "ValueError",
         was: "Decimal(str(entfernung_km_roh))",
     };
     match v {
-        PyWert::Text(t) => Decimal::from_str_exact(t.trim()).map_err(|_| fehler()),
+        PyWert::Text(t) => Decimal::from_str_exact(t.trim())
+            .map(Km::new)
+            .map_err(|_| fehler()),
         w => {
             let t = w.py_str();
             Decimal::from_str_exact(&t)
                 .or_else(|_| Decimal::from_scientific(&t))
+                .map(Km::new)
                 .map_err(|_| fehler())
         }
     }
@@ -290,7 +293,7 @@ mod aequivalenz {
         #[test]
         fn dezimal_wie_alt(v in json_wert()) {
             let (alt, neu): (Ergebnis<Decimal>, Ergebnis<Decimal>) =
-                (alt_klasse(dezimal_alt(&v)), alt_klasse(dezimal(&py(&v))));
+                (alt_klasse(dezimal_alt(&v)), alt_klasse(dezimal(&py(&v)).map(domain::Km::get)));
             pruefe(&v, &alt, &neu, Vec::new, &[])?;
         }
     }

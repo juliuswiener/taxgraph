@@ -9,8 +9,14 @@
 //! aussehende Zahl verwandelt. Die Wahl folgt `REWRITE_PLAN.md` §4 ("fail-closed statt
 //! fail-open") und ist damit dieselbe wie ueberall sonst im Store: lieber ein sichtbarer
 //! `None` als eine leise falsche Zahl.
+//!
+//! Daneben [`Satz`] und [`Km`]: exakte `Decimal`-Werte, die mit Geld multipliziert werden, je ein
+//! eigener Typ, damit ein Satz nie als Entfernung in eine Rechnung geht (Geld-Entscheidung
+//! Punkt 2: Saetze und km nie als nacktes `Decimal`).
 
 use std::fmt;
+
+use rust_decimal::Decimal;
 
 /// Ein Betrag in Cent, der kleinsten Einheit, in der der Python-Store rechnet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -25,6 +31,15 @@ pub struct Euro(i64);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[error("Euro-Betrag {0} EUR ueberschreitet den Cent-Wertebereich")]
 pub struct CentUeberlauf(pub i64);
+
+/// Ein Satz aus Params-YAML oder Gesetz: Euro je km (`0.30`), Anteil (`0.8`) oder Prozent
+/// (`13.2`) -- welche Einheit, sagt das Feld.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Satz(Decimal);
+
+/// Eine Entfernung in km mit Nachkommastellen (`entfernung_km_roh`, z. B. `10.6`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Km(Decimal);
 
 impl Cent {
     /// Baut einen Cent-Betrag aus einer rohen `i64`.
@@ -144,6 +159,34 @@ impl Euro {
             Some(v) => Ok(Cent::new(v)),
             None => Err(CentUeberlauf(self.0)),
         }
+    }
+}
+
+impl Satz {
+    /// Baut einen Satz aus einem rohen `Decimal`.
+    #[must_use]
+    pub const fn new(satz: Decimal) -> Self {
+        Self(satz)
+    }
+
+    /// Der rohe `Decimal`-Wert.
+    #[must_use]
+    pub const fn get(self) -> Decimal {
+        self.0
+    }
+}
+
+impl Km {
+    /// Baut eine Entfernung aus einem rohen `Decimal`.
+    #[must_use]
+    pub const fn new(km: Decimal) -> Self {
+        Self(km)
+    }
+
+    /// Der rohe `Decimal`-Wert.
+    #[must_use]
+    pub const fn get(self) -> Decimal {
+        self.0
     }
 }
 

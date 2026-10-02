@@ -9,7 +9,7 @@
 //! (nicht-numerische Strings, Listen) erzeugt der Generator nicht, und der Korpus enthaelt keine.
 use std::str::FromStr;
 
-use domain::{Cent, Euro, Vz};
+use domain::{Cent, Euro, Km, Vz};
 use engine::zugriff::teil1::afa::{P62GwgEingabe, P7LinearAfaEingabe};
 use engine::zugriff::teil1::belastungen::{P33AgbEingabe, P33ZumutbarEingabe};
 use engine::zugriff::teil1::einkuenfte::{
@@ -194,7 +194,7 @@ pub fn entfernungspauschale(args: &[Value]) -> R<EntfernungspauschaleEingabe> {
     let s = dict(args)?;
     Ok(EntfernungspauschaleEingabe {
         veranlagungszeitraum: vz_pfad(s)?,
-        entfernung_km_roh: decimal_str(s.get("entfernung_km_roh").ok_or("KeyError")?)?,
+        entfernung_km_roh: Km::new(decimal_str(s.get("entfernung_km_roh").ok_or("KeyError")?)?),
         arbeitstage: req_int(s, "arbeitstage")?,
         eigenes_oder_ueberlassenes_kfz: get_truthy(s, "eigenes_oder_ueberlassenes_kfz", false),
         oepnv_kosten_jahr: euro(s, "oepnv_kosten_jahr")?,

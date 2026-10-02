@@ -1,6 +1,6 @@
 //! § 35c `EStG` -- energetische Sanierung (`runner.py`, reines Python). Saetze und
 //! Hoechstbetraege hartkodiert wie in Python (7 %/6 %, 14.000/12.000, 50 %).
-use domain::{Cent, Euro};
+use domain::{Cent, Euro, Satz};
 use rust_decimal::Decimal;
 
 use super::{cent, euro, int_mal_satz, z, EngineFehler};
@@ -31,9 +31,9 @@ pub struct SanierungEingabe {
 /// ```
 pub fn p35c_sanierung(e: &SanierungEingabe) -> Result<Euro, EngineFehler> {
     let (satz, hoechst) = if e.ist_uebernaechstes_foerderjahr {
-        (Decimal::new(6, 2), 12_000)
+        (Satz::new(Decimal::new(6, 2)), 12_000)
     } else {
-        (Decimal::new(7, 2), 14_000)
+        (Satz::new(Decimal::new(7, 2)), 14_000)
     };
     euro(int_mal_satz(e.sanierungsaufwendungen, satz)?.min(hoechst))
 }
@@ -79,7 +79,7 @@ pub fn p35c_ermaessigung_cent(e: &SanierungEingabe) -> Result<Cent, EngineFehler
 pub fn p35c_energieberater(energieberater_aufwendungen: Euro) -> Result<Euro, EngineFehler> {
     euro(int_mal_satz(
         energieberater_aufwendungen,
-        Decimal::new(50, 2),
+        Satz::new(Decimal::new(50, 2)),
     )?)
 }
 

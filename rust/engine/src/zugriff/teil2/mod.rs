@@ -28,8 +28,7 @@ pub mod sonstige;
 
 use bindung::ParamsWertFehler;
 use catala_sys::CatalaFehler;
-use domain::{Cent, CentUeberlauf, Euro};
-use rust_decimal::Decimal;
+use domain::{Cent, CentUeberlauf, Euro, Satz};
 
 use super::teil1::fehler::EngineFehler as Basis;
 use crate::dezimal::zu_bruch;
@@ -132,8 +131,8 @@ fn cent(v: i128) -> Result<Cent, EngineFehler> {
 /// 2^53 + 3 EUR bei 0,5 (gemessen 2026-10-02). Bei 0,06/0,07 zeigt sich das nur fuer negative
 /// Aufwendungen, positive kappt der Hoechstbetrag; die YAML-Saetze von `satz_mit_deckel` kappt er
 /// immer. Test: `p35c::tests::exakt_wo_python_float_abweicht`.
-fn int_mal_satz(aufw: Euro, satz: Decimal) -> Result<i128, EngineFehler> {
-    let (zaehler, nenner) = zu_bruch(satz).map_err(Basis::from)?;
+fn int_mal_satz(aufw: Euro, satz: Satz) -> Result<i128, EngineFehler> {
+    let (zaehler, nenner) = zu_bruch(satz.get()).map_err(Basis::from)?;
     Ok(z(aufw) * i128::from(zaehler) / i128::from(nenner))
 }
 

@@ -1,7 +1,6 @@
 //! § 24a `EStG` Altersentlastungsbetrag.
 use catala_sys::CatalaFehler;
-use domain::Cent;
-use rust_decimal::Decimal;
+use domain::{Cent, Satz};
 
 use crate::dezimal::{self, DezimalUeberlauf};
 
@@ -10,7 +9,7 @@ use crate::dezimal::{self, DezimalUeberlauf};
 pub struct AltersentlastungsbetragEingabe {
     pub arbeitslohn: Cent,
     pub positive_andere_einkuenfte: Cent,
-    pub prozentsatz: Decimal,
+    pub prozentsatz: Satz,
     pub hoechstbetrag: Cent,
 }
 
@@ -31,14 +30,14 @@ pub enum AltersentlastungsbetragFehler {
 ///
 /// ```
 /// use engine::altersentlastungsbetrag::{berechnen, AltersentlastungsbetragEingabe};
-/// use domain::Cent;
+/// use domain::{Cent, Satz};
 /// use rust_decimal::Decimal;
 /// // Grenzfall-Seed TestUnterHoechstbetrag: Bemessung 2000+1000=3000, Prozentsatz 20 %
 /// // (als Prozentzahl, das Modul teilt intern /100) -> 600 < Hoechstbetrag 760 -> 600.
 /// let ergebnis = berechnen(AltersentlastungsbetragEingabe {
 ///     arbeitslohn: Cent::new(200_000),
 ///     positive_andere_einkuenfte: Cent::new(100_000),
-///     prozentsatz: Decimal::new(200, 1),
+///     prozentsatz: Satz::new(Decimal::new(200, 1)),
 ///     hoechstbetrag: Cent::new(76_000),
 /// })
 /// .unwrap();
@@ -47,7 +46,7 @@ pub enum AltersentlastungsbetragFehler {
 pub fn berechnen(
     eingabe: AltersentlastungsbetragEingabe,
 ) -> Result<Cent, AltersentlastungsbetragFehler> {
-    let (num, den) = dezimal::zu_bruch(eingabe.prozentsatz)?;
+    let (num, den) = dezimal::zu_bruch(eingabe.prozentsatz.get())?;
     let cent = catala_sys::altersentlastungsbetrag(
         eingabe.arbeitslohn.get(),
         eingabe.positive_andere_einkuenfte.get(),
@@ -61,7 +60,7 @@ pub fn berechnen(
 #[cfg(test)]
 mod tests {
     use super::{berechnen, AltersentlastungsbetragEingabe};
-    use domain::Cent;
+    use domain::{Cent, Satz};
     use rust_decimal::Decimal;
 
     #[test]
@@ -71,7 +70,7 @@ mod tests {
         let ergebnis = berechnen(AltersentlastungsbetragEingabe {
             arbeitslohn: Cent::new(200_000),
             positive_andere_einkuenfte: Cent::new(100_000),
-            prozentsatz: Decimal::new(200, 1),
+            prozentsatz: Satz::new(Decimal::new(200, 1)),
             hoechstbetrag: Cent::new(76_000),
         })
         .unwrap();

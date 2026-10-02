@@ -1,14 +1,13 @@
 //! § 9 Abs. 1 S. 3 Nr. 4/4a, Abs. 2 `EStG` Entfernungspauschale.
 use catala_sys::{CatalaFehler, EntfernungspauschaleErgebnis};
-use domain::Cent;
-use rust_decimal::Decimal;
+use domain::{Cent, Km};
 
 use crate::dezimal::{self, DezimalUeberlauf};
 
 /// Eingabe fuer [`berechnen`], 1:1 `Entfernungspauschale.Berechnung__Berechnung_in`.
 #[derive(Debug, Clone, Copy)]
 pub struct EntfernungspauschaleEingabe {
-    pub entfernung_km_roh: Decimal,
+    pub entfernung_km_roh: Km,
     pub arbeitstage: i64,
     pub eigenes_oder_ueberlassenes_kfz: bool,
     pub oepnv_kosten_jahr: Cent,
@@ -35,10 +34,10 @@ pub enum EntfernungspauschaleFehler {
 ///
 /// ```
 /// use engine::entfernungspauschale::{berechnen, EntfernungspauschaleEingabe};
-/// use domain::Cent;
+/// use domain::{Cent, Km};
 /// use rust_decimal::Decimal;
 /// let ergebnis = berechnen(EntfernungspauschaleEingabe {
-///     entfernung_km_roh: Decimal::new(106, 1),
+///     entfernung_km_roh: Km::new(Decimal::new(106, 1)),
 ///     arbeitstage: 200,
 ///     eigenes_oder_ueberlassenes_kfz: false,
 ///     oepnv_kosten_jahr: Cent::new(0),
@@ -53,7 +52,7 @@ pub enum EntfernungspauschaleFehler {
 pub fn berechnen(
     eingabe: EntfernungspauschaleEingabe,
 ) -> Result<EntfernungspauschaleErgebnis, EntfernungspauschaleFehler> {
-    let (num, den) = dezimal::zu_bruch(eingabe.entfernung_km_roh)?;
+    let (num, den) = dezimal::zu_bruch(eingabe.entfernung_km_roh.get())?;
     let ergebnis = catala_sys::entfernungspauschale(catala_sys::EntfernungspauschaleEingabe {
         entfernung_km_roh_num: num,
         entfernung_km_roh_den: den,
@@ -71,13 +70,13 @@ pub fn berechnen(
 #[cfg(test)]
 mod tests {
     use super::{berechnen, EntfernungspauschaleEingabe};
-    use domain::Cent;
+    use domain::{Cent, Km};
     use rust_decimal::Decimal;
 
     #[test]
     fn angefangener_km_bleibt_unberuecksichtigt() {
         let ergebnis = berechnen(EntfernungspauschaleEingabe {
-            entfernung_km_roh: Decimal::new(106, 1),
+            entfernung_km_roh: Km::new(Decimal::new(106, 1)),
             arbeitstage: 200,
             eigenes_oder_ueberlassenes_kfz: false,
             oepnv_kosten_jahr: Cent::new(0),

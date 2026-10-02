@@ -1,5 +1,5 @@
 //! § 22 Nr. 1 `EStG` Renten und § 19 Abs. 2 `EStG` Versorgungsbezuege (`runner.py` Weg A).
-use domain::{Euro, Vz};
+use domain::{Euro, Satz, Vz};
 
 use bindung::Params;
 use rust_decimal::{Decimal, RoundingStrategy};
@@ -42,8 +42,9 @@ pub struct RentenEingabe {
 /// Dezimalwert aber nicht, weicht Python ab (Test `zehntel_rundet_den_dezimalwert`). Kein
 /// Tabellenwert liegt so: `kohorten_exhaustiv` in `rust/parity/tests/zugriff_teil2_paritaet.rs`
 /// prueft den ganzen Tabellen-Definitionsbereich.
-fn zehntel(prozent: Decimal) -> Result<i128, EngineFehler> {
+fn zehntel(prozent: Satz) -> Result<i128, EngineFehler> {
     prozent
+        .get()
         .checked_mul(Decimal::TEN)
         .map(|v| v.round_dp_with_strategy(0, RoundingStrategy::MidpointNearestEven))
         .and_then(|v| i64::try_from(v).ok())
@@ -52,7 +53,7 @@ fn zehntel(prozent: Decimal) -> Result<i128, EngineFehler> {
 }
 
 /// `jahresrente * round(prozent * 10) // 1000` -- Python `_renten_stpfl`.
-fn stpfl(rente: Euro, prozent: Decimal) -> Result<i128, EngineFehler> {
+fn stpfl(rente: Euro, prozent: Satz) -> Result<i128, EngineFehler> {
     Ok((z(rente) * zehntel(prozent)?).div_euclid(1000))
 }
 
@@ -211,6 +212,7 @@ pub fn einkuenfte_versorgung(
 #[cfg(test)]
 mod tests {
     use super::zehntel;
+    use domain::Satz;
     use rust_decimal::Decimal;
 
     /// PARITÄT, bewusst: Python `round(0.8500000000000001 * 10)` rundet das Float-Produkt 8.5
@@ -218,6 +220,9 @@ mod tests {
     /// (`kohorten_exhaustiv`).
     #[test]
     fn zehntel_rundet_den_dezimalwert() {
-        assert_eq!(zehntel(Decimal::new(8_500_000_000_000_001, 16)).unwrap(), 9);
+        assert_eq!(
+            zehntel(Satz::new(Decimal::new(8_500_000_000_000_001, 16))).unwrap(),
+            9
+        );
     }
 }

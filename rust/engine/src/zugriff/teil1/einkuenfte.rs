@@ -1,6 +1,6 @@
 //! Einkunftsgroessen aus runner.py: § 21 V+V, § 19, § 3 Nr. 72, § 21 Abs. 2, § 16 Abs. 4,
 //! § 4 Abs. 3, § 15 Abs. 1 S. 1 Nr. 2. Alle EURO rein, EURO raus.
-use domain::{Cent, Euro, Vz};
+use domain::{Cent, Euro, Satz, Vz};
 use rust_decimal::Decimal;
 
 use super::fehler::{in_cent, ok, EngineFehler};
@@ -169,7 +169,7 @@ pub struct P212VerbilligtEingabe {
 pub fn p21_2_verbilligt(e: &P212VerbilligtEingabe) -> Result<Euro, EngineFehler> {
     let c = verbilligte_vermietung::berechnen(VerbilligteVermietungEingabe {
         werbungskosten: in_cent(e.werbungskosten)?,
-        entgelt_quote_prozent: Decimal::from(e.entgelt_quote_prozent),
+        entgelt_quote_prozent: Satz::new(Decimal::from(e.entgelt_quote_prozent)),
     })?;
     Ok(c.floor_euro())
 }

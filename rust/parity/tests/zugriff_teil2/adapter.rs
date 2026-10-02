@@ -7,7 +7,7 @@
 //! Liest Python einen Wert gar nicht (z. B. VZ bei `aufwendungen <= 0`), setzt der Adapter einen
 //! Platzhalter -- das ist Pythons Verhalten, kein Default.
 use bindung::Params;
-use domain::{Cent, Euro, Vz};
+use domain::{Cent, Euro, Km, Vz};
 use engine::tarif::Veranlagung;
 use engine::zugriff::teil1::fehler::EngineFehler as Basis;
 use engine::zugriff::teil1::werbungskosten::{EntfernungspauschaleEingabe, RaumkostenEingabe};
@@ -619,7 +619,9 @@ fn sachverhalt(d: &D) -> Result<Sachverhalt, Fehl> {
         let km = d.get("entfernung_km_roh").ok_or(Fehl::Py("KeyError"))?;
         Sachverhalt::Entfernungspauschale(EntfernungspauschaleEingabe {
             veranlagungszeitraum: v,
-            entfernung_km_roh: Decimal::from_str(&km.to_string()).expect("Decimal(str(km))"),
+            entfernung_km_roh: Km::new(
+                Decimal::from_str(&km.to_string()).expect("Decimal(str(km))"),
+            ),
             arbeitstage: req(d, "arbeitstage")?,
             eigenes_oder_ueberlassenes_kfz: flag(d, "eigenes_oder_ueberlassenes_kfz"),
             oepnv_kosten_jahr: eur(d, "oepnv_kosten_jahr"),
