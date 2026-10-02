@@ -11,7 +11,7 @@
 use std::collections::HashSet;
 use std::hash::BuildHasher;
 
-use domain::PyWert;
+use domain::{BasisId, PyWert};
 #[cfg(test)]
 use serde_json::Value;
 
@@ -185,12 +185,23 @@ fn ist_instanz_suffix(rest: &str) -> bool {
 /// `basis__<n>` (n ≥ 1) in Snapshot-Reihenfolge (`flag_check.py:112-121`). Keine Zählung aus einem
 /// Zählfeld: was da ist, ist da.
 ///
+/// `basis` ist eine [`BasisId`]: eine Instanz (`vv_einnahmen__2`) ist als Basis nicht darstellbar.
+///
 /// ```
+/// use domain::BasisId;
 /// use konsistenz::{instanz_feld_ids, Felder};
-/// assert!(instanz_feld_ids(&Felder::new(), "vv_einnahmen").is_empty());
+/// let basis = BasisId::new("vv_einnahmen").unwrap();
+/// assert!(instanz_feld_ids(&Felder::new(), &basis).is_empty());
 /// ```
 #[must_use]
-pub fn instanz_feld_ids(felder: &Felder, basis: &str) -> Vec<String> {
+pub fn instanz_feld_ids(felder: &Felder, basis: &BasisId) -> Vec<String> {
+    instanz_feld_ids_text(felder, basis.as_str())
+}
+
+/// [`instanz_feld_ids`] fuer die Basen aus [`FLAG_NEGIERT`]: eine Tabelle aus `&str`, die
+/// `konstanten_gleich` (`konsistenz_paritaet`) Zeichen fuer Zeichen gegen Python haelt. Dass jede
+/// Basis darin eine [`BasisId`] ist, prueft `jede_flag_basis_ist_eine_basis_id`.
+fn instanz_feld_ids_text(felder: &Felder, basis: &str) -> Vec<String> {
     let mut treffer: Vec<String> = if felder.contains_key(basis) {
         vec![basis.to_owned()]
     } else {
@@ -301,7 +312,7 @@ pub fn flag_widersprueche<S: BuildHasher>(
         }
         let flag_titel = flag_name(flag);
         for basis in basen {
-            for feld_id in instanz_feld_ids(felder, basis) {
+            for feld_id in instanz_feld_ids_text(felder, basis) {
                 let Some(wert) = lies(felder, &feld_id).bestaetigt() else {
                     continue;
                 };
@@ -329,6 +340,34 @@ mod tests {
     use super::*;
     use crate::lesung::test_snap as snap;
     use domain::Zustand;
+
+    /// Die Tabelle haelt `&str` (ein `const` mit `BasisId` brauchte `unwrap` im Produktcode).
+    /// Ein Tippfehler darin — etwa eine Instanz als Basis — faellt hier auf.
+    #[test]
+    fn jede_flag_basis_ist_eine_basis_id() {
+        for (flag, basen) in FLAG_NEGIERT {
+            for basis in basen {
+                assert!(BasisId::new(*basis).is_ok(), "{flag}: {basis:?}");
+            }
+        }
+    }
+
+    /// Typ und Text liefern dasselbe; die Basis selbst und jede Instanz, in Snapshot-Reihenfolge.
+    #[test]
+    fn instanz_feld_ids_findet_basis_und_instanzen() {
+        let s = snap(&[
+            ("vv_einnahmen__2", PyWert::Ganz(2), Zustand::Bestaetigt),
+            ("vv_einnahmen", PyWert::Ganz(1), Zustand::Bestaetigt),
+            ("vv_einnahmen__x", PyWert::Ganz(3), Zustand::Bestaetigt),
+        ]);
+        let basis = BasisId::new("vv_einnahmen").unwrap();
+        assert_eq!(
+            instanz_feld_ids(&s, &basis),
+            instanz_feld_ids_text(&s, "vv_einnahmen")
+        );
+        assert_eq!(instanz_feld_ids(&s, &basis).len(), 2);
+        assert!(BasisId::new("vv_einnahmen__2").is_err());
+    }
 
     #[test]
     fn kein_vuv_widerspruch_und_text() {
