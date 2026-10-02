@@ -485,3 +485,41 @@ pub fn uebernehme(
         llm_uebersprungen: uebersprungen,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use proptest::prelude::*;
+
+    use super::eur_cent_signed;
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        /// Zwei Nachkommastellen bis 10^12 Euro: `f64` trifft den Cent genau, mit Punkt, Komma,
+        /// Tausenderpunkten und Euro-Zeichen.
+        #[test]
+        fn eur_cent_signed_zwei_stellen_centgenau(
+            c in prop_oneof![-10_000_i64..10_000, -100_000_000_000_000_i64..100_000_000_000_000],
+            komma in any::<bool>(),
+            tausender in any::<bool>(),
+            euro in any::<bool>(),
+        ) {
+            let z = format!("{:03}", c.unsigned_abs());
+            let (ganz, bruch) = z.split_at(z.len() - 2);
+            let mut gruppiert = String::new();
+            for (i, ziffer) in ganz.chars().enumerate() {
+                if komma && tausender && i > 0 && (ganz.len() - i) % 3 == 0 {
+                    gruppiert.push('.');
+                }
+                gruppiert.push(ziffer);
+            }
+            let text = format!(
+                "{}{gruppiert}{}{bruch}{}",
+                if c < 0 { "-" } else { "" },
+                if komma { ',' } else { '.' },
+                if euro { " €" } else { "" }
+            );
+            prop_assert_eq!(eur_cent_signed(&text).unwrap(), c);
+        }
+    }
+}
