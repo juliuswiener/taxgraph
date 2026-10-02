@@ -316,6 +316,40 @@ async fn owner_check_trennt_nutzer_und_die_ampel_ist_offen() {
     );
 }
 
+/// Eine Akte, die `store::lade` abweist, bleibt byte-gleich (Vault
+/// `backlog/taxgraph/falldatei-mit-nan-liest-rust-als-text`, AK2): `DELETE` und `POST /event`
+/// scheitern am Owner-Check mit 500, `POST /fall` mit 409. Kein Weg faellt auf eine leere Akte
+/// zurueck und schreibt.
+#[tokio::test]
+async fn abgewiesene_akte_bleibt_byte_gleich() {
+    let d = dienst();
+    let alice = bearer(&d, "alice");
+    let pfad = d.zustand.konfig.faelle.join("f1.json");
+    let akte = concat!(
+        r#"{"version":1,"veranlagungszeitraum":2025,"fall_id":"f1","user_id":"alice","#,
+        r#""events":[NaN],"snapshots":[]}"#
+    );
+    std::fs::create_dir_all(&d.zustand.konfig.faelle).unwrap();
+    std::fs::write(&pfad, akte).unwrap();
+    let rumpf = r#"{"fall_id": "f1", "scheibe": "ep", "veranlagungszeitraum": 2025}"#;
+    let laenge = rumpf.len().to_string();
+    let kopf = [
+        ("authorization", alice.as_str()),
+        ("content-type", "application/json"),
+        ("content-length", laenge.as_str()),
+    ];
+    let mut status = Vec::new();
+    for (methode, ziel, k, body) in [
+        ("DELETE", "/fall/f1", &kopf[..1], None),
+        ("POST", "/fall/f1/event", &kopf[..], Some(rumpf)),
+        ("POST", "/fall", &kopf[..], Some(rumpf)),
+    ] {
+        status.push(sende(&d, methode, ziel, k, body).await.status);
+    }
+    assert_eq!(status, [500, 500, 409]);
+    assert_eq!(std::fs::read(&pfad).unwrap(), akte.as_bytes());
+}
+
 #[tokio::test]
 async fn openapi_nennt_alle_fertigen_routen() {
     use utoipa::OpenApi;
