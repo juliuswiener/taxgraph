@@ -281,6 +281,11 @@ jobs:
   # `clerk build` selbst, nur libgmp-dev zum Linken (`catala-sys/build.rs` bindet GMP dynamisch,
   # LGPL). ubuntu-latest bringt einen Rust-Toolchain per rustup mit, keine dritte Action noetig.
   #
+  # poppler-utils: der Doctest `eingang::ocr::lies_kontoauszug_pdf` ruft `pdftotext` und erwartet
+  # `NichtLesbar` (Exit 1 bei fehlender Datei). Das Runner-Image hat poppler nicht (Ubuntu2404-
+  # Readme); ohne das Programm liefert derselbe Aufruf `Start` ("No such file or directory") und
+  # der Doctest ist rot. Nachgemessen 2026-10-02 im Nachbau des Runners (ubuntu:24.04).
+  #
   # Die Tarif-Paritaet gegen tools/parity/oracle.py (rust/parity/tests/tarif_paritaet.rs)
   # BRAUCHT den Opam-Switch + `produkt/` + `oracle/gettsim/assemble_catala.sh` und ist deshalb
   # standardmaessig ein No-op (sie erkennt PARITY!=1 und skippt sich selbst, gruen). Lokal
@@ -291,10 +296,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: System-Abhaengigkeiten (libgmp fuers Linken)
+      - name: System-Abhaengigkeiten (libgmp fuers Linken, poppler fuer den eingang-Doctest)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgmp-dev
+          sudo apt-get install -y libgmp-dev poppler-utils
 
       - name: Cargo-Registry cachen
         uses: actions/cache@v4
@@ -315,7 +320,13 @@ jobs:
       # Fehlen. einreichung_e2e prueft dann nur bis zum Writer, eigenschaften ueberspringt seine
       # zehn Schema-Tests, elster einen Unit-Test und fuenf Doctests. Byte-Vergleich mit Python
       # und XSD laufen lokal (ERIC_DIR).
+      #
+      # --no-fail-fast: ohne das Flag bricht cargo beim ersten roten Ziel ab, und alles danach
+      # laeuft nie -- spaetere Testziele UND die Doctests aller Crates, die cargo zuletzt faehrt.
+      # So verdeckte `parity --lib` am 2026-10-02 den roten eingang-Doctest (Lauf 36985004342:
+      # kein einziges "Doc-tests" im Log). Der Job-Status bleibt rot, sobald ein Ziel rot ist
+      # (exit 101); neu ist nur, dass ein Lauf ALLE roten Ziele zeigt statt eines je Push.
       - name: cargo test (Tarif-Paritaet ohne PARITY=1 -- no-op, gruen)
-        run: cd rust && cargo test
+        run: cd rust && cargo test --no-fail-fast
         env:
           TAXGRAPH_OHNE_XSD: "1"
