@@ -13,7 +13,7 @@ use domain::{Cent, Feldtyp, Lage, PyWert, Veranlagung, Zustand};
 use serde::ser::SerializeMap;
 use serde::Serialize;
 use serde_json::Value;
-use store::SnapshotFeld;
+use store::{EventId, SnapshotFeld};
 
 use crate::geordnet::Geordnet;
 use crate::instanz::parse_instanz;
@@ -686,12 +686,15 @@ fn kap_alle_null(snapshot: &Felder, felder: &[&str]) -> Ergebnis<bool> {
 /// assert!(d.eingaben_konsistent());
 /// assert_eq!(d.deklaration.get("E0100001"), Some(&serde_json::json!(true)));
 /// assert!(deklariere(&leer, &HashMap::new(), 0, None).is_err());
+/// let sid = store::EventId::aus_bytes([7; 32]);
+/// let mit = deklariere(&leer, &HashMap::new(), 2025, Some(&sid)).unwrap();
+/// assert_eq!(mit.basis_snapshot.as_deref(), Some(sid.to_string().as_str()));
 /// ```
 pub fn deklariere(
     snapshot: &Felder,
     bindung: &BindungIndex<'_>,
     vz: i64,
-    snapshot_id: Option<&str>,
+    snapshot_id: Option<&EventId>,
 ) -> Ergebnis<Deklaration> {
     if snapshot.contains_key("felder") || snapshot.contains_key("snapshot_id") {
         return Err(DeklarationsFehler::SnapshotObjekt);
@@ -746,7 +749,7 @@ pub fn deklariere(
     let anlage_instanzen = bau.instanzen_ausgabe();
     p35a_summe_aus_posten(&mut bau.deklaration, &anlage_instanzen);
     Ok(Deklaration {
-        basis_snapshot: snapshot_id.map(str::to_owned),
+        basis_snapshot: snapshot_id.map(ToString::to_string),
         deklaration: bau.deklaration,
         kind_anlagen: bau.kind_anlagen,
         person_b: bau.person_b,

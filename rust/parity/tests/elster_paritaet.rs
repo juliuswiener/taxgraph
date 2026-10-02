@@ -325,7 +325,7 @@ fn vergleiche_fall(
         &felder,
         index(),
         datei.veranlagungszeitraum.als_i64_saettigend(),
-        Some(&sid.to_string()),
+        Some(&sid),
     );
     match (&rust, py["deklariere"].get("ok")) {
         (Ok(d), Some(p)) => {
@@ -1173,7 +1173,7 @@ fn checkest_stichprobe() {
         let store = Store::aus_datei(datei.clone());
         let (felder, sid) = store.materialisiere(None).unwrap();
         let vz = datei.veranlagungszeitraum.als_i64_saettigend();
-        let Ok(d) = elster::deklariere(&felder, index(), vz, Some(&sid.to_string())) else {
+        let Ok(d) = elster::deklariere(&felder, index(), vz, Some(&sid)) else {
             continue;
         };
         let abgabe = proben.len().is_multiple_of(2);
@@ -1256,7 +1256,7 @@ fn negativkontrolle() {
     // Dieselbe Jahresquelle wie `vergleiche_fall` und der Oracle (`store.veranlagungszeitraum`).
     let vz = datei.veranlagungszeitraum.als_i64_saettigend();
     let mut d = serde_json::to_value(
-        elster::deklariere(&felder, index(), vz, Some(&sid.to_string())).unwrap(),
+        elster::deklariere(&felder, index(), vz, Some(&sid)).unwrap(),
     )
     .unwrap();
     d["deklaration"]["E0100001"] = json!(false);
