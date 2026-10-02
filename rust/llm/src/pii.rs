@@ -133,6 +133,10 @@ pub fn filtere(text: &str) -> (Gefiltert, Vec<&'static str>) {
     if text.is_empty() {
         return (Gefiltert(text), getroffen);
     }
+    // Tragend, s. Moduldoku: IBAN vor Steuer-Id vor Kontonummer.
+    debug_assert!(["iban", "steuer_id", "kontonummer"]
+        .map(|k| MUSTER.kategorien.iter().position(|(n, _)| *n == k))
+        .is_sorted());
     for (kategorie, muster) in &MUSTER.kategorien {
         match muster.ersetze(&text, |_| PLATZHALTER.to_owned()) {
             Some((neu, n)) => {

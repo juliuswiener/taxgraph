@@ -48,7 +48,10 @@ pub(crate) fn speichere(pfad: &Path, bestand: &Value) -> Result<(), AuthFehler> 
         .create_new(true)
         .mode(0o600)
         .open(&tmp)?;
-    f.write_all(py_json(bestand).as_bytes())?;
+    let text = py_json(bestand);
+    // `py_json` faellt bei einem Fehler still auf "" zurueck: das leerte hier die Nutzerdatei.
+    debug_assert!(!text.is_empty());
+    f.write_all(text.as_bytes())?;
     f.flush()?;
     f.sync_all()?;
     std::fs::rename(&tmp, pfad)?;
@@ -102,5 +105,26 @@ impl serde_json::ser::Formatter for PyFormatter {
 
     fn begin_object_value<W: ?Sized + Write>(&mut self, w: &mut W) -> std::io::Result<()> {
         w.write_all(b": ")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use domain::testhilfe::json_wert;
+    use proptest::prelude::*;
+    use serde_json::Value;
+
+    use super::py_json;
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        /// Nur die Trenner unterscheiden `py_json` von `serde_json`: beide Texte lesen sich als
+        /// derselbe Wert. Zahlen schreiben beide gleich, das Lesen rundet sie also gleich.
+        #[test]
+        fn py_json_liest_sich_wie_serde_json(v in json_wert()) {
+            let lies = |t: &str| serde_json::from_str::<Value>(t).ok();
+            prop_assert_eq!(lies(&py_json(&v)), lies(&serde_json::to_string(&v).unwrap()));
+        }
     }
 }

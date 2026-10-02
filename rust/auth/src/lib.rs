@@ -141,6 +141,14 @@ impl Auth {
 
     /// `register` (`auth.py:127-147`): pruefen, hashen, speichern. Rueckgabe = der Name.
     ///
+    /// ```
+    /// let dir = tempfile::tempdir().unwrap();
+    /// let a = auth::Auth::neu("g".into(), dir.path().join("users.json"), None);
+    /// let neu = auth::Anmeldung { username: "julius".into(), password: "geheim123".into() };
+    /// assert_eq!(a.registriere(&neu).unwrap().as_str(), "julius");
+    /// assert_eq!(a.registriere(&neu).unwrap_err().status(), 409);
+    /// ```
+    ///
     /// # Errors
     /// 400 bei ungueltigem Namen/Passwort, 409 bei vorhandenem Namen, 500 bei I/O oder
     /// Passwoertern ueber 72 Byte (Python-bcrypt 5 wirft dort `ValueError`).
@@ -173,6 +181,16 @@ impl Auth {
 
     /// `login` (`auth.py:153-168`): Passwort gegen den gespeicherten Hash, dann ein Token.
     /// Kein Namens-Muster — Python prueft es beim Login nicht.
+    ///
+    /// ```
+    /// let dir = tempfile::tempdir().unwrap();
+    /// let a = auth::Auth::neu("g".into(), dir.path().join("users.json"), None);
+    /// let an = |pw: &str| auth::Anmeldung { username: "julius".into(), password: pw.into() };
+    /// a.registriere(&an("geheim123")).unwrap();
+    /// let t = a.login(&an("geheim123")).unwrap();
+    /// assert_eq!(a.pruefe_token(&t).as_deref(), Some("julius"));
+    /// assert_eq!(a.login(&an("falsch123")).unwrap_err().status(), 401);
+    /// ```
     ///
     /// # Errors
     /// 401 bei unbekanntem Namen oder falschem Passwort; 500 bei I/O, kaputtem Hash oder
@@ -246,6 +264,14 @@ impl Auth {
     /// `logout` (`auth.py:171-182`): ein gueltiges Token (optional mit `Bearer `-Praefix) auf
     /// die Sperrliste setzen. Antwortet in Python immer 200; hier ist die Rueckgabe das `sub`
     /// des abgemeldeten Tokens, falls es eines gab.
+    ///
+    /// ```
+    /// let a = auth::Auth::neu("g".into(), "/x".into(), None);
+    /// let t = a.stelle_aus("julius").unwrap();
+    /// assert_eq!(a.logout(&format!("Bearer {t}")).as_deref(), Some("julius"));
+    /// assert!(a.pruefe_token(&t).is_none());
+    /// assert_eq!(a.logout("kein.token.da"), None);
+    /// ```
     pub fn logout(&self, roh: &str) -> Option<String> {
         let token = roh.strip_prefix("Bearer ").unwrap_or(roh);
         if token.is_empty() {
@@ -260,6 +286,9 @@ impl Auth {
         if let Ok(mut g) = self.gesperrt.lock() {
             g.insert(jti);
         }
+        // `pruefe_token` liest `jti` selbst und uebergeht eine vergiftete Sperre still; danach
+        // muss es dieses Token ablehnen, sonst bliebe es nach dem Logout gueltig.
+        debug_assert!(self.pruefe_token(token).is_none());
         let sub = payload
             .get("sub")
             .and_then(Value::as_str)
