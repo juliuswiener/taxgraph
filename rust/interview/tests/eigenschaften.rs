@@ -9,7 +9,8 @@
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::indexing_slicing,
-    clippy::panic
+    clippy::panic,
+    clippy::disallowed_types
 )]
 
 use std::collections::{HashMap, HashSet};

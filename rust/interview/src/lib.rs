@@ -22,7 +22,8 @@
         clippy::unwrap_used,
         clippy::expect_used,
         clippy::indexing_slicing,
-        clippy::panic
+        clippy::panic,
+        clippy::disallowed_types
     )
 )]
 
@@ -34,7 +35,7 @@ mod instanz;
 mod relevanz;
 mod rollen;
 
-pub use antwort::{py_eq, Antwort, Eintrag, InstanzAnzahl};
+pub use antwort::{Antwort, Eintrag, InstanzAnzahl};
 pub use beweis::{justification, trace_ergebnis, AnkerRefSicht, Justification, Trace};
 pub use fragen::naechste_fragen;
 pub use graph::{Graph, Sicht, UnbekanntesFeld};
