@@ -297,6 +297,10 @@ pub fn unvollstaendige_instanzen(felder: &Felder, graph: &Graph<'_>) -> Vec<Plau
     interview::fehlende_instanzen(felder, graph.alle(), graph)
         .into_iter()
         .map(|l| {
+            // Der Satz braucht eine Luecke: fehlend nicht leer, vorhanden + fehlend = anzahl.
+            debug_assert!(
+                !l.fehlend.is_empty() && l.vorhanden.len() + l.fehlend.len() == usize::from(l.anzahl)
+            );
             let vorhanden = l.vorhanden.len();
             let fehlt = aufzaehlung(l.etikett, &l.fehlend);
             PlausiWiderspruch {

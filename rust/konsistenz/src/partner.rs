@@ -138,6 +138,11 @@ pub fn alleinerziehend_mit_zusammen(felder: &Felder) -> Vec<PartnerWiderspruch> 
     {
         return Vec::new();
     }
+    // Der Beweis von oben, geprueft: bestaetigt steht genau das Literal unten im Store.
+    debug_assert!(matches!(
+        lies(felder, "veranlagung").bestaetigt(),
+        Some(PyWert::Text(s)) if s == "zusammen"
+    ));
     vec![PartnerWiderspruch {
         feld_id: "fam_alleinstehend",
         wert: Value::Bool(true),
@@ -154,6 +159,7 @@ mod tests {
     use super::*;
     use crate::lesung::test_snap as snap;
     use domain::Zustand::{Bestaetigt, Vorlaeufig};
+    use proptest::prelude::*;
 
     #[test]
     fn gdb_partner_einzel_widerspruch() {
@@ -206,5 +212,72 @@ mod tests {
             ("fam_alleinstehend", PyWert::Bool(true), Bestaetigt),
         ]);
         assert!(alleinerziehend_mit_zusammen(&s).is_empty());
+    }
+
+    /// `veranlagung` und `fam_alleinstehend` stehen immer im Snapshot, dazu bis zu drei
+    /// Partnerfelder; jedes Feld ist bestaetigt oder vorlaeufig. Die Werte liegen an den
+    /// Kippstellen: `"Zusammen"` weicht ab, `Ganz(1)` ist nicht `True`, `Ganz(0)` ist nicht gesetzt.
+    fn felder() -> impl Strategy<Value = Felder> {
+        let text = |s: &str| PyWert::Text(s.to_owned());
+        let zustand = || prop_oneof![Just(Bestaetigt), Just(Vorlaeufig)];
+        let veranlagung = prop::sample::select(vec![
+            text("einzel"),
+            text("zusammen"),
+            text("Zusammen"),
+            PyWert::Null,
+        ]);
+        let allein = prop::sample::select(vec![
+            PyWert::Bool(true),
+            PyWert::Bool(false),
+            PyWert::Ganz(1),
+        ]);
+        let partner = prop::collection::vec(
+            (
+                prop::sample::select(PARTNER_FELDER.to_vec()),
+                prop::sample::select(vec![
+                    PyWert::Ganz(50),
+                    PyWert::Ganz(0),
+                    PyWert::Bool(true),
+                    PyWert::Bool(false),
+                    PyWert::Gleit(0.5),
+                    PyWert::Null,
+                ]),
+                zustand(),
+            ),
+            0..=3,
+        );
+        ((veranlagung, zustand()), (allein, zustand()), partner).prop_map(
+            |((v, vz), (a, az), partner)| {
+                let mut eintraege = vec![("veranlagung", v, vz), ("fam_alleinstehend", a, az)];
+                eintraege.extend(partner);
+                snap(&eintraege)
+            },
+        )
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        /// § 26b und § 24b schliessen sich aus: Partnerangaben ohne Zusammenveranlagung und
+        /// `fam_alleinstehend` mit Zusammenveranlagung meldet derselbe Snapshot nie zugleich.
+        #[test]
+        fn partner_und_alleinerziehend_nie_zugleich(f in felder()) {
+            prop_assert!(
+                partner_ohne_zusammen(&f).is_empty() || alleinerziehend_mit_zusammen(&f).is_empty()
+            );
+        }
+
+        /// Unbestaetigt ist wie fehlend: ohne die vorlaeufigen Felder melden beide Pruefungen
+        /// dasselbe.
+        #[test]
+        fn vorlaeufige_felder_aendern_nichts(f in felder()) {
+            let mut bestaetigt = f.clone();
+            bestaetigt.retain(|_, feld| feld.zustand == Bestaetigt);
+            prop_assert_eq!(partner_ohne_zusammen(&f), partner_ohne_zusammen(&bestaetigt));
+            prop_assert_eq!(
+                alleinerziehend_mit_zusammen(&f),
+                alleinerziehend_mit_zusammen(&bestaetigt)
+            );
+        }
     }
 }
