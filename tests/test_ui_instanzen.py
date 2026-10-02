@@ -75,10 +75,15 @@ def _store_mit(kinder=None):
     b = TR.lade_bindung()
     s = ST.leerer_store(veranlagungszeitraum=2025, fall_id="inst")
     if kinder is not None:
+        # Über `bereich.max` weist der Speicher seit 2026-10-02 ab (Auflage W). Ein solcher Wert kann
+        # nur als ALTWERT in einer Akte stehen — Laden prüft nie, der Deckel der Instanzgruppe muss
+        # ihn trotzdem lesen. Darum schreibt der Test ihn ohne Bindungsprüfung, wie eine alte Akte.
+        alt = kinder > b["fam_anzahl_kinder"]["bereich"]["max"]
         ST.append_event(s, feld_id="fam_anzahl_kinder", wert=kinder, zustand="bestaetigt",
                         herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft",
                                   "haftung": "nutzer"},
-                        schreiber="t", signal={"signal_1": None, "signal_2": "t"}, bindung=b)
+                        schreiber="t", signal={"signal_1": None, "signal_2": "t"},
+                        bindung=None if alt else b)
     return s, b
 
 

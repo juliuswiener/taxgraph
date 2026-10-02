@@ -299,7 +299,7 @@
             "min",
             "max"
           ],
-          "description": "Optionale Wertebereichsgrenzen (nur cent/int) für das Unsicherheits-Derivat. Fehlt es, ist die Achse unbounded (offene Intervallseite).",
+          "description": "Optionale Wertebereichsgrenzen (nur cent/int). Das Unsicherheits-Derivat liest sie als Achse (fehlt es, ist die Achse unbounded, offene Intervallseite). Der Schreibweg (store.append_event, Rust store::Store::append) weist eine Zahl ausserhalb von min..max ab, die nicht 0 ist; die 0 heisst bei diesen Feldern 'nichts anzugeben' und bleibt zulaessig. Laden prueft nie.",
           "properties": {
             "min": {
               "type": "integer"

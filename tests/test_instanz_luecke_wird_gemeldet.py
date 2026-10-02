@@ -62,8 +62,12 @@ def _fall(kinder=3, namen=("Anna", "Ben"), zustand="bestaetigt"):
                                   else fid.startswith(("kein_", "keine_"))),
                             zustand="bestaetigt", herkunft=LAIE, schreiber="ui:laie",
                             signal=KLICK, bindung=BINDUNG)
+    # Über `bereich.max` weist der Speicher seit 2026-10-02 ab (Auflage W). Ein solcher Wert steht nur
+    # als ALTWERT in einer Akte — Laden prüft nie —, darum ohne Bindungsprüfung geschrieben.
+    alt = kinder > BINDUNG["fam_anzahl_kinder"]["bereich"]["max"]
     ST.append_event(s, feld_id="fam_anzahl_kinder", wert=kinder, zustand="bestaetigt",
-                    herkunft=LAIE, schreiber="ui:laie", signal=KLICK, bindung=BINDUNG)
+                    herkunft=LAIE, schreiber="ui:laie", signal=KLICK,
+                    bindung=None if alt else BINDUNG)
     for i, name in enumerate(namen, start=1):
         ST.append_event(s, feld_id=TR.instanz_feld_id("kind_vorname", i), wert=name,
                         zustand=zustand, herkunft=LAIE, schreiber="ui:laie", signal=KLICK,

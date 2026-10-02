@@ -276,6 +276,19 @@ def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
             f"fail-closed (Typ): {feld_id}={anzeige} passt nicht zum Bindungstyp '{typ}' — "
             "der Ring läse das sonst still als 0 (Stille-Null-Klasse).")
 
+    # Auflage W (Wertebereich), 2026-10-02 (decisions/zahl-ausserhalb-des-bereichs-wird-beim-
+    # speichern-abgewiesen-die-null-nicht). `bereich: {min, max}` setzte bisher nur das Eingabefeld
+    # im Browser durch; die KI, ein direkter Aufruf und jeder Import nahmen -1 Kinder oder 9999 als
+    # Geburtsjahr an. Abgewiesen wird nur eine Zahl AUSSERHALB, die nicht 0 ist: die 0 heisst bei
+    # diesen Feldern "nichts anzugeben" (decisions/speichern-lehnt-nullwerte-nicht-ab) und bleibt
+    # auch unter einem Minimum > 0 zulaessig. Die Zahl steht in der Meldung (kein PII, anders als
+    # ein Text), Rust: Abweisung::WertAusserhalbBereich. Laden prueft nie.
+    bereich = eintrag.get("bereich")
+    if bereich and typ in ("cent", "int") and wert != 0 and not bereich["min"] <= wert <= bereich["max"]:
+        raise ValueError(
+            f"fail-closed (Bereich): {feld_id}={wert!r} liegt ausserhalb des erlaubten Bereichs "
+            f"{bereich['min']} bis {bereich['max']} der Bindung.")
+
     # Auflage F (Format), 2026-08-25. `typ: text` heisst „beliebiger String" — für ein Feld mit
     # festem Format ist das zu wenig. Julius' Durchgang: `kind_wohnsitz_inland_zeitraum` bekam
     # "01.01-31.122" (ein Tippfehler, eine 2 zu viel) und wurde anstandslos gespeichert. Der Wert

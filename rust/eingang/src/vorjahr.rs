@@ -125,13 +125,16 @@ pub fn uebernehme(
     })
 }
 
-/// Die zwei Abweisungen der Wertpruefung (Auflage T und F; Python: Praefix `fail-closed (Typ)`/
-/// `fail-closed (Format)`). Nur sie ueberspringt [`uebernehme`], jede andere bricht ab.
+/// Die drei Abweisungen der Wertpruefung (Auflage T, F und W; Python: Praefix `fail-closed (Typ)`/
+/// `fail-closed (Format)`/`fail-closed (Bereich)`). Nur sie ueberspringt [`uebernehme`], jede andere
+/// bricht ab.
 fn ist_pruef_abweisung(e: &SchreibFehler) -> bool {
     matches!(
         e,
         SchreibFehler::Abweisung(
-            Abweisung::TypInkonform { .. } | Abweisung::FormatInkonform { .. }
+            Abweisung::TypInkonform { .. }
+                | Abweisung::FormatInkonform { .. }
+                | Abweisung::WertAusserhalbBereich { .. }
         )
     )
 }
@@ -165,7 +168,7 @@ mod tests {
     use crate::vorschlag::SchreibFehler;
 
     /// Entscheidung `vorjahr-unpassenden-altwert-ueberspringen`: ein Altwert, den die Wertpruefung
-    /// abweist (Steuerzeichen, Muster), reisst die uebrigen Vorschlaege nicht mit.
+    /// abweist (Steuerzeichen, Muster, Bereich), reisst die uebrigen Vorschlaege nicht mit.
     #[test]
     fn abgewiesener_altwert_wird_uebersprungen() {
         let nachschlag = BindungNachschlag::neu(crate::doctest_bindung().unwrap());
@@ -174,6 +177,7 @@ mod tests {
             ("bruttoarbeitslohn", json!(4_000_000)),
             ("stammdaten_nachname", json!("Maier\u{0}")), // Auflage T: Steuerzeichen
             ("kind_wohnsitz_inland_zeitraum", json!("01.01-31.122")), // Auflage F: Muster
+            ("geburtsjahr", json!(1899)),                 // Auflage W: Bereich 1900..2010
         ]
         .into_iter()
         .map(|(f, wert)| {
@@ -187,13 +191,17 @@ mod tests {
         assert_eq!(erg.uebertragen, 2);
         assert_eq!(
             erg.uebersprungen,
-            ["kind_wohnsitz_inland_zeitraum", "stammdaten_nachname"]
+            [
+                "geburtsjahr",
+                "kind_wohnsitz_inland_zeitraum",
+                "stammdaten_nachname"
+            ]
         );
         let aktiv: BTreeSet<&str> = store.aktive().map(|(f, _)| f).collect();
         assert_eq!(aktiv, BTreeSet::from(["bruttoarbeitslohn", "veranlagung"]));
     }
 
-    /// Nur die Wertpruefung (Typ/Format) wird uebersprungen. Eine andere Abweisung erreicht
+    /// Nur die Wertpruefung (Typ/Format/Bereich) wird uebersprungen. Eine andere Abweisung erreicht
     /// `uebernehme` heute nicht (der Writer setzt Schreiber, Herkunft und Zustand selbst und prueft
     /// vorher auf ein aktives Event), darum hier an der Einordnung geprueft: kaeme eine hinzu,
     /// bricht sie ab statt still zu fehlen.
@@ -209,6 +217,12 @@ mod tests {
             feld_id: "f".into(),
             wert: "w".into(),
             muster: "m".into(),
+        }));
+        assert!(ueberspringt(Abweisung::WertAusserhalbBereich {
+            feld_id: "f".into(),
+            wert: 1899,
+            min: 1900,
+            max: 2010,
         }));
         assert!(!ueberspringt(Abweisung::AktivesEventVorhanden {
             feld_id: "f".into(),

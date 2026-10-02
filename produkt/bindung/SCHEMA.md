@@ -32,7 +32,7 @@ YAML (`produkt/bindung/bindung_*.yaml`), werden geladen und gegen das Schema gep
 | `vz_gueltigkeit` | int[] | ✓ | Veranlagungszeiträume, z.B. `[2024, 2025, 2026]`. |
 | `anker_ref` | `{quelle, zitatanker, datei?}` | ✓ | Norm-Fundstelle + wörtlicher Zitatanker (das „warum"). `datei` optional (Pflicht bei Catala-Quellen wie EP). |
 | `enum_werte` | string[] | falls typ=enum | Zulässige Werte. |
-| `bereich` | `{min, max, grund?}` | – (nur cent/int) | Wertebereichsgrenzen fürs Unsicherheits-Derivat. Fehlt = unbounded (offene Intervallseite). Gate: min≤max, ganzzahlig, cent<0 nur mit `grund` (Verluste). |
+| `bereich` | `{min, max, grund?}` | – (nur cent/int) | Wertebereichsgrenzen: Achse des Unsicherheits-Derivats (fehlt = unbounded, offene Intervallseite) UND Schreibgrenze — der Store weist eine Zahl ausserhalb ab, die nicht 0 ist (die 0 = „nichts anzugeben“ bleibt zulässig, Laden prüft nie). Gate: min≤max, ganzzahlig, cent<0 nur mit `grund` (Verluste). |
 
 ## Summen-Konvention (Auflage A)
 
