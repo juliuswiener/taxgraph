@@ -27,6 +27,7 @@
 #include "EuerGewinn.h"
 #include "MitunternehmerEinkuenfte.h"
 #include "GwgSofortabzug.h"
+#include "Haushaltsnahe.h"
 #include "Verlustvortrag.h"
 #include "ErmaessigterDurchschnittssatz.h"
 #include "Entfernungspauschale.h"
@@ -432,6 +433,29 @@ int tg_gwg_sofortabzug(long anschaffungskosten_netto_cents, long *out_cents) {
     return TG_ERR_CATALA;
   }
   *out_cents = mpz_get_si(r->GwgSofortabzug__sofortabzug);
+  catala_free_all();
+  return TG_OK;
+}
+
+static __thread Haushaltsnahe__Haushaltsnahe_in tg_haushaltsnahe_in;
+
+static void *tg_run_haushaltsnahe(void) {
+  return (void *)Haushaltsnahe__haushaltsnahe(&tg_haushaltsnahe_in);
+}
+
+int tg_haushaltsnahe(long minijob_cents, long dienstleistungen_cents, long handwerker_cents,
+                     long *out_cents) {
+  catala_init();
+  tg_haushaltsnahe_in.Haushaltsnahe__minijob_aufwendungen_in = catala_new_money(minijob_cents);
+  tg_haushaltsnahe_in.Haushaltsnahe__haushaltsnahe_dienstleistungen_in =
+      catala_new_money(dienstleistungen_cents);
+  tg_haushaltsnahe_in.Haushaltsnahe__handwerker_arbeitskosten_in = catala_new_money(handwerker_cents);
+  const Haushaltsnahe__Haushaltsnahe *r = catala_do(tg_run_haushaltsnahe);
+  if (!r) {
+    catala_free_all();
+    return TG_ERR_CATALA;
+  }
+  *out_cents = mpz_get_si(r->Haushaltsnahe__steuerermaessigung);
   catala_free_all();
   return TG_OK;
 }

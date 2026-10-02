@@ -5,7 +5,7 @@
 //! `rust/fixtures/sperrgrund_klartext.json`); ein Rust-Test vergleicht beide (unten).
 //!
 //! `grund` in `api.py: ergebnis()` ist entweder `None` (kein Sperrgrund), das Literal
-//! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 52 Schluessel unten. Die
+//! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 53 Schluessel unten. Die
 //! dritte Moeglichkeit bildet [`Sperrgrund::Bestaetigt`] ab; sie hat bewusst KEINEN
 //! eigenen Klartext (die Python-Quelle hat auch keinen fuer sie).
 use std::fmt;
@@ -14,7 +14,7 @@ use std::str::FromStr;
 /// Text fuer einen unbekannten/nicht gelisteten Sperrgrund-String (`UNBEKANNTER_SPERRGRUND`).
 pub const UNBEKANNTER_SPERRGRUND: &str = "Die Berechnung kann an dieser Stelle nicht fortgesetzt werden, und woran genau es liegt, lässt sich hier nicht in Worte fassen. Das liegt an der Software, nicht an deinen Angaben. Bitte melde diesen Fall — damit lässt sich nachvollziehen, was gefehlt hat.";
 
-/// Ein Sperrgrund-String, der zu keinem der 52 bekannten Schluessel und nicht zu
+/// Ein Sperrgrund-String, der zu keinem der 53 bekannten Schluessel und nicht zu
 /// `"bestaetigt"` passt.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("unbekannter Sperrgrund {0:?}")]
@@ -66,6 +66,7 @@ pub enum Sperrgrund {
     RealsplittingAngabenOffen,
     RechnungUnbarOffen,
     RenteInstanzOffen,
+    RentenbeginnNachVz,
     RentenbeginnOffen,
     RentenfreibetragFixierungOffen,
     RingBetragVorlaeufig,
@@ -130,6 +131,7 @@ impl Sperrgrund {
             Self::RealsplittingAngabenOffen => "realsplitting_angaben_offen",
             Self::RechnungUnbarOffen => "rechnung_unbar_offen",
             Self::RenteInstanzOffen => "rente_instanz_offen",
+            Self::RentenbeginnNachVz => "rentenbeginn_nach_vz",
             Self::RentenbeginnOffen => "rentenbeginn_offen",
             Self::RentenfreibetragFixierungOffen => "rentenfreibetrag_fixierung_offen",
             Self::RingBetragVorlaeufig => "ring_betrag_vorlaeufig",
@@ -195,6 +197,7 @@ impl Sperrgrund {
             Self::RealsplittingAngabenOffen => Some("Du zahlst Unterhalt an deinen geschiedenen oder getrennt lebenden Ehepartner. Es fehlt noch der Betrag oder die Antwort, ob der Empfänger dem Abzug zugestimmt hat (Anlage U). Ohne Zustimmung gibt es den Abzug nicht. Bitte beantworte beide Fragen."),
             Self::RechnungUnbarOffen => Some("Zu deinen Handwerker- oder Haushaltsdienstleistungen fehlt noch die Antwort, ob du eine Rechnung erhalten und sie überwiesen hast. Barzahlungen erkennt das Finanzamt hier nicht an. Bitte beantworte diese Frage."),
             Self::RenteInstanzOffen => Some("Zu einer deiner Renten oder zu einer Rente deines Partners sind die Angaben unvollständig. Für jede einzelne Rente braucht die Berechnung vier Dinge: die Art der Rente, den Jahresbetrag, das Jahr des Rentenbeginns und das Alter der beziehenden Person zu diesem Zeitpunkt. Bitte ergänze die fehlenden Angaben."),
+            Self::RentenbeginnNachVz => Some("Das Jahr des Rentenbeginns liegt nach dem Jahr dieser Steuererklärung. Eine Rente, die erst später beginnt, gehört nicht in diese Erklärung. Bitte prüfe das Jahr des Rentenbeginns."),
             Self::RentenbeginnOffen => Some("Zu deiner Rente fehlt das Jahr, in dem die Rentenzahlung begonnen hat. Die Berechnung braucht dieses Jahr, um den steuerfreien Teil der Rente richtig festzulegen. Bitte trage das Jahr des Rentenbeginns ein."),
             Self::RentenfreibetragFixierungOffen => Some("Die Rente hat vor diesem Jahr begonnen. Dann ist der steuerfreie Teil der Rente ein fester Eurobetrag, der im Jahr nach dem Rentenbeginn einmal festgelegt wurde und sich seither nicht mehr ändert. Diesen Betrag findest du in einem früheren Steuerbescheid. Bitte trage ihn ein."),
             Self::RingBetragVorlaeufig => Some("Ein Betrag, den du genannt hast, ist noch nicht bestätigt. Solange das so ist, zeigt die Software keine Steuer an; sie könnte einen genannten Betrag sonst nicht mitrechnen. Bitte sieh dir die Angabe noch einmal an und bestätige sie; danach rechnet die Software die Zahl."),
@@ -274,6 +277,7 @@ impl FromStr for Sperrgrund {
             "realsplitting_angaben_offen" => Ok(Self::RealsplittingAngabenOffen),
             "rechnung_unbar_offen" => Ok(Self::RechnungUnbarOffen),
             "rente_instanz_offen" => Ok(Self::RenteInstanzOffen),
+            "rentenbeginn_nach_vz" => Ok(Self::RentenbeginnNachVz),
             "rentenbeginn_offen" => Ok(Self::RentenbeginnOffen),
             "rentenfreibetrag_fixierung_offen" => Ok(Self::RentenfreibetragFixierungOffen),
             "ring_betrag_vorlaeufig" => Ok(Self::RingBetragVorlaeufig),
@@ -310,7 +314,7 @@ mod tests {
         let klartext = fixture["klartext"].as_object().unwrap();
         assert_eq!(
             klartext.len(),
-            52,
+            53,
             "Fixture-Groesse hat sich veraendert -- Enum nachziehen"
         );
         for (schluessel, erwartet) in klartext {

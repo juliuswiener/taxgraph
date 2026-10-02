@@ -457,16 +457,17 @@ def catala_p35a_haushaltsnahe(s: dict) -> int:
         handwerker = 0
     if handwerker > 0 and ist_gefoerdert:  # Abs.3 S.2: öffentlich gefördert → Handwerker = 0
         handwerker = 0
-    ermessigung = 0
-    if minijob > 0:
-        ermessigung += min(minijob * 20 // 100, 510)
-    if dienstleistungen > 0:
-        ermessigung += min(dienstleistungen * 20 // 100, 4000)
-    if handwerker > 0:
-        ermessigung += min(handwerker * 20 // 100, 1200)
+    # Abs.1-3 rechnet die Catala-Regel in Cent; erst die Summe wird auf ganze Euro abgerundet
+    # (Vault decisions/haushaltsnahe-ermaessigung-rechnet-die-catala-regel-und-rundet-erst-die-summe).
+    # ponytail: negativer Topf → 0 vor der Regel (die Regel ergäbe −500 € → −100 €); fällt weg, wenn
+    # Backlog negativer-aufwand-umgeht-pflichtfrage negative Aufwände schon bei der Eingabe abweist.
+    cent = int(HN.haushaltsnahe(HN.HaushaltsnaheIn(
+        minijob_aufwendungen_in=Money(f"{max(minijob, 0)}.00"),
+        haushaltsnahe_dienstleistungen_in=Money(f"{max(dienstleistungen, 0)}.00"),
+        handwerker_arbeitskosten_in=Money(f"{max(handwerker, 0)}.00"))).steuerermaessigung)
     if s.get("p35a_mitveranlagung", {}).get("wert") is True:
-        ermessigung = ermessigung // 2
-    return ermessigung
+        cent = cent // 2
+    return cent // 100
 
 
 def catala_p3_nr72_photovoltaik(s: dict) -> int:
@@ -902,10 +903,12 @@ def _rente_besteuerungsanteil(jahr: int) -> float:
 
 
 def _rente_ertragsanteil(alter: int) -> float:
-    """§ 22 Nr. 1 S. 3 a bb — Ertragsanteil je Alter bei Rentenbeginn (params/kohorten, VZ-agnostisch)."""
+    """§ 22 Nr. 1 S. 3 a bb — Ertragsanteil je Alter bei Rentenbeginn (params/kohorten, VZ-agnostisch).
+    Die letzte Tabellenzeile gilt nach oben offen: „… 94 bis 96 2 ab 97 1“
+    (sources/gesetze-im-internet/estg_p22_2026-07-13.txt:23). Nur der Schlüssel wird gedeckelt, nicht der Eingabewert."""
     p = _load_yaml_path(os.path.join(
         ROOT, "params", "kohorten", "rente_ertragsanteil_p22.yaml"))
-    return p["kohorten"][alter]["ertragsanteil_prozent"]
+    return p["kohorten"][min(alter, 97)]["ertragsanteil_prozent"]
 
 
 def _renten_wk_pb(year: int) -> int:
