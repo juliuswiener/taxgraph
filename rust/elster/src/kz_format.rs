@@ -159,16 +159,18 @@ pub enum KzFormat {
 ///
 /// ```
 /// use elster::{kz_format, KzFormat};
-/// assert_eq!(kz_format("E6004901"), KzFormat::KommaCent);
-/// assert_eq!(kz_format("E0200301"), KzFormat::KommaCent);
-/// assert_eq!(kz_format("E0705701"), KzFormat::EuroAufgerundet);
-/// assert_eq!(kz_format("E0200201"), KzFormat::EuroAbgerundet);
+/// use domain::Kz;
+/// let kz = |s| Kz::new(s).unwrap();
+/// assert_eq!(kz_format(&kz("E6004901")), KzFormat::KommaCent);
+/// assert_eq!(kz_format(&kz("E0200301")), KzFormat::KommaCent);
+/// assert_eq!(kz_format(&kz("E0705701")), KzFormat::EuroAufgerundet);
+/// assert_eq!(kz_format(&kz("E0200201")), KzFormat::EuroAbgerundet);
 /// ```
 #[must_use]
-pub fn kz_format(kz: &str) -> KzFormat {
-    if Kz::hat_e60_praefix(kz) || KOMMA_OHNE_E60_KZ.contains(&kz) {
+pub fn kz_format(kz: &Kz) -> KzFormat {
+    if kz.hat_e60_praefix() || KOMMA_OHNE_E60_KZ.contains(&kz.as_str()) {
         KzFormat::KommaCent
-    } else if ABZUGS_KZ.contains(&kz) {
+    } else if ABZUGS_KZ.contains(&kz.as_str()) {
         KzFormat::EuroAufgerundet
     } else {
         KzFormat::EuroAbgerundet
@@ -216,17 +218,18 @@ fn komma_text(c: Cent) -> String {
 /// Store-Cent → Kz-Betrag (`_cent_nach_kz`, `est_mapping.py:175-183`).
 ///
 /// ```
-/// use domain::{Cent, Euro};
+/// use domain::{Cent, Euro, Kz};
 /// use elster::{cent_nach_kz, KzBetrag};
+/// let kz = |s| Kz::new(s).unwrap();
 /// // Einnahme: abrunden
-/// assert_eq!(cent_nach_kz(Cent::new(199), "E0200201"), KzBetrag::Euro(Euro::new(1)));
+/// assert_eq!(cent_nach_kz(Cent::new(199), &kz("E0200201")), KzBetrag::Euro(Euro::new(1)));
 /// // Abzug: aufrunden
-/// assert_eq!(cent_nach_kz(Cent::new(101), "E0705701"), KzBetrag::Euro(Euro::new(2)));
+/// assert_eq!(cent_nach_kz(Cent::new(101), &kz("E0705701")), KzBetrag::Euro(Euro::new(2)));
 /// // Dezimal-Kz: exakt; P1 bei negativen Betraegen
-/// assert_eq!(cent_nach_kz(Cent::new(-150), "E6004901").als_json(), serde_json::json!("-2,50"));
+/// assert_eq!(cent_nach_kz(Cent::new(-150), &kz("E6004901")).als_json(), serde_json::json!("-2,50"));
 /// ```
 #[must_use]
-pub fn cent_nach_kz(cent: Cent, kz: &str) -> KzBetrag {
+pub fn cent_nach_kz(cent: Cent, kz: &Kz) -> KzBetrag {
     match kz_format(kz) {
         KzFormat::KommaCent => KzBetrag::Komma(cent),
         KzFormat::EuroAufgerundet => KzBetrag::Euro(cent.ceil_euro()),
@@ -245,14 +248,15 @@ pub fn cent_nach_kz(cent: Cent, kz: &str) -> KzBetrag {
 /// zu, der Port weist sie ab.
 ///
 /// ```
-/// use domain::Feldtyp;
+/// use domain::{Feldtyp, Kz};
 /// use elster::kz_wert;
 /// use serde_json::json;
-/// assert_eq!(kz_wert(&json!(2015), "E1800501", Some(Feldtyp::Int)).unwrap(), json!("01.01.2015"));
-/// assert_eq!(kz_wert(&json!(12345), "E0200201", Some(Feldtyp::Cent)).unwrap(), json!(123));
-/// assert_eq!(kz_wert(&json!("x"), "E0100201", Some(Feldtyp::Text)).unwrap(), json!("x"));
+/// let kz = |s| Kz::new(s).unwrap();
+/// assert_eq!(kz_wert(&json!(2015), &kz("E1800501"), Some(Feldtyp::Int)).unwrap(), json!("01.01.2015"));
+/// assert_eq!(kz_wert(&json!(12345), &kz("E0200201"), Some(Feldtyp::Cent)).unwrap(), json!(123));
+/// assert_eq!(kz_wert(&json!("x"), &kz("E0100201"), Some(Feldtyp::Text)).unwrap(), json!("x"));
 /// ```
-pub fn kz_wert(wert: &Value, kz: &str, typ: Option<Feldtyp>) -> Result<Value, PyFehler> {
+pub fn kz_wert(wert: &Value, kz: &Kz, typ: Option<Feldtyp>) -> Result<Value, PyFehler> {
     if typ == Some(Feldtyp::Cent) {
         let cent = match wert {
             Value::Bool(b) => i64::from(*b),
@@ -263,7 +267,7 @@ pub fn kz_wert(wert: &Value, kz: &str, typ: Option<Feldtyp>) -> Result<Value, Py
         };
         return Ok(cent_nach_kz(Cent::new(cent), kz).als_json());
     }
-    if DATUMS_KZ.contains(&kz) {
+    if DATUMS_KZ.contains(&kz.as_str()) {
         if let Value::Number(n) = wert {
             if let Some(jahr) = n.as_i64() {
                 return Ok(Value::String(format!("01.01.{jahr:04}")));
@@ -271,6 +275,19 @@ pub fn kz_wert(wert: &Value, kz: &str, typ: Option<Feldtyp>) -> Result<Value, Py
         }
     }
     Ok(wert.clone())
+}
+
+/// Prueft eine Kz aus einer Tabelle oder aus der Deklaration, bevor sie in [`kz_wert`] geht.
+/// Die Tabellen in `tabellen.rs`/`kz_format.rs` halten `&str`; diese eine Stelle macht daraus
+/// eine [`Kz`]. Ein Tippfehler in einer Tabelle (`E06004901`) wird so zum Fehler statt zu `2`.
+///
+/// # Errors
+/// [`PyFehler`] `ValueError`, wenn `kz` nicht `^E[0-9]{7}$` ist.
+pub(crate) fn kz_pruefen(kz: &str) -> Result<Kz, PyFehler> {
+    Kz::new(kz).map_err(|e| PyFehler {
+        klasse: "ValueError",
+        nachricht: e.to_string(),
+    })
 }
 
 /// Die eine Schreibstelle fuer Kz-Werte in `deklariere` (`_schreibe_kz`, `est_mapping.py:288-302`):
@@ -297,7 +314,7 @@ pub(crate) fn schreibe_kz(
     // DIE Grenze Store -> Deklaration: einmal konvertieren, danach laeuft die unveraenderte
     // Value-Kette (`kz_wert`, `gleich_null`) -- die Deklaration IST JSON.
     let wert = wert.zu_json().map_err(PyFehler::from)?;
-    let v = kz_wert(&wert, kz, typ)?;
+    let v = kz_wert(&wert, &kz_pruefen(kz)?, typ)?;
     if null_kz.contains(&kz) && py::gleich_null(&v) {
         return Ok(());
     }
@@ -311,13 +328,15 @@ pub(crate) fn schreibe_kz(
 /// ```
 /// use elster::jahr_aus_kz_wert;
 /// use serde_json::json;
-/// assert_eq!(jahr_aus_kz_wert(&json!(" 01.01.2015 "), "E1800501"), json!(2015));
-/// assert_eq!(jahr_aus_kz_wert(&json!("2015"), "E1800501"), json!("2015"));
-/// assert_eq!(jahr_aus_kz_wert(&json!("01.01.2015"), "E0200201"), json!("01.01.2015"));
+/// use domain::Kz;
+/// let kz = |s| Kz::new(s).unwrap();
+/// assert_eq!(jahr_aus_kz_wert(&json!(" 01.01.2015 "), &kz("E1800501")), json!(2015));
+/// assert_eq!(jahr_aus_kz_wert(&json!("2015"), &kz("E1800501")), json!("2015"));
+/// assert_eq!(jahr_aus_kz_wert(&json!("01.01.2015"), &kz("E0200201")), json!("01.01.2015"));
 /// ```
 #[must_use]
-pub fn jahr_aus_kz_wert(wert: &Value, kz: &str) -> Value {
-    if !DATUMS_KZ.contains(&kz) {
+pub fn jahr_aus_kz_wert(wert: &Value, kz: &Kz) -> Value {
+    if !DATUMS_KZ.contains(&kz.as_str()) {
         return wert.clone();
     }
     let Value::String(s) = wert else {
@@ -341,27 +360,80 @@ pub fn jahr_aus_kz_wert(wert: &Value, kz: &str) -> Value {
 
 #[cfg(test)]
 mod tests {
-    use super::{cent_nach_kz, kz_format, KzBetrag, KzFormat, ABZUGS_KZ};
-    use domain::{Cent, Euro};
+    use super::{
+        cent_nach_kz, kz_format, kz_pruefen, schreibe_kz, KzBetrag, KzFormat, ABZUGS_KZ,
+        DATUMS_KZ, KOMMA_OHNE_E60_KZ, NULL_UNZULAESSIG_KZ_2024, NULL_UNZULAESSIG_KZ_2025,
+    };
+    use crate::tabellen::{DOKUMENTIERT_AGGREGAT, P23_GEWINN_KZ, VERZWEIGUNG};
+    use domain::{Cent, Euro, Feldtyp, Kz, PyWert};
     use proptest::prelude::*;
+    use std::collections::BTreeMap;
+
+    fn kz(s: &str) -> Kz {
+        Kz::new(s).unwrap()
+    }
 
     proptest! {
         /// Rundung „zu Ihren Gunsten": eine Einnahme wird nie hoeher, ein Abzug nie niedriger
         /// deklariert als der Cent-Betrag; beide weichen um weniger als einen Euro ab.
         #[test]
         fn rundung_zugunsten_der_steuerpflichtigen(c in -10_000_000_000_i64..10_000_000_000) {
-            let KzBetrag::Euro(ein) = cent_nach_kz(Cent::new(c), "E0200201") else { panic!() };
+            let KzBetrag::Euro(ein) = cent_nach_kz(Cent::new(c), &kz("E0200201")) else { panic!() };
             prop_assert!(ein.get() * 100 <= c && c - ein.get() * 100 < 100);
-            let KzBetrag::Euro(ab) = cent_nach_kz(Cent::new(c), "E0705701") else { panic!() };
+            let KzBetrag::Euro(ab) = cent_nach_kz(Cent::new(c), &kz("E0705701")) else { panic!() };
             prop_assert!(ab.get() * 100 >= c && ab.get() * 100 - c < 100);
         }
     }
 
     #[test]
     fn jedes_abzugs_kz_rundet_auf() {
-        for kz in ABZUGS_KZ {
-            assert_eq!(kz_format(kz), KzFormat::EuroAufgerundet, "{kz}");
-            assert_eq!(cent_nach_kz(Cent::new(1), kz), KzBetrag::Euro(Euro::new(1)));
+        for s in ABZUGS_KZ {
+            let k = kz(s);
+            assert_eq!(kz_format(&k), KzFormat::EuroAufgerundet, "{s}");
+            assert_eq!(cent_nach_kz(Cent::new(1), &k), KzBetrag::Euro(Euro::new(1)));
         }
+    }
+
+    /// Die Tabellen halten `&str`; `schreibe_kz` macht daraus eine `Kz`. Ein Tippfehler in einer
+    /// Tabelle waere sonst ein stilles falsches Format.
+    #[test]
+    fn jede_tabellen_kz_ist_eine_gueltige_kz() {
+        for tabelle in [
+            ABZUGS_KZ,
+            KOMMA_OHNE_E60_KZ,
+            NULL_UNZULAESSIG_KZ_2024,
+            NULL_UNZULAESSIG_KZ_2025,
+            DATUMS_KZ,
+        ] {
+            for s in tabelle {
+                assert!(Kz::ist_gueltig(s), "{s:?}");
+            }
+        }
+        // Die Tabellen, aus denen `deklariere` eine Kz in `schreibe_kz`/`cent_nach_kz` reicht.
+        for (ziel, _) in DOKUMENTIERT_AGGREGAT {
+            assert!(Kz::ist_gueltig(ziel), "{ziel:?}");
+        }
+        for (_, s) in P23_GEWINN_KZ {
+            assert!(Kz::ist_gueltig(s), "{s:?}");
+        }
+        for v in VERZWEIGUNG {
+            for (_, s) in v.kz.paare() {
+                assert!(Kz::ist_gueltig(s), "{}: {s:?}", v.feld);
+            }
+        }
+    }
+
+    /// Der Tippfehler aus der K9-Sonde: `E06004901` (neun Stellen) landete als Euro-Betrag `2` statt
+    /// `2,50` im XML. `schreibe_kz` ist die eine Schreibstelle und lehnt ihn ab.
+    #[test]
+    fn schreibe_kz_lehnt_eine_ungueltige_kz_ab() {
+        let mut ziel = BTreeMap::new();
+        let wert = PyWert::Ganz(250);
+        let fehler = schreibe_kz(&mut ziel, "E06004901", &wert, Some(Feldtyp::Cent), &[]).unwrap_err();
+        assert_eq!(fehler.klasse, "ValueError");
+        assert!(ziel.is_empty());
+        schreibe_kz(&mut ziel, "E6004901", &wert, Some(Feldtyp::Cent), &[]).unwrap();
+        assert_eq!(ziel["E6004901"], serde_json::json!("2,50"));
+        assert!(kz_pruefen("E6004901").is_ok());
     }
 }

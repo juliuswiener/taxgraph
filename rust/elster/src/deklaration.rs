@@ -17,7 +17,7 @@ use store::SnapshotFeld;
 
 use crate::geordnet::Geordnet;
 use crate::instanz::parse_instanz;
-use crate::kz_format::{cent_nach_kz, null_unzulaessig, schreibe_kz, KzBetrag};
+use crate::kz_format::{cent_nach_kz, kz_pruefen, null_unzulaessig, schreibe_kz, KzBetrag};
 use crate::py::{self, PyFehler};
 use crate::tabellen::{
     suche, ArtKz, PflichtBedingung, Verzweigung, DOKUMENTIERT_AGGREGAT, KAP_FELDER_A, KAP_FELDER_B,
@@ -326,7 +326,7 @@ fn aggregat_beitrag(wert: &PyWert, ziel: &str, typ: Feldtyp) -> Result<i64, PyFe
     if typ != Feldtyp::Cent {
         return Ok(n);
     }
-    match cent_nach_kz(Cent::new(n), ziel) {
+    match cent_nach_kz(Cent::new(n), &kz_pruefen(ziel)?) {
         KzBetrag::Euro(e) => Ok(e.get()),
         KzBetrag::Komma(_) => Err(PyFehler::typ(
             "unsupported operand type(s) for +: 'int' and 'str'",
@@ -971,7 +971,11 @@ impl Bau<'_> {
             if let Some(kz) =
                 nachschlagen(P23_GEWINN_KZ, &art.wert).map_err(wert_fehler(&feld_id))?
             {
-                let v = cent_nach_kz(Cent::new(gewinn), kz).als_json();
+                let v = cent_nach_kz(
+                    Cent::new(gewinn),
+                    &kz_pruefen(kz).map_err(wert_fehler(&feld_id))?,
+                )
+                .als_json();
                 self.instanz(GRUPPE, idx).felder.insert(kz.to_owned(), v);
             } else {
                 let grund = format!("p23-Typ '{}' ohne Kz-Zweig", art.wert.py_str());

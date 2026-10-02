@@ -54,18 +54,16 @@ impl Kz {
         }
     }
 
-    /// Text beginnt mit `E60`, dem Praefix der EUeR-Kz (`est_mapping.py:236`). Prueft nur den
-    /// Anfang, nicht die Kz-Regel.
+    /// Die Kz beginnt mit `E60`, dem Praefix der EUeR-Kz (`est_mapping.py:236`).
     ///
     /// ```
     /// use domain::Kz;
-    /// assert!(Kz::hat_e60_praefix("E6004901"));
-    /// assert!(!Kz::hat_e60_praefix("E0100401"));
-    /// assert!(Kz::hat_e60_praefix("E60"));
+    /// assert!(Kz::new("E6004901").unwrap().hat_e60_praefix());
+    /// assert!(!Kz::new("E0100401").unwrap().hat_e60_praefix());
     /// ```
     #[must_use]
-    pub fn hat_e60_praefix(s: &str) -> bool {
-        s.starts_with("E60")
+    pub fn hat_e60_praefix(&self) -> bool {
+        self.0.starts_with("E60")
     }
 
     /// Die Kennzahl als `&str`.

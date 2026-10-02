@@ -519,9 +519,10 @@ fn kz_format_sweep() {
             &json!({"fn": "elster.cent_sweep", "kz": kz, "von": von, "bis": bis, "schritt": schritt}),
         );
         let py = py.as_array().expect("Liste");
+        let kz_typ = domain::Kz::new(kz).unwrap();
         let rust: Vec<Value> = (von..=bis)
             .step_by(schritt)
-            .map(|c| elster::cent_nach_kz(domain::Cent::new(c), kz).als_json())
+            .map(|c| elster::cent_nach_kz(domain::Cent::new(c), &kz_typ).als_json())
             .collect();
         assert_eq!(rust.len(), py.len(), "{kz}: Laenge");
         n += rust.len();
@@ -591,7 +592,8 @@ fn kz_wert_sweep() {
         let typ = f[2]
             .as_str()
             .map(|t| serde_json::from_value::<Feldtyp>(json!(t)).unwrap());
-        let r = match elster::kz_wert(&f[0], f[1].as_str().unwrap(), typ) {
+        let kz = domain::Kz::new(f[1].as_str().unwrap()).unwrap();
+        let r = match elster::kz_wert(&f[0], &kz, typ) {
             Ok(v) => json!({"ok": v}),
             Err(e) => json!({"err": e.klasse}),
         };
@@ -620,7 +622,8 @@ fn kz_wert_sweep() {
     .collect();
     let pj = frage(&json!({"fn": "elster.jahr_aus_kz_wert", "faelle": jahr_faelle}));
     for (f, p) in jahr_faelle.iter().zip(pj.as_array().unwrap()) {
-        let r = elster::jahr_aus_kz_wert(&f[0], f[1].as_str().unwrap());
+        let kz = domain::Kz::new(f[1].as_str().unwrap()).unwrap();
+        let r = elster::jahr_aus_kz_wert(&f[0], &kz);
         if &r != p {
             diffs += 1;
             println!("  ABWEICHUNG _jahr_aus_kz_wert{f}: rust={r} py={p}");
@@ -1215,7 +1218,10 @@ fn negativkontrolle() {
         &json!({"fn": "elster.cent_sweep", "kz": "E0705701", "von": -500, "bis": 500, "schritt": 1}),
     );
     let mut rust: Vec<Value> = (-500..=500)
-        .map(|c| elster::cent_nach_kz(domain::Cent::new(c), "E0705701").als_json())
+        .map(|c| {
+            elster::cent_nach_kz(domain::Cent::new(c), &domain::Kz::new("E0705701").unwrap())
+                .als_json()
+        })
         .collect();
     assert_eq!(json!(rust), py, "Ausgangslage gleich");
     rust[600] = json!(rust[600].as_i64().unwrap() + 1);
