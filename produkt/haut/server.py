@@ -9,6 +9,7 @@ Start:  python -m produkt.haut.server   (oder: python produkt/haut/server.py [po
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import signal
@@ -50,6 +51,19 @@ STATIC = os.path.join(HERE, "static")
 # damit ein PDF von etwa 23 MB — großzügig für einen gescannten Jahres-Kontoauszug und weit
 # unterhalb dessen, was einen einfädigen Server beim blossen Einlesen lahmlegt.
 MAX_BODY_BYTES = 32 * 1024 * 1024
+
+
+def _nur_endlich(text: str) -> float:
+    """parse_constant/parse_float für den Rumpf. NaN, ±Infinity und 1e400 sind kein JSON
+    (RFC 8259), json.loads nimmt sie trotzdem an. Ohne diesen Haken landeten sie an ungeprüften
+    Stellen (ts, herkunft, signal_1) in der Akte, die der Rust-Lader danach sperrt. serde_json
+    weist sie an der Rust-Tür ebenso ab (rust/api/src/dispatch.rs, lies_koerper);
+    tests/test_nan_im_rumpf_erreicht_die_akte_nicht.py."""
+    zahl = float(text)
+    if not math.isfinite(zahl):
+        raise ValueError(f"nicht endliche Zahl {text}")
+    return zahl
+
 
 _CTYPE = {".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8",
           ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8"}
@@ -218,8 +232,8 @@ class Handler(BaseHTTPRequestHandler):
             roh = self.rfile.read(laenge) if laenge else b""
             if roh:
                 try:
-                    body = json.loads(roh)
-                except json.JSONDecodeError:
+                    body = json.loads(roh, parse_constant=_nur_endlich, parse_float=_nur_endlich)
+                except ValueError:  # JSONDecodeError, UnicodeDecodeError und _nur_endlich
                     self._json(400, {"fehler": "ungültiges JSON im Body"})
                     return
         # JWT-Kontext für DIESEN Request setzen (single-threaded → Modul-Variable sicher)

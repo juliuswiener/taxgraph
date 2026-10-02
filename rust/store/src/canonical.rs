@@ -111,7 +111,7 @@ impl EventId {
     }
 
     /// # Errors
-    /// [`EventIdFehler`], wenn `s` nicht aus genau 64 Hex-Zeichen besteht.
+    /// [`EventIdFehler`], wenn `s` nicht aus genau 64 Zeichen `[0-9a-f]` besteht (`schema.json`).
     ///
     /// ```
     /// use store::{EventId, EventIdFehler};
@@ -119,10 +119,15 @@ impl EventId {
     /// assert_eq!(EventId::parse(&id.to_string()), Ok(id));
     /// assert_eq!(EventId::parse("abc"), Err(EventIdFehler::FalscheLaenge(3)));
     /// assert_eq!(EventId::parse(&"zz".repeat(32)), Err(EventIdFehler::UngueltigesHex));
+    /// assert_eq!(EventId::parse(&"AB".repeat(32)), Err(EventIdFehler::UngueltigesHex));
     /// ```
     pub fn parse(s: &str) -> Result<Self, EventIdFehler> {
         if s.len() != 64 {
             return Err(EventIdFehler::FalscheLaenge(s.len()));
+        }
+        // `from_str_radix` allein liest auch `A-F` und ein fuehrendes `+`.
+        if !s.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')) {
+            return Err(EventIdFehler::UngueltigesHex);
         }
         let mut bytes = [0u8; 32];
         for (i, chunk) in s.as_bytes().chunks(2).enumerate() {

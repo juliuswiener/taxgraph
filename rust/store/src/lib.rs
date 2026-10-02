@@ -29,7 +29,7 @@ pub use canonical::{canonical_json, sha256_hex, EventId, EventIdFehler};
 pub use event::{Event, NeuesEvent, Signal};
 pub use katalog::Katalog;
 pub use nachschlag::{baue_nachschlag, instanz_basis, BindungNachschlag};
-pub use persistenz::{lade, speichere, PersistenzFehler};
+pub use persistenz::{lade, speichere, PersistenzFehler, Sperrform};
 pub use store::{
     EricBefund, EricBefundEingabe, EricKlasse, Snapshot, SnapshotFehler, SnapshotFeld, Store,
     StoreDatei, Veranlagungsjahr,

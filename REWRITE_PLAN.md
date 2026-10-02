@@ -222,6 +222,7 @@ was korrekt ist, bleibt Python und die Stelle geht als Frage an Julius. Bekannte
 | P8 | A-Renten Instanz-Σ, B-Rente Flat-Feld | `bescheid_zweige.py:1110-1127` |
 | P9 | 200 von 332 echten ELSTER-XML schema-ungültig: `0` in GanzzahlPos-Kz (14 Kz fehlen in `_NULL_UNZULAESSIG_KZ`) | `est_mapping.py`; Vault-Ticket `elster-xml-null-in-ganzzahlpos-kz` |
 | P10 | 32 echte Fälle tragen Alt-Herkunft `{"herkunft": …}` ohne `pruef_tiefe`/`haftung`; 5 Fälle haben VZ 2099, −5, 10^38 (API-Sicherheitstests) | Rust-Store lädt sie noch nicht — Entscheidung: tolerant laden wie Python, keine Migration fremder Nutzerdaten |
+| P11 | Fallakte mit `NaN`, `±Infinity`, `±1e400` oder Ganzzahl über `u64` unter `events`: Python liest still eine Zahl, Rust sperrt die Akte mit `PersistenzFehler::Sperrform` (Zeile, Spalte, Form) — keine falsche Zahl in der Rechnung; real 0 von 192 | `api.py:138-143` (`json.load`); Tests `b4_nan_infinity_und_ueberlauf_sperren_mit_namen`, `zahlform_im_text_und_grosser_vz_laden` (`rust/store/src/persistenz.rs`); Vault `decisions/fallakte-mit-nan-oder-ueberlauf-sperrt-mit-namen` |
 
 ---
 

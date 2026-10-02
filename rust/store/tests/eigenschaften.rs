@@ -276,11 +276,10 @@ proptest! {
     }
 }
 
-/// Befund: `EventId::parse` nimmt mehr an als `schema.json` (`^[a-f0-9]{64}$`), denn
-/// `u8::from_str_radix` liest Grossbuchstaben und ein fuehrendes `+`. Python vergleicht `ersetzt`
-/// als Text (`store.py:422`) und findet zu `"AB" * 32` kein Ziel; Rust liest `[0xab; 32]`.
+/// `EventId::parse` haelt `schema.json` (`^[a-f0-9]{64}$`). `u8::from_str_radix` allein liest
+/// auch Grossbuchstaben und ein fuehrendes `+`. Python vergleicht `ersetzt` als Text
+/// (`store.py:422`) und findet zu `"AB" * 32` kein Ziel; Rust darf daraus kein `[0xab; 32]` lesen.
 #[test]
-#[ignore = "Befund: EventId::parse nimmt Grossbuchstaben und '+' an, schema.json nur [a-f0-9]"]
 fn event_id_parse_haelt_das_schema_muster() {
     for text in ["AB".repeat(32), "+f".repeat(32)] {
         let ergebnis = EventId::parse(&text);
@@ -288,31 +287,17 @@ fn event_id_parse_haelt_das_schema_muster() {
     }
 }
 
-/// Was `lade` heute aus einem von `speichere` geschriebenen Text zurueckliest (gemessen, s.
-/// `textfeld_mit_c1_zeichen_laedt_wieder`): kein U+007F..U+009F, kein U+FFFE/U+FFFF und kein
-/// Leerzeichen neben U+2028/U+2029.
-fn yaml_lesbar(t: &str) -> bool {
-    !t.chars()
-        .any(|c| matches!(c, '\u{7f}'..='\u{9f}' | '\u{fffe}' | '\u{ffff}'))
-        && !["\u{2028} ", " \u{2028}", "\u{2029} ", " \u{2029}"]
-            .iter()
-            .any(|m| t.contains(m))
-}
-
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(48))]
 
-    /// Roundtrip: `speichere` (JSON) -> `lade` (YAML) gibt jedes Event unveraendert zurueck, und
+    /// Roundtrip: `speichere` (JSON) -> `lade` (JSON) gibt jedes Event unveraendert zurueck, und
     /// jeder geladene `event_id` passt noch zum Inhalt. Die Texte haengen als Ersetzungskette an
-    /// einem ungebundenen Feld; dort laesst Auflage T jeden Text durch. Ohne den Filter
-    /// [`yaml_lesbar`] ist die Eigenschaft rot: `"\u{7f}"` laedt nicht, `"\u{2028} "` verliert
-    /// das Leerzeichen.
+    /// einem ungebundenen Feld; dort laesst Auflage T jeden Text durch. Mit dem frueheren
+    /// YAML-Leser war die Eigenschaft ohne Filter rot: `"\u{7f}"` lud nicht, `"\u{2028} "`
+    /// verlor das Leerzeichen.
     #[test]
     fn speichern_und_laden_ist_verlustfrei(
-        texte in proptest::collection::vec(
-            domain::testhilfe::text().prop_filter("Befund YAML", |t| yaml_lesbar(t)),
-            1..6,
-        )
+        texte in proptest::collection::vec(domain::testhilfe::text(), 1..6)
     ) {
         let mut s = Store::leer(2025, None);
         let mut vorher = None;
@@ -336,16 +321,13 @@ proptest! {
     }
 }
 
-/// Befund: `speichere` schreibt JSON, `lade` liest YAML (wie `store.py`/`api.py`). DEL und die
-/// C1-Zeichen U+0080..U+009F stehen im JSON roh, und Auflage T laesst sie in einem Textfeld durch
-/// (`nur_xml_zeichen`). libyaml weist sie ab: die GANZE Fallakte laedt nicht mehr. NEL (U+0085),
-/// U+2028 und U+2029 liest YAML als Zeilenumbruch: aus NEL wird ein Leerzeichen, ein Leerzeichen
-/// neben U+2028/U+2029 faellt weg — der `event_id` passt danach nicht mehr zum Text. Die
-/// Rust-`api` laedt ueber `lade` (`api/src/eigener_fall.rs:80`), Python ueber `json.load`
-/// (`api.py::lade_fall`). Gemessen: alle Unicode-Skalare einzeln (sonst bricht nur U+FFFE/U+FFFF,
-/// die Auflage T abweist) und alle 11.111 Texte bis Laenge 4 aus zehn Rand-Zeichen.
+/// DEL und die C1-Zeichen U+0080..U+009F stehen im JSON roh, und Auflage T laesst sie in einem
+/// Textfeld durch (`nur_xml_zeichen`). `lade` liest JSON wie Python (`api.py::lade_fall`,
+/// `json.load`) und gibt sie unveraendert zurueck. Der fruehere YAML-Leser wies DEL/C1 ab (die
+/// GANZE Fallakte lud nicht mehr), machte aus NEL (U+0085) ein Leerzeichen und liess ein
+/// Leerzeichen neben U+2028/U+2029 fallen — der `event_id` passte danach nicht mehr zum Text.
+/// Die Rust-`api` laedt ueber `lade` (`api/src/eigener_fall.rs:80`).
 #[test]
-#[ignore = "Befund: lade (YAML) liest DEL/C1 nicht zurueck, NEL und Leerzeichen an U+2028 aendern sich"]
 fn textfeld_mit_c1_zeichen_laedt_wieder() {
     let dir = std::env::temp_dir().join(format!(
         "taxgraph-store-eigenschaften-c1-{}",

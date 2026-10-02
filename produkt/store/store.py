@@ -408,6 +408,11 @@ def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dic
     if bindung is not None:
         _pruefe_typ_konformitaet(feld_id, wert, bindung)
 
+    # Typ-Zwang: signal_2 ist Text oder null (Rust: Option<String>). Eine Zahl warf in der Zeile
+    # darunter AttributeError und kam als 500 heraus, bei vorlaeufig stand sie in der Akte.
+    if signal.get("signal_2") is not None and not isinstance(signal.get("signal_2"), str):
+        raise ValueError(f"fail-closed: signal_2 muss Text oder null sein, nicht "
+                         f"{type(signal.get('signal_2')).__name__}.")
     # Typ-Zwang: bestaetigt braucht signal_2.
     if zustand == "bestaetigt" and not (signal.get("signal_2") or "").strip():
         raise ValueError("fail-closed: zustand=bestaetigt braucht ein signal_2 (Zwei-Signal).")
