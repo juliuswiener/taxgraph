@@ -174,7 +174,7 @@ def _dialog_lauf(explizit: dict, scheibe: str = "gesamt", max_fragen: int = 600)
         else:
             wert = 0
         ST.append_event(store=store, feld_id=fid, wert=wert, zustand="bestaetigt",
-                        herkunft={"quelle": "screening_b"}, schreiber="ui:laie",
+                        herkunft={"herkunft": "screening_b", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, schreiber="ui:laie",
                         signal={"signal_1": None, "signal_2": f"ok@{fid}"},
                         ts="2026-08-14T12:00:00Z")
         gestellt.append(fid)

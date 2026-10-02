@@ -120,6 +120,7 @@ bindungen:
   - feld_id: p22_nr3_werbungskosten
     quelle: {regel_id: p22_3_leistungen, signatur_slot: werbungskosten_zu_einnahmen}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: false
     vorjahr: uebernehmbar

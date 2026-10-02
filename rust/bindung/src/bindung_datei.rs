@@ -192,6 +192,9 @@ pub struct Ableitung {
 
 /// Eine einzelne Feld-Bindung (`$defs/bindung`). Feldnamen und Optionalitaet 1:1 aus
 /// `schema.json`; die vier `allOf`-Regeln pruefen [`Bindung::validieren`].
+// Vier unabhaengige Schalter der Bindungsdatei (`askable`, `frage_invertiert`, `eingangsfrage`,
+// `nicht_negativ`), wie sie `schema.json` fuehrt, kein verkappter Zustandsautomat.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Bindung {
@@ -225,6 +228,10 @@ pub struct Bindung {
     pub anker_ref: AnkerRef,
     pub enum_werte: Option<Vec<String>>,
     pub bereich: Option<Bereich>,
+    /// Das Feld kennt im amtlichen Schema kein Minus (`nicht_negativ: true`); der Store weist
+    /// eine negative Zahl beim Schreiben ab.
+    #[serde(default)]
+    pub nicht_negativ: bool,
     pub screening: Option<bool>,
     pub beweist: Option<Beweist>,
     pub feld_bedingung: Option<FeldBedingung>,

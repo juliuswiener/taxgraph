@@ -10,6 +10,7 @@ bindungen:
     quelle: {regel_id: p10_1_4_kirchensteuer, signatur_slot: gezahlte_kirchensteuer}
     feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -29,6 +30,7 @@ bindungen:
     quelle: {regel_id: p10_1_4_kirchensteuer, signatur_slot: erstattete_kirchensteuer}
     feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -49,6 +51,7 @@ bindungen:
     vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p10_1_7_berufsausbildung, signatur_slot: aufwendungen}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -112,6 +115,7 @@ bindungen:
   - feld_id: berufsausbildung_einzelbetrag
     quelle: {regel_id: p10_1_7_berufsausbildung, signatur_slot: einzelaufwendung}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: false
     vorjahr: uebernehmbar
@@ -134,6 +138,7 @@ bindungen:
     # Eingangsfrage (2026-08-26, E2E-Durchgang auf Julius' Bitte). Frage 24 von 24: „Hattest du groessere aussergewoehnliche Ausgaben?" stand HINTER „Waren die Ausgaben notwendig?" und „Konntest du sie nicht vermeiden?" — zwei Merkmalen von Ausgaben, die niemand erhoben hatte.
     eingangsfrage: true
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -323,6 +328,7 @@ bindungen:
   - feld_id: hh_minijob_aufwendungen
     quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: minijob_aufwendungen}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: false
     fragetext_laie: null
@@ -340,6 +346,7 @@ bindungen:
     vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -373,6 +380,7 @@ bindungen:
   - feld_id: hh_dienstleistungen
     quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: haushaltsnahe_dienstleistungen}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: false
     fragetext_laie: null
@@ -390,6 +398,7 @@ bindungen:
     vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: dienstleistungen_sind_keine_handwerkerleistungen}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -423,6 +432,7 @@ bindungen:
   - feld_id: hh_handwerker_arbeitskosten
     quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: handwerker_arbeitskosten}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: false
     fragetext_laie: null
@@ -445,6 +455,7 @@ bindungen:
     vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: handwerker_nur_renovierung_erhaltung_modernisierung}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -584,6 +595,7 @@ bindungen:
     vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p10b_spenden, signatur_slot: zuwendungen}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag

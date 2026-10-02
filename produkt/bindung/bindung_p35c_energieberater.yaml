@@ -11,6 +11,7 @@ bindungen:
   - feld_id: p35c_energieberater_aufwendungen
     quelle: {regel_id: p35c_energieberater_ermaessigung, signatur_slot: energieberater_aufwendungen}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag

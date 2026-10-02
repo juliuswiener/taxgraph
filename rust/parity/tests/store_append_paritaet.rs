@@ -1,7 +1,7 @@
 //! Verhaltensparitaet von `Store::append` (Rust) gegen `produkt/store/store.py::append_event`
 //! (Python, ueber `tools/parity/oracle.py::_append_sequence`) ueber ganze Aufruf-SEQUENZEN --
 //! Deliverable #2 (Nachtrag) der `store`-Crate, ergaenzend zu `store_paritaet.rs` (das nur die
-//! reine `event_id`-Hashfunktion prueft, keine Auflagen A/K1/F2/T/F/B).
+//! reine `event_id`-Hashfunktion prueft, keine Auflagen A/K1/F2/T/V/W/F/B).
 //!
 //! Zwei Tests:
 //! - `append_sequence_paritaet_ueber_zufaellige_aufruf_sequenzen`: 1000 proptest-Faelle, je 1..=20
@@ -329,7 +329,12 @@ fn wert_korrekt(cursor: &mut Cursor, feld: &Bindung) -> Value {
                 .as_ref()
                 .map(|w| w.iter().filter_map(|s| s.parse::<i64>().ok()).collect())
                 .unwrap_or_default();
-            if zahlen.is_empty() {
+            if let (true, Some(b)) = (zahlen.is_empty(), feld.bereich.as_ref()) {
+                // Auflage W: ein Wert INNERHALB von `bereich` -- eine Zufallszahl bis 1_000_000
+                // liege fast immer ausserhalb und machte aus jedem Glueckspfad eine Abweisung.
+                let breite = usize::try_from((b.max - b.min).clamp(0, 999)).unwrap_or(0) + 1;
+                json!(b.min + i64::try_from(cursor.range(breite)).unwrap_or(0))
+            } else if zahlen.is_empty() {
                 zufallszahl(cursor, 1_000_000)
             } else {
                 json!(zahlen[cursor.range(zahlen.len())])
@@ -450,6 +455,8 @@ fn abweisung_klasse(a: &Abweisung) -> &'static str {
         Abweisung::WertNichtDarstellbar { .. } => "WertNichtDarstellbar",
         Abweisung::TypInkonform { .. } => "TypInkonform",
         Abweisung::FormatInkonform { .. } => "FormatInkonform",
+        Abweisung::NegativerBetrag { .. } => "NegativerBetrag",
+        Abweisung::WertAusserhalbBereich { .. } => "WertAusserhalbBereich",
         Abweisung::AktivesEventVorhanden { .. } => "AktivesEventVorhanden",
         Abweisung::ErsetztZielUnbekannt(_) => "ErsetztZielUnbekannt",
         Abweisung::ErsetztFeldMismatch => "ErsetztFeldMismatch",
@@ -599,6 +606,76 @@ fn szenario_zeilenumbruch(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSp
     Some(spec)
 }
 
+/// Auflage W (Vault `decisions/zahl-ausserhalb-des-bereichs-wird-beim-speichern-abgewiesen-die-
+/// null-nicht`): Randwerte und Nachbarn von `bereich` an einem Feld mit `bereich`, auch als
+/// Instanz (`base__2`). Beide Seiten muessen ausserhalb (ausser der 0) mit `WertAusserhalbBereich`
+/// abweisen und Raender, 0 und Werte innerhalb annehmen.
+fn szenario_bereich(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
+    let kandidaten: Vec<&&Bindung> = pools
+        .alle
+        .iter()
+        .filter(|b| {
+            matches!(b.typ, Feldtyp::Cent | Feldtyp::Int)
+                && b.bereich.is_some()
+                && b.enum_werte.as_ref().is_none_or(Vec::is_empty)
+        })
+        .collect();
+    let feld = **waehle(cursor, &kandidaten)?;
+    let b = feld.bereich.as_ref()?;
+    let wert = match cursor.range(6) {
+        0 => b.min - 1,
+        1 => b.max + 1,
+        2 => 0,
+        3 => b.min,
+        4 => b.max,
+        _ => b
+            .min
+            .saturating_sub(1 + i64::try_from(cursor.range(1000)).unwrap_or(0)),
+    };
+    let mut spec = leer_spec();
+    spec.feld_id = if cursor.bool() {
+        format!("{}__2", feld.feld_id)
+    } else {
+        feld.feld_id.clone()
+    };
+    spec.wert = json!(wert);
+    spec.schreiber = nicht_vorschlag_schreiber(cursor);
+    Some(spec)
+}
+
+/// Auflage V (Vault `decisions/geldfeld-ohne-minus-im-schema-lehnt-minus-bei-eingabe-ab`): ein
+/// Vorzeichen an einem Zahlfeld ohne `bereich`, auch als Instanz (`base__2`). Felder mit
+/// `nicht_negativ` muessen beide Seiten bei einer negativen Zahl mit `NegativerBetrag` abweisen,
+/// alle anderen (Verlust-, Differenz-, unklare Felder) nehmen sie an; 0 und Positives gehen
+/// ueberall durch.
+fn szenario_vorzeichen(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
+    let kandidaten: Vec<&&Bindung> = pools
+        .alle
+        .iter()
+        .filter(|b| {
+            matches!(b.typ, Feldtyp::Cent | Feldtyp::Int)
+                && b.bereich.is_none()
+                && b.enum_werte.as_ref().is_none_or(Vec::is_empty)
+        })
+        .collect();
+    let feld = **waehle(cursor, &kandidaten)?;
+    let wert = match cursor.range(4) {
+        0 => -1,
+        1 => 0,
+        2 => 1,
+        _ => -(1 + i64::try_from(cursor.range(10_000_000)).unwrap_or(0)),
+    };
+    let mut spec = leer_spec();
+    spec.feld_id = if cursor.bool() {
+        format!("{}__2", feld.feld_id)
+    } else {
+        feld.feld_id.clone()
+    };
+    spec.wert = json!(wert);
+    spec.schreiber = nicht_vorschlag_schreiber(cursor);
+    Some(spec)
+}
+
 /// Punkt 4: leerer Text (`typ: text`, Laenge 0) wird abgewiesen, mit und ohne `muster`.
 fn szenario_leerer_text(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
     let kandidaten: Vec<&&Bindung> = pools
@@ -722,7 +799,7 @@ fn baue_aufruf(
     salt: u64,
     ts: &str,
 ) -> AufrufSpec {
-    let versuch = match cursor.range(15) {
+    let versuch = match cursor.range(17) {
         0 => szenario_vorschlag_gluecklich(cursor, pools),
         1 => szenario_auflage_a_verletzt(cursor, pools),
         2 => szenario_ersetzt_guard(cursor, pools, store),
@@ -737,6 +814,8 @@ fn baue_aufruf(
         11 => szenario_ersetzt_erfolg(cursor, pools, store),
         12 => szenario_zeilenumbruch(cursor, pools),
         13 => szenario_leerer_text(cursor, pools),
+        15 => szenario_bereich(cursor, pools),
+        16 => szenario_vorzeichen(cursor, pools),
         _ => szenario_ersetzt_bereits(cursor, store),
     };
     let mut spec = versuch

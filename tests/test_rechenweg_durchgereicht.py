@@ -106,7 +106,7 @@ def test_auch_der_konflikt_traegt_ihn(fall, monkeypatch):
     # in der api.chat() einen Konflikt meldet statt zu schreiben (Auflage-B-Vorprüfung).
     API.event(fall, {"feld_id": FELD, "wert": 6_200_000, "zustand": "bestaetigt",
                      "schreiber": "nutzer:test",
-                     "herkunft": {"herkunft": "nutzer", "pruef_tiefe": "bestaetigt",
+                     "herkunft": {"herkunft": "nutzer", "pruef_tiefe": "ungeprueft",
                                   "haftung": "nutzer"},
                      "signal": {"signal_1": None, "signal_2": "klick@bruttoarbeitslohn"}})
     _stub(monkeypatch, {"feld_id": FELD, "wert": WERT, "beleg": "50k pro jahr",
