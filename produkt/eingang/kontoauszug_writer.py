@@ -507,6 +507,36 @@ def llm_klassifikator_factory(client, role, *, fixture_id: str | None = None):
     return klassifikator
 
 
+# Ab hier weist der Store einen Vorschlag ab (store.py, Auflage F2/Magnitude: abs(wert) >= 10^10 Cent).
+BETRAG_GRENZE_CENT = 10 ** 10
+
+
+def _betrag_tragbar(tx) -> bool:
+    """Liest den Betrag wie `uebernehme_kontoauszug` (`int(tx.get("betrag", 0))`) und sagt, ob er dort ankommt:
+    eine Zahl unter 10^10 Cent. NaN, Infinity, Text, null, eine Liste und ein Element ohne Objekt sind es nicht."""
+    try:
+        return abs(int(tx.get("betrag", 0))) < BETRAG_GRENZE_CENT
+    except (AttributeError, TypeError, ValueError, OverflowError):
+        return False
+
+
+def verwirf_unlesbare_betraege(transaktionen: list, n_verworfen: int = 0) -> tuple[list, int]:
+    """Buchungen, deren Betrag `uebernehme_kontoauszug` nicht tragen kann, fliegen einzeln aus der Liste und zählen
+    in `verworfen`; die übrigen bleiben. Vault decisions/kontoauszug-betrag-cent-genau-oder-verworfen: den
+    Auszug ganz abzulehnen ist ausdrücklich nicht gewollt. Vorher endete eine solche Buchung als 500 (der
+    Store weist ab 10^10 Cent ab, `int()` wirft bei NaN/Infinity/Text) und der Nutzer verlor die lesbaren
+    Zeilen mit. → (Buchungen, n_verworfen + Zahl der verworfenen)."""
+    ok = [tx for tx in transaktionen if _betrag_tragbar(tx)]
+    return ok, n_verworfen + len(transaktionen) - len(ok)
+
+
+def hinweis_verworfen(n: int, fmt: str) -> str:
+    """Der Satz für den Nutzer: warum `n` Zeilen eines Auszugs im Format `fmt` nicht übernommen wurden."""
+    grund = ("unsicher erkannt (Confidence < 60%) oder mit zu großem Betrag (ab 100 Mio. €) verworfen" if fmt == "pdf"
+             else "mit unlesbarem Betrag (keine Zahl oder ab 100 Mio. €) verworfen")
+    return f"{n} Zeile(n) {grund} — bitte manuell prüfen/nachtragen."
+
+
 def uebernehme_kontoauszug(store: dict, transaktionen: list[dict], bindung: dict, *,
                            llm_klassifikator=None, ts: str | None = None,
                            katalog: dict | None = None) -> tuple[int, int]:
