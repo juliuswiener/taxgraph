@@ -201,8 +201,16 @@ pub(crate) fn zahl_int(w: &PyWert) -> Result<i64, BescheidFehler> {
 ///
 /// PARITÄT: ein Float wird mit seinem binaeren Wert uebernommen (`from_f64_retain`), nicht ueber
 /// seine Kurzschreibweise; jenseits des `Decimal`-Bereichs (~7,9e28) saturiert der Wert mit
-/// Vorzeichen — alle Aufrufer fragen nur Vorzeichen und Schwellen. Alles, was keine Zahl ist,
-/// zaehlt 0 (die Aufrufer fragen ueber `zahl_ohne_bool`).
+/// Vorzeichen. Die Aufrufer in `deklaration::sperre` fragen nur Vorzeichen und Schwellen (auch
+/// einer Summe); `rentenfreibetrag_euro` rechnet daraus einen Betrag (`rf // 100`). Alles, was
+/// keine Zahl ist, zaehlt 0 (die Aufrufer fragen ueber `zahl_ohne_bool`).
+///
+/// PARITÄT NaN: Python vergleicht NaN immer `False`; hier saturiert NaN nach seinem Vorzeichenbit
+/// auf `Decimal::MAX`/`MIN` und besteht damit `> 0` bzw. `<= 0`. Als Betrag wird es ±9e18 Euro,
+/// Python wirft `ValueError` (`int(nan)`). Aus dem Store heute unerreichbar: Typ `cent`/`int`
+/// laesst keinen Float zu, und `lade` liest NaN als Text (B4, Vault:
+/// `tickets/falldatei-mit-nan-liest-rust-als-text`). Liest `lade` NaN kuenftig als Float, gilt
+/// das Upgrade unten.
 ///
 /// ponytail: die Saettigung ist die Vor-K2-Fassung und bleibt (D18): `PyWert::dezimal` meldet dort
 /// `DezimalGrenze`, `CPython` rechnet exakt weiter. Ein Geldpfad dieses Crates kann die Grenze
