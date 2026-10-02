@@ -40,10 +40,17 @@ def test_kontrolle_vielfache_von_5_stimmen_ueberein(R, toepfe):
     assert accessor == regel
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="Nachbildung rundet je Topf ab, die Catala-Regel nicht (gemessen 2026-10-02)")
 @pytest.mark.parametrize("toepfe,regel_euro", [((4, 4, 4), 2), ((0, 1, 5999), 1200)])
 def test_accessor_rechnet_wie_die_catala_regel(R, toepfe, regel_euro):
     regel, accessor = _beide(R, *toepfe)
     assert regel == regel_euro                      # Vorbedingung: die Regel selbst wie gemessen
     assert accessor == regel, f"{toepfe} EUR: Regel {regel} EUR, Accessor {accessor} EUR"
+
+
+@pytest.mark.parametrize("toepfe,erwartet", [((0, 0, -500), 0), ((-500, 0, 0), 0), ((-1000, 3000, 5999), 1799)])
+def test_negativer_topf_rechnet_wie_vorher_null(R, toepfe, erwartet):
+    """Die Regel allein ergäbe −100 € je −500 € (gemessen 2026-10-02); bis negativer-aufwand-umgeht-
+    pflichtfrage gebaut ist, zählt ein negativer Topf 0 € wie vor der Umstellung."""
+    regel, accessor = _beide(R, *toepfe)
+    assert regel < erwartet                         # Vorbedingung: die Regel allein rechnet schlechter
+    assert accessor == erwartet

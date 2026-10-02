@@ -551,6 +551,34 @@ fn p35a_haushaltsnahe() {
     );
 }
 
+/// Feste Faelle zu [`p35a_haushaltsnahe`]: Toepfe ohne Vielfaches von 5 (die Cent-Summe wird erst
+/// am Ende abgerundet) und ein negativer Topf (zaehlt 0, nicht −20 %).
+#[test]
+fn p35a_haushaltsnahe_cent_summe() {
+    if skip_ohne_parity_env() {
+        return;
+    }
+    let tore = json!({"hh_in_eu_ewr": {"wert": true}, "hh_rechnung_unbar": {"wert": true}});
+    for (minijob, dienst, handwerk, mitveranlagung, erwartet) in [
+        (4, 4, 4, false, 2),
+        (0, 1, 5999, false, 1200),
+        (0, 1, 5999, true, 600),
+        (2549, 3, 0, false, 510),
+        (-1000, 3000, 5999, false, 1799),
+    ] {
+        let mut s = tore.clone();
+        s["hh_minijob_aufwendungen"] = json!(minijob);
+        s["hh_dienstleistungen"] = json!(dienst);
+        s["hh_handwerker_arbeitskosten"] = json!(handwerk);
+        s["p35a_mitveranlagung"] = json!({"wert": mitveranlagung});
+        let args = [s];
+        let py = live("catala_p35a_haushaltsnahe", &args);
+        let rust = rust_ausgang("catala_p35a_haushaltsnahe", &args);
+        assert!(!weicht_ab(&rust, &py), "{args:?}: rust={rust:?} live={py:?}");
+        assert_eq!(rust, Ausgang::Ok(erwartet), "{args:?}");
+    }
+}
+
 #[test]
 fn p3_nr72_photovoltaik() {
     pruefe(

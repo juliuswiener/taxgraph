@@ -35,6 +35,12 @@ GATE = {"hh_in_eu_ewr": {"wert": True}, "hh_rechnung_unbar": {"wert": True}, "hh
     ({"hh_dienstleistungen": 3000},  600),
     ({"hh_minijob_aufwendungen": 2800, "hh_handwerker_arbeitskosten": 10000}, 1710),
     ({}, 0),
+    # Keine Vielfachen von 5: die Cent-Summe wird erst am Ende abgerundet, nicht je Topf.
+    ({"hh_minijob_aufwendungen": 4, "hh_dienstleistungen": 4, "hh_handwerker_arbeitskosten": 4}, 2),   # 3 × 0,80
+    ({"hh_dienstleistungen": 1, "hh_handwerker_arbeitskosten": 5999}, 1200),                            # 0,20 + 1.199,80
+    ({"hh_minijob_aufwendungen": 2549, "hh_dienstleistungen": 3}, 510),                                # 509,80 + 0,60
+    ({"hh_minijob_aufwendungen": 2551}, 510),                                                          # 510,20 → Deckel
+    ({"hh_dienstleistungen": 1, "hh_handwerker_arbeitskosten": 5999, "p35a_mitveranlagung": {"wert": True}}, 600),
 ])
 def test_p35a_seeds(R, s, erwartet):
     assert R.catala_p35a_haushaltsnahe({**GATE, **s}) == erwartet
