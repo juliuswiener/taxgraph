@@ -1,0 +1,124 @@
+"""NaN, ±Infinity und 1e400 im Anfrage-Rumpf sind kein JSON (RFC 8259). Die Tür in server.py
+weist sie ab wie die Rust-Tür (rust/api/src/dispatch.rs, lies_koerper): 400 "ungültiges JSON
+im Body", gleicher Status, gleicher Wortlaut.
+
+Der Fund (Backlog falldatei-mit-nan-liest-rust-als-text, AK4, gemessen 2026-10-02): json.loads
+nimmt NaN und Infinity als Literal an, 1e400 wird still zu inf. Je Zeile des Berichts an main:
+
+1. ts, herkunft mit Zusatzschlüssel, signal.signal_1 = NaN -> 201, der Wert stand in der Akte.
+   Der Rust-Lader sperrt eine solche Akte; DELETE und POST /event antworten danach 500
+   (rust/api/tests/http.rs, abgewiesene_akte_bleibt_byte_gleich).
+2. wert = NaN -> 422 aus Auflage T statt 400 an der Tür.
+5. veranlagungszeitraum = NaN -> 400 mit eigenem Wortlaut; Infinity und 1e400 -> 500
+   OverflowError aus int() in api.fall_anlegen. Die Tür ist der einzige Weg dorthin, der keine
+   feste Jahreszahl mitbringt (Aufrufer gegrept), deshalb dort kein eigener Fang.
+
+K1 aus derselben Messung, ohne NaN: signal_2 als Zahl warf bei zustand=bestaetigt in
+store.append_event AttributeError -> 500. Rust führt signal_2 als Option<String>. Jetzt 422 mit
+Feldname, für jeden zustand.
+
+Dazu das Netz hinter der Tür: api.speichere_fall schreibt mit allow_nan=False. Kommt NaN doch
+bis dorthin, scheitert das Schreiben, und die Akte bleibt, wie sie war.
+
+NULL LLM.
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+import pytest
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from test_paket_b_e2e_http import base, _req, _vorl  # noqa: F401,E402
+
+import api as API  # noqa: E402 — den Pfad setzt test_paket_b_e2e_http
+
+TUER = (400, {"fehler": "ungültiges JSON im Body"})
+NICHT_ENDLICH = ["NaN", "Infinity", "-Infinity", "1e400", "-1e400"]
+
+
+def _roh(base: str, pfad: str, rumpf: dict, literal: str) -> tuple[int, dict]:
+    """POST mit `literal` wörtlich an der Stelle "@L@". json.dumps schriebe 1e400 als Infinity;
+    1e400 läuft aber über parse_float, Infinity über parse_constant."""
+    text = json.dumps(rumpf, ensure_ascii=False)
+    assert text.count('"@L@"') == 1, text
+    req = urllib.request.Request(base + pfad, data=text.replace('"@L@"', literal).encode(),
+                                 method="POST", headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.status, json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read())
+
+
+def _akte() -> bytes:
+    with open(os.path.join(API.FAELLE, "f1.json"), "rb") as f:
+        return f.read()
+
+
+@pytest.fixture
+def fall(base):
+    _req(base, "POST", "/fall", {"fall_id": "f1", "scheibe": "ep", "veranlagungszeitraum": 2025})
+    return base
+
+
+# Jede Stelle und jedes Literal je einmal, kein Kreuzprodukt: die Tür kennt keine Felder, und
+# jede Abweisung an der Tür kostet 0,5 s Abbau (serve_forever schläft dann bis zum Poll-Intervall).
+@pytest.mark.parametrize("stelle, literal", [("ts", "NaN"), ("herkunft", "Infinity"),
+                                             ("signal_1", "-Infinity"), ("ts", "1e400"),
+                                             ("herkunft", "-1e400")])
+def test_zeile1_ungepruefte_stelle_erreicht_die_akte_nicht(fall, stelle, literal):
+    ev = _vorl("ep_arbeitstage", 200)
+    rumpf = {"ts": {**ev, "ts": "@L@"},
+             "herkunft": {**ev, "herkunft": {**ev["herkunft"], "x": "@L@"}},
+             "signal_1": {**ev, "signal": {"signal_1": "@L@", "signal_2": None}}}[stelle]
+    vorher = _akte()
+    assert _roh(fall, "/fall/f1/event", rumpf, literal) == TUER
+    assert _akte() == vorher
+
+
+@pytest.mark.parametrize("literal", NICHT_ENDLICH)
+def test_zeile2_wert_scheitert_an_der_tuer(fall, literal):
+    vorher = _akte()
+    assert _roh(fall, "/fall/f1/event", {**_vorl("ep_arbeitstage", 0), "wert": "@L@"},
+                literal) == TUER
+    assert _akte() == vorher
+
+
+def test_endliche_zahl_passiert_die_tuer(fall):
+    """Kontrolle: 2.5 ist JSON. Die Tür lässt die Zahl durch, Auflage T weist sie für ein
+    int-Feld ab. Ohne diese Zeile bestünden die Tests oben auch mit einer Tür, die jede
+    Kommazahl abweist."""
+    status, antwort = _roh(fall, "/fall/f1/event", {**_vorl("ep_arbeitstage", 0), "wert": "@L@"},
+                           "2.5")
+    assert status == 422 and "fail-closed (Typ)" in antwort["fehler"], antwort
+
+
+@pytest.mark.parametrize("literal", NICHT_ENDLICH)
+def test_zeile5_veranlagungszeitraum_scheitert_an_der_tuer(base, literal):
+    rumpf = {"fall_id": "f2", "scheibe": "ep", "veranlagungszeitraum": "@L@"}
+    assert _roh(base, "/fall", rumpf, literal) == TUER
+    assert not os.path.exists(os.path.join(API.FAELLE, "f2.json"))
+
+
+@pytest.mark.parametrize("zustand", ["bestaetigt", "vorlaeufig"])
+def test_k1_signal_2_als_zahl_ist_422_mit_feldname(fall, zustand):
+    rumpf = {**_vorl("ep_arbeitstage", 200), "zustand": zustand,
+             "signal": {"signal_1": None, "signal_2": 5}}
+    vorher = _akte()
+    _, antwort = _req(fall, "POST", "/fall/f1/event", rumpf, erwarte=422)
+    assert "signal_2" in antwort["fehler"]
+    assert _akte() == vorher
+
+
+def test_netz_speichere_fall_schreibt_kein_nan(tmp_path, monkeypatch):
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path))
+    API.speichere_fall("f1", {"events": []})
+    vorher = (tmp_path / "f1.json").read_bytes()
+    with pytest.raises(ValueError):
+        API.speichere_fall("f1", {"events": [{"ts": float("nan")}]})
+    assert (tmp_path / "f1.json").read_bytes() == vorher
