@@ -45,7 +45,7 @@ pub use kz::{Kz, UngueltigeKz};
 pub use lage::Lage;
 pub use meet::{meet_herkunft, meet_zustand, MeetFehler};
 pub use money::{Cent, CentUeberlauf, Euro, Km, Satz};
-pub use py_text::py_strip;
+pub use py_text::{py_strip, repr_float};
 pub use py_wert::{PyFehler, PyWert};
 pub use rentenart::Rentenart;
 pub use sperrgrund::{Sperrgrund, UnbekannterSperrgrund, UNBEKANNTER_SPERRGRUND};
