@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use domain::{Konfession, Lage, PyWert, Sperrgrund};
 use konsistenz::flag_widersprueche;
 
-use super::{bestaetigt, oder_null_positiv, positiv, Grund, K};
+use super::{bestaetigt, oder_null_positiv, positiv, zahl_wert, Grund, K};
 use crate::deklaration::konstanten::AGB_KIST;
 use crate::einkuenfte::{
     EUER_KOMPONENTEN, GEWINN_QUELLEN_MENGEN, KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE,
@@ -128,7 +128,13 @@ pub(super) fn betrag_offen(k: &K<'_>) -> Option<Sperrgrund> {
         return Some(Sperrgrund::KirchensteuerBetragOffen);
     }
     // § 35: Person A; Person B nur bei zusammen (sonst rechnet der Ring den Partner-Betrieb nicht).
-    let offen = |mb: &str, hs: &str| positiv(f, mb) && !bestaetigt(f, hs);
+    // Ein bestaetigter Hebesatz <= 0 sperrt wie ein fehlender (§ 16 Abs. 4 S. 2 GewStG, Julius und
+    // main 2026-10-02).
+    let offen = |mb: &str, hs: &str| {
+        positiv(f, mb)
+            && (!bestaetigt(f, hs)
+                || zahl_wert(wert(f, hs)).is_some_and(|z| z.is_zero() || z.is_sign_negative()))
+    };
     realsplitting_fahrtkosten(f).or_else(|| {
         (offen("gewst_messbetrag", "gewst_hebesatz")
             || (ist_zusammen(f) && offen("gewst_messbetrag_partner", "gewst_hebesatz_partner")))

@@ -569,9 +569,12 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "an deinem Hauptwohnsitz einen eigenen Hausstand führst und dass du dich dort finanziell an "
         "den Kosten beteiligst. Bitte beantworte diese drei Fragen.",
     "gewst_hebesatz_offen":
-        "Zu deinem Gewerbebetrieb fehlt der Hebesatz deiner Gemeinde. Ohne ihn lässt sich nicht "
-        "berechnen, wie viel Gewerbesteuer auf deine Einkommensteuer angerechnet wird. Den Hebesatz "
-        "findest du auf deinem Gewerbesteuerbescheid oder auf der Internetseite deiner Gemeinde.",
+        "Zu deinem Gewerbebetrieb fehlt der Hebesatz deiner Gemeinde, oder er steht auf 0 oder "
+        "darunter. Ein Hebesatz von 0 oder darunter ist nicht möglich, jede Gemeinde muss einen "
+        "Mindestsatz erheben. Ohne ihn "
+        "lässt sich nicht berechnen, wie viel Gewerbesteuer auf deine Einkommensteuer angerechnet "
+        "wird. Den Hebesatz findest du auf deinem Gewerbesteuerbescheid oder auf der Internetseite "
+        "deiner Gemeinde.",
     "handwerker_foerderung_offen":
         "Zu deinen Handwerkerkosten fehlt noch die Antwort, ob du dafür öffentliche Fördermittel "
         "bekommen hast — etwa einen zinsverbilligten Kredit oder einen steuerfreien Zuschuss. Für "
@@ -791,6 +794,9 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         v = felder.get(f)
         w = v and v.get("wert")
         return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
+    def _hoechstens_null(f):
+        w = (felder.get(f) or {}).get("wert")
+        return isinstance(w, (int, float)) and not isinstance(w, bool) and w <= 0
     def _dhf_vpf_grund():
         # dHf/Verpflegung §9-WK-Tatbestand — fail-closed (K2). Gilt für JEDE Scheibe, die diese Felder
         # ring-verdrahtet: an_gesamt (catala_est) UND der gesamt/rentner-WK-Pfad (B1, catala_werbungskosten_n).
@@ -1130,11 +1136,16 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # die Anrechnung min(4×MB, MB×Hebesatz, …) ist ohne Hebesatz nicht rechenbar. KEIN 4×MB-Default (der
         # über-creditete bei Hebesatz < 400 % = Under-tax) → gewst_hebesatz_offen. Kein gewst_messbetrag = kein § 35
         # (over-tax-safe opt-out, feuert NICHT). Feld-präsenz-getrieben; Scheiben ohne die Felder → _positiv=False.
-        if _positiv("gewst_messbetrag") and (felder.get("gewst_hebesatz") or {}).get("zustand") != "bestaetigt":
+        # Ein bestätigter Hebesatz 0 sperrt wie ein fehlender: § 16 Abs. 4 S. 2 GewStG kennt keine 0 (Julius
+        # 2026-10-02, Entscheid partner-hebesatz-… Punkt 3), ein negativer erst recht nicht (main 2026-10-02:
+        # alte Akten sind schon gespeichert, die Tür ersetzt das nicht). Bei Messbetrag 0 bleibt er wirkungslos.
+        if _positiv("gewst_messbetrag") and ((felder.get("gewst_hebesatz") or {}).get("zustand") != "bestaetigt"
+                                              or _hoechstens_null("gewst_hebesatz")):
             return "gewst_hebesatz_offen"
         # Person B: derselbe Spiegel für den Betrieb des Ehegatten, nur bei zusammen (sonst rechnet der Ring ihn nicht).
         if (felder.get("veranlagung", {}).get("wert") == "zusammen" and _positiv("gewst_messbetrag_partner")
-                and (felder.get("gewst_hebesatz_partner") or {}).get("zustand") != "bestaetigt"):
+                and ((felder.get("gewst_hebesatz_partner") or {}).get("zustand") != "bestaetigt"
+                     or _hoechstens_null("gewst_hebesatz_partner"))):
             return "gewst_hebesatz_offen"
         # Person B (#4): bei Zusammenveranlagung braucht der Ring den vollständig BESTÄTIGTEN Person-B-
         # Kegel (Bruttolohn + IdNr) — sonst kein halber Ehepaar-Bescheid (K2). Bei einzel irrelevant.

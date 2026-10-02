@@ -1697,6 +1697,50 @@ fn gezielte_faelle() {
                 ("gewst_messbetrag_partner", json!(175_000), true),
             ],
         ),
+        // § 35: Hebesatz 0 bei Messbetrag > 0 ist unmoeglich und sperrt wie ein fehlender, A und B.
+        (
+            "gewst_hebesatz_offen",
+            "gesamt",
+            vec![
+                ("gewst_messbetrag", json!(100_000), true),
+                ("gewst_hebesatz", json!(0), true),
+            ],
+        ),
+        (
+            "gewst_hebesatz_offen",
+            "gesamt",
+            vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+                ("gewst_hebesatz_partner", json!(0), true),
+            ],
+        ),
+        // Ein negativer Hebesatz erst recht (main 2026-10-02), A und B.
+        (
+            "gewst_hebesatz_offen",
+            "gesamt",
+            vec![
+                ("gewst_messbetrag", json!(100_000), true),
+                ("gewst_hebesatz", json!(-1), true),
+            ],
+        ),
+        (
+            "gewst_hebesatz_offen",
+            "gesamt",
+            vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+                ("gewst_hebesatz_partner", json!(-1), true),
+            ],
+        ),
+        (
+            "(keine Sperre)",
+            "gesamt",
+            vec![
+                ("gewst_messbetrag", json!(0), true),
+                ("gewst_hebesatz", json!(0), true),
+            ],
+        ),
     ];
     // Kontrollfall: dieselben Angaben mit beantworteten Fragen sperren NICHT (kein "immer gleicher Grund").
     faelle.push((

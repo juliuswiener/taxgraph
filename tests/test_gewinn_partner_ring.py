@@ -344,16 +344,50 @@ def test_p35_partner_hebesatz_sperrt_nicht_ohne_partner_anrechnung(veranlagung, 
     assert _sperrgrund(_gewerbe_partner(veranlagung, messbetrag)) != "gewst_hebesatz_offen"
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="Hebesatz 0 bei Messbetrag > 0 rechnet ohne Anrechnung; Entscheid liegt bei Julius "
-                          "(steht gegen „bestätigte Null sperrt nie“), gemessen 2026-10-02")
 def test_p35_hebesatz_null_bei_messbetrag_sperrt():
+    """Ein Hebesatz 0 ist unmöglich (§ 16 Abs. 4 S. 2 GewStG, Mindesthebesatz) und rechnete still
+    ohne Anrechnung (synthetisch +4.000 EUR). Julius 2026-10-02: sperrt wie ein fehlender, Vault-
+    Entscheid partner-hebesatz-und-leibrente-… Punkt 3. Die Meldung sagt, dass 0 nicht geht."""
     f = _basis("einzel")
+    f["kein_gewinn"] = {"wert": False, "zustand": "bestaetigt"}   # sonst sperrt vorher flag_konsistenz_offen
     f["einkuenfte_gewinn"] = {"wert": 5000000, "zustand": "bestaetigt"}
     f["gewinn_betriebsart"] = {"wert": "gewerbe", "zustand": "bestaetigt"}
     f["gewst_messbetrag"] = {"wert": 100000, "zustand": "bestaetigt"}
     f["gewst_hebesatz"] = {"wert": 0, "zustand": "bestaetigt"}
     assert _sperrgrund(f) == "gewst_hebesatz_offen"
+    assert "Hebesatz von 0 oder darunter ist nicht möglich" in API.sperrgrund_klartext("gewst_hebesatz_offen")
+    f["gewst_hebesatz"] = {"wert": 400, "zustand": "bestaetigt"}
+    assert _sperrgrund(f) != "gewst_hebesatz_offen"
+
+
+def test_p35_partner_hebesatz_null_sperrt_wie_person_a():
+    f = _gewerbe_partner("zusammen", 175000)
+    f["gewst_hebesatz_partner"] = {"wert": 0, "zustand": "bestaetigt"}
+    assert _sperrgrund(f) == "gewst_hebesatz_offen"
+
+
+def test_p35_negativer_hebesatz_sperrt_wie_null():
+    """main 2026-10-02: ein negativer Hebesatz ist erst recht unmöglich. Die Tür (bereich min 1)
+    ersetzt den Guard nicht, alte Akten sind schon gespeichert. A und B."""
+    f = _basis("einzel")
+    f["kein_gewinn"] = {"wert": False, "zustand": "bestaetigt"}
+    f["einkuenfte_gewinn"] = {"wert": 5000000, "zustand": "bestaetigt"}
+    f["gewinn_betriebsart"] = {"wert": "gewerbe", "zustand": "bestaetigt"}
+    f["gewst_messbetrag"] = {"wert": 100000, "zustand": "bestaetigt"}
+    f["gewst_hebesatz"] = {"wert": -1, "zustand": "bestaetigt"}
+    assert _sperrgrund(f) == "gewst_hebesatz_offen"
+    f = _gewerbe_partner("zusammen", 175000)
+    f["gewst_hebesatz_partner"] = {"wert": -1, "zustand": "bestaetigt"}
+    assert _sperrgrund(f) == "gewst_hebesatz_offen"
+
+
+def test_p35_hebesatz_null_ohne_messbetrag_sperrt_nicht():
+    """Messbetrag 0: der Hebesatz ist ohne Wirkung (8 echte Akten tragen so eine 0)."""
+    f = _gewerbe_partner("zusammen", 0)
+    f["gewst_messbetrag"] = {"wert": 0, "zustand": "bestaetigt"}
+    f["gewst_hebesatz"] = {"wert": 0, "zustand": "bestaetigt"}
+    f["gewst_hebesatz_partner"] = {"wert": 0, "zustand": "bestaetigt"}
+    assert _sperrgrund(f) != "gewst_hebesatz_offen"
 
 
 def test_p16_4_gate_gilt_auch_fuer_den_partner():
