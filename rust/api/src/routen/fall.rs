@@ -1,13 +1,15 @@
 //! `POST /fall` und `DELETE /fall/{id}` (`api.fall_anlegen`, `api.fall_loeschen`).
 use std::collections::BTreeSet;
 
+use auth::Username;
 use axum::extract::State;
+use domain::FallId;
 use serde_json::{json, Map, Value};
 use store::audit::{anhaengen, AuditAktion};
 use store::Store;
 
 use crate::antwort::Antwort;
-use crate::eigener_fall::{auth_uid_oder_401, fall_pfad, ist_fall_id, EigenerFall};
+use crate::eigener_fall::{auth_uid_oder_401, fall_kennung, fall_pfad, ist_fall_id, EigenerFall};
 use crate::fehler::ApiFehler;
 use crate::konfig::Konfig;
 use crate::python;
@@ -67,7 +69,7 @@ fn vz_pruefen(konfig: &Konfig, obj: &Map<String, Value>) -> Result<i64, ApiFehle
     ))
 }
 
-fn fall_id_pruefen(obj: &Map<String, Value>) -> Result<String, ApiFehler> {
+fn fall_id_pruefen(obj: &Map<String, Value>) -> Result<FallId, ApiFehler> {
     let roh = obj.get("fall_id").unwrap_or(&Value::Null);
     if !python::wahr(roh) || !ist_fall_id(&python::text(roh)) {
         return Err(ApiFehler::status(
@@ -77,7 +79,7 @@ fn fall_id_pruefen(obj: &Map<String, Value>) -> Result<String, ApiFehler> {
     }
     // PARITÄT: `str(fall_id)` besteht das Muster auch für `123` oder `true`; erst `_fall_pfad`
     // wirft dann `TypeError` (500).
-    roh.as_str().map(str::to_owned).ok_or_else(|| {
+    let text = roh.as_str().ok_or_else(|| {
         ApiFehler::unerwartet(
             "TypeError",
             format!(
@@ -85,7 +87,8 @@ fn fall_id_pruefen(obj: &Map<String, Value>) -> Result<String, ApiFehler> {
                 python::typname(roh)
             ),
         )
-    })
+    })?;
+    fall_kennung(text)
 }
 
 /// `fall_anlegen(body)` (`api.py:277`): Auth, Eingaben, Datei, Audit.
@@ -104,7 +107,7 @@ pub fn fall_anlegen(z: &Zustand, nutzer: &Nutzer, body: &Value) -> Result<Antwor
     let scheibe = scheibe_pruefen(obj.get("scheibe").unwrap_or(&standard))?.to_owned();
     let vz = vz_pruefen(&z.konfig, obj)?;
     let fall_id = fall_id_pruefen(obj)?;
-    let pfad = fall_pfad(&z.konfig, &fall_id)?;
+    let pfad = fall_pfad(&z.konfig, &fall_id);
     if pfad.exists() {
         return Err(ApiFehler::status(
             409,
@@ -114,22 +117,22 @@ pub fn fall_anlegen(z: &Zustand, nutzer: &Nutzer, body: &Value) -> Result<Antwor
             ),
         ));
     }
-    let mut datei = Store::leer(vz, Some(fall_id.clone())).into_datei();
+    let mut datei = Store::leer(vz, Some(fall_id.to_string())).into_datei();
     datei.scheibe = Some(scheibe.clone());
-    datei.user_id.clone_from(&uid);
+    datei.user_id = uid.as_ref().map(Username::to_string);
     store::speichere(&pfad, &datei)?;
     if let Some(uid) = &uid {
         anhaengen(
             &z.konfig.audit_pfad(),
-            Some(uid),
+            Some(uid.as_str()),
             AuditAktion::FallAngelegt,
-            Some(&fall_id),
+            Some(fall_id.as_str()),
             Some(&format!("scheibe={scheibe}")),
         )?;
     }
     Ok(Antwort::neu(
         201,
-        json!({ "fall_id": fall_id, "scheibe": scheibe, "veranlagungszeitraum": vz }),
+        json!({ "fall_id": fall_id.as_str(), "scheibe": scheibe, "veranlagungszeitraum": vz }),
     ))
 }
 
@@ -179,9 +182,9 @@ pub async fn loeschen(State(z): State<Zustand>, fall: EigenerFall) -> Result<Ant
     let detail = format!("scheibe={}, vz={vz}", scheibe.as_deref().unwrap_or("None"));
     anhaengen(
         &z.konfig.audit_pfad(),
-        Some(fall.nutzer().unwrap_or("unbekannt")),
+        Some(fall.nutzer().map_or("unbekannt", Username::as_str)),
         AuditAktion::FallGeloescht,
-        Some(fall.id()),
+        Some(fall.id().as_str()),
         Some(&detail),
     )?;
     // PARITÄT-Grenze: ein Jahr außerhalb von i64 (gemessen: eine Fall-Datei mit 10^38) trägt
@@ -190,6 +193,6 @@ pub async fn loeschen(State(z): State<Zustand>, fall: EigenerFall) -> Result<Ant
     let vz_json = i64::try_from(vz).map_or_else(|_| json!(vz as f64), |j| json!(j));
     Ok(Antwort::neu(
         200,
-        json!({ "geloescht": true, "fall_id": fall.id(), "scheibe": scheibe, "veranlagungszeitraum": vz_json }),
+        json!({ "geloescht": true, "fall_id": fall.id().as_str(), "scheibe": scheibe, "veranlagungszeitraum": vz_json }),
     ))
 }

@@ -22,6 +22,7 @@ interview = { path = "../interview" }
 intervall = { path = "../intervall" }
 store = { path = "../store" }
 auth = { path = "../auth" }
+domain = { path = "../domain" }
 axum = { workspace = true }
 tokio = { workspace = true }
 utoipa = { workspace = true }

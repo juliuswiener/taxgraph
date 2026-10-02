@@ -1745,7 +1745,13 @@ fn dokumentierte_abweichungen() {
     assert_eq!((py.status, rs.status), (200, 200));
     assert!(String::from_utf8_lossy(&py.body).contains("99999999999999999999999999999999999999"));
     assert!(!String::from_utf8_lossy(&rs.body).contains("99999999999999999999999999999999999999"));
-    // 3. Login mit Nicht-Text-Passwort fuer einen vorhandenen Nutzer: Python 500 (AttributeError), Rust 401.
+    // 3. Token mit gueltiger Signatur, `sub` verfehlt `_USER_RE` (9c/0b, `auth::Username`):
+    //    Python nimmt den Namen als uid (Fall fehlt: 404), Rust zaehlt das Token als keines (401).
+    let (py, rs) =
+        zweimal(&Anfrage::neu("sub ab", "DELETE", "/fall/nix").token(&token("ab", GEHEIMNIS)));
+    println!("  sub=ab: py={} | rs={}", py.status, rs.status);
+    assert_eq!((py.status, rs.status), (404, 401));
+    // 4. Login mit Nicht-Text-Passwort fuer einen vorhandenen Nutzer: Python 500 (AttributeError), Rust 401.
     let reg = Anfrage::neu("register", "POST", "/auth/register")
         .json(&json!({"username": "nutzer_z", "password": "passwort123"}));
     let _ = zweimal(&reg);
