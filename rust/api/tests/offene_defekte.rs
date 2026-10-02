@@ -3,11 +3,13 @@
 //! Requests durch `app()`.
 //!
 //! Die Faelle hier brauchen `GET /fall/{id}/deklaration`, `POST /fall/{id}/einreichen` und
-//! `POST /fall/{id}/kontoauszug` — alle drei sind heute 501-Stubs (`routen/lesen.rs:65`,
-//! `routen/schreiben.rs:25`, `routen/schreiben.rs:66`). Die Tests sind deshalb
-//! `#[ignore]` und werden aus ZWEI Gruenden rot, in dieser Reihenfolge:
+//! `POST /fall/{id}/kontoauszug`. `deklaration` ist seit 9c portiert (`api/src/deklaration.rs`);
+//! `einreichen` und `kontoauszug` sind heute 501-Stubs (`routen/schreiben.rs:25`,
+//! `routen/schreiben.rs:66`). Die Tests sind deshalb `#[ignore]` und werden aus ZWEI Gruenden rot,
+//! in dieser Reihenfolge:
 //!
-//! 1. heute: der Handler antwortet 501 statt 200/409 — die Route ist nicht portiert;
+//! 1. heute: der Handler antwortet 501 statt 200/409 — die Route ist nicht portiert
+//!    (entfaellt fuer `deklaration`);
 //! 2. nach der Portierung: der Handler liest `pflichtfelder_luecken` bzw. den Sperrgrund nicht.
 //!
 //! Grund 2 ist der Defekt, den der Python-Test pinnt; Grund 1 ist die fehlende Naht davor. Beide
@@ -187,15 +189,12 @@ async fn kontrolle_die_deklaration_erreicht_den_fall() {
         None,
     )
     .await;
-    // 501 heute, 200 nach der Naht — beides beweist, dass die Route den Fall erreicht.
-    // 404/401/403 taeten es nicht.
-    assert!(
-        status == 501 || status == 200,
+    // Seit der Portierung 200; ein 501 oder 404/401/403 erreichte den Fall nicht.
+    assert_eq!(
+        status, 200,
         "deklaration erreicht den Fall nicht: {status} {text}"
     );
-    if status == 501 {
-        assert_eq!(json["fehler"], "nicht_portiert");
-    }
+    assert!(json["deklaration"].is_object(), "{text}");
 }
 
 /// GRUENE KONTROLLZEILE fuer den Abgabegate-Test: derselbe Fall, dieselbe Route.
@@ -279,7 +278,7 @@ async fn abgabegate_nennt_die_pflichtfeldluecke_selbst() {
 /// deshalb nur das, was in JEDER der beiden Optionen gilt: keine Antwort, die den Widerspruch
 /// gleichzeitig als vollstaendig ausgibt.
 #[tokio::test]
-#[ignore = "GET /deklaration ist 501-Stub (api/src/routen/lesen.rs:65); nach der Portierung fehlt der Aufruf von an_gesamt_sperrgrund — anders als /ergebnis und /einreichen (api.py:580 bzw. 725). Offen, ob Sperren oder Warnen: decisions/deklaration-darf-verweigern.md. Python: test_deklaration_umgeht_waechter_gepinnt.py::test_deklaration_erkennt_widerspruch_NICHT_bug_gepinnt. Rot sehen: --ignored"]
+#[ignore = "GET /deklaration (api/src/deklaration.rs) fragt wie Python den Sperrgrund nicht: es fehlt der Aufruf von an_gesamt_sperrgrund — anders als /ergebnis und /einreichen (api.py:580 bzw. 725). Offen, ob Sperren oder Warnen: decisions/deklaration-darf-verweigern.md. Python: test_deklaration_umgeht_waechter_gepinnt.py::test_deklaration_erkennt_widerspruch_NICHT_bug_gepinnt. Rot sehen: --ignored"]
 async fn deklaration_umgeht_den_waechter_nicht() {
     let d = dienst();
     let token = fall_anlegen(&d, "waechter", "gesamt").await;

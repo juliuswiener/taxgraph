@@ -60,7 +60,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 /// Routen, fuer die Rust heute `501 nicht_portiert` antwortet (AK3 in 9c). Beim Port fliegt die
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
 const NICHT_PORTIERT: &[&str] = &[
-    "GET /fall/{id}/deklaration",
     "POST /fall/{id}/event",
     "POST /fall/{id}/vorjahr",
     "POST /fall/{id}/einreichen",
@@ -80,7 +79,7 @@ const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/feld/{fid}/frage", 677),
     ("GET /fall/{id}/ergebnis", 26),
     ("GET /fall/{id}/preflight", 17),
-    ("GET /fall/{id}/deklaration", 3),
+    ("GET /fall/{id}/deklaration", 17),
     ("GET /fall/{id}/graph", 9),
     ("POST /fall/{id}/event", 12),
     ("POST /fall/{id}/flow", 2),
@@ -1828,6 +1827,14 @@ fn generatoren() {
         ("g_pf_leer", "gesamt", 2025),
         ("g_pf_un", "gesamt", 2025),
         ("g_pf_nf", "gesamt", 2025),
+        // `deklaration`: g_dk speist jede Ring-Einspeisung, g_dk2 ist zusammen mit Partner; g_vz0,
+        // g_vz23 und g_vz27 bekommen unten von Hand das Jahr 0, 2023 (kein Steuerjahr) und 2027 (ohne
+        // Parameter: der Ring schluckt es, die Deklaration rechnet).
+        ("g_dk", "gesamt", 2025),
+        ("g_dk2", "gesamt", 2025),
+        ("g_vz0", "gesamt", 2025),
+        ("g_vz23", "gesamt", 2025),
+        ("g_vz27", "gesamt", 2025),
     ] {
         let b = json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": vz});
         a("POST", "/fall", Some(b));
@@ -2035,13 +2042,79 @@ fn generatoren() {
             abgewiesen.push(format!("{id}/{feld}"));
         }
     }
+    // `deklaration`: je Ring-Einspeisung (`mit_ring_werten`) ein Satz Felder auf `gesamt`:
+    // Verpflegungskuerzung (E0205508), Kapital-Antrag (E1900401/E1901401), haushaltsnahe Summen,
+    // V+V-Summen samt dokumentiertem Aggregat, Einzelzeilen (§ 35c, GewSt, § 22 Nr. 3,
+    // Berufsausbildung), § 23-Instanzen und Kinder.
+    for (id, feld, wert) in [
+        ("g_dk", "bruttoarbeitslohn", json!(6_000_000)),
+        ("g_dk", "veranlagung", json!("einzel")),
+        ("g_dk", "tage_24h", json!(20)),
+        ("g_dk", "tage_an_abreise", json!(2)),
+        ("g_dk", "tage_ueber_8h_eintaegig", json!(3)),
+        ("g_dk", "vpf_fruehstuecke_gestellt_anzahl", json!(5)),
+        ("g_dk", "vpf_mittagessen_gestellt_anzahl", json!(3)),
+        ("g_dk", "vpf_abendessen_gestellt_anzahl", json!(2)),
+        ("g_dk", "vpf_mahlzeiten_gezahltes_entgelt", json!(0)),
+        ("g_dk", "kap_kapitalertraege", json!(500_000)),
+        ("g_dk", "kap_gewinn_aktien", json!(300_000)),
+        ("g_dk", "hh_minijob_betrag", json!(40_000)),
+        ("g_dk", "hh_minijob_betrag__2", json!(10_000)),
+        ("g_dk", "hh_dienstleistung_betrag", json!(120_000)),
+        ("g_dk", "hh_handwerker_betrag", json!(200_000)),
+        ("g_dk", "vv_einnahmen", json!(1_000_000)),
+        ("g_dk", "vv_gebaeude_afa", json!(100_000)),
+        ("g_dk", "vv_schuldzinsen", json!(50_000)),
+        ("g_dk", "vv_nebenkosten_umgelegt", json!(80_000)),
+        ("g_dk", "p35c_sanierungsaufwendungen", json!(1_000_000)),
+        ("g_dk", "p35c_keine_doppelfoerderung", json!(true)),
+        ("g_dk", "gewst_messbetrag", json!(50_000)),
+        ("g_dk", "gewst_hebesatz", json!(400)),
+        ("g_dk", "p22_nr3_einnahmen", json!(100_000)),
+        ("g_dk", "p22_nr3_einkuenfte", json!(40_000)),
+        ("g_dk", "berufsausbildung_aufwendungen", json!(600_000)),
+        ("g_dk", "p23_veraeusserungs_typ", json!("grundstueck")),
+        ("g_dk", "p23_veraeusserungspreis", json!(20_000_000)),
+        (
+            "g_dk",
+            "p23_anschaffung_herstellungskosten",
+            json!(10_000_000),
+        ),
+        ("g_dk", "p23_werbungskosten", json!(100_000)),
+        ("g_dk", "p23_veraeusserungs_typ__2", json!("anderes_wg")),
+        ("g_dk", "p23_veraeusserungspreis__2", json!(5_000_000)),
+        ("g_dk", "fam_anzahl_kinder", json!(2)),
+        ("g_dk", "kind_vorname", json!("Anna")),
+        ("g_dk", "kind_vorname__2", json!("Ben")),
+        ("g_dk2", "veranlagung", json!("zusammen")),
+        ("g_dk2", "bruttoarbeitslohn", json!(5_000_000)),
+        ("g_dk2", "bruttoarbeitslohn_partner", json!(3_000_000)),
+        ("g_dk2", "kein_kap", json!(false)),
+        ("g_dk2", "kap_kapitalertraege", json!(200_000)),
+        ("g_dk2", "kap_kapitalertraege_partner", json!(100_000)),
+        ("g_dk2", "gewst_messbetrag", json!(50_000)),
+        ("g_dk2", "gewst_hebesatz", json!(400)),
+        ("g_dk2", "gewst_messbetrag_partner", json!(30_000)),
+        ("g_dk2", "gewst_hebesatz_partner", json!(380)),
+        ("g_vz0", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_vz23", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_vz27", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_vz27", "kap_kapitalertraege", json!(500_000)),
+        ("g_vz27", "tage_24h", json!(10)),
+        ("g_vz27", "vpf_fruehstuecke_gestellt_anzahl", json!(3)),
+    ] {
+        let ev = ereignis(feld, &wert, None);
+        if a("POST", &format!("/fall/{id}/event"), Some(ev)).is_none() {
+            abgewiesen.push(format!("{id}/{feld}"));
+        }
+    }
     let ev = ereignis_llm("agb_aufwendungen", &json!(50_000));
     if a("POST", "/fall/g_pf_gelb/event", Some(ev)).is_none() {
         abgewiesen.push("g_pf_gelb/agb_aufwendungen".to_owned());
     }
     assert!(
         abgewiesen.is_empty(),
-        "preflight-Faelle: Events abgewiesen: {abgewiesen:?}"
+        "Events der preflight- und deklaration-Faelle abgewiesen: {abgewiesen:?}"
     );
     // Scheiben-Wechsel von Hand, in beiden Verzeichnissen gleich: `bruttoarbeitslohn` hat in `ep`
     // keine Bindung mehr. Der Store laesst so ein Event nicht ueber `POST /event` zu (400), eine
@@ -2057,6 +2130,21 @@ fn generatoren() {
             .join(format!("{id}.json"));
         let mut akte: Value = serde_json::from_slice(&std::fs::read(&pfad).unwrap()).unwrap();
         akte["scheibe"] = json!("ep");
+        std::fs::write(&pfad, serde_json::to_vec(&akte).unwrap()).unwrap();
+    }
+    // Jahr von Hand: 0 und 2023 lassen `deklariere` scheitern, 2027 hat keine Parameter (Ring-Werte
+    // ohne Jahr, die Deklaration rechnet trotzdem).
+    for (art, (id, vz)) in ["python", "rust"]
+        .into_iter()
+        .flat_map(|art| [("g_vz0", 0), ("g_vz23", 2023), ("g_vz27", 2027)].map(|f| (art, f)))
+    {
+        let pfad = tmp
+            .path()
+            .join(art)
+            .join("faelle")
+            .join(format!("{id}.json"));
+        let mut akte: Value = serde_json::from_slice(&std::fs::read(&pfad).unwrap()).unwrap();
+        akte["veranlagungszeitraum"] = json!(vz);
         std::fs::write(&pfad, serde_json::to_vec(&akte).unwrap()).unwrap();
     }
     // Ersetzung des ersten Events; dasselbe Feld ohne `ersetzt` weist der Store ab (422).
@@ -2093,9 +2181,10 @@ fn generatoren() {
     // Die Felder der Queue je Fall: `frage` fragt danach jedes davon einzeln ab.
     let mut queue_felder: Vec<(&str, Vec<(String, bool)>)> = vec![];
     let mut ergebnisse: Vec<Value> = vec![];
+    let mut deklarationen: Vec<Value> = vec![];
     for id in [
         "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_rent3", "g_vor", "g_wz",
-        "g_aussen", "g_an2", "g_ep2", "g_vor2", "g_pf_rot",
+        "g_aussen", "g_an2", "g_ep2", "g_vor2", "g_pf_rot", "g_dk", "g_dk2",
     ] {
         for r in ["stand", "fragen", "ergebnis", "graph", "deklaration"] {
             let b = a("GET", &format!("/fall/{id}/{r}"), None);
@@ -2107,6 +2196,8 @@ fn generatoren() {
                 gruende.extend(b.and_then(|b| b["ring_gesperrt"].as_str().map(str::to_owned)));
             } else if r == "ergebnis" {
                 ergebnisse.extend(b);
+            } else if r == "deklaration" {
+                deklarationen.extend(b);
             } else if r == "fragen" {
                 // Fragen je Antwort und der Sperrgrund, den `fragen` selbst meldet (ohne den
                 // Rentenbeginn-Zweig von `stand`).
@@ -2252,6 +2343,39 @@ fn generatoren() {
     for fid in ["ep_arbeitstage__1", "nicht_da_feld__2", "ep_arbeitstage__x"] {
         a("GET", &format!("/fall/g_ep/feld/{fid}/frage"), None);
     }
+    for id in ["g_vz0", "g_vz23", "g_vz27"] {
+        deklarationen.extend(a("GET", &format!("/fall/{id}/deklaration"), None));
+    }
+    // `deklaration`: welche Kz und welche Bereiche der Antwort Pythons Antworten tragen.
+    let mut kz_je: BTreeMap<String, usize> = BTreeMap::new();
+    for d in &deklarationen {
+        for k in d["deklaration"]
+            .as_object()
+            .into_iter()
+            .flatten()
+            .map(|(k, _)| k)
+        {
+            *kz_je.entry(k.clone()).or_default() += 1;
+        }
+    }
+    let gefuellt = |k: &str| {
+        deklarationen
+            .iter()
+            .filter(|d| match &d[k] {
+                Value::Array(a) => !a.is_empty(),
+                Value::Object(o) => !o.is_empty(),
+                _ => false,
+            })
+            .count()
+    };
+    println!(
+        "  deklaration: {} Antworten, Kz je Antwort {kz_je:?}, person_b {} kind_anlagen {} anlage_instanzen {} \
+         dokumentiert {} nicht_deklariert {} unvollstaendig {} luecken {} vollstaendig {}",
+        deklarationen.len(), gefuellt("person_b"), gefuellt("kind_anlagen"), gefuellt("anlage_instanzen"),
+        gefuellt("dokumentiert"), gefuellt("nicht_deklariert"), gefuellt("unvollstaendig"),
+        gefuellt("pflichtfelder_luecken"),
+        deklarationen.iter().filter(|d| d["vollstaendig"] == json!(true)).count(),
+    );
     println!("  frage: Felder der Queue {frage_felder}, davon mit __1 zusaetzlich {frage_instanz}");
     // `flow` mit rohem Text: Reihenfolge der Schluessel, doppelte Schluessel, Zahlenschreibweisen und
     // Escapes — Wege, die ein `json!`-`Value` (sortiert) im Test verschluckte.
@@ -2341,6 +2465,35 @@ fn generatoren() {
             .unwrap_or(0)
             >= 6,
         "preflight: zu wenige Plausibilitaets-Widersprueche: {bereiche:?}"
+    );
+    // `deklaration`: jede Einspeisung von `mit_ring_werten` erscheint als Kz in einer Antwort.
+    for (kz, was) in [
+        ("E0205508", "Verpflegungskuerzung"),
+        ("E1900401", "Kapital-Antrag"),
+        ("E1901401", "genutzter Sparer-Pauschbetrag"),
+        ("E0104109", "haushaltsnah Minijob"),
+        ("E0107208", "haushaltsnah Dienstleistung"),
+        ("E0111215", "haushaltsnah Handwerker"),
+        ("E0701401", "V+V Einnahmen gesamt"),
+        ("E0705701", "V+V Werbungskosten"),
+        ("E0701601", "V+V Ueberschuss"),
+        ("E0700206", "V+V Mieteinnahmen"),
+        ("E0305104", "§ 22 Nr. 3 Einnahmen"),
+        ("E0305201", "§ 22 Nr. 3 Werbungskosten"),
+        ("E0108002", "Berufsausbildung"),
+        ("E0240902", "§ 35c Foerderung"),
+        ("E0801704", "GewSt zu zahlen"),
+    ] {
+        assert!(
+            kz_je.contains_key(kz),
+            "deklaration: {kz} ({was}) kommt in keiner Antwort vor: {kz_je:?}"
+        );
+    }
+    assert!(
+        gefuellt("dokumentiert") >= 1
+            && gefuellt("anlage_instanzen") >= 1
+            && gefuellt("person_b") >= 1,
+        "deklaration: Aggregat, Anlage-Instanz oder Person B fehlt in allen Antworten"
     );
     // Der Rentenbeginn sperrt nur, wenn der Guard davor nichts findet — ein eigener Weg in `stand`.
     for g in ["rentenbeginn_offen", "flag_konsistenz_offen"] {

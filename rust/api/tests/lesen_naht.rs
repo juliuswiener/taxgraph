@@ -415,3 +415,67 @@ async fn frage_einzeln_loest_die_instanz_auf() {
         );
     }
 }
+
+/// `deklaration`: ohne Events nur die konstanten Kz, mit Event der Wert dazu; `basis_snapshot` ist die
+/// Kennung des Snapshots; ein Fall mit Jahr 0 ist ein 500 mit Pythons Text (`est_mapping.py:220`).
+#[tokio::test]
+async fn deklaration_gestalt_und_jahr() {
+    let d = dienst();
+    let token = fall_anlegen(&d).await;
+    let (status, leer) = sende(&d, "GET", "/fall/sonde/deklaration", &token, None).await;
+    assert_eq!(status, 200, "{leer}");
+    let mut schluessel: Vec<&str> = leer
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
+    schluessel.sort_unstable();
+    assert_eq!(
+        schluessel,
+        [
+            "anlage_instanzen",
+            "basis_snapshot",
+            "deklaration",
+            "dokumentiert",
+            "eingaben_konsistent",
+            "fall_id",
+            "kind_anlagen",
+            "nicht_deklariert",
+            "person_b",
+            "pflichtfelder_luecken",
+            "pflichtfelder_vollstaendig",
+            "unvollstaendig",
+            "vollstaendig",
+        ]
+    );
+    assert_eq!(leer["fall_id"], "sonde");
+    assert_eq!(leer["deklaration"]["E0100001"], true, "konstantes Kz");
+    let (_, graph) = sende(&d, "GET", "/fall/sonde/graph", &token, None).await;
+    assert_eq!(leer["basis_snapshot"], graph["snapshot_id"]);
+
+    event_anhaengen(&d, "ep_arbeitstage", 220);
+    let (_, mit) = sende(&d, "GET", "/fall/sonde/deklaration", &token, None).await;
+    assert_ne!(mit["basis_snapshot"], leer["basis_snapshot"]);
+    assert_eq!(
+        mit["nicht_deklariert"],
+        json!([]),
+        "ep_arbeitstage ist gebunden: {mit}"
+    );
+    let kz_vorher = leer["deklaration"].as_object().unwrap().len();
+    let kz_nachher = mit["deklaration"].as_object().unwrap().len();
+    assert!(kz_nachher > kz_vorher, "das Event schreibt ein Kz: {mit}");
+
+    let pfad = d.zustand.konfig.faelle.join("sonde.json");
+    let mut akte: Value = serde_json::from_slice(&std::fs::read(&pfad).unwrap()).unwrap();
+    akte["veranlagungszeitraum"] = json!(0);
+    std::fs::write(&pfad, serde_json::to_vec(&akte).unwrap()).unwrap();
+    let (status, fehler) = sende(&d, "GET", "/fall/sonde/deklaration", &token, None).await;
+    assert_eq!(status, 500, "{fehler}");
+    assert!(
+        fehler["fehler"]
+            .as_str()
+            .is_some_and(|t| t.starts_with("ValueError: Veranlagungsjahr fehlt oder ist 0: 0.")),
+        "{fehler}"
+    );
+}

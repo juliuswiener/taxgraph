@@ -78,12 +78,16 @@ pub async fn preflight(State(z): State<Zustand>, fall: EigenerFall) -> Result<An
     crate::preflight::preflight(&z, fall.id(), fall.store())
 }
 
-/// `GET /fall/{id}/deklaration` — `api.deklaration` (`api.py:664`).
+/// `GET /fall/{id}/deklaration` — `api.deklaration` (`api.py:665`), Rumpf in
+/// [`crate::deklaration::deklaration`].
 ///
 /// # Errors
-/// Wie [`fragen`].
-pub async fn deklaration(_fall: EigenerFall) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("GET /fall/{id}/deklaration"))
+/// Die Fehler des Owner-Checks (401/403/404) und die von `api.deklaration`.
+pub async fn deklaration(
+    State(z): State<Zustand>,
+    fall: EigenerFall,
+) -> Result<Antwort, ApiFehler> {
+    crate::deklaration::deklaration(&z, fall.id(), fall.store())
 }
 
 /// `GET /fall/{id}/graph` — `api.graph` (`api.py:833`), Rumpf in [`crate::graph::graph`].
