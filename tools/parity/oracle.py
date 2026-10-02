@@ -418,6 +418,13 @@ def main() -> None:
         if not line:
             continue
         req = json.loads(line)
+        if str(req.get("fn", "")).startswith("wert."):
+            # lazy wie unten: tools/parity/wert_oracle.py (domain::PyWert, reines CPython, kein Produktmodul)
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import wert_oracle  # noqa: E402
+            sys.stdout.write(json.dumps(wert_oracle.handle(req), ensure_ascii=False) + "\n")
+            sys.stdout.flush()
+            continue
         if str(req.get("fn", "")).startswith("runner."):
             sys.stdout.write(json.dumps(_runner(req)) + "\n")
             sys.stdout.flush()
