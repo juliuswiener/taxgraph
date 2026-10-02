@@ -316,6 +316,63 @@ async fn owner_check_trennt_nutzer_und_die_ampel_ist_offen() {
     );
 }
 
+/// 9c/0b: Der Owner-Check gibt dem Handler `FallId` und `Username`, keinen rohen String.
+#[tokio::test]
+async fn eigener_fall_traegt_fall_id_und_username() {
+    let d = dienst();
+    let rumpf = r#"{"fall_id": "f1", "scheibe": "ep", "veranlagungszeitraum": 2025}"#;
+    let laenge = rumpf.len().to_string();
+    let alice = bearer(&d, "alice");
+    let kopf = [
+        ("authorization", alice.as_str()),
+        ("content-type", "application/json"),
+        ("content-length", laenge.as_str()),
+    ];
+    assert_eq!(
+        sende(&d, "POST", "/fall", &kopf, Some(rumpf)).await.status,
+        201
+    );
+    let id = domain::FallId::new("f1").unwrap();
+    let fall =
+        api::EigenerFall::pruefe(&d.zustand, &api::Nutzer(Some("alice".into())), &id).unwrap();
+    let (fid, nutzer): (&domain::FallId, Option<&auth::Username>) = (fall.id(), fall.nutzer());
+    assert_eq!(
+        (fid.as_str(), nutzer.map(auth::Username::as_str)),
+        ("f1", Some("alice"))
+    );
+}
+
+/// PARITÄT-Grenze (9c/0b): Ein gültig signiertes Token, dessen `sub` `_USER_RE` verfehlt, zählt
+/// wie kein Token — 401. Python nimmt den Namen als uid an. Ein solches Token entsteht nur aus
+/// einer von Hand geänderten `users.json` (die Registrierung prüft das Muster, der Login nicht).
+#[tokio::test]
+async fn token_mit_ungueltigem_namen_ist_401() {
+    let d = dienst();
+    let rumpf = r#"{"fall_id": "f1", "scheibe": "ep", "veranlagungszeitraum": 2025}"#;
+    let laenge = rumpf.len().to_string();
+    for name in ["ab", "1abc", "a b", ""] {
+        let t = bearer(&d, name);
+        let kopf = [
+            ("authorization", t.as_str()),
+            ("content-type", "application/json"),
+            ("content-length", laenge.as_str()),
+        ];
+        for (methode, ziel, k, body) in [
+            ("POST", "/fall", &kopf[..], Some(rumpf)),
+            ("DELETE", "/fall/nix", &kopf[..1], None),
+            ("GET", "/fall/nix/stand", &kopf[..1], None),
+        ] {
+            let a = sende(&d, methode, ziel, k, body).await;
+            assert_eq!(
+                (a.status, a.json()["fehler"].clone()),
+                (401, json!("Authentifizierung erforderlich")),
+                "{name:?} {methode} {ziel}"
+            );
+        }
+    }
+    assert!(!d.zustand.konfig.faelle.join("f1.json").exists());
+}
+
 /// Eine Akte, die `store::lade` abweist, bleibt byte-gleich (Vault
 /// `backlog/taxgraph/falldatei-mit-nan-liest-rust-als-text`, AK2): `DELETE` und `POST /event`
 /// scheitern am Owner-Check mit 500, `POST /fall` mit 409. Kein Weg faellt auf eine leere Akte
