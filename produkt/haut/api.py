@@ -155,8 +155,7 @@ def speichere_fall(fall_id: str, store: dict) -> None:
     tmp = tempfile.NamedTemporaryFile("w", dir=FAELLE, delete=False, encoding="utf-8", suffix=".tmp")
     try:
         with tmp:
-            # allow_nan=False: lieber scheitert das Schreiben, als dass NaN die Akte vergiftet (der
-            # Rust-Lader sperrt sie dann). Die Tür in server.py weist NaN schon vorher ab.
+            # allow_nan=False: Netz hinter der Tür (server.py), NaN sperrt sonst die Akte für Rust.
             json.dump(store, tmp, ensure_ascii=False, allow_nan=False)
             tmp.flush()
             os.fsync(tmp.fileno())
