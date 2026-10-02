@@ -4,7 +4,7 @@
 //! er für unbekannte Pfade genauso.
 use std::sync::OnceLock;
 
-use axum::body::{to_bytes, Body};
+use axum::body::{to_bytes, Body, Bytes};
 use axum::extract::{Request, State};
 use axum::http::{header, HeaderMap, HeaderName};
 use axum::middleware::Next;
@@ -18,7 +18,7 @@ use crate::antwort::{bytes_antwort, content_type_fuer, json_antwort, methode_nic
 use crate::fehler::Ausgang;
 use crate::konfig::Konfig;
 use crate::routen::{Eintrag, EINTRAEGE};
-use crate::zustand::{Koerper, Nutzer, Treffer, Zustand};
+use crate::zustand::{Koerper, KoerperRoh, Nutzer, Treffer, Zustand};
 
 /// Höchstmaß eines Anfrage-Rumpfs (`server.py:52`).
 pub const MAX_BODY_BYTES: u64 = 32 * 1024 * 1024;
@@ -81,7 +81,7 @@ fn grenzpruefung(h: &HeaderMap, methode: &str) -> Option<Response> {
 }
 
 /// Liest und parst den POST-Rumpf (`server.py:199-228`). Ohne Rumpf: `{}`.
-async fn lies_koerper(h: &HeaderMap, body: Body) -> Result<Value, Box<Response>> {
+async fn lies_koerper(h: &HeaderMap, body: Body) -> Result<(Value, Bytes), Box<Response>> {
     let laenge = match kopf(h, &header::CONTENT_LENGTH).filter(|t| !t.is_empty()) {
         None => 0,
         // PARITÄT: Pythons `int()` nimmt auch " 5", "+5" und "5_0"; hyper lehnt solche Köpfe
@@ -105,12 +105,14 @@ async fn lies_koerper(h: &HeaderMap, body: Body) -> Result<Value, Box<Response>>
         )));
     }
     if laenge == 0 {
-        return Ok(json!({}));
+        return Ok((json!({}), Bytes::from_static(b"{}")));
     }
     let roh = to_bytes(body, usize::try_from(MAX_BODY_BYTES).unwrap_or(usize::MAX))
         .await
         .map_err(|_| Box::new(fehler_json(400, "ungültiges JSON im Body")))?;
-    serde_json::from_slice(&roh).map_err(|_| Box::new(fehler_json(400, "ungültiges JSON im Body")))
+    let wert = serde_json::from_slice(&roh)
+        .map_err(|_| Box::new(fehler_json(400, "ungültiges JSON im Body")))?;
+    Ok((wert, roh))
 }
 
 /// `_extract_user` (`server.py:167`): `Authorization`, optional `Bearer `, dann `verify_token`.
@@ -243,13 +245,13 @@ pub async fn dispatch(State(z): State<Zustand>, req: Request, next: Next) -> Res
         return r;
     }
     let (mut parts, body) = req.into_parts();
-    let koerper = if methode == "POST" {
+    let (koerper, roh) = if methode == "POST" {
         match lies_koerper(&parts.headers, body).await {
             Ok(v) => v,
             Err(r) => return *r,
         }
     } else {
-        json!({})
+        (json!({}), Bytes::from_static(b"{}"))
     };
     let nutzer = nutzer_aus_kopf(&z, &parts.headers);
     let Some((eintrag, caps)) = finde_route(&methode, &pfad) else {
@@ -266,6 +268,7 @@ pub async fn dispatch(State(z): State<Zustand>, req: Request, next: Next) -> Res
     };
     parts.extensions.insert(Nutzer(nutzer.clone()));
     parts.extensions.insert(Koerper(koerper));
+    parts.extensions.insert(KoerperRoh(roh));
     parts.extensions.insert(treffer.clone());
     let _sperre = z.sperre.lock().await;
     let antwort = next.run(Request::from_parts(parts, Body::empty())).await;

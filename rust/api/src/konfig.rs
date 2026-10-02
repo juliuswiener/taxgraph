@@ -36,8 +36,10 @@ fn expanduser(pfad: &str) -> PathBuf {
     }
 }
 
+/// `os.environ.get(name, "").strip()`. `py_strip` statt `str::trim`: Pythons `strip()` nimmt auch
+/// U+001C..U+001F weg (`TAXGRAPH_FLOW=$'\x1c1\x1f'` ist dort `"1"`, gemessen 2026-10-02).
 fn env_text(name: &str) -> String {
-    std::env::var(name).unwrap_or_default().trim().to_owned()
+    domain::py_strip(&std::env::var(name).unwrap_or_default()).to_owned()
 }
 
 impl Konfig {

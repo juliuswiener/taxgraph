@@ -51,6 +51,7 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
     ("login.token", "JWT traegt iat und zufaelliges jti — je Anmeldung neu; Laenge und Nutzer bleiben gleich (Content-Length wird roh verglichen)"),
     ("audit.ts", "Zeitstempel der Anfrage"),
     ("audit.null", "Python schreibt fall_id/detail als null, Rust laesst fehlende Felder weg"),
+    ("flow.ts", "Zeitstempel der Zeile; der Rest der Zeile wird als Text verglichen (Form des `ts` prueft Suite 18, `flow_paritaet`)"),
     ("users.password_hash", "bcrypt-Salz ist zufaellig"),
     ("users.created_at", "Zeitstempel der Registrierung"),
     ("fehler.log", "nur Anzahl und `ort`: Typ (Python-Klasse gegen Rust-Typname), Aufrufstelle und die PII-gefilterte Fall-Kennung unterscheiden sich im Bau"),
@@ -67,7 +68,6 @@ const NICHT_PORTIERT: &[&str] = &[
     "GET /fall/{id}/deklaration",
     "GET /fall/{id}/graph",
     "POST /fall/{id}/event",
-    "POST /fall/{id}/flow",
     "POST /fall/{id}/vorjahr",
     "POST /fall/{id}/einreichen",
     "POST /fall/{id}/chat",
@@ -149,9 +149,9 @@ impl Drop for Server {
 /// Startet einen Server. Die Umgebung ist vollstaendig gesetzt, damit `.env*` im Repo-Wurzelverzeichnis
 /// (werden von beiden Mains geladen, nur fuer fehlende Schluessel) nichts veraendert; LLM- und
 /// Karten-Schluessel sind leer, damit kein Stub-Handler in Python nach draussen telefoniert.
-/// `flow`: `TAXGRAPH_FLOW=1`, sonst antwortet `POST /flow` nur `{"mitgeschrieben": false}`.
-/// ponytail: `flow.jsonl` vergleicht niemand (`verzeichnis_zustand` liest nur `*.json`); beim
-/// flow-Port als drittes Log-Paar mit normalisiertem `ts` aufnehmen.
+/// `flow`: `TAXGRAPH_FLOW=1`, sonst antwortet `POST /flow` nur `{"mitgeschrieben": false}` und
+/// `flow.jsonl` entsteht nicht. Mit `flow` vergleicht `Paar::anfrage` die neuen Zeilen von
+/// `flow.jsonl` beider Server (drittes Log-Paar, `ts` normalisiert).
 fn starte(art: &'static str, wurzel: &Path, no_auth: bool, flow: bool, seed: &Path) -> Server {
     let daten = wurzel.join(art);
     let faelle = daten.join("faelle");
@@ -359,6 +359,9 @@ struct Stat {
     codes: BTreeMap<String, usize>,
     /// Rumpf-Erreichungen je Route aus `UNTERGRENZE`, s. `Stat::zaehle`.
     erreicht: BTreeMap<String, usize>,
+    /// Zeilen von `flow.jsonl`, die Python schrieb und Rust im Vergleich gegenueberstand; der Beleg,
+    /// dass der Vergleich nicht zwei leere Listen sieht.
+    flow_zeilen: usize,
 }
 
 impl Stat {
@@ -399,13 +402,20 @@ impl Log {
     fn neu(pfad: PathBuf) -> Self {
         Self { pfad, gelesen: 0 }
     }
-    fn neue(&mut self) -> Vec<Value> {
+    /// Die neuen Zeilen als Text, unveraendert.
+    fn neue_zeilen(&mut self) -> Vec<String> {
         let roh = std::fs::read(&self.pfad).unwrap_or_default();
         let neu = &roh[self.gelesen.min(roh.len())..];
         self.gelesen = roh.len();
         String::from_utf8_lossy(neu)
             .lines()
             .filter(|z| !z.is_empty())
+            .map(str::to_owned)
+            .collect()
+    }
+    fn neue(&mut self) -> Vec<Value> {
+        self.neue_zeilen()
+            .iter()
             .map(|z| serde_json::from_str(z).unwrap_or_else(|e| panic!("Logzeile {z:?}: {e}")))
             .collect()
     }
@@ -485,6 +495,27 @@ fn normiere_audit(zeilen: Vec<Value>, norm: &mut BTreeMap<&'static str, usize>) 
         .collect()
 }
 
+/// `flow.jsonl` als TEXT: nur der Wert von `ts` wird ersetzt, der Rest bleibt Byte fuer Byte —
+/// Schluesselreihenfolge und Zahlenschreibweise eingeschlossen, die ein geparstes `Value` (sortiert)
+/// verschluckte. Eine Zeile ohne `ts` am Anfang bleibt roh und faellt im Vergleich auf.
+fn normiere_flow(zeilen: Vec<String>, norm: &mut BTreeMap<&'static str, usize>) -> Vec<String> {
+    zeilen
+        .into_iter()
+        .map(|z| {
+            match z
+                .strip_prefix("{\"ts\": \"")
+                .and_then(|r| r.split_once("\", "))
+            {
+                Some((_, rest)) => {
+                    *norm.entry("flow.ts").or_default() += 1;
+                    format!("{{\"ts\": \"<TS>\", {rest}")
+                }
+                None => z,
+            }
+        })
+        .collect()
+}
+
 fn orte(zeilen: &[Value]) -> Vec<Value> {
     zeilen
         .iter()
@@ -531,7 +562,7 @@ fn nutzer_zustand(s: &Server, norm: &mut BTreeMap<&'static str, usize>) -> Value
 struct Paar {
     py: Server,
     rs: Server,
-    logs: [Log; 4],
+    logs: [Log; 6],
     stat: Stat,
     stoerung_bei: Option<usize>,
 }
@@ -545,6 +576,8 @@ impl Paar {
             Log::neu(rs.faelle().join("audit.jsonl")),
             Log::neu(py.faelle().join("fehler.log")),
             Log::neu(rs.faelle().join("fehler.log")),
+            Log::neu(py.faelle().join("flow.jsonl")),
+            Log::neu(rs.faelle().join("flow.jsonl")),
         ];
         let stoerung_bei = std::env::var("PARITY_STOERUNG").ok().map(|_| 7);
         Self {
@@ -567,8 +600,8 @@ impl Paar {
             // Negativkontrolle: EINE Rust-Antwort veraendern.
             rs.status += 1;
         }
-        let [py_audit, rs_audit, py_fehler, rs_fehler] = &mut self.logs;
-        let (ra, rf) = (rs_audit.neue(), rs_fehler.neue());
+        let [py_audit, rs_audit, py_fehler, rs_fehler, py_flow, rs_flow] = &mut self.logs;
+        let (ra, rf, rfl) = (rs_audit.neue(), rs_fehler.neue(), rs_flow.neue_zeilen());
         let stub = json_body(&rs)
             .filter(|_| rs.status == 501)
             .filter(|b| b["fehler"] == "nicht_portiert");
@@ -590,8 +623,9 @@ impl Paar {
             };
             let vorher = akte(&self.py);
             let py = sende(self.py.port, a);
-            // Audit und Fehlerlog des Python-Rumpfs haben (noch) kein Rust-Gegenstueck.
-            let _ = (py_audit.neue(), py_fehler.neue());
+            // Audit, Fehlerlog und Fluss-Mitschnitt des Python-Rumpfs haben (noch) kein
+            // Rust-Gegenstueck: `fragen`, `event`, `ergebnis` schreiben dort `flow.jsonl`-Zeilen.
+            let _ = (py_audit.neue(), py_fehler.neue(), py_flow.neue_zeilen());
             if akte(&self.py) != vorher {
                 if akte(&self.rs) != vorher {
                     let d = format!("{wohin}: Fall-Datei schon vor dem Spiegeln verschieden");
@@ -611,7 +645,7 @@ impl Paar {
             .entry(format!("{art} {}", rs.status))
             .or_default() += 1;
         let py = sende(self.py.port, a);
-        let (pa, pf) = (py_audit.neue(), py_fehler.neue());
+        let (pa, pf, pfl) = (py_audit.neue(), py_fehler.neue(), py_flow.neue_zeilen());
         let mut d = vergleiche(&py, &rs, modus, &mut self.stat.norm);
         if modus == Modus::NurStatus {
             self.stat.nur_status += 1;
@@ -629,6 +663,14 @@ impl Paar {
             *self.stat.norm.entry("fehler.log").or_default() += 1;
             if orte(&pf) != orte(&rf) {
                 d.push(format!("Fehlerlog py={:?} rs={:?}", orte(&pf), orte(&rf)));
+            }
+            let (pfl, rfl) = (
+                normiere_flow(pfl, &mut self.stat.norm),
+                normiere_flow(rfl, &mut self.stat.norm),
+            );
+            self.stat.flow_zeilen += pfl.len();
+            if pfl != rfl {
+                d.push(format!("Fluss-Mitschnitt py={pfl:?} rs={rfl:?}"));
             }
         }
         if !d.is_empty() {
@@ -680,6 +722,7 @@ impl Paar {
             let n = s.erreicht.get(*route).unwrap_or(&0);
             println!("  Rumpf erreicht: {n:4} x {route}");
         }
+        println!("  flow.jsonl: {} Zeilen verglichen", s.flow_zeilen);
         let codes: Vec<String> = s.codes.iter().map(|(k, n)| format!("{k}:{n}")).collect();
         println!("  Status je Art (Rust): {}", codes.join(" "));
         println!("  Normalisierungen angewendet: {:?}", s.norm);
@@ -1651,13 +1694,22 @@ fn generatoren() {
         let b = a("POST", "/fall/g_neu/vorjahr", Some(vj.clone()));
         assert_eq!(b.unwrap()["uebernommen"], soll, "Vorjahr g_neu aus g_vj");
     }
+    // `flow` mit Schalter: jede Sorte, die Kappung bei 4000 Zeichen, Abweisungen mit Wortlaut.
+    // Beide Server schreiben dazu `flow.jsonl`; `Paar::anfrage` vergleicht die neuen Zeilen.
     for b in [
         koerper("flow", ""),
         json!({"art": "pruefliste_weiter", "inhalt": {"offen": ["ep_arbeitstage"]}}),
         json!({"art": "erfunden", "inhalt": {}}),
+        json!({"art": "nachfrage_spaeter"}),
+        json!({"art": "nachfragen_gestartet", "inhalt": {"text": "ä".repeat(5000)}}),
+        json!({"art": "pruefliste_aendern", "inhalt": [1, 2.5, null, "ä😀\u{2028}\"\\"]}),
+        json!({"art": 5}),
+        json!({}),
+        json!([1]),
     ] {
         a("POST", "/fall/g_ep/flow", Some(b));
     }
+    a("POST", "/fall/g_vj/flow", None);
     let mut engines: BTreeMap<String, usize> = BTreeMap::new();
     let mut gruende: Vec<String> = vec![];
     for id in [
@@ -1694,6 +1746,18 @@ fn generatoren() {
             a("GET", &format!("/fall/{id}/feld/{feld}/{r}"), None);
         }
     }
+    // `flow` mit rohem Text: Reihenfolge der Schluessel, doppelte Schluessel, Zahlenschreibweisen und
+    // Escapes — Wege, die ein `json!`-`Value` (sortiert) im Test verschluckte.
+    for text in [
+        r#"{"inhalt": {"z": 1, "a": [1E5, 1e-7, 0.1], "ä": "😀\u0000"}, "art": "weg_gewaehlt"}"#,
+        r#"{"art": "x", "art": "nachfrage_spaeter", "inhalt": {"b": 1, "a": 2, "b": 3}}"#,
+        r#"{"art": "pruefliste_aendern", "inhalt": 18446744073709551615}"#,
+        "null",
+        r#""weg_gewaehlt""#,
+    ] {
+        let x = Anfrage::neu("gen flow roh", "POST", "/fall/g_neu/flow").token(&alice);
+        p.anfrage(&x.roh(text, "application/json"), Modus::Voll);
+    }
     p.zustand_vergleichen("am Ende");
     p.bericht("generatoren");
     assert!(p.stat.abweichungen.is_empty(), "{:?}", p.stat.abweichungen);
@@ -1715,6 +1779,12 @@ fn generatoren() {
         .filter(|(r, n)| p.stat.erreicht.get(*r).copied().unwrap_or(0) < *n)
         .collect();
     assert!(zu_wenig.is_empty(), "Untergrenze verfehlt: {zu_wenig:?}");
+    // Der Mitschnitt-Vergleich sah wirklich Zeilen: jede zulaessige Meldung oben schreibt eine.
+    assert!(
+        p.stat.flow_zeilen >= 8,
+        "flow.jsonl: nur {} Zeilen verglichen",
+        p.stat.flow_zeilen
+    );
 }
 
 /// `ENUM_LABELS` aus `api_constants.py`, wie das Modul sie nach dem Laden haelt (samt der

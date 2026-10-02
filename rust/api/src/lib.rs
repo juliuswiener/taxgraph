@@ -21,6 +21,7 @@ pub mod dispatch;
 pub mod eigener_fall;
 pub mod enum_labels;
 pub mod fehler;
+pub mod flow;
 pub mod konfig;
 pub mod openapi;
 pub mod python;
@@ -32,7 +33,7 @@ pub mod zustand;
 pub use antwort::Antwort;
 pub use eigener_fall::{EigenerFall, FallBesitz};
 pub use fehler::ApiFehler;
-pub use zustand::{Koerper, Nutzer, Treffer, Zustand};
+pub use zustand::{Koerper, KoerperRoh, Nutzer, Treffer, Zustand};
 
 /// Der fertige Dienst: Pfad-Normalisierung, darunter der Router mit allen Routen, darum der
 /// Dispatcher (auch um den Fallback). Für `axum::serve` mit `axum::ServiceExt::into_make_service`.

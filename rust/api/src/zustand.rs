@@ -172,6 +172,11 @@ pub struct Nutzer(pub Option<String>);
 #[derive(Debug, Clone)]
 pub struct Koerper(pub Value);
 
+/// Der POST-Rumpf als Bytes, so wie er ankam. Fuer die Routen, die den Rumpf mit Pythons
+/// Schluesselreihenfolge brauchen (`flow`): [`Koerper`] ist ein `serde_json::Value` und sortiert.
+#[derive(Debug, Clone)]
+pub struct KoerperRoh(pub axum::body::Bytes);
+
 /// Das Routenmuster, das gegriffen hat, und seine Treffergruppen (`treffer.groupdict()`).
 #[derive(Debug, Clone)]
 pub struct Treffer {
@@ -199,6 +204,17 @@ impl FromRequestParts<Zustand> for Nutzer {
 }
 
 impl FromRequestParts<Zustand> for Koerper {
+    type Rejection = ApiFehler;
+
+    fn from_request_parts(
+        parts: &mut Parts,
+        _: &Zustand,
+    ) -> impl Future<Output = Result<Self, ApiFehler>> {
+        std::future::ready(aus_erweiterung(parts))
+    }
+}
+
+impl FromRequestParts<Zustand> for KoerperRoh {
     type Rejection = ApiFehler;
 
     fn from_request_parts(

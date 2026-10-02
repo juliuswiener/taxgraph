@@ -454,6 +454,13 @@ def main() -> None:
             sys.stdout.write(json.dumps(schritt8_oracle.handle(req), ensure_ascii=False) + "\n")
             sys.stdout.flush()
             continue
+        if str(req.get("fn", "")).startswith("flow."):
+            # lazy wie oben: tools/parity/flow_oracle.py (rust/api/src/flow.rs, Schritt 9c/0e)
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import flow_oracle  # noqa: E402
+            sys.stdout.write(json.dumps(flow_oracle.handle(req), ensure_ascii=False) + "\n")
+            sys.stdout.flush()
+            continue
         try:
             fn = DISPATCH[req["fn"]]
             ergebnis = fn(req)

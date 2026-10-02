@@ -112,3 +112,26 @@ fn xdg_konvention_und_leerzeichen_zaehlen_wie_ungesetzt() {
         "ein nur-Leerzeichen-TAXGRAPH_DATEN muss wie 'nicht gesetzt' wirken (getrimmt, nicht-leer)"
     );
 }
+
+/// `strip()` in `api_constants._daten_wurzel` (`api_constants.py:32`) nimmt auch U+001C..U+001F
+/// weg, `str::trim` nicht: `"\x1c/pfad\x1f"` ist dort `"/pfad"`, `"\x1c\x1f"` leer (gemessen
+/// 2026-10-02 mit `python3 -c`).
+#[test]
+fn steuerzeichen_am_rand_zaehlen_wie_leerzeichen() {
+    let probe = tempfile::tempdir().unwrap();
+    let a = probe.path().join("a");
+    let xdg = probe.path().join("xdg");
+    let umrandet = format!("\u{1c}{}\u{1f}", a.to_str().unwrap());
+    let erste = Umgebung::neue(&[("TAXGRAPH_DATEN", Some(&umrandet)), ("XDG_DATA_HOME", None)]);
+    assert_eq!(Konfig::aus_env().faelle, a.join("faelle"));
+    drop(erste);
+    let _zweite = Umgebung::neue(&[
+        ("TAXGRAPH_DATEN", Some("\u{1c}\u{1f}")),
+        ("XDG_DATA_HOME", Some(xdg.to_str().unwrap())),
+    ]);
+    assert_eq!(
+        Konfig::aus_env().faelle,
+        xdg.join("taxgraph").join("faelle"),
+        "nur Steuerzeichen in TAXGRAPH_DATEN zaehlen wie 'nicht gesetzt'"
+    );
+}
