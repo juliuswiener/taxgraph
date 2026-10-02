@@ -178,7 +178,11 @@ impl Schreiber {
             Self::ImportBeleg => Some("beleg"),
             Self::ImportKontoauszug => Some("kontoauszug"),
             Self::Berechnet(_) => Some("maps"),
-            _ => None,
+            Self::ImportVorjahr
+            | Self::ImportElster
+            | Self::Engine
+            | Self::Abgeleitet(_)
+            | Self::Mensch(_) => None,
         }
     }
 }
