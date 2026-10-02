@@ -7,7 +7,7 @@
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
-use domain::{meet_zustand, Zustand};
+use domain::{meet_zustand, Kz, Zustand};
 use serde::Serialize;
 use serde_json::Value;
 use store::{SnapshotFehler, SnapshotFeld, Store};
@@ -109,6 +109,12 @@ pub struct Rueckgelesen {
 }
 
 /// Round-Trip Deklaration → Store-Felder (`est_mapping.py:926-969`). 1:1, Negation, Person B,
+/// `jahr_aus_kz_wert` fuer einen Schluessel der Deklaration. Ein Schluessel, der keine Kz ist, kann
+/// in keiner Datums-Kz stehen; der Wert bleibt dann unveraendert, wie vorher.
+fn jahr_aus_schluessel(wert: &Value, schluessel: &str) -> Value {
+    Kz::new(schluessel).map_or_else(|_| wert.clone(), |kz| jahr_aus_kz_wert(wert, &kz))
+}
+
 /// Instanzen und Verzweigungs-Werte sind invertierbar; die Aggregation nur als Summe.
 ///
 /// ```
@@ -119,7 +125,7 @@ pub struct Rueckgelesen {
 /// ```
 #[must_use]
 pub fn zuruecklesen(result: &Deklaration, bindung: &BindungIndex<'_>) -> Rueckgelesen {
-    let kz_von = |b: &bindung::Bindung| b.elster_kz.clone().filter(|k| !k.is_empty());
+    let kz_von = |b: &bindung::Bindung| b.elster_kz.as_ref().map(|k| k.as_str().to_owned());
     let e_nach_feld: BTreeMap<String, &str> = bindung
         .iter()
         .filter_map(|(fid, b)| kz_von(b).map(|k| (k, fid.as_str())))
@@ -155,7 +161,7 @@ pub fn zuruecklesen(result: &Deklaration, bindung: &BindungIndex<'_>) -> Rueckge
                 if let Some(f) = inst_kz_nach_feld.get(kz) {
                     felder.insert(format!("{f}__{idx}"), wert.clone());
                 } else if let Some(f) = e_nach_verzweigung.get(kz.as_str()) {
-                    felder.insert(format!("{f}__{idx}"), jahr_aus_kz_wert(wert, kz));
+                    felder.insert(format!("{f}__{idx}"), jahr_aus_schluessel(wert, kz));
                 }
             }
             for (ziel, agg) in &inst.dokumentiert {
@@ -167,7 +173,7 @@ pub fn zuruecklesen(result: &Deklaration, bindung: &BindungIndex<'_>) -> Rueckge
         if let Some(f) = e_nach_negation.get(e_nr.as_str()) {
             felder.insert((*f).to_owned(), Value::Bool(!crate::py::truthy(wert)));
         } else if let Some(f) = e_nach_verzweigung.get(e_nr.as_str()) {
-            felder.insert((*f).to_owned(), jahr_aus_kz_wert(wert, e_nr));
+            felder.insert((*f).to_owned(), jahr_aus_schluessel(wert, e_nr));
         } else if let Some(f) = e_nach_feld.get(e_nr) {
             felder.insert((*f).to_owned(), wert.clone());
         }

@@ -20,7 +20,7 @@ use std::process::Command;
 use regex::Regex;
 
 /// Arme in gesperrten Crates. Macht der Besitzer einen explizit, wird der Test rot: Zeile loeschen.
-const OFFEN: &[&str] = &["store/src/abweisung.rs Schreiber"];
+const OFFEN: &[&str] = &[];
 
 /// `rust/`, die Workspace-Wurzel.
 fn wurzel() -> PathBuf {

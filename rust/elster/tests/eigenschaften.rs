@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use bindung::Bindung;
-use domain::{Achsenwert, Cent, Feldtyp, Herkunft, PruefTiefe, Zustand};
+use domain::{Achsenwert, Cent, Feldtyp, Herkunft, Kz, PruefTiefe, Vz, Zustand};
 use elster::testhilfe::schemas_da;
 use elster::{
     cent_nach_kz, deklariere, erzeuge_xml, kz_format, zuruecklesen, Felder, KzFormat, XmlOptionen,
@@ -164,7 +164,7 @@ fn round_trip_eins_zu_eins() {
         .iter()
         .filter(|b| b.elster_kz.is_some() && b.instanz_gruppe.is_none())
     {
-        let kz = b.elster_kz.as_deref().unwrap();
+        let kz = b.elster_kz.as_ref().unwrap().as_str();
         let wert = beispiel(b);
         let d = deklariere(
             &einzeln(&b.feld_id, wert.clone(), Zustand::Bestaetigt),
@@ -206,11 +206,12 @@ proptest! {
             .filter(|b| b.typ == Feldtyp::Cent && b.elster_kz.is_some() && b.instanz_gruppe.is_none())
             .collect();
         let b = cent[i % cent.len()];
-        let kz = b.elster_kz.as_deref().unwrap();
+        let kz_typ = b.elster_kz.as_ref().unwrap();
+        let kz = kz_typ.as_str();
         let d = deklariere(&einzeln(&b.feld_id, json!(c), Zustand::Bestaetigt), index(), 2025, None).unwrap();
         if let Some(v) = d.deklaration.get(kz).or_else(|| d.person_b.get(kz)) {
-            prop_assert_eq!(v, &cent_nach_kz(Cent::new(c), kz).als_json());
-            match (kz_format(kz), v.as_i64()) {
+            prop_assert_eq!(v, &cent_nach_kz(Cent::new(c), kz_typ).als_json());
+            match (kz_format(kz_typ), v.as_i64()) {
                 (KzFormat::EuroAbgerundet, Some(e)) => prop_assert!(e * 100 <= c),
                 (KzFormat::EuroAufgerundet, Some(e)) => prop_assert!(e * 100 >= c),
                 (KzFormat::KommaCent, None) => prop_assert_eq!(v, &json!(format!("{},{:02}", c / 100, c % 100))),
@@ -301,12 +302,15 @@ fn kz_mengen_aus_xsd() {
     let cent_kz: Vec<&str> = bindungen()
         .iter()
         .filter(|b| b.typ == Feldtyp::Cent)
-        .filter_map(|b| b.elster_kz.as_deref())
+        .filter_map(|b| b.elster_kz.as_ref().map(Kz::as_str))
         .collect();
     let komma_luecke: Vec<&str> = cent_kz
         .iter()
         .copied()
-        .filter(|kz| typ(kz).starts_with("Dezimalzahl") && kz_format(kz) != KzFormat::KommaCent)
+        .filter(|kz| {
+            typ(kz).starts_with("Dezimalzahl")
+                && kz_format(&Kz::new(*kz).unwrap()) != KzFormat::KommaCent
+        })
         .collect();
     let null_luecke: Vec<&str> = cent_kz
         .iter()
@@ -646,8 +650,8 @@ fn hh_top_ein_posten_bleibt_unveraendert() {
 /// das an `<HA_35a>` — der Test war damals rot (Gegenprobe im Bericht).
 #[test]
 fn hh_top_mehrere_posten_ist_xsd_valide() {
-    for vz in ["2024", "2025"] {
-        let jahr: i64 = vz.parse().unwrap();
+    for vz in [Vz::Vz2024, Vz::Vz2025] {
+        let jahr = i64::from(vz.jahr());
         if !schemas_da(jahr) {
             continue;
         }

@@ -44,3 +44,19 @@ utoipa = "=6.0.0"
 
 [profile.dev]
 debug = "line-tables-only"
+# Stufe 1 statt 0: die Vergleichslaeufe gegen Python (rust/parity) und die Tests rechnen
+# Dezimalarithmetik und die Catala-Regeln; unoptimiert braucht der Rust-Teil dafuer 3- bis 5-mal so
+# viel Rechenzeit. Gemessen 2026-10-02 (12 Kerne, Rechenzeit des Rust-Prozesses, Stufe 0 -> 1):
+# bescheid_deklaration_paritaet 116-135 s -> 24-29 s und bescheid_zweige_paritaet 357-413 s ->
+# 50-55 s (je 2 Laeufe); die 15 uebrigen Suiten zusammen 232 s -> 67 s (je 1 Lauf). Die Wanduhrzeit
+# sinkt weniger, weil viele Suiten am Python-Orakel haengen. Kosten: ein Kaltbau des Workspace
+# braucht 2,6-mal so viel Rechenzeit (user 182 s -> 478 s), target/ waechst von 2,9 auf 3,3 GB; ein
+# Bau nach einer Aenderung kostet etwa gleich viel.
+# Warum hier und nicht nur unter [profile.test]: api_http_paritaet baut den Dienst selbst mit
+# `cargo build` (also im dev-Profil); mit [profile.test] allein blieb er auf Stufe 0 und die Suite
+# brauchte 25,5 s Rechenzeit statt 9,6 s.
+# debug-assertions und overflow-checks bleiben an: Cargo reicht bei Stufe 1 `-C debug-assertions=on`
+# ausdruecklich durch, und ein `= false` hier wuerde tests/test_ci_konfiguration.py rot machen.
+# Die Stufe steckt im Hash jedes Artefakts; darum haengt der Cache-Schluessel des rust-Jobs in
+# .github/workflows/ci.yml an dieser Datei.
+opt-level = 1

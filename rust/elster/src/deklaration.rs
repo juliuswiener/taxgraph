@@ -13,11 +13,11 @@ use domain::{Cent, Feldtyp, Lage, PyWert, Veranlagung, Zustand};
 use serde::ser::SerializeMap;
 use serde::Serialize;
 use serde_json::Value;
-use store::SnapshotFeld;
+use store::{EventId, SnapshotFeld};
 
 use crate::geordnet::Geordnet;
 use crate::instanz::parse_instanz;
-use crate::kz_format::{cent_nach_kz, null_unzulaessig, schreibe_kz, KzBetrag};
+use crate::kz_format::{cent_nach_kz, kz_pruefen, null_unzulaessig, schreibe_kz, KzBetrag};
 use crate::py::{self, PyFehler};
 use crate::tabellen::{
     suche, ArtKz, PflichtBedingung, Verzweigung, DOKUMENTIERT_AGGREGAT, KAP_FELDER_A, KAP_FELDER_B,
@@ -262,9 +262,10 @@ fn wert_fehler(feld_id: &str) -> impl Fn(PyFehler) -> DeklarationsFehler + '_ {
     }
 }
 
-/// Nicht-leerer `elster_kz` (Python: `b.get("elster_kz")` ist truthy).
+/// `elster_kz` der Bindung (Python: `b.get("elster_kz")` ist truthy; ein leerer Text ist als `Kz`
+/// nicht darstellbar).
 fn kz_von(b: &Bindung) -> Option<&str> {
-    b.elster_kz.as_deref().filter(|k| !k.is_empty())
+    b.elster_kz.as_ref().map(domain::Kz::as_str)
 }
 
 fn gruppe_von(b: &Bindung) -> Option<&str> {
@@ -325,7 +326,7 @@ fn aggregat_beitrag(wert: &PyWert, ziel: &str, typ: Feldtyp) -> Result<i64, PyFe
     if typ != Feldtyp::Cent {
         return Ok(n);
     }
-    match cent_nach_kz(Cent::new(n), ziel) {
+    match cent_nach_kz(Cent::new(n), &kz_pruefen(ziel)?) {
         KzBetrag::Euro(e) => Ok(e.get()),
         KzBetrag::Komma(_) => Err(PyFehler::typ(
             "unsupported operand type(s) for +: 'int' and 'str'",
@@ -685,12 +686,15 @@ fn kap_alle_null(snapshot: &Felder, felder: &[&str]) -> Ergebnis<bool> {
 /// assert!(d.eingaben_konsistent());
 /// assert_eq!(d.deklaration.get("E0100001"), Some(&serde_json::json!(true)));
 /// assert!(deklariere(&leer, &HashMap::new(), 0, None).is_err());
+/// let sid = store::EventId::aus_bytes([7; 32]);
+/// let mit = deklariere(&leer, &HashMap::new(), 2025, Some(&sid)).unwrap();
+/// assert_eq!(mit.basis_snapshot.as_deref(), Some(sid.to_string().as_str()));
 /// ```
 pub fn deklariere(
     snapshot: &Felder,
     bindung: &BindungIndex<'_>,
     vz: i64,
-    snapshot_id: Option<&str>,
+    snapshot_id: Option<&EventId>,
 ) -> Ergebnis<Deklaration> {
     if snapshot.contains_key("felder") || snapshot.contains_key("snapshot_id") {
         return Err(DeklarationsFehler::SnapshotObjekt);
@@ -745,7 +749,7 @@ pub fn deklariere(
     let anlage_instanzen = bau.instanzen_ausgabe();
     p35a_summe_aus_posten(&mut bau.deklaration, &anlage_instanzen);
     Ok(Deklaration {
-        basis_snapshot: snapshot_id.map(str::to_owned),
+        basis_snapshot: snapshot_id.map(ToString::to_string),
         deklaration: bau.deklaration,
         kind_anlagen: bau.kind_anlagen,
         person_b: bau.person_b,
@@ -970,7 +974,11 @@ impl Bau<'_> {
             if let Some(kz) =
                 nachschlagen(P23_GEWINN_KZ, &art.wert).map_err(wert_fehler(&feld_id))?
             {
-                let v = cent_nach_kz(Cent::new(gewinn), kz).als_json();
+                let v = cent_nach_kz(
+                    Cent::new(gewinn),
+                    &kz_pruefen(kz).map_err(wert_fehler(&feld_id))?,
+                )
+                .als_json();
                 self.instanz(GRUPPE, idx).felder.insert(kz.to_owned(), v);
             } else {
                 let grund = format!("p23-Typ '{}' ohne Kz-Zweig", art.wert.py_str());
@@ -1321,8 +1329,9 @@ mod tests {
         let index = store::baue_nachschlag(&bindungen);
         let kz = index["kap_antrag_guenstigerpruefung"]
             .elster_kz
-            .as_deref()
-            .unwrap();
+            .as_ref()
+            .unwrap()
+            .as_str();
         let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
         let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
             wert: wert.into(),

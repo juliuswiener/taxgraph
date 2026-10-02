@@ -301,13 +301,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgmp-dev poppler-utils
 
+      # Der Schluessel haengt an Cargo.lock UND rust/Cargo.toml: dort steht `[profile.dev]
+      # opt-level = 1`. Die Stufe steckt im Hash jedes gebauten Artefakts; mit dem alten Schluessel
+      # (nur Cargo.lock) holte der Job nach der Umstellung den mit opt-level 0 gebauten Cache, baute
+      # alles neu, und actions/cache schreibt bei einem Treffer nie neu -- der Cache waere fuer
+      # immer wertlos geblieben (tests/test_ci_konfiguration.py haelt beides zusammen).
       - name: Cargo-Registry cachen
         uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             rust/target
-          key: cargo-taxgraph-${{ runner.os }}-${{ hashFiles('rust/Cargo.lock') }}
+          key: cargo-taxgraph-${{ runner.os }}-${{ hashFiles('rust/Cargo.lock', 'rust/Cargo.toml') }}
 
       - name: cargo build
         run: cd rust && cargo build

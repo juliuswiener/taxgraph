@@ -58,7 +58,7 @@ fn pruefe(fall: &str) {
             python.len()
         );
     }
-    let (ok, meldung) = elster::validiere_xsd_text(e.xml.as_bytes(), &e.vz.jahr().to_string());
+    let (ok, meldung) = elster::validiere_xsd_text(e.xml.as_bytes(), e.vz);
     assert!(ok, "{fall}: {meldung}");
 }
 

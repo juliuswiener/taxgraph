@@ -624,7 +624,7 @@ pub fn ernte_est_mapping_kz(bindung: &BindungIndex<'_>) -> Result<Vec<KzPrueflin
 /// ponytail: bleibt Python-treu bei `kz[1:3] == "60"` (`xsd_verify.py:79`), nicht
 /// [`Kz::hat_e60_praefix`]. Beide Regeln sind nur fuer gueltige Kz gleich (`X6000000`: hier E77,
 /// dort kein E60); `get(1..3)` zaehlt zudem Bytes, Python Zeichen. Die Bindung lehnt ungueltige Kz
-/// schon beim Laden ab (`bindung_datei.rs:272`). Angleichung mit K9 (Kz an der Quelle).
+/// schon beim Laden ab (`domain::Kz::deserialize`). Angleichung mit K9: `KzPruefling` traegt noch Text.
 fn datenart(kz: &str) -> (&'static str, &'static str) {
     if kz.get(1..3) == Some("60") {
         ("E77-{jahr}.xsd", "E77")

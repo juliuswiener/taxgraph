@@ -5,6 +5,8 @@
 //! die Doctests saehen den Helfer dann nicht. Nicht Teil der stabilen API.
 use std::io::Write;
 
+use domain::Vz;
+
 /// Liegen beide Schemas fuer `vz`? Fehlt eines, ist das rot, ausser `TAXGRAPH_OHNE_XSD=1` —
 /// dieselbe Regel wie `tests/conftest.py`. Mit dem Flag steht der Verzicht auf stderr, und die
 /// Antwort ist `false`: der Aufrufer laesst weg, was das Schema braucht.
@@ -31,7 +33,11 @@ pub fn schemas_da(vz: i64) -> bool {
         ),
         (
             format!("elster11_E10_{vz}_extern.xsd"),
-            crate::finde_xsd_schema(&vz.to_string()),
+            // Ein Jahr ausserhalb von `Vz` hat kein Schema: fehlt, wie vorher.
+            u16::try_from(vz)
+                .ok()
+                .and_then(|j| Vz::try_from(j).ok())
+                .and_then(crate::finde_xsd_schema),
         ),
     ]
     .into_iter()
