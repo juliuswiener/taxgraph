@@ -48,8 +48,12 @@ def _roh(base: str, pfad: str, rumpf: dict, literal: str | bytes) -> tuple[int, 
     text = json.dumps(rumpf, ensure_ascii=False).encode()
     assert text.count(b'"@L@"') == 1, text
     roh = literal if isinstance(literal, bytes) else literal.encode()
-    req = urllib.request.Request(base + pfad, data=text.replace(b'"@L@"', roh),
-                                 method="POST", headers={"Content-Type": "application/json"})
+    return _sende(base, pfad, text.replace(b'"@L@"', roh))
+
+
+def _sende(base: str, pfad: str, daten: bytes) -> tuple[int, dict]:
+    req = urllib.request.Request(base + pfad, data=daten, method="POST",
+                                 headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
             return r.status, json.loads(r.read())
@@ -115,6 +119,20 @@ def test_n1_rumpf_ohne_utf8_scheitert_an_der_tuer(fall):
     assert _roh(fall, "/fall/f1/event", {**_vorl("ep_arbeitstage", 200), "ts": "@L@"},
                 b'"2026-\xff"') == TUER
     assert _akte() == vorher
+
+
+@pytest.mark.parametrize("vorsatz, kodierung", [(b"\xef\xbb\xbf", "utf-8"),
+                                                (b"\xff\xfe", "utf-16-le"), (b"", "utf-16-le")],
+                         ids=["utf-8-mit-bom", "utf-16-le-mit-bom", "utf-16-le-ohne-bom"])
+def test_kodierung_nur_utf8_ohne_bom(fall, vorsatz, kodierung):
+    """Die Tür nimmt nur UTF-8 ohne BOM an, wie die Rust-Tür. Vorher erkannte json.loads auf
+    Bytes diese drei selbst und legte den Fall an: 201 (gemessen 2026-10-02). UTF-16-LE mit BOM
+    scheitert an roh.decode mit UnicodeDecodeError, die anderen zwei an json.loads mit
+    JSONDecodeError. Beide sind ValueError, also 400 und nicht 500."""
+    vorher = sorted(os.listdir(API.FAELLE)), _akte()
+    rumpf = json.dumps({"fall_id": "f2", "scheibe": "ep", "veranlagungszeitraum": 2025})
+    assert _sende(fall, "/fall", vorsatz + rumpf.encode(kodierung)) == TUER
+    assert (sorted(os.listdir(API.FAELLE)), _akte()) == vorher
 
 
 @pytest.mark.parametrize("zustand", ["bestaetigt", "vorlaeufig"])

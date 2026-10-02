@@ -232,7 +232,10 @@ class Handler(BaseHTTPRequestHandler):
             roh = self.rfile.read(laenge) if laenge else b""
             if roh:
                 try:
-                    body = json.loads(roh, parse_constant=_nur_endlich, parse_float=_nur_endlich)
+                    # Nur UTF-8 ohne BOM, wie die Rust-Tür (serde_json::from_slice): json.loads auf
+                    # Bytes nähme auch UTF-16 und BOM an. Einziger Client ist der Browser (UTF-8).
+                    body = json.loads(roh.decode("utf-8"), parse_constant=_nur_endlich,
+                                      parse_float=_nur_endlich)
                 except ValueError:  # JSONDecodeError, UnicodeDecodeError und _nur_endlich
                     self._json(400, {"fehler": "ungültiges JSON im Body"})
                     return
