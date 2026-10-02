@@ -25,14 +25,6 @@ use crate::{
     Felder,
 };
 
-/// Rentenarten mit § 22 Nr. 1 S. 3 a aa (`AA_RENTEN_ARTEN`) bzw. bb (`BB_RENTEN_ARTEN`).
-const AA_RENTEN: [&str; 3] = [
-    "gesetzliche_rente",
-    "berufsstaendische_versorgung",
-    "private_basisrente",
-];
-const BB_RENTEN: [&str; 2] = ["private_leibrente", "sonstige_leibrente"];
-
 /// `rf // 100 if isinstance(rf, (int, float)) and not bool else None` (Naht-CENT → EURO).
 ///
 /// PARITÄT: Python `//` auf einem Float ist `floor(x / 100)`. Hier: [`cent_zu_euro_dezimal`] auf dem
@@ -56,17 +48,24 @@ fn cent_zu_euro_dezimal(cent: Decimal) -> Euro {
     Euro::new(euro.to_i64().unwrap_or(0))
 }
 
-/// Rentenart aus `renten_art` + den Feldern, die der jeweilige Zweig liest.
+/// Rentenart aus `renten_art` + den Feldern, die der jeweilige Zweig liest: § 22 Nr. 1 S. 3 a bb
+/// (`BB_RENTEN_ARTEN`) bzw. aa (`AA_RENTEN_ARTEN`). Fehlend, `null` oder ausserhalb der
+/// `enum_werte`: nicht ringfaehig.
 fn rentenart(art: Option<&PyWert>, beginn: i64, alter: i64, rf: Option<Euro>) -> Rentenart {
-    match art {
-        Some(PyWert::Text(s)) if BB_RENTEN.contains(&s.as_str()) => Rentenart::Bb {
+    use domain::Rentenart as Art;
+    match domain::Lage::rentenart(art) {
+        domain::Lage::Gueltig(Art::PrivateLeibrente | Art::SonstigeLeibrente) => Rentenart::Bb {
             alter_bei_rentenbeginn: alter,
         },
-        Some(PyWert::Text(s)) if AA_RENTEN.contains(&s.as_str()) => Rentenart::Aa {
+        domain::Lage::Gueltig(
+            Art::GesetzlicheRente | Art::BerufsstaendischeVersorgung | Art::PrivateBasisrente,
+        ) => Rentenart::Aa {
             renten_beginn_jahr: beginn,
             rentenfreibetrag: rf,
         },
-        _ => Rentenart::NichtRingfaehig,
+        domain::Lage::Fehlt | domain::Lage::Null | domain::Lage::Abweichend(_) => {
+            Rentenart::NichtRingfaehig
+        }
     }
 }
 
@@ -266,16 +265,20 @@ mod tests {
 }
 
 /// Aequivalenz von `rentenfreibetrag_euro` mit `PyWert` (D15), je D-Nummer ein Test. `PyWert`
-/// ersetzt das Lesen; die Umrechnung Cent → Euro bleibt `cent_zu_euro_dezimal`.
+/// ersetzt das Lesen; die Umrechnung Cent → Euro bleibt `cent_zu_euro_dezimal`. Dazu `rentenart`
+/// gegen seine Fassung vor K7b und gegen `RENTNER_AA_ARTEN`.
 #[cfg(test)]
 mod aequivalenz {
-    use domain::testhilfe::{json_wert, klasse, pruefe, py};
-    use domain::Euro;
-    use proptest::prelude::*;
-    use serde_json::json;
+    use std::collections::BTreeSet;
 
-    use super::{cent_zu_euro_dezimal, rentenfreibetrag_euro};
-    use crate::aequivalenz::{d18, DEZIMAL};
+    use domain::testhilfe::{json_wert, klasse, pruefe, py};
+    use domain::{Euro, PyWert};
+    use proptest::prelude::*;
+    use serde_json::{json, Value};
+
+    use super::{cent_zu_euro_dezimal, rentenart, rentenfreibetrag_euro, Rentenart};
+    use crate::aequivalenz::{d18, enum_json, DEZIMAL};
+    use crate::deklaration::konstanten_json;
     use crate::vor_k2::rentenfreibetrag_euro_alt;
 
     /// Die Alt-Fassung gegen `CPython` — die Messung, die D18 festhaelt (Auflage 1).
@@ -283,8 +286,63 @@ mod aequivalenz {
         rentenfreibetrag_euro_alt(Some(v), cent_zu_euro_dezimal).map(Ok)
     }
 
+    /// Die Fassung vor K7b: Text gegen `BB_RENTEN`, dann `AA_RENTEN`, sonst nicht ringfaehig.
+    fn rentenart_alt(art: Option<&PyWert>, beginn: i64, alter: i64, rf: Option<Euro>) -> Rentenart {
+        const AA_RENTEN: [&str; 3] = [
+            "gesetzliche_rente",
+            "berufsstaendische_versorgung",
+            "private_basisrente",
+        ];
+        const BB_RENTEN: [&str; 2] = ["private_leibrente", "sonstige_leibrente"];
+        match art {
+            Some(PyWert::Text(s)) if BB_RENTEN.contains(&s.as_str()) => Rentenart::Bb {
+                alter_bei_rentenbeginn: alter,
+            },
+            Some(PyWert::Text(s)) if AA_RENTEN.contains(&s.as_str()) => Rentenart::Aa {
+                renten_beginn_jahr: beginn,
+                rentenfreibetrag: rf,
+            },
+            _ => Rentenart::NichtRingfaehig,
+        }
+    }
+
+    /// K7b: der aa-Zweig von `rentenart` ist genau `RENTNER_AA_ARTEN`, die Tabelle des Guards
+    /// (`sperre/gesamt.rs`), die `konstanten_gleich` gegen Python pinnt.
+    #[test]
+    fn aa_zweig_ist_rentner_aa_arten() {
+        let aa: BTreeSet<&str> = domain::Rentenart::ALLE
+            .map(domain::Rentenart::als_str)
+            .into_iter()
+            .filter(|s| {
+                let w = PyWert::Text((*s).to_owned());
+                matches!(rentenart(Some(&w), 0, 0, None), Rentenart::Aa { .. })
+            })
+            .collect();
+        let k = konstanten_json();
+        let gepinnt: BTreeSet<&str> = k["tabellen"]["RENTNER_AA_ARTEN"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        assert_eq!(aa, gepinnt);
+    }
+
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        /// K7b: `rentenart` liest ueber `Lage`; die Fassung davor verglich den Text.
+        #[test]
+        fn rentenart_wie_alt(
+            v in enum_json(domain::Rentenart::ALLE.map(domain::Rentenart::als_str)),
+            beginn in any::<i64>(),
+            alter in any::<i64>(),
+            rf in proptest::option::of(any::<i64>().prop_map(Euro::new)),
+        ) {
+            let w = v.as_ref().map(py);
+            let alt = rentenart_alt(w.as_ref(), beginn, alter, rf);
+            pruefe(&v, &alt, &rentenart(w.as_ref(), beginn, alter, rf), Vec::new, &[])?;
+        }
 
         #[test]
         fn rentenfreibetrag_euro_alt_wie_pywert(v in json_wert()) {

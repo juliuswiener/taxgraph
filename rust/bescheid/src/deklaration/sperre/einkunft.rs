@@ -2,7 +2,7 @@
 //! (`_an_gesamt_sperrgrund`, DBA bis `gewst_hebesatz_offen`).
 use std::collections::HashSet;
 
-use domain::{PyWert, Sperrgrund};
+use domain::{Konfession, Lage, PyWert, Sperrgrund};
 use konsistenz::flag_widersprueche;
 
 use super::{bestaetigt, oder_null_positiv, positiv, Grund, K};
@@ -116,9 +116,14 @@ pub(super) fn betrag_offen(k: &K<'_>) -> Option<Sperrgrund> {
     if verneint("kein_unterhalt") && !bestaetigt(f, "p33a_unterhalt_aufwendungen") {
         return Some(Sperrgrund::UnterhaltBetragOffen);
     }
-    // `wert not in (None, "keine")`
-    let konfession = !matches!(wert(f, "kist_konfession"), None | Some(PyWert::Null))
-        && !matches!(wert(f, "kist_konfession"), Some(PyWert::Text(s)) if s == "keine");
+    // `wert not in (None, "keine")`. PARITÄT: auch ein Wert ausserhalb der `enum_werte` sperrt.
+    let konfession = match Lage::konfession(wert(f, "kist_konfession")) {
+        Lage::Fehlt | Lage::Null | Lage::Gueltig(Konfession::Keine) => false,
+        Lage::Gueltig(
+            Konfession::Evangelisch | Konfession::RoemischKatholisch | Konfession::Andere,
+        )
+        | Lage::Abweichend(_) => true,
+    };
     if konfession && AGB_KIST.iter().any(|a| !bestaetigt(f, a)) {
         return Some(Sperrgrund::KirchensteuerBetragOffen);
     }
@@ -146,4 +151,33 @@ fn realsplitting_fahrtkosten(f: &Felder) -> Option<Sperrgrund> {
         && (!bestaetigt(f, "fahrtkosten_pausch_ag_bl_tbl_h")
             || !bestaetigt(f, "fahrtkosten_pausch_gdb80_oder_70g")))
     .then_some(Sperrgrund::FahrtkostenpauschaleOffen)
+}
+
+/// K7b: die Kirchensteuer-Sperre in `betrag_offen` gegen ihre Fassung vor K7b.
+#[cfg(test)]
+mod aequivalenz {
+    use domain::testhilfe::pruefe;
+    use domain::{Konfession, PyWert, Sperrgrund};
+    use proptest::prelude::*;
+
+    use super::{betrag_offen, K};
+    use crate::aequivalenz::{ein_feld, enum_json};
+    use crate::{wert, Felder, Instanzquelle};
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        /// Nur `kist_konfession` steht im Snapshot; die anderen Sperren in `betrag_offen` greifen
+        /// nicht. Die Fassung davor: `!matches!(None | null) && !matches!("keine")`.
+        #[test]
+        fn kist_sperre_wie_alt(v in enum_json(Konfession::ALLE.map(Konfession::als_str))) {
+            let f = v.clone().map_or_else(Felder::new, |w| ein_feld("kist_konfession", w, true));
+            let gesetzt = !matches!(wert(&f, "kist_konfession"), None | Some(PyWert::Null))
+                && !matches!(wert(&f, "kist_konfession"), Some(PyWert::Text(s)) if s == "keine");
+            let alt = gesetzt.then_some(Sperrgrund::KirchensteuerBetragOffen);
+            let q = Instanzquelle { store: None, bindung: None, nur_bestaetigt: true };
+            let k = K { f: &f, cfg: None, vz: None, q: &q };
+            pruefe(&v, &alt, &betrag_offen(&k), Vec::new, &[])?;
+        }
+    }
 }
