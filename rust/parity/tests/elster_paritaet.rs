@@ -2,8 +2,10 @@
 //! `xsd_verify.py`, `checkest_gate.py`) ueber `tools/parity/elster_oracle.py` — EIN Orakel-Prozess
 //! fuer das ganze Test-Binary.
 //!
-//! - `kz_format_sweep`: `_cent_nach_kz` dicht um 0 und duenn darueber hinaus, jedes Kz-Format;
-//!   `_kz_wert`, `_jahr_aus_kz_wert`, `parse_instanz` ueber systematische Eingaben.
+//! - `abzugs_kz_mengengleich`: Python-`_ABZUGS_KZ` und Rust-`ABZUGS_KZ` sind als Menge gleich.
+//! - `kz_format_sweep`: `_cent_nach_kz` dicht um 0 und duenn darueber hinaus, jedes Kz-Format,
+//!   die Abzugs-Kz aus beiden Listen; `_kz_wert`, `_jahr_aus_kz_wert`, `parse_instanz` ueber
+//!   systematische Eingaben.
 //! - `schema_und_werkzeug`: `kz_pfade`/`pflicht_kinder`/`_resolve_kz_meta` (2024, 2025),
 //!   `klassifiziere_rc`, `xsd_verify.pruefe_bindung` (Bindung + Ernte).
 //! - `reale_faelle`: jede Fall-Datei unter `faelle_verzeichnis()` — deklariere, zuruecklesen,
@@ -26,7 +28,7 @@
     clippy::panic
 )]
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use bindung::Bindung;
@@ -453,16 +455,47 @@ fn bericht(titel: &str, z: &Zaehler) {
 
 // ---------------------------------------------------------------- Tests
 
+/// Pythons `_ABZUGS_KZ` (`est_mapping.py`), sortiert.
+fn py_abzugs_kz() -> Vec<String> {
+    serde_json::from_value(frage(&json!({"fn": "elster.abzugs_kz"}))).expect("Liste von Kz")
+}
+
+/// Beide Seiten fuehren dieselben Abzugs-Kz. Fehlt eines auf einer Seite, rundet sie dort ab statt
+/// auf (Vault `decisions/elster-testluecken-mit-eigener-probe-schliessen`, Punkt 1).
+#[test]
+fn abzugs_kz_mengengleich() {
+    if skip_ohne_parity_env() {
+        return;
+    }
+    let py_liste = py_abzugs_kz();
+    let py: BTreeSet<&str> = py_liste.iter().map(String::as_str).collect();
+    let rust: BTreeSet<&str> = elster::ABZUGS_KZ.iter().copied().collect();
+    let nur_py: Vec<_> = py.difference(&rust).collect();
+    let nur_rust: Vec<_> = rust.difference(&py).collect();
+    println!(
+        "[ABZUGS_KZ] py={} rust={} nur py={nur_py:?} nur rust={nur_rust:?}",
+        py.len(),
+        rust.len()
+    );
+    assert!(nur_py.is_empty() && nur_rust.is_empty());
+}
+
 #[test]
 fn kz_format_sweep() {
     if skip_ohne_parity_env() {
         return;
     }
     let formate = ["E0200201", "E0705701", "E0200301", "E6004901"];
-    let mut alle: Vec<&str> = elster::ABZUGS_KZ
+    // Vereinigung beider Abzugslisten: ein Kz, das nur Python aufrundet, fiele sonst aus dem Sweep.
+    let py_abzug = py_abzugs_kz();
+    let abzug: BTreeSet<&str> = elster::ABZUGS_KZ
         .iter()
-        .chain(elster::KOMMA_OHNE_E60_KZ)
         .copied()
+        .chain(py_abzug.iter().map(String::as_str))
+        .collect();
+    let mut alle: Vec<&str> = abzug
+        .into_iter()
+        .chain(elster::KOMMA_OHNE_E60_KZ.iter().copied())
         .collect();
     alle.extend(["E6002301", "E1900701", "E1800501", "E0100001"]);
     let mut laeufe: Vec<(&str, i64, i64, usize)> = Vec::new();

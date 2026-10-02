@@ -74,6 +74,11 @@ def _cent_liste(req: dict) -> list:
     return [EM._cent_nach_kz(w, kz) for kz, w in req["paare"]]
 
 
+def _abzugs_kz(_req: dict) -> list:
+    EM = _module()["EM"]
+    return sorted(EM._ABZUGS_KZ)
+
+
 def _kz_wert(req: dict) -> list:
     EM = _module()["EM"]
     return [_fang(EM._kz_wert, w, kz, typ) for w, kz, typ in req["faelle"]]
@@ -126,6 +131,7 @@ HANDLER = {
     "fall": _fall,
     "cent_sweep": _cent_sweep,
     "cent_liste": _cent_liste,
+    "abzugs_kz": _abzugs_kz,
     "kz_wert": _kz_wert,
     "jahr_aus_kz_wert": _jahr_aus,
     "parse_instanz": _parse_instanz,
