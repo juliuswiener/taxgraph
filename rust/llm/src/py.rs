@@ -598,6 +598,16 @@ impl GeordneteMap {
     /// ```
     #[must_use]
     pub fn py_repr(&self) -> String {
+        // Ein `dict` fuehrt jeden Schluessel einmal. `visit_map` faltet doppelte zusammen, wer
+        // das offene Feld direkt fuellt, nicht.
+        debug_assert_eq!(
+            self.0
+                .iter()
+                .map(|(k, _)| k)
+                .collect::<std::collections::BTreeSet<_>>()
+                .len(),
+            self.0.len()
+        );
         format!(
             "{{{}}}",
             self.0
@@ -674,7 +684,7 @@ mod aequivalenz {
         ganzzahl_text, int_ausnahmen, json_wert, klasse, pruefe, py, py_absteigend, text, Ergebnis,
     };
     use domain::{py_strip, PyWert};
-    use proptest::collection::btree_map;
+    use proptest::collection::{btree_map, vec};
     use proptest::prelude::*;
     use serde_json::{json, Map, Value};
 
@@ -764,6 +774,18 @@ mod aequivalenz {
             let innen_sortiert = PyWert::Objekt(m.iter().rev().map(|(k, w)| (k.clone(), py(w))).collect());
             let v = Value::Object(m.into_iter().collect::<Map<_, _>>());
             pruefe(&v, &alt, &py_absteigend(&v).repr(), || d8(&alt, &innen_sortiert.repr()), REPR)?;
+        }
+
+        /// Doppelter Schluessel wie `json.loads`: der letzte Wert gilt, am Platz des ersten.
+        #[test]
+        fn geordnete_map_doppelt_wie_pywert(paare in vec(("[ab]", json_wert()), 0..6)) {
+            let datei = format!(
+                "{{{}}}",
+                paare.iter().map(|(k, w)| format!("{}: {w}", json!(k))).collect::<Vec<_>>().join(", ")
+            );
+            let alt = serde_json::from_str::<GeordneteMap>(&datei).unwrap().py_repr();
+            let neu = serde_json::from_str::<PyWert>(&datei).unwrap().repr();
+            pruefe(&datei, &alt, &neu, Vec::new, &[])?;
         }
     }
 
