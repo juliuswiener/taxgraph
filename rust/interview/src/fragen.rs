@@ -5,7 +5,6 @@ use std::collections::{HashMap, HashSet};
 
 use bindung::{Bindung, Bindungspunkt, Vorjahr};
 use domain::PyWert;
-use serde_json::Value;
 use store::{Event, Store};
 
 use crate::antwort::{Aktiv, Antwort};
@@ -118,7 +117,7 @@ fn feld_ausgeschlossen(
         let nicht = PyWert::from(nicht.clone());
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| w.py_eq(&nicht))
     } else {
-        let soll = PyWert::from(bed.wert.clone().unwrap_or(Value::Null));
+        let soll = bed.wert.clone().map_or(PyWert::Null, PyWert::from);
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| !w.py_eq(&soll))
     };
     stand == Bedingungsstand::Ausgeschlossen

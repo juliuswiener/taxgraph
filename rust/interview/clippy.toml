@@ -1,0 +1,6 @@
+# Tor 2 (REWRITE_PLAN §7, K8). Testcode nimmt `lib.rs` per `cfg_attr(test, allow(...))` aus, die
+# Integrationstests ihr eigenes `allow`.
+disallowed-types = [
+    { path = "serde_json::Value", reason = "Tor 2: interview liest PyWert, Value nur im Testcode" },
+    { path = "serde_json::Map", reason = "Tor 2: interview liest PyWert, Value nur im Testcode" },
+]
