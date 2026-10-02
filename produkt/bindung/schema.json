@@ -313,6 +313,10 @@
             }
           }
         },
+        "nicht_negativ": {
+          "type": "boolean",
+          "description": "Optional (nur cent/int). Das Feld kennt im amtlichen ELSTER-Schema kein Minus (Schematyp NichtNeg/Pos). Der Schreibweg (store.append_event, Rust store::Store::append) weist eine negative Zahl ab (422, Feldname und Wert); die 0 und positive Werte gehen durch, Laden prueft nie. Ein Feld, das ein Minus verlangt (Verlust, Differenz), traegt das Attribut nicht. Ein Pruefer haelt die Bindung gegen das lokale Schema zusammen (tests/test_bindung_nicht_negativ.py)."
+        },
         "screening": {
           "type": "boolean",
           "description": "Optional. Diese Frage erhebt die EXISTENZ eines ganzen Themas (Kinder, Vermietung, Kapitalertraege, Behinderung ...) und schaltet bei Verneinung einen ganzen Block ab. Die Oberflaeche stellt alle screening-Fragen GEMEINSAM als Ankreuzliste an den Anfang, statt sie einzeln durch den Fragebogen zu verteilen — gemessen 2026-08-25: zehn Kreuze nehmen 147 Einzelfragen weg. Deklariert und nicht am Feldnamen abgelesen: eine Heuristik ueber 'kein_' ist genau der Fehler, den frage_invertiert hier schon einmal ersetzt hat."

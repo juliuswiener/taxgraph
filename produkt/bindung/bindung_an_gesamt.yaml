@@ -659,6 +659,7 @@ bindungen:
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewst_messbetrag}
     feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -701,6 +702,7 @@ bindungen:
   - feld_id: gewst_zu_zahlen
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewst_zu_zahlen}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: false
     vorjahr: uebernehmbar
@@ -1411,6 +1413,7 @@ bindungen:
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
     feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: die Lohnsteuerbescheinigung stellt der Arbeitgeber am Ende des Dienstverhaeltnisses aus; einbehaltene Lohnsteuer, Steuerklasse und die beiden Rentenversicherungsanteile stehen darauf. Ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es weder Arbeitgeber noch Bescheinigung, aus der etwas abzulesen waere. `bruttoarbeitslohn_partner` erhebt genau diese Existenz. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus — unbeantwortet und ein vorlaeufiger Beleg-Vorschlag lassen die Frage stehen. NICHT gegated sind die Vorsorge-Felder des Partners (basis_kv_partner, basis_pv_partner, vorsorge_*_partner und vor_rv_ausserhalb_lstb_partner = Beitraege AUSSERHALB der Lohnsteuerbescheinigung): die traegt auch ein Partner ohne Anstellung, und eine Bedingung darauf naehme ihm den Vorsorgeabzug."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     fragetext_laie: "Wie viel Lohnsteuer wurde im Jahr vom Arbeitgeber deines Ehe-/Lebenspartners einbehalten und abgeführt?"
@@ -1429,6 +1432,7 @@ bindungen:
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
     feld_bedingung: {feld: kist_konfession_partner, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     fragetext_laie: "Wie viel Kirchensteuer wurde im Jahr vom Arbeitgeber deines Ehe-/Lebenspartners einbehalten (nur falls kirchensteuerpflichtig)?"
@@ -1626,6 +1630,7 @@ bindungen:
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_messbetrag_partner}
     feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 35 EStG rechnet die Gewerbesteuer des Gewerbetreibenden an, § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen gewerbetreibenden PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Anrechnung (Kz E0801606). Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -1646,6 +1651,7 @@ bindungen:
   - feld_id: gewst_zu_zahlen_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_zu_zahlen_partner}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: false
     vorjahr: uebernehmbar

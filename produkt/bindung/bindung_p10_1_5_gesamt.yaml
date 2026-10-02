@@ -56,6 +56,7 @@ bindungen:
     # Eingangsfrage (2026-08-26, E2E-Durchgang auf Julius' Bitte). Stand als LETZTE der zehn Betreuungsfragen. „Wie viel hast du fuer die Betreuung gezahlt?" ist die Existenzfrage des Themas; davor liefen neun Fragen nach Zeitraeumen, Dienstleistern und Eigenanteilen einer Betreuung, nach der nie gefragt war.
     eingangsfrage: true
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -172,6 +173,7 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -192,6 +194,7 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -212,6 +215,7 @@ bindungen:
     instanz_gruppe: kind
     quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag

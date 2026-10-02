@@ -236,6 +236,8 @@ def _fehlerklasse(msg: str) -> str:
         return "TypInkonform"
     if msg.startswith("fail-closed (Format):"):
         return "FormatInkonform"
+    if msg.startswith("fail-closed (Vorzeichen):"):
+        return "NegativerBetrag"
     if msg.startswith("fail-closed (Bereich):"):
         return "WertAusserhalbBereich"
     if "braucht ein signal_2" in msg:

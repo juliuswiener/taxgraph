@@ -419,6 +419,30 @@ mod tests {
         );
     }
 
+    /// Laden prueft nie (Vault `decisions/geldfeld-ohne-minus-im-schema-lehnt-minus-bei-eingabe-ab`
+    /// Punkt 3, `decisions/zahl-ausserhalb-des-bereichs-wird-beim-speichern-abgewiesen-die-null-
+    /// nicht` Punkt 3): eine Akte mit einem Minus in einem `nicht_negativ`-Feld oder einer Zahl
+    /// ausserhalb von `bereich` laedt wie bisher.
+    #[test]
+    fn akte_mit_minus_und_wert_ausserhalb_bereich_laedt_weiter() {
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-minus-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("minus.json");
+        for (feld, wert) in [
+            ("hh_handwerker_betrag", "-5000000"),
+            ("fam_anzahl_kinder", "99"),
+        ] {
+            let akte = akte_mit("2025", wert).replace("ep_arbeitstage", feld);
+            std::fs::write(&pfad, akte).unwrap();
+            let datei = lade(&pfad).unwrap();
+            assert_eq!(datei.events[0].feld_id, feld);
+        }
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
     /// Wortlaut von `PersistenzFehler::Format`: „kein gueltiges JSON" nur fuer Syntax und
     /// abgeschnittenen Text; gueltiges JSON mit falscher Form (fehlendes Feld, falscher Typ,
     /// doppeltes Feld) sagt das so. Jede Meldung nennt Zeile und Spalte.

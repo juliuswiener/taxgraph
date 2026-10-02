@@ -98,6 +98,16 @@ pub enum Abweisung {
         muster: String,
     },
 
+    /// Auflage V/Vorzeichen (`store.py::_pruefe_typ_konformitaet`, Vault
+    /// `decisions/geldfeld-ohne-minus-im-schema-lehnt-minus-bei-eingabe-ab`): eine negative Zahl
+    /// an einem Feld mit `nicht_negativ: true` (Schematyp ohne Minus). Die 0 geht durch. Die Zahl
+    /// steht in der Meldung (kein PII).
+    #[error(
+        "fail-closed (Vorzeichen): {feld_id}={wert} darf nicht negativ sein — das Feld kennt im \
+         amtlichen ELSTER-Schema kein Minus, die Erklärung würde dort abgelehnt."
+    )]
+    NegativerBetrag { feld_id: String, wert: i64 },
+
     /// Auflage W/Wertebereich (`store.py::_pruefe_typ_konformitaet`, Vault
     /// `decisions/zahl-ausserhalb-des-bereichs-wird-beim-speichern-abgewiesen-die-null-nicht`):
     /// eine Zahl ausserhalb von `bindung.bereich` `min..=max`, die nicht 0 ist. Die 0 bleibt

@@ -125,16 +125,17 @@ pub fn uebernehme(
     })
 }
 
-/// Die drei Abweisungen der Wertpruefung (Auflage T, F und W; Python: Praefix `fail-closed (Typ)`/
-/// `fail-closed (Format)`/`fail-closed (Bereich)`). Nur sie ueberspringt [`uebernehme`], jede andere
+/// Die vier Abweisungen der Wertpruefung (Auflage T, V, W und F; Python: Praefix `fail-closed
+/// (Typ)`/`(Vorzeichen)`/`(Bereich)`/`(Format)`). Nur sie ueberspringt [`uebernehme`], jede andere
 /// bricht ab.
 fn ist_pruef_abweisung(e: &SchreibFehler) -> bool {
     matches!(
         e,
         SchreibFehler::Abweisung(
             Abweisung::TypInkonform { .. }
-                | Abweisung::FormatInkonform { .. }
+                | Abweisung::NegativerBetrag { .. }
                 | Abweisung::WertAusserhalbBereich { .. }
+                | Abweisung::FormatInkonform { .. }
         )
     )
 }
@@ -168,7 +169,7 @@ mod tests {
     use crate::vorschlag::SchreibFehler;
 
     /// Entscheidung `vorjahr-unpassenden-altwert-ueberspringen`: ein Altwert, den die Wertpruefung
-    /// abweist (Steuerzeichen, Muster, Bereich), reisst die uebrigen Vorschlaege nicht mit.
+    /// abweist (Steuerzeichen, Muster, Bereich, Vorzeichen), reisst die uebrigen Vorschlaege nicht mit.
     #[test]
     fn abgewiesener_altwert_wird_uebersprungen() {
         let nachschlag = BindungNachschlag::neu(crate::doctest_bindung().unwrap());
@@ -178,6 +179,7 @@ mod tests {
             ("stammdaten_nachname", json!("Maier\u{0}")), // Auflage T: Steuerzeichen
             ("kind_wohnsitz_inland_zeitraum", json!("01.01-31.122")), // Auflage F: Muster
             ("geburtsjahr", json!(1899)),                 // Auflage W: Bereich 1900..2010
+            ("hh_handwerker_betrag", json!(-5000)),       // Auflage V: Betrag ohne Minus
         ]
         .into_iter()
         .map(|(f, wert)| {
@@ -193,6 +195,7 @@ mod tests {
             erg.uebersprungen,
             [
                 "geburtsjahr",
+                "hh_handwerker_betrag",
                 "kind_wohnsitz_inland_zeitraum",
                 "stammdaten_nachname"
             ]
@@ -217,6 +220,10 @@ mod tests {
             feld_id: "f".into(),
             wert: "w".into(),
             muster: "m".into(),
+        }));
+        assert!(ueberspringt(Abweisung::NegativerBetrag {
+            feld_id: "f".into(),
+            wert: -1,
         }));
         assert!(ueberspringt(Abweisung::WertAusserhalbBereich {
             feld_id: "f".into(),

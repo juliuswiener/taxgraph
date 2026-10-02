@@ -1,7 +1,7 @@
 //! Verhaltensparitaet von `Store::append` (Rust) gegen `produkt/store/store.py::append_event`
 //! (Python, ueber `tools/parity/oracle.py::_append_sequence`) ueber ganze Aufruf-SEQUENZEN --
 //! Deliverable #2 (Nachtrag) der `store`-Crate, ergaenzend zu `store_paritaet.rs` (das nur die
-//! reine `event_id`-Hashfunktion prueft, keine Auflagen A/K1/F2/T/W/F/B).
+//! reine `event_id`-Hashfunktion prueft, keine Auflagen A/K1/F2/T/V/W/F/B).
 //!
 //! Zwei Tests:
 //! - `append_sequence_paritaet_ueber_zufaellige_aufruf_sequenzen`: 1000 proptest-Faelle, je 1..=20
@@ -455,6 +455,7 @@ fn abweisung_klasse(a: &Abweisung) -> &'static str {
         Abweisung::WertNichtDarstellbar { .. } => "WertNichtDarstellbar",
         Abweisung::TypInkonform { .. } => "TypInkonform",
         Abweisung::FormatInkonform { .. } => "FormatInkonform",
+        Abweisung::NegativerBetrag { .. } => "NegativerBetrag",
         Abweisung::WertAusserhalbBereich { .. } => "WertAusserhalbBereich",
         Abweisung::AktivesEventVorhanden { .. } => "AktivesEventVorhanden",
         Abweisung::ErsetztZielUnbekannt(_) => "ErsetztZielUnbekannt",
@@ -642,6 +643,39 @@ fn szenario_bereich(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
     Some(spec)
 }
 
+/// Auflage V (Vault `decisions/geldfeld-ohne-minus-im-schema-lehnt-minus-bei-eingabe-ab`): ein
+/// Vorzeichen an einem Zahlfeld ohne `bereich`, auch als Instanz (`base__2`). Felder mit
+/// `nicht_negativ` muessen beide Seiten bei einer negativen Zahl mit `NegativerBetrag` abweisen,
+/// alle anderen (Verlust-, Differenz-, unklare Felder) nehmen sie an; 0 und Positives gehen
+/// ueberall durch.
+fn szenario_vorzeichen(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
+    let kandidaten: Vec<&&Bindung> = pools
+        .alle
+        .iter()
+        .filter(|b| {
+            matches!(b.typ, Feldtyp::Cent | Feldtyp::Int)
+                && b.bereich.is_none()
+                && b.enum_werte.as_ref().is_none_or(Vec::is_empty)
+        })
+        .collect();
+    let feld = **waehle(cursor, &kandidaten)?;
+    let wert = match cursor.range(4) {
+        0 => -1,
+        1 => 0,
+        2 => 1,
+        _ => -(1 + i64::try_from(cursor.range(10_000_000)).unwrap_or(0)),
+    };
+    let mut spec = leer_spec();
+    spec.feld_id = if cursor.bool() {
+        format!("{}__2", feld.feld_id)
+    } else {
+        feld.feld_id.clone()
+    };
+    spec.wert = json!(wert);
+    spec.schreiber = nicht_vorschlag_schreiber(cursor);
+    Some(spec)
+}
+
 /// Punkt 4: leerer Text (`typ: text`, Laenge 0) wird abgewiesen, mit und ohne `muster`.
 fn szenario_leerer_text(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
     let kandidaten: Vec<&&Bindung> = pools
@@ -765,7 +799,7 @@ fn baue_aufruf(
     salt: u64,
     ts: &str,
 ) -> AufrufSpec {
-    let versuch = match cursor.range(16) {
+    let versuch = match cursor.range(17) {
         0 => szenario_vorschlag_gluecklich(cursor, pools),
         1 => szenario_auflage_a_verletzt(cursor, pools),
         2 => szenario_ersetzt_guard(cursor, pools, store),
@@ -781,6 +815,7 @@ fn baue_aufruf(
         12 => szenario_zeilenumbruch(cursor, pools),
         13 => szenario_leerer_text(cursor, pools),
         15 => szenario_bereich(cursor, pools),
+        16 => szenario_vorzeichen(cursor, pools),
         _ => szenario_ersetzt_bereits(cursor, store),
     };
     let mut spec = versuch

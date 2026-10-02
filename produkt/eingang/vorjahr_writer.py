@@ -23,10 +23,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "store"))
 import store as ST   # noqa: E402
 
-# Die drei Abweisungen der Wertprüfung (store._pruefe_typ_konformitaet, Auflage T, F und W; Rust:
-# Abweisung::TypInkonform/FormatInkonform/WertAusserhalbBereich). Nur sie überspringt die Übernahme,
-# jede andere bricht ab (decisions/vorjahr-unpassenden-altwert-ueberspringen).
-_PRUEF_ABWEISUNG = ("fail-closed (Typ)", "fail-closed (Format)", "fail-closed (Bereich)")
+# Die vier Abweisungen der Wertprüfung (store._pruefe_typ_konformitaet, Auflage T, V, W und F; Rust:
+# Abweisung::TypInkonform/NegativerBetrag/WertAusserhalbBereich/FormatInkonform). Nur sie überspringt
+# die Übernahme, jede andere bricht ab (decisions/vorjahr-unpassenden-altwert-ueberspringen).
+_PRUEF_ABWEISUNG = ("fail-closed (Typ)", "fail-closed (Vorzeichen)", "fail-closed (Bereich)",
+                    "fail-closed (Format)")
 
 
 def uebertragbare_felder(bindung: dict) -> dict:

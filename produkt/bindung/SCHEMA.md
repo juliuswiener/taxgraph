@@ -33,6 +33,7 @@ YAML (`produkt/bindung/bindung_*.yaml`), werden geladen und gegen das Schema gep
 | `anker_ref` | `{quelle, zitatanker, datei?}` | ✓ | Norm-Fundstelle + wörtlicher Zitatanker (das „warum"). `datei` optional (Pflicht bei Catala-Quellen wie EP). |
 | `enum_werte` | string[] | falls typ=enum | Zulässige Werte. |
 | `bereich` | `{min, max, grund?}` | – (nur cent/int) | Wertebereichsgrenzen: Achse des Unsicherheits-Derivats (fehlt = unbounded, offene Intervallseite) UND Schreibgrenze — der Store weist eine Zahl ausserhalb ab, die nicht 0 ist (die 0 = „nichts anzugeben“ bleibt zulässig, Laden prüft nie). Gate: min≤max, ganzzahlig, cent<0 nur mit `grund` (Verluste). |
+| `nicht_negativ` | bool | – (nur cent/int) | Das Feld kennt im amtlichen Schema kein Minus (Schematyp NichtNeg/Pos): eine negative Zahl wird beim Schreiben abgewiesen (422), 0 und Positives gehen durch, Laden prüft nie. Verlust-/Differenzfelder tragen es nicht. Prüftest: `tests/test_bindung_nicht_negativ.py` hält Bindung und lokales Schema zusammen. |
 
 ## Summen-Konvention (Auflage A)
 

@@ -276,6 +276,17 @@ def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
             f"fail-closed (Typ): {feld_id}={anzeige} passt nicht zum Bindungstyp '{typ}' — "
             "der Ring läse das sonst still als 0 (Stille-Null-Klasse).")
 
+    # Auflage V (Vorzeichen), 2026-10-02 (decisions/geldfeld-ohne-minus-im-schema-lehnt-minus-bei-
+    # eingabe-ab). `nicht_negativ: true` heisst: der Schematyp des Kz kennt kein Minus. Ein Minus
+    # landete bisher ungefragt in der Erklaerung (die Pflichtfrage "Rechnung und Ueberweisung?" prueft
+    # nur > 0) und scheiterte erst bei ELSTER ("Unzulaessiges Vorzeichen"). Die 0 und Positives gehen
+    # durch; Verlust-/Differenzfelder tragen das Attribut nicht; Laden prueft nie.
+    # Rust: Abweisung::NegativerBetrag.
+    if eintrag.get("nicht_negativ") and typ in ("cent", "int") and wert < 0:
+        raise ValueError(
+            f"fail-closed (Vorzeichen): {feld_id}={wert!r} darf nicht negativ sein — das Feld kennt im "
+            "amtlichen ELSTER-Schema kein Minus, die Erklärung würde dort abgelehnt.")
+
     # Auflage W (Wertebereich), 2026-10-02 (decisions/zahl-ausserhalb-des-bereichs-wird-beim-
     # speichern-abgewiesen-die-null-nicht). `bereich: {min, max}` setzte bisher nur das Eingabefeld
     # im Browser durch; die KI, ein direkter Aufruf und jeder Import nahmen -1 Kinder oder 9999 als

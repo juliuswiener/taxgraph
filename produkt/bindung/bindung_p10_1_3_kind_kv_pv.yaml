@@ -17,6 +17,7 @@ bindungen:
     vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p10_1_3_kv_pv_kind, signatur_slot: basis_kv}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
@@ -36,6 +37,7 @@ bindungen:
     vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p10_1_3_kv_pv_kind, signatur_slot: basis_pv}
     typ: cent
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
