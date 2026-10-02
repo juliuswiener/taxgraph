@@ -175,9 +175,7 @@ def _cfg(store: dict) -> dict:
 
 
 def _datei_felder(dateiname: str) -> tuple:
-    import yaml
-    d = yaml.safe_load(open(os.path.join(PRODUKT, "bindung", dateiname), encoding="utf-8"))
-    return tuple(b["feld_id"] for b in d.get("bindungen", []))
+    return TR.lade_datei_felder(dateiname)   # gecacht: jeder Handler der Scheibe n_vor_gwg läuft hier durch
 
 
 def _scheibe_felder(store: dict) -> tuple:

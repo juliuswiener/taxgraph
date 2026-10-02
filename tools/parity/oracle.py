@@ -362,16 +362,13 @@ def _interview(req: dict) -> dict:
             return {"ok": _TR.lade_instanz_gruppen()}
         if name == "traverser.scheiben":
             # Eingabe-Beschaffung, kein Vergleich: Scheiben-Felder/Kegel wie `api._scheibe_felder`.
-            import yaml
             sys.path.insert(0, os.path.join(ROOT, "produkt", "haut"))
             import api_constants as _AC
             out = {}
             for sch, cfg in _AC.SCHEIBEN.items():
                 fs = cfg["felder"]
                 if fs is None:
-                    d = yaml.safe_load(open(os.path.join(ROOT, "produkt", "bindung", cfg["felder_datei"]),
-                                            encoding="utf-8"))
-                    fs = tuple(b["feld_id"] for b in d.get("bindungen", []))
+                    fs = _TR.lade_datei_felder(cfg["felder_datei"])
                 out[sch] = {"felder": list(fs), "kegel": None if cfg.get("kegel") is None else list(cfg["kegel"])}
             return {"ok": out}
         if name.startswith("bindung_rollen."):

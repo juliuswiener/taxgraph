@@ -37,6 +37,21 @@ def lade_bindung() -> dict:
     return out
 
 
+@functools.lru_cache(maxsize=None)
+def lade_datei_felder(dateiname: str) -> tuple:
+    """Die feld_ids einer bindung_*.yaml in Dateireihenfolge — die Felder einer Scheibe, die ihre
+    Tabelle nicht als Tupel führt (`api_constants.SCHEIBEN[..]["felder_datei"]`, heute nur n_vor_gwg).
+    Pro Prozess und Datei gecacht, wie `lade_bindung` daneben; eine geänderte YAML liest erst der nächste
+    Prozess. Ungecacht parste jeder Aufruf mit dieser Scheibe (`api._scheibe_bindung`, jede
+    `bescheid.fall`-Anfrage des Parity-Orakels) die Datei neu, und PyYAML läuft dabei in reinem Python:
+    1479 Lesevorgänge in einem Lauf von `bescheid_deklaration_paritaet`, gemessen 2026-10-02.
+    Tupel, nie die Liste: der Cache gibt allen Aufrufern dasselbe Objekt."""
+    yaml = _yaml()
+    with open(os.path.join(PRODUKT, "bindung", dateiname), encoding="utf-8") as fh:
+        d = yaml.safe_load(fh)
+    return tuple(b["feld_id"] for b in d.get("bindungen", []))
+
+
 def lade_rules() -> dict:
     yaml = _yaml()
     doc = yaml.safe_load(open(os.path.join(ROOT, "pipeline", "produktion", "rules.yaml")))
