@@ -525,6 +525,15 @@ mod tests {
         ] {
             assert_eq!(eur_cent_signed(roh), cent, "{roh:?}");
         }
+        // Lange Ziffernfolgen (Python: int() liest hoechstens 4300 Ziffern, fuehrende Nullen zaehlen nicht).
+        for (roh, cent) in [
+            ("1".repeat(4301), None),
+            (format!("{}1,00", "0".repeat(5000)), Some(100)),
+            (format!("{}1,00", "٠".repeat(5000)), Some(100)),
+            (format!("1{},00", ".000".repeat(1500)), None),
+        ] {
+            assert_eq!(eur_cent_signed(&roh), cent, "{} Zeichen", roh.len());
+        }
     }
 
     /// AK1: eine Zeile mit unlesbarem Betrag zaehlt in `verworfen`, die lesbare bleibt.

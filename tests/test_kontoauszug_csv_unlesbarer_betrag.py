@@ -41,3 +41,9 @@ def test_unlesbarer_betrag_steht_in_verworfen_mit_grund(base):
     assert b["uebernommen"] == 1, b
     assert b["verworfen"] == 2, f"abc und 1,2,3 fehlen in verworfen: {b}"
     assert "Betrag" in b.get("hinweis", ""), f"der Hinweis nennt den Betrag nicht als Grund: {b}"
+
+
+def test_betrag_mit_4301_ziffern_steht_in_verworfen(base):
+    """int() liest höchstens 4300 Ziffern; vorher warf der Parser ValueError (gemessen: 500)."""
+    b = _hochladen(base, "ka-lang", KOPF + LESBAR + f"18.03.2025;{'1' * 4301};Ruerup-Rente Basisrente\n")
+    assert (b["uebernommen"], b["verworfen"]) == (1, 1), b

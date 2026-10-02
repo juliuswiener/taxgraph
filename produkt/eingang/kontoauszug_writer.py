@@ -25,6 +25,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "store"))
@@ -252,7 +253,12 @@ def _eur_cent_signed(s: str) -> int | None:
     if not m:
         return None
     tausender, bruch_de, ganz, bruch = m.groups()
-    cent = int((tausender or ganz).replace(".", "")) * 100 + int((bruch_de or bruch or "").ljust(2, "0"))
+    # Ziffern jeder Schrift auf ASCII wie Rust (py::ascii_ziffern), führende Nullen weg: int() liest
+    # höchstens 4300 Ziffern, und ab 20 Ziffern ist der Betrag ohnehin über i64.
+    ganz = "".join(str(unicodedata.decimal(z)) for z in (tausender or ganz).replace(".", "")).lstrip("0")
+    if len(ganz) > 19:
+        return None
+    cent = int(ganz or "0") * 100 + int((bruch_de or bruch or "").ljust(2, "0"))
     if cent > _I64_MAX:                   # PARITÄT: Rust rechnet in i64; darüber unlesbar wie dort
         return None
     return -cent if neg else cent

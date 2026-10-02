@@ -120,6 +120,9 @@ def test_parse_csv_deutsche_betraege():
     ("480.00", 48000), ("480.5", 48050), ("-1200,00 €", -120000), ("92233720368547758,07", 2**63 - 1),
     ("-1.234", None), ("1e3", None), ("inf", None), ("abc", None), ("1,2,3", None),
     ("1.234.567", None), ("480,055", None), ("92233720368547758,08", None),
+    # Lange Ziffernfolgen: int() liest höchstens 4300 Ziffern; führende Nullen zählen nicht (wie Rust).
+    ("1" * 4301, None), ("0" * 5000 + "1,00", 100), ("٠" * 5000 + "1,00", 100),
+    ("1" + ".000" * 1500 + ",00", None),
 ])
 def test_eur_cent_signed_tabelle(roh, cent):
     assert KW._eur_cent_signed(roh) == cent

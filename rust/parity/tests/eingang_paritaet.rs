@@ -422,6 +422,22 @@ fn kontoauszug() {
             r.wahl(&[",00", ".5", ",5", ",055", "", ".000,99", "e2", "_5"])
         )
     }));
+    // Lange Ziffernfolgen um Pythons 4300-Ziffern-Grenze von int(), mit fuehrenden Nullen und
+    // Tausendergruppen.
+    betraege.extend((0..60).map(|_| {
+        let n = 4250 + r.n(100);
+        let lauf = match r.n(4) {
+            0 => "1".repeat(n),
+            1 => format!("{}{}", "0".repeat(n), r.n(1000)),
+            2 => format!("{}{}", "٠".repeat(n), r.n(1000)),
+            _ => format!("1{}", ".000".repeat(n / 3)),
+        };
+        format!(
+            "{}{lauf}{}",
+            r.wahl(&["", "-"]),
+            r.wahl(&[",00", ",5", ".5", ""])
+        )
+    }));
     let py_b = frage(&json!({"fn": "schritt8.eingang.cent", "werte": betraege}));
     for (i, b) in betraege.iter().enumerate() {
         let rust = json!({"ok": ka::eur_cent_signed(b)});
