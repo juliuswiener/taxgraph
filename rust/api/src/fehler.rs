@@ -82,7 +82,9 @@ impl From<store::PersistenzFehler> for ApiFehler {
     fn from(e: store::PersistenzFehler) -> Self {
         let typ = match &e {
             store::PersistenzFehler::Lesen(..) | store::PersistenzFehler::Schreiben(_) => "OSError",
-            store::PersistenzFehler::Format(..) => "JSONDecodeError",
+            store::PersistenzFehler::Format(..) | store::PersistenzFehler::Sperrform { .. } => {
+                "JSONDecodeError"
+            }
             store::PersistenzFehler::Serialisieren(_) => "TypeError",
         };
         Self::unerwartet(typ, e.to_string())

@@ -1,14 +1,13 @@
-//! Persistenz der Store-Datei: [`lade`] liest YAML (`store.py:84-87`), [`speichere`] schreibt
-//! JSON atomar mit Modus 0600 (`produkt/haut/api.py:146-162`, `speichere_fall`) — DIESELBE Datei
-//! durchlaeuft in Python zwei verschiedene Formate an zwei verschiedenen Stellen. Das
-//! funktioniert, weil JSON eine Teilmenge von YAML ist: `yaml.safe_load` parst eine von
-//! `speichere_fall` geschriebene JSON-Datei anstandslos. Eine von Hand geschriebene, echte
-//! YAML-Datei (Kommentare, Anker, Flow-Referenzen) laedt `lade` ebenfalls — `speichere` selbst
-//! erzeugt so etwas nie, weil `api.py` es nie erzeugt.
+//! Persistenz der Store-Datei: [`lade`] liest JSON wie der Python-Server
+//! (`produkt/haut/api.py:138-143`, `lade_fall` -> `json.load`), [`speichere`] schreibt JSON
+//! atomar mit Modus 0600 (`api.py:146-162`, `speichere_fall`). `produkt/store/store.py:84-87`
+//! (`lade`, YAML) ruft der Server nicht auf; YAML wies DEL/C1 ab und aenderte NEL und Leerzeichen
+//! an U+2028/U+2029 still (Vault `decisions/rust-liest-fallakte-als-json-wie-der-server`).
 //!
-//! PARITAET: `serde_yaml_ng` liest, `serde_json` schreibt — dieselbe Asymmetrie wie im Original,
-//! bewusst nicht geglaettet: sie ist eine reale Betriebseigenschaft der Python-Version, kein
-//! Bug, den diese Portierung "beheben" duerfte.
+//! PARITAET: `json.load` liest `NaN`, `Infinity`, `1e400` und Ganzzahlen ausserhalb von
+//! `i64`/`u64` still als Zahl. [`lade`] weist sie unter `events` mit Zeile, Spalte und
+//! [`Sperrform`] ab, statt eine falsche Zahl zu laden (Vault
+//! `decisions/fallakte-mit-nan-oder-ueberlauf-sperrt-mit-namen`).
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 
@@ -19,20 +18,41 @@ use crate::store::StoreDatei;
 pub enum PersistenzFehler {
     #[error("store-datei {0} konnte nicht gelesen werden: {1}")]
     Lesen(PathBuf, std::io::Error),
-    #[error("store-datei {0} ist kein gueltiges YAML/JSON: {1}")]
-    Format(PathBuf, serde_yaml_ng::Error),
+    #[error("store-datei {0} ist kein gueltiges JSON: {1}")]
+    Format(PathBuf, serde_json::Error),
+    #[error("store-datei {pfad} enthaelt {form:?} in Zeile {zeile}, Spalte {spalte}")]
+    Sperrform {
+        pfad: PathBuf,
+        zeile: usize,
+        spalte: usize,
+        form: Sperrform,
+    },
     #[error("store-datei konnte nicht geschrieben werden: {0}")]
     Schreiben(#[from] std::io::Error),
     #[error("store-datei konnte nicht serialisiert werden: {0}")]
     Serialisieren(#[from] serde_json::Error),
 }
 
-/// Laedt eine Store-Datei (`store.py:84-87`, `lade`): YAML-Parser, KEINE Schema-Pruefung — eine
-/// strukturell falsche Datei liefert hier einen Fehler (Serde braucht die Pflichtfelder), eine
-/// inhaltlich falsche (z.B. unbekanntes `feld_id`) laedt anstandslos durch, genau wie in Python.
+/// Zahlform, die `json.load` still als Zahl liest und [`lade`] unter `events` abweist.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Sperrform {
+    /// `NaN`.
+    NaN,
+    /// `Infinity` oder `-Infinity`.
+    Infinity,
+    /// Kommazahl ausserhalb von `f64`, z. B. `1e400`.
+    KommazahlUeberlauf,
+    /// Ganzzahl ausserhalb `i64::MIN..=u64::MAX` in einem Event; `serde_json` laese sie still als
+    /// gerundetes `f64`.
+    GanzzahlUeberlauf,
+}
+
+/// Laedt eine Store-Datei als JSON, KEINE Schema-Pruefung — eine strukturell falsche Datei liefert
+/// hier einen Fehler (Serde braucht die Pflichtfelder), eine inhaltlich falsche (z.B. unbekanntes
+/// `feld_id`) laedt anstandslos durch, genau wie in Python.
 ///
 /// # Errors
-/// [`PersistenzFehler::Lesen`]/[`PersistenzFehler::Format`].
+/// [`PersistenzFehler::Lesen`]/[`PersistenzFehler::Format`]/[`PersistenzFehler::Sperrform`].
 ///
 /// ```
 /// let dir = std::env::temp_dir().join(format!("taxgraph-doctest-lade-{}", std::process::id()));
@@ -46,7 +66,93 @@ pub enum PersistenzFehler {
 pub fn lade(pfad: &Path) -> Result<StoreDatei, PersistenzFehler> {
     let text = std::fs::read_to_string(pfad)
         .map_err(|e| PersistenzFehler::Lesen(pfad.to_path_buf(), e))?;
-    serde_yaml_ng::from_str(&text).map_err(|e| PersistenzFehler::Format(pfad.to_path_buf(), e))
+    if let Some((stelle, form)) = finde_sperrform(&text) {
+        let vorher = text.get(..stelle).unwrap_or_default();
+        let zeilenanfang = vorher.rsplit('\n').next().unwrap_or_default();
+        return Err(PersistenzFehler::Sperrform {
+            pfad: pfad.to_path_buf(),
+            zeile: vorher.matches('\n').count() + 1,
+            spalte: zeilenanfang.chars().count() + 1,
+            form,
+        });
+    }
+    serde_json::from_str(&text).map_err(|e| PersistenzFehler::Format(pfad.to_path_buf(), e))
+}
+
+/// Erste [`Sperrform`] unter `events`, ausserhalb von Strings, mit ihrem Byte-Versatz.
+///
+/// ponytail: eigener Vorab-Scan statt `serde_json` mit `arbitrary_precision` (D1,
+/// `domain/src/py_wert.rs:508`). Er kennt nur Strings, Klammertiefe und den obersten Schluessel
+/// und prueft darum jedes Token unter `events`, auch in `signal` und in unbekannten Schluesseln.
+/// Ausserhalb entscheidet `serde_json` allein: `veranlagungszeitraum` laedt exakt als `i128`, eine
+/// Ganzzahl ueber `u64` in `vorjahr_referenz` gerundet als `Gleit`. Upgrade: voller Pfad je
+/// Fundstelle, wenn eine weitere Stelle sperren soll.
+fn finde_sperrform(text: &str) -> Option<(usize, Sperrform)> {
+    let mut zeichen = text.char_indices().peekable();
+    let mut tiefe = 0_usize;
+    let mut in_events = false;
+    while let Some((start, c)) = zeichen.next() {
+        match c {
+            '"' => {
+                let mut ende = text.len();
+                while let Some((i, c)) = zeichen.next() {
+                    match c {
+                        '\\' => {
+                            zeichen.next();
+                        }
+                        '"' => {
+                            ende = i;
+                            break;
+                        }
+                        _ => {}
+                    }
+                }
+                let danach = text.get(ende + 1..).unwrap_or_default();
+                if tiefe == 1 && danach.trim_start().starts_with(':') {
+                    let schluessel = text
+                        .get(start..=ende)
+                        .and_then(|s| serde_json::from_str::<String>(s).ok());
+                    in_events = schluessel.as_deref() == Some("events");
+                }
+            }
+            '{' | '[' => tiefe += 1,
+            '}' | ']' => tiefe = tiefe.saturating_sub(1),
+            'N' | 'I' | '-' | '0'..='9' if in_events => {
+                let mut ende = text.len();
+                while let Some(&(i, c)) = zeichen.peek() {
+                    if !(c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.')) {
+                        ende = i;
+                        break;
+                    }
+                    zeichen.next();
+                }
+                let token = text.get(start..ende).unwrap_or_default();
+                if let Some(form) = sperrform(token) {
+                    return Some((start, form));
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Die [`Sperrform`] eines Zahl- oder Wort-Tokens.
+fn sperrform(token: &str) -> Option<Sperrform> {
+    match token {
+        "NaN" => Some(Sperrform::NaN),
+        "Infinity" | "-Infinity" => Some(Sperrform::Infinity),
+        _ if token.contains(['.', 'e', 'E']) => token
+            .parse::<f64>()
+            .is_ok_and(f64::is_infinite)
+            .then_some(Sperrform::KommazahlUeberlauf),
+        _ => {
+            let ziffern = token.strip_prefix('-').unwrap_or(token);
+            let ganzzahl = !ziffern.is_empty() && ziffern.bytes().all(|b| b.is_ascii_digit());
+            let ausserhalb = token.parse::<i64>().is_err() && token.parse::<u64>().is_err();
+            (ganzzahl && ausserhalb).then_some(Sperrform::GanzzahlUeberlauf)
+        }
+    }
 }
 
 /// Schreibt die Store-Datei atomar (`produkt/haut/api.py:146-162`, `speichere_fall`): Tempfile im
@@ -90,7 +196,7 @@ pub fn speichere(pfad: &Path, datei: &StoreDatei) -> Result<(), PersistenzFehler
 
 #[cfg(test)]
 mod tests {
-    use super::{lade, speichere};
+    use super::{lade, speichere, PersistenzFehler, Sperrform};
     use crate::store::{StoreDatei, Veranlagungsjahr};
 
     fn testdatei() -> StoreDatei {
@@ -126,7 +232,7 @@ mod tests {
     }
 
     #[test]
-    fn lade_liest_json_als_teilmenge_von_yaml() {
+    fn lade_liest_json_ohne_optionale_felder() {
         let dir = std::env::temp_dir().join(format!(
             "taxgraph-store-test-persistenz-json-{}",
             std::process::id()
@@ -166,44 +272,93 @@ mod tests {
         std::fs::remove_dir_all(&dir).ok();
     }
 
-    /// B4: `CPython` schreibt NaN/Infinity nackt in die Fallakte (`api.py:157`, `json.dump` ohne
-    /// `allow_nan=False`) und liest sie mit `json.load` als Float zurueck, `1e400` als `inf`.
-    /// `lade` liest dieselben Token per YAML als Text. Der Test verlangt das `CPython`-Verhalten.
+    /// Eine Akte mit einem Event; `wert` steht roh in Zeile 3 ab Spalte 50, hinter einem `ä`.
+    fn akte_mit(vz: &str, wert: &str) -> String {
+        concat!(
+            r#"{"version":1,"veranlagungszeitraum":VZ,"snapshots":[],"events":["#,
+            "\n",
+            r#"{"event_id":"ID","ts":"2026-01-01T00:00:00+00:00","feld_id":"ep_arbeitstage","#,
+            "\n",
+            r#""signal":{"signal_1":null,"signal_2":"ä"},"wert":WERT,"zustand":"bestaetigt","#,
+            r#""herkunft":{"herkunft":"mensch","pruef_tiefe":"ungeprueft","haftung":"nutzer"},"#,
+            r#""schreiber":"julius","ersetzt":null}]}"#
+        )
+        .replace("VZ", vz)
+        .replace("ID", &"0".repeat(64))
+        .replace("WERT", wert)
+    }
+
+    /// B4 (Vault `decisions/fallakte-mit-nan-oder-ueberlauf-sperrt-mit-namen`): `CPython` liest
+    /// diese Formen mit `json.load` still als Zahl (`api.py:143`). `lade` weist sie in einem
+    /// Event-Wert mit Zeile, Spalte in Zeichen und Form ab. Ohne den Scan sperrt `serde_json` die
+    /// Akte ohne Namen und liest die Ganzzahlen als gerundetes `f64`.
     #[test]
-    #[ignore = "B4: lade liest NaN/Infinity/1e400 als Text, CPython als Float (nicht Teil von K2)"]
-    fn b4_nan_und_infinity_laden_als_float_wie_cpython() {
+    fn b4_nan_infinity_und_ueberlauf_sperren_mit_namen() {
         let dir = std::env::temp_dir().join(format!(
             "taxgraph-store-test-persistenz-b4-{}",
             std::process::id()
         ));
         std::fs::create_dir_all(&dir).unwrap();
         let pfad = dir.join("b4.json");
-        let vorlage = concat!(
-            r#"{"version":1,"veranlagungszeitraum":2025,"snapshots":[],"events":[{"event_id":"ID","#,
-            r#""ts":"2026-01-01T00:00:00+00:00","feld_id":"ep_arbeitstage","wert":WERT,"#,
-            r#""zustand":"bestaetigt","herkunft":{"herkunft":"mensch","pruef_tiefe":"ungeprueft","#,
-            r#""haftung":"nutzer"},"schreiber":"julius","signal":{"signal_1":null,"signal_2":"k"},"#,
-            r#""ersetzt":null}]}"#
-        );
-        for (token, erwartet) in [
-            ("NaN", f64::NAN),
-            ("Infinity", f64::INFINITY),
-            ("-Infinity", f64::NEG_INFINITY),
-            ("1e400", f64::INFINITY),
-        ] {
-            let text = vorlage
-                .replace("ID", &"0".repeat(64))
-                .replace("WERT", token);
-            std::fs::write(&pfad, text).unwrap();
-            let datei = lade(&pfad).unwrap();
-            let wert = &datei.events[0].wert;
-            let wie_cpython = match *wert {
-                domain::PyWert::Gleit(f) if erwartet.is_nan() => f.is_nan(),
-                domain::PyWert::Gleit(f) => f.to_bits() == erwartet.to_bits(),
-                _ => false,
-            };
-            assert!(wie_cpython, "{token}: {wert:?} statt Float wie CPython");
-        }
+        let falsch: Vec<String> = [
+            ("NaN", Sperrform::NaN),
+            ("Infinity", Sperrform::Infinity),
+            ("-Infinity", Sperrform::Infinity),
+            ("1e400", Sperrform::KommazahlUeberlauf),
+            ("-1e400", Sperrform::KommazahlUeberlauf),
+            ("18446744073709551616", Sperrform::GanzzahlUeberlauf),
+            ("-9223372036854775809", Sperrform::GanzzahlUeberlauf),
+        ]
+        .into_iter()
+        .filter_map(|(token, form)| {
+            std::fs::write(&pfad, akte_mit("2025", token)).unwrap();
+            match lade(&pfad) {
+                Err(PersistenzFehler::Sperrform {
+                    zeile: 3,
+                    spalte: 50,
+                    form: ist,
+                    ..
+                }) if ist == form => None,
+                anders => Some(format!("{token}: {anders:?}")),
+            }
+        })
+        .collect();
+        let meldung = lade(&pfad).err().map(|e| e.to_string());
         std::fs::remove_dir_all(&dir).ok();
+        assert!(falsch.is_empty(), "{falsch:#?}");
+        let ende = "enthaelt GanzzahlUeberlauf in Zeile 3, Spalte 50";
+        assert!(
+            meldung.as_deref().is_some_and(|m| m.ends_with(ende)),
+            "{meldung:?}"
+        );
+    }
+
+    /// Grenze des Scans: Zahlformen in einem String (auch hinter `\"`) und eine Ganzzahl ueber
+    /// `u64` ausserhalb von `events` laden wie bisher, auch hinter `events` (`vorjahr_referenz`,
+    /// gerundet als `Gleit`). Eine reale Akte traegt einen 38-stelligen `veranlagungszeitraum`.
+    #[test]
+    fn zahlform_im_text_und_grosser_vz_laden() {
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-grenze-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("grenze.json");
+        let vz = "99999999999999999999999999999999999999";
+        let text = r#""NaN" -Infinity 1e400 18446744073709551616"#;
+        let akte = akte_mit(vz, &format!("{text:?}"))
+            .replace("]}", r#"],"vorjahr_referenz":18446744073709551617}"#);
+        std::fs::write(&pfad, akte).unwrap();
+        let datei = lade(&pfad).unwrap();
+        std::fs::remove_dir_all(&dir).ok();
+        assert_eq!(
+            datei.veranlagungszeitraum,
+            Veranlagungsjahr(vz.parse().unwrap())
+        );
+        assert_eq!(datei.events[0].wert, domain::PyWert::Text(text.to_string()));
+        assert_eq!(
+            datei.vorjahr_referenz,
+            Some(domain::PyWert::Gleit(18_446_744_073_709_551_616.0))
+        );
     }
 }
