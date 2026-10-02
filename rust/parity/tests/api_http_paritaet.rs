@@ -1751,6 +1751,10 @@ fn generatoren() {
     for text in [
         r#"{"inhalt": {"z": 1, "a": [1E5, 1e-7, 0.1], "ä": "😀\u0000"}, "art": "weg_gewaehlt"}"#,
         r#"{"art": "x", "art": "nachfrage_spaeter", "inhalt": {"b": 1, "a": 2, "b": 3}}"#,
+        // i64::MAX: die grösste Ganzzahl, die die Tür noch durchlässt (Rest der Zeile: Zahlenschreibweise).
+        r#"{"art": "pruefliste_aendern", "inhalt": 9223372036854775807}"#,
+        // u64::MAX: ausserhalb von i64 → 400 an der Tür, in Python (`parse_int`) wie in Rust
+        // (`hat_ganzzahl_ausserhalb_i64`); es entsteht keine Zeile in `flow.jsonl`.
         r#"{"art": "pruefliste_aendern", "inhalt": 18446744073709551615}"#,
         "null",
         r#""weg_gewaehlt""#,
