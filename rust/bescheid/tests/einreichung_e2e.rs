@@ -21,49 +21,16 @@
 //! Neu erzeugen: `python3 tools/parity/e2e_faelle.py` aus der Repo-Wurzel.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use bescheid::deklaration::{einreichungs_xml, EinreichFehler};
 use bescheid::testhilfe::{index, params};
+use elster::testhilfe::schemas_da;
 
 fn fixture(datei: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../fixtures/e2e")
         .join(datei)
-}
-
-/// Liegen beide Schemas fuer `vz`? Fehlt eines, ist das rot, ausser `TAXGRAPH_OHNE_XSD=1`.
-fn schemas_da(vz: i64) -> bool {
-    let fehlt: Vec<String> = [
-        (
-            format!("E10-{vz}.xsd"),
-            elster::finde_schema(vz, "E10-{jahr}.xsd"),
-        ),
-        (
-            format!("elster11_E10_{vz}_extern.xsd"),
-            elster::finde_xsd_schema(&vz.to_string()),
-        ),
-    ]
-    .into_iter()
-    .filter_map(|(name, pfad)| pfad.is_none().then_some(name))
-    .collect();
-    if fehlt.is_empty() {
-        return true;
-    }
-    assert!(
-        std::env::var("TAXGRAPH_OHNE_XSD").as_deref() == Ok("1"),
-        "ERiC-Schema fehlt: {fehlt:?}. ERIC_DIR auf die ERiC-Auslieferung setzen; \
-         TAXGRAPH_OHNE_XSD=1 nur, wo kein ERiC liegen kann (CI)."
-    );
-    // Direkt auf stderr: `eprintln!` faengt libtest ein, die CI saehe den Verzicht sonst nie.
-    #[allow(clippy::explicit_write)]
-    writeln!(
-        std::io::stderr(),
-        "TAXGRAPH_OHNE_XSD=1: {fehlt:?} fehlt, XML und XSD NICHT geprueft"
-    )
-    .unwrap();
-    false
 }
 
 fn pruefe(fall: &str) {

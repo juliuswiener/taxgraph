@@ -647,10 +647,9 @@ fn eingaben_pruefen(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<(), X
 /// use elster::{deklariere, erzeuge_xml, Felder, XmlOptionen};
 /// let d = deklariere(&Felder::new(), &HashMap::new(), 2025, None).unwrap();
 /// let opt = XmlOptionen { hersteller_id: Some("00000".into()), ..XmlOptionen::default() };
-/// if elster::finde_schema(2025, "E10-{jahr}.xsd").is_some() {
-///     let xml = erzeuge_xml(&d, &opt).unwrap();
-///     assert!(xml.contains("<E0100001>X</E0100001>"));
-/// }
+/// # if !elster::testhilfe::schemas_da(2025) { return; }
+/// let xml = erzeuge_xml(&d, &opt).unwrap();
+/// assert!(xml.contains("<E0100001>X</E0100001>"));
 /// ```
 pub fn erzeuge_xml(result: &Deklaration, opt: &XmlOptionen<'_>) -> Result<String, XmlFehler> {
     eingaben_pruefen(result, opt)?;

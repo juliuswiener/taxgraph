@@ -441,7 +441,7 @@ def test_eric_skip_greift_nur_mit_dem_flag():
     assert ausgang(True, None) == "rot", (
         "ohne TAXGRAPH_OHNE_XSD kam kein lautes Rot — der stille Skip ist zurueck")
     assert ausgang(True, "1") == "skip", "mit TAXGRAPH_OHNE_XSD=1 wurde nicht uebersprungen"
-    # Nur "1" zaehlt, wie auf der Rust-Seite (einreichung_e2e.rs:55).
+    # Nur "1" zaehlt, wie auf der Rust-Seite (elster::testhilfe::schemas_da).
     for wert in ("true", "yes", "0", ""):
         assert ausgang(True, wert) == "rot", f"TAXGRAPH_OHNE_XSD={wert!r} hat uebersprungen"
     # Ein inhaltlicher XmlFehler wird nie angefasst, auch mit Flag: der Aufrufer reicht die

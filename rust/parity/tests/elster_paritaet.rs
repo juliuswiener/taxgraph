@@ -259,6 +259,16 @@ fn xml_varianten(vz: i64) -> Value {
     })
 }
 
+/// Der XML-Teil (`rust_xml`, xmllint) braucht die Schemas 2024 und 2025; generierte Stores tragen
+/// nur diese Jahre. Ohne Schema scheitert `erzeuge_xml` auf BEIDEN Seiten mit demselben Text, und
+/// der Vergleich ist gruen, ohne ein Byte XML geprueft zu haben. Rot, ausser `TAXGRAPH_OHNE_XSD=1`;
+/// dann laufen die Vergleiche ohne XML weiter.
+fn xml_braucht_schemas() {
+    for vz in [2024, 2025] {
+        let _ = elster::testhilfe::schemas_da(vz);
+    }
+}
+
 fn rust_xml(
     d: &elster::Deklaration,
     felder: &Felder,
@@ -646,10 +656,10 @@ fn schema_und_werkzeug() {
     }
     let mut diffs = 0;
     for vz in [2024_i64, 2025] {
-        let Some(pfad) = elster::finde_schema(vz, "E10-{jahr}.xsd") else {
-            println!("[schema] E10-{vz}.xsd nicht vorhanden (source_unavailable)");
+        if !elster::testhilfe::schemas_da(vz) {
             continue;
-        };
+        }
+        let pfad = elster::finde_schema(vz, "E10-{jahr}.xsd").unwrap();
         let info = elster::schema_info(&pfad).unwrap();
         let py = frage(&json!({"fn": "elster.schema", "vz": vz}));
         let pfade = json!(info
@@ -731,6 +741,7 @@ fn reale_faelle() {
     if skip_ohne_parity_env() {
         return;
     }
+    xml_braucht_schemas();
     let dateien = walk_json(&faelle_verzeichnis());
     let mut z = Zaehler::default();
     for (i, pfad) in dateien.iter().enumerate() {
@@ -999,6 +1010,7 @@ fn generierte_stores() {
     if skip_ohne_parity_env() {
         return;
     }
+    xml_braucht_schemas();
     let z = std::cell::RefCell::new(Zaehler::default());
     let n = std::cell::Cell::new(0_usize);
     let cfg = Config {
@@ -1079,6 +1091,7 @@ fn checkest_stichprobe() {
         println!("[checkESt] ERiC nicht gefunden — source_unavailable, kein rc-Vergleich");
         return;
     }
+    xml_braucht_schemas();
     let hid = hersteller_id();
     println!(
         "[checkESt] Hersteller-ID {}",

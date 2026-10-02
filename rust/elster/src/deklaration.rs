@@ -1177,10 +1177,10 @@ mod tests {
     /// live aus dem XSD 2025, nicht aus `null_unzulaessig`.
     #[test]
     fn art_verzweigung_schreibt_keine_verbotene_null() {
-        let Some(xsd) = crate::finde_schema(2025, "E10-{jahr}.xsd") else {
-            println!("E10-2025.xsd fehlt — source_unavailable");
+        if !crate::testhilfe::schemas_da(2025) {
             return;
-        };
+        }
+        let xsd = crate::finde_schema(2025, "E10-{jahr}.xsd").unwrap();
         let meta = crate::kz_meta(&xsd, "E10").unwrap();
         let verbietet_null = |kz: &str| {
             meta.get(kz).is_some_and(|m| {
