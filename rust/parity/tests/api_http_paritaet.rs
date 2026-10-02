@@ -60,7 +60,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 /// Routen, fuer die Rust heute `501 nicht_portiert` antwortet (AK3 in 9c). Beim Port fliegt die
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
 const NICHT_PORTIERT: &[&str] = &[
-    "GET /fall/{id}/fragen",
     "GET /fall/{id}/feld/{fid}/frage",
     "GET /fall/{id}/ergebnis",
     "GET /fall/{id}/deklaration",
@@ -77,7 +76,7 @@ const NICHT_PORTIERT: &[&str] = &[
 /// diese Routen gehen nach einer Rust-`501` an Python. Stufe 4 (einreichen, chat, entfernung,
 /// kontoauszug) riefe dort `ERiC`, das LLM oder ORS.
 const UNTERGRENZE: &[(&str, usize)] = &[
-    ("GET /fall/{id}/fragen", 3),
+    ("GET /fall/{id}/fragen", 14),
     ("GET /fall/{id}/stand", 7),
     ("GET /fall/{id}/feld/{fid}/warum", 10),
     ("GET /fall/{id}/feld/{fid}/frage", 4),
@@ -1630,6 +1629,81 @@ fn koerper(route: &str, quelle: &str) -> Value {
     }
 }
 
+/// Der Pflicht-Kegel von `an_gesamt` (33 Felder, `SCHEIBEN['an_gesamt']['kegel']`) mit neutralen
+/// Werten, ohne `ep_arbeitstage`, `fam_anzahl_kinder` und `dhf_monate`. Alle Achsen, die dann noch
+/// offen sind, haben einen `bereich`: der Ring rechnet, und `fragen` bekommt Gewichte.
+fn kegel_an() -> Vec<(&'static str, Value)> {
+    vec![
+        ("bruttoarbeitslohn", json!(4_000_000)),
+        ("veranlagung", json!("einzel")),
+        ("ep_entfernung_km", json!(30)),
+        ("ep_oepnv_kosten", json!(0)),
+        ("ep_eigenes_kfz", json!(true)),
+        ("vor_an_anteil_rv", json!(0)),
+        ("vor_ag_anteil_rv", json!(0)),
+        ("vor_rv_ausserhalb_lstb", json!(0)),
+        ("versicherungsart", json!("gesetzlich_an")),
+        ("basis_kv", json!(0)),
+        ("basis_pv", json!(0)),
+        ("vorsorge_arbeitslosenversicherung", json!(0)),
+        ("vorsorge_erwerbsunfaehigkeit", json!(0)),
+        ("vorsorge_unfall_haftpflicht", json!(0)),
+        ("vorsorge_rv_alt_mit_ueberschuss", json!(0)),
+        ("vorsorge_rv_alt_ohne_ueberschuss", json!(0)),
+        ("mit_anspruch_auf_zuschuss", json!(false)),
+        ("dhf_unterkunftskosten_monat", json!(0)),
+        ("dhf_im_inland", json!(false)),
+        ("dhf_beruflich_veranlasst", json!(false)),
+        ("dhf_eigener_hausstand", json!(false)),
+        ("dhf_finanzielle_beteiligung", json!(false)),
+        ("tage_24h", json!(1)),
+        ("tage_an_abreise", json!(1)),
+        ("tage_ueber_8h_eintaegig", json!(1)),
+        ("kein_gewinn", json!(true)),
+        ("kein_kap", json!(true)),
+        ("kein_vuv", json!(true)),
+        ("kein_sonstige", json!(true)),
+        ("verlustvortrag_bestand", json!(0)),
+    ]
+}
+
+/// Der Pflicht-Kegel von `rentner_gesamt` (28 Felder), vollstaendig bestaetigt, als aa-Rente mit
+/// Beginn 2020 und OHNE `rentner_rentenfreibetrag`: der Guard sperrt mit
+/// `rentenfreibetrag_fixierung_offen`, und der Ring wirft `RentenfreibetragFixierungOffen`, sobald
+/// er rechnet.
+fn kegel_rentner() -> Vec<(&'static str, Value)> {
+    vec![
+        ("rentner_renten_art", json!("gesetzliche_rente")),
+        ("rentner_jahresrente", json!(1_200_000)),
+        ("rentner_renten_beginn_jahr", json!(2020)),
+        ("rentner_alter_bei_rentenbeginn", json!(65)),
+        ("rentner_grad_der_behinderung", json!(50)),
+        ("rentner_hilflos_blind_taubblind", json!(false)),
+        ("rentner_pflegegrad", json!(1)),
+        ("rentner_gepflegter_hilflos", json!(false)),
+        ("rentner_hinterbliebenenbezuege", json!(false)),
+        ("veranlagung", json!("einzel")),
+        ("kein_gewinn", json!(true)),
+        ("kein_kap", json!(true)),
+        ("kein_vuv", json!(true)),
+        ("kein_sonstige", json!(false)),
+        ("vor_an_anteil_rv", json!(0)),
+        ("vor_ag_anteil_rv", json!(0)),
+        ("vor_rv_ausserhalb_lstb", json!(0)),
+        ("versicherungsart", json!("gesetzlich_an")),
+        ("basis_kv", json!(0)),
+        ("basis_pv", json!(0)),
+        ("vorsorge_arbeitslosenversicherung", json!(0)),
+        ("vorsorge_erwerbsunfaehigkeit", json!(0)),
+        ("vorsorge_unfall_haftpflicht", json!(0)),
+        ("vorsorge_rv_alt_mit_ueberschuss", json!(0)),
+        ("vorsorge_rv_alt_ohne_ueberschuss", json!(0)),
+        ("mit_anspruch_auf_zuschuss", json!(false)),
+        ("agb_zwangslaeufig", json!(false)),
+        ("agb_notwendig_angemessen", json!(false)),
+    ]
+}
+
 /// Echte Eingaben fuer Stufe 1–3 (9c): vier eigene Faelle in zwei Scheiben, Events auf mehreren
 /// Feldern samt Ersetzung, Vorjahr-Uebernahme aus einer zweiten Fallakte, UI-Meldungen mit
 /// `TAXGRAPH_FLOW=1`, dann jede Lese-Route. Jede Route erreicht ihren Rumpf so oft, wie
@@ -1656,6 +1730,13 @@ fn generatoren() {
         ("g_an", "an_gesamt", 2025),
         ("g_rent", "rentner_gesamt", 2025),
         ("g_rent2", "rentner_gesamt", 2025),
+        // aa-Folgejahr ohne fixierten Rentenfreibetrag: der Ring wirft, `fragen` bleibt vollstaendig.
+        ("g_rent3", "rentner_gesamt", 2025),
+        // `fragen` mit Gewichten aus dem Ring: `g_an2` (Gesamt-Ring, trotz Sperrgrund), `g_ep2` und
+        // `g_vor2` (Gesamt-Ring von `ep`, Teil-Ring von `n_vor_gwg`), je mit einer offenen Achse.
+        ("g_an2", "an_gesamt", 2025),
+        ("g_ep2", "ep", 2025),
+        ("g_vor2", "n_vor_gwg", 2025),
         ("g_vor", "n_vor_gwg", 2025),
         // Herkunftsformen und Zustaende fuer `warum`/`graph`; `g_aussen` bekommt weiter unten die
         // Scheibe `ep` (Scheiben-Wechsel von Hand) und behaelt ein Feld, das dort keine Bindung hat.
@@ -1705,6 +1786,19 @@ fn generatoren() {
         // Ohne `kein_sonstige = false` sperrt schon der Flag-Guard; erst damit bleibt der Rentenbeginn.
         ("g_rent2", "rentner_jahresrente", json!(1_200_000)),
         ("g_rent2", "kein_sonstige", json!(false)),
+        // g_ep2/g_vor2: alles bestaetigt ausser `ep_arbeitstage` (offene Achse mit `bereich`).
+        ("g_ep2", "ep_entfernung_km", json!(30)),
+        ("g_ep2", "ep_oepnv_kosten", json!(0)),
+        ("g_ep2", "ep_eigenes_kfz", json!(true)),
+        ("g_ep2", "ep_ziel_des_weges", json!("1")),
+        (
+            "g_ep2",
+            "ep_ziel_adresse",
+            json!("80331 München, Marienplatz 1"),
+        ),
+        ("g_vor2", "ep_entfernung_km", json!(30)),
+        ("g_vor2", "ep_oepnv_kosten", json!(0)),
+        ("g_vor2", "ep_eigenes_kfz", json!(true)),
         // n_vor_gwg liest seine Felder aus der YAML und rechnet nur den Teil-Ring.
         ("g_vor", "ep_arbeitstage", json!(220)),
         ("g_vor", "ep_entfernung_km", json!(30)),
@@ -1713,6 +1807,19 @@ fn generatoren() {
         let pfad = format!("/fall/{id}/event");
         let b = a("POST", &pfad, Some(ereignis(feld, &wert, None)));
         erster = erster.or_else(|| b?["event_id"].as_str().map(str::to_owned));
+    }
+    // Die zwei Kegel: `g_an2` mit `ep_arbeitstage` (eine offene Achse je `bereich`), `g_rent3` voll.
+    let kegel = kegel_an()
+        .into_iter()
+        .chain([("ep_arbeitstage", json!(220))])
+        .map(|(f, w)| ("g_an2", f, w))
+        .chain(kegel_rentner().into_iter().map(|(f, w)| ("g_rent3", f, w)));
+    for (id, feld, wert) in kegel {
+        a(
+            "POST",
+            &format!("/fall/{id}/event"),
+            Some(ereignis(feld, &wert, None)),
+        );
     }
     for (id, ev) in [
         ("g_wz", ereignis_llm("ep_oepnv_kosten", &json!(120))),
@@ -1837,8 +1944,11 @@ fn generatoren() {
     a("POST", "/fall/g_vj/flow", None);
     let mut engines: BTreeMap<String, usize> = BTreeMap::new();
     let mut gruende: Vec<String> = vec![];
+    let mut fragen_je_fall: Vec<(&str, usize)> = vec![];
+    let mut fragen_gruende: Vec<String> = vec![];
     for id in [
-        "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_vor", "g_wz", "g_aussen",
+        "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_rent3", "g_vor", "g_wz",
+        "g_aussen", "g_an2", "g_ep2", "g_vor2", "g_pf_rot",
     ] {
         for r in ["stand", "fragen", "ergebnis", "graph", "deklaration"] {
             let b = a("GET", &format!("/fall/{id}/{r}"), None);
@@ -1848,9 +1958,19 @@ fn generatoren() {
                     .and_then(|b| b["engine"].as_str().map(str::to_owned));
                 *engines.entry(e.unwrap_or_default()).or_default() += 1;
                 gruende.extend(b.and_then(|b| b["ring_gesperrt"].as_str().map(str::to_owned)));
+            } else if r == "fragen" {
+                // Fragen je Antwort und der Sperrgrund, den `fragen` selbst meldet (ohne den
+                // Rentenbeginn-Zweig von `stand`).
+                let n = b
+                    .as_ref()
+                    .map_or(0, |b| b["fragen"].as_array().map_or(0, Vec::len));
+                fragen_je_fall.push((id, n));
+                fragen_gruende
+                    .extend(b.and_then(|b| b["ring_gesperrt"].as_str().map(str::to_owned)));
             }
         }
     }
+    println!("  fragen: Anzahl je Fall {fragen_je_fall:?}, Sperrgruende {fragen_gruende:?}");
     // `preflight` auf allen Faellen: welche Ampeln und Bereiche Pythons Antworten tragen, gezaehlt
     // wird, was die Antwort enthaelt — nicht, dass 200 zurueckkam.
     let mut ampeln: BTreeMap<String, usize> = BTreeMap::new();
@@ -1935,6 +2055,19 @@ fn generatoren() {
             "stand erreicht den Rechenweg {e:?} zu selten: {engines:?}"
         );
     }
+    // Der Ring wirft hier (`RentenfreibetragFixierungOffen`), und die Liste bleibt trotzdem voll.
+    assert!(
+        fragen_gruende
+            .iter()
+            .any(|g| g == "rentenfreibetrag_fixierung_offen"),
+        "fragen meldet nie den Sperrgrund der Fixierung: {fragen_gruende:?}"
+    );
+    assert!(
+        fragen_je_fall
+            .iter()
+            .any(|(id, n)| *id == "g_rent3" && *n > 100),
+        "fragen: g_rent3 ohne volle Liste: {fragen_je_fall:?}"
+    );
     for ampel in ["RED", "AMBER", "GREEN"] {
         assert!(
             ampeln.get(ampel).copied().unwrap_or(0) >= 1,

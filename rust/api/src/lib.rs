@@ -22,6 +22,7 @@ pub mod eigener_fall;
 pub mod enum_labels;
 pub mod fehler;
 pub mod flow;
+pub mod fragen;
 pub mod graph;
 pub mod konfig;
 pub mod openapi;

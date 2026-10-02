@@ -30,7 +30,7 @@ fn slot_klasse(e: &SlotFehler<BescheidFehler>) -> &'static str {
     }
 }
 
-fn intervall_fehler(e: &IntervallFehler<SlotFehler<BescheidFehler>>) -> ApiFehler {
+pub(crate) fn intervall_fehler(e: &IntervallFehler<SlotFehler<BescheidFehler>>) -> ApiFehler {
     match e {
         IntervallFehler::LeereAchse(_) => ApiFehler::unerwartet("ValueError", e.to_string()),
         IntervallFehler::Ueberlauf(_) => ApiFehler::unerwartet("OverflowError", e.to_string()),
@@ -53,9 +53,37 @@ pub(crate) fn intervall_json(iv: &Intervall) -> Value {
     })
 }
 
-/// `IV.intervall(felder, bindung, bescheid_fn, snapshot_id=sid)["intervall"]` fuer eine Quantitaet.
+/// Der Fehler von [`ring`]: Intervall-Rechnung ueber einen Accessor.
+pub(crate) type RingFehler = IntervallFehler<SlotFehler<BescheidFehler>>;
+
+/// `IV.intervall(felder, bindung, bescheid_fn, snapshot_id=sid)` fuer eine Quantitaet.
+///
+/// `bf_felder` ist das `felder`-Argument von `_bescheid_fn` (der Snapshot fuer Einzelfelder), nicht
+/// das von `IV.intervall`: `/stand` reicht ihn dem Teil-Ring durch, `GET /fragen` nicht
+/// (`api.py:332`).
 ///
 /// `None`, wenn es zu ihr keinen Accessor gibt (`_bescheid_fn` liefert dort `None`).
+#[allow(clippy::too_many_arguments)] // Python-Signatur 1:1: `_bescheid_fn` plus `IV.intervall`
+pub(crate) fn ring(
+    quantitaet: &str,
+    vz: Vz,
+    umgebung: &Umgebung<'_>,
+    achsen: &[AchsenBindung],
+    felder: &Felder,
+    bf_felder: Option<&Felder>,
+    store: Option<&Store>,
+    sid: &str,
+) -> Result<Option<IntervallErgebnis>, RingFehler> {
+    // Estimate-Pfad: ein vorlaeufiger Wert zeigt seine Wirkung im Range (`nur_bestaetigt=False`).
+    let Some(bf) = bescheid_fn(
+        quantitaet, vz, umgebung, bf_felder, store, false, None, None,
+    ) else {
+        return Ok(None);
+    };
+    intervall::intervall(felder, achsen, |w| bf(w), intervall::CAP_DEFAULT, Some(sid)).map(Some)
+}
+
+/// Der `intervall`-Teil von [`ring`] als JSON, fuer `/stand`.
 fn spanne(
     quantitaet: &str,
     vz: Vz,
@@ -65,23 +93,18 @@ fn spanne(
     store: Option<&Store>,
     sid: &str,
 ) -> Result<Option<Value>, ApiFehler> {
-    // Estimate-Pfad: ein vorlaeufiger Wert zeigt seine Wirkung im Range (`nur_bestaetigt=False`).
-    let Some(bf) = bescheid_fn(
+    let r = ring(
         quantitaet,
         vz,
         umgebung,
+        achsen,
+        felder,
         Some(felder),
         store,
-        false,
-        None,
-        None,
-    ) else {
-        return Ok(None);
-    };
-    let r: IntervallErgebnis =
-        intervall::intervall(felder, achsen, |w| bf(w), intervall::CAP_DEFAULT, Some(sid))
-            .map_err(|e| intervall_fehler(&e))?;
-    Ok(Some(intervall_json(&r.intervall)))
+        sid,
+    )
+    .map_err(|e| intervall_fehler(&e))?;
+    Ok(r.map(|r| intervall_json(&r.intervall)))
 }
 
 /// Das Jahr als [`Vz`], oder der Fehler, den Python spaeter in der Rechnung wirft.
@@ -89,7 +112,7 @@ fn spanne(
 /// PARITÄT: Python rechnet mit jedem `int` weiter und scheitert erst im Ring (`params/<vz>`);
 /// [`Vz`] kennt nur 2024–2026. Ein Fall mit anderem Jahr kann nur von Hand angelegt werden
 /// (`POST /fall` prueft `params/`).
-fn jahr(store: &Store) -> Result<Vz, ApiFehler> {
+pub(crate) fn jahr(store: &Store) -> Result<Vz, ApiFehler> {
     let j = store.veranlagungszeitraum();
     u16::try_from(j)
         .ok()
@@ -213,6 +236,6 @@ pub fn stand(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort, Ap
     ))
 }
 
-fn bescheid_fehler(e: &BescheidFehler) -> ApiFehler {
+pub(crate) fn bescheid_fehler(e: &BescheidFehler) -> ApiFehler {
     ApiFehler::unerwartet(e.python_klasse().unwrap_or("OverflowError"), e.to_string())
 }

@@ -247,11 +247,11 @@ async fn owner_check_trennt_nutzer_und_die_ampel_ist_offen() {
             json!({"fall_id": "f1", "scheibe": "ep", "veranlagungszeitraum": 2025})
         )
     );
-    // Eigener Fall: Stub (`fragen` ist noch nicht portiert; `stand` rechnet seit 9c/Stufe 2).
+    // Eigener Fall: Stub (`deklaration` ist noch nicht portiert; `stand` und `fragen` rechnen).
     let a = sende(
         &d,
         "GET",
-        "/fall/f1/fragen",
+        "/fall/f1/deklaration",
         &[("authorization", &alice)],
         None,
     )

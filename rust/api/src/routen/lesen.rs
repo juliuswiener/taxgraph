@@ -12,12 +12,12 @@ use crate::eigener_fall::EigenerFall;
 use crate::fehler::ApiFehler;
 use crate::zustand::{Treffer, Zustand};
 
-/// `GET /fall/{id}/fragen` — `api.fragen` (`api.py:342`).
+/// `GET /fall/{id}/fragen` — `api.fragen` (`api.py:342`), Rumpf in [`crate::fragen::fragen`].
 ///
 /// # Errors
-/// Die Fehler des Owner-Checks (401/403/404) und, sobald portiert, die von `api.fragen`.
-pub async fn fragen(_fall: EigenerFall) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("GET /fall/{id}/fragen"))
+/// Die Fehler des Owner-Checks (401/403/404) und die von `api.fragen`.
+pub async fn fragen(State(z): State<Zustand>, fall: EigenerFall) -> Result<Antwort, ApiFehler> {
+    crate::fragen::fragen(&z, fall.id(), fall.store())
 }
 
 /// `GET /fall/{id}/stand` — `api.stand` (`api.py:447`), Rumpf in [`crate::stand::stand`].
