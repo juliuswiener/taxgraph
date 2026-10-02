@@ -155,7 +155,7 @@ def catala_ep_ab_21km(s: dict) -> int:
     die K2-sichere Richtung (Über-Ansatz = Über-Förderung = Fiskus-Verlust = Under-tax-Analog)."""
     year = s["veranlagungszeitraum"]
     r = _ep_saetze(year)
-    km_voll = int(Decimal(str(s["entfernung_km_roh"])))                # volle Entfernungs-km (§ 9 Abs.1 S.3 Nr.4 S.4)
+    km_voll = int(Decimal(str(s["entfernung_km_roh"])))                # volle Entfernungs-km (§ 9 Abs.1 S.3 Nr.4 S.2; BMF v. 18.11.2021, Rz. 12)
     grenze = int(r["staffelgrenze_km"])                               # 20
     arbeitstage = int(s.get("arbeitstage", 0))
     satz_ab21_ct = int(Decimal(str(r["satz_ab_21_km"])) * 100)        # €/km ab 21 in Cent
