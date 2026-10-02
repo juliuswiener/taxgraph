@@ -70,9 +70,7 @@ def _scheibe(name):
     if cfg["felder"] is not None:
         felder = tuple(cfg["felder"])
     else:
-        import yaml
-        d = yaml.safe_load(open(os.path.join(ROOT, "produkt", "bindung", cfg["felder_datei"]), encoding="utf-8"))
-        felder = tuple(b["feld_id"] for b in d.get("bindungen", []))
+        felder = m["TR"].lade_datei_felder(cfg["felder_datei"])
     return cfg, {f: m["bindung"][f] for f in felder if f in m["bindung"]}
 
 
@@ -261,8 +259,7 @@ def _zweig(req: dict) -> dict:
     if cfg is None:
         bf = m["BZ"]._bescheid_fn(q, vz, m["bindung"], felder, store, nur_bestaetigt=bool(req.get("nur_bestaetigt", True)))
         return {"none": bf is None}
-    alle = cfg["felder"] if cfg["felder"] is not None else tuple(
-        b["feld_id"] for b in __import__("yaml").safe_load(open(os.path.join(ROOT, "produkt", "bindung", cfg["felder_datei"]), encoding="utf-8")).get("bindungen", []))
+    alle = cfg["felder"] if cfg["felder"] is not None else m["TR"].lade_datei_felder(cfg["felder_datei"])
     kegel = cfg.get("kegel") or alle
     voll = m["bindung"]
     bindung = voll if req.get("bindung") == "voll" else {f: voll[f] for f in alle}
@@ -302,8 +299,7 @@ def _scheiben(_req: dict) -> dict:
         q = cfg["gesamt_ring"]
         if q is None:
             continue
-        alle = cfg["felder"] if cfg["felder"] is not None else tuple(
-            b["feld_id"] for b in __import__("yaml").safe_load(open(os.path.join(ROOT, "produkt", "bindung", cfg["felder_datei"]), encoding="utf-8")).get("bindungen", []))
+        alle = cfg["felder"] if cfg["felder"] is not None else m["TR"].lade_datei_felder(cfg["felder_datei"])
         out[q] = {"felder": list(alle), "kegel": list(cfg.get("kegel") or alle)}
     return out
 
