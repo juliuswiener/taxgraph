@@ -198,6 +198,15 @@ const BETRAEGE: &[&str] = &[
     "-2,675",
     "-𝟏𝟐,𝟓",
     "-١_٠٠٠,٥",
+    "-1.234",
+    "1e3",
+    "1,2,3",
+    "480,5",
+    "480",
+    "480.00",
+    "-1200,00 €",
+    "92233720368547758,07",
+    "92233720368547758,08",
 ];
 
 fn csv_zelle(r: &mut Rng, s: &str) -> String {
@@ -348,9 +357,9 @@ fn kontoauszug() {
     let mut mit_tx = 0;
     for (i, t) in csvs.iter().enumerate() {
         let rust = match ka::parse_csv(t) {
-            Ok(v) => {
+            Ok((v, n)) => {
                 mit_tx += usize::from(!v.is_empty());
-                json!({"ok": v.iter().map(tx_json).collect::<Vec<_>>()})
+                json!({"ok": [v.iter().map(tx_json).collect::<Vec<_>>(), n]})
             }
             Err(e) => konto_fehler(&e),
         };
@@ -376,7 +385,9 @@ fn kontoauszug() {
                 .map(|_| (*r.wahl(&llm_texte)).to_owned())
                 .collect()
         });
-        let Ok(tx) = ka::parse_csv(t) else { continue };
+        let Ok((tx, _)) = ka::parse_csv(t) else {
+            continue;
+        };
         let py = frage(
             &json!({"fn": "schritt8.eingang.konto", "tx": tx.iter().map(tx_json).collect::<Vec<_>>(), "ts": TS, "llm": llm}),
         );
@@ -411,9 +422,25 @@ fn kontoauszug() {
             r.wahl(&[",00", ".5", ",5", ",055", "", ".000,99", "e2", "_5"])
         )
     }));
+    // Lange Ziffernfolgen um Pythons 4300-Ziffern-Grenze von int(), mit fuehrenden Nullen und
+    // Tausendergruppen.
+    betraege.extend((0..60).map(|_| {
+        let n = 4250 + r.n(100);
+        let lauf = match r.n(4) {
+            0 => "1".repeat(n),
+            1 => format!("{}{}", "0".repeat(n), r.n(1000)),
+            2 => format!("{}{}", "٠".repeat(n), r.n(1000)),
+            _ => format!("1{}", ".000".repeat(n / 3)),
+        };
+        format!(
+            "{}{lauf}{}",
+            r.wahl(&["", "-"]),
+            r.wahl(&[",00", ",5", ".5", ""])
+        )
+    }));
     let py_b = frage(&json!({"fn": "schritt8.eingang.cent", "werte": betraege}));
     for (i, b) in betraege.iter().enumerate() {
-        let rust = ka::eur_cent_signed(b).map_or_else(|e| konto_fehler(&e), |c| json!({"ok": c}));
+        let rust = json!({"ok": ka::eur_cent_signed(b)});
         z.pruefe(
             &format!("eur_cent {b:?}"),
             &rust,
@@ -460,10 +487,8 @@ fn kontoauszug() {
             .iter()
             .map(|(k, v)| (k.parse().unwrap(), v.as_f64().unwrap()))
             .collect();
-        let rust = match ka::parse_pdf_zeilen(f["text"].as_str().unwrap(), &conf, 0.6) {
-            Ok((t, n)) => json!({"ok": [t.iter().map(tx_json).collect::<Vec<_>>(), n]}),
-            Err(e) => konto_fehler(&e),
-        };
+        let (t, n) = ka::parse_pdf_zeilen(f["text"].as_str().unwrap(), &conf, 0.6);
+        let rust = json!({"ok": [t.iter().map(tx_json).collect::<Vec<_>>(), n]});
         z.pruefe(
             &format!("pdf_zeilen {f}"),
             &rust,
@@ -488,7 +513,7 @@ fn kontoauszug() {
     }
     let mut neg = Zaehler::default();
     let mut gestoert = rust_konto(
-        ka::parse_csv("Datum;Betrag;Zweck\n01.03.2025;-480,00;Maler\n"),
+        ka::parse_csv("Datum;Betrag;Zweck\n01.03.2025;-480,00;Maler\n").map(|(tx, _)| tx),
         None,
     );
     gestoert["events"][0]["wert"] = json!(48001);
@@ -722,9 +747,8 @@ fn pdf_ocr() {
         );
         z.pruefe(&format!("{name}: beleg"), &ocr_json(&beleg), &py["beleg"]);
         if let Ok((t, c)) = &konto {
-            let rust = ka::parse_pdf_zeilen(t, c, 0.6)
-                .map(|(tx, n)| json!([tx.iter().map(tx_json).collect::<Vec<_>>(), n]))
-                .unwrap();
+            let (tx, n) = ka::parse_pdf_zeilen(t, c, 0.6);
+            let rust = json!([tx.iter().map(tx_json).collect::<Vec<_>>(), n]);
             let conf: BTreeMap<String, f64> = c.iter().map(|(k, v)| (k.to_string(), *v)).collect();
             let py_z = frage(
                 &json!({"fn": "schritt8.eingang.pdf_zeilen", "faelle": [{"text": t, "conf": conf}]}),

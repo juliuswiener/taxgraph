@@ -36,6 +36,8 @@ pub(crate) fn speichere(pfad: &Path, bestand: &Value) -> Result<(), AuthFehler> 
     if let Some(dir) = pfad.parent().filter(|d| !d.as_os_str().is_empty()) {
         std::fs::create_dir_all(dir)?;
     }
+    // Vor dem Anlegen der tmp-Datei: scheitert die Serialisierung, bleibt alles unberuehrt.
+    let text = py_json(bestand).map_err(std::io::Error::from)?;
     let mut tmp_name = pfad.as_os_str().to_owned();
     tmp_name.push(".tmp");
     let tmp = std::path::PathBuf::from(tmp_name);
@@ -48,7 +50,7 @@ pub(crate) fn speichere(pfad: &Path, bestand: &Value) -> Result<(), AuthFehler> 
         .create_new(true)
         .mode(0o600)
         .open(&tmp)?;
-    f.write_all(py_json(bestand).as_bytes())?;
+    f.write_all(text.as_bytes())?;
     f.flush()?;
     f.sync_all()?;
     std::fs::rename(&tmp, pfad)?;
@@ -59,18 +61,18 @@ pub(crate) fn speichere(pfad: &Path, bestand: &Value) -> Result<(), AuthFehler> 
 ///
 /// ```
 /// let w = serde_json::json!({"b": [1, 2], "a": "ä"});
-/// assert_eq!(auth::py_json(&w), r#"{"a": "ä", "b": [1, 2]}"#);
+/// assert_eq!(auth::py_json(&w).unwrap(), r#"{"a": "ä", "b": [1, 2]}"#);
 /// ```
-#[must_use]
-pub fn py_json(wert: &Value) -> String {
+///
+/// # Errors
+/// Wenn `serde_json` den Wert nicht schreibt. Ohne `arbitrary_precision` (D1, `py_wert.rs`)
+/// ist kein solcher `Value` bekannt; der Fehler geht trotzdem an den Aufrufer statt als `""`
+/// in die Nutzerdatei.
+pub fn py_json(wert: &Value) -> Result<String, serde_json::Error> {
     let mut puffer = Vec::new();
     let mut ser = serde_json::Serializer::with_formatter(&mut puffer, PyFormatter);
-    // Serialisierung in einen `Vec` scheitert nur an nicht-endlichen Floats, die ein aus JSON
-    // gelesener `Value` nicht tragen kann.
-    if serde::Serialize::serialize(wert, &mut ser).is_err() {
-        return String::new();
-    }
-    String::from_utf8(puffer).unwrap_or_default()
+    serde::Serialize::serialize(wert, &mut ser)?;
+    String::from_utf8(puffer).map_err(serde::ser::Error::custom)
 }
 
 struct PyFormatter;
@@ -102,5 +104,26 @@ impl serde_json::ser::Formatter for PyFormatter {
 
     fn begin_object_value<W: ?Sized + Write>(&mut self, w: &mut W) -> std::io::Result<()> {
         w.write_all(b": ")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use domain::testhilfe::json_wert;
+    use proptest::prelude::*;
+    use serde_json::Value;
+
+    use super::py_json;
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        /// Nur die Trenner unterscheiden `py_json` von `serde_json`: beide Texte lesen sich als
+        /// derselbe Wert. Zahlen schreiben beide gleich, das Lesen rundet sie also gleich.
+        #[test]
+        fn py_json_liest_sich_wie_serde_json(v in json_wert()) {
+            let lies = |t: &str| serde_json::from_str::<Value>(t).ok();
+            prop_assert_eq!(lies(&py_json(&v).unwrap()), lies(&serde_json::to_string(&v).unwrap()));
+        }
     }
 }

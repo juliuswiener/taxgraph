@@ -25,7 +25,7 @@
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard, OnceLock};
 
-use domain::Cent;
+use domain::{Cent, Satz};
 use engine::agb::{self, AgbAbzugEingabe};
 use engine::altersentlastungsbetrag::{self, AltersentlastungsbetragEingabe};
 use engine::berufsausbildung::{self, BerufsausbildungEingabe};
@@ -95,12 +95,12 @@ fn boolf(args: &Value, key: &str) -> bool {
 
 /// § 21 Abs. 2 `EStG` und § 24a `EStG` kodieren ihren Prozentsatz im Corpus als `_num`/`_den`
 /// (siehe `tools/parity/record.py`/`oracle.py`), symmetrisch zu [`engine::dezimal::zu_bruch`].
-fn prozent_von(args: &Value, feld: &str) -> Decimal {
+fn prozent_von(args: &Value, feld: &str) -> Satz {
     let num = i64f(args, &format!("{feld}_num"));
     let den = args[format!("{feld}_den")]
         .as_u64()
         .unwrap_or_else(|| panic!("{feld}_den fehlt"));
-    Decimal::from(num) / Decimal::from(den)
+    Satz::new(Decimal::from(num) / Decimal::from(den))
 }
 
 /// Rechnet EINEN Corpus-/Proptest-Fall ueber die passende `engine`-Funktion, in Cent.
@@ -394,7 +394,7 @@ proptest! {
         if skip_ohne_parity_env() { return Ok(()); }
         let rust_cent = verbilligte_vermietung::berechnen(VerbilligteVermietungEingabe {
             werbungskosten: Cent::new(werbungskosten),
-            entgelt_quote_prozent: Decimal::new(prozent, 0),
+            entgelt_quote_prozent: Satz::new(Decimal::new(prozent, 0)),
         }).expect("VerbilligteVermietungWk-Scope laeuft durch").get();
         let args = serde_json::json!({
             "werbungskosten_cent": werbungskosten,
@@ -543,7 +543,7 @@ proptest! {
         let rust_cent = altersentlastungsbetrag::berechnen(AltersentlastungsbetragEingabe {
             arbeitslohn: Cent::new(arbeitslohn),
             positive_andere_einkuenfte: Cent::new(andere_einkuenfte),
-            prozentsatz: Decimal::new(prozentsatz, 0),
+            prozentsatz: Satz::new(Decimal::new(prozentsatz, 0)),
             hoechstbetrag: Cent::new(hoechstbetrag),
         }).expect("Altersentlastungsbetrag-Scope laeuft durch").get();
         let args = serde_json::json!({

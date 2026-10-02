@@ -1628,6 +1628,72 @@ fn gezielte_faelle() {
                 ("behinderungsbedingte_aufwendungen", json!(100_000), true),
             ],
         ),
+        // § 22 aa: Beginn nach dem VZ (der Ring hat keinen Zweig dafuer) und, als Gegenstueck derselben
+        // Funktion, Beginn vor dem VZ ohne Freibetrag. Der Zufallskorpus trifft beides nicht.
+        (
+            "rentenbeginn_nach_vz",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("gesetzliche_rente"), true),
+                ("rentner_renten_beginn_jahr", json!(2026), true),
+            ],
+        ),
+        (
+            "rentenfreibetrag_fixierung_offen",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("gesetzliche_rente"), true),
+                ("rentner_renten_beginn_jahr", json!(2024), true),
+            ],
+        ),
+        (
+            "rentenbeginn_nach_vz",
+            "rentner_gesamt",
+            vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("rentner_renten_art_partner", json!("gesetzliche_rente"), true),
+                ("rentner_jahresrente_partner", json!(1_200_000), true),
+                ("rentner_renten_beginn_jahr_partner", json!(2026), true),
+                ("rentner_alter_bei_rentenbeginn_partner", json!(65), true),
+            ],
+        ),
+        // § 22 bb sperrt nach dem VZ wie aa; vor dem VZ ohne Freibetrag sperrt bb nicht (kein Freibetrag).
+        (
+            "rentenbeginn_nach_vz",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("private_leibrente"), true),
+                ("rentner_renten_beginn_jahr", json!(2026), true),
+            ],
+        ),
+        (
+            "rentenbeginn_nach_vz",
+            "rentner_gesamt",
+            vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("rentner_renten_art_partner", json!("sonstige_leibrente"), true),
+                ("rentner_jahresrente_partner", json!(1_200_000), true),
+                ("rentner_renten_beginn_jahr_partner", json!(2026), true),
+                ("rentner_alter_bei_rentenbeginn_partner", json!(65), true),
+            ],
+        ),
+        (
+            "(keine Sperre)",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("private_leibrente"), true),
+                ("rentner_renten_beginn_jahr", json!(2024), true),
+            ],
+        ),
+        // § 35: der Hebesatz des Partner-Betriebs fehlt wie der von Person A.
+        (
+            "gewst_hebesatz_offen",
+            "gesamt",
+            vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+            ],
+        ),
     ];
     // Kontrollfall: dieselben Angaben mit beantworteten Fragen sperren NICHT (kein "immer gleicher Grund").
     faelle.push((

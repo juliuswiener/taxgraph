@@ -418,7 +418,7 @@ fn bcrypt_und_handler() {
     let wert: Value = serde_json::from_str(&text_py).unwrap();
     z.pruefe(
         "format py_json",
-        &json!(auth::py_json(&wert)),
+        &json!(auth::py_json(&wert).unwrap()),
         &json!(text_py),
     );
     for d in [&datei_py, &datei_rust] {

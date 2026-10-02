@@ -30,33 +30,13 @@ pub struct P35aHaushaltsnaheEingabe {
     pub p35a_mitveranlagung: bool,
 }
 
-/// § 35a Abs. 1: 20 %, hoechstens 510 EUR (Minijob).
-const HOECHST_MINIJOB: i64 = 510;
-/// § 35a Abs. 2: 20 %, hoechstens 4.000 EUR (Dienstleistungen).
-const HOECHST_DIENSTLEISTUNGEN: i64 = 4000;
-/// § 35a Abs. 3: 20 %, hoechstens 1.200 EUR (Handwerker).
-const HOECHST_HANDWERKER: i64 = 1200;
-
-/// 20 % von `betrag`, abgerundet, gedeckelt; 0 fuer `betrag <= 0`.
-fn zwanzig_prozent(betrag: i64, hoechst: i64) -> Result<i64, EngineFehler> {
-    if betrag <= 0 {
-        return Ok(0);
-    }
-    Ok(ok(
-        betrag
-            .checked_mul(20)
-            .and_then(|x| x.checked_div_euclid(100)),
-        "p35a",
-    )?
-    .min(hoechst))
-}
-
 /// `catala_p35a_haushaltsnahe` -- § 35a Abs. 1-5 `EStG`, EURO. EU/EWR (Abs. 4) gatet alles;
 /// Rechnung + unbare Zahlung (Abs. 5 S. 3) gatet nur Abs. 2/3; oeffentlich gefoerderte
-/// Massnahmen nullen nur Abs. 3 (S. 2). Bei Mitveranlagung halbiert.
+/// Massnahmen nullen nur Abs. 3 (S. 2). Abs. 1-3 rechnet der Catala-Scope `Haushaltsnahe` in
+/// Cent; bei Mitveranlagung halbiert, erst die Summe auf ganze Euro abgerundet.
 ///
 /// # Errors
-/// [`EngineFehler::Ueberlauf`] bei `i64`-Ueberlauf.
+/// [`EngineFehler::Ueberlauf`] bei `i64`-Ueberlauf, [`EngineFehler::Catala`] aus dem Scope.
 ///
 /// ```
 /// use domain::Euro;
@@ -83,14 +63,20 @@ pub fn p35a_haushaltsnahe(e: &P35aHaushaltsnaheEingabe) -> Result<Euro, EngineFe
     if handwerker > 0 && e.hh_handwerker_gefoerdert {
         handwerker = 0;
     }
-    let summe = zwanzig_prozent(e.hh_minijob_aufwendungen.get(), HOECHST_MINIJOB)?
-        + zwanzig_prozent(dienstleistungen, HOECHST_DIENSTLEISTUNGEN)?
-        + zwanzig_prozent(handwerker, HOECHST_HANDWERKER)?;
-    Ok(Euro::new(if e.p35a_mitveranlagung {
+    // ponytail: negativer Topf → 0 vor der Regel (die Regel ergaebe −500 EUR → −100 EUR); faellt
+    // weg, wenn Backlog negativer-aufwand-umgeht-pflichtfrage negative Aufwaende bei der Eingabe abweist.
+    let topf = |x: i64| in_cent(Euro::new(x.max(0))).map(Cent::get);
+    let summe = catala_sys::haushaltsnahe(
+        topf(e.hh_minijob_aufwendungen.get())?,
+        topf(dienstleistungen)?,
+        topf(handwerker)?,
+    )?;
+    Ok(Cent::new(if e.p35a_mitveranlagung {
         summe.div_euclid(2)
     } else {
         summe
-    }))
+    })
+    .floor_euro())
 }
 
 /// Eingabe fuer [`kist`]. Konfession und Bundesland sind die Store-Werte, wie Python sie mit

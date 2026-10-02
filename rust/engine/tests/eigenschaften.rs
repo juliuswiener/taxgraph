@@ -11,13 +11,15 @@ use std::path::Path;
 use std::sync::OnceLock;
 
 use bindung::Params;
-use domain::Cent;
+use domain::{Cent, Euro};
 use engine::tarif::{
     festzusetzende_est_einzel, festzusetzende_est_gesamt, festzusetzende_est_zusammen, grundtarif,
     splittingtarif, FestzusetzendeEstEinzelEingabe, FestzusetzendeEstZusammenEingabe,
     GesamtEingabe, Vz,
 };
 use engine::zugriff::teil1::pauschbetraege::grundfreibetrag;
+use engine::zugriff::teil2::gewerbe::{gewst, GewstAusgabe, GewstEingabe, Hinzurechnung, Kuerzung};
+use engine::zugriff::teil2::solz::{solz, SolzEingabe};
 use proptest::prelude::*;
 
 fn params() -> &'static Params {
@@ -115,5 +117,62 @@ proptest! {
             bruttoarbeitslohn: Cent::new(brutto), werbungskosten: Cent::new(w), sonderausgaben: Cent::new(0),
         }, vz).unwrap();
         prop_assert!(est(wk + dwk) <= est(wk));
+    }
+
+    /// § 4 `SolzG`: Ueber der Freigrenze gleitet der Zuschlag mit 11,9 % des Ueberschusses auf
+    /// 5,5 %. Also kein Sprung, nie fallend, nie ueber 5,5 %, mit Splitting nie hoeher.
+    #[test]
+    fn solz_gleitet_ueber_die_freigrenze(
+        bmg in prop_oneof![0_i64..120_000, 0_i64..10_000_000],
+        kap in prop_oneof![Just(0_i64), 0_i64..50_000],
+        plus in 0_i64..20_000, splitting in any::<bool>(), (_, vz) in jahre()
+    ) {
+        let cent = |basis: i64, splitting: bool| solz(&SolzEingabe {
+            vz, bemessungsgrundlage: Euro::new(basis), kapital_steuer: Euro::new(kap), splitting,
+        }).unwrap().get();
+        let (vorher, nachher) = (cent(bmg, splitting), cent(bmg + plus, splitting));
+        // Je Euro hoechstens 11,9 Cent, dazu ein Cent aus dem Abrunden.
+        prop_assert!(vorher <= nachher && 10 * (nachher - vorher) <= 119 * plus + 10,
+            "{vorher} -> {nachher} Cent bei +{plus} EUR");
+        prop_assert!(10 * vorher <= 55 * bmg.max(kap), "{vorher} Cent > 5,5 % von {bmg} EUR");
+        // Bis zur kleinsten Freigrenze (18.130 EUR, 2024 Einzel) zaehlt nur die Kapitalertragsteuer.
+        if bmg - kap <= 18_130 {
+            prop_assert_eq!(vorher, cent(kap, splitting));
+        }
+        prop_assert!(cent(bmg, true) <= cent(bmg, false));
+    }
+
+    /// §§ 10a, 11 `GewStG`: 3,5 % des auf volle 100 EUR abgerundeten Gewerbeertrags ueber
+    /// 24.500 EUR. Ein Euro Gewinn mehr kostet 0 oder genau 350 Cent Messbetrag. Ein Fehlbetrag
+    /// laesst ueber 1 Mio. EUR mindestens 40 % des Ueberschusses stehen.
+    #[test]
+    fn gewst_messbetrag_nach_gewstg(
+        gewinn in prop_oneof![0_i64..200_000, -500_000_i64..5_000_000],
+        schuldzinsen in 0_i64..1_000_000, kuerzung in 0_i64..200_000,
+        fehlbetrag in prop_oneof![Just(0_i64), 0_i64..3_000_000], (_, vz) in jahre()
+    ) {
+        let n = Euro::new(0);
+        let messbetrag = |gewinn: i64, schuldzinsen: i64, kuerzung: i64, fehlbetrag: i64| {
+            gewst(&GewstEingabe {
+                vz, ausgabe: GewstAusgabe::Messbetrag, gewinn_gewerbebetrieb: Euro::new(gewinn),
+                hinzurechnung: Hinzurechnung {
+                    entgelte_schulden: Euro::new(schuldzinsen), renten: n, stille: n,
+                    miet_beweglich: n, miet_unbeweglich: n, rechte: n,
+                },
+                kuerzung: Kuerzung {
+                    einheitswert: n, grundsteuer: n,
+                    gewinnanteile_mitunternehmer: Euro::new(kuerzung), schachteldividenden: n,
+                },
+                fehlbetrag_bestand: Euro::new(fehlbetrag),
+            }).unwrap().get()
+        };
+        let schritt = messbetrag(gewinn + 1, schuldzinsen, kuerzung, fehlbetrag)
+            - messbetrag(gewinn, schuldzinsen, kuerzung, fehlbetrag);
+        prop_assert!(schritt == 0 || schritt == 350, "+1 EUR Gewinn: {schritt} Cent");
+        prop_assert_eq!(messbetrag(gewinn.rem_euclid(24_600), 0, 0, 0), 0);
+        // Unbegrenzter Fehlbetrag: Von 1 Mio. EUR an sind nur 60 % des Ueberschusses abziehbar.
+        let rest = (gewinn - 1_000_000).max(0) * 4 / 10;
+        let untergrenze = 35 * (rest / 100 * 100 - 24_500).max(0);
+        prop_assert!(10 * messbetrag(gewinn, 0, 0, i64::MAX / 4) >= untergrenze, "Rest {rest} EUR");
     }
 }

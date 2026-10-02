@@ -47,6 +47,9 @@ fn ergebnis<T>(rc: i32, wert: T, vz_code: i32) -> Result<T, CatalaFehler> {
 /// Wie [`ergebnis`], fuer Scopes ohne `Veranlagungszeitraum`-Parameter (der `TG_ERR_VZ`-Zweig
 /// ist fuer diese Scopes unerreichbar, weil ihr `tg_*`-Wrapper `tg_vz()` nie aufruft).
 fn ergebnis_ohne_vz<T>(rc: i32, wert: T) -> Result<T, CatalaFehler> {
+    // Ein anderer Code hiesse: C-Wrapper und Rust-Seite passen nicht mehr zusammen. Unten kaeme
+    // er still als `Assertion` an.
+    debug_assert!(matches!(rc, 0 | 1));
     if rc == 0 {
         Ok(wert)
     } else {
@@ -124,6 +127,12 @@ extern "C" {
         out_cents: *mut i64,
     ) -> i32;
     fn tg_gwg_sofortabzug(anschaffungskosten_netto_cents: i64, out_cents: *mut i64) -> i32;
+    fn tg_haushaltsnahe(
+        minijob_cents: i64,
+        dienstleistungen_cents: i64,
+        handwerker_cents: i64,
+        out_cents: *mut i64,
+    ) -> i32;
     fn tg_verlustvortrag_abzug(
         gde_cents: i64,
         bestand_cents: i64,
@@ -826,6 +835,37 @@ pub fn gwg_sofortabzug(anschaffungskosten_netto_cent: i64) -> Result<i64, Catala
     })
 }
 
+/// § 35a Abs. 1-3 `EStG` haushaltsnahe Beschaeftigung, Dienstleistungen, Handwerker: die drei
+/// Aufwendungen (jeweils Cent) auf die Summe der gedeckelten 20-%-Toepfe, in Cent, ungerundet.
+///
+/// # Errors
+/// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
+///
+/// ```
+/// use catala_sys::haushaltsnahe;
+/// // 0,20 + 1.199,80 EUR: die Regel rundet je Topf nicht
+/// assert_eq!(haushaltsnahe(0, 100, 599_900).unwrap(), 120_000);
+/// ```
+pub fn haushaltsnahe(
+    minijob_cent: i64,
+    dienstleistungen_cent: i64,
+    handwerker_cent: i64,
+) -> Result<i64, CatalaFehler> {
+    locked(|| {
+        let mut out: i64 = 0;
+        // SAFETY: siehe `spenden_abzug`.
+        let rc = unsafe {
+            tg_haushaltsnahe(
+                minijob_cent,
+                dienstleistungen_cent,
+                handwerker_cent,
+                &raw mut out,
+            )
+        };
+        ergebnis_ohne_vz(rc, out)
+    })
+}
+
 /// § 10d `EStG` Verlustvortrag: Gesamtbetrag der Einkuenfte, Verlustvortragsbestand (jeweils
 /// Cent) und Zusammenveranlagungs-Flag auf den Verlustabzug, in Cent.
 ///
@@ -963,6 +1003,13 @@ pub fn raumkostenabzug(
         let mut ffi_out = TgRaumkostenabzugOutFfi::default();
         // SAFETY: siehe `entfernungspauschale`.
         let rc = unsafe { tg_raumkostenabzug(&raw const ffi_in, &raw mut ffi_out) };
+        // Catala setzt `abzug_gesamt` gleich der Summe der Teile. Sonst ist ein Feld im C-Struct
+        // verrutscht, oder `mpz_get_si` hat einen Wert jenseits von `i64` abgeschnitten.
+        debug_assert_eq!(
+            i128::from(ffi_out.abzug_gesamt_cents),
+            i128::from(ffi_out.abzug_arbeitszimmer_cents)
+                + i128::from(ffi_out.abzug_homeoffice_cents)
+        );
         ergebnis_ohne_vz(
             rc,
             RaumkostenabzugErgebnis {

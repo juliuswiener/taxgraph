@@ -6,14 +6,14 @@
 //! Alle Dateien werden EINMAL in [`Params::lade`] gelesen (Python: `lru_cache` je Pfad). Jeder
 //! Fehler nennt Datei und Schluessel.
 //!
-//! Zahlen: ganze Euro-Betraege sind [`Euro`], Saetze mit Nachkommastellen [`Decimal`] (nie `f64`).
+//! Zahlen: ganze Euro-Betraege sind [`Euro`], Saetze mit Nachkommastellen [`Satz`] (nie `f64`).
 //! Eine YAML-Gleitkommazahl wird ueber ihre kuerzeste Dezimaldarstellung gelesen -- dieselbe, die
 //! Pythons `str(float)` liefert (`Decimal(str(prozent))` in runner.py).
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-use domain::{Euro, Vz};
+use domain::{Euro, Satz, Vz};
 use rust_decimal::Decimal;
 use serde_yaml_ng::Value;
 
@@ -58,9 +58,9 @@ pub struct ArbeitszimmerSaetze {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EntfernungspauschaleSaetze {
     /// Euro je km (z. B. `0.30`).
-    pub satz_bis_20_km: Decimal,
+    pub satz_bis_20_km: Satz,
     /// Euro je km ab dem 21. km (z. B. `0.38`).
-    pub satz_ab_21_km: Decimal,
+    pub satz_ab_21_km: Satz,
     pub staffelgrenze_km: i64,
     pub hoechstbetrag_ohne_kfz: Euro,
 }
@@ -89,7 +89,7 @@ pub struct VerpflegungSaetze {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AltersentlastungKohorte {
     /// Prozent (z. B. `13.2`), nicht Anteil.
-    pub prozentsatz: Decimal,
+    pub prozentsatz: Satz,
     pub hoechstbetrag: Euro,
 }
 
@@ -117,7 +117,7 @@ pub struct FahrtkostenPauschalen {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SatzHoechstbetrag {
     /// Anteil (z. B. `0.8`), nicht Prozent.
-    pub abzugssatz: Decimal,
+    pub abzugssatz: Satz,
     pub hoechstbetrag_je_kind: Euro,
 }
 
@@ -125,7 +125,7 @@ pub struct SatzHoechstbetrag {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VersorgungsfreibetragKohorte {
     /// Prozent (z. B. `13.2`), nicht Anteil.
-    pub prozentsatz: Decimal,
+    pub prozentsatz: Satz,
     pub hoechstbetrag: Euro,
     pub zuschlag: Euro,
 }
@@ -255,7 +255,7 @@ impl Params {
     /// use rust_decimal::Decimal;
     /// let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     /// let p = bindung::Params::lade(&wurzel).unwrap();
-    /// assert_eq!(p.entfernungspauschale(domain::Vz::Vz2024).unwrap().satz_bis_20_km, Decimal::new(30, 2));
+    /// assert_eq!(p.entfernungspauschale(domain::Vz::Vz2024).unwrap().satz_bis_20_km.get(), Decimal::new(30, 2));
     /// ```
     pub fn entfernungspauschale(
         &self,
@@ -263,8 +263,8 @@ impl Params {
     ) -> Result<EntfernungspauschaleSaetze, ParamsWertFehler> {
         let d = "entfernungspauschale.yaml";
         Ok(EntfernungspauschaleSaetze {
-            satz_bis_20_km: self.dezimal(vz, d, "satz_bis_20_km")?,
-            satz_ab_21_km: self.dezimal(vz, d, "satz_ab_21_km")?,
+            satz_bis_20_km: Satz::new(self.dezimal(vz, d, "satz_bis_20_km")?),
+            satz_ab_21_km: Satz::new(self.dezimal(vz, d, "satz_ab_21_km")?),
             staffelgrenze_km: self.ganz(vz, d, "staffelgrenze_km")?,
             hoechstbetrag_ohne_kfz: self.euro(vz, d, "hoechstbetrag_ohne_kfz")?,
         })
@@ -328,7 +328,7 @@ impl Params {
     /// let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     /// let p = bindung::Params::lade(&wurzel).unwrap();
     /// let k = p.altersentlastung_kohorte(2025).unwrap();
-    /// assert_eq!((k.prozentsatz, k.hoechstbetrag), (Decimal::new(132, 1), domain::Euro::new(627)));
+    /// assert_eq!((k.prozentsatz.get(), k.hoechstbetrag), (Decimal::new(132, 1), domain::Euro::new(627)));
     /// assert_eq!(p.altersentlastung_kohorte(1990).unwrap().hoechstbetrag, domain::Euro::new(1900));
     /// ```
     pub fn altersentlastung_kohorte(
@@ -366,6 +366,7 @@ impl Params {
         };
         Ok(AltersentlastungKohorte {
             prozentsatz: dezimalzahl(feld("prozentsatz")?)
+                .map(Satz::new)
                 .ok_or_else(|| typfehler("prozentsatz", "Dezimalzahl"))?,
             hoechstbetrag: ganzzahl(feld("hoechstbetrag")?)
                 .map(Euro::new)
@@ -539,7 +540,7 @@ impl Params {
 
     fn satz_hoechstbetrag(&self, vz: Vz, d: &str) -> Result<SatzHoechstbetrag, ParamsWertFehler> {
         Ok(SatzHoechstbetrag {
-            abzugssatz: self.dezimal(vz, d, "abzugssatz")?,
+            abzugssatz: Satz::new(self.dezimal(vz, d, "abzugssatz")?),
             hoechstbetrag_je_kind: self.euro(vz, d, "hoechstbetrag_je_kind")?,
         })
     }
@@ -551,7 +552,7 @@ impl Params {
     ///
     /// ```
     /// let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
-    /// assert_eq!(p.kinderbetreuung(domain::Vz::Vz2025).unwrap().abzugssatz, rust_decimal::Decimal::new(8, 1));
+    /// assert_eq!(p.kinderbetreuung(domain::Vz::Vz2025).unwrap().abzugssatz.get(), rust_decimal::Decimal::new(8, 1));
     /// ```
     pub fn kinderbetreuung(&self, vz: Vz) -> Result<SatzHoechstbetrag, ParamsWertFehler> {
         self.satz_hoechstbetrag(vz, "kinderbetreuung_p10.yaml")
@@ -638,15 +639,16 @@ impl Params {
     ///
     /// ```
     /// let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
-    /// assert_eq!(p.rente_besteuerungsanteil(2025).unwrap(), Some(rust_decimal::Decimal::new(835, 1)));
+    /// assert_eq!(p.rente_besteuerungsanteil(2025).unwrap(), Some(domain::Satz::new(rust_decimal::Decimal::new(835, 1))));
     /// assert_eq!(p.rente_besteuerungsanteil(2004).unwrap(), None);
     /// ```
-    pub fn rente_besteuerungsanteil(&self, jahr: i64) -> Result<Option<Decimal>, ParamsWertFehler> {
+    pub fn rente_besteuerungsanteil(&self, jahr: i64) -> Result<Option<Satz>, ParamsWertFehler> {
         self.kohorten_dezimal(
             "rente_besteuerungsanteil_p22.yaml",
             jahr,
             "besteuerungsanteil_prozent",
         )
+        .map(|s| s.map(Satz::new))
     }
 
     /// § 22 Nr. 1 S. 3 a bb `EStG` Ertragsanteil in Prozent je Alter bei Rentenbeginn
@@ -657,14 +659,15 @@ impl Params {
     ///
     /// ```
     /// let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
-    /// assert_eq!(p.rente_ertragsanteil(0).unwrap(), Some(rust_decimal::Decimal::new(59, 0)));
+    /// assert_eq!(p.rente_ertragsanteil(0).unwrap(), Some(domain::Satz::new(rust_decimal::Decimal::new(59, 0))));
     /// ```
-    pub fn rente_ertragsanteil(&self, alter: i64) -> Result<Option<Decimal>, ParamsWertFehler> {
+    pub fn rente_ertragsanteil(&self, alter: i64) -> Result<Option<Satz>, ParamsWertFehler> {
         self.kohorten_dezimal(
             "rente_ertragsanteil_p22.yaml",
             alter,
             "ertragsanteil_prozent",
         )
+        .map(|s| s.map(Satz::new))
     }
 
     /// § 19 Abs. 2 S. 3 `EStG` Kohortenzeile je Versorgungsbeginn, ausserhalb der Tabelle
@@ -712,6 +715,7 @@ impl Params {
             prozentsatz: zeile
                 .get("prozentsatz")
                 .and_then(dezimalzahl)
+                .map(Satz::new)
                 .ok_or_else(|| typfehler("prozentsatz", "Dezimalzahl"))?,
             hoechstbetrag: euro("hoechstbetrag")?,
             zuschlag: euro("zuschlag")?,
@@ -785,7 +789,7 @@ mod tests {
     #[test]
     fn saetze_2026_entfernung() {
         let s = params().entfernungspauschale(Vz::Vz2026).unwrap();
-        assert_eq!(s.satz_bis_20_km, Decimal::new(38, 2));
+        assert_eq!(s.satz_bis_20_km.get(), Decimal::new(38, 2));
         assert_eq!(s.staffelgrenze_km, 20);
         assert_eq!(s.hoechstbetrag_ohne_kfz, Euro::new(4500));
     }

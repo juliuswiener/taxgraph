@@ -28,9 +28,10 @@ pub mod sonstige;
 
 use bindung::ParamsWertFehler;
 use catala_sys::CatalaFehler;
-use domain::{Cent, CentUeberlauf, Euro};
+use domain::{Cent, CentUeberlauf, Euro, Satz};
 
 use super::teil1::fehler::EngineFehler as Basis;
+use crate::dezimal::zu_bruch;
 
 /// Fehler der Teil-2-Accessoren. [`EngineFehler::Basis`] ist der Teil-1-Fehlertyp (Catala,
 /// Parameter, Ueberlauf); die uebrigen Varianten sind Teil-2-eigene Python-Ausnahmen aus
@@ -122,23 +123,17 @@ fn cent(v: i128) -> Result<Cent, EngineFehler> {
     i64::try_from(v).map(Cent::new).map_err(|_| UEBERLAUF)
 }
 
-/// Python `int(aufw * satz)`: Float-Produkt, dann Abschneiden Richtung 0.
+/// Python `int(aufw * satz)`, exakt: `aufw * zaehler / nenner` in `i128` ([`zu_bruch`]); `/`
+/// schneidet wie `int()` Richtung 0 ab.
 ///
-/// PARITÄT: bewusst `f64` -- Python multipliziert `int x float` in IEEE-754 double; dieselbe
-/// Operation in Rust ist bitgleich (auch `i64 -> f64` rundet in beiden Sprachen
-/// round-to-nearest-even). Exakte Ganzzahlrechnung wuerde oberhalb 2^53 von Python abweichen.
-/// Gemessen: fuer 1..=2.000.000 EUR und die Saetze 0.8/0.3/0.07/0.06 weicht der Float-Weg nie
-/// vom exakten Prozentwert ab.
-fn int_mal_float(aufw: Euro, satz: f64) -> Result<i128, EngineFehler> {
-    // ponytail: Praezisionsverlust oberhalb 2^53 ist genau Pythons Verhalten.
-    #[allow(clippy::cast_precision_loss)]
-    let produkt = (aufw.get() as f64 * satz).trunc();
-    if !produkt.is_finite() || produkt.abs() >= 9.2e18 {
-        return Err(UEBERLAUF);
-    }
-    // ponytail: |produkt| < 2^63 und ganzzahlig, `as` schneidet nichts ab.
-    #[allow(clippy::cast_possible_truncation)]
-    Ok(i128::from(produkt as i64))
+/// PARITÄT, bewusst: Python rechnet `int x float` in IEEE-754 double und verfehlt den exakten
+/// Wert ab |aufw| = 914.793.674.309.657 EUR bei 0,07, 4.691.249.611.844.283 EUR bei 0,06 und
+/// 2^53 + 3 EUR bei 0,5 (gemessen 2026-10-02). Bei 0,06/0,07 zeigt sich das nur fuer negative
+/// Aufwendungen, positive kappt der Hoechstbetrag; die YAML-Saetze von `satz_mit_deckel` kappt er
+/// immer. Test: `p35c::tests::exakt_wo_python_float_abweicht`.
+fn int_mal_satz(aufw: Euro, satz: Satz) -> Result<i128, EngineFehler> {
+    let (zaehler, nenner) = zu_bruch(satz.get()).map_err(Basis::from)?;
+    Ok(z(aufw) * i128::from(zaehler) / i128::from(nenner))
 }
 
 /// Rohwert eines [`Euro`] als `i128`.

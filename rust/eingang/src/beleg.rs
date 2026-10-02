@@ -154,6 +154,10 @@ pub fn beleg_felder(bindung: BindungNachschlag<'_>, typ: BelegTyp) -> BTreeMap<S
 
 /// `_parse_eur_cent("45.000,00")` → 4 500 000 (`int()`, Dezimalziffern jeder Schrift).
 fn eur_cent(betrag: &str) -> Option<i64> {
+    // Trenner streichen ist nur mal 100, wenn `EUR` genau zwei Nachkommastellen liefert.
+    debug_assert!(betrag
+        .rsplit_once(',')
+        .is_some_and(|(_, n)| n.chars().count() == 2));
     match py::py_int_text(&betrag.replace(['.', ','], "")) {
         PyInt::Wert(c) => Some(c),
         _ => None,

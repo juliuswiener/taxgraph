@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # rust/catala-sys/gen.sh — generates the Catala C backend for the modules the Rust port
-# needs today (aliases in produkt/engine/runner.py:66-84 minus Haushaltsnahe, plus
+# needs today (aliases in produkt/engine/runner.py:66-84, plus
 # GwgSofortabzug at runner.py:780) and drops the result into generated/.
 #
 # Mechanism (REWRITE_PLAN.md §3, Audit C Teil 2.3/2.6): scopes declared in ```catala fences
@@ -39,7 +39,7 @@ cat > "$BUILD_ROOT/clerk.toml" <<'TOML'
 [project]
 # One entry per directory that declares Catala modules (module resolution is not recursive).
 # All 27 rule directories under rules/estg are listed so cross-module `> Using` resolves, even
-# though the "rust-c" target below only asks for the 19 modules the Rust port needs today.
+# though the "rust-c" target below only asks for the 20 modules the Rust port needs today.
 include_dirs = [
   "rules/estg/p07_afa_ueberhangsjahr",
   "rules/estg/p11",
@@ -74,7 +74,7 @@ target_dir = "_target"
 
 [[target]]
 name = "rust-c"
-modules = ["Einkommensteuertarif", "Entfernungspauschale", "Arbeitszimmer_homeoffice", "SpendenAbzug", "ZumutbareBelastung", "AgbAbzug", "Kirchensteuerabzug", "Altersentlastungsbetrag", "Entlastungsbetrag", "Familienleistungsausgleich", "VerbilligteVermietungWk", "KrankenPflegeVorsorge", "Berufsausbildungsaufwendungen", "BetriebsFreibetrag", "EuerGewinn", "Verlustvortrag", "MitunternehmerEinkuenfte", "ErmaessigterDurchschnittssatz", "GwgSofortabzug"]
+modules = ["Einkommensteuertarif", "Entfernungspauschale", "Arbeitszimmer_homeoffice", "SpendenAbzug", "ZumutbareBelastung", "AgbAbzug", "Kirchensteuerabzug", "Altersentlastungsbetrag", "Entlastungsbetrag", "Familienleistungsausgleich", "VerbilligteVermietungWk", "KrankenPflegeVorsorge", "Berufsausbildungsaufwendungen", "BetriebsFreibetrag", "EuerGewinn", "Verlustvortrag", "MitunternehmerEinkuenfte", "ErmaessigterDurchschnittssatz", "GwgSofortabzug", "Haushaltsnahe"]
 backends = ["c"]
 include_sources = false
 TOML

@@ -303,6 +303,22 @@ pub enum FuenftelFehler {
 ///
 /// # Errors
 /// Siehe [`FuenftelFehler`].
+///
+/// ```
+/// use domain::Cent;
+/// use engine::tarif::{fuenftel, grundtarif, FuenftelEingabe, FuenftelFehler, Veranlagung, Vz};
+/// let fall = |zve, ao| FuenftelEingabe {
+///     zu_versteuerndes_einkommen: Cent::new(zve),
+///     ausserordentliche_einkuenfte: Cent::new(ao),
+///     veranlagung: Veranlagung::Einzel,
+///     vz: Vz::Vz2025,
+/// };
+/// // 20.000 EUR Abfindung in 60.000 EUR zvE: die Progression greift nur auf ein Fuenftel.
+/// let ohne_regel = grundtarif(Cent::new(6_000_000), Vz::Vz2025).unwrap();
+/// assert!(fuenftel(fall(6_000_000, 2_000_000)).unwrap() < ohne_regel);
+/// // S. 3: ao uebersteigt das zvE; ohne positives zvE gibt es kein Ergebnis.
+/// assert_eq!(fuenftel(fall(-100, 2_000_000)), Err(FuenftelFehler::ZveNichtPositiv));
+/// ```
 pub fn fuenftel(eingabe: FuenftelEingabe) -> Result<Cent, FuenftelFehler> {
     let zve = eingabe.zu_versteuerndes_einkommen.get();
     let ao = eingabe.ausserordentliche_einkuenfte.get();

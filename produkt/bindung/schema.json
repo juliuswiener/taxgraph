@@ -363,7 +363,29 @@
             "feld",
             "grund"
           ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "required": [
+                "wert"
+              ],
+              "not": {
+                "required": [
+                  "wert_nicht"
+                ]
+              }
+            },
+            {
+              "required": [
+                "wert_nicht"
+              ],
+              "not": {
+                "required": [
+                  "wert"
+                ]
+              }
+            }
+          ]
         },
         "ableitung": {
           "type": "object",

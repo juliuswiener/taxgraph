@@ -2,15 +2,8 @@
 //! (`runner.py`, reines Python).
 use domain::{Euro, Vz};
 
-use super::{euro, int_mal_float, z, EngineFehler};
+use super::{euro, int_mal_satz, z, EngineFehler};
 use bindung::{Params, SatzHoechstbetrag};
-use rust_decimal::Decimal;
-
-/// Der YAML-Float, den Python multipliziert: `bindung` liest ihn als kuerzeste Dezimaldarstellung,
-/// das Zurueckparsen liefert genau denselben `f64` (Round-Trip der kuerzesten Darstellung).
-fn als_float(satz: Decimal) -> Result<f64, EngineFehler> {
-    satz.to_string().parse().map_err(|_| super::UEBERLAUF)
-}
 
 /// Gemeinsamer Rechenweg von Kinderbetreuung und Schulgeld: `aufw <= 0 -> 0`, sonst
 /// `min(int(aufw * satz), hb)`.
@@ -18,7 +11,7 @@ fn satz_mit_deckel(aufw: Euro, s: SatzHoechstbetrag, hb: i128) -> Result<Euro, E
     if aufw.get() <= 0 {
         return Ok(Euro::new(0));
     }
-    euro(int_mal_float(aufw, als_float(s.abzugssatz)?)?.min(hb))
+    euro(int_mal_satz(aufw, s.abzugssatz)?.min(hb))
 }
 
 /// Eingabe fuer [`p10_1_5_kinderbetreuung`] (EIN Kind).

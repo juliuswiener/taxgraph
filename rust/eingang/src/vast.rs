@@ -305,6 +305,8 @@ pub fn aus_lersl(leistungen: &[Leistung]) -> Result<Vec<EdatenSatz>, VastFehler>
 
 #[cfg(test)]
 mod tests {
+    use proptest::prelude::*;
+
     use super::cent;
 
     #[test]
@@ -316,5 +318,43 @@ mod tests {
         assert_eq!(cent(Some("0.135")).unwrap(), Some(14));
         assert!(cent(Some("NaN")).is_err());
         assert!(cent(Some("Infinity")).is_err());
+    }
+
+    /// `wert · 10^-stellen` Euro in Cent, half-even, in Ganzzahlen gerechnet.
+    fn halb_gerade(wert: i64, stellen: usize) -> i64 {
+        let zehn = |n: usize| (0..n).fold(1_i64, |p, _| p * 10);
+        if stellen <= 2 {
+            return wert * zehn(2 - stellen);
+        }
+        let teiler = zehn(stellen - 2);
+        let (ganz, rest) = (wert.abs() / teiler, wert.abs() % teiler);
+        let auf = 2 * rest > teiler || (2 * rest == teiler && ganz % 2 == 1);
+        wert.signum() * (ganz + i64::from(auf))
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        /// Unter 28 Stellen rundet `cent` wie Ganzzahl-Arithmetik half-even, mit Punkt, Komma
+        /// oder Exponent, auch mit fuehrenden Nullen.
+        #[test]
+        fn cent_wie_ganzzahl_halb_gerade(
+            ziffern in "[0-9]{1,16}",
+            stellen in 0_usize..7,
+            minus in any::<bool>(),
+            komma in any::<bool>(),
+            exponent in any::<bool>(),
+        ) {
+            let wert = ziffern.parse::<i64>().unwrap() * if minus { -1 } else { 1 };
+            let vz = if minus { "-" } else { "" };
+            let text = if exponent {
+                format!("{vz}{ziffern}e-{stellen}")
+            } else {
+                let z = format!("{ziffern:0>w$}", w = stellen + 1);
+                let (ganz, bruch) = z.split_at(z.len() - stellen);
+                format!("{vz}{ganz}{}{bruch}", if komma { ',' } else { '.' })
+            };
+            prop_assert_eq!(cent(Some(&text)).unwrap(), Some(halb_gerade(wert, stellen)));
+        }
     }
 }
