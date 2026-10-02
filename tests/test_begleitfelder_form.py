@@ -80,6 +80,12 @@ def test_meldung_nennt_feld_und_typ_nie_den_wert():
                         herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer",
                                   "geheim-schluessel": 1}, schreiber="ui:laie", bindung=BINDUNG)
     assert "geheim-schluessel" not in str(e.value)
+    with pytest.raises(ValueError, match=r"signal darf nur die Schlüssel signal_1 und signal_2 tragen") as e:
+        ST.append_event(st, feld_id="ep_arbeitstage", wert=1, zustand="vorlaeufig",
+                        herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                        signal={"signal_1": None, "signal_2": None, "geheim-schluessel": 1},
+                        schreiber="ui:laie", bindung=BINDUNG)
+    assert "geheim-schluessel" not in str(e.value)
 
 
 def test_form_wird_vor_dem_falsy_signal_geprueft():
@@ -100,5 +106,7 @@ def test_http_ts_zahl_und_signal_liste_sind_422(base):
     for signal in (5, "x", [1], True, 0, "", [], False):
         _req(base, "POST", "/fall/form-http/event", {**ev, "signal": signal}, erwarte=422)
     _req(base, "POST", "/fall/form-http/event", {**ev, "herkunft": {**ev["herkunft"], "x": 1}}, erwarte=422)
+    for signal in ({"signal_1": None, "signal_2": "ok", "x": 1}, {"x": 1}):    # Zusatzschlüssel im signal
+        _req(base, "POST", "/fall/form-http/event", {**ev, "signal": signal}, erwarte=422)
     _req(base, "POST", "/fall/form-http/event", ev, erwarte=201)
     assert _req(base, "GET", "/fall/form-http/ergebnis", erwarte=200)[0] == 200
