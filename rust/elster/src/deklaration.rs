@@ -1011,7 +1011,7 @@ impl Bau<'_> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::{BTreeSet, HashMap};
     use std::path::Path;
 
     use domain::{Achsenwert, Herkunft, Konfession, PruefTiefe, Rentenart};
@@ -1254,6 +1254,7 @@ mod tests {
             .into(),
         };
         let mut durch = Vec::new();
+        let mut geprueft = BTreeSet::new();
         for cfg in VERZWEIGUNG.iter().chain(PARTNER_VERZWEIGUNG) {
             let b = index[cfg.feld];
             let werte: &[i64] = if b.typ == Feldtyp::Cent {
@@ -1267,7 +1268,10 @@ mod tests {
                 &[""]
             };
             for i in suffixe {
-                for (art, _) in cfg.kz.paare() {
+                for (art, ziel) in cfg.kz.paare() {
+                    if verbietet_null(ziel) {
+                        geprueft.insert(ziel);
+                    }
                     for w in werte {
                         let snapshot = Felder::from([
                             (format!("{}{i}", cfg.feld), feld(json!(w))),
@@ -1289,6 +1293,12 @@ mod tests {
                 }
             }
         }
+        // Nicht-Leer-Probe (Vault: `decisions/elster-testluecken-mit-eigener-probe-schliessen`):
+        // findet das XSD keine Kz mit 0-Sperre, bestuende `durch.is_empty()` leer.
+        assert!(
+            !geprueft.is_empty(),
+            "keine Kz der Art-Verzweigung verbietet laut XSD 2025 die 0: der Test prueft nichts"
+        );
         assert!(
             durch.is_empty(),
             "0 in {} Faellen durchgelassen, obwohl der XSD-Typ sie verbietet: {durch:?}",
