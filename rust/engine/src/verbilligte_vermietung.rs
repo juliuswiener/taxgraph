@@ -1,7 +1,6 @@
 //! § 21 Abs. 2 `EStG` verbilligte Vermietung.
 use catala_sys::CatalaFehler;
-use domain::Cent;
-use rust_decimal::Decimal;
+use domain::{Cent, Satz};
 
 use crate::dezimal::{self, DezimalUeberlauf};
 
@@ -9,7 +8,7 @@ use crate::dezimal::{self, DezimalUeberlauf};
 #[derive(Debug, Clone, Copy)]
 pub struct VerbilligteVermietungEingabe {
     pub werbungskosten: Cent,
-    pub entgelt_quote_prozent: Decimal,
+    pub entgelt_quote_prozent: Satz,
 }
 
 /// [`berechnen`] kann an der Decimal->Bruch-Umwandlung ODER am Catala-Scope selbst scheitern.
@@ -28,11 +27,11 @@ pub enum VerbilligteVermietungFehler {
 ///
 /// ```
 /// use engine::verbilligte_vermietung::{berechnen, VerbilligteVermietungEingabe};
-/// use domain::Cent;
+/// use domain::{Cent, Satz};
 /// use rust_decimal::Decimal;
 /// let ergebnis = berechnen(VerbilligteVermietungEingabe {
 ///     werbungskosten: Cent::new(100_000),
-///     entgelt_quote_prozent: Decimal::new(100, 0),
+///     entgelt_quote_prozent: Satz::new(Decimal::new(100, 0)),
 /// })
 /// .unwrap();
 /// assert_eq!(ergebnis, Cent::new(100_000));
@@ -40,7 +39,7 @@ pub enum VerbilligteVermietungFehler {
 pub fn berechnen(
     eingabe: VerbilligteVermietungEingabe,
 ) -> Result<Cent, VerbilligteVermietungFehler> {
-    let (num, den) = dezimal::zu_bruch(eingabe.entgelt_quote_prozent)?;
+    let (num, den) = dezimal::zu_bruch(eingabe.entgelt_quote_prozent.get())?;
     let cent = catala_sys::verbilligte_vermietung_wk(eingabe.werbungskosten.get(), num, den)?;
     Ok(Cent::new(cent))
 }
@@ -48,14 +47,14 @@ pub fn berechnen(
 #[cfg(test)]
 mod tests {
     use super::{berechnen, VerbilligteVermietungEingabe};
-    use domain::Cent;
+    use domain::{Cent, Satz};
     use rust_decimal::Decimal;
 
     #[test]
     fn volle_quote_laesst_werbungskosten_unveraendert() {
         let ergebnis = berechnen(VerbilligteVermietungEingabe {
             werbungskosten: Cent::new(100_000),
-            entgelt_quote_prozent: Decimal::new(100, 0),
+            entgelt_quote_prozent: Satz::new(Decimal::new(100, 0)),
         })
         .unwrap();
         assert_eq!(ergebnis, Cent::new(100_000));

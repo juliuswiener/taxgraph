@@ -19,7 +19,7 @@
 use std::cell::{Cell, RefCell};
 
 use bindung::Params;
-use domain::{Cent, Euro, Lage, PyWert, Veranlagung, Vz};
+use domain::{Cent, Euro, Km, Lage, PyWert, Veranlagung, Vz};
 use engine::tarif::Veranlagung as TarifVeranlagung;
 use engine::zugriff::teil1::werbungskosten::{entfernungspauschale, EntfernungspauschaleEingabe};
 use intervall::{bescheid_via_slots, AchsenBindung, SlotFehler, Slots, Werte};
@@ -210,7 +210,7 @@ fn abziehbarer_betrag<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<Euro> {
     Ok(entfernungspauschale(
         &EntfernungspauschaleEingabe {
             veranlagungszeitraum: r.vz(),
-            entfernung_km_roh: Decimal::from(km),
+            entfernung_km_roh: Km::new(Decimal::from(km)),
             arbeitstage,
             eigenes_oder_ueberlassenes_kfz: kfz,
             oepnv_kosten_jahr: oepnv,

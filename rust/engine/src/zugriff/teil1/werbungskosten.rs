@@ -1,7 +1,7 @@
 //! Werbungskosten-Bausteine aus runner.py: Arbeitszimmer/Homeoffice (`catala_raumkosten`),
 //! Entfernungspauschale (`catala_entfernungspauschale`, `catala_ep_ab_21km`). Alle EURO.
 use bindung::Params;
-use domain::{Cent, Euro, Vz};
+use domain::{Cent, Euro, Km, Satz, Vz};
 use rust_decimal::Decimal;
 
 use super::afa::{p6_2_gwg, P62GwgEingabe};
@@ -72,7 +72,7 @@ pub struct EntfernungspauschaleEingabe {
     /// `s["veranlagungszeitraum"]` (Pflicht).
     pub veranlagungszeitraum: Vz,
     /// `Decimal(str(s["entfernung_km_roh"]))` (Pflicht), exakt.
-    pub entfernung_km_roh: Decimal,
+    pub entfernung_km_roh: Km,
     /// `int(s["arbeitstage"])` (Pflicht).
     pub arbeitstage: i64,
     /// PARITÄT: Python setzt fehlend = False (fail-open)
@@ -82,10 +82,14 @@ pub struct EntfernungspauschaleEingabe {
 }
 
 /// Euro-Satz je km (`0.30`) in Cent. Python: `Money(f"{satz:.2f}")`.
-fn satz_cent(satz: Decimal) -> Result<Cent, EngineFehler> {
-    let c = satz * Decimal::ONE_HUNDRED;
+///
+/// Rechtsgrundlage: § 9 Abs. 1 S. 3 Nr. 4 S. 2 `EStG` nennt den Satz in ganzen Cent (0,38 Euro),
+/// die Staffel fuer VZ 2024/2025 ebenso (0,30/0,38 Euro). Ein Satz zwischen zwei Cent ist kein
+/// Gesetzeswert, daher [`EngineFehler::NichtCentGenau`] statt einer Rundung.
+fn satz_cent(satz: Satz) -> Result<Cent, EngineFehler> {
+    let c = satz.get() * Decimal::ONE_HUNDRED;
     if !c.fract().is_zero() {
-        return Err(EngineFehler::NichtCentGenau(satz));
+        return Err(EngineFehler::NichtCentGenau(satz.get()));
     }
     i64::try_from(c)
         .map(Cent::new)
@@ -102,7 +106,7 @@ fn satz_cent(satz: Decimal) -> Result<Cent, EngineFehler> {
 /// use engine::zugriff::teil1::werbungskosten::{entfernungspauschale, EntfernungspauschaleEingabe};
 /// let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
 /// let e = EntfernungspauschaleEingabe {
-///     veranlagungszeitraum: domain::Vz::Vz2025, entfernung_km_roh: rust_decimal::Decimal::from(100),
+///     veranlagungszeitraum: domain::Vz::Vz2025, entfernung_km_roh: domain::Km::new(rust_decimal::Decimal::from(100)),
 ///     arbeitstage: 220, eigenes_oder_ueberlassenes_kfz: true, oepnv_kosten_jahr: domain::Euro::new(0),
 /// };
 /// assert_eq!(entfernungspauschale(&e, &p).unwrap(), domain::Euro::new(8008));
@@ -126,8 +130,11 @@ pub fn entfernungspauschale(
 }
 
 /// Euro-Satz in ganzen Cent, abgeschnitten. Python: `int(Decimal(str(satz)) * 100)`.
-fn satz_cent_abgeschnitten(satz: Decimal) -> Result<i64, EngineFehler> {
-    i64::try_from((satz * Decimal::ONE_HUNDRED).trunc())
+///
+/// Rechtsgrundlage wie [`satz_cent`]: § 9 Abs. 1 S. 3 Nr. 4 S. 2 `EStG` nennt ganze Cent, das
+/// Abschneiden aendert keinen Gesetzeswert. PARITÄT: es bildet nur Pythons `int()` nach.
+fn satz_cent_abgeschnitten(satz: Satz) -> Result<i64, EngineFehler> {
+    i64::try_from((satz.get() * Decimal::ONE_HUNDRED).trunc())
         .map_err(|_| EngineFehler::Ueberlauf("Satz->Cent"))
 }
 
@@ -145,16 +152,14 @@ fn satz_cent_abgeschnitten(satz: Decimal) -> Result<i64, EngineFehler> {
 /// use engine::zugriff::teil1::werbungskosten::{ep_ab_21km, EntfernungspauschaleEingabe};
 /// let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
 /// let e = EntfernungspauschaleEingabe {
-///     veranlagungszeitraum: domain::Vz::Vz2025, entfernung_km_roh: rust_decimal::Decimal::from(30),
+///     veranlagungszeitraum: domain::Vz::Vz2025, entfernung_km_roh: domain::Km::new(rust_decimal::Decimal::from(30)),
 ///     arbeitstage: 100, eigenes_oder_ueberlassenes_kfz: false, oepnv_kosten_jahr: domain::Euro::new(0),
 /// };
 /// assert_eq!(ep_ab_21km(&e, &p).unwrap(), domain::Euro::new(380));
 /// ```
 pub fn ep_ab_21km(e: &EntfernungspauschaleEingabe, p: &Params) -> Result<Euro, EngineFehler> {
     let r = p.entfernungspauschale(e.veranlagungszeitraum)?;
-    // § 9 Abs. 1 S. 3 Nr. 4 S. 4: nur volle Entfernungs-km (int() schneidet Richtung 0 ab).
-    let km_voll =
-        i64::try_from(e.entfernung_km_roh.trunc()).map_err(|_| EngineFehler::Ueberlauf("km"))?;
+    let km_voll = ok(e.entfernung_km_roh.volle_km(), "km")?;
     let grenze = r.staffelgrenze_km;
     let satz_ab21_ct = satz_cent_abgeschnitten(r.satz_ab_21_km)?;
     let satz_bis20_ct = satz_cent_abgeschnitten(r.satz_bis_20_km)?;
