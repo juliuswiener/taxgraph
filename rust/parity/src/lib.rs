@@ -461,8 +461,19 @@ mod tests {
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
     }
 
+    /// Wie in `tests/*_paritaet.rs`: `oracle.py` importiert das aus Catala erzeugte Paket `pkg`
+    /// (`oracle/gettsim/_catala`). Ohne `PARITY=1` (CI, frischer Arbeitsbaum) gibt es das nicht,
+    /// das Orakel schliesst, und der Test panickt mit `Geschlossen`.
+    fn skip_ohne_parity_env() -> bool {
+        std::env::var("PARITY").as_deref() != Ok("1")
+    }
+
     #[test]
     fn oracle_antwortet() {
+        if skip_ohne_parity_env() {
+            eprintln!("PARITY!=1 -- uebersprungen (braucht Catala-Toolchain + Python-Umfeld)");
+            return;
+        }
         let _guard = super::ORACLE_LOCK
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -473,6 +484,10 @@ mod tests {
 
     #[test]
     fn diff_erkennt_uebereinstimmung() {
+        if skip_ohne_parity_env() {
+            eprintln!("PARITY!=1 -- uebersprungen (braucht Catala-Toolchain + Python-Umfeld)");
+            return;
+        }
         let _guard = super::ORACLE_LOCK
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -484,6 +499,10 @@ mod tests {
 
     #[test]
     fn diff_erkennt_abweichung() {
+        if skip_ohne_parity_env() {
+            eprintln!("PARITY!=1 -- uebersprungen (braucht Catala-Toolchain + Python-Umfeld)");
+            return;
+        }
         let _guard = super::ORACLE_LOCK
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
