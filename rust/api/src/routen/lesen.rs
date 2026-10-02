@@ -52,12 +52,13 @@ pub async fn frage_einzeln(_fall: EigenerFall, _treffer: Treffer) -> Result<Antw
     Ok(Antwort::nicht_portiert("GET /fall/{id}/feld/{fid}/frage"))
 }
 
-/// `GET /fall/{id}/ergebnis` — `api.ergebnis` (`api.py:568`, `_ergebnis_roh`).
+/// `GET /fall/{id}/ergebnis` — `api.ergebnis` (`api.py:558`, `_ergebnis_roh`), Rumpf in
+/// [`crate::ergebnis::ergebnis`].
 ///
 /// # Errors
-/// Wie [`fragen`].
-pub async fn ergebnis(_fall: EigenerFall) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("GET /fall/{id}/ergebnis"))
+/// Die Fehler des Owner-Checks (401/403/404) und die von `api.ergebnis`.
+pub async fn ergebnis(State(z): State<Zustand>, fall: EigenerFall) -> Result<Antwort, ApiFehler> {
+    crate::ergebnis::ergebnis(&z, fall.id(), fall.store())
 }
 
 /// `GET /fall/{id}/preflight` — `api.preflight_check` (`api.py:641`), Rumpf in

@@ -61,7 +61,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
 const NICHT_PORTIERT: &[&str] = &[
     "GET /fall/{id}/feld/{fid}/frage",
-    "GET /fall/{id}/ergebnis",
     "GET /fall/{id}/deklaration",
     "POST /fall/{id}/event",
     "POST /fall/{id}/vorjahr",
@@ -80,7 +79,7 @@ const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/stand", 7),
     ("GET /fall/{id}/feld/{fid}/warum", 10),
     ("GET /fall/{id}/feld/{fid}/frage", 4),
-    ("GET /fall/{id}/ergebnis", 3),
+    ("GET /fall/{id}/ergebnis", 26),
     ("GET /fall/{id}/preflight", 17),
     ("GET /fall/{id}/deklaration", 3),
     ("GET /fall/{id}/graph", 9),
@@ -1667,15 +1666,71 @@ fn kegel_an() -> Vec<(&'static str, Value)> {
     ]
 }
 
+/// `kegel_an` vollstaendig: dazu `ep_arbeitstage`, `fam_anzahl_kinder`, `dhf_monate` und die zwei
+/// Verpflegungs-Angaben, die den Guard (§ 9 Abs. 4a) zufriedenstellen. `/ergebnis` nennt eine Zahl.
+fn kegel_an_voll() -> Vec<(&'static str, Value)> {
+    let mut k = kegel_an();
+    k.extend([
+        ("ep_arbeitstage", json!(220)),
+        ("fam_anzahl_kinder", json!(0)),
+        ("dhf_monate", json!(0)),
+        ("vpf_monate_am_ort", json!(2)),
+        ("vpf_keine_mahlzeitengestellung", json!(true)),
+    ]);
+    k
+}
+
+/// Der Pflicht-Kegel von `gesamt` (35 Felder), vollstaendig bestaetigt: Lohn, V+V, Kapital ohne
+/// Betraege. `/ergebnis` nennt eine Zahl und die Rechenweg-Kette.
+fn kegel_gesamt() -> Vec<(&'static str, Value)> {
+    vec![
+        ("vv_einnahmen", json!(1_000_000)),
+        ("vv_gebaeude_afa", json!(100_000)),
+        ("vv_schuldzinsen", json!(50_000)),
+        ("vv_erhaltungsaufwand", json!(0)),
+        ("vv_sonstige_wk", json!(0)),
+        ("vv_entgelt_quote_prozent", json!(100)),
+        ("veranlagung", json!("einzel")),
+        ("bruttoarbeitslohn", json!(4_000_000)),
+        ("ep_arbeitstage", json!(220)),
+        ("ep_entfernung_km", json!(30)),
+        ("ep_oepnv_kosten", json!(0)),
+        ("ep_eigenes_kfz", json!(true)),
+        ("vor_an_anteil_rv", json!(0)),
+        ("vor_ag_anteil_rv", json!(0)),
+        ("vor_rv_ausserhalb_lstb", json!(0)),
+        ("versicherungsart", json!("gesetzlich_an")),
+        ("basis_kv", json!(0)),
+        ("basis_pv", json!(0)),
+        ("vorsorge_arbeitslosenversicherung", json!(0)),
+        ("vorsorge_erwerbsunfaehigkeit", json!(0)),
+        ("vorsorge_unfall_haftpflicht", json!(0)),
+        ("vorsorge_rv_alt_mit_ueberschuss", json!(0)),
+        ("vorsorge_rv_alt_ohne_ueberschuss", json!(0)),
+        ("mit_anspruch_auf_zuschuss", json!(false)),
+        ("kap_kapitalertraege", json!(0)),
+        ("kap_gewinn_aktien", json!(0)),
+        ("kap_verlust_aktien", json!(0)),
+        ("kap_gewinn_sonstige", json!(0)),
+        ("kap_verlust_sonstige", json!(0)),
+        ("kein_gewinn", json!(true)),
+        ("kein_kap", json!(true)),
+        ("kein_vuv", json!(false)),
+        ("kein_sonstige", json!(true)),
+        ("agb_zwangslaeufig", json!(false)),
+        ("agb_notwendig_angemessen", json!(false)),
+    ]
+}
+
 /// Der Pflicht-Kegel von `rentner_gesamt` (28 Felder), vollstaendig bestaetigt, als aa-Rente mit
-/// Beginn 2020 und OHNE `rentner_rentenfreibetrag`: der Guard sperrt mit
+/// Beginn `beginn` und OHNE `rentner_rentenfreibetrag`. Beginn 2020: der Guard sperrt mit
 /// `rentenfreibetrag_fixierung_offen`, und der Ring wirft `RentenfreibetragFixierungOffen`, sobald
-/// er rechnet.
-fn kegel_rentner() -> Vec<(&'static str, Value)> {
+/// er rechnet. Beginn 2025 (Erstjahr): `/ergebnis` nennt eine Zahl.
+fn kegel_rentner(beginn: i64) -> Vec<(&'static str, Value)> {
     vec![
         ("rentner_renten_art", json!("gesetzliche_rente")),
         ("rentner_jahresrente", json!(1_200_000)),
-        ("rentner_renten_beginn_jahr", json!(2020)),
+        ("rentner_renten_beginn_jahr", json!(beginn)),
         ("rentner_alter_bei_rentenbeginn", json!(65)),
         ("rentner_grad_der_behinderung", json!(50)),
         ("rentner_hilflos_blind_taubblind", json!(false)),
@@ -1735,6 +1790,26 @@ fn generatoren() {
         // `fragen` mit Gewichten aus dem Ring: `g_an2` (Gesamt-Ring, trotz Sperrgrund), `g_ep2` und
         // `g_vor2` (Gesamt-Ring von `ep`, Teil-Ring von `n_vor_gwg`), je mit einer offenen Achse.
         ("g_an2", "an_gesamt", 2025),
+        // `ergebnis` mit Zahl: g_an3 (voller Kegel, kein SolZ), g_an4 (dazu Lohnsteuer und
+        // Konfession: KiSt und Abschlusszahlung), g_an5 (vorlaeufige Lohnsteuer sperrt die Zahl),
+        // g_ges2 (Kette), g_ges3 (Kinder: Guenstigerpruefung § 31), g_ges4/g_ges5/g_ges6 (offene
+        // Hinweise trotz Zahl: Gate fehlt, vorlaeufiges Kind-Feld, vorlaeufiger Verkaufspreis),
+        // g_rent4 (Rentner im Erstjahr, Erstattung).
+        ("g_an3", "an_gesamt", 2025),
+        ("g_an4", "an_gesamt", 2025),
+        ("g_an5", "an_gesamt", 2025),
+        ("g_ges2", "gesamt", 2025),
+        ("g_ges3", "gesamt", 2025),
+        ("g_ges4", "gesamt", 2025),
+        ("g_ges5", "gesamt", 2025),
+        ("g_ges6", "gesamt", 2025),
+        // g_ges7: zusammen mit Partner und hohem Einkommen (Freibetrag guenstiger als Kindergeld),
+        // g_ges8: `vv_wohnzwecke` verneint nimmt `vv_entgelt_quote_prozent` aus dem Kegel,
+        // g_ges9: dieselbe Quote fehlt, ohne dass die Regel abbestellt ist.
+        ("g_ges7", "gesamt", 2025),
+        ("g_ges8", "gesamt", 2025),
+        ("g_ges9", "gesamt", 2025),
+        ("g_rent4", "rentner_gesamt", 2025),
         ("g_ep2", "ep", 2025),
         ("g_vor2", "n_vor_gwg", 2025),
         ("g_vor", "n_vor_gwg", 2025),
@@ -1809,17 +1884,87 @@ fn generatoren() {
         erster = erster.or_else(|| b?["event_id"].as_str().map(str::to_owned));
     }
     // Die zwei Kegel: `g_an2` mit `ep_arbeitstage` (eine offene Achse je `bereich`), `g_rent3` voll.
-    let kegel = kegel_an()
-        .into_iter()
-        .chain([("ep_arbeitstage", json!(220))])
-        .map(|(f, w)| ("g_an2", f, w))
-        .chain(kegel_rentner().into_iter().map(|(f, w)| ("g_rent3", f, w)));
+    let mit_kinder = || {
+        let mut k = kegel_gesamt();
+        k.push(("fam_anzahl_kinder", json!(2)));
+        k
+    };
+    let mut kegel: Vec<(&str, &str, Value)> = vec![];
+    let mut fuege = |id: &'static str, k: Vec<(&'static str, Value)>| {
+        kegel.extend(k.into_iter().map(|(f, w)| (id, f, w)));
+    };
+    fuege("g_an2", {
+        let mut k = kegel_an();
+        k.push(("ep_arbeitstage", json!(220)));
+        k
+    });
+    fuege("g_rent3", kegel_rentner(2020));
+    for id in ["g_an3", "g_an4", "g_an5"] {
+        fuege(id, kegel_an_voll());
+    }
+    fuege(
+        "g_an4",
+        vec![
+            ("p36_lohnsteuer", json!(500_000)),
+            ("kist_konfession", json!("evangelisch")),
+        ],
+    );
+    fuege("g_ges2", kegel_gesamt());
+    fuege("g_ges3", mit_kinder());
+    fuege("g_ges4", {
+        let mut k = mit_kinder();
+        k.push(("kinderbetreuungskosten", json!(120_000)));
+        k
+    });
+    fuege("g_ges5", mit_kinder());
+    fuege("g_ges6", kegel_gesamt());
+    fuege("g_ges7", {
+        let mut k = mit_kinder();
+        for e in &mut k {
+            match e.0 {
+                "veranlagung" => e.1 = json!("zusammen"),
+                "bruttoarbeitslohn" => e.1 = json!(40_000_000),
+                _ => {}
+            }
+        }
+        k.extend([
+            ("bruttoarbeitslohn_partner", json!(3_000_000)),
+            ("kap_kapitalertraege_partner", json!(0)),
+            ("kap_gewinn_aktien_partner", json!(0)),
+            ("kap_gewinn_sonstige_partner", json!(0)),
+            ("kap_verlust_aktien_partner", json!(0)),
+            ("kap_verlust_sonstige_partner", json!(0)),
+        ]);
+        k
+    });
+    let ohne_quote = || {
+        let mut k = kegel_gesamt();
+        k.retain(|(f, _)| *f != "vv_entgelt_quote_prozent");
+        k
+    };
+    fuege("g_ges8", {
+        let mut k = ohne_quote();
+        k.push(("vv_wohnzwecke", json!(false)));
+        k
+    });
+    fuege("g_ges9", ohne_quote());
+    fuege("g_rent4", {
+        let mut k = kegel_rentner(2025);
+        k.push(("p36_lohnsteuer", json!(1_000)));
+        k
+    });
     for (id, feld, wert) in kegel {
-        a(
-            "POST",
-            &format!("/fall/{id}/event"),
-            Some(ereignis(feld, &wert, None)),
-        );
+        let pfad = format!("/fall/{id}/event");
+        a("POST", &pfad, Some(ereignis(feld, &wert, None)));
+    }
+    // Vorlaeufige Angaben neben vollstaendigem Kegel (LLM-Vorschlag, kein signal_2).
+    for (id, feld, wert) in [
+        ("g_an5", "p36_lohnsteuer", 500_000),
+        ("g_ges5", "kinderbetreuungskosten", 120_000),
+        ("g_ges6", "p23_veraeusserungspreis", 50_000_000),
+    ] {
+        let pfad = format!("/fall/{id}/event");
+        a("POST", &pfad, Some(ereignis_llm(feld, &json!(wert))));
     }
     for (id, ev) in [
         ("g_wz", ereignis_llm("ep_oepnv_kosten", &json!(120))),
@@ -1946,6 +2091,7 @@ fn generatoren() {
     let mut gruende: Vec<String> = vec![];
     let mut fragen_je_fall: Vec<(&str, usize)> = vec![];
     let mut fragen_gruende: Vec<String> = vec![];
+    let mut ergebnisse: Vec<Value> = vec![];
     for id in [
         "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_rent3", "g_vor", "g_wz",
         "g_aussen", "g_an2", "g_ep2", "g_vor2", "g_pf_rot",
@@ -1958,6 +2104,8 @@ fn generatoren() {
                     .and_then(|b| b["engine"].as_str().map(str::to_owned));
                 *engines.entry(e.unwrap_or_default()).or_default() += 1;
                 gruende.extend(b.and_then(|b| b["ring_gesperrt"].as_str().map(str::to_owned)));
+            } else if r == "ergebnis" {
+                ergebnisse.extend(b);
             } else if r == "fragen" {
                 // Fragen je Antwort und der Sperrgrund, den `fragen` selbst meldet (ohne den
                 // Rentenbeginn-Zweig von `stand`).
@@ -1971,6 +2119,41 @@ fn generatoren() {
         }
     }
     println!("  fragen: Anzahl je Fall {fragen_je_fall:?}, Sperrgruende {fragen_gruende:?}");
+    for id in [
+        "g_an3", "g_an4", "g_an5", "g_ges2", "g_ges3", "g_ges4", "g_ges5", "g_ges6", "g_ges7",
+        "g_ges8", "g_ges9", "g_rent4",
+    ] {
+        ergebnisse.extend(a("GET", &format!("/fall/{id}/ergebnis"), None));
+    }
+    // Was Pythons `/ergebnis` in diesen Faellen sagt: gezaehlt wird der Inhalt der Antwort, nicht dass
+    // 200 zurueckkam. `engine_unavailable` bleibt ungezaehlt: jede Scheibe mit Ring hat einen Accessor.
+    let mut ergebnis_gruende: BTreeMap<String, usize> = BTreeMap::new();
+    for e in &ergebnisse {
+        *ergebnis_gruende
+            .entry(e["grund"].as_str().unwrap_or_default().to_owned())
+            .or_default() += 1;
+    }
+    let mit = |k: &str| ergebnisse.iter().filter(|e| !e[k].is_null()).count();
+    let mit_offen = ergebnisse
+        .iter()
+        .filter(|e| {
+            e["grund"] == "bestaetigt" && e["offen"].as_array().is_some_and(|o| !o.is_empty())
+        })
+        .count();
+    let mit_p31 = ergebnisse
+        .iter()
+        .filter(|e| !e["kette"]["p31"].is_null())
+        .count();
+    let mit_freibetrag = ergebnisse
+        .iter()
+        .filter(|e| e["kette"]["p31"]["guenstiger"] == "freibetraege")
+        .count();
+    println!(
+        "  ergebnis: Gruende {ergebnis_gruende:?}, zahl {} solz {} kist {} abschluss {} kette {} p31 {mit_p31} \
+         offen trotz Zahl {mit_offen} sperr_felder {} trace {}",
+        mit("zahl_cent"), mit("solz_cent"), mit("kist_cent"), mit("abschlusszahlung_cent"),
+        mit("kette"), mit("sperr_felder"), mit("trace"),
+    );
     // `preflight` auf allen Faellen: welche Ampeln und Bereiche Pythons Antworten tragen, gezaehlt
     // wird, was die Antwort enthaelt — nicht, dass 200 zurueckkam.
     let mut ampeln: BTreeMap<String, usize> = BTreeMap::new();
@@ -2067,6 +2250,31 @@ fn generatoren() {
             .iter()
             .any(|(id, n)| *id == "g_rent3" && *n > 100),
         "fragen: g_rent3 ohne volle Liste: {fragen_je_fall:?}"
+    );
+    for g in [
+        "bestaetigt",
+        "input_kegel_nicht_bestaetigt",
+        "ring_betrag_vorlaeufig",
+        "kein_scheiben_gesamtbescheid",
+        "dhf_tatbestand_offen",
+        "partner_konsistenz_offen",
+    ] {
+        assert!(
+            ergebnis_gruende.contains_key(g),
+            "ergebnis meldet nie den Grund {g:?}: {ergebnis_gruende:?}"
+        );
+    }
+    assert!(
+        mit("kist_cent") >= 1 && mit("abschlusszahlung_cent") >= 2 && mit("kette") >= 3,
+        "ergebnis: zu wenige Zahlen mit KiSt, Abschlusszahlung oder Kette"
+    );
+    assert!(
+        mit_p31 >= 2 && mit_freibetrag >= 1 && mit_offen >= 3,
+        "ergebnis: p31 {mit_p31}, davon Freibetrag {mit_freibetrag}, offen {mit_offen}"
+    );
+    assert!(
+        mit("sperr_felder") >= 2,
+        "ergebnis: zu wenige Sperrgruende mit Feldern"
     );
     for ampel in ["RED", "AMBER", "GREEN"] {
         assert!(

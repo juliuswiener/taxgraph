@@ -1,7 +1,7 @@
-//! `GET /fall/{id}/feld/{fid}/warum`, `GET /fall/{id}/graph` und `GET /fall/{id}/preflight` ohne
-//! Python: die Gestalt aus `api.warum` (`api.py:548`), `api.graph` (`api.py:833`) und
-//! `api.preflight_check` (`api.py:641`), an einem Fall der Scheibe `ep` (sechs Felder), mit Events
-//! aus der Store-Bibliothek.
+//! `GET /fall/{id}/feld/{fid}/warum`, `graph`, `preflight` und `ergebnis` ohne Python: die Gestalt aus
+//! `api.warum` (`api.py:548`), `api.graph` (`api.py:833`), `api.preflight_check` (`api.py:641`) und
+//! `api.ergebnis` (`api.py:558`), an einem Fall der Scheibe `ep` (sechs Felder), mit Events aus der
+//! Store-Bibliothek.
 //!
 //! Dass die Antworten Byte fuer Byte denen von Python gleichen, prueft der Differenz-Harness
 //! (`rust/parity/tests/api_http_paritaet.rs`, `generatoren`); dieser Test haelt die Form fest und
@@ -87,11 +87,16 @@ async fn fall_anlegen(d: &Dienst) -> String {
 
 /// Haengt ein bestaetigtes Event an die Akte an (so wie `POST /event` es taete) und gibt seine Kennung.
 fn event_anhaengen(d: &Dienst, feld: &str, wert: i64) -> String {
+    event_mit_wert(d, feld, json!(wert))
+}
+
+/// Wie [`event_anhaengen`], mit beliebigem JSON-Wert (ein Bool-Feld).
+fn event_mit_wert(d: &Dienst, feld: &str, wert: Value) -> String {
     let pfad = d.zustand.konfig.faelle.join("sonde.json");
     let mut store = Store::aus_datei(store::lade(&pfad).unwrap());
     let neu = NeuesEvent {
         feld_id: feld.to_owned(),
-        wert: json!(wert).into(),
+        wert: wert.into(),
         feldzustand: Feldzustand::Bestaetigt {
             signal_2: Signal2::new("klick@naht").unwrap(),
         },
@@ -294,4 +299,43 @@ async fn preflight_ampel_und_items() {
                          deshalb immer kleiner als der Lohn. Bitte prüfe, welche der beiden Zahlen stimmt."},
               sparer])
     );
+}
+
+/// `ergebnis`: ohne Angaben die offenen Kegel-Felder (sortiert) und ein Klartext, mit allen vier die
+/// Zahl der Entfernungspauschale samt Trace. Gemessen 2026-10-02 mit `api.ergebnis` auf demselben
+/// Fall: 215.600 Cent.
+#[tokio::test]
+async fn ergebnis_offen_dann_zahl() {
+    let d = dienst();
+    let token = fall_anlegen(&d).await;
+    let holen = || sende(&d, "GET", "/fall/sonde/ergebnis", &token, None);
+    let (status, offen) = holen().await;
+    assert_eq!(status, 200, "{offen}");
+    assert_eq!(offen["grund"], "input_kegel_nicht_bestaetigt");
+    assert_eq!(
+        offen["offen"],
+        json!([
+            "ep_arbeitstage",
+            "ep_eigenes_kfz",
+            "ep_entfernung_km",
+            "ep_oepnv_kosten"
+        ])
+    );
+    assert_eq!(offen["zahl_cent"], Value::Null);
+    assert!(offen["klartext"].as_str().is_some_and(|k| !k.is_empty()));
+
+    event_anhaengen(&d, "ep_arbeitstage", 220);
+    event_anhaengen(&d, "ep_entfernung_km", 30);
+    event_anhaengen(&d, "ep_oepnv_kosten", 0);
+    event_mit_wert(&d, "ep_eigenes_kfz", json!(true));
+    let (_, zahl) = holen().await;
+    assert_eq!(zahl["grund"], "bestaetigt", "{zahl}");
+    assert_eq!(zahl["zahl_cent"], 215_600);
+    assert_eq!(zahl["offen"], json!([]));
+    assert!(
+        zahl.get("klartext").is_none(),
+        "kein Klartext bei einer Zahl"
+    );
+    assert_eq!(zahl["kette"], Value::Null);
+    assert!(zahl["trace"]["regeln"]["p09_entfernungspauschale"].is_array());
 }
