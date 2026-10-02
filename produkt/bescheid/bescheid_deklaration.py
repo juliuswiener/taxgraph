@@ -1132,6 +1132,10 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # (over-tax-safe opt-out, feuert NICHT). Feld-präsenz-getrieben; Scheiben ohne die Felder → _positiv=False.
         if _positiv("gewst_messbetrag") and (felder.get("gewst_hebesatz") or {}).get("zustand") != "bestaetigt":
             return "gewst_hebesatz_offen"
+        # Person B: derselbe Spiegel für den Betrieb des Ehegatten, nur bei zusammen (sonst rechnet der Ring ihn nicht).
+        if (felder.get("veranlagung", {}).get("wert") == "zusammen" and _positiv("gewst_messbetrag_partner")
+                and (felder.get("gewst_hebesatz_partner") or {}).get("zustand") != "bestaetigt"):
+            return "gewst_hebesatz_offen"
         # Person B (#4): bei Zusammenveranlagung braucht der Ring den vollständig BESTÄTIGTEN Person-B-
         # Kegel (Bruttolohn + IdNr) — sonst kein halber Ehepaar-Bescheid (K2). Bei einzel irrelevant.
         if cfg.get("partner_19") and felder.get("veranlagung", {}).get("wert") == "zusammen":
@@ -1157,14 +1161,18 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # § 22 aa Rentenfreibetrag-Fixierung (K2): ab dem 2. Jahr ist der Freibetrag in EURO fix; fehlt er
         # (aa-Folgejahr, renten_beginn < VZ, kein rentenfreibetrag) → fail-closed, kein %×erhöhte-Rente.
         # renten_beginn > VZ: der Ring kennt dafür keinen Zweig (runner.catala_renten_einkuenfte warf, HTTP 500)
-        # → rentenbeginn_nach_vz, keine Zahl.
+        # → rentenbeginn_nach_vz, keine Zahl. Das gilt auch für bb (Ertragsanteil): dort rechnete der Ring still.
         if cfg.get("rentner"):
-            def _aa_beginn_grund(art, beginn, rf):
-                if not (art in RENTNER_AA_ARTEN and isinstance(beginn, int) and vz is not None):
+            # ponytail: die bb-Werte stehen hier wörtlich wie runner.BB_RENTEN_ARTEN (api_constants ist für diesen
+            # Auftrag gesperrt); ein RENTNER_BB_ARTEN neben RENTNER_AA_ARTEN löst beide Kopien ab.
+            def _beginn_grund(art, beginn, rf):
+                aa = art in RENTNER_AA_ARTEN
+                if not ((aa or art in ("private_leibrente", "sonstige_leibrente"))
+                        and isinstance(beginn, int) and vz is not None):
                     return None
                 if beginn > vz:
                     return "rentenbeginn_nach_vz"
-                if beginn < vz and not (isinstance(rf, (int, float)) and not isinstance(rf, bool)):
+                if aa and beginn < vz and not (isinstance(rf, (int, float)) and not isinstance(rf, bool)):
                     return "rentenfreibetrag_fixierung_offen"
                 return None
             # Multi-Rente (#6): Fixierung + Vollständigkeit JE Rente-Instanz der Person A (instanzen-Naht). Eine
@@ -1177,11 +1185,11 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                     fi = inst["felder"]
                     if inst["index"] >= 2 and (not kern <= set(fi) or inst["zustand"] != "bestaetigt"):
                         return "rente_instanz_offen"
-                    if g := _aa_beginn_grund(fi.get("rentner_renten_art", {}).get("wert"),
+                    if g := _beginn_grund(fi.get("rentner_renten_art", {}).get("wert"),
                                              fi.get("rentner_renten_beginn_jahr", {}).get("wert"),
                                              fi.get("rentner_rentenfreibetrag", {}).get("wert")):
                         return g
-            elif g := _aa_beginn_grund(felder.get("rentner_renten_art", {}).get("wert"),
+            elif g := _beginn_grund(felder.get("rentner_renten_art", {}).get("wert"),
                                        felder.get("rentner_renten_beginn_jahr", {}).get("wert"),
                                        felder.get("rentner_rentenfreibetrag", {}).get("wert")):
                 return g
@@ -1191,7 +1199,7 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             # unbedingten `return None` unten und ist toter Code für gesamt_guard-Scheiben). Zwei konkrete
             # Lücken, beide K2 (fail-closed, kein Rate-Bescheid statt stillem Fehl-Ergebnis):
             # (a) Renten-Gruppe: ein einzelnes rentner_renten_art_partner (ohne beginn_jahr_partner) lief
-            #     ungefangen in den Fixierungs-Guard unten — _aa_beginn_grund(beginn=None) liefert None
+            #     ungefangen in den Fixierungs-Guard unten — _beginn_grund(beginn=None) liefert None
             #     (kein isinstance(None, int)), der Guard griff NICHT — und crashte im Ring mit HTTP 500
             #     ("RentenfreibetragFixierungOffen"), weil der Ring das fehlende Feld intern als 0 (=
             #     aa-Folgejahr) behandelt und dort einen fixierten Freibetrag verlangt, den niemand gesetzt
@@ -1217,7 +1225,7 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                         and (felder.get("versicherungsart_partner") or {}).get("zustand") != "bestaetigt"):
                     return "partner_kegel_offen"
             # Person B (#4b): dieselbe aa-Folgejahr-Fixierungs-Sperre für die Ehegatten-Rente bei zusammen.
-            if felder.get("veranlagung", {}).get("wert") == "zusammen" and (g := _aa_beginn_grund(
+            if felder.get("veranlagung", {}).get("wert") == "zusammen" and (g := _beginn_grund(
                     felder.get("rentner_renten_art_partner", {}).get("wert"),
                     felder.get("rentner_renten_beginn_jahr_partner", {}).get("wert"),
                     felder.get("rentner_rentenfreibetrag_partner", {}).get("wert"))):

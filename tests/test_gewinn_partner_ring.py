@@ -318,6 +318,44 @@ def _sperrgrund(felder: dict):
     return API._an_gesamt_sperrgrund(felder, AC.SCHEIBEN["gesamt"], 2025, None, bindung)
 
 
+def _gewerbe_partner(veranlagung: str, messbetrag: int) -> dict:
+    f = _basis(veranlagung)
+    f["einkuenfte_gewinn_partner"] = {"wert": 5000000, "zustand": "bestaetigt"}
+    f["gewinn_betriebsart_partner"] = {"wert": "gewerbe", "zustand": "bestaetigt"}
+    f["gewst_messbetrag_partner"] = {"wert": messbetrag, "zustand": "bestaetigt"}
+    return f
+
+
+def test_p35_partner_hebesatz_offen_sperrt_wie_person_a():
+    """§ 35: ohne Hebesatz ist die Anrechnung min(4×MB, MB×Hebesatz, …) nicht rechenbar. Für Person A
+    sperrt das gewst_hebesatz_offen; ohne denselben Spiegel rechnete das Paar still ganz ohne die
+    Partner-Anrechnung (over-tax, synthetisch +7.000 EUR, rente35a-Bericht). Vault-Entscheid
+    partner-hebesatz-und-leibrente-nach-dem-steuerjahr-sperren-wie-ihr-gegenstueck."""
+    f = _gewerbe_partner("zusammen", 175000)
+    assert _sperrgrund(f) == "gewst_hebesatz_offen"
+    f["gewst_hebesatz_partner"] = {"wert": 400, "zustand": "bestaetigt"}
+    assert _sperrgrund(f) != "gewst_hebesatz_offen"
+
+
+@pytest.mark.parametrize("veranlagung,messbetrag", [("einzel", 175000), ("zusammen", 0)])
+def test_p35_partner_hebesatz_sperrt_nicht_ohne_partner_anrechnung(veranlagung, messbetrag):
+    """Gegenrichtung: bei Einzelveranlagung rechnet der Ring den Partner-Betrieb nicht mit, ein
+    Messbetrag 0 öffnet § 35 nicht — beides darf nicht an der Hebesatz-Frage hängen."""
+    assert _sperrgrund(_gewerbe_partner(veranlagung, messbetrag)) != "gewst_hebesatz_offen"
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError,
+                   reason="Hebesatz 0 bei Messbetrag > 0 rechnet ohne Anrechnung; Entscheid liegt bei Julius "
+                          "(steht gegen „bestätigte Null sperrt nie“), gemessen 2026-10-02")
+def test_p35_hebesatz_null_bei_messbetrag_sperrt():
+    f = _basis("einzel")
+    f["einkuenfte_gewinn"] = {"wert": 5000000, "zustand": "bestaetigt"}
+    f["gewinn_betriebsart"] = {"wert": "gewerbe", "zustand": "bestaetigt"}
+    f["gewst_messbetrag"] = {"wert": 100000, "zustand": "bestaetigt"}
+    f["gewst_hebesatz"] = {"wert": 0, "zustand": "bestaetigt"}
+    assert _sperrgrund(f) == "gewst_hebesatz_offen"
+
+
 def test_p16_4_gate_gilt_auch_fuer_den_partner():
     """§ 16 Abs. 4 S. 1+2: der Freibetrag setzt Alter ≥ 55 (oder Berufsunfähigkeit) UND
     erstmalige Inanspruchnahme voraus. Für Person A sperrt der Guard, solange das nicht bestätigt
