@@ -66,6 +66,14 @@ def _akte() -> bytes:
         return f.read()
 
 
+def _dateien() -> list[str]:
+    """Was im Fallverzeichnis liegt, ohne das Protokoll. server.py schickt die Antwort auf
+    POST /fall und schreibt audit.jsonl erst danach, ins selbe Verzeichnis (`base` setzt
+    AUDIT_DIR = FAELLE): ob die Datei beim ersten Blick schon steht, entscheidet der Zufall.
+    Ausgenommen ist genau dieser eine Name. Jede andere Datei zählt, auch eine *.tmp."""
+    return sorted(n for n in os.listdir(API.FAELLE) if n != "audit.jsonl")
+
+
 @pytest.fixture
 def fall(base):
     _req(base, "POST", "/fall", {"fall_id": "f1", "scheibe": "ep", "veranlagungszeitraum": 2025})
@@ -129,10 +137,10 @@ def test_kodierung_nur_utf8_ohne_bom(fall, vorsatz, kodierung):
     Bytes diese drei selbst und legte den Fall an: 201 (gemessen 2026-10-02). UTF-16-LE mit BOM
     scheitert an roh.decode mit UnicodeDecodeError, die anderen zwei an json.loads mit
     JSONDecodeError. Beide sind ValueError, also 400 und nicht 500."""
-    vorher = sorted(os.listdir(API.FAELLE)), _akte()
+    vorher = _dateien(), _akte()
     rumpf = json.dumps({"fall_id": "f2", "scheibe": "ep", "veranlagungszeitraum": 2025})
     assert _sende(fall, "/fall", vorsatz + rumpf.encode(kodierung)) == TUER
-    assert (sorted(os.listdir(API.FAELLE)), _akte()) == vorher
+    assert (_dateien(), _akte()) == vorher
 
 
 @pytest.mark.parametrize("zustand", ["bestaetigt", "vorlaeufig"])
