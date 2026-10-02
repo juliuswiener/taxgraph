@@ -18,7 +18,8 @@ store.append_event AttributeError -> 500. Rust führt signal_2 als Option<String
 Feldname, für jeden zustand.
 
 Dazu das Netz hinter der Tür: api.speichere_fall schreibt mit allow_nan=False. Kommt NaN doch
-bis dorthin, scheitert das Schreiben, und die Akte bleibt, wie sie war.
+bis dorthin, scheitert das Schreiben, und die Akte bleibt, wie sie war. N2: keine Teil-Datei *.tmp
+bleibt dabei liegen.
 
 NULL LLM.
 """
@@ -133,3 +134,14 @@ def test_netz_speichere_fall_schreibt_kein_nan(tmp_path, monkeypatch):
     with pytest.raises(ValueError):
         API.speichere_fall("f1", {"events": [{"ts": float("nan")}]})
     assert (tmp_path / "f1.json").read_bytes() == vorher
+
+
+def test_n2_gescheitertes_schreiben_laesst_keine_teil_datei(tmp_path, monkeypatch):
+    """N2: scheitert das Schreiben, löscht speichere_fall die eigene *.tmp. Vorher blieb sie
+    liegen, mit dem Anfang des Falls darin. Der Auslöser hier ist allow_nan=False; die Löschung
+    gilt für jeden Fehler bis einschließlich os.replace."""
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path))
+    API.speichere_fall("f1", {"events": []})
+    with pytest.raises(ValueError):
+        API.speichere_fall("f1", {"events": [{"ts": float("nan")}]})
+    assert os.listdir(tmp_path) == ["f1.json"]
