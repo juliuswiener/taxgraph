@@ -5,20 +5,24 @@ Backlog negativer-aufwand-umgeht-pflichtfrage. Gemessen (Worker authfix, 2026-10
 -50000 Cent auf hh_handwerker_betrag gab 201, die Pflichtfrage "Rechnung und Überweisung?" prüft nur
 Beträge > 0 und entfiel, ELSTER lehnte die Erklärung erst bei der Abgabe ab ("Unzulässiges Vorzeichen").
 
-`nicht_negativ: true` steht an 42 Feldern, deren Schematyp kein Minus kennt (NichtNeg/Pos, E10-2025.xsd),
-und an 8 Partner-Spiegeln ohne eigenes Kz. Der Store weist ein Minus dort beim Schreiben ab (422, Auflage V),
+`nicht_negativ: true` steht an 42 Cent-Feldern, deren Schematyp kein Minus kennt (NichtNeg/Pos, E10-2025.xsd),
+an 8 Partner-Spiegeln ohne eigenes Kz und an dem int-Feld `ep_entfernung_km` (Folge 1, Punkt 3: E0203504,
+GanzzahlPos…, das einzige int-Feld ohne `bereich` mit solchem Schematyp). Der Store weist ein Minus dort
+beim Schreiben ab (422, Auflage V),
 0 und Positives gehen durch, Laden prüft nie. Die vier Verlustfelder, zwei Differenzfelder und 74 unklare
 Felder tragen es nicht.
 
 ponytail: die 74 unklaren Felder (23 mit XSD-Minus ohne Differenz im Bindungstext, 51 ohne Kz) bekommen das
 Attribut erst bei eigenem Beleg; `test_schema_kennt_minus_nicht_aber_bindung_sperrt_es` hält nur die
-Gegenrichtung fest (kein Attribut ohne Schemagrund). Obergrenze: die Heuristik liest den Typnamen
-(NichtNeg/Pos), nicht das Muster — das Muster steckt im Basistyp. Upgrade: Muster über die Vererbungskette
-auflösen, wenn ein Typ ohne diese Namen auftaucht."""
+Gegenrichtung fest (kein Attribut ohne Schemagrund). Obergrenze: die Namens-Heuristik liest den Typnamen
+(NichtNeg/Pos), nicht das Muster — das Muster steckt im Basistyp. Der Upgrade steht seit Folge 1 da:
+`test_kein_zahlfeld_mit_schematyp_ohne_minus_ist_unmarkiert` löst die Vererbungskette auf und fand 0 verfehlte
+Felder (25 Kz-Felder ohne Attribut, alle mit Minus im Schema; 55 ohne Kz haben keinen Schematyp)."""
 from __future__ import annotations
 
 import functools
 import os
+import re
 import sys
 
 import pytest
@@ -89,6 +93,74 @@ def test_schema_kennt_minus_nicht_aber_bindung_sperrt_es(braucht_echtes_xsd):
     assert zuviel == [], f"nicht_negativ an Feldern, deren Schematyp ein Minus erlaubt: {zuviel}"
 
 
+@functools.lru_cache(maxsize=1)
+def _typ_index() -> dict:
+    """Start-Element -> {Typname: complexType-Knoten} aus den lokalen Schemata (für die Vererbungskette)."""
+    index = {}
+    for muster, start in (("E10-{jahr}.xsd", "E10"), ("E77-{jahr}.xsd", "E77")):
+        pfad = X._find_schema(JAHR, muster)
+        if pfad is not None:
+            index[start] = X._load_indices(X._parse_top_level_children(pfad))[0]
+    return index
+
+
+def _kette_kennt_kein_minus(feld_id: str):
+    """Urteil über die GANZE Vererbungskette des Schematyps, nicht über den Typnamen: True, wenn der Grundtyp
+    (nonNegativeInteger/positiveInteger) oder ein Muster der Kette kein Minus zulässt. Die Muster EINES Schritts
+    sind Alternativen, die Schritte gelten zugleich. None ohne Kz oder ohne Schemaeintrag."""
+    kz = BINDUNG[feld_id].get("elster_kz")
+    if not isinstance(kz, str) or not kz.startswith("E"):
+        return None
+    start = X._datenart_fuer_kz(kz)[1]
+    m = _kz_meta().get(start, {}).get(kz)
+    if m is None:
+        return None
+    probe = "-1,00" if "Dezimal" in m["type_name"] else "-1"
+    name, index, gruppen = m["type_name"], _typ_index()[start], []
+    while name in index:
+        basis = None
+        for kind in index[name]:
+            if kind.tag == X.XS + "simpleContent":
+                for x in kind:
+                    if x.tag in (X.XS + "restriction", X.XS + "extension"):
+                        gruppen.append([e.get("value") for e in x if e.tag == X.XS + "pattern"])
+                        basis = x.get("base")
+        if basis is None:
+            break
+        name = basis
+    if name in ("xs:nonNegativeInteger", "xs:positiveInteger"):
+        return True
+    return not all(any(re.fullmatch(p, probe) for p in g) for g in gruppen if g)
+
+
+def test_kein_zahlfeld_mit_schematyp_ohne_minus_ist_unmarkiert(braucht_echtes_xsd):
+    """Folge 1, Punkt 3 (haertung8, 2026-10-02): die Kette bis zum Grundtyp, nicht der Typname. Gemessen: von den
+    80 Cent-Feldern ohne Attribut haben 25 ein Kz, und bei allen 25 lässt der Schematyp ein Minus zu (Grundtyp
+    xs:integer, Muster `-?...`); 55 haben kein Kz. Die Namens-Heuristik oben hat also keines verfehlt. Hier steht
+    die Gegenrichtung als Dauerprüfung: ein künftiges Schema mit einem Typ, den der Name nicht verrät, wird rot.
+    Zahlfelder mit `bereich` fehlen hier: ihr Minimum deckt das Minus."""
+    zahl = [f for f, b in sorted(BINDUNG.items()) if b.get("typ") in ("cent", "int") and not b.get("bereich")]
+    urteil = {f: _kette_kennt_kein_minus(f) for f in zahl}
+    unmarkiert = [f for f, kein_minus in urteil.items() if kein_minus and not BINDUNG[f].get("nicht_negativ")]
+    assert unmarkiert == [], f"Schematyp ohne Minus, aber ohne nicht_negativ: {unmarkiert}"
+    # Kontrolle (ein Null-Ergebnis zählt erst, wenn die Prüfung etwas findet): dieselbe Funktion erkennt jedes der
+    # 43 markierten Felder mit Kz (42 Cent + ep_entfernung_km) als "kein Minus".
+    markiert_mit_kz = [f for f in MIT_ATTRIBUT if BINDUNG[f].get("elster_kz")]
+    assert len(markiert_mit_kz) == 43, markiert_mit_kz
+    assert [f for f in markiert_mit_kz if not _kette_kennt_kein_minus(f)] == []
+
+
+def test_int_feld_ohne_bereich_mit_schematyp_ohne_minus_traegt_nicht_negativ(braucht_echtes_xsd):
+    """Der Vorläufer-Zähler oben (42) zählte nur Cent-Felder. `ep_entfernung_km` (int, E0203504,
+    GanzzahlPosOhneFuehrNull…) war das einzige int-Feld ohne `bereich`, dessen Schematyp kein Minus kennt:
+    -5 km kam über POST /event und über /entfernung in die Akte."""
+    assert _kz_meta(), "E10-2025.xsd nicht gefunden"
+    ohne_minus = [f for f, b in sorted(BINDUNG.items())
+                  if b.get("typ") == "int" and not b.get("bereich") and _schema_kennt_kein_minus(f)]
+    assert ohne_minus == ["ep_entfernung_km"], f"gemessen 2026-10-02: genau ein Feld, jetzt {ohne_minus}"
+    assert BINDUNG["ep_entfernung_km"].get("nicht_negativ") is True
+
+
 def test_partner_spiegel_ohne_kz_folgt_dem_grundfeld():
     """Die 8 Partner-Felder ohne eigenes Kz tragen das Attribut genau dann, wenn ihr Grundfeld es trägt."""
     abweichend = []
@@ -102,7 +174,8 @@ def test_partner_spiegel_ohne_kz_folgt_dem_grundfeld():
 
 
 def test_attribut_steht_nur_an_zahlfeldern_und_die_verlustfelder_tragen_es_nicht():
-    assert len(MIT_ATTRIBUT) == 50, f"42 Schematypen ohne Minus + 8 Partner-Spiegel, gezählt {len(MIT_ATTRIBUT)}"
+    assert len(MIT_ATTRIBUT) == 51, (f"42 Cent-Schematypen ohne Minus + 8 Partner-Spiegel + ep_entfernung_km, "
+                                     f"gezählt {len(MIT_ATTRIBUT)}")
     assert [f for f in MIT_ATTRIBUT if BINDUNG[f].get("typ") not in ("cent", "int")] == []
     assert [f for f in VERLUSTFELDER if f in MIT_ATTRIBUT] == []
 

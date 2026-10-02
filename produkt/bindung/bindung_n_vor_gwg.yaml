@@ -27,6 +27,7 @@ bindungen:
     vorschlagbar_von: [maps]
     quelle: {regel_id: p09_entfernungspauschale, signatur_slot: entfernung_km_roh}
     typ: int
+    nicht_negativ: true
     einheit: km
     askable: true
     vorjahr: uebernehmbar
