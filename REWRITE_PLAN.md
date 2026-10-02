@@ -16,20 +16,43 @@ Der Fix ist der erste Schritt nach dem Orch-Neustart (Vault `tickets/github-ci-s
 
 **Offen zum Orch-Neustart (2026-10-02)**
 
-1. Gebaut, nicht gemergt (Spitzen per `git log -1 <zweig>` geprüft, 11:12):
+1. Gebaut, nicht gemergt (Spitzen per `git log -1 <zweig>` geprüft, 11:36):
    - `orch/k8` `99f50b6`: K8 Tor 1/2, vier Commits auf Basis `ba6ec34` (Einzelheiten §7, 9b-B).
-   - `orch/9c` `908961a`: 9c/0b, `3f8bac9` Owner-Check trägt `FallId` und `Username` statt String;
-     dazu ein Merge von `a941ea7`.
+   - `orch/9c` `7da2de9`: 9c/0b, `3f8bac9` Owner-Check trägt `FallId` und `Username` statt String;
+     dazu Merges von `a941ea7` (`908961a`) und `beef16b` (`7da2de9`). **9c/0c gebaut, nicht committet:**
+     fünf Dateien in `~/.cache/taxgraph-tmp/wt-k5`, `git diff HEAD` byte-gleich `berichte/9c-0c-wip.patch`
+     (geprüft 11:38); PARITY dafür nicht vollständig gelaufen.
    - `orch/hebesatz0` `48d009e` (authfix): `d0de8f5` Hebesatz 0 bei Messbetrag > 0 sperrt wie ein
      fehlender, A und B · `e46d4f5` negativer Hebesatz sperrt wie 0 · `48d009e` Klartext nennt „0 oder darunter".
+     Die Worker-PARITY für `d0de8f5`/`e46d4f5` zählt nicht: zwei Worktrees teilten ein `CARGO_TARGET_DIR`,
+     cargo nahm fremde Artefakte. Nachmessung im frischen Baum.
+   - `orch/flow` `31faa26`: `0333d2f` fremder Rumpf an `flow` antwortet 400 statt 500, nur Python
+     (`produkt/haut/flow.py`, `tests/test_flow_mitschnitt.py`); dazu Merge von `beef16b`. Rust-Teil 9c/0e
+     offen (Bericht `berichte/flow.md`; Vault `decisions/rust-9c-generator-je-route-und-flow-portieren`,
+     Nachtrag 11:30).
+   - `orch/haertung` `980cd90`: eine Doku-Zeile in `rust/store/src/store.rs` (kein Doku-Link auf das private
+     `ableitung::berechne`); Basis `bb01e0f`, Bericht `berichte/json-leser.md`.
 2. Reihenfolge danach:
    1. CI-Fix: die drei `parity`-Lib-Tests folgen der PARITY-Konvention (Vault-Ticket oben).
-   2. Gemeinsame Nachmessung, Merge der drei Zweige, Push.
+   2. Gemeinsame Nachmessung im frischen Baum, Merge aller Zweige aus Punkt 1, Push.
    3. YAML-Cache im Orakel (Vault `research/taxgraph-bauzeit-vs-testzeit`, Abschnitt „Stand der Umsetzung").
    4. Doctest-Zählung `catala-sys` klären: `berichte/haertung.md` (auf `908820e`) zählt 25 von 26 `pub fn`
       mit Doctest und erklärt den 26. cargo-Doctest mit einem Nicht-fn-Item; `55305af` meldet 26/26 und
       erklärt die 25 mit einem Zählfehler von `messung.py` (Doc-Block über `#[allow]`).
-3. In Arbeit, Stand in deren Übergabe: Worker `haertung`, `rundung`, `k7b`.
+   5. K8-Rest (§7): Arm `rust/store/src/abweisung.rs:140` (`_ => None` auf `Schreiber`) erst nach K8 auf main,
+      im selben Commit wie das Löschen der `OFFEN`-Zeile (`rust/api/tests/domain_enums_exhaustiv.rs:23` auf
+      `orch/k8`). Offen: ob Tor 2 auch `interview` sperrt.
+   6. Aus der Übergabe `haertung` (Bericht `berichte/json-leser.md`):
+      - Flake-Testfix `test_kodierung_nur_utf8_ohne_bom`: der Server schreibt das Protokoll erst nach der
+        Antwort (Vault `tickets/kodierungstest-liest-das-verzeichnis-bevor-der-server-sein-protokoll-schreibt`).
+      - Wortlaut `rust/store/src/persistenz.rs:21`: „kein gueltiges JSON" gilt für jeden serde-Fehler.
+      - Warteschlange (Vault `backlog/taxgraph/`): `bindungsbereich-prueft-nur-der-browser` →
+        `negativer-aufwand-umgeht-pflichtfrage` → `python-schreibt-akte-die-der-rust-leser-sperrt` →
+        `python-schreibt-ganzzahl-ueber-i64-in-die-fallakte`.
+   7. 9c/0c committen, dann die Route `GET /fall/{id}/stand`.
+   8. Rust-Teil 9c/0e (`flow`, Bericht `berichte/flow.md`).
+   9. K9 Commits 0–4 (§7).
+3. In Arbeit: kein Worker.
 
 | Schritt | Stand | Commits |
 |---|---|---|
@@ -350,10 +373,15 @@ realen Stores Pflicht) · K3 `interview` · K4 `konsistenz` · K5 `elster` · K6
 (`serde_json::Value` in bescheid/konsistenz/intervall/interview = 0; `_ =>` auf Domain-Enums = 0) · K9 `&str`-Rest.
 **K8-Stand auf `beef16b`: Tor 1/2 gebaut auf `orch/k8` (`99f50b6`, Basis `ba6ec34`), nicht gemergt.** Tor 1
 (`_ =>` auf Domain-Enums): Workspace-Test `rust/api/tests/domain_enums_exhaustiv.rs` über clippys
-`wildcard_enum_match_arm`; eine Ausnahme offen (`OFFEN`: der Arm in `store/src/abweisung.rs`, geht an haertung).
+`wildcard_enum_match_arm`; eine Ausnahme offen (`OFFEN`: der Arm `store/src/abweisung.rs:140`, erst nach K8 auf main).
 Tor 2 (`serde_json::Value`): `clippy.toml` verbietet `Value` und `Map` in `bescheid` und `konsistenz`;
 `intervall` nutzt `Value` nur in Testmodulen, `interview` weiter im Produktcode (`interview/src/fragen.rs:121`,
 gemessen auf `99f50b6`) — für `interview` ist das Tor nicht erreicht.
+**K9 Stufe 1 gemessen** (Worker `k7b`, Bericht `berichte/k9-karte.md`, nicht nachgemessen): eigene Typen nur,
+wo heute ein falscher Text still durchrutscht (Vault `decisions/k9-typen-nur-wo-heute-ein-falscher-text-durchrutscht`).
+Stufe 2 nach dem Orch-Neustart in den Commits 0–4: `bindung` Kz → `elster` `Vz` → `domain`+`elster` `&Kz` →
+`elster` `deklariere(.., Option<&EventId>)` → `konsistenz` `BasisId`. Commit 5 (`bescheid_fn(Quantitaet)`)
+entfällt; Nachschlage-Schlüssel bleiben Text, alle 26 statt der 8 unter „Entscheidungen".
 Entscheidungen: `Lage<T>` nur für Enum-Felder (Veranlagung, Konfession, Bundesland, Rentenart) und
 Cent-Summen in `bescheid`, voller bindungstypisierter Snapshot nach Cutover · `auth`/`audit`-Newtypes
 (`Username`, `FallId`) in 9c mit den API-Handlern · Listen/Objekte und Ganzzahlen > u64 in Fremddaten
