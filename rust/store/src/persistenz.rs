@@ -443,6 +443,60 @@ mod tests {
         std::fs::remove_dir_all(&dir).ok();
     }
 
+    /// AK3 (Vault `decisions/tuer-und-speicher-weisen-ab-was-die-fallakte-nicht-exakt-halten-
+    /// kann`, Punkt 2): jedes Event, das der Python-Schreibweg annimmt, laedt der Leser; was Python
+    /// abweist, lehnt der Leser ab oder liest es nur, weil er einen Zusatz still verwirft
+    /// (`rust_laedt` dokumentiert, welches von beiden). Gemeinsame Tabelle mit
+    /// `tests/test_begleitfelder_form.py`: `rust/fixtures/begleitfelder_formen.json`.
+    #[test]
+    fn begleitfelder_formen_laden_wie_die_tabelle_sagt() {
+        use serde_json::{json, Value};
+        let tabelle: Value =
+            serde_json::from_str(include_str!("../../fixtures/begleitfelder_formen.json")).unwrap();
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-formen-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("formen.json");
+        let faelle = tabelle["faelle"].as_array().unwrap();
+        assert!(faelle.len() >= 30, "Tabelle zu klein: {}", faelle.len());
+        let falsch: Vec<String> = faelle
+            .iter()
+            .filter_map(|fall| {
+                let name = fall["name"].as_str().unwrap();
+                let angenommen = fall["python"] == "angenommen";
+                // Was Python bei einem angenommenen Aufruf SPEICHERT: fehlendes/null `ts` wird zur
+                // Zeit, fehlendes/null/leeres `signal` zum Standard-Signal. Ein abgewiesener Aufruf
+                // wird nie gespeichert; sein Wortlaut geht unveraendert an den Leser.
+                let ts = match fall.get("ts") {
+                    Some(v) if !(angenommen && v.is_null()) => v.clone(),
+                    _ => tabelle["standard_ts"].clone(),
+                };
+                let signal = match fall.get("signal") {
+                    Some(v) if !(angenommen && (v.is_null() || v == &json!({}))) => Some(v.clone()),
+                    _ if angenommen => Some(tabelle["standard_signal"].clone()),
+                    _ => None,
+                };
+                let mut event = json!({
+                    "event_id": "0".repeat(64), "ts": ts, "feld_id": "ep_arbeitstage", "wert": 1,
+                    "zustand": "bestaetigt", "herkunft": fall["herkunft"], "schreiber": "julius",
+                    "ersetzt": null,
+                });
+                if let Some(s) = signal {
+                    event["signal"] = s;
+                }
+                let akte = json!({"version": 1, "veranlagungszeitraum": 2025, "snapshots": [], "events": [event]});
+                std::fs::write(&pfad, akte.to_string()).unwrap();
+                let laedt = lade(&pfad).is_ok();
+                let erwartet = angenommen || fall["rust_laedt"] == true;
+                (laedt != erwartet).then(|| format!("{name}: laedt={laedt}, erwartet={erwartet}"))
+            })
+            .collect();
+        std::fs::remove_dir_all(&dir).ok();
+        assert!(falsch.is_empty(), "{falsch:#?}");
+    }
+
     /// Wortlaut von `PersistenzFehler::Format`: „kein gueltiges JSON" nur fuer Syntax und
     /// abgeschnittenen Text; gueltiges JSON mit falscher Form (fehlendes Feld, falscher Typ,
     /// doppeltes Feld) sagt das so. Jede Meldung nennt Zeile und Spalte.

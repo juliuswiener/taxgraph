@@ -319,15 +319,55 @@ def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
             "Bindung — ein formal falscher Wert wird spätestens beim Finanzamt abgelehnt.")
 
 
+_HERKUNFT_SCHLUESSEL = ("herkunft", "pruef_tiefe", "haftung")
+
+
+def _pruefe_begleitfelder(ts, herkunft, signal) -> None:
+    """Auflage Form (decisions/tuer-und-speicher-weisen-ab-was-die-fallakte-nicht-exakt-halten-kann,
+    Punkt 2): `ts`, `herkunft` und `signal` tragen genau die Form, die der Rust-Leser der Fallakte
+    kennt. Python prüfte bisher nur den Wert; ein Zeitstempel als Zahl oder ein Herkunftszusatz ging
+    durch, und die Rust-Fassung sperrte die ganze Akte danach (jede Route 500). Ein `signal`, das kein
+    Objekt war, endete in AttributeError (500) oder wurde als falsy Form still zum Standard-Signal.
+
+    - `ts`: fehlt (None) oder Text.
+    - `herkunft`: GENAU die drei Schlüssel herkunft/pruef_tiefe/haftung, oder nur `herkunft` (die Alt-Form
+      in 32 echten Akten, rust/domain HerkunftVektor); herkunft/haftung nicht leerer Text, pruef_tiefe
+      eine der vier Stufen. Ein Zusatzschlüssel ist 422, auch wo der Rust-Leser ihn stillschweigend
+      verwürfe (Voll-Form) — er ginge beim Neuschreiben verloren und änderte die event_id.
+    - `signal`: fehlt (None) oder ein Objekt. Jede andere Form, auch 0, "", [] und false, ist 422.
+    (`signal_2` Text/null prüft append_event weiter unten.)
+
+    Die Meldungen nennen Feld und Typ, nie den Wert (Zeitstempel und Schlüssel sind Nutzereingaben).
+    Gemeinsame Tabelle der Formen für Python und Rust: rust/fixtures/begleitfelder_formen.json."""
+    if ts is not None and not isinstance(ts, str):
+        raise ValueError(f"fail-closed (Form): ts muss Text sein oder fehlen, nicht {type(ts).__name__}.")
+    if not isinstance(herkunft, dict):
+        raise ValueError(f"fail-closed (Form): herkunft muss ein Objekt sein, nicht {type(herkunft).__name__}.")
+    if set(herkunft) != set(_HERKUNFT_SCHLUESSEL) and set(herkunft) != {"herkunft"}:
+        raise ValueError("fail-closed (Form): herkunft muss genau die Schlüssel herkunft, pruef_tiefe und "
+                         "haftung tragen (oder nur herkunft) — jeder andere Schlüsselsatz macht die Akte "
+                         "für die Rust-Fassung unlesbar.")
+    for achse in ("herkunft", "haftung"):
+        if achse in herkunft and not (isinstance(herkunft[achse], str) and herkunft[achse]):
+            raise ValueError(f"fail-closed (Form): herkunft.{achse} muss ein nicht leerer Text sein.")
+    if "pruef_tiefe" in herkunft and herkunft["pruef_tiefe"] not in _PRUEF_ORD:
+        raise ValueError("fail-closed (Form): herkunft.pruef_tiefe muss eine der Stufen "
+                         f"{', '.join(_PRUEF_ORD)} sein.")
+    if signal is not None and not isinstance(signal, dict):
+        raise ValueError(f"fail-closed (Form): signal muss ein Objekt sein oder fehlen, nicht "
+                         f"{type(signal).__name__}.")
+
+
 def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dict,
                  schreiber: str, signal: dict | None = None, ersetzt: str | None = None,
                  ts: str | None = None, katalog: dict | None = None,
                  bindung: dict | None = None) -> dict:
-    """Baut EIN Event, prüft fail-closed (Auflagen A+B+T), setzt den content-adressierten event_id,
+    """Baut EIN Event, prüft fail-closed (Auflagen Form+A+B+T), setzt den content-adressierten event_id,
     hängt es an. Gibt das Event zurück. KEINE zweite Schreib-Implementierung.
 
     bindung: optional — wenn gesetzt, greift Auflage T (Typ-Konformität, s. _pruefe_typ_konformitaet).
     Weggelassen bleibt der Aufruf wie bisher (Rückwärtskompatibilität zu den Bestandsaufrufen)."""
+    _pruefe_begleitfelder(ts, herkunft, signal)   # VOR `signal or ...`: die falsy Formen sind sonst unsichtbar
     signal = signal or {"signal_1": None, "signal_2": None}
 
     # Auflage A: ein llm:-Schreiber muss sich ehrlich deklarieren (kein Herkunfts-Schlupfloch).
