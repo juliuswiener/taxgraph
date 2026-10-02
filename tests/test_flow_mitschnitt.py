@@ -169,6 +169,26 @@ def test_die_oberflaeche_meldet_nur_was_sonst_niemand_sieht(fall):
         "mit Beliebigem füllen.")
 
 
+@pytest.mark.parametrize("body", [["weg_gewaehlt"], "weg_gewaehlt", 5, None,
+                                  {"art": ["weg_gewaehlt"]}, {"art": {"weg_gewaehlt": 1}}])
+def test_ein_rumpf_ohne_objekt_oder_ohne_textsorte_ist_400_wie_eine_unbekannte_sorte(
+        fall, monkeypatch, body):
+    """Ein Rumpf, der kein Objekt ist, und eine Sorte, die kein Text ist, sind Client-Eingabe —
+    dieselbe Fehlerklasse wie eine unbekannte Sorte, also dieselbe 400. Ein 500 hiesse „der
+    Server ist kaputt", wo der Client falsch gefragt hat. Ohne Schalter bleibt es 200 ohne
+    Prüfung: dann wird nichts geschrieben, also gibt es nichts abzuweisen."""
+    fid, pfad = fall
+    vorher = _zeilen(pfad)
+    with pytest.raises(API.ApiError) as e:
+        API.flow_melden(fid, body)
+    assert e.value.status == 400, f"{body!r}: {e.value.status} statt 400"
+    assert _zeilen(pfad) == vorher, f"Abgewiesen und trotzdem mitgeschrieben: {_zeilen(pfad)}"
+
+    monkeypatch.delenv("TAXGRAPH_FLOW", raising=False)
+    monkeypatch.delenv("TAXGRAPH_KI_DEBUG", raising=False)
+    assert API.flow_melden(fid, body) == (200, {"mitgeschrieben": False})
+
+
 def test_eine_zu_grosse_meldung_wird_gekappt_und_sagt_es(fall):
     """Ein Client-Beitrag ist Fremdtext und darf die Datei nicht sprengen. Gekappt wird er
     deshalb — aber NICHT stillschweigend: stillschweigend gekürzt sähe im Mitschnitt aus wie
