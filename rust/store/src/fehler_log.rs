@@ -112,6 +112,12 @@ impl FallId {
         Self(fall_id.to_string())
     }
 
+    /// ```
+    /// use store::fehler_log::FallId;
+    /// let steuer_id = regex::Regex::new(r"\d{11}").unwrap();
+    /// assert_eq!(FallId::pruefe("demo-1", &[steuer_id.clone()]).als_str(), "demo-1");
+    /// assert_eq!(FallId::pruefe("12345678901", &[steuer_id]).als_str(), "<gesperrt:pii>");
+    /// ```
     #[must_use]
     pub fn als_str(&self) -> &str {
         &self.0
@@ -147,6 +153,18 @@ pub enum FehlerLogFehler {
 /// Literal, kein zusammengesetzter Text, sonst reist Nutzereingabe mit. `exc` wird NUR ueber
 /// seinen Typnamen gelesen, nie ueber seinen Inhalt (s. Moduldoku, Punkt 1).
 ///
+/// ```
+/// use store::fehler_log::{protokolliere, Meta, Stufe};
+/// let dir = std::env::temp_dir().join(format!("taxgraph-doctest-fehlerlog-{}", std::process::id()));
+/// let pfad = dir.join("fehler.jsonl");
+/// let fehler = std::io::Error::other("IBAN DE89370400440532013000");
+/// protokolliere(&pfad, "server.dispatch", &fehler, Stufe::Fehler, None, Meta::default()).unwrap();
+/// let zeile = std::fs::read_to_string(&pfad).unwrap();
+/// assert!(zeile.contains("server.dispatch"));
+/// assert!(!zeile.contains("DE89")); // der Inhalt des Fehlers reist nie mit
+/// std::fs::remove_dir_all(&dir).ok();
+/// ```
+///
 /// # Errors
 /// [`FehlerLogFehler::Ein`], wenn die Datei nicht angelegt/geschrieben werden kann.
 #[track_caller]
@@ -176,6 +194,19 @@ pub fn protokolliere<E: ?Sized>(
 }
 
 /// Liest alle Eintraege (`fehler_log.py:219-225`, `lies`).
+///
+/// ```
+/// use store::fehler_log::{lies, protokolliere, Meta, Stufe};
+/// let dir = std::env::temp_dir().join(format!("taxgraph-doctest-fehlerlog-lies-{}", std::process::id()));
+/// let pfad = dir.join("fehler.jsonl");
+/// assert!(lies(&pfad).unwrap().is_empty()); // fehlende Datei: leeres Log
+/// let meta = Meta { anzahl: Some(3), ..Meta::default() };
+/// protokolliere(&pfad, "import.beleg", &std::fmt::Error, Stufe::Warnung, None, meta).unwrap();
+/// let eintraege = lies(&pfad).unwrap();
+/// assert_eq!(eintraege[0].stufe, Stufe::Warnung);
+/// assert_eq!(eintraege[0].meta.anzahl, Some(3));
+/// std::fs::remove_dir_all(&dir).ok();
+/// ```
 ///
 /// # Errors
 /// [`FehlerLogFehler::Format`], wenn eine Zeile kein gueltiges JSON ist.

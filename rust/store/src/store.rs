@@ -153,6 +153,13 @@ impl Veranlagungsjahr {
     /// liegt — ein gesaettigtes `i64::MAX` fuehrt zu denselben "viel zu weit in der Zukunft"-
     /// Vergleichsergebnissen wie Pythons unbeschraenkte Arithmetik mit dem echten 40-stelligen
     /// Wert.
+    ///
+    /// ```
+    /// use store::Veranlagungsjahr;
+    /// assert_eq!(Veranlagungsjahr(-5).als_i64_saettigend(), -5); // keine Bereichspruefung
+    /// assert_eq!(Veranlagungsjahr(i128::MAX).als_i64_saettigend(), i64::MAX);
+    /// assert_eq!(Veranlagungsjahr(i128::MIN).als_i64_saettigend(), i64::MIN);
+    /// ```
     #[must_use]
     pub fn als_i64_saettigend(self) -> i64 {
         i64::try_from(self.0).unwrap_or(if self.0.is_positive() {
@@ -268,6 +275,13 @@ pub struct Store {
 
 impl Store {
     /// `store.py:77-81`, `leerer_store`.
+    ///
+    /// ```
+    /// let s = store::Store::leer(2025, Some("demo-1".to_string()));
+    /// assert_eq!(s.veranlagungszeitraum(), 2025);
+    /// assert_eq!(s.datei().fall_id.as_deref(), Some("demo-1"));
+    /// assert!(s.events().is_empty() && s.snapshots().is_empty());
+    /// ```
     #[must_use]
     pub fn leer(veranlagungszeitraum: i64, fall_id: Option<String>) -> Self {
         Self {
@@ -287,32 +301,103 @@ impl Store {
 
     /// Baut den `aktiv`-Index aus einer geladenen [`StoreDatei`] neu auf (`store.py:92-100`,
     /// `_aktives`) — die Datei speichert den Index nicht mit.
+    ///
+    /// ```
+    /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
+    /// # let neu = |wert: i64, ersetzt: Option<store::EventId>| store::NeuesEvent {
+    /// #     feld_id: "ep_arbeitstage".to_string(),
+    /// #     wert: serde_json::json!(wert).into(),
+    /// #     feldzustand: Feldzustand::Bestaetigt { signal_2: Signal2::new("klick").unwrap() },
+    /// #     herkunft: Herkunft {
+    /// #         herkunft: Achsenwert::new("mensch").unwrap(),
+    /// #         pruef_tiefe: PruefTiefe::Ungeprueft,
+    /// #         haftung: Achsenwert::new("nutzer").unwrap(),
+    /// #     },
+    /// #     schreiber: Schreiber::Mensch("julius".to_string()),
+    /// #     signal_1: None,
+    /// #     ersetzt,
+    /// #     ts: Some("2026-01-01T00:00:00+00:00".to_string()),
+    /// # };
+    /// # let leer = std::collections::HashMap::new();
+    /// # let bindung = store::BindungNachschlag::neu(&leer);
+    /// let mut s = store::Store::leer(2025, None);
+    /// let erste = s.append(&neu(220, None), None, bindung).unwrap();
+    /// let zweite = s.append(&neu(230, Some(erste)), None, bindung).unwrap();
+    /// let geladen = store::Store::aus_datei(s.into_datei());
+    /// assert_eq!(geladen.aktives("ep_arbeitstage").unwrap().event_id, zweite);
+    /// ```
     #[must_use]
     pub fn aus_datei(datei: StoreDatei) -> Self {
         let aktiv = baue_aktiv_index(&datei.events);
         Self { datei, aktiv }
     }
 
+    /// ```
+    /// let s = store::Store::leer(2025, None);
+    /// assert_eq!(s.datei().version, 1);
+    /// assert_eq!(s.datei().veranlagungszeitraum, store::Veranlagungsjahr(2025));
+    /// ```
     #[must_use]
     pub fn datei(&self) -> &StoreDatei {
         &self.datei
     }
 
+    /// ```
+    /// let datei = store::Store::leer(2025, Some("demo-1".to_string())).into_datei();
+    /// assert_eq!(datei.fall_id.as_deref(), Some("demo-1"));
+    /// assert_eq!(store::Store::aus_datei(datei).veranlagungszeitraum(), 2025);
+    /// ```
     #[must_use]
     pub fn into_datei(self) -> StoreDatei {
         self.datei
     }
 
+    /// ```
+    /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
+    /// # let neu = |wert: i64, ersetzt: Option<store::EventId>| store::NeuesEvent {
+    /// #     feld_id: "ep_arbeitstage".to_string(),
+    /// #     wert: serde_json::json!(wert).into(),
+    /// #     feldzustand: Feldzustand::Bestaetigt { signal_2: Signal2::new("klick").unwrap() },
+    /// #     herkunft: Herkunft {
+    /// #         herkunft: Achsenwert::new("mensch").unwrap(),
+    /// #         pruef_tiefe: PruefTiefe::Ungeprueft,
+    /// #         haftung: Achsenwert::new("nutzer").unwrap(),
+    /// #     },
+    /// #     schreiber: Schreiber::Mensch("julius".to_string()),
+    /// #     signal_1: None,
+    /// #     ersetzt,
+    /// #     ts: Some("2026-01-01T00:00:00+00:00".to_string()),
+    /// # };
+    /// # let leer = std::collections::HashMap::new();
+    /// # let bindung = store::BindungNachschlag::neu(&leer);
+    /// let mut s = store::Store::leer(2025, None);
+    /// let erste = s.append(&neu(220, None), None, bindung).unwrap();
+    /// let zweite = s.append(&neu(230, Some(erste)), None, bindung).unwrap();
+    /// // append-only: das ersetzte Event bleibt im Log
+    /// let ids: Vec<store::EventId> = s.events().iter().map(|e| e.event_id).collect();
+    /// assert_eq!(ids, [erste, zweite]);
+    /// ```
     #[must_use]
     pub fn events(&self) -> &[Event] {
         &self.datei.events
     }
 
+    /// ```
+    /// let mut s = store::Store::leer(2025, None);
+    /// assert!(s.erzeuge_snapshot(None, None, None).is_err()); // leerer Log, kein `bis_event`
+    /// assert!(s.snapshots().is_empty());
+    /// ```
     #[must_use]
     pub fn snapshots(&self) -> &[Snapshot] {
         &self.datei.snapshots
     }
 
+    /// ```
+    /// let mut datei = store::Store::leer(2025, None).into_datei();
+    /// assert_eq!(store::Store::aus_datei(datei.clone()).veranlagungszeitraum(), 2025);
+    /// datei.veranlagungszeitraum = store::Veranlagungsjahr(i128::MAX); // gesaettigt
+    /// assert_eq!(store::Store::aus_datei(datei).veranlagungszeitraum(), i64::MAX);
+    /// ```
     #[must_use]
     pub fn veranlagungszeitraum(&self) -> i64 {
         self.datei.veranlagungszeitraum.als_i64_saettigend()
@@ -320,6 +405,32 @@ impl Store {
 
     /// Das aktuell aktive Event fuer `feld_id`, wenn eines existiert (`store.py:92-100`,
     /// `_aktives`, hier direkt ueber den gepflegten Index statt per Voll-Scan).
+    ///
+    /// ```
+    /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
+    /// # let neu = |wert: i64, ersetzt: Option<store::EventId>| store::NeuesEvent {
+    /// #     feld_id: "ep_arbeitstage".to_string(),
+    /// #     wert: serde_json::json!(wert).into(),
+    /// #     feldzustand: Feldzustand::Bestaetigt { signal_2: Signal2::new("klick").unwrap() },
+    /// #     herkunft: Herkunft {
+    /// #         herkunft: Achsenwert::new("mensch").unwrap(),
+    /// #         pruef_tiefe: PruefTiefe::Ungeprueft,
+    /// #         haftung: Achsenwert::new("nutzer").unwrap(),
+    /// #     },
+    /// #     schreiber: Schreiber::Mensch("julius".to_string()),
+    /// #     signal_1: None,
+    /// #     ersetzt,
+    /// #     ts: Some("2026-01-01T00:00:00+00:00".to_string()),
+    /// # };
+    /// # let leer = std::collections::HashMap::new();
+    /// # let bindung = store::BindungNachschlag::neu(&leer);
+    /// let mut s = store::Store::leer(2025, None);
+    /// assert!(s.aktives("ep_arbeitstage").is_none());
+    /// let erste = s.append(&neu(220, None), None, bindung).unwrap();
+    /// assert_eq!(s.aktives("ep_arbeitstage").unwrap().event_id, erste);
+    /// let zweite = s.append(&neu(230, Some(erste)), None, bindung).unwrap();
+    /// assert_eq!(s.aktives("ep_arbeitstage").unwrap().event_id, zweite);
+    /// ```
     #[must_use]
     pub fn aktives(&self, feld_id: &str) -> Option<&Event> {
         self.aktiv
@@ -355,6 +466,37 @@ impl Store {
     ///
     /// # Errors
     /// [`Abweisung`], wenn eine der Auflagen verletzt ist.
+    ///
+    /// ```
+    /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
+    /// # let neu = |wert: i64, ersetzt: Option<store::EventId>| store::NeuesEvent {
+    /// #     feld_id: "ep_arbeitstage".to_string(),
+    /// #     wert: serde_json::json!(wert).into(),
+    /// #     feldzustand: Feldzustand::Bestaetigt { signal_2: Signal2::new("klick").unwrap() },
+    /// #     herkunft: Herkunft {
+    /// #         herkunft: Achsenwert::new("mensch").unwrap(),
+    /// #         pruef_tiefe: PruefTiefe::Ungeprueft,
+    /// #         haftung: Achsenwert::new("nutzer").unwrap(),
+    /// #     },
+    /// #     schreiber: Schreiber::Mensch("julius".to_string()),
+    /// #     signal_1: None,
+    /// #     ersetzt,
+    /// #     ts: Some("2026-01-01T00:00:00+00:00".to_string()),
+    /// # };
+    /// let leer = std::collections::HashMap::new(); // ohne Bindung lassen Auflage T/F durch
+    /// let bindung = store::BindungNachschlag::neu(&leer);
+    /// let mut s = store::Store::leer(2025, None);
+    /// let erste = s.append(&neu(220, None), None, bindung).unwrap();
+    /// // Auflage B: ein zweites aktives Event fuer dasselbe Feld braucht `ersetzt`
+    /// assert_eq!(
+    ///     s.append(&neu(230, None), None, bindung),
+    ///     Err(store::Abweisung::AktivesEventVorhanden {
+    ///         feld_id: "ep_arbeitstage".to_string(),
+    ///         aktives_event: erste,
+    ///     })
+    /// );
+    /// assert!(s.append(&neu(230, Some(erste)), None, bindung).is_ok());
+    /// ```
     pub fn append(
         &mut self,
         neu: &NeuesEvent,
@@ -638,6 +780,13 @@ impl Store {
     /// [`Store::push_neu`] ruft dies auf, wie in der Deliverable-Vorgabe verlangt ("die EINE
     /// Schreibstelle").
     fn push_geprueft(&mut self, event: Event) -> EventId {
+        // Auflage B bzw. der `aktiv`-Check jeder Ableitung lief vorher: ohne `ersetzt` hat das Feld
+        // noch kein aktives Event — sonst haette es danach zwei.
+        debug_assert!(
+            event.ersetzt.is_some() || !self.aktiv.contains_key(&event.feld_id),
+            "{} haette zwei aktive Events",
+            event.feld_id
+        );
         let idx = self.datei.events.len();
         self.aktiv.insert(event.feld_id.clone(), idx);
         let id = event.event_id;
@@ -651,6 +800,39 @@ impl Store {
     ///
     /// # Errors
     /// [`SnapshotFehler::BisEventUnbekannt`], wenn `bis_event` nicht im Log steht.
+    ///
+    /// ```
+    /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
+    /// # let neu = |wert: i64, ersetzt: Option<store::EventId>| store::NeuesEvent {
+    /// #     feld_id: "ep_arbeitstage".to_string(),
+    /// #     wert: serde_json::json!(wert).into(),
+    /// #     feldzustand: Feldzustand::Bestaetigt { signal_2: Signal2::new("klick").unwrap() },
+    /// #     herkunft: Herkunft {
+    /// #         herkunft: Achsenwert::new("mensch").unwrap(),
+    /// #         pruef_tiefe: PruefTiefe::Ungeprueft,
+    /// #         haftung: Achsenwert::new("nutzer").unwrap(),
+    /// #     },
+    /// #     schreiber: Schreiber::Mensch("julius".to_string()),
+    /// #     signal_1: None,
+    /// #     ersetzt,
+    /// #     ts: Some("2026-01-01T00:00:00+00:00".to_string()),
+    /// # };
+    /// # let leer = std::collections::HashMap::new();
+    /// # let bindung = store::BindungNachschlag::neu(&leer);
+    /// use domain::PyWert;
+    /// let mut s = store::Store::leer(2025, None);
+    /// let erste = s.append(&neu(220, None), None, bindung).unwrap();
+    /// s.append(&neu(230, Some(erste)), None, bindung).unwrap();
+    /// let (felder, _) = s.materialisiere(None).unwrap();
+    /// assert_eq!(felder["ep_arbeitstage"].wert, PyWert::Ganz(230)); // das ersetzte zaehlt nicht
+    /// let (bis_erste, _) = s.materialisiere(Some(erste)).unwrap();
+    /// assert_eq!(bis_erste["ep_arbeitstage"].wert, PyWert::Ganz(220));
+    /// let fremd = store::EventId::aus_bytes([0; 32]);
+    /// assert_eq!(
+    ///     s.materialisiere(Some(fremd)),
+    ///     Err(store::SnapshotFehler::BisEventUnbekannt(fremd))
+    /// );
+    /// ```
     pub fn materialisiere(
         &self,
         bis_event: Option<EventId>,
@@ -692,6 +874,44 @@ impl Store {
     ///
     /// # Errors
     /// [`SnapshotFehler`], s. [`Store::materialisiere`] und `LeererLogOhneBisEvent`.
+    ///
+    /// ```
+    /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
+    /// # let neu = |wert: i64, ersetzt: Option<store::EventId>| store::NeuesEvent {
+    /// #     feld_id: "ep_arbeitstage".to_string(),
+    /// #     wert: serde_json::json!(wert).into(),
+    /// #     feldzustand: Feldzustand::Bestaetigt { signal_2: Signal2::new("klick").unwrap() },
+    /// #     herkunft: Herkunft {
+    /// #         herkunft: Achsenwert::new("mensch").unwrap(),
+    /// #         pruef_tiefe: PruefTiefe::Ungeprueft,
+    /// #         haftung: Achsenwert::new("nutzer").unwrap(),
+    /// #     },
+    /// #     schreiber: Schreiber::Mensch("julius".to_string()),
+    /// #     signal_1: None,
+    /// #     ersetzt,
+    /// #     ts: Some("2026-01-01T00:00:00+00:00".to_string()),
+    /// # };
+    /// # let leer = std::collections::HashMap::new();
+    /// # let bindung = store::BindungNachschlag::neu(&leer);
+    /// use store::{EricBefundEingabe, EricKlasse, SnapshotFehler};
+    /// let mut s = store::Store::leer(2025, None);
+    /// assert_eq!(
+    ///     s.erzeuge_snapshot(None, None, None),
+    ///     Err(SnapshotFehler::LeererLogOhneBisEvent)
+    /// );
+    /// let id = s.append(&neu(220, None), None, bindung).unwrap();
+    /// let befund = EricBefundEingabe {
+    ///     rc: 0,
+    ///     klasse: EricKlasse::Plausibel,
+    ///     gekappt_verdacht: false,
+    ///     fehler_anzahl: None,
+    /// };
+    /// let sid = s.erzeuge_snapshot(None, None, Some(befund)).unwrap();
+    /// let snap = &s.snapshots()[0];
+    /// assert_eq!((snap.snapshot_id, snap.bis_event), (sid, id));
+    /// assert_eq!(snap.eric_befund.as_ref().map(|b| b.gebunden_an), Some(sid));
+    /// assert_eq!(s.materialisiere(None).unwrap().1, sid);
+    /// ```
     pub fn erzeuge_snapshot(
         &mut self,
         bis_event: Option<EventId>,

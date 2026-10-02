@@ -33,6 +33,16 @@ pub enum PersistenzFehler {
 ///
 /// # Errors
 /// [`PersistenzFehler::Lesen`]/[`PersistenzFehler::Format`].
+///
+/// ```
+/// let dir = std::env::temp_dir().join(format!("taxgraph-doctest-lade-{}", std::process::id()));
+/// let pfad = dir.join("fall.json");
+/// let datei = store::Store::leer(2025, Some("demo-1".to_string())).into_datei();
+/// store::speichere(&pfad, &datei).unwrap();
+/// assert_eq!(store::lade(&pfad).unwrap().fall_id.as_deref(), Some("demo-1"));
+/// assert!(store::lade(&dir.join("fehlt.json")).is_err());
+/// std::fs::remove_dir_all(&dir).ok();
+/// ```
 pub fn lade(pfad: &Path) -> Result<StoreDatei, PersistenzFehler> {
     let text = std::fs::read_to_string(pfad)
         .map_err(|e| PersistenzFehler::Lesen(pfad.to_path_buf(), e))?;
@@ -46,6 +56,16 @@ pub fn lade(pfad: &Path) -> Result<StoreDatei, PersistenzFehler> {
 /// # Errors
 /// [`PersistenzFehler::Schreiben`]/[`PersistenzFehler::Serialisieren`], wenn Tempfile, Schreiben
 /// oder `rename` scheitern.
+///
+/// ```
+/// use std::os::unix::fs::PermissionsExt;
+/// let dir = std::env::temp_dir().join(format!("taxgraph-doctest-speichere-{}", std::process::id()));
+/// let pfad = dir.join("fall.json");
+/// store::speichere(&pfad, &store::Store::leer(2025, None).into_datei()).unwrap();
+/// let modus = std::fs::metadata(&pfad).unwrap().permissions().mode() & 0o777;
+/// assert_eq!(modus, 0o600);
+/// std::fs::remove_dir_all(&dir).ok();
+/// ```
 pub fn speichere(pfad: &Path, datei: &StoreDatei) -> Result<(), PersistenzFehler> {
     let verzeichnis = pfad
         .parent()

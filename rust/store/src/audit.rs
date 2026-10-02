@@ -43,6 +43,11 @@ pub enum AuditAktion {
 }
 
 impl AuditAktion {
+    /// ```
+    /// use store::audit::AuditAktion;
+    /// assert_eq!(AuditAktion::LoginFehlgeschlagen.als_str(), "login_fehlgeschlagen");
+    /// assert_eq!(AuditAktion::from("fall_export").als_str(), "fall_export"); // `Andere`
+    /// ```
     #[must_use]
     pub fn als_str(&self) -> &str {
         match self {
@@ -153,6 +158,18 @@ pub fn anhaengen(
 }
 
 /// Liest alle Eintraege (`audit.py:77-83`, `lies`).
+///
+/// ```
+/// use store::audit::{anhaengen, lies, AuditAktion};
+/// let dir = std::env::temp_dir().join(format!("taxgraph-doctest-audit-lies-{}", std::process::id()));
+/// let pfad = dir.join("audit.jsonl");
+/// assert!(lies(&pfad).unwrap().is_empty()); // fehlende Datei: leeres Log
+/// anhaengen(&pfad, None, AuditAktion::from("fall_export"), Some("demo-1"), None).unwrap();
+/// let eintraege = lies(&pfad).unwrap();
+/// assert_eq!(eintraege[0].user_id, "unbekannt");
+/// assert_eq!(eintraege[0].action, AuditAktion::Andere("fall_export".to_string()));
+/// std::fs::remove_dir_all(&dir).ok();
+/// ```
 ///
 /// # Errors
 /// [`AuditFehler::Format`], wenn eine Zeile kein gueltiges JSON ist.

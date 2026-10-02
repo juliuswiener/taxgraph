@@ -97,6 +97,9 @@ pub fn berechne(regel: &Ableitung, wert: &PyWert, vz: i64) -> Option<serde_json:
 mod tests {
     use super::{berechne, jahr_aus_datum, monat_tag_aus_datum};
     use bindung::{Ableitung, AbleitungArt};
+    use chrono::{Datelike, NaiveDate};
+    use domain::PyWert;
+    use proptest::prelude::*;
     use serde_json::json;
 
     #[test]
@@ -147,5 +150,63 @@ mod tests {
     fn nicht_string_wert_liefert_none() {
         let r = regel(AbleitungArt::JahrAusDatum, None);
         assert_eq!(berechne(&r, &json!(1955).into(), 2025), None);
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1_000))]
+
+        /// Eine Altersgrenze kippt hoechstens einmal: wer die Schwelle zu Jahresbeginn erreicht hat,
+        /// hat sie in jedem spaeteren Veranlagungsjahr; wer am Jahresende darunter liegt, lag in
+        /// jedem frueheren darunter — und niemand ist im selben Jahr beides. Das Jahr liegt dicht
+        /// an der Grenze, jeder zweite Geburtstag ist der 1. Januar.
+        #[test]
+        fn altersgrenzen_sind_monoton_im_veranlagungsjahr(
+            jahr in 1900..2100_i64,
+            (monat, tag) in prop_oneof![Just((1_u32, 1_u32)), (1..=12_u32, 1..=28_u32)],
+            schwelle in 0..100_u8,
+            abstand in -3..=3_i64,
+            spaeter in 0..=3_i64,
+        ) {
+            let datum = PyWert::Text(format!("{tag:02}.{monat:02}.{jahr}"));
+            let gilt = |art, vz| {
+                berechne(&regel(art, Some(f64::from(schwelle))), &datum, vz) == Some(json!(true))
+            };
+            let erreicht = |vz| gilt(AbleitungArt::AlterAmJahresbeginnErreicht, vz);
+            let unter = |vz| gilt(AbleitungArt::AlterUnterAmJahresende, vz);
+            let vz = jahr + i64::from(schwelle) + abstand;
+            prop_assert!(erreicht(vz) <= erreicht(vz + spaeter));
+            prop_assert!(unter(vz) >= unter(vz + spaeter));
+            prop_assert!(!(erreicht(vz) && unter(vz)));
+        }
+
+        /// `JJJJ-MM-TT` und `TT.MM.JJJJ` lesen fuer jedes Kalenderdatum dieselben Ziffern als Jahr,
+        /// Monat und Tag, und jede Regel leitet aus beiden Schreibweisen dasselbe ab.
+        #[test]
+        fn iso_und_deutsches_datum_leiten_gleich_ab(
+            datum in (1..10_000_i32, 1..=12_u32, 1..=31_u32)
+                .prop_filter_map("kein Kalenderdatum", |(j, m, t)| NaiveDate::from_ymd_opt(j, m, t)),
+            schwelle in 0..100_u8,
+            abstand in -3..=3_i64,
+        ) {
+            let iso = datum.format("%Y-%m-%d").to_string();
+            let deutsch = datum.format("%d.%m.%Y").to_string();
+            for text in [&iso, &deutsch] {
+                prop_assert_eq!(jahr_aus_datum(text), Some(i64::from(datum.year())));
+                prop_assert_eq!(monat_tag_aus_datum(text), Some((datum.month(), datum.day())));
+            }
+            let vz = i64::from(datum.year()) + i64::from(schwelle) + abstand;
+            for art in [
+                AbleitungArt::AlterUnterAmJahresende,
+                AbleitungArt::JahrAusDatum,
+                AbleitungArt::AlterAmJahresbeginnErreicht,
+                AbleitungArt::Uebernahme,
+            ] {
+                let r = regel(art, Some(f64::from(schwelle)));
+                prop_assert_eq!(
+                    berechne(&r, &PyWert::Text(iso.clone()), vz),
+                    berechne(&r, &PyWert::Text(deutsch.clone()), vz)
+                );
+            }
+        }
     }
 }
