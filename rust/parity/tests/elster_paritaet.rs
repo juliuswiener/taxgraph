@@ -747,9 +747,9 @@ fn schema_und_werkzeug() {
     let mut prueflinge: Vec<elster::KzPruefling> = bindungen()
         .iter()
         .filter_map(|b| {
-            b.elster_kz.clone().map(|kz| elster::KzPruefling {
+            b.elster_kz.as_ref().map(|kz| elster::KzPruefling {
                 feld_id: b.feld_id.clone(),
-                elster_kz: kz,
+                elster_kz: kz.to_string(),
                 vz_gueltigkeit: b.vz_gueltigkeit.clone(),
             })
         })

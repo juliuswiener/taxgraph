@@ -7,6 +7,8 @@
 //! bei der engeren Rust-Regel.
 use std::fmt;
 
+use serde::de::{Deserialize, Deserializer, Error};
+
 /// Eine geprueft gueltige Kennzahl, z. B. `E0100401`.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Kz(String);
@@ -83,6 +85,20 @@ impl fmt::Display for Kz {
     }
 }
 
+/// Liest eine Kennzahl aus einem Text und prueft sie mit [`Kz::new`]. Eine ungueltige Kennzahl
+/// scheitert beim Laden und nennt den Text.
+///
+/// ```
+/// use domain::Kz;
+/// assert_eq!(serde_json::from_str::<Kz>("\"E0100401\"").unwrap().as_str(), "E0100401");
+/// assert!(serde_json::from_str::<Kz>("\"E010040\"").is_err());
+/// ```
+impl<'de> Deserialize<'de> for Kz {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        Self::new(String::deserialize(deserializer)?).map_err(D::Error::custom)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Kz;
@@ -107,5 +123,18 @@ mod tests {
         ] {
             assert!(Kz::new(s).is_err(), "{s:?}");
         }
+    }
+
+    #[test]
+    fn deserialize_prueft_dieselbe_regel() {
+        for s in ["E0100401", "E6004901"] {
+            let kz: Kz = serde_json::from_value(serde_json::json!(s)).unwrap();
+            assert_eq!(kz.as_str(), s);
+        }
+        for s in ["", "E010040", "E0100401\n", "e0100401"] {
+            let fehler = serde_json::from_value::<Kz>(serde_json::json!(s)).unwrap_err();
+            assert!(fehler.to_string().contains("ungueltige Kz"), "{s:?}: {fehler}");
+        }
+        assert!(serde_json::from_value::<Kz>(serde_json::json!(7_654_321)).is_err());
     }
 }

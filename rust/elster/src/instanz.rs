@@ -119,7 +119,7 @@ pub struct Rueckgelesen {
 /// ```
 #[must_use]
 pub fn zuruecklesen(result: &Deklaration, bindung: &BindungIndex<'_>) -> Rueckgelesen {
-    let kz_von = |b: &bindung::Bindung| b.elster_kz.clone().filter(|k| !k.is_empty());
+    let kz_von = |b: &bindung::Bindung| b.elster_kz.as_ref().map(|k| k.as_str().to_owned());
     let e_nach_feld: BTreeMap<String, &str> = bindung
         .iter()
         .filter_map(|(fid, b)| kz_von(b).map(|k| (k, fid.as_str())))

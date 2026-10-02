@@ -164,7 +164,7 @@ fn round_trip_eins_zu_eins() {
         .iter()
         .filter(|b| b.elster_kz.is_some() && b.instanz_gruppe.is_none())
     {
-        let kz = b.elster_kz.as_deref().unwrap();
+        let kz = b.elster_kz.as_ref().unwrap().as_str();
         let wert = beispiel(b);
         let d = deklariere(
             &einzeln(&b.feld_id, wert.clone(), Zustand::Bestaetigt),
@@ -206,7 +206,7 @@ proptest! {
             .filter(|b| b.typ == Feldtyp::Cent && b.elster_kz.is_some() && b.instanz_gruppe.is_none())
             .collect();
         let b = cent[i % cent.len()];
-        let kz = b.elster_kz.as_deref().unwrap();
+        let kz = b.elster_kz.as_ref().unwrap().as_str();
         let d = deklariere(&einzeln(&b.feld_id, json!(c), Zustand::Bestaetigt), index(), 2025, None).unwrap();
         if let Some(v) = d.deklaration.get(kz).or_else(|| d.person_b.get(kz)) {
             prop_assert_eq!(v, &cent_nach_kz(Cent::new(c), kz).als_json());
@@ -301,7 +301,7 @@ fn kz_mengen_aus_xsd() {
     let cent_kz: Vec<&str> = bindungen()
         .iter()
         .filter(|b| b.typ == Feldtyp::Cent)
-        .filter_map(|b| b.elster_kz.as_deref())
+        .filter_map(|b| b.elster_kz.as_ref().map(domain::Kz::as_str))
         .collect();
     let komma_luecke: Vec<&str> = cent_kz
         .iter()

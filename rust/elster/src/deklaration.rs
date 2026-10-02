@@ -262,9 +262,10 @@ fn wert_fehler(feld_id: &str) -> impl Fn(PyFehler) -> DeklarationsFehler + '_ {
     }
 }
 
-/// Nicht-leerer `elster_kz` (Python: `b.get("elster_kz")` ist truthy).
+/// `elster_kz` der Bindung (Python: `b.get("elster_kz")` ist truthy; ein leerer Text ist als `Kz`
+/// nicht darstellbar).
 fn kz_von(b: &Bindung) -> Option<&str> {
-    b.elster_kz.as_deref().filter(|k| !k.is_empty())
+    b.elster_kz.as_ref().map(domain::Kz::as_str)
 }
 
 fn gruppe_von(b: &Bindung) -> Option<&str> {
@@ -1321,8 +1322,9 @@ mod tests {
         let index = store::baue_nachschlag(&bindungen);
         let kz = index["kap_antrag_guenstigerpruefung"]
             .elster_kz
-            .as_deref()
-            .unwrap();
+            .as_ref()
+            .unwrap()
+            .as_str();
         let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
         let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
             wert: wert.into(),
