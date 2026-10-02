@@ -276,11 +276,10 @@ proptest! {
     }
 }
 
-/// Befund: `EventId::parse` nimmt mehr an als `schema.json` (`^[a-f0-9]{64}$`), denn
-/// `u8::from_str_radix` liest Grossbuchstaben und ein fuehrendes `+`. Python vergleicht `ersetzt`
-/// als Text (`store.py:422`) und findet zu `"AB" * 32` kein Ziel; Rust liest `[0xab; 32]`.
+/// `EventId::parse` haelt `schema.json` (`^[a-f0-9]{64}$`). `u8::from_str_radix` allein liest
+/// auch Grossbuchstaben und ein fuehrendes `+`. Python vergleicht `ersetzt` als Text
+/// (`store.py:422`) und findet zu `"AB" * 32` kein Ziel; Rust darf daraus kein `[0xab; 32]` lesen.
 #[test]
-#[ignore = "Befund: EventId::parse nimmt Grossbuchstaben und '+' an, schema.json nur [a-f0-9]"]
 fn event_id_parse_haelt_das_schema_muster() {
     for text in ["AB".repeat(32), "+f".repeat(32)] {
         let ergebnis = EventId::parse(&text);
