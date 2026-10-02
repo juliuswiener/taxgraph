@@ -5,10 +5,13 @@
 //! (`body["vorjahr_fall_id"]`, `api.py:947`) mit `EigenerFall::pruefe` prüfen.
 #![allow(clippy::unused_async)] // die Stubs warten nicht; die echten Handler tun es.
 
+use axum::extract::State;
+use domain::PyWert;
+
 use crate::antwort::Antwort;
 use crate::eigener_fall::{EigenerFall, FallBesitz};
 use crate::fehler::ApiFehler;
-use crate::zustand::Koerper;
+use crate::zustand::{Koerper, KoerperRoh, Zustand};
 
 /// `POST /fall/{id}/event` — `api.event` (`api.py:494`).
 ///
@@ -35,12 +38,22 @@ pub async fn chat(_fall: EigenerFall, _body: Koerper) -> Result<Antwort, ApiFehl
 }
 
 /// `POST /fall/{id}/flow` — `api.flow_melden` (`api.py:1298`). Nur `FallBesitz`: Python prüft den
-/// Besitz und lädt den Fall nicht, ein fehlender Fall ist dort 200, kein 404.
+/// Besitz und lädt den Fall nicht, ein fehlender Fall ist dort 200, kein 404. Der Rumpf kommt als
+/// [`KoerperRoh`], damit `flow.jsonl` die Schlüssel in der Reihenfolge des Clients behält.
 ///
 /// # Errors
-/// Wie [`event`], ohne 404.
-pub async fn flow_melden(_fall: FallBesitz, _body: Koerper) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("POST /fall/{id}/flow"))
+/// Die Fehler des Owner-Checks (401/403) und 400 aus `flow.melde_ui`.
+pub async fn flow_melden(
+    State(z): State<Zustand>,
+    fall: FallBesitz,
+    Koerper(wert): Koerper,
+    KoerperRoh(roh): KoerperRoh,
+) -> Result<Antwort, ApiFehler> {
+    // Dieselben Bytes hat der Dispatcher schon als `Value` gelesen; `PyWert` liest sie noch einmal,
+    // mit Einfuegereihenfolge. Das Fallback ist nie noetig, haelt aber jede Abweichung der beiden
+    // Leser als Wert statt als Absturz.
+    let body = serde_json::from_slice::<PyWert>(&roh).unwrap_or_else(|_| PyWert::from(wert));
+    crate::flow::melde_ui(&z.konfig.audit_dir, fall.id().as_str(), &body)
 }
 
 /// `POST /fall/{id}/entfernung` — `api.entfernung` (`api.py:883`).

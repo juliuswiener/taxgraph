@@ -51,6 +51,7 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
     ("login.token", "JWT traegt iat und zufaelliges jti — je Anmeldung neu; Laenge und Nutzer bleiben gleich (Content-Length wird roh verglichen)"),
     ("audit.ts", "Zeitstempel der Anfrage"),
     ("audit.null", "Python schreibt fall_id/detail als null, Rust laesst fehlende Felder weg"),
+    ("flow.ts", "Zeitstempel der Zeile; der Rest der Zeile wird als Text verglichen (Form des `ts` prueft Suite 18, `flow_paritaet`)"),
     ("users.password_hash", "bcrypt-Salz ist zufaellig"),
     ("users.created_at", "Zeitstempel der Registrierung"),
     ("fehler.log", "nur Anzahl und `ort`: Typ (Python-Klasse gegen Rust-Typname), Aufrufstelle und die PII-gefilterte Fall-Kennung unterscheiden sich im Bau"),
@@ -60,7 +61,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
 const NICHT_PORTIERT: &[&str] = &[
     "GET /fall/{id}/fragen",
-    "GET /fall/{id}/stand",
     "GET /fall/{id}/feld/{fid}/warum",
     "GET /fall/{id}/feld/{fid}/frage",
     "GET /fall/{id}/ergebnis",
@@ -68,7 +68,6 @@ const NICHT_PORTIERT: &[&str] = &[
     "GET /fall/{id}/deklaration",
     "GET /fall/{id}/graph",
     "POST /fall/{id}/event",
-    "POST /fall/{id}/flow",
     "POST /fall/{id}/vorjahr",
     "POST /fall/{id}/einreichen",
     "POST /fall/{id}/chat",
@@ -82,7 +81,7 @@ const NICHT_PORTIERT: &[&str] = &[
 /// kontoauszug) riefe dort `ERiC`, das LLM oder ORS.
 const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/fragen", 3),
-    ("GET /fall/{id}/stand", 3),
+    ("GET /fall/{id}/stand", 7),
     ("GET /fall/{id}/feld/{fid}/warum", 4),
     ("GET /fall/{id}/feld/{fid}/frage", 4),
     ("GET /fall/{id}/ergebnis", 3),
@@ -150,9 +149,9 @@ impl Drop for Server {
 /// Startet einen Server. Die Umgebung ist vollstaendig gesetzt, damit `.env*` im Repo-Wurzelverzeichnis
 /// (werden von beiden Mains geladen, nur fuer fehlende Schluessel) nichts veraendert; LLM- und
 /// Karten-Schluessel sind leer, damit kein Stub-Handler in Python nach draussen telefoniert.
-/// `flow`: `TAXGRAPH_FLOW=1`, sonst antwortet `POST /flow` nur `{"mitgeschrieben": false}`.
-/// ponytail: `flow.jsonl` vergleicht niemand (`verzeichnis_zustand` liest nur `*.json`); beim
-/// flow-Port als drittes Log-Paar mit normalisiertem `ts` aufnehmen.
+/// `flow`: `TAXGRAPH_FLOW=1`, sonst antwortet `POST /flow` nur `{"mitgeschrieben": false}` und
+/// `flow.jsonl` entsteht nicht. Mit `flow` vergleicht `Paar::anfrage` die neuen Zeilen von
+/// `flow.jsonl` beider Server (drittes Log-Paar, `ts` normalisiert).
 fn starte(art: &'static str, wurzel: &Path, no_auth: bool, flow: bool, seed: &Path) -> Server {
     let daten = wurzel.join(art);
     let faelle = daten.join("faelle");
@@ -360,6 +359,9 @@ struct Stat {
     codes: BTreeMap<String, usize>,
     /// Rumpf-Erreichungen je Route aus `UNTERGRENZE`, s. `Stat::zaehle`.
     erreicht: BTreeMap<String, usize>,
+    /// Zeilen von `flow.jsonl`, die Python schrieb und Rust im Vergleich gegenueberstand; der Beleg,
+    /// dass der Vergleich nicht zwei leere Listen sieht.
+    flow_zeilen: usize,
 }
 
 impl Stat {
@@ -400,13 +402,20 @@ impl Log {
     fn neu(pfad: PathBuf) -> Self {
         Self { pfad, gelesen: 0 }
     }
-    fn neue(&mut self) -> Vec<Value> {
+    /// Die neuen Zeilen als Text, unveraendert.
+    fn neue_zeilen(&mut self) -> Vec<String> {
         let roh = std::fs::read(&self.pfad).unwrap_or_default();
         let neu = &roh[self.gelesen.min(roh.len())..];
         self.gelesen = roh.len();
         String::from_utf8_lossy(neu)
             .lines()
             .filter(|z| !z.is_empty())
+            .map(str::to_owned)
+            .collect()
+    }
+    fn neue(&mut self) -> Vec<Value> {
+        self.neue_zeilen()
+            .iter()
             .map(|z| serde_json::from_str(z).unwrap_or_else(|e| panic!("Logzeile {z:?}: {e}")))
             .collect()
     }
@@ -486,6 +495,27 @@ fn normiere_audit(zeilen: Vec<Value>, norm: &mut BTreeMap<&'static str, usize>) 
         .collect()
 }
 
+/// `flow.jsonl` als TEXT: nur der Wert von `ts` wird ersetzt, der Rest bleibt Byte fuer Byte —
+/// Schluesselreihenfolge und Zahlenschreibweise eingeschlossen, die ein geparstes `Value` (sortiert)
+/// verschluckte. Eine Zeile ohne `ts` am Anfang bleibt roh und faellt im Vergleich auf.
+fn normiere_flow(zeilen: Vec<String>, norm: &mut BTreeMap<&'static str, usize>) -> Vec<String> {
+    zeilen
+        .into_iter()
+        .map(|z| {
+            match z
+                .strip_prefix("{\"ts\": \"")
+                .and_then(|r| r.split_once("\", "))
+            {
+                Some((_, rest)) => {
+                    *norm.entry("flow.ts").or_default() += 1;
+                    format!("{{\"ts\": \"<TS>\", {rest}")
+                }
+                None => z,
+            }
+        })
+        .collect()
+}
+
 fn orte(zeilen: &[Value]) -> Vec<Value> {
     zeilen
         .iter()
@@ -532,7 +562,7 @@ fn nutzer_zustand(s: &Server, norm: &mut BTreeMap<&'static str, usize>) -> Value
 struct Paar {
     py: Server,
     rs: Server,
-    logs: [Log; 4],
+    logs: [Log; 6],
     stat: Stat,
     stoerung_bei: Option<usize>,
 }
@@ -546,6 +576,8 @@ impl Paar {
             Log::neu(rs.faelle().join("audit.jsonl")),
             Log::neu(py.faelle().join("fehler.log")),
             Log::neu(rs.faelle().join("fehler.log")),
+            Log::neu(py.faelle().join("flow.jsonl")),
+            Log::neu(rs.faelle().join("flow.jsonl")),
         ];
         let stoerung_bei = std::env::var("PARITY_STOERUNG").ok().map(|_| 7);
         Self {
@@ -568,8 +600,8 @@ impl Paar {
             // Negativkontrolle: EINE Rust-Antwort veraendern.
             rs.status += 1;
         }
-        let [py_audit, rs_audit, py_fehler, rs_fehler] = &mut self.logs;
-        let (ra, rf) = (rs_audit.neue(), rs_fehler.neue());
+        let [py_audit, rs_audit, py_fehler, rs_fehler, py_flow, rs_flow] = &mut self.logs;
+        let (ra, rf, rfl) = (rs_audit.neue(), rs_fehler.neue(), rs_flow.neue_zeilen());
         let stub = json_body(&rs)
             .filter(|_| rs.status == 501)
             .filter(|b| b["fehler"] == "nicht_portiert");
@@ -591,8 +623,9 @@ impl Paar {
             };
             let vorher = akte(&self.py);
             let py = sende(self.py.port, a);
-            // Audit und Fehlerlog des Python-Rumpfs haben (noch) kein Rust-Gegenstueck.
-            let _ = (py_audit.neue(), py_fehler.neue());
+            // Audit, Fehlerlog und Fluss-Mitschnitt des Python-Rumpfs haben (noch) kein
+            // Rust-Gegenstueck: `fragen`, `event`, `ergebnis` schreiben dort `flow.jsonl`-Zeilen.
+            let _ = (py_audit.neue(), py_fehler.neue(), py_flow.neue_zeilen());
             if akte(&self.py) != vorher {
                 if akte(&self.rs) != vorher {
                     let d = format!("{wohin}: Fall-Datei schon vor dem Spiegeln verschieden");
@@ -612,7 +645,7 @@ impl Paar {
             .entry(format!("{art} {}", rs.status))
             .or_default() += 1;
         let py = sende(self.py.port, a);
-        let (pa, pf) = (py_audit.neue(), py_fehler.neue());
+        let (pa, pf, pfl) = (py_audit.neue(), py_fehler.neue(), py_flow.neue_zeilen());
         let mut d = vergleiche(&py, &rs, modus, &mut self.stat.norm);
         if modus == Modus::NurStatus {
             self.stat.nur_status += 1;
@@ -630,6 +663,14 @@ impl Paar {
             *self.stat.norm.entry("fehler.log").or_default() += 1;
             if orte(&pf) != orte(&rf) {
                 d.push(format!("Fehlerlog py={:?} rs={:?}", orte(&pf), orte(&rf)));
+            }
+            let (pfl, rfl) = (
+                normiere_flow(pfl, &mut self.stat.norm),
+                normiere_flow(rfl, &mut self.stat.norm),
+            );
+            self.stat.flow_zeilen += pfl.len();
+            if pfl != rfl {
+                d.push(format!("Fluss-Mitschnitt py={pfl:?} rs={rfl:?}"));
             }
         }
         if !d.is_empty() {
@@ -681,6 +722,7 @@ impl Paar {
             let n = s.erreicht.get(*route).unwrap_or(&0);
             println!("  Rumpf erreicht: {n:4} x {route}");
         }
+        println!("  flow.jsonl: {} Zeilen verglichen", s.flow_zeilen);
         let codes: Vec<String> = s.codes.iter().map(|(k, n)| format!("{k}:{n}")).collect();
         println!("  Status je Art (Rust): {}", codes.join(" "));
         println!("  Normalisierungen angewendet: {:?}", s.norm);
@@ -1596,6 +1638,10 @@ fn generatoren() {
         ("g_vj", "ep", 2024),
         ("g_neu", "ep", 2025),
         ("g_ges", "gesamt", 2025),
+        ("g_an", "an_gesamt", 2025),
+        ("g_rent", "rentner_gesamt", 2025),
+        ("g_rent2", "rentner_gesamt", 2025),
+        ("g_vor", "n_vor_gwg", 2025),
     ] {
         let b = json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": vz});
         a("POST", "/fall", Some(b));
@@ -1617,6 +1663,21 @@ fn generatoren() {
         ("g_ges", "bruttoarbeitslohn", json!(4_000_000)),
         ("g_ges", "veranlagung", json!("einzel")),
         ("g_ges", "ep_arbeitstage", json!(230)),
+        // an_gesamt: ein dHf-Feld ueber null sperrt den Ring (K2-Guard), `engine` ist `gesperrt`.
+        ("g_an", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_an", "veranlagung", json!("einzel")),
+        ("g_an", "dhf_unterkunftskosten_monat", json!(50_000)),
+        // rentner_gesamt: mit Rentenbeginn rechnet der Ring, ohne ihn sperrt `rentenbeginn_offen`.
+        ("g_rent", "rentner_jahresrente", json!(1_200_000)),
+        ("g_rent", "rentner_renten_beginn_jahr", json!(2015)),
+        ("g_rent", "veranlagung", json!("einzel")),
+        // Ohne `kein_sonstige = false` sperrt schon der Flag-Guard; erst damit bleibt der Rentenbeginn.
+        ("g_rent2", "rentner_jahresrente", json!(1_200_000)),
+        ("g_rent2", "kein_sonstige", json!(false)),
+        // n_vor_gwg liest seine Felder aus der YAML und rechnet nur den Teil-Ring.
+        ("g_vor", "ep_arbeitstage", json!(220)),
+        ("g_vor", "ep_entfernung_km", json!(30)),
+        ("g_vor", "ep_eigenes_kfz", json!(true)),
     ] {
         let pfad = format!("/fall/{id}/event");
         let b = a("POST", &pfad, Some(ereignis(feld, &wert, None)));
@@ -1633,14 +1694,27 @@ fn generatoren() {
         let b = a("POST", "/fall/g_neu/vorjahr", Some(vj.clone()));
         assert_eq!(b.unwrap()["uebernommen"], soll, "Vorjahr g_neu aus g_vj");
     }
+    // `flow` mit Schalter: jede Sorte, die Kappung bei 4000 Zeichen, Abweisungen mit Wortlaut.
+    // Beide Server schreiben dazu `flow.jsonl`; `Paar::anfrage` vergleicht die neuen Zeilen.
     for b in [
         koerper("flow", ""),
         json!({"art": "pruefliste_weiter", "inhalt": {"offen": ["ep_arbeitstage"]}}),
         json!({"art": "erfunden", "inhalt": {}}),
+        json!({"art": "nachfrage_spaeter"}),
+        json!({"art": "nachfragen_gestartet", "inhalt": {"text": "ä".repeat(5000)}}),
+        json!({"art": "pruefliste_aendern", "inhalt": [1, 2.5, null, "ä😀\u{2028}\"\\"]}),
+        json!({"art": 5}),
+        json!({}),
+        json!([1]),
     ] {
         a("POST", "/fall/g_ep/flow", Some(b));
     }
-    for id in ["g_ep", "g_neu", "g_ges"] {
+    a("POST", "/fall/g_vj/flow", None);
+    let mut engines: BTreeMap<String, usize> = BTreeMap::new();
+    let mut gruende: Vec<String> = vec![];
+    for id in [
+        "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_vor",
+    ] {
         for r in [
             "stand",
             "fragen",
@@ -1649,9 +1723,19 @@ fn generatoren() {
             "deklaration",
             "preflight",
         ] {
-            a("GET", &format!("/fall/{id}/{r}"), None);
+            let b = a("GET", &format!("/fall/{id}/{r}"), None);
+            if r == "stand" {
+                let e = b
+                    .as_ref()
+                    .and_then(|b| b["engine"].as_str().map(str::to_owned));
+                *engines.entry(e.unwrap_or_default()).or_default() += 1;
+                gruende.extend(b.and_then(|b| b["ring_gesperrt"].as_str().map(str::to_owned)));
+            }
         }
     }
+    // `engine` aus Pythons Antwort; Rust ist dieselbe Antwort (sonst waere eine Abweichung gemeldet).
+    // Gezaehlt wird, welche Rechenwege `stand` erreicht — nicht, dass 200 zurueckkam.
+    println!("  stand: engine je Antwort {engines:?}, Sperrgruende {gruende:?}");
     for (id, feld) in [
         ("g_ep", "ep_arbeitstage"),
         ("g_ep", "ep_eigenes_kfz"),
@@ -1662,14 +1746,94 @@ fn generatoren() {
             a("GET", &format!("/fall/{id}/feld/{feld}/{r}"), None);
         }
     }
+    // `flow` mit rohem Text: Reihenfolge der Schluessel, doppelte Schluessel, Zahlenschreibweisen und
+    // Escapes — Wege, die ein `json!`-`Value` (sortiert) im Test verschluckte.
+    for text in [
+        r#"{"inhalt": {"z": 1, "a": [1E5, 1e-7, 0.1], "ä": "😀\u0000"}, "art": "weg_gewaehlt"}"#,
+        r#"{"art": "x", "art": "nachfrage_spaeter", "inhalt": {"b": 1, "a": 2, "b": 3}}"#,
+        r#"{"art": "pruefliste_aendern", "inhalt": 18446744073709551615}"#,
+        "null",
+        r#""weg_gewaehlt""#,
+    ] {
+        let x = Anfrage::neu("gen flow roh", "POST", "/fall/g_neu/flow").token(&alice);
+        p.anfrage(&x.roh(text, "application/json"), Modus::Voll);
+    }
     p.zustand_vergleichen("am Ende");
     p.bericht("generatoren");
     assert!(p.stat.abweichungen.is_empty(), "{:?}", p.stat.abweichungen);
+    for e in ["catala", "catala_teilweise", "gesperrt"] {
+        assert!(
+            engines.get(e).copied().unwrap_or(0) >= 1,
+            "stand erreicht den Rechenweg {e:?} zu selten: {engines:?}"
+        );
+    }
+    // Der Rentenbeginn sperrt nur, wenn der Guard davor nichts findet — ein eigener Weg in `stand`.
+    for g in ["rentenbeginn_offen", "flag_konsistenz_offen"] {
+        assert!(
+            gruende.iter().any(|x| x == g),
+            "stand meldet nie den Sperrgrund {g:?}: {gruende:?}"
+        );
+    }
     let zu_wenig: Vec<_> = UNTERGRENZE
         .iter()
         .filter(|(r, n)| p.stat.erreicht.get(*r).copied().unwrap_or(0) < *n)
         .collect();
     assert!(zu_wenig.is_empty(), "Untergrenze verfehlt: {zu_wenig:?}");
+    // Der Mitschnitt-Vergleich sah wirklich Zeilen: jede zulaessige Meldung oben schreibt eine.
+    assert!(
+        p.stat.flow_zeilen >= 8,
+        "flow.jsonl: nur {} Zeilen verglichen",
+        p.stat.flow_zeilen
+    );
+}
+
+/// `ENUM_LABELS` aus `api_constants.py`, wie das Modul sie nach dem Laden haelt (samt der
+/// `setdefault`-Ableitungen), als `[[feld, [[wert, text], ...]], ...]` in Einfuegereihenfolge.
+const ENUM_LABELS_PY: &str = r#"
+import importlib.util, json, sys
+spec = importlib.util.spec_from_file_location("ac", "produkt/haut/api_constants.py")
+ac = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(ac)
+json.dump([[f, [[w, t] for w, t in l.items()]] for f, l in ac.ENUM_LABELS.items()], sys.stdout)
+"#;
+
+/// Die erzeugte Tabelle `api::enum_labels` ist die Tabelle aus `api_constants.py`: Schluessel,
+/// Werte, Texte und Reihenfolge. Aendert sich Python, wird dieser Test rot, bis
+/// `tools/parity/gen_enum_labels.py` neu laeuft.
+#[test]
+fn enum_labels_gleich() {
+    if skip() {
+        return;
+    }
+    let aus = Command::new("python3")
+        .args(["-c", ENUM_LABELS_PY])
+        .current_dir(repo_root())
+        .output()
+        .unwrap();
+    assert!(
+        aus.status.success(),
+        "{}",
+        String::from_utf8_lossy(&aus.stderr)
+    );
+    let py: Value = serde_json::from_slice(&aus.stdout).unwrap();
+    let rust: Value = api::enum_labels::ENUM_LABELS
+        .iter()
+        .map(|(f, l)| json!([f, l.iter().map(|(w, t)| json!([w, t])).collect::<Vec<_>>()]))
+        .collect();
+    assert_eq!(
+        py, rust,
+        "ENUM_LABELS weicht ab: python3 tools/parity/gen_enum_labels.py"
+    );
+    let werte: usize = rust
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e[1].as_array().unwrap().len())
+        .sum();
+    println!(
+        "enum_labels_gleich: {} Felder, {werte} Werte, 0 Abweichungen",
+        rust.as_array().unwrap().len()
+    );
 }
 
 // ---------------------------------------------------------------- Wirksamkeit und Grenzen
@@ -1734,6 +1898,27 @@ fn dokumentierte_abweichungen() {
     );
     assert_eq!((py.status, rs.status), (400, 400));
     assert_ne!(py.body, rs.body);
+    // 1b. `stand` auf einer Akte mit Jahr 10^38 (9c, Stufe 2, gewollte Abweichung): Python rechnet mit
+    //     jedem `int` weiter und antwortet 200 mit einer Spanne fuer ein Jahr ohne Parameter; Rust
+    //     kennt nur 2024-2026 (`domain::Vz`) und antwortet 500 statt einer Zahl fuer ein falsches Jahr.
+    //     Eine solche Akte entsteht nur von Hand (`POST /fall` prueft `params/`).
+    let (py, rs) =
+        zweimal(&Anfrage::neu("stand seed_big", "GET", "/fall/seed_big/stand").token(&alice));
+    println!(
+        "  stand seed_big: py={} {} | rs={} {}",
+        py.status,
+        String::from_utf8_lossy(&py.body)
+            .chars()
+            .take(200)
+            .collect::<String>(),
+        rs.status,
+        String::from_utf8_lossy(&rs.body)
+            .chars()
+            .take(200)
+            .collect::<String>()
+    );
+    assert_eq!((py.status, rs.status), (200, 500));
+    assert!(String::from_utf8_lossy(&rs.body).contains("kein unterstuetzter Veranlagungszeitraum"));
     // 2. Jahr ausserhalb von i64 bei DELETE: Python gibt die Ganzzahl, Rust einen Float.
     let (py, rs) =
         zweimal(&Anfrage::neu("DELETE seed_big", "DELETE", "/fall/seed_big").token(&alice));

@@ -7,7 +7,8 @@
 //! - [`sperrgrund_klartext`], [`sperrgrund_felder`], [`rentenbeginn_offen_stand`],
 //!   [`vorlaeufige_ring_betraege`],
 //! - [`einreichungs_xml`] (`api.einreichen` bis zum XML): Ring-Werte, Guard, `deklariere` und
-//!   `erzeuge_xml` in Pythons Reihenfolge.
+//!   `erzeuge_xml` in Pythons Reihenfolge,
+//! - [`Cfg::der_akte`] und [`scheibe_bindung`] (`api._cfg`, `api._scheibe_bindung`).
 //!
 //! Sperrgruende sind [`domain::Sperrgrund`]; ihr Klartext liegt dort (exhaustiver `match`).
 //! Die `cfg`-Scheibe aus `api_constants.SCHEIBEN` ist [`Cfg`].
@@ -22,6 +23,7 @@ mod sperre;
 
 use domain::{Feldtyp, PyWert, Scheibe, Sperrgrund, Zustand, UNBEKANNTER_SPERRGRUND};
 use konsistenz::{partner_ohne_zusammen, PartnerWiderspruch};
+use store::Store;
 
 pub use einreichung::{einreichungs_xml, EinreichFehler, Einreichung};
 pub use feste_zahl::{feste_zahl, FesteZahl, KeineZahl, KeineZahlGrund};
@@ -229,6 +231,66 @@ impl Cfg {
     #[must_use]
     pub const fn scheibe(&self) -> Scheibe {
         self.scheibe
+    }
+
+    /// `api._cfg(store)`: die `Cfg` der Scheibe, die die Akte nennt.
+    ///
+    /// # Errors
+    /// [`ScheibenFehler::Unbekannt`], wenn die Akte keine oder eine unbekannte Scheibe nennt.
+    pub fn der_akte(store: &Store) -> Result<Self, ScheibenFehler> {
+        let roh = store.datei().scheibe.as_deref();
+        roh.and_then(|s| s.parse::<Scheibe>().ok())
+            .map(Self::fuer)
+            .ok_or_else(|| ScheibenFehler::Unbekannt(roh.map(str::to_owned)))
+    }
+}
+
+/// Warum `api._cfg`/`api._scheibe_bindung` keine Bindung liefern; den Wortlaut fuer den Client
+/// baut der Aufrufer (Pythons `repr`).
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum ScheibenFehler {
+    /// `_cfg`: 400 `unbekannte Scheibe`; der rohe Wert aus der Akte.
+    #[error("unbekannte Scheibe {0:?}")]
+    Unbekannt(Option<String>),
+    /// `_scheibe_bindung`: 500; die Felder ohne Bindung in Scheibenreihenfolge.
+    #[error("Bindungstabelle unvollständig für Scheibe: {0:?}")]
+    BindungUnvollstaendig(Vec<String>),
+}
+
+/// `api._scheibe_bindung`: die Bindung je Feld der Scheibe, aus dem Index aller Bindungen.
+/// Ein doppeltes Feld (`rentner_gesamt`: `geburtsjahr`) faellt wie im `dict` zusammen.
+///
+/// # Errors
+/// [`ScheibenFehler::BindungUnvollstaendig`] mit jedem Feld, das der Index nicht kennt.
+///
+/// ```
+/// use bescheid::deklaration::{scheibe_bindung, ScheibenFehler};
+/// let leer = bescheid::BindungIndex::new();
+/// assert_eq!(
+///     scheibe_bindung(&["a", "b"], &leer).unwrap_err(),
+///     ScheibenFehler::BindungUnvollstaendig(vec!["a".into(), "b".into()])
+/// );
+/// let b = scheibe_bindung(&["geburtsjahr"; 2], bescheid::testhilfe::index()).unwrap();
+/// assert_eq!(b.len(), 1);
+/// ```
+pub fn scheibe_bindung<'a>(
+    felder: &[impl AsRef<str>],
+    index: &BindungIndex<'a>,
+) -> Result<BindungIndex<'a>, ScheibenFehler> {
+    let mut bindung = BindungIndex::new();
+    let mut fehlend = Vec::new();
+    for f in felder.iter().map(AsRef::as_ref) {
+        match index.get(f) {
+            Some(b) => {
+                bindung.insert(f.to_owned(), *b);
+            }
+            None => fehlend.push(f.to_owned()),
+        }
+    }
+    if fehlend.is_empty() {
+        Ok(bindung)
+    } else {
+        Err(ScheibenFehler::BindungUnvollstaendig(fehlend))
     }
 }
 
