@@ -41,12 +41,13 @@ TUER = (400, {"fehler": "ungültiges JSON im Body"})
 NICHT_ENDLICH = ["NaN", "Infinity", "-Infinity", "1e400", "-1e400"]
 
 
-def _roh(base: str, pfad: str, rumpf: dict, literal: str) -> tuple[int, dict]:
+def _roh(base: str, pfad: str, rumpf: dict, literal: str | bytes) -> tuple[int, dict]:
     """POST mit `literal` wörtlich an der Stelle "@L@". json.dumps schriebe 1e400 als Infinity;
-    1e400 läuft aber über parse_float, Infinity über parse_constant."""
-    text = json.dumps(rumpf, ensure_ascii=False)
-    assert text.count('"@L@"') == 1, text
-    req = urllib.request.Request(base + pfad, data=text.replace('"@L@"', literal).encode(),
+    1e400 läuft aber über parse_float, Infinity über parse_constant. Bytes für Rümpfe ohne UTF-8."""
+    text = json.dumps(rumpf, ensure_ascii=False).encode()
+    assert text.count(b'"@L@"') == 1, text
+    roh = literal if isinstance(literal, bytes) else literal.encode()
+    req = urllib.request.Request(base + pfad, data=text.replace(b'"@L@"', roh),
                                  method="POST", headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
@@ -103,6 +104,16 @@ def test_zeile5_veranlagungszeitraum_scheitert_an_der_tuer(base, literal):
     rumpf = {"fall_id": "f2", "scheibe": "ep", "veranlagungszeitraum": "@L@"}
     assert _roh(base, "/fall", rumpf, literal) == TUER
     assert not os.path.exists(os.path.join(API.FAELLE, "f2.json"))
+
+
+def test_n1_rumpf_ohne_utf8_scheitert_an_der_tuer(fall):
+    """N1: UnicodeDecodeError ist eine ValueError, `except ValueError` fängt sie mit. Vorher schloss
+    der Dienst die Verbindung ohne Antwort. Die Rust-Tür (serde_json::from_slice) antwortet auf
+    0xff im Rumpf ebenso 400 mit demselben Wortlaut (gemessen 2026-10-02 an POST /fall)."""
+    vorher = _akte()
+    assert _roh(fall, "/fall/f1/event", {**_vorl("ep_arbeitstage", 200), "ts": "@L@"},
+                b'"2026-\xff"') == TUER
+    assert _akte() == vorher
 
 
 @pytest.mark.parametrize("zustand", ["bestaetigt", "vorlaeufig"])
