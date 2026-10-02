@@ -1,6 +1,7 @@
-//! `GET /fall/{id}/feld/{fid}/warum` und `GET /fall/{id}/graph` ohne Python: die Gestalt aus
-//! `api.warum` (`api.py:548`) und `api.graph` (`api.py:833`), an einem Fall der Scheibe `ep` (sechs
-//! Felder), mit einem Event aus der Store-Bibliothek.
+//! `GET /fall/{id}/feld/{fid}/warum`, `GET /fall/{id}/graph` und `GET /fall/{id}/preflight` ohne
+//! Python: die Gestalt aus `api.warum` (`api.py:548`), `api.graph` (`api.py:833`) und
+//! `api.preflight_check` (`api.py:641`), an einem Fall der Scheibe `ep` (sechs Felder), mit Events
+//! aus der Store-Bibliothek.
 //!
 //! Dass die Antworten Byte fuer Byte denen von Python gleichen, prueft der Differenz-Harness
 //! (`rust/parity/tests/api_http_paritaet.rs`, `generatoren`); dieser Test haelt die Form fest und
@@ -238,5 +239,59 @@ async fn graph_der_scheibe_ep() {
     assert_ne!(
         nachher["snapshot_id"], vorher["snapshot_id"],
         "neues Event, neuer Snapshot"
+    );
+}
+
+/// `preflight`: die Ampel folgt den Events, die Items stehen in Pythons Bereichs-Reihenfolge. Auf
+/// `ep` ist `kein_kap` nicht fragbar, ein Kapitalbetrag neben dem nie gestellten Flag ist deshalb
+/// kein Widerspruch (auf `gesamt` waere er einer).
+#[tokio::test]
+async fn preflight_ampel_und_items() {
+    let d = dienst();
+    let token = fall_anlegen(&d).await;
+    let holen = || sende(&d, "GET", "/fall/sonde/preflight", &token, None);
+    let (status, leer) = holen().await;
+    assert_eq!(status, 200, "{leer}");
+    assert_eq!(
+        leer,
+        json!({"fall_id": "sonde", "status": "GREEN", "items": []})
+    );
+
+    event_anhaengen(&d, "bruttoarbeitslohn", 4_000_000);
+    let (_, gelb) = holen().await;
+    assert_eq!(gelb["status"], "AMBER");
+    assert_eq!(
+        gelb["items"],
+        json!([{"typ": "hinweis", "bereich": "pauschale",
+                "text": "Arbeitslohn vorhanden, aber keine Anzahl an Arbeitstagen für die \
+                         Entfernungspauschale angegeben. Möglicherweise wurde die Pauschale vergessen."}])
+    );
+
+    event_anhaengen(&d, "ep_arbeitstage", 220);
+    let (_, gruen) = holen().await;
+    assert_eq!(gruen["status"], "GREEN", "{gruen}");
+    assert_eq!(gruen["items"], json!([]));
+
+    // Nur der Hinweis auf den Sparer-Pauschbetrag, kein `flag`-Widerspruch: `kein_kap` ist auf `ep`
+    // nicht fragbar.
+    event_anhaengen(&d, "kap_kapitalertraege", 10_000);
+    let sparer = json!({"typ": "hinweis", "bereich": "pauschale",
+        "text": "Kapitaleinkünfte vorhanden, aber der Sparer-Pauschbetrag (1.000/2.000 €) ist nur mit \
+                 Angabe der Veranlagungsart korrekt bestimmbar."});
+    let (_, gelb2) = holen().await;
+    assert_eq!(gelb2["status"], "AMBER", "{gelb2}");
+    assert_eq!(gelb2["items"], json!([sparer]));
+
+    // Widersprueche stehen vor den Hinweisen.
+    event_anhaengen(&d, "p36_lohnsteuer", 5_000_000);
+    let (_, rot) = holen().await;
+    assert_eq!(rot["status"], "RED");
+    assert_eq!(
+        rot["items"],
+        json!([{"typ": "widerspruch", "bereich": "plausibilitaet",
+                "text": "Bei einem Bruttoarbeitslohn von 40.000 € kann dein Arbeitgeber nicht 50.000 € \
+                         Lohnsteuer einbehalten haben — die Lohnsteuer wird vom Lohn abgezogen und ist \
+                         deshalb immer kleiner als der Lohn. Bitte prüfe, welche der beiden Zahlen stimmt."},
+              sparer])
     );
 }

@@ -60,12 +60,13 @@ pub async fn ergebnis(_fall: EigenerFall) -> Result<Antwort, ApiFehler> {
     Ok(Antwort::nicht_portiert("GET /fall/{id}/ergebnis"))
 }
 
-/// `GET /fall/{id}/preflight` — `api.preflight_check` (`api.py:640`).
+/// `GET /fall/{id}/preflight` — `api.preflight_check` (`api.py:641`), Rumpf in
+/// [`crate::preflight::preflight`].
 ///
 /// # Errors
-/// Wie [`fragen`].
-pub async fn preflight(_fall: EigenerFall) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("GET /fall/{id}/preflight"))
+/// Die Fehler des Owner-Checks (401/403/404) und die von `api.preflight_check`.
+pub async fn preflight(State(z): State<Zustand>, fall: EigenerFall) -> Result<Antwort, ApiFehler> {
+    crate::preflight::preflight(&z, fall.id(), fall.store())
 }
 
 /// `GET /fall/{id}/deklaration` — `api.deklaration` (`api.py:664`).

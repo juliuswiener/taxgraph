@@ -25,6 +25,7 @@ pub mod flow;
 pub mod graph;
 pub mod konfig;
 pub mod openapi;
+pub mod preflight;
 pub mod python;
 pub mod routen;
 pub mod schema;

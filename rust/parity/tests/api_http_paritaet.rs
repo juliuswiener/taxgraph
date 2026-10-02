@@ -63,7 +63,6 @@ const NICHT_PORTIERT: &[&str] = &[
     "GET /fall/{id}/fragen",
     "GET /fall/{id}/feld/{fid}/frage",
     "GET /fall/{id}/ergebnis",
-    "GET /fall/{id}/preflight",
     "GET /fall/{id}/deklaration",
     "POST /fall/{id}/event",
     "POST /fall/{id}/vorjahr",
@@ -83,7 +82,7 @@ const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/feld/{fid}/warum", 10),
     ("GET /fall/{id}/feld/{fid}/frage", 4),
     ("GET /fall/{id}/ergebnis", 3),
-    ("GET /fall/{id}/preflight", 3),
+    ("GET /fall/{id}/preflight", 17),
     ("GET /fall/{id}/deklaration", 3),
     ("GET /fall/{id}/graph", 9),
     ("POST /fall/{id}/event", 12),
@@ -1662,6 +1661,18 @@ fn generatoren() {
         // Scheibe `ep` (Scheiben-Wechsel von Hand) und behaelt ein Feld, das dort keine Bindung hat.
         ("g_wz", "gesamt", 2025),
         ("g_aussen", "gesamt", 2025),
+        // `preflight`: ein roter Fall mit je einem Widerspruch, `g_pf_ae` fuer § 24b, `g_pf_gelb`
+        // (nur Hinweise), zwei gruene (leer, und mit Angaben, die nichts melden), `g_pf_un` ohne
+        // Flag-Antwort auf `gesamt`, `g_pf_nf` mit demselben Betrag auf `ep` (Flag dort nicht fragbar),
+        // `g_vj_vv` als Vorjahr mit Verlustvortrag.
+        ("g_vj_vv", "gesamt", 2024),
+        ("g_pf_rot", "gesamt", 2025),
+        ("g_pf_ae", "gesamt", 2025),
+        ("g_pf_gelb", "gesamt", 2025),
+        ("g_pf_gruen", "gesamt", 2025),
+        ("g_pf_leer", "gesamt", 2025),
+        ("g_pf_un", "gesamt", 2025),
+        ("g_pf_nf", "gesamt", 2025),
     ] {
         let b = json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": vz});
         a("POST", "/fall", Some(b));
@@ -1722,11 +1733,77 @@ fn generatoren() {
     ] {
         a("POST", &format!("/fall/{id}/event"), Some(ev));
     }
+    // Das Vorjahr mit bestaetigtem Verlustvortrag; `POST /vorjahr` legt `vorjahr_referenz` an, gegen
+    // die `preflight` den neuen Bestand prueft. Erst danach kommt der hoehere Bestand in `g_pf_rot`.
+    let mut abgewiesen: Vec<String> = vec![];
+    let ev = ereignis("verlustvortrag_bestand", &json!(100_000), None);
+    if a("POST", "/fall/g_vj_vv/event", Some(ev)).is_none() {
+        abgewiesen.push("g_vj_vv/verlustvortrag_bestand".to_owned());
+    }
+    let b = a(
+        "POST",
+        "/fall/g_pf_rot/vorjahr",
+        Some(koerper("vorjahr", "g_vj_vv")),
+    );
+    assert!(b.is_some(), "Vorjahr g_pf_rot aus g_vj_vv abgewiesen");
+    for (id, feld, wert) in [
+        // Rot: je ein Widerspruch aus jedem Bereich, ausser § 24b (`g_pf_ae`).
+        ("g_pf_rot", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_pf_rot", "p36_lohnsteuer", json!(5_000_000)),
+        ("g_pf_rot", "kist_gezahlt", json!(1_500_000)),
+        ("g_pf_rot", "kirchensteuer_arbeitgeber", json!(5_000)),
+        ("g_pf_rot", "kein_kap", json!(true)),
+        ("g_pf_rot", "kap_kapitalertraege", json!(10_000)),
+        ("g_pf_rot", "veranlagung", json!("einzel")),
+        ("g_pf_rot", "kap_kapitalertraege_partner", json!(20_000)),
+        ("g_pf_rot", "fam_anzahl_kinder", json!(3)),
+        ("g_pf_rot", "kind_vorname", json!("Anna")),
+        ("g_pf_rot", "schulgeld", json!(20_000_000)),
+        ("g_pf_rot", "schulgeld__2", json!(5_000)),
+        ("g_pf_rot", "stammdaten_keine_bankverbindung", json!(true)),
+        (
+            "g_pf_rot",
+            "stammdaten_iban",
+            json!("DE89370400440532013000"),
+        ),
+        ("g_pf_rot", "verlustvortrag_bestand", json!(500_000)),
+        ("g_pf_ae", "veranlagung", json!("zusammen")),
+        ("g_pf_ae", "fam_alleinstehend", json!(true)),
+        ("g_pf_gelb", "bruttoarbeitslohn", json!(3_000_000)),
+        ("g_pf_gelb", "kein_vuv", json!(false)),
+        ("g_pf_gelb", "vv_einnahmen", json!(1_000_000)),
+        ("g_pf_gruen", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_pf_gruen", "ep_arbeitstage", json!(220)),
+        ("g_pf_gruen", "p36_lohnsteuer", json!(500_000)),
+        // Kein Flag beantwortet: auf `gesamt` ein Widerspruch, auf `ep` (s. u.) nicht.
+        ("g_pf_un", "kap_kapitalertraege", json!(10_000)),
+        ("g_pf_nf", "kap_kapitalertraege", json!(10_000)),
+    ] {
+        let ev = ereignis(feld, &wert, None);
+        if a("POST", &format!("/fall/{id}/event"), Some(ev)).is_none() {
+            abgewiesen.push(format!("{id}/{feld}"));
+        }
+    }
+    let ev = ereignis_llm("agb_aufwendungen", &json!(50_000));
+    if a("POST", "/fall/g_pf_gelb/event", Some(ev)).is_none() {
+        abgewiesen.push("g_pf_gelb/agb_aufwendungen".to_owned());
+    }
+    assert!(
+        abgewiesen.is_empty(),
+        "preflight-Faelle: Events abgewiesen: {abgewiesen:?}"
+    );
     // Scheiben-Wechsel von Hand, in beiden Verzeichnissen gleich: `bruttoarbeitslohn` hat in `ep`
     // keine Bindung mehr. Der Store laesst so ein Event nicht ueber `POST /event` zu (400), eine
     // vorhandene Akte kann es dennoch tragen.
-    for art in ["python", "rust"] {
-        let pfad = tmp.path().join(art).join("faelle").join("g_aussen.json");
+    for (art, id) in ["python", "rust"]
+        .into_iter()
+        .flat_map(|art| ["g_aussen", "g_pf_nf"].map(|id| (art, id)))
+    {
+        let pfad = tmp
+            .path()
+            .join(art)
+            .join("faelle")
+            .join(format!("{id}.json"));
         let mut akte: Value = serde_json::from_slice(&std::fs::read(&pfad).unwrap()).unwrap();
         akte["scheibe"] = json!("ep");
         std::fs::write(&pfad, serde_json::to_vec(&akte).unwrap()).unwrap();
@@ -1763,14 +1840,7 @@ fn generatoren() {
     for id in [
         "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_vor", "g_wz", "g_aussen",
     ] {
-        for r in [
-            "stand",
-            "fragen",
-            "ergebnis",
-            "graph",
-            "deklaration",
-            "preflight",
-        ] {
+        for r in ["stand", "fragen", "ergebnis", "graph", "deklaration"] {
             let b = a("GET", &format!("/fall/{id}/{r}"), None);
             if r == "stand" {
                 let e = b
@@ -1781,6 +1851,45 @@ fn generatoren() {
             }
         }
     }
+    // `preflight` auf allen Faellen: welche Ampeln und Bereiche Pythons Antworten tragen, gezaehlt
+    // wird, was die Antwort enthaelt — nicht, dass 200 zurueckkam.
+    let mut ampeln: BTreeMap<String, usize> = BTreeMap::new();
+    let mut bereiche: BTreeMap<String, usize> = BTreeMap::new();
+    for id in [
+        "g_ep",
+        "g_neu",
+        "g_ges",
+        "g_an",
+        "g_rent",
+        "g_rent2",
+        "g_vor",
+        "g_wz",
+        "g_aussen",
+        "g_vj_vv",
+        "g_pf_rot",
+        "g_pf_ae",
+        "g_pf_gelb",
+        "g_pf_gruen",
+        "g_pf_leer",
+        "g_pf_un",
+        "g_pf_nf",
+    ] {
+        let Some(b) = a("GET", &format!("/fall/{id}/preflight"), None) else {
+            continue;
+        };
+        *ampeln
+            .entry(b["status"].as_str().unwrap_or_default().to_owned())
+            .or_default() += 1;
+        for i in b["items"].as_array().into_iter().flatten() {
+            let schluessel = format!(
+                "{}/{}",
+                i["typ"].as_str().unwrap_or_default(),
+                i["bereich"].as_str().unwrap_or_default()
+            );
+            *bereiche.entry(schluessel).or_default() += 1;
+        }
+    }
+    println!("  preflight: Ampeln {ampeln:?}, Items je Bereich {bereiche:?}");
     // `engine` aus Pythons Antwort; Rust ist dieselbe Antwort (sonst waere eine Abweichung gemeldet).
     // Gezaehlt wird, welche Rechenwege `stand` erreicht — nicht, dass 200 zurueckkam.
     println!("  stand: engine je Antwort {engines:?}, Sperrgruende {gruende:?}");
@@ -1826,6 +1935,32 @@ fn generatoren() {
             "stand erreicht den Rechenweg {e:?} zu selten: {engines:?}"
         );
     }
+    for ampel in ["RED", "AMBER", "GREEN"] {
+        assert!(
+            ampeln.get(ampel).copied().unwrap_or(0) >= 1,
+            "preflight meldet nie {ampel:?}: {ampeln:?}"
+        );
+    }
+    // `nicht_gerechnet` fehlt mit Absicht: `NICHT_GERECHNET` ist leer, der Bereich bleibt leer.
+    for bereich in [
+        "widerspruch/flag",
+        "widerspruch/partner",
+        "widerspruch/alleinerziehend",
+        "widerspruch/plausibilitaet",
+        "hinweis/pauschale",
+        "hinweis/betrag_vorlaeufig",
+    ] {
+        let n = bereiche.get(bereich).copied().unwrap_or(0);
+        assert!(n >= 1, "preflight liefert nie {bereich}: {bereiche:?}");
+    }
+    assert!(
+        bereiche
+            .get("widerspruch/plausibilitaet")
+            .copied()
+            .unwrap_or(0)
+            >= 6,
+        "preflight: zu wenige Plausibilitaets-Widersprueche: {bereiche:?}"
+    );
     // Der Rentenbeginn sperrt nur, wenn der Guard davor nichts findet — ein eigener Weg in `stand`.
     for g in ["rentenbeginn_offen", "flag_konsistenz_offen"] {
         assert!(
