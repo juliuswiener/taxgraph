@@ -334,7 +334,9 @@ def _pruefe_begleitfelder(ts, herkunft, signal) -> None:
       in 32 echten Akten, rust/domain HerkunftVektor); herkunft/haftung nicht leerer Text, pruef_tiefe
       eine der vier Stufen. Ein Zusatzschlüssel ist 422, auch wo der Rust-Leser ihn stillschweigend
       verwürfe (Voll-Form) — er ginge beim Neuschreiben verloren und änderte die event_id.
-    - `signal`: fehlt (None) oder ein Objekt. Jede andere Form, auch 0, "", [] und false, ist 422.
+    - `signal`: fehlt (None) oder ein Objekt. Jede andere Form, auch 0, "", [] und false, ist 422. Ein Schlüssel
+      ausser signal_1/signal_2 ist 422 (schema.json: additionalProperties false): der Rust-Leser verwirft ihn still,
+      und die event_id passte danach nicht mehr zum Inhalt (Folge 1, Entscheidung main 2026-10-02, Vorschlag A).
     (`signal_2` Text/null prüft append_event weiter unten.)
 
     Die Meldungen nennen Feld und Typ, nie den Wert (Zeitstempel und Schlüssel sind Nutzereingaben).
@@ -356,6 +358,8 @@ def _pruefe_begleitfelder(ts, herkunft, signal) -> None:
     if signal is not None and not isinstance(signal, dict):
         raise ValueError(f"fail-closed (Form): signal muss ein Objekt sein oder fehlen, nicht "
                          f"{type(signal).__name__}.")
+    if signal is not None and set(signal) - {"signal_1", "signal_2"}:
+        raise ValueError("fail-closed (Form): signal darf nur die Schlüssel signal_1 und signal_2 tragen.")
 
 
 def append_event(store: dict, *, feld_id: str, wert, zustand: str, herkunft: dict,
