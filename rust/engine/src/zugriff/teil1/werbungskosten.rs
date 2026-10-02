@@ -241,3 +241,31 @@ pub fn werbungskosten_n(e: &WerbungskostenNEingabe, p: &Params) -> Result<Euro, 
     }
     Ok(Euro::new(wk))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{ep_ab_21km, EntfernungspauschaleEingabe};
+    use bindung::Params;
+    use domain::{Euro, Km, Vz};
+    use rust_decimal::Decimal;
+
+    /// 101,5 km sind 101 volle km. Gerundet (102) kaeme 3171 heraus: die Kappung am Rest laesst
+    /// nur 1 EUR durch, ganzzahlige km wie im Doku-Beispiel zeigen den Fehler nie, und
+    /// `zugriff_teil1_paritaet` laeuft nur mit `PARITY=1`.
+    /// Erwartungswert 3170 = Python-Orakel, nicht aus Rust: auf 33f56ad liefert
+    /// `runner.catala_ep_ab_21km({"arbeitstage": 103, "entfernung_km_roh": 101.5,
+    /// "veranlagungszeitraum": 2026})` 3170.
+    #[test]
+    fn ep_ab_21km_zaehlt_nur_volle_km() {
+        let p =
+            Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
+        let e = EntfernungspauschaleEingabe {
+            veranlagungszeitraum: Vz::Vz2026,
+            entfernung_km_roh: Km::new(Decimal::new(1015, 1)),
+            arbeitstage: 103,
+            eigenes_oder_ueberlassenes_kfz: false,
+            oepnv_kosten_jahr: Euro::new(0),
+        };
+        assert_eq!(ep_ab_21km(&e, &p).unwrap(), Euro::new(3170));
+    }
+}
