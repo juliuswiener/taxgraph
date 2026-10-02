@@ -151,6 +151,8 @@ impl Drop for Server {
 /// (werden von beiden Mains geladen, nur fuer fehlende Schluessel) nichts veraendert; LLM- und
 /// Karten-Schluessel sind leer, damit kein Stub-Handler in Python nach draussen telefoniert.
 /// `flow`: `TAXGRAPH_FLOW=1`, sonst antwortet `POST /flow` nur `{"mitgeschrieben": false}`.
+/// ponytail: `flow.jsonl` vergleicht niemand (`verzeichnis_zustand` liest nur `*.json`); beim
+/// flow-Port als drittes Log-Paar mit normalisiertem `ts` aufnehmen.
 fn starte(art: &'static str, wurzel: &Path, no_auth: bool, flow: bool, seed: &Path) -> Server {
     let daten = wurzel.join(art);
     let faelle = daten.join("faelle");
@@ -1538,7 +1540,9 @@ fn zufallsfolgen() {
 // ---------------------------------------------------------------- Generatoren (9c)
 
 /// Ein Event wie aus der Oberflaeche, per Klick bestaetigt. `ts` steht fest: die `event_id` ist
-/// ein Hash ueber das Event (`store.py:28`) und bleibt so je Lauf gleich.
+/// ein Hash ueber das Event (`store.py:31`) und bleibt so je Lauf gleich.
+/// ponytail: nur `bestaetigt` mit Herkunft `laie`; `vorlaeufig` und weitere Herkunft beim
+/// event-Port ergaenzen, sobald Rust sie verschieden behandelt.
 fn ereignis(feld: &str, wert: &Value, ersetzt: Option<&str>) -> Value {
     json!({"feld_id": feld, "wert": wert, "zustand": "bestaetigt", "schreiber": "ui:paritaet",
         "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
