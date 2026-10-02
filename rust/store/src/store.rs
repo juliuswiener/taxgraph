@@ -145,7 +145,7 @@ impl<'de> Deserialize<'de> for Veranlagungsjahr {
 
 impl Veranlagungsjahr {
     /// Fuer Aufrufer, die den (bewusst engeren) `i64`-Bereich brauchen — [`Store::leer`] und die
-    /// Datums-Ableitung ([`ableitung::berechne`], `vz: i64`). Saettigt an den `i64`-Grenzen statt
+    /// Datums-Ableitung (`ableitung::berechne`, `vz: i64`). Saettigt an den `i64`-Grenzen statt
     /// zu ueberlaufen: betrifft praktisch nur die eine gemessene 38-stellige Datei, deren Wert
     /// fuer jede reale Ableitungsregel ohnehin weit ausserhalb jeder sinnvollen Jahresspanne
     /// liegt — ein gesaettigtes `i64::MAX` fuehrt zu denselben "viel zu weit in der Zukunft"-
