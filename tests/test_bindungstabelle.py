@@ -300,6 +300,21 @@ def test_neg_paragraph_im_fragetext(schema, daten):
     assert list(jsonschema.Draft202012Validator(schema).iter_errors(d)), "§ im Fragetext nicht abgelehnt"
 
 
+def test_neg_feld_bedingung_ohne_oder_mit_beiden_werten(schema, daten):
+    """Genau eines von wert/wert_nicht. Fehlen beide, wirft traverser.py:557 KeyError und
+    fragen.rs:121 vergleicht still mit null. Stehen beide, gewinnt in Python wie Rust still
+    wert_nicht."""
+    f, i = next((f, i) for f in sorted(daten) for i, b in enumerate(daten[f]["bindungen"])
+                if b.get("feld_bedingung"))
+    ohne, beide = copy.deepcopy(daten[f]), copy.deepcopy(daten[f])
+    for k in ("wert", "wert_nicht"):
+        ohne["bindungen"][i]["feld_bedingung"].pop(k, None)
+    beide["bindungen"][i]["feld_bedingung"].update(wert=True, wert_nicht=False)
+    V = jsonschema.Draft202012Validator(schema)
+    assert list(V.iter_errors(ohne)), "feld_bedingung ohne wert und wert_nicht nicht abgelehnt"
+    assert list(V.iter_errors(beide)), "feld_bedingung mit wert und wert_nicht nicht abgelehnt"
+
+
 def test_neg_erfundene_kz(daten, e10_kz):
     # es MUSS echte elster_kz in der Scheibe geben (sonst prüft Gate c nichts)
     echte = [b["elster_kz"] for d in daten.values() for b in d["bindungen"] if b.get("elster_kz")]

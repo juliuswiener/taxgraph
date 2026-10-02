@@ -65,16 +65,23 @@ fn multi_objekt(k: &K<'_>, cfg: &Cfg) -> Grund {
     Ok(None)
 }
 
-/// § 22 aa: `art in RENTNER_AA_ARTEN`, `beginn` ganzzahlig (Python-`bool` zaehlt!). Nach dem VZ →
-/// `rentenbeginn_nach_vz` (der Ring hat dafuer keinen Zweig); vor dem VZ ohne Freibetrag (Zahl,
-/// kein Bool) → die Euro-Fixierung fehlt. Python `_aa_beginn_grund`.
-fn aa_beginn_grund(
+/// § 22 aa (`art in RENTNER_AA_ARTEN`) und bb (Leibrente), `beginn` ganzzahlig (Python-`bool`
+/// zaehlt!). Nach dem VZ → `rentenbeginn_nach_vz` (aa: der Ring hat dafuer keinen Zweig, bb: er
+/// rechnete still); aa vor dem VZ ohne Freibetrag (Zahl, kein Bool) → die Euro-Fixierung fehlt.
+/// Python `_beginn_grund`.
+fn beginn_grund(
     k: &K<'_>,
     art: Option<&PyWert>,
     beginn: Option<&PyWert>,
     rf: Option<&PyWert>,
 ) -> Option<Sperrgrund> {
-    if !matches!(art, Some(PyWert::Text(s)) if RENTNER_AA_ARTEN.contains(&s.as_str())) {
+    use domain::Rentenart as Art;
+    let aa = matches!(art, Some(PyWert::Text(s)) if RENTNER_AA_ARTEN.contains(&s.as_str()));
+    let bb = matches!(
+        domain::Lage::rentenart(art),
+        domain::Lage::Gueltig(Art::PrivateLeibrente | Art::SonstigeLeibrente)
+    );
+    if !(aa || bb) {
         return None;
     }
     let (Some(beginn), Some(vz)) = (py_int_wert(beginn), k.vz) else {
@@ -84,7 +91,8 @@ fn aa_beginn_grund(
     if beginn > vz {
         Some(Sperrgrund::RentenbeginnNachVz)
     } else {
-        (beginn < vz && zahl_wert(rf).is_none()).then_some(Sperrgrund::RentenfreibetragFixierungOffen)
+        (aa && beginn < vz && zahl_wert(rf).is_none())
+            .then_some(Sperrgrund::RentenfreibetragFixierungOffen)
     }
 }
 
@@ -99,7 +107,7 @@ fn rente(k: &K<'_>, cfg: &Cfg) -> Grund {
             if inst.index >= 2 && (!kern || inst.zustand != domain::Zustand::Bestaetigt) {
                 return Ok(Some(Sperrgrund::RenteInstanzOffen));
             }
-            if let Some(g) = aa_beginn_grund(
+            if let Some(g) = beginn_grund(
                 k,
                 w("rentner_renten_art"),
                 w("rentner_renten_beginn_jahr"),
@@ -108,7 +116,7 @@ fn rente(k: &K<'_>, cfg: &Cfg) -> Grund {
                 return Ok(Some(g));
             }
         }
-    } else if let Some(g) = aa_beginn_grund(
+    } else if let Some(g) = beginn_grund(
         k,
         wert(f, "rentner_renten_art"),
         wert(f, "rentner_renten_beginn_jahr"),
@@ -138,7 +146,7 @@ fn rente_partner(k: &K<'_>) -> Option<Sperrgrund> {
     {
         return Some(Sperrgrund::PartnerKegelOffen);
     }
-    aa_beginn_grund(
+    beginn_grund(
         k,
         wert(f, "rentner_renten_art_partner"),
         wert(f, "rentner_renten_beginn_jahr_partner"),

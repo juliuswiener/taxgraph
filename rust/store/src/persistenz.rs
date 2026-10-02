@@ -155,9 +155,10 @@ fn sperrform(token: &str) -> Option<Sperrform> {
     }
 }
 
-/// Schreibt die Store-Datei atomar (`produkt/haut/api.py:146-162`, `speichere_fall`): Tempfile im
+/// Schreibt die Store-Datei atomar (`produkt/haut/api.py:146-166`, `speichere_fall`): Tempfile im
 /// selben Verzeichnis, fsync, `rename` — ein Leser sieht nie einen halb geschriebenen Zustand.
-/// Modus 0600 ab Neuanlage: hier stehen Steuer-ID, Einkommen und IBAN.
+/// Scheitert ein Schritt nach dem Anlegen, kommt das Tempfile wieder weg. Modus 0600 ab
+/// Neuanlage: hier stehen Steuer-ID, Einkommen und IBAN.
 ///
 /// # Errors
 /// [`PersistenzFehler::Schreiben`]/[`PersistenzFehler::Serialisieren`], wenn Tempfile, Schreiben
@@ -180,17 +181,29 @@ pub fn speichere(pfad: &Path, datei: &StoreDatei) -> Result<(), PersistenzFehler
     std::fs::create_dir_all(verzeichnis)?;
     let dateiname = pfad.file_name().and_then(|n| n.to_str()).unwrap_or("store");
     let temp_pfad = verzeichnis.join(format!(".{dateiname}.{}.tmp", std::process::id()));
-    {
-        let mut tmp = std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .mode(0o600)
-            .open(&temp_pfad)?;
-        serde_json::to_writer(&mut tmp, datei)?;
-        tmp.sync_all()?;
-    }
-    std::fs::rename(&temp_pfad, pfad)?;
+    let tmp = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .mode(0o600)
+        .open(&temp_pfad)?;
+    fuelle_und_ersetze(tmp, &temp_pfad, pfad, datei).inspect_err(|_| {
+        // Die eigene Teil-Datei, nie die Akte. Scheitert auch das, zaehlt der erste Fehler.
+        let _ = std::fs::remove_file(&temp_pfad);
+    })
+}
+
+/// Rest von [`speichere`] ab dem eigenen Tempfile: schreiben, fsync, schliessen, `rename`.
+fn fuelle_und_ersetze(
+    mut tmp: std::fs::File,
+    temp_pfad: &Path,
+    pfad: &Path,
+    datei: &StoreDatei,
+) -> Result<(), PersistenzFehler> {
+    serde_json::to_writer(&mut tmp, datei)?;
+    tmp.sync_all()?;
+    drop(tmp);
+    std::fs::rename(temp_pfad, pfad)?;
     Ok(())
 }
 
@@ -269,6 +282,34 @@ mod tests {
         );
         datei.vorjahr_referenz = Some(domain::PyWert::Gleit(f64::NAN));
         assert!(serde_json::to_value(&datei).is_err());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// N2: scheitert das Schreiben nach dem Anlegen des Tempfiles (hier NaN, wie
+    /// `allow_nan=False` in `speichere_fall`), kommt die eigene Teil-Datei weg. Die Akte bleibt
+    /// byte-gleich.
+    #[test]
+    fn gescheitertes_speichern_laesst_keine_teil_datei() {
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-teil-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("fall.json");
+        let mut datei = testdatei();
+        speichere(&pfad, &datei).unwrap();
+        let vorher = std::fs::read(&pfad).unwrap();
+        datei.vorjahr_referenz = Some(domain::PyWert::Gleit(f64::NAN));
+        assert!(matches!(
+            speichere(&pfad, &datei),
+            Err(PersistenzFehler::Serialisieren(_))
+        ));
+        assert_eq!(std::fs::read(&pfad).unwrap(), vorher);
+        let namen: Vec<_> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
+        assert_eq!(namen, ["fall.json"]);
         std::fs::remove_dir_all(&dir).ok();
     }
 

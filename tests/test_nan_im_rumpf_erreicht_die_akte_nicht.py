@@ -18,7 +18,8 @@ store.append_event AttributeError -> 500. Rust führt signal_2 als Option<String
 Feldname, für jeden zustand.
 
 Dazu das Netz hinter der Tür: api.speichere_fall schreibt mit allow_nan=False. Kommt NaN doch
-bis dorthin, scheitert das Schreiben, und die Akte bleibt, wie sie war.
+bis dorthin, scheitert das Schreiben, und die Akte bleibt, wie sie war. N2: keine Teil-Datei *.tmp
+bleibt dabei liegen.
 
 NULL LLM.
 """
@@ -41,13 +42,18 @@ TUER = (400, {"fehler": "ungültiges JSON im Body"})
 NICHT_ENDLICH = ["NaN", "Infinity", "-Infinity", "1e400", "-1e400"]
 
 
-def _roh(base: str, pfad: str, rumpf: dict, literal: str) -> tuple[int, dict]:
+def _roh(base: str, pfad: str, rumpf: dict, literal: str | bytes) -> tuple[int, dict]:
     """POST mit `literal` wörtlich an der Stelle "@L@". json.dumps schriebe 1e400 als Infinity;
-    1e400 läuft aber über parse_float, Infinity über parse_constant."""
-    text = json.dumps(rumpf, ensure_ascii=False)
-    assert text.count('"@L@"') == 1, text
-    req = urllib.request.Request(base + pfad, data=text.replace('"@L@"', literal).encode(),
-                                 method="POST", headers={"Content-Type": "application/json"})
+    1e400 läuft aber über parse_float, Infinity über parse_constant. Bytes für Rümpfe ohne UTF-8."""
+    text = json.dumps(rumpf, ensure_ascii=False).encode()
+    assert text.count(b'"@L@"') == 1, text
+    roh = literal if isinstance(literal, bytes) else literal.encode()
+    return _sende(base, pfad, text.replace(b'"@L@"', roh))
+
+
+def _sende(base: str, pfad: str, daten: bytes) -> tuple[int, dict]:
+    req = urllib.request.Request(base + pfad, data=daten, method="POST",
+                                 headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
             return r.status, json.loads(r.read())
@@ -105,6 +111,30 @@ def test_zeile5_veranlagungszeitraum_scheitert_an_der_tuer(base, literal):
     assert not os.path.exists(os.path.join(API.FAELLE, "f2.json"))
 
 
+def test_n1_rumpf_ohne_utf8_scheitert_an_der_tuer(fall):
+    """N1: UnicodeDecodeError ist eine ValueError, `except ValueError` fängt sie mit. Vorher schloss
+    der Dienst die Verbindung ohne Antwort. Die Rust-Tür (serde_json::from_slice) antwortet auf
+    0xff im Rumpf ebenso 400 mit demselben Wortlaut (gemessen 2026-10-02 an POST /fall)."""
+    vorher = _akte()
+    assert _roh(fall, "/fall/f1/event", {**_vorl("ep_arbeitstage", 200), "ts": "@L@"},
+                b'"2026-\xff"') == TUER
+    assert _akte() == vorher
+
+
+@pytest.mark.parametrize("vorsatz, kodierung", [(b"\xef\xbb\xbf", "utf-8"),
+                                                (b"\xff\xfe", "utf-16-le"), (b"", "utf-16-le")],
+                         ids=["utf-8-mit-bom", "utf-16-le-mit-bom", "utf-16-le-ohne-bom"])
+def test_kodierung_nur_utf8_ohne_bom(fall, vorsatz, kodierung):
+    """Die Tür nimmt nur UTF-8 ohne BOM an, wie die Rust-Tür. Vorher erkannte json.loads auf
+    Bytes diese drei selbst und legte den Fall an: 201 (gemessen 2026-10-02). UTF-16-LE mit BOM
+    scheitert an roh.decode mit UnicodeDecodeError, die anderen zwei an json.loads mit
+    JSONDecodeError. Beide sind ValueError, also 400 und nicht 500."""
+    vorher = sorted(os.listdir(API.FAELLE)), _akte()
+    rumpf = json.dumps({"fall_id": "f2", "scheibe": "ep", "veranlagungszeitraum": 2025})
+    assert _sende(fall, "/fall", vorsatz + rumpf.encode(kodierung)) == TUER
+    assert (sorted(os.listdir(API.FAELLE)), _akte()) == vorher
+
+
 @pytest.mark.parametrize("zustand", ["bestaetigt", "vorlaeufig"])
 def test_k1_signal_2_als_zahl_ist_422_mit_feldname(fall, zustand):
     rumpf = {**_vorl("ep_arbeitstage", 200), "zustand": zustand,
@@ -122,3 +152,14 @@ def test_netz_speichere_fall_schreibt_kein_nan(tmp_path, monkeypatch):
     with pytest.raises(ValueError):
         API.speichere_fall("f1", {"events": [{"ts": float("nan")}]})
     assert (tmp_path / "f1.json").read_bytes() == vorher
+
+
+def test_n2_gescheitertes_schreiben_laesst_keine_teil_datei(tmp_path, monkeypatch):
+    """N2: scheitert das Schreiben, löscht speichere_fall die eigene *.tmp. Vorher blieb sie
+    liegen, mit dem Anfang des Falls darin. Der Auslöser hier ist allow_nan=False; die Löschung
+    gilt für jeden Fehler bis einschließlich os.replace."""
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path))
+    API.speichere_fall("f1", {"events": []})
+    with pytest.raises(ValueError):
+        API.speichere_fall("f1", {"events": [{"ts": float("nan")}]})
+    assert os.listdir(tmp_path) == ["f1.json"]

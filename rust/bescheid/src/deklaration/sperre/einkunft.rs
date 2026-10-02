@@ -127,9 +127,12 @@ pub(super) fn betrag_offen(k: &K<'_>) -> Option<Sperrgrund> {
     if konfession && AGB_KIST.iter().any(|a| !bestaetigt(f, a)) {
         return Some(Sperrgrund::KirchensteuerBetragOffen);
     }
+    // § 35: Person A; Person B nur bei zusammen (sonst rechnet der Ring den Partner-Betrieb nicht).
+    let offen = |mb: &str, hs: &str| positiv(f, mb) && !bestaetigt(f, hs);
     realsplitting_fahrtkosten(f).or_else(|| {
-        (positiv(f, "gewst_messbetrag") && !bestaetigt(f, "gewst_hebesatz"))
-            .then_some(Sperrgrund::GewstHebesatzOffen)
+        (offen("gewst_messbetrag", "gewst_hebesatz")
+            || (ist_zusammen(f) && offen("gewst_messbetrag_partner", "gewst_hebesatz_partner")))
+        .then_some(Sperrgrund::GewstHebesatzOffen)
     })
 }
 

@@ -36,6 +36,9 @@ Fehlermeldung.
 Die bekannten Instanzen (belegt in `test_muster_erklaert_genau_die_bekannten_...`):
   - gewst_hebesatz (Kreuz kein_gewinn) -- Vorbedingung `_positiv("gewst_messbetrag")`, dasselbe
     Kreuz (bindung_an_gesamt.yaml). Muster (a).
+  - gewst_hebesatz_partner (Kreuz kein_gewinn_partner) -- Vorbedingung
+    `_positiv("gewst_messbetrag_partner")`, dasselbe Kreuz (bindung_an_gesamt.yaml Z.1608 vs. Z.1627).
+    Muster (a). Seit dem Partner-Spiegel von gewst_hebesatz_offen (2026-10-02).
   - behinderungsbedingte_aufwendungen_wahlrecht_pb (Kreuz keine_behinderung_pflege) -- Vorbedingung
     `_positiv("behinderungsbedingte_aufwendungen")`, dasselbe Kreuz (bindung_sonder_agb_35a.yaml
     Z.166 vs. Z.193). Muster (a).
@@ -450,6 +453,7 @@ def test_muster_erklaert_genau_die_bekannten_falsch_positiven():
     erklaert = {f for f in schnitt if _strukturell_unerreichbar(f, menge_a, vorbedingungen, gleichheiten)}
     erwartet = {
         "gewst_hebesatz",
+        "gewst_hebesatz_partner",
         "behinderungsbedingte_aufwendungen_wahlrecht_pb",
         "behinderungsbedingte_aufwendungen_wahlrecht_pb_partner",
         "rentner_alter_55_oder_berufsunfaehig",

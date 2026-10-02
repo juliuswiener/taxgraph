@@ -812,6 +812,9 @@ fn handgeschrieben_auth(p: &mut Paar) {
         .roh("{x}", json_kopf));
     a!(po("kaputtes JSON, unbekannter Pfad", "/nix").roh("{x}", json_kopf));
     a!(po("nur Leerraum", "/auth/login").roh("   ", json_kopf));
+    // NaN ist kein JSON (RFC 8259). Beide Tueren weisen es ab, gleicher Status, gleicher Wortlaut:
+    // server.py mit _nur_endlich als parse_constant, dispatch.rs mit lies_koerper (serde_json).
+    a!(po("NaN im Rumpf", "/auth/login").roh(r#"{"username": NaN, "password": "x"}"#, json_kopf));
     a!(po("ohne Rumpf", "/auth/login"));
     a!(po("kaputtes JSON, falscher Text-Typ", "/fall").roh("{x}", "text/plain"));
     a!(de("DELETE mit Rumpf", "/fall/nix")
@@ -1761,13 +1764,6 @@ fn dokumentierte_abweichungen() {
         py.status, rs.status
     );
     assert_eq!((py.status, rs.status), (500, 401));
-    // 4. JSON-Literale, die nur Python kennt (NaN): Python rechnet weiter, Rust meldet 400.
-    let (py, rs) = zweimal(
-        &Anfrage::neu("NaN", "POST", "/auth/login")
-            .roh(r#"{"username": NaN, "password": "x"}"#, "application/json"),
-    );
-    println!("  NaN im Body: py={} | rs={}", py.status, rs.status);
-    assert_ne!(py.status, rs.status);
 }
 
 /// `_routes()` (`server.py:62`) und `api::routen::EINTRAEGE` stimmen in Methode, Muster und
