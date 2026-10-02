@@ -76,13 +76,13 @@ pub async fn deklaration(_fall: EigenerFall) -> Result<Antwort, ApiFehler> {
     Ok(Antwort::nicht_portiert("GET /fall/{id}/deklaration"))
 }
 
-/// `GET /fall/{id}/graph` — `api.graph` (`api.py:832`).
+/// `GET /fall/{id}/graph` — `api.graph` (`api.py:833`), Rumpf in [`crate::graph::graph`].
 ///
 /// PARITÄT: P7 — `static/graph.js` ruft die Route ohne `Authorization`-Kopf (`graph.js:13,70`); der
 /// Extractor antwortet 401, wie Python. Die Korrektur liegt im Frontend, nicht hier.
 ///
 /// # Errors
-/// Wie [`fragen`].
-pub async fn graph(_fall: EigenerFall) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("GET /fall/{id}/graph"))
+/// Die Fehler des Owner-Checks (401/403/404) und die von `api.graph`.
+pub async fn graph(State(z): State<Zustand>, fall: EigenerFall) -> Result<Antwort, ApiFehler> {
+    crate::graph::graph(&z, fall.id(), fall.store())
 }

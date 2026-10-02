@@ -1,5 +1,6 @@
-//! `GET /fall/{id}/feld/{fid}/warum` ohne Python: die Gestalt aus `api.warum` (`api.py:548`), an
-//! einem Fall der Scheibe `ep`, mit einem Event aus der Store-Bibliothek.
+//! `GET /fall/{id}/feld/{fid}/warum` und `GET /fall/{id}/graph` ohne Python: die Gestalt aus
+//! `api.warum` (`api.py:548`) und `api.graph` (`api.py:833`), an einem Fall der Scheibe `ep` (sechs
+//! Felder), mit einem Event aus der Store-Bibliothek.
 //!
 //! Dass die Antworten Byte fuer Byte denen von Python gleichen, prueft der Differenz-Harness
 //! (`rust/parity/tests/api_http_paritaet.rs`, `generatoren`); dieser Test haelt die Form fest und
@@ -180,4 +181,62 @@ async fn warum_mit_event_liefert_die_justification() {
     let pfad = "/fall/sonde/feld/ep_entfernung_km/warum";
     let (status, antwort) = sende(&d, "GET", pfad, &token, None).await;
     assert_eq!(status, 404, "{antwort}");
+}
+
+/// `graph`: eine Kante je Feld der Scheibe (`ep`: sechs), nach `feld_id` sortiert, `zustand` `offen`
+/// bis ein Event da ist und dann der des Events; Knoten sind die Regeln mit ihrem Status.
+#[tokio::test]
+async fn graph_der_scheibe_ep() {
+    let d = dienst();
+    let token = fall_anlegen(&d).await;
+    let (status, vorher) = sende(&d, "GET", "/fall/sonde/graph", &token, None).await;
+    assert_eq!(status, 200, "{vorher}");
+    assert_eq!(vorher["fall_id"], "sonde");
+    assert!(vorher["snapshot_id"]
+        .as_str()
+        .is_some_and(|s| s.len() == 64));
+    let kanten = vorher["kanten"].as_array().unwrap();
+    let felder: Vec<&str> = kanten
+        .iter()
+        .map(|k| k["feld_id"].as_str().unwrap())
+        .collect();
+    let mut sortiert = felder.clone();
+    sortiert.sort_unstable();
+    assert_eq!(felder, sortiert, "Kanten nach feld_id sortiert");
+    assert_eq!(
+        felder,
+        [
+            "ep_arbeitstage",
+            "ep_eigenes_kfz",
+            "ep_entfernung_km",
+            "ep_oepnv_kosten",
+            "ep_ziel_adresse",
+            "ep_ziel_des_weges"
+        ]
+    );
+    assert!(kanten.iter().all(|k| k["zustand"] == "offen"));
+    // Gemessen 2026-10-02 mit `api.graph` auf demselben Fall: alle sechs Felder speisen die Regel
+    // `p09_entfernungspauschale` als Slot, und die Regel ist `relevant`.
+    assert!(kanten
+        .iter()
+        .all(|k| k["rolle"] == "slot" && k["regel_id"] == "p09_entfernungspauschale"));
+    assert_eq!(
+        vorher["knoten"],
+        json!([{"regel_id": "p09_entfernungspauschale", "status": "relevant",
+                "gates_offen": [], "annahmen_offen": []}])
+    );
+
+    event_anhaengen(&d, "ep_arbeitstage", 220);
+    let (_, nachher) = sende(&d, "GET", "/fall/sonde/graph", &token, None).await;
+    let k = nachher["kanten"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|k| k["feld_id"] == "ep_arbeitstage")
+        .unwrap();
+    assert_eq!(k["zustand"], "bestaetigt");
+    assert_ne!(
+        nachher["snapshot_id"], vorher["snapshot_id"],
+        "neues Event, neuer Snapshot"
+    );
 }
