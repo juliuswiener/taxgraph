@@ -418,25 +418,34 @@ mod tests {
     }
 
     /// `repr(float)` bei exaktem Gleichstand zweier kuerzester Kandidaten, gemessen `CPython` 3.14.7
-    /// (`repr(x)`). `std` (`{:e}`) schreibt bei den ersten sieben die um eins groessere letzte Ziffer.
-    /// Die letzten zwei haben vor der 5 eine ungerade Ziffer: dort runden beide Wege auf, die Probe
-    /// haelt fest, dass die Ziffernquelle das nicht kaputt macht. Ganzzahl-Teil und Bruch stehen
+    /// (`repr(x)`). `std` (`{:e}`) schreibt bei allen bis auf die letzten zwei die um eins groessere
+    /// letzte Ziffer. Diese zwei haben vor der 5 eine ungerade Ziffer: dort runden beide Wege auf, die
+    /// Probe haelt fest, dass die Ziffernquelle das nicht kaputt macht. Ganzzahl-Teil und Bruch stehen
     /// getrennt, weil ihre Summe in `f64` exakt ist (ein Literal mit allen Stellen meldet clippy).
+    /// Alle Faelle laufen durch und werden zusammen gemeldet, damit ein roter Lauf zeigt, welche
+    /// Eintraege betroffen sind.
     #[test]
     fn repr_float_gleichstand_wie_cpython() {
-        for (ganz, bruch, python) in [
+        let falsch: Vec<String> = [
             (-1_409_149_049_912_713.0, -0.25, "-1409149049912713.2"),
             (1_409_149_049_912_713.0, 0.25, "1409149049912713.2"),
             (794_489_546.0, 0.472_656_25, "794489546.4726562"),
             (-794_489_546.0, -0.472_656_25, "-794489546.4726562"),
             (1_000_000_000_000_000.0, 0.25, "1000000000000000.2"),
+            // 2^49 + 0.25: der Randfund aus dem llm-Proptest der Mutation F1 (`{:e}` schrieb `...312.3`)
+            (562_949_953_421_312.0, 0.25, "562949953421312.2"),
             (127_197_475_452_823.0, 0.125, "127197475452823.12"),
             (0.0, 2f64.powi(-25), "2.9802322387695312e-08"),
             (89_843_931_170_626.0, 0.375, "89843931170626.38"),
             (94_344_571_025_549.0, 0.875, "94344571025549.88"),
-        ] {
-            assert_eq!(repr_float(ganz + bruch), python, "{ganz:e} + {bruch:e}");
-        }
+        ]
+        .into_iter()
+        .filter_map(|(ganz, bruch, python)| {
+            let rust = repr_float(ganz + bruch);
+            (rust != python).then(|| format!("{ganz:e} + {bruch:e}: Rust {rust}, CPython {python}"))
+        })
+        .collect();
+        assert!(falsch.is_empty(), "Gleichstand weicht von CPython ab: {falsch:#?}");
     }
 
     /// `repr(str)` (D9), gemessen 3.12.9 und 3.14.7.
