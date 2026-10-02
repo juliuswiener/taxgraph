@@ -152,15 +152,18 @@ def melde_ui(fall_id: str, body: dict) -> tuple[int, dict]:
     rekonstruieren wie die checkliste aussah? und die nachfragen?" wurde nachgemessen — man kann,
     fast vollständig. Was hier ankommt, ist deshalb nur der Rest (s. UI_ARTEN).
 
-    Wirft ValueError bei einer nicht vorgesehenen Sorte; die Hülle in api.py macht daraus 400.
+    Wirft ValueError bei einer nicht vorgesehenen Sorte, bei einer Sorte, die kein Text ist, und
+    bei einem Rumpf, der kein Objekt ist; die Hülle in api.py macht daraus 400.
     Abweisen statt still verwerfen: ein Client, der sich die Sorte selbst ausdenken dürfte, könnte
     die Datei beliebig füllen, und ein stilles Verwerfen sähe im Mitschnitt aus wie „ist nicht
     passiert".
     """
     if not an():
         return 200, {"mitgeschrieben": False}
+    if not isinstance(body, dict):
+        raise ValueError("Rumpf muss ein Objekt sein")
     art = body.get("art")
-    if art not in UI_ARTEN:
+    if not isinstance(art, str) or art not in UI_ARTEN:
         raise ValueError(f"art muss eines von {sorted(UI_ARTEN)} sein")
     schreibe(fall_id, art, gekappt(body.get("inhalt")))
     return 200, {"mitgeschrieben": True}
