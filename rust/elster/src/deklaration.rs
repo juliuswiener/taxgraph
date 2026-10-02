@@ -743,6 +743,7 @@ pub fn deklariere(
     let dokumentiert = bau.dokumentiert();
     bau.p23_gewinn()?;
     let anlage_instanzen = bau.instanzen_ausgabe();
+    p35a_summe_aus_posten(&mut bau.deklaration, &anlage_instanzen);
     Ok(Deklaration {
         basis_snapshot: snapshot_id.map(str::to_owned),
         deklaration: bau.deklaration,
@@ -754,6 +755,45 @@ pub fn deklariere(
         unvollstaendig: bau.unvollstaendig,
         pflichtfelder_luecken,
     })
+}
+
+/// § 35a: (Summen-Kz, Posten-Kz). Die Summe ist die Summe der GERUNDETEN Posten (Vordruck Zeile 9:
+/// „+ … ="), nicht die aufgerundete Rohsumme aus dem Ring. Sonst standen bei 4 × 100,01 € vier
+/// Posten zu 101 gegen eine Summe von 401: Differenz 3, ERiC toleriert 2 (rc=610001002).
+/// `_P35A_SUMME_AUS_POSTEN` in `est_mapping.py`.
+// ponytail: feste Liste, dieselben drei Toepfe wie `haushaltsnah` in
+// `rust/bescheid/src/deklaration/ring_werte.rs`. Ein vierter Topf, dessen Summe die Engine aus
+// Posten bildet, braucht hier und in `est_mapping.py` einen Eintrag; ab dann lohnt es, die Paare
+// aus der Bindung abzuleiten.
+const P35A_SUMME_AUS_POSTEN: [(&str, &str); 3] = [
+    ("E0104109", "E0104108"),
+    ("E0107208", "E0107207"),
+    ("E0111215", "E0111214"),
+];
+
+/// Summen-Kz = Summe der gerundeten Posten-Kz (Instanz 1 in `deklaration`, 2..N in den
+/// Instanzen). Ersetzt wird nur eine vorhandene Summe und nur durch einen Betrag > 0, wie im
+/// Ring. Ohne Posten bleibt ein Bestandswert stehen (`tests/test_p35a_bestandsdaten.py`).
+fn p35a_summe_aus_posten(
+    deklaration: &mut BTreeMap<String, Value>,
+    instanzen: &[(String, Vec<AnlageInstanz>)],
+) {
+    for (summe_kz, posten_kz) in P35A_SUMME_AUS_POSTEN {
+        let summe: i64 = deklaration
+            .get(posten_kz)
+            .into_iter()
+            .chain(
+                instanzen
+                    .iter()
+                    .flat_map(|(_, ii)| ii)
+                    .filter_map(|i| i.felder.get(posten_kz)),
+            )
+            .filter_map(Value::as_i64)
+            .sum();
+        if summe > 0 && deklaration.contains_key(summe_kz) {
+            deklaration.insert(summe_kz.to_owned(), Value::from(summe));
+        }
+    }
 }
 
 impl Bau<'_> {
