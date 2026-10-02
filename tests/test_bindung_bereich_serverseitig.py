@@ -96,11 +96,33 @@ def test_wert_ausserhalb_bereich_wird_abgewiesen_oder_sperrt(base, fid, wert, na
         f"{fid}={nachbar}: {im_bereich.get('zahl_cent')} Cent ({im_bereich.get('grund')})")
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason="Wert im Bereich -> HTTP 500 (gemessen 2026-10-02)")
+LEIBRENTE = _rentner_kegel(renten_art="private_leibrente")
+
+
 @pytest.mark.parametrize("fid,wert,kegel", [
     ("rentner_renten_beginn_jahr", 2026, None),
-    ("rentner_alter_bei_rentenbeginn", 98, _rentner_kegel(renten_art="private_leibrente")),
+    ("rentner_alter_bei_rentenbeginn", 98, LEIBRENTE),
 ])
 def test_wert_im_bereich_endet_nicht_in_500(base, fid, wert, kegel):
     _, (st_erg, erg), (st_stand, stand) = _fall(base, f"i-{fid}".replace("_", "-"), fid, wert, kegel)
     assert (st_erg, st_stand) == (200, 200), (erg.get("fehler"), stand.get("fehler"))
+
+
+def test_rentenbeginn_nach_vz_sperrt_benannt(base):
+    _, (_, erg), _ = _fall(base, "nach-vz", "rentner_renten_beginn_jahr", 2026)
+    assert (erg.get("zahl_cent"), erg.get("grund")) == (None, "rentenbeginn_nach_vz"), erg
+
+
+# 2 Mio. EUR Leibrente: erst dann trägt 1 % gegen 2 % Ertragsanteil eine Steuer, die sich unterscheidet.
+GROSSE_LEIBRENTE = _rentner_kegel(renten_art="private_leibrente", jahresrente=200000000)
+
+
+@pytest.mark.parametrize("alter,gleich_wie", [(98, 97), (100, 97), (96, 97)])
+def test_alter_ueber_97_rechnet_wie_97(base, alter, gleich_wie):
+    """„… 94 bis 96 2 ab 97 1“ (sources/gesetze-im-internet/estg_p22_2026-07-13.txt:23).
+    (96, 97) ist die Kontrolle: 2 % statt 1 % MUSS eine andere Zahl geben, sonst misst der Fall nichts."""
+    fid = "rentner_alter_bei_rentenbeginn"
+    _, (_, erg), _ = _fall(base, f"alter-{alter}", fid, alter, GROSSE_LEIBRENTE)
+    _, (_, ref), _ = _fall(base, f"alter-{gleich_wie}-{alter}", fid, gleich_wie, GROSSE_LEIBRENTE)
+    assert erg.get("zahl_cent") and ref.get("zahl_cent"), (erg, ref)
+    assert (erg["zahl_cent"] == ref["zahl_cent"]) is (alter > 97), (erg["zahl_cent"], ref["zahl_cent"])

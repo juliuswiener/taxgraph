@@ -65,19 +65,27 @@ fn multi_objekt(k: &K<'_>, cfg: &Cfg) -> Grund {
     Ok(None)
 }
 
-/// § 22 aa: `art in RENTNER_AA_ARTEN`, `beginn` ganzzahlig (Python-`bool` zaehlt!), vor dem VZ, und
-/// kein Freibetrag (Zahl, kein Bool) → die Euro-Fixierung fehlt.
-fn fixierung_offen(
+/// § 22 aa: `art in RENTNER_AA_ARTEN`, `beginn` ganzzahlig (Python-`bool` zaehlt!). Nach dem VZ →
+/// `rentenbeginn_nach_vz` (der Ring hat dafuer keinen Zweig); vor dem VZ ohne Freibetrag (Zahl,
+/// kein Bool) → die Euro-Fixierung fehlt. Python `_aa_beginn_grund`.
+fn aa_beginn_grund(
     k: &K<'_>,
     art: Option<&PyWert>,
     beginn: Option<&PyWert>,
     rf: Option<&PyWert>,
-) -> bool {
-    let art_aa = matches!(art, Some(PyWert::Text(s)) if RENTNER_AA_ARTEN.contains(&s.as_str()));
+) -> Option<Sperrgrund> {
+    if !matches!(art, Some(PyWert::Text(s)) if RENTNER_AA_ARTEN.contains(&s.as_str())) {
+        return None;
+    }
     let (Some(beginn), Some(vz)) = (py_int_wert(beginn), k.vz) else {
-        return false;
+        return None;
     };
-    art_aa && beginn < i64::from(vz.jahr()) && zahl_wert(rf).is_none()
+    let vz = i64::from(vz.jahr());
+    if beginn > vz {
+        Some(Sperrgrund::RentenbeginnNachVz)
+    } else {
+        (beginn < vz && zahl_wert(rf).is_none()).then_some(Sperrgrund::RentenfreibetragFixierungOffen)
+    }
 }
 
 /// Rentner-Scheibe: Fixierung und Vollstaendigkeit je Rente-Instanz, Person-B-Rente.
@@ -91,22 +99,22 @@ fn rente(k: &K<'_>, cfg: &Cfg) -> Grund {
             if inst.index >= 2 && (!kern || inst.zustand != domain::Zustand::Bestaetigt) {
                 return Ok(Some(Sperrgrund::RenteInstanzOffen));
             }
-            if fixierung_offen(
+            if let Some(g) = aa_beginn_grund(
                 k,
                 w("rentner_renten_art"),
                 w("rentner_renten_beginn_jahr"),
                 w("rentner_rentenfreibetrag"),
             ) {
-                return Ok(Some(Sperrgrund::RentenfreibetragFixierungOffen));
+                return Ok(Some(g));
             }
         }
-    } else if fixierung_offen(
+    } else if let Some(g) = aa_beginn_grund(
         k,
         wert(f, "rentner_renten_art"),
         wert(f, "rentner_renten_beginn_jahr"),
         wert(f, "rentner_rentenfreibetrag"),
     ) {
-        return Ok(Some(Sperrgrund::RentenfreibetragFixierungOffen));
+        return Ok(Some(g));
     }
     if ist_zusammen(f) {
         sperre_o!(rente_partner(k));
@@ -130,13 +138,12 @@ fn rente_partner(k: &K<'_>) -> Option<Sperrgrund> {
     {
         return Some(Sperrgrund::PartnerKegelOffen);
     }
-    fixierung_offen(
+    aa_beginn_grund(
         k,
         wert(f, "rentner_renten_art_partner"),
         wert(f, "rentner_renten_beginn_jahr_partner"),
         wert(f, "rentner_rentenfreibetrag_partner"),
     )
-    .then_some(Sperrgrund::RentenfreibetragFixierungOffen)
 }
 
 /// § 19 Abs. 2 Versorgungsfreibetrag: Beginnjahr und Bemessungsgrundlage BESTAETIGT gesetzt.

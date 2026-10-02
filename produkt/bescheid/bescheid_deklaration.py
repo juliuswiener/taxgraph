@@ -622,6 +622,9 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "Für jede einzelne Rente braucht die Berechnung vier Dinge: die Art der Rente, den "
         "Jahresbetrag, das Jahr des Rentenbeginns und das Alter der beziehenden Person zu diesem "
         "Zeitpunkt. Bitte ergänze die fehlenden Angaben.",
+    "rentenbeginn_nach_vz":
+        "Das Jahr des Rentenbeginns liegt nach dem Jahr dieser Steuererklärung. Eine Rente, die erst "
+        "später beginnt, gehört nicht in diese Erklärung. Bitte prüfe das Jahr des Rentenbeginns.",
     "rentenbeginn_offen":
         "Zu deiner Rente fehlt das Jahr, in dem die Rentenzahlung begonnen hat. Die Berechnung "
         "braucht dieses Jahr, um den steuerfreien Teil der Rente richtig festzulegen. Bitte trage "
@@ -1153,10 +1156,17 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                     return "vv_instanz_offen"
         # § 22 aa Rentenfreibetrag-Fixierung (K2): ab dem 2. Jahr ist der Freibetrag in EURO fix; fehlt er
         # (aa-Folgejahr, renten_beginn < VZ, kein rentenfreibetrag) → fail-closed, kein %×erhöhte-Rente.
+        # renten_beginn > VZ: der Ring kennt dafür keinen Zweig (runner.catala_renten_einkuenfte warf, HTTP 500)
+        # → rentenbeginn_nach_vz, keine Zahl.
         if cfg.get("rentner"):
-            def _fixierung_offen(art, beginn, rf):
-                return (art in RENTNER_AA_ARTEN and isinstance(beginn, int) and vz is not None
-                        and beginn < vz and not (isinstance(rf, (int, float)) and not isinstance(rf, bool)))
+            def _aa_beginn_grund(art, beginn, rf):
+                if not (art in RENTNER_AA_ARTEN and isinstance(beginn, int) and vz is not None):
+                    return None
+                if beginn > vz:
+                    return "rentenbeginn_nach_vz"
+                if beginn < vz and not (isinstance(rf, (int, float)) and not isinstance(rf, bool)):
+                    return "rentenfreibetrag_fixierung_offen"
+                return None
             # Multi-Rente (#6): Fixierung + Vollständigkeit JE Rente-Instanz der Person A (instanzen-Naht). Eine
             # Zusatz-Rente (index≥2) braucht die 4 Kern-Felder present + per-Instanz-meet bestaetigt (rentenfrei-
             # betrag optional = nur aa-Folgejahr) — sonst rente_instanz_offen (kein still zu niedriges §22-Σ, K2).
@@ -1167,21 +1177,21 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                     fi = inst["felder"]
                     if inst["index"] >= 2 and (not kern <= set(fi) or inst["zustand"] != "bestaetigt"):
                         return "rente_instanz_offen"
-                    if _fixierung_offen(fi.get("rentner_renten_art", {}).get("wert"),
-                                        fi.get("rentner_renten_beginn_jahr", {}).get("wert"),
-                                        fi.get("rentner_rentenfreibetrag", {}).get("wert")):
-                        return "rentenfreibetrag_fixierung_offen"
-            elif _fixierung_offen(felder.get("rentner_renten_art", {}).get("wert"),
-                                  felder.get("rentner_renten_beginn_jahr", {}).get("wert"),
-                                  felder.get("rentner_rentenfreibetrag", {}).get("wert")):
-                return "rentenfreibetrag_fixierung_offen"
+                    if g := _aa_beginn_grund(fi.get("rentner_renten_art", {}).get("wert"),
+                                             fi.get("rentner_renten_beginn_jahr", {}).get("wert"),
+                                             fi.get("rentner_rentenfreibetrag", {}).get("wert")):
+                        return g
+            elif g := _aa_beginn_grund(felder.get("rentner_renten_art", {}).get("wert"),
+                                       felder.get("rentner_renten_beginn_jahr", {}).get("wert"),
+                                       felder.get("rentner_rentenfreibetrag", {}).get("wert")):
+                return g
             # Person B, Partner-Kegel (K2, BACKLOG rentner-gesamt-partner-kegel-ungeschuetzt, messung_2):
             # rentner_gesamt/zusammen hatte KEINEN Vollständigkeits-Guard für die 28 gewired-ten Partnerfelder
             # (cfg fehlte "partner_19", der einzige zweite Fast-Treffer api.py:2076 liegt nach dem
             # unbedingten `return None` unten und ist toter Code für gesamt_guard-Scheiben). Zwei konkrete
             # Lücken, beide K2 (fail-closed, kein Rate-Bescheid statt stillem Fehl-Ergebnis):
             # (a) Renten-Gruppe: ein einzelnes rentner_renten_art_partner (ohne beginn_jahr_partner) lief
-            #     ungefangen in den Fixierungs-Guard unten — _fixierung_offen(beginn=None) liefert False
+            #     ungefangen in den Fixierungs-Guard unten — _aa_beginn_grund(beginn=None) liefert None
             #     (kein isinstance(None, int)), der Guard griff NICHT — und crashte im Ring mit HTTP 500
             #     ("RentenfreibetragFixierungOffen"), weil der Ring das fehlende Feld intern als 0 (=
             #     aa-Folgejahr) behandelt und dort einen fixierten Freibetrag verlangt, den niemand gesetzt
@@ -1207,11 +1217,11 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
                         and (felder.get("versicherungsart_partner") or {}).get("zustand") != "bestaetigt"):
                     return "partner_kegel_offen"
             # Person B (#4b): dieselbe aa-Folgejahr-Fixierungs-Sperre für die Ehegatten-Rente bei zusammen.
-            if felder.get("veranlagung", {}).get("wert") == "zusammen" and _fixierung_offen(
+            if felder.get("veranlagung", {}).get("wert") == "zusammen" and (g := _aa_beginn_grund(
                     felder.get("rentner_renten_art_partner", {}).get("wert"),
                     felder.get("rentner_renten_beginn_jahr_partner", {}).get("wert"),
-                    felder.get("rentner_rentenfreibetrag_partner", {}).get("wert")):
-                return "rentenfreibetrag_fixierung_offen"
+                    felder.get("rentner_rentenfreibetrag_partner", {}).get("wert"))):
+                return g
         # § 19 Abs. 2 Versorgungsfreibetrag (K2): Versorgungsbezüge vorhanden → beide kritischen Inputs
         # müssen gesetzt sein (Bemessungsgrundlage + Beginnjahr), sonst fail-closed.
         versorgung_jahresrente = felder.get("versorgung_jahresrente", {}).get("wert")

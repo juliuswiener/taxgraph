@@ -902,10 +902,12 @@ def _rente_besteuerungsanteil(jahr: int) -> float:
 
 
 def _rente_ertragsanteil(alter: int) -> float:
-    """§ 22 Nr. 1 S. 3 a bb — Ertragsanteil je Alter bei Rentenbeginn (params/kohorten, VZ-agnostisch)."""
+    """§ 22 Nr. 1 S. 3 a bb — Ertragsanteil je Alter bei Rentenbeginn (params/kohorten, VZ-agnostisch).
+    Die letzte Tabellenzeile gilt nach oben offen: „… 94 bis 96 2 ab 97 1“
+    (sources/gesetze-im-internet/estg_p22_2026-07-13.txt:23). Nur der Schlüssel wird gedeckelt, nicht der Eingabewert."""
     p = _load_yaml_path(os.path.join(
         ROOT, "params", "kohorten", "rente_ertragsanteil_p22.yaml"))
-    return p["kohorten"][alter]["ertragsanteil_prozent"]
+    return p["kohorten"][min(alter, 97)]["ertragsanteil_prozent"]
 
 
 def _renten_wk_pb(year: int) -> int:

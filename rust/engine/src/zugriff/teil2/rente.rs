@@ -90,7 +90,9 @@ pub fn renten_einkuenfte(e: &RentenEingabe, p: &Params) -> Result<Euro, EngineFe
         Rentenart::Bb {
             alter_bei_rentenbeginn,
         } => {
-            let prozent = p.rente_ertragsanteil(alter_bei_rentenbeginn)?.ok_or(
+            // Die letzte Tabellenzeile gilt nach oben offen: "… 94 bis 96 2 ab 97 1"
+            // (sources/gesetze-im-internet/estg_p22_2026-07-13.txt:23). Nur der Schluessel wird gedeckelt.
+            let prozent = p.rente_ertragsanteil(alter_bei_rentenbeginn.min(97))?.ok_or(
                 EngineFehler::TabelleOhneEintrag {
                     tabelle: "rente_ertragsanteil_p22",
                     schluessel: alter_bei_rentenbeginn,
