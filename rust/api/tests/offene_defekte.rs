@@ -2,8 +2,9 @@
 //! RICHTIGE Verhalten verlangt. Aufbau wie `stand_naht.rs`: ein Dienst im Wegwerf-Verzeichnis,
 //! Requests durch `app()`.
 //!
-//! Die Faelle hier brauchen `GET /fall/{id}/deklaration` und `POST /fall/{id}/einreichen` — beide
-//! sind heute 501-Stubs (`routen/lesen.rs:65`, `routen/schreiben.rs:25`). Die Tests sind deshalb
+//! Die Faelle hier brauchen `GET /fall/{id}/deklaration`, `POST /fall/{id}/einreichen` und
+//! `POST /fall/{id}/kontoauszug` — alle drei sind heute 501-Stubs (`routen/lesen.rs:65`,
+//! `routen/schreiben.rs:25`, `routen/schreiben.rs:66`). Die Tests sind deshalb
 //! `#[ignore]` und werden aus ZWEI Gruenden rot, in dieser Reihenfolge:
 //!
 //! 1. heute: der Handler antwortet 501 statt 200/409 — die Route ist nicht portiert;
@@ -310,5 +311,69 @@ async fn deklaration_umgeht_den_waechter_nicht() {
          vollstaendig={}, ohne den Widerspruch zu nennen — derselbe Fall, den /ergebnis und \
          /einreichen sperren: {json}",
         json["vollstaendig"]
+    );
+}
+
+/// CSV mit einer lesbaren Ruerup-Zeile und zwei unlesbaren Betraegen (`abc`, `1,2,3`) — dieselben
+/// Zeilen wie `test_kontoauszug_csv_unlesbarer_betrag.py`.
+const KONTOAUSZUG_CSV: &str = "datum;betrag;verwendungszweck\n\
+    15.03.2025;-1200,00;Ruerup-Rente Jahresbeitrag Basisrente\n\
+    16.03.2025;abc;Ruerup-Rente Nachzahlung Basisrente\n\
+    17.03.2025;1,2,3;Ruerup-Rente Sonderzahlung Basisrente\n";
+
+async fn kontoauszug_hochladen(d: &Dienst, fall_id: &str) -> (u16, Value, String) {
+    let token = fall_anlegen(d, fall_id, "an_gesamt").await;
+    let rumpf = json!({"format": "csv", "inhalt": KONTOAUSZUG_CSV}).to_string();
+    sende(
+        d,
+        "POST",
+        &format!("/fall/{fall_id}/kontoauszug"),
+        &[
+            ("authorization", &token),
+            ("content-type", "application/json"),
+            ("content-length", &rumpf.len().to_string()),
+        ],
+        Some(&rumpf),
+    )
+    .await
+}
+
+/// GRUENE KONTROLLZEILE fuer den Kontoauszug-Test: die Route erreicht den Fall.
+#[tokio::test]
+async fn kontrolle_der_kontoauszug_erreicht_den_fall() {
+    let d = dienst();
+    let (status, json, text) = kontoauszug_hochladen(&d, "konto").await;
+    assert!(
+        status == 501 || status == 200,
+        "kontoauszug erreicht den Fall nicht: {status} {text}"
+    );
+    if status == 501 {
+        assert_eq!(json["fehler"], "nicht_portiert");
+    }
+}
+
+/// `test_kontoauszug_csv_unlesbarer_betrag.py::test_unlesbarer_betrag_steht_in_verworfen_mit_grund`:
+/// eine CSV-Zeile mit unlesbarem Betrag muss in `verworfen` zaehlen und im `hinweis` stehen.
+///
+/// `eingang::kontoauszug::eur_cent_signed` liefert fuer `abc` und `1,2,3` `Ok(0)`, `uebernehme`
+/// ueberspringt jeden Betrag `>= 0`, `parse_csv` kennt kein `verworfen` (gemessen 2026-10-02,
+/// `berichte/authfix.md` 4a). Den Wortlaut des Grundes legt der Test nicht fest, nur dass er den
+/// Betrag nennt.
+#[tokio::test]
+#[ignore = "POST /kontoauszug ist 501-Stub (api/src/routen/schreiben.rs:66); nach der Portierung zaehlt der CSV-Zweig unlesbare Betraege nicht nach verworfen (eingang::kontoauszug::eur_cent_signed liefert Ok(0), uebernehme ueberspringt >= 0). Erwartet verworfen=2 und einen hinweis mit 'Betrag'. Python: test_kontoauszug_csv_unlesbarer_betrag.py::test_unlesbarer_betrag_steht_in_verworfen_mit_grund. Vault: tickets/kontoauszug-zeile-mit-unlesbarem-betrag-verschwindet-still.md. Rot sehen: --ignored"]
+async fn kontoauszug_unlesbarer_betrag_steht_in_verworfen() {
+    let d = dienst();
+    let (status, json, text) = kontoauszug_hochladen(&d, "unlesbar").await;
+    assert_eq!(status, 200, "erwartet 200, erhalten {status}: {text}");
+    assert_eq!(json["uebernommen"], 1, "{json}");
+    assert_eq!(
+        json["verworfen"], 2,
+        "abc und 1,2,3 fehlen in verworfen: {json}"
+    );
+    assert!(
+        json["hinweis"]
+            .as_str()
+            .is_some_and(|h| h.contains("Betrag")),
+        "der Hinweis nennt den Betrag nicht als Grund: {json}"
     );
 }
