@@ -355,7 +355,7 @@ def test_p35_hebesatz_null_bei_messbetrag_sperrt():
     f["gewst_messbetrag"] = {"wert": 100000, "zustand": "bestaetigt"}
     f["gewst_hebesatz"] = {"wert": 0, "zustand": "bestaetigt"}
     assert _sperrgrund(f) == "gewst_hebesatz_offen"
-    assert "Hebesatz von 0 ist nicht möglich" in API.sperrgrund_klartext("gewst_hebesatz_offen")
+    assert "Hebesatz von 0 oder darunter ist nicht möglich" in API.sperrgrund_klartext("gewst_hebesatz_offen")
     f["gewst_hebesatz"] = {"wert": 400, "zustand": "bestaetigt"}
     assert _sperrgrund(f) != "gewst_hebesatz_offen"
 

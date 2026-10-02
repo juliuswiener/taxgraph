@@ -569,8 +569,9 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "an deinem Hauptwohnsitz einen eigenen Hausstand führst und dass du dich dort finanziell an "
         "den Kosten beteiligst. Bitte beantworte diese drei Fragen.",
     "gewst_hebesatz_offen":
-        "Zu deinem Gewerbebetrieb fehlt der Hebesatz deiner Gemeinde, oder er steht auf 0. Ein "
-        "Hebesatz von 0 ist nicht möglich, jede Gemeinde muss einen Mindestsatz erheben. Ohne ihn "
+        "Zu deinem Gewerbebetrieb fehlt der Hebesatz deiner Gemeinde, oder er steht auf 0 oder "
+        "darunter. Ein Hebesatz von 0 oder darunter ist nicht möglich, jede Gemeinde muss einen "
+        "Mindestsatz erheben. Ohne ihn "
         "lässt sich nicht berechnen, wie viel Gewerbesteuer auf deine Einkommensteuer angerechnet "
         "wird. Den Hebesatz findest du auf deinem Gewerbesteuerbescheid oder auf der Internetseite "
         "deiner Gemeinde.",
