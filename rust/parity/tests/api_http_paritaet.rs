@@ -1705,6 +1705,19 @@ fn ereignis_beleg(feld: &str, wert: &Value) -> Value {
         "ts": "2026-01-01T00:00:00+00:00", "ersetzt": null})
 }
 
+/// Ein Vorjahres-Vorschlag: `vorlaeufig`, Schreiber `import:vorjahr`, Herkunft `vorjahr`, kein Signal.
+/// Der Katalog laesst ihn auf jedes Feld zu, auch auf ein KAP-Feld ohne `vorschlagbar_von`.
+fn ereignis_vorjahr(feld: &str, wert: &Value) -> Value {
+    roher_event(
+        feld,
+        wert.clone(),
+        "vorlaeufig",
+        "import:vorjahr",
+        "vorjahr",
+        None,
+    )
+}
+
 /// Ein Event mit allen Schluesseln, jeder frei waehlbar; `ersetzt` ist `null`, `ts` fest.
 #[allow(clippy::needless_pass_by_value)] // die Aufrufer reichen Wertliterale durch
 fn roher_event(
@@ -4265,6 +4278,17 @@ fn generatoren() {
         ("g_dk_p23", "gesamt", 2025),
         ("g_dk_hh", "gesamt", 2025),
         ("g_dk_partner", "gesamt", 2025),
+        // `deklaration` und das KAP-Leck: der Kapital-Antrag (E1900401/E1901401) zaehlt nur bestaetigte
+        // Werte. `g_dk_kapb` Topf bestaetigt (Kontrolle), `g_dk_kapv` Topf nur vorlaeufig, `g_dk_kapa`
+        // Aggregat nur vorlaeufig, `g_dk_kapm` Aktien-Topf bestaetigt neben vorlaeufigem sonstigen Topf.
+        // `g_dk_kaprb`/`g_dk_kaprv`: Partner-Topf in `rentner_gesamt` (in `gesamt` sperrt der Guard
+        // einen vorlaeufigen Partner-Wert vorher mit `partner_kegel_offen`).
+        ("g_dk_kapb", "gesamt", 2025),
+        ("g_dk_kapv", "gesamt", 2025),
+        ("g_dk_kapa", "gesamt", 2025),
+        ("g_dk_kapm", "gesamt", 2025),
+        ("g_dk_kaprb", "rentner_gesamt", 2025),
+        ("g_dk_kaprv", "rentner_gesamt", 2025),
     ] {
         let b = json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": vz});
         a("POST", "/fall", Some(b));
@@ -4396,6 +4420,26 @@ fn generatoren() {
         k.push(("p36_lohnsteuer", json!(1_000)));
         k
     });
+    // Das KAP-Leck: voller Kegel ohne `kein_kap` und ohne die KAP-Felder, die der Fall unten selbst
+    // setzt (ein Feld zweimal weist der Store mit 422 ab).
+    let kap_kegel = |eigen: &[&str]| {
+        let mut k = kegel_gesamt();
+        k.retain(|(f, _)| *f != "kein_kap" && !eigen.contains(f));
+        k
+    };
+    fuege("g_dk_kapb", kap_kegel(&["kap_gewinn_sonstige"]));
+    fuege("g_dk_kapv", kap_kegel(&["kap_gewinn_sonstige"]));
+    fuege("g_dk_kapa", kap_kegel(&["kap_kapitalertraege"]));
+    fuege(
+        "g_dk_kapm",
+        kap_kegel(&["kap_gewinn_aktien", "kap_gewinn_sonstige"]),
+    );
+    for id in ["g_dk_kaprb", "g_dk_kaprv"] {
+        let mut k = kegel_rentner(2025);
+        k.retain(|(f, _)| *f != "veranlagung");
+        k.push(("veranlagung", json!("zusammen")));
+        fuege(id, k);
+    }
     for (id, feld, wert) in kegel {
         let pfad = format!("/fall/{id}/event");
         a("POST", &pfad, Some(ereignis(feld, &wert, None)));
@@ -4588,6 +4632,48 @@ fn generatoren() {
     let ev = ereignis_llm("agb_aufwendungen", &json!(50_000));
     if a("POST", "/fall/g_pf_gelb/event", Some(ev)).is_none_or(|b| b.get("event_id").is_none()) {
         abgewiesen.push("g_pf_gelb/agb_aufwendungen".to_owned());
+    }
+    // Das KAP-Leck: ein bestaetigter Wert (Kontrolle) gegen denselben Wert nur als Vorjahres-Vorschlag.
+    // Betraege unter dem Sparer-Pauschbetrag: 400 gegen 700 EUR bleibt unterscheidbar.
+    for (id, ev) in [
+        ("g_dk_kapb", ereignis("kein_kap", &json!(false), None)),
+        (
+            "g_dk_kapb",
+            ereignis("kap_gewinn_sonstige", &json!(40_000), None),
+        ),
+        ("g_dk_kapv", ereignis("kein_kap", &json!(false), None)),
+        (
+            "g_dk_kapv",
+            ereignis_vorjahr("kap_gewinn_sonstige", &json!(40_000)),
+        ),
+        ("g_dk_kapa", ereignis("kein_kap", &json!(false), None)),
+        (
+            "g_dk_kapa",
+            ereignis_vorjahr("kap_kapitalertraege", &json!(40_000)),
+        ),
+        ("g_dk_kapm", ereignis("kein_kap", &json!(false), None)),
+        (
+            "g_dk_kapm",
+            ereignis("kap_gewinn_aktien", &json!(40_000), None),
+        ),
+        (
+            "g_dk_kapm",
+            ereignis_vorjahr("kap_gewinn_sonstige", &json!(30_000)),
+        ),
+        (
+            "g_dk_kaprb",
+            ereignis("kap_gewinn_sonstige_partner", &json!(40_000), None),
+        ),
+        (
+            "g_dk_kaprv",
+            ereignis_vorjahr("kap_gewinn_sonstige_partner", &json!(40_000)),
+        ),
+    ] {
+        if a("POST", &format!("/fall/{id}/event"), Some(ev.clone()))
+            .is_none_or(|b| b.get("event_id").is_none())
+        {
+            abgewiesen.push(format!("{id}/{}", ev["feld_id"]));
+        }
     }
     assert!(
         abgewiesen.is_empty(),
@@ -4853,6 +4939,47 @@ fn generatoren() {
     ] {
         deklarationen.extend(a("GET", &format!("/fall/{id}/deklaration"), None));
         assert_eq!(status.get(), 409, "deklaration {id} sperrt nicht");
+    }
+    // Das KAP-Leck: Python und Rust antworten gleich (`a` vergleicht), und die Antwort traegt den
+    // Kapital-Antrag genau dann, wenn ein BESTAETIGTER Wert ihn ausloest. Ein vorlaeufiger Wert steht
+    // in `unvollstaendig` (die Antwort sieht ihn) und loest weder E1900401 noch E1901401 aus; im
+    // gemischten Fall zaehlen nur die 400 EUR des bestaetigten Topfs (mit Leck 700).
+    for (id, feld, vorlaeufig, antrag) in [
+        ("g_dk_kapb", "kap_gewinn_sonstige", false, Some(400)),
+        ("g_dk_kapv", "kap_gewinn_sonstige", true, None),
+        ("g_dk_kapa", "kap_kapitalertraege", true, None),
+        ("g_dk_kapm", "kap_gewinn_sonstige", true, Some(400)),
+        (
+            "g_dk_kaprb",
+            "kap_gewinn_sonstige_partner",
+            false,
+            Some(400),
+        ),
+        ("g_dk_kaprv", "kap_gewinn_sonstige_partner", true, None),
+    ] {
+        let b = a("GET", &format!("/fall/{id}/deklaration"), None).unwrap_or_default();
+        assert_eq!(status.get(), 200, "deklaration {id} sperrt: {b}");
+        let kz = &b["deklaration"];
+        let offen = b["unvollstaendig"]
+            .as_array()
+            .is_some_and(|u| u.iter().any(|u| u["feld_id"] == feld));
+        assert_eq!(
+            offen,
+            vorlaeufig,
+            "deklaration {id}: {feld} steht {} in `unvollstaendig`: {b}",
+            if offen { "zu Unrecht" } else { "nicht" }
+        );
+        match antrag {
+            Some(pauschbetrag) => assert_eq!(
+                (&kz["E1900401"], &kz["E1901401"]),
+                (&json!(true), &json!(pauschbetrag)),
+                "deklaration {id}: Kapital-Antrag fehlt oder weicht ab: {b}"
+            ),
+            None => assert!(
+                kz.get("E1900401").is_none() && kz.get("E1901401").is_none(),
+                "deklaration {id}: vorlaeufiger {feld} loest den Kapital-Antrag aus: {kz}"
+            ),
+        }
     }
     // `deklaration`: welche Kz und welche Bereiche der Antwort Pythons Antworten tragen.
     let mut kz_je: BTreeMap<String, usize> = BTreeMap::new();

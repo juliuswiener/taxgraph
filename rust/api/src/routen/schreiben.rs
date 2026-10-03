@@ -1,9 +1,9 @@
-//! POST-Routen auf einen Fall — STUBS für D3. Wie [`super::lesen`]: der Fall kommt nur über
-//! [`EigenerFall`], der Rumpf über [`Koerper`], die Antwort ist `501 nicht_portiert`.
+//! POST-Routen auf einen Fall. Wie [`super::lesen`]: der Fall kommt nur über [`EigenerFall`], der
+//! Rumpf über [`Koerper`]; der Rumpf der Route steht in ihrem eigenen Modul (`event`, `flow`, …).
 //!
-//! D3: Funktionsnamen und Modul lassen, Rumpf ersetzen. `vorjahr` prüft seine zweite Fall-Kennung
-//! (`body["vorjahr_fall_id"]`, `api.py:947`) mit `EigenerFall::pruefe`.
-#![allow(clippy::unused_async)] // die Stubs warten nicht; die echten Handler tun es.
+//! `vorjahr` prüft seine zweite Fall-Kennung (`body["vorjahr_fall_id"]`, `api.py:947`) mit
+//! `EigenerFall::pruefe`.
+#![allow(clippy::unused_async)] // `event`, `flow_melden`, `vorjahr`, `kontoauszug` rufen nur ihren synchronen Rumpf.
 
 use axum::extract::State;
 use domain::PyWert;
