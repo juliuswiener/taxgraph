@@ -1,4 +1,4 @@
-//! § 35 EStG: die Sperre `gewst_hebesatz_offen` im Standardlauf (ohne `PARITY=1`, ohne Python).
+//! § 35 `EStG`: die Sperre `gewst_hebesatz_offen` im Standardlauf (ohne `PARITY=1`, ohne Python).
 //!
 //! Wer Gewerbe-Messbetrag angibt, aber keinen brauchbaren Hebesatz, bekommt sonst still keine
 //! Anrechnung (Vault `gewerbesteuer-anrechnung-rechnet-ohne-hebesatz-still-zu-wenig-an`: +4.000 EUR
@@ -69,6 +69,8 @@ fn grund(events: &[(&str, Value, bool)]) -> Option<Sperrgrund> {
 
 /// Bei Zusammenveranlagung verlangt der Partner-Kegel sechs bestaetigte Nullen (wie `partner_kegel` in
 /// `bescheid_deklaration_paritaet.rs`); ohne sie kaeme `partner_kegel_offen` statt "keine Sperre".
+// Eine Tabelle von Faellen, keine Logik: die Laenge ist die Zahl der Faelle.
+#[allow(clippy::too_many_lines)]
 fn faelle() -> Vec<Fall> {
     vec![
         Fall {

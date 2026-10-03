@@ -1,4 +1,4 @@
-//! § 35a EStG, `p35a_haushaltsnahe`: die Rechnung im Standardlauf (ohne `PARITY=1`, ohne Python).
+//! § 35a `EStG`, `p35a_haushaltsnahe`: die Rechnung im Standardlauf (ohne `PARITY=1`, ohne Python).
 //!
 //! Die Funktion ruft die Catala-Regel `Haushaltsnahe` (Cent) und rundet erst die Summe ab (Vault
 //! `haushaltsnahe-catala-regel-wird-nie-gerechnet`, Entscheidung
