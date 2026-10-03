@@ -764,6 +764,71 @@ def test_guard_greift_nur_ohne_toolchain():
         f"übersprungen — der Guard greift zu früh und versteckt echte Tests")
 
 
+# ---- Ein Lauf ohne Catala-Engine nennt seine Ursache in der Schlusszeile ------------------------
+# Entscheidung ein-lauf-ohne-catala-engine-bleibt-rot-und-nennt-seine-ursache (Vault), Backlog
+# conftest-guard-prueft-importzeit-statt-laufzeit. Der Lauf bleibt rot; nur die Ursache kommt dazu.
+
+def test_schlusszeile_nennt_die_zahlen_und_fehlt_mit_engine():
+    sys.path.insert(0, HERE)
+    import conftest                       # noqa: E402
+
+    # Engine da -> keine Zeile.
+    assert conftest._catala_schlusszeile(False, 5, 3, 24) is None
+    # Engine fehlt, kein Fehler -> Zeile mit der Zahl der nicht gesammelten Dateien.
+    z = conftest._catala_schlusszeile(True, 0, 0, 24)
+    assert "Catala-Engine fehlt in diesem Baum" in z and "24 Testdateien NICHT gesammelt" in z
+    assert "kein Fehler" in z
+    # Engine fehlt, F = 5, N = 3 -> beide Zahlen, dazu die Abhilfe.
+    z = conftest._catala_schlusszeile(True, 5, 3, 24)
+    assert "5 Fehler, davon 3 mit Importversuch" in z and "24 Testdateien NICHT gesammelt" in z
+    assert "make build-python" in z and "_catala" in z
+
+
+def test_catala_fehlt_stimmt_mit_einem_eigenen_importversuch_ueberein():
+    """Die Schlusszeile hängt an `_ENGINE_FEHLT`. Ohne diese Gegenprobe könnte `_catala_fehlt()` immer
+    False liefern, und alle Tests der Zeilenlogik blieben grün: sie bekämen ihre Bedingung gestellt."""
+    sys.path.insert(0, HERE)
+    import conftest                       # noqa: E402
+
+    try:
+        import runner                     # noqa: F401, E402 — conftest hat die Pfade gesetzt
+        engine_da = True
+    except Exception:
+        engine_da = False
+    assert conftest._ENGINE_FEHLT == (not engine_da), (
+        f"conftest sagt Engine fehlt={conftest._ENGINE_FEHLT}, ein eigener Import von `runner` sagt "
+        f"engine_da={engine_da}")
+
+
+def test_lauf_ohne_engine_endet_mit_der_ursache_nach_der_fehlerliste(tmp_path):
+    """Ende-zu-Ende in einem eigenen pytest-Prozess: ein Test, der die Engine laden will, und einer,
+    der es nicht tut. Die Zeile steht NACH der `FAILED`-Zeile und zählt genau einen Importversuch."""
+    sys.path.insert(0, HERE)
+    import conftest                       # noqa: E402
+
+    if not conftest._ENGINE_FEHLT:
+        pytest.skip("mit Catala-Engine — die Schlusszeile erscheint dort nie, nichts zu messen")
+    import subprocess
+
+    (tmp_path / "test_probe_engine.py").write_text(
+        "def test_laedt_die_engine():\n    import pkg  # noqa: F401\n\n\n"
+        "def test_ohne_engine():\n    assert 1 + 1 == 2\n", encoding="utf-8")
+    env = dict(os.environ, PYTHONPATH=os.pathsep.join([HERE, os.environ.get("PYTHONPATH", "")]),
+               PYTHONDONTWRITEBYTECODE="1")
+    r = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", "-p", "conftest", "-p", "no:cacheprovider",
+         "-p", "no:randomly", "-o", "addopts=", "--rootdir", str(tmp_path), str(tmp_path)],
+        cwd=tmp_path, env=env, capture_output=True, text=True, timeout=300)
+    zeilen = r.stdout.splitlines()
+    ursache = [i for i, z in enumerate(zeilen) if "Catala-Engine fehlt in diesem Baum" in z]
+    assert len(ursache) == 1, f"erwartet genau eine Ursache-Zeile:\n{r.stdout[-2500:]}\n{r.stderr[-800:]}"
+    assert "1 Fehler, davon 1 mit Importversuch" in zeilen[ursache[0]]
+    failed = [i for i, z in enumerate(zeilen) if z.startswith("FAILED")]
+    assert failed and ursache[0] > failed[-1], (
+        "die Ursache-Zeile muss NACH der Fehlerliste stehen, sonst geht sie wie die Anfangszeile unter")
+    assert "1 failed, 1 passed" in r.stdout        # nichts umgewandelt: rot bleibt rot
+
+
 # ---------------------------------------------- was CI und Makefile starten, muss startbar sein
 #
 # DER FUND (Abnahme-Audit 2026-08-19): der Umzug des Rechenkerns nach produkt/engine/ liess
@@ -1089,3 +1154,57 @@ def test_eric_gate_sieht_ueberhaupt_aufrufer():
     # Gegenrichtung: die Ausnahmeliste darf nicht auf tote Eintraege zeigen.
     tot = sorted(set(ERIC_OHNE_MARKER) - aufrufer)
     assert not tot, f"ERIC_OHNE_MARKER nennt Aufrufer, die es nicht (mehr) gibt: {tot}"
+
+
+# ---- .gitignore: auch ein VERWEIS auf ein Build-Verzeichnis wird ignoriert -----------------------
+# Entscheidung ignorier-regeln-der-build-verzeichnisse-gelten-auch-fuer-verweise (Vault), Backlog
+# gitignore-nimmt-den-catala-symlink-nicht-aus. Ein Arbeitsbaum bekommt statt eines Build-Verzeichnisses
+# einen Symlink auf den Hauptbaum (arbeitsbaum-misst-wie-der-hauptbaum, Punkt 3). Eine Regel mit `/`
+# am Ende gilt nur für echte Verzeichnisse: der Verweis wäre für Git eine neue Datei, und `git add -A`
+# (die Auto-Speicherung von orch) nähme ihn mit. Gemessen 2026-10-03: drei Zweige tragen so einen Verweis.
+_BUILD_NAMEN = ("_build", "_target", "_targets", "oracle/.venv", "oracle/.venv312",
+                "oracle/gettsim/_catala")
+
+
+def _nicht_ignoriert(repo: pathlib.Path, pfade: list[str]) -> list[str]:
+    import subprocess
+    env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1")  # kein fremdes excludesfile
+    return [p for p in pfade
+            if subprocess.run(["git", "check-ignore", "-q", p], cwd=repo, env=env).returncode != 0]
+
+
+def test_gitignore_nimmt_verweise_auf_build_verzeichnisse_aus(tmp_path):
+    """Je Name zwei Fälle in einem Wegwerf-Repo mit der echten `.gitignore` dieses Baums: ein VERWEIS
+    (der Fall, der fehlte) und ein echtes Verzeichnis (muss ignoriert bleiben). Kein absoluter Pfad:
+    die `.gitignore` kommt aus der Wurzel des Baums, in dem der Test läuft."""
+    import shutil
+    import subprocess
+
+    ziel = tmp_path / "ziel"
+    ziel.mkdir()
+    ergebnis = {}
+    for fall in ("verweis", "verzeichnis"):
+        repo = tmp_path / fall
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", "."], cwd=repo, check=True)
+        shutil.copy(ROOT / ".gitignore", repo / ".gitignore")
+        pfade = []
+        for name in _BUILD_NAMEN:
+            (repo / name).parent.mkdir(parents=True, exist_ok=True)
+            if fall == "verweis":
+                (repo / name).symlink_to(ziel, target_is_directory=True)
+                pfade.append(name)
+            else:
+                (repo / name).mkdir()
+                (repo / name / "datei.txt").write_text("x", encoding="utf-8")
+                pfade.append(f"{name}/datei.txt")
+        ergebnis[fall] = _nicht_ignoriert(repo, pfade)
+    meldungen = []
+    if ergebnis["verweis"]:
+        meldungen.append(
+            "Git ignoriert diese Build-Namen nicht, wenn sie ein VERWEIS sind (die Regel in .gitignore "
+            "endet auf `/` und gilt nur für Verzeichnisse): " + ", ".join(ergebnis["verweis"]))
+    if ergebnis["verzeichnis"]:
+        meldungen.append("Git ignoriert ein echtes Verzeichnis unter diesen Namen nicht mehr: "
+                         + ", ".join(ergebnis["verzeichnis"]))
+    assert not meldungen, "\n".join(meldungen)

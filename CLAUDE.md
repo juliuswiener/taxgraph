@@ -18,8 +18,10 @@ not their commands directly, or the Catala toolchain and the 3.12 venv are missi
 `_build/` und `oracle/gettsim/_catala/` (beide gitignored). Der Skip-Guard in
 `tests/conftest.py` greift nur bei direkten `runner`/`pkg`-Importen; die Testdateien, die
 `api`/`server` importieren, laufen trotzdem und scheitern an `engine_unavailable`. Ergebnis:
-117 failed statt eines ehrlichen Skips. Vor jedem Tor in einem neuen Worktree einmal
-`make build-python` laufen lassen. Gemessen 2026-10-01.
+129 failed + 2 errors, und der Lauf bleibt rot (kein Skip: ein grüner Lauf ohne Engine hätte
+nichts gemessen). Er nennt seine Ursache selbst in der Schlusszeile nach der Fehlerliste
+(`Catala-Engine fehlt in diesem Baum`). Vor jedem Tor in einem neuen Worktree einmal
+`make build-python` laufen lassen. Gemessen 2026-10-03 auf `b540590`.
 
 A single test: `python3 -m pytest tests/path/to/test_x.py::test_name -q`.
 
