@@ -1,4 +1,7 @@
 {
+  "worktree": {
+    "baseRef": "head"
+  },
   "permissions": {
     "deny": [
       "Read(//home/julius/.config/taxgraph/**)",

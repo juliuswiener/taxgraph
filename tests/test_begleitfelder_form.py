@@ -17,6 +17,7 @@ import copy
 import json
 import os
 import sys
+from datetime import datetime, timezone
 
 import pytest
 
@@ -95,6 +96,43 @@ def test_form_wird_vor_dem_falsy_signal_geprueft():
         with pytest.raises(ValueError, match=r"signal muss ein Objekt sein"):
             _schreibe({"herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
                        "signal": falsy})
+
+
+FEHLT = object()   # Schluesselwort `ts` gar nicht uebergeben
+FEST = "2026-01-01T00:00:00+00:00"
+
+
+def _ist_jetzt_iso(ts) -> bool:
+    """Nicht leer, ISO 8601 mit Zone, parsebar, innerhalb einer Minute der Uhr."""
+    if not isinstance(ts, str) or not ts:
+        return False
+    t = datetime.fromisoformat(ts)
+    return t.tzinfo is not None and abs((datetime.now(timezone.utc) - t).total_seconds()) < 60
+
+
+@pytest.mark.parametrize("ts", ["", None, FEHLT], ids=["leer", "None", "fehlt"])
+def test_leerer_zeitstempel_heisst_fehlt_und_wird_die_jetzt_zeit(ts):
+    """Pin (Vault decisions/leerer-zeitstempel-heisst-fehlt-und-wird-die-jetzt-zeit): `ts or _now()` in
+    `append_event` UND `erzeuge_snapshot`. Rust zieht nach (`store::tests`); haelt Python unbemerkt davon
+    ab, faellt dieser Test, bevor die zwei Seiten verschiedene Eintraege und Kennungen bilden."""
+    kw = {} if ts is FEHLT else {"ts": ts}
+    st = ST.leerer_store(2025, fall_id="ts-leer")
+    ev = ST.append_event(st, feld_id="ep_arbeitstage", wert=1, zustand="vorlaeufig", schreiber="ui:laie",
+                         herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                         bindung=BINDUNG, **kw)
+    assert _ist_jetzt_iso(ev["ts"]), repr(ev["ts"])
+    snap = ST.erzeuge_snapshot(st, **kw)
+    assert _ist_jetzt_iso(snap["ts"]), repr(snap["ts"])
+
+
+def test_fester_zeitstempel_bleibt_wie_er_ist():
+    """Gegenprobe zum Pin oben: ein uebergebener Zeitstempel wird nicht durch die Jetzt-Zeit ersetzt."""
+    st = ST.leerer_store(2025, fall_id="ts-fest")
+    ev = ST.append_event(st, feld_id="ep_arbeitstage", wert=1, zustand="vorlaeufig", schreiber="ui:laie",
+                         herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                         bindung=BINDUNG, ts=FEST)
+    assert ev["ts"] == FEST and not _ist_jetzt_iso(ev["ts"])
+    assert ST.erzeuge_snapshot(st, ts=FEST)["ts"] == FEST
 
 
 def test_http_ts_zahl_und_signal_liste_sind_422(base):

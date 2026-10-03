@@ -28,10 +28,10 @@ konsistenz = { path = "../konsistenz" }
 store = { path = "../store" }
 auth = { path = "../auth" }
 domain = { path = "../domain" }
+eingang = { path = "../eingang" }
 elster = { path = "../elster" }
 engine = { path = "../engine" }
 llm = { path = "../llm" }
-eingang = { path = "../eingang" }
 axum = { workspace = true }
 tokio = { workspace = true }
 utoipa = { workspace = true }
@@ -40,6 +40,7 @@ serde_json = { workspace = true }
 regex = { workspace = true }
 chrono = { workspace = true }
 tower = { workspace = true }
+tempfile = { workspace = true }
 
 [dev-dependencies]
 domain = { path = "../domain", features = ["testhilfe"] }

@@ -910,10 +910,12 @@ fn erzeuge_store(c: &mut Cursor<'_>) -> StoreDatei {
             1 => Some(Signal {
                 signal_1: Some(Some(json!("a").into())),
                 signal_2: Some("b".to_owned()),
+                signal_2_fehlt: false,
             }),
             _ => Some(Signal {
                 signal_1: Some(None),
                 signal_2: None,
+                signal_2_fehlt: false,
             }),
         };
         let ersetzt = if i > 0 && c.range(5) == 0 {

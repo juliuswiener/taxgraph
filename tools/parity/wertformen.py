@@ -155,7 +155,6 @@ class Zaehler:
             self._merke("ohne Bindung", quelle, fid)
         if basis and basis != feld_id:
             self.instanz["Instanz-ID basis__n"] += 1
-            self.instanz["davon basis__1"] += feld_id.endswith("__1")
         etikett = abweichung(wert, fm, eintrag)
         if etikett:
             self._merke(etikett, quelle, fid)

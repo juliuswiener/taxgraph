@@ -637,11 +637,46 @@ fn kz_wert_sweep() {
     assert_eq!(diffs, 0);
 }
 
+/// Die Zaehlerregel `[2-9]|[1-9][0-9]+` (Entscheidung 2026-10-03, vault
+/// `die-schreib-route-weist-eine-kennung-mit-instanz-eins-ab`): `x__1` ist keine Instanz, Instanz 1 ist
+/// die Basis. Feste Antworten, auf BEIDEN Seiten geprueft -- das Orakel soll nicht nur "keine" sagen.
+const INSTANZ_ANKER: [(&str, Option<(&str, u64)>); 16] = [
+    ("a", None),
+    ("a__1", None),
+    ("a__2", Some(("a", 2))),
+    ("a__3", Some(("a", 3))),
+    ("a__9", Some(("a", 9))),
+    ("a__10", Some(("a", 10))),
+    ("a__11", Some(("a", 11))),
+    ("a__19", Some(("a", 19))),
+    ("a__99", Some(("a", 99))),
+    ("a__100", Some(("a", 100))),
+    ("a__0", None),
+    ("a__01", None),
+    ("a__02", None),
+    ("a__001", None),
+    ("a__", None),
+    ("a__x", None),
+];
+
 fn parse_instanz_sweep() {
     let mut ids: Vec<String> = [
         "a",
         "a__1",
         "a__2",
+        "a__3",
+        "a__9",
+        "a__10",
+        "a__11",
+        "a__19",
+        "a__99",
+        "a__100",
+        "a__01",
+        "a__001",
+        "a__x",
+        "a__11\n",
+        "a__1\n",
+        "a__10\n",
         "a__02",
         "a__0",
         "a___1",
@@ -663,6 +698,16 @@ fn parse_instanz_sweep() {
     .iter()
     .map(|s| (*s).to_owned())
     .collect();
+    // Jeder Zaehler von 0 bis 120, glatt, mit fuehrender Null und mit abschliessendem Zeilenumbruch: die
+    // Zaehlerregel `[2-9]|[1-9][0-9]+` an ihren Kanten (1, 9/10, 99/100) statt nur durch Zufall.
+    for n in 0..=120 {
+        for suffix in ["", "\n"] {
+            ids.push(format!("a__{n}{suffix}"));
+            ids.push(format!("a__0{n}{suffix}"));
+        }
+    }
+    ids.sort_unstable();
+    ids.dedup();
     let mut rng = TestRng::deterministic_rng(RngAlgorithm::ChaCha);
     let zeichen = ['a', 'b', 'z', '_', '_', '_', '0', '1', '2', '9', 'A', '\n'];
     for _ in 0..20_000 {
@@ -674,19 +719,53 @@ fn parse_instanz_sweep() {
         );
     }
     let py = frage(&json!({"fn": "elster.parse_instanz", "ids": ids}));
+    let py = py.as_array().unwrap();
     let mut diffs = 0;
-    for (id, p) in ids.iter().zip(py.as_array().unwrap()) {
+    // `store::instanz_basis` (die Basis allein): Python ist die Referenz, bei jeder Eingabe -- auch bei einem
+    // abschliessenden `\n` (Pythons `$`), das `instanz_basis` seit `feld_kennung_paritaet` ebenso liest.
+    // `zeilenende` zaehlt die `\n`-Eingaben, die Python als Instanz liest: sie muessen darunter sein.
+    let (mut basis_diffs, mut zeilenende, mut instanz_ja, mut instanz_nein) = (0, 0, 0, 0);
+    for (id, p) in ids.iter().zip(py) {
         let r = elster::parse_instanz(id).map_or(Value::Null, |(b, i)| json!([b, i]));
         if &r != p {
             diffs += 1;
             println!("  ABWEICHUNG parse_instanz({id:?}): rust={r} py={p}");
         }
+        let py_basis = p.get(0).and_then(Value::as_str);
+        instanz_ja += usize::from(py_basis.is_some());
+        instanz_nein += usize::from(py_basis.is_none());
+        zeilenende += usize::from(py_basis.is_some() && id.ends_with('\n'));
+        let basis = store::instanz_basis(id);
+        if basis != py_basis {
+            basis_diffs += 1;
+            println!("  ABWEICHUNG instanz_basis({id:?}): rust={basis:?} py={py_basis:?}");
+        }
     }
     println!(
-        "[parse_instanz] Eingaben={} Abweichungen={diffs}",
+        "[parse_instanz] Eingaben={} Abweichungen={diffs}; [instanz_basis] Abweichungen={basis_diffs}, \
+         davon Zeilenende gelesen {zeilenende}, Python Instanz {instanz_ja} / keine {instanz_nein}",
         ids.len()
     );
     assert_eq!(diffs, 0);
+    assert_eq!(basis_diffs, 0);
+    assert!(
+        zeilenende >= 100 && instanz_ja > 200 && instanz_nein > 500,
+        "{zeilenende} {instanz_ja} {instanz_nein}"
+    );
+    // Die Anker: Python, `parse_instanz` und `instanz_basis` sagen dasselbe, und es ist nicht "immer keine".
+    for (id, soll) in INSTANZ_ANKER {
+        let i = ids.iter().position(|x| x == id).unwrap_or_else(|| {
+            panic!("{id:?} fehlt im Sweep");
+        });
+        let soll_py = soll.map_or(Value::Null, |(b, n)| json!([b, n]));
+        assert_eq!(py[i], soll_py, "CPython {id:?}");
+        assert_eq!(elster::parse_instanz(id), soll, "parse_instanz {id:?}");
+        assert_eq!(
+            store::instanz_basis(id),
+            soll.map(|(b, _)| b),
+            "instanz_basis {id:?}"
+        );
+    }
 }
 
 #[test]

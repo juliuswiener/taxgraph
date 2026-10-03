@@ -19,21 +19,23 @@ use crate::tabellen::{NEGATION, PARTNER_INSTANZ, VERZWEIGUNG};
 fn instanz_re() -> Option<&'static regex::Regex> {
     static RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
     // Python `$` passt auch vor einem abschliessenden `\n` — daher `\n?\z`.
-    RE.get_or_init(|| regex::Regex::new(r"^([a-z][a-z0-9_]*)__([1-9][0-9]*)\n?\z").ok())
+    RE.get_or_init(|| regex::Regex::new(r"^([a-z][a-z0-9_]*)__([2-9]|[1-9][0-9]+)\n?\z").ok())
         .as_ref()
 }
 
-/// `base__<n>` (n ≥ 1) → `(base, n)`; eine Basis-`feld_id` ohne Suffix → `None` (= Instanz 1).
+/// `base__<n>` (n ≥ 2) → `(base, n)`; eine Basis-`feld_id` ohne Suffix → `None` (= Instanz 1), ebenso
+/// `base__1`, `base__0` und `base__02`.
 ///
-/// PARITÄT: diese Regel (`est_mapping.py:543`) nimmt `x__1` als Instanz 1 an; die Traverser-Regel
-/// in [`domain::FeldId`] lehnt `__1` ab (`REWRITE_PLAN.md` §4, F2). Beide bleiben, bis die
-/// Aufrufstellen per Paritaet entschieden sind. Ein Index jenseits `u64` liefert hier `None`,
-/// Python rechnet unbeschraenkt.
+/// PARITÄT: `est_mapping.py:702` (`_INSTANZ_RE`, Zähler `[2-9]|[1-9][0-9]+`). `x__1` ist keine Instanz:
+/// die Oberfläche erzeugt es nie, und die Schreib-Route weist es ab (Entscheidung 2026-10-03). Damit
+/// liest diese Regel `__1` wie die Traverser-Regel in [`domain::FeldId`] (`REWRITE_PLAN.md` §4, F2). Ein
+/// Index jenseits `u64` liefert hier `None`, Python rechnet unbeschraenkt.
 ///
 /// ```
 /// use elster::parse_instanz;
 /// assert_eq!(parse_instanz("vv_einnahmen__2"), Some(("vv_einnahmen", 2)));
-/// assert_eq!(parse_instanz("vv_einnahmen__1"), Some(("vv_einnahmen", 1)));
+/// assert_eq!(parse_instanz("vv_einnahmen__10"), Some(("vv_einnahmen", 10)));
+/// assert_eq!(parse_instanz("vv_einnahmen__1"), None);
 /// assert_eq!(parse_instanz("vv_einnahmen"), None);
 /// assert_eq!(parse_instanz("vv_einnahmen__02"), None);
 /// ```
@@ -79,7 +81,8 @@ pub fn instanzen(
             .get(basis)
             .is_some_and(|b| b.instanz_gruppe.as_deref() == Some(gruppe));
         if ist_basis {
-            // `x` und `x__1` landen beide auf Index 1; sortiert gewinnt `x__1` (wie in Python).
+            // `x__1` ist keine Instanz (`parse_instanz`): es faellt hier mit der Basis `x__1` heraus, die es
+            // in keiner Bindung gibt. Index 1 kommt nur von der Basis selbst.
             vorkommen
                 .entry(idx)
                 .or_default()

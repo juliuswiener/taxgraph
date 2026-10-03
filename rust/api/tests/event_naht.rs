@@ -145,6 +145,67 @@ async fn die_kennung_gleicht_der_von_python() {
         antwort["event_id"],
         "b7be2a125d647323b38e775a6fe4a82fb1de93da27f51d6c2dc62b1fc108e875"
     );
+    // Ein `signal` ohne `signal_2`: Python legt es ohne den Schluessel ab, und die Kennung hängt daran.
+    for (id, signal, soll) in [
+        (
+            "e5",
+            r#"{"signal_1": 5}"#,
+            "1adeb73218c20062c18865e5e086f94c40c3434d104fab67517d816c9fa4cafb",
+        ),
+        (
+            "e6",
+            r#"{"signal_1": null}"#,
+            "b984dec6ddfa01b6e6ef940f5a0f7a88a7644cc734a1b611607e6c3431e5385e",
+        ),
+        (
+            "e7",
+            r#"{"signal_2": "x"}"#,
+            "7a364b6528cacb203a1cc8238d1bdf14e3de60b0f90975ebbabe05129dd97493",
+        ),
+    ] {
+        fall_anlegen(&d, id).await;
+        let b = rumpf(ARBEITSTAGE, "220", "vorlaeufig", "ui:naht", signal);
+        let (status, antwort) = sende(&d, &format!("/fall/{id}/event"), &token, &b).await;
+        assert_eq!(status, 201, "{signal}: {antwort}");
+        assert_eq!(antwort["event_id"], soll, "{signal}");
+    }
+}
+
+/// Instanz 1 ist die Basis ohne Suffix, `x__1` ist keine Instanz (Entscheidung 2026-10-03, Zähler
+/// `[2-9]|[1-9][0-9]+`): die Route weist es mit 400 ab, und `x`, `x__2`, `x__10` gehen durch. Die
+/// Basis `vv_einnahmen` hat eine `instanz_gruppe` und liegt in der Scheibe `gesamt` -- am Fall `ep`
+/// käme die 400 auch ohne die Regel (kein Feld dort trägt eine Gruppe). Wortlaut aus `api.event`.
+#[tokio::test]
+async fn instanz_eins_wird_abgewiesen_und_der_rest_geht_durch() {
+    let d = dienst();
+    let token = d.zustand.auth.stelle_aus("alice").unwrap();
+    let anlegen =
+        json!({"fall_id": "e5", "scheibe": "gesamt", "veranlagungszeitraum": 2025}).to_string();
+    let (status, antwort) = sende(&d, "/fall", &token, &anlegen).await;
+    assert_eq!(status, 201, "POST /fall: {antwort}");
+    let ok = |feld: &str| {
+        rumpf(
+            &format!("\"{feld}\""),
+            "1500000",
+            "bestaetigt",
+            "ui:naht",
+            &format!(r#"{{"signal_1": null, "signal_2": "klick@{feld}"}}"#),
+        )
+    };
+    for feld in ["vv_einnahmen", "vv_einnahmen__2", "vv_einnahmen__10"] {
+        let (status, antwort) = sende(&d, "/fall/e5/event", &token, &ok(feld)).await;
+        assert_eq!(status, 201, "{feld}: {antwort}");
+    }
+    assert_eq!(events_in_akte(&d, "e5"), 3);
+    for feld in ["vv_einnahmen__1", "vv_einnahmen__0", "vv_einnahmen__02"] {
+        let (status, antwort) = sende(&d, "/fall/e5/event", &token, &ok(feld)).await;
+        assert_eq!(status, 400, "{feld}: {antwort}");
+        assert_eq!(
+            antwort["fehler"],
+            format!("feld_id '{feld}' nicht in dieser Scheibe")
+        );
+    }
+    assert_eq!(events_in_akte(&d, "e5"), 3, "eine Abweisung legt nichts ab");
 }
 
 /// Status und Wortlaut je Abweisung, wie `api.event` und `store.append_event` sie liefern.

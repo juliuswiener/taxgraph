@@ -18,8 +18,9 @@ neuen Commits lief noch keine CI; gepusht wird nur auf Julius' Wort.
 
 - `opt-level = 1` im dev-Profil (`6fbe3d5`, `rust/Cargo.toml:62`): der Beschluss vom 2026-10-02 ist gebaut.
 - 9c: `_cfg`/`_scheibe_bindung` verdrahtet, `GET /stand`, `flow` im Rust-Server (`ecdfcb9`); **alle GET-Routen** im
-  Rust-Server (`8d1bd96`). Offen sind die sechs POST-Routen `event`, `vorjahr`, `einreichen`, `chat`, `entfernung`,
-  `kontoauszug`: Rust antwortet dort `501 nicht_portiert` (`rust/parity/tests/api_http_paritaet.rs:62`).
+  Rust-Server (`8d1bd96`); die POST-Routen `event`, `kontoauszug` und `vorjahr` sind gebaut und gegen Python im
+  Harness gemessen (gemergt als `82bbf1e`). Offen sind `einreichen`, `chat` und `entfernung`: Rust antwortet dort
+  `501 nicht_portiert` (`NICHT_PORTIERT` in `rust/parity/tests/api_http_paritaet.rs`).
 - K8-Rest und `Kz`/`Vz`/`EventId`/`BasisId` als Typen in bindung, elster, konsistenz (`80743f2`); K9 `interview`
   Tor 2 (`97d3846`), `py_eq` gegen echtes CPython und `wert_paritaet` (`619f5dd`), Typfragen auf `PyWert` gegen
   echtes CPython, Folge 3 Block B und C (`6f90e76`).
@@ -39,7 +40,7 @@ je rot), `PARITY=1 cargo test --workspace` in einem Lauf, echte Akten.
 
 **Offen**
 
-1. Die sechs POST-Routen aus 9c (oben), danach Cutover (Schritt 10). Harness-Pfad für `chat`/`entfernung` (Variante B)
+1. Die drei POST-Routen `einreichen`, `chat`, `entfernung` aus 9c (oben), danach Cutover (Schritt 10). Harness-Pfad für `chat`/`entfernung` (Variante B)
    wartet auf Julius.
 2. Reste aus den Berichten `haertung` und `json-leser`: die Warteschlange im Vault (`backlog/taxgraph/`) hat noch
    `python-schreibt-akte-die-der-rust-leser-sperrt`; die anderen drei (`bindungsbereich-prueft-nur-der-browser`,
@@ -93,7 +94,7 @@ je rot), `PARITY=1 cargo test --workspace` in einem Lauf, echte Akten.
 | Format | `cargo fmt --all --check`: 33 Hunks in 14 fremden Dateien, bewusst vertagt (CI prüft nur clippy, Log #165) | — |
 | dev-Profil nur Zeilentabellen | fertig: `[profile.dev] debug = "line-tables-only"` statt `debug = 2` (Auftrag Julius, Plattenplatz), `profile.test` erbt. Backtraces behalten Datei und Zeile, der Debugger sieht keine Variablen. `libstore-*.rlib` 11 804 166 B → 5 428 230 B (auf 46 %); clippy 0, `cargo test -p store` grün, Gegenprobe ohne Abschnitt → `debuginfo=2`. PARITY 17/17 grün auf `8e48cf7` | `bb01e0f` · `beef16b` |
 | Orakel liest eine Bindungsdatei einmal | fertig: `traverser.lade_datei_felder` ist je Prozess gecacht, `api._datei_felder` und beide Orakel-Skripte nutzen sie. YAML-Lesevorgänge 1509 → 32. `bescheid_deklaration_paritaet` 205 → 91 s laut Worker-Bericht, 86 s in der Nachmessung auf `8e48cf7`; die anderen 16 Suiten nicht schneller. Kosten: eine geänderte Bindungs-YAML wirkt erst nach Neustart des Prozesses (wie `lade_bindung`). Gegenproben G5/G6 in der Nachmessung je rot; Vault `research/taxgraph-bauzeit-vs-testzeit` | `6bba00d` |
-| 9c `api`-Handler | offen auf `b540590`: alle GET-Routen gemergt (`8d1bd96`), sechs POST-Routen 501 (Offen-Block oben); 9c/0b (`Username`/`FallId`-Newtypes im Owner-Check) gemergt (`0b31195`), 9c/0c und 9c/0e gemergt (`ecdfcb9`); Landkarte gemessen (15 Routen, Bericht `berichte/9c-karte.md`); Harness-Generator je Route fertig (`88f60c7`: echte Eingaben für 11 Routen aus Stufe 1–3; `flow.jsonl` fällt noch aus jedem Vergleich, `ponytail:`); `parity` verlangt von jeder Route aus `NICHT_PORTIERT` eine 501, sonst nennt die Abweichung die Route (`d432948` in `4ec2d2f`); `flow` wird mitportiert (Python-Teil gemergt, `1321f3b`; Rust-Teil 9c/0e offen); Vorbedingung JSON-Leser erfüllt (`d4babec`) (Vault `decisions/rust-9c-generator-je-route-und-flow-portieren`) | `88f60c7` · `4ec2d2f` |
+| 9c `api`-Handler | offen auf `b540590`: alle GET-Routen gemergt (`8d1bd96`), POST-Routen `event`, `kontoauszug`, `vorjahr` gebaut (`82bbf1e`), `einreichen`/`chat`/`entfernung` weiter 501 (Offen-Block oben); 9c/0b (`Username`/`FallId`-Newtypes im Owner-Check) gemergt (`0b31195`), 9c/0c und 9c/0e gemergt (`ecdfcb9`); Landkarte gemessen (15 Routen, Bericht `berichte/9c-karte.md`); Harness-Generator je Route fertig (`88f60c7`: echte Eingaben für 11 Routen aus Stufe 1–3; `flow.jsonl` fällt noch aus jedem Vergleich, `ponytail:`); `parity` verlangt von jeder Route aus `NICHT_PORTIERT` eine 501, sonst nennt die Abweichung die Route (`d432948` in `4ec2d2f`); `flow` wird mitportiert (Python-Teil gemergt, `1321f3b`; Rust-Teil 9c/0e offen); Vorbedingung JSON-Leser erfüllt (`d4babec`) (Vault `decisions/rust-9c-generator-je-route-und-flow-portieren`) | `88f60c7` · `4ec2d2f` |
 | 10 Cutover | offen | — |
 
 Gates auf `8e48cf7` (2026-10-02 15:05, Instructor nachgemessen im frischen Worktree `wt-nachmessung`, Log

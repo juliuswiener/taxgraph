@@ -78,15 +78,23 @@ pub struct FesteZahl {
 /// Der Kegel nach [`interview::relevante_kegel_felder`] -- Python `BR.relevante_kegel_felder`
 /// (`bindung_rollen.py:41`). Ohne `store` bleibt der volle Kegel (Alt-Aufrufer, Teil-Ringe).
 ///
-/// Die Sicht ist die VOLLE (`graph.alle()`), nicht eine aus dem Kegel gebaute: `relevanz`
-/// sammelt die Gates je Regel aus der Sicht, und die Gate-Felder stehen neben dem Kegel,
-/// nicht in ihm. Eine Kegel-Sicht liesse jedes Gate fehlen und schloesse nichts aus.
+/// Die Sicht ist die der SCHEIBE (`index`, Pythons `_scheibe_bindung`), weder der volle Graph noch
+/// der Kegel allein: `relevanz` sammelt die Gates je Regel aus der Sicht. Der Kegel liesse jedes Gate
+/// fehlen (sie stehen neben ihm) und schloesse nichts aus; der volle Graph sieht Gates, die die
+/// Scheibe nicht fuehrt, und schloesse eine Regel aus, die Pythons Traverser noch fragt -- der
+/// Kegel waere vollstaendig, waehrend `fragen` ihn weiter verlangt (Harness, Fall `g_an6`).
 fn relevanter_kegel<'k>(
     kegel: &[&'k str],
     store: Option<&Store>,
     graph: &Graph<'k>,
+    index: &crate::BindungIndex<'_>,
 ) -> Vec<&'k str> {
-    interview::relevante_kegel_felder(kegel, graph.alle(), store, graph)
+    // Ein Feld der Scheibe, das der Graph nicht kennt, gibt es nur in Tests mit fremdem Index: dort
+    // gilt wie bisher die volle Sicht.
+    let sicht = graph
+        .sicht(index.keys().map(String::as_str))
+        .unwrap_or_else(|_| graph.alle().clone());
+    interview::relevante_kegel_felder(kegel, &sicht, store, graph)
 }
 
 /// Python `_feste_zahl` (`api.py:194`). Fail-closed: die Zahl NUR bei Scheiben-Gesamt-Accessor
@@ -127,7 +135,7 @@ pub fn feste_zahl(
     // Der Kegel, wie ihn `_feste_zahl` sieht. Ohne Graph bleibt er voll -- der Graph ist
     // nur die Quelle der Regel-Zuordnung, und ohne ihn schliesst `relevanz` nichts aus.
     let kegel: Vec<&str> = match graph {
-        Some(g) => relevanter_kegel(scheibe_felder, store, g),
+        Some(g) => relevanter_kegel(scheibe_felder, store, g, umgebung.index),
         None => scheibe_felder.to_vec(),
     };
     // Lage 2: unvollstaendig ODER nicht durchgehend bestaetigt.

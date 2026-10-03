@@ -326,6 +326,7 @@ pub fn entfernung(
                 ),
             ]))),
             signal_2: None,
+            signal_2_fehlt: false,
         },
         signal_2_fremd: None,
         ersetzt,

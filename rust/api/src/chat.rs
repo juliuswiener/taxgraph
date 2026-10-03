@@ -384,6 +384,7 @@ fn neues_event(v: &Vorschlag) -> Result<NeuesEventRoh, ApiFehler> {
                 ("beleg".to_owned(), PyWert::Text(v.beleg.clone())),
             ]))),
             signal_2: None,
+            signal_2_fehlt: false,
         },
         signal_2_fremd: None,
         ersetzt: None,

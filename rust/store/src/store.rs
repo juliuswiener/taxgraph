@@ -15,7 +15,7 @@ use crate::canonical::EventId;
 use crate::event::{Event, NeuesEvent, NeuesEventRoh, Signal};
 use crate::katalog::Katalog;
 use crate::nachschlag::BindungNachschlag;
-use crate::zeit::jetzt_iso;
+use crate::zeit::{jetzt_iso, ts_oder_jetzt};
 
 /// Die reine Datei-Form (`schema.json` Top-Level-Objekt), OHNE den `aktiv`-Index — das ist, was
 /// `persistenz::lade`/`speichere` lesen/schreiben (`store.py:77-87`). Feldliste 1:1
@@ -350,6 +350,19 @@ impl Store {
         self.datei
     }
 
+    /// `store["vorjahr_referenz"] = ...` (`vorjahr_writer.uebernehme_vorjahr`): die Vergleichsgrösse aus
+    /// dem Vorjahres-Fall, die `preflight` liest. Ersetzt eine frühere.
+    ///
+    /// ```
+    /// let mut s = store::Store::leer(2025, None);
+    /// assert!(s.datei().vorjahr_referenz.is_none());
+    /// s.setze_vorjahr_referenz(serde_json::json!({"verlustvortrag_bestand": {"wert": 5}}).into());
+    /// assert!(s.datei().vorjahr_referenz.is_some());
+    /// ```
+    pub fn setze_vorjahr_referenz(&mut self, referenz: PyWert) {
+        self.datei.vorjahr_referenz = Some(referenz);
+    }
+
     /// ```
     /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
     /// # let neu = |wert: i64, ersetzt: Option<store::EventId>| store::NeuesEvent {
@@ -509,10 +522,10 @@ impl Store {
         let signal =
             // Schreibpfad: Schluessel ist immer da (Python `store.py`: `signal or {"signal_1":
             // None, ...}`) -- aeussere Ebene daher immer `Some(...)` (s. `Signal`-Typdoku).
-            Signal { signal_1: Some(neu.signal_1.clone()), signal_2: neu.signal_2_roh().map(str::to_owned) };
+            Signal { signal_1: Some(neu.signal_1.clone()), signal_2: neu.signal_2_roh().map(str::to_owned), signal_2_fehlt: false };
         let event = Event {
             event_id: EventId::aus_bytes([0; 32]),
-            ts: neu.ts.clone().unwrap_or_else(jetzt_iso),
+            ts: ts_oder_jetzt(neu.ts.clone()),
             feld_id: neu.feld_id.clone(),
             wert: neu.wert.clone(),
             zustand: neu.zustand(),
@@ -533,10 +546,6 @@ impl Store {
     /// ([`NeuesEventRoh`]): dieselben Auflagen in Pythons Reihenfolge — A, K1, F2, T/V/W/F, dann
     /// `signal_2` (Text) und `bestaetigt` (braucht `signal_2`), dann B. Der Schreiber wird wie in
     /// Python nach Praefix klassifiziert, nicht nach Gleichheit.
-    ///
-    /// ponytail: `Signal::signal_2` fehlt nie, es ist `null` oder Text; ein `signal` ohne den
-    /// Schluessel `signal_2` legt Python ohne ihn ab, hier steht `signal_2: null` — gleicher Inhalt,
-    /// andere Kennung. Upgrade: Anwesenheit des Schluessels in `Signal` wie bei `signal_1`.
     ///
     /// # Errors
     /// [`AbweisungRoh`], wenn eine Auflage verletzt ist.
@@ -578,11 +587,7 @@ impl Store {
         self.pruefe_auflage_b(&neu.feld_id, ersetzt)?;
         let event = Event {
             event_id: EventId::aus_bytes([0; 32]),
-            ts: neu
-                .ts
-                .clone()
-                .filter(|t| !t.is_empty())
-                .unwrap_or_else(jetzt_iso),
+            ts: ts_oder_jetzt(neu.ts.clone()),
             feld_id: neu.feld_id.clone(),
             wert: neu.wert.clone(),
             zustand: neu.zustand,
@@ -758,6 +763,7 @@ impl Store {
                 // vorher die JSON-Darstellung; fuer `float` folgt er jetzt Python (`1e+16`, wo
                 // JSON `1e16` schrieb) -- `signal_2` geht in den `event_id`.
                 signal_2: Some(format!("beweist@{feld_id}={}", wert.py_str())),
+                signal_2_fehlt: false,
             }),
             ersetzt: None,
         };
@@ -848,6 +854,7 @@ impl Store {
                 signal: Some(Signal {
                     signal_1: Some(None),
                     signal_2: Some(format!("ableitung@{}", regel.aus)),
+                    signal_2_fehlt: false,
                 }),
                 ersetzt: None,
             });
@@ -1034,7 +1041,7 @@ impl Store {
         });
         let snap = Snapshot {
             snapshot_id: sid,
-            ts: ts.unwrap_or_else(jetzt_iso),
+            ts: ts_oder_jetzt(ts),
             bis_event: letztes,
             felder,
             eric_befund,
@@ -1170,12 +1177,10 @@ fn passt_muster(muster: &str, wert: &str) -> bool {
 /// faengt eine vermutete EUR-statt-Cent-Verwechslung. Akzeptiert Zahl ODER numerischen String
 /// (LLM-Antworten liefern oft JSON-Strings); nicht-numerische Strings bleiben unangetastet.
 ///
-/// ponytail: `trim().parse` liest weder `1_000` noch Nicht-ASCII-Ziffern, Pythons `float()` schon
-/// (gemessen: `"1_0000000000"` weist Python ab, hier laeuft es durch). Ausbau: `py_float` aus
-/// `eingang::kontoauszug` nach `domain` heben und hier rufen.
+/// Der Text liest [`domain::py_float`] wie Pythons `float()` (`1_0000000000`, Nicht-ASCII-Ziffern).
 fn pruefe_magnitude(feld_id: &str, wert: &PyWert, schreiber: &Schreiber) -> Result<(), Abweisung> {
     let zahl = match wert {
-        PyWert::Text(s) => s.trim().parse::<f64>().ok(),
+        PyWert::Text(s) => domain::py_float(s),
         _ => zahl_als_f64(wert),
     };
     if let Some(z) = zahl {
@@ -1666,5 +1671,79 @@ mod tests {
             );
         }
         assert!(store.events().is_empty());
+    }
+
+    /// Entscheidung leerer-zeitstempel-heisst-fehlt-und-wird-die-jetzt-zeit: ein leerer `ts` heisst "fehlt"
+    /// und wird zur Jetzt-Zeit, wie Pythons `ts or _now()` (`store.py` `append_event`, `erzeuge_snapshot`).
+    /// "Jetzt-ISO" heisst: RFC 3339 mit Zone, parsebar, und innerhalb einer Minute der Uhr.
+    fn ist_jetzt_iso(ts: &str) -> bool {
+        chrono::DateTime::parse_from_rfc3339(ts).is_ok_and(|t| {
+            (chrono::Utc::now() - t.with_timezone(&chrono::Utc))
+                .num_seconds()
+                .abs()
+                < 60
+        })
+    }
+
+    fn event_mit_ts(ts: Option<String>) -> NeuesEvent {
+        NeuesEvent {
+            feld_id: "ep_arbeitstage".to_string(),
+            wert: json!(220).into(),
+            feldzustand: Feldzustand::Bestaetigt {
+                signal_2: Signal2::new("klick").unwrap(),
+            },
+            herkunft: mensch_herkunft(),
+            schreiber: Schreiber::Mensch("julius".to_string()),
+            signal_1: None,
+            ersetzt: None,
+            ts,
+        }
+    }
+
+    const FEST: &str = "2026-01-01T00:00:00+00:00";
+
+    #[test]
+    fn append_mit_leerem_zeitstempel_stempelt_die_jetzt_zeit() {
+        let map = leere_bindung();
+        let bindung = BindungNachschlag::neu(&map);
+        for ts in [Some(String::new()), None] {
+            let mut store = Store::leer(2025, None);
+            store
+                .append(&event_mit_ts(ts.clone()), None, bindung)
+                .unwrap();
+            let gestempelt = &store.events()[0].ts;
+            assert!(ist_jetzt_iso(gestempelt), "ts={ts:?} -> {gestempelt:?}");
+        }
+        // Gegenprobe: ein fester Zeitstempel bleibt, wie er ist (sonst bewiese das Gruen oben nichts).
+        let mut store = Store::leer(2025, None);
+        store
+            .append(&event_mit_ts(Some(FEST.to_string())), None, bindung)
+            .unwrap();
+        assert_eq!(store.events()[0].ts, FEST);
+        assert!(!ist_jetzt_iso(FEST));
+    }
+
+    #[test]
+    fn erzeuge_snapshot_mit_leerem_zeitstempel_stempelt_die_jetzt_zeit() {
+        let map = leere_bindung();
+        let bindung = BindungNachschlag::neu(&map);
+        for ts in [Some(String::new()), None] {
+            let mut store = Store::leer(2025, None);
+            store
+                .append(&event_mit_ts(Some(FEST.to_string())), None, bindung)
+                .unwrap();
+            store.erzeuge_snapshot(None, ts.clone(), None).unwrap();
+            let gestempelt = &store.snapshots()[0].ts;
+            assert!(ist_jetzt_iso(gestempelt), "ts={ts:?} -> {gestempelt:?}");
+        }
+        // Gegenprobe: ein fester Zeitstempel bleibt, wie er ist.
+        let mut store = Store::leer(2025, None);
+        store
+            .append(&event_mit_ts(Some(FEST.to_string())), None, bindung)
+            .unwrap();
+        store
+            .erzeuge_snapshot(None, Some("2026-01-02T00:00:00+00:00".to_string()), None)
+            .unwrap();
+        assert_eq!(store.snapshots()[0].ts, "2026-01-02T00:00:00+00:00");
     }
 }

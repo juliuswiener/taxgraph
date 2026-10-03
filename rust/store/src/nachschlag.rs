@@ -5,22 +5,30 @@ use std::collections::HashMap;
 
 use bindung::Bindung;
 
-/// `base__<n>` (n>=1) -> `base`; eine Basis-`feld_id` ohne Suffix -> `None` (= Instanz 1).
-/// Byte-identisches Pendant zu `_INSTANZ_RE = re.compile(r"^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[1-9][0-9]*)$")`.
+/// `base__<n>` (n>=2) -> `base`; eine Basis-`feld_id` ohne Suffix -> `None` (= Instanz 1), ebenso `base__1`.
+/// Pendant zu `_INSTANZ_RE = re.compile(r"^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[2-9]|[1-9][0-9]+)$")`. Pythons
+/// `$` passt auch vor EINEM abschliessenden `\n` (`a__2\n`): das gilt hier ebenso, denn `store.py`
+/// (`_pruefe_typ_konformitaet`) liest die Basis so, und ein Wert zu `schulgeld__2\n` wird dort auf den Typ von
+/// `schulgeld` geprueft. Gleich mit Python bei jeder Eingabe (`feld_kennung_paritaet`).
 ///
 /// ```
 /// use store::instanz_basis;
 /// assert_eq!(instanz_basis("kind_idnr__2"), Some("kind_idnr"));
+/// assert_eq!(instanz_basis("kind_idnr__2\n"), Some("kind_idnr"));
+/// assert_eq!(instanz_basis("kind_idnr__2\n\n"), None);
+/// assert_eq!(instanz_basis("kind_idnr__1"), None);
 /// assert_eq!(instanz_basis("kind_idnr"), None);
 /// assert_eq!(instanz_basis("kind_idnr__02"), None);
 /// ```
 #[must_use]
 pub fn instanz_basis(feld_id: &str) -> Option<&str> {
     let (basis, idx) = feld_id.rsplit_once("__")?;
+    let idx = idx.strip_suffix('\n').unwrap_or(idx);
     if basis.is_empty()
         || idx.is_empty()
         || !idx.bytes().all(|b| b.is_ascii_digit())
         || idx.starts_with('0')
+        || idx == "1"
     {
         return None;
     }
@@ -130,9 +138,19 @@ mod tests {
     fn instanz_basis_matcht_python_regex() {
         assert_eq!(instanz_basis("vv_einnahmen__2"), Some("vv_einnahmen"));
         assert_eq!(instanz_basis("vv_einnahmen__12"), Some("vv_einnahmen"));
+        assert_eq!(instanz_basis("vv_einnahmen__10"), Some("vv_einnahmen"));
+        assert_eq!(instanz_basis("vv_einnahmen__11"), Some("vv_einnahmen"));
         assert_eq!(instanz_basis("vv_einnahmen"), None);
-        assert_eq!(instanz_basis("vv_einnahmen__0"), None); // [1-9][0-9]* -- keine fuehrende 0
+        assert_eq!(instanz_basis("vv_einnahmen__1"), None); // Instanz 1 ist die Basis, nie `__1`
+        assert_eq!(instanz_basis("vv_einnahmen__0"), None); // [2-9]|[1-9][0-9]+ -- keine 0, keine fuehrende 0
         assert_eq!(instanz_basis("vv_einnahmen__"), None);
         assert_eq!(instanz_basis("__2"), None); // Basis darf nicht leer sein
+
+        // Pythons `$` passt vor EINEM abschliessenden `\n`, nicht vor zweien und nicht ohne Zaehler.
+        assert_eq!(instanz_basis("vv_einnahmen__2\n"), Some("vv_einnahmen"));
+        assert_eq!(instanz_basis("vv_einnahmen__10\n"), Some("vv_einnahmen"));
+        assert_eq!(instanz_basis("vv_einnahmen__2\n\n"), None);
+        assert_eq!(instanz_basis("vv_einnahmen__1\n"), None);
+        assert_eq!(instanz_basis("vv_einnahmen__\n"), None);
     }
 }

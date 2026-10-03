@@ -32,15 +32,37 @@ use crate::canonical::EventId;
 /// Schreiben in diesem Crate immer `Some(...)` (s. Konstruktionsstellen).
 ///
 /// `Serialize` geht wie bei [`Event`] ueber den Konvertierer `PyWert -> Value` (s. dort).
-#[derive(Debug, Clone, Default, PartialEq, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Signal {
     // Bewusstes `Option<Option<T>>` (s. Typdoku oben: Schluessel-Anwesenheit vs. `null`-Wert
     // sind zwei verschiedene, real gemessene Zustaende, kein Sonderfall der Faelle 1-2).
     #[allow(clippy::option_option)]
-    #[serde(default, deserialize_with = "signal_1_praesenz")]
     pub signal_1: Option<Option<PyWert>>,
-    #[serde(default)]
     pub signal_2: Option<String>,
+    /// Der Schluessel `signal_2` fehlt in der Akte. Der HTTP-Weg legt ein `signal` ohne `signal_2`
+    /// so ab (`POST /event` mit `{"signal": {"signal_1": 5}}`); ohne dieses Merkmal schriebe Rust
+    /// `signal_2: null` dazu, und die `event_id` wiche von der aus Python ab.
+    pub signal_2_fehlt: bool,
+}
+
+impl<'de> Deserialize<'de> for Signal {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        /// Beide Schluessel mit sichtbarer Anwesenheit.
+        #[derive(Deserialize)]
+        #[allow(clippy::option_option)]
+        struct Roh {
+            #[serde(default, deserialize_with = "signal_1_praesenz")]
+            signal_1: Option<Option<PyWert>>,
+            #[serde(default, deserialize_with = "signal_2_praesenz")]
+            signal_2: Option<Option<String>>,
+        }
+        let roh = Roh::deserialize(deserializer)?;
+        Ok(Self {
+            signal_1: roh.signal_1,
+            signal_2_fehlt: roh.signal_2.is_none(),
+            signal_2: roh.signal_2.flatten(),
+        })
+    }
 }
 
 /// Macht die Anwesenheit des Schluessels sichtbar (Standard-`Option<Option<T>>`-Deserialize
@@ -54,9 +76,18 @@ where
     Option::<PyWert>::deserialize(deserializer).map(Some)
 }
 
+/// Wie [`signal_1_praesenz`], fuer `signal_2`.
+#[allow(clippy::option_option)]
+fn signal_2_praesenz<'de, D>(deserializer: D) -> Result<Option<Option<String>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer).map(Some)
+}
+
 impl Signal {
     /// `signal` als JSON. Ein fehlender `signal_1`-Schluessel bleibt fehlend, ein `null` bleibt
-    /// `null` (s. Typdoku); `signal_2` steht immer da, wie im abgeleiteten `Serialize` zuvor.
+    /// `null` (s. Typdoku); `signal_2` steht da, ausser es fehlte in der Akte (`signal_2_fehlt`).
     fn zu_json(&self) -> Result<serde_json::Value, PyFehler> {
         let mut objekt = serde_json::Map::new();
         if let Some(signal_1) = &self.signal_1 {
@@ -66,7 +97,9 @@ impl Signal {
             };
             objekt.insert("signal_1".to_string(), wert);
         }
-        objekt.insert("signal_2".to_string(), serde_json::json!(self.signal_2));
+        if !self.signal_2_fehlt {
+            objekt.insert("signal_2".to_string(), serde_json::json!(self.signal_2));
+        }
         Ok(serde_json::Value::Object(objekt))
     }
 }
@@ -309,6 +342,7 @@ mod tests {
             signal: Some(Signal {
                 signal_1: None,
                 signal_2: Some("klick@ui".to_string()),
+                signal_2_fehlt: false,
             }),
             ersetzt: None,
         }
@@ -336,6 +370,10 @@ mod tests {
             json!({"signal_2": "klick@ui"}),
             json!({"signal_1": null, "signal_2": null}),
             json!({"signal_1": {"typ": "beleg", "ref": "b#1"}, "signal_2": null}),
+            // `signal_2` fehlt: bleibt fehlend (Python legt ein `signal` ohne den Schluessel so ab).
+            json!({"signal_1": 5}),
+            json!({"signal_1": null}),
+            json!({}),
         ] {
             let signal: Signal = serde_json::from_value(roh.clone()).unwrap();
             assert_eq!(serde_json::to_value(&signal).unwrap(), roh);
@@ -344,6 +382,7 @@ mod tests {
         e.signal = Some(Signal {
             signal_1: Some(Some(domain::PyWert::Gleit(f64::NAN))),
             signal_2: None,
+            signal_2_fehlt: false,
         });
         assert!(e.berechne_event_id().is_err());
         assert!(serde_json::to_value(&e).is_err());

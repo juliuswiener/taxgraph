@@ -215,13 +215,12 @@ bindungen:
   # ========================= Altersentlastungsbetrag §24a (p24a) =========================
   - feld_id: rentner_alter_64_erfuellt
     quelle: {regel_id: p24a_altersentlastungsbetrag, geltungsbedingung: alter_64_vor_bezugsjahr_vollendet}
-    eingangsfrage: true
-    ableitung: {aus: stammdaten_geburtsdatum, art: alter_am_jahresbeginn_erreicht, schwelle: 64, grund: "§ 24a S. 3 EStG stellt darauf ab, ob der Steuerpflichtige vor Beginn des Kalenderjahres das 64. Lebensjahr vollendet hat. Das ergibt sich aus dem Geburtsdatum, das die Stammdaten erheben — die Frage danach ist rechnerisch redundant."}
+    ableitung: {aus: stammdaten_geburtsdatum, art: alter_am_jahresbeginn_erreicht, schwelle: 64, grund: "§ 24a S. 3 EStG stellt darauf ab, ob der Steuerpflichtige vor Beginn des Kalenderjahres das 64. Lebensjahr vollendet hat. Das ergibt sich aus dem Geburtsdatum, das die Stammdaten erheben — die Frage danach ist rechnerisch redundant. Fehlt das Geburtsdatum, fragt das Programm stattdessen das Geburtsjahr (`geburtsjahr`, bindung_an_gesamt.yaml); dieses Feld hier wird nie gefragt (Julius 2026-10-03)."}
     typ: bool
     einheit: null
-    askable: true
+    askable: false
     vorjahr: uebernehmbar
-    fragetext_laie: "Hattest du vor Beginn dieses Jahres schon deinen 64. Geburtstag?"
+    fragetext_laie: null
     hilfe_kurz: "Der Altersentlastungsbetrag steht dir zu, wenn du zu Beginn des Jahres bereits 64 Jahre alt warst."
     beispielwert: true
     herkunft_slots: null

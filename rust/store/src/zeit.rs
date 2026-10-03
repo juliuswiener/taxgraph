@@ -13,3 +13,12 @@ pub(crate) fn jetzt_iso() -> String {
     }
     chrono::Utc::now().to_rfc3339()
 }
+
+/// Der Zeitstempel eines neuen Eintrags: ein leerer Text heisst "fehlt" und wird zur Jetzt-Zeit, wie Pythons
+/// `ts or _now()` (`store.py` `append_event` und `erzeuge_snapshot`; Entscheidung
+/// leerer-zeitstempel-heisst-fehlt-und-wird-die-jetzt-zeit). Ob der Text ein Zeitstempel IST, prueft niemand:
+/// Python nimmt `' '` und `'banane'` an, und das bleibt so.
+#[must_use]
+pub(crate) fn ts_oder_jetzt(ts: Option<String>) -> String {
+    ts.filter(|t| !t.is_empty()).unwrap_or_else(jetzt_iso)
+}

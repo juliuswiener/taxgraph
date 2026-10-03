@@ -1,8 +1,8 @@
 //! POST-Routen auf einen Fall — STUBS für D3. Wie [`super::lesen`]: der Fall kommt nur über
 //! [`EigenerFall`], der Rumpf über [`Koerper`], die Antwort ist `501 nicht_portiert`.
 //!
-//! D3: Funktionsnamen und Modul lassen, Rumpf ersetzen. `vorjahr` muss seine zweite Fall-Kennung
-//! (`body["vorjahr_fall_id"]`, `api.py:947`) mit `EigenerFall::pruefe` prüfen.
+//! D3: Funktionsnamen und Modul lassen, Rumpf ersetzen. `vorjahr` prüft seine zweite Fall-Kennung
+//! (`body["vorjahr_fall_id"]`, `api.py:947`) mit `EigenerFall::pruefe`.
 #![allow(clippy::unused_async)] // die Stubs warten nicht; die echten Handler tun es.
 
 use axum::extract::State;
@@ -11,7 +11,7 @@ use domain::PyWert;
 use crate::antwort::Antwort;
 use crate::eigener_fall::{EigenerFall, FallBesitz};
 use crate::fehler::ApiFehler;
-use crate::zustand::{Koerper, KoerperRoh, Zustand};
+use crate::zustand::{Koerper, KoerperRoh, Nutzer, Zustand};
 
 /// `POST /fall/{id}/event` — `api.event` (`api.py:495`), Rumpf in [`crate::event::event`].
 ///
@@ -85,18 +85,28 @@ pub async fn entfernung(
         .map_err(|e| ApiFehler::unerwartet("RuntimeError", e.to_string()))?
 }
 
-/// `POST /fall/{id}/vorjahr` — `api.vorjahr` (`api.py:928`).
+/// `POST /fall/{id}/vorjahr` — `api.vorjahr` (`api.py:928`), Rumpf in [`crate::vorjahr`]. Die zweite
+/// Fall-Kennung des Rumpfs (`vorjahr_fall_id`) geht durch `EigenerFall::pruefe`, dafür der [`Nutzer`].
 ///
 /// # Errors
-/// Wie [`event`].
-pub async fn vorjahr(_fall: EigenerFall, _body: Koerper) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("POST /fall/{id}/vorjahr"))
+/// Wie [`event`], dazu 400 für die Kennung der Quelle und 422 für eine Abweisung des Stores.
+pub async fn vorjahr(
+    State(z): State<Zustand>,
+    nutzer: Nutzer,
+    mut fall: EigenerFall,
+    Koerper(wert): Koerper,
+) -> Result<Antwort, ApiFehler> {
+    crate::vorjahr::vorjahr(&z, &nutzer, &mut fall, &wert)
 }
 
-/// `POST /fall/{id}/kontoauszug` — `api.kontoauszug` (`api.py:956`).
+/// `POST /fall/{id}/kontoauszug` — `api.kontoauszug` (`api.py:956`), Rumpf in [`crate::kontoauszug`].
 ///
 /// # Errors
 /// Wie [`event`].
-pub async fn kontoauszug(_fall: EigenerFall, _body: Koerper) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("POST /fall/{id}/kontoauszug"))
+pub async fn kontoauszug(
+    State(z): State<Zustand>,
+    mut fall: EigenerFall,
+    Koerper(wert): Koerper,
+) -> Result<Antwort, ApiFehler> {
+    crate::kontoauszug::kontoauszug(&z, &mut fall, &wert)
 }
