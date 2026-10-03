@@ -305,6 +305,8 @@ impl Anfrage {
 struct Antwort {
     status: u16,
     kopf: BTreeMap<String, String>,
+    /// Kopfname klein -> Schreibweise auf dem Draht (`content-type` -> `Content-Type`).
+    namen: BTreeMap<String, String>,
     body: Vec<u8>,
 }
 
@@ -351,13 +353,19 @@ fn parse(roh: &[u8]) -> Antwort {
         .unwrap()
         .parse()
         .unwrap();
-    let kopf = zeilen
-        .filter_map(|z| z.split_once(':'))
+    let paare: Vec<(&str, &str)> = zeilen.filter_map(|z| z.split_once(':')).collect();
+    let kopf = paare
+        .iter()
         .map(|(k, v)| (k.trim().to_ascii_lowercase(), v.trim().to_owned()))
+        .collect();
+    let namen = paare
+        .iter()
+        .map(|(k, _)| (k.trim().to_ascii_lowercase(), k.trim().to_owned()))
         .collect();
     Antwort {
         status,
         kopf,
+        namen,
         body: roh[ende + 4..].to_vec(),
     }
 }
@@ -498,6 +506,25 @@ fn vergleiche(
                 "Kopf {k}: py={:?} rs={:?}",
                 py.kopf.get(k),
                 rs.kopf.get(k)
+            ));
+        }
+    }
+    // Die Schreibweise der Namen: Python `Content-Type`, hyper schreibt ohne Einstellung `content-type`
+    // (`api::dienen`). `Date` hat auf beiden Seiten einen anderen Wert und nur den Namen im Vergleich.
+    // `Server` (nur Python) und `Connection` (nur Rust) fehlen hier mit Absicht.
+    for k in [
+        "content-type",
+        "content-length",
+        "content-security-policy",
+        "x-content-type-options",
+        "referrer-policy",
+        "date",
+    ] {
+        if py.namen.get(k) != rs.namen.get(k) {
+            d.push(format!(
+                "Kopfname {k}: py={:?} rs={:?}",
+                py.namen.get(k),
+                rs.namen.get(k)
             ));
         }
     }

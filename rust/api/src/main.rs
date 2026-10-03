@@ -27,12 +27,7 @@ async fn dienen(port: u16, zustand: Zustand) -> std::io::Result<()> {
         listener.local_addr()?.port()
     );
     std::io::stdout().flush()?;
-    axum::serve(
-        listener,
-        axum::ServiceExt::<axum::extract::Request>::into_make_service(app(zustand)),
-    )
-    .with_graceful_shutdown(beendet())
-    .await?;
+    api::dienen::dienen(listener, app(zustand), beendet()).await?;
     println!("Server heruntergefahren.");
     Ok(())
 }
