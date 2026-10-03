@@ -721,13 +721,13 @@ def einreichen(fall_id: str, body: dict) -> tuple[int, dict]:
                 f"auf dieser Scheibe bleibt nutzbar.")}
 
     # Sperrgrund-Prüfung VOR Deklaration: Ring ist rechnerunfähig → 409 mit unserem Grund,
-    # nicht ERiCs falschem Grund später. Identisch wie in ergebnis() (Zeile 2075).
+    # nicht ERiCs falschem Grund später. Wie in ergebnis(): `klartext` ist der Satz für den Laien.
     vz = int(store.get("veranlagungszeitraum") or 0)
     felder = _mit_ring_werten(felder, vz)
     if cfg.get("guard"):
         sperr = _an_gesamt_sperrgrund(felder, cfg, vz, store, bindung)
         if sperr:
-            return 409, {"fall_id": fall_id, "eingereicht": False, "grund": sperr,
+            return 409, {"fall_id": fall_id, "eingereicht": False, "grund": sperr, "klartext": sperrgrund_klartext(sperr),
                          "hinweis": "Die Deklaration kann nicht erstellt werden, weil eine erforderliche Angabe fehlt."}
 
     result = EM.deklariere(felder, bindung, vz=vz, snapshot_id=sid)
