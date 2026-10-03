@@ -12,10 +12,9 @@
 //! - `negativkontrolle`: eine gestoerte Rust-Antwort MUSS als Abweichung auffallen.
 //! - `dokumentierte_abweichungen`: was diese Stufe bewusst NICHT angleicht, mit Beleg.
 //!
-//! Noch nicht portierte Routen stehen in `NICHT_PORTIERT`: ihre `501` wird je Route gezaehlt, nicht
-//! verglichen; eine `501` ausserhalb der Liste ist eine Abweichung. Routen aus `UNTERGRENZE` gehen
-//! danach an Python, das den Rumpf ausfuehrt. Beim Port fliegt die Route aus der Liste, und der
-//! Harness vergleicht sie von selbst.
+//! Alle Routen sind portiert: antwortet Rust irgendwo `501 nicht_portiert`, ist das eine Abweichung
+//! (`Paar::anfrage`), nie eine gezaehlte Ausnahme. Eine Liste noch nicht portierter Routen gibt es
+//! nicht mehr.
 //!
 //! `PARITY=1 cargo test -p parity --test api_http_paritaet -- --nocapture --test-threads=1`
 //! Stoerung zum Zeigen der Rotfaerbung: `PARITY_STOERUNG=1` (veraendert EINE Rust-Antwort).
@@ -69,14 +68,9 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
     ("fehler.log", "nur Anzahl und `ort`: Typ (Python-Klasse gegen Rust-Typname), Aufrufstelle und die PII-gefilterte Fall-Kennung unterscheiden sich im Bau"),
 ];
 
-/// Routen, fuer die Rust heute `501 nicht_portiert` antwortet (AK3 in 9c). Beim Port fliegt die
-/// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
-const NICHT_PORTIERT: &[&str] = &[];
-
 /// Stufe 1–3 (AK1 in 9c): Untergrenze der Rumpf-Erreichungen je Route im Test `generatoren`, gleich
-/// der Zahl seiner Faelle, die den Rumpf erreichen sollen; faellt einer aus, wird der Test rot. Nur
-/// diese Routen gehen nach einer Rust-`501` an Python. Stufe 4 (einreichen, chat, entfernung)
-/// riefe dort `ERiC`, das LLM oder ORS.
+/// der Zahl seiner Faelle, die den Rumpf erreichen sollen; faellt einer aus, wird der Test rot.
+/// Stufe 4 (einreichen, chat, entfernung) steht hier nicht: sie riefe `ERiC`, das LLM oder ORS.
 const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/fragen", 14),
     ("GET /fall/{id}/stand", 7),
@@ -382,7 +376,6 @@ struct Stat {
     anfragen: usize,
     verglichen: usize,
     nur_status: usize,
-    stubs: BTreeMap<String, usize>,
     abweichungen: Vec<String>,
     norm: BTreeMap<&'static str, usize>,
     /// Wie oft welcher Status je Anfrageart (erstes Wort des Titels) vorkam — der Beleg, dass die
@@ -673,10 +666,9 @@ impl Paar {
         }
     }
 
-    /// Rust zuerst: antwortet es `501 nicht_portiert`, zaehlt die Route statt eines Vergleichs.
-    /// Routen aus `UNTERGRENZE` gehen dann an Python, das den Rumpf ausfuehrt; schreibt es in den
-    /// Fall, bekommt Rust die Datei gespiegelt. Sonst gingen die Verzeichnisse auseinander, ohne
-    /// dass einer der beiden Server falsch waere. Rueckgabe: der JSON-Body von Python.
+    /// Rust zuerst. Antwortet es `501 nicht_portiert`, ist das eine Abweichung (alle Routen sind
+    /// portiert; eine Route, die stumm wieder 501 liefert, faerbt jeden Test rot, der sie trifft), und
+    /// es gibt keinen Vergleich. Rueckgabe: der JSON-Body von Python.
     fn anfrage(&mut self, a: &Anfrage, modus: Modus) -> Option<Value> {
         let mut rs = sende(self.rs.port, a);
         self.stat.anfragen += 1;
@@ -692,36 +684,12 @@ impl Paar {
             .filter(|b| b["fehler"] == "nicht_portiert");
         if let Some(b) = stub {
             let r = b["route"].as_str().unwrap_or("?");
-            *self.stat.stubs.entry(r.to_owned()).or_default() += 1;
-            let wohin = format!("{} {} [{}]", a.methode, a.pfad, a.titel);
-            if !NICHT_PORTIERT.contains(&r) {
-                let d = format!("{wohin}: 501 ausserhalb NICHT_PORTIERT");
-                self.stat.abweichungen.push(d);
-            }
-            if !NICHT_PORTIERT.contains(&r) || !UNTERGRENZE.iter().any(|(u, _)| *u == r) {
-                return None;
-            }
-            let id = a.pfad.split('/').nth(2).unwrap_or_default();
-            let akte = |s: &Server| {
-                let roh = std::fs::read(s.faelle().join(format!("{id}.json"))).ok()?;
-                serde_json::from_slice::<Value>(&roh).ok()
-            };
-            let vorher = akte(&self.py);
-            let py = sende(self.py.port, a);
-            // Audit, Fehlerlog und Fluss-Mitschnitt des Python-Rumpfs haben (noch) kein
-            // Rust-Gegenstueck: `fragen`, `event`, `ergebnis` schreiben dort `flow.jsonl`-Zeilen.
-            let _ = (py_audit.neue(), py_fehler.neue(), py_flow.neue_zeilen());
-            if akte(&self.py) != vorher {
-                if akte(&self.rs) != vorher {
-                    let d = format!("{wohin}: Fall-Datei schon vor dem Spiegeln verschieden");
-                    self.stat.abweichungen.push(d);
-                }
-                let datei = format!("{id}.json");
-                std::fs::copy(self.py.faelle().join(&datei), self.rs.faelle().join(&datei))
-                    .unwrap();
-            }
-            self.stat.zaehle(a, &py);
-            return json_body(&py);
+            let d = format!(
+                "{} {} [{}]: 501 nicht_portiert ({r})",
+                a.methode, a.pfad, a.titel
+            );
+            self.stat.abweichungen.push(d);
+            return None;
         }
         let art = a.titel.split_whitespace().next().unwrap_or("").to_owned();
         *self
@@ -799,14 +767,10 @@ impl Paar {
 
     fn bericht(&self, titel: &str) {
         let s = &self.stat;
-        let stubs: usize = s.stubs.values().sum();
         println!(
-            "API-PARITAET {titel}: Anfragen {} | verglichen {} (davon nur Status {}) | Abweichungen {} | 501-Stubs nicht portiert {stubs}",
+            "API-PARITAET {titel}: Anfragen {} | verglichen {} (davon nur Status {}) | Abweichungen {}",
             s.anfragen, s.verglichen, s.nur_status, s.abweichungen.len()
         );
-        for (route, n) in &s.stubs {
-            println!("  nicht portiert: {n:4} x {route}");
-        }
         for (route, _) in UNTERGRENZE {
             let n = s.erreicht.get(*route).unwrap_or(&0);
             println!("  Rumpf erreicht: {n:4} x {route}");
@@ -1171,7 +1135,7 @@ fn handgeschrieben_auth(p: &mut Paar) {
     a!(po("anlegen unbekannte Felder", "/fall")
         .token(&bob)
         .json(&json!({"fall_id": "extra1", "x": 1, "user_id": "alice"})));
-    // Stubs und Owner-Check
+    // Fall-Routen (frueher Stubs) und Owner-Check
     let get_stubs = [
         "fragen",
         "stand",
@@ -1247,15 +1211,6 @@ fn handgeschrieben_auth(p: &mut Paar) {
     .token(&alice));
     a!(g("ready am Ende", "/ready"));
     p.zustand_vergleichen("nach den Szenarien (Auth)");
-    // Jede Route aus NICHT_PORTIERT kommt oben zur 501. Bleibt sie aus, ist die Route portiert und
-    // ihre Zeile veraltet; der Vergleich allein merkte das nicht (Befund 4 in 9c).
-    for r in NICHT_PORTIERT
-        .iter()
-        .filter(|r| !p.stat.stubs.contains_key(**r))
-    {
-        let d = format!("{r}: steht in NICHT_PORTIERT, lieferte aber keine 501");
-        p.stat.abweichungen.push(d);
-    }
 }
 
 fn handgeschrieben_ohne_auth(p: &mut Paar) {
@@ -1497,7 +1452,7 @@ impl Ctx {
     }
 }
 
-/// Die Routen unter `/fall/{id}/` fuer `Op::Stub`; welche davon portiert sind, sagt `NICHT_PORTIERT`.
+/// Die Routen unter `/fall/{id}/` fuer `Op::Stub` (alle portiert).
 const FALL_ROUTEN: [(&str, &str); 15] = [
     ("GET", "fragen"),
     ("GET", "stand"),
@@ -5366,6 +5321,27 @@ fn dokumentierte_abweichungen() {
         String::from_utf8_lossy(&rs.body)
     );
     assert_eq!((py.status, rs.status), (500, 400));
+    // 6. Fremddienst-Zahlen und -Gestalten (Vault `decisions/fremddienst-zahlfehler-nur-in-python-bleiben-
+    //    bis-zum-cutover`, Messung `berichte/k9-fremddienst.md`). Vier Wege, auf denen Python bei einer
+    //    Antwort des Sprachmodells oder des Karten-Dienstes abstuerzt oder eine Antwort schickt, die kein
+    //    JSON ist, und Rust sauber zurueckfaellt: A1 `rechenweg`/`vorschlag_wert` mit NaN/Infinity (Python
+    //    200 ohne gueltiges JSON, Rust 200), A2 `aussage` mit Infinity/1e400 (Python 500, Rust 200),
+    //    A3 `distance` mit NaN/Infinity (Python 500, Rust 503), B `content`/`kategorie` als Liste/Objekt/
+    //    Zahl (Python 500, Rust 200). Nutzerwirkung: Python bricht ab, Rust faellt zurueck; die Akte bleibt
+    //    in allen Faellen unberuehrt. Rust ist die Soll-Seite (Korrektheit vor Paritaet, `REWRITE_PLAN.md`
+    //    §4); Python wird bis zum Cutover nicht repariert. Die Faelle stehen mit Begruendung in
+    //    `extern_stub/fremd_abweichungen.rs`; wird Python repariert oder Rust anders, faellt dieser Eintrag.
+    extern_stub::fremd_abweichungen::pruefe(&["A1", "A2", "A3", "B"]);
+    // 7. Chat-Antwort mit einem einzelnen Surrogat-Escape in `begruendung` (Messung `berichte/k9-
+    //    fremddienst.md`, Beobachtung ohne Ticket). Python weist nur das betroffene Feld ab
+    //    (`abgelehnt_gruende`: `UnicodeEncodeError`) und behaelt die uebrigen Vorschlaege der Antwort;
+    //    Rust verwirft Stufe 3 als Ganzes (serde_json lehnt das Surrogat beim Lesen ab, 200 ohne
+    //    Vorschlag, `kein_feld`). Nutzerwirkung: in Rust fehlen die gesunden Vorschlaege derselben
+    //    Antwort; die Akte bleibt unberuehrt. NICHT entschieden, welche Seite korrekt ist (REWRITE_PLAN
+    //    §4: wo unklar ist, was korrekt ist, bleibt Python und die Stelle geht als Frage an Julius).
+    //    Der Fall in `extern_stub/fremd_abweichungen.rs` haelt beide Seiten fest und faellt, wenn eine
+    //    sich aendert; mit der Entscheidung wird der Eintrag zu einer der beiden Formen.
+    extern_stub::fremd_abweichungen::pruefe(&["C"]);
 }
 
 /// `_routes()` (`server.py:62`) und `api::routen::EINTRAEGE` stimmen in Methode, Muster und

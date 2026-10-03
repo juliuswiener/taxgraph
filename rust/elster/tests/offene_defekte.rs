@@ -564,9 +564,9 @@ fn p23_eric_prueft_zwei_verkaeufe() {
 
 // ---------------------------------------------------------------- Anlage L
 
-/// `_erklaere_gewinn` ohne HTTP: in Rust ist `GET /deklaration` ein 501-Stub. Die Kz-Wahl sitzt
-/// in `deklariere` (`tabellen.rs`, `GEWINN`), der Ring-Schritt (`mit_ring_werten`) beruehrt
-/// keine Gewinnfelder.
+/// `_erklaere_gewinn` ohne HTTP: `GET /deklaration` liegt im Crate `api`, das von `elster`
+/// abhaengt. Die Kz-Wahl sitzt in `deklariere` (`tabellen.rs`, `GEWINN`), der Ring-Schritt
+/// (`mit_ring_werten`) beruehrt keine Gewinnfelder.
 fn gewinn_deklaration(betriebsart: &str, bezeichnung: &str) -> Deklaration {
     let felder = bestaetigt(&[
         ("veranlagung", json!("einzel")),

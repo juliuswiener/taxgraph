@@ -4,10 +4,10 @@
 //!
 //! Die Faelle hier brauchen `GET /fall/{id}/deklaration`, `POST /fall/{id}/einreichen` und
 //! `POST /fall/{id}/kontoauszug`. Alle drei sind portiert (`api/src/deklaration.rs`,
-//! `api/src/einreichen.rs`, `api/src/kontoauszug.rs`). Die Tests sind `#[ignore]`, weil die
-//! Handler den Defekt von Python teilen: sie lesen `pflichtfelder_luecken` bzw. den Sperrgrund
-//! nicht. Das ist der Defekt, den der Python-Test pinnt; der Ignore-Text nennt ihn, damit das Rot
-//! nicht als „schon erledigt" gelesen wird.
+//! `api/src/einreichen.rs`, `api/src/kontoauszug.rs`). Ein Test ist `#[ignore]`, solange der
+//! Handler den Defekt von Python teilt (`einreichen` liest `pflichtfelder_luecken` nicht). Das ist
+//! der Defekt, den der Python-Test pinnt; der Ignore-Text nennt ihn, damit das Rot nicht als „schon
+//! erledigt" gelesen wird. Die Tests von `deklaration` und `kontoauszug` laufen ohne `#[ignore]`.
 //!
 //! Rot sehen:  `cargo test -p api --test offene_defekte -- --ignored`
 #![allow(
@@ -95,8 +95,8 @@ async fn fall_anlegen(d: &Dienst, fall_id: &str, scheibe: &str) -> String {
     token
 }
 
-/// Die Ereignisse eines Falls direkt in die Store-Datei schreiben — `POST /event` ist 501-Stub,
-/// der Fall muss aber beantwortet sein, bevor `/deklaration` etwas messen kann. Derselbe Weg wie
+/// Die Ereignisse eines Falls direkt in die Store-Datei schreiben, ohne `POST /event` — der Fall muss
+/// beantwortet sein, bevor `/deklaration` etwas messen kann. Derselbe Weg wie
 /// `bescheid::testhilfe::store`, nur auf der Platte statt im Speicher.
 fn setze_felder(d: &Dienst, fall_id: &str, paare: &[(&str, Value)]) {
     let pfad = d.zustand.konfig.faelle.join(format!("{fall_id}.json"));
@@ -347,8 +347,10 @@ async fn kontrolle_der_kontoauszug_erreicht_den_fall() {
 /// (Regel getestet in `eingang` `tests::csv_unlesbarer_betrag_zaehlt_in_verworfen`); die Route
 /// muss sie nach `verworfen` und in den `hinweis` reichen. Den Wortlaut des Grundes legt der Test
 /// nicht fest, nur dass er den Betrag nennt.
+///
+/// Kein `#[ignore]` mehr: die Route ist portiert (`api/src/kontoauszug.rs`), und dieser Test wird rot,
+/// sobald die Zahl aus `parse_csv` nicht mehr nach `verworfen` oder in den `hinweis` gelangt.
 #[tokio::test]
-#[ignore = "POST /kontoauszug ist 501-Stub (api/src/routen/schreiben.rs:66); die Portierung muss den zweiten Wert von eingang::kontoauszug::parse_csv nach verworfen reichen. Erwartet verworfen=2 und einen hinweis mit 'Betrag'. Python: test_kontoauszug_csv_unlesbarer_betrag.py::test_unlesbarer_betrag_steht_in_verworfen_mit_grund. Vault: backlog/taxgraph/kontoauszug-zeile-mit-unlesbarem-betrag-verschwindet-still.md. Rot sehen: --ignored"]
 async fn kontoauszug_unlesbarer_betrag_steht_in_verworfen() {
     let d = dienst();
     let (status, json, text) = kontoauszug_hochladen(&d, "unlesbar").await;

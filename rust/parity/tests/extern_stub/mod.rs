@@ -22,6 +22,11 @@ use std::time::Duration;
 
 use serde_json::{json, Value};
 
+// Die vier Fremddienst-Abweichungen A1-A3 und B (Eintrag 6 in `dokumentierte_abweichungen`).
+pub(super) mod fremd_abweichungen;
+// Die Werkzeug-Texte (503/422) beider Server ueber HTTP, `PATH` je Fall umgelegt.
+mod werkzeug;
+
 /// Der Karten-Schluessel des Laufs. Erfunden; steht nur in der Umgebung der Server und im Stub.
 pub(super) const SCHLUESSEL_ORS: &str = "h8-synthetischer-ors-schluessel";
 /// Der LLM-Schluessel des Laufs. Erfunden.
