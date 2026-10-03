@@ -593,7 +593,7 @@ mod p34_antrag_tests {
 
     #[test]
     fn ohne_antrag_oder_berechtigung_steht_keine_antrags_kz() {
-        let faelle: [(&str, Vec<(&str, Value, bool)>); 6] = [
+        let faelle: [(&str, Vec<(&str, Value, bool)>); 8] = [
             (
                 "antrag nein",
                 vec![("antrag_ermaessigter_satz", json!(false), true)],
@@ -601,6 +601,14 @@ mod p34_antrag_tests {
             (
                 "antrag unbestaetigt",
                 vec![("antrag_ermaessigter_satz", json!(true), false)],
+            ),
+            (
+                "Geburtsjahr unbestaetigt",
+                vec![("geburtsjahr", json!(1960), false)],
+            ),
+            (
+                "Gewinn unbestaetigt",
+                vec![("rentner_veraeusserungsgewinn", json!(VG), false)],
             ),
             ("zu jung", vec![("geburtsjahr", json!(1990), true)]),
             (
@@ -631,10 +639,38 @@ mod p34_antrag_tests {
                 Vec::<&str>::new(),
                 "{name}: Antrags-Kz geschrieben"
             );
+            // Kontrolle: die Basiszeile steht, wo der Gewinn bestaetigt ist (sonst misst der Fall nichts)
+            let gewinn_bestaetigt = abweichung
+                .iter()
+                .all(|(f, _, b)| *f != "rentner_veraeusserungsgewinn" || *b);
             assert!(
-                d.deklaration.contains_key("E0801301"),
+                !gewinn_bestaetigt || d.deklaration.contains_key("E0801301"),
                 "{name}: der Fall misst nichts"
             );
+        }
+    }
+
+    /// Die Grenzen des Netto-Gewinns sind cent genau: 5.000.000,00 EUR (Freibetrag 0) schreiben,
+    /// 5.000.001,00 EUR nicht (die Route sperrt dort vorher mit `abs3_ueber_5mio_offen`); 45.001 EUR
+    /// lassen 1 EUR netto, 45.000 EUR keinen.
+    #[test]
+    fn die_netto_grenzen_gelten_cent_genau() {
+        let faelle = [
+            (500_000_000, true),
+            (500_000_100, false),
+            (13_600_000, true),
+            (4_500_100, true),
+            (4_500_000, false),
+        ];
+        for (vg, schreibt) in faelle {
+            let abw = [("rentner_veraeusserungsgewinn", json!(vg), true)];
+            let (f, d) = lauf(&fall("gewerbe", &abw), Some(Vz::Vz2025));
+            assert_eq!(
+                f.contains_key("p34_abs3_antragsbetrag"),
+                schreibt,
+                "vg={vg}"
+            );
+            assert_eq!(antrags_kz(&d).len(), usize::from(schreibt), "vg={vg}");
         }
     }
 
