@@ -189,6 +189,8 @@ fn scheiben() -> &'static Scheiben {
 #[derive(Default)]
 struct Zaehler {
     je_fn: BTreeMap<String, (usize, usize)>,
+    /// Je Zeile: in wie vielen Vergleichen das Rust-Ergebnis einen Wert trug (`parity::pin::nicht_leer`).
+    nicht_leer: BTreeMap<&'static str, u64>,
     abdeckung: BTreeMap<String, usize>,
     beispiele: Vec<String>,
 }
@@ -200,7 +202,7 @@ thread_local! {
 
 /// Zaehlt einen Vergleich; `kontext` nennt bei realen Faellen nur Nummern, nie Werte.
 fn vergleiche(
-    funktion: &str,
+    funktion: &'static str,
     rust: &Value,
     python: &Result<Value, String>,
     kontext: &str,
@@ -208,6 +210,8 @@ fn vergleiche(
 ) -> bool {
     let gleich = matches!(python, Ok(p) if p == rust);
     ZAEHLER.with_borrow_mut(|z| {
+        // Die Zeile gehoert in die Karte, auch wenn sie nie einen Wert sieht (Zaehler 0).
+        *z.nicht_leer.entry(funktion).or_default() += u64::from(parity::pin::nicht_leer(rust));
         zaehle(
             z,
             funktion,
@@ -252,7 +256,8 @@ fn bericht(titel: &str) -> usize {
     ZAEHLER.with_borrow(|z| {
         let mut summe = 0;
         for (f, (n, d)) in &z.je_fn {
-            println!("interview-paritaet {titel}: {f:<42} Rust {n:>6} / Python {n:>6} Aufrufe, {d} Abweichungen");
+            let nl = z.nicht_leer.get(f.as_str()).copied().unwrap_or(0);
+            println!("interview-paritaet {titel}: {f:<42} Rust {n:>6} / Python {n:>6} Aufrufe, {d} Abweichungen, nicht-leer {nl}");
             summe += d;
         }
         for (f, n) in &z.abdeckung {
@@ -263,6 +268,21 @@ fn bericht(titel: &str) -> usize {
         }
         summe
     })
+}
+
+/// Bekannt leere Zeilen im Block `reale_faelle`. Ein Eintrag je Zeile, mit Grund.
+const LEER_REALE: &[(&str, &str)] = &[];
+
+/// Bekannt leere Zeilen im Block `generierte_paritaet`.
+const LEER_GENERIERTE: &[(&str, &str)] = &[];
+
+/// Pin gegen einen gruenen Lauf, der nichts belegt (Ticket `parity-lauf-gruen-ohne-dass-die-zeile-
+/// rechnet`): eine Zeile, die nie ein Ergebnis mit Wert sah, meldet "0 Abweichungen" und hat nichts
+/// verglichen. `liste` nennt bekannt leere Zeilen mit Grund; `korpus` steht in der Meldung.
+fn wache_rechnet(titel: &str, korpus: &str, liste: &[(&str, &str)]) {
+    let gesehen: parity::pin::Gesehen =
+        ZAEHLER.with_borrow(|z| z.nicht_leer.iter().map(|(f, n)| (*f, *n)).collect());
+    parity::pin::pruefe(&format!("interview {titel}"), korpus, liste, &gesehen);
 }
 
 fn js<T: serde::Serialize>(x: &T) -> Value {
@@ -305,7 +325,7 @@ fn pruefe_store(
     let store = Store::aus_datei(datei);
     let (g, s) = (graph(), sicht_aus(felder));
     let mut ok = true;
-    let mut v = |f: &str, rust: Value, python: Result<Value, String>| {
+    let mut v = |f: &'static str, rust: Value, python: Result<Value, String>| {
         ok &= vergleiche(f, &rust, &python, kontext, zeige);
     };
 
@@ -614,22 +634,19 @@ fn lader_paritaet() {
         true,
     );
     assert_eq!(bericht("lader"), 0, "Lader-Abweichungen");
+    wache_rechnet("lader", "kein Korpus (Bindungs-Registry)", &[]);
 }
 
 fn reale_faelle() -> Vec<Value> {
-    let Ok(rd) = std::fs::read_dir(faelle_verzeichnis()) else {
-        return Vec::new();
-    };
-    let mut pfade: Vec<_> = rd
-        .flatten()
-        .map(|e| e.path())
-        .filter(|p| p.extension().is_some_and(|e| e == "json"))
-        .collect();
-    pfade.sort();
-    pfade
-        .iter()
-        .filter_map(|p| std::fs::read_to_string(p).ok())
-        .filter_map(|t| serde_json::from_str::<Value>(&t).ok())
+    // Gezaehlt gelesen statt still uebersprungen: ein leerer oder unlesbarer Korpus macht den
+    // Block rot, NICHT gruen mit "0 Faelle" (`parity::korpus`).
+    let verzeichnis = faelle_verzeichnis();
+    let korpus = parity::korpus::Korpus::lies(&verzeichnis);
+    korpus.pflicht(&verzeichnis, "reale_faelle");
+    korpus
+        .gelesen
+        .into_iter()
+        .map(|(_, v)| v)
         .filter(|v| v.get("events").is_some())
         .collect()
 }
@@ -688,6 +705,7 @@ fn reale_faelle_paritaet() {
         faelle.len()
     );
     assert_eq!(bericht("real"), 0, "Abweichungen auf realen Faellen");
+    wache_rechnet("reale_faelle", parity::pin::KORPUS, LEER_REALE);
 }
 
 #[test]
@@ -1091,8 +1109,9 @@ fn generierte_paritaet() {
     if skip_ohne_parity_env() {
         return;
     }
+    let faelle = parity::fallzahl::holen_u32("interview_paritaet generierte_paritaet", 1000);
     let mut runner = TestRunner::new(Config {
-        cases: parity::fallzahl::holen_u32("interview_paritaet generierte_paritaet", 1000),
+        cases: faelle,
         failure_persistence: None,
         ..Config::default()
     });
@@ -1129,4 +1148,16 @@ fn generierte_paritaet() {
     let summe = bericht("generiert");
     assert!(ergebnis.is_ok(), "{ergebnis:?}");
     assert_eq!(summe, 0);
+    // Der Pin gilt nur beim Standard der Fallzahl (`parity::fallzahl::wache_gilt`).
+    if parity::fallzahl::wache_gilt(
+        "interview_paritaet generierte_paritaet",
+        faelle as usize,
+        1000,
+    ) {
+        wache_rechnet(
+            "generierte_paritaet",
+            "kein Korpus (Proptest-Stores, deterministischer Seed)",
+            LEER_GENERIERTE,
+        );
+    }
 }

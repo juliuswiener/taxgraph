@@ -69,7 +69,11 @@ pub struct EntfernungspauschaleSaetze {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DhfGrenzen {
     pub cap_monat_inland: Euro,
-    pub cap_monat_ausland: Euro,
+    /// `None` = KEINE Auslandsgrenze (nicht 0). Die 2.000-EUR-Grenze gilt erst ab VZ 2026
+    /// (`StÄndG` 2025, `BGBl`. 2025 I Nr. 363); `params/2024` und `params/2025` fuehren sie nicht.
+    /// PARITÄT: Python liest `(p.get("cap_monat_ausland") or {}).get("wert")`; fehlender
+    /// Schluessel, leerer Block und `wert: null` ergeben dort wie hier `None`.
+    pub cap_monat_ausland: Option<Euro>,
 }
 
 /// § 9 Abs. 4a `EStG`: Pauschalen (Euro je Tag) und Kuerzungssaetze (Prozent) aus
@@ -272,19 +276,33 @@ impl Params {
 
     /// § 9 Abs. 1 S. 3 Nr. 5 `EStG` (`dhf_p9_1_nr5.yaml`).
     ///
+    /// `cap_monat_ausland` ist `None`, wenn die Datei keine Auslandsgrenze fuehrt: VZ 2024 und 2025.
+    ///
     /// # Errors
-    /// Wie [`Params::grundfreibetrag`].
+    /// Wie [`Params::grundfreibetrag`]; zusaetzlich bei einem `cap_monat_ausland`, das kein Block
+    /// ist oder dessen `wert` keine ganze Zahl ist.
     ///
     /// ```
     /// let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     /// let p = bindung::Params::lade(&wurzel).unwrap();
     /// assert_eq!(p.dhf(domain::Vz::Vz2026).unwrap().cap_monat_inland, domain::Euro::new(1000));
+    /// assert_eq!(p.dhf(domain::Vz::Vz2026).unwrap().cap_monat_ausland, Some(domain::Euro::new(2000)));
+    /// assert_eq!(p.dhf(domain::Vz::Vz2025).unwrap().cap_monat_ausland, None);
     /// ```
     pub fn dhf(&self, vz: Vz) -> Result<DhfGrenzen, ParamsWertFehler> {
         let d = "dhf_p9_1_nr5.yaml";
+        // Die Inlandsgrenze fehlt nie still (Python: KeyError); nur die Auslandsgrenze darf fehlen.
+        let cap_monat_ausland = match self.datei(vz, d)?.werte.get("cap_monat_ausland") {
+            None | Some(Value::Null) => None,
+            Some(block) if block.is_mapping() => match block.get("wert") {
+                None | Some(Value::Null) => None,
+                Some(_) => Some(self.euro(vz, d, "cap_monat_ausland")?),
+            },
+            Some(_) => return Err(typ(vz, d, "cap_monat_ausland", "Block")),
+        };
         Ok(DhfGrenzen {
             cap_monat_inland: self.euro(vz, d, "cap_monat_inland")?,
-            cap_monat_ausland: self.euro(vz, d, "cap_monat_ausland")?,
+            cap_monat_ausland,
         })
     }
 
@@ -813,5 +831,83 @@ mod tests {
             ),
             (20, 40)
         );
+    }
+
+    /// Die 2.000-EUR-Auslandsgrenze gilt erst ab VZ 2026 (`StÄndG` 2025, `BGBl`. 2025 I Nr. 363);
+    /// `params/2024` und `params/2025` fuehren sie nicht. Die Inlandsgrenze ist in allen drei 1.000.
+    /// Gegenstueck: Python `runner._dhf_params` (`tests/test_werbungskosten_n.py`).
+    #[test]
+    fn dhf_auslandsgrenze_gilt_erst_ab_vz2026() {
+        let p = params();
+        for (vz, ausland) in [
+            (Vz::Vz2024, None),
+            (Vz::Vz2025, None),
+            (Vz::Vz2026, Some(Euro::new(2000))),
+        ] {
+            let g = p.dhf(vz).unwrap();
+            assert_eq!(g.cap_monat_inland, Euro::new(1000));
+            assert_eq!(g.cap_monat_ausland, ausland);
+        }
+    }
+
+    /// `params` mit einer ersetzten `dhf_p9_1_nr5.yaml` fuer VZ 2025: Kopf wie die echte Datei,
+    /// der Rest aus `rumpf`.
+    fn mit_dhf(rumpf: &str) -> Params {
+        let kopf = "parameter: dhf_p9_1_nr5\nveranlagungszeitraum: 2025\nauthority: gesetz\n\
+                    redistributable: true\ngueltig_ab: \"2025-01-01\"\n";
+        let datei = serde_yaml_ng::from_str(&format!("{kopf}{rumpf}")).unwrap();
+        let mut p = params();
+        p.jahre
+            .insert((2025, "dhf_p9_1_nr5.yaml".to_string()), datei);
+        p
+    }
+
+    const INLAND: &str = "cap_monat_inland:\n  wert: 1000\n";
+
+    /// Fehlender Schluessel, leerer Block, leerer Wert: alle drei heissen "keine Grenze" (`None`),
+    /// weder Fehler noch 0. Python `(p.get("cap_monat_ausland") or {}).get("wert")` liest sie gleich.
+    #[test]
+    fn dhf_fehlende_auslandsgrenze_ist_keine_grenze_kein_fehler() {
+        for ausland in [
+            "",
+            "cap_monat_ausland:\n",
+            "cap_monat_ausland: {}\n",
+            "cap_monat_ausland:\n  wert:\n",
+            "cap_monat_ausland:\n  einheit: euro_je_monat\n",
+        ] {
+            let g = mit_dhf(&format!("{INLAND}{ausland}"))
+                .dhf(Vz::Vz2025)
+                .unwrap();
+            assert_eq!(g.cap_monat_inland, Euro::new(1000), "{ausland:?}");
+            assert_eq!(g.cap_monat_ausland, None, "{ausland:?}");
+        }
+    }
+
+    /// Eine vorhandene Auslandsgrenze wird gelesen -- 2026 traegt sie, und ein spaeteres Wiederauftauchen
+    /// in einer anderen Datei darf nicht still verschluckt werden.
+    #[test]
+    fn dhf_vorhandene_auslandsgrenze_wird_gelesen() {
+        let g = mit_dhf(&format!("{INLAND}cap_monat_ausland:\n  wert: 2000\n"))
+            .dhf(Vz::Vz2025)
+            .unwrap();
+        assert_eq!(g.cap_monat_ausland, Some(Euro::new(2000)));
+    }
+
+    /// Kaputte Daten sind Fehler, keine "keine Grenze": ein Auslandsschluessel, der kein Block ist,
+    /// oder ein `wert` ohne ganze Zahl. Und die Inlandsgrenze darf nie still fehlen.
+    #[test]
+    fn dhf_kaputte_daten_sind_fehler_nicht_keine_grenze() {
+        for ausland in [
+            "cap_monat_ausland: 2000\n",
+            "cap_monat_ausland:\n  wert: zweitausend\n",
+        ] {
+            assert!(
+                mit_dhf(&format!("{INLAND}{ausland}"))
+                    .dhf(Vz::Vz2025)
+                    .is_err(),
+                "{ausland:?}"
+            );
+        }
+        assert!(mit_dhf("").dhf(Vz::Vz2025).is_err());
     }
 }

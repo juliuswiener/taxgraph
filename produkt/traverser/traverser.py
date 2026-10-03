@@ -530,9 +530,54 @@ def _nach_themen(felder: list[str], bindung: dict,
         eingang = [f for f in gruppe if bindung[f].get("eingangsfrage")]
         if eingang:
             gruppe = eingang + [f for f in gruppe if f not in eingang]
-        nach_thema[thema] = _nach_vordruck(gruppe, bindung, gw_einmal, gewicht_aktiv)
+        nach_thema[thema] = _nach_ausloesern(
+            _nach_vordruck(gruppe, bindung, gw_einmal, gewicht_aktiv), bindung)
     return [f for thema in _themen_folge(nach_thema, bindung, angefangen or [])
             for f in nach_thema[thema]]
+
+
+def _nach_ausloesern(gruppe: list[str], bindung: dict) -> list[str]:
+    """Ein Feld mit `ableitung` steht hinter seinen Auslösern (`aus`, `und_feld`), auch im selben
+    Thema (Vault: decisions/ableitung-feuert-je-instanz-und-frage-nach-beiden-ausloesern, Punkt 2).
+
+    `_themen_folge` tut das nur für THEMEN. Innerhalb eines Themas entschied die Klasse: das Ziel
+    `kind_unter_14_haushaltszugehoerig` ist ein Gate (Gewicht > 0), sein `und_feld`
+    `…haushaltszugehoerigkeit_zeitraum` ein Slot, und Gates stehen vor Slots. Gemessen 2026-10-03
+    mit bekanntem Geburtsdatum: Ziel Platz 209, Zeitraum Platz 211. Wer der Queue folgt, beantwortet
+    das Ziel, bevor die Ableitung feuern kann — ein „Nein" kostet den Abzug. Beantwortet er den
+    Zeitraum zuerst, feuert sie und das Ziel verschwindet.
+
+    Das Ziel bleibt eine Frage (Rückfall: ist das Kind über 14 oder fehlt eine Quelle, feuert nichts).
+    Nur seine STELLE ändert sich: direkt hinter den letzten Auslöser, der noch weiter hinten steht.
+    Mehrere Nachzügler hinter demselben Auslöser behalten ihre Reihenfolge; die Menge bleibt gleich.
+
+    Ein Auslöser, der selbst eine `ableitung` trägt, zählt nicht (keine Ketten, s.
+    test_keine_ableitung_speist_eine_andere): er könnte selbst nachrücken, und sein Nachzügler ginge
+    verloren. Auslöser in einem anderen Thema oder schon beantwortet (nicht in `gruppe`) zählen auch
+    nicht.
+    ponytail: nur Auslöser derselben Gruppe. Liegt ein `und_feld` in einem anderen Thema, ordnet
+    `_themen_folge` es nicht vor (dort gilt nur `aus`). Heute gibt es keinen solchen Fall; Upgrade:
+    `_merke(thema, ableitung.get("und_feld"))` ebendort.
+    """
+    ort = {f: i for i, f in enumerate(gruppe)}
+    hinter: dict[str, list[str]] = {}
+    for f in gruppe:
+        regel = bindung[f].get("ableitung")
+        if not regel:
+            continue
+        weiter_hinten = [ort[x] for x in (regel.get("aus"), regel.get("und_feld"))
+                         if x in ort and ort[x] > ort[f] and not bindung[x].get("ableitung")]
+        if weiter_hinten:
+            hinter.setdefault(gruppe[max(weiter_hinten)], []).append(f)
+    if not hinter:
+        return gruppe
+    nachgezogen = {f for fs in hinter.values() for f in fs}
+    aus: list[str] = []
+    for f in gruppe:
+        if f not in nachgezogen:
+            aus.append(f)
+            aus.extend(hinter.get(f, []))
+    return aus
 
 
 def _feld_ausgeschlossen(eintrag: dict, aktiv: dict, bindung: dict | None = None) -> bool:

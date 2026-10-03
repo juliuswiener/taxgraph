@@ -748,6 +748,237 @@ fn hh_summe_ist_die_summe_der_gerundeten_posten() {
     assert_eq!(d.deklaration.get("E0111215"), Some(&json!(3001)));
 }
 
+// ------------------------------------------- Anlage R: mehrere Renten einer Person
+//
+// `<R>` traegt `maxOccurs="2"` (ein `<R>` je PERSON, Index 1 = PersonB); die Renten einer Person
+// stehen als `<Einz>` (`maxOccurs="99"`) in `<Leibr_gesetzl>`/`<Leibr_priv>`/`<Leibr_sonst>` (je
+// `maxOccurs="1"`). Ohne Eintrag `("rente", "Einz")` in `INSTANZ_CONTAINER_TIEFER` legte die zweite
+// Rente einer Person ein zweites `<R>` an (PersonB) — ERiC lehnt die Einzelveranlagung ab
+// (rc=610001002, gemessen 2026-10-03). Die Python-Seite prueft dasselbe in
+// tests/test_elster_xml.py; hier steht die Rust-Messung direkt.
+
+/// Der `<R>`-Baum als Zeilen, in Dokumentreihenfolge: je `<R>` eine Zeile `R <Person>`, je `<Einz>`
+/// darunter `<Container>: <Kz>=<Text> …`. Ein leeres `<Einz>` ist eine Zeile ohne Kz und faellt im
+/// Vergleich auf. Eine Kz, die in EINEM `<Einz>` zweimal steht, bricht ab.
+fn anlagen_r(xml: &str) -> Vec<String> {
+    let doc = roxmltree::Document::parse(xml).unwrap();
+    let name = |n: &roxmltree::Node<'_, '_>| n.tag_name().name().to_owned();
+    let mut zeilen = Vec::new();
+    for r in doc
+        .descendants()
+        .filter(|n| n.is_element() && name(n) == "R")
+    {
+        let person = r
+            .children()
+            .find(|c| c.is_element() && name(c) == "Person")
+            .and_then(|c| c.text())
+            .unwrap_or("?");
+        zeilen.push(format!("R {person}"));
+        for container in r
+            .children()
+            .filter(|c| c.is_element() && name(c).starts_with("Leibr"))
+        {
+            for einz in container.children().filter(roxmltree::Node::is_element) {
+                let kz: Vec<(String, &str)> = einz
+                    .children()
+                    .filter(roxmltree::Node::is_element)
+                    .map(|k| (name(&k), k.text().unwrap_or("")))
+                    .collect();
+                let mut namen: Vec<&String> = kz.iter().map(|(n, _)| n).collect();
+                namen.sort();
+                namen.dedup();
+                assert_eq!(namen.len(), kz.len(), "Kz doppelt im <Einz>: {kz:?}");
+                let inhalt: Vec<String> = kz.iter().map(|(n, t)| format!("{n}={t}")).collect();
+                zeilen.push(format!("{}: {}", name(&container), inhalt.join(" ")));
+            }
+        }
+    }
+    zeilen
+}
+
+fn rente_1() -> Vec<(&'static str, Value)> {
+    vec![
+        ("rentner_renten_art", json!("gesetzliche_rente")),
+        ("rentner_jahresrente", json!(1_800_000)),
+        ("rentner_renten_beginn_jahr", json!(2015)),
+    ]
+}
+
+fn rente_2(art: &str) -> Vec<(&'static str, Value)> {
+    vec![
+        ("rentner_renten_art__2", json!(art)),
+        ("rentner_jahresrente__2", json!(900_000)),
+        ("rentner_renten_beginn_jahr__2", json!(2012)),
+        ("rentner_alter_bei_rentenbeginn__2", json!(65)),
+    ]
+}
+
+fn rente_partner() -> Vec<(&'static str, Value)> {
+    vec![
+        ("kein_sonstige_partner", json!(false)),
+        ("rentner_renten_art_partner", json!("gesetzliche_rente")),
+        ("rentner_jahresrente_partner", json!(700_000)),
+        ("rentner_renten_beginn_jahr_partner", json!(2016)),
+    ]
+}
+
+fn rente_xml(veranlagung: &str, teile: &[Vec<(&'static str, Value)>]) -> String {
+    let mut paare = vec![("veranlagung", json!(veranlagung))];
+    paare.extend(teile.iter().flatten().cloned());
+    let d = deklariere(&bestaetigt(&paare), index(), 2025, None).unwrap();
+    assert!(d.eingaben_konsistent(), "{:?}", d.unvollstaendig());
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        ..XmlOptionen::default()
+    };
+    erzeuge_xml(&d, &opt).unwrap()
+}
+
+const GESETZL_1: &str = "Leibr_gesetzl: E1800301=18000 E1800501=01.01.2015";
+const GESETZL_2: &str = "Leibr_gesetzl: E1800301=9000 E1800501=01.01.2012";
+const PRIV_2: &str = "Leibr_priv: E1801601=9000 E1801701=01.01.2012";
+const GESETZL_B: &str = "Leibr_gesetzl: E1800301=7000 E1800501=01.01.2016";
+
+/// AK1 (Rust-Seite): Einzelveranlagung, zwei gesetzliche Renten -> EIN `<R>`, EIN
+/// `<Leibr_gesetzl>`, ZWEI `<Einz>`.
+#[test]
+fn rente_zwei_gesetzliche_einer_person_ein_r_zwei_einz() {
+    if !schemas_da(2025) {
+        return;
+    }
+    let xml = rente_xml("einzel", &[rente_1(), rente_2("gesetzliche_rente")]);
+    assert_eq!(anlagen_r(&xml), ["R PersonA", GESETZL_1, GESETZL_2]);
+}
+
+/// AK2 (Rust-Seite): gesetzlich + privat -> je EIN `<Einz>` in `<Leibr_gesetzl>` und
+/// `<Leibr_priv>`. Zaehlte die Gruppen-Nummer 2 statt des Rangs, stuende vor dem privaten Posten
+/// ein leeres `<Einz>` (ERiC: `Kontext '/R[1]/Leibr_priv[1]/Einz[1]' ist leer`).
+#[test]
+fn rente_gesetzlich_plus_privat_je_ein_einz_ohne_leeres() {
+    if !schemas_da(2025) {
+        return;
+    }
+    let xml = rente_xml("einzel", &[rente_1(), rente_2("private_leibrente")]);
+    assert_eq!(anlagen_r(&xml), ["R PersonA", GESETZL_1, PRIV_2]);
+}
+
+/// AK3 (Rust-Seite): Zusammenveranlagung, zweite Rente von A + Rente von B -> `<R>[1]` (A) mit
+/// zwei `<Einz>`, `<R>[2]` (B) mit einem. Person B behaelt ihre eigene Anlage R.
+#[test]
+fn rente_zusammen_zweite_rente_a_und_rente_b_zwei_r() {
+    if !schemas_da(2025) {
+        return;
+    }
+    let xml = rente_xml(
+        "zusammen",
+        &[rente_1(), rente_2("gesetzliche_rente"), rente_partner()],
+    );
+    assert_eq!(
+        anlagen_r(&xml),
+        ["R PersonA", GESETZL_1, GESETZL_2, "R PersonB", GESETZL_B]
+    );
+}
+
+/// AK8 (Rust-Seite): eine Rente bleibt wie bisher EIN `<R>` mit EINEM `<Einz>`; mit Partner-Rente
+/// zwei `<R>`. Gegenprobe, dass der Rang die Einzelfaelle nicht anruehrt.
+#[test]
+fn rente_einzelne_rente_bleibt_unveraendert() {
+    if !schemas_da(2025) {
+        return;
+    }
+    assert_eq!(
+        anlagen_r(&rente_xml("einzel", &[rente_1()])),
+        ["R PersonA", GESETZL_1]
+    );
+    assert_eq!(
+        anlagen_r(&rente_xml("zusammen", &[rente_1(), rente_partner()])),
+        ["R PersonA", GESETZL_1, "R PersonB", GESETZL_B]
+    );
+}
+
+/// AK3 (Rust-Seite, Schema): das XML mit mehreren Renten haelt das amtliche XSD.
+#[test]
+fn rente_mehrere_renten_sind_xsd_valide() {
+    if !schemas_da(2025) {
+        return;
+    }
+    for (name, veranlagung, teile) in [
+        (
+            "einzel gesetzlich+gesetzlich",
+            "einzel",
+            vec![rente_1(), rente_2("gesetzliche_rente")],
+        ),
+        (
+            "einzel gesetzlich+privat",
+            "einzel",
+            vec![rente_1(), rente_2("private_leibrente")],
+        ),
+        (
+            "zusammen zweite Rente A + Rente B",
+            "zusammen",
+            vec![rente_1(), rente_2("gesetzliche_rente"), rente_partner()],
+        ),
+    ] {
+        let xml = rente_xml(veranlagung, &teile);
+        let (ok, meldung) = elster::validiere_xsd_text(xml.as_bytes(), Vz::Vz2025);
+        assert!(ok, "{name}: {meldung}");
+    }
+}
+
+/// Luecke im Instanzindex: Instanz 1 und 3, keine 2. Der Store erlaubt das (`eingaben_konsistent`
+/// bleibt wahr, es fehlt nur `__2`). Die Gruppen-Nummer 3 legte VOR dem Posten ein leeres `<Einz>`
+/// an (ERiC: "Kontext ... ist leer"); der Rang zaehlt dicht. Das ist die EINZIGE Abweichung vom
+/// alten XML der vier bestehenden Gruppen und sie ist gewollt. Python-Gegenstueck:
+/// `test_luecke_im_instanzindex_zaehlt_dicht_ohne_leeres_einz`.
+#[test]
+fn luecke_im_instanzindex_zaehlt_dicht_ohne_leeres_einz() {
+    if !schemas_da(2025) {
+        return;
+    }
+    for (gruppe, art, betrag) in [
+        ("hh_minijob", "hh_minijob_art", "hh_minijob_betrag"),
+        (
+            "hh_dienstleistung",
+            "hh_dienstleistung_art",
+            "hh_dienstleistung_betrag",
+        ),
+        ("hh_handwerker", "hh_handwerker_art", "hh_handwerker_betrag"),
+    ] {
+        let paare = [
+            (art, json!("1")),
+            (betrag, json!(120_000)),
+            (&format!("{art}__3")[..], json!("2")),
+            (&format!("{betrag}__3")[..], json!(80_000)),
+        ];
+        let d = deklariere(&bestaetigt(&paare), index(), 2025, None).unwrap();
+        let indizes: Vec<u64> = d
+            .instanzen_der_gruppe(gruppe)
+            .iter()
+            .map(|i| i.index)
+            .collect();
+        assert!(d.eingaben_konsistent(), "{gruppe}: Vorbedingung");
+        assert_eq!(indizes, [3], "{gruppe}: Vorbedingung, Instanz 2 fehlt");
+        let opt = XmlOptionen {
+            hersteller_id: Some("74931".to_owned()),
+            ..XmlOptionen::default()
+        };
+        let xml = erzeuge_xml(&d, &opt).unwrap();
+        let doc = roxmltree::Document::parse(&xml).unwrap();
+        let einz: Vec<Vec<&str>> = doc
+            .descendants()
+            .filter(|n| n.is_element() && n.tag_name().name() == "Einz")
+            .map(|e| {
+                e.children()
+                    .filter(roxmltree::Node::is_element)
+                    .map(|k| k.text().unwrap_or(""))
+                    .collect()
+            })
+            .collect();
+        // beide Posten stehen drin, in Instanz-Reihenfolge, kein leeres <Einz> (120000 Cent = 1200)
+        assert_eq!(einz, [["1", "1200"], ["2", "800"]], "{gruppe}");
+    }
+}
+
 /// Was das Vorsatz-Seitengate verlangt: Name, Anschrift, Bankentscheidung, Steuernummer.
 fn seitengate() -> Vec<(&'static str, Value)> {
     vec![

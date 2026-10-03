@@ -994,3 +994,127 @@ fn rentner_gesamt_meldet_keine_felder_die_sein_kegel_nie_fragt() {
          — gemeldet {luecken:?}"
     );
 }
+
+// ---------------------------------------------------------------- GWG: kein stiller Abzug von 0
+
+/// Kegel von `tests/test_gwg_tatbestand_sperre.py::_KEGEL` (Gesamt): ein EUeR-Weg ohne Betraege, damit
+/// die GWG-Zeile das Einzige ist, das die Steuer bewegt.
+fn gwg_basis(sonstige_cent: i64) -> Vec<(&'static str, Value)> {
+    vec![
+        ("bruttoarbeitslohn", json!(6_000_000)),
+        ("vv_entgelt_quote_prozent", json!(100)),
+        ("kein_gewinn", json!(false)),
+        ("betriebseinnahmen", json!(0)),
+        ("sonstige_betriebsausgaben", json!(sonstige_cent)),
+        ("afa_jahresbetrag", json!(0)),
+        // wie in Python bewusst True: sie halten die Regel p33_1_2_agb_abzug im Kegel offen
+        ("agb_zwangslaeufig", json!(true)),
+        ("agb_notwendig_angemessen", json!(true)),
+    ]
+}
+
+/// `None` = nicht beantwortet.
+fn gwg_lauf(
+    betrag: Option<i64>,
+    nutzbar: Option<bool>,
+    netto: Option<bool>,
+    verzeichnis: Option<bool>,
+    sonstige_cent: i64,
+) -> (Grund, Option<i64>) {
+    let mut paare = gwg_basis(sonstige_cent);
+    if let Some(b) = betrag {
+        paare.push(("gwg_anschaffungskosten_netto", json!(b)));
+    }
+    for (feld, wert) in [
+        ("gwg_bewegliches_selbstaendig_nutzbar", nutzbar),
+        ("gwg_netto_ohne_vorsteuer", netto),
+        ("gwg_verzeichnis_ab_250", verzeichnis),
+    ] {
+        if let Some(w) = wert {
+            paare.push((feld, json!(w)));
+        }
+    }
+    ergebnis(&fall(Scheibe::Gesamt, &paare, &[]))
+}
+
+/// `test_gwg_tatbestand_sperre.py::OFFEN_FAELLE`: jedes Geraet mit Betrag > 0, das keinen Sofortabzug
+/// bekommt, ist sichtbar OFFEN (keine Zahl, ein Grund). Vor 2026-10-03 war es `Bestaetigt` mit einem
+/// stillen Abzug von 0 (gemessen 790 EUR + "netto: nein": Steuer des Falls ohne GWG, 304,00 EUR ueber
+/// der Referenz). Gleiche Gruende, gleiche Reihenfolge wie Python (`_an_gesamt_sperrgrund`).
+#[test]
+fn gwg_ohne_sofortabzug_ist_offen_nicht_stille_null() {
+    use Sperrgrund::{GwgAbschreibungOffen as Afa, GwgMehrwertsteuerOffen as Mwst};
+    const MITTEL: i64 = 50_000;
+    const UEBER_800: i64 = 100_000;
+    // (Name, Betrag, nutzbar, netto, verzeichnis, Grund)
+    #[allow(clippy::type_complexity)]
+    let faelle: &[(&str, i64, Option<bool>, Option<bool>, Option<bool>, Sperrgrund)] = &[
+        ("790 brutto, netto=nein", 79_000, Some(true), Some(false), Some(true), Mwst),
+        ("500 brutto, netto=nein", MITTEL, Some(true), Some(false), Some(true), Mwst),
+        ("850 brutto, netto=nein", 85_000, Some(true), Some(false), Some(true), Mwst),
+        ("1000 brutto, netto=nein", UEBER_800, Some(true), Some(false), Some(true), Mwst),
+        ("500, Verzeichnis=nein", MITTEL, Some(true), Some(true), Some(false), Afa),
+        ("500, nicht selbstaendig nutzbar", MITTEL, Some(false), Some(true), Some(true), Afa),
+        ("500, nicht nutzbar UND netto=nein", MITTEL, Some(false), Some(false), Some(true), Afa),
+        ("800,01 netto", 80_001, Some(true), Some(true), Some(true), Afa),
+        ("1000 netto, alles ja", UEBER_800, Some(true), Some(true), Some(true), Afa),
+        ("1000, Fragen unbeantwortet", UEBER_800, None, None, None, Afa),
+        ("250,01 ohne Verzeichnis", 25_001, Some(true), Some(true), Some(false), Afa),
+    ];
+    for (name, betrag, nutzbar, netto, verz, erwartet) in faelle {
+        assert_eq!(
+            gwg_lauf(Some(*betrag), *nutzbar, *netto, *verz, 0),
+            (Grund::Sperre(*erwartet), None),
+            "{name}"
+        );
+    }
+}
+
+/// Gegenprobe von der anderen Seite und Kontrolle gegen die Blindheit der Messung: mit "netto: ja" wirkt
+/// der Sofortabzug (790 EUR = 790 EUR als sonstige Betriebsausgabe), an den Grenzen (800,00 / 250,00 EUR)
+/// bleibt er, und ein Betrag von 0 ist der Ausweg ("netto: nein" sperrt dann nicht).
+#[test]
+fn gwg_sofortabzug_bleibt_wo_er_zusteht() {
+    let alle_ja = |b: i64| gwg_lauf(Some(b), Some(true), Some(true), Some(true), 0);
+    let (g_ohne, ohne) = gwg_lauf(None, None, None, None, 0);
+    let (g_ref, referenz) = gwg_lauf(None, None, None, None, 79_000);
+    let (g_ja, ja) = alle_ja(79_000);
+    assert_eq!(
+        (g_ohne, g_ref, g_ja),
+        (Grund::Bestaetigt, Grund::Bestaetigt, Grund::Bestaetigt)
+    );
+    assert_ne!(referenz, ohne, "KONTROLLE: Messung blind, Referenz == Fall ohne Abzug");
+    assert_eq!(ja, referenz, "790 EUR netto: Sofortabzug == Betriebsausgabe");
+    assert_eq!(alle_ja(80_000).0, Grund::Bestaetigt, "800,00 EUR ist die Grenze, kein Ueberschuss");
+    assert_eq!(
+        gwg_lauf(Some(25_000), Some(true), Some(true), Some(false), 0).0,
+        Grund::Bestaetigt,
+        "250,00 EUR: die Verzeichnispflicht beginnt darueber"
+    );
+    assert_eq!(
+        gwg_lauf(Some(0), Some(true), Some(false), Some(true), 0).0,
+        Grund::Bestaetigt,
+        "Betrag 0: nichts wegzulassen, der Ausweg"
+    );
+}
+
+/// Ein VORLAEUFIGES "netto: nein" (Vorjahres-Vorschlag) ist keine Antwort: `GwgTatbestandOffen`, nicht
+/// `GwgMehrwertsteuerOffen`. Nur ein bestaetigtes "nein" ist ein Urteil (Zwei-Signal-Regel).
+#[test]
+fn gwg_vorlaeufiges_nein_ist_keine_antwort() {
+    let mut paare = gwg_basis(0);
+    paare.extend([
+        ("gwg_anschaffungskosten_netto", json!(50_000)),
+        ("gwg_bewegliches_selbstaendig_nutzbar", json!(true)),
+        ("gwg_verzeichnis_ab_250", json!(true)),
+    ]);
+    let f = fall(
+        Scheibe::Gesamt,
+        &paare,
+        &[("gwg_netto_ohne_vorsteuer", json!(false))],
+    );
+    assert_eq!(
+        ergebnis(&f),
+        (Grund::Sperre(Sperrgrund::GwgTatbestandOffen), None)
+    );
+}

@@ -1,6 +1,9 @@
 # Doppelte Haushaltsführung § 9 Abs. 1 Satz 3 Nr. 5 EStG — Unterkunfts-Monatskappung, VZ 2026.
 # Abziehbar sind die Unterkunftskosten am Zweitwohnort, gekappt auf 1.000 Euro/Monat im Inland
-# (2.000 Euro/Monat im Ausland). Werte VZ-konstant seit 2014 (BGBl. I 2013 S. 285).
+# (2.000 Euro/Monat im Ausland). Die Auslandsgrenze ist NEU ab VZ 2026 (StÄndG 2025, BGBl. 2025 I
+# Nr. 363, anzuwenden erstmals VZ 2026 nach § 52 Abs. 1 S. 1 EStG) und fehlt deshalb in params/2024
+# und params/2025 (dort heisst "fehlt": keine Grenze). Der frühere Kopf nannte beide Grenzen
+# „VZ-konstant seit 2014 (BGBl. I 2013 S. 285)"; das gilt höchstens für den Inlandsbetrag.
 # Datenquelle: eingefrorene Gesetzesfassung sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt.
 
 parameter: dhf_p9_1_nr5

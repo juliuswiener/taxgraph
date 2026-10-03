@@ -251,6 +251,29 @@ def _fall_zusammen_kirchensteuerpflichtig():
     return s
 
 
+# Anlage R, mehrere Renten (Vault: einzelveranlagung-zweite-anlage-r-lehnt-eric-ab). Rente 1 steht
+# in `_BASIS_RENTNER_MIT_RENTE` (gesetzlich, 18.000 EUR, Beginn 2015), die zweite Rente DERSELBEN
+# Person ist die Instanz `__2`, die Rente von Person B tragen die `_partner`-Felder (ohne Gruppe).
+def _rente_2(art, jahresrente=900_000, beginn=2012, alter=65):
+    return (("rentner_renten_art__2", art), ("rentner_jahresrente__2", jahresrente),
+            ("rentner_renten_beginn_jahr__2", beginn), ("rentner_alter_bei_rentenbeginn__2", alter))
+
+
+_RENTE_PARTNER = (("rentner_renten_art_partner", "gesetzliche_rente"),
+                  ("rentner_jahresrente_partner", 700_000),
+                  ("rentner_renten_beginn_jahr_partner", 2016))
+
+
+def _fall_rente(veranlagung, zweite=(), partner=()):
+    # Lazy: test_rentenbeginn_kein_datumsformat importiert _b/_ABSENDER aus DIESER Datei.
+    from test_rentenbeginn_kein_datumsformat import _BASIS_RENTNER_MIT_RENTE
+    s = ST.leerer_store(2025, fall_id=f"durchstich_rente_{veranlagung}")
+    for f, w in _BASIS_RENTNER_MIT_RENTE + tuple(zweite) + tuple(partner):
+        _b(s, f, w)
+    _b(s, "veranlagung", veranlagung)
+    return s
+
+
 # Absender-Stammdaten fuer den Vorsatz-Block. Sie liegen noch nicht als Fall-Felder vor
 # (Bau laeuft), muessen fuer den ABGABE-Pfad aber gesetzt sein — erzeuge_xml() verlangt sie
 # fail-closed bei abgabefaehig=True. Werte aus dem amtlichen Beispiel-XML
@@ -520,6 +543,24 @@ def test_spenden_zeile_5_besteht_die_amtliche_pruefung(name, spenden, mit_zeile_
     # Vorbedingung: der Fall traegt, was er messen soll
     assert ("E0108105" in dekl["deklaration"]) is mit_zeile_5, dekl["nicht_deklariert"]
     rc, texte, _ = _pruefe(store)
+    assert rc == CE.RC_OK, (
+        f"[{name}] rc={rc} [{CE.klassifiziere_rc(rc)}], erwartet RC_OK. "
+        f"Beanstandungen:\n" + "\n".join(f"  - {t[:200]}" for t in texte))
+
+
+# Anlage R: zwei Renten derselben Person bei Einzelveranlagung (Vault: einzelveranlagung-zweite-anlage-
+# r-lehnt-eric-ab). Vor dem Fix legte die zweite Rente ein zweites <R> (PersonB) an: rc=610001002, „Es
+# handelt sich um eine Einzelveranlagung, daher darf fuer die Ehefrau / Person B keine Anlage R
+# ausgefuellt werden."; gesetzlich + privat zusaetzlich „Kontext '/R[1]/Leibr_priv[1]/Einz[1]' ist leer".
+# Die Kontrolle mit EINER Rente belegt, dass der Aufbau (Rentner-Basis) selbst durchkommt.
+@braucht_eric
+@pytest.mark.parametrize("name,zweite", [
+    ("kontrolle_eine_rente", ()),
+    ("gesetzlich_gesetzlich", _rente_2("gesetzliche_rente")),
+    ("gesetzlich_privat", _rente_2("private_leibrente")),
+])
+def test_einzelveranlagung_mehrere_renten_einer_person_bestehen_die_amtliche_pruefung(name, zweite):
+    rc, texte, _ = _pruefe(_fall_rente("einzel", zweite))
     assert rc == CE.RC_OK, (
         f"[{name}] rc={rc} [{CE.klassifiziere_rc(rc)}], erwartet RC_OK. "
         f"Beanstandungen:\n" + "\n".join(f"  - {t[:200]}" for t in texte))

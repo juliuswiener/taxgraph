@@ -9,7 +9,7 @@
 //! 2026-08-09), obwohl das XSD beide Fassungen annimmt. Die Ausgabe ist byte-gleich zu
 //! `ET.indent(space="\t")` + `ET.tostring` + der Praefix-Nachbearbeitung des Originals.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::fmt;
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -29,13 +29,17 @@ pub const TESTMERKER_ERIC: &str = "700000004";
 /// Kz aus `anlage_instanzen`/`deklaration`, die in eine andere Datenart gehoeren (E60xx → E77).
 const E10_AUSSCHLUSS_DATENART: &[&str] = &["E6002301", "E6004901"];
 /// Gruppen, deren Wiederholung tiefer als am E10-Direktkind haengt (`<SO>` maxOccurs=1,
-/// `<HA_35a>` maxOccurs=1 — die Posten wiederholen sich ueber `<Einz>` darunter).
+/// `<HA_35a>` maxOccurs=1 — die Posten wiederholen sich ueber `<Einz>` darunter). `rente`:
+/// `<R>` traegt maxOccurs=2 (ein `<R>` je PERSON), die Renten einer Person stehen als `<Einz>` in
+/// `<Leibr_gesetzl>`/`<Leibr_priv>`/`<Leibr_sonst>` (je maxOccurs=1). Ohne Eintrag legt die zweite
+/// Rente einer Person ein zweites `<R>` an (`PersonB`) — ERiC lehnt ab (rc=610001002).
 /// Muss mit `elster_xml.py::INSTANZ_CONTAINER_TIEFER` wortgleich sein (Paritaetskriterium).
 const INSTANZ_CONTAINER_TIEFER: &[(&str, &str)] = &[
     ("p23_veraeusserung", "Einz"),
     ("hh_minijob", "Einz"),
     ("hh_dienstleistung", "Einz"),
     ("hh_handwerker", "Einz"),
+    ("rente", "Einz"),
 ];
 /// Skalare Pflicht-Diskriminatoren ohne Kz.
 const PFLICHT_DEFAULT: &[(&str, &str)] = &[("Person", "PersonA"), ("Laufende_Nummer_V", "1")];
@@ -561,12 +565,23 @@ fn liste_repr(l: &[String]) -> String {
 
 type InstanzMap<'d> = HashMap<&'d str, Vec<(Vec<String>, usize, &'d Value)>>;
 
+/// Ein Eintrag vor der Rang-Vergabe: Kz, Gruppe, Container, 0-basierter Instanzindex, Wert.
+type RoherEintrag<'d> = (&'d str, &'d str, Vec<String>, usize, &'d Value);
+
+/// Im tieferen Container zaehlt der RANG der Instanz, nicht ihre Gruppen-Nummer (Spiegel von
+/// `elster_xml.py::erzeuge_xml`): Hat Person A eine gesetzliche (Instanz 1) und eine private Rente
+/// (Instanz 2), steht die private als ERSTER Posten in `<Leibr_priv>`. Die Gruppen-Nummer 2 legte
+/// davor ein leeres `<Einz>` an (ERiC: "Kontext ... ist leer"). Rang = Platz unter den Instanzen
+/// DERSELBEN Gruppe, die in denselben Container schreiben; Instanz 1 steht in `deklaration` und
+/// belegt Platz 0, wenn dort ein Kz von ihr im Container liegt. Eine Luecke (Instanz 1 und 3, ohne
+/// 2) zaehlt dicht: das alte `<Einz>` ohne Inhalt ist weg.
 fn baue_instanz_map<'d>(
     result: &'d Deklaration,
     pfade: &HashMap<&str, &[String]>,
     vz: i64,
 ) -> Result<InstanzMap<'d>, XmlFehler> {
-    let mut map: InstanzMap<'d> = HashMap::new();
+    let mut rohe: Vec<RoherEintrag<'d>> = Vec::new();
+    let mut belegt: HashMap<(&'d str, Vec<String>), BTreeSet<usize>> = HashMap::new();
     for (gruppe, instanzen) in &result.anlage_instanzen {
         for inst in instanzen {
             let idx0 = usize::try_from(inst.index.saturating_sub(1)).unwrap_or(usize::MAX);
@@ -590,15 +605,40 @@ fn baue_instanz_map<'d>(
                     .iter()
                     .find(|(g, _)| g == gruppe)
                     .map(|(_, s)| *s);
-                let ende = tiefer
+                let tiefer_ende = tiefer
                     .and_then(|s| kz_pfad.iter().position(|p| p == s))
-                    .map_or(2, |i| i + 1);
-                let container = kz_pfad.get(..ende).unwrap_or(kz_pfad).to_vec();
-                map.entry(kz.as_str())
-                    .or_default()
-                    .push((container, idx0, wert));
+                    .map(|i| i + 1);
+                let container = kz_pfad
+                    .get(..tiefer_ende.unwrap_or(2))
+                    .unwrap_or(kz_pfad)
+                    .to_vec();
+                if tiefer_ende.is_some() {
+                    belegt
+                        .entry((gruppe.as_str(), container.clone()))
+                        .or_default()
+                        .insert(idx0);
+                }
+                rohe.push((kz.as_str(), gruppe.as_str(), container, idx0, wert));
             }
         }
+    }
+    for ((_, container), plaetze) in &mut belegt {
+        let a_steht_drin = result
+            .deklaration
+            .keys()
+            .filter_map(|k| pfade.get(k.as_str()))
+            .any(|p| p.get(..container.len()) == Some(container.as_slice()));
+        if a_steht_drin {
+            plaetze.insert(0); // Instanz 1 (Person A, `deklaration`) steht schon im ersten <Einz>
+        }
+    }
+    let mut map: InstanzMap<'d> = HashMap::new();
+    for (kz, gruppe, container, idx0, wert) in rohe {
+        let rang = belegt
+            .get(&(gruppe, container.clone()))
+            .and_then(|plaetze| plaetze.iter().position(|p| *p == idx0))
+            .unwrap_or(idx0);
+        map.entry(kz).or_default().push((container, rang, wert));
     }
     Ok(map)
 }
