@@ -68,16 +68,18 @@ def zeige(eintraege: list[dict]) -> None:
                 print(f"          {q['feld_id']:42s}{inst} {q.get('frage', '')[:74]}")
 
         elif art == "antwort":
-            # Der Zweig zeigt fuenf der sechs Werte des `antwort`-Eintrags; alle sechs stehen im
-            # Fall. `zustand` folgt mit dem Leser — er unterscheidet bestaetigt von vorlaeufig,
-            # und diese Auskunft fehlt spaeter. Kein Verlust-Auffangnetz, sondern eine Auswahl.
+            # Alle sechs Werte des `antwort`-Eintrags erscheinen. `zustand` unterscheidet bestaetigt
+            # von vorlaeufig; gekennzeichnet wird nur das Ausnahmewort `vorlaeufig` (Vault:
+            # decisions/mitschnitt-leser-zeigt-vorlaeufig-als-solches), die Zeile fuer `bestaetigt`
+            # bleibt, wie sie war. tests/test_flow_leser_zustand.py haelt beides fest.
             weg = (i.get("weg") or "").split("@")[0] or ""
             marke = SCHIRME.get(weg) or (
                 "KI-Vorschlag" if str(i.get("schreiber", "")).startswith("llm")
                 else f"automatisch ({i.get('schreiber')})" if not weg else weg)
             korr = "  (ersetzt)" if i.get("ersetzt") else ""
+            vorl = "  (vorläufig)" if i.get("zustand") == "vorlaeufig" else ""
             print(f"{t}  → {marke:22s} {i.get('feld_id'):40s} = "
-                  f"{str(i.get('wert'))[:34]}{korr}")
+                  f"{str(i.get('wert'))[:34]}{korr}{vorl}")
 
         elif art == "weg_gewaehlt":
             print(f"\n{t}  ══ Weg gewählt: {i.get('weg')!r}")
