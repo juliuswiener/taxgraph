@@ -242,7 +242,12 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # betroffenen Felder gerade die optionalen sind (agB, Spenden, § 16-vg, § 19-Versorgung).
 # Die letzte Zeile ist der neue Preflight-Schluessel: ohne ihn waere die Meldung totes Wiring
 # (dieselbe Falle, die an preflight.py schon einmal stand).
-API_ZEILEN_OBERGRENZE = 1324
+#
+# 1324 -> 1331 (2026-10-03, `/deklaration` sperrt bei Sperrgrund wie `/einreichen`). 7 Zeilen in
+# `deklaration`: `_cfg`, der Guard-Aufruf, der 409-Koerper und zwei Zeilen Kommentar. Die Sperre
+# SELBST ist `_an_gesamt_sperrgrund` und der Satz `sperrgrund_klartext`, beide im Rechenkern; hier
+# steht nur die Entscheidung "keine Vorschau" und der Koerper (Julius, decisions/deklaration-darf-verweigern).
+API_ZEILEN_OBERGRENZE = 1331
 
 
 def _runner_stellen(pfad: str) -> list[int]:

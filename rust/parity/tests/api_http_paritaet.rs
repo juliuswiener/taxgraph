@@ -80,7 +80,12 @@ const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/feld/{fid}/frage", 677),
     ("GET /fall/{id}/ergebnis", 26),
     ("GET /fall/{id}/preflight", 17),
-    ("GET /fall/{id}/deklaration", 17),
+    // 12 statt 17: seit `/deklaration` bei Sperrgrund 409 antwortet (decisions/deklaration-darf-
+    // verweigern), zaehlt `Stat::zaehle` (nur Pythons 2xx) die fuenf Faelle g_an, g_rent, g_rent3, g_an2
+    // und g_pf_rot nicht mehr: gemessen 9 Rumpf-Erreichungen vor der Reparatur von g_dk, g_dk2 und
+    // g_vz27 (die ohne Sperrgrund wieder 200 antworten) und 12 danach. Die Sperrfaelle zaehlt
+    // `generatoren` eigens (`gesperrt_dk`), mit Grund und Koerper.
+    ("GET /fall/{id}/deklaration", 12),
     ("GET /fall/{id}/graph", 9),
     ("POST /fall/{id}/event", 12),
     ("POST /fall/{id}/flow", 2),
@@ -4090,14 +4095,21 @@ fn generatoren() {
         ("g_pf_leer", "gesamt", 2025),
         ("g_pf_un", "gesamt", 2025),
         ("g_pf_nf", "gesamt", 2025),
-        // `deklaration`: g_dk speist jede Ring-Einspeisung, g_dk2 ist zusammen mit Partner; g_vz0,
-        // g_vz23 und g_vz27 bekommen unten von Hand das Jahr 0, 2023 (kein Steuerjahr) und 2027 (ohne
-        // Parameter: der Ring schluckt es, die Deklaration rechnet).
+        // `deklaration`: g_dk speist jede Ring-Einspeisung ohne Sperrgrund, g_dk2 ist zusammen mit
+        // Partner; g_vz0, g_vz23 und g_vz27 bekommen unten von Hand das Jahr 0, 2023 (kein Steuerjahr)
+        // und 2027 (ohne Parameter: der Ring schluckt es, die Deklaration rechnet). `/deklaration`
+        // sperrt bei Sperrgrund mit 409; g_dk_* tragen je einen davon (Kapital-Widerspruch,
+        // Verpflegung, § 23, Haushaltsnahes, Partner).
         ("g_dk", "gesamt", 2025),
         ("g_dk2", "gesamt", 2025),
         ("g_vz0", "gesamt", 2025),
         ("g_vz23", "gesamt", 2025),
         ("g_vz27", "gesamt", 2025),
+        ("g_dk_kap", "gesamt", 2025),
+        ("g_dk_vpf", "gesamt", 2025),
+        ("g_dk_p23", "gesamt", 2025),
+        ("g_dk_hh", "gesamt", 2025),
+        ("g_dk_partner", "gesamt", 2025),
     ] {
         let b = json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": vz});
         a("POST", "/fall", Some(b));
@@ -4316,10 +4328,15 @@ fn generatoren() {
     // `deklaration`: je Ring-Einspeisung (`mit_ring_werten`) ein Satz Felder auf `gesamt`:
     // Verpflegungskuerzung (E0205508), Kapital-Antrag (E1900401/E1901401), haushaltsnahe Summen,
     // V+V-Summen samt dokumentiertem Aggregat, Einzelzeilen (§ 35c, GewSt, § 22 Nr. 3,
-    // Berufsausbildung), § 23-Instanzen und Kinder.
+    // Berufsausbildung) und Kinder -- alles ohne Sperrgrund, sonst antwortet `/deklaration` 409 und
+    // keine Kz erreichen die Antwort. Dafuer die Antworten auf die Fragen, die der Guard sonst offen
+    // sieht: `kein_kap`, `kein_vuv`, `vpf_monate_am_ort`, `hh_rechnung_unbar`,
+    // `hh_handwerker_keine_foerderung`, `hh_in_eu_ewr`. § 23 steht in `g_dk_p23`: der Ring rechnet es
+    // nicht (`einkunftsart_nicht_ring_faehig`), also sperrt `/deklaration` in jedem Fall mit § 23.
     for (id, feld, wert) in [
         ("g_dk", "bruttoarbeitslohn", json!(6_000_000)),
         ("g_dk", "veranlagung", json!("einzel")),
+        ("g_dk", "vpf_monate_am_ort", json!(2)),
         ("g_dk", "tage_24h", json!(20)),
         ("g_dk", "tage_an_abreise", json!(2)),
         ("g_dk", "tage_ueber_8h_eintaegig", json!(3)),
@@ -4327,12 +4344,16 @@ fn generatoren() {
         ("g_dk", "vpf_mittagessen_gestellt_anzahl", json!(3)),
         ("g_dk", "vpf_abendessen_gestellt_anzahl", json!(2)),
         ("g_dk", "vpf_mahlzeiten_gezahltes_entgelt", json!(0)),
+        ("g_dk", "kein_kap", json!(false)),
         ("g_dk", "kap_kapitalertraege", json!(500_000)),
-        ("g_dk", "kap_gewinn_aktien", json!(300_000)),
+        ("g_dk", "hh_rechnung_unbar", json!(true)),
+        ("g_dk", "hh_handwerker_keine_foerderung", json!(true)),
+        ("g_dk", "hh_in_eu_ewr", json!(true)),
         ("g_dk", "hh_minijob_betrag", json!(40_000)),
         ("g_dk", "hh_minijob_betrag__2", json!(10_000)),
         ("g_dk", "hh_dienstleistung_betrag", json!(120_000)),
         ("g_dk", "hh_handwerker_betrag", json!(200_000)),
+        ("g_dk", "kein_vuv", json!(false)),
         ("g_dk", "vv_einnahmen", json!(1_000_000)),
         ("g_dk", "vv_gebaeude_afa", json!(100_000)),
         ("g_dk", "vv_schuldzinsen", json!(50_000)),
@@ -4344,16 +4365,6 @@ fn generatoren() {
         ("g_dk", "p22_nr3_einnahmen", json!(100_000)),
         ("g_dk", "p22_nr3_einkuenfte", json!(40_000)),
         ("g_dk", "berufsausbildung_aufwendungen", json!(600_000)),
-        ("g_dk", "p23_veraeusserungs_typ", json!("grundstueck")),
-        ("g_dk", "p23_veraeusserungspreis", json!(20_000_000)),
-        (
-            "g_dk",
-            "p23_anschaffung_herstellungskosten",
-            json!(10_000_000),
-        ),
-        ("g_dk", "p23_werbungskosten", json!(100_000)),
-        ("g_dk", "p23_veraeusserungs_typ__2", json!("anderes_wg")),
-        ("g_dk", "p23_veraeusserungspreis__2", json!(5_000_000)),
         ("g_dk", "fam_anzahl_kinder", json!(2)),
         ("g_dk", "kind_vorname", json!("Anna")),
         ("g_dk", "kind_vorname__2", json!("Ben")),
@@ -4363,6 +4374,12 @@ fn generatoren() {
         ("g_dk2", "kein_kap", json!(false)),
         ("g_dk2", "kap_kapitalertraege", json!(200_000)),
         ("g_dk2", "kap_kapitalertraege_partner", json!(100_000)),
+        // Der Pflicht-Kegel von Person B und die Antwort auf ihr Flag: sonst `flag_konsistenz_offen`.
+        ("g_dk2", "kap_gewinn_aktien_partner", json!(0)),
+        ("g_dk2", "kap_gewinn_sonstige_partner", json!(0)),
+        ("g_dk2", "kap_verlust_aktien_partner", json!(0)),
+        ("g_dk2", "kap_verlust_sonstige_partner", json!(0)),
+        ("g_dk2", "kein_kap_partner", json!(false)),
         ("g_dk2", "gewst_messbetrag", json!(50_000)),
         ("g_dk2", "gewst_hebesatz", json!(400)),
         ("g_dk2", "gewst_messbetrag_partner", json!(30_000)),
@@ -4370,9 +4387,40 @@ fn generatoren() {
         ("g_vz0", "bruttoarbeitslohn", json!(4_000_000)),
         ("g_vz23", "bruttoarbeitslohn", json!(4_000_000)),
         ("g_vz27", "bruttoarbeitslohn", json!(4_000_000)),
+        ("g_vz27", "kein_kap", json!(false)),
         ("g_vz27", "kap_kapitalertraege", json!(500_000)),
+        ("g_vz27", "vpf_monate_am_ort", json!(2)),
         ("g_vz27", "tage_24h", json!(10)),
         ("g_vz27", "vpf_fruehstuecke_gestellt_anzahl", json!(3)),
+        // Sperrfaelle von `/deklaration`, je einer mit eigenem Grund (alle: Einzelveranlagung):
+        // `kapital_semantik_offen` (Aggregat UND Aktien-Topf), `verpflegung_dreimonatsfrist_aufteilung_
+        // offen` (`vpf_monate_am_ort` fehlt), `einkunftsart_nicht_ring_faehig` (§ 23),
+        // `rechnung_unbar_offen` (Dienstleistung ohne `hh_rechnung_unbar`), `partner_kegel_offen`.
+        ("g_dk_kap", "bruttoarbeitslohn", json!(6_000_000)),
+        ("g_dk_kap", "veranlagung", json!("einzel")),
+        ("g_dk_kap", "kein_kap", json!(false)),
+        ("g_dk_kap", "kap_kapitalertraege", json!(500_000)),
+        ("g_dk_kap", "kap_gewinn_aktien", json!(300_000)),
+        ("g_dk_vpf", "bruttoarbeitslohn", json!(6_000_000)),
+        ("g_dk_vpf", "veranlagung", json!("einzel")),
+        ("g_dk_vpf", "tage_24h", json!(20)),
+        ("g_dk_vpf", "vpf_fruehstuecke_gestellt_anzahl", json!(5)),
+        ("g_dk_p23", "bruttoarbeitslohn", json!(6_000_000)),
+        ("g_dk_p23", "veranlagung", json!("einzel")),
+        ("g_dk_p23", "kein_p23_verkauf", json!(false)),
+        ("g_dk_p23", "p23_veraeusserungs_typ", json!("grundstueck")),
+        ("g_dk_p23", "p23_veraeusserungspreis", json!(20_000_000)),
+        (
+            "g_dk_p23",
+            "p23_anschaffung_herstellungskosten",
+            json!(10_000_000),
+        ),
+        ("g_dk_p23", "p23_werbungskosten", json!(100_000)),
+        ("g_dk_hh", "bruttoarbeitslohn", json!(6_000_000)),
+        ("g_dk_hh", "veranlagung", json!("einzel")),
+        ("g_dk_hh", "hh_dienstleistung_betrag", json!(120_000)),
+        ("g_dk_partner", "veranlagung", json!("zusammen")),
+        ("g_dk_partner", "bruttoarbeitslohn", json!(5_000_000)),
     ] {
         let ev = ereignis(feld, &wert, None);
         if a("POST", &format!("/fall/{id}/event"), Some(ev))
@@ -4480,6 +4528,10 @@ fn generatoren() {
             } else if r == "ergebnis" {
                 ergebnisse.extend(b);
             } else if r == "deklaration" {
+                // g_dk und g_dk2 tragen die Ring-Einspeisungen und duerfen nicht sperren.
+                if id.starts_with("g_dk") {
+                    assert_eq!(status.get(), 200, "deklaration {id} sperrt: {b:?}");
+                }
                 deklarationen.extend(b);
             } else if r == "fragen" {
                 // Fragen je Antwort und der Sperrgrund, den `fragen` selbst meldet (ohne den
@@ -4629,6 +4681,22 @@ fn generatoren() {
     }
     for id in ["g_vz0", "g_vz23", "g_vz27"] {
         deklarationen.extend(a("GET", &format!("/fall/{id}/deklaration"), None));
+        // Nur das Jahr 2027 rechnet (ohne Parameter); 0 und 2023 lassen `deklariere` scheitern (500).
+        if id == "g_vz27" {
+            assert_eq!(status.get(), 200, "deklaration {id} sperrt");
+        }
+    }
+    // Die Sperrfaelle: `/deklaration` antwortet 409 mit `fall_id`, `grund`, `klartext`; Python und
+    // Rust vergleicht `Paar::anfrage` ueber den ganzen Koerper. Ihre Gruende stehen in `gesperrt_dk`.
+    for id in [
+        "g_dk_kap",
+        "g_dk_vpf",
+        "g_dk_p23",
+        "g_dk_hh",
+        "g_dk_partner",
+    ] {
+        deklarationen.extend(a("GET", &format!("/fall/{id}/deklaration"), None));
+        assert_eq!(status.get(), 409, "deklaration {id} sperrt nicht");
     }
     // `deklaration`: welche Kz und welche Bereiche der Antwort Pythons Antworten tragen.
     let mut kz_je: BTreeMap<String, usize> = BTreeMap::new();
@@ -4659,6 +4727,22 @@ fn generatoren() {
         gefuellt("dokumentiert"), gefuellt("nicht_deklariert"), gefuellt("unvollstaendig"),
         gefuellt("pflichtfelder_luecken"),
         deklarationen.iter().filter(|d| d["vollstaendig"] == json!(true)).count(),
+    );
+    // Die Sperrfaelle unter den Antworten: nur ein 409 traegt `grund` (die 200-Antwort kennt den
+    // Schluessel nicht). Aus den fuenf Faellen oben und den Faellen der Schleife davor
+    // (g_an, g_rent, g_rent3, g_an2, g_pf_rot).
+    let gesperrt_dk: Vec<&Value> = deklarationen
+        .iter()
+        .filter(|d| d.get("grund").is_some())
+        .collect();
+    let gruende_dk: BTreeMap<&str, usize> = gesperrt_dk.iter().fold(BTreeMap::new(), |mut m, d| {
+        *m.entry(d["grund"].as_str().unwrap_or_default())
+            .or_default() += 1;
+        m
+    });
+    println!(
+        "  deklaration gesperrt (409): {} Antworten, Gruende {gruende_dk:?}",
+        gesperrt_dk.len()
     );
     println!("  frage: Felder der Queue {frage_felder}, davon mit __2 zusaetzlich {frage_instanz}");
     // `flow` mit rohem Text: Reihenfolge der Schluessel, doppelte Schluessel, Zahlenschreibweisen und
@@ -4879,6 +4963,33 @@ fn generatoren() {
             && gefuellt("person_b") >= 1,
         "deklaration: Aggregat, Anlage-Instanz oder Person B fehlt in allen Antworten"
     );
+    // `/deklaration` sperrt: mindestens die fuenf Faelle g_dk_*, dazu die Sperrfaelle der Schleife
+    // oben (gemessen: zehn Antworten, ein Grund je g_dk_* und `flag_konsistenz_offen` aus g_pf_rot).
+    // Der Koerper ist genau `fall_id`, `grund`, `klartext`; der Satz ist nie leer.
+    for g in [
+        "kapital_semantik_offen",
+        "verpflegung_dreimonatsfrist_aufteilung_offen",
+        "einkunftsart_nicht_ring_faehig",
+        "rechnung_unbar_offen",
+        "partner_kegel_offen",
+        "flag_konsistenz_offen",
+    ] {
+        assert!(
+            gruende_dk.contains_key(g),
+            "deklaration sperrt nie mit {g:?}: {gruende_dk:?}"
+        );
+    }
+    assert!(
+        gesperrt_dk.len() >= 10,
+        "deklaration: nur {} Sperrfaelle",
+        gesperrt_dk.len()
+    );
+    for d in &gesperrt_dk {
+        let mut schluessel: Vec<&str> = d.as_object().unwrap().keys().map(String::as_str).collect();
+        schluessel.sort_unstable();
+        assert_eq!(schluessel, ["fall_id", "grund", "klartext"], "{d}");
+        assert!(d["klartext"].as_str().is_some_and(|k| !k.is_empty()), "{d}");
+    }
     // Der Rentenbeginn sperrt nur, wenn der Guard davor nichts findet — ein eigener Weg in `stand`.
     for g in ["rentenbeginn_offen", "flag_konsistenz_offen"] {
         assert!(
