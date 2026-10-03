@@ -154,6 +154,14 @@ def test_der_rohe_partner_gewinn_entscheidet_nicht_der_netto_gewinn(partner_vg, 
     assert (_grund("gesamt", rentner_veraeusserungsgewinn_partner=(partner_vg, True)) == GRUND) == sperrt
 
 
+def test_ohne_veranlagungsjahr_sperrt_die_bibliothek_nicht():
+    """vz None (Jahr ohne Parameter): der Chooser rechnet nicht, also keine Sperre (Rust: `vz = None`)."""
+    snap = _snap()
+    bindung = API._scheibe_bindung({"scheibe": "gesamt"})
+    assert API._an_gesamt_sperrgrund(snap, AC.SCHEIBEN["gesamt"], 2025, None, bindung) == GRUND
+    assert API._an_gesamt_sperrgrund(snap, AC.SCHEIBEN["gesamt"], None, None, bindung) is None
+
+
 def test_ueber_fuenf_millionen_behaelt_den_eigenen_grund():
     """Die 5-Mio-Sperre steht vor dieser: ihr Text trifft den Fall (A über der Grenze) genauer."""
     assert _grund("gesamt", rentner_veraeusserungsgewinn=(600_000_000, True)) == "abs3_ueber_5mio_offen"

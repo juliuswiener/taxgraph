@@ -90,6 +90,11 @@ fn fall(abw: &[(&'static str, Value, bool)]) -> Ereignisse {
 
 /// Der Sperrgrund (als Text) der Scheibe fuer VZ 2025.
 fn grund(scheibe: Scheibe, events: &Ereignisse) -> Option<&'static str> {
+    grund_im_jahr(scheibe, events, Some(Vz::Vz2025))
+}
+
+/// Wie [`grund`], mit waehlbarem Jahr (`None` = Jahr ohne Parameter).
+fn grund_im_jahr(scheibe: Scheibe, events: &Ereignisse, vz: Option<Vz>) -> Option<&'static str> {
     let st = store(events);
     let f = felder(&st);
     let idx = scheiben_index(scheibe);
@@ -99,7 +104,7 @@ fn grund(scheibe: Scheibe, events: &Ereignisse) -> Option<&'static str> {
         nur_bestaetigt: false,
     };
     let cfg = Cfg::fuer(scheibe);
-    an_gesamt_sperrgrund(&f, Some(&cfg), Some(Vz::Vz2025), &q)
+    an_gesamt_sperrgrund(&f, Some(&cfg), vz, &q)
         .unwrap()
         .map(domain::Sperrgrund::als_str)
 }
@@ -189,6 +194,14 @@ fn der_rohe_partner_gewinn_entscheidet_nicht_der_netto_gewinn() {
         for s in SCHEIBEN {
             assert_eq!(grund(s, &e), Some(GRUND), "{s:?}: Partner-VG {vg}");
         }
+    }
+}
+
+/// Ohne Veranlagungsjahr rechnet der Chooser nicht, also sperrt der Guard nicht (Python `vz is None`).
+#[test]
+fn ohne_veranlagungsjahr_sperrt_der_guard_nicht() {
+    for s in SCHEIBEN {
+        assert_eq!(grund_im_jahr(s, &fall(&[]), None), None, "{s:?}");
     }
 }
 
