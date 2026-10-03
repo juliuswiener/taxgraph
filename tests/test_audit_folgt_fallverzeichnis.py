@@ -32,7 +32,6 @@ import json
 import os
 import subprocess
 import sys
-import time
 import urllib.error
 import urllib.request
 
@@ -259,7 +258,6 @@ def test_gestarteter_dienst_legt_akte_und_protokoll_an_denselben_ort(tmp_path):
                 status = a.status
         except urllib.error.HTTPError as e:
             status = e.code
-        time.sleep(0.4)          # das Protokoll haengt nach der Antwort; dem Schreiben Zeit geben
     finally:
         proc.terminate()
         try:

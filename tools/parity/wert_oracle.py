@@ -12,6 +12,9 @@
   `{"werte": [wert, ...]}` wie `wert.int`; je Wert `bool(x)`, `type(x).__name__`, `x > 0`, `x if
   isinstance(x, int) else None`, `... and not isinstance(x, bool)`, `isinstance(x, (int, float)) and not
   isinstance(x, bool)` (als Wahrheitswert) und `x or 0` (im Draht-Format, siehe `kodiere`).
+- `wert.repr`, `wert.py_str`: `{"werte": [wert, ...]}` wie `wert.int`; je Wert `repr(x)` und `str(x)`
+  als Text.
+- `wert.repr_text_sweep`: `repr(c)` fuer jeden Skalarwert `c`, kompakt (siehe `_repr_text_sweep`).
 
 Draht-Format (kein Wert reist als JSON-Zahl, denn `json.loads` kennt weder NaN noch `u64`-exakte
 Floats im Rust-Sinn): `null`, `true`/`false`, Text und Liste wie JSON; `{"i": "<dezimal>"}` eine
@@ -147,6 +150,45 @@ def _oder_null(req: dict) -> list:
     return _je_wert(req, lambda x: kodiere(x or 0))
 
 
+def _repr(req: dict) -> list:
+    return _je_wert(req, repr)
+
+
+def _py_str(req: dict) -> list:
+    return _je_wert(req, str)
+
+
+def _repr_text_sweep(req: dict) -> dict:
+    """`repr(c)` fuer jeden Skalarwert `c` (ohne Surrogate), ohne 1,1 Mio. Antworten zu senden.
+
+    - `nicht_druckbar`: Laeufe `[von, bis, kategorie]` der `c` mit `c.isprintable() == False`, nach
+      `unicodedata.category`. Genau diese `c` escapet `repr`.
+    - `nicht_escaped`: die `c`, die nicht druckbar sind und trotzdem unveraendert in `repr(c)` stehen
+      (leer: `repr` escapet jedes nicht druckbare Zeichen).
+    - `ausnahmen`: `[[codepunkt, repr(c)]]` fuer jedes druckbare `c`, dessen `repr` nicht `'c'` ist
+      (`'` waehlt die Anfuehrungszeichen `"`, `\\` wird verdoppelt).
+    """
+    laeufe, nicht_escaped, ausnahmen = [], [], []
+    for cp in range(0x110000):
+        if 0xD800 <= cp < 0xE000:
+            continue
+        c = chr(cp)
+        r = repr(c)
+        if c.isprintable():
+            if r != f"'{c}'":
+                ausnahmen.append([cp, r])
+            continue
+        if r == f"'{c}'":
+            nicht_escaped.append(cp)
+        kat = unicodedata.category(c)
+        if laeufe and laeufe[-1][1] == cp - 1 and laeufe[-1][2] == kat:
+            laeufe[-1][1] = cp
+        else:
+            laeufe.append([cp, cp, kat])
+    return {"unicode": unicodedata.unidata_version, "nicht_druckbar": laeufe,
+            "nicht_escaped": nicht_escaped, "ausnahmen": ausnahmen}
+
+
 HANDLER = {
     "py_eq": _py_eq,
     "py_eq_json": _py_eq_json,
@@ -159,6 +201,9 @@ HANDLER = {
     "int_ohne_bool": _int_ohne_bool,
     "zahl_ohne_bool": _zahl_ohne_bool,
     "oder_null": _oder_null,
+    "repr": _repr,
+    "py_str": _py_str,
+    "repr_text_sweep": _repr_text_sweep,
 }
 
 
