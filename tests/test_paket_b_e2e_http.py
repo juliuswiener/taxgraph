@@ -1267,18 +1267,20 @@ def test_gesamt_gwg_ueber_800_ausgeschlossen(base):
     1400 dann Deckelung; genau der B-Over-Tax-Trap den Option A vermeidet). Nur die 400-€-Instanz (Basis) muss
     den Tatbestand bestätigen -- die 1000-€-Instanz (__2) ist nach S. 1 STRUKTURELL vom Sofortabzug
     ausgeschlossen, ihre drei Fragen sind gegenstandslos und dürfen unbeantwortet NICHT sperren (gemessen
-    2026-09-07: die Sperre feuerte vorher für JEDES Asset mit Betrag > 0, auch für dieses)."""
-    catala = _catala_da()
+    2026-09-07: die Sperre feuerte vorher für JEDES Asset mit Betrag > 0, auch für dieses).
+
+    GEÄNDERT 2026-10-03 (main-Auftrag h8-gwg): das 1000-€-Asset verschwindet nicht mehr still aus dem Ergebnis.
+    Die Rechnung nullt es weiter (das Estimate /stand rechnet mit den 400 €), ein FESTGESETZTES Ergebnis gibt
+    es aber nicht mehr: `gwg_abschreibung_offen` — es gehört in die AfA, die hier nicht gerechnet wird. Vorher
+    stand hier `1053700 / bestaetigt`, also eine Zahl, die das Asset ohne Hinweis ausliess. Die Fragen des
+    1000-€-Assets bleiben gegenstandslos: sie sperren NICHT mit `gwg_tatbestand_offen`."""
     _gesamt_anlegen(base, "gw8", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
                     betriebseinnahmen=5000000, gwg=[40000, 100000]))
     for _fld in ("gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250"):
         _req(base, "POST", "/fall/gw8/event", _laie(_fld, True), erwarte=201)
     st, erg = _req(base, "GET", "/fall/gw8/ergebnis")
     _val("ergebnis", erg)
-    if catala:
-        assert erg["zahl_cent"] == 1053700 and erg["grund"] == "bestaetigt"
-    else:
-        assert erg["zahl_cent"] is None
+    assert erg["zahl_cent"] is None and erg["grund"] == "gwg_abschreibung_offen", erg
 
 
 def test_gesamt_gwg_only_verlust(base):
@@ -1310,13 +1312,16 @@ def test_gesamt_gwg_ohne_tatbestand_darf_keinen_sofortabzug_geben(base):
     ANDEREN Bedingungen werden bestätigt (True), damit dieser Test GENAU die verneinte Bedingung isoliert —
     sonst träfe der Kegel-Sperrgrund (gwg_tatbestand_offen, offen wegen der unbeantworteten Nachbarfragen)
     statt der hier zu prüfenden Nullung. Verglichen wird mit demselben Fall, alle drei Bedingungen bejaht
-    (voller Sofortabzug): bei "nein" muss die Steuer höher liegen. Bekannte Lücke, hier bewusst NICHT
-    gepinnt: "nein" verliert den Betrag heute ganz, obwohl über § 4 Abs. 3 S. 3 die AfA nach § 7 Abs. 1 S. 1
-    gilt, die das Merkmal "selbständig nutzbar" nicht kennt (Vault-Ticket
-    gwg-ohne-verzeichnis-verschwindet-statt-abgeschrieben). Bis 2026-09-26 verglich dieser Test per == mit
-    dem Fall OHNE GWG-Asset und hätte so genau diesen Fix gesperrt. Schritt 2 (2026-09-07, _abzug in
+    (voller Sofortabzug). Bekannte Lücke, hier bewusst NICHT gepinnt: "nein" verliert den Betrag, obwohl über
+    § 4 Abs. 3 S. 3 die AfA nach § 7 Abs. 1 S. 1 gilt, die das Merkmal "selbständig nutzbar" nicht kennt
+    (Vault-Ticket gwg-ohne-verzeichnis-verschwindet-statt-abgeschrieben). Bis 2026-09-26 verglich dieser Test
+    per == mit dem Fall OHNE GWG-Asset und hätte so genau diesen Fix gesperrt. Schritt 2 (2026-09-07, _abzug in
     bescheid_einkuenfte.py) behoben — vormals xfail, seit Schritt 1 die Bedingung erfragbar wurde, aber
-    keine Rechenstelle die Antwort las."""
+    keine Rechenstelle die Antwort las.
+
+    GEÄNDERT 2026-10-03 (main-Auftrag h8-gwg): bei "nein" gibt es KEINE Zahl mehr, die den Betrag still
+    weglässt (vorher: Steuer höher als im Ja-Fall, `bestaetigt`). Das Ergebnis ist `gwg_abschreibung_offen`;
+    die Kontrolle (alle drei ja) rechnet weiter und liefert die Zahl."""
     if not _catala_da():
         pytest.skip("Catala-Toolchain nicht verfügbar")   # Vergleich braucht eine echte Berechnung.
     _gesamt_anlegen(base, "gwt", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
@@ -1333,10 +1338,11 @@ def test_gesamt_gwg_ohne_tatbestand_darf_keinen_sofortabzug_geben(base):
         _req(base, "POST", "/fall/gwt_ja/event", _laie(_fld, True), erwarte=201)
     st2, erg2 = _req(base, "GET", "/fall/gwt_ja/ergebnis")
     _val("ergebnis", erg2)
-    assert erg["zahl_cent"] > erg2["zahl_cent"], (
-        "verneinter § 6 Abs. 2-Tatbestand (nicht selbständig nutzbar) darf keinen Sofortabzug geben — die Steuer "
-        f"muss über der mit bejahtem Tatbestand liegen; gemessen: selbstaendig_nein={erg['zahl_cent']} "
-        f"selbstaendig_ja={erg2['zahl_cent']}")
+    assert erg2["zahl_cent"] is not None and erg2["grund"] == "bestaetigt", (
+        f"Kontrolle (alle drei ja) muss eine Zahl liefern, sonst misst der Test nichts: {erg2}")
+    assert erg["zahl_cent"] is None and erg["grund"] == "gwg_abschreibung_offen", (
+        "verneinter § 6 Abs. 2-Tatbestand (nicht selbständig nutzbar) darf keinen Sofortabzug geben UND keine "
+        f"Zahl, die den Betrag still weglässt; gemessen: selbstaendig_nein={erg}")
 
 
 def test_gesamt_gwg_ohne_verzeichnis_darf_keinen_sofortabzug_geben(base):
@@ -1344,11 +1350,13 @@ def test_gesamt_gwg_ohne_verzeichnis_darf_keinen_sofortabzug_geben(base):
     250 Euro übersteigt", sind "in ein besonderes, laufend zu führendes Verzeichnis aufzunehmen" (S. 5: oder aus
     der Buchführung ersichtlich) — Feld gwg_verzeichnis_ab_250. Das Asset liegt mit 600 € bewusst ÜBER 250 €:
     darunter prüft _abzug die Frage gar nicht, ein Test dort bewiese nichts. Verglichen wird mit demselben Fall,
-    alle drei Bedingungen bejaht (voller Sofortabzug): bei "nein" muss die Steuer höher liegen. Bekannte Lücke,
-    hier bewusst NICHT gepinnt: "nein" verliert den Betrag heute ganz, obwohl § 6 Abs. 2a (Sammelposten) bzw.
-    die AfA nach § 7 Abs. 1 gilt (Vault-Ticket gwg-ohne-verzeichnis-verschwindet-statt-abgeschrieben).
-    Mutationsprobe 2026-09-26: vor diesem Test liess sich die Prüfung auskommentieren, und alle gwg-Tests
-    blieben grün."""
+    alle drei Bedingungen bejaht (voller Sofortabzug). Bekannte Lücke, hier bewusst NICHT gepinnt: "nein"
+    verliert den Betrag, obwohl § 6 Abs. 2a (Sammelposten) bzw. die AfA nach § 7 Abs. 1 gilt (Vault-Ticket
+    gwg-ohne-verzeichnis-verschwindet-statt-abgeschrieben). Mutationsprobe 2026-09-26: vor diesem Test liess
+    sich die Prüfung auskommentieren, und alle gwg-Tests blieben grün.
+
+    GEÄNDERT 2026-10-03 (main-Auftrag h8-gwg): bei "nein" keine Zahl mehr, sondern `gwg_abschreibung_offen`
+    (vorher: Steuer höher als im Ja-Fall, `bestaetigt`, das Gerät still ohne Abzug)."""
     if not _catala_da():
         pytest.skip("Catala-Toolchain nicht verfügbar")   # Vergleich braucht eine echte Berechnung.
     _gesamt_anlegen(base, "gwv", _gesamt_kegel(0, kein_vuv=True, kein_gewinn=False,
@@ -1364,10 +1372,11 @@ def test_gesamt_gwg_ohne_verzeichnis_darf_keinen_sofortabzug_geben(base):
         _req(base, "POST", "/fall/gwv_ja/event", _laie(_fld, True), erwarte=201)
     st2, erg2 = _req(base, "GET", "/fall/gwv_ja/ergebnis")
     _val("ergebnis", erg2)
-    assert erg["zahl_cent"] > erg2["zahl_cent"], (
-        "fehlendes Verzeichnis über 250 € (§ 6 Abs. 2 S. 4) darf keinen Sofortabzug geben — die Steuer muss über "
-        f"der mit bejahtem Verzeichnis liegen; gemessen: verzeichnis_nein={erg['zahl_cent']} "
-        f"verzeichnis_ja={erg2['zahl_cent']}")
+    assert erg2["zahl_cent"] is not None and erg2["grund"] == "bestaetigt", (
+        f"Kontrolle (alle drei ja) muss eine Zahl liefern, sonst misst der Test nichts: {erg2}")
+    assert erg["zahl_cent"] is None and erg["grund"] == "gwg_abschreibung_offen", (
+        "fehlendes Verzeichnis über 250 € (§ 6 Abs. 2 S. 4) darf keinen Sofortabzug geben UND keine Zahl, die "
+        f"den Betrag still weglässt; gemessen: verzeichnis_nein={erg}")
 
 
 @pytest.mark.parametrize("vg_cent,erwartet_cent", [
