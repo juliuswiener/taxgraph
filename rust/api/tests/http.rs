@@ -364,7 +364,8 @@ async fn eigener_fall_traegt_fall_id_und_username() {
 
 /// PARITÄT-Grenze (9c/0b): Ein gültig signiertes Token, dessen `sub` `_USER_RE` verfehlt, zählt
 /// wie kein Token — 401. Python nimmt den Namen als uid an. Ein solches Token entsteht nur aus
-/// einer von Hand geänderten `users.json` (die Registrierung prüft das Muster, der Login nicht).
+/// einer von Hand geänderten `users.json` (die Registrierung prüft das Muster, seit dem Bau von
+/// `login_vergibt_kein_token_fuer_namen_ausserhalb_des_musters` auch der Login).
 #[tokio::test]
 async fn token_mit_ungueltigem_namen_ist_401() {
     let d = dienst();
@@ -391,6 +392,88 @@ async fn token_mit_ungueltigem_namen_ist_401() {
         }
     }
     assert!(!d.zustand.konfig.faelle.join("f1.json").exists());
+}
+
+/// `POST /auth/login` mit einem Namen, der kein Nutzer sein kann (Vault `decisions/login-prueft-das-
+/// namensmuster-vor-dem-nachschlagen`): 401 `username oder password falsch`, kein Token, ein
+/// `login_fehlgeschlagen`-Eintrag je Versuch. Der Name `a b` steht von Hand in der Nutzerdatei, mit dem
+/// richtigen Passwort; `None` und `True` sind echte Nutzer (gueltige Namen), die ein JSON-`null` oder
+/// `true` nicht treffen duerfen — ihr `repr` ist derselbe Text. Das Gegenstueck zu
+/// `token_mit_ungueltigem_namen_ist_401`: dort lehnt jede Route ein solches Token ab, hier entsteht es nicht.
+#[tokio::test]
+async fn login_vergibt_kein_token_fuer_namen_ausserhalb_des_musters() {
+    let d = dienst();
+    let post = |pfad: &'static str, body: Value| {
+        let d = &d;
+        async move {
+            let text = body.to_string();
+            let laenge = text.len().to_string();
+            sende(
+                d,
+                "POST",
+                pfad,
+                &[
+                    ("content-type", "application/json"),
+                    ("content-length", laenge.as_str()),
+                ],
+                Some(&text),
+            )
+            .await
+        }
+    };
+    for name in ["gueltig_er", "None", "True"] {
+        let a = post(
+            "/auth/register",
+            json!({"username": name, "password": "password1"}),
+        )
+        .await;
+        assert_eq!(a.status, 201, "{name}: {}", a.text);
+    }
+    // Handarbeit: derselbe Hash unter einem Namen, den `register` ablehnt.
+    let datei = d.zustand.konfig.faelle.parent().unwrap().join("users.json");
+    let mut bestand: Value = serde_json::from_slice(&std::fs::read(&datei).unwrap()).unwrap();
+    let eintrag = bestand["users"]["gueltig_er"].clone();
+    bestand["users"]["a b"] = eintrag;
+    std::fs::write(&datei, bestand.to_string()).unwrap();
+
+    // Positivkontrolle: ein Name im Muster loggt ein, sonst bewiese jede Ablehnung nichts.
+    let a = post(
+        "/auth/login",
+        json!({"username": "gueltig_er", "password": "password1"}),
+    )
+    .await;
+    assert_eq!(a.status, 200, "{}", a.text);
+    assert!(a.json()["token"].is_string());
+
+    let abgewiesen = [
+        json!("a b"),
+        json!([]),
+        json!(["x"]),
+        json!({}),
+        json!({"a": 1}),
+        json!(null),
+        json!(true),
+        json!(false),
+        json!(5),
+    ];
+    for name in &abgewiesen {
+        let a = post(
+            "/auth/login",
+            json!({"username": name, "password": "password1"}),
+        )
+        .await;
+        // Nur Status und Fehlertext: ein Token, das der Name doch bekam, kaeme nie in die Meldung.
+        assert_eq!(
+            (a.status, a.json()["fehler"].clone()),
+            (401, json!("username oder password falsch")),
+            "username {name}"
+        );
+    }
+    let fehlschlaege = audit_zeilen(&d)
+        .iter()
+        .filter(|z| z["action"] == "login_fehlgeschlagen")
+        .count();
+    assert_eq!(fehlschlaege, abgewiesen.len());
 }
 
 /// Eine Akte, die `store::lade` abweist, bleibt byte-gleich (Vault

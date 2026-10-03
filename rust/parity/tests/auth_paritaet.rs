@@ -330,6 +330,17 @@ fn bcrypt_und_handler() {
     let geheim = "handler-geheimnis";
     let a = Auth::neu(geheim.into(), datei_rust.clone(), None);
     let lang = "p".repeat(73);
+    // Handarbeit an der Nutzerdatei: ein Name, den `register` nie vergibt, steht mit dem Hash von
+    // `geheim123` in BEIDEN Dateien (Vault decisions/login-prueft-das-namensmuster-vor-dem-nachschlagen).
+    // Die Registrierungsschritte unten schreiben die Dateien danach in ihrem eigenen Format neu.
+    let handarbeit = json!({"users": {"a b": {
+        "password_hash": bcrypt::hash("geheim123", 4).unwrap(),
+        "created_at": "2026-10-03T00:00:00+00:00",
+    }}});
+    for d in [&datei_py, &datei_rust] {
+        std::fs::create_dir_all(d.parent().unwrap()).unwrap();
+        std::fs::write(d, handarbeit.to_string()).unwrap();
+    }
     let schritte = [
         (
             "register",
@@ -365,6 +376,8 @@ fn bcrypt_und_handler() {
         ),
         ("login", json!({"username": "julius", "password": lang})),
         ("login", json!({"password": "x"})),
+        // Handarbeit-Name ausserhalb des Musters, richtiges Passwort: beide Seiten 401, gleicher Text.
+        ("login", json!({"username": "a b", "password": "geheim123"})),
         ("logout", json!({"token": "Bearer kaputt"})),
         ("logout", json!({})),
     ];
@@ -382,6 +395,23 @@ fn bcrypt_und_handler() {
             &py,
         );
     }
+    // Absolut, nicht nur gleich: vor dem Bau antworteten beide 200 (gleich, aber falsch). Beide muessen
+    // den Namen ABWEISEN, mit Pythons Text.
+    let a_b = json!({"username": "a b", "password": "geheim123"});
+    let mut py = frage(
+        &json!({"fn": "schritt8.auth.handler", "aktion": "login", "body": a_b, "datei": datei_py, "secret": geheim}),
+    );
+    // Ein Token steht nie in der Fehlermeldung, auch nicht, wenn der Name doch eines bekam.
+    if py["body"].get("token").is_some() {
+        py["body"]["token"] = json!("<token>");
+    }
+    let erwartet = json!({"status": 401, "msg": "username oder password falsch"});
+    z.pruefe("login 'a b': Python weist ab", &py, &erwartet);
+    z.pruefe(
+        "login 'a b': Rust weist ab",
+        &rust_handler(&a, "login", &a_b),
+        &erwartet,
+    );
     // Kreuzweise: Rust loggt gegen Pythons Datei ein und umgekehrt.
     let quer = Auth::neu(geheim.into(), datei_py.clone(), None);
     z.pruefe(
