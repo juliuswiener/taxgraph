@@ -44,6 +44,10 @@ use proptest::strategy::ValueTree;
 use proptest::test_runner::TestRunner;
 use serde_json::{json, Map, Value};
 
+// Stub fuer Karten-Dienst und LLM samt Szenarien fuer `chat` und `entfernung` (Folge 6).
+#[path = "extern_stub/mod.rs"]
+mod extern_stub;
+
 const GEHEIMNIS: &str = "paritaet-geheimnis-api-9a";
 
 /// Die Uhr beider Server: abgeleitete Events und Events ohne `ts` tragen sie.
@@ -155,7 +159,16 @@ impl Drop for Server {
 /// `flow`: `TAXGRAPH_FLOW=1`, sonst antwortet `POST /flow` nur `{"mitgeschrieben": false}` und
 /// `flow.jsonl` entsteht nicht. Mit `flow` vergleicht `Paar::anfrage` die neuen Zeilen von
 /// `flow.jsonl` beider Server (drittes Log-Paar, `ts` normalisiert).
-fn starte(art: &'static str, wurzel: &Path, no_auth: bool, flow: bool, seed: &Path) -> Server {
+/// `extra`: zusaetzliche Umgebung, gewinnt gegen die Voreinstellung. Der Lauf gegen den Stub setzt
+/// hier `LLM_API_BASE`, `ORS_API_BASE` und die synthetischen Schluessel (`extern_stub`).
+fn starte_mit(
+    art: &'static str,
+    wurzel: &Path,
+    no_auth: bool,
+    flow: bool,
+    seed: &Path,
+    extra: &[(&str, &str)],
+) -> Server {
     let daten = wurzel.join(art);
     let faelle = daten.join("faelle");
     std::fs::create_dir_all(&faelle).unwrap();
@@ -192,6 +205,9 @@ fn starte(art: &'static str, wurzel: &Path, no_auth: bool, flow: bool, seed: &Pa
         .env_remove("XDG_DATA_HOME")
         .stdout(Stdio::piped())
         .stderr(Stdio::null());
+    for (k, v) in extra {
+        cmd.env(k, v);
+    }
     let mut child = cmd.spawn().unwrap();
     let stdout = child.stdout.take().unwrap();
     let (tx, rx) = mpsc::channel();
@@ -606,8 +622,20 @@ struct Paar {
 
 impl Paar {
     fn neu(wurzel: &Path, no_auth: bool, flow: bool, seed: &Path) -> Self {
-        let py = starte("python", wurzel, no_auth, flow, seed);
-        let rs = starte("rust", wurzel, no_auth, flow, seed);
+        Self::neu_mit(wurzel, no_auth, flow, seed, &[], &[])
+    }
+
+    /// Wie [`Paar::neu`], mit eigener Zusatz-Umgebung je Seite (`starte_mit`).
+    fn neu_mit(
+        wurzel: &Path,
+        no_auth: bool,
+        flow: bool,
+        seed: &Path,
+        extra_py: &[(&str, &str)],
+        extra_rs: &[(&str, &str)],
+    ) -> Self {
+        let py = starte_mit("python", wurzel, no_auth, flow, seed, extra_py);
+        let rs = starte_mit("rust", wurzel, no_auth, flow, seed, extra_rs);
         let logs = [
             Log::neu(py.faelle().join("audit.jsonl")),
             Log::neu(rs.faelle().join("audit.jsonl")),
