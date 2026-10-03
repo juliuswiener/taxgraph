@@ -92,10 +92,29 @@ fn als_text(v: &Value) -> String {
     v.as_str().map_or_else(|| v.to_string(), str::to_owned)
 }
 
+/// Die sieben Kz des Pflegeblocks (§ 33b Abs. 6 EStG, Gruppe `AgB/Pflege_PB/Einz`): Zwilling von
+/// `PFLEGE_KZ` in `src/tabellen.rs` (dort `pub(crate)`). Der Mapper schreibt den Block nur, wenn
+/// `rentner_pflegegrad` 2..4 oder Merkzeichen H dasteht (`Bau::pflegeblock`); sonst faellt er
+/// als Ganzes weg.
+// ponytail: Abschrift der Kz-Menge. Upgrade: `PFLEGE_KZ` aus `elster` exportieren, sobald ein
+// zweiter Test sie braucht.
+const PFLEGEBLOCK_KZ: [&str; 7] = [
+    "E0161606", "E0161808", "E0161607", "E0161506", "E0110601", "E0106507", "E0106603",
+];
+const PFLEGEGRAD: &str = "rentner_pflegegrad";
+
 /// Was `deklariere` aus genau diesem einen Wert in die Kz schreibt. `None`: nichts, der Mapper
 /// laesst den Wert weg. Wie das Python-Vorbild: nur `deklaration`, nicht `person_b`.
+///
+/// Ein Feld des Pflegeblocks bekommt den Pflegegrad 3 dazu. Allein kommt es nie an (der Block
+/// faellt weg), der Pruefer sah 0 Werte — und `rentner_pflege_weitere_personen` (E0106603,
+/// Schema `.{0,1}`) lief mit Bereich 0..20 unbemerkt durch.
 fn ankunft(b: &Bindung, kz: &str, wert: Value, index: &BindungIndex<'_>) -> Option<String> {
-    let d = deklariere(&einzeln(&b.feld_id, wert), index, VZ, None).unwrap();
+    let mut felder = einzeln(&b.feld_id, wert);
+    if b.feld_id != PFLEGEGRAD && PFLEGEBLOCK_KZ.contains(&kz) {
+        felder.extend(einzeln(PFLEGEGRAD, json!(3)));
+    }
+    let d = deklariere(&felder, index, VZ, None).unwrap();
     d.deklaration.get(kz).map(als_text)
 }
 
@@ -374,11 +393,11 @@ fn jede_gebundene_kz_steht_in_genau_einem_zweig() {
         "nur {} Bindungen mit Kz: die Bindung wurde nicht gelesen",
         mit_kz.len()
     );
-    // KONTROLLE: der Zahl-Zweig hat Werte gegen Werteliste und Muster gehalten (gemessen 11 Kz, davon
-    // 3 mit Stellenzahl-Muster; die zwoelfte, E0106603, kommt aus einem Einzelfeld nicht an), nicht
-    // nur Kz ohne Facette durchgewunken.
+    // KONTROLLE: der Zahl-Zweig hat Werte gegen Werteliste und Muster gehalten (gemessen 12 Kz, davon
+    // 4 mit Stellenzahl-Muster; E0106603 ist die zwoelfte und kommt nur mit dem Pflegegrad an, s.
+    // `ankunft`), nicht nur Kz ohne Facette durchgewunken.
     assert!(
-        mit_facette >= 10 && stellenzahl >= 3,
+        mit_facette >= 12 && stellenzahl >= 4,
         "Zahl-Zweig: nur {mit_facette} Kz mit Facette, {stellenzahl} mit Stellenzahl-Muster"
     );
     assert_eq!(
@@ -470,5 +489,49 @@ fn pruefer_meldet_kein_stellenzahlmuster_als_widerspruch() {
         bef.abweichungen[0].contains("1000"),
         "{:?}",
         bef.abweichungen
+    );
+}
+
+/// Das Muster von `E0106603` (Anzahl weiterer Pflegepersonen) wie in `E10-2025.xsd:1380` und
+/// `E10-2024.xsd:1444`: hoechstens EIN Zeichen, also 0..9. Abschrift, damit der Test in der CI
+/// laeuft; `pflegepersonen_muster_steht_im_schema` haelt sie gegen das Schema.
+const PFLEGEPERSONEN_MUSTER: &str = ".{0,1}";
+
+#[test]
+fn pruefer_meldet_pflegepersonen_ueber_dem_xsd_maximum() {
+    let m = meta(&[], &[PFLEGEPERSONEN_MUSTER]);
+    let b = eine("rentner_pflege_weitere_personen");
+    let r = b.bereich.as_ref().unwrap();
+    let bef = pruefe(b, "E0106603", &m, index());
+    assert_eq!(bef.zweig, Zweig::Zahl);
+    // KONTROLLE: jeder Wert des Bereichs kommt in der Kz an (sonst sah der Pruefer 0 Werte und
+    // meldete trotzdem „bestanden") und wurde gegen das Muster gehalten.
+    assert_eq!(
+        bef.werte,
+        usize::try_from(r.max - r.min + 1).unwrap(),
+        "nicht jeder Wert des Bereichs {}..{} kam in E0106603 an",
+        r.min,
+        r.max
+    );
+    assert!(
+        bef.abweichungen.is_empty(),
+        "Bereich {}..{} laesst Werte durch, die das Schema (Muster {PFLEGEPERSONEN_MUSTER}) \
+         ablehnt:\n{}",
+        r.min,
+        r.max,
+        bef.abweichungen.join("\n")
+    );
+}
+
+#[test]
+fn pflegepersonen_muster_steht_im_schema() {
+    if !schemas_da(VZ) {
+        return;
+    }
+    let (e10, _) = schema_meta();
+    assert_eq!(
+        e10["E0106603"].patterns,
+        [PFLEGEPERSONEN_MUSTER],
+        "die Abschrift in diesem Test weicht vom Schema ab"
     );
 }
