@@ -59,9 +59,10 @@ pub fn uebertragbare_felder(bindung: BindungNachschlag<'_>) -> BTreeMap<String, 
 
 /// `uebernehme_vorjahr(neuer_store, vorjahr_felder, bindung, vorjahr_vz=, ts=)`.
 ///
-/// Reihenfolge: sortiert nach `feld_id`. Python folgt der `glob`-Reihenfolge der Bindungsdateien;
-/// das Ergebnis ist davon unabhaengig, weil vorlaeufige Events keine Ableitung ausloesen
-/// (`store::Store::append`, `leite_ab`/`rechne_ab` nur fuer `bestaetigt`).
+/// Reihenfolge: sortiert nach `feld_id`. Python folgt der Reihenfolge der Bindung (bei `api.vorjahr`
+/// die der Scheibe), und die steht in der Akte: wer sie nachbilden muss, ruft
+/// [`uebernehme_in_reihenfolge`]. Das Ergebnis hängt davon nicht ab, weil vorlaeufige Events keine
+/// Ableitung ausloesen (`store::Store::append`, `leite_ab`/`rechne_ab` nur fuer `bestaetigt`).
 ///
 /// Eine Abweisung der Wertpruefung (Typ/Format) ueberspringt das Feld
 /// ([`VorjahrErgebnis::uebersprungen`]); Entscheidung `vorjahr-unpassenden-altwert-ueberspringen`.
@@ -91,17 +92,40 @@ pub fn uebernehme(
     vorjahr_vz: i64,
     ts: Option<&str>,
 ) -> Result<VorjahrErgebnis, SchreibFehler> {
+    let reihenfolge: Vec<String> = uebertragbare_felder(bindung).into_keys().collect();
+    uebernehme_in_reihenfolge(store, vorjahr_felder, bindung, &reihenfolge, vorjahr_vz, ts)
+}
+
+/// [`uebernehme`] in der Reihenfolge `reihenfolge` (`feld_id`s; eine ohne Flag in `bindung` wird
+/// uebergangen): Python geht `bindung.items()` durch, und die Events stehen in dieser Reihenfolge
+/// in der Akte. Bei der ersten anderen Abweisung bricht die Schleife dort ab, wo Python abbricht.
+/// `uebersprungen` ist sortiert (`sorted(uebersprungen)`).
+///
+/// # Errors
+/// [`SchreibFehler`] bei der ersten anderen Abweisung.
+pub fn uebernehme_in_reihenfolge(
+    store: &mut Store,
+    vorjahr_felder: &BTreeMap<String, VorjahrFeld>,
+    bindung: BindungNachschlag<'_>,
+    reihenfolge: &[String],
+    vorjahr_vz: i64,
+    ts: Option<&str>,
+) -> Result<VorjahrErgebnis, SchreibFehler> {
     let aktiv: HashSet<String> = store.aktive().map(|(f, _)| f.to_owned()).collect();
+    let flags = uebertragbare_felder(bindung);
     let mut n = 0;
     let mut uebersprungen = Vec::new();
-    for (fid, kat) in uebertragbare_felder(bindung) {
+    for fid in reihenfolge {
+        let Some(kat) = flags.get(fid) else {
+            continue;
+        };
         let Some(vf) = vorjahr_felder
-            .get(&fid)
+            .get(fid)
             .filter(|v| v.zustand.as_deref() == Some("bestaetigt"))
         else {
             continue;
         };
-        if aktiv.contains(&fid) {
+        if aktiv.contains(fid) {
             continue;
         }
         let signal_1 = json!({"typ": "vorjahr", "vz": vorjahr_vz, "quell_feld_id": fid, "quell_wert": vf.wert, "kategorie": kat});
@@ -114,10 +138,11 @@ pub fn uebernehme(
         .schreibe(store, None, bindung, ts);
         match geschrieben {
             Ok(_) => n += 1,
-            Err(e) if ist_pruef_abweisung(&e) => uebersprungen.push(fid),
+            Err(e) if ist_pruef_abweisung(&e) => uebersprungen.push(fid.clone()),
             Err(e) => return Err(e),
         }
     }
+    uebersprungen.sort();
     Ok(VorjahrErgebnis {
         uebertragen: n,
         uebersprungen,

@@ -350,6 +350,19 @@ impl Store {
         self.datei
     }
 
+    /// `store["vorjahr_referenz"] = ...` (`vorjahr_writer.uebernehme_vorjahr`): die Vergleichsgrösse aus
+    /// dem Vorjahres-Fall, die `preflight` liest. Ersetzt eine frühere.
+    ///
+    /// ```
+    /// let mut s = store::Store::leer(2025, None);
+    /// assert!(s.datei().vorjahr_referenz.is_none());
+    /// s.setze_vorjahr_referenz(serde_json::json!({"verlustvortrag_bestand": {"wert": 5}}).into());
+    /// assert!(s.datei().vorjahr_referenz.is_some());
+    /// ```
+    pub fn setze_vorjahr_referenz(&mut self, referenz: PyWert) {
+        self.datei.vorjahr_referenz = Some(referenz);
+    }
+
     /// ```
     /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2};
     /// # let neu = |wert: i64, ersetzt: Option<store::EventId>| store::NeuesEvent {

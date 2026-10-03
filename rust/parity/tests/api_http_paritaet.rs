@@ -64,7 +64,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 /// Routen, fuer die Rust heute `501 nicht_portiert` antwortet (AK3 in 9c). Beim Port fliegt die
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
 const NICHT_PORTIERT: &[&str] = &[
-    "POST /fall/{id}/vorjahr",
     "POST /fall/{id}/einreichen",
     "POST /fall/{id}/chat",
     "POST /fall/{id}/entfernung",
@@ -86,7 +85,7 @@ const UNTERGRENZE: &[(&str, usize)] = &[
     ("POST /fall/{id}/event", 12),
     ("POST /fall/{id}/flow", 2),
     ("POST /fall/{id}/kontoauszug", 127),
-    ("POST /fall/{id}/vorjahr", 2),
+    ("POST /fall/{id}/vorjahr", 17),
 ];
 
 // ---------------------------------------------------------------- Umgebung
@@ -1238,6 +1237,13 @@ fn handgeschrieben_ohne_auth(p: &mut Paar) {
     }
     p.anfrage(
         &g("kaputte Fall-Datei GET", "/fall/seed_kaputt/stand"),
+        Modus::NurStatus,
+    );
+    // Die kaputte Akte als QUELLE von `vorjahr`: 500 auf beiden Seiten, der Text der Ausnahme
+    // unterscheidet sich (wie oben bei `stand`).
+    p.anfrage(
+        &po("vorjahr kaputte Quelle", "/fall/seed_a/vorjahr")
+            .json(&json!({"vorjahr_fall_id": "seed_kaputt"})),
         Modus::NurStatus,
     );
     a!(de("DELETE herrenlos ohne Token", "/fall/seed_o"));
@@ -2857,23 +2863,24 @@ impl Vorlage {
     }
 }
 
-/// Der Lauf von `kontoauszug_faelle`: Sender, Status der letzten Antwort, Bilanz, laufende Nummer.
-struct Auszuege<'a, 'b> {
+/// Der Lauf von `kontoauszug_faelle` und `vorjahr_faelle`: Sender, Status der letzten Antwort, Bilanz,
+/// laufende Nummer, die Route (`kontoauszug`, `vorjahr`) und das Kuerzel der Fall-Kennungen.
+struct Lauf<'a, 'b> {
     a: &'a mut Sender<'b>,
     status: &'a std::cell::Cell<u16>,
     bilanz: EventBilanz,
     nr: usize,
+    route: &'static str,
+    kurz: &'static str,
 }
 
-impl Auszuege<'_, '_> {
-    /// Ein Auszug an einem frischen Fall der Scheibe `gesamt`.
+impl Lauf<'_, '_> {
+    /// Ein Rumpf an einem frischen Fall der Scheibe `gesamt`.
     fn lauf(&mut self, name: &str, body: Value, soll: u16, erwartet: &[(&str, Value)]) {
         self.lauf_in(name, &Vorlage::gesamt(), body, soll, erwartet);
     }
 
-    /// Ein Auszug an einem frischen Fall der `vorlage`. Beide Server antworten gleich, oder
-    /// `Paar::anfrage` meldet es; `soll` und `erwartet` (Schluessel der Antwort) prüfen nur, dass der
-    /// Fall den Zweig trifft, den sein Name nennt.
+    /// Ein Rumpf an einem frischen Fall der `vorlage`.
     fn lauf_in(
         &mut self,
         name: &str,
@@ -2882,19 +2889,33 @@ impl Auszuege<'_, '_> {
         soll: u16,
         erwartet: &[(&str, Value)],
     ) {
+        let id = self.fall(name, vorlage);
+        self.post(name, &id, body, soll, erwartet);
+    }
+
+    /// Ein frischer Fall der `vorlage` (Jahr 2025) mit ihren Events; liefert die Kennung.
+    fn fall(&mut self, name: &str, vorlage: &Vorlage) -> String {
         self.nr += 1;
-        let id = format!("g_ka{}", self.nr);
+        let id = format!("g_{}{}", self.kurz, self.nr);
         let b = json!({"fall_id": id, "scheibe": vorlage.scheibe, "veranlagungszeitraum": 2025});
         (self.a)("POST", "/fall", Some(b));
         for e in &vorlage.vorher {
             (self.a)("POST", &format!("/fall/{id}/event"), Some(e.clone()));
             if self.status.get() != 201 {
-                self.bilanz
-                    .falsch
-                    .push(format!("{name}: Vorbereitung {e} wurde mit {} abgewiesen", self.status.get()));
+                self.bilanz.falsch.push(format!(
+                    "{name}: Vorbereitung {e} wurde mit {} abgewiesen",
+                    self.status.get()
+                ));
             }
         }
-        let antwort = (self.a)("POST", &format!("/fall/{id}/kontoauszug"), Some(body));
+        id
+    }
+
+    /// Ein Rumpf an die Route des Falls `id`. Beide Server antworten gleich, oder `Paar::anfrage`
+    /// meldet es; `soll` und `erwartet` (Schluessel der Antwort) pruefen nur, dass der Fall den Zweig
+    /// trifft, den sein Name nennt.
+    fn post(&mut self, name: &str, id: &str, body: Value, soll: u16, erwartet: &[(&str, Value)]) {
+        let antwort = (self.a)("POST", &format!("/fall/{id}/{}", self.route), Some(body));
         self.bilanz
             .pruefe(name, soll, self.status.get(), antwort.as_ref());
         for (k, v) in erwartet {
@@ -2902,7 +2923,9 @@ impl Auszuege<'_, '_> {
             if ist != Some(v) {
                 self.bilanz.falsch.push(format!(
                     "{name}: {k} erwartet {v}, Antwort {}",
-                    antwort.as_ref().map_or_else(|| "keine".to_owned(), ToString::to_string)
+                    antwort
+                        .as_ref()
+                        .map_or_else(|| "keine".to_owned(), ToString::to_string)
                 ));
             }
         }
@@ -2913,11 +2936,13 @@ impl Auszuege<'_, '_> {
 /// `verwirf_unlesbare_betraege` einzeln aus dem Auszug nimmt (nie der ganze Auszug), die Kategorien,
 /// der Deckel der LLM-Aufrufe und die Formen des Rumpfs. Jeder Fall bekommt einen frischen Fall.
 fn kontoauszug_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBilanz {
-    let mut k = Auszuege {
+    let mut k = Lauf {
         a,
         status,
         bilanz: EventBilanz::default(),
         nr: 0,
+        route: "kontoauszug",
+        kurz: "ka",
     };
     let csv = |zeilen: &[&str]| format!("datum;betrag;verwendungszweck\n{}\n", zeilen.join("\n"));
     let auszug = |format: &str, inhalt: Value| json!({"format": format, "inhalt": inhalt});
@@ -3604,6 +3629,238 @@ fn kontoauszug_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBil
     k.bilanz
 }
 
+/// Setzt in den Akten BEIDER Server den Wert des letzten Events von `feld` im Fall `id`: ein
+/// Altwert, den die heutige Wertpruefung abweist (gespeichert vor dieser Pruefung; nur von Hand zu
+/// erzeugen). Beide Seiten lesen die Akte bei jeder Anfrage neu.
+fn altwert_setzen(tmp: &Path, id: &str, feld: &str, wert: &Value) {
+    for art in ["python", "rust"] {
+        let pfad = tmp.join(art).join("faelle").join(format!("{id}.json"));
+        let mut akte: Value = serde_json::from_slice(&std::fs::read(&pfad).unwrap()).unwrap();
+        let e = akte["events"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .rev()
+            .find(|e| e["feld_id"] == feld)
+            .unwrap();
+        e["wert"] = wert.clone();
+        std::fs::write(&pfad, serde_json::to_vec(&akte).unwrap()).unwrap();
+    }
+}
+
+/// Ein Vorjahres-Fall: `bestaetigt` als Events der Schreiber `ui:` (bestaetigt), `vorlaeufig` als
+/// Vorschlaege des LLM; die Kennung `id`, die Scheibe und das Jahr stehen fest.
+fn vorjahr_quelle(
+    k: &mut Lauf,
+    (id, scheibe, vz): (&str, &str, i64),
+    bestaetigt: &[(&str, Value)],
+    vorlaeufig: &[(&str, Value)],
+) {
+    (k.a)(
+        "POST",
+        "/fall",
+        Some(json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": vz})),
+    );
+    for (feld, wert) in bestaetigt {
+        (k.a)(
+            "POST",
+            &format!("/fall/{id}/event"),
+            Some(ereignis(feld, wert, None)),
+        );
+    }
+    for (feld, wert) in vorlaeufig {
+        (k.a)(
+            "POST",
+            &format!("/fall/{id}/event"),
+            Some(ereignis_llm(feld, wert)),
+        );
+    }
+}
+
+/// `POST /vorjahr` in allen Formen: die Uebernahme je Scheibe (nur bestaetigte Felder, nie ueber ein
+/// belegtes), Altwerte, die die Wertpruefung abweist (uebersprungen), die Vergleichsgroesse
+/// `vorjahr_referenz`, die zweite Fall-Kennung des Rumpfs (400, `TypeError`, 404,
+/// 403) und die Formen des Rumpfs. Jeder Fall bekommt einen frischen Fall als Ziel.
+fn vorjahr_faelle(a: &mut Sender, status: &std::cell::Cell<u16>, tmp: &Path) -> EventBilanz {
+    let mut k = Lauf {
+        a,
+        status,
+        bilanz: EventBilanz::default(),
+        nr: 0,
+        route: "vorjahr",
+        kurz: "vt",
+    };
+    let stamm = [
+        ("veranlagung", json!("einzel")),
+        ("bruttoarbeitslohn", json!(4_000_000)),
+        ("geburtsjahr", json!(1980)),
+        ("stammdaten_nachname", json!("Müller")),
+        ("hh_handwerker_betrag", json!(48_000)),
+        ("ep_entfernung_km", json!(30)),
+        ("verlustvortrag_bestand", json!(123_456)),
+    ];
+    let vorlaeufig = [
+        ("ep_arbeitstage", json!(200)),
+        ("kap_kapitalertraege", json!(150_000)),
+    ];
+    vorjahr_quelle(&mut k, ("g_vq1", "gesamt", 2024), &stamm, &vorlaeufig);
+    // Altwerte, die die heutige Pruefung abweist: Steuerzeichen (T), Vorzeichen (V), Bereich (W).
+    vorjahr_quelle(&mut k, ("g_vq2", "gesamt", 2024), &stamm, &[]);
+    altwert_setzen(tmp, "g_vq2", "hh_handwerker_betrag", &json!(-5000));
+    altwert_setzen(tmp, "g_vq2", "geburtsjahr", &json!(1899));
+    altwert_setzen(tmp, "g_vq2", "stammdaten_nachname", &json!("Maier\u{0}"));
+    // Ein Altwert ab 10^10: der Store prueft F2/Magnitude nur mit Katalog, und `uebernehme_vorjahr`
+    // gibt keinen mit; er wird uebernommen. (Die Abweisungen, bei denen die Uebernahme abbricht und
+    // 422 antwortet, kann ein `import:vorjahr`-Event heute nicht ausloesen.)
+    vorjahr_quelle(&mut k, ("g_vq3", "gesamt", 2024), &stamm, &[]);
+    altwert_setzen(tmp, "g_vq3", "bruttoarbeitslohn", &json!(10_000_000_000_i64));
+    vorjahr_quelle(&mut k, ("g_vq4", "gesamt", 2024), &stamm, &[]);
+    altwert_setzen(tmp, "g_vq4", "bruttoarbeitslohn", &json!(10_000_000_000_i64));
+    altwert_setzen(tmp, "g_vq4", "hh_handwerker_betrag", &json!(10_000_000_000_i64));
+    vorjahr_quelle(&mut k, ("g_vq5", "gesamt", 2024), &[], &vorlaeufig);
+    vorjahr_quelle(
+        &mut k,
+        ("g_vq6", "gesamt", 2024),
+        &[("verlustvortrag_bestand", json!(7))],
+        &[],
+    );
+    vorjahr_quelle(&mut k, ("g_vq7", "gesamt", 2024), &[], &[]);
+    vorjahr_quelle(
+        &mut k,
+        ("g_vq8", "ep", 2025),
+        &[
+            ("ep_entfernung_km", json!(40)),
+            ("ep_eigenes_kfz", json!(true)),
+            ("ep_arbeitstage", json!(210)),
+        ],
+        &[],
+    );
+    let von = |id: &str| json!({"vorjahr_fall_id": id});
+    let z = |u: i64, ue: &[&str], id: &str| {
+        vec![
+            ("uebernommen", json!(u)),
+            ("uebersprungen", json!(ue)),
+            ("vorjahr_fall_id", json!(id)),
+        ]
+    };
+    k.lauf("vorjahr normal", von("g_vq1"), 200, &z(6, &[], "g_vq1"));
+    // Dasselbe Ziel dreimal: die zweite Uebernahme findet alles belegt; die Vergleichsgroesse aus
+    // `g_vq6` ersetzt die erste, eine Quelle ohne Bestand laesst sie stehen.
+    let id = k.fall("vorjahr Folge", &Vorlage::gesamt());
+    k.post("vorjahr Folge 1", &id, von("g_vq1"), 200, &z(6, &[], "g_vq1"));
+    k.post("vorjahr Folge 2", &id, von("g_vq1"), 200, &z(0, &[], "g_vq1"));
+    k.post("vorjahr Folge 3", &id, von("g_vq6"), 200, &z(0, &[], "g_vq6"));
+    k.post("vorjahr Folge 4", &id, von("g_vq5"), 200, &z(0, &[], "g_vq5"));
+    k.lauf_in(
+        "vorjahr Ziel teils belegt",
+        &Vorlage {
+            scheibe: "gesamt",
+            vorher: vec![
+                ereignis("veranlagung", &json!("zusammen"), None),
+                ereignis("geburtsjahr", &json!(1970), None),
+            ],
+        },
+        von("g_vq1"),
+        200,
+        &z(4, &[], "g_vq1"),
+    );
+    k.lauf_in(
+        "vorjahr Ziel ep",
+        &Vorlage {
+            scheibe: "ep",
+            vorher: vec![],
+        },
+        von("g_vq1"),
+        200,
+        &z(1, &[], "g_vq1"),
+    );
+    k.lauf("vorjahr Quelle ep", von("g_vq8"), 200, &z(3, &[], "g_vq8"));
+    k.lauf(
+        "vorjahr Altwerte abgewiesen",
+        von("g_vq2"),
+        200,
+        &z(
+            3,
+            &["geburtsjahr", "hh_handwerker_betrag", "stammdaten_nachname"],
+            "g_vq2",
+        ),
+    );
+    k.lauf("vorjahr Altwert ab 10^10", von("g_vq3"), 200, &z(6, &[], "g_vq3"));
+    k.lauf("vorjahr zwei Altwerte ab 10^10", von("g_vq4"), 200, &z(6, &[], "g_vq4"));
+    k.lauf("vorjahr nur vorlaeufig", von("g_vq5"), 200, &z(0, &[], "g_vq5"));
+    k.lauf("vorjahr leere Quelle", von("g_vq7"), 200, &z(0, &[], "g_vq7"));
+    k.lauf("vorjahr eigener Fall als Quelle", von("seed_a"), 200, &z(0, &[], "seed_a"));
+    let id = k.fall("vorjahr Quelle ist Ziel", &Vorlage::gesamt());
+    k.post(
+        "vorjahr Quelle ist Ziel",
+        &id,
+        von(&id),
+        400,
+        &[("fehler", json!("vorjahr_fall_id muss ein ANDERER (Vorjahres-)Fall sein"))],
+    );
+    let fehlt = "vorjahr_fall_id fehlt oder ungültig";
+    k.lauf("vorjahr leerer Rumpf", json!({}), 400, &[("fehler", json!(fehlt))]);
+    for (name, wert) in [
+        ("null", Value::Null),
+        ("leerer Text", json!("")),
+        ("0", json!(0)),
+        ("falsch", json!(false)),
+        ("leere Liste", json!([])),
+        ("leeres Objekt", json!({})),
+        ("0.0", json!(0.0)),
+        ("Schraegstrich", json!("a/b")),
+        ("Umlaut", json!("ä")),
+        ("65 Zeichen", json!("x".repeat(65))),
+        ("Leerzeichen", json!(" ")),
+        ("Leerzeichen im Namen", json!("a b")),
+        ("Zeilenumbruch am Ende", json!("g_vq1\n")),
+        ("Liste", json!(["g_vq1"])),
+        ("Objekt", json!({"a": 1})),
+        ("Kommazahl", json!(1.5)),
+        ("grosse Kommazahl", json!(1e22)),
+    ] {
+        k.lauf(
+            &format!("vorjahr Kennung {name}"),
+            json!({"vorjahr_fall_id": wert}),
+            400,
+            &[("fehler", json!(fehlt))],
+        );
+    }
+    // Eine Ganzzahl, `true` und eine Kommazahl wie 1e-05 bestehen die Pruefung des Textes und
+    // scheitern erst in `lade_fall` (`TypeError`).
+    for (name, wert) in [
+        ("Ganzzahl", json!(5)),
+        ("negative Ganzzahl", json!(-5)),
+        ("i64 max", json!(i64::MAX)),
+        ("wahr", json!(true)),
+        ("kleine Kommazahl", json!(1e-5)),
+    ] {
+        k.lauf(
+            &format!("vorjahr Kennung {name}"),
+            json!({"vorjahr_fall_id": wert}),
+            500,
+            &[],
+        );
+    }
+    for (name, id, soll) in [
+        ("fehlt", "gibtsnicht", 404),
+        ("fremd", "seed_b", 403),
+        ("herrenlos", "seed_o", 403),
+    ] {
+        k.lauf(&format!("vorjahr Quelle {name}"), von(id), soll, &[]);
+    }
+    for (name, body) in [
+        ("Liste", json!([1])),
+        ("Text", json!("g_vq1")),
+        ("null", Value::Null),
+        ("Zahl", json!(5)),
+        ("wahr", json!(true)),
+    ] {
+        k.lauf(&format!("vorjahr Rumpf {name}"), body, 500, &[]);
+    }
+    k.bilanz
+}
+
 /// Rumpf von `POST /event` als Rohtext: `wert` und `signal` stehen so, wie sie hier geschrieben sind.
 fn roher_text(feld: &str, wert: &str, signal: &str) -> String {
     format!(
@@ -4198,6 +4455,8 @@ fn generatoren() {
     let ereignisse = event_faelle(&mut a, &status);
     // `POST /kontoauszug` in allen Formen (CSV, JSON, PDF, Betraege, Kategorien, Deckel, Rumpf).
     let auszuege = kontoauszug_faelle(&mut a, &status);
+    // `POST /vorjahr` in allen Formen (Quellen unten von Hand, Altwerte, zweite Kennung).
+    let vorjahre = vorjahr_faelle(&mut a, &status, tmp.path());
     let mut engines: BTreeMap<String, usize> = BTreeMap::new();
     let mut gruende: Vec<String> = vec![];
     let mut fragen_je_fall: Vec<(&str, usize)> = vec![];
@@ -4502,6 +4761,16 @@ fn generatoren() {
         auszuege.falsch.is_empty(),
         "kontoauszug: Faelle erreichen nicht den Zweig ihres Namens: {:?}",
         auszuege.falsch
+    );
+    println!(
+        "  vorjahr: {} Faelle, Klassen {:?}",
+        vorjahre.klassen.values().sum::<usize>(),
+        vorjahre.klassen
+    );
+    assert!(
+        vorjahre.falsch.is_empty(),
+        "vorjahr: Faelle erreichen nicht den Zweig ihres Namens: {:?}",
+        vorjahre.falsch
     );
     for k in ["200", "400", "422", "500 AttributeError", "500 Error"] {
         assert!(
