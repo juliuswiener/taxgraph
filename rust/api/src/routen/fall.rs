@@ -121,15 +121,16 @@ pub fn fall_anlegen(z: &Zustand, nutzer: &Nutzer, body: &Value) -> Result<Antwor
     datei.scheibe = Some(scheibe.clone());
     datei.user_id = uid.as_ref().map(Username::to_string);
     store::speichere(&pfad, &datei)?;
-    if let Some(uid) = &uid {
-        anhaengen(
-            &z.konfig.audit_pfad(),
-            Some(uid.as_str()),
-            AuditAktion::FallAngelegt,
-            Some(fall_id.as_str()),
-            Some(&format!("scheibe={scheibe}")),
-        )?;
-    }
+    // Auch ohne Anmeldung (Nutzer `unbekannt`, s. `anhaengen`): eine Akte ohne Spur im Protokoll ist
+    // die Lücke, die niemand mehr einem Vorgang zuordnen kann (Vault
+    // `decisions/protokollzeile-nach-der-wirkung-vor-der-antwort`, Punkt 3). Der Besitzer bleibt leer.
+    anhaengen(
+        &z.konfig.audit_pfad(),
+        uid.as_ref().map(Username::as_str),
+        AuditAktion::FallAngelegt,
+        Some(fall_id.as_str()),
+        Some(&format!("scheibe={scheibe}")),
+    )?;
     Ok(Antwort::neu(
         201,
         json!({ "fall_id": fall_id.as_str(), "scheibe": scheibe, "veranlagungszeitraum": vz }),

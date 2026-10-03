@@ -72,11 +72,10 @@ def _akte() -> bytes:
 
 
 def _dateien() -> list[str]:
-    """Was im Fallverzeichnis liegt, ohne das Protokoll. server.py schickt die Antwort auf
-    POST /fall und schreibt audit.jsonl erst danach, ins selbe Verzeichnis (`base` setzt
-    AUDIT_DIR = FAELLE): ob die Datei beim ersten Blick schon steht, entscheidet der Zufall.
-    Ausgenommen ist genau dieser eine Name. Jede andere Datei zählt, auch eine *.tmp."""
-    return sorted(n for n in os.listdir(API.FAELLE) if n != "audit.jsonl")
+    """Was im Fallverzeichnis liegt: die Akten und alles, was neben ihnen entstünde, auch eine *.tmp.
+    server.py schreibt audit.jsonl vor der Antwort (`base` setzt AUDIT_DIR = FAELLE); die Datei steht
+    beim ersten Blick also immer da und gehört zum Vergleich."""
+    return sorted(os.listdir(API.FAELLE))
 
 
 @pytest.fixture

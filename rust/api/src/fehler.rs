@@ -22,8 +22,8 @@ pub enum ApiFehler {
     Unerwartet { typ: String, meldung: String },
 }
 
-/// Marker an der Antwort: der Dispatcher braucht zu wissen, WIE sie entstand (Audit-Status,
-/// Fehlerlog).
+/// Marker an der Antwort: der Dispatcher braucht zu wissen, WIE sie entstand (Fehlerlog). Der
+/// Audit-Status kommt aus der Antwort selbst, nicht aus diesem Marker.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Ausgang {
     /// `ApiError`/`AuthError`.
