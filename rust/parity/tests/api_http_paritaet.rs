@@ -2552,10 +2552,12 @@ fn event_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBilanz {
             m("ep_ziel_adresse", json!("a\u{1}b")),
             422,
         ),
+        // Bis Auflage Z ging das Emoji durch (ein gueltiges XML-Zeichen, Auflage T); ELSTER nimmt es
+        // nicht an. Der Umlaut davor bleibt erlaubt, abgewiesen wird nur das Emoji.
         (
-            "T Text mit Emoji",
+            "Z Text mit Emoji",
             m("ep_ziel_adresse", json!("München 😀")),
-            201,
+            422,
         ),
         ("T Text Zahl", m("ep_ziel_adresse", json!(5)), 422),
         ("T Text Liste", m("ep_ziel_adresse", json!(["a"])), 422),
@@ -2724,6 +2726,31 @@ fn event_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBilanz {
             "F Zusatz mit Zeilenende",
             m("stammdaten_hausnummerzusatz", json!("a\n")),
             422,
+        ),
+        // Z (Zeichensatz): ELSTER nimmt in einem Textfeld nur Standard_E_V2 an. Beide Server
+        // weisen ab (422), Umlaute, ss und Euro gehen durch (201). Der Wortlaut steht in
+        // `store_zeichensatz_paritaet.rs`.
+        (
+            "Z geschuetztes Leerzeichen",
+            m("ep_ziel_adresse", json!("Musterstr.\u{a0}5")),
+            422,
+        ),
+        (
+            "Z Gedankenstrich",
+            m("ep_ziel_adresse", json!("Berlin\u{2013}Mitte")),
+            422,
+        ),
+        (
+            "Z l mit Strich",
+            m("ep_ziel_adresse", json!("Wa\u{142}esa")),
+            422,
+        ),
+        ("Z Tabulator", m("ep_ziel_adresse", json!("a\tb")), 422),
+        ("Z Zeilenumbruch", m("ep_ziel_adresse", json!("a\nb")), 422),
+        (
+            "Z Umlaute und Euro",
+            m("ep_ziel_adresse", json!("Müller-Straße 5 €")),
+            201,
         ),
     ]);
     // `signal_2` (Text oder null) und `bestaetigt` (braucht ein signal_2 mit Inhalt).
@@ -5430,6 +5457,7 @@ fn generatoren() {
         "422 Vorzeichen",
         "422 Bereich",
         "422 Format",
+        "422 Zeichensatz",
         "422 B",
         "422 signal_2",
     ] {

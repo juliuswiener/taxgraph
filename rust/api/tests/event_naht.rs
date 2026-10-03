@@ -224,7 +224,7 @@ async fn abweisungen_tragen_den_wortlaut_von_python() {
     let beleg = rumpf(ARBEITSTAGE, "220", "vorlaeufig", "import:beleg2", "null");
     let ts_zahl = ok(ARBEITSTAGE, "220").replace(r#""2026-01-01T00:00:00+00:00""#, "5");
     let ersetzt = ok(ARBEITSTAGE, "1").replace(r#""ts""#, r#""ersetzt": "nope", "ts""#);
-    let faelle: [(&str, String, u16, &str); 14] = [
+    let faelle: [(&str, String, u16, &str); 15] = [
         (
             "feld nicht in der Scheibe",
             ok(r#""gibt_es_nicht""#, "1"),
@@ -270,6 +270,14 @@ async fn abweisungen_tragen_den_wortlaut_von_python() {
             422,
             "fail-closed (Typ): ep_arbeitstage=1.5 passt nicht zum Bindungstyp 'int' — der Ring läse \
              das sonst still als 0 (Stille-Null-Klasse).",
+        ),
+        (
+            // Auflage Z: das Zeichen und ein Vorschlag, nie der Wert (Wortlaut aus `store.append_event`).
+            "Zeichensatz",
+            ok(r#""ep_ziel_adresse""#, r#""Wałesa""#),
+            422,
+            "fail-closed (Zeichensatz): ep_ziel_adresse enthält das Zeichen „ł\" (U+0142), das \
+             ELSTER in Textfeldern nicht annimmt — schreibe stattdessen „l\".",
         ),
         (
             "llm bestaetigt",

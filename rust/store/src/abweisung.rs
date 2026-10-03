@@ -98,6 +98,14 @@ pub enum Abweisung {
         muster: String,
     },
 
+    /// Auflage Z/Zeichensatz (`store.py::_pruefe_typ_konformitaet`, Vault
+    /// `decisions/elster-zeichensatz-beim-speichern-abweisen`): ein `typ: text`-Wert mit einem Zeichen
+    /// ausserhalb des ELSTER-Zeichensatzes `Standard_E_V2` (`E10-2025.xsd:1810`, ohne Zeilenumbruch
+    /// nach `:1792`). Die Meldung nennt das Feld, das Zeichen und einen Vorschlag, nie den Wert (PII);
+    /// ihr Text steht in [`domain::zeichensatz::feld_meldung`], wortgleich mit Python.
+    #[error("{}", domain::zeichensatz::feld_meldung(.feld_id, *.zeichen))]
+    ZeichensatzVerletzt { feld_id: String, zeichen: char },
+
     /// Auflage V/Vorzeichen (`store.py::_pruefe_typ_konformitaet`, Vault
     /// `decisions/geldfeld-ohne-minus-im-schema-lehnt-minus-bei-eingabe-ab`): eine negative Zahl
     /// an einem Feld mit `nicht_negativ: true` (Schematyp ohne Minus). Die 0 geht durch. Die Zahl
