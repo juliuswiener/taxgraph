@@ -164,7 +164,10 @@ def login(body: dict, audit_fn=None) -> tuple[int, dict]:
     user = _lade_users()["users"].get(username) if gueltig else None
     if not user or not _check_pw(password, user["password_hash"]):
         if audit_fn:
-            audit_fn(username, "login_fehlgeschlagen", None, None)
+            # Ein Nicht-Text steht als None im Protokoll (audit.append macht daraus "unbekannt"), nie als
+            # Rohwert: das Feld bleibt Text, und `true` belastet nicht den echten Nutzer "True" (Vault
+            # decisions/login-protokolliert-einen-nicht-text-namen-als-unbekannt).
+            audit_fn(username if isinstance(username, str) else None, "login_fehlgeschlagen", None, None)
         raise AuthError(401, "username oder password falsch")
     token = _create_token(username)
     if audit_fn:

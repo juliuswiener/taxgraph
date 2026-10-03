@@ -146,19 +146,10 @@ pub async fn login(State(z): State<Zustand>, Koerper(body): Koerper) -> Result<A
         // Nutzerdatei zu lesen. Auch `null`/`true`/`false`: ihr `repr` ("None", "True", "False") ist ein
         // gültiger Name, den ein Nutzer tragen könnte. Python: `isinstance(username, str)` in `login`
         // (Vault decisions/login-prueft-das-namensmuster-vor-dem-nachschlagen, Punkt 2); eine Liste oder ein
-        // Objekt warf dort vorher `TypeError` (unhashbar, 500).
-        andere => {
-            // Das Protokoll nennt `username or "unbekannt"`: ein falscher Wert (null, false, 0, [], {})
-            // heisst dort "unbekannt", ein leerer Name ebenso (`anhaengen`). Ein wahrer Nicht-Text steht
-            // als `repr` im Protokoll; Python schreibt ihn als JSON-Wert (Rest-Abweichung, Inhalt des
-            // Eintrags ist nicht Teil dieses Baus).
-            let nutzer = if wahr(andere) {
-                crate::python::text(andere)
-            } else {
-                String::new()
-            };
-            return Err(z.auth.weise_ab(&nutzer).into());
-        }
+        // Objekt warf dort vorher `TypeError` (unhashbar, 500). Im Protokoll steht `unbekannt` (leerer Name,
+        // `anhaengen`), nie der Rohwert und nie sein `repr`: `true` darf nicht als der echte Nutzer "True"
+        // dastehen (Vault decisions/login-protokolliert-einen-nicht-text-namen-als-unbekannt).
+        _ => return Err(z.auth.weise_ab("").into()),
     };
     // PARITÄT-Grenze: ein Nicht-Text als Passwort wirft in Python nur für einen EXISTIERENDEN
     // Nutzer `AttributeError` (500), sonst 401. Hier ist es immer 401 (leeres Passwort).

@@ -446,18 +446,21 @@ async fn login_vergibt_kein_token_fuer_namen_ausserhalb_des_musters() {
     assert_eq!(a.status, 200, "{}", a.text);
     assert!(a.json()["token"].is_string());
 
+    // (Name im Body, `user_id` im Protokoll). Ein Text bleibt stehen; ein Nicht-Text ist `unbekannt`
+    // (Vault decisions/login-protokolliert-einen-nicht-text-namen-als-unbekannt), nie sein `repr`:
+    // JSON `true` darf nicht als der echte Nutzer "True" im Protokoll stehen.
     let abgewiesen = [
-        json!("a b"),
-        json!([]),
-        json!(["x"]),
-        json!({}),
-        json!({"a": 1}),
-        json!(null),
-        json!(true),
-        json!(false),
-        json!(5),
+        (json!("a b"), "a b"),
+        (json!([]), "unbekannt"),
+        (json!(["x"]), "unbekannt"),
+        (json!({}), "unbekannt"),
+        (json!({"a": 1}), "unbekannt"),
+        (json!(null), "unbekannt"),
+        (json!(true), "unbekannt"),
+        (json!(false), "unbekannt"),
+        (json!(5), "unbekannt"),
     ];
-    for name in &abgewiesen {
+    for (name, im_protokoll) in &abgewiesen {
         let a = post(
             "/auth/login",
             json!({"username": name, "password": "password1"}),
@@ -468,6 +471,13 @@ async fn login_vergibt_kein_token_fuer_namen_ausserhalb_des_musters() {
             (a.status, a.json()["fehler"].clone()),
             (401, json!("username oder password falsch")),
             "username {name}"
+        );
+        let zeilen = audit_zeilen(&d);
+        let letzte = zeilen.last().unwrap();
+        assert_eq!(
+            (letzte["action"].clone(), letzte["user_id"].clone()),
+            (json!("login_fehlgeschlagen"), json!(im_protokoll)),
+            "Protokoll zu username {name}"
         );
     }
     let fehlschlaege = audit_zeilen(&d)

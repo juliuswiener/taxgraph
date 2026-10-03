@@ -227,7 +227,9 @@ class TestPasswordPolicy:
                        audit_fn=lambda *args: aufrufe.append(args))
         assert e.value.status == 401
         assert str(e.value) == "username oder password falsch"
-        assert aufrufe == [(wert, "login_fehlgeschlagen", None, None)]
+        # Das Protokoll bekommt keinen Rohwert (Vault decisions/login-protokolliert-einen-nicht-text-
+        # namen-als-unbekannt): None, und audit.append macht daraus "unbekannt".
+        assert aufrufe == [(None, "login_fehlgeschlagen", None, None)]
 
     @pytest.mark.parametrize("wert", [["x"], {"a": 1}])
     def test_login_username_liste_ueber_http_ist_401_nicht_500(self, base, wert):
@@ -237,6 +239,25 @@ class TestPasswordPolicy:
         status, body = _req(base, "POST", "/auth/login", {"username": wert, "password": "password1"},
                             erwarte=401)
         assert body == {"fehler": "username oder password falsch"}, body
+
+    @pytest.mark.parametrize("wert", [["x"], {"a": 1}, 5, True])
+    def test_login_username_kein_text_steht_als_unbekannt_im_protokoll(self, base, wert):
+        """AK1 (Vault login-schreibt-einen-nicht-text-namen-roh-oder-als-fremden-nutzer-ins-protokoll):
+        ein Nicht-Text als Name ist im Protokoll `unbekannt` — kein Rohwert mit wechselndem Typ, und
+        JSON `true` belastet nicht den echten Nutzer "True" (der hier registriert ist). Am echten
+        Server mit dem echten audit.append."""
+        _req(base, "POST", "/auth/register", {"username": "True", "password": "password1"},
+             erwarte=201)
+        _req(base, "POST", "/auth/login", {"username": wert, "password": "password1"}, erwarte=401)
+        fehl = [e for e in audit.lies() if e.get("action") == "login_fehlgeschlagen"]
+        assert [e["user_id"] for e in fehl] == ["unbekannt"], fehl
+
+    def test_login_text_name_ausserhalb_des_musters_bleibt_im_protokoll_stehen(self, base):
+        """Gegenprobe zu AK1: ein Name, der Text ist, wird nicht verschluckt — nur ein Nicht-Text
+        wird `unbekannt`."""
+        _req(base, "POST", "/auth/login", {"username": "a b", "password": "password1"}, erwarte=401)
+        fehl = [e for e in audit.lies() if e.get("action") == "login_fehlgeschlagen"]
+        assert [e["user_id"] for e in fehl] == ["a b"], fehl
 
 # ------------------------------------------------------------------ P1.6 Audit Integration
 
