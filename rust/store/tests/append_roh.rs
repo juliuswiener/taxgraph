@@ -32,6 +32,7 @@ fn roh(schreiber: &str, zustand: Zustand, signal_2: Option<&str>) -> NeuesEventR
         signal: Signal {
             signal_1: Some(None),
             signal_2: signal_2.map(str::to_owned),
+            signal_2_fehlt: false,
         },
         signal_2_fremd: None,
         ersetzt: None,
@@ -197,4 +198,48 @@ fn ersetzt_ohne_kennung_trifft_kein_event() {
     neu.ersetzt = Some(id.to_string());
     neu.wert = json!(230).into();
     assert!(anhaengen(&mut s, &neu).is_ok());
+}
+
+/// Ein `signal` ohne den Schluessel `signal_2` legt Python ohne ihn ab; die Kennung haengt daran.
+/// Die Kennungen sind die von `store.append_event` (`CPython` 3.14) zu denselben Eingaben.
+#[test]
+fn signal_ohne_signal_2_wird_ohne_den_schluessel_abgelegt() {
+    for (signal_1, signal_2, fehlt, soll_signal, soll_id) in [
+        (
+            Some(Some(json!(5).into())),
+            None,
+            true,
+            json!({"signal_1": 5}),
+            "1adeb73218c20062c18865e5e086f94c40c3434d104fab67517d816c9fa4cafb",
+        ),
+        (
+            Some(None),
+            None,
+            true,
+            json!({"signal_1": null}),
+            "b984dec6ddfa01b6e6ef940f5a0f7a88a7644cc734a1b611607e6c3431e5385e",
+        ),
+        (
+            None,
+            Some("x".to_owned()),
+            false,
+            json!({"signal_2": "x"}),
+            "7a364b6528cacb203a1cc8238d1bdf14e3de60b0f90975ebbabe05129dd97493",
+        ),
+    ] {
+        let mut neu = roh("ui:naht", Zustand::Vorlaeufig, None);
+        neu.signal = Signal {
+            signal_1,
+            signal_2,
+            signal_2_fehlt: fehlt,
+        };
+        let mut s = Store::leer(2025, None);
+        let id = anhaengen(&mut s, &neu).unwrap();
+        assert_eq!(id.to_string(), soll_id, "{soll_signal}");
+        let e = serde_json::to_value(&s.events()[0]).unwrap();
+        assert_eq!(e["signal"], soll_signal);
+        // Laden und wieder Schreiben aendert nichts: die Kennung bleibt nachrechenbar.
+        let zurueck: store::Event = serde_json::from_value(e).unwrap();
+        assert_eq!(zurueck.berechne_event_id().unwrap().to_string(), soll_id);
+    }
 }

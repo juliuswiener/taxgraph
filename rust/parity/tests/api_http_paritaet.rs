@@ -1976,6 +1976,39 @@ fn event_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBilanz {
             201,
         ),
         ("A llm ok", llm("llm_vorschlag"), 201),
+        // `signal` ohne `signal_2`: Python legt es ohne den Schluessel ab (andere Kennung als mit `null`).
+        (
+            "signal nur signal_1",
+            aend(
+                vl("ep_arbeitstage", json!(1)),
+                &[("signal", some(json!({"signal_1": 5})))],
+            ),
+            201,
+        ),
+        (
+            "signal nur signal_1 null",
+            aend(
+                vl("ep_arbeitstage", json!(1)),
+                &[("signal", some(json!({"signal_1": null})))],
+            ),
+            201,
+        ),
+        (
+            "signal nur signal_2",
+            aend(
+                vl("ep_arbeitstage", json!(1)),
+                &[("signal", some(json!({"signal_2": "x"})))],
+            ),
+            201,
+        ),
+        (
+            "signal_1 Objekt ohne signal_2 (bestaetigt, dann 422)",
+            aend(
+                m("ep_arbeitstage", json!(1)),
+                &[("signal", some(json!({"signal_1": {"a": [1.5, null]}})))],
+            ),
+            422,
+        ),
         (
             "A llm ersetzt Text",
             aend(llm("llm_vorschlag"), &[("ersetzt", some(json!("abc")))]),

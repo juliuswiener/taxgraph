@@ -509,7 +509,7 @@ impl Store {
         let signal =
             // Schreibpfad: Schluessel ist immer da (Python `store.py`: `signal or {"signal_1":
             // None, ...}`) -- aeussere Ebene daher immer `Some(...)` (s. `Signal`-Typdoku).
-            Signal { signal_1: Some(neu.signal_1.clone()), signal_2: neu.signal_2_roh().map(str::to_owned) };
+            Signal { signal_1: Some(neu.signal_1.clone()), signal_2: neu.signal_2_roh().map(str::to_owned), signal_2_fehlt: false };
         let event = Event {
             event_id: EventId::aus_bytes([0; 32]),
             ts: neu.ts.clone().unwrap_or_else(jetzt_iso),
@@ -533,10 +533,6 @@ impl Store {
     /// ([`NeuesEventRoh`]): dieselben Auflagen in Pythons Reihenfolge — A, K1, F2, T/V/W/F, dann
     /// `signal_2` (Text) und `bestaetigt` (braucht `signal_2`), dann B. Der Schreiber wird wie in
     /// Python nach Praefix klassifiziert, nicht nach Gleichheit.
-    ///
-    /// ponytail: `Signal::signal_2` fehlt nie, es ist `null` oder Text; ein `signal` ohne den
-    /// Schluessel `signal_2` legt Python ohne ihn ab, hier steht `signal_2: null` — gleicher Inhalt,
-    /// andere Kennung. Upgrade: Anwesenheit des Schluessels in `Signal` wie bei `signal_1`.
     ///
     /// # Errors
     /// [`AbweisungRoh`], wenn eine Auflage verletzt ist.
@@ -758,6 +754,7 @@ impl Store {
                 // vorher die JSON-Darstellung; fuer `float` folgt er jetzt Python (`1e+16`, wo
                 // JSON `1e16` schrieb) -- `signal_2` geht in den `event_id`.
                 signal_2: Some(format!("beweist@{feld_id}={}", wert.py_str())),
+                signal_2_fehlt: false,
             }),
             ersetzt: None,
         };
@@ -848,6 +845,7 @@ impl Store {
                 signal: Some(Signal {
                     signal_1: Some(None),
                     signal_2: Some(format!("ableitung@{}", regel.aus)),
+                    signal_2_fehlt: false,
                 }),
                 ersetzt: None,
             });

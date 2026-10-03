@@ -156,6 +156,7 @@ fn signal_ablage(signal: &Value) -> (Signal, Option<String>) {
             Signal {
                 signal_1: Some(None),
                 signal_2: None,
+                signal_2_fehlt: false,
             },
             None,
         )
@@ -175,7 +176,15 @@ fn signal_ablage(signal: &Value) -> (Signal, Option<String>) {
         Some(Value::String(s)) => (Some(s.clone()), None),
         Some(w) => (None, Some(typname(w).to_owned())),
     };
-    (Signal { signal_1, signal_2 }, fremd)
+    let signal_2_fehlt = !o.contains_key("signal_2");
+    (
+        Signal {
+            signal_1,
+            signal_2,
+            signal_2_fehlt,
+        },
+        fremd,
+    )
 }
 
 /// Die ersten 200 Zeichen (`str(e)[:200]`).
