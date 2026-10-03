@@ -1,0 +1,220 @@
+{
+  "dokumentiert_aggregat": {
+    "E0703838": [
+      "vv_erhaltungsaufwand",
+      "vv_gebaeude_afa",
+      "vv_schuldzinsen",
+      "vv_sonstige_wk"
+    ]
+  },
+  "iban_transform_ziel_kz": [
+    "E0101601",
+    "E0102102",
+    "E0102603"
+  ],
+  "konstante_kz": [
+    "E0100001"
+  ],
+  "negation": {
+    "fam_alleinstehend": "E0503701"
+  },
+  "p23": {
+    "art_feld": "p23_veraeusserungs_typ",
+    "betragsfelder": [
+      "p23_anschaffung_herstellungskosten",
+      "p23_veraeusserungspreis",
+      "p23_werbungskosten"
+    ],
+    "gewinn_kz": {
+      "anderes_wg": "E0307701",
+      "grundstueck": "E0306801"
+    }
+  },
+  "partner_instanz": {
+    "bruttoarbeitslohn_partner": "E0200201",
+    "gewst_hebesatz_partner": "E0801705",
+    "gewst_messbetrag_partner": "E0801606",
+    "gewst_zu_zahlen_partner": "E0801704",
+    "kap_gewinn_aktien_partner": "E1900901",
+    "kap_kapitalertraege_partner": "E1900701",
+    "kap_verlust_aktien_partner": "E1901301",
+    "kap_verlust_sonstige_partner": "E1901201",
+    "kirchensteuer_arbeitgeber_partner": "E0200501",
+    "p36_lohnsteuer_partner": "E0200301",
+    "rentner_grad_der_behinderung_partner": "E0109708",
+    "rentner_hilflos_blind_taubblind_partner": "E0109706",
+    "steuerklasse_partner": "E0200002",
+    "vor_ag_anteil_rv_partner": "E2000801",
+    "vor_an_anteil_rv_partner": "E2000401",
+    "vor_rv_ausserhalb_lstb_partner": "E2000601"
+  },
+  "partner_verzweigung": {
+    "basis_kv_partner": {
+      "art_feld": "versicherungsart_partner",
+      "kz": {
+        "gesetzlich_an": "E2001203",
+        "gesetzlich_freiwillig": "E2001805",
+        "privat": "E2003104"
+      }
+    },
+    "basis_pv_partner": {
+      "art_feld": "versicherungsart_partner",
+      "kz": {
+        "gesetzlich_an": "E2001505",
+        "gesetzlich_freiwillig": "E2002105",
+        "privat": "E2003202"
+      }
+    },
+    "einkuenfte_gewinn_partner": {
+      "art_feld": "gewinn_betriebsart_partner",
+      "kz": {
+        "gewerbe": "E0800302",
+        "selbstaendig": "E0803202"
+      }
+    },
+    "gewinn_bezeichnung_partner": {
+      "art_feld": "gewinn_betriebsart_partner",
+      "kz": {
+        "gewerbe": "E0800301",
+        "selbstaendig": "E0803101"
+      }
+    },
+    "rentner_jahresrente_partner": {
+      "art_feld": "rentner_renten_art_partner",
+      "kz": {
+        "berufsstaendische_versorgung": "E1800301",
+        "gesetzliche_rente": "E1800301",
+        "private_basisrente": "E1800301",
+        "private_leibrente": "E1801601",
+        "sonstige_leibrente": "E1803102"
+      }
+    },
+    "rentner_renten_beginn_jahr_partner": {
+      "art_feld": "rentner_renten_art_partner",
+      "kz": {
+        "berufsstaendische_versorgung": "E1800501",
+        "gesetzliche_rente": "E1800501",
+        "private_basisrente": "E1800501",
+        "private_leibrente": "E1801701",
+        "sonstige_leibrente": "E1803202"
+      }
+    },
+    "rentner_veraeusserungsgewinn_partner": {
+      "art_feld": "rentner_veraeusserungs_betriebsart_partner",
+      "kz": {
+        "gewerbe": "E0801301",
+        "land_forst": "E0901201",
+        "selbstaendig": "E0804501"
+      }
+    }
+  },
+  "pflege_kz": [
+    "E0106507",
+    "E0106603",
+    "E0110601",
+    "E0161506",
+    "E0161606",
+    "E0161607",
+    "E0161808"
+  ],
+  "verzweigung": {
+    "basis_kv": {
+      "art_feld": "versicherungsart",
+      "kz": {
+        "gesetzlich_an": "E2001203",
+        "gesetzlich_freiwillig": "E2001805",
+        "privat": "E2003104"
+      }
+    },
+    "basis_pv": {
+      "art_feld": "versicherungsart",
+      "kz": {
+        "gesetzlich_an": "E2001505",
+        "gesetzlich_freiwillig": "E2002105",
+        "privat": "E2003202"
+      }
+    },
+    "einkuenfte_gewinn": {
+      "art_feld": "gewinn_betriebsart",
+      "kz": {
+        "gewerbe": "E0800302",
+        "selbstaendig": "E0803202"
+      }
+    },
+    "gewinn_bezeichnung": {
+      "art_feld": "gewinn_betriebsart",
+      "kz": {
+        "gewerbe": "E0800301",
+        "selbstaendig": "E0803101"
+      }
+    },
+    "p34_abs3_antragsbetrag": {
+      "art_feld": "rentner_veraeusserungs_betriebsart",
+      "kz": {
+        "gewerbe": "E0801602",
+        "land_forst": "E0901704",
+        "selbstaendig": "E0805003"
+      }
+    },
+    "p35c_massnahme_einzelbetrag": {
+      "art_feld": "p35c_massnahme_art",
+      "kz": {
+        "dach": "E0241101",
+        "digital": "E0241601",
+        "fenster_tueren": "E0241301",
+        "geschossdecken": "E0241201",
+        "heizung": "E0241501",
+        "heizung_optimierung": "E0241701",
+        "lueftung": "E0241401",
+        "sommerlicher_waermeschutz": "E0241302",
+        "waende": "E0241001"
+      }
+    },
+    "rentner_jahresrente": {
+      "art_feld": "rentner_renten_art",
+      "kz": {
+        "berufsstaendische_versorgung": "E1800301",
+        "gesetzliche_rente": "E1800301",
+        "private_basisrente": "E1800301",
+        "private_leibrente": "E1801601",
+        "sonstige_leibrente": "E1803102"
+      }
+    },
+    "rentner_renten_beginn_jahr": {
+      "art_feld": "rentner_renten_art",
+      "kz": {
+        "berufsstaendische_versorgung": "E1800501",
+        "gesetzliche_rente": "E1800501",
+        "private_basisrente": "E1800501",
+        "private_leibrente": "E1801701",
+        "sonstige_leibrente": "E1803202"
+      }
+    },
+    "rentner_veraeusserungsgewinn": {
+      "art_feld": "rentner_veraeusserungs_betriebsart",
+      "kz": {
+        "gewerbe": "E0801301",
+        "land_forst": "E0901201",
+        "selbstaendig": "E0804501"
+      }
+    }
+  },
+  "wertekodierung": {
+    "kist_konfession": {
+      "code": {
+        "evangelisch": "02",
+        "keine": "11",
+        "roemisch-katholisch": "03"
+      },
+      "kz": "E0100402"
+    },
+    "kist_konfession_partner": {
+      "code": {
+        "evangelisch": "02",
+        "keine": "11",
+        "roemisch-katholisch": "03"
+      },
+      "kz": "E0101002"
+    }
+  }
+}

@@ -91,16 +91,17 @@ fn felder_null_ohne_datei_ist_ein_fehler_kein_leerer_satz() {
 
 #[test]
 fn rentner_gesamt_traegt_das_doppelte_geburtsjahr_nicht_still_weg() {
-    // Befund aus helfer-spec.md: rentner_gesamt hat 249 Feld-Eintraege, aber nur 248 verschiedene
-    // (248/247 bis zum Zwilling p34_abs3_antragsbetrag, 2026-10-03).
-    // Folge in Python: _scheibe_felder 249, _scheibe_bindung 248, Differenz verschwindet ohne
+    // Befund aus helfer-spec.md: rentner_gesamt hat 250 Feld-Eintraege, aber nur 249 verschiedene
+    // (249/248 bis zum Zwilling p34_abs3_antragsbetrag, 250/249 mit stammdaten_hausnummerzusatz,
+    // 2026-10-03).
+    // Folge in Python: _scheibe_felder 250, _scheibe_bindung 249, Differenz verschwindet ohne
     // Meldung. Hier wird die Differenz SICHTBAR gemacht, nicht wegnormalisiert.
     let c = Cfg::fuer(Scheibe::RentnerGesamt);
     let f = c.felder(ohne_datei).unwrap();
-    assert_eq!(f.len(), 249, "roh gezaehlt wie _scheibe_felder");
+    assert_eq!(f.len(), 250, "roh gezaehlt wie _scheibe_felder");
     let n_geburtsjahr = f.iter().filter(|x| x.as_str() == "geburtsjahr").count();
     assert_eq!(n_geburtsjahr, 2, "das Duplikat ist da und wird nicht versteckt");
     let distinct: std::collections::HashSet<_> = f.iter().collect();
-    assert_eq!(distinct.len(), 248, "distinct wie _scheibe_bindung");
-    assert_eq!(c.kegel(ohne_datei).unwrap().len(), 28, "der Meet laeuft ueber 28, nicht 249");
+    assert_eq!(distinct.len(), 249, "distinct wie _scheibe_bindung");
+    assert_eq!(c.kegel(ohne_datei).unwrap().len(), 28, "der Meet laeuft ueber 28, nicht 250");
 }
