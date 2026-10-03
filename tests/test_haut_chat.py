@@ -235,10 +235,9 @@ def test_graceful_skip_human_only(fall, monkeypatch, capsys):
     assert st == 200
     assert {g["feld_id"] for g in body["vorschlaege"]} == {"agb_aufwendungen", "berufsausbildung_aufwendungen"}
     assert body["abgelehnt"] == ["antrag_ermaessigter_satz"]   # UNVERÄNDERTE Form: list[feld_id]
-    # NEU (additiv): der Grund steht jetzt daneben — Katalog-Text, PII-frei (kein Wert/Freitext, nur die feld_id).
-    assert "antrag_ermaessigter_satz" in body["abgelehnt_gruende"]
-    grund = body["abgelehnt_gruende"]["antrag_ermaessigter_satz"]
-    assert "antrag_ermaessigter_satz" in grund and "True" not in grund
+    # NEU (additiv): der Grund steht jetzt daneben — Klasse der Abweisung und feld_id, nie der Wert.
+    assert body["abgelehnt_gruende"] == {
+        "antrag_ermaessigter_satz": "fail-closed (Katalog): antrag_ermaessigter_satz"}
     assert body["konflikte"] == []                   # kein Konflikt — das Feld war nie LLM-vorschlagbar (Fall 1)
     # das Feld wurde NICHT geschrieben (kein aktives Event)
     import store as ST
@@ -246,6 +245,41 @@ def test_graceful_skip_human_only(fall, monkeypatch, capsys):
     # Observability PII-frei: nur die abgewiesene feld_id, kein Wert/Freitext
     err = capsys.readouterr().err
     assert "antrag_ermaessigter_satz" in err and "True" not in err
+
+
+# --------------------------------------------------------------- Ablehnungsgrund: Klasse und Feld, nie der Wert
+@pytest.mark.parametrize("fid,wert,klasse,nicht_im_grund", [
+    ("agb_aufwendungen", "GEHEIM-123", "fail-closed (Typ)", "GEHEIM-123"),        # Text in einem Cent-Feld
+    ("kind_idnr", "GEHEIM-123", "fail-closed (Format)", "GEHEIM-123"),            # Muster [0-9]{11}
+    ("agb_aufwendungen", 98765432109, "fail-closed (F2/Magnitude)", "98765432109"),  # >= 10^10
+])
+def test_abgelehnter_grund_nennt_klasse_und_feld_nie_den_wert(
+        fall, monkeypatch, fid, wert, klasse, nicht_im_grund):
+    """Julius 2026-10-03 (6c), „Feld und Typ, nicht der Wert": `abgelehnt_gruende[fid]` heißt
+    `<Klasse>: <feld_id>`. Die Store-Meldung trägt `feld_id=wert`; sie darf den Weg in die Antwort (und
+    damit in alles, was Gründe später protokolliert oder weiterreicht) nicht mehr nehmen. Der Text steht
+    hier Zeichen für Zeichen fest — Rust (`api::chat::abgelehnt_grund`) muss ihn gleich schreiben."""
+    monkeypatch.setattr(LC, "complete", _fake_complete((fid, wert)))
+    st, body = API.chat(fall, {"text": "3000 Euro."})
+    assert st == 200
+    assert body["abgelehnt"] == [fid]
+    assert body["abgelehnt_gruende"] == {fid: f"{klasse}: {fid}"}
+    assert nicht_im_grund not in json.dumps(body, ensure_ascii=False), (
+        "Der abgelehnte Wert steht in der Antwort.")
+
+
+@pytest.mark.parametrize("meldung,erwartet", [
+    (ValueError("fail-closed (Format): kind_idnr='GEHEIM-123' passt nicht"), "fail-closed (Format): f"),
+    (ValueError("fail-closed (F2/Magnitude): a=1 von x"), "fail-closed (F2/Magnitude): f"),
+    (ValueError("fail-closed: signal_2 muss Text oder null sein"), "fail-closed: f"),       # ohne Tag
+    (ValueError("fail-closed (GEHEIM-123): f=1"), "fail-closed: f"),                      # Tag mit Fremdzeichen
+    (ValueError("fail-closed (Typ"), "fail-closed: f"),                                   # Klammer offen
+    (ValueError("fail-closed ()"), "fail-closed: f"),                                     # Tag leer
+    (KeyError("wert"), "KeyError: f"),                                                    # keine Store-Meldung
+    (ValueError("etwas anderes mit GEHEIM-123"), "ValueError: f"),
+])
+def test_abgelehnt_grund_klassen_und_randfaelle(meldung, erwartet):
+    assert API.api_llm._abgelehnt_grund(meldung, "f") == erwartet
 
 
 # --------------------------------------------------------------- Ring-e2e: vorläufig bewegt die Steuer NICHT

@@ -1,11 +1,12 @@
-//! Ein einzelner HTTP/1.1-POST, gebaut fuer die Fehlerklassen von `llm_client._ein_versuch`
-//! (`llm_client.py:276-331`).
+//! Eine einzelne HTTP/1.1-Anfrage (POST fuer den Chat, GET und POST fuer `ors`), gebaut fuer die
+//! Fehlerklassen von `llm_client._ein_versuch` (`llm_client.py:276-331`).
 //!
 //! Warum kein fertiger HTTP-Client: Python unterscheidet zwei Zeitgrenzen, und die Unterscheidung
 //! entscheidet ueber Wiederholen oder Aufgeben. Der Socket-Timeout gilt JE LESEOPERATION (ein
 //! stehender Anbieter → `TimeoutError` → wiederholbar); die Wanduhr-Frist wird ZWISCHEN den
 //! Leseoperationen geprueft (ein troepfelnder Anbieter → Frist → endgueltig). Gaengige Clients
 //! kennen nur Gesamt- oder Phasen-Timeouts und koennen die zwei Faelle nicht auseinanderhalten.
+use std::fmt::Write as _;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::Arc;
@@ -156,21 +157,49 @@ pub(crate) fn post(
     socket: Duration,
     ende: Instant,
 ) -> Result<Antwort, Transport> {
-    let ziel = zerlege(&format!("{basis}/chat/completions"))?;
+    senden(
+        "POST",
+        &format!("{basis}/chat/completions"),
+        &[
+            ("Authorization", &format!("Bearer {schluessel}")),
+            ("Content-Type", "application/json"),
+        ],
+        Some(koerper),
+        socket,
+        ende,
+    )
+}
+
+/// Eine Anfrage `methode` an `url` (mit Query, falls vorhanden). `kopf` steht nach `Host:` in
+/// dieser Reihenfolge; mit `koerper` folgt `Content-Length`. Die Fehlerklassen sind die von
+/// [`post`]: der Client ordnet sie ein, hier wird nur gesendet und gelesen.
+pub(crate) fn senden(
+    methode: &str,
+    url: &str,
+    kopf: &[(&str, &str)],
+    koerper: Option<&[u8]>,
+    socket: Duration,
+    ende: Instant,
+) -> Result<Antwort, Transport> {
+    let ziel = zerlege(url)?;
     let mut strom = verbinde(&ziel, socket)?;
     let host = if (ziel.tls && ziel.port == 443) || (!ziel.tls && ziel.port == 80) {
         ziel.host.clone()
     } else {
         format!("{}:{}", ziel.host, ziel.port)
     };
-    let kopf = format!(
-        "POST {} HTTP/1.1\r\nHost: {host}\r\nAuthorization: Bearer {schluessel}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccept-Encoding: identity\r\nUser-Agent: taxgraph\r\nConnection: close\r\n\r\n",
-        ziel.pfad,
-        koerper.len()
-    );
+    let mut kopf_text = format!("{methode} {} HTTP/1.1\r\nHost: {host}\r\n", ziel.pfad);
+    for (name, wert) in kopf {
+        let _ = write!(kopf_text, "{name}: {wert}\r\n");
+    }
+    if let Some(k) = koerper {
+        let _ = write!(kopf_text, "Content-Length: {}\r\n", k.len());
+    }
+    kopf_text
+        .push_str("Accept-Encoding: identity\r\nUser-Agent: taxgraph\r\nConnection: close\r\n\r\n");
     strom
-        .write_all(kopf.as_bytes())
-        .and_then(|()| strom.write_all(koerper))
+        .write_all(kopf_text.as_bytes())
+        .and_then(|()| strom.write_all(koerper.unwrap_or_default()))
         .and_then(|()| strom.flush())
         .map_err(|e| {
             if ist_zeit(&e) {
