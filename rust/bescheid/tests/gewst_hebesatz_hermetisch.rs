@@ -75,7 +75,7 @@ fn faelle() -> Vec<Fall> {
             gruppe: "a_offen",
             name: "A: Messbetrag, Hebesatz 0",
             events: vec![
-                ("gewst_messbetrag", json!(100000), true),
+                ("gewst_messbetrag", json!(100_000), true),
                 ("gewst_hebesatz", json!(0), true),
             ],
             erwartet: Some("gewst_hebesatz_offen"),
@@ -84,7 +84,7 @@ fn faelle() -> Vec<Fall> {
             gruppe: "a_offen",
             name: "A: Messbetrag, Hebesatz -1",
             events: vec![
-                ("gewst_messbetrag", json!(100000), true),
+                ("gewst_messbetrag", json!(100_000), true),
                 ("gewst_hebesatz", json!(-1), true),
             ],
             erwartet: Some("gewst_hebesatz_offen"),
@@ -92,14 +92,14 @@ fn faelle() -> Vec<Fall> {
         Fall {
             gruppe: "a_offen",
             name: "A: Messbetrag, Hebesatz fehlt",
-            events: vec![("gewst_messbetrag", json!(100000), true)],
+            events: vec![("gewst_messbetrag", json!(100_000), true)],
             erwartet: Some("gewst_hebesatz_offen"),
         },
         Fall {
             gruppe: "a_offen",
             name: "A: Messbetrag, Hebesatz nur vorlaeufig 400",
             events: vec![
-                ("gewst_messbetrag", json!(100000), true),
+                ("gewst_messbetrag", json!(100_000), true),
                 ("gewst_hebesatz", json!(400), false),
             ],
             erwartet: Some("gewst_hebesatz_offen"),
@@ -108,7 +108,7 @@ fn faelle() -> Vec<Fall> {
             gruppe: "frei",
             name: "A: Messbetrag, Hebesatz 400",
             events: vec![
-                ("gewst_messbetrag", json!(100000), true),
+                ("gewst_messbetrag", json!(100_000), true),
                 ("gewst_hebesatz", json!(400), true),
             ],
             erwartet: None,
@@ -117,7 +117,7 @@ fn faelle() -> Vec<Fall> {
             gruppe: "frei",
             name: "A: Messbetrag, Hebesatz 1",
             events: vec![
-                ("gewst_messbetrag", json!(100000), true),
+                ("gewst_messbetrag", json!(100_000), true),
                 ("gewst_hebesatz", json!(1), true),
             ],
             erwartet: None,
@@ -142,7 +142,7 @@ fn faelle() -> Vec<Fall> {
             name: "B zusammen: Messbetrag, Hebesatz fehlt",
             events: vec![
                 ("veranlagung", json!("zusammen"), true),
-                ("gewst_messbetrag_partner", json!(175000), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
             ],
             erwartet: Some("gewst_hebesatz_offen"),
         },
@@ -151,7 +151,7 @@ fn faelle() -> Vec<Fall> {
             name: "B zusammen: Messbetrag, Hebesatz 0",
             events: vec![
                 ("veranlagung", json!("zusammen"), true),
-                ("gewst_messbetrag_partner", json!(175000), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
                 ("gewst_hebesatz_partner", json!(0), true),
             ],
             erwartet: Some("gewst_hebesatz_offen"),
@@ -161,7 +161,7 @@ fn faelle() -> Vec<Fall> {
             name: "B zusammen: Messbetrag, Hebesatz -1",
             events: vec![
                 ("veranlagung", json!("zusammen"), true),
-                ("gewst_messbetrag_partner", json!(175000), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
                 ("gewst_hebesatz_partner", json!(-1), true),
             ],
             erwartet: Some("gewst_hebesatz_offen"),
@@ -177,7 +177,7 @@ fn faelle() -> Vec<Fall> {
                 ("kap_gewinn_sonstige_partner", json!(0), true),
                 ("kap_verlust_aktien_partner", json!(0), true),
                 ("kap_verlust_sonstige_partner", json!(0), true),
-                ("gewst_messbetrag_partner", json!(175000), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
                 ("gewst_hebesatz_partner", json!(400), true),
             ],
             erwartet: None,
@@ -203,7 +203,7 @@ fn faelle() -> Vec<Fall> {
             name: "B einzel: Messbetrag, Hebesatz fehlt",
             events: vec![
                 ("veranlagung", json!("einzel"), true),
-                ("gewst_messbetrag_partner", json!(175000), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
             ],
             erwartet: None,
         },
@@ -212,7 +212,7 @@ fn faelle() -> Vec<Fall> {
             name: "B einzel: Messbetrag, Hebesatz 0",
             events: vec![
                 ("veranlagung", json!("einzel"), true),
-                ("gewst_messbetrag_partner", json!(175000), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
                 ("gewst_hebesatz_partner", json!(0), true),
             ],
             erwartet: None,
@@ -222,9 +222,9 @@ fn faelle() -> Vec<Fall> {
             name: "A ok, B zusammen ohne Hebesatz",
             events: vec![
                 ("veranlagung", json!("zusammen"), true),
-                ("gewst_messbetrag", json!(100000), true),
+                ("gewst_messbetrag", json!(100_000), true),
                 ("gewst_hebesatz", json!(400), true),
-                ("gewst_messbetrag_partner", json!(175000), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
             ],
             erwartet: Some("gewst_hebesatz_offen"),
         },
@@ -233,8 +233,8 @@ fn faelle() -> Vec<Fall> {
             name: "A ohne Hebesatz, B zusammen ok",
             events: vec![
                 ("veranlagung", json!("zusammen"), true),
-                ("gewst_messbetrag", json!(100000), true),
-                ("gewst_messbetrag_partner", json!(175000), true),
+                ("gewst_messbetrag", json!(100_000), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
                 ("gewst_hebesatz_partner", json!(400), true),
             ],
             erwartet: Some("gewst_hebesatz_offen"),
@@ -250,9 +250,9 @@ fn faelle() -> Vec<Fall> {
                 ("kap_gewinn_sonstige_partner", json!(0), true),
                 ("kap_verlust_aktien_partner", json!(0), true),
                 ("kap_verlust_sonstige_partner", json!(0), true),
-                ("gewst_messbetrag", json!(100000), true),
+                ("gewst_messbetrag", json!(100_000), true),
                 ("gewst_hebesatz", json!(400), true),
-                ("gewst_messbetrag_partner", json!(175000), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
                 ("gewst_hebesatz_partner", json!(400), true),
             ],
             erwartet: None,
