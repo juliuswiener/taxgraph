@@ -1,5 +1,5 @@
-//! § 35a `EStG`: die Abbildung Feld -> Eingabe in `abzuege.rs::steuerermaessigungen` im Standardlauf (ohne
-//! `PARITY=1`, ohne Python).
+//! § 35a und § 35c `EStG`: die Abbildung Feld -> Eingabe in `abzuege.rs::steuerermaessigungen` im Standardlauf
+//! (ohne `PARITY=1`, ohne Python).
 //!
 //! `p35a_haushaltsnahe` (Crate `engine`) rechnet richtig, wenn man ihr die richtigen sieben Werte gibt
 //! (`rust/engine/tests/haushaltsnahe_hermetisch.rs`). Dass die Bescheid-Schicht ihr die richtigen Werte
@@ -10,12 +10,21 @@
 //! `feld_kennung_gate.rs` (141 < 142) schlaegt an, nicht das Verhalten. 1 (`cent_zu_euro` rundet auf) faengt
 //! schon der Bestand (5 Tests). Mit diesen Tests werden alle 21 rot, jede mit 1 bis 3 der drei Tests.
 //!
+//! § 35c (vierter Test): zwei Mutationen am Aufrufer liessen `cargo test -p bescheid` auf 92578c9b gruen
+//! (170 passed, 0 failed): die Doppelfoerderung (`p35c_keine_doppelfoerderung` = nein) wird ignoriert, und das
+//! uebernaechste Foerderjahr (`p35c_ist_uebernaechstes_foerderjahr`) wird ignoriert (7 %/14.000 statt 6 %/12.000, auch im
+//! Jahresdeckel). Beide werden mit dem Test rot.
+//!
 //! HERKUNFT DER ERWARTUNGSWERTE: jede Zahl ist die Ausgabe des Python-Orakels
 //! `bescheid_abzuege._shared_steuer_sonder_agb` (`steuerermaessigungen`, ueber `tools/parity/bescheid_oracle`
 //! mit leerer Wegwerf-Datenwurzel) auf denselben Events UND stimmt mit der Gesetzes-Arithmetik aus den
 //! GEMEINTEN Topfsummen ueberein (20 %, Deckel 510 / 4.000 / 1.200 EUR; Abs. 4 EU/EWR, Abs. 5 S. 3 unbare
 //! Zahlung, Abs. 3 S. 2 Foerderung; `sources/gesetze-im-internet/estg_p35a_*.txt`). Das Orakel hat beides
 //! gegeneinander geprueft und bricht bei einer Abweichung ab. Kein Wert ist aus dem Rust-Code abgelesen.
+//! Fuer § 35c gilt dasselbe (7 %/14.000 EUR, 6 %/12.000 EUR, Energieberater 50 %,
+//! `sources/gesetze-im-internet/estg_p35c_2026-07-13.txt`); der gemeinsame Jahreshoechstbetrag fuer Sanierung plus
+//! Energieberater ist Auslegung des Projekts (`rules/estg/p35c/energetische_massnahmen.catala_en`), nicht
+//! Gesetzeswortlaut; dort stuetzt nur das Python-Orakel.
 //!
 //! Zahlen in den Events sind Cent (die Felder `hh_*_betrag` und `hh_*` sind Cent-Felder); `erwartet` ist die
 //! Steuerermaessigung in EUR. Die Topfwerte der Gate-Faelle (1.000 / 5.000 / 3.000 EUR) liegen unter den
@@ -359,6 +368,131 @@ fn faelle() -> Vec<Fall> {
             nur_bestaetigt: true,
             erwartet: 472,
         },
+        Fall {
+            gruppe: "p35c",
+            name: "Sanierung 20.000 EUR, Abschlussjahr: 7 % = 1.400",
+            events: vec![
+                z("p35c_sanierungsaufwendungen", 2_000_000, true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 1400,
+        },
+        Fall {
+            gruppe: "p35c",
+            name: "Sanierung 20.000 EUR, uebernaechstes Foerderjahr: 6 % = 1.200",
+            events: vec![
+                z("p35c_sanierungsaufwendungen", 2_000_000, true),
+                b("p35c_ist_uebernaechstes_foerderjahr", true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 1200,
+        },
+        Fall {
+            gruppe: "p35c",
+            name: "Sanierung 300.000 EUR: Hoechstbetrag 14.000",
+            events: vec![
+                z("p35c_sanierungsaufwendungen", 30_000_000, true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 14_000,
+        },
+        Fall {
+            gruppe: "p35c",
+            name: "Sanierung 300.000 EUR, uebernaechstes Foerderjahr: Hoechstbetrag 12.000",
+            events: vec![
+                z("p35c_sanierungsaufwendungen", 30_000_000, true),
+                b("p35c_ist_uebernaechstes_foerderjahr", true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 12_000,
+        },
+        Fall {
+            gruppe: "p35c",
+            name: "Energieberater 1.001 EUR: 50 % = 500",
+            events: vec![
+                z("p35c_energieberater_aufwendungen", 100_100, true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 500,
+        },
+        Fall {
+            gruppe: "p35c",
+            name: "Sanierung 200.000 + Energieberater 4.000 EUR: Jahresdeckel 14.000",
+            events: vec![
+                z("p35c_sanierungsaufwendungen", 20_000_000, true),
+                z("p35c_energieberater_aufwendungen", 400_000, true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 14_000,
+        },
+        Fall {
+            gruppe: "p35c",
+            name: "dasselbe im uebernaechsten Foerderjahr: Jahresdeckel 12.000",
+            events: vec![
+                z("p35c_sanierungsaufwendungen", 20_000_000, true),
+                z("p35c_energieberater_aufwendungen", 400_000, true),
+                b("p35c_ist_uebernaechstes_foerderjahr", true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 12_000,
+        },
+        Fall {
+            gruppe: "p35c",
+            name: "Doppelfoerderung ausdruecklich ja (keine_doppelfoerderung = nein): Sanierung und Energieberater 0",
+            events: vec![
+                z("p35c_sanierungsaufwendungen", 2_000_000, true),
+                z("p35c_energieberater_aufwendungen", 100_100, true),
+                b("p35c_keine_doppelfoerderung", false),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 0,
+        },
+        Fall {
+            gruppe: "p35c",
+            name: "keine Doppelfoerderung ausdruecklich bestaetigt: zaehlt",
+            events: vec![
+                z("p35c_sanierungsaufwendungen", 2_000_000, true),
+                z("p35c_energieberater_aufwendungen", 100_100, true),
+                b("p35c_keine_doppelfoerderung", true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 1900,
+        },
+        Fall {
+            gruppe: "p35c",
+            name: "Doppelfoerderung unbeantwortet: zaehlt hier (die Sperre sitzt woanders)",
+            events: vec![
+                z("p35c_sanierungsaufwendungen", 2_000_000, true),
+                z("p35c_energieberater_aufwendungen", 100_100, true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 1900,
+        },
+        Fall {
+            gruppe: "p35c",
+            name: "§ 35a (1.800) und § 35c (1.400) addieren sich",
+            events: vec![
+                b("hh_in_eu_ewr", true),
+                b("hh_rechnung_unbar", true),
+                z("hh_minijob_betrag", 100_000, true),
+                z("hh_dienstleistung_betrag", 500_000, true),
+                z("hh_handwerker_betrag", 300_000, true),
+                z("p35c_sanierungsaufwendungen", 2_000_000, true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 3200,
+        },
     ]
 }
 
@@ -436,4 +570,13 @@ fn betraege_instanzen_und_flat_rueckfall() {
 #[test]
 fn cent_werden_zu_euro_abgerundet() {
     pruefe("cent");
+}
+
+/// § 35c Abs. 1 und 3: die Felder der Sanierung kommen richtig an. Sanierung 7 % bis 14.000 EUR, im
+/// uebernaechsten Foerderjahr 6 % bis 12.000 EUR; Energieberater 50 %; gemeinsamer Jahresdeckel 14.000 bzw.
+/// 12.000 EUR; eine AUSDRUECKLICH bestaetigte Doppelfoerderung (Abs. 3 S. 2) nullt beide Toepfe, eine
+/// unbeantwortete nicht (die Sperre sitzt in `_an_gesamt_sperrgrund`); die Summe mit § 35a stimmt.
+#[test]
+fn p35c_doppelfoerderung_foerderjahr_energieberater_und_deckel() {
+    pruefe("p35c");
 }
