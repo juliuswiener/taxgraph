@@ -111,6 +111,16 @@ pub fn wache_gilt(wo: &str, n: usize, standard: usize) -> bool {
     false
 }
 
+/// Wie [`wache_gilt`], wenn mehrere Stellen EINEN Pool speisen: `stellen` = (n, Standard) je Stelle. Der
+/// Waechter gilt nur, wenn jede Stelle ihre Standardzahl hat.
+#[must_use]
+pub fn wache_gilt_pool(wo: &str, stellen: &[(usize, usize)]) -> bool {
+    match stellen.iter().find(|(n, standard)| n != standard) {
+        None => true,
+        Some(&(n, standard)) => wache_gilt(wo, n, standard),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -158,5 +168,14 @@ mod tests {
         assert!(wache_gilt("test", 1000, 1000));
         assert!(!wache_gilt("test", 7, 1000));
         assert!(!wache_gilt("test", 10_000, 1000));
+    }
+
+    #[test]
+    fn wache_gilt_pool_nur_wenn_jede_stelle_ihren_standard_hat() {
+        assert!(wache_gilt_pool("test", &[(1500, 1500), (1000, 1000)]));
+        assert!(wache_gilt_pool("test", &[]));
+        // PARITY_N=1500: die erste Stelle steht auf ihrem Standard, die zweite nicht.
+        assert!(!wache_gilt_pool("test", &[(1500, 1500), (1500, 1000)]));
+        assert!(!wache_gilt_pool("test", &[(7, 1500), (7, 1000)]));
     }
 }
