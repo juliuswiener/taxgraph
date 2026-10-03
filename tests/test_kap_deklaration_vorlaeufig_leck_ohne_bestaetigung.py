@@ -66,6 +66,13 @@ Vergleich mit der Nachbarfunktion _instanz_summe IN DERSELBEN DATEI und die LIVE
 Asymmetrie offen.
 
 HEAD zum Zeitpunkt der Messung: 3bfca6b.
+
+STAND 2026-10-03: behoben, in Python UND Rust (Entscheid kap-vorschau-liest-nur-bestaetigte-werte): der
+Antrag-Block liest nur bestaetigte Werte, der xfail-Marker ist entfallen. Die oben als „NICHT geprueft"
+genannten Eingaben sind jetzt je ein Fall (AK4): das Aggregat, ein gemischter Zustand (ein Topf bestaetigt,
+einer vorlaeufig) und der Partner — in `gesamt` ist der vorlaeufige Partner-KAP-Wert NICHT erreichbar
+(`partner_kegel_offen` sperrt /deklaration vorher), in `rentner_gesamt` erreichbar und gefiltert. Die
+uebrigen Einspeise-Bloecke von `_mit_ring_werten` (Verpflegung, § 35c) sind nicht Gegenstand dieser Datei.
 """
 from __future__ import annotations
 
@@ -168,17 +175,34 @@ _GRUND_BASIS = {
 # tragen alle den Abwesenheitswert 0 und kommen jetzt aus dem Bauer.
 
 
-def _grund(auslassen=()):
+def _grund(auslassen=(), zusammen=False):
     """Voller gesamt-Kegel mit den echten Fallwerten, plus _STAMM (das sind KEINE Kegel-Felder).
 
     `auslassen` sind Felder, die der Test DANACH als eigenes Event schickt (hier: die kap_events,
     darunter ein bewusst vorlaeufiger Wert). Sie duerfen im Bauer nicht vorbelegt sein -- sonst
     kaeme dasselbe Feld zweimal (Store weist das nach Auflage B mit 422 ab) oder der Bauer
-    ueberschriebe genau den Messgegenstand.
+    ueberschriebe genau den Messgegenstand. `zusammen`: Zusammenveranlagung, der Partner-Kegel
+    kommt mit dem Abwesenheitswert aus dem Bauer.
     """
-    raus = [(f, w) for f, w in kegel_fuer("gesamt", _GRUND_BASIS)
+    basis = {**_GRUND_BASIS, "veranlagung": "zusammen"} if zusammen else _GRUND_BASIS
+    raus = [(f, w) for f, w in kegel_fuer("gesamt", basis)
             if f not in set(auslassen)]
     return raus + list(_STAMM)
+
+
+# Partner-Kegel unter Zusammenveranlagung in `gesamt`: GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP gehoeren
+# NICHT zum Bauer-Kegel, der Guard verlangt sie aber bestaetigt (sonst partner_kegel_offen).
+_PARTNER_NULL = ("bruttoarbeitslohn_partner", "kap_kapitalertraege_partner", "kap_gewinn_aktien_partner",
+                 "kap_gewinn_sonstige_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner")
+
+
+def _grund_rentner(auslassen=()):
+    """Voller rentner_gesamt-Kegel, Zusammenveranlagung, eine Rente. Die Scheibe fuehrt KEINE KAP-Betraege
+    im Kegel (nur `kein_kap`) und hat keinen Partner-KAP-Guard; vorlaeufige KAP-Werte erreichen hier
+    `/deklaration`, ohne dass `an_gesamt_sperrgrund` etwas meldet."""
+    basis = {"rentner_jahresrente": 2000000, "rentner_renten_beginn_jahr": 2025,
+             "kein_sonstige": False, "veranlagung": "zusammen"}
+    return [(f, w) for f, w in kegel_fuer("rentner_gesamt", basis) if f not in set(auslassen)]
 
 
 @pytest.fixture(scope="module")
@@ -212,14 +236,19 @@ def gemessen(tmp_path_factory):
     if "ELSTER_HERSTELLER_ID" not in os.environ:
         hid.setenv("ELSTER_HERSTELLER_ID", "00000000000")
 
-    def _messe(fid, kap_events):
+    def _messe(fid, kap_events, zusammen=False, scheibe="gesamt", partner_null=False, erwarte_dek=200):
         st, r = _req(base, "POST", "/fall",
-                     {"fall_id": fid, "scheibe": "gesamt", "veranlagungszeitraum": 2025})
+                     {"fall_id": fid, "scheibe": scheibe, "veranlagungszeitraum": 2025})
         assert st == 201, (fid, "fall_anlegen", st, r)
         # Die kap_events des Aufrufers bleiben draussen: der Test schickt sie gleich selbst,
         # und der 'leck'-Fall schickt dort bewusst einen VORLAEUFIGEN Wert -- der Bauer darf
         # den Messgegenstand nicht vorbelegen.
-        for fld, w in _grund(auslassen=[ev["feld_id"] for ev in kap_events]):
+        eigene = [ev["feld_id"] for ev in kap_events]
+        grund = (_grund_rentner(auslassen=eigene) if scheibe == "rentner_gesamt"
+                 else _grund(auslassen=eigene, zusammen=zusammen))
+        if partner_null:
+            grund += [(f, 0) for f in _PARTNER_NULL if f not in eigene]
+        for fld, w in grund:
             st, r = _req(base, "POST", f"/fall/{fid}/event", _laie(fld, w))
             assert st == 201, (fid, fld, st, r)
         for ev in kap_events:
@@ -228,7 +257,7 @@ def gemessen(tmp_path_factory):
         st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
         assert st == 200, (fid, "ergebnis", st, erg)
         st, dek = _req(base, "GET", f"/fall/{fid}/deklaration")
-        assert st == 200, (fid, "deklaration", st, dek)
+        assert st == erwarte_dek, (fid, "deklaration", st, dek)
         xml_erfasst.pop("letztes", None)
         st_e, ein = API.einreichen(fid, {})
         return {"ergebnis": erg, "deklaration": dek, "einreichen": (st_e, ein),
@@ -244,6 +273,34 @@ def gemessen(tmp_path_factory):
                                       [_laie("kein_kap", False), _laie("kap_gewinn_sonstige", 175000)])
         ergebnisse["leck"] = _messe("kapleck_leck",
                                      [_laie("kein_kap", False), _vorjahr_vorschlag("kap_gewinn_sonstige", 175000)])
+        # AK4: das Aggregat statt eines Topfs; ein Topf bestaetigt, ein zweiter vorlaeufig (unter dem
+        # Sparer-Pauschbetrag, damit 400 gegen 700 EUR unterscheidbar bleibt).
+        ergebnisse["aggregat"] = _messe("kapleck_aggregat",
+                                         [_laie("kein_kap", False), _vorjahr_vorschlag("kap_kapitalertraege", 175000)])
+        ergebnisse["gemischt_kontrolle"] = _messe("kapleck_gem_kontrolle",
+                                                   [_laie("kein_kap", False), _laie("kap_gewinn_aktien", 40000)])
+        ergebnisse["gemischt"] = _messe("kapleck_gemischt",
+                                         [_laie("kein_kap", False), _laie("kap_gewinn_aktien", 40000),
+                                          _vorjahr_vorschlag("kap_gewinn_sonstige", 30000)])
+        # AK4 Partner-KAP in `gesamt`: der Guard (GESAMT_PARTNER_KAP) sperrt /deklaration vorher.
+        ergebnisse["partner_gesamt_gruen"] = _messe(
+            "kapleck_pg_gruen", [_laie("kein_kap_partner", False), _laie("kap_gewinn_sonstige_partner", 175000)],
+            zusammen=True, partner_null=True)
+        ergebnisse["partner_gesamt_leck"] = _messe(
+            "kapleck_pg_leck", [_laie("kein_kap_partner", False), _vorjahr_vorschlag("kap_gewinn_sonstige_partner", 175000)],
+            zusammen=True, partner_null=True, erwarte_dek=409)
+        # AK4 in `rentner_gesamt` (Zusammenveranlagung): hier erreichen vorlaeufige KAP-Werte /deklaration.
+        ergebnisse["rentner_gruen"] = _messe(
+            "kapleck_r_gruen", [_laie("kap_gewinn_sonstige_partner", 175000)], scheibe="rentner_gesamt")
+        ergebnisse["rentner_eigen"] = _messe(
+            "kapleck_r_eigen", [_laie("kein_kap", False), _vorjahr_vorschlag("kap_gewinn_sonstige", 175000)],
+            scheibe="rentner_gesamt")
+        ergebnisse["rentner_partner"] = _messe(
+            "kapleck_r_partner", [_vorjahr_vorschlag("kap_gewinn_sonstige_partner", 175000)],
+            scheibe="rentner_gesamt")
+        ergebnisse["rentner_partner_aggregat"] = _messe(
+            "kapleck_r_partner_aggr", [_vorjahr_vorschlag("kap_kapitalertraege_partner", 175000)],
+            scheibe="rentner_gesamt")
     finally:
         EX.erzeuge_xml = orig_erzeuge_xml
         hid.undo()
@@ -277,10 +334,9 @@ def test_gruenkontrolle_bestaetigter_topf_konsistent(gemessen, braucht_echtes_xs
 
 
 def test_vorbedingung_leck_fall_ist_nirgends_abgabefaehig(gemessen):
-    """Die Vorbedingung des xfail-Tests unten, als eigener gruener Test (Entscheid
-    ein-erwarteter-fehlschlag-traegt-nur-die-kernaussage-..., 2026-10-03). Sie gehoert nicht in den
-    xfail-Test: scheitert sie, wuerde dieser an einer Zeile vor der Kernaussage fallen und sich nicht
-    melden, wenn der Leck behoben ist.
+    """Die Vorbedingung des Tests unten (der bis 2026-10-03 xfail(strict) war), als eigener Test (Entscheid
+    ein-erwarteter-fehlschlag-traegt-nur-die-kernaussage-..., 2026-10-03). Sie bleibt getrennt: scheitert
+    sie, misst der Test unten nichts mehr (kein Leck-Fall ohne Zahl, ohne 409, ohne XML).
 
     Der Leck-Fall ist ueberall anderweitig gesperrt: `/ergebnis` liefert keine Zahl (der Kegel ist
     nicht bestaetigt -- NICHT der Guard `_an_gesamt_sperrgrund`, deshalb sperrt `/deklaration`
@@ -295,20 +351,13 @@ def test_vorbedingung_leck_fall_ist_nirgends_abgabefaehig(gemessen):
     assert leck["xml"] is None, "XML wurde trotz eingaben_konsistent=False erzeugt -- anderer Befund"
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
-    "_kap_positiv/_c2 (bescheid_deklaration.py:117-119, 136-137) lesen felder.get(fid)['wert'] OHNE "
-    "zustand-Check -- ein NIE bestaetigter (vorlaeufiger) KAP-Topf-Wert loest trotzdem kap_erklaert=True "
-    "aus und injiziert E1900401=True/E1901401>0 in die LIVE-Antwort von GET /deklaration, obwohl "
-    "derselbe Aufruf eingaben_konsistent=False meldet (die Nachbarfunktion _instanz_summe IN DERSELBEN "
-    "DATEI filtert zustand=='bestaetigt' korrekt -- die Asymmetrie ist original, nicht Bauabsicht). "
-    "Erreicht NICHT das abgesendete XML (EM.deklariere() blockt einreichen() unabhaengig ueber "
-    "eingaben_konsistent=False, 409 deklaration_unvollstaendig, VOR erzeuge_xml()) -- nur der "
-    "/deklaration-Dict-Inhalt widerspricht seiner eigenen eingaben_konsistent-Aussage. "
-    "Die Sperre von /deklaration bei Sperrgrund (2026-10-03) ERFASST DIESEN FALL NICHT: "
-    "_an_gesamt_sperrgrund meldet hier keinen Grund (gemessen: /deklaration bleibt 200). "
-    "Reparaturrichtung offen (zustand-Filter in _kap_positiv/_c2 wie in _instanz_summe, oder die "
-    "Injektion an eingaben_konsistent koppeln) -- dieser Test bindet sich an keine davon."))
 def test_vorlaeufiger_topf_leckt_in_deklaration_trotz_unvollstaendig(gemessen):
+    """Behoben 2026-10-03 (Entscheid kap-vorschau-liest-nur-bestaetigte-werte): `_kap_positiv`/`_c2` in
+    `_mit_ring_werten` lesen nur Werte mit Zustand „bestaetigt", wie die Nachbarfunktion `_instanz_summe`.
+    Vorher xfail(strict): ein NIE bestaetigter KAP-Topf loeste kap_erklaert aus und injizierte
+    E1900401=True/E1901401>0 in GET /deklaration, obwohl dieselbe Antwort eingaben_konsistent=False meldet.
+    Der Leck erreichte nie das XML (409 deklaration_unvollstaendig VOR erzeuge_xml); die Sperre von
+    /deklaration bei Sperrgrund erfasst den Fall nicht (der Guard meldet nichts)."""
     leck = gemessen["leck"]
 
     # DIE Kernaussage: derselbe /deklaration-Aufruf, der eingaben_konsistent=False UND
@@ -329,3 +378,62 @@ def test_vorlaeufiger_topf_leckt_in_deklaration_trotz_unvollstaendig(gemessen):
         f"Widerspruch bestaetigt: /deklaration meldet eingaben_konsistent=False UND "
         f"kap_gewinn_sonstige als unvollstaendig, injiziert aber im selben Aufruf "
         f"E1900401={dek.get('E1900401')!r}/E1901401={dek.get('E1901401')!r} aus dem unbestaetigten Wert")
+
+
+def _kein_antrag(fall, unvollstaendig_feld):
+    """Gemeinsame Kernaussage der AK4-Faelle: /deklaration meldet das Feld als unvollstaendig, injiziert aber
+    weder den Antrag noch einen genutzten Sparer-Pauschbetrag aus dem unbestaetigten Wert."""
+    dek = fall["deklaration"]
+    assert dek["eingaben_konsistent"] is False, dek
+    assert unvollstaendig_feld in {u["feld_id"] for u in dek["unvollstaendig"]}, dek["unvollstaendig"]
+    assert dek["deklaration"].get("E1900401") is None and not dek["deklaration"].get("E1901401"), (
+        f"{unvollstaendig_feld} nur vorlaeufig, aber E1900401={dek['deklaration'].get('E1900401')!r}/"
+        f"E1901401={dek['deklaration'].get('E1901401')!r}")
+
+
+def test_vorlaeufiges_aggregat_leckt_nicht_in_deklaration(gemessen):
+    """AK4: dieselbe Aussage fuer `kap_kapitalertraege` (das Aggregat statt eines Topfs)."""
+    _kein_antrag(gemessen["aggregat"], "kap_kapitalertraege")
+
+
+def test_gemischter_zustand_zaehlt_nur_den_bestaetigten_topf(gemessen):
+    """AK4: Aktiengewinn 400 EUR bestaetigt, sonstiger Gewinn 300 EUR nur vorlaeufig. Der Antrag steht (ein
+    bestaetigter Topf erklaert Kapitalertraege), der genutzte Sparer-Pauschbetrag zaehlt aber nur die 400 EUR
+    des bestaetigten Topfs — gleich der Kontrolle ohne den vorlaeufigen Topf. Vorher: 700."""
+    kontrolle, gemischt = gemessen["gemischt_kontrolle"], gemessen["gemischt"]
+    kd, gd = kontrolle["deklaration"]["deklaration"], gemischt["deklaration"]["deklaration"]
+    assert kontrolle["deklaration"]["eingaben_konsistent"] is True, kontrolle["deklaration"]
+    assert (kd.get("E1900401"), kd.get("E1901401")) == (True, 400), kd      # KONTROLLE: der Aufbau misst
+    assert gemischt["deklaration"]["eingaben_konsistent"] is False, gemischt["deklaration"]
+    assert "kap_gewinn_sonstige" in {u["feld_id"] for u in gemischt["deklaration"]["unvollstaendig"]}
+    assert (gd.get("E1900401"), gd.get("E1901401")) == (kd.get("E1900401"), kd.get("E1901401")), (gd, kd)
+
+
+def test_partner_kap_in_gesamt_sperrt_der_guard_vor_der_vorschau(gemessen):
+    """AK4 „nicht erreichbar": in `gesamt` verlangt der Guard (`GESAMT_PARTNER_KAP`) alle Partner-KAP-Felder
+    bestaetigt. Ein vorlaeufiger Partner-Wert ergibt 409 partner_kegel_offen, noch bevor `_mit_ring_werten`
+    liest. Kontrolle: derselbe Fall mit bestaetigtem Wert antwortet 200 und traegt den Antrag."""
+    gruen, leck = gemessen["partner_gesamt_gruen"], gemessen["partner_gesamt_leck"]
+    dg = gruen["deklaration"]
+    assert dg["eingaben_konsistent"] is True and dg["deklaration"].get("E1900401") is True, dg
+    assert leck["deklaration"]["grund"] == "partner_kegel_offen", leck["deklaration"]
+
+
+def test_rentner_partner_gruenkontrolle(gemessen):
+    """Kontrolle fuer die Rentner-Faelle: ein bestaetigter Partner-Topf traegt Antrag und Pauschbetrag."""
+    d = gemessen["rentner_gruen"]["deklaration"]
+    assert d["eingaben_konsistent"] is True, d
+    assert (d["deklaration"].get("E1900401"), d["deklaration"].get("E1901401")) == (True, 1750), d["deklaration"]
+
+
+@pytest.mark.parametrize("fall,feld", [
+    ("rentner_eigen", "kap_gewinn_sonstige"),
+    ("rentner_partner", "kap_gewinn_sonstige_partner"),
+    ("rentner_partner_aggregat", "kap_kapitalertraege_partner"),
+])
+def test_rentner_vorlaeufiger_kap_wert_leckt_nicht_in_deklaration(gemessen, fall, feld):
+    """AK4 in `rentner_gesamt` (Zusammenveranlagung): die Scheibe hat keinen Partner-KAP-Guard und keine KAP-
+    Betraege im Kegel, `/ergebnis` meldet ring_betrag_vorlaeufig — der Guard schweigt, /deklaration antwortet
+    200. Eigener Topf, Partner-Topf und Partner-Aggregat: keiner darf einen Antrag ausloesen."""
+    assert gemessen[fall]["ergebnis"]["grund"] == "ring_betrag_vorlaeufig", gemessen[fall]["ergebnis"]
+    _kein_antrag(gemessen[fall], feld)

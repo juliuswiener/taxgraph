@@ -66,8 +66,10 @@ fn multi_objekt(k: &K<'_>, cfg: &Cfg) -> Grund {
 }
 
 /// § 22 aa (`art in RENTNER_AA_ARTEN`) und bb (Leibrente), `beginn` ganzzahlig (Python-`bool`
-/// zaehlt!). Nach dem VZ → `rentenbeginn_nach_vz` (aa: der Ring hat dafuer keinen Zweig, bb: er
-/// rechnete still); aa vor dem VZ ohne Freibetrag (Zahl, kein Bool) → die Euro-Fixierung fehlt.
+/// zaehlt!). Jahr <= 0 → `rentenbeginn_jahr_ungueltig` (das Kz-Datum wuerde "01.01.0000", `ERiC` lehnt es
+/// ab), VOR der Freibetrag-Bedingung. Nach dem VZ → `rentenbeginn_nach_vz` (aa: der Ring hat dafuer
+/// keinen Zweig, bb: er rechnete still); aa vor dem VZ ohne Freibetrag (Zahl, kein Bool) → die
+/// Euro-Fixierung fehlt.
 /// Python `_beginn_grund`.
 fn beginn_grund(
     k: &K<'_>,
@@ -88,7 +90,9 @@ fn beginn_grund(
         return None;
     };
     let vz = i64::from(vz.jahr());
-    if beginn > vz {
+    if beginn <= 0 {
+        Some(Sperrgrund::RentenbeginnJahrUngueltig)
+    } else if beginn > vz {
         Some(Sperrgrund::RentenbeginnNachVz)
     } else {
         (aa && beginn < vz && zahl_wert(rf).is_none())
