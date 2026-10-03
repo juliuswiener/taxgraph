@@ -18,8 +18,8 @@ use super::c2;
 use super::konstanten::VERPFLEGUNG_TAGE;
 use crate::einkuenfte::{KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE, KAP_TOEPFE_PARTNER};
 use crate::{
-    cent_zu_euro, euro_plus, ist_positive_zahl, ist_zusammen, minus, plus, py_int, wert,
-    zahl_oder_null, BescheidFehler, Felder,
+    cent_zu_euro, euro_plus, ist_positive_zahl, ist_zusammen, minus, plus, py_int, zahl_oder_null,
+    BescheidFehler, Felder,
 };
 
 type R<T> = Result<T, BescheidFehler>;
@@ -82,10 +82,10 @@ pub fn mit_ring_werten(felder: &mut Felder, vz: Option<Vz>, p: &Params) -> R<()>
 
 // ---------------------------------------------------------------- (1) Verpflegungskuerzung
 
-/// (1) E0205508: Kuerzungsbetrag wegen Mahlzeitengestellung in CENT. Inert: ohne Verpflegungs-Felder
-/// kein Eintrag (auch kein Wert 0).
+/// (1) E0205508: Kuerzungsbetrag wegen Mahlzeitengestellung in CENT. Inert: ohne BESTAETIGTES
+/// Tage-Feld kein Eintrag (auch kein Wert 0). Ein vorlaeufiger Wert ist so gut wie nicht da.
 fn verpflegung(f: &mut Felder, vz: Option<Vz>, p: &Params, h: &HerkunftVektor) -> R<()> {
-    if !VERPFLEGUNG_TAGE.iter().any(|t| f.contains_key(*t)) {
+    if !VERPFLEGUNG_TAGE.iter().any(|t| bestaetigt(f, t).is_some()) {
         return Ok(());
     }
     let kuerzung = match kuerzung_cent(f, vz, p) {
@@ -102,7 +102,8 @@ fn verpflegung(f: &mut Felder, vz: Option<Vz>, p: &Params, h: &HerkunftVektor) -
 }
 
 /// `runner._verpflegung_kuerzung_cent(s, vz)`: Kuerzung wegen Mahlzeiten nach Entgelt, in Cent
-/// (§ 9 Abs. 4a S. 8-10). `s` sind die Rohwerte ALLER Felder, auch vorlaeufiger.
+/// (§ 9 Abs. 4a S. 8-10). Gelesen werden nur BESTAETIGTE Felder von `s`; ein vorlaeufiges zaehlt wie ein
+/// fehlendes (0).
 fn kuerzung_cent(s: &Felder, vz: Option<Vz>, p: &Params) -> R<i64> {
     let vz = vz.ok_or(BescheidFehler::Python {
         klasse: "FileNotFoundError",
@@ -112,7 +113,7 @@ fn kuerzung_cent(s: &Felder, vz: Option<Vz>, p: &Params) -> R<i64> {
         .verpflegung(vz)
         .map_err(|e| BescheidFehler::Engine(e.into()))?;
     // PARITÄT: `int(s.get(k, 0))` — fehlend ist 0 (fail-open default), ein `null` ist `TypeError`.
-    let ganz = |k: &str| wert(s, k).map_or(Ok(0), py_int);
+    let ganz = |k: &str| bestaetigt(s, k).map_or(Ok(0), py_int);
     let mal = |a: i64, b: i64| {
         a.checked_mul(b)
             .ok_or(BescheidFehler::Ueberlauf("Verpflegung"))
@@ -159,8 +160,9 @@ fn kuerzung_cent(s: &Felder, vz: Option<Vz>, p: &Params) -> R<i64> {
 
 // ---------------------------------------------------------------- (2)+(3) Anlage KAP
 
-/// Der Wert eines BESTAETIGTEN Feldes (Python `_kap_wert`). Ein vorlaeufiger Wert ist fuer den KAP-Antrag
-/// so gut wie nicht da: er loest den Antrag nicht aus und geht nicht in den genutzten Pauschbetrag ein.
+/// Der Wert eines BESTAETIGTEN Feldes (Python `_kap_wert`, im Verpflegungs-Block der Filter auf `s`). Ein
+/// vorlaeufiger Wert ist so gut wie nicht da: er loest weder den KAP-Antrag noch die Verpflegungskuerzung aus
+/// und geht in keine Summe ein.
 fn bestaetigt<'a>(f: &'a Felder, fid: &str) -> Option<&'a PyWert> {
     f.get(fid)
         .filter(|x| x.zustand == Zustand::Bestaetigt)

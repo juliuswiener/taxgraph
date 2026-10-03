@@ -60,8 +60,10 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
 
     (1) E0205508 (Kürzungsbetrag wegen Mahlzeitengestellung). Der Ring
     (runner._verpflegung_kuerzung_cent) rechnet den CENT-Wert aus den
-    Rohdaten (tage_24h, frühstücke, etc.). Inert: ohne Verpflegungs-Felder
-    kein Eintrag (auch kein Wert 0).
+    Rohdaten (tage_24h, frühstücke, etc.). Inert: ohne BESTÄTIGTES Tage-Feld
+    kein Eintrag (auch kein Wert 0). Es zählen nur BESTÄTIGTE Felder
+    (Zwei-Signal-Regel, wie die Blöcke unten); ein vorläufiges Feld zählt wie
+    ein fehlendes — es löst die Kürzung nicht aus und geht in keine Summe ein.
 
     (2) E1900401 (Antrag Günstigerprüfung § 32d Abs. 6) + (3) E1901401
     (genutzter Sparer-Pauschbetrag § 20 Abs. 9): NICHT an den vom Ring beim
@@ -102,11 +104,16 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
     """
     # (1) Verpflegungskürzung
     verpflegungs_felder = {"tage_24h", "tage_an_abreise", "tage_ueber_8h_eintaegig"}
-    if verpflegungs_felder & set(felder):
+
+    def _vpf_bestaetigt(e):
+        # Ein Wert ohne Zustandsangabe (kein dict) bleibt gelesen wie bisher; ein dict zaehlt nur bestaetigt.
+        return not isinstance(e, dict) or e.get("zustand") == "bestaetigt"
+
+    if any(_vpf_bestaetigt(felder[f]) for f in verpflegungs_felder if f in felder):
         try:
             import runner
             s = {fid: e["wert"] if isinstance(e, dict) else e
-                 for fid, e in felder.items()}
+                 for fid, e in felder.items() if _vpf_bestaetigt(e)}
             kuerzung_cent = runner._verpflegung_kuerzung_cent(s, vz)
         except Exception:
             kuerzung_cent = 0

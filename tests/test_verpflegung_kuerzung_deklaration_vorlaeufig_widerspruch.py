@@ -2,14 +2,20 @@
 vorlaeufig_leck_ohne_bestaetigung.py): dieselbe Zustand-Blindheit, ein ANDERER Block DERSELBEN
 Funktion (_mit_ring_werten, bescheid_deklaration.py).
 
-STAND 2026-10-03: `/deklaration` sperrt bei Sperrgrund wie `/einreichen`
-(decisions/deklaration-darf-verweigern.md). Dieser Fall hat einen: `/ergebnis` und `einreichen()`
-melden `verpflegung_dreimonatsfrist_aufteilung_offen` (nicht mehr `verpflegung_reduktion_offen`,
-wie unten gemessen), und `/deklaration` antwortet jetzt 409 statt mit dem injizierten E0205508.
-Der frueher `xfail(strict)`-markierte Test ist die gruene Kontrolle dieser Sperre; seine
-Vorbedingung (Sperrgrund an `/ergebnis` und `einreichen`, kein XML) steht in einem eigenen gruenen
-Test. Der Injektions-Block in `_mit_ring_werten` selbst ist weiter zustandsblind -- er ist hier nur
-nicht mehr erreichbar. Der Rest dieses Dokstrings ist die Messung vom 2026-08-31, nicht der Ist-Stand.
+STAND 2026-10-03 (BEHOBEN, Entscheid verpflegung-vorschau-liest-nur-bestaetigte-werte): Der Injektions-
+Block in `_mit_ring_werten` liest nur BESTAETIGTE Werte (Ausloeser und Summe `s`); ein vorlaeufiges Feld zaehlt
+wie ein fehlendes. Gemischte Zustaende und die Nach-Frist-Felder, die unten als "nicht geprueft" stehen,
+deckt tests/test_verpflegung_vorschau_liest_nur_bestaetigte_werte.py ab.
+
+Davor, am selben Tag: `/deklaration` sperrt bei Sperrgrund wie `/einreichen`
+(decisions/deklaration-darf-verweigern.md). Dieser Fall (kein `vpf_monate_am_ort`) hat einen: `/ergebnis` und
+`einreichen()` melden `verpflegung_dreimonatsfrist_aufteilung_offen` (nicht mehr `verpflegung_reduktion_offen`,
+wie unten gemessen), und `/deklaration` antwortet 409 statt mit dem injizierten E0205508. Der frueher
+`xfail(strict)`-markierte Test ist die gruene Kontrolle dieser Sperre; seine Vorbedingung (Sperrgrund an
+`/ergebnis` und `einreichen`, kein XML) steht in einem eigenen gruenen Test. Die Sperre hielt nur diesen Fall zu:
+mit bestaetigtem `vpf_monate_am_ort` und bestaetigter Mahlzeiten-Antwort blieb der Block erreichbar (Messung
+`neunc`, 69119b9, ~/.cache/taxgraph-tmp/berichte/ring-werte-blocks.md). Der Rest dieses Dokstrings ist die
+Messung vom 2026-08-31, nicht der Ist-Stand.
 
 Volle Lektuere der gesamten Funktion (Zeilen 58-345, nicht nur ein Block) ergibt eine Tabelle mit
 GENAU ZWEI blinden Bloecken -- kein dritter:
