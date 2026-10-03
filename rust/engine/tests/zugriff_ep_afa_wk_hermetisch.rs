@@ -15,15 +15,15 @@
 //!
 //! HERKUNFT DER ERWARTUNGSWERTE: jede Zahl der Tabellen unten ist die Ausgabe des Python-Orakels (`runner.catala_*`, mit
 //! leerer Wegwerf-Datenwurzel) auf denselben Eingaben; Orakel-Skript und Lauf: Anlagen zum Bericht. Kein Wert ist aus dem
-//! Rust-Code abgelesen. 50 der 72 Faelle stimmen ausserdem mit einer unabhaengigen Rechnung aus den Quellen im Baum ueberein:
+//! Rust-Code abgelesen. 70 der 72 Faelle stimmen ausserdem mit einer unabhaengigen Rechnung aus den Quellen im Baum ueberein:
 //! Entfernungspauschale 0,30 EUR (bis 20 km) und 0,38 EUR (ab dem 21. km; ab VZ 2026 durchgehend 0,38 EUR), nur volle
 //! Kilometer, Deckel 4.500 EUR ohne Kfz, `OePNV` nur soweit er die Pauschale uebersteigt (§ 9 Abs. 1 S. 3 Nr. 4, Abs. 2 `EStG`,
-//! `estg_p9_abs1nr4_abs2_2026-07-09.txt`), `AfA` linear mit Zwoelftelung im Anschaffungsjahr (§ 7 Abs. 1 S. 1, 4 `EStG`,
-//! `estg_p7_2026-07-11.txt`) und Arbeitnehmer-Pauschbetrag 1.230 EUR (§ 9a S. 1 Nr. 1a `EStG`, `estg_p9a_2026-07-09.txt`). Die
-//! 20 Faelle von `werbungskosten_n` stimmen mit der Summe der einzeln vom Orakel gerechneten Zweige ueberein; die Einzelwerte
-//! der Zweige doppelte Haushaltsfuehrung, Verpflegung (Pauschalen, Dreimonatsfrist), Uebernachtung und GWG-Sofortabzug
-//! (800 EUR) stuetzt nur das Python-Orakel. Nur das Orakel stuetzt auch die zwei Faelle von `einkuenfte_nichtselbststaendig`
-//! mit einem Bruttolohn unter dem Pauschbetrag (Ergebnis 0).
+//! `estg_p9_abs1nr4_abs2_2026-07-09.txt`), `AfA` linear mit Zwoelftelung im Anschaffungsjahr (§ 7 Abs. 1 S. 1 und 4 `EStG`,
+//! `estg_p7_2026-07-11.txt`) und Arbeitnehmer-Pauschbetrag 1.230 EUR (§ 9a S. 1 Nr. 1a `EStG`, `estg_p9a_2026-07-09.txt`). Bei
+//! `werbungskosten_n` rechnet dieselbe Quellen-Rechnung jeden Zweig einzeln, und die Summe der Zweige wird verglichen -- derselbe
+//! Satz, ein zweiter Rechenweg, kein eigener Gesetzes-Ausschnitt fuer die Zusammenschaltung. Nur das Python-Orakel stuetzt die
+//! zwei Faelle von `einkuenfte_nichtselbststaendig` mit einem Bruttolohn unter dem Pauschbetrag (Ergebnis 0): die Skizze
+//! "Brutto minus der groessten der beiden Zahlen" liefert den Wert 0 erst mit dem Accessor.
 //!
 //! Abgrenzung: die `Ueberlauf`-Fehler dieser Zugriffe pruefen die Tests in `zugriff_ueberlauf_hermetisch.rs`.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
