@@ -327,7 +327,7 @@ tests/test_vpf_frist_unterbrechung.py	181	6	0	GOLDEN	produkt/traverser/traverser
 tests/test_werbungskosten_n.py	283	19	0	GOLDEN	golden/runner.py (catala_werbungskosten_n)	cases; needs: Catala
 tests/test_wertformen_muster.py	108	4	0	TOOLING	tools/parity/wertformen.py	Gate fuer das Messwerkzeug tools/parity/wertformen.py: abweichung prueft muster so streng wie das Speichern (re.match verankert nur am Anfang, ein Wert mit Zeilenumbruch am Ende muss als Verstoss gelten). Das Werkzeug bleibt Python; in rust/**/*.rs und */Cargo.toml kommt wertformen nicht vor
 tests/test_xsd_verify.py	419	20	0	NOT_PORTED	produkt/mapping/xsd_verify.py	XSD codegen types replace the Kz verification pass; minority exit-code gate stays TOOLING if pass kept
-tests/test_zweig_duplikation_differential.py	377	4	0	NOT_PORTED	produkt/bescheid/bescheid_zweige.py	AST differential -> one fn per paragraph, generic over Zweig; no inline duplication
+tests/test_zweig_duplikation_differential.py	379	4	0	NOT_PORTED	produkt/bescheid/bescheid_zweige.py	AST differential -> one fn per paragraph, generic over Zweig; no inline duplication
 tests/test_zweig_import_except_scope.py	80	2	0	NOT_PORTED	produkt/bescheid/bescheid_zweige.py	Python ImportError catch -> Result<_, BescheidFehler> enum, no catch-all (rust/bescheid/src/lib.rs:49)
 tests/test_zweite_fall_kennung_gate.py	118	5	0	NOT_PORTED	produkt/haut/api.py	AST scan -> axum extractor EigenerFall required by handler signature (rust/api/src/eigener_fall.rs:18); no Fall load without owner check
 tests/ui_hilfen.py	74	0	0	INTEGRATION	tests helper	Playwright helper, not a test file; moves with UI integration suite

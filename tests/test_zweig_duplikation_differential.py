@@ -146,12 +146,14 @@ def _geteilte_catala_namen() -> set[str]:
 # unten hat das gemeldet, statt es durchgehen zu lassen. Ebenso sind die Kind-Pauschbeträge nach
 # `_p33b_kind_pauschbetraege` gewandert — `catala_behinderten_pb` und `catala_hinterbliebenen_pb`
 # bleiben trotzdem hier, weil beide Zweige sie für die EIGENE Person weiterhin selbst aufrufen.
+# Am 2026-10-03 ist `catala_p16_4_freibetrag` hier ausgezogen: der netto_vg der Person A (§ 16 Abs. 4)
+# steht jetzt EINMAL in `_netto_vg_person_a` (bescheid_einkuenfte) und wird von beiden Zweigen UND von der
+# Antrags-Kz des § 34 Abs. 3 (`_mit_ring_werten`) gerufen; kein Zweig ruft den Accessor mehr selbst.
 VERGLEICHBAR = frozenset({
     "catala_behinderten_pb",
     "catala_hinterbliebenen_pb",
     "catala_pflege_pb",
     "catala_p10_4b_erstattungsueberhang",
-    "catala_p16_4_freibetrag",
     "catala_p22_nr3_einkuenfte",
     "catala_p24b_entlastung",
 })
