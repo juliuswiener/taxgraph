@@ -568,10 +568,31 @@ fn hat_luecke(w: &PyWert) -> bool {
     matches!(w, Text(t) if t.contains(REPR_LUECKE))
 }
 
+/// Werte in `int_werte()` ohne die zwei Zufallsstellen von `int_gleit` (gemessen: 4.279 im Standard).
+const INT_WERTE_OHNE_ZUFALL: usize = 2279;
+
+/// Werte in `repr_gleit()` ohne die drei Zufallsstellen (gemessen: 10.086 im Standard).
+const REPR_GLEIT_OHNE_ZUFALL: usize = 6586;
+
+/// Die zwei Zufallsstellen von `int_gleit` als (Zahl, Standard); `PARITY_N` setzt beide.
+fn int_gleit_stellen() -> [(usize, usize); 2] {
+    [
+        (
+            parity::fallzahl::holen("wert_paritaet int_gleit Bitmuster", 1000),
+            1000,
+        ),
+        (
+            parity::fallzahl::holen("wert_paritaet int_gleit Mantisse", 1000),
+            1000,
+        ),
+    ]
+}
+
 /// Floats fuer `int(x)`: die Kanten der Ganzzahl-Darstellung, 2^k, und zufaellige Werte (Bitmuster
 /// und Mantisse mal Zehnerpotenz, damit viele davon im Bereich bis 1e24 liegen).
 #[allow(clippy::cast_precision_loss)]
 fn int_gleit() -> Vec<PyWert> {
+    let [(n_bits, _), (n_mantisse, _)] = int_gleit_stellen();
     let mut v: Vec<f64> = vec![
         0.5,
         -0.5,
@@ -611,10 +632,10 @@ fn int_gleit() -> Vec<PyWert> {
         z ^= z << 17;
         z
     };
-    for _ in 0..1000 {
+    for _ in 0..n_bits {
         v.push(f64::from_bits(naechste()));
     }
-    for _ in 0..1000 {
+    for _ in 0..n_mantisse {
         let mantisse = (naechste() >> 11) as f64 / 9_007_199_254_740_992.0;
         let zehn = i32::try_from(naechste() % 27).unwrap() - 3;
         let vorzeichen = if naechste() & 1 == 0 { 1.0 } else { -1.0 };
@@ -731,6 +752,12 @@ fn int_gegen_cpython() {
         return;
     }
     let werte = int_werte();
+    // Die Zufallsstellen liefern genau so viele Werte, wie verlangt sind (Standard 2.000, `PARITY_N`
+    // je Stelle): eine Stelle, die ihre Zahl wieder im Quelltext traegt, faellt hier auf.
+    assert_eq!(
+        werte.len(),
+        INT_WERTE_OHNE_ZUFALL + int_gleit_stellen().iter().map(|(n, _)| n).sum::<usize>()
+    );
     let py = fragen("wert.int", &werte);
     let (mut unerwartet, mut ueber_i64) = (Vec::new(), 0);
     let mut luecke = std::collections::BTreeSet::new();
@@ -777,19 +804,22 @@ fn int_gegen_cpython() {
         })
         .collect();
     assert_eq!(luecke, erwartet);
-    // Das Orakel sagt nicht nur "ok" oder nur "Fehler": jede Klasse kommt vor.
-    for (klasse, mindestens) in [
-        ("ok", 1000),
-        ("TypeError", 20),
-        ("ValueError", 1000),
-        ("OverflowError", 2),
-    ] {
-        assert!(
-            je_klasse.get(klasse).copied().unwrap_or(0) >= mindestens,
-            "{je_klasse:?}"
-        );
+    // Das Orakel sagt nicht nur "ok" oder nur "Fehler": jede Klasse kommt vor. Die Mindestzahlen
+    // sind an den Standard-Pool gebunden (`PARITY_N` kuerzt die zufaelligen Floats).
+    if parity::fallzahl::wache_gilt_pool("wert_paritaet int_werte", &int_gleit_stellen()) {
+        for (klasse, mindestens) in [
+            ("ok", 1000),
+            ("TypeError", 20),
+            ("ValueError", 1000),
+            ("OverflowError", 2),
+        ] {
+            assert!(
+                je_klasse.get(klasse).copied().unwrap_or(0) >= mindestens,
+                "{je_klasse:?}"
+            );
+        }
+        assert!(ueber_i64 > 100, "{ueber_i64}");
     }
-    assert!(ueber_i64 > 100, "{ueber_i64}");
 }
 
 /// `int(c + "7" + c)` fuer jeden Skalarwert `c` (1.112.064 Texte): welche `CPython` annimmt, mit
@@ -1128,6 +1158,24 @@ fn zwei_hoch(k: i32) -> f64 {
     }
 }
 
+/// Die drei Zufallsstellen von `repr_gleit` als (Zahl, Standard); `PARITY_N` setzt alle.
+fn repr_gleit_stellen() -> [(usize, usize); 3] {
+    [
+        (
+            parity::fallzahl::holen("wert_paritaet repr_gleit Bitmuster", 1500),
+            1500,
+        ),
+        (
+            parity::fallzahl::holen("wert_paritaet repr_gleit Mantisse", 1000),
+            1000,
+        ),
+        (
+            parity::fallzahl::holen("wert_paritaet repr_gleit Dezimalbrueche", 1000),
+            1000,
+        ),
+    ]
+}
+
 /// Die Gleitkommazahlen fuer `repr`: die Rand- und Gleichstandswerte aus dem Auftrag, jede
 /// Zweierpotenz, kleine ungerade Vielfache davon, die Kanten der Festkomma-Schranke (`1e16`, `1e-4`)
 /// und zufaellige Werte (Bitmuster, Mantisse mal Zehnerpotenz, kurze Dezimalbrueche, Subnormale).
@@ -1135,6 +1183,7 @@ fn zwei_hoch(k: i32) -> f64 {
 // `...713.2`. Das Literal bleibt, wie es im Auftrag steht.
 #[allow(clippy::cast_precision_loss, clippy::excessive_precision)]
 fn repr_gleit() -> Vec<f64> {
+    let [(n_bits, _), (n_mantisse, _), (n_dezimal, _)] = repr_gleit_stellen();
     let mut v: Vec<f64> = vec![
         0.0,
         -0.0,
@@ -1214,16 +1263,16 @@ fn repr_gleit() -> Vec<f64> {
             v.push(if naechste() & 1 == 0 { x } else { -x });
         }
     }
-    for _ in 0..1500 {
+    for _ in 0..n_bits {
         v.push(f64::from_bits(naechste()));
     }
-    for _ in 0..1000 {
+    for _ in 0..n_mantisse {
         let mantisse = (naechste() >> 11) as f64 / 9_007_199_254_740_992.0;
         let zehn = i32::try_from(naechste() % 61).unwrap() - 30;
         let vorzeichen = if naechste() & 1 == 0 { 1.0 } else { -1.0 };
         v.push(vorzeichen * mantisse * 10f64.powi(zehn));
     }
-    for _ in 0..1000 {
+    for _ in 0..n_dezimal {
         let stellen = u32::try_from(naechste() % 15).unwrap() + 1;
         let nenner = i32::try_from(naechste() % 21).unwrap();
         v.push((naechste() % 10_u64.pow(stellen)) as f64 / 10f64.powi(nenner));
@@ -1283,6 +1332,11 @@ fn repr_float_gegen_cpython() {
     );
 
     let pool = repr_gleit();
+    // Wie bei `int`: die drei Zufallsstellen liefern genau die verlangte Zahl (Standard 3.500).
+    assert_eq!(
+        pool.len(),
+        REPR_GLEIT_OHNE_ZUFALL + repr_gleit_stellen().iter().map(|(n, _)| n).sum::<usize>()
+    );
     let werte: Vec<PyWert> = pool.iter().map(|f| Gleit(*f)).collect();
     let py = fragen("wert.repr", &werte);
     let (mut abw, mut gleichstaende, mut exponent) = (Vec::new(), 0_usize, 0_usize);
@@ -1315,7 +1369,9 @@ fn repr_float_gegen_cpython() {
         abw.len(),
         &abw[..abw.len().min(20)]
     );
-    assert!(pool.len() > 9000 && exponent > 3000 && gleichstaende > 100);
+    if parity::fallzahl::wache_gilt_pool("wert_paritaet repr_gleit", &repr_gleit_stellen()) {
+        assert!(pool.len() > 9000 && exponent > 3000 && gleichstaende > 100);
+    }
 }
 
 /// Texte fuer `repr`: jede Folge bis Laenge 4 aus `'`, `"`, `\`, `a` und Zeilenumbruch (781, damit
@@ -1435,7 +1491,9 @@ fn repr_und_py_str_gegen_cpython() {
             abw.len(),
             &abw[..abw.len().min(20)]
         );
-        assert!(werte.len() > 17_000 && gesehen.len() > 15_000);
+        if parity::fallzahl::wache_gilt_pool("wert_paritaet repr_gleit", &repr_gleit_stellen()) {
+            assert!(werte.len() > 17_000 && gesehen.len() > 15_000);
+        }
         // Das Orakel sagt nicht nur eine Art von Antwort.
         for muster in [
             "-0.0", "nan", "-inf", "1e+16", "5e-324", "None", "True", "\"'\"", "'\\\\'", "{}", "[]",
