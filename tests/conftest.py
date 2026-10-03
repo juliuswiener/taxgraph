@@ -24,6 +24,7 @@ Datei-I/O, kein geteilter Zustand, kein Wettlauf mit fremden Schreibern.
 """
 from __future__ import annotations
 
+import importlib.abc
 import os
 import sys
 import tempfile
@@ -107,6 +108,98 @@ def _dateien_die_catala_brauchen() -> list[str]:
                 treffer.append(name)
                 break
     return treffer
+
+
+# ------------------------------------- Ein Lauf ohne Catala-Engine nennt seine Ursache am Ende
+#
+# Der Guard oben lässt nur Dateien aus, die die Engine beim LADEN importieren. Weitere Dateien
+# erreichen sie erst WÄHREND des Laufs und fallen mit `engine_unavailable` bzw. `No module named
+# 'pkg'` um (129 failed + 2 errors, gemessen 2026-10-03 auf b540590, Arbeitsbaum ohne `_catala`).
+# Der Lauf bleibt ROT: kein Skip, denn die Engine ist kein Geheimnis wie die Hersteller-ID, und ein
+# grüner Lauf ohne Engine hätte nichts gemessen. Was fehlte, war die Ursache dort, wo der Blick
+# landet — die Anfangszeile des Guards geht bei 3000 Zeilen Ausgabe unter. Darum steht sie in der
+# Schlusszeile NACH der Fehlerliste. Entscheidung (Vault): decisions/ein-lauf-ohne-catala-engine-
+# bleibt-rot-und-nennt-seine-ursache.md; Backlog: conftest-guard-prueft-importzeit-statt-laufzeit.md.
+#
+# Den Meldungstext zu lesen reicht nicht (nach der Messung vom 2026-10-03 nennt ihn nur ein Teil der
+# Fehler). Darum zählt ein Finder an `sys.meta_path`, wie oft ein Test im EIGENEN Lauf versucht hat,
+# `pkg`/`runner`/`catala_runtime` zu laden. Der Zähler reist als `user_properties` im Testbericht
+# zum Controller: unter xdist (-n 6) zählt jeder Prozess für sich, ein Modulglobal käme nie dort an.
+#
+# ponytail: die Zählung kennt nur den Importversuch. Ein Fehler, dessen Test nichts importiert (ein
+# früherer Aufruf im selben Prozess hat den Fehlschlag gemerkt), steht in F, aber nicht in N.
+_CATALA_MODULE = ("pkg", "runner", "catala_runtime")
+_VERSUCH = "catala_importversuch"
+
+
+def _catala_schlusszeile(engine_fehlt: bool, fehler: int, mit_versuch: int,
+                         nicht_gesammelt: int) -> str | None:
+    """Die Schlusszeile eines Laufs; mit Engine gibt es keine (None). Rein: kein pytest, keine Datei."""
+    if not engine_fehlt:
+        return None
+    if fehler:
+        befund = (f"{fehler} Fehler, davon {mit_versuch} mit Importversuch auf pkg/runner/"
+                  f"catala_runtime im eigenen Test (die übrigen können Folgen sein: ein früherer "
+                  f"Aufruf im selben Prozess hat den Fehlschlag gemerkt)")
+    else:
+        befund = "kein Fehler"
+    return (f"[conftest] Catala-Engine fehlt in diesem Baum — {befund}; {nicht_gesammelt} "
+            f"Testdateien NICHT gesammelt. Dieser Lauf sagt nichts über die Rechenregeln. "
+            f"Abhilfe: `make build-python`, oder `oracle/gettsim/_catala` auf den Hauptbaum verlinken.")
+
+
+class _CatalaImportZaehler(importlib.abc.MetaPathFinder):
+    """Zählt Importversuche auf die Engine. Findet nie selbst etwas (gibt None zurück)."""
+    versuche = 0
+
+    def find_spec(self, name, path=None, target=None):
+        if name.partition(".")[0] in _CATALA_MODULE:
+            _CatalaImportZaehler.versuche += 1
+        return None
+
+
+class _CatalaUrsache:
+    """Mitzähler je Test und Schlusszeile. Wird nur registriert, wenn die Engine fehlt."""
+
+    def __init__(self):
+        self._start = {}
+
+    def pytest_runtest_logstart(self, nodeid, location):
+        self._start[nodeid] = _CatalaImportZaehler.versuche
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_runtest_makereport(self, item, call):
+        report = yield
+        if call.when in ("setup", "call"):
+            jetzt = _CatalaImportZaehler.versuche
+            n = jetzt - self._start.get(item.nodeid, jetzt)
+            if n > 0:
+                report.user_properties.append((_VERSUCH, n))
+        return report
+
+    # tryfirst + wrapper: außen um den Terminal-Reporter, dessen Fehlerliste (`short test summary`)
+    # erst in SEINEM Wrapper nach dem yield gedruckt wird. Unsere Zeile kommt also danach.
+    @pytest.hookimpl(wrapper=True, tryfirst=True)
+    def pytest_terminal_summary(self, terminalreporter, exitstatus, config):
+        ergebnis = yield
+        if not config.option.collectonly:   # beim Einsammeln läuft kein Test, CI `sammelbarkeit` braucht Ruhe
+            berichte = (terminalreporter.stats.get("failed", [])
+                        + terminalreporter.stats.get("error", []))
+            fehler = {b.nodeid for b in berichte}
+            mit_versuch = {b.nodeid for b in berichte
+                           if any(k == _VERSUCH for k, _ in getattr(b, "user_properties", ()))}
+            terminalreporter.write_line(_catala_schlusszeile(
+                True, len(fehler), len(mit_versuch), len(collect_ignore)), yellow=True)
+        return ergebnis
+
+
+_ENGINE_FEHLT = _catala_fehlt()
+
+
+def pytest_configure(config):
+    if _ENGINE_FEHLT:
+        sys.meta_path.insert(0, _CatalaImportZaehler())
+        config.pluginmanager.register(_CatalaUrsache(), "catala_ursache")
 
 
 # ------------------------------------------- Fehlendes ERiC-Schema: laut rot, nur mit Flag ein Skip
@@ -333,7 +426,7 @@ def pytest_runtest_makereport(item, call):
 
 
 collect_ignore = []
-if _catala_fehlt():
+if _ENGINE_FEHLT:
     collect_ignore = _dateien_die_catala_brauchen()
     # Sichtbar machen, nicht stillschweigend weglassen: eine übersprungene Datei ist eine
     # NICHT gelaufene Prüfung. Die Zahl gehört ins Protokoll, wie jede Skip-Zahl — sonst

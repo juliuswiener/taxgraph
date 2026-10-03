@@ -36,7 +36,7 @@ mod wert;
 mod zustand;
 
 pub use fall_id::{FallId, UngueltigeFallId};
-pub use feld_id::{BasisId, FeldId, FeldIdFehler};
+pub use feld_id::{ist_gueltige_feld_id, BasisId, FeldId, FeldIdFehler};
 pub use herkunft::{
     Achsenwert, Herkunft, HerkunftAlt, HerkunftVektor, LeererAchsenwert, Schreiber, KONFLIKT,
 };

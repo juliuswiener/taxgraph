@@ -35,13 +35,9 @@ pub enum BindungFehler {
     LeereVzGueltigkeit { feld_id: String },
 }
 
-/// Prueft `^[a-z][a-z0-9_]*$` ohne Regex-Abhaengigkeit (nur ASCII, wie das Schema selbst).
-#[must_use]
-pub fn ist_gueltige_feld_id(s: &str) -> bool {
-    let mut bytes = s.bytes();
-    matches!(bytes.next(), Some(b) if b.is_ascii_lowercase())
-        && bytes.all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_')
-}
+/// `^[a-z][a-z0-9_]*$` ohne Regex-Abhaengigkeit (nur ASCII, wie das Schema selbst). Die eine Regel
+/// steht in `domain`; `BasisId::new` ruft dieselbe Funktion.
+pub use domain::ist_gueltige_feld_id;
 
 /// Bindungspunkt einer [`Quelle`]: entweder ein Signatur-Slot einer Catala-Regel oder eine
 /// benannte Geltungsbedingung -- nie beides, nie keins (Schema: `quelle.oneOf`).

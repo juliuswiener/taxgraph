@@ -721,9 +721,9 @@ fn parse_instanz_sweep() {
     let py = frage(&json!({"fn": "elster.parse_instanz", "ids": ids}));
     let py = py.as_array().unwrap();
     let mut diffs = 0;
-    // `store::instanz_basis` (die Basis allein): Python ist die Referenz. Eine Abweichung ist bekannt und
-    // festgehalten: Pythons `$` passt vor einem abschliessenden `\n`, `instanz_basis` prueft den Zaehler
-    // Zeichen fuer Zeichen und weist `a__2\n` ab (`nachschlag.rs`). Jede andere Abweichung ist ein Fehler.
+    // `store::instanz_basis` (die Basis allein): Python ist die Referenz, bei jeder Eingabe -- auch bei einem
+    // abschliessenden `\n` (Pythons `$`), das `instanz_basis` seit `feld_kennung_paritaet` ebenso liest.
+    // `zeilenende` zaehlt die `\n`-Eingaben, die Python als Instanz liest: sie muessen darunter sein.
     let (mut basis_diffs, mut zeilenende, mut instanz_ja, mut instanz_nein) = (0, 0, 0, 0);
     for (id, p) in ids.iter().zip(py) {
         let r = elster::parse_instanz(id).map_or(Value::Null, |(b, i)| json!([b, i]));
@@ -734,30 +734,20 @@ fn parse_instanz_sweep() {
         let py_basis = p.get(0).and_then(Value::as_str);
         instanz_ja += usize::from(py_basis.is_some());
         instanz_nein += usize::from(py_basis.is_none());
+        zeilenende += usize::from(py_basis.is_some() && id.ends_with('\n'));
         let basis = store::instanz_basis(id);
         if basis != py_basis {
-            if py_basis.is_some() && basis.is_none() && id.ends_with('\n') {
-                zeilenende += 1;
-            } else {
-                basis_diffs += 1;
-                println!("  ABWEICHUNG instanz_basis({id:?}): rust={basis:?} py={py_basis:?}");
-            }
+            basis_diffs += 1;
+            println!("  ABWEICHUNG instanz_basis({id:?}): rust={basis:?} py={py_basis:?}");
         }
     }
-    // Die festgehaltene Abweichung ist genau "Python nimmt an, weil `\n` folgt": jede solche Eingabe weicht ab.
-    let erwartet_zeilenende = ids
-        .iter()
-        .zip(py)
-        .filter(|(id, p)| id.ends_with('\n') && !p.is_null())
-        .count();
     println!(
         "[parse_instanz] Eingaben={} Abweichungen={diffs}; [instanz_basis] Abweichungen={basis_diffs}, \
-         festgehalten (Zeilenende) {zeilenende}, Python Instanz {instanz_ja} / keine {instanz_nein}",
+         davon Zeilenende gelesen {zeilenende}, Python Instanz {instanz_ja} / keine {instanz_nein}",
         ids.len()
     );
     assert_eq!(diffs, 0);
     assert_eq!(basis_diffs, 0);
-    assert_eq!(zeilenende, erwartet_zeilenende);
     assert!(
         zeilenende >= 100 && instanz_ja > 200 && instanz_nein > 500,
         "{zeilenende} {instanz_ja} {instanz_nein}"
