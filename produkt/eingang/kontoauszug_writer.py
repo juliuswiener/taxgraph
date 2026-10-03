@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import csv
 import io
+import math
 import os
 import re
 import subprocess
@@ -555,6 +556,44 @@ def verwirf_unlesbare_betraege(transaktionen: list, n_verworfen: int = 0) -> tup
     Zeilen mit. → (Buchungen, n_verworfen + Zahl der verworfenen)."""
     ok = [tx for tx in transaktionen if _betrag_tragbar(tx)]
     return ok, n_verworfen + len(transaktionen) - len(ok)
+
+
+_I64_MIN, _I64_MAX = -(2**63), 2**63 - 1
+
+
+def _nicht_tragbare_zahlen(wert) -> set[str]:
+    """Die Typen ("float", "int") der Zahlen in `wert`, beliebig tief, die die Fallakte nicht exakt hält: nicht endliche
+    Kommazahlen (`speichere_fall` schreibt kein NaN) und Ganzzahlen ausserhalb von i64 (der Rust-Lader sperrt sie)."""
+    gefunden, offen = set(), [wert]
+    while offen:
+        w = offen.pop()
+        if isinstance(w, dict):
+            offen.extend(w.values())
+        elif isinstance(w, list):
+            offen.extend(w)
+        elif isinstance(w, float) and not math.isfinite(w):
+            gefunden.add("float")
+        elif isinstance(w, int) and not _I64_MIN <= w <= _I64_MAX:     # bool ist int und liegt immer darin
+            gefunden.add("int")
+    return gefunden
+
+
+def pruefe_buchungsfelder(transaktionen: list) -> None:
+    """Backlog falldatei-mit-nan-liest-rust-als-text, AK4. Nach `verwirf_unlesbare_betraege`: das `datum` jeder Buchung
+    trägt keine Zahl, die die Akte nicht halten kann, und der `verwendungszweck` einer Ausgabe ist Text (oder falsch,
+    das heisst leer). Sonst `ValueError`; der Text nennt Feld und Typ, nie den Wert. `datum` geht unverändert in
+    `signal_1`; `inhalt` ist ein JSON-Text, den die Rumpf-Tür (server.py) nicht sieht. Erst alle Daten, dann alle Zwecke,
+    wie die Rust-Fassung. `betrag` bleibt bei `verwirf_unlesbare_betraege`: ein Betrag ist eine Zahl, die das Programm
+    nicht tragen kann, ein Datum ist es nicht."""
+    for tx in transaktionen:
+        gefunden = _nicht_tragbare_zahlen(tx.get("datum", ""))
+        if gefunden:
+            raise ValueError("datum einer Buchung enthält eine Zahl "
+                             f"({'float' if 'float' in gefunden else 'int'}), die die Akte nicht halten kann.")
+    for tx in transaktionen:
+        zweck = tx.get("verwendungszweck", "")
+        if int(tx.get("betrag", 0)) < 0 and zweck and not isinstance(zweck, str):
+            raise ValueError(f"verwendungszweck einer Ausgabe muss Text sein, nicht {type(zweck).__name__}.")
 
 
 def hinweis_verworfen(n: int, fmt: str) -> str:

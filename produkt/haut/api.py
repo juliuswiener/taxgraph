@@ -1026,6 +1026,10 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
     else:
         raise ApiError(400, "format muss csv, json oder pdf sein")
     tx, n_verworfen = KW.verwirf_unlesbare_betraege(tx, n_verworfen)   # nie 500, nie der ganze Auszug weg
+    try:
+        KW.pruefe_buchungsfelder(tx)   # datum und Zweck, die die Akte nicht hält: 422 statt 500 beim Schreiben
+    except ValueError as e:
+        raise ApiError(422, f"Kontoauszug nicht lesbar: {e}")
     # katalog GLOBAL (dev-2-Kontrakt): Enforcement decoupled vom per-Scheibe-Targeting.
     n, llm_uebersprungen = KW.uebernehme_kontoauszug(
         store, tx, bindung, llm_klassifikator=api_llm._kontoauszug_llm_klassifikator(),

@@ -329,3 +329,83 @@ async fn abweisungen_tragen_den_wortlaut_von_python() {
         assert_eq!(events_in_akte(&d, "e4"), 0, "{name}: die Akte bleibt leer");
     }
 }
+
+/// Die gemeinsame Tabelle der Begleitfelder (`rust/fixtures/begleitfelder_formen.json`, Python:
+/// `tests/test_begleitfelder_form.py`) gegen die Rust-Route, ohne Python (Vault Backlog
+/// `python-schreibt-akte-die-der-rust-leser-sperrt`, AK1 bis AK3). Je Fall `ts`, `herkunft`, `signal`:
+/// - `python: angenommen` -> 201, und die Akte besteht den Rundlauf: `store::lade` liest sie, der
+///   `event_id` des gelesenen Events stimmt (nichts ging verloren), und `speichere` schreibt dieselben
+///   Bytes zurück.
+/// - `python: abgewiesen` -> 422 mit `fail-closed (Form)` und eine leere Akte; 400 schon an der Tür
+///   (`api.event`), wenn `herkunft` kein Objekt mit dem Schlüssel `herkunft` ist.
+#[tokio::test]
+async fn begleitfelder_tabelle_bedient_die_route_und_besteht_den_rundlauf() {
+    let d = dienst();
+    let tabelle: Value =
+        serde_json::from_str(include_str!("../../fixtures/begleitfelder_formen.json")).unwrap();
+    let faelle = tabelle["faelle"].as_array().unwrap();
+    assert!(faelle.len() >= 30, "die Tabelle ist kürzer als erwartet");
+    let (mut angenommen, mut abgewiesen) = (0, 0);
+    for (i, f) in faelle.iter().enumerate() {
+        let (id, name) = (format!("bf{i}"), f["name"].as_str().unwrap());
+        let token = fall_anlegen(&d, &id).await;
+        let mut body = json!({"feld_id": "ep_arbeitstage", "wert": 1, "zustand": "vorlaeufig",
+            "schreiber": "ui:laie"});
+        for k in ["ts", "herkunft", "signal"] {
+            if let Some(v) = f.get(k) {
+                body[k] = v.clone();
+            }
+        }
+        let (status, antwort) =
+            sende(&d, &format!("/fall/{id}/event"), &token, &body.to_string()).await;
+        if f["python"] == "angenommen" {
+            angenommen += 1;
+            assert_eq!(status, 201, "{name}: {antwort}");
+            rundlauf(&d, &id, name);
+        } else {
+            abgewiesen += 1;
+            let tuer = !f["herkunft"]
+                .as_object()
+                .is_some_and(|h| h.contains_key("herkunft"));
+            assert_eq!(status, if tuer { 400 } else { 422 }, "{name}: {antwort}");
+            if !tuer {
+                let text = antwort["fehler"].as_str().unwrap();
+                assert!(
+                    text.starts_with("fail-closed (Form): "),
+                    "{name}: {antwort}"
+                );
+            }
+            assert_eq!(
+                events_in_akte(&d, &id),
+                0,
+                "{name}: eine Abweisung legt nichts ab"
+            );
+        }
+    }
+    assert!(
+        angenommen >= 8 && abgewiesen >= 20,
+        "{angenommen} / {abgewiesen}"
+    );
+}
+
+/// Die Akte des Falls `id` mit einem Event: `store::lade` liest sie, der `event_id` des Events stimmt
+/// noch (kein Schlüssel ging beim Lesen verloren), und `speichere` schreibt dieselben Bytes zurück.
+fn rundlauf(d: &Dienst, id: &str, name: &str) {
+    let pfad = d.zustand.konfig.faelle.join(format!("{id}.json"));
+    let datei =
+        store::lade(&pfad).unwrap_or_else(|e| panic!("{name}: Rust liest die Akte nicht: {e}"));
+    assert_eq!(datei.events.len(), 1, "{name}");
+    let event = &datei.events[0];
+    assert_eq!(
+        event.berechne_event_id().as_ref(),
+        Ok(&event.event_id),
+        "{name}"
+    );
+    let kopie = d.zustand.konfig.faelle.join(format!("{id}.kopie"));
+    store::speichere(&kopie, &datei).unwrap();
+    assert_eq!(
+        std::fs::read(&kopie).unwrap(),
+        std::fs::read(&pfad).unwrap(),
+        "{name}"
+    );
+}
