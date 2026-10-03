@@ -1168,6 +1168,275 @@ fn generierte_stores() {
     ergebnis.unwrap();
 }
 
+// ------------------------------------------- Anlage R: mehrere Renten; Rang im Container
+
+/// Ein Store (VZ 2025) mit genau diesen Feldern, jedes unmittelbar bestaetigt, in der Reihenfolge.
+/// ponytail: gleiche Schleife wie `p35c_store`; die beiden zusammenzulegen waere ein Umbau fremder
+/// Zeilen (neunc-p34 baut dort gleichzeitig um) und folgt, wenn beide Zweige gemergt sind.
+fn store_aus_feldern(felder: impl IntoIterator<Item = (String, Value)>) -> StoreDatei {
+    let mut store = Store::leer(2025, None);
+    let nachschlag = BindungNachschlag::neu(index());
+    let signal = Signal2::new("ui:bestaetigt").unwrap();
+    for (feld_id, wert) in felder {
+        let neu = NeuesEvent {
+            feld_id,
+            wert: PyWert::from(wert),
+            feldzustand: Feldzustand::Bestaetigt {
+                signal_2: signal.clone(),
+            },
+            herkunft: herkunft_mensch(),
+            schreiber: Schreiber::Mensch("julius".to_owned()),
+            signal_1: None,
+            ersetzt: None,
+            ts: Some("2026-09-29T00:00:00+00:00".to_owned()),
+        };
+        store
+            .append(&neu, None, nachschlag)
+            .expect("Feld anhaengen");
+    }
+    store.into_datei()
+}
+
+/// Wie oft `tag` (`<R>`, `<Einz>` …) in `xml` als Element-Anfang steht.
+fn zaehle_tag(xml: &str, tag: &str) -> usize {
+    ohne_praefix(xml).matches(&format!("<{tag}>")).count()
+}
+
+/// Leere Elemente, wie der Schreiber sie ausgibt (`<Einz/>` oder `<Einz />`).
+fn zaehle_leer(xml: &str, tag: &str) -> usize {
+    let flach = ohne_praefix(xml);
+    flach.matches(&format!("<{tag}/>")).count() + flach.matches(&format!("<{tag} />")).count()
+}
+
+/// Ein Fall der Rang-Pruefung: Name, Store und was im Rust-XML (Variante `basis`) stehen muss —
+/// Zahl der `<R>` (falls geprueft), Zahl der `<Einz>` insgesamt, `<Einz>` ohne Inhalt: keines.
+struct RangFall {
+    name: String,
+    datei: StoreDatei,
+    erwartet: Option<(Option<usize>, usize)>,
+}
+
+fn rente_felder(zweite: Option<&str>, partner: bool, veranlagung: &str) -> Vec<(String, Value)> {
+    let mut f: Vec<(String, Value)> = vec![
+        ("veranlagung".into(), json!(veranlagung)),
+        ("rentner_renten_art".into(), json!("gesetzliche_rente")),
+        ("rentner_jahresrente".into(), json!(1_800_000)),
+        ("rentner_renten_beginn_jahr".into(), json!(2015)),
+    ];
+    if let Some(art) = zweite {
+        f.extend([
+            ("rentner_renten_art__2".into(), json!(art)),
+            ("rentner_jahresrente__2".into(), json!(900_000)),
+            ("rentner_renten_beginn_jahr__2".into(), json!(2012)),
+            ("rentner_alter_bei_rentenbeginn__2".into(), json!(65)),
+        ]);
+    }
+    if partner {
+        f.extend([
+            ("kein_sonstige_partner".into(), json!(false)),
+            (
+                "rentner_renten_art_partner".into(),
+                json!("gesetzliche_rente"),
+            ),
+            ("rentner_jahresrente_partner".into(), json!(700_000)),
+            ("rentner_renten_beginn_jahr_partner".into(), json!(2016)),
+        ]);
+    }
+    f
+}
+
+/// Die vier Gruppen mit Wiederholung im tieferen Container: (Gruppe, Art-Feld, Betrag-Feld).
+const HH_TOEPFE: [(&str, &str, &str); 3] = [
+    ("hh_minijob", "hh_minijob_art", "hh_minijob_betrag"),
+    (
+        "hh_dienstleistung",
+        "hh_dienstleistung_art",
+        "hh_dienstleistung_betrag",
+    ),
+    ("hh_handwerker", "hh_handwerker_art", "hh_handwerker_betrag"),
+];
+
+fn hh_felder(art: &str, betrag: &str, nummern: &[usize]) -> Vec<(String, Value)> {
+    let suffix = |n: usize| {
+        if n == 1 {
+            String::new()
+        } else {
+            format!("__{n}")
+        }
+    };
+    nummern
+        .iter()
+        .flat_map(|&n| {
+            [
+                (format!("{art}{}", suffix(n)), json!(n.to_string())),
+                (format!("{betrag}{}", suffix(n)), json!(100_000 * n)),
+            ]
+        })
+        .collect()
+}
+
+fn p23_felder(n: usize, veranlagung: &str) -> Vec<(String, Value)> {
+    let verkaeufe = [
+        (20_000_000, 15_000_000, 500_000),
+        (13_000_000, 9_000_000, 200_000),
+        (8_000_000, 6_000_000, 100_000),
+    ];
+    let mut f: Vec<(String, Value)> = vec![
+        ("veranlagung".into(), json!(veranlagung)),
+        ("p23_anzahl_verkaeufe".into(), json!(n)),
+    ];
+    for (i, (preis, ak, wk)) in verkaeufe.iter().take(n).enumerate() {
+        let s = if i == 0 {
+            String::new()
+        } else {
+            format!("__{}", i + 1)
+        };
+        f.extend([
+            (format!("p23_veraeusserungspreis{s}"), json!(preis)),
+            (format!("p23_anschaffung_herstellungskosten{s}"), json!(ak)),
+            (format!("p23_werbungskosten{s}"), json!(wk)),
+            (format!("p23_veraeusserungs_typ{s}"), json!("grundstueck")),
+        ]);
+    }
+    f
+}
+
+fn rang_faelle() -> Vec<RangFall> {
+    let fall = |name: &str, felder: Vec<(String, Value)>, erwartet| RangFall {
+        name: name.to_owned(),
+        datei: store_aus_feldern(felder),
+        erwartet,
+    };
+    let mut faelle = vec![
+        // Die Aenderung: mehrere Renten einer Person -> EIN <R>, die Renten als <Einz> darin.
+        fall(
+            "rente einzel gesetzlich+gesetzlich",
+            rente_felder(Some("gesetzliche_rente"), false, "einzel"),
+            Some((Some(1), 2)),
+        ),
+        fall(
+            "rente einzel gesetzlich+privat",
+            rente_felder(Some("private_leibrente"), false, "einzel"),
+            Some((Some(1), 2)),
+        ),
+        fall(
+            "rente zusammen zweite Rente A + Rente B",
+            rente_felder(Some("gesetzliche_rente"), true, "zusammen"),
+            Some((Some(2), 3)),
+        ),
+        // Unveraendert: eine Rente je Person.
+        fall(
+            "rente einzel eine Rente",
+            rente_felder(None, false, "einzel"),
+            Some((Some(1), 1)),
+        ),
+        fall(
+            "rente zusammen Rente A + Rente B",
+            rente_felder(None, true, "zusammen"),
+            Some((Some(2), 2)),
+        ),
+    ];
+    // Die Luecke (Instanz 1 und 3, keine 2): dicht gezaehlt, kein <Einz> ohne Inhalt. Die EINE
+    // gewollte Abweichung vom alten XML der vier Bestandsgruppen (alt: leeres <Einz>, ERiC
+    // "Kontext ... ist leer"); Rohdaten der Messung: ~/.cache/taxgraph-tmp/k9-r/gap_store.py.
+    for (gruppe, art, betrag) in HH_TOEPFE {
+        faelle.push(fall(
+            &format!("{gruppe} Luecke 1+3"),
+            hh_felder(art, betrag, &[1, 3]),
+            Some((None, 2)),
+        ));
+    }
+    // Pin der Bestandsgruppen: dichte Instanzen ergeben dasselbe XML wie vor dem Rang. Rust gleich
+    // Python heisst hier gleich dem Python-Hash aus `tests/test_elster_xml.py::_HASH_VORHER`.
+    for (gruppe, art, betrag) in HH_TOEPFE {
+        for n in [1, 2, 4] {
+            let nummern: Vec<usize> = (1..=n).collect();
+            faelle.push(fall(
+                &format!("{gruppe} {n} Posten"),
+                hh_felder(art, betrag, &nummern),
+                Some((None, n)),
+            ));
+        }
+    }
+    for n in [1, 2, 3] {
+        faelle.push(fall(
+            &format!("p23 {n} Verkaeufe"),
+            p23_felder(n, "einzel"),
+            Some((None, n)),
+        ));
+    }
+    faelle.push(fall(
+        "p23 zusammen 2 Verkaeufe",
+        p23_felder(2, "zusammen"),
+        Some((None, 2)),
+    ));
+    faelle
+}
+
+/// Rente: jede Rente einer Person ein `<Einz>` in EINER Anlage R, die Luecke im Instanzindex dicht,
+/// die Bestandsgruppen (p23, drei Toepfe § 35a) unveraendert. Jeder Fall: Rust gleich Python
+/// (Deklaration, Zuruecklesen, XML in beiden Varianten) UND eine Probe auf dem Rust-XML, damit zwei
+/// gleich falsche Seiten nicht gruen sind. Vault `backlog/taxgraph/einzelveranlagung-zweite-anlage-r-lehnt-eric-ab`.
+#[test]
+fn rente_zweite_rente_luecke_und_bestandsgruppen_rust_gleich_python() {
+    if skip_ohne_parity_env() {
+        return;
+    }
+    let mit_xml = elster::testhilfe::schemas_da(2025);
+    let mut z = Zaehler::default();
+    let faelle = rang_faelle();
+    for f in &faelle {
+        let name = format!("rang/{}", f.name);
+        vergleiche_fall(
+            &f.datei,
+            &serde_json::to_value(&f.datei).unwrap(),
+            false,
+            &mut z,
+            &name,
+            true,
+        );
+        let Some((r, einz)) = f.erwartet.filter(|_| mit_xml) else {
+            continue;
+        };
+        let xml = match p35c_rust_xml(&f.datei) {
+            Ok(x) => x,
+            Err(e) => {
+                z.abweichungen
+                    .push(format!("{name}: Rust-XML ist Err: {e}"));
+                continue;
+            }
+        };
+        let ist = (
+            zaehle_tag(&xml, "R"),
+            zaehle_tag(&xml, "Einz"),
+            zaehle_leer(&xml, "Einz"),
+        );
+        println!(
+            "  {:<42} <R>={} <Einz>={} leer={}",
+            f.name, ist.0, ist.1, ist.2
+        );
+        if r.is_some_and(|r| r != ist.0) || ist.1 != einz || ist.2 != 0 {
+            z.abweichungen.push(format!(
+                "{name}: erwartet <R>={r:?} <Einz>={einz} leer=0, im XML <R>={} <Einz>={} leer={}",
+                ist.0, ist.1, ist.2
+            ));
+        }
+    }
+    bericht("rente / Rang im Container", &z);
+    assert_eq!(z.faelle, faelle.len(), "jeder Fall lief");
+    assert_eq!(
+        z.dekl_ok,
+        faelle.len(),
+        "deklariere lieferte nicht in jedem Fall Ok"
+    );
+    assert!(
+        !mit_xml || z.xml_ok >= faelle.len(),
+        "weniger Fall-XML auf beiden Seiten Ok als Faelle: {}",
+        z.xml_ok
+    );
+    assert!(z.abweichungen.is_empty(), "{:#?}", z.abweichungen);
+}
+
 // ---------------------------------------------------------------- § 35c: je Massnahmenart ein Fall
 
 /// (Massnahmenart, Container unter `EM_35c/Obj/Aufw/Massn`, Kz) — wie `P35C_ARTEN` in

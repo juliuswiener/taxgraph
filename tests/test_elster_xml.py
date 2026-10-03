@@ -6,10 +6,12 @@ Deklaration, fehlende Hersteller-ID, unbekannte Kz -> kein XML statt kaputtes XM
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -17,10 +19,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "produkt", "eingang"))
 sys.path.insert(0, os.path.join(ROOT, "elster", "submission"))
 sys.path.insert(0, os.path.join(ROOT, "elster"))
+for _sub in ("produkt/mapping", "produkt/store", "produkt/traverser"):
+    sys.path.insert(0, os.path.join(ROOT, _sub))
 
 import elster_xml as EX      # noqa: E402
+import est_mapping as EM     # noqa: E402
+import store as ST           # noqa: E402
+import traverser as TR       # noqa: E402
 import validate_xsd as VX    # noqa: E402
 import checkest_gate as CE   # noqa: E402
+import test_checkest_durchstich as D   # noqa: E402  (Rentner-Bauer, _ABSENDER)
 
 HID = "74931"                # ERiC-Test-Hersteller-ID aus dem amtlichen Beispiel-XML
 
@@ -263,6 +271,177 @@ def test_instanz_container_tiefer_verdraengt_p23_nicht():
     assert EX.INSTANZ_CONTAINER_TIEFER["p23_veraeusserung"] == "Einz"
     for gruppe in _HH_TOEPFE:
         assert EX.INSTANZ_CONTAINER_TIEFER[gruppe] == "Einz"
+
+
+# ------------------------------------------------- Anlage R: mehrere Renten einer Person
+#
+# Wer allein veranlagt wird und zwei Renten hat, bekam bis 2026-10-03 ein XML mit ZWEI <R>: die zweite
+# Rente (Instanz `__2` der Gruppe `rente`) legte ein zweites <R> an, und Index 1 am <R> heisst PersonB.
+# ERiC: rc=610001002, „Es handelt sich um eine Einzelveranlagung, daher darf fuer die Ehefrau /
+# Person B keine Anlage R ausgefuellt werden." Das Schema kennt <R> je Person (maxOccurs=2); die Renten
+# einer Person stehen als <Einz> (maxOccurs=99) in <Leibr_gesetzl>|<Leibr_priv>|<Leibr_sonst>.
+# Eine zweite Stelle: der Index im <Einz> ist der RANG der Instanz im Container, nicht ihre Nummer —
+# gesetzlich (1) plus privat (2) legte vor dem privaten Posten ein leeres <Einz> an (ERiC: „Kontext
+# '/R[1]/Leibr_priv[1]/Einz[1]' ist leer"). Entschieden in
+# decisions/zweite-rente-einer-person-steht-als-weiteres-einz-in-derselben-anlage-r.md.
+
+def _anlagen_r(xml: str) -> list:
+    """[(Person, {Container: [{Kz: Text} je <Einz>]})] je <R>, in Dokumentreihenfolge.
+
+    Eine Kz, die in EINEM <Einz> zweimal steht, ist ein Fehler des Schreibers und bricht hier ab —
+    ein dict wuerde sie verschlucken."""
+    def lok(tag: str) -> str:
+        return tag.rsplit("}", 1)[-1]
+    ergebnis = []
+    for r in (e for e in ET.fromstring(xml).iter() if lok(e.tag) == "R"):
+        person = next(c.text for c in r if lok(c.tag) == "Person")
+        container: dict = {}
+        for c in r:
+            if not lok(c.tag).startswith("Leibr"):
+                continue
+            for einz in c:
+                kinder = [(lok(k.tag), k.text) for k in einz]
+                assert len({t for t, _ in kinder}) == len(kinder), f"{lok(c.tag)}: Kz doppelt im Einz: {kinder}"
+                container.setdefault(lok(c.tag), []).append(dict(kinder))
+        ergebnis.append((person, container))
+    return ergebnis
+
+
+def _rente_xml(veranlagung: str, zweite=(), partner=()) -> str:
+    snap, sid = ST.materialisiere(D._fall_rente(veranlagung, zweite, partner))
+    dekl = EM.deklariere(snap, TR.lade_bindung(), snapshot_id=sid, vz=2025)
+    return EX.erzeuge_xml(dekl, vz=2025, hersteller_id=HID, abgabefaehig=True, **D._ABSENDER)
+
+
+# Rente 1 (`_BASIS_RENTNER_MIT_RENTE`), Rente `__2` (`D._rente_2`), Rente von Person B (`D._RENTE_PARTNER`)
+_GESETZL_1 = {"E1800301": "18000", "E1800501": "01.01.2015"}
+_GESETZL_2 = {"E1800301": "9000", "E1800501": "01.01.2012"}
+_PRIV_2 = {"E1801601": "9000", "E1801701": "01.01.2012"}
+_GESETZL_B = {"E1800301": "7000", "E1800501": "01.01.2016"}
+
+_RENTEN_FAELLE = {
+    # AK1: Einzelveranlagung, zwei gesetzliche Renten -> EIN <R>, EIN <Leibr_gesetzl>, ZWEI <Einz>
+    "einzel gesetzlich+gesetzlich": (
+        ("einzel", D._rente_2("gesetzliche_rente"), ()),
+        [("PersonA", {"Leibr_gesetzl": [_GESETZL_1, _GESETZL_2]})]),
+    # AK2: gesetzlich + privat -> je EIN <Einz> in <Leibr_gesetzl> und <Leibr_priv>, kein leeres <Einz>
+    "einzel gesetzlich+privat": (
+        ("einzel", D._rente_2("private_leibrente"), ()),
+        [("PersonA", {"Leibr_gesetzl": [_GESETZL_1], "Leibr_priv": [_PRIV_2]})]),
+    # AK3: zusammen, zweite Rente von A + Rente von B -> <R>[1] (A) zwei <Einz>, <R>[2] (B) eines
+    "zusammen zweite Rente A + Rente B": (
+        ("zusammen", D._rente_2("gesetzliche_rente"), D._RENTE_PARTNER),
+        [("PersonA", {"Leibr_gesetzl": [_GESETZL_1, _GESETZL_2]}),
+         ("PersonB", {"Leibr_gesetzl": [_GESETZL_B]})]),
+}
+
+
+@pytest.mark.parametrize("name", list(_RENTEN_FAELLE))
+def test_mehrere_renten_einer_person_stehen_als_einz_in_ihrer_anlage_r(name):
+    """AK1-AK3: Aufbau des <R>-Baums je Fall — Zahl und Reihenfolge der <R>, der Container, der <Einz>
+    und ihr Inhalt. Nur die Zahl der <Einz> zu zaehlen liesse das leere <Einz> von AK2 durch."""
+    (veranlagung, zweite, partner), erwartet = _RENTEN_FAELLE[name]
+    assert _anlagen_r(_rente_xml(veranlagung, zweite, partner)) == erwartet, name
+
+
+@braucht_xsd
+@pytest.mark.parametrize("name", list(_RENTEN_FAELLE))
+def test_mehrere_renten_einer_person_sind_xsd_valide(name, tmp_path):
+    (veranlagung, zweite, partner), _ = _RENTEN_FAELLE[name]
+    pfad = str(tmp_path / "rente.xml")
+    with open(pfad, "w", encoding="utf-8") as f:
+        f.write(_rente_xml(veranlagung, zweite, partner))
+    ok, meldung = VX.validate(pfad, "2025")
+    assert ok, f"{name}: {meldung}"
+
+
+# Luecke im Instanzindex: Instanz 1 und 3, keine 2. Der Store erlaubt das (`eingaben_konsistent` bleibt
+# wahr, es fehlt nur `__2`). Die Gruppen-Nummer 3 legte VOR dem Posten ein leeres <Einz> an
+# (ERiC: „Kontext ist leer"); der Rang zaehlt dicht. Das ist die EINZIGE Abweichung vom alten XML der
+# vier bestehenden Gruppen (gemessen: alle byte-gleichen Faelle unten) und sie ist gewollt.
+_HH_FELDER = {
+    "hh_minijob": ("hh_minijob_art", "hh_minijob_betrag"),
+    "hh_dienstleistung": ("hh_dienstleistung_art", "hh_dienstleistung_betrag"),
+    "hh_handwerker": ("hh_handwerker_art", "hh_handwerker_betrag"),
+}
+
+
+@pytest.mark.parametrize("gruppe", list(_HH_FELDER))
+def test_luecke_im_instanzindex_zaehlt_dicht_ohne_leeres_einz(gruppe):
+    art, betrag = _HH_FELDER[gruppe]
+    s = ST.leerer_store(2025, fall_id=f"luecke_{gruppe}")
+    for feld, wert in ((art, "1"), (betrag, 120_000), (f"{art}__3", "2"), (f"{betrag}__3", 80_000)):
+        D._b(s, feld, wert)
+    D._b(s, "veranlagung", "einzel")
+    snap, sid = ST.materialisiere(s)
+    dekl = EM.deklariere(snap, TR.lade_bindung(), snapshot_id=sid, vz=2025)
+    assert dekl["eingaben_konsistent"] is True and [i["index"] for i in dekl["anlage_instanzen"][gruppe]] == [3], \
+        "Vorbedingung: Instanz 3 liegt in anlage_instanzen, Instanz 2 fehlt"
+    xml = EX.erzeuge_xml(dekl, vz=2025, hersteller_id=HID)
+    einz = [e for e in ET.fromstring(xml).iter() if e.tag.rsplit("}", 1)[-1] == "Einz"]
+    assert len(einz) == 2, f"{gruppe}: {len(einz)} Einz statt 2"
+    assert all(len(e) > 0 for e in einz), f"{gruppe}: leeres Einz im XML"
+    # beide Posten stehen drin, in Instanz-Reihenfolge (Betrag in Euro: 120000 Cent = 1200)
+    assert [[k.text for k in e] for e in einz] == [["1", "1200"], ["2", "800"]], gruppe
+
+
+# Pin (AK8): die vier bestehenden Gruppen und die Rente mit EINER Rente erzeugen vor und nach dem Umbau
+# dasselbe XML, Byte fuer Byte. Hash = sha256 des XML-Textes (UTF-8), gemessen auf 604022c8 (vorher).
+# Faelle: p23 (1-3 Verkaeufe, Partner), die drei §35a-Toepfe mit 1, 2, 4 Posten, Rente einzel mit einer
+# Rente, Rente zusammen mit Rente von Person B. Wird einer rot, hat sich das XML einer bestehenden Gruppe
+# geaendert -- der Rang im Container wirkt dann ueber `rente` hinaus.
+_HASH_VORHER = {
+    "p23 1 Verkaeufe": "221571009eb89abfc26a003dbb3ae56550f46cf76949ce33f3806f0a9d75c20d",
+    "p23 2 Verkaeufe": "34c063104d0146535c54a28ddc4c93be1c75f6d17083cf793234bb8c93bead74",
+    "p23 3 Verkaeufe": "c9589cdf09b1ecbf9450f39e1500d9cc70f926b35c3675def0486f14e6843e21",
+    "p23 Partner-Verkauf": "57b6b711aab73a77559b4ca05115795bd1f60b8c148c5a3fe7570f85d7b00cd3",
+    "hh_minijob 1 Posten": "d351e12a89d6e99454084884eb07a260d3b5bd9c66a5c236206dee98c74d738f",
+    "hh_minijob 2 Posten": "f36a5b55bd8ce968af3faf2ec12ac10479efe9344f2a62916c84ca33f6fe4af3",
+    "hh_minijob 4 Posten": "1b3e299cebdbb20d049f6fcd0c66e4918469d62ba53922914cfd9bed583fbecd",
+    "hh_dienstleistung 1 Posten": "d351e12a89d6e99454084884eb07a260d3b5bd9c66a5c236206dee98c74d738f",
+    "hh_dienstleistung 2 Posten": "f36a5b55bd8ce968af3faf2ec12ac10479efe9344f2a62916c84ca33f6fe4af3",
+    "hh_dienstleistung 4 Posten": "1b3e299cebdbb20d049f6fcd0c66e4918469d62ba53922914cfd9bed583fbecd",
+    "hh_handwerker 1 Posten": "28f1f0642c1f1a252d9e1f51695aa9b3035189af48f2f61c32c1d0fc4d9f2666",
+    "hh_handwerker 2 Posten": "4c8672a7ad43d0d61c47b42500b0810911b9b1f4d5390e8c9d849280ce6c6221",
+    "hh_handwerker 4 Posten": "2c7917d7b1bc17760b7634364e421f8708aa03dfd35b678be6a23f365babd6de",
+    "Rente einzel, eine Rente": "4300823a0933db89847e71b8360c4dc5b4dc7ded84b5bf6181513d5e7033c45c",
+    "Rente zusammen, Rente von B": "9604e70b449f51dab3eb95a09881cc5676ade75b64f8dd6a9a2b8d253ef0f149",
+}
+
+
+def _bytegleich_faelle() -> dict:
+    import test_p23_mehrfachverkauf_bricht_so_maxoccurs as P23
+    import test_p23_partner_verkauf_still_unter_person_a_eingereicht as P23P
+    bind = TR.lade_bindung()
+
+    def p23(n):
+        snap, sid = ST.materialisiere(P23._fall(f"pin_p23_{n}", n))
+        res = EM.deklariere(snap, bind, snapshot_id=sid, vz=2025)
+        return EX.erzeuge_xml(res, vz=2025, hersteller_id="74931", snapshot=snap)
+
+    def hh(gruppe, n):
+        art, betrag = _HH_TOEPFE[gruppe]
+        res = _hh_result(gruppe, [{art: str(i + 1), betrag: 100_000 * (i + 1)} for i in range(n)])
+        return EX.erzeuge_xml(res, vz=2025, hersteller_id="74931")
+
+    faelle: dict = {f"p23 {n} Verkaeufe": (lambda n=n: p23(n)) for n in (1, 2, 3)}
+    faelle["p23 Partner-Verkauf"] = lambda: P23P._xml_bauen(
+        bind, {**P23P._VERKAUF_A, **P23P._VERKAUF_PARTNER_UEBER_INSTANZ_2})[1]
+    faelle.update({f"{g} {n} Posten": (lambda g=g, n=n: hh(g, n)) for g in _HH_TOEPFE for n in (1, 2, 4)})
+    faelle["Rente einzel, eine Rente"] = lambda: _rente_xml("einzel")
+    faelle["Rente zusammen, Rente von B"] = lambda: _rente_xml("zusammen", (), D._RENTE_PARTNER)
+    return faelle
+
+
+def test_vier_gruppen_und_eine_rente_erzeugen_unveraendertes_xml():
+    faelle = _bytegleich_faelle()
+    assert set(faelle) == set(_HASH_VORHER), "Fallliste und Hash-Tabelle weichen ab"
+    anders = {}
+    for name, bau in faelle.items():
+        h = hashlib.sha256(bau().encode("utf-8")).hexdigest()
+        if h != _HASH_VORHER[name]:
+            anders[name] = h
+    assert not anders, f"XML geaendert gegenueber 604022c8 (sha256): {anders}"
 
 
 @braucht_xsd
