@@ -16,7 +16,11 @@ Die drei enum-Felder sind die Kontrolle: sie wurden schon vorher über `enum_wer
 Daneben: zwei Werte INNERHALB des Bereichs enden in HTTP 500 auf /ergebnis und /stand —
 rentner_renten_beginn_jahr nach dem VZ (runner.catala_renten_einkuenfte wirft
 RentenfreibetragFixierungOffen am Guard vorbei) und rentner_alter_bei_rentenbeginn 98..100 (KeyError in
-params/kohorten/rente_ertragsanteil_p22.yaml, Schlüssel 0..97)."""
+params/kohorten/rente_ertragsanteil_p22.yaml, Schlüssel 0..97).
+
+Der letzte Abschnitt gilt dem Ableitungsweg (decisions/ableitung-schreibt-keinen-wert-ausserhalb-des-bereichs):
+`_leite_ab` und `_rechne_ab` hängen ihr Ergebnis direkt an die Ereignisliste und gingen an der Prüfung oben
+vorbei. Eine Ableitung schreibt jetzt keinen Wert, der ausserhalb von `bereich` liegt; die Frage bleibt stehen."""
 from __future__ import annotations
 
 import glob
@@ -29,6 +33,8 @@ import pytest
 import yaml
 
 import store as ST  # conftest legt produkt/store auf sys.path
+import traverser as TR
+from test_p33b_abs5_s4_ring import KEGEL_BASIS
 from test_paket_b_e2e_http import _gesamt_kegel, _laie, _rentner_kegel, base  # noqa: F401 — Fixture
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -200,3 +206,141 @@ def test_alter_ueber_97_rechnet_wie_97(base, alter, gleich_wie):
     _, (_, ref), _ = _fall(base, f"alter-{gleich_wie}-{alter}", fid, gleich_wie, GROSSE_LEIBRENTE)
     assert erg.get("zahl_cent") and ref.get("zahl_cent"), (erg, ref)
     assert (erg["zahl_cent"] == ref["zahl_cent"]) is (alter > 97), (erg["zahl_cent"], ref["zahl_cent"])
+
+
+# ---- Der Ableitungsweg: kein Wert ausserhalb von `bereich` ---------------------------------------------------
+# `append_event` prüft Typ, Muster und Bereich; `_leite_ab`/`_rechne_ab` hängen ihr Ergebnis dagegen direkt an
+# die Ereignisliste. Gemessen 2026-10-03: aus dem Geburtsdatum 15.07.1850 wurde `geburtsjahr` 1850 (Bereich
+# 1900..2010) geschrieben, die Frage verschwand aus der Queue, und die Rechnung las 1850 als gesicherte Angabe.
+# Das Datum selbst bekommt keine Grenze (eigene Entscheidung); nur die Ableitung daraus unterbleibt.
+
+BINDUNG = TR.lade_bindung()
+KATALOG = ST.lade_katalog(BINDUNG)
+LAIE = {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}
+QUELLEN = [("stammdaten_geburtsdatum", "geburtsjahr"), ("stammdaten_geburtsdatum_partner", "geburtsjahr_partner")]
+
+
+def _store_mit(*paare, bindung=None):
+    """Bestätigte Antworten in dieser Reihenfolge; ohne `bindung` gegen die echte Bindung samt Katalog."""
+    s = ST.leerer_store(2025, fall_id="ableitung-bereich")
+    for feld, wert in paare:
+        ST.append_event(s, feld_id=feld, wert=wert, zustand="bestaetigt", herkunft=LAIE, schreiber="ui:laie",
+                        signal={"signal_1": None, "signal_2": f"klick@{feld}"}, ts="2026-10-03T12:00:00+00:00",
+                        bindung=bindung or BINDUNG, katalog=None if bindung else KATALOG)
+    return s
+
+
+def _abgeleitet(s):
+    return {e["feld_id"]: e["wert"] for e in s["events"] if e["schreiber"].startswith("abgeleitet:")}
+
+
+@pytest.mark.parametrize("quelle,ziel", QUELLEN)
+@pytest.mark.parametrize("datum", ["15.07.1850", "31.12.1899", "01.01.2011", "15.07.2025", "15.07.2999"])
+def test_ableitung_schreibt_kein_geburtsjahr_ausserhalb_des_bereichs(quelle, ziel, datum):
+    """AK1: Jahr ausserhalb 1900..2010 (je eines unter min, über max, im Jahr 2999 wie im Auftrag): kein Event,
+    die Frage bleibt offen. Das Datum selbst bleibt in der Akte."""
+    s = _store_mit((quelle, datum))
+    assert ziel not in _abgeleitet(s), f"{quelle}={datum}: Ableitung schrieb {ziel}={_abgeleitet(s)[ziel]}"
+    assert ziel not in ST.materialisiere(s)[0]
+    assert [e["wert"] for e in s["events"] if e["feld_id"] == quelle] == [datum]
+
+
+@pytest.mark.parametrize("quelle,ziel", QUELLEN)
+@pytest.mark.parametrize("datum,jahr", [("01.01.1900", 1900), ("15.07.1960", 1960), ("31.12.2010", 2010),
+                                        ("01.01.0000", 0)])
+def test_ableitung_schreibt_das_jahr_im_bereich_und_die_null(quelle, ziel, datum, jahr):
+    """Die Ränder 1900 und 2010 und eine Mitte werden abgeleitet wie bisher. Die 0 (Datum 01.01.0000) geht wie
+    beim Speichern durch (decisions/zahl-ausserhalb-des-bereichs-…-die-null-nicht): eine Regel, eine Stelle.
+    Ob eine GERECHNETE 0 dasselbe verdient wie eine getippte, ist offen (Bericht, „Entscheidung für Julius")."""
+    assert _abgeleitet(_store_mit((quelle, datum))).get(ziel) == jahr
+
+
+def test_ableitung_ohne_bereich_am_ziel_laeuft_weiter():
+    """Kontrolle: `rentner_alter_64_erfuellt` (bool, ohne `bereich`) wird auch für das Datum 1850 abgeleitet.
+    Nur der Wert ausserhalb fällt weg, nicht die ganze Quelle."""
+    abgeleitet = _abgeleitet(_store_mit(("stammdaten_geburtsdatum", "15.07.1850")))
+    assert abgeleitet.get("rentner_alter_64_erfuellt") is True, abgeleitet
+
+
+def _bindung_ableitung():
+    return {"datum": {"typ": "datum"},
+            "jahr": {"typ": "int", "bereich": {"min": 1900, "max": 2010},
+                     "ableitung": {"aus": "datum", "art": "jahr_aus_datum", "grund": "t"}}}
+
+
+def _bindung_beweist(wert):
+    return {"anzahl": {"typ": "int", "beweist": {"feld_id": "ziel", "wert": wert, "ab": 1}},
+            "ziel": {"typ": "int", "bereich": {"min": 1, "max": 5}}}
+
+
+@pytest.mark.parametrize("datum,erwartet", [("15.07.1850", None), ("15.07.1960", 1960)])
+def test_rechne_ab_prueft_den_bereich_des_ziels(datum, erwartet):
+    """Dieselbe Regel ohne die echte Bindung: der Ableitungsschritt, nicht das Geburtsjahr, trägt die Prüfung."""
+    s = _store_mit(("datum", datum), bindung=_bindung_ableitung())
+    assert _abgeleitet(s).get("jahr") == erwartet
+
+
+@pytest.mark.parametrize("wert,erwartet", [(99, None), (-1, None), (3, 3), (0, 0)])
+def test_leite_ab_prueft_den_bereich_des_ziels(wert, erwartet):
+    """`beweist` schreibt eine feste Zahl; liegt sie ausserhalb von `bereich` des Ziels, bleibt die Frage stehen.
+    In der echten Bindung trägt kein `beweist`-Ziel einen Bereich: dieser Weg ist heute nur synthetisch erreichbar."""
+    s = _store_mit(("anzahl", 3), bindung=_bindung_beweist(wert))
+    assert _abgeleitet(s).get("ziel") == erwartet
+
+
+# AK5: Auflage B bleibt. Die Prüfung hängt VOR dem Schreiben, `ziel in aktiv` sperrt wie bisher.
+
+def test_bestaetigte_null_am_ziel_sperrt_die_ableitung_weiter():
+    s = _store_mit(("geburtsjahr", 0), ("stammdaten_geburtsdatum", "15.07.1960"))
+    assert [(e["wert"], e["schreiber"]) for e in s["events"] if e["feld_id"] == "geburtsjahr"] == [(0, "ui:laie")]
+
+
+def test_vorjahreswert_am_ziel_sperrt_die_ableitung_weiter():
+    """Ein vorläufiger Vorjahreswert bleibt stehen und gewinnt gegen die spätere Ableitung (Entscheidung Punkt 4)."""
+    s = _store_mit()
+    ST.append_event(s, feld_id="geburtsjahr", wert=1950, zustand="vorlaeufig",
+                    herkunft={"herkunft": "vorjahr", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                    schreiber="import:vorjahr", signal={"signal_1": None, "signal_2": None},
+                    ts="2026-10-03T12:00:00+00:00", bindung=BINDUNG, katalog=KATALOG)
+    ST.append_event(s, feld_id="stammdaten_geburtsdatum", wert="15.07.1960", zustand="bestaetigt", herkunft=LAIE,
+                    schreiber="ui:laie", signal={"signal_1": None, "signal_2": "klick"},
+                    ts="2026-10-03T12:00:01+00:00", bindung=BINDUNG, katalog=KATALOG)
+    assert [(e["wert"], e["zustand"]) for e in s["events"] if e["feld_id"] == "geburtsjahr"] == [(1950, "vorlaeufig")]
+
+
+def _lauf_geburtsdatum(base, fall_id, datum):
+    """Gesamt-Fall mit der Basis des p24a-Rückfalltests und (optional) einem Geburtsdatum.
+    -> (zahl_cent, Fragen-IDs). Die Basis bestätigt den Kegel; `zahl_cent` ist die Steuerzahl des Bescheids."""
+    assert _http(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                         "fall_id": fall_id})[0] == 201
+    felder = [*KEGEL_BASIS, ("agb_zwangslaeufig", True), ("agb_notwendig_angemessen", True)]
+    if datum:
+        felder.append(("stammdaten_geburtsdatum", datum))
+    for f, w in felder:
+        st, antwort = _http(base, "POST", f"/fall/{fall_id}/event", _laie(f, w))
+        assert st == 201, (f, w, antwort)
+    _, erg = _http(base, "GET", f"/fall/{fall_id}/ergebnis")
+    assert erg["grund"] == "bestaetigt", erg
+    _, fr = _http(base, "GET", f"/fall/{fall_id}/fragen")
+    return erg["zahl_cent"], [f.get("feld_id") or f.get("feld") for f in fr["fragen"]]
+
+
+@pytest.mark.parametrize("datum", ["15.07.1850", "15.07.2999"])
+def test_jahr_ausserhalb_bleibt_frage_und_bewegt_die_zahl_nicht(base, datum):
+    """Geld und Frage über HTTP (gemessen 2026-10-03, Python und Rust gleich): vor dem Fix machte 15.07.1850
+    aus `geburtsjahr` 1850 den höchsten Altersentlastungsbetrag — 889 EUR weniger Steuer als ohne Angabe
+    (15.267.300 gegen 15.356.200 ct); bei 2999 fiel nur die Frage weg. Jetzt rechnet der Fall wie einer ohne
+    Geburtsdatum, und `geburtsjahr` steht weiter in der Queue, bis der Nutzer es selbst beantwortet."""
+    ohne_zahl, ohne_fragen = _lauf_geburtsdatum(base, "ab-ohne", None)
+    zahl, fragen = _lauf_geburtsdatum(base, f"ab-{datum}".replace(".", "-"), datum)
+    assert "geburtsjahr" in ohne_fragen
+    assert "geburtsjahr" in fragen, "die Ableitung hat die Frage still beantwortet"
+    assert zahl == ohne_zahl, f"{datum}: Steuer {zahl} ct statt {ohne_zahl} ct"
+
+
+def test_jahr_im_bereich_beantwortet_die_frage_und_bewegt_die_zahl(base):
+    """Kontrolle zum Test oben: ohne sie wäre „zahl == ohne_zahl" auch gültig, wenn das Datum nie etwas bewegte."""
+    ohne_zahl, _ = _lauf_geburtsdatum(base, "ab-ohne-k", None)
+    zahl, fragen = _lauf_geburtsdatum(base, "ab-1958", "15.07.1958")
+    assert "geburtsjahr" not in fragen
+    assert zahl < ohne_zahl, (zahl, ohne_zahl)

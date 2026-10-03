@@ -746,14 +746,23 @@ impl Store {
         if zahl < regel.ab.unwrap_or(1.0) {
             return Ok(());
         }
-        if bindung.get(&regel.feld_id).is_none() || self.aktiv.contains_key(&regel.feld_id) {
+        let Some(ziel) = bindung.get(&regel.feld_id) else {
+            return Ok(());
+        };
+        if self.aktiv.contains_key(&regel.feld_id) {
+            return Ok(());
+        }
+        // Ein Wert ausserhalb `bereich` des Ziels wird nicht geschrieben, die Frage bleibt stehen
+        // (`store.py::_leite_ab`). Heute traegt kein `beweist`-Ziel einen Bereich.
+        let ziel_wert: PyWert = regel.wert.clone().into();
+        if ableitung_ausserhalb_bereich(ziel, &ziel_wert) {
             return Ok(());
         }
         let event = Event {
             event_id: EventId::aus_bytes([0; 32]),
             ts: jetzt_iso(),
             feld_id: regel.feld_id.clone(),
-            wert: regel.wert.clone().into(),
+            wert: ziel_wert,
             zustand: Zustand::Bestaetigt,
             herkunft: berechnet_herkunft().into(),
             schreiber: Schreiber::Abgeleitet("beweist".to_string()),
@@ -859,11 +868,18 @@ impl Store {
             let Some(neuer_wert) = ableitung::berechne(regel, quellwert, vz) else {
                 continue;
             };
+            // Dieselbe Bereichsregel wie beim Speichern (`bereich_verletzt`): ein gerechneter Wert
+            // ausserhalb `bereich` laesst sich nicht SICHER bestimmen, die Frage bleibt stehen
+            // (`store.py::_rechne_ab`).
+            let neuer_wert: PyWert = neuer_wert.into();
+            if ableitung_ausserhalb_bereich(eintrag, &neuer_wert) {
+                continue;
+            }
             neue_events.push(Event {
                 event_id: EventId::aus_bytes([0; 32]),
                 ts: jetzt_iso(),
                 feld_id: ziel_i,
-                wert: neuer_wert.into(),
+                wert: neuer_wert,
                 zustand: Zustand::Bestaetigt,
                 herkunft: berechnet_herkunft().into(),
                 schreiber: Schreiber::Abgeleitet("ableitung".to_string()),
@@ -1118,6 +1134,26 @@ fn python_schreiber(roh: &str) -> Schreiber {
     }
 }
 
+/// Auflage W (Wertebereich), EINE Regel an EINER Stelle (`store.py::_ausserhalb_bereich`): der
+/// `bereich` des Eintrags, wenn die Zahl `n` ausserhalb liegt. Die 0 liegt nie ausserhalb (Vault
+/// `decisions/zahl-ausserhalb-des-bereichs-wird-beim-speichern-abgewiesen-die-null-nicht`).
+///
+/// Zwei Aufrufer: [`pruefe_bindung`] weist den Wert ab; [`Store::leite_ab`]/[`Store::rechne_ab`]
+/// schreiben ihn nicht (Vault `decisions/ableitung-schreibt-keinen-wert-ausserhalb-des-bereichs`).
+fn bereich_verletzt(eintrag: &bindung::Bindung, n: i64) -> Option<&bindung::Bereich> {
+    eintrag
+        .bereich
+        .as_ref()
+        .filter(|b| n != 0 && !(b.min..=b.max).contains(&n))
+}
+
+/// Liegt der abgeleitete `wert` ausserhalb von `bereich` des Ziels? Nur eine Ganzzahl auf einem
+/// cent/int-Ziel kann es (`store.py::_ausserhalb_bereich`: `_typ_konform` fuer cent/int).
+fn ableitung_ausserhalb_bereich(eintrag: &bindung::Bindung, wert: &PyWert) -> bool {
+    matches!(eintrag.typ, domain::Feldtyp::Cent | domain::Feldtyp::Int)
+        && matches!(wert, PyWert::Ganz(n) if bereich_verletzt(eintrag, *n).is_some())
+}
+
 /// Auflage T (Typ) + Auflage V (Vorzeichen) + Auflage W (Wertebereich) + Auflage F (Format), `store.py:193-248`, `_pruefe_typ_konformitaet`.
 /// Unbekanntes `feld_id`: durchlassen, nicht raten (Team-Lead-Vorgabe).
 ///
@@ -1167,8 +1203,8 @@ fn pruefe_bindung(
     // Auflage W (Wertebereich): nur eine Zahl AUSSERHALB von `bereich`, die nicht 0 ist. Die 0
     // heisst bei diesen Feldern "nichts anzugeben" und bleibt zulaessig, auch unter einem Minimum
     // ueber 0 (Vault `decisions/speichern-lehnt-nullwerte-nicht-ab`). Laden prueft nie.
-    if let (Some(n), Some(bereich)) = (zahl, &eintrag.bereich) {
-        if n != 0 && !(bereich.min..=bereich.max).contains(&n) {
+    if let Some(n) = zahl {
+        if let Some(bereich) = bereich_verletzt(eintrag, n) {
             return Err(Abweisung::WertAusserhalbBereich {
                 feld_id: feld_id.to_string(),
                 wert: n,
@@ -1594,6 +1630,55 @@ mod tests {
             "fail-closed (Bereich): fam_anzahl_kinder=-1 liegt ausserhalb des erlaubten Bereichs \
              0 bis 20 der Bindung."
         );
+    }
+
+    /// Auflage W auf dem Ableitungsweg (Vault `decisions/ableitung-schreibt-keinen-wert-ausserhalb-
+    /// des-bereichs`): `beweist.wert` ausserhalb `bereich` des Ziels wird nicht geschrieben, die
+    /// Frage bleibt stehen. In der echten Bindung traegt kein `beweist`-Ziel einen Bereich: der Weg
+    /// ist nur ueber eine geaenderte Kopie erreichbar (wie `muster_prueft_den_ganzen_wert_auflage_f`).
+    #[test]
+    fn leite_ab_schreibt_keinen_wert_ausserhalb_des_bereichs_des_ziels() {
+        let schreibe = |beweis_wert: i64| {
+            let mut bindungen = echte_bindungen();
+            for b in &mut bindungen {
+                if b.feld_id == "fam_anzahl_kinder" {
+                    b.beweist = Some(bindung::Beweist {
+                        feld_id: "kein_kind".to_string(),
+                        wert: json!(beweis_wert),
+                        ab: Some(1.0),
+                    });
+                }
+                if b.feld_id == "kein_kind" {
+                    b.typ = domain::Feldtyp::Int;
+                    b.bereich = Some(bindung::Bereich {
+                        min: 1,
+                        max: 5,
+                        grund: None,
+                    });
+                }
+            }
+            let map = crate::baue_nachschlag(&bindungen);
+            let mut neu = mensch_bestaetigt("fam_anzahl_kinder", "");
+            neu.wert = json!(3).into();
+            let mut store = Store::leer(2025, None);
+            store
+                .append(&neu, None, BindungNachschlag::neu(&map))
+                .unwrap();
+            store.aktives("kein_kind").map(|e| e.wert.clone())
+        };
+        for (beweis_wert, erwartet) in [
+            (99, None),
+            (-1, None),
+            (3, Some(3)),
+            (5, Some(5)),
+            (0, Some(0)),
+        ] {
+            assert_eq!(
+                schreibe(beweis_wert),
+                erwartet.map(domain::PyWert::Ganz),
+                "beweist.wert={beweis_wert}"
+            );
+        }
     }
 
     proptest! {
