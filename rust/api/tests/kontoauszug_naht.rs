@@ -378,6 +378,7 @@ async fn format_und_rumpf() {
         (json!("CSV"), 200),
         (json!(" csv\n"), 200),
         (json!("\u{a0}csv\u{a0}"), 200),
+        (json!("\u{1c}csv\u{1f}"), 200),
         (json!(null), 400),
         (json!(""), 400),
         (json!("  "), 400),
@@ -458,6 +459,8 @@ async fn pdf_eingabe_wird_vor_dem_lesen_geprueft() {
         (json!("=QUJD"), ungueltig),
         (json!("QQ==QQ=="), ungueltig),
         (json!("QQ-_"), ungueltig),
+        (json!("QUJ-"), ungueltig),
+        (json!("QUJ_"), ungueltig),
         (json!("QUJDä"), ungueltig),
         (json!("QUJDR"), ungueltig),
     ]
@@ -471,5 +474,101 @@ async fn pdf_eingabe_wird_vor_dem_lesen_geprueft() {
         )
         .await;
         assert_eq!((s, a), (400, json!({"fehler": fehler})), "{inhalt}");
+    }
+}
+
+#[tokio::test]
+async fn zweck_datum_und_csv_randfaelle() {
+    let d = dienst();
+    let tx = |betrag: Value, zweck: Value| json!({"format": "json", "inhalt": [{"datum": "d", "betrag": betrag, "verwendungszweck": zweck}]});
+    // Ein Zweck, der kein Text ist: bei einer Ausgabe `AttributeError` (`.lower()`), bei einer Einnahme
+    // nie gelesen; falsch heisst leer.
+    for (i, (zweck, klasse)) in [
+        (json!(5), "int"),
+        (json!(["maler"]), "list"),
+        (json!({"a": 1}), "dict"),
+        (json!(true), "bool"),
+        (json!(1.5), "float"),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let (s, a) = auszug(&d, &format!("kw{i}"), tx(json!(-100), zweck.clone())).await;
+        assert_eq!(
+            (s, a),
+            (
+                500,
+                json!({"fehler": format!("AttributeError: '{klasse}' object has no attribute 'lower'")})
+            ),
+            "{zweck}"
+        );
+    }
+    for (i, zweck) in [json!(null), json!(0), json!([]), json!(false), json!("")]
+        .into_iter()
+        .enumerate()
+    {
+        let (s, a) = auszug(&d, &format!("kw1{i}"), tx(json!(-100), zweck.clone())).await;
+        assert_eq!(
+            (s, a),
+            (
+                200,
+                json!({"uebernommen": 0, "transaktionen": 1, "verworfen": 0})
+            ),
+            "{zweck}"
+        );
+    }
+    let (s, a) = auszug(&d, "kw20", tx(json!(100), json!(5))).await;
+    assert_eq!(
+        (s, a),
+        (
+            200,
+            json!({"uebernommen": 0, "transaktionen": 1, "verworfen": 0})
+        )
+    );
+    // Ein fehlendes Datum steht als leerer Text im Beleg, ein vorhandenes unverändert.
+    let (_, a) = auszug(
+        &d,
+        "kw30",
+        json!({"format": "json", "inhalt": [{"betrag": -5000, "verwendungszweck": "Spende"}]}),
+    )
+    .await;
+    assert_eq!(a["uebernommen"], 1);
+    assert_eq!(events(&d, "kw30")[0]["signal"]["signal_1"]["datum"], "");
+    let (_, a) = auszug(&d, "kw31", json!({"format": "json", "inhalt": [{"datum": 5.5, "betrag": -5000, "verwendungszweck": "Spende"}]})).await;
+    assert_eq!(a["uebernommen"], 1);
+    assert_eq!(events(&d, "kw31")[0]["signal"]["signal_1"]["datum"], 5.5);
+    // CSV: der Inhalt, der kein Text ist, ist leer; Vorzeichen wie `lstrip("+-")`.
+    let (s, a) = auszug(&d, "kc0", json!({"format": "csv", "inhalt": 5})).await;
+    assert_eq!(
+        (s, a),
+        (
+            200,
+            json!({"uebernommen": 0, "transaktionen": 0, "verworfen": 0})
+        )
+    );
+    for (i, (betrag, gebucht)) in [
+        ("--5", 1),
+        ("+-5", 0),
+        ("-+5", 1),
+        (" - 5,5 € ", 1),
+        ("-480.5", 1),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let (s, a) = auszug(
+            &d,
+            &format!("kc1{i}"),
+            csv(&[&format!("01.03.2025;{betrag};Maler")]),
+        )
+        .await;
+        assert_eq!(
+            (s, a),
+            (
+                200,
+                json!({"uebernommen": gebucht, "transaktionen": 1, "verworfen": 0})
+            ),
+            "{betrag}"
+        );
     }
 }

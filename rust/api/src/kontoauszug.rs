@@ -59,9 +59,9 @@ fn lese_fehler(e: &KontoauszugFehler) -> ApiFehler {
 /// die Buchung fliegt aus dem Auszug.
 ///
 /// ponytail: steht ein solches Wort im Datum einer Buchung, die gebucht wird, oder im Zweck einer
-/// Ausgabe, scheitert Python (500, `ValueError` bei der Kennung des Events, `AttributeError` bei
-/// `.lower()`), Rust sieht Text und übernimmt die Buchung (dokumentierte Abweichung 5 in
-/// `api_http_paritaet.rs`). Ebenso steht eine Ganzzahl über `u64` als Kommazahl da (Python: exakte
+/// Ausgabe, scheitert Python (500: `speichere_fall` schreibt mit `allow_nan=False`, und `.lower()`
+/// kennt keine Kommazahl), Rust sieht Text und übernimmt die Buchung (dokumentierte Abweichung 5
+/// in `api_http_paritaet.rs`). Ebenso steht eine Ganzzahl über `u64` als Kommazahl da (Python: exakte
 /// `int`; ab 309 Ziffern Text), und ein einzelnes Surrogat-Escape (`"\ud800"`) weist `serde_json` mit 400 ab,
 /// Python scheitert erst beim Schreiben der Akte (500). Upgrade: ein eigener Leser, der `PyWert` mit `NaN` liefert.
 fn json_laden(text: &str) -> Result<Value, ()> {

@@ -85,7 +85,7 @@ const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/graph", 9),
     ("POST /fall/{id}/event", 12),
     ("POST /fall/{id}/flow", 2),
-    ("POST /fall/{id}/kontoauszug", 126),
+    ("POST /fall/{id}/kontoauszug", 127),
     ("POST /fall/{id}/vorjahr", 2),
 ];
 
@@ -3482,6 +3482,7 @@ fn kontoauszug_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBil
         ("Format Grossschrift", json!("CSV"), 200),
         ("Format mit Leerraum", json!(" csv\n"), 200),
         ("Format Tab und NBSP", json!("\u{a0}csv\u{a0}"), 200),
+        ("Format mit U+001C und U+001F", json!("\u{1c}csv\u{1f}"), 200),
         ("Format gemischt", json!("Csv"), 200),
         ("Format fehlt", Value::Null, 400),
         ("Format leer", json!(""), 400),
@@ -3580,6 +3581,8 @@ fn kontoauszug_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBil
         ("pdf base64 Auffuellung vorn", json!("=QUJD"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
         ("pdf base64 zweimal aufgefuellt", json!("QQ==QQ=="), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
         ("pdf base64 URL-Alphabet", json!("QQ-_"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
+        ("pdf base64 nur Minus", json!("QUJ-"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
+        ("pdf base64 nur Unterstrich", json!("QUJ_"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
         ("pdf base64 Umlaut", json!("QUJDä"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
         ("pdf base64 Rest 1", json!("QUJDR"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
     ] {
@@ -4775,8 +4778,9 @@ fn dokumentierte_abweichungen() {
     // 5. `POST /kontoauszug`, JSON als Text mit `NaN` an einer Stelle, die gelesen wird (9c, gewollte
     //    Abweichung, `json_laden` in `api::kontoauszug`): Python liest die Kommazahl `nan` und scheitert
     //    spaeter daran, Rust liest den Text `"NaN"` und uebernimmt die Buchung.
-    //    a) im Datum einer Buchung, die gebucht wird: Python rechnet die Kennung des Events aus (JSON
-    //       ohne `NaN`) und antwortet 500, die Akte bleibt leer; Rust legt `"NaN"` als Text ab.
+    //    a) im Datum einer Buchung, die gebucht wird: Python schreibt die Akte mit `allow_nan=False`
+    //       (`speichere_fall`, "NaN sperrt sonst die Akte fuer Rust") und antwortet 500, die Akte
+    //       bleibt leer; Rust legt `"NaN"` als Text ab.
     //    b) im Zweck einer Ausgabe: Python ruft `.lower()` auf eine Kommazahl (500), Rust sieht Text,
     //       findet keine Kategorie und antwortet 200.
     //    Beides gibt es nur mit einem Auszug, den kein Programm so schreibt.

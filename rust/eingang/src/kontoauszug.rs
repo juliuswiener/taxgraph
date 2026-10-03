@@ -598,7 +598,7 @@ pub fn uebernehme(
 mod tests {
     use proptest::prelude::*;
 
-    use super::{eur_cent_signed, parse_csv};
+    use super::{aus_json, eur_cent_signed, hinweis_verworfen, parse_csv, KontoauszugFehler};
 
     /// Vault `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`; Python-Gegenstueck
     /// `tests/test_kontoauszug_writer.py::test_eur_cent_signed_tabelle`.
@@ -633,6 +633,55 @@ mod tests {
         ] {
             assert_eq!(eur_cent_signed(&roh), cent, "{} Zeichen", roh.len());
         }
+    }
+
+    /// Der Satz fuer den Nutzer nennt je Format den Grund, der dort wirklich zutrifft.
+    #[test]
+    fn hinweis_nennt_den_grund_je_format() {
+        assert_eq!(
+            hinweis_verworfen(3, "pdf"),
+            "3 Zeile(n) unsicher erkannt (Confidence < 60%) oder mit zu großem Betrag (ab 100 Mio. €) verworfen — bitte manuell prüfen/nachtragen."
+        );
+        for fmt in ["csv", "json"] {
+            assert_eq!(
+                hinweis_verworfen(1, fmt),
+                "1 Zeile(n) mit unlesbarem Betrag (keine Zahl oder ab 100 Mio. €) verworfen — bitte manuell prüfen/nachtragen."
+            );
+        }
+    }
+
+    /// `aus_json` ohne die Vorauswahl der Route: ein Element ohne Objekt und ein Zweck ohne Text
+    /// scheitern mit Pythons Meldung (`tx.get`, `.lower()`); ein Zweck ohne Text bei einer Einnahme nicht.
+    #[test]
+    fn aus_json_meldungen_wie_python() {
+        use serde_json::json;
+        let meldung = |liste| match aus_json(&liste) {
+            Err(KontoauszugFehler::TransaktionUngueltig { index, meldung }) => {
+                Some((index, meldung))
+            }
+            _ => None,
+        };
+        assert_eq!(
+            meldung(json!([{"betrag": 1}, 5])),
+            Some((1, "'int' object has no attribute 'get'".to_owned()))
+        );
+        assert_eq!(
+            meldung(json!([null])),
+            Some((0, "'NoneType' object has no attribute 'get'".to_owned()))
+        );
+        assert_eq!(
+            meldung(json!([{"betrag": -1, "verwendungszweck": 1.5}])),
+            Some((0, "'float' object has no attribute 'lower'".to_owned()))
+        );
+        assert_eq!(
+            meldung(json!([{"betrag": -1, "verwendungszweck": [1]}])),
+            Some((0, "'list' object has no attribute 'lower'".to_owned()))
+        );
+        assert!(aus_json(&json!([{"betrag": 1, "verwendungszweck": 5}])).is_ok());
+        assert!(aus_json(&json!([{"betrag": -1, "verwendungszweck": null}])).is_ok());
+        assert!(aus_json(&json!([{"betrag": -1, "verwendungszweck": 0}])).is_ok());
+        let tx = aus_json(&json!([{"betrag": -1}])).unwrap();
+        assert_eq!(tx[0].datum, json!(""));
     }
 
     /// AK1: eine Zeile mit unlesbarem Betrag zaehlt in `verworfen`, die lesbare bleibt.
