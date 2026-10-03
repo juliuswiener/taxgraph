@@ -694,17 +694,19 @@ def _iban_pruefziffer_gueltig(iban: str) -> bool:
     return int(ziffern) % 97 == 1
 # Klasse INSTANZ — Repeated-Instance (Store-Modell A, Multi-Objekt/Multi-Rente/Per-Kind): ein wiederholbares
 # Anlage-Feld trägt für Instanz 2..N das Suffix __<n> am feld_id (Instanz 1 = die Basis-feld_id ohne Suffix,
-# unverändert deklariert). Das Suffix liegt vollständig in [a-z0-9_] → der Store-feld_id-Pattern
+# unverändert deklariert; `x__1` ist KEINE Instanz — Entscheidung 2026-10-03, die Oberfläche erzeugt es nie
+# und die Schreib-Route weist es ab). Das Suffix liegt vollständig in [a-z0-9_] → der Store-feld_id-Pattern
 # ^[a-z][a-z0-9_]*$ bleibt UNVERÄNDERT (bewusst kein '#' — '#' bräche das Store-Schema-Gate). Der Store lernt
 # die Instanz GAR NICHT; sie ist reine Konvention der Bindung (instanz_gruppe) + est_mapping. Je Instanz wird
 # DIESELBE Basis-Kz wiederverwendet (Instanz-Reuse, kein neuer Kz — analog Person-B/Klasse g auf der Instanz-
 # Achse; Kz-Instanz-Recon 2026-07-18: alle drei Anlagen V/R/Kind = Reuse, kein distinkter Instanz-Kz).
-_INSTANZ_RE = re.compile(r"^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[1-9][0-9]*)$")
+_INSTANZ_RE = re.compile(r"^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[2-9]|[1-9][0-9]+)$")
 
 
 def parse_instanz(feld_id: str):
-    """Die EINE Enumerations-Wahrheit für Repeated-Instance: `base__<n>` (n>=1) -> (base, n); eine Basis-
-    feld_id OHNE Suffix -> None (= Instanz 1). BEIDE Seiten — die Deklaration (deklariere) UND der Ring-
+    """Die EINE Enumerations-Wahrheit für Repeated-Instance: `base__<n>` (n>=2) -> (base, n); eine Basis-
+    feld_id OHNE Suffix -> None (= Instanz 1), ebenso `base__1`, `base__0` und `base__02` (keine Instanz).
+    BEIDE Seiten — die Deklaration (deklariere) UND der Ring-
     Instanz-Reader (instanzen) — rufen NUR diese Funktion (kein zweites Regex, keine Enumerations-Drift
     zwischen Deklaration und Ring)."""
     m = _INSTANZ_RE.match(feld_id)

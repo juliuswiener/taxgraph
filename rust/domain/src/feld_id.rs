@@ -1,15 +1,14 @@
 //! Feld-Ids und die Repeated-Instance-Konvention.
 //!
-//! Zwei Python-Module schreiben dieselbe Konvention leicht verschieden nach:
+//! Zwei Python-Module halten dieselbe Konvention:
 //! `produkt/traverser/traverser.py:144-152` (`instanz_feld_id`) erzeugt sie — Instanz 1 ist die
-//! Basis-`feld_id` OHNE Suffix, Instanz `n >= 2` traegt `basis__n`. `produkt/mapping/est_mapping.py:543-552`
-//! (`parse_instanz`, Regex `^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[1-9][0-9]*)$`) *liest* sie und
-//! akzeptiert dabei auch `basis__1`, obwohl der Traverser diese Form nie erzeugt. `FeldId` folgt
-//! hier der ERZEUGENDEN Seite (Traverser): `FromStr` weist `basis__1` als ungueltige
+//! Basis-`feld_id` OHNE Suffix, Instanz `n >= 2` traegt `basis__n`. `produkt/mapping/est_mapping.py:702`
+//! (`parse_instanz`, Regex `^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[2-9]|[1-9][0-9]+)$`) *liest* sie.
+//! Bis 2026-10-03 las `parse_instanz` auch `basis__1`, obwohl der Traverser diese Form nie erzeugt; die
+//! Schreib-Route weist `basis__1` seitdem ab (vault `die-schreib-route-weist-eine-kennung-mit-instanz-eins-ab`),
+//! und beide Seiten lesen es nicht mehr als Instanz. `FromStr` weist `basis__1` als ungueltige
 //! Instanz-Kodierung zurueck, damit `Display`/`FromStr` ein echtes Roundtrip-Paar bleiben (jede
-//! `FeldId` hat genau EINE String-Darstellung). Ein Aufrufer, der `est_mapping`-kompatibel auch
-//! `basis__1` lesen muss, tut das VOR dem Parsen in `FeldId` (ponytail: kein zweiter Parse-Pfad
-//! in dieser Crate, bis ein Rust-Aufrufer diese Divergenz tatsaechlich braucht).
+//! `FeldId` hat genau EINE String-Darstellung).
 use std::fmt;
 use std::num::NonZeroU16;
 use std::str::FromStr;
@@ -149,7 +148,7 @@ impl FromStr for FeldId {
     type Err = FeldIdFehler;
 
     /// Parst nach der Traverser-Konvention (siehe Modul-Dokumentation): `basis__1` ist KEINE
-    /// gueltige Instanz-Kodierung, auch wenn `est_mapping.parse_instanz` sie akzeptieren wuerde.
+    /// gueltige Instanz-Kodierung, so wenig wie fuer `est_mapping.parse_instanz`.
     ///
     /// ```
     /// use domain::FeldId;
@@ -212,9 +211,9 @@ mod tests {
     }
 
     #[test]
-    fn est_mapping_akzeptiert_basis_1_traverser_nicht() {
-        // Dokumentiert die Divergenz aus der Modul-Doc: est_mapping.parse_instanz("x__1") liefert
-        // ("x", 1); FeldId weist dieselbe Zeichenkette zurueck.
+    fn basis_1_ist_keine_instanz() {
+        // Wie est_mapping.parse_instanz("x__1"), das seit 2026-10-03 None liefert: FeldId weist die
+        // Zeichenkette zurueck.
         assert!("x__1".parse::<FeldId>().is_err());
     }
 }

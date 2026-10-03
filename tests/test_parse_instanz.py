@@ -1,4 +1,4 @@
-"""Test statische parse_instanz-Funktion — erfasst n>=1, Basis -> None."""
+"""Test statische parse_instanz-Funktion — erfasst n>=2, Basis und __1 -> None."""
 import pytest
 
 import sys
@@ -8,9 +8,9 @@ import est_mapping as EM
 
 
 def test_parse_instanz_1():
-    # Die Reparatur: __1 ist jetzt eine Instanz (n>=1), nicht nur Basis
-    result = EM.parse_instanz("vz_einnahmen__1")
-    assert result == ("vz_einnahmen", 1), f"Expected ('vz_einnahmen', 1), got {result}"
+    # Instanz 1 ist die Basis ohne Suffix (traverser.instanz_feld_id); __1 ist keine Instanz.
+    # Siehe tests/test_instanz_eins_wird_abgewiesen.py fuer die Zaehler-Regel.
+    assert EM.parse_instanz("vz_einnahmen__1") is None
 
 
 def test_parse_instanz_2():
@@ -42,7 +42,7 @@ def test_parse_instanz_kaputt():
 
 
 def test_parse_instanz_regex_finiert():
-    # regex muss: Basis ^[a-z][a-z0-9_]*$; Suffix __ + idx [1-9][0-9]*
+    # regex muss: Basis ^[a-z][a-z0-9_]*$; Suffix __ + idx [2-9]|[1-9][0-9]+
     # nur alphanumerisch + Unterstrich, startend mit Buchstabe
     result = EM.parse_instanz("kind_vorname__2")
     assert result == ("kind_vorname", 2), f"Expected ('kind_vorname', 2), got {result}"
