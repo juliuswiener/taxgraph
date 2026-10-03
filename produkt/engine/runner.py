@@ -233,10 +233,17 @@ def catala_werbungskosten_n(s: dict) -> int:
 
 
 def _dhf_params(year: int) -> dict:
-    """Kappungsgrenzen doppelte Haushaltsfuehrung aus params/<vz> (§ 9 Abs. 1 S. 3 Nr. 5)."""
+    """Kappungsgrenzen doppelte Haushaltsfuehrung aus params/<vz> (§ 9 Abs. 1 S. 3 Nr. 5).
+
+    cap_monat_ausland ist None, wenn die Datei keine Auslandsgrenze fuehrt (Schluessel fehlt, Block
+    leer oder wert null): None heisst KEINE Grenze, nicht 0 und nicht Fehler. So steht es fuer
+    VZ 2024/2025 in params/: die 2.000-EUR-Auslandsgrenze gilt erst ab VZ 2026 (StÄndG 2025,
+    BGBl. 2025 I Nr. 363; § 52 Abs. 1 S. 1 EStG), davor nannte Nr. 5 S. 4 nur den Inlandsbetrag.
+    Die Inlandsgrenze fehlt dagegen NIE still: ein fehlender Schluessel ist ein KeyError."""
     p = _load_yaml_path(os.path.join(
         ROOT, "params", str(year), "dhf_p9_1_nr5.yaml"))
-    return {k: p[k]["wert"] for k in ("cap_monat_inland", "cap_monat_ausland")}
+    return {"cap_monat_inland": p["cap_monat_inland"]["wert"],
+            "cap_monat_ausland": (p.get("cap_monat_ausland") or {}).get("wert")}
 
 
 def _dhf_abzug(s: dict, year: int) -> int:
@@ -244,11 +251,14 @@ def _dhf_abzug(s: dict, year: int) -> int:
     EURO. WOERTLICHE Transkription des Registry-Rechenwegs von p9_1_3_nr5_doppelte_haushaltsfuehrung
     (hinweis): 'Monatsmiete 1.400 EUR wird auf 1.000 EUR gekappt; 1.000 x 12 = 12.000,00 EUR' /
     'Kappung wirkt je Monat, nicht auf das Jahr: 1.000 x 6 = 6.000,00 EUR' / 'Auslandsunterkunft:
-    Kappung bei 2.000 EUR je Monat'. Grenzen aus params/<vz> (nie hardcoden). KOPPLUNG: bei
-    Aenderung der Registry-Regel p9_1_3_nr5 diese Formel nachziehen (Konsistenz-Gate haelt sie fest)."""
+    Kappung bei 2.000 EUR je Monat' (Fassung ab VZ 2026; fuer VZ 2024/2025 liefert params/<vz> keine
+    Auslandsgrenze, dann wird die Miete ungekappt angesetzt). Grenzen aus params/<vz> (nie
+    hardcoden). KOPPLUNG: bei Aenderung der Registry-Regel p9_1_3_nr5 diese Formel nachziehen
+    (Konsistenz-Gate haelt sie fest)."""
     cap = _dhf_params(year)
     grenze = cap["cap_monat_inland"] if s.get("im_inland", True) else cap["cap_monat_ausland"]
-    return min(int(s.get("unterkunftskosten_monat", 0)), grenze) * int(s.get("monate", 0))
+    miete = int(s.get("unterkunftskosten_monat", 0))
+    return (miete if grenze is None else min(miete, grenze)) * int(s.get("monate", 0))
 
 
 def _verpflegung_params(year: int) -> dict:
@@ -359,27 +369,19 @@ def _verpflegung_abzug(s: dict, year: int) -> int:
 
 
 
-# Die 2.000-€-Auslandsgrenze ist NEU: sie gilt erst ab VZ 2026. Für VZ 2024/2025 nennt Nr. 5 S. 4
-# a.F. nur die Inlandsgrenze; für Ausland bleibt es bei der allgemeinen Notwendigkeitsprüfung
-# (BMF-Reisekosten v. 25.11.2020, Rz. 124: "Die Höchstgrenze von 1.000 € gilt hier nicht").
-# ponytail: Grenze 2.000 € gilt ab VZ 2026 (StÄndG 2025, BGBl. 2025 I Nr. 363); davor keine
-# Auslandsgrenze.
-UEBERNACHTUNG_AUSLANDSGRENZE_AB_VZ = 2026
-
-
 def _uebernachtung_monatsgrenze(year: int, im_inland: bool):
     """Monatsgrenze für Übernachtungskosten NACH Ablauf der 48 Monate — EURO, oder None = keine.
 
     § 9 Abs. 1 S. 3 Nr. 5a S. 4 verweist für die HÖHE auf den Betrag nach Nr. 5. Die Beträge kommen
     aus params/<vz>/dhf_p9_1_nr5.yaml — derselben Quelle wie der Nachbarfall dHf, kein zweiter
-    Parametersatz. NUR die VZ-Abgrenzung der Auslandsgrenze steht hier: die params-Dateien für
-    2024/2025 behaupten "VZ-konstant seit 2014" und führen die 2.000 € auch dort, was für diese
-    beiden VZ nicht zutrifft (eigenes Ticket; hier NICHT mitgeändert). KOPPLUNG: bei Änderung der
-    Registry-Regeln p9_1_3_nr5a_* diese Grenze nachziehen."""
+    Parametersatz und kein eigener VZ-Schalter hier. Die 2.000-€-Auslandsgrenze ist NEU und gilt
+    erst ab VZ 2026 (StÄndG 2025, BGBl. 2025 I Nr. 363): params/2024 und params/2025 führen sie
+    nicht, `_dhf_params` liefert dort None = keine Grenze. Für Ausland bleibt es dann bei der
+    allgemeinen Notwendigkeitsprüfung (BMF-Reisekosten v. 25.11.2020, Rz. 124: "Die Höchstgrenze
+    von 1.000 € gilt hier nicht"). KOPPLUNG: bei Änderung der Registry-Regeln p9_1_3_nr5a_* diese
+    Grenze nachziehen."""
     cap = _dhf_params(year)
-    if im_inland:
-        return cap["cap_monat_inland"]
-    return cap["cap_monat_ausland"] if year >= UEBERNACHTUNG_AUSLANDSGRENZE_AB_VZ else None
+    return cap["cap_monat_inland"] if im_inland else cap["cap_monat_ausland"]
 
 
 def _uebernachtung_abzug(s: dict, year: int) -> int:

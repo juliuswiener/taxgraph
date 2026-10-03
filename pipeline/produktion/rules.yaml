@@ -56,6 +56,7 @@ regeln:
     zitatanker: höchstens 2 000 Euro im Monat bei einer Unterkunft im Ausland
     herkunft: synthetisch
     rechenweg: 'Auslandsunterkunft: Kappung bei 2.000 EUR je Monat; 2.000 x 12 = 24.000,00 EUR.'
+    vz: 2026
     inputs:
       unterkunftskosten_monat: 2500
       monate: 12
