@@ -1,9 +1,9 @@
 //! Die Routentabelle: `_routes()` (`server.py:62`), EINE Quelle für Regex-Dispatch und axum-Router.
 //!
-//! Ein Handler gehört in das Modul seiner Gruppe — `lesen` (GET, Stub), `schreiben` (POST, Stub),
-//! `betrieb`, `anmeldung`, `fall` (in 9a fertig). Zwei Worker, die `lesen` und `schreiben` ersetzen,
-//! ändern nie dieselbe Datei; diese Tabelle bleibt unberührt, solange der Funktionsname gleich
-//! bleibt (die Argumente des Handlers sind axum-Extractor und dürfen sich ändern).
+//! Ein Handler gehört in das Modul seiner Gruppe — `lesen` (GET auf einen Fall), `schreiben` (POST
+//! auf einen Fall), `betrieb`, `anmeldung`, `fall`. Diese Tabelle bleibt unberührt, solange der
+//! Funktionsname gleich bleibt (die Argumente des Handlers sind axum-Extractor und dürfen sich
+//! ändern).
 use axum::routing::{delete, get, post};
 use axum::Router;
 

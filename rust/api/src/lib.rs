@@ -3,8 +3,8 @@
 //!
 //! Aufbau: [`dispatch::dispatch`] ist `Handler._dispatch` als Middleware um den Router aus
 //! [`routen::router`]; [`eigener_fall::EigenerFall`] ist der Owner-Check als Extractor.
-//! Schritt 9a: `/health`, `/ready`, `/auth/*`, `POST /fall`, `DELETE /fall/{id}` und die
-//! `elster-ampel` sind fertig, alle übrigen Fall-Routen antworten `501 nicht_portiert`.
+//! Alle 24 Routen sind portiert. Antwortet eine `501 nicht_portiert`, ist das eine Abweichung:
+//! der Differenz-Harness (`rust/parity/tests/api_http_paritaet.rs`) meldet sie.
 #![cfg_attr(
     test,
     allow(

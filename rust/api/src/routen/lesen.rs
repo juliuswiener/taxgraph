@@ -1,9 +1,8 @@
-//! GET-Routen auf einen Fall — STUBS für D2. Jeder Handler bekommt seinen Fall nur über
-//! [`EigenerFall`]; er antwortet `501 nicht_portiert`, bis die Python-Logik (`api.py`) portiert ist.
+//! GET-Routen auf einen Fall. Jeder Handler bekommt seinen Fall nur über [`EigenerFall`]; der Rumpf
+//! steht im Modul der Route (`fragen`, `stand`, `warum`, …) und ist die Portierung von `api.py`.
 //!
-//! D2: Funktionsnamen und Modul lassen, Rumpf ersetzen. Der Dispatcher, die Tabelle und der
-//! Harness bleiben unberührt. `warum`/`frage_einzeln` lesen `Treffer::fid` (`m["fid"]`).
-#![allow(clippy::unused_async)] // die Stubs warten nicht; die echten Handler tun es.
+//! `warum`/`frage_einzeln` lesen `Treffer::fid` (`m["fid"]`).
+#![allow(clippy::unused_async)] // kein Handler wartet: er ruft seinen synchronen Rumpf; axum-Handler sind `async`.
 
 use axum::extract::State;
 
