@@ -5,6 +5,7 @@
 //! 502/503/504, Netzstoerung, Socket-Timeout und leerer Inhalt sind voruebergehend; eine
 //! abgeschnittene Antwort (`finish_reason == "length"`) bekommt genau EINE Wiederholung, mit der
 //! kleineren Frist; alles andere ist endgueltig. Backoff 1 s, 2 s.
+use std::cell::RefCell;
 use std::fmt;
 use std::time::{Duration, Instant};
 
@@ -12,6 +13,29 @@ use serde_json::{json, Value};
 
 use crate::http::{self, Transport};
 use crate::pii::{Gefiltert, Maskiert};
+
+thread_local! {
+    /// `_letzte.meta["provider"]` (`llm_client.py:81`): wer in DIESEM Thread zuletzt geantwortet hat.
+    static ANBIETER: RefCell<String> = const { RefCell::new(String::new()) };
+}
+
+/// Der Anbieter der letzten gelesenen Antwort in diesem Thread (`letzte_meta().get("provider", "")`).
+/// Leer, solange keine Antwort gelesen wurde. Der Ausfall-Eintrag im Protokoll nennt ihn auch dann,
+/// wenn die Antwort leer oder abgeschnitten war und der Aufruf scheiterte.
+#[must_use]
+pub fn letzter_anbieter() -> String {
+    ANBIETER.with(|a| a.borrow().clone())
+}
+
+/// `_merke("", "")`: nie die Angabe eines früheren Aufrufs stehen lassen. `HttpChat::complete` ruft es
+/// selbst; wer vor dem Aufruf scheitern kann (fehlende Umgebung), ruft es zuerst.
+pub fn vergiss_anbieter() {
+    ANBIETER.with(|a| a.borrow_mut().clear());
+}
+
+fn merke_anbieter(provider: &str) {
+    ANBIETER.with(|a| provider.clone_into(&mut a.borrow_mut()));
+}
 
 /// `_VORUEBERGEHEND` (`llm_client.py:100`).
 const VORUEBERGEHEND: [u16; 5] = [429, 500, 502, 503, 504];
@@ -307,6 +331,12 @@ pub trait Chat {
         nachrichten: &[Nachricht],
         schema: Option<&Value>,
     ) -> Result<Completion, LlmFehler>;
+
+    /// Der Anbieter der letzten Antwort (`llm_client.letzte_meta()["provider"]`), fuer den
+    /// Ausfall-Eintrag im Protokoll. Ein Chat ohne Anbieter lässt ihn leer.
+    fn letzter_anbieter(&self) -> String {
+        String::new()
+    }
 }
 
 /// Der HTTP-Client.
@@ -324,6 +354,10 @@ enum Versuch {
 }
 
 impl Chat for HttpChat {
+    fn letzter_anbieter(&self) -> String {
+        letzter_anbieter()
+    }
+
     fn complete(
         &self,
         nachrichten: &[Nachricht],
@@ -340,6 +374,7 @@ impl Chat for HttpChat {
             }
         }
         let koerper = serde_json::to_vec(&nutzlast).map_err(|e| endgueltig(&e.to_string()))?;
+        vergiss_anbieter();
         let mut abgeschnitten = 0;
         for versuch in 0..VERSUCHE {
             let letzter = versuch == VERSUCHE - 1;
@@ -451,6 +486,14 @@ fn inhalt(j: &Value) -> Versuch {
         .filter(|v| crate::py::wahr(v))
         .map(crate::py::py_str)
         .unwrap_or_default();
+    let provider = j
+        .get("provider")
+        .filter(|v| crate::py::wahr(v))
+        .map(crate::py::py_str)
+        .unwrap_or_default();
+    // `_merke(provider, ende)` steht VOR den Pruefungen: auch eine abgeschnittene oder leere Antwort
+    // nennt im Ausfall-Eintrag, wer sie geschickt hat.
+    merke_anbieter(&provider);
     if ende == "length" {
         return Versuch::Abgeschnitten;
     }
@@ -471,11 +514,6 @@ fn inhalt(j: &Value) -> Versuch {
     if crate::py::strip(&text).is_empty() {
         return Versuch::Voruebergehend(Grund::Leer, "leerer Inhalt vom Anbieter".into());
     }
-    let provider = j
-        .get("provider")
-        .filter(|v| crate::py::wahr(v))
-        .map(crate::py::py_str)
-        .unwrap_or_default();
     Versuch::Ok(Completion {
         text,
         provider,

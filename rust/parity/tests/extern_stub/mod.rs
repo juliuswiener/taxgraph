@@ -412,6 +412,15 @@ pub(super) struct Szenario {
     pub anfragen: Vec<&'static str>,
     /// Ein Text, der nicht im Koerper an den Dienst stehen darf (PII-Filter).
     pub nicht_im_dienst: Option<&'static str>,
+    /// `chat`: `abgelehnt_gruende[feld_id]`, Zeichen fuer Zeichen (Julius 6c: Klasse und Feld).
+    pub grund: Option<(&'static str, String)>,
+    /// `chat`: ein Wert, der nirgends in der Antwort stehen darf (Julius 6c: nie der Wert).
+    pub nicht_in_antwort: Option<&'static str>,
+    /// Bestaetigte Angaben (`feld_id`, Wert), die vor der Anfrage per `POST /event` in den Fall gehen:
+    /// der Erklaer-Kontext, den `chat` an das Modell schickt.
+    pub vorher: Vec<(&'static str, Value)>,
+    /// Texte, die im Koerper einer Anfrage an den Dienst stehen muessen (Pythons Kontext, woertlich).
+    pub muss_im_dienst: Vec<&'static str>,
 }
 
 const ADRESSEN: (&str, &str) = ("Musterstr. 1, 80331 München", "Beispielweg 2, 80333 München");
@@ -463,6 +472,10 @@ fn entfernung(
         fehler_beginnt: fehler,
         anfragen: anfragen.to_vec(),
         nicht_im_dienst: None,
+        grund: None,
+        nicht_in_antwort: None,
+        vorher: vec![],
+        muss_im_dienst: vec![],
     }
 }
 
@@ -699,6 +712,10 @@ fn chat(
         fehler_beginnt: fehler,
         anfragen: anfragen.to_vec(),
         nicht_im_dienst: None,
+        grund: None,
+        nicht_in_antwort: None,
+        vorher: vec![],
+        muss_im_dienst: vec![],
     }
 }
 
@@ -816,7 +833,141 @@ pub(super) fn chat_szenarien() -> Vec<Szenario> {
             ASD,
         )
     });
+    // C15: der Store weist den Vorschlag ab, der Wert steht im Text des Nutzers. Der Grund nennt
+    // Klasse und Feld (Julius 2026-10-03, 6c), der Wert steht nirgends in der Antwort.
+    v.extend([
+        abweisung("C15a Typ", "agb_aufwendungen", &json!("GEHEIM-123"), "fail-closed (Typ)", "GEHEIM-123"),
+        abweisung("C15b Format", "kind_idnr", &json!("GEHEIM-123"), "fail-closed (Format)", "GEHEIM-123"),
+        abweisung(
+            "C15c Magnitude",
+            "agb_aufwendungen",
+            &json!(98_765_432_109_u64),
+            "fail-closed (F2/Magnitude)",
+            "98765432109",
+        ),
+    ]);
+    // C16/C17: Stufe 1 scheitert, aber der Dienst hat geantwortet und sich genannt: der Ausfall-Eintrag
+    // im Audit und im Fluss nennt den Anbieter (`llm_client.letzte_meta()`).
+    let mit_anbieter = |inhalt: &str, ende: &str| {
+        Schritt::roh(
+            "*",
+            200,
+            &format!(
+                r#"{{"provider": "AnbieterX", "choices": [{{"message": {{"content": "{inhalt}"}}, "finish_reason": "{ende}"}}]}}"#
+            ),
+        )
+        .immer()
+    };
+    v.push(chat(
+        "C16 Stufe 1 leere Antwort mit Anbieter",
+        text.clone(),
+        vec![mit_anbieter("", "stop")],
+        501,
+        None,
+        &["chat:aussagen"; 3],
+    ));
+    v.push(chat(
+        "C17 Stufe 1 abgeschnitten mit Anbieter",
+        text.clone(),
+        vec![mit_anbieter("{", "length")],
+        501,
+        None,
+        &["chat:aussagen"; 2],
+    ));
+    // C20: nach C17 (Anbieter genannt) scheitert der Dienst ohne Antwort: der Anbieter ist leer, nicht der
+    // von C17 (`_merke("", "")` zu Beginn jedes Aufrufs).
+    v.push(chat(
+        "C20 Stufe 1 HTTP 500 nach einem Anbieter",
+        text.clone(),
+        vec![Schritt::roh("*", 500, r#"{"error": "x"}"#).immer()],
+        501,
+        None,
+        &["chat:aussagen"; 3],
+    ));
+    // C19: Stufe 2 waehlt die Regel mit dem Zaehlfeld `fam_anzahl_kinder` (und eine zweite, in
+    // unsortierter Reihenfolge); die Instanz-Felder des Kindes (`kind_idnr`) stehen in anderen Regeln
+    // und kommen nur ueber die Instanz-Gruppe in Stufe 3.
+    v.push(Szenario {
+        muss_im_dienst: vec!["kind_idnr"],
+        ..chat(
+            "C19 Zaehlfeld der Instanz-Gruppe",
+            text.clone(),
+            {
+                let mut s = drei_stufen();
+                s[1] = Schritt::chat(
+                    "chat:zuordnung",
+                    &json!({"zuordnungen": [
+                        {"aussage": 0, "regeln": ["p24b_entlastungsbetrag", "p09_entfernungspauschale"]}]}),
+                    "stop",
+                );
+                s
+            },
+            200,
+            None,
+            ASD,
+        )
+    });
+    // C18: der Erklaer-Kontext. Bestaetigte Angaben und das offene Feld gehen in den Prompt von Stufe 3;
+    // der Wert besonderer Kategorien (`agb_aufwendungen`) bleibt draussen. Zuletzt, weil die Angaben im
+    // Fall bleiben (C15 braucht `agb_aufwendungen` ohne aktives Event).
+    v.push(Szenario {
+        vorher: vec![
+            ("vv_einnahmen", json!(6_200_000)),
+            ("kein_vuv", json!(true)),
+            ("veranlagung", json!("zusammen")),
+            ("ep_arbeitstage", json!(220)),
+            ("kap_antrag_guenstigerpruefung", json!(true)),
+            ("agb_aufwendungen", json!(500_000)),
+        ],
+        muss_im_dienst: vec![
+            "Die Frage, um die es geht",
+            "62000,00 EUR",
+            "220 Tage",
+            "- None \u{2192} ja",
+            "weitere Angaben liegen vor",
+        ],
+        ..chat(
+            "C18 Erklaer-Kontext",
+            json!({"text": TEXT, "feld_id": "ep_arbeitstage"}),
+            drei_stufen(),
+            200,
+            None,
+            ASD,
+        )
+    });
     v
+}
+
+/// Stufe 3 mit EINEM Vorschlag, den der Store abweist. Der Beleg steht im Text; die Aussage nennt den
+/// Wert nicht, damit ein Treffer in der Antwort nur aus dem Ablehnungsgrund stammen kann.
+fn abweisung(
+    name: &'static str,
+    feld_id: &'static str,
+    wert: &Value,
+    klasse: &'static str,
+    geheim: &'static str,
+) -> Szenario {
+    let rumpf = json!({"text": "Meine Krankheitskosten und GEHEIM-123 stehen auf dem Bescheid."});
+    let schritte = vec![
+        Schritt::chat(
+            "chat:aussagen",
+            &json!({"aussagen": [{"text": "Der Nutzer nennt eine Angabe", "beleg": "Krankheitskosten"}]}),
+            "stop",
+        ),
+        Schritt::regeln(3),
+        Schritt::chat(
+            "chat:dialog",
+            &json!({"vorschlaege": [{"feld_id": feld_id, "wert": wert, "beleg": "Krankheitskosten",
+                                     "begruendung": "b", "aussage": 0, "rechenweg": null}],
+                    "rueckfragen": [], "antwort": "", "unsicher": false}),
+            "stop",
+        ),
+    ];
+    Szenario {
+        grund: Some((feld_id, format!("{klasse}: {feld_id}"))),
+        nicht_in_antwort: Some(geheim),
+        ..chat(name, rumpf, schritte, 200, None, ASD)
+    }
 }
 
 // ---------------------------------------------------------------- Python gegen den Stub
@@ -851,6 +1002,16 @@ pub(super) fn lauf_einzeln(
     stub: &Stub,
     s: &Szenario,
 ) -> (u16, Option<Value>, Vec<Gesehen>) {
+    for (feld, wert) in &s.vorher {
+        let a = Anfrage::neu(
+            &format!("{} {}: vorher {feld}", s.route, s.name),
+            "POST",
+            &format!("/fall/x_{}/event", s.scheibe),
+        )
+        .json(&super::ereignis(feld, wert, None));
+        let r = sende(server.port, &a);
+        assert_eq!(r.status, 201, "{} vorher {feld}: {}", s.name, String::from_utf8_lossy(&r.body));
+    }
     stub.setze(s.schritte.clone());
     let a = Anfrage::neu(
         &format!("{} {}", s.route, s.name),
@@ -884,6 +1045,24 @@ pub(super) fn pruefe_soll(s: &Szenario, status: u16, body: Option<&Value>, geseh
     if let Some(verboten) = s.nicht_im_dienst {
         if gesehen.iter().any(|g| g.body.contains(verboten)) {
             d.push(format!("{verboten:?} steht im Koerper an den Dienst"));
+        }
+    }
+    if let Some((feld_id, soll)) = &s.grund {
+        let ist = body
+            .and_then(|b| b["abgelehnt_gruende"][feld_id].as_str())
+            .unwrap_or_default();
+        if ist != soll {
+            d.push(format!("abgelehnt_gruende[{feld_id}] {ist:?}, erwartet {soll:?}"));
+        }
+    }
+    if let Some(verboten) = s.nicht_in_antwort {
+        if body.is_some_and(|b| b.to_string().contains(verboten)) {
+            d.push(format!("{verboten:?} steht in der Antwort"));
+        }
+    }
+    for noetig in &s.muss_im_dienst {
+        if !gesehen.iter().any(|g| g.body.contains(noetig)) {
+            d.push(format!("{noetig:?} steht in keinem Koerper an den Dienst"));
         }
     }
     d
@@ -1060,6 +1239,18 @@ fn paarlauf(route: &str, titel: &str) {
         p.anfrage(&a, Modus::Voll);
     }
     for s in &szenarien {
+        for (feld, wert) in &s.vorher {
+            let a = Anfrage::neu(
+                &format!("{} {}: vorher {feld}", s.route, s.name),
+                "POST",
+                &format!("/fall/x_{}/event", s.scheibe),
+            )
+            .json(&super::ereignis(feld, wert, None));
+            p.anfrage(&a, Modus::Voll);
+            if p.stat.letzter != 201 {
+                p.stat.abweichungen.push(format!("{} vorher {feld}: Status {}", s.name, p.stat.letzter));
+            }
+        }
         stub_py.setze(s.schritte.clone());
         stub_rs.setze(s.schritte.clone());
         let a = Anfrage::neu(
@@ -1095,4 +1286,10 @@ fn paarlauf(route: &str, titel: &str) {
 #[test]
 fn extern_paritaet_entfernung() {
     paarlauf("entfernung", "extern/entfernung");
+}
+
+/// `POST /fall/{id}/chat`: Rust gleich Python gegen je einen Stub des Sprachmodells.
+#[test]
+fn extern_paritaet_chat() {
+    paarlauf("chat", "extern/chat");
 }

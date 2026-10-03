@@ -1182,6 +1182,29 @@ def _llm_dialog(freitext: str, katalog: list[dict], kontext: str = "",
             "rueckfragen_zurueckgestellt": zurueckgestellt}
 
 
+def _abgelehnt_grund(e: Exception, fid: str) -> str:
+    """Der Grund einer Abweisung in `abgelehnt_gruende` (api.chat): die Klasse und das Feld, NIE der Wert.
+
+    Julius 2026-10-03 (6c), „Feld und Typ, nicht der Wert": die Store-Meldung trägt `feld_id=wert`
+    (`store.py`, `repr(wert)`), und der Wert ist, was der Nutzer oder das Modell gesagt hat. Die Klasse
+    ist der Text bis zur schließenden Klammer des Tags — `fail-closed (Format)`, `(Typ)`, `(Bereich)`,
+    `(F2/Magnitude)`; ein Tag mit anderen Zeichen als ASCII-Buchstaben, Ziffern, `_` und `/` zählt nicht
+    (dann steht nur `fail-closed`), und eine Ausnahme, die nicht `fail-closed` sagt, nennt ihre Klasse.
+    Der Store-Wortlaut selbst bleibt unberührt: andere Kanäle (event, entfernung, vorjahr) und die
+    Präfix-Leser (`vorjahr_writer.py`, `tools/parity/oracle.py`) hängen an ihm. Hier und nicht in
+    api.py, weil api.py unter einer Zeilen-Ratsche steht (tests/test_bescheid_grenze.py).
+    Rust gleich: `api::chat::abgelehnt_grund`."""
+    text = str(e)
+    if not text.startswith("fail-closed"):
+        return f"{type(e).__name__}: {fid}"
+    klasse = "fail-closed"
+    tag, klammer, _ = text[len(klasse):].partition(")")
+    if klammer and tag.startswith(" (") and len(tag) > 2 and all(
+            c.isascii() and (c.isalnum() or c in "_/") for c in tag[2:]):
+        klasse = f"fail-closed ({tag[2:]})"
+    return f"{klasse}: {fid}"
+
+
 def _kontoauszug_llm_klassifikator():
     """Baut den Kontoauszug-LLM-Fallback-Klassifikator (dev-2s kontoauszug_writer.llm_klassifikator_factory,
     llm_client-MODUL als `client` — hat `.complete`, kein Klassen-Bau nötig). Cap-gated wie /chat: JEDER Aufruf

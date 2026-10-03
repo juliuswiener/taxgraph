@@ -1204,7 +1204,7 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
         except (ValueError, KeyError) as e:
             abgelehnt.append(fid)                    # Katalog/Auflage-A/F2-Abweisung → still überspringen, Rest gilt
             if fid:
-                abgelehnt_gruende[fid] = str(e)       # NEU: Grund (kein Wert/Freitext enthalten, PII-frei)
+                abgelehnt_gruende[fid] = api_llm._abgelehnt_grund(e, fid)   # Klasse und Feld, nie der Wert
     speichere_fall(fall_id, store)
     _abg = [a for a in abgelehnt if a]
     if _abg:                                         # Security-Observability (feld_ids, KEIN Wert/Freitext = PII-frei):

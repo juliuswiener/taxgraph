@@ -69,7 +69,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 const NICHT_PORTIERT: &[&str] = &[
     "POST /fall/{id}/vorjahr",
     "POST /fall/{id}/einreichen",
-    "POST /fall/{id}/chat",
     "POST /fall/{id}/kontoauszug",
 ];
 

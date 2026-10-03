@@ -17,6 +17,7 @@
 
 pub mod antwort;
 mod anzeige;
+pub mod chat;
 pub mod deklaration;
 pub mod dispatch;
 pub mod eigener_fall;

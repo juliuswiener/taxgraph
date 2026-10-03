@@ -34,12 +34,20 @@ pub async fn einreichen(_fall: EigenerFall, _body: Koerper) -> Result<Antwort, A
     Ok(Antwort::nicht_portiert("POST /fall/{id}/einreichen"))
 }
 
-/// `POST /fall/{id}/chat` — `api.chat` (`api.py:1060`).
+/// `POST /fall/{id}/chat` — `api.chat` (`api.py:1095`), Rumpf in [`crate::chat::chat`].
 ///
 /// # Errors
-/// Wie [`event`].
-pub async fn chat(_fall: EigenerFall, _body: Koerper) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("POST /fall/{id}/chat"))
+/// Wie [`event`]; dazu 500 wie in [`crate::chat::chat`] beschrieben, 501 bei Ausfall von Stufe 1.
+pub async fn chat(
+    State(z): State<Zustand>,
+    mut fall: EigenerFall,
+    Koerper(wert): Koerper,
+    KoerperRoh(roh): KoerperRoh,
+) -> Result<Antwort, ApiFehler> {
+    // Drei Modellaufrufe von bis zu 150 s: Netz-E/A, nicht auf einem Async-Worker.
+    tokio::task::spawn_blocking(move || crate::chat::chat(&z, &mut fall, &wert, &roh))
+        .await
+        .map_err(|e| ApiFehler::unerwartet("RuntimeError", e.to_string()))?
 }
 
 /// `POST /fall/{id}/flow` — `api.flow_melden` (`api.py:1298`). Nur `FallBesitz`: Python prüft den
