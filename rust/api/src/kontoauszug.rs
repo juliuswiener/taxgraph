@@ -168,7 +168,11 @@ fn pdf_lesen(bytes: &[u8]) -> Result<(Vec<Transaktion>, usize), ApiFehler> {
         OcrFehler::Zeitlimit { .. } | OcrFehler::ZuAufwendig(_) | OcrFehler::NichtLesbar => {
             ApiFehler::status(422, format!("Kontoauszug nicht lesbar: {e}"))
         }
-        OcrFehler::Start { .. } => ApiFehler::unerwartet("FileNotFoundError", e.to_string()),
+        // Ein fehlendes Hilfsprogramm ist ein Betriebsproblem, nicht die Datei des Nutzers: 503 wie in
+        // Python (`api.kontoauszug`, `except FileNotFoundError`), Text wortgleich, ohne Ausnahme-Typ.
+        OcrFehler::Start { .. } => {
+            ApiFehler::status(503, format!("PDF-Auslesen ist gerade nicht möglich: {e}"))
+        }
         OcrFehler::KeinUtf8(_) => ApiFehler::unerwartet("UnicodeDecodeError", e.to_string()),
         OcrFehler::KeinBild => ApiFehler::unerwartet("IndexError", e.to_string()),
         OcrFehler::Tsv(_) => ApiFehler::unerwartet("Error", e.to_string()),

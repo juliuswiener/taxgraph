@@ -242,7 +242,12 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # betroffenen Felder gerade die optionalen sind (agB, Spenden, § 16-vg, § 19-Versorgung).
 # Die letzte Zeile ist der neue Preflight-Schluessel: ohne ihn waere die Meldung totes Wiring
 # (dieselbe Falle, die an preflight.py schon einmal stand).
-API_ZEILEN_OBERGRENZE = 1324
+#
+# 1324 -> 1329 (2026-10-03, fehlendes Hilfsprogramm beim PDF-Kontoauszug). 5 Zeilen: ein `except`-
+# Zweig in `kontoauszug()`, 2 Kommentar, 3 Code (`except`, Meldung ueber zwei Zeilen). Kein Rechenkern
+# und keine Verzweigung ueber Steuerdaten. ANLASS, gemessen (Vault decisions/fehlendes-hilfsprogramm-
+# antwortet-503): ohne `pdftotext` im PATH antwortete der Upload mit 500 und „FileNotFoundError: ...".
+API_ZEILEN_OBERGRENZE = 1329
 
 
 def _runner_stellen(pfad: str) -> list[int]:

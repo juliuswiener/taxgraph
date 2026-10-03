@@ -39,9 +39,11 @@ pub enum OcrFehler {
     /// `PdfNichtLesbar` — `pdftotext` kann die Datei nicht oeffnen (Exit weder 0 noch 3); 422.
     #[error("Die Datei lässt sich nicht als PDF öffnen (kein PDF, beschädigt oder mit Passwort geschützt).")]
     NichtLesbar,
-    /// Werkzeug fehlt / startet nicht (Python: `FileNotFoundError`, 500).
-    #[error("{befehl}: {nachricht}")]
-    Start { befehl: String, nachricht: String },
+    /// Ein Hilfsprogramm liegt nicht auf dem `PATH` (Python: `FileNotFoundError`). Ein
+    /// Betriebsproblem, keine Eigenschaft der Datei: die API antwortet 503 mit diesem Text. Jeder
+    /// andere Startfehler (etwa fehlende Ausfuehrungsrechte, Pythons `PermissionError`) ist [`Self::Io`].
+    #[error("Das Programm '{programm}' fehlt auf diesem Rechner.")]
+    Start { programm: String },
     /// Ausgabe ist kein UTF-8 (Python: `UnicodeDecodeError`, 500).
     #[error("{0}: Ausgabe ist kein UTF-8")]
     KeinUtf8(String),
@@ -50,7 +52,7 @@ pub enum OcrFehler {
     KeinBild,
     #[error("tesseract-TSV: {0}")]
     Tsv(#[from] csv::CsvFehler),
-    #[error("Temp-Verzeichnis: {0}")]
+    #[error("Ein-/Ausgabe: {0}")]
     Io(#[from] std::io::Error),
 }
 
@@ -69,10 +71,9 @@ fn lauf(
             .collect::<Vec<_>>()
             .join(", ")
     );
-    let (prog, args) = befehl.split_first().ok_or_else(|| OcrFehler::Start {
-        befehl: anzeige.clone(),
-        nachricht: "leer".into(),
-    })?;
+    let (prog, args) = befehl
+        .split_first()
+        .ok_or_else(|| std::io::Error::other("leerer Befehl"))?;
     let mut cmd = Command::new(prog);
     cmd.args(args)
         .stdin(Stdio::null())
@@ -82,14 +83,19 @@ fn lauf(
         // OMP_THREAD_LIMIT=1: mehrere OpenMP-Faeden bremsen unter Ueberbuchung bis ans Zeitlimit.
         cmd.env("OMP_THREAD_LIMIT", "1");
     }
-    let mut kind = cmd.spawn().map_err(|e| OcrFehler::Start {
-        befehl: anzeige.clone(),
-        nachricht: e.to_string(),
+    let mut kind = cmd.spawn().map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            OcrFehler::Start {
+                programm: (*prog).to_owned(),
+            }
+        } else {
+            OcrFehler::Io(e)
+        }
     })?;
-    let mut stdout = kind.stdout.take().ok_or_else(|| OcrFehler::Start {
-        befehl: anzeige.clone(),
-        nachricht: "stdout".into(),
-    })?;
+    let mut stdout = kind
+        .stdout
+        .take()
+        .ok_or_else(|| std::io::Error::other("stdout"))?;
     // Lesen im eigenen Faden, sonst blockiert ein volles Pipe-Puffer das Kind bis zum Zeitlimit.
     let leser = std::thread::spawn(move || {
         let mut puffer = Vec::new();
