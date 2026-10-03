@@ -123,7 +123,7 @@ def _rel(store):
 def test_ohne_geburtsdatum_bleibt_geburtsjahr_in_der_queue(base):
     zahl, fragen = _lauf(base, "p24a-ohne")
     assert zahl == 15356200
-    assert len(fragen) == 218
+    assert len(fragen) == 219          # 218 + stammdaten_hausnummerzusatz (optional, askable), gemessen 2026-10-03
     assert "geburtsjahr" in fragen
     assert FELD not in fragen          # nie gefragt: das Feld steht in keiner Scheibe
 
@@ -131,7 +131,7 @@ def test_ohne_geburtsdatum_bleibt_geburtsjahr_in_der_queue(base):
 def test_mit_geburtsdatum_1958_fragt_geburtsjahr_nicht_und_senkt_die_zahl(base):
     zahl, fragen = _lauf(base, "p24a-1958", geburtsdatum="01.01.1958")
     assert zahl == 15325100                         # 311 EUR weniger als ohne (Δ 31.100 ct)
-    assert len(fragen) == 216
+    assert len(fragen) == 217          # 216 + stammdaten_hausnummerzusatz, gemessen 2026-10-03
     assert "geburtsjahr" not in fragen
 
 

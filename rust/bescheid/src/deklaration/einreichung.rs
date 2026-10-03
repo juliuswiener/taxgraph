@@ -88,7 +88,7 @@ pub enum EinreichFehler {
 /// // an_gesamt ist eine Teilrechnung: kein Stammdatenfeld liegt in ihrem Kegel.
 /// match einreichungs_xml(&st, index(), params(), "BY", None) {
 ///     Err(EinreichFehler::ScheibeNichtAbgabefaehig { fehlende_stammdatenfelder, .. }) => {
-///         assert_eq!(fehlende_stammdatenfelder.len(), 12);
+///         assert_eq!(fehlende_stammdatenfelder.len(), 13);
 ///     }
 ///     anders => panic!("{anders:?}"),
 /// }

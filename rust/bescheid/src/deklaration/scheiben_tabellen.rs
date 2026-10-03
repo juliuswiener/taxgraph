@@ -94,7 +94,7 @@ pub(super) const SCHEIBEN_AN_GESAMT_KEGEL: [&str; 33] = [
 
 /// `SCHEIBEN['gesamt']["felder"]` = `VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER + GESAMT_VERSORGUNG + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + PARTNER_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN + GESAMT_DBA + GESAMT_P23 + P23_SCREENING + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG + VERPFLEGUNG_EINZELREISE + AGB_TATBESTAND + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER + STEUERKLASSE_FELDER + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 351] = [
+pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 352] = [
     "vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand",
     "vv_sonstige_wk", "vv_entgelt_quote_prozent", "vv_wohnzwecke", "vv_auf_dauer",
     "veranlagung", "bruttoarbeitslohn", "ep_arbeitstage", "ep_entfernung_km",
@@ -180,7 +180,7 @@ pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 351] = [
     "kirchensteuer_arbeitgeber_partner", "rentner_alter_55_oder_berufsunfaehig", "rentner_freibetrag_erstmalig", "rentner_alter_55_oder_berufsunfaehig_partner",
     "rentner_freibetrag_erstmalig_partner", "steuerklasse", "steuerklasse_partner", "stammdaten_nachname",
     "stammdaten_vorname", "stammdaten_geburtsdatum", "stammdaten_strasse", "stammdaten_hausnummer",
-    "stammdaten_plz", "stammdaten_wohnort", "stammdaten_keine_bankverbindung", "stammdaten_iban",
+    "stammdaten_hausnummerzusatz", "stammdaten_plz", "stammdaten_wohnort", "stammdaten_keine_bankverbindung", "stammdaten_iban",
     "stammdaten_bic", "stammdaten_art_est_erklaerung", "stammdaten_steuernummer", "stammdaten_nachname_partner",
     "stammdaten_vorname_partner", "stammdaten_geburtsdatum_partner", "kist_konfession_partner",
 ];
@@ -201,7 +201,7 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 
 /// `SCHEIBEN['rentner_gesamt']["felder"]` = `RENTNER_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + GESAMT_PARTNER_KAP + AGB_TATBESTAND`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 249] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 250] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -253,7 +253,7 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 249] = [
     "vorsorge_arbeitslosenversicherung_partner", "vorsorge_erwerbsunfaehigkeit_partner", "vorsorge_unfall_haftpflicht_partner", "vorsorge_rv_alt_mit_ueberschuss_partner",
     "vorsorge_rv_alt_ohne_ueberschuss_partner", "mit_anspruch_auf_zuschuss_partner", "vor_an_anteil_rv_partner", "vor_ag_anteil_rv_partner",
     "vor_rv_ausserhalb_lstb_partner", "stammdaten_nachname", "stammdaten_vorname", "stammdaten_geburtsdatum",
-    "stammdaten_strasse", "stammdaten_hausnummer", "stammdaten_plz", "stammdaten_wohnort",
+    "stammdaten_strasse", "stammdaten_hausnummer", "stammdaten_hausnummerzusatz", "stammdaten_plz", "stammdaten_wohnort",
     "stammdaten_keine_bankverbindung", "stammdaten_iban", "stammdaten_bic", "stammdaten_art_est_erklaerung",
     "stammdaten_steuernummer", "stammdaten_nachname_partner", "stammdaten_vorname_partner", "stammdaten_geburtsdatum_partner",
     "kist_konfession_partner", "einkuenfte_gewinn_partner", "gewinn_betriebsart_partner", "gewinn_bezeichnung_partner",
