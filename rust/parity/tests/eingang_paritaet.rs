@@ -669,8 +669,14 @@ fn ocr_json(r: &Result<(String, eingang::ocr::ConfMap), eingang::ocr::OcrFehler>
     match r {
         Ok((t, c)) => json!({"ok": [t, c]}),
         Err(eingang::ocr::OcrFehler::ZuAufwendig(m)) => json!({"err": "OcrZuAufwendig", "msg": m}),
-        Err(e @ eingang::ocr::OcrFehler::NichtLesbar) => {
+        // pdftoppm mit Exit != 0: in Python ebenfalls `PdfNichtLesbar`, mit eigenem Text.
+        Err(
+            e @ (eingang::ocr::OcrFehler::NichtLesbar | eingang::ocr::OcrFehler::BildUmwandlung),
+        ) => {
             json!({"err": "PdfNichtLesbar", "msg": e.to_string()})
+        }
+        Err(e @ eingang::ocr::OcrFehler::OcrNichtVerfuegbar) => {
+            json!({"err": "OcrNichtVerfuegbar", "msg": e.to_string()})
         }
         Err(e) => json!({"err": format!("{e:?}")}),
     }
