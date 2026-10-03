@@ -367,18 +367,7 @@ mod tests {
             ("-9223372036854775809", Sperrform::GanzzahlUeberlauf),
         ]
         .into_iter()
-        .filter_map(|(token, form)| {
-            std::fs::write(&pfad, akte_mit("2025", token)).unwrap();
-            match lade(&pfad) {
-                Err(PersistenzFehler::Sperrform {
-                    zeile: 3,
-                    spalte: 50,
-                    form: ist,
-                    ..
-                }) if ist == form => None,
-                anders => Some(format!("{token}: {anders:?}")),
-            }
-        })
+        .filter_map(|(token, form)| sperrt_nicht_mit(&pfad, token, form))
         .collect();
         let meldung = lade(&pfad).err().map(|e| e.to_string());
         std::fs::remove_dir_all(&dir).ok();
@@ -387,6 +376,66 @@ mod tests {
         assert!(
             meldung.as_deref().is_some_and(|m| m.ends_with(ende)),
             "{meldung:?}"
+        );
+    }
+
+    /// Schreibt `akte_mit("2025", token)` nach `pfad`. Gibt den Befund zurueck, wenn `lade` nicht
+    /// mit `form` in Zeile 3, Spalte 50 sperrt; `None` heisst: gesperrt wie verlangt.
+    fn sperrt_nicht_mit(pfad: &std::path::Path, token: &str, form: Sperrform) -> Option<String> {
+        std::fs::write(pfad, akte_mit("2025", token)).unwrap();
+        match lade(pfad) {
+            Err(PersistenzFehler::Sperrform {
+                zeile: 3,
+                spalte: 50,
+                form: ist,
+                ..
+            }) if ist == form => None,
+            anders => Some(format!("{token}: {anders:?}")),
+        }
+    }
+
+    /// Je Form ein Test (Vault `backlog/taxgraph/falldatei-mit-nan-liest-rust-als-text`, AK1),
+    /// beide Vorzeichen; ein Fehlschlag nennt die Form im Testnamen.
+    fn sperrt_je_form(name: &str, tokens: &[&str], form: Sperrform) {
+        let dir = std::env::temp_dir().join(format!(
+            "taxgraph-store-test-persistenz-form-{name}-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("form.json");
+        let falsch: Vec<String> = tokens
+            .iter()
+            .filter_map(|token| sperrt_nicht_mit(&pfad, token, form))
+            .collect();
+        std::fs::remove_dir_all(&dir).ok();
+        assert!(falsch.is_empty(), "{falsch:#?}");
+    }
+
+    #[test]
+    fn b4_nan_sperrt_mit_namen() {
+        sperrt_je_form("nan", &["NaN"], Sperrform::NaN);
+    }
+
+    #[test]
+    fn b4_infinity_sperrt_mit_namen() {
+        sperrt_je_form("infinity", &["Infinity", "-Infinity"], Sperrform::Infinity);
+    }
+
+    #[test]
+    fn b4_kommazahl_ueberlauf_sperrt_mit_namen() {
+        sperrt_je_form(
+            "kommazahl",
+            &["1e400", "-1e400"],
+            Sperrform::KommazahlUeberlauf,
+        );
+    }
+
+    #[test]
+    fn b4_ganzzahl_ueberlauf_sperrt_mit_namen() {
+        sperrt_je_form(
+            "ganzzahl",
+            &["18446744073709551616", "-9223372036854775809"],
+            Sperrform::GanzzahlUeberlauf,
         );
     }
 
