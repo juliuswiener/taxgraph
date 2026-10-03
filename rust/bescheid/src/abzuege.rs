@@ -709,6 +709,12 @@ mod tests {
         assert!(p10_1_5_gate_fehlend(&q(Some(&mit), true))
             .unwrap()
             .is_empty());
+        // Ein bestaetigtes Nein ist eine Antwort: der Waechter prueft Anwesenheit, nicht den Wert
+        // (Vault decisions/bestaetigtes-nein-auf-die-kind-frage-bleibt-eine-antwort-der-waechter-prueft-anwesenheit;
+        // Python: tests/test_stille_null_offen.py::test_gate_bestaetigt_nein_bleibt_ohne_offen_eintrag).
+        assert!(p10_1_5_gate_fehlend(&q(Some(&ohne), true))
+            .unwrap()
+            .is_empty());
         let fehlt = store(&[("kinderbetreuungskosten", json!(1), true)]);
         assert_eq!(
             p10_1_5_gate_fehlend(&q(Some(&fehlt), true)).unwrap().len(),
