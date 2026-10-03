@@ -258,3 +258,53 @@ def test_kein_fb_zweig_wird_nicht_beschrieben(tmp_path, monkeypatch):
     _fall(tmp_path, monkeypatch, "k")
     d = _dekl("k")["deklaration"]
     assert not {k: d[k] for k in ("E0801401", "E0804601", "E0901302", "E0801903", "E0805305", "E0902002") if k in d}
+
+
+# ---- die Bibliothek ohne HTTP: Grenzen, die über die Route nicht erreichbar sind --------------------
+
+def _ring(vz=2025, **abweichend):
+    """`_mit_ring_werten` auf einem berechtigten Antragsfall; (wert, bestaetigt) je Feld. Rückgabe: Zwilling."""
+    felder = {"antrag_ermaessigter_satz": (True, True), "geburtsjahr": (1960, True),
+              "dauernd_berufsunfaehig": (False, True), "ermaessigung_einmal_genutzt": (False, True),
+              "rentner_alter_55_oder_berufsunfaehig": (True, True), "rentner_freibetrag_erstmalig": (True, True),
+              "rentner_veraeusserungsgewinn": (VG_CENT, True), "rentner_veraeusserungs_betriebsart": ("gewerbe", True)}
+    felder.update(abweichend)
+    snap = {k: {"wert": w, "zustand": "bestaetigt" if b else "vorlaeufig"} for k, (w, b) in felder.items() if w is not None}
+    return API._mit_ring_werten(snap, vz).get("p34_abs3_antragsbetrag")
+
+
+def test_die_bibliothek_schreibt_den_zwilling_mit_gewinn_der_basiszeile():
+    z = _ring()
+    assert z is not None and z["wert"] == VG_CENT and z["zustand"] == "bestaetigt", z
+
+
+@pytest.mark.parametrize("vg_cent, schreibt", [
+    (500_000_000, True),     # 5.000.000,00 EUR: Freibetrag 0, netto genau 5 Mio -> noch erlaubt
+    (500_000_100, False),    # 5.000.001,00 EUR: ueber der Grenze (die Route sperrt dort vorher)
+    (13_600_000, True),      # 136.000 EUR: Freibetrag 45.000 noch voll, netto 91.000
+    (4_500_000, False),      # 45.000 EUR: netto 0 (Freibetrag deckt alles) -> keine Antragszeile
+    (4_500_100, True),       # 45.001 EUR: netto 1 EUR
+], ids=["genau_5mio", "ueber_5mio", "freibetrag_voll", "netto_null", "netto_ein_euro"])
+def test_die_bibliothek_haelt_die_grenzen_des_netto_gewinns_cent_genau(vg_cent, schreibt):
+    z = _ring(rentner_veraeusserungsgewinn=(vg_cent, True))
+    assert (z is not None) == schreibt, (vg_cent, z)
+
+
+@pytest.mark.parametrize("name, abw", [
+    ("antrag_unbestaetigt", {"antrag_ermaessigter_satz": (True, False)}),
+    ("antrag_nein", {"antrag_ermaessigter_satz": (False, True)}),
+    ("antrag_fehlt", {"antrag_ermaessigter_satz": (None, True)}),
+    ("gewinn_unbestaetigt", {"rentner_veraeusserungsgewinn": (VG_CENT, False)}),
+    ("geburtsjahr_unbestaetigt", {"geburtsjahr": (1960, False)}),
+    ("zu_jung", {"geburtsjahr": (1990, True)}),
+    ("schon_genutzt", {"ermaessigung_einmal_genutzt": (True, True)}),
+], ids=lambda x: x if isinstance(x, str) else "")
+def test_die_bibliothek_schreibt_ohne_bestaetigten_antrag_oder_berechtigung_nichts(name, abw):
+    assert _ring(**abw) is None, name
+
+
+def test_die_bibliothek_schreibt_ohne_veranlagungsjahr_nichts():
+    # vz 0 = kein Jahr: Rust (vz None) schreibt dann nichts; Python haette sonst mit 0 - 1960 gerechnet
+    assert _ring(vz=0, dauernd_berufsunfaehig=(True, True)) is None
+    assert _ring(vz=2025, dauernd_berufsunfaehig=(True, True)) is not None
+
