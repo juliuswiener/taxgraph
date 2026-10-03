@@ -3,13 +3,13 @@
 //! Requests durch `app()`.
 //!
 //! Die Faelle hier brauchen `GET /fall/{id}/deklaration`, `POST /fall/{id}/einreichen` und
-//! `POST /fall/{id}/kontoauszug`. `deklaration` ist seit 9c portiert (`api/src/deklaration.rs`);
-//! `einreichen` und `kontoauszug` sind heute 501-Stubs (`routen/schreiben.rs:25`,
-//! `routen/schreiben.rs:66`). Die Tests sind deshalb `#[ignore]` und werden aus ZWEI Gruenden rot,
-//! in dieser Reihenfolge:
+//! `POST /fall/{id}/kontoauszug`. `deklaration` ist seit 9c portiert (`api/src/deklaration.rs`),
+//! `kontoauszug` ebenfalls (`api/src/kontoauszug.rs`); `einreichen` ist heute ein 501-Stub
+//! (`routen/schreiben.rs:25`). Die Tests der Stubs sind deshalb `#[ignore]` und werden aus ZWEI
+//! Gruenden rot, in dieser Reihenfolge:
 //!
 //! 1. heute: der Handler antwortet 501 statt 200/409 — die Route ist nicht portiert
-//!    (entfaellt fuer `deklaration`);
+//!    (entfaellt fuer `deklaration` und `kontoauszug`);
 //! 2. nach der Portierung: der Handler liest `pflichtfelder_luecken` bzw. den Sperrgrund nicht.
 //!
 //! Grund 2 ist der Defekt, den der Python-Test pinnt; Grund 1 ist die fehlende Naht davor. Beide
@@ -351,8 +351,10 @@ async fn kontrolle_der_kontoauszug_erreicht_den_fall() {
 /// (Regel getestet in `eingang` `tests::csv_unlesbarer_betrag_zaehlt_in_verworfen`); die Route
 /// muss sie nach `verworfen` und in den `hinweis` reichen. Den Wortlaut des Grundes legt der Test
 /// nicht fest, nur dass er den Betrag nennt.
+///
+/// Kein `#[ignore]` mehr: die Route ist portiert (`api/src/kontoauszug.rs`), und dieser Test wird rot,
+/// sobald die Zahl aus `parse_csv` nicht mehr nach `verworfen` oder in den `hinweis` gelangt.
 #[tokio::test]
-#[ignore = "POST /kontoauszug ist 501-Stub (api/src/routen/schreiben.rs:66); die Portierung muss den zweiten Wert von eingang::kontoauszug::parse_csv nach verworfen reichen. Erwartet verworfen=2 und einen hinweis mit 'Betrag'. Python: test_kontoauszug_csv_unlesbarer_betrag.py::test_unlesbarer_betrag_steht_in_verworfen_mit_grund. Vault: backlog/taxgraph/kontoauszug-zeile-mit-unlesbarem-betrag-verschwindet-still.md. Rot sehen: --ignored"]
 async fn kontoauszug_unlesbarer_betrag_steht_in_verworfen() {
     let d = dienst();
     let (status, json, text) = kontoauszug_hochladen(&d, "unlesbar").await;
