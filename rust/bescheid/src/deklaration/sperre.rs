@@ -145,18 +145,16 @@ fn abs3_guards(k: &K<'_>) -> Grund {
 
 /// § 34 Abs. 3 fuer A + Veraeusserungsgewinn des Ehegatten (Python `abs3_partner_gewinn_offen`, AK2b,
 /// Entscheid 2026-10-03): der Chooser glaettet nur den Gewinn von A, der des Partners bliebe ungeglaettet.
-/// Trigger = ROHER Partner-Gewinn > 0 (nicht `netto_vg_partner`) UND zusammen UND der Chooser nimmt
+/// Trigger = ROHER Partner-Gewinn (vor Freibetrag) > 0 (nicht `netto_vg_partner`) UND zusammen UND der Chooser nimmt
 /// Abs. 3 ([`abs3_wird_gerechnet`]). Alles auf bestaetigten Feldern: ein vorlaeufiger Wert urteilt nicht.
 /// Nach den zwei Abs.-3-Sperren in [`abs3_guards`]: ueber 5 Mio und offene Berufsunfaehigkeit haben
 /// ihren eigenen Text.
 fn abs3_partner_gewinn(k: &K<'_>) -> Grund {
-    // roh und billig vorab; der Rest auf den bestaetigten Feldern
-    if !positiv(k.f, "rentner_veraeusserungsgewinn_partner") {
-        return Ok(None);
-    }
     let fb = bestaetigte(k.f);
-    let gewinn_bestaetigt = ist_positive_zahl(wert(&fb, "rentner_veraeusserungsgewinn_partner"));
-    if gewinn_bestaetigt && ist_zusammen(&fb) && abs3_wird_gerechnet(&fb, k.vz)? {
+    if ist_positive_zahl(wert(&fb, "rentner_veraeusserungsgewinn_partner"))
+        && ist_zusammen(&fb)
+        && abs3_wird_gerechnet(&fb, k.vz)?
+    {
         return Ok(Some(Sperrgrund::Abs3PartnerGewinnOffen));
     }
     Ok(None)

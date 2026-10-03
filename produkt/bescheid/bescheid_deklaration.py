@@ -1058,16 +1058,15 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
     # Abs. 3 S. 3 („vorbehaltlich des Absatzes 1") und die Entscheidung p34-fuenftelung-umfasst-beide-ehegatten
     # ihn in die Fünftelung nehmen — eine Zahl ohne Sperre, gemessen 2026-10-03: 24.194.600 ct. Sperre statt
     # falscher Zahl, bis das gebaut ist (Partner-Pfad AK2, nach dem Rust-Umstieg). Trigger = ROHER Partner-Gewinn
-    # > 0 (nicht netto_vg_partner; zu weite Sperre vor Zahl ohne Sperre) ∧ zusammen ∧ der Chooser nimmt Abs. 3
+    # (vor Freibetrag) > 0 (nicht netto_vg_partner; zu weite Sperre vor Zahl ohne Sperre) ∧ zusammen ∧ der Chooser nimmt Abs. 3
     # (_abs3_wird_gerechnet: Antrag ∧ eligible ∧ 0 < netto_vg <= 5 Mio). Alles auf BESTÄTIGTEN Feldern, wie der
     # Chooser: ein vorläufiger Wert urteilt nicht. Ein Betrag <= 0 sperrt nie. Nach den zwei Abs.-3-Sperren oben:
     # über 5 Mio und offene Berufsunfähigkeit haben ihren eigenen, genaueren Text.
-    if _positiv("rentner_veraeusserungsgewinn_partner"):        # roh und billig vorab; der Rest auf bestätigten
-        _fb34 = _bestaetigte(felder)
-        _pvg = (_fb34.get("rentner_veraeusserungsgewinn_partner") or {}).get("wert")
-        if (isinstance(_pvg, (int, float)) and not isinstance(_pvg, bool) and _pvg > 0
-                and _fb34.get("veranlagung", {}).get("wert") == "zusammen" and _abs3_wird_gerechnet(_fb34, vz)):
-            return "abs3_partner_gewinn_offen"
+    _fb34 = _bestaetigte(felder)
+    _pvg = (_fb34.get("rentner_veraeusserungsgewinn_partner") or {}).get("wert")
+    if (isinstance(_pvg, (int, float)) and not isinstance(_pvg, bool) and _pvg > 0
+            and _fb34.get("veranlagung", {}).get("wert") == "zusammen" and _abs3_wird_gerechnet(_fb34, vz)):
+        return "abs3_partner_gewinn_offen"
     # an_gesamt Gap-A (K2, Over-tax): Kinder → §31/§32-KiFB-Rechnung NICHT in dieser Scheibe.
     # an_gesamt nutzt catala_est (kein §2-Gesamt-Scope, kein freibetraege_kinder); Kinder-Fälle
     # gehören in Scheibe "gesamt", die den vollen §31-Günstiger-§2-Lauf macht. Der Guard feuert
