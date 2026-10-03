@@ -1,7 +1,19 @@
 # Doppelte Haushaltsführung § 9 Abs. 1 Satz 3 Nr. 5 EStG — Unterkunfts-Monatskappung, VZ 2025.
 # Abziehbar sind die Unterkunftskosten am Zweitwohnort, gekappt auf 1.000 Euro/Monat im Inland
-# (2.000 Euro/Monat im Ausland). Werte VZ-konstant seit 2014 (BGBl. I 2013 S. 285).
-# Datenquelle: eingefrorene Gesetzesfassung sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt.
+# (der frühere Kopf nannte sie „VZ-konstant seit 2014, BGBl. I 2013 S. 285"; das ist in sources/
+# nicht nachgeprüft und gilt in jedem Fall nur für den Inlandsbetrag).
+# EINE AUSLANDSGRENZE GIBT ES FÜR VZ 2025 NICHT. Die 2.000-Euro-Grenze für das Ausland steht erst
+# in der Fassung ab VZ 2026 (Art. 2 Nr. 3 Buchst. b Doppelbuchst. aa StÄndG 2025, BGBl. 2025 I Nr. 363,
+# anzuwenden erstmals VZ 2026 nach § 52 Abs. 1 S. 1 EStG). Davor galt für das Ausland keine feste
+# Kappung (BMF-Reisekosten v. 25.11.2020, Rz. 112 und 124). Darum fehlt cap_monat_ausland in dieser
+# Datei, und der Leser (produkt/engine/runner.py _dhf_params, rust/bindung Params::dhf) behandelt
+# das Fehlen als KEINE Grenze — nicht als 0 und nicht als Fehler.
+# Datenquelle: sources/bfinv/anleitungen/anl_ndhf_2025.txt (amtliche Anleitung N-DHF 2025, Zeilen 23
+# und 24): „Im Inland … bis zu 1.000 € im Monat … Im Ausland werden die Unterkunftskosten in
+# nachgewiesener Höhe für eine angemessene Zweitwohnung (60 m²) anerkannt" — keine Euro-Grenze.
+# sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt ist die Fassung ab VZ 2026 und belegt
+# hier nur den Wortlaut der Inlandsgrenze; zum Anwendungsbeginn: estg_p52_2026-08-30.txt (Abs. 1 S. 1).
+# Die „angemessene Zweitwohnung (60 m²)" (BMF Rz. 112) rechnet TaxGraph nicht; das ist offen.
 
 parameter: dhf_p9_1_nr5
 veranlagungszeitraum: 2025
@@ -16,11 +28,3 @@ cap_monat_inland:
   rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "1", satz: "3 Nr. 5"}
   datenquelle: "§ 9 Abs. 1 S. 3 Nr. 5 EStG i.d.F. VZ 2025"
   zitatanker: "höchstens 1 000 Euro im Monat bei einer Unterkunft im Inland"
-
-cap_monat_ausland:
-  wert: 2000
-  einheit: euro_je_monat
-  veranlagungszeitraum: 2025
-  rechtsquelle: {gesetz: EStG, paragraph: "9", absatz: "1", satz: "3 Nr. 5"}
-  datenquelle: "§ 9 Abs. 1 S. 3 Nr. 5 EStG i.d.F. VZ 2025"
-  zitatanker: "2 000 Euro im Monat bei einer Unterkunft im Ausland"

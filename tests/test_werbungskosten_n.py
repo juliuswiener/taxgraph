@@ -56,11 +56,18 @@ def _dhf_registry_seed():
 def test_dhf_konsistenz_runner_registry():
     """KONSISTENZ-GATE runner↔registry: _dhf_abzug MUSS die Registry-Rechenwege (test_seed von
     p9_1_3_nr5) cent-genau reproduzieren. Divergenz (runner-Formel läuft von der Registry-hinweis-
-    Formel weg) → ROT. Kopplung: bei Registry-Änderung diese Formel nachziehen."""
+    Formel weg) → ROT. Kopplung: bei Registry-Änderung diese Formel nachziehen.
+
+    VZ: Die Registry-Regel liest die Fassung ab VZ 2026 (norm_source estg_p9_abs1nr5_2026-07-09);
+    nur dort gilt die 2.000-€-Auslandsgrenze. Ein Auslands-Seed MUSS deshalb sein `vz:` nennen —
+    ohne Tag würde er stillschweigend als 2025 gerechnet, und 2025 kennt keine Auslandsgrenze.
+    Inlands-Seeds sind VZ-unabhängig (Inlandsgrenze 1.000 € in allen drei VZ) und laufen als 2025."""
     runner = _runner()
     import yaml  # noqa: F401
     for c in _dhf_registry_seed():
-        got = runner._dhf_abzug(c["inputs"], 2025)
+        assert c["inputs"]["im_inland"] or "vz" in c, (
+            f"Auslands-Seed ohne vz-Tag: {c['inputs']} — die Auslandsgrenze gilt erst ab VZ 2026")
+        got = runner._dhf_abzug(c["inputs"], c.get("vz", 2025))
         exp = int(c["expected"])
         assert got == exp, (f"runner↔registry-Divergenz: {c['inputs']} → runner {got} ≠ "
                             f"registry {exp} ({c['rechenweg']})")
@@ -73,6 +80,69 @@ def test_werbungskosten_n_mit_dhf():
          "oepnv_kosten_jahr": 0, "eigenes_oder_ueberlassenes_kfz": True,
          "unterkunftskosten_monat": 1400, "monate": 12, "im_inland": True}
     assert runner.catala_werbungskosten_n(s) == 2156 + 12000
+
+
+# ---- Stufe 1b: dHf, Auslandsgrenze nur ab VZ 2026 ----
+# Die 2.000-€-Grenze für eine Unterkunft im Ausland ist neu: Art. 2 Nr. 3 Buchst. b Doppelbuchst. aa
+# StÄndG 2025 (BGBl. 2025 I Nr. 363), anzuwenden erstmals für VZ 2026 (§ 52 Abs. 1 S. 1 EStG).
+# Davor nannte Nr. 5 S. 4 nur den Inlandsbetrag; für das Ausland gibt es keine feste Kappung
+# (BMF-Reisekosten v. 25.11.2020, Rz. 112 und 124). Entscheidung 2026-09-26: bis VZ 2025 ungekappt.
+
+def _dhf_fall(vz, miete, im_inland):
+    return {"veranlagungszeitraum": vz, "unterkunftskosten_monat": miete, "monate": 12,
+            "im_inland": im_inland}
+
+
+@pytest.mark.parametrize("vz", [2024, 2025])
+def test_dhf_ausland_ist_vor_vz2026_ungekappt(vz):
+    """AK1/AK2: 2.500 € × 12 im Ausland → 30.000 €, kein Deckel (davor: 24.000 €)."""
+    runner = _runner()
+    assert runner._dhf_abzug(_dhf_fall(vz, 2500, False), vz) == 30000
+    assert runner.catala_werbungskosten_n(_dhf_fall(vz, 2500, False)) == 30000
+
+
+def test_dhf_ausland_ist_ab_vz2026_auf_2000_gekappt():
+    """AK3 (Kontrollfall): dieselben Eingaben in VZ 2026 → 2.000 × 12 = 24.000 €."""
+    runner = _runner()
+    assert runner._dhf_abzug(_dhf_fall(2026, 2500, False), 2026) == 24000
+    assert runner.catala_werbungskosten_n(_dhf_fall(2026, 2500, False)) == 24000
+
+
+@pytest.mark.parametrize("vz", [2024, 2025, 2026])
+def test_dhf_inland_bleibt_in_jedem_vz_auf_1000_gekappt(vz):
+    """AK4 (Kontrollfall): Inland 1.400 × 12 → 12.000 € in jedem der drei VZ."""
+    runner = _runner()
+    assert runner._dhf_abzug(_dhf_fall(vz, 1400, True), vz) == 12000
+
+
+def test_dhf_params_tragen_die_auslandsgrenze_nur_ab_vz2026():
+    """AK6 aus Sicht des Runners: 2024/2025 liefern KEINE Auslandsgrenze (None), 2026 liefert
+    2.000; die Inlandsgrenze ist in allen drei VZ 1.000. Die Grenze kommt aus params/<vz> — an
+    EINER Stelle, nicht je Aufrufer (Entscheidung auslandsgrenze-2000-euro-gilt-erst-ab-vz-2026)."""
+    runner = _runner()
+    assert runner._dhf_params(2024) == {"cap_monat_inland": 1000, "cap_monat_ausland": None}
+    assert runner._dhf_params(2025) == {"cap_monat_inland": 1000, "cap_monat_ausland": None}
+    assert runner._dhf_params(2026) == {"cap_monat_inland": 1000, "cap_monat_ausland": 2000}
+
+
+@pytest.mark.parametrize("auslandsblock", [
+    pytest.param({}, id="schluessel_fehlt"),
+    pytest.param({"cap_monat_ausland": {"wert": None}}, id="wert_none"),
+    pytest.param({"cap_monat_ausland": None}, id="block_leer"),
+])
+def test_dhf_fehlende_auslandsgrenze_ist_keine_grenze_kein_keyerror(monkeypatch, auslandsblock):
+    """Fehlt cap_monat_ausland oder ist sein Wert None, heisst das 'keine Grenze'. Der Runner
+    darf dann weder mit KeyError/TypeError abbrechen noch eine Grenze erfinden — weder in der
+    dHf (Nr. 5) noch bei der Übernachtung nach 48 Monaten (Nr. 5a, verweist auf Nr. 5).
+    Die Inlandsgrenze bleibt davon unberührt."""
+    runner = _runner()
+    monkeypatch.setattr(runner, "_load_yaml_path",
+                        lambda _pfad: {"cap_monat_inland": {"wert": 1000}, **auslandsblock})
+    assert runner._dhf_params(2025) == {"cap_monat_inland": 1000, "cap_monat_ausland": None}
+    assert runner._dhf_abzug(_dhf_fall(2025, 2500, False), 2025) == 30000
+    assert runner._dhf_abzug(_dhf_fall(2025, 1400, True), 2025) == 12000
+    assert runner._uebernachtung_monatsgrenze(2026, False) is None   # die Params entscheiden, kein zweiter Schalter
+    assert runner._uebernachtung_monatsgrenze(2026, True) == 1000
 
 
 # ---- Stufe 1b: Verpflegung (Engine-Vorarbeit; Haut/×Tage nach dev-2s Tage-Bindung) ----

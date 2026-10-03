@@ -20,18 +20,20 @@ pub struct DhfEingabe {
 }
 
 /// § 9 Abs. 1 S. 3 Nr. 5 `EStG` -- abziehbare Unterkunftskosten, EURO: Monatsmiete gekappt je
-/// Monat (Inland 1.000, Ausland 2.000 aus `params/<vz>`), mal Monate.
+/// Monat (Inland 1.000, Ausland 2.000 aus `params/<vz>`), mal Monate. Fuehrt `params/<vz>` keine
+/// Auslandsgrenze (VZ 2024/2025: sie gilt erst ab VZ 2026, `StÄndG` 2025), bleibt die Auslandsmiete
+/// ungekappt. PARITÄT: Python `_dhf_abzug`, `None` = keine Grenze.
 pub(crate) fn dhf_abzug(e: &DhfEingabe, p: &Params) -> Result<i64, EngineFehler> {
     let cap = p.dhf(e.veranlagungszeitraum)?;
     let grenze = if e.im_inland {
-        cap.cap_monat_inland
+        Some(cap.cap_monat_inland)
     } else {
         cap.cap_monat_ausland
     };
+    let miete = e.unterkunftskosten_monat.get();
     ok(
-        e.unterkunftskosten_monat
-            .get()
-            .min(grenze.get())
+        grenze
+            .map_or(miete, |g| miete.min(g.get()))
             .checked_mul(e.monate),
         "dhf",
     )
@@ -169,13 +171,12 @@ pub struct UebernachtungEingabe {
     pub uebernachtung_im_inland: bool,
 }
 
-/// Ab diesem VZ gilt die 2.000-EUR-Auslandsgrenze (`StÄndG` 2025). Fuer 2024/2025 gibt es fuer
-/// Auslandsunterkuenfte keine Monatsgrenze (BMF-Reisekosten v. 25.11.2020, Rz. 124).
-const AUSLANDSGRENZE_AB_VZ: u16 = 2026;
-
 /// § 9 Abs. 1 S. 3 Nr. 5a `EStG` -- Uebernachtungskosten, EURO. Die ersten 48 Monate am selben
 /// Ort ungekappt; danach auf die Grenze nach Nr. 5 gekappt (S. 4). Ein Zeitraum ueber die
-/// Schwelle wird monatsweise geteilt (BMF v. 25.11.2020, Rz. 126).
+/// Schwelle wird monatsweise geteilt (BMF v. 25.11.2020, Rz. 126). Die Grenze kommt aus denselben
+/// Params wie bei der dHf, ohne eigenen VZ-Schalter: die 2.000-EUR-Auslandsgrenze gilt erst ab
+/// VZ 2026 (`StÄndG` 2025), davor fuehrt `params/<vz>` keine (BMF-Reisekosten v. 25.11.2020,
+/// Rz. 124).
 pub(crate) fn uebernachtung_abzug(
     e: &UebernachtungEingabe,
     p: &Params,
@@ -187,10 +188,8 @@ pub(crate) fn uebernachtung_abzug(
     let cap = p.dhf(e.veranlagungszeitraum)?;
     let grenze = if e.uebernachtung_im_inland {
         Some(cap.cap_monat_inland)
-    } else if e.veranlagungszeitraum.jahr() >= AUSLANDSGRENZE_AB_VZ {
-        Some(cap.cap_monat_ausland)
     } else {
-        None
+        cap.cap_monat_ausland
     };
     let gekappt = grenze.map_or(kosten, |g| kosten.min(g.get()));
     ok(
@@ -200,4 +199,69 @@ pub(crate) fn uebernachtung_abzug(
             .and_then(|(a, b)| a.checked_add(b)),
         "uebernachtung",
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{dhf_abzug, uebernachtung_abzug, DhfEingabe, UebernachtungEingabe};
+    use bindung::Params;
+    use domain::{Euro, Vz};
+
+    fn params() -> Params {
+        Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap()
+    }
+
+    fn dhf(vz: Vz, miete: i64, im_inland: bool) -> i64 {
+        let e = DhfEingabe {
+            veranlagungszeitraum: vz,
+            unterkunftskosten_monat: Euro::new(miete),
+            monate: 12,
+            im_inland,
+        };
+        dhf_abzug(&e, &params()).unwrap()
+    }
+
+    fn uebernachtung(vz: Vz, im_inland: bool) -> i64 {
+        let e = UebernachtungEingabe {
+            veranlagungszeitraum: vz,
+            uebernachtung_kosten_monat: Euro::new(2500),
+            uebernachtung_monate: 12,
+            uebernachtung_monate_bisher: 48,
+            uebernachtung_im_inland: im_inland,
+        };
+        uebernachtung_abzug(&e, &params()).unwrap()
+    }
+
+    /// Die 2.000-EUR-Auslandsgrenze gilt erst ab VZ 2026 (`StÄndG` 2025, `BGBl`. 2025 I Nr. 363).
+    /// In `params/2024` und `params/2025` steht sie nicht; 2.500 EUR x 12 bleiben dort ungekappt.
+    /// Erwartungswerte = Python-Orakel auf 604022c8 mit den neuen Params:
+    /// `runner._dhf_abzug({"unterkunftskosten_monat": 2500, "monate": 12, "im_inland": False}, vz)`
+    /// liefert 30000 / 30000 / 24000.
+    #[test]
+    fn dhf_ausland_ist_vor_vz2026_ungekappt() {
+        assert_eq!(dhf(Vz::Vz2024, 2500, false), 30_000);
+        assert_eq!(dhf(Vz::Vz2025, 2500, false), 30_000);
+        assert_eq!(dhf(Vz::Vz2026, 2500, false), 24_000);
+    }
+
+    /// Kontrollfall: die Inlandsgrenze 1.000 gilt in jedem der drei VZ (1.400 x 12 -> 12.000).
+    #[test]
+    fn dhf_inland_bleibt_in_jedem_vz_auf_1000_gekappt() {
+        for vz in [Vz::Vz2024, Vz::Vz2025, Vz::Vz2026] {
+            assert_eq!(dhf(vz, 1400, true), 12_000);
+        }
+    }
+
+    /// Nr. 5a verweist fuer die Hoehe nach 48 Monaten auf Nr. 5: dieselbe Grenze aus denselben
+    /// Params, kein zweiter VZ-Schalter. Python-Orakel `runner._uebernachtung_abzug` (bisher=48,
+    /// monate=12, 2.500 EUR): Ausland 30000 / 30000 / 24000, Inland 12000 in allen drei.
+    #[test]
+    fn uebernachtung_nach_48_monaten_folgt_derselben_grenze() {
+        assert_eq!(uebernachtung(Vz::Vz2024, false), 30_000);
+        assert_eq!(uebernachtung(Vz::Vz2025, false), 30_000);
+        assert_eq!(uebernachtung(Vz::Vz2026, false), 24_000);
+        for vz in [Vz::Vz2024, Vz::Vz2025, Vz::Vz2026] {
+            assert_eq!(uebernachtung(vz, true), 12_000);
+        }
+    }
 }

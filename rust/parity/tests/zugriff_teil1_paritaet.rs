@@ -564,6 +564,54 @@ fn werbungskosten_n() {
     pruefe("catala_werbungskosten_n", &d(felder));
 }
 
+/// Die 2.000-EUR-Auslandsgrenze gilt erst ab VZ 2026 (`StÄndG` 2025, `BGBl`. 2025 I Nr. 363); fuer
+/// VZ 2024/2025 bleibt die Auslandsmiete ungekappt. GEZIELT statt gewuerfelt: der Korpus hat keinen
+/// dHf-Auslandssatz, und der Wuerfel trifft "Ausland, Miete ueber 2.000, VZ 2024/2025" nur zufaellig.
+/// Python (live) UND Rust muessen die FESTEN Zahlen liefern (2.500 x 12 im Ausland: 30000 / 30000 /
+/// 24000; Inland 1.400 bzw. 2.500 EUR: 12000), nicht nur einander gleichen -- zwei gleich falsche
+/// Seiten waeren sonst gruen. Gilt fuer die dHf (Nr. 5) und die Uebernachtung nach 48 Monaten (Nr. 5a).
+#[test]
+fn werbungskosten_n_auslandsgrenze_gilt_erst_ab_vz2026() {
+    if skip_ohne_parity_env() {
+        eprintln!(
+            "SKIP werbungskosten_n_auslandsgrenze_gilt_erst_ab_vz2026 (PARITY=1 nicht gesetzt)"
+        );
+        return;
+    }
+    let name = "catala_werbungskosten_n";
+    for (vz, ausland) in [(2024, 30_000), (2025, 30_000), (2026, 24_000)] {
+        let dhf = |miete: i64, im_inland: bool| {
+            json!({"veranlagungszeitraum": vz, "unterkunftskosten_monat": miete, "monate": 12,
+                   "im_inland": im_inland})
+        };
+        let uen = |im_inland: bool| {
+            json!({"veranlagungszeitraum": vz, "uebernachtung_kosten_monat": 2500,
+                   "uebernachtung_monate": 12, "uebernachtung_monate_bisher": 48,
+                   "uebernachtung_im_inland": im_inland})
+        };
+        let faelle = [
+            ("dHf Ausland", dhf(2500, false), ausland),
+            ("dHf Inland", dhf(1400, true), 12_000),
+            ("Uebernachtung Ausland", uen(false), ausland),
+            ("Uebernachtung Inland", uen(true), 12_000),
+        ];
+        for (was, fall, erwartet) in faelle {
+            let args = [fall];
+            assert_eq!(
+                live(name, &args),
+                Ausgang::Ok(erwartet),
+                "Python, VZ {vz}, {was}"
+            );
+            assert_eq!(
+                rust_ausgang(name, &args),
+                Ausgang::Ok(erwartet),
+                "Rust, VZ {vz}, {was}"
+            );
+        }
+    }
+    println!("[paritaet] werbungskosten_n Auslandsgrenze: 3 VZ x 4 Faelle, Python == Rust == fest");
+}
+
 #[test]
 fn vermietung_einkuenfte() {
     let e = || g(-1000, 60_000, &[]);
