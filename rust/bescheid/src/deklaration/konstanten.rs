@@ -55,12 +55,13 @@ pub(super) const RENTNER_AA_ARTEN: [&str; 3] = [
     "private_basisrente",
 ];
 /// `STAMMDATEN_FELDER` (liest `api.einreichen`, nicht `bescheid_deklaration.py`).
-pub(super) const STAMMDATEN_FELDER: [&str; 12] = [
+pub(super) const STAMMDATEN_FELDER: [&str; 13] = [
     "stammdaten_nachname",
     "stammdaten_vorname",
     "stammdaten_geburtsdatum",
     "stammdaten_strasse",
     "stammdaten_hausnummer",
+    "stammdaten_hausnummerzusatz",
     "stammdaten_plz",
     "stammdaten_wohnort",
     "stammdaten_keine_bankverbindung",

@@ -78,3 +78,23 @@ fn rentner() {
 fn gesamt() {
     pruefe("gesamt");
 }
+
+/// Die Angestellte mit Hausnummerzusatz "a" (Vault `hausnummer-zusatz-bekommt-ein-bindungsfeld`):
+/// `E0101207` steht neben `E0101206`, und der Zusatz haengt an `<AbsStr>`. Das Rust-XML ist gleich
+/// dem Python-XML (`pruefe`); die Zeilen darunter halten fest, dass die Python-Datei den Zusatz
+/// ueberhaupt traegt -- sonst verglichen beide Seiten einen Fall ohne ihn.
+#[test]
+fn hausnummer_zusatz() {
+    pruefe("hausnummer_zusatz");
+    let python = std::fs::read_to_string(fixture("hausnummer_zusatz.xml")).unwrap();
+    let hausnummer = python.find("<E0101206>7</E0101206>");
+    let zusatz = python.find("<E0101207>a</E0101207>");
+    assert!(
+        hausnummer.is_some() && zusatz > hausnummer,
+        "E0101207 steht nicht neben E0101206 im Python-XML"
+    );
+    assert!(
+        python.contains("<AbsStr>Musterstraße 7a</AbsStr>"),
+        "der Zusatz erreicht <AbsStr> nicht"
+    );
+}

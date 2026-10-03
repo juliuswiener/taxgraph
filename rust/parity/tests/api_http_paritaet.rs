@@ -2692,6 +2692,39 @@ fn event_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBilanz {
             m("kind_idnr", json!("١٢٣٤٥٦٧٨٩٠١")),
             422,
         ),
+        // Der Hausnummerzusatz (E0101207): 1 bis 6 Zeichen, kein Zeilenumbruch. Sechs Zeichen sind
+        // auch sechs, wenn sie mehr als sechs Bytes belegen; den leeren Text lehnt schon die
+        // Typpruefung ab.
+        (
+            "F Zusatz sechs Zeichen",
+            m("stammdaten_hausnummerzusatz", json!("abcdef")),
+            201,
+        ),
+        (
+            "F Zusatz sechs Zeichen mit Umlauten",
+            m("stammdaten_hausnummerzusatz", json!("Äöü ß-")),
+            201,
+        ),
+        (
+            "F Zusatz sieben Zeichen",
+            m("stammdaten_hausnummerzusatz", json!("abcdefg")),
+            422,
+        ),
+        (
+            "F Zusatz leer",
+            m("stammdaten_hausnummerzusatz", json!("")),
+            422,
+        ),
+        (
+            "F Zusatz mit Zeilenumbruch",
+            m("stammdaten_hausnummerzusatz", json!("a\nb")),
+            422,
+        ),
+        (
+            "F Zusatz mit Zeilenende",
+            m("stammdaten_hausnummerzusatz", json!("a\n")),
+            422,
+        ),
     ]);
     // `signal_2` (Text oder null) und `bestaetigt` (braucht ein signal_2 mit Inhalt).
     for (name, s2) in [

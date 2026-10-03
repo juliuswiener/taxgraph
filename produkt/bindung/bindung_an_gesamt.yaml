@@ -1182,6 +1182,24 @@ bindungen:
       zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
       datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
 
+  - feld_id: stammdaten_hausnummerzusatz
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_hausnummerzusatz}
+    typ: text
+    muster: '^(?:[^\n\r]{1,6})$'   # E10-2025.xsd E0101207: String_MinL1_MaxL6, Muster [^\n\r]+ (Rust-regex kennt kein Lookahead)
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hat deine Hausnummer einen Zusatz, zum Beispiel a oder b?"
+    hilfe_kurz: "Nur der Zusatz hinter der Hausnummer, höchstens sechs Zeichen. Ohne Zusatz lässt du die Frage aus."
+    beispielwert: "a"
+    herkunft_slots: null
+    elster_kz: E0101207
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
   - feld_id: stammdaten_plz
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_plz}
     typ: text

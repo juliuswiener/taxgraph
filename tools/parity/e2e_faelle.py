@@ -112,10 +112,14 @@ GESAMT = dict(ARBEITNEHMER, **{
     "hh_in_eu_ewr": True,
 })
 
+# Die Angestellte mit Hausnummerzusatz: E0101207 neben E0101206, und der Zusatz in <AbsStr> ("Musterstraße 7a").
+HAUSNUMMER_ZUSATZ = dict(ARBEITNEHMER, stammdaten_hausnummerzusatz="a")
+
 FAELLE: list[tuple[str, str, dict]] = [
     ("arbeitnehmer", "gesamt", ARBEITNEHMER),
     ("rentner", "rentner_gesamt", RENTNER),
     ("gesamt", "gesamt", GESAMT),
+    ("hausnummer_zusatz", "gesamt", HAUSNUMMER_ZUSATZ),
 ]
 
 
