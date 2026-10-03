@@ -263,7 +263,8 @@ async fn owner_check_trennt_nutzer_und_die_ampel_ist_offen() {
             json!({"fall_id": "f1", "scheibe": "ep", "veranlagungszeitraum": 2025})
         )
     );
-    // Eigener Fall: Stub (`einreichen` ist noch nicht portiert; die GET-Routen rechnen).
+    // Eigener Fall: `einreichen` erreicht ihn. Die Scheibe `ep` traegt keine Erklaerung (kein
+    // Stammdatenfeld im Kegel), also antwortet es 409, ohne ERiC zu fragen.
     let a = sende(
         &d,
         "POST",
@@ -277,8 +278,8 @@ async fn owner_check_trennt_nutzer_und_die_ampel_ist_offen() {
     )
     .await;
     assert_eq!(
-        (a.status, a.json()["fehler"].clone()),
-        (501, json!("nicht_portiert"))
+        (a.status, a.json()["grund"].clone()),
+        (409, json!("scheibe_nicht_abgabefaehig"))
     );
     // Fremder Fall, kein Token, fehlender Fall.
     assert_eq!(

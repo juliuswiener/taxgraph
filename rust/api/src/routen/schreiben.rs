@@ -26,12 +26,23 @@ pub async fn event(
     crate::event::event(&z, &mut fall, &wert, &roh)
 }
 
-/// `POST /fall/{id}/einreichen` — `api.einreichen` (`api.py:675`).
+/// `POST /fall/{id}/einreichen` — `api.einreichen` (`api.py:678`), Rumpf in
+/// [`crate::einreichen::einreichen`]. Nur Prüfen (`ERIC_VALIDIERE`), kein Versand.
 ///
 /// # Errors
-/// Wie [`event`].
-pub async fn einreichen(_fall: EigenerFall, _body: Koerper) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("POST /fall/{id}/einreichen"))
+/// Wie [`event`]; dazu 500 wie in [`crate::einreichen::einreichen`] beschrieben.
+pub async fn einreichen(
+    State(z): State<Zustand>,
+    nutzer: Nutzer,
+    mut fall: EigenerFall,
+    Koerper(wert): Koerper,
+) -> Result<Antwort, ApiFehler> {
+    // ERiC prüft synchron, in der Regel Sekunden: nicht auf einem Async-Worker.
+    tokio::task::spawn_blocking(move || {
+        crate::einreichen::einreichen(&z, &nutzer, &mut fall, &wert)
+    })
+    .await
+    .map_err(|e| ApiFehler::unerwartet("RuntimeError", e.to_string()))?
 }
 
 /// `POST /fall/{id}/chat` — `api.chat` (`api.py:1095`), Rumpf in [`crate::chat::chat`].
