@@ -138,6 +138,28 @@ def test_unvollstaendig_nennt_die_offenen_felder(base):
     assert any(e.get("feld_id") == "bruttoarbeitslohn" for e in offen), offen
 
 
+def test_sperrgrund_409_traegt_den_klartext(base):
+    """Das 409 mit Sperrgrund der Berechnung bringt den Laien-Satz mit, wie `ergebnis()`.
+
+    Vorher trug es nur die Maschinen-Kennung und einen festen Satz ("... weil eine erforderliche
+    Angabe fehlt"), der bei manchen Gruenden in die falsche Richtung zeigt (Vault
+    einreichen-sperrgruende-erreichen-den-nutzer-nie). Der Server hat den geprueften Satz laengst
+    (`sperrgrund_klartext`, Gate tests/test_sperrgrund_klartext.py); die Oberflaeche braucht ihn
+    nur geliefert (Vault die-einreichen-anzeige-nennt-je-ursache-einen-festen-text, Punkt 5).
+
+    DER FALL (erreichbar, gemessen 2026-10-03): Scheibe `gesamt`, VZ 2025, EIN bestaetigtes Event
+    `dhf_unterkunftskosten_monat` — die Geltungsbedingungen der doppelten Haushaltsfuehrung fehlen,
+    der Guard antwortet `dhf_tatbestand_offen`, bevor irgendein Pruefprogramm laeuft."""
+    fid = _fall(base)
+    _req(base, "POST", f"/fall/{fid}/event", _laie("dhf_unterkunftskosten_monat", 140000))
+    _st, r = _req(base, "POST", f"/fall/{fid}/einreichen", {}, erwarte=409)
+    assert r["grund"] == "dhf_tatbestand_offen", r
+    assert r["eingereicht"] is False
+    assert r["klartext"] == API.sperrgrund_klartext("dhf_tatbestand_offen"), r
+    assert r["klartext"] != API.sperrgrund_klartext("gibt_es_nicht"), (
+        f"der Ersatztext fuer einen unbekannten Grund, nicht der Satz zu diesem: {r['klartext']!r}")
+
+
 # ----------------------------------------------------------------- Einheit (ohne HTTP)
 
 def test_vorlaeufiges_feld_blockiert_einreichen(tmp_path, monkeypatch):
