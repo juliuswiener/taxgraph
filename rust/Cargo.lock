@@ -184,6 +184,7 @@ dependencies = [
  "interview",
  "konsistenz",
  "proptest",
+ "regex",
  "rust_decimal",
  "serde_json",
  "store",
