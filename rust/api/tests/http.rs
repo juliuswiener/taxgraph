@@ -7,6 +7,7 @@
     clippy::panic
 )]
 
+use std::collections::BTreeSet;
 use std::path::Path;
 
 use api::konfig::Konfig;
@@ -705,22 +706,81 @@ async fn fall_angelegt_ohne_nutzer() {
     assert!(akte.get("user_id").is_none(), "Besitzer gesetzt: {akte}");
 }
 
-#[tokio::test]
-async fn openapi_nennt_alle_fertigen_routen() {
+/// Die Routen im Router, die das OpenAPI-Dokument ([`api::openapi::ApiDoc`]) noch nicht beschreibt:
+/// 15 von 24. Sie sind portiert; es fehlen ihr `#[utoipa::path]` und ihre Schemas. Die Liste ist
+/// der Stand, kein Ziel: wer eine Route ins Dokument aufnimmt, streicht sie hier (der Test
+/// verlangt es), und wer eine neue Route baut, ohne sie zu dokumentieren, scheitert am Test.
+const UNDOKUMENTIERT: [(&str, &str); 15] = [
+    ("GET", "/fall/{id}/fragen"),
+    ("GET", "/fall/{id}/stand"),
+    ("POST", "/fall/{id}/event"),
+    ("GET", "/fall/{id}/feld/{fid}/warum"),
+    ("GET", "/fall/{id}/feld/{fid}/frage"),
+    ("GET", "/fall/{id}/ergebnis"),
+    ("GET", "/fall/{id}/preflight"),
+    ("GET", "/fall/{id}/deklaration"),
+    ("POST", "/fall/{id}/einreichen"),
+    ("GET", "/fall/{id}/graph"),
+    ("POST", "/fall/{id}/chat"),
+    ("POST", "/fall/{id}/flow"),
+    ("POST", "/fall/{id}/entfernung"),
+    ("POST", "/fall/{id}/vorjahr"),
+    ("POST", "/fall/{id}/kontoauszug"),
+];
+
+type Route = (String, String);
+
+/// `(Methode, Pfad)` der Routentabelle; die Methode steht gross.
+fn router_routen() -> BTreeSet<Route> {
+    EINTRAEGE
+        .iter()
+        .map(|e| (e.methode.to_owned(), e.axum_pfad.to_owned()))
+        .collect()
+}
+
+/// `(Methode, Pfad)` des OpenAPI-Dokuments, die Methode gross gemacht wie in der Tabelle.
+fn dokument_routen() -> BTreeSet<Route> {
     use utoipa::OpenApi;
     let doc = serde_json::to_value(api::openapi::ApiDoc::openapi()).unwrap();
-    let pfade = doc["paths"].as_object().unwrap();
-    for p in [
-        "/health",
-        "/ready",
-        "/auth/register",
-        "/auth/login",
-        "/auth/logout",
-        "/auth/session",
-        "/fall",
-        "/fall/{id}",
-        "/fall/{id}/elster-ampel",
-    ] {
-        assert!(pfade.contains_key(p), "{p}");
+    let mut routen = BTreeSet::new();
+    for (pfad, ops) in doc["paths"].as_object().unwrap() {
+        for methode in ops.as_object().unwrap().keys() {
+            // Ein Pfad traegt neben den Methoden auch `summary`, `parameters` und Ähnliches.
+            if [
+                "get", "post", "put", "delete", "patch", "head", "options", "trace",
+            ]
+            .contains(&methode.as_str())
+            {
+                routen.insert((methode.to_uppercase(), pfad.clone()));
+            }
+        }
     }
+    routen
+}
+
+#[test]
+fn openapi_deckt_den_router_bis_auf_die_bekannte_luecke() {
+    let router = router_routen();
+    let fehlt: BTreeSet<Route> = router.difference(&dokument_routen()).cloned().collect();
+    let bekannt: BTreeSet<Route> = UNDOKUMENTIERT
+        .iter()
+        .map(|(m, p)| ((*m).to_owned(), (*p).to_owned()))
+        .collect();
+    let neu: Vec<_> = fehlt.difference(&bekannt).collect();
+    assert!(
+        neu.is_empty(),
+        "Route im Router, aber nicht im OpenAPI-Dokument: {neu:?}"
+    );
+    let veraltet: Vec<_> = bekannt.difference(&fehlt).collect();
+    assert!(
+        veraltet.is_empty(),
+        "UNDOKUMENTIERT nennt eine Route, die schon im Dokument steht oder nicht im Router: {veraltet:?}"
+    );
+}
+
+#[test]
+fn openapi_beschreibt_keine_route_ohne_router() {
+    let router = router_routen();
+    let ohne: Vec<_> = dokument_routen().difference(&router).cloned().collect();
+    assert!(ohne.is_empty(), "im Dokument, nicht im Router: {ohne:?}");
 }
