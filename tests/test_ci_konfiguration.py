@@ -764,6 +764,71 @@ def test_guard_greift_nur_ohne_toolchain():
         f"übersprungen — der Guard greift zu früh und versteckt echte Tests")
 
 
+# ---- Ein Lauf ohne Catala-Engine nennt seine Ursache in der Schlusszeile ------------------------
+# Entscheidung ein-lauf-ohne-catala-engine-bleibt-rot-und-nennt-seine-ursache (Vault), Backlog
+# conftest-guard-prueft-importzeit-statt-laufzeit. Der Lauf bleibt rot; nur die Ursache kommt dazu.
+
+def test_schlusszeile_nennt_die_zahlen_und_fehlt_mit_engine():
+    sys.path.insert(0, HERE)
+    import conftest                       # noqa: E402
+
+    # Engine da -> keine Zeile.
+    assert conftest._catala_schlusszeile(False, 5, 3, 24) is None
+    # Engine fehlt, kein Fehler -> Zeile mit der Zahl der nicht gesammelten Dateien.
+    z = conftest._catala_schlusszeile(True, 0, 0, 24)
+    assert "Catala-Engine fehlt in diesem Baum" in z and "24 Testdateien NICHT gesammelt" in z
+    assert "kein Fehler" in z
+    # Engine fehlt, F = 5, N = 3 -> beide Zahlen, dazu die Abhilfe.
+    z = conftest._catala_schlusszeile(True, 5, 3, 24)
+    assert "5 Fehler, davon 3 mit Importversuch" in z and "24 Testdateien NICHT gesammelt" in z
+    assert "make build-python" in z and "_catala" in z
+
+
+def test_catala_fehlt_stimmt_mit_einem_eigenen_importversuch_ueberein():
+    """Die Schlusszeile hängt an `_ENGINE_FEHLT`. Ohne diese Gegenprobe könnte `_catala_fehlt()` immer
+    False liefern, und alle Tests der Zeilenlogik blieben grün: sie bekämen ihre Bedingung gestellt."""
+    sys.path.insert(0, HERE)
+    import conftest                       # noqa: E402
+
+    try:
+        import runner                     # noqa: F401, E402 — conftest hat die Pfade gesetzt
+        engine_da = True
+    except Exception:
+        engine_da = False
+    assert conftest._ENGINE_FEHLT == (not engine_da), (
+        f"conftest sagt Engine fehlt={conftest._ENGINE_FEHLT}, ein eigener Import von `runner` sagt "
+        f"engine_da={engine_da}")
+
+
+def test_lauf_ohne_engine_endet_mit_der_ursache_nach_der_fehlerliste(tmp_path):
+    """Ende-zu-Ende in einem eigenen pytest-Prozess: ein Test, der die Engine laden will, und einer,
+    der es nicht tut. Die Zeile steht NACH der `FAILED`-Zeile und zählt genau einen Importversuch."""
+    sys.path.insert(0, HERE)
+    import conftest                       # noqa: E402
+
+    if not conftest._ENGINE_FEHLT:
+        pytest.skip("mit Catala-Engine — die Schlusszeile erscheint dort nie, nichts zu messen")
+    import subprocess
+
+    (tmp_path / "test_probe_engine.py").write_text(
+        "def test_laedt_die_engine():\n    import pkg  # noqa: F401\n\n\n"
+        "def test_ohne_engine():\n    assert 1 + 1 == 2\n", encoding="utf-8")
+    env = dict(os.environ, PYTHONPATH=os.pathsep.join([HERE, os.environ.get("PYTHONPATH", "")]),
+               PYTHONDONTWRITEBYTECODE="1")
+    r = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", "-p", "conftest", "-p", "no:cacheprovider",
+         "-p", "no:randomly", "-o", "addopts=", "--rootdir", str(tmp_path), str(tmp_path)],
+        cwd=tmp_path, env=env, capture_output=True, text=True, timeout=300)
+    zeilen = r.stdout.splitlines()
+    ursache = [i for i, z in enumerate(zeilen) if "Catala-Engine fehlt in diesem Baum" in z]
+    assert len(ursache) == 1, f"erwartet genau eine Ursache-Zeile:\n{r.stdout[-2500:]}\n{r.stderr[-800:]}"
+    assert "1 Fehler, davon 1 mit Importversuch" in zeilen[ursache[0]]
+    failed = [i for i, z in enumerate(zeilen) if z.startswith("FAILED")]
+    assert failed and ursache[0] > failed[-1], (
+        "die Ursache-Zeile muss NACH der Fehlerliste stehen, sonst geht sie wie die Anfangszeile unter")
+    assert "1 failed, 1 passed" in r.stdout        # nichts umgewandelt: rot bleibt rot
+
+
 # ---------------------------------------------- was CI und Makefile starten, muss startbar sein
 #
 # DER FUND (Abnahme-Audit 2026-08-19): der Umzug des Rechenkerns nach produkt/engine/ liess
