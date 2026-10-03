@@ -43,6 +43,7 @@ pub use ausgaben::{
 };
 pub use snapshot::{Bestaetigt, Marke, Roh, Snapshot};
 
+pub(crate) use self::gesamt::netto_vg;
 use self::rechnen::R;
 pub(crate) use self::tarif::leerer_gesamtfall;
 use crate::abzuege::oepnv_eur;

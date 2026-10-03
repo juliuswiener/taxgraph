@@ -628,6 +628,28 @@ bindungen:
       quelle: "§ 34 Abs. 3 S. 4 EStG"
       zitatanker: "Die Ermäßigung nach den Sätzen 1 bis 3 kann der Steuerpflichtige nur einmal im Leben in Anspruch nehmen"
       datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  # Berechnete Antragszeile (Vault backlog p34-antrag-ohne-kennzahl-erreicht-elster-nicht, AK1/AK3): der Gewinn der
+  # Basiszeile, für den der ermäßigte Satz beantragt wird. Entsteht in _mit_ring_werten nur, wenn der Chooser
+  # Abs. 3 auch rechnet (Antrag UND _abs3_eligible UND 0 < netto_vg <= 5 Mio) und wird über
+  # est_mapping.VERZWEIGUNG nach rentner_veraeusserungs_betriebsart auf die Antrags-Kz der Anlage gelenkt.
+  # antrag_ermaessigter_satz selbst bleibt ohne Kz: er ist ein Tatbestand, kein Betrag.
+  - feld_id: p34_abs3_antragsbetrag
+    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, geltungsbedingung: antrag_gestellt}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: der Veräußerungsgewinn, für den der ermäßigte Steuersatz beantragt wird."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Verzweigt: das Kz haengt an rentner_veraeusserungs_betriebsart (est_mapping VERZWEIGUNG, Klasse f) — gewerbe E0801602 [G/VAe_G_v_FB/Betr_TBetr_MUAnt/VAe_G_FB_Antr] / selbstaendig E0805003 [S/VAe_Gew/Vor_FB] / land_forst E0901704 [L/VAe_G_v_FB/VAe_G_FB_Antr], je im Container der Basiszeile (E0801301 / E0804501 / E0901201), Schema E10-2024 und E10-2025 (E10-2026 liegt im ERiC-Paket 44.2.4.0 nicht vor). Der kein-FB-Zweig (E0801903 / E0805305 / E0902002) bleibt unbeschrieben: seine Basiszeilen (E0801401 / E0804601 / E0901302) schreibt TaxGraph nicht."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 1 EStG"
+      zitatanker: "so kann auf Antrag abweichend von Absatz 1 die auf den Teil dieser außerordentlichen Einkünfte, der den Betrag von insgesamt 5 Millionen Euro nicht übersteigt, entfallende Einkommensteuer nach einem ermäßigten Steuersatz bemessen werden"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
 
   # ===== GewSt § 35-Anrechnung S1 (Gewerbesteuer auf ESt): Messbetrag-Input-Pfad =====
   # § 35 EStG: die tarifliche ESt ermäßigt sich um min(4× Messbetrag [„das Vierfache", geltende Fassung 2026 —

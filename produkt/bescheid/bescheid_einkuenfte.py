@@ -303,6 +303,25 @@ def _laufender_gewinn(f: dict, store: dict | None = None, bindung: dict | None =
     return gewinn, mitu
 
 
+def _netto_vg_person_a(f: dict) -> int:
+    """§ 16 Veräußerungsgewinn von Person A, netto nach § 16 Abs. 4-Freibetrag (EURO). Die EINE Fassung für
+    den Chooser beider Ringe (bescheid_zweige) und die Antrags-Kz § 34 Abs. 3 (bescheid_deklaration): beide
+    müssen unter derselben Bedingung `0 < netto_vg` entscheiden, sonst stünde der Antrag in der Erklärung, den
+    die Vorschau nicht rechnet (oder umgekehrt).
+
+    Naht-Fix (gate-naht-guard-liest-zustand): der Freibetrag wurde bisher unconditional gewährt, sobald der
+    Guard (_an_gesamt_sperrgrund) den Fall durchliess. Der Guard sperrt jetzt nur noch bei NICHT bestätigten
+    Bools; ein bestätigtes False (S. 1 nicht erfüllt) kommt hier an und darf keinen Freibetrag bekommen.
+    GEFLOORT bei 0: Freibetrag > vg erzeugt keinen Phantom-Verlust. Absent → 0."""
+    import runner
+    v = f.get("rentner_veraeusserungsgewinn", {}).get("wert")
+    vg_euro = (int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else 0) // 100
+    gate_ok = (f.get("rentner_alter_55_oder_berufsunfaehig", {}).get("wert") is True
+               and f.get("rentner_freibetrag_erstmalig", {}).get("wert") is True)
+    fb = runner.catala_p16_4_freibetrag({"rentner_veraeusserungsgewinn": vg_euro}) if gate_ok else 0
+    return max(0, vg_euro - fb)
+
+
 def _gewinn_partner_anteil(f: dict):
     """Der Beitrag des Ehegatten zu g["einkuenfte_gewinn"] (EURO): laufender Gewinn + § 16-vg
     netto nach EIGENEM § 16 Abs. 4-Freibetrag. Dritter Wert: dieser § 16-vg netto allein — er

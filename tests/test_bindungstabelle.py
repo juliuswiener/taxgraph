@@ -539,6 +539,9 @@ BETRAGSFELDER_OHNE_KZ = {
     # p35c_massnahme_einzelbetrag -> eine der neun Einzelzeilen der Anlage Energetische
     # Massnahmen, gewaehlt ueber p35c_massnahme_art (2026-08-16).
     "p35c_massnahme_einzelbetrag",
+    # p34_abs3_antragsbetrag -> die Antragszeile § 34 Abs. 3 der Anlage G/S/L (E0801602 / E0805003 /
+    # E0901704), gewaehlt ueber rentner_veraeusserungs_betriebsart (2026-10-03).
+    "p34_abs3_antragsbetrag",
 
     # Gruppe B: Partner-Instanzen — XML-Writer kennt PersonB nicht (elster_xml.py Z. 39 nur PersonA).
     # Stille Fehler bei Zusammenveranlagung: Ehepaar 50k+50k rechnet 20.490€ ESt, Erklärung enthält

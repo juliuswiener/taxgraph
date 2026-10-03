@@ -94,7 +94,7 @@ fn vv_summe<Z: Marke>(r: &Ring<'_, Z>) -> R<Euro> {
 
 /// § 16 Veraeusserungsgewinn NACH § 16 Abs. 4-Freibetrag, bei 0 gefloort (kein Phantom-Verlust).
 /// Der Freibetrag nur bei bestaetigtem S. 1 (55+/berufsunfaehig) UND erstmalig.
-pub(super) fn netto_vg(f: &Felder) -> R<Euro> {
+pub(crate) fn netto_vg(f: &Felder) -> R<Euro> {
     let vg = feld_euro_oder_null(f, "rentner_veraeusserungsgewinn")?;
     let gate = ist_true(wert(f, "rentner_alter_55_oder_berufsunfaehig"))
         && ist_true(wert(f, "rentner_freibetrag_erstmalig"));

@@ -89,6 +89,13 @@ const VERAEUSSERUNG: &[(&str, &str)] = &[
     ("selbstaendig", "E0804501"),
     ("land_forst", "E0901201"),
 ];
+/// § 34 Abs. 3 Antragszeile im Container der Basiszeile darueber (XSD E10-2024/E10-2025:
+/// `VAe_G_FB_Antr` / `Vor_FB` / `VAe_G_FB_Antr`).
+const ANTRAG_ABS3: &[(&str, &str)] = &[
+    ("gewerbe", "E0801602"),
+    ("selbstaendig", "E0805003"),
+    ("land_forst", "E0901704"),
+];
 /// §§ 13-18: `land_forst` bewusst ohne Kz (Anlage L hat vier Kandidaten, Auswahl haengt an zwei
 /// fehlenden Feldern) → fail-closed.
 const GEWINN: &[(&str, &str)] = &[("gewerbe", "E0800302"), ("selbstaendig", "E0803202")];
@@ -121,6 +128,11 @@ pub(crate) const VERZWEIGUNG: &[Verzweigung] = &[
         feld: "rentner_veraeusserungsgewinn",
         art_feld: "rentner_veraeusserungs_betriebsart",
         kz: ArtKz::Text(VERAEUSSERUNG),
+    },
+    Verzweigung {
+        feld: "p34_abs3_antragsbetrag",
+        art_feld: "rentner_veraeusserungs_betriebsart",
+        kz: ArtKz::Text(ANTRAG_ABS3),
     },
     Verzweigung {
         feld: "p35c_massnahme_einzelbetrag",
