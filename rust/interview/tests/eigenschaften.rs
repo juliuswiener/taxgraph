@@ -239,4 +239,67 @@ proptest! {
             folge.iter().zip(&tiefen).collect::<Vec<_>>()
         );
     }
+
+    /// `_nach_ausloesern` (`traverser.py`): ein Feld mit `ableitung` steht hinter seinen Ausloesern
+    /// (`aus`, `und_feld`) desselben Themas, die selbst keine Ableitung tragen. `_themen_folge`
+    /// ordnet nur Themen; innerhalb eines Themas stand das Ziel (Gate) vor seinem `und_feld` (Slot).
+    #[test]
+    fn ableitung_steht_hinter_ihren_ausloesern_im_selben_thema(basis in basis_events()) {
+        let felder: Vec<&str> = graph().alle().feld_ids().collect();
+        let events: Vec<Event> = basis
+            .iter()
+            .enumerate()
+            .map(|(i, (f, k, best))| {
+                let z = if *best { Zustand::Bestaetigt } else { Zustand::Vorlaeufig };
+                event(i, felder[f % felder.len()], wert(*k), z)
+            })
+            .collect();
+        let q = queue(&store(events));
+        for &f in &q {
+            let b = graph().alle().get(f).unwrap();
+            let Some(abl) = &b.ableitung else { continue };
+            for a in [Some(abl.aus.as_str()), abl.und_feld.as_deref()].into_iter().flatten() {
+                let Some(pa) = pos(&q, a) else { continue };
+                if thema(a) != thema(f) || graph().alle().get(a).unwrap().ableitung.is_some() {
+                    continue;
+                }
+                prop_assert!(pa < pos(&q, f).unwrap(), "{f} (Platz {:?}) steht vor seinem Ausloeser {a} (Platz {pa})", pos(&q, f));
+            }
+        }
+    }
+}
+
+fn pos(q: &[&str], f: &str) -> Option<usize> {
+    q.iter().position(|x| *x == f)
+}
+
+/// Gemessen 2026-10-03 auf 431ca41c: mit bekanntem Geburtsdatum stand das Ziel auf Platz 209, sein
+/// `und_feld` auf 211 (`api.fragen`); in der leeren Queue 331 gegen 333.
+#[test]
+fn ableitungsziel_steht_hinter_seinem_und_feld() {
+    const ZIEL: &str = "kind_unter_14_haushaltszugehoerig";
+    const UND: &str = "kind_betreuung_haushaltszugehoerigkeit_zeitraum";
+    let best = |i, f: &str, w: Value| event(i, f, w, Zustand::Bestaetigt);
+    for (name, events) in [
+        ("leer", vec![]),
+        (
+            "fuenfjaehriges Kind, Kosten bekannt",
+            vec![
+                best(0, "kind_geburtsdatum", json!("01.03.2020")),
+                best(1, "kinderbetreuungskosten", json!(600_000)),
+            ],
+        ),
+        // Rueckfall: ueber 14 feuert nichts, das Ziel bleibt eine Frage — hinter dem Zeitraum.
+        (
+            "Kind ueber 14",
+            vec![best(0, "kind_geburtsdatum", json!("01.03.2009"))],
+        ),
+    ] {
+        let q = queue(&store(events));
+        let (z, u) = (pos(&q, ZIEL), pos(&q, UND));
+        assert!(
+            z.is_some() && u.is_some() && u < z,
+            "{name}: Ziel Platz {z:?}, und_feld Platz {u:?}"
+        );
+    }
 }

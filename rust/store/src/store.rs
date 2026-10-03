@@ -14,7 +14,7 @@ use crate::abweisung::{self, Abweisung, AbweisungRoh};
 use crate::canonical::EventId;
 use crate::event::{Event, NeuesEvent, NeuesEventRoh, Signal};
 use crate::katalog::Katalog;
-use crate::nachschlag::BindungNachschlag;
+use crate::nachschlag::{instanz_basis, BindungNachschlag};
 use crate::zeit::{jetzt_iso, ts_oder_jetzt};
 
 /// Die reine Datei-Form (`schema.json` Top-Level-Objekt), OHNE den `aktiv`-Index — das ist, was
@@ -789,22 +789,38 @@ impl Store {
         }
         let aktiv_snapshot = self.aktiv.clone();
         let mut neue_events = Vec::new();
+        // Instanz (`kind_geburtsdatum__2`): der Suffix des ausloesenden Feldes gilt fuer `aus`,
+        // `und_feld` UND `ziel` (Vault: `decisions/ableitung-feuert-je-instanz-und-frage-nach-
+        // beiden-ausloesern`, Punkt 1) -- `store.py::_rechne_ab`.
+        let suffix = instanz_suffix(feld_id);
         for (ziel, eintrag) in bindung.alle() {
             let Some(regel) = &eintrag.ableitung else {
                 continue;
             };
-            let und = regel.und_feld.as_deref();
-            if feld_id != regel.aus && Some(feld_id) != und {
+            // Nur ein Ziel mit `instanz_gruppe` hat Instanzen (`if eintrag.get("instanz_gruppe")`).
+            let sfx = if eintrag
+                .instanz_gruppe
+                .as_deref()
+                .is_some_and(|g| !g.is_empty())
+            {
+                suffix
+            } else {
+                ""
+            };
+            let aus_i = format!("{}{sfx}", regel.aus);
+            let ziel_i = format!("{ziel}{sfx}");
+            let und_i = regel.und_feld.as_deref().map(|u| format!("{u}{sfx}"));
+            if feld_id != aus_i && Some(feld_id) != und_i.as_deref() {
                 continue;
             }
-            if aktiv_snapshot.contains_key(ziel) {
+            if aktiv_snapshot.contains_key(&ziel_i) {
                 continue;
             }
-            let quellwert = if regel.aus == feld_id {
+            let quellwert = if aus_i == feld_id {
                 wert
             } else {
                 let Some(qev) = aktiv_snapshot
-                    .get(&regel.aus)
+                    .get(&aus_i)
                     .and_then(|&i| self.datei.events.get(i))
                 else {
                     continue;
@@ -814,7 +830,7 @@ impl Store {
                 }
                 &qev.wert
             };
-            if let Some(und_feld) = und {
+            if let Some(und_feld) = &und_i {
                 let Some(ev) = aktiv_snapshot
                     .get(und_feld)
                     .and_then(|&i| self.datei.events.get(i))
@@ -846,14 +862,15 @@ impl Store {
             neue_events.push(Event {
                 event_id: EventId::aus_bytes([0; 32]),
                 ts: jetzt_iso(),
-                feld_id: ziel.to_string(),
+                feld_id: ziel_i,
                 wert: neuer_wert.into(),
                 zustand: Zustand::Bestaetigt,
                 herkunft: berechnet_herkunft().into(),
                 schreiber: Schreiber::Abgeleitet("ableitung".to_string()),
                 signal: Some(Signal {
                     signal_1: Some(None),
-                    signal_2: Some(format!("ableitung@{}", regel.aus)),
+                    // Bei Instanz 2 ist das Quellfeld das der Instanz (`kind_geburtsdatum__2`).
+                    signal_2: Some(format!("ableitung@{aus_i}")),
                     signal_2_fehlt: false,
                 }),
                 ersetzt: None,
@@ -1049,6 +1066,15 @@ impl Store {
         self.datei.snapshots.push(snap);
         Ok(sid)
     }
+}
+
+/// Der Instanz-Suffix des Feldes: `"__2"` zu `kind_geburtsdatum__2`, sonst `""` (Instanz 1).
+/// Pythons `f"__{n}"` aus `parse_instanz`; ein abschliessendes `\n` (Pythons `$`, s.
+/// [`instanz_basis`]) gehoert nicht dazu, der Vergleich mit `feld_id` scheitert dann wie dort.
+fn instanz_suffix(feld_id: &str) -> &str {
+    instanz_basis(feld_id)
+        .and_then(|basis| feld_id.get(basis.len()..))
+        .map_or("", |rest| rest.strip_suffix('\n').unwrap_or(rest))
 }
 
 fn baue_aktiv_index(events: &[Event]) -> HashMap<String, usize> {
