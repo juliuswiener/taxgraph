@@ -139,6 +139,20 @@ impl Auth {
         }
     }
 
+    /// Eine Anmeldung, die nie einen Nutzer treffen kann (der Name verfehlt `_USER_RE` oder ist kein
+    /// Text): protokolliert `login_fehlgeschlagen` wie jeder andere Fehlschlag und liefert die 401
+    /// `username oder password falsch` — dieselbe Antwort wie bei einem unbekannten Namen.
+    ///
+    /// ```
+    /// let a = auth::Auth::neu("g".into(), "/nie/gelesen/users.json".into(), None);
+    /// assert_eq!(a.weise_ab("[]").status(), 401);
+    /// ```
+    #[must_use]
+    pub fn weise_ab(&self, nutzer: &str) -> AuthFehler {
+        self.protokolliere(nutzer, AuditAktion::LoginFehlgeschlagen);
+        AuthFehler::Falsch
+    }
+
     /// `register` (`auth.py:127-147`): pruefen, hashen, speichern. Rueckgabe = der Name.
     ///
     /// ```
@@ -179,8 +193,11 @@ impl Auth {
         Ok(name)
     }
 
-    /// `login` (`auth.py:153-168`): Passwort gegen den gespeicherten Hash, dann ein Token.
-    /// Kein Namens-Muster — Python prueft es beim Login nicht.
+    /// `login` (`auth.py:153-176`): Namensmuster, Passwort gegen den gespeicherten Hash, dann ein Token.
+    /// Ein Name ausserhalb von `_USER_RE` ist kein Nutzer: 401 wie bei einem falschen Passwort, BEVOR
+    /// die Nutzerdatei gelesen wird (Vault `decisions/login-prueft-das-namensmuster-vor-dem-
+    /// nachschlagen`). Steht ein solcher Name von Hand in der Datei, bekommt er kein Token mehr, das
+    /// jede Route danach abweist (`token_mit_ungueltigem_namen_ist_401`).
     ///
     /// ```
     /// let dir = tempfile::tempdir().unwrap();
@@ -190,12 +207,18 @@ impl Auth {
     /// let t = a.login(&an("geheim123")).unwrap();
     /// assert_eq!(a.pruefe_token(&t).as_deref(), Some("julius"));
     /// assert_eq!(a.login(&an("falsch123")).unwrap_err().status(), 401);
+    /// let ausserhalb = auth::Anmeldung { username: "a b".into(), password: "geheim123".into() };
+    /// assert_eq!(a.login(&ausserhalb).unwrap_err().status(), 401);
     /// ```
     ///
     /// # Errors
-    /// 401 bei unbekanntem Namen oder falschem Passwort; 500 bei I/O, kaputtem Hash oder
-    /// Passwoertern ueber 72 Byte fuer einen EXISTIERENDEN Nutzer (Python prueft erst den Namen).
+    /// 401 bei einem Namen ausserhalb des Musters, unbekanntem Namen oder falschem Passwort; 500 bei
+    /// I/O, kaputtem Hash oder Passwoertern ueber 72 Byte fuer einen EXISTIERENDEN Nutzer (Python
+    /// prueft erst den Namen).
     pub fn login(&self, a: &Anmeldung) -> Result<String, AuthFehler> {
+        if !ist_gueltiger_username(&a.username) {
+            return Err(self.weise_ab(&a.username));
+        }
         let bestand = datei::lade(&self.nutzerdatei)?;
         let hash = bestand
             .get("users")
@@ -367,6 +390,82 @@ mod tests {
         assert_eq!(a.pruefe_token(&t).as_deref(), Some("julius"));
         assert_eq!(a.logout(&t).as_deref(), Some("julius"));
         assert!(a.pruefe_token(&t).is_none());
+    }
+
+    /// Namen, die `register` ablehnt: mit Leerzeichen, zu kurz, Ziffer vorn, abschliessender
+    /// Zeilenumbruch, Nicht-ASCII, zu lang, leer.
+    fn ausserhalb() -> Vec<String> {
+        ["a b", "ab", "1abc", "name\n", "ä_name", &"x".repeat(33), ""]
+            .map(String::from)
+            .to_vec()
+    }
+
+    #[test]
+    fn login_ausserhalb_des_musters_ist_401_ohne_die_datei_zu_lesen_und_protokolliert() {
+        let dir = tempfile::tempdir().unwrap();
+        let pfad = dir.path().join("users.json");
+        let audit = dir.path().join("audit.jsonl");
+        // Eine Nutzerdatei, die jeder Zugriff als 500 melden wuerde: wer sie liest, faellt auf.
+        std::fs::write(&pfad, "kein json").unwrap();
+        let a = Auth::neu("s".into(), pfad, Some(audit.clone()));
+        // Positivkontrolle: ein Name IM Muster erreicht die Datei und scheitert an ihr.
+        assert!(matches!(
+            a.login(&anmeldung("gueltig_er", "geheim123")),
+            Err(AuthFehler::NutzerdateiKaputt(_))
+        ));
+        for name in ausserhalb() {
+            assert!(
+                matches!(
+                    a.login(&anmeldung(&name, "geheim123")),
+                    Err(AuthFehler::Falsch)
+                ),
+                "{name:?}"
+            );
+        }
+        let zeilen = store::audit::lies(&audit).unwrap();
+        assert_eq!(
+            zeilen.len(),
+            ausserhalb().len(),
+            "ein Eintrag je Fehlschlag"
+        );
+        for (z, name) in zeilen.iter().zip(ausserhalb()) {
+            assert_eq!(z.action, store::audit::AuditAktion::LoginFehlgeschlagen);
+            assert_eq!(
+                z.user_id,
+                if name.is_empty() {
+                    "unbekannt"
+                } else {
+                    name.as_str()
+                }
+            );
+        }
+    }
+
+    #[test]
+    fn handarbeit_name_ausserhalb_des_musters_bekommt_kein_token() {
+        let dir = tempfile::tempdir().unwrap();
+        let pfad = dir.path().join("users.json");
+        let hash = bcrypt::hash("geheim123", 4).unwrap();
+        let eintrag =
+            serde_json::json!({"password_hash": hash, "created_at": "2026-10-03T00:00:00+00:00"});
+        let mut nutzer = serde_json::Map::new();
+        for name in ausserhalb().into_iter().chain(["gueltig_er".to_owned()]) {
+            nutzer.insert(name, eintrag.clone());
+        }
+        std::fs::write(&pfad, serde_json::json!({ "users": nutzer }).to_string()).unwrap();
+        let a = Auth::neu("s".into(), pfad, None);
+        // Positivkontrolle: derselbe Hash, ein Name im Muster: Token.
+        let t = a.login(&anmeldung("gueltig_er", "geheim123")).unwrap();
+        assert_eq!(a.pruefe_token(&t).as_deref(), Some("gueltig_er"));
+        for name in ausserhalb() {
+            assert!(
+                matches!(
+                    a.login(&anmeldung(&name, "geheim123")),
+                    Err(AuthFehler::Falsch)
+                ),
+                "{name:?} bekam ein Token"
+            );
+        }
     }
 
     #[test]

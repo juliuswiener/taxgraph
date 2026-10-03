@@ -3,17 +3,11 @@
 //! Requests durch `app()`.
 //!
 //! Die Faelle hier brauchen `GET /fall/{id}/deklaration`, `POST /fall/{id}/einreichen` und
-//! `POST /fall/{id}/kontoauszug`. `deklaration` ist seit 9c portiert (`api/src/deklaration.rs`),
-//! `kontoauszug` ebenfalls (`api/src/kontoauszug.rs`); `einreichen` ist heute ein 501-Stub
-//! (`routen/schreiben.rs:25`). Die Tests der Stubs sind deshalb `#[ignore]` und werden aus ZWEI
-//! Gruenden rot, in dieser Reihenfolge:
-//!
-//! 1. heute: der Handler antwortet 501 statt 200/409 — die Route ist nicht portiert
-//!    (entfaellt fuer `deklaration` und `kontoauszug`);
-//! 2. nach der Portierung: der Handler liest `pflichtfelder_luecken` bzw. den Sperrgrund nicht.
-//!
-//! Grund 2 ist der Defekt, den der Python-Test pinnt; Grund 1 ist die fehlende Naht davor. Beide
-//! stehen im Ignore-Text, damit das Rot nach der Portierung nicht als „schon erledigt" gelesen wird.
+//! `POST /fall/{id}/kontoauszug`. Alle drei sind portiert (`api/src/deklaration.rs`,
+//! `api/src/einreichen.rs`, `api/src/kontoauszug.rs`). Ein Test ist `#[ignore]`, solange der
+//! Handler den Defekt von Python teilt (`einreichen` liest `pflichtfelder_luecken` nicht). Das ist
+//! der Defekt, den der Python-Test pinnt; der Ignore-Text nennt ihn, damit das Rot nicht als „schon
+//! erledigt" gelesen wird. Die Tests von `deklaration` und `kontoauszug` laufen ohne `#[ignore]`.
 //!
 //! Rot sehen:  `cargo test -p api --test offene_defekte -- --ignored`
 #![allow(
@@ -215,13 +209,17 @@ async fn kontrolle_das_einreichen_erreicht_den_fall() {
         Some("{}"),
     )
     .await;
-    assert!(
-        status == 501 || status == 200 || status == 409 || status == 422,
+    // Der Fall ist ohne `bruttoarbeitslohn`: das Abgabe-Gate des XML-Writers nennt die Luecke
+    // (422 `xml_nicht_baubar`), noch vor jeder Frage an ERiC.
+    assert_eq!(
+        (status, json["grund"].as_str()),
+        (422, Some("xml_nicht_baubar")),
         "einreichen erreicht den Fall nicht: {status} {text}"
     );
-    if status == 501 {
-        assert_eq!(json["fehler"], "nicht_portiert");
-    }
+    assert!(
+        json["detail"].as_str().is_some_and(|d| d.contains("bruttoarbeitslohn")),
+        "{text}"
+    );
 }
 
 /// `test_pflichtfelder_luecken_ohne_leser.py::test_abgabegate_nennt_die_pflichtfeldluecke_selbst`:
@@ -232,7 +230,7 @@ async fn kontrolle_das_einreichen_erreicht_den_fall() {
 /// in Python nur `eingaben_konsistent` liest (`api.py:731`), laeuft der Fall bis `ERiC` durch und
 /// der Nutzer bekommt eine Fremdmeldung statt unseres Feldnamens.
 #[tokio::test]
-#[ignore = "POST /einreichen ist 501-Stub (api/src/routen/schreiben.rs:25); nach der Portierung fehlt der Leser von pflichtfelder_luecken (elster::Deklaration hat den Accessor, kein Handler ruft ihn). Erwartet 409 'deklaration_unvollstaendig' mit bruttoarbeitslohn. Python: test_pflichtfelder_luecken_ohne_leser.py::test_abgabegate_nennt_die_pflichtfeldluecke_selbst. Vault: tickets/zwei-vollstaendigkeitsbegriffe-einer-davon-gelesen.md. Rot sehen: --ignored"]
+#[ignore = "POST /einreichen (api/src/einreichen.rs) bildet Python ab und liest pflichtfelder_luecken nicht (elster::Deklaration hat den Accessor, kein Handler ruft ihn): heute 422 'xml_nicht_baubar' aus dem Abgabe-Gate des Writers, wie in Python. Erwartet 409 'deklaration_unvollstaendig' mit bruttoarbeitslohn. Python: test_pflichtfelder_luecken_ohne_leser.py::test_abgabegate_nennt_die_pflichtfeldluecke_selbst. Vault: tickets/zwei-vollstaendigkeitsbegriffe-einer-davon-gelesen.md. Rot sehen: --ignored"]
 async fn abgabegate_nennt_die_pflichtfeldluecke_selbst() {
     let d = dienst();
     let token = fall_anlegen(&d, "gate", "gesamt").await;
@@ -335,13 +333,11 @@ async fn kontoauszug_hochladen(d: &Dienst, fall_id: &str) -> (u16, Value, String
 async fn kontrolle_der_kontoauszug_erreicht_den_fall() {
     let d = dienst();
     let (status, json, text) = kontoauszug_hochladen(&d, "konto").await;
-    assert!(
-        status == 501 || status == 200,
+    assert_eq!(
+        status, 200,
         "kontoauszug erreicht den Fall nicht: {status} {text}"
     );
-    if status == 501 {
-        assert_eq!(json["fehler"], "nicht_portiert");
-    }
+    assert!(json["uebernommen"].is_number(), "{text}");
 }
 
 /// `test_kontoauszug_csv_unlesbarer_betrag.py::test_unlesbarer_betrag_steht_in_verworfen_mit_grund`:

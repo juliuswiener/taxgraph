@@ -156,8 +156,12 @@ def login(body: dict, audit_fn=None) -> tuple[int, dict]:
         raise AuthError(400, f"Pflichtfelder fehlen: {sorted(missing)}")
     username = body["username"]
     password = body["password"]
-    store = _lade_users()
-    user = store["users"].get(username)
+    # Ein Name, den register() nie vergibt (Muster) oder der kein Text ist, ist kein Nutzer: 401 wie bei
+    # einem falschen Passwort, bevor die Nutzerdatei angefasst wird (Vault
+    # decisions/login-prueft-das-namensmuster-vor-dem-nachschlagen). Sonst bekaeme ein von Hand
+    # eingetragener Name ein Token, das Rust an jeder Route abweist; eine Liste als Name wuerfe TypeError.
+    gueltig = isinstance(username, str) and _USER_RE.fullmatch(username)
+    user = _lade_users()["users"].get(username) if gueltig else None
     if not user or not _check_pw(password, user["password_hash"]):
         if audit_fn:
             audit_fn(username, "login_fehlgeschlagen", None, None)

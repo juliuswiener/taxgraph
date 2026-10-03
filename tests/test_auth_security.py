@@ -166,6 +166,78 @@ class TestPasswordPolicy:
         reload_store = AUTH._lade_users()
         assert "TestUser" in reload_store["users"]
 
+    # --- login prueft das Namensmuster (Vault decisions/login-prueft-das-namensmuster-vor-dem-nachschlagen)
+    #
+    # register() vergibt nur Namen nach _USER_RE. login() prueft das Muster nicht: stand in der
+    # Nutzerdatei ein anderer Name (nur durch Handarbeit moeglich), bekam er ein gueltiges Token. Rust
+    # weist ein solches Token danach an jeder Route mit 401 ab ("angemeldet, aber ueberall abgewiesen").
+    # Zugangsdaten stehen nur im tmp_path-Store dieser Tests; sie sind Testwerte, keine echten.
+
+    @staticmethod
+    def _nutzerdatei_mit(tmp_path, monkeypatch, *namen):
+        """Nutzerdatei in tmp_path, in der jeder Name (auch einer, den register() ablehnt) das
+        Passwort `password1` hat — so wie nach Handarbeit an der echten Datei."""
+        monkeypatch.setattr(AUTH, "USER_STORE", str(tmp_path / "users.json"))
+        store = AUTH._lade_users()
+        for name in namen:
+            store["users"][name] = {"password_hash": AUTH._hash_pw("password1"),
+                                    "created_at": datetime.now(timezone.utc).isoformat()}
+        AUTH._speichere_users(store)
+
+    @pytest.mark.parametrize("name", ["a b", "ab", "1abc", "name\n", "ä_name", "x" * 33])
+    def test_login_weist_namen_ausserhalb_des_musters_ab(self, tmp_path, monkeypatch, name):
+        """AK1: ein Name ausserhalb von _USER_RE bekommt kein Token, auch mit dem richtigen Passwort —
+        401 mit demselben Text wie bei einem falschen Passwort. Ein gueltiger Name in derselben Datei
+        loggt weiter ein (Positivkontrolle: ohne sie wuerde jede Ablehnung den Test erfuellen)."""
+        self._nutzerdatei_mit(tmp_path, monkeypatch, name, "gueltig_er")
+        status, body = AUTH.login({"username": "gueltig_er", "password": "password1"})
+        assert status == 200 and body["username"] == "gueltig_er"
+
+        with pytest.raises(AUTH.AuthError) as e:
+            AUTH.login({"username": name, "password": "password1"})
+        assert e.value.status == 401
+        assert str(e.value) == "username oder password falsch"
+
+    def test_login_ausserhalb_des_musters_liest_die_nutzerdatei_nicht_und_protokolliert(
+            self, tmp_path, monkeypatch):
+        """Die Pruefung steht VOR dem Nachschlagen: ein Name ausserhalb des Musters erreicht die Datei
+        nie (hier wirft jeder Zugriff darauf). Der Fehlschlag wird protokolliert wie bisher: ein
+        audit_fn-Aufruf `login_fehlgeschlagen` mit dem Namen."""
+        self._nutzerdatei_mit(tmp_path, monkeypatch, "a b")
+
+        def _nie(*a, **k):
+            raise AssertionError("die Nutzerdatei wurde gelesen")
+        monkeypatch.setattr(AUTH, "_lade_users", _nie)
+        aufrufe = []
+        with pytest.raises(AUTH.AuthError) as e:
+            AUTH.login({"username": "a b", "password": "password1"},
+                       audit_fn=lambda *args: aufrufe.append(args))
+        assert e.value.status == 401
+        assert aufrufe == [("a b", "login_fehlgeschlagen", None, None)]
+
+    @pytest.mark.parametrize("wert", [["x"], {"a": 1}, 5, None, True])
+    def test_login_username_kein_text_ist_401(self, tmp_path, monkeypatch, wert):
+        """AK2: ein username, der kein Text ist, ergibt 401 — keine Liste/kein Objekt als TypeError
+        (unhashable) und keine Zahl/None als Treffer. `True` ist kein Text, auch wenn ein Nutzer
+        namens "True" existiert."""
+        self._nutzerdatei_mit(tmp_path, monkeypatch, "True", "None")
+        aufrufe = []
+        with pytest.raises(AUTH.AuthError) as e:
+            AUTH.login({"username": wert, "password": "password1"},
+                       audit_fn=lambda *args: aufrufe.append(args))
+        assert e.value.status == 401
+        assert str(e.value) == "username oder password falsch"
+        assert aufrufe == [(wert, "login_fehlgeschlagen", None, None)]
+
+    @pytest.mark.parametrize("wert", [["x"], {"a": 1}])
+    def test_login_username_liste_ueber_http_ist_401_nicht_500(self, base, wert):
+        """AK2 am echten Server: vorher antwortete der Sammelfaenger in server.py mit 500
+        ("TypeError: unhashable type"). Mit dem echten audit_fn, damit auch das Protokoll eine Liste
+        als Nutzerkennung verkraftet."""
+        status, body = _req(base, "POST", "/auth/login", {"username": wert, "password": "password1"},
+                            erwarte=401)
+        assert body == {"fehler": "username oder password falsch"}, body
+
 # ------------------------------------------------------------------ P1.6 Audit Integration
 
 class TestAuditIntegration:

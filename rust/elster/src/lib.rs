@@ -43,8 +43,8 @@ pub use deklaration::{
     Felder, KindAnlage,
 };
 pub use eric::{
-    eric_log_pfad, find_eric_lib, gekappt_verdacht, klassifiziere_rc, nicht_geprueft, validiere,
-    EricFehler, EricKlasse, ERIC_VALIDIERE, RC_DATENARTVERSION_UNBEKANNT, RC_HERSTELLER_GESPERRT,
+    eric_log_pfad, find_eric_lib, gekappt_verdacht, klasse_name, klassifiziere_rc, nicht_geprueft,
+    unerwarteter_rc_hinweis, validiere, EricFehler, EricKlasse, ERIC_VALIDIERE, RC_DATENARTVERSION_UNBEKANNT, RC_HERSTELLER_GESPERRT,
     RC_IO_SCHEMA_VALIDIERUNGSFEHLER, RC_IO_UNERWARTETE_ELEMENTE, RC_OK, RC_PLAUSIBILITAET,
     VALIDIERE_MELDUNGEN_MAX,
 };

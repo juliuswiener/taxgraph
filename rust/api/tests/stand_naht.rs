@@ -199,15 +199,12 @@ async fn kontrolle_der_fall_wird_erreicht() {
         None,
     )
     .await;
-    // 501 heute, 200 nach der Naht — beides beweist, dass die Route den Fall erreicht.
-    // 404/401/403 taeten es nicht.
-    assert!(
-        status == 501 || status == 200,
+    // 200 beweist, dass die Route den Fall erreicht; 404/401/403 taeten es nicht.
+    assert_eq!(
+        status, 200,
         "stand erreicht den Fall nicht: {status} {text}"
     );
-    if status == 501 {
-        assert_eq!(json["fehler"], "nicht_portiert");
-    }
+    assert!(json.is_object(), "{text}");
 }
 
 /// DIE NAHT: `stand` rechnet, statt 501 zu liefern (vorher `#[ignore]`, rot mit `--ignored`).

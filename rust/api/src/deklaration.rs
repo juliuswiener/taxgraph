@@ -19,7 +19,7 @@ use crate::zustand::Zustand;
 /// ponytail: bei `Wert` und `SnapshotObjekt`/`KeinFeldGebunden` ist nur die Klasse das
 /// Paritaetskriterium (`elster_paritaet`); der Text kann von Pythons abweichen. Alle drei brauchen
 /// einen Store-Wert oder eine Eingabe, die `POST /event` und die Bindung nicht durchlassen.
-fn deklarations_fehler(e: &DeklarationsFehler) -> ApiFehler {
+pub(crate) fn deklarations_fehler(e: &DeklarationsFehler) -> ApiFehler {
     let text = match e {
         DeklarationsFehler::Jahr(f) | DeklarationsFehler::Wert { fehler: f, .. } => {
             f.nachricht.clone()

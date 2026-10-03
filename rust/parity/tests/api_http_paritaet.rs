@@ -48,6 +48,9 @@ use serde_json::{json, Map, Value};
 // Stub fuer Karten-Dienst und LLM samt Szenarien fuer `chat` und `entfernung` (Folge 6).
 #[path = "extern_stub/mod.rs"]
 mod extern_stub;
+// Attrappe von `libericapi.so` und die Szenarien fuer `einreichen` (Folge 6, Stufe 2).
+#[path = "eric_attrappe/mod.rs"]
+mod eric_attrappe;
 
 const GEHEIMNIS: &str = "paritaet-geheimnis-api-9a";
 
@@ -57,6 +60,7 @@ const FESTE_ZEIT: &str = "2026-01-02T03:04:05.123456+00:00";
 /// Jede Normalisierung, vollstaendig. Was hier nicht steht, wird roh verglichen.
 const NORMALISIERUNGEN: &[(&str, &str)] = &[
     ("login.token", "JWT traegt iat und zufaelliges jti — je Anmeldung neu; Laenge und Nutzer bleiben gleich (Content-Length wird roh verglichen)"),
+    ("eric.log-pfad", "Verzeichnisname von eric.log ist zufaellig, nur die 8 Zeichen nach `eric_checkest_` werden ersetzt (Laenge und Content-Length bleiben gleich)"),
     ("audit.ts", "Zeitstempel der Anfrage"),
     ("audit.null", "Python schreibt fall_id/detail als null, Rust laesst fehlende Felder weg"),
     ("flow.ts", "Zeitstempel der Zeile; der Rest der Zeile wird als Text verglichen (Form des `ts` prueft Suite 18, `flow_paritaet`)"),
@@ -67,9 +71,7 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 
 /// Routen, fuer die Rust heute `501 nicht_portiert` antwortet (AK3 in 9c). Beim Port fliegt die
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
-const NICHT_PORTIERT: &[&str] = &[
-    "POST /fall/{id}/einreichen",
-];
+const NICHT_PORTIERT: &[&str] = &[];
 
 /// Stufe 1–3 (AK1 in 9c): Untergrenze der Rumpf-Erreichungen je Route im Test `generatoren`, gleich
 /// der Zahl seiner Faelle, die den Rumpf erreichen sollen; faellt einer aus, wird der Test rot. Nur
@@ -205,6 +207,11 @@ fn starte_mit(
         .env("LLM_API_BASE", "")
         .env("LLM_MODEL", "")
         .env("ORS_API_KEY", "")
+        // Nie die echte ERiC-Bibliothek mit einer echten Hersteller-ID: ohne ID baut `einreichen` kein
+        // XML und ruft ERiC nie. Eine gesetzte, leere Variable gewinnt gegen `.env` (beide Server
+        // setzen nur fehlende Schluessel). Die Szenarien mit Attrappe ueberschreiben beides in `extra`.
+        .env("ELSTER_HERSTELLER_ID", "")
+        .env("ERIC_DIR", "/nicht/vorhanden")
         .env_remove("XDG_DATA_HOME")
         .stdout(Stdio::piped())
         .stderr(Stdio::null());
@@ -461,6 +468,18 @@ fn normiere_antwort(v: &mut Value, norm: &mut BTreeMap<&'static str, usize>) {
     if let Some(t) = v.get_mut("token").filter(|t| t.is_string()) {
         *t = json!("<TOKEN>");
         *norm.entry("login.token").or_default() += 1;
+    }
+    // `detail` nennt bei leerem ERiC-Puffer den Pfad von eric.log; sein Verzeichnisname ist zufaellig
+    // (`eric_checkest_` und 8 Zeichen, wie `tempfile.mkdtemp`). Die Laenge ist gleich (Content-Length).
+    if let Some(Value::String(t)) = v.get_mut("detail") {
+        const MARKE: &str = "eric_checkest_";
+        if let Some(i) = t.find(MARKE) {
+            let ende = (i + MARKE.len() + 8).min(t.len());
+            if t.is_char_boundary(ende) {
+                t.replace_range(i + MARKE.len()..ende, "<ID>");
+                *norm.entry("eric.log-pfad").or_default() += 1;
+            }
+        }
     }
 }
 
