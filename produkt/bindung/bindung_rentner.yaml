@@ -425,7 +425,7 @@ bindungen:
     quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: teilung_bei_mehreren_pflegepersonen}
     typ: int
     einheit: null
-    bereich: {min: 0, max: 20, grund: "Anzahl weiterer Pflegepersonen; 0 ist der Normalfall und laut ERiC ausdrücklich anzugeben."}
+    bereich: {min: 0, max: 9, grund: "Anzahl weiterer Pflegepersonen; 0 ist der Normalfall und laut ERiC ausdrücklich anzugeben. Höchstens 9: das Schema erlaubt ein Zeichen (E10-2025.xsd, Muster .{0,1}; die Gruppe führt höchstens 9 weitere Personen)."}
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Wie viele weitere Personen pflegen diese Person außer dir noch unentgeltlich? (0, wenn du allein pflegst)"
