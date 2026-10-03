@@ -1976,6 +1976,45 @@ fn gezielte_faelle() {
             ],
         ),
     ];
+    // GWG ohne Sofortabzug (main-Auftrag h8-gwg, 2026-10-03): jede Konstellation, die vorher still 0 abzog und
+    // `bestaetigt` blieb, ist offen. Zwei neue Gruende, Reihenfolge je Instanz wie in `_an_gesamt_sperrgrund`:
+    // nicht selbstaendig nutzbar -> "netto: nein" -> ueber 800 EUR -> unbeantwortet -> Verzeichnis (ueber 250 EUR).
+    let gwg_fall = |betrag: i64, s: Option<bool>, n: Option<bool>, v: Option<bool>| {
+        let mut f = euer_leer.clone();
+        f.push(("gwg_anschaffungskosten_netto", json!(betrag), true));
+        for (id, w) in [
+            ("gwg_bewegliches_selbstaendig_nutzbar", s),
+            ("gwg_netto_ohne_vorsteuer", n),
+            ("gwg_verzeichnis_ab_250", v),
+        ] {
+            if let Some(w) = w {
+                f.push((id, json!(w), true));
+            }
+        }
+        f
+    };
+    for (erwartet, betrag, s, n, v) in [
+        ("gwg_mehrwertsteuer_offen", 79_000, Some(true), Some(false), Some(true)),
+        ("gwg_mehrwertsteuer_offen", 85_000, Some(true), Some(false), Some(true)),
+        ("gwg_abschreibung_offen", 50_000, Some(true), Some(true), Some(false)),
+        ("gwg_abschreibung_offen", 50_000, Some(false), Some(true), Some(true)),
+        // nicht nutzbar UND netto=nein: die Mehrwertsteuer ist egal, kein GWG (Reihenfolge)
+        ("gwg_abschreibung_offen", 50_000, Some(false), Some(false), Some(true)),
+        ("gwg_abschreibung_offen", 100_000, Some(true), Some(true), Some(true)),
+        ("gwg_abschreibung_offen", 100_000, None, None, None),
+        ("gwg_abschreibung_offen", 80_001, Some(true), Some(true), Some(true)),
+        ("gwg_abschreibung_offen", 25_001, Some(true), Some(true), Some(false)),
+        // Grenzen und Ausweg: kein Fehlalarm
+        ("(keine Sperre)", 80_000, Some(true), Some(true), Some(true)),
+        ("(keine Sperre)", 25_000, Some(true), Some(true), Some(false)),
+        ("(keine Sperre)", 0, Some(true), Some(false), Some(true)),
+    ] {
+        faelle.push((erwartet, "gesamt", gwg_fall(betrag, s, n, v)));
+    }
+    // Ein VORLAEUFIGES "nein" ist keine Antwort: gwg_tatbestand_offen, nicht gwg_mehrwertsteuer_offen.
+    let mut gwg_vorlaeufig = gwg_fall(50_000, Some(true), None, Some(true));
+    gwg_vorlaeufig.push(("gwg_netto_ohne_vorsteuer", json!(false), false));
+    faelle.push(("gwg_tatbestand_offen", "gesamt", gwg_vorlaeufig));
     // Kontrollfall: dieselben Angaben mit beantworteten Fragen sperren NICHT (kein "immer gleicher Grund").
     faelle.push((
         "(keine Sperre)",

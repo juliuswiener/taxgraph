@@ -5,7 +5,7 @@
 //! `rust/fixtures/sperrgrund_klartext.json`); ein Rust-Test vergleicht beide (unten).
 //!
 //! `grund` in `api.py: ergebnis()` ist entweder `None` (kein Sperrgrund), das Literal
-//! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 54 Schluessel unten. Die
+//! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 56 Schluessel unten. Die
 //! dritte Moeglichkeit bildet [`Sperrgrund::Bestaetigt`] ab; sie hat bewusst KEINEN
 //! eigenen Klartext (die Python-Quelle hat auch keinen fuer sie).
 use std::fmt;
@@ -14,7 +14,7 @@ use std::str::FromStr;
 /// Text fuer einen unbekannten/nicht gelisteten Sperrgrund-String (`UNBEKANNTER_SPERRGRUND`).
 pub const UNBEKANNTER_SPERRGRUND: &str = "Die Berechnung kann an dieser Stelle nicht fortgesetzt werden, und woran genau es liegt, lässt sich hier nicht in Worte fassen. Das liegt an der Software, nicht an deinen Angaben. Bitte melde diesen Fall — damit lässt sich nachvollziehen, was gefehlt hat.";
 
-/// Ein Sperrgrund-String, der zu keinem der 54 bekannten Schluessel und nicht zu
+/// Ein Sperrgrund-String, der zu keinem der 56 bekannten Schluessel und nicht zu
 /// `"bestaetigt"` passt.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("unbekannter Sperrgrund {0:?}")]
@@ -44,6 +44,8 @@ pub enum Sperrgrund {
     GewinnAngabenOffen,
     GewinnQuelleOffen,
     GewstHebesatzOffen,
+    GwgAbschreibungOffen,
+    GwgMehrwertsteuerOffen,
     GwgTatbestandOffen,
     HandwerkerFoerderungOffen,
     HaushaltEuEwrOffen,
@@ -110,6 +112,8 @@ impl Sperrgrund {
             Self::GewinnAngabenOffen => "gewinn_angaben_offen",
             Self::GewinnQuelleOffen => "gewinn_quelle_offen",
             Self::GewstHebesatzOffen => "gewst_hebesatz_offen",
+            Self::GwgAbschreibungOffen => "gwg_abschreibung_offen",
+            Self::GwgMehrwertsteuerOffen => "gwg_mehrwertsteuer_offen",
             Self::GwgTatbestandOffen => "gwg_tatbestand_offen",
             Self::HandwerkerFoerderungOffen => "handwerker_foerderung_offen",
             Self::HaushaltEuEwrOffen => "haushalt_eu_ewr_offen",
@@ -177,6 +181,8 @@ impl Sperrgrund {
             Self::GewinnAngabenOffen => Some("Du hast angegeben, dass du Gewinneinkünfte hast. Es fehlen noch Angaben zu deiner Einnahmen-Überschuss-Rechnung: Betriebseinnahmen, sonstige Betriebsausgaben oder Abschreibungen. Trag bei jeder dieser Angaben einen Betrag ein, auch wenn er 0 € ist. Oder gib deinen Gewinn direkt als Gesamtbetrag an."),
             Self::GewinnQuelleOffen => Some("Deinen Gewinn hast du auf zwei Wegen angegeben: einmal als fertigen Betrag und einmal aufgeteilt in Betriebseinnahmen, Betriebsausgaben und Abschreibungen. Welcher der beiden gilt, kann die Software nicht raten. Bitte lass einen der beiden Wege stehen."),
             Self::GewstHebesatzOffen => Some("Zu deinem Gewerbebetrieb fehlt der Hebesatz deiner Gemeinde, oder er steht auf 0 oder darunter. Ein Hebesatz von 0 oder darunter ist nicht möglich, jede Gemeinde muss einen Mindestsatz erheben. Ohne ihn lässt sich nicht berechnen, wie viel Gewerbesteuer auf deine Einkommensteuer angerechnet wird. Den Hebesatz findest du auf deinem Gewerbesteuerbescheid oder auf der Internetseite deiner Gemeinde."),
+            Self::GwgAbschreibungOffen => Some("Ein Gerät, das du als Sofortabzug erfasst hast, kommt dafür nicht in Frage: Es kostet mehr als 800 Euro ohne Mehrwertsteuer, du kannst es nicht allein benutzen, oder du hast es ab 250 Euro weder in einer Liste noch in deiner Buchführung festgehalten. Dann verteilt sich der Abzug über mehrere Jahre (Abschreibung). Diese Abschreibung rechnet die Software hier noch nicht, und das Gerät still wegzulassen wäre falsch. Das Ergebnis bleibt deshalb offen. Trage das Gerät bitte nicht hier ein, sondern bei der Abschreibung."),
+            Self::GwgMehrwertsteuerOffen => Some("Bei einem als Sofortabzug erfassten Gerät hast du angegeben, dass der Preis die Mehrwertsteuer enthält. Was du dann absetzen darfst, hängt davon ab, ob du die Mehrwertsteuer vom Finanzamt zurückbekommst: als Kleinunternehmer zählt der Preis mit Mehrwertsteuer, sonst der Preis ohne. Diese Unterscheidung kann die Software noch nicht treffen. Einen Abzug von null Euro will sie dir nicht zeigen, deshalb bleibt das Ergebnis offen. Bekommst du die Mehrwertsteuer zurück, gib den Preis ohne sie an und beantworte die Frage nach dem Preis ohne Mehrwertsteuer mit Ja."),
             Self::GwgTatbestandOffen => Some("Zu einem als Sofortabzug erfassten Gerät fehlt noch eine Antwort zu einer der Voraussetzungen — ob es allein benutzbar ist, ob der Betrag den Vorsteuerabzug schon abgezogen hat, oder (ab 250 Euro) ob du dazu eine Liste geführt hast oder es aus deiner Buchführung ersichtlich ist. Bitte beantworte die offene Frage zu diesem Gerät."),
             Self::HandwerkerFoerderungOffen => Some("Zu deinen Handwerkerkosten fehlt noch die Antwort, ob du dafür öffentliche Fördermittel bekommen hast — etwa einen zinsverbilligten Kredit oder einen steuerfreien Zuschuss. Für geförderte Maßnahmen gibt es die Steuerermäßigung nicht. Bitte beantworte diese Frage, auch wenn du keine Förderung bekommen hast."),
             Self::HaushaltEuEwrOffen => Some("Für deine Kosten für Handwerker, Haushaltshilfe oder haushaltsnahe Dienstleistungen fehlt noch die Antwort, ob der Haushalt in der Europäischen Union oder im Europäischen Wirtschaftsraum liegt. Nur dann gibt es die Steuerermäßigung. Bitte beantworte diese Frage — bei einem Haushalt in Deutschland ist sie automatisch mit Ja beantwortet."),
@@ -258,6 +264,8 @@ impl FromStr for Sperrgrund {
             "gewinn_angaben_offen" => Ok(Self::GewinnAngabenOffen),
             "gewinn_quelle_offen" => Ok(Self::GewinnQuelleOffen),
             "gewst_hebesatz_offen" => Ok(Self::GewstHebesatzOffen),
+            "gwg_abschreibung_offen" => Ok(Self::GwgAbschreibungOffen),
+            "gwg_mehrwertsteuer_offen" => Ok(Self::GwgMehrwertsteuerOffen),
             "gwg_tatbestand_offen" => Ok(Self::GwgTatbestandOffen),
             "handwerker_foerderung_offen" => Ok(Self::HandwerkerFoerderungOffen),
             "haushalt_eu_ewr_offen" => Ok(Self::HaushaltEuEwrOffen),
@@ -318,7 +326,7 @@ mod tests {
         let klartext = fixture["klartext"].as_object().unwrap();
         assert_eq!(
             klartext.len(),
-            54,
+            56,
             "Fixture-Groesse hat sich veraendert -- Enum nachziehen"
         );
         for (schluessel, erwartet) in klartext {
