@@ -349,3 +349,228 @@ def test_doppel_klick_schuetzt_gegen_doppel_submit(base, playwright_context):
         assert not disabled_danach, "Knopf muss nach der Antwort wieder klickbar sein"
     finally:
         page.close()
+
+
+# ===================================================================================================
+# Je Ursache ein fester Text (Vault die-einreichen-anzeige-nennt-je-ursache-einen-festen-text)
+#
+# Vorher las die Oberflaeche vom Server nur `grund` und `unvollstaendig`: acht verschiedene Ursachen
+# von "nicht geprueft" ergaben EINEN Anzeigetext (Probe 2026-10-03: 1 von 8). Der Server schickte
+# `rc`, `klasse`, `detail` und `ericantwort` laengst mit. Die Ueberschrift bleibt "Nicht geprüft.";
+# der Satz darunter kommt aus einer Tabelle in app.js. Dieser Wortlaut ist von Julius am 2026-10-03
+# unveraendert uebernommen worden und steht hier mit Absicht als Literal: eine stille Aenderung
+# der Tabelle faellt damit auf.
+# ===================================================================================================
+
+STANDARD_SATZ = "Aus der Prüfung liegt kein Ergebnis vor. Der Fall gilt als offen."
+SATZ = {
+    "scheibe_nicht_abgabefaehig": (
+        "Dieser Fall ist eine Teilrechnung und kann keine Erklärung tragen. Lege ihn mit der "
+        "vollständigen Berechnung an, wenn du eine Erklärung brauchst."),
+    "xml_nicht_baubar": (
+        "Aus deinen Angaben lässt sich noch keine Erklärung erzeugen. Der Fall gilt als offen."),
+    "eric_nicht_verfuegbar": (
+        "Das Prüfprogramm der Finanzverwaltung ist auf diesem Rechner nicht verfügbar."),
+    "kein_pruefmodul_fuer_vz": "Für das Veranlagungsjahr 2025 gibt es im Prüfprogramm kein Prüfmodul.",
+    "hersteller_id_gesperrt": (
+        "Die Hersteller-Kennung dieses Programms ist beim Prüfprogramm gesperrt. Das liegt nicht "
+        "an deinen Angaben."),
+    "io_reader_unerwartete_elemente": (
+        "Das Prüfprogramm hat die erzeugte Erklärung nicht gelesen: Sie enthält Elemente, die es "
+        "nicht erwartet."),
+}
+MARKE = "GEHEIM-PFAD-eric.log"
+
+
+def _absaetze(page) -> list[str]:
+    """Klick, warten bis das Ergebnis steht, dann der Text je Absatz von #einreichen-status
+    (textContent verklebt die Absaetze ohne Trenner, das taugt nicht zum Vergleichen)."""
+    page.click("#einreichen-btn")
+    page.wait_for_function(
+        "document.getElementById('einreichen-status').textContent.trim().length > 0", timeout=5000)
+    return page.evaluate(
+        "Array.from(document.getElementById('einreichen-status').children).map(e => e.textContent)")
+
+
+def _gespielte_antwort(page, fall_id: str, status: int, body: dict) -> list[str]:
+    """Der Server antwortet (gespielt) mit `body`: prueft die Oberflaeche allein, unabhaengig davon,
+    ob der echte Server diese Form heute erzeugt. Mehrfach auf derselben Seite aufrufbar."""
+    muster = f"**/fall/{fall_id}/einreichen"
+    page.route(muster, lambda route: route.fulfill(
+        status=status, content_type="application/json", body=json.dumps(body)))
+    try:
+        return _absaetze(page)
+    finally:
+        page.unroute(muster)
+
+
+def _echte_antwort(base, playwright_context, monkeypatch, fall_id: str, *, rc: int | None = None,
+                   antwort: str = "", ursache: str | None = None) -> list[str]:
+    """Echter Server, echtes Chromium; nur die Pruefung (ERiC) und der XML-Bau werden ersetzt.
+    `ursache`: "eric_fehlt" (503), "xml" (422) oder None (dann zaehlt `rc`)."""
+    import elster_xml as EX
+    CE = _patch_bis_checkest(monkeypatch, rc=rc if rc is not None else 0, antwort=antwort)
+    if ursache == "eric_fehlt":
+        def _boom(*a, **k):
+            raise RuntimeError("libericapi.so nicht gefunden")
+        monkeypatch.setattr(CE, "validate", _boom)
+    elif ursache == "xml":
+        def _kaputt(*a, **k):
+            raise EX.XmlFehler("Pflichtfeld fehlt")
+        monkeypatch.setattr(EX, "erzeuge_xml", _kaputt)
+    page = playwright_context.new_page()
+    try:
+        _fall_und_fertig_screen(base, page, fall_id)
+        return _absaetze(page)
+    finally:
+        page.close()
+
+
+def _teilscheibe_antwort(base, playwright_context) -> list[str]:
+    """409 scheibe_nicht_abgabefaehig: Fall auf der Scheibe an_gesamt. Die Probe erzwang den
+    Schirm #fertig; ob ein Nutzer ihn im normalen Ablauf mit so einem Fall erreicht, ist offen."""
+    s, r = _req(base, "POST", "/fall", {"scheibe": "an_gesamt", "veranlagungszeitraum": 2025,
+                                        "fall_id": "teilscheibe"})
+    assert s == 201, r
+    page = playwright_context.new_page()
+    try:
+        page.goto(base)
+        page.wait_for_load_state("networkidle")
+        page.evaluate("FALL = 'teilscheibe';")
+        for i, h in (("start", "true"), ("flow", "false"), ("fertig", "false")):
+            page.evaluate(f"document.getElementById('{i}').hidden = {h};")
+        return _absaetze(page)
+    finally:
+        page.close()
+
+
+def _pruefe_nicht_geprueft(name: str, absaetze: list[str], satz: str, pruefcode: int | None) -> None:
+    assert absaetze[:2] == ["Nicht geprüft.", satz], f"{name}: {absaetze}"
+    erwartet = [f"Prüfcode: {pruefcode}"] if pruefcode is not None else []
+    assert absaetze[2:] == erwartet, f"{name}: Prüfcode-Zeile falsch: {absaetze}"
+    kl = " ".join(absaetze).lower()
+    # Die zwei Gegenregeln des Moduls: "nicht geprüft" klingt weder nach Urteil noch nach Freigabe.
+    assert "beanstandet" not in kl and "ordnung" not in kl, f"{name}: {absaetze}"
+
+
+def test_je_ursache_ein_fester_text_und_alle_verschieden(base, playwright_context, monkeypatch):
+    """AK1: sieben Ursachen von "nicht geprüft", ein Klick je Ursache, echter Server. Der Satz ist
+    der Tabellentext, und kein Fall zeigt dasselbe wie ein anderer. Wuerde die Tabelle fehlen,
+    zeigte jeder Fall den Rueckfallsatz (Probe vorher: 1 von 8)."""
+    faelle = {
+        "hersteller_id_gesperrt": (dict(rc=610301202), SATZ["hersteller_id_gesperrt"], 610301202),
+        "kein_pruefmodul_fuer_vz": (dict(rc=610001042), SATZ["kein_pruefmodul_fuer_vz"], 610001042),
+        "io_reader_unerwartete_elemente": (dict(rc=610301106),
+                                           SATZ["io_reader_unerwartete_elemente"], 610301106),
+        "io_gate_nicht_geprueft": (dict(rc=610301200), STANDARD_SATZ, 610301200),
+        "sonstig": (dict(rc=610301006), STANDARD_SATZ, 610301006),
+        "xml_nicht_baubar": (dict(ursache="xml"), SATZ["xml_nicht_baubar"], None),
+        "eric_nicht_verfuegbar": (dict(ursache="eric_fehlt"), SATZ["eric_nicht_verfuegbar"], None),
+    }
+    gesehen = {}
+    for i, (name, (args, satz, code)) in enumerate(faelle.items()):
+        absaetze = _echte_antwort(base, playwright_context, monkeypatch, f"ursache-{i}", **args)
+        _pruefe_nicht_geprueft(name, absaetze, satz, code)
+        gesehen[name] = tuple(absaetze)
+    teilscheibe = _teilscheibe_antwort(base, playwright_context)
+    _pruefe_nicht_geprueft("scheibe_nicht_abgabefaehig", teilscheibe,
+                           SATZ["scheibe_nicht_abgabefaehig"], None)
+    gesehen["scheibe_nicht_abgabefaehig"] = tuple(teilscheibe)
+    assert len(set(gesehen.values())) == len(gesehen), (
+        f"verschiedene Ursachen, gleiche Anzeige: {gesehen}")
+
+
+def test_unbekannter_schluessel_zeigt_den_rueckfallsatz(base, playwright_context):
+    """AK1: ein `grund` oder eine `klasse`, die die Tabelle nicht kennt, zeigt den heutigen Satz und
+    bleibt "Nicht geprüft." (nie "in Ordnung"). Auch Namen, die ein JS-Objekt von Haus aus hat
+    ("constructor", "__proto__"), duerfen nicht als Tabellentreffer durchgehen."""
+    page = playwright_context.new_page()
+    try:
+        _fall_und_fertig_screen(base, page, "unbekannt")
+        basis = {"fall_id": "unbekannt", "eingereicht": False}
+        for grund in ("gibt_es_nicht", "constructor", "__proto__", "toString"):
+            a = _gespielte_antwort(page, "unbekannt", 422, {**basis, "grund": grund})
+            assert a == ["Nicht geprüft.", STANDARD_SATZ], f"grund={grund!r}: {a}"
+        for klasse in ("gibt_es_nicht", "constructor", "__proto__"):
+            a = _gespielte_antwort(page, "unbekannt", 422, {
+                **basis, "grund": "rc_kein_plausibilitaetsverdikt", "klasse": klasse, "rc": 777777})
+            assert a == ["Nicht geprüft.", STANDARD_SATZ, "Prüfcode: 777777"], (
+                f"klasse={klasse!r}: {a}")
+        # Kein `grund` und kein 200: auch das ist nicht "in Ordnung".
+        a = _gespielte_antwort(page, "unbekannt", 500, {"fehler": "irgendwas"})
+        assert a == ["Nicht geprüft.", STANDARD_SATZ], a
+    finally:
+        page.close()
+
+
+@pytest.mark.parametrize("feld", ["detail", "ericantwort", "hinweis"])
+def test_roh_felder_des_servers_stehen_nie_auf_dem_schirm(base, playwright_context, feld):
+    """AK2: `detail` kann den Pfad von eric.log samt Log-Auszug tragen (checkest_gate), bei
+    xml_nicht_baubar ist es `str(e)` einer Ausnahme, die `hinweis`-Saetze sind in "Sie"-Form. Der
+    Test legt in EIN Feld eine Marke und verlangt, dass sie in keiner Antwortform erscheint.
+    Zugleich muss die Antwort wirklich angezeigt worden sein (sonst waere der Test leer)."""
+    formen = {
+        "rc_kein_plausibilitaetsverdikt": {"klasse": "sonstig", "rc": 610301006},
+        "kein_pruefmodul_fuer_vz": {"klasse": "datenartversion_unbekannt", "rc": 610001042, "vz": 2025},
+        "xml_nicht_baubar": {},
+        "eric_nicht_verfuegbar": {},
+        "scheibe_nicht_abgabefaehig": {"scheibe": "an_gesamt"},
+        "plausibilitaet_verletzt": {"klasse": "plausibilitaet_fehler", "rc": 610001002},
+    }
+    page = playwright_context.new_page()
+    try:
+        _fall_und_fertig_screen(base, page, "roh")
+        for grund, rest in formen.items():
+            a = _gespielte_antwort(page, "roh", 422, {
+                "fall_id": "roh", "eingereicht": False, "grund": grund, **rest, feld: MARKE})
+            text = " ".join(a)
+            assert a and a[0] in ("Nicht geprüft.", "Geprüft und beanstandet."), (
+                f"{grund}: keine Anzeige des Ergebnisses: {a}")
+            assert MARKE not in text and "eric.log" not in text, (
+                f"{grund}: Feld {feld!r} steht roh auf dem Schirm: {a}")
+    finally:
+        page.close()
+
+
+def test_pruefcode_steht_in_einer_eigenen_zeile(base, playwright_context, monkeypatch):
+    """AK3: bei jedem Fall mit `rc` steht "Prüfcode: <rc>" in einem eigenen Absatz unter dem Satz.
+    Zu 610301200 (Sammelcode, mindestens zwei unverwandte Ursachen) und zu jedem Code der Klasse
+    `sonstig` (hier 610301006) steht KEIN Ursachentext, nur der Rueckfallsatz plus Prüfcode — die
+    Regel vom 2026-08-30 (Kommentar ueber einreichenPruefen). Zu 610301106 (Klasse
+    io_reader_unerwartete_elemente) gibt es einen Text. Ohne rc (503) gibt es keine Zeile."""
+    for i, (rc, satz) in enumerate([(610301200, STANDARD_SATZ), (610301106,
+                                    SATZ["io_reader_unerwartete_elemente"]),
+                                    (610301006, STANDARD_SATZ)]):
+        a = _echte_antwort(base, playwright_context, monkeypatch, f"code-{i}", rc=rc)
+        assert a == ["Nicht geprüft.", satz, f"Prüfcode: {rc}"], f"rc={rc}: {a}"
+    a = _echte_antwort(base, playwright_context, monkeypatch, "code-503", ursache="eric_fehlt")
+    assert a == ["Nicht geprüft.", SATZ["eric_nicht_verfuegbar"]], a
+
+
+def test_sperrgrund_zeigt_den_klartext_des_servers(base, playwright_context):
+    """AK4: das 409 mit Sperrgrund bringt `klartext` mit, die Oberflaeche zeigt ihn statt des
+    Sammelsatzes "... weil eine erforderliche Angabe fehlt". Echter Fall, echter Server, kein
+    Ersatz der Pruefung (sie wird nie erreicht): Scheibe gesamt, VZ 2025, ein bestaetigtes Event
+    `dhf_unterkunftskosten_monat` ergibt `dhf_tatbestand_offen`."""
+    s, r = _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
+                                        "fall_id": "sperre"})
+    assert s == 201, r
+    s, r = _req(base, "POST", "/fall/sperre/event", {
+        "feld_id": "dhf_unterkunftskosten_monat", "wert": 140000, "zustand": "bestaetigt",
+        "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "schreiber": "ui:laie",
+        "signal": {"signal_1": {"typ": "laie_eingabe"}, "signal_2": "laie_bestaetigt"}})
+    assert s == 201, r
+    page = playwright_context.new_page()
+    try:
+        page.goto(base)
+        page.wait_for_load_state("networkidle")
+        page.evaluate("FALL = 'sperre';")
+        for i, h in (("start", "true"), ("flow", "false"), ("fertig", "false")):
+            page.evaluate(f"document.getElementById('{i}').hidden = {h};")
+        a = _absaetze(page)
+    finally:
+        page.close()
+    klartext = API.sperrgrund_klartext("dhf_tatbestand_offen")
+    _pruefe_nicht_geprueft("dhf_tatbestand_offen", a, klartext, None)
+    assert "erforderliche Angabe fehlt" not in " ".join(a), f"Sammelsatz steht noch da: {a}"

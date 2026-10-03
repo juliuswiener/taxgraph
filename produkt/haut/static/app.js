@@ -2512,6 +2512,40 @@ async function zeigePreflight() {
   pf.hidden = false;
 }
 
+// --- Absendeknopf, Anzeigetexte: je Ursache von „Nicht geprüft" ein FESTER Satz unter der Überschrift
+// (Vault die-einreichen-anzeige-nennt-je-ursache-einen-festen-text; Wortlaut von Julius am 2026-10-03
+// unverändert übernommen). Fest statt durchgereicht: `detail` und `ericantwort` können den Pfad von
+// eric.log samt Log-Auszug oder `str(e)` einer Ausnahme tragen, die `hinweis`-Sätze des Servers stehen in
+// „Sie"-Form — die Oberfläche zeigt davon NIE etwas. Schlüssel ist `grund`; bei
+// rc_kein_plausibilitaetsverdikt zusätzlich `klasse`. Eine Map statt eines Objekts: ein Schlüssel wie
+// „constructor" vom Server träfe sonst eine Eigenschaft von Object. Unbekannter Schlüssel, 610301200 und
+// jede Klasse `sonstig`: der Standardsatz (plus Prüfcode, s. einreichenPruefen) — aus 610301200 folgt keine
+// Ursache. Die Tabelle ist keine Positivliste für „in Ordnung"; sie ist nur Wortwahl unter einer
+// Überschrift, die schon feststeht.
+const EINREICHEN_STANDARD_SATZ = "Aus der Prüfung liegt kein Ergebnis vor. Der Fall gilt als offen.";
+const EINREICHEN_SATZ_GRUND = new Map([
+  ["scheibe_nicht_abgabefaehig", "Dieser Fall ist eine Teilrechnung und kann keine Erklärung tragen. " +
+    "Lege ihn mit der vollständigen Berechnung an, wenn du eine Erklärung brauchst."],
+  ["xml_nicht_baubar", "Aus deinen Angaben lässt sich noch keine Erklärung erzeugen. Der Fall gilt als offen."],
+  ["eric_nicht_verfuegbar", "Das Prüfprogramm der Finanzverwaltung ist auf diesem Rechner nicht verfügbar."],
+  ["kein_pruefmodul_fuer_vz", "Für das Veranlagungsjahr {vz} gibt es im Prüfprogramm kein Prüfmodul."],
+]);
+const EINREICHEN_SATZ_KLASSE = new Map([
+  ["hersteller_id_gesperrt", "Die Hersteller-Kennung dieses Programms ist beim Prüfprogramm gesperrt. " +
+    "Das liegt nicht an deinen Angaben."],
+  ["io_reader_unerwartete_elemente", "Das Prüfprogramm hat die erzeugte Erklärung nicht gelesen: " +
+    "Sie enthält Elemente, die es nicht erwartet."],
+]);
+function einreichenSatz(b) {
+  // 409 mit Sperrgrund: der Server liefert den geprüften Laien-Satz (sperrgrund_klartext), wie /ergebnis.
+  if (typeof b.klartext === "string" && b.klartext.trim()) return b.klartext;
+  const satz = b.grund === "rc_kein_plausibilitaetsverdikt"
+    ? EINREICHEN_SATZ_KLASSE.get(b.klasse) : EINREICHEN_SATZ_GRUND.get(b.grund);
+  if (satz === undefined) return EINREICHEN_STANDARD_SATZ;
+  if (!satz.includes("{vz}")) return satz;
+  return Number.isInteger(b.vz) ? satz.replace("{vz}", String(b.vz)) : EINREICHEN_STANDARD_SATZ;
+}
+
 // --- Absendeknopf: löst NUR die lokale checkESt-Prüfung aus (POST /fall/{id}/einreichen), sendet
 // nichts ans Finanzamt — der echte Versand bleibt CLI-only (elster/versand.py) und ist hier bewusst
 // nicht verdrahtet. Server ist fail-closed: der Knopf ist immer klickbar, `vollstaendig` und
@@ -2590,7 +2624,13 @@ async function einreichenPruefen() {
     }
   } else {
     kopf.textContent = "Nicht geprüft.";
-    detail.textContent = "Aus der Prüfung liegt kein Ergebnis vor. Der Fall gilt als offen.";
+    detail.textContent = einreichenSatz(r.body || {});
+  }
+  // Prüfcode: ein Merkzettel für die Rückfrage, keine Ursachenangabe. Nur bei einem Fehlerfall (rc=0 ist
+  // kein Code, der etwas zu merken gäbe).
+  if (r.status !== 200 && r.body && Number.isInteger(r.body.rc)) {
+    extra.push(Object.assign(document.createElement("p"),
+      {className: "einreichen-pruefcode", textContent: `Prüfcode: ${r.body.rc}`}));
   }
   status.replaceChildren(kopf, detail, ...extra);
   status.hidden = false;
