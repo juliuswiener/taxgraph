@@ -28,6 +28,7 @@ pub mod flow;
 pub mod fragen;
 pub mod graph;
 pub mod konfig;
+pub mod kontoauszug;
 pub mod openapi;
 pub mod preflight;
 pub mod python;

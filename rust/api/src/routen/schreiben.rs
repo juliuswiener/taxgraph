@@ -77,10 +77,14 @@ pub async fn vorjahr(_fall: EigenerFall, _body: Koerper) -> Result<Antwort, ApiF
     Ok(Antwort::nicht_portiert("POST /fall/{id}/vorjahr"))
 }
 
-/// `POST /fall/{id}/kontoauszug` — `api.kontoauszug` (`api.py:956`).
+/// `POST /fall/{id}/kontoauszug` — `api.kontoauszug` (`api.py:956`), Rumpf in [`crate::kontoauszug`].
 ///
 /// # Errors
 /// Wie [`event`].
-pub async fn kontoauszug(_fall: EigenerFall, _body: Koerper) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("POST /fall/{id}/kontoauszug"))
+pub async fn kontoauszug(
+    State(z): State<Zustand>,
+    mut fall: EigenerFall,
+    Koerper(wert): Koerper,
+) -> Result<Antwort, ApiFehler> {
+    crate::kontoauszug::kontoauszug(&z, &mut fall, &wert)
 }

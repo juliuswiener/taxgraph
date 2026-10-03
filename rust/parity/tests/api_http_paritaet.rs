@@ -29,6 +29,7 @@
 )]
 
 use std::collections::BTreeMap;
+use std::fmt::Write as _;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpStream;
 use std::os::unix::fs::PermissionsExt;
@@ -67,13 +68,12 @@ const NICHT_PORTIERT: &[&str] = &[
     "POST /fall/{id}/einreichen",
     "POST /fall/{id}/chat",
     "POST /fall/{id}/entfernung",
-    "POST /fall/{id}/kontoauszug",
 ];
 
 /// Stufe 1–3 (AK1 in 9c): Untergrenze der Rumpf-Erreichungen je Route im Test `generatoren`, gleich
 /// der Zahl seiner Faelle, die den Rumpf erreichen sollen; faellt einer aus, wird der Test rot. Nur
-/// diese Routen gehen nach einer Rust-`501` an Python. Stufe 4 (einreichen, chat, entfernung,
-/// kontoauszug) riefe dort `ERiC`, das LLM oder ORS.
+/// diese Routen gehen nach einer Rust-`501` an Python. Stufe 4 (einreichen, chat, entfernung)
+/// riefe dort `ERiC`, das LLM oder ORS.
 const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/fragen", 14),
     ("GET /fall/{id}/stand", 7),
@@ -85,6 +85,7 @@ const UNTERGRENZE: &[(&str, usize)] = &[
     ("GET /fall/{id}/graph", 9),
     ("POST /fall/{id}/event", 12),
     ("POST /fall/{id}/flow", 2),
+    ("POST /fall/{id}/kontoauszug", 126),
     ("POST /fall/{id}/vorjahr", 2),
 ];
 
@@ -2798,6 +2799,808 @@ fn event_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBilanz {
     bilanz
 }
 
+/// base64 (RFC 4648, mit Auffuellung); der Test hat kein `base64`-Crate.
+fn base64(bytes: &[u8]) -> String {
+    const ALPHABET: &[u8; 64] =
+        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut aus = String::new();
+    for gruppe in bytes.chunks(3) {
+        let teil = |i: usize| u32::from(gruppe.get(i).copied().unwrap_or(0));
+        let n = (teil(0) << 16) | (teil(1) << 8) | teil(2);
+        for i in 0..4 {
+            if i <= gruppe.len() {
+                aus.push(ALPHABET[((n >> (18 - 6 * i)) & 63) as usize] as char);
+            } else {
+                aus.push('=');
+            }
+        }
+    }
+    aus
+}
+
+/// Ein PDF mit einer Seite und einer Textzeile je Eintrag (Textlayer; `pdftotext` liest es ohne OCR).
+/// Es hat keine Verweistabelle; `pdftotext` baut sie neu auf.
+fn pdf_mit_zeilen(zeilen: &[&str]) -> Vec<u8> {
+    let mut inhalt = String::from("BT /F1 12 Tf 72 720 Td 14 TL\n");
+    for z in zeilen {
+        let _ = writeln!(inhalt, "({z}) Tj T*");
+    }
+    inhalt.push_str("ET");
+    let objekte = [
+        "<</Type/Catalog/Pages 2 0 R>>".to_owned(),
+        "<</Type/Pages/Kids[3 0 R]/Count 1>>".to_owned(),
+        "<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>"
+            .to_owned(),
+        format!("<</Length {}>>\nstream\n{inhalt}\nendstream", inhalt.len()),
+        "<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>".to_owned(),
+    ];
+    let mut aus = String::from("%PDF-1.4\n");
+    for (i, o) in objekte.iter().enumerate() {
+        let _ = write!(aus, "{} 0 obj\n{o}\nendobj\n", i + 1);
+    }
+    aus.push_str("trailer\n<</Root 1 0 R/Size 6>>\n%%EOF\n");
+    aus.into_bytes()
+}
+
+/// Der Ausgangszustand eines Kontoauszug-Falls: Scheibe und Events, die vorher im Fall stehen.
+struct Vorlage {
+    scheibe: &'static str,
+    vorher: Vec<Value>,
+}
+
+impl Vorlage {
+    fn gesamt() -> Self {
+        Self {
+            scheibe: "gesamt",
+            vorher: vec![],
+        }
+    }
+}
+
+/// Der Lauf von `kontoauszug_faelle`: Sender, Status der letzten Antwort, Bilanz, laufende Nummer.
+struct Auszuege<'a, 'b> {
+    a: &'a mut Sender<'b>,
+    status: &'a std::cell::Cell<u16>,
+    bilanz: EventBilanz,
+    nr: usize,
+}
+
+impl Auszuege<'_, '_> {
+    /// Ein Auszug an einem frischen Fall der Scheibe `gesamt`.
+    fn lauf(&mut self, name: &str, body: Value, soll: u16, erwartet: &[(&str, Value)]) {
+        self.lauf_in(name, &Vorlage::gesamt(), body, soll, erwartet);
+    }
+
+    /// Ein Auszug an einem frischen Fall der `vorlage`. Beide Server antworten gleich, oder
+    /// `Paar::anfrage` meldet es; `soll` und `erwartet` (Schluessel der Antwort) prüfen nur, dass der
+    /// Fall den Zweig trifft, den sein Name nennt.
+    fn lauf_in(
+        &mut self,
+        name: &str,
+        vorlage: &Vorlage,
+        body: Value,
+        soll: u16,
+        erwartet: &[(&str, Value)],
+    ) {
+        self.nr += 1;
+        let id = format!("g_ka{}", self.nr);
+        let b = json!({"fall_id": id, "scheibe": vorlage.scheibe, "veranlagungszeitraum": 2025});
+        (self.a)("POST", "/fall", Some(b));
+        for e in &vorlage.vorher {
+            (self.a)("POST", &format!("/fall/{id}/event"), Some(e.clone()));
+            if self.status.get() != 201 {
+                self.bilanz
+                    .falsch
+                    .push(format!("{name}: Vorbereitung {e} wurde mit {} abgewiesen", self.status.get()));
+            }
+        }
+        let antwort = (self.a)("POST", &format!("/fall/{id}/kontoauszug"), Some(body));
+        self.bilanz
+            .pruefe(name, soll, self.status.get(), antwort.as_ref());
+        for (k, v) in erwartet {
+            let ist = antwort.as_ref().map(|b| &b[*k]);
+            if ist != Some(v) {
+                self.bilanz.falsch.push(format!(
+                    "{name}: {k} erwartet {v}, Antwort {}",
+                    antwort.as_ref().map_or_else(|| "keine".to_owned(), ToString::to_string)
+                ));
+            }
+        }
+    }
+}
+
+/// `POST /kontoauszug` in allen Formen: CSV, JSON (Liste und Text), PDF, die Betraege, die
+/// `verwirf_unlesbare_betraege` einzeln aus dem Auszug nimmt (nie der ganze Auszug), die Kategorien,
+/// der Deckel der LLM-Aufrufe und die Formen des Rumpfs. Jeder Fall bekommt einen frischen Fall.
+fn kontoauszug_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBilanz {
+    let mut k = Auszuege {
+        a,
+        status,
+        bilanz: EventBilanz::default(),
+        nr: 0,
+    };
+    let csv = |zeilen: &[&str]| format!("datum;betrag;verwendungszweck\n{}\n", zeilen.join("\n"));
+    let auszug = |format: &str, inhalt: Value| json!({"format": format, "inhalt": inhalt});
+    let zaehlen = |u: i64, t: i64, v: i64| {
+        vec![
+            ("uebernommen", json!(u)),
+            ("transaktionen", json!(t)),
+            ("verworfen", json!(v)),
+        ]
+    };
+    let hinweis_csv = |n: i64| {
+        json!(format!(
+            "{n} Zeile(n) mit unlesbarem Betrag (keine Zahl oder ab 100 Mio. €) verworfen — bitte manuell prüfen/nachtragen."
+        ))
+    };
+
+    // ---- CSV
+    k.lauf(
+        "csv Kategorien",
+        auszug(
+            "csv",
+            json!(csv(&[
+                "01.03.2025;-480,00;Maler Huber",
+                "02.03.2025;-50,00;Spende Rotes Kreuz",
+                "03.03.2025;-300,00;Minijob-Zentrale",
+                "04.03.2025;-1.200,00;Rentenversicherung Ruerup",
+                "05.03.2025;1.000,00;Gehalt",
+                "06.03.2025;-20,00;Reinigung Treppenhaus",
+                "07.03.2025;-9,99;Einkauf",
+            ])),
+        ),
+        200,
+        &zaehlen(5, 7, 0),
+    );
+    k.lauf(
+        "csv Betragsschreibweisen",
+        auszug(
+            "csv",
+            json!(csv(&[
+                "01.03.2025;-abc;Maler",
+                "01.03.2025;1,2,3;Maler",
+                "01.03.2025;-1e3;Maler",
+                "01.03.2025;-1.234;Maler",
+                "01.03.2025;inf;Maler",
+                "01.03.2025;NaN;Maler",
+                "01.03.2025;-;Maler",
+                "01.03.2025;-,5;Maler",
+                "01.03.2025;12,345;Maler",
+                "01.03.2025;-1.234,567;Maler",
+                "01.03.2025;-12.34.567,00;Maler",
+            ])),
+        ),
+        200,
+        &zaehlen(0, 0, 11),
+    );
+    // Lesbar, auch wo es seltsam aussieht: Vorzeichen, `€`, Leerzeichen, Tausenderpunkt, Ziffern
+    // anderer Schriften (`unicodedata.decimal`).
+    for (name, betrag, cent) in [
+        ("csv --5", "--5", -500),
+        ("csv +-5", "+-5", 500),
+        ("csv -+5", "-+5", -500),
+        ("csv Euro und Leerzeichen", " - 5,5 € ", -550),
+        ("csv Tausender", "-1.234,5", -123_450),
+        ("csv Punkt als Komma", "-480.5", -48_050),
+        ("csv ganze Zahl", "-480", -48_000),
+        ("csv arabische Ziffern", "-٤٨٠,٠٠", -48_000),
+        ("csv Vollbreitenziffern", "-４８０,００", -48_000),
+        ("csv fuehrende Nullen", "-000480,00", -48_000),
+        ("csv zwanzig Nullen", "-00000000000000000000480,00", -48_000),
+    ] {
+        k.lauf(
+            name,
+            auszug("csv", json!(csv(&[&format!("01.03.2025;{betrag};Maler")]))),
+            200,
+            &[
+                ("uebernommen", json!(i64::from(cent < 0))),
+                ("transaktionen", json!(1)),
+                ("verworfen", json!(0)),
+            ],
+        );
+    }
+    // Ab 10^10 Cent (100 Mio. €) fliegt die Buchung einzeln raus, die lesbaren bleiben; ueber i64
+    // fliegt sie schon beim Lesen.
+    k.lauf(
+        "csv Betrag ab 10^10 Cent",
+        auszug(
+            "csv",
+            json!(csv(&[
+                "01.03.2025;-100000000,00;Maler",
+                "01.03.2025;-99999999,99;Maler",
+                "01.03.2025;100000000,00;Gehalt",
+                "01.03.2025;-92233720368547758,07;Maler",
+                "01.03.2025;-92233720368547758,08;Maler",
+                "01.03.2025;-123456789012345678901,00;Maler",
+                "01.03.2025;99999999,99;Gehalt",
+            ])),
+        ),
+        200,
+        &[
+            ("uebernommen", json!(1)),
+            ("transaktionen", json!(2)),
+            ("verworfen", json!(5)),
+            ("hinweis", hinweis_csv(5)),
+        ],
+    );
+    k.lauf(
+        "csv Spalten-Aliasse",
+        auszug(
+            "csv",
+            json!("Buchungstag;Umsatz;Buchungstext\n01.03.2025;-480,00;Maler\n02.03.2025;-5,00;Spende\n"),
+        ),
+        200,
+        &zaehlen(2, 2, 0),
+    );
+    k.lauf(
+        "csv englische Spalten",
+        auszug(
+            "csv",
+            json!(" Date ; AMOUNT ;Description\n01.03.2025;-480,00;Maler\n"),
+        ),
+        200,
+        &zaehlen(1, 1, 0),
+    );
+    k.lauf(
+        "csv Betrag (EUR) und Zweck",
+        auszug(
+            "csv",
+            json!("Buchungsdatum;Betrag (EUR);Zweck\n01.03.2025;-480,00;Maler\n"),
+        ),
+        200,
+        &zaehlen(1, 1, 0),
+    );
+    for (name, text, soll) in [
+        ("csv leer", "", zaehlen(0, 0, 0)),
+        ("csv nur Kopf", "datum;betrag;verwendungszweck\n", zaehlen(0, 0, 0)),
+        ("csv ohne Betragsspalte", "datum;zweck\n01.03.2025;Maler\n", zaehlen(0, 0, 0)),
+        ("csv Komma statt Semikolon", "datum,betrag,verwendungszweck\n01.03.2025,-480,Maler\n", zaehlen(0, 0, 0)),
+        ("csv leerer Betrag zaehlt nicht", "datum;betrag;verwendungszweck\n01.03.2025;;Maler\n01.03.2025;  ;Maler\n", zaehlen(0, 0, 0)),
+        ("csv BOM vor dem Kopf", "\u{feff}datum;betrag;verwendungszweck\n01.03.2025;-480,00;Maler\n", zaehlen(1, 1, 0)),
+        ("csv CRLF", "datum;betrag;verwendungszweck\r\n01.03.2025;-480,00;Maler\r\n", zaehlen(1, 1, 0)),
+        ("csv zu kurze Zeile", "datum;betrag;verwendungszweck\n01.03.2025;-480,00\n", zaehlen(0, 1, 0)),
+        ("csv zu lange Zeile", "datum;betrag;verwendungszweck\n01.03.2025;-480,00;Maler;x;y\n", zaehlen(1, 1, 0)),
+        ("csv Zweck mit Semikolon", "datum;betrag;verwendungszweck\n01.03.2025;-480,00;\"Maler; Huber\"\n", zaehlen(1, 1, 0)),
+        ("csv Kopf mit Leerzeichen und Grossschrift", "  DATUM ; Betrag ;VerwendungsZweck \n01.03.2025;-480,00;MALER\n", zaehlen(1, 1, 0)),
+        ("csv doppelte Betragsspalte", "datum;betrag;betrag\n01.03.2025;-480,00;-5,00\n", zaehlen(0, 1, 0)),
+        ("csv ohne Datumsspalte", "betrag;zweck\n-480,00;Maler\n", zaehlen(1, 1, 0)),
+        ("csv Zeilen ohne Zeilenumbruch am Ende", "datum;betrag;verwendungszweck\n01.03.2025;-480,00;Maler", zaehlen(1, 1, 0)),
+        ("csv NUL im Zweck", "datum;betrag;verwendungszweck\n01.03.2025;-480,00;Ma\u{0}ler\n", zaehlen(0, 1, 0)),
+    ] {
+        k.lauf(name, auszug("csv", json!(text)), 200, &soll);
+    }
+    // Der Inhalt eines CSV, der kein Text ist, ist leer (`inhalt if isinstance(inhalt, str) else ""`).
+    for (name, inhalt) in [
+        ("csv Inhalt Zahl", json!(5)),
+        ("csv Inhalt null", Value::Null),
+        ("csv Inhalt Liste", json!(["a;b"])),
+        ("csv Inhalt Objekt", json!({"a": 1})),
+        ("csv Inhalt wahr", json!(true)),
+    ] {
+        k.lauf(name, auszug("csv", inhalt), 200, &zaehlen(0, 0, 0));
+    }
+    k.lauf(
+        "csv ohne Inhalt",
+        json!({"format": "csv"}),
+        200,
+        &zaehlen(0, 0, 0),
+    );
+    // Die Fehler von `csv.reader`: Python meldet sie als 500 mit der Klasse `Error`.
+    k.lauf(
+        "csv CR im Feld",
+        auszug("csv", json!("datum;betrag;verwendungszweck\n01.03.2025;-480,00;Ma\rler\n")),
+        500,
+        &[],
+    );
+    k.lauf(
+        "csv Feld ueber 131072 Zeichen",
+        auszug(
+            "csv",
+            json!(format!(
+                "datum;betrag;verwendungszweck\n01.03.2025;-480,00;{}\n",
+                "x".repeat(131_073)
+            )),
+        ),
+        500,
+        &[],
+    );
+    k.lauf(
+        "csv Feld mit 131072 Zeichen",
+        auszug(
+            "csv",
+            json!(format!(
+                "datum;betrag;verwendungszweck\n01.03.2025;-480,00;{}\n",
+                "x".repeat(131_072)
+            )),
+        ),
+        200,
+        &zaehlen(0, 1, 0),
+    );
+
+    // ---- JSON: eine Liste im Rumpf
+    let tx = |datum: Value, betrag: Value, zweck: Value| {
+        json!({"datum": datum, "betrag": betrag, "verwendungszweck": zweck})
+    };
+    k.lauf(
+        "json Liste",
+        auszug(
+            "json",
+            json!([
+                tx(json!("01.03.2025"), json!(-48_000), json!("Maler Huber")),
+                tx(json!("02.03.2025"), json!(-5000), json!("Spende")),
+                tx(json!("03.03.2025"), json!(100_000), json!("Gehalt")),
+            ]),
+        ),
+        200,
+        &zaehlen(2, 3, 0),
+    );
+    // Der Betrag, den `int(tx.get("betrag", 0))` annimmt (Zahl, Text, Wahrheitswert) oder nicht.
+    for (name, betrag, tragbar) in [
+        ("json Betrag Kommazahl", json!(-480.9), true),
+        ("json Betrag Text", json!("-480"), true),
+        ("json Betrag Text mit Leerzeichen", json!(" -480 "), true),
+        ("json Betrag Text mit Unterstrich", json!("-4_80"), true),
+        ("json Betrag arabische Ziffern", json!("-٤٨٠"), true),
+        ("json Betrag wahr", json!(true), true),
+        ("json Betrag falsch", json!(false), true),
+        ("json Betrag Text 1e3", json!("1e3"), false),
+        ("json Betrag Text leer", json!(""), false),
+        ("json Betrag Text Minus U+2212", json!("−480"), false),
+        ("json Betrag null", Value::Null, false),
+        ("json Betrag Liste", json!([1]), false),
+        ("json Betrag Objekt", json!({}), false),
+        ("json Betrag Text NaN", json!("NaN"), false),
+        ("json Betrag Text inf", json!("inf"), false),
+        ("json Betrag Text Kommazahl", json!("-480.5"), false),
+        ("json Betrag Kommazahl 1e10", json!(1e10), false),
+        ("json Betrag Kommazahl -1e10", json!(-1e10), false),
+        ("json Betrag Kommazahl -1e308", json!(-1e308), false),
+        ("json Betrag Kommazahl unter 1e10", json!(-9_999_999_999.9), true),
+        ("json Betrag 10^10 - 1", json!(-9_999_999_999_i64), true),
+        ("json Betrag 10^10", json!(-10_000_000_000_i64), false),
+        ("json Betrag i64 max", json!(i64::MAX), false),
+        ("json Betrag i64 min", json!(i64::MIN), false),
+        ("json Betrag Text 10^10", json!("-10000000000"), false),
+        ("json Betrag Text 10^10 - 1", json!("-9999999999"), true),
+    ] {
+        let t = i64::from(tragbar);
+        k.lauf(
+            name,
+            auszug(
+                "json",
+                json!([tx(json!("01.03.2025"), betrag, json!("Maler"))]),
+            ),
+            200,
+            &[("transaktionen", json!(t)), ("verworfen", json!(1 - t))],
+        );
+    }
+    k.lauf(
+        "json Betrag fehlt",
+        auszug("json", json!([{"datum": "01.03.2025", "verwendungszweck": "Maler"}])),
+        200,
+        &zaehlen(0, 1, 0),
+    );
+    k.lauf(
+        "json Element kein Objekt",
+        auszug(
+            "json",
+            json!([5, "x", null, [1], true, {}, tx(json!("d"), json!(-100), json!("Maler"))]),
+        ),
+        200,
+        &[
+            ("uebernommen", json!(1)),
+            ("transaktionen", json!(2)),
+            ("verworfen", json!(5)),
+        ],
+    );
+    // Ein Verwendungszweck, der kein Text ist: bei einer Ausgabe `AttributeError` (500), bei einer
+    // Einnahme nie gelesen, und falsch heisst leer.
+    for (name, zweck, soll) in [
+        ("json Zweck Zahl", json!(5), 500),
+        ("json Zweck Liste", json!(["maler"]), 500),
+        ("json Zweck Objekt", json!({"a": 1}), 500),
+        ("json Zweck wahr", json!(true), 500),
+        ("json Zweck Kommazahl", json!(1.5), 500),
+        ("json Zweck null", Value::Null, 200),
+        ("json Zweck 0", json!(0), 200),
+        ("json Zweck leere Liste", json!([]), 200),
+        ("json Zweck falsch", json!(false), 200),
+        ("json Zweck leer", json!(""), 200),
+    ] {
+        k.lauf(
+            name,
+            auszug("json", json!([tx(json!("d"), json!(-100), zweck)])),
+            soll,
+            &[],
+        );
+    }
+    k.lauf(
+        "json Zweck Zahl bei Einnahme",
+        auszug("json", json!([tx(json!("d"), json!(100), json!(5))])),
+        200,
+        &zaehlen(0, 1, 0),
+    );
+    k.lauf(
+        "json Zweck fehlt",
+        auszug("json", json!([{"betrag": -100}])),
+        200,
+        &zaehlen(0, 1, 0),
+    );
+    // Das Datum landet unveraendert in `signal_1`; der Vergleich der Akten sieht, wie.
+    for (name, datum) in [
+        ("json Datum Zahl", json!(5)),
+        ("json Datum null", Value::Null),
+        ("json Datum Kommazahl", json!(1.5)),
+        ("json Datum 1e22", json!(1e22)),
+        ("json Datum Objekt", json!({"z": [1, 2.5, null], "a": "ä😀"})),
+        ("json Datum Liste", json!([1, "a"])),
+        ("json Datum wahr", json!(true)),
+        ("json Datum Umlaut", json!("1. März \u{2028}\"\\")),
+    ] {
+        k.lauf(
+            name,
+            auszug("json", json!([tx(datum, json!(-5000), json!("Spende"))])),
+            200,
+            &zaehlen(1, 1, 0),
+        );
+    }
+    k.lauf(
+        "json Datum fehlt",
+        auszug("json", json!([{"betrag": -5000, "verwendungszweck": "Spende"}])),
+        200,
+        &zaehlen(1, 1, 0),
+    );
+    // PII im Zweck: IBAN, Steuernummer und Kontonummer werden maskiert, bevor sie in der Akte stehen.
+    k.lauf(
+        "json maskierter Zweck",
+        auszug(
+            "json",
+            json!([tx(
+                json!("01.03.2025"),
+                json!(-48_000),
+                json!("Maler Huber DE89 3704 0044 0532 0130 00 StNr 12/345/67890 Konto 1234567890 de89370400440532013000")
+            )]),
+        ),
+        200,
+        &zaehlen(1, 1, 0),
+    );
+    k.lauf(
+        "json Grossschrift im Zweck",
+        auszug(
+            "json",
+            json!([
+                tx(json!("d"), json!(-100), json!("MALER")),
+                tx(json!("d"), json!(-100), json!("SPENDE AN DAS ROTE KREUZ")),
+                tx(json!("d"), json!(-100), json!("GEBÄUDEREINIGUNG")),
+                tx(json!("d"), json!(-100), json!("MINIJOB-ZENTRALE")),
+                tx(json!("d"), json!(-100), json!("RÜRUP-RENTE")),
+                tx(json!("d"), json!(-100), json!("SANITÄR MÜLLER")),
+            ]),
+        ),
+        200,
+        &zaehlen(5, 6, 0),
+    );
+    k.lauf(
+        "json zwei Buchungen derselben Kategorie",
+        auszug(
+            "json",
+            json!([
+                tx(json!("d"), json!(-100), json!("Maler")),
+                tx(json!("d"), json!(-200), json!("Klempner")),
+                tx(json!("d"), json!(-300), json!("Reinigung")),
+            ]),
+        ),
+        200,
+        &zaehlen(2, 3, 0),
+    );
+    k.lauf(
+        "json Einnahme zaehlt nicht",
+        auszug("json", json!([tx(json!("d"), json!(5000), json!("Spende"))])),
+        200,
+        &zaehlen(0, 1, 0),
+    );
+    k.lauf(
+        "json Betrag 0 zaehlt nicht",
+        auszug("json", json!([tx(json!("d"), json!(0), json!("Spende"))])),
+        200,
+        &zaehlen(0, 1, 0),
+    );
+    k.lauf_in(
+        "json Zielfeld schon belegt",
+        &Vorlage {
+            scheibe: "gesamt",
+            vorher: vec![ereignis("spenden_betrag", &json!(1000), None)],
+        },
+        auszug(
+            "json",
+            json!([
+                tx(json!("d"), json!(-5000), json!("Spende")),
+                tx(json!("d"), json!(-100), json!("Maler")),
+            ]),
+        ),
+        200,
+        &zaehlen(1, 2, 0),
+    );
+    k.lauf_in(
+        "json Zielfeld fehlt in der Scheibe",
+        &Vorlage {
+            scheibe: "ep",
+            vorher: vec![],
+        },
+        auszug(
+            "json",
+            json!([
+                tx(json!("d"), json!(-5000), json!("Spende")),
+                tx(json!("d"), json!(-100), json!("Maler")),
+            ]),
+        ),
+        200,
+        &zaehlen(0, 2, 0),
+    );
+    k.lauf(
+        "json leere Liste",
+        auszug("json", json!([])),
+        200,
+        &zaehlen(0, 0, 0),
+    );
+    // Mehr unklare Ausgaben als der Deckel (50) zulaesst: der Rest zaehlt in `llm_uebersprungen`,
+    // und die sichere Kategorie dahinter wird trotzdem erkannt.
+    let mut viele: Vec<Value> = (0..56)
+        .map(|i| tx(json!("d"), json!(-100 - i), json!(format!("Einkauf {i}"))))
+        .collect();
+    viele.push(tx(json!("d"), json!(-5000), json!("Spende")));
+    k.lauf(
+        "json Deckel der LLM-Aufrufe",
+        auszug("json", json!(viele.clone())),
+        200,
+        &[
+            ("uebernommen", json!(1)),
+            ("transaktionen", json!(57)),
+            ("verworfen", json!(0)),
+            ("llm_uebersprungen", json!(6)),
+        ],
+    );
+    let mut viele_und_unlesbar = viele;
+    viele_und_unlesbar.push(tx(json!("d"), json!("x"), json!("Maler")));
+    k.lauf(
+        "json Deckel und unlesbarer Betrag",
+        auszug("json", json!(viele_und_unlesbar)),
+        200,
+        &[("verworfen", json!(1)), ("llm_uebersprungen", json!(6))],
+    );
+    k.lauf(
+        "json genau am Deckel",
+        auszug(
+            "json",
+            json!((0..50)
+                .map(|i| tx(json!("d"), json!(-100 - i), json!(format!("Einkauf {i}"))))
+                .collect::<Vec<_>>()),
+        ),
+        200,
+        &zaehlen(0, 50, 0),
+    );
+
+    // ---- JSON: der Inhalt als Text
+    let text = |t: &str| auszug("json", json!(t));
+    k.lauf(
+        "json Text Liste",
+        text(r#"[{"datum": "01.03.2025", "betrag": -48000, "verwendungszweck": "Maler"}]"#),
+        200,
+        &zaehlen(1, 1, 0),
+    );
+    // Beträge, die `json.loads` liest und `serde_json` nicht (NaN, Infinity, 1e400) oder anders.
+    for (name, betrag, tragbar) in [
+        ("json Text NaN", "NaN", false),
+        ("json Text Infinity", "Infinity", false),
+        ("json Text -Infinity", "-Infinity", false),
+        ("json Text 1e400", "1e400", false),
+        ("json Text -1e400", "-1e400", false),
+        ("json Text 20 Ziffern", "-12345678901234567890", false),
+        ("json Text 4300 Ziffern", &format!("-{}", "9".repeat(4300)), false),
+        ("json Text 1e5", "-1e5", true),
+        ("json Text -0", "-0", true),
+        ("json Text -0.0", "-0.0", true),
+        ("json Text 1E2", "-1E2", true),
+        ("json Text 480.99", "-480.99", true),
+        ("json Text 9999999999.5", "-9999999999.5", true),
+        ("json Text 1e10", "-1e10", false),
+    ] {
+        let t = i64::from(tragbar);
+        k.lauf(
+            name,
+            text(&format!(
+                r#"[{{"datum": "d", "betrag": {betrag}, "verwendungszweck": "Maler"}}]"#
+            )),
+            200,
+            &[("transaktionen", json!(t)), ("verworfen", json!(1 - t))],
+        );
+    }
+    k.lauf(
+        "json Text 4301 Ziffern",
+        text(&format!(
+            r#"[{{"betrag": -{}, "verwendungszweck": "Maler"}}]"#,
+            "9".repeat(4301)
+        )),
+        400,
+        &[("fehler", json!("json-Inhalt nicht parsebar"))],
+    );
+    for (name, t, soll, fehler) in [
+        ("json Text kaputt", "[{", 400, "json-Inhalt nicht parsebar"),
+        ("json Text mit BOM", "\u{feff}[]", 400, "json-Inhalt nicht parsebar"),
+        ("json Text Komma am Ende", "[1,]", 400, "json-Inhalt nicht parsebar"),
+        ("json Text Leerraum", "  ", 400, "json-Inhalt nicht parsebar"),
+        ("json Text nur Zahl", "5", 400, "json muss eine Liste von Transaktionen sein"),
+        ("json Text Objekt", "{}", 400, "json muss eine Liste von Transaktionen sein"),
+        ("json Text null", "null", 400, "json muss eine Liste von Transaktionen sein"),
+        ("json Text Text", "\"abc\"", 400, "json muss eine Liste von Transaktionen sein"),
+        ("json Text wahr", "true", 400, "json muss eine Liste von Transaktionen sein"),
+        ("json Text NaN allein", "NaN", 400, "json muss eine Liste von Transaktionen sein"),
+        ("json Text Einzelquote", "['a']", 400, "json-Inhalt nicht parsebar"),
+        ("json Text Kommentar", "[] // x", 400, "json-Inhalt nicht parsebar"),
+        ("json Text zwei Listen", "[][]", 400, "json-Inhalt nicht parsebar"),
+        ("json Text Steuerzeichen im Text", "[\"a\tb\"]", 400, "json-Inhalt nicht parsebar"),
+        ("json Text mit Leerraum drumherum", " \n[]\t", 200, ""),
+        ("json Text leer", "", 200, ""),
+    ] {
+        let erwartet: Vec<(&str, Value)> = if fehler.is_empty() {
+            zaehlen(0, 0, 0)
+        } else {
+            vec![("fehler", json!(fehler))]
+        };
+        k.lauf(name, text(t), soll, &erwartet);
+    }
+    // Der Inhalt, der weder Liste noch Text ist: `json.loads` wirft `TypeError`, gefangen wie ein
+    // `ValueError`; ein falscher Inhalt ist die leere Liste.
+    for (name, inhalt, soll, fehler) in [
+        ("json Inhalt Zahl", json!(5), 400, "json-Inhalt nicht parsebar"),
+        ("json Inhalt wahr", json!(true), 400, "json-Inhalt nicht parsebar"),
+        ("json Inhalt Kommazahl", json!(1.5), 400, "json-Inhalt nicht parsebar"),
+        ("json Inhalt Objekt", json!({"a": 1}), 400, "json-Inhalt nicht parsebar"),
+        ("json Inhalt leeres Objekt", json!({}), 200, ""),
+        ("json Inhalt null", Value::Null, 200, ""),
+        ("json Inhalt falsch", json!(false), 200, ""),
+        ("json Inhalt 0", json!(0), 200, ""),
+        ("json Inhalt 0.0", json!(0.0), 200, ""),
+    ] {
+        let erwartet: Vec<(&str, Value)> = if fehler.is_empty() {
+            zaehlen(0, 0, 0)
+        } else {
+            vec![("fehler", json!(fehler))]
+        };
+        k.lauf(name, auszug("json", inhalt), soll, &erwartet);
+    }
+    k.lauf(
+        "json ohne Inhalt",
+        json!({"format": "json"}),
+        200,
+        &zaehlen(0, 0, 0),
+    );
+
+    // ---- Format
+    let leer_csv = json!("datum;betrag;verwendungszweck\n01.03.2025;-480,00;Maler\n");
+    for (name, format, soll) in [
+        ("Format Grossschrift", json!("CSV"), 200),
+        ("Format mit Leerraum", json!(" csv\n"), 200),
+        ("Format Tab und NBSP", json!("\u{a0}csv\u{a0}"), 200),
+        ("Format gemischt", json!("Csv"), 200),
+        ("Format fehlt", Value::Null, 400),
+        ("Format leer", json!(""), 400),
+        ("Format Leerraum", json!("  "), 400),
+        ("Format Liste leer", json!([]), 400),
+        ("Format Objekt leer", json!({}), 400),
+        ("Format falsch", json!(false), 400),
+        ("Format 0", json!(0), 400),
+        ("Format xml", json!("xml"), 400),
+        ("Format Zahl", json!(5), 500),
+        ("Format wahr", json!(true), 500),
+        ("Format Liste", json!(["csv"]), 500),
+        ("Format Objekt", json!({"a": 1}), 500),
+        ("Format Kommazahl", json!(1.5), 500),
+    ] {
+        k.lauf(
+            name,
+            json!({"format": format, "inhalt": leer_csv}),
+            soll,
+            &[],
+        );
+    }
+    k.lauf("Format fehlt ganz", json!({"inhalt": leer_csv}), 400, &[("fehler", json!("format muss csv, json oder pdf sein"))]);
+    k.lauf("Rumpf leeres Objekt", json!({}), 400, &[]);
+    for (name, body) in [
+        ("Rumpf Liste", json!([1])),
+        ("Rumpf Text", json!("csv")),
+        ("Rumpf null", Value::Null),
+        ("Rumpf Zahl", json!(5)),
+        ("Rumpf wahr", json!(true)),
+        ("Rumpf Kommazahl", json!(1.5)),
+    ] {
+        k.lauf(name, body, 500, &[]);
+    }
+
+    // ---- PDF
+    let pdf = |zeilen: &[&str]| json!({"format": "pdf", "inhalt": base64(&pdf_mit_zeilen(zeilen))});
+    k.lauf(
+        "pdf Zeilen",
+        pdf(&[
+            "01.03.2025 Maler Huber -480,00 EUR",
+            "02.03.2025 Spende Rotes Kreuz -50,00 EUR",
+            "03.03.2025 Minijob-Zentrale -999.999.999,99 EUR",
+            "Saldo 1.000,00",
+        ]),
+        200,
+        &[
+            ("uebernommen", json!(2)),
+            ("transaktionen", json!(2)),
+            ("verworfen", json!(1)),
+            (
+                "hinweis",
+                json!("1 Zeile(n) unsicher erkannt (Confidence < 60%) oder mit zu großem Betrag (ab 100 Mio. €) verworfen — bitte manuell prüfen/nachtragen."),
+            ),
+        ],
+    );
+    k.lauf(
+        "pdf mehrere Betraege in einer Zeile",
+        pdf(&[
+            "01.03.2025 Maler Huber -480,00 EUR 1.234,56",
+            "02.03.2025 Spende -50,00",
+            "03.03.2025 ohne Betrag",
+            "Kein Datum -5,00",
+            "Zwischensumme -100,00",
+            "Tagessaldo 5,00",
+        ]),
+        200,
+        &zaehlen(1, 1, 2),
+    );
+    k.lauf(
+        "pdf Betrag ueber i64",
+        pdf(&[
+            "01.03.2025 Maler -92.233.720.368.547.758,08",
+            "02.03.2025 Maler -92.233.720.368.547.758,07",
+            "03.03.2025 Spende -1,00",
+        ]),
+        200,
+        &zaehlen(1, 1, 2),
+    );
+    k.lauf(
+        "pdf ohne Text",
+        pdf(&[]),
+        200,
+        &zaehlen(0, 0, 0),
+    );
+    for (name, inhalt, soll, fehler) in [
+        ("pdf Inhalt fehlt", Value::Null, 400, "pdf-Inhalt fehlt (erwartet: base64-kodierte PDF-Bytes in `inhalt`)"),
+        ("pdf Inhalt leer", json!(""), 400, "pdf-Inhalt fehlt (erwartet: base64-kodierte PDF-Bytes in `inhalt`)"),
+        ("pdf Inhalt Leerraum", json!(" \n\t"), 400, "pdf-Inhalt fehlt (erwartet: base64-kodierte PDF-Bytes in `inhalt`)"),
+        ("pdf Inhalt Zahl", json!(5), 400, "pdf-Inhalt fehlt (erwartet: base64-kodierte PDF-Bytes in `inhalt`)"),
+        ("pdf Inhalt Liste", json!(["QQ=="]), 400, "pdf-Inhalt fehlt (erwartet: base64-kodierte PDF-Bytes in `inhalt`)"),
+        ("pdf base64 Auffuellung fehlt", json!("QQ"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
+        ("pdf base64 Auffuellung halb", json!("QQ="), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
+        ("pdf base64 Zeilenumbruch", json!("QUJD\nREVG"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
+        ("pdf base64 Leerzeichen", json!("QUJD REVG"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
+        ("pdf base64 Auffuellung vorn", json!("=QUJD"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
+        ("pdf base64 zweimal aufgefuellt", json!("QQ==QQ=="), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
+        ("pdf base64 URL-Alphabet", json!("QQ-_"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
+        ("pdf base64 Umlaut", json!("QUJDä"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
+        ("pdf base64 Rest 1", json!("QUJDR"), 400, "pdf-Inhalt nicht gültig base64-kodiert"),
+    ] {
+        k.lauf(
+            name,
+            json!({"format": "pdf", "inhalt": inhalt}),
+            soll,
+            &[("fehler", json!(fehler))],
+        );
+    }
+    // Gueltiges base64 von etwas, das kein PDF ist: `pdftotext` kann es nicht oeffnen (422).
+    for (name, inhalt) in [
+        ("pdf kein PDF", base64(b"Das ist kein PDF.")),
+        ("pdf nur Kopfzeile", base64(b"%PDF-1.4\n")),
+        ("pdf ein Byte", base64(b"A")),
+    ] {
+        k.lauf(name, json!({"format": "pdf", "inhalt": inhalt}), 422, &[]);
+    }
+    k.bilanz
+}
+
 /// Rumpf von `POST /event` als Rohtext: `wert` und `signal` stehen so, wie sie hier geschrieben sind.
 fn roher_text(feld: &str, wert: &str, signal: &str) -> String {
     format!(
@@ -3374,6 +4177,8 @@ fn generatoren() {
     a("POST", "/fall/g_vj/flow", None);
     // `POST /event` in allen Formen (Tabelle der Begleitfelder, Tuer, Auflagen A bis B).
     let ereignisse = event_faelle(&mut a, &status);
+    // `POST /kontoauszug` in allen Formen (CSV, JSON, PDF, Betraege, Kategorien, Deckel, Rumpf).
+    let auszuege = kontoauszug_faelle(&mut a, &status);
     let mut engines: BTreeMap<String, usize> = BTreeMap::new();
     let mut gruende: Vec<String> = vec![];
     let mut fragen_je_fall: Vec<(&str, usize)> = vec![];
@@ -3668,6 +4473,23 @@ fn generatoren() {
             ereignisse.klassen
         );
     }
+    println!(
+        "  kontoauszug: {} Faelle, Klassen {:?}",
+        auszuege.klassen.values().sum::<usize>(),
+        auszuege.klassen
+    );
+    assert!(
+        auszuege.falsch.is_empty(),
+        "kontoauszug: Faelle erreichen nicht den Zweig ihres Namens: {:?}",
+        auszuege.falsch
+    );
+    for k in ["200", "400", "422", "500 AttributeError", "500 Error"] {
+        assert!(
+            auszuege.klassen.contains_key(k),
+            "kontoauszug: kein Fall der Klasse {k:?}: {:?}",
+            auszuege.klassen
+        );
+    }
     assert!(p.stat.abweichungen.is_empty(), "{:?}", p.stat.abweichungen);
     for e in ["catala", "catala_teilweise", "gesperrt"] {
         assert!(
@@ -3950,6 +4772,74 @@ fn dokumentierte_abweichungen() {
         py.status, rs.status
     );
     assert_eq!((py.status, rs.status), (500, 401));
+    // 5. `POST /kontoauszug`, JSON als Text mit `NaN` an einer Stelle, die gelesen wird (9c, gewollte
+    //    Abweichung, `json_laden` in `api::kontoauszug`): Python liest die Kommazahl `nan` und scheitert
+    //    spaeter daran, Rust liest den Text `"NaN"` und uebernimmt die Buchung.
+    //    a) im Datum einer Buchung, die gebucht wird: Python rechnet die Kennung des Events aus (JSON
+    //       ohne `NaN`) und antwortet 500, die Akte bleibt leer; Rust legt `"NaN"` als Text ab.
+    //    b) im Zweck einer Ausgabe: Python ruft `.lower()` auf eine Kommazahl (500), Rust sieht Text,
+    //       findet keine Kategorie und antwortet 200.
+    //    Beides gibt es nur mit einem Auszug, den kein Programm so schreibt.
+    for (fall, inhalt, py_fehler) in [
+        (
+            "dok_nan_datum",
+            r#"[{"datum": NaN, "betrag": -5000, "verwendungszweck": "Spende"}]"#,
+            "ValueError: Out of range float values are not JSON compliant: nan",
+        ),
+        (
+            "dok_nan_zweck",
+            r#"[{"datum": "d", "betrag": -5000, "verwendungszweck": Infinity}]"#,
+            "AttributeError: 'float' object has no attribute 'lower'",
+        ),
+    ] {
+        let neu = Anfrage::neu("dok Fall", "POST", "/fall").token(&alice).json(
+            &json!({"fall_id": fall, "scheibe": "gesamt", "veranlagungszeitraum": 2025}),
+        );
+        let _ = zweimal(&neu);
+        let (py, rs) = zweimal(
+            &Anfrage::neu("dok kontoauszug NaN", "POST", &format!("/fall/{fall}/kontoauszug"))
+                .token(&alice)
+                .json(&json!({"format": "json", "inhalt": inhalt})),
+        );
+        println!(
+            "  kontoauszug {fall}: py={} {} | rs={} {}",
+            py.status,
+            String::from_utf8_lossy(&py.body),
+            rs.status,
+            String::from_utf8_lossy(&rs.body)
+        );
+        assert_eq!((py.status, rs.status), (500, 200), "{fall}");
+        assert!(
+            String::from_utf8_lossy(&py.body).contains(py_fehler),
+            "{fall}: {}",
+            String::from_utf8_lossy(&py.body)
+        );
+    }
+    //    c) ein einzelnes Surrogat-Escape im JSON-Text: Python nimmt es an und scheitert beim Schreiben
+    //       der Akte (500, `UnicodeEncodeError`), `serde_json` weist es schon beim Lesen ab (400).
+    let neu = Anfrage::neu("dok Fall", "POST", "/fall").token(&alice).json(
+        &json!({"fall_id": "dok_surrogat", "scheibe": "gesamt", "veranlagungszeitraum": 2025}),
+    );
+    let _ = zweimal(&neu);
+    let (py, rs) = zweimal(
+        &Anfrage::neu("dok kontoauszug Surrogat", "POST", "/fall/dok_surrogat/kontoauszug")
+            .token(&alice)
+            .json(&json!({"format": "json", "inhalt":
+                r#"[{"datum": "\ud800", "betrag": -5000, "verwendungszweck": "Spende"}]"#})),
+    );
+    println!(
+        "  kontoauszug Surrogat: py={} {} | rs={} {}",
+        py.status,
+        String::from_utf8_lossy(&py.body),
+        rs.status,
+        String::from_utf8_lossy(&rs.body)
+    );
+    assert_eq!((py.status, rs.status), (500, 400));
+    let datei = |s: &Server, fall: &str| {
+        std::fs::read_to_string(s.faelle().join(format!("{fall}.json"))).unwrap()
+    };
+    assert!(datei(&p.py, "dok_nan_datum").contains(r#""events": []"#));
+    assert!(datei(&p.rs, "dok_nan_datum").contains(r#""datum":"NaN""#));
 }
 
 /// `_routes()` (`server.py:62`) und `api::routen::EINTRAEGE` stimmen in Methode, Muster und

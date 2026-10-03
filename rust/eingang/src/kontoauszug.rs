@@ -130,9 +130,10 @@ pub enum KontoauszugFehler {
     /// JSON-Zweig: `int(betrag)` scheitert (Python: `ValueError`/`TypeError` → 500, Audit B §6 #6).
     #[error("Transaktion {index}: betrag nicht ganzzahlig lesbar")]
     BetragUngueltig { index: usize },
-    /// JSON-Zweig: Element ist kein Objekt bzw. Zweck kein Text (Python: `AttributeError` → 500).
-    #[error("Transaktion {index}: kein Objekt mit Text-Verwendungszweck")]
-    TransaktionUngueltig { index: usize },
+    /// JSON-Zweig: Element ist kein Objekt bzw. der Zweck einer Ausgabe kein Text (Python:
+    /// `AttributeError` → 500); `meldung` ist Pythons Text (`'int' object has no attribute 'lower'`).
+    #[error("Transaktion {index}: {meldung}")]
+    TransaktionUngueltig { index: usize, meldung: String },
     #[error(transparent)]
     Schreiben(#[from] SchreibFehler),
 }
@@ -245,14 +246,23 @@ pub fn parse_csv(text: &str) -> Result<(Vec<Transaktion>, usize), KontoauszugFeh
     csv_fehler.map_or(Ok((out, verworfen)), |e| Err(e.into()))
 }
 
-/// JSON-Zweig (`api.py:973-979` + `int(tx.get("betrag", 0))`): Liste von Objekten. Anders als
-/// Python wird die GANZE Liste vor jedem Schreiben geprueft; Python bricht mitten in der
-/// Schleife ab (500) und verwirft den Fall ungespeichert — nach aussen gleich.
+/// JSON-Zweig: die Eingabe von `uebernehme_kontoauszug` (`int(tx.get("betrag", 0))`, `tx.get(...)`):
+/// Liste von Objekten. Anders als Python wird die GANZE Liste vor jedem Schreiben geprueft; Python
+/// bricht mitten in der Schleife ab (500) und verwirft den Fall ungespeichert — nach aussen gleich.
+///
+/// Die Route ruft vorher [`verwirf_unlesbare_betraege_json`] (`api.py:1019`): eine Buchung, deren
+/// Betrag nicht lesbar ist oder ab 10^10 Cent liegt, fliegt dort einzeln raus und kommt hier nie
+/// an. Was hier noch scheitert, scheitert in Python in `uebernehme_kontoauszug` selbst: ein Element
+/// ohne Objekt, ein Betrag, den `int()` nicht liest, und ein Nicht-Text als Zweck AUF EINER
+/// AUSGABE (`betrag < 0`; bei den anderen Buchungen liest Python den Zweck nie).
 ///
 /// ```
 /// let tx = eingang::kontoauszug::aus_json(&serde_json::json!([{"betrag": "-5", "verwendungszweck": "Spende"}])).unwrap();
 /// assert_eq!(tx[0].betrag, -5);
 /// assert!(eingang::kontoauszug::aus_json(&serde_json::json!([{"betrag": "1,5"}])).is_err());
+/// // Ein Zweck, der kein Text ist, wirft nur bei einer Ausgabe.
+/// assert!(eingang::kontoauszug::aus_json(&serde_json::json!([{"betrag": 5, "verwendungszweck": 7}])).is_ok());
+/// assert!(eingang::kontoauszug::aus_json(&serde_json::json!([{"betrag": -5, "verwendungszweck": 7}])).is_err());
 /// ```
 ///
 /// # Errors
@@ -266,7 +276,10 @@ pub fn aus_json(liste: &Value) -> Result<Vec<Transaktion>, KontoauszugFehler> {
         .map(|(index, tx)| {
             let o = tx
                 .as_object()
-                .ok_or(KontoauszugFehler::TransaktionUngueltig { index })?;
+                .ok_or_else(|| KontoauszugFehler::TransaktionUngueltig {
+                    index,
+                    meldung: format!("'{}' object has no attribute 'get'", py_typ(tx)),
+                })?;
             let betrag = match o.get("betrag").map_or(PyInt::Wert(0), py::py_int) {
                 PyInt::Wert(b) => b,
                 PyInt::Ueberlauf => {
@@ -282,10 +295,16 @@ pub fn aus_json(liste: &Value) -> Result<Vec<Transaktion>, KontoauszugFehler> {
             let verwendungszweck = match o.get("verwendungszweck") {
                 None => String::new(),
                 Some(Value::String(s)) => s.clone(),
-                // PARITAET-Abweichung: ein falscher Wert (null, 0, "") ist in Python `(z or "")`
-                // und damit leer; hier ebenso. Ein wahrer Nicht-Text wirft dort `AttributeError`.
-                Some(v) if !py::wahr(v) => String::new(),
-                Some(_) => return Err(KontoauszugFehler::TransaktionUngueltig { index }),
+                // Ein falscher Wert (null, 0, "") ist in Python `(z or "")` und damit leer. Ein
+                // wahrer Nicht-Text wirft dort `AttributeError`, aber nur, wo Python den Zweck liest:
+                // bei einer Ausgabe (`betrag >= 0` springt vorher weiter).
+                Some(v) if !py::wahr(v) || betrag >= 0 => String::new(),
+                Some(v) => {
+                    return Err(KontoauszugFehler::TransaktionUngueltig {
+                        index,
+                        meldung: format!("'{}' object has no attribute 'lower'", py_typ(v)),
+                    })
+                }
             };
             Ok(Transaktion {
                 datum: o.get("datum").cloned().unwrap_or_else(|| json!("")),
@@ -294,6 +313,102 @@ pub fn aus_json(liste: &Value) -> Result<Vec<Transaktion>, KontoauszugFehler> {
             })
         })
         .collect()
+}
+
+/// Pythons `type(v).__name__` fuer einen JSON-Wert.
+fn py_typ(v: &Value) -> &'static str {
+    match v {
+        Value::Null => "NoneType",
+        Value::Bool(_) => "bool",
+        Value::Number(n) if n.is_f64() => "float",
+        Value::Number(_) => "int",
+        Value::String(_) => "str",
+        Value::Array(_) => "list",
+        Value::Object(_) => "dict",
+    }
+}
+
+/// `BETRAG_GRENZE_CENT`: ab hier weist der Store einen Vorschlag ab (Auflage F2/Magnitude).
+pub const BETRAG_GRENZE_CENT: u64 = 10_000_000_000;
+
+/// `_betrag_tragbar(tx)`: ob der Betrag in `uebernehme_kontoauszug` ankommt — eine Zahl unter 10^10
+/// Cent. NaN, Infinity, Text ohne Zahl, `null`, Liste und ein Element ohne Objekt sind es nicht.
+///
+/// ```
+/// use eingang::kontoauszug::betrag_tragbar;
+/// use serde_json::json;
+/// assert!(betrag_tragbar(&json!({"betrag": "-1_5"})));
+/// assert!(betrag_tragbar(&json!({})));
+/// assert!(!betrag_tragbar(&json!({"betrag": 10_000_000_000_i64})));
+/// assert!(!betrag_tragbar(&json!({"betrag": null})));
+/// assert!(!betrag_tragbar(&json!(5)));
+/// ```
+#[must_use]
+pub fn betrag_tragbar(tx: &Value) -> bool {
+    let Some(o) = tx.as_object() else {
+        return false;
+    };
+    match o.get("betrag").map_or(PyInt::Wert(0), py::py_int) {
+        PyInt::Wert(b) => b.unsigned_abs() < BETRAG_GRENZE_CENT,
+        PyInt::WertFehler | PyInt::TypFehler | PyInt::Ueberlauf => false,
+    }
+}
+
+/// `verwirf_unlesbare_betraege(transaktionen, n_verworfen)` fuer die Elemente eines JSON-Auszugs
+/// (Vault `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`): eine Buchung, deren Betrag
+/// [`betrag_tragbar`] nicht trägt, fliegt einzeln raus und zaehlt in `n_verworfen`; die uebrigen
+/// bleiben. Den Auszug ganz abzulehnen ist ausdruecklich nicht gewollt.
+#[must_use]
+pub fn verwirf_unlesbare_betraege_json(liste: &[Value], n_verworfen: usize) -> (Vec<Value>, usize) {
+    let ok: Vec<Value> = liste
+        .iter()
+        .filter(|tx| betrag_tragbar(tx))
+        .cloned()
+        .collect();
+    let weg = liste.len() - ok.len();
+    (ok, n_verworfen + weg)
+}
+
+/// Wie [`verwirf_unlesbare_betraege_json`], fuer die Buchungen aus CSV und PDF (der Betrag ist dort
+/// schon eine Zahl; nur ab 10^10 Cent fliegt eine Buchung raus).
+///
+/// ```
+/// use eingang::kontoauszug::{verwirf_unlesbare_betraege, Transaktion};
+/// let t = |betrag| Transaktion { datum: serde_json::json!(""), betrag, verwendungszweck: String::new() };
+/// let (ok, n) = verwirf_unlesbare_betraege(vec![t(-500), t(i64::MAX), t(-10_000_000_000), t(9_999_999_999)], 1);
+/// assert_eq!((ok.len(), n), (2, 3));
+/// ```
+#[must_use]
+pub fn verwirf_unlesbare_betraege(
+    transaktionen: Vec<Transaktion>,
+    n_verworfen: usize,
+) -> (Vec<Transaktion>, usize) {
+    let gesamt = transaktionen.len();
+    let ok: Vec<Transaktion> = transaktionen
+        .into_iter()
+        .filter(|t| t.betrag.unsigned_abs() < BETRAG_GRENZE_CENT)
+        .collect();
+    let weg = gesamt - ok.len();
+    (ok, n_verworfen + weg)
+}
+
+/// `hinweis_verworfen(n, fmt)`: der Satz fuer den Nutzer, warum `n` Zeilen eines Auszugs im Format
+/// `fmt` nicht uebernommen wurden.
+///
+/// ```
+/// assert_eq!(
+///     eingang::kontoauszug::hinweis_verworfen(2, "csv"),
+///     "2 Zeile(n) mit unlesbarem Betrag (keine Zahl oder ab 100 Mio. €) verworfen — bitte manuell prüfen/nachtragen."
+/// );
+/// ```
+#[must_use]
+pub fn hinweis_verworfen(n: usize, fmt: &str) -> String {
+    let grund = if fmt == "pdf" {
+        "unsicher erkannt (Confidence < 60%) oder mit zu großem Betrag (ab 100 Mio. €) verworfen"
+    } else {
+        "mit unlesbarem Betrag (keine Zahl oder ab 100 Mio. €) verworfen"
+    };
+    format!("{n} Zeile(n) {grund} — bitte manuell prüfen/nachtragen.")
 }
 
 static SALDO: LazyLock<PyRegex> =

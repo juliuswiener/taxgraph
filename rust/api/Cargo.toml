@@ -25,9 +25,11 @@ bindung = { path = "../bindung" }
 interview = { path = "../interview" }
 intervall = { path = "../intervall" }
 konsistenz = { path = "../konsistenz" }
+llm = { path = "../llm" }
 store = { path = "../store" }
 auth = { path = "../auth" }
 domain = { path = "../domain" }
+eingang = { path = "../eingang" }
 elster = { path = "../elster" }
 engine = { path = "../engine" }
 axum = { workspace = true }
@@ -38,6 +40,7 @@ serde_json = { workspace = true }
 regex = { workspace = true }
 chrono = { workspace = true }
 tower = { workspace = true }
+tempfile = { workspace = true }
 
 [dev-dependencies]
 domain = { path = "../domain", features = ["testhilfe"] }
