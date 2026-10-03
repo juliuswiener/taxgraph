@@ -54,6 +54,9 @@ from api_constants import (  # noqa: E402
 from bescheid_abzuege import (  # noqa: E402
     _abs3_eligible,
 )
+from bescheid_einkuenfte import (  # noqa: E402
+    _netto_vg_person_a,
+)
 
 def _mit_ring_werten(felder: dict, vz: int) -> dict:
     """Hängt berechnete Ring-Werte als fertige Events in felder ein.
@@ -373,6 +376,30 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
             and isinstance(_p35c_gate.get("wert"), bool):
         felder["p35c_foerderung_in_anspruch"] = {
             "wert": not _p35c_gate["wert"],
+            "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
+            "schreiber": "engine",
+            "signal": {"signal_1": None, "signal_2": None},
+        }
+
+    # § 34 Abs. 3 S. 1 „auf Antrag": die Antragszeile der Anlage, aus der der Veräußerungsgewinn stammt
+    # (E0801602 G / E0805003 S / E0901704 L, gewählt über rentner_veraeusserungs_betriebsart in
+    # est_mapping.VERZWEIGUNG). Die Zeile heisst im amtlichen Schema „Veräußerungsgewinn laut Zeile
+    # E0801301 [bzw. E0804501 / E0901201], für den der ermäßigte Steuersatz … beantragt wird" — der Wert ist
+    # also der Gewinn der Basiszeile. Ohne diese Zeile sah das Finanzamt den Antrag nie, die Vorschau
+    # rechnete ihn aber (gemessen 2026-10-03). Geschrieben wird nur, was der Chooser auch rechnet
+    # (bescheid_zweige: Antrag UND _abs3_eligible UND 0 < netto_vg <= 5 Mio, Entscheid 2026-09-26): sonst
+    # stünde in der Erklärung ein Antrag, den die Vorschau ablehnt. Nur bestätigte Felder zählen, wie im
+    # Chooser (nur_bestaetigt=True). Über 5 Mio sperrt abs3_ueber_5mio_offen vorher.
+    # ponytail: nur Person A (AK2 des Eintrags). Der Partner hat keine Abs.-3-Felder; der kein-FB-Zweig
+    # (E0801903 / E0805305 / E0902002) bleibt unbeschrieben, weil dessen Basiszeilen nie geschrieben werden.
+    # vz 0 = kein Veranlagungsjahr (fall_anlegen laesst nur Jahre mit Parametern zu): dann keine Antragszeile,
+    # wie Rust bei `vz = None`.
+    _fb = {k: v for k, v in felder.items() if isinstance(v, dict) and v.get("zustand") == "bestaetigt"}
+    if (vz > 0 and _fb.get("antrag_ermaessigter_satz", {}).get("wert") is True and _abs3_eligible(_fb, vz)
+            and 0 < _netto_vg_person_a(_fb) <= 5_000_000):
+        felder["p34_abs3_antragsbetrag"] = {
+            "wert": int(_fb["rentner_veraeusserungsgewinn"]["wert"]),
             "zustand": "bestaetigt",
             "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "amtlich", "haftung": "system"},
             "schreiber": "engine",

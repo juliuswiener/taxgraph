@@ -382,6 +382,10 @@ VERZWEIGUNG = {
     # Anlage S E0804501 [Vor_FB]; land_forst § 14 -> Anlage L E0901201 [VAe_G_FB_Antr].
     "rentner_veraeusserungsgewinn": {"art_feld": "rentner_veraeusserungs_betriebsart", "kz": {
         "gewerbe": "E0801301", "selbstaendig": "E0804501", "land_forst": "E0901201"}},
+    # § 34 Abs. 3 Antragszeile (berechneter Zwilling p34_abs3_antragsbetrag, s. _mit_ring_werten): im selben
+    # Container wie die Basiszeile darueber (XSD E10-2024/E10-2025: VAe_G_FB_Antr / Vor_FB / VAe_G_FB_Antr).
+    "p34_abs3_antragsbetrag": {"art_feld": "rentner_veraeusserungs_betriebsart", "kz": {
+        "gewerbe": "E0801602", "selbstaendig": "E0805003", "land_forst": "E0901704"}},
     # § 35c: die Anlage Energetische Massnahmen fuehrt neun Einzelzeilen plus eine Summe. Die
     # Summe traegt p35c_sanierungsaufwendungen (E0241901); dieser berechnete Zwilling traegt
     # denselben Betrag in die Zeile der gewaehlten Massnahmenart. Ohne eine Einzelzeile lehnt

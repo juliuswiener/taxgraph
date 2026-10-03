@@ -1193,13 +1193,18 @@ const P35C_BETRAG: i64 = 1_234_567;
 /// ruft `_mit_ring_werten` nicht auf (`tools/parity/elster_oracle.py:46-52`): der Zwilling
 /// `p35c_massnahme_einzelbetrag` entsteht dort nicht aus der Summe, darum traegt der Store ihn selbst.
 fn p35c_store(art: Option<&str>) -> StoreDatei {
-    let mut store = Store::leer(2025, None);
-    let nachschlag = BindungNachschlag::neu(index());
-    let signal = Signal2::new("ui:bestaetigt").unwrap();
     let felder = art
         .map(|a| ("p35c_massnahme_art", json!(a)))
         .into_iter()
         .chain([("p35c_massnahme_einzelbetrag", json!(P35C_BETRAG))]);
+    store_bestaetigt(felder)
+}
+
+/// Ein Store (VZ 2025) aus `felder`, jedes unmittelbar bestaetigt.
+fn store_bestaetigt(felder: impl IntoIterator<Item = (&'static str, Value)>) -> StoreDatei {
+    let mut store = Store::leer(2025, None);
+    let nachschlag = BindungNachschlag::neu(index());
+    let signal = Signal2::new("ui:bestaetigt").unwrap();
     for (feld_id, wert) in felder {
         let neu = NeuesEvent {
             feld_id: feld_id.to_owned(),
@@ -1213,7 +1218,7 @@ fn p35c_store(art: Option<&str>) -> StoreDatei {
             ersetzt: None,
             ts: Some("2026-09-29T00:00:00+00:00".to_owned()),
         };
-        store.append(&neu, None, nachschlag).expect("p35c-Feld");
+        store.append(&neu, None, nachschlag).expect(feld_id);
     }
     store.into_datei()
 }
@@ -1251,17 +1256,22 @@ fn ohne_praefix(xml: &str) -> String {
     aus
 }
 
-/// Der Text unter `EM_35c/Obj/Aufw/Massn/<container>/<kz>`, wenn der Pfad im XML steht.
-fn p35c_wert(xml: &str, container: &str, kz: &str) -> Option<String> {
+/// Der Text unter `<pfad…>/<kz>`, wenn der Pfad im XML steht (jedes Glied nach dem vorigen).
+fn pfad_wert(xml: &str, pfad: &[&str], kz: &str) -> Option<String> {
     let flach = ohne_praefix(xml);
     let mut rest = flach.as_str();
-    for name in ["EM_35c", "Obj", "Aufw", "Massn", container] {
+    for name in pfad {
         let i = rest.find(&format!("<{name}>"))?;
         rest = &rest[i..];
     }
     let i = rest.find(&format!("<{kz}>"))?;
     let inhalt = &rest[i + kz.len() + 2..];
     Some(inhalt[..inhalt.find('<')?].to_owned())
+}
+
+/// Der Text unter `EM_35c/Obj/Aufw/Massn/<container>/<kz>`, wenn der Pfad im XML steht.
+fn p35c_wert(xml: &str, container: &str, kz: &str) -> Option<String> {
+    pfad_wert(xml, &["EM_35c", "Obj", "Aufw", "Massn", container], kz)
 }
 
 /// Die Nicht-Leer-Probe zu einer Art: das XML ist `Ok`, der Pfad steht darin mit einer Zahl, und
@@ -1347,6 +1357,136 @@ fn p35c_je_massnahmenart_ein_fall() {
         }
     }
     println!("[p35c] neun Arten, je Fall Rust gleich Python; mit XML: Pfad im XML und Gegenprobe (leere Art) erkannt");
+}
+
+// ---------------------------------------------------------------- § 34 Abs. 3: Antragszeile je Betriebsart
+
+/// (Betriebsart, Pfad zum Container der Basiszeile unterhalb von `E10`, Basis-Kz, Antrags-Kz) — aus dem
+/// amtlichen `E10-2025.xsd` (`VAe_G_FB_Antr` bzw. `Vor_FB`), wie `ARTEN` in `tests/test_p34_antrag_kennzahl.py`.
+/// `E10` fehlt im Pfad: das Wurzelelement traegt Attribute, `pfad_wert` sucht `<name>` ohne.
+/// Nur die Nicht-Leer-Probe liest die Liste; ob Art -> Kz stimmt, entscheidet `vergleiche_fall`.
+const P34_ARTEN: [(&str, &[&str], &str, &str); 3] = [
+    (
+        "gewerbe",
+        &["G", "VAe_G_v_FB", "Betr_TBetr_MUAnt", "VAe_G_FB_Antr"],
+        "E0801301",
+        "E0801602",
+    ),
+    (
+        "selbstaendig",
+        &["S", "VAe_Gew", "Vor_FB"],
+        "E0804501",
+        "E0805003",
+    ),
+    (
+        "land_forst",
+        &["L", "VAe_G_v_FB", "VAe_G_FB_Antr"],
+        "E0901201",
+        "E0901704",
+    ),
+];
+
+/// 500.000 EUR in Cent.
+const P34_VG: i64 = 50_000_000;
+
+/// Ein Store mit Gewinn, Betriebsart und (falls `antrag`) dem Zwilling `p34_abs3_antragsbetrag`.
+/// Der Orakelweg ruft `_mit_ring_werten` nicht auf (siehe `p35c_store`), darum traegt der Store den
+/// Zwilling selbst; wann er entsteht, prueft `bescheid_deklaration_paritaet.rs` (`gezielte_faelle`).
+fn p34_store(art: &'static str, antrag: bool) -> StoreDatei {
+    let zwilling = antrag.then(|| ("p34_abs3_antragsbetrag", json!(P34_VG)));
+    store_bestaetigt(
+        [
+            ("rentner_veraeusserungsgewinn", json!(P34_VG)),
+            ("rentner_veraeusserungs_betriebsart", json!(art)),
+        ]
+        .into_iter()
+        .chain(zwilling),
+    )
+}
+
+/// Die Nicht-Leer-Probe zu einer Art (mit Zwilling): Basis- und Antrags-Kz stehen im Container der
+/// Basiszeile mit einer Zahl, keine Antrags-Kz einer anderen Art und keine des kein-FB-Zweigs.
+fn p34_probe(art: &str, xml: &Result<String, String>) -> Vec<String> {
+    let Some((_, pfad, basis, antrag)) = P34_ARTEN.iter().find(|(a, ..)| *a == art) else {
+        return vec![format!("unbekannte Art {art}")];
+    };
+    let xml = match xml {
+        Ok(x) => x,
+        Err(e) => return vec![format!("Rust-XML ist Err: {e}")],
+    };
+    let mut fehler = Vec::new();
+    for kz in [basis, antrag] {
+        match pfad_wert(xml, pfad, kz) {
+            None => fehler.push(format!("{kz} fehlt unter {}", pfad.join("/"))),
+            Some(w) if w.is_empty() || !w.bytes().all(|b| b.is_ascii_digit()) => {
+                fehler.push(format!("{kz} traegt keine Zahl: {w:?}"));
+            }
+            Some(_) => {}
+        }
+    }
+    let fremd = P34_ARTEN
+        .iter()
+        .map(|(_, _, _, k)| *k)
+        .filter(|k| k != antrag)
+        .chain(["E0801903", "E0805305", "E0902002"]);
+    for k in fremd {
+        if xml.contains(k) {
+            fehler.push(format!("{k} steht auch im XML (fremde Zeile)"));
+        }
+    }
+    fehler
+}
+
+/// Je Betriebsart ein Fall mit Antrags-Zwilling: Rust gleich Python (Deklaration, Zuruecklesen, XML),
+/// dazu die Nicht-Leer-Probe (Antrags-Kz im Container der Basiszeile) und die Gegenprobe ohne
+/// Zwilling (kein Antrags-Kz in keinem der sechs Zeilen). Vault `p34-antrag-ohne-kennzahl-erreicht-
+/// elster-nicht`: Python UND Rust schrieben die Antragszeile bis dahin nie.
+#[test]
+fn p34_antrag_je_betriebsart() {
+    if skip_ohne_parity_env() {
+        return;
+    }
+    let mit_xml = elster::testhilfe::schemas_da(2025);
+    let mut z = Zaehler::default();
+    for (art, ..) in P34_ARTEN {
+        let datei = p34_store(art, true);
+        let name = format!("p34/{art}");
+        vergleiche_fall(
+            &datei,
+            &serde_json::to_value(&datei).unwrap(),
+            false,
+            &mut z,
+            &name,
+            true,
+        );
+        if mit_xml {
+            let xml = p35c_rust_xml(&datei);
+            let probe = p34_probe(art, &xml);
+            z.abweichungen
+                .extend(probe.into_iter().map(|p| format!("{name}: {p}")));
+        }
+    }
+    bericht("p34 Antrag je Betriebsart", &z);
+    assert_eq!(z.faelle, 3, "drei Arten, drei Faelle");
+    assert_eq!(z.dekl_ok, 3, "deklariere lieferte nicht in jedem Fall Ok");
+    assert!(
+        !mit_xml || z.xml_ok >= 3,
+        "weniger als drei Fall-XML auf beiden Seiten Ok: {}",
+        z.xml_ok
+    );
+    assert!(z.abweichungen.is_empty(), "{:#?}", z.abweichungen);
+    // Gegenprobe: ohne Zwilling steht keine Antrags-Kz im XML; die Probe muss den Fehlbestand sehen.
+    if mit_xml {
+        for (art, _, _, antrag) in P34_ARTEN {
+            let leer = p35c_rust_xml(&p34_store(art, false));
+            let probe = p34_probe(art, &leer);
+            assert!(
+                probe.iter().any(|p| p.starts_with(antrag)),
+                "Gegenprobe: die Probe sieht die fehlende {antrag} bei {art} nicht: {probe:?}"
+            );
+        }
+    }
+    println!("[p34] drei Arten, je Fall Rust gleich Python; mit XML: Antrags-Kz im Container der Basiszeile, Gegenprobe (kein Zwilling) erkannt");
 }
 
 // ---------------------------------------------------------------- ERiC

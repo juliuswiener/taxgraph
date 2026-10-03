@@ -16,10 +16,12 @@ use store::SnapshotFeld;
 
 use super::c2;
 use super::konstanten::VERPFLEGUNG_TAGE;
+use crate::abzuege::abs3_eligible;
 use crate::einkuenfte::{KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE, KAP_TOEPFE_PARTNER};
+use crate::zweige::netto_vg;
 use crate::{
-    cent_zu_euro, euro_plus, ist_positive_zahl, ist_zusammen, minus, plus, py_int, zahl_oder_null,
-    BescheidFehler, Felder,
+    cent_zu_euro, euro_plus, feld_int_oder_null, ist_positive_zahl, ist_true, ist_zusammen, minus,
+    plus, py_int, wert, zahl_oder_null, BescheidFehler, Felder,
 };
 
 type R<T> = Result<T, BescheidFehler>;
@@ -77,7 +79,8 @@ pub fn mit_ring_werten(felder: &mut Felder, vz: Option<Vz>, p: &Params) -> R<()>
     kap_antrag(felder, vz, p, &h)?;
     haushaltsnah(felder, &h)?;
     vermietung(felder, &h)?;
-    einzelzeilen(felder, &h)
+    einzelzeilen(felder, &h)?;
+    p34_antrag(felder, vz, &h)
 }
 
 // ---------------------------------------------------------------- (1) Verpflegungskuerzung
@@ -364,6 +367,35 @@ fn einzelzeile(f: &mut Felder, summe: &str, ziel: &str, h: &HerkunftVektor) -> R
     Ok(())
 }
 
+/// (8) § 34 Abs. 3 Antragszeile (`E0801602` G / `E0805003` S / `E0901704` L, je nach
+/// `rentner_veraeusserungs_betriebsart`, `est_mapping.VERZWEIGUNG`): der Gewinn der Basiszeile, fuer
+/// den der ermaessigte Satz beantragt wird. Geschrieben nur, was der Chooser auch rechnet
+/// (`tarif::p34_chooser`: Antrag UND `abs3_eligible` UND 0 < `netto_vg` <= 5 Mio); nur bestaetigte
+/// Felder zaehlen. Ueber 5 Mio sperrt `abs3_ueber_5mio_offen` vorher.
+///
+/// ponytail: nur Person A (AK2 des Eintrags p34-antrag-ohne-kennzahl-erreicht-elster-nicht);
+/// `vz = None` (Jahr ohne Parameter) schreibt nichts, wie Python bei `vz == 0`.
+fn p34_antrag(f: &mut Felder, vz: Option<Vz>, h: &HerkunftVektor) -> R<()> {
+    let Some(vz) = vz else {
+        return Ok(());
+    };
+    let fb: Felder = f
+        .iter()
+        .filter(|(_, x)| x.zustand == Zustand::Bestaetigt)
+        .map(|(k, x)| (k.clone(), x.clone()))
+        .collect();
+    let netto = netto_vg(&fb)?.get();
+    if ist_true(wert(&fb, "antrag_ermaessigter_satz"))
+        && abs3_eligible(&fb, vz)?
+        && 0 < netto
+        && netto <= 5_000_000
+    {
+        let vg_cent = feld_int_oder_null(&fb, "rentner_veraeusserungsgewinn")?;
+        setze(f, "p34_abs3_antragsbetrag", PyWert::Ganz(vg_cent), h);
+    }
+    Ok(())
+}
+
 /// (6) § 35c-Einzelzeile, GewSt-Kz, § 22 Nr. 3, § 10 Abs. 1 Nr. 7, (5) § 35c-Umkehrung.
 fn einzelzeilen(f: &mut Felder, h: &HerkunftVektor) -> R<()> {
     einzelzeile(
@@ -465,5 +497,187 @@ mod aequivalenz {
         fn py_int_typ_wie_alt(v in json_wert()) {
             pruefe(&v, &alt_klasse(py_int_typ_alt(&v)), &alt_klasse(py_int_typ(&py(&v))), Vec::new, &[])?;
         }
+    }
+}
+
+/// § 34 Abs. 3 Antragszeile (Vault `p34-antrag-ohne-kennzahl-erreicht-elster-nicht`, AK1/AK3): der
+/// Ring-Wert entsteht nur, wenn der Chooser Abs. 3 auch rechnet, und landet im Container der Basiszeile.
+#[cfg(test)]
+mod p34_antrag_tests {
+    use domain::{PyWert, Vz};
+    use serde_json::{json, Value};
+
+    use super::mit_ring_werten;
+    use crate::testhilfe::{felder, index, params, store};
+    use crate::Felder;
+
+    /// (Betriebsart, Basis-Kz, Antrags-Kz) — aus dem amtlichen E10-2025.xsd, wie im Python-Test.
+    const ARTEN: [(&str, &str, &str); 3] = [
+        ("gewerbe", "E0801301", "E0801602"),
+        ("selbstaendig", "E0804501", "E0805003"),
+        ("land_forst", "E0901201", "E0901704"),
+    ];
+    const ALLE_ANTRAGS_KZ: [&str; 6] = [
+        "E0801602", "E0805003", "E0901704", "E0801903", "E0805305", "E0902002",
+    ];
+    /// 500.000 EUR: ueber dem Freibetrag, unter 5 Mio.
+    const VG: i64 = 50_000_000;
+
+    /// Berechtigter Antragsfall; `abweichend` ersetzt oder ergaenzt Felder (Wert, bestaetigt).
+    fn fall(art: &str, abweichend: &[(&str, Value, bool)]) -> Vec<(String, Value, bool)> {
+        let mut felder: Vec<(String, Value, bool)> = [
+            ("rentner_veraeusserungsgewinn", json!(VG)),
+            ("rentner_veraeusserungs_betriebsart", json!(art)),
+            ("rentner_alter_55_oder_berufsunfaehig", json!(true)),
+            ("rentner_freibetrag_erstmalig", json!(true)),
+            ("geburtsjahr", json!(1955)),
+            ("antrag_ermaessigter_satz", json!(true)),
+            ("dauernd_berufsunfaehig", json!(false)),
+            ("ermaessigung_einmal_genutzt", json!(false)),
+        ]
+        .into_iter()
+        .map(|(f, w)| (f.to_owned(), w, true))
+        .collect();
+        for (f, w, b) in abweichend {
+            felder.retain(|(g, _, _)| g != f);
+            felder.push(((*f).to_owned(), w.clone(), *b));
+        }
+        felder
+    }
+
+    /// Ring-Werte und Deklaration (VZ 2025) zu einem Fall; `vz` steuert nur `mit_ring_werten`.
+    fn lauf(fall: &[(String, Value, bool)], vz: Option<Vz>) -> (Felder, elster::Deklaration) {
+        let paare: Vec<(&str, Value, bool)> = fall
+            .iter()
+            .map(|(f, w, b)| (f.as_str(), w.clone(), *b))
+            .collect();
+        let mut f = felder(&store(&paare));
+        mit_ring_werten(&mut f, vz, params()).unwrap();
+        let d = elster::deklariere(&f, index(), 2025, None).unwrap();
+        (f, d)
+    }
+
+    fn antrags_kz(d: &elster::Deklaration) -> Vec<&str> {
+        ALLE_ANTRAGS_KZ
+            .into_iter()
+            .filter(|k| d.deklaration.contains_key(*k))
+            .collect()
+    }
+
+    #[test]
+    fn antrag_schreibt_die_antrags_kz_der_anlage() {
+        for (art, basis, antrag) in ARTEN {
+            let (f, d) = lauf(&fall(art, &[]), Some(Vz::Vz2025));
+            assert_eq!(
+                f.get("p34_abs3_antragsbetrag").map(|x| x.wert.clone()),
+                Some(PyWert::Ganz(VG)),
+                "{art}: kein Ring-Wert"
+            );
+            assert_eq!(
+                d.deklaration.get(basis).and_then(Value::as_f64),
+                Some(500_000.0),
+                "{art}: Basis"
+            );
+            assert_eq!(
+                d.deklaration.get(antrag).and_then(Value::as_f64),
+                Some(500_000.0),
+                "{art}: {antrag}"
+            );
+            assert_eq!(
+                antrags_kz(&d),
+                vec![antrag],
+                "{art}: nur die eigene Antrags-Kz darf stehen"
+            );
+        }
+    }
+
+    #[test]
+    fn ohne_antrag_oder_berechtigung_steht_keine_antrags_kz() {
+        type Paare<'a> = Vec<(&'a str, Value, bool)>;
+        let faelle: [(&str, Paare); 8] = [
+            (
+                "antrag nein",
+                vec![("antrag_ermaessigter_satz", json!(false), true)],
+            ),
+            (
+                "antrag unbestaetigt",
+                vec![("antrag_ermaessigter_satz", json!(true), false)],
+            ),
+            (
+                "Geburtsjahr unbestaetigt",
+                vec![("geburtsjahr", json!(1960), false)],
+            ),
+            (
+                "Gewinn unbestaetigt",
+                vec![("rentner_veraeusserungsgewinn", json!(VG), false)],
+            ),
+            ("zu jung", vec![("geburtsjahr", json!(1990), true)]),
+            (
+                "schon genutzt",
+                vec![("ermaessigung_einmal_genutzt", json!(true), true)],
+            ),
+            // 40.000 EUR liegen unter dem Freibetrag (45.000): netto_vg 0
+            (
+                "netto null",
+                vec![("rentner_veraeusserungsgewinn", json!(4_000_000), true)],
+            ),
+            (
+                "Alter vorlaeufig",
+                vec![
+                    ("geburtsjahr", json!(1955), false),
+                    ("dauernd_berufsunfaehig", json!(false), true),
+                ],
+            ),
+        ];
+        for (name, abweichung) in faelle {
+            let (f, d) = lauf(&fall("gewerbe", &abweichung), Some(Vz::Vz2025));
+            assert!(
+                !f.contains_key("p34_abs3_antragsbetrag"),
+                "{name}: Ring-Wert entstand"
+            );
+            assert_eq!(
+                antrags_kz(&d),
+                Vec::<&str>::new(),
+                "{name}: Antrags-Kz geschrieben"
+            );
+            // Kontrolle: die Basiszeile steht, wo der Gewinn bestaetigt ist (sonst misst der Fall nichts)
+            let gewinn_bestaetigt = abweichung
+                .iter()
+                .all(|(f, _, b)| *f != "rentner_veraeusserungsgewinn" || *b);
+            assert!(
+                !gewinn_bestaetigt || d.deklaration.contains_key("E0801301"),
+                "{name}: der Fall misst nichts"
+            );
+        }
+    }
+
+    /// Die Grenzen des Netto-Gewinns sind cent genau: 5.000.000,00 EUR (Freibetrag 0) schreiben,
+    /// 5.000.001,00 EUR nicht (die Route sperrt dort vorher mit `abs3_ueber_5mio_offen`); 45.001 EUR
+    /// lassen 1 EUR netto, 45.000 EUR keinen.
+    #[test]
+    fn die_netto_grenzen_gelten_cent_genau() {
+        let faelle = [
+            (500_000_000, true),
+            (500_000_100, false),
+            (13_600_000, true),
+            (4_500_100, true),
+            (4_500_000, false),
+        ];
+        for (vg, schreibt) in faelle {
+            let abw = [("rentner_veraeusserungsgewinn", json!(vg), true)];
+            let (f, d) = lauf(&fall("gewerbe", &abw), Some(Vz::Vz2025));
+            assert_eq!(
+                f.contains_key("p34_abs3_antragsbetrag"),
+                schreibt,
+                "vg={vg}"
+            );
+            assert_eq!(antrags_kz(&d).len(), usize::from(schreibt), "vg={vg}");
+        }
+    }
+
+    #[test]
+    fn ohne_veranlagungsjahr_steht_keine_antrags_kz() {
+        let (f, _) = lauf(&fall("gewerbe", &[]), None);
+        assert!(!f.contains_key("p34_abs3_antragsbetrag"));
     }
 }

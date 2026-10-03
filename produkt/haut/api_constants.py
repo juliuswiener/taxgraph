@@ -396,7 +396,7 @@ GESAMT_VERSORGUNG = ("versorgung_jahresrente", "versorgung_bemessungsgrundlage",
 
 # ========== Rentner: §§ 13-18 Gewinn + Veräußerungs-Gewinn ==========
 RENTNER_GEWINN = (("einkuenfte_gewinn", "gewinn_bezeichnung", "rentner_veraeusserungsgewinn",
-                   "rentner_veraeusserungs_betriebsart",
+                   "rentner_veraeusserungs_betriebsart", "p34_abs3_antragsbetrag",
                    "gewinn_betriebsart", "geburtsjahr") + EUER_KOMPONENTEN + GWG_FELDER + MITU_FELDER + ABS3_FELDER)
 
 # ========== RENTNER_KEGEL (Pflicht-Felder im Rentner-Ring) ==========
@@ -690,7 +690,7 @@ GESAMT_REALSPLITTING = ("realsplitting_unterhaltsleistungen", "realsplitting_emp
                         "realsplitting_empfaenger_kv_krankengeld", "realsplitting_zustimmung")
 
 # ========== § 21 Veräußerungs-Gewinn (Gesamt) ==========
-GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart")
+GESAMT_VG = ("rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart", "p34_abs3_antragsbetrag")
 GESAMT_VG_PARTNER = ("rentner_veraeusserungsgewinn_partner", "rentner_veraeusserungs_betriebsart_partner")
 
 # ========== § 3 Nr. 72 Photovoltaik (steuerfreie Einnahmen) ==========

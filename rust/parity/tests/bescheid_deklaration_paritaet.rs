@@ -1584,6 +1584,197 @@ fn verpflegung_faelle() -> Vec<(&'static str, &'static str, Vec<(&'static str, V
     out
 }
 
+/// § 34 Abs. 3: der Zwilling `p34_abs3_antragsbetrag` (Antrags-Kz G E0801602 / S E0805003 /
+/// L E0901704, Vault `p34-antrag-ohne-kennzahl-erreicht-elster-nicht`) entsteht in `mit_ring_werten`
+/// nur bei bestaetigtem Antrag UND Berechtigung UND 0 < `netto_vg` <= 5 Mio EUR. Je Fall: Python gleich
+/// Rust (alle fuenf Funktionen, `werte`), dazu die Erwartung "Zwilling da / nicht da" an PYTHON — ohne
+/// sie waere ein Fall, in dem beide Seiten nichts schreiben, gruen. Die Grenzfaelle des Netto-Gewinns
+/// sind Cent genau: 5.000.000,00 EUR (Freibetrag 0) schreibt, 5.000.001,00 EUR nicht.
+#[test]
+fn p34_antrag_zwilling() {
+    if skip() {
+        return;
+    }
+    let eligible = |art: &'static str, vg: i64| -> Vec<(&'static str, Value, bool)> {
+        vec![
+            ("antrag_ermaessigter_satz", json!(true), true),
+            ("geburtsjahr", json!(1960), true),
+            ("dauernd_berufsunfaehig", json!(false), true),
+            ("ermaessigung_einmal_genutzt", json!(false), true),
+            ("rentner_alter_55_oder_berufsunfaehig", json!(true), true),
+            ("rentner_freibetrag_erstmalig", json!(true), true),
+            ("rentner_veraeusserungsgewinn", json!(vg), true),
+            ("rentner_veraeusserungs_betriebsart", json!(art), true),
+        ]
+    };
+    let mit = |f: Vec<(&'static str, Value, bool)>, neu: (&'static str, Value, bool)| {
+        let mut f: Vec<_> = f.into_iter().filter(|(n, ..)| *n != neu.0).collect();
+        f.push(neu);
+        f
+    };
+    // (Name, Scheibe, Felder, vz ohne Jahr, Zwilling erwartet)
+    let faelle: Vec<(
+        &str,
+        &'static str,
+        Vec<(&'static str, Value, bool)>,
+        bool,
+        bool,
+    )> = vec![
+        (
+            "gewerbe",
+            "gesamt",
+            eligible("gewerbe", 50_000_000),
+            false,
+            true,
+        ),
+        (
+            "selbstaendig",
+            "gesamt",
+            eligible("selbstaendig", 50_000_000),
+            false,
+            true,
+        ),
+        (
+            "land_forst",
+            "gesamt",
+            eligible("land_forst", 50_000_000),
+            false,
+            true,
+        ),
+        (
+            "gewerbe/rentner_gesamt",
+            "rentner_gesamt",
+            eligible("gewerbe", 50_000_000),
+            false,
+            true,
+        ),
+        (
+            "netto genau 5 Mio",
+            "gesamt",
+            eligible("gewerbe", 500_000_000),
+            false,
+            true,
+        ),
+        (
+            "netto 1 EUR ueber 5 Mio",
+            "gesamt",
+            eligible("gewerbe", 500_000_100),
+            false,
+            false,
+        ),
+        (
+            "viel ueber 5 Mio",
+            "gesamt",
+            eligible("gewerbe", 600_000_000),
+            false,
+            false,
+        ),
+        (
+            "Antrag nein",
+            "gesamt",
+            mit(
+                eligible("gewerbe", 50_000_000),
+                ("antrag_ermaessigter_satz", json!(false), true),
+            ),
+            false,
+            false,
+        ),
+        (
+            "Antrag vorlaeufig",
+            "gesamt",
+            mit(
+                eligible("gewerbe", 50_000_000),
+                ("antrag_ermaessigter_satz", json!(true), false),
+            ),
+            false,
+            false,
+        ),
+        (
+            "Antrag fehlt",
+            "gesamt",
+            eligible("gewerbe", 50_000_000)
+                .into_iter()
+                .filter(|(n, ..)| *n != "antrag_ermaessigter_satz")
+                .collect(),
+            false,
+            false,
+        ),
+        (
+            "zu jung",
+            "gesamt",
+            mit(
+                eligible("gewerbe", 50_000_000),
+                ("geburtsjahr", json!(1990), true),
+            ),
+            false,
+            false,
+        ),
+        (
+            "schon genutzt",
+            "gesamt",
+            mit(
+                eligible("gewerbe", 50_000_000),
+                ("ermaessigung_einmal_genutzt", json!(true), true),
+            ),
+            false,
+            false,
+        ),
+        (
+            "netto null (unter Freibetrag)",
+            "gesamt",
+            eligible("gewerbe", 4_000_000),
+            false,
+            false,
+        ),
+        (
+            "ohne Veranlagungsjahr",
+            "gesamt",
+            eligible("gewerbe", 50_000_000),
+            true,
+            false,
+        ),
+    ];
+    let mut b = Bilanz::default();
+    let mut da = 0;
+    for (name, scheibe, felder, vz_ohne, erwartet) in &faelle {
+        let evs: Vec<Value> = felder
+            .iter()
+            .enumerate()
+            .map(|(i, (f, w, z))| event(i, f, w, *z))
+            .collect();
+        let k = Kontext {
+            quelle: Quelle::Store(
+                json!({"version": 1, "veranlagungszeitraum": 2025, "events": evs}),
+            ),
+            vz: 2025,
+            scheibe: Some(scheibe),
+            store_uebergeben: true,
+            bindung_uebergeben: true,
+            vz_ohne: *vz_ohne,
+            float_modus: false,
+        };
+        let py = frage_roh(&k.request(&["mit_ring_werten"]));
+        let py_da = py["bescheid.mit_ring_werten"]["ok"]
+            .get("p34_abs3_antragsbetrag")
+            .is_some();
+        assert_eq!(
+            py_da,
+            *erwartet,
+            "Python: Zwilling {} (Fall {name}): {}",
+            if py_da { "da" } else { "fehlt" },
+            py["bescheid.mit_ring_werten"]
+        );
+        da += usize::from(py_da);
+        vergleiche(&mut b, &k, name, true, false);
+    }
+    b.drucke("p34_antrag_zwilling", faelle.len());
+    assert_eq!(b.abweichungen(), 0);
+    assert_eq!(
+        da, 5,
+        "fuenf Faelle schreiben den Zwilling, alle anderen nicht"
+    );
+}
+
 /// Die Sperrgründe, die der Zufall nicht zuverlässig erreicht (spät im Guard hinter frühen Sperren).
 /// Jeder Fall ist von Hand gebaut; der Test verlangt, dass PYTHON den erwarteten Grund liefert (der
 /// Fall trifft die Stelle wirklich) und dass Rust ihn ebenso liefert.
