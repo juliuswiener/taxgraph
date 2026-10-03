@@ -3796,6 +3796,12 @@ fn generatoren() {
         ("g_an3", "an_gesamt", 2025),
         ("g_an4", "an_gesamt", 2025),
         ("g_an5", "an_gesamt", 2025),
+        // g_an6: das Gate `vpf_auswaertige_taetigkeit` (verneint) liegt NICHT in der Scheibe `an_gesamt`
+        // (`POST /event` weist es dort ab), und die drei `tage_*` des Kegels fehlen. Die Akte entsteht
+        // als `gesamt` und bekommt unten von Hand die Scheibe `an_gesamt`. Pythons Relevanz
+        // (Scheiben-Bindung) sieht das Gate nicht, eine Voll-Graph-Sicht schloesse die Regel aus und
+        // liesse den Kegel vollstaendig.
+        ("g_an6", "gesamt", 2025),
         ("g_ges2", "gesamt", 2025),
         ("g_ges3", "gesamt", 2025),
         ("g_ges4", "gesamt", 2025),
@@ -3908,6 +3914,12 @@ fn generatoren() {
     for id in ["g_an3", "g_an4", "g_an5"] {
         fuege(id, kegel_an_voll());
     }
+    fuege("g_an6", {
+        let mut k = kegel_an_voll();
+        k.retain(|(f, _)| !matches!(*f, "tage_24h" | "tage_an_abreise" | "tage_ueber_8h_eintaegig"));
+        k.push(("vpf_auswaertige_taetigkeit", json!(false)));
+        k
+    });
     fuege(
         "g_an4",
         vec![
@@ -4123,17 +4135,21 @@ fn generatoren() {
     // Scheiben-Wechsel von Hand, in beiden Verzeichnissen gleich: `bruttoarbeitslohn` hat in `ep`
     // keine Bindung mehr. Der Store laesst so ein Event nicht ueber `POST /event` zu (400), eine
     // vorhandene Akte kann es dennoch tragen.
-    for (art, id) in ["python", "rust"]
-        .into_iter()
-        .flat_map(|art| ["g_aussen", "g_pf_nf"].map(|id| (art, id)))
-    {
+    for (art, (id, scheibe)) in ["python", "rust"].into_iter().flat_map(|art| {
+        [
+            ("g_aussen", "ep"),
+            ("g_pf_nf", "ep"),
+            ("g_an6", "an_gesamt"),
+        ]
+        .map(|f| (art, f))
+    }) {
         let pfad = tmp
             .path()
             .join(art)
             .join("faelle")
             .join(format!("{id}.json"));
         let mut akte: Value = serde_json::from_slice(&std::fs::read(&pfad).unwrap()).unwrap();
-        akte["scheibe"] = json!("ep");
+        akte["scheibe"] = json!(scheibe);
         std::fs::write(&pfad, serde_json::to_vec(&akte).unwrap()).unwrap();
     }
     // Jahr von Hand: 0 und 2023 lassen `deklariere` scheitern, 2027 hat keine Parameter (Ring-Werte
@@ -4232,7 +4248,7 @@ fn generatoren() {
     }
     println!("  fragen: Anzahl je Fall {fragen_je_fall:?}, Sperrgruende {fragen_gruende:?}");
     for id in [
-        "g_an3", "g_an4", "g_an5", "g_ges2", "g_ges3", "g_ges4", "g_ges5", "g_ges6", "g_ges7",
+        "g_an3", "g_an4", "g_an5", "g_an6", "g_ges2", "g_ges3", "g_ges4", "g_ges5", "g_ges6", "g_ges7",
         "g_ges8", "g_ges9", "g_rent4",
     ] {
         ergebnisse.extend(a("GET", &format!("/fall/{id}/ergebnis"), None));
