@@ -11,8 +11,15 @@
 //! (159 passed, 0 failed, 10 ignored). Mit diesen Tests werden alle vier rot, jede mit genau zwei der vier
 //! neuen Tests (161 passed, 2 failed).
 //!
+//! Scheibe `rentner_gesamt` (h8-hermetisch2): derselbe `gesamt_guard` laeuft auch dort, mit eigener `Cfg`.
+//! Gemessen am 2026-10-03 auf e50f7d36: die Mutation "`betrag_offen` entfaellt fuer die Rentner-Scheibe"
+//! (`if !cfg.rentner { sperre_o!(betrag_offen(k)); }` in `sperre/gesamt.rs`) laesst `cargo test -p bescheid`
+//! gruen (163 passed, 0 failed); mit den vier `rentner_*`-Tests wird sie rot (3 von 4). R1-R4 werden von den
+//! vier `rentner_*`-Tests allein je mit 2 Tests rot (`cargo test -p bescheid --test gewst_hebesatz_hermetisch
+//! -- rentner_`).
+//!
 //! HERKUNFT DER ERWARTUNGSWERTE: jede Zeile der Tabelle unten ist die Ausgabe des Python-Orakels
-//! `api._an_gesamt_sperrgrund(felder, SCHEIBEN["gesamt"], 2025, None, bindung)` auf denselben Events
+//! `api._an_gesamt_sperrgrund(felder, SCHEIBEN[<scheibe>], 2025, None, bindung)` auf denselben Events
 //! (Orakel-Skript und Lauf: Anlagen zum Bericht). Kein Wert ist aus dem Rust-Code abgelesen. Die
 //! Python-Tests `tests/test_gewinn_partner_ring.py::test_p35_*` stuetzen dieselben Aussagen.
 //!
@@ -32,20 +39,27 @@ use domain::{Scheibe, Sperrgrund, Vz};
 use serde_json::{json, Value};
 use std::sync::OnceLock;
 
-/// Ein handgebauter Fall: Events `(feld_id, wert, bestaetigt)` und der Grund, den das Python-Orakel liefert.
+/// Ein handgebauter Fall: Scheibe, Events `(feld_id, wert, bestaetigt)` und der Grund, den das Python-Orakel liefert.
 struct Fall {
+    scheibe: Scheibe,
     gruppe: &'static str,
     name: &'static str,
     events: Vec<(&'static str, Value, bool)>,
     erwartet: Option<&'static str>,
 }
 
-/// Die Bindung der Scheibe `gesamt`: nur ihre Feld-Ids, wie `api._scheibe_bindung`. Der volle Index kennt mehr
+/// Die Bindung der Scheibe: nur ihre Feld-Ids, wie `api._scheibe_bindung`. Der volle Index kennt mehr
 /// Flags und liesse `flag_widersprueche` auf Person B ansprechen.
-fn scheiben_index() -> &'static BindungIndex<'static> {
-    static I: OnceLock<BindungIndex<'static>> = OnceLock::new();
-    I.get_or_init(|| {
-        let ids = Cfg::fuer(Scheibe::Gesamt).felder(|_| Vec::new()).unwrap();
+fn scheiben_index(scheibe: Scheibe) -> &'static BindungIndex<'static> {
+    static GESAMT: OnceLock<BindungIndex<'static>> = OnceLock::new();
+    static RENTNER: OnceLock<BindungIndex<'static>> = OnceLock::new();
+    let zelle = if scheibe == Scheibe::RentnerGesamt {
+        &RENTNER
+    } else {
+        &GESAMT
+    };
+    zelle.get_or_init(|| {
+        let ids = Cfg::fuer(scheibe).felder(|_| Vec::new()).unwrap();
         index()
             .iter()
             .filter(|(k, _)| ids.contains(k))
@@ -54,16 +68,16 @@ fn scheiben_index() -> &'static BindungIndex<'static> {
     })
 }
 
-/// Der Sperrgrund der Scheibe `gesamt` fuer VZ 2025 auf einem Store aus den Events.
-fn grund(events: &[(&str, Value, bool)]) -> Option<Sperrgrund> {
+/// Der Sperrgrund der Scheibe fuer VZ 2025 auf einem Store aus den Events.
+fn grund(scheibe: Scheibe, events: &[(&str, Value, bool)]) -> Option<Sperrgrund> {
     let st = store(events);
     let f = felder(&st);
     let q = Instanzquelle {
         store: Some(&st),
-        bindung: Some(scheiben_index()),
+        bindung: Some(scheiben_index(scheibe)),
         nur_bestaetigt: false,
     };
-    let cfg = Cfg::fuer(Scheibe::Gesamt);
+    let cfg = Cfg::fuer(scheibe);
     an_gesamt_sperrgrund(&f, Some(&cfg), Some(Vz::Vz2025), &q).unwrap()
 }
 
@@ -74,6 +88,7 @@ fn grund(events: &[(&str, Value, bool)]) -> Option<Sperrgrund> {
 fn faelle() -> Vec<Fall> {
     vec![
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "a_offen",
             name: "A: Messbetrag, Hebesatz 0",
             events: vec![
@@ -83,6 +98,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: Some("gewst_hebesatz_offen"),
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "a_offen",
             name: "A: Messbetrag, Hebesatz -1",
             events: vec![
@@ -92,12 +108,14 @@ fn faelle() -> Vec<Fall> {
             erwartet: Some("gewst_hebesatz_offen"),
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "a_offen",
             name: "A: Messbetrag, Hebesatz fehlt",
             events: vec![("gewst_messbetrag", json!(100_000), true)],
             erwartet: Some("gewst_hebesatz_offen"),
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "a_offen",
             name: "A: Messbetrag, Hebesatz nur vorlaeufig 400",
             events: vec![
@@ -107,6 +125,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: Some("gewst_hebesatz_offen"),
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "frei",
             name: "A: Messbetrag, Hebesatz 400",
             events: vec![
@@ -116,6 +135,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: None,
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "frei",
             name: "A: Messbetrag, Hebesatz 1",
             events: vec![
@@ -125,6 +145,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: None,
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "frei",
             name: "A: Messbetrag 0, Hebesatz 0",
             events: vec![
@@ -134,12 +155,14 @@ fn faelle() -> Vec<Fall> {
             erwartet: None,
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "frei",
             name: "A: Messbetrag 0, Hebesatz fehlt",
             events: vec![("gewst_messbetrag", json!(0), true)],
             erwartet: None,
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "b_offen",
             name: "B zusammen: Messbetrag, Hebesatz fehlt",
             events: vec![
@@ -149,6 +172,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: Some("gewst_hebesatz_offen"),
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "b_offen",
             name: "B zusammen: Messbetrag, Hebesatz 0",
             events: vec![
@@ -159,6 +183,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: Some("gewst_hebesatz_offen"),
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "b_offen",
             name: "B zusammen: Messbetrag, Hebesatz -1",
             events: vec![
@@ -169,6 +194,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: Some("gewst_hebesatz_offen"),
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "frei",
             name: "B zusammen: Messbetrag, Hebesatz 400",
             events: vec![
@@ -185,6 +211,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: None,
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "frei",
             name: "B zusammen: Messbetrag 0, Hebesatz 0",
             events: vec![
@@ -201,6 +228,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: None,
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "frei",
             name: "B einzel: Messbetrag, Hebesatz fehlt",
             events: vec![
@@ -210,6 +238,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: None,
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "frei",
             name: "B einzel: Messbetrag, Hebesatz 0",
             events: vec![
@@ -220,6 +249,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: None,
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "getrennt",
             name: "A ok, B zusammen ohne Hebesatz",
             events: vec![
@@ -231,6 +261,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: Some("gewst_hebesatz_offen"),
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "getrennt",
             name: "A ohne Hebesatz, B zusammen ok",
             events: vec![
@@ -242,6 +273,7 @@ fn faelle() -> Vec<Fall> {
             erwartet: Some("gewst_hebesatz_offen"),
         },
         Fall {
+            scheibe: Scheibe::Gesamt,
             gruppe: "frei",
             name: "A und B zusammen beide ok",
             events: vec![
@@ -252,6 +284,192 @@ fn faelle() -> Vec<Fall> {
                 ("kap_gewinn_sonstige_partner", json!(0), true),
                 ("kap_verlust_aktien_partner", json!(0), true),
                 ("kap_verlust_sonstige_partner", json!(0), true),
+                ("gewst_messbetrag", json!(100_000), true),
+                ("gewst_hebesatz", json!(400), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+                ("gewst_hebesatz_partner", json!(400), true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_a_offen",
+            name: "A: Messbetrag, Hebesatz 0",
+            events: vec![
+                ("gewst_messbetrag", json!(100_000), true),
+                ("gewst_hebesatz", json!(0), true),
+            ],
+            erwartet: Some("gewst_hebesatz_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_a_offen",
+            name: "A: Messbetrag, Hebesatz -1",
+            events: vec![
+                ("gewst_messbetrag", json!(100_000), true),
+                ("gewst_hebesatz", json!(-1), true),
+            ],
+            erwartet: Some("gewst_hebesatz_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_a_offen",
+            name: "A: Messbetrag, Hebesatz fehlt",
+            events: vec![("gewst_messbetrag", json!(100_000), true)],
+            erwartet: Some("gewst_hebesatz_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_a_offen",
+            name: "A: Messbetrag, Hebesatz nur vorlaeufig 400",
+            events: vec![
+                ("gewst_messbetrag", json!(100_000), true),
+                ("gewst_hebesatz", json!(400), false),
+            ],
+            erwartet: Some("gewst_hebesatz_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_frei",
+            name: "A: Messbetrag, Hebesatz 400",
+            events: vec![
+                ("gewst_messbetrag", json!(100_000), true),
+                ("gewst_hebesatz", json!(400), true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_frei",
+            name: "A: Messbetrag, Hebesatz 1",
+            events: vec![
+                ("gewst_messbetrag", json!(100_000), true),
+                ("gewst_hebesatz", json!(1), true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_frei",
+            name: "A: Messbetrag 0, Hebesatz 0",
+            events: vec![
+                ("gewst_messbetrag", json!(0), true),
+                ("gewst_hebesatz", json!(0), true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_frei",
+            name: "A: Messbetrag 0, Hebesatz fehlt",
+            events: vec![("gewst_messbetrag", json!(0), true)],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_b_offen",
+            name: "B zusammen: Messbetrag, Hebesatz fehlt",
+            events: vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+            ],
+            erwartet: Some("gewst_hebesatz_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_b_offen",
+            name: "B zusammen: Messbetrag, Hebesatz 0",
+            events: vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+                ("gewst_hebesatz_partner", json!(0), true),
+            ],
+            erwartet: Some("gewst_hebesatz_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_b_offen",
+            name: "B zusammen: Messbetrag, Hebesatz -1",
+            events: vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+                ("gewst_hebesatz_partner", json!(-1), true),
+            ],
+            erwartet: Some("gewst_hebesatz_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_frei",
+            name: "B zusammen: Messbetrag, Hebesatz 400",
+            events: vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+                ("gewst_hebesatz_partner", json!(400), true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_frei",
+            name: "B zusammen: Messbetrag 0, Hebesatz 0",
+            events: vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("gewst_messbetrag_partner", json!(0), true),
+                ("gewst_hebesatz_partner", json!(0), true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_frei",
+            name: "B einzel: Messbetrag, Hebesatz fehlt",
+            events: vec![
+                ("veranlagung", json!("einzel"), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_frei",
+            name: "B einzel: Messbetrag, Hebesatz 0",
+            events: vec![
+                ("veranlagung", json!("einzel"), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+                ("gewst_hebesatz_partner", json!(0), true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_getrennt",
+            name: "A ok, B zusammen ohne Hebesatz",
+            events: vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("gewst_messbetrag", json!(100_000), true),
+                ("gewst_hebesatz", json!(400), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+            ],
+            erwartet: Some("gewst_hebesatz_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_getrennt",
+            name: "A ohne Hebesatz, B zusammen ok",
+            events: vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("gewst_messbetrag", json!(100_000), true),
+                ("gewst_messbetrag_partner", json!(175_000), true),
+                ("gewst_hebesatz_partner", json!(400), true),
+            ],
+            erwartet: Some("gewst_hebesatz_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rentner_frei",
+            name: "A und B zusammen beide ok",
+            events: vec![
+                ("veranlagung", json!("zusammen"), true),
                 ("gewst_messbetrag", json!(100_000), true),
                 ("gewst_hebesatz", json!(400), true),
                 ("gewst_messbetrag_partner", json!(175_000), true),
@@ -270,7 +488,7 @@ fn pruefe(gruppe: &str) {
     let abweichend: Vec<String> = faelle
         .iter()
         .filter_map(|f| {
-            let g = grund(&f.events).map(Sperrgrund::als_str);
+            let g = grund(f.scheibe, &f.events).map(Sperrgrund::als_str);
             (g != f.erwartet).then(|| format!("{}: {g:?}, Orakel {:?}", f.name, f.erwartet))
         })
         .collect();
@@ -305,4 +523,30 @@ fn person_a_und_b_werden_getrennt_geprueft() {
 #[test]
 fn brauchbarer_hebesatz_messbetrag_null_und_einzelveranlagung_sperren_nicht() {
     pruefe("frei");
+}
+
+/// Scheibe `rentner_gesamt`: Person A, Messbetrag > 0 und Hebesatz 0, negativ, fehlend oder nur vorlaeufig
+/// sperrt. Dieselbe Pruefung wie `person_a_...` fuer `gesamt`; die Rentner-Scheibe laeuft durch denselben
+/// `gesamt_guard`, aber mit eigener `Cfg` (kein Partner-Kegel, `rentner`).
+#[test]
+fn rentner_person_a_hebesatz_null_negativ_fehlend_oder_vorlaeufig_sperrt() {
+    pruefe("rentner_a_offen");
+}
+
+/// Scheibe `rentner_gesamt`: Person B bei Zusammenveranlagung.
+#[test]
+fn rentner_person_b_bei_zusammenveranlagung_hebesatz_null_negativ_oder_fehlend_sperrt() {
+    pruefe("rentner_b_offen");
+}
+
+/// Scheibe `rentner_gesamt`: beide Halbseiten sind unabhaengig.
+#[test]
+fn rentner_person_a_und_b_werden_getrennt_geprueft() {
+    pruefe("rentner_getrennt");
+}
+
+/// Scheibe `rentner_gesamt`: kein Fehlalarm bei brauchbarem Hebesatz, Messbetrag 0 und Einzelveranlagung.
+#[test]
+fn rentner_brauchbarer_hebesatz_messbetrag_null_und_einzelveranlagung_sperren_nicht() {
+    pruefe("rentner_frei");
 }
