@@ -99,6 +99,7 @@ tests/test_feld_bedingung_sperrgrund_widerspruch.py	513	4	0	NOT_PORTED	produkt/b
 tests/test_feld_bestand_ratsche.py	123	6	0	NOT_PORTED	produkt/bindung + traverser	removing a Feld variant breaks exhaustive Migration match -> paired migration forced by compiler
 tests/test_festzusetzende_est_scope.py	124	2	0	NOT_PORTED	produkt/haut/api (_bescheid_fn)	[deps: catala] NameError on out-of-scope name -> rustc rejects unresolved identifiers
 tests/test_flag_konsistenz.py	197	25	0	PROPERTY	produkt/konsistenz/flag_check	kein_X flag set & income of X present => widerspruch
+tests/test_flow_leser_zustand.py	102	5	0	TOOLING	scripts/flow.py (Mitschnitt-Leser)	Der Leser scripts/flow.py (per importlib geladen) haengt bei zustand vorlaeufig das Suffix (vorläufig) an, die Zeile fuer bestaetigt bleibt byte-gleich; ein Test schreibt ueber den echten Schreiber produkt/haut/api.py. Bleibt ein Python-Skript, kein Rust-Gegenstueck.
 tests/test_flow_mitschnitt.py	199	8	0	INTEGRATION	produkt/haut/flow	flow log records steps
 tests/test_frage_einzeln.py	116	6	0	INTEGRATION	produkt/haut/api GET /feld/<fid>/frage	endpoint for answered field question
 tests/test_fragen_gewichte_nach_relevanz.py	117	2	0	PROPERTY	produkt/haut/api (_gesamt_beitrag) + intervall	[deps: catala] intervall respects relevanz at every call site; one fn in Rust
