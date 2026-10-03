@@ -61,12 +61,20 @@ pub async fn flow_melden(
     crate::flow::melde_ui(&z.konfig.audit_dir, fall.id().as_str(), &body)
 }
 
-/// `POST /fall/{id}/entfernung` — `api.entfernung` (`api.py:883`).
+/// `POST /fall/{id}/entfernung` — `api.entfernung` (`api.py:886`), Rumpf in
+/// [`crate::entfernung::entfernung`].
 ///
 /// # Errors
-/// Wie [`event`].
-pub async fn entfernung(_fall: EigenerFall, _body: Koerper) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("POST /fall/{id}/entfernung"))
+/// Wie [`event`]; dazu 400/422/503 und 500 wie dort beschrieben.
+pub async fn entfernung(
+    State(z): State<Zustand>,
+    mut fall: EigenerFall,
+    Koerper(wert): Koerper,
+) -> Result<Antwort, ApiFehler> {
+    // Der Karten-Dienst ist Netz-E/A (bis 8 s je Aufruf): nicht auf einem Async-Worker.
+    tokio::task::spawn_blocking(move || crate::entfernung::entfernung(&z, &mut fall, &wert))
+        .await
+        .map_err(|e| ApiFehler::unerwartet("RuntimeError", e.to_string()))?
 }
 
 /// `POST /fall/{id}/vorjahr` — `api.vorjahr` (`api.py:928`).

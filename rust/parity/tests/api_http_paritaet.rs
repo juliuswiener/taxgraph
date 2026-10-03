@@ -70,7 +70,6 @@ const NICHT_PORTIERT: &[&str] = &[
     "POST /fall/{id}/vorjahr",
     "POST /fall/{id}/einreichen",
     "POST /fall/{id}/chat",
-    "POST /fall/{id}/entfernung",
     "POST /fall/{id}/kontoauszug",
 ];
 

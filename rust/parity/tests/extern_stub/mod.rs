@@ -429,6 +429,15 @@ fn geocode_ok() -> Schritt {
     )
 }
 
+/// Die zweite Adresse bekommt andere Koordinaten, damit ein vertauschtes Paar im Routing auffaellt.
+fn geocode_nach() -> Schritt {
+    Schritt::roh(
+        "ors:geocode",
+        200,
+        r#"{"features": [{"geometry": {"coordinates": [11.6, 48.2]}}]}"#,
+    )
+}
+
 fn route_mit(distanz: &str) -> Schritt {
     Schritt::roh(
         "ors:route",
@@ -463,7 +472,7 @@ const GGR: &[&str] = &["ors:geocode", "ors:geocode", "ors:route"];
 /// (nicht erreichbar) gehen im bestehenden Lauf mit leeren Schluesseln; E13 (Zeitgrenze 8 s) gehoert
 /// den Crate-Tests.
 pub(super) fn entfernung_szenarien() -> Vec<Szenario> {
-    let gut = |d: &str| vec![geocode_ok(), geocode_ok(), route_mit(d)];
+    let gut = |d: &str| vec![geocode_ok(), geocode_nach(), route_mit(d)];
     let g1 = |antwort: Schritt| vec![antwort];
     let mut v = vec![
         entfernung("E2 Strecke 30,4 km", gut("30400.0"), 200, None, GGR),
@@ -584,7 +593,61 @@ pub(super) fn entfernung_szenarien() -> Vec<Szenario> {
             None,
             GGR,
         ),
+        entfernung(
+            "E9h routes[0] ist eine Zahl",
+            vec![geocode_ok(), geocode_ok(), Schritt::roh("ors:route", 200, r#"{"routes": [5]}"#)],
+            500,
+            Some("TypeError: argument of type 'int' is not a container or iterable"),
+            GGR,
+        ),
+        entfernung(
+            "E9i routes[0] ist der Text summary",
+            vec![geocode_ok(), geocode_ok(), Schritt::roh("ors:route", 200, r#"{"routes": ["summary"]}"#)],
+            500,
+            Some("TypeError: string indices must be integers, not 'str'"),
+            GGR,
+        ),
+        entfernung(
+            "E9j summary ist eine Zahl",
+            vec![geocode_ok(), geocode_ok(), Schritt::roh("ors:route", 200, r#"{"routes": [{"summary": 5}]}"#)],
+            500,
+            Some("TypeError: argument of type 'int' is not a container or iterable"),
+            GGR,
+        ),
+        entfernung(
+            "E9k Koordinaten in allen Zahlenformen",
+            vec![
+                Schritt::roh(
+                    "ors:geocode",
+                    200,
+                    r#"{"features": [{"geometry": {"coordinates": [1e30, 5.0, 1E-7, 123456789, "ü", null, true, 0.1, -0.0, 1.5e300]}}]}"#,
+                )
+                .immer(),
+                route_mit("30400.0"),
+            ],
+            200,
+            None,
+            GGR,
+        ),
+        entfernung("E7 Distanz inf (Text)", gut(r#""inf""#), 500, Some("OverflowError: cannot convert float infinity to integer"), GGR),
+        entfernung("E7 Distanz nan (Text)", gut(r#""nan""#), 500, Some("ValueError: cannot convert float NaN to integer"), GGR),
+        entfernung("E7 Distanz 12_000 mit Leerraum (Text)", gut(r#"" 12_000 ""#), 200, None, GGR),
+        entfernung(
+            "E7 Distanz 10^25 als Ganzzahl (ueber u64)",
+            gut("10000000000000000000000000"),
+            422,
+            Some("fail-closed (F2/Magnitude): ep_entfernung_km=10000000000000000000000 von berechnet:maps"),
+            GGR,
+        ),
     ];
+    v.push(Szenario {
+        rumpf: json!({"von": "Straße 5 & 6/7, 'x' \"y\" +%", "nach": "Zürich ß"}),
+        ..entfernung("E2e Sonderzeichen in den Adressen", gut("30400.0"), 200, None, GGR)
+    });
+    v.push(Szenario {
+        scheibe: "an_gesamt",
+        ..entfernung("E12b Scheibe an_gesamt hat das Feld", gut("30400.0"), 200, None, GGR)
+    });
     // Eingaben, die den Dienst nie erreichen.
     for (name, rumpf, status, fehler) in [
         (
@@ -836,7 +899,7 @@ pub(super) fn pruefe_woertlich(name: &str, g: &[Gesehen]) -> Vec<String> {
             (2, "pfad", "/ors/v2/directions/driving-car"),
             (2, "authorization", "<KEY>"),
             (2, "content-type", "application/json"),
-            (2, "body", r#"{"coordinates": [[11.5, 48.1], [11.5, 48.1]], "preference": "shortest", "units": "m"}"#),
+            (2, "body", r#"{"coordinates": [[11.5, 48.1], [11.6, 48.2]], "preference": "shortest", "units": "m"}"#),
         ],
         n if n.starts_with("C4 ") => vec![
             (0, "pfad", "/llm/chat/completions"),
@@ -961,4 +1024,75 @@ fn python_gegen_den_stub_liefert_die_gemessenen_ausgaenge() {
     }
     println!("EXTERN python gegen Stub: {} Szenarien, {} Abweichungen", szenarien.len(), abweichungen.len());
     assert!(abweichungen.is_empty(), "{abweichungen:#?}");
+}
+
+// ---------------------------------------------------------------- Python gegen Rust, je ein Stub
+
+use super::{Modus, Paar};
+
+/// Python und Rust nebeneinander, je ein eigener Stub mit demselben Skript: dieselbe Anfrage muss
+/// dieselbe Antwort, dieselben Protokolle (`audit`, `fehler.log`, `flow.jsonl`), denselben Stand der
+/// Fallakten UND dieselben Anfragen an den Dienst ergeben (ohne Schluessel, s. [`Gesehen`]).
+/// Zusaetzlich gelten die Soll-Werte der Szenarien (an Python gemessen) fuer die Antwort von Rust.
+fn paarlauf(route: &str, titel: &str) {
+    if skip() {
+        return;
+    }
+    let wurzel = tempfile::tempdir().unwrap();
+    let seed = wurzel.path().join("seed");
+    schreibe_seed(&seed);
+    let (stub_py, stub_rs) = (Stub::starte(), Stub::starte());
+    let (env_py, env_rs) = (stub_py.umgebung(), stub_rs.umgebung());
+    let extra_py: Vec<(&str, &str)> = env_py.iter().map(|(k, v)| (*k, v.as_str())).collect();
+    let extra_rs: Vec<(&str, &str)> = env_rs.iter().map(|(k, v)| (*k, v.as_str())).collect();
+    let mut p = Paar::neu_mit(wurzel.path(), true, true, &seed, &extra_py, &extra_rs);
+    let szenarien: Vec<Szenario> = alle_szenarien()
+        .into_iter()
+        .filter(|s| s.route == route)
+        .collect();
+    let mut scheiben: Vec<&str> = szenarien.iter().map(|s| s.scheibe).collect();
+    scheiben.sort_unstable();
+    scheiben.dedup();
+    for s in scheiben {
+        let a = Anfrage::neu("anlegen", "POST", "/fall").json(
+            &json!({"fall_id": format!("x_{s}"), "scheibe": s, "veranlagungszeitraum": 2025}),
+        );
+        p.anfrage(&a, Modus::Voll);
+    }
+    for s in &szenarien {
+        stub_py.setze(s.schritte.clone());
+        stub_rs.setze(s.schritte.clone());
+        let a = Anfrage::neu(
+            &format!("{} {}", s.route, s.name),
+            "POST",
+            &format!("/fall/x_{}/{}", s.scheibe, s.route),
+        )
+        .json(&s.rumpf);
+        let body_py = p.anfrage(&a, Modus::Voll);
+        let status_rs = p.stat.letzter;
+        let (gesehen_py, gesehen_rs) = (stub_py.nimm(), stub_rs.nimm());
+        let mut d: Vec<String> = vergleiche_aufzeichnungen(&gesehen_py, &gesehen_rs);
+        d.extend(
+            pruefe_soll(s, status_rs, body_py.as_ref(), &gesehen_rs)
+                .into_iter()
+                .chain(pruefe_woertlich(s.name, &gesehen_rs)),
+        );
+        p.stat
+            .abweichungen
+            .extend(d.into_iter().map(|x| format!("{}: {x}", s.name)));
+    }
+    p.zustand_vergleichen("nach den Szenarien");
+    p.bericht(titel);
+    println!("EXTERN {titel}: {} Szenarien, je eigener Stub", szenarien.len());
+    assert!(
+        p.stat.abweichungen.is_empty(),
+        "{:#?}",
+        p.stat.abweichungen
+    );
+}
+
+/// `POST /fall/{id}/entfernung`: Rust gleich Python gegen je einen Stub des Karten-Dienstes.
+#[test]
+fn extern_paritaet_entfernung() {
+    paarlauf("entfernung", "extern/entfernung");
 }

@@ -30,6 +30,8 @@ auth = { path = "../auth" }
 domain = { path = "../domain" }
 elster = { path = "../elster" }
 engine = { path = "../engine" }
+llm = { path = "../llm" }
+eingang = { path = "../eingang" }
 axum = { workspace = true }
 tokio = { workspace = true }
 utoipa = { workspace = true }

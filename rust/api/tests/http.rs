@@ -263,11 +263,11 @@ async fn owner_check_trennt_nutzer_und_die_ampel_ist_offen() {
             json!({"fall_id": "f1", "scheibe": "ep", "veranlagungszeitraum": 2025})
         )
     );
-    // Eigener Fall: Stub (`entfernung` ist noch nicht portiert; die GET-Routen rechnen).
+    // Eigener Fall: Stub (`einreichen` ist noch nicht portiert; die GET-Routen rechnen).
     let a = sende(
         &d,
         "POST",
-        "/fall/f1/entfernung",
+        "/fall/f1/einreichen",
         &[
             ("authorization", &alice),
             ("content-type", "application/json"),
