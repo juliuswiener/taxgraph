@@ -1408,10 +1408,12 @@ mod tests {
                 .collect();
             deklariere(&felder, &index, 2025, None)
         };
+        // Der Instanzpfad (`instanz_feld`) beginnt bei `__2`: Instanz 1 ist die Basis-`feld_id` ohne
+        // Suffix und geht den Feldpfad; `x__1` ist keine Instanz (Entscheidung 2026-10-03).
         let rente = |art: &Value| {
             [
-                ("rentner_jahresrente__1", json!(1_200_000)),
-                ("rentner_renten_art__1", art.clone()),
+                ("rentner_jahresrente__2", json!(1_200_000)),
+                ("rentner_renten_art__2", art.clone()),
             ]
         };
         let partner = |art: &Value| {

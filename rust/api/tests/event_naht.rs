@@ -171,6 +171,43 @@ async fn die_kennung_gleicht_der_von_python() {
     }
 }
 
+/// Instanz 1 ist die Basis ohne Suffix, `x__1` ist keine Instanz (Entscheidung 2026-10-03, Zähler
+/// `[2-9]|[1-9][0-9]+`): die Route weist es mit 400 ab, und `x`, `x__2`, `x__10` gehen durch. Die
+/// Basis `vv_einnahmen` hat eine `instanz_gruppe` und liegt in der Scheibe `gesamt` -- am Fall `ep`
+/// käme die 400 auch ohne die Regel (kein Feld dort trägt eine Gruppe). Wortlaut aus `api.event`.
+#[tokio::test]
+async fn instanz_eins_wird_abgewiesen_und_der_rest_geht_durch() {
+    let d = dienst();
+    let token = d.zustand.auth.stelle_aus("alice").unwrap();
+    let anlegen =
+        json!({"fall_id": "e5", "scheibe": "gesamt", "veranlagungszeitraum": 2025}).to_string();
+    let (status, antwort) = sende(&d, "/fall", &token, &anlegen).await;
+    assert_eq!(status, 201, "POST /fall: {antwort}");
+    let ok = |feld: &str| {
+        rumpf(
+            &format!("\"{feld}\""),
+            "1500000",
+            "bestaetigt",
+            "ui:naht",
+            &format!(r#"{{"signal_1": null, "signal_2": "klick@{feld}"}}"#),
+        )
+    };
+    for feld in ["vv_einnahmen", "vv_einnahmen__2", "vv_einnahmen__10"] {
+        let (status, antwort) = sende(&d, "/fall/e5/event", &token, &ok(feld)).await;
+        assert_eq!(status, 201, "{feld}: {antwort}");
+    }
+    assert_eq!(events_in_akte(&d, "e5"), 3);
+    for feld in ["vv_einnahmen__1", "vv_einnahmen__0", "vv_einnahmen__02"] {
+        let (status, antwort) = sende(&d, "/fall/e5/event", &token, &ok(feld)).await;
+        assert_eq!(status, 400, "{feld}: {antwort}");
+        assert_eq!(
+            antwort["fehler"],
+            format!("feld_id '{feld}' nicht in dieser Scheibe")
+        );
+    }
+    assert_eq!(events_in_akte(&d, "e5"), 3, "eine Abweisung legt nichts ab");
+}
+
 /// Status und Wortlaut je Abweisung, wie `api.event` und `store.append_event` sie liefern.
 #[tokio::test]
 async fn abweisungen_tragen_den_wortlaut_von_python() {

@@ -414,7 +414,8 @@ def test_neg_gemischte_summanden(daten):
 # Die Liste ist eine BESTANDSAUFNAHME, kein Freibrief: sie hält den Stand fest, damit ein
 # NEUES unerreichbares Feld auffällt. Wer hier etwas einträgt, sollte begründen können,
 # warum das Feld nicht gefragt wird. Wer eines entfernt, hat es erreichbar gemacht.
-UNERREICHBAR_BEKANNT = {
+UNERREICHBAR_BEKANNT: set[str] = set(  # leer seit 2026-10-03: ein `{}` mit nur Kommentaren waere ein dict
+
     # § 33 Abs. 1 Tatbestand: agb_notwendig_angemessen/agb_zwangslaeufig sind seit
     # 2026-09-26 ueber AGB_TATBESTAND in SCHEIBEN["gesamt"] UND ["rentner_gesamt"]
     # erreichbar (Felder UND Kegel) — nicht mehr hier. Entscheidung:
@@ -433,8 +434,9 @@ UNERREICHBAR_BEKANNT = {
     # gwg_bewegliches_selbstaendig_nutzbar/gwg_netto_ohne_vorsteuer/gwg_verzeichnis_ab_250: seit
     # 2026-09-07 via GWG_FELDER auf gesamt/rentner_gesamt (tickets/gwg-selbstaendig-nutzbar-
     # nicht-erfragbar.md, Schritt 1), also erreichbar — nicht mehr hier.
-    # § 24a — der Accessor leitet das Alter aus geburtsjahr + VZ ab
-    "rentner_alter_64_erfuellt",
+    # rentner_alter_64_erfuellt (§ 24a): seit 2026-10-03 nicht mehr askable (Julius „5: 1", Form B,
+    # backlog/taxgraph/p24a-rueckfall-nennt-falsches-feld.md) — abgeleitet aus dem Geburtsdatum, den
+    # Rückfall trägt `geburtsjahr`. Ein nicht askables Feld gehört hier nicht hin.
     # § 9 Abs. 4a Einzelreise-Slots: vpf_abwesenheit_stunden/vpf_an_oder_abreisetag/
     # vpf_mit_uebernachtung sind seit 2026-09-26 ueber VERPFLEGUNG_EINZELREISE in
     # SCHEIBEN["gesamt"], also erreichbar — nicht mehr hier.
@@ -442,7 +444,7 @@ UNERREICHBAR_BEKANNT = {
     # Regeln und steht seit dem Screening-Umbau in AUSGABEN_SCREENING (api_constants.py:89),
     # damit in gesamt und n_vor_gwg. Gemessen 2026-09-26: POST /event auf gesamt -> 201,
     # nicht 400.
-}
+)
 
 
 def test_g_askable_felder_sind_erreichbar(daten):
@@ -494,11 +496,12 @@ def test_g_askable_felder_sind_erreichbar(daten):
     #   vpf_auswaertige_taetigkeit                    -> AUSGABEN_SCREENING
     #   vpf_abwesenheit_stunden / _an_oder_abreisetag / _mit_uebernachtung
     #                                                 -> VERPFLEGUNG_EINZELREISE, gesamt
-    # Uebrig bleibt rentner_alter_64_erfuellt: der Accessor leitet das Alter aus geburtsjahr +
-    # VZ ab, das Feld wird nicht gefragt. 1 ist der wahre Restbestand, nicht 1 als Polster.
-    # Der eigentliche Waechter ist die `neu == []`-Zusicherung oben; diese Zahl haelt nur fest,
-    # dass das Leeren der Liste eine bewusste Handlung bleibt.
-    UNTERGRENZE = 1
+    # Uebrig blieb rentner_alter_64_erfuellt (1 war der wahre Restbestand, kein Polster). Gesenkt
+    # 1 -> 0 am 2026-10-03: das Feld ist nicht mehr askable (abgeleitet aus dem Geburtsdatum, der
+    # Rueckfall ist `geburtsjahr`), die Liste ist leer. Mit 0 prueft die Untergrenze NICHTS mehr — sie
+    # steht nur, damit das Absenken eine sichtbare Entscheidung blieb. Der Waechter ist die
+    # `neu == []`-Zusicherung oben: ein NEUES unerreichbares askable-Feld faellt dort auf.
+    UNTERGRENZE = 0
     assert len(UNERREICHBAR_BEKANNT) >= UNTERGRENZE, (
         f"UNERREICHBAR_BEKANNT hat nur noch {len(UNERREICHBAR_BEKANNT)} Eintraege, erwartet "
         f"mindestens {UNTERGRENZE} — sind Felder erreichbar geworden (dann gehoert die Zahl "

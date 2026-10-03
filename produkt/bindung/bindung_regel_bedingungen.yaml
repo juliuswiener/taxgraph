@@ -304,7 +304,7 @@ regel_bedingungen:
   - regel_id: p24a_altersentlastungsbetrag
     feld: rentner_alter_64_erfuellt
     wert: true
-    grund: "§ 24a S. 3 EStG gewaehrt den Altersentlastungsbetrag nur dem, der vor Beginn des Kalenderjahres das 64. Lebensjahr vollendet hat. `rentner_alter_64_erfuellt` erhebt genau diese Voraussetzung — wer sie verneint, bekommt den Betrag nicht, und die Folgefragen dazu sind gegenstandslos."
+    grund: "§ 24a S. 3 EStG gewaehrt den Altersentlastungsbetrag nur dem, der vor Beginn des Kalenderjahres das 64. Lebensjahr vollendet hat. `rentner_alter_64_erfuellt` erhebt genau diese Voraussetzung — wer sie verneint, bekommt den Betrag nicht, und die Folgefragen dazu sind gegenstandslos. Das Feld wird aus dem Geburtsdatum berechnet und nie gefragt; fehlt das Geburtsdatum, trägt `geburtsjahr` den Rückfall (Julius 2026-10-03)."
 
   - regel_id: p33b_hinterbliebenen_pauschbetrag
     feld: rentner_hinterbliebenenbezuege

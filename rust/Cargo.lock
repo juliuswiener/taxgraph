@@ -933,6 +933,7 @@ dependencies = [
  "rust_decimal",
  "serde",
  "serde_json",
+ "serde_yaml_ng",
  "store",
  "tempfile",
  "thiserror",

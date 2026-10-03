@@ -106,7 +106,7 @@ from _helpers import _bestaetigt_wert
 # __n-Suffix-Kenntnis. Diese Aenderung repariert NUR flag_widersprueche() -- die anderen drei fallen
 # fail-closed (ein vorhandenes Instanz-Feld wird als fehlend gemeldet und sperrt/meldet offen) und
 # sind NICHT Teil dieser Aenderung.
-_INSTANZ_SUFFIX_RE = re.compile(r"^(?P<idx>[1-9][0-9]*)$")
+_INSTANZ_SUFFIX_RE = re.compile(r"^(?P<idx>[2-9]|[1-9][0-9]+)$")
 
 
 def _instanz_feld_ids(snapshot: dict, basis: str) -> list:
