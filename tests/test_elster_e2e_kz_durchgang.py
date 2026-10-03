@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.join(ROOT, 'produkt', 'eingang'))
 import api as API
 import server as SRV
 import audit                # noqa: E402
-from _kegel import kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
+from _kegel import kegel_fuer, partner_kegel_fuer  # noqa: E402 — ein Bauer fuer alle Scheiben (tests/_kegel.py)
 
 
 def _req(base, method, path, body=None, erwarte=None):
@@ -73,6 +73,21 @@ def _laie(fld, w):
         "schreiber": "ui:laie",
         "signal": {"signal_1": None, "signal_2": f"ok@{fld}"}
     }
+
+
+def _deklaration_ohne_sperre(fall_id):
+    """`GET /deklaration` OHNE den Sperrgrund-Guard: dieselben Schritte wie `api.deklaration`, ohne
+    `_an_gesamt_sperrgrund`. Seit 2026-10-03 sperrt `/deklaration` wie `/einreichen` (409). § 23 ist
+    fuer den Ring `einkunftsart_nicht_ring_faehig` (oder, ohne beantwortetes `kein_p23_verkauf`,
+    `flag_konsistenz_offen`): der Endpunkt liefert fuer diese Faelle nie Kz. Die § 23-Tests pruefen das
+    Kz-Mapping (`est_mapping.deklariere`), nicht die Sperre -- das Mapping bleibt ueber diesen Weg
+    pruefbar, solange `test_p23_kz_durchgang` die Sperre des Endpunkts selbst festhaelt."""
+    store = API.lade_fall(fall_id)
+    felder, sid = API.ST.materialisiere(store)
+    vz = int(store["veranlagungszeitraum"])
+    felder = API._mit_ring_werten(felder, vz)
+    erg = API.EM.deklariere(felder, API._scheibe_bindung(store), vz=vz, snapshot_id=sid)
+    return {"fall_id": fall_id, **erg}
 
 
 @pytest.fixture
@@ -301,7 +316,9 @@ def test_kvpv_kz_person_b(base, vers_art, basis_kv_val, basis_pv_val, kz_kv, kz_
     ]
     _req(base, "POST", "/fall", {"scheibe": "gesamt", "veranlagungszeitraum": 2025,
                                   "fall_id": f"kvpv-b-{vers_art}"}, erwarte=201)
-    fall = kegel_fuer("gesamt", dict(fall))
+    # Person B braucht ihren Pflicht-Kegel, sonst sperrt der Guard (partner_kegel_offen) -- und
+    # `/deklaration` seit 2026-10-03 mit ihm.
+    fall = kegel_fuer("gesamt", dict(fall)) + partner_kegel_fuer()
     for feld, wert in fall:
         _req(base, "POST", f"/fall/kvpv-b-{vers_art}/event", _laie(feld, wert), erwarte=201)
     _, dekl = _req(base, "GET", f"/fall/kvpv-b-{vers_art}/deklaration", erwarte=200)
@@ -392,7 +409,9 @@ def test_p23_kz_durchgang(base, typ, typ_wert, kz):
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
     ]:
         _req(base, "POST", f"/fall/p23-{typ}/event", _laie(feld, wert), erwarte=201)
-    _, dekl = _req(base, "GET", f"/fall/p23-{typ}/deklaration", erwarte=200)
+    # Der Endpunkt sperrt diesen Fall (409); das Mapping messen wir ohne die Sperre.
+    _req(base, "GET", f"/fall/p23-{typ}/deklaration", erwarte=409)
+    dekl = _deklaration_ohne_sperre(f"p23-{typ}")
     ai = dekl.get("anlage_instanzen", {})
     p23_inst = ai.get("p23_veraeusserung", [])
     found = any(kz in inst.get("felder", {}) for inst in p23_inst)
@@ -419,7 +438,7 @@ def test_p23_negativ_typ_fehlt(base):
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
     ]:
         _req(base, "POST", "/fall/p23-neg/event", _laie(feld, wert), erwarte=201)
-    _, dekl = _req(base, "GET", "/fall/p23-neg/deklaration", erwarte=200)
+    dekl = _deklaration_ohne_sperre("p23-neg")
     result = dekl.get("deklaration", {})
     ai = dekl.get("anlage_instanzen", {})
     has_kz_in_inst = any(kz in inst.get("felder", {}) for insts in ai.values() for inst in insts for kz in ("E0306801", "E0307701"))
@@ -446,7 +465,7 @@ def test_p23_negativ_gewinn_null(base):
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
     ]:
         _req(base, "POST", "/fall/p23-null/event", _laie(feld, wert), erwarte=201)
-    _, dekl = _req(base, "GET", "/fall/p23-null/deklaration", erwarte=200)
+    dekl = _deklaration_ohne_sperre("p23-null")
     result = dekl.get("deklaration", {})
     ai = dekl.get("anlage_instanzen", {})
     has_kz = any(kz in inst.get("felder", {}) for insts in ai.values() for inst in insts for kz in ("E0306801", "E0307701"))
@@ -471,7 +490,7 @@ def test_p23_rundung_beweist_floor(base):
         ("kein_sonstige", True), ("fam_anzahl_kinder", 0), ("verlustvortrag_bestand", 0),
     ]:
         _req(base, "POST", "/fall/p23-rnd/event", _laie(feld, wert), erwarte=201)
-    _, dekl = _req(base, "GET", "/fall/p23-rnd/deklaration", erwarte=200)
+    dekl = _deklaration_ohne_sperre("p23-rnd")
     ai = dekl.get("anlage_instanzen", {})
     p23_inst = ai.get("p23_veraeusserung", [])
     inst = next((inst for inst in p23_inst if "E0306801" in inst.get("felder", {})), None)

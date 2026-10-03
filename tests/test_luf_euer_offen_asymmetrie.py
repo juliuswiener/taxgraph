@@ -130,13 +130,17 @@ def fall(tmp_path, monkeypatch):
             assert st == 201, (fid, wert, st, resp)
         st, erg = API.ergebnis(fall_id)
         assert st == 200, (st, erg)
+        # `/deklaration` sperrt bei Sperrgrund wie `/ergebnis` (409, seit 2026-10-03): fuer
+        # land_forst ist das luf_euer_offen, fuer gewerbe/selbstaendig antwortet es 200 mit Kz.
         st, dekl = API.deklaration(fall_id)
-        assert st == 200, (st, dekl)
+        assert st in (200, 409), (st, dekl)
         kz = _KZ_JE_BETRIEBSART.get(betriebsart)
         return {
             "grund": erg.get("grund"),
             "zahl_cent": erg.get("zahl_cent"),
             "kz_wert": dekl.get("deklaration", {}).get(kz) if kz else None,
+            "deklaration_status": st,
+            "deklaration_grund": dekl.get("grund"),
         }
     return _lauf
 
@@ -153,6 +157,9 @@ def test_land_forst_wird_bei_doppelquelle_gesperrt(fall):
         "nicht mehr sperrt, hat sich luf_euer_offen selbst geaendert und der Vergleich unten "
         "prueft nicht mehr, was er behauptet.")
     assert r["zahl_cent"] is None
+    # Dieselbe Sperre an `/deklaration`: 409 mit demselben Grund, keine Kz im Koerper.
+    assert r["deklaration_status"] == 409, r
+    assert r["deklaration_grund"] == "luf_euer_offen", r
 
 
 # ---------------------------------------------------------------- der Defekt
