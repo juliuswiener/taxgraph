@@ -382,12 +382,13 @@ fn unvollstaendig(d: &elster::Deklaration) -> Vec<&str> {
         .collect()
 }
 
-/// `test_kap_deklaration_vorlaeufig_leck_ohne_bestaetigung.py`. Gewollte Abweichung: Python
+/// `test_kap_deklaration_vorlaeufig_leck_ohne_bestaetigung.py`. BEHOBEN 2026-10-03 (Entscheid
+/// kap-vorschau-liest-nur-bestaetigte-werte): `kap_antrag` (`ring_werte.rs`) liest nur bestaetigte Werte,
+/// der Test ist kein offener Defekt mehr und laeuft ohne `#[ignore]`. Gewollte Abweichung: Python
 /// verlangt `zahl_cent(leck) == zahl_cent(baseline)` (Zeile 295) und scheitert dort seit dem
 /// Kegel-Zuwachs (gemessen `None == 753400`, Lage 2) - vor der Kernaussage. Hier steht die Absicht
 /// der Vorbedingung: der vorlaeufige Topf geht nicht in die Steuer ein.
 #[test]
-#[ignore = "mit_ring_werten (bescheid/src/deklaration/ring_werte.rs) liest den KAP-Topf ohne zustand-Pruefung: ein vorlaeufiger kap_gewinn_sonstige setzt E1900401/E1901401, obwohl dieselbe Deklaration eingaben_konsistent=false meldet. Python: test_kap_deklaration_vorlaeufig_leck_ohne_bestaetigung.py::test_vorlaeufiger_topf_leckt_in_deklaration_trotz_unvollstaendig. Vault: keine eigene Notiz; Ringseite decisions/klasse-c-vorlaeufiger-betrag-sperrt.md. Rot sehen: --ignored"]
 fn kap_vorlaeufiger_topf_leckt_in_deklaration() {
     let (_, basis, _) = leck_lauf(&[("kein_kap", json!(true))], &[]);
     let topf = [("kap_gewinn_sonstige", json!(175_000))];
@@ -416,6 +417,132 @@ fn kap_vorlaeufiger_topf_leckt_in_deklaration() {
         leck.deklaration.get("E1900401"),
         leck.deklaration.get("E1901401")
     );
+}
+
+/// AK4 der KAP-Vorschau: `unvollstaendig` nennt das Feld, aber weder Antrag noch genutzter Pauschbetrag
+/// stehen in der Deklaration.
+fn kein_antrag(d: &elster::Deklaration, feld: &str) {
+    assert!(
+        !d.eingaben_konsistent() && unvollstaendig(d).contains(&feld),
+        "KONTROLLE: die Deklaration meldet {feld} nicht als unvollstaendig"
+    );
+    assert!(
+        !gesetzt(d, "E1900401") && !gesetzt(d, "E1901401"),
+        "DEFEKT: {feld} nur vorlaeufig, aber E1900401={:?}, E1901401={:?}",
+        d.deklaration.get("E1900401"),
+        d.deklaration.get("E1901401")
+    );
+}
+
+/// `kap_kapitalertraege` (das Aggregat statt eines Topfs) nur vorlaeufig.
+#[test]
+fn kap_vorlaeufiges_aggregat_leckt_nicht_in_deklaration() {
+    let (_, _, leck) = leck_lauf(
+        &[("kein_kap", json!(false))],
+        &[("kap_kapitalertraege", json!(175_000))],
+    );
+    kein_antrag(&leck, "kap_kapitalertraege");
+}
+
+/// Gemischter Zustand: Aktiengewinn 400 EUR bestaetigt, sonstiger Gewinn 300 EUR nur vorlaeufig. Der Antrag
+/// steht, der genutzte Pauschbetrag zaehlt nur die 400 EUR (vorher 700), gleich der Kontrolle ohne den
+/// vorlaeufigen Topf.
+#[test]
+fn kap_gemischter_zustand_zaehlt_nur_den_bestaetigten_topf() {
+    let paare = [
+        ("kein_kap", json!(false)),
+        ("kap_gewinn_aktien", json!(40_000)),
+    ];
+    let (_, _, kontrolle) = leck_lauf(&paare, &[]);
+    assert!(
+        kontrolle.eingaben_konsistent()
+            && gesetzt(&kontrolle, "E1900401")
+            && kz(&kontrolle, "E1901401") == Some(400.0),
+        "KONTROLLE: bestaetigter Aktiengewinn traegt nicht E1900401 und E1901401=400: {:?}",
+        kontrolle.deklaration
+    );
+    let (_, _, gemischt) = leck_lauf(&paare, &[("kap_gewinn_sonstige", json!(30_000))]);
+    assert!(
+        !gemischt.eingaben_konsistent()
+            && unvollstaendig(&gemischt).contains(&"kap_gewinn_sonstige")
+            && gesetzt(&gemischt, "E1900401"),
+        "KONTROLLE: gemischter Zustand ohne Antrag oder ohne unvollstaendig-Meldung: {:?}",
+        gemischt.deklaration
+    );
+    assert_eq!(
+        kz(&gemischt, "E1901401"),
+        kz(&kontrolle, "E1901401"),
+        "DEFEKT: der vorlaeufige Topf geht in den genutzten Sparer-Pauschbetrag ein"
+    );
+}
+
+/// Partner-KAP in `gesamt` ist NICHT erreichbar: der Guard verlangt alle Partner-KAP-Felder bestaetigt und
+/// sperrt mit `partner_kegel_offen`, noch bevor `mit_ring_werten` liest. Kontrolle: bestaetigt, keine Sperre.
+#[test]
+fn kap_partner_in_gesamt_sperrt_der_guard_vor_der_vorschau() {
+    let mut paare = vec![
+        ("veranlagung", json!("zusammen")),
+        ("kein_kap_partner", json!(false)),
+    ];
+    paare.extend(
+        [
+            "bruttoarbeitslohn_partner",
+            "kap_kapitalertraege_partner",
+            "kap_gewinn_aktien_partner",
+            "kap_verlust_aktien_partner",
+            "kap_verlust_sonstige_partner",
+        ]
+        .map(|f| (f, json!(0))),
+    );
+    let topf = ("kap_gewinn_sonstige_partner", json!(175_000));
+    let (grund, _, _) = leck_lauf(&paare, std::slice::from_ref(&topf));
+    assert_eq!(
+        grund,
+        Grund::Sperre(Sperrgrund::PartnerKegelOffen),
+        "vorlaeufiger Partner-Topf in gesamt sperrt nicht mit partner_kegel_offen"
+    );
+    paare.push(topf);
+    let (grund, _, dek) = leck_lauf(&paare, &[]);
+    assert!(
+        !matches!(grund, Grund::Sperre(_))
+            && dek.eingaben_konsistent()
+            && gesetzt(&dek, "E1900401"),
+        "KONTROLLE: bestaetigter Partner-Topf in gesamt: {grund:?}, {:?}",
+        dek.deklaration
+    );
+}
+
+/// `rentner_gesamt`, Zusammenveranlagung, eine Rente: kein Partner-KAP-Guard, keine KAP-Betraege im Kegel,
+/// `/deklaration` laeuft ohne Guard-Treffer. Hier ist ein vorlaeufiger KAP-Wert erreichbar: eigener Topf,
+/// Partner-Topf und Partner-Aggregat duerfen keinen Antrag ausloesen.
+#[test]
+fn kap_vorlaeufiger_wert_in_rentner_gesamt_leckt_nicht_in_deklaration() {
+    let rentner = |gesetzt: &[(&'static str, Value)], vorlaeufig: &[(&'static str, Value)]| {
+        let mut paare = vec![
+            ("rentner_jahresrente", json!(2_000_000)),
+            ("rentner_renten_beginn_jahr", json!(2025)),
+            ("kein_sonstige", json!(false)),
+            ("veranlagung", json!("zusammen")),
+        ];
+        paare.extend_from_slice(gesetzt);
+        deklaration(&fall(Scheibe::RentnerGesamt, &paare, vorlaeufig))
+    };
+    let gruen = rentner(&[("kap_gewinn_sonstige_partner", json!(175_000))], &[]);
+    assert!(
+        gruen.eingaben_konsistent()
+            && gesetzt(&gruen, "E1900401")
+            && kz(&gruen, "E1901401") == Some(1750.0),
+        "KONTROLLE: bestaetigter Partner-Topf in rentner_gesamt traegt keinen Antrag: {:?}",
+        gruen.deklaration
+    );
+    for (feld, gesetzt_) in [
+        ("kap_gewinn_sonstige", vec![("kein_kap", json!(false))]),
+        ("kap_gewinn_sonstige_partner", vec![]),
+        ("kap_kapitalertraege_partner", vec![]),
+    ] {
+        let leck = rentner(&gesetzt_, &[(feld, json!(175_000))]);
+        kein_antrag(&leck, feld);
+    }
 }
 
 /// `test_verpflegung_kuerzung_deklaration_vorlaeufig_widerspruch.py`. Gewollte Abweichung: Python

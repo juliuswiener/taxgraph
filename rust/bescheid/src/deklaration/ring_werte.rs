@@ -159,11 +159,30 @@ fn kuerzung_cent(s: &Felder, vz: Option<Vz>, p: &Params) -> R<i64> {
 
 // ---------------------------------------------------------------- (2)+(3) Anlage KAP
 
+/// Der Wert eines BESTAETIGTEN Feldes (Python `_kap_wert`). Ein vorlaeufiger Wert ist fuer den KAP-Antrag
+/// so gut wie nicht da: er loest den Antrag nicht aus und geht nicht in den genutzten Pauschbetrag ein.
+fn bestaetigt<'a>(f: &'a Felder, fid: &str) -> Option<&'a PyWert> {
+    f.get(fid)
+        .filter(|x| x.zustand == Zustand::Bestaetigt)
+        .map(|x| &x.wert)
+}
+
+/// Python `_c2` des Antrag-Blocks: [`c2`], aber ein unbestaetigtes Feld zaehlt 0.
+///
+/// Nicht `c2` selbst filtern: `sperre.rs` liest damit `rentner_veraeusserungsgewinn` fuer den Guard.
+fn c2_bestaetigt(f: &Felder, fid: &str) -> R<i64> {
+    if bestaetigt(f, fid).is_some() {
+        c2(f, fid)
+    } else {
+        Ok(0)
+    }
+}
+
 /// (2)+(3) E1900401 (Antrag Guenstigerpruefung) und E1901401 (genutzter Sparer-Pauschbetrag): beide
-/// zusammen NACH erfolgreicher Berechnung, oder keins von beiden.
+/// zusammen NACH erfolgreicher Berechnung, oder keins von beiden. Es zaehlen nur bestaetigte Werte.
 fn kap_antrag(f: &mut Felder, vz: Option<Vz>, p: &Params, h: &HerkunftVektor) -> R<()> {
     let zusammen = ist_zusammen(f);
-    let positiv = |fid: &str| ist_positive_zahl(wert(f, fid));
+    let positiv = |fid: &str| ist_positive_zahl(bestaetigt(f, fid));
     let erklaert = KAP_TOEPFE.iter().any(|t| positiv(t))
         || positiv(KAP_ERTRAEGE)
         || (zusammen
@@ -192,10 +211,10 @@ fn pb_genutzt(f: &Felder, zusammen: bool, vz: Option<Vz>, p: &Params) -> R<i64> 
     let toepfe_belegt = |toepfe: &[&str]| -> R<bool> {
         toepfe
             .iter()
-            .try_fold(false, |acc, t| Ok(acc || c2(f, t)? != 0))
+            .try_fold(false, |acc, t| Ok(acc || c2_bestaetigt(f, t)? != 0))
     };
     let verrechne = |suffix: &str| -> R<Euro> {
-        let euro = |k: &str| c2(f, &format!("{k}{suffix}")).map(cent_zu_euro);
+        let euro = |k: &str| c2_bestaetigt(f, &format!("{k}{suffix}")).map(cent_zu_euro);
         Ok(kapital_verrechnung(&KapitalVerrechnungEingabe {
             gewinn_aktien: euro("kap_gewinn_aktien")?,
             verlust_aktien: euro("kap_verlust_aktien")?,
@@ -206,13 +225,13 @@ fn pb_genutzt(f: &Felder, zusammen: bool, vz: Option<Vz>, p: &Params) -> R<i64> 
     let mut verrechnete = if toepfe_belegt(&KAP_TOEPFE)? {
         verrechne("")?
     } else {
-        c2(f, KAP_ERTRAEGE).map(cent_zu_euro)?
+        c2_bestaetigt(f, KAP_ERTRAEGE).map(cent_zu_euro)?
     };
     if zusammen {
         let partner = if toepfe_belegt(&KAP_TOEPFE_PARTNER)? {
             verrechne("_partner")?
         } else {
-            c2(f, KAP_ERTRAEGE_PARTNER).map(cent_zu_euro)?
+            c2_bestaetigt(f, KAP_ERTRAEGE_PARTNER).map(cent_zu_euro)?
         };
         verrechnete = euro_plus(verrechnete, partner)?;
     }

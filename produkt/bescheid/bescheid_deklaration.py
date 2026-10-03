@@ -82,7 +82,9 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
     Töpfe-XOR-Aggregat-Auswahl 1:1 zur SINGLE-SOURCE in _bescheid_fn
     (api.py Z. 1019-1047/1462-1483) — bei Änderung dort nachziehen.
     Direkt auf `felder` gerechnet (kein _feste_zahl/Meet-Gate): der Wert
-    hängt nur an KAP-Feldern, nicht an unverwandten Kegel-Feldern.
+    hängt nur an KAP-Feldern, nicht an unverwandten Kegel-Feldern. Es zählen
+    nur BESTÄTIGTE KAP-Werte (_kap_wert); ein vorläufiger Topf löst weder den
+    Antrag aus noch geht er in den genutzten Pauschbetrag ein.
 
     (4) § 35a Haushaltsnahe Sum-Kz (E0104109/E0107208/E0111215): seit der
     Einzelaufstellung (Anlass 2026-08-10, checkESt rc=610001002 ohne Einz-Kz)
@@ -118,8 +120,16 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
             }
 
     # (2)+(3) Anlage KAP: Antrag Günstigerprüfung + genutzter Sparer-Pauschbetrag
+    def _kap_wert(fid):
+        # Nur bestaetigte Werte zaehlen (Zwei-Signal-Regel, wie _instanz_summe unten): ein vorlaeufiger
+        # Wert ist fuer den Antrag so gut wie nicht da. Vorher las _kap_positiv/_c2 den Rohwert, und
+        # /deklaration trug E1900401/E1901401 aus einem nie bestaetigten Topf, obwohl dieselbe Antwort
+        # eingaben_konsistent=False meldete.
+        ev = felder.get(fid) or {}
+        return ev.get("wert") if ev.get("zustand") == "bestaetigt" else None
+
     def _kap_positiv(fid):
-        w = (felder.get(fid) or {}).get("wert")
+        w = _kap_wert(fid)
         return isinstance(w, (int, float)) and not isinstance(w, bool) and w > 0
 
     zusammen = (felder.get("veranlagung") or {}).get("wert") == "zusammen"
@@ -137,7 +147,7 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
             import runner
 
             def _c2(fid):
-                return int((felder.get(fid) or {}).get("wert") or 0)
+                return int(_kap_wert(fid) or 0)
 
             if any(_c2(t) != 0 for t in KAP_TOEPFE):
                 verrechnete = runner.catala_kapital_verrechnung({

@@ -54,15 +54,15 @@ use proptest::test_runner::{Config, RngAlgorithm, TestRng, TestRunner};
 use serde_json::{json, Value};
 use store::{EventId, Store, StoreDatei};
 
-/// Bekannt leere Zeilen in `gezielte_faelle`. Der Block faehrt 12 handgebaute Faelle, die nur
-/// `an_gesamt_sperrgrund` pruefen; die vier Ring-Zeilen sind dort nicht erreichbar.
+/// Bekannt leere Zeilen in `gezielte_faelle`. Der Block faehrt handgebaute Faelle, die vor allem
+/// `an_gesamt_sperrgrund` pruefen; `mit_ring_werten` und `vorlaeufige_ring_betraege` rechnen nur dank
+/// der KAP-Faelle (vorlaeufiger Topf/Aggregat, gemischter Zustand, Partner in `rentner_gesamt`), die
+/// anderen beiden Ring-Zeilen sind dort nicht erreichbar.
 ///
 /// Grund je Eintrag: der Fall traegt nur die Felder fuer den Sperrgrund, nicht die Ring-Werte.
 const LEER_GEZIELTE: &[(&str, &str)] = &[
-    ("mit_ring_werten", "gezielter Fall traegt keine Ring-Werte"),
     ("rentenbeginn_offen_stand", "gezielter Fall traegt keinen Rentenbeginn"),
     ("sperrgrund_felder", "gezielter Fall traegt keine Sperrgrund-Feldliste"),
-    ("vorlaeufige_ring_betraege", "gezielter Fall traegt keine vorlaeufigen Ring-Betraege"),
 ];
 
 /// Bekannt leere Zeilen in `golden_faelle`. Grund wie in `bescheid_blatt`: die Vorlage traegt
@@ -1789,6 +1789,43 @@ fn gezielte_faelle() {
             vec![
                 ("rentner_renten_art", json!("private_leibrente"), true),
                 ("rentner_renten_beginn_jahr", json!(1), true),
+            ],
+        ),
+        // Anlage KAP: `mit_ring_werten` liest nur BESTAETIGTE Werte. Python == Rust auf: vorlaeufiger Topf
+        // allein (kein Antrag), vorlaeufiges Aggregat, gemischter Zustand (Antrag, Pauschbetrag nur aus dem
+        // bestaetigten Topf), vorlaeufiger Partner-Topf in rentner_gesamt. Der Guard meldet nichts (keine
+        // Sperre); verglichen wird die Ausgabe von `mit_ring_werten` in `vergleiche`.
+        (
+            "(keine Sperre)",
+            "gesamt",
+            vec![
+                ("kein_kap", json!(false), true),
+                ("kap_gewinn_sonstige", json!(175_000), false),
+            ],
+        ),
+        (
+            "(keine Sperre)",
+            "gesamt",
+            vec![
+                ("kein_kap", json!(false), true),
+                ("kap_kapitalertraege", json!(175_000), false),
+            ],
+        ),
+        (
+            "(keine Sperre)",
+            "gesamt",
+            vec![
+                ("kein_kap", json!(false), true),
+                ("kap_gewinn_aktien", json!(40_000), true),
+                ("kap_gewinn_sonstige", json!(30_000), false),
+            ],
+        ),
+        (
+            "(keine Sperre)",
+            "rentner_gesamt",
+            vec![
+                ("veranlagung", json!("zusammen"), true),
+                ("kap_gewinn_sonstige_partner", json!(175_000), false),
             ],
         ),
         // § 35: der Hebesatz des Partner-Betriebs fehlt wie der von Person A.
