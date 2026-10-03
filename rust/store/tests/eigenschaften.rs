@@ -375,6 +375,111 @@ fn ableitung_ohne_instanz_gruppe_ignoriert_den_suffix() {
     assert_eq!(felder, ["stammdaten_geburtsdatum__2"]);
 }
 
+// ---- Die Ableitung schreibt keinen Wert ausserhalb von `bereich` -----------------------------------
+// Gegenstueck zu `tests/test_bindung_bereich_serverseitig.py` (Abschnitt „Der Ableitungsweg") und
+// Vault `decisions/ableitung-schreibt-keinen-wert-ausserhalb-des-bereichs`. `rechne_ab` haengte sein
+// Ergebnis ueber `push_neu` an `pruefe_bindung` vorbei: aus 15.07.1850 wurde `geburtsjahr` 1850
+// (Bereich 1900..2010), und die Frage verschwand.
+
+const QUELLEN: [(&str, &str); 2] = [
+    ("stammdaten_geburtsdatum", "geburtsjahr"),
+    ("stammdaten_geburtsdatum_partner", "geburtsjahr_partner"),
+];
+
+#[test]
+fn ableitung_schreibt_kein_geburtsjahr_ausserhalb_des_bereichs() {
+    for (quelle, ziel) in QUELLEN {
+        for datum in [
+            "15.07.1850",
+            "31.12.1899",
+            "01.01.2011",
+            "15.07.2025",
+            "15.07.2999",
+        ] {
+            let s = store_mit(&[(quelle, json!(datum))]);
+            assert!(
+                s.aktives(ziel).is_none(),
+                "{quelle}={datum}: Ableitung schrieb {ziel}"
+            );
+            // Das Datum selbst bleibt in der Akte: nur die Ableitung daraus unterbleibt.
+            assert_eq!(s.aktives(quelle).unwrap().wert, PyWert::Text(datum.into()));
+        }
+    }
+}
+
+#[test]
+fn ableitung_schreibt_das_jahr_im_bereich_und_die_null() {
+    // Raender und Mitte wie bisher. Die 0 (Datum 01.01.0000) geht wie beim Speichern durch
+    // (`pruefe_bindung`: eine Regel, eine Stelle); ob eine GERECHNETE 0 dasselbe verdient wie eine
+    // getippte, ist offen (Bericht, „Entscheidung fuer Julius").
+    for (quelle, ziel) in QUELLEN {
+        for (datum, jahr) in [
+            ("01.01.1900", 1900),
+            ("15.07.1960", 1960),
+            ("31.12.2010", 2010),
+            ("01.01.0000", 0),
+        ] {
+            let s = store_mit(&[(quelle, json!(datum))]);
+            assert_eq!(
+                ableitung_auf(&s, ziel).map(|(w, _)| w),
+                Some(PyWert::Ganz(jahr)),
+                "{quelle}={datum}"
+            );
+        }
+    }
+}
+
+#[test]
+fn ableitung_ohne_bereich_am_ziel_laeuft_weiter() {
+    // Kontrolle: `rentner_alter_64_erfuellt` (bool, ohne `bereich`) wird auch fuer 1850 abgeleitet.
+    let s = store_mit(&[("stammdaten_geburtsdatum", json!("15.07.1850"))]);
+    assert_eq!(
+        ableitung_auf(&s, "rentner_alter_64_erfuellt").map(|(w, _)| w),
+        Some(PyWert::Bool(true))
+    );
+}
+
+#[test]
+fn bestaetigte_null_und_vorjahreswert_am_ziel_sperren_die_ableitung_weiter() {
+    // Entscheidung Punkt 4: `ziel in aktiv` bleibt, auch bei einer bestaetigten 0.
+    let s = store_mit(&[
+        ("geburtsjahr", json!(0)),
+        ("stammdaten_geburtsdatum", json!("15.07.1960")),
+    ]);
+    let e = s.aktives("geburtsjahr").unwrap();
+    assert_eq!(
+        (&e.wert, &e.schreiber),
+        (&PyWert::Ganz(0), &Schreiber::Mensch("julius".to_string()))
+    );
+    let mut s = Store::leer(2025, None);
+    let vorjahr = NeuesEvent {
+        feldzustand: Feldzustand::Vorlaeufig,
+        schreiber: Schreiber::ImportVorjahr,
+        herkunft: Herkunft {
+            herkunft: Achsenwert::new("vorjahr").unwrap(),
+            pruef_tiefe: PruefTiefe::Ungeprueft,
+            haftung: Achsenwert::new("nutzer").unwrap(),
+        },
+        ..neues_event(
+            "geburtsjahr",
+            &json!(1950),
+            false,
+            None,
+            "2026-01-01T00:00:00+00:00".to_string(),
+        )
+    };
+    s.append(&vorjahr, None, nachschlag()).unwrap();
+    let datum = neues_event(
+        "stammdaten_geburtsdatum",
+        &json!("15.07.1960"),
+        true,
+        None,
+        "2026-01-01T00:00:01+00:00".to_string(),
+    );
+    s.append(&datum, None, nachschlag()).unwrap();
+    assert_eq!(s.aktives("geburtsjahr").unwrap().wert, PyWert::Ganz(1950));
+}
+
 proptest! {
     /// `EventId` -> Hex-Text -> `EventId`, ebenso ueber JSON, ist verlustfrei; der Text sind
     /// immer 64 Zeichen `[0-9a-f]`, das Muster aus `schema.json`.

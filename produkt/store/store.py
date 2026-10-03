@@ -231,6 +231,23 @@ def _wert_erlaubt(wert, typ: str, enum_werte) -> bool:
     return True
 
 
+def _ausserhalb_bereich(eintrag: dict, wert) -> dict | None:
+    """Auflage W, EINE Regel an EINER Stelle: das `bereich` des Bindungseintrags, wenn `wert` eine Zahl
+    ausserhalb davon ist, sonst None. Die 0 liegt nie ausserhalb (decisions/zahl-ausserhalb-des-bereichs-
+    wird-beim-speichern-abgewiesen-die-null-nicht). Nur cent/int tragen einen Bereich.
+
+    Zwei Aufrufer: `_pruefe_typ_konformitaet` weist den Wert ab (422); `_leite_ab` und `_rechne_ab` schreiben
+    ihn nicht (decisions/ableitung-schreibt-keinen-wert-ausserhalb-des-bereichs) — der Nutzer tippte ein
+    Datum, kein Jahr, eine Fehlermeldung zu einem Feld, das er nie sah, hilft ihm nicht. Rust:
+    `store::bereich_verletzt`."""
+    bereich = eintrag.get("bereich")
+    typ = eintrag.get("typ")
+    if (bereich and typ in ("cent", "int") and _typ_konform(wert, typ, None)
+            and wert != 0 and not bereich["min"] <= wert <= bereich["max"]):
+        return bereich
+    return None
+
+
 def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
     """Auflage T (Typ-Konformität, Stille-Null-Klasse): wert muss zum Bindungstyp von feld_id passen —
     fängt genau den Fall, der den Ring bisher stumm auf 0 fallen liess (String '50000' auf einem
@@ -294,8 +311,9 @@ def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
     # diesen Feldern "nichts anzugeben" (decisions/speichern-lehnt-nullwerte-nicht-ab) und bleibt
     # auch unter einem Minimum > 0 zulaessig. Die Zahl steht in der Meldung (kein PII, anders als
     # ein Text), Rust: Abweisung::WertAusserhalbBereich. Laden prueft nie.
-    bereich = eintrag.get("bereich")
-    if bereich and typ in ("cent", "int") and wert != 0 and not bereich["min"] <= wert <= bereich["max"]:
+    # Die Regel selbst steht in `_ausserhalb_bereich`; die Ableitungen fragen dieselbe Stelle.
+    bereich = _ausserhalb_bereich(eintrag, wert)
+    if bereich:
         raise ValueError(
             f"fail-closed (Bereich): {feld_id}={wert!r} liegt ausserhalb des erlaubten Bereichs "
             f"{bereich['min']} bis {bereich['max']} der Bindung.")
@@ -526,7 +544,7 @@ def _leite_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict | 
     `kein_kind` leer. Der Wert fehlte dann in der Rechnung und in der ELSTER-Deklaration, und
     zwar still — dieselbe Bauform, die hier schon einmal 351 EUR gekostet hat.
 
-    VIER SCHRANKEN, jede fail-closed:
+    FÜNF SCHRANKEN, jede fail-closed:
     - nur `zustand=bestaetigt` — ein vorläufiger KI-Vorschlag („2 Kinder") beweist nichts, solange
       der Nutzer ihn nicht gesehen hat. Dieselbe Regel wie bei `instanz_anzahl`.
     - nur oberhalb `ab` (Vorgabe 1) — aus `0 Kinder` wird NICHTS abgeleitet, dann bleibt die
@@ -536,6 +554,8 @@ def _leite_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict | 
       überschrieben, auch kein vorläufiges.
     - keine Kette: das abgeleitete Event läuft nicht noch einmal durch die Ableitung. Eine Ebene,
       damit `beweist` nicht unbemerkt eine Lawine auslöst.
+    - nur ein Wert innerhalb `bereich` des Ziels (`_ausserhalb_bereich`, dieselbe Regel wie beim
+      Speichern) — sonst passiert nichts und die Frage bleibt stehen.
 
     Der Wert trägt `herkunft=berechnet` und erscheint dem Nutzer als „∑ berechnet", nicht als
     „✓ selbst". Er hat die Zahl gesagt, nicht diesen Satz — die Haftung bleibt bei ihm, die
@@ -552,6 +572,11 @@ def _leite_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict | 
         return
     ziel = regel["feld_id"]
     if ziel not in bindung or ziel in _aktives(store):
+        return
+    # Ein Wert ausserhalb `bereich` des Ziels wird nicht geschrieben, die Frage bleibt stehen (kein 422:
+    # der Nutzer sah das Ziel nie). Heute traegt kein `beweist`-Ziel einen Bereich; die Regel steht hier,
+    # damit beide Ableitungswege dieselbe Pruefung haben wie das Speichern.
+    if _ausserhalb_bereich(bindung[ziel], regel["wert"]):
         return
     abgeleitet = {"event_id": "", "ts": _now(), "feld_id": ziel, "wert": regel["wert"],
                   "zustand": "bestaetigt",
@@ -629,8 +654,9 @@ def _rechne_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict |
 
     Unterschied zu `beweist`: dort steht der Zielwert fest, hier wird er gerechnet. Sonst
     dieselben Schranken — nur bestätigte Quellen, nie überschreiben, keine Kette. Zusätzlich:
-    lässt sich der Wert nicht SICHER bestimmen (unlesbares Datum), passiert nichts und die Frage
-    bleibt stehen. Ein gerateter Geburtsjahrgang wäre schlimmer als eine Frage zu viel.
+    lässt sich der Wert nicht SICHER bestimmen (unlesbares Datum, oder ein Jahr ausserhalb `bereich`
+    des Ziels), passiert nichts und die Frage bleibt stehen. Ein gerateter Geburtsjahrgang wäre
+    schlimmer als eine Frage zu viel.
 
     ZWEI AUSLÖSER, nicht einer (2026-08-27). Bis dahin lief diese Funktion nur beim Schreiben des
     QUELLFELDS und prüfte das `und_feld` in genau diesem Moment. Wurde das und_feld erst danach
@@ -696,6 +722,11 @@ def _rechne_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict |
                 continue
         neu = _berechne(regel, quellwert, int(store["veranlagungszeitraum"]))
         if neu is None:
+            continue
+        # Dieselbe Bereichsregel wie beim Speichern (`_ausserhalb_bereich`): ein gerechneter Wert ausserhalb
+        # `bereich` ist ein Wert, der sich nicht SICHER bestimmen laesst. Aus dem Geburtsdatum 15.07.1850
+        # wurde sonst `geburtsjahr` 1850, die Frage verschwand, und die Rechnung las es als gesicherte Angabe.
+        if _ausserhalb_bereich(eintrag, neu):
             continue
         ev = {"event_id": "", "ts": _now(), "feld_id": ziel_i, "wert": neu,
               "zustand": "bestaetigt",

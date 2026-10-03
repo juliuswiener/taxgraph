@@ -4322,6 +4322,13 @@ fn generatoren() {
         // Quelle. Die Ableitung `kind_unter_14_haushaltszugehoerig` feuert je Instanz (`__2`).
         ("g_kind2", "gesamt", 2025),
         ("g_kind2b", "gesamt", 2025),
+        // g_jahr_aussen/g_jahr_aussen2: Geburtsdatum 15.07.1850 und 15.07.2999 -> das Jahr liegt ausserhalb
+        // `bereich` 1900..2010 von `geburtsjahr`: keine Ableitung, die Frage bleibt, die Zahl rechnet wie
+        // ohne Angabe. g_jahr_innen: 15.07.1960 (Kontrolle), g_jahr_ohne: gar kein Geburtsdatum.
+        ("g_jahr_aussen", "gesamt", 2025),
+        ("g_jahr_aussen2", "gesamt", 2025),
+        ("g_jahr_innen", "gesamt", 2025),
+        ("g_jahr_ohne", "gesamt", 2025),
         ("g_rent4", "rentner_gesamt", 2025),
         // g_rent5: Rentenbeginn-Jahr 0 (aa, ohne Freibetrag): der Guard sperrt mit
         // `rentenbeginn_jahr_ungueltig`, nicht mit der Fixierung.
@@ -4547,6 +4554,18 @@ fn generatoren() {
         k.extend(kind("__2", "01.03.2021", true));
         k
     });
+    for (id, datum) in [
+        ("g_jahr_aussen", "15.07.1850"),
+        ("g_jahr_aussen2", "15.07.2999"),
+        ("g_jahr_innen", "15.07.1960"),
+    ] {
+        fuege(id, {
+            let mut k = kegel_gesamt();
+            k.push(("stammdaten_geburtsdatum", json!(datum)));
+            k
+        });
+    }
+    fuege("g_jahr_ohne", kegel_gesamt());
     fuege("g_rent4", {
         let mut k = kegel_rentner(2025);
         k.push(("p36_lohnsteuer", json!(1_000)));
@@ -4912,7 +4931,7 @@ fn generatoren() {
     for id in [
         "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_rent3", "g_rent5", "g_vor",
         "g_wz", "g_aussen", "g_an2", "g_ep2", "g_vor2", "g_pf_rot", "g_dk", "g_dk2", "g_kind2",
-        "g_kind2b",
+        "g_kind2b", "g_jahr_aussen", "g_jahr_aussen2", "g_jahr_innen", "g_jahr_ohne",
     ] {
         for r in ["stand", "fragen", "ergebnis", "graph", "deklaration"] {
             let b = a("GET", &format!("/fall/{id}/{r}"), None);
@@ -4957,7 +4976,8 @@ fn generatoren() {
     println!("  fragen: Anzahl je Fall {fragen_je_fall:?}, Sperrgruende {fragen_gruende:?}");
     for id in [
         "g_an3", "g_an4", "g_an5", "g_an6", "g_ges2", "g_ges3", "g_ges4", "g_ges5", "g_ges6", "g_ges7",
-        "g_ges8", "g_ges9", "g_rent4", "g_kind2", "g_kind2b",
+        "g_ges8", "g_ges9", "g_rent4", "g_kind2", "g_kind2b", "g_jahr_aussen", "g_jahr_aussen2",
+        "g_jahr_innen", "g_jahr_ohne",
     ] {
         ergebnisse.extend(a("GET", &format!("/fall/{id}/ergebnis"), None));
     }
@@ -5091,6 +5111,41 @@ fn generatoren() {
         kein_ziel.is_none() || status.get() == 404,
         "Instanz 1 hat in g_kind2b keine Ableitung: {kein_ziel:?}"
     );
+    // Die Ableitung und `bereich`: Python und Rust vergleicht `a`; dass die Ableitung bei einem Jahr
+    // ausserhalb NICHTS schreibt und die Frage bleibt, pruefen die Behauptungen (ein gleiches, aber
+    // falsches Bild auf beiden Seiten waere sonst unsichtbar). Kontrolle: im Bereich leitet sie ab.
+    let in_queue = |id: &str| {
+        queue_felder
+            .iter()
+            .find(|(i, _)| *i == id)
+            .is_some_and(|(_, fs)| fs.iter().any(|(f, _)| f == "geburtsjahr"))
+    };
+    let ohne = a("GET", "/fall/g_jahr_ohne/ergebnis", None).map(|b| b["zahl_cent"].clone());
+    assert!(
+        ohne.as_ref().is_some_and(Value::is_i64),
+        "g_jahr_ohne ohne Zahl: {ohne:?}"
+    );
+    for id in ["g_jahr_aussen", "g_jahr_aussen2"] {
+        let b = a("GET", &format!("/fall/{id}/feld/geburtsjahr/warum"), None);
+        assert!(
+            b.is_none() || status.get() == 404,
+            "{id}: Ableitung schrieb ein Geburtsjahr ausserhalb des Bereichs: {b:?}"
+        );
+        assert!(in_queue(id), "{id}: die Frage geburtsjahr ist verschwunden");
+        let zahl = a("GET", &format!("/fall/{id}/ergebnis"), None).map(|b| b["zahl_cent"].clone());
+        assert_eq!(zahl, ohne, "{id}: die Zahl rechnet nicht wie ohne Angabe");
+    }
+    assert!(in_queue("g_jahr_ohne"));
+    let b = a("GET", "/fall/g_jahr_innen/feld/geburtsjahr/warum", None);
+    let j = b.as_ref().map(|b| &b["justification"]);
+    assert_eq!(
+        j.map(|j| (&j["wert"], j["signal"]["signal_2"].as_str())),
+        Some((&json!(1960), Some("ableitung@stammdaten_geburtsdatum"))),
+        "g_jahr_innen: keine Ableitung im Bereich: {b:?}"
+    );
+    assert!(!in_queue("g_jahr_innen"));
+    let innen = a("GET", "/fall/g_jahr_innen/ergebnis", None).map(|b| b["zahl_cent"].clone());
+    assert_ne!(innen, ohne, "Kontrolle bewegt die Zahl nicht");
     // `frage` zu jedem Feld der Queue dieser Faelle: Bereich mit und ohne Grund, Aufzaehlungen,
     // Muster, Standardwerte, Vorjahr-Kategorie, Instanz-Etikett. Ein Feld mit Instanz-Etikett wird
     // zusaetzlich mit `__2` gefragt (Aufloesung auf das Basisfeld); `__1` ist keine Instanz mehr und
