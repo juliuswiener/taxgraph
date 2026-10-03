@@ -15,6 +15,10 @@ path = "src/lib.rs"
 name = "taxgraph-api"
 path = "src/main.rs"
 
+[features]
+# Testbau fuer den Differenz-Harness: feste Uhr im Store (`store/festzeit`).
+festzeit = ["store/festzeit"]
+
 [dependencies]
 bescheid = { path = "../bescheid" }
 bindung = { path = "../bindung" }

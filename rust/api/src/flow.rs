@@ -174,7 +174,7 @@ pub fn schreibe(ablage: &Path, fall: Option<&str>, art: &str, inhalt: &PyWert) {
 }
 
 /// `obj.get(schluessel)` eines `dict`; alles andere (und ein fehlender Schluessel) ist `None`.
-fn hole<'a>(obj: &'a PyWert, schluessel: &str) -> Option<&'a PyWert> {
+pub(crate) fn hole<'a>(obj: &'a PyWert, schluessel: &str) -> Option<&'a PyWert> {
     match obj {
         PyWert::Objekt(paare) => paare.iter().find(|(k, _)| k == schluessel).map(|(_, v)| v),
         _ => None,

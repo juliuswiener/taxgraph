@@ -46,6 +46,9 @@ use serde_json::{json, Map, Value};
 
 const GEHEIMNIS: &str = "paritaet-geheimnis-api-9a";
 
+/// Die Uhr beider Server: abgeleitete Events und Events ohne `ts` tragen sie.
+const FESTE_ZEIT: &str = "2026-01-02T03:04:05.123456+00:00";
+
 /// Jede Normalisierung, vollstaendig. Was hier nicht steht, wird roh verglichen.
 const NORMALISIERUNGEN: &[(&str, &str)] = &[
     ("login.token", "JWT traegt iat und zufaelliges jti — je Anmeldung neu; Laenge und Nutzer bleiben gleich (Content-Length wird roh verglichen)"),
@@ -60,7 +63,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 /// Routen, fuer die Rust heute `501 nicht_portiert` antwortet (AK3 in 9c). Beim Port fliegt die
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
 const NICHT_PORTIERT: &[&str] = &[
-    "POST /fall/{id}/event",
     "POST /fall/{id}/vorjahr",
     "POST /fall/{id}/einreichen",
     "POST /fall/{id}/chat",
@@ -104,7 +106,15 @@ fn rust_binary() -> PathBuf {
     CELL.get_or_init(|| {
         let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
         let status = Command::new(cargo)
-            .args(["build", "-p", "api", "--bin", "taxgraph-api"])
+            .args([
+                "build",
+                "-p",
+                "api",
+                "--bin",
+                "taxgraph-api",
+                "--features",
+                "festzeit",
+            ])
             .current_dir(repo_root().join("rust"))
             .status()
             .unwrap();
@@ -155,7 +165,7 @@ fn starte(art: &'static str, wurzel: &Path, no_auth: bool, flow: bool, seed: &Pa
     }
     let mut cmd = if art == "python" {
         let mut c = Command::new("python3");
-        c.args(["-u", "produkt/haut/server.py", "0"]);
+        c.args(["-u", "rust/parity/tests/festzeit/server.py", "0"]);
         c
     } else {
         let mut c = Command::new(rust_binary());
@@ -170,6 +180,11 @@ fn starte(art: &'static str, wurzel: &Path, no_auth: bool, flow: bool, seed: &Pa
         .env("TAXGRAPH_NO_AUTH", if no_auth { "1" } else { "0" })
         .env("TAXGRAPH_FLOW", if flow { "1" } else { "0" })
         .env("TAXGRAPH_KI_DEBUG", "0")
+        // Pythons Set-Ausgabe (`zustand muss {…} sein`) haengt am Hash der Texte; fest, damit sie
+        // vergleichbar bleibt. Rust ignoriert die Variable.
+        .env("PYTHONHASHSEED", "0")
+        // Feste Uhr in beiden Servern (`festzeit/server.py`, Rust-Feature `festzeit`).
+        .env("TAXGRAPH_JETZT", FESTE_ZEIT)
         .env("LLM_API_KEY", "")
         .env("LLM_API_BASE", "")
         .env("LLM_MODEL", "")
@@ -355,6 +370,8 @@ struct Stat {
     /// Zeilen von `flow.jsonl`, die Python schrieb und Rust im Vergleich gegenueberstand; der Beleg,
     /// dass der Vergleich nicht zwei leere Listen sieht.
     flow_zeilen: usize,
+    /// Der Status der letzten Rust-Antwort, fuer Folgen, die ihn gegen eine Erwartung pruefen.
+    letzter: u16,
 }
 
 impl Stat {
@@ -535,6 +552,33 @@ fn verzeichnis_zustand(s: &Server) -> BTreeMap<String, (Value, u32)> {
     m
 }
 
+/// Der erste Pfad, an dem zwei JSON-Werte auseinandergehen, mit beiden Werten (gekuerzt).
+fn erster_unterschied(a: &Value, b: &Value, pfad: &str) -> String {
+    let kurz = |v: &Value| v.to_string().chars().take(160).collect::<String>();
+    match (a, b) {
+        (Value::Object(x), Value::Object(y)) => {
+            for (k, v) in x {
+                match y.get(k) {
+                    Some(w) if w == v => {}
+                    Some(w) => return erster_unterschied(v, w, &format!("{pfad}/{k}")),
+                    None => return format!("{pfad}/{k} fehlt in Rust: {}", kurz(v)),
+                }
+            }
+            let nur: Vec<_> = y.keys().filter(|k| !x.contains_key(*k)).collect();
+            format!("{pfad}: nur Rust {nur:?}")
+        }
+        (Value::Array(x), Value::Array(y)) => {
+            for (i, (v, w)) in x.iter().zip(y).enumerate() {
+                if v != w {
+                    return erster_unterschied(v, w, &format!("{pfad}[{i}]"));
+                }
+            }
+            format!("{pfad}: Laenge py={} rs={}", x.len(), y.len())
+        }
+        _ => format!("{pfad}: py={} rs={}", kurz(a), kurz(b)),
+    }
+}
+
 fn nutzer_zustand(s: &Server, norm: &mut BTreeMap<&'static str, usize>) -> Value {
     let Ok(text) = std::fs::read_to_string(s.users()) else {
         return Value::Null;
@@ -593,6 +637,7 @@ impl Paar {
             // Negativkontrolle: EINE Rust-Antwort veraendern.
             rs.status += 1;
         }
+        self.stat.letzter = rs.status;
         let [py_audit, rs_audit, py_fehler, rs_fehler, py_flow, rs_flow] = &mut self.logs;
         let (ra, rf, rfl) = (rs_audit.neue(), rs_fehler.neue(), rs_flow.neue_zeilen());
         let stub = json_body(&rs)
@@ -688,7 +733,11 @@ impl Paar {
                 .keys()
                 .filter(|k| r.get(*k).is_some_and(|x| x != &p[*k]))
                 .collect();
-            self.stat.abweichungen.push(format!("Fall-Verzeichnis {wo}: nur Python {nur_p:?}, nur Rust {nur_r:?}, verschieden {anders:?}"));
+            let erste: Vec<String> = anders
+                .iter()
+                .map(|k| format!("{k}: {}", erster_unterschied(&p[*k].0, &r[*k].0, "")))
+                .collect();
+            self.stat.abweichungen.push(format!("Fall-Verzeichnis {wo}: nur Python {nur_p:?}, nur Rust {nur_r:?}, verschieden {anders:?}; Rechte {:?}; {erste:?}", p.iter().filter(|(k, v)| r.get(*k).is_some_and(|x| x.1 != v.1)).map(|(k, _)| k).collect::<Vec<_>>()));
         }
         let (pu, ru) = (
             nutzer_zustand(&self.py, &mut self.stat.norm),
@@ -1615,6 +1664,1053 @@ fn ereignis_beleg(feld: &str, wert: &Value) -> Value {
         "ts": "2026-01-01T00:00:00+00:00", "ersetzt": null})
 }
 
+/// Ein Event mit allen Schluesseln, jeder frei waehlbar; `ersetzt` ist `null`, `ts` fest.
+#[allow(clippy::needless_pass_by_value)] // die Aufrufer reichen Wertliterale durch
+fn roher_event(
+    feld: &str,
+    wert: Value,
+    zustand: &str,
+    schreiber: &str,
+    herkunft: &str,
+    signal_2: Option<&str>,
+) -> Value {
+    json!({"feld_id": feld, "wert": wert, "zustand": zustand, "schreiber": schreiber,
+        "herkunft": {"herkunft": herkunft, "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": signal_2},
+        "ts": "2026-01-01T00:00:00+00:00", "ersetzt": null})
+}
+
+/// `basis` mit einzelnen Schluesseln ersetzt (`Some`) oder entfernt (`None`).
+fn abgewandelt(mut basis: Value, aenderungen: &[(&str, Option<Value>)]) -> Value {
+    let o = basis.as_object_mut().unwrap();
+    for (k, v) in aenderungen {
+        match v {
+            Some(v) => {
+                o.insert((*k).to_owned(), v.clone());
+            }
+            None => {
+                o.remove(*k);
+            }
+        }
+    }
+    basis
+}
+
+/// Die Anfrage-Funktion von `generatoren`: Methode, Pfad, Rumpf, Antwort von Python.
+type Sender<'a> = dyn FnMut(&str, &str, Option<Value>) -> Option<Value> + 'a;
+
+/// Die Klasse einer Antwort von `POST /event`: Status, bei 422 die Auflage, bei 500 die Python-Klasse.
+fn klasse(status: u16, body: Option<&Value>) -> String {
+    let fehler = body.and_then(|b| b["fehler"].as_str()).unwrap_or("");
+    let art = if status == 500 {
+        fehler.split(':').next().map(str::to_owned)
+    } else {
+        fehler
+            .strip_prefix("fail-closed (")
+            .and_then(|r| r.split_once(')'))
+            .map(|(k, _)| k.to_owned())
+            .or_else(|| {
+                fehler
+                    .starts_with("fail-closed:")
+                    .then(|| "signal_2".to_owned())
+            })
+    };
+    art.map_or_else(|| status.to_string(), |k| format!("{status} {k}"))
+}
+
+/// Was `event_faelle` sah: je Klasse die Zahl der Antworten, und jeder Fall, dessen Status von der
+/// Erwartung abwich (Beleg, dass der Fall den Zweig erreicht, den sein Name nennt).
+#[derive(Default)]
+struct EventBilanz {
+    klassen: BTreeMap<String, usize>,
+    falsch: Vec<String>,
+}
+
+impl EventBilanz {
+    fn pruefe(&mut self, name: &str, soll: u16, ist: u16, body: Option<&Value>) {
+        *self.klassen.entry(klasse(ist, body)).or_default() += 1;
+        if soll != ist {
+            self.falsch
+                .push(format!("{name}: erwartet {soll}, Antwort {ist}"));
+        }
+    }
+}
+
+/// `POST /event` in allen Formen: die Tabelle `begleitfelder_formen.json` (je Zeile ein Fall) und
+/// die Auflagen in Pythons Reihenfolge — Tuer (400/500), A, K1, F2, T, V, W, F, `signal_2`, B. Jeder
+/// Fall bekommt einen frischen Fall, ausser der Folge zu B. Beide Server antworten gleich, oder
+/// `Paar::anfrage` meldet es; die Erwartung (`soll`) prueft nur, dass der Fall den Zweig trifft.
+fn event_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBilanz {
+    let mut bilanz = EventBilanz::default();
+    let neuer_fall = |a: &mut Sender, id: &str| {
+        let b = json!({"fall_id": id, "scheibe": "gesamt", "veranlagungszeitraum": 2025});
+        a("POST", "/fall", Some(b));
+    };
+    let tabelle: Value =
+        serde_json::from_str(include_str!("../../fixtures/begleitfelder_formen.json")).unwrap();
+    for (i, f) in tabelle["faelle"].as_array().unwrap().iter().enumerate() {
+        let id = format!("g_bf{i}");
+        neuer_fall(a, &id);
+        let mut body = json!({"feld_id": "ep_arbeitstage", "wert": 1, "zustand": "vorlaeufig",
+            "schreiber": "ui:laie"});
+        for k in ["ts", "herkunft", "signal"] {
+            if let Some(v) = f.get(k) {
+                body[k] = v.clone();
+            }
+        }
+        let antwort = a("POST", &format!("/fall/{id}/event"), Some(body));
+        // Ohne Objekt `herkunft` mit Schluessel `herkunft` weist schon die Tuer ab (400, `api.event`),
+        // nicht erst der Store (422): dort prueft die Tabelle nur `append_event`.
+        let tuer = !f["herkunft"]
+            .as_object()
+            .is_some_and(|h| h.contains_key("herkunft"));
+        let soll = match (f["python"] == "angenommen", tuer) {
+            (true, _) => 201,
+            (false, true) => 400,
+            (false, false) => 422,
+        };
+        let name = format!("Tabelle {}", f["name"].as_str().unwrap());
+        bilanz.pruefe(&name, soll, status.get(), antwort.as_ref());
+    }
+
+    let m = |f: &str, w: Value| ereignis(f, &w, None);
+    let von = |schreiber: &str, herkunft: &str, f: &str, w: Value| {
+        roher_event(f, w, "vorlaeufig", schreiber, herkunft, None)
+    };
+    let vl = |f: &str, w: Value| roher_event(f, w, "vorlaeufig", "ui:paritaet", "laie", None);
+    let aend = abgewandelt;
+    let some = Some;
+    let signal = |s2: Value| json!({"signal_1": null, "signal_2": s2});
+    let gross = json!(10_000_000_000_i64);
+    let basis = m("ep_arbeitstage", json!(1));
+    let mut faelle: Vec<(&str, Value, u16)> = vec![];
+    // Tuer: Feld, Zustand, Herkunft, Schreiber, Rumpf — und ihre Reihenfolge.
+    for (name, k, w, soll) in [
+        ("feld_id Zahl", "feld_id", json!(5), 400),
+        ("feld_id null", "feld_id", Value::Null, 400),
+        ("feld_id wahr", "feld_id", json!(true), 400),
+        ("feld_id Umlaut", "feld_id", json!("größe_ä"), 400),
+        ("feld_id Apostroph", "feld_id", json!("a'b"), 400),
+        ("feld_id Liste", "feld_id", json!([1]), 500),
+        ("feld_id Objekt", "feld_id", json!({}), 500),
+        (
+            "feld_id Instanz ohne Gruppe",
+            "feld_id",
+            json!("ep_arbeitstage__2"),
+            400,
+        ),
+        ("feld_id Instanz 0", "feld_id", json!("schulgeld__0"), 400),
+        (
+            "feld_id Instanz fuehrende Null",
+            "feld_id",
+            json!("schulgeld__02"),
+            400,
+        ),
+        (
+            "feld_id Instanz ohne Basis",
+            "feld_id",
+            json!("gibt_es_nicht__2"),
+            400,
+        ),
+        (
+            "feld_id Instanz mit Zeilenende",
+            "feld_id",
+            json!("schulgeld__2\n"),
+            201,
+        ),
+        ("zustand foo", "zustand", json!("foo"), 400),
+        ("zustand gross", "zustand", json!("Bestaetigt"), 400),
+        ("zustand leer", "zustand", json!(""), 400),
+        ("zustand Zahl", "zustand", json!(5), 400),
+        ("zustand null", "zustand", Value::Null, 400),
+        ("zustand wahr", "zustand", json!(true), 400),
+        ("zustand Liste", "zustand", json!([]), 500),
+        ("zustand Objekt", "zustand", json!({}), 500),
+        ("herkunft Text", "herkunft", json!("laie"), 400),
+        ("herkunft null", "herkunft", Value::Null, 400),
+        ("herkunft Liste", "herkunft", json!([]), 400),
+        ("herkunft Zahl", "herkunft", json!(5), 400),
+        (
+            "herkunft Achse Liste",
+            "herkunft",
+            json!({"herkunft": ["laie"], "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}),
+            422,
+        ),
+        (
+            "herkunft pruef_tiefe Liste",
+            "herkunft",
+            json!({"herkunft": "laie", "pruef_tiefe": [], "haftung": "nutzer"}),
+            500,
+        ),
+        (
+            "herkunft pruef_tiefe Objekt",
+            "herkunft",
+            json!({"herkunft": "laie", "pruef_tiefe": {"a": 1}, "haftung": "nutzer"}),
+            500,
+        ),
+        (
+            "herkunft pruef_tiefe null",
+            "herkunft",
+            json!({"herkunft": "laie", "pruef_tiefe": null, "haftung": "nutzer"}),
+            422,
+        ),
+        (
+            "herkunft haftung Zahl",
+            "herkunft",
+            json!({"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": 5}),
+            422,
+        ),
+        ("herkunft leer", "herkunft", json!({}), 400),
+        (
+            "herkunft ohne Schluessel herkunft",
+            "herkunft",
+            json!({"x": 1}),
+            400,
+        ),
+        ("schreiber leer", "schreiber", json!(""), 400),
+        ("schreiber Zahl", "schreiber", json!(5), 400),
+        ("schreiber null", "schreiber", Value::Null, 400),
+        ("schreiber Liste", "schreiber", json!([]), 400),
+        ("schreiber wahr", "schreiber", json!(true), 400),
+    ] {
+        faelle.push((name, aend(basis.clone(), &[(k, some(w))]), soll));
+    }
+    for (name, k, soll) in [
+        ("feld_id fehlt", "feld_id", 400),
+        ("zustand fehlt", "zustand", 400),
+        ("herkunft fehlt", "herkunft", 400),
+        ("schreiber fehlt", "schreiber", 400),
+        ("wert fehlt", "wert", 422),
+    ] {
+        faelle.push((name, aend(basis.clone(), &[(k, None)]), soll));
+    }
+    faelle.extend([
+        ("feld_id unbekannt", m("gibt_es_nicht", json!(1)), 400),
+        ("Instanz mit Gruppe", m("schulgeld__2", json!(300_000)), 201),
+        (
+            "Instanz zweistellig",
+            m("kinderbetreuungskosten__11", json!(1000)),
+            201,
+        ),
+        (
+            "Reihenfolge feld_id vor zustand",
+            aend(
+                m("gibt_es_nicht", json!(1)),
+                &[("zustand", some(json!("foo")))],
+            ),
+            400,
+        ),
+        (
+            "Reihenfolge zustand vor herkunft",
+            aend(
+                basis.clone(),
+                &[("zustand", some(json!("foo"))), ("herkunft", None)],
+            ),
+            400,
+        ),
+        (
+            "Reihenfolge herkunft vor schreiber",
+            aend(basis.clone(), &[("herkunft", None), ("schreiber", None)]),
+            400,
+        ),
+        ("Rumpf Liste", json!([1]), 500),
+        ("Rumpf Text", json!("x"), 500),
+        ("Rumpf null", Value::Null, 500),
+        ("Rumpf Zahl", json!(5), 500),
+        ("Rumpf wahr", json!(true), 500),
+        ("Rumpf leeres Objekt", json!({}), 400),
+        // ts: Text jeder Art; leer heisst "jetzt".
+        (
+            "ts leer",
+            aend(basis.clone(), &[("ts", some(json!("")))]),
+            201,
+        ),
+        (
+            "ts Text",
+            aend(basis.clone(), &[("ts", some(json!("gestern")))]),
+            201,
+        ),
+        (
+            "ts Umlaut und Emoji",
+            aend(basis.clone(), &[("ts", some(json!("ä😀")))]),
+            201,
+        ),
+    ]);
+    // Auflage A: ein Vorschlags-Schreiber deklariert sich ehrlich, Praefix statt Gleichheit.
+    let llm = |h: &str| von("llm:t", h, "ep_arbeitstage", json!(200));
+    let mit_signal = |b: Value, s2: Value| aend(b, &[("signal", some(signal(s2)))]);
+    let best = |b: Value| aend(b, &[("zustand", some(json!("bestaetigt")))]);
+    faelle.extend([
+        ("A llm falsche Herkunft", llm("laie"), 422),
+        (
+            "A llm bestaetigt",
+            mit_signal(best(llm("llm_vorschlag")), json!("x")),
+            422,
+        ),
+        (
+            "A llm mit signal_2",
+            mit_signal(llm("llm_vorschlag"), json!("x")),
+            422,
+        ),
+        (
+            "A llm signal_2 leerer Text",
+            mit_signal(llm("llm_vorschlag"), json!("")),
+            422,
+        ),
+        (
+            "A llm signal_2 Zahl",
+            mit_signal(llm("llm_vorschlag"), json!(5)),
+            422,
+        ),
+        (
+            "A llm ohne signal",
+            aend(llm("llm_vorschlag"), &[("signal", None)]),
+            201,
+        ),
+        (
+            "A llm Alt-Herkunft",
+            aend(
+                llm("llm_vorschlag"),
+                &[("herkunft", some(json!({"herkunft": "llm_vorschlag"})))],
+            ),
+            201,
+        ),
+        ("A llm ok", llm("llm_vorschlag"), 201),
+        (
+            "A llm ersetzt Text",
+            aend(llm("llm_vorschlag"), &[("ersetzt", some(json!("abc")))]),
+            422,
+        ),
+        (
+            "A llm ersetzt falsch",
+            aend(llm("llm_vorschlag"), &[("ersetzt", some(json!(false)))]),
+            422,
+        ),
+        (
+            "A llm ersetzt leer",
+            aend(llm("llm_vorschlag"), &[("ersetzt", some(json!("")))]),
+            422,
+        ),
+        (
+            "A beleg falsche Herkunft",
+            von(
+                "import:beleg",
+                "llm_vorschlag",
+                "ep_oepnv_kosten",
+                json!(100),
+            ),
+            422,
+        ),
+        (
+            "A beleg ok",
+            von(
+                "import:beleg",
+                "beleg_import",
+                "ep_oepnv_kosten",
+                json!(100),
+            ),
+            201,
+        ),
+        (
+            "A beleg Praefix",
+            von("import:beleg_xyz", "laie", "ep_oepnv_kosten", json!(100)),
+            422,
+        ),
+        (
+            "A beleg ersetzt",
+            aend(
+                von(
+                    "import:beleg",
+                    "beleg_import",
+                    "ep_oepnv_kosten",
+                    json!(100),
+                ),
+                &[("ersetzt", some(json!("x")))],
+            ),
+            422,
+        ),
+        (
+            "A vorjahr falsche Herkunft",
+            von("import:vorjahr", "laie", "ep_arbeitstage", json!(200)),
+            422,
+        ),
+        (
+            "A vorjahr ok",
+            von("import:vorjahr", "vorjahr", "ep_arbeitstage", json!(200)),
+            201,
+        ),
+        // Pythons `startswith`: ein Schreiber mit dem Praefix gehoert zur Klasse, auch mit Rest.
+        (
+            "A vorjahr Praefix",
+            von("import:vorjahr_x", "laie", "ep_arbeitstage", json!(200)),
+            422,
+        ),
+        (
+            "A kontoauszug Praefix",
+            von(
+                "import:kontoauszug_x",
+                "laie",
+                "spenden_betrag",
+                json!(5000),
+            ),
+            422,
+        ),
+        (
+            "A llm Praefix ohne Doppelpunkt",
+            von("llm", "laie", "ep_arbeitstage", json!(200)),
+            201,
+        ),
+        (
+            "T Cent langer Text (Meldung gekuerzt im Mitschnitt)",
+            m("ep_oepnv_kosten", json!("x".repeat(300))),
+            422,
+        ),
+        (
+            "T Cent langer Text mit Umlauten",
+            m("ep_oepnv_kosten", json!("ä".repeat(250))),
+            422,
+        ),
+        (
+            "A vorjahr bestaetigt",
+            mit_signal(
+                best(von(
+                    "import:vorjahr",
+                    "vorjahr",
+                    "ep_arbeitstage",
+                    json!(200),
+                )),
+                json!("x"),
+            ),
+            422,
+        ),
+        (
+            "A vorjahr ersetzt unbekannt",
+            aend(
+                von("import:vorjahr", "vorjahr", "ep_arbeitstage", json!(200)),
+                &[("ersetzt", some(json!("zz")))],
+            ),
+            422,
+        ),
+        (
+            "A kontoauszug falsche Herkunft",
+            von("import:kontoauszug", "laie", "spenden_betrag", json!(5000)),
+            422,
+        ),
+        (
+            "A kontoauszug ok",
+            von(
+                "import:kontoauszug",
+                "kontoauszug",
+                "spenden_betrag",
+                json!(5000),
+            ),
+            201,
+        ),
+        (
+            "A kontoauszug ersetzt",
+            aend(
+                von(
+                    "import:kontoauszug",
+                    "kontoauszug",
+                    "spenden_betrag",
+                    json!(5000),
+                ),
+                &[("ersetzt", some(json!("x")))],
+            ),
+            422,
+        ),
+        (
+            "A berechnet falsche Herkunft",
+            von("berechnet:maps", "laie", "ep_entfernung_km", json!(30)),
+            422,
+        ),
+        (
+            "A berechnet ok",
+            von("berechnet:maps", "berechnet", "ep_entfernung_km", json!(30)),
+            201,
+        ),
+        (
+            "A berechnet bestaetigt",
+            mit_signal(
+                best(von(
+                    "berechnet:maps",
+                    "berechnet",
+                    "ep_entfernung_km",
+                    json!(30),
+                )),
+                json!("x"),
+            ),
+            422,
+        ),
+        (
+            "A berechnet ersetzt unbekannt",
+            aend(
+                von("berechnet:maps", "berechnet", "ep_entfernung_km", json!(30)),
+                &[("ersetzt", some(json!("zz")))],
+            ),
+            422,
+        ),
+        (
+            "A llmx ist kein Vorschlag",
+            aend(basis.clone(), &[("schreiber", some(json!("llmx")))]),
+            201,
+        ),
+        (
+            "A LLM gross ist kein Vorschlag",
+            aend(basis.clone(), &[("schreiber", some(json!("LLM:foo")))]),
+            201,
+        ),
+        (
+            "A engine ist kein Vorschlag",
+            aend(
+                m("ep_arbeitstage", json!(5)),
+                &[("schreiber", some(json!("engine:x")))],
+            ),
+            201,
+        ),
+    ]);
+    // K1 (Katalog) und F2 (Betrag ab 10^10): nur fuer Vorschlags-Schreiber.
+    faelle.extend([
+        (
+            "K1 llm Feld nur fuer Menschen",
+            von(
+                "llm:t",
+                "llm_vorschlag",
+                "kap_antrag_guenstigerpruefung",
+                json!(true),
+            ),
+            422,
+        ),
+        (
+            "K1 beleg fremdes Feld",
+            von("import:beleg", "beleg_import", "ep_arbeitstage", json!(200)),
+            422,
+        ),
+        (
+            "K1 kontoauszug fremdes Feld",
+            von(
+                "import:kontoauszug",
+                "kontoauszug",
+                "ep_arbeitstage",
+                json!(200),
+            ),
+            422,
+        ),
+        (
+            "K1 maps fremdes Feld",
+            von("berechnet:maps", "berechnet", "ep_arbeitstage", json!(200)),
+            422,
+        ),
+        (
+            "K1 llm Instanz-Feld",
+            von("llm:t", "llm_vorschlag", "schulgeld__2", json!(300_000)),
+            422,
+        ),
+        (
+            "K1 berechnet:x im Katalog maps",
+            von("berechnet:x", "berechnet", "ep_entfernung_km", json!(30)),
+            201,
+        ),
+        (
+            "F2 llm 10^10",
+            von("llm:t", "llm_vorschlag", "ep_oepnv_kosten", gross.clone()),
+            422,
+        ),
+        (
+            "F2 llm -10^10",
+            von(
+                "llm:t",
+                "llm_vorschlag",
+                "ep_oepnv_kosten",
+                json!(-10_000_000_000_i64),
+            ),
+            422,
+        ),
+        (
+            "F2 llm knapp darunter",
+            von(
+                "llm:t",
+                "llm_vorschlag",
+                "ep_oepnv_kosten",
+                json!(9_999_999_999_i64),
+            ),
+            201,
+        ),
+        (
+            "F2 llm Zahl als Text",
+            von(
+                "llm:t",
+                "llm_vorschlag",
+                "ep_oepnv_kosten",
+                json!("10000000000"),
+            ),
+            422,
+        ),
+        (
+            "F2 llm Zahl als Text mit Leerraum",
+            von("llm:t", "llm_vorschlag", "ep_oepnv_kosten", json!(" 1e10 ")),
+            422,
+        ),
+        (
+            "F2 llm inf als Text",
+            von("llm:t", "llm_vorschlag", "ep_oepnv_kosten", json!("inf")),
+            422,
+        ),
+        (
+            "F2 llm nan als Text (dann T)",
+            von("llm:t", "llm_vorschlag", "ep_oepnv_kosten", json!("nan")),
+            422,
+        ),
+        (
+            "F2 llm Text ohne Zahl (dann T)",
+            von("llm:t", "llm_vorschlag", "ep_oepnv_kosten", json!("abc")),
+            422,
+        ),
+        (
+            "F2 llm wahr (dann T)",
+            von("llm:t", "llm_vorschlag", "ep_arbeitstage", json!(true)),
+            422,
+        ),
+        (
+            "F2 llm Kommazahl (dann T)",
+            von("llm:t", "llm_vorschlag", "ep_oepnv_kosten", json!(1.5)),
+            422,
+        ),
+        (
+            "F2 beleg 10^10",
+            von(
+                "import:beleg",
+                "beleg_import",
+                "ep_oepnv_kosten",
+                gross.clone(),
+            ),
+            422,
+        ),
+        (
+            "F2 llm int-Feld",
+            von("llm:t", "llm_vorschlag", "ep_arbeitstage", gross.clone()),
+            422,
+        ),
+        (
+            "F2 llm Textfeld mit Zahl",
+            von("llm:t", "llm_vorschlag", "ep_ziel_adresse", json!("1e10")),
+            422,
+        ),
+        (
+            "F2 llm Textfeld ohne Zahl",
+            von("llm:t", "llm_vorschlag", "ep_ziel_adresse", json!("abc")),
+            201,
+        ),
+        (
+            "F2 Mensch darf 10^10",
+            m("ep_oepnv_kosten", gross.clone()),
+            201,
+        ),
+    ]);
+    // T (Typ), V (Vorzeichen), W (Bereich), F (Format) auf dem Wert eines Menschen.
+    faelle.extend([
+        ("T Cent als Text", m("ep_oepnv_kosten", json!("50000")), 422),
+        ("T Cent Kommazahl", m("ep_oepnv_kosten", json!(1.5)), 422),
+        (
+            "T Cent ganze Kommazahl",
+            m("ep_oepnv_kosten", json!(100.0)),
+            422,
+        ),
+        ("T Cent wahr", m("ep_oepnv_kosten", json!(true)), 422),
+        ("T Cent null", m("ep_oepnv_kosten", Value::Null), 422),
+        (
+            "T Cent Liste",
+            m("ep_oepnv_kosten", json!([1, {"a": 2.5}])),
+            422,
+        ),
+        (
+            "T Cent Objekt",
+            m("ep_oepnv_kosten", json!({"b": "x", "a": null})),
+            422,
+        ),
+        (
+            "T Cent Text mit Apostroph",
+            m("ep_oepnv_kosten", json!("it's")),
+            422,
+        ),
+        (
+            "T Cent Text mit Anfuehrungszeichen",
+            m("ep_oepnv_kosten", json!("a'\"b")),
+            422,
+        ),
+        (
+            "T Cent Emoji",
+            m("ep_oepnv_kosten", json!("😀\u{a0}\t")),
+            422,
+        ),
+        ("T Int als Text", m("ep_arbeitstage", json!("5")), 422),
+        (
+            "T Aufzaehlung falsch",
+            m("veranlagung", json!("gemeinsam")),
+            422,
+        ),
+        ("T Aufzaehlung ok", m("veranlagung", json!("einzel")), 201),
+        ("T Aufzaehlung Zahl", m("veranlagung", json!(5)), 422),
+        (
+            "T Aufzaehlung Zahl als Wert",
+            m("ep_ziel_des_weges", json!(1)),
+            422,
+        ),
+        (
+            "T Aufzaehlung Text ok",
+            m("ep_ziel_des_weges", json!("2")),
+            201,
+        ),
+        (
+            "T Aufzaehlung Liste",
+            m("veranlagung", json!(["einzel"])),
+            422,
+        ),
+        (
+            "T Wahrheitswert als Text",
+            m("vv_wohnzwecke", json!("true")),
+            422,
+        ),
+        (
+            "T Wahrheitswert als Zahl",
+            m("vv_wohnzwecke", json!(1)),
+            422,
+        ),
+        ("T Wahrheitswert ok", m("vv_wohnzwecke", json!(true)), 201),
+        (
+            "T Datum ISO",
+            m("stammdaten_geburtsdatum", json!("1990-01-01")),
+            422,
+        ),
+        (
+            "T Datum ok",
+            m("stammdaten_geburtsdatum", json!("01.01.1990")),
+            201,
+        ),
+        (
+            "T Datum mit Zeilenende",
+            m("stammdaten_geburtsdatum", json!("01.01.1990\n")),
+            422,
+        ),
+        (
+            "T Datum arabische Ziffern",
+            m("stammdaten_geburtsdatum", json!("٠١.٠١.١٩٩٠")),
+            422,
+        ),
+        ("T Text leer", m("ep_ziel_adresse", json!("")), 422),
+        (
+            "T Text mit Steuerzeichen",
+            m("ep_ziel_adresse", json!("a\u{1}b")),
+            422,
+        ),
+        (
+            "T Text mit Emoji",
+            m("ep_ziel_adresse", json!("München 😀")),
+            201,
+        ),
+        ("T Text Zahl", m("ep_ziel_adresse", json!(5)), 422),
+        ("T Text Liste", m("ep_ziel_adresse", json!(["a"])), 422),
+        (
+            "T Grad der Behinderung Zwischenwert",
+            m("kind_grad_der_behinderung", json!(33)),
+            422,
+        ),
+        (
+            "T Grad der Behinderung ok",
+            m("kind_grad_der_behinderung", json!(40)),
+            201,
+        ),
+        (
+            "T Grad der Behinderung 0",
+            m("kind_grad_der_behinderung", json!(0)),
+            201,
+        ),
+        (
+            "T Grad der Behinderung darueber",
+            m("kind_grad_der_behinderung", json!(105)),
+            422,
+        ),
+        (
+            "T Grad der Behinderung negativ",
+            m("kind_grad_der_behinderung", json!(-5)),
+            422,
+        ),
+        ("V Cent negativ", m("ep_oepnv_kosten", json!(-1)), 422),
+        (
+            "V Cent negativ gross",
+            m("kap_kapitalertraege", json!(-100_000_000_000_000_i64)),
+            422,
+        ),
+        (
+            "V Verlustfeld negativ",
+            m("kap_verlust_aktien", json!(-5)),
+            422,
+        ),
+        ("V Int negativ", m("ep_entfernung_km", json!(-1)), 422),
+        ("V Null", m("ep_oepnv_kosten", json!(0)), 201),
+        (
+            "V Feld ohne Verbot",
+            m("bruttoarbeitslohn", json!(-100)),
+            201,
+        ),
+        (
+            "V Int-Feld ohne Verbot",
+            m("vpf_monate_am_ort", json!(-1)),
+            201,
+        ),
+        (
+            "W Arbeitstage darueber",
+            m("ep_arbeitstage", json!(367)),
+            422,
+        ),
+        ("W Arbeitstage negativ", m("ep_arbeitstage", json!(-1)), 422),
+        ("W Arbeitstage Null", m("ep_arbeitstage", json!(0)), 201),
+        (
+            "W Arbeitstage Obergrenze",
+            m("ep_arbeitstage", json!(366)),
+            201,
+        ),
+        (
+            "W Geburtsjahr darunter",
+            m("geburtsjahr_partner", json!(1899)),
+            422,
+        ),
+        (
+            "W Geburtsjahr darueber",
+            m("geburtsjahr_partner", json!(2011)),
+            422,
+        ),
+        (
+            "W Geburtsjahr Null",
+            m("geburtsjahr_partner", json!(0)),
+            201,
+        ),
+        (
+            "W Geburtsjahr Untergrenze",
+            m("geburtsjahr_partner", json!(1900)),
+            201,
+        ),
+        ("W Kinder darueber", m("fam_anzahl_kinder", json!(21)), 422),
+        (
+            "W Kinder ok mit Ableitung",
+            m("fam_anzahl_kinder", json!(2)),
+            201,
+        ),
+        (
+            "W Kinder Null mit Ableitung",
+            m("fam_anzahl_kinder", json!(0)),
+            201,
+        ),
+        (
+            "W Quote darueber",
+            m("vv_entgelt_quote_prozent", json!(101)),
+            422,
+        ),
+        (
+            "W Versorgungsbeginn darunter",
+            m("versorgung_beginn_jahr", json!(1954)),
+            422,
+        ),
+        ("V vor W", m("ep_entfernung_km", json!(-400)), 422),
+        (
+            "F Zeitraum mit Tippfehler",
+            m("kind_betreuung_zeitraum", json!("01.01-31.122")),
+            422,
+        ),
+        (
+            "F Zeitraum ok",
+            m("kind_betreuung_zeitraum", json!("01.01-31.12")),
+            201,
+        ),
+        (
+            "F Zeitraum Tag 32",
+            m("kind_betreuung_zeitraum", json!("32.01-31.12")),
+            422,
+        ),
+        (
+            "F Kennung zu kurz",
+            m("kind_idnr", json!("1234567890")),
+            422,
+        ),
+        ("F Kennung ok", m("kind_idnr", json!("12345678901")), 201),
+        (
+            "F Kennung mit Zeilenende",
+            m("kind_idnr", json!("12345678901\n")),
+            422,
+        ),
+        (
+            "F Kennung arabische Ziffern",
+            m("kind_idnr", json!("١٢٣٤٥٦٧٨٩٠١")),
+            422,
+        ),
+    ]);
+    // `signal_2` (Text oder null) und `bestaetigt` (braucht ein signal_2 mit Inhalt).
+    for (name, s2) in [
+        ("signal_2 Zahl", json!(5)),
+        ("signal_2 wahr", json!(true)),
+        ("signal_2 Liste", json!([1])),
+        ("signal_2 Objekt", json!({})),
+        ("signal_2 Kommazahl", json!(1.5)),
+    ] {
+        faelle.push((name, mit_signal(vl("ep_arbeitstage", json!(1)), s2), 422));
+    }
+    for (name, s2) in [
+        ("bestaetigt signal_2 leer", json!("")),
+        ("bestaetigt signal_2 Leerzeichen", json!("  ")),
+        ("bestaetigt signal_2 Tabulator", json!("\t\n")),
+        (
+            "bestaetigt signal_2 geschuetztes Leerzeichen",
+            json!("\u{a0}"),
+        ),
+        (
+            "bestaetigt signal_2 Informationstrenner",
+            json!("\u{1c}\u{1f}"),
+        ),
+        ("bestaetigt signal_2 Nullbreite", json!("\u{200b}")),
+        ("bestaetigt signal_2 null", Value::Null),
+    ] {
+        faelle.push((
+            name,
+            mit_signal(m("ep_arbeitstage", json!(1)), s2.clone()),
+            if name.ends_with("Nullbreite") {
+                201
+            } else {
+                422
+            },
+        ));
+    }
+    faelle.push((
+        "bestaetigt ohne signal",
+        aend(m("ep_arbeitstage", json!(1)), &[("signal", None)]),
+        422,
+    ));
+    faelle.push((
+        "bestaetigt signal null",
+        aend(
+            m("ep_arbeitstage", json!(1)),
+            &[("signal", some(Value::Null))],
+        ),
+        422,
+    ));
+    for (i, (name, body, soll)) in faelle.iter().enumerate() {
+        let id = format!("g_m{i}");
+        neuer_fall(a, &id);
+        let antwort = a("POST", &format!("/fall/{id}/event"), Some(body.clone()));
+        bilanz.pruefe(name, *soll, status.get(), antwort.as_ref());
+    }
+
+    // B: ein aktives Event je Feld, `ersetzt` nur mit gueltigem Ziel. Eine Folge auf einem Fall;
+    // die Kennungen stehen in den Meldungen und sind je Server gleich (feste Uhr).
+    neuer_fall(a, "g_evb");
+    let pfad = "/fall/g_evb/event";
+    let mut senden = |name: &str, body: Value, soll: u16, bilanz: &mut EventBilanz| {
+        let antwort = a("POST", pfad, Some(body));
+        bilanz.pruefe(name, soll, status.get(), antwort.as_ref());
+        antwort.and_then(|b| b["event_id"].as_str().map(str::to_owned))
+    };
+    let id1 = senden(
+        "B erstes Event",
+        m("ep_arbeitstage", json!(200)),
+        201,
+        &mut bilanz,
+    )
+    .unwrap();
+    let id2 = senden(
+        "B anderes Feld",
+        m("ep_oepnv_kosten", json!(100)),
+        201,
+        &mut bilanz,
+    )
+    .unwrap();
+    senden(
+        "B schon aktiv",
+        m("ep_arbeitstage", json!(201)),
+        422,
+        &mut bilanz,
+    );
+    let mit = |ersetzt: Value| {
+        aend(
+            m("ep_arbeitstage", json!(210)),
+            &[("ersetzt", some(ersetzt))],
+        )
+    };
+    for (name, ersetzt) in [
+        ("B Ziel unbekannt", json!("nope")),
+        ("B Ziel Zahl", json!(5)),
+        ("B Ziel wahr", json!(true)),
+        ("B Ziel falsch", json!(false)),
+        ("B Ziel leer", json!("")),
+        ("B Ziel Liste", json!([1, "a"])),
+        ("B Ziel Objekt", json!({"a": 1.5, "b": null})),
+        ("B Ziel in Grossbuchstaben", json!(id1.to_uppercase())),
+        ("B Ziel mit Leerzeichen", json!(format!(" {id1}"))),
+        ("B Ziel anderes Feld", json!(id2)),
+    ] {
+        senden(name, mit(ersetzt), 422, &mut bilanz);
+    }
+    let id3 = senden("B Ersetzung", mit(json!(id1)), 201, &mut bilanz).unwrap();
+    senden("B schon ersetzt", mit(json!(id1)), 422, &mut bilanz);
+    senden(
+        "B wieder ohne Ziel",
+        m("ep_arbeitstage", json!(220)),
+        422,
+        &mut bilanz,
+    );
+    senden(
+        "B llm ersetzt aktives",
+        aend(llm("llm_vorschlag"), &[("ersetzt", some(json!(id3)))]),
+        422,
+        &mut bilanz,
+    );
+    let id4 = senden(
+        "B Entfernung",
+        m("ep_entfernung_km", json!(30)),
+        201,
+        &mut bilanz,
+    )
+    .unwrap();
+    senden(
+        "B berechnet ersetzt aktives",
+        aend(
+            von("berechnet:maps", "berechnet", "ep_entfernung_km", json!(40)),
+            &[("ersetzt", some(json!(id4)))],
+        ),
+        201,
+        &mut bilanz,
+    );
+    senden(
+        "B vorjahr ersetzt aktives",
+        aend(
+            von("import:vorjahr", "vorjahr", "ep_oepnv_kosten", json!(7)),
+            &[("ersetzt", some(json!(id2)))],
+        ),
+        201,
+        &mut bilanz,
+    );
+    senden(
+        "B Kinder",
+        m("fam_anzahl_kinder", json!(2)),
+        201,
+        &mut bilanz,
+    );
+    senden(
+        "B abgeleitetes Feld ist aktiv",
+        m("kein_kind", json!(true)),
+        422,
+        &mut bilanz,
+    );
+    // Rohtext-Fall fuer `generatoren`: Zahlenschreibweisen in `wert` und `signal_1`.
+    neuer_fall(a, "g_evr");
+    bilanz
+}
+
+/// Rumpf von `POST /event` als Rohtext: `wert` und `signal` stehen so, wie sie hier geschrieben sind.
+fn roher_text(feld: &str, wert: &str, signal: &str) -> String {
+    format!(
+        r#"{{"feld_id": "{feld}", "wert": {wert}, "zustand": "vorlaeufig", "schreiber": "ui:paritaet", "herkunft": {{"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}}, "signal": {signal}, "ts": "2026-01-01T00:00:00+00:00", "ersetzt": null}}"#
+    )
+}
+
 /// Ein nicht leerer Body je POST-Route aus Stufe 1–3; `quelle` ist der Vorjahres-Fall. Stufe 4
 /// bekommt `{}`: sie geht nie an Python (s. `UNTERGRENZE`).
 fn koerper(route: &str, quelle: &str) -> Value {
@@ -1771,9 +2867,13 @@ fn generatoren() {
     schreibe_seed(&seed);
     let mut p = Paar::neu(tmp.path(), false, true, &seed);
     let alice = token("alice", GEHEIMNIS);
+    // Der Status der letzten Anfrage (Rust; gleich dem von Python, sonst ist es eine Abweichung).
+    let status = std::cell::Cell::new(0u16);
     let mut a = |m: &str, pfad: &str, body: Option<Value>| {
         let x = Anfrage::neu(&format!("gen {m} {pfad}"), m, pfad).token(&alice);
-        p.anfrage(&body.map_or(x.clone(), |b| x.json(&b)), Modus::Voll)
+        let antwort = p.anfrage(&body.map_or(x.clone(), |b| x.json(&b)), Modus::Voll);
+        status.set(p.stat.letzter);
+        antwort
     };
     for (id, scheibe, vz) in [
         ("g_ep", "ep", 2025),
@@ -1995,7 +3095,7 @@ fn generatoren() {
     // die `preflight` den neuen Bestand prueft. Erst danach kommt der hoehere Bestand in `g_pf_rot`.
     let mut abgewiesen: Vec<String> = vec![];
     let ev = ereignis("verlustvortrag_bestand", &json!(100_000), None);
-    if a("POST", "/fall/g_vj_vv/event", Some(ev)).is_none() {
+    if a("POST", "/fall/g_vj_vv/event", Some(ev)).is_none_or(|b| b.get("event_id").is_none()) {
         abgewiesen.push("g_vj_vv/verlustvortrag_bestand".to_owned());
     }
     let b = a(
@@ -2038,7 +3138,9 @@ fn generatoren() {
         ("g_pf_nf", "kap_kapitalertraege", json!(10_000)),
     ] {
         let ev = ereignis(feld, &wert, None);
-        if a("POST", &format!("/fall/{id}/event"), Some(ev)).is_none() {
+        if a("POST", &format!("/fall/{id}/event"), Some(ev))
+            .is_none_or(|b| b.get("event_id").is_none())
+        {
             abgewiesen.push(format!("{id}/{feld}"));
         }
     }
@@ -2104,12 +3206,14 @@ fn generatoren() {
         ("g_vz27", "vpf_fruehstuecke_gestellt_anzahl", json!(3)),
     ] {
         let ev = ereignis(feld, &wert, None);
-        if a("POST", &format!("/fall/{id}/event"), Some(ev)).is_none() {
+        if a("POST", &format!("/fall/{id}/event"), Some(ev))
+            .is_none_or(|b| b.get("event_id").is_none())
+        {
             abgewiesen.push(format!("{id}/{feld}"));
         }
     }
     let ev = ereignis_llm("agb_aufwendungen", &json!(50_000));
-    if a("POST", "/fall/g_pf_gelb/event", Some(ev)).is_none() {
+    if a("POST", "/fall/g_pf_gelb/event", Some(ev)).is_none_or(|b| b.get("event_id").is_none()) {
         abgewiesen.push("g_pf_gelb/agb_aufwendungen".to_owned());
     }
     assert!(
@@ -2174,6 +3278,8 @@ fn generatoren() {
         a("POST", "/fall/g_ep/flow", Some(b));
     }
     a("POST", "/fall/g_vj/flow", None);
+    // `POST /event` in allen Formen (Tabelle der Begleitfelder, Tuer, Auflagen A bis B).
+    let ereignisse = event_faelle(&mut a, &status);
     let mut engines: BTreeMap<String, usize> = BTreeMap::new();
     let mut gruende: Vec<String> = vec![];
     let mut fragen_je_fall: Vec<(&str, usize)> = vec![];
@@ -2393,8 +3499,74 @@ fn generatoren() {
         let x = Anfrage::neu("gen flow roh", "POST", "/fall/g_neu/flow").token(&alice);
         p.anfrage(&x.roh(text, "application/json"), Modus::Voll);
     }
+    // `POST /event` mit Zahlenschreibweisen, wie sie ein `json!`-`Value` verschluckte: `signal_1`
+    // wird unveraendert abgelegt, `wert` steht in der 422-Meldung (`repr` einer Kommazahl).
+    for text in [
+        roher_text("ep_arbeitstage", "1", r#"{"signal_1": 1.0, "signal_2": null}"#),
+        roher_text("ep_entfernung_km", "1", r#"{"signal_1": 1E5, "signal_2": "a"}"#),
+        roher_text(
+            "ep_oepnv_kosten",
+            "1",
+            r#"{"signal_1": {"z": 1, "a": [1e-7, 0.1, -0.0, 1e22], "ä": "😀\u0000\ud83d\ude00"}, "signal_2": null}"#,
+        ),
+        roher_text(
+            "kap_kapitalertraege",
+            "1",
+            r#"{"signal_1": 9223372036854775807, "signal_2": null}"#,
+        ),
+        roher_text("kap_gewinn_aktien", "1", r#"{"signal_1": [], "signal_2": "x"}"#),
+        roher_text("ep_oepnv_kosten", "1e22", "null"),
+        roher_text("ep_oepnv_kosten", "1e5", "null"),
+        roher_text("ep_oepnv_kosten", "0.1", "null"),
+        roher_text("ep_oepnv_kosten", "-0.0", "null"),
+        roher_text("ep_oepnv_kosten", "5e-324", "null"),
+        roher_text("ep_oepnv_kosten", "1.7976931348623157e308", "null"),
+        roher_text("ep_arbeitstage", "1E2", "null"),
+        // Ausserhalb von i64 und nicht endlich: 400 an der Tuer.
+        roher_text("ep_oepnv_kosten", "123456789012345678901", "null"),
+        roher_text("ep_oepnv_kosten", "1e400", "null"),
+        roher_text("ep_oepnv_kosten", "1", r#"{"signal_1": 18446744073709551615}"#),
+        // Doppelter Schluessel: der letzte gilt.
+        r#"{"feld_id": "gibt_es_nicht", "feld_id": "ep_ziel_adresse", "wert": "x", "wert": "y", "zustand": "vorlaeufig", "schreiber": "ui:paritaet", "herkunft": {"herkunft": "laie"}}"#.to_owned(),
+        roher_text("ep_ziel_adresse", r#""a\u0000b""#, "null"),
+    ] {
+        let x = Anfrage::neu("gen event roh", "POST", "/fall/g_evr/event").token(&alice);
+        p.anfrage(&x.roh(&text, "application/json"), Modus::Voll);
+    }
     p.zustand_vergleichen("am Ende");
     p.bericht("generatoren");
+    println!(
+        "  event: {} Faelle, Klassen {:?}",
+        ereignisse.klassen.values().sum::<usize>(),
+        ereignisse.klassen
+    );
+    assert!(
+        ereignisse.falsch.is_empty(),
+        "event: Faelle erreichen nicht den Zweig ihres Namens: {:?}",
+        ereignisse.falsch
+    );
+    for k in [
+        "201",
+        "400",
+        "500 TypeError",
+        "500 AttributeError",
+        "422 Form",
+        "422 A",
+        "422 Katalog",
+        "422 F2/Magnitude",
+        "422 Typ",
+        "422 Vorzeichen",
+        "422 Bereich",
+        "422 Format",
+        "422 B",
+        "422 signal_2",
+    ] {
+        assert!(
+            ereignisse.klassen.contains_key(k),
+            "event: kein Fall der Klasse {k:?}: {:?}",
+            ereignisse.klassen
+        );
+    }
     assert!(p.stat.abweichungen.is_empty(), "{:?}", p.stat.abweichungen);
     for e in ["catala", "catala_teilweise", "gesperrt"] {
         assert!(

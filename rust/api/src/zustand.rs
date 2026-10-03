@@ -140,6 +140,19 @@ impl Zustand {
             .get_or_init(|| Bindungen { registry, je_datei }))
     }
 
+    /// Der Feld-Katalog der Vorschlags-Schreiber (`ST.lade_katalog(TR.lade_bindung())`,
+    /// `api.py:531`): GLOBAL ueber alle Bindungsdateien, nicht je Scheibe — die Freigabe haengt am
+    /// Feld, nicht an der Scheibe.
+    ///
+    /// # Errors
+    /// 500, wenn `produkt/bindung` nicht lesbar ist.
+    pub fn katalog(&self) -> Result<store::Katalog, ApiFehler> {
+        let b = self.bindungen()?;
+        Ok(store::Katalog::aus_bindungen(
+            b.registry.dateien.iter().flat_map(|(_, d)| &d.bindungen),
+        ))
+    }
+
     /// Die Jahresparameter aus `params/`, einmal je Prozess geladen.
     ///
     /// # Errors

@@ -24,9 +24,9 @@ mod persistenz;
 mod store;
 mod zeit;
 
-pub use abweisung::Abweisung;
+pub use abweisung::{Abweisung, AbweisungRoh};
 pub use canonical::{canonical_json, sha256_hex, EventId, EventIdFehler};
-pub use event::{Event, NeuesEvent, Signal};
+pub use event::{Event, NeuesEvent, NeuesEventRoh, Signal};
 pub use katalog::Katalog;
 pub use nachschlag::{baue_nachschlag, instanz_basis, BindungNachschlag};
 pub use persistenz::{lade, speichere, PersistenzFehler, Sperrform};
