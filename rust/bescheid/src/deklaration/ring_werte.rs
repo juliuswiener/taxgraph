@@ -367,29 +367,43 @@ fn einzelzeile(f: &mut Felder, summe: &str, ziel: &str, h: &HerkunftVektor) -> R
     Ok(())
 }
 
+/// Nur die bestaetigten Felder, wie der Chooser (`nur_bestaetigt = True`): ein vorlaeufiger Wert ist
+/// kein Beleg (Python `_bestaetigte`).
+pub(super) fn bestaetigte(f: &Felder) -> Felder {
+    f.iter()
+        .filter(|(_, x)| x.zustand == Zustand::Bestaetigt)
+        .map(|(k, x)| (k.clone(), x.clone()))
+        .collect()
+}
+
+/// Der § 34-Chooser nimmt Abs. 3 fuer Person A: Antrag UND `abs3_eligible` UND 0 < `netto_vg` <= 5 Mio
+/// (`tarif::p34_chooser`, Entscheid 2026-09-26). `fb` = nur bestaetigte Felder ([`bestaetigte`]). Eine
+/// Stelle fuer die Antragszeile ([`p34_antrag`]) und die Sperre `abs3_partner_gewinn_offen`
+/// (`sperre::abs3_partner_gewinn`), damit beide nicht driften. `vz = None` (Jahr ohne Parameter) nie.
+/// Die Reihenfolge der Bedingungen ist Pythons (`_abs3_wird_gerechnet`): `netto_vg` rechnet erst, wenn
+/// Antrag und Berechtigung stehen.
+pub(super) fn abs3_wird_gerechnet(fb: &Felder, vz: Option<Vz>) -> R<bool> {
+    let Some(vz) = vz else {
+        return Ok(false);
+    };
+    if !ist_true(wert(fb, "antrag_ermaessigter_satz")) || !abs3_eligible(fb, vz)? {
+        return Ok(false);
+    }
+    let netto = netto_vg(fb)?.get();
+    Ok(0 < netto && netto <= 5_000_000)
+}
+
 /// (8) § 34 Abs. 3 Antragszeile (`E0801602` G / `E0805003` S / `E0901704` L, je nach
 /// `rentner_veraeusserungs_betriebsart`, `est_mapping.VERZWEIGUNG`): der Gewinn der Basiszeile, fuer
 /// den der ermaessigte Satz beantragt wird. Geschrieben nur, was der Chooser auch rechnet
-/// (`tarif::p34_chooser`: Antrag UND `abs3_eligible` UND 0 < `netto_vg` <= 5 Mio); nur bestaetigte
-/// Felder zaehlen. Ueber 5 Mio sperrt `abs3_ueber_5mio_offen` vorher.
+/// ([`abs3_wird_gerechnet`]); nur bestaetigte Felder zaehlen. Ueber 5 Mio sperrt
+/// `abs3_ueber_5mio_offen` vorher, mit Gewinn beim Ehegatten `abs3_partner_gewinn_offen`.
 ///
 /// ponytail: nur Person A (AK2 des Eintrags p34-antrag-ohne-kennzahl-erreicht-elster-nicht);
 /// `vz = None` (Jahr ohne Parameter) schreibt nichts, wie Python bei `vz == 0`.
 fn p34_antrag(f: &mut Felder, vz: Option<Vz>, h: &HerkunftVektor) -> R<()> {
-    let Some(vz) = vz else {
-        return Ok(());
-    };
-    let fb: Felder = f
-        .iter()
-        .filter(|(_, x)| x.zustand == Zustand::Bestaetigt)
-        .map(|(k, x)| (k.clone(), x.clone()))
-        .collect();
-    let netto = netto_vg(&fb)?.get();
-    if ist_true(wert(&fb, "antrag_ermaessigter_satz"))
-        && abs3_eligible(&fb, vz)?
-        && 0 < netto
-        && netto <= 5_000_000
-    {
+    let fb = bestaetigte(f);
+    if abs3_wird_gerechnet(&fb, vz)? {
         let vg_cent = feld_int_oder_null(&fb, "rentner_veraeusserungsgewinn")?;
         setze(f, "p34_abs3_antragsbetrag", PyWert::Ganz(vg_cent), h);
     }

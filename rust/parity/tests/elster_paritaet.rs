@@ -1171,15 +1171,14 @@ fn generierte_stores() {
 // ------------------------------------------- Anlage R: mehrere Renten; Rang im Container
 
 /// Ein Store (VZ 2025) mit genau diesen Feldern, jedes unmittelbar bestaetigt, in der Reihenfolge.
-/// ponytail: gleiche Schleife wie `p35c_store`; die beiden zusammenzulegen waere ein Umbau fremder
-/// Zeilen (neunc-p34 baut dort gleichzeitig um) und folgt, wenn beide Zweige gemergt sind.
-fn store_aus_feldern(felder: impl IntoIterator<Item = (String, Value)>) -> StoreDatei {
+/// Der eine Helfer fuer `rang_faelle` (Anlage R), `p35c_store` und `p34_store`.
+fn store_aus_feldern<S: Into<String>>(felder: impl IntoIterator<Item = (S, Value)>) -> StoreDatei {
     let mut store = Store::leer(2025, None);
     let nachschlag = BindungNachschlag::neu(index());
     let signal = Signal2::new("ui:bestaetigt").unwrap();
     for (feld_id, wert) in felder {
         let neu = NeuesEvent {
-            feld_id,
+            feld_id: feld_id.into(),
             wert: PyWert::from(wert),
             feldzustand: Feldzustand::Bestaetigt {
                 signal_2: signal.clone(),
@@ -1466,30 +1465,7 @@ fn p35c_store(art: Option<&str>) -> StoreDatei {
         .map(|a| ("p35c_massnahme_art", json!(a)))
         .into_iter()
         .chain([("p35c_massnahme_einzelbetrag", json!(P35C_BETRAG))]);
-    store_bestaetigt(felder)
-}
-
-/// Ein Store (VZ 2025) aus `felder`, jedes unmittelbar bestaetigt.
-fn store_bestaetigt(felder: impl IntoIterator<Item = (&'static str, Value)>) -> StoreDatei {
-    let mut store = Store::leer(2025, None);
-    let nachschlag = BindungNachschlag::neu(index());
-    let signal = Signal2::new("ui:bestaetigt").unwrap();
-    for (feld_id, wert) in felder {
-        let neu = NeuesEvent {
-            feld_id: feld_id.to_owned(),
-            wert: PyWert::from(wert),
-            feldzustand: Feldzustand::Bestaetigt {
-                signal_2: signal.clone(),
-            },
-            herkunft: herkunft_mensch(),
-            schreiber: Schreiber::Mensch("julius".to_owned()),
-            signal_1: None,
-            ersetzt: None,
-            ts: Some("2026-09-29T00:00:00+00:00".to_owned()),
-        };
-        store.append(&neu, None, nachschlag).expect(feld_id);
-    }
-    store.into_datei()
+    store_aus_feldern(felder)
 }
 
 /// Das Rust-XML (Variante `basis`) zu einem Store.
@@ -1663,7 +1639,7 @@ const P34_VG: i64 = 50_000_000;
 /// Zwilling selbst; wann er entsteht, prueft `bescheid_deklaration_paritaet.rs` (`gezielte_faelle`).
 fn p34_store(art: &'static str, antrag: bool) -> StoreDatei {
     let zwilling = antrag.then(|| ("p34_abs3_antragsbetrag", json!(P34_VG)));
-    store_bestaetigt(
+    store_aus_feldern(
         [
             ("rentner_veraeusserungsgewinn", json!(P34_VG)),
             ("rentner_veraeusserungs_betriebsart", json!(art)),

@@ -294,7 +294,7 @@ Vollständige Tabellen: Audit A §1/§3, Audit B §2/§3. Die tragenden:
 | höchstens ein aktives Event je Feld, `ersetzt` gültig | Auflage B `store.py:368-381` | `Store::append -> Result<EventId, Abweisung>`, kein anderer `pub` Mutator |
 | Wert passt zum Bindungstyp | Auflage T `store.py:167-248`, **nur wenn Bindung übergeben** | `Wert` wird immer gegen die Bindung geparst; kein Pfad ohne |
 | `event_id` = sha256(canonical_json) | `store.py:22-34` | Serializer byte-gleich zu `json.dumps(sort_keys, ensure_ascii=False, separators=(",",":"))`; Parität über alle vorhandenen Stores |
-| Fehlende Angabe sperrt statt 0 | 47 Sperrgrund-Literale `bescheid_deklaration.py:781-1443`; 152 × `.get(…,0)` in `runner.py` | `enum Sperrgrund` (47 Varianten beim Entwurf; auf `2bc35bd4` 55: 54 Sperrgründe und `Bestaetigt`, gezählt in `rust/domain/src/sperrgrund.rs`; exhaustiver `klartext`); Eingabe-Structs je Scope **ohne** `Default` |
+| Fehlende Angabe sperrt statt 0 | 47 Sperrgrund-Literale `bescheid_deklaration.py:781-1443`; 152 × `.get(…,0)` in `runner.py` | `enum Sperrgrund` (47 Varianten beim Entwurf; auf `7ec1ccd8` 58: 57 Sperrgründe und `Bestaetigt`, gezählt in `rust/domain/src/sperrgrund.rs`; exhaustiver `klartext`); Eingabe-Structs je Scope **ohne** `Default` |
 | Jeder Sperrgrund hat Klartext | Test `test_sperrgrund_klartext.py` | exhaustiver `match` |
 | Partnerdaten nur bei Zusammenveranlagung | Handliste `partner_check.py:17-29` | `Veranlagung::Einzel { a } \| Zusammen { a, b }` |
 | Nur VZ 2024–2026 | `VZ_ENUM[year]` KeyError | `enum Vz` mit `TryFrom<u16>` |

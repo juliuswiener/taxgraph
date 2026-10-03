@@ -37,6 +37,7 @@ use rust_decimal::Decimal;
 use store::SnapshotFeld;
 
 use super::konstanten::{AN_GESAMT_FLAGS, AN_GESAMT_PARTNER, VOR_FELDER, VOR_PARTNER_FELDER};
+use super::ring_werte::{abs3_wird_gerechnet, bestaetigte};
 use super::{c2, Cfg};
 use crate::abzuege::abs3_eligible;
 use crate::{
@@ -104,6 +105,7 @@ pub fn an_gesamt_sperrgrund(
         return Ok(Some(Sperrgrund::AlleinerziehendKonsistenzOffen));
     }
     sperre!(abs3_guards(&k));
+    sperre!(abs3_partner_gewinn(&k));
     sperre_o!(an_gesamt_luecken(&k));
     if let Some(cfg) = cfg.filter(|c| c.gesamt_guard) {
         return gesamt::gesamt_guard(&k, cfg);
@@ -137,6 +139,23 @@ fn abs3_guards(k: &K<'_>) -> Grund {
         if abs3_eligible(&mit_bu, vz)? {
             return Ok(Some(Sperrgrund::BerufsunfaehigkeitOffen));
         }
+    }
+    Ok(None)
+}
+
+/// § 34 Abs. 3 fuer A + Veraeusserungsgewinn des Ehegatten (Python `abs3_partner_gewinn_offen`, `AK2b`,
+/// Entscheid 2026-10-03): der Chooser glaettet nur den Gewinn von A, der des Partners bliebe ungeglaettet.
+/// Trigger = ROHER Partner-Gewinn (vor Freibetrag) > 0 (nicht `netto_vg_partner`) UND zusammen UND der Chooser nimmt
+/// Abs. 3 ([`abs3_wird_gerechnet`]). Alles auf bestaetigten Feldern: ein vorlaeufiger Wert urteilt nicht.
+/// Nach den zwei Abs.-3-Sperren in [`abs3_guards`]: ueber 5 Mio und offene Berufsunfaehigkeit haben
+/// ihren eigenen Text.
+fn abs3_partner_gewinn(k: &K<'_>) -> Grund {
+    let fb = bestaetigte(k.f);
+    if ist_positive_zahl(wert(&fb, "rentner_veraeusserungsgewinn_partner"))
+        && ist_zusammen(&fb)
+        && abs3_wird_gerechnet(&fb, k.vz)?
+    {
+        return Ok(Some(Sperrgrund::Abs3PartnerGewinnOffen));
     }
     Ok(None)
 }
