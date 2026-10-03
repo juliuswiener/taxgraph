@@ -299,8 +299,10 @@ def fall_anlegen(body: dict) -> tuple[int, dict]:
     if uid is not None:
         store["user_id"] = uid
     speichere_fall(fall_id, store)
-    if uid is not None:
-        audit.append(uid, "fall_angelegt", fall_id, f"scheibe={scheibe}")
+    # Auch ohne Anmeldung (Nutzer `unbekannt`, s. audit.append): eine Akte ohne Spur im Protokoll
+    # ist die Lücke, die niemand mehr einem Vorgang zuordnen kann (Vault
+    # decisions/protokollzeile-nach-der-wirkung-vor-der-antwort, Punkt 3). Der Besitzer bleibt leer.
+    audit.append(uid, "fall_angelegt", fall_id, f"scheibe={scheibe}")
     return 201, {"fall_id": fall_id, "scheibe": scheibe, "veranlagungszeitraum": vz}
 
 

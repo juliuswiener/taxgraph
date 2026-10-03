@@ -208,32 +208,26 @@ fn fehler_antwort_mit_pfad(pfad: &str) -> Response {
     json_antwort(404, &json!({ "fehler": "not_found", "pfad": pfad }))
 }
 
-/// Fehlerlog und Audit nach dem Handler (`server.py:237-264`).
+/// Fehlerlog und Audit nach dem Handler und VOR der Antwort (`server.py` `_dispatch`, Block nach
+/// `status, obj = fn(…)`). Die Zeile nennt den Status der Antwort, nicht den Weg dorthin.
 fn nachlauf(z: &Zustand, treffer: &Treffer, pfad: &str, nutzer: Option<&str>, antwort: &Response) {
-    let ausgang = antwort.extensions().get::<Ausgang>().copied();
-    if ausgang == Some(Ausgang::Unerwartet) {
+    let fall = || treffer.id.as_deref().map(|id| FallId::pruefe(id, &[]));
+    if antwort.extensions().get::<Ausgang>() == Some(&Ausgang::Unerwartet) {
         // Nicht protokollierbar heißt: die Antwort geht trotzdem raus (wie Python, dort ohne Schutz).
-        let fall = treffer.id.as_deref().map(|id| FallId::pruefe(id, &[]));
         // ponytail: die PII-Muster liefert erst `llm::pii`; bis dahin steht `<gesperrt:pii_filter_fehlt>`.
         let _ = protokolliere(
             &z.konfig.fehler_pfad(),
             treffer.ort,
             &Ausnahme,
             Stufe::Fehler,
-            fall,
+            fall(),
             Meta::default(),
         );
     }
     if !pfad.starts_with("/fall") {
         return;
     }
-    // PARITÄT: `status` bleibt in Python bei 500, wenn der Handler eine `ApiError` wirft — der
-    // Audit-Eintrag nennt dann 500, obwohl die Antwort 403/404/… war.
-    let status = if ausgang.is_some() {
-        500
-    } else {
-        antwort.status().as_u16()
-    };
+    let status = antwort.status().as_u16();
     let uid = nutzer.unwrap_or("dev");
     let detail = format!("status={status}");
     let (aktion, fall_id) = if pfad == "/fall" {
@@ -251,13 +245,24 @@ fn nachlauf(z: &Zustand, treffer: &Treffer, pfad: &str, nutzer: Option<&str>, an
         )
     };
     if let Some(aktion) = aktion {
-        let _ = store::audit::anhaengen(
+        // Scheitert das Schreiben, geht die Antwort trotzdem raus (die Wirkung ist geschehen); der
+        // Fehler steht im Fehlerlog, `ort` wie in Python.
+        if let Err(e) = store::audit::anhaengen(
             &z.konfig.audit_pfad(),
             Some(uid),
             aktion,
             fall_id,
             Some(&detail),
-        );
+        ) {
+            let _ = protokolliere(
+                &z.konfig.fehler_pfad(),
+                "server.audit",
+                &e,
+                Stufe::Fehler,
+                fall(),
+                Meta::default(),
+            );
+        }
     }
 }
 

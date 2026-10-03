@@ -266,11 +266,10 @@ class Handler(BaseHTTPRequestHandler):
                     continue
                 treffer = muster.match(pfad)
                 if treffer:
-                    status = 500
                     try:
                         status, obj = fn(treffer.groupdict(), body)
                     except (api.ApiError, auth.AuthError) as e:
-                        self._json(e.status, {"fehler": str(e)})
+                        status, obj = e.status, {"fehler": str(e)}
                     except Exception as e:  # nie eine nackte Exception nach aussen lecken
                         # Die einzige Stelle, an der ein UNERWARTETER Fehler aus irgendeiner
                         # Route landet. Ohne diese Zeile ist er nach dem 500 nicht mehr
@@ -285,17 +284,23 @@ class Handler(BaseHTTPRequestHandler):
                         # im Traceback benennen die Stelle ohnehin eindeutig.
                         fehler_log.protokolliere(f"server.dispatch {muster.pattern}", e,
                                                  fall_id=treffer.groupdict().get("id"))
-                        self._json(500, {"fehler": f"{type(e).__name__}: {e}"})
-                    else:
-                        self._json(status, obj)
+                        status, obj = 500, {"fehler": f"{type(e).__name__}: {e}"}
                     if pfad.startswith("/fall"):
-                        uid = api_auth._AUTH_USER or "dev"
+                        # Nach der Wirkung, vor der Antwort, mit dem Status der Antwort (Vault
+                        # decisions/protokollzeile-nach-der-wirkung-vor-der-antwort): wer das
+                        # Protokoll direkt nach der Antwort liest, findet die Zeile. Scheitert das
+                        # Schreiben, geht die Antwort trotzdem raus -- die Wirkung ist geschehen.
                         fid = treffer.groupdict().get("id")
-                        if pfad == "/fall":
-                            audit.append(uid, "fall_create", fid, f"status={status}")
-                        elif fid:
-                            act = pfad.split("/")[-1]
-                            audit.append(uid, f"fall_{act}", fid, f"status={status}")
+                        try:
+                            uid = api_auth._AUTH_USER or "dev"
+                            if pfad == "/fall":
+                                audit.append(uid, "fall_create", fid, f"status={status}")
+                            elif fid:
+                                act = pfad.split("/")[-1]
+                                audit.append(uid, f"fall_{act}", fid, f"status={status}")
+                        except Exception as e:  # noqa: BLE001 -- Protokoll ist Nebenkanal
+                            fehler_log.protokolliere("server.audit", e, fall_id=fid)
+                    self._json(status, obj)
                     return
             self._json(404, {"fehler": "route_not_found", "methode": method, "pfad": pfad})
         finally:
