@@ -564,7 +564,7 @@ fn werbungskosten_n() {
     pruefe("catala_werbungskosten_n", &d(felder));
 }
 
-/// Die 2.000-EUR-Auslandsgrenze gilt erst ab VZ 2026 (`StÄndG` 2025, BGBl. 2025 I Nr. 363); fuer
+/// Die 2.000-EUR-Auslandsgrenze gilt erst ab VZ 2026 (`StÄndG` 2025, `BGBl`. 2025 I Nr. 363); fuer
 /// VZ 2024/2025 bleibt die Auslandsmiete ungekappt. GEZIELT statt gewuerfelt: der Korpus hat keinen
 /// dHf-Auslandssatz, und der Wuerfel trifft "Ausland, Miete ueber 2.000, VZ 2024/2025" nur zufaellig.
 /// Python (live) UND Rust muessen die FESTEN Zahlen liefern (2.500 x 12 im Ausland: 30000 / 30000 /

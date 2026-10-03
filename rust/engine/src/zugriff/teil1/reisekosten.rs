@@ -232,7 +232,7 @@ mod tests {
         uebernachtung_abzug(&e, &params()).unwrap()
     }
 
-    /// Die 2.000-EUR-Auslandsgrenze gilt erst ab VZ 2026 (`StÄndG` 2025, BGBl. 2025 I Nr. 363).
+    /// Die 2.000-EUR-Auslandsgrenze gilt erst ab VZ 2026 (`StÄndG` 2025, `BGBl`. 2025 I Nr. 363).
     /// In `params/2024` und `params/2025` steht sie nicht; 2.500 EUR x 12 bleiben dort ungekappt.
     /// Erwartungswerte = Python-Orakel auf 604022c8 mit den neuen Params:
     /// `runner._dhf_abzug({"unterkunftskosten_monat": 2500, "monate": 12, "im_inland": False}, vz)`

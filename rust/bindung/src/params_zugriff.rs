@@ -70,7 +70,7 @@ pub struct EntfernungspauschaleSaetze {
 pub struct DhfGrenzen {
     pub cap_monat_inland: Euro,
     /// `None` = KEINE Auslandsgrenze (nicht 0). Die 2.000-EUR-Grenze gilt erst ab VZ 2026
-    /// (`StÄndG` 2025, BGBl. 2025 I Nr. 363); `params/2024` und `params/2025` fuehren sie nicht.
+    /// (`StÄndG` 2025, `BGBl`. 2025 I Nr. 363); `params/2024` und `params/2025` fuehren sie nicht.
     /// PARITÄT: Python liest `(p.get("cap_monat_ausland") or {}).get("wert")`; fehlender
     /// Schluessel, leerer Block und `wert: null` ergeben dort wie hier `None`.
     pub cap_monat_ausland: Option<Euro>,
@@ -833,7 +833,7 @@ mod tests {
         );
     }
 
-    /// Die 2.000-EUR-Auslandsgrenze gilt erst ab VZ 2026 (`StÄndG` 2025, BGBl. 2025 I Nr. 363);
+    /// Die 2.000-EUR-Auslandsgrenze gilt erst ab VZ 2026 (`StÄndG` 2025, `BGBl`. 2025 I Nr. 363);
     /// `params/2024` und `params/2025` fuehren sie nicht. Die Inlandsgrenze ist in allen drei 1.000.
     /// Gegenstueck: Python `runner._dhf_params` (`tests/test_werbungskosten_n.py`).
     #[test]
@@ -894,7 +894,7 @@ mod tests {
     }
 
     /// Kaputte Daten sind Fehler, keine "keine Grenze": ein Auslandsschluessel, der kein Block ist,
-    /// oder ein `wert` ohne ganze Zahl. Und die INLANDSgrenze darf nie still fehlen.
+    /// oder ein `wert` ohne ganze Zahl. Und die Inlandsgrenze darf nie still fehlen.
     #[test]
     fn dhf_kaputte_daten_sind_fehler_nicht_keine_grenze() {
         for ausland in [
