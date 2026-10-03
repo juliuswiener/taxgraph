@@ -231,6 +231,30 @@ rust-build:
 rust-test:
 	cd rust && cargo build && cargo clippy --all-targets -- -D warnings && cargo test
 
+## Playwright-Tests der Oberflaeche gegen den RUST-Server (REWRITE_PLAN §6/§7, 9c: "Playwright gegen Rust").
+## Baut taxgraph-api und startet alle Dateien in tests/ mit `sync_playwright` (heute 22) mit dem Plugin
+## tools/ui_rust/ui_rust_plugin.py, das nur `server.make_server` durch den Start von Rust ersetzt. Die
+## Tests, die gegen Rust nicht gruen werden koennen, stehen mit Ursache in tools/ui_rust/ausschluss.tsv:
+## sie laufen als xfail(strict). Ein gelisteter Test, der gruen wird, und ein Eintrag ohne Test machen
+## den Lauf rot; ein neuer Test ausserhalb der Liste, der rot wird, bleibt rot. Braucht Playwright mit
+## Chromium (`pip install playwright`, `playwright install chromium`); CI hat beides nicht.
+## UI_N = Zahl der xdist-Worker. Das Binary liegt unter $CARGO_TARGET_DIR (sonst rust/target), UI_RUST_BIN ueberschreibt es.
+## Die Pruefung der Liste (test_ui_rust_ausschluss.py) nennt `sync_playwright` nur als Text und ist keine UI-Datei.
+UI_DATEIEN = $(shell grep -l sync_playwright tests/test_*.py | grep -v test_ui_rust_ausschluss | sort)
+UI_N ?= 4
+
+ui-rust:
+	cd rust && cargo build -p api --bin taxgraph-api
+	PYTHONPATH=tools/ui_rust python3 -m pytest -p ui_rust_plugin $(UI_DATEIEN) -q -n $(UI_N) --dist loadfile -p no:cacheprovider
+
+## Gegenprobe zu ui-rust: Rust startet und endet sofort (UI_RUST_GEGENPROBE=1). Die Tests muessen rot werden;
+## bleiben sie gruen, reden sie nicht mit Rust. Das Ziel ist gruen, wenn pytest rot war.
+ui-rust-gegenprobe:
+	cd rust && cargo build -p api --bin taxgraph-api
+	@if UI_RUST_GEGENPROBE=1 PYTHONPATH=tools/ui_rust python3 -m pytest -p ui_rust_plugin tests/test_ui_login.py -q -p no:cacheprovider; \
+	then echo "GEGENPROBE FEHLGESCHLAGEN: die Tests blieben gruen, obwohl Rust sofort endet"; exit 1; \
+	else echo "Gegenprobe rot, wie gewollt: ohne Rust-Prozess laufen die UI-Tests nicht"; fi
+
 clean:
 	$(OPAM_ENV); clerk clean || true
 	rm -rf _build _target oracle/gettsim/_catala

@@ -1,0 +1,29 @@
+# Tests der UI-Dateien, die gegen den Rust-Server NICHT gruen werden koennen -- `make ui-rust` schliesst genau diese aus.
+# Eine Zeile: nodeid <TAB> Ursache. Die Ursache ist einer von zwei Werten:
+#   LLM-Stub   der Test ersetzt das Sprachmodell IM PROZESS (api_llm._llm_dialog, LC.complete); Rust hat in diesem Lauf keinen LLM-Stub.
+#   ERiC-Stub  der Test ersetzt erzeuge_xml, EM.deklariere und checkest_gate.validate im Prozess; Rust laeuft den echten Weg (422 xml_nicht_baubar).
+# Die Tests laufen als xfail(strict): wird ein gelisteter Test gruen, ist der Eintrag veraltet und der Lauf rot.
+# Ein Test, der hier fehlt und rot wird, bleibt rot. Ein Eintrag ohne Test (Datei oder Name fehlt) macht den Lauf rot.
+tests/test_absendeknopf_im_browser.py::test_beanstandet_zeigt_anderen_text_als_erfolg	ERiC-Stub
+tests/test_absendeknopf_im_browser.py::test_einreichen_200_traegt_nicht_deklariert	ERiC-Stub
+tests/test_absendeknopf_im_browser.py::test_erfolg_zeigt_in_ordnung_ohne_beanstandung_oder_unsicherheit	ERiC-Stub
+tests/test_absendeknopf_im_browser.py::test_je_ursache_ein_fester_text_und_alle_verschieden	ERiC-Stub
+tests/test_absendeknopf_im_browser.py::test_klick_ruft_wirklich_den_einreichen_endpunkt	ERiC-Stub
+tests/test_absendeknopf_im_browser.py::test_nicht_deklariert_zeigt_jeden_eintrag_statt_in_ordnung	ERiC-Stub
+tests/test_absendeknopf_im_browser.py::test_nicht_geprueft_unterscheidet_sich_von_beanstandet_trotz_gleichem_http_status	ERiC-Stub
+tests/test_absendeknopf_im_browser.py::test_pruefcode_steht_in_einer_eigenen_zeile	ERiC-Stub
+tests/test_dialog_kanal.py::test_frage_veraendert_den_fall_nicht	LLM-Stub
+tests/test_dialog_kanal.py::test_rueckfrage_nach_erklaer_mir_bleibt_im_selben_verlauf	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_aendern_kehrt_in_die_liste_zurueck	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_aendern_oeffnet_das_feld_im_fragefluss	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_bestaetigen_schiebt_die_seite_nicht_weg	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_cent_wird_als_euro_gezeigt	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_die_letzte_aenderung_laesst_die_liste_nicht_leer_stehen	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_enum_zeigt_den_anzeigetext	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_kein_feld_wird_invertiert_angezeigt	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_keine_horizontale_scrollbar_bei_360px	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_konflikt_erscheint_und_keine_seite_gewinnt_von_allein	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_meins_behalten_schreibt_nichts	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_seite_zeigt_jede_zeile_mit_ihrem_zitat	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_stimmt_bestaetigt_genau_ein_feld	LLM-Stub
+tests/test_ui_verstanden_seite.py::test_weiter_fuehrt_in_den_fragefluss_und_verliert_nichts	LLM-Stub

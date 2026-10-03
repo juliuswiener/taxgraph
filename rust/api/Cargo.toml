@@ -34,6 +34,7 @@ engine = { path = "../engine" }
 llm = { path = "../llm" }
 axum = { workspace = true }
 tokio = { workspace = true }
+hyper-util = { workspace = true }
 utoipa = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -43,6 +44,7 @@ tower = { workspace = true }
 tempfile = { workspace = true }
 
 [dev-dependencies]
+tokio = { workspace = true, features = ["io-util"] }
 domain = { path = "../domain", features = ["testhilfe"] }
 http-body-util = { workspace = true }
 proptest = { workspace = true }

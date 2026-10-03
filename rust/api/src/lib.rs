@@ -19,6 +19,7 @@ pub mod antwort;
 mod anzeige;
 pub mod chat;
 pub mod deklaration;
+pub mod dienen;
 pub mod dispatch;
 pub mod eigener_fall;
 pub mod einreichen;
