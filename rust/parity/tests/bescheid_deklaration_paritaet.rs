@@ -1688,6 +1688,109 @@ fn gezielte_faelle() {
                 ("rentner_renten_beginn_jahr", json!(2024), true),
             ],
         ),
+        // § 22: Jahr <= 0 wird zum Kz-Datum "01.01.0000", ERiC lehnt es ab. Der Grund steht VOR der
+        // Freibetrag-Bedingung: aa ohne Freibetrag meldet ihn statt der Fixierung. Person A (Basis und
+        // Instanz `__2`), Person B, aa mit und ohne Freibetrag, beide Leibrenten; -1 = Direktweg am
+        // Speicher vorbei. Die Kontrollen (Jahr 1) sperren nicht.
+        (
+            "rentenbeginn_jahr_ungueltig",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("gesetzliche_rente"), true),
+                ("rentner_renten_beginn_jahr", json!(0), true),
+            ],
+        ),
+        (
+            "rentenbeginn_jahr_ungueltig",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("gesetzliche_rente"), true),
+                ("rentner_renten_beginn_jahr", json!(0), true),
+                ("rentner_rentenfreibetrag", json!(600_000), true),
+            ],
+        ),
+        (
+            "rentenbeginn_jahr_ungueltig",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("gesetzliche_rente"), true),
+                ("rentner_renten_beginn_jahr", json!(-1), true),
+            ],
+        ),
+        (
+            "rentenbeginn_jahr_ungueltig",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("private_leibrente"), true),
+                ("rentner_renten_beginn_jahr", json!(0), true),
+            ],
+        ),
+        (
+            "rentenbeginn_jahr_ungueltig",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("sonstige_leibrente"), true),
+                ("rentner_renten_beginn_jahr", json!(-1), true),
+            ],
+        ),
+        (
+            "rentenbeginn_jahr_ungueltig",
+            "rentner_gesamt",
+            vec![
+                ("kein_sonstige", json!(false), true),
+                ("rentner_renten_art__2", json!("private_leibrente"), true),
+                ("rentner_jahresrente__2", json!(900_000), true),
+                ("rentner_renten_beginn_jahr__2", json!(0), true),
+                ("rentner_alter_bei_rentenbeginn__2", json!(65), true),
+            ],
+        ),
+        (
+            "rentenbeginn_jahr_ungueltig",
+            "rentner_gesamt",
+            vec![
+                ("veranlagung", json!("zusammen"), true),
+                (
+                    "rentner_renten_art_partner",
+                    json!("gesetzliche_rente"),
+                    true,
+                ),
+                ("rentner_jahresrente_partner", json!(1_200_000), true),
+                ("rentner_renten_beginn_jahr_partner", json!(0), true),
+                ("rentner_alter_bei_rentenbeginn_partner", json!(65), true),
+            ],
+        ),
+        (
+            "rentenbeginn_jahr_ungueltig",
+            "rentner_gesamt",
+            vec![
+                ("veranlagung", json!("zusammen"), true),
+                (
+                    "rentner_renten_art_partner",
+                    json!("private_leibrente"),
+                    true,
+                ),
+                ("rentner_jahresrente_partner", json!(1_200_000), true),
+                ("rentner_renten_beginn_jahr_partner", json!(-1), true),
+                ("rentner_alter_bei_rentenbeginn_partner", json!(65), true),
+            ],
+        ),
+        (
+            "(keine Sperre)",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("gesetzliche_rente"), true),
+                ("rentner_renten_beginn_jahr", json!(1), true),
+                ("rentner_rentenfreibetrag", json!(600_000), true),
+            ],
+        ),
+        (
+            "(keine Sperre)",
+            "rentner_gesamt",
+            vec![
+                ("rentner_renten_art", json!("private_leibrente"), true),
+                ("rentner_renten_beginn_jahr", json!(1), true),
+            ],
+        ),
         // § 35: der Hebesatz des Partner-Betriebs fehlt wie der von Person A.
         (
             "gewst_hebesatz_offen",

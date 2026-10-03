@@ -4225,6 +4225,9 @@ fn generatoren() {
         ("g_ges8", "gesamt", 2025),
         ("g_ges9", "gesamt", 2025),
         ("g_rent4", "rentner_gesamt", 2025),
+        // g_rent5: Rentenbeginn-Jahr 0 (aa, ohne Freibetrag): der Guard sperrt mit
+        // `rentenbeginn_jahr_ungueltig`, nicht mit der Fixierung.
+        ("g_rent5", "rentner_gesamt", 2025),
         ("g_ep2", "ep", 2025),
         ("g_vor2", "n_vor_gwg", 2025),
         ("g_vor", "n_vor_gwg", 2025),
@@ -4329,6 +4332,7 @@ fn generatoren() {
         k
     });
     fuege("g_rent3", kegel_rentner(2020));
+    fuege("g_rent5", kegel_rentner(0));
     for id in ["g_an3", "g_an4", "g_an5"] {
         fuege(id, kegel_an_voll());
     }
@@ -4663,8 +4667,8 @@ fn generatoren() {
     let mut ergebnisse: Vec<Value> = vec![];
     let mut deklarationen: Vec<Value> = vec![];
     for id in [
-        "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_rent3", "g_vor", "g_wz",
-        "g_aussen", "g_an2", "g_ep2", "g_vor2", "g_pf_rot", "g_dk", "g_dk2",
+        "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_rent3", "g_rent5", "g_vor",
+        "g_wz", "g_aussen", "g_an2", "g_ep2", "g_vor2", "g_pf_rot", "g_dk", "g_dk2",
     ] {
         for r in ["stand", "fragen", "ergebnis", "graph", "deklaration"] {
             let b = a("GET", &format!("/fall/{id}/{r}"), None);
@@ -5039,6 +5043,7 @@ fn generatoren() {
         "kein_scheiben_gesamtbescheid",
         "dhf_tatbestand_offen",
         "partner_konsistenz_offen",
+        "rentenbeginn_jahr_ungueltig",
     ] {
         assert!(
             ergebnis_gruende.contains_key(g),
@@ -5122,6 +5127,7 @@ fn generatoren() {
         "rechnung_unbar_offen",
         "partner_kegel_offen",
         "flag_konsistenz_offen",
+        "rentenbeginn_jahr_ungueltig",
     ] {
         assert!(
             gruende_dk.contains_key(g),
@@ -5140,7 +5146,11 @@ fn generatoren() {
         assert!(d["klartext"].as_str().is_some_and(|k| !k.is_empty()), "{d}");
     }
     // Der Rentenbeginn sperrt nur, wenn der Guard davor nichts findet — ein eigener Weg in `stand`.
-    for g in ["rentenbeginn_offen", "flag_konsistenz_offen"] {
+    for g in [
+        "rentenbeginn_offen",
+        "flag_konsistenz_offen",
+        "rentenbeginn_jahr_ungueltig",
+    ] {
         assert!(
             gruende.iter().any(|x| x == g),
             "stand meldet nie den Sperrgrund {g:?}: {gruende:?}"
