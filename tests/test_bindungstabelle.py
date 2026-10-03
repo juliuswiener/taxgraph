@@ -35,6 +35,7 @@ RULES_PATH = os.path.join(ROOT, "pipeline", "produktion", "rules.yaml")
 import sys
 sys.path.insert(0, ROOT)
 from pipeline.gates import _normalize  # noqa: E402
+from test_slot_fn_reader_existiert import _quell_pfade  # noqa: E402 — das Verzeichnis lesen, keine Liste pflegen
 
 _META_KEYS = {"parameter", "veranlagungszeitraum", "authority", "redistributable", "gueltig_ab",
               "quelle", "datenquelle", "rechtsquelle", "stand", "kohorte", "note", "kommentar",
@@ -724,52 +725,107 @@ def test_h_gate_faengt_neue_felder_ohne_kz(daten):
         f"Gegenprobe fehlgeschlagen: erfundenes Feld nicht erkannt: {unbekannt}")
 
 
-# Bekannte Ausnahmen für api.py-Read-Keys, die keinem Store-Feld entsprechen.
-API_READ_AUSNAHMEN: set[str] = set()
+# Treffer der beiden Lese-Muster unten, die keine Feld-Kennung sind. Je Eintrag der Grund.
+API_READ_AUSNAHMEN: dict[str, str] = {
+    "wert": "bescheid_deklaration.py (§ 35-Gewerbesteuer, § 22 Nr. 3): `f` ist dort ein EINTRAG einer "
+            "Schleife über (_m, _h) bzw. (_p22_einn, _p22_eink), also ein Feld-Dict; `wert` ist sein "
+            "Schlüssel, keine Kennung",
+    "zustand": "wie `wert`: Schlüssel des Eintrags (`f.get(\"zustand\") == \"bestaetigt\"`), keine Kennung",
+}
+
+# Mindestzahl verschiedener Kennungen, die das Gate lesen MUSS (ohne API_READ_AUSNAHMEN). Gemessen, nicht
+# geschätzt (k9, 2026-10-03, die zwei Muster unten): heute 122 in produkt/bescheid/bescheid_*.py; vor dem
+# Umzug 795bc2a (2026-08-18) 117 in produkt/haut/api.py. Ein Lauf darunter hat Lesestellen verloren (Umzug,
+# Umbenennung der Datei) und prüft nichts mehr — rot, nicht grün. Wächst NUR bewusst; wer eine Lesestelle
+# mit Absicht löscht, senkt die Zahl im selben Commit.
+MIN_GELESENE_KENNUNGEN = 122
+
+# Die zwei Bauarten, mit denen der Rechenkern ein Feld liest.
+_LESE_MUSTER = (
+    r'_c(?:ent)?\("([a-z0-9_]+)"\)',      # _c("feld_id") und _cent("feld_id")
+    r'f\.get\("([a-z0-9_]+)"',            # f.get("feld_id")
+)
+
+
+def _gelesene_kennungen(pfade) -> set[str]:
+    """Alle Kennungen, die die Lese-Muster in den Dateien `pfade` finden. Eine Datei, die es nicht
+    gibt, zählt nicht (api.py trägt heute keine Lesestelle mehr); dass die Menge dann zu klein
+    ist, fängt MIN_GELESENE_KENNUNGEN."""
+    kennungen: set[str] = set()
+    for pfad in pfade:
+        if not os.path.exists(pfad):
+            continue
+        with open(pfad, encoding="utf-8") as f:
+            src = f.read()
+        for muster in _LESE_MUSTER:
+            kennungen |= set(re.findall(muster, src))
+    return kennungen
+
+
+def _pruefe_lesestellen(gelesen: set[str], binding_keys: set[str]) -> None:
+    """Das Gate selbst, getrennt vom Einlesen, damit die Gegenproben es mit anderen Mengen füttern."""
+    echt = gelesen - API_READ_AUSNAHMEN.keys()
+    assert len(echt) >= MIN_GELESENE_KENNUNGEN, (
+        f"Das Gate liest nur {len(echt)} Kennungen, die Mindestzahl ist {MIN_GELESENE_KENNUNGEN} "
+        f"(gemessen: 122 heute, 117 vor dem Umzug 795bc2a). Die Lesestellen liegen nicht mehr dort, "
+        f"wo das Gate sucht (produkt/bescheid/*.py, produkt/haut/api.py) — ein Gate ohne Treffer "
+        f"prüft nichts.")
+    veraltet = sorted(API_READ_AUSNAHMEN.keys() - gelesen)
+    assert not veraltet, (
+        f"API_READ_AUSNAHMEN nennt {veraltet}, aber kein Lese-Muster trifft sie mehr — "
+        f"Eintrag streichen, sonst verdeckt die Ausnahmeliste später etwas anderes.")
+    unbekannt = sorted(echt - binding_keys)
+    assert not unbekannt, (
+        f"Der Rechenkern ruft _c / _cent / f.get für Feld-IDs auf, die in keiner "
+        f"bindung_*.yaml als feld_id existieren: {unbekannt}. Das Feld wurde "
+        f"umbenannt/gelöscht oder die Kennung ist falsch geschrieben, die Lesestelle liest still 0 "
+        f"→ stiller Over-tax (keine Test-Rot-Warnung).")
+
+
+def _bindungs_kennungen(daten) -> set[str]:
+    return {b["feld_id"] for d in daten.values() for b in d["bindungen"] if b.get("feld_id")}
 
 
 def test_i_api_read_keys_sind_in_bindung(daten):
-    """Jeder feld_id-String in `_c(...)`/`_cent(...)`/`f.get("...")`-Aufrufen von api.py
-    muss in mindestens einer bindung_*.yaml als `feld_id` existieren.
+    """Jeder feld_id-String in `_c(...)`/`_cent(...)`/`f.get("...")`-Aufrufen des Rechenkerns
+    (produkt/bescheid/*.py, produkt/haut/api.py) muss in mindestens einer bindung_*.yaml als
+    `feld_id` existieren — und das Gate muss mindestens MIN_GELESENE_KENNUNGEN davon lesen.
 
-    `_c(fid)` (z. B. api.py:183) gibt bei unbekanntem fid still 0 zurück — kein Error,
-    kein None, kein Log. `f.get("fid", {}).get("wert")` gibt None → `is True` = False →
-    still falscher Zweig. Beide Bauarten senken den Abzug still (Over-tax), ohne dass
-    ein Test rot wird.
+    `_c(fid)` gibt bei unbekanntem fid still 0 zurück — kein Error, kein None, kein Log.
+    `f.get("fid", {}).get("wert")` gibt None → `is True` = False → still falscher Zweig. Beide
+    Bauarten senken den Abzug still (Over-tax), ohne dass ein Test rot wird.
 
     Realer Fall 2026-08-05: basis_kv_pv → basis_kv + basis_pv (Feldsplit, 4 neue Felder).
-    Vier von sechs _c-Lesestellen (api.py:764/779/1338/1354) lasen beim Commit noch
-    basis_kv_pv → _c gab still 0 → der gesamte KV/PV-Vorsorgeabzug in den Scheiben
-    gesamt und rentner_gesamt fiel weg → Over-tax. Die Suite blieb grün.
-    Weder test_g (askable→SCHEIBEN) noch ein anderer Test hat es gefangen — gefunden
-    per Hand beim Review. Dieses Gate ist die systematische Lösung.
+    Vier von sechs _c-Lesestellen lasen beim Commit noch basis_kv_pv → _c gab still 0 → der
+    gesamte KV/PV-Vorsorgeabzug in den Scheiben gesamt und rentner_gesamt fiel weg → Over-tax.
+    Die Suite blieb grün. Dieses Gate ist die systematische Lösung.
+
+    Zweiter Fall 2026-08-18 (Umzug 795bc2a, „Steuerlogik verlässt die Haut"): die Lesestellen zogen
+    von api.py nach produkt/bescheid/bescheid_*.py. Das Gate las weiter nur api.py — 0 statt 117
+    Kennungen — und blieb grün. Deshalb liest es jetzt das Verzeichnis (wie
+    test_slot_fn_reader_existiert) und zählt, was es liest.
     """
-    api_py = os.path.join(ROOT, "produkt", "haut", "api.py")
-    with open(api_py) as f:
-        src = f.read()
+    _pruefe_lesestellen(_gelesene_kennungen(_quell_pfade()), _bindungs_kennungen(daten))
 
-    read_keys: set[str] = set()
 
-    # Pattern 1: _c("feld_id") und _cent("feld_id")
-    read_keys |= set(re.findall(r'_c(?:ent)?\("([a-z0-9_]+)"\)', src))
+def test_i2_gate_bricht_ab_wenn_es_zu_wenig_liest(daten):
+    """Gegenprobe zu MIN_GELESENE_KENNUNGEN: biegt man die Quellen auf api.py allein um (der Zustand
+    von 2026-08-18 bis 2026-10-03, 0 Treffer), MUSS das Gate rot werden und die Mindestzahl nennen."""
+    nur_api = (os.path.join(ROOT, "produkt", "haut", "api.py"),)
+    with pytest.raises(AssertionError, match=str(MIN_GELESENE_KENNUNGEN)):
+        _pruefe_lesestellen(_gelesene_kennungen(nur_api), _bindungs_kennungen(daten))
 
-    # Pattern 2: f.get("feld_id")
-    read_keys |= set(re.findall(r'f\.get\("([a-z0-9_]+)"', src))
 
-    # Alle feld_ids aus der Bindungstabelle sammeln
-    binding_keys: set[str] = set()
-    for d in daten.values():
-        for b in d["bindungen"]:
-            fid = b.get("feld_id")
-            if fid:
-                binding_keys.add(fid)
-
-    unbekannt = sorted(read_keys - binding_keys - API_READ_AUSNAHMEN)
-    assert not unbekannt, (
-        f"api.py ruft _c / _cent / f.get für Feld-IDs auf, die in keiner "
-        f"bindung_*.yaml als feld_id existieren: {unbekannt}. Das Feld wurde "
-        f"umbenannt/gelöscht, die api.py-Lesestelle nicht mitgezogen → stiller "
-        f"Over-tax (keine Test-Rot-Warnung).")
+def test_i3_gate_faengt_einen_tippfehler(daten, tmp_path):
+    """Gegenprobe zum Namensabgleich: eine falsch geschriebene Kennung im Quelltext MUSS auffallen,
+    auch wenn der Rest der Lesestellen stimmt."""
+    echt = _gelesene_kennungen(_quell_pfade())
+    quelle = tmp_path / "bescheid_tippfehler.py"
+    quelle.write_text('x = _c("bruttoarbeitslon")\n')
+    mit_tippfehler = echt | _gelesene_kennungen((str(quelle),))
+    assert "bruttoarbeitslon" in mit_tippfehler
+    with pytest.raises(AssertionError, match="bruttoarbeitslon"):
+        _pruefe_lesestellen(mit_tippfehler, _bindungs_kennungen(daten))
 
 
 # Bekannte Ausnahmen für Kz, die gebunden sind aber nicht in Tests vorkommen.
