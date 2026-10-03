@@ -308,7 +308,7 @@ fn pruefe(name: &str, generator: &BoxedStrategy<Vec<Value>>) {
     // (b) generiert
     let mut runner = TestRunner::deterministic();
     let (mut diff_gen, mut fehlerfaelle, mut n_gen) = (0usize, 0usize, 0usize);
-    for _ in 0..1000 {
+    for _ in 0..parity::fallzahl::holen("zugriff_teil1_paritaet generiert", 1000) {
         let args = generator.new_tree(&mut runner).unwrap().current();
         let py = live(name, &args);
         let rust = rust_ausgang(name, &args);

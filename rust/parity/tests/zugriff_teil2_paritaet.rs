@@ -31,6 +31,7 @@ use proptest::strategy::{Strategy, ValueTree};
 use proptest::test_runner::TestRunner;
 use serde_json::{json, Value};
 
+/// Standard der generierten Faelle je Funktion; `PARITY_N` ersetzt ihn (`parity::fallzahl`).
 const GENERIERT_JE_FUNKTION: usize = 1000;
 
 /// Ausnahmeklassen des Catala-Laufzeitsystems (`catala_runtime.py`, `CatalaError`-Unterklassen).
@@ -244,6 +245,10 @@ fn generiert_gegen_orakel() {
         return;
     }
     let mut summe = 0;
+    let je_funktion = parity::fallzahl::holen(
+        "zugriff_teil2_paritaet generiert_gegen_orakel",
+        GENERIERT_JE_FUNKTION,
+    );
     eprintln!(
         "{:<32} {:>6} {:>6} {:>6}",
         "funktion", "faelle", "diff", "err"
@@ -252,7 +257,7 @@ fn generiert_gegen_orakel() {
         let strategie = gen::fuer(name);
         let mut runner = TestRunner::deterministic();
         let mut z = Zaehler::default();
-        for _ in 0..GENERIERT_JE_FUNKTION {
+        for _ in 0..je_funktion {
             let args = strategie.new_tree(&mut runner).unwrap().current();
             z.pruefe(&args, &rust(*f, &args), &live(name, &args), "generiert");
         }

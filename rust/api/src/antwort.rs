@@ -22,17 +22,6 @@ impl Antwort {
     pub fn neu(status: u16, body: Value) -> Self {
         Self { status, body }
     }
-
-    /// Die Antwort eines Handlers, der noch Python ist (D2/D3 ersetzen ihn). Der Differenz-Harness
-    /// (`rust/parity/tests/api_http_paritaet.rs`) erkennt sie an `fehler == "nicht_portiert"` und
-    /// zählt sie getrennt.
-    #[must_use]
-    pub fn nicht_portiert(route: &'static str) -> Self {
-        Self::neu(
-            501,
-            serde_json::json!({ "fehler": "nicht_portiert", "route": route }),
-        )
-    }
 }
 
 impl IntoResponse for Antwort {

@@ -1133,7 +1133,7 @@ fn generierte_stores() {
     let z = std::cell::RefCell::new(Zaehler::default());
     let n = std::cell::Cell::new(0_usize);
     let cfg = Config {
-        cases: 1000,
+        cases: parity::fallzahl::holen_u32("elster_paritaet generierte_stores", 1000),
         failure_persistence: None,
         max_shrink_iters: 0,
         ..Config::default()

@@ -613,8 +613,9 @@ fn generierte_faelle() {
         return;
     }
     let bilanz = Mutex::new(Bilanz::new());
+    let n_faelle = parity::fallzahl::holen_u32("konsistenz_paritaet generierte_faelle", 1000);
     let mut runner = proptest::test_runner::TestRunner::new(ProptestConfig {
-        cases: 1000,
+        cases: n_faelle,
         ..ProptestConfig::default()
     });
     runner
@@ -629,28 +630,39 @@ fn generierte_faelle() {
         })
         .unwrap();
     let bilanz = bilanz.into_inner().unwrap();
-    wache_rechnet("generierte Faelle (1000)", LEER_GENERIERTE, &bilanz);
-    assert_eq!(berichte("generierte Faelle (1000)", &bilanz), 0);
-    assert!(
-        bilanz["flag_widersprueche"].nicht_leer > 50,
-        "Generator trifft flag_check zu selten"
+    let block = format!("generierte Faelle ({n_faelle})");
+    // Pin der leeren Zeilen und Untergrenzen sind an die 1000 Faelle des Standards gebunden.
+    let wachen = parity::fallzahl::wache_gilt(
+        "konsistenz_paritaet generierte_faelle",
+        n_faelle as usize,
+        1000,
     );
-    assert!(
-        bilanz["preflight"].nicht_leer > 500,
-        "Generator trifft preflight zu selten"
-    );
-    assert!(
-        bilanz["partner_ohne_zusammen"].nicht_leer > 20,
-        "Generator trifft partner_check zu selten"
-    );
-    assert!(
-        bilanz["alleinerziehend_mit_zusammen"].nicht_leer > 20,
-        "Generator trifft § 24b zu selten"
-    );
-    assert!(
-        bilanz["  davon luecken_nicht_leer"].faelle > 20,
-        "Generator trifft fehlende_instanzen zu selten"
-    );
+    if wachen {
+        wache_rechnet(&block, LEER_GENERIERTE, &bilanz);
+    }
+    assert_eq!(berichte(&block, &bilanz), 0);
+    if wachen {
+        assert!(
+            bilanz["flag_widersprueche"].nicht_leer > 50,
+            "Generator trifft flag_check zu selten"
+        );
+        assert!(
+            bilanz["preflight"].nicht_leer > 500,
+            "Generator trifft preflight zu selten"
+        );
+        assert!(
+            bilanz["partner_ohne_zusammen"].nicht_leer > 20,
+            "Generator trifft partner_check zu selten"
+        );
+        assert!(
+            bilanz["alleinerziehend_mit_zusammen"].nicht_leer > 20,
+            "Generator trifft § 24b zu selten"
+        );
+        assert!(
+            bilanz["  davon luecken_nicht_leer"].faelle > 20,
+            "Generator trifft fehlende_instanzen zu selten"
+        );
+    }
 }
 
 #[test]

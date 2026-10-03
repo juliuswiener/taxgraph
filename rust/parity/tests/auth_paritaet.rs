@@ -85,7 +85,8 @@ fn validierung() {
     if skip() {
         return;
     }
-    let mut s = strings(1000);
+    let n_faelle = parity::fallzahl::holen("auth_paritaet validierung", 1000);
+    let mut s = strings(n_faelle);
     // Namensnahe Strings (erste Stelle meist Buchstabe, Laenge um die Grenzen 3/32), damit die
     // gueltige Seite nicht nur aus Randfaellen besteht.
     let namensnah = (
@@ -102,7 +103,7 @@ fn validierung() {
             proptest::test_runner::RngAlgorithm::ChaCha,
         ),
     );
-    s.extend((0..1000).map(|_| namensnah.new_tree(&mut runner).unwrap().current()));
+    s.extend((0..n_faelle).map(|_| namensnah.new_tree(&mut runner).unwrap().current()));
     s.extend(
         [
             "abc",
@@ -147,7 +148,7 @@ fn validierung() {
         .iter()
         .filter(|b| **b == json!(true))
         .count();
-    println!("validierung: {} Strings (1000 zufaellig + 1000 namensnah + 13 Rand), {} Vergleiche ({gueltig} gueltige Namen); Abweichungen {}; Negativkontrolle {}", s.len(), z.faelle, z.abw, neg.abw);
+    println!("validierung: {} Strings ({n_faelle} zufaellig + {n_faelle} namensnah + 13 Rand), {} Vergleiche ({gueltig} gueltige Namen); Abweichungen {}; Negativkontrolle {}", s.len(), z.faelle, z.abw, neg.abw);
     assert_eq!(neg.abw, 1);
     assert_eq!(z.abw, 0);
 }

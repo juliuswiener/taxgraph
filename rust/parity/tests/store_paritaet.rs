@@ -67,7 +67,10 @@ fn arbitrary_event() -> impl Strategy<Value = Value> {
 }
 
 proptest! {
-    #![proptest_config(ProptestConfig::with_cases(1000))]
+    #![proptest_config(ProptestConfig::with_cases(parity::fallzahl::holen_u32(
+        "store_paritaet proptest",
+        1000,
+    )))]
 
     /// `store::EventId::von_json` matcht `produkt/store/store.py::event_id` byte-identisch
     /// ueber 1000 zufaellig generierte JSON-Objekte (s. Moduldoku fuer die Interpretation).

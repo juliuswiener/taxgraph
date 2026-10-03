@@ -254,7 +254,8 @@ fn pii() {
             .unwrap();
     let n_korpus = korpus.len();
     let mut texte = korpus;
-    texte.extend(pii_texte(1000));
+    let n_faelle = parity::fallzahl::holen("llm_paritaet pii", 1000);
+    texte.extend(pii_texte(n_faelle));
     let py_f = frage(&json!({"fn": "schritt8.llm.filtere", "texte": texte}));
     let py_m = frage(&json!({"fn": "schritt8.llm.maskiere", "texte": texte}));
     let paare: Vec<[&str; 2]> = texte
@@ -290,7 +291,7 @@ fn pii() {
         .iter()
         .filter(|r| !r[1].as_array().unwrap().is_empty())
         .count();
-    println!("pii: {} Texte ({n_korpus} Korpus + 1000 proptest), {} Vergleiche, davon {getroffen} mit Treffer; Abweichungen {}; Negativkontrolle {}",
+    println!("pii: {} Texte ({n_korpus} Korpus + {n_faelle} proptest), {} Vergleiche, davon {getroffen} mit Treffer; Abweichungen {}; Negativkontrolle {}",
         texte.len(), z.faelle, z.abw, neg.abw);
     assert_eq!(neg.abw, 1, "Negativkontrolle muss rot sein");
     assert_eq!(z.abw, 0);
@@ -504,7 +505,8 @@ fn parser_und_beleg() {
         r#"{"antwort": null, "unsicher": "false"}"#, r#"{"rueckfragen": [{"frage": "Wie viel?", "feld_id": "x"}]}"#,
     ].map(String::from).to_vec();
     let mut r = Rng(0x5eed_1234);
-    texte.extend((0..1000).map(|_| modell_ausgabe(&mut r, &felder, &regeln)));
+    let n_faelle = parity::fallzahl::holen("llm_paritaet parser_und_beleg", 1000);
+    texte.extend((0..n_faelle).map(|_| modell_ausgabe(&mut r, &felder, &regeln)));
     let mut z = Zaehler::default();
     for (felder_n, anzahl) in [(5usize, 3usize), (0, 1)] {
         let py = frage(
@@ -519,7 +521,7 @@ fn parser_und_beleg() {
             );
         }
     }
-    // Beleg-Gate: 1000 Paare aus Belegen und Texten.
+    // Beleg-Gate: ebenso viele Paare (Standard 1000) aus Belegen und Texten.
     let texte_frei = [
         "ich fahre 20km mit dem auto",
         "15000 Euro",
@@ -531,7 +533,7 @@ fn parser_und_beleg() {
     let belege = [
         "5", "20km", "fahre 20", "²", "a", "5²", "", " ", "EURO", "[PII]", "b", "Tage",
     ];
-    let paare: Vec<[&str; 2]> = (0..1000)
+    let paare: Vec<[&str; 2]> = (0..n_faelle)
         .map(|_| [*r.wahl(&belege), *r.wahl(&texte_frei)])
         .collect();
     let py_b = frage(&json!({"fn": "schritt8.llm.beleg", "paare": paare}));
@@ -561,7 +563,7 @@ fn parser_und_beleg() {
         .iter()
         .filter(|t| matches!(llm::parse::chat_parse(t), llm::Antwort::Unlesbar))
         .count();
-    println!("parser: {} Modelltexte × 2 Parameter + 1000 Beleg-Paare = {} Vergleiche; schemagerecht {schemagerecht}, unlesbar {unlesbar}; Abweichungen {}; Negativkontrolle {}",
+    println!("parser: {} Modelltexte × 2 Parameter + {n_faelle} Beleg-Paare = {} Vergleiche; schemagerecht {schemagerecht}, unlesbar {unlesbar}; Abweichungen {}; Negativkontrolle {}",
         texte.len(), z.faelle, z.abw, neg.abw);
     assert_eq!(neg.abw, 1);
     assert_eq!(z.abw, 0);
@@ -824,7 +826,8 @@ fn dialog() {
     let mut z = Zaehler::default();
     let mut stufen = [0usize; 4];
     let mut erste = None;
-    for _ in 0..1020 {
+    // Standard 1020 = 20 feste + 1000 generierte Laeufe; `PARITY_N` setzt die Gesamtzahl.
+    for _ in 0..parity::fallzahl::holen("llm_paritaet dialog", 1020) {
         let s = szenario(&mut r, &katalog);
         let rust = rust_dialog(&s, &katalog, &gruppen);
         let mut py = frage(
@@ -1264,7 +1267,8 @@ fn klassifikator_und_schemas() {
         "} {".into(),
         r#"x {"kategorie": "vorsorge"} y {"#.into(),
     ];
-    texte.extend((0..1000).map(|_| (0..=r.n(9)).map(|_| *r.wahl(&teile)).collect::<String>()));
+    let n_faelle = parity::fallzahl::holen("llm_paritaet klassifikator_und_schemas", 1000);
+    texte.extend((0..n_faelle).map(|_| (0..=r.n(9)).map(|_| *r.wahl(&teile)).collect::<String>()));
     let py = frage(&json!({"fn": "schritt8.llm.kategorie", "texte": texte}));
     for (i, t) in texte.iter().enumerate() {
         let rust = json!({"ok": llm::kontoauszug::parse_kategorie(t).map(llm::Kategorie::als_str)});
