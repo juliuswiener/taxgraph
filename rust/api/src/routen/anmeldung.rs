@@ -142,11 +142,23 @@ pub async fn login(State(z): State<Zustand>, Koerper(body): Koerper) -> Result<A
     let (username, password) = pflichtfelder(&body)?;
     let name = match username {
         Value::String(s) => s.clone(),
-        Value::Array(_) | Value::Object(_) => {
-            return Err(typ_fehler("TypeError", unhashbar(username, "dict key")));
+        // Ein Nicht-Text ist nie ein Nutzer: 401 wie bei einem falschen Passwort, protokolliert, ohne die
+        // Nutzerdatei zu lesen. Auch `null`/`true`/`false`: ihr `repr` ("None", "True", "False") ist ein
+        // gültiger Name, den ein Nutzer tragen könnte. Python: `isinstance(username, str)` in `login`
+        // (Vault decisions/login-prueft-das-namensmuster-vor-dem-nachschlagen, Punkt 2); eine Liste oder ein
+        // Objekt warf dort vorher `TypeError` (unhashbar, 500).
+        andere => {
+            // Das Protokoll nennt `username or "unbekannt"`: ein falscher Wert (null, false, 0, [], {})
+            // heisst dort "unbekannt", ein leerer Name ebenso (`anhaengen`). Ein wahrer Nicht-Text steht
+            // als `repr` im Protokoll; Python schreibt ihn als JSON-Wert (Rest-Abweichung, Inhalt des
+            // Eintrags ist nicht Teil dieses Baus).
+            let nutzer = if wahr(andere) {
+                crate::python::text(andere)
+            } else {
+                String::new()
+            };
+            return Err(z.auth.weise_ab(&nutzer).into());
         }
-        // Ein Nicht-Text ist als Schlüssel hashbar und nie ein Nutzer: Python meldet 401.
-        andere => crate::python::text(andere),
     };
     // PARITÄT-Grenze: ein Nicht-Text als Passwort wirft in Python nur für einen EXISTIERENDEN
     // Nutzer `AttributeError` (500), sonst 401. Hier ist es immer 401 (leeres Passwort).
