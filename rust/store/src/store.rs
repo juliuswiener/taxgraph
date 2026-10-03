@@ -15,7 +15,7 @@ use crate::canonical::EventId;
 use crate::event::{Event, NeuesEvent, NeuesEventRoh, Signal};
 use crate::katalog::Katalog;
 use crate::nachschlag::BindungNachschlag;
-use crate::zeit::jetzt_iso;
+use crate::zeit::{jetzt_iso, ts_oder_jetzt};
 
 /// Die reine Datei-Form (`schema.json` Top-Level-Objekt), OHNE den `aktiv`-Index — das ist, was
 /// `persistenz::lade`/`speichere` lesen/schreiben (`store.py:77-87`). Feldliste 1:1
@@ -512,7 +512,7 @@ impl Store {
             Signal { signal_1: Some(neu.signal_1.clone()), signal_2: neu.signal_2_roh().map(str::to_owned), signal_2_fehlt: false };
         let event = Event {
             event_id: EventId::aus_bytes([0; 32]),
-            ts: neu.ts.clone().unwrap_or_else(jetzt_iso),
+            ts: ts_oder_jetzt(neu.ts.clone()),
             feld_id: neu.feld_id.clone(),
             wert: neu.wert.clone(),
             zustand: neu.zustand(),
@@ -574,11 +574,7 @@ impl Store {
         self.pruefe_auflage_b(&neu.feld_id, ersetzt)?;
         let event = Event {
             event_id: EventId::aus_bytes([0; 32]),
-            ts: neu
-                .ts
-                .clone()
-                .filter(|t| !t.is_empty())
-                .unwrap_or_else(jetzt_iso),
+            ts: ts_oder_jetzt(neu.ts.clone()),
             feld_id: neu.feld_id.clone(),
             wert: neu.wert.clone(),
             zustand: neu.zustand,
@@ -1032,7 +1028,7 @@ impl Store {
         });
         let snap = Snapshot {
             snapshot_id: sid,
-            ts: ts.unwrap_or_else(jetzt_iso),
+            ts: ts_oder_jetzt(ts),
             bis_event: letztes,
             felder,
             eric_befund,
@@ -1662,5 +1658,79 @@ mod tests {
             );
         }
         assert!(store.events().is_empty());
+    }
+
+    /// Entscheidung leerer-zeitstempel-heisst-fehlt-und-wird-die-jetzt-zeit: ein leerer `ts` heisst "fehlt"
+    /// und wird zur Jetzt-Zeit, wie Pythons `ts or _now()` (`store.py` `append_event`, `erzeuge_snapshot`).
+    /// "Jetzt-ISO" heisst: RFC 3339 mit Zone, parsebar, und innerhalb einer Minute der Uhr.
+    fn ist_jetzt_iso(ts: &str) -> bool {
+        chrono::DateTime::parse_from_rfc3339(ts).is_ok_and(|t| {
+            (chrono::Utc::now() - t.with_timezone(&chrono::Utc))
+                .num_seconds()
+                .abs()
+                < 60
+        })
+    }
+
+    fn event_mit_ts(ts: Option<String>) -> NeuesEvent {
+        NeuesEvent {
+            feld_id: "ep_arbeitstage".to_string(),
+            wert: json!(220).into(),
+            feldzustand: Feldzustand::Bestaetigt {
+                signal_2: Signal2::new("klick").unwrap(),
+            },
+            herkunft: mensch_herkunft(),
+            schreiber: Schreiber::Mensch("julius".to_string()),
+            signal_1: None,
+            ersetzt: None,
+            ts,
+        }
+    }
+
+    const FEST: &str = "2026-01-01T00:00:00+00:00";
+
+    #[test]
+    fn append_mit_leerem_zeitstempel_stempelt_die_jetzt_zeit() {
+        let map = leere_bindung();
+        let bindung = BindungNachschlag::neu(&map);
+        for ts in [Some(String::new()), None] {
+            let mut store = Store::leer(2025, None);
+            store
+                .append(&event_mit_ts(ts.clone()), None, bindung)
+                .unwrap();
+            let gestempelt = &store.events()[0].ts;
+            assert!(ist_jetzt_iso(gestempelt), "ts={ts:?} -> {gestempelt:?}");
+        }
+        // Gegenprobe: ein fester Zeitstempel bleibt, wie er ist (sonst bewiese das Gruen oben nichts).
+        let mut store = Store::leer(2025, None);
+        store
+            .append(&event_mit_ts(Some(FEST.to_string())), None, bindung)
+            .unwrap();
+        assert_eq!(store.events()[0].ts, FEST);
+        assert!(!ist_jetzt_iso(FEST));
+    }
+
+    #[test]
+    fn erzeuge_snapshot_mit_leerem_zeitstempel_stempelt_die_jetzt_zeit() {
+        let map = leere_bindung();
+        let bindung = BindungNachschlag::neu(&map);
+        for ts in [Some(String::new()), None] {
+            let mut store = Store::leer(2025, None);
+            store
+                .append(&event_mit_ts(Some(FEST.to_string())), None, bindung)
+                .unwrap();
+            store.erzeuge_snapshot(None, ts.clone(), None).unwrap();
+            let gestempelt = &store.snapshots()[0].ts;
+            assert!(ist_jetzt_iso(gestempelt), "ts={ts:?} -> {gestempelt:?}");
+        }
+        // Gegenprobe: ein fester Zeitstempel bleibt, wie er ist.
+        let mut store = Store::leer(2025, None);
+        store
+            .append(&event_mit_ts(Some(FEST.to_string())), None, bindung)
+            .unwrap();
+        store
+            .erzeuge_snapshot(None, Some("2026-01-02T00:00:00+00:00".to_string()), None)
+            .unwrap();
+        assert_eq!(store.snapshots()[0].ts, "2026-01-02T00:00:00+00:00");
     }
 }
