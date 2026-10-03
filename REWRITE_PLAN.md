@@ -388,10 +388,13 @@ realen Stores Pflicht) · K3 `interview` · K4 `konsistenz` · K5 `elster` · K6
 (`serde_json::Value` in bescheid/konsistenz/intervall/interview = 0; `_ =>` auf Domain-Enums = 0) · K9 `&str`-Rest.
 **K8-Stand auf `8e48cf7`: Tor 1/2 gemergt (`d1c5e00`, Spitze `99f50b6`, Basis `ba6ec34`).** Tor 1
 (`_ =>` auf Domain-Enums): Workspace-Test `rust/api/tests/domain_enums_exhaustiv.rs` über clippys
-`wildcard_enum_match_arm`; eine Ausnahme offen (`OFFEN`, `rust/api/tests/domain_enums_exhaustiv.rs:23`: der Arm `store/src/abweisung.rs:140`; K8 liegt jetzt auf main, der Arm fällt mit der `OFFEN`-Zeile in einem Commit).
+`wildcard_enum_match_arm`; eine Ausnahme offen (`OFFEN`, `rust/api/tests/domain_enums_exhaustiv.rs:23`: der Arm `store/src/abweisung.rs:140`; K8 liegt jetzt auf main, der Arm fällt mit der `OFFEN`-Zeile in einem Commit) — **erledigt in `80743f2`**.
 Tor 2 (`serde_json::Value`): `clippy.toml` verbietet `Value` und `Map` in `bescheid` und `konsistenz`;
 `intervall` nutzt `Value` nur in Testmodulen, `interview` weiter im Produktcode (`interview/src/fragen.rs:121`,
-gemessen auf `99f50b6`) — für `interview` ist das Tor nicht erreicht.
+gemessen auf `99f50b6`) — für `interview` war das Tor dort nicht erreicht.
+**Seit `b540590`:** Tor 2 sperrt auch `interview` (`rust/interview/clippy.toml`, Merge `97d3846`), und die Liste
+`OFFEN` in `rust/api/tests/domain_enums_exhaustiv.rs:23` ist leer (Merge `80743f2`). Beides gelesen am 2026-10-03,
+Rust-Gates grün (Absatz „Gates auf `b540590`" oben).
 **K9 Stufe 1 gemessen** (Worker `k7b`, Bericht `berichte/k9-karte.md`, nicht nachgemessen): eigene Typen nur,
 wo heute ein falscher Text still durchrutscht (Vault `decisions/k9-typen-nur-wo-heute-ein-falscher-text-durchrutscht`).
 Stufe 2 in den Commits 0–4: `bindung` Kz → `elster` `Vz` → `domain`+`elster` `&Kz` →
