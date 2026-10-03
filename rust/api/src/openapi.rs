@@ -1,6 +1,8 @@
-//! OpenAPI-Dokument der in 9a fertigen Routen. Kein Endpunkt: Python kennt `/openapi.json` nicht
-//! (dort wäre es ein 404), also liefert es nur `taxgraph-api --openapi`. Die Schemas der
-//! Stub-Routen (`produkt/haut/api_schema/*.json`) tragen D2/D3 nach.
+//! OpenAPI-Dokument der 9 Routen, die bisher beschrieben sind (`/health`, `/ready`, `/auth/*`,
+//! `POST /fall`, `DELETE /fall/{id}`, `elster-ampel`); die 15 übrigen Routen sind portiert, aber
+//! noch nicht im Dokument. Welche, hält `UNDOKUMENTIERT` in `tests/http.rs` fest. Kein Endpunkt:
+//! Python kennt `/openapi.json` nicht (dort wäre es ein 404), also liefert es nur
+//! `taxgraph-api --openapi`.
 use utoipa::OpenApi;
 
 use crate::routen::{anmeldung, betrieb, fall};

@@ -1,8 +1,9 @@
-//! Request-/Response-Typen der in 9a fertigen Routen — nur für das OpenAPI-Dokument
-//! ([`crate::openapi::ApiDoc`]); die Handler bauen ihre Antworten als `serde_json::Value`, weil
-//! Pythons Dicts Schlüssel tragen, die ein Struct nicht abbilden soll (`body` ist beliebiges JSON).
-//! Die Schemas der Stub-Routen liegen in `produkt/haut/api_schema/*.json` und kommen mit ihren
-//! Handlern (D2/D3).
+//! Request-/Response-Typen der 9 Routen, die [`crate::openapi::ApiDoc`] beschreibt — nur für das
+//! OpenAPI-Dokument; die Handler bauen ihre Antworten als `serde_json::Value`, weil Pythons Dicts
+//! Schlüssel tragen, die ein Struct nicht abbilden soll (`body` ist beliebiges JSON).
+//! Für die 15 übrigen Routen gibt es hier noch keine Typen. Pythons JSON-Schemas liegen in
+//! `produkt/haut/api_schema/*.json` (6 Dateien: `ergebnis`, `event`, `fragen`, `graph`, `stand`,
+//! `warum`).
 use serde::Serialize;
 use utoipa::ToSchema;
 
