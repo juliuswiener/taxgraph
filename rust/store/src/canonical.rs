@@ -11,13 +11,10 @@
 //! Rueckwaertsschraegstrich, `\b`/`\f`, verschachtelte Objekt-Schluesselsortierung, Array-
 //! Reihenfolge, negative Ganzzahlen, `null`, `bool`.
 //!
-//! PARITAET (Restrisiko, dokumentiert statt geloest): Gleitkommazahlen. `domain::Wert` kennt
-//! keinen Float-Fall, und Auflage T weist einen Float fuer jedes GEBUNDENE `typ=cent/int`-Feld
-//! zurueck (`domain::Wert::aus_pywert`). Ein Float kann store-seitig nur bei einem UNBEKANNTEN
-//! `feld_id` auftreten (Auflage T laesst dann durch, s. `abweisung::pruefe_typ_konformitaet`).
-//! Pythons `repr()`-Fliesskommaformatierung und `serde_json`s Float-Formatierung sind fuer diesen
-//! Fall nicht Byte-fuer-Byte verglichen; ein Store mit einem Float auf einem ungebundenen Feld
-//! ist ein dokumentierter Coverage-Gap, kein bekannter Fehler.
+//! Kommazahlen schreibt `canonical_json` nicht `serde_json`, sondern Pythons `float.__repr__`
+//! (`1e+22`, `1e-07`): `serde_json` schreibt `1e22` und `1e-7`, und dieselbe Kennung `event_id`
+//! haengt an jedem Zeichen. Eine Kommazahl steht in `signal_1` und in `wert` eines ungebundenen
+//! Felds; Auflage T weist sie fuer jedes gebundene `typ=cent/int`-Feld ab.
 use std::fmt;
 use std::str::FromStr;
 
@@ -33,10 +30,49 @@ use sha2::{Digest, Sha256};
 /// ```
 #[must_use]
 pub fn canonical_json(value: &serde_json::Value) -> String {
-    // serde_json::Value kann laut Invariante von `serde_json::Number` keinen NaN/Infinity-
-    // Float tragen (`Number::from_f64` verweigert deren Konstruktion) -- der Err-Zweig ist
-    // unerreichbar. Ohne unwrap/panic dokumentiert statt weggelassen.
-    serde_json::to_string(value).unwrap_or_default()
+    let mut aus = String::new();
+    schreibe(value, &mut aus);
+    aus
+}
+
+/// Ein Wert nach `canonical_json`. Alles ausser einer Kommazahl schreibt `serde_json` selbst; die
+/// Kommazahl schreibt Pythons `float.__repr__` (`1e+22`, `1e-07`, `100000.0`), denn `serde_json`
+/// (`ryu`) schreibt `1e22`, `1e-7` und wechselt an anderen Grenzen in die Exponentenform.
+fn schreibe(wert: &serde_json::Value, aus: &mut String) {
+    use serde_json::Value;
+    match wert {
+        Value::Number(n) if n.is_f64() => match n.as_f64() {
+            Some(f) => aus.push_str(&domain::PyWert::Gleit(f).repr()),
+            // `Number::is_f64` ohne `as_f64` gibt es nicht; der Zweig haelt nur den Compiler zufrieden.
+            None => aus.push_str(&n.to_string()),
+        },
+        Value::Array(teile) => {
+            aus.push('[');
+            for (i, t) in teile.iter().enumerate() {
+                if i > 0 {
+                    aus.push(',');
+                }
+                schreibe(t, aus);
+            }
+            aus.push(']');
+        }
+        Value::Object(paare) => {
+            aus.push('{');
+            for (i, (k, v)) in paare.iter().enumerate() {
+                if i > 0 {
+                    aus.push(',');
+                }
+                aus.push_str(&serde_json::to_string(k).unwrap_or_default());
+                aus.push(':');
+                schreibe(v, aus);
+            }
+            aus.push('}');
+        }
+        // serde_json::Value kann laut Invariante von `serde_json::Number` keinen NaN/Infinity-
+        // Float tragen (`Number::from_f64` verweigert deren Konstruktion) -- der Err-Zweig ist
+        // unerreichbar. Ohne unwrap/panic dokumentiert statt weggelassen.
+        andere => aus.push_str(&serde_json::to_string(andere).unwrap_or_default()),
+    }
 }
 
 /// sha256(text) als Hex-String (Kleinbuchstaben, wie Pythons `hexdigest()`).
@@ -175,6 +211,40 @@ impl<'de> Deserialize<'de> for EventId {
 mod tests {
     use super::{canonical_json, EventId};
     use serde_json::json;
+
+    /// Kommazahlen wie `json.dumps(..., sort_keys=True, ensure_ascii=False, separators=(",", ":"))`
+    /// (Referenz: `CPython` 3, je Zeile `python3 -c 'import json; print(json.dumps({"a": <zahl>}))'`).
+    #[test]
+    fn kommazahlen_stehen_wie_in_python() {
+        for (text, soll) in [
+            ("1e22", "1e+22"),
+            ("1e-7", "1e-07"),
+            ("1e16", "1e+16"),
+            ("1e15", "1000000000000000.0"),
+            ("123456789012345680.0", "1.2345678901234568e+17"),
+            ("0.1", "0.1"),
+            ("-0.0", "-0.0"),
+            ("5e-324", "5e-324"),
+            ("1.7976931348623157e308", "1.7976931348623157e+308"),
+            ("1e5", "100000.0"),
+            ("0.0001", "0.0001"),
+            ("0.00001", "1e-05"),
+            ("1.5e-5", "1.5e-05"),
+        ] {
+            let wert: serde_json::Value =
+                serde_json::from_str(&format!(r#"{{"a":[{text}]}}"#)).unwrap();
+            assert_eq!(
+                canonical_json(&wert),
+                format!(r#"{{"a":[{soll}]}}"#),
+                "{text}"
+            );
+        }
+        // Ganzzahlen, Texte und Verschachtelung bleiben, wie sie waren.
+        assert_eq!(
+            canonical_json(&json!({"b":[1,-2,"ä\n",null,true],"a":{"y":1.5}})),
+            r#"{"a":{"y":1.5},"b":[1,-2,"ä\n",null,true]}"#
+        );
+    }
 
     #[test]
     fn sortiert_schluessel_rekursiv_und_kompakt() {

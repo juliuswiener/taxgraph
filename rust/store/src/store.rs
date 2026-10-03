@@ -10,9 +10,9 @@ use domain::{
 use serde::{Deserialize, Serialize};
 
 use crate::ableitung;
-use crate::abweisung::{self, Abweisung};
+use crate::abweisung::{self, Abweisung, AbweisungRoh};
 use crate::canonical::EventId;
-use crate::event::{Event, NeuesEvent, Signal};
+use crate::event::{Event, NeuesEvent, NeuesEventRoh, Signal};
 use crate::katalog::Katalog;
 use crate::nachschlag::BindungNachschlag;
 use crate::zeit::jetzt_iso;
@@ -502,31 +502,9 @@ impl Store {
         bindung: BindungNachschlag<'_>,
     ) -> Result<EventId, Abweisung> {
         Self::pruefe_auflage_a(neu)?;
-        // K2-Auflage 3: der Wert muss nach JSON gehen, sonst gibt es keinen `event_id`. Geprueft
-        // EINMAL hier, vor den Auflagen, die den Wert lesen: NaN/inf ist ein Fehler, kein stiller
-        // Wert, und die Fehlerklasse haengt nicht davon ab, welche Auflage ihn zuerst saehe.
-        neu.wert
-            .zu_json()
-            .map_err(|e| Abweisung::WertNichtDarstellbar {
-                feld_id: neu.feld_id.clone(),
-                grund: e.to_string(),
-            })?;
+        Self::pruefe_wert(&neu.feld_id, &neu.wert, &neu.schreiber, katalog, bindung)?;
+        self.pruefe_auflage_b(&neu.feld_id, neu.ersetzt)?;
         let wert = &neu.wert;
-        if let Some(typ) = neu.schreiber.vorschlag_typ() {
-            let katalog = katalog.ok_or_else(|| Abweisung::KatalogFehlt {
-                schreiber: neu.schreiber.to_string(),
-            })?;
-            if !katalog.erlaubt(typ, &neu.feld_id) {
-                return Err(Abweisung::KatalogNichtFreigegeben {
-                    schreiber: neu.schreiber.to_string(),
-                    feld_id: neu.feld_id.clone(),
-                    typ,
-                });
-            }
-            pruefe_magnitude(&neu.feld_id, wert, &neu.schreiber)?;
-        }
-        pruefe_bindung(&neu.feld_id, wert, bindung)?;
-        self.pruefe_auflage_b(neu)?;
 
         let signal =
             // Schreibpfad: Schluessel ist immer da (Python `store.py`: `signal or {"signal_1":
@@ -551,37 +529,158 @@ impl Store {
         Ok(event_id)
     }
 
+    /// Wie [`Store::append`], aber fuer die Formen, die Pythons `append_event` roh annimmt
+    /// ([`NeuesEventRoh`]): dieselben Auflagen in Pythons Reihenfolge — A, K1, F2, T/V/W/F, dann
+    /// `signal_2` (Text) und `bestaetigt` (braucht `signal_2`), dann B. Der Schreiber wird wie in
+    /// Python nach Praefix klassifiziert, nicht nach Gleichheit.
+    ///
+    /// ponytail: `Signal::signal_2` fehlt nie, es ist `null` oder Text; ein `signal` ohne den
+    /// Schluessel `signal_2` legt Python ohne ihn ab, hier steht `signal_2: null` — gleicher Inhalt,
+    /// andere Kennung. Upgrade: Anwesenheit des Schluessels in `Signal` wie bei `signal_1`.
+    ///
+    /// # Errors
+    /// [`AbweisungRoh`], wenn eine Auflage verletzt ist.
+    pub fn append_roh(
+        &mut self,
+        neu: &NeuesEventRoh,
+        katalog: Option<&Katalog>,
+        bindung: BindungNachschlag<'_>,
+    ) -> Result<EventId, AbweisungRoh> {
+        let pruef = python_schreiber(&neu.schreiber);
+        let ohne_signal_2 = neu.signal.signal_2.is_none() && neu.signal_2_fremd.is_none();
+        Self::pruefe_auflage_a_form(
+            &pruef,
+            neu.herkunft.herkunft_achse().as_str(),
+            neu.zustand == Zustand::Vorlaeufig && ohne_signal_2,
+            neu.ersetzt.is_some(),
+        )?;
+        Self::pruefe_wert(&neu.feld_id, &neu.wert, &pruef, katalog, bindung)?;
+        if let Some(typ) = &neu.signal_2_fremd {
+            return Err(AbweisungRoh::Signal2KeinText { typ: typ.clone() });
+        }
+        if neu.zustand == Zustand::Bestaetigt
+            && neu
+                .signal
+                .signal_2
+                .as_deref()
+                .is_none_or(|s| domain::py_strip(s).is_empty())
+        {
+            return Err(AbweisungRoh::BestaetigtOhneSignal2);
+        }
+        let ersetzt = match &neu.ersetzt {
+            None => None,
+            // Eine Kennung ist genau der kleingeschriebene Hex-Text, den `EventId` ausgibt; `parse`
+            // nimmt nichts anderes (Grossbuchstaben, `+`, falsche Laenge: `ErsetztZielText`).
+            Some(text) => Some(
+                EventId::parse(text).map_err(|_| AbweisungRoh::ErsetztZielText(text.clone()))?,
+            ),
+        };
+        self.pruefe_auflage_b(&neu.feld_id, ersetzt)?;
+        let event = Event {
+            event_id: EventId::aus_bytes([0; 32]),
+            ts: neu
+                .ts
+                .clone()
+                .filter(|t| !t.is_empty())
+                .unwrap_or_else(jetzt_iso),
+            feld_id: neu.feld_id.clone(),
+            wert: neu.wert.clone(),
+            zustand: neu.zustand,
+            herkunft: neu.herkunft.clone(),
+            schreiber: neu
+                .schreiber
+                .parse()
+                .unwrap_or_else(|u: std::convert::Infallible| match u {}),
+            signal: Some(neu.signal.clone()),
+            ersetzt,
+        };
+        let event_id = self.push_neu(event)?;
+        let vz = self.datei.veranlagungszeitraum.als_i64_saettigend();
+        self.leite_ab(&neu.feld_id, &neu.wert, neu.zustand, bindung)?;
+        self.rechne_ab(&neu.feld_id, &neu.wert, neu.zustand, bindung, vz)?;
+        Ok(event_id)
+    }
+
     /// Auflage A (`store.py:262-324`): ein Vorschlags-Schreiber deklariert sich ehrlich
     /// (`herkunft`/`zustand`/`signal_2`) und darf (ausser `berechnet:`) nie `ersetzt` tragen.
     fn pruefe_auflage_a(neu: &NeuesEvent) -> Result<(), Abweisung> {
-        let Some((erwartete_herkunft, folge)) = abweisung::auflage_a_erwartung(&neu.schreiber)
-        else {
-            return Ok(());
-        };
         // `zustand != vorlaeufig` UND `signal_2 is_some()` sind in Python zwei getrennte Checks;
         // in Rust sind sie durch `Feldzustand` strukturell gekoppelt (nur `Vorlaeufig` traegt kein
         // `Signal2`) -- ein Check deckt beide ab.
-        let ehrlich = neu.herkunft.herkunft.as_str() == erwartete_herkunft
-            && matches!(neu.feldzustand, Feldzustand::Vorlaeufig);
+        Self::pruefe_auflage_a_form(
+            &neu.schreiber,
+            neu.herkunft.herkunft.as_str(),
+            matches!(neu.feldzustand, Feldzustand::Vorlaeufig),
+            neu.ersetzt.is_some(),
+        )
+    }
+
+    /// Auflage A auf den Rohmerkmalen: `herkunft_achse` ist die `herkunft`-Achse der Herkunft,
+    /// `vorlaeufig_ohne_signal_2` heisst `zustand == vorlaeufig` UND `signal_2 is None` (Pythons
+    /// beide Bedingungen), `ersetzt_gesetzt` `ersetzt is not None`. Der Name des Schreibers in der
+    /// Meldung ist der Praefix, den Python dort fest schreibt (`llm:-Schreiber`).
+    fn pruefe_auflage_a_form(
+        schreiber: &Schreiber,
+        herkunft_achse: &str,
+        vorlaeufig_ohne_signal_2: bool,
+        ersetzt_gesetzt: bool,
+    ) -> Result<(), Abweisung> {
+        let Some((erwartete_herkunft, folge)) = abweisung::auflage_a_erwartung(schreiber) else {
+            return Ok(());
+        };
+        let ehrlich = herkunft_achse == erwartete_herkunft && vorlaeufig_ohne_signal_2;
         if !ehrlich {
             return Err(Abweisung::AuflageA {
-                schreiber: neu.schreiber.to_string(),
+                schreiber: abweisung::auflage_a_name(schreiber),
                 erwartete_herkunft,
                 folge,
             });
         }
-        if abweisung::ersetzt_gesperrt(&neu.schreiber) && neu.ersetzt.is_some() {
+        if abweisung::ersetzt_gesperrt(schreiber) && ersetzt_gesetzt {
             return Err(Abweisung::AuflageAErsetztGuard {
-                schreiber: neu.schreiber.to_string(),
+                schreiber: schreiber.to_string(),
             });
         }
         Ok(())
     }
 
+    /// K2-Auflage 3 (Wert nach JSON), K1 (Katalog), F2 (Magnitude) und T/V/W/F (Bindung), in dieser
+    /// Reihenfolge (`store.py:326-366`).
+    fn pruefe_wert(
+        feld_id: &str,
+        wert: &PyWert,
+        schreiber: &Schreiber,
+        katalog: Option<&Katalog>,
+        bindung: BindungNachschlag<'_>,
+    ) -> Result<(), Abweisung> {
+        // K2-Auflage 3: der Wert muss nach JSON gehen, sonst gibt es keinen `event_id`. Geprueft
+        // EINMAL hier, vor den Auflagen, die den Wert lesen: NaN/inf ist ein Fehler, kein stiller
+        // Wert, und die Fehlerklasse haengt nicht davon ab, welche Auflage ihn zuerst saehe.
+        wert.zu_json()
+            .map_err(|e| Abweisung::WertNichtDarstellbar {
+                feld_id: feld_id.to_owned(),
+                grund: e.to_string(),
+            })?;
+        if let Some(typ) = schreiber.vorschlag_typ() {
+            let katalog = katalog.ok_or_else(|| Abweisung::KatalogFehlt {
+                schreiber: schreiber.to_string(),
+            })?;
+            if !katalog.erlaubt(typ, feld_id) {
+                return Err(Abweisung::KatalogNichtFreigegeben {
+                    schreiber: schreiber.to_string(),
+                    feld_id: feld_id.to_owned(),
+                    typ,
+                });
+            }
+            pruefe_magnitude(feld_id, wert, schreiber)?;
+        }
+        pruefe_bindung(feld_id, wert, bindung)
+    }
+
     /// Auflage B (`store.py:368-381`): hoechstens ein aktives Event je `feld_id`; Ueberschreiben
     /// nur ueber ein gueltiges `ersetzt`-Ziel.
-    fn pruefe_auflage_b(&self, neu: &NeuesEvent) -> Result<(), Abweisung> {
-        match neu.ersetzt {
+    fn pruefe_auflage_b(&self, feld_id: &str, ersetzt: Option<EventId>) -> Result<(), Abweisung> {
+        match ersetzt {
             None => {
                 // Invariante: jeder Index in `aktiv` zeigt auf ein vorhandenes Event (einziger
                 // Schreibpfad ist `push_geprueft`, das Index und Vec gemeinsam pflegt). Ein
@@ -589,12 +688,12 @@ impl Store {
                 // fail-open als "kein aktives Event" statt zu paniken.
                 if let Some(aktives_event) = self
                     .aktiv
-                    .get(&neu.feld_id)
+                    .get(feld_id)
                     .and_then(|&idx| self.datei.events.get(idx))
                     .map(|e| e.event_id)
                 {
                     return Err(Abweisung::AktivesEventVorhanden {
-                        feld_id: neu.feld_id.clone(),
+                        feld_id: feld_id.to_owned(),
                         aktives_event,
                     });
                 }
@@ -604,7 +703,7 @@ impl Store {
                 let Some(ziel_event) = self.datei.events.iter().find(|e| e.event_id == ziel) else {
                     return Err(Abweisung::ErsetztZielUnbekannt(ziel));
                 };
-                if ziel_event.feld_id != neu.feld_id {
+                if ziel_event.feld_id != feld_id {
                     return Err(Abweisung::ErsetztFeldMismatch);
                 }
                 if self.datei.events.iter().any(|e| e.ersetzt == Some(ziel)) {
@@ -967,6 +1066,23 @@ fn snapshot_id(felder: &BTreeMap<String, SnapshotFeld>) -> Result<EventId, Snaps
     let value = serde_json::to_value(felder)
         .map_err(|e| SnapshotFehler::WertNichtDarstellbar(e.to_string()))?;
     Ok(EventId::von_json(&value))
+}
+
+/// Der Schreiber, wie Python ihn fuer die Auflagen A/K1/F2 klassifiziert: nach Praefix
+/// (`startswith`, `store.py:111-118` und `:262-308`), nicht nach Gleichheit wie
+/// [`Schreiber::from_str`]. `import:beleg2` ist dort ein Beleg-Schreiber und faellt unter A, K1
+/// und F2; als `Mensch` entkaeme er allen dreien.
+fn python_schreiber(roh: &str) -> Schreiber {
+    if roh.starts_with("import:beleg") {
+        Schreiber::ImportBeleg
+    } else if roh.starts_with("import:vorjahr") {
+        Schreiber::ImportVorjahr
+    } else if roh.starts_with("import:kontoauszug") {
+        Schreiber::ImportKontoauszug
+    } else {
+        roh.parse()
+            .unwrap_or_else(|u: std::convert::Infallible| match u {})
+    }
 }
 
 /// Auflage T (Typ) + Auflage V (Vorzeichen) + Auflage W (Wertebereich) + Auflage F (Format), `store.py:193-248`, `_pruefe_typ_konformitaet`.

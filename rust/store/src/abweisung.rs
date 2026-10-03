@@ -170,6 +170,41 @@ pub fn auflage_a_erwartung(schreiber: &Schreiber) -> Option<(&'static str, &'sta
     }
 }
 
+/// Warum [`crate::store::Store::append_roh`] ein Event abweist: eine Auflage des Stores, oder eine
+/// der drei Pruefungen, die in [`crate::store::Store::append`] das Typsystem erledigt (ein
+/// `signal_2`, das kein Text ist; `bestaetigt` ohne Beleg; ein `ersetzt`, das keine Kennung ist).
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum AbweisungRoh {
+    #[error(transparent)]
+    Store(#[from] Abweisung),
+    /// `store.py:481`.
+    #[error("fail-closed: signal_2 muss Text oder null sein, nicht {typ}.")]
+    Signal2KeinText { typ: String },
+    /// `store.py:485`.
+    #[error("fail-closed: zustand=bestaetigt braucht ein signal_2 (Zwei-Signal).")]
+    BestaetigtOhneSignal2,
+    /// `store.py:497`: das `ersetzt`-Ziel ist keine Kennung eines Events im Log.
+    #[error("fail-closed (B): ersetzt-Ziel {0} existiert nicht.")]
+    ErsetztZielText(String),
+}
+
+/// Der Name des Schreibers in der Meldung der Auflage A: Python schreibt den Praefix fest
+/// (`llm:-Schreiber`, `berechnet:-Schreiber`), nicht den ganzen Schreiber-String.
+#[must_use]
+pub fn auflage_a_name(schreiber: &Schreiber) -> String {
+    match schreiber {
+        Schreiber::Llm(_) => "llm:".to_owned(),
+        Schreiber::Berechnet(_) => "berechnet:".to_owned(),
+        Schreiber::ImportBeleg
+        | Schreiber::ImportVorjahr
+        | Schreiber::ImportKontoauszug
+        | Schreiber::ImportElster
+        | Schreiber::Engine
+        | Schreiber::Abgeleitet(_)
+        | Schreiber::Mensch(_) => schreiber.to_string(),
+    }
+}
+
 /// Auflage A, Ersetzt-Guard (`store.py:321`): `llm:`/`import:beleg`/`import:kontoauszug` duerfen
 /// nie `ersetzt` tragen. `berechnet:` ist EXEMPT (`api.py entfernung()` uebergibt dort bewusst
 /// `ersetzt=<aktives Event>`, s. Kommentar in `store.py:317-320`).

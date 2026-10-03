@@ -180,6 +180,11 @@ impl EigenerFall {
     pub fn store(&self) -> &Store {
         &self.store
     }
+
+    /// Der Fall zum Schreiben; gespeichert wird danach mit [`store::speichere`] an [`Self::pfad`].
+    pub fn store_mut(&mut self) -> &mut Store {
+        &mut self.store
+    }
 }
 
 impl FromRequestParts<Zustand> for EigenerFall {

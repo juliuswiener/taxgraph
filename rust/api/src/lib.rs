@@ -22,6 +22,7 @@ pub mod dispatch;
 pub mod eigener_fall;
 pub mod enum_labels;
 pub mod ergebnis;
+pub mod event;
 pub mod fehler;
 pub mod flow;
 pub mod fragen;

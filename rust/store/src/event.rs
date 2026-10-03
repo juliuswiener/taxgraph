@@ -205,6 +205,32 @@ pub struct NeuesEvent {
     pub ts: Option<String>,
 }
 
+/// Eingabe fuer [`crate::store::Store::append_roh`]: die Formen, die Pythons `append_event`
+/// (`store.py:365`) annimmt und die [`NeuesEvent`] im Typsystem ausschliesst — `zustand`
+/// vorlaeufig mit `signal_2`, die Alt-Form der Herkunft, ein `signal` ohne `signal_1`, ein
+/// `ersetzt` ohne gueltige Kennung. Der Schreibweg der HTTP-Schicht (`api.event`) bekommt seine
+/// Eingabe roh vom Client und muss sie so ablegen, wie Python es tut; die Event-Kennung haengt am
+/// ganzen Inhalt.
+#[derive(Debug, Clone)]
+pub struct NeuesEventRoh {
+    pub feld_id: String,
+    pub wert: PyWert,
+    pub zustand: Zustand,
+    pub herkunft: HerkunftVektor,
+    /// Der rohe Schreiber-String. Die Auflagen A/K1/F2 klassifizieren ihn wie Python nach Praefix
+    /// (`import:beleg2` ist ein Beleg-Schreiber), abgelegt wird er unveraendert.
+    pub schreiber: String,
+    /// Wie abgelegt: `signal_1` Schluessel da/fehlt, `signal_2` Text oder `null`.
+    pub signal: Signal,
+    /// `Some(Typname)`, wenn `signal_2` weder Text noch `null` war (Python: `int`, `list`, ...).
+    /// `signal.signal_2` ist dann `None`; abgelegt wird so ein Event nie.
+    pub signal_2_fremd: Option<String>,
+    /// Pythons `str(ersetzt)`; ein Text, der keine Kennung ist, trifft kein Event.
+    pub ersetzt: Option<String>,
+    /// `None` oder leer -> `_now()` (Python: `ts or _now()`).
+    pub ts: Option<String>,
+}
+
 impl NeuesEvent {
     /// ```
     /// # use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, Schreiber, Signal2, Zustand};

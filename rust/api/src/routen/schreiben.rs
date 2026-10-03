@@ -13,12 +13,17 @@ use crate::eigener_fall::{EigenerFall, FallBesitz};
 use crate::fehler::ApiFehler;
 use crate::zustand::{Koerper, KoerperRoh, Zustand};
 
-/// `POST /fall/{id}/event` — `api.event` (`api.py:494`).
+/// `POST /fall/{id}/event` — `api.event` (`api.py:495`), Rumpf in [`crate::event::event`].
 ///
 /// # Errors
-/// Die Fehler des Owner-Checks (401/403/404) und, sobald portiert, die von `api.event`.
-pub async fn event(_fall: EigenerFall, _body: Koerper) -> Result<Antwort, ApiFehler> {
-    Ok(Antwort::nicht_portiert("POST /fall/{id}/event"))
+/// Die Fehler des Owner-Checks (401/403/404) und die von `api.event`.
+pub async fn event(
+    State(z): State<Zustand>,
+    mut fall: EigenerFall,
+    Koerper(wert): Koerper,
+    KoerperRoh(roh): KoerperRoh,
+) -> Result<Antwort, ApiFehler> {
+    crate::event::event(&z, &mut fall, &wert, &roh)
 }
 
 /// `POST /fall/{id}/einreichen` — `api.einreichen` (`api.py:675`).

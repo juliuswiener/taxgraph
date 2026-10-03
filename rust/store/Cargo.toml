@@ -7,6 +7,10 @@ publish.workspace = true
 [lints]
 workspace = true
 
+[features]
+# Testbau: die Uhr steht auf `TAXGRAPH_JETZT` (s. `zeit.rs`). Nie im Produktionsbau.
+festzeit = []
+
 [dependencies]
 domain = { path = "../domain" }
 bindung = { path = "../bindung" }
