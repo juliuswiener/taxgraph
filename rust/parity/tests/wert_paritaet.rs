@@ -30,6 +30,20 @@
 //! `TypeError` von `x > 0`) muessen stimmen; `int_mit_bool` und `int_ohne_bool` melden wie `int`
 //! die Rust-Grenze ueber `i64`.
 //!
+//! `repr(x)` und `str(x)` (`PyWert::repr`, `py_str`, darunter `domain::repr_float` und `repr_str`):
+//! - `repr_float_gegen_cpython`: zwoelf Anker mit festgehaltenem Text (`1e16`, `1e-5`, `5e-324`,
+//!   `f64::MAX`, `-0.0`, die Gleichstaende `-1409149049912713.25`, `562949953421312.25`) auf beiden
+//!   Seiten, dann 10.086 Gleitkommazahlen: jede Zweierpotenz, kleine ungerade Vielfache davon, die
+//!   Kanten bei `1e16` und `1e-4`, zufaellige Bitmuster, Subnormale. Darunter 121 exakte
+//!   Gleichstaende, die `{:e}` von `std` anders schreibt.
+//! - `repr_und_py_str_gegen_cpython`: dieselben Gleitkommazahlen, jede Folge bis Laenge 4 aus `'`, `"`,
+//!   `\`, `a`, Zeilenumbruch, und 6.352 Behaelter (jedes Paar aus Skalaren als Liste und als
+//!   `dict`) -- 17.243 Werte, `repr` und `str` je einmal.
+//! - `repr_text_sweep_gegen_cpython`: `repr(c)` fuer jeden der 1.112.064 Skalarwerte. Festgehaltene
+//!   Abweichung: `repr_str` escapet Cf (153 von 170), Co (137.468) und Cn nicht, `CPython` schon
+//!   (ponytail an `repr_str`). Mehr nicht: jedes andere Zeichen, das Rust aendert, stimmt mit
+//!   `CPython` ueberein, und Rust escapet nie ein druckbares Zeichen.
+//!
 //! Braucht `python3` mit dem Repo-Umfeld (`oracle.py` importiert die Catala-Pakete eager) -- in CI
 //! standardmaessig SKIP, lokal erzwingen:
 //!
@@ -1078,4 +1092,429 @@ fn python_klasse_gegen_cpython() {
     let grenze = GrossGanz(u64::MAX).int().unwrap_err();
     assert_eq!(grenze.python_klasse(), None);
     assert!(matches!(grenze, PyFehler::I64Grenze(_)));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Block A: `repr`, `py_str` und darunter `repr_float` (ueber `Gleit`) und `repr_str` (ueber `Text`).
+
+/// 2^k als `f64`, exakt, fuer `-1074 <= k <= 1023`.
+fn zwei_hoch(k: i32) -> f64 {
+    if k >= -1022 {
+        f64::from_bits(u64::try_from(1023 + k).unwrap() << 52)
+    } else {
+        f64::from_bits(1_u64 << (k + 1074))
+    }
+}
+
+/// Die Gleitkommazahlen fuer `repr`: die Rand- und Gleichstandswerte aus dem Auftrag, jede
+/// Zweierpotenz, kleine ungerade Vielfache davon, die Kanten der Festkomma-Schranke (`1e16`, `1e-4`)
+/// und zufaellige Werte (Bitmuster, Mantisse mal Zehnerpotenz, kurze Dezimalbrueche, Subnormale).
+// `excessive_precision`: der Gleichstand ist als `f64` exakt (`...713.25`), sein kuerzester Text aber
+// `...713.2`. Das Literal bleibt, wie es im Auftrag steht.
+#[allow(clippy::cast_precision_loss, clippy::excessive_precision)]
+fn repr_gleit() -> Vec<f64> {
+    let mut v: Vec<f64> = vec![
+        0.0,
+        -0.0,
+        1.0,
+        -1.0,
+        0.5,
+        100.0,
+        0.1,
+        0.1 + 0.2,
+        1.0 / 3.0,
+        2.0 / 3.0,
+        1e15,
+        1e16,
+        -1e16,
+        9_999_999_999_999_998.0,
+        1.5e16,
+        123_456_789_012_345_680.0,
+        1e22,
+        1e23,
+        1e-4,
+        1e-5,
+        0.000_099_999_999_999_999_99,
+        0.001,
+        5e-324,
+        -5e-324,
+        f64::MIN_POSITIVE,
+        2.225_073_858_507_201e-308,
+        f64::MAX,
+        f64::MIN,
+        f64::EPSILON,
+        f64::NAN,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        // exakte Gleichstaende zweier kuerzester Kandidaten
+        -1_409_149_049_912_713.25,
+        562_949_953_421_312.25,
+        351_843_720_888_320.312_5,
+        zwei_hoch(-25),
+    ];
+    for k in -1074..=1023 {
+        v.push(zwei_hoch(k));
+        if k % 5 == 0 {
+            v.push(-zwei_hoch(k));
+        }
+    }
+    // kleine ungerade Vielfache von 2^-k: dezimal enden sie auf 5, viele davon sind Gleichstaende
+    for k in 1..=70 {
+        for m in (3..32).step_by(2) {
+            v.push(f64::from(m) * zwei_hoch(-k));
+        }
+    }
+    // Zehnerpotenzen und ihre Nachbarn, die Kanten bei 1e16 und 1e-4
+    for e in -8..=24 {
+        let zehn: f64 = format!("1e{e}").parse().unwrap();
+        for d in -20..=20_i64 {
+            v.push(f64::from_bits(
+                zehn.to_bits().checked_add_signed(d).unwrap(),
+            ));
+        }
+    }
+    for m in 0..40 {
+        v.push(1e16 + 2.0 * f64::from(m));
+        v.push(9.007_199_254_740_992e15 + f64::from(m));
+    }
+    let mut z: u64 = 0x2545_f491_4f6c_dd1d;
+    let mut naechste = || {
+        z ^= z << 13;
+        z ^= z >> 7;
+        z ^= z << 17;
+        z
+    };
+    // Ganzzahl in [2^k, 2^(k+1)) plus ein Bruch in Achteln: der Abstand der Floats ist dort 1/4 bis 1/8
+    for k in 46..53 {
+        for _ in 0..150 {
+            let n = (1_u64 << k) | (naechste() & ((1_u64 << k) - 1));
+            let x = n as f64 + (naechste() % 8) as f64 / 8.0;
+            v.push(if naechste() & 1 == 0 { x } else { -x });
+        }
+    }
+    for _ in 0..1500 {
+        v.push(f64::from_bits(naechste()));
+    }
+    for _ in 0..1000 {
+        let mantisse = (naechste() >> 11) as f64 / 9_007_199_254_740_992.0;
+        let zehn = i32::try_from(naechste() % 61).unwrap() - 30;
+        let vorzeichen = if naechste() & 1 == 0 { 1.0 } else { -1.0 };
+        v.push(vorzeichen * mantisse * 10f64.powi(zehn));
+    }
+    for _ in 0..1000 {
+        let stellen = u32::try_from(naechste() % 15).unwrap() + 1;
+        let nenner = i32::try_from(naechste() % 21).unwrap();
+        v.push((naechste() % 10_u64.pow(stellen)) as f64 / 10f64.powi(nenner));
+    }
+    for _ in 0..500 {
+        v.push(f64::from_bits(naechste() & ((1_u64 << 52) - 1)));
+    }
+    v
+}
+
+/// Die Ziffern einer Zahlschreibung: ohne Vorzeichen, Punkt, Exponent, fuehrende und folgende Nullen.
+fn nur_ziffern(t: &str) -> String {
+    let mantisse = t.trim_start_matches('-').split('e').next().unwrap_or("");
+    mantisse.replace('.', "").trim_matches('0').to_owned()
+}
+
+/// Paare, deren `CPython`-Text von Hand gemessen und hier festgehalten ist (3.12.14 und 3.14.7 gleich),
+/// damit das Orakel nicht nur "gleich" sagt: die Randwerte und die Gleichstandswerte aus dem Auftrag.
+#[allow(clippy::excessive_precision)] // wie bei `repr_gleit`: exakter Gleichstand als Literal
+const REPR_FLOAT_ANKER: [(f64, &str); 12] = [
+    (1e16, "1e+16"),
+    (1e15, "1000000000000000.0"),
+    (9_999_999_999_999_998.0, "9999999999999998.0"),
+    (1e-5, "1e-05"),
+    (1e-4, "0.0001"),
+    (5e-324, "5e-324"),
+    (f64::MAX, "1.7976931348623157e+308"),
+    (-0.0, "-0.0"),
+    (0.1 + 0.2, "0.30000000000000004"),
+    (-1_409_149_049_912_713.25, "-1409149049912713.2"),
+    (562_949_953_421_312.25, "562949953421312.2"),
+    (0.000_099_999_999_999_999_99, "9.999999999999999e-05"),
+];
+
+/// `repr(float)` gegen `CPython`: die Anker auf BEIDEN Seiten, dann der ganze Pool. Der Pool muss die
+/// Gleichstaende enthalten, die `{:e}` von `std` anders schreibt (sonst belegte er den Fix nicht).
+#[test]
+fn repr_float_gegen_cpython() {
+    if skip() {
+        return;
+    }
+    let anker: Vec<PyWert> = REPR_FLOAT_ANKER.iter().map(|(f, _)| Gleit(*f)).collect();
+    for ((f, soll), p) in REPR_FLOAT_ANKER.iter().zip(fragen("wert.repr", &anker)) {
+        assert_eq!(p, Ok(json!(soll)), "CPython {f:e}");
+        assert_eq!(domain::repr_float(*f), *soll, "Rust {f:e}");
+    }
+    // Zusaetzlich die drei Sonderwerte, deren Bits im Pool nicht als Zahl lesbar sind.
+    let sonder = [f64::NAN, f64::INFINITY, f64::NEG_INFINITY];
+    let sonder_w: Vec<PyWert> = sonder.iter().map(|f| Gleit(*f)).collect();
+    assert_eq!(
+        fragen("wert.repr", &sonder_w),
+        [Ok(json!("nan")), Ok(json!("inf")), Ok(json!("-inf"))]
+    );
+    assert_eq!(
+        sonder.map(domain::repr_float),
+        ["nan", "inf", "-inf"].map(str::to_owned)
+    );
+
+    let pool = repr_gleit();
+    let werte: Vec<PyWert> = pool.iter().map(|f| Gleit(*f)).collect();
+    let py = fragen("wert.repr", &werte);
+    let (mut abw, mut gleichstaende, mut exponent) = (Vec::new(), 0_usize, 0_usize);
+    for (f, p) in pool.iter().zip(&py) {
+        let Ok(Value::String(soll)) = p else {
+            panic!("keine Antwort: {f:e}: {p:?}");
+        };
+        let ist = domain::repr_float(*f);
+        if &ist != soll || &Gleit(*f).repr() != soll || &Gleit(*f).py_str() != soll {
+            abw.push(format!(
+                "{:016x} {f:e}: Rust {ist}, CPython {soll}",
+                f.to_bits()
+            ));
+        }
+        exponent += usize::from(soll.contains('e'));
+        // `{:e}` rundet den exakten Gleichstand auf, `CPython` auf die gerade Ziffer.
+        if f.is_finite() && nur_ziffern(&format!("{f:e}")) != nur_ziffern(soll) {
+            gleichstaende += 1;
+        }
+    }
+    println!(
+        "repr_float: {} Werte, davon mit Exponent {exponent}, Gleichstaende (std anders) {gleichstaende}, \
+         {} Abweichungen",
+        pool.len(),
+        abw.len()
+    );
+    assert!(
+        abw.is_empty(),
+        "{} Abweichungen, erste: {:#?}",
+        abw.len(),
+        &abw[..abw.len().min(20)]
+    );
+    assert!(pool.len() > 9000 && exponent > 3000 && gleichstaende > 100);
+}
+
+/// Texte fuer `repr`: jede Folge bis Laenge 4 aus `'`, `"`, `\`, `a` und Zeilenumbruch (781, damit
+/// ist die Wahl der Anfuehrungszeichen erschoepft), dazu Einzelfaelle. Ohne Zeichen aus der
+/// festgehaltenen Luecke (`repr_text_sweep_gegen_cpython`).
+fn repr_texte() -> Vec<String> {
+    let alphabet = ['\'', '"', '\\', 'a', '\n'];
+    let mut v = vec![String::new()];
+    let mut stufe = vec![String::new()];
+    for _ in 0..4 {
+        stufe = stufe
+            .iter()
+            .flat_map(|s| alphabet.iter().map(move |c| format!("{s}{c}")))
+            .collect();
+        v.extend(stufe.iter().cloned());
+    }
+    v.extend(
+        [
+            "\t",
+            "\r",
+            "\0",
+            "\x1f",
+            "\x7f",
+            "\u{80}",
+            "\u{9f}",
+            "\u{a0}",
+            "\u{ad}",
+            "\u{e4}",
+            "\u{20ac}",
+            "\u{1f600}",
+            "\u{2028}",
+            "\u{2029}",
+            "\u{200b}",
+            "\u{feff}",
+            "\u{3000}",
+            "a\u{300}",
+            "\\n",
+            "\\x41",
+            "'\"'\"",
+            "it's \"quoted\"",
+            "\u{1f600}'",
+            "tab\there",
+        ]
+        .map(str::to_owned),
+    );
+    v
+}
+
+/// Container fuer `repr`: jeder Skalar in `[x]`, `[[x]]`, `{"k": x}`, mit Schluesseln, die Anfuehrungs-
+/// zeichen tragen, dazu jedes Paar zweier Skalare als Liste und als `dict` (Trenner, Reihenfolge).
+fn repr_behaelter() -> Vec<PyWert> {
+    let mut klein = skalare();
+    klein.extend(["'", "\"", "\\", "a'b\"c", "\n"].map(|t| Text(t.to_owned())));
+    let mut v = behaelter();
+    for a in &klein {
+        v.extend((0..3).map(|art| huelle(a, art)));
+        v.push(objekt(vec![("'", a.clone())]));
+        v.push(objekt(vec![
+            ("\"'", a.clone()),
+            ("z", liste(vec![a.clone(), a.clone()])),
+        ]));
+        for b in &klein {
+            v.push(liste(vec![a.clone(), b.clone()]));
+            v.push(objekt(vec![("x", a.clone()), ("y", b.clone())]));
+        }
+    }
+    v.extend([
+        objekt(vec![
+            ("b", Ganz(1)),
+            (
+                "a",
+                liste(vec![Null, Bool(true), Gleit(1e16), Text("it's".to_owned())]),
+            ),
+        ]),
+        liste(vec![liste(vec![]), objekt(vec![])]),
+        objekt(vec![("", objekt(vec![("", liste(vec![]))]))]),
+    ]);
+    v
+}
+
+/// `repr(x)` und `str(x)` gegen `CPython` fuer Gleitkommazahlen, Texte und Container.
+#[test]
+fn repr_und_py_str_gegen_cpython() {
+    if skip() {
+        return;
+    }
+    let mut werte: Vec<PyWert> = repr_gleit().into_iter().map(Gleit).collect();
+    werte.extend(repr_texte().into_iter().map(Text));
+    werte.extend(repr_behaelter());
+    let rust = |w: &PyWert, op: &str| match op {
+        "wert.repr" => w.repr(),
+        _ => w.py_str(),
+    };
+    for op in ["wert.repr", "wert.py_str"] {
+        let py = fragen(op, &werte);
+        let mut abw = Vec::new();
+        let mut gesehen = std::collections::BTreeSet::new();
+        for (w, p) in werte.iter().zip(&py) {
+            let Ok(Value::String(soll)) = p else {
+                panic!("{op}: keine Antwort: {w:?}: {p:?}");
+            };
+            let ist = rust(w, op);
+            if &ist != soll {
+                abw.push(format!("{w:?}: Rust {ist:?}, CPython {soll:?}"));
+            }
+            gesehen.insert(soll.clone());
+        }
+        println!(
+            "{op}: {} Werte, {} verschiedene Antworten, {} Abweichungen",
+            werte.len(),
+            gesehen.len(),
+            abw.len()
+        );
+        assert!(
+            abw.is_empty(),
+            "{op}: {} Abweichungen, erste: {:#?}",
+            abw.len(),
+            &abw[..abw.len().min(20)]
+        );
+        assert!(werte.len() > 17_000 && gesehen.len() > 15_000);
+        // Das Orakel sagt nicht nur eine Art von Antwort.
+        for muster in [
+            "-0.0", "nan", "-inf", "1e+16", "5e-324", "None", "True", "\"'\"", "'\\\\'", "{}", "[]",
+        ] {
+            assert!(gesehen.iter().any(|s| s.contains(muster)), "{op}: {muster}");
+        }
+    }
+    // `str` laesst einen Text, wie er ist; `repr` setzt ihn in Anfuehrungszeichen.
+    let text = [Text("a'b".to_owned())];
+    assert_eq!(fragen("wert.py_str", &text), [Ok(json!("a'b"))]);
+    assert_eq!(fragen("wert.repr", &text), [Ok(json!("\"a'b\""))]);
+}
+
+/// `repr(c)` fuer jeden der 1.112.064 Skalarwerte `c`. Rust hat keine Tabelle der Kategorien: `druckbar`
+/// kennt Cc, Zs/Zl/Zp und 17 Cf. Der Test legt fest, was daraus folgt:
+///
+/// - Jedes `c`, das Rust NICHT unveraendert laesst (Escape, Anfuehrungszeichen), geht an `CPython`
+///   und muss denselben Text ergeben: Rust escapet nie ein druckbares `c` und nie anders.
+/// - Jedes `c`, das Rust unveraendert laesst, ist in `CPython` druckbar, oder es gehoert zur
+///   festgehaltenen Abweichung: `repr_str` escapet Cf, Co und Cn nicht (ponytail an `repr_str`).
+///   Die Menge der Kategorien und die Zahlen sind festgelegt.
+///
+/// Folge der Abweichung: ein Text mit einem Zeichen der Luecke steht in `repr`, `py_str` von Liste und
+/// `dict` und in den Fehlermeldungen von `int(text)` unescapet, `CPython` schreibt `؀`. Das ist
+/// Text, kein Betrag; der Wert selbst bleibt gleich.
+#[test]
+fn repr_text_sweep_gegen_cpython() {
+    if skip() {
+        return;
+    }
+    let a = frage(&json!({ "fn": "wert.repr_text_sweep" }));
+    let zahl = |v: &Value| u32::try_from(v.as_u64().unwrap()).unwrap();
+    let unicode = a["unicode"].as_str().unwrap();
+    let mut kategorie: Vec<Option<&str>> = vec![None; 0x11_0000];
+    for lauf in a["nicht_druckbar"].as_array().unwrap() {
+        let kat = lauf[2].as_str().unwrap();
+        for cp in zahl(&lauf[0])..=zahl(&lauf[1]) {
+            kategorie[usize::try_from(cp).unwrap()] = Some(kat);
+        }
+    }
+    assert!(
+        a["nicht_escaped"].as_array().unwrap().is_empty(),
+        "CPython laesst ein nicht druckbares Zeichen stehen: {}",
+        a["nicht_escaped"]
+    );
+    let ausnahmen: Vec<u32> = a["ausnahmen"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| zahl(&e[0]))
+        .collect();
+    assert_eq!(ausnahmen, [u32::from('\''), u32::from('\\')]);
+
+    let (mut zu_fragen, mut luecke) = (Vec::new(), Vec::new());
+    let mut je_kategorie = std::collections::BTreeMap::<&str, usize>::new();
+    for c in (0..=0x10_ffff_u32).filter_map(char::from_u32) {
+        let cp = u32::from(c);
+        let rust = Text(c.to_string()).repr();
+        if rust != format!("'{c}'") {
+            zu_fragen.push(c);
+        } else if let Some(kat) = kategorie[usize::try_from(cp).unwrap()] {
+            *je_kategorie.entry(kat).or_default() += 1;
+            luecke.push(cp);
+        }
+    }
+    let texte: Vec<PyWert> = zu_fragen.iter().map(|c| Text(c.to_string())).collect();
+    let py = fragen("wert.repr", &texte);
+    let abw: Vec<String> = texte
+        .iter()
+        .zip(&py)
+        .filter_map(|(w, p)| {
+            let ist: Ant = Ok(Value::String(w.repr()));
+            (ist != *p).then(|| format!("{w:?}: Rust {ist:?}, CPython {p:?}"))
+        })
+        .collect();
+    println!(
+        "repr-Sweep: Unicode {unicode}, {} Zeichen aendert Rust, Luecke je Kategorie {je_kategorie:?}, \
+         {} Abweichungen",
+        zu_fragen.len(),
+        abw.len()
+    );
+    assert!(
+        abw.is_empty(),
+        "{} Abweichungen, erste: {:#?}",
+        abw.len(),
+        &abw[..abw.len().min(20)]
+    );
+    assert!(zu_fragen.len() > 80, "{}", zu_fragen.len());
+    // Die festgehaltene Abweichung: nur Cf, Co, Cn, und genau diese Zahlen.
+    assert_eq!(
+        je_kategorie.keys().copied().collect::<Vec<_>>(),
+        ["Cf", "Cn", "Co"]
+    );
+    assert_eq!(je_kategorie["Cf"], 153);
+    assert_eq!(je_kategorie["Co"], 137_468);
+    match unicode {
+        "16.0.0" => assert_eq!(je_kategorie["Cn"], 819_533),
+        "15.0.0" => assert_eq!(je_kategorie["Cn"], 825_345),
+        _ => assert!(je_kategorie["Cn"] > 800_000, "{je_kategorie:?}"),
+    }
+    for c in REPR_LUECKE {
+        assert!(luecke.contains(&u32::from(c)), "{c:?}");
+    }
 }
