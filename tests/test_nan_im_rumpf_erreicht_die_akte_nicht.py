@@ -5,7 +5,9 @@ im Body", gleicher Status, gleicher Wortlaut.
 Ebenso eine Ganzzahl außerhalb von i64 an JEDER Stelle des Rumpfs (Backlog
 python-schreibt-ganzzahl-ueber-i64-in-die-fallakte; unten, test_ganzzahl_*): Python liest sie exakt,
 Rust (ohne arbitrary_precision) nur gerundet als f64, und der Rust-Lader sperrt sie. Die Rust-Tür
-(lies_koerper) kennt diese Abweisung noch nicht, siehe Bericht haertung8.
+weist sie ebenso ab: lies_koerper ruft hat_ganzzahl_ausserhalb_i64 (rust/api/src/dispatch.rs:115) und
+antwortet 400 "ungültiges JSON im Body"; getestet in dispatch.rs,
+ganzzahl_ausserhalb_i64_wird_an_jeder_stelle_gefunden.
 
 Der Fund (Backlog falldatei-mit-nan-liest-rust-als-text, AK4, gemessen 2026-10-02): json.loads
 nimmt NaN und Infinity als Literal an, 1e400 wird still zu inf. Je Zeile des Berichts an main:

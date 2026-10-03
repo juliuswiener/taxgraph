@@ -10,7 +10,7 @@ gemessene Wert in Klammern, mit dem Befehl.
 
 ---
 
-## Fortschritt (Stand 2026-10-03, HEAD `2bc35bd4`; Gates zuletzt als Runde auf `b540590` gemessen; das Tracking-Ref `origin/claude/implementation-start-ypyyqw` steht lokal auf `55e9164d`, HEAD liegt 82 Commits davor)
+## Fortschritt (Stand 2026-10-03, HEAD `2bc35bd4`, Nachtrag „Seit `2bc35bd4` gemergt“ gemessen am Baum `cbc376a6`; Gates zuletzt als Runde auf `b540590` gemessen; das Tracking-Ref `origin/claude/implementation-start-ypyyqw` steht lokal auf `55e9164d`, HEAD liegt 82 Commits davor)
 
 CI-Lauf 37010730963 auf `8e48cf7`: **alle fünf Jobs grün** (erster ganz grüner Lauf seit dem 20.08). Das Vault-Ticket
 `github-ci-seit-20-08-rot` ist geschlossen (`backlog/archive/taxgraph/github-ci-seit-20-08-rot.md`). Gepusht ist bis `55e9164d`
@@ -42,6 +42,24 @@ CI-Lauf 37010730963 auf `8e48cf7`: **alle fünf Jobs grün** (erster ganz grüne
   Nicht-Text mit 401 ab (`2720ea3`) und schreibt einen Nicht-Text-Namen als `unbekannt` ins Protokoll (`3275a31`, `4368ebb`);
   Wächter-Pin der Kind-Frage (`0914e13`); Fremddienst-Harness, 501-Liste entfernt (`d9d51a6`); Rentenbeginn-Jahr <= 0
   sperrt, KAP-Vorschau liest nur Bestätigtes (`2bc35bd`).
+- Seit `2bc35bd4` gemergt (gemessen am Baum `cbc376a6`, 2026-10-03; der TESTMAP-Punkt gilt mit dem Zweig `orch/testmap`):
+  - **`make ui-rust`** (`5d212c31`, Merge `081e1d94`) startet die 22 UI-Dateien gegen das Rust-Binary
+    (`make -n ui-rust | tr ' ' '\n' | grep -c '^tests/'` → 22). Die 23 Tests, die gegen Rust nicht grün werden
+    können (15 LLM-Stub, 8 ERiC-Stub), stehen mit Ursache in `tools/ui_rust/ausschluss.tsv` und laufen als
+    `xfail(strict)`. Lauf auf `5d212c31` (`UI_N=3`): 249 passed, 23 xfailed, 149 s; davon starten 216 einen
+    Rust-Server, 33 sind reine Python-Prüfungen im Prozess (die Zeile `ui-rust:` am Lauf-Ende zählt das).
+    `make ui-rust-gegenprobe` (Rust endet sofort): 6 failed, wie gewollt. Auf `cbc376a6` nicht neu gelaufen;
+    nicht in der CI (kein Playwright, kein Chromium). Der Rust-Server schreibt dabei die Antwort-Kopfnamen in
+    Title-Case wie Python (`rust/api/src/dienen.rs`, `rust/api/tests/kopfnamen.rs`).
+  - **`PARITY_N`** (`aaaad5a8`, `rust/parity/src/fallzahl.rs`): ein Env-Knopf für die Fallzahl der Zufalls- und
+    Generator-Läufe. 16 der 21 `*_paritaet.rs` lesen ihn (`grep -l 'fallzahl::' rust/parity/tests/*_paritaet.rs | wc -l`
+    → 16); `api_http`, `eingang_werkzeug`, `feld_kennung`, `flow` und `wert` lesen ihn nicht. Ohne die Variable gilt
+    der Standard der Suite; ein Wert, der keine ganze Zahl ab 1 ist, bricht ab (`rust/parity/tests/fallzahl_env.rs`).
+    Wächter, die an die Standardzahl gebunden sind, laufen nur bei Standard-N (`fallzahl.rs`, `wache_gilt`).
+  - **TESTMAP-Test** (`3342d515`, Zweig `orch/testmap`, gemessen auf `cbc376a6` plus diesem Zweig): `rust/TESTMAP.tsv` hat 397 Zeilen, 331 `tests/…` und 66 `rust/…`
+    (`cut -f1 rust/TESTMAP.tsv | grep -c '^tests/'`, `'^rust/'`). `tests/test_testmap_vollstaendig.py` (läuft in
+    `make unit`) wird rot, wenn eine Datei in `tests/` oder `rust/*/tests/` keine Zeile hat;
+    `python3 tests/test_testmap_vollstaendig.py` nennt Zahl und Liste. Bericht `berichte/testmap.md`.
 
 **Gates auf `b540590`** (2026-10-03 02:28–02:39, Instructor, Hauptbaum, Skript `~/.cache/taxgraph-tmp/gate-runde.sh`,
 Log `gate-runde.log`; jede Stufe einzeln): `make unit` 3878 passed / 0 failed (14 skipped, 25 xfailed, 188 s);
@@ -104,7 +122,7 @@ Parity-Suiten ist von 19 auf 21 gestiegen (`ls rust/parity/tests/*_paritaet.rs |
 | Stille Schema-Skips | fertig: alle Rust-Tests, die das ERiC-Schema brauchen, fragen `elster::testhilfe::schemas_da` — ohne Schema rot, Skip nur mit `TAXGRAPH_OHNE_XSD=1`. Der XSD-Pfad läuft ohne Schema gegen eine selbst gebaute Mini-XSD, der leere Art-Test verlangt eine nicht leere Menge (`94b5319`). Der Rundungs-Sweep prüft die Abzugs-Kz beider Listen, ein Test verlangt Mengengleichheit (`d118ecf`). Offen: der Zufallsgenerator trifft vier der neun § 35c-Kz nie (Vault-Ticket `fuzzer-generierte-stores-erreicht-vier-p35c-kz-nie`; je Sanierungsart ein handgebauter Paritätsfall seit `3fb18c0`) | `86e9c91` · `94b5319` · `d118ecf` |
 | Veranlagungsjahr in Rust-`elster` | fertig: `deklariere(snapshot, bindung, vz, id)` wählt die Null-Verbots-Liste je Jahr wie `est_mapping.null_unzulaessig` (0 → Fehler; 2024/2025 eigene Menge; 2026–2100 Vereinigung; sonst Fehler). `elster_paritaet reale_faelle` 4 → 0 Abweichungen (fall#52/#53 eg_huge/eg_neg). Gegenprobe am Aufrufort rot. Bericht `~/.cache/taxgraph-tmp/berichte/vz.md` | `d8d5f1f` · `faef9ee` |
 | End-to-End Eingabe → Bescheid → ELSTER-XML | fertig, byte-gleich Python, 3 Fixtures VZ 2025 gegen XSD | `479deb9` |
-| Python-xfail → Rust `#[ignore]` | fertig: 24 Gegenstücke in `rust/{api,bescheid,elster}/tests/offene_defekte.rs` (`90f91aa`). **Auf `2bc35bd4` stehen dort 22 `#[ignore]`-Tests** (api 1, bescheid 11, elster 10; `grep -cE '^\s*#\[ignore' rust/*/tests/offene_defekte.rs`): `api::deklaration_umgeht_den_waechter_nicht` (`436521e`) und `bescheid::kap_vorlaeufiger_topf_leckt_in_deklaration` (`69119b9`) laufen ohne `#[ignore]`, weil der Defekt behoben ist. Unter `--ignored` rot am Defekt — Ausnahme `p23_eric_prueft_zwei_verkaeufe`: im Hauptbaum grün, weil `.env*` eine echte Hersteller-ID trägt (Umgebungs-Gate, im `#[ignore]`-Grund benannt); `test_datenwurzel_ausserhalb_repo` als grüner Rust-Test (`api/tests/datenwurzel.rs`); TESTMAP nennt je xfail das Gegenstück. Unter K2 kompilierbar erst mit `faef9ee` | `90f91aa` · `faef9ee` |
+| Python-xfail → Rust `#[ignore]` | fertig: 24 Gegenstücke in `rust/{api,bescheid,elster}/tests/offene_defekte.rs` (`90f91aa`). **Auf `cbc376a6` stehen dort 21 `#[ignore]`-Tests** (api 1, bescheid 10, elster 10; `grep -cE '^\s*#\[ignore' rust/*/tests/offene_defekte.rs`; auf `2bc35bd4` waren es 22 mit bescheid 11): `api::deklaration_umgeht_den_waechter_nicht` (`436521e`), `bescheid::kap_vorlaeufiger_topf_leckt_in_deklaration` (`69119b9`) und `bescheid::verpflegung_vorlaeufige_tage_lecken_in_deklaration` (`cbc376a6`) laufen ohne `#[ignore]`, weil der Defekt behoben ist. Unter `--ignored` rot am Defekt — Ausnahme `p23_eric_prueft_zwei_verkaeufe`: im Hauptbaum grün, weil `.env*` eine echte Hersteller-ID trägt (Umgebungs-Gate, im `#[ignore]`-Grund benannt); `test_datenwurzel_ausserhalb_repo` als grüner Rust-Test (`api/tests/datenwurzel.rs`); TESTMAP nennt je xfail das Gegenstück. Unter K2 kompilierbar erst mit `faef9ee` | `90f91aa` · `faef9ee` |
 | GitHub-CI wieder grün machen | drei Ursachen, je eine behoben: Quell-Hash locale-abhängig (`LC_ALL=C`, `e94357f`); `ttsim-backend` ungepinnt (`==1.2.1`, eine Pin-Quelle + Wächter, `1993b8d`/`f057f70`-Merge); fehlendes ERiC-Schema → laut rot, Skip nur mit `TAXGRAPH_OHNE_XSD=1`, `ci.yml` setzt es (`5b77799`). Der `rust`-Job wäre auf `5b77799` an E0308 + 6 Clippy-Fehlern aus `90f91aa` rot gewesen, behoben in `faef9ee`. **Gepusht mit `beef16b`; Lauf 36985004342: vier von fünf Jobs grün, `rust` rot an einer vierten Ursache:** die drei `parity`-Lib-Tests liefen ohne PARITY-Gate und fanden `pkg` nicht, `cargo test` brach ab, die Ziele danach liefen nicht. Behoben mit `1e3f6fb` (Lib-Tests überspringen laut, poppler im `rust`-Job, `--no-fail-fast`). **Lauf 37010730963 auf `8e48cf7`: alle fünf Jobs grün.** Vault `tickets/github-ci-seit-20-08-rot` | `e94357f` · `5b77799` · `bb41b61` |
 | Wackliger Test durch Ablage-Leck | fertig: `audit.AUDIT_DIR`/`api.FAELLE` enden an der Testdatei (autouse-Fixture in `tests/conftest.py`), Ursache pytest-randomly | `d1b0422` |
 | Pflegegrad im XSD-Enum | fertig, Py **und** Rust: 5→4, Block-Wegfall ohne H, nur E0161606 weg mit H; xmllint invalide 38 → 22; Testloch Enum-Schranke geschlossen (Vault `decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen`) | `29d66c2` |
@@ -115,7 +133,7 @@ Parity-Suiten ist von 19 auf 21 gestiegen (`ls rust/parity/tests/*_paritaet.rs |
 | Format | `cargo fmt --all --check`: 150 Hunks in 35 Dateien (`cd rust && cargo fmt --all --check`, gemessen auf `2bc35bd4`), bewusst vertagt (CI prüft nur clippy: `.github/workflows/ci.yml:320-321`; Log #165) | — |
 | dev-Profil nur Zeilentabellen | fertig: `[profile.dev] debug = "line-tables-only"` statt `debug = 2` (Auftrag Julius, Plattenplatz), `profile.test` erbt. Backtraces behalten Datei und Zeile, der Debugger sieht keine Variablen. `libstore-*.rlib` 11 804 166 B → 5 428 230 B (auf 46 %); clippy 0, `cargo test -p store` grün, Gegenprobe ohne Abschnitt → `debuginfo=2`. PARITY 17/17 grün auf `8e48cf7` | `bb01e0f` · `beef16b` |
 | Orakel liest eine Bindungsdatei einmal | fertig: `traverser.lade_datei_felder` ist je Prozess gecacht, `api._datei_felder` und beide Orakel-Skripte nutzen sie. YAML-Lesevorgänge 1509 → 32. `bescheid_deklaration_paritaet` 205 → 91 s laut Worker-Bericht, 86 s in der Nachmessung auf `8e48cf7`; die anderen 16 Suiten nicht schneller. Kosten: eine geänderte Bindungs-YAML wirkt erst nach Neustart des Prozesses (wie `lade_bindung`). Gegenproben G5/G6 in der Nachmessung je rot; Vault `research/taxgraph-bauzeit-vs-testzeit` | `6bba00d` |
-| 9c `api`-Handler | Handler fertig auf `2bc35bd4`: alle 24 Routen portiert (Routentabelle des Harness: Python 24, Rust 24); alle GET-Routen gemergt (`8d1bd96`), POST-Routen `event`, `kontoauszug`, `vorjahr` (`82bbf1e`), `chat` und `entfernung` (`c949f86`), `einreichen` (`8c89556`; nur `ERIC_VALIDIERE`, kein Versand); 9c/0b (`Username`/`FallId`-Newtypes im Owner-Check) gemergt (`0b31195`), 9c/0c und 9c/0e gemergt (`ecdfcb9`); Landkarte gemessen (15 Routen, Bericht `berichte/9c-karte.md`); Harness-Generator je Route fertig (`88f60c7`: echte Eingaben für 11 Routen aus Stufe 1–3); `NICHT_PORTIERT` entfällt (`d9d51a6`), eine Antwort `501 nicht_portiert` ist im Harness eine Abweichung (`d432948` in `4ec2d2f`, danach `d9d51a6`); `flow` ist portiert (Python-Teil `1321f3b`, Rust-Teil `ecdfcb9`) und der Mitschnitt `flow.jsonl` wird in `Modus::Voll` verglichen (Lauf auf `4368ebb` mit `--nocapture`: 60 bzw. 977 Zeilen in zwei Abschnitten, sonst 0); Vorbedingung JSON-Leser erfüllt (`d4babec`). Die Abnahme „Kontrakttest, Playwright gegen Rust“ (§7, Schritt 9c) ist hier nicht geprüft (Vault `decisions/rust-9c-generator-je-route-und-flow-portieren`) | `88f60c7` · `4ec2d2f` |
+| 9c `api`-Handler | Handler fertig auf `2bc35bd4`: alle 24 Routen portiert (Routentabelle des Harness: Python 24, Rust 24); alle GET-Routen gemergt (`8d1bd96`), POST-Routen `event`, `kontoauszug`, `vorjahr` (`82bbf1e`), `chat` und `entfernung` (`c949f86`), `einreichen` (`8c89556`; nur `ERIC_VALIDIERE`, kein Versand); 9c/0b (`Username`/`FallId`-Newtypes im Owner-Check) gemergt (`0b31195`), 9c/0c und 9c/0e gemergt (`ecdfcb9`); Landkarte gemessen (15 Routen, Bericht `berichte/9c-karte.md`); Harness-Generator je Route fertig (`88f60c7`: echte Eingaben für 11 Routen aus Stufe 1–3); `NICHT_PORTIERT` entfällt (`d9d51a6`), eine Antwort `501 nicht_portiert` ist im Harness eine Abweichung (`d432948` in `4ec2d2f`, danach `d9d51a6`); `flow` ist portiert (Python-Teil `1321f3b`, Rust-Teil `ecdfcb9`) und der Mitschnitt `flow.jsonl` wird in `Modus::Voll` verglichen (Lauf auf `4368ebb` mit `--nocapture`: 60 bzw. 977 Zeilen in zwei Abschnitten, sonst 0); Vorbedingung JSON-Leser erfüllt (`d4babec`). Die Abnahme „Kontrakttest, Playwright gegen Rust“ (§7, Schritt 9c) stand hier offen (Vault `decisions/rust-9c-generator-je-route-und-flow-portieren`); den Lauf gibt es seit `081e1d94` als `make ui-rust` (Punkt „Seit `2bc35bd4` gemergt“: 249 passed, 23 xfailed auf `5d212c31`, nicht in der CI) | `88f60c7` · `4ec2d2f` |
 | 10 Cutover | offen | — |
 
 Gates auf `8e48cf7` (2026-10-02 15:05, Instructor nachgemessen im frischen Worktree `wt-nachmessung`, Log
@@ -334,7 +352,7 @@ Abnahme je Modul: alle Golden-Eingaben + 1 000 generierte ohne Diff. Cutover: 10
 
 ## 6. Testklassifikation (301 Dateien)
 
-Stand `607aedb`. Auf `2bc35bd4` zählt `tests/` 328 `.py`-Dateien mit 82 187 Zeilen; die Tabelle ist nicht neu klassifiziert.
+Stand `607aedb`. Auf `2bc35bd4` zählt `tests/` 328 `.py`-Dateien mit 82 187 Zeilen, auf `cbc376a6` 330 mit 82 481, mit dem Zweig `orch/testmap` 331 mit 82 557 (Befehl: `ls tests/*.py | wc -l`, `cat tests/*.py | wc -l`); die Tabelle ist nicht neu klassifiziert. Die Karte `rust/TESTMAP.tsv` führt seit `3342d515` auch Rust-Dateien: 397 Zeilen = 331 mit Präfix `tests/` plus 66 mit Präfix `rust/`. Die Zahlen der Tabelle unten sind Python-Zahlen (Präfix `tests/`), nicht die der ganzen Karte. Die Spalte „Dateien“ der UI-Zeile zählt 20; `make ui-rust` startet 22 Dateien mit `sync_playwright` (Stand `cbc376a6`).
 
 Quelle: `tests_part{1,2}.tsv` (Klassifikation nach Docstring, Imports und Stichproben — **derived**,
 nicht jede Datei vollständig gelesen; Zeilen/Testzahlen nachgezählt, **explicit**).
@@ -360,7 +378,9 @@ Tragende Ersetzungen der NOT_PORTED-Gruppe (Details je Datei in der TSV, wird al
 - Partner ohne Zusammenveranlagung → `Veranlagung`-Enum.
 
 Die UI-Tests (Playwright, Python) bleiben: sie prüfen das Frontend, das unverändert bleibt, und sind
-damit genau der End-to-End-Test „Frontend gegen Rust-API" aus Phase 4.
+damit genau der End-to-End-Test „Frontend gegen Rust-API" aus Phase 4. Der Lauf steht als `make ui-rust`
+(Abschnitt Fortschritt); die Liste der 23 Tests, die gegen Rust nicht grün werden können, ist
+`tools/ui_rust/ausschluss.tsv`.
 
 ---
 
@@ -433,7 +453,9 @@ Korrigierter Messstand: 92 `pub fn` mit `&str` (≈32 tragen Regeln); 75 `_ =>`,
 
 Arbeitsregeln ab jetzt: ein Commit je Schritt; nach jedem Schritt `cargo build`, `cargo clippy -- -D warnings`,
 `cargo test` und **alle** Parity-Suiten; jeder nicht portierte Python-Test nennt in Commit-Nachricht und
-`rust/TESTMAP.tsv` den Typ oder die Property, die ihn ersetzt; Routen, Payloads, Fehlerformate,
+`rust/TESTMAP.tsv` den Typ oder die Property, die ihn ersetzt; jede neue Testdatei in `tests/` oder
+`rust/*/tests/` braucht eine Zeile in `rust/TESTMAP.tsv`, sonst ist `make unit` rot
+(`tests/test_testmap_vollstaendig.py`); Routen, Payloads, Fehlerformate,
 Bescheid-Text und XML bleiben identisch, jeder Fixture-Diff wird im Commit erklärt.
 
 ---
