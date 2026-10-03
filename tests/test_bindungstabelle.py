@@ -2348,3 +2348,53 @@ def test_die_laengenpruefung_wird_rot_bei_65_zeichen():
     grenze = _url_grenze_feld_id()
     assert _zu_lange_kennungen({"a" * (grenze + 1): {}, "b": {}}, grenze) == ["a" * (grenze + 1)]
     assert _zu_lange_kennungen({"a" * grenze: {}}, grenze) == []
+
+
+# ---------------------------------------------------------------------------------------------------
+# Das Ziel eines `und_feld` ist kein Zahlfeld (Vault decisions/und-feld-ziel-ist-kein-zahlfeld-bis-die-
+# nullfrage-entschieden-ist). Eine Ableitung mit `und_feld` prueft, ob dieses Feld "leer" ist. Python
+# (`store._rechne_ab`: `wert in (None, "", False)`) zaehlt die Zahl 0 als leer, Rust (`rechne_ab`) nicht.
+# Traegt das Ziel eine 0, laeuft die Ableitung in Python nicht und in Rust doch. Heute loest das nirgends
+# aus: genau ein `und_feld`, Typ `text`. Dieser Waechter schreibt keine Verhaltensaenderung vor, er zwingt
+# die Entscheidung genau dann, wenn jemand ein Zahlfeld als `und_feld` einsetzt.
+# ---------------------------------------------------------------------------------------------------
+
+def _und_feld_zahlziele(bindung: dict) -> list:
+    """(Feld mit `ableitung`, sein `und_feld`, dessen Typ) fuer jedes `und_feld` mit Zahltyp cent/int.
+    Bei `bool` stimmen beide Fassungen ueberein (`false` ist in beiden leer, 0 lehnt der Typcheck ab);
+    `text`, `datum` und `enum` lehnen 0, 0.0 und `false` am Speicher ab."""
+    treffer = []
+    for fid, eintrag in bindung.items():
+        und = (eintrag.get("ableitung") or {}).get("und_feld")
+        if und and (bindung.get(und) or {}).get("typ") in ("cent", "int"):
+            treffer.append((fid, und, bindung[und]["typ"]))
+    return sorted(treffer)
+
+
+def test_kein_und_feld_ziel_ist_ein_zahlfeld():
+    # Positivkontrolle zuerst: die Pruefung sieht ein Zahlziel, sonst bewiese das Gruen unten nichts.
+    # Erfunden: `a` und `c` zeigen auf ein int- bzw. cent-Feld, `b` auf Text, `d` auf bool, `e` hat keins.
+    erfunden = {
+        "a": {"typ": "bool", "ableitung": {"aus": "x", "art": "jahr_aus_datum", "und_feld": "z_int"}},
+        "b": {"typ": "bool", "ableitung": {"aus": "x", "art": "jahr_aus_datum", "und_feld": "z_text"}},
+        "c": {"typ": "bool", "ableitung": {"aus": "x", "art": "jahr_aus_datum", "und_feld": "z_cent"}},
+        "d": {"typ": "bool", "ableitung": {"aus": "x", "art": "jahr_aus_datum", "und_feld": "z_bool"}},
+        "e": {"typ": "bool", "ableitung": {"aus": "x", "art": "jahr_aus_datum"}},
+        "z_int": {"typ": "int"}, "z_text": {"typ": "text"}, "z_cent": {"typ": "cent"}, "z_bool": {"typ": "bool"},
+    }
+    assert _und_feld_zahlziele(erfunden) == [("a", "z_int", "int"), ("c", "z_cent", "cent")]
+    assert _und_feld_zahlziele({k: v for k, v in erfunden.items() if k not in ("a", "c")}) == []
+
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "traverser"))
+    import traverser as TR  # noqa: E402
+
+    bindung = TR.lade_bindung()
+    assert len(bindung) > 300, f"nur {len(bindung)} Kennungen geladen -- der Test saehe nichts"
+    treffer = _und_feld_zahlziele(bindung)
+    assert treffer == [], (
+        f"und_feld mit Zahltyp {treffer} (Feld, und_feld, Typ). Python liest eine 0 am und_feld als leer, "
+        "Rust nicht: dieselbe Akte rechnet verschieden. Erst entscheiden -- Rust `PyWert::py_eq` "
+        "(rust/domain/src/py_wert.rs) im `und_feld`-Zweig von `rechne_ab` oder die Python-Zeile in "
+        "`_rechne_ab` aendern --, dann diesen Test lockern "
+        "(Vault: decisions/und-feld-ziel-ist-kein-zahlfeld-bis-die-nullfrage-entschieden-ist).")
