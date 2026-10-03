@@ -375,9 +375,6 @@ enum Modus {
     Voll,
     /// Nur der Status: die Meldung haengt an einem Parser (Python `json`, `yaml`), den Rust nicht teilt.
     NurStatus,
-    /// Status, Header und Body, aber nicht das Audit: Python schreibt einen Nicht-Text-Namen roh ins
-    /// Audit (`user_id: 5`), `store::audit` kennt nur Text.
-    OhneAudit,
 }
 
 #[derive(Default)]
@@ -990,10 +987,15 @@ fn handgeschrieben_auth(p: &mut Paar) {
     a!(po("login leerer Name", "/auth/login").json(&reg("", "passwort123")));
     a!(po("login fehlt username", "/auth/login").json(&json!({"password": "x"})));
     a!(po("login Name Liste", "/auth/login").json(&json!({"username": [], "password": "x"})));
-    p.anfrage(
-        &po("login Name Zahl", "/auth/login").json(&json!({"username": 5, "password": "x"})),
-        Modus::OhneAudit,
-    );
+    // Ein Nicht-Text als Name steht in beiden Protokollen als `unbekannt`, nie als Rohwert oder `repr`
+    // (Vault decisions/login-protokolliert-einen-nicht-text-namen-als-unbekannt). Mit Audit-Vergleich.
+    a!(po("login Name Liste gefuellt", "/auth/login")
+        .json(&json!({"username": ["x"], "password": "x"})));
+    a!(po("login Name Zahl", "/auth/login").json(&json!({"username": 5, "password": "x"})));
+    // JSON `true` ist nicht der echte, registrierbare Nutzer "True": sein `repr` darf nicht im Protokoll stehen.
+    a!(po("register Name True", "/auth/register").json(&reg("True", "passwort123")));
+    a!(po("login Name true", "/auth/login")
+        .json(&json!({"username": true, "password": "passwort123"})));
     a!(po("login Passwort Zahl, unbekannter Nutzer", "/auth/login")
         .json(&json!({"username": "niemand", "password": 5})));
     a!(po("login Body Liste", "/auth/login").json(&json!([1, 2])));
