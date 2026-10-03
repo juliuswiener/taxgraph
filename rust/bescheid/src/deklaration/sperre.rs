@@ -143,7 +143,7 @@ fn abs3_guards(k: &K<'_>) -> Grund {
     Ok(None)
 }
 
-/// § 34 Abs. 3 fuer A + Veraeusserungsgewinn des Ehegatten (Python `abs3_partner_gewinn_offen`, AK2b,
+/// § 34 Abs. 3 fuer A + Veraeusserungsgewinn des Ehegatten (Python `abs3_partner_gewinn_offen`, `AK2b`,
 /// Entscheid 2026-10-03): der Chooser glaettet nur den Gewinn von A, der des Partners bliebe ungeglaettet.
 /// Trigger = ROHER Partner-Gewinn (vor Freibetrag) > 0 (nicht `netto_vg_partner`) UND zusammen UND der Chooser nimmt
 /// Abs. 3 ([`abs3_wird_gerechnet`]). Alles auf bestaetigten Feldern: ein vorlaeufiger Wert urteilt nicht.

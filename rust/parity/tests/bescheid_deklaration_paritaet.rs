@@ -1776,7 +1776,7 @@ fn p34_antrag_zwilling() {
 }
 
 /// § 34 Abs. 3 fuer A + Veraeusserungsgewinn beim Ehegatten (`abs3_partner_gewinn_offen`, Vault
-/// `p34-antrag-ohne-kennzahl-erreicht-elster-nicht` AK2b, Entscheid 2026-10-03): zusammen UND Antrag
+/// `p34-antrag-ohne-kennzahl-erreicht-elster-nicht` `AK2b`, Entscheid 2026-10-03): zusammen UND Antrag
 /// bestaetigt UND Berechtigung UND 0 < `netto_vg` <= 5 Mio UND ROHER Partner-Gewinn > 0; nur bestaetigte
 /// Felder urteilen, ein Betrag <= 0 sperrt nie. Je Fall: Python gleich Rust (alle fuenf Funktionen) UND
 /// der erwartete Grund an PYTHON festgenagelt (ein Fall, in dem beide Seiten aus demselben falschen Grund
@@ -1784,12 +1784,12 @@ fn p34_antrag_zwilling() {
 /// Freibetrag sperrt. Rust-hermetisch ohne Python: `bescheid/tests/abs3_partner_gewinn.rs`.
 #[test]
 fn p34_partner_gewinn_sperre() {
-    if skip() {
-        return;
-    }
     const GRUND: &str = "abs3_partner_gewinn_offen";
     const KEINE: &str = "(keine Sperre)";
     type Paare = Vec<(&'static str, Value, bool)>;
+    if skip() {
+        return;
+    }
     let basis = |abw: &[(&'static str, Value, bool)]| -> Paare {
         let mut e: Paare = vec![
             ("veranlagung", json!("zusammen"), true),
