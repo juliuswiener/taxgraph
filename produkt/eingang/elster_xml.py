@@ -88,11 +88,18 @@ E10_AUSSCHLUSS_DATENART: dict[str, str] = {
 #                       2026-10-01: ein Topf mit zwei Posten ergab zwei <HA_35a> mit je einem
 #                       <Einz> statt einem <HA_35a> mit zwei <Einz>; von mehreren Posten erreichte
 #                       nur einer die Datei.
+#   rente:              <R> traegt maxOccurs=2 (ein <R> je PERSON, Index 1 = PersonB), die Renten
+#                       einer Person stehen als <Einz> (maxOccurs=99) in <Leibr_gesetzl>|<Leibr_priv>|
+#                       <Leibr_sonst> (je maxOccurs=1; E10-2025.xsd:20901, 20980, 21019). Ohne Eintrag
+#                       legte die zweite Rente einer Person ein zweites <R> an (PersonB) -- ERiC lehnt
+#                       bei Einzelveranlagung ab (rc=610001002, "keine Anlage R fuer Person B").
+#                       Gemessen 2026-10-03.
 INSTANZ_CONTAINER_TIEFER: dict[str, str] = {
     "p23_veraeusserung": "Einz",
     "hh_minijob": "Einz",
     "hh_dienstleistung": "Einz",
     "hh_handwerker": "Einz",
+    "rente": "Einz",
 }
 
 
@@ -562,6 +569,15 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
     # instanz-Eintrag auf seiner Ebene -> _einhaengen() findet-oder-legt-erstes an), die
     # Wiederholung sitzt am eingetragenen Segment. Gruppen-gebunden statt pfadbasiert, weil z.B.
     # "Einz" als Elementname im E10-Schema generisch fuer viele andere Anlagen wiederkehrt.
+    #
+    # Im tieferen Container zaehlt der RANG der Instanz, nicht ihre Gruppen-Nummer: Hat Person A eine
+    # gesetzliche (Instanz 1) und eine private Rente (Instanz 2), steht die private als ERSTER Posten
+    # in <Leibr_priv>. Die Gruppen-Nummer 2 legte davor ein leeres <Einz> an (ERiC: "Kontext
+    # '/R[1]/Leibr_priv[1]/Einz[1]' ist leer"). Rang = Platz unter den Instanzen DERSELBEN Gruppe,
+    # die in denselben Container schreiben; Instanz 1 steht in `deklaration` und belegt Platz 0, wenn
+    # dort ein Kz von ihr im Container liegt.
+    rohe_eintraege: list[tuple[str, str, tuple, int, object]] = []   # (kz, gruppe, container, idx_0, wert)
+    belegt: dict[tuple[str, tuple], set[int]] = {}                  # (gruppe, tieferer container) -> idx_0
     instanz_map: dict[str, list[tuple[tuple, int, object]]] = {}
     for gruppe, instanzen in anlage_instanzen.items():
         for inst in instanzen:
@@ -586,9 +602,18 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
                 tiefer_segment = INSTANZ_CONTAINER_TIEFER.get(gruppe)
                 if tiefer_segment and tiefer_segment in kz_path:
                     container = kz_path[:kz_path.index(tiefer_segment) + 1]
+                    belegt.setdefault((gruppe, container), set()).add(inst_idx_0)
                 else:
                     container = kz_path[:2]   # ("E10", "<Direktkind>")
-                instanz_map.setdefault(kz, []).append((container, inst_idx_0, wert))
+                rohe_eintraege.append((kz, gruppe, container, inst_idx_0, wert))
+
+    for (_gruppe, container), plaetze in belegt.items():
+        if any(pfade[kz][:len(container)] == container for kz in deklaration if kz in pfade):
+            plaetze.add(0)   # Instanz 1 (Person A, `deklaration`) steht schon im ersten <Einz>
+    for kz, gruppe, container, inst_idx_0, wert in rohe_eintraege:
+        plaetze = belegt.get((gruppe, container))
+        rang = sorted(plaetze).index(inst_idx_0) if plaetze else inst_idx_0
+        instanz_map.setdefault(kz, []).append((container, rang, wert))
 
     ns_e10 = NS_E10.format(vz=vz)
     ET.register_namespace("", NS_ELSTER)
