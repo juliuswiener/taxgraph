@@ -846,10 +846,11 @@ impl Store {
                 else {
                     continue;
                 };
-                // ponytail: `store.py:577` prueft `wert in (None, "", False)` mit Pythons
+                // ponytail: `store.py::_rechne_ab` prueft `wert in (None, "", False)` mit Pythons
                 // `==` — dort zaehlen auch `0` und `0.0` als leer, hier nicht. Die Divergenz
                 // ist aelter als K2 (sie stand schon auf `Value`) und wird im heutigen Bestand
-                // nicht ausgeloest. Upgrade: `PyWert::py_eq` gegen `Null`/`Text("")`/`Bool(false)`,
+                // nicht ausgeloest; `tests/test_bindungstabelle.py::test_kein_und_feld_ziel_ist_ein_zahlfeld`
+                // haelt das fest. Upgrade: `PyWert::py_eq` gegen `Null`/`Text("")`/`Bool(false)`,
                 // nach einer Messung ueber die Nullwerte des Bestands (s. Risikokarte).
                 //
                 // ponytail: strukturelle Gleichheit auf `PyWert` ist Wire-Roundtrip, KEIN
@@ -932,7 +933,7 @@ impl Store {
     }
 
     /// Faltet den Log-Praefix (bis inkl. `bis_event`, sonst alles) zu `feld_id -> SnapshotFeld` +
-    /// `snapshot_id` (`store.py:577-603`, `materialisiere`). Append-only + `ersetzt`-Aufloesung:
+    /// `snapshot_id` (`store.py::materialisiere`). Append-only + `ersetzt`-Aufloesung:
     /// ein spaeter ersetztes Event zaehlt nicht.
     ///
     /// # Errors
