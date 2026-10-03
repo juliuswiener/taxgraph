@@ -180,6 +180,46 @@ def test_steuerzeichen_im_textwert_ist_harter_fehler():
         EX.erzeuge_xml(_dekl(E0161806="\x00"), vz=2025, hersteller_id=HID)
 
 
+@pytest.mark.parametrize("wert,zeichen,vorschlag", [
+    ("Kowalski Anna", "geschütztes Leerzeichen (U+00A0)", "ein normales Leerzeichen"),
+    ("Müller–Straße", "„–\" (U+2013)", "„-\""),
+    ("Wałesa", "„ł\" (U+0142)", "„l\""),
+    ("Maier\tMüller", "Tabulator (U+0009)", "ein normales Leerzeichen"),
+    ("Maier\nMüller", "Zeilenumbruch (U+000A)", "ein normales Leerzeichen"),
+], ids=["nbsp", "gedankenstrich", "l-mit-strich", "tabulator", "zeilenumbruch"])
+def test_zeichen_ausserhalb_des_elster_zeichensatzes_ist_harter_fehler(wert, zeichen, vorschlag):
+    """Ticket elster-zeichensatz-strenger-als-xml, AK5: die zweite Sperre an der XML-Erzeugung. Ein Wert,
+    der vor der Store-Regel gespeichert wurde (Alt-Store, Import), kommt nicht ins XML — er scheiterte
+    sonst erst bei ELSTER. Die Meldung nennt Element, Zeichen und Vorschlag, nie den Wert (PII)."""
+    with pytest.raises(EX.XmlFehler, match="ELSTER in Textfeldern nicht annimmt") as exc:
+        EX.erzeuge_xml(_dekl(E0100201=wert), vz=2025, hersteller_id=HID)
+    meldung = str(exc.value)
+    assert "Element E0100201" in meldung and zeichen in meldung and vorschlag in meldung, meldung
+    assert "Müller" not in meldung and "Maier" not in meldung and "Kowalski" not in meldung, meldung
+
+
+def test_altbestand_mit_unerlaubtem_zeichen_passiert_die_xml_erzeugung_nicht():
+    """AK5 durch den ganzen Weg: ein Wert, den ein Alt-Store ohne Zeichensatz-Regel angenommen hat
+    (append_event OHNE bindung=, wie vor der Regel), wird deklariert und scheitert erst am Writer."""
+    s = ST.leerer_store(2025, fall_id="zs-altbestand")
+    for fid, wert in (("stammdaten_nachname", "Wałesa"), ("veranlagung", "einzel")):
+        ST.append_event(s, feld_id=fid, wert=wert, zustand="bestaetigt",
+                        herkunft={"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                        schreiber="ui:laie", signal={"signal_1": None, "signal_2": "ok"},
+                        ts="2026-10-01T12:00:00+00:00")
+    snap, sid = ST.materialisiere(s)
+    dekl = EM.deklariere(snap, TR.lade_bindung(), snapshot_id=sid, vz=2025)
+    assert dekl["deklaration"]["E0100201"] == "Wałesa"
+    with pytest.raises(EX.XmlFehler, match=r"Element E0100201 enthält das Zeichen „ł\" \(U\+0142\)"):
+        EX.erzeuge_xml(dekl, vz=2025, hersteller_id=HID)
+
+
+def test_erlaubte_zeichen_kommen_ins_xml():
+    """Gegenprobe zu AK5: Umlaute, ß, € und Œ gehen durch die zweite Sperre und stehen im XML."""
+    xml = EX.erzeuge_xml(_dekl(E0100201="Müller-Größe ß € Œuvre"), vz=2025, hersteller_id=HID)
+    assert "<E0100201>Müller-Größe ß € Œuvre</E0100201>" in xml
+
+
 # ----------------------------------------------------------------- XSD-Gate
 
 @braucht_xsd

@@ -1223,6 +1223,19 @@ fn pruefe_bindung(
             });
         }
     }
+    // Auflage Z (Zeichensatz): jedes `typ: text` endet im Schema auf StringBaseCType oder einem
+    // engeren Muster; dessen Zeichensatz ist enger als XML (`domain::zeichensatz`). Zuletzt, wie in
+    // `store.py`: T, V, W und F behalten ihre Klasse und Meldung, ein Steuerzeichen seine eigene.
+    // Laden prueft nie.
+    if let (domain::Feldtyp::Text, Some(zeichen)) = (
+        eintrag.typ,
+        text.and_then(domain::zeichensatz::erstes_unerlaubtes_zeichen),
+    ) {
+        return Err(Abweisung::ZeichensatzVerletzt {
+            feld_id: feld_id.to_string(),
+            zeichen,
+        });
+    }
     Ok(())
 }
 

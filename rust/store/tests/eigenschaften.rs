@@ -548,8 +548,14 @@ proptest! {
 /// GANZE Fallakte lud nicht mehr), machte aus NEL (U+0085) ein Leerzeichen und liess ein
 /// Leerzeichen neben U+2028/U+2029 fallen — der `event_id` passte danach nicht mehr zum Text.
 /// Die Rust-`api` laedt ueber `lade` (`api/src/eigener_fall.rs:80`).
+///
+/// Seit Auflage Z weist `append` DEL/C1/U+2028 an einem Textfeld ab (ELSTER nimmt sie nicht an,
+/// `rust/store/tests/zeichensatz.rs`). Die Akten mit solchen Werten gibt es trotzdem: sie stammen
+/// von vor Auflage Z. Der Test legt sie darum ohne Bindung an (`leer`, wie ein Altbestand) und
+/// prueft, dass `lade` sie unveraendert zurueckgibt: Laden prueft nie.
 #[test]
 fn textfeld_mit_c1_zeichen_laedt_wieder() {
+    let leer = HashMap::new();
     let dir = std::env::temp_dir().join(format!(
         "taxgraph-store-eigenschaften-c1-{}",
         std::process::id()
@@ -568,7 +574,7 @@ fn textfeld_mit_c1_zeichen_laedt_wieder() {
         let mut s = Store::leer(2025, None);
         let ts = "2026-01-01T00:00:00+00:00".to_string();
         let neu = neues_event("stammdaten_nachname", &json!(text), true, None, ts);
-        s.append(&neu, None, nachschlag()).unwrap();
+        s.append(&neu, None, BindungNachschlag::neu(&leer)).unwrap();
         store::speichere(&pfad, s.datei()).unwrap();
         match store::lade(&pfad) {
             Ok(d) if d.events == s.datei().events => None,

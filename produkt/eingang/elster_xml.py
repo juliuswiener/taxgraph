@@ -29,6 +29,7 @@ sys.path.insert(0, os.path.join(PRODUKT, "traverser"))
 import xsd_verify as XV   # noqa: E402  (amtlicher Kz -> Element-Pfad aus dem E10-XSD)
 sys.path.insert(0, os.path.join(PRODUKT, "store"))
 import store as ST        # noqa: E402  (nur_xml_zeichen: dieselbe Zeichenpruefung wie Auflage T)
+import zeichensatz as ZS  # noqa: E402  (ELSTER-Zeichensatz: dieselbe Regel wie Auflage Z)
 
 NS_ELSTER = "http://www.elster.de/elsterxml/schema/v11"
 NS_E10 = "http://finkonsens.de/elster/elstererklaerung/est/e10/v{vz}"
@@ -788,6 +789,11 @@ def erzeuge_xml(result: dict, *, vz: int = 2025, empfaenger_land: str = "BY",
             raise XmlFehler(
                 f"Element {name} enthält ein Steuerzeichen, das im XML nicht zulässig ist — "
                 "ELSTER wiese die ganze Abgabe ab. Wert nicht geloggt.")
+        # Dieselbe zweite Linie fuer den ELSTER-Zeichensatz (Auflage Z): Altbestaende und Importe, die
+        # vor der Regel gespeichert wurden, passieren die XML-Erzeugung nicht.
+        meldung = ZS.element_meldung(el.tag.rsplit("}", 1)[-1], el.text) if isinstance(el.text, str) else None
+        if meldung:
+            raise XmlFehler(meldung)
     ET.indent(wurzel, space="\t")
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + _serialisiere(wurzel, ns_e10)
 

@@ -19,8 +19,11 @@ import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, ROOT)
+# store.py importiert zeichensatz.py flach (wie im Produktionsstart, wo produkt/store auf dem Pfad liegt);
+# `from produkt.store import store` unten braucht den Pfad, sonst findet es das Nachbarmodul nicht.
+sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
 
-_CAT = os.path.join(ROOT, "oracle", "gettsim", "_catala")
+_CAT =os.path.join(ROOT, "oracle", "gettsim", "_catala")
 sys.path.insert(0, os.path.join(_CAT, "rt"))
 sys.path.insert(0, _CAT)
 
@@ -236,6 +239,8 @@ def _fehlerklasse(msg: str) -> str:
         return "TypInkonform"
     if msg.startswith("fail-closed (Format):"):
         return "FormatInkonform"
+    if msg.startswith("fail-closed (Zeichensatz):"):
+        return "ZeichensatzVerletzt"
     if msg.startswith("fail-closed (Vorzeichen):"):
         return "NegativerBetrag"
     if msg.startswith("fail-closed (Bereich):"):
@@ -456,6 +461,13 @@ def main() -> None:
             sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
             import feld_kennung_oracle  # noqa: E402
             sys.stdout.write(json.dumps(feld_kennung_oracle.handle(req), ensure_ascii=False) + "\n")
+            sys.stdout.flush()
+            continue
+        if str(req.get("fn", "")).startswith("zeichensatz."):
+            # lazy wie oben: tools/parity/zeichensatz_oracle.py (ELSTER-Zeichensatz, Auflage Z)
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import zeichensatz_oracle  # noqa: E402
+            sys.stdout.write(json.dumps(zeichensatz_oracle.handle(req), ensure_ascii=False) + "\n")
             sys.stdout.flush()
             continue
         if str(req.get("fn", "")).startswith("bescheid."):
