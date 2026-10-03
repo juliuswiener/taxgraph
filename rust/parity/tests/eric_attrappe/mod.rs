@@ -404,10 +404,10 @@ fn thread_von(meta: &str) -> Option<String> {
 }
 
 fn ohne_thread(meta: &str) -> String {
-    meta.lines()
-        .filter(|z| !z.starts_with("thread="))
-        .map(|z| format!("{z}\n"))
-        .collect()
+    meta.lines().filter(|z| !z.starts_with("thread=")).fold(String::new(), |mut s, z| {
+        let _ = writeln!(s, "{z}");
+        s
+    })
 }
 
 /// Was die Attrappe sah: `(meta, xml)` je Aufruf, in der Reihenfolge.
