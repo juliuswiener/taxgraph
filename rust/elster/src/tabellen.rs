@@ -351,3 +351,142 @@ pub(crate) fn suche<'a>(tabelle: &'a [(&'a str, &'a str)], schluessel: &str) -> 
         .find(|(k, _)| *k == schluessel)
         .map(|(_, v)| *v)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::{json, Map, Value};
+
+    /// Abbild der Kz-Tabellen aus `est_mapping.py`, erzeugt von `tools/parity/dump_kz_tabellen.py`
+    /// (Python-Gegenstueck: `tests/test_kz_tabellen_fixture.py`). Beide Tests laufen ohne `PARITY=1`:
+    /// ein Tausch oder Tippfehler in `tabellen.rs` ist sonst nur mit dem Python-Orakel sichtbar
+    /// (`elster_paritaet`); `Kz::ist_gueltig` prueft nur die Form, nicht, ob die Kz die richtige ist.
+    const FIXTURE: &str = include_str!("../../fixtures/kz_tabellen.json");
+
+    fn fixture() -> Value {
+        serde_json::from_str(FIXTURE).unwrap()
+    }
+
+    fn sortiert(liste: &[&str]) -> Value {
+        let mut l = liste.to_vec();
+        l.sort_unstable();
+        json!(l)
+    }
+
+    /// Objekt aus `(Schluessel, Wert)`-Paaren; ein doppelter Schluessel ist ein Fehler der Tabelle.
+    fn objekt(paare: &[(&str, &str)]) -> Value {
+        let m: Map<String, Value> = paare
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), json!(v)))
+            .collect();
+        assert_eq!(m.len(), paare.len(), "doppelter Schluessel in {paare:?}");
+        Value::Object(m)
+    }
+
+    fn verzweigung(tabelle: &[Verzweigung]) -> Value {
+        let m: Map<String, Value> = tabelle
+            .iter()
+            .map(|v| {
+                let eintrag = json!({"art_feld": v.art_feld, "kz": objekt(&v.kz.paare())});
+                (v.feld.to_owned(), eintrag)
+            })
+            .collect();
+        assert_eq!(m.len(), tabelle.len(), "doppeltes Feld in der Verzweigung");
+        Value::Object(m)
+    }
+
+    fn dokumentiert_aggregat() -> Value {
+        let m: Map<String, Value> = DOKUMENTIERT_AGGREGAT
+            .iter()
+            .map(|(kz, felder)| ((*kz).to_owned(), sortiert(felder)))
+            .collect();
+        Value::Object(m)
+    }
+
+    fn wertekodierung() -> Value {
+        let m: Map<String, Value> = WERTEKODIERUNG
+            .iter()
+            .map(|w| {
+                let code: Map<String, Value> = Konfession::ALLE
+                    .into_iter()
+                    .filter_map(|k| (w.code)(k).map(|c| (k.als_str().to_owned(), json!(c))))
+                    .collect();
+                (w.feld.to_owned(), json!({"kz": w.kz, "code": code}))
+            })
+            .collect();
+        Value::Object(m)
+    }
+
+    /// Die Tabellen in der Form von `dump_kz_tabellen.tabellen()`.
+    fn aus_tabellen() -> Value {
+        json!({
+            "konstante_kz": sortiert(KONSTANTE_KZ),
+            "iban_transform_ziel_kz": sortiert(IBAN_TRANSFORM_ZIEL_KZ),
+            "negation": objekt(NEGATION),
+            "dokumentiert_aggregat": dokumentiert_aggregat(),
+            "p23": {
+                "betragsfelder": sortiert(P23_BETRAGSFELDER),
+                "art_feld": P23_ART_FELD,
+                "gewinn_kz": objekt(P23_GEWINN_KZ),
+            },
+            "verzweigung": verzweigung(VERZWEIGUNG),
+            "partner_verzweigung": verzweigung(PARTNER_VERZWEIGUNG),
+            "partner_instanz": objekt(PARTNER_INSTANZ),
+            "pflege_kz": sortiert(PFLEGE_KZ),
+            "wertekodierung": wertekodierung(),
+        })
+    }
+
+    /// Jeder Eintrag, der in `tabellen.rs` und in der Fixture verschieden steht (Pfad + beide Werte).
+    fn abweichungen(pfad: &str, rust: &Value, fix: &Value, aus: &mut Vec<String>) {
+        match (rust, fix) {
+            (Value::Object(r), Value::Object(f)) => {
+                let schluessel = r.keys().chain(f.keys().filter(|k| !r.contains_key(*k)));
+                for k in schluessel {
+                    let weg = format!("{pfad}/{k}");
+                    match (r.get(k), f.get(k)) {
+                        (Some(a), Some(b)) => abweichungen(&weg, a, b, aus),
+                        (a, b) => aus.push(format!("{weg}: Rust {a:?}, Fixture {b:?}")),
+                    }
+                }
+            }
+            _ if rust != fix => aus.push(format!("{pfad}: Rust {rust}, Fixture {fix}")),
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn tabellen_gleich_fixture() {
+        let mut aus = Vec::new();
+        abweichungen("", &aus_tabellen(), &fixture(), &mut aus);
+        assert!(
+            aus.is_empty(),
+            "tabellen.rs weicht von rust/fixtures/kz_tabellen.json ab (est_mapping.py ist die Quelle: \
+             erst `python3 tools/parity/dump_kz_tabellen.py`, dann tabellen.rs nachziehen):\n  {}",
+            aus.join("\n  ")
+        );
+    }
+
+    /// Gegenprobe gegen „beide Seiten leer“ oder einen Vergleich, der nie etwas findet (nur Fixture und
+    /// Helfer, nicht die Tabellen: eine Abweichung dort macht diesen Test nicht zusätzlich rot).
+    #[test]
+    fn der_vergleich_sieht_einen_unterschied_und_die_fixture_ist_nicht_leer() {
+        let fix = fixture();
+        let p35c = &fix["verzweigung"]["p35c_massnahme_einzelbetrag"]["kz"];
+        assert_eq!(
+            p35c.as_object().map(Map::len),
+            Some(9),
+            "neun Sanierungsarten"
+        );
+        assert!(p35c.get("heizung").is_some());
+        let nicht_leer = |v: &Value| v.as_object().is_some_and(|m| !m.is_empty());
+        assert!(nicht_leer(&fix["negation"]) && nicht_leer(&fix["p23"]["gewinn_kz"]));
+
+        let mut geaendert = fix.clone();
+        geaendert["verzweigung"]["p35c_massnahme_einzelbetrag"]["kz"]["heizung"] =
+            json!("E0241599");
+        let mut aus = Vec::new();
+        abweichungen("", &geaendert, &fix, &mut aus);
+        assert!(aus.len() == 1 && aus[0].contains("heizung"), "{aus:?}");
+    }
+}
