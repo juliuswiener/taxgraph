@@ -3515,6 +3515,13 @@ fn generatoren() {
             r#"{"signal_1": 9223372036854775807, "signal_2": null}"#,
         ),
         roher_text("kap_gewinn_aktien", "1", r#"{"signal_1": [], "signal_2": "x"}"#),
+        // Abgewiesen (Typ): der Mitschnitt `abgewiesen` traegt `wert` in der Reihenfolge des Clients.
+        roher_text(
+            "ep_oepnv_kosten",
+            r#"{"z": 1, "a": [1E5, 1e-7, 1e22], "ä": "x"}"#,
+            "null",
+        ),
+        roher_text("ep_oepnv_kosten", "[1.0, -0.0, 1e16]", "null"),
         roher_text("ep_oepnv_kosten", "1e22", "null"),
         roher_text("ep_oepnv_kosten", "1e5", "null"),
         roher_text("ep_oepnv_kosten", "0.1", "null"),

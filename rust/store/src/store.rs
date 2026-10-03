@@ -569,12 +569,10 @@ impl Store {
         }
         let ersetzt = match &neu.ersetzt {
             None => None,
-            // Eine Kennung ist genau der kleingeschriebene Hex-Text, den `EventId` ausgibt.
+            // Eine Kennung ist genau der kleingeschriebene Hex-Text, den `EventId` ausgibt; `parse`
+            // nimmt nichts anderes (Grossbuchstaben, `+`, falsche Laenge: `ErsetztZielText`).
             Some(text) => Some(
-                EventId::parse(text)
-                    .ok()
-                    .filter(|id| id.to_string() == *text)
-                    .ok_or_else(|| AbweisungRoh::ErsetztZielText(text.clone()))?,
+                EventId::parse(text).map_err(|_| AbweisungRoh::ErsetztZielText(text.clone()))?,
             ),
         };
         self.pruefe_auflage_b(&neu.feld_id, ersetzt)?;
