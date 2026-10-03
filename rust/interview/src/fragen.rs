@@ -170,7 +170,7 @@ fn nach_themen<'r>(
         let (eingang, rest): (Vec<&Bindung>, Vec<&Bindung>) =
             gruppe.iter().partition(|b| b.eingangsfrage);
         let geordnet: Vec<&Bindung> = eingang.into_iter().chain(rest).collect();
-        *gruppe = nach_vordruck(&geordnet, gw, gewicht_aktiv);
+        *gruppe = nach_ausloesern(nach_vordruck(&geordnet, gw, gewicht_aktiv));
     }
     let folge = themen_folge(&themen, sicht, graph, angefangen);
     let mut out = Vec::with_capacity(felder.len());
@@ -186,6 +186,58 @@ fn nach_themen<'r>(
         "Themenfolge verliert oder verdoppelt Felder"
     );
     out
+}
+
+/// Ein Feld mit `ableitung` steht hinter seinen Ausloesern (`aus`, `und_feld`), auch im selben
+/// Thema (`_nach_ausloesern`, `traverser.py`; Vault: `decisions/ableitung-feuert-je-instanz-und-
+/// frage-nach-beiden-ausloesern`, Punkt 2). `themen_folge` ordnet nur THEMEN; innerhalb eines
+/// Themas stand das Ziel `kind_unter_14_haushaltszugehoerig` (Gate) vor seinem `und_feld` (Slot),
+/// und wer der Queue folgte, beantwortete es, bevor die Ableitung feuern konnte.
+///
+/// Das Ziel bleibt eine Frage; nur seine STELLE aendert sich: direkt hinter den letzten Ausloeser,
+/// der noch weiter hinten steht. Mehrere Nachzuegler hinter demselben Ausloeser behalten ihre
+/// Reihenfolge, die Menge bleibt gleich. Ein Ausloeser mit eigener `ableitung` zaehlt nicht (keine
+/// Ketten; er koennte selbst nachruecken und seinen Nachzuegler verlieren), ebenso wenig einer, der
+/// nicht in der Gruppe steht (anderes Thema, schon beantwortet).
+// ponytail: nur Ausloeser derselben Gruppe. Liegt ein `und_feld` in einem anderen Thema, ordnet
+// `themen_folge` es nicht vor (dort gilt nur `aus`); heute gibt es keinen solchen Fall.
+fn nach_ausloesern(gruppe: Vec<&Bindung>) -> Vec<&Bindung> {
+    let ort: HashMap<&str, usize> = gruppe
+        .iter()
+        .enumerate()
+        .map(|(i, b)| (b.feld_id.as_str(), i))
+        .collect();
+    // Index des Ausloesers -> Indizes seiner Nachzuegler, in Gruppenordnung.
+    let mut hinter: HashMap<usize, Vec<usize>> = HashMap::new();
+    for (i, b) in gruppe.iter().enumerate() {
+        let Some(regel) = &b.ableitung else {
+            continue;
+        };
+        let weiter_hinten = [Some(regel.aus.as_str()), regel.und_feld.as_deref()]
+            .into_iter()
+            .flatten()
+            .filter_map(|x| ort.get(x).copied())
+            .filter(|&j| j > i && gruppe.get(j).is_some_and(|a| a.ableitung.is_none()))
+            .max();
+        if let Some(j) = weiter_hinten {
+            hinter.entry(j).or_default().push(i);
+        }
+    }
+    if hinter.is_empty() {
+        return gruppe;
+    }
+    let nachgezogen: HashSet<usize> = hinter.values().flatten().copied().collect();
+    let mut aus = Vec::with_capacity(gruppe.len());
+    for (i, &b) in gruppe.iter().enumerate() {
+        if nachgezogen.contains(&i) {
+            continue;
+        }
+        aus.push(b);
+        for k in hinter.get(&i).into_iter().flatten() {
+            aus.extend(gruppe.get(*k).copied());
+        }
+    }
+    aus
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -325,4 +377,70 @@ fn themen_folge<'r>(
     }
     folge.extend(offen);
     folge
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Eine Bindung der echten Registry, umbenannt; `ableitung` je nach `regel` gesetzt oder leer.
+    fn feld(id: &str, regel: Option<(&str, Option<&str>)>) -> Bindung {
+        let reg = crate::doctest_registry().expect("registry");
+        let vorlage = reg
+            .dateien
+            .iter()
+            .flat_map(|(_, d)| &d.bindungen)
+            .find(|b| b.feld_id == "kind_unter_14_haushaltszugehoerig")
+            .expect("Vorlage")
+            .clone();
+        let mut b = vorlage.clone();
+        b.feld_id = id.to_owned();
+        b.ableitung = regel.map(|(aus, und)| {
+            let mut a = vorlage
+                .ableitung
+                .clone()
+                .expect("Vorlage traegt eine ableitung");
+            a.aus = aus.to_owned();
+            a.und_feld = und.map(str::to_owned);
+            a
+        });
+        b
+    }
+
+    fn ids(v: &[&Bindung]) -> Vec<String> {
+        v.iter().map(|b| b.feld_id.clone()).collect()
+    }
+
+    /// Gegenstueck zu `test_nachzuegler_behalten_ihre_reihenfolge_und_gehen_nicht_verloren`.
+    #[test]
+    fn nachzuegler_behalten_ihre_reihenfolge_und_gehen_nicht_verloren() {
+        let regel = Some(("q", Some("u")));
+        let (z1, z2) = (feld("z1", regel), feld("z2", regel));
+        let (v, q, u, w) = (
+            feld("v", None),
+            feld("q", None),
+            feld("u", None),
+            feld("w", None),
+        );
+        let ordnung = |gruppe: Vec<&Bindung>| ids(&nach_ausloesern(gruppe));
+        assert_eq!(
+            ordnung(vec![&z1, &z2, &v, &q, &u, &w]),
+            ["v", "q", "u", "z1", "z2", "w"]
+        );
+        // Steht schon alles richtig, aendert sich nichts.
+        assert_eq!(
+            ordnung(vec![&q, &u, &z1, &z2, &v, &w]),
+            ["q", "u", "z1", "z2", "v", "w"]
+        );
+        // Fehlt ein Ausloeser in der Gruppe, bleibt das Ziel stehen oder folgt dem anderen.
+        assert_eq!(ordnung(vec![&z1, &v, &q]), ["v", "q", "z1"]);
+        assert_eq!(ordnung(vec![&z1, &v, &w]), ["z1", "v", "w"]);
+    }
+
+    /// Ein Ausloeser mit eigener `ableitung` zaehlt nicht: keine Kette, nichts geht verloren.
+    #[test]
+    fn ausloeser_mit_eigener_ableitung_zaehlt_nicht() {
+        let (a, b) = (feld("a", Some(("b", None))), feld("b", Some(("a", None))));
+        assert_eq!(ids(&nach_ausloesern(vec![&a, &b])), ["a", "b"]);
+    }
 }

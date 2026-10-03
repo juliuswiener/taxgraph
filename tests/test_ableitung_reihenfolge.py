@@ -315,6 +315,137 @@ def test_ableitung_ohne_instanz_gruppe_ignoriert_den_suffix():
     assert not [f for f in _abgeleitet(s) if f.endswith("__2")]
 
 
+# ---- Die Frage-Reihenfolge: das Ziel nach seinem und_feld ------------------------
+# Gemessen 2026-10-03 auf 431ca41c, Geburtsdatum bekannt (fuenf Jahre), `api.fragen`:
+#   Ziel `kind_unter_14_haushaltszugehoerig` Platz 209, `…zeitraum` Platz 211 von 218.
+# Wer der Reihenfolge folgt, beantwortet das Ziel zuerst — ein „Nein" kostet 4.800 EUR. Beantwortet
+# er den Zeitraum zuerst, feuert die Ableitung und das Ziel verschwindet aus der Queue.
+# Das Ziel ist ein Gate (`geltungsbedingung`, Gewicht > 0), der Zeitraum ein Slot: Gates stehen
+# vor Slots, und `_nach_vordruck` sortiert nur innerhalb einer Klasse.
+
+ZEITRAUM = HAUS[0]
+
+
+def _pos(queue, feld):
+    return queue.index(feld) if feld in queue else None
+
+
+def test_ziel_wird_nach_seinem_und_feld_gefragt():
+    """Geburtsdatum + Kosten bekannt, Zeitraum offen: der Zeitraum steht vor dem Ziel."""
+    q = TR.naechste_fragen(_store(GEB, KOSTEN), BINDUNG)
+    assert _pos(q, ZEITRAUM) is not None and _pos(q, FELD) is not None, "Fragen fehlen in der Queue"
+    assert _pos(q, ZEITRAUM) < _pos(q, FELD), (
+        f"das Ableitungsziel steht auf {_pos(q, FELD)}, sein und_feld auf {_pos(q, ZEITRAUM)}: "
+        "wer der Reihenfolge folgt, beantwortet das Ziel, bevor die Ableitung feuern kann")
+
+
+def test_leere_queue_hat_das_ziel_hinter_dem_und_feld():
+    """Auch ohne jede Antwort (Platz 331 gegen 333 auf 431ca41c)."""
+    q = TR.naechste_fragen(ST.leerer_store(VZ, fall_id="leer"), BINDUNG)
+    assert _pos(q, ZEITRAUM) < _pos(q, FELD)
+
+
+def test_wer_der_queue_folgt_wird_nie_nach_dem_ziel_gefragt():
+    """Der Ablauf, nicht die Momentaufnahme: die Queue wird beantwortet, Kopf fuer Kopf. Sobald
+    eines der beiden Felder am Kopf steht, ist es der Zeitraum — und danach ist das Ziel weg."""
+    s = _store(GEB, KOSTEN)
+    gefragt = []
+    for _ in range(len(TR.naechste_fragen(s, BINDUNG))):
+        q = TR.naechste_fragen(s, BINDUNG)
+        kopf = next((f for f in q if f in (ZEITRAUM, FELD)), None)
+        if kopf is None:
+            break
+        gefragt.append(kopf)
+        if kopf == FELD:
+            break
+        _setze(s, ZEITRAUM, HAUS[1])          # der Nutzer folgt der Queue und beantwortet den Zeitraum
+    assert gefragt == [ZEITRAUM], f"gefragt in dieser Reihenfolge: {gefragt}"
+    assert FELD not in TR.naechste_fragen(s, BINDUNG)
+    assert _wert(s)["wert"] is True
+    assert _abzug(s) == 4800
+
+
+def test_rueckfall_ueber_14_haelt_das_ziel_fragbar_und_hinter_dem_und_feld():
+    """Die Behinderungs-Ausnahme: das Ziel bleibt eine Frage (Entscheidung hergeleitete-felder-
+    bleiben-als-rueckfall-fragbar), nur die Reihenfolge aendert sich."""
+    q = TR.naechste_fragen(_store(("kind_geburtsdatum", "01.03.2009"), KOSTEN), BINDUNG)
+    assert FELD in q
+    assert _pos(q, ZEITRAUM) < _pos(q, FELD)
+
+
+def test_die_umordnung_verliert_und_verdoppelt_keine_frage():
+    """Gegenprobe zur Queue: dieselbe Menge, nur anders geordnet."""
+    q = TR.naechste_fragen(ST.leerer_store(VZ, fall_id="leer"), BINDUNG)
+    assert len(q) == len(set(q))
+    kandidaten = {f for f, b in BINDUNG.items() if b.get("askable")}
+    assert set(q) <= kandidaten
+
+
+def test_api_fragen_stellt_das_ziel_hinter_den_zeitraum(tmp_path, monkeypatch):
+    """Der echte Weg (`api.fragen`), wie ihn die Oberflaeche liest: Geburtsdatum bekannt, Ziel
+    und Zeitraum offen. Danach beantwortet der Nutzer den Zeitraum, und das Ziel ist weg."""
+    import api as API
+    import audit
+    from _kegel import kegel_fuer
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
+
+    def laie(fld, w):
+        return {"feld_id": fld, "wert": w, "zustand": "bestaetigt",
+                "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                "schreiber": "ui:laie", "signal": {"signal_1": None, "signal_2": f"ok@{fld}"}}
+
+    st, r = API.fall_anlegen({"scheibe": "gesamt", "veranlagungszeitraum": VZ, "fall_id": "k-reihenfolge"})
+    assert st == 201, r
+    for feld, wert in kegel_fuer("gesamt", {"bruttoarbeitslohn": 6000000}) + [KOSTEN, GEB]:
+        st, r = API.event("k-reihenfolge", laie(feld, wert))
+        assert st == 201, (feld, st, r)
+
+    def queue():
+        st, obj = API.fragen("k-reihenfolge")
+        assert st == 200, obj
+        return [f["feld_id"] for f in obj["fragen"]]
+
+    q = queue()
+    assert _pos(q, ZEITRAUM) is not None and _pos(q, FELD) is not None
+    assert _pos(q, ZEITRAUM) < _pos(q, FELD), (
+        f"api.fragen: Ziel Platz {_pos(q, FELD)}, Zeitraum Platz {_pos(q, ZEITRAUM)} von {len(q)}")
+    st, r = API.event("k-reihenfolge", laie(*HAUS))
+    assert st == 201, r
+    assert FELD not in queue()
+
+
+def _nach_ausloesern_probe():
+    """Synthetische Bindung: zwei Ableitungen mit dem GLEICHEN und_feld und eine mit `aus` im
+    selben Thema — die Nachzuegler behalten ihre Reihenfolge, nichts geht verloren."""
+    thema = {"regel_id": "t"}
+    b = {
+        "z1": {"quelle": thema, "ableitung": {"aus": "q", "und_feld": "u"}},
+        "z2": {"quelle": thema, "ableitung": {"aus": "q", "und_feld": "u"}},
+        "v": {"quelle": thema},
+        "q": {"quelle": thema},
+        "u": {"quelle": thema},
+        "w": {"quelle": thema},
+    }
+    return b
+
+
+def test_nachzuegler_behalten_ihre_reihenfolge_und_gehen_nicht_verloren():
+    b = _nach_ausloesern_probe()
+    gruppe = ["z1", "z2", "v", "q", "u", "w"]
+    assert TR._nach_ausloesern(gruppe, b) == ["v", "q", "u", "z1", "z2", "w"]
+    # Steht schon alles richtig, aendert sich nichts.
+    richtig = ["q", "u", "z1", "z2", "v", "w"]
+    assert TR._nach_ausloesern(richtig, b) == richtig
+    # Fehlt ein Ausloeser in der Gruppe (anderes Thema / schon beantwortet), bleibt das Ziel stehen.
+    assert TR._nach_ausloesern(["z1", "v", "q"], b) == ["v", "q", "z1"]
+    assert TR._nach_ausloesern(["z1", "v", "w"], b) == ["z1", "v", "w"]
+    # Ein Ausloeser mit eigener ableitung zaehlt nicht (keine Kette): nichts geht verloren.
+    ring = {"a": {"quelle": {"regel_id": "t"}, "ableitung": {"aus": "b"}},
+            "b": {"quelle": {"regel_id": "t"}, "ableitung": {"aus": "a"}}}
+    assert TR._nach_ausloesern(["a", "b"], ring) == ["a", "b"]
+
+
 # ---- Die Monatsfrage: zwei Regeln, zwei Zeitbezuege, zwei Antworten --------------
 
 def _monatsfall(s, feld, monate):

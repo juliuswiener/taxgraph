@@ -90,7 +90,15 @@ def test_gates_stehen_nach_gewicht_absteigend():
     for regel, felder in je_thema.items():
         # Die Eingangsfrage steht immer vorn (s. traverser._nach_themen) — auch wenn sie kein Gate
         # ist. Sie darf die Gewichts-Reihenfolge der übrigen also nicht widerlegen.
-        felder = [f for f in felder if not bindung[f].get("eingangsfrage")]
+        #
+        # Ein Ableitungsziel steht dagegen HINTER seinem Auslöser (`_nach_ausloesern`, 2026-10-03,
+        # Vault: decisions/ableitung-feuert-je-instanz-und-frage-nach-beiden-ausloesern, Punkt 2):
+        # `kind_unter_14_haushaltszugehoerig` ist ein Gate, sein und_feld ein Slot, und wer das Ziel
+        # vor dem Zeitraum beantwortet, nimmt der Ableitung die Gelegenheit zu feuern. Das Ziel ist
+        # die einzige Ausnahme der Gate-vor-Slot-Regel; die Ordnung der übrigen Gates bleibt. Dass
+        # das Ziel hinter seinem Auslöser steht, prüft tests/test_ableitung_reihenfolge.py.
+        felder = [f for f in felder
+                  if not bindung[f].get("eingangsfrage") and not bindung[f].get("ableitung")]
         gewichte = [gw.get(f, 0) for f in felder if gw.get(f, 0) > 0]
         assert gewichte == sorted(gewichte, reverse=True), (
             f"{regel}: Gates stehen nicht absteigend nach Gewicht: "
