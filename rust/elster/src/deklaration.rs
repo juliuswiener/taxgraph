@@ -1030,6 +1030,7 @@ mod tests {
         SnapshotFeld, Value, Zustand, PARTNER_VERZWEIGUNG, VERZWEIGUNG,
     };
     use crate::tabellen::PFLEGE_KZ;
+    use crate::tabellen::WERTEKODIERUNG;
 
     #[test]
     fn iban_pruefziffer() {
@@ -1506,5 +1507,41 @@ mod tests {
         for f in ["rentner_renten_art", "rentner_renten_art_partner"] {
             assert_eq!(werte(f), Rentenart::ALLE.map(Rentenart::als_str), "{f}");
         }
+    }
+
+    /// Klasse i: jeder Code, den `WERTEKODIERUNG` schreiben kann, steht in der Werteliste seiner Kz
+    /// im Schema. Der Zweig sitzt im Crate, weil die Tabelle `pub(crate)` ist (Vault:
+    /// `decisions/typpruefung-bindung-gegen-schema-bekommt-in-rust-einen-test-kein-build-skript`);
+    /// `tests/bindungs_typ_vs_xsd_typ.rs` prueft denselben Weg ueber `deklariere`. Ohne Schema rot,
+    /// ausser `TAXGRAPH_OHNE_XSD=1`.
+    #[test]
+    fn wertekodierung_codes_stehen_in_der_werteliste() {
+        if !crate::testhilfe::schemas_da(2025) {
+            return;
+        }
+        let pfad = crate::finde_schema(2025, "E10-{jahr}.xsd").unwrap();
+        let meta = crate::kz_meta(&pfad, "E10").unwrap();
+        let mut codes = 0;
+        for w in WERTEKODIERUNG {
+            let enums = &meta
+                .get(w.kz)
+                .unwrap_or_else(|| panic!("{}: Kz {} nicht im Schema", w.feld, w.kz))
+                .enums;
+            assert!(!enums.is_empty(), "{}: Kz {} ohne Werteliste", w.feld, w.kz);
+            for k in Konfession::ALLE {
+                if let Some(code) = (w.code)(k) {
+                    codes += 1;
+                    assert!(
+                        enums.iter().any(|e| e == code),
+                        "{}: {k:?} -> {code:?}, Kz {} erlaubt nur {enums:?}",
+                        w.feld,
+                        w.kz
+                    );
+                }
+            }
+        }
+        // KONTROLLE: zwei Felder mit je drei Codes (keine, evangelisch, roemisch-katholisch);
+        // „andere" hat keinen. Ein Lauf ohne Code haette nichts geprueft.
+        assert_eq!(codes, 6, "gepruefte Codes");
     }
 }
