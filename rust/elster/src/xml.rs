@@ -329,6 +329,15 @@ fn pruefe_zeichen(k: &Knoten) -> Result<(), XmlFehler> {
             k.name
         )));
     }
+    // Dieselbe zweite Linie fuer den ELSTER-Zeichensatz (Auflage Z): Altbestaende und Importe, die
+    // vor der Regel gespeichert wurden, passieren die XML-Erzeugung nicht (`elster_xml.py`).
+    if let Some(meldung) = k
+        .text
+        .as_deref()
+        .and_then(|t| domain::zeichensatz::element_meldung(&k.name, t))
+    {
+        return Err(XmlFehler(meldung));
+    }
     k.kinder.iter().try_for_each(pruefe_zeichen)
 }
 

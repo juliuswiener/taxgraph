@@ -150,9 +150,9 @@ pub fn uebernehme_in_reihenfolge(
     })
 }
 
-/// Die vier Abweisungen der Wertpruefung (Auflage T, V, W und F; Python: Praefix `fail-closed
-/// (Typ)`/`(Vorzeichen)`/`(Bereich)`/`(Format)`). Nur sie ueberspringt [`uebernehme`], jede andere
-/// bricht ab.
+/// Die fuenf Abweisungen der Wertpruefung (Auflage T, V, W, F und Z; Python: Praefix `fail-closed
+/// (Typ)`/`(Vorzeichen)`/`(Bereich)`/`(Format)`/`(Zeichensatz)`). Nur sie ueberspringt [`uebernehme`],
+/// jede andere bricht ab.
 fn ist_pruef_abweisung(e: &SchreibFehler) -> bool {
     matches!(
         e,
@@ -161,6 +161,7 @@ fn ist_pruef_abweisung(e: &SchreibFehler) -> bool {
                 | Abweisung::NegativerBetrag { .. }
                 | Abweisung::WertAusserhalbBereich { .. }
                 | Abweisung::FormatInkonform { .. }
+                | Abweisung::ZeichensatzVerletzt { .. }
         )
     )
 }
@@ -194,7 +195,8 @@ mod tests {
     use crate::vorschlag::SchreibFehler;
 
     /// Entscheidung `vorjahr-unpassenden-altwert-ueberspringen`: ein Altwert, den die Wertpruefung
-    /// abweist (Steuerzeichen, Muster, Bereich, Vorzeichen), reisst die uebrigen Vorschlaege nicht mit.
+    /// abweist (Steuerzeichen, Muster, Bereich, Vorzeichen, Zeichensatz), reisst die uebrigen Vorschlaege
+    /// nicht mit.
     #[test]
     fn abgewiesener_altwert_wird_uebersprungen() {
         let nachschlag = BindungNachschlag::neu(crate::doctest_bindung().unwrap());
@@ -205,6 +207,11 @@ mod tests {
             ("kind_wohnsitz_inland_zeitraum", json!("01.01-31.122")), // Auflage F: Muster
             ("geburtsjahr", json!(1899)),                 // Auflage W: Bereich 1900..2010
             ("hh_handwerker_betrag", json!(-5000)),       // Auflage V: Betrag ohne Minus
+            // Auflage Z: Gedankenstrich
+            (
+                "rentner_gepflegter_angaben",
+                json!("Mutter\u{2013}Pflegegrad"),
+            ),
         ]
         .into_iter()
         .map(|(f, wert)| {
@@ -222,6 +229,7 @@ mod tests {
                 "geburtsjahr",
                 "hh_handwerker_betrag",
                 "kind_wohnsitz_inland_zeitraum",
+                "rentner_gepflegter_angaben",
                 "stammdaten_nachname"
             ]
         );
@@ -255,6 +263,10 @@ mod tests {
             wert: 1899,
             min: 1900,
             max: 2010,
+        }));
+        assert!(ueberspringt(Abweisung::ZeichensatzVerletzt {
+            feld_id: "f".into(),
+            zeichen: '\u{2013}',
         }));
         assert!(!ueberspringt(Abweisung::AktivesEventVorhanden {
             feld_id: "f".into(),

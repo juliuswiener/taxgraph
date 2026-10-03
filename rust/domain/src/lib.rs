@@ -33,6 +33,7 @@ mod veranlagung;
 mod vorschlag_typ;
 mod vz;
 mod wert;
+pub mod zeichensatz;
 mod zustand;
 
 pub use fall_id::{FallId, UngueltigeFallId};

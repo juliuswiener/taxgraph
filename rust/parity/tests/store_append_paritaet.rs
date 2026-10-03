@@ -455,6 +455,7 @@ fn abweisung_klasse(a: &Abweisung) -> &'static str {
         Abweisung::WertNichtDarstellbar { .. } => "WertNichtDarstellbar",
         Abweisung::TypInkonform { .. } => "TypInkonform",
         Abweisung::FormatInkonform { .. } => "FormatInkonform",
+        Abweisung::ZeichensatzVerletzt { .. } => "ZeichensatzVerletzt",
         Abweisung::NegativerBetrag { .. } => "NegativerBetrag",
         Abweisung::WertAusserhalbBereich { .. } => "WertAusserhalbBereich",
         Abweisung::AktivesEventVorhanden { .. } => "AktivesEventVorhanden",
@@ -602,6 +603,42 @@ fn szenario_zeilenumbruch(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSp
     let mut spec = leer_spec();
     spec.feld_id.clone_from(&feld.feld_id);
     spec.wert = json!(format!("{}\n", korrekt.as_str()?));
+    spec.schreiber = nicht_vorschlag_schreiber(cursor);
+    Some(spec)
+}
+
+/// Auflage Z (Ticket `elster-zeichensatz-strenger-als-xml`): Texte mit Zeichen, die ELSTER nicht
+/// annimmt, und solche, die es annimmt, an einem Textfeld. Beide Seiten muessen dieselbe Klasse
+/// melden: `ZeichensatzVerletzt` (Tabulator, NBSP, Gedankenstrich, „ł", C1, U+2028, BOM, Emoji),
+/// `TypInkonform` (NUL: Steuerzeichen), `FormatInkonform` an einem Feld mit `muster` (F kommt vor Z)
+/// oder die gleiche `event_id` (Umlaute, ß, €, Œ). Der Satz der Codepunkte selbst steht in
+/// `store_zeichensatz_paritaet.rs`.
+fn szenario_zeichensatz(cursor: &mut Cursor, pools: &Pools) -> Option<AufrufSpec> {
+    const TEXTE: [&str; 14] = [
+        "Maier–Müller",
+        "Wałesa",
+        "Kowalski\u{a0}Anna",
+        "Maier\tMüller",
+        "Maier\nMüller",
+        "O’Brien",
+        "Fortsetzung…",
+        "Mül\u{85}ler",
+        "Maier\u{2028}Müller",
+        "\u{feff}Maier",
+        "Smile \u{1f600}",
+        "Maier\u{0}",
+        "Müller ß € Œuvre",
+        "ÄÖÜäöü Straße 5",
+    ];
+    let kandidaten: Vec<&&Bindung> = pools
+        .alle
+        .iter()
+        .filter(|b| b.typ == Feldtyp::Text)
+        .collect();
+    let feld = **waehle(cursor, &kandidaten)?;
+    let mut spec = leer_spec();
+    spec.feld_id.clone_from(&feld.feld_id);
+    spec.wert = json!(TEXTE[cursor.range(TEXTE.len())]);
     spec.schreiber = nicht_vorschlag_schreiber(cursor);
     Some(spec)
 }
@@ -799,7 +836,7 @@ fn baue_aufruf(
     salt: u64,
     ts: &str,
 ) -> AufrufSpec {
-    let versuch = match cursor.range(17) {
+    let versuch = match cursor.range(18) {
         0 => szenario_vorschlag_gluecklich(cursor, pools),
         1 => szenario_auflage_a_verletzt(cursor, pools),
         2 => szenario_ersetzt_guard(cursor, pools, store),
@@ -816,6 +853,7 @@ fn baue_aufruf(
         13 => szenario_leerer_text(cursor, pools),
         15 => szenario_bereich(cursor, pools),
         16 => szenario_vorzeichen(cursor, pools),
+        17 => szenario_zeichensatz(cursor, pools),
         _ => szenario_ersetzt_bereits(cursor, store),
     };
     let mut spec = versuch

@@ -17,6 +17,8 @@ import json
 import re
 from datetime import datetime, timezone
 
+import zeichensatz as ZS   # ELSTER-Zeichensatz (Auflage Z); liegt neben store.py, wo `import store` laeuft
+
 # ------------------------------------------------------------------ Content-Adressierung
 
 def canonical_json(obj) -> str:
@@ -335,6 +337,18 @@ def _pruefe_typ_konformitaet(feld_id: str, wert, bindung: dict) -> None:
         raise ValueError(
             f"fail-closed (Format): {feld_id}={wert!r} passt nicht zum Muster '{muster}' der "
             "Bindung — ein formal falscher Wert wird spätestens beim Finanzamt abgelehnt.")
+
+    # Auflage Z (Zeichensatz), 2026-10-03 (decisions/elster-zeichensatz-beim-speichern-abweisen). Jedes
+    # `typ: text` endet im Schema auf StringBaseCType oder einem engeren Muster; dessen Zeichensatz ist enger
+    # als XML (kein Tabulator, kein Zeilenumbruch, kein „ł", kein Gedankenstrich). Abgewiesen wird mit dem
+    # Zeichen und einem Vorschlag, nie mit dem Wert (PII); die Regel selbst steht in zeichensatz.py. Laden
+    # prueft nie, die XML-Erzeugung sperrt Altbestaende (elster_xml.erzeuge_xml). Rust: Abweisung::ZeichensatzVerletzt.
+    # Zuletzt, damit jede Abweisung, die es schon gab (T, V, W, F), ihre Klasse und Meldung behaelt: ein
+    # Muster-Feld mit Zeilenende bleibt eine Format-Abweisung.
+    if typ == "text" and isinstance(wert, str):
+        zeichen = ZS.erstes_unerlaubtes_zeichen(wert)
+        if zeichen is not None:
+            raise ValueError(ZS.feld_meldung(feld_id, zeichen))
 
 
 _HERKUNFT_SCHLUESSEL = ("herkunft", "pruef_tiefe", "haftung")

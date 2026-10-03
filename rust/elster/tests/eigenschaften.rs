@@ -154,6 +154,133 @@ fn steuerzeichen_im_textwert_ist_harter_fehler() {
     );
 }
 
+/// Der Wert eines `xs:pattern` im benannten `complexType` des Schemas (roxmltree loest
+/// `&#xa;` und `&#x20;` zu den Zeichen auf).
+fn xsd_muster(schema: &roxmltree::Document<'_>, typ: &str) -> String {
+    schema
+        .descendants()
+        .find(|n| n.tag_name().name() == "complexType" && n.attribute("name") == Some(typ))
+        .and_then(|ct| ct.descendants().find(|n| n.tag_name().name() == "pattern"))
+        .and_then(|p| p.attribute("value"))
+        .unwrap_or_else(|| panic!("{typ} fehlt im Schema"))
+        .to_owned()
+}
+
+/// Ticket elster-zeichensatz-strenger-als-xml: die Menge im Code ist die des Schemas.
+/// `StringZUBaseCType` (E10-2025.xsd:1810) ohne die Zeilenumbrueche, die `StringBaseCType`
+/// (:1792) verbietet. Geprueft wird JEDES Zeichen der Ebenen 0 bis 2 (U+0000..U+2FFFF) und
+/// U+E000..U+FFFF; eine Abschrift mit einem Tippfehler wird rot. Python: `test_menge_gleicht_dem_xsd`.
+#[test]
+fn zeichensatz_gleicht_dem_xsd() {
+    if !schemas_da(2025) {
+        return;
+    }
+    let pfad = elster::finde_schema(2025, "E10-{jahr}.xsd").unwrap();
+    let text = std::fs::read_to_string(pfad).unwrap();
+    let schema = roxmltree::Document::parse(&text).unwrap();
+    let zu = xsd_muster(&schema, "StringZUBaseCType");
+    let base = xsd_muster(&schema, "StringBaseCType");
+    assert_eq!(
+        base, "[^\n\r]+",
+        "StringBaseCType (:1792) verbietet nur CR/LF"
+    );
+    let zu = regex::Regex::new(&format!("^(?:{zu})$")).unwrap();
+    let base = regex::Regex::new(&format!("^(?:{base})$")).unwrap();
+    let mut falsch = Vec::new();
+    let mut erlaubt = 0;
+    for cp in (0..0x30000u32).chain(0xE000..0x10000) {
+        let Some(c) = char::from_u32(cp) else {
+            continue;
+        };
+        let s = c.to_string();
+        let im_schema = zu.is_match(&s) && base.is_match(&s);
+        erlaubt += usize::from(im_schema);
+        if domain::zeichensatz::elster_zeichen(c) != im_schema {
+            falsch.push(format!("U+{cp:04X}"));
+        }
+    }
+    assert!(falsch.is_empty(), "Menge weicht vom Schema ab: {falsch:?}");
+    // Gegenprobe, dass der Vergleich etwas gesehen hat: 186 Zeichen, nicht 0 von 0.
+    assert_eq!(erlaubt, 186);
+}
+
+/// AK5: die zweite Sperre an der XML-Erzeugung. Ein Wert, den ein Alt-Store oder ein Import ohne
+/// Auflage Z annahm, wird deklariert (Laden prueft nie) und scheitert erst am Writer — nie erst bei
+/// ELSTER. Die Meldung nennt Element, Zeichen und Vorschlag, nie den Wert (PII).
+#[test]
+fn zeichen_ausserhalb_des_zeichensatzes_ist_harter_fehler() {
+    if !schemas_da(2025) {
+        return;
+    }
+    let opt = XmlOptionen {
+        hersteller_id: Some("74931".to_owned()),
+        ..XmlOptionen::default()
+    };
+    for (wert, zeichen, vorschlag) in [
+        (
+            "Kowalski\u{a0}Anna",
+            "geschütztes Leerzeichen (U+00A0)",
+            "ein normales Leerzeichen",
+        ),
+        ("Müller\u{2013}Straße", "„\u{2013}\" (U+2013)", "„-\""),
+        ("Wa\u{142}esa", "„\u{142}\" (U+0142)", "„l\""),
+        (
+            "Maier\tMüller",
+            "Tabulator (U+0009)",
+            "ein normales Leerzeichen",
+        ),
+        (
+            "Maier\nMüller",
+            "Zeilenumbruch (U+000A)",
+            "ein normales Leerzeichen",
+        ),
+    ] {
+        let d = deklariere(
+            &einzeln("stammdaten_nachname", json!(wert), Zustand::Bestaetigt),
+            index(),
+            2025,
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            d.deklaration["E0100201"],
+            json!(wert),
+            "{wert:?}: Laden prueft nie"
+        );
+        let meldung = erzeuge_xml(&d, &opt).unwrap_err().0;
+        assert!(
+            meldung.contains("ELSTER in Textfeldern nicht annimmt")
+                && meldung.contains("Element E0100201")
+                && meldung.contains(zeichen)
+                && meldung.contains(vorschlag),
+            "{wert:?}: {meldung}"
+        );
+        for teil in ["Müller", "Maier", "Kowalski", "esa"] {
+            assert!(
+                !meldung.contains(teil),
+                "{wert:?}: die Meldung nennt den Wert: {meldung}"
+            );
+        }
+    }
+}
+
+/// Gegenprobe zu AK5: Umlaute, ß, € und Œ gehen durch die zweite Sperre und stehen im XML.
+#[test]
+fn erlaubte_zeichen_kommen_ins_xml() {
+    if !schemas_da(2025) {
+        return;
+    }
+    let mut paare = seitengate();
+    paare[0] = ("stammdaten_nachname", json!("Müller-Größe ß € Œuvre"));
+    paare.push(("stammdaten_geburtsdatum", json!("05.05.1955")));
+    paare.push(("kist_konfession", json!("keine")));
+    let xml = abgabe_xml(&bestaetigt(&paare)).unwrap();
+    assert!(
+        xml.contains("<E0100201>Müller-Größe ß € Œuvre</E0100201>"),
+        "{xml}"
+    );
+}
+
 /// Round-Trip fuer JEDE 1:1-Bindung (eigener `elster_kz`, keine Instanz): steht die Kz nach der
 /// Deklaration mit dem Rohwert in der Deklaration, liest `zuruecklesen` exakt den Rohwert zurueck.
 /// Ausnahmen muessen hier namentlich stehen.
