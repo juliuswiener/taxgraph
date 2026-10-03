@@ -16,6 +16,16 @@ _BASE = "https://api.openrouteservice.org"
 _TIMEOUT = 8
 
 
+def _basis() -> str:
+    """Die Basis-URL JETZT: `$ORS_API_BASE` (zur Aufrufzeit gelesen, leer = Standard `_BASE`).
+
+    Gesetzt wird sie nur im Vergleichslauf gegen einen lokalen Stub (rust/parity, Vault
+    `decisions/rust-9c-generator-je-route-und-flow-portieren`); im Betrieb bleibt sie ungesetzt und
+    die Adressen gehen an `_BASE`. Wer sie setzt, bestimmt, wohin Adressen UND Schlüssel gehen —
+    dieselbe Vertrauensstufe wie `$ORS_API_KEY` und `$LLM_API_BASE`."""
+    return os.environ.get("ORS_API_BASE", "").strip().rstrip("/") or _BASE
+
+
 class OrsNichtVerfuegbar(Exception):
     """Kein $ORS_API_KEY gesetzt oder der Dienst antwortete nicht verwertbar — Aufrufer fällt auf
     manuelle km-Eingabe zurück (nie crashen, nie einen Fake-Wert setzen)."""
@@ -59,7 +69,7 @@ def geocode(adresse: str) -> list[float]:
     """Adresse → [lon, lat] (erstes Treffer-Feature). Über den API-Key im Query (Geocoding-Endpunkt)."""
     from urllib.parse import urlencode
     q = urlencode({"api_key": _key(), "text": adresse, "size": 1, "boundary.country": "DE"})
-    j = _hole(f"{_BASE}/geocode/search?{q}")
+    j = _hole(f"{_basis()}/geocode/search?{q}")
     feats = (j or {}).get("features") or []
     geom = (feats[0] if feats else {}).get("geometry") or {}
     coords = geom.get("coordinates")
@@ -72,7 +82,7 @@ def _distanz_meter(von_lonlat: list[float], nach_lonlat: list[float]) -> float:
     """Routing driving-car, preference=shortest (§ 9 kürzeste Straßenverbindung) → Distanz in Metern."""
     body = json.dumps({"coordinates": [von_lonlat, nach_lonlat], "preference": "shortest",
                        "units": "m"}).encode("utf-8")
-    j = _hole(f"{_BASE}/v2/directions/driving-car",
+    j = _hole(f"{_basis()}/v2/directions/driving-car",
               data=body, headers={"Authorization": _key(), "Content-Type": "application/json"})
     routes = (j or {}).get("routes") or []
     if not routes or "summary" not in routes[0] or "distance" not in routes[0]["summary"]:

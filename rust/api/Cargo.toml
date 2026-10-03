@@ -25,13 +25,13 @@ bindung = { path = "../bindung" }
 interview = { path = "../interview" }
 intervall = { path = "../intervall" }
 konsistenz = { path = "../konsistenz" }
-llm = { path = "../llm" }
 store = { path = "../store" }
 auth = { path = "../auth" }
 domain = { path = "../domain" }
 eingang = { path = "../eingang" }
 elster = { path = "../elster" }
 engine = { path = "../engine" }
+llm = { path = "../llm" }
 axum = { workspace = true }
 tokio = { workspace = true }
 utoipa = { workspace = true }

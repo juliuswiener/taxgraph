@@ -256,6 +256,17 @@ impl<'r> Graph<'r> {
         self.instanz_gruppen.get(gruppe).copied()
     }
 
+    /// Alle Instanz-Gruppen (`lade_instanz_gruppen().values()`), in unbestimmter Reihenfolge.
+    ///
+    /// ```
+    /// let reg = interview::doctest_registry().unwrap();
+    /// let g = interview::Graph::aus_registry(&reg);
+    /// assert!(g.instanz_gruppen().any(|x| x.gruppe == "kind"));
+    /// ```
+    pub fn instanz_gruppen(&self) -> impl Iterator<Item = &'r InstanzGruppe> + '_ {
+        self.instanz_gruppen.values().copied()
+    }
+
     /// Die Themen, die den Fragebogen eroeffnen, in Deklarations-Reihenfolge ohne Doppel.
     ///
     /// ```

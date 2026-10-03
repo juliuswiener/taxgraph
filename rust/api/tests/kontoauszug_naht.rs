@@ -481,8 +481,8 @@ async fn pdf_eingabe_wird_vor_dem_lesen_geprueft() {
 async fn zweck_datum_und_csv_randfaelle() {
     let d = dienst();
     let tx = |betrag: Value, zweck: Value| json!({"format": "json", "inhalt": [{"datum": "d", "betrag": betrag, "verwendungszweck": zweck}]});
-    // Ein Zweck, der kein Text ist: bei einer Ausgabe `AttributeError` (`.lower()`), bei einer Einnahme
-    // nie gelesen; falsch heisst leer.
+    // Ein Zweck, der kein Text ist: bei einer Ausgabe 422 (vorher `AttributeError` aus `.lower()`, 500),
+    // bei einer Einnahme nie gelesen; falsch heisst leer.
     for (i, (zweck, klasse)) in [
         (json!(5), "int"),
         (json!(["maler"]), "list"),
@@ -497,8 +497,8 @@ async fn zweck_datum_und_csv_randfaelle() {
         assert_eq!(
             (s, a),
             (
-                500,
-                json!({"fehler": format!("AttributeError: '{klasse}' object has no attribute 'lower'")})
+                422,
+                json!({"fehler": format!("Kontoauszug nicht lesbar: verwendungszweck einer Ausgabe muss Text sein, nicht {klasse}.")})
             ),
             "{zweck}"
         );
@@ -571,4 +571,151 @@ async fn zweck_datum_und_csv_randfaelle() {
             "{betrag}"
         );
     }
+}
+
+/// Backlog `falldatei-mit-nan-liest-rust-als-text`, AK4 (Python: `tests/test_kontoauszug_buchungsfelder.py`).
+/// `inhalt` ist ein JSON-TEXT, den die Rumpf-Tür nicht sieht. Ein `datum` mit einer Zahl, die die Akte
+/// nicht halten kann (nicht endlich oder ausserhalb von `i64`, beliebig tief), und der Zweck einer Ausgabe,
+/// der kein Text ist, sind 422; der Text nennt Feld und Typ, nie den Wert, und die Akte bleibt leer.
+#[tokio::test]
+async fn datum_und_zweck_die_die_akte_nicht_haelt_sind_422() {
+    let d = dienst();
+    let auszug_text = |datum: &str, zweck: &str, betrag: &str| {
+        let tx =
+            format!(r#"[{{"datum": {datum}, "betrag": {betrag}, "verwendungszweck": {zweck}}}]"#);
+        json!({"format": "json", "inhalt": tx})
+    };
+    let ruerup = r#""Ruerup-Rente Jahresbeitrag Basisrente""#;
+    let datum_meldung = |typ: &str| json!({"fehler": format!("Kontoauszug nicht lesbar: datum einer Buchung enthält eine Zahl ({typ}), die die Akte nicht halten kann.")});
+    let zweck_meldung = |typ: &str| json!({"fehler": format!("Kontoauszug nicht lesbar: verwendungszweck einer Ausgabe muss Text sein, nicht {typ}.")});
+    let (zwei_63, zwei_64, unter_i64) = (
+        "9223372036854775808",
+        "18446744073709551616",
+        "-9223372036854775809",
+    );
+    let datum_faelle: Vec<(String, &str)> = vec![
+        ("NaN".into(), "float"),
+        ("Infinity".into(), "float"),
+        ("-Infinity".into(), "float"),
+        ("1e400".into(), "float"),
+        ("-1e400".into(), "float"),
+        ("[1, NaN]".into(), "float"),
+        (r#"{"a": {"b": [Infinity]}}"#.into(), "float"),
+        (zwei_63.into(), "int"),
+        (zwei_64.into(), "int"),
+        (unter_i64.into(), "int"),
+        (format!("[{zwei_64}]"), "int"),
+        (format!(r#"{{"a": {unter_i64}}}"#), "int"),
+        (format!("[{zwei_64}, NaN]"), "float"),
+    ];
+    for (i, (datum, typ)) in datum_faelle.iter().enumerate() {
+        let id = format!("bd{i}");
+        let (s, a) = auszug(&d, &id, auszug_text(datum, ruerup, "-120000")).await;
+        assert_eq!((s, a), (422, datum_meldung(typ)), "{datum}");
+        assert!(events(&d, &id).is_empty(), "{datum}: die Akte bleibt leer");
+    }
+    // Kontrolle: tragbare Daten werden wie vorher übernommen, auch die Grenzen von i64 und Text "NaN".
+    for (i, datum) in [
+        "9223372036854775807",
+        "-9223372036854775808",
+        "1.5",
+        "1e22",
+        "-0",
+        "null",
+        r#""NaN""#,
+        "[1, 2.5]",
+        "true",
+    ]
+    .iter()
+    .enumerate()
+    {
+        let (s, a) = auszug(&d, &format!("bg{i}"), auszug_text(datum, ruerup, "-120000")).await;
+        assert_eq!(
+            (s, a),
+            (
+                200,
+                json!({"uebernommen": 1, "transaktionen": 1, "verworfen": 0})
+            ),
+            "{datum}"
+        );
+    }
+    // Kontrolle: nur gültiges JSON kann eine Zahl ausserhalb von `i64` sein; führende Null, `-` und `+5` sind es nicht.
+    for (i, zahl) in [
+        "0123456789012345678901234",
+        "-0123456789012345678901",
+        "-",
+        "--5",
+        "+5",
+    ]
+    .iter()
+    .enumerate()
+    {
+        let (s, a) = auszug(&d, &format!("bk{i}"), auszug_text(zahl, ruerup, "-120000")).await;
+        assert_eq!(
+            (s, a),
+            (400, json!({"fehler": "json-Inhalt nicht parsebar"})),
+            "{zahl}"
+        );
+    }
+    // Das Datum jeder Buchung zählt, auch einer Einnahme.
+    let (s, a) = auszug(&d, "be0", auszug_text("NaN", ruerup, "5000")).await;
+    assert_eq!((s, a), (422, datum_meldung("float")));
+    // `verworfen` kommt zuerst: ein unlesbarer Betrag nimmt die Buchung allein heraus, auch mit NaN im Datum.
+    let inhalt = format!(
+        r#"[{{"datum": NaN, "betrag": NaN, "verwendungszweck": {ruerup}}}, {{"datum": "d", "betrag": -120000, "verwendungszweck": {ruerup}}}]"#
+    );
+    let (s, a) = auszug(&d, "bv0", json!({"format": "json", "inhalt": inhalt})).await;
+    assert_eq!(
+        (s, a),
+        (
+            200,
+            json!({"uebernommen": 1, "transaktionen": 1, "verworfen": 1, "hinweis": "1 Zeile(n) mit unlesbarem Betrag (keine Zahl oder ab 100 Mio. €) verworfen — bitte manuell prüfen/nachtragen."})
+        )
+    );
+    // Der Zweck einer Ausgabe, der kein Text ist; als JSON-Text auch NaN und eine grosse Ganzzahl.
+    for (i, (zweck, typ)) in [
+        ("5", "int"),
+        ("1.5", "float"),
+        (r#"["maler"]"#, "list"),
+        (r#"{"a": 1}"#, "dict"),
+        ("true", "bool"),
+        ("NaN", "float"),
+        ("-Infinity", "float"),
+        (zwei_64, "int"),
+    ]
+    .iter()
+    .enumerate()
+    {
+        let id = format!("bz{i}");
+        let (s, a) = auszug(&d, &id, auszug_text(r#""2025-03-15""#, zweck, "-120000")).await;
+        assert_eq!((s, a), (422, zweck_meldung(typ)), "{zweck}");
+        assert!(events(&d, &id).is_empty(), "{zweck}: die Akte bleibt leer");
+    }
+    // Falsch heisst leer, und der Zweck einer Einnahme wird nie gelesen.
+    for (i, (zweck, betrag)) in [
+        ("null", "-120000"),
+        ("0", "-120000"),
+        ("[]", "-120000"),
+        ("false", "-120000"),
+        (r#""""#, "-120000"),
+        ("5", "5000"),
+    ]
+    .iter()
+    .enumerate()
+    {
+        let (s, a) = auszug(&d, &format!("bl{i}"), auszug_text(r#""d""#, zweck, betrag)).await;
+        assert_eq!(
+            (s, a),
+            (
+                200,
+                json!({"uebernommen": 0, "transaktionen": 1, "verworfen": 0})
+            ),
+            "{zweck}"
+        );
+    }
+    // Das Datum wird vor dem Zweck gemeldet, beides vor dem Schreiben.
+    let inhalt = r#"[{"datum": "ok", "betrag": -100, "verwendungszweck": 5}, {"datum": NaN, "betrag": -100, "verwendungszweck": "Maler"}]"#;
+    let (s, a) = auszug(&d, "br0", json!({"format": "json", "inhalt": inhalt})).await;
+    assert_eq!((s, a), (422, datum_meldung("float")));
+    assert!(events(&d, "br0").is_empty());
 }

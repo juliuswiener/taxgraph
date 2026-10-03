@@ -39,9 +39,19 @@ pub enum OcrFehler {
     /// `PdfNichtLesbar` — `pdftotext` kann die Datei nicht oeffnen (Exit weder 0 noch 3); 422.
     #[error("Die Datei lässt sich nicht als PDF öffnen (kein PDF, beschädigt oder mit Passwort geschützt).")]
     NichtLesbar,
-    /// Werkzeug fehlt / startet nicht (Python: `FileNotFoundError`, 500).
-    #[error("{befehl}: {nachricht}")]
-    Start { befehl: String, nachricht: String },
+    /// `pdftoppm` endet mit Exit != 0 — Pythons `PdfNichtLesbar` mit eigenem Text zum Umwandeln in
+    /// Bilder, 422. `pdftotext` hatte die Datei angenommen; was dann scheitert, liegt an ihr.
+    #[error("Die Seiten der Datei lassen sich nicht in Bilder umwandeln (beschädigt oder nicht unterstützt).")]
+    BildUmwandlung,
+    /// `tesseract` endet mit Exit != 0 (gemessen: fehlende `deu`-Sprachdaten, Exit 1, stdout leer) —
+    /// Pythons `OcrNichtVerfuegbar`, 503. Das Bild hat `pdftoppm` gerade selbst erzeugt.
+    #[error("Die Texterkennung (tesseract) ist auf diesem Rechner nicht einsatzbereit (sie endete mit einem Fehler, etwa weil die deutschen Sprachdaten fehlen).")]
+    OcrNichtVerfuegbar,
+    /// Ein Hilfsprogramm liegt nicht auf dem `PATH` (Python: `FileNotFoundError`). Ein
+    /// Betriebsproblem, keine Eigenschaft der Datei: die API antwortet 503 mit diesem Text. Jeder
+    /// andere Startfehler (etwa fehlende Ausfuehrungsrechte, Pythons `PermissionError`) ist [`Self::Io`].
+    #[error("Das Programm '{programm}' fehlt auf diesem Rechner.")]
+    Start { programm: String },
     /// Ausgabe ist kein UTF-8 (Python: `UnicodeDecodeError`, 500).
     #[error("{0}: Ausgabe ist kein UTF-8")]
     KeinUtf8(String),
@@ -50,7 +60,7 @@ pub enum OcrFehler {
     KeinBild,
     #[error("tesseract-TSV: {0}")]
     Tsv(#[from] csv::CsvFehler),
-    #[error("Temp-Verzeichnis: {0}")]
+    #[error("Ein-/Ausgabe: {0}")]
     Io(#[from] std::io::Error),
 }
 
@@ -69,10 +79,9 @@ fn lauf(
             .collect::<Vec<_>>()
             .join(", ")
     );
-    let (prog, args) = befehl.split_first().ok_or_else(|| OcrFehler::Start {
-        befehl: anzeige.clone(),
-        nachricht: "leer".into(),
-    })?;
+    let (prog, args) = befehl
+        .split_first()
+        .ok_or_else(|| std::io::Error::other("leerer Befehl"))?;
     let mut cmd = Command::new(prog);
     cmd.args(args)
         .stdin(Stdio::null())
@@ -82,14 +91,19 @@ fn lauf(
         // OMP_THREAD_LIMIT=1: mehrere OpenMP-Faeden bremsen unter Ueberbuchung bis ans Zeitlimit.
         cmd.env("OMP_THREAD_LIMIT", "1");
     }
-    let mut kind = cmd.spawn().map_err(|e| OcrFehler::Start {
-        befehl: anzeige.clone(),
-        nachricht: e.to_string(),
+    let mut kind = cmd.spawn().map_err(|e| {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            OcrFehler::Start {
+                programm: (*prog).to_owned(),
+            }
+        } else {
+            OcrFehler::Io(e)
+        }
     })?;
-    let mut stdout = kind.stdout.take().ok_or_else(|| OcrFehler::Start {
-        befehl: anzeige.clone(),
-        nachricht: "stdout".into(),
-    })?;
+    let mut stdout = kind
+        .stdout
+        .take()
+        .ok_or_else(|| std::io::Error::other("stdout"))?;
     // Lesen im eigenen Faden, sonst blockiert ein volles Pipe-Puffer das Kind bis zum Zeitlimit.
     let leser = std::thread::spawn(move || {
         let mut puffer = Vec::new();
@@ -193,13 +207,22 @@ fn text_und_conf(zeilen: Vec<(String, f64)>) -> (String, ConfMap) {
     )
 }
 
-fn tesseract_tsv(bild: &Path) -> Result<Vec<(String, f64)>, OcrFehler> {
+/// Exit 0 gilt, auch bei leerer Ausgabe: auf einer weissen Seite gibt `tesseract` nur die Kopfzeile aus.
+/// Exit != 0 ist nie „die Seite ist leer“, sondern [`OcrFehler::OcrNichtVerfuegbar`] — wenn `streng`.
+///
+/// ponytail: `streng` ist nur beim Kontoauszug an. Der Beleg-Leser (ohne Aufrufer) behaelt Pythons
+/// `beleg_writer`, das den Rueckgabecode nicht liest (Vault `decisions/ein-hilfsprogramm-mit-fehlercode-
+/// bricht-den-upload-ab`, Punkt 5); wer ihn anschliesst, schaltet es dort ein.
+fn tesseract_tsv(bild: &Path, streng: bool) -> Result<Vec<(String, f64)>, OcrFehler> {
     let b = bild.to_string_lossy();
-    let (tsv, _) = lauf(
+    let (tsv, status) = lauf(
         &["tesseract", &b, "stdout", "-l", "deu", "tsv"],
         TESSERACT_ZEITLIMIT,
         true,
     )?;
+    if streng && !status.success() {
+        return Err(OcrFehler::OcrNichtVerfuegbar);
+    }
     Ok(tsv_zu_zeilen(&tsv)?)
 }
 
@@ -211,13 +234,12 @@ fn pngs(dir: &Path) -> Result<Vec<std::path::PathBuf>, OcrFehler> {
     Ok(v)
 }
 
-/// `_ocr_tesseract_seite(pfad, seiten_nr)` (1-indiziert).
-fn ocr_seite(pfad: &str, seite: usize) -> Result<(String, ConfMap), OcrFehler> {
+/// `_ocr_tesseract_seite(pfad, seiten_nr)` (1-indiziert). `streng`: siehe [`tesseract_tsv`].
+fn ocr_seite(pfad: &str, seite: usize, streng: bool) -> Result<(String, ConfMap), OcrFehler> {
     let td = tempfile::tempdir()?;
     let praefix = td.path().join("seite");
     let n = seite.to_string();
-    // Python prueft weder Rueckgabecode noch Ausgabe von pdftoppm, nur das Zeitlimit.
-    lauf(
+    let (_, status) = lauf(
         &[
             "pdftoppm",
             "-png",
@@ -233,18 +255,21 @@ fn ocr_seite(pfad: &str, seite: usize) -> Result<(String, ConfMap), OcrFehler> {
         PDFTOPPM_ZEITLIMIT,
         false,
     )?;
+    if streng && !status.success() {
+        return Err(OcrFehler::BildUmwandlung);
+    }
     let bild = pngs(td.path())?
         .into_iter()
         .next()
         .ok_or(OcrFehler::KeinBild)?;
-    Ok(text_und_conf(tesseract_tsv(&bild)?))
+    Ok(text_und_conf(tesseract_tsv(&bild, streng)?))
 }
 
 /// `_ocr_tesseract_zeilen(pfad)`: Voll-Scan, jede Seite ein OCR-Lauf; Deckel VOR dem ersten.
 fn ocr_alle(pfad: &str, zu_viel: &dyn Fn(usize) -> String) -> Result<(String, ConfMap), OcrFehler> {
     let td = tempfile::tempdir()?;
     let praefix = td.path().join("seite");
-    lauf(
+    let (_, status) = lauf(
         &[
             "pdftoppm",
             "-png",
@@ -256,6 +281,9 @@ fn ocr_alle(pfad: &str, zu_viel: &dyn Fn(usize) -> String) -> Result<(String, Co
         PDFTOPPM_ZEITLIMIT,
         false,
     )?;
+    if !status.success() {
+        return Err(OcrFehler::BildUmwandlung);
+    }
     let seiten: Vec<_> = pngs(td.path())?
         .into_iter()
         .filter(|p| p.extension().is_some_and(|e| e == "png"))
@@ -265,7 +293,7 @@ fn ocr_alle(pfad: &str, zu_viel: &dyn Fn(usize) -> String) -> Result<(String, Co
     }
     let mut zeilen = Vec::new();
     for s in &seiten {
-        zeilen.extend(tesseract_tsv(s)?);
+        zeilen.extend(tesseract_tsv(s, true)?);
     }
     Ok(text_und_conf(zeilen))
 }
@@ -276,6 +304,7 @@ fn gemischt(
     pfad: &str,
     text: &str,
     zu_viel: &dyn Fn(usize, usize) -> String,
+    streng: bool,
 ) -> Result<(String, ConfMap), OcrFehler> {
     let mut seiten: Vec<&str> = text.split('\x0c').collect();
     seiten.pop();
@@ -293,7 +322,7 @@ fn gemischt(
         let teil = if plausibel(seite) {
             (*seite).to_owned()
         } else {
-            let (t, c) = ocr_seite(pfad, i + 1)?;
+            let (t, c) = ocr_seite(pfad, i + 1, streng)?;
             conf.extend(c.into_iter().map(|(k, v)| (versatz + k, v)));
             t
         };
@@ -338,11 +367,16 @@ pub fn lies_kontoauszug_pdf(pfad: &str) -> Result<(String, ConfMap), OcrFehler> 
             )
         });
     }
-    gemischt(pfad, &text, &|n, von| {
-        format!(
-            "{n} von {von} Seiten haben keinen lesbaren Textlayer und müssten einzeln per Bilderkennung gelesen werden (Höchstzahl: {OCR_SEITEN_HOECHSTZAHL}). Bitte den Auszug auf den benötigten Zeitraum kürzen oder als CSV exportieren."
-        )
-    })
+    gemischt(
+        pfad,
+        &text,
+        &|n, von| {
+            format!(
+                "{n} von {von} Seiten haben keinen lesbaren Textlayer und müssten einzeln per Bilderkennung gelesen werden (Höchstzahl: {OCR_SEITEN_HOECHSTZAHL}). Bitte den Auszug auf den benötigten Zeitraum kürzen oder als CSV exportieren."
+            )
+        },
+        true,
+    )
 }
 
 /// `lies_beleg_text(pfad)`: `.txt` direkt; ohne Textlayer EIN tesseract-Lauf ueber die ganze
@@ -376,9 +410,14 @@ pub fn lies_beleg_text(pfad: &str) -> Result<(String, ConfMap), OcrFehler> {
             ConfMap::new(),
         ));
     }
-    gemischt(pfad, &text, &|n, von| {
-        format!(
-            "{n} von {von} Seiten haben keinen lesbaren Textlayer und müssten einzeln per Bilderkennung gelesen werden (Höchstzahl: {OCR_SEITEN_HOECHSTZAHL}). Bitte den Beleg auf die benötigten Seiten kürzen."
-        )
-    })
+    gemischt(
+        pfad,
+        &text,
+        &|n, von| {
+            format!(
+                "{n} von {von} Seiten haben keinen lesbaren Textlayer und müssten einzeln per Bilderkennung gelesen werden (Höchstzahl: {OCR_SEITEN_HOECHSTZAHL}). Bitte den Beleg auf die benötigten Seiten kürzen."
+            )
+        },
+        false,
+    )
 }

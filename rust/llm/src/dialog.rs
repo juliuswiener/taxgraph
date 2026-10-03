@@ -5,8 +5,8 @@
 //! Aussagen. Der Nutzertext wird GENAU EINMAL gefiltert, hier.
 use std::collections::{BTreeMap, HashSet};
 
+use domain::PyWert;
 use serde::Serialize;
-use serde_json::{json, Value};
 
 use crate::client::{Chat, LlmFehler};
 use crate::gates::{self, BelegterVorschlag, KatalogFeld};
@@ -20,8 +20,9 @@ use crate::schema;
 pub trait Protokoll {
     /// Ein Audit-Eintrag (`audit.append(user, "llm_call", None, teil)`).
     fn melde(&self, teil: &str);
-    /// `flow.schreibe(None, "ki", {"stufe", "was", "inhalt"})`.
-    fn mitschnitt(&self, stufe: u8, was: &str, inhalt: &Value);
+    /// `flow.schreibe(None, "ki", {"stufe", "was", "inhalt"})`. `inhalt` führt jedes `dict` in der
+    /// Reihenfolge, in der Python es baut — der Fluss schreibt sie so in die Datei.
+    fn mitschnitt(&self, stufe: u8, was: &str, inhalt: &PyWert);
 }
 
 /// Kein Protokoll (Tests, Paritaet).
@@ -30,7 +31,24 @@ pub struct KeinProtokoll;
 
 impl Protokoll for KeinProtokoll {
     fn melde(&self, _teil: &str) {}
-    fn mitschnitt(&self, _stufe: u8, _was: &str, _inhalt: &Value) {}
+    fn mitschnitt(&self, _stufe: u8, _was: &str, _inhalt: &PyWert) {}
+}
+
+/// Ein Wert in der Reihenfolge, in der `Serialize` seine Felder schreibt. `serde_json::Value`
+/// sortiert die Schlüssel; Pythons `dict` führt sie in Einfügereihenfolge, und `flow.jsonl` zeigt sie so.
+fn geordnet<T: Serialize>(wert: &T) -> PyWert {
+    serde_json::to_string(wert)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or(PyWert::Null)
+}
+
+fn text(s: &str) -> PyWert {
+    PyWert::Text(s.to_owned())
+}
+
+fn objekt<const N: usize>(paare: [(&str, PyWert); N]) -> PyWert {
+    PyWert::Objekt(paare.into_iter().map(|(k, v)| (k.to_owned(), v)).collect())
 }
 
 /// Audit ueber `store::audit` (`produkt/store/audit.py`), ohne Mitschnitt.
@@ -51,7 +69,7 @@ impl Protokoll for AuditProtokoll {
             Some(teil),
         );
     }
-    fn mitschnitt(&self, _stufe: u8, _was: &str, _inhalt: &Value) {}
+    fn mitschnitt(&self, _stufe: u8, _was: &str, _inhalt: &PyWert) {}
 }
 
 /// Rueckgabe von `_llm_dialog`.
@@ -142,6 +160,7 @@ pub fn llm_dialog(
             crate::py::laenge(gefiltert.as_str())
         ),
         protokoll,
+        chat,
     };
 
     let aussagen = stufe_aussagen(chat, &gefiltert, &m)?;
@@ -182,6 +201,7 @@ pub fn llm_dialog(
 struct Melder<'a> {
     kopf: String,
     protokoll: &'a dyn Protokoll,
+    chat: &'a dyn Chat,
 }
 
 impl Melder<'_> {
@@ -195,14 +215,21 @@ impl Melder<'_> {
         } else {
             e.grund()
         };
+        // `llm_client.letzte_meta()["provider"]`: auch eine leere oder abgeschnittene Antwort nennt ihn.
+        let provider = self.chat.letzter_anbieter();
         self.melde(&format!(
-            "stufe={stufe}, ergebnis=kein_ergebnis, grund={grund}, versuche={}, provider=''",
-            e.versuche()
+            "stufe={stufe}, ergebnis=kein_ergebnis, grund={grund}, versuche={}, provider={}",
+            e.versuche(),
+            crate::py::py_repr_str(&provider)
         ));
         self.protokoll.mitschnitt(
             stufe,
             "ausgefallen",
-            &json!({"grund": grund, "versuche": e.versuche(), "provider": ""}),
+            &objekt([
+                ("grund", text(grund)),
+                ("versuche", PyWert::Ganz(i64::from(e.versuche()))),
+                ("provider", PyWert::Text(provider)),
+            ]),
         );
     }
 }
@@ -220,11 +247,7 @@ fn stufe_aussagen(
         )
         .inspect_err(|e| m.gescheitert(1, e))?;
     let aussagen = parse::aussagen_parse(&c1.text, gefiltert).oder_leer_wie_python();
-    m.protokoll.mitschnitt(
-        1,
-        "aussagen",
-        &serde_json::to_value(&aussagen).unwrap_or_default(),
-    );
+    m.protokoll.mitschnitt(1, "aussagen", &geordnet(&aussagen));
     m.melde(&format!(
         "stufe=1, aussagen={}, aussagen_ohne_beleg={}, inhalt_laenge={}, provider='{}', finish='{}'",
         aussagen.len(),
@@ -268,10 +291,26 @@ fn stufe_themen(
     let erlaubt: HashSet<String> = verfuegbar.iter().cloned().collect();
     let zuordnung =
         parse::zuordnung_parse(&c2.text, &erlaubt, aussagen.len()).oder_leer_wie_python();
+    // `{"zuordnungen": {nr: [regel]}, "regeln": sorted(getroffen)}`. ponytail: die Nummern stehen
+    // aufsteigend; Python führt sie in der Reihenfolge der Modellantwort (nur im Mitschnitt sichtbar).
+    let mut regeln = zuordnung.getroffen.clone();
+    regeln.sort();
     m.protokoll.mitschnitt(
         2,
         "zuordnungen",
-        &serde_json::to_value(&zuordnung).unwrap_or_default(),
+        &objekt([
+            (
+                "zuordnungen",
+                PyWert::Objekt(
+                    zuordnung
+                        .je_aussage
+                        .iter()
+                        .map(|(i, r)| (i.to_string(), PyWert::Liste(r.iter().map(|x| text(x)).collect())))
+                        .collect(),
+                ),
+            ),
+            ("regeln", PyWert::Liste(regeln.iter().map(|x| text(x)).collect())),
+        ]),
     );
     m.melde(&format!(
         "stufe=2, aussagen={}, zugeordnet={}, regeln={}/{}, inhalt_laenge={}, provider='{}', finish='{}'",
@@ -339,8 +378,15 @@ fn stufe_werte(
     m.protokoll.mitschnitt(
         3,
         "ergebnis",
-        &json!({"vorschlaege": behalten, "ohne_beleg_verworfen": verworfen, "rueckfragen": rueckfragen,
-                "rueckfragen_geloest": geloest, "antwort": antwort, "unsicher": unsicher, "aussagen": aussagen}),
+        &objekt([
+            ("vorschlaege", geordnet(&behalten)),
+            ("ohne_beleg_verworfen", geordnet(&verworfen)),
+            ("rueckfragen", geordnet(&rueckfragen)),
+            ("rueckfragen_geloest", geordnet(&geloest)),
+            ("antwort", text(&antwort)),
+            ("unsicher", PyWert::Bool(unsicher)),
+            ("aussagen", geordnet(&aussagen)),
+        ]),
     );
     m.melde(&format!(
         "stufe=3, katalog={}, katalog_felder={}, vorschlaege={}, ohne_beleg_verworfen={}, rueckfragen={}, rueckfragen_zurueckgestellt={zurueckgestellt}, rueckfragen_geloest={}, offen={}, antwortlaenge={}, unsicher={}, inhalt_laenge={}, provider='{}', finish='{}'",

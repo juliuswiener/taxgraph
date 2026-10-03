@@ -8,7 +8,7 @@
 //! `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`).
 use domain::py_strip;
 use eingang::kontoauszug::{
-    aus_json, hinweis_verworfen, parse_csv, parse_pdf_zeilen, uebernehme,
+    aus_json, hinweis_verworfen, parse_csv, parse_pdf_zeilen, pruefe_buchungsfelder, uebernehme,
     verwirf_unlesbare_betraege, verwirf_unlesbare_betraege_json, Klassifikator, KontoauszugFehler,
     Transaktion, LLM_AUFRUFE_HOECHSTZAHL,
 };
@@ -51,20 +51,23 @@ fn lese_fehler(e: &KontoauszugFehler) -> ApiFehler {
 
 /// `json.loads(text)` wie `CPython`, soweit es hier sichtbar wird: `NaN`, `Infinity` und
 /// `-Infinity` sind Zahlen (Python liest sie, `serde_json` nicht), eine Kommazahl über `f64` ist
-/// `inf`, und eine Ganzzahl mit mehr als 4300 Ziffern ist ein `ValueError`.
+/// `inf`, eine Ganzzahl ausserhalb von `i64` bleibt exakt, und eine Ganzzahl mit mehr als 4300 Ziffern
+/// ist ein `ValueError`.
 ///
-/// `serde_json` kennt kein `NaN`: die drei Wörter und eine überlaufende Kommazahl stehen danach als
-/// Text (`"NaN"`, `"Infinity"`, `"-Infinity"`) im Wert. Das genügt dort, wo es zählt: `int()` auf
-/// den Text scheitert wie auf die Zahl (`ValueError` hier, `ValueError`/`OverflowError` dort), und
-/// die Buchung fliegt aus dem Auszug.
+/// `serde_json` kennt kein `NaN` und hält keine Ganzzahl über `u64` exakt. Die drei Wörter, eine
+/// überlaufende Kommazahl und eine Ganzzahl ausserhalb von `i64` stehen darum als Text im Wert, der
+/// mit der Kennzeichnung (zweiter Rückgabewert) beginnt und auf `float` oder `int` endet. Eine solche
+/// Zahl ist als Betrag keine tragbare Zahl (`int()` auf den Text scheitert wie auf die Zahl, die
+/// Buchung fliegt aus dem Auszug); im Datum einer Buchung und im Zweck einer Ausgabe weist
+/// `eingang::kontoauszug::pruefe_buchungsfelder` sie ab (422).
 ///
-/// ponytail: steht ein solches Wort im Datum einer Buchung, die gebucht wird, oder im Zweck einer
-/// Ausgabe, scheitert Python (500: `speichere_fall` schreibt mit `allow_nan=False`, und `.lower()`
-/// kennt keine Kommazahl), Rust sieht Text und übernimmt die Buchung (dokumentierte Abweichung 5
-/// in `api_http_paritaet.rs`). Ebenso steht eine Ganzzahl über `u64` als Kommazahl da (Python: exakte
-/// `int`; ab 309 Ziffern Text), und ein einzelnes Surrogat-Escape (`"\ud800"`) weist `serde_json` mit 400 ab,
-/// Python scheitert erst beim Schreiben der Akte (500). Upgrade: ein eigener Leser, der `PyWert` mit `NaN` liefert.
-fn json_laden(text: &str) -> Result<Value, ()> {
+/// ponytail: Die Kennzeichnung ist ein Text, der im Auszug nicht roh vorkommt. Ein Auszug, der sie als
+/// `\u`-Escape schriebe, sähe aus wie eine solche Zahl (422 statt 200); das gibt es nur mit Absicht.
+/// Ein einzelnes Surrogat-Escape (`"\ud800"`) weist `serde_json` mit 400 ab, Python scheitert erst beim
+/// Schreiben der Akte (500, dokumentierte Abweichung 5c in `api_http_paritaet.rs`). Upgrade: ein eigener
+/// Leser, der `PyWert` mit `NaN` liefert.
+fn json_laden(text: &str) -> Result<(Value, String), ()> {
+    let marke = marke_fuer(text);
     let mut aus = String::with_capacity(text.len());
     let (mut in_text, mut maskiert) = (false, false);
     let mut rest = text;
@@ -85,9 +88,7 @@ fn json_laden(text: &str) -> Result<Value, ()> {
             .into_iter()
             .find(|w| rest.starts_with(w) && wort_ende(rest, w.len()))
         {
-            aus.push('"');
-            aus.push_str(wort);
-            aus.push('"');
+            ersetze(&mut aus, &marke, "float");
             weiter = wort.len();
         } else if c == '-' || c.is_ascii_digit() {
             let ende = rest
@@ -98,13 +99,11 @@ fn json_laden(text: &str) -> Result<Value, ()> {
             if ganzzahl && zahl.bytes().filter(u8::is_ascii_digit).count() > 4300 {
                 return Err(());
             }
-            // Über `f64::MAX` (auch eine Ganzzahl mit mehr als 308 Ziffern) liest `serde_json` nichts.
-            if zahl.parse::<f64>().is_ok_and(f64::is_infinite) {
-                aus.push_str(if zahl.starts_with('-') {
-                    "\"-Infinity\""
-                } else {
-                    "\"Infinity\""
-                });
+            if json_ganzzahl(zahl) && zahl.parse::<i64>().is_err() {
+                ersetze(&mut aus, &marke, "int");
+            // Über `f64::MAX` liest `serde_json` nichts.
+            } else if zahl.parse::<f64>().is_ok_and(f64::is_infinite) {
+                ersetze(&mut aus, &marke, "float");
             } else {
                 aus.push_str(zahl);
             }
@@ -114,7 +113,34 @@ fn json_laden(text: &str) -> Result<Value, ()> {
         }
         rest = rest.get(weiter..).unwrap_or_default();
     }
-    serde_json::from_str(&aus).map_err(|_| ())
+    serde_json::from_str(&aus)
+        .map(|wert| (wert, marke))
+        .map_err(|_| ())
+}
+
+/// Setzt den Text für eine Zahl, die `serde_json` nicht hält: `"<marke><typ>"`.
+fn ersetze(aus: &mut String, marke: &str, typ: &str) {
+    aus.push('"');
+    aus.push_str(marke);
+    aus.push_str(typ);
+    aus.push('"');
+}
+
+/// Die Kennzeichnung der Zahlen, die `json_laden` durch Text ersetzt: sie kommt im Auszug nicht vor.
+fn marke_fuer(text: &str) -> String {
+    let mut marke = String::from("§nicht_tragbar:");
+    while text.contains(&marke) {
+        marke.push('_');
+    }
+    marke
+}
+
+/// Eine Ganzzahl in der Schreibweise von JSON (`-?(0|[1-9][0-9]*)`); `-`, `--5` und `007` sind es nicht.
+fn json_ganzzahl(zahl: &str) -> bool {
+    let ziffern = zahl.strip_prefix('-').unwrap_or(zahl);
+    !ziffern.is_empty()
+        && ziffern.bytes().all(|b| b.is_ascii_digit())
+        && (ziffern.len() == 1 || !ziffern.starts_with('0'))
 }
 
 /// Steht nach `laenge` Bytes von `rest` ein Trenner (oder nichts)?
@@ -165,10 +191,20 @@ fn pdf_lesen(bytes: &[u8]) -> Result<(Vec<Transaktion>, usize), ApiFehler> {
         .map_err(|e| ApiFehler::unerwartet("OSError", e.to_string()))?;
     let pfad = datei.path().to_string_lossy().into_owned();
     let (text, konfidenz) = lies_kontoauszug_pdf(&pfad).map_err(|e| match e {
-        OcrFehler::Zeitlimit { .. } | OcrFehler::ZuAufwendig(_) | OcrFehler::NichtLesbar => {
+        // `BildUmwandlung`: pdftoppm scheitert an der Datei, die pdftotext angenommen hat — der Nutzer kann
+        // eine andere hochladen.
+        OcrFehler::Zeitlimit { .. }
+        | OcrFehler::ZuAufwendig(_)
+        | OcrFehler::NichtLesbar
+        | OcrFehler::BildUmwandlung => {
             ApiFehler::status(422, format!("Kontoauszug nicht lesbar: {e}"))
         }
-        OcrFehler::Start { .. } => ApiFehler::unerwartet("FileNotFoundError", e.to_string()),
+        // Ein fehlendes Hilfsprogramm ist ein Betriebsproblem, nicht die Datei des Nutzers: 503 wie in
+        // Python (`api.kontoauszug`, `except FileNotFoundError`), Text wortgleich, ohne Ausnahme-Typ.
+        // `OcrNichtVerfuegbar`: tesseract endet mit Fehlercode (etwa ohne `deu`-Daten) — ebenfalls 503.
+        OcrFehler::Start { .. } | OcrFehler::OcrNichtVerfuegbar => {
+            ApiFehler::status(503, format!("PDF-Auslesen ist gerade nicht möglich: {e}"))
+        }
         OcrFehler::KeinUtf8(_) => ApiFehler::unerwartet("UnicodeDecodeError", e.to_string()),
         OcrFehler::KeinBild => ApiFehler::unerwartet("IndexError", e.to_string()),
         OcrFehler::Tsv(_) => ApiFehler::unerwartet("Error", e.to_string()),
@@ -207,18 +243,22 @@ fn format_lesen(b: &Map<String, Value>) -> Result<String, ApiFehler> {
 }
 
 /// Der JSON-Zweig: eine Liste im Rumpf gilt, Text wird als JSON gelesen, ein falscher Wert ist
-/// die leere Liste.
-fn json_liste(inhalt: &Value) -> Result<Vec<Value>, ApiFehler> {
+/// die leere Liste. Zweiter Wert: die Kennzeichnung der Zahlen, die `json_laden` ersetzt hat (nur
+/// beim Text).
+fn json_liste(inhalt: &Value) -> Result<(Vec<Value>, Option<String>), ApiFehler> {
     let nicht_lesbar = || ApiFehler::status(400, "json-Inhalt nicht parsebar");
-    let wert = match inhalt {
-        Value::Array(_) => inhalt.clone(),
-        falsch if !wahr(falsch) => json!([]),
-        Value::String(text) => json_laden(text).map_err(|()| nicht_lesbar())?,
+    let (wert, marke) = match inhalt {
+        Value::Array(_) => (inhalt.clone(), None),
+        falsch if !wahr(falsch) => (json!([]), None),
+        Value::String(text) => {
+            let (wert, marke) = json_laden(text).map_err(|()| nicht_lesbar())?;
+            (wert, Some(marke))
+        }
         // `json.loads(5)` ist ein `TypeError`, den `api.kontoauszug` wie einen `ValueError` fängt.
         _ => return Err(nicht_lesbar()),
     };
     match wert {
-        Value::Array(liste) => Ok(liste),
+        Value::Array(liste) => Ok((liste, marke)),
         _ => Err(ApiFehler::status(
             400,
             "json muss eine Liste von Transaktionen sein",
@@ -265,7 +305,12 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
             verwirf_unlesbare_betraege(tx, n)
         }
         "json" => {
-            let (ok, n) = verwirf_unlesbare_betraege_json(&json_liste(inhalt)?, 0);
+            let (liste, marke) = json_liste(inhalt)?;
+            let (ok, n) = verwirf_unlesbare_betraege_json(&liste, 0);
+            // Datum und Zweck, die die Akte nicht hält: 422 (`api.kontoauszug`, vorher 500 beim Schreiben).
+            pruefe_buchungsfelder(&ok, marke.as_deref()).map_err(|text| {
+                ApiFehler::status(422, format!("Kontoauszug nicht lesbar: {text}"))
+            })?;
             let tx = aus_json(&Value::Array(ok)).map_err(|e| lese_fehler(&e))?;
             (tx, n)
         }

@@ -254,7 +254,8 @@ pub fn parse_csv(text: &str) -> Result<(Vec<Transaktion>, usize), KontoauszugFeh
 /// Betrag nicht lesbar ist oder ab 10^10 Cent liegt, fliegt dort einzeln raus und kommt hier nie
 /// an. Was hier noch scheitert, scheitert in Python in `uebernehme_kontoauszug` selbst: ein Element
 /// ohne Objekt, ein Betrag, den `int()` nicht liest, und ein Nicht-Text als Zweck AUF EINER
-/// AUSGABE (`betrag < 0`; bei den anderen Buchungen liest Python den Zweck nie).
+/// AUSGABE (`betrag < 0`; bei den anderen Buchungen liest Python den Zweck nie). Die Route ruft
+/// zuvor [`pruefe_buchungsfelder`]: den Zweck weist sie dort mit 422 ab, `aus_json` sieht ihn nie.
 ///
 /// ```
 /// let tx = eingang::kontoauszug::aus_json(&serde_json::json!([{"betrag": "-5", "verwendungszweck": "Spende"}])).unwrap();
@@ -390,6 +391,82 @@ pub fn verwirf_unlesbare_betraege(
         .collect();
     let weg = gesamt - ok.len();
     (ok, n_verworfen + weg)
+}
+
+/// Der Typ der Zahl in `wert` (beliebig tief), die die Fallakte nicht exakt haelt: `"float"` fuer eine nicht
+/// endliche Kommazahl, `"int"` fuer eine Ganzzahl ausserhalb von `i64`; `"float"` geht vor. Beide kennt
+/// `serde_json` nicht und die Rust-Fassung der Akte sperrt sie; die Route kennzeichnet sie im JSON-Text
+/// mit einem Text, der mit `marke` beginnt und auf `float` oder `int` endet.
+fn nicht_tragbare_zahl(wert: &Value, marke: Option<&str>) -> Option<&'static str> {
+    let mut offen = vec![wert];
+    let mut gefunden = None;
+    while let Some(w) = offen.pop() {
+        match w {
+            Value::Object(o) => offen.extend(o.values()),
+            Value::Array(a) => offen.extend(a),
+            Value::String(s) => match markentyp(s, marke) {
+                Some("float") => return Some("float"),
+                Some(typ) => gefunden = Some(typ),
+                None => {}
+            },
+            _ => {}
+        }
+    }
+    gefunden
+}
+
+/// Der Typ, den die Kennzeichnung `marke` im Text `s` nennt.
+fn markentyp(s: &str, marke: Option<&str>) -> Option<&'static str> {
+    let rest = s.strip_prefix(marke?)?;
+    Some(if rest == "float" { "float" } else { "int" })
+}
+
+/// `pruefe_buchungsfelder(transaktionen)` (`kontoauszug_writer.py`), nach [`verwirf_unlesbare_betraege_json`]:
+/// das `datum` jeder Buchung traegt keine Zahl, die die Akte nicht haelt, und der `verwendungszweck`
+/// einer Ausgabe ist Text (falsch heisst leer). Erst alle Daten, dann alle Zwecke, wie Python. Der
+/// Text der Meldung nennt Feld und Typ, nie den Wert; die Route macht daraus ein 422.
+///
+/// `marke`: das Kennzeichen der Zahlen, die die Route im JSON-Text gefunden und durch einen Text ersetzt hat.
+///
+/// ```
+/// use eingang::kontoauszug::pruefe_buchungsfelder;
+/// use serde_json::json;
+/// let tx = json!([{"datum": "d", "betrag": -5, "verwendungszweck": "Spende"}]);
+/// assert_eq!(pruefe_buchungsfelder(tx.as_array().unwrap(), None), Ok(()));
+/// let kaputt = json!([{"datum": ["#float"], "betrag": -5}]);
+/// assert!(pruefe_buchungsfelder(kaputt.as_array().unwrap(), Some("#")).unwrap_err().contains("(float)"));
+/// let zweck = json!([{"betrag": 5, "verwendungszweck": 7}, {"betrag": -5, "verwendungszweck": [1]}]);
+/// assert!(pruefe_buchungsfelder(zweck.as_array().unwrap(), None).unwrap_err().ends_with("nicht list."));
+/// ```
+///
+/// # Errors
+/// Der Text der Meldung, ohne das Praefix `Kontoauszug nicht lesbar: `.
+pub fn pruefe_buchungsfelder(liste: &[Value], marke: Option<&str>) -> Result<(), String> {
+    for tx in liste {
+        if let Some(typ) = tx.get("datum").and_then(|d| nicht_tragbare_zahl(d, marke)) {
+            return Err(format!(
+                "datum einer Buchung enthält eine Zahl ({typ}), die die Akte nicht halten kann."
+            ));
+        }
+    }
+    for tx in liste {
+        let Some(o) = tx.as_object() else { continue };
+        let ausgabe =
+            matches!(o.get("betrag").map_or(PyInt::Wert(0), py::py_int), PyInt::Wert(b) if b < 0);
+        let Some(zweck) = o.get("verwendungszweck").filter(|z| ausgabe && py::wahr(z)) else {
+            continue;
+        };
+        let typ = match zweck {
+            Value::String(s) => markentyp(s, marke),
+            andere => Some(py_typ(andere)),
+        };
+        if let Some(typ) = typ {
+            return Err(format!(
+                "verwendungszweck einer Ausgabe muss Text sein, nicht {typ}."
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// `hinweis_verworfen(n, fmt)`: der Satz fuer den Nutzer, warum `n` Zeilen eines Auszugs im Format

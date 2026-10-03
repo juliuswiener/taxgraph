@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import csv
 import io
+import math
 import os
 import re
 import subprocess
@@ -86,8 +87,20 @@ class OcrZuAufwendig(RuntimeError):
     Zeile löschte 13.568 EUR, und der Zustand blieb "bestaetigt")."""
 
 
+class OcrNichtVerfuegbar(RuntimeError):
+    """tesseract endet mit einem Fehlercode: die Texterkennung ist auf diesem Rechner nicht einsatzbereit.
+
+    Der gemessene Auslöser ist eine unvollständige Installation (fehlende `deu`-Sprachdaten, Exit 1, stdout
+    leer). Das Bild hat pdftoppm gerade selbst erzeugt, an der Datei des Nutzers liegt es also nicht —
+    deshalb ein eigener Typ und KEIN PdfNichtLesbar: api.py antwortet 503 (Betriebsproblem), nicht 422.
+    Vorher kam hier lautlos ("", {}) zurück, am Endpunkt ein leerer Auszug mit 200 (Vault
+    decisions/ein-hilfsprogramm-mit-fehlercode-bricht-den-upload-ab)."""
+
+
 class PdfNichtLesbar(RuntimeError):
     """pdftotext kann die Datei nicht öffnen: kein PDF, beschädigt oder mit Passwort geschützt.
+    Ebenso: pdftoppm kann die Seiten nicht in Bilder umwandeln (Exit != 0) — pdftotext hatte die Datei
+    vorher angenommen, was dann scheitert, liegt in aller Regel an ihr.
 
     Vorher wurde daraus lautlos leerer Text, am Endpunkt 200 mit 0 Buchungen — vom Auszug ohne
     Buchungen nicht zu unterscheiden. pdftotext-Exit: 0 gelesen; 3 Rechte-Fehler (Kopierschutz)
@@ -405,18 +418,37 @@ def lies_kontoauszug_pdf(pfad: str) -> tuple[str, dict]:
     return "\n".join(text_teile), conf_map
 
 
+def _pdftoppm(argumente: list[str]) -> None:
+    """pdftoppm rastert mit 200 dpi. Exit != 0 ist immer ein Fehler und nie "die Seite ist leer": ohne
+    diese Prüfung gab der Voll-Scan ("", {}) zurück (ein leerer Auszug) und die Einzelseite warf
+    IndexError. Beide Wege des Kontoauszugs laufen hier durch; beleg_writer hat seine eigene Kopie."""
+    r = subprocess.run(["pdftoppm", "-png", "-r", "200", *argumente], capture_output=True,
+                       timeout=PDFTOPPM_ZEITLIMIT_S)
+    if r.returncode != 0:
+        raise PdfNichtLesbar("Die Seiten der Datei lassen sich nicht in Bilder umwandeln "
+                             "(beschädigt oder nicht unterstützt).")
+
+
+def _tesseract_tsv(bild: str) -> str:
+    """tesseract liest ein Bild als TSV. Exit 0 gilt, auch bei leerer Ausgabe: auf einer weißen Seite
+    endet tesseract mit Exit 0 und gibt nur die Kopfzeile aus. Exit != 0 (gemessen: fehlende deu-Daten,
+    Exit 1, stdout leer) ist ein Betriebsproblem, nie "die Seite ist leer"."""
+    r = subprocess.run(["tesseract", bild, "stdout", "-l", "deu", "tsv"], capture_output=True, text=True,
+                       timeout=TESSERACT_ZEITLIMIT_S, env={**os.environ, "OMP_THREAD_LIMIT": "1"})
+    if r.returncode != 0:
+        raise OcrNichtVerfuegbar("Die Texterkennung (tesseract) ist auf diesem Rechner nicht einsatzbereit "
+                                 "(sie endete mit einem Fehler, etwa weil die deutschen Sprachdaten fehlen).")
+    return r.stdout
+
+
 def _ocr_tesseract_seite(pfad: str, seiten_nr: int) -> tuple[str, dict]:
     """Wie _ocr_tesseract_zeilen, aber NUR eine Seite (1-indiziert) rastern+OCR'n — für den
     Teil-Textlayer-Fall (der Rest der Seiten hat schon einen brauchbaren Textlayer)."""
     with tempfile.TemporaryDirectory() as td:
         praefix = os.path.join(td, "seite")
-        subprocess.run(["pdftoppm", "-png", "-r", "200", "-f", str(seiten_nr), "-l", str(seiten_nr),
-                        pfad, praefix], capture_output=True, timeout=PDFTOPPM_ZEITLIMIT_S)
+        _pdftoppm(["-f", str(seiten_nr), "-l", str(seiten_nr), pfad, praefix])
         png = sorted(os.listdir(td))[0]
-        tsv = subprocess.run(["tesseract", os.path.join(td, png), "stdout", "-l", "deu", "tsv"],
-                             capture_output=True, text=True, timeout=TESSERACT_ZEITLIMIT_S,
-                             env={**os.environ, "OMP_THREAD_LIMIT": "1"}).stdout
-        zeilen = _tsv_zu_zeilen(tsv)
+        zeilen = _tsv_zu_zeilen(_tesseract_tsv(os.path.join(td, png)))
     text = "\n".join(z for z, _ in zeilen)
     conf_map = {i: c for i, (_, c) in enumerate(zeilen)}
     return text, conf_map
@@ -428,8 +460,7 @@ def _ocr_tesseract_zeilen(pfad: str) -> tuple[str, dict]:
     K2 Under-tax > Over-tax). Zeilen-Reihenfolge = Lesereihenfolge (block/par/line, Seiten sequenziell)."""
     with tempfile.TemporaryDirectory() as td:
         praefix = os.path.join(td, "seite")
-        subprocess.run(["pdftoppm", "-png", "-r", "200", pfad, praefix], capture_output=True,
-                       timeout=PDFTOPPM_ZEITLIMIT_S)
+        _pdftoppm([pfad, praefix])
         seiten = sorted(f for f in os.listdir(td) if f.endswith(".png"))
         # Voll-Scan-Pfad: hier ist JEDE Seite ein OCR-Lauf, der Deckel gilt also unmittelbar.
         # Abbruch VOR dem ersten tesseract-Aufruf, aus demselben Grund wie oben.
@@ -440,10 +471,7 @@ def _ocr_tesseract_zeilen(pfad: str) -> tuple[str, dict]:
                 f"Bitte auf den benötigten Zeitraum kürzen oder als CSV exportieren.")
         zeilen = []
         for seite in seiten:
-            tsv = subprocess.run(["tesseract", os.path.join(td, seite), "stdout", "-l", "deu", "tsv"],
-                                 capture_output=True, text=True, timeout=TESSERACT_ZEITLIMIT_S,
-                                 env={**os.environ, "OMP_THREAD_LIMIT": "1"}).stdout
-            zeilen.extend(_tsv_zu_zeilen(tsv))
+            zeilen.extend(_tsv_zu_zeilen(_tesseract_tsv(os.path.join(td, seite))))
     text = "\n".join(z for z, _ in zeilen)
     conf_map = {i: c for i, (_, c) in enumerate(zeilen)}
     return text, conf_map
@@ -528,6 +556,44 @@ def verwirf_unlesbare_betraege(transaktionen: list, n_verworfen: int = 0) -> tup
     Zeilen mit. → (Buchungen, n_verworfen + Zahl der verworfenen)."""
     ok = [tx for tx in transaktionen if _betrag_tragbar(tx)]
     return ok, n_verworfen + len(transaktionen) - len(ok)
+
+
+_I64_MIN, _I64_MAX = -(2**63), 2**63 - 1
+
+
+def _nicht_tragbare_zahlen(wert) -> set[str]:
+    """Die Typen ("float", "int") der Zahlen in `wert`, beliebig tief, die die Fallakte nicht exakt hält: nicht endliche
+    Kommazahlen (`speichere_fall` schreibt kein NaN) und Ganzzahlen ausserhalb von i64 (der Rust-Lader sperrt sie)."""
+    gefunden, offen = set(), [wert]
+    while offen:
+        w = offen.pop()
+        if isinstance(w, dict):
+            offen.extend(w.values())
+        elif isinstance(w, list):
+            offen.extend(w)
+        elif isinstance(w, float) and not math.isfinite(w):
+            gefunden.add("float")
+        elif isinstance(w, int) and not _I64_MIN <= w <= _I64_MAX:     # bool ist int und liegt immer darin
+            gefunden.add("int")
+    return gefunden
+
+
+def pruefe_buchungsfelder(transaktionen: list) -> None:
+    """Backlog falldatei-mit-nan-liest-rust-als-text, AK4. Nach `verwirf_unlesbare_betraege`: das `datum` jeder Buchung
+    trägt keine Zahl, die die Akte nicht halten kann, und der `verwendungszweck` einer Ausgabe ist Text (oder falsch,
+    das heisst leer). Sonst `ValueError`; der Text nennt Feld und Typ, nie den Wert. `datum` geht unverändert in
+    `signal_1`; `inhalt` ist ein JSON-Text, den die Rumpf-Tür (server.py) nicht sieht. Erst alle Daten, dann alle Zwecke,
+    wie die Rust-Fassung. `betrag` bleibt bei `verwirf_unlesbare_betraege`: ein Betrag ist eine Zahl, die das Programm
+    nicht tragen kann, ein Datum ist es nicht."""
+    for tx in transaktionen:
+        gefunden = _nicht_tragbare_zahlen(tx.get("datum", ""))
+        if gefunden:
+            raise ValueError("datum einer Buchung enthält eine Zahl "
+                             f"({'float' if 'float' in gefunden else 'int'}), die die Akte nicht halten kann.")
+    for tx in transaktionen:
+        zweck = tx.get("verwendungszweck", "")
+        if int(tx.get("betrag", 0)) < 0 and zweck and not isinstance(zweck, str):
+            raise ValueError(f"verwendungszweck einer Ausgabe muss Text sein, nicht {type(zweck).__name__}.")
 
 
 def hinweis_verworfen(n: int, fmt: str) -> str:

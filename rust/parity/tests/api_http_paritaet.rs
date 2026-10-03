@@ -45,6 +45,10 @@ use proptest::strategy::ValueTree;
 use proptest::test_runner::TestRunner;
 use serde_json::{json, Map, Value};
 
+// Stub fuer Karten-Dienst und LLM samt Szenarien fuer `chat` und `entfernung` (Folge 6).
+#[path = "extern_stub/mod.rs"]
+mod extern_stub;
+
 const GEHEIMNIS: &str = "paritaet-geheimnis-api-9a";
 
 /// Die Uhr beider Server: abgeleitete Events und Events ohne `ts` tragen sie.
@@ -65,8 +69,6 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
 /// Zeile raus; eine `501` einer Route ausserhalb der Liste ist eine Abweichung.
 const NICHT_PORTIERT: &[&str] = &[
     "POST /fall/{id}/einreichen",
-    "POST /fall/{id}/chat",
-    "POST /fall/{id}/entfernung",
 ];
 
 /// Stufe 1–3 (AK1 in 9c): Untergrenze der Rumpf-Erreichungen je Route im Test `generatoren`, gleich
@@ -160,7 +162,16 @@ impl Drop for Server {
 /// `flow`: `TAXGRAPH_FLOW=1`, sonst antwortet `POST /flow` nur `{"mitgeschrieben": false}` und
 /// `flow.jsonl` entsteht nicht. Mit `flow` vergleicht `Paar::anfrage` die neuen Zeilen von
 /// `flow.jsonl` beider Server (drittes Log-Paar, `ts` normalisiert).
-fn starte(art: &'static str, wurzel: &Path, no_auth: bool, flow: bool, seed: &Path) -> Server {
+/// `extra`: zusaetzliche Umgebung, gewinnt gegen die Voreinstellung. Der Lauf gegen den Stub setzt
+/// hier `LLM_API_BASE`, `ORS_API_BASE` und die synthetischen Schluessel (`extern_stub`).
+fn starte_mit(
+    art: &'static str,
+    wurzel: &Path,
+    no_auth: bool,
+    flow: bool,
+    seed: &Path,
+    extra: &[(&str, &str)],
+) -> Server {
     let daten = wurzel.join(art);
     let faelle = daten.join("faelle");
     std::fs::create_dir_all(&faelle).unwrap();
@@ -197,6 +208,9 @@ fn starte(art: &'static str, wurzel: &Path, no_auth: bool, flow: bool, seed: &Pa
         .env_remove("XDG_DATA_HOME")
         .stdout(Stdio::piped())
         .stderr(Stdio::null());
+    for (k, v) in extra {
+        cmd.env(k, v);
+    }
     let mut child = cmd.spawn().unwrap();
     let stdout = child.stdout.take().unwrap();
     let (tx, rx) = mpsc::channel();
@@ -611,8 +625,20 @@ struct Paar {
 
 impl Paar {
     fn neu(wurzel: &Path, no_auth: bool, flow: bool, seed: &Path) -> Self {
-        let py = starte("python", wurzel, no_auth, flow, seed);
-        let rs = starte("rust", wurzel, no_auth, flow, seed);
+        Self::neu_mit(wurzel, no_auth, flow, seed, &[], &[])
+    }
+
+    /// Wie [`Paar::neu`], mit eigener Zusatz-Umgebung je Seite (`starte_mit`).
+    fn neu_mit(
+        wurzel: &Path,
+        no_auth: bool,
+        flow: bool,
+        seed: &Path,
+        extra_py: &[(&str, &str)],
+        extra_rs: &[(&str, &str)],
+    ) -> Self {
+        let py = starte_mit("python", wurzel, no_auth, flow, seed, extra_py);
+        let rs = starte_mit("rust", wurzel, no_auth, flow, seed, extra_rs);
         let logs = [
             Log::neu(py.faelle().join("audit.jsonl")),
             Log::neu(rs.faelle().join("audit.jsonl")),
@@ -3223,14 +3249,14 @@ fn kontoauszug_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBil
             ("verworfen", json!(5)),
         ],
     );
-    // Ein Verwendungszweck, der kein Text ist: bei einer Ausgabe `AttributeError` (500), bei einer
-    // Einnahme nie gelesen, und falsch heisst leer.
+    // Ein Verwendungszweck, der kein Text ist: bei einer Ausgabe 422 (`pruefe_buchungsfelder`, vorher
+    // `AttributeError`, 500), bei einer Einnahme nie gelesen, und falsch heisst leer.
     for (name, zweck, soll) in [
-        ("json Zweck Zahl", json!(5), 500),
-        ("json Zweck Liste", json!(["maler"]), 500),
-        ("json Zweck Objekt", json!({"a": 1}), 500),
-        ("json Zweck wahr", json!(true), 500),
-        ("json Zweck Kommazahl", json!(1.5), 500),
+        ("json Zweck Zahl", json!(5), 422),
+        ("json Zweck Liste", json!(["maler"]), 422),
+        ("json Zweck Objekt", json!({"a": 1}), 422),
+        ("json Zweck wahr", json!(true), 422),
+        ("json Zweck Kommazahl", json!(1.5), 422),
         ("json Zweck null", Value::Null, 200),
         ("json Zweck 0", json!(0), 200),
         ("json Zweck leere Liste", json!([]), 200),
@@ -3453,6 +3479,129 @@ fn kontoauszug_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBil
         )),
         400,
         &[("fehler", json!("json-Inhalt nicht parsebar"))],
+    );
+    // ---- JSON-Text: Datum und Zweck, die die Akte nicht haelt (Vault Backlog
+    // `falldatei-mit-nan-liest-rust-als-text`, AK4). Die Rumpf-Tuer sieht den Text nicht; beide Server
+    // weisen mit 422 ab, der Wortlaut nennt Feld und Typ, nie den Wert. Vorher: Python 500 beim Schreiben
+    // (NaN) oder 200 mit einer Ganzzahl ausserhalb von i64 in der Akte, Rust 200 mit Text.
+    let datum_meldung = |typ: &str| {
+        json!(format!(
+            "Kontoauszug nicht lesbar: datum einer Buchung enthält eine Zahl ({typ}), die die Akte nicht halten kann."
+        ))
+    };
+    let zweck_meldung = |typ: &str| {
+        json!(format!(
+            "Kontoauszug nicht lesbar: verwendungszweck einer Ausgabe muss Text sein, nicht {typ}."
+        ))
+    };
+    let neun_4300 = "9".repeat(4300);
+    for (name, datum, typ) in [
+        ("json Text Datum NaN", "NaN", "float"),
+        ("json Text Datum Infinity", "Infinity", "float"),
+        ("json Text Datum -Infinity", "-Infinity", "float"),
+        ("json Text Datum 1e400", "1e400", "float"),
+        ("json Text Datum -1e400", "-1e400", "float"),
+        ("json Text Datum Liste mit NaN", "[1, NaN]", "float"),
+        ("json Text Datum tief Infinity", r#"{"a": {"b": [Infinity]}}"#, "float"),
+        ("json Text Datum 2^63", "9223372036854775808", "int"),
+        ("json Text Datum 2^64", "18446744073709551616", "int"),
+        ("json Text Datum unter i64", "-9223372036854775809", "int"),
+        ("json Text Datum Liste mit 2^64", "[18446744073709551616]", "int"),
+        ("json Text Datum Objekt unter i64", r#"{"a": -9223372036854775809}"#, "int"),
+        ("json Text Datum 4300 Ziffern", neun_4300.as_str(), "int"),
+        ("json Text Datum int und NaN", "[18446744073709551616, NaN]", "float"),
+    ] {
+        k.lauf(
+            name,
+            text(&format!(
+                r#"[{{"datum": {datum}, "betrag": -5000, "verwendungszweck": "Spende"}}]"#
+            )),
+            422,
+            &[("fehler", datum_meldung(typ))],
+        );
+    }
+    for (name, zahl) in [
+        ("json Text Datum fuehrende Null", "0123456789012345678901234"),
+        ("json Text Datum Minus mit fuehrender Null", "-0123456789012345678901"),
+        ("json Text Datum nur Minus", "-"),
+        ("json Text Datum zwei Minus", "--5"),
+        ("json Text Datum Plus", "+5"),
+    ] {
+        k.lauf(
+            name,
+            text(&format!(
+                r#"[{{"datum": {zahl}, "betrag": -5000, "verwendungszweck": "Spende"}}]"#
+            )),
+            400,
+            &[("fehler", json!("json-Inhalt nicht parsebar"))],
+        );
+    }
+    k.lauf(
+        "json Text Datum einer Einnahme NaN",
+        text(r#"[{"datum": NaN, "betrag": 5000, "verwendungszweck": "Spende"}]"#),
+        422,
+        &[("fehler", datum_meldung("float"))],
+    );
+    for (name, datum) in [
+        ("json Text Datum i64 max", "9223372036854775807"),
+        ("json Text Datum i64 min", "-9223372036854775808"),
+        ("json Text Datum Kommazahl", "1.5"),
+        ("json Text Datum Text NaN", r#""NaN""#),
+        ("json Text Datum Liste", "[1, 2.5]"),
+        ("json Text Datum wahr", "true"),
+        ("json Text Datum null", "null"),
+    ] {
+        k.lauf(
+            name,
+            text(&format!(
+                r#"[{{"datum": {datum}, "betrag": -5000, "verwendungszweck": "Spende"}}]"#
+            )),
+            200,
+            &zaehlen(1, 1, 0),
+        );
+    }
+    k.lauf(
+        "json Text verworfene Buchung mit NaN im Datum",
+        text(
+            r#"[{"datum": NaN, "betrag": NaN, "verwendungszweck": "Spende"}, {"datum": "d", "betrag": -5000, "verwendungszweck": "Spende"}]"#,
+        ),
+        200,
+        &[
+            ("uebernommen", json!(1)),
+            ("transaktionen", json!(1)),
+            ("verworfen", json!(1)),
+        ],
+    );
+    k.lauf(
+        "json Text Datum vor Zweck",
+        text(
+            r#"[{"datum": "d", "betrag": -100, "verwendungszweck": 5}, {"datum": NaN, "betrag": -100, "verwendungszweck": "Maler"}]"#,
+        ),
+        422,
+        &[("fehler", datum_meldung("float"))],
+    );
+    for (name, zweck, typ) in [
+        ("json Text Zweck NaN", "NaN", "float"),
+        ("json Text Zweck -Infinity", "-Infinity", "float"),
+        ("json Text Zweck 1e400", "1e400", "float"),
+        ("json Text Zweck 2^64", "18446744073709551616", "int"),
+        ("json Text Zweck Zahl", "5", "int"),
+        ("json Text Zweck Liste", r#"["maler"]"#, "list"),
+    ] {
+        k.lauf(
+            name,
+            text(&format!(
+                r#"[{{"datum": "d", "betrag": -5000, "verwendungszweck": {zweck}}}]"#
+            )),
+            422,
+            &[("fehler", zweck_meldung(typ))],
+        );
+    }
+    k.lauf(
+        "json Text Zweck NaN bei Einnahme",
+        text(r#"[{"datum": "d", "betrag": 5000, "verwendungszweck": NaN}]"#),
+        200,
+        &zaehlen(0, 1, 0),
     );
     for (name, t, soll, fehler) in [
         ("json Text kaputt", "[{", 400, "json-Inhalt nicht parsebar"),
@@ -5172,50 +5321,10 @@ fn dokumentierte_abweichungen() {
         py.status, rs.status
     );
     assert_eq!((py.status, rs.status), (500, 401));
-    // 5. `POST /kontoauszug`, JSON als Text mit `NaN` an einer Stelle, die gelesen wird (9c, gewollte
-    //    Abweichung, `json_laden` in `api::kontoauszug`): Python liest die Kommazahl `nan` und scheitert
-    //    spaeter daran, Rust liest den Text `"NaN"` und uebernimmt die Buchung.
-    //    a) im Datum einer Buchung, die gebucht wird: Python schreibt die Akte mit `allow_nan=False`
-    //       (`speichere_fall`, "NaN sperrt sonst die Akte fuer Rust") und antwortet 500, die Akte
-    //       bleibt leer; Rust legt `"NaN"` als Text ab.
-    //    b) im Zweck einer Ausgabe: Python ruft `.lower()` auf eine Kommazahl (500), Rust sieht Text,
-    //       findet keine Kategorie und antwortet 200.
-    //    Beides gibt es nur mit einem Auszug, den kein Programm so schreibt.
-    for (fall, inhalt, py_fehler) in [
-        (
-            "dok_nan_datum",
-            r#"[{"datum": NaN, "betrag": -5000, "verwendungszweck": "Spende"}]"#,
-            "ValueError: Out of range float values are not JSON compliant: nan",
-        ),
-        (
-            "dok_nan_zweck",
-            r#"[{"datum": "d", "betrag": -5000, "verwendungszweck": Infinity}]"#,
-            "AttributeError: 'float' object has no attribute 'lower'",
-        ),
-    ] {
-        let neu = Anfrage::neu("dok Fall", "POST", "/fall").token(&alice).json(
-            &json!({"fall_id": fall, "scheibe": "gesamt", "veranlagungszeitraum": 2025}),
-        );
-        let _ = zweimal(&neu);
-        let (py, rs) = zweimal(
-            &Anfrage::neu("dok kontoauszug NaN", "POST", &format!("/fall/{fall}/kontoauszug"))
-                .token(&alice)
-                .json(&json!({"format": "json", "inhalt": inhalt})),
-        );
-        println!(
-            "  kontoauszug {fall}: py={} {} | rs={} {}",
-            py.status,
-            String::from_utf8_lossy(&py.body),
-            rs.status,
-            String::from_utf8_lossy(&rs.body)
-        );
-        assert_eq!((py.status, rs.status), (500, 200), "{fall}");
-        assert!(
-            String::from_utf8_lossy(&py.body).contains(py_fehler),
-            "{fall}: {}",
-            String::from_utf8_lossy(&py.body)
-        );
-    }
+    // 5. `POST /kontoauszug`, JSON als Text (`json_laden` in `api::kontoauszug`). a) `NaN` im Datum einer
+    //    gebuchten Buchung und b) `Infinity` im Zweck einer Ausgabe waren hier dokumentierte Abweichungen
+    //    (Python 500, Rust 200); beide Server weisen sie seit Backlog `falldatei-mit-nan-liest-rust-als-text`,
+    //    AK4, mit 422 ab (Faelle `json Text Datum ...` und `json Text Zweck ...` in `kontoauszug_faelle`).
     //    c) ein einzelnes Surrogat-Escape im JSON-Text: Python nimmt es an und scheitert beim Schreiben
     //       der Akte (500, `UnicodeEncodeError`), `serde_json` weist es schon beim Lesen ab (400).
     let neu = Anfrage::neu("dok Fall", "POST", "/fall").token(&alice).json(
@@ -5236,11 +5345,6 @@ fn dokumentierte_abweichungen() {
         String::from_utf8_lossy(&rs.body)
     );
     assert_eq!((py.status, rs.status), (500, 400));
-    let datei = |s: &Server, fall: &str| {
-        std::fs::read_to_string(s.faelle().join(format!("{fall}.json"))).unwrap()
-    };
-    assert!(datei(&p.py, "dok_nan_datum").contains(r#""events": []"#));
-    assert!(datei(&p.rs, "dok_nan_datum").contains(r#""datum":"NaN""#));
 }
 
 /// `_routes()` (`server.py:62`) und `api::routen::EINTRAEGE` stimmen in Methode, Muster und

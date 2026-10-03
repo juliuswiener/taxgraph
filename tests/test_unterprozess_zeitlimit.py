@@ -233,6 +233,18 @@ def _boom_fuer(fehler: str):
     if fehler == "timeout":
         def _boom(cmd, *a, **kw):
             raise subprocess.TimeoutExpired(cmd, kw.get("timeout", 30))
+    elif fehler == "werkzeug_fehlt":
+        # So meldet subprocess.run ein Programm, das auf dem PATH nicht liegt.
+        def _boom(cmd, *a, **kw):
+            raise FileNotFoundError(2, "No such file or directory", "pdftotext")
+    elif fehler == "pdftoppm_fehler":
+        _boom = _run_werkzeuge(pdftoppm_rc=1)
+    elif fehler == "tesseract_fehler":
+        _boom = _run_werkzeuge(tesseract_rc=1)
+    elif fehler == "programmfehler":
+        # Ein Fehler, der kein Betriebsproblem ist: muss ein 500 bleiben, kein 503.
+        def _boom(cmd, *a, **kw):
+            raise ValueError("kein Betriebsproblem")
     else:
         def _boom(cmd, *a, **kw):
             return subprocess.CompletedProcess(
@@ -260,6 +272,101 @@ def test_endpunkt_wirft_apierror_422(tmp_path, monkeypatch, fehler):
     assert e.value.status == 422, (
         f"Endpunkt wirft Status {e.value.status} statt 422 bei '{fehler}'")
     assert "nicht lesbar" in str(e.value), f"Meldung erklärt nichts: {e.value}"
+
+
+TSV_KOPF = "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext\n"
+EINE_LEERE_SEITE = "x\x0c"      # pdftotext-Ausgabe: eine Seite, zu kurz fuer einen Textlayer -> Einzelseiten-OCR
+
+
+def _run_werkzeuge(*, fehlt: str | None = None, text: str = "", pdftoppm_rc: int = 0,
+                   tesseract_rc: int = 0):
+    """Unterprozess-Ersatz fuer pdftotext, pdftoppm und tesseract. `text` ist die pdftotext-Ausgabe
+    (leer = Voll-Scan, EINE_LEERE_SEITE = Einzelseite). `fehlt` nennt ein Programm, das nicht auf dem
+    PATH liegt. Bei Exit 0 legt pdftoppm eine Seite ab, bei Exit != 0 keine (so gemessen); tesseract
+    liefert bei Exit 0 nur die TSV-Kopfzeile (die weisse Seite), bei Exit != 0 nichts."""
+    def _run(cmd, *a, **kw):
+        if cmd[0] == fehlt:
+            raise FileNotFoundError(2, "No such file or directory", fehlt)
+        if cmd[0] == "pdftotext":
+            return subprocess.CompletedProcess(cmd, 0, stdout=text, stderr="")
+        if cmd[0] == "pdftoppm":
+            if pdftoppm_rc == 0:
+                pathlib.Path(cmd[-1] + "-1.png").write_bytes(b"")
+            return subprocess.CompletedProcess(cmd, pdftoppm_rc, stdout=b"", stderr=b"")
+        if cmd[0] == "tesseract":
+            return subprocess.CompletedProcess(cmd, tesseract_rc, stderr="",
+                                               stdout=TSV_KOPF if tesseract_rc == 0 else "")
+        raise AssertionError(f"unerwarteter Unterprozess: {cmd}")
+    return _run
+
+
+@pytest.mark.parametrize("fehlt", ["pdftotext", "pdftoppm", "tesseract"])
+def test_endpunkt_fehlendes_werkzeug_wirft_apierror_503(tmp_path, monkeypatch, fehlt):
+    """Ein Programm, das auf dem Rechner fehlt, ist ein Betriebsproblem: 503 mit Klartext (Vault
+    decisions/fehlendes-hilfsprogramm-antwortet-503). Alle drei Programme laufen über dieselbe
+    Stelle; geprüft wird jedes, weil pdftoppm und tesseract erst im OCR-Zweig erreicht werden.
+    Der Ausnahme-Typ und die errno-Zeile gehören nicht in die Meldung an den Nutzer."""
+    import base64
+    import api as API
+    fall_id = _fall_anlegen(tmp_path, monkeypatch)
+    monkeypatch.setattr(KW.subprocess, "run", _run_werkzeuge(fehlt=fehlt))
+
+    with pytest.raises(API.ApiError) as e:
+        API.kontoauszug(fall_id, {"format": "pdf",
+                                  "inhalt": base64.b64encode(b"%PDF-1.4\n").decode()})
+    meldung = str(e.value)
+    assert e.value.status == 503, f"Status {e.value.status} statt 503: {meldung}"
+    assert "FileNotFoundError" not in meldung and "Errno" not in meldung, (
+        f"Ausnahme-Typ in der Meldung an den Nutzer: {meldung}")
+    # Wortgleich mit Rust (rust/api/tests/kontoauszug_werkzeug.rs): zwei Texte, die auseinanderlaufen,
+    # sieht kein Test, solange jeder nur sein eigenes Stück prüft.
+    assert meldung == (f"PDF-Auslesen ist gerade nicht möglich: Das Programm '{fehlt}' fehlt auf "
+                       f"diesem Rechner."), f"Wortlaut weicht ab: {meldung}"
+
+
+def test_endpunkt_anderer_fehler_bleibt_kein_apierror(tmp_path, monkeypatch):
+    """Gegenprobe zum 503: nur FileNotFoundError ist ein Betriebsproblem. Ein ValueError aus dem
+    Lesepfad darf NICHT zu einem ApiError werden (kein Catch-all), sonst versteckt der Zweig
+    echte Programmfehler. ApiError ist selbst eine ValueError-Unterklasse, daher der isinstance."""
+    import base64
+    import api as API
+    fall_id = _fall_anlegen(tmp_path, monkeypatch)
+    monkeypatch.setattr(KW.subprocess, "run", _boom_fuer("programmfehler"))
+
+    with pytest.raises(ValueError) as e:
+        API.kontoauszug(fall_id, {"format": "pdf",
+                                  "inhalt": base64.b64encode(b"%PDF-1.4\n").decode()})
+    assert not isinstance(e.value, API.ApiError), f"ValueError wurde zum ApiError: {e.value}"
+
+
+@pytest.mark.parametrize("weg", ["voll", "einzel"])
+@pytest.mark.parametrize("programm, status", [("pdftoppm", 422), ("tesseract", 503)])
+def test_endpunkt_rueckgabecode_pdftoppm_422_tesseract_503(tmp_path, monkeypatch, programm, status,
+                                                            weg):
+    """Endet pdftoppm oder tesseract mit Fehlercode, scheitert der Upload (Vault decisions/ein-
+    hilfsprogramm-mit-fehlercode-bricht-den-upload-ab) — vorher las er still leer (Voll-Scan) oder
+    brach mit IndexError ab (Einzelseite). pdftoppm -> 422: die Datei laesst sich nicht in Bilder
+    umwandeln, der Nutzer kann eine andere hochladen. tesseract -> 503: das Bild hat pdftoppm gerade
+    selbst gemacht, der einzige gemessene Ausloeser ist eine unvollstaendige Installation (fehlende
+    deu-Sprachdaten). Beide Wege (Voll-Scan, Einzelseite) und beide Programme."""
+    import base64
+    import api as API
+    fall_id = _fall_anlegen(tmp_path, monkeypatch)
+    text = "" if weg == "voll" else EINE_LEERE_SEITE
+    monkeypatch.setattr(KW.subprocess, "run",
+                        _run_werkzeuge(text=text, **{f"{programm}_rc": 1}))
+
+    with pytest.raises(API.ApiError) as e:
+        API.kontoauszug(fall_id, {"format": "pdf",
+                                  "inhalt": base64.b64encode(b"%PDF-1.4\n").decode()})
+    meldung = str(e.value)
+    assert e.value.status == status, f"Status {e.value.status} statt {status}: {meldung}"
+    for name in ("PdfNichtLesbar", "OcrNichtVerfuegbar", "IndexError"):
+        assert name not in meldung, f"Ausnahme-Typ {name} in der Meldung: {meldung}"
+    if status == 422:
+        assert "nicht lesbar" in meldung and "Bilder" in meldung, f"Meldung erklärt nichts: {meldung}"
+    else:
+        assert meldung.startswith("PDF-Auslesen ist gerade nicht möglich:"), meldung
 
 
 def test_ueber_http_kommt_wirklich_422_an(tmp_path, monkeypatch):
@@ -311,16 +418,96 @@ def test_ueber_http_kommt_wirklich_422_an(tmp_path, monkeypatch):
         srv.server_close()
 
 
-def test_endpunkt_laesst_keine_temporaere_pdf_zurueck(tmp_path, monkeypatch):
+def _kontoauszug_ueber_http(tmp_path, monkeypatch, run) -> tuple[int, str]:
+    """Schickt einen PDF-Kontoauszug über den echten Server (server.py) und gibt (Status, Körper)
+    zurück, auch bei 4xx/5xx. `run` ersetzt subprocess.run. Gleicher Weg wie
+    test_ueber_http_kommt_wirklich_422_an, nur ohne feste Erwartung."""
+    import base64
+    import json as _json
+    import threading
+    import urllib.error
+    import urllib.request
+    import api as API
+    import api_auth
+    import audit
+    import server as SRV
+
+    monkeypatch.setattr(API, "FAELLE", str(tmp_path / "faelle"))
+    monkeypatch.setattr(audit, "AUDIT_DIR", str(tmp_path / "faelle"))
+    monkeypatch.setattr(api_auth, "_AUTH_USER", None)
+    monkeypatch.setenv("TAXGRAPH_NO_AUTH", "1")
+    API.fall_anlegen({"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": "http_probe"})
+    monkeypatch.setattr(KW.subprocess, "run", run)
+
+    srv = SRV.make_server(0)
+    th = threading.Thread(target=srv.serve_forever, daemon=True)
+    th.start()
+    basis = f"http://{srv.server_address[0]}:{srv.server_address[1]}"
+    try:
+        rumpf = _json.dumps({"format": "pdf",
+                             "inhalt": base64.b64encode(b"%PDF-1.4\n").decode()}).encode()
+        anfrage = urllib.request.Request(
+            f"{basis}/fall/http_probe/kontoauszug", data=rumpf, method="POST",
+            headers={"Content-Type": "application/json", "Origin": basis})
+        try:
+            with urllib.request.urlopen(anfrage, timeout=15) as antwort:
+                return antwort.status, antwort.read().decode()
+        except urllib.error.HTTPError as e:
+            return e.code, e.read().decode()
+    finally:
+        srv.shutdown()
+        th.join(timeout=5)
+        srv.server_close()
+
+
+def test_ueber_http_kommt_wirklich_503_an(tmp_path, monkeypatch):
+    """Fehlt ein Lesewerkzeug, sieht der Nutzer über den echten Server ein 503 mit Klartext —
+    kein 500 mit "FileNotFoundError: [Errno 2] ..." (roter Befehl A22 der Entscheidung
+    fehlendes-hilfsprogramm-antwortet-503)."""
+    code, koerper = _kontoauszug_ueber_http(
+        tmp_path, monkeypatch, _boom_fuer("werkzeug_fehlt"))
+    assert code == 503, f"HTTP {code} statt 503:\n{koerper}"
+    assert "FileNotFoundError" not in koerper and "Errno" not in koerper, (
+        f"Ausnahme-Typ in der Antwort an den Nutzer:\n{koerper}")
+    assert "pdftotext" in koerper, f"Antwort nennt das fehlende Programm nicht:\n{koerper}"
+
+
+def test_ueber_http_bleibt_ein_anderer_fehler_500(tmp_path, monkeypatch):
+    """Gegenprobe über den echten Server: ein ValueError aus dem Lesepfad bleibt ein 500."""
+    code, koerper = _kontoauszug_ueber_http(
+        tmp_path, monkeypatch, _boom_fuer("programmfehler"))
+    assert code == 500, f"HTTP {code} statt 500:\n{koerper}"
+
+
+@pytest.mark.parametrize("fehler, status, text", [
+    ("pdftoppm_fehler", 422, "nicht lesbar"),
+    ("tesseract_fehler", 503, "PDF-Auslesen ist gerade nicht möglich"),
+])
+def test_ueber_http_rueckgabecode_pdftoppm_422_tesseract_503(tmp_path, monkeypatch, fehler, status,
+                                                              text):
+    """Der Beweis ueber server.py: ein Fehlercode von pdftoppm kommt als 422, einer von tesseract als
+    503 beim Nutzer an — kein 200 mit 0 Buchungen, kein 500 mit Klassenname. Der Zweig fuer tesseract
+    sitzt hinter dem fuer FileNotFoundError und liefert dieselbe Art Antwort."""
+    code, koerper = _kontoauszug_ueber_http(
+        tmp_path, monkeypatch, _boom_fuer(fehler))
+    assert code == status, f"HTTP {code} statt {status}:\n{koerper}"
+    assert text in koerper, f"Antwort enthält {text!r} nicht:\n{koerper}"
+    for name in ("PdfNichtLesbar", "OcrNichtVerfuegbar", "IndexError", "FileNotFoundError"):
+        assert name not in koerper, f"Ausnahme-Typ {name} in der Antwort an den Nutzer:\n{koerper}"
+
+
+@pytest.mark.parametrize("fehler", ["timeout", "werkzeug_fehlt", "pdftoppm_fehler", "tesseract_fehler"])
+def test_endpunkt_laesst_keine_temporaere_pdf_zurueck(tmp_path, monkeypatch, fehler):
     """Der Abbruchpfad darf das entpackte PDF nicht liegen lassen: die temporäre Datei trägt den
     ROHEN Auszug samt IBAN, vor jeder Maskierung durch den Writer. Das `finally: os.unlink` gab
-    es schon — geprüft war es für diesen neuen Zweig nicht."""
+    es schon — geprüft war es für diesen neuen Zweig nicht. Gilt für jeden Abbruchgrund, der als
+    eigener `except`-Zweig dazukommt (zuletzt: ein fehlendes Hilfsprogramm)."""
     import base64
     import api as API
     fall_id = _fall_anlegen(tmp_path, monkeypatch)
     vorher = set(pathlib.Path(tempfile.gettempdir()).glob("*.pdf"))
 
-    monkeypatch.setattr(KW.subprocess, "run", _boom_fuer("timeout"))
+    monkeypatch.setattr(KW.subprocess, "run", _boom_fuer(fehler))
     with pytest.raises(API.ApiError):
         API.kontoauszug(fall_id, {"format": "pdf",
                                   "inhalt": base64.b64encode(b"%PDF-1.4\n").decode()})

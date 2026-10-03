@@ -1020,12 +1020,23 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
                 # exportieren), nicht ein vorübergehender Systemzustand. Für eine Datei, die
                 # pdftotext gar nicht öffnen kann, gilt dasselbe.
                 raise ApiError(422, f"Kontoauszug nicht lesbar: {e}")
+            except FileNotFoundError as e:
+                # Fehlendes Hilfsprogramm = Betriebsproblem, nicht die Datei: 503 wie bei ERiC, nicht 422
+                # (decisions/fehlendes-hilfsprogramm-antwortet-503). NUR dieser Typ, kein Catch-all.
+                raise ApiError(503, f"PDF-Auslesen ist gerade nicht möglich: Das Programm "
+                                    f"'{e.filename}' fehlt auf diesem Rechner.")
+            except KW.OcrNichtVerfuegbar as e:      # tesseract mit Fehlercode (z. B. keine deu-Daten): ebenso 503
+                raise ApiError(503, f"PDF-Auslesen ist gerade nicht möglich: {e}")
             tx, n_verworfen = KW.parse_pdf_zeilen(text, conf_map)
         finally:
             os.unlink(pfad)
     else:
         raise ApiError(400, "format muss csv, json oder pdf sein")
     tx, n_verworfen = KW.verwirf_unlesbare_betraege(tx, n_verworfen)   # nie 500, nie der ganze Auszug weg
+    try:
+        KW.pruefe_buchungsfelder(tx)   # datum und Zweck, die die Akte nicht hält: 422 statt 500 beim Schreiben
+    except ValueError as e:
+        raise ApiError(422, f"Kontoauszug nicht lesbar: {e}")
     # katalog GLOBAL (dev-2-Kontrakt): Enforcement decoupled vom per-Scheibe-Targeting.
     n, llm_uebersprungen = KW.uebernehme_kontoauszug(
         store, tx, bindung, llm_klassifikator=api_llm._kontoauszug_llm_klassifikator(),
@@ -1211,7 +1222,7 @@ def chat(fall_id: str, body: dict) -> tuple[int, dict]:
         except (ValueError, KeyError) as e:
             abgelehnt.append(fid)                    # Katalog/Auflage-A/F2-Abweisung → still überspringen, Rest gilt
             if fid:
-                abgelehnt_gruende[fid] = str(e)       # NEU: Grund (kein Wert/Freitext enthalten, PII-frei)
+                abgelehnt_gruende[fid] = api_llm._abgelehnt_grund(e, fid)   # Klasse und Feld, nie der Wert
     speichere_fall(fall_id, store)
     _abg = [a for a in abgelehnt if a]
     if _abg:                                         # Security-Observability (feld_ids, KEIN Wert/Freitext = PII-frei):
