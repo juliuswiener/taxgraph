@@ -5,7 +5,7 @@
 //! `rust/fixtures/sperrgrund_klartext.json`); ein Rust-Test vergleicht beide (unten).
 //!
 //! `grund` in `api.py: ergebnis()` ist entweder `None` (kein Sperrgrund), das Literal
-//! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 54 Schluessel unten. Die
+//! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 55 Schluessel unten. Die
 //! dritte Moeglichkeit bildet [`Sperrgrund::Bestaetigt`] ab; sie hat bewusst KEINEN
 //! eigenen Klartext (die Python-Quelle hat auch keinen fuer sie).
 use std::fmt;
@@ -14,7 +14,7 @@ use std::str::FromStr;
 /// Text fuer einen unbekannten/nicht gelisteten Sperrgrund-String (`UNBEKANNTER_SPERRGRUND`).
 pub const UNBEKANNTER_SPERRGRUND: &str = "Die Berechnung kann an dieser Stelle nicht fortgesetzt werden, und woran genau es liegt, lässt sich hier nicht in Worte fassen. Das liegt an der Software, nicht an deinen Angaben. Bitte melde diesen Fall — damit lässt sich nachvollziehen, was gefehlt hat.";
 
-/// Ein Sperrgrund-String, der zu keinem der 54 bekannten Schluessel und nicht zu
+/// Ein Sperrgrund-String, der zu keinem der 55 bekannten Schluessel und nicht zu
 /// `"bestaetigt"` passt.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("unbekannter Sperrgrund {0:?}")]
@@ -27,6 +27,7 @@ pub enum Sperrgrund {
     /// `"bestaetigt"`: kein Sperrgrund, das Ergebnis steht. Kein Klartext (Python hat
     /// auch keinen).
     Bestaetigt,
+    Abs3PartnerGewinnOffen,
     Abs3Ueber5mioOffen,
     AlleinerziehendKonsistenzOffen,
     ArbeitsmittelAfaUeberGwgOffen,
@@ -89,6 +90,7 @@ impl Sperrgrund {
     pub const fn als_str(self) -> &'static str {
         match self {
             Self::Bestaetigt => "bestaetigt",
+            Self::Abs3PartnerGewinnOffen => "abs3_partner_gewinn_offen",
             Self::Abs3Ueber5mioOffen => "abs3_ueber_5mio_offen",
             Self::AlleinerziehendKonsistenzOffen => "alleinerziehend_konsistenz_offen",
             Self::ArbeitsmittelAfaUeberGwgOffen => "arbeitsmittel_afa_ueber_gwg_offen",
@@ -160,6 +162,7 @@ impl Sperrgrund {
     pub const fn klartext(self) -> Option<&'static str> {
         match self {
             Self::Bestaetigt => None,
+            Self::Abs3PartnerGewinnOffen => Some("Du hast den ermäßigten Steuersatz für den Verkauf oder die Aufgabe deines Betriebs beantragt, und dein Ehepartner hat ebenfalls einen Gewinn aus dem Verkauf oder der Aufgabe eines Betriebs. Wie beide Gewinne zusammen zu versteuern sind, rechnet die Software noch nicht. Damit du keine falsche Zahl bekommst, bleibt die Berechnung gesperrt. Dieser Fall braucht steuerliche Beratung."),
             Self::Abs3Ueber5mioOffen => Some("Du hast den ermäßigten Steuersatz für den Verkauf oder die Aufgabe deines Betriebs beantragt, und der Gewinn liegt über fünf Millionen Euro. Der ermäßigte Satz gilt nur bis zu dieser Grenze; wie der Teil darüber zu versteuern ist, rechnet die Software noch nicht. Dieser Fall braucht steuerliche Beratung."),
             Self::AlleinerziehendKonsistenzOffen => Some("Zwei Angaben passen nicht zusammen: Du hast angegeben, allein stehend zu sein, und zugleich eine gemeinsame Veranlagung mit Ehe- oder Lebenspartner gewählt. Den Entlastungsbetrag für Alleinerziehende gibt es nur, wenn du nicht gemeinsam veranlagt wirst. Bitte sieh dir beide Angaben noch einmal an."),
             Self::ArbeitsmittelAfaUeberGwgOffen => Some("Zu deinen angeschafften Arbeitsmitteln fehlt noch, wie die Kosten abgesetzt werden sollen. Bei Anschaffungen bis 800 Euro ist das die Frage, ob du den Betrag sofort in voller Höhe absetzen willst; bei teureren Geräten die Nutzungsdauer und — wenn du sie in diesem Jahr gekauft hast — der Anschaffungsmonat. Bitte beantworte die Rückfragen zu deinen Arbeitsmitteln."),
@@ -237,6 +240,7 @@ impl FromStr for Sperrgrund {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "bestaetigt" => Ok(Self::Bestaetigt),
+            "abs3_partner_gewinn_offen" => Ok(Self::Abs3PartnerGewinnOffen),
             "abs3_ueber_5mio_offen" => Ok(Self::Abs3Ueber5mioOffen),
             "alleinerziehend_konsistenz_offen" => Ok(Self::AlleinerziehendKonsistenzOffen),
             "arbeitsmittel_afa_ueber_gwg_offen" => Ok(Self::ArbeitsmittelAfaUeberGwgOffen),
@@ -318,7 +322,7 @@ mod tests {
         let klartext = fixture["klartext"].as_object().unwrap();
         assert_eq!(
             klartext.len(),
-            54,
+            55,
             "Fixture-Groesse hat sich veraendert -- Enum nachziehen"
         );
         for (schluessel, erwartet) in klartext {

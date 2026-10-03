@@ -1775,6 +1775,187 @@ fn p34_antrag_zwilling() {
     );
 }
 
+/// § 34 Abs. 3 fuer A + Veraeusserungsgewinn beim Ehegatten (`abs3_partner_gewinn_offen`, Vault
+/// `p34-antrag-ohne-kennzahl-erreicht-elster-nicht` AK2b, Entscheid 2026-10-03): zusammen UND Antrag
+/// bestaetigt UND Berechtigung UND 0 < `netto_vg` <= 5 Mio UND ROHER Partner-Gewinn > 0; nur bestaetigte
+/// Felder urteilen, ein Betrag <= 0 sperrt nie. Je Fall: Python gleich Rust (alle fuenf Funktionen) UND
+/// der erwartete Grund an PYTHON festgenagelt (ein Fall, in dem beide Seiten aus demselben falschen Grund
+/// nichts sperren, waere sonst gruen). Der Abweichungsfall roh/netto: Partner 40.000 EUR unter dem
+/// Freibetrag sperrt. Rust-hermetisch ohne Python: `bescheid/tests/abs3_partner_gewinn.rs`.
+#[test]
+fn p34_partner_gewinn_sperre() {
+    if skip() {
+        return;
+    }
+    const GRUND: &str = "abs3_partner_gewinn_offen";
+    const KEINE: &str = "(keine Sperre)";
+    type Paare = Vec<(&'static str, Value, bool)>;
+    let basis = |abw: &[(&'static str, Value, bool)]| -> Paare {
+        let mut e: Paare = vec![
+            ("veranlagung", json!("zusammen"), true),
+            ("antrag_ermaessigter_satz", json!(true), true),
+            ("geburtsjahr", json!(1960), true),
+            ("dauernd_berufsunfaehig", json!(false), true),
+            ("ermaessigung_einmal_genutzt", json!(false), true),
+            ("rentner_alter_55_oder_berufsunfaehig", json!(true), true),
+            ("rentner_freibetrag_erstmalig", json!(true), true),
+            ("rentner_veraeusserungsgewinn", json!(50_000_000), true),
+            ("rentner_veraeusserungs_betriebsart", json!("gewerbe"), true),
+            (
+                "rentner_veraeusserungsgewinn_partner",
+                json!(30_000_000),
+                true,
+            ),
+            (
+                "rentner_alter_55_oder_berufsunfaehig_partner",
+                json!(true),
+                true,
+            ),
+            ("rentner_freibetrag_erstmalig_partner", json!(true), true),
+            ("kein_gewinn", json!(false), true),
+            ("bruttoarbeitslohn_partner", json!(0), true),
+            ("kap_kapitalertraege_partner", json!(0), true),
+            ("kap_gewinn_aktien_partner", json!(0), true),
+            ("kap_gewinn_sonstige_partner", json!(0), true),
+            ("kap_verlust_aktien_partner", json!(0), true),
+            ("kap_verlust_sonstige_partner", json!(0), true),
+        ];
+        for (f, w, b) in abw {
+            e.retain(|(g, _, _)| g != f);
+            if !w.is_null() {
+                e.push((f, w.clone(), *b));
+            }
+        }
+        e
+    };
+    let pvg = "rentner_veraeusserungsgewinn_partner";
+    let faelle: Vec<(&str, &str, Paare)> = vec![
+        ("voll", GRUND, basis(&[])),
+        ("Partner 1 Cent", GRUND, basis(&[(pvg, json!(1), true)])),
+        (
+            "Partner 40.000 EUR unter Freibetrag (roh/netto)",
+            GRUND,
+            basis(&[(pvg, json!(4_000_000), true)]),
+        ),
+        ("Partner-VG 0", KEINE, basis(&[(pvg, json!(0), true)])),
+        (
+            "Partner-VG negativ",
+            KEINE,
+            basis(&[(pvg, json!(-1), true)]),
+        ),
+        (
+            "Partner-VG fehlt",
+            KEINE,
+            basis(&[(pvg, Value::Null, true)]),
+        ),
+        (
+            "Partner-VG vorlaeufig",
+            KEINE,
+            basis(&[(pvg, json!(30_000_000), false)]),
+        ),
+        (
+            "Antrag vorlaeufig Ja",
+            KEINE,
+            basis(&[("antrag_ermaessigter_satz", json!(true), false)]),
+        ),
+        (
+            "Antrag vorlaeufig Nein",
+            KEINE,
+            basis(&[("antrag_ermaessigter_satz", json!(false), false)]),
+        ),
+        (
+            "Veranlagung vorlaeufig",
+            KEINE,
+            basis(&[("veranlagung", json!("zusammen"), false)]),
+        ),
+        (
+            "Geburtsjahr vorlaeufig",
+            KEINE,
+            basis(&[("geburtsjahr", json!(1960), false)]),
+        ),
+        (
+            "Gewinn A vorlaeufig",
+            KEINE,
+            basis(&[("rentner_veraeusserungsgewinn", json!(50_000_000), false)]),
+        ),
+        (
+            "Antrag Nein",
+            KEINE,
+            basis(&[("antrag_ermaessigter_satz", json!(false), true)]),
+        ),
+        (
+            "Antrag fehlt",
+            KEINE,
+            basis(&[("antrag_ermaessigter_satz", Value::Null, true)]),
+        ),
+        (
+            "Einzelveranlagung",
+            KEINE,
+            basis(&[("veranlagung", json!("einzel"), true)]),
+        ),
+        (
+            "A zu jung",
+            KEINE,
+            basis(&[("geburtsjahr", json!(1990), true)]),
+        ),
+        (
+            "A schon genutzt",
+            KEINE,
+            basis(&[("ermaessigung_einmal_genutzt", json!(true), true)]),
+        ),
+        (
+            "A netto 0",
+            KEINE,
+            basis(&[("rentner_veraeusserungsgewinn", json!(4_000_000), true)]),
+        ),
+        (
+            "A ohne Gewinn",
+            KEINE,
+            basis(&[("rentner_veraeusserungsgewinn", Value::Null, true)]),
+        ),
+        (
+            "A ueber 5 Mio: eigener Grund davor",
+            "abs3_ueber_5mio_offen",
+            basis(&[("rentner_veraeusserungsgewinn", json!(600_000_000), true)]),
+        ),
+    ];
+    let mut b = Bilanz::default();
+    let mut gesperrt = 0;
+    for scheibe in ["gesamt", "rentner_gesamt"] {
+        for (name, erwartet, felder) in &faelle {
+            let evs: Vec<Value> = felder
+                .iter()
+                .enumerate()
+                .map(|(i, (f, w, z))| event(i, f, w, *z))
+                .collect();
+            let k = Kontext {
+                quelle: Quelle::Store(
+                    json!({"version": 1, "veranlagungszeitraum": 2025, "events": evs}),
+                ),
+                vz: 2025,
+                scheibe: Some(scheibe),
+                store_uebergeben: true,
+                bindung_uebergeben: true,
+                vz_ohne: false,
+                float_modus: false,
+            };
+            let py = frage_roh(&k.request(&["an_gesamt_sperrgrund"]));
+            let py_grund = py["bescheid.an_gesamt_sperrgrund"]["ok"]
+                .as_str()
+                .unwrap_or(KEINE);
+            assert_eq!(
+                py_grund, *erwartet,
+                "Python: falscher Grund ({scheibe}: {name})"
+            );
+            gesperrt += usize::from(py_grund == GRUND);
+            vergleiche(&mut b, &k, &format!("{scheibe}: {name}"), true, false);
+        }
+    }
+    b.drucke("p34_partner_gewinn_sperre", faelle.len() * 2);
+    assert_eq!(b.abweichungen(), 0);
+    assert_eq!(gesperrt, 6, "3 Sperrfaelle je Scheibe, alle anderen nicht");
+}
+
 /// Die Sperrgründe, die der Zufall nicht zuverlässig erreicht (spät im Guard hinter frühen Sperren).
 /// Jeder Fall ist von Hand gebaut; der Test verlangt, dass PYTHON den erwarteten Grund liefert (der
 /// Fall trifft die Stelle wirklich) und dass Rust ihn ebenso liefert.

@@ -58,6 +58,22 @@ from bescheid_einkuenfte import (  # noqa: E402
     _netto_vg_person_a,
 )
 
+
+def _bestaetigte(felder: dict) -> dict:
+    """Nur die bestätigten Felder — wie der Chooser (nur_bestaetigt=True). Ein vorläufiger Wert ist kein Beleg
+    (Zwei-Signal-Regel; partner_check zählt ebenso)."""
+    return {k: v for k, v in felder.items() if isinstance(v, dict) and v.get("zustand") == "bestaetigt"}
+
+
+def _abs3_wird_gerechnet(fb: dict, vz: int | None) -> bool:
+    """Der § 34-Chooser (bescheid_zweige) nimmt Abs. 3 für Person A: Antrag UND _abs3_eligible UND
+    0 < netto_vg <= 5 Mio (Entscheid 2026-09-26). `fb` = nur bestätigte Felder (`_bestaetigte`). EINE Stelle für
+    die Antragszeile (`_mit_ring_werten`) und die Sperre `abs3_partner_gewinn_offen`, damit beide nicht driften.
+    vz None / 0 = kein Veranlagungsjahr (fall_anlegen laesst nur Jahre mit Parametern zu): dann nie, wie Rust."""
+    return (vz is not None and vz > 0 and fb.get("antrag_ermaessigter_satz", {}).get("wert") is True
+            and _abs3_eligible(fb, vz) and 0 < _netto_vg_person_a(fb) <= 5_000_000)
+
+
 def _mit_ring_werten(felder: dict, vz: int) -> dict:
     """Hängt berechnete Ring-Werte als fertige Events in felder ein.
 
@@ -390,14 +406,12 @@ def _mit_ring_werten(felder: dict, vz: int) -> dict:
     # rechnete ihn aber (gemessen 2026-10-03). Geschrieben wird nur, was der Chooser auch rechnet
     # (bescheid_zweige: Antrag UND _abs3_eligible UND 0 < netto_vg <= 5 Mio, Entscheid 2026-09-26): sonst
     # stünde in der Erklärung ein Antrag, den die Vorschau ablehnt. Nur bestätigte Felder zählen, wie im
-    # Chooser (nur_bestaetigt=True). Über 5 Mio sperrt abs3_ueber_5mio_offen vorher.
+    # Chooser (nur_bestaetigt=True). Über 5 Mio sperrt abs3_ueber_5mio_offen vorher; mit Gewinn beim Ehegatten
+    # sperrt abs3_partner_gewinn_offen (beide über _abs3_wird_gerechnet).
     # ponytail: nur Person A (AK2 des Eintrags). Der Partner hat keine Abs.-3-Felder; der kein-FB-Zweig
     # (E0801903 / E0805305 / E0902002) bleibt unbeschrieben, weil dessen Basiszeilen nie geschrieben werden.
-    # vz 0 = kein Veranlagungsjahr (fall_anlegen laesst nur Jahre mit Parametern zu): dann keine Antragszeile,
-    # wie Rust bei `vz = None`.
-    _fb = {k: v for k, v in felder.items() if isinstance(v, dict) and v.get("zustand") == "bestaetigt"}
-    if (vz > 0 and _fb.get("antrag_ermaessigter_satz", {}).get("wert") is True and _abs3_eligible(_fb, vz)
-            and 0 < _netto_vg_person_a(_fb) <= 5_000_000):
+    _fb = _bestaetigte(felder)
+    if _abs3_wird_gerechnet(_fb, vz):
         felder["p34_abs3_antragsbetrag"] = {
             "wert": int(_fb["rentner_veraeusserungsgewinn"]["wert"]),
             "zustand": "bestaetigt",
@@ -446,6 +460,12 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "beantragt, und der Gewinn liegt über fünf Millionen Euro. Der ermäßigte Satz gilt nur "
         "bis zu dieser Grenze; wie der Teil darüber zu versteuern ist, rechnet die Software noch "
         "nicht. Dieser Fall braucht steuerliche Beratung.",
+    "abs3_partner_gewinn_offen":
+        "Du hast den ermäßigten Steuersatz für den Verkauf oder die Aufgabe deines Betriebs "
+        "beantragt, und dein Ehepartner hat ebenfalls einen Gewinn aus dem Verkauf oder der "
+        "Aufgabe eines Betriebs. Wie beide Gewinne zusammen zu versteuern sind, rechnet die "
+        "Software noch nicht. Damit du keine falsche Zahl bekommst, bleibt die Berechnung "
+        "gesperrt. Dieser Fall braucht steuerliche Beratung.",
     "ausland_dhf_nicht_ring_faehig":
         "Deine zweite Wohnung am Arbeitsort liegt im Ausland. Dafür gelten eigene Obergrenzen, die "
         "die Software noch nicht rechnet. Dieser Fall braucht steuerliche Beratung.",
@@ -1033,6 +1053,21 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
             and not _abs3_eligible(felder, vz)
             and _abs3_eligible({**felder, "dauernd_berufsunfaehig": {"wert": True}}, vz)):
         return "berufsunfaehigkeit_offen"
+    # § 34 Abs. 3 für A + Veräußerungsgewinn des Ehegatten (AK2b, Entscheid main 2026-10-03): der Chooser
+    # glättet nur den Gewinn von A (Abs. 3); der Gewinn des Partners bliebe ungeglättet im Rest, obwohl § 34
+    # Abs. 3 S. 3 („vorbehaltlich des Absatzes 1") und die Entscheidung p34-fuenftelung-umfasst-beide-ehegatten
+    # ihn in die Fünftelung nehmen — eine Zahl ohne Sperre, gemessen 2026-10-03: 24.194.600 ct. Sperre statt
+    # falscher Zahl, bis das gebaut ist (Partner-Pfad AK2, nach dem Rust-Umstieg). Trigger = ROHER Partner-Gewinn
+    # > 0 (nicht netto_vg_partner; zu weite Sperre vor Zahl ohne Sperre) ∧ zusammen ∧ der Chooser nimmt Abs. 3
+    # (_abs3_wird_gerechnet: Antrag ∧ eligible ∧ 0 < netto_vg <= 5 Mio). Alles auf BESTÄTIGTEN Feldern, wie der
+    # Chooser: ein vorläufiger Wert urteilt nicht. Ein Betrag <= 0 sperrt nie. Nach den zwei Abs.-3-Sperren oben:
+    # über 5 Mio und offene Berufsunfähigkeit haben ihren eigenen, genaueren Text.
+    if _positiv("rentner_veraeusserungsgewinn_partner"):        # roh und billig vorab; der Rest auf bestätigten
+        _fb34 = _bestaetigte(felder)
+        _pvg = (_fb34.get("rentner_veraeusserungsgewinn_partner") or {}).get("wert")
+        if (isinstance(_pvg, (int, float)) and not isinstance(_pvg, bool) and _pvg > 0
+                and _fb34.get("veranlagung", {}).get("wert") == "zusammen" and _abs3_wird_gerechnet(_fb34, vz)):
+            return "abs3_partner_gewinn_offen"
     # an_gesamt Gap-A (K2, Over-tax): Kinder → §31/§32-KiFB-Rechnung NICHT in dieser Scheibe.
     # an_gesamt nutzt catala_est (kein §2-Gesamt-Scope, kein freibetraege_kinder); Kinder-Fälle
     # gehören in Scheibe "gesamt", die den vollen §31-Günstiger-§2-Lauf macht. Der Guard feuert

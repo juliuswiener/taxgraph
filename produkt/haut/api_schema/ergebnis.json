@@ -26,7 +26,7 @@
                        "gwg_tatbestand_offen",
                        "kinderbetreuung_reine_betreuung_offen", "kinderbetreuung_zahlung_offen",
                        "alleinerziehend_konsistenz_offen", "gewinn_quelle_offen",
-                       "luf_euer_offen", "gewinn_angaben_offen", "lohnersatz_betrag_offen", "verlustvortrag_betrag_offen", "unterhalt_betrag_offen", "kirchensteuer_betrag_offen", "realsplitting_angaben_offen", "fahrtkostenpauschale_offen", "gewst_hebesatz_offen", "abs3_ueber_5mio_offen", "berufsunfaehigkeit_offen", "kinder_gehoeren_in_gesamt", "verlustvortrag_gehoert_in_gesamt", "dba_multi_country_offen", "dba_kapital_offen", "p32b_kombi_offen", "progression_gehoert_in_gesamt", "p16_4_gate_offen", "behinderungsbedingte_aufwendungen_wahlrecht_offen",
+                       "luf_euer_offen", "gewinn_angaben_offen", "lohnersatz_betrag_offen", "verlustvortrag_betrag_offen", "unterhalt_betrag_offen", "kirchensteuer_betrag_offen", "realsplitting_angaben_offen", "fahrtkostenpauschale_offen", "gewst_hebesatz_offen", "abs3_ueber_5mio_offen", "abs3_partner_gewinn_offen", "berufsunfaehigkeit_offen", "kinder_gehoeren_in_gesamt", "verlustvortrag_gehoert_in_gesamt", "dba_multi_country_offen", "dba_kapital_offen", "p32b_kombi_offen", "progression_gehoert_in_gesamt", "p16_4_gate_offen", "behinderungsbedingte_aufwendungen_wahlrecht_offen",
                        "behinderungsbedingte_aufwendungen_wahlrecht_partner_offen",
                        "ring_betrag_vorlaeufig"]},
     "offen": {"type": "array", "items": {"type": "string"}},
