@@ -1168,6 +1168,187 @@ fn generierte_stores() {
     ergebnis.unwrap();
 }
 
+// ---------------------------------------------------------------- § 35c: je Massnahmenart ein Fall
+
+/// (Massnahmenart, Container unter `EM_35c/Obj/Aufw/Massn`, Kz) — wie `P35C_ARTEN` in
+/// `tests/test_kz_bindung_durchgang.py`. Die Liste dient NUR der Nicht-Leer-Probe; ob die Zuordnung
+/// Art -> Zeile stimmt, entscheidet der Vergleich mit Python in `vergleiche_fall`. Ein Dreher in
+/// dieser Liste UND in `rust/elster/src/tabellen.rs` faellt dort auf (Python steht dazwischen).
+const P35C_ARTEN: [(&str, &str, &str); 9] = [
+    ("waende", "Waende", "E0241001"),
+    ("dach", "Dach", "E0241101"),
+    ("geschossdecken", "Geschossd", "E0241201"),
+    ("fenster_tueren", "Fenst_Tuer", "E0241301"),
+    ("sommerlicher_waermeschutz", "Somm_Waerm", "E0241302"),
+    ("lueftung", "Lueftung", "E0241401"),
+    ("heizung", "Heizung", "E0241501"),
+    ("digital", "Digital", "E0241601"),
+    ("heizung_optimierung", "Heizung_alt", "E0241701"),
+];
+
+/// 12.345,67 Euro: der Cent-Anteil ist der Grund, warum die Kz-Rundung (auf/ab) mitgeprueft wird.
+const P35C_BETRAG: i64 = 1_234_567;
+
+/// Ein Store mit Art (falls gegeben) UND Einzelbetrag, beide unmittelbar bestaetigt. Der Orakelweg
+/// ruft `_mit_ring_werten` nicht auf (`tools/parity/elster_oracle.py:46-52`): der Zwilling
+/// `p35c_massnahme_einzelbetrag` entsteht dort nicht aus der Summe, darum traegt der Store ihn selbst.
+fn p35c_store(art: Option<&str>) -> StoreDatei {
+    let mut store = Store::leer(2025, None);
+    let nachschlag = BindungNachschlag::neu(index());
+    let signal = Signal2::new("ui:bestaetigt").unwrap();
+    let felder = art
+        .map(|a| ("p35c_massnahme_art", json!(a)))
+        .into_iter()
+        .chain([("p35c_massnahme_einzelbetrag", json!(P35C_BETRAG))]);
+    for (feld_id, wert) in felder {
+        let neu = NeuesEvent {
+            feld_id: feld_id.to_owned(),
+            wert: PyWert::from(wert),
+            feldzustand: Feldzustand::Bestaetigt {
+                signal_2: signal.clone(),
+            },
+            herkunft: herkunft_mensch(),
+            schreiber: Schreiber::Mensch("julius".to_owned()),
+            signal_1: None,
+            ersetzt: None,
+            ts: Some("2026-09-29T00:00:00+00:00".to_owned()),
+        };
+        store.append(&neu, None, nachschlag).expect("p35c-Feld");
+    }
+    store.into_datei()
+}
+
+/// Das Rust-XML (Variante `basis`) zu einem Store.
+fn p35c_rust_xml(datei: &StoreDatei) -> Result<String, String> {
+    let (felder, sid) = Store::aus_datei(datei.clone())
+        .materialisiere(None)
+        .unwrap();
+    let vz = datei.veranlagungszeitraum.als_i64_saettigend();
+    let d = elster::deklariere(&felder, index(), vz, Some(&sid)).map_err(|e| format!("{e:?}"))?;
+    rust_xml(&d, &felder, vz, false, HID_TEST)
+}
+
+/// `xml` ohne Namespace-Praefixe in den Tags (`<ns0:E1>` -> `<E1>`), wie `_pfad_im_xml` in
+/// `tests/test_kz_bindung_durchgang.py`: der Test haengt so nicht an der Praefix-Vergabe.
+fn ohne_praefix(xml: &str) -> String {
+    let mut aus = String::with_capacity(xml.len());
+    let mut rest = xml;
+    while let Some(i) = rest.find('<') {
+        aus.push_str(&rest[..=i]);
+        rest = &rest[i + 1..];
+        if let Some(r) = rest.strip_prefix('/') {
+            aus.push('/');
+            rest = r;
+        }
+        let ende = rest
+            .find(|c: char| !c.is_ascii_alphanumeric())
+            .unwrap_or(rest.len());
+        if rest[ende..].starts_with(':') {
+            rest = &rest[ende + 1..];
+        }
+    }
+    aus.push_str(rest);
+    aus
+}
+
+/// Der Text unter `EM_35c/Obj/Aufw/Massn/<container>/<kz>`, wenn der Pfad im XML steht.
+fn p35c_wert(xml: &str, container: &str, kz: &str) -> Option<String> {
+    let flach = ohne_praefix(xml);
+    let mut rest = flach.as_str();
+    for name in ["EM_35c", "Obj", "Aufw", "Massn", container] {
+        let i = rest.find(&format!("<{name}>"))?;
+        rest = &rest[i..];
+    }
+    let i = rest.find(&format!("<{kz}>"))?;
+    let inhalt = &rest[i + kz.len() + 2..];
+    Some(inhalt[..inhalt.find('<')?].to_owned())
+}
+
+/// Die Nicht-Leer-Probe zu einer Art: das XML ist `Ok`, der Pfad steht darin mit einer Zahl, und
+/// keines der anderen acht Kz steht darin. Rueckgabe: was nicht stimmt.
+fn p35c_probe(art: &str, xml: &Result<String, String>) -> Vec<String> {
+    let Some((_, container, kz)) = P35C_ARTEN.iter().find(|(a, _, _)| *a == art) else {
+        return vec![format!("unbekannte Art {art}")];
+    };
+    let xml = match xml {
+        Ok(x) => x,
+        Err(e) => return vec![format!("Rust-XML ist Err: {e}")],
+    };
+    let mut fehler = Vec::new();
+    match p35c_wert(xml, container, kz) {
+        None => fehler.push(format!("{container}/{kz} fehlt im XML")),
+        Some(w) if w.is_empty() || !w.bytes().all(|b| b.is_ascii_digit()) => {
+            fehler.push(format!("{container}/{kz} traegt keine Zahl: {w:?}"));
+        }
+        Some(_) => {}
+    }
+    for (_, _, anderes) in P35C_ARTEN.iter().filter(|(_, _, k)| k != kz) {
+        if xml.contains(anderes) {
+            fehler.push(format!("{anderes} steht auch im XML (fremde Zeile)"));
+        }
+    }
+    fehler
+}
+
+/// Je Massnahmenart des § 35c ein handgebauter Fall mit Cent-Anteil im Betrag: Rust gleich Python
+/// (Deklaration, Zuruecklesen, XML), dazu die Nicht-Leer-Probe. Der Zufallsgenerator
+/// (`generierte_stores`) trifft vier der neun Arten nie (Vault `decisions/je-sanierungsart-ein-
+/// handgebauter-store-im-paritaetstest`); ein Dreher in der Tabelle `tabellen.rs` (`p35c_massnahme_art`
+/// -> Kz) bleibt dort unsichtbar. Gemessen: `schema_und_werkzeug` (`pruefe_bindung`) faengt ihn heute
+/// auch, braucht dafuer aber die XSD-Schemas; dieser Test faengt ihn ueber die Deklaration und, mit
+/// Schemas, ueber das XML. Der Generator bleibt unveraendert.
+#[test]
+fn p35c_je_massnahmenart_ein_fall() {
+    if skip_ohne_parity_env() {
+        return;
+    }
+    // Ohne Schemas (`TAXGRAPH_OHNE_XSD=1`) laeuft nur der Vergleich der Deklaration, wie in den
+    // anderen Tests dieser Datei; sonst ist ein fehlendes Schema rot.
+    let mit_xml = elster::testhilfe::schemas_da(2025);
+    let mut z = Zaehler::default();
+    for (art, container, kz) in P35C_ARTEN {
+        let datei = p35c_store(Some(art));
+        let name = format!("p35c/{art}");
+        vergleiche_fall(
+            &datei,
+            &serde_json::to_value(&datei).unwrap(),
+            false,
+            &mut z,
+            &name,
+            true,
+        );
+        if mit_xml {
+            let xml = p35c_rust_xml(&datei);
+            let wert = xml.as_ref().ok().and_then(|x| p35c_wert(x, container, kz));
+            println!("  {art:<26} {container}/{kz} = {wert:?}");
+            let probe = p35c_probe(art, &xml);
+            z.abweichungen
+                .extend(probe.into_iter().map(|p| format!("{name}: {p}")));
+        }
+    }
+    bericht("p35c je Massnahmenart", &z);
+    assert_eq!(z.faelle, 9, "neun Arten, neun Faelle");
+    assert_eq!(z.dekl_ok, 9, "deklariere lieferte nicht in jedem Fall Ok");
+    assert!(
+        !mit_xml || z.xml_ok >= 9,
+        "weniger als neun Fall-XML auf beiden Seiten Ok: {}",
+        z.xml_ok
+    );
+    assert!(z.abweichungen.is_empty(), "{:#?}", z.abweichungen);
+    // Gegenprobe: ohne Art im Speicher steht der Betrag in keiner der neun Zeilen; die Probe muss
+    // das sehen, sonst waere ein leeres XML auf beiden Seiten gruen.
+    if mit_xml {
+        let leer = p35c_rust_xml(&p35c_store(None));
+        for (art, _, _) in P35C_ARTEN {
+            assert!(
+                !p35c_probe(art, &leer).is_empty(),
+                "Gegenprobe: die Probe sieht den fehlenden Betrag bei {art} nicht"
+            );
+        }
+    }
+    println!("[p35c] neun Arten, je Fall Rust gleich Python; mit XML: Pfad im XML und Gegenprobe (leere Art) erkannt");
+}
+
 // ---------------------------------------------------------------- ERiC
 
 /// Hersteller-ID aus der Umgebung oder den `.env`-Dateien der Repo-Wurzel. Nie ausgeben.
