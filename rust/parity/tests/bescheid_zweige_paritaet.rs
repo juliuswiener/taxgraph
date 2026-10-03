@@ -1115,11 +1115,9 @@ fn runner(cases: u32) -> TestRunner {
 }
 
 /// `PARITY_N` überschreibt die Fallzahl je Quantität (Standard 1.200; Abnahme verlangt ≥ 1.000).
+/// Ungültiger Wert: Panik mit Klartext (`parity::fallzahl`), kein stilles Standard.
 fn generierte_je_quantitaet() -> u32 {
-    std::env::var("PARITY_N")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(1200)
+    parity::fallzahl::holen_u32("bescheid_zweige_paritaet generierte_faelle", 1200)
 }
 
 #[test]
@@ -1145,7 +1143,14 @@ fn generierte_faelle() {
     }
     let b = b.into_inner();
     b.drucke("generierte_faelle", n.get());
-    b.wache_rechnet("generierte_faelle", LEER_GENERIERTE);
+    // Der Pin der leeren Zeilen gilt nur fuer den Standard (`parity::fallzahl::wache_gilt`).
+    if parity::fallzahl::wache_gilt(
+        "bescheid_zweige_paritaet generierte_faelle",
+        generierte_je_quantitaet() as usize,
+        1200,
+    ) {
+        b.wache_rechnet("generierte_faelle", LEER_GENERIERTE);
+    }
     assert!(n.get() >= 4 * generierte_je_quantitaet().min(1000) as usize);
     assert_eq!(b.abweichungen(), 0);
 }
