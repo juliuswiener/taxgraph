@@ -1385,7 +1385,9 @@ fn generierte_faelle() {
     let n = std::cell::Cell::new(0_usize);
     let kontexte = std::cell::Cell::new(0_usize);
     let floats = std::cell::Cell::new(0_usize);
-    let ergebnis = runner(1200).run(&prop::collection::vec(any::<u8>(), 1024..4096), |bytes| {
+    let n_faelle =
+        parity::fallzahl::holen_u32("bescheid_deklaration_paritaet generierte_faelle", 1200);
+    let ergebnis = runner(n_faelle).run(&prop::collection::vec(any::<u8>(), 1024..4096), |bytes| {
         let mut c = Cursor {
             bytes: &bytes,
             pos: 0,
@@ -1420,7 +1422,16 @@ fn generierte_faelle() {
         0,
         "generierte_faelle: Abweichungen (Anzahl s. o.)"
     );
-    b.borrow().wache_rechnet("generierte_faelle", &[]);
+    // Pin und Untergrenzen gelten beim Standard; sonst muss der Lauf mindestens die verlangte Zahl
+    // rechnen.
+    let wachen = parity::fallzahl::wache_gilt(
+        "bescheid_deklaration_paritaet generierte_faelle",
+        n_faelle as usize,
+        1200,
+    );
+    if wachen {
+        b.borrow().wache_rechnet("generierte_faelle", &[]);
+    }
     b.borrow().drucke_gruende();
     eprintln!(
         "generierte_faelle: {} Stores ({} im Float-Modus), {} Kontexte",
@@ -1429,12 +1440,14 @@ fn generierte_faelle() {
         kontexte.get()
     );
     ergebnis.unwrap();
-    assert!(n.get() >= 1000);
-    for f in FUNKTIONEN {
-        assert!(
-            b.borrow().zeilen[f].python >= 1000,
-            "{f}: weniger als 1.000 Aufrufe"
-        );
+    assert!(n.get() >= if wachen { 1000 } else { n_faelle as usize });
+    if wachen {
+        for f in FUNKTIONEN {
+            assert!(
+                b.borrow().zeilen[f].python >= 1000,
+                "{f}: weniger als 1.000 Aufrufe"
+            );
+        }
     }
 }
 

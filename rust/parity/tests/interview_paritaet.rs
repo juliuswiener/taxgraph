@@ -1092,7 +1092,7 @@ fn generierte_paritaet() {
         return;
     }
     let mut runner = TestRunner::new(Config {
-        cases: 1000,
+        cases: parity::fallzahl::holen_u32("interview_paritaet generierte_paritaet", 1000),
         failure_persistence: None,
         ..Config::default()
     });

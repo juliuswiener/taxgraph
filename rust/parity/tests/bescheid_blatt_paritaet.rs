@@ -1258,7 +1258,8 @@ fn generierte_faelle() {
     }
     let b = std::cell::RefCell::new(Bilanz::default());
     let n = std::cell::Cell::new(0usize);
-    let ergebnis = runner(1200).run(&prop::collection::vec(any::<u8>(), 1024..4096), |bytes| {
+    let n_faelle = parity::fallzahl::holen_u32("bescheid_blatt_paritaet generierte_faelle", 1200);
+    let ergebnis = runner(n_faelle).run(&prop::collection::vec(any::<u8>(), 1024..4096), |bytes| {
         let mut c = Cursor {
             bytes: &bytes,
             pos: 0,
@@ -1290,9 +1291,18 @@ fn generierte_faelle() {
         0,
         "generierte_faelle: Abweichungen (Anzahl s. o.)"
     );
-    b.borrow().wache_rechnet("generierte_faelle", &[]);
+    // Pin und Untergrenze gelten beim Standard; sonst muss der Lauf mindestens die verlangte Zahl
+    // rechnen.
+    let wachen = parity::fallzahl::wache_gilt(
+        "bescheid_blatt_paritaet generierte_faelle",
+        n_faelle as usize,
+        1200,
+    );
+    if wachen {
+        b.borrow().wache_rechnet("generierte_faelle", &[]);
+    }
     ergebnis.unwrap();
-    assert!(n.get() >= 1000);
+    assert!(n.get() >= if wachen { 1000 } else { n_faelle as usize });
 }
 
 #[test]
@@ -1304,7 +1314,9 @@ fn dba_methode_generiert() {
     let n = std::cell::Cell::new(0usize);
     let strategie = prop::collection::vec(any::<u8>(), 64..128);
     let b_ref = std::cell::RefCell::new(&mut b);
-    runner(1500)
+    let n_faelle =
+        parity::fallzahl::holen_u32("bescheid_blatt_paritaet dba_methode_generiert", 1500);
+    runner(n_faelle)
         .run(&strategie, |bytes| {
             let mut c = Cursor {
                 bytes: &bytes,
@@ -1366,13 +1378,22 @@ fn dba_methode_generiert() {
         0,
         "dba_methode_generiert: Abweichungen (Anzahl s. o.)"
     );
-    b.wache_rechnet("dba_methode_generiert", &[]);
-    assert!(n.get() >= 1000);
-    let z = &b.zeilen["dba_methode_fuer"];
-    assert!(
-        z.ok_gleich > 0 && z.err_gleich > 0,
-        "beide Pfade (ok und Fehler) müssen vorkommen"
+    let wachen = parity::fallzahl::wache_gilt(
+        "bescheid_blatt_paritaet dba_methode_generiert",
+        n_faelle as usize,
+        1500,
     );
+    if wachen {
+        b.wache_rechnet("dba_methode_generiert", &[]);
+    }
+    assert!(n.get() >= if wachen { 1000 } else { n_faelle as usize });
+    let z = &b.zeilen["dba_methode_fuer"];
+    if wachen {
+        assert!(
+            z.ok_gleich > 0 && z.err_gleich > 0,
+            "beide Pfade (ok und Fehler) müssen vorkommen"
+        );
+    }
 }
 
 // ---------------------------------------------------------------- Negativkontrolle

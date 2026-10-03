@@ -351,8 +351,9 @@ fn kontoauszug() {
     let mut r = Rng(0x0c5b_0001);
     let korpus: Vec<String> = serde_json::from_value(frage(&json!({"fn": "schritt8.korpus",
         "dateien": ["tests/test_kontoauszug_writer.py", "tests/test_llm_deckel_und_wiederholung.py", "tests/test_kontoauszug_maskierung.py"]}))).unwrap();
+    let n_faelle = parity::fallzahl::holen("eingang_paritaet kontoauszug", 1000);
     let mut csvs: Vec<String> = korpus.clone();
-    csvs.extend((0..1000).map(|_| csv_auszug(&mut r)));
+    csvs.extend((0..n_faelle).map(|_| csv_auszug(&mut r)));
     let py_csv = frage(&json!({"fn": "schritt8.eingang.csv", "texte": csvs}));
     let mut mit_tx = 0;
     for (i, t) in csvs.iter().enumerate() {
@@ -414,7 +415,7 @@ fn kontoauszug() {
     }
     // Betrag-Parser, PDF-Zeilen, TSV.
     let mut betraege: Vec<String> = BETRAEGE.iter().map(|s| (*s).to_owned()).collect();
-    betraege.extend((0..1000).map(|_| {
+    betraege.extend((0..n_faelle).map(|_| {
         format!(
             "{}{}{}",
             r.wahl(&["", "-", "+", " -"]),
@@ -525,7 +526,7 @@ fn kontoauszug() {
         &gestoert,
         &json!({"r": py0["r"], "events": py0["events"]}),
     );
-    println!("kontoauszug: {} CSV ({} Korpus + 1000 generiert, {mit_tx} mit Buchungen), 300 JSON, {} Betraege, 500 PDF-Texte, 200 TSV = {} Vergleiche; {events_n} Rust-Events verglichen; Abweichungen {}; dokumentiert {}; Negativkontrolle {}",
+    println!("kontoauszug: {} CSV ({} Korpus + {n_faelle} generiert, {mit_tx} mit Buchungen), 300 JSON, {} Betraege, 500 PDF-Texte, 200 TSV = {} Vergleiche; {events_n} Rust-Events verglichen; Abweichungen {}; dokumentiert {}; Negativkontrolle {}",
         csvs.len(), korpus.len(), betraege.len(), z.faelle, z.abw, z.dokumentiert, neg.abw);
     assert_eq!(neg.abw, 1);
     assert_eq!(z.abw, 0);
@@ -1070,7 +1071,8 @@ fn vorjahr_vast_edaten() {
     .map(|s| Some((*s).to_owned()))
     .collect();
     betraege.push(None);
-    betraege.extend((0..1000).map(|_| {
+    let n_faelle = parity::fallzahl::holen("eingang_paritaet vorjahr_vast_edaten", 1000);
+    betraege.extend((0..n_faelle).map(|_| {
         Some(format!(
             "{}{}{}",
             r.wahl(&["", "-", "+", " "]),

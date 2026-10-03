@@ -527,8 +527,9 @@ fn generierte_faelle() {
         return;
     }
     let bilanz = Mutex::new(Bilanz::new());
+    let n_faelle = parity::fallzahl::holen_u32("intervall_paritaet generierte_faelle", 1000);
     let mut runner = proptest::test_runner::TestRunner::new(ProptestConfig {
-        cases: 1000,
+        cases: n_faelle,
         ..ProptestConfig::default()
     });
     runner
@@ -554,16 +555,26 @@ fn generierte_faelle() {
         })
         .unwrap();
     let bilanz = bilanz.into_inner().unwrap();
-    assert_eq!(berichte("generierte Faelle (1000)", &bilanz), 0);
-    assert!(bilanz["intervall"].faelle > 900);
-    assert!(
-        bilanz["intervall"].zahl > 300,
-        "Generator trifft den Zahl-Pfad zu selten"
+    assert_eq!(
+        berichte(&format!("generierte Faelle ({n_faelle})"), &bilanz),
+        0
     );
-    assert!(
-        bilanz["via_slots euro"].zahl > 400,
-        "Generator trifft den Slot-Erfolgspfad zu selten"
-    );
+    // Die Untergrenzen sind an die 1000 Faelle des Standards gebunden.
+    if parity::fallzahl::wache_gilt(
+        "intervall_paritaet generierte_faelle",
+        n_faelle as usize,
+        1000,
+    ) {
+        assert!(bilanz["intervall"].faelle > 900);
+        assert!(
+            bilanz["intervall"].zahl > 300,
+            "Generator trifft den Zahl-Pfad zu selten"
+        );
+        assert!(
+            bilanz["via_slots euro"].zahl > 400,
+            "Generator trifft den Slot-Erfolgspfad zu selten"
+        );
+    }
 }
 
 #[test]
