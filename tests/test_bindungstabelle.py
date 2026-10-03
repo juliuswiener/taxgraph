@@ -2247,3 +2247,45 @@ def test_q_gate_faengt_geloeschten_registereintrag(daten):
     assert fid in unbekannt, (
         f"Gegenprobe fehlgeschlagen: {fid} taucht nach dem Entfernen aus dem Register NICHT als "
         f"unbekannter Treffer auf -- das Register hat keine Wirkung auf das Ergebnis.")
+
+
+# ---------------------------------------------------------------------------------------------------
+# Laenge der feld_id: die Grenze des URL-Musters
+#
+# Das Schema (`schema.json`: `^[a-z][a-z0-9_]*$`) kennt keine Laengengrenze, das URL-Muster
+# `_FID` in `produkt/haut/server.py` schon (`{1,64}`). Eine laengere Kennung waere gueltig in der
+# Bindung und unerreichbar ueber `/fall/<id>/feld/<fid>/frage`. Dieser Test haelt die Bindung unter
+# der Grenze, damit die Luecke nicht still waechst (Entscheidung
+# feld-kennung-folgt-der-schema-regel-und-instanz-eins-bleibt-gepinnt, Punkt 2). Die Grenze steht
+# in Rust nicht mehr in `BasisId`, sondern nur noch im Router (`rust/api/src/routen.rs`).
+# ---------------------------------------------------------------------------------------------------
+
+def _url_grenze_feld_id() -> int:
+    """Die Obergrenze aus `_FID` in server.py, aus dem Quelltext gelesen, nicht nachgeschrieben."""
+    with open(os.path.join(ROOT, "produkt", "haut", "server.py"), encoding="utf-8") as f:
+        m = re.search(r'^_FID\s*=\s*r"[^"]*\{1,(\d+)\}', f.read(), re.M)
+    assert m, "server.py: _FID hat keine Form {1,<n>} mehr -- Test anpassen"
+    return int(m.group(1))
+
+
+def _zu_lange_kennungen(bindung: dict, grenze: int) -> list:
+    return sorted(k for k in bindung if len(k) > grenze)
+
+
+def test_keine_feld_id_der_bindung_ist_laenger_als_das_url_muster_erlaubt():
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "traverser"))
+    import traverser as TR  # noqa: E402
+
+    bindung = TR.lade_bindung()
+    grenze = _url_grenze_feld_id()
+    assert len(bindung) > 300, f"nur {len(bindung)} Kennungen geladen -- der Test saehe nichts"
+    assert _zu_lange_kennungen(bindung, grenze) == [], (
+        f"feld_id laenger als {grenze} Zeichen: ueber das URL-Muster _FID (server.py) nicht erreichbar")
+
+
+def test_die_laengenpruefung_wird_rot_bei_65_zeichen():
+    """Positivkontrolle: die Pruefung sieht eine zu lange Kennung, sonst bewiese das Gruen oben nichts."""
+    grenze = _url_grenze_feld_id()
+    assert _zu_lange_kennungen({"a" * (grenze + 1): {}, "b": {}}, grenze) == ["a" * (grenze + 1)]
+    assert _zu_lange_kennungen({"a" * grenze: {}}, grenze) == []
