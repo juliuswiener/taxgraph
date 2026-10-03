@@ -10,6 +10,7 @@
     )
 )]
 
+pub mod fallzahl;
 pub mod korpus;
 pub mod pin;
 
