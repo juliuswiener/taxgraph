@@ -43,6 +43,9 @@ def _gwg_sofortabzug_summe(f: dict, store: dict | None, bindung: dict | None,
         # ⭐ CENT-GUARD (§ 6 Abs. 2, 800€-Schwelle): netto//100 FLOORT Cent vor dem catala-≤800-Vergleich
         # → 800,01-800,99€ (80001-80099 Cent) würde auf 800 abgerundet fälschlich als GWG durchgehen
         # (under-tax, Sofortabzug statt AfA). Schwelle VOR der Euro-Rundung in Cent prüfen.
+        # Alle `return 0` in dieser Funktion rechnen ein Geraet OHNE Sofortabzug. Eine festgesetzte Zahl darf diese 0 nicht
+        # still zeigen: _an_gesamt_sperrgrund (GWG-Block, bescheid_deklaration.py) sperrt jede solche Instanz mit Betrag > 0
+        # (gwg_abschreibung_offen / gwg_mehrwertsteuer_offen, seit 2026-10-03). Die 0 gilt hier nur fuer die Schaetzung (/stand).
         if netto > 80000:
             return 0
         # § 6 Abs. 2 S. 1-5, Schritt 2 (2026-09-07): ein verneinter Tatbestand ist eine gültige, rechenbare

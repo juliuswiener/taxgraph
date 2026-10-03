@@ -187,6 +187,9 @@ pub fn dba_methode_fuer(
 /// § 6 Abs. 2 GWG-Sofortabzug fuer EIN Asset (`_abzug` in `_gwg_sofortabzug_summe`), EURO.
 fn gwg_abzug(fi: &Felder) -> Result<Euro, BescheidFehler> {
     let netto = feld_int_oder_null(fi, "gwg_anschaffungskosten_netto")?;
+    // Alle `Euro::new(0)` hier rechnen ein Geraet OHNE Sofortabzug. Eine festgesetzte Zahl darf diese 0 nicht still
+    // zeigen: `sperre::gesamt::gwg` sperrt jede solche Instanz mit Betrag > 0 (`GwgAbschreibungOffen` /
+    // `GwgMehrwertsteuerOffen`, seit 2026-10-03). Die 0 gilt nur fuer die Schaetzung (/stand).
     // CENT-GUARD: die 800-EUR-Schwelle wird VOR der Euro-Rundung in Cent geprueft.
     if netto > 80_000 {
         return Ok(Euro::new(0));

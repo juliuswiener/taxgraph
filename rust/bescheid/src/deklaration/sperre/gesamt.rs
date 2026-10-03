@@ -283,8 +283,19 @@ fn p35a_p35c(k: &K<'_>) -> Grund {
         .then_some(Sperrgrund::P35cDoppelfoerderungOffen))
 }
 
-/// § 6 Abs. 2 GWG-Sofortabzug S. 1-5: je `gwg`-Instanz mit Betrag in (0, 800 EUR] die drei
-/// Voraussetzungen; die Verzeichnis-Frage nur ueber 250 EUR. Explizites false ist eine Antwort.
+/// § 6 Abs. 2 GWG-Sofortabzug S. 1-5, je `gwg`-Instanz mit Betrag > 0 (Spiegel von
+/// `_an_gesamt_sperrgrund`, GWG-Block). Reihenfolge je Instanz:
+///
+/// 1. "selbstaendig nutzbar" BESTAETIGT nein -> [`Sperrgrund::GwgAbschreibungOffen`] (nie ein GWG);
+/// 2. "netto ohne Vorsteuer" BESTAETIGT nein -> [`Sperrgrund::GwgMehrwertsteuerOffen`] (der Betrag
+///    ist brutto, die Folgefrage fehlt noch);
+/// 3. Betrag ueber 800 EUR -> `GwgAbschreibungOffen`; die Tatbestandsfragen sind gegenstandslos;
+/// 4. unbeantwortete Voraussetzung (Verzeichnis nur ueber 250 EUR) -> [`Sperrgrund::GwgTatbestandOffen`];
+///    "Verzeichnis" BESTAETIGT nein ueber 250 EUR -> `GwgAbschreibungOffen`.
+///
+/// Bis 2026-10-03 war ein beantwortetes "nein" und der Betrag ueber 800 EUR ein stiller Abzug von 0
+/// (`gwg_abzug` nullt weiter, die Sperre ist das Urteil fuer jede festgesetzte Zahl). Ein Betrag von
+/// 0 sperrt nie: das ist der Ausweg.
 fn gwg(k: &K<'_>) -> Grund {
     if k.q.beide().is_none() {
         return Ok(None);
@@ -297,20 +308,41 @@ fn gwg(k: &K<'_>) -> Grund {
                 .map(|x| &x.wert),
         )
         .unwrap_or(Decimal::ZERO);
-        // Ueber 800 EUR netto ist der Sofortabzug ausgeschlossen (Schwelle in Cent).
-        if betrag <= Decimal::ZERO || betrag > Decimal::from(80_000) {
+        if betrag <= Decimal::ZERO {
             continue;
+        }
+        // BESTAETIGTES "nein" ist eine Antwort, keine Luecke; ein vorlaeufiges zaehlt nicht.
+        let nein = |id: &str| {
+            inst.felder.get(id).is_some_and(|x| {
+                x.zustand == domain::Zustand::Bestaetigt && x.wert == PyWert::Bool(false)
+            })
+        };
+        if nein("gwg_bewegliches_selbstaendig_nutzbar") {
+            return Ok(Some(Sperrgrund::GwgAbschreibungOffen));
+        }
+        if nein("gwg_netto_ohne_vorsteuer") {
+            return Ok(Some(Sperrgrund::GwgMehrwertsteuerOffen));
+        }
+        // Ueber 800 EUR (Schwelle in Cent) ist der Sofortabzug ausgeschlossen: nichts zu fragen,
+        // aber auch nicht still weglassen.
+        if betrag > Decimal::from(80_000) {
+            return Ok(Some(Sperrgrund::GwgAbschreibungOffen));
         }
         let offen = |id: &str| {
             inst.felder
                 .get(id)
                 .is_none_or(|x| x.zustand != domain::Zustand::Bestaetigt)
         };
-        if offen("gwg_bewegliches_selbstaendig_nutzbar")
-            || offen("gwg_netto_ohne_vorsteuer")
-            || (betrag > Decimal::from(25_000) && offen("gwg_verzeichnis_ab_250"))
-        {
+        if offen("gwg_bewegliches_selbstaendig_nutzbar") || offen("gwg_netto_ohne_vorsteuer") {
             return Ok(Some(Sperrgrund::GwgTatbestandOffen));
+        }
+        if betrag > Decimal::from(25_000) {
+            if offen("gwg_verzeichnis_ab_250") {
+                return Ok(Some(Sperrgrund::GwgTatbestandOffen));
+            }
+            if nein("gwg_verzeichnis_ab_250") {
+                return Ok(Some(Sperrgrund::GwgAbschreibungOffen));
+            }
         }
     }
     Ok(None)

@@ -23,7 +23,7 @@
                        "partner_konsistenz_offen", "kapital_semantik_offen",
                        "rentenfreibetrag_fixierung_offen", "rentenbeginn_nach_vz", "rentenbeginn_jahr_ungueltig", "versorgungsfreibetrag_offen", "vv_instanz_offen",
                        "rechnung_unbar_offen", "handwerker_foerderung_offen", "haushalt_eu_ewr_offen", "p35c_doppelfoerderung_offen", "rente_instanz_offen",
-                       "gwg_tatbestand_offen",
+                       "gwg_tatbestand_offen", "gwg_mehrwertsteuer_offen", "gwg_abschreibung_offen",
                        "kinderbetreuung_reine_betreuung_offen", "kinderbetreuung_zahlung_offen",
                        "alleinerziehend_konsistenz_offen", "gewinn_quelle_offen",
                        "luf_euer_offen", "gewinn_angaben_offen", "lohnersatz_betrag_offen", "verlustvortrag_betrag_offen", "unterhalt_betrag_offen", "kirchensteuer_betrag_offen", "realsplitting_angaben_offen", "fahrtkostenpauschale_offen", "gewst_hebesatz_offen", "abs3_ueber_5mio_offen", "berufsunfaehigkeit_offen", "kinder_gehoeren_in_gesamt", "verlustvortrag_gehoert_in_gesamt", "dba_multi_country_offen", "dba_kapital_offen", "p32b_kombi_offen", "progression_gehoert_in_gesamt", "p16_4_gate_offen", "behinderungsbedingte_aufwendungen_wahlrecht_offen",

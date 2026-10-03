@@ -623,6 +623,21 @@ SPERRGRUND_KLARTEXT: dict[str, str] = {
         "ob es allein benutzbar ist, ob der Betrag den Vorsteuerabzug schon abgezogen hat, oder (ab 250 "
         "Euro) ob du dazu eine Liste geführt hast oder es aus deiner Buchführung ersichtlich ist. Bitte "
         "beantworte die offene Frage zu diesem Gerät.",
+    "gwg_mehrwertsteuer_offen":
+        "Bei einem als Sofortabzug erfassten Gerät hast du angegeben, dass der Preis die Mehrwertsteuer "
+        "enthält. Was du dann absetzen darfst, hängt davon ab, ob du die Mehrwertsteuer vom Finanzamt "
+        "zurückbekommst: als Kleinunternehmer zählt der Preis mit Mehrwertsteuer, sonst der Preis "
+        "ohne. Diese Unterscheidung kann die Software noch nicht treffen. Einen Abzug von null Euro will "
+        "sie dir nicht zeigen, deshalb bleibt das Ergebnis offen. Bekommst du die Mehrwertsteuer "
+        "zurück, gib den Preis ohne sie an und beantworte die Frage nach dem Preis ohne "
+        "Mehrwertsteuer mit Ja.",
+    "gwg_abschreibung_offen":
+        "Ein Gerät, das du als Sofortabzug erfasst hast, kommt dafür nicht in Frage: Es kostet mehr als "
+        "800 Euro ohne Mehrwertsteuer, du kannst es nicht allein benutzen, oder du hast es ab 250 Euro "
+        "weder in einer Liste noch in deiner Buchführung festgehalten. Dann verteilt sich der Abzug "
+        "über mehrere Jahre (Abschreibung). Diese Abschreibung rechnet die Software hier noch nicht, und "
+        "das Gerät still wegzulassen wäre falsch. Das Ergebnis bleibt deshalb offen. Trage das Gerät "
+        "bitte nicht hier ein, sondern bei der Abschreibung.",
     "rechnung_unbar_offen":
         "Zu deinen Handwerker- oder Haushaltsdienstleistungen fehlt noch die Antwort, ob du eine "
         "Rechnung erhalten und sie überwiesen hast. Barzahlungen erkennt das Finanzamt hier nicht "
@@ -1404,31 +1419,62 @@ def _an_gesamt_sperrgrund(felder: dict, cfg: dict | None = None, vz: int | None 
         # § 6 Abs. 2 GWG-Sofortabzug S. 1-5: die drei Anspruchsvoraussetzungen (selbständig nutzbar S.2/3,
         # netto vorsteuerbereinigt S.1, ab 250 EUR Verzeichnis/Buchführung S.4/5) sind CONDITIONAL-MANDATORY
         # je gwg-Instanz -- nur wenn die Instanz überhaupt einen Betrag > 0 trägt (analog
-        # _hh_instanz_positiv oben). Unbeantwortet (nicht bestätigt) sperrt den GANZEN Ring; explizit false
-        # ist ANTWORT (Ring rechenbar, _gwg_sofortabzug_summe nullt genau diese Instanz), nur UNSET/vorläufig
-        # sperrt. instanzweise wie EM.instanzen(gwg) liefert -- vor Schritt 1 (2026-09-07) waren die drei
-        # Bool-Felder unerreichbar, es gibt daher keine Altantworten, die eine neue Sperre stumm auslöst.
+        # _hh_instanz_positiv oben). Unbeantwortet (nicht bestätigt) sperrt den GANZEN Ring.
+        #
+        # Stand 2026-10-03 (main-Auftrag h8-gwg): auch eine BEANTWORTETE Instanz sperrt, sobald sie keinen
+        # Sofortabzug bekommt. Bis dahin nullte _gwg_sofortabzug_summe sie still (`return 0`) und das
+        # Ergebnis blieb "bestaetigt" -- gemessen 790 EUR + "netto: nein": Steuer des Falls ohne GWG, 304,00
+        # EUR zu hoch gegen die Referenz (790 EUR als sonstige Betriebsausgabe); 500 EUR mit "kein
+        # Verzeichnis" bzw. "nicht selbstaendig nutzbar" ebenso. Zwei Gruende, in dieser Reihenfolge je Instanz:
+        #   1. nicht selbstaendig nutzbar (bestaetigt nein): nie ein GWG, egal ob brutto/netto, egal wie
+        #      teuer  -> gwg_abschreibung_offen (AfA, wird hier nicht gerechnet)
+        #   2. "netto: nein" (bestaetigt): der Betrag ist brutto. Ob er abziehbar ist (Kleinunternehmer:
+        #      der Bruttobetrag) oder umzurechnen waere, haengt an einer Folgefrage, die es noch nicht gibt;
+        #      auch der Betrag ueber 800 EUR ist dann nicht entschieden (Band 800,01-952 EUR bei 19 %)
+        #      -> gwg_mehrwertsteuer_offen
+        #   3. Betrag ueber 800 EUR (netto bestaetigt oder unbeantwortet) -> gwg_abschreibung_offen; die
+        #      drei Tatbestandsfragen sind gegenstandslos, sie werden NICHT verlangt.
+        #   4. bis 800 EUR: unbeantwortete Fragen -> gwg_tatbestand_offen (wie bisher); beantwortet und
+        #      "Verzeichnis: nein" ueber 250 EUR -> gwg_abschreibung_offen.
+        # Ein Betrag von 0 (oder keiner) bleibt der Ausweg: nichts zu sperren, das Geraet steht dann bei
+        # der Abschreibung. _gwg_sofortabzug_summe bleibt unveraendert (Schaetzung /stand rechnet weiter);
+        # die Sperre hier ist das Urteil fuer jede festgesetzte Zahl, sie gilt fuer /ergebnis, /deklaration
+        # und /einreichen gemeinsam. Vor Schritt 1 (2026-09-07) waren die drei Bool-Felder unerreichbar,
+        # es gibt daher keine Altantworten, die eine neue Sperre stumm ausloesen; gemessen 2026-10-03 an
+        # 192 echten Akten: 3 mit GWG-Betrag, keine mit "nein" und keine ueber 800 EUR.
+        def _gwg_nein(_felder, fb):
+            # BESTAETIGTES "nein" -- eine Antwort, nicht eine Luecke. Eine vorlaeufige Antwort zaehlt nicht.
+            _e = _felder.get(fb) or {}
+            return _e.get("zustand") == "bestaetigt" and _e.get("wert") is False
+
         if store is not None and bindung is not None:
             for _inst in EM.instanzen(store, bindung, "gwg"):
                 _netto_v = _inst["felder"].get("gwg_anschaffungskosten_netto", {}).get("wert")
                 _netto_i = _netto_v if isinstance(_netto_v, (int, float)) and not isinstance(_netto_v, bool) else 0
                 if _netto_i <= 0:
                     continue
+                if _gwg_nein(_inst["felder"], "gwg_bewegliches_selbstaendig_nutzbar"):
+                    return "gwg_abschreibung_offen"
+                if _gwg_nein(_inst["felder"], "gwg_netto_ohne_vorsteuer"):
+                    return "gwg_mehrwertsteuer_offen"
                 # § 6 Abs. 2 S. 1: über 800 EUR netto ist der Sofortabzug strukturell ausgeschlossen
                 # (zwingend AfA) -- die drei Tatbestandsfragen sind für DIESES Wirtschaftsgut gegenstandslos,
-                # unbeantwortet darf nicht sperren. Spiegelt den > 80000-Cent-Guard in _gwg_sofortabzug_summe
-                # (bescheid_einkuenfte.py), sonst fragt die Sperre nach Voraussetzungen, die am Betrag längst
-                # gescheitert sind (gemessen 2026-09-07: 1000-EUR-Instanz sperrte die Abgabe grundlos).
+                # unbeantwortet darf nicht sperren (gemessen 2026-09-07: 1000-EUR-Instanz sperrte die Abgabe
+                # grundlos nach Voraussetzungen, die am Betrag längst gescheitert sind). Spiegelt den
+                # > 80000-Cent-Guard in _gwg_sofortabzug_summe (bescheid_einkuenfte.py). Das Geraet
+                # selbst verschwindet aber nicht still: gwg_abschreibung_offen.
                 if _netto_i > 80000:
-                    continue
+                    return "gwg_abschreibung_offen"
                 if any((_inst["felder"].get(fb) or {}).get("zustand") != "bestaetigt"
                        for fb in ("gwg_bewegliches_selbstaendig_nutzbar", "gwg_netto_ohne_vorsteuer")):
                     return "gwg_tatbestand_offen"
                 # S. 4: Verzeichnispflicht nur > 250 EUR netto -- darunter ist die Frage rechtlich
                 # gegenstandslos, unbeantwortet darf hier nicht sperren.
-                if (_netto_i > 25000
-                        and (_inst["felder"].get("gwg_verzeichnis_ab_250") or {}).get("zustand") != "bestaetigt"):
-                    return "gwg_tatbestand_offen"
+                if _netto_i > 25000:
+                    if (_inst["felder"].get("gwg_verzeichnis_ab_250") or {}).get("zustand") != "bestaetigt":
+                        return "gwg_tatbestand_offen"
+                    if _gwg_nein(_inst["felder"], "gwg_verzeichnis_ab_250"):
+                        return "gwg_abschreibung_offen"
         # § 10 Abs. 1 Nr. 5 S. 2 + S. 4 Kinderbetreuung: Nachhilfe/Unterricht/Sport (S. 2) und
         # Barzahlung (S. 4) schliessen den Abzug aus. CONDITIONAL-MANDATORY je Kind-Instanz und
         # nur bei Betrag > 0 (analog GWG oben) — ohne Betrag gibt es nichts abzuziehen, dann sind
