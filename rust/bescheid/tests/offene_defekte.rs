@@ -546,12 +546,12 @@ fn kap_vorlaeufiger_wert_in_rentner_gesamt_leckt_nicht_in_deklaration() {
     }
 }
 
-/// `test_verpflegung_kuerzung_deklaration_vorlaeufig_widerspruch.py`. Gewollte Abweichung: Python
-/// verlangt `grund == verpflegung_reduktion_offen` (Zeile 306); der Leck-Fall hat kein
-/// `vpf_monate_am_ort`, deshalb sperrt heute `verpflegung_dreimonatsfrist_aufteilung_offen` (gemessen)
-/// - vor der Kernaussage. Hier steht die Absicht der Vorbedingung: ein Waechter sperrt die Zahl.
+/// `test_verpflegung_kuerzung_deklaration_vorlaeufig_widerspruch.py`. BEHOBEN 2026-10-03 (Entscheid
+/// verpflegung-vorschau-liest-nur-bestaetigte-werte): `verpflegung` und `kuerzung_cent` (`ring_werte.rs`)
+/// lesen nur bestaetigte Werte, der Test ist kein offener Defekt mehr und laeuft ohne `#[ignore]`. Der Leck-Fall
+/// hat kein `vpf_monate_am_ort`, deshalb sperrt ein Waechter (Python: `verpflegung_dreimonatsfrist_aufteilung_offen`)
+/// die Zahl; die Vorbedingung prueft nur, dass irgendein Waechter sperrt.
 #[test]
-#[ignore = "mit_ring_werten (bescheid/src/deklaration/ring_werte.rs) rechnet die Verpflegungs-Kuerzung aus vorlaeufigen tage_24h/vpf_fruehstuecke_gestellt_anzahl: E0205508 steht in einer Deklaration mit eingaben_konsistent=false. Python: test_verpflegung_kuerzung_deklaration_vorlaeufig_widerspruch.py::test_vorlaeufige_tage_leckt_kuerzung_in_deklaration_trotz_unvollstaendig. Vault: keine eigene Notiz; Ringseite decisions/klasse-c-vorlaeufiger-betrag-sperrt.md. Rot sehen: --ignored"]
 fn verpflegung_vorlaeufige_tage_lecken_in_deklaration() {
     let basis = [
         ("veranlagung", json!("einzel")),
@@ -589,6 +589,91 @@ fn verpflegung_vorlaeufige_tage_lecken_in_deklaration() {
         leck.deklaration.get("E0205409"),
         leck.deklaration.get("E0205508")
     );
+}
+
+/// `tests/test_verpflegung_vorschau_liest_nur_bestaetigte_werte.py`: je Feld drei Faelle (bestaetigt / fehlt /
+/// vorlaeufig), alles andere bestaetigt, `vpf_monate_am_ort = 2` (der Waechter sperrt nicht). Ein vorlaeufiges
+/// Feld zaehlt wie ein fehlendes: dieselbe E0205508-Zeile. Basis M: 100 Tage `tage_24h`, die Mahlzeiten binden
+/// die Kuerzung. Basis P: je 10 Mahlzeiten, die Tage binden sie.
+#[test]
+fn verpflegung_vorlaeufiges_feld_zaehlt_wie_fehlendes() {
+    type Paare = Vec<(&'static str, Value)>;
+    let ohne = |b: &Paare, feld: &str| -> Paare {
+        b.iter().filter(|(f, _)| *f != feld).cloned().collect()
+    };
+    let m: Paare = vec![
+        ("tage_24h", json!(100)),
+        ("vpf_fruehstuecke_gestellt_anzahl", json!(5)),
+        ("vpf_mittagessen_gestellt_anzahl", json!(2)),
+        ("vpf_abendessen_gestellt_anzahl", json!(2)),
+    ];
+    let mahlzeiten_p: Paare = vec![
+        ("vpf_fruehstuecke_gestellt_anzahl", json!(10)),
+        ("vpf_mittagessen_gestellt_anzahl", json!(10)),
+        ("vpf_abendessen_gestellt_anzahl", json!(10)),
+    ];
+    let tage_p: Paare = vec![
+        ("tage_24h", json!(3)),
+        ("tage_an_abreise", json!(2)),
+        ("tage_ueber_8h_eintaegig", json!(2)),
+    ];
+    let p: Paare = [tage_p.clone(), mahlzeiten_p.clone()].concat();
+    let nach: Paare = vec![
+        ("vpf_tage_24h_nach_drei_monaten", json!(2)),
+        ("vpf_tage_an_abreise_nach_drei_monaten", json!(1)),
+        ("vpf_tage_ueber_8h_nach_drei_monaten", json!(1)),
+    ];
+    // (Name, Feld, Wert, bestaetigte Basis ohne das Feld)
+    let mut faelle: Vec<(&str, &'static str, Value, Paare)> = vec![];
+    for &(f, ref w) in &m[1..] {
+        faelle.push((f, f, w.clone(), ohne(&m, f)));
+    }
+    faelle.push((
+        "entgelt",
+        "vpf_mahlzeiten_gezahltes_entgelt",
+        json!(2000),
+        m.clone(),
+    ));
+    for &(f, ref w) in &tage_p {
+        faelle.push((f, f, w.clone(), ohne(&p, f)));
+    }
+    // Ein einziger vorlaeufiger Tage-Topf: ohne ihn keine Zeile, mit ihm (vorher) 84 EUR.
+    faelle.push(("einziger_tage_topf", "tage_24h", json!(3), mahlzeiten_p));
+    for &(f, ref w) in &nach {
+        let basis = [
+            p.clone(),
+            nach.iter()
+                .filter(|(g, _)| *g != f)
+                .map(|(g, _)| (*g, json!(0)))
+                .collect(),
+        ]
+        .concat();
+        faelle.push((f, f, w.clone(), basis));
+    }
+    assert_eq!(faelle.len(), 11);
+    let basis: Paare = vec![
+        ("veranlagung", json!("einzel")),
+        ("agb_zwangslaeufig", json!(true)),
+        ("agb_notwendig_angemessen", json!(true)),
+        ("vpf_monate_am_ort", json!(2)),
+    ];
+    for (name, feld, wert, bestaetigt) in faelle {
+        let gesetzt: Paare = [basis.clone(), bestaetigt].concat();
+        let zeile = |g: &Paare, vorlaeufig: &[(&'static str, Value)]| {
+            kz(&leck_lauf(g, vorlaeufig).2, "E0205508")
+        };
+        let fehlt = zeile(&gesetzt, &[]);
+        let bestaetigt = zeile(&[gesetzt.clone(), vec![(feld, wert.clone())]].concat(), &[]);
+        let vorlaeufig = zeile(&gesetzt, &[(feld, wert)]);
+        assert_ne!(
+            bestaetigt, fehlt,
+            "KONTROLLE: {name}: {feld} bestaetigt aendert E0205508 nicht ({fehlt:?}), der Fall misst nichts"
+        );
+        assert_eq!(
+            vorlaeufig, fehlt,
+            "DEFEKT: {name}: {feld} nur vorlaeufig, E0205508 = {vorlaeufig:?}, ohne das Feld {fehlt:?} (bestaetigt {bestaetigt:?})"
+        );
+    }
 }
 
 // ---------------------------------------------------------------- KAP-Topf ohne Kennzahl

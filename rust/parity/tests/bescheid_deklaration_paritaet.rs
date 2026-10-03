@@ -1490,6 +1490,87 @@ fn negativkontrolle_erkennt_genau_eine_abweichung() {
 
 // ---------------------------------------------------------------- gezielte Fälle
 
+/// Der Sperrgrund des Wächters bei vorläufigen oder fehlenden Nach-Frist-Tagen und mehr als 3 Monaten am Ort.
+const VPF_FRIST_GRUND: &str = "verpflegung_dreimonatsfrist_aufteilung_offen";
+
+/// `mit_ring_werten` liest in der Verpflegung nur BESTÄTIGTE Werte (Entscheid
+/// verpflegung-vorschau-liest-nur-bestaetigte-werte): 14 Felder-Gruppen × (bestätigt, fehlt, vorläufig) × 3 Scheiben
+/// = 126 Fälle, alles andere bestätigt. Die Gruppen sind die 42 Fälle der Messung von `neunc` (69119b9). Der
+/// erwartete Sperrgrund ist der des Wächters: nur fehlende oder vorläufige Nach-Frist-Tage bei 4 Monaten sperren.
+fn verpflegung_faelle() -> Vec<(&'static str, &'static str, Vec<(&'static str, Value, bool)>)> {
+    type Paare = Vec<(&'static str, i64)>;
+    const NACH: [&str; 3] = [
+        "vpf_tage_24h_nach_drei_monaten",
+        "vpf_tage_an_abreise_nach_drei_monaten",
+        "vpf_tage_ueber_8h_nach_drei_monaten",
+    ];
+    let ohne = |b: &Paare, feld: &str| -> Paare {
+        b.iter().filter(|(f, _)| *f != feld).copied().collect()
+    };
+    let m: Paare = vec![
+        ("tage_24h", 100),
+        ("vpf_fruehstuecke_gestellt_anzahl", 5),
+        ("vpf_mittagessen_gestellt_anzahl", 2),
+        ("vpf_abendessen_gestellt_anzahl", 2),
+    ];
+    let mahlzeiten_p: Paare = vec![
+        ("vpf_fruehstuecke_gestellt_anzahl", 10),
+        ("vpf_mittagessen_gestellt_anzahl", 10),
+        ("vpf_abendessen_gestellt_anzahl", 10),
+    ];
+    let tage_p: Paare = vec![
+        ("tage_24h", 3),
+        ("tage_an_abreise", 2),
+        ("tage_ueber_8h_eintaegig", 2),
+    ];
+    let p: Paare = [tage_p.clone(), mahlzeiten_p.clone()].concat();
+    let nach: Paare = vec![(NACH[0], 2), (NACH[1], 1), (NACH[2], 1)];
+    // (Feld, Wert, bestätigte Basis ohne das Feld, Monate am Ort)
+    let mut gruppen: Vec<(&'static str, i64, Paare, i64)> = vec![];
+    for &(f, w) in &m[1..] {
+        gruppen.push((f, w, ohne(&m, f), 2));
+    }
+    gruppen.push(("vpf_mahlzeiten_gezahltes_entgelt", 2000, m.clone(), 2));
+    for &(f, w) in &tage_p {
+        gruppen.push((f, w, ohne(&p, f), 2));
+    }
+    gruppen.push(("tage_24h", 3, mahlzeiten_p, 2));
+    for monate in [2, 4] {
+        for &(f, w) in &nach {
+            let basis = [
+                p.clone(),
+                nach.iter()
+                    .filter(|(g, _)| *g != f)
+                    .map(|(g, _)| (*g, 0))
+                    .collect(),
+            ]
+            .concat();
+            gruppen.push((f, w, basis, monate));
+        }
+    }
+    assert_eq!(gruppen.len(), 14);
+    let mut out = vec![];
+    for scheibe in ["gesamt", "an_gesamt", "n_vor_gwg"] {
+        for (feld, wert, basis, monate) in &gruppen {
+            for variante in ["bestaetigt", "fehlt", "vorlaeufig"] {
+                let mut ev: Vec<(&'static str, Value, bool)> =
+                    basis.iter().map(|(f, w)| (*f, json!(*w), true)).collect();
+                ev.push(("vpf_monate_am_ort", json!(*monate), true));
+                if variante != "fehlt" {
+                    ev.push((*feld, json!(*wert), variante == "bestaetigt"));
+                }
+                let erwartet = if *monate > 3 && NACH.contains(feld) && variante != "bestaetigt" {
+                    VPF_FRIST_GRUND
+                } else {
+                    "(keine Sperre)"
+                };
+                out.push((erwartet, scheibe, ev));
+            }
+        }
+    }
+    out
+}
+
 /// Die Sperrgründe, die der Zufall nicht zuverlässig erreicht (spät im Guard hinter frühen Sperren).
 /// Jeder Fall ist von Hand gebaut; der Test verlangt, dass PYTHON den erwarteten Grund liefert (der
 /// Fall trifft die Stelle wirklich) und dass Rust ihn ebenso liefert.
@@ -1897,6 +1978,7 @@ fn gezielte_faelle() {
         ]
         .concat(),
     ));
+    faelle.extend(verpflegung_faelle());
     let mut b = Bilanz::default();
     for (erwartet, scheibe, felder) in &faelle {
         let evs: Vec<Value> = felder

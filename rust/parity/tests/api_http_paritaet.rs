@@ -82,8 +82,9 @@ const UNTERGRENZE: &[(&str, usize)] = &[
     // verweigern), zaehlt `Stat::zaehle` (nur Pythons 2xx) die fuenf Faelle g_an, g_rent, g_rent3, g_an2
     // und g_pf_rot nicht mehr: gemessen 9 Rumpf-Erreichungen vor der Reparatur von g_dk, g_dk2 und
     // g_vz27 (die ohne Sperrgrund wieder 200 antworten) und 12 danach. Die Sperrfaelle zaehlt
-    // `generatoren` eigens (`gesperrt_dk`), mit Grund und Koerper.
-    ("GET /fall/{id}/deklaration", 12),
+    // `generatoren` eigens (`gesperrt_dk`), mit Grund und Koerper. 22 statt 12: die Faelle `g_dv_*` (vorlaeufige
+    // Verpflegungsfelder, `verpflegung_dv_faelle`) antworten zehnmal mit 200 (drei Szenarien x 3, dazu `g_dv_n_b`).
+    ("GET /fall/{id}/deklaration", 22),
     ("GET /fall/{id}/graph", 9),
     ("POST /fall/{id}/event", 12),
     ("POST /fall/{id}/flow", 2),
@@ -4140,6 +4141,83 @@ fn kegel_rentner(beginn: i64) -> Vec<(&'static str, Value)> {
     ]
 }
 
+/// Ein Ereignis der `g_dv_*`-Faelle: (Feld, Wert, bestaetigt?).
+type DvEvent = (&'static str, Value, bool);
+
+/// Die Faelle von `GET /deklaration` bei einem vorlaeufigen Verpflegungsfeld (Entscheid
+/// verpflegung-vorschau-liest-nur-bestaetigte-werte, gemessen von `neunc` auf 69119b9): je Szenario drei Faelle
+/// `g_dv_<szenario>_<f|b|v>` (Feld fehlt / bestaetigt / als vorlaeufiger Vorjahres-Vorschlag), alles andere
+/// bestaetigt. `m`: Mahlzeiten binden die Kuerzung, `t`: die Tage binden sie, `e`: ein einziger vorlaeufiger
+/// Tage-Topf, `n`: Nach-Frist-Tage bei 4 Monaten am Ort (der Waechter sperrt, wenn sie fehlen oder vorlaeufig sind).
+fn verpflegung_dv_faelle() -> Vec<(String, Vec<DvEvent>)> {
+    type Basis = Vec<(&'static str, i64)>;
+    let mahlzeiten = |n: i64| -> Basis {
+        vec![
+            ("vpf_fruehstuecke_gestellt_anzahl", n),
+            ("vpf_mittagessen_gestellt_anzahl", n),
+            ("vpf_abendessen_gestellt_anzahl", n),
+        ]
+    };
+    let szenarien: Vec<(&str, i64, Basis, &'static str, i64)> = vec![
+        (
+            "m",
+            2,
+            vec![
+                ("tage_24h", 100),
+                ("vpf_mittagessen_gestellt_anzahl", 2),
+                ("vpf_abendessen_gestellt_anzahl", 2),
+            ],
+            "vpf_fruehstuecke_gestellt_anzahl",
+            5,
+        ),
+        (
+            "t",
+            2,
+            [
+                vec![("tage_an_abreise", 2), ("tage_ueber_8h_eintaegig", 2)],
+                mahlzeiten(10),
+            ]
+            .concat(),
+            "tage_24h",
+            3,
+        ),
+        ("e", 2, mahlzeiten(10), "tage_24h", 3),
+        (
+            "n",
+            4,
+            [
+                vec![
+                    ("tage_24h", 3),
+                    ("tage_an_abreise", 2),
+                    ("tage_ueber_8h_eintaegig", 2),
+                    ("vpf_tage_an_abreise_nach_drei_monaten", 0),
+                    ("vpf_tage_ueber_8h_nach_drei_monaten", 0),
+                ],
+                mahlzeiten(10),
+            ]
+            .concat(),
+            "vpf_tage_24h_nach_drei_monaten",
+            2,
+        ),
+    ];
+    let mut out = vec![];
+    for (kuerzel, monate, basis, feld, wert) in szenarien {
+        for (v, zustand) in [("f", None), ("b", Some(true)), ("v", Some(false))] {
+            let mut ev: Vec<(&'static str, Value, bool)> = vec![
+                ("bruttoarbeitslohn", json!(6_000_000), true),
+                ("veranlagung", json!("einzel"), true),
+                ("vpf_monate_am_ort", json!(monate), true),
+            ];
+            ev.extend(basis.iter().map(|(f, w)| (*f, json!(*w), true)));
+            if let Some(z) = zustand {
+                ev.push((feld, json!(wert), z));
+            }
+            out.push((format!("g_dv_{kuerzel}_{v}"), ev));
+        }
+    }
+    out
+}
+
 /// Echte Eingaben fuer Stufe 1–3 (9c): vier eigene Faelle in zwei Scheiben, Events auf mehreren
 /// Feldern samt Ersetzung, Vorjahr-Uebernahme aus einer zweiten Fallakte, UI-Meldungen mit
 /// `TAXGRAPH_FLOW=1`, dann jede Lese-Route. Jede Route erreicht ihren Rumpf so oft, wie
@@ -4240,6 +4318,11 @@ fn generatoren() {
         ("g_dk_partner", "gesamt", 2025),
     ] {
         let b = json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": vz});
+        a("POST", "/fall", Some(b));
+    }
+    let dv_faelle = verpflegung_dv_faelle();
+    for (id, _) in &dv_faelle {
+        let b = json!({"fall_id": id, "scheibe": "gesamt", "veranlagungszeitraum": 2025});
         a("POST", "/fall", Some(b));
     }
     let mut erster = None;
@@ -4558,6 +4641,28 @@ fn generatoren() {
             abgewiesen.push(format!("{id}/{feld}"));
         }
     }
+    // Die Faelle `g_dv_*`: bestaetigt als Klick, vorlaeufig als Vorjahres-Vorschlag (`import:vorjahr`).
+    for (id, events) in &dv_faelle {
+        for (feld, wert, bestaetigt) in events {
+            let ev = if *bestaetigt {
+                ereignis(feld, wert, None)
+            } else {
+                roher_event(
+                    feld,
+                    wert.clone(),
+                    "vorlaeufig",
+                    "import:vorjahr",
+                    "vorjahr",
+                    None,
+                )
+            };
+            if a("POST", &format!("/fall/{id}/event"), Some(ev))
+                .is_none_or(|b| b.get("event_id").is_none())
+            {
+                abgewiesen.push(format!("{id}/{feld}"));
+            }
+        }
+    }
     let ev = ereignis_llm("agb_aufwendungen", &json!(50_000));
     if a("POST", "/fall/g_pf_gelb/event", Some(ev)).is_none_or(|b| b.get("event_id").is_none()) {
         abgewiesen.push("g_pf_gelb/agb_aufwendungen".to_owned());
@@ -4826,6 +4931,45 @@ fn generatoren() {
     ] {
         deklarationen.extend(a("GET", &format!("/fall/{id}/deklaration"), None));
         assert_eq!(status.get(), 409, "deklaration {id} sperrt nicht");
+    }
+    // Vorlaeufige Verpflegungsfelder: `/deklaration` zeigt E0205508 wie bei "Feld fehlt" (Python und Rust
+    // vergleicht `a` ueber den ganzen Koerper; hier die Aussage dazu). Der Waechter `n` sperrt weiter.
+    let dv: BTreeMap<String, (u16, Value)> = dv_faelle
+        .iter()
+        .map(|(id, _)| {
+            let b = a("GET", &format!("/fall/{id}/deklaration"), None).unwrap();
+            deklarationen.push(b.clone());
+            (id.clone(), (status.get(), b))
+        })
+        .collect();
+    for s in ["m", "t", "e"] {
+        let (f, b, v) = (
+            &dv[&format!("g_dv_{s}_f")],
+            &dv[&format!("g_dv_{s}_b")],
+            &dv[&format!("g_dv_{s}_v")],
+        );
+        assert_eq!(
+            (f.0, b.0, v.0),
+            (200, 200, 200),
+            "g_dv_{s}: {f:?} {b:?} {v:?}"
+        );
+        let zeile = |x: &(u16, Value)| x.1["deklaration"].get("E0205508").cloned();
+        assert_ne!(
+            zeile(b),
+            zeile(f),
+            "KONTROLLE: g_dv_{s}: das bestaetigte Feld aendert E0205508 nicht"
+        );
+        assert_eq!(
+            zeile(v),
+            zeile(f),
+            "DEFEKT: g_dv_{s}: das vorlaeufige Feld geht in E0205508 ein"
+        );
+        assert_eq!(v.1["eingaben_konsistent"], json!(false), "g_dv_{s}: {v:?}");
+    }
+    let (f, b, v) = (&dv["g_dv_n_f"], &dv["g_dv_n_b"], &dv["g_dv_n_v"]);
+    assert_eq!((f.0, b.0, v.0), (409, 200, 409), "g_dv_n: {f:?} {b:?} {v:?}");
+    for x in [f, v] {
+        assert_eq!(x.1["grund"], json!("verpflegung_dreimonatsfrist_aufteilung_offen"));
     }
     // `deklaration`: welche Kz und welche Bereiche der Antwort Pythons Antworten tragen.
     let mut kz_je: BTreeMap<String, usize> = BTreeMap::new();
