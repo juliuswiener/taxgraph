@@ -247,7 +247,12 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # Zweig in `kontoauszug()`, 2 Kommentar, 3 Code (`except`, Meldung ueber zwei Zeilen). Kein Rechenkern
 # und keine Verzweigung ueber Steuerdaten. ANLASS, gemessen (Vault decisions/fehlendes-hilfsprogramm-
 # antwortet-503): ohne `pdftotext` im PATH antwortete der Upload mit 500 und „FileNotFoundError: ...".
-API_ZEILEN_OBERGRENZE = 1329
+#
+# 1329 -> 1331 (2026-10-03, tesseract mit Fehlercode beim PDF-Kontoauszug). 2 Zeilen: der zweite `except`-
+# Zweig direkt hinter dem fuer `FileNotFoundError` (`OcrNichtVerfuegbar` -> 503), ein Satz Kommentar in der
+# Zeile. Kein Rechenkern. ANLASS, gemessen (Vault decisions/ein-hilfsprogramm-mit-fehlercode-bricht-den-
+# upload-ab): ohne `deu`-Daten endet tesseract mit Exit 1 und stdout leer, der Upload las „0 Buchungen" mit 200.
+API_ZEILEN_OBERGRENZE = 1331
 
 
 def _runner_stellen(pfad: str) -> list[int]:

@@ -165,12 +165,18 @@ fn pdf_lesen(bytes: &[u8]) -> Result<(Vec<Transaktion>, usize), ApiFehler> {
         .map_err(|e| ApiFehler::unerwartet("OSError", e.to_string()))?;
     let pfad = datei.path().to_string_lossy().into_owned();
     let (text, konfidenz) = lies_kontoauszug_pdf(&pfad).map_err(|e| match e {
-        OcrFehler::Zeitlimit { .. } | OcrFehler::ZuAufwendig(_) | OcrFehler::NichtLesbar => {
+        // `BildUmwandlung`: pdftoppm scheitert an der Datei, die pdftotext angenommen hat — der Nutzer kann
+        // eine andere hochladen.
+        OcrFehler::Zeitlimit { .. }
+        | OcrFehler::ZuAufwendig(_)
+        | OcrFehler::NichtLesbar
+        | OcrFehler::BildUmwandlung => {
             ApiFehler::status(422, format!("Kontoauszug nicht lesbar: {e}"))
         }
         // Ein fehlendes Hilfsprogramm ist ein Betriebsproblem, nicht die Datei des Nutzers: 503 wie in
         // Python (`api.kontoauszug`, `except FileNotFoundError`), Text wortgleich, ohne Ausnahme-Typ.
-        OcrFehler::Start { .. } => {
+        // `OcrNichtVerfuegbar`: tesseract endet mit Fehlercode (etwa ohne `deu`-Daten) — ebenfalls 503.
+        OcrFehler::Start { .. } | OcrFehler::OcrNichtVerfuegbar => {
             ApiFehler::status(503, format!("PDF-Auslesen ist gerade nicht möglich: {e}"))
         }
         OcrFehler::KeinUtf8(_) => ApiFehler::unerwartet("UnicodeDecodeError", e.to_string()),

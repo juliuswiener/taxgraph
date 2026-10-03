@@ -1,7 +1,13 @@
 //! `POST /fall/{id}/kontoauszug` mit einem PDF, wenn ein Hilfsprogramm (`pdftotext`, `pdftoppm`,
-//! `tesseract`) fehlt: 503 mit Klartext statt 500 mit dem Namen einer Ausnahme (Vault
-//! `decisions/fehlendes-hilfsprogramm-antwortet-503`). Die Gegenstücke in Python stehen in
-//! `tests/test_unterprozess_zeitlimit.py` (`test_endpunkt_fehlendes_werkzeug_wirft_apierror_503`).
+//! `tesseract`) fehlt oder mit Fehlercode endet:
+//! - fehlt es: 503 mit Klartext statt 500 mit dem Namen einer Ausnahme (Vault
+//!   `decisions/fehlendes-hilfsprogramm-antwortet-503`);
+//! - endet `pdftoppm` mit Exit != 0: 422 „nicht lesbar“, `tesseract`: 503 (Vault `decisions/ein-
+//!   hilfsprogramm-mit-fehlercode-bricht-den-upload-ab`) — vorher las der Upload still leer.
+//!
+//! Die Gegenstücke in Python stehen in `tests/test_unterprozess_zeitlimit.py`
+//! (`test_endpunkt_fehlendes_werkzeug_wirft_apierror_503`,
+//! `test_endpunkt_rueckgabecode_pdftoppm_422_tesseract_503`).
 //!
 //! HERMETISCH: kein echtes `pdftotext`/`tesseract` nötig. Je Fall zeigt `PATH` auf ein Verzeichnis
 //! mit Shell-Skripten, die nur Builtins nutzen. `PATH` und `TMPDIR` gelten für den ganzen Prozess,
@@ -46,6 +52,14 @@ const OHNE_TEXT: &str = "exit 0";
 const EINE_LEERE_SEITE: &str = "printf 'x\\f'";
 /// pdftoppm legt `<Präfix>-1.png` ab (das letzte Argument ist das Präfix).
 const EIN_BILD: &str = "for a; do p=$a; done; : > \"$p-1.png\"";
+/// Exit 1 ohne Ausgabe: so endet `pdftoppm` auf einer Datei, die es nicht umwandeln kann, und
+/// `tesseract` ohne die `deu`-Sprachdaten.
+const EXIT_EINS: &str = "exit 1";
+
+/// Der Wortlaut der 422-Antwort bei `pdftoppm` mit Fehlercode; wortgleich mit Python.
+const BILDER: &str = "Kontoauszug nicht lesbar: Die Seiten der Datei lassen sich nicht in Bilder umwandeln (beschädigt oder nicht unterstützt).";
+/// Der Wortlaut der 503-Antwort bei `tesseract` mit Fehlercode; wortgleich mit Python.
+const TEXTERKENNUNG: &str = "PDF-Auslesen ist gerade nicht möglich: Die Texterkennung (tesseract) ist auf diesem Rechner nicht einsatzbereit (sie endete mit einem Fehler, etwa weil die deutschen Sprachdaten fehlen).";
 
 struct Dienst {
     zustand: Zustand,
@@ -162,6 +176,44 @@ const FAELLE: &[Fall] = &[
         status: 503,
         enthaelt: fehlt!("tesseract"),
     },
+    Fall {
+        name: "pdftoppm Exit 1 (Voll-Scan)",
+        stubs: &[
+            ("pdftotext", OHNE_TEXT, 0o755),
+            ("pdftoppm", EXIT_EINS, 0o755),
+        ],
+        status: 422,
+        enthaelt: BILDER,
+    },
+    Fall {
+        name: "pdftoppm Exit 1 (Einzelseite)",
+        stubs: &[
+            ("pdftotext", EINE_LEERE_SEITE, 0o755),
+            ("pdftoppm", EXIT_EINS, 0o755),
+        ],
+        status: 422,
+        enthaelt: BILDER,
+    },
+    Fall {
+        name: "tesseract Exit 1 (Voll-Scan)",
+        stubs: &[
+            ("pdftotext", OHNE_TEXT, 0o755),
+            ("pdftoppm", EIN_BILD, 0o755),
+            ("tesseract", EXIT_EINS, 0o755),
+        ],
+        status: 503,
+        enthaelt: TEXTERKENNUNG,
+    },
+    Fall {
+        name: "tesseract Exit 1 (Einzelseite)",
+        stubs: &[
+            ("pdftotext", EINE_LEERE_SEITE, 0o755),
+            ("pdftoppm", EIN_BILD, 0o755),
+            ("tesseract", EXIT_EINS, 0o755),
+        ],
+        status: 503,
+        enthaelt: TEXTERKENNUNG,
+    },
     // Gegenprobe: nur ein FEHLENDES Programm ist ein Betriebsproblem. Eines, das da ist und nicht
     // starten darf (Pythons PermissionError), bleibt ein 500 — kein Catch-all.
     Fall {
@@ -173,7 +225,7 @@ const FAELLE: &[Fall] = &[
 ];
 
 #[tokio::test]
-async fn fehlendes_hilfsprogramm_antwortet_503_und_laesst_nichts_liegen() {
+async fn hilfsprogramm_fehler_antworten_mit_klartext_und_lassen_nichts_liegen() {
     let d = dienst();
     // Temp-Dateien und -Verzeichnisse des Lesepfads landen hier: nach jedem Fall muss es leer sein.
     let spuren = d.tmp.path().join("spuren");
@@ -195,12 +247,19 @@ async fn fehlendes_hilfsprogramm_antwortet_503_und_laesst_nichts_liegen() {
             fall.name,
             fall.enthaelt
         );
-        if fall.status == 503 {
-            assert!(
-                !meldung.contains("FileNotFoundError") && !meldung.contains("os error"),
-                "{}: Ausnahme-Typ oder errno in der Antwort an den Nutzer: {meldung}",
-                fall.name
-            );
+        if fall.status != 500 {
+            for typ in [
+                "FileNotFoundError",
+                "IndexError",
+                "PdfNichtLesbar",
+                "os error",
+            ] {
+                assert!(
+                    !meldung.contains(typ),
+                    "{}: {typ} in der Antwort an den Nutzer: {meldung}",
+                    fall.name
+                );
+            }
         }
         let uebrig: Vec<_> = std::fs::read_dir(&spuren)
             .unwrap()

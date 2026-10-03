@@ -1018,6 +1018,8 @@ def kontoauszug(fall_id: str, body: dict) -> tuple[int, dict]:
                 # (decisions/fehlendes-hilfsprogramm-antwortet-503). NUR dieser Typ, kein Catch-all.
                 raise ApiError(503, f"PDF-Auslesen ist gerade nicht möglich: Das Programm "
                                     f"'{e.filename}' fehlt auf diesem Rechner.")
+            except KW.OcrNichtVerfuegbar as e:      # tesseract mit Fehlercode (z. B. keine deu-Daten): ebenso 503
+                raise ApiError(503, f"PDF-Auslesen ist gerade nicht möglich: {e}")
             tx, n_verworfen = KW.parse_pdf_zeilen(text, conf_map)
         finally:
             os.unlink(pfad)

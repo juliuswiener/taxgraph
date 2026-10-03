@@ -23,6 +23,7 @@ for sub in ("produkt/store", "produkt/traverser", "produkt/eingang"):
 import store as ST              # noqa: E402
 import traverser as TR          # noqa: E402
 import kontoauszug_writer as KW  # noqa: E402
+from test_unterprozess_zeitlimit import EINE_LEERE_SEITE, TSV_KOPF, _run_werkzeuge  # noqa: E402
 
 TS = "2026-07-18T14:00:00+00:00"
 KA = {"herkunft": "kontoauszug", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}
@@ -289,6 +290,74 @@ def test_lies_kontoauszug_pdf_teil_textlayer_conf_index_alignment(tmp_path, monk
     tx, verworfen = KW.parse_pdf_zeilen(text, conf_map)
     assert not any("Spende" in t["verwendungszweck"] for t in tx)   # <0.6 -> verworfen, nicht 1.0-Fallback
     assert verworfen == 1
+
+
+# ---- Rückgabecodes von pdftoppm und tesseract (Vault decisions/ein-hilfsprogramm-mit-fehlercode-bricht-den-upload-ab) ----
+# Unterprozess-Ersatz statt echter Werkzeuge: ein Fehlercode lässt sich mit den echten nur über eine kaputte
+# Installation erzeugen. "voll" = Voll-Scan (pdftotext ohne Text), "einzel" = eine Seite eines Teil-Textlayers.
+
+_WEGE = {"voll": "", "einzel": EINE_LEERE_SEITE}
+
+
+@pytest.mark.parametrize("bild_da", [False, True])
+@pytest.mark.parametrize("weg", ["voll", "einzel"])
+def test_pdftoppm_fehlercode_ist_pdf_nicht_lesbar(tmp_path, monkeypatch, weg, bild_da):
+    """pdftoppm mit Exit != 0: PdfNichtLesbar mit eigenem Text zum Umwandeln in Bilder. Vorher: Voll-Scan
+    gab ("", {}) (ein leerer Auszug, am Endpunkt 200 mit 0 Buchungen), Einzelseite warf IndexError.
+    Auch ein halbes Ergebnis zählt nicht: hat pdftoppm vor dem Fehler ein Bild abgelegt, bleibt Exit != 0
+    ein Fehler ("immer ein Fehler, nie die Seite ist leer")."""
+    run = _run_werkzeuge(text=_WEGE[weg], pdftoppm_rc=1)
+    if bild_da:
+        ohne_bild = run
+
+        def run(cmd, *a, **kw):
+            r = ohne_bild(cmd, *a, **kw)
+            if cmd[0] == "pdftoppm":
+                open(cmd[-1] + "-1.png", "wb").close()
+            return r
+    monkeypatch.setattr(KW.subprocess, "run", run)
+
+    with pytest.raises(KW.PdfNichtLesbar) as e:
+        KW.lies_kontoauszug_pdf(str(tmp_path / "x.pdf"))
+    assert "Bilder" in str(e.value), f"Text nennt das Umwandeln in Bilder nicht: {e.value}"
+    assert "pdftoppm" not in str(e.value), "Programmname gehört nicht in die Meldung an den Nutzer"
+
+
+@pytest.mark.parametrize("weg", ["voll", "einzel"])
+def test_tesseract_fehlercode_ist_ocr_nicht_verfuegbar(tmp_path, monkeypatch, weg):
+    """tesseract mit Exit != 0 (gemessen: fehlende deu-Sprachdaten, Exit 1, stdout leer): der neue
+    Ausnahme-Typ OcrNichtVerfuegbar, nicht ("", {}). Er ist KEIN PdfNichtLesbar — sonst fing der erste
+    `except` in api.py ihn ab und aus dem 503 würde ein 422."""
+    monkeypatch.setattr(KW.subprocess, "run", _run_werkzeuge(text=_WEGE[weg], tesseract_rc=1))
+
+    with pytest.raises(KW.OcrNichtVerfuegbar) as e:
+        KW.lies_kontoauszug_pdf(str(tmp_path / "x.pdf"))
+    assert not isinstance(e.value, KW.PdfNichtLesbar)
+
+
+@pytest.mark.parametrize("weg", ["voll", "einzel"])
+def test_weisse_seite_liest_leer_ohne_fehler(tmp_path, monkeypatch, weg):
+    """Gegenprobe: tesseract auf einer weißen Seite endet mit Exit 0 und gibt nur die TSV-Kopfzeile aus.
+    Exit 0 heißt "das Ergebnis gilt, auch wenn es leer ist" — sonst würde jede leere Seite zum Fehler."""
+    monkeypatch.setattr(KW.subprocess, "run", _run_werkzeuge(text=_WEGE[weg]))
+    assert KW.lies_kontoauszug_pdf(str(tmp_path / "x.pdf")) == ("", {})
+
+
+@pytest.mark.parametrize("weg", ["voll", "einzel"])
+def test_exit_null_mit_bild_liest_wie_vorher(tmp_path, monkeypatch, weg):
+    """Gegenprobe: Exit 0 bei beiden Programmen bleibt unverändert — der erkannte Text kommt zurück,
+    die Confidence je Zeile auch."""
+    zeile = "5\t1\t1\t1\t1\t1\t0\t0\t10\t10\t96\tMiete\n"
+    run = _run_werkzeuge(text=_WEGE[weg])
+
+    def mit_text(cmd, *a, **kw):
+        r = run(cmd, *a, **kw)
+        if cmd[0] == "tesseract":
+            r.stdout = TSV_KOPF + zeile
+        return r
+    monkeypatch.setattr(KW.subprocess, "run", mit_text)
+    text, conf = KW.lies_kontoauszug_pdf(str(tmp_path / "x.pdf"))
+    assert text == "Miete" and conf == {0: 0.96}
 
 
 # ---- parse_pdf_zeilen: Zeilen-Regex, Schwelle-Gate, Saldo-/Summenzeilen-Schutz (kein Mock) ----
