@@ -215,6 +215,106 @@ def test_ein_ja_auf_die_neue_frage_rettet_den_abzug():
     assert _abzug(_store(GEB, KOSTEN, (FELD, True))) == 4800
 
 
+# ---- Das zweite Kind: die Ableitung feuert je Instanz --------------------------
+# Gemessen 2026-10-03 auf 431ca41c, derselbe Fall mit dem echten Rechenweg:
+#   Kind 1 allein                                -> 4.800 EUR, Ableitung auf `FELD`
+#   Kind 1 + Kind 2, je 6.000 EUR                -> 4.800 EUR (soll 9.600), Ableitung NUR auf `FELD`
+#   Kind 2 allein (Kind 1 fehlt, `FELD` NICHT aktiv) ->    0 EUR (soll 4.800), keine Ableitung
+#   Kind 1 + 2, Nutzer setzt beide Gates selbst  -> 9.600 EUR
+# Der dritte Fall trennt den Suffix von der Zyklus-Sperre `ziel in aktiv`: dort gilt die Sperre
+# nicht, und es feuert trotzdem nichts. `_rechne_ab` verglich `feld_id` ohne `__2` mit `aus`/`und_feld`.
+
+FELD2 = FELD + "__2"
+GEB2 = ("kind_geburtsdatum__2", "01.03.2021")                        # im VZ 2025 vier Jahre alt
+HAUS2 = ("kind_betreuung_haushaltszugehoerigkeit_zeitraum__2", "01.01-31.12")
+KOSTEN2 = ("kinderbetreuungskosten__2", 600_000)
+
+
+def _abgeleitet(s):
+    return {e["feld_id"]: e for e in s["events"] if e["schreiber"] == "abgeleitet:ableitung"}
+
+
+def _wert2(s):
+    felder, _ = ST.materialisiere(s)
+    return felder.get(FELD2)
+
+
+def test_zweites_kind_leitet_seine_qualifikation_ab():
+    """Kind 2 allein: `FELD` ist nicht aktiv, die Zyklus-Sperre kann nicht schuld sein. Vor dem
+    Fix blieb `FELD__2` leer — allein wegen des Suffix."""
+    s = _store(GEB2, HAUS2)
+    e = _wert2(s)
+    assert e is not None, "die Ableitung erreicht Instanz 2 nicht (Vergleich ohne Suffix)"
+    assert e["wert"] is True
+    assert _wert(s) is None, "Instanz 2 hat ein Feld der Instanz 1 geschrieben"
+    # Die Spur nennt das Quellfeld der Instanz, aus dem gerechnet wurde.
+    assert _abgeleitet(s)[FELD2]["signal"]["signal_2"] == "ableitung@kind_geburtsdatum__2"
+
+
+def test_zweites_kind_beide_reihenfolgen_ergeben_dasselbe():
+    """Quelle zuerst und und_feld zuerst: beide Auslöser müssen die Instanz treffen."""
+    assert _wert2(_store(GEB2, HAUS2))["wert"] is True
+    assert _wert2(_store(HAUS2, GEB2))["wert"] is True
+
+
+def test_beide_kinder_leiten_je_instanz_ab():
+    s = _store(GEB, HAUS, GEB2, HAUS2)
+    assert {k: e["wert"] for k, e in _abgeleitet(s).items()} == {FELD: True, FELD2: True}
+
+
+def test_zwei_kinder_je_6000_ergeben_9600_abzug():
+    """Der Geldtest, über den echten Rechenweg. Vor dem Fix 4.800 EUR."""
+    a = _abzug(_store(GEB, KOSTEN, HAUS, GEB2, KOSTEN2, HAUS2))
+    b = _abzug(_store(HAUS2, GEB2, KOSTEN2, HAUS, GEB, KOSTEN))
+    assert a == b == 9600, f"{a} EUR / {b} EUR statt 9.600 EUR"
+
+
+def test_kind_2_allein_bekommt_seinen_abzug():
+    assert _abzug(_store(GEB2, KOSTEN2, HAUS2)) == 4800
+
+
+def test_nutzerantwort_auf_instanz_2_bleibt_stehen():
+    """Die Sperre gilt je Instanz: ein Nein auf `FELD__2` wird nicht überschrieben."""
+    e = _wert2(_store((FELD2, False), GEB2, HAUS2))
+    assert e["wert"] is False
+    assert (e.get("herkunft") or {}).get("herkunft") == "laie"
+
+
+def test_antwort_auf_instanz_1_sperrt_instanz_2_nicht():
+    """Die Sperre gilt je Instanz, nicht je Basisfeld. Hätte der Fix nur den Suffix im Vergleich
+    abgeschnitten, läge `FELD` in `aktiv` und blockte Kind 2."""
+    s = _store((FELD, False), GEB2, HAUS2)
+    assert _wert(s)["wert"] is False, "die Antwort auf Instanz 1 wurde angefasst"
+    assert _wert2(s)["wert"] is True
+
+
+def test_ein_nein_auf_instanz_2_kostet_weiterhin_den_abzug():
+    """Kein verstecktes Geschenk, wie bei Instanz 1."""
+    assert _abzug(_store((FELD2, False), GEB2, KOSTEN2, HAUS2)) == 0
+
+
+def test_instanz_2_ohne_und_feld_oder_ueber_14_leitet_nichts_ab():
+    assert _wert2(_store(GEB2, KOSTEN2)) is None
+    assert _wert2(_store(("kind_geburtsdatum__2", "01.03.2009"), HAUS2)) is None
+    # Quelle der Instanz 2 und und_feld der Instanz 1 sind keine Einheit.
+    assert _wert2(_store(GEB2, HAUS)) is None
+    assert _wert2(_store(GEB, HAUS2)) is None
+
+
+def test_feld_id_mit_zeilenumbruch_ist_keine_instanz_2():
+    """Pythons `$` in `parse_instanz` passt vor einem abschliessenden `\\n`: `…__2\\n` ist ein
+    Instanz-Feld des Typpruefers, aber kein `aus` der Instanz 2. Rust liest es genauso."""
+    s = _store(("kind_geburtsdatum__2\n", "01.03.2021"), HAUS2)
+    assert not _abgeleitet(s)
+
+
+def test_ableitung_ohne_instanz_gruppe_ignoriert_den_suffix():
+    """Der Suffix gilt nur für Felder mit `instanz_gruppe`. `geburtsjahr` hat keine: ein
+    `stammdaten_geburtsdatum__2` darf kein `geburtsjahr__2` erzeugen."""
+    s = _store(("stammdaten_geburtsdatum__2", "05.05.1955"))
+    assert not [f for f in _abgeleitet(s) if f.endswith("__2")]
+
+
 # ---- Die Monatsfrage: zwei Regeln, zwei Zeitbezuege, zwei Antworten --------------
 
 def _monatsfall(s, feld, monate):

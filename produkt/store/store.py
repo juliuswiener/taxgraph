@@ -650,43 +650,63 @@ def _rechne_ab(store: dict, *, feld_id: str, wert, zustand: str, bindung: dict |
     # Ableitung sieht nur den Stand VOR diesem Aufruf und kann deshalb nicht auf dem Ergebnis
     # einer anderen Ableitung desselben Aufrufs aufsetzen.
     aktiv = _aktives(store)
+    # Instanz (`kind_geburtsdatum__2`): der Suffix des auslösenden Feldes gilt für `aus`, `und_feld`
+    # UND `ziel` — eine Ableitung feuert je Instanz und schreibt je Instanz (Vault: decisions/
+    # ableitung-feuert-je-instanz-und-frage-nach-beiden-ausloesern, Punkt 1). Vorher verglich diese
+    # Funktion `feld_id` ohne Suffix; Kind 2 bekam nie eine Qualifikation. Dieselbe Enumerations-
+    # Wahrheit wie in `_pruefe_typ_konformitaet`, derselbe lokale Import aus demselben Grund.
+    suffix = ""
+    try:
+        import est_mapping as _EM
+        parsed = _EM.parse_instanz(feld_id)
+        if parsed:
+            suffix = f"__{parsed[1]}"
+    except ImportError:
+        pass   # reine Store-Tests ohne produkt/mapping auf sys.path: kein Instanz-Feld dort
     for ziel, eintrag in bindung.items():
         regel = eintrag.get("ableitung")
         if not regel:
             continue
+        # Nur ein Ziel mit `instanz_gruppe` hat Instanzen. Ohne sie bleibt der Vergleich wie er war:
+        # `stammdaten_geburtsdatum__2` leitet kein `geburtsjahr__2` ab.
+        sfx = suffix if eintrag.get("instanz_gruppe") else ""
+        aus_i = regel.get("aus") + sfx
+        ziel_i = ziel + sfx
         # `und_feld`: die Ableitung greift nur, wenn AUCH dieses Feld bestätigt beantwortet ist.
         # Für Bedingungen, die aus mehreren Angaben folgen — § 10 Abs. 1 Nr. 5 S. 1 EStG verlangt
         # ein Kind unter 14 UND Haushaltszugehörigkeit. Aus dem Geburtsdatum allein zu schliessen
         # hiesse, die Haushaltszugehörigkeit zu unterstellen; das gäbe einen Abzug, den niemand
         # erklärt hat.
         und = regel.get("und_feld")
-        if feld_id not in (regel.get("aus"), und) or ziel in aktiv:
+        und_i = und + sfx if und else None
+        if feld_id not in (aus_i, und_i) or ziel_i in aktiv:
             continue
-        if regel.get("aus") == feld_id:
+        if aus_i == feld_id:
             quellwert = wert
         else:
             # Ausgelöst über das und_feld: der Quellwert muss aus dem Store kommen, und auch dort
             # gilt „nur bestätigte Quellen" — ein vorläufiger Vorschlag rechnet nichts aus.
-            qev = aktiv.get(regel.get("aus"))
+            qev = aktiv.get(aus_i)
             if qev is None or qev.get("zustand") != "bestaetigt":
                 continue
             quellwert = qev.get("wert")
-        if und:
-            ev = aktiv.get(und)
+        if und_i:
+            ev = aktiv.get(und_i)
             if ev is None or ev.get("zustand") != "bestaetigt" or ev.get("wert") in (None, "", False):
                 continue
         neu = _berechne(regel, quellwert, int(store["veranlagungszeitraum"]))
         if neu is None:
             continue
-        ev = {"event_id": "", "ts": _now(), "feld_id": ziel, "wert": neu,
+        ev = {"event_id": "", "ts": _now(), "feld_id": ziel_i, "wert": neu,
               "zustand": "bestaetigt",
               "herkunft": {"herkunft": "berechnet", "pruef_tiefe": "ungeprueft",
                            "haftung": "nutzer"},
               "schreiber": "abgeleitet:ableitung",
               # Die Spur nennt das QUELLFELD, aus dem gerechnet wurde — nicht das Feld, dessen
               # Bestätigung die Ableitung ausgelöst hat. Seit es zwei Auslöser gibt, fallen die
-              # beiden auseinander, und `warum` soll die Herkunft des Wertes zeigen.
-              "signal": {"signal_1": None, "signal_2": f"ableitung@{regel.get('aus')}"},
+              # beiden auseinander, und `warum` soll die Herkunft des Wertes zeigen. Bei Instanz 2
+              # ist das Quellfeld das der Instanz (`kind_geburtsdatum__2`).
+              "signal": {"signal_1": None, "signal_2": f"ableitung@{aus_i}"},
               "ersetzt": None}
         ev["event_id"] = event_id(ev)
         store["events"].append(ev)

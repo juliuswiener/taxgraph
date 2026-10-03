@@ -4318,6 +4318,10 @@ fn generatoren() {
         ("g_ges7", "gesamt", 2025),
         ("g_ges8", "gesamt", 2025),
         ("g_ges9", "gesamt", 2025),
+        // g_kind2: zwei Kinder je 6.000 EUR, Quelle vor Zeitraum; g_kind2b: nur Kind 2, Zeitraum vor
+        // Quelle. Die Ableitung `kind_unter_14_haushaltszugehoerig` feuert je Instanz (`__2`).
+        ("g_kind2", "gesamt", 2025),
+        ("g_kind2b", "gesamt", 2025),
         ("g_rent4", "rentner_gesamt", 2025),
         // g_rent5: Rentenbeginn-Jahr 0 (aa, ohne Freibetrag): der Guard sperrt mit
         // `rentenbeginn_jahr_ungueltig`, nicht mit der Fixierung.
@@ -4498,6 +4502,51 @@ fn generatoren() {
         k
     });
     fuege("g_ges9", ohne_quote());
+    // Die Antworten auf die beiden Folgefragen (`reine_betreuung`, `rechnung_ueberweisung`) je Kind:
+    // ohne sie sperrt der Guard, und `ergebnis` trueg keine Zahl.
+    let kind = |n: &'static str, geburt: &'static str, zeitraum_zuerst: bool| {
+        let (g, k, h, r, u): (
+            &'static str,
+            &'static str,
+            &'static str,
+            &'static str,
+            &'static str,
+        ) = match n {
+            "" => (
+                "kind_geburtsdatum",
+                "kinderbetreuungskosten",
+                "kind_betreuung_haushaltszugehoerigkeit_zeitraum",
+                "kind_betreuung_reine_betreuung",
+                "kind_betreuung_rechnung_ueberweisung",
+            ),
+            _ => (
+                "kind_geburtsdatum__2",
+                "kinderbetreuungskosten__2",
+                "kind_betreuung_haushaltszugehoerigkeit_zeitraum__2",
+                "kind_betreuung_reine_betreuung__2",
+                "kind_betreuung_rechnung_ueberweisung__2",
+            ),
+        };
+        let (gv, kv, hv) = (json!(geburt), json!(600_000), json!("01.01-31.12"));
+        let mut e = if zeitraum_zuerst {
+            vec![(h, hv), (g, gv), (k, kv)]
+        } else {
+            vec![(g, gv), (k, kv), (h, hv)]
+        };
+        e.extend([(r, json!(true)), (u, json!(true))]);
+        e
+    };
+    fuege("g_kind2", {
+        let mut k = mit_kinder();
+        k.extend(kind("", "01.03.2020", false));
+        k.extend(kind("__2", "01.03.2021", false));
+        k
+    });
+    fuege("g_kind2b", {
+        let mut k = mit_kinder();
+        k.extend(kind("__2", "01.03.2021", true));
+        k
+    });
     fuege("g_rent4", {
         let mut k = kegel_rentner(2025);
         k.push(("p36_lohnsteuer", json!(1_000)));
@@ -4862,7 +4911,8 @@ fn generatoren() {
     let mut deklarationen: Vec<Value> = vec![];
     for id in [
         "g_ep", "g_neu", "g_ges", "g_an", "g_rent", "g_rent2", "g_rent3", "g_rent5", "g_vor",
-        "g_wz", "g_aussen", "g_an2", "g_ep2", "g_vor2", "g_pf_rot", "g_dk", "g_dk2",
+        "g_wz", "g_aussen", "g_an2", "g_ep2", "g_vor2", "g_pf_rot", "g_dk", "g_dk2", "g_kind2",
+        "g_kind2b",
     ] {
         for r in ["stand", "fragen", "ergebnis", "graph", "deklaration"] {
             let b = a("GET", &format!("/fall/{id}/{r}"), None);
@@ -4907,7 +4957,7 @@ fn generatoren() {
     println!("  fragen: Anzahl je Fall {fragen_je_fall:?}, Sperrgruende {fragen_gruende:?}");
     for id in [
         "g_an3", "g_an4", "g_an5", "g_an6", "g_ges2", "g_ges3", "g_ges4", "g_ges5", "g_ges6", "g_ges7",
-        "g_ges8", "g_ges9", "g_rent4",
+        "g_ges8", "g_ges9", "g_rent4", "g_kind2", "g_kind2b",
     ] {
         ergebnisse.extend(a("GET", &format!("/fall/{id}/ergebnis"), None));
     }
@@ -5003,6 +5053,44 @@ fn generatoren() {
             a("GET", &format!("/fall/{id}/feld/{feld}/{r}"), None);
         }
     }
+    // `warum` der abgeleiteten Qualifikation je Instanz: Kind 2 traegt dieselbe Ableitung wie Kind 1,
+    // mit dem Quellfeld der Instanz in der Spur. Python und Rust vergleicht `a`; die Zusage, dass die
+    // Ableitung die Instanz ERREICHT, pruefen die Behauptungen hier (ein 404 auf beiden Seiten
+    // waere ein gleiches, aber falsches Bild).
+    for (id, feld, quelle) in [
+        (
+            "g_kind2",
+            "kind_unter_14_haushaltszugehoerig",
+            "kind_geburtsdatum",
+        ),
+        (
+            "g_kind2",
+            "kind_unter_14_haushaltszugehoerig__2",
+            "kind_geburtsdatum__2",
+        ),
+        (
+            "g_kind2b",
+            "kind_unter_14_haushaltszugehoerig__2",
+            "kind_geburtsdatum__2",
+        ),
+    ] {
+        let b = a("GET", &format!("/fall/{id}/feld/{feld}/warum"), None);
+        let j = b.as_ref().map(|b| &b["justification"]);
+        assert_eq!(
+            j.map(|j| (&j["wert"], j["signal"]["signal_2"].as_str())),
+            Some((&json!(true), Some(format!("ableitung@{quelle}").as_str()))),
+            "{id}/{feld}: keine Ableitung je Instanz: {b:?}"
+        );
+    }
+    let kein_ziel = a(
+        "GET",
+        "/fall/g_kind2b/feld/kind_unter_14_haushaltszugehoerig/warum",
+        None,
+    );
+    assert!(
+        kein_ziel.is_none() || status.get() == 404,
+        "Instanz 1 hat in g_kind2b keine Ableitung: {kein_ziel:?}"
+    );
     // `frage` zu jedem Feld der Queue dieser Faelle: Bereich mit und ohne Grund, Aufzaehlungen,
     // Muster, Standardwerte, Vorjahr-Kategorie, Instanz-Etikett. Ein Feld mit Instanz-Etikett wird
     // zusaetzlich mit `__2` gefragt (Aufloesung auf das Basisfeld); `__1` ist keine Instanz mehr und

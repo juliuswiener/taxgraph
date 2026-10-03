@@ -259,6 +259,122 @@ fn der_pool_erreicht_alle_ableitungen() {
     );
 }
 
+// ---- Das zweite Kind: die Ableitung feuert je Instanz --------------------------------------------
+// Gegenstueck zu `tests/test_ableitung_reihenfolge.py` (Abschnitt „Das zweite Kind"). `rechne_ab`
+// verglich `feld_id` ohne `__2` mit `aus` und `und_feld`: Kind 2 bekam nie eine Qualifikation, auch
+// dann nicht, wenn die Zyklus-Sperre (`ziel in aktiv`) gar nicht griff (Kind 2 allein).
+
+const ZIEL: &str = "kind_unter_14_haushaltszugehoerig";
+const ZIEL2: &str = "kind_unter_14_haushaltszugehoerig__2";
+const GEB: (&str, &str) = ("kind_geburtsdatum", "01.03.2020");
+const HAUS: (&str, &str) = (
+    "kind_betreuung_haushaltszugehoerigkeit_zeitraum",
+    "01.01-31.12",
+);
+const GEB2: (&str, &str) = ("kind_geburtsdatum__2", "01.03.2021");
+const HAUS2: (&str, &str) = (
+    "kind_betreuung_haushaltszugehoerigkeit_zeitraum__2",
+    "01.01-31.12",
+);
+
+/// Bestaetigte Antworten in dieser Reihenfolge auf einem leeren Store (VZ 2025).
+fn store_mit(antworten: &[(&str, Value)]) -> Store {
+    let mut s = Store::leer(2025, None);
+    for (i, (feld, wert)) in antworten.iter().enumerate() {
+        let ts = format!("2026-01-01T00:00:{:02}+00:00", i % 60);
+        let neu = neues_event(feld, wert, true, None, ts);
+        s.append(&neu, None, nachschlag()).unwrap();
+    }
+    s
+}
+
+fn text(paar: (&'static str, &str)) -> (&'static str, Value) {
+    (paar.0, json!(paar.1))
+}
+
+/// `(wert, signal_2)` der Ableitung auf `feld`, sonst `None` (kein Event oder von Hand geschrieben).
+fn ableitung_auf(s: &Store, feld: &str) -> Option<(PyWert, String)> {
+    let e = s.aktives(feld)?;
+    (e.schreiber == Schreiber::Abgeleitet("ableitung".to_string())).then(|| {
+        let signal_2 = e.signal.as_ref().and_then(|g| g.signal_2.clone());
+        (e.wert.clone(), signal_2.unwrap_or_default())
+    })
+}
+
+#[test]
+fn zweites_kind_leitet_seine_qualifikation_ab() {
+    // Kind 2 allein: ZIEL ist nicht aktiv, die Zyklus-Sperre kann nicht schuld sein. Beide
+    // Ausloeser, in beiden Reihenfolgen.
+    for antworten in [[GEB2, HAUS2], [HAUS2, GEB2]] {
+        let s = store_mit(&antworten.map(text));
+        assert_eq!(
+            ableitung_auf(&s, ZIEL2),
+            Some((
+                PyWert::Bool(true),
+                "ableitung@kind_geburtsdatum__2".to_string()
+            )),
+            "{antworten:?}"
+        );
+        assert!(s.aktives(ZIEL).is_none(), "Instanz 2 schrieb in Instanz 1");
+    }
+}
+
+#[test]
+fn beide_kinder_leiten_je_instanz_ab() {
+    let s = store_mit(&[GEB, HAUS, GEB2, HAUS2].map(text));
+    let wahr = |f| ableitung_auf(&s, f).map(|(w, _)| w);
+    assert_eq!(wahr(ZIEL), Some(PyWert::Bool(true)));
+    assert_eq!(wahr(ZIEL2), Some(PyWert::Bool(true)));
+}
+
+#[test]
+fn antworten_je_instanz_bleiben_stehen_und_sperren_die_andere_nicht() {
+    // Ein Nein auf Instanz 2 bleibt: die Ableitung ueberschreibt keine Nutzerantwort.
+    let mut antworten = vec![(ZIEL2, json!(false))];
+    antworten.extend([GEB2, HAUS2].map(text));
+    let s = store_mit(&antworten);
+    let e = s.aktives(ZIEL2).unwrap();
+    assert_eq!(e.wert, PyWert::Bool(false));
+    assert_eq!(e.schreiber, Schreiber::Mensch("julius".to_string()));
+
+    // Ein Nein auf Instanz 1 sperrt Instanz 2 nicht: die Sperre gilt je Instanz, nicht je
+    // Basisfeld. Haette der Fix nur den Suffix im Vergleich abgeschnitten, laege ZIEL in `aktiv`.
+    let mut antworten = vec![(ZIEL, json!(false))];
+    antworten.extend([GEB2, HAUS2].map(text));
+    let s = store_mit(&antworten);
+    assert_eq!(s.aktives(ZIEL).unwrap().wert, PyWert::Bool(false));
+    assert_eq!(
+        ableitung_auf(&s, ZIEL2).map(|(w, _)| w),
+        Some(PyWert::Bool(true))
+    );
+}
+
+#[test]
+fn quelle_und_und_feld_verschiedener_instanzen_leiten_nichts_ab() {
+    for antworten in [
+        vec![GEB2],
+        vec![GEB2, GEB],
+        vec![GEB2, HAUS],
+        vec![GEB, HAUS2],
+        vec![("kind_geburtsdatum__2", "01.03.2009"), HAUS2],
+        // Pythons `$` passt vor einem abschliessenden `\n`: `…__2\n` ist ein Instanz-Feld des
+        // Typpruefers, aber kein `aus` der Instanz 2 (`test_ableitung_reihenfolge.py`).
+        vec![("kind_geburtsdatum__2\n", "01.03.2021"), HAUS2],
+    ] {
+        let s = store_mit(&antworten.iter().copied().map(text).collect::<Vec<_>>());
+        assert!(ableitung_auf(&s, ZIEL2).is_none(), "{antworten:?}");
+    }
+}
+
+#[test]
+fn ableitung_ohne_instanz_gruppe_ignoriert_den_suffix() {
+    // `geburtsjahr` hat keine `instanz_gruppe`: `stammdaten_geburtsdatum__2` erzeugt kein
+    // `geburtsjahr__2` (und, wie bisher, auch kein `geburtsjahr`).
+    let s = store_mit(&[("stammdaten_geburtsdatum__2", json!("05.05.1955"))]);
+    let felder: Vec<&str> = s.events().iter().map(|e| e.feld_id.as_str()).collect();
+    assert_eq!(felder, ["stammdaten_geburtsdatum__2"]);
+}
+
 proptest! {
     /// `EventId` -> Hex-Text -> `EventId`, ebenso ueber JSON, ist verlustfrei; der Text sind
     /// immer 64 Zeichen `[0-9a-f]`, das Muster aus `schema.json`.
