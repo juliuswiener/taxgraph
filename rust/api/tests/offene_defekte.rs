@@ -95,8 +95,8 @@ async fn fall_anlegen(d: &Dienst, fall_id: &str, scheibe: &str) -> String {
     token
 }
 
-/// Die Ereignisse eines Falls direkt in die Store-Datei schreiben — `POST /event` ist 501-Stub,
-/// der Fall muss aber beantwortet sein, bevor `/deklaration` etwas messen kann. Derselbe Weg wie
+/// Die Ereignisse eines Falls direkt in die Store-Datei schreiben, ohne `POST /event` — der Fall muss
+/// beantwortet sein, bevor `/deklaration` etwas messen kann. Derselbe Weg wie
 /// `bescheid::testhilfe::store`, nur auf der Platte statt im Speicher.
 fn setze_felder(d: &Dienst, fall_id: &str, paare: &[(&str, Value)]) {
     let pfad = d.zustand.konfig.faelle.join(format!("{fall_id}.json"));

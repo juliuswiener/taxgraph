@@ -6,8 +6,9 @@
 //! Lesart des Rots: die Defekt-Zusicherung beginnt mit `DEFEKT:`. Eine Kontrolle (Messaufbau,
 //! Normalfall) beginnt mit `KONTROLLE:`; scheitert sie, misst der Test nichts.
 //!
-//! In Rust sind `GET /ergebnis` und `GET /deklaration` 501-Stubs (`api/src/routen/lesen.rs`). Die
-//! Tests komponieren deshalb, was die Python-Handler komponieren: [`ergebnis`] wie `_ergebnis_roh`
+//! In Rust liegen `GET /ergebnis` und `GET /deklaration` im Crate `api` (`api/src/ergebnis.rs`,
+//! `api/src/deklaration.rs`), das von `bescheid` abhaengt. Die Tests komponieren darum hier, was die
+//! Python-Handler komponieren: [`ergebnis`] wie `_ergebnis_roh`
 //! (`api.py:568`), [`deklaration`] wie `deklaration` (`api.py:664`). Die Felder entstehen ueber
 //! den Kegel-Bauer (`tests/_kegel.py`), alle bestaetigt.
 #![allow(
