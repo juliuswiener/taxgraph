@@ -123,6 +123,8 @@ struct Zaehler {
     faelle: usize,
     abweichungen: usize,
     fehlerfaelle: usize,
+    /// Faelle, in denen Python einen Wert ungleich 0/leer lieferte (`parity::pin::nicht_leer`).
+    nicht_leer: usize,
     beispiele: Vec<String>,
 }
 
@@ -131,6 +133,9 @@ impl Zaehler {
         self.faelle += 1;
         if matches!(py, Ausgang::Err(_) | Ausgang::Catala) {
             self.fehlerfaelle += 1;
+        }
+        if matches!(py, Ausgang::Ok(v) if parity::pin::nicht_leer(v)) {
+            self.nicht_leer += 1;
         }
         if r != py {
             self.abweichungen += 1;
@@ -205,8 +210,8 @@ fn korpus_gegen_aufzeichnung_und_orakel() {
     let mut summe = 0;
     let mut gesehen = std::collections::BTreeMap::new();
     eprintln!(
-        "{:<32} {:>6} {:>9} {:>9} {:>6}",
-        "funktion", "faelle", "diff_rec", "diff_live", "err"
+        "{:<32} {:>6} {:>9} {:>9} {:>6} {:>8}",
+        "funktion", "faelle", "diff_rec", "diff_live", "err", "nicht-0"
     );
     for (name, f) in FUNKTIONEN {
         let (mut rec, mut liv) = (Zaehler::default(), Zaehler::default());
@@ -217,13 +222,13 @@ fn korpus_gegen_aufzeichnung_und_orakel() {
             liv.pruefe(&args, &ergebnis, &live(name, &args), "korpus/live");
         }
         eprintln!(
-            "{name:<32} {:>6} {:>9} {:>9} {:>6}",
-            rec.faelle, rec.abweichungen, liv.abweichungen, liv.fehlerfaelle
+            "{name:<32} {:>6} {:>9} {:>9} {:>6} {:>8}",
+            rec.faelle, rec.abweichungen, liv.abweichungen, liv.fehlerfaelle, rec.nicht_leer
         );
         for b in rec.beispiele.iter().chain(&liv.beispiele) {
             eprintln!("    {b}");
         }
-        gesehen.insert(*name, rec.faelle as u64);
+        gesehen.insert(*name, rec.nicht_leer as u64);
         summe += rec.abweichungen + liv.abweichungen;
     }
     // Eine Zeile ohne Korpus kann nichts belegen: sie vergleicht nichts und meldet
@@ -249,9 +254,10 @@ fn generiert_gegen_orakel() {
         "zugriff_teil2_paritaet generiert_gegen_orakel",
         GENERIERT_JE_FUNKTION,
     );
+    let mut gesehen = parity::pin::Gesehen::new();
     eprintln!(
-        "{:<32} {:>6} {:>6} {:>6}",
-        "funktion", "faelle", "diff", "err"
+        "{:<32} {:>6} {:>6} {:>6} {:>8}",
+        "funktion", "faelle", "diff", "err", "nicht-0"
     );
     for (name, f) in FUNKTIONEN {
         let strategie = gen::fuer(name);
@@ -262,13 +268,29 @@ fn generiert_gegen_orakel() {
             z.pruefe(&args, &rust(*f, &args), &live(name, &args), "generiert");
         }
         eprintln!(
-            "{name:<32} {:>6} {:>6} {:>6}",
-            z.faelle, z.abweichungen, z.fehlerfaelle
+            "{name:<32} {:>6} {:>6} {:>6} {:>8}",
+            z.faelle, z.abweichungen, z.fehlerfaelle, z.nicht_leer
         );
         for b in &z.beispiele {
             eprintln!("    {b}");
         }
+        gesehen.insert(*name, z.nicht_leer as u64);
         summe += z.abweichungen;
+    }
+    // Eine Zeile, die nie einen Wert sieht, vergleicht zwei Fehlerklassen oder zwei Nullen und
+    // meldet "0 Abweichungen". Die Liste ist leer: im Generator-Block rechnet jede Zeile. Der
+    // Pin gilt nur beim Standard der Fallzahl (`parity::fallzahl::wache_gilt`).
+    if parity::fallzahl::wache_gilt(
+        "zugriff_teil2_paritaet generiert_gegen_orakel",
+        je_funktion,
+        GENERIERT_JE_FUNKTION,
+    ) {
+        parity::pin::pruefe(
+            "generiert_gegen_orakel",
+            "kein Korpus (Proptest, deterministischer Seed)",
+            &[],
+            &gesehen,
+        );
     }
     assert_eq!(summe, 0, "Abweichungen bei generierten Faellen");
 }

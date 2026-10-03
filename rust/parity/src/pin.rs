@@ -37,6 +37,21 @@ use std::fmt::Write as _;
 /// sich waehrend einer Messung aendern kann (am 2026-10-01 von 192 auf 198).
 pub const KORPUS: &str = "~/.cache/taxgraph-tmp/korpus-rt (192 Fall-Dateien)";
 
+/// Ein Ergebnis zaehlt als "Wert gesehen", wenn es nicht null, `false`, `0`, leer ist -- auch
+/// verschachtelt (ein Objekt voller Nullen ist leer). Der Massstab der `nicht_leer`-Spalten.
+#[must_use]
+pub fn nicht_leer(v: &serde_json::Value) -> bool {
+    use serde_json::Value;
+    match v {
+        Value::Null => false,
+        Value::Bool(b) => *b,
+        Value::Number(n) => n.as_f64().is_some_and(|x| x != 0.0),
+        Value::String(s) => !s.is_empty(),
+        Value::Array(a) => a.iter().any(nicht_leer),
+        Value::Object(o) => o.values().any(nicht_leer),
+    }
+}
+
 /// Zeilenname -> `nicht_leer`-Zaehler. 0 heisst "hat nie einen Wert gesehen".
 pub type Gesehen = BTreeMap<&'static str, u64>;
 
@@ -74,6 +89,16 @@ pub fn pruefe(block: &str, korpus: &str, liste: &[(&str, &str)], gesehen: &Geseh
         .collect();
 
     let mut meldung = String::new();
+    // Ein Block ohne jede beurteilte Zeile hat nichts verglichen: leerer Korpus, oder die Zeilen
+    // wurden nie gebucht. Ohne diese Zeile waere er gruen -- keine Zeile steht auf 0, keine
+    // gelistete fehlt (Liste leer).
+    if gesehen.is_empty() {
+        let _ = write!(
+            meldung,
+            "\n{block}: keine einzige Zeile beurteilt -- ein Block ohne Zeilen belegt nichts \
+             (leerer Korpus? Block nicht gelaufen?)."
+        );
+    }
     if !neu_leer.is_empty() {
         let _ = write!(
             meldung,
@@ -109,4 +134,59 @@ pub fn pruefe(block: &str, korpus: &str, liste: &[(&str, &str)], gesehen: &Geseh
         "{meldung}\nKorpus dieser Liste: {korpus}\n\
          Grund je Eintrag und Korpus stehen an der Liste im Test."
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const LISTE: &[(&str, &str)] = &[("leer", "Grund")];
+
+    fn zeilen(paare: &[(&'static str, u64)]) -> Gesehen {
+        paare.iter().copied().collect()
+    }
+
+    #[test]
+    fn gelistete_leere_und_rechnende_zeile_sind_gruen() {
+        pruefe("t", "k", LISTE, &zeilen(&[("leer", 0), ("rechnet", 3)]));
+    }
+
+    #[test]
+    #[should_panic(expected = "NICHT gelistet: [neu]")]
+    fn ungelistete_leere_zeile_ist_rot() {
+        pruefe("t", "k", LISTE, &zeilen(&[("leer", 0), ("neu", 0)]));
+    }
+
+    #[test]
+    #[should_panic(expected = "rechnen WIEDER: [leer (Grund)]")]
+    fn gelistete_zeile_mit_wert_ist_rot() {
+        pruefe("t", "k", LISTE, &zeilen(&[("leer", 5)]));
+    }
+
+    #[test]
+    #[should_panic(expected = "gibt es nicht mehr: [leer]")]
+    fn gelistete_zeile_ohne_gegenstueck_ist_rot() {
+        pruefe("t", "k", LISTE, &zeilen(&[("rechnet", 1)]));
+    }
+
+    #[test]
+    #[should_panic(expected = "keine einzige Zeile beurteilt")]
+    fn block_ohne_zeilen_ist_rot_auch_mit_leerer_liste() {
+        pruefe("t", "k", &[], &Gesehen::new());
+    }
+
+    #[test]
+    fn nicht_leer_zaehlt_nur_werte() {
+        use serde_json::json;
+        assert!(!nicht_leer(&json!(null)));
+        assert!(!nicht_leer(&json!(0)));
+        assert!(!nicht_leer(&json!(false)));
+        assert!(!nicht_leer(&json!("")));
+        assert!(!nicht_leer(&json!([])));
+        assert!(!nicht_leer(&json!({"a": [0, null], "b": {"c": ""}})));
+        assert!(nicht_leer(&json!(-1)));
+        assert!(nicht_leer(&json!(true)));
+        assert!(nicht_leer(&json!("x")));
+        assert!(nicht_leer(&json!({"a": [0, {"b": 2}]})));
+    }
 }
