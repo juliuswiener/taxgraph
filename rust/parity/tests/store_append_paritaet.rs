@@ -830,7 +830,10 @@ fn baue_aufruf(
 }
 
 proptest! {
-    #![proptest_config(ProptestConfig::with_cases(1000))]
+    #![proptest_config(ProptestConfig::with_cases(parity::fallzahl::holen_u32(
+        "store_append_paritaet proptest",
+        1000,
+    )))]
 
     /// 1..=20 generierte Aufrufe gegen einen anfangs leeren Store, Rust vs. Python ueber
     /// GENAU EINEN geteilten Oracle-Prozess (s. Moduldoku).

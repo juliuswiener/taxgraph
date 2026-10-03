@@ -75,7 +75,10 @@ fn tarif_paritaet_dense_sweep() {
 }
 
 proptest! {
-    #![proptest_config(ProptestConfig::with_cases(1000))]
+    #![proptest_config(ProptestConfig::with_cases(parity::fallzahl::holen_u32(
+        "tarif_paritaet proptest",
+        1000,
+    )))]
 
     #[test]
     fn tarif_paritaet_proptest_grenzfaelle(zve_eur in zve_strategy()) {

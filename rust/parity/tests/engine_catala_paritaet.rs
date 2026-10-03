@@ -285,7 +285,10 @@ fn engine_corpus_replay() {
 }
 
 proptest! {
-    #![proptest_config(ProptestConfig::with_cases(1000))]
+    #![proptest_config(ProptestConfig::with_cases(parity::fallzahl::holen_u32(
+        "engine_catala_paritaet proptest",
+        1000,
+    )))]
 
     #[test]
     fn spenden_abzug_paritaet(zuwendungen in 0i64..=10_000_000i64, gesamtbetrag in 0i64..=50_000_000i64) {
