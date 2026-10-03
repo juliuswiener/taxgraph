@@ -137,8 +137,7 @@ pub enum KontoauszugFehler {
     Schreiben(#[from] SchreibFehler),
 }
 
-/// `float(s)` fuer Text: Leerraum aussen, Dezimalziffern jeder Schrift ([`py::ascii_ziffern`]),
-/// `_` nur zwischen Ziffern, dann Rusts Parser (gleiche Grammatik inkl. `inf`/`nan`).
+/// `float(s)` fuer Text: [`domain::py_float`].
 ///
 /// ```
 /// assert_eq!(eingang::kontoauszug::py_float(" 1_000.5 "), Some(1000.5));
@@ -146,22 +145,7 @@ pub enum KontoauszugFehler {
 /// ```
 #[must_use]
 pub fn py_float(s: &str) -> Option<f64> {
-    let s = py::ascii_ziffern(py::strip(s));
-    let s = s.as_ref();
-    let b = s.as_bytes();
-    for (i, &c) in b.iter().enumerate() {
-        if c == b'_' {
-            let davor = i
-                .checked_sub(1)
-                .and_then(|j| b.get(j))
-                .is_some_and(u8::is_ascii_digit);
-            let danach = b.get(i + 1).is_some_and(u8::is_ascii_digit);
-            if !(davor && danach) {
-                return None;
-            }
-        }
-    }
-    s.replace('_', "").parse().ok()
+    domain::py_float(s)
 }
 
 /// Nur eindeutige Cent-Schreibweisen (Vault `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`):

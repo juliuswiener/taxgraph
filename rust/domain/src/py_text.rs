@@ -83,6 +83,37 @@ pub(crate) fn int_aus_text(s: &str) -> Result<String, PyFehler> {
     })
 }
 
+/// `float(s)` fuer Text: aussen entfernt `CPython` Unicode-Leerraum ohne U+001C..U+001F (wie bei
+/// `int`, D16: `float("\x1c5")` ist ein `ValueError`), Dezimalziffern jeder Schrift zaehlen als
+/// ASCII-Ziffern (D6), ein `_` steht nur zwischen zwei Ziffern; den Rest liest Rusts Parser, dessen
+/// Grammatik die von Python ist (`1e5`, `.5`, `inf`, `-Infinity`, `nan`). Kein Treffer: `None`.
+///
+/// ```
+/// assert_eq!(domain::py_float(" 1_000.5 "), Some(1000.5));
+/// assert_eq!(domain::py_float("\u{660}\u{661}"), Some(1.0));
+/// assert_eq!(domain::py_float("1__0"), None);
+/// assert_eq!(domain::py_float("\u{1c}5"), None);
+/// ```
+#[must_use]
+pub fn py_float(s: &str) -> Option<f64> {
+    let mut text = String::with_capacity(s.len());
+    let mut davor_ziffer = false;
+    let mut chars = s.trim().chars().peekable();
+    while let Some(c) = chars.next() {
+        let c = ascii_ziffer(c).unwrap_or(c);
+        if c == '_' {
+            let danach_ziffer = chars.peek().is_some_and(|n| ascii_ziffer(*n).is_some());
+            if !(davor_ziffer && danach_ziffer) {
+                return None;
+            }
+        } else {
+            text.push(c);
+        }
+        davor_ziffer = c.is_ascii_digit();
+    }
+    text.parse().ok()
+}
+
 /// Eine Dezimalziffer jeder Schrift (Kategorie Nd, `str.isdecimal()`) als ASCII-Ziffer
 /// (Umsetzung aus llm `py.rs:157-184`, D6). Unicode legt Nd-Zeichen in lueckenlosen Zehnerfolgen
 /// 0-9 ab, aneinanderstossende Folgen beginnen jeweils bei 0: der Abstand zum Anfang des
@@ -262,6 +293,43 @@ mod tests {
         0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200a, 0x2028, 0x2029,
         0x202f, 0x205f, 0x3000,
     ];
+
+    /// `float(text)` gemessen mit `CPython` 3.14.7 (`python3 -c 'print(float(t))'` je Zeile).
+    #[test]
+    fn py_float_wie_cpython() {
+        for (text, soll) in [
+            (" 5 ", Some(5.0)),
+            ("\u{a0}5\u{3000}", Some(5.0)),
+            ("\u{85}5", Some(5.0)),
+            (" \u{b}5\u{c}", Some(5.0)),
+            ("1_0", Some(10.0)),
+            ("1e1_0", Some(1e10)),
+            ("1e+1_0", Some(1e10)),
+            ("1_0000000000", Some(1e10)),
+            ("\u{661}\u{660}", Some(10.0)),
+            ("\u{660}\u{661}", Some(1.0)),
+            ("1\u{661}", Some(11.0)),
+            (
+                "\u{661}\u{660}\u{660}\u{660}\u{660}\u{660}\u{660}\u{660}\u{660}\u{660}\u{660}",
+                Some(1e10),
+            ),
+            ("-Infinity", Some(f64::NEG_INFINITY)),
+            ("inf", Some(f64::INFINITY)),
+            ("\u{1c}5", None),
+            ("5\u{1f}", None),
+            ("1__0", None),
+            ("_1", None),
+            ("1_", None),
+            ("0x10", None),
+            ("", None),
+            ("abc", None),
+        ] {
+            assert_eq!(super::py_float(text), soll, "{text:?}");
+        }
+        for text in ["+nan", "NaN"] {
+            assert!(super::py_float(text).is_some_and(f64::is_nan), "{text:?}");
+        }
+    }
 
     /// D16: was `int(text)` aussen entfernt, in `CPython` 3.12.9 und 3.14.7 gleich: `STRIP` ohne
     /// U+001C..U+001F. Erzeugt mit

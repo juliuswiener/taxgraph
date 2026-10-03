@@ -1170,12 +1170,10 @@ fn passt_muster(muster: &str, wert: &str) -> bool {
 /// faengt eine vermutete EUR-statt-Cent-Verwechslung. Akzeptiert Zahl ODER numerischen String
 /// (LLM-Antworten liefern oft JSON-Strings); nicht-numerische Strings bleiben unangetastet.
 ///
-/// ponytail: `trim().parse` liest weder `1_000` noch Nicht-ASCII-Ziffern, Pythons `float()` schon
-/// (gemessen: `"1_0000000000"` weist Python ab, hier laeuft es durch). Ausbau: `py_float` aus
-/// `eingang::kontoauszug` nach `domain` heben und hier rufen.
+/// Der Text liest [`domain::py_float`] wie Pythons `float()` (`1_0000000000`, Nicht-ASCII-Ziffern).
 fn pruefe_magnitude(feld_id: &str, wert: &PyWert, schreiber: &Schreiber) -> Result<(), Abweisung> {
     let zahl = match wert {
-        PyWert::Text(s) => s.trim().parse::<f64>().ok(),
+        PyWert::Text(s) => domain::py_float(s),
         _ => zahl_als_f64(wert),
     };
     if let Some(z) = zahl {

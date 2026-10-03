@@ -2301,6 +2301,67 @@ fn event_faelle(a: &mut Sender, status: &std::cell::Cell<u16>) -> EventBilanz {
             von("llm:t", "llm_vorschlag", "ep_ziel_adresse", json!("abc")),
             201,
         ),
+        // Pythons `float()` im Text: `_` zwischen Ziffern, Ziffern jeder Schrift, Leerraum aussen.
+        (
+            "F2 llm Textfeld Zahl mit Unterstrich",
+            von(
+                "llm:t",
+                "llm_vorschlag",
+                "ep_ziel_adresse",
+                json!("1_0000000000"),
+            ),
+            422,
+        ),
+        (
+            "F2 llm Textfeld Zahl in arabischen Ziffern",
+            von(
+                "llm:t",
+                "llm_vorschlag",
+                "ep_ziel_adresse",
+                json!("١٠٠٠٠٠٠٠٠٠٠٠"),
+            ),
+            422,
+        ),
+        (
+            "F2 llm Textfeld Zahl mit Leerraum aussen",
+            von(
+                "llm:t",
+                "llm_vorschlag",
+                "ep_ziel_adresse",
+                json!("\u{a0}1e10\u{3000}"),
+            ),
+            422,
+        ),
+        (
+            "F2 llm Textfeld Exponent mit Unterstrich",
+            von("llm:t", "llm_vorschlag", "ep_ziel_adresse", json!("1e1_0")),
+            422,
+        ),
+        (
+            "F2 llm Textfeld kleine Zahl mit Unterstrich",
+            von("llm:t", "llm_vorschlag", "ep_ziel_adresse", json!("1_0")),
+            201,
+        ),
+        (
+            "F2 llm Textfeld doppelter Unterstrich",
+            von(
+                "llm:t",
+                "llm_vorschlag",
+                "ep_ziel_adresse",
+                json!("1__0000000000"),
+            ),
+            201,
+        ),
+        (
+            "F2 llm Textfeld Zahl hinter Informationstrenner",
+            von(
+                "llm:t",
+                "llm_vorschlag",
+                "ep_ziel_adresse",
+                json!("1e10\u{1f}"),
+            ),
+            422,
+        ),
         (
             "F2 Mensch darf 10^10",
             m("ep_oepnv_kosten", gross.clone()),
