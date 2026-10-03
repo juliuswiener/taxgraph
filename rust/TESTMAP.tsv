@@ -273,6 +273,7 @@ tests/test_solz_accessor.py	89	10	0	GOLDEN	golden/runner.py (catala_solz)	hand v
 tests/test_solz_ring.py	416	8	0	GOLDEN	produkt/bescheid/bescheid_zweige.py	solz_cent per Scheibe; needs: Catala
 tests/test_sonderausgaben_p10c.py	78	4	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	§10c floor cases; needs: Catala
 tests/test_sperre_bietet_ihr_feld_an.py	340	7	0	INTEGRATION	produkt/haut/api.py	HTTP+browser flow einzel-switch; needs: Playwright
+tests/test_sperrgrund_klartext_fixture.py	56	4	0	GOLDEN	produkt/bescheid/bescheid_deklaration (SPERRGRUND_KLARTEXT, UNBEKANNTER_SPERRGRUND) + rust/fixtures/sperrgrund_klartext.json	Das Python-Dict der Sperrgrund-Klartexte gegen die Fixture, Schluesselmenge UND Texte byte-gleich, ohne Rust und ohne PARITY=1 (vorher merkte eine veraltete Fixture nur PARITY=1). Rot: python3 tools/parity/dump_sperrgruende.py. Gegenstuecke in Rust: rust/domain/src/sperrgrund.rs::klartext_ist_byte_identisch_zur_python_quelle (Unit-Test im Quelltext, gegen dieselbe Fixture) und Python gegen Rust live in rust/parity/tests/bescheid_deklaration_paritaet.rs::sperrgrund_klartext_literale
 tests/test_sperrgrund_klartext_im_browser.py	208	5	0	INTEGRATION	produkt/haut/api.py; static app.js	backend sentence reaches UI
 tests/test_sperrgrund_klartext.py	418	17	0	NOT_PORTED	produkt/haut/api.py	AST scan -> enum Sperrgrund with exhaustive fn klartext()
 tests/test_split_naht_gate.py	121	3	0	NOT_PORTED	produkt/haut/api.py	Python from-import value binding; no Rust analogue
