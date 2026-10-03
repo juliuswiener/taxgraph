@@ -374,7 +374,7 @@ fn einzelzeile(f: &mut Felder, summe: &str, ziel: &str, h: &HerkunftVektor) -> R
 /// Felder zaehlen. Ueber 5 Mio sperrt `abs3_ueber_5mio_offen` vorher.
 ///
 /// ponytail: nur Person A (AK2 des Eintrags p34-antrag-ohne-kennzahl-erreicht-elster-nicht);
-/// `vz = None` (Jahr ohne Parameter) schreibt nichts, Python rechnet hier mit jedem int.
+/// `vz = None` (Jahr ohne Parameter) schreibt nichts, wie Python bei `vz == 0`.
 fn p34_antrag(f: &mut Felder, vz: Option<Vz>, h: &HerkunftVektor) -> R<()> {
     let Some(vz) = vz else {
         return Ok(());
