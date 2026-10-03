@@ -1586,7 +1586,7 @@ fn verpflegung_faelle() -> Vec<(&'static str, &'static str, Vec<(&'static str, V
 
 /// § 34 Abs. 3: der Zwilling `p34_abs3_antragsbetrag` (Antrags-Kz G E0801602 / S E0805003 /
 /// L E0901704, Vault `p34-antrag-ohne-kennzahl-erreicht-elster-nicht`) entsteht in `mit_ring_werten`
-/// nur bei bestaetigtem Antrag UND Berechtigung UND 0 < netto_vg <= 5 Mio EUR. Je Fall: Python gleich
+/// nur bei bestaetigtem Antrag UND Berechtigung UND 0 < `netto_vg` <= 5 Mio EUR. Je Fall: Python gleich
 /// Rust (alle fuenf Funktionen, `werte`), dazu die Erwartung "Zwilling da / nicht da" an PYTHON — ohne
 /// sie waere ein Fall, in dem beide Seiten nichts schreiben, gruen. Die Grenzfaelle des Netto-Gewinns
 /// sind Cent genau: 5.000.000,00 EUR (Freibetrag 0) schreibt, 5.000.001,00 EUR nicht.

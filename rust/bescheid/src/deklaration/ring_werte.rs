@@ -593,7 +593,8 @@ mod p34_antrag_tests {
 
     #[test]
     fn ohne_antrag_oder_berechtigung_steht_keine_antrags_kz() {
-        let faelle: [(&str, Vec<(&str, Value, bool)>); 8] = [
+        type Paare<'a> = Vec<(&'a str, Value, bool)>;
+        let faelle: [(&str, Paare); 8] = [
             (
                 "antrag nein",
                 vec![("antrag_ermaessigter_satz", json!(false), true)],
