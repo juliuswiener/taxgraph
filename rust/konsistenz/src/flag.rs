@@ -171,18 +171,18 @@ pub fn flag_stand<S: BuildHasher>(
     }
 }
 
-/// `^[1-9][0-9]*$` über dem Suffix nach `basis__` (`flag_check.py:109`).
+/// `^([2-9]|[1-9][0-9]+)$` über dem Suffix nach `basis__` (`flag_check.py:109`).
 ///
 /// PARITÄT: Pythons `$` passt auch vor einem abschließenden `\n` — nachgebaut. Das Store-Schema
 /// (`^[a-z][a-z0-9_]*$`) schließt solche Schlüssel ohnehin aus.
 fn ist_instanz_suffix(rest: &str) -> bool {
     let rest = rest.strip_suffix('\n').unwrap_or(rest);
     let mut b = rest.bytes();
-    matches!(b.next(), Some(b'1'..=b'9')) && b.all(|c| c.is_ascii_digit())
+    rest != "1" && matches!(b.next(), Some(b'1'..=b'9')) && b.all(|c| c.is_ascii_digit())
 }
 
 /// Alle im Snapshot vorhandenen Schlüssel für `basis`: die Basis selbst (Instanz 1), dann jedes
-/// `basis__<n>` (n ≥ 1) in Snapshot-Reihenfolge (`flag_check.py:112-121`). Keine Zählung aus einem
+/// `basis__<n>` (n ≥ 2) in Snapshot-Reihenfolge (`flag_check.py:112-121`). Keine Zählung aus einem
 /// Zählfeld: was da ist, ist da.
 ///
 /// `basis` ist eine [`BasisId`]: eine Instanz (`vv_einnahmen__2`) ist als Basis nicht darstellbar.
@@ -359,13 +359,19 @@ mod tests {
             ("vv_einnahmen__2", PyWert::Ganz(2), Zustand::Bestaetigt),
             ("vv_einnahmen", PyWert::Ganz(1), Zustand::Bestaetigt),
             ("vv_einnahmen__x", PyWert::Ganz(3), Zustand::Bestaetigt),
+            // Instanz 1 ist die Basis; `__1` zaehlt nicht als zweites Exemplar (Regel `[2-9]|[1-9][0-9]+`).
+            ("vv_einnahmen__1", PyWert::Ganz(4), Zustand::Bestaetigt),
+            ("vv_einnahmen__10", PyWert::Ganz(5), Zustand::Bestaetigt),
         ]);
         let basis = BasisId::new("vv_einnahmen").unwrap();
         assert_eq!(
             instanz_feld_ids(&s, &basis),
             instanz_feld_ids_text(&s, "vv_einnahmen")
         );
-        assert_eq!(instanz_feld_ids(&s, &basis).len(), 2);
+        assert_eq!(
+            instanz_feld_ids(&s, &basis),
+            ["vv_einnahmen", "vv_einnahmen__10", "vv_einnahmen__2"]
+        );
         assert!(BasisId::new("vv_einnahmen__2").is_err());
     }
 

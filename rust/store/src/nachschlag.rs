@@ -5,12 +5,15 @@ use std::collections::HashMap;
 
 use bindung::Bindung;
 
-/// `base__<n>` (n>=1) -> `base`; eine Basis-`feld_id` ohne Suffix -> `None` (= Instanz 1).
-/// Byte-identisches Pendant zu `_INSTANZ_RE = re.compile(r"^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[1-9][0-9]*)$")`.
+/// `base__<n>` (n>=2) -> `base`; eine Basis-`feld_id` ohne Suffix -> `None` (= Instanz 1), ebenso `base__1`.
+/// Pendant zu `_INSTANZ_RE = re.compile(r"^(?P<base>[a-z][a-z0-9_]*)__(?P<idx>[2-9]|[1-9][0-9]+)$")`. Eine
+/// Abweichung ist bekannt: Pythons `$` passt auch vor einem abschliessenden `\n` (`a__2\n`), hier nicht
+/// (`elster_paritaet` haelt das fest).
 ///
 /// ```
 /// use store::instanz_basis;
 /// assert_eq!(instanz_basis("kind_idnr__2"), Some("kind_idnr"));
+/// assert_eq!(instanz_basis("kind_idnr__1"), None);
 /// assert_eq!(instanz_basis("kind_idnr"), None);
 /// assert_eq!(instanz_basis("kind_idnr__02"), None);
 /// ```
@@ -21,6 +24,7 @@ pub fn instanz_basis(feld_id: &str) -> Option<&str> {
         || idx.is_empty()
         || !idx.bytes().all(|b| b.is_ascii_digit())
         || idx.starts_with('0')
+        || idx == "1"
     {
         return None;
     }
@@ -130,8 +134,11 @@ mod tests {
     fn instanz_basis_matcht_python_regex() {
         assert_eq!(instanz_basis("vv_einnahmen__2"), Some("vv_einnahmen"));
         assert_eq!(instanz_basis("vv_einnahmen__12"), Some("vv_einnahmen"));
+        assert_eq!(instanz_basis("vv_einnahmen__10"), Some("vv_einnahmen"));
+        assert_eq!(instanz_basis("vv_einnahmen__11"), Some("vv_einnahmen"));
         assert_eq!(instanz_basis("vv_einnahmen"), None);
-        assert_eq!(instanz_basis("vv_einnahmen__0"), None); // [1-9][0-9]* -- keine fuehrende 0
+        assert_eq!(instanz_basis("vv_einnahmen__1"), None); // Instanz 1 ist die Basis, nie `__1`
+        assert_eq!(instanz_basis("vv_einnahmen__0"), None); // [2-9]|[1-9][0-9]+ -- keine 0, keine fuehrende 0
         assert_eq!(instanz_basis("vv_einnahmen__"), None);
         assert_eq!(instanz_basis("__2"), None); // Basis darf nicht leer sein
     }

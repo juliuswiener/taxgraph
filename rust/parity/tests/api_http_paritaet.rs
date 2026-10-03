@@ -3429,7 +3429,8 @@ fn generatoren() {
     }
     // `frage` zu jedem Feld der Queue dieser Faelle: Bereich mit und ohne Grund, Aufzaehlungen,
     // Muster, Standardwerte, Vorjahr-Kategorie, Instanz-Etikett. Ein Feld mit Instanz-Etikett wird
-    // zusaetzlich mit `__1` gefragt (Aufloesung auf das Basisfeld).
+    // zusaetzlich mit `__2` gefragt (Aufloesung auf das Basisfeld); `__1` ist keine Instanz mehr und
+    // steht in `instanz_eins_wird_abgewiesen`.
     let mut frage_felder = 0_usize;
     let mut frage_instanz = 0_usize;
     for (id, felder) in &queue_felder {
@@ -3440,13 +3441,13 @@ fn generatoren() {
             a("GET", &format!("/fall/{id}/feld/{fid}/frage"), None);
             frage_felder += 1;
             if *instanz {
-                a("GET", &format!("/fall/{id}/feld/{fid}__1/frage"), None);
+                a("GET", &format!("/fall/{id}/feld/{fid}__2/frage"), None);
                 frage_instanz += 1;
             }
         }
     }
     // Instanz-Suffix an einem Feld ohne Instanz, am unbekannten Feld und mit nicht-numerischem Suffix.
-    for fid in ["ep_arbeitstage__1", "nicht_da_feld__2", "ep_arbeitstage__x"] {
+    for fid in ["ep_arbeitstage__2", "nicht_da_feld__2", "ep_arbeitstage__x"] {
         a("GET", &format!("/fall/g_ep/feld/{fid}/frage"), None);
     }
     for id in ["g_vz0", "g_vz23", "g_vz27"] {
@@ -3482,7 +3483,7 @@ fn generatoren() {
         gefuellt("pflichtfelder_luecken"),
         deklarationen.iter().filter(|d| d["vollstaendig"] == json!(true)).count(),
     );
-    println!("  frage: Felder der Queue {frage_felder}, davon mit __1 zusaetzlich {frage_instanz}");
+    println!("  frage: Felder der Queue {frage_felder}, davon mit __2 zusaetzlich {frage_instanz}");
     // `flow` mit rohem Text: Reihenfolge der Schluessel, doppelte Schluessel, Zahlenschreibweisen und
     // Escapes — Wege, die ein `json!`-`Value` (sortiert) im Test verschluckte.
     for text in [
@@ -3899,4 +3900,62 @@ fn routentabelle_gleich_python() {
     );
     assert_eq!(py.len(), 24);
     assert_eq!(py, rs);
+}
+
+/// `x__1` ist keine Instanz (Entscheidung 2026-10-03, Zaehler `[2-9]|[1-9][0-9]+`): `POST /event` weist
+/// es mit 400 ab, waehrend `x`, `x__2` und `x__10` durchgehen; `frage` loest `x__2` auf das Basisfeld
+/// auf, `x__1` nicht (404). Beide Server antworten gleich, sonst meldet `Paar::anfrage` es. Die Basis
+/// `vv_einnahmen` traegt eine `instanz_gruppe` und liegt in `gesamt`: an einem Feld ohne Gruppe kaeme
+/// die 400 auch vor der Regel (s. `ep_arbeitstage__2` in `event_faelle`).
+#[test]
+fn instanz_eins_wird_abgewiesen() {
+    if skip() {
+        return;
+    }
+    let tmp = tempfile::tempdir().unwrap();
+    let seed = tmp.path().join("seed");
+    schreibe_seed(&seed);
+    let mut p = Paar::neu(tmp.path(), false, false, &seed);
+    let alice = token("alice", GEHEIMNIS);
+    let mut a = |m: &str, pfad: &str, body: Option<Value>| {
+        let x = Anfrage::neu(&format!("instanz {m} {pfad}"), m, pfad).token(&alice);
+        let antwort = p.anfrage(&body.map_or(x.clone(), |b| x.json(&b)), Modus::Voll);
+        (p.stat.letzter, antwort)
+    };
+    let (status, _) = a(
+        "POST",
+        "/fall",
+        Some(json!({"fall_id": "g_inst", "scheibe": "gesamt", "veranlagungszeitraum": 2025})),
+    );
+    assert_eq!(status, 201);
+    let event = "/fall/g_inst/event";
+    for feld in ["vv_einnahmen", "vv_einnahmen__2", "vv_einnahmen__10"] {
+        let (status, _) = a("POST", event, Some(ereignis(feld, &json!(1_500_000), None)));
+        assert_eq!(status, 201, "{feld}");
+    }
+    for feld in ["vv_einnahmen__1", "vv_einnahmen__0", "vv_einnahmen__02"] {
+        let (status, body) = a("POST", event, Some(ereignis(feld, &json!(1_500_000), None)));
+        assert_eq!(status, 400, "{feld}");
+        assert_eq!(
+            body.unwrap()["fehler"],
+            format!("feld_id '{feld}' nicht in dieser Scheibe")
+        );
+    }
+    for (feld, soll) in [
+        ("vv_einnahmen", 200),
+        ("vv_einnahmen__2", 200),
+        ("vv_einnahmen__10", 200),
+        ("vv_einnahmen__1", 404),
+        ("vv_einnahmen__0", 404),
+    ] {
+        let (status, _) = a("GET", &format!("/fall/g_inst/feld/{feld}/frage"), None);
+        assert_eq!(status, soll, "frage {feld}");
+    }
+    p.zustand_vergleichen("instanz_eins");
+    p.bericht("instanz_eins");
+    assert!(
+        p.stat.abweichungen.is_empty(),
+        "Abweichungen: {:?}",
+        p.stat.abweichungen
+    );
 }
