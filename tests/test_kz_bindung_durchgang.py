@@ -34,6 +34,7 @@ import api as API               # noqa: E402
 import server as SRV             # noqa: E402
 import audit                      # noqa: E402
 import xsd_verify as XV           # noqa: E402
+from _kegel import partner_kegel_fuer  # noqa: E402 — Person-B-Pflichtfelder bei zusammen (tests/_kegel.py)
 
 HID = "74931"
 
@@ -1061,8 +1062,11 @@ def test_gewst_zu_zahlen_besteht_eric_toleranz(http_base, messbetrag, hebesatz,
     st, _ = _http_req(http_base, "POST", "/fall",
                        {"fall_id": "gzt1", "scheibe": "gesamt", "veranlagungszeitraum": 2025})
     assert st == 201
+    # Bei `zusammen` braucht Person B ihren Pflicht-Kegel: sonst sperrt der Guard (partner_kegel_offen)
+    # und `/deklaration` seit 2026-10-03 mit ihm.
+    partner = partner_kegel_fuer() if veranlagung == "zusammen" else []
     for feld, wert in (("veranlagung", veranlagung), (kein_gewinn, False),
-                       (messbetrag_feld, messbetrag), (hebesatz_feld, hebesatz)):
+                       (messbetrag_feld, messbetrag), (hebesatz_feld, hebesatz), *partner):
         st, _ = _http_req(http_base, "POST", "/fall/gzt1/event", _http_bestaetigt(feld, wert))
         assert st == 201, (st, feld)
 

@@ -45,6 +45,7 @@ import server as SRV     # noqa: E402
 import audit              # noqa: E402
 
 from test_paket_b_e2e_http import _req  # noqa: E402 — gleicher HTTP-Helfer wie der Rest der Suite
+from _kegel import partner_kegel_fuer  # noqa: E402 — Person-B-Pflichtfelder bei zusammen (tests/_kegel.py)
 
 GEWINN_CENT = 3000000
 
@@ -84,6 +85,9 @@ def _erklaere_gewinn_partner(base, fall_id, betriebsart, bezeichnung):
         ("kein_vuv", True), ("kein_sonstige", True), ("kein_kap", True),
         ("kein_p23_verkauf", True), ("kein_gewinn", True),
         ("kein_kap_partner", True), ("kein_sonstige_partner", True), ("kein_gewinn_partner", False),
+        # Person B braucht ihren Pflicht-Kegel: sonst sperrt der Guard (partner_kegel_offen) und
+        # `/deklaration` seit 2026-10-03 mit ihm -- dann gaebe es keine Kz zu messen.
+        *partner_kegel_fuer(),
     ):
         _req(base, "POST", f"/fall/{fall_id}/event", _bestaetigt(fld, w), erwarte=201)
     st, dekl = _req(base, "GET", f"/fall/{fall_id}/deklaration", erwarte=200)

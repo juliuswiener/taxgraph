@@ -669,8 +669,15 @@ def deklaration(fall_id: str) -> tuple[int, dict]:
     store = lade_fall(fall_id)
     bindung = _scheibe_bindung(store)
     felder, sid = ST.materialisiere(store)
+    cfg = _cfg(store)
     vz = int(store.get("veranlagungszeitraum") or 0)
     felder = _mit_ring_werten(felder, vz)
+    # Sperrgrund wie einreichen() (Ring -> Guard -> deklariere) und ergebnis(): keine Vorschau mit Werten
+    # aus einem Fall, den beide sperren (decisions/deklaration-darf-verweigern.md). Koerper: grund + klartext.
+    if cfg.get("guard"):
+        sperr = _an_gesamt_sperrgrund(felder, cfg, vz, store, bindung)
+        if sperr:
+            return 409, {"fall_id": fall_id, "grund": sperr, "klartext": sperrgrund_klartext(sperr)}
     result = EM.deklariere(felder, bindung, vz=vz, snapshot_id=sid)
     return 200, {"fall_id": fall_id, **result}
 

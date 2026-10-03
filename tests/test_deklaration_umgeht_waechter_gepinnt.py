@@ -1,17 +1,20 @@
-"""Nagelt eine Asymmetrie fest: `/deklaration` fragt `_an_gesamt_sperrgrund` nie, `/ergebnis`
-und `/einreichen` fragen ihn (api.py Zeile 570 bzw. 699). Derselbe Fall (reiner Person-A-Kegel,
-kein Partner -- kein Partnerloch), dieselbe kapital_semantik_offen-Kollision (Aggregat
-kap_kapitalertraege UND Topf kap_gewinn_aktien gleichzeitig bestaetigt):
+"""Haelt fest, dass `/deklaration` den Sperrgrund wie `/ergebnis` und `/einreichen` fragt
+(`_an_gesamt_sperrgrund`, Julius 2026-10-03, decisions/deklaration-darf-verweigern.md). Bis dahin
+fragte `deklaration()` ihn nie, und dieser Test war ein `xfail(strict)` auf die Asymmetrie. Derselbe
+Fall (reiner Person-A-Kegel, kein Partner -- kein Partnerloch), dieselbe kapital_semantik_offen-
+Kollision (Aggregat kap_kapitalertraege UND Topf kap_gewinn_aktien gleichzeitig bestaetigt):
 
 - GET /ergebnis   -> gesperrt (grund=kapital_semantik_offen, zahl_cent=None)      [GRUENE KONTROLLE]
 - POST /einreichen -> gesperrt (409, grund=kapital_semantik_offen)                [GRUENE KONTROLLE]
-- GET /deklaration -> HTTP 200, vollstaendig=True, eingaben_konsistent=True,
-  UND zeigt Aggregat (E1900701) und Topf (E1900901) gleichzeitig                  [XFAIL, STRICT]
+- GET /deklaration -> gesperrt (409, grund=kapital_semantik_offen, klartext wie /ergebnis,
+  keine Kz im Koerper)                                                             [DIE SPERRE]
 
-Die beiden gruenen Kontrollen sind Pflicht, nicht Dekoration: ohne sie waere ein "Deklaration
-liefert 200" auch mit einem harmlosen Fall zu bekommen, der den Waechter gar nicht auslöst.
-Erst wenn ergebnis UND einreichen auf DEMSELBEN Fall wirklich sperren, beweist der dritte
-Befund die Luecke, nicht einen falschen Testfall.
+Die beiden Kontrollen sind Pflicht, nicht Dekoration: ohne sie waere ein "Deklaration sperrt"
+auch mit einem Fall zu bekommen, der aus einem anderen Grund sperrt. Erst wenn ergebnis UND
+einreichen auf DEMSELBEN Fall mit DEMSELBEN Grund sperren, beweist der dritte Test die Sperre.
+Faellt der Aufruf in `deklaration()` weg, wird dieser dritte Test rot (409 erwartet, 200 geliefert);
+ein `xfail` ohne `raises=` haette das nicht gemeldet (`_req` wirft bei 4xx, der Marker nimmt jeden
+Fehler als erwartet).
 
 Reichweite -- wörtlich aus der Recherche uebernommen, nicht aus der Serverseite geschlossen:
 
@@ -28,8 +31,8 @@ Konzept-Skizze, dort Zeile 45 als "ELSTER-Deklarationsvorschau (Store->E-Nr),
 lossy-transparent" dokumentiert) -- keine einzige weitere Client- oder Export-Datei
 (auch `pipeline/ui/static/index.html`, eine zweite, GEPRUEFTE UND ausgeschlossene
 UI-Oberflaeche im selben Repo, enthaelt weder den String "deklaration" noch "/fall/").
-Der Endpunkt ist nach diesem Befund AKTUELL NICHT nutzersichtbar -- ein latenter Defekt,
-kein akuter Nutzerpfad ueber die ausgelieferte Oberflaeche.
+Der Endpunkt ist nach diesem Befund AKTUELL NICHT nutzersichtbar -- die Sperre aendert fuer
+niemanden etwas Sichtbares, bis jemand ihn an eine Oberflaeche anschliesst.
 
 Der Eingabezustand, den er falsch behandelt, ist dagegen sehr wohl ueber den normalen
 Frage-Fluss herstellbar, nicht nur ueber direkte API-Manipulation: `kap_kapitalertraege`
@@ -38,23 +41,22 @@ Frage-Fluss herstellbar, nicht nur ueber direkte API-Manipulation: `kap_kapitale
 sind unbedingt und unabhaengig voneinander askable (die Person-B-Spiegelfelder sind beide
 nur an dieselbe Bedingung `kein_kap_partner==false` gekoppelt, nicht aneinander). Ein
 Nutzer kann also im ganz normalen Interview beide Fragen wörtlich beantworten und damit
-genau den Widerspruch herstellen, den `/ergebnis` und `/einreichen` zu Recht sperren. Sollte
-`/deklaration` je an eine Oberflaeche verdrahtet werden -- die Konzept-Skizze benennt genau
-diese Absicht ("so sieht deine Erklaerung aus") --, wuerde der Defekt beim ersten echten
-Nutzer sichtbar, der beide KAP-Fragen wahrheitsgemaess beantwortet.
+genau den Widerspruch herstellen, den `/ergebnis` und `/einreichen` zu Recht sperren. Wird
+`/deklaration` je an eine Oberflaeche verdrahtet -- die Konzept-Skizze benennt genau diese
+Absicht ("so sieht deine Erklaerung aus") --, bekommt ein Nutzer, der beide KAP-Fragen
+wahrheitsgemaess beantwortet, die Sperre mit Klartext statt zweier widerspruechlicher Betraege.
 
 Was dieser Test NICHT behauptet: dass ein Nutzer diesen Widerspruch heute in der Oberflaeche
 je zu sehen bekommt (er bekommt ihn nicht, s.o.); dass dies ein Partner-spezifisches Loch ist
-(reiner Person-A-Fall hier, bewusst ohne veranlagung=zusammen); dass der Fix in `deklaration()`
-liegen muss statt in einer gemeinsamen Vorpruef-Funktion -- das ist eine Entscheidung ueber
-den Instructor/Julius, keine, die dieser Test trifft oder vorwegnimmt. Nicht repariert.
+(reiner Person-A-Fall hier, bewusst ohne veranlagung=zusammen); dass die Sperre jeden Fall
+erfasst, in dem `/deklaration` Werte aus unbestaetigten Feldern zeigt -- nur Faelle, in denen
+`_an_gesamt_sperrgrund` einen Grund meldet (s. test_kap_deklaration_vorlaeufig_leck_ohne_
+bestaetigung.py: dort meldet er keinen).
 """
 from __future__ import annotations
 
 import os
 import sys
-
-import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from test_paket_b_e2e_http import base, _req, _gesamt_kegel, _gesamt_anlegen  # noqa: F401,E402
@@ -87,23 +89,13 @@ def test_einreichen_sperrt_bei_kapital_semantik_offen(base):
     assert res["eingereicht"] is False
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG (nicht Testfehler): api.py deklaration() ruft _an_gesamt_sperrgrund nie auf "
-           "(anders als _ergebnis_roh Zeile 570 und einreichen Zeile 699) -- deklariert einen "
-           "Widerspruch als vollstaendig statt ihn zu sperren. Faellt dieser xfail um, weil die "
-           "Asymmetrie behoben wurde: Marker entfernen, Kontrollen oben bleiben.",
-)
-def test_deklaration_erkennt_widerspruch_NICHT_bug_gepinnt(base):
-    """Erwartung, die HEUTE nicht zutrifft: Deklaration darf nicht gleichzeitig vollstaendig UND
-    Aggregat+Topf gleichzeitig melden, wenn ergebnis/einreichen denselben Fall sperren."""
+def test_deklaration_sperrt_bei_kapital_semantik_offen(base):
+    """DIE SPERRE: derselbe Fall, 409 mit demselben Grund, dem Satz von /ergebnis und ohne Kz."""
     _fall_mit_kapital_semantik_offen(base)
-    st, dek = _req(base, "GET", f"/fall/{FALL}/deklaration")
-    assert st == 200  # heute IMMER 200, der Waechter wird nie gefragt
-    aggregat = dek["deklaration"].get("E1900701")
-    topf = dek["deklaration"].get("E1900901")
-    assert not (dek.get("vollstaendig") and aggregat and topf), (
-        f"Deklaration zeigt Aggregat({aggregat}) UND Topf({topf}) gleichzeitig bei "
-        f"vollstaendig={dek.get('vollstaendig')}, eingaben_konsistent={dek.get('eingaben_konsistent')} "
-        f"-- derselbe Fall, den ergebnis/einreichen zu Recht sperren."
-    )
+    _, erg = _req(base, "GET", f"/fall/{FALL}/ergebnis")
+    st, dek = _req(base, "GET", f"/fall/{FALL}/deklaration", erwarte=409)
+    assert dek["grund"] == "kapital_semantik_offen", f"Deklaration hat NICHT gesperrt: {dek}"
+    assert dek["klartext"] and dek["klartext"] == erg["klartext"], (dek, erg.get("klartext"))
+    # Der Koerper ist genau `fall_id`, `grund`, `klartext` -- kein Aggregat, kein Topf, kein Kz.
+    assert set(dek) == {"fall_id", "grund", "klartext"}, dek
+    assert dek["fall_id"] == FALL

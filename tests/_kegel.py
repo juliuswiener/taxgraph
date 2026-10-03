@@ -157,6 +157,22 @@ def kegel_fuer(scheibe: str, gesetzt: dict | None = None) -> list[tuple[str, obj
     return raus
 
 
+def partner_kegel_fuer(gesetzt: dict | None = None) -> list[tuple[str, object]]:
+    """Die Pflichtfelder von Person B bei `veranlagung=zusammen` als (feld_id, wert)-Paare.
+
+    `kegel_fuer("gesamt")` baut die Einzel-Basis; die Partner-Pflichtfelder
+    (`GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP`: Bruttolohn und die fuenf Kapital-Felder) gehoeren
+    nur bei `zusammen` dazu, und der Guard sperrt mit `partner_kegel_offen`, solange eines nicht
+    bestaetigt ist -- seit 2026-10-03 auch `/deklaration`. Wer `zusammen` setzt und Kz von Person B
+    misst, haengt diese Liste an. `gesetzt` gewinnt wie bei `kegel_fuer`; sonst der Abwesenheitswert.
+    """
+    gesetzt = dict(gesetzt or {})
+    ac = _api_constants()
+    b = bindung()
+    return [(f, gesetzt.get(f, standardwert(f, b.get(f))))
+            for f in ac.GESAMT_PARTNER_19 + ac.GESAMT_PARTNER_KAP]
+
+
 def fehlende_kegel_felder(scheibe: str, gesetzt) -> list[str]:
     """Welche Kegel-Mitglieder `gesetzt` NICHT enthaelt — die Ratsche fuer alte Handlisten.
 

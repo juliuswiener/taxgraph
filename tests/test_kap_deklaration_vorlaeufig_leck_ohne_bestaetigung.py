@@ -276,7 +276,26 @@ def test_gruenkontrolle_bestaetigter_topf_konsistent(gemessen, braucht_echtes_xs
           f"in Dict UND XML, eingaben_konsistent=True")
 
 
-@pytest.mark.xfail(strict=True, reason=(
+def test_vorbedingung_leck_fall_ist_nirgends_abgabefaehig(gemessen):
+    """Die Vorbedingung des xfail-Tests unten, als eigener gruener Test (Entscheid
+    ein-erwarteter-fehlschlag-traegt-nur-die-kernaussage-..., 2026-10-03). Sie gehoert nicht in den
+    xfail-Test: scheitert sie, wuerde dieser an einer Zeile vor der Kernaussage fallen und sich nicht
+    melden, wenn der Leck behoben ist.
+
+    Der Leck-Fall ist ueberall anderweitig gesperrt: `/ergebnis` liefert keine Zahl (der Kegel ist
+    nicht bestaetigt -- NICHT der Guard `_an_gesamt_sperrgrund`, deshalb sperrt `/deklaration`
+    hier auch nicht, s. u.), `einreichen()` bricht mit 409 `deklaration_unvollstaendig` VOR dem XML
+    ab, und es entsteht kein XML.
+    """
+    leck = gemessen["leck"]
+    assert leck["ergebnis"]["zahl_cent"] is None, leck["ergebnis"]
+    assert leck["ergebnis"]["grund"] == "input_kegel_nicht_bestaetigt", leck["ergebnis"]
+    assert leck["einreichen"][0] == 409, leck["einreichen"]
+    assert leck["einreichen"][1].get("grund") == "deklaration_unvollstaendig", leck["einreichen"]
+    assert leck["xml"] is None, "XML wurde trotz eingaben_konsistent=False erzeugt -- anderer Befund"
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
     "_kap_positiv/_c2 (bescheid_deklaration.py:117-119, 136-137) lesen felder.get(fid)['wert'] OHNE "
     "zustand-Check -- ein NIE bestaetigter (vorlaeufiger) KAP-Topf-Wert loest trotzdem kap_erklaert=True "
     "aus und injiziert E1900401=True/E1901401>0 in die LIVE-Antwort von GET /deklaration, obwohl "
@@ -285,27 +304,22 @@ def test_gruenkontrolle_bestaetigter_topf_konsistent(gemessen, braucht_echtes_xs
     "Erreicht NICHT das abgesendete XML (EM.deklariere() blockt einreichen() unabhaengig ueber "
     "eingaben_konsistent=False, 409 deklaration_unvollstaendig, VOR erzeuge_xml()) -- nur der "
     "/deklaration-Dict-Inhalt widerspricht seiner eigenen eingaben_konsistent-Aussage. "
+    "Die Sperre von /deklaration bei Sperrgrund (2026-10-03) ERFASST DIESEN FALL NICHT: "
+    "_an_gesamt_sperrgrund meldet hier keinen Grund (gemessen: /deklaration bleibt 200). "
     "Reparaturrichtung offen (zustand-Filter in _kap_positiv/_c2 wie in _instanz_summe, oder die "
     "Injektion an eingaben_konsistent koppeln) -- dieser Test bindet sich an keine davon."))
 def test_vorlaeufiger_topf_leckt_in_deklaration_trotz_unvollstaendig(gemessen):
-    baseline, leck = gemessen["baseline"], gemessen["leck"]
-
-    # Vorbedingung (kein Teil des Befunds): Copy 1 (Steuer) ist geschuetzt -- sonst waere dies
-    # der VIEL groessere Zwei-Signal-Bruch aus test_ui_zwei_signal_sicherheit.py, nicht dieser hier.
-    assert leck["ergebnis"]["zahl_cent"] == baseline["ergebnis"]["zahl_cent"], (
-        "Steuer bewegt sich schon durch den vorlaeufigen Wert -- anderer, groesserer Befund, "
-        "nicht der hier gemessene Deklarations-Leck")
-
-    # Der Waechter, der einreichen() schuetzt, muss auch hier feuern (Kontrolle gegen den
-    # eigenen Docstring-Claim oben) -- sonst ist die 'nicht ins XML'-Aussage unbelegt.
-    assert leck["deklaration"]["eingaben_konsistent"] is False, leck["deklaration"]
-    assert leck["einreichen"][0] == 409, leck["einreichen"]
-    assert leck["einreichen"][1].get("grund") == "deklaration_unvollstaendig", leck["einreichen"]
-    assert leck["xml"] is None, "XML wurde trotz eingaben_konsistent=False erzeugt -- anderer Befund"
+    leck = gemessen["leck"]
 
     # DIE Kernaussage: derselbe /deklaration-Aufruf, der eingaben_konsistent=False UND
     # kap_gewinn_sonstige als unvollstaendig meldet, injiziert im selben JSON trotzdem
-    # E1900401/E1901401 aus genau diesem unbestaetigten Wert.
+    # E1900401/E1901401 aus genau diesem unbestaetigten Wert. Die Vorbedingungen (Zahl, einreichen,
+    # XML) stehen im eigenen Test oben; ein anderer Fehler als AssertionError (z. B. ein KeyError,
+    # wenn /deklaration ploetzlich 409 liefert) macht diesen Test rot statt "erwartet".
+    assert leck["deklaration"]["eingaben_konsistent"] is False, leck["deklaration"]
+    unvollstaendig_felder = {u["feld_id"] for u in leck["deklaration"]["unvollstaendig"]}
+    assert "kap_gewinn_sonstige" in unvollstaendig_felder, leck["deklaration"]["unvollstaendig"]
+
     dek = leck["deklaration"]["deklaration"]
     print(f"\n[leck] eingaben_konsistent={leck['deklaration']['eingaben_konsistent']}, "
           f"unvollstaendig={leck['deklaration']['unvollstaendig']}, "
