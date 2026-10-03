@@ -5345,6 +5345,17 @@ fn dokumentierte_abweichungen() {
         String::from_utf8_lossy(&rs.body)
     );
     assert_eq!((py.status, rs.status), (500, 400));
+    // 6. Fremddienst-Zahlen und -Gestalten (Vault `decisions/fremddienst-zahlfehler-nur-in-python-bleiben-
+    //    bis-zum-cutover`, Messung `berichte/k9-fremddienst.md`). Vier Wege, auf denen Python bei einer
+    //    Antwort des Sprachmodells oder des Karten-Dienstes abstuerzt oder eine Antwort schickt, die kein
+    //    JSON ist, und Rust sauber zurueckfaellt: A1 `rechenweg`/`vorschlag_wert` mit NaN/Infinity (Python
+    //    200 ohne gueltiges JSON, Rust 200), A2 `aussage` mit Infinity/1e400 (Python 500, Rust 200),
+    //    A3 `distance` mit NaN/Infinity (Python 500, Rust 503), B `content`/`kategorie` als Liste/Objekt/
+    //    Zahl (Python 500, Rust 200). Nutzerwirkung: Python bricht ab, Rust faellt zurueck; die Akte bleibt
+    //    in allen Faellen unberuehrt. Rust ist die Soll-Seite (Korrektheit vor Paritaet, `REWRITE_PLAN.md`
+    //    §4); Python wird bis zum Cutover nicht repariert. Die Faelle stehen mit Begruendung in
+    //    `extern_stub/fremd_abweichungen.rs`; wird Python repariert oder Rust anders, faellt dieser Eintrag.
+    extern_stub::fremd_abweichungen::pruefe_alle();
 }
 
 /// `_routes()` (`server.py:62`) und `api::routen::EINTRAEGE` stimmen in Methode, Muster und
