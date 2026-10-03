@@ -39,6 +39,9 @@ use proptest::strategy::ValueTree;
 use proptest::test_runner::TestRunner;
 use serde_json::{json, Value};
 
+/// Standard der generierten Faelle je Funktion; `PARITY_N` ersetzt ihn (`parity::fallzahl`).
+const GENERIERT: usize = 1000;
+
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -277,7 +280,31 @@ fn weicht_ab(rust: &Ausgang, python: &Ausgang) -> bool {
     rust != python
 }
 
-fn pruefe(name: &str, generator: &BoxedStrategy<Vec<Value>>) {
+/// Hat die Seite einen Wert gesehen? `Ok(0)` und jeder Fehler sind leer (wie `nicht_leer` in
+/// `parity::pin`): zwei gleiche Nullen oder zwei gleiche Ausnahmen belegen keine Rechnung.
+fn nicht_leer(a: &Ausgang) -> bool {
+    matches!(a, Ausgang::Ok(v) if *v != 0)
+}
+
+/// Bekannt leere Korpus-Zeilen: Funktionen, fuer die `rust/fixtures/corpus/runner/` keinen
+/// aufgezeichneten Datensatz mit einem Wert ungleich 0 traegt. Der Korpus-Erzeuger schreibt nur
+/// gerufene Funktionen (`zugriff_teil2_paritaet.rs`, `LEER_KORPUS`). Die Funktion rechnet trotzdem:
+/// Block (b) bringt 1000 generierte Faelle.
+///
+/// Ueber den Zaehler `nicht-0` der Ausgabezeile von [`pruefe`] gemessen, 2026-10-03: 2 von 32
+/// Funktionen stehen im Korpus auf 0 (beide ohne jede Korpusdatei, nicht nur ohne Wert).
+const LEER_KORPUS: &[(&str, &str)] = &[
+    (
+        "catala_p101_mobilitaetspraemie",
+        "Korpusquelle fehlt (keine catala_p101_mobilitaetspraemie.*.jsonl); Zweig von (b) getragen (nicht-0 424)",
+    ),
+    (
+        "catala_raumkosten",
+        "Korpusquelle fehlt (keine catala_raumkosten.*.jsonl); Zweig von (b) getragen (nicht-0 689)",
+    ),
+];
+
+fn pruefe(name: &'static str, generator: &BoxedStrategy<Vec<Value>>) {
     if skip_ohne_parity_env() {
         eprintln!("SKIP {name} (PARITY=1 nicht gesetzt)");
         return;
@@ -286,9 +313,11 @@ fn pruefe(name: &str, generator: &BoxedStrategy<Vec<Value>>) {
     // (a) Korpus
     let saetze = korpus(name);
     let (mut diff_aufz, mut diff_live, mut aufz_ungleich_live) = (0usize, 0usize, 0usize);
+    let mut korpus_nicht_leer = 0u64;
     for satz in &saetze {
         let args = satz["args"].as_array().unwrap();
         let aufgezeichnet = aus_python(satz);
+        korpus_nicht_leer += u64::from(nicht_leer(&aufgezeichnet));
         let py = live(name, args);
         let rust = rust_ausgang(name, args);
         if weicht_ab(&rust, &aufgezeichnet) {
@@ -308,11 +337,13 @@ fn pruefe(name: &str, generator: &BoxedStrategy<Vec<Value>>) {
     // (b) generiert
     let mut runner = TestRunner::deterministic();
     let (mut diff_gen, mut fehlerfaelle, mut n_gen) = (0usize, 0usize, 0usize);
-    for _ in 0..parity::fallzahl::holen("zugriff_teil1_paritaet generiert", 1000) {
+    let mut gen_nicht_leer = 0u64;
+    for _ in 0..parity::fallzahl::holen("zugriff_teil1_paritaet generiert", GENERIERT) {
         let args = generator.new_tree(&mut runner).unwrap().current();
         let py = live(name, &args);
         let rust = rust_ausgang(name, &args);
         n_gen += 1;
+        gen_nicht_leer += u64::from(nicht_leer(&py));
         if matches!(py, Ausgang::Err(_)) {
             fehlerfaelle += 1;
         }
@@ -323,7 +354,8 @@ fn pruefe(name: &str, generator: &BoxedStrategy<Vec<Value>>) {
     }
     println!(
         "[paritaet] {name}: korpus {} (diff aufgezeichnet {diff_aufz}, diff live {diff_live}, \
-         aufgezeichnet!=live {aufz_ungleich_live}); generiert {n_gen} (davon Python-Fehler {fehlerfaelle}), diff {diff_gen}",
+         aufgezeichnet!=live {aufz_ungleich_live}, nicht-0 {korpus_nicht_leer}); generiert {n_gen} \
+         (davon Python-Fehler {fehlerfaelle}, nicht-0 {gen_nicht_leer}), diff {diff_gen}",
         saetze.len()
     );
     for b in beispiele.iter().take(5) {
@@ -334,6 +366,30 @@ fn pruefe(name: &str, generator: &BoxedStrategy<Vec<Value>>) {
         0,
         "{name}: Abweichungen, siehe oben"
     );
+    // Eine Zeile, die nie einen Wert sieht, meldet "0 Abweichungen" ohne zu rechnen. Je Funktion
+    // eine Zeile je Block; die Liste nennt nur die Eintraege dieser Funktion.
+    // ponytail: ein Eintrag in `LEER_KORPUS` ohne Test (umbenannte Funktion) faellt nicht auf --
+    // ein Sammeltest ueber alle Namen, wenn die Liste waechst.
+    let liste: Vec<(&str, &str)> = LEER_KORPUS
+        .iter()
+        .filter(|(n, _)| *n == name)
+        .copied()
+        .collect();
+    parity::pin::pruefe(
+        &format!("{name} Korpus"),
+        "rust/fixtures/corpus/runner (aufgezeichnete Ergebnisse)",
+        &liste,
+        &parity::pin::Gesehen::from([(name, korpus_nicht_leer)]),
+    );
+    // Die Untergrenze gilt beim Standard der Fallzahl; bei kleinerem N ist sie falsch rot.
+    if parity::fallzahl::wache_gilt("zugriff_teil1_paritaet generiert", n_gen, GENERIERT) {
+        parity::pin::pruefe(
+            &format!("{name} generiert"),
+            "kein Korpus (Proptest, deterministischer Seed)",
+            &[],
+            &parity::pin::Gesehen::from([(name, gen_nicht_leer)]),
+        );
+    }
 }
 
 // ---- Generatoren ---------------------------------------------------------------------------
