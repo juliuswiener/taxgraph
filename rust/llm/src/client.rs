@@ -123,6 +123,17 @@ impl fmt::Debug for Schluessel {
     }
 }
 
+impl Schluessel {
+    /// Fuer `ors`: derselbe Typ, dieselbe Regel — der Wert steht nie in `Debug`.
+    pub(crate) fn neu(wert: String) -> Self {
+        Self(wert)
+    }
+
+    pub(crate) fn als_str(&self) -> &str {
+        &self.0
+    }
+}
+
 /// Endpunkt, Modell, Schluessel und die Zeitgrenzen.
 #[derive(Debug, Clone)]
 pub struct Konfiguration {

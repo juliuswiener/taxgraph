@@ -1,6 +1,7 @@
 //! `llm` — LLM-Anbindung (`produkt/haut/llm_client.py`, `api_llm.py`, `pii_filter.py`):
 //! PII-Filter, Chat-Completions-Client mit Wiederholung und Frist, der Drei-Stufen-Chat mit
-//! strikten Parsern und deterministischen Gates, der Kontoauszug-Klassifikator.
+//! strikten Parsern und deterministischen Gates, der Kontoauszug-Klassifikator. Dazu [`ors`], der
+//! Transport zu `OpenRouteService` (`produkt/haut/ors_client.py`) auf demselben HTTP-Unterbau.
 //!
 //! Tragende Typen: [`pii::Gefiltert`]/[`pii::Maskiert`] (nur sie erreichen [`Nachricht::nutzer`]),
 //! [`Antwort`] (kaputtes JSON ist eine benannte Variante, kein stilles Leer),
@@ -21,6 +22,7 @@ pub mod dialog;
 pub mod gates;
 mod http;
 pub mod kontoauszug;
+pub mod ors;
 pub mod parse;
 pub mod pii;
 pub mod prompt;
