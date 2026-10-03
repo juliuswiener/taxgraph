@@ -95,7 +95,6 @@ impl Rng {
 struct Zaehler {
     faelle: usize,
     abw: usize,
-    dokumentiert: usize,
 }
 impl Zaehler {
     fn pruefe(&mut self, was: &str, rust: &Value, py: &Value) {
@@ -526,8 +525,8 @@ fn kontoauszug() {
         &gestoert,
         &json!({"r": py0["r"], "events": py0["events"]}),
     );
-    println!("kontoauszug: {} CSV ({} Korpus + {n_faelle} generiert, {mit_tx} mit Buchungen), 300 JSON, {} Betraege, 500 PDF-Texte, 200 TSV = {} Vergleiche; {events_n} Rust-Events verglichen; Abweichungen {}; dokumentiert {}; Negativkontrolle {}",
-        csvs.len(), korpus.len(), betraege.len(), z.faelle, z.abw, z.dokumentiert, neg.abw);
+    println!("kontoauszug: {} CSV ({} Korpus + {n_faelle} generiert, {mit_tx} mit Buchungen), 300 JSON, {} Betraege, 500 PDF-Texte, 200 TSV = {} Vergleiche; {events_n} Rust-Events verglichen; Abweichungen {}; Negativkontrolle {}",
+        csvs.len(), korpus.len(), betraege.len(), z.faelle, z.abw, neg.abw);
     assert_eq!(neg.abw, 1);
     assert_eq!(z.abw, 0);
 }
@@ -1121,13 +1120,7 @@ fn vorjahr_vast_edaten() {
     for (i, b) in betraege.iter().enumerate() {
         let rust = eingang::vast::cent(b.as_deref())
             .map_or_else(|e| vast_fehler(&e), |c| json!({"ok": c}));
-        let p = py_norm(&py["cent"][i]);
-        // PARITAET-Abweichung (Bericht): Python liefert eine grosse Ganzzahl, Rust `Ueberlauf`.
-        if rust == json!({"err": "OverflowError"}) && p.get("ok").is_some() {
-            z.dokumentiert += 1;
-            continue;
-        }
-        z.pruefe(&format!("vast cent {b:?}"), &rust, &p);
+        z.pruefe(&format!("vast cent {b:?}"), &rust, &py_norm(&py["cent"][i]));
     }
     for (i, w) in lstb.iter().enumerate() {
         let rust =
@@ -1139,6 +1132,87 @@ fn vorjahr_vast_edaten() {
         let rust =
             eingang::vast::aus_lersl(&ls).map_or_else(|e| vast_fehler(&e), |v| json!({"ok": v}));
         z.pruefe(&format!("aus_lersl {l}"), &rust, &py_norm(&py["lersl"][i]));
+    }
+    // Grenze der Akte (i64): ein Betrag, dessen Cent nicht in i64 passen, lehnen beide Seiten ab (Python
+    // `OverflowError`, Rust `Ueberlauf`). Die Zufallsfolge zieht ihn nur selten aus dem Pool, darum feste
+    // Anker mit festgehaltenem Ergebnis auf BEIDEN Seiten: gleiche Antwort reicht nicht, wenn beide
+    // abdriften. -2^63 weisen beide ab (Rust liest den Betrag erst ohne Vorzeichen).
+    let ueberlauf = json!({"err": "OverflowError"});
+    let gross = "12345678901234567890123456.785";
+    let halb = "50000000000000000.00"; // 5e18 Cent
+    let cent_anker: [(&str, Value); 7] = [
+        ("92233720368547758.07", json!({"ok": i64::MAX})),
+        ("-92233720368547758.07", json!({"ok": -i64::MAX})),
+        ("92233720368547758.08", ueberlauf.clone()),
+        ("-92233720368547758.08", ueberlauf.clone()),
+        (gross, ueberlauf.clone()),
+        ("1e30", ueberlauf.clone()),
+        ("45000.00", json!({"ok": 4_500_000})),
+    ];
+    let lstb_anker: Vec<(BTreeMap<String, String>, Value)> = vec![
+        (
+            BTreeMap::from([
+                ("BruttoArbLohn".into(), "45000.00".into()),
+                ("LSteuer".into(), gross.into()),
+            ]),
+            ueberlauf.clone(),
+        ),
+        (
+            BTreeMap::from([("LSteuer".into(), "8200.00".into())]),
+            json!({"ok": [{"feld_id": "p36_lohnsteuer", "wert": 820_000, "kategorie": "LStB/LSteuer: einbehaltene Lohnsteuer"}]}),
+        ),
+    ];
+    let lersl_anker: Vec<(Vec<&str>, Value)> = vec![
+        (vec![gross], ueberlauf.clone()),
+        (vec![halb, halb], ueberlauf.clone()),
+        (vec![halb, halb, "-50000000000000000.00"], ueberlauf.clone()),
+        (
+            vec![halb, "-50000000000000000.00", "1.00"],
+            json!({"ok": [{"feld_id": "p32b_progressionseinkuenfte", "wert": 100,
+                "kategorie": "LErsL: Lohnersatzleistungen (§ 32b Abs. 1 Nr. 1) — ALG"}]}),
+        ),
+    ];
+    let leistungen = |betraege: &[&str]| -> Vec<Value> {
+        betraege
+            .iter()
+            .map(|b| json!({"Betrag": b, "Art": "ALG"}))
+            .collect()
+    };
+    let py_anker = frage(&json!({"fn": "schritt8.eingang.vast",
+        "werte": cent_anker.iter().map(|(t, _)| *t).collect::<Vec<_>>(),
+        "lstb": lstb_anker.iter().map(|(w, _)| w).collect::<Vec<_>>(),
+        "lersl": lersl_anker.iter().map(|(l, _)| leistungen(l)).collect::<Vec<_>>()}));
+    for (i, (text, soll)) in cent_anker.iter().enumerate() {
+        let rust =
+            eingang::vast::cent(Some(text)).map_or_else(|e| vast_fehler(&e), |c| json!({"ok": c}));
+        z.pruefe(&format!("grenze cent rust {text}"), &rust, soll);
+        z.pruefe(
+            &format!("grenze cent python {text}"),
+            &py_norm(&py_anker["cent"][i]),
+            soll,
+        );
+    }
+    for (i, (w, soll)) in lstb_anker.iter().enumerate() {
+        let rust =
+            eingang::vast::aus_lstb(w).map_or_else(|e| vast_fehler(&e), |v| json!({"ok": v}));
+        z.pruefe(&format!("grenze lstb rust {w:?}"), &rust, soll);
+        z.pruefe(
+            &format!("grenze lstb python {w:?}"),
+            &py_norm(&py_anker["lstb"][i]),
+            soll,
+        );
+    }
+    for (i, (betraege, soll)) in lersl_anker.iter().enumerate() {
+        let ls: Vec<eingang::vast::Leistung> =
+            serde_json::from_value(Value::Array(leistungen(betraege))).unwrap();
+        let rust =
+            eingang::vast::aus_lersl(&ls).map_or_else(|e| vast_fehler(&e), |v| json!({"ok": v}));
+        z.pruefe(&format!("grenze lersl rust {betraege:?}"), &rust, soll);
+        z.pruefe(
+            &format!("grenze lersl python {betraege:?}"),
+            &py_norm(&py_anker["lersl"][i]),
+            soll,
+        );
     }
     // eDaten
     let felder: Vec<&str> = bindungen().iter().map(|b| b.feld_id.as_str()).collect();
@@ -1178,8 +1252,8 @@ fn vorjahr_vast_edaten() {
         &json!({"ok": eingang::vast::cent(Some("45000.00")).unwrap().unwrap() + 1}),
         &py["cent"][0],
     );
-    println!("vorjahr+vast+edaten: {} Vergleiche (500 Vorjahr, davon {} mit uebersprungenem Altwert, {} Betraege, 300 LStB, 300 LErsL, 500 eDaten); Abweichungen {}; dokumentiert {}; Negativkontrolle {}",
-        z.faelle, mit_uebersprungen, betraege.len(), z.abw, z.dokumentiert, neg.abw);
+    println!("vorjahr+vast+edaten: {} Vergleiche (500 Vorjahr, davon {} mit uebersprungenem Altwert, {} Betraege, 300 LStB, 300 LErsL, 500 eDaten); Abweichungen {}; Negativkontrolle {}",
+        z.faelle, mit_uebersprungen, betraege.len(), z.abw, neg.abw);
     assert_eq!(neg.abw, 1);
     assert_eq!(z.abw, 0);
     assert!(
