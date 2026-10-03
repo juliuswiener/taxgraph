@@ -1154,3 +1154,57 @@ def test_eric_gate_sieht_ueberhaupt_aufrufer():
     # Gegenrichtung: die Ausnahmeliste darf nicht auf tote Eintraege zeigen.
     tot = sorted(set(ERIC_OHNE_MARKER) - aufrufer)
     assert not tot, f"ERIC_OHNE_MARKER nennt Aufrufer, die es nicht (mehr) gibt: {tot}"
+
+
+# ---- .gitignore: auch ein VERWEIS auf ein Build-Verzeichnis wird ignoriert -----------------------
+# Entscheidung ignorier-regeln-der-build-verzeichnisse-gelten-auch-fuer-verweise (Vault), Backlog
+# gitignore-nimmt-den-catala-symlink-nicht-aus. Ein Arbeitsbaum bekommt statt eines Build-Verzeichnisses
+# einen Symlink auf den Hauptbaum (arbeitsbaum-misst-wie-der-hauptbaum, Punkt 3). Eine Regel mit `/`
+# am Ende gilt nur für echte Verzeichnisse: der Verweis wäre für Git eine neue Datei, und `git add -A`
+# (die Auto-Speicherung von orch) nähme ihn mit. Gemessen 2026-10-03: drei Zweige tragen so einen Verweis.
+_BUILD_NAMEN = ("_build", "_target", "_targets", "oracle/.venv", "oracle/.venv312",
+                "oracle/gettsim/_catala")
+
+
+def _nicht_ignoriert(repo: pathlib.Path, pfade: list[str]) -> list[str]:
+    import subprocess
+    env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1")  # kein fremdes excludesfile
+    return [p for p in pfade
+            if subprocess.run(["git", "check-ignore", "-q", p], cwd=repo, env=env).returncode != 0]
+
+
+def test_gitignore_nimmt_verweise_auf_build_verzeichnisse_aus(tmp_path):
+    """Je Name zwei Fälle in einem Wegwerf-Repo mit der echten `.gitignore` dieses Baums: ein VERWEIS
+    (der Fall, der fehlte) und ein echtes Verzeichnis (muss ignoriert bleiben). Kein absoluter Pfad:
+    die `.gitignore` kommt aus der Wurzel des Baums, in dem der Test läuft."""
+    import shutil
+    import subprocess
+
+    ziel = tmp_path / "ziel"
+    ziel.mkdir()
+    ergebnis = {}
+    for fall in ("verweis", "verzeichnis"):
+        repo = tmp_path / fall
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", "."], cwd=repo, check=True)
+        shutil.copy(ROOT / ".gitignore", repo / ".gitignore")
+        pfade = []
+        for name in _BUILD_NAMEN:
+            (repo / name).parent.mkdir(parents=True, exist_ok=True)
+            if fall == "verweis":
+                (repo / name).symlink_to(ziel, target_is_directory=True)
+                pfade.append(name)
+            else:
+                (repo / name).mkdir()
+                (repo / name / "datei.txt").write_text("x", encoding="utf-8")
+                pfade.append(f"{name}/datei.txt")
+        ergebnis[fall] = _nicht_ignoriert(repo, pfade)
+    meldungen = []
+    if ergebnis["verweis"]:
+        meldungen.append(
+            "Git ignoriert diese Build-Namen nicht, wenn sie ein VERWEIS sind (die Regel in .gitignore "
+            "endet auf `/` und gilt nur für Verzeichnisse): " + ", ".join(ergebnis["verweis"]))
+    if ergebnis["verzeichnis"]:
+        meldungen.append("Git ignoriert ein echtes Verzeichnis unter diesen Namen nicht mehr: "
+                         + ", ".join(ergebnis["verzeichnis"]))
+    assert not meldungen, "\n".join(meldungen)
