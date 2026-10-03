@@ -265,50 +265,43 @@ async fn abgabegate_nennt_die_pflichtfeldluecke_selbst() {
     );
 }
 
-/// `test_deklaration_umgeht_waechter_gepinnt.py::test_deklaration_erkennt_widerspruch_NICHT_bug_gepinnt`:
-/// `/deklaration` fragt den Sperrgrund nie, `/ergebnis` und `/einreichen` fragen ihn.
+/// `test_deklaration_umgeht_waechter_gepinnt.py::test_deklaration_sperrt_bei_kapital_semantik_offen`:
+/// `/deklaration` fragt den Sperrgrund wie `/ergebnis` und `/einreichen` und sperrt mit 409.
 ///
 /// Derselbe Fall: Aggregat (E1900701) UND Aktien-Topf (E1900901) gleichzeitig bestaetigt. Die
-/// Deklaration darf ihn nicht als vollstaendig melden und beide Kz gleichzeitig zeigen.
+/// Deklaration darf ihn nicht als vollstaendig melden und beide Kz zeigen; sie antwortet 409 mit
+/// `grund` und dem `klartext`, den `/ergebnis` fuer denselben Grund zeigt
+/// (`decisions/deklaration-darf-verweigern.md`, entschieden 2026-10-03).
 ///
-/// Ob `/deklaration` sperren SOLL oder nur warnen soll, ist offen — `decisions/deklaration-darf-
-/// verweigern.md` empfiehlt Sperren und hat es ausdruecklich nicht entschieden. Der Test verlangt
-/// deshalb nur das, was in JEDER der beiden Optionen gilt: keine Antwort, die den Widerspruch
-/// gleichzeitig als vollstaendig ausgibt.
+/// Kein `#[ignore]` mehr: der Aufruf von `an_gesamt_sperrgrund` in `api/src/deklaration.rs` ist die
+/// Sperre, und dieser Test wird rot, sobald er fehlt.
 #[tokio::test]
-#[ignore = "GET /deklaration (api/src/deklaration.rs) fragt wie Python den Sperrgrund nicht: es fehlt der Aufruf von an_gesamt_sperrgrund — anders als /ergebnis und /einreichen (api.py:580 bzw. 725). Offen, ob Sperren oder Warnen: decisions/deklaration-darf-verweigern.md. Python: test_deklaration_umgeht_waechter_gepinnt.py::test_deklaration_erkennt_widerspruch_NICHT_bug_gepinnt. Rot sehen: --ignored"]
 async fn deklaration_umgeht_den_waechter_nicht() {
     let d = dienst();
     let token = fall_anlegen(&d, "waechter", "gesamt").await;
     setze_felder(&d, "waechter", &kapital_semantik_offen());
-    let (status, json, text) = sende(
-        &d,
-        "GET",
-        "/fall/waechter/deklaration",
-        &[("authorization", &token)],
-        None,
-    )
-    .await;
-    // Gesperrt (409) oder warnend (200) — beides ist eine ehrliche Antwort. Entscheidend ist,
-    // dass nicht BEIDES zugleich gemeldet wird.
+    let kopf = [("authorization", token.as_str())];
+    let (status, json, text) = sende(&d, "GET", "/fall/waechter/deklaration", &kopf, None).await;
+    assert_eq!(status, 409, "erwartet 409, erhalten {status}: {text}");
+    assert_eq!(json["grund"], "kapital_semantik_offen", "{text}");
+    // Der Koerper ist genau `fall_id`, `grund`, `klartext` — nichts von der Deklaration steht darin.
+    let mut schluessel: Vec<&str> = json
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
+    schluessel.sort_unstable();
+    assert_eq!(schluessel, ["fall_id", "grund", "klartext"], "{text}");
+    // Der Satz ist der von `/ergebnis` fuer denselben Grund, kein eigener Text.
+    let (st_erg, erg, text_erg) = sende(&d, "GET", "/fall/waechter/ergebnis", &kopf, None).await;
+    assert_eq!(st_erg, 200, "{text_erg}");
+    assert_eq!(erg["grund"], "kapital_semantik_offen", "{text_erg}");
     assert!(
-        status == 200 || status == 409,
-        "unerwartet {status}: {text}"
+        erg["klartext"].as_str().is_some_and(|k| !k.is_empty()),
+        "/ergebnis liefert keinen Klartext: {text_erg}"
     );
-    if status == 409 {
-        return;
-    }
-    let aggregat = json["deklaration"].get("E1900701");
-    let topf = json["deklaration"].get("E1900901");
-    assert!(
-        !(json["vollstaendig"] == Value::Bool(true)
-            && aggregat.is_some_and(|w| w != &Value::Null)
-            && topf.is_some_and(|w| w != &Value::Null)),
-        "DEFEKT: Deklaration zeigt Aggregat({aggregat:?}) UND Topf({topf:?}) gleichzeitig bei \
-         vollstaendig={}, ohne den Widerspruch zu nennen — derselbe Fall, den /ergebnis und \
-         /einreichen sperren: {json}",
-        json["vollstaendig"]
-    );
+    assert_eq!(json["klartext"], erg["klartext"], "{text} gegen {text_erg}");
 }
 
 /// CSV mit einer lesbaren Ruerup-Zeile und zwei unlesbaren Betraegen (`abc`, `1,2,3`) — dieselben

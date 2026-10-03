@@ -2,6 +2,15 @@
 vorlaeufig_leck_ohne_bestaetigung.py): dieselbe Zustand-Blindheit, ein ANDERER Block DERSELBEN
 Funktion (_mit_ring_werten, bescheid_deklaration.py).
 
+STAND 2026-10-03: `/deklaration` sperrt bei Sperrgrund wie `/einreichen`
+(decisions/deklaration-darf-verweigern.md). Dieser Fall hat einen: `/ergebnis` und `einreichen()`
+melden `verpflegung_dreimonatsfrist_aufteilung_offen` (nicht mehr `verpflegung_reduktion_offen`,
+wie unten gemessen), und `/deklaration` antwortet jetzt 409 statt mit dem injizierten E0205508.
+Der frueher `xfail(strict)`-markierte Test ist die gruene Kontrolle dieser Sperre; seine
+Vorbedingung (Sperrgrund an `/ergebnis` und `einreichen`, kein XML) steht in einem eigenen gruenen
+Test. Der Injektions-Block in `_mit_ring_werten` selbst ist weiter zustandsblind -- er ist hier nur
+nicht mehr erreichbar. Der Rest dieses Dokstrings ist die Messung vom 2026-08-31, nicht der Ist-Stand.
+
 Volle Lektuere der gesamten Funktion (Zeilen 58-345, nicht nur ein Block) ergibt eine Tabelle mit
 GENAU ZWEI blinden Bloecken -- kein dritter:
 
@@ -163,6 +172,9 @@ _GRUND = kegel_fuer("gesamt", {
 TAGE_24H = 100
 FRUEHSTUECKE = 5
 
+# Der Sperrgrund, den `/ergebnis`, `einreichen()` und `/deklaration` im Leck-Fall melden.
+GRUND_LECK = "verpflegung_dreimonatsfrist_aufteilung_offen"
+
 
 @pytest.fixture(scope="module")
 def gemessen(tmp_path_factory):
@@ -212,12 +224,14 @@ def gemessen(tmp_path_factory):
 
         st, erg = _req(base, "GET", f"/fall/{fid}/ergebnis")
         assert st == 200, (fid, "ergebnis", st, erg)
-        st, dek = _req(base, "GET", f"/fall/{fid}/deklaration")
-        assert st == 200, (fid, "deklaration", st, dek)
+        # 200 mit Kz oder 409 (Sperrgrund): welches von beiden, pruefen die Tests, nicht die Fixtur.
+        st_dek, dek = _req(base, "GET", f"/fall/{fid}/deklaration")
+        assert st_dek in (200, 409), (fid, "deklaration", st_dek, dek)
         xml_erfasst.pop("letztes", None)
         st_e, ein = API.einreichen(fid, {})
-        return {"ergebnis": erg, "deklaration": dek, "einreichen": (st_e, ein),
-                "xml": xml_erfasst.get("letztes"), "tage_24h_zustand": tage_zustand}
+        return {"ergebnis": erg, "deklaration": dek, "deklaration_status": st_dek,
+                "einreichen": (st_e, ein), "xml": xml_erfasst.get("letztes"),
+                "tage_24h_zustand": tage_zustand}
 
     ergebnisse = {}
     try:
@@ -279,53 +293,27 @@ def test_gruenkontrolle_bestaetigte_tage_konsistent(gemessen, braucht_echtes_xsd
           f"E0205508={kuerzung} in Dict UND XML, eingaben_konsistent=True")
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "Zeile 102-103 in _mit_ring_werten (bescheid_deklaration.py) baut die Eingabe fuer "
-    "runner._verpflegung_kuerzung_cent() OHNE zustand-Filter (`e['wert'] if isinstance(e, dict) "
-    "else e` fuer JEDES Feld) -- ein NIE bestaetigter (vorlaeufiger) Vorjahres-Vorschlag fuer "
-    "tage_24h/vpf_fruehstuecke_gestellt_anzahl loest trotzdem eine Kuerzungsberechnung aus und "
-    "injiziert E0205508>0 in die LIVE-Antwort von GET /deklaration, obwohl derselbe Aufruf "
-    "eingaben_konsistent=False meldet und tage_24h/vpf_fruehstuecke_gestellt_anzahl selbst als "
-    "unvollstaendig listet (est_mapping.py:582 filtert PRO FELD zustand=='bestaetigt', deshalb "
-    "fehlt E0205409 im selben Dict -- eine Kuerzung ohne die Position, die sie kuerzen soll). "
-    "Derselbe Zustand-Blindheit-Fehler wie in _kap_positiv/_c2 (s. "
-    "test_kap_deklaration_vorlaeufig_leck_ohne_bestaetigung.py), hier in einem ANDEREN Block "
-    "derselben Funktion. Erreicht NICHT das abgesendete XML (ein bereits bestehender, "
-    "zustand-sensitiver Waechter [verpflegung_reduktion_offen] blockt GET /ergebnis UND "
-    "einreichen() schon VOR jeder Zahl, unabhaengig von diesem Injektions-Leck) -- nur der "
-    "/deklaration-Dict-Inhalt widerspricht seiner eigenen eingaben_konsistent-Aussage. "
-    "Reparaturrichtung offen (zustand-Filter in Zeile 102-103 wie in _instanz_summe, oder die "
-    "Injektion an eingaben_konsistent koppeln) -- dieser Test bindet sich an keine davon."))
-def test_vorlaeufige_tage_leckt_kuerzung_in_deklaration_trotz_unvollstaendig(gemessen):
-    baseline, leck = gemessen["baseline"], gemessen["leck"]
-
-    # Vorbedingung (kein Teil des Befunds): /ergebnis liefert HIER GAR KEINE Zahl -- ein
-    # bereits bestehender, zustand-sensitiver Waechter (verpflegung_reduktion_offen) sperrt
-    # staerker als beim KAP-Fund (dort kam noch eine unveraenderte Zahl zurueck).
+def test_vorbedingung_leck_fall_ist_gesperrt_und_ohne_xml(gemessen):
+    """Die Vorbedingung des Sperr-Tests unten, als eigener gruener Test (Entscheid
+    ein-erwarteter-fehlschlag-traegt-nur-die-kernaussage-..., 2026-10-03): `/ergebnis` liefert HIER
+    GAR KEINE Zahl, `einreichen()` bricht mit demselben Grund ab, und es entsteht kein XML. Der
+    Waechter ist zustandssensibel und feuert VOR jeder Zahl, unabhaengig vom Injektions-Block."""
+    leck = gemessen["leck"]
     assert leck["ergebnis"]["zahl_cent"] is None, leck["ergebnis"]
-    assert leck["ergebnis"]["grund"] == "verpflegung_reduktion_offen", leck["ergebnis"]
-
-    # Der Waechter, der einreichen() schuetzt, muss auch hier feuern (Kontrolle gegen den
-    # eigenen Docstring-Claim oben) -- sonst ist die "nicht ins XML"-Aussage unbelegt.
+    assert leck["ergebnis"]["grund"] == GRUND_LECK, leck["ergebnis"]
     assert leck["einreichen"][0] == 409, leck["einreichen"]
-    assert leck["einreichen"][1].get("grund") == "verpflegung_reduktion_offen", leck["einreichen"]
+    assert leck["einreichen"][1].get("grund") == GRUND_LECK, leck["einreichen"]
     assert leck["xml"] is None, "XML wurde trotz gesperrtem Ergebnis erzeugt -- anderer Befund"
 
-    # DIE Kernaussage: derselbe /deklaration-Aufruf, der eingaben_konsistent=False UND
-    # tage_24h/vpf_fruehstuecke_gestellt_anzahl als unvollstaendig meldet, injiziert im selben
-    # JSON trotzdem E0205508 aus genau diesen unbestaetigten Werten.
-    assert leck["deklaration"]["eingaben_konsistent"] is False, leck["deklaration"]
-    unvollstaendig_felder = {u["feld_id"] for u in leck["deklaration"]["unvollstaendig"]}
-    assert {"tage_24h", "vpf_fruehstuecke_gestellt_anzahl"} <= unvollstaendig_felder, (
-        leck["deklaration"]["unvollstaendig"])
 
-    dek = leck["deklaration"]["deklaration"]
-    print(f"\n[leck] eingaben_konsistent={leck['deklaration']['eingaben_konsistent']}, "
-          f"unvollstaendig={sorted(unvollstaendig_felder)}, "
-          f"E0205409={dek.get('E0205409')!r}, E0205508={dek.get('E0205508')!r}")
-
-    assert dek.get("E0205409") is None and not dek.get("E0205508"), (
-        f"Widerspruch bestaetigt: /deklaration meldet eingaben_konsistent=False UND "
-        f"tage_24h/vpf_fruehstuecke_gestellt_anzahl als unvollstaendig, injiziert aber im "
-        f"selben Aufruf E0205508={dek.get('E0205508')!r} EUR Kuerzung ohne die zugehoerige "
-        f"Pauschale (E0205409={dek.get('E0205409')!r}) je deklariert zu haben")
+def test_deklaration_sperrt_bei_vorlaeufigen_verpflegungstagen(gemessen):
+    """DIE SPERRE (frueher xfail): derselbe Fall, 409 mit demselben Grund und dem Satz von
+    /ergebnis. Der Koerper traegt weder E0205508 noch sonst ein Kz: die Kuerzung ohne die Position,
+    die sie kuerzen soll, steht nirgends mehr in der Antwort."""
+    leck = gemessen["leck"]
+    dek = leck["deklaration"]
+    assert leck["deklaration_status"] == 409, f"Deklaration hat NICHT gesperrt: {dek}"
+    assert dek["grund"] == GRUND_LECK, dek
+    assert dek["klartext"] and dek["klartext"] == leck["ergebnis"]["klartext"], (
+        dek, leck["ergebnis"].get("klartext"))
+    assert set(dek) == {"fall_id", "grund", "klartext"}, dek

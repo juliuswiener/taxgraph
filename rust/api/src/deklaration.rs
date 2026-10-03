@@ -1,7 +1,8 @@
 //! `api.deklaration` (`api.py:665`): der Snapshot als Kz-Tabelle der Steuererklaerung — ohne XML,
 //! ohne Versand. Die Ring-Werte (Verpflegungskuerzung, Kapital-Antrag, haushaltsnahe Summen)
 //! kommen vorher in den Snapshot (`bescheid::deklaration::mit_ring_werten`).
-use bescheid::deklaration::mit_ring_werten;
+use bescheid::deklaration::{an_gesamt_sperrgrund, mit_ring_werten, sperrgrund_klartext_text};
+use bescheid::Instanzquelle;
 use domain::{FallId, Vz};
 use elster::DeklarationsFehler;
 use serde_json::{json, Value};
@@ -31,8 +32,9 @@ pub(crate) fn deklarations_fehler(e: &DeklarationsFehler) -> ApiFehler {
 /// `api.deklaration(fall_id)` nach dem Owner-Check.
 ///
 /// # Errors
-/// 400/500 aus Scheibe und Bindung; 500 mit der Python-Klasse, wenn der Ring (nur Ueberlauf) oder
-/// `elster::deklariere` scheitert (Jahr 0 oder unplausibel, kein Feld in der Bindung).
+/// 400/500 aus Scheibe und Bindung; 500 mit der Python-Klasse, wenn der Ring (nur Ueberlauf), der
+/// Guard oder `elster::deklariere` scheitert (Jahr 0 oder unplausibel, kein Feld in der Bindung).
+/// Meldet der Guard einen Sperrgrund, ist das keine Fehler-Variante, sondern die Antwort 409.
 pub fn deklaration(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort, ApiFehler> {
     let sb = z.scheibe_bindung(store)?;
     let (mut felder, sid) = store
@@ -43,6 +45,29 @@ pub fn deklaration(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwo
     let vz = store.veranlagungszeitraum();
     let ring_jahr: Option<Vz> = u16::try_from(vz).ok().and_then(|j| Vz::try_from(j).ok());
     mit_ring_werten(&mut felder, ring_jahr, z.params()?).map_err(|e| bescheid_fehler(&e))?;
+    // Ring -> Guard -> deklariere, wie `einreichung.rs` und `api.einreichen`: eine Vorschau, die Werte
+    // aus einem gesperrten Fall zeigt, widerspraeche `/ergebnis` und `/einreichen`. Der Koerper ist
+    // `fall_id`, `grund`, `klartext` (Python: `api.deklaration`).
+    if sb.cfg.guard() {
+        // Der Guard sieht Roh-Felder; `nur_bestaetigt` liest er nicht.
+        let q = Instanzquelle {
+            store: Some(store),
+            bindung: Some(&sb.index),
+            nur_bestaetigt: false,
+        };
+        if let Some(g) = an_gesamt_sperrgrund(&felder, Some(&sb.cfg), ring_jahr, &q)
+            .map_err(|e| bescheid_fehler(&e))?
+        {
+            return Ok(Antwort::neu(
+                409,
+                json!({
+                    "fall_id": fall_id.as_str(),
+                    "grund": g.als_str(),
+                    "klartext": sperrgrund_klartext_text(Some(g.als_str())),
+                }),
+            ));
+        }
+    }
     let d = elster::deklariere(&felder, &sb.index, vz, Some(&sid))
         .map_err(|e| deklarations_fehler(&e))?;
     let Value::Object(mut koerper) =

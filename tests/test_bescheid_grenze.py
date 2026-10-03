@@ -252,7 +252,14 @@ RUNNER_STELLEN_OBERGRENZE = 0
 # Zweig direkt hinter dem fuer `FileNotFoundError` (`OcrNichtVerfuegbar` -> 503), ein Satz Kommentar in der
 # Zeile. Kein Rechenkern. ANLASS, gemessen (Vault decisions/ein-hilfsprogramm-mit-fehlercode-bricht-den-
 # upload-ab): ohne `deu`-Daten endet tesseract mit Exit 1 und stdout leer, der Upload las „0 Buchungen" mit 200.
-API_ZEILEN_OBERGRENZE = 1331
+#
+# 1331 -> 1342 (2026-10-03, `/deklaration` sperrt bei Sperrgrund wie `/einreichen`, +7; davor k9 +4 fuer
+# kontoauszug-json 422). 7 Zeilen in `deklaration`: `_cfg`, der Guard-Aufruf, der 409-Koerper und zwei Zeilen
+# Kommentar. Die Sperre SELBST ist `_an_gesamt_sperrgrund` und der Satz `sperrgrund_klartext`, beide im
+# Rechenkern; hier steht nur die Entscheidung "keine Vorschau" und der Koerper (Julius, decisions/
+# deklaration-darf-verweigern). Entscheidung (b), main 2026-10-03: bewusst anheben, kein Auslagern --
+# der Python-Server entfaellt beim Cutover.
+API_ZEILEN_OBERGRENZE = 1342
 
 
 def _runner_stellen(pfad: str) -> list[int]:
