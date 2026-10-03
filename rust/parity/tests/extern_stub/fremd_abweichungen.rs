@@ -1,11 +1,13 @@
 //! Vier Abweichungen bei Zahlen und Gestalten aus einem Fremddienst, die Python als Absturz zeigt und
 //! Rust als Rueckfall (Vault `decisions/fremddienst-zahlfehler-nur-in-python-bleiben-bis-zum-cutover`;
-//! Messung `berichte/k9-fremddienst.md`, `fa181f0`/`b4fbe8b`).
+//! Messung `berichte/k9-fremddienst.md`, `fa181f0`/`b4fbe8b`), dazu eine fuenfte (C, einzelnes Surrogat
+//! im Text), bei der Python mehr rettet als Rust und die Frage offen ist.
 //!
-//! Das ist KEIN Paarvergleich: beide Server antworten verschieden, und das ist gewollt. Der Fall haelt
-//! fest, WIE beide abweichen:
+//! Das ist KEIN Paarvergleich: beide Server antworten verschieden. Der Fall haelt fest, WIE beide
+//! abweichen:
 //! - die Rust-Seite ist die Soll-Seite (Korrektheit vor Paritaet, `REWRITE_PLAN.md` §4, Auflage (1)):
-//!   wird sie anders, faellt der Fall;
+//!   wird sie anders, faellt der Fall. AUSNAHME C: dort ist nicht entschieden, welche Seite korrekt
+//!   ist; der Fall haelt beide Seiten fest, bis Julius entscheidet;
 //! - die Python-Seite ist der gemessene Ist-Zustand: wird Python repariert, faellt der Fall, und der
 //!   Eintrag ist zu streichen (Auflage (2): die Abweichung steht samt Begruendung in der Liste).
 //!
@@ -15,9 +17,11 @@
 //! | A2  | `aussage` mit `Infinity`, `1e400`                          | 500 `OverflowError`      | 200                 |
 //! | A3  | ORS `distance` mit `NaN`, `Infinity`, `1e400`              | 500                      | 503 (Rueckfall)     |
 //! | B   | `content` / `kategorie` als Liste, Objekt, Zahl            | 500                      | 200                 |
+//! | C   | `begruendung` mit einzelnem Surrogat-Escape (`\ud800`)     | 200, nur das Feld abgelehnt | 200, ganze Antwort verworfen |
 //!
 //! Die Steuerakte bleibt in allen Faellen unberuehrt: `ereignisse` zaehlt die Ereignisse der Akte nach
-//! der Anfrage (Python schreibt in A1 den gueltigen Vorschlag, Rust verwirft die ganze Antwort).
+//! der Anfrage (Python schreibt in A1 den gueltigen Vorschlag, Rust verwirft die ganze Antwort; in C
+//! schreibt Python den gesunden Vorschlag, Rust keinen).
 //! Dass Rust "zurueckfaellt", sagt der Body: `aussagen[0].status` ist `kein_feld` (Stufe 3 unlesbar) oder
 //! `werte_ausgefallen` (Stufe 3 gescheitert), nie ein Vorschlag aus einer halb gelesenen Antwort.
 use serde_json::{json, Value};
@@ -129,6 +133,12 @@ const A3_GRUND: &str =
 const B_GRUND: &str =
     "Python ruft `.strip()` bzw. `in dict` auf einen Nicht-Text, 500. Rust behandelt die Antwort \
     als unbrauchbar: 200 ohne Vorschlag, der Auszug bleibt unklassifiziert.";
+
+const C_GRUND: &str = "Python weist nur das Feld mit dem Surrogat ab (`UnicodeEncodeError` beim Schreiben der Akte, \
+    Grund in `abgelehnt_gruende`) und behaelt das zweite Feld der Antwort. Rust liest Stufe 3 mit serde_json, das \
+    ein einzelnes Surrogat-Escape als Ganzes ablehnt: kein Vorschlag, auch nicht fuer das gesunde Feld. OFFEN: \
+    Hier ist Python fuer den Nutzer besser (ein Vorschlag mehr); ob Rust je Feld abweisen soll, ist nicht \
+    entschieden (REWRITE_PLAN §4: wo unklar ist, was korrekt ist, geht die Stelle als Frage an Julius).";
 
 /// Python: 200, aber der Body ist kein JSON und nennt `enthaelt`; der Vorschlag steht in der Akte.
 fn python_kein_json(enthaelt: &'static str, ereignisse: usize) -> Seite {
@@ -361,6 +371,43 @@ fn faelle(regeln: &[String]) -> Vec<Abweichung> {
         content("5"),
         "AttributeError: 'int' object has no attribute 'strip'",
     ));
+    // ---------------------------------------------------------------- C: einzelnes Surrogat im Text
+    // Zwei Vorschlaege in EINER Antwort: das erste traegt ein einzelnes Surrogat-Escape in `begruendung`,
+    // das zweite ist in Ordnung. Das zeigt, was der Nutzer verliert.
+    let zwei_vorschlaege = r#"{"vorschlaege": [
+        {"feld_id": "bruttoarbeitslohn", "wert": 6000000, "beleg": "60000 Euro brutto",
+         "begruendung": "\ud800", "aussage": 0, "rechenweg": null},
+        {"feld_id": "fam_anzahl_kinder", "wert": 0, "beleg": "bin ledig",
+         "begruendung": "b", "aussage": 0, "rechenweg": null}],
+        "rueckfragen": [], "antwort": "ok", "unsicher": false}"#;
+    v.push(chat_fall(
+        "C",
+        "begruendung mit Surrogat, zweites Feld in Ordnung",
+        stufen(zwei_vorschlaege),
+        rust_200(
+            1,
+            ASD,
+            vec![
+                ("/vorschlaege/0/feld_id", json!("fam_anzahl_kinder")),
+                ("/abgelehnt", json!(["bruttoarbeitslohn"])),
+                (
+                    "/abgelehnt_gruende/bruttoarbeitslohn",
+                    json!("UnicodeEncodeError: bruttoarbeitslohn"),
+                ),
+                ("/aussagen/0/status", json!("vorschlag")),
+            ],
+        ),
+        rust_200(
+            0,
+            ASD,
+            vec![
+                ("/vorschlaege", json!([])),
+                ("/abgelehnt", json!([])),
+                ("/aussagen/0/status", json!("kein_feld")),
+            ],
+        ),
+        C_GRUND,
+    ));
     v
 }
 
@@ -470,9 +517,9 @@ fn pruefe_seite(
     d
 }
 
-/// Alle Faelle gegen je einen Python- und einen Rust-Server mit je eigenem Stub. Der Aufrufer ist der
-/// Eintrag 6 in `dokumentierte_abweichungen`.
-pub(crate) fn pruefe_alle() {
+/// Die Faelle der Klassen `nrs` gegen je einen Python- und einen Rust-Server mit je eigenem Stub. Die
+/// Aufrufer sind die Eintraege 6 (A1-A3, B) und 7 (C) in `dokumentierte_abweichungen`.
+pub(crate) fn pruefe(nrs: &[&str]) {
     let wurzel = tempfile::tempdir().unwrap();
     let seed = wurzel.path().join("seed");
     schreibe_seed(&seed);
@@ -488,7 +535,10 @@ pub(crate) fn pruefe_alle() {
         "Stufe 2 schickte keine Regel-Kennungen: {regeln:?}"
     );
     let mut abweichungen = Vec::new();
-    let faelle = faelle(&regeln);
+    let faelle: Vec<Abweichung> = faelle(&regeln)
+        .into_iter()
+        .filter(|f| nrs.contains(&f.nr))
+        .collect();
     for (i, f) in faelle.iter().enumerate() {
         let id = format!("fremd_{i}");
         let (dp, dr) = (
@@ -527,11 +577,11 @@ pub(crate) fn pruefe_alle() {
             f.name
         );
     }
-    for nr in ["A1", "A2", "A3", "B"] {
-        assert!(faelle.iter().any(|f| f.nr == nr), "kein Fall fuer {nr}");
+    for nr in nrs {
+        assert!(faelle.iter().any(|f| f.nr == *nr), "kein Fall fuer {nr}");
     }
     println!(
-        "EXTERN Fremddienst-Abweichungen: {} Faelle, {} Abweichungen vom Soll",
+        "EXTERN Fremddienst-Abweichungen {nrs:?}: {} Faelle, {} Abweichungen vom Soll",
         faelle.len(),
         abweichungen.len()
     );

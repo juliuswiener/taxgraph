@@ -5374,7 +5374,17 @@ fn dokumentierte_abweichungen() {
     //    in allen Faellen unberuehrt. Rust ist die Soll-Seite (Korrektheit vor Paritaet, `REWRITE_PLAN.md`
     //    §4); Python wird bis zum Cutover nicht repariert. Die Faelle stehen mit Begruendung in
     //    `extern_stub/fremd_abweichungen.rs`; wird Python repariert oder Rust anders, faellt dieser Eintrag.
-    extern_stub::fremd_abweichungen::pruefe_alle();
+    extern_stub::fremd_abweichungen::pruefe(&["A1", "A2", "A3", "B"]);
+    // 7. Chat-Antwort mit einem einzelnen Surrogat-Escape in `begruendung` (Messung `berichte/k9-
+    //    fremddienst.md`, Beobachtung ohne Ticket). Python weist nur das betroffene Feld ab
+    //    (`abgelehnt_gruende`: `UnicodeEncodeError`) und behaelt die uebrigen Vorschlaege der Antwort;
+    //    Rust verwirft Stufe 3 als Ganzes (serde_json lehnt das Surrogat beim Lesen ab, 200 ohne
+    //    Vorschlag, `kein_feld`). Nutzerwirkung: in Rust fehlen die gesunden Vorschlaege derselben
+    //    Antwort; die Akte bleibt unberuehrt. NICHT entschieden, welche Seite korrekt ist (REWRITE_PLAN
+    //    §4: wo unklar ist, was korrekt ist, bleibt Python und die Stelle geht als Frage an Julius).
+    //    Der Fall in `extern_stub/fremd_abweichungen.rs` haelt beide Seiten fest und faellt, wenn eine
+    //    sich aendert; mit der Entscheidung wird der Eintrag zu einer der beiden Formen.
+    extern_stub::fremd_abweichungen::pruefe(&["C"]);
 }
 
 /// `_routes()` (`server.py:62`) und `api::routen::EINTRAEGE` stimmen in Methode, Muster und
