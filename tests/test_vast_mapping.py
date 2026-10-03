@@ -56,6 +56,78 @@ def test_unlesbarer_betrag_faellt_auf():
         VM._cent("keine Zahl")
 
 
+# ----------------------------------------------------------------- Grenze der Akte (i64)
+#
+# Die Fallakte hält eine Ganzzahl nur bis i64 exakt. Der Rust-Dienst sperrt eine Akte mit einer
+# größeren beim Laden (500 auf jeder Route, gemessen). Die Tür weist solche HTTP-Rümpfe ab; dieser
+# Import war die Seitentür: aus_lstb({"BruttoArbLohn": "12345678901234567890123456.785"}) ergab
+# 1234567890123456789012345678 Cent, uebernehme_edaten schrieb sie bestätigt in die Akte.
+
+GROSS = "12345678901234567890123456.785"
+
+
+@pytest.mark.parametrize("euro,cent", [
+    ("92233720368547758.07", 2**63 - 1),
+    ("-92233720368547758.07", -(2**63 - 1)),
+])
+def test_cent_grenze_selbst_geht_durch(euro, cent):
+    assert VM._cent(euro) == cent
+
+
+@pytest.mark.parametrize("euro", [
+    GROSS,
+    "-" + GROSS,
+    "92233720368547758.08",     # 2**63 Cent
+    "-92233720368547758.08",    # -2**63: Rust liest den Betrag erst ohne Vorzeichen, beide Seiten weisen ab
+    "1e30",
+])
+def test_betrag_ausserhalb_i64_wird_abgelehnt(euro):
+    with pytest.raises(OverflowError, match="ausserhalb des Wertebereichs"):
+        VM._cent(euro)
+
+
+def test_grosser_betrag_erreicht_die_akte_nicht():
+    """Der ganze Weg: Beleg → aus_lstb → uebernehme_edaten mit der echten Bindung. Ein einziger zu
+    großer Betrag verwirft den Beleg; kein Event, auch nicht für die gültigen Felder daneben."""
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "store"))
+    sys.path.insert(0, os.path.join(ROOT, "produkt", "traverser"))
+    import store as ST
+    import elster_writer as EW
+    import traverser as TR
+    bindung = TR.lade_bindung()
+
+    s = ST.leerer_store(2025, fall_id="vast-gross")
+    with pytest.raises(OverflowError):
+        EW.uebernehme_edaten(s, VM.aus_lstb({"BruttoArbLohn": "45000.00", "LSteuer": GROSS}),
+                             ts="2026-01-01T00:00:00Z", bindung=bindung)
+    assert s["events"] == []
+
+    # Gegenprobe: derselbe Weg mit einem normalen Betrag schreibt weiter.
+    n = EW.uebernehme_edaten(s, VM.aus_lstb({"BruttoArbLohn": "45000.00", "LSteuer": "8200.00"}),
+                             ts="2026-01-01T00:00:00Z", bindung=bindung)
+    assert n == 2
+    assert {e["feld_id"]: e["wert"] for e in s["events"]} == {
+        "bruttoarbeitslohn": 4500000, "p36_lohnsteuer": 820000}
+
+
+def test_lersl_betrag_ausserhalb_i64_wird_abgelehnt():
+    with pytest.raises(OverflowError):
+        VM.aus_lersl([{"Betrag": GROSS, "Art": "ALG"}])
+
+
+def test_lersl_summe_ausserhalb_i64_wird_abgelehnt():
+    """Zwei Beträge im Bereich, die Summe nicht (2 x 5e18 Cent > 2**63 - 1). Rust: checked_add je
+    Summand, also fällt auch eine Teilsumme außerhalb, die ein späterer Betrag zurückholt."""
+    halb = {"Betrag": "50000000000000000.00", "Art": "ALG"}
+    assert VM._cent(halb["Betrag"]) == 5 * 10**18
+    with pytest.raises(OverflowError):
+        VM.aus_lersl([halb, dict(halb)])
+    with pytest.raises(OverflowError):
+        VM.aus_lersl([halb, dict(halb), {"Betrag": "-50000000000000000.00"}])
+    # Gegenprobe: gegenläufige Beträge, die Summe bleibt im Bereich
+    assert VM.aus_lersl([halb, {"Betrag": "-50000000000000000.00"}, {"Betrag": "1.00"}])[0]["wert"] == 100
+
+
 # ----------------------------------------------------------------- LStB
 
 def test_lstb_uebersetzt_bekannte_felder():

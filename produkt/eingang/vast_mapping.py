@@ -28,12 +28,24 @@ from decimal import Decimal, InvalidOperation
 
 # --------------------------------------------------------------- Einheiten-Naht
 
+# Die Fallakte hält eine Ganzzahl nur bis i64 exakt: der Rust-Dienst sperrt eine Akte mit einer
+# größeren beim Laden (HTTP 500 auf jeder Route). Die Tür (server._ganzzahl_im_i64) weist solche
+# Rümpfe mit 400 ab; dieser Import ist die Seitentür und prüft deshalb selbst
+# (decisions/tuer-und-speicher-weisen-ab-was-die-fallakte-nicht-exakt-halten-kann, Punkt 1).
+_I64_MIN, _I64_MAX = -(2**63), 2**63 - 1
+
+
 def _cent(euro_text: str | None) -> int | None:
     """VaSt-Betrag ("45000.00", Euro mit 2 Nachkommastellen) → Cent-Integer.
 
     None/leer → None (Feld war im Beleg nicht besetzt; minOccurs=0 ist im Schema
     durchgängig). Kein Wert ist etwas anderes als der Wert 0 — wer 0 schreibt, behauptet
     eine bescheinigte Null.
+
+    Ein Betrag, dessen Cent nicht in i64 passen, ist ein OverflowError (wie `Infinity`, das
+    `int()` schon so abweist) — er käme sonst als Ganzzahl beliebiger Länge in die Akte. Die
+    Grenze ist symmetrisch (±(2**63 - 1)): Rust liest den Betrag erst ohne Vorzeichen
+    (eingang::vast::cent), -2**63 weisen beide Seiten ab.
     """
     if euro_text is None:
         return None
@@ -41,9 +53,12 @@ def _cent(euro_text: str | None) -> int | None:
     if not s:
         return None
     try:
-        return int((Decimal(s) * 100).to_integral_value())
+        cent = int((Decimal(s) * 100).to_integral_value())
     except (InvalidOperation, ValueError):
         raise ValueError(f"VaSt-Betrag nicht lesbar: {euro_text!r}")
+    if not -_I64_MAX <= cent <= _I64_MAX:
+        raise OverflowError(f"VaSt-Betrag ausserhalb des Wertebereichs: {euro_text!r}")
+    return cent
 
 
 # --------------------------------------------------------------- Belegart LStB
@@ -168,6 +183,8 @@ def aus_lersl(leistungen: list[dict]) -> list[dict]:
         if cent is None:
             continue
         summe += cent
+        if not _I64_MIN <= summe <= _I64_MAX:      # Rust: checked_add je Summand
+            raise OverflowError(f"VaSt-Betrag ausserhalb des Wertebereichs: {l.get('Betrag')!r}")
         art = (l.get("Art") or "").strip()
         if art:
             arten.append(art)
