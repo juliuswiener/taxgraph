@@ -207,7 +207,7 @@ pub(crate) fn repr(v: &Value) -> String {
             if n.is_i64() || n.is_u64() {
                 n.to_string()
             } else {
-                float_repr(n.as_f64().unwrap_or(f64::NAN))
+                domain::repr_float(n.as_f64().unwrap_or(f64::NAN))
             }
         }
         Value::String(s) => repr_str(s),
@@ -220,44 +220,6 @@ pub(crate) fn repr(v: &Value) -> String {
                 .join(", ")
         ),
     }
-}
-
-/// Python `repr(float)`: kuerzeste Ziffernfolge, Exponentialform bei Exponent < -4 oder >= 16.
-fn float_repr(f: f64) -> String {
-    if f.is_nan() {
-        return "nan".to_owned();
-    }
-    if f.is_infinite() {
-        return if f > 0.0 { "inf" } else { "-inf" }.to_owned();
-    }
-    let vorzeichen = if f.is_sign_negative() { "-" } else { "" };
-    let e_form = format!("{:e}", f.abs());
-    let (mantisse, exp) = e_form.split_once('e').unwrap_or((e_form.as_str(), "0"));
-    let exp: i32 = exp.parse().unwrap_or(0);
-    let ziffern: String = mantisse.chars().filter(char::is_ascii_digit).collect();
-    let (erste, rest) = ziffern.split_at(1.min(ziffern.len()));
-    let rumpf = if (-4..16).contains(&exp) {
-        let exp_u = usize::try_from(exp.unsigned_abs()).unwrap_or(0);
-        if exp >= 0 {
-            if ziffern.len() <= exp_u + 1 {
-                format!("{ziffern}{}.0", "0".repeat(exp_u + 1 - ziffern.len()))
-            } else {
-                let (ganz, bruch) = ziffern.split_at(exp_u + 1);
-                format!("{ganz}.{bruch}")
-            }
-        } else {
-            format!("0.{}{ziffern}", "0".repeat(exp_u - 1))
-        }
-    } else {
-        let mant = if rest.is_empty() {
-            erste.to_owned()
-        } else {
-            format!("{erste}.{rest}")
-        };
-        let zeichen = if exp < 0 { '-' } else { '+' };
-        format!("{mant}e{zeichen}{:02}", exp.unsigned_abs())
-    };
-    format!("{vorzeichen}{rumpf}")
 }
 
 /// Python `repr(str)`: einfache Anfuehrungszeichen, ausser der Text enthaelt `'` und kein `"`.
@@ -320,7 +282,7 @@ fn druckbar(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{float_repr, int, int_alt, repr, repr_str};
+    use super::{int, int_alt, repr, repr_str};
     use serde_json::json;
 
     #[test]
@@ -360,11 +322,11 @@ mod tests {
             repr(&json!([{"a": 1}, null, true])),
             "[{'a': 1}, None, True]"
         );
-        assert_eq!(float_repr(1e16), "1e+16");
-        assert_eq!(float_repr(1.5e-5), "1.5e-05");
-        assert_eq!(float_repr(0.0001), "0.0001");
-        assert_eq!(float_repr(123.0), "123.0");
-        assert_eq!(float_repr(-0.0), "-0.0");
+        assert_eq!(repr(&json!(1e16)), "1e+16");
+        assert_eq!(repr(&json!(1.5e-5)), "1.5e-05");
+        assert_eq!(repr(&json!(0.0001)), "0.0001");
+        assert_eq!(repr(&json!(123.0)), "123.0");
+        assert_eq!(repr(&json!(-0.0)), "-0.0");
     }
 }
 

@@ -8,60 +8,59 @@ Kernaussagen unten mit `datei:zeile` stehen. Grade nach CLAUDE.md: **explicit** 
 
 ---
 
-## Fortschritt (Stand 2026-10-02 15:40, HEAD `8e48cf7`, gepusht `beef16b..8e48cf7`, 200 Commits seit `3dbd35d`)
+## Fortschritt (Stand 2026-10-03 02:40, HEAD `b540590`, lokal, nicht gepusht: 53 Commits vor origin `8e48cf7`)
 
-CI-Lauf 37010730963 auf `8e48cf7`: **alle fünf Jobs grün** (gettsim-crosscheck, golden, catala-toolchain, rust,
-sammelbarkeit) — der erste ganz grüne Lauf seit dem 20.08. Die vierte Ursache (drei `parity`-Lib-Tests ohne
-PARITY-Gate, Lauf 36985004342) behob `bb41b61`. Vault `tickets/github-ci-seit-20-08-rot`, Nachtrag 2026-10-02 15:10.
-Das Ticket ist noch nicht geschlossen (Punkt 3 unten).
+CI-Lauf 37010730963 auf `8e48cf7`: **alle fünf Jobs grün** (erster ganz grüner Lauf seit dem 20.08). Das Vault-Ticket
+`github-ci-seit-20-08-rot` ist geschlossen (`backlog/archive/taxgraph/github-ci-seit-20-08-rot.md`). Auf den 53
+neuen Commits lief noch keine CI; gepusht wird nur auf Julius' Wort.
 
-**Offen nach dem Merge (2026-10-02 15:40, `8e48cf7`)**
+**Seit `8e48cf7` in main** (je Spitze per `git log --first-parent 8e48cf7..HEAD`):
 
-1. Gemergt und gepusht, je Spitze per `git merge-base --is-ancestor` gegen `8e48cf7` geprüft (neun Zweige):
-   - `orch/ci4` `bb41b61` (Merge `1e3f6fb`) · `orch/flake` `cd6c789` (`abe1f32`) · `orch/k8` `99f50b6` (`d1c5e00`) ·
-     `orch/9c` `7da2de9` (`0b31195`, nur 9c/0b) · `orch/hebesatz0` `48d009e` (`16cc0fd`) · `orch/flow` `31faa26`
-     (`1321f3b`) · `orch/haertung` `980cd90` (`3661140`) · `orch/planstand` `5225fa6` (`0e7580b`) ·
-     `orch/orakelcache` `6bba00d` (`8e48cf7`).
-   - Nachmessung im frischen Worktree (Abschnitt „Gates auf `8e48cf7`" unten).
-2. **Beschlossen, nicht gebaut: `opt-level=1` für die Tests** (Julius, 2026-10-02). Gemessen vom Worker
-   `orakelcache`, nicht nachgemessen (Bericht `~/.cache/taxgraph-tmp/berichte/orakelcache.md`, Rohdaten
-   `~/.cache/taxgraph-tmp/orakelcache-logs/`): `bescheid_deklaration_paritaet` 86,8 → 30,7 s,
-   `bescheid_zweige_paritaet` 152 → 70,7 s, Rust-CPU der Zweige 258 → 49 s; Kosten: Kaltbau 20 → 54 s, `target/`
-   2,9 → 3,3 GB. `debug_assertions` und `overflow-checks` bleiben an. Zu entscheiden und zu messen: Ort der
-   Einstellung (`[profile.dev]` in `rust/Cargo.toml`, `profile.test` erbt, oder `CARGO_PROFILE_DEV_OPT_LEVEL=1` nur in
-   den Messskripten und in `ci.yml`); alle 17 Suiten unter `opt-level=1`; Wirkung auf die Laufzeit des `rust`-Jobs.
-3. Vault-Ticket `github-ci-seit-20-08-rot`: Nachtrag steht (Vault-Commit `7a30407`). Formal schließen:
-   `note qualify` mit einer Entscheidungsnotiz, dann `note archive`.
-4. Reste, in dieser Reihenfolge:
-   1. Doctest-Zählung `catala-sys` klären: `berichte/haertung.md` (auf `908820e`) zählt 25 von 26 `pub fn`
-      mit Doctest und erklärt den 26. cargo-Doctest mit einem Nicht-fn-Item; `55305af` meldet 26/26 und
-      erklärt die 25 mit einem Zählfehler von `messung.py` (Doc-Block über `#[allow]`).
-   2. K8-Rest (§7): Arm `rust/store/src/abweisung.rs:140` (`_ => None` auf `Schreiber`) fällt im selben Commit wie
-      die `OFFEN`-Zeile (`rust/api/tests/domain_enums_exhaustiv.rs:23`); beide auf `8e48cf7` geprüft, K8 liegt
-      jetzt auf main. Offen: ob Tor 2 auch `interview` sperrt.
-   3. Aus der Übergabe `haertung` (Bericht `berichte/json-leser.md`):
-      - Flake `test_kodierung_nur_utf8_ohne_bom`: **erledigt** (`cd6c789`, der Test nimmt `audit.jsonl` aus).
-        Offen bleibt die Produktfrage, ob das Protokoll vor die Antwort gehört (Vault
-        `tickets/kodierungstest-liest-das-verzeichnis-bevor-der-server-sein-protokoll-schreibt`), und
-        `tests/test_audit_folgt_fallverzeichnis.py:262` wartet für dasselbe Schreiben mit `time.sleep(0.4)`.
-      - Wortlaut `rust/store/src/persistenz.rs:21`: „kein gueltiges JSON" gilt für jeden serde-Fehler.
-      - Warteschlange (Vault `backlog/taxgraph/`): `bindungsbereich-prueft-nur-der-browser` →
-        `negativer-aufwand-umgeht-pflichtfrage` → `python-schreibt-akte-die-der-rust-leser-sperrt` →
-        `python-schreibt-ganzzahl-ueber-i64-in-die-fallakte`.
-   4. 9c/0c committen, dann die Route `GET /fall/{id}/stand`. **9c/0c gebaut, nicht committet:** fünf Dateien in
-      `~/.cache/taxgraph-tmp/wt-k5`, `git diff HEAD` byte-gleich `berichte/9c-0c-wip.patch` (geprüft 11:38);
-      PARITY dafür nicht vollständig gelaufen.
-   5. Rust-Teil 9c/0e (`flow`, Bericht `berichte/flow.md`; Vault
-      `decisions/rust-9c-generator-je-route-und-flow-portieren`, Nachtrag 11:30). Der Python-Teil (`0333d2f`,
-      fremder Rumpf → 400) ist gemergt.
-   6. K9 Commits 0–4 (§7).
-   7. Weitere Hebel für die Testzeit, laut Bericht `orakelcache` gemessen, nicht nachgemessen, nicht gebaut (Vault `research/taxgraph-bauzeit-vs-testzeit`):
-      `traverser.gate_gewicht` (etwa 70 % der Orakelzeit von `interview_paritaet`), `xsd_verify` (etwa die Hälfte
-      von `elster_paritaet`), 50 s Wartezeit in `store_paritaet`/`tarif_paritaet`.
-5. In Arbeit: kein Worker.
+- `opt-level = 1` im dev-Profil (`6fbe3d5`, `rust/Cargo.toml:62`): der Beschluss vom 2026-10-02 ist gebaut.
+- 9c: `_cfg`/`_scheibe_bindung` verdrahtet, `GET /stand`, `flow` im Rust-Server (`ecdfcb9`); **alle GET-Routen** im
+  Rust-Server (`8d1bd96`). Offen sind die sechs POST-Routen `event`, `vorjahr`, `einreichen`, `chat`, `entfernung`,
+  `kontoauszug`: Rust antwortet dort `501 nicht_portiert` (`rust/parity/tests/api_http_paritaet.rs:62`).
+- K8-Rest und `Kz`/`Vz`/`EventId`/`BasisId` als Typen in bindung, elster, konsistenz (`80743f2`); K9 `interview`
+  Tor 2 (`97d3846`), `py_eq` gegen echtes CPython und `wert_paritaet` (`619f5dd`), Typfragen auf `PyWert` gegen
+  echtes CPython, Folge 3 Block B und C (`6f90e76`).
+- Härtung: Wortlaut `persistenz`, Bereichs-/Negativ-/`ts_herkunft`-Türen (`08b3d4a`); Rust-Tür weist eine Ganzzahl
+  außerhalb von i64 mit 400 ab (`e24748a`); Python-Schreibwege gegen Bereich, Minus, Form: 422 statt 500 (`9cb1daa`);
+  `signal`-Zusatzschlüssel 422 und Kontoauszug verwirft nur die Buchung (`0ccbeca`); `repr(float)` rundet den
+  Gleichstand wie CPython (`c54da3a`).
+
+**Gates auf `b540590`** (2026-10-03 02:28–02:39, Instructor, Hauptbaum, Skript `~/.cache/taxgraph-tmp/gate-runde.sh`,
+Log `gate-runde.log`; jede Stufe einzeln): `make unit` 3878 passed / 0 failed (14 skipped, 25 xfailed, 188 s);
+`make golden` 135/135; clippy `--workspace --all-targets -D warnings` rc=0; `cargo test --workspace --exclude parity
+--no-fail-fast` 1005 passed / 0 failed / 25 ignored (Summe über 51 `test result`-Zeilen, Doctests eingeschlossen);
+**19 von 19 Parity-Suiten** je einzeln `PARITY=1 … -- --test-threads 3` rc=0, die langsamsten `interview` 138 s,
+`api_http` 76 s, `elster` 72 s, `bescheid_zweige` 68 s (Suite-Zeit; vorher 156 s, `bescheid_deklaration` 86 → 29 s).
+Gesamte Parity-Runde ≈ 10 min statt ≈ 20 min. **Nicht nachgemessen:** Gegenproben G1–G6 (zuletzt auf `8e48cf7`
+je rot), `PARITY=1 cargo test --workspace` in einem Lauf, echte Akten.
+
+**Offen**
+
+1. Die sechs POST-Routen aus 9c (oben), danach Cutover (Schritt 10). Harness-Pfad für `chat`/`entfernung` (Variante B)
+   wartet auf Julius.
+2. Reste aus den Berichten `haertung` und `json-leser`: die Warteschlange im Vault (`backlog/taxgraph/`) hat noch
+   `python-schreibt-akte-die-der-rust-leser-sperrt`; die anderen drei (`bindungsbereich-prueft-nur-der-browser`,
+   `negativer-aufwand-umgeht-pflichtfrage`, `python-schreibt-ganzzahl-ueber-i64-in-die-fallakte`) liegen im Archiv.
+   Der Kodierungstest ist behoben (`cd6c789`); die Produktfrage „Protokollzeile vor die Antwort" ist entschieden
+   und wartet als Bauauftrag `backlog/taxgraph/audit-status-spalte-bleibt-auf-500`. Offen bleibt die
+   Doctest-Zählung `catala-sys` (25 von 26 oder 26 von 26; nicht neu geprüft).
+3. Weitere Hebel für die Testzeit, laut Bericht `orakelcache`, nicht nachgemessen: `traverser.gate_gewicht` (etwa 70 %
+   der Orakelzeit von `interview_paritaet`), `xsd_verify` (etwa die Hälfte von `elster_paritaet`), 50 s Wartezeit in
+   `store_paritaet`/`tarif_paritaet` (Vault `research/taxgraph-bauzeit-vs-testzeit`).
+4. Tickets: sechs Entscheidungen für Julius liegen in Vault `tickets/` (`p24a-rueckfall-nennt-falsches-feld`,
+   `p32-6-kinderfreibetraege-verwaiste-regel`, `p32-abs6-satz-2-und-5-lesen-keine-regel`,
+   `chat-ablehnungsgrund-enthaelt-den-wert`, `instanz-kennung-mit-suffix-eins-wird-verschieden-gelesen`,
+   `worktree-erbt-hook-mit-fremdem-testpfad`). Alle übrigen Taxgraph-Tickets sind qualifiziert und liegen als
+   Bauauftrag in `backlog/taxgraph/`.
+5. In Arbeit: kein Worker. Alle Worker außer `b1-2` melden beim Roster 2026-10-03 HTTP 400/429 (Anbieter);
+   sie sind nicht despawnt.
 6. Aufräumen für Julius (der Guard blockt `git worktree remove`): Worktrees `wt-orakelcache`,
-   `wt-orakelcache-vorher`, `wt-nachmessung` samt `target-wt-*` unter `~/.cache/taxgraph-tmp/`.
-   In `wt-nachmessung` liegt ein untracked Symlink `oracle/.venv312`, nie committen.
+   `wt-orakelcache-vorher`, `wt-nachmessung`, `wt-neunc`, `wt-k9`, `wt-haertung8` samt `target-wt-*` und
+   `target-b1-2` unter `~/.cache/taxgraph-tmp/`. In `wt-nachmessung` liegt ein untracked Symlink `oracle/.venv312`,
+   nie committen. `cargo fmt --all` (23 Dateien Drift) erst, wenn kein Zweig mehr offen ist.
 
 | Schritt | Stand | Commits |
 |---|---|---|
@@ -94,7 +93,7 @@ Das Ticket ist noch nicht geschlossen (Punkt 3 unten).
 | Format | `cargo fmt --all --check`: 33 Hunks in 14 fremden Dateien, bewusst vertagt (CI prüft nur clippy, Log #165) | — |
 | dev-Profil nur Zeilentabellen | fertig: `[profile.dev] debug = "line-tables-only"` statt `debug = 2` (Auftrag Julius, Plattenplatz), `profile.test` erbt. Backtraces behalten Datei und Zeile, der Debugger sieht keine Variablen. `libstore-*.rlib` 11 804 166 B → 5 428 230 B (auf 46 %); clippy 0, `cargo test -p store` grün, Gegenprobe ohne Abschnitt → `debuginfo=2`. PARITY 17/17 grün auf `8e48cf7` | `bb01e0f` · `beef16b` |
 | Orakel liest eine Bindungsdatei einmal | fertig: `traverser.lade_datei_felder` ist je Prozess gecacht, `api._datei_felder` und beide Orakel-Skripte nutzen sie. YAML-Lesevorgänge 1509 → 32. `bescheid_deklaration_paritaet` 205 → 91 s laut Worker-Bericht, 86 s in der Nachmessung auf `8e48cf7`; die anderen 16 Suiten nicht schneller. Kosten: eine geänderte Bindungs-YAML wirkt erst nach Neustart des Prozesses (wie `lade_bindung`). Gegenproben G5/G6 in der Nachmessung je rot; Vault `research/taxgraph-bauzeit-vs-testzeit` | `6bba00d` |
-| 9c `api`-Handler | offen auf `8e48cf7`; 9c/0b (`Username`/`FallId`-Newtypes im Owner-Check) gemergt (`0b31195`), 9c/0c gebaut, nicht committet (Offen-Block oben); Landkarte gemessen (15 Routen, Bericht `berichte/9c-karte.md`); Harness-Generator je Route fertig (`88f60c7`: echte Eingaben für 11 Routen aus Stufe 1–3; `flow.jsonl` fällt noch aus jedem Vergleich, `ponytail:`); `parity` verlangt von jeder Route aus `NICHT_PORTIERT` eine 501, sonst nennt die Abweichung die Route (`d432948` in `4ec2d2f`); `flow` wird mitportiert (Python-Teil gemergt, `1321f3b`; Rust-Teil 9c/0e offen); Vorbedingung JSON-Leser erfüllt (`d4babec`) (Vault `decisions/rust-9c-generator-je-route-und-flow-portieren`) | `88f60c7` · `4ec2d2f` |
+| 9c `api`-Handler | offen auf `b540590`: alle GET-Routen gemergt (`8d1bd96`), sechs POST-Routen 501 (Offen-Block oben); 9c/0b (`Username`/`FallId`-Newtypes im Owner-Check) gemergt (`0b31195`), 9c/0c und 9c/0e gemergt (`ecdfcb9`); Landkarte gemessen (15 Routen, Bericht `berichte/9c-karte.md`); Harness-Generator je Route fertig (`88f60c7`: echte Eingaben für 11 Routen aus Stufe 1–3; `flow.jsonl` fällt noch aus jedem Vergleich, `ponytail:`); `parity` verlangt von jeder Route aus `NICHT_PORTIERT` eine 501, sonst nennt die Abweichung die Route (`d432948` in `4ec2d2f`); `flow` wird mitportiert (Python-Teil gemergt, `1321f3b`; Rust-Teil 9c/0e offen); Vorbedingung JSON-Leser erfüllt (`d4babec`) (Vault `decisions/rust-9c-generator-je-route-und-flow-portieren`) | `88f60c7` · `4ec2d2f` |
 | 10 Cutover | offen | — |
 
 Gates auf `8e48cf7` (2026-10-02 15:05, Instructor nachgemessen im frischen Worktree `wt-nachmessung`, Log
@@ -389,10 +388,13 @@ realen Stores Pflicht) · K3 `interview` · K4 `konsistenz` · K5 `elster` · K6
 (`serde_json::Value` in bescheid/konsistenz/intervall/interview = 0; `_ =>` auf Domain-Enums = 0) · K9 `&str`-Rest.
 **K8-Stand auf `8e48cf7`: Tor 1/2 gemergt (`d1c5e00`, Spitze `99f50b6`, Basis `ba6ec34`).** Tor 1
 (`_ =>` auf Domain-Enums): Workspace-Test `rust/api/tests/domain_enums_exhaustiv.rs` über clippys
-`wildcard_enum_match_arm`; eine Ausnahme offen (`OFFEN`, `rust/api/tests/domain_enums_exhaustiv.rs:23`: der Arm `store/src/abweisung.rs:140`; K8 liegt jetzt auf main, der Arm fällt mit der `OFFEN`-Zeile in einem Commit).
+`wildcard_enum_match_arm`; eine Ausnahme offen (`OFFEN`, `rust/api/tests/domain_enums_exhaustiv.rs:23`: der Arm `store/src/abweisung.rs:140`; K8 liegt jetzt auf main, der Arm fällt mit der `OFFEN`-Zeile in einem Commit) — **erledigt in `80743f2`**.
 Tor 2 (`serde_json::Value`): `clippy.toml` verbietet `Value` und `Map` in `bescheid` und `konsistenz`;
 `intervall` nutzt `Value` nur in Testmodulen, `interview` weiter im Produktcode (`interview/src/fragen.rs:121`,
-gemessen auf `99f50b6`) — für `interview` ist das Tor nicht erreicht.
+gemessen auf `99f50b6`) — für `interview` war das Tor dort nicht erreicht.
+**Seit `b540590`:** Tor 2 sperrt auch `interview` (`rust/interview/clippy.toml`, Merge `97d3846`), und die Liste
+`OFFEN` in `rust/api/tests/domain_enums_exhaustiv.rs:23` ist leer (Merge `80743f2`). Beides gelesen am 2026-10-03,
+Rust-Gates grün (Absatz „Gates auf `b540590`" oben).
 **K9 Stufe 1 gemessen** (Worker `k7b`, Bericht `berichte/k9-karte.md`, nicht nachgemessen): eigene Typen nur,
 wo heute ein falscher Text still durchrutscht (Vault `decisions/k9-typen-nur-wo-heute-ein-falscher-text-durchrutscht`).
 Stufe 2 in den Commits 0–4: `bindung` Kz → `elster` `Vz` → `domain`+`elster` `&Kz` →
