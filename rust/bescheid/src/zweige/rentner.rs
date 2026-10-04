@@ -1,28 +1,28 @@
 //! `_zweig_festzusetzende_est_rentner` (`bescheid_zweige.py:1072-1480`), Teil 1: § 22-Renten,
 //! § 33b, Gewinn, § 24a/§ 24b und der Aufbau des Gesamtfalls. Tarif-Teil: `rentner_tarif.rs`.
 use domain::{Euro, PyWert, Vz};
-use engine::zugriff::teil1::ermaessigungen::{P24aAltersentlastungEingabe, p24a_altersentlastung};
-use engine::zugriff::teil2::gesamt::{GesamtfallEingabe, gesamt_gde};
-use engine::zugriff::teil2::rente::{RentenEingabe, Rentenart, renten_einkuenfte};
+use engine::zugriff::teil1::ermaessigungen::{p24a_altersentlastung, P24aAltersentlastungEingabe};
+use engine::zugriff::teil2::gesamt::{gesamt_gde, GesamtfallEingabe};
+use engine::zugriff::teil2::rente::{renten_einkuenfte, RentenEingabe, Rentenart};
 use intervall::Slots;
-use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 
 use super::gesamt::{
     entlastung_24b, gde_fall, kist_ueberhang, netto_vg, nr3_euro, p35_person_a, pauschbetraege_a,
     pauschbetrag_partner, vorsorge_slots,
 };
-use super::rechnen::{R, add, max0, summe_euro};
-use super::tarif::{Lage, Modus, P35, leerer_gesamtfall, rahmen};
-use super::{Marke, Ring, VeranlagungWert, rentner_tarif};
+use super::rechnen::{add, max0, summe_euro, R};
+use super::tarif::{leerer_gesamtfall, rahmen, Lage, Modus, P35};
+use super::{rentner_tarif, Marke, Ring, VeranlagungWert};
 use crate::abzuege::{p33b_kind_pauschbetraege, shared_steuer_sonder_agb};
 use crate::einkuenfte::{
     gewinn_partner_anteil, laufender_gewinn, p20_kapitaleinkuenfte, p23_ansonsten_einkuenfte,
     p35_summen, shared_dba_sonstige,
 };
 use crate::{
-    Felder, cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, feld_veranlagung, wert,
-    zahl_dezimal,
+    cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, feld_veranlagung, wert, zahl_dezimal,
+    Felder,
 };
 
 /// `rf // 100 if isinstance(rf, (int, float)) and not bool else None` (Naht-CENT → EURO).
@@ -232,7 +232,7 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
 
 #[cfg(test)]
 mod tests {
-    use serde_json::{Value, json};
+    use serde_json::{json, Value};
 
     use super::*;
 
@@ -274,10 +274,10 @@ mod aequivalenz {
     use domain::testhilfe::{json_wert, klasse, pruefe, py};
     use domain::{Euro, PyWert};
     use proptest::prelude::*;
-    use serde_json::{Value, json};
+    use serde_json::{json, Value};
 
-    use super::{Rentenart, cent_zu_euro_dezimal, rentenart, rentenfreibetrag_euro};
-    use crate::aequivalenz::{DEZIMAL, d18, enum_json};
+    use super::{cent_zu_euro_dezimal, rentenart, rentenfreibetrag_euro, Rentenart};
+    use crate::aequivalenz::{d18, enum_json, DEZIMAL};
     use crate::deklaration::testhilfe::konstanten_json;
     use crate::vor_k2::rentenfreibetrag_euro_alt;
 

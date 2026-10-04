@@ -2,12 +2,12 @@
 //! (`bescheid_zweige.py:1292-1422`). Reihenfolge: § 34 → § 35 → Kapital § 32d → § 32b (anders als
 //! `gesamt_tarif`: dort steht § 32b VOR Kapital).
 use domain::Euro;
-use engine::zugriff::teil2::est::{TarifEingabe, tarif_est};
-use engine::zugriff::teil2::gesamt::{GesamtfallEingabe, gesamt_tarifliche, gesamt_zve};
-use engine::zugriff::teil2::sonstige::{ProgressionsvorbehaltEingabe, p32b_1};
+use engine::zugriff::teil2::est::{tarif_est, TarifEingabe};
+use engine::zugriff::teil2::gesamt::{gesamt_tarifliche, gesamt_zve, GesamtfallEingabe};
+use engine::zugriff::teil2::sonstige::{p32b_1, ProgressionsvorbehaltEingabe};
 
-use super::rechnen::{R, add, max0, sub};
-use super::tarif::{Endstand, Lage, SolzInfo, kapital, p34_chooser, p35_credit};
+use super::rechnen::{add, max0, sub, R};
+use super::tarif::{kapital, p34_chooser, p35_credit, Endstand, Lage, SolzInfo};
 
 /// § 32b im Rentner-Ring: wirkt auf das Ergebnis NACH dem Kapital. Rueckgabe
 /// `(result', est_ohne_p35')`; der § 35-Kredit (nach der Formel OHNE § 32b, wie Python) kommt danach ab.
