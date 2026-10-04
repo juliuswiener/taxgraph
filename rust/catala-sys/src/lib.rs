@@ -32,6 +32,10 @@ pub enum CatalaFehler {
     Assertion,
     #[error("ungueltiger Veranlagungszeitraum-Code: {0}")]
     UngueltigerVzCode(i32),
+    /// Eine GELESENE Scope-Ausgabe (`{0}`, Feldname im Scope) passt nicht in `i64`. Der Scope rechnet in GMP exakt; `mpz_get_si` gaebe
+    /// still den Wert mod 2^63 zurueck. Python rechnet mit beliebig grossen Ganzzahlen, kein Gegenstueck; fail-closed.
+    #[error("Scope-Ausgabe {0} passt nicht in i64")]
+    Ueberlauf(&'static str),
 }
 
 /// Wertet den Rueckgabecode eines `tg_*`-Wrappers aus: `0` -> Ok, `2` -> ungueltiger VZ-Code
@@ -57,93 +61,166 @@ fn ergebnis_ohne_vz<T>(rc: i32, wert: T) -> Result<T, CatalaFehler> {
     }
 }
 
+/// Eine Scope-Ausgabe, wie der Shim sie liefert (`TgAusgabe` in `shim.c`): der Wert als `long` UND ob er in `long` passte. `name` zeigt auf ein
+/// Zeichenkettenliteral im Shim (Programmdauer).
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+struct TgAusgabeFfi {
+    wert: i64,
+    passt: i32,
+    name: *const std::os::raw::c_char,
+}
+
+impl Default for TgAusgabeFfi {
+    fn default() -> Self {
+        Self {
+            wert: 0,
+            passt: 0,
+            name: std::ptr::null(),
+        }
+    }
+}
+
+/// Eine Ausgabe eines Catala-Scopes. Der Scope rechnet in GMP exakt; `mpz_get_si` im Shim gibt bei einem Wert ausserhalb `long` still dessen
+/// untere 63 Bit zurueck. Dieser Typ haelt fest, ob der Wert passte, und laesst ihn nur ueber [`Ausgabe::cent`] heraus: geprueft wird, was
+/// gelesen wird (lazy), nicht jede Ausgabe, die der Scope bildet. Die Felder sind privat, es gibt keinen Weg am Pruefen vorbei.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Ausgabe {
+    wert: i64,
+    passt: bool,
+    name: &'static str,
+}
+
+impl From<TgAusgabeFfi> for Ausgabe {
+    fn from(ffi: TgAusgabeFfi) -> Self {
+        let name = if ffi.name.is_null() {
+            "unbekannt"
+        } else {
+            // SAFETY: `name` zeigt auf ein NUL-terminiertes Zeichenkettenliteral im Shim (`#feld` in `TG_AUS`), das fuer die Programmdauer
+            // lebt; nur ein erfolgreicher Scope-Aufruf (rc 0) setzt es, sonst ist es null und wird oben abgefangen.
+            unsafe { std::ffi::CStr::from_ptr(ffi.name) }
+                .to_str()
+                .unwrap_or("unbekannt")
+        };
+        Self {
+            wert: ffi.wert,
+            passt: ffi.passt != 0,
+            name,
+        }
+    }
+}
+
+impl Ausgabe {
+    /// Der Wert in Cent, wenn er in `i64` passte.
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`] mit dem Namen der Ausgabe, wenn der Scope-Wert ausserhalb `i64` liegt.
+    pub fn cent(self) -> Result<i64, CatalaFehler> {
+        if self.passt {
+            Ok(self.wert)
+        } else {
+            Err(CatalaFehler::Ueberlauf(self.name))
+        }
+    }
+}
+
+/// Scope mit genau EINER Ausgabe und ohne Veranlagungszeitraum: die Ausgabe ist der Rueckgabewert, also immer gelesen.
+fn einzel(rc: i32, out: TgAusgabeFfi) -> Result<i64, CatalaFehler> {
+    ergebnis_ohne_vz(rc, Ausgabe::from(out)).and_then(Ausgabe::cent)
+}
+
+/// Wie [`einzel`], fuer Scopes mit `Veranlagungszeitraum`-Parameter.
+fn einzel_mit_vz(rc: i32, out: TgAusgabeFfi, vz_code: i32) -> Result<i64, CatalaFehler> {
+    ergebnis(rc, Ausgabe::from(out), vz_code).and_then(Ausgabe::cent)
+}
+
 extern "C" {
     // ponytail: `long`/`int` auf der C-Seite werden hier als `i64`/`i32` deklariert, weil
     // diese Crate nur Linux x86_64 (LP64, `c_long == i64`) als Ziel hat; ein Windows-Target
     // braeuchte stattdessen `std::os::raw::c_long`.
-    fn tg_grundtarif(zve_cents: i64, vz_code: i32, out_cents: *mut i64) -> i32;
-    fn tg_splittingtarif(zve_gemeinsam_cents: i64, vz_code: i32, out_cents: *mut i64) -> i32;
+    fn tg_grundtarif(zve_cents: i64, vz_code: i32, out: *mut TgAusgabeFfi) -> i32;
+    fn tg_splittingtarif(zve_gemeinsam_cents: i64, vz_code: i32, out: *mut TgAusgabeFfi) -> i32;
     fn tg_festzusetzende_est_einzel(
         bruttoarbeitslohn_cents: i64,
         werbungskosten_cents: i64,
         sonderausgaben_cents: i64,
         vz_code: i32,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
 
-    fn tg_spenden_abzug(zuwendungen_cents: i64, gde_cents: i64, out_cents: *mut i64) -> i32;
+    fn tg_spenden_abzug(zuwendungen_cents: i64, gde_cents: i64, out: *mut TgAusgabeFfi) -> i32;
     fn tg_zumutbare_belastung(
         gde_cents: i64,
         anzahl_kinder: i64,
         splitting: i32,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
-    fn tg_agb_abzug(agb_cents: i64, zumutbare_belastung_cents: i64, out_cents: *mut i64) -> i32;
-    fn tg_kirchensteuerabzug(gezahlt_cents: i64, erstattet_cents: i64, out_cents: *mut i64) -> i32;
+    fn tg_agb_abzug(agb_cents: i64, zumutbare_belastung_cents: i64, out: *mut TgAusgabeFfi) -> i32;
+    fn tg_kirchensteuerabzug(gezahlt_cents: i64, erstattet_cents: i64, out: *mut TgAusgabeFfi) -> i32;
     fn tg_altersentlastungsbetrag(
         arbeitslohn_cents: i64,
         positive_andere_cents: i64,
         prozentsatz_num: i64,
         prozentsatz_den: u64,
         hoechstbetrag_cents: i64,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
     fn tg_entlastungsbetrag(
         alleinstehend: i32,
         anzahl_kinder: i64,
         monate_ohne_voraussetzung: i64,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
     fn tg_familienleistungsausgleich(
         est_ohne_cents: i64,
         est_mit_cents: i64,
         kindergeld_cents: i64,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
     fn tg_verbilligte_vermietung_wk(
         werbungskosten_cents: i64,
         entgelt_quote_num: i64,
         entgelt_quote_den: u64,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
     fn tg_kranken_pflege_vorsorge(
         basis_cents: i64,
         weitere_cents: i64,
         mit_zuschuss: i32,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
-    fn tg_berufsausbildung(aufwendungen_cents: i64, out_cents: *mut i64) -> i32;
-    fn tg_betriebs_freibetrag(veraeusserungsgewinn_cents: i64, out_cents: *mut i64) -> i32;
+    fn tg_berufsausbildung(aufwendungen_cents: i64, out: *mut TgAusgabeFfi) -> i32;
+    fn tg_betriebs_freibetrag(veraeusserungsgewinn_cents: i64, out: *mut TgAusgabeFfi) -> i32;
     fn tg_euer_gewinn(
         betriebseinnahmen_cents: i64,
         betriebsausgaben_cents: i64,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
     fn tg_mitunternehmer_einkuenfte(
         gewinnanteil_cents: i64,
         verguetung_taetigkeit_cents: i64,
         verguetung_darlehen_cents: i64,
         verguetung_ueberlassung_cents: i64,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
-    fn tg_gwg_sofortabzug(anschaffungskosten_netto_cents: i64, out_cents: *mut i64) -> i32;
+    fn tg_gwg_sofortabzug(anschaffungskosten_netto_cents: i64, out: *mut TgAusgabeFfi) -> i32;
     fn tg_haushaltsnahe(
         minijob_cents: i64,
         dienstleistungen_cents: i64,
         handwerker_cents: i64,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
     fn tg_verlustvortrag_abzug(
         gde_cents: i64,
         bestand_cents: i64,
         zusammenveranlagung: i32,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
     fn tg_ermaessigter_durchschnittssatz(
         ao_cents: i64,
         est_gesamt_zzgl_progression_cents: i64,
         bemessungsgrundlage_durchschnitt_cents: i64,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
     fn tg_entfernungspauschale(
         eingabe: *const TgEntfernungspauschaleInFfi,
@@ -167,7 +244,7 @@ extern "C" {
         werbungskosten_b_cents: i64,
         sonderausgaben_gemeinsam_cents: i64,
         vz_code: i32,
-        out_cents: *mut i64,
+        out: *mut TgAusgabeFfi,
     ) -> i32;
     fn tg_festzusetzende_est_gesamt(
         eingabe: *const TgGesamtInFfi,
@@ -203,8 +280,8 @@ struct TgEntfernungspauschaleInFfi {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 struct TgEntfernungspauschaleOutFfi {
-    entfernungspauschale_cents: i64,
-    abziehbarer_betrag_cents: i64,
+    entfernungspauschale_cents: TgAusgabeFfi,
+    abziehbarer_betrag_cents: TgAusgabeFfi,
 }
 
 #[repr(C)]
@@ -226,9 +303,9 @@ struct TgRaumkostenabzugInFfi {
 // Feldnamen spiegeln shim.c 1:1; das gemeinsame Praefix ist die C-Struct-Konvention.
 #[allow(clippy::struct_field_names)]
 struct TgRaumkostenabzugOutFfi {
-    abzug_arbeitszimmer_cents: i64,
-    abzug_homeoffice_cents: i64,
-    abzug_gesamt_cents: i64,
+    abzug_arbeitszimmer_cents: TgAusgabeFfi,
+    abzug_homeoffice_cents: TgAusgabeFfi,
+    abzug_gesamt_cents: TgAusgabeFfi,
 }
 
 #[repr(C)]
@@ -236,12 +313,12 @@ struct TgRaumkostenabzugOutFfi {
 // Feldnamen spiegeln shim.c 1:1; das gemeinsame Suffix ist die C-Struct-Konvention.
 #[allow(clippy::struct_field_names)]
 struct TgEstOutFfi {
-    summe_der_einkuenfte_cents: i64,
-    gesamtbetrag_der_einkuenfte_cents: i64,
-    einkommen_cents: i64,
-    zu_versteuerndes_einkommen_cents: i64,
-    tarifliche_est_cents: i64,
-    festzusetzende_est_cents: i64,
+    summe_der_einkuenfte_cents: TgAusgabeFfi,
+    gesamtbetrag_der_einkuenfte_cents: TgAusgabeFfi,
+    einkommen_cents: TgAusgabeFfi,
+    zu_versteuerndes_einkommen_cents: TgAusgabeFfi,
+    tarifliche_est_cents: TgAusgabeFfi,
+    festzusetzende_est_cents: TgAusgabeFfi,
 }
 
 #[repr(C)]
@@ -283,13 +360,31 @@ pub struct EntfernungspauschaleEingabe {
     pub hoechstbetrag_cent: i64,
 }
 
-/// Ergebnis von [`entfernungspauschale`]: `entfernungspauschale_cent` VOR dem
-/// Hoechstbetragsdeckel, `abziehbarer_betrag_cent` NACH dem Deckel (Python liest nur
-/// Letzteres in `catala_entfernungspauschale`/`catala_ep_ab_21km`).
+/// Ergebnis von [`entfernungspauschale`]: `entfernungspauschale` nach dem Hoechstbetragsdeckel (ohne Kfz), `abziehbarer_betrag` zusaetzlich nach
+/// der OePNV-Guenstigerpruefung (Python liest nur Letzteres in `catala_entfernungspauschale`/`catala_ep_ab_21km`). Jede Ausgabe wird erst beim
+/// Lesen auf `i64` geprueft (siehe [`Ausgabe`]): wer nur `abziehbarer_betrag_cent()` liest, scheitert nicht an der anderen.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EntfernungspauschaleErgebnis {
-    pub entfernungspauschale_cent: i64,
-    pub abziehbarer_betrag_cent: i64,
+    entfernungspauschale: Ausgabe,
+    abziehbarer_betrag: Ausgabe,
+}
+
+impl EntfernungspauschaleErgebnis {
+    /// Entfernungspauschale in Cent (nach dem Hoechstbetragsdeckel, vor der OePNV-Pruefung).
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`], wenn der Scope-Wert nicht in `i64` passt.
+    pub fn entfernungspauschale_cent(&self) -> Result<i64, CatalaFehler> {
+        self.entfernungspauschale.cent()
+    }
+
+    /// Abziehbarer Betrag in Cent (nach der OePNV-Guenstigerpruefung).
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`], wenn der Scope-Wert nicht in `i64` passt.
+    pub fn abziehbarer_betrag_cent(&self) -> Result<i64, CatalaFehler> {
+        self.abziehbarer_betrag.cent()
+    }
 }
 
 /// Eingabe fuer [`raumkostenabzug`] (§ 4 Abs. 5 Nr. 6b/6c `EStG`, haeusliches Arbeitszimmer und
@@ -307,12 +402,39 @@ pub struct RaumkostenabzugEingabe {
     pub tagespauschale_hoechstbetrag_cent: i64,
 }
 
-/// Ergebnis von [`raumkostenabzug`]: Arbeitszimmer- und Homeoffice-Abzug getrennt, plus Summe.
+/// Ergebnis von [`raumkostenabzug`]: Arbeitszimmer- und Homeoffice-Abzug getrennt, plus Summe. Jede Ausgabe wird erst beim Lesen auf `i64`
+/// geprueft (siehe [`Ausgabe`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RaumkostenabzugErgebnis {
-    pub abzug_arbeitszimmer_cent: i64,
-    pub abzug_homeoffice_cent: i64,
-    pub abzug_gesamt_cent: i64,
+    arbeitszimmer: Ausgabe,
+    homeoffice: Ausgabe,
+    gesamt: Ausgabe,
+}
+
+impl RaumkostenabzugErgebnis {
+    /// Abzug fuer das haeusliche Arbeitszimmer in Cent.
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`], wenn der Scope-Wert nicht in `i64` passt.
+    pub fn abzug_arbeitszimmer_cent(&self) -> Result<i64, CatalaFehler> {
+        self.arbeitszimmer.cent()
+    }
+
+    /// Abzug fuer die Homeoffice-Tagespauschale in Cent.
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`], wenn der Scope-Wert nicht in `i64` passt.
+    pub fn abzug_homeoffice_cent(&self) -> Result<i64, CatalaFehler> {
+        self.homeoffice.cent()
+    }
+
+    /// Summe beider Abzuege in Cent.
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`], wenn der Scope-Wert nicht in `i64` passt.
+    pub fn abzug_gesamt_cent(&self) -> Result<i64, CatalaFehler> {
+        self.gesamt.cent()
+    }
 }
 
 /// Eingabe fuer [`festzusetzende_est_gesamt`]/[`festzusetzende_est_gesamt_zusammen`]: die 16
@@ -369,26 +491,77 @@ impl GesamtEingabe {
 
 /// Ergebnis der Einkommensteuertarif-Scopes mit mehreren Ausgabefeldern
 /// (`FestzusetzendeEstEinzel`/`FestzusetzendeEstGesamt`/`FestzusetzendeEstGesamtZusammen`
-/// teilen dieselben sechs Feldnamen).
+/// teilen dieselben sechs Feldnamen). Jede Ausgabe wird erst beim Lesen auf `i64` geprueft (siehe [`Ausgabe`]): ein Aufrufer, der nur die
+/// festzusetzende Einkommensteuer liest, scheitert nicht daran, dass das zu versteuernde Einkommen nicht in `i64` passt.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FestzusetzendeEstErgebnis {
-    pub summe_der_einkuenfte_cent: i64,
-    pub gesamtbetrag_der_einkuenfte_cent: i64,
-    pub einkommen_cent: i64,
-    pub zu_versteuerndes_einkommen_cent: i64,
-    pub tarifliche_est_cent: i64,
-    pub festzusetzende_est_cent: i64,
+    summe_der_einkuenfte: Ausgabe,
+    gesamtbetrag_der_einkuenfte: Ausgabe,
+    einkommen: Ausgabe,
+    zu_versteuerndes_einkommen: Ausgabe,
+    tarifliche_est: Ausgabe,
+    festzusetzende_est: Ausgabe,
+}
+
+impl FestzusetzendeEstErgebnis {
+    /// Summe der Einkuenfte in Cent.
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`], wenn der Scope-Wert nicht in `i64` passt.
+    pub fn summe_der_einkuenfte_cent(&self) -> Result<i64, CatalaFehler> {
+        self.summe_der_einkuenfte.cent()
+    }
+
+    /// Gesamtbetrag der Einkuenfte in Cent.
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`], wenn der Scope-Wert nicht in `i64` passt.
+    pub fn gesamtbetrag_der_einkuenfte_cent(&self) -> Result<i64, CatalaFehler> {
+        self.gesamtbetrag_der_einkuenfte.cent()
+    }
+
+    /// Einkommen in Cent.
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`], wenn der Scope-Wert nicht in `i64` passt.
+    pub fn einkommen_cent(&self) -> Result<i64, CatalaFehler> {
+        self.einkommen.cent()
+    }
+
+    /// Zu versteuerndes Einkommen in Cent.
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`], wenn der Scope-Wert nicht in `i64` passt.
+    pub fn zu_versteuerndes_einkommen_cent(&self) -> Result<i64, CatalaFehler> {
+        self.zu_versteuerndes_einkommen.cent()
+    }
+
+    /// Tarifliche Einkommensteuer in Cent.
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`], wenn der Scope-Wert nicht in `i64` passt.
+    pub fn tarifliche_est_cent(&self) -> Result<i64, CatalaFehler> {
+        self.tarifliche_est.cent()
+    }
+
+    /// Festzusetzende Einkommensteuer in Cent.
+    ///
+    /// # Errors
+    /// [`CatalaFehler::Ueberlauf`], wenn der Scope-Wert nicht in `i64` passt.
+    pub fn festzusetzende_est_cent(&self) -> Result<i64, CatalaFehler> {
+        self.festzusetzende_est.cent()
+    }
 }
 
 impl From<TgEstOutFfi> for FestzusetzendeEstErgebnis {
     fn from(ffi: TgEstOutFfi) -> Self {
         Self {
-            summe_der_einkuenfte_cent: ffi.summe_der_einkuenfte_cents,
-            gesamtbetrag_der_einkuenfte_cent: ffi.gesamtbetrag_der_einkuenfte_cents,
-            einkommen_cent: ffi.einkommen_cents,
-            zu_versteuerndes_einkommen_cent: ffi.zu_versteuerndes_einkommen_cents,
-            tarifliche_est_cent: ffi.tarifliche_est_cents,
-            festzusetzende_est_cent: ffi.festzusetzende_est_cents,
+            summe_der_einkuenfte: ffi.summe_der_einkuenfte_cents.into(),
+            gesamtbetrag_der_einkuenfte: ffi.gesamtbetrag_der_einkuenfte_cents.into(),
+            einkommen: ffi.einkommen_cents.into(),
+            zu_versteuerndes_einkommen: ffi.zu_versteuerndes_einkommen_cents.into(),
+            tarifliche_est: ffi.tarifliche_est_cents.into(),
+            festzusetzende_est: ffi.festzusetzende_est_cents.into(),
         }
     }
 }
@@ -420,12 +593,12 @@ fn locked<T>(f: impl FnOnce() -> T) -> T {
 /// ```
 pub fn grundtarif(zve_cent: i64, vz: Vz) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
-        // SAFETY: `out` ist ein gueltiger, alignierter `*mut i64` fuer die Dauer des Aufrufs;
+        let mut out = TgAusgabeFfi::default();
+        // SAFETY: `out` ist ein gueltiger, alignierter `*mut TgAusgabeFfi` fuer die Dauer des Aufrufs;
         // `tg_grundtarif` schreibt nur hindurch, wenn es 0 zurueckgibt. Kein Zeiger ueberlebt
         // den Aufruf.
         let rc = unsafe { tg_grundtarif(zve_cent, vz as i32, &raw mut out) };
-        ergebnis(rc, out, vz as i32)
+        einzel_mit_vz(rc, out, vz as i32)
     })
 }
 
@@ -442,10 +615,10 @@ pub fn grundtarif(zve_cent: i64, vz: Vz) -> Result<i64, CatalaFehler> {
 /// ```
 pub fn splittingtarif(zve_gemeinsam_cent: i64, vz: Vz) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `grundtarif`.
         let rc = unsafe { tg_splittingtarif(zve_gemeinsam_cent, vz as i32, &raw mut out) };
-        ergebnis(rc, out, vz as i32)
+        einzel_mit_vz(rc, out, vz as i32)
     })
 }
 
@@ -467,7 +640,7 @@ pub fn festzusetzende_est_einzel(
     vz: Vz,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `grundtarif`.
         let rc = unsafe {
             tg_festzusetzende_est_einzel(
@@ -478,7 +651,7 @@ pub fn festzusetzende_est_einzel(
                 &raw mut out,
             )
         };
-        ergebnis(rc, out, vz as i32)
+        einzel_mit_vz(rc, out, vz as i32)
     })
 }
 
@@ -494,10 +667,10 @@ pub fn festzusetzende_est_einzel(
 /// ```
 pub fn spenden_abzug(zuwendungen_cent: i64, gde_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
-        // SAFETY: `out` ist ein gueltiger, alignierter `*mut i64` fuer die Dauer des Aufrufs.
+        let mut out = TgAusgabeFfi::default();
+        // SAFETY: `out` ist ein gueltiger, alignierter `*mut TgAusgabeFfi` fuer die Dauer des Aufrufs.
         let rc = unsafe { tg_spenden_abzug(zuwendungen_cent, gde_cent, &raw mut out) };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -517,12 +690,12 @@ pub fn zumutbare_belastung(
     splitting: bool,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
             tg_zumutbare_belastung(gde_cent, anzahl_kinder, i32::from(splitting), &raw mut out)
         };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -537,10 +710,10 @@ pub fn zumutbare_belastung(
 /// ```
 pub fn agb_abzug(agb_cent: i64, zumutbare_belastung_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe { tg_agb_abzug(agb_cent, zumutbare_belastung_cent, &raw mut out) };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -556,10 +729,10 @@ pub fn agb_abzug(agb_cent: i64, zumutbare_belastung_cent: i64) -> Result<i64, Ca
 /// ```
 pub fn kirchensteuerabzug(gezahlt_cent: i64, erstattet_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe { tg_kirchensteuerabzug(gezahlt_cent, erstattet_cent, &raw mut out) };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -583,7 +756,7 @@ pub fn altersentlastungsbetrag(
     hoechstbetrag_cent: i64,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
             tg_altersentlastungsbetrag(
@@ -595,7 +768,7 @@ pub fn altersentlastungsbetrag(
                 &raw mut out,
             )
         };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -615,7 +788,7 @@ pub fn entlastungsbetrag(
     monate_ohne_voraussetzung: i64,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
             tg_entlastungsbetrag(
@@ -625,7 +798,7 @@ pub fn entlastungsbetrag(
                 &raw mut out,
             )
         };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -647,7 +820,7 @@ pub fn familienleistungsausgleich(
     kindergeld_cent: i64,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
             tg_familienleistungsausgleich(
@@ -657,7 +830,7 @@ pub fn familienleistungsausgleich(
                 &raw mut out,
             )
         };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -677,7 +850,7 @@ pub fn verbilligte_vermietung_wk(
     entgelt_quote_den: u64,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
             tg_verbilligte_vermietung_wk(
@@ -687,7 +860,7 @@ pub fn verbilligte_vermietung_wk(
                 &raw mut out,
             )
         };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -708,7 +881,7 @@ pub fn kranken_pflege_vorsorge(
     mit_zuschuss: bool,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
             tg_kranken_pflege_vorsorge(
@@ -718,7 +891,7 @@ pub fn kranken_pflege_vorsorge(
                 &raw mut out,
             )
         };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -734,10 +907,10 @@ pub fn kranken_pflege_vorsorge(
 /// ```
 pub fn berufsausbildung(aufwendungen_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe { tg_berufsausbildung(aufwendungen_cent, &raw mut out) };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -753,10 +926,10 @@ pub fn berufsausbildung(aufwendungen_cent: i64) -> Result<i64, CatalaFehler> {
 /// ```
 pub fn betriebs_freibetrag(veraeusserungsgewinn_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe { tg_betriebs_freibetrag(veraeusserungsgewinn_cent, &raw mut out) };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -775,11 +948,11 @@ pub fn euer_gewinn(
     betriebsausgaben_cent: i64,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc =
             unsafe { tg_euer_gewinn(betriebseinnahmen_cent, betriebsausgaben_cent, &raw mut out) };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -801,7 +974,7 @@ pub fn mitunternehmer_einkuenfte(
     verguetung_ueberlassung_cent: i64,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
             tg_mitunternehmer_einkuenfte(
@@ -812,7 +985,7 @@ pub fn mitunternehmer_einkuenfte(
                 &raw mut out,
             )
         };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -828,10 +1001,10 @@ pub fn mitunternehmer_einkuenfte(
 /// ```
 pub fn gwg_sofortabzug(anschaffungskosten_netto_cent: i64) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe { tg_gwg_sofortabzug(anschaffungskosten_netto_cent, &raw mut out) };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -852,7 +1025,7 @@ pub fn haushaltsnahe(
     handwerker_cent: i64,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
             tg_haushaltsnahe(
@@ -862,7 +1035,7 @@ pub fn haushaltsnahe(
                 &raw mut out,
             )
         };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -882,7 +1055,7 @@ pub fn verlustvortrag_abzug(
     zusammenveranlagung: bool,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
             tg_verlustvortrag_abzug(
@@ -892,7 +1065,7 @@ pub fn verlustvortrag_abzug(
                 &raw mut out,
             )
         };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -914,7 +1087,7 @@ pub fn ermaessigter_durchschnittssatz(
     bemessungsgrundlage_durchschnitt_cent: i64,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `spenden_abzug`.
         let rc = unsafe {
             tg_ermaessigter_durchschnittssatz(
@@ -924,7 +1097,7 @@ pub fn ermaessigter_durchschnittssatz(
                 &raw mut out,
             )
         };
-        ergebnis_ohne_vz(rc, out)
+        einzel(rc, out)
     })
 }
 
@@ -940,7 +1113,7 @@ pub fn ermaessigter_durchschnittssatz(
 ///     eigenes_oder_ueberlassenes_kfz: false, oepnv_kosten_jahr_cent: 0,
 ///     satz_bis_20_km_cent: 30, satz_ab_21_km_cent: 38, staffelgrenze_km: 20, hoechstbetrag_cent: 450_000,
 /// }).unwrap();
-/// assert_eq!(e.entfernungspauschale_cent, 60_000); // 10 volle km × 0,30 EUR × 200 Tage
+/// assert_eq!(e.entfernungspauschale_cent().unwrap(), 60_000); // 10 volle km × 0,30 EUR × 200 Tage
 /// ```
 pub fn entfernungspauschale(
     eingabe: EntfernungspauschaleEingabe,
@@ -964,8 +1137,8 @@ pub fn entfernungspauschale(
         ergebnis_ohne_vz(
             rc,
             EntfernungspauschaleErgebnis {
-                entfernungspauschale_cent: ffi_out.entfernungspauschale_cents,
-                abziehbarer_betrag_cent: ffi_out.abziehbarer_betrag_cents,
+                entfernungspauschale: ffi_out.entfernungspauschale_cents.into(),
+                abziehbarer_betrag: ffi_out.abziehbarer_betrag_cents.into(),
             },
         )
     })
@@ -983,7 +1156,7 @@ pub fn entfernungspauschale(
 ///     jahrespauschale_gewaehlt: false, monate_ohne_mittelpunkt: 0, homeoffice_tage: 120,
 ///     jahrespauschale_cent: 126_000, tagespauschale_pro_tag_cent: 600, tagespauschale_hoechstbetrag_cent: 126_000,
 /// }).unwrap();
-/// assert_eq!(r.abzug_gesamt_cent, 72_000); // 120 Tage × 6 EUR
+/// assert_eq!(r.abzug_gesamt_cent().unwrap(), 72_000); // 120 Tage × 6 EUR
 /// ```
 pub fn raumkostenabzug(
     eingabe: RaumkostenabzugEingabe,
@@ -1003,19 +1176,26 @@ pub fn raumkostenabzug(
         let mut ffi_out = TgRaumkostenabzugOutFfi::default();
         // SAFETY: siehe `entfernungspauschale`.
         let rc = unsafe { tg_raumkostenabzug(&raw const ffi_in, &raw mut ffi_out) };
-        // Catala setzt `abzug_gesamt` gleich der Summe der Teile. Sonst ist ein Feld im C-Struct
-        // verrutscht, oder `mpz_get_si` hat einen Wert jenseits von `i64` abgeschnitten.
-        debug_assert_eq!(
-            i128::from(ffi_out.abzug_gesamt_cents),
-            i128::from(ffi_out.abzug_arbeitszimmer_cents)
-                + i128::from(ffi_out.abzug_homeoffice_cents)
+        // Catala setzt `abzug_gesamt` gleich der Summe der Teile. Sonst ist ein Feld im C-Struct verrutscht. Nur pruefbar, wenn alle drei
+        // Werte in `long` passten: sonst gaben die gewickelten Werte (mod 2^63) keine Summe mehr.
+        debug_assert!(
+            [
+                ffi_out.abzug_arbeitszimmer_cents,
+                ffi_out.abzug_homeoffice_cents,
+                ffi_out.abzug_gesamt_cents
+            ]
+            .iter()
+            .any(|a| a.passt == 0)
+                || i128::from(ffi_out.abzug_gesamt_cents.wert)
+                    == i128::from(ffi_out.abzug_arbeitszimmer_cents.wert)
+                        + i128::from(ffi_out.abzug_homeoffice_cents.wert)
         );
         ergebnis_ohne_vz(
             rc,
             RaumkostenabzugErgebnis {
-                abzug_arbeitszimmer_cent: ffi_out.abzug_arbeitszimmer_cents,
-                abzug_homeoffice_cent: ffi_out.abzug_homeoffice_cents,
-                abzug_gesamt_cent: ffi_out.abzug_gesamt_cents,
+                arbeitszimmer: ffi_out.abzug_arbeitszimmer_cents.into(),
+                homeoffice: ffi_out.abzug_homeoffice_cents.into(),
+                gesamt: ffi_out.abzug_gesamt_cents.into(),
             },
         )
     })
@@ -1031,7 +1211,7 @@ pub fn raumkostenabzug(
 /// use catala_sys::Vz;
 /// use catala_sys::festzusetzende_est_einzel_voll;
 /// let v = festzusetzende_est_einzel_voll(5_000_000, 0, 0, Vz::Vz2025).unwrap();
-/// assert!(v.zu_versteuerndes_einkommen_cent < 5_000_000 && v.festzusetzende_est_cent > 0);
+/// assert!(v.zu_versteuerndes_einkommen_cent().unwrap() < 5_000_000 && v.festzusetzende_est_cent().unwrap() > 0);
 /// ```
 pub fn festzusetzende_est_einzel_voll(
     bruttoarbeitslohn_cent: i64,
@@ -1079,7 +1259,7 @@ pub fn festzusetzende_est_zusammen(
     vz: Vz,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
-        let mut out: i64 = 0;
+        let mut out = TgAusgabeFfi::default();
         // SAFETY: siehe `grundtarif`.
         let rc = unsafe {
             tg_festzusetzende_est_zusammen(
@@ -1092,7 +1272,7 @@ pub fn festzusetzende_est_zusammen(
                 &raw mut out,
             )
         };
-        ergebnis(rc, out, vz as i32)
+        einzel_mit_vz(rc, out, vz as i32)
     })
 }
 
@@ -1116,7 +1296,7 @@ pub fn festzusetzende_est_zusammen(
 ///     steuerermaessigungen_cent: 0, steuer_kapital_gesondert_cent: 0, hinzurechnung_kindergeld_cent: 0,
 ///     hinzurechnung_zulage_cent: 0, tarif_modifiziert: false, tarifliche_est_modifiziert_cent: 0,
 /// };
-/// assert!(festzusetzende_est_gesamt(eingabe, Vz::Vz2025).unwrap().festzusetzende_est_cent > 0);
+/// assert!(festzusetzende_est_gesamt(eingabe, Vz::Vz2025).unwrap().festzusetzende_est_cent().unwrap() > 0);
 /// ```
 pub fn festzusetzende_est_gesamt(
     eingabe: GesamtEingabe,
@@ -1152,7 +1332,7 @@ pub fn festzusetzende_est_gesamt(
 /// };
 /// let einzel = festzusetzende_est_gesamt(eingabe, Vz::Vz2025).unwrap();
 /// let zusammen = festzusetzende_est_gesamt_zusammen(eingabe, Vz::Vz2025).unwrap();
-/// assert!(zusammen.festzusetzende_est_cent <= einzel.festzusetzende_est_cent); // Splittingvorteil
+/// assert!(zusammen.festzusetzende_est_cent().unwrap() <= einzel.festzusetzende_est_cent().unwrap()); // Splittingvorteil
 /// ```
 pub fn festzusetzende_est_gesamt_zusammen(
     eingabe: GesamtEingabe,

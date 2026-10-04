@@ -140,7 +140,7 @@ fn floor(cent: i64) -> Euro {
 /// assert!(gesamt(&e, &p).unwrap().get() > 0);
 /// ```
 pub fn gesamt(e: &GesamtfallEingabe, p: &Params) -> Result<Euro, EngineFehler> {
-    Ok(floor(gesamt_out(e, p)?.festzusetzende_est_cent))
+    Ok(floor(gesamt_out(e, p)?.festzusetzende_est_cent()?))
 }
 
 /// § 2 Abs. 3 `EStG` Gesamtbetrag der Einkuenfte desselben Laufs, EURO.
@@ -155,7 +155,7 @@ pub fn gesamt(e: &GesamtfallEingabe, p: &Params) -> Result<Euro, EngineFehler> {
 /// assert_eq!(gesamt_gde(&beispiel_gesamtfall(), &p).unwrap(), Euro::new(50_000));
 /// ```
 pub fn gesamt_gde(e: &GesamtfallEingabe, p: &Params) -> Result<Euro, EngineFehler> {
-    Ok(floor(gesamt_out(e, p)?.gesamtbetrag_der_einkuenfte_cent))
+    Ok(floor(gesamt_out(e, p)?.gesamtbetrag_der_einkuenfte_cent()?))
 }
 
 /// Tarifliche `ESt` (§ 32a auf das zvE) desselben Laufs, EURO.
@@ -170,7 +170,7 @@ pub fn gesamt_gde(e: &GesamtfallEingabe, p: &Params) -> Result<Euro, EngineFehle
 /// assert_eq!(gesamt_tarifliche(&e, &p).unwrap(), gesamt(&e, &p).unwrap());
 /// ```
 pub fn gesamt_tarifliche(e: &GesamtfallEingabe, p: &Params) -> Result<Euro, EngineFehler> {
-    Ok(floor(gesamt_out(e, p)?.tarifliche_est_cent))
+    Ok(floor(gesamt_out(e, p)?.tarifliche_est_cent()?))
 }
 
 /// § 2 Abs. 5 zu versteuerndes Einkommen desselben Laufs, EURO.
@@ -186,7 +186,7 @@ pub fn gesamt_tarifliche(e: &GesamtfallEingabe, p: &Params) -> Result<Euro, Engi
 /// assert_eq!(gesamt_zve(&beispiel_gesamtfall(), &p).unwrap(), Euro::new(49_964));
 /// ```
 pub fn gesamt_zve(e: &GesamtfallEingabe, p: &Params) -> Result<Euro, EngineFehler> {
-    Ok(floor(gesamt_out(e, p)?.zu_versteuerndes_einkommen_cent))
+    Ok(floor(gesamt_out(e, p)?.zu_versteuerndes_einkommen_cent()?))
 }
 
 /// Rechenweg-Kette fuer die Erklaer-UI, alle Werte EURO (`runner.py` `catala_gesamt_kette`).
@@ -213,10 +213,10 @@ pub struct GesamtKette {
 pub fn gesamt_kette(e: &GesamtfallEingabe, p: &Params) -> Result<GesamtKette, EngineFehler> {
     let o = gesamt_out(e, p)?;
     Ok(GesamtKette {
-        gesamtbetrag_der_einkuenfte: floor(o.gesamtbetrag_der_einkuenfte_cent),
-        zu_versteuerndes_einkommen: floor(o.zu_versteuerndes_einkommen_cent),
-        tarifliche_est: floor(o.tarifliche_est_cent),
-        festzusetzende_est: floor(o.festzusetzende_est_cent),
+        gesamtbetrag_der_einkuenfte: floor(o.gesamtbetrag_der_einkuenfte_cent()?),
+        zu_versteuerndes_einkommen: floor(o.zu_versteuerndes_einkommen_cent()?),
+        tarifliche_est: floor(o.tarifliche_est_cent()?),
+        festzusetzende_est: floor(o.festzusetzende_est_cent()?),
     })
 }
 

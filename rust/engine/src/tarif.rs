@@ -97,8 +97,8 @@ pub fn festzusetzende_est_einzel(
 ///     werbungskosten: Cent::new(0),
 ///     sonderausgaben: Cent::new(0),
 /// }, Vz::Vz2025).unwrap();
-/// assert!(voll.zu_versteuerndes_einkommen_cent < 5_000_000); // Pauschbetraege sind abgezogen
-/// assert!(voll.festzusetzende_est_cent > 0);
+/// assert!(voll.zu_versteuerndes_einkommen_cent().unwrap() < 5_000_000); // Pauschbetraege sind abgezogen
+/// assert!(voll.festzusetzende_est_cent().unwrap() > 0);
 /// ```
 pub fn festzusetzende_est_einzel_voll(
     eingabe: FestzusetzendeEstEinzelEingabe,
@@ -231,7 +231,7 @@ impl GesamtEingabe {
 ///     hinzurechnung_zulage: n, tarif_modifiziert: false, tarifliche_est_modifiziert: n,
 /// };
 /// let e = festzusetzende_est_gesamt(eingabe, Vz::Vz2025).unwrap();
-/// assert!(e.festzusetzende_est_cent > 0);
+/// assert!(e.festzusetzende_est_cent().unwrap() > 0);
 /// ```
 pub fn festzusetzende_est_gesamt(
     eingabe: GesamtEingabe,
@@ -261,7 +261,7 @@ pub fn festzusetzende_est_gesamt(
 /// };
 /// let einzel = festzusetzende_est_gesamt(eingabe, Vz::Vz2025).unwrap();
 /// let zusammen = festzusetzende_est_gesamt_zusammen(eingabe, Vz::Vz2025).unwrap();
-/// assert!(zusammen.festzusetzende_est_cent <= einzel.festzusetzende_est_cent); // Splittingvorteil
+/// assert!(zusammen.festzusetzende_est_cent().unwrap() <= einzel.festzusetzende_est_cent().unwrap()); // Splittingvorteil
 /// ```
 pub fn festzusetzende_est_gesamt_zusammen(
     eingabe: GesamtEingabe,

@@ -69,7 +69,7 @@ fn euer_gewinn_differenz_ausserhalb_i64_ist_ueberlauf() {
         )
     };
     pruefe(
-        "euer gewinn",
+        "EuerGewinn__gewinn",
         &[
             ("M - (-M)", None, f(M, -M)),
             ("-M - M", None, f(-M, M)),
@@ -104,7 +104,7 @@ fn mitunternehmer_summe_ausserhalb_i64_ist_ueberlauf_aber_nicht_bei_grosser_teil
         )
     };
     pruefe(
-        "mitunternehmer summe",
+        "MitunternehmerEinkuenfte__einkuenfte_mitunternehmer",
         &[
             ("M+M+M+M", None, f(M, M, M, M)),
             ("M+M", None, f(M, M, 0, 0)),
@@ -142,7 +142,7 @@ fn kirchensteuerabzug_differenz_ausserhalb_i64_ist_ueberlauf() {
         )
     };
     pruefe(
-        "kist abzug",
+        "Kirchensteuerabzug__abziehbare_kirchensteuer",
         &[
             ("M - (-M)", None, f(M, -M)),
             ("M - 0 (Kontrolle)", Some(92_233_720_368_547_758), f(M, 0)),
@@ -176,7 +176,7 @@ fn agb_abzug_differenz_ausserhalb_i64_ist_ueberlauf() {
         )
     };
     pruefe(
-        "agb abzug",
+        "AgbAbzug__abzug_agb",
         &[
             ("M bei GdE -M", None, f(M, -M)),
             (

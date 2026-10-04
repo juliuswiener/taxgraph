@@ -107,7 +107,7 @@ proptest! {
             steuerermaessigungen: n, steuer_kapital_gesondert: n, hinzurechnung_kindergeld: n,
             hinzurechnung_zulage: n, tarif_modifiziert: false, tarifliche_est_modifiziert: n,
         }, vz).unwrap();
-        prop_assert!(gesamt.festzusetzende_est_cent >= 0);
+        prop_assert!(gesamt.festzusetzende_est_cent().unwrap() >= 0);
     }
 
     /// Mehr Werbungskosten oder mehr Sonderausgaben erhoehen die Steuer nie.

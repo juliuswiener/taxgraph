@@ -66,9 +66,10 @@ pub enum EngineFehler {
     DivisionDurchNull,
 }
 
+/// Geht ueber die zentrale Abbildung der Teil-1-Ebene: `CatalaFehler::Ueberlauf` wird dort zu [`Basis::Ueberlauf`].
 impl From<CatalaFehler> for EngineFehler {
     fn from(f: CatalaFehler) -> Self {
-        Self::Basis(Basis::Catala(f))
+        Self::Basis(Basis::from(f))
     }
 }
 

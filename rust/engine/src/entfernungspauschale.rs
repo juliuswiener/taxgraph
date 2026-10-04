@@ -17,57 +17,13 @@ pub struct EntfernungspauschaleEingabe {
     pub hoechstbetrag: Cent,
 }
 
-/// [`berechnen`] kann an der Decimal->Bruch-Umwandlung, an der Vorab-Pruefung des Jahresbetrags ODER am Catala-Scope selbst scheitern.
+/// [`berechnen`] kann an der Decimal->Bruch-Umwandlung ODER am Catala-Scope selbst scheitern.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 pub enum EntfernungspauschaleFehler {
     #[error(transparent)]
     Dezimal(#[from] DezimalUeberlauf),
     #[error(transparent)]
     Catala(#[from] CatalaFehler),
-    /// Der Jahresbetrag in Cent passt nicht in `i64` (`ep_gesamt`). Python rechnet mit beliebig grossen Ganzzahlen; kein
-    /// Gegenstueck, fail-closed statt Wert mod 2^63.
-    #[error("i64-Ueberlauf in {0}")]
-    Ueberlauf(&'static str),
-}
-
-/// Vorab-Pruefung des Jahresbetrags, den der Scope bildet: `Tage * (km_bis_grenze * Satz1 + km_ueber_grenze * Satz2)` in Cent.
-///
-/// Der Scope rechnet in GMP exakt. Der C-Shim liest seine Ausgabe mit `mpz_get_si`, und das gibt bei einem Wert ausserhalb `long`
-/// still dessen untere 63 Bit zurueck (Wert mod 2^63), keinen Fehler (Bericht h8-ep-fenster). `ep_ab_21km` prueft nur die
-/// Teilprodukte; zwischen ihrer Grenze und der des Gesamtbetrags lag ein Fenster, in dem Rust eine falsche Zahl lieferte.
-/// Mit Kfz gibt der Scope den Betrag aus, also ist ein Betrag ausserhalb `i64` ein Ueberlauf. Ohne Kfz deckelt er vorher auf den
-/// Hoechstbetrag: ein positiver Betrag ausserhalb `i64` ist dort ein richtiger Wert (der Hoechstbetrag), kein Fehler.
-///
-/// Sitzt in [`berechnen`], der einzigen Stelle, die den Scope aufruft: jeder Zugang (`werbungskosten::entfernungspauschale`,
-/// `sachverhalt::Sachverhalt::Entfernungspauschale`) ist damit erfasst.
-fn gesamt_pruefen(s: &EntfernungspauschaleEingabe) -> Result<(), EntfernungspauschaleFehler> {
-    // Passt der volle km nicht in i64, meldet der Scope selbst den Dezimal-Fehler (Zaehler ausserhalb i64): nichts zu pruefen.
-    let Some(km) = s.entfernung_km_roh.volle_km() else {
-        return Ok(());
-    };
-    let grenze = s.staffelgrenze_km;
-    let (bis, ueber) = if km > grenze {
-        (
-            grenze,
-            km.checked_sub(grenze)
-                .ok_or(EntfernungspauschaleFehler::Ueberlauf("ep_gesamt"))?,
-        )
-    } else {
-        (km, 0)
-    };
-    let (satz_bis, satz_ab) = (s.satz_bis_20_km.get(), s.satz_ab_21_km.get());
-    let gesamt = bis
-        .checked_mul(satz_bis)
-        .zip(ueber.checked_mul(satz_ab))
-        .and_then(|(a, b)| a.checked_add(b))
-        .and_then(|pro_tag| pro_tag.checked_mul(s.arbeitstage));
-    let positiv = [bis, ueber, satz_bis, satz_ab, s.arbeitstage]
-        .iter()
-        .all(|x| *x >= 0);
-    if gesamt.is_none() && (s.eigenes_oder_ueberlassenes_kfz || !positiv) {
-        return Err(EntfernungspauschaleFehler::Ueberlauf("ep_gesamt"));
-    }
-    Ok(())
 }
 
 /// § 9 Abs. 1 S. 3 Nr. 4/4a `EStG`: einfache Entfernung, Arbeitstage, Kfz-Flag, OePNV-Kosten,
@@ -91,12 +47,11 @@ fn gesamt_pruefen(s: &EntfernungspauschaleEingabe) -> Result<(), Entfernungspaus
 ///     hoechstbetrag: Cent::new(450_000),
 /// })
 /// .unwrap();
-/// assert_eq!(ergebnis.entfernungspauschale_cent, 60_000);
+/// assert_eq!(ergebnis.entfernungspauschale_cent().unwrap(), 60_000);
 /// ```
 pub fn berechnen(
     eingabe: EntfernungspauschaleEingabe,
 ) -> Result<EntfernungspauschaleErgebnis, EntfernungspauschaleFehler> {
-    gesamt_pruefen(&eingabe)?;
     let (num, den) = dezimal::zu_bruch(eingabe.entfernung_km_roh.get())?;
     let ergebnis = catala_sys::entfernungspauschale(catala_sys::EntfernungspauschaleEingabe {
         entfernung_km_roh_num: num,
@@ -131,6 +86,6 @@ mod tests {
             hoechstbetrag: Cent::new(450_000),
         })
         .unwrap();
-        assert_eq!(ergebnis.entfernungspauschale_cent, 60_000);
+        assert_eq!(ergebnis.entfernungspauschale_cent().unwrap(), 60_000);
     }
 }
