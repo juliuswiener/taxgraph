@@ -7,6 +7,9 @@
 //!   `Gleit` (ponytail an `Deserialize`: ausserhalb von `i128` nur noch als f64). Die Mutante (`n as i128`) wickelt `u128::MAX`
 //!   auf `-1` und liefert `Ganz(-1)`. Python haelt die Zahl exakt (`int`): der Test pinnt die dokumentierte f64-Saettigung, kein
 //!   Python-Orakel stuetzt den f64-Wert.
+//! * `py_wert.rs`, `aus_i128` (Mutationsmessung N4f): YAML-Ganzzahlen ausserhalb von `i64` und `u64` werden mit `n as f64` zu einem
+//!   `Gleit`. Der Weg ueber `f32` (`n as f32 as f64`) verlor die unteren Stellen, ohne dass ein Test es merkte, weil die
+//!   Bestandswerte (`i64::MIN - 1`, Zweierpotenzen) in `f32` exakt sind.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use domain::{Km, PyWert};
@@ -57,4 +60,36 @@ fn yaml_u128_ausserhalb_i128_wird_ein_gleit_statt_gewickelt() {
         PyWert::Gleit(nach_f64(u128::try_from(i128::MAX).unwrap()))
     );
     assert_eq!(yaml(&u64::MAX.to_string()), PyWert::GrossGanz(u64::MAX));
+}
+
+/// `PyWert` aus YAML, `i128` ausserhalb von `i64` und `u64`: ein `Gleit` mit dem `f64`-Wert der Zahl (`n as f64`), nicht dem `f32`-Wert.
+/// `2^70 + 2^20` ist in `f64` exakt (51 Bit), in `f32` (24 Bit) nicht. Grenzen: `u64::MAX + 1` ist der kleinste Wert ueber `GrossGanz`,
+/// `i64::MIN - 1` der groesste unter `Ganz`.
+#[test]
+fn yaml_i128_ausserhalb_u64_und_i64_wird_ein_gleit_ohne_f32_verlust() {
+    let yaml = |n: i128| serde_yaml_ng::from_str::<PyWert>(&n.to_string()).unwrap();
+    let nach_f64 = |n: i128| {
+        #[allow(clippy::cast_precision_loss)]
+        let f = n as f64;
+        f
+    };
+    let zwei_hoch_70 = 1_i128 << 70;
+    for n in [
+        zwei_hoch_70 + (1 << 20),
+        -(zwei_hoch_70 + (1 << 20)),
+        i128::from(u64::MAX) + 1,
+        i128::from(i64::MIN) - 1,
+        12_345_678_901_234_567_890_123,
+        i128::MIN,
+    ] {
+        assert_eq!(yaml(n), PyWert::Gleit(nach_f64(n)), "{n}");
+    }
+    // `f32` haette 2^70 + 2^20 auf 2^70 gerundet: der Test unterscheidet die beiden Wege.
+    assert_ne!(
+        nach_f64(zwei_hoch_70 + (1 << 20)).to_bits(),
+        nach_f64(zwei_hoch_70).to_bits()
+    );
+    // Gegenproben: die Nachbarn innerhalb von `i64` und `u64` bleiben ganze Zahlen.
+    assert_eq!(yaml(i128::from(u64::MAX)), PyWert::GrossGanz(u64::MAX));
+    assert_eq!(yaml(i128::from(i64::MIN)), PyWert::Ganz(i64::MIN));
 }
