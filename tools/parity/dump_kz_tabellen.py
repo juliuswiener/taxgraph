@@ -7,6 +7,11 @@ Python-Test `tests/test_kz_tabellen_fixture.py`; Regal: `rust/elster/src/regal.r
 Wertquelle ist ausschliesslich Python: Tabellen als Objekt, einzelne Regeln als Zeilenmuster
 (`_wert`). Kein Wert wird aus `rust/` gelesen — die Rust-Seite wird an denselben Werten gemessen.
 Mengen sortiert. Run: python3 tools/parity/dump_kz_tabellen.py
+
+Herkunft (Fassung): ERiC 44.2.4.0 — so steht es in `pflichtfelder[].eric_version`, aus
+`est_mapping.py:454-462` (checkESt-Laeufe). Die amtliche XSD (`elster11_E10_2025_extern.xsd`, unter
+`~/02_Software/eric/`) hat diese Fixture NICHT gelesen: sie ist ein Abbild der Python-Tabellen, kein
+Abbild des Schemas. Ein Kz, das in Python, Rust und Bindung gleich falsch steht, faengt sie nicht.
 """
 from __future__ import annotations
 
