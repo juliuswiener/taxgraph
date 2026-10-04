@@ -68,7 +68,23 @@ def zum_fragebogen(page, ankreuzen=None, timeout: int = 8000):
                 f"bejahen. Ist es noch ein `screening`-Feld?")
             box.check()
         page.click("#screening-weiter")
-        page.wait_for_selector("#screening", state="hidden", timeout=timeout)
+        try:
+            page.wait_for_selector("#screening", state="hidden", timeout=timeout)
+        except Exception as error:
+            # Was dieser Timeout für sich nicht sagt: „zu spät" oder „nie". Das Call-Log ist in
+            # beiden Fällen gleich (N × visible). `screeningWeiter()` bricht bei der ersten Antwort,
+            # die kein 2xx ist, aus der seriellen POST-Kette aus — vor der Zeile, die #screening
+            # versteckt — und textet dann den Netz-Banner an; solange die Kette noch läuft, ist der
+            # „Weiter"-Knopf deaktiviert. Banner und Knopfzustand trennen den einen durchgefallenen
+            # Request von reiner Langsamkeit (gemessen 2026-10-04: 23 POSTs, 328 ms gegen 8000 ms).
+            try:
+                zustand = page.evaluate(
+                    """() => [document.getElementById('netz-banner').textContent,
+                              document.getElementById('screening-weiter').disabled]""")
+                hinweis = f"netz-banner={zustand[0]!r} #screening-weiter.disabled={zustand[1]!r}"
+            except Exception:  # Seite schon geschlossen — dann bleibt es bei der alten Meldung
+                hinweis = "netz-banner/Knopf nicht lesbar (Seite geschlossen)"
+            raise type(error)(f"{error}\n{hinweis}") from None
 
     page.wait_for_selector("#wegpunkt:not([hidden])", timeout=timeout)
     return page
