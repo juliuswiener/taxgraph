@@ -23,6 +23,71 @@ CI-Lauf 37010730963 auf `8e48cf7`: **alle fünf Jobs grün** (erster ganz grüne
 (`git rev-list --count 2bc35bd4..HEAD`), davon 42 Merges auf dem ersten Elternpfad. CI auf `55e9164d` und auf HEAD nicht abgefragt
 (nicht gemessen); gepusht wird nur auf Julius' Wort.
 
+**Cutover vollzogen (2026-10-04; Julius: Push und Cutover „nach deinem Ermessen“).** Die Voraussetzungen stehen unter „Offen“ 1.
+Der Cutover hat zwei trennbare Teile (Vault `audits/cutover-bereitschaft-rust-port-2026-10-03.md`, „Was daraus folgt“): (A) Rust ist der
+gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder vollzogen noch beschlossen.**
+
+- *Was sich ändert (A):* `make serve` startet den Rust-Dienst (`taxgraph-api`) und ist der Standard-Start; `make serve-python` startet den
+  Python-Dienst. Gebaut mit `f81dba31` (Makefile, `tests/test_make_serve.py`) und `5f346eb5` (Test: `SERVE_PORT` gilt in Start- und Meldezeile).
+- *Was bleibt, und warum:* Python wird nicht gelöscht. Es bleibt Orakel der Vergleichssuiten (`rust/parity`, `ls rust/parity/tests/*_paritaet.rs | wc -l`
+  → 22; `make golden`) und Rückfall. Ein Löschen hätte alle Vergleichssuiten und die 135 Golden-Fälle ihrer Gegenseite beraubt und `tests/` schon in
+  `conftest.py` zum Abbruch gebracht (Messung an Wegwerf-Kopien: Vault `audits/cutover-bereitschaft-rust-port-2026-10-03.md`, Befunde 4 bis 7).
+  Das Löschen ist eine eigene Entscheidung nach einer Beobachtungszeit (F6) und braucht vorher eine Aufzeichnung der Python-Antworten (dort Befund 7).
+  Der Echtversand `versand.py` bleibt Python (F4, Vorbehalt Julius); `POST /fall/<id>/einreichen` prüft in beiden Diensten nur
+  (`rust/api/src/einreichen.rs:1-8`, `produkt/haut/api.py:685-691`).
+- *Rückfall:* (1) schnell: `make serve-python`; beide Dienste lesen dieselben Dateien und Umgebungsvariablen, es gibt keine Migration.
+  (2) Code: der lokale Tag `<TAG>` (Platzhalter, bis der Instruktor ihn setzt; Name `python-standard-letzter`) bezeichnet den letzten Stand, in dem
+  Python der Standard-Start war: `git checkout <TAG>`. (3) Hat ein Rust-Lauf eine Akte beschädigt: `make restore ARCHIV=<tar.gz aus BACKUP_DIR>`.
+- *Messbelege der Voraussetzungen* (jede Zahl mit Quelle; „Bericht“ heißt: aus dem genannten Bericht übernommen, hier nicht neu gemessen):
+  - **(a) 10 000 Fälle je Suite:** `PARITY_N=10000`, jede der 17 Suiten mit Fallzahl-Schalter einzeln: 141 passed / 0 failed, Summe 2858 s.
+    Als ein Lauf nicht gemessen (abgeleitet etwa 49,7 min: 2858 s + 126,5 s für die fünf Suiten ohne Schalter + 0,2 s); bei `N` ungleich Standard sind die
+    Abdeckungs-Wächter aus (`fallzahl::wache_gilt`). Vault `audits/parity-voll-stufe-1-und-2-2026-10-04.md` (Baum `23003002`).
+  - **(c) Gesamtlauf mit Orakel:** `PARITY=1 cargo test --workspace --no-fail-fast`: 1580 passed / 0 failed / 21 ignored, 120 Binaries, 782 s mit Bau
+    (derselbe Vault-Eintrag; die 21 ignorierten sind die bekannten offenen Defekte, `offene_defekte.rs` in api, bescheid und elster).
+  - **(b) Gegenproben:** 15 von 15 (N-G1 bis N-G6, A-G1 bis A-G9) je rot auf `c9d13e6f`: Vault
+    `audits/g-gegenproben-15-von-15-rot-und-solz-konstante-2026-10-04.md`. **Grenze, nicht Teil der 15:** der Solz-Faktor 118 statt 119
+    (`rust/engine/src/zugriff/teil2/solz.rs`) lässt alle Rust-Tests ohne `PARITY=1` grün (`cargo test --workspace --exclude parity`); nur mit
+    `PARITY=1` fallen 3 von 4 Tests der Suite `zugriff_teil2_paritaet` auf. Solange Python das Orakel bleibt, ist die Lücke klein; fiele es weg,
+    brauchte die Stelle eingefrorene Referenzwerte.
+  - **(d) Binärdefekt des Harness:** behoben, `eebe4578` ist in main (`git merge-base --is-ancestor eebe4578 HEAD`).
+  - **(e) die Entscheidung:** Julius, nach Ermessen des Instruktors.
+- *Rauchprobe auf einer Kopie der echten Daten* (`PARITY=1 CARGO_TARGET_DIR=<Verzeichnis auf Platte> python3 tools/parity/rauchprobe_echtdaten.py`, `7d08e023`;
+  Bericht `~/.cache/taxgraph-tmp/berichte/rauchprobe-echtdaten.md`): Bestand 37 MB, 192 Fälle, 8 lesende Routen (`stand`, `fragen`, `ergebnis`,
+  `preflight`, `deklaration`, `graph`, `feld/frage`, `feld/warum`), 2218 Abfragen je Dienst, **2202 gleich, 16 abweichend**: `stand`, `fragen`, `ergebnis`
+  je 5-mal Rust 500 / Python 200 und `deklaration` 1-mal ein anderer Text. Alle 16 liegen an fünf Fällen mit einem Jahr außerhalb 2024..2026 (2099, −5, eine
+  38-stellige Zahl). Ursache und Messung: Bericht `~/.cache/taxgraph-tmp/berichte/rauchprobe-abweichungen.md`. Als gewollte Abweichungen geführt (`6efc1c72`): 1h (Jahr 2099,
+  `stand`/`fragen`/`ergebnis`; mit vollständiger Akte antworten beide 500) und 1i (`deklaration` mit Jahr jenseits von i64: gleicher Satz, Rust nennt `i64::MAX`,
+  Python die Zahl; `rust/store/src/store.rs:412-414`) in `rust/parity/tests/api_http_paritaet.rs`, `dokumentierte_abweichungen`, neben 1b. Für `stand`/`fragen`/`ergebnis` mit Jahr −5 gilt derselbe Mechanismus; der Harness prüft dort nur `deklaration` (kein eigener Test, in der Rauchprobe gemessen). Die Einträge stehen seit dem
+  Merge von `orch/cutover-abw` in main. Bei eingeschalteter Anmeldung kann kein Nutzer diese Fälle öffnen: Sie haben kein Besitzerfeld, beide Dienste antworten mit 403
+  (15 von 15 Abfragen gemessen, Bericht `rauchprobe-abweichungen.md`).
+- *Überlauf-Regel:* ein Betrag, den die Rechnung nicht in `i64` fasst, ist in Rust ein 422 („Ein eingegebener Betrag ist zu groß für die Berechnung“) statt einer
+  falschen Zahl; Python rechnet weiter und antwortet 200 (Vault `decisions/betrag-ausserhalb-i64-rechnung-antwortet-422-statt-500.md`, Abweichungen 1c bis 1f). Bis zum
+  Shim-Guard waren Entfernungspauschale, EÜR-Gewinn, Mitunternehmer-Summe, Kirchensteuer-Abzug und AGB-Abzug einzeln abgesichert; die Gesamtrechnung (Gesamtbetrag der
+  Einkünfte, zu versteuerndes Einkommen) zeigte bei absurden Eingaben einen falschen Zwischenwert (Vault `audits/ueberlauf-i64-entfernungspauschale-und-nachbarn-2026-10-04.md`).
+  **Seit dem Merge von `orch/h8-shim-guard`** prüft ein einziger Prüfer im C-Übersetzer zum Rechenkern jede gelesene Ausgabe auf 64 Bit (Abweichung 1g; Plan im Vault, selber
+  Eintrag, „Was daraus folgt“ 1); damit ist auch die Gesamtrechnung abgedeckt. Vor diesem Merge gilt der Vault-Befund: Die Gesamtrechnung ist offen.
+- *Messung am Produktstart auf Kopien* (Rohdaten `~/.cache/taxgraph-tmp/cutover-smoke/serve-A.log`, `rundlauf.out`; der echte Bestand wurde nicht beschrieben): `make serve`
+  sichert zuerst; eine Anfrage ohne Token ergibt 401, auch wenn `TAXGRAPH_NO_AUTH=1` geerbt war; SIGTERM endet mit „Server heruntergefahren“; ein von Rust
+  geschriebenes Ereignis liest Python identisch (`ergebnis`, `stand`, `fragen`) und umgekehrt (Fall mit 46 Ereignissen).
+- *Betriebsfolgen:*
+  1. `make serve` baut im dev-Profil (opt-level 1), nie mit `--release`: `rust/Cargo.toml` hat kein `[profile.release]` (`grep -c profile.release rust/Cargo.toml` → 0), Cargo
+     schaltet im Release-Bau `overflow-checks` und `debug-assertions` ab, und nur der dev-Bau wird von `rust/parity` und `make ui-rust` gemessen. Kaltbau in leerem
+     Zielordner: 123 Crates, 40 s, 870 MB (`cutover-smoke/cargo-build.log`).
+  2. Die Anmeldung ist an: `make serve` entfernt `TAXGRAPH_NO_AUTH` aus der Umgebung (`env -u TAXGRAPH_NO_AUTH`, geprüft in `tests/test_make_serve.py`). Ein Fall ohne Besitzerfeld ist für jedes Konto gesperrt (403, wie in Python); im echten Bestand haben 39 von 192
+     Fällen ein Besitzerfeld (gemessen, Bericht `rauchprobe-abweichungen.md`). Das ist unverändert gegenüber Python.
+  3. `make backup` läuft vor jedem Start (`SICHERN=0` überspringt): rund 29,5 MB je Start bei 37 MB Bestand (`cutover-smoke/serve-A.log`: 29 455 291 B); `BACKUP_DIR`
+     (Standard `../taxgraph-backups`, neben dem Checkout) wächst, ein Aufräumen ist nicht gebaut.
+  4. `AUTH_USERS` (Standard `produkt/auth/users.json`) und `TAXGRAPH_USER_STORE` laufen auseinander, wenn jemand die Variable setzt: `make backup` sichert weiter die
+     Standarddatei. Dann `make serve AUTH_USERS=<Pfad>` aufrufen. Bestand vor dem Cutover, nicht verändert.
+  5. `SERVE_PORT` (Standard 8000), `SERVE_TARGET` (Standard `~/.cache/taxgraph-serve/target`); `TAXGRAPH_JWT_SECRET` setzen, damit Anmeldungen einen Neustart überleben (ohne den Wert würfelt der Dienst bei jedem Start einen neuen und entwertet alle Tokens, `rust/auth/src/lib.rs:112-113`).
+     Der Dienst bindet nur 127.0.0.1 (`rust/api/src/main.rs`).
+  6. `make serve` schreibt in den echten Bestand (Standard `~/.local/share/taxgraph`; `TAXGRAPH_DATEN` und `XDG_DATA_HOME` verschieben ihn). Tests und Messungen setzen `TAXGRAPH_DATEN` auf eine Kopie und starten den Dienst nie über
+     `make serve` (so tun es `scripts/starte-api.sh` und `tools/parity/rauchprobe_echtdaten.py`).
+- *Tor auf dem finalen main* (clippy, `cargo test --workspace --exclude parity`, `make unit`, `make golden`, TESTMAP-Test, `PARITY=1`): **TOR: von Instruktor.** Letzter voller Lauf mit Zahlen:
+  „Gates auf `057b7ec3`“ unten.
+- *Nicht gemessen:* ein einzelner `PARITY_N=10000`-Lauf über alle Suiten; ein Betrieb mit `TAXGRAPH_NO_AUTH=1` gegen den echten Bestand (dort wären die 16 Abweichungen sichtbar);
+  `make serve` gegen den echten Bestand (bewusst nie gestartet); ein Dauerlauf; ob die Oberfläche besitzerlose Fälle auflistet.
+
 **Seit `8e48cf7` in main** (je Spitze per `git log --first-parent 8e48cf7..HEAD`):
 
 - `opt-level = 1` im dev-Profil (`6fbe3d5`, `rust/Cargo.toml:63`, `grep -n opt-level rust/Cargo.toml`): der Beschluss vom 2026-10-02 ist gebaut.
@@ -138,18 +203,12 @@ Parity-Suiten ist von 19 auf 22 gestiegen (`ls rust/parity/tests/*_paritaet.rs |
 
 **Offen**
 
-1. Cutover (Schritt 10). Alle Routen aus 9c sind portiert (oben). Der Harness-Pfad für `chat`/`entfernung`/`einreichen` steht:
-   Abschnitte `extern/chat`, `extern/entfernung`, `extern/einreichen` in `api_http_paritaet.rs` mit Fremddienst-Stubs je Server;
-   das Chat-Surrogat ist dokumentierte Abweichung C (`115ddac`). **Offen, Entscheidung Julius.** Die Voraussetzungen laut Plan (§ 5 „Cutover: 10 000“,
-   § 7 Schritt 10 „nur bei vollständiger Parität“) sind offen oder nicht gemessen: (a) 10 000 generierte Fälle: nicht gemessen; (b) Gegenproben
-   G1–G6: zuletzt auf `8e48cf7` je rot (G1–G9 auf `a941ea7`), danach nicht nachgemessen; (c) `PARITY=1 cargo test --workspace` in einem Lauf: nicht
-   gemessen; (d) Parity-Harness-Binärdefekt: Der Harness `api_http_paritaet` startet die Rust-Server vom Pfad `<CARGO_TARGET_DIR>/debug/taxgraph-api`;
-   jedes andere `cargo test -p api` im selben Zielverzeichnis ersetzt die Datei durch einen Bau ohne `festzeit`, die Server haben dann die echte Uhr, und
-   die `event_id`-Abweichungen sehen wie ein Produktfehler aus (laut Commit-Nachricht, auf `bc092a74` nicht nachgemessen). Die Behebung steht als
-   Commit `eebe4578` (2026-10-04 07:06, ein Commit über `057b7ec3`, ändert `rust/parity/tests/api_http_paritaet.rs` und `rust/TESTMAP.tsv`) auf dem
-   Zweig `orch/parity-binaer-kopie`, in Arbeit bei `p24a-bau` (laut main); der Zweig ist nicht in main
-   (Stand 07:13: `git log --oneline 057b7ec3..orch/parity-binaer-kopie` → 1 Zeile, `git merge-base --is-ancestor eebe4578 bc092a74` → nein);
-   (e) die Entscheidung selbst.
+1. Cutover (Schritt 10) — **Teil (A) vollzogen 2026-10-04, Teil (B) Python löschen offen; Belege im Absatz „Cutover vollzogen“ oben.** Alle Routen aus 9c sind portiert (oben). Der Harness-Pfad
+   für `chat`/`entfernung`/`einreichen` steht: Abschnitte `extern/chat`, `extern/entfernung`, `extern/einreichen` in `api_http_paritaet.rs` mit Fremddienst-Stubs je Server; das
+   Chat-Surrogat ist dokumentierte Abweichung C (`115ddac`). Die Voraussetzungen laut Plan (§ 5 „Cutover: 10 000“, § 7 Schritt 10 „nur bei vollständiger Parität“) sind: (a) 10 000
+   generierte Fälle, (b) Gegenproben, (c) `PARITY=1 cargo test --workspace` in einem Lauf, (d) Behebung des Binärdefekts im Harness `api_http_paritaet` (`eebe4578`: ein anderes
+   `cargo test -p api` im selben Zielordner ersetzte `<CARGO_TARGET_DIR>/debug/taxgraph-api` durch einen Bau ohne `festzeit`, die `event_id`-Abweichungen sahen wie ein Produktfehler
+   aus), (e) die Entscheidung. Stand am 2026-10-04: (a), (b), (c), (d) gemessen (Absatz oben), (e) gefallen. Offen bleibt (B).
 2. Reste aus den Berichten `haertung` und `json-leser`: alle vier Einträge (`python-schreibt-akte-die-der-rust-leser-sperrt`,
    `bindungsbereich-prueft-nur-der-browser`, `negativer-aufwand-umgeht-pflichtfrage`,
    `python-schreibt-ganzzahl-ueber-i64-in-die-fallakte`) liegen im Archiv (`backlog/archive/taxgraph/`, geprüft per
@@ -221,7 +280,7 @@ Parity-Suiten ist von 19 auf 22 gestiegen (`ls rust/parity/tests/*_paritaet.rs |
 | dev-Profil nur Zeilentabellen | fertig: `[profile.dev] debug = "line-tables-only"` statt `debug = 2` (Auftrag Julius, Plattenplatz), `profile.test` erbt. Backtraces behalten Datei und Zeile, der Debugger sieht keine Variablen. `libstore-*.rlib` 11 804 166 B → 5 428 230 B (auf 46 %); clippy 0, `cargo test -p store` grün, Gegenprobe ohne Abschnitt → `debuginfo=2`. PARITY 17/17 grün auf `8e48cf7` | `bb01e0f` · `beef16b` |
 | Orakel liest eine Bindungsdatei einmal | fertig: `traverser.lade_datei_felder` ist je Prozess gecacht, `api._datei_felder` und beide Orakel-Skripte nutzen sie. YAML-Lesevorgänge 1509 → 32. `bescheid_deklaration_paritaet` 205 → 91 s laut Worker-Bericht, 86 s in der Nachmessung auf `8e48cf7`; die anderen 16 Suiten nicht schneller. Kosten: eine geänderte Bindungs-YAML wirkt erst nach Neustart des Prozesses (wie `lade_bindung`). Gegenproben G5/G6 in der Nachmessung je rot; Vault `research/taxgraph-bauzeit-vs-testzeit` | `6bba00d` |
 | 9c `api`-Handler | Handler fertig (gemessen auf `2bc35bd4`, Routenzahl auf `bc092a74` nachgemessen): alle 24 Routen portiert (Routentabelle des Harness: Python 24, Rust 24, Befehl oben); alle GET-Routen gemergt (`8d1bd96`), POST-Routen `event`, `kontoauszug`, `vorjahr` (`82bbf1e`), `chat` und `entfernung` (`c949f86`), `einreichen` (`8c89556`; nur `ERIC_VALIDIERE`, kein Versand); 9c/0b (`Username`/`FallId`-Newtypes im Owner-Check) gemergt (`0b31195`), 9c/0c und 9c/0e gemergt (`ecdfcb9`); Landkarte gemessen (15 Routen, Bericht `berichte/9c-karte.md`); Harness-Generator je Route fertig (`88f60c7`: echte Eingaben für 11 Routen aus Stufe 1–3); `NICHT_PORTIERT` entfällt (`d9d51a6`), eine Antwort `501 nicht_portiert` ist im Harness eine Abweichung (`d432948` in `4ec2d2f`, danach `d9d51a6`); `flow` ist portiert (Python-Teil `1321f3b`, Rust-Teil `ecdfcb9`) und der Mitschnitt `flow.jsonl` wird in `Modus::Voll` verglichen (Lauf auf `4368ebb` mit `--nocapture`: 60 bzw. 977 Zeilen in zwei Abschnitten, sonst 0); Vorbedingung JSON-Leser erfüllt (`d4babec`). Die Abnahme „Kontrakttest, Playwright gegen Rust“ (§7, Schritt 9c) stand hier offen (Vault `decisions/rust-9c-generator-je-route-und-flow-portieren`); den Lauf gibt es seit `081e1d94` als `make ui-rust` (Punkt „Seit `2bc35bd4` gemergt“: 249 passed, 23 xfailed auf `5d212c31`, auf `bc092a74` nicht neu gelaufen, nicht in der CI) | `88f60c7` · `4ec2d2f` |
-| 10 Cutover | offen, Entscheidung Julius; Voraussetzungen unter „Offen“ 1 | — |
+| 10 Cutover | **(A) vollzogen 2026-10-04** (Absatz „Cutover vollzogen“ oben): `make serve` = Rust, `make serve-python` = Rückfall; **(B) Python löschen nicht vollzogen**: Python bleibt Referenz, Orakel und Rückfall | `f81dba31`, `5f346eb5` |
 
 Gates auf `8e48cf7` (2026-10-02 15:05, Instructor nachgemessen im frischen Worktree `wt-nachmessung`, Log
 `~/.cache/taxgraph-tmp/nachmessung-neustart.log`): `make unit` 3548 passed / 0 failed (79 skipped, 102 xfailed,
@@ -496,7 +555,7 @@ damit genau der End-to-End-Test „Frontend gegen Rust-API" aus Phase 4. Der Lau
 | 9a | `api`-Gerüst: 24 Routen, Auth, `EigenerFall`, Fehlerformate, HTTP-Differenz-Harness | Harness 0 Abweichungen auf den implementierten Routen |
 | 9b | **Härtung aller portierten Crates** (Entscheidung Julius 2026-09-30, vor 9c) | siehe unten |
 | 9c | `api`-Handler lesen/schreiben + Frontend-E2E | Kontrakttest, Playwright gegen Rust |
-| 10 | Cutover — **nur bei vollständiger Parität** | 10 000 generiert |
+| 10 | Cutover — **nur bei vollständiger Parität** | 10 000 generiert; (A) Rust als Standard-Start vollzogen 2026-10-04, (B) Python löschen offen (Fortschritt, Absatz „Cutover vollzogen“) |
 
 Scheitert ein Schritt nach drei Versuchen, wird er zurückgenommen und im Bericht geführt.
 
@@ -566,7 +625,7 @@ Bescheid-Text und XML bleiben identisch, jeder Fixture-Diff wird im Commit erkl�
 | F3 | Hartkodierte Gesetzeswerte (`runner.py:462-467,1052,1703-1706`) nach `params/`? | Port übernimmt sie als benannte `const` mit § im Doc-Kommentar; Umzug separat |
 | F4 | `versand.py` (Echtversand) portieren? | Nein — Julius-Vorbehalt |
 | F5 | Löschkandidaten in `pipeline/` | Nicht Teil des Ports |
-| F6 | Cutover löscht Python | Nur wenn Schritt 10 grün; sonst bleibt Python Referenz und der Bericht nennt die Lücke |
+| F6 | Cutover löscht Python | Schritt 10, Teil (A), ist vollzogen (2026-10-04); Python wird NICHT gelöscht: Referenz, Orakel der Vergleichssuiten, Rückfall (`make serve-python`). Das Löschen ist eine eigene Entscheidung nach einer Beobachtungszeit; an ihr hängen die Solz-Lücke und die Frage eingefrorener Referenzwerte |
 | F7 | YAML-Crate (`serde_yaml` archiviert) | `serde_yaml_ng` oder `serde_norway` nach Doku-Check; Duplikat-Schlüssel-Verhalten per Test belegt |
 
 ---

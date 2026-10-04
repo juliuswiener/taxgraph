@@ -8,7 +8,17 @@ make tests              clerk test -W rules/          the Catala scope tests
 make all                unit + tests + s02
 make golden             golden/golden_lauf.py          full-return regression
 make snapshot-verify    pipeline/snapshot.py verify --all
+make serve              Rust-Dienst (das Produkt seit dem Cutover 2026-10-04), sichert den Bestand vorher
+make serve-python       Python-Dienst: Rückfall, Referenz und Orakel
 ```
+
+`make serve` baut im dev-Profil, nie mit `--release` (dort fehlen `overflow-checks`; nur der dev-Bau wird
+von `rust/parity` und `make ui-rust` gemessen). Beide Ziele laufen gegen den echten Bestand
+`~/.local/share/taxgraph`: Tests und Messungen setzen `TAXGRAPH_DATEN` auf eine Kopie oder nutzen
+`scripts/starte-api.sh`, nie `make serve`. Rückfall auf Python: `make serve-python`; der letzte Stand mit
+Python als Standard-Start ist der lokale Tag `<TAG>` (Platzhalter). Python bleibt Orakel der `rust/parity`-Suiten
+und wird nicht gelöscht (`REWRITE_PLAN.md`, Absatz „Cutover vollzogen“). `BACKUP_DIR` wächst je Start;
+`AUTH_USERS` folgt `TAXGRAPH_USER_STORE` nicht von selbst.
 
 `make unit` runs plain `python3 -m pytest`, without `OPAM_ENV`/`VENV312` from the Makefile.
 `make tests` runs under `OPAM_ENV` and `make golden` under `VENV312` — call those targets,

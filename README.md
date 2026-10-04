@@ -39,6 +39,33 @@ make tests   # alle Clerk-Scope-Tests (12 gruen)
 make s02     # Differentialtest Catala vs GETTSIM, erzeugt reports/s02-divergenzen.md
 ```
 
+### Dienst starten (seit dem Cutover 2026-10-04: Rust)
+
+```bash
+make serve          # Rust-Dienst, das Produkt: http://127.0.0.1:8000 (SERVE_PORT=... aendert den Port)
+make serve-python   # Python-Dienst: Rueckfall, Referenz und Orakel der Vergleichstests
+```
+
+- Beide Ziele sichern den Bestand zuerst mit `make backup` (rund 30 MB je Start, nach
+  `../taxgraph-backups`). Scheitert die Sicherung, startet nichts. `SICHERN=0` ueberspringt sie.
+- Beide lesen dieselben Dateien und Umgebungsvariablen: Bestand unter `~/.local/share/taxgraph/faelle`
+  (`TAXGRAPH_DATEN` und `XDG_DATA_HOME` wirken wie bisher), Konten in `produkt/auth/users.json`,
+  `.env.llm` und `.env.maps` aus der Repo-Wurzel. Der Wechsel in beide Richtungen braucht keine Migration.
+- Die Anmeldung ist an. `TAXGRAPH_JWT_SECRET` setzen, damit Anmeldungen einen Neustart ueberleben.
+- `make serve` baut im dev-Profil (opt-level 1), nicht mit `--release`: nur dieser Bau wird von den
+  Vergleichstests gegen Python geprueft, und `--release` schaltet `overflow-checks` ab.
+- Rueckfall: `make serve-python` starten. Hat ein Rust-Lauf eine Akte beschaedigt, den Bestand mit
+  `make restore ARCHIV=<tar.gz aus ../taxgraph-backups>` zurueckholen. Den Code des letzten Stands mit
+  Python als Standard-Start liefert der lokale Tag `<TAG>`: `git checkout <TAG>`. Es ist nichts geloescht.
+- Betrieb: `BACKUP_DIR` waechst um rund 30 MB je Start, ein Aufraeumen gibt es nicht. Setzt Du
+  `TAXGRAPH_USER_STORE`, sichert `make backup` weiter `produkt/auth/users.json`: dann `AUTH_USERS=<Pfad>`
+  mitgeben. Der Bau liegt in `~/.cache/taxgraph-serve/target` (`SERVE_TARGET=...` aendert das); der erste
+  Bau dauerte gemessen 40 s. Der Dienst bindet nur 127.0.0.1.
+- Ein Fall ohne Besitzerfeld ist bei eingeschalteter Anmeldung fuer jedes Konto gesperrt (403). Das war in
+  Python schon so.
+- Der Versand an ELSTER bleibt Python (`versand.py`, Vorbehalt Julius). `POST /fall/<id>/einreichen`
+  prueft in beiden Diensten nur (ERiC `ERIC_VALIDIERE`) und sendet nichts.
+
 ### Verifizierte Regeln reproduzieren (frischer Clone)
 
 Die Pipeline-Laeufe unter `pipeline/runs/` sind gitignored — ein frischer Clone
