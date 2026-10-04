@@ -1100,3 +1100,22 @@ fn katalog_ordnet_die_felder_den_schreibern_zu() {
         .count();
     assert_eq!(maps, 1);
 }
+
+/// Python `_jahr`: ein Wert, der kein Text ist, ist kein Datum. Die echte Bindung haelt Zahlen
+/// am `datum`-Typ auf; hier traegt die Quelle den Typ `int`, damit der Wert die Ableitung erreicht.
+#[test]
+fn ableitung_liest_eine_zahl_nicht_als_datum() {
+    let eigene = mit_aenderung("stammdaten_geburtsdatum", |b| {
+        b.typ = Feldtyp::Int;
+        b.muster = None;
+        b.bereich = None;
+    });
+    let mut s = leerer_store(2025);
+    mit_karte(
+        &eigene,
+        &bestaetigt("stammdaten_geburtsdatum", &json!(19_610_101)),
+        &mut s,
+    )
+    .unwrap();
+    assert_eq!(aktive(&s).len(), 1, "{:?}", aktive(&s));
+}
