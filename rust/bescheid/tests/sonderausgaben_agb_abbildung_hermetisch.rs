@@ -292,6 +292,18 @@ fn faelle() -> Vec<Fall> {
             nur_bestaetigt: true,
             erwartet: [0, 0, 0],
         },
+        // Wie der Fall davor, fuer den Ehegatten (Mutation N03 des Instruktors auf e297690d): die Partner-Kette kuerzt die Basis
+        // um den Pauschbetrag des Ehegatten ebenfalls nie unter 0. Erreichbar nur beim direkten Aufruf (siehe oben).
+        Fall {
+            gruppe: "agb",
+            name: "Zusammenveranlagung, Partner GdB 50, Wahlrecht Einzelnachweis (nein), Basis 0 unter dem Pauschbetrag 1.140 EUR: Ergebnis 0, nicht negativ",
+            events: vec![z("rentner_grad_der_behinderung_partner", 50, true), b("behinderungsbedingte_aufwendungen_wahlrecht_pb_partner", false)],
+            gde: 50_000,
+            ausserg: 0,
+            zusammen: true,
+            nur_bestaetigt: true,
+            erwartet: [0, 0, 0],
+        },
         // Nur das Python-Orakel stuetzt diese beiden Faelle (zumutbare Belastung, § 33 Abs. 3). Die Fahrtkostenpauschale
         // (§ 33 Abs. 2a: 900 EUR bei GdB 80 oder GdB 70 mit G, 4.500 EUR bei aG, Bl, TBl oder H) kommt zum agB-Aufwand 5.000 EUR dazu
         // (Mutation A20); 3.953 EUR ist der Wert ohne Pauschale (siehe oben).
