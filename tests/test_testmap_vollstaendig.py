@@ -4,6 +4,7 @@ Die Karte sagt je Testdatei, was sie prueft und was sie ersetzt oder dass sie bl
 Zeile steht in keiner Zaehlung des Cutover-Plans. Der Test sucht die Dateien in `tests/` (Python) und
 in `rust/*/tests/` (Rust, dazu Hilfsquellen `.py`/`.c`), nicht deren Inhalt, und braucht nichts ausser
 dem Baum. Daten (yaml, txt, proptest-regressions) und `#[cfg(test)]` im Quelltext zaehlen nicht.
+Spalte 2 und 3 der Karte halten den Stand beim Anlegen der Zeile; kein Test prueft oder zieht sie nach.
 
 `python3 tests/test_testmap_vollstaendig.py` nennt die Zahl und die Liste der fehlenden Dateien.
 """
@@ -38,7 +39,7 @@ def luecken(wurzel: str = ROOT, karte: str = KARTE) -> list[str]:
 def test_jede_testdatei_hat_eine_zeile_in_der_karte():
     fehlend = luecken()
     assert not fehlend, (
-        f"{len(fehlend)} Testdateien ohne Zeile in {KARTE} (Spalten: file, lines, n_tests, xfail, "
+        f"{len(fehlend)} Testdateien ohne Zeile in {KARTE} (Spalten: file, lines_bei_anlage, n_tests_bei_anlage, xfail, "
         "category, target_module, replacing_guarantee_or_note):\n  " + "\n  ".join(fehlend)
     )
 

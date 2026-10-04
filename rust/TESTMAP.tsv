@@ -1,4 +1,4 @@
-file	lines	n_tests	xfail	category	target_module	replacing_guarantee_or_note
+file	lines_bei_anlage	n_tests_bei_anlage	xfail	category	target_module	replacing_guarantee_or_note
 tests/_ablage_leck_probe.py	31	1	0	NOT_PORTED	(pytest conftest)	Attrappe zu tests/test_ablage_endet_an_der_testdatei.py, keine Testdatei (Name mit _, pytest sammelt sie nur auf der Befehlszeile): lenkt api.FAELLE und audit.AUDIT_DIR per Zuweisung um und setzt nie zurueck. Bleibt mit dem Waechter in Python. Rust hat keine Zuweisung an Modul-Globals fuer diese Pfade: Konfig liegt im Zustand (rust/api/src/zustand.rs:24)
 tests/conftest.py	411	0	0	NOT_PORTED	produkt/auth/audit	[deps: catala-guard,eric-skip] pytest fixtures + guard against writes to real audit.jsonl -> store::audit, Pfad ist Parameter von anhaengen()/lies() (kein globales AUDIT_DIR), tempdir je cargo test
 tests/_kegel.py	171	0	0	NOT_PORTED	produkt/haut/api_constants (SCHEIBEN kegel)	test helper duplicating Pflicht-Kegel -> Kegel derived from one const SCHEIBEN table, tests call the same fn
