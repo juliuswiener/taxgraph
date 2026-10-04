@@ -212,7 +212,7 @@ fn kegel_rentner() -> Paare {
         ("rentner_hinterbliebenenbezuege", json!(false)),
         ("veranlagung", json!("einzel")),
         ("kein_gewinn", json!(true)),
-        ("kein_kap", json!(false)),
+        ("kein_kap", json!(true)),
         ("kein_vuv", json!(true)),
         ("kein_sonstige", json!(false)),
         ("vor_an_anteil_rv", json!(0)),
@@ -230,11 +230,6 @@ fn kegel_rentner() -> Paare {
         ("agb_zwangslaeufig", json!(true)),
         ("agb_notwendig_angemessen", json!(true)),
         ("rentner_rentenfreibetrag", json!(0)),
-        ("kap_kapitalertraege", json!(3_000_000)),
-        ("kap_gewinn_aktien", json!(0)),
-        ("kap_gewinn_sonstige", json!(0)),
-        ("kap_verlust_aktien", json!(0)),
-        ("kap_verlust_sonstige", json!(0)),
     ]
 }
 
@@ -278,8 +273,63 @@ fn g4_kind_freibetrag_p32d_aenderungen() -> Paare {
     ]
 }
 
+fn g5_vg_einzel_p34_aenderungen() -> Paare {
+    vec![
+        ("kein_gewinn", json!(false)),
+        ("rentner_alter_55_oder_berufsunfaehig", json!(true)),
+        ("rentner_freibetrag_erstmalig", json!(true)),
+        ("rentner_veraeusserungsgewinn", json!(12_000_000)),
+    ]
+}
+
+fn r3_rentner_p34_aenderungen() -> Paare {
+    vec![
+        ("kein_gewinn", json!(false)),
+        ("rentner_alter_55_oder_berufsunfaehig", json!(true)),
+        ("rentner_freibetrag_erstmalig", json!(true)),
+        ("rentner_veraeusserungsgewinn", json!(12_000_000)),
+    ]
+}
+
+fn r4_rentner_p35_aenderungen() -> Paare {
+    vec![
+        ("kein_gewinn", json!(false)),
+        ("einkuenfte_gewinn", json!(5_000_000)),
+        ("gewinn_betriebsart", json!("gewerbe")),
+        ("gewst_messbetrag", json!(150_000)),
+        ("gewst_hebesatz", json!(400)),
+    ]
+}
+
+fn r5_rentner_kind_freibetrag_aenderungen() -> Paare {
+    vec![
+        ("rentner_jahresrente", json!(30_000_000)),
+        ("veranlagung", json!("zusammen")),
+        ("fam_anzahl_kinder", json!(1)),
+    ]
+}
+
+fn r1_rentner_p32d_aenderungen() -> Paare {
+    vec![
+        ("kein_kap", json!(false)),
+        ("kap_kapitalertraege", json!(3_000_000)),
+        ("kap_gewinn_aktien", json!(0)),
+        ("kap_gewinn_sonstige", json!(0)),
+        ("kap_verlust_aktien", json!(0)),
+        ("kap_verlust_sonstige", json!(0)),
+    ]
+}
+
 fn r2_rentner_kind_p32d_aenderungen() -> Paare {
-    vec![("fam_anzahl_kinder", json!(1))]
+    vec![
+        ("kein_kap", json!(false)),
+        ("fam_anzahl_kinder", json!(1)),
+        ("kap_kapitalertraege", json!(3_000_000)),
+        ("kap_gewinn_aktien", json!(0)),
+        ("kap_gewinn_sonstige", json!(0)),
+        ("kap_verlust_aktien", json!(0)),
+        ("kap_verlust_sonstige", json!(0)),
+    ]
 }
 
 // ---- Tests -----------------------------------------------------------------------------------------
@@ -350,7 +400,11 @@ async fn g4_kind_freibetrag_p32d_kette_kommt_aus_dem_freibetrag_lauf() {
 /// Schliesser in `rentner_tarif::festzusetzende` (Kapital VOR § 32b, ein einziger Rueckgabepunkt).
 #[tokio::test]
 async fn r1_rentner_p32d_kette_traegt_die_abgeltungsteuer() {
-    let a = ergebnis("rentner_gesamt", &kegel_rentner()).await;
+    let a = ergebnis(
+        "rentner_gesamt",
+        &mit(kegel_rentner(), r1_rentner_p32d_aenderungen()),
+    )
+    .await;
     erwarte_kette("r1", &a, 806_100, [16_598, 16_562, 811, 8_061]);
 }
 
@@ -365,5 +419,66 @@ async fn r2_rentner_kind_p32d_kette_kommt_aus_dem_endstand() {
     .await;
     erwarte_kette("r2", &a, 806_100, [16_598, 16_562, 811, 8_061]);
     assert_eq!(a["kette"]["p31"]["guenstiger"], "kindergeld", "{a}");
+    assert_eq!(a["kette"]["p31"]["kindergeld"].as_i64(), Some(3060), "{a}");
+}
+
+/// Rentner-Gegenprobe ohne Sonderregel (20.000 EUR Rente): die Kette lief schon vor p24a und endet unveraendert
+/// bei der Zahl. Basis der Rentner-Faelle dieser Datei.
+#[tokio::test]
+async fn r0_rentner_gegenprobe_kette_endet_bei_der_zahl() {
+    let a = ergebnis("rentner_gesamt", &kegel_rentner()).await;
+    erwarte_kette("r0", &a, 81_100, [16_598, 16_562, 811, 811]);
+    assert!(a["kette"]["p31"].is_null(), "kinderlos: kein p31");
+}
+
+/// § 34 `EStG` im Gesamt-Zweig (120.000 EUR Veraeusserungsgewinn, einzeln): der modifizierte Tarif steckt im
+/// finalen `g2` (`tarif_modifiziert`). Aus dem Basis-`g` endete die Kette um die § 34-Ermaessigung zu hoch
+/// (34.338 statt 30.358 EUR). Die Stufe `tarifliche` haelt das `g2` fest.
+#[tokio::test]
+async fn g5_vg_einzel_p34_kette_traegt_die_tarifermaessigung() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), g5_vg_einzel_p34_aenderungen()),
+    )
+    .await;
+    erwarte_kette("g5", &a, 4_458_400, [133_770, 133_734, 44_584, 44_584]);
+}
+
+/// § 34 `EStG` im Rentner-Zweig (20.000 EUR Rente + 120.000 EUR Veraeusserungsgewinn): derselbe Fall mit dem
+/// `g2` des Rentner-Laufs. Ohne den Endstand stuende hier die `tarifliche` Stufe um die Ermaessigung zu hoch.
+#[tokio::test]
+async fn r3_rentner_p34_kette_traegt_die_tarifermaessigung() {
+    let a = ergebnis(
+        "rentner_gesamt",
+        &mit(kegel_rentner(), r3_rentner_p34_aenderungen()),
+    )
+    .await;
+    erwarte_kette("r3", &a, 2_051_100, [91_598, 91_562, 20_511, 20_511]);
+}
+
+/// § 35 `EStG` im Rentner-Zweig (50.000 EUR Gewerbegewinn, Messbetrag 1.500, Hebesatz 400): die Anrechnung
+/// steckt in `steuerermaessigungen` des finalen `g2`; die Stufe `festzusetzende` kommt aus dem Endwert.
+#[tokio::test]
+async fn r4_rentner_p35_kette_endet_bei_der_zahl() {
+    let a = ergebnis(
+        "rentner_gesamt",
+        &mit(kegel_rentner(), r4_rentner_p35_aenderungen()),
+    )
+    .await;
+    erwarte_kette("r4", &a, 1_105_000, [66_598, 66_562, 17_050, 11_050]);
+}
+
+/// § 31 im Rentner-Zweig, der Kinderfreibetrag gewinnt (300.000 EUR Rente, Zusammenveranlagung, 1 Kind): die
+/// Kette kommt aus dem Freibetrag-Lauf, das Kindergeld ist hinzugerechnet. Der Kindergeld-Sieg (r2) laesst
+/// den Freibetrag-Lauf unbenutzt; erst dieser Fall haelt ihn.
+#[tokio::test]
+async fn r5_rentner_kind_freibetrag_kette_kommt_aus_dem_freibetrag_lauf() {
+    let a = ergebnis(
+        "rentner_gesamt",
+        &mit(kegel_rentner(), r5_rentner_kind_freibetrag_aenderungen()),
+    )
+    .await;
+    erwarte_kette("r5", &a, 8_234_000, [250_398, 240_726, 79_280, 82_340]);
+    assert_eq!(a["kette"]["p31"]["guenstiger"], "freibetraege", "{a}");
     assert_eq!(a["kette"]["p31"]["kindergeld"].as_i64(), Some(3060), "{a}");
 }
