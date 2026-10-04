@@ -380,9 +380,20 @@ const FESTE_ZAHL: Ausgang = Ausgang::Ueberlauf("feste_zahl");
 /// die Faelle ausserhalb sind also "zwischen" (nur die Slot-Summe liegt ausserhalb `i64`), nie "klar". Die EUeR-Summanden
 /// (`betriebsausgaben`) addiert der Guard schon vorab: dort meldet die Marke "Addition" (derselbe Fall, eine Stelle frueher);
 /// `feste_zahl` erreichen darum die Vorsorge-Slots.
+///
+/// Die zwei EUeR-Faelle mit Summe `i64::MAX` (Guard laesst sie durch): der Gesamt-Scope gibt dort ein zvE ausserhalb `i64` aus
+/// (Verlust `i64::MAX` ct plus Pauschalen), `gesamt_kette` liest es. Vor dem Shim-Guard (h8-shim-guard) kam der Wert mod 2^63 an und
+/// die Rechnung lief durch (`Bestaetigt(0)`, zufaellig gleich Python, weil das Vorzeichen erhalten bleibt); jetzt meldet der Guard das
+/// Feld `Einkommensteuertarif__zu_versteuerndes_einkommen`. Python: `grund = bestaetigt`, `zahl_cent = 0` (`orakel_bs5.py`, Anlage
+/// `orakel_bs5_euer.out`, Fall `euer_max_0` und `euer_max_minus_1_plus_1`). Das ist die neue Abweichung 1g ("zwischen").
 #[test]
 fn slot_summe_ausserhalb_i64_meldet_feste_zahl_ueberlauf_und_knapp_rechnet() {
-    let nichts = Ausgang::Bestaetigt(0);
+    let zve_ueberlauf = || {
+        Ausgang::Anders(
+            r#"EngineTeil2(Basis(Ueberlauf("Einkommensteuertarif__zu_versteuerndes_einkommen")))"#
+                .to_owned(),
+        )
+    };
     let faelle: Vec<(&str, Fall, Ausgang)> = vec![
         (
             "knapp: basis_kv max + basis_pv 0",
@@ -419,8 +430,16 @@ fn slot_summe_ausserhalb_i64_meldet_feste_zahl_ueberlauf_und_knapp_rechnet() {
             ),
             FESTE_ZAHL,
         ),
-        ("knapp: EUeR max + 0", euer(MAX, 0), Ausgang::Bestaetigt(0)),
-        ("knapp: EUeR max - 1 + 1", euer(MAX - 1, 1), nichts),
+        (
+            "zwischen: EUeR max + 0 (Guard im Shim: zvE; Python bestaetigt 0)",
+            euer(MAX, 0),
+            zve_ueberlauf(),
+        ),
+        (
+            "zwischen: EUeR max - 1 + 1 (Guard im Shim: zvE; Python bestaetigt 0)",
+            euer(MAX - 1, 1),
+            zve_ueberlauf(),
+        ),
         (
             "zwischen: EUeR max + 1 (Guard: Addition)",
             euer(MAX, 1),

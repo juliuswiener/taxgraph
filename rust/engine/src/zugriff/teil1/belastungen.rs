@@ -1,7 +1,7 @@
 //! § 33 `EStG` aussergewoehnliche Belastungen (`catala_p33_zumutbar`, `catala_p33_agb`).
 use domain::{Cent, Euro};
 
-use super::fehler::{in_cent, ok, EngineFehler};
+use super::fehler::{in_cent, EngineFehler};
 use crate::agb::{self, AgbAbzugEingabe};
 use crate::zumutbare_belastung::{self, ZumutbareBelastungEingabe};
 
@@ -67,15 +67,9 @@ pub struct P33AgbEingabe {
 /// ```
 pub fn p33_agb(e: &P33AgbEingabe) -> Result<Euro, EngineFehler> {
     let agb_cent = in_cent(e.aussergewoehnliche_belastungen)?;
-    let zumutbar = zumutbar_cent(&e.zumutbar)?;
-    // Der Scope gibt `agb - zumutbar` nur aus, wenn es positiv ist; er rechnet exakt (GMP), der Shim liest mit `mpz_get_si`:
-    // ausserhalb `i64` (zumutbar < 0 bei negativem Gesamtbetrag der Einkuenfte) kaeme still der Wert mod 2^63 an.
-    if agb_cent.get() > zumutbar.get() {
-        ok(agb_cent.get().checked_sub(zumutbar.get()), "agb abzug")?;
-    }
     let c = agb::berechnen(AgbAbzugEingabe {
         aussergewoehnliche_belastungen: agb_cent,
-        zumutbare_belastung: zumutbar,
+        zumutbare_belastung: zumutbar_cent(&e.zumutbar)?,
     })?;
     Ok(c.floor_euro())
 }

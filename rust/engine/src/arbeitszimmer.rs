@@ -37,9 +37,9 @@ pub struct ArbeitszimmerEingabe {
 ///     tagespauschale_hoechstbetrag: Cent::new(126_000),
 /// })
 /// .unwrap();
-/// assert_eq!(ergebnis.abzug_arbeitszimmer_cent, 0);
-/// assert_eq!(ergebnis.abzug_homeoffice_cent, 72_000);
-/// assert_eq!(ergebnis.abzug_gesamt_cent, 72_000);
+/// assert_eq!(ergebnis.abzug_arbeitszimmer_cent().unwrap(), 0);
+/// assert_eq!(ergebnis.abzug_homeoffice_cent().unwrap(), 72_000);
+/// assert_eq!(ergebnis.abzug_gesamt_cent().unwrap(), 72_000);
 /// ```
 pub fn berechnen(eingabe: ArbeitszimmerEingabe) -> Result<RaumkostenabzugErgebnis, CatalaFehler> {
     catala_sys::raumkostenabzug(catala_sys::RaumkostenabzugEingabe {
@@ -74,8 +74,8 @@ mod tests {
             tagespauschale_hoechstbetrag: Cent::new(126_000),
         })
         .unwrap();
-        assert_eq!(ergebnis.abzug_arbeitszimmer_cent, 0);
-        assert_eq!(ergebnis.abzug_homeoffice_cent, 72_000);
-        assert_eq!(ergebnis.abzug_gesamt_cent, 72_000);
+        assert_eq!(ergebnis.abzug_arbeitszimmer_cent().unwrap(), 0);
+        assert_eq!(ergebnis.abzug_homeoffice_cent().unwrap(), 72_000);
+        assert_eq!(ergebnis.abzug_gesamt_cent().unwrap(), 72_000);
     }
 }

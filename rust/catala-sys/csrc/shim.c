@@ -37,6 +37,23 @@
 #define TG_ERR_CATALA 1
 #define TG_ERR_VZ 2
 
+/* Eine Scope-Ausgabe: der Wert als long UND ob er in long passte. Der Scope rechnet in GMP exakt; mpz_get_si gibt bei einem Wert ausserhalb
+ * von long still dessen untere 63 Bit zurueck (Wert mod 2^63), ohne Fehler. `passt` haelt das fest, `name` ist der Feldname der Ausgabe im
+ * Scope (Zeichenkettenliteral, lebt fuer die Programmdauer). Geprueft wird erst beim Lesen (Rust: `Ausgabe::cent`), nicht beim Wandeln: ein
+ * Scope mit mehreren Ausgaben wandelt alle, ein Aufrufer liest meist nur eine. EINE Stelle fuer alle Ausgaben, kein Scope-Sonderfall. */
+typedef struct TgAusgabe {
+  long wert;
+  int passt;
+  const char *name;
+} TgAusgabe;
+
+#define TG_AUS(dst, r, feld)                          \
+  do {                                                \
+    (dst).wert = mpz_get_si((r)->feld);               \
+    (dst).passt = mpz_fits_slong_p((r)->feld) != 0;   \
+    (dst).name = #feld;                               \
+  } while (0)
+
 static int tg_vz(int code, Einkommensteuertarif__Veranlagungszeitraum *out) {
   if (code < 0 || code > 2) {
     return TG_ERR_VZ;
@@ -51,7 +68,7 @@ static void *tg_run_grundtarif(void) {
   return (void *)Einkommensteuertarif__grundtarif(&tg_grundtarif_in);
 }
 
-int tg_grundtarif(long zve_cents, int vz_code, long *out_cents) {
+int tg_grundtarif(long zve_cents, int vz_code, TgAusgabe *out) {
   Einkommensteuertarif__Veranlagungszeitraum vz;
   int rc = tg_vz(vz_code, &vz);
   if (rc != TG_OK) {
@@ -66,7 +83,7 @@ int tg_grundtarif(long zve_cents, int vz_code, long *out_cents) {
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->Einkommensteuertarif__tarifliche_steuer);
+  TG_AUS(*out, r, Einkommensteuertarif__tarifliche_steuer);
   catala_free_all();
   return TG_OK;
 }
@@ -77,7 +94,7 @@ static void *tg_run_splittingtarif(void) {
   return (void *)Einkommensteuertarif__splittingtarif(&tg_splittingtarif_in);
 }
 
-int tg_splittingtarif(long zve_gemeinsam_cents, int vz_code, long *out_cents) {
+int tg_splittingtarif(long zve_gemeinsam_cents, int vz_code, TgAusgabe *out) {
   Einkommensteuertarif__Veranlagungszeitraum vz;
   int rc = tg_vz(vz_code, &vz);
   if (rc != TG_OK) {
@@ -92,7 +109,7 @@ int tg_splittingtarif(long zve_gemeinsam_cents, int vz_code, long *out_cents) {
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->Einkommensteuertarif__tarifliche_steuer);
+  TG_AUS(*out, r, Einkommensteuertarif__tarifliche_steuer);
   catala_free_all();
   return TG_OK;
 }
@@ -104,7 +121,7 @@ static void *tg_run_fee(void) {
 }
 
 int tg_festzusetzende_est_einzel(long bruttoarbeitslohn_cents, long werbungskosten_cents,
-                                  long sonderausgaben_cents, int vz_code, long *out_cents) {
+                                  long sonderausgaben_cents, int vz_code, TgAusgabe *out) {
   Einkommensteuertarif__Veranlagungszeitraum vz;
   int rc = tg_vz(vz_code, &vz);
   if (rc != TG_OK) {
@@ -120,7 +137,7 @@ int tg_festzusetzende_est_einzel(long bruttoarbeitslohn_cents, long werbungskost
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->Einkommensteuertarif__festzusetzende_est);
+  TG_AUS(*out, r, Einkommensteuertarif__festzusetzende_est);
   catala_free_all();
   return TG_OK;
 }
@@ -138,7 +155,7 @@ static void *tg_run_spenden(void) {
   return (void *)SpendenAbzug__spenden_abzug(&tg_spenden_in);
 }
 
-int tg_spenden_abzug(long zuwendungen_cents, long gde_cents, long *out_cents) {
+int tg_spenden_abzug(long zuwendungen_cents, long gde_cents, TgAusgabe *out) {
   catala_init();
   tg_spenden_in.SpendenAbzug__zuwendungen_in = catala_new_money(zuwendungen_cents);
   tg_spenden_in.SpendenAbzug__gesamtbetrag_der_einkuenfte_in = catala_new_money(gde_cents);
@@ -147,7 +164,7 @@ int tg_spenden_abzug(long zuwendungen_cents, long gde_cents, long *out_cents) {
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->SpendenAbzug__spenden_abzug);
+  TG_AUS(*out, r, SpendenAbzug__spenden_abzug);
   catala_free_all();
   return TG_OK;
 }
@@ -158,7 +175,7 @@ static void *tg_run_zumutbar(void) {
   return (void *)ZumutbareBelastung__zumutbare_belastung(&tg_zumutbar_in);
 }
 
-int tg_zumutbare_belastung(long gde_cents, long anzahl_kinder, int splitting, long *out_cents) {
+int tg_zumutbare_belastung(long gde_cents, long anzahl_kinder, int splitting, TgAusgabe *out) {
   catala_init();
   tg_zumutbar_in.ZumutbareBelastung__gesamtbetrag_der_einkuenfte_in = catala_new_money(gde_cents);
   tg_zumutbar_in.ZumutbareBelastung__anzahl_kinder_in = catala_new_int(anzahl_kinder);
@@ -168,7 +185,7 @@ int tg_zumutbare_belastung(long gde_cents, long anzahl_kinder, int splitting, lo
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->ZumutbareBelastung__zumutbare_belastung);
+  TG_AUS(*out, r, ZumutbareBelastung__zumutbare_belastung);
   catala_free_all();
   return TG_OK;
 }
@@ -179,7 +196,7 @@ static void *tg_run_agb(void) {
   return (void *)AgbAbzug__agb_abzug(&tg_agb_in);
 }
 
-int tg_agb_abzug(long agb_cents, long zumutbare_belastung_cents, long *out_cents) {
+int tg_agb_abzug(long agb_cents, long zumutbare_belastung_cents, TgAusgabe *out) {
   catala_init();
   tg_agb_in.AgbAbzug__aussergewoehnliche_belastungen_in = catala_new_money(agb_cents);
   tg_agb_in.AgbAbzug__zumutbare_belastung_in = catala_new_money(zumutbare_belastung_cents);
@@ -188,7 +205,7 @@ int tg_agb_abzug(long agb_cents, long zumutbare_belastung_cents, long *out_cents
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->AgbAbzug__abzug_agb);
+  TG_AUS(*out, r, AgbAbzug__abzug_agb);
   catala_free_all();
   return TG_OK;
 }
@@ -199,7 +216,7 @@ static void *tg_run_kist(void) {
   return (void *)Kirchensteuerabzug__kirchensteuerabzug(&tg_kist_in);
 }
 
-int tg_kirchensteuerabzug(long gezahlt_cents, long erstattet_cents, long *out_cents) {
+int tg_kirchensteuerabzug(long gezahlt_cents, long erstattet_cents, TgAusgabe *out) {
   catala_init();
   tg_kist_in.Kirchensteuerabzug__gezahlte_kirchensteuer_in = catala_new_money(gezahlt_cents);
   tg_kist_in.Kirchensteuerabzug__erstattete_kirchensteuer_in = catala_new_money(erstattet_cents);
@@ -208,7 +225,7 @@ int tg_kirchensteuerabzug(long gezahlt_cents, long erstattet_cents, long *out_ce
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->Kirchensteuerabzug__abziehbare_kirchensteuer);
+  TG_AUS(*out, r, Kirchensteuerabzug__abziehbare_kirchensteuer);
   catala_free_all();
   return TG_OK;
 }
@@ -221,7 +238,7 @@ static void *tg_run_altersentlastung(void) {
 
 int tg_altersentlastungsbetrag(long arbeitslohn_cents, long positive_andere_cents,
                                 long prozentsatz_num, unsigned long prozentsatz_den,
-                                long hoechstbetrag_cents, long *out_cents) {
+                                long hoechstbetrag_cents, TgAusgabe *out) {
   catala_init();
   tg_altersentlastung_in.Altersentlastungsbetrag__arbeitslohn_in = catala_new_money(arbeitslohn_cents);
   tg_altersentlastung_in.Altersentlastungsbetrag__positive_andere_einkuenfte_in =
@@ -234,7 +251,7 @@ int tg_altersentlastungsbetrag(long arbeitslohn_cents, long positive_andere_cent
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->Altersentlastungsbetrag__altersentlastungsbetrag);
+  TG_AUS(*out, r, Altersentlastungsbetrag__altersentlastungsbetrag);
   catala_free_all();
   return TG_OK;
 }
@@ -246,7 +263,7 @@ static void *tg_run_entlastung(void) {
 }
 
 int tg_entlastungsbetrag(int alleinstehend, long anzahl_kinder, long monate_ohne_voraussetzung,
-                          long *out_cents) {
+                          TgAusgabe *out) {
   catala_init();
   tg_entlastung_in.Entlastungsbetrag__alleinstehend_in = catala_new_bool(alleinstehend);
   tg_entlastung_in.Entlastungsbetrag__anzahl_kinder_in = catala_new_int(anzahl_kinder);
@@ -257,7 +274,7 @@ int tg_entlastungsbetrag(int alleinstehend, long anzahl_kinder, long monate_ohne
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->Entlastungsbetrag__entlastungsbetrag);
+  TG_AUS(*out, r, Entlastungsbetrag__entlastungsbetrag);
   catala_free_all();
   return TG_OK;
 }
@@ -269,7 +286,7 @@ static void *tg_run_familienleistung(void) {
 }
 
 int tg_familienleistungsausgleich(long est_ohne_cents, long est_mit_cents, long kindergeld_cents,
-                                   long *out_cents) {
+                                   TgAusgabe *out) {
   catala_init();
   tg_familienleistung_in.Familienleistungsausgleich__est_ohne_freibetraege_in =
       catala_new_money(est_ohne_cents);
@@ -282,7 +299,7 @@ int tg_familienleistungsausgleich(long est_ohne_cents, long est_mit_cents, long 
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->Familienleistungsausgleich__est_nach_familienausgleich);
+  TG_AUS(*out, r, Familienleistungsausgleich__est_nach_familienausgleich);
   catala_free_all();
   return TG_OK;
 }
@@ -294,7 +311,7 @@ static void *tg_run_verbilligt(void) {
 }
 
 int tg_verbilligte_vermietung_wk(long werbungskosten_cents, long entgelt_quote_num,
-                                  unsigned long entgelt_quote_den, long *out_cents) {
+                                  unsigned long entgelt_quote_den, TgAusgabe *out) {
   catala_init();
   tg_verbilligt_in.VerbilligteVermietungWk__werbungskosten_in = catala_new_money(werbungskosten_cents);
   tg_verbilligt_in.VerbilligteVermietungWk__entgelt_quote_prozent_in =
@@ -304,7 +321,7 @@ int tg_verbilligte_vermietung_wk(long werbungskosten_cents, long entgelt_quote_n
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->VerbilligteVermietungWk__abziehbare_werbungskosten);
+  TG_AUS(*out, r, VerbilligteVermietungWk__abziehbare_werbungskosten);
   catala_free_all();
   return TG_OK;
 }
@@ -316,7 +333,7 @@ static void *tg_run_kvpv(void) {
 }
 
 int tg_kranken_pflege_vorsorge(long basis_cents, long weitere_cents, int mit_zuschuss,
-                                long *out_cents) {
+                                TgAusgabe *out) {
   catala_init();
   tg_kvpv_in.KrankenPflegeVorsorge__basis_kv_pv_in = catala_new_money(basis_cents);
   tg_kvpv_in.KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in = catala_new_money(weitere_cents);
@@ -326,7 +343,7 @@ int tg_kranken_pflege_vorsorge(long basis_cents, long weitere_cents, int mit_zus
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge);
+  TG_AUS(*out, r, KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge);
   catala_free_all();
   return TG_OK;
 }
@@ -337,7 +354,7 @@ static void *tg_run_berufsausbildung(void) {
   return (void *)Berufsausbildungsaufwendungen__berufsausbildung(&tg_berufsausbildung_in);
 }
 
-int tg_berufsausbildung(long aufwendungen_cents, long *out_cents) {
+int tg_berufsausbildung(long aufwendungen_cents, TgAusgabe *out) {
   catala_init();
   tg_berufsausbildung_in.Berufsausbildungsaufwendungen__aufwendungen_in =
       catala_new_money(aufwendungen_cents);
@@ -346,7 +363,7 @@ int tg_berufsausbildung(long aufwendungen_cents, long *out_cents) {
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->Berufsausbildungsaufwendungen__abziehbare_sonderausgaben);
+  TG_AUS(*out, r, Berufsausbildungsaufwendungen__abziehbare_sonderausgaben);
   catala_free_all();
   return TG_OK;
 }
@@ -357,7 +374,7 @@ static void *tg_run_betriebsfreibetrag(void) {
   return (void *)BetriebsFreibetrag__betriebs_freibetrag(&tg_betriebsfreibetrag_in);
 }
 
-int tg_betriebs_freibetrag(long veraeusserungsgewinn_cents, long *out_cents) {
+int tg_betriebs_freibetrag(long veraeusserungsgewinn_cents, TgAusgabe *out) {
   catala_init();
   tg_betriebsfreibetrag_in.BetriebsFreibetrag__veraeusserungsgewinn_in =
       catala_new_money(veraeusserungsgewinn_cents);
@@ -366,7 +383,7 @@ int tg_betriebs_freibetrag(long veraeusserungsgewinn_cents, long *out_cents) {
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->BetriebsFreibetrag__freibetrag);
+  TG_AUS(*out, r, BetriebsFreibetrag__freibetrag);
   catala_free_all();
   return TG_OK;
 }
@@ -377,7 +394,7 @@ static void *tg_run_euer(void) {
   return (void *)EuerGewinn__euer_gewinn(&tg_euer_in);
 }
 
-int tg_euer_gewinn(long betriebseinnahmen_cents, long betriebsausgaben_cents, long *out_cents) {
+int tg_euer_gewinn(long betriebseinnahmen_cents, long betriebsausgaben_cents, TgAusgabe *out) {
   catala_init();
   tg_euer_in.EuerGewinn__betriebseinnahmen_in = catala_new_money(betriebseinnahmen_cents);
   tg_euer_in.EuerGewinn__betriebsausgaben_in = catala_new_money(betriebsausgaben_cents);
@@ -386,7 +403,7 @@ int tg_euer_gewinn(long betriebseinnahmen_cents, long betriebsausgaben_cents, lo
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->EuerGewinn__gewinn);
+  TG_AUS(*out, r, EuerGewinn__gewinn);
   catala_free_all();
   return TG_OK;
 }
@@ -399,7 +416,7 @@ static void *tg_run_mitunternehmer(void) {
 
 int tg_mitunternehmer_einkuenfte(long gewinnanteil_cents, long verguetung_taetigkeit_cents,
                                   long verguetung_darlehen_cents, long verguetung_ueberlassung_cents,
-                                  long *out_cents) {
+                                  TgAusgabe *out) {
   catala_init();
   tg_mitunternehmer_in.MitunternehmerEinkuenfte__gewinnanteil_in = catala_new_money(gewinnanteil_cents);
   tg_mitunternehmer_in.MitunternehmerEinkuenfte__verguetung_taetigkeit_in =
@@ -413,7 +430,7 @@ int tg_mitunternehmer_einkuenfte(long gewinnanteil_cents, long verguetung_taetig
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->MitunternehmerEinkuenfte__einkuenfte_mitunternehmer);
+  TG_AUS(*out, r, MitunternehmerEinkuenfte__einkuenfte_mitunternehmer);
   catala_free_all();
   return TG_OK;
 }
@@ -424,7 +441,7 @@ static void *tg_run_gwg(void) {
   return (void *)GwgSofortabzug__gwg_sofortabzug(&tg_gwg_in);
 }
 
-int tg_gwg_sofortabzug(long anschaffungskosten_netto_cents, long *out_cents) {
+int tg_gwg_sofortabzug(long anschaffungskosten_netto_cents, TgAusgabe *out) {
   catala_init();
   tg_gwg_in.GwgSofortabzug__anschaffungskosten_netto_in = catala_new_money(anschaffungskosten_netto_cents);
   const GwgSofortabzug__GwgSofortabzug *r = catala_do(tg_run_gwg);
@@ -432,7 +449,7 @@ int tg_gwg_sofortabzug(long anschaffungskosten_netto_cents, long *out_cents) {
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->GwgSofortabzug__sofortabzug);
+  TG_AUS(*out, r, GwgSofortabzug__sofortabzug);
   catala_free_all();
   return TG_OK;
 }
@@ -444,7 +461,7 @@ static void *tg_run_haushaltsnahe(void) {
 }
 
 int tg_haushaltsnahe(long minijob_cents, long dienstleistungen_cents, long handwerker_cents,
-                     long *out_cents) {
+                     TgAusgabe *out) {
   catala_init();
   tg_haushaltsnahe_in.Haushaltsnahe__minijob_aufwendungen_in = catala_new_money(minijob_cents);
   tg_haushaltsnahe_in.Haushaltsnahe__haushaltsnahe_dienstleistungen_in =
@@ -455,7 +472,7 @@ int tg_haushaltsnahe(long minijob_cents, long dienstleistungen_cents, long handw
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->Haushaltsnahe__steuerermaessigung);
+  TG_AUS(*out, r, Haushaltsnahe__steuerermaessigung);
   catala_free_all();
   return TG_OK;
 }
@@ -467,7 +484,7 @@ static void *tg_run_verlustvortrag(void) {
 }
 
 int tg_verlustvortrag_abzug(long gde_cents, long bestand_cents, int zusammenveranlagung,
-                             long *out_cents) {
+                             TgAusgabe *out) {
   catala_init();
   tg_verlustvortrag_in.Verlustvortrag__gesamtbetrag_einkuenfte_in = catala_new_money(gde_cents);
   tg_verlustvortrag_in.Verlustvortrag__verlustvortrag_bestand_in = catala_new_money(bestand_cents);
@@ -477,7 +494,7 @@ int tg_verlustvortrag_abzug(long gde_cents, long bestand_cents, int zusammenvera
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->Verlustvortrag__verlustabzug);
+  TG_AUS(*out, r, Verlustvortrag__verlustabzug);
   catala_free_all();
   return TG_OK;
 }
@@ -490,7 +507,7 @@ static void *tg_run_ermaessigt(void) {
 
 int tg_ermaessigter_durchschnittssatz(long ao_cents, long est_gesamt_zzgl_progression_cents,
                                        long bemessungsgrundlage_durchschnitt_cents,
-                                       long *out_cents) {
+                                       TgAusgabe *out) {
   catala_init();
   tg_ermaessigt_in.ErmaessigterDurchschnittssatz__ao_einkuenfte_in = catala_new_money(ao_cents);
   tg_ermaessigt_in.ErmaessigterDurchschnittssatz__est_gesamt_zzgl_progression_in =
@@ -502,7 +519,7 @@ int tg_ermaessigter_durchschnittssatz(long ao_cents, long est_gesamt_zzgl_progre
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->ErmaessigterDurchschnittssatz__est_ao);
+  TG_AUS(*out, r, ErmaessigterDurchschnittssatz__est_ao);
   catala_free_all();
   return TG_OK;
 }
@@ -526,8 +543,8 @@ typedef struct TgEntfernungspauschaleIn {
 } TgEntfernungspauschaleIn;
 
 typedef struct TgEntfernungspauschaleOut {
-  long entfernungspauschale_cents;
-  long abziehbarer_betrag_cents;
+  TgAusgabe entfernungspauschale_cents;
+  TgAusgabe abziehbarer_betrag_cents;
 } TgEntfernungspauschaleOut;
 
 static __thread Entfernungspauschale__Berechnung_in tg_ep_in;
@@ -553,8 +570,8 @@ int tg_entfernungspauschale(const TgEntfernungspauschaleIn *in, TgEntfernungspau
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  out->entfernungspauschale_cents = mpz_get_si(r->Entfernungspauschale__entfernungspauschale);
-  out->abziehbarer_betrag_cents = mpz_get_si(r->Entfernungspauschale__abziehbarer_betrag);
+  TG_AUS(out->entfernungspauschale_cents, r, Entfernungspauschale__entfernungspauschale);
+  TG_AUS(out->abziehbarer_betrag_cents, r, Entfernungspauschale__abziehbarer_betrag);
   catala_free_all();
   return TG_OK;
 }
@@ -572,9 +589,9 @@ typedef struct TgRaumkostenabzugIn {
 } TgRaumkostenabzugIn;
 
 typedef struct TgRaumkostenabzugOut {
-  long abzug_arbeitszimmer_cents;
-  long abzug_homeoffice_cents;
-  long abzug_gesamt_cents;
+  TgAusgabe abzug_arbeitszimmer_cents;
+  TgAusgabe abzug_homeoffice_cents;
+  TgAusgabe abzug_gesamt_cents;
 } TgRaumkostenabzugOut;
 
 static __thread ArbeitszimmerHomeoffice__Raumkostenabzug_in tg_raumkosten_in;
@@ -605,9 +622,9 @@ int tg_raumkostenabzug(const TgRaumkostenabzugIn *in, TgRaumkostenabzugOut *out)
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  out->abzug_arbeitszimmer_cents = mpz_get_si(r->ArbeitszimmerHomeoffice__abzug_arbeitszimmer);
-  out->abzug_homeoffice_cents = mpz_get_si(r->ArbeitszimmerHomeoffice__abzug_homeoffice);
-  out->abzug_gesamt_cents = mpz_get_si(r->ArbeitszimmerHomeoffice__abzug_gesamt);
+  TG_AUS(out->abzug_arbeitszimmer_cents, r, ArbeitszimmerHomeoffice__abzug_arbeitszimmer);
+  TG_AUS(out->abzug_homeoffice_cents, r, ArbeitszimmerHomeoffice__abzug_homeoffice);
+  TG_AUS(out->abzug_gesamt_cents, r, ArbeitszimmerHomeoffice__abzug_gesamt);
   catala_free_all();
   return TG_OK;
 }
@@ -620,12 +637,12 @@ int tg_raumkostenabzug(const TgRaumkostenabzugIn *in, TgRaumkostenabzugOut *out)
  * mehr tun muesste als `out.festzusetzende_est_cents` zu lesen.
  */
 typedef struct TgEstOut {
-  long summe_der_einkuenfte_cents;
-  long gesamtbetrag_der_einkuenfte_cents;
-  long einkommen_cents;
-  long zu_versteuerndes_einkommen_cents;
-  long tarifliche_est_cents;
-  long festzusetzende_est_cents;
+  TgAusgabe summe_der_einkuenfte_cents;
+  TgAusgabe gesamtbetrag_der_einkuenfte_cents;
+  TgAusgabe einkommen_cents;
+  TgAusgabe zu_versteuerndes_einkommen_cents;
+  TgAusgabe tarifliche_est_cents;
+  TgAusgabe festzusetzende_est_cents;
 } TgEstOut;
 
 static __thread Einkommensteuertarif__FestzusetzendeEstEinzel_in tg_fee_voll_in;
@@ -651,12 +668,12 @@ int tg_festzusetzende_est_einzel_voll(long bruttoarbeitslohn_cents, long werbung
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  out->summe_der_einkuenfte_cents = mpz_get_si(r->Einkommensteuertarif__summe_der_einkuenfte);
-  out->gesamtbetrag_der_einkuenfte_cents = mpz_get_si(r->Einkommensteuertarif__gesamtbetrag_der_einkuenfte);
-  out->einkommen_cents = mpz_get_si(r->Einkommensteuertarif__einkommen);
-  out->zu_versteuerndes_einkommen_cents = mpz_get_si(r->Einkommensteuertarif__zu_versteuerndes_einkommen);
-  out->tarifliche_est_cents = mpz_get_si(r->Einkommensteuertarif__tarifliche_est);
-  out->festzusetzende_est_cents = mpz_get_si(r->Einkommensteuertarif__festzusetzende_est);
+  TG_AUS(out->summe_der_einkuenfte_cents, r, Einkommensteuertarif__summe_der_einkuenfte);
+  TG_AUS(out->gesamtbetrag_der_einkuenfte_cents, r, Einkommensteuertarif__gesamtbetrag_der_einkuenfte);
+  TG_AUS(out->einkommen_cents, r, Einkommensteuertarif__einkommen);
+  TG_AUS(out->zu_versteuerndes_einkommen_cents, r, Einkommensteuertarif__zu_versteuerndes_einkommen);
+  TG_AUS(out->tarifliche_est_cents, r, Einkommensteuertarif__tarifliche_est);
+  TG_AUS(out->festzusetzende_est_cents, r, Einkommensteuertarif__festzusetzende_est);
   catala_free_all();
   return TG_OK;
 }
@@ -670,7 +687,7 @@ static void *tg_run_fez(void) {
 int tg_festzusetzende_est_zusammen(long bruttoarbeitslohn_a_cents, long werbungskosten_a_cents,
                                     long bruttoarbeitslohn_b_cents, long werbungskosten_b_cents,
                                     long sonderausgaben_gemeinsam_cents, int vz_code,
-                                    long *out_cents) {
+                                    TgAusgabe *out) {
   Einkommensteuertarif__Veranlagungszeitraum vz;
   int rc = tg_vz(vz_code, &vz);
   if (rc != TG_OK) {
@@ -689,7 +706,7 @@ int tg_festzusetzende_est_zusammen(long bruttoarbeitslohn_a_cents, long werbungs
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  *out_cents = mpz_get_si(r->Einkommensteuertarif__festzusetzende_est);
+  TG_AUS(*out, r, Einkommensteuertarif__festzusetzende_est);
   catala_free_all();
   return TG_OK;
 }
@@ -773,12 +790,12 @@ int tg_festzusetzende_est_gesamt(const TgGesamtIn *in, int vz_code, TgEstOut *ou
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  out->summe_der_einkuenfte_cents = mpz_get_si(r->Einkommensteuertarif__summe_der_einkuenfte);
-  out->gesamtbetrag_der_einkuenfte_cents = mpz_get_si(r->Einkommensteuertarif__gesamtbetrag_der_einkuenfte);
-  out->einkommen_cents = mpz_get_si(r->Einkommensteuertarif__einkommen);
-  out->zu_versteuerndes_einkommen_cents = mpz_get_si(r->Einkommensteuertarif__zu_versteuerndes_einkommen);
-  out->tarifliche_est_cents = mpz_get_si(r->Einkommensteuertarif__tarifliche_est);
-  out->festzusetzende_est_cents = mpz_get_si(r->Einkommensteuertarif__festzusetzende_est);
+  TG_AUS(out->summe_der_einkuenfte_cents, r, Einkommensteuertarif__summe_der_einkuenfte);
+  TG_AUS(out->gesamtbetrag_der_einkuenfte_cents, r, Einkommensteuertarif__gesamtbetrag_der_einkuenfte);
+  TG_AUS(out->einkommen_cents, r, Einkommensteuertarif__einkommen);
+  TG_AUS(out->zu_versteuerndes_einkommen_cents, r, Einkommensteuertarif__zu_versteuerndes_einkommen);
+  TG_AUS(out->tarifliche_est_cents, r, Einkommensteuertarif__tarifliche_est);
+  TG_AUS(out->festzusetzende_est_cents, r, Einkommensteuertarif__festzusetzende_est);
   catala_free_all();
   return TG_OK;
 }
@@ -836,12 +853,12 @@ int tg_festzusetzende_est_gesamt_zusammen(const TgGesamtIn *in, int vz_code, TgE
     catala_free_all();
     return TG_ERR_CATALA;
   }
-  out->summe_der_einkuenfte_cents = mpz_get_si(r->Einkommensteuertarif__summe_der_einkuenfte);
-  out->gesamtbetrag_der_einkuenfte_cents = mpz_get_si(r->Einkommensteuertarif__gesamtbetrag_der_einkuenfte);
-  out->einkommen_cents = mpz_get_si(r->Einkommensteuertarif__einkommen);
-  out->zu_versteuerndes_einkommen_cents = mpz_get_si(r->Einkommensteuertarif__zu_versteuerndes_einkommen);
-  out->tarifliche_est_cents = mpz_get_si(r->Einkommensteuertarif__tarifliche_est);
-  out->festzusetzende_est_cents = mpz_get_si(r->Einkommensteuertarif__festzusetzende_est);
+  TG_AUS(out->summe_der_einkuenfte_cents, r, Einkommensteuertarif__summe_der_einkuenfte);
+  TG_AUS(out->gesamtbetrag_der_einkuenfte_cents, r, Einkommensteuertarif__gesamtbetrag_der_einkuenfte);
+  TG_AUS(out->einkommen_cents, r, Einkommensteuertarif__einkommen);
+  TG_AUS(out->zu_versteuerndes_einkommen_cents, r, Einkommensteuertarif__zu_versteuerndes_einkommen);
+  TG_AUS(out->tarifliche_est_cents, r, Einkommensteuertarif__tarifliche_est);
+  TG_AUS(out->festzusetzende_est_cents, r, Einkommensteuertarif__festzusetzende_est);
   catala_free_all();
   return TG_OK;
 }

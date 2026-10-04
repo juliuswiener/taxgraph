@@ -73,7 +73,7 @@ pub fn est_einzel(e: &EstEinzelEingabe) -> Result<Euro, EngineFehler> {
 /// ```
 pub fn est_einzel_zve(e: &EstEinzelEingabe) -> Result<Euro, EngineFehler> {
     let o = tarif::festzusetzende_est_einzel_voll(e.scope()?, e.vz)?;
-    Ok(Cent::new(o.zu_versteuerndes_einkommen_cent).floor_euro())
+    Ok(Cent::new(o.zu_versteuerndes_einkommen_cent()?).floor_euro())
 }
 
 /// Eingabe fuer [`est_zusammen`]. PARITÄT: Python setzt jedes fehlende Betragsfeld = 0.

@@ -18,7 +18,7 @@ pub enum EngineFehler {
     /// (`AssertionFailed`, `NoValue`, `Conflict`, `DivisionByZero`, ...). Der C-Shim meldet nur
     /// "fehlgeschlagen", nicht welche -- die Zuordnung ist 1:Familie.
     #[error(transparent)]
-    Catala(#[from] CatalaFehler),
+    Catala(CatalaFehler),
     /// Ein Dezimalwert passt nicht in den Zaehler/Nenner-Bereich von `catala_new_frac`. Python
     /// rechnet mit beliebig grossen Bruechen; kein Gegenstueck.
     #[error(transparent)]
@@ -37,12 +37,23 @@ pub enum EngineFehler {
     NichtCentGenau(rust_decimal::Decimal),
 }
 
+/// DIE eine Stelle, die einen Scope-Fehler auf [`EngineFehler`] abbildet. Eine gelesene Scope-Ausgabe, die nicht in `i64` passt
+/// (`CatalaFehler::Ueberlauf`, Marke = Name der Ausgabe), ist ein [`EngineFehler::Ueberlauf`] (HTTP: 422); jeder andere Scope-Fehler bleibt
+/// [`EngineFehler::Catala`]. Alle `?` auf einem `CatalaFehler` laufen hierueber, auch die der drei Sonder-Fehlertypen unten.
+impl From<CatalaFehler> for EngineFehler {
+    fn from(c: CatalaFehler) -> Self {
+        match c {
+            CatalaFehler::Ueberlauf(marke) => Self::Ueberlauf(marke),
+            andere => Self::Catala(andere),
+        }
+    }
+}
+
 impl From<EntfernungspauschaleFehler> for EngineFehler {
     fn from(e: EntfernungspauschaleFehler) -> Self {
         match e {
             EntfernungspauschaleFehler::Dezimal(d) => Self::Dezimal(d),
-            EntfernungspauschaleFehler::Catala(c) => Self::Catala(c),
-            EntfernungspauschaleFehler::Ueberlauf(marke) => Self::Ueberlauf(marke),
+            EntfernungspauschaleFehler::Catala(c) => Self::from(c),
         }
     }
 }
@@ -51,7 +62,7 @@ impl From<AltersentlastungsbetragFehler> for EngineFehler {
     fn from(e: AltersentlastungsbetragFehler) -> Self {
         match e {
             AltersentlastungsbetragFehler::Dezimal(d) => Self::Dezimal(d),
-            AltersentlastungsbetragFehler::Catala(c) => Self::Catala(c),
+            AltersentlastungsbetragFehler::Catala(c) => Self::from(c),
         }
     }
 }
@@ -60,7 +71,7 @@ impl From<VerbilligteVermietungFehler> for EngineFehler {
     fn from(e: VerbilligteVermietungFehler) -> Self {
         match e {
             VerbilligteVermietungFehler::Dezimal(d) => Self::Dezimal(d),
-            VerbilligteVermietungFehler::Catala(c) => Self::Catala(c),
+            VerbilligteVermietungFehler::Catala(c) => Self::from(c),
         }
     }
 }

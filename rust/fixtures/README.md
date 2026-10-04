@@ -86,3 +86,23 @@ python3 tools/parity/extract_intervall_orakel.py
 Aendert sich ein Orakel (`produkt/konsistenz/*`, `intervall.py`) oder die Bindung, sind die Fixtures neu zu
 erzeugen; der Rust-Test zeigt dann, wo Rust vom Orakel abweicht. Beide Generatoren sind deterministisch
 (fester Seed, sortierte Ausgabe): zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed.
+
+## `wertwache_orakel.json`
+
+Feste Grenzfaelle fuer `engine::zugriff` samt den Antworten des laufenden Python-Orakels (`runner.catala_*` ueber
+`tools/parity/oracle.py`): `solz`, `fuenftel`, `p32b_1`, `p34c_1`, `kst_nenner_b`, `behinderten_pb`, `p33a_unterhalt`,
+`renten_einkuenfte`, `p3_nr72_photovoltaik`, `p101_mobilitaetspraemie` und `_cent`. Je Fall: `fn`, `args` (der rohe
+Sachverhalt-dict, wie ihn die Parity-Suiten schicken) und `py` (`{"ok": wert}` oder `{"err": klasse, "catala": bool}`).
+Die Faelle liegen an den Schwellen und Saetzen der Zugriffsfunktionen (0/0, -1/-1, genau an der Grenze, +-1), weil der
+Zufallsgenerator von `zugriff_teil{1,2}_paritaet` sie nur selten und nie gemeinsam zieht. Konsument:
+`rust/engine/tests/wertwache_orakel_werte.rs` (hermetisch, ohne `PARITY=1`, ohne Python; benutzt die Adapter der
+Parity-Suiten).
+
+```
+python3 tools/parity/extract_wertwache_orakel.py
+```
+
+Der Generator braucht die gebaute Catala-Engine (`make build-python`) und ist deterministisch (feste Gitter, sortierte
+Ausgabe): zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed (geprueft bei `PYTHONHASHSEED` 1 und 777).
+Aendert sich ein Orakel (`runner.py`, Catala-Regeln), ist das Fixture neu zu erzeugen; der Rust-Test zeigt dann, wo
+Rust vom Orakel abweicht.

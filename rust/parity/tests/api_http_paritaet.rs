@@ -5942,13 +5942,13 @@ fn dokumentierte_abweichungen() {
     //         Kuerzungen laeuft ueber (`vpf k28`); alle vier Routen, `deklaration` an der Addition. Gegenprobe: das Fruehstueck
     //         allein passt gerade, beide Seiten 200 mit derselben Zahl.
     //     1e: `ep_entfernung_km` bei 366 Arbeitstagen und Kfz, zwei Schwellen: ab 663170264369776 km passt der Jahresbetrag der
-    //         Entfernungspauschale in Cent nicht mehr in `i64` (`ep_gesamt`), ab 663170264369792 km schon `Tage * (km - 20) * 38 ct`
+    //         Entfernungspauschale in Cent nicht mehr in `i64` (`Entfernungspauschale__abziehbarer_betrag`), ab 663170264369792 km schon `Tage * (km - 20) * 38 ct`
     //         (`ab21_roh`). Der Catala-Scope rechnet den Jahresbetrag exakt, der C-Shim liest ihn mit `mpz_get_si` und bekommt still
     //         die unteren 63 Bit. Vor h8-ep-fenster, gemessen bei entferntem Aufruf der Vorab-Pruefung (Anlage `parity_dok_stand_vorher.log`):
     //         `ergebnis` zwischen ...776 und ...791 km 200 mit `zahl_cent` 691900 (...776) und 660100 (...791) statt Pythons 0; `stand`
     //         200 mit `intervall.min_cent`/`max_cent` 691900 und 660100 statt 0 (falsche Zahl); `fragen` (alle Punkte) und `stand` bei
     //         10^15 km 200 mit demselben Koerper wie Python, ihr Koerper haengt von der Zahl nicht ab. Jetzt: `stand`, `fragen`,
-    //         `ergebnis` Rust 422 (`ep_gesamt`), Python 200. Fuer `fragen` und `stand` bei 10^15 km ist das eine Nebenwirkung: der Fehler
+    //         `ergebnis` Rust 422 (`Entfernungspauschale__abziehbarer_betrag`; bis h8-shim-guard die Vorab-Rechnung `ep_gesamt`), Python 200. Fuer `fragen` und `stand` bei 10^15 km ist das eine Nebenwirkung: der Fehler
     //         der Pauschale wird auf diesen Routen nicht unterdrueckt (fail-closed, wie 1d). `deklaration` rechnet die Pauschale nicht,
     //         beide Seiten 200 mit gleichem Koerper. Ohne Kfz deckelt der Scope auf 4500 EUR: `stand` und `fragen` bleiben 200,
     //         `ergebnis` meldet 422 an der Teilrechnung `ab21_roh` (Python nennt `zahl_cent` 589100).
@@ -5958,9 +5958,20 @@ fn dokumentierte_abweichungen() {
     //         (`betriebseinnahmen` 9223372036854775800 ct, `sonstige_betriebsausgaben` -9223372036854775800 ct). Der Catala-Scope
     //         summiert exakt, der C-Shim liest mit `mpz_get_si` die unteren 63 Bit. Vor dem Fix antwortete Rust auf `stand`,
     //         `fragen` und `ergebnis` 200, `ergebnis` mit `zahl_cent` 4150517416584808200 (Python 8301034833169457400). Jetzt Rust
-    //         422 (`mitunternehmer summe`, `euer gewinn`), Python 200; `deklaration` rechnet die Einkuenfte nicht (gleicher Koerper).
-    //         Gegenprobe: je 10^15 ct, beide Seiten 200 mit derselben Zahl. NICHT behoben, siehe Bericht h8-ep-fenster: die Summen
-    //         des Gesamt-Scopes (`gesamtbetrag_der_einkuenfte`, `zu_versteuerndes_einkommen` in der `kette` von `ergebnis`).
+    //         422 (`MitunternehmerEinkuenfte__einkuenfte_mitunternehmer`, `EuerGewinn__gewinn`), Python 200; `deklaration` rechnet die Einkuenfte nicht (gleicher Koerper).
+    //         Gegenprobe: je 10^15 ct, beide Seiten 200 mit derselben Zahl. Die Summen des Gesamt-Scopes (`gesamtbetrag_der_einkuenfte`,
+    //         `zu_versteuerndes_einkommen`) fing erst h8-shim-guard ab, siehe 1g.
+    //     1g: Scheibe `gesamt`, EIN Betrag (`bruttoarbeitslohn` 9223372036854775800 ct) bringt `gesamtbetrag_der_einkuenfte` und das zvE im
+    //         Gesamt-Scope ueber `i64` (Python 92233720368554102 und 92233720368554066 EUR). Der Catala-Scope rechnet exakt, der C-Shim liest mit
+    //         `mpz_get_si` die unteren 63 Bit. Vor dem Guard im Shim (h8-shim-guard, Messung auf 904f6215, Anlage `http_1g_vorher.log`): Rust
+    //         `stand` und `fragen` 200 mit demselben Koerper wie Python (die gewickelte Summe ging in Folgescopes ein, aendert diesen Koerper
+    //         hier nicht), `ergebnis` 200 mit derselben `zahl_cent` 4150517416583008300, aber einer `kette` mit `gesamtbetrag_der_einkuenfte`
+    //         6343 und `zu_versteuerndes_einkommen` 6307 statt Pythons Werten: eine falsche Zahl, die als Bescheid-Zeile erscheint. Jetzt
+    //         Rust 422 auf `stand`, `fragen` und `ergebnis` (`Einkommensteuertarif__gesamtbetrag_der_einkuenfte`), Python 200: der Fehler wird
+    //         auf allen Routen gemeldet, die die Summe lesen (fail-closed, wie 1d/1e). `deklaration` rechnet die Summen nicht, beide Seiten
+    //         200 mit gleichem Koerper. Zwei Einkunftsarten zu je 9223372036854775800 ct (`bruttoarbeitslohn`, `vv_einnahmen`): Rust vorher
+    //         `kette` 92233720368544101 statt Pythons 184467440737091860 (falsch), jetzt 422. Gegenproben: 10^15 ct, beide Seiten gleich;
+    //         Scheibe `an_gesamt` mit demselben Betrag (nur die festzusetzende ESt, 4150517416582623200 ct), beide Seiten gleich.
     let meldung = "Ein eingegebener Betrag ist zu groß für die Berechnung";
     let akte_in = |id: &str,
                    scheibe: &str,
@@ -6013,6 +6024,84 @@ fn dokumentierte_abweichungen() {
             v["mobilitaetspraemie_cent"].clone(),
         )
     };
+    // 1h/1i (zu 1b; cutover-abw, gewollte Abweichung, Messung `berichte/rauchprobe-abweichungen.md`): Fall-Dateien mit einem
+    //     Jahr ausserhalb von 2024..2026, von Hand geschrieben. `POST /fall` weist sie auf beiden Seiten mit 400 ab; im Betrieb mit
+    //     Anmeldung ist eine Datei ohne Besitzer fuer jedes Konto gesperrt (403), hier gehoert sie `alice`, damit der Pfad erreichbar ist.
+    //     1h: Jahr 2099, Akte ohne bestaetigte Eingaben: `stand`, `fragen`, `ergebnis` Python 200 (`ergebnis`: `zahl_cent` null, `grund`
+    //         `input_kegel_nicht_bestaetigt`, keine Parameterdatei noetig), Rust 500 `ValueError: kein unterstuetzter
+    //         Veranlagungszeitraum: 2099` (`api/src/stand.rs`, `jahr`). `preflight`, `graph` und `deklaration` (dort gilt 2024..2100):
+    //         beide 200 mit gleichem Koerper. Gegenrichtung, vollstaendige Akte mit Jahr 2099: beide 500, Python `FileNotFoundError`
+    //         (`params/2099/...`), Rust dieselbe ValueError; Python rechnet nie mit einem anderen Jahr.
+    //     1i: `deklaration` mit Jahr 10^38 (`seed_big`): beide 500 mit demselben Satz, nur die Zahl unterscheidet sich: Python nennt die
+    //         38 Neunen, Rust `i64::MAX` (`Store::veranlagungszeitraum` saettigt, `store/src/store.rs`). Gegenprobe Jahr -5: beide 500,
+    //         gleicher Text.
+    let von_hand = |id: &str, jahr: &str| {
+        for s in [&p.py, &p.rs] {
+            let inhalt = format!(
+                r#"{{"version":1,"veranlagungszeitraum":{jahr},"fall_id":"{id}","scheibe":"gesamt","events":[],"snapshots":[],"user_id":"alice"}}"#
+            );
+            std::fs::write(s.faelle().join(format!("{id}.json")), inhalt).unwrap();
+        }
+    };
+    let koerper = |a: &Antwort| -> Value { serde_json::from_slice(&a.body).unwrap() };
+    let fehlertext = |a: &Antwort| -> String { koerper(a)["fehler"].as_str().unwrap().to_owned() };
+    let vz_text = "ValueError: kein unterstuetzter Veranlagungszeitraum: 2099";
+    von_hand("dok_jahr_leer", "2099");
+    for route in ["stand", "fragen", "ergebnis"] {
+        let (py, rs) = lies("dok_jahr_leer", route);
+        assert_eq!((py.status, rs.status), (200, 500), "jahr 2099 leer {route}");
+        assert_eq!(fehlertext(&rs), vz_text, "jahr 2099 leer {route}");
+        assert!(koerper(&py).get("fehler").is_none(), "jahr 2099 leer {route}");
+        if route == "ergebnis" {
+            let a = koerper(&py);
+            assert_eq!(
+                (&a["grund"], &a["zahl_cent"]),
+                (&json!("input_kegel_nicht_bestaetigt"), &Value::Null)
+            );
+        }
+    }
+    for route in ["preflight", "graph", "deklaration"] {
+        let (py, rs) = lies("dok_jahr_leer", route);
+        assert_eq!((py.status, rs.status), (200, 200), "jahr 2099 leer {route}");
+        assert_eq!(koerper(&py), koerper(&rs), "jahr 2099 leer {route}: gleicher Koerper");
+    }
+    akte("dok_jahr_voll", &[]);
+    for s in [&p.py, &p.rs] {
+        let pfad = s.faelle().join("dok_jahr_voll.json");
+        let mut v: Value = serde_json::from_slice(&std::fs::read(&pfad).unwrap()).unwrap();
+        v["veranlagungszeitraum"] = json!(2099);
+        std::fs::write(&pfad, serde_json::to_vec(&v).unwrap()).unwrap();
+    }
+    for route in ["stand", "ergebnis"] {
+        let (py, rs) = lies("dok_jahr_voll", route);
+        assert_eq!((py.status, rs.status), (500, 500), "jahr 2099 voll {route}");
+        let py_text = fehlertext(&py);
+        assert!(
+            py_text.starts_with("FileNotFoundError") && py_text.contains("params/2099/"),
+            "jahr 2099 voll {route}: {py_text}"
+        );
+        assert_eq!(fehlertext(&rs), vz_text, "jahr 2099 voll {route}");
+    }
+    let neun38 = "99999999999999999999999999999999999999";
+    let i64_max = "9223372036854775807";
+    let (py, rs) = lies("seed_big", "deklaration");
+    assert_eq!((py.status, rs.status), (500, 500), "seed_big deklaration");
+    let (py_text, rs_text) = (fehlertext(&py), fehlertext(&rs));
+    assert_eq!(
+        py_text,
+        format!("ValueError: Veranlagungsjahr {neun38} ist kein Steuerjahr (erwartet 2024..2100). deklariere() lehnt es ab, statt still eine Menge zu waehlen.")
+    );
+    assert_eq!(
+        py_text.replace(neun38, "<N>"),
+        rs_text.replace(i64_max, "<N>"),
+        "gleicher Satz, nur die Zahl verschieden"
+    );
+    assert!(rs_text.contains(i64_max) && !rs_text.contains(neun38));
+    von_hand("dok_jahr_minus5", "-5");
+    let (py, rs) = lies("dok_jahr_minus5", "deklaration");
+    assert_eq!((py.status, rs.status), (500, 500), "jahr -5 deklaration");
+    assert_eq!(koerper(&py), koerper(&rs), "jahr -5: gleicher Text");
+    assert!(fehlertext(&py).contains("Veranlagungsjahr -5 ist kein Steuerjahr"));
     let tageswerte = [
         ("vpf_keine_mahlzeitengestellung", json!(false)),
         (
@@ -6083,7 +6172,7 @@ fn dokumentierte_abweichungen() {
         }
     }
     // 1e: Entfernung, die den Jahresbetrag der Entfernungspauschale ausserhalb i64 bringt (366 Tage). Mit Kfz (kein Hoechstbetrag)
-    //     gibt der Catala-Scope den Betrag aus, und `stand`, `fragen` und `ergebnis` rechnen ihn: Rust 422 (`ep_gesamt`), Python 200.
+    //     gibt der Catala-Scope den Betrag aus, und `stand`, `fragen` und `ergebnis` rechnen ihn: Rust 422 (`Entfernungspauschale__abziehbarer_betrag`), Python 200.
     //     `deklaration` rechnet ihn nicht: beide Seiten 200 mit gleichem Koerper. Ohne Kfz deckelt der Scope auf 4500 EUR: `stand`
     //     und `fragen` bleiben 200, nur `ergebnis` meldet 422, an der Teilrechnung `ab21_roh` (erhoehter Teil ab dem 21. km).
     for (id, km, kfz) in [
@@ -6112,7 +6201,7 @@ fn dokumentierte_abweichungen() {
             let marke = match (route, kfz) {
                 ("deklaration", _) | ("stand" | "fragen", false) => None,
                 ("ergebnis", false) => Some("Ueberlauf in ab21_roh"),
-                _ => Some("Ueberlauf in ep_gesamt"),
+                _ => Some("Ueberlauf in Entfernungspauschale__abziehbarer_betrag"),
             };
             let Some(marke) = marke else {
                 assert_eq!((py.status, rs.status), (200, 200), "{id} {route}");
@@ -6163,7 +6252,7 @@ fn dokumentierte_abweichungen() {
                 ("gewinnanteil", json!(m100)),
                 ("verguetung_taetigkeit", json!(m100)),
             ],
-            Some("Ueberlauf in mitunternehmer summe"),
+            Some("Ueberlauf in MitunternehmerEinkuenfte__einkuenfte_mitunternehmer"),
         ),
         (
             "dok_euer",
@@ -6172,7 +6261,7 @@ fn dokumentierte_abweichungen() {
                 ("sonstige_betriebsausgaben", json!(-m100)),
                 ("afa_jahresbetrag", json!(0)),
             ],
-            Some("Ueberlauf in euer gewinn"),
+            Some("Ueberlauf in EuerGewinn__gewinn"),
         ),
     ] {
         akte_in(id, "gesamt", gewinn(&[]), &felder);
@@ -6215,6 +6304,77 @@ fn dokumentierte_abweichungen() {
                     }
                 }
             }
+        }
+    }
+    // 1g: Summen des Gesamt-Scopes ausserhalb von i64 (siehe Kopf). Python: `kette.gesamtbetrag_der_einkuenfte` in EUR, exakt.
+    let gde_marke = "Ueberlauf in Einkommensteuertarif__gesamtbetrag_der_einkuenfte";
+    for (id, felder, py_gde) in [
+        (
+            "dok_gesamt_innen",
+            vec![("bruttoarbeitslohn", json!(1_000_000_000_000_000_i64))],
+            None,
+        ),
+        (
+            "dok_gesamt_summe",
+            vec![("bruttoarbeitslohn", json!(m100))],
+            Some(92_233_720_368_554_102_i64),
+        ),
+        (
+            "dok_gesamt_zwei",
+            vec![
+                ("bruttoarbeitslohn", json!(m100)),
+                ("vv_einnahmen", json!(m100)),
+            ],
+            Some(184_467_440_737_091_860_i64),
+        ),
+    ] {
+        akte_in(id, "gesamt", kegel_gesamt(), &felder);
+        for route in ["stand", "fragen", "ergebnis", "deklaration"] {
+            let (py, rs) = lies(id, route);
+            if route == "ergebnis" {
+                let kette = |a: &Antwort| {
+                    serde_json::from_slice::<Value>(&a.body).unwrap()["kette"].clone()
+                };
+                println!("  {id} ergebnis kette: py={} | rs={}", kette(&py), kette(&rs));
+                if let Some(gde) = py_gde {
+                    assert_eq!(
+                        kette(&py)["gesamtbetrag_der_einkuenfte"],
+                        json!(gde),
+                        "{id}: Python rechnet die Summe exakt"
+                    );
+                }
+            }
+            match (route, py_gde) {
+                ("deklaration", _) | (_, None) => {
+                    assert_eq!((py.status, rs.status), (200, 200), "{id} {route}");
+                    let (a, b): (Value, Value) = (
+                        serde_json::from_slice(&py.body).unwrap(),
+                        serde_json::from_slice(&rs.body).unwrap(),
+                    );
+                    assert_eq!(a, b, "{id} {route}: gleicher Koerper");
+                }
+                (_, Some(_)) => {
+                    assert_eq!((py.status, rs.status), (200, 422), "{id} {route}");
+                    let text = String::from_utf8_lossy(&rs.body).into_owned();
+                    assert!(
+                        text.contains(meldung) && text.contains(gde_marke),
+                        "{id} {route}: {text}"
+                    );
+                    if route == "ergebnis" {
+                        assert_eq!(zahl(&py).0, json!("bestaetigt"), "{id}");
+                    }
+                }
+            }
+        }
+    }
+    // 1g, Gegenprobe: derselbe Betrag in der Scheibe `an_gesamt` (nur die festzusetzende ESt, kein Gesamt-Scope): beide Seiten gleich.
+    akte("dok_gesamt_an", &[("bruttoarbeitslohn", json!(m100))]);
+    for route in ["stand", "fragen", "ergebnis", "deklaration"] {
+        let (py, rs) = lies("dok_gesamt_an", route);
+        assert_eq!((py.status, rs.status), (200, 200), "an_gesamt {route}");
+        if route == "ergebnis" {
+            assert_eq!(zahl(&py), zahl(&rs), "an_gesamt {route}");
+            assert_eq!(zahl(&py).1, json!(4_150_517_416_582_623_200_i64));
         }
     }
     // 2. Jahr ausserhalb von i64 bei DELETE: Python gibt die Ganzzahl, Rust einen Float.
