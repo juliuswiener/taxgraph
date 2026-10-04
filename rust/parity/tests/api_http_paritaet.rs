@@ -6024,6 +6024,84 @@ fn dokumentierte_abweichungen() {
             v["mobilitaetspraemie_cent"].clone(),
         )
     };
+    // 1h/1i (zu 1b; cutover-abw, gewollte Abweichung, Messung `berichte/rauchprobe-abweichungen.md`): Fall-Dateien mit einem
+    //     Jahr ausserhalb von 2024..2026, von Hand geschrieben. `POST /fall` weist sie auf beiden Seiten mit 400 ab; im Betrieb mit
+    //     Anmeldung ist eine Datei ohne Besitzer fuer jedes Konto gesperrt (403), hier gehoert sie `alice`, damit der Pfad erreichbar ist.
+    //     1h: Jahr 2099, Akte ohne bestaetigte Eingaben: `stand`, `fragen`, `ergebnis` Python 200 (`ergebnis`: `zahl_cent` null, `grund`
+    //         `input_kegel_nicht_bestaetigt`, keine Parameterdatei noetig), Rust 500 `ValueError: kein unterstuetzter
+    //         Veranlagungszeitraum: 2099` (`api/src/stand.rs`, `jahr`). `preflight`, `graph` und `deklaration` (dort gilt 2024..2100):
+    //         beide 200 mit gleichem Koerper. Gegenrichtung, vollstaendige Akte mit Jahr 2099: beide 500, Python `FileNotFoundError`
+    //         (`params/2099/...`), Rust dieselbe ValueError; Python rechnet nie mit einem anderen Jahr.
+    //     1i: `deklaration` mit Jahr 10^38 (`seed_big`): beide 500 mit demselben Satz, nur die Zahl unterscheidet sich: Python nennt die
+    //         38 Neunen, Rust `i64::MAX` (`Store::veranlagungszeitraum` saettigt, `store/src/store.rs`). Gegenprobe Jahr -5: beide 500,
+    //         gleicher Text.
+    let von_hand = |id: &str, jahr: &str| {
+        for s in [&p.py, &p.rs] {
+            let inhalt = format!(
+                r#"{{"version":1,"veranlagungszeitraum":{jahr},"fall_id":"{id}","scheibe":"gesamt","events":[],"snapshots":[],"user_id":"alice"}}"#
+            );
+            std::fs::write(s.faelle().join(format!("{id}.json")), inhalt).unwrap();
+        }
+    };
+    let koerper = |a: &Antwort| -> Value { serde_json::from_slice(&a.body).unwrap() };
+    let fehlertext = |a: &Antwort| -> String { koerper(a)["fehler"].as_str().unwrap().to_owned() };
+    let vz_text = "ValueError: kein unterstuetzter Veranlagungszeitraum: 2099";
+    von_hand("dok_jahr_leer", "2099");
+    for route in ["stand", "fragen", "ergebnis"] {
+        let (py, rs) = lies("dok_jahr_leer", route);
+        assert_eq!((py.status, rs.status), (200, 500), "jahr 2099 leer {route}");
+        assert_eq!(fehlertext(&rs), vz_text, "jahr 2099 leer {route}");
+        assert!(koerper(&py).get("fehler").is_none(), "jahr 2099 leer {route}");
+        if route == "ergebnis" {
+            let a = koerper(&py);
+            assert_eq!(
+                (&a["grund"], &a["zahl_cent"]),
+                (&json!("input_kegel_nicht_bestaetigt"), &Value::Null)
+            );
+        }
+    }
+    for route in ["preflight", "graph", "deklaration"] {
+        let (py, rs) = lies("dok_jahr_leer", route);
+        assert_eq!((py.status, rs.status), (200, 200), "jahr 2099 leer {route}");
+        assert_eq!(koerper(&py), koerper(&rs), "jahr 2099 leer {route}: gleicher Koerper");
+    }
+    akte("dok_jahr_voll", &[]);
+    for s in [&p.py, &p.rs] {
+        let pfad = s.faelle().join("dok_jahr_voll.json");
+        let mut v: Value = serde_json::from_slice(&std::fs::read(&pfad).unwrap()).unwrap();
+        v["veranlagungszeitraum"] = json!(2099);
+        std::fs::write(&pfad, serde_json::to_vec(&v).unwrap()).unwrap();
+    }
+    for route in ["stand", "ergebnis"] {
+        let (py, rs) = lies("dok_jahr_voll", route);
+        assert_eq!((py.status, rs.status), (500, 500), "jahr 2099 voll {route}");
+        let py_text = fehlertext(&py);
+        assert!(
+            py_text.starts_with("FileNotFoundError") && py_text.contains("params/2099/"),
+            "jahr 2099 voll {route}: {py_text}"
+        );
+        assert_eq!(fehlertext(&rs), vz_text, "jahr 2099 voll {route}");
+    }
+    let neun38 = "99999999999999999999999999999999999999";
+    let i64_max = "9223372036854775807";
+    let (py, rs) = lies("seed_big", "deklaration");
+    assert_eq!((py.status, rs.status), (500, 500), "seed_big deklaration");
+    let (py_text, rs_text) = (fehlertext(&py), fehlertext(&rs));
+    assert_eq!(
+        py_text,
+        format!("ValueError: Veranlagungsjahr {neun38} ist kein Steuerjahr (erwartet 2024..2100). deklariere() lehnt es ab, statt still eine Menge zu waehlen.")
+    );
+    assert_eq!(
+        py_text.replace(neun38, "<N>"),
+        rs_text.replace(i64_max, "<N>"),
+        "gleicher Satz, nur die Zahl verschieden"
+    );
+    assert!(rs_text.contains(i64_max) && !rs_text.contains(neun38));
+    von_hand("dok_jahr_minus5", "-5");
+    let (py, rs) = lies("dok_jahr_minus5", "deklaration");
+    assert_eq!((py.status, rs.status), (500, 500), "jahr -5 deklaration");
+    assert_eq!(koerper(&py), koerper(&rs), "jahr -5: gleicher Text");
+    assert!(fehlertext(&py).contains("Veranlagungsjahr -5 ist kein Steuerjahr"));
     let tageswerte = [
         ("vpf_keine_mahlzeitengestellung", json!(false)),
         (
