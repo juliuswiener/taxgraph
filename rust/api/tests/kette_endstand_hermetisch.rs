@@ -282,6 +282,37 @@ fn g5_vg_einzel_p34_aenderungen() -> Paare {
     ]
 }
 
+/// § 34 Abs. 3 auf den Cent genau an der Obergrenze: 5.000.000 EUR Veraeusserungsgewinn (der Freibetrag § 16 Abs. 4 ist
+/// ab 181.000 EUR 0, `netto_vg` ist der rohe Gewinn), Antrag auf den ermaessigten Satz, dauernd berufsunfaehig.
+fn g6_p34_abs3_genau_5_mio_aenderungen() -> Paare {
+    vec![
+        ("kein_gewinn", json!(false)),
+        ("rentner_alter_55_oder_berufsunfaehig", json!(true)),
+        ("rentner_freibetrag_erstmalig", json!(true)),
+        ("rentner_veraeusserungsgewinn", json!(500_000_000)),
+        ("antrag_ermaessigter_satz", json!(true)),
+        ("dauernd_berufsunfaehig", json!(true)),
+    ]
+}
+
+/// § 31 mit einem Kind, Zusammenveranlagung, 84.418 EUR Gewinn, sonst nichts: die Steuer mit Kinderfreibetrag plus
+/// Kindergeld ist genau so hoch wie die ohne (`est_ohne` 16.046 EUR, `est_mit` 12.986 EUR, Kindergeld 3.060 EUR).
+fn g7_kind_gleichstand_aenderungen() -> Paare {
+    vec![
+        ("veranlagung", json!("zusammen")),
+        ("bruttoarbeitslohn", json!(0)),
+        ("bruttoarbeitslohn_partner", json!(0)),
+        ("kap_kapitalertraege_partner", json!(0)),
+        ("kap_gewinn_aktien_partner", json!(0)),
+        ("kap_gewinn_sonstige_partner", json!(0)),
+        ("kap_verlust_aktien_partner", json!(0)),
+        ("kap_verlust_sonstige_partner", json!(0)),
+        ("fam_anzahl_kinder", json!(1)),
+        ("kein_gewinn", json!(false)),
+        ("einkuenfte_gewinn", json!(8_441_800)),
+    ]
+}
+
 fn r3_rentner_p34_aenderungen() -> Paare {
     vec![
         ("kein_gewinn", json!(false)),
@@ -442,6 +473,56 @@ async fn g5_vg_einzel_p34_kette_traegt_die_tarifermaessigung() {
     )
     .await;
     erwarte_kette("g5", &a, 4_458_400, [133_770, 133_734, 44_584, 44_584]);
+}
+
+/// § 34 Abs. 3 `EStG` gilt bis EINSCHLIESSLICH 5.000.000 EUR (`netto_vg <= 5_000_000` in `p34_chooser`; Python
+/// `0 < netto_vg <= 5_000_000`, `bescheid_zweige.py:873`): genau 5 Mio EUR mit Antrag und Berufsunfaehigkeit rechnen den
+/// ermaessigten Durchschnittssatz (1.263.270 EUR), nicht die Fuenftelung (Python ohne Antrag: 2.230.219 EUR). Ueber 5 Mio
+/// sperrt `abs3_ueber_5mio_offen` (gemessen bei 5.000.001 EUR); die Grenze selbst ist ueber `GET /ergebnis` also nur auf
+/// genau 5.000.000 EUR erreichbar.
+///
+/// Die Mutationsmessung (`bescheid-elster-mutation`, T04) liess `<=` -> `<` in jedem Lauf gruen, auch mit `PARITY=1`; der
+/// Witness (`rentner_veraeusserungsgewinn` 500.000.000 Cent) wich bei `festzusetzende_est_gesamt` und `_rentner` ab.
+/// Erwartung aus dem Python-Server (`api.ergebnis` im selben Prozess, 2026-10-04, `0197bf76`).
+#[tokio::test]
+async fn g6_p34_abs3_gilt_bis_einschliesslich_5_mio() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), g6_p34_abs3_genau_5_mio_aenderungen()),
+    )
+    .await;
+    erwarte_kette(
+        "g6",
+        &a,
+        126_327_000,
+        [5_058_770, 5_058_734, 1_263_270, 1_263_270],
+    );
+}
+
+/// § 31 `EStG` am Gleichstand: kostet der Kinderfreibetrag-Lauf plus Kindergeld GENAU so viel wie der Lauf ohne (hier
+/// 12.986 + 3.060 = 16.046 EUR), bleibt es beim Kindergeld (`est_mit + kg < est_ohne` ist strikt; Python
+/// `_fb_guenstiger = _est_mit_fb + _kg_kind < _est_ohne_fb`, `bescheid_zweige.py:1014`). Die Kette zeigt dann den Lauf
+/// ohne Freibetrag (zvE 84.346 EUR, nicht 74.746 EUR) und `p31` nennt das Kindergeld.
+///
+/// Gepinnt ist das VERHALTEN DES ORAKELS am Gleichstand, nicht seine gesetzliche Richtigkeit: ob § 31 `EStG` bei
+/// Gleichstand das Kindergeld oder den Freibetrag meint, ist nicht geprueft und bleibt offen. Faellt die Entscheidung
+/// anders aus, aendert sich diese Erwartung zusammen mit Python.
+///
+/// Die Mutationsmessung (T15) liess `<` -> `<=` in jedem Lauf gruen, auch mit `PARITY=1`: die Zufallsfaelle treffen den
+/// Gleichstand nicht (118 von 3.000 untersuchten zvE-Werten, Zusammenveranlagung, ein Kind). Die Zahl selbst ist an dieser
+/// Stelle gleich; die Mutation verschiebt `p31.guenstiger` auf "freibetraege" und die Stufen zvE/tarifliche der Kette
+/// (74.746 und 12.986 statt 84.346 und 16.046 EUR).
+/// Erwartung aus dem Python-Server (`api.ergebnis` im selben Prozess, 2026-10-04, `0197bf76`).
+#[tokio::test]
+async fn g7_kind_gleichstand_haelt_das_kindergeld() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), g7_kind_gleichstand_aenderungen()),
+    )
+    .await;
+    erwarte_kette("g7", &a, 1_604_600, [84_418, 84_346, 16_046, 16_046]);
+    assert_eq!(a["kette"]["p31"]["guenstiger"], "kindergeld", "{a}");
+    assert_eq!(a["kette"]["p31"]["kindergeld"].as_i64(), Some(3060), "{a}");
 }
 
 /// § 34 `EStG` im Rentner-Zweig (20.000 EUR Rente + 120.000 EUR Veraeusserungsgewinn): derselbe Fall mit dem
