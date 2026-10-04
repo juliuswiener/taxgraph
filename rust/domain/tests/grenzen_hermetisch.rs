@@ -20,8 +20,8 @@
 use std::num::NonZeroU16;
 
 use domain::{
-    meet_herkunft, py_float, Achsenwert, BasisId, Cent, FallId, FeldId, FeldIdFehler, Feldtyp,
-    Herkunft, PruefTiefe, PyFehler, PyWert, Wert, WertFehler,
+    meet_herkunft, py_float, repr_float, Achsenwert, BasisId, Cent, FallId, FeldId, FeldIdFehler,
+    Feldtyp, Herkunft, PruefTiefe, PyFehler, PyWert, Wert, WertFehler,
 };
 
 // ---- money.rs -------------------------------------------------------------------------------------------------------
@@ -134,6 +134,15 @@ fn instanzgrenzen() {
             "{s}"
         );
     }
+    // Die Instanz-Kodierung wird VOR der Basis geprueft: `A__1` meldet die Instanz, nicht die grosse Basis.
+    assert_eq!(
+        "A__1".parse::<FeldId>(),
+        Err(FeldIdFehler::UngueltigeInstanz("A__1".to_owned()))
+    );
+    assert_eq!(
+        "A__2".parse::<FeldId>(),
+        Err(FeldIdFehler::UngueltigeBasis("A".to_owned()))
+    );
     let zwei: FeldId = "a__2".parse().unwrap();
     assert_eq!(zwei.instanznummer().get(), 2);
     assert_eq!(
@@ -379,4 +388,75 @@ fn enum_ohne_werteliste_weist_ab() {
         versuch(Some(&["nein".to_owned(), "ja".to_owned()])),
         Ok(Wert::Enum("ja".to_owned()))
     );
+}
+
+// ---- py_text.rs, repr ------------------------------------------------------------------------------------------------
+
+/// `repr(float)` an den Raendern, gemessen mit `CPython` 3.14.7 (`repr(x)`): Null, Exponentgrenzen -4 und 16, kleinste und
+/// groesste Zahl.
+#[test]
+fn repr_float_grenzwerte_wie_cpython() {
+    for (f, soll) in [
+        (0.0, "0.0"),
+        (-0.0, "-0.0"),
+        (1.0, "1.0"),
+        (100.0, "100.0"),
+        (1e15, "1000000000000000.0"),
+        (1e16, "1e+16"),
+        (1.5e16, "1.5e+16"),
+        (123_456_789_012_345_680.0, "1.2345678901234568e+17"),
+        (9_007_199_254_740_992.0, "9007199254740992.0"),
+        (9_223_372_036_854_775_808.0, "9.223372036854776e+18"),
+        (1e21, "1e+21"),
+        (1e22, "1e+22"),
+        (f64::MAX, "1.7976931348623157e+308"),
+        (f64::MIN_POSITIVE, "2.2250738585072014e-308"),
+        (5e-324, "5e-324"),
+        (1e-4, "0.0001"),
+        (1e-5, "1e-05"),
+        (1.5e-5, "1.5e-05"),
+        (0.000_123_45, "0.00012345"),
+        (1e-7, "1e-07"),
+        (-1.5e-7, "-1.5e-07"),
+        (0.1 + 0.2, "0.30000000000000004"),
+        (1.0 / 3.0, "0.3333333333333333"),
+        (12345.678, "12345.678"),
+        (4.35, "4.35"),
+        (f64::INFINITY, "inf"),
+        (f64::NEG_INFINITY, "-inf"),
+        (f64::NAN, "nan"),
+    ] {
+        assert_eq!(repr_float(f), soll, "{f:e}");
+    }
+}
+
+/// `repr(str)`: das Aufbauschema der Escapes `\xNN` (bis U+00FF), `\uNNNN` (bis U+FFFF), `\UNNNNNNNN` folgt dem Codepunkt, fuer
+/// jedes Zeichen, das `repr` ueberhaupt escapet. Dass beide kleinen Breiten vorkommen, ist die Gegenprobe.
+#[test]
+fn repr_escape_breite_folgt_dem_codepunkt() {
+    let (mut x, mut u, mut roh) = (0_u32, 0_u32, 0_u32);
+    for c in (0..=0x10_ffff_u32).filter_map(char::from_u32) {
+        if matches!(c, '\'' | '"' | '\\' | '\t' | '\n' | '\r') {
+            continue;
+        }
+        let n = u32::from(c);
+        let repr = PyWert::Text(c.to_string()).repr();
+        let koerper = repr
+            .strip_prefix('\'')
+            .and_then(|r| r.strip_suffix('\''))
+            .unwrap();
+        if koerper == c.to_string() {
+            roh += 1;
+        } else if n <= 0xff {
+            assert_eq!(koerper, format!("\\x{n:02x}"), "U+{n:04X}");
+            x += 1;
+        } else if n <= 0xffff {
+            assert_eq!(koerper, format!("\\u{n:04x}"), "U+{n:04X}");
+            u += 1;
+        } else {
+            assert_eq!(koerper, format!("\\U{n:08x}"), "U+{n:04X}");
+        }
+    }
+    assert!(x > 0 && u > 0, "x={x} u={u}");
+    assert!(roh > 100_000, "roh={roh}");
 }
