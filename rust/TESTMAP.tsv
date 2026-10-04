@@ -300,6 +300,7 @@ tests/test_testmap_vollstaendig.py	74	3	0	TOOLING	(Repo-Lint fuer rust/TESTMAP.t
 tests/test_thema_am_stueck_im_durchgang.py	264	5	0	PROPERTY	produkt/traverser/traverser.py	topic contiguity over a whole run
 tests/test_traverser.py	441	29	0	INTEGRATION	produkt/traverser/traverser.py	traverser core; minority rules.yaml sweep -> serde
 tests/test_triage_log_bindung.py	124	3	0	TOOLING	pipeline/item_registry	pipeline stays Python
+tests/test_ueberlauf_waechter_text.py	437	15	0	TOOLING	rust/catala-sys/csrc/shim.c; rust/Cargo.toml [profile.dev]; Makefile serve	[deps: none] Textpruefung ohne Catala, Rust-Bau und Python-Orakel: mpz_get_si nur im Makro TG_AUS; make serve baut dev, dort overflow-checks = true. Beide Waechter gegen Text-Mutanten und Umformatierung geprueft
 tests/test_ui_a11y.py	179	2	0	INTEGRATION	produkt/haut (static UI)	Playwright + axe-core; needs: Playwright, network (CDN)
 tests/test_ui_backend.py	196	12	0	TOOLING	pipeline/ui/service.py	pipeline triage UI stays Python
 tests/test_ui_chat_aussagen.py	685	17	0	INTEGRATION	produkt/haut (UI + api_llm)	needs: Playwright
