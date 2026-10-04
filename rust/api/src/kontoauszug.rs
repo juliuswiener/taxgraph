@@ -360,3 +360,352 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
     }
     Ok(Antwort::neu(200, Value::Object(aus)))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const MARKE: &str = "§nicht_tragbar:";
+
+    /// Die Zahl, die `json_laden` durch Text ersetzt hat.
+    fn ersatz(typ: &str) -> Value {
+        json!(format!("{MARKE}{typ}"))
+    }
+
+    fn laden(text: &str) -> Option<Value> {
+        json_laden(text).ok().map(|(wert, _)| wert)
+    }
+
+    /// `base64.b64decode(text, validate=True)` aus `CPython` 3.14: gleiche Eingaben, gleiche Ausgänge
+    /// (Fehlerfall `None`). Die Werte stammen aus einem Lauf von Python, nicht aus dem Code hier.
+    #[test]
+    fn base64_streng_wie_python_validate() {
+        let faelle: [(&str, Option<&[u8]>); 41] = [
+            ("", Some(&[])),
+            ("QUJD", Some(&[65, 66, 67])),
+            ("QUI=", Some(&[65, 66])),
+            ("QQ==", Some(&[65])),
+            ("QR==", Some(&[65])),
+            ("QQ=", None),
+            ("QQ", None),
+            ("Q", None),
+            ("QUJDRA==", Some(&[65, 66, 67, 68])),
+            ("QUJDRA=", None),
+            ("QUJDRA", None),
+            ("QUJDREU=", Some(&[65, 66, 67, 68, 69])),
+            ("QUJDREVG", Some(&[65, 66, 67, 68, 69, 70])),
+            ("QQ==QQ==", None),
+            ("=QUJ", None),
+            ("QU JD", None),
+            ("QUJD\n", None),
+            ("QU-D", None),
+            ("QU_D", None),
+            ("+/+/", Some(&[251, 255, 191])),
+            ("////", Some(&[255, 255, 255])),
+            ("++++", Some(&[251, 239, 190])),
+            ("AAAA", Some(&[0, 0, 0])),
+            ("Zm9v", Some(&[102, 111, 111])),
+            ("Zm9vYg==", Some(&[102, 111, 111, 98])),
+            ("Zm9vYmE=", Some(&[102, 111, 111, 98, 97])),
+            ("Zm9vYmFy", Some(&[102, 111, 111, 98, 97, 114])),
+            ("Zm9vYg=", None),
+            ("Zm9vYg===", None),
+            ("Zm9=", Some(&[102, 111])),
+            ("Zm==", Some(&[102])),
+            ("=", None),
+            ("==", None),
+            ("A===", None),
+            ("AA==", Some(&[0])),
+            ("AAA=", Some(&[0, 0])),
+            ("AAA", None),
+            ("ab/+", Some(&[105, 191, 254])),
+            ("ä", None),
+            ("QUJDä=", None),
+            ("QQ==\n", None),
+        ];
+        for (text, soll) in faelle {
+            assert_eq!(base64_streng(text).as_deref(), soll, "{text:?}");
+        }
+    }
+
+    /// `json.loads` aus `CPython` 3.14: was Python liest, liest `json_laden` mit denselben Werten
+    /// (`NaN`, `Infinity`, Überlauf und große Ganzzahlen als Ersatztext); was Python ablehnt,
+    /// lehnt es auch ab.
+    #[test]
+    fn json_laden_wie_python() {
+        let float = || ersatz("float");
+        let ganz = || ersatz("int");
+        let faelle: Vec<(&str, Option<Value>)> = vec![
+            (r#"[1, 2.5, "a"]"#, Some(json!([1, 2.5, "a"]))),
+            ("[NaN]", Some(json!([float()]))),
+            ("[Infinity, -Infinity]", Some(json!([float(), float()]))),
+            ("NaN", Some(float())),
+            ("-Infinity", Some(float())),
+            (r#"["NaN"]"#, Some(json!(["NaN"]))),
+            ("[NaNa]", None),
+            ("[Infinityx]", None),
+            ("[-Infinityx]", None),
+            ("[NaN,1]", Some(json!([float(), 1]))),
+            (r#"{"a":NaN}"#, Some(json!({"a": float()}))),
+            ("[NaN ]", Some(json!([float()]))),
+            ("[NaN\n]", Some(json!([float()]))),
+            ("[ NaN , NaN ]", Some(json!([float(), float()]))),
+            ("[5 NaN]", None),
+            ("[12345678901234567890]", Some(json!([ganz()]))),
+            (
+                "[9223372036854775807]",
+                Some(json!([9_223_372_036_854_775_807_i64])),
+            ),
+            ("[-9223372036854775808]", Some(json!([i64::MIN]))),
+            ("[-9223372036854775809]", Some(json!([ganz()]))),
+            ("[-12345678901234567890]", Some(json!([ganz()]))),
+            ("[1e999]", Some(json!([float()]))),
+            ("[-1e999]", Some(json!([float()]))),
+            ("[1E999]", Some(json!([float()]))),
+            ("[10e400]", Some(json!([float()]))),
+            ("[2e308]", Some(json!([float()]))),
+            ("[1e+999]", Some(json!([float()]))),
+            ("[1.7976931348623159e308]", Some(json!([float()]))),
+            (
+                "[1.7976931348623157e308]",
+                Some(json!([1.797_693_134_862_315_7e308_f64])),
+            ),
+            ("[1e5]", Some(json!([100_000.0]))),
+            ("[1E5]", Some(json!([100_000.0]))),
+            ("[1.5e+3]", Some(json!([1500.0]))),
+            ("[1e-5]", Some(json!([1e-5]))),
+            ("[-]", None),
+            ("[--5]", None),
+            ("[01]", None),
+            ("[-01]", None),
+            ("[0123456789012345678901234567890]", None),
+            ("[1-2]", None),
+            ("[1.5.5]", None),
+            ("[1e]", None),
+            ("[1e5e5]", None),
+            ("", None),
+            ("[", None),
+            ("[1,]", None),
+            (r#"{"a": [1, 2]}"#, Some(json!({"a": [1, 2]}))),
+            (
+                r#"["NaN 1e999 12345678901234567890"]"#,
+                Some(json!(["NaN 1e999 12345678901234567890"])),
+            ),
+            (r#"{"1e999": 1}"#, Some(json!({"1e999": 1}))),
+            (r#"["a\\", NaN]"#, Some(json!(["a\\", float()]))),
+            (r#"["\"", NaN]"#, Some(json!(["\"", float()]))),
+            (r#"["\" NaN"]"#, Some(json!(["\" NaN"]))),
+            (r#"["ä", NaN]"#, Some(json!(["ä", float()]))),
+            (r#"["ä", 12345678901234567890]"#, Some(json!(["ä", ganz()]))),
+        ];
+        for (text, soll) in faelle {
+            assert_eq!(laden(text), soll, "{text:?}");
+        }
+    }
+
+    /// `CPython` liest eine Ganzzahl bis 4300 Ziffern und wirft ab 4301 `ValueError`; eine Kommazahl
+    /// mit mehr Ziffern liest es.
+    #[test]
+    fn json_laden_vierttausenddreihundert_ziffern() {
+        let ziffern = |n: usize| format!("1{}", "0".repeat(n - 1));
+        for n in [4299, 4300] {
+            for vorzeichen in ["", "-"] {
+                let text = format!("[{vorzeichen}{}]", ziffern(n));
+                assert_eq!(
+                    laden(&text),
+                    Some(json!([ersatz("int")])),
+                    "{vorzeichen}{n} Ziffern"
+                );
+            }
+        }
+        for n in [4301, 4302] {
+            for vorzeichen in ["", "-"] {
+                let text = format!("[{vorzeichen}{}]", ziffern(n));
+                assert_eq!(laden(&text), None, "{vorzeichen}{n} Ziffern");
+            }
+        }
+        let lang = format!("[0.{}]", "1".repeat(5000));
+        assert!(laden(&lang).is_some(), "Kommazahl mit 5000 Ziffern");
+    }
+
+    /// Die Kennzeichnung kommt im Auszug nicht roh vor: steht sie schon darin, hängt `marke_fuer`
+    /// Unterstriche an, bis sie neu ist; der Auszug behält seinen Text.
+    #[test]
+    fn json_laden_waehlt_eine_marke_die_im_auszug_nicht_vorkommt() {
+        assert_eq!(marke_fuer("[]"), MARKE);
+        let (wert, marke) = json_laden(r#"["§nicht_tragbar:float", NaN]"#).unwrap();
+        assert_eq!(marke, "§nicht_tragbar:_");
+        assert_eq!(
+            wert,
+            json!(["§nicht_tragbar:float", "§nicht_tragbar:_float"])
+        );
+        let (wert, marke) = json_laden(r#"["§nicht_tragbar:_", "§nicht_tragbar:", NaN]"#).unwrap();
+        assert_eq!(marke, "§nicht_tragbar:__");
+        assert_eq!(wert[2], json!("§nicht_tragbar:__float"));
+        assert_eq!(json_laden("[]").unwrap().1, MARKE);
+    }
+
+    /// Eine Ganzzahl in der Schreibweise von JSON: `-?(0|[1-9][0-9]*)`.
+    #[test]
+    fn json_ganzzahl_ist_die_json_schreibweise() {
+        for ja in ["0", "-0", "7", "-7", "10", "-10", "9223372036854775808"] {
+            assert!(json_ganzzahl(ja), "{ja}");
+        }
+        for nein in [
+            "", "-", "--5", "007", "-07", "00", "1e5", "1.5", "+5", "1-2", "a", "5a",
+        ] {
+            assert!(!json_ganzzahl(nein), "{nein}");
+        }
+    }
+
+    /// Ein Wort endet vor Leerraum, `,`, `]`, `}` oder am Ende des Texts.
+    #[test]
+    fn wort_ende_kennt_die_trenner() {
+        for ja in [
+            "NaN", "NaN ", "NaN\t", "NaN\n", "NaN,", "NaN]", "NaN}", "NaN ,",
+        ] {
+            assert!(wort_ende(ja, 3), "{ja:?}");
+        }
+        for nein in ["NaNa", "NaN1", "NaN:", "NaN\"", "NaN)", "NaN_"] {
+            assert!(!wort_ende(nein, 3), "{nein:?}");
+        }
+        assert!(wort_ende("-Infinity", 9));
+        assert!(!wort_ende("-Infinityx", 9));
+    }
+
+    fn status_und_text(f: ApiFehler) -> (u16, String) {
+        match f {
+            ApiFehler::Status(s, m) => (s, m),
+            ApiFehler::Unerwartet { typ, meldung } => (500, format!("{typ}: {meldung}")),
+        }
+    }
+
+    /// `(body.get("format") or "").strip().lower()`: ein falscher Wert ist leer, ein wahrer
+    /// Nicht-Text ist ein `AttributeError` (500).
+    #[test]
+    fn format_lesen_wie_python() {
+        let lies = |b: Value| -> Result<String, (u16, String)> {
+            let Value::Object(m) = b else { unreachable!() };
+            format_lesen(&m).map_err(status_und_text)
+        };
+        assert_eq!(lies(json!({"format": " CSV "})), Ok("csv".into()));
+        assert_eq!(lies(json!({"format": "Json"})), Ok("json".into()));
+        assert_eq!(lies(json!({"format": "PDF"})), Ok("pdf".into()));
+        assert_eq!(lies(json!({"format": "   "})), Ok(String::new()));
+        for leer in [
+            json!({}),
+            json!({"format": null}),
+            json!({"format": false}),
+            json!({"format": 0}),
+            json!({"format": ""}),
+            json!({"format": []}),
+            json!({"format": {}}),
+        ] {
+            assert_eq!(lies(leer.clone()), Ok(String::new()), "{leer}");
+        }
+        for (wahr, typ) in [
+            (json!({"format": 5}), "int"),
+            (json!({"format": true}), "bool"),
+            (json!({"format": [1]}), "list"),
+            (json!({"format": {"a": 1}}), "dict"),
+            (json!({"format": 1.5}), "float"),
+        ] {
+            assert_eq!(
+                lies(wahr.clone()),
+                Err((
+                    500,
+                    format!("AttributeError: '{typ}' object has no attribute 'strip'")
+                )),
+                "{wahr}"
+            );
+        }
+    }
+
+    /// Der JSON-Zweig: eine Liste im Rumpf gilt (ohne Kennzeichnung), Text wird gelesen (mit), ein
+    /// falscher Wert ist die leere Liste; alles andere ist 400.
+    #[test]
+    fn json_liste_wie_python() {
+        let lies = |v: Value| json_liste(&v).map_err(status_und_text);
+        assert_eq!(
+            lies(json!([1, "a"])),
+            Ok((vec![json!(1), json!("a")], None))
+        );
+        for leer in [
+            json!(null),
+            json!(false),
+            json!(0),
+            json!(""),
+            json!({}),
+            json!(0.0),
+        ] {
+            assert_eq!(lies(leer.clone()), Ok((vec![], None)), "{leer}");
+        }
+        assert_eq!(
+            lies(json!("[1, NaN]")),
+            Ok((
+                vec![json!(1), json!(format!("{MARKE}float"))],
+                Some(MARKE.to_owned())
+            ))
+        );
+        assert_eq!(lies(json!("[]")), Ok((vec![], Some(MARKE.to_owned()))));
+        let nicht_lesbar = Err((400, "json-Inhalt nicht parsebar".to_owned()));
+        for kaputt in [
+            json!("nope"),
+            json!("["),
+            json!(5),
+            json!(true),
+            json!({"a": 1}),
+            json!(1.5),
+        ] {
+            assert_eq!(lies(kaputt.clone()), nicht_lesbar, "{kaputt}");
+        }
+        for keine_liste in [
+            json!("5"),
+            json!("{}"),
+            json!(r#""x""#),
+            json!("null"),
+            json!("NaN"),
+        ] {
+            assert_eq!(
+                lies(keine_liste.clone()),
+                Err((
+                    400,
+                    "json muss eine Liste von Transaktionen sein".to_owned()
+                )),
+                "{keine_liste}"
+            );
+        }
+    }
+
+    /// Der PDF-Zweig: Text mit Inhalt, base64 mit `validate=True`.
+    #[test]
+    fn pdf_bytes_wie_python() {
+        let lies = |v: Value| pdf_bytes(&v).map_err(status_und_text);
+        assert_eq!(lies(json!("QUJD")), Ok(vec![65, 66, 67]));
+        let fehlt = Err((
+            400,
+            "pdf-Inhalt fehlt (erwartet: base64-kodierte PDF-Bytes in `inhalt`)".to_owned(),
+        ));
+        for leer in [
+            json!(null),
+            json!(""),
+            json!("   \n"),
+            json!(5),
+            json!(["QUJD"]),
+            json!({}),
+            json!(false),
+        ] {
+            assert_eq!(lies(leer.clone()), fehlt, "{leer}");
+        }
+        let ungueltig = Err((400, "pdf-Inhalt nicht gültig base64-kodiert".to_owned()));
+        for kaputt in [
+            json!("QQ="),
+            json!("QU JD"),
+            json!(" QUJD"),
+            json!("QUJD\n"),
+            json!("ä"),
+        ] {
+            assert_eq!(lies(kaputt.clone()), ungueltig, "{kaputt}");
+        }
+    }
+}

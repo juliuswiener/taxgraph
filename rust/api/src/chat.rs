@@ -637,4 +637,53 @@ mod tests {
         assert!(vertrag.contains("schreiber='llm:…'"));
         assert!(vertrag.ends_with("Zwei-Signal-Klick."));
     }
+
+    /// Ein Store mit Events `(feld_id, wert, zustand, ersetzt)`; `ersetzt` ist der Index eines frueheren Events.
+    fn store_aus(events: &[(&str, Value, &str, Option<usize>)]) -> Store {
+        let mut datei = Store::leer(2025, Some("k1".into())).into_datei();
+        let mut ids: Vec<String> = Vec::new();
+        for (i, (fid, wert, zustand, ersetzt)) in events.iter().enumerate() {
+            let mut e = json!({
+                "ts": format!("2026-01-01T00:00:{:02}+00:00", i % 60), "feld_id": fid, "wert": wert,
+                "zustand": zustand,
+                "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                "schreiber": "ui:laie", "signal": {"signal_1": null, "signal_2": "ok"},
+                "ersetzt": ersetzt.map(|k| ids[k].clone()),
+            });
+            let id = EventId::von_json(&e).to_string();
+            e["event_id"] = json!(id);
+            ids.push(id);
+            datei.events.push(serde_json::from_value(e).unwrap());
+        }
+        Store::aus_datei(datei)
+    }
+
+    /// Auftrag 8: `_aktives(store).items()` (`store.py:92`) als `dict`: ein ersetztes Event zaehlt nicht, ein
+    /// Feld steht an der Stelle seines ersten Events und traegt den Wert des letzten; nur ein bestaetigtes
+    /// letztes Event kommt in den Kontext.
+    #[test]
+    fn bestaetigte_folgen_dem_dict_von_python() {
+        let store = store_aus(&[
+            ("a", json!(1), "bestaetigt", None),
+            ("b", json!(2), "bestaetigt", None),
+            ("a", json!(3), "bestaetigt", None),
+            ("c", json!(4), "bestaetigt", None),
+            ("c", json!(5), "bestaetigt", Some(3)),
+            ("d", json!(6), "vorlaeufig", None),
+            ("e", json!(7), "bestaetigt", None),
+            ("e", json!(8), "vorlaeufig", None),
+        ]);
+        let ist: Vec<(&str, String)> = bestaetigte(&store)
+            .iter()
+            .map(|e| (e.feld_id.as_str(), e.wert.py_str()))
+            .collect();
+        assert_eq!(
+            ist,
+            vec![
+                ("a", "3".to_owned()),
+                ("b", "2".to_owned()),
+                ("c", "5".to_owned())
+            ]
+        );
+    }
 }
