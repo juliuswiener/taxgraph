@@ -5934,6 +5934,150 @@ fn dokumentierte_abweichungen() {
             assert_eq!((&a["grund"], &a["zahl_cent"]), (&json!("bestaetigt"), &json!(0)));
         }
     }
+    // 1d/1e. Zwei weitere Eingaben derselben Klasse wie 1c (h8-abweichung-422, gewollte Abweichung, Korrektheit vor Paritaet):
+    //     Felder OHNE `bereich`, die `POST /event` mit 201 annimmt (beide Seiten), deren Zwischenprodukt aber nicht in `i64` passt.
+    //     Python rechnet mit jedem `int` weiter und antwortet 200; Rust meldet 422 mit der Betragsmeldung -- nie 500, nie eine
+    //     gewickelte Zahl. Die Marke im Klammertext ist die Stelle im Rechenkern (`ueberlauf_luecke_hermetisch`, `engine`).
+    //     1d: `vpf_fruehstuecke_gestellt_anzahl` 16470307208669242 (zu 560 ct) plus ein Mittagessen (1120 ct): die Summe der
+    //         Kuerzungen laeuft ueber (`vpf k28`); alle vier Routen, `deklaration` an der Addition. Gegenprobe: das Fruehstueck
+    //         allein passt gerade, beide Seiten 200 mit derselben Zahl.
+    //     1e: `ep_entfernung_km` 10^15 bei 366 Arbeitstagen: `Tage * (km - 20) * 38 ct` laeuft ueber (`ab21_roh`); nur `ergebnis`
+    //         rechnet den erhoehten Teil ab dem 21. km, `stand`, `fragen` und `deklaration` bleiben auf beiden Seiten 200.
+    //         Gegenprobe: 6 * 10^14 km, beide Seiten 200 mit derselben Zahl. NICHT hier festgehalten: zwischen 663170264369776
+    //         und 663170264369791 km (366 Tage) wickelt der Catala-Scope der Entfernungspauschale still und Rust antwortet 200
+    //         mit einer falschen Zahl, wo Python die richtige nennt. Das ist ein Defekt, keine gewollte Abweichung
+    //         (Bericht h8-abweichung-422, Abschnitt Befund).
+    let meldung = "Ein eingegebener Betrag ist zu groß für die Berechnung";
+    let akte = |id: &str, aendern: &[(&'static str, Value)]| {
+        let neu = Anfrage::neu("dok ueberlauf Fall", "POST", "/fall")
+            .token(&alice)
+            .json(&json!({"fall_id": id, "scheibe": "an_gesamt", "veranlagungszeitraum": 2025}));
+        let (py, rs) = zweimal(&neu);
+        assert_eq!((py.status, rs.status), (201, 201), "{id}");
+        let mut felder = kegel_an_voll();
+        for (f, w) in aendern {
+            felder.retain(|(g, _)| g != f);
+            felder.push((*f, w.clone()));
+        }
+        for (feld, wert) in &felder {
+            let (py, rs) = zweimal(
+                &Anfrage::neu("dok ueberlauf Event", "POST", &format!("/fall/{id}/event"))
+                    .token(&alice)
+                    .json(&ereignis(feld, wert, None)),
+            );
+            assert_eq!((py.status, rs.status), (201, 201), "{id} {feld}");
+        }
+    };
+    let lies = |id: &str, route: &str| {
+        let (py, rs) = zweimal(
+            &Anfrage::neu("dok ueberlauf Route", "GET", &format!("/fall/{id}/{route}"))
+                .token(&alice),
+        );
+        println!(
+            "  {id} {route}: py={} | rs={} {}",
+            py.status,
+            rs.status,
+            String::from_utf8_lossy(&rs.body)
+                .chars()
+                .take(160)
+                .collect::<String>()
+        );
+        (py, rs)
+    };
+    // Python nennt auf `ergebnis` die Zahl; Rust dieselbe (Gegenprobe) oder 422 (Abweichung).
+    let zahl = |a: &Antwort| -> (Value, Value, Value) {
+        let v: Value = serde_json::from_slice(&a.body).unwrap();
+        (
+            v["grund"].clone(),
+            v["zahl_cent"].clone(),
+            v["mobilitaetspraemie_cent"].clone(),
+        )
+    };
+    let tageswerte = [
+        ("vpf_keine_mahlzeitengestellung", json!(false)),
+        (
+            "vpf_fruehstuecke_gestellt_anzahl",
+            json!(16_470_307_208_669_242_i64),
+        ),
+    ];
+    // 1d, Gegenprobe: das Fruehstueck allein.
+    akte("dok_mahlzeit_gerade", &tageswerte);
+    let mut gerade_zahl = None;
+    for route in ["stand", "fragen", "ergebnis", "deklaration"] {
+        let (py, rs) = lies("dok_mahlzeit_gerade", route);
+        assert_eq!(
+            (py.status, rs.status),
+            (200, 200),
+            "mahlzeit gerade {route}"
+        );
+        if route == "ergebnis" {
+            assert_eq!(zahl(&py), zahl(&rs), "mahlzeit gerade {route}");
+            assert_eq!(zahl(&py).0, json!("bestaetigt"));
+            gerade_zahl = Some(zahl(&py).1);
+        }
+    }
+    // 1d: dazu ein Mittagessen.
+    let mut mit_mittag = tageswerte.to_vec();
+    mit_mittag.push(("vpf_mittagessen_gestellt_anzahl", json!(1)));
+    akte("dok_mahlzeit", &mit_mittag);
+    for route in ["stand", "fragen", "ergebnis", "deklaration"] {
+        let (py, rs) = lies("dok_mahlzeit", route);
+        assert_eq!((py.status, rs.status), (200, 422), "mahlzeit {route}");
+        let text = String::from_utf8_lossy(&rs.body).into_owned();
+        let marke = if route == "deklaration" {
+            "Ueberlauf in Addition"
+        } else {
+            "Ueberlauf in vpf k28"
+        };
+        assert!(
+            text.contains(meldung) && text.contains(marke),
+            "mahlzeit {route}: {text}"
+        );
+        if route == "ergebnis" {
+            assert_eq!(zahl(&py).0, json!("bestaetigt"));
+            assert_eq!(
+                Some(zahl(&py).1),
+                gerade_zahl,
+                "Python: dieselbe Zahl wie ohne Mittagessen"
+            );
+        }
+    }
+    // 1e, Gegenprobe: 6 * 10^14 km, weit unter der Grenze.
+    let entfernung = |km: i64| {
+        [
+            ("ep_entfernung_km", json!(km)),
+            ("ep_arbeitstage", json!(366)),
+        ]
+    };
+    akte("dok_entfernung_innen", &entfernung(600_000_000_000_000));
+    for route in ["stand", "fragen", "ergebnis", "deklaration"] {
+        let (py, rs) = lies("dok_entfernung_innen", route);
+        assert_eq!(
+            (py.status, rs.status),
+            (200, 200),
+            "entfernung innen {route}"
+        );
+        if route == "ergebnis" {
+            assert_eq!(zahl(&py), zahl(&rs), "entfernung innen {route}");
+            assert_eq!(zahl(&py).0, json!("bestaetigt"));
+        }
+    }
+    // 1e: 10^15 km.
+    akte("dok_entfernung", &entfernung(1_000_000_000_000_000));
+    for route in ["stand", "fragen", "ergebnis", "deklaration"] {
+        let (py, rs) = lies("dok_entfernung", route);
+        if route == "ergebnis" {
+            assert_eq!((py.status, rs.status), (200, 422), "entfernung {route}");
+            let text = String::from_utf8_lossy(&rs.body).into_owned();
+            assert!(
+                text.contains(meldung) && text.contains("Ueberlauf in ab21_roh"),
+                "entfernung {route}: {text}"
+            );
+            assert_eq!(zahl(&py).0, json!("bestaetigt"));
+        } else {
+            assert_eq!((py.status, rs.status), (200, 200), "entfernung {route}");
+        }
+    }
     // 2. Jahr ausserhalb von i64 bei DELETE: Python gibt die Ganzzahl, Rust einen Float.
     let (py, rs) =
         zweimal(&Anfrage::neu("DELETE seed_big", "DELETE", "/fall/seed_big").token(&alice));
