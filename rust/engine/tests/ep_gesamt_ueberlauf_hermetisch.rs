@@ -13,6 +13,8 @@
 //! das Ergebnis ist exakt (Python liefert dasselbe), also bleibt es ein Wert -- ein Fehler waere hier eine Ablehnung einer
 //! richtigen Rechnung.
 //!
+//! Das Fenster ist kein Sonderfall von 366 Tagen: es gibt es bei jeder Tageszahl, stets etwa 16 km breit (`TAGE`: 1 und 2 Tage).
+//!
 //! HERKUNFT DER ERWARTUNGSWERTE: `runner.catala_entfernungspauschale` / `runner.catala_ep_ab_21km` (Python, exakte Ganzzahlen),
 //! VZ 2025, 366 Arbeitstage, Skript und Ausgabe `orakel_ep_k.py` / `orakel_ep_k.out` in den Anlagen zum Bericht. Die Grenzen
 //! folgen aus 366 * (20 * 30 + (km - 20) * 38) Cent gegen `i64::MAX`: bei ...775 km 9223372036854772140 (passt), bei ...776 km
@@ -35,6 +37,8 @@ use engine::zugriff::teil1::werbungskosten::{
 use rust_decimal::Decimal;
 
 const UEBERLAUF: &str = r#"Err(Ueberlauf("ep_gesamt"))"#;
+/// Die alte Sperre der Teilprodukte in `ep_ab_21km` (schlaegt erst am Ende des Fensters an).
+const AB21_ROH: &str = r#"Err(Ueberlauf("ab21_roh"))"#;
 
 fn params() -> Params {
     Params::lade(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap()
@@ -104,7 +108,7 @@ const AB21: &[(i64, bool, &str)] = &[
     (663_170_264_369_775, true, "Ok(Euro(92233720368545525))"),
     (663_170_264_369_776, true, UEBERLAUF),
     (663_170_264_369_791, true, UEBERLAUF),
-    (663_170_264_369_792, true, r#"Err(Ueberlauf("ab21_roh"))"#),
+    (663_170_264_369_792, true, AB21_ROH),
     // ohne Kfz: Rest = 4500 - 2196 EUR = 2304 EUR (Python), im Fenster kein Fehler.
     (663_170_264_369_775, false, "Ok(Euro(2304))"),
     (663_170_264_369_776, false, "Ok(Euro(2304))"),
@@ -122,6 +126,58 @@ fn ep_ab_21km_im_fenster_776_bis_791_ist_ueberlauf_statt_still_falsch() {
         })
         .collect();
     melde(&abweichend, AB21.len());
+}
+
+/// Das Fenster gibt es bei jeder Tageszahl, stets etwa 16 km breit (Anteil bis 20 km zu Satz ab 21 km: 600 zu 38). Kfz.
+/// `(Tage, km, entfernungspauschale(), ep_ab_21km())`. Bei 1 Tag laeuft die SUMME der beiden Teile ueber, bei 2 Tagen erst die
+/// Multiplikation mit den Tagen: zwei verschiedene Stellen der Vorab-Pruefung.
+const TAGE: &[(i64, i64, &str, &str)] = &[
+    (
+        1,
+        242_720_316_759_336_209,
+        "Ok(Euro(92233720368547757))",
+        "Ok(Euro(92233720368547751))",
+    ),
+    (1, 242_720_316_759_336_210, UEBERLAUF, UEBERLAUF),
+    (1, 242_720_316_759_336_225, UEBERLAUF, UEBERLAUF),
+    (1, 242_720_316_759_336_226, UEBERLAUF, AB21_ROH),
+    (
+        2,
+        121_360_158_379_668_106,
+        "Ok(Euro(92233720368547757))",
+        "Ok(Euro(92233720368547745))",
+    ),
+    (2, 121_360_158_379_668_107, UEBERLAUF, UEBERLAUF),
+    (2, 121_360_158_379_668_122, UEBERLAUF, UEBERLAUF),
+    (2, 121_360_158_379_668_123, UEBERLAUF, AB21_ROH),
+];
+
+#[test]
+fn fenster_gibt_es_bei_jeder_tageszahl() {
+    let p = params();
+    let abweichend: Vec<String> = TAGE
+        .iter()
+        .flat_map(|&(tage, km, ep, ab21)| {
+            let e = EntfernungspauschaleEingabe {
+                arbeitstage: tage,
+                ..eingabe(km, true, 0)
+            };
+            [
+                (
+                    "entfernungspauschale",
+                    format!("{:?}", entfernungspauschale(&e, &p)),
+                    ep,
+                ),
+                ("ep_ab_21km", format!("{:?}", ep_ab_21km(&e, &p)), ab21),
+            ]
+            .into_iter()
+            .filter(|(_, ist, soll)| ist != soll)
+            .map(move |(was, ist, soll)| {
+                format!("{tage} Tage, km={km}, {was}: ist {ist}, soll {soll}")
+            })
+        })
+        .collect();
+    melde(&abweichend, 2 * TAGE.len());
 }
 
 #[test]
