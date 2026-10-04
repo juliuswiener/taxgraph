@@ -42,6 +42,7 @@ impl From<EntfernungspauschaleFehler> for EngineFehler {
         match e {
             EntfernungspauschaleFehler::Dezimal(d) => Self::Dezimal(d),
             EntfernungspauschaleFehler::Catala(c) => Self::Catala(c),
+            EntfernungspauschaleFehler::Ueberlauf(marke) => Self::Ueberlauf(marke),
         }
     }
 }

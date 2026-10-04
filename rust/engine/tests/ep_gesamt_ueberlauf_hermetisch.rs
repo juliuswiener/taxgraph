@@ -29,7 +29,9 @@
 use std::path::Path;
 
 use bindung::Params;
-use domain::{Euro, Km, Vz};
+use domain::{Cent, Euro, Km, Vz};
+use engine::entfernungspauschale::EntfernungspauschaleEingabe as ScopeEingabe;
+use engine::sachverhalt::Sachverhalt;
 use engine::zugriff::teil1::werbungskosten::{
     entfernungspauschale, ep_ab_21km, werbungskosten_n, EntfernungspauschaleEingabe,
     WerbungskostenNEingabe,
@@ -37,6 +39,7 @@ use engine::zugriff::teil1::werbungskosten::{
 use rust_decimal::Decimal;
 
 const UEBERLAUF: &str = r#"Err(Ueberlauf("ep_gesamt"))"#;
+const SACHVERHALT_UEBERLAUF: &str = r#"Err(Entfernungspauschale(Ueberlauf("ep_gesamt")))"#;
 /// Die alte Sperre der Teilprodukte in `ep_ab_21km` (schlaegt erst am Ende des Fensters an).
 const AB21_ROH: &str = r#"Err(Ueberlauf("ab21_roh"))"#;
 
@@ -203,6 +206,44 @@ fn werbungskosten_n_mit_ep_ausserhalb_i64_ist_ueberlauf() {
         .iter()
         .filter_map(|&(km, kfz, soll)| {
             let ist = wk(km, kfz);
+            (ist != soll).then(|| format!("km={km} kfz={kfz}: ist {ist}, soll {soll}"))
+        })
+        .collect();
+    melde(&abweichend, faelle.len());
+}
+
+/// Zweiter Zugang zum Scope: `Sachverhalt::Entfernungspauschale(..).berechnen()` ruft `entfernungspauschale::berechnen` ohne
+/// `werbungskosten::entfernungspauschale`. Die Vorab-Pruefung sitzt in `berechnen` selbst, damit beide Zugaenge sie haben.
+/// Vorher (Wegwerf-Test, Anlage `sachverhalt_ep.out`): `Ok(Cent(10240))` bei ...776 und `Ok(Cent(218860))` bei ...791 km.
+#[test]
+fn sachverhalt_entfernungspauschale_ist_ueberlauf_statt_wert_mod_2_63() {
+    let berechne = |km: i64, kfz: bool| {
+        format!(
+            "{:?}",
+            Sachverhalt::Entfernungspauschale(ScopeEingabe {
+                entfernung_km_roh: Km::new(Decimal::from(km)),
+                arbeitstage: 366,
+                eigenes_oder_ueberlassenes_kfz: kfz,
+                oepnv_kosten_jahr: Cent::new(0),
+                satz_bis_20_km: Cent::new(30),
+                satz_ab_21_km: Cent::new(38),
+                staffelgrenze_km: 20,
+                hoechstbetrag: Cent::new(450_000),
+            })
+            .berechnen()
+        )
+    };
+    let faelle = [
+        (663_170_264_369_775, true, "Ok(Cent(9223372036854772140))"),
+        (663_170_264_369_776, true, SACHVERHALT_UEBERLAUF),
+        (663_170_264_369_791, true, SACHVERHALT_UEBERLAUF),
+        (663_170_264_369_792, true, SACHVERHALT_UEBERLAUF),
+        (663_170_264_369_776, false, "Ok(Cent(450000))"),
+    ];
+    let abweichend: Vec<String> = faelle
+        .iter()
+        .filter_map(|&(km, kfz, soll)| {
+            let ist = berechne(km, kfz);
             (ist != soll).then(|| format!("km={km} kfz={kfz}: ist {ist}, soll {soll}"))
         })
         .collect();
