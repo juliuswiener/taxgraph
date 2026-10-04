@@ -30,7 +30,9 @@ use std::path::Path;
 
 use bindung::Params;
 use domain::{Cent, Euro, Km, Vz};
-use engine::entfernungspauschale::EntfernungspauschaleEingabe as ScopeEingabe;
+use engine::entfernungspauschale::{
+    berechnen as ep_berechnen, EntfernungspauschaleEingabe as ScopeEingabe,
+};
 use engine::sachverhalt::Sachverhalt;
 use engine::zugriff::teil1::werbungskosten::{
     entfernungspauschale, ep_ab_21km, werbungskosten_n, EntfernungspauschaleEingabe,
@@ -248,4 +250,108 @@ fn sachverhalt_entfernungspauschale_ist_ueberlauf_statt_wert_mod_2_63() {
         })
         .collect();
     melde(&abweichend, faelle.len());
+}
+
+/// Mutant V1 (`.all(|x| *x >= 0)` -> `> 0` in `gesamt_pruefen`, Messung von main): ohne Kfz ist ein Faktor 0 (km <= Grenze, Satz 0, Grenze 0)
+/// KEIN Grund fuer einen Fehler. Laeuft der Jahresbetrag nur durch `arbeitstage` (ein freies `i64`) ueber `i64`, deckelt der Scope ihn
+/// ohne Kfz auf den Hoechstbetrag, bevor der Shim liest: Ok mit 450000 ct, Python gleich. Mit Kfz gibt der Scope den Betrag aus: Ueberlauf.
+/// `(Name, km, Tage, Kfz, Satz bis 20 km, Satz ab 21 km, Staffelgrenze, erwartet)`; Satz in Cent. Aufruf von `entfernungspauschale::berechnen`
+/// mit eigenen Saetzen (`werbungskosten::entfernungspauschale` nimmt sie aus den Parametern, dort ist keiner 0).
+/// HERKUNFT: Python-Orakel `orakel_v1.py` -> `orakel_v1.out` (Catala-Scope `EP.berechnung` direkt, exakte Ganzzahlen): ohne Kfz in allen vier
+/// Faellen `entfernungspauschale_ct` = `abziehbarer_ct` = 450000; mit Kfz 2767011611056432742100, 5534023222112865484200,
+/// 28039050992038518453280, 35048813740048148066600 (alle ausserhalb `i64`).
+#[allow(clippy::type_complexity)]
+const NULLFAKTOR: &[(&str, i64, i64, bool, i64, i64, i64, &str)] = &[
+    (
+        "A: ueber = 0 (km 10 <= Grenze)",
+        10,
+        i64::MAX,
+        false,
+        30,
+        38,
+        20,
+        "Ok((450000, 450000))",
+    ),
+    (
+        "B: Satz ab 21 km = 0",
+        100,
+        i64::MAX,
+        false,
+        30,
+        0,
+        20,
+        "Ok((450000, 450000))",
+    ),
+    (
+        "C: Satz bis 20 km = 0",
+        100,
+        i64::MAX,
+        false,
+        0,
+        38,
+        20,
+        "Ok((450000, 450000))",
+    ),
+    (
+        "D: Staffelgrenze 0 (bis = 0)",
+        100,
+        i64::MAX,
+        false,
+        30,
+        38,
+        0,
+        "Ok((450000, 450000))",
+    ),
+    // mit Kfz derselbe Fall: der Scope gibt den Betrag ungedeckelt aus, er passt nicht in i64
+    ("A mit Kfz", 10, i64::MAX, true, 30, 38, 20, ENG_UEBERLAUF),
+    ("B mit Kfz", 100, i64::MAX, true, 30, 0, 20, ENG_UEBERLAUF),
+    ("C mit Kfz", 100, i64::MAX, true, 0, 38, 20, ENG_UEBERLAUF),
+    ("D mit Kfz", 100, i64::MAX, true, 30, 38, 0, ENG_UEBERLAUF),
+    // Kontrollen ohne Ueberlauf: unveraendert Ok (Python 60000 und 120000 ct)
+    (
+        "A, 200 Tage",
+        10,
+        200,
+        false,
+        30,
+        38,
+        20,
+        "Ok((60000, 60000))",
+    ),
+    (
+        "B, 200 Tage",
+        100,
+        200,
+        false,
+        30,
+        0,
+        20,
+        "Ok((120000, 120000))",
+    ),
+];
+const ENG_UEBERLAUF: &str = r#"Err(Ueberlauf("ep_gesamt"))"#;
+
+#[test]
+fn ohne_kfz_ist_ein_nullfaktor_kein_grund_fuer_einen_fehler() {
+    let abweichend: Vec<String> = NULLFAKTOR
+        .iter()
+        .filter_map(|&(name, km, tage, kfz, satz_bis, satz_ab, grenze, soll)| {
+            let ist = format!(
+                "{:?}",
+                ep_berechnen(ScopeEingabe {
+                    entfernung_km_roh: Km::new(Decimal::from(km)),
+                    arbeitstage: tage,
+                    eigenes_oder_ueberlassenes_kfz: kfz,
+                    oepnv_kosten_jahr: Cent::new(0),
+                    satz_bis_20_km: Cent::new(satz_bis),
+                    satz_ab_21_km: Cent::new(satz_ab),
+                    staffelgrenze_km: grenze,
+                    hoechstbetrag: Cent::new(450_000),
+                })
+                .map(|e| (e.entfernungspauschale_cent, e.abziehbarer_betrag_cent))
+            );
+            (ist != soll).then(|| format!("{name}: ist {ist}, soll {soll}"))
+        })
+        .collect();
+    melde(&abweichend, NULLFAKTOR.len());
 }
