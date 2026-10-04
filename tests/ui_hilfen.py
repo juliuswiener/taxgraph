@@ -77,11 +77,15 @@ def zum_fragebogen(page, ankreuzen=None, timeout: int = 8000):
             # versteckt — und textet dann den Netz-Banner an; solange die Kette noch läuft, ist der
             # „Weiter"-Knopf deaktiviert. Banner und Knopfzustand trennen den einen durchgefallenen
             # Request von reiner Langsamkeit (gemessen 2026-10-04: 23 POSTs, 328 ms gegen 8000 ms).
+            # `hidden` trennt den sichtbaren Abbruch vom versteckten Alt-Text: versteckeNetzFehler()
+            # setzt nur `hidden`, der Text überlebt (gemessen 2026-10-04: Abbruch, dann Verzögerung).
             try:
                 zustand = page.evaluate(
                     """() => [document.getElementById('netz-banner').textContent,
+                              document.getElementById('netz-banner').hidden,
                               document.getElementById('screening-weiter').disabled]""")
-                hinweis = f"netz-banner={zustand[0]!r} #screening-weiter.disabled={zustand[1]!r}"
+                hinweis = (f"netz-banner(hidden={zustand[1]!r})={zustand[0]!r} "
+                           f"#screening-weiter.disabled={zustand[2]!r}")
             except Exception:  # Seite schon geschlossen — dann bleibt es bei der alten Meldung
                 hinweis = "netz-banner/Knopf nicht lesbar (Seite geschlossen)"
             raise type(error)(f"{error}\n{hinweis}") from None
