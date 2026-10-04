@@ -29,8 +29,10 @@ Fallliste, die das Produkt dem Nutzer zeigt. Genau dort lagen am 2026-10-01 die 
 bis sie verschoben wurden. Eine vorhandene Datei wird NIE ueberschrieben — `fall_anlegen`
 antwortet 409, dieses Skript meldet das und macht weiter.
 
-Kein Audit-Eintrag: `fall_anlegen` protokolliert nur mit angemeldetem Nutzer, unter
-`TAXGRAPH_NO_AUTH=1` gibt es keinen, und `event` protokolliert nicht (gemessen: 0 Zeilen).
+Audit: `fall_anlegen` protokolliert jeden NEU angelegten Fall als `fall_angelegt`, auch ohne
+Anmeldung (Nutzer `unbekannt`), in `$TAXGRAPH_DATEN/faelle/audit.jsonl` — es sei denn,
+`TAXGRAPH_AUDIT_DIR` zeigt woanders hin. Ein vorhandener Fall (409) schreibt keine Zeile, und
+`event` protokolliert nicht (gemessen 2026-10-04: sechs Faelle, sechs Zeilen).
 
 Reproduzierbar im INHALT, nicht byte-gleich: `event_id` und `ts` entstehen beim Schreiben.
 Zwei Laeufe ergeben dieselben Felder, Werte und Zustaende, aber andere sha256-Summen.
