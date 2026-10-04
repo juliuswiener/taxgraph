@@ -109,3 +109,35 @@ Der Generator braucht die gebaute Catala-Engine (`make build-python`) und ist de
 Ausgabe): zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed (geprueft bei `PYTHONHASHSEED` 1 und 777).
 Aendert sich ein Orakel (`runner.py`, Catala-Regeln), ist das Fixture neu zu erzeugen; der Rust-Test zeigt dann, wo
 Rust vom Orakel abweicht.
+
+## `eingang_orakel.json`
+
+Eingaben fuer die Crate `eingang` samt den Antworten des Python-Orakels (`produkt/eingang/*` ueber
+`tools/parity/schritt8_oracle.py`). Konsumenten: `rust/eingang/tests/orakel_werte.rs` (Werte: CSV-
+Zeilenmaschine, Betragsparser, Schluesselwoerter, Rundung, Vorjahr, eDaten, Beleg) und
+`rust/eingang/tests/ocr_pfade.rs` (Abschnitt `ocr`: je Fall drei Shell-Skripte als `pdftotext`/`pdftoppm`/
+`tesseract`, dieselben unter Python und Rust). Beide hermetisch, ohne Python zur Laufzeit. Der Generator
+legt `OMP_THREAD_LIMIT=7` in die Umgebung, damit sichtbar wird, dass nur `tesseract` ihn auf 1 setzt.
+
+```
+python3 tools/parity/extract_eingang_orakel.py
+```
+
+Aendert sich ein Leser in `produkt/eingang/`, ist das Fixture neu zu erzeugen; der Rust-Test zeigt dann,
+wo Rust vom Orakel abweicht. Das Fixture ist deterministisch (Seed im Generator): zwei Laeufe geben
+dieselbe Datei.
+
+## `zeichensatz_orakel.json`
+
+Das Orakel `produkt/store/zeichensatz.py` fuer `domain::zeichensatz`, je Codepunkt (ohne Surrogate, bis U+10FFFF): `erlaubt`
+(zusammenhaengende Bereiche, die `erstes_unerlaubtes_zeichen` durchlaesst) und `laeufe` (`[von, bis, name, rat]`: wie die
+Meldung das Zeichen nennt, `null` = das Zeichen selbst, und der Rat), dazu volle Meldungen aus `feld_meldung` und
+`element_meldung`. Konsument: `rust/domain/tests/zeichensatz_hermetisch.rs` (hermetisch, ohne `PARITY=1`, ohne Python).
+Der Paritaetstest `rust/parity/tests/store_zeichensatz_paritaet.rs` prueft dasselbe live gegen Python.
+
+```
+python3 tools/parity/extract_zeichensatz_orakel.py
+```
+
+Der Generator ist deterministisch: zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed (geprueft bei
+`PYTHONHASHSEED` 1 und 777).

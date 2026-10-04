@@ -179,11 +179,13 @@ impl Auth {
         if nutzer.contains_key(name.as_str()) {
             return Err(AuthFehler::Existiert(name));
         }
-        let hash =
-            bcrypt::non_truncating_hash(&a.password, BCRYPT_KOSTEN).map_err(|e| match e {
-                bcrypt::BcryptError::Truncation(_) => AuthFehler::PasswortUeber72Bytes,
-                andere => AuthFehler::Bcrypt(andere),
-            })?;
+        // Python-bcrypt 5 hasht bis 72 Byte (bei 72 faellt das End-NUL weg) und wirft erst darueber
+        // `ValueError`. `bcrypt::hash` schneidet genauso ab; `non_truncating_hash` wiese schon 72 Byte
+        // ab, weil es das NUL mitzaehlt. Ueber 72 Byte ginge ein Passwortbyte verloren: Fehler.
+        if a.password.len() > 72 {
+            return Err(AuthFehler::PasswortUeber72Bytes);
+        }
+        let hash = bcrypt::hash(&a.password, BCRYPT_KOSTEN)?;
         nutzer.insert(
             name.as_str().to_owned(),
             serde_json::json!({"password_hash": hash, "created_at": iso_jetzt()}),
@@ -502,5 +504,35 @@ mod tests {
         assert!(a.gesperrt.is_poisoned());
         assert_eq!(a.logout(&t).as_deref(), Some("julius"));
         assert!(a.pruefe_token(&t).is_none());
+    }
+
+    /// `os.environ.get(...) or <Vorgabe>` (`auth.py:18`, `:23`): leer gilt als nicht gesetzt. Die
+    /// Umgebung gilt prozessweit; sonst liest sie kein Test dieses Binaries.
+    #[test]
+    fn aus_env_liest_geheimnis_und_nutzerdatei_leer_gilt_als_nicht_gesetzt() {
+        let standard = std::path::Path::new("/standard/users.json");
+        let hex64 = |g: &str| {
+            g.len() == 64 && g.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        };
+        std::env::remove_var("TAXGRAPH_JWT_SECRET");
+        std::env::remove_var("TAXGRAPH_USER_STORE");
+        let a = Auth::aus_env(standard, None).unwrap();
+        assert!(hex64(&a.geheimnis), "{}", a.geheimnis); // token_hex(32)
+        assert_ne!(a.geheimnis, Auth::aus_env(standard, None).unwrap().geheimnis);
+        assert_eq!(a.nutzerdatei, standard);
+
+        std::env::set_var("TAXGRAPH_JWT_SECRET", "festes-geheimnis");
+        std::env::set_var("TAXGRAPH_USER_STORE", "/env/users.json");
+        let a = Auth::aus_env(standard, None).unwrap();
+        assert_eq!(a.geheimnis, "festes-geheimnis");
+        assert_eq!(a.nutzerdatei, std::path::Path::new("/env/users.json"));
+
+        std::env::set_var("TAXGRAPH_JWT_SECRET", "");
+        std::env::set_var("TAXGRAPH_USER_STORE", "");
+        let a = Auth::aus_env(standard, None).unwrap();
+        assert!(hex64(&a.geheimnis), "{}", a.geheimnis);
+        assert_eq!(a.nutzerdatei, standard);
+        std::env::remove_var("TAXGRAPH_JWT_SECRET");
+        std::env::remove_var("TAXGRAPH_USER_STORE");
     }
 }

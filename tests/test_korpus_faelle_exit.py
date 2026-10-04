@@ -10,6 +10,12 @@ Der Lauf geht durch den echten Start-Zweig (`runpy`, `__main__`: `sys.exit(main(
 Korpus, denn der Exit-Code entsteht erst dort, nicht in `main()`. Kein Netzwerk, kein Server, kein
 Schreiben: `API.fall_anlegen` und `API.event` sind ersetzt, jede Abweisung ist ein echtes
 `API.ApiError`. Zwei Tests, damit jede Zusage einzeln rot wird: der Exit-Code und die Schlusszeile.
+
+Der dritte Test deckt den Zweig `else:` in `main()` ab: jedes andere Ergebnis zaehlt als Abweisung,
+auch ein unbekanntes. Die echte `lege_an` liefert nur `neu`, `vorhanden` oder `ABWEISUNG ...`; kein
+Lauf ueber sie erreicht den Zweig, und `elif ergebnis.startswith("ABWEISUNG")` an seiner Stelle
+bliebe fuer die ersten beiden Tests gleichwertig. Darum ersetzt er `lege_an` und ruft `main()`
+direkt auf: unter `runpy` legte das Skript `lege_an` neu an, und die Ersetzung ginge verloren.
 """
 from __future__ import annotations
 
@@ -73,3 +79,14 @@ def test_schlusszeile_nennt_die_zahl_der_abweisungen(monkeypatch, tmp_path, caps
     abgewiesen = anlegen_ab + event_ab
     neu = gesamt - abgewiesen - vorhanden     # der Lauf macht nach einer Abweisung weiter
     assert zeile == f"{neu} neu angelegt, {vorhanden} bereits vorhanden, {abgewiesen} abgewiesen, {gesamt} gesamt"
+
+
+def test_ein_unbekanntes_ergebnis_zaehlt_als_abweisung(monkeypatch, tmp_path, capsys):
+    kf = _lade(monkeypatch, tmp_path)
+    monkeypatch.setattr(kf, "lege_an", lambda fall_id, scheibe, gesetzt: "unbekannt")
+    monkeypatch.setattr(sys, "argv", ["korpus_faelle.py"])   # argparse liest sonst die pytest-Argumente
+    code = kf.main()
+    gesamt = len(kf.FAELLE)
+    assert code == 1
+    assert capsys.readouterr().out.strip().splitlines()[-1] == (
+        f"0 neu angelegt, 0 bereits vorhanden, {gesamt} abgewiesen, {gesamt} gesamt")
