@@ -5,7 +5,8 @@
 //! `rust/fixtures/sperrgrund_klartext.json`); ein Rust-Test vergleicht beide (unten).
 //!
 //! `grund` in `api.py: ergebnis()` ist entweder `None` (kein Sperrgrund), das Literal
-//! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 57 Schluessel unten. Die
+//! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 57 Python-Schluessel unten
+//! (dazu zwei Rust-eigene, siehe `KindFreibetragVerteilungOffen`). Die
 //! dritte Moeglichkeit bildet [`Sperrgrund::Bestaetigt`] ab; sie hat bewusst KEINEN
 //! eigenen Klartext (die Python-Quelle hat auch keinen fuer sie).
 use std::fmt;
@@ -14,7 +15,7 @@ use std::str::FromStr;
 /// Text fuer einen unbekannten/nicht gelisteten Sperrgrund-String (`UNBEKANNTER_SPERRGRUND`).
 pub const UNBEKANNTER_SPERRGRUND: &str = "Die Berechnung kann an dieser Stelle nicht fortgesetzt werden, und woran genau es liegt, lässt sich hier nicht in Worte fassen. Das liegt an der Software, nicht an deinen Angaben. Bitte melde diesen Fall — damit lässt sich nachvollziehen, was gefehlt hat.";
 
-/// Ein Sperrgrund-String, der zu keinem der 57 bekannten Schluessel und nicht zu
+/// Ein Sperrgrund-String, der zu keinem der bekannten Schluessel und nicht zu
 /// `"bestaetigt"` passt.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("unbekannter Sperrgrund {0:?}")]
@@ -53,6 +54,12 @@ pub enum Sperrgrund {
     InputKegelNichtBestaetigt,
     KapitalSemantikOffen,
     KeinScheibenGesamtbescheid,
+    /// Rust-eigen (Julius 2026-10-04, `kind_freibetrag_verteilung_offen`): Python kennt diesen Grund nicht, die
+    /// Fixture mit den 57 Python-Schluesseln fuehrt ihn nicht. Das Antwort-Schema `api_schema/ergebnis.json` (Python)
+    /// kennt den Wert auch nicht.
+    KindFreibetragVerteilungOffen,
+    /// Rust-eigen (wie [`Sperrgrund::KindFreibetragVerteilungOffen`]), `kind_zeitraum_unlesbar`.
+    KindZeitraumUnlesbar,
     KinderGehoerenInGesamt,
     KinderbetreuungReineBetreuungOffen,
     KinderbetreuungZahlungOffen,
@@ -122,6 +129,8 @@ impl Sperrgrund {
             Self::InputKegelNichtBestaetigt => "input_kegel_nicht_bestaetigt",
             Self::KapitalSemantikOffen => "kapital_semantik_offen",
             Self::KeinScheibenGesamtbescheid => "kein_scheiben_gesamtbescheid",
+            Self::KindFreibetragVerteilungOffen => "kind_freibetrag_verteilung_offen",
+            Self::KindZeitraumUnlesbar => "kind_zeitraum_unlesbar",
             Self::KinderGehoerenInGesamt => "kinder_gehoeren_in_gesamt",
             Self::KinderbetreuungReineBetreuungOffen => "kinderbetreuung_reine_betreuung_offen",
             Self::KinderbetreuungZahlungOffen => "kinderbetreuung_zahlung_offen",
@@ -192,6 +201,8 @@ impl Sperrgrund {
             Self::InputKegelNichtBestaetigt => Some("Für ein Ergebnis fehlen noch Angaben. Welche das sind, ist hier aufgeführt — sobald sie beantwortet sind, geht es weiter. Es ist nichts schiefgegangen: du bist noch mitten in der Erklärung."),
             Self::KapitalSemantikOffen => Some("Deine Kapitalerträge hast du auf zwei Wegen angegeben: einmal als Gesamtsumme und einmal aufgeteilt in einzelne Gewinne und Verluste. Ob die Einzelbeträge in der Summe schon enthalten sind oder dazukommen, kann die Software nicht raten. Bitte lass einen der beiden Wege stehen."),
             Self::KeinScheibenGesamtbescheid => Some("Für diesen Ausschnitt deiner Erklärung gibt es bewusst keine Gesamtsumme. Die einzelnen Regeln werden hier gerechnet, aber eine belastbare Gesamtsteuer daraus zu bilden kann die Software an dieser Stelle noch nicht — und sie zeigt lieber keine Zahl als eine falsche."),
+            Self::KindFreibetragVerteilungOffen => Some("Bei einem deiner Kinder hängt der Kinderfreibetrag davon ab, wie das Kind zu dir und zu deinem Ehepartner steht. Das betrifft ein Enkel- oder Stiefkind, ein Kind, das nur zu einem von euch gehört, und Zeiträume, die bei euch beiden verschieden sind. Das Gesetz knüpft den Freibetrag dann an weitere Angaben, nach denen die Software nicht fragt, zum Beispiel ob der andere Elternteil verstorben ist, oder an einen Antrag auf Übertragung. Damit du keine falsche Zahl bekommst, bleibt die Berechnung gesperrt. Dieser Fall braucht steuerliche Beratung."),
+            Self::KindZeitraumUnlesbar => Some("Bei einem deiner Kinder steht ein Zeitraum, den die Software nicht lesen kann. Erwartet ist die Form TT.MM-TT.MM innerhalb des Steuerjahres, zum Beispiel 01.07-31.12. Der Zeitraum entscheidet, für wie viele Monate der Kinderfreibetrag zusteht. Damit du keine falsche Zahl bekommst, bleibt die Berechnung gesperrt. Bitte prüfe die Zeiträume zu deinen Kindern."),
             Self::KinderGehoerenInGesamt => Some("Du hast Kinder angegeben. Ob Kindergeld oder die Kinderfreibeträge günstiger sind, wird gegeneinander abgewogen, und diese Abwägung ist in der gerade laufenden Berechnung nicht enthalten. Ohne sie wäre deine Steuer zu hoch, deshalb rechnet die Software hier nicht weiter."),
             Self::KinderbetreuungReineBetreuungOffen => Some("Zu deinen Betreuungskosten fehlt noch die Antwort, ob der Betrag reine Betreuung ist. Nachhilfe, Musik- oder Sportunterricht und Freizeitkurse sind keine Betreuung und werden nicht abgezogen. Hast du beides in einem Betrag gezahlt, trage bitte nur den Betreuungsteil ein und antworte dann mit Ja."),
             Self::KinderbetreuungZahlungOffen => Some("Zu deinen Betreuungskosten fehlt noch die Antwort, ob du eine Rechnung erhalten und per Überweisung bezahlt hast. Das Finanzamt erkennt nur Betreuungskosten an, die auf das Konto des Betreuers überwiesen wurden. Bar bezahlte Beträge zählen nicht. Bitte beantworte diese Frage oder trage nur den überwiesenen Teil ein."),
@@ -276,6 +287,8 @@ impl FromStr for Sperrgrund {
             "input_kegel_nicht_bestaetigt" => Ok(Self::InputKegelNichtBestaetigt),
             "kapital_semantik_offen" => Ok(Self::KapitalSemantikOffen),
             "kein_scheiben_gesamtbescheid" => Ok(Self::KeinScheibenGesamtbescheid),
+            "kind_freibetrag_verteilung_offen" => Ok(Self::KindFreibetragVerteilungOffen),
+            "kind_zeitraum_unlesbar" => Ok(Self::KindZeitraumUnlesbar),
             "kinder_gehoeren_in_gesamt" => Ok(Self::KinderGehoerenInGesamt),
             "kinderbetreuung_reine_betreuung_offen" => Ok(Self::KinderbetreuungReineBetreuungOffen),
             "kinderbetreuung_zahlung_offen" => Ok(Self::KinderbetreuungZahlungOffen),
@@ -345,6 +358,26 @@ mod tests {
             UNBEKANNTER_SPERRGRUND,
             fixture["unbekannt"].as_str().unwrap()
         );
+    }
+
+    /// Rust-eigene Gruende (Julius 2026-10-04, Kinderfreibetrag je Kind): Python kennt sie nicht, die Fixture fuehrt
+    /// sie nicht. Sie haben Klartext, und ihre Kennung laeuft rund. Der Test haelt die Abweichung fest: nimmt Python
+    /// einen der Gruende auf, wird er rot und die Fixture ist nachzuziehen.
+    #[test]
+    fn rust_eigene_gruende_haben_klartext_und_laufen_rund() {
+        let fixture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+        let klartext = fixture["klartext"].as_object().unwrap();
+        for grund in [
+            Sperrgrund::KindFreibetragVerteilungOffen,
+            Sperrgrund::KindZeitraumUnlesbar,
+        ] {
+            assert!(
+                !klartext.contains_key(grund.als_str()),
+                "{grund}: Python kennt den Grund jetzt"
+            );
+            assert!(grund.klartext().is_some_and(|t| t.len() > 100), "{grund}");
+            assert_eq!(grund.als_str().parse::<Sperrgrund>().unwrap(), grund);
+        }
     }
 
     #[test]

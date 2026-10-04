@@ -223,6 +223,7 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
         pe_raw: feld_euro_oder_null(f, "p32b_progressionseinkuenfte")?,
         kapitaleinkuenfte,
         kinder: feld_int_oder_null(f, "fam_anzahl_kinder")?,
+        q,
         extras: r.a.extras,
     };
     rahmen(&lage, r.a.solz, Modus::Rentner, |fb, info, ende| {

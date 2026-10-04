@@ -18,10 +18,11 @@ use engine::zugriff::teil2::kapital::{kapital_steuer, KapitalSteuerEingabe};
 use engine::zugriff::teil2::solz::{solz, SolzEingabe};
 
 use super::ausgaben::{kette_endstand, kette_p31, kist_konfession, setze_kette, Extras};
+use super::kinderfreibetrag::{auswerten, Befund};
 use super::rechnen::{add, mal, mal_div, max0, sub, R};
 use super::VeranlagungWert;
 use crate::abzuege::abs3_eligible;
-use crate::{ist_true, py_int, wert, BescheidFehler, Felder};
+use crate::{ist_true, py_int, wert, BescheidFehler, Felder, Instanzquelle};
 
 /// Laender mit 8 % (`runner._KIST_BY_BW`).
 const KIST_8_PROZENT: [&str; 2] = ["bayern", "baden_wuerttemberg"];
@@ -73,6 +74,8 @@ pub(super) struct Lage<'a> {
     pub pe_raw: Euro,
     pub kapitaleinkuenfte: Euro,
     pub kinder: i64,
+    /// Die Instanz-Quelle der Kind-Angaben (`kind`-Gruppe), in der Sicht des Aufrufs (streng oder nicht).
+    pub q: Instanzquelle<'a>,
     pub extras: Option<&'a RefCell<Extras>>,
 }
 
@@ -307,12 +310,17 @@ where
         let je_elternteil =
             l.p.kinderfreibetrag_je_elternteil(l.vz)
                 .map_err(engine::zugriff::teil1::fehler::EngineFehler::from)?;
-        let je_kind = mal(if zusammen { 2 } else { 1 }, je_elternteil)?;
-        let fb_kind = mal(kinder, je_kind)?;
         let kg =
             l.p.kindergeld_monatlich_je_kind(l.vz)
                 .map_err(engine::zugriff::teil1::fehler::EngineFehler::from)?;
-        let kg_kind = mal(kinder, mal(12, kg)?)?;
+        // § 32 Abs. 6 Satz 2 und 5 je Kind: Kindschaftsverhaeltnis und Monate; Freibetrag und Kindergeld
+        // folgen denselben Monaten. Der K2-Guard hat dieselben Faelle vorher gesperrt.
+        let (fb_kind, kg_kind) = match auswerten(&l.q, kinder, zusammen, Some(l.vz.jahr()))? {
+            Befund::Rechenbar(summen) => summen.betraege(je_elternteil, kg)?,
+            Befund::Gesperrt(sperre) => {
+                return Err(BescheidFehler::KindFreibetragGesperrt(sperre.grund()))
+            }
+        };
         let est_ohne = festzusetzende(Euro::new(0), &mut info, &mut ende_ohne)?;
         let est_mit = festzusetzende(fb_kind, &mut info, &mut ende_mit)?;
         let guenstiger = add(est_mit, kg_kind)?.get() < est_ohne.get();

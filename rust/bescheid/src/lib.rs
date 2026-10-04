@@ -31,7 +31,7 @@ pub mod deklaration;
 pub mod einkuenfte;
 pub mod zweige;
 
-use domain::{Cent, Euro, Lage, PyWert, Veranlagung, Zustand};
+use domain::{Cent, Euro, Lage, PyWert, Sperrgrund, Veranlagung, Zustand};
 use elster::Instanz;
 use engine::zugriff::teil1::fehler::EngineFehler as EngineFehler1;
 use engine::zugriff::teil2::EngineFehler as EngineFehler2;
@@ -71,6 +71,11 @@ pub enum BescheidFehler {
     /// `i64`-Ueberlauf (Python rechnet unbeschraenkt).
     #[error("i64-Ueberlauf in {0}")]
     Ueberlauf(&'static str),
+    /// Der Kinderfreibetrag je Kind ist nicht zu bestimmen ([`Sperrgrund::KindFreibetragVerteilungOffen`],
+    /// [`Sperrgrund::KindZeitraumUnlesbar`]). Der K2-Guard faengt beide vorher ab; kommt der Fehler an, hat ein
+    /// Aufrufer ohne Guard gerechnet. Rust-eigen, Python kennt ihn nicht.
+    #[error("Kinderfreibetrag je Kind nicht bestimmbar ({0}); der Guard haette sperren muessen")]
+    KindFreibetragGesperrt(Sperrgrund),
 }
 
 impl BescheidFehler {
@@ -91,7 +96,7 @@ impl BescheidFehler {
             Self::BindungFehlt => Some("AttributeError"),
             Self::SlotFehlt(_) => Some("KeyError"),
             Self::Python { klasse, .. } => Some(klasse),
-            Self::Ueberlauf(_) => None,
+            Self::Ueberlauf(_) | Self::KindFreibetragGesperrt(_) => None,
         }
     }
 

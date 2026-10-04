@@ -470,9 +470,14 @@ fn euro_nach_cent() -> Ausgang {
 /// 2025) in `tarif::rahmen`. Die Bindung begrenzt das Feld auf 0..=20 (der Python-Store lehnt 21 mit 422 ab); die Faelle hier
 /// stehen AUSSERHALB davon, wie in einer von Hand geschriebenen Akte (der Rust-`Store::aus_datei` prueft den Bereich nicht), und
 /// das Orakel lief mit abgeschalteter Bereichspruefung (`OHNE_BEREICH=1`). Python liefert fuer ALLE Faelle `bestaetigt`,
-/// `zahl_cent = 575700` (die Kinder aendern die Guenstigerpruefung nicht); Rust meldet ab `Freibetrag > i64::MAX` die Marke
-/// "Multiplikation", also "zwischen". Bei `i64::MAX / 4800` Kindern passt das Produkt gerade noch (9.223.372.036.854.772.800), die
-/// Engine scheitert dann eine Stelle spaeter bei Euro -> Cent: die Grenze der Stelle, ohne dass `mal` selbst anschlaegt.
+/// `zahl_cent = 575700` (die Kinder aendern die Guenstigerpruefung nicht); Rust meldet ab `Freibetrag > i64::MAX` einen
+/// Ueberlauf, also "zwischen". Bei `i64::MAX / 4800` Kindern passt das Produkt gerade noch (9.223.372.036.854.772.800), die
+/// Engine scheitert dann eine Stelle spaeter bei Euro -> Cent: die Grenze der Stelle, ohne dass der Freibetrag selbst anschlaegt.
+///
+/// Seit dem Bau je Kind (Julius 2026-10-04, `zweige/kinderfreibetrag.rs`) rechnet `Summen::betraege` den Freibetrag als
+/// `je_elternteil * Personenmonate / 12` in `rechnen::mal_div` (`i128`); die Marke der Stelle ist darum "a*b//c" statt
+/// "Multiplikation". Die Grenzen und Python-Werte sind dieselben. `rechnen::mal` sitzt nicht mehr auf diesem Pfad (B1 trifft
+/// hier nichts mehr); die Stelle schuetzt jetzt der Treffer `mal_div` (B2) und `Summen::plus/mal` (Marke "Kinder-Monate").
 #[test]
 fn kinderfreibetrag_ausserhalb_i64_meldet_multiplikation_und_rechnet_knapp() {
     let kinder = |n: i64| {
@@ -495,12 +500,12 @@ fn kinderfreibetrag_ausserhalb_i64_meldet_multiplikation_und_rechnet_knapp() {
         (
             "zwischen: i64::MAX / 4800 + 1 Kinder",
             MAX / 4800 + 1,
-            Ausgang::Ueberlauf("Multiplikation"),
+            Ausgang::Ueberlauf("a*b//c"),
         ),
         (
             "zwischen: 10^16 Kinder",
             10_i64.pow(16),
-            Ausgang::Ueberlauf("Multiplikation"),
+            Ausgang::Ueberlauf("a*b//c"),
         ),
     ];
     let mut falsch = Vec::new();

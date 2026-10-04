@@ -404,6 +404,7 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
         pe_raw: feld_euro_oder_null(f, "p32b_progressionseinkuenfte")?,
         kapitaleinkuenfte,
         kinder: feld_int_oder_null(f, "fam_anzahl_kinder")?,
+        q: r.q(),
         extras: r.a.extras,
     };
     rahmen(&lage, r.a.solz, Modus::Gesamt, |fb, info, ende| {
