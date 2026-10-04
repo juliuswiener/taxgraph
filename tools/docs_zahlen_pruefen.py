@@ -8,10 +8,10 @@
 Je Zeile: der Anker (Regex mit Gruppen) sucht die Zahl im Doc-Text und ergibt Soll und Doc:Zeile. Ein Kommando oder eine
 Quelldatei liefert den Ist-Wert. Status: OK (Soll = Ist), ABWEICHUNG (Ist anders, oder der Anker trifft nicht genau eine
 Zeile: der Doc-Text wurde geaendert), NUR ENDTOR (nur ein schwerer Lauf liefert die Zahl, wird nicht ausgefuehrt).
-Quellen: Baum (git-Stand dieser Arbeitskopie), Logs der Trockenlaeufe unter ~/.cache/taxgraph-tmp/gate-final/, Berichte unter
+Quellen: Baum (git-Stand dieser Arbeitskopie), Logs der Trockenlaeufe und des Endtors (log-endtor-A, log-endtor-B) unter ~/.cache/taxgraph-tmp/gate-final/, Berichte unter
 ~/.cache/taxgraph-tmp/berichte/, Vault-Notizen unter ~/00_projects/vault/audits/. Bei Logs, Berichten und Vault-Notizen heisst OK:
 der Doc-Text gibt die genannte Quelle richtig wieder, nicht: die Zahl gilt auf dem heutigen Baum.
-Leichte Kommandos nur: grep, wc, ls, git merge-base/cat-file, python3 tests/test_testmap_vollstaendig.py, python3 -c.
+Leichte Kommandos nur: grep, wc, ls, git merge-base/cat-file/rev-parse/diff/grep, python3 tests/test_testmap_vollstaendig.py, python3 -c.
 Exit 0: keine ABWEICHUNG; 1: mindestens eine; 2: Aufruffehler.
 """
 from __future__ import annotations
@@ -77,16 +77,19 @@ def tausend(wert: str) -> str:
 
 
 def einsetzen(vorlage: str, gruppen: list[str]) -> str:
-    """{0} Zahl (Leerzeichen und Zahlwort normalisiert), {0t} Zahl mit Tausender-Leerzeichen, {0r} Text unveraendert."""
+    """{0} Zahl (Leerzeichen und Zahlwort normalisiert), {0t} Zahl mit Tausender-Leerzeichen, {0r} Text unveraendert,
+    {0d} Dezimalzahl mit Punkt statt Komma (so stehen sie in den Logs)."""
     def ersatz(m: re.Match) -> str:
         roh = gruppen[int(m.group(1))].strip()
         if m.group(2) == "r":
             return re.escape(roh)
+        if m.group(2) == "d":
+            return re.escape(norm(roh).replace(",", "."))
         wert = norm(roh) if re.fullmatch(r"[\d.,\s\u00a0\u202f]+|\w+", roh) and not re.search(r"[A-Za-z]-", roh) else roh
         if m.group(2) == "t":
             return tausend(wert)
         return re.escape(wert).replace("\\,", ",").replace("\\-", "-")
-    return re.sub(r"\{(\d)([tr]?)\}", ersatz, vorlage)
+    return re.sub(r"\{(\d)([trd]?)\}", ersatz, vorlage)
 
 
 def pfad(s: str) -> str:
@@ -97,7 +100,7 @@ def fuehre_aus(kommando: str) -> str:
     argv = shlex.split(pfad(kommando))
     if argv[0] not in ERLAUBT:
         raise ValueError(f"Kommando nicht erlaubt: {argv[0]}")
-    if argv[0] == "git" and argv[1] not in ("merge-base", "cat-file", "rev-parse"):
+    if argv[0] == "git" and argv[1] not in ("merge-base", "cat-file", "rev-parse", "diff", "grep"):
         raise ValueError(f"git-Unterbefehl nicht erlaubt: {argv[1]}")
     if argv[0] == "python3" and argv[1] not in ("tests/test_testmap_vollstaendig.py", "-c"):
         raise ValueError(f"python3-Aufruf nicht erlaubt: {argv[1]}")
@@ -242,7 +245,7 @@ def fundstellen() -> list[P]:
 def hashes() -> list[P]:
     rows = []
     for h in ("f81dba31", "5f346eb5", "23003002", "c9d13e6f", "1fdc6c0a", "1805712b", "7babaac8", "eebe4578", "7d08e023",
-              "6efc1c72", "81892228", "b7eb0c01", "0197bf76", "b6516035", "057b7ec3"):
+              "6efc1c72", "81892228", "b7eb0c01", "0197bf76", "b6516035", "057b7ec3", "7cd5e048", "88ee0bf", "904f6215"):
         rows.append(P(f"Commit {h}", R, rf"`({h})`", kommando=f"git cat-file -t {h}", ist=r"^(commit)", erste=True,
                       modus="da"))
     return rows
@@ -438,7 +441,7 @@ def trockenlaeufe() -> list[P]:
     lg("L1 golden Faelle", r"golden (135)/135 in 1 s", ZF1, r"{0}/135 Faelle bestanden")
     lg("L1 ui-rust s", r"`make ui-rust` (236) s", ZF1, r"^SCHRITT 7 ui-rust +rc=0 dauer={0}s")
     lg("L1 ui-rust passed", r"236 s, (249) passed / 23 xfailed", ZF1, r"{0} passed, 23 xfailed")
-    lg("L1 ui-rust xfailed", r"249 passed / (23) xfailed", ZF1, r"249 passed, {0} xfailed")
+    lg("L1 ui-rust xfailed", r"236 s, 249 passed / (23) xfailed", ZF1, r"249 passed, {0} xfailed")
     lg("L1 parity s", r"Parity (637) s, 192", ZF1, r"^SCHRITT 8 parity +rc=0 dauer={0}s")
     lg("L1 parity passed", r"637 s, (192) passed / 0 failed / 0 ignored in 25 Binaries", ZF1, r"passed={0} failed=0 ignored=0")
     lg("L1 parity Binaries", r"0 ignored in (25) Binaries\. Summe", ZF1, r"testresult_zeilen={0}")
@@ -455,7 +458,7 @@ def trockenlaeufe() -> list[P]:
     lg("L2 unit s", r"`make unit` (308,7) s, 4429", ZF2, r"^SCHRITT 5 unit +rc=0 dauer=308\.7s")
     lg("L2 unit passed", r"308,7 s, (4429) passed / 19 skipped / 22 xfailed", ZF2, r"{0} passed, 19 skipped, 22 xfailed")
     lg("L2 unit skipped", r"4429 passed / (19) skipped", ZF2, r"4429 passed, {0} skipped")
-    lg("L2 unit xfailed", r"19 skipped / (22) xfailed", ZF2, r"19 skipped, {0} xfailed")
+    lg("L2 unit xfailed", r"4429 passed / 19 skipped / (22) xfailed", ZF2, r"19 skipped, {0} xfailed")
     lg("L2 golden Faelle", r"golden (135)/135; `make ui-rust`", ZF2, r"{0}/135 Faelle bestanden")
     lg("L2 ui-rust s", r"`make ui-rust` (132,9) s", ZF2, r"^SCHRITT 7 ui-rust +rc=0 dauer=132\.9s")
     lg("L2 ui-rust passed", r"132,9 s, (249) / 23", ZF2, r"{0} passed, 23 xfailed")
@@ -468,8 +471,8 @@ def trockenlaeufe() -> list[P]:
                                   if re.search(r"^s9\(\) \{.*?^\s+(?:.*?)\}", (T / "gate-final" / "run.sh").read_text(encoding="utf-8"), re.S | re.M) else "")))
     lg("L2 Korpus s", r"Korpus \(Kopie\) (6,8) s", ZF2, r"^SCHRITT 9 korpus-tests +rc=0 dauer=6\.8s")
     lg("L2 Korpus passed", r"6,8 s, (18) passed / 1 xfailed / 0 skipped", ZF2, r"{0} passed, 1 xfailed")
-    lg("L2 Korpus xfailed", r"18 passed / (1) xfailed / 0 skipped", ZF2, r"18 passed, {0} xfailed")
-    lg("L2 Korpus skipped", r"1 xfailed / (0) skipped", ZF2, r"^SKIPS korpus-tests gesamt={0} ")
+    lg("L2 Korpus xfailed", r"6,8 s, 18 passed / (1) xfailed / 0 skipped", ZF2, r"18 passed, {0} xfailed")
+    lg("L2 Korpus skipped", r"6,8 s, 18 passed / 1 xfailed / (0) skipped", ZF2, r"^SKIPS korpus-tests gesamt={0} ")
     lg("L2 Summe s", r"Summe (1186) s \(19,8 min\)", ZF2, r"^GESAMT dauer={0}s")
     rows.append(P("L2 Summe min", R, r"Summe 1186 s \((19,8) min\)", kommando="GESAMT dauer / 60", ist=r"([0-9.]+)",
                   lauf=lambda: f"{_s(ZF2, r'^GESAMT dauer=(\d+)s') / 60:.1f}"))
@@ -506,7 +509,7 @@ def trockenlaeufe() -> list[P]:
         P("Last Lauf 2 (Log-Kopf)", R, r"Basis `1fdc6c0a`.*Last laut Log-Kopf ([0-9,]+) / ([0-9,]+) / ([0-9,]+)", kommando="grep load log-1fdc6c0a/00-kopf.txt", ist=r"load=([0-9.]+) ([0-9.]+) ([0-9.]+)", lauf=lambda: (LOG2 / "00-kopf.txt").read_text(encoding="utf-8")),
     ]
     rows += [
-        P("Planwert Endtor s", R, r"Planwert (1600) s", kommando="aufrunden(100, L1 GESAMT + L2 Korpus + ERiC + (L2 Parity - L1 Parity))", ist=r"(\d+)",
+        P("Planwert Endtor s", R, r"Planwert (1600) s, aufgerundet", kommando="aufrunden(100, L1 GESAMT + L2 Korpus + ERiC + (L2 Parity - L1 Parity))", ist=r"(\d+)",
           lauf=lambda: str(math.ceil((_s(ZF1, r"^GESAMT dauer=(\d+)s") + _s(ZF2, r"^SCHRITT 9 .*dauer=([0-9.]+)s") + _s(T / "gate-final" / "eric-dateien.log", r"in ([0-9.]+)s")
                                       + _s(ZF2, r"^SCHRITT 8 .*dauer=([0-9.]+)s") - _s(ZF1, r"^SCHRITT 8 .*dauer=([0-9.]+)s")) / 100) * 100)),
         P("Planungslast 30", R, r"Zeitplan Endtor bei Last (30):", kommando="grep load log-trocken2/00-kopf.txt", ist=r"load=([0-9.]+)", modus="rund",
@@ -525,12 +528,137 @@ def _s(datei: Path, regex: str) -> float:
 
 
 def endtor() -> list[P]:
-    """Zahlen, die nur der Endtor liefert: werden NICHT ausgefuehrt."""
-    return [
-        P("Lauf B: 10000 Faelle in einem Lauf", R, r"`PARITY_N=(10000)`-Lauf über alle Suiten", kommando="PARITY=1 PARITY_N=10000 cargo test -p parity --no-fail-fast (4500 s)", endtor=True),
-        P("Zeitlimit Lauf A", R, r"Limit (2000) s \(Vorgabe", kommando="timeout -k 60 2000 bash run.sh ... std <commit>; Dauer von Lauf A", endtor=True),
-        P("Golden auf dem Endstand (Lauf 2: 135/135)", R, r"golden (135)/135; `make ui-rust` 132,9", kommando="make golden auf dem Endstand", endtor=True),
-    ]
+    """Der Endtor auf 7cd5e048 (Lauf A: alle neun Schritte, N=std; Lauf B: nur Parity, N=10000), gelesen aus den Logs.
+    Zeilen mit endtor=True (Zahl liefert nur ein schwerer Lauf, wird nicht ausgefuehrt) gibt es seitdem keine mehr."""
+    rows: list[P] = []
+    GF = T / "gate-final"
+    ZEA, ZEB = GF / "log-endtor-A" / "zusammenfassung.txt", GF / "log-endtor-B" / "zusammenfassung.txt"
+
+    def lg(zahl, anker, zf, muster, **kw):
+        rows.append(q(zahl, R, anker, zf, muster, **kw))
+
+    def dauer(zf: Path) -> str:
+        return str(int(_s(zf, r"^GESAMT dauer=(\d+)s")))
+
+    def kleiner(zahl, anker, zf, kommando):
+        rows.append(P(zahl, R, anker, kommando=kommando, ist=r"(\d+)", modus="kleiner", lauf=lambda: dauer(zf)))
+
+    def zaehle(datei: Path, regex: str) -> Callable[[], str]:
+        return lambda: str(len(re.findall(regex, datei.read_text(encoding="utf-8", errors="replace"), re.M)))
+    A, B = r"Lauf A \(alle neun.*", r"Lauf B \(nur Parity.*"
+    # --- Kopf: Basis, Diff nach dem Endtor
+    rows.append(P("Diff 7cd5e048..88ee0bf", R, r"→ (1) file changed, (35) insertions", kommando="git diff --shortstat 7cd5e048 88ee0bf",
+                  ist=r"(\d+) file changed, (\d+) insertions"))
+    lg("Status vor/nach Lauf A", r"`git status` (0) Zeilen vor und nach", ZEA, r"^status={0} Zeilen")
+    lg("Status vor/nach Lauf B", r"`git status` (0) Zeilen vor und nach", ZEB, r"^status={0} Zeilen")
+    # --- Lauf A
+    lg("EA Start", A + r"Start (17:15:23), Ende", ZEA, r"^start=2026-10-04T{0}\+02:00")
+    lg("EA Ende", A + r"Ende (17:32:29), Last", ZEA, r"^GESAMT dauer=[0-9]+s ende=2026-10-04T{0}\+02:00")
+    rows.append(P("EA Last (Log-Kopf)", R, A + r"Last laut Log-Kopf ([0-9,]+) / ([0-9,]+) / ([0-9,]+)", kommando="grep load log-endtor-A/00-kopf.txt",
+                  ist=r"load=([0-9.]+) ([0-9.]+) ([0-9.]+)", lauf=lambda: (GF / "log-endtor-A" / "00-kopf.txt").read_text(encoding="utf-8")))
+    lg("EA build-python s", r"Lauf A.*build-python (0,1) s; clippy", ZEA, r"^SCHRITT 1 build-python +rc=0 dauer={0d}s")
+    lg("EA clippy s", r"Lauf A.*clippy (4,4) s, 0 Warnungen", ZEA, r"^SCHRITT 2 clippy +rc=0 dauer={0d}s warning=0")
+    lg("EA cargo s", r"`cargo test` (57,2) s, 1673", ZEA, r"^SCHRITT 3 cargo-test +rc=0 dauer={0d}s")
+    lg("EA cargo passed", r"57,2 s, (1673) passed / 0 failed / 24 ignored", ZEA, r"passed={0} failed=0 ignored=24")
+    lg("EA cargo ignored", r"1673 passed / 0 failed / (24) ignored in 131", ZEA, r"failed=0 ignored={0} testresult")
+    lg("EA cargo Binaries", r"24 ignored in (131) Binaries", ZEA, r"testresult_zeilen={0} ")
+    lg("EA TESTMAP", r"TESTMAP (480) Dateien, 0 ohne Zeile", GF / "log-endtor-A" / "4-testmap.log", r"{0} Testdateien, 0 ohne Zeile")
+    lg("EA unit s", r"`make unit` (276,1) s, 4516", ZEA, r"^SCHRITT 5 unit +rc=0 dauer={0d}s")
+    lg("EA unit passed", r"276,1 s, (4516) passed / 19 skipped / 22 xfailed", ZEA, r"{0} passed, 19 skipped, 22 xfailed")
+    lg("EA unit skipped", r"4516 passed / (19) skipped / 22 xfailed", ZEA, r"4516 passed, {0} skipped")
+    lg("EA unit xfailed", r"4516 passed / 19 skipped / (22) xfailed", ZEA, r"19 skipped, {0} xfailed")
+    lg("EA golden s", r"golden 135/135 in (0,4) s", ZEA, r"^SCHRITT 6 golden +rc=0 dauer={0d}s")
+    lg("EA golden Faelle", r"xfailed; golden (135)/135 in 0,4 s", ZEA, r"{0}/135 Faelle bestanden")
+    lg("EA ui-rust s", r"`make ui-rust` (118,9) s, 249", ZEA, r"^SCHRITT 7 ui-rust +rc=0 dauer={0d}s")
+    lg("EA ui-rust passed", r"118,9 s, (249) passed / 23 xfailed", ZEA, r"{0} passed, 23 xfailed")
+    lg("EA ui-rust xfailed", r"118,9 s, 249 passed / (23) xfailed", ZEA, r"249 passed, {0} xfailed")
+    lg("EA parity s", r"Parity (562,4) s, 192", ZEA, r"^SCHRITT 8 parity +rc=0 dauer={0d}s")
+    lg("EA parity passed", r"562,4 s, (192) passed / 0 failed / 0 ignored in 25 Binaries;", ZEA, r"passed={0} failed=0 ignored=0")
+    lg("EA parity Binaries", r"562,4 s, 192 passed / 0 failed / 0 ignored in (25) Binaries;", ZEA, r"testresult_zeilen={0} ")
+    lg("EA korpus s", r"Korpus \(Kopie\) (6,0) s, 18", ZEA, r"^SCHRITT 9 korpus-tests +rc=0 dauer={0d}s")
+    lg("EA korpus passed", r"6,0 s, (18) passed / 1 xfailed / 0 skipped\. Summe", ZEA, r"{0} passed, 1 xfailed")
+    lg("EA korpus xfailed", r"6,0 s, 18 passed / (1) xfailed / 0 skipped\. Summe", ZEA, r"18 passed, {0} xfailed")
+    lg("EA korpus skipped", r"6,0 s, 18 passed / 1 xfailed / (0) skipped\. Summe", ZEA, r"^SKIPS korpus-tests gesamt={0} ")
+    lg("EA Summe s", r"Summe (1026) s \(17,1 min\)", ZEA, r"^GESAMT dauer={0}s")
+    rows.append(P("EA Summe min", R, r"Summe 1026 s \((17,1) min\)", kommando="GESAMT dauer / 60 (Lauf A)", ist=r"([0-9.]+)",
+                  lauf=lambda: f"{_s(ZEA, r'^GESAMT dauer=(\d+)s') / 60:.1f}"))
+    kleiner("EA unter Limit", r"unter dem Limit von (2000) s und unter", ZEA, "GESAMT dauer Lauf A < Limit")
+    kleiner("EA unter Planwert", r"unter dem Planwert (1600) s\. Nachprüfung", ZEA, "GESAMT dauer Lauf A < Planwert")
+    kleiner("Zeitlimit Lauf A (Vorausschau-Satz)", r"Limit (2000) s \(Vorgabe des Instruktors, keine Messung\)", ZEA, "GESAMT dauer Lauf A < Limit")
+    lg("EA Nachpruefung Worktree", r"Planwert 1600 s\. Nachprüfung im Log: Worktree (0) Zeilen", ZEA, r"^NACHPRUEFUNG worktree-status={0} Zeilen")
+    lg("EA Nachpruefung Bestand", r"Planwert 1600 s\..*echter Bestand (0) Dateien", ZEA, r"^NACHPRUEFUNG echter-Bestand: {0} Dateien")
+    lg("EA Nachpruefung Korpus", r"Planwert 1600 s\..*Korpus (0)\.$", ZEA, r"^NACHPRUEFUNG korpus: {0} Dateien")
+    # --- Lauf A gegen Lauf 2 (Differenzen aus beiden Logs)
+
+    def diff(regex_a: str, zf_a: Path, regex_b: str, zf_b: Path) -> Callable[[], str]:
+        return lambda: str(int(_s(zf_a, regex_a) - _s(zf_b, regex_b)))
+    rows.append(P("A-L2 cargo passed", R, r"`cargo test` \+(210) passed", kommando="passed (Lauf A) - passed (Lauf 2)", ist=r"(\d+)",
+                  lauf=diff(r"^SCHRITT 3 .*passed=(\d+)", ZEA, r"^SCHRITT 3 .*passed=(\d+)", ZF2)))
+    rows.append(P("A-L2 cargo ignored", R, r"und \+(3) ignored", kommando="ignored (Lauf A) - ignored (Lauf 2)", ist=r"(\d+)",
+                  lauf=diff(r"^SCHRITT 3 .*ignored=(\d+)", ZEA, r"^SCHRITT 3 .*ignored=(\d+)", ZF2)))
+    rows.append(P("A-L2 TESTMAP", R, r"TESTMAP \+(27) Dateien", kommando="Testdateien (Lauf A) - Testdateien (Lauf 2)", ist=r"(\d+)",
+                  lauf=diff(r"(\d+) Testdateien", GF / "log-endtor-A" / "4-testmap.log", r"(\d+) Testdateien", LOG2 / "4-testmap.log")))
+    rows.append(P("A-L2 unit passed", R, r"`make unit` \+(87) passed", kommando="passed (Lauf A) - passed (Lauf 2)", ist=r"(\d+)",
+                  lauf=diff(r"^SCHRITT 5 unit .* (\d+) passed", ZEA, r"^SCHRITT 5 unit .* (\d+) passed", ZF2)))
+    for n, anker in (("301", r"sie warten (301) s, 30 s"), ("30", r"sie warten 301 s, (30) s und"), ("61", r"und (61) s\)")):
+        lg(f"Handtest wartet {n} s", anker, GF / "log-endtor-A" / "3-cargo-test.log", r"wartet {0} s: manuell mit --ignored")
+
+    def werte(zf: Path) -> tuple:
+        t = zf.read_text(encoding="utf-8")
+
+        def z(regex: str):
+            m = re.search(regex, t, re.M)
+            return m.groups() if m else None
+        return (z(r"^SCHRITT 5 unit .* (\d+) skipped, (\d+) xfailed"), z(r"^SCHRITT 6 golden .* (\d+)/135"),
+                z(r"^SCHRITT 7 ui-rust .* (\d+) passed, (\d+) xfailed"), z(r"^SCHRITT 8 parity .* passed=(\d+) failed=(\d+) ignored=(\d+)"))
+
+    def gleich() -> str:
+        a, b = werte(ZEA), werte(ZF2)
+        return "gleich" if None not in a and a == b else ""
+    rows.append(P("A = Lauf 2: skipped, xfailed, golden, ui-rust, Parity", R, r"(skipped, xfailed, golden, `make ui-rust` und Parity) sind unverändert",
+                  kommando="skipped/xfailed (unit), Faelle (golden), passed/xfailed (ui-rust), passed/failed/ignored (Parity): Lauf A gegen Lauf 2",
+                  ist=r"(gleich)", modus="da", lauf=gleich))
+    rows.append(P("A-L2 ignorierte Handtests", R, r"\+3 ignored \((drei) Handtests", kommando="ignored (Lauf A) - ignored (Lauf 2)", ist=r"(\d+)",
+                  lauf=diff(r"^SCHRITT 3 .*ignored=(\d+)", ZEA, r"^SCHRITT 3 .*ignored=(\d+)", ZF2)))
+    # --- Lauf B
+    lg("(a) EB Binaries", r"über alle (25) Binaries \(Lauf B", ZEB, r"testresult_zeilen={0} ")
+    lg("(a) EB passed", r"ist grün: (192) passed / 0 failed in 2644 s", ZEB, r"passed={0} failed=0")
+    lg("(a) EB failed", r"192 passed / (0) failed in 2644 s", ZEB, r"passed=192 failed={0} ignored")
+    lg("(a) EB s", r"192 passed / 0 failed in (2644) s", ZEB, r"^GESAMT dauer={0}s")
+    lg("EB Start", B + r"Start (17:33:41), Ende", ZEB, r"^start=2026-10-04T{0}\+02:00")
+    lg("EB Ende", B + r"Ende (18:17:45), Last", ZEB, r"^GESAMT dauer=[0-9]+s ende=2026-10-04T{0}\+02:00")
+    rows.append(P("EB Last (Log-Kopf)", R, B + r"Last laut Log-Kopf ([0-9,]+) / ([0-9,]+) / ([0-9,]+)", kommando="grep load log-endtor-B/00-kopf.txt",
+                  ist=r"load=([0-9.]+) ([0-9.]+) ([0-9.]+)", lauf=lambda: (GF / "log-endtor-B" / "00-kopf.txt").read_text(encoding="utf-8")))
+    lg("EB PARITY_N", r"Lauf B \(nur Parity, `PARITY_N=(10000)`", ZEB, r"^N={0}$")
+    lg("EB SCHRITTE", r"`SCHRITTE=(8)`, eigenes Ziel", ZEB, r"^schritte={0}$")
+    lg("EB Korpus-Dateien", r"Korpus-Kopie mit (192) Dateien", ZEB, r"^korpus=.* \({0} Dateien\)")
+    lg("EB parity s", r"Parity (2643,9) s, 192", ZEB, r"^SCHRITT 8 parity +rc=0 dauer={0d}s")
+    lg("EB parity passed", r"2643,9 s, (192) passed / 0 failed / 0 ignored in 25 Binaries; Summe", ZEB, r"passed={0} failed=0 ignored=0")
+    lg("EB parity Binaries", r"2643,9 s, 192 passed / 0 failed / 0 ignored in (25) Binaries; Summe", ZEB, r"testresult_zeilen={0} ")
+    lg("EB Summe s", r"Summe (2644) s \(44,1 min\)", ZEB, r"^GESAMT dauer={0}s")
+    rows.append(P("EB Summe min", R, r"Summe 2644 s \((44,1) min\)", kommando="GESAMT dauer / 60 (Lauf B)", ist=r"([0-9.]+)",
+                  lauf=lambda: f"{_s(ZEB, r'^GESAMT dauer=(\d+)s') / 60:.1f}"))
+    kleiner("EB unter Limit", r"unter dem Limit von (4500) s \(`gate-final/run.sh`", ZEB, "GESAMT dauer Lauf B < Limit")
+    lg("EB Limit steht in run.sh", r"unter dem Limit von (4500) s \(`gate-final/run.sh`", GF / "run.sh", r"timeout -k 60 {0} bash")
+    rows.append(P("EB 26 Meldungen N=10000", R, r"meldet (26)-mal „laeuft mit 10000 Faellen“", kommando="grep -c 'PARITY_N=10000: .* laeuft mit 10000 Faellen' log-endtor-B/8-parity.log",
+                  ist=r"(\d+)", lauf=zaehle(GF / "log-endtor-B" / "8-parity.log", r"PARITY_N=10000: .* laeuft mit 10000 Faellen")))
+    rows.append(P("EB 11 Waechter uebersprungen", R, r"und (11)-mal „Abdeckungs-Waechter", kommando="grep -c 'PARITY_N=10000: Abdeckungs-Waechter .* uebersprungen' log-endtor-B/8-parity.log",
+                  ist=r"(\d+)", lauf=zaehle(GF / "log-endtor-B" / "8-parity.log", r"PARITY_N=10000: Abdeckungs-Waechter .* uebersprungen")))
+    lg("EB Nachpruefung Worktree", r"gewollt\)\. Nachprüfung im Log: Worktree (0) Zeilen", ZEB, r"^NACHPRUEFUNG worktree-status={0} Zeilen")
+    lg("EB Nachpruefung Bestand", r"gewollt\)\..*echter Bestand (0) Dateien", ZEB, r"^NACHPRUEFUNG echter-Bestand: {0} Dateien")
+    lg("EB Nachpruefung Korpus", r"gewollt\)\..*Korpus (0)\.$", ZEB, r"^NACHPRUEFUNG korpus: {0} Dateien")
+    # --- Tag
+    rows.append(P("Tag python-standard-letzter", R, r"→ `([0-9a-f]{40})`, nicht gepusht", kommando="git rev-parse python-standard-letzter", ist=r"^([0-9a-f]{40})"))
+    rows.append(P("Tag = Elterncommit von f81dba31", R, r"`git rev-parse f81dba31\^` → (derselbe Hash)\),", kommando="git rev-parse f81dba31^ gegen git rev-parse python-standard-letzter",
+                  ist=r"(derselbe Hash)", modus="da", lauf=lambda: "derselbe Hash" if re.search(r"^([0-9a-f]{40})", fuehre_aus("git rev-parse f81dba31^"), re.M).group(1)
+                  == re.search(r"^([0-9a-f]{40})", fuehre_aus("git rev-parse python-standard-letzter"), re.M).group(1) else ""))
+    rows.append(P("904f6215 ohne make serve", R, r"`git grep -c '\^serve' 904f6215 -- Makefile` (findet nichts)\),", kommando="git grep -c ^serve 904f6215 -- Makefile",
+                  ist=r"(findet nichts)", modus="da", lauf=lambda: "findet nichts" if not re.search(r"Makefile:\d+", fuehre_aus("git grep -c ^serve 904f6215 -- Makefile")) else ""))
+    for doc, anker in ((RD, r"Tag `(python-standard-letzter)` \(`904f6215`\)"), ("CLAUDE.md", r"Tag `(python-standard-letzter)` \(`904f6215`")):
+        rows.append(P(f"Tag-Name in {doc}", doc, anker, kommando="git rev-parse python-standard-letzter", ist=r"^([0-9a-f]{40})", modus="da"))
+    for doc in (RD, "CLAUDE.md"):
+        rows.append(P(f"Commit 904f6215 in {doc}", doc, r"`(904f6215)`", kommando="git cat-file -t 904f6215", ist=r"^(commit)", modus="da", erste=True))
+    return rows
 
 
 # ---------------------------------------------------------------- Lauf

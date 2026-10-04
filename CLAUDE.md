@@ -16,7 +16,7 @@ make serve-python       Python-Dienst: Rückfall, Referenz und Orakel
 von `rust/parity` und `make ui-rust` gemessen; `tests/test_ueberlauf_waechter_text.py` hält `overflow-checks = true` im `[profile.dev]` fest). Beide Ziele laufen gegen den echten Bestand
 `~/.local/share/taxgraph`: Tests und Messungen setzen `TAXGRAPH_DATEN` auf eine Kopie oder nutzen
 `scripts/starte-api.sh`, nie `make serve`. Rückfall auf Python: `make serve-python`; der letzte Stand mit
-Python als Standard-Start ist der lokale Tag `<TAG>` (Platzhalter). Python bleibt Orakel der `rust/parity`-Suiten
+Python als Standard-Start ist der lokale Tag `python-standard-letzter` (`904f6215`, nicht gepusht). Python bleibt Orakel der `rust/parity`-Suiten
 und wird nicht gelöscht (`REWRITE_PLAN.md`, Absatz „Cutover vollzogen“). `BACKUP_DIR` wächst je Start;
 `AUTH_USERS` folgt `TAXGRAPH_USER_STORE` nicht von selbst.
 

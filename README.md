@@ -56,7 +56,7 @@ make serve-python   # Python-Dienst: Rueckfall, Referenz und Orakel der Vergleic
   Vergleichstests gegen Python geprueft, und `--release` schaltet `overflow-checks` ab.
 - Rueckfall: `make serve-python` starten. Hat ein Rust-Lauf eine Akte beschaedigt, den Bestand mit
   `make restore ARCHIV=<tar.gz aus ../taxgraph-backups>` zurueckholen. Den Code des letzten Stands mit
-  Python als Standard-Start liefert der lokale Tag `<TAG>`: `git checkout <TAG>`. Es ist nichts geloescht.
+  Python als Standard-Start liefert der lokale Tag `python-standard-letzter` (`904f6215`): `git checkout python-standard-letzter`. Es ist nichts geloescht.
 - Betrieb: `BACKUP_DIR` waechst um rund 30 MB je Start, ein Aufraeumen gibt es nicht. Setzt Du
   `TAXGRAPH_USER_STORE`, sichert `make backup` weiter `produkt/auth/users.json`: dann `AUTH_USERS=<Pfad>`
   mitgeben. Der Bau liegt in `~/.cache/taxgraph-serve/target` (`SERVE_TARGET=...` aendert das); der erste

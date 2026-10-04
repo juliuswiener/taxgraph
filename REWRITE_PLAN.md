@@ -36,12 +36,13 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
   Der Echtversand `versand.py` bleibt Python (F4, Vorbehalt Julius); `POST /fall/<id>/einreichen` prüft in beiden Diensten nur
   (`rust/api/src/einreichen.rs:1-8`, `produkt/haut/api.py:685-691`).
 - *Rückfall:* (1) schnell: `make serve-python`; beide Dienste lesen dieselben Dateien und Umgebungsvariablen, es gibt keine Migration.
-  (2) Code: der lokale Tag `<TAG>` (Platzhalter, bis der Instruktor ihn setzt; Name `python-standard-letzter`) bezeichnet den letzten Stand, in dem
-  Python der Standard-Start war: `git checkout <TAG>`. (3) Hat ein Rust-Lauf eine Akte beschädigt: `make restore ARCHIV=<tar.gz aus BACKUP_DIR>`.
+  (2) Code: der lokale Tag `python-standard-letzter` (`git rev-parse python-standard-letzter` → `904f6215c94d3fdf7653b6087c5c4048d01b13c2`, nicht gepusht) ist der Elterncommit
+  von `f81dba31` (`git rev-parse f81dba31^` → derselbe Hash), dem Commit, der `make serve` auf Rust stellt. In `904f6215` gibt es kein `make serve` (`git grep -c '^serve' 904f6215 -- Makefile` findet nichts),
+  Python war der Standard-Start: `git checkout python-standard-letzter`. (3) Hat ein Rust-Lauf eine Akte beschädigt: `make restore ARCHIV=<tar.gz aus BACKUP_DIR>`.
 - *Messbelege der Voraussetzungen* (jede Zahl mit Quelle; „Bericht“ heißt: aus dem genannten Bericht übernommen, hier nicht neu gemessen):
   - **(a) 10 000 Fälle je Suite:** `PARITY_N=10000`, jede der 17 Suiten mit Fallzahl-Schalter einzeln: 141 passed / 0 failed, Summe 2858 s.
-    Als ein Lauf nicht gemessen (abgeleitet etwa 49,7 min: 2858 s + 126,5 s für die fünf Suiten ohne Schalter + 0,2 s); bei `N` ungleich Standard sind die
-    Abdeckungs-Wächter aus (`fallzahl::wache_gilt`). Ein einzelner Lauf mit `PARITY_N=10000` (Lauf B des Endtors, nur Parity) steht aus. Vault `audits/parity-voll-stufe-1-und-2-2026-10-04.md` (Baum `23003002`).
+    Als ein Lauf zuerst nicht gemessen (abgeleitet etwa 49,7 min: 2858 s + 126,5 s für die fünf Suiten ohne Schalter + 0,2 s); bei `N` ungleich Standard sind die
+    Abdeckungs-Wächter aus (`fallzahl::wache_gilt`). Ein einzelner Lauf mit `PARITY_N=10000` über alle 25 Binaries (Lauf B des Endtors, gemessen auf `7cd5e048`) ist grün: 192 passed / 0 failed in 2644 s, Punkt „Endtor“ unten. Vault `audits/parity-voll-stufe-1-und-2-2026-10-04.md` (Baum `23003002`).
   - **(c) Gesamtlauf mit Orakel:** `PARITY=1 cargo test --workspace --no-fail-fast`: 1580 passed / 0 failed / 21 ignored, 120 Binaries, 782 s mit Bau
     (derselbe Vault-Eintrag; die 21 ignorierten sind die bekannten offenen Defekte, `offene_defekte.rs` in api, bescheid und elster).
   - **(b) Gegenproben:** 15 von 15 (N-G1 bis N-G6, A-G1 bis A-G9) je rot auf `c9d13e6f`: Vault
@@ -121,10 +122,20 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
     `tests/test_p23_mehrfachverkauf_bricht_so_maxoccurs.py::test_eric_hat_ueberhaupt_geantwortet_zwei_verkaeufe`: ohne `.env` skipped, mit `.env` xfail (21 xfailed + 1 skipped bei denselben 22 Node-IDs ohne `.env`).
     (iii) Das Skript setzt `XDG_DATA_HOME` auf ein leeres Verzeichnis, damit nichts in den echten Bestand schreibt; dadurch skippen 4 Tests wegen leerem Bestand, die mit dem Korpus (Kopie) grün laufen.
     (iv) Bei `N` ungleich Standard sind die Abdeckungs-Wächter aus, bei `N=200` meldet das Log 11 Stellen. (v) Parity braucht ein eigenes Zielverzeichnis, weil jedes andere `cargo test -p api` im selben Ziel das Binärprogramm der Harness ersetzt.
-  - Zeitplan Endtor bei Last 30: etwa 27 min (Planwert 1600 s, aufgerundet aus Lauf 1 plus Korpus-Tests, plus die 15 ERiC-Dateien (10,5 s, `gate-final/eric-dateien.log`) plus der Parity-Unterschied von `N=std` zu `N=200`; Wachstum durch spätere Merges nicht gemessen), Limit 2000 s (Vorgabe des Instruktors, keine Messung).
-- *Endtor auf dem finalen main:* **TOR: von Instruktor.** Zwei Läufe nacheinander: Lauf A alle neun Schritte mit `N=std`, Lauf B nur Parity mit `PARITY_N=10000`. Beide stehen aus, ebenso der Tag `<TAG>`.
-  Letzter voller Lauf mit Zahlen auf main: „Gates auf `057b7ec3`“ unten.
-- *Nicht gemessen:* ein einzelner `PARITY_N=10000`-Lauf über alle Suiten (Lauf B des Endtors); ein Betrieb mit `TAXGRAPH_NO_AUTH=1` gegen den echten Bestand (dort wären die 16 Abweichungen sichtbar);
+  - Vorausschau vor dem Endtor (Messung im nächsten Punkt), Zeitplan Endtor bei Last 30: etwa 27 min (Planwert 1600 s, aufgerundet aus Lauf 1 plus Korpus-Tests, plus die 15 ERiC-Dateien (10,5 s, `gate-final/eric-dateien.log`) plus der Parity-Unterschied von `N=std` zu `N=200`; Wachstum durch spätere Merges nicht gemessen), Limit 2000 s (Vorgabe des Instruktors, keine Messung).
+- *Endtor auf main, gemessen auf `7cd5e048`* (Worktree `~/.cache/taxgraph-tmp/wt-gate-final`, `HEAD` gleich Basis, `git status` 0 Zeilen vor und nach dem Lauf; Skript `gate-final/run.sh`, `nice -n 10`; Logs `gate-final/log-endtor-A/` und `gate-final/log-endtor-B/`,
+  je `zusammenfassung.txt`; Messung des Forks `cutover-bau`, 2026-10-04): **TOR: bestanden.** Beide Läufe sind grün, kein Schritt ist rot. Der Instruktor hat die Logs nachgelesen und beide Läufe bestätigt (seine Aussage, nicht meine Messung). Der Hauptbaum stand beim Schreiben auf `88ee0bf`;
+  seit `7cd5e048` kam nur ein Testmerge dazu (`git diff --shortstat 7cd5e048 88ee0bf` → 1 file changed, 35 insertions, `rust/store/tests/entscheidungsstellen.rs`), keine Produktänderung; der Endtor ist nicht auf `88ee0bf` gelaufen.
+  - Lauf A (alle neun Schritte, `N=std`, Abdeckungs-Wächter scharf): Start 17:15:23, Ende 17:32:29, Last laut Log-Kopf 0,67 / 5,72 / 7,77 (1, 5, 15 min). build-python 0,1 s; clippy 4,4 s, 0 Warnungen; `cargo test` 57,2 s, 1673 passed / 0 failed / 24 ignored in 131 Binaries;
+    TESTMAP 480 Dateien, 0 ohne Zeile; `make unit` 276,1 s, 4516 passed / 19 skipped / 22 xfailed; golden 135/135 in 0,4 s; `make ui-rust` 118,9 s, 249 passed / 23 xfailed; Parity 562,4 s, 192 passed / 0 failed / 0 ignored in 25 Binaries;
+    Korpus (Kopie) 6,0 s, 18 passed / 1 xfailed / 0 skipped. Summe 1026 s (17,1 min), unter dem Limit von 2000 s und unter dem Planwert 1600 s. Nachprüfung im Log: Worktree 0 Zeilen, echter Bestand 0 Dateien neuer als der Start, Korpus 0.
+    Gegenüber Lauf 2 (`1fdc6c0a`): `cargo test` +210 passed und +3 ignored (drei Handtests in `llm`, je „manuell mit --ignored“, sie warten 301 s, 30 s und 61 s), TESTMAP +27 Dateien, `make unit` +87 passed;
+    skipped, xfailed, golden, `make ui-rust` und Parity sind unverändert.
+  - Lauf B (nur Parity, `PARITY_N=10000`, `SCHRITTE=8`, eigenes Ziel `target-gate-final-parity`, `TAXGRAPH_DATEN` auf die Korpus-Kopie mit 192 Dateien): Start 17:33:41, Ende 18:17:45, Last laut Log-Kopf 0,53 / 1,67 / 4,12 (1, 5, 15 min).
+    Parity 2643,9 s, 192 passed / 0 failed / 0 ignored in 25 Binaries; Summe 2644 s (44,1 min), unter dem Limit von 4500 s (`gate-final/run.sh`, Kopfzeile). Das Log meldet 26-mal „laeuft mit 10000 Faellen“ und 11-mal „Abdeckungs-Waechter … uebersprungen“
+    (die Wächter gelten nur bei Standard-`N`, gewollt). Nachprüfung im Log: Worktree 0 Zeilen, echter Bestand 0 Dateien neuer als der Start, Korpus 0.
+  - Der Tag `python-standard-letzter` (Rückfall (2) oben) steht lokal auf `904f6215`; er ist nicht gepusht. Frühere Gates mit Zahlen auf main: „Gates auf `057b7ec3`“ unten.
+- *Nicht gemessen:* ein Betrieb mit `TAXGRAPH_NO_AUTH=1` gegen den echten Bestand (dort wären die 16 Abweichungen sichtbar);
   `make serve` gegen den echten Bestand (bewusst nie gestartet); ein Dauerlauf; ob die Oberfläche besitzerlose Fälle auflistet.
 
 **Seit `8e48cf7` in main** (je Spitze per `git log --first-parent 8e48cf7..HEAD`):
@@ -172,7 +183,7 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
     der Standard der Suite; ein Wert, der keine ganze Zahl ab 1 ist, bricht ab (`rust/parity/tests/fallzahl_env.rs`).
     Wächter, die an die Standardzahl gebunden sind, laufen nur bei Standard-N (`fallzahl.rs`, `wache_gilt`).
     `PARITY_N=7` lief laut Merge-Nachricht `94882f7a` grün in allen 16 Suiten plus `wert_paritaet` (Log nicht eingesehen); `PARITY_N=10000`
-    (die Cutover-Zahl) ist nicht gemessen.
+    (die Cutover-Zahl) war auf `bc092a74` nicht gemessen; seitdem gemessen: Lauf B des Endtors auf `7cd5e048` (Absatz „Cutover vollzogen“).
   - **TESTMAP-Test** (`3342d515`, Merge `d32c3443`; Zahlen auf `bc092a74` gemessen): `rust/TESTMAP.tsv` hat 439 Zeilen ohne Kopf (`wc -l` → 440),
     342 `tests/…` und 97 `rust/…` (397 = 331 + 66 am 2026-10-03; `cut -f1 rust/TESTMAP.tsv | grep -c '^tests/'` → 342, `'^rust/'` → 97).
     `tests/test_testmap_vollstaendig.py` (läuft in `make unit`) wird rot, wenn eine Datei in `tests/` oder `rust/*/tests/` keine Zeile hat;
@@ -238,7 +249,7 @@ Log `gate-runde.log`; jede Stufe einzeln): `make unit` 3878 passed / 0 failed (1
 Gesamte Parity-Runde ≈ 10 min statt ≈ 20 min. **Nicht nachgemessen:** Gegenproben G1–G6 (zuletzt auf `8e48cf7`
 je rot), `PARITY=1 cargo test --workspace` in einem Lauf, echte Akten. Seit `b540590` ist hier keine Runde über alle Parity-Suiten belegt (nicht gemessen); die Zahl der
 Parity-Suiten ist von 19 auf 22 gestiegen (`ls rust/parity/tests/*_paritaet.rs | wc -l` → 22 auf `bc092a74`; 21 auf `2bc35bd4`, 19 auf
-`b540590`). Laut Merge-Nachricht `7e81ada2` lief auf `9ad51c19` ein Tor mit PARITY 178/0 (Log nicht eingesehen, nicht nachgemessen).
+`b540590`). Laut Merge-Nachricht `7e81ada2` lief auf `9ad51c19` ein Tor mit PARITY 178/0 (Log nicht eingesehen, nicht nachgemessen). Spätere Messungen: Absatz „Cutover vollzogen“ (Voraussetzungen (a) bis (c), Endtor auf `7cd5e048`).
 
 **Offen**
 
@@ -247,7 +258,7 @@ Parity-Suiten ist von 19 auf 22 gestiegen (`ls rust/parity/tests/*_paritaet.rs |
    Chat-Surrogat ist dokumentierte Abweichung C (`115ddac`). Die Voraussetzungen laut Plan (§ 5 „Cutover: 10 000“, § 7 Schritt 10 „nur bei vollständiger Parität“) sind: (a) 10 000
    generierte Fälle, (b) Gegenproben, (c) `PARITY=1 cargo test --workspace` in einem Lauf, (d) Behebung des Binärdefekts im Harness `api_http_paritaet` (`eebe4578`: ein anderes
    `cargo test -p api` im selben Zielordner ersetzte `<CARGO_TARGET_DIR>/debug/taxgraph-api` durch einen Bau ohne `festzeit`, die `event_id`-Abweichungen sahen wie ein Produktfehler
-   aus), (e) die Entscheidung. Stand am 2026-10-04: (a), (b), (c), (d) gemessen (Absatz oben), (e) gefallen. Offen bleibt (B).
+   aus), (e) die Entscheidung. Stand am 2026-10-04: (a), (b), (c), (d) gemessen (Absatz oben), (e) gefallen; der Endtor (Lauf A und Lauf B auf `7cd5e048`) ist bestanden. Offen bleibt (B).
 2. Reste aus den Berichten `haertung` und `json-leser`: alle vier Einträge (`python-schreibt-akte-die-der-rust-leser-sperrt`,
    `bindungsbereich-prueft-nur-der-browser`, `negativer-aufwand-umgeht-pflichtfrage`,
    `python-schreibt-ganzzahl-ueber-i64-in-die-fallakte`) liegen im Archiv (`backlog/archive/taxgraph/`, geprüft per
