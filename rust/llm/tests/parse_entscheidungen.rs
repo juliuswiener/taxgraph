@@ -130,3 +130,20 @@ fn antwort_parse_kappt_bei_2000_und_liest_nichtobjekte_tolerant() {
         Antwort::Tolerant((ref a, false)) if a.is_empty()
     ));
 }
+
+/// Python `_aussagen_parse`: der Satz wird gestrippt und bei 300 Zeichen gekappt, ebenso der
+/// Beleg, der danach noch im gefilterten Freitext stehen muss.
+#[test]
+fn aussagen_parse_kappt_satz_und_beleg_bei_300() {
+    let (gefiltert, _) = llm::pii::filtere(&"a".repeat(300));
+    for (laenge, soll) in [(299, 299), (300, 300), (301, 300), (400, 300)] {
+        let text = json!({"aussagen": [{
+            "text": format!(" {} ", "a".repeat(laenge)),
+            "beleg": "a".repeat(laenge),
+        }]})
+        .to_string();
+        let a = aussagen_parse(&text, &gefiltert).oder_leer_wie_python();
+        assert_eq!(a[0].text.chars().count(), soll, "satz {laenge}");
+        assert_eq!(a[0].beleg.chars().count(), soll, "beleg {laenge}");
+    }
+}
