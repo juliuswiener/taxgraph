@@ -24,7 +24,8 @@ def lies() -> list[dict]:
     if not os.path.exists(PFAD):
         print(f"Kein Mitschnitt unter {PFAD}.\n"
               f"Der Server muss mit TAXGRAPH_FLOW=1 laufen:\n"
-              f"    TAXGRAPH_FLOW=1 python produkt/haut/server.py 8000", file=sys.stderr)
+              f"    TAXGRAPH_FLOW=1 make serve          (Rust, das Produkt)\n"
+              f"    TAXGRAPH_FLOW=1 make serve-python   (Python, Rueckfall)", file=sys.stderr)
         raise SystemExit(2)
     aus = []
     for zeile in open(PFAD, encoding="utf-8"):
