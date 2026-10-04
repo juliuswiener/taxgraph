@@ -274,4 +274,60 @@ mod tests {
             HashMap::from([("a".to_owned(), 30), ("b".to_owned(), 0)])
         );
     }
+
+    /// Auftrag 8 (Mutanten H211, H212 am Fall `rentner_folgejahr_ohne_freibetrag` des Orakels): nur der
+    /// fehlende Rentenfreibetrag lässt `/fragen` ohne Gewichte antworten; jeder andere Fehler des Rings
+    /// ist ein 500.
+    #[test]
+    fn nur_die_fehlende_fixierung_ist_kein_fehler() {
+        let offen = IntervallFehler::Bescheid(SlotFehler::Slot(BescheidFehler::EngineTeil2(
+            EngineFehler::RentenfreibetragFixierungOffen {
+                beginn: 2020,
+                vz: 2025,
+            },
+        )));
+        assert!(fixierung_offen(&offen));
+        let anderer = IntervallFehler::Bescheid(SlotFehler::Slot(BescheidFehler::EngineTeil2(
+            EngineFehler::VersorgungsfreibetragOffen,
+        )));
+        assert!(!fixierung_offen(&anderer));
+        assert!(!fixierung_offen(&IntervallFehler::LeereAchse("a".into())));
+        assert!(!fixierung_offen(&IntervallFehler::Bescheid(
+            SlotFehler::UnbekanntesFeld("a".into())
+        )));
+    }
+
+    /// Auftrag 8 (Mutant H242): `bindung[fid]` für ein Feld, das nicht in der Bindung steht, ist
+    /// `KeyError` mit dem `repr` der Feld-ID. `frage_einzeln` und die Queue prüfen vorher; erreichbar ist
+    /// der Zweig über HTTP nicht.
+    #[test]
+    fn frage_metadaten_fuer_ein_fremdes_feld_ist_key_error() {
+        let tmp = tempfile::tempdir().unwrap();
+        let konfig = crate::konfig::Konfig {
+            wurzel: std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."),
+            faelle: tmp.path().join("faelle"),
+            audit_dir: tmp.path().join("faelle"),
+        };
+        let auth = auth::Auth::neu(
+            "testgeheimnis".into(),
+            tmp.path().join("users.json"),
+            Some(konfig.audit_pfad()),
+        );
+        let z = Zustand::neu(konfig, auth);
+        let mut datei = Store::leer(2025, Some("k1".into())).into_datei();
+        datei.scheibe = Some("gesamt".into());
+        let store = Store::aus_datei(datei);
+        let sb = z.scheibe_bindung(&store).unwrap();
+        let ApiFehler::Unerwartet { typ, meldung } =
+            frage_metadaten("gibt_es_nicht", &sb, &store).unwrap_err()
+        else {
+            panic!("kein Ausnahme-Fehler")
+        };
+        assert_eq!(
+            (typ.as_str(), meldung.as_str()),
+            ("KeyError", "'gibt_es_nicht'")
+        );
+        let frage = frage_metadaten("bruttoarbeitslohn", &sb, &store).unwrap();
+        assert_eq!(frage["feld_id"], json!("bruttoarbeitslohn"));
+    }
 }

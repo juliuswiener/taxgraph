@@ -141,3 +141,25 @@ python3 tools/parity/extract_zeichensatz_orakel.py
 
 Der Generator ist deterministisch: zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed (geprueft bei
 `PYTHONHASHSEED` 1 und 777).
+
+## `api_stand_fragen_orakel.json`
+
+Zwanzig Faelle (Scheiben `gesamt`, `an_gesamt`, `rentner_gesamt`, `ep`, `n_vor_gwg`; darunter zwei Vermietungsobjekte,
+eine zweite Rente, ein vorlaeufiges Einzelfeld und ein Rentenbeginn im Folgejahr ohne Freibetrag, je bestaetigt und
+vorlaeufig, damit die Faelle den Unterschied zwischen Ring mit und ohne Store, zwischen "nur bestaetigt" und
+"auch vorlaeufig" und den Fehler `RentenfreibetragFixierungOffen` sehen; dazu zwei Faelle mit einer offenen Achse, damit die
+Gewichte der Fragen-Reihenfolge sichtbar werden: Teil-Ring `ep_werbungskosten` und Gesamt-Ring ohne Gewichte wegen des Fehlers) samt den Antworten des Python-Servers
+(`api.stand`, `api.fragen`, `api.frage_einzeln` aus `produkt/haut/api.py`, im selben Prozess mit denselben Ereignissen):
+`events` (die Rumpfe von `POST /fall/<id>/event`, Reihenfolge ist Semantik), `stand` (die ganze Antwort), `fragen` (die
+ganze Antwort, nur bei den grossen Faellen; sonst `fragen_ids` und der Sperrgrund), `kopf` (was der Mitschnitt fuer
+`fragen` schreibt) und `einzeln` (Antwort je Probe-Feld). `event_id` jedes Felds in `stand` steht als `<event_id>` da:
+der Server haengt die Uhrzeit an das Ereignis. Konsument: `rust/api/tests/stand_fragen_orakel_hermetisch.rs`
+(hermetisch, ohne `PARITY=1`, ohne Python). Die Ereignislisten der Basisfaelle liest der Generator aus
+`rust/api/tests/kette_endstand_hermetisch.rs`.
+
+```
+python3 tools/parity/extract_stand_fragen_orakel.py
+```
+
+Der Generator ist deterministisch: zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed (geprueft bei
+`PYTHONHASHSEED` 1, 2 und 777).
