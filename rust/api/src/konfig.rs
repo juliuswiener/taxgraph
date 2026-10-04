@@ -10,6 +10,8 @@
 //! | `TAXGRAPH_ROOT` (neu) | `ROOT = dirname(PRODUKT)` | Repo-Wurzel für `params/` und `produkt/haut/static/` |
 use std::path::{Path, PathBuf};
 
+use store::fehler_log::{protokolliere, Meta, Stufe};
+
 /// Pfade des Dienstes; alles, was Python beim Import festlegt.
 #[derive(Debug, Clone)]
 pub struct Konfig {
@@ -113,13 +115,36 @@ pub fn flow_an() -> bool {
     env_text("TAXGRAPH_FLOW") == "1" || env_text("TAXGRAPH_KI_DEBUG") == "1"
 }
 
-/// `_lade_env_dateien` (`server.py:290`): `.env.maps`, `.env.llm`, `.env` aus `wurzel`; nur
+/// `_lade_env_dateien` (`server.py:331`): `.env.maps`, `.env.llm`, `.env` aus `wurzel`; nur
 /// Schlüssel, die noch nicht gesetzt sind. Werte gehen nie in ein Protokoll.
+///
+/// Eine fehlende Datei (oder ein Verzeichnis dieses Namens) bleibt still, wie Pythons `os.path.isfile`.
+/// Eine vorhandene Datei, die sich nicht lesen lässt (Rechte, kein UTF-8), kommt als Warnung
+/// `server.env_datei_lesen` ins Fehlerlog, ohne Pfad und ohne Inhalt, und wird übersprungen. Das
+/// Fehlerlog liegt dort, wo `Konfig::aus_env` es VOR dem ersten `set_var` dieser Funktion findet
+/// (Python: `AUDIT_DIR` steht beim Import fest).
 pub fn lade_env_dateien(wurzel: &Path) {
+    let fehler_pfad = Konfig::aus_env().fehler_pfad();
     for name in [".env.maps", ".env.llm", ".env"] {
-        // Nicht lesbar (auch: kein UTF-8) -> wie Python übersprungen; dort mit Warnung im Fehlerlog.
-        let Ok(text) = std::fs::read_to_string(wurzel.join(name)) else {
+        let pfad = wurzel.join(name);
+        if !pfad.is_file() {
             continue;
+        }
+        let text = match std::fs::read_to_string(&pfad) {
+            Ok(text) => text,
+            Err(e) => {
+                // Das Protokoll darf den Start nie abbrechen: ein Fehler beim Schreiben ist hier
+                // verschluckt. Das Verzeichnis legt `protokolliere` bei Bedarf selbst an.
+                let _ = protokolliere(
+                    &fehler_pfad,
+                    "server.env_datei_lesen",
+                    &e,
+                    Stufe::Warnung,
+                    None,
+                    Meta::default(),
+                );
+                continue;
+            }
         };
         for zeile in text.lines().map(str::trim) {
             if zeile.is_empty() || zeile.starts_with('#') {
