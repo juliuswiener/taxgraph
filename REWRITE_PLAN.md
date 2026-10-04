@@ -75,7 +75,7 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
   Bruttolohn von 9223372036854775800 ct in der Scheibe `gesamt`: `stand`, `fragen` und `ergebnis` antworten in Rust 422, in Python 200; Kommentar
   `api_http_paritaet.rs:5964`, Test ab Zeile 6309). Vault `audits/ueberlauf-guard-am-uebersetzer-2026-10-04.md` (Messung des Instruktors, von mir nicht wiederholt): 23 von 25 eigenen
   Mutanten rot, 2 gleichwertig; 12 der 26 Übersetzer-Funktionen haben keinen roten Test (ihre Unerreichbarkeit über HTTP beruht auf Gitter und Ableitung).
-  **Wächter gegen den Rückfall** (seit `b7eb0c01`, Merge von `orch/h8-waechter`; Vault `audits/ueberlauf-waechter-text-2026-10-04.md`: 84 Testfälle; Instruktor-Nachmessung mit 32 Mutanten bzw. Kontrollen, alle wie erwartet, von mir nicht wiederholt):
+  **Wächter gegen den Rückfall** (seit `b7eb0c01`, Merge von `orch/h8-waechter`; Vault `audits/ueberlauf-waechter-text-2026-10-04.md`: 84 Testfälle; Instruktor-Nachmessung mit 28 Läufen (22 Mutanten rot, 6 Kontrollen grün), alle wie erwartet, von mir nicht wiederholt):
   `tests/test_ueberlauf_waechter_text.py` prüft nur Text (kein Catala, kein Rust-Bau). Erstens steht `mpz_get_si` in `rust/catala-sys/csrc/` nur im Makro `TG_AUS`; der Wächter liest die
   Zeilenverkettung mit, meldet ein totes oder zerlegtes Makro und ignoriert Kommentare und bloße Umformatierung. Zweitens bleibt `overflow-checks = true` ausdrücklich im `[profile.dev]` (`rust/Cargo.toml:68`), und der Test liest
   das Makefile mit, um zu prüfen, welches Profil `make serve` baut. `--release` ist verboten: `make serve` baut mit `cargo build` im dev-Profil (`Makefile:113` begründet es,
