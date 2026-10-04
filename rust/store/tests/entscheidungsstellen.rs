@@ -23,8 +23,8 @@ use domain::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 use store::{
-    Abweisung, AbweisungRoh, BindungNachschlag, EricBefundEingabe, EricKlasse, EventId, Katalog,
-    NeuesEvent, NeuesEventRoh, Signal, Store, Veranlagungsjahr,
+    Abweisung, AbweisungRoh, BindungNachschlag, EricBefundEingabe, EricKlasse, EventId,
+    EventIdFehler, Katalog, NeuesEvent, NeuesEventRoh, Signal, Store, Veranlagungsjahr,
 };
 
 const TS: &str = "2026-01-01T00:00:00+00:00";
@@ -102,6 +102,16 @@ fn signal_2(s: &Store, feld: &str) -> Option<String> {
     s.aktives(feld)
         .and_then(|e| e.signal.as_ref())
         .and_then(|sig| sig.signal_2.clone())
+}
+
+/// Die Herkunft des aktiven Events als JSON (`herkunft`, `pruef_tiefe`, `haftung`).
+fn herkunft_json(s: &Store, feld: &str) -> Value {
+    serde_json::to_value(&s.aktives(feld).unwrap().herkunft).unwrap()
+}
+
+/// Herkunft jedes abgeleiteten Events: er hat die Zahl gesagt, nicht diesen Satz (`store.py`).
+fn berechnet_json() -> Value {
+    json!({"herkunft": "berechnet", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"})
 }
 
 fn anhaengen(s: &mut Store, neu: &NeuesEvent) -> Result<EventId, Abweisung> {
@@ -321,6 +331,7 @@ fn beweist_schreibt_das_ziel_mit_dem_text_von_python_und_erst_ab_eins() {
             let e = s.aktives("kein_kind").unwrap();
             assert_eq!(e.wert, PyWert::Bool(false));
             assert_eq!(e.schreiber.to_string(), "abgeleitet:beweist");
+            assert_eq!(herkunft_json(&s, "kein_kind"), berechnet_json());
             assert_eq!(
                 signal_2(&s, "kein_kind"),
                 Some(format!("beweist@fam_anzahl_kinder={anzahl}"))
@@ -424,6 +435,7 @@ fn ableitung_rechnet_mit_dem_veranlagungsjahr_der_akte() {
             );
             if soll {
                 assert_eq!(s.aktives(KIND_UNTER_14).unwrap().wert, PyWert::Bool(true));
+                assert_eq!(herkunft_json(&s, KIND_UNTER_14), berechnet_json());
                 assert_eq!(
                     signal_2(&s, KIND_UNTER_14),
                     Some(format!("ableitung@{KIND_GEB}"))
@@ -693,4 +705,398 @@ fn snapshot_traegt_den_befund_unveraendert() {
         assert_eq!(b.gebunden_an, sid);
         assert_ne!(b.gebunden_an, snap.bis_event);
     }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Wortlaut der Abweisungen (Teil C: abweisung.rs)
+// ---------------------------------------------------------------------------------------------
+
+fn text<T: std::fmt::Debug>(r: Result<T, Abweisung>) -> String {
+    r.unwrap_err().to_string()
+}
+
+/// Ein Vorschlags-Schreiber legt den Wert falsch (`bestaetigt`) ab: A nennt den Praefix des
+/// Schreibers und den Satz je Typ. Wortlaut aus `store.append_event` (Python, echter Katalog).
+#[test]
+fn auflage_a_traegt_den_wortlaut_von_python_je_vorschlags_schreiber() {
+    let faelle = [
+        (
+            Schreiber::Llm("chat".to_owned()),
+            "llm_vorschlag",
+            "fail-closed (A): llm:-Schreiber muss herkunft=llm_vorschlag, zustand=vorlaeufig, \
+             signal_2=null tragen — kein Bestätigen durch die KI.",
+        ),
+        (
+            Schreiber::ImportBeleg,
+            "beleg_import",
+            "fail-closed (A): import:beleg-Schreiber muss herkunft=beleg_import, zustand=vorlaeufig, \
+             signal_2=null tragen — ein Beleg-Import bestätigt nie direkt.",
+        ),
+        (
+            Schreiber::ImportVorjahr,
+            "vorjahr",
+            "fail-closed (A): import:vorjahr-Schreiber muss herkunft=vorjahr, zustand=vorlaeufig, \
+             signal_2=null tragen — eine Vorjahres-Übernahme bestätigt nie direkt.",
+        ),
+        (
+            Schreiber::ImportKontoauszug,
+            "kontoauszug",
+            "fail-closed (A): import:kontoauszug-Schreiber muss herkunft=kontoauszug, \
+             zustand=vorlaeufig, signal_2=null tragen — eine Kontoauszug-Klassifikation bestätigt \
+             nie direkt.",
+        ),
+        (
+            Schreiber::Berechnet("maps".to_owned()),
+            "berechnet",
+            "fail-closed (A): berechnet:-Schreiber muss herkunft=berechnet, zustand=vorlaeufig, \
+             signal_2=null tragen — ein berechneter/abgeleiteter Vorschlag bestätigt nie direkt.",
+        ),
+    ];
+    for (schreiber, achse, soll) in faelle {
+        let mut neu = bestaetigt("bruttoarbeitslohn", &json!(1));
+        neu.schreiber = schreiber;
+        neu.herkunft = herkunft(achse);
+        assert_eq!(text(anhaengen(&mut leerer_store(2025), &neu)), soll);
+    }
+}
+
+/// Der Ersetzt-Guard nennt den ganzen Schreiber (`llm:chat`), nicht den Praefix.
+#[test]
+fn ersetzt_guard_traegt_den_wortlaut_von_python() {
+    for (schreiber, achse, name) in [
+        (
+            Schreiber::Llm("chat".to_owned()),
+            "llm_vorschlag",
+            "llm:chat",
+        ),
+        (Schreiber::ImportBeleg, "beleg_import", "import:beleg"),
+        (
+            Schreiber::ImportKontoauszug,
+            "kontoauszug",
+            "import:kontoauszug",
+        ),
+    ] {
+        let mut s = leerer_store(2025);
+        let erste = anhaengen(&mut s, &bestaetigt("bruttoarbeitslohn", &json!(5))).unwrap();
+        let mut neu = vorlaeufig("bruttoarbeitslohn", &json!(6), schreiber, achse);
+        neu.ersetzt = Some(erste);
+        assert_eq!(
+            text(anhaengen(&mut s, &neu)),
+            format!(
+                "fail-closed (A): {name} darf kein ersetzt tragen — ein Vorschlag ersetzt nie \
+                 einen bestätigten Wert; die Übernahme läuft über /event mit menschlichem signal_2."
+            )
+        );
+    }
+}
+
+/// Katalog (K1), Magnitude (F2), Typ (Steuerzeichen), Format und Auflage B: Wortlaut aus Python.
+#[test]
+fn katalog_magnitude_typ_format_und_b_tragen_den_wortlaut_von_python() {
+    let karte = echte_karte();
+    let ohne_katalog = leerer_store(2025)
+        .append(
+            &vorlaeufig(
+                "bruttoarbeitslohn",
+                &json!(1),
+                Schreiber::Llm("chat".to_owned()),
+                "llm_vorschlag",
+            ),
+            None,
+            BindungNachschlag::neu(&karte),
+        )
+        .unwrap_err();
+    assert_eq!(
+        ohne_katalog.to_string(),
+        "fail-closed (Katalog): Vorschlags-Schreiber llm:chat braucht katalog=lade_katalog(bindung)."
+    );
+    let beleg = |feld: &str, wert: PyWert| {
+        let mut neu = vorlaeufig(feld, &json!(1), Schreiber::ImportBeleg, "beleg_import");
+        neu.wert = wert;
+        neu
+    };
+    assert_eq!(
+        text(anhaengen(
+            &mut leerer_store(2025),
+            &beleg("ep_arbeitstage", PyWert::Ganz(1))
+        )),
+        "fail-closed (Katalog): import:beleg darf ep_arbeitstage nicht vorschlagen (human-only \
+         oder nicht für Typ 'beleg' freigegeben)."
+    );
+    // F2: dieselbe Meldung fuer jede Zahlform, der Wert als `repr` wie in Python.
+    for (wert, zahl) in [
+        (PyWert::Ganz(12_000_000_000), "12000000000"),
+        (
+            PyWert::GrossGanz(18_000_000_000_000_000_000),
+            "18000000000000000000",
+        ),
+        (PyWert::Gleit(12_000_000_000.0), "12000000000.0"),
+        (PyWert::Text("12000000000".to_owned()), "'12000000000'"),
+    ] {
+        assert_eq!(
+            text(anhaengen(
+                &mut leerer_store(2025),
+                &beleg("bruttoarbeitslohn", wert)
+            )),
+            format!(
+                "fail-closed (F2/Magnitude): bruttoarbeitslohn={zahl} von import:beleg — \
+                 vermuteter Einheiten-/Skalierungsfehler (EUR statt Cent)."
+            )
+        );
+    }
+    // T: ein Steuerzeichen bleibt aus der Meldung.
+    assert_eq!(
+        text(anhaengen(
+            &mut leerer_store(2025),
+            &bestaetigt("ep_ziel_adresse", &json!("a\u{1}b"))
+        )),
+        "fail-closed (Typ): ep_ziel_adresse=[Steuerzeichen im Text, Wert nicht geloggt] passt \
+         nicht zum Bindungstyp 'text' — der Ring läse das sonst still als 0 (Stille-Null-Klasse)."
+    );
+    // F: das Muster steht unveraendert in der Meldung.
+    assert_eq!(
+        text(anhaengen(
+            &mut leerer_store(2025),
+            &bestaetigt(KIND_ZEITRAUM, &json!("abc"))
+        )),
+        "fail-closed (Format): kind_betreuung_haushaltszugehoerigkeit_zeitraum='abc' passt nicht \
+         zum Muster '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\\.(10|11|12|01|02|03|04|05|06|07|08|09)-\
+         (0[1-9]|[1-2][0-9]|3[0-1])\\.(10|11|12|01|02|03|04|05|06|07|08|09))$' der Bindung — ein \
+         formal falscher Wert wird spätestens beim Finanzamt abgelehnt."
+    );
+}
+
+/// Auflage B: das `ersetzt`-Ziel fehlt, gehoert zu einem anderen Feld, ist schon ersetzt.
+#[test]
+fn ersetzt_ziel_traegt_den_wortlaut_von_python() {
+    let mut s = leerer_store(2025);
+    let andere = anhaengen(&mut s, &bestaetigt("ep_arbeitstage", &json!(5))).unwrap();
+    let erste = anhaengen(&mut s, &bestaetigt("bruttoarbeitslohn", &json!(5))).unwrap();
+    let ersetze = |wert: i64, ziel: EventId| {
+        let mut neu = bestaetigt("bruttoarbeitslohn", &json!(wert));
+        neu.ersetzt = Some(ziel);
+        neu
+    };
+    let unbekannt = EventId::parse(&"a".repeat(64)).unwrap();
+    assert_eq!(
+        text(anhaengen(&mut s, &ersetze(6, unbekannt))),
+        format!(
+            "fail-closed (B): ersetzt-Ziel {} existiert nicht.",
+            "a".repeat(64)
+        )
+    );
+    assert_eq!(
+        text(anhaengen(&mut s, &ersetze(6, andere))),
+        "fail-closed (B): ersetzt-Ziel gehört zu anderem feld_id."
+    );
+    anhaengen(&mut s, &ersetze(6, erste)).unwrap();
+    assert_eq!(
+        text(anhaengen(&mut s, &ersetze(7, erste))),
+        "fail-closed (B): ersetzt-Ziel ist bereits ersetzt."
+    );
+}
+
+/// Ein Wert, der nicht nach JSON geht, ist eine Verschaerfung ohne Python-Entsprechung: der Text
+/// nennt das Feld, dann `=`, dann den Grund.
+#[test]
+fn wert_nicht_darstellbar_nennt_feld_und_grund() {
+    let mut neu = bestaetigt("bruttoarbeitslohn", &json!(1));
+    neu.wert = PyWert::Gleit(f64::NAN);
+    let meldung = text(anhaengen(&mut leerer_store(2025), &neu));
+    assert!(
+        meldung.starts_with("fail-closed (Wert): bruttoarbeitslohn=") && meldung.len() > 40,
+        "{meldung}"
+    );
+}
+
+/// Eine Kennung ist genau 64 Zeichen Hex, klein: 65 und 63 scheitern an der LAENGE (ein 65. Zeichen
+/// fiele sonst erst beim Zerlegen als ungueltiges Hex auf).
+#[test]
+fn event_id_parse_nimmt_nur_64_zeichen() {
+    assert!(EventId::parse(&"a".repeat(64)).is_ok());
+    assert_eq!(
+        EventId::parse(&"a".repeat(65)),
+        Err(EventIdFehler::FalscheLaenge(65))
+    );
+    assert_eq!(
+        EventId::parse(&"a".repeat(63)),
+        Err(EventIdFehler::FalscheLaenge(63))
+    );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Bindungen, die die echte Bindung nicht traegt (Teil C: Muster, Bereich, Datumsform)
+// ---------------------------------------------------------------------------------------------
+
+/// Eine Bindungskarte mit einer Aenderung an einem Feld; die Bindungen bleiben im Test.
+fn mit_aenderung(feld: &str, aendere: impl Fn(&mut Bindung)) -> Vec<Bindung> {
+    let mut eigene: Vec<Bindung> = bindungen().clone();
+    for b in &mut eigene {
+        if b.feld_id == feld {
+            aendere(b);
+        }
+    }
+    eigene
+}
+
+fn mit_karte(eigene: &[Bindung], neu: &NeuesEvent, s: &mut Store) -> Result<EventId, Abweisung> {
+    let karte = store::baue_nachschlag(eigene);
+    s.append(neu, None, BindungNachschlag::neu(&karte))
+}
+
+/// Ein `muster` gilt fuer den ganzen Wert (`re.fullmatch`), auch mit einer Alternative: `a|b`
+/// nimmt `a` und `b`, aber nicht `ab` (Python `fullmatch`, gemessen).
+#[test]
+fn muster_mit_alternative_gilt_fuer_den_ganzen_wert() {
+    let eigene = mit_aenderung(KIND_ZEITRAUM, |b| b.muster = Some("a|b".to_owned()));
+    for (wert, geht) in [("a", true), ("b", true), ("ab", false), ("x", false)] {
+        let fehler = mit_karte(
+            &eigene,
+            &bestaetigt(KIND_ZEITRAUM, &json!(wert)),
+            &mut leerer_store(2025),
+        );
+        assert_eq!(fehler.is_ok(), geht, "{wert}: {fehler:?}");
+        if let Err(e) = fehler {
+            assert!(matches!(e, Abweisung::FormatInkonform { .. }), "{e:?}");
+        }
+    }
+}
+
+/// Ein Muster, das sich nicht uebersetzen laesst, laesst nichts durch (fail-closed; Python
+/// bricht dort mit `re.error` ab, kein Orakel -- `PARITAET` in `passt_muster`).
+#[test]
+fn ungueltiges_muster_laesst_nichts_durch() {
+    let eigene = mit_aenderung(KIND_ZEITRAUM, |b| b.muster = Some("(".to_owned()));
+    let fehler = mit_karte(
+        &eigene,
+        &bestaetigt(KIND_ZEITRAUM, &json!("x")),
+        &mut leerer_store(2025),
+    )
+    .unwrap_err();
+    assert!(
+        matches!(fehler, Abweisung::FormatInkonform { .. }),
+        "{fehler:?}"
+    );
+}
+
+/// Python `_ausserhalb_bereich`: auch ein `cent`-Ziel schreibt keinen Wert ausserhalb `bereich`.
+/// `geburtsjahr` hat Typ `int`; hier traegt es `cent`, der Bereich 1900 bis 2010 bleibt.
+#[test]
+fn ableitung_schreibt_auch_bei_einem_cent_ziel_nichts_ausserhalb_des_bereichs() {
+    let eigene = mit_aenderung("geburtsjahr", |b| b.typ = Feldtyp::Cent);
+    for (geburt, soll) in [("01.01.1850", false), ("01.01.1961", true)] {
+        let mut s = leerer_store(2025);
+        mit_karte(
+            &eigene,
+            &bestaetigt("stammdaten_geburtsdatum", &json!(geburt)),
+            &mut s,
+        )
+        .unwrap();
+        assert_eq!(hat(&s, "geburtsjahr"), soll, "{geburt}");
+    }
+}
+
+/// Python `_jahr`: ISO und deutsch, nach `strip()`, mit genau vier Ziffern fuers Jahr. Die echte
+/// Bindung haelt Leerraum und ein Vorzeichen am `datum`-Typ auf; hier traegt die Quelle den Typ
+/// `text` ohne Muster, damit der Wert die Ableitung erreicht.
+#[test]
+fn ableitung_liest_das_datum_wie_python() {
+    let eigene = mit_aenderung("stammdaten_geburtsdatum", |b| {
+        b.typ = Feldtyp::Text;
+        b.muster = None;
+    });
+    for (wert, soll) in [
+        (" 01.01.1961 ", true),
+        ("01.01.1961", true),
+        ("1961-01-01", true),
+        ("01.01.+961", false),
+        ("01.01.-961", false),
+        ("+961-01-01", false),
+    ] {
+        let mut s = leerer_store(2025);
+        mit_karte(
+            &eigene,
+            &bestaetigt("stammdaten_geburtsdatum", &json!(wert)),
+            &mut s,
+        )
+        .unwrap();
+        assert_eq!(hat(&s, "geburtsjahr"), soll, "{wert:?}");
+        assert_eq!(hat(&s, "rentner_alter_64_erfuellt"), soll, "{wert:?}");
+        if soll {
+            assert_eq!(s.aktives("geburtsjahr").unwrap().wert, PyWert::Ganz(1961));
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Instanz-Aufloesung und Katalog (Teil C: nachschlag.rs, katalog.rs)
+// ---------------------------------------------------------------------------------------------
+
+/// `base__n` -> `base`, gleich mit `est_mapping.parse_instanz` (Python, `_INSTANZ_RE`) bei jeder
+/// Eingabe der Tabelle: die LETZTE Trennung gilt, die Basis beginnt mit einem Kleinbuchstaben und
+/// besteht aus Kleinbuchstaben, Ziffern und `_`, der Zaehler ist 2 oder mehr ohne fuehrende 0.
+#[test]
+fn instanz_basis_gleicht_der_enumeration_von_python() {
+    let faelle: [(&str, Option<&str>); 23] = [
+        ("a__b__2", Some("a__b")),
+        ("a__2__3", Some("a__2")),
+        ("__2", None),
+        ("A_x__2", None),
+        ("Ax__2", None),
+        ("x1__2", Some("x1")),
+        ("1x__2", None),
+        ("x-y__2", None),
+        ("_x__2", None),
+        ("x__10", Some("x")),
+        ("x__2\n", Some("x")),
+        ("x__2\n\n", None),
+        ("x__+2", None),
+        ("x__1", None),
+        ("x__02", None),
+        ("x__", None),
+        ("x", None),
+        ("xä__2", None),
+        ("x_a__3", Some("x_a")),
+        ("x__2a", None),
+        ("a__10\n", Some("a")),
+        ("ab__99", Some("ab")),
+        ("x__\u{662}", None),
+    ];
+    for (feld, soll) in faelle {
+        assert_eq!(store::instanz_basis(feld), soll, "{feld:?}");
+    }
+}
+
+/// Der Katalog ordnet jedem Vorschlags-Schreiber seine Felder zu (`store.lade_katalog`, Python):
+/// `llm` nimmt `afa_jahresbetrag`, `maps` nur `ep_entfernung_km`, `beleg` nimmt
+/// `agb_aufwendungen` und nicht `afa_jahresbetrag`, `kontoauszug` nur seine fuenf Betragsfelder;
+/// `ep_arbeitstage` nimmt nur `llm`, ein abgeleitetes Feld ohne Frage
+/// (`rentner_alter_64_erfuellt`, nicht `askable`) keiner.
+#[test]
+fn katalog_ordnet_die_felder_den_schreibern_zu() {
+    let katalog = Katalog::aus_bindungen(bindungen().iter());
+    for (schreiber, feld, soll) in [
+        ("llm", "afa_jahresbetrag", true),
+        ("llm", "rentner_alter_64_erfuellt", false),
+        ("llm", "ep_entfernung_km", true),
+        ("maps", "ep_entfernung_km", true),
+        ("maps", "afa_jahresbetrag", false),
+        ("beleg", "agb_aufwendungen", true),
+        ("beleg", "afa_jahresbetrag", false),
+        ("kontoauszug", "spenden_betrag", true),
+        ("kontoauszug", "agb_aufwendungen", false),
+        ("llm", "ep_arbeitstage", true),
+        ("maps", "ep_arbeitstage", false),
+        ("beleg", "ep_arbeitstage", false),
+        ("kontoauszug", "ep_arbeitstage", false),
+        ("beleg", "spenden_betrag", true),
+        ("maps", "spenden_betrag", false),
+    ] {
+        assert_eq!(katalog.erlaubt(schreiber, feld), soll, "{schreiber} {feld}");
+    }
+    let maps = bindungen()
+        .iter()
+        .filter(|b| katalog.erlaubt("maps", &b.feld_id))
+        .count();
+    assert_eq!(maps, 1);
 }
