@@ -1,4 +1,70 @@
 {
+  "abzugs_kz": [
+    "E0104108",
+    "E0104109",
+    "E0107207",
+    "E0107208",
+    "E0107601",
+    "E0108002",
+    "E0108105",
+    "E0108202",
+    "E0111214",
+    "E0111215",
+    "E0120103",
+    "E0124401",
+    "E0161804",
+    "E0203611",
+    "E0207611",
+    "E0241001",
+    "E0241101",
+    "E0241201",
+    "E0241301",
+    "E0241302",
+    "E0241401",
+    "E0241501",
+    "E0241601",
+    "E0241701",
+    "E0241901",
+    "E0242001",
+    "E0304601",
+    "E0305201",
+    "E0503110",
+    "E0503310",
+    "E0505607",
+    "E0506104",
+    "E0506105",
+    "E0703838",
+    "E0705701",
+    "E1901201",
+    "E1901301",
+    "E2000401",
+    "E2000601",
+    "E2000801",
+    "E2001203",
+    "E2001403",
+    "E2001503",
+    "E2001505",
+    "E2001803",
+    "E2001805",
+    "E2001903",
+    "E2002003",
+    "E2002105",
+    "E2003104",
+    "E2003202"
+  ],
+  "bankverbindung": {
+    "iban": [
+      "E0102102",
+      "E0102603"
+    ],
+    "keine_bankverbindung": "E0102002",
+    "kontoinhaber": "E0101601"
+  },
+  "datums_kz": [
+    "E1800501",
+    "E1801701",
+    "E1803202"
+  ],
   "dokumentiert_aggregat": {
     "E0703838": [
       "vv_erhaltungsaufwand",
@@ -7,16 +73,264 @@
       "vv_sonstige_wk"
     ]
   },
+  "elster_xml": {
+    "absender_herkunft": {
+      "absender_name": [
+        [
+          "E0100201",
+          "Nachname"
+        ],
+        [
+          "E0100301",
+          "Vorname"
+        ]
+      ],
+      "absender_ort": [
+        [
+          "E0100602",
+          "Wohnort"
+        ]
+      ],
+      "absender_plz": [
+        [
+          "E0100601",
+          "PLZ"
+        ]
+      ],
+      "absender_strasse": [
+        [
+          "E0101104",
+          "Straße"
+        ],
+        [
+          "E0101206",
+          "Hausnummer"
+        ]
+      ]
+    },
+    "absender_strasse_zusatz_kz": "E0101207",
+    "e10_ausschluss_datenart": [
+      "E6002301",
+      "E6004901"
+    ],
+    "eric_pflicht_trotz_optional": {
+      "E10/V": [
+        "Laufende_Nummer_V"
+      ]
+    },
+    "instanz_container_tiefer": {
+      "hh_dienstleistung": "Einz",
+      "hh_handwerker": "Einz",
+      "hh_minijob": "Einz",
+      "p23_veraeusserung": "Einz",
+      "rente": "Einz"
+    },
+    "instanz_nummer_felder": [
+      "Laufende_Nummer_V"
+    ],
+    "ns_e10_format": "http://finkonsens.de/elster/elstererklaerung/est/e10/v{vz}",
+    "ns_elster": "http://www.elster.de/elsterxml/schema/v11",
+    "pflicht_default": {
+      "Laufende_Nummer_V": "1",
+      "Person": "PersonA"
+    },
+    "testmerker_eric": "700000004"
+  },
+  "eric": {
+    "extern_schema_muster": "elster11_E10_{vz}_extern.xsd"
+  },
+  "eric_rc": {
+    "klassen": {
+      "datenartversion_unbekannt": 610001042,
+      "hersteller_id_gesperrt": 610301202,
+      "io_gate_nicht_geprueft": 610301200,
+      "io_reader_unerwartete_elemente": 610301106,
+      "plausibel": 0,
+      "plausibilitaet_fehler": 610001002
+    },
+    "meldungen_max": 1000,
+    "nicht_geprueft_klassen": [
+      "datenartversion_unbekannt",
+      "hersteller_id_gesperrt",
+      "io_gate_nicht_geprueft",
+      "io_reader_unerwartete_elemente"
+    ],
+    "rc": {
+      "RC_DATENARTVERSION_UNBEKANNT": 610001042,
+      "RC_HERSTELLER_GESPERRT": 610301202,
+      "RC_IO_SCHEMA_VALIDIERUNGSFEHLER": 610301200,
+      "RC_IO_UNERWARTETE_ELEMENTE": 610301106,
+      "RC_OK": 0,
+      "RC_PLAUSIBILITAET": 610001002
+    },
+    "sonstig": {
+      "klasse": "sonstig",
+      "rc": 7
+    },
+    "validiere": 2
+  },
+  "hinweise": {
+    "kist_konfession": "Ihre Konfession laesst sich nicht automatisch dem amtlichen Religionsschluessel zuordnen. Der amtliche Schluessel unterscheidet rund zwanzig einzelne Koerperschaften, viele davon regional (etwa juedische Gemeinden je nach Bundesland). Bitte tragen Sie die Konfession in Mein ELSTER nach oder waehlen Sie eine der angebotenen, falls sie zutrifft. Alles Uebrige Ihrer Erklaerung bleibt davon unberuehrt.",
+    "kist_konfession_partner": "Die Konfession Ihres Ehegatten laesst sich nicht automatisch dem amtlichen Religionsschluessel zuordnen (rund zwanzig Koerperschaften, viele regional). Bitte in Mein ELSTER nachtragen oder eine der angebotenen waehlen, falls sie zutrifft. Alles Uebrige Ihrer Erklaerung bleibt davon unberuehrt."
+  },
   "iban_transform_ziel_kz": [
     "E0101601",
     "E0102102",
     "E0102603"
   ],
+  "iban_weiche": {
+    "ausland": "E0102603",
+    "inland": "E0102102",
+    "praefix": "DE"
+  },
+  "kap_felder_a": [
+    "kap_kapitalertraege",
+    "kap_gewinn_aktien",
+    "kap_verlust_aktien",
+    "kap_gewinn_sonstige",
+    "kap_verlust_sonstige"
+  ],
+  "kap_felder_b": [
+    "kap_kapitalertraege_partner",
+    "kap_gewinn_aktien_partner",
+    "kap_verlust_aktien_partner",
+    "kap_gewinn_sonstige_partner",
+    "kap_verlust_sonstige_partner"
+  ],
+  "kap_null_grund": "Option A (Julius-Entscheidung 2026-08-10): alle KAP-Felder beider Personen bestaetigt 0 -- als Kz deklariert wuerde ELSTER 'Kapitalertraege erklaert' lesen und einen Angabegrund verlangen, den wir nicht liefern.",
+  "komma_ohne_e60_kz": [
+    "E0200301",
+    "E0200501",
+    "E1904701",
+    "E1904801",
+    "E1904901",
+    "E1905101"
+  ],
   "konstante_kz": [
     "E0100001"
   ],
+  "multiplikation": [
+    "fam_anzahl_kinder"
+  ],
   "negation": {
     "fam_alleinstehend": "E0503701"
+  },
+  "null_unzulaessig": {
+    "je_vz": {
+      "2024": [
+        "E0104108",
+        "E0104109",
+        "E0106603",
+        "E0107207",
+        "E0107208",
+        "E0108002",
+        "E0108105",
+        "E0108202",
+        "E0109708",
+        "E0111214",
+        "E0111215",
+        "E0161606",
+        "E0203503",
+        "E0203504",
+        "E0205201",
+        "E0205302",
+        "E0205409",
+        "E0207611",
+        "E0240801",
+        "E0240802",
+        "E0241001",
+        "E0241101",
+        "E0241201",
+        "E0241301",
+        "E0241302",
+        "E0241401",
+        "E0241501",
+        "E0241601",
+        "E0241701",
+        "E0241901",
+        "E0242001",
+        "E0305201",
+        "E0505809",
+        "E0506104",
+        "E0506105",
+        "E0801705"
+      ],
+      "2025": [
+        "E0104108",
+        "E0104109",
+        "E0107207",
+        "E0107208",
+        "E0108002",
+        "E0108105",
+        "E0108202",
+        "E0109708",
+        "E0111214",
+        "E0111215",
+        "E0161606",
+        "E0203503",
+        "E0203504",
+        "E0205201",
+        "E0205302",
+        "E0205409",
+        "E0207611",
+        "E0240801",
+        "E0240802",
+        "E0241001",
+        "E0241101",
+        "E0241201",
+        "E0241301",
+        "E0241302",
+        "E0241401",
+        "E0241501",
+        "E0241601",
+        "E0241701",
+        "E0241901",
+        "E0242001",
+        "E0305201",
+        "E0505809",
+        "E0506104",
+        "E0506105",
+        "E0801705"
+      ]
+    },
+    "vereinigung": [
+      "E0104108",
+      "E0104109",
+      "E0106603",
+      "E0107207",
+      "E0107208",
+      "E0108002",
+      "E0108105",
+      "E0108202",
+      "E0109708",
+      "E0111214",
+      "E0111215",
+      "E0161606",
+      "E0203503",
+      "E0203504",
+      "E0205201",
+      "E0205302",
+      "E0205409",
+      "E0207611",
+      "E0240801",
+      "E0240802",
+      "E0241001",
+      "E0241101",
+      "E0241201",
+      "E0241301",
+      "E0241302",
+      "E0241401",
+      "E0241501",
+      "E0241601",
+      "E0241701",
+      "E0241901",
+      "E0242001",
+      "E0305201",
+      "E0505809",
+      "E0506104",
+      "E0506105",
+      "E0801705"
+    ]
   },
   "p23": {
     "art_feld": "p23_veraeusserungs_typ",
@@ -30,6 +344,31 @@
       "grundstueck": "E0306801"
     }
   },
+  "p35a_summe_aus_posten": [
+    [
+      "E0104109",
+      "E0104108"
+    ],
+    [
+      "E0107208",
+      "E0107207"
+    ],
+    [
+      "E0111215",
+      "E0111214"
+    ]
+  ],
+  "p35c_massnahme_art_reihenfolge": [
+    "waende",
+    "dach",
+    "geschossdecken",
+    "fenster_tueren",
+    "sommerlicher_waermeschutz",
+    "lueftung",
+    "heizung",
+    "digital",
+    "heizung_optimierung"
+  ],
   "partner_instanz": {
     "bruttoarbeitslohn_partner": "E0200201",
     "gewst_hebesatz_partner": "E0801705",
@@ -108,6 +447,19 @@
       }
     }
   },
+  "pflege": {
+    "block": [
+      "E0161606",
+      "E0161808",
+      "E0161607",
+      "E0161506",
+      "E0110601",
+      "E0106507",
+      "E0106603"
+    ],
+    "grad_kz": "E0161606",
+    "h_kz": "E0161808"
+  },
   "pflege_kz": [
     "E0106507",
     "E0106603",
@@ -117,6 +469,166 @@
     "E0161607",
     "E0161808"
   ],
+  "pflichtfelder": [
+    {
+      "bedingung": "immer",
+      "eric_version": "44.2.4.0",
+      "felder": [
+        "kist_konfession",
+        "stammdaten_geburtsdatum",
+        "stammdaten_nachname",
+        "stammdaten_plz",
+        "stammdaten_strasse",
+        "stammdaten_vorname",
+        "stammdaten_wohnort"
+      ]
+    },
+    {
+      "bedingung": "alle_oder_keins",
+      "eric_version": "44.2.4.0",
+      "felder": [
+        "bruttoarbeitslohn",
+        "p36_lohnsteuer",
+        "steuerklasse"
+      ]
+    },
+    {
+      "bedingung": "alle_oder_keins",
+      "eric_version": "44.2.4.0",
+      "felder": [
+        "vor_ag_anteil_rv",
+        "vor_an_anteil_rv"
+      ]
+    }
+  ],
+  "proben": {
+    "regex/iban": [
+      {
+        "erwartet": true,
+        "wert": "DE89370400440532013000"
+      },
+      {
+        "erwartet": true,
+        "wert": "GB82WEST12345698765432"
+      },
+      {
+        "erwartet": true,
+        "wert": "DE8937"
+      },
+      {
+        "erwartet": false,
+        "wert": "XX00"
+      },
+      {
+        "erwartet": false,
+        "wert": "de89370400440532013000"
+      },
+      {
+        "erwartet": false,
+        "wert": "12345"
+      }
+    ],
+    "regex/instanz": [
+      {
+        "erwartet": true,
+        "wert": "vv_einnahmen__2"
+      },
+      {
+        "erwartet": true,
+        "wert": "vv_einnahmen__10"
+      },
+      {
+        "erwartet": false,
+        "wert": "vv_einnahmen__1"
+      },
+      {
+        "erwartet": false,
+        "wert": "vv_einnahmen__02"
+      },
+      {
+        "erwartet": false,
+        "wert": "vv_einnahmen"
+      },
+      {
+        "erwartet": true,
+        "wert": "a__2"
+      }
+    ],
+    "regex/steuernummer": [
+      {
+        "erwartet": true,
+        "wert": "9181012345678"
+      },
+      {
+        "erwartet": true,
+        "wert": "1234012345678"
+      },
+      {
+        "erwartet": false,
+        "wert": "91811234567"
+      },
+      {
+        "erwartet": false,
+        "wert": "91810123456789"
+      },
+      {
+        "erwartet": false,
+        "wert": "918101234567a"
+      }
+    ],
+    "xsd_verify/ja_typ_pattern": [
+      {
+        "erwartet": true,
+        "wert": "Ja1BaseCType"
+      },
+      {
+        "erwartet": true,
+        "wert": "JaXBaseCType"
+      },
+      {
+        "erwartet": true,
+        "wert": "JaNein12BaseCType"
+      },
+      {
+        "erwartet": true,
+        "wert": "Ja2BaseCType_RABE"
+      },
+      {
+        "erwartet": true,
+        "wert": "JaBaseCType"
+      },
+      {
+        "erwartet": false,
+        "wert": "GanzzahlPosCType_RABE"
+      }
+    ],
+    "xsd_verify/kz_pattern": [
+      {
+        "erwartet": true,
+        "wert": "E0100001"
+      },
+      {
+        "erwartet": true,
+        "wert": "E0241302"
+      },
+      {
+        "erwartet": false,
+        "wert": "E123456"
+      },
+      {
+        "erwartet": false,
+        "wert": "e0100001"
+      },
+      {
+        "erwartet": false,
+        "wert": "X0100001"
+      },
+      {
+        "erwartet": false,
+        "wert": "E01000011"
+      }
+    ]
+  },
   "verzweigung": {
     "basis_kv": {
       "art_feld": "versicherungsart",
@@ -216,5 +728,30 @@
       },
       "kz": "E0101002"
     }
+  },
+  "wertekodierung_andere_ohne_code": {
+    "felder": [
+      "kist_konfession",
+      "kist_konfession_partner"
+    ],
+    "ohne_code": [
+      "andere"
+    ]
+  },
+  "xsd_verify": {
+    "datenart": {
+      "default": [
+        "E10-{jahr}.xsd",
+        "E10"
+      ],
+      "routing": {
+        "60": [
+          "E77-{jahr}.xsd",
+          "E77"
+        ]
+      }
+    },
+    "max_depth": 80,
+    "xs_namespace": "{http://www.w3.org/2001/XMLSchema}"
   }
 }

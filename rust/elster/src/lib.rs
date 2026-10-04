@@ -30,6 +30,7 @@ mod geordnet;
 mod instanz;
 mod kz_format;
 mod py;
+mod regal;
 mod tabellen;
 #[doc(hidden)]
 #[allow(clippy::unwrap_used)]

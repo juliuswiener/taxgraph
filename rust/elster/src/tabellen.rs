@@ -417,6 +417,178 @@ mod tests {
         Value::Object(m)
     }
 
+    /// Der Wert einer Regal-Zone: Literale als Menge, Liste oder Paarobjekt. Ein fehlender
+    /// Anker ist ein Fehler der Zone, nie ein Skip — sonst waere „nichts gefunden" gruen.
+    fn zone_menge(datei: &str, anker: &str, offnen: &str, ende: &str) -> Value {
+        crate::regal::menge(&crate::regal::zone(datei, anker, offnen, ende).unwrap_or_else(|e| panic!("{datei} {e}")))
+    }
+
+    fn zone_liste(datei: &str, anker: &str, offnen: &str, ende: &str) -> Value {
+        crate::regal::folge(&crate::regal::zone(datei, anker, offnen, ende).unwrap_or_else(|e| panic!("{datei} {e}")))
+    }
+
+    fn zone_paare(datei: &str, anker: &str, offnen: &str, ende: &str) -> Value {
+        crate::regal::paar_objekt(&crate::regal::zone(datei, anker, offnen, ende).unwrap_or_else(|e| panic!("{datei} {e}")))
+    }
+
+    /// Das n-te Literal einer einzeiligen Zone.
+    fn zone_einzel(datei: &str, anker: &str, n: usize) -> Value {
+        json!(crate::regal::einzel(&crate::regal::zone(datei, anker, "", "").unwrap_or_else(|e| panic!("{datei} {e}")), n))
+    }
+
+    /// Das erste Literal der Zeile mit `anker`, als Text (nicht als `Value`).
+    fn einzel_der(datei: &str, anker: &str) -> String {
+        crate::regal::einzel(&crate::regal::zone(datei, anker, "", "").unwrap_or_else(|e| panic!("{datei} {e}")), 0)
+    }
+
+    /// Die Ueberlebenden der Inventur: Regeln, die nicht in `tabellen.rs` stehen. Jede ist
+    /// eine Zone in der Regal-Datei, kein handgeschriebener Wert.
+    fn aus_regal() -> Value {
+        let kf = "kz_format.rs";
+        let d = "deklaration.rs";
+        let x = "xml.rs";
+        // Wertbasiert, nicht ueber Quelltext: die Klasse, die Rust einem rc gibt, gegen die von Python.
+        let rcs = [
+            crate::RC_OK,
+            crate::RC_PLAUSIBILITAET,
+            crate::RC_IO_SCHEMA_VALIDIERUNGSFEHLER,
+            crate::RC_HERSTELLER_GESPERRT,
+            crate::RC_DATENARTVERSION_UNBEKANNT,
+            crate::RC_IO_UNERWARTETE_ELEMENTE,
+        ];
+        let klassen: Map<String, Value> = rcs
+            .iter()
+            .map(|rc| (crate::klasse_name(crate::klassifiziere_rc(*rc)).to_owned(), json!(rc)))
+            .collect();
+        let mut nicht_geprueft_klassen: Vec<&str> = rcs
+            .iter()
+            .map(|rc| crate::klassifiziere_rc(*rc))
+            .filter(|k| crate::nicht_geprueft(*k))
+            .map(crate::klasse_name)
+            .collect();
+        nicht_geprueft_klassen.sort_unstable();
+        nicht_geprueft_klassen.dedup();
+        let vorwahl_e77 = zone_einzel("xsd.rs", "if kz.get(1..3) == Some(", 0)
+            .as_str()
+            .map(str::to_owned)
+            .unwrap_or_default();
+        let schluessel_e10_v = crate::regal::wortliche(
+            crate::regal::zone("xsd.rs", ".entry(vec![\"E10\"", "", "").unwrap_or_else(|e| panic!("xsd.rs {e}")),
+        )
+        .join("/");
+        let r = json!({
+            "abzugs_kz": zone_menge(kf, "pub const ABZUGS_KZ", "[", "]"),
+            "komma_ohne_e60_kz": zone_menge(kf, "pub const KOMMA_OHNE_E60_KZ", "[", "]"),
+            "datums_kz": zone_menge(kf, "pub const DATUMS_KZ", "[", "]"),
+            "null_unzulaessig": {
+                "je_vz": {
+                    "2024": zone_menge(kf, "const NULL_UNZULAESSIG_KZ_2024", "[", "]"),
+                    "2025": zone_menge(kf, "const NULL_UNZULAESSIG_KZ_2025", "[", "]"),
+                },
+                "vereinigung": zone_einzel(kf, "pub const NULL_UNZULAESSIG_KZ_VEREINIGUNG", 0),
+            },
+            "multiplikation": zone_liste("tabellen.rs", "pub(crate) const MULTIPLIKATION", "[", "]"),
+            "p35a_summe_aus_posten": Value::Array(
+                crate::regal::wortliche(&crate::regal::zone(d, "const P35A_SUMME_AUS_POSTEN", "[", "]").unwrap())
+                    .chunks(2)
+                    .map(|c| json!([c[0], c[1]]))
+                    .collect(),
+            ),
+            "iban_weiche": {
+                "praefix": zone_einzel(d, "let kz = if norm.starts_with(", 0),
+                "inland": zone_einzel(d, "let kz = if norm.starts_with(", 1),
+                "ausland": zone_einzel(d, "let kz = if norm.starts_with(", 2),
+            },
+            "bankverbindung": {
+                "iban": [zone_einzel(d, "fn bankverbindung(&mut self)", 0),
+                         zone_einzel(d, "fn bankverbindung(&mut self)", 1)],
+                "keine_bankverbindung": zone_einzel(d, "fn bankverbindung(&mut self)", 2),
+                "kontoinhaber": zone_einzel(d, "fn bankverbindung(&mut self)", 3),
+            },
+            "p35c_massnahme_art_reihenfolge": Value::Array(
+                crate::regal::paar_objekt(&crate::regal::zone("tabellen.rs", "p35c_massnahme_einzelbetrag", "[", "]").unwrap())
+                    .as_object()
+                    .map(|m| m.keys().map(|k| json!(k.clone())).collect())
+                    .unwrap_or_default(),
+            ),
+            "kap_felder_a": zone_liste("tabellen.rs", "pub(crate) const KAP_FELDER_A", "[", "]"),
+            "kap_felder_b": zone_liste("tabellen.rs", "pub(crate) const KAP_FELDER_B", "[", "]"),
+            "kap_null_grund": json!(crate::regal::text_der("tabellen.rs", "pub(crate) const KAP_NULL_GRUND", 0)),
+            "hinweise": {
+                "kist_konfession": json!(crate::regal::text_der("tabellen.rs", "Ihre Konfession laesst sich", 0)),
+                "kist_konfession_partner":
+                    json!(crate::regal::text_der("tabellen.rs", "Die Konfession Ihres Ehegatten", 0)),
+            },
+            "wertekodierung_andere_ohne_code": {
+                "felder": zone_menge("tabellen.rs", "pub(crate) const WERTEKODIERUNG", "[", "]"),
+                "ohne_code": Value::Array(
+                    Konfession::ALLE
+                        .into_iter()
+                        .filter(|k| (WERTEKODIERUNG[0].code)(*k).is_none())
+                        .map(|k| json!(k.als_str().replace('\u{f6}', "oe")))
+                        .collect(),
+                ),
+            },
+            "pflege": {
+                "grad_kz": zone_einzel(d, "let grad_kz =", 0),
+                "h_kz": zone_einzel(d, "let h_kz =", 0),
+                "block": zone_liste("tabellen.rs", "pub(crate) const PFLEGE_KZ", "[", "]"),
+            },
+            "xsd_verify": {
+                "max_depth": json!(crate::MAX_DEPTH),
+                // Python haelt den Namensraum in Clark-Notation: `{uri}`.
+                "xs_namespace": json!(format!("{{{}}}", einzel_der("xsd.rs", "const XS: &str"))),
+                "datenart": {
+                    "default": zone_liste("xsd.rs", "(\"E10-{jahr}.xsd\"", "", ""),
+                    "routing": { vorwahl_e77: zone_liste("xsd.rs", "(\"E77-{jahr}.xsd\"", "", "") },
+                },
+            },
+            "eric": {
+                "extern_schema_muster": zone_einzel("xmllint.rs", "finde_datei(&format!(\"elster11_E10_", 0),
+            },
+            "elster_xml": {
+                "ns_elster": json!(crate::NS_ELSTER),
+                "ns_e10_format": zone_einzel(x, "let mut e10 = Knoten::neu", 0),
+                "testmerker_eric": zone_einzel(x, "const TESTMERKER_ERIC", 0),
+                "pflicht_default": zone_paare(x, "const PFLICHT_DEFAULT", "[", "]"),
+                "instanz_nummer_felder": zone_menge(x, "const INSTANZ_NUMMER_FELDER", "[", "]"),
+                "e10_ausschluss_datenart": zone_menge(x, "const E10_AUSSCHLUSS_DATENART", "[", "]"),
+                "instanz_container_tiefer": zone_paare(x, "const INSTANZ_CONTAINER_TIEFER", "[", "]"),
+                "absender_strasse_zusatz_kz": zone_einzel(x, "const ABSENDER_STRASSE_ZUSATZ_KZ", 0),
+                "absender_herkunft": Value::Object(
+                    crate::regal::wortliche(&crate::regal::zone(x, "const ABSENDER_HERKUNFT", "[", "]").unwrap())
+                        .chunks(2)
+                        .map(|c| (c[0].clone(), json!([c[1].clone()])))
+                        .fold(Map::new(), |mut m, (k, v)| {
+                            m.entry(k).or_insert(json!([])).as_array_mut().map(|a| {
+                                if let Value::Array(x) = v { a.push(x[0].clone()) }
+                            });
+                            m
+                        }),
+                ),
+                "eric_pflicht_trotz_optional": {
+                    schluessel_e10_v: zone_menge("xsd.rs", "if !v.iter().any", "{", "}"),
+                },
+            },
+            "eric_rc": {
+                "rc": {
+                    "RC_OK": json!(crate::RC_OK),
+                    "RC_PLAUSIBILITAET": json!(crate::RC_PLAUSIBILITAET),
+                    "RC_IO_SCHEMA_VALIDIERUNGSFEHLER": json!(crate::RC_IO_SCHEMA_VALIDIERUNGSFEHLER),
+                    "RC_HERSTELLER_GESPERRT": json!(crate::RC_HERSTELLER_GESPERRT),
+                    "RC_DATENARTVERSION_UNBEKANNT": json!(crate::RC_DATENARTVERSION_UNBEKANNT),
+                    "RC_IO_UNERWARTETE_ELEMENTE": json!(crate::RC_IO_UNERWARTETE_ELEMENTE),
+                },
+                "klassen": klassen,
+                "sonstig": {"rc": 7, "klasse": crate::klasse_name(crate::klassifiziere_rc(7))},
+                "validiere": json!(crate::ERIC_VALIDIERE),
+                "meldungen_max": json!(crate::VALIDIERE_MELDUNGEN_MAX),
+                "nicht_geprueft_klassen": nicht_geprueft_klassen,
+            },
+        });
+        r
+    }
+
     /// Die Tabellen in der Form von `dump_kz_tabellen.tabellen()`.
     fn aus_tabellen() -> Value {
         json!({
