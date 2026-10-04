@@ -41,17 +41,20 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
 - *Messbelege der Voraussetzungen* (jede Zahl mit Quelle; „Bericht“ heißt: aus dem genannten Bericht übernommen, hier nicht neu gemessen):
   - **(a) 10 000 Fälle je Suite:** `PARITY_N=10000`, jede der 17 Suiten mit Fallzahl-Schalter einzeln: 141 passed / 0 failed, Summe 2858 s.
     Als ein Lauf nicht gemessen (abgeleitet etwa 49,7 min: 2858 s + 126,5 s für die fünf Suiten ohne Schalter + 0,2 s); bei `N` ungleich Standard sind die
-    Abdeckungs-Wächter aus (`fallzahl::wache_gilt`). Vault `audits/parity-voll-stufe-1-und-2-2026-10-04.md` (Baum `23003002`).
+    Abdeckungs-Wächter aus (`fallzahl::wache_gilt`). Ein einzelner Lauf mit `PARITY_N=10000` (Lauf B des Endtors, nur Parity) steht aus. Vault `audits/parity-voll-stufe-1-und-2-2026-10-04.md` (Baum `23003002`).
   - **(c) Gesamtlauf mit Orakel:** `PARITY=1 cargo test --workspace --no-fail-fast`: 1580 passed / 0 failed / 21 ignored, 120 Binaries, 782 s mit Bau
     (derselbe Vault-Eintrag; die 21 ignorierten sind die bekannten offenen Defekte, `offene_defekte.rs` in api, bescheid und elster).
   - **(b) Gegenproben:** 15 von 15 (N-G1 bis N-G6, A-G1 bis A-G9) je rot auf `c9d13e6f`: Vault
     `audits/g-gegenproben-15-von-15-rot-und-solz-konstante-2026-10-04.md`. Die Grenze, die dieser Lauf fand (der Solz-Faktor 118 statt 119 in
-    `rust/engine/src/zugriff/teil2/solz.rs` ließ ohne `PARITY=1` alle Rust-Tests grün), ist seit `1fdc6c0a` geschlossen: `rust/fixtures/wertwache_orakel.json`
-    (1686 feste Fälle aus dem Python-Lauf, 11 Funktionen) und `rust/engine/tests/wertwache_orakel_werte.rs` rechnen sie ohne Python nach (Vault
-    `audits/wertwache-fixture-ohne-orakel-2026-10-04.md`). Messung des Instruktors dort, von mir nicht wiederholt: 18 von 23 eigenen Mutanten rot, darunter der Solz-Faktor 118. Die
-    anderen 5 sind grün: 2 gleichwertig oder außerhalb des Fixtures, **3 sind echte Lücken im Gitter** (Unterhalt § 33a Höchstbetrag-Boden, Rente Boden,
-    Rente `renten_beginn_jahr == vz`). Diese 3 sind Stand 2026-10-04 offen; ein Operator-Sweep (`orch/wertwache-sweep`) ist beauftragt und noch nicht gelaufen.
-    Funktionen außerhalb der 11 (zum Beispiel `gewst`) haben keinen Fixture-Wächter und hängen weiter am Python-Vergleich.
+    `rust/engine/src/zugriff/teil2/solz.rs` ließ ohne `PARITY=1` alle Rust-Tests grün), ist **geschlossen**: Seit `1fdc6c0a` rechnen `rust/fixtures/wertwache_orakel.json`
+    (feste Fälle aus dem Python-Lauf, 11 Funktionen) und `rust/engine/tests/wertwache_orakel_werte.rs` sie ohne Python nach (Vault
+    `audits/wertwache-fixture-ohne-orakel-2026-10-04.md`: 18 von 23 Mutanten des Instruktors rot, darunter der Solz-Faktor 118; Instruktor-Messung, von mir nicht wiederholt).
+    Die drei Gitter-Lücken aus jenem Eintrag (Unterhalt § 33a Höchstbetrag-Boden, Rente Boden, Rente `renten_beginn_jahr == vz`) schloss seit `1805712b` (Merge von `orch/wertwache-sweep`)
+    ein Operator-Sweep über die Rümpfe der elf Funktionen; das Fixture hat jetzt 3683 Fälle (`rust/fixtures/README.md`). Worker-Bericht `~/.cache/taxgraph-tmp/berichte/wertwache-sweep.md`
+    (von mir gelesen, nicht nachgemessen): 249 Operator-Mutanten, 227 rot, 21 grün, 1 ohne Kompilat; die 21 grünen belegt der Bericht je Gruppe als gleichwertig; vorher (Fixture von
+    `1fdc6c0a`, derselbe Sweep) waren 83 grün, das Gitter-Update schloss 62 Lücken. Laut Merge-Nachricht `1805712b` (Instruktor) sind V1 bis V23 wie erwartet und V15 bis V17 jetzt rot.
+    Grenzen laut Bericht: Operatoren außerhalb der Liste (`!x`-Entfernung, Bedingung negieren, `if`/`else`-Tausch) sind nicht gelaufen; Funktionen außerhalb der 11 (zum Beispiel `gewst`)
+    haben keinen Fixture-Wächter und hängen weiter am Python-Vergleich; einige Stellen hängen an zwei oder drei Fällen (Abschnitt „Dünne Stellen“ im Bericht).
   - **(d) Binärdefekt des Harness:** behoben, `eebe4578` ist in main (`git merge-base --is-ancestor eebe4578 HEAD`).
   - **(e) die Entscheidung:** Julius, nach Ermessen des Instruktors.
 - *Rauchprobe auf einer Kopie der echten Daten* (`PARITY=1 CARGO_TARGET_DIR=<Verzeichnis auf Platte> python3 tools/parity/rauchprobe_echtdaten.py`, `7d08e023`;
@@ -70,14 +73,28 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
   Mitunternehmer-Summe, Kirchensteuer-Abzug, AGB-Abzug) und die Gesamtrechnung zeigte bei absurden Eingaben einen falschen Zwischenwert. Neue gewollte Abweichung 1g (ein
   Bruttolohn von 9223372036854775800 ct in der Scheibe `gesamt`: `stand`, `fragen` und `ergebnis` antworten in Rust 422, in Python 200; Kommentar
   `api_http_paritaet.rs:5964`, Test ab Zeile 6309). Vault `audits/ueberlauf-guard-am-uebersetzer-2026-10-04.md` (Messung des Instruktors, von mir nicht wiederholt): 23 von 25 eigenen
-  Mutanten rot, 2 gleichwertig; 12 der 26 Übersetzer-Funktionen haben keinen roten Test (ihre Unerreichbarkeit über HTTP beruht auf Gitter und Ableitung); ein Test, der ein neues
-  `mpz_get_si` im Klartext verbietet, existiert nicht.
+  Mutanten rot, 2 gleichwertig; 12 der 26 Übersetzer-Funktionen haben keinen roten Test (ihre Unerreichbarkeit über HTTP beruht auf Gitter und Ableitung).
+  **Wächter gegen den Rückfall** (seit `b7eb0c01`, Merge von `orch/h8-waechter`; Instruktor laut Merge-Nachricht: 32 eigene Mutanten alle wie erwartet, Kontrollen grün, von mir nicht wiederholt):
+  `tests/test_ueberlauf_waechter_text.py` prüft nur Text (kein Catala, kein Rust-Bau). Erstens steht `mpz_get_si` in `rust/catala-sys/csrc/` nur im Makro `TG_AUS`; der Wächter liest die
+  Zeilenverkettung mit, meldet ein totes oder zerlegtes Makro und ignoriert Kommentare und bloße Umformatierung. Zweitens bleibt `overflow-checks = true` ausdrücklich im `[profile.dev]` (`rust/Cargo.toml:68`), und der Test liest
+  das Makefile mit, um zu prüfen, welches Profil `make serve` baut. `--release` ist verboten: `make serve` baut mit `cargo build` im dev-Profil (`Makefile:113` begründet es,
+  `tests/test_make_serve.py` prüft, dass `--release` im Befehl fehlt). Eine technische Sperre gegen einen von Hand gestarteten `cargo build --release` gibt es nicht (abgeleitet aus dem
+  Fehlen von `[profile.release]`, nicht gemessen); ein solcher Bau ließe jedes ungeprüft geschriebene `+`/`-` der Geldrechnung still umbrechen (Vault
+  `audits/ueberlauf-casts-ueber-http-keine-stille-falschzahl-2026-10-04.md`, abgeleitet, nicht gemessen).
+  **Weitere Stelle im Rust-Code selbst** (`orch/h8-p23-gewinn`, Merge `0197bf76`; Vault `audits/ueberlauf-casts-ueber-http-keine-stille-falschzahl-2026-10-04.md`): Im Gewinn aus privaten Veräußerungsgeschäften (§ 23) kippte `wrapping_sub` bei
+  Preis 0 und Anschaffungs- und Werbungskosten von je 9·10^18 ct das Vorzeichen (+446 744 073 709 551 616 ct statt −1,8·10^19 ct). Jetzt `checked_sub`
+  (`rust/elster/src/deklaration.rs:959-975`): außerhalb von `i64` meldet `deklariere()` den Fehler `DeklarationsFehler::Ueberlauf`, die API antwortet 422 (`rust/api/src/deklaration.rs:27-28`).
+  Über HTTP ist die Stelle heute nicht erreichbar, weil der Guard jede § 23-Eingabe vorher mit 409 abweist (Worker: 6 von 6 Kombinationen, nicht von mir wiederholt); darum gibt es dort
+  keinen Parity-Eintrag, nur einen Test auf Funktionsebene. Gewollte Abweichung von Python (rechnet exakt). Instruktor: 12 von 12 eigene Mutanten rot. Das übrige `wrapping_add` in `dokumentiert()`
+  (`deklaration.rs:936`) bleibt mit `ponytail:`-Kommentar (Summe höchstens 3,7·10^17, unerreichbar). Zur Einordnung (Worker, nicht wiederholt): 6860 Fälle gegen die echten Dienste,
+  0 stille Falschzahlen über HTTP.
 - *Messung am Produktstart auf Kopien* (Rohdaten `~/.cache/taxgraph-tmp/cutover-smoke/serve-A.log`, `rundlauf.out`; der echte Bestand wurde nicht beschrieben): `make serve`
   sichert zuerst; eine Anfrage ohne Token ergibt 401, auch wenn `TAXGRAPH_NO_AUTH=1` geerbt war; SIGTERM endet mit „Server heruntergefahren“; ein von Rust
   geschriebenes Ereignis liest Python identisch (`ergebnis`, `stand`, `fragen`) und umgekehrt (Fall mit 46 Ereignissen).
 - *Betriebsfolgen:*
   1. `make serve` baut im dev-Profil (opt-level 1), nie mit `--release`: `rust/Cargo.toml` hat kein `[profile.release]` (`grep -c profile.release rust/Cargo.toml` → 0), Cargo
-     schaltet im Release-Bau `overflow-checks` und `debug-assertions` ab, und nur der dev-Bau wird von `rust/parity` und `make ui-rust` gemessen. Kaltbau in leerem
+     schaltet im Release-Bau `overflow-checks` und `debug-assertions` ab, und nur der dev-Bau wird von `rust/parity` und `make ui-rust` gemessen. Seit `b7eb0c01` steht `overflow-checks = true` ausdrücklich im `[profile.dev]` (`rust/Cargo.toml:68`);
+     `tests/test_ueberlauf_waechter_text.py` verlangt die Zeile. Kaltbau in leerem
      Zielordner: 123 Crates, 40 s, 870 MB (`cutover-smoke/cargo-build.log`).
   2. Die Anmeldung ist an: `make serve` entfernt `TAXGRAPH_NO_AUTH` aus der Umgebung (`env -u TAXGRAPH_NO_AUTH`, geprüft in `tests/test_make_serve.py`). Ein Fall ohne Besitzerfeld ist für jedes Konto gesperrt (403, wie in Python); im echten Bestand haben 39 von 192
      Fällen ein Besitzerfeld (gemessen, Bericht `rauchprobe-abweichungen.md`). Das ist unverändert gegenüber Python.
@@ -89,9 +106,24 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
      Der Dienst bindet nur 127.0.0.1 (`rust/api/src/main.rs`).
   6. `make serve` schreibt in den echten Bestand (Standard `~/.local/share/taxgraph`; `TAXGRAPH_DATEN` und `XDG_DATA_HOME` verschieben ihn). Tests und Messungen setzen `TAXGRAPH_DATEN` auf eine Kopie und starten den Dienst nie über
      `make serve` (so tun es `scripts/starte-api.sh` und `tools/parity/rauchprobe_echtdaten.py`).
-- *Tor auf dem finalen main* (clippy, `cargo test --workspace --exclude parity`, `make unit`, `make golden`, TESTMAP-Test, `PARITY=1`): **TOR: von Instruktor.** Letzter voller Lauf mit Zahlen:
-  „Gates auf `057b7ec3`“ unten.
-- *Nicht gemessen:* ein einzelner `PARITY_N=10000`-Lauf über alle Suiten; ein Betrieb mit `TAXGRAPH_NO_AUTH=1` gegen den echten Bestand (dort wären die 16 Abweichungen sichtbar);
+- *Trockenläufe des vollen Tors* (kein Endtor; Skript `~/.cache/taxgraph-tmp/gate-final/run.sh`, ein eigener Worktree, eigene Ziele, `nice -n 10`; Logs
+  `~/.cache/taxgraph-tmp/gate-final/log-trocken2/zusammenfassung.txt` und `log-1fdc6c0a/zusammenfassung.txt`; Messung des Forks `cutover-bau`, 2026-10-04). Reihenfolge der Schritte:
+  `make build-python`, clippy, `cargo test --workspace --exclude parity`, TESTMAP-Test, `make unit`, `make golden`, `make ui-rust`, Parity (`PARITY=1`, eigenes zweites Zielverzeichnis), Korpus-Tests.
+  - Lauf 1, Basis `b6516035`, Parity `PARITY_N=200`, ohne `.env`, Last 30 bis 38, kalte Ziele: build-python unter 1 s; clippy 23 s, 0 Warnungen; `cargo test` 196 s, 1437 passed / 0 failed / 21 ignored;
+    TESTMAP 451 Dateien, 0 ohne Zeile; `make unit` 436 s, 4362 passed / 87 skipped / 21 xfailed; golden 135/135 in 1 s; `make ui-rust` 236 s, 249 passed / 23 xfailed;
+    Parity 637 s, 192 passed / 0 failed / 0 ignored in 25 Binaries. Summe 1529 s (25,5 min). Nichts rot.
+  - Lauf 2, Basis `1fdc6c0a`, Parity `N=std` (Abdeckungs-Wächter scharf), mit `.env`, Last 5 bis 11, warme Ziele: 0,2 s; clippy 7,4 s, 0; `cargo test` 84,3 s, 1463 / 0 / 21; TESTMAP 453 / 0;
+    `make unit` 308,7 s, 4429 passed / 19 skipped / 22 xfailed; golden 135/135; `make ui-rust` 132,9 s, 249 / 23; Parity 645,2 s, 192 / 0 / 0 in 25 Binaries; die drei Testdateien, deren 4 Tests bei
+    leerer Datenwurzel skippen, gegen den Korpus (Kopie) 6,8 s, 18 passed / 1 xfailed / 0 skipped. Summe 1186 s (19,8 min). Nichts rot.
+  - Was die Läufe zeigen: (i) `tests/conftest.py` lädt `<Wurzel>/.env`; ein frischer Worktree hat keine, dann überspringt `make unit` 68 ERiC-Tests („ERiC oder Hersteller-ID fehlt“). Mit der `.env` (Symlink aus dem
+    Hauptbaum) sind es 0; die öffentliche Test-ID 74931 hilft nicht (ERiC: `hersteller_id_gesperrt`). (ii) Der eine xfail mehr (22 statt 21) ist
+    `tests/test_p23_mehrfachverkauf_bricht_so_maxoccurs.py::test_eric_hat_ueberhaupt_geantwortet_zwei_verkaeufe`: ohne `.env` skipped, mit `.env` xfail (21 xfailed + 1 skipped bei denselben 22 Node-IDs ohne `.env`).
+    (iii) Das Skript setzt `XDG_DATA_HOME` auf ein leeres Verzeichnis, damit nichts in den echten Bestand schreibt; dadurch skippen 4 Tests wegen leerem Bestand, die mit dem Korpus (Kopie) grün laufen.
+    (iv) Bei `N` ungleich Standard sind die Abdeckungs-Wächter aus, bei `N=200` meldet das Log 11 Stellen. (v) Parity braucht ein eigenes Zielverzeichnis, weil jedes andere `cargo test -p api` im selben Ziel das Binärprogramm der Harness ersetzt.
+  - Zeitplan Endtor bei Last 30: etwa 27 min (Planwert 1600 s, Lauf 1 plus Korpus-Tests, ERiC bis 16 s und Parity mit `N=std`; Wachstum durch spätere Merges nicht gemessen), Limit 2000 s.
+- *Endtor auf dem finalen main:* **TOR: von Instruktor.** Zwei Läufe nacheinander: Lauf A alle neun Schritte mit `N=std`, Lauf B nur Parity mit `PARITY_N=10000`. Beide stehen aus, ebenso der Tag `<TAG>`.
+  Letzter voller Lauf mit Zahlen auf main: „Gates auf `057b7ec3`“ unten.
+- *Nicht gemessen:* ein einzelner `PARITY_N=10000`-Lauf über alle Suiten (Lauf B des Endtors); ein Betrieb mit `TAXGRAPH_NO_AUTH=1` gegen den echten Bestand (dort wären die 16 Abweichungen sichtbar);
   `make serve` gegen den echten Bestand (bewusst nie gestartet); ein Dauerlauf; ob die Oberfläche besitzerlose Fälle auflistet.
 
 **Seit `8e48cf7` in main** (je Spitze per `git log --first-parent 8e48cf7..HEAD`):
