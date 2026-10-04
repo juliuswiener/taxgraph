@@ -39,3 +39,20 @@ Geld ist.
 ```
 python3 tools/parity/extract_golden.py
 ```
+
+## `interview_orakel.json`
+
+Szenarien fuer die Crate `interview` samt den Antworten des Python-Orakels
+(`produkt/traverser/traverser.py`, `produkt/haut/bindung_rollen.py`). Konsument:
+`rust/interview/tests/orakel_werte.rs` (hermetisch, ohne Python). Je Szenario: Events (Reihenfolge ist
+Semantik), eine Sicht (voll, Teil-Bindung oder selbstgebaute Felder) und die erwarteten Antworten.
+Die Frageliste steht als Positionen in der Sicht-Reihenfolge, die Relevanz als Abweichung zur
+Relevanz des leeren Stores. Der Unsicherheits-Beitrag steht nicht im Fixture, die Formel steht in
+Generator und Test.
+
+```
+python3 tools/parity/extract_interview_orakel.py
+```
+
+Aendert sich `traverser.py` oder die Bindung, ist das Fixture neu zu erzeugen; der Rust-Test zeigt
+dann, wo Rust vom Orakel abweicht. `git diff` auf der Datei zeigt, was sich am Orakel geaendert hat.
