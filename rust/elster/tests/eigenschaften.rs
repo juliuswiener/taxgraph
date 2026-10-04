@@ -336,14 +336,16 @@ proptest! {
         let kz_typ = b.elster_kz.as_ref().unwrap();
         let kz = kz_typ.as_str();
         let d = deklariere(&einzeln(&b.feld_id, json!(c), Zustand::Bestaetigt), index(), 2025, None).unwrap();
-        if let Some(v) = d.deklaration.get(kz).or_else(|| d.person_b.get(kz)) {
-            prop_assert_eq!(v, &cent_nach_kz(Cent::new(c), kz_typ).als_json());
-            match (kz_format(kz_typ), v.as_i64()) {
-                (KzFormat::EuroAbgerundet, Some(e)) => prop_assert!(e * 100 <= c),
-                (KzFormat::EuroAufgerundet, Some(e)) => prop_assert!(e * 100 >= c),
-                (KzFormat::KommaCent, None) => prop_assert_eq!(v, &json!(format!("{},{:02}", c / 100, c % 100))),
-                (f, _) => prop_assert!(false, "{kz}: Format {f:?} passt nicht zu {v}"),
-            }
+        // Fehlt die Kz ganz, ist das ein Fehler: kein stilles Ueberspringen der Pruefung.
+        let Some(v) = d.deklaration.get(kz).or_else(|| d.person_b.get(kz)) else {
+            return Err(TestCaseError::fail(format!("{kz} ({}): fehlt in der Deklaration, c = {c}", b.feld_id)));
+        };
+        prop_assert_eq!(v, &cent_nach_kz(Cent::new(c), kz_typ).als_json());
+        match (kz_format(kz_typ), v.as_i64()) {
+            (KzFormat::EuroAbgerundet, Some(e)) => prop_assert!(e * 100 <= c),
+            (KzFormat::EuroAufgerundet, Some(e)) => prop_assert!(e * 100 >= c),
+            (KzFormat::KommaCent, None) => prop_assert_eq!(v, &json!(format!("{},{:02}", c / 100, c % 100))),
+            (f, _) => prop_assert!(false, "{kz}: Format {f:?} passt nicht zu {v}"),
         }
     }
 
@@ -371,9 +373,11 @@ proptest! {
             }
         }
         let inst = elster::instanzen(&store, index(), "vv_objekt").unwrap();
-        if let Some(i) = inst.iter().find(|i| i.index == idx) {
-            prop_assert_eq!(i.zustand, erwartet);
-        }
+        // Erscheint die Instanz nie, ist das ein Fehler: kein stilles Ueberspringen der Pruefung.
+        let Some(i) = inst.iter().find(|i| i.index == idx) else {
+            return Err(TestCaseError::fail(format!("Instanz vv_objekt__{idx} fehlt, Zustaende {zustaende:?}")));
+        };
+        prop_assert_eq!(i.zustand, erwartet);
     }
 }
 

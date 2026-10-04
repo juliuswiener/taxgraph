@@ -38,8 +38,8 @@ A single test: `python3 -m pytest tests/path/to/test_x.py::test_name -q`.
 **Neue Testdatei braucht eine Zeile in `rust/TESTMAP.tsv`, sonst ist `make unit` rot.** Das gilt für jede Datei
 in `tests/` und jede `.rs`/`.py`/`.c` in `rust/*/tests/`. Der Test `tests/test_testmap_vollstaendig.py` nennt die
 fehlenden Dateien; dasselbe zeigt `python3 tests/test_testmap_vollstaendig.py`. Eine Zeile hat 7 Spalten, durch
-Tab getrennt (`file`, `lines`, `n_tests`, `xfail`, `category`, `target_module`, Notiz), und Spalte 7 nennt nur
-Ersatz, der im Baum existiert. Wer einen Zweig mergt, ruft den Test nach dem Merge auf: ein Zweig, der älter ist als
+Tab getrennt (`file`, `lines_bei_anlage`, `n_tests_bei_anlage`, `xfail`, `category`, `target_module`, Notiz), und Spalte 7 nennt nur
+Ersatz, der im Baum existiert. Spalte 2 und 3 halten den Stand beim Anlegen der Zeile; niemand zieht sie nach (kein Tor prüft sie). Wer einen Zweig mergt, ruft den Test nach dem Merge auf: ein Zweig, der älter ist als
 der Test, bringt Testdateien ohne Zeile mit (so fielen `rentenbeginn_jahr.rs` und `fallzahl_env.rs` beim ersten
 Lauf auf). Bei einem Konflikt in der TSV bleiben
 beide Zeilen stehen; die Python-Zeilen sind nach Pfad sortiert (ohne Satzzeichen), die Rust-Zeilen folgen. Kein
