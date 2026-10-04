@@ -213,6 +213,13 @@ pub enum DeklarationsFehler {
     /// Ein Store-Wert passt nicht zu der Operation, die das Original auf ihm ausfuehrt.
     #[error("Feld {feld_id}: {fehler}")]
     Wert { feld_id: String, fehler: PyFehler },
+    /// Eine Rechnung der Deklaration verlaesst `i64`; Python rechnet dort exakt weiter.
+    ///
+    /// GEWOLLTE ABWEICHUNG (Korrektheit vor Paritaet): Rust meldet den Fehler (HTTP 422, s.
+    /// `api::deklaration::deklarations_fehler`), statt still zu rechnen. Der Text nennt nur das
+    /// Feld und die Stelle, nie einen Wert aus dem Store.
+    #[error("Feld {feld_id}: {was}")]
+    Ueberlauf { feld_id: String, was: &'static str },
 }
 
 impl DeklarationsFehler {
@@ -226,6 +233,9 @@ impl DeklarationsFehler {
         match self {
             Self::SnapshotObjekt | Self::KeinFeldGebunden => "ValueError",
             Self::Jahr(fehler) | Self::Wert { fehler, .. } => fehler.klasse,
+            // Keine Python-Klasse: Python wirft hier nichts (s. [`Self::Ueberlauf`]). "OverflowError"
+            // ist die Klasse der Rust-Grenze, wie bei `domain::PyFehler::I64Grenze` (`py.rs`).
+            Self::Ueberlauf { .. } => "OverflowError",
         }
     }
 }
@@ -923,6 +933,11 @@ impl Bau<'_> {
             }
             let mut quell: Vec<String> = akku.iter().map(|(f, _)| f.clone()).collect();
             quell.sort();
+            // ponytail: `wrapping_add` darf hier nie umbrechen. Quellen sind die vier `cent`-Felder
+            // von `DOKUMENTIERT_AGGREGAT`, je als Euro (`aggregat_beitrag`, <= i64::MAX / 100);
+            // die Summe liegt bei <= 3,7e17 und damit weit unter i64::MAX. Wird eines der Felder ein
+            // `int` oder kommt ein fuenftes hinzu, gilt die Grenze nicht mehr: dann `checked_add`
+            // und `DeklarationsFehler::Ueberlauf`, wie in `p23_gewinn`.
             let summe = akku.iter().map(|(_, w)| *w).fold(0_i64, i64::wrapping_add);
             out.insert(
                 (*ziel).to_owned(),
@@ -941,18 +956,27 @@ impl Bau<'_> {
         let Some(gruppe) = self.instanzen.get(&GRUPPE.to_owned()) else {
             return Ok(());
         };
-        let gewinne: Vec<(u64, i64)> = gruppe
+        // GEWOLLTE ABWEICHUNG von Python (Korrektheit vor Paritaet): Python rechnet die Differenz
+        // exakt (Preis 0, AK = WK = 9e18 ct ergibt -1,8e19 ct). Ausserhalb von `i64` meldet Rust
+        // `Ueberlauf` (HTTP 422) statt zu rechnen; `wrapping_sub` kippte dort das Vorzeichen
+        // (+446744073709551616 ct statt eines Verlusts). Ueber HTTP heute nicht erreichbar: der
+        // Guard sperrt jede § 23-Eingabe vor `deklariere()` mit 409. Darum kein Parity-Eintrag.
+        let gewinne = gruppe
             .schluessel()
             .iter()
             .filter_map(|idx| gruppe.get(idx).map(|inst| (*idx, inst)))
             .map(|(idx, inst)| {
                 let roh = |k: &str| inst.rohdaten.get(k).copied().unwrap_or(0);
                 let gewinn = roh("p23_veraeusserungspreis")
-                    .wrapping_sub(roh("p23_anschaffung_herstellungskosten"))
-                    .wrapping_sub(roh("p23_werbungskosten"));
-                (idx, gewinn)
+                    .checked_sub(roh("p23_anschaffung_herstellungskosten"))
+                    .and_then(|d| d.checked_sub(roh("p23_werbungskosten")))
+                    .ok_or_else(|| DeklarationsFehler::Ueberlauf {
+                        feld_id: format!("p23_veraeusserung__{idx}"),
+                        was: "Differenz jenseits i64",
+                    })?;
+                Ok((idx, gewinn))
             })
-            .collect();
+            .collect::<Ergebnis<Vec<(u64, i64)>>>()?;
         for (idx, gewinn) in gewinne {
             if gewinn == 0 {
                 continue;
@@ -1543,5 +1567,89 @@ mod tests {
         // KONTROLLE: zwei Felder mit je drei Codes (keine, evangelisch, roemisch-katholisch);
         // „andere" hat keinen. Ein Lauf ohne Code haette nichts geprueft.
         assert_eq!(codes, 6, "gepruefte Codes");
+    }
+
+    /// § 23-Gewinn = Preis − AK/HK − WK ausserhalb von `i64`: Fehler statt Umbruch.
+    ///
+    /// GEWOLLTE ABWEICHUNG von Python, das exakt rechnet. Mit `wrapping_sub` ergab Preis 0 bei
+    /// AK = WK = 9e18 ct **+446744073709551616** ct statt eines Verlusts von 1,8e19 ct (das
+    /// Vorzeichen kippte). Ueber HTTP ist die Stelle nicht erreichbar (der Guard sperrt § 23 mit
+    /// 409, bericht h8-casts), darum der Test auf Funktionsebene.
+    #[test]
+    fn p23_gewinn_ausserhalb_i64_ist_ein_fehler_statt_umbruch() {
+        use super::DeklarationsFehler;
+
+        const NEUN_E18: i64 = 9_000_000_000_000_000_000;
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        // Je Verkauf `(Suffix, Preis, AK/HK, WK)`; Suffix "" ist Instanz 1, "__2" Instanz 2.
+        let rechne = |verkaeufe: &[(&str, i64, i64, i64)]| {
+            let mut felder = Felder::new();
+            for (suffix, preis, ak, wk) in verkaeufe {
+                for (f, w) in [
+                    ("p23_veraeusserungs_typ", json!("grundstueck")),
+                    ("p23_veraeusserungspreis", json!(preis)),
+                    ("p23_anschaffung_herstellungskosten", json!(ak)),
+                    ("p23_werbungskosten", json!(wk)),
+                ] {
+                    felder.insert(format!("{f}{suffix}"), feld(w));
+                }
+            }
+            deklariere(&felder, &index, 2025, None)
+        };
+        let ueberlauf = |verkaeufe: &[(&str, i64, i64, i64)], erwartet_feld: &str| {
+            let e = rechne(verkaeufe).unwrap_err();
+            assert_eq!(
+                e,
+                DeklarationsFehler::Ueberlauf {
+                    feld_id: erwartet_feld.to_owned(),
+                    was: "Differenz jenseits i64",
+                },
+                "{verkaeufe:?}"
+            );
+            assert_eq!(e.python_klasse(), "OverflowError");
+        };
+
+        // 1. KONTROLLE: der Normalfall kommt an, sonst bewiese der Fehler unten nichts.
+        //    20 000 000 − 10 000 000 − 100 000 ct = 9 900 000 ct = 99 000 EUR, Kz E0306801.
+        let d = rechne(&[("", 20_000_000, 10_000_000, 100_000)]).unwrap();
+        let (gruppe, instanzen) = &d.anlage_instanzen[0];
+        assert_eq!(gruppe, "p23_veraeusserung");
+        assert_eq!(instanzen[0].felder.get("E0306801"), Some(&json!(99_000)));
+
+        // 2. Der Fall des Berichts: Preis 0, AK = WK = 9e18 ct (exakt −1,8e19 ct).
+        ueberlauf(&[("", 0, NEUN_E18, NEUN_E18)], "p23_veraeusserung__1");
+        // 3. Nach oben: Preis i64::MAX, AK −1 (Preis − AK = i64::MAX + 1).
+        ueberlauf(&[("", i64::MAX, -1, 0)], "p23_veraeusserung__1");
+        // 4. Erst die ZWEITE Subtraktion laeuft ueber: 0 − i64::MAX − 2 liegt unter i64::MIN.
+        ueberlauf(&[("", 0, i64::MAX, 2)], "p23_veraeusserung__1");
+        // 5. Die Instanz im Fehler ist die, die ueberlaeuft (Instanz 1 ist in Ordnung).
+        ueberlauf(
+            &[
+                ("", 20_000_000, 10_000_000, 100_000),
+                ("__2", 0, NEUN_E18, NEUN_E18),
+            ],
+            "p23_veraeusserung__2",
+        );
+        // 6. GRENZE: 0 − i64::MAX − 1 = i64::MIN passt noch; kein Fehler, keine Entscheidung ueber
+        //    den Wert (die Grenze selbst ist der Beleg, dass `checked_sub` nicht zu eng ist).
+        assert!(rechne(&[("", 0, i64::MAX, 1)]).is_ok());
     }
 }
