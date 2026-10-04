@@ -503,4 +503,34 @@ mod tests {
         assert_eq!(a.logout(&t).as_deref(), Some("julius"));
         assert!(a.pruefe_token(&t).is_none());
     }
+
+    /// `os.environ.get(...) or <Vorgabe>` (`auth.py:18`, `:23`): leer gilt als nicht gesetzt. Die
+    /// Umgebung gilt prozessweit; sonst liest sie kein Test dieses Binaries.
+    #[test]
+    fn aus_env_liest_geheimnis_und_nutzerdatei_leer_gilt_als_nicht_gesetzt() {
+        let standard = std::path::Path::new("/standard/users.json");
+        let hex64 = |g: &str| {
+            g.len() == 64 && g.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        };
+        std::env::remove_var("TAXGRAPH_JWT_SECRET");
+        std::env::remove_var("TAXGRAPH_USER_STORE");
+        let a = Auth::aus_env(standard, None).unwrap();
+        assert!(hex64(&a.geheimnis), "{}", a.geheimnis); // token_hex(32)
+        assert_ne!(a.geheimnis, Auth::aus_env(standard, None).unwrap().geheimnis);
+        assert_eq!(a.nutzerdatei, standard);
+
+        std::env::set_var("TAXGRAPH_JWT_SECRET", "festes-geheimnis");
+        std::env::set_var("TAXGRAPH_USER_STORE", "/env/users.json");
+        let a = Auth::aus_env(standard, None).unwrap();
+        assert_eq!(a.geheimnis, "festes-geheimnis");
+        assert_eq!(a.nutzerdatei, std::path::Path::new("/env/users.json"));
+
+        std::env::set_var("TAXGRAPH_JWT_SECRET", "");
+        std::env::set_var("TAXGRAPH_USER_STORE", "");
+        let a = Auth::aus_env(standard, None).unwrap();
+        assert!(hex64(&a.geheimnis), "{}", a.geheimnis);
+        assert_eq!(a.nutzerdatei, standard);
+        std::env::remove_var("TAXGRAPH_JWT_SECRET");
+        std::env::remove_var("TAXGRAPH_USER_STORE");
+    }
 }
