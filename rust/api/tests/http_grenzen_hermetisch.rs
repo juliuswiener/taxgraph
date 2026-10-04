@@ -16,6 +16,8 @@
 //! - `C110`, `C112`: `entfernung` prueft Adressen und Scheibe vor jedem Netzzugriff.
 //! - `C070`, `X07`: eine Kennung ausserhalb von `{1,64}` erreicht `fall_kennung` nie (Route).
 //! - `C118`: jede Scheibe mit Gesamt-Ring hat einen Accessor; `engine_unavailable` ist unerreichbar.
+//! - `A09`: nur `application/json` (mit Zeichensatz) ist JSON, nicht jeder Typ mit "json" darin.
+//! - `A11`: eine Content-Length ausserhalb von `u64` ist 413, nicht 0.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -173,6 +175,62 @@ async fn rumpfgrenze_content_type_und_ein_byte() {
     )
     .await;
     assert_eq!(a.status, 400, "{}", a.text());
+}
+
+/// `A09`: der Medientyp beginnt mit `application/json` (`str.startswith`, `server.py`). Ein Typ, der
+/// nur "json" enthaelt (`text/json`, `x-foo/json`, `application/x-json`), ist 415; mit Zeichensatz
+/// geht es durch.
+#[tokio::test]
+async fn nur_application_json_ist_json() {
+    let d = dienst();
+    for typ in [
+        "text/json",
+        "x-foo/json",
+        "application/x-json",
+        "text/plain; json",
+    ] {
+        let a = sende(
+            &d,
+            "POST",
+            "/auth/login",
+            &[("content-length", "2"), ("content-type", typ)],
+            Some("{}"),
+        )
+        .await;
+        assert_eq!(a.status, 415, "{typ}: {}", a.text());
+    }
+    for typ in ["application/json", "application/json; charset=utf-8"] {
+        let a = sende(
+            &d,
+            "POST",
+            "/auth/login",
+            &[("content-length", "2"), ("content-type", typ)],
+            Some("{}"),
+        )
+        .await;
+        assert_eq!(a.status, 400, "{typ}: {}", a.text());
+    }
+}
+
+/// `A11`: eine `Content-Length`, die in kein `u64` passt (hyper laesst sie nicht durch, der Router
+/// per `oneshot` schon), zaehlt als zu gross: 413. Mit 0 als Ersatz liefe der Rumpf `{}` durch.
+#[tokio::test]
+async fn content_length_ausserhalb_von_u64_ist_413() {
+    let d = dienst();
+    for laenge in ["99999999999999999999999", "18446744073709551616"] {
+        let a = sende(
+            &d,
+            "POST",
+            "/auth/login",
+            &[
+                ("content-length", laenge),
+                ("content-type", "application/json"),
+            ],
+            Some("{}"),
+        )
+        .await;
+        assert_eq!(a.status, 413, "{laenge}: {}", a.text());
+    }
 }
 
 /// `C057`: `GET /` und `GET /static/...` liefern nur Dateien unterhalb von `produkt/haut/static`.
