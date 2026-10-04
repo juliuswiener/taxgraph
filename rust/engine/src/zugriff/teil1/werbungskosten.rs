@@ -116,7 +116,7 @@ pub fn entfernungspauschale(
     p: &Params,
 ) -> Result<Euro, EngineFehler> {
     let r = p.entfernungspauschale(e.veranlagungszeitraum)?;
-    let out = ep_scope::berechnen(EpScopeEingabe {
+    let scope = EpScopeEingabe {
         entfernung_km_roh: e.entfernung_km_roh,
         arbeitstage: e.arbeitstage,
         eigenes_oder_ueberlassenes_kfz: e.eigenes_oder_ueberlassenes_kfz,
@@ -125,8 +125,43 @@ pub fn entfernungspauschale(
         satz_ab_21_km: satz_cent(r.satz_ab_21_km)?,
         staffelgrenze_km: r.staffelgrenze_km,
         hoechstbetrag: in_cent(r.hoechstbetrag_ohne_kfz)?,
-    })?;
+    };
+    ep_gesamt_pruefen(&scope)?;
+    let out = ep_scope::berechnen(scope)?;
     Ok(Cent::new(out.abziehbarer_betrag_cent).floor_euro())
+}
+
+/// Vorab-Pruefung des Jahresbetrags, den der Scope bildet: `Tage * (km_bis_grenze * Satz1 + km_ueber_grenze * Satz2)` in Cent.
+///
+/// Der Scope rechnet in GMP exakt. Der C-Shim liest seine Ausgabe mit `mpz_get_si`, und das gibt bei einem Wert ausserhalb `long`
+/// still dessen untere 63 Bit zurueck (Wert mod 2^63), keinen Fehler (Bericht h8-ep-fenster). `ep_ab_21km` prueft nur die
+/// Teilprodukte; zwischen ihrer Grenze und der des Gesamtbetrags lag ein Fenster, in dem Rust eine falsche Zahl lieferte.
+/// Mit Kfz gibt der Scope den Betrag aus, also ist ein Betrag ausserhalb `i64` ein Ueberlauf. Ohne Kfz deckelt er vorher auf den
+/// Hoechstbetrag: ein positiver Betrag ausserhalb `i64` ist dort ein richtiger Wert (der Hoechstbetrag), kein Fehler.
+fn ep_gesamt_pruefen(s: &EpScopeEingabe) -> Result<(), EngineFehler> {
+    // Passt der volle km nicht in i64, meldet der Scope selbst den Dezimal-Fehler (Zaehler ausserhalb i64): nichts zu pruefen.
+    let Some(km) = s.entfernung_km_roh.volle_km() else {
+        return Ok(());
+    };
+    let grenze = s.staffelgrenze_km;
+    let (bis, ueber) = if km > grenze {
+        (grenze, ok(km.checked_sub(grenze), "ep_gesamt")?)
+    } else {
+        (km, 0)
+    };
+    let (satz_bis, satz_ab) = (s.satz_bis_20_km.get(), s.satz_ab_21_km.get());
+    let gesamt = bis
+        .checked_mul(satz_bis)
+        .zip(ueber.checked_mul(satz_ab))
+        .and_then(|(a, b)| a.checked_add(b))
+        .and_then(|pro_tag| pro_tag.checked_mul(s.arbeitstage));
+    let positiv = [bis, ueber, satz_bis, satz_ab, s.arbeitstage]
+        .iter()
+        .all(|x| *x >= 0);
+    if gesamt.is_none() && (s.eigenes_oder_ueberlassenes_kfz || !positiv) {
+        return Err(EngineFehler::Ueberlauf("ep_gesamt"));
+    }
+    Ok(())
 }
 
 /// Euro-Satz in ganzen Cent, abgeschnitten. Python: `int(Decimal(str(satz)) * 100)`.
