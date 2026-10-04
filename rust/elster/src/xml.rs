@@ -446,7 +446,7 @@ fn leite_steuernummer_ab(snapshot: &Felder) -> Option<String> {
 }
 
 /// `^[0-9]{4}0[0-9]{8}$` (Python-`$`: ein abschliessendes `\n` passt mit).
-fn stnr_muster(s: &str) -> bool {
+pub(crate) fn stnr_muster(s: &str) -> bool {
     let b = s.strip_suffix('\n').unwrap_or(s).as_bytes();
     b.len() == 13 && b.iter().all(u8::is_ascii_digit) && b.get(4) == Some(&b'0')
 }
@@ -861,4 +861,67 @@ fn kz_schleife(
         }
     }
     Ok(())
+}
+
+/// Hermetisch (kein ERiC-Schema): `abgabe_pruefen` ist die Bankverbindungs-Entscheidung aus
+/// `est_mapping.py`/`elster_xml.py:718-719`. Geprueft wird das Verhalten, nicht der Wortlaut der Kz:
+/// jede der drei Kz (IBAN Inland, IBAN Ausland, „keine Bankverbindung") muss fuer sich genuegen.
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    /// Eine Deklaration mit genau diesen Kz. Absender und Steuernummer kommen aus den Optionen,
+    /// damit nur die Bankverbindung den Ausgang entscheidet.
+    fn mit_kz(kz: &[(&str, Value)]) -> Deklaration {
+        let mut d = crate::deklariere(&Felder::new(), &HashMap::new(), 2025, None).unwrap();
+        for (k, v) in kz {
+            d.deklaration.insert((*k).to_owned(), v.clone());
+        }
+        d
+    }
+
+    fn optionen() -> XmlOptionen<'static> {
+        XmlOptionen {
+            abgabefaehig: true,
+            absender_name: Some("Muster Max".to_owned()),
+            absender_strasse: Some("Musterweg 1".to_owned()),
+            absender_plz: Some("80331".to_owned()),
+            absender_ort: Some("Muenchen".to_owned()),
+            absender_steuernummer: Some("9181012345678".to_owned()),
+            ..XmlOptionen::default()
+        }
+    }
+
+    /// `Absender` traegt kein `Debug`; der Test fragt nur Ok oder Fehler.
+    fn ergebnis(kz: &[(&str, Value)]) -> Result<(), XmlFehler> {
+        abgabe_pruefen(&mit_kz(kz), &optionen()).map(|_| ())
+    }
+
+    #[test]
+    fn nur_die_auslands_iban_genuegt_als_bankverbindung() {
+        let r = ergebnis(&[("E0102603", json!("GB82WEST12345698765432"))]);
+        assert!(r.is_ok(), "{r:?}");
+    }
+
+    #[test]
+    fn nur_die_inlands_iban_genuegt_als_bankverbindung() {
+        let r = ergebnis(&[("E0102102", json!("DE89370400440532013000"))]);
+        assert!(r.is_ok(), "{r:?}");
+    }
+
+    #[test]
+    fn nur_der_schalter_keine_bankverbindung_genuegt() {
+        let r = ergebnis(&[("E0102002", json!(true))]);
+        assert!(r.is_ok(), "{r:?}");
+    }
+
+    #[test]
+    fn ohne_bankverbindung_und_ohne_schalter_ist_ein_fehler() {
+        for kz in [vec![], vec![("E0102002", json!(false))]] {
+            let r = ergebnis(&kz);
+            let text = r.expect_err("Bankverbindungs-Entscheidung fehlt").0;
+            assert!(text.contains("Bankverbindungs-Entscheidung"), "{text}");
+        }
+    }
 }

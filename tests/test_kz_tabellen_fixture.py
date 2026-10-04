@@ -2,8 +2,8 @@
 
 `tools/parity/dump_kz_tabellen.py` schreibt `KONSTANTE_KZ`, `IBAN_TRANSFORM_ZIEL_KZ`, `NEGATION`,
 `DOKUMENTIERT_AGGREGAT`, `P23_*`, `VERZWEIGUNG` (darin die neun Sanierungsarten § 35c),
-`PARTNER_VERZWEIGUNG`, `PARTNER_INSTANZ`, `PFLEGE_KZ` und `WERTEKODIERUNG` aus `est_mapping.py` in diese
-Datei. Rust (`elster::tabellen`) wird gegen sie geprüft (`tabellen::tests::tabellen_gleich_fixture`).
+`PARTNER_VERZWEIGUNG`, `PARTNER_INSTANZ`, `PFLEGE_KZ`, `WERTEKODIERUNG` und 21 weitere Schlüssel (Mengen, Regeln, `proben`)
+in diese Datei. Rust prüft sie mit `tabellen::tests` (Regal: `regal.rs`; Bankverbindung: `xml::tests`).
 Die Datei ist ein Abbild. Ändert jemand eine Kz in `est_mapping.py` und erzeugt sie nicht neu, merkte das
 bisher nur `PARITY=1` (`elster_paritaet`, braucht das Python-Orakel): der Standardlauf blieb grün, und Rust
 prüfte gegen einen veralteten Stand (gemessen 2026-10-03: Kz-Tausch in `tabellen.rs`, `cargo test

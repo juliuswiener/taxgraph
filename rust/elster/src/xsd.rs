@@ -117,7 +117,7 @@ fn kinder<'a, 'i>(n: Node<'a, 'i>) -> impl Iterator<Item = Node<'a, 'i>> {
 }
 
 /// `^E\d{7}$`; die Regel steht in [`Kz::ist_gueltig`].
-fn ist_kz(name: &str) -> bool {
+pub(crate) fn ist_kz(name: &str) -> bool {
     Kz::ist_gueltig(name)
 }
 

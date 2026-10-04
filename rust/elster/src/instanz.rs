@@ -16,7 +16,7 @@ use crate::deklaration::{BindungIndex, Deklaration};
 use crate::kz_format::jahr_aus_kz_wert;
 use crate::tabellen::{NEGATION, PARTNER_INSTANZ, VERZWEIGUNG};
 
-fn instanz_re() -> Option<&'static regex::Regex> {
+pub(crate) fn instanz_re() -> Option<&'static regex::Regex> {
     static RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
     // Python `$` passt auch vor einem abschliessenden `\n` — daher `\n?\z`.
     RE.get_or_init(|| regex::Regex::new(r"^([a-z][a-z0-9_]*)__([2-9]|[1-9][0-9]+)\n?\z").ok())
