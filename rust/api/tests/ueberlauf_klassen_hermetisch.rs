@@ -425,7 +425,8 @@ async fn fall_ueber_event(
 /// `i64::MAX`, `i64::MIN`, ±10^17): Python antwortet in jedem dieser Faelle auf allen Routen mit 200 und rechnet weiter (`ergebnis`
 /// `bestaetigt`, `zahl_cent` 0 bzw. 661100); der 422 ist Rusts gewollte Abweichung ("zwischen": nur das Zwischenprodukt Euro in Cent
 /// liegt ausserhalb `i64`). Elf Eingaben erreichen die Stelle: `bruttoarbeitslohn` `i64::MIN`, `ep_oepnv_kosten` `i64::MAX`,
-/// `ep_entfernung_km` `i64::MAX` und 10^17 (nur `ergebnis`, Zwischenprodukt `ab21_roh`), und sieben Vorsorgebetraege `i64::MIN`.
+/// `ep_entfernung_km` `i64::MAX` und 10^17 (alle drei Routen, Jahresbetrag der Entfernungspauschale `ep_gesamt`; vor h8-ep-fenster nur
+/// `ergebnis`, und `stand`/`fragen` rechneten still mit dem Wert mod 2^63), und sieben Vorsorgebetraege `i64::MIN`.
 /// Alle anderen Zahlfelder weist `POST /event` selbst ab (Bereich, Vorzeichen) oder die Rechnung kommt durch.
 ///
 /// Gegenproben ("knapp", Python = Rust): `bruttoarbeitslohn` `i64::MAX` (`zahl_cent` 4150517416582623200), 10^17 (44999999997974100)
@@ -448,8 +449,12 @@ async fn ein_betrag_ausserhalb_i64_ueber_post_event_ist_ein_422_und_nie_ein_500(
     let mut ueberlaeufe: Vec<(&'static str, i64, &[&str])> = vec![
         ("bruttoarbeitslohn", tief, &["stand", "fragen", "ergebnis"]),
         ("ep_oepnv_kosten", hoch, &["stand", "fragen", "ergebnis"]),
-        ("ep_entfernung_km", hoch, &["ergebnis"]),
-        ("ep_entfernung_km", 10_i64.pow(17), &["ergebnis"]),
+        ("ep_entfernung_km", hoch, &["stand", "fragen", "ergebnis"]),
+        (
+            "ep_entfernung_km",
+            10_i64.pow(17),
+            &["stand", "fragen", "ergebnis"],
+        ),
     ];
     ueberlaeufe.extend(
         vorsorge
@@ -620,7 +625,9 @@ type HttpFall = (
 /// Zwei Ueberlaufstellen der Engine, die ueber die HTTP-Haut mit gueltigen Feldern erreichbar sind (Bericht h8-ueberlauf-luecke,
 /// Sonde `sonde_luecke`): Mahlzeiten-Anzahlen (`int` ohne Bereich: 16470307208669242 Fruehstuecke zu 560 ct und ein Mittagessen zu
 /// 1120 ct laufen als Summe ueber, Marke `vpf k28`) und eine Entfernung 1e15 km bei 366 Arbeitstagen (`Tage * (km - 20) * 38 ct`,
-/// Marke `ab21_roh`; nur `ergebnis` rechnet den erhoehten Teil ab dem 21. km, `stand`, `fragen` und `deklaration` bleiben 200).
+/// Marke `ab21_roh`; nur `ergebnis` rechnet den erhoehten Teil ab dem 21. km). Mit Kfz kommt der Jahresbetrag der Entfernungspauschale
+/// (Marke `ep_gesamt`, h8-ep-fenster) schon vorher aus dem Bereich: `stand`, `fragen` und `ergebnis` 422; ohne Kfz deckelt der Scope
+/// auf 4500 EUR, `stand` und `fragen` bleiben 200 und nur `ergebnis` meldet `ab21_roh`. `deklaration` rechnet die Pauschale nicht.
 /// Rust meldet 422 mit der Betragsmeldung, nie 500 und nie eine Zahl. Python (`orakel_luecke_http.py`, Bereichspruefung des Stores
 /// aus) antwortet in beiden Faellen auf allen vier Routen mit 200 (`ergebnis`: 662900 bzw. 0 Cent): der 422 ist die fail-closed-
 /// Konvention von Rust, "zwischen". Gegenproben (ein Fruehstueck allein, 30 km): 200 wie in Python; der Test prueft dort
@@ -662,9 +669,23 @@ async fn mahlzeiten_und_entfernung_ausserhalb_i64_sind_ueber_http_ein_422_und_ni
             ],
             "ergebnis",
             422,
+            "ep_gesamt",
+        ),
+        ("k1", Vec::new(), "stand", 422, "ep_gesamt"),
+        ("k1", Vec::new(), "fragen", 422, "ep_gesamt"),
+        (
+            "k3",
+            vec![
+                ("ep_entfernung_km", json!(1_000_000_000_000_000_i64)),
+                ("ep_arbeitstage", json!(366)),
+                ("ep_eigenes_kfz", json!(false)),
+            ],
+            "ergebnis",
+            422,
             "ab21_roh",
         ),
-        ("k1", Vec::new(), "stand", 200, ""),
+        ("k3", Vec::new(), "stand", 200, ""),
+        ("k3", Vec::new(), "fragen", 200, ""),
         (
             "k2",
             vec![
