@@ -3,7 +3,9 @@
 //! Teil `parse.rs`). Erwartungen aus dem Python-Aufruf mit denselben Eingaben.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
-use llm::parse::{antwort_parse, aussagen_parse, chat_parse, rueckfragen_parse};
+use std::collections::HashSet;
+
+use llm::parse::{antwort_parse, aussagen_parse, chat_parse, rueckfragen_parse, zuordnung_parse};
 use llm::Antwort;
 use serde_json::json;
 
@@ -23,6 +25,35 @@ fn kaputtes_json_ist_unlesbar() {
         aussagen_parse("kein json", &gefiltert),
         Antwort::Unlesbar
     ));
+    let erlaubt: HashSet<String> = HashSet::new();
+    assert!(matches!(
+        zuordnung_parse("kein json", &erlaubt, 2),
+        Antwort::Unlesbar
+    ));
+}
+
+/// Ein JSON, das kein Objekt ist (Liste, Zahl), enthaelt keine `rueckfragen`/`aussagen`/
+/// `zuordnungen`, auch wenn ein Listenelement diesen Schluessel traegt: leer, in jedem Parser.
+/// Belegt PA27-PA29 als gleichwertig (`Value::get(&str)` auf Nicht-Objekten ist `None`).
+#[test]
+fn json_ohne_objekt_hat_keine_schluessel() {
+    let (gefiltert, _) = llm::pii::filtere("x");
+    let erlaubt: HashSet<String> = ["r1".to_owned()].into_iter().collect();
+    for text in [
+        r#"[{"rueckfragen": [{"frage": "?"}]}]"#,
+        r#"[{"aussagen": [{"text": "x"}]}]"#,
+        r#"[{"zuordnungen": [{"aussage": 0, "regeln": ["r1"]}]}]"#,
+        "5",
+    ] {
+        assert!(rueckfragen_parse(text, 3).oder_leer_wie_python().is_empty());
+        assert!(aussagen_parse(text, &gefiltert)
+            .oder_leer_wie_python()
+            .is_empty());
+        assert!(zuordnung_parse(text, &erlaubt, 2)
+            .oder_leer_wie_python()
+            .getroffen
+            .is_empty());
+    }
 }
 
 /// Python `for k in ("vorschlaege", "vorschläge", "suggestions", "felder")`: der erste Schluessel
