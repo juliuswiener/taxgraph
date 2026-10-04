@@ -6,12 +6,12 @@
 //! (`Schluessel absent = nicht rechenbar`, `_feste_zahl`), und spaetere Laeufe ueberschreiben.
 use bindung::Params;
 use domain::{Cent, Euro, PyWert};
-use engine::zugriff::teil1::ermaessigungen::{P36AbschlusszahlungEingabe, p36_abschlusszahlung};
-use engine::zugriff::teil2::gesamt::{GesamtKette, gesamt_kette};
+use engine::zugriff::teil1::ermaessigungen::{p36_abschlusszahlung, P36AbschlusszahlungEingabe};
+use engine::zugriff::teil2::gesamt::{gesamt_kette, GesamtKette};
 
 use super::rechnen::R;
 use super::tarif::Endstand;
-use crate::{Felder, wert, zahl_int};
+use crate::{wert, zahl_int, Felder};
 use domain::Zustand;
 
 /// Wer die Guenstigerpruefung § 31 gewonnen hat (`kette["p31"]["guenstiger"]`).

@@ -7,21 +7,21 @@ use std::cell::{Cell, RefCell};
 use bindung::Params;
 use domain::{Cent, Euro, Konfession, PyWert, Vz};
 use engine::zugriff::teil1::ermaessigungen::{
-    KistEingabe, P31FamilienleistungEingabe, kist, p31_familienleistung,
+    kist, p31_familienleistung, KistEingabe, P31FamilienleistungEingabe,
 };
-use engine::zugriff::teil2::est::{FuenftelEingabe, TarifEingabe, fuenftel, tarif_est};
+use engine::zugriff::teil2::est::{fuenftel, tarif_est, FuenftelEingabe, TarifEingabe};
 use engine::zugriff::teil2::gesamt::{
-    DurchschnittssatzEingabe, GesamtfallEingabe, ermaessigter_durchschnittssatz, gesamt,
-    gesamt_tarifliche, gesamt_zve,
+    ermaessigter_durchschnittssatz, gesamt, gesamt_tarifliche, gesamt_zve,
+    DurchschnittssatzEingabe, GesamtfallEingabe,
 };
-use engine::zugriff::teil2::kapital::{KapitalSteuerEingabe, kapital_steuer};
-use engine::zugriff::teil2::solz::{SolzEingabe, solz};
+use engine::zugriff::teil2::kapital::{kapital_steuer, KapitalSteuerEingabe};
+use engine::zugriff::teil2::solz::{solz, SolzEingabe};
 
+use super::ausgaben::{kette_endstand, kette_p31, kist_konfession, setze_kette, Extras};
+use super::rechnen::{add, mal, mal_div, max0, sub, R};
 use super::VeranlagungWert;
-use super::ausgaben::{Extras, kette_endstand, kette_p31, kist_konfession, setze_kette};
-use super::rechnen::{R, add, mal, mal_div, max0, sub};
 use crate::abzuege::abs3_eligible;
-use crate::{BescheidFehler, Felder, ist_true, py_int, wert};
+use crate::{ist_true, py_int, wert, BescheidFehler, Felder};
 
 /// Laender mit 8 % (`runner._KIST_BY_BW`).
 const KIST_8_PROZENT: [&str; 2] = ["bayern", "baden_wuerttemberg"];
@@ -426,15 +426,15 @@ pub(crate) fn leerer_gesamtfall(vz: Vz, zusammen: bool) -> GesamtfallEingabe {
 /// Dazu `kist_steuererhebend` gegen seine Fassung vor K7b.
 #[cfg(test)]
 mod aequivalenz {
-    use domain::testhilfe::{Ergebnis, ganzzahl_text, json_wert, pruefe};
+    use domain::testhilfe::{ganzzahl_text, json_wert, pruefe, Ergebnis};
     use domain::{Konfession, PyWert};
     use proptest::prelude::*;
-    use serde_json::{Value, json};
+    use serde_json::{json, Value};
 
     use super::kist_steuererhebend;
     use crate::aequivalenz::{alt_klasse, ein_feld, enum_json, int_oder_null, int_oder_null_wie};
     use crate::vor_k2::int_oder_null_alt;
-    use crate::{Felder, wert};
+    use crate::{wert, Felder};
 
     /// Die Vor-K2-Fassung von `q_roh_cent`. `q_roh_cent` selbst ist seit dem Port die Produktion —
     /// dieser Helfer traegt die alte Gestalt und ist die einzige Seite, die die D-Nummern messt.

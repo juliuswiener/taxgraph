@@ -2,12 +2,12 @@
 //! Bescheid bei gegebenem § 32-Abs.-6-Kinderfreibetrag (`bescheid_zweige.py:859-1013`).
 //! Reihenfolge: § 34 → § 35 → Est → § 32b → Kapital § 32d. (Der Rentner-Zweig macht § 32b NACH Kapital.)
 use domain::{Cent, Euro};
-use engine::zugriff::teil2::est::{TarifEingabe, tarif_est};
-use engine::zugriff::teil2::gesamt::{GesamtfallEingabe, gesamt_tarifliche, gesamt_zve};
-use engine::zugriff::teil2::sonstige::{ProgressionsvorbehaltEingabe, p32b_1};
+use engine::zugriff::teil2::est::{tarif_est, TarifEingabe};
+use engine::zugriff::teil2::gesamt::{gesamt_tarifliche, gesamt_zve, GesamtfallEingabe};
+use engine::zugriff::teil2::sonstige::{p32b_1, ProgressionsvorbehaltEingabe};
 
-use super::rechnen::{R, add, mal, mal_div, max0, sub};
-use super::tarif::{Endstand, Lage, SolzInfo, kapital, p34_chooser, p35_credit};
+use super::rechnen::{add, mal, mal_div, max0, sub, R};
+use super::tarif::{kapital, p34_chooser, p35_credit, Endstand, Lage, SolzInfo};
 
 /// § 32b Post-Engine-Wrapper (Progressionsvorbehalt) mit nachgezogenem § 35-Deckel-3. `est_raw` ist
 /// die ESt des `g2` ohne § 32b; Rueckgabe `(est_raw', est_ohne_p35)`.
@@ -78,8 +78,8 @@ pub(super) fn festzusetzende(
         g2.steuerermaessigungen = add(g2.steuerermaessigungen, credit)?;
     }
     let mut est_raw = l.est(&g2)?; // KEIN Kapital (est_regulaer_ohne_kap)
-    // § 51a Abs. 2 S. 3: die KiSt-Basis traegt die § 35-Anrechnung NICHT; NEU rechnen statt zurueck-
-    // zuaddieren (der Kredit ist nur bis zum Catala-Deckel wirksam).
+                                   // § 51a Abs. 2 S. 3: die KiSt-Basis traegt die § 35-Anrechnung NICHT; NEU rechnen statt zurueck-
+                                   // zuaddieren (der Kredit ist nur bis zum Catala-Deckel wirksam).
     let mut est_ohne_p35 = if l.pe_active() || credit.get() == 0 {
         est_raw
     } else {

@@ -3,39 +3,39 @@
 //! § 31, SolZ, KiSt) steht in `gesamt_tarif.rs`.
 use domain::{Euro, PyWert, Vz};
 use engine::zugriff::teil1::einkuenfte::{
+    einkuenfte_nichtselbststaendig, p16_4_freibetrag, p21_2_verbilligt, vermietung_einkuenfte,
     EinkuenfteNichtselbststaendigEingabe, P164FreibetragEingabe, P212VerbilligtEingabe,
-    VermietungEinkuenfteEingabe, einkuenfte_nichtselbststaendig, p16_4_freibetrag,
-    p21_2_verbilligt, vermietung_einkuenfte,
+    VermietungEinkuenfteEingabe,
 };
 use engine::zugriff::teil1::ermaessigungen::{
-    P24aAltersentlastungEingabe, P24bEntlastungEingabe, p24a_altersentlastung, p24b_entlastung,
+    p24a_altersentlastung, p24b_entlastung, P24aAltersentlastungEingabe, P24bEntlastungEingabe,
 };
-use engine::zugriff::teil1::sonderausgaben::P10KistEingabe;
 use engine::zugriff::teil1::sonderausgaben::p10_4b_erstattungsueberhang;
-use engine::zugriff::teil1::werbungskosten::{WerbungskostenNEingabe, werbungskosten_n};
-use engine::zugriff::teil2::gesamt::{GesamtfallEingabe, gesamt_gde};
+use engine::zugriff::teil1::sonderausgaben::P10KistEingabe;
+use engine::zugriff::teil1::werbungskosten::{werbungskosten_n, WerbungskostenNEingabe};
+use engine::zugriff::teil2::gesamt::{gesamt_gde, GesamtfallEingabe};
 use engine::zugriff::teil2::p33::{
-    BehindertenPbEingabe, HinterbliebenenPbEingabe, PflegePbEingabe, behinderten_pb,
-    hinterbliebenen_pb, pflege_pb,
+    behinderten_pb, hinterbliebenen_pb, pflege_pb, BehindertenPbEingabe, HinterbliebenenPbEingabe,
+    PflegePbEingabe,
 };
 use engine::zugriff::teil2::rente::{
-    EinkuenfteVersorgungEingabe, VersorgungsfreibetragEingabe, einkuenfte_versorgung,
+    einkuenfte_versorgung, EinkuenfteVersorgungEingabe, VersorgungsfreibetragEingabe,
 };
 use engine::zugriff::teil2::sonstige::p22_nr3_einkuenfte;
 use intervall::Slots;
 
-use super::rechnen::{R, add, max0, sub, summe_euro};
-use super::tarif::{Lage, Modus, P35, leerer_gesamtfall, rahmen};
+use super::rechnen::{add, max0, sub, summe_euro, R};
+use super::tarif::{leerer_gesamtfall, rahmen, Lage, Modus, P35};
 use super::wk::{am_gesamt, ep_eingabe, wk_teile};
-use super::{Marke, Ring, VeranlagungWert, gesamt_tarif, slot};
+use super::{gesamt_tarif, slot, Marke, Ring, VeranlagungWert};
 use crate::abzuege::{p33b_kind_pauschbetraege, shared_steuer_sonder_agb};
 use crate::einkuenfte::{
     gewinn_partner_anteil, laufender_gewinn, p20_kapitaleinkuenfte, p23_ansonsten_einkuenfte,
     p35_summen, shared_dba_sonstige,
 };
 use crate::{
-    Felder, cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_false, ist_true, py_int,
-    summe, wert, zahl_int,
+    cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_false, ist_true, py_int, summe,
+    wert, zahl_int, Felder,
 };
 
 /// § 21 Ueberschuss EINES Objekts (Einnahmen − Werbungskosten), Naht-CENT → EURO. Kein Floor pro
