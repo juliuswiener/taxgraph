@@ -105,29 +105,137 @@ fn repo_root() -> PathBuf {
         .unwrap()
 }
 
+/// Das Merkmal, an dem ein `taxgraph-api` als Testbau mit fester Uhr gilt: der Name der Umgebungsvariablen, die nur
+/// `--features festzeit` liest (`rust/store/src/zeit.rs`, `#[cfg(feature = "festzeit")]`). Ein Bau ohne das Feature
+/// enthaelt den Text nicht (gemessen: `grep -c TAXGRAPH_JETZT` gibt 1 mit und 0 ohne Feature).
+const FESTZEIT_MERKMAL: &[u8] = b"TAXGRAPH_JETZT";
+
+/// Praefix des Verzeichnisses mit der Binaer-Kopie eines Testlaufs: `taxgraph-parity-bin-<pid>`.
+const KOPIE_PRAEFIX: &str = "taxgraph-parity-bin-";
+
+fn enthaelt(heuhaufen: &[u8], nadel: &[u8]) -> bool {
+    heuhaufen
+        .windows(nadel.len())
+        .any(|fenster| fenster == nadel)
+}
+
+/// Ob `datei` ein Bau mit fester Uhr ist. `Err` nennt die Datei.
+fn pruefe_festzeit(datei: &Path) -> Result<(), String> {
+    let bytes =
+        std::fs::read(datei).map_err(|e| format!("{}: nicht lesbar: {e}", datei.display()))?;
+    if enthaelt(&bytes, FESTZEIT_MERKMAL) {
+        Ok(())
+    } else {
+        Err(format!(
+            "{}: enthaelt {} nicht, ist also ohne `--features festzeit` gebaut",
+            datei.display(),
+            String::from_utf8_lossy(FESTZEIT_MERKMAL)
+        ))
+    }
+}
+
+/// Entfernt die Kopien frueherer Laeufe, deren Prozess nicht mehr lebt (`/proc/<pid>` fehlt). Eine Kopie bleibt
+/// sonst liegen: ein `static` wird beim Programmende nie fallengelassen, und das Binaer ist Dutzende MB gross.
+/// ponytail: nur Verzeichnisse mit genau diesem Praefix und einer Zahl dahinter; PID-Wiederverwendung laesst eine tote
+/// Kopie hoechstens bis zum naechsten Lauf liegen. Ausbau: Aufraeumen ueber einen Prozess, der den Lauf ueberlebt.
+fn entferne_alte_kopien() {
+    let Ok(eintraege) = std::fs::read_dir(std::env::temp_dir()) else {
+        return;
+    };
+    for eintrag in eintraege.flatten() {
+        let name = eintrag.file_name().to_string_lossy().into_owned();
+        let Some(pid) = name
+            .strip_prefix(KOPIE_PRAEFIX)
+            .and_then(|rest| rest.parse::<u32>().ok())
+        else {
+            continue;
+        };
+        let ist_verzeichnis = eintrag.file_type().is_ok_and(|t| t.is_dir());
+        if ist_verzeichnis
+            && pid != std::process::id()
+            && !Path::new(&format!("/proc/{pid}")).exists()
+        {
+            let _ = std::fs::remove_dir_all(eintrag.path());
+        }
+    }
+}
+
+/// Baut `taxgraph-api` mit `--features festzeit` und kopiert es SOFORT in ein Verzeichnis dieses Testlaufs (ausserhalb
+/// von `target/`). Die Server starten von der Kopie: jedes andere `cargo build/test -p api` im selben
+/// `CARGO_TARGET_DIR` ersetzt `debug/taxgraph-api` durch einen Bau OHNE das Feature (gemessen), und ein Rust-Server
+/// ohne feste Uhr haengt jede `event_id` an die echte Zeit. Enthaelt die Kopie das Merkmal nicht, bricht der Lauf mit
+/// einer Meldung ab, die das sagt, statt Dutzende Abweichungen der `event_id` zu zeigen.
+fn baue_rust_binaer() -> Result<PathBuf, String> {
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
+    let status = Command::new(cargo)
+        .args([
+            "build",
+            "-p",
+            "api",
+            "--bin",
+            "taxgraph-api",
+            "--features",
+            "festzeit",
+        ])
+        .current_dir(repo_root().join("rust"))
+        .status()
+        .map_err(|e| format!("cargo build -p api nicht gestartet: {e}"))?;
+    if !status.success() {
+        return Err("cargo build -p api schlug fehl".into());
+    }
+    let ziel = std::env::var_os("CARGO_TARGET_DIR")
+        .map_or_else(|| repo_root().join("rust/target"), PathBuf::from);
+    let original = ziel.join("debug/taxgraph-api");
+    let verzeichnis = std::env::temp_dir().join(format!("{KOPIE_PRAEFIX}{}", std::process::id()));
+    std::fs::create_dir_all(&verzeichnis)
+        .map_err(|e| format!("{}: nicht angelegt: {e}", verzeichnis.display()))?;
+    let kopie = verzeichnis.join("taxgraph-api");
+    std::fs::copy(&original, &kopie).map_err(|e| {
+        format!(
+            "{} nach {} nicht kopiert: {e}",
+            original.display(),
+            kopie.display()
+        )
+    })?;
+    entferne_alte_kopien();
+    pruefe_festzeit(&kopie).map_err(|grund| {
+        format!(
+            "Binaer-Kopie unbrauchbar: {grund}. Zwischen dem Bau mit `--features festzeit` und der Kopie hat ein anderes \
+             `cargo build/test -p api` im selben CARGO_TARGET_DIR ({}) {} ueberschrieben; die Rust-Server liefen mit der \
+             echten Uhr und jede `event_id` wiche von Python ab. Kein `cargo -p api` parallel zu diesem Lauf, oder ein \
+             eigenes CARGO_TARGET_DIR.",
+            ziel.display(),
+            original.display()
+        )
+    })?;
+    Ok(kopie)
+}
+
 fn rust_binary() -> PathBuf {
-    static CELL: OnceLock<PathBuf> = OnceLock::new();
-    CELL.get_or_init(|| {
-        let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
-        let status = Command::new(cargo)
-            .args([
-                "build",
-                "-p",
-                "api",
-                "--bin",
-                "taxgraph-api",
-                "--features",
-                "festzeit",
-            ])
-            .current_dir(repo_root().join("rust"))
-            .status()
-            .unwrap();
-        assert!(status.success(), "cargo build -p api schlug fehl");
-        let ziel = std::env::var_os("CARGO_TARGET_DIR")
-            .map_or_else(|| repo_root().join("rust/target"), PathBuf::from);
-        ziel.join("debug/taxgraph-api")
-    })
-    .clone()
+    static CELL: OnceLock<Result<PathBuf, String>> = OnceLock::new();
+    match CELL.get_or_init(baue_rust_binaer) {
+        Ok(pfad) => pfad.clone(),
+        Err(grund) => panic!("{grund}"),
+    }
+}
+
+/// Die Pruefung der Binaer-Kopie erkennt ein Binaer ohne feste Uhr. Laeuft ohne `PARITY=1` und ohne Bau: die
+/// Kopie-Pruefung in `baue_rust_binaer` haengt an `pruefe_festzeit`, und die haelt dieser Test fest.
+#[test]
+fn kopie_pruefung_erkennt_binaer_ohne_festzeit() {
+    let tmp = tempfile::tempdir().unwrap();
+    let mit = tmp.path().join("mit");
+    let ohne = tmp.path().join("ohne");
+    std::fs::write(&mit, b"\x7fELF-kopf TAXGRAPH_JETZT rest").unwrap();
+    // Ein Zeichen fehlt: ein Teiltreffer darf nicht genuegen.
+    std::fs::write(&ohne, b"\x7fELF-kopf TAXGRAPH_JETZ rest TAXGRAPH_").unwrap();
+    assert!(pruefe_festzeit(&mit).is_ok());
+    let fehler = pruefe_festzeit(&ohne).unwrap_err();
+    assert!(
+        fehler.contains("festzeit") && fehler.contains("TAXGRAPH_JETZT"),
+        "{fehler}"
+    );
+    assert!(pruefe_festzeit(&tmp.path().join("fehlt")).is_err());
 }
 
 /// Ein laufender Server samt Datenverzeichnis.

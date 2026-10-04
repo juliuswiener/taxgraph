@@ -40,6 +40,10 @@ Aufruf (aus dem Repo-Wurzelverzeichnis):
     TAXGRAPH_DATEN=<eigenes Verzeichnis> python3 tools/parity/korpus_faelle.py
     TAXGRAPH_DATEN=<eigenes Verzeichnis> python3 tools/parity/korpus_faelle.py --probe
 
+Exit 1, wenn mindestens ein Fall abgewiesen wurde (Zeile `ABWEISUNG ...`); die Schlusszeile nennt
+ihre Zahl. Der Lauf macht nach einer Abweisung mit dem naechsten Fall weiter. `neu` und
+`vorhanden` enden mit Exit 0.
+
 SICHERHEIT: erzeugte Faelle tragen ERFUNDENE Werte (keine echten Steuerdaten). Ausgegeben
 werden nur fall_id, Scheibe, Statuscode und Zaehlwerte — keine Werte, keine Betraege.
 """
@@ -207,7 +211,7 @@ def main() -> int:
                   f"kegel={len(kegel_fuer(scheibe, dict(gesetzt)))} Felder")
         return 0
 
-    neu = vorhanden = 0
+    neu = vorhanden = abgewiesen = 0
     for fall_id, scheibe, gesetzt in FAELLE:
         ergebnis = lege_an(fall_id, scheibe, gesetzt)
         print(f"  {fall_id:34s} {scheibe:16s} {ergebnis}")
@@ -215,8 +219,11 @@ def main() -> int:
             neu += 1
         elif ergebnis == "vorhanden":
             vorhanden += 1
-    print(f"\n{neu} neu angelegt, {vorhanden} bereits vorhanden, {len(FAELLE)} gesamt")
-    return 0
+        else:   # jedes andere Ergebnis zaehlt als ABWEISUNG, auch ein unbekanntes
+            abgewiesen += 1
+    print(f"\n{neu} neu angelegt, {vorhanden} bereits vorhanden, {abgewiesen} abgewiesen, "
+          f"{len(FAELLE)} gesamt")
+    return 1 if abgewiesen else 0
 
 
 if __name__ == "__main__":

@@ -11,13 +11,13 @@ use engine::zugriff::teil1::ermaessigungen::{
 };
 use engine::zugriff::teil2::est::{fuenftel, tarif_est, FuenftelEingabe, TarifEingabe};
 use engine::zugriff::teil2::gesamt::{
-    ermaessigter_durchschnittssatz, gesamt, gesamt_kette, gesamt_tarifliche, gesamt_zve,
+    ermaessigter_durchschnittssatz, gesamt, gesamt_tarifliche, gesamt_zve,
     DurchschnittssatzEingabe, GesamtfallEingabe,
 };
 use engine::zugriff::teil2::kapital::{kapital_steuer, KapitalSteuerEingabe};
 use engine::zugriff::teil2::solz::{solz, SolzEingabe};
 
-use super::ausgaben::{kette_p31, kist_konfession, setze_kette, Extras, Kette};
+use super::ausgaben::{kette_endstand, kette_p31, kist_konfession, setze_kette, Extras};
 use super::rechnen::{add, mal, mal_div, max0, sub, R};
 use super::VeranlagungWert;
 use crate::abzuege::abs3_eligible;
@@ -48,6 +48,16 @@ pub(super) struct SolzInfo {
     pub est_mit_fb: Euro,
     pub kap_st: Euro,
     pub est_ohne_p35: Euro,
+}
+
+/// Endstand eines § 31-Laufs (Python `bescheid_zweige._kette_endstand`): das finale Eingabe-Dict
+/// des Laufs und sein zurueckgegebener Endwert. Aus DIESEM — nicht aus dem Vor-Korrektur-Rohstand —
+/// wird die Rechenweg-Kette gefuettert. `SolzInfo` reicht dafuer nicht: es traegt nur den
+/// KiFB-Lauf, die Kette braucht bei Kindern auch den fb=0-Lauf (Kindergeld-Sieg).
+#[derive(Debug, Clone, Copy)]
+pub(super) struct Endstand {
+    pub g2: GesamtfallEingabe,
+    pub wert: Euro,
 }
 
 /// Was der Tarif-Teil ueber den Aufbau hinaus braucht (Python-Closure-Variablen).
@@ -270,25 +280,30 @@ pub(super) enum Modus {
     Rentner,
 }
 
-/// § 31 Familienleistungsausgleich-Rahmen um `festzusetzende(freibetrag)`, danach Rechenweg-Kette,
-/// SolZ und KiSt. `g` ist der Basis-Gesamtfall (auch fuer die Kette).
+/// § 31 Familienleistungsausgleich-Rahmen um `festzusetzende(freibetrag, info, ende)`, danach
+/// Rechenweg-Kette, SolZ und KiSt. Die Kette braucht NICHT den Basis-Gesamtfall: sie kommt aus dem
+/// Endstand, den jeder Lauf ueber `ende` hinterlaesst (s. `kette_endstand`).
 ///
 /// # Errors
-/// Accessor- und Ueberlauf-Fehler.
+/// Accessor- und Ueberlauf-Fehler, zusaetzlich die `KeyError`-Parallele, wenn ein Lauf keinen
+/// Endstand hinterlassen hat.
 pub(super) fn rahmen<F>(
     l: &Lage<'_>,
-    g: &GesamtfallEingabe,
     solz_out: Option<&Cell<Option<Cent>>>,
     modus: Modus,
     festzusetzende: F,
 ) -> R<Euro>
 where
-    F: Fn(Euro, &mut Option<SolzInfo>) -> R<Euro>,
+    F: Fn(Euro, &mut Option<SolzInfo>, &mut Option<Endstand>) -> R<Euro>,
 {
     let mut info: Option<SolzInfo> = None;
+    // Endstand je § 31-Lauf (Python `kette_end`-Dict): die Kette wird daraus gerechnet. Ein `None`
+    // hier heisst: ein Lauf hat nichts hinterlassen — das ist ein Fehler, kein Grund fuer None.
+    let mut ende_ohne: Option<Endstand> = None;
+    let mut ende_mit: Option<Endstand> = None;
     let zusammen = l.veranlagung.zusammen();
     let kinder = l.kinder;
-    let (est, fb_kind, kg_kind, fb_guenstiger) = if kinder > 0 {
+    let (est, kg_kind, fb_guenstiger) = if kinder > 0 {
         let je_elternteil =
             l.p.kinderfreibetrag_je_elternteil(l.vz)
                 .map_err(engine::zugriff::teil1::fehler::EngineFehler::from)?;
@@ -298,37 +313,47 @@ where
             l.p.kindergeld_monatlich_je_kind(l.vz)
                 .map_err(engine::zugriff::teil1::fehler::EngineFehler::from)?;
         let kg_kind = mal(kinder, mal(12, kg)?)?;
-        let est_ohne = festzusetzende(Euro::new(0), &mut info)?;
-        let est_mit = festzusetzende(fb_kind, &mut info)?;
+        let est_ohne = festzusetzende(Euro::new(0), &mut info, &mut ende_ohne)?;
+        let est_mit = festzusetzende(fb_kind, &mut info, &mut ende_mit)?;
         let guenstiger = add(est_mit, kg_kind)?.get() < est_ohne.get();
         let est = p31_familienleistung(&P31FamilienleistungEingabe {
             est_ohne_freibetraege: est_ohne,
             est_mit_freibetraegen: est_mit,
             kindergeld: kg_kind,
         })?;
-        (est, fb_kind, kg_kind, guenstiger)
+        (est, kg_kind, guenstiger)
     } else {
         (
-            festzusetzende(Euro::new(0), &mut info)?,
-            Euro::new(0),
+            festzusetzende(Euro::new(0), &mut info, &mut ende_ohne)?,
             Euro::new(0),
             false,
         )
     };
-    // P5.4 Rechenweg-Kette — auch mit Kindern, mit der § 31-Entscheidung.
+    // P5.4 Rechenweg-Kette — auch mit Kindern, mit der § 31-Entscheidung. Gespeist aus dem
+    // ENDSTAND des Laufs (s. `kette_endstand`): die Korrekturen § 34/§ 35 sitzen in dessen
+    // finale Eingabe, § 32b/§ 32d in seinem Endwert. Ein fehlender Endstand ist ein Fehler, keine
+    // still uebergangene Kette — sonst waere der Defekt zurueck, den p24a behebt.
     if l.extras.is_some() {
+        let fehlte = |was| BescheidFehler::Python {
+            klasse: "KeyError",
+            was,
+        };
+        let ohne = kette_endstand(
+            ende_ohne.as_ref().ok_or(fehlte(
+                "kette_end[0] fehlt — der fb=0-Lauf hat keinen Endstand hinterlassen",
+            ))?,
+            l.p,
+        )?;
         let kette = if kinder > 0 {
-            let ohne = Kette::from(gesamt_kette(g, l.p)?);
-            let mit = Kette::from(gesamt_kette(
-                &GesamtfallEingabe {
-                    freibetraege_kinder: fb_kind,
-                    ..*g
-                },
+            let mit = kette_endstand(
+                ende_mit.as_ref().ok_or(fehlte(
+                    "kette_end[freibetrag] fehlt — der KiFB-Lauf hat keinen Endstand hinterlassen",
+                ))?,
                 l.p,
-            )?);
+            )?;
             kette_p31(ohne, mit, fb_guenstiger, kg_kind)?
         } else {
-            Kette::from(gesamt_kette(g, l.p)?)
+            ohne
         };
         l.mit_extras(|e| setze_kette(e, kette, est));
     }

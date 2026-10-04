@@ -406,8 +406,8 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
         kinder: feld_int_oder_null(f, "fam_anzahl_kinder")?,
         extras: r.a.extras,
     };
-    rahmen(&lage, &g, r.a.solz, Modus::Gesamt, |fb, info| {
-        gesamt_tarif::festzusetzende(&lage, &g, fb, info)
+    rahmen(&lage, r.a.solz, Modus::Gesamt, |fb, info, ende| {
+        gesamt_tarif::festzusetzende(&lage, &g, fb, info, ende)
     })
 }
 

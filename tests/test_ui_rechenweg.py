@@ -612,12 +612,32 @@ def test_p31_stufe_ist_im_dom_sichtbar(base, playwright_context):
         page.close()
 
 
-def test_abweichende_kette_zeigt_hinweis_statt_tabelle(base, playwright_context):
-    """Was der Nutzer sieht: im § 34-Fall den Hinweis, nicht die Tabelle mit 34.338 EUR."""
+# § 32d, 30.000 EUR Kapitalerträge — dieselbe Liste wie test_kette_endet_bei_der_zahl[p32d-kap30k].
+# Diese Konstellation ist der Kern des p24a-Befunds: vor dem Endstand-Fix endete die Kette hier bei
+# 13.924 EUR (der § 32d-Zuschlag von 7.250 EUR fehlte), der Wächter verwarf sie still, und die
+# Oberfläche zeigte den Hinweis statt einer Tabelle, die um 7.250 EUR zu niedrig gerechnet hatte.
+_FELDER_P32D = _LOHN_60K_EINZEL + [
+    ("kein_gewinn", True), ("kein_kap", False), ("kap_kapitalertraege", 3_000_000),
+    ("kap_gewinn_aktien", 0), ("kap_gewinn_sonstige", 0),
+    ("kap_verlust_aktien", 0), ("kap_verlust_sonstige", 0)]
+
+
+def test_endstandskette_zeigt_tabelle_mit_der_gezahlten_steuer(base, playwright_context):
+    """Was der Nutzer sieht, nachdem die Kette aus dem Endstand kommt: die TABELLE, und in ihrer
+    letzten Zeile dieselbe Zahl, die darüber steht — hier 21.174 EUR (§ 32d-Fall).
+
+    Der Name hielt, was der Wächter vor p24a tat (Hinweis statt Tabelle, weil die Kette um 7.250 EUR
+    zu niedrig endete). Der § 32d-Fall bleibt als DOM-Pin, jetzt mit der Zahl, die er zeigen MUSS:
+    wäre die Tabelle wieder hidden, hätte eine Seite ihre Endkorrektur verloren (Paritaets-Risiko).
+    Das Netz selbst — Hinweis statt Tabelle bei wirklicher Abweichung — ist in
+    tests/test_rechenweg_endstand.py als API-Fall gepinnt."""
     page = playwright_context.new_page()
     try:
-        fid = "rw-a120"
-        _fall_mit(base, fid, "gesamt", _A120_ALLEIN)
+        fid = "rw-p32d"
+        ergebnis = _fall_mit(base, fid, "gesamt", _FELDER_P32D)
+        assert ergebnis["kette"] is not None, (
+            "Der § 32d-Fall verliert die Kette, obwohl beide Seiten aus dem Endstand speisen "
+            f"sollten: zahl_cent={ergebnis['zahl_cent']}")
         page.goto(base)
         page.wait_for_load_state("networkidle")
         page.evaluate(f"FALL = '{fid}';")
@@ -625,8 +645,13 @@ def test_abweichende_kette_zeigt_hinweis_statt_tabelle(base, playwright_context)
         page.evaluate("document.getElementById('flow').hidden = false;")
         page.evaluate("(async () => { await zeigeErgebnis(); })();")
         page.wait_for_selector("#rechenweg:not([hidden])", timeout=5000)
-        assert page.evaluate("document.getElementById('rechenweg-tabelle').hidden"), (
-            "Tabelle sichtbar: " + page.evaluate("document.getElementById('rechenweg-body').innerText"))
-        assert not page.evaluate("document.getElementById('rechenweg-hinweis').hidden")
+        assert not page.evaluate("document.getElementById('rechenweg-tabelle').hidden"), (
+            "Tabelle hidden, obwohl eine Kette da ist")
+        assert page.evaluate("document.getElementById('rechenweg-hinweis').hidden")
+        letzte = page.query_selector_all("#rechenweg-body .rw-reihe")[-1]
+        wert = letzte.query_selector(".rw-wert").text_content().strip()
+        assert wert == "21.174 €", (
+            f"Letzte Stufe zeigt {wert!r} statt 21.174 € — dann sind Zahl und Kette wieder "
+            "zwei verschiedene Steuern")
     finally:
         page.close()

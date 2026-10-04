@@ -15,6 +15,11 @@
 //! dieselben verwerfen. Ein reiner Mustertext-Vergleich waere taub, weil beide Seiten
 //! denselben Text laesen.
 //!
+//! Welche Literale die Fixture wirklich liest, haelt `aufzeichnen` fest: `wortliche` und `einzel`
+//! tragen die Lage jedes gelesenen Literals ein, solange eine Aufzeichnung laeuft. Die Wache
+//! `tabellen::tests::jedes_kz_literal_ist_von_der_fixture_gelesen` (`kz_wache.rs`) verlangt, dass
+//! jedes Kz-Literal im Produktionstext der Crate dazugehoert.
+//!
 //! ponytail: eine Zeile, die nach `pub`/`const`/`static`/`fn` nichts weiter als das Wort selbst
 //! traegt, gilt als Top-Level — auch im Testmodul. Upgrade: Klammertiefe zaehlen, Testmodule
 //! ueberspringen.
@@ -27,7 +32,34 @@
     dead_code
 )]
 
+use std::cell::RefCell;
+
 use serde_json::Value;
+
+thread_local! {
+    /// Adressbereiche (Anfang, Ende) der Literale, die seit `aufzeichnen` gelesen wurden; `None`: aus.
+    /// Je Thread, denn `cargo test` fuehrt jeden Test auf einem eigenen aus.
+    static GELESEN: RefCell<Option<Vec<(usize, usize)>>> = const { RefCell::new(None) };
+}
+
+/// Fuehrt `f` aus und liefert dazu die Adressbereiche aller Literale, die `wortliche`/`einzel`
+/// dabei aus einem Regal-Text gelesen haben (Anfang inklusive, Ende exklusive, samt Anfuehrungszeichen).
+pub(crate) fn aufzeichnen<T>(f: impl FnOnce() -> T) -> (T, Vec<(usize, usize)>) {
+    GELESEN.with(|g| *g.borrow_mut() = Some(Vec::new()));
+    let aus = f();
+    let gelesen = GELESEN.with(|g| g.borrow_mut().take()).unwrap_or_default();
+    (aus, gelesen)
+}
+
+/// Tragen `text[von..bis]` als gelesen ein; ohne laufende Aufzeichnung ein Nichts.
+fn gelesen(text: &str, von: usize, bis: usize) {
+    let basis = text.as_ptr().addr();
+    GELESEN.with(|g| {
+        if let Some(liste) = g.borrow_mut().as_mut() {
+            liste.push((basis + von, basis + bis));
+        }
+    });
+}
 
 /// Was eine Konstante oder Regel mit der Fixture zu tun hat.
 #[derive(Clone, Copy)]
@@ -41,6 +73,11 @@ pub(crate) enum Zuordnung {
     /// Eine Funktion, die die Regel als Code traegt (Muster, Routing, Klassenliste): geprueft
     /// ueber die Proben unter diesem Pfad in der Fixture, nicht ueber den Wortlaut.
     Funktion(&'static str),
+    /// Eine Funktion, deren Kz-Literale kein Fixture-Wert liest, sondern Verhaltenstests: `kz` sind
+    /// alle Kz-Literale der Funktion in Lesereihenfolge (jede Abweichung macht `kz_wache` rot, bis
+    /// jemand sie hier und im Test nachzieht), `tests` die Tests im selben Quelltext, die bei einem
+    /// falschen Literal rot werden (gemessen, mit einem Mutanten je Literal).
+    Verhalten { kz: &'static [&'static str], tests: &'static [&'static str] },
 }
 
 /// Eine Datei der Crate, ihr Text und ihre Eintraege.
@@ -142,6 +179,18 @@ pub(crate) const REGAL: &[Datei] = &[
             ("INSTANZ_NUMMER_FELDER", Zuordnung::Schluessel("elster_xml/instanz_nummer_felder")),
             ("ABSENDER_HERKUNFT", Zuordnung::Schluessel("elster_xml/absender_herkunft")),
             ("ABSENDER_STRASSE_ZUSATZ_KZ", Zuordnung::Schluessel("elster_xml/absender_strasse_zusatz_kz")),
+            // Nr 59: die Bankverbindungs-Entscheidung; ihre drei Kz fuehrt keine Fixture, die Tests schon.
+            (
+                "abgabe_pruefen",
+                Zuordnung::Verhalten {
+                    kz: &["E0102002", "E0102102", "E0102603"],
+                    tests: &[
+                        "nur_der_schalter_keine_bankverbindung_genuegt",
+                        "nur_die_inlands_iban_genuegt_als_bankverbindung",
+                        "nur_die_auslands_iban_genuegt_als_bankverbindung",
+                    ],
+                },
+            ),
         ],
         vollstaendig: false,
     },
@@ -401,27 +450,32 @@ pub(crate) fn anker_zone(
     Err(format!("Blockende {schliessen:?} nach {anker:?} fehlt"))
 }
 
-/// Alle `"..."`-Literale eines Textstuecks, in Reihenfolge des Lesens.
+/// Alle `"..."`-Literale eines Textstuecks mit ihrer Lage (Byte-Bereich samt Anfuehrungszeichen),
+/// in Reihenfolge des Lesens. Traegt nichts als gelesen ein.
 ///
 /// Rust-Zeilenfortsetzung: ein `\` vor dem Zeilenende streicht den Umbruch und den fuehrenden
 /// Leerraum der Folgezeile, wie der Compiler es tut.
-pub(crate) fn wortliche(text: &str) -> Vec<String> {
+fn literale(text: &str) -> Vec<(String, usize, usize)> {
     let mut aus = Vec::new();
-    let mut zeichen = text.chars().peekable();
-    while let Some(c) = zeichen.next() {
+    let mut zeichen = text.char_indices().peekable();
+    while let Some((von, c)) = zeichen.next() {
         if c != '"' {
             continue;
         }
         let mut innen = String::new();
-        while let Some(c) = zeichen.next() {
+        let mut bis = text.len();
+        while let Some((i, c)) = zeichen.next() {
             match c {
-                '"' => break,
-                '\\' => match zeichen.next() {
+                '"' => {
+                    bis = i + 1;
+                    break;
+                }
+                '\\' => match zeichen.next().map(|(_, x)| x) {
                     Some('n') => innen.push('\n'),
                     Some('t') => innen.push('\t'),
                     Some('r') => innen.push('\r'),
                     Some('\n') => {
-                        while zeichen.peek().is_some_and(|x| x.is_whitespace()) {
+                        while zeichen.peek().is_some_and(|(_, x)| x.is_whitespace()) {
                             zeichen.next();
                         }
                     }
@@ -431,9 +485,20 @@ pub(crate) fn wortliche(text: &str) -> Vec<String> {
                 _ => innen.push(c),
             }
         }
-        aus.push(innen);
+        aus.push((innen, von, bis));
     }
     aus
+}
+
+/// Alle `"..."`-Literale eines Textstuecks, in Reihenfolge des Lesens. Jedes zaehlt als gelesen.
+pub(crate) fn wortliche(text: &str) -> Vec<String> {
+    literale(text)
+        .into_iter()
+        .map(|(s, von, bis)| {
+            gelesen(text, von, bis);
+            s
+        })
+        .collect()
 }
 
 /// Literale als Menge (sortiert, ohne Doppelung): die Form der Fixture fuer `frozenset`.
@@ -460,12 +525,20 @@ pub(crate) fn paar_objekt(text: &str) -> Value {
     Value::Object(m)
 }
 
-/// Das `n`-te Literal eines Textstuecks (fuer Einzelwerte, z. B. einen Namespace).
+/// Das `n`-te Literal eines Textstuecks (fuer Einzelwerte, z. B. einen Namespace). Nur dieses
+/// zaehlt als gelesen: ein weiteres Literal in derselben Zone sieht die Fixture nicht.
 pub(crate) fn einzel(text: &str, n: usize) -> String {
-    wortliche(text)
+    let (s, von, bis) = literale(text)
         .into_iter()
         .nth(n)
-        .unwrap_or_else(|| panic!("kein Literal {n} in {text:?}"))
+        .unwrap_or_else(|| panic!("kein Literal {n} in {text:?}"));
+    gelesen(text, von, bis);
+    s
+}
+
+/// Die Form einer Kennzahl `E` + 7 Ziffern: sie trennt Kz-Literale von Feldnamen und Texten.
+pub(crate) fn ist_kz_form(s: &str) -> bool {
+    s.len() == 8 && s.starts_with('E') && s[1..].bytes().all(|b| b.is_ascii_digit())
 }
 
 /// Eine Fixture-Referenz; `None` bei fehlendem Pfad. Pfade getrennt durch `/`.

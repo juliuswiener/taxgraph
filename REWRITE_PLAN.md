@@ -10,21 +10,29 @@ gemessene Wert in Klammern, mit dem Befehl.
 
 ---
 
-## Fortschritt (Stand 2026-10-03, HEAD `2bc35bd4`, Nachtrag „Seit `2bc35bd4` gemergt“ gemessen am Baum `cbc376a6`; Gates zuletzt als Runde auf `b540590` gemessen; das Tracking-Ref `origin/claude/implementation-start-ypyyqw` steht lokal auf `55e9164d`, HEAD liegt 82 Commits davor)
+## Fortschritt (Stand 2026-10-04, HEAD `bc092a74`; Gates von main auf `057b7ec3`; das Tracking-Ref `origin/claude/implementation-start-ypyyqw` steht lokal auf `55e9164d`, HEAD liegt 209 Commits voraus)
+
+Messregel dieses Abschnitts: Jede Zahl ist am Baum `bc092a74` neu gemessen, mit dem Befehl daneben (Worktree `~/.cache/taxgraph-tmp/wt-plan`,
+Zweig `orch/plan-nachzug`), außer wo „gemessen auf `<Commit>`“, „laut Merge-Nachricht“ oder „nicht gemessen“ steht. Die Gates stammen von
+main (Logs `~/.cache/taxgraph-tmp/gate-main-057b/`); ein Tor auf `bc092a74` läuft dort noch und ist hier nicht eingetragen.
 
 CI-Lauf 37010730963 auf `8e48cf7`: **alle fünf Jobs grün** (erster ganz grüner Lauf seit dem 20.08). Das Vault-Ticket
 `github-ci-seit-20-08-rot` ist geschlossen (`backlog/archive/taxgraph/github-ci-seit-20-08-rot.md`). Gepusht ist bis `55e9164d`
 (Reflog des Tracking-Refs: „update by push“, 2026-10-03 02:42; `git rev-list --count origin/claude/implementation-start-ypyyqw..HEAD`
-→ 82); die 82 Commits danach liegen nur lokal. CI auf `55e9164d` nicht abgefragt; gepusht wird nur auf Julius' Wort.
+→ 209, mit `--no-merges` 132, mit `--first-parent` 75); diese 209 Commits liegen nur lokal; seit `2bc35bd4` sind es 127
+(`git rev-list --count 2bc35bd4..HEAD`), davon 42 Merges auf dem ersten Elternpfad. CI auf `55e9164d` und auf HEAD nicht abgefragt
+(nicht gemessen); gepusht wird nur auf Julius' Wort.
 
 **Seit `8e48cf7` in main** (je Spitze per `git log --first-parent 8e48cf7..HEAD`):
 
-- `opt-level = 1` im dev-Profil (`6fbe3d5`, `rust/Cargo.toml:62`): der Beschluss vom 2026-10-02 ist gebaut.
+- `opt-level = 1` im dev-Profil (`6fbe3d5`, `rust/Cargo.toml:63`, `grep -n opt-level rust/Cargo.toml`): der Beschluss vom 2026-10-02 ist gebaut.
 - 9c: `_cfg`/`_scheibe_bindung` verdrahtet, `GET /stand`, `flow` im Rust-Server (`ecdfcb9`); **alle GET-Routen** im
   Rust-Server (`8d1bd96`); die POST-Routen `event`, `kontoauszug` und `vorjahr` sind gebaut und gegen Python im
   Harness gemessen (gemergt als `82bbf1e`); `chat` und `entfernung` folgten mit `c949f86`, `einreichen` mit `8c89556`.
-  **Alle 24 Routen sind portiert** (Routentabelle des Harness: Python 24, Rust 24). Die Liste `NICHT_PORTIERT` gibt es
-  nicht mehr (`grep -rn NICHT_PORTIERT rust` → kein Treffer; entfernt mit `d9d51a6`); eine Antwort `501 nicht_portiert`
+  **Alle 24 Routen sind portiert** (Routentabelle des Harness: Python 24, Rust 24; `PARITY=1 cargo test -p parity --test
+  api_http_paritaet routentabelle_gleich_python -- --nocapture` auf `bc092a74`: „Python 24 Routen, Rust 24 Routen“, Test grün, Methode,
+  Muster und Reihenfolge gleich). Die Liste `NICHT_PORTIERT` gibt es
+  nicht mehr (`grep -rn NICHT_PORTIERT rust` → kein Treffer, auf `bc092a74` wiederholt; entfernt mit `d9d51a6`); eine Antwort `501 nicht_portiert`
   ist im Harness eine Abweichung (`rust/parity/tests/api_http_paritaet.rs:15`). `einreichen` prüft nur: ERiC läuft mit
   `ERIC_VALIDIERE`, lokal, ohne Netz und ohne Zertifikat, gesendet wird nichts (`rust/api/src/einreichen.rs:1-8`).
 - K8-Rest und `Kz`/`Vz`/`EventId`/`BasisId` als Typen in bindung, elster, konsistenz (`80743f2`); K9 `interview`
@@ -42,24 +50,80 @@ CI-Lauf 37010730963 auf `8e48cf7`: **alle fünf Jobs grün** (erster ganz grüne
   Nicht-Text mit 401 ab (`2720ea3`) und schreibt einen Nicht-Text-Namen als `unbekannt` ins Protokoll (`3275a31`, `4368ebb`);
   Wächter-Pin der Kind-Frage (`0914e13`); Fremddienst-Harness, 501-Liste entfernt (`d9d51a6`); Rentenbeginn-Jahr <= 0
   sperrt, KAP-Vorschau liest nur Bestätigtes (`2bc35bd`).
-- Seit `2bc35bd4` gemergt (gemessen am Baum `cbc376a6`, 2026-10-03; der TESTMAP-Punkt gilt mit dem Zweig `orch/testmap`):
+- Seit `2bc35bd4` gemergt (127 Commits, 42 Merges auf dem ersten Elternpfad; die Punkte `make ui-rust`, `PARITY_N` und TESTMAP auf
+  `bc092a74` nachgemessen, danach die übrigen Merges):
   - **`make ui-rust`** (`5d212c31`, Merge `081e1d94`) startet die 22 UI-Dateien gegen das Rust-Binary
-    (`make -n ui-rust | tr ' ' '\n' | grep -c '^tests/'` → 22). Die 23 Tests, die gegen Rust nicht grün werden
-    können (15 LLM-Stub, 8 ERiC-Stub), stehen mit Ursache in `tools/ui_rust/ausschluss.tsv` und laufen als
+    (`make -n ui-rust | tr ' ' '\n' | grep -c '^tests/'` → 22, auf `bc092a74` wiederholt). Die 23 Tests, die gegen Rust nicht grün werden
+    können (15 LLM-Stub, 8 ERiC-Stub; `grep -v '^#' tools/ui_rust/ausschluss.tsv | cut -f2 | sort | uniq -c`, auf `bc092a74`
+    wiederholt), stehen mit Ursache in `tools/ui_rust/ausschluss.tsv` und laufen als
     `xfail(strict)`. Lauf auf `5d212c31` (`UI_N=3`): 249 passed, 23 xfailed, 149 s; davon starten 216 einen
     Rust-Server, 33 sind reine Python-Prüfungen im Prozess (die Zeile `ui-rust:` am Lauf-Ende zählt das).
-    `make ui-rust-gegenprobe` (Rust endet sofort): 6 failed, wie gewollt. Auf `cbc376a6` nicht neu gelaufen;
+    `make ui-rust-gegenprobe` (Rust endet sofort): 6 failed, wie gewollt. Auf `bc092a74` nicht neu gelaufen (nicht gemessen);
     nicht in der CI (kein Playwright, kein Chromium). Der Rust-Server schreibt dabei die Antwort-Kopfnamen in
     Title-Case wie Python (`rust/api/src/dienen.rs`, `rust/api/tests/kopfnamen.rs`).
   - **`PARITY_N`** (`aaaad5a8`, `rust/parity/src/fallzahl.rs`): ein Env-Knopf für die Fallzahl der Zufalls- und
-    Generator-Läufe. 16 der 21 `*_paritaet.rs` lesen ihn (`grep -l 'fallzahl::' rust/parity/tests/*_paritaet.rs | wc -l`
-    → 16); `api_http`, `eingang_werkzeug`, `feld_kennung`, `flow` und `wert` lesen ihn nicht. Ohne die Variable gilt
+    Generator-Läufe. 17 der 22 `*_paritaet.rs` lesen ihn (`ls rust/parity/tests/*_paritaet.rs | wc -l` → 22; `grep -l 'fallzahl::' rust/parity/tests/*_paritaet.rs | wc -l`
+    → 17; auf `2bc35bd4` waren es 16 von 21); `api_http`, `eingang_werkzeug`, `feld_kennung`, `flow` und `store_zeichensatz` lesen ihn nicht
+    (`wert` seit `dd23965d`, gemergt mit `94882f7a`, ja). Ohne die Variable gilt
     der Standard der Suite; ein Wert, der keine ganze Zahl ab 1 ist, bricht ab (`rust/parity/tests/fallzahl_env.rs`).
     Wächter, die an die Standardzahl gebunden sind, laufen nur bei Standard-N (`fallzahl.rs`, `wache_gilt`).
-  - **TESTMAP-Test** (`3342d515`, Zweig `orch/testmap`, gemessen auf `cbc376a6` plus diesem Zweig): `rust/TESTMAP.tsv` hat 397 Zeilen, 331 `tests/…` und 66 `rust/…`
-    (`cut -f1 rust/TESTMAP.tsv | grep -c '^tests/'`, `'^rust/'`). `tests/test_testmap_vollstaendig.py` (läuft in
-    `make unit`) wird rot, wenn eine Datei in `tests/` oder `rust/*/tests/` keine Zeile hat;
-    `python3 tests/test_testmap_vollstaendig.py` nennt Zahl und Liste. Bericht `berichte/testmap.md`.
+    `PARITY_N=7` lief laut Merge-Nachricht `94882f7a` grün in allen 16 Suiten plus `wert_paritaet` (Log nicht eingesehen); `PARITY_N=10000`
+    (die Cutover-Zahl) ist nicht gemessen.
+  - **TESTMAP-Test** (`3342d515`, Merge `d32c3443`; Zahlen auf `bc092a74` gemessen): `rust/TESTMAP.tsv` hat 439 Zeilen ohne Kopf (`wc -l` → 440),
+    342 `tests/…` und 97 `rust/…` (397 = 331 + 66 am 2026-10-03; `cut -f1 rust/TESTMAP.tsv | grep -c '^tests/'` → 342, `'^rust/'` → 97).
+    `tests/test_testmap_vollstaendig.py` (läuft in `make unit`) wird rot, wenn eine Datei in `tests/` oder `rust/*/tests/` keine Zeile hat;
+    `python3 tests/test_testmap_vollstaendig.py` → „439 Testdateien, 0 ohne Zeile“ (main: 436/0 auf `057b7ec3`). Bericht `berichte/testmap.md`.
+    Die Spalte `lines` prüft kein Tor: Vault-Ticket `testmap-zeilen-spalte-veraltet-und-kein-tor-prueft-sie` (unqualifiziert in `tickets/`;
+    Titel: „… in 36 Python-Zeilen veraltet“, Stand `19554121`, nicht neu gemessen).
+  - **Weitere Merges seit `2bc35bd4`, je Spitze** (`git log --first-parent --reverse 2bc35bd4..bc092a74`; „laut Merge“ = aus der Merge-Nachricht,
+    nicht nachgemessen). Die fünf jüngsten Befunde zuerst:
+    - **Überlauf-422, Eintrag 1c** (`057b7ec3`, Fix `a388883e`): Ein Betrag außerhalb von i64 über `POST /event` ist in Rust ein 422 mit Klartext
+      statt eines 500 (`CatalaError`/`OverflowError`). Gewollte Abweichung — Python rechnet weiter und antwortet 200 —, eingetragen als 1c in
+      `rust/parity/tests/api_http_paritaet.rs:5782`. `cargo test -p api --test ueberlauf_klassen_hermetisch` → 5 passed (`bc092a74`). Ein Jahr
+      außerhalb u16 ist über HTTP nicht erreichbar, daher keine Änderung (laut Merge). Davor `a966b94c`: 127 Überlauf-Mutanten, 119 rot an
+      benannten Tests, 8 Überlebende (5 unerreichbar, 2 gleichwertig, 1 ungeklärt; laut Merge).
+    - **Kette-Endstand** (`cc28b334`): Die Kette der Zweige (Rechenweg) steht in Python und Rust auf demselben Endstand. Neue Tests:
+      `cargo test -p api --test kette_endstand_hermetisch` → 12 passed, `python3 -m pytest tests/test_rechenweg_endstand.py -q` → 13 passed
+      (`bc092a74`); 7 eigene Mutanten rot (laut Merge).
+    - **Kz-Wache** (`a9f6aec8`, Commit `82a357c7`): `tabellen::tests::jedes_kz_literal_ist_von_der_fixture_gelesen` und `rust/elster/src/kz_wache.rs`
+      verlangen für jedes exakte Kz-Literal in `rust/elster/src` (221: `deklaration.rs` 14, `kz_format.rs` 131, `tabellen.rs` 64, `xml.rs` 12;
+      gemessen auf `82a357c7` mit einer vorübergehenden Zählzeile, `rust/elster/src` seitdem unverändert, `git diff --stat 82a357c7 bc092a74 --
+      rust/elster/src` leer) einen von drei Gründen: von der Fixture gelesen, Item in `tabellen.rs`, `Zuordnung::Verhalten`. Zwei Lücken im
+      Fixture-Test (`iban_weiche`, `bankverbindung`) geschlossen; nur Test-Code. `cargo test -p elster --lib -- kz_wache jedes_kz_literal` → 5 passed
+      (`bc092a74`). Vorläufer: `707937ab` (Fixture `rust/fixtures/kz_tabellen.json` gegen `est_mapping.py`, ohne `PARITY=1`) und `7d9a6c39`
+      (89/89 Tabellen-Mutanten tot; Nr 59, die IBAN-Ausland-Kz in `abgabe_pruefen`, durch 4 Verhaltenstests geschlossen; laut Merge).
+    - **Golden-Rust-Prüfer** (`b13a0669`): `rust/engine/tests/golden_werte.rs` rechnet die 135 Golden-Fälle gegen die Rust-Engine auf die Erwartung,
+      Fallzahl gepinnt (`cargo test -p engine --test golden_werte` → 2 passed; `python3 -c "import json; print(len(json.load(open('rust/fixtures/golden_cases.json'))))"`
+      → 135). 22 Mutanten, 16 erschlagen, 6 `floor`/`ceil`-Überlebende klassifiziert (laut Merge). Davor `3fabb4ed`: ein Rust-Test hält die Form der
+      Fixture. Das Tor für den Wert bleibt `make golden`.
+    - **`korpus_faelle`-Exit** (`bc092a74`): `tools/parity/korpus_faelle.py` endet nach einer Abweisung mit Exit 1 und nennt ihre Zahl
+      (`python3 -m pytest tests/test_korpus_faelle_exit.py -q` → 8 passed, `bc092a74`). Davor `2ec08c52`: `lege_an` nennt Status und Grund statt
+      `AttributeError`; das Vault-Ticket `korpus-faelle-liest-ein-feld-das-apierror-nicht-hat` liegt weiter in `tickets/`.
+    - **Verhalten, Python und Rust gleich** (laut Merge): GWG ohne Sofortabzug sperrt sichtbar (`gwg_mehrwertsteuer_offen`, `gwg_abschreibung_offen`;
+      `f05b0247`); die 2.000-€-Auslandsgrenze der Doppelten Haushaltsführung gilt erst ab VZ 2026, VZ 2024 ist Folgerung, der Wortlaut a. F. liegt nicht in
+      `sources/` (`583d70f1`); § 34 Abs. 3: der Antrag schreibt `p34_abs3_antragsbetrag` (`4295f49e`, Partner-Pfad dort ausdrücklich nicht gebaut),
+      Gewinn beim Ehegatten sperrt mit `abs3_partner_gewinn_offen` (`0749aab3`, 57 Sperrgründe); Kind-Qualifikation je Instanz (`f22e2e76`); eine
+      Ableitung schreibt keinen Wert außerhalb `bereich` (`4b2cf0d2`); `rentner_pflege_weitere_personen` höchstens 9 (`431ca41c`); zwei Renten einer
+      Person sind ein `<R>` mit zwei `<Einz>` (`f37c2fb3`); Zeichensatz `Standard_E_V2` beim Speichern (`d635627c`, siehe „Entschieden“ unten);
+      `stammdaten_hausnummerzusatz` E0101207 (`f77a7776`); Verpflegungs-Vorschau liest nur Bestätigtes (`cbc376a6`); VaSt-Import lehnt Beträge
+      außerhalb i64 ab, Python (`94882f7a`).
+    - **Wächter ohne `PARITY=1`, nur Tests** (laut Merge): Gewerbesteuer-Hebesatz und Haushaltsnahe (`149cde0b`), § 35a-Abbildung und `rentner_gesamt`
+      (`57944f48`), p24a/p24b/p31 und weitere Posten (`af9bed11`), zwei § 23-Sperren über `GET /ergebnis` (`4a2f6ea4`), kein Aufrufer von
+      `lies_beleg_text` unter `produkt/` (`f80187db`), kein `und_feld`-Ziel ist ein Zahlfeld (`c00649ea`), Rentenbeginn und KAP-Leck (`0c20203b`),
+      OpenAPI-Router gegen Dokument (`593d94b4`), Bindungswerte gegen das ELSTER-Schema (`9ad51c19`), `rentner_gesamt`-Sperren, Zugriffe,
+      Kind-Abzüge und Überlauf-Pfade (`931b68f8`), 74 Tests je Schalter mit 53 Mutanten, 10 überlebt, alle Äquivalenzen (`0aa91677`), Parity: ein Block
+      ohne beurteilte Zeile ist rot (`604022c8`).
+    - **Werkzeug und Doku:** UI-Hilfen melden Banner und Knopfzustand bei Last (`19554121`, `b7b4e55e`), der Mitschnitt-Leser kennzeichnet
+      „(vorläufig)“ (`08104fce`); `7e81ada2`: Tor auf `9ad51c19` laut Merge clippy 0, ws 1110/0/21, PARITY 178/0, unit 4146/15/22, golden 135/135.
+
+**Gates auf `057b7ec3`** (2026-10-04 06:41–06:50, main, Skript `~/.cache/taxgraph-tmp/gate-main-057b/lauf.sh`, Logs ebenda, Baum sauber laut
+`00-kopf.txt`; von main übernommen, nicht wiederholt; die Summe über die `test result`-Zeilen ist aus `4-cargo.log` nachgezählt): `make unit`
+4405 passed / 15 skipped / 22 xfailed (458,58 s); `make golden` 135/135; `cargo clippy --workspace --all-targets --exclude parity -- -D warnings`
+rc=0; `cargo test --workspace --exclude parity --no-fail-fast` 1369 passed / 0 failed / 21 ignored (93 `test result`-Zeilen, Doctests
+eingeschlossen); `python3 tests/test_testmap_vollstaendig.py` 436 Testdateien, 0 ohne Zeile. Gegenüber `b540590` (3878 Tests in 188 s) brauchte
+`make unit` 458,58 s für 4405 Tests; die Ursache (Testzahl, Last) ist nicht untersucht. Nicht Teil dieses Tors: `PARITY=1` (unten),
+Gegenproben, echte Akten. Ein Tor auf `bc092a74` läuft bei main und ist hier nicht eingetragen; die TESTMAP-Zahl auf `bc092a74` (439/0, oben)
+ist eigene Messung.
 
 **Gates auf `b540590`** (2026-10-03 02:28–02:39, Instructor, Hauptbaum, Skript `~/.cache/taxgraph-tmp/gate-runde.sh`,
 Log `gate-runde.log`; jede Stufe einzeln): `make unit` 3878 passed / 0 failed (14 skipped, 25 xfailed, 188 s);
@@ -68,39 +132,62 @@ Log `gate-runde.log`; jede Stufe einzeln): `make unit` 3878 passed / 0 failed (1
 **19 von 19 Parity-Suiten** je einzeln `PARITY=1 … -- --test-threads 3` rc=0, die langsamsten `interview` 138 s,
 `api_http` 76 s, `elster` 72 s, `bescheid_zweige` 68 s (Suite-Zeit; vorher 156 s, `bescheid_deklaration` 86 → 29 s).
 Gesamte Parity-Runde ≈ 10 min statt ≈ 20 min. **Nicht nachgemessen:** Gegenproben G1–G6 (zuletzt auf `8e48cf7`
-je rot), `PARITY=1 cargo test --workspace` in einem Lauf, echte Akten. Auf `2bc35bd4` ist keine Runde gemessen; die Zahl der
-Parity-Suiten ist von 19 auf 21 gestiegen (`ls rust/parity/tests/*_paritaet.rs | wc -l`; auf `b540590` 19).
+je rot), `PARITY=1 cargo test --workspace` in einem Lauf, echte Akten. Seit `b540590` ist hier keine Runde über alle Parity-Suiten belegt (nicht gemessen); die Zahl der
+Parity-Suiten ist von 19 auf 22 gestiegen (`ls rust/parity/tests/*_paritaet.rs | wc -l` → 22 auf `bc092a74`; 21 auf `2bc35bd4`, 19 auf
+`b540590`). Laut Merge-Nachricht `7e81ada2` lief auf `9ad51c19` ein Tor mit PARITY 178/0 (Log nicht eingesehen, nicht nachgemessen).
 
 **Offen**
 
 1. Cutover (Schritt 10). Alle Routen aus 9c sind portiert (oben). Der Harness-Pfad für `chat`/`entfernung`/`einreichen` steht:
    Abschnitte `extern/chat`, `extern/entfernung`, `extern/einreichen` in `api_http_paritaet.rs` mit Fremddienst-Stubs je Server;
-   das Chat-Surrogat ist dokumentierte Abweichung C (`115ddac`).
+   das Chat-Surrogat ist dokumentierte Abweichung C (`115ddac`). **Offen, Entscheidung Julius.** Die Voraussetzungen laut Plan (§ 5 „Cutover: 10 000“,
+   § 7 Schritt 10 „nur bei vollständiger Parität“) sind offen oder nicht gemessen: (a) 10 000 generierte Fälle: nicht gemessen; (b) Gegenproben
+   G1–G6: zuletzt auf `8e48cf7` je rot (G1–G9 auf `a941ea7`), danach nicht nachgemessen; (c) `PARITY=1 cargo test --workspace` in einem Lauf: nicht
+   gemessen; (d) Parity-Harness-Binärdefekt: Der Harness `api_http_paritaet` startet die Rust-Server vom Pfad `<CARGO_TARGET_DIR>/debug/taxgraph-api`;
+   jedes andere `cargo test -p api` im selben Zielverzeichnis ersetzt die Datei durch einen Bau ohne `festzeit`, die Server haben dann die echte Uhr, und
+   die `event_id`-Abweichungen sehen wie ein Produktfehler aus (laut Commit-Nachricht, auf `bc092a74` nicht nachgemessen). Die Behebung steht als
+   Commit `eebe4578` (2026-10-04 07:06, ein Commit über `057b7ec3`, ändert `rust/parity/tests/api_http_paritaet.rs` und `rust/TESTMAP.tsv`) auf dem
+   Zweig `orch/parity-binaer-kopie`, in Arbeit bei `p24a-bau` (laut main); der Zweig ist nicht in main
+   (Stand 07:13: `git log --oneline 057b7ec3..orch/parity-binaer-kopie` → 1 Zeile, `git merge-base --is-ancestor eebe4578 bc092a74` → nein);
+   (e) die Entscheidung selbst.
 2. Reste aus den Berichten `haertung` und `json-leser`: alle vier Einträge (`python-schreibt-akte-die-der-rust-leser-sperrt`,
    `bindungsbereich-prueft-nur-der-browser`, `negativer-aufwand-umgeht-pflichtfrage`,
    `python-schreibt-ganzzahl-ueber-i64-in-die-fallakte`) liegen im Archiv (`backlog/archive/taxgraph/`, geprüft per
    `find ~/00_projects/vault -name '<slug>.md'`). Der Kodierungstest ist behoben (`cd6c789`); die Produktfrage „Protokollzeile
-   vor die Antwort" ist gebaut (`6d4cc2c`, Python + Rust; `audit-status-spalte-bleibt-auf-500` liegt im Archiv). Offen bleibt
-   die Doctest-Zählung `catala-sys` (25 von 26 oder 26 von 26; nicht neu geprüft).
+   vor die Antwort" ist gebaut (`6d4cc2c`, Python + Rust; `audit-status-spalte-bleibt-auf-500` liegt im Archiv). Die Doctest-Zählung
+   `catala-sys` ist überholt: 27 Doctests, 27 passed (Gate-Log `gate-main-057b/4-cargo.log`, Abschnitt „Doc-tests catala_sys“;
+   `git diff --stat 057b7ec3 bc092a74 -- rust/catala-sys` leer, also gilt es für `bc092a74`). Ob 27 jede `pub fn` deckt: nicht gemessen (die
+   Nachmessung 2026-09-30 in § 7 nennt noch `catala-sys 0/26`).
 3. Weitere Hebel für die Testzeit, laut Bericht `orakelcache`, nicht nachgemessen: `traverser.gate_gewicht` (etwa 70 %
    der Orakelzeit von `interview_paritaet`), `xsd_verify` (etwa die Hälfte von `elster_paritaet`), 50 s Wartezeit in
-   `store_paritaet`/`tarif_paritaet` (Vault `research/taxgraph-bauzeit-vs-testzeit`).
+   `store_paritaet`/`tarif_paritaet` (Vault `research/taxgraph-bauzeit-vs-testzeit`). `make unit` dauerte auf `057b7ec3` 458,58 s (4405 Tests)
+   gegenüber 188 s auf `b540590` (3878 Tests; `gate-main-057b/1-unit.log`), Ursache nicht untersucht.
 4. Tickets: Von den sechs Entscheidungen für Julius, die hier am 2026-10-03 in Vault `tickets/` standen, liegt keine mehr
    dort (`find ~/00_projects/vault -name '<slug>.md'`): `p24a-rueckfall-nennt-falsches-feld` und
    `chat-ablehnungsgrund-enthaelt-den-wert` im Backlog-Archiv, `worktree-erbt-hook-mit-fremdem-testpfad` in
    `tickets/archive/`, `p32-6-kinderfreibetraege-verwaiste-regel`, `p32-abs6-satz-2-und-5-lesen-keine-regel` und
-   `instanz-kennung-mit-suffix-eins-wird-verschieden-gelesen` in `backlog/taxgraph/` (49 Dateien). Unqualifiziert in
-   `tickets/` liegen zwei Taxgraph-Tickets (`grep -l 'project: "taxgraph"' tickets/*.md`):
-   `fehlertexte-nennen-den-eingegebenen-wert-in-422-500-und-ablaufprotokoll` und
-   `minus-null-im-json-text-ist-in-python-null-und-in-rust-minus-null`.
-5. In Arbeit laut Roster (`mcp__orch__roster`, 2026-10-03 17:27): `haertung8`, `k9`, `neunc` (alle busy). Der frühere Stand
+   `instanz-kennung-mit-suffix-eins-wird-verschieden-gelesen` in `backlog/taxgraph/` (48 Dateien, `ls ~/00_projects/vault/backlog/taxgraph | wc -l`,
+   2026-10-04; 49 am 2026-10-03). Unqualifiziert in `tickets/` liegen jetzt sieben Taxgraph-Tickets (`grep -l 'project: "taxgraph"' tickets/*.md | wc -l`
+   → 7; zwei am 2026-10-03): `fehlertexte-nennen-den-eingegebenen-wert-in-422-500-und-ablaufprotokoll`,
+   `minus-null-im-json-text-ist-in-python-null-und-in-rust-minus-null`, `korpus-faelle-liest-ein-feld-das-apierror-nicht-hat` (Fix laut Merge `2ec08c52`
+   gemergt, das Ticket liegt weiter in `tickets/`), `neues-params-jahr-ohne-vz-erweiterung-macht-in-rust-500` (2026-10-04, Commit `057b7ec3`),
+   `p34-abs3-fuer-den-partner-fehlt-ganz` (2026-10-03; danach sperrt `0749aab3` den Gewinn beim Ehegatten, ob das das Ticket schließt: nicht geprüft),
+   `testmap-zeilen-spalte-veraltet-und-kein-tor-prueft-sie` und `zwei-messungen-widersprechen-sich-bei-der-partner-vorsorge` (Titel: „Vier
+   Messungen an einem Fall, drei Richtungen: keine Rust/Python-Differenz, aber ein Loch in beiden Sprachen“).
+5. In Arbeit laut Roster (`mcp__orch__roster`, 2026-10-04 07:13): `haertung8`, `k9`, `last-fehler`, `p24a-bau` (alle busy), `main` idle; `neunc` steht
+   nicht in der Liste (2026-10-03 17:27 waren es `haertung8`, `k9`, `neunc`). Der frühere Stand
    (kein Worker; HTTP 400/429 bei allen außer `b1-2`) gilt nicht mehr.
-6. Aufräumen für Julius (der Guard blockt `git worktree remove`): Die Worktrees `wt-orakelcache`, `wt-orakelcache-vorher`
-   und `wt-nachmessung` samt `target-wt-*` gibt es nicht mehr (`ls ~/.cache/taxgraph-tmp/<name>`). Es bleiben `wt-neunc`,
-   `wt-k9`, `wt-haertung8` samt `target-wt-neunc`, `target-wt-k9`, `target-wt-haertung8` und `target-b1-2` unter
-   `~/.cache/taxgraph-tmp/`; neu sind unter anderem `target-wt-k9fh` und `target-wt-rente`. `git worktree list` zählt 33
-   Einträge. Der Symlink `oracle/.venv312` steht in `.gitignore` (`git check-ignore -v oracle/.venv312`), nie mit `git add -f` committen.
-   `cargo fmt --all` (150 Hunks in 35 Dateien, `cd rust && cargo fmt --all --check`) erst, wenn kein Zweig mehr offen ist.
+6. Aufräumen für Julius: `wt-orakelcache`, `wt-orakelcache-vorher` und `wt-nachmessung` gibt es weiterhin nicht. Von den Namen des Stands 2026-10-03
+   gibt es noch `wt-neunc`, `wt-k9` und `wt-haertung8`; `target-wt-neunc`, `target-wt-k9`, `target-wt-haertung8`, `target-b1-2`, `target-wt-k9fh` und
+   `target-wt-rente` gibt es nicht mehr (`ls -d ~/.cache/taxgraph-tmp/target*` → 14 Verzeichnisse: `target-main`, `target-p24a`, `target-p24a-end`,
+   `target-parity-kopie`, `target-last-fehler`, `target-wt-haertung8e/f/g/i`, `target-wt-k9-e2/-fnb/-iv/-mer`, `target-wt-ktr`; zusammen 88 GB,
+   `du -sch ~/.cache/taxgraph-tmp/target*`). `git worktree list | wc -l` → 67 (33 am 2026-10-03); Verzeichnisse `wt-*` unter
+   `~/.cache/taxgraph-tmp/`: 60 (`find ~/.cache/taxgraph-tmp -maxdepth 1 -type d -name 'wt-*' | wc -l`). `/home` ist zu 92 % belegt, 44 GB frei
+   (`df -h /home`). Dazu die Arbeitsverzeichnisse der `neunc`-Aufträge mit eigenem `target`: `~/.cache/taxgraph-tmp/{kls,ktr,kzg,plan}` (0,74 / 5,6 /
+   7,4 / 2,0 GB, `du -sh`; `plan` wächst mit jedem Lauf). Ob der Guard `git worktree remove` bei fremden Worktrees weiter blockt, ist nicht gemessen;
+   bei einem eigenen sauberen Worktree (`wt-kzg-basis`) lief es am 2026-10-04 ohne Blockade. Der Symlink `oracle/.venv312` steht in `.gitignore`
+   (`git check-ignore -v oracle/.venv312` → `.gitignore:8`), nie mit `git add -f` committen. `cargo fmt --all` (150 Hunks in 35 Dateien auf `2bc35bd4`,
+   `cd rust && cargo fmt --all --check`) erst, wenn kein Zweig mehr offen ist; auf `bc092a74` nicht neu gemessen (Auftrag: kein `cargo fmt`).
 
 | Schritt | Stand | Commits |
 |---|---|---|
@@ -118,23 +205,23 @@ Parity-Suiten ist von 19 auf 21 gestiegen (`ls rust/parity/tests/*_paritaet.rs |
 | auth ohne stille Fehlerpfade | fertig: Sperrliste erholt sich von vergiftetem Mutex, `py_json` liefert `Result` statt still `""` | `22459db` |
 | Unlesbarer CSV-Betrag | fertig, Py **und** Rust: unlesbare Zeile zählt in `verworfen` mit Hinweis, Betrag ganzzahlig ohne `float`/`f64`, über i64 oder 4300 Ziffern verworfen statt 500; der Rust-HTTP-Test lief bis zur Portierung der Route unter `#[ignore]` und läuft seit `91bfd72` ohne (Vault `backlog/archive/taxgraph/kontoauszug-zeile-mit-unlesbarem-betrag-verschwindet-still`). Negatives Geldfeld → Vault-Backlog `negativer-aufwand-umgeht-pflichtfrage`, nach dem JSON-Leser | `065fc93` · `215b046` |
 | Aufwands-Einzelposten runden auf | fertig, Py **und** Rust: 14 Einzelposten-Kz runden wie ihre Summen auf, § 35a-Summen aus den gerundeten Posten; ERiC rc=0 statt 610001002 (Vault `decisions/aufwand-einzelposten-aufrunden-summe-aus-posten`) | `a46e525` |
-| Kaputtes PDF / Beleg-Regex | fertig, Py **und** Rust: `pdftotext`-Exit ≠ 0/3 (auch fehlende Datei, Exit 1) → `/kontoauszug` 422 statt 0 Buchungen; Nr-Anker-Regex einmal je Nummer (≈ 40×). Reiner Scan als Beleg liest leer: Vault-Ticket `beleg-pdf-ohne-textlayer-wird-leer-gelesen` (kein Produktpfad) | `908820e` |
-| Stille Schema-Skips | fertig: alle Rust-Tests, die das ERiC-Schema brauchen, fragen `elster::testhilfe::schemas_da` — ohne Schema rot, Skip nur mit `TAXGRAPH_OHNE_XSD=1`. Der XSD-Pfad läuft ohne Schema gegen eine selbst gebaute Mini-XSD, der leere Art-Test verlangt eine nicht leere Menge (`94b5319`). Der Rundungs-Sweep prüft die Abzugs-Kz beider Listen, ein Test verlangt Mengengleichheit (`d118ecf`). Offen: der Zufallsgenerator trifft vier der neun § 35c-Kz nie (Vault-Ticket `fuzzer-generierte-stores-erreicht-vier-p35c-kz-nie`; je Sanierungsart ein handgebauter Paritätsfall seit `3fb18c0`) | `86e9c91` · `94b5319` · `d118ecf` |
+| Kaputtes PDF / Beleg-Regex | fertig, Py **und** Rust: `pdftotext`-Exit ≠ 0/3 (auch fehlende Datei, Exit 1) → `/kontoauszug` 422 statt 0 Buchungen; Nr-Anker-Regex einmal je Nummer (≈ 40×). Reiner Scan als Beleg liest leer: Vault-Backlog `beleg-pdf-ohne-textlayer-wird-leer-gelesen` (kein Produktpfad; Wächter `f80187db`: kein Aufrufer von `lies_beleg_text` unter `produkt/`) | `908820e` |
+| Stille Schema-Skips | fertig: alle Rust-Tests, die das ERiC-Schema brauchen, fragen `elster::testhilfe::schemas_da` — ohne Schema rot, Skip nur mit `TAXGRAPH_OHNE_XSD=1`. Der XSD-Pfad läuft ohne Schema gegen eine selbst gebaute Mini-XSD, der leere Art-Test verlangt eine nicht leere Menge (`94b5319`). Der Rundungs-Sweep prüft die Abzugs-Kz beider Listen, ein Test verlangt Mengengleichheit (`d118ecf`). Offen: der Zufallsgenerator trifft vier der neun § 35c-Kz nie (Vault-Backlog `fuzzer-generierte-stores-erreicht-vier-p35c-kz-nie`; je Sanierungsart ein handgebauter Paritätsfall seit `3fb18c0`) | `86e9c91` · `94b5319` · `d118ecf` |
 | Veranlagungsjahr in Rust-`elster` | fertig: `deklariere(snapshot, bindung, vz, id)` wählt die Null-Verbots-Liste je Jahr wie `est_mapping.null_unzulaessig` (0 → Fehler; 2024/2025 eigene Menge; 2026–2100 Vereinigung; sonst Fehler). `elster_paritaet reale_faelle` 4 → 0 Abweichungen (fall#52/#53 eg_huge/eg_neg). Gegenprobe am Aufrufort rot. Bericht `~/.cache/taxgraph-tmp/berichte/vz.md` | `d8d5f1f` · `faef9ee` |
 | End-to-End Eingabe → Bescheid → ELSTER-XML | fertig, byte-gleich Python, 3 Fixtures VZ 2025 gegen XSD | `479deb9` |
-| Python-xfail → Rust `#[ignore]` | fertig: 24 Gegenstücke in `rust/{api,bescheid,elster}/tests/offene_defekte.rs` (`90f91aa`). **Auf `cbc376a6` stehen dort 21 `#[ignore]`-Tests** (api 1, bescheid 10, elster 10; `grep -cE '^\s*#\[ignore' rust/*/tests/offene_defekte.rs`; auf `2bc35bd4` waren es 22 mit bescheid 11): `api::deklaration_umgeht_den_waechter_nicht` (`436521e`), `bescheid::kap_vorlaeufiger_topf_leckt_in_deklaration` (`69119b9`) und `bescheid::verpflegung_vorlaeufige_tage_lecken_in_deklaration` (`cbc376a6`) laufen ohne `#[ignore]`, weil der Defekt behoben ist. Unter `--ignored` rot am Defekt — Ausnahme `p23_eric_prueft_zwei_verkaeufe`: im Hauptbaum grün, weil `.env*` eine echte Hersteller-ID trägt (Umgebungs-Gate, im `#[ignore]`-Grund benannt); `test_datenwurzel_ausserhalb_repo` als grüner Rust-Test (`api/tests/datenwurzel.rs`); TESTMAP nennt je xfail das Gegenstück. Unter K2 kompilierbar erst mit `faef9ee` | `90f91aa` · `faef9ee` |
-| GitHub-CI wieder grün machen | drei Ursachen, je eine behoben: Quell-Hash locale-abhängig (`LC_ALL=C`, `e94357f`); `ttsim-backend` ungepinnt (`==1.2.1`, eine Pin-Quelle + Wächter, `1993b8d`/`f057f70`-Merge); fehlendes ERiC-Schema → laut rot, Skip nur mit `TAXGRAPH_OHNE_XSD=1`, `ci.yml` setzt es (`5b77799`). Der `rust`-Job wäre auf `5b77799` an E0308 + 6 Clippy-Fehlern aus `90f91aa` rot gewesen, behoben in `faef9ee`. **Gepusht mit `beef16b`; Lauf 36985004342: vier von fünf Jobs grün, `rust` rot an einer vierten Ursache:** die drei `parity`-Lib-Tests liefen ohne PARITY-Gate und fanden `pkg` nicht, `cargo test` brach ab, die Ziele danach liefen nicht. Behoben mit `1e3f6fb` (Lib-Tests überspringen laut, poppler im `rust`-Job, `--no-fail-fast`). **Lauf 37010730963 auf `8e48cf7`: alle fünf Jobs grün.** Vault `tickets/github-ci-seit-20-08-rot` | `e94357f` · `5b77799` · `bb41b61` |
+| Python-xfail → Rust `#[ignore]` | fertig: 24 Gegenstücke in `rust/{api,bescheid,elster}/tests/offene_defekte.rs` (`90f91aa`). **Auf `bc092a74` stehen dort 21 `#[ignore]`-Tests** (api 1, bescheid 10, elster 10; `grep -cE '^\s*#\[ignore' rust/*/tests/offene_defekte.rs`; ebenso auf `cbc376a6`, auf `2bc35bd4` waren es 22 mit bescheid 11): `api::deklaration_umgeht_den_waechter_nicht` (`436521e`), `bescheid::kap_vorlaeufiger_topf_leckt_in_deklaration` (`69119b9`) und `bescheid::verpflegung_vorlaeufige_tage_lecken_in_deklaration` (`cbc376a6`) laufen ohne `#[ignore]`, weil der Defekt behoben ist. Unter `--ignored` rot am Defekt — Ausnahme `p23_eric_prueft_zwei_verkaeufe`: im Hauptbaum grün, weil `.env*` eine echte Hersteller-ID trägt (Umgebungs-Gate, im `#[ignore]`-Grund benannt); `test_datenwurzel_ausserhalb_repo` als grüner Rust-Test (`api/tests/datenwurzel.rs`); TESTMAP nennt je xfail das Gegenstück. Unter K2 kompilierbar erst mit `faef9ee` | `90f91aa` · `faef9ee` |
+| GitHub-CI wieder grün machen | drei Ursachen, je eine behoben: Quell-Hash locale-abhängig (`LC_ALL=C`, `e94357f`); `ttsim-backend` ungepinnt (`==1.2.1`, eine Pin-Quelle + Wächter, `1993b8d`/`f057f70`-Merge); fehlendes ERiC-Schema → laut rot, Skip nur mit `TAXGRAPH_OHNE_XSD=1`, `ci.yml` setzt es (`5b77799`). Der `rust`-Job wäre auf `5b77799` an E0308 + 6 Clippy-Fehlern aus `90f91aa` rot gewesen, behoben in `faef9ee`. **Gepusht mit `beef16b`; Lauf 36985004342: vier von fünf Jobs grün, `rust` rot an einer vierten Ursache:** die drei `parity`-Lib-Tests liefen ohne PARITY-Gate und fanden `pkg` nicht, `cargo test` brach ab, die Ziele danach liefen nicht. Behoben mit `1e3f6fb` (Lib-Tests überspringen laut, poppler im `rust`-Job, `--no-fail-fast`). **Lauf 37010730963 auf `8e48cf7`: alle fünf Jobs grün.** Vault `backlog/archive/taxgraph/github-ci-seit-20-08-rot` | `e94357f` · `5b77799` · `bb41b61` |
 | Wackliger Test durch Ablage-Leck | fertig: `audit.AUDIT_DIR`/`api.FAELLE` enden an der Testdatei (autouse-Fixture in `tests/conftest.py`), Ursache pytest-randomly | `d1b0422` |
 | Pflegegrad im XSD-Enum | fertig, Py **und** Rust: 5→4, Block-Wegfall ohne H, nur E0161606 weg mit H; xmllint invalide 38 → 22; Testloch Enum-Schranke geschlossen (Vault `decisions/pflegegrad-ausserhalb-des-schemas-abbilden-oder-weglassen`) | `29d66c2` |
 | Wertformen-Messwerkzeug | fertig: `re.fullmatch` statt `re.match`, Regressionstest in `tests/` (Vault `decisions/wertformen-prueft-format-ueber-den-ganzen-wert`) | `3436fa9` |
-| Rente über 97, Rentenbeginn nach dem VZ, § 35a | fertig, Py **und** Rust: ein Alter bei Rentenbeginn über 97 nimmt die Zeile „ab 97" statt HTTP 500; ein Rentenbeginn nach dem VZ sperrt benannt mit `rentenbeginn_nach_vz` (Sperrgrund 53) statt 500, erst für aa (`5275dc3`), mit `4d6dd9a` auch für die bb-Leibrente; § 35a rechnet die Catala-Regel in Cent und rundet erst die Summe ab (`db2de9f`). 78 `xfail(strict)` hielten fest, dass der Server Zahlen außerhalb `bereich` annimmt (`c97662a`, Vault-Backlog `bindungsbereich-prueft-nur-der-browser`); behoben mit `bb7bc8d` (Abweisen beim Speichern): `tests/test_bindung_bereich_serverseitig.py` trägt 0 `xfail` (`grep -c xfail`) und läuft grün (119 passed), der Backlog-Eintrag liegt im Archiv. Echte Akten: 0 von 192 ändern sich | `a826efb` · `f1e92db` |
+| Rente über 97, Rentenbeginn nach dem VZ, § 35a | fertig, Py **und** Rust: ein Alter bei Rentenbeginn über 97 nimmt die Zeile „ab 97" statt HTTP 500; ein Rentenbeginn nach dem VZ sperrt benannt mit `rentenbeginn_nach_vz` (Sperrgrund 53) statt 500, erst für aa (`5275dc3`), mit `4d6dd9a` auch für die bb-Leibrente; § 35a rechnet die Catala-Regel in Cent und rundet erst die Summe ab (`db2de9f`). 78 `xfail(strict)` hielten fest, dass der Server Zahlen außerhalb `bereich` annimmt (`c97662a`, Vault-Backlog `bindungsbereich-prueft-nur-der-browser`); behoben mit `bb7bc8d` (Abweisen beim Speichern): `tests/test_bindung_bereich_serverseitig.py` trägt 0 `xfail` (`grep -c xfail`) und läuft grün (149 passed auf `bc092a74`, `python3 -m pytest tests/test_bindung_bereich_serverseitig.py -q`; früher 119), der Backlog-Eintrag liegt im Archiv. Echte Akten: 0 von 192 ändern sich | `a826efb` · `f1e92db` |
 | Partner-Hebesatz offen | fertig, Py **und** Rust: Zusammenveranlagung mit `gewst_messbetrag_partner` > 0 und unbeantwortetem `gewst_hebesatz_partner` sperrt mit `gewst_hebesatz_offen` wie bei Person A, statt still ohne Partner-Anrechnung zu rechnen (`45b0cb1`, Vault `decisions/partner-hebesatz-und-leibrente-nach-dem-steuerjahr-sperren-wie-ihr-gegenstueck`). Hebesatz 0 oder darunter bei Messbetrag > 0 sperrt wie ein fehlender, A und B: `d0de8f5`, `e46d4f5`, Klartext `48d009e`, gemergt mit `16cc0fd` | `f1e92db` · `d0de8f5` |
-| 9b Rest | gemergt: `store` (`9cbaf76`: 39 Doctests, Eigenschaften P1–P6, `debug_assert!` „ein aktives Event je Feld"); die zwei `#[ignore]`-Befunde behebt `d4babec`: `EventId::parse` weist A–F und `+` ab (`1359d13`), `store::lade` liest JSON statt YAML, NaN/±Infinity/±1e400/Ganzzahl außerhalb i64/u64 sperren mit `PersistenzFehler::Sperrform` (P11), die Python-Tür weist nicht endliche Zahlen mit 400 ab. auth, catala-sys, llm, eingang (`cb275b4`); konsistenz (`3da715e`: `debug_assert!` D1/D2, zwei Eigenschaften); interview, intervall (`4ec2d2f`: je ein `debug_assert!` und eine Eigenschaft über 1000 Fälle); engine (`a941ea7`: Doctest `tarif::fuenftel`, Eigenschaften SolZ-Gleitzone und GewSt-Messbetrag; dazu verlangt `schema.json` genau eines von `wert`/`wert_nicht`). Tür nach dem JSON-Leser: nur UTF-8 ohne BOM, ein Schreibfehler hinterlässt keine `*.tmp`, NaN-Login ohne Abweichung (`3f27bb8`); ein doppeltes Struct-Feld sperrt die Akte, `api.py`-Zeilenratsche zurück auf 1324 (`2b53e64`). `api` mit 9c: erledigt (Zeile „9c `api`-Handler“); der Wächter `test_ci_konfiguration` prüft die installierte Fassung für `gettsim` **und** `ttsim-backend` (`b2b4ae7`, `tests/test_ci_konfiguration.py:297`) | `d4babec` · `3da715e` · `4ec2d2f` · `a941ea7` · `3f27bb8` · `2b53e64` |
-| Format | `cargo fmt --all --check`: 150 Hunks in 35 Dateien (`cd rust && cargo fmt --all --check`, gemessen auf `2bc35bd4`), bewusst vertagt (CI prüft nur clippy: `.github/workflows/ci.yml:320-321`; Log #165) | — |
+| 9b Rest | gemergt: `store` (`9cbaf76`: 39 Doctests, Eigenschaften P1–P6, `debug_assert!` „ein aktives Event je Feld"); die zwei `#[ignore]`-Befunde behebt `d4babec`: `EventId::parse` weist A–F und `+` ab (`1359d13`), `store::lade` liest JSON statt YAML, NaN/±Infinity/±1e400/Ganzzahl außerhalb i64/u64 sperren mit `PersistenzFehler::Sperrform` (P11), die Python-Tür weist nicht endliche Zahlen mit 400 ab. auth, catala-sys, llm, eingang (`cb275b4`); konsistenz (`3da715e`: `debug_assert!` D1/D2, zwei Eigenschaften); interview, intervall (`4ec2d2f`: je ein `debug_assert!` und eine Eigenschaft über 1000 Fälle); engine (`a941ea7`: Doctest `tarif::fuenftel`, Eigenschaften SolZ-Gleitzone und GewSt-Messbetrag; dazu verlangt `schema.json` genau eines von `wert`/`wert_nicht`). Tür nach dem JSON-Leser: nur UTF-8 ohne BOM, ein Schreibfehler hinterlässt keine `*.tmp`, NaN-Login ohne Abweichung (`3f27bb8`); ein doppeltes Struct-Feld sperrt die Akte, `api.py`-Zeilenratsche zurück auf 1324 (`2b53e64`; heute `API_ZEILEN_OBERGRENZE = 1342` in `tests/test_bescheid_grenze.py:262`, `wc -l produkt/haut/api.py` → 1342). `api` mit 9c: erledigt (Zeile „9c `api`-Handler“); der Wächter `test_ci_konfiguration` prüft die installierte Fassung für `gettsim` **und** `ttsim-backend` (`b2b4ae7`, `tests/test_ci_konfiguration.py:297`) | `d4babec` · `3da715e` · `4ec2d2f` · `a941ea7` · `3f27bb8` · `2b53e64` |
+| Format | `cargo fmt --all --check`: 150 Hunks in 35 Dateien (`cd rust && cargo fmt --all --check`, gemessen auf `2bc35bd4`; auf `bc092a74` nicht neu gemessen, Auftrag ohne `cargo fmt`), bewusst vertagt (CI prüft nur clippy: `.github/workflows/ci.yml:320-321`; Log #165) | — |
 | dev-Profil nur Zeilentabellen | fertig: `[profile.dev] debug = "line-tables-only"` statt `debug = 2` (Auftrag Julius, Plattenplatz), `profile.test` erbt. Backtraces behalten Datei und Zeile, der Debugger sieht keine Variablen. `libstore-*.rlib` 11 804 166 B → 5 428 230 B (auf 46 %); clippy 0, `cargo test -p store` grün, Gegenprobe ohne Abschnitt → `debuginfo=2`. PARITY 17/17 grün auf `8e48cf7` | `bb01e0f` · `beef16b` |
 | Orakel liest eine Bindungsdatei einmal | fertig: `traverser.lade_datei_felder` ist je Prozess gecacht, `api._datei_felder` und beide Orakel-Skripte nutzen sie. YAML-Lesevorgänge 1509 → 32. `bescheid_deklaration_paritaet` 205 → 91 s laut Worker-Bericht, 86 s in der Nachmessung auf `8e48cf7`; die anderen 16 Suiten nicht schneller. Kosten: eine geänderte Bindungs-YAML wirkt erst nach Neustart des Prozesses (wie `lade_bindung`). Gegenproben G5/G6 in der Nachmessung je rot; Vault `research/taxgraph-bauzeit-vs-testzeit` | `6bba00d` |
-| 9c `api`-Handler | Handler fertig auf `2bc35bd4`: alle 24 Routen portiert (Routentabelle des Harness: Python 24, Rust 24); alle GET-Routen gemergt (`8d1bd96`), POST-Routen `event`, `kontoauszug`, `vorjahr` (`82bbf1e`), `chat` und `entfernung` (`c949f86`), `einreichen` (`8c89556`; nur `ERIC_VALIDIERE`, kein Versand); 9c/0b (`Username`/`FallId`-Newtypes im Owner-Check) gemergt (`0b31195`), 9c/0c und 9c/0e gemergt (`ecdfcb9`); Landkarte gemessen (15 Routen, Bericht `berichte/9c-karte.md`); Harness-Generator je Route fertig (`88f60c7`: echte Eingaben für 11 Routen aus Stufe 1–3); `NICHT_PORTIERT` entfällt (`d9d51a6`), eine Antwort `501 nicht_portiert` ist im Harness eine Abweichung (`d432948` in `4ec2d2f`, danach `d9d51a6`); `flow` ist portiert (Python-Teil `1321f3b`, Rust-Teil `ecdfcb9`) und der Mitschnitt `flow.jsonl` wird in `Modus::Voll` verglichen (Lauf auf `4368ebb` mit `--nocapture`: 60 bzw. 977 Zeilen in zwei Abschnitten, sonst 0); Vorbedingung JSON-Leser erfüllt (`d4babec`). Die Abnahme „Kontrakttest, Playwright gegen Rust“ (§7, Schritt 9c) stand hier offen (Vault `decisions/rust-9c-generator-je-route-und-flow-portieren`); den Lauf gibt es seit `081e1d94` als `make ui-rust` (Punkt „Seit `2bc35bd4` gemergt“: 249 passed, 23 xfailed auf `5d212c31`, nicht in der CI) | `88f60c7` · `4ec2d2f` |
-| 10 Cutover | offen | — |
+| 9c `api`-Handler | Handler fertig (gemessen auf `2bc35bd4`, Routenzahl auf `bc092a74` nachgemessen): alle 24 Routen portiert (Routentabelle des Harness: Python 24, Rust 24, Befehl oben); alle GET-Routen gemergt (`8d1bd96`), POST-Routen `event`, `kontoauszug`, `vorjahr` (`82bbf1e`), `chat` und `entfernung` (`c949f86`), `einreichen` (`8c89556`; nur `ERIC_VALIDIERE`, kein Versand); 9c/0b (`Username`/`FallId`-Newtypes im Owner-Check) gemergt (`0b31195`), 9c/0c und 9c/0e gemergt (`ecdfcb9`); Landkarte gemessen (15 Routen, Bericht `berichte/9c-karte.md`); Harness-Generator je Route fertig (`88f60c7`: echte Eingaben für 11 Routen aus Stufe 1–3); `NICHT_PORTIERT` entfällt (`d9d51a6`), eine Antwort `501 nicht_portiert` ist im Harness eine Abweichung (`d432948` in `4ec2d2f`, danach `d9d51a6`); `flow` ist portiert (Python-Teil `1321f3b`, Rust-Teil `ecdfcb9`) und der Mitschnitt `flow.jsonl` wird in `Modus::Voll` verglichen (Lauf auf `4368ebb` mit `--nocapture`: 60 bzw. 977 Zeilen in zwei Abschnitten, sonst 0); Vorbedingung JSON-Leser erfüllt (`d4babec`). Die Abnahme „Kontrakttest, Playwright gegen Rust“ (§7, Schritt 9c) stand hier offen (Vault `decisions/rust-9c-generator-je-route-und-flow-portieren`); den Lauf gibt es seit `081e1d94` als `make ui-rust` (Punkt „Seit `2bc35bd4` gemergt“: 249 passed, 23 xfailed auf `5d212c31`, auf `bc092a74` nicht neu gelaufen, nicht in der CI) | `88f60c7` · `4ec2d2f` |
+| 10 Cutover | offen, Entscheidung Julius; Voraussetzungen unter „Offen“ 1 | — |
 
 Gates auf `8e48cf7` (2026-10-02 15:05, Instructor nachgemessen im frischen Worktree `wt-nachmessung`, Log
 `~/.cache/taxgraph-tmp/nachmessung-neustart.log`): `make unit` 3548 passed / 0 failed (79 skipped, 102 xfailed,
@@ -160,22 +247,32 @@ Testbinaries; `rust/fuzz` `cargo check` grün; `make unit` 3478 passed / 0 faile
 - `/vorjahr` seit `e64a8c4`: eine Typ-/Format-Abweisung überspringt das Feld, Antwort 200 mit
   `uebersprungen` (nur feld_ids); jede andere Abweisung 422. Der Handler gibt
   `VorjahrErgebnis.uebersprungen` weiter (Vault `decisions/vorjahr-unpassenden-altwert-ueberspringen`).
-- `/chat`: die Gründe nennen bei übrigen Typfehlern den Wert (Vault-Ticket
-  `chat-ablehnungsgrund-enthaelt-den-wert`), spätestens beim Portieren entscheiden.
+- `/chat`: der Grund nennt Klasse und `feld_id`, nie den Wert: entschieden und gebaut mit `89eff75` (Python und Rust; Vault-Backlog
+  `chat-ablehnungsgrund-enthaelt-den-wert`, `abschluss: gebaut`, im Archiv).
 
-**Entschieden (Julius, 2026-10-01), nicht gebaut:** Das ELSTER-Schema erlaubt in Textfeldern nur den
+**Entschieden (Julius, 2026-10-01), gebaut mit `7bc78493` (Merge `d635627c`, 2026-10-03):** Das ELSTER-Schema erlaubt in Textfeldern nur den
 Zeichensatz „Standard_E_V2", strenger als XML 1.0. Ein Zeichen ausserhalb wird beim Speichern
 abgewiesen, die Meldung nennt Zeichen und Vorschlag, Py **und** Rust (Vault
-`decisions/elster-zeichensatz-beim-speichern-abweisen`, Backlog `elster-zeichensatz-strenger-als-xml`).
+`decisions/elster-zeichensatz-beim-speichern-abweisen`, Backlog `elster-zeichensatz-strenger-als-xml`; der Backlog-Eintrag liegt weiter in `backlog/taxgraph/` mit fünf offenen Kästchen AK1–AK5,
+`grep -c '\- \[ \] AK'` → 5; Code: `rust/domain/src/zeichensatz.rs`, `rust/store/src/abweisung.rs`, `produkt/store/zeichensatz.py`).
 
 **Offen aus 2026-10-01 (gemessen, noch nicht entschieden):**
-- **Nutzerpfad-Karte** (`sperre`, in Arbeit): `rust/interview` ist fertig portiert und trägt **keinen** Nutzerpfad. Falls das für weitere Crates gilt, ist „fertig" in der Tabelle oben eine Aussage über den Code, nicht über das Produkt.
-- **Rentner-Scheibe** fragt Lohnsteuer ohne die zwei ERiC-Pflichtfelder. Beide naheliegenden Ausgänge falsch; entschieden ist (c): Ring zuerst. Vault-Ticket `rentner-scheibe-fragt-lohnsteuer-ohne-die-zwei-pflichtfelder`, `naht` leitet die Naht-Paare aus dem XSD ab.
+- **Nutzerpfad-Karte** (`sperre`; im Roster vom 2026-10-04 steht kein Arbeiter `sperre`): `rust/interview` ist fertig portiert und trägt **keinen** Nutzerpfad. Falls das für weitere Crates gilt, ist „fertig" in der Tabelle oben eine Aussage über den Code, nicht über das Produkt. Nachgeprüft am 2026-10-04 (die Karte
+  `berichte/nutzerpfad-karte.md` ist vom 2026-10-01 und nicht neu gemacht): `rust/api` hängt an `interview` (`rust/api/Cargo.toml:25`, seit `199bbeca`;
+  Aufrufe in `rust/api/src/ergebnis.rs` und `fragen.rs`), und `taxgraph-api` startet nicht mehr nur ein Parity-Test: `scripts/starte-api.sh`
+  (`cd8687d3`) und `make ui-rust` (`Makefile:235-253`) starten es (`grep -rn 'taxgraph-api'` über Makefile, scripts, tools). Ob ein
+  Produktionsweg es startet: nicht gemessen; produktiv läuft bis zum Cutover Python. Die Karte (13:35 Uhr) ist älter als `cd8687d3` (13:52) und `199bbeca` (13:59) vom selben Tag. Von ihren 14 Bausteinen sind hier nur `interview` und
+  `api` nachgeprüft; die übrigen 12: nicht neu geprüft.
+- **Rentner-Scheibe** fragt Lohnsteuer ohne die zwei ERiC-Pflichtfelder. Beide naheliegenden Ausgänge falsch; entschieden ist (c): Ring zuerst. Vault-Backlog `rentner-scheibe-fragt-lohnsteuer-ohne-die-zwei-pflichtfelder`, `naht` leitet die Naht-Paare aus dem XSD ab. Auf `bc092a74` nicht neu geprüft.
 - **Audit-Leck** (Fix `d1b0422`, Zeile „Wackliger Test" oben): `API.FAELLE` und `audit.AUDIT_DIR` sind zwei Modul-Globals, die halbe Isolierung leckt 1145 Zeilen ins Nutzerverzeichnis. 12 von 169 Wegwerf-Skripten tragen das Muster. Zweites Ticket: die `status`-Spalte steht bei fünf Aktionsnamen auf 500 trotz 409/422 am Client — gebaut mit `6d4cc2c`.
-- **Parity-Blindstellen** (Vault `decisions/parity-elster-vergleich-gegenstandslos-fuer-ring`): der ELSTER-Vergleich nimmt auf beiden Seiten denselben verkürzten Weg — für die Ring-Injektion 0 Aussage; die Komposition `mit_ring_werten → elster::deklariere` hat für Rust keine Zeile. `intervall`/„B alle" ist **strukturell leer** (299 von 366 Achsen nullen die Zeile, 192/192 NULL).
+- **Parity-Blindstellen** (Vault `decisions/parity-elster-vergleich-gegenstandslos-fuer-ring`): der ELSTER-Vergleich nimmt auf beiden Seiten denselben verkürzten Weg — für die Ring-Injektion 0 Aussage; die Komposition `mit_ring_werten → elster::deklariere` hat für Rust keine Zeile. `intervall`/„B alle" ist **strukturell leer** (299 von 366 Achsen nullen die Zeile, 192/192 NULL). Seit `604022c8` (laut Merge) ist ein Block ohne beurteilte Zeile rot, `zugriff_teil1`/`zugriff_teil2`
+  und `interview` zählen Werte statt Fälle, leere Zeilen sind gepinnt; `interview` war bei leerem Korpus grün. Ob „B alle“ noch strukturell leer ist: nicht neu gemessen.
 **Kleinere offene Befunde:** Float-Rentenfreibetrag
 fehlt im Parity-Korpus (nur Unit-Tests); reale Fälle decken Kinder/§ 23/DBA kaum (Golden-Fälle vor Cutover);
-Mutationen überleben bei § 31-Gleichstand und `true` im Rentenbeginn-Jahr.
+Mutationen überleben bei § 31-Gleichstand und `true` im Rentenbeginn-Jahr (Stand 2026-10-03, auf `bc092a74` nicht neu geprüft). Neue
+Mutations-Überlebende seit `2bc35bd4` (laut Merge, nicht nachgemessen): `0aa91677` 10 von 53, alle Äquivalenzen (`m47` `Gesamt.rentner=true` ist tot);
+`b13a0669` 6 von 22, alle `floor`/`ceil`, klassifiziert; `a966b94c` 8 von 127 (5 `unreachable`, 2 `equivalent`, 1 ungeklärt: A3, `api/src/stand.rs`,
+`IntervallFehler::Ueberlauf` → `ValueError`, Bericht `berichte/h8-hermetisch5.md`).
 
 ---
 

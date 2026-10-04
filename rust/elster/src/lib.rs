@@ -29,6 +29,9 @@ mod eric;
 mod geordnet;
 mod instanz;
 mod kz_format;
+// Nur im Testbau: die Wache sucht jedes Kz-Literal im Produktionstext, das keine Fixture liest.
+#[cfg(test)]
+mod kz_wache;
 mod py;
 // Nur im Testbau: das Regal liest die Quelltexte der Crate (`include_str!`) und gehoert nicht ins Binary.
 #[cfg(test)]

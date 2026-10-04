@@ -7,7 +7,7 @@ use engine::zugriff::teil2::gesamt::{gesamt_tarifliche, gesamt_zve, GesamtfallEi
 use engine::zugriff::teil2::sonstige::{p32b_1, ProgressionsvorbehaltEingabe};
 
 use super::rechnen::{add, max0, sub, R};
-use super::tarif::{kapital, p34_chooser, p35_credit, Lage, SolzInfo};
+use super::tarif::{kapital, p34_chooser, p35_credit, Endstand, Lage, SolzInfo};
 
 /// § 32b im Rentner-Ring: wirkt auf das Ergebnis NACH dem Kapital. Rueckgabe
 /// `(result', est_ohne_p35')`; der § 35-Kredit (nach der Formel OHNE § 32b, wie Python) kommt danach ab.
@@ -44,7 +44,8 @@ fn p32b_nach_kapital(
     Ok((result, est_ohne_p35))
 }
 
-/// `_festzusetzende_r(freibetrag)` (EURO). `info` traegt den SolZ-Zwischenstand.
+/// `_festzusetzende_r(freibetrag)` (EURO). `info` traegt den SolZ-Zwischenstand, `ende` den
+/// Endstand dieses Laufs (1:1 gesamt-Präzedenz; Python `kette_end_r`).
 ///
 /// # Errors
 /// Accessor- und Ueberlauf-Fehler.
@@ -53,6 +54,7 @@ pub(super) fn festzusetzende(
     g: &GesamtfallEingabe,
     freibetrag: Euro,
     info: &mut Option<SolzInfo>,
+    ende: &mut Option<Endstand>,
 ) -> R<Euro> {
     let g2 = GesamtfallEingabe {
         freibetraege_kinder: freibetrag,
@@ -107,5 +109,8 @@ pub(super) fn festzusetzende(
             est_ohne_p35,
         });
     }
+    // Endstand NACH dem § 32b/§ 35-Wrapper: dieser `result` ist der zurueckgegebene Wert, und
+    // `g2` ist das Dict, auf dem die oberen drei Stufen gerechnet werden (1:1 Python).
+    *ende = Some(Endstand { g2, wert: result });
     Ok(result)
 }

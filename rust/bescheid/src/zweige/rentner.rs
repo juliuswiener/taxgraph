@@ -225,8 +225,8 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
         kinder: feld_int_oder_null(f, "fam_anzahl_kinder")?,
         extras: r.a.extras,
     };
-    rahmen(&lage, &g, r.a.solz, Modus::Rentner, |fb, info| {
-        rentner_tarif::festzusetzende(&lage, &g, fb, info)
+    rahmen(&lage, r.a.solz, Modus::Rentner, |fb, info, ende| {
+        rentner_tarif::festzusetzende(&lage, &g, fb, info, ende)
     })
 }
 
