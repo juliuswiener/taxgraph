@@ -91,10 +91,13 @@ erzeugen; der Rust-Test zeigt dann, wo Rust vom Orakel abweicht. Beide Generator
 
 Feste Grenzfaelle fuer `engine::zugriff` samt den Antworten des laufenden Python-Orakels (`runner.catala_*` ueber
 `tools/parity/oracle.py`): `solz`, `fuenftel`, `p32b_1`, `p34c_1`, `kst_nenner_b`, `behinderten_pb`, `p33a_unterhalt`,
-`renten_einkuenfte`, `p3_nr72_photovoltaik`, `p101_mobilitaetspraemie` und `_cent`. Je Fall: `fn`, `args` (der rohe
+`renten_einkuenfte`, `p3_nr72_photovoltaik`, `p101_mobilitaetspraemie` und `_cent` (3683 Faelle, 689 029 Bytes). Je Fall: `fn`, `args` (der rohe
 Sachverhalt-dict, wie ihn die Parity-Suiten schicken) und `py` (`{"ok": wert}` oder `{"err": klasse, "catala": bool}`).
 Die Faelle liegen an den Schwellen und Saetzen der Zugriffsfunktionen (0/0, -1/-1, genau an der Grenze, +-1), weil der
-Zufallsgenerator von `zugriff_teil{1,2}_paritaet` sie nur selten und nie gemeinsam zieht. Konsument:
+Zufallsgenerator von `zugriff_teil{1,2}_paritaet` sie nur selten und nie gemeinsam zieht. Die Gitter der Koerperschaftsteuer
+(Zinsschranke, Verlustabzug, Spendenabzug), der Rente (Basisrente aa) und des Unterhalts-Bodens stammen aus einem
+Operator-Sweep ueber die Rumpfe der elf Funktionen: je Mutant, der ohne `PARITY=1` gruen blieb, kam der kleinste Fall dazu,
+der ihn faengt. Konsument:
 `rust/engine/tests/wertwache_orakel_werte.rs` (hermetisch, ohne `PARITY=1`, ohne Python; benutzt die Adapter der
 Parity-Suiten).
 

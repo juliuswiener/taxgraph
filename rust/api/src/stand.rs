@@ -24,7 +24,7 @@ use crate::zustand::Zustand;
 /// ueberlaeuft (z. B. `bruttoarbeitslohn` = `i64::MIN` ueber `POST /event`, das ihn annimmt), ist eine
 /// Eingabe des Nutzers und kein Programmfehler: 422 mit einer Meldung, die sagt, dass ein Betrag zu gross
 /// ist, statt eines 500 mit einer Python-Klasse, die es dort nie gab. Der Text traegt keinen Wert aus dem Store.
-fn ueberlauf_422(e: &dyn std::fmt::Display) -> ApiFehler {
+pub(crate) fn ueberlauf_422(e: &dyn std::fmt::Display) -> ApiFehler {
     ApiFehler::status(
         422,
         format!(

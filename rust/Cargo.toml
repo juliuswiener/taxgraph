@@ -61,3 +61,8 @@ debug = "line-tables-only"
 # Die Stufe steckt im Hash jedes Artefakts; darum haengt der Cache-Schluessel des rust-Jobs in
 # .github/workflows/ci.yml an dieser Datei.
 opt-level = 1
+# `make serve` baut mit `cargo build` und damit in genau diesem Profil (das Makefile verbietet
+# --release). Hier steht die Ueberlaufpruefung ausdruecklich, obwohl Cargo sie fuer dev vorgibt:
+# ohne sie bricht ein ungeprueft geschriebenes `+`/`-` der Geldrechnung still um (Bericht h8-casts).
+# tests/test_ueberlauf_waechter_text.py verlangt diese Zeile und liest das Makefile mit.
+overflow-checks = true

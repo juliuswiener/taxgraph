@@ -12,13 +12,20 @@ nie gemeinsam; ein Mutant an einer Schwelle ueberlebt dort mit 1000 Faellen je F
   * Solz        §§ 3, 4 SolzG: Freigrenze je VZ (einzel/zusammen) und +-1/2/3, Schnittpunkt Regel/Milderung, Kapitalsteuer
   * Fuenftel    § 34 Abs. 1: verbleibendes zvE 0 / -1 / positiv, zvE 0 / -1 / positiv
   * P32b_1      Progressionsvorbehalt: zvE + Progressionseinkuenfte 0 / +-1 / negativ
-  * P34c_1      Anrechnung auslaendischer Steuer: zvE und ausl 0 / +-1
-  * KStG        Nenner B: Beteiligungsquote 9 / 10 / 11 (§ 8b Abs. 4)
+  * P34c_1      Anrechnung auslaendischer Steuer: zvE und ausl 0 / +-1, gezahlte Steuer -1 / 0 / 1
+  * KStG        Nenner B: Beteiligungsquote 9 / 10 / 11 (§ 8b Abs. 4); Hinzurechnungen; Zinsschranke (Freigrenze 3 Mio. EUR
+                +-1, Ausnahmen, EBITDA-Deckel); Verlustabzug (§ 8c/§ 8d, Sockel 1 Mio. EUR); Spendenabzug; Gewerbeertrag
+                und Hebesatz; Cent-Reste der Abrundung
   * Behinderten-Pauschbetrag: GdB 19 / 20 / 21 ... 100 / 101
-  * § 33a       Unterhalt: Schonbetrag 623 / 624 / 625 und Grundfreibetrag je VZ
-  * § 22        Renten (bb): Alter 96 / 97 / 98
+  * § 33a       Unterhalt: Schonbetrag 623 / 624 / 625, Grundfreibetrag je VZ, Boden des Hoechstbetrags (<= 0)
+  * § 22        Renten: bb Alter 96 / 97 / 98 und Boden (steuerpflichtig <= WK-PB 102); aa Erstjahr, Folgejahr mit und ohne
+                Freibetrag, Beginn nach dem VZ; nicht ringfaehige Art; fehlende Pflichtfelder
   * § 3 Nr. 72  Photovoltaik: 30 kWp je Einheit, 100 kWp insgesamt, Leistung 0 / 1
   * § 101       Mobilitaetspraemie: Arbeitnehmer-Zweig und Unterschreitung des Grundfreibetrags
+
+Die gezielten Gitter (Zinsschranke, Verlustabzug, Rente aa, Hoechstbetrag-Boden, Cent-Reste) stammen aus einem Operator-Sweep
+ueber die Rumpfe der elf Funktionen (Bericht `wertwache-sweep.md`): je Mutant, der gruen blieb, kam der kleinste Fall dazu, der
+ihn faengt.
 
 Alles deterministisch: feste Gitter, kein Zufall, sortierte Schluessel; zweimal erzeugt (auch unter PYTHONHASHSEED=1
 und 777) ergibt dieselben Bytes. Der Aufrufer braucht `make build-python` (Catala-Paket fuer `oracle.py`).
@@ -89,7 +96,7 @@ def p34c_1() -> None:
     for zve in (-1, 0, 1, 2, 60_000):
         for ausl in (-1, 0, 1, 2, 30_000, 60_000, 70_000):
             for est in (0, 5, 10_000):
-                for gezahlt in (1, 5_000):
+                for gezahlt in (-1, 0, 1, 5_000):
                     fall("catala_p34c_1", {"gezahlte_auslaendische_steuer": gezahlt, "deutsche_est_inkl_ausl": est,
                                            "zu_versteuerndes_einkommen": zve, "auslaendische_einkuenfte_staat": ausl})
 
@@ -102,6 +109,76 @@ def kst() -> None:
                                              "dividende_bezuege": div, "gewinn_estg": gewinn,
                                              "veraeusserungsgewinn": 5000})
     fall("catala_kst_nenner_b", {"gewst_hebesatz": 400, "dividende_bezuege": 1000, "gewinn_estg": 100_000})
+    kst_rumpf()
+
+
+def kst_fall(**felder) -> None:
+    fall("catala_kst_nenner_b", {"gewst_hebesatz": 400, **felder})
+
+
+def kst_rumpf() -> None:
+    """Die Zweige hinter dem Einkommen der Kapitalgesellschaft: Hinzurechnung (Personensteuern, Geldstrafen),
+    Zinsschranke (§ 4h EStG/§ 8a KStG: Freigrenze 3 Mio. EUR, Ausnahmen, EBITDA-Deckel), Verlustabzug (§ 8c/§ 8d, Sockel
+    1 Mio. EUR + 70 %), Spendenabzug (§ 9 Abs. 1 Nr. 2), Gewerbeertrag/Hebesatz. Betraege in EUR."""
+    # Hinzurechnung: Personensteuern und Geldstrafen (nicht abziehbar)
+    for ps in (0, 1, 1000, 123_456):
+        for gs in (0, 1, 2000):
+            for gewinn in (100_000, 100_037):
+                kst_fall(gewinn_estg=gewinn, personensteuern=ps, geldstrafen=gs)
+    # verdeckte Gewinnausschuettung und Einlage
+    for vga in (0, 1000, 50_000):
+        for einlage in (0, 700, 20_000):
+            kst_fall(gewinn_estg=100_000, verdeckte_gewinnausschuettung=vga, verdeckte_einlage=einlage)
+    # § 8b: Beteiligung 9/10/11 mit Veraeusserungsgewinn (auch negativ) und vielen Gewinnen (1-Cent-Schwankungen sichtbar)
+    for quote in (9, 10, 11):
+        for ve in (0, 5000, -5000):
+            for div in (0, 1000):
+                for gewinn in range(100_000, 100_041, 5):
+                    kst_fall(gewinn_estg=gewinn, beteiligung_prozent=quote, dividende_bezuege=div,
+                             veraeusserungsgewinn=ve)
+    # Zinsschranke: Netto-Zinsaufwand 3 Mio. EUR -1 / 0 / +1 und deutlich darueber, beide Ausnahmen, EBITDA-Deckel und
+    # Vortraege
+    for zinsertrag in (0, 500_000):
+        for d in (-1, 0, 1, 1_000_000):
+            for konzern, escape in ((False, False), (True, False), (False, True)):
+                for gewinn in (0, 20_000_000):
+                    for abschr in (0, 1_000_000):
+                        for zv in (0, 700_000):
+                            for ev in (0, 400_000):
+                                kst_fall(gewinn_estg=gewinn, zinsaufwand=3_000_000 + zinsertrag + d, zinsertrag=zinsertrag,
+                                         abschreibungen=abschr, zins_vortrag_bestand=zv, ebitda_vortrag_bestand=ev,
+                                         keine_konzern_oder_nahestehende_b=konzern, eigenkapital_escape_c=escape)
+    kst_fall(gewinn_estg=20_000_000, zinsaufwand=4_000_000, keine_konzern_oder_nahestehende_b=True,
+             eigenkapital_escape_c=True)
+    for zins in (0, 1, 2_999_999, 3_000_000, 3_000_001):  # ohne Ertrag, ohne Vortraege
+        kst_fall(gewinn_estg=10_000_000, zinsaufwand=zins)
+    # Cent-Reste: Der Spendenabzug (Obergrenze 4 Promille von Umsatz + Loehnen, abgerundet) legt das Einkommen auf
+    # beliebige Cent-Reste; Umsatz 100 Mio. EUR + 0..39 EUR stellt sie durch, damit eine Verschiebung um 1 Cent (z. B.
+    # Verlustbestand -1 statt 0 bei schaedlichem Erwerb) die Abrundung der KSt kippt
+    for erwerb in (False, True):
+        for k in range(40):
+            kst_fall(gewinn_estg=1_000_000, zuwendungen=10_000_000, umsaetze=100_000_000 + k, schaedlicher_erwerb=erwerb,
+                     verlustvortrag_bestand=500_000)
+    # Verlustabzug: Flags in allen 8 Kombinationen, Sockel 1 Mio. EUR (+-1) und 70 %-Grenze
+    for erwerb in (False, True):
+        for antrag in (False, True):
+            for fort in (False, True):
+                for vv in (0, 500_000, 2_000_000):
+                    for gewinn in (200_000, 3_000_000):
+                        kst_fall(gewinn_estg=gewinn, verlustvortrag_bestand=vv, schaedlicher_erwerb=erwerb,
+                                 antrag_8d=antrag, fortfuehrungs_voraussetzungen=fort)
+    for gewinn in (-1, 0, 1, 999_999, 1_000_000, 1_000_001, 2_000_000, 5_000_000):
+        for vv in (0, 1, 1_000_000, 1_500_000, 10_000_000):
+            kst_fall(gewinn_estg=gewinn, verlustvortrag_bestand=vv)
+    # Spendenabzug: 20 % des Einkommens gegen 4 Promille von Umsatz + Loehnen, Zuwendungen darunter/darueber
+    for zuw in (0, 1000, 50_000, 500_000, 5_000_000):
+        for umsatz, lohn in ((0, 0), (10_000_000, 0), (0, 5_000_000), (10_000_000, 5_000_000)):
+            for gewinn in (-100_000, 0, 100_000, 5_000_000):
+                kst_fall(gewinn_estg=gewinn, zuwendungen=zuw, umsaetze=umsatz, loehne_gehaelter=lohn)
+    # Gewerbeertrag: Rundung auf volle 100 EUR, Hebesatz
+    for gewinn in (-101, -100, -1, 0, 1, 99, 100, 101, 199, 200, 12_345, 100_000):
+        for hebesatz in (0, 1, 350, 400, 1000):
+            fall("catala_kst_nenner_b", {"gewst_hebesatz": hebesatz, "gewinn_estg": gewinn})
 
 
 def behinderten() -> None:
@@ -123,6 +200,16 @@ def unterhalt() -> None:
                                                    "kv_pv_beitraege": kv, "andere_einkuenfte_bezuege": andere})
         for aufw in (gfb - 1, gfb, gfb + 1):
             fall("catala_p33a_unterhalt", {"veranlagungszeitraum": vz, "aufwendungen": aufw})
+        # Boden des Hoechstbetrags (GFB + kv_pv - Anrechnung <= 0): Anrechnung == GFB + kv_pv, +-1; aufw >= 1 zeigt
+        # den Boden (Ergebnis 0 statt 1), aufw <= 0 nicht
+        for kv in (0, 700, -1000):
+            for aufw in (-1, 0, 1, 5, 100):
+                for d in (-2, -1, 0, 1, 2):
+                    fall("catala_p33a_unterhalt", {"veranlagungszeitraum": vz, "aufwendungen": aufw,
+                                                   "kv_pv_beitraege": kv, "andere_einkuenfte_bezuege": gfb + 624 + kv + d})
+
+
+AA_ARTEN = ("gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente")
 
 
 def renten() -> None:
@@ -132,6 +219,47 @@ def renten() -> None:
                 for rente in (12_000, 100_000):
                     fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "renten_art": art,
                                                       "alter_bei_rentenbeginn": alter, "jahresrente": rente})
+        # Boden: steuerpflichtig - WK-PB (102) <= 0 -> Ergebnis 0, nie 1 und nie negativ; Alter 65 = 18 %
+        for alter in (-1, 0, 30, 65, 97):
+            for rente in (-100, -1, 0, 1, 100, 102, 103):
+                fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "renten_art": "private_leibrente",
+                                                  "alter_bei_rentenbeginn": alter, "jahresrente": rente})
+        for rente in range(560, 580):
+            fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "renten_art": "private_leibrente",
+                                              "alter_bei_rentenbeginn": 65, "jahresrente": rente})
+        # Aa (Basisrente): Erstjahr (Beginn == VZ), Folgejahr mit/ohne fixierten Freibetrag, Beginn nach dem VZ
+        for beginn in (vz - 20, 2005, vz - 1, vz, vz + 1, vz + 5):
+            for fb in (None, 0, 1000, 12_000):
+                for rente in (-1, 0, 100, 1000, 12_000, 100_000):
+                    d = {"veranlagungszeitraum": vz, "renten_art": "gesetzliche_rente", "renten_beginn_jahr": beginn,
+                         "jahresrente": rente}
+                    if fb is not None:
+                        d["rentenfreibetrag"] = fb
+                    fall("catala_renten_einkuenfte", d)
+        for fb in (0, 1000):  # Folgejahr: (jahresrente - Freibetrag) - 102 genau an der 0
+            for d in (-1, 0, 101, 102, 103):
+                fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "renten_art": "gesetzliche_rente",
+                                                  "renten_beginn_jahr": vz - 1, "rentenfreibetrag": fb,
+                                                  "jahresrente": fb + d})
+        for rente in range(118, 136):  # Erstjahr: 83 / 83,5 / 84 % von jahresrente - 102 genau an der 0
+            fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "renten_art": "gesetzliche_rente",
+                                              "renten_beginn_jahr": vz, "jahresrente": rente})
+        for art in AA_ARTEN[1:]:
+            fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "renten_art": art,
+                                              "renten_beginn_jahr": vz, "jahresrente": 12_000})
+            fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "renten_art": art,
+                                              "renten_beginn_jahr": vz - 1, "rentenfreibetrag": 1000,
+                                              "jahresrente": 12_000})
+        # Art ausserhalb von Aa/Bb und fehlende Pflichtfelder
+        fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "renten_art": "betriebsrente_direktzusage",
+                                          "jahresrente": 12_000})
+        fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "jahresrente": 12_000})
+        fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "renten_art": "private_leibrente",
+                                          "jahresrente": 12_000})
+        fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "renten_art": "gesetzliche_rente",
+                                          "jahresrente": 12_000})
+        fall("catala_renten_einkuenfte", {"veranlagungszeitraum": vz, "renten_art": "private_leibrente",
+                                          "alter_bei_rentenbeginn": 65})
 
 
 def photovoltaik() -> None:

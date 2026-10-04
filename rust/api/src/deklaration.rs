@@ -10,7 +10,7 @@ use store::Store;
 
 use crate::antwort::Antwort;
 use crate::fehler::ApiFehler;
-use crate::stand::bescheid_fehler;
+use crate::stand::{bescheid_fehler, ueberlauf_422};
 use crate::zustand::Zustand;
 
 /// Python-Klasse und Text der Ausnahme aus `est_mapping.deklariere`. Die Fehler des Jahres tragen
@@ -19,7 +19,14 @@ use crate::zustand::Zustand;
 /// ponytail: bei `Wert` und `SnapshotObjekt`/`KeinFeldGebunden` ist nur die Klasse das
 /// Paritaetskriterium (`elster_paritaet`); der Text kann von Pythons abweichen. Alle drei brauchen
 /// einen Store-Wert oder eine Eingabe, die `POST /event` und die Bindung nicht durchlassen.
+///
+/// Ausnahme `Ueberlauf`: Python wirft dort nichts, es rechnet exakt. Rust antwortet 422 wie bei
+/// jedem Betrag, den die Rechnung nicht fasst ([`ueberlauf_422`]), nicht 500 mit einer Klasse, die
+/// es in Python nie gab.
 pub(crate) fn deklarations_fehler(e: &DeklarationsFehler) -> ApiFehler {
+    if matches!(e, DeklarationsFehler::Ueberlauf { .. }) {
+        return ueberlauf_422(e);
+    }
     let text = match e {
         DeklarationsFehler::Jahr(f) | DeklarationsFehler::Wert { fehler: f, .. } => {
             f.nachricht.clone()
@@ -80,4 +87,41 @@ pub fn deklaration(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwo
     };
     koerper.insert("fall_id".to_owned(), json!(fall_id.as_str()));
     Ok(Antwort::neu(200, Value::Object(koerper)))
+}
+
+#[cfg(test)]
+mod tests {
+    use elster::DeklarationsFehler;
+
+    use super::deklarations_fehler;
+    use crate::fehler::ApiFehler;
+
+    /// `DeklarationsFehler::Ueberlauf` ist 422 mit dem Betrags-Text, kein 500 mit einer Klasse, die
+    /// Python an dieser Stelle nie wirft. Die Stelle ist ueber HTTP nicht erreichbar (§ 23 sperrt
+    /// der Guard vor `deklariere()`); darum der Test auf der Abbildung.
+    #[test]
+    fn ueberlauf_der_deklaration_ist_422_und_ohne_wert() {
+        let e = DeklarationsFehler::Ueberlauf {
+            feld_id: "p23_veraeusserung__1".to_owned(),
+            was: "Differenz jenseits i64",
+        };
+        assert!(
+            matches!(
+                deklarations_fehler(&e),
+                ApiFehler::Status(422, ref t)
+                    if t.contains("zu groß") && t.contains("p23_veraeusserung__1")
+            ),
+            "{:?}",
+            deklarations_fehler(&e)
+        );
+        // KONTROLLE: ein anderer Fehler bleibt 500 mit seiner Python-Klasse.
+        assert!(
+            matches!(
+                deklarations_fehler(&DeklarationsFehler::KeinFeldGebunden),
+                ApiFehler::Unerwartet { ref typ, .. } if typ == "ValueError"
+            ),
+            "{:?}",
+            deklarations_fehler(&DeklarationsFehler::KeinFeldGebunden)
+        );
+    }
 }
