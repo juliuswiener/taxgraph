@@ -34,7 +34,7 @@ const FIXTURE: &str = include_str!("../../fixtures/konsistenz_orakel.json");
 
 /// Szenarien im Fixture. Faellt die Zahl, wurde das Fixture gekuerzt -- dann waere der Test gruen, weil er
 /// weniger prueft.
-const N_SZENARIEN: usize = 1360;
+const N_SZENARIEN: usize = 1369;
 const N_EUR: usize = 37;
 
 fn fixture() -> &'static Value {

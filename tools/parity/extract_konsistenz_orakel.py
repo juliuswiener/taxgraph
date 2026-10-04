@@ -48,7 +48,12 @@ BETRAG_PY = BETRAG + [2.5, 0.0, -0.0, 999.99, 1000.0, 1000.5, 1099.9, 1100.0, 12
                       # Ab 2**53 liegt `(f - fmod(f, 100)) / 100` nicht mehr auf einer Ganzzahl; `//` korrigiert
                       # dort (CPython `float_divmod`). Gemessen an 3.14: 3.6118e16 ohne, 3.6136e16 mit Korrektur.
                       3.611817872850673e16, 3.613642085502932e16, 3.630884210044771e16, 1e17,
-                      9007199254740993.0]
+                      9007199254740993.0,
+                      # Der Zweig `div - floor > 0.5` entscheidet (gemessen an 3.14): bei `== 0.5` genau behaelt
+                      # Python `floor` (`>`, nicht `>=`: 3.657870684243122e17 -> ...121, 4.203101941072417e17 -> ...417);
+                      # bei `0.9375 > 0.5` zaehlt Python `+ 1` (5.0206729224504584e16 -> ...045). Am Ende der Liste,
+                      # damit die Indizes in KURZ und die Namen der bisherigen Szenarien bleiben.
+                      3.657870684243122e17, 4.203101941072417e17, 5.0206729224504584e16]
 LEER_ZUSTAENDE = [None, False, True, 0, 0.0, -0.0, 1, 5, 5.5, "", " ", "  ", " x ", "\u001f", " ", "0"]
 
 
