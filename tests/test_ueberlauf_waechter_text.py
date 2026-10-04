@@ -48,7 +48,8 @@ def _c_ohne_kommentare(text: str) -> str:
     """C nach den Uebersetzungsphasen 2 und 3: Zeilenverkettung (`\\` am Zeilenende), dann
     Kommentare weg und Inhalt von Zeichenketten und -literalen leer. Zeilenenden bleiben, damit
     eine Direktive (`#define` mit Fortsetzungszeilen) EINE Zeile ist, egal wie sie umbrochen ist."""
-    text = re.sub(r"\\[ \t]*\r?\n", " ", text)
+    # Ersatz "" und kein Leerzeichen: der Praeprozessor klebt die Zeilen, `mpz_get_\<NL>si` ist `mpz_get_si`.
+    text = re.sub(r"\\[ \t]*\r?\n", "", text)
     aus: list[str] = []
     i, n = 0, len(text)
     while i < n:
@@ -231,13 +232,18 @@ def test_shim_waechter_laesst_den_sauberen_text_durch():
     assert shim_probleme({"shim.c": MAKRO + NUTZER}) == []
 
 
-def test_shim_waechter_schlaegt_am_echten_text_an_wenn_ein_aufruf_zu_klartext_wird():
+@pytest.mark.parametrize("schreibweise", [
+    "mpz_get_si",
+    "mpz_get_\\\nsi",  # der Praeprozessor klebt die Zeilen OHNE Leerzeichen zu `mpz_get_si`
+    "mpz_\\ \nget_\\\r\nsi",
+])
+def test_shim_waechter_schlaegt_am_echten_text_an_wenn_ein_aufruf_zu_klartext_wird(schreibweise):
     """Der Rueckfall am echten Ort: ein `TG_AUS(...)` des echten shim.c wird in-memory durch das
     Klartext-Aequivalent ersetzt. Ohne diesen Test pruefte der Waechter nur, dass heute alles gut ist."""
     echt = _shim_quellen()["shim.c"]
     m = re.search(r"^(\s*)TG_AUS\(([^,]+),\s*r,\s*(\w+)\);", echt, re.MULTILINE)
     assert m, "kein TG_AUS-Aufruf in shim.c gefunden"
-    klartext = f"{m.group(1)}({m.group(2).strip('*')}).wert = mpz_get_si(r->{m.group(3)});"
+    klartext = f"{m.group(1)}({m.group(2).strip('*')}).wert = {schreibweise}(r->{m.group(3)});"
     mutiert = echt.replace(m.group(0), klartext, 1)
     assert mutiert != echt
     probleme = shim_probleme({"shim.c": mutiert})
@@ -252,6 +258,9 @@ def test_shim_waechter_schlaegt_am_echten_text_an_wenn_ein_aufruf_zu_klartext_wi
     ("Aufruf ohne Leerraum vor der Klammer in einer Funktion", MAKRO + "static long g(mpz_srcptr z){return mpz_get_si(z);}\n" + NUTZER),
     ("Kommentarende vor dem Aufruf", MAKRO + "/* ok */ long x(R *r) { return mpz_get_si(r->a); }\n" + NUTZER),
     ("ein Schraegstrich-Stern-Muster im String schuetzt nicht", MAKRO + 'const char *s = "/*"; long x(R *r) { return mpz_get_si(r->a); }\n' + NUTZER),
+    ("Name durch Zeilenverkettung gespalten", MAKRO + "long x(R *r) { return mpz_get_\\\nsi(r->a); }\n" + NUTZER),
+    ("Name an zwei Stellen gespalten, Leerraum nach dem Strich", MAKRO + "long x(R *r) { return mpz_\\ \nget\\\n_si(r->a); }\n" + NUTZER),
+    ("Name gespalten, CRLF", MAKRO + "long x(R *r) { return mpz_get_\\\r\nsi(r->a); }\r\n" + NUTZER),
 ])
 def test_shim_waechter_schlaegt_an(name, text):
     probleme = shim_probleme({"shim.c": text})
@@ -272,6 +281,9 @@ def test_shim_waechter_schlaegt_an(name, text):
     ("aehnlicher Name", MAKRO + "long mpz_get_si_alt(void); long my_mpz_get_si2;\n" + NUTZER),
     ("Kommentar mit Apostroph", MAKRO + "/* don't use mpz_get_si */\n" + NUTZER),
     ("Zeilenkommentar mit Fortsetzung", MAKRO + "// Hinweis \\\n mpz_get_si(x)\n" + NUTZER),
+    ("Kommentaranfang und -ende durch Zeilenverkettung gespalten", MAKRO + "/\\\n* frueher: mpz_get_si(x) *\\\n/\n" + NUTZER),
+    ("Name im Makrokopf gespalten", MAKRO.replace("mpz_get_si", "mpz_get_\\\nsi") + NUTZER),
+    ("Makro-Aufruf gespalten", MAKRO + "void g(Out *o, R *r) { TG_\\\nAUS(*o, r, a); }\n"),
 ])
 def test_shim_waechter_laesst_umformatierung_und_kommentare_durch(name, text):
     assert shim_probleme({"shim.c": text}) == [], name
@@ -307,14 +319,53 @@ def test_profil_waechter_laesst_den_sauberen_text_durch():
     assert profil_probleme(CARGO_OK, MAKE_OK, {}) == []
 
 
+# Die Zeile in jeder Schreibweise des Schluessels, die TOML kennt: nackt, "gequotet", 'literal'; Leerraum
+# und Kommentar dahinter egal. ponytail: erste passende Zeile der Datei, Punkt-Schluessel
+# (`profile.dev.overflow-checks = true`) und Inline-Tabellen erkennt die Regex nicht. Dann wird
+# `_ohne_und_mit_false` LAUT rot (assert), nie still gruen; der Waechter selbst liest per tomllib
+# und kennt beide Formen (Faelle unten). Ausbau, falls das Cargo.toml so umgebaut wird: den
+# Rueckfall am geparsten dict erzeugen statt am Text.
+UEBERLAUF_ZEILE = re.compile(r"^[ \t]*([\"']?)overflow-checks\1[ \t]*=[ \t]*true\b[^\n]*$", re.MULTILINE)
+
+
+def _ohne_und_mit_false(cargo_text: str) -> tuple[str, str]:
+    """Der Rueckfall am Text: dieselbe Datei ohne die Zeile / mit `= false` (Schreibweise bleibt)."""
+    zeile = UEBERLAUF_ZEILE.search(cargo_text)
+    assert zeile, "rust/Cargo.toml hat keine ausdrueckliche Zeile `overflow-checks = true` im Profil dev"
+    ohne = cargo_text.replace(zeile.group(0), "", 1)
+    aus = cargo_text.replace(zeile.group(0), re.sub(r"\btrue\b", "false", zeile.group(0), count=1), 1)
+    assert ohne != cargo_text and aus != cargo_text
+    return ohne, aus
+
+
 def test_profil_waechter_schlaegt_am_echten_text_an_wenn_die_zeile_fehlt_oder_false_ist():
     """Der Rueckfall am echten Ort: das echte Cargo.toml in-memory ohne die Zeile / mit `= false`."""
     echt = CARGO_WURZEL.read_text(encoding="utf-8")
-    zeile = re.search(r"^overflow-checks\s*=\s*true\s*$", echt, re.MULTILINE)
-    assert zeile, "rust/Cargo.toml hat keine ausdrueckliche Zeile `overflow-checks = true` im Profil dev"
     make = MAKEFILE.read_text(encoding="utf-8")
-    ohne = echt.replace(zeile.group(0), "", 1)
-    aus = echt.replace(zeile.group(0), "overflow-checks = false", 1)
+    ohne, aus = _ohne_und_mit_false(echt)
+    assert any("nicht gesetzt" in p for p in profil_probleme(ohne, make))
+    assert any("False" in p for p in profil_probleme(aus, make))
+
+
+@pytest.mark.parametrize("schreibweise", [
+    "overflow-checks = true",
+    "overflow-checks=true",
+    '"overflow-checks" = true',
+    "'overflow-checks' = true",
+    '"overflow-checks"=true # nie ausschalten',
+    "  overflow-checks\t=\ttrue",
+])
+def test_profil_waechter_faengt_den_rueckfall_in_jeder_schluesselschreibweise(schreibweise):
+    """Das echte Cargo.toml, nur die Zeile umgeschrieben: unveraendert in Ordnung, ohne die Zeile und mit
+    `= false` rot. Haette der Selbsttest nur die nackte Schreibweise gefunden, fiele er bei der ersten
+    Umformatierung der Zeile um, ohne dass der Waechter etwas falsch gemacht haette."""
+    echt = CARGO_WURZEL.read_text(encoding="utf-8")
+    make = MAKEFILE.read_text(encoding="utf-8")
+    zeile = UEBERLAUF_ZEILE.search(echt)
+    assert zeile, "rust/Cargo.toml hat keine ausdrueckliche Zeile `overflow-checks = true` im Profil dev"
+    text = echt.replace(zeile.group(0), schreibweise, 1)
+    assert profil_probleme(text, make) == []
+    ohne, aus = _ohne_und_mit_false(text)
     assert any("nicht gesetzt" in p for p in profil_probleme(ohne, make))
     assert any("False" in p for p in profil_probleme(aus, make))
 
@@ -328,6 +379,9 @@ def test_profil_waechter_schlaegt_am_echten_text_an_wenn_die_zeile_fehlt_oder_fa
     ("Paket-Override schaltet aus", CARGO_OK + '[profile.dev.package."*"]\noverflow-checks = false\n'),
     ("Build-Override schaltet aus", CARGO_OK + '[profile.dev.build-override]\noverflow-checks = false\n'),
     ("verschachtelt zwei Ebenen", CARGO_OK + '[profile.dev.package.domain]\noverflow-checks = false\n'),
+    ("gequoteter Schluessel mit false", CARGO_OK.replace("overflow-checks = true", '"overflow-checks" = false')),
+    ("gequoteter Schluessel in Punktschreibweise mit false", 'profile.dev.opt-level = 1\nprofile.dev."overflow-checks" = false\n'),
+    ("gequoteter Schluessel verschwunden, nur Kommentar bleibt", CARGO_OK.replace("overflow-checks = true", '# "overflow-checks" = true')),
 ])
 def test_profil_waechter_schlaegt_am_cargo_toml_an(name, cargo):
     assert profil_probleme(cargo, MAKE_OK, {}) != [], name
@@ -340,6 +394,9 @@ def test_profil_waechter_schlaegt_am_cargo_toml_an(name, cargo):
     ("Kommentar dahinter und davor", '[profile.dev]\n# bleibt an\noverflow-checks = true # nie ausschalten\n'),
     ("Reihenfolge der Schluessel", '[profile.dev]\noverflow-checks = true\nopt-level = 1\ndebug = "line-tables-only"\n'),
     ("Kopf mit Leerraum", '[ profile.dev ]\noverflow-checks = true\n'),
+    ("gequoteter Schluessel", CARGO_OK.replace("overflow-checks = true", '"overflow-checks" = true')),
+    ("Schluessel in Apostrophen", CARGO_OK.replace("overflow-checks = true", "'overflow-checks' = true")),
+    ("gequoteter Schluessel in Punktschreibweise", 'profile.dev.opt-level = 1\nprofile.dev."overflow-checks" = true\n'),
     ("Paket-Override mit true", CARGO_OK + '[profile.dev.package."*"]\noverflow-checks = true\nopt-level = 3\n'),
     ("fremde Profile daneben", CARGO_OK + '[profile.release]\noverflow-checks = false\n[profile.test]\nopt-level = 1\n'),
 ])
