@@ -194,6 +194,12 @@ fn agb_abzug_differenz_ausserhalb_i64_ist_ueberlauf() {
                 None,
                 f(87_622_034_350_120_371, -M),
             ),
+            // agb < zumutbar: der Scope gibt 0 aus, die Differenz (unter i64::MIN) erreicht den Shim nie.
+            (
+                "-M bei GdE M: Abzug 0, Differenz unter i64::MIN",
+                Some(0),
+                f(-M, M),
+            ),
         ],
     );
 }
