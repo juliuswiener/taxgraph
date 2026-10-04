@@ -658,3 +658,127 @@ fn dezimalzahl_aus_grosser_ganzzahl_bleibt_exakt() {
         assert_eq!(satz.get(), soll, "{text}");
     }
 }
+
+/// Ein unlesbarer Wert ist ein Fehler und wird nie still zu null (Mutationsmessung N4f: `?` -> `.unwrap_or_default()` ueberlebte an
+/// acht Stellen in `params_zugriff.rs`). Je Fall macht der Test genau einen Wert einer Temp-Kopie unlesbar und erwartet den vollen
+/// Fehlertext mit Datei und Schluessel.
+#[test]
+fn unlesbare_werte_sind_ein_fehler_und_werden_nicht_zu_null() {
+    type Lese = fn(&Params) -> Option<String>;
+    let faelle: [(&str, &str, &str, Lese, &str); 7] = [
+        (
+            "2025/entfernungspauschale.yaml",
+            "satz_bis_20_km:\n  wert: 0.30",
+            "satz_bis_20_km:\n  wert: abc",
+            |p| p.entfernungspauschale(Vz::Vz2025).err().map(|e| e.to_string()),
+            "2025/entfernungspauschale.yaml: Schluessel satz_bis_20_km.wert ist keine Dezimalzahl",
+        ),
+        (
+            "2025/entfernungspauschale.yaml",
+            "satz_ab_21_km:\n  wert: 0.38",
+            "satz_ab_21_km:\n  wert: abc",
+            |p| p.entfernungspauschale(Vz::Vz2025).err().map(|e| e.to_string()),
+            "2025/entfernungspauschale.yaml: Schluessel satz_ab_21_km.wert ist keine Dezimalzahl",
+        ),
+        // Eine Zahl mit Bruchteil ist keine ganze Zahl (fail-closed), nicht null.
+        (
+            "2025/entfernungspauschale.yaml",
+            "staffelgrenze_km:\n  wert: 20",
+            "staffelgrenze_km:\n  wert: 20.5",
+            |p| p.entfernungspauschale(Vz::Vz2025).err().map(|e| e.to_string()),
+            "2025/entfernungspauschale.yaml: Schluessel staffelgrenze_km.wert ist keine ganze Zahl",
+        ),
+        (
+            "2025/verpflegung_p9_4a.yaml",
+            "kuerzung_mittag_abend_prozent:\n  wert: 40",
+            "kuerzung_mittag_abend_prozent:\n  wert: abc",
+            |p| p.verpflegung(Vz::Vz2025).err().map(|e| e.to_string()),
+            "2025/verpflegung_p9_4a.yaml: Schluessel kuerzung_mittag_abend_prozent.wert ist keine ganze Zahl",
+        ),
+        (
+            "2025/behinderten_pauschbetrag_p33b.yaml",
+            "pflege_staffel:\n  2: 600",
+            "pflege_staffel:\n  2: abc",
+            |p| p.p33b_pauschbetraege(Vz::Vz2025).err().map(|e| e.to_string()),
+            "2025/behinderten_pauschbetrag_p33b.yaml: Schluessel pflege_staffel ist keine Staffel {ganze Zahl: ganze Zahl}",
+        ),
+        (
+            "2025/kinderbetreuung_p10.yaml",
+            "abzugssatz:\n  wert: 0.8",
+            "abzugssatz:\n  wert: abc",
+            |p| p.kinderbetreuung(Vz::Vz2025).err().map(|e| e.to_string()),
+            "2025/kinderbetreuung_p10.yaml: Schluessel abzugssatz.wert ist keine Dezimalzahl",
+        ),
+        (
+            "2025/schulgeld_p10.yaml",
+            "abzugssatz:\n  wert: 0.3",
+            "abzugssatz:\n  wert: abc",
+            |p| p.schulgeld(Vz::Vz2025).err().map(|e| e.to_string()),
+            "2025/schulgeld_p10.yaml: Schluessel abzugssatz.wert ist keine Dezimalzahl",
+        ),
+    ];
+    for (datei, alt, neu, lese, soll) in faelle {
+        let w = Wurzel::neu("unlesbar");
+        w.ersetze(datei, alt, neu);
+        assert_eq!(lese(&w.lade()).as_deref(), Some(soll), "{datei}: {neu:?}");
+    }
+    // Gegenprobe: `20.0` hat keinen Bruchteil und ist die ganze Zahl 20.
+    let w = Wurzel::neu("zwanzig-punkt-null");
+    w.ersetze(
+        "2025/entfernungspauschale.yaml",
+        "staffelgrenze_km:\n  wert: 20",
+        "staffelgrenze_km:\n  wert: 20.0",
+    );
+    let e = w.lade().entfernungspauschale(Vz::Vz2025).unwrap();
+    assert_eq!(e.staffelgrenze_km, 20);
+}
+
+/// `lade` scheitert, wenn ein Jahresverzeichnis oder `kohorten/` fehlt (Mutationsmessung N4f: `yaml_dateien(&dir)?` ->
+/// `.unwrap_or_default()` lud dann nichts und meldete Erfolg).
+#[test]
+fn lade_scheitert_ohne_verzeichnis() {
+    for rel in ["2024", "2025", "2026", "kohorten"] {
+        let w = Wurzel::neu("ohne-verzeichnis");
+        std::fs::remove_dir_all(w.pfad(rel)).unwrap();
+        let Err(fehler) = Params::lade(&w.0) else {
+            panic!("lade ohne params/{rel} muss scheitern");
+        };
+        let text = fehler.to_string();
+        assert!(
+            text.starts_with("konnte ") && text.contains(&format!("params/{rel}")),
+            "{text}"
+        );
+    }
+}
+
+/// `lade` liest jede `*.yaml` aus den Jahresverzeichnissen und aus `kohorten/` (Mutationsmessung N4f: `for pfad in
+/// yaml_dateien(&dir)?` -> `.skip(1)` liess die erste Kohortendatei ungeladen). Eine unlesbare Datei, die nicht geladen wird,
+/// faellt sonst nur auf, wenn ein Accessor genau sie liest.
+#[test]
+fn lade_liest_jede_parameterdatei() {
+    let w = Wurzel::neu("jede-datei");
+    let mut dateien = Vec::new();
+    for dir in ["2024", "2025", "2026", "kohorten"] {
+        for eintrag in std::fs::read_dir(w.pfad(dir)).unwrap() {
+            let pfad = eintrag.unwrap().path();
+            if pfad.extension().is_some_and(|e| e == "yaml") {
+                dateien.push(pfad);
+            }
+        }
+    }
+    assert!(
+        dateien.len() >= 60,
+        "nur {} Dateien gefunden",
+        dateien.len()
+    );
+    for pfad in &dateien {
+        let original = std::fs::read_to_string(pfad).unwrap();
+        std::fs::write(pfad, "kaputt: [\n").unwrap();
+        assert!(
+            Params::lade(&w.0).is_err(),
+            "{} wird nicht geladen",
+            pfad.display()
+        );
+        std::fs::write(pfad, original).unwrap();
+    }
+}

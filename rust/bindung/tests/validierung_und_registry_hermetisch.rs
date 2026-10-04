@@ -384,3 +384,18 @@ fn quelle_und_luecke_binden_den_richtigen_punkt() {
         }
     }
 }
+
+/// `lade_bindung` prueft auch die ERSTE Bindung einer Datei (Mutationsmessung N4f: `for b in &datei.bindungen` -> `.skip(1)` liess
+/// eine Datei mit nur einer, ungueltigen Bindung durch; der Test oben hat die ungueltige Bindung an zweiter Stelle).
+#[test]
+fn lade_bindung_prueft_auch_die_erste_bindung() {
+    let d = verzeichnis("erste");
+    let eins = gueltig("feld_a").replace("[2025]", "[]");
+    assert_ne!(eins, gueltig("feld_a"), "Anker nicht einwandfrei");
+    std::fs::write(d.join("bindung_eins.yaml"), &eins).unwrap();
+    match lade_bindung(&d.join("bindung_eins.yaml")) {
+        Err(BindungFehler::LeereVzGueltigkeit { feld_id }) => assert_eq!(feld_id, "feld_a"),
+        anderes => panic!("erwartet LeereVzGueltigkeit fuer feld_a, bekam {anderes:?}"),
+    }
+    std::fs::remove_dir_all(&d).unwrap();
+}
