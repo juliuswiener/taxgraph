@@ -426,7 +426,7 @@ async fn fall_ueber_event(
 /// `bestaetigt`, `zahl_cent` 0 bzw. 661100); der 422 ist Rusts gewollte Abweichung ("zwischen": nur das Zwischenprodukt Euro in Cent
 /// liegt ausserhalb `i64`). Elf Eingaben erreichen die Stelle: `bruttoarbeitslohn` `i64::MIN`, `ep_oepnv_kosten` `i64::MAX`,
 /// `ep_entfernung_km` `i64::MAX` und 10^17 (alle drei Routen, Jahresbetrag der Entfernungspauschale `ep_gesamt`; vor h8-ep-fenster nur
-/// `ergebnis`, und `stand`/`fragen` rechneten still mit dem Wert mod 2^63), und sieben Vorsorgebetraege `i64::MIN`.
+/// `ergebnis`; `stand` und `fragen` antworteten 200), und sieben Vorsorgebetraege `i64::MIN`.
 /// Alle anderen Zahlfelder weist `POST /event` selbst ab (Bereich, Vorzeichen) oder die Rechnung kommt durch.
 ///
 /// Gegenproben ("knapp", Python = Rust): `bruttoarbeitslohn` `i64::MAX` (`zahl_cent` 4150517416582623200), 10^17 (44999999997974100)

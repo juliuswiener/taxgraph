@@ -5944,11 +5944,14 @@ fn dokumentierte_abweichungen() {
     //     1e: `ep_entfernung_km` bei 366 Arbeitstagen und Kfz, zwei Schwellen: ab 663170264369776 km passt der Jahresbetrag der
     //         Entfernungspauschale in Cent nicht mehr in `i64` (`ep_gesamt`), ab 663170264369792 km schon `Tage * (km - 20) * 38 ct`
     //         (`ab21_roh`). Der Catala-Scope rechnet den Jahresbetrag exakt, der C-Shim liest ihn mit `mpz_get_si` und bekommt still
-    //         die unteren 63 Bit. Vor h8-ep-fenster antworteten `stand` und `fragen` (beide rechnen die Pauschale) auf beiden Seiten
-    //         200, Rust mit einer falschen Zahl; `ergebnis` zwischen ...776 und ...791 km 200 mit `zahl_cent` 691900 (...776) und
-    //         660100 (...791) statt Pythons 0. Jetzt: `stand`, `fragen`, `ergebnis` Rust 422 (`ep_gesamt`), Python 200; `deklaration`
-    //         rechnet die Pauschale nicht, beide Seiten 200 mit gleichem Koerper. Ohne Kfz deckelt der Scope auf 4500 EUR: `stand`
-    //         und `fragen` bleiben 200, `ergebnis` meldet 422 an der Teilrechnung `ab21_roh` (Python nennt `zahl_cent` 589100).
+    //         die unteren 63 Bit. Vor h8-ep-fenster, gemessen bei entferntem Aufruf der Vorab-Pruefung (Anlage `parity_dok_stand_vorher.log`):
+    //         `ergebnis` zwischen ...776 und ...791 km 200 mit `zahl_cent` 691900 (...776) und 660100 (...791) statt Pythons 0; `stand`
+    //         200 mit `intervall.min_cent`/`max_cent` 691900 und 660100 statt 0 (falsche Zahl); `fragen` (alle Punkte) und `stand` bei
+    //         10^15 km 200 mit demselben Koerper wie Python, ihr Koerper haengt von der Zahl nicht ab. Jetzt: `stand`, `fragen`,
+    //         `ergebnis` Rust 422 (`ep_gesamt`), Python 200. Fuer `fragen` und `stand` bei 10^15 km ist das eine Nebenwirkung: der Fehler
+    //         der Pauschale wird auf diesen Routen nicht unterdrueckt (fail-closed, wie 1d). `deklaration` rechnet die Pauschale nicht,
+    //         beide Seiten 200 mit gleichem Koerper. Ohne Kfz deckelt der Scope auf 4500 EUR: `stand` und `fragen` bleiben 200,
+    //         `ergebnis` meldet 422 an der Teilrechnung `ab21_roh` (Python nennt `zahl_cent` 589100).
     //         Gegenprobe: 6 * 10^14 km, beide Seiten 200 mit derselben Zahl. Punkte: 10^15 und ...776, ...791 km mit Kfz, 10^15 ohne.
     //     1f: Scheibe `gesamt`, `kein_gewinn` falsch, die Summe im Scope der Gewinn-Einkuenfte laeuft ueber `i64`: Mitunternehmer
     //         (`gewinnanteil` und `verguetung_taetigkeit` je 9223372036854775800 ct = 92233720368547758 EUR) und EUeR
