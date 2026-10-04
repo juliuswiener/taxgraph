@@ -15,7 +15,7 @@
 use std::collections::BTreeMap;
 
 use eingang::kontoauszug::parse_pdf_zeilen;
-use eingang::vorjahr::{uebernehme_in_reihenfolge, uebertragbare_felder, VorjahrFeld};
+use eingang::vorjahr::{uebernehme, uebernehme_in_reihenfolge, uebertragbare_felder, VorjahrFeld};
 use eingang::vorschlag::SchreibFehler;
 use serde_json::json;
 use store::{Abweisung, BindungNachschlag, Store};
@@ -124,4 +124,125 @@ fn eine_zeile_ueber_der_backtracking_grenze_wird_verworfen_und_gezaehlt() {
     assert_eq!(verworfen, 1, "die ueberlange Zeile zaehlt als verworfen");
     assert_eq!(tx.len(), 1, "die Zeile danach wird gelesen");
     assert_eq!(tx.first().unwrap().verwendungszweck, "Maler");
+}
+
+/// Python ruft den LLM-Rueckfall als `llm_klassifikator(maskiere(zweck), betrag)` mit dem Betrag der
+/// Buchung, also negativ bei einer Ausgabe (`uebernehme_kontoauszug`, `kontoauszug_writer.py`). Die
+/// Orakel-Faelle lesen die Argumente nicht; hier nimmt der Klassifikator sie auf. Positive Buchungen
+/// und Treffer der Schluesselwoerter erreichen ihn nicht.
+#[test]
+fn der_llm_rueckfall_bekommt_den_zweck_und_den_betrag_mit_vorzeichen() {
+    use std::cell::RefCell;
+
+    use eingang::kontoauszug::{uebernehme as uebernehme_konto, Transaktion};
+    let nachschlag = BindungNachschlag::neu(eingang::doctest_bindung().unwrap());
+    let tx = |zweck: &str, betrag: i64| Transaktion {
+        datum: json!("01.03.2025"),
+        betrag,
+        verwendungszweck: zweck.to_owned(),
+    };
+    let gesehen = RefCell::new(Vec::new());
+    let klassifikator = |z: &llm::pii::Maskiert, b: i64| {
+        gesehen.borrow_mut().push((z.as_str().to_owned(), b));
+        None
+    };
+    let mut store = Store::leer(2025, None);
+    uebernehme_konto(
+        &mut store,
+        &[
+            tx("Posten Quelle unbekannt", -4800),
+            tx("Gutschrift Posten", 100),
+            tx("Maler Huber", -7),
+            tx("Zweiter Posten ohne Stichwort", -1),
+        ],
+        nachschlag,
+        Some(&klassifikator),
+        None,
+        None,
+    )
+    .unwrap();
+    assert_eq!(
+        *gesehen.borrow(),
+        [
+            ("Posten Quelle unbekannt".to_owned(), -4800),
+            ("Zweiter Posten ohne Stichwort".to_owned(), -1)
+        ]
+    );
+}
+
+/// `beleg_felder` ordnet ein Cent-Feld dem Beleg-Typ nach dem ANFANG seines `herkunft_slots` zu
+/// (`hs.lower().startswith(hs_prefix)`); der Praefix des Minijobs ist `minijob-bescheinigung`, nicht
+/// `minijob`. Die ausgelieferte Bindung hat nur den Slot `Minijob-Bescheinigung: Aufwendungen`, darum
+/// bekommt das Feld hier einen Zwilling, dessen Slot nur mit `Minijob` beginnt.
+#[test]
+fn ein_slot_der_nur_mit_minijob_beginnt_gehoert_nicht_zum_minijob_beleg() {
+    use eingang::beleg::{beleg_felder, BelegTyp};
+    let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+    let mut alle: Vec<bindung::Bindung> = bindung::lade_registry(&wurzel)
+        .unwrap()
+        .dateien
+        .into_iter()
+        .flat_map(|(_, d)| d.bindungen)
+        .collect();
+    let mut zwilling = alle
+        .iter()
+        .find(|b| b.feld_id == "hh_minijob_betrag")
+        .unwrap()
+        .clone();
+    zwilling.feld_id = "zz_minijob_ohne_bescheinigung".into();
+    zwilling.herkunft_slots = Some(vec!["Minijob ohne Bescheinigung: Betrag".into()]);
+    alle.push(zwilling);
+    let map = store::baue_nachschlag(&alle);
+    let felder = beleg_felder(BindungNachschlag::neu(&map), BelegTyp::Minijob);
+    assert!(
+        felder.contains_key("hh_minijob_betrag"),
+        "Gegenprobe: das echte Feld gehoert dazu"
+    );
+    assert!(
+        !felder.contains_key("zz_minijob_ohne_bescheinigung"),
+        "{felder:?}"
+    );
+}
+
+/// `vorjahr::uebernehme` ohne Reihenfolge haengt die Events nach `feld_id` sortiert an (Doku an der
+/// Funktion); die API nimmt `uebernehme_in_reihenfolge` und braucht diese Reihenfolge nicht. Die
+/// Orakel-Faelle sortieren die Events vor dem Vergleich, sehen die Reihenfolge also nicht.
+#[test]
+fn die_vorjahr_uebernahme_ohne_reihenfolge_haengt_nach_feld_id_sortiert_an() {
+    let nachschlag = BindungNachschlag::neu(eingang::doctest_bindung().unwrap());
+    let feld = || VorjahrFeld {
+        wert: json!(1),
+        zustand: Some("bestaetigt".into()),
+    };
+    // Felder, die den Wert 1 annehmen (ein Text- oder Bool-Feld wiese ihn ab), in Schluesselreihenfolge.
+    let felder: Vec<String> = uebertragbare_felder(nachschlag)
+        .into_keys()
+        .filter(|f| {
+            let mut store = Store::leer(2025, None);
+            let eins = BTreeMap::from([(f.clone(), feld())]);
+            uebernehme_in_reihenfolge(
+                &mut store,
+                &eins,
+                nachschlag,
+                std::slice::from_ref(f),
+                2024,
+                None,
+            )
+            .is_ok_and(|e| e.uebertragen == 1)
+        })
+        .take(3)
+        .collect();
+    assert!(felder.len() >= 2, "{felder:?}");
+    let vorjahr: BTreeMap<String, VorjahrFeld> =
+        felder.iter().map(|f| (f.clone(), feld())).collect();
+    let mut store = Store::leer(2025, None);
+    uebernehme(&mut store, &vorjahr, nachschlag, 2024, None).unwrap();
+    let angehaengt: Vec<String> = serde_json::to_value(store.events())
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e["feld_id"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(angehaengt, felder);
 }

@@ -250,6 +250,13 @@ PPM_OMP = 'f=1; while [ $# -gt 0 ]; do case $1 in -f) f=$2;; esac; p=$1; shift; 
 # pdftotext, das OMP_THREAD_LIMIT als Seitentext meldet (plausibel: laenger als 20 Zeichen)
 PDFTOTEXT_OMP = "printf 'pdftotext sieht OMP=%s\\n\\f' \"${OMP_THREAD_LIMIT:-leer}\""
 PDFTOTEXT_OMP_KURZ = "printf 'x\\f'"
+# Die Programme melden ihre Argumente im Ergebnis (Dateipfade als PFAD, sie unterscheiden sich je Leser):
+# pdftotext als Seitentext, pdftoppm im Namen des Bildes, tesseract als zweites Wort (TSV) bzw. als Text.
+PDFTOTEXT_ARGS = "t=; for a; do case $a in */*|*.pdf) a=PFAD;; esac; t=\"$t $a\"; done; printf 'pdftotext sieht:%s\\n\\f' \"$t\""
+PPM_ARGS = 'for a; do case $a in */*|*.pdf) ;; *) t="$t$a";; esac; p=$a; done; : > "$p-$t.png"'
+TESS_ARGS = ("b=${1##*/}; shift; case $1 in stdout) printf '" + TSV_KOPF
+             + "5\\t1\\t1\\t1\\t1\\t1\\t0\\t0\\t1\\t1\\t96\\t%s\\n5\\t1\\t1\\t1\\t2\\t1\\t0\\t0\\t1\\t1\\t90\\targs:%s\\n' \"$b\" \"$*\";; "
+             "*) printf 'tesseract args: %s\\n' \"$*\";; esac")
 
 
 def pdftotext_seiten(seiten: list) -> str:
@@ -531,6 +538,11 @@ def main() -> None:
     fall("OMP_THREAD_LIMIT: pdftoppm je Einzelseite, tesseract", [PDFTOTEXT_OMP_KURZ, PPM_OMP, TESS_OMP])
     fall("Beleg ohne Textlayer: tesseract-Text", ["exit 0", PPM_EINZEL, "printf 'Zeile eins\\r\\nZeile zwei\\rdrei\\n'"])
     fall("Beleg ohne Textlayer: nur Zeilenende", ["exit 0", PPM_EINZEL, "printf '\\r\\n\\r'"])
+    # Argumente der Programme: pdftotext (-layout), pdftoppm (-png, -r 200, bei Einzelseiten -f/-l),
+    # tesseract (-l deu, tsv; beim Beleg ohne Textlayer `- -l deu`)
+    fall("Argumente: pdftotext", [PDFTOTEXT_ARGS, PPM_ARGS, TESS_ARGS])
+    fall("Argumente: Voll-Scan, Beleg ohne Textlayer", ["exit 0", PPM_ARGS, TESS_ARGS])
+    fall("Argumente: Einzelseite", [pdftotext_seiten(["x"]), PPM_ARGS, TESS_ARGS])
 
     # ---- Betrag-Parser
     betraege = list(BETRAEGE)
@@ -705,6 +717,19 @@ def main() -> None:
         roh = {k: v for k, v in req.items() if k != "text_aus"}
         roh["text"] = rezept[0] + einheit * n + rezept[3]
         out["beleg"].append({"req": req, "py": H["eingang.beleg"](roh)})
+    # Betrag mit mehr als einer Tausendergruppe (`1.234.567,89`) und Nr-Anker nur an der Wortgrenze
+    # (`Nr. 3` ist kein Treffer in `Nr. 30`): je Beleg-Typ und Anker ein Fall, ohne Zufall.
+    kopf = {"lstb": "Lohnsteuerbescheinigung 2025", "spende": "Zuwendungsbestätigung", "handwerker": "Rechnung Handwerker",
+            "dienstleistung": "Haushaltsnahe Dienstleistung", "minijob": "Minijob Haushaltsscheck"}
+    for typ in BW.BELEG_TYPEN:
+        for modus, wert in BW.beleg_felder(BINDUNG, typ).values():
+            a = f"Nr. {wert}" if modus == "nr" else wert
+            texte_bl = [f"{kopf[typ]}\n{a} 1.234.567,89", f"{kopf[typ]}\n{a} 12.345.678.901,23 EUR"]
+            if modus == "nr":
+                texte_bl += [f"{kopf[typ]}\nNr. {wert}0 45.000,00", f"{kopf[typ]}\nNr. {wert}7 45.000,00\nNr {wert} 3,50"]
+            for t in texte_bl:
+                req = {"text": t, "conf": {}, "schreibe": False, "ref": "upload-1", "ts": TS}
+                out["beleg"].append({"req": req, "py": H["eingang.beleg"](req)})
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
