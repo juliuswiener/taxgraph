@@ -5779,6 +5779,53 @@ fn dokumentierte_abweichungen() {
     );
     assert_eq!((py.status, rs.status), (200, 500));
     assert!(String::from_utf8_lossy(&rs.body).contains("kein unterstuetzter Veranlagungszeitraum"));
+    // 1c. Ein Betrag, den `POST /event` annimmt und den die Rechnung nicht in `i64` fasst (h8-befund-12, gewollte Abweichung,
+    //     Korrektheit vor Paritaet): `bruttoarbeitslohn` = `i64::MIN` (Euro in Cent ueberlaeuft). Python rechnet mit jedem
+    //     `int` weiter und antwortet auf `stand`, `fragen` und `ergebnis` mit 200 (`bestaetigt`, `zahl_cent` 0); Rust antwortet
+    //     mit 422 und der Meldung "Ein eingegebener Betrag ist zu gross ..." statt mit einer Zahl, die es nicht ausrechnen kann
+    //     -- und nicht mehr mit 500 `CatalaError`/`OverflowError`. Erreichbar ueber HTTP: der Store nimmt den Wert an
+    //     (`POST /event` 201 auf beiden Seiten). Der Test `ueberlauf_klassen_hermetisch` haelt die elf Eingaben fest.
+    let neu = Anfrage::neu("dok ueberlauf Fall", "POST", "/fall").token(&alice).json(
+        &json!({"fall_id": "dok_ueberlauf", "scheibe": "an_gesamt", "veranlagungszeitraum": 2025}),
+    );
+    let (py, rs) = zweimal(&neu);
+    assert_eq!((py.status, rs.status), (201, 201));
+    let mut felder = kegel_an_voll();
+    felder.retain(|(f, _)| *f != "bruttoarbeitslohn");
+    felder.push(("bruttoarbeitslohn", json!(i64::MIN)));
+    for (feld, wert) in &felder {
+        let (py, rs) = zweimal(
+            &Anfrage::neu("dok ueberlauf Event", "POST", "/fall/dok_ueberlauf/event")
+                .token(&alice)
+                .json(&ereignis(feld, wert, None)),
+        );
+        assert_eq!((py.status, rs.status), (201, 201), "{feld}");
+    }
+    for route in ["stand", "fragen", "ergebnis"] {
+        let (py, rs) = zweimal(
+            &Anfrage::neu(
+                "dok ueberlauf Route",
+                "GET",
+                &format!("/fall/dok_ueberlauf/{route}"),
+            )
+            .token(&alice),
+        );
+        println!(
+            "  ueberlauf {route}: py={} | rs={} {}",
+            py.status,
+            rs.status,
+            String::from_utf8_lossy(&rs.body)
+        );
+        assert_eq!((py.status, rs.status), (200, 422), "{route}");
+        assert!(
+            String::from_utf8_lossy(&rs.body).contains("Ein eingegebener Betrag ist zu groß für die Berechnung"),
+            "{route}"
+        );
+        if route == "ergebnis" {
+            let a: Value = serde_json::from_slice(&py.body).unwrap();
+            assert_eq!((&a["grund"], &a["zahl_cent"]), (&json!("bestaetigt"), &json!(0)));
+        }
+    }
     // 2. Jahr ausserhalb von i64 bei DELETE: Python gibt die Ganzzahl, Rust einen Float.
     let (py, rs) =
         zweimal(&Anfrage::neu("DELETE seed_big", "DELETE", "/fall/seed_big").token(&alice));
