@@ -21,7 +21,7 @@ use std::num::NonZeroU16;
 
 use domain::{
     meet_herkunft, py_float, repr_float, Achsenwert, BasisId, Cent, FallId, FeldId, FeldIdFehler,
-    Feldtyp, Herkunft, PruefTiefe, PyFehler, PyWert, Wert, WertFehler,
+    Feldtyp, Herkunft, HerkunftVektor, PruefTiefe, PyFehler, PyWert, Schreiber, Wert, WertFehler,
 };
 
 // ---- money.rs -------------------------------------------------------------------------------------------------------
@@ -459,4 +459,110 @@ fn repr_escape_breite_folgt_dem_codepunkt() {
     }
     assert!(x > 0 && u > 0, "x={x} u={u}");
     assert!(roh > 100_000, "roh={roh}");
+}
+
+// ---- herkunft.rs ----------------------------------------------------------------------------------------------------
+
+/// Jeder Schreiber-String wird zur richtigen VARIANTE (nicht nur zu einem String, der gleich zurueckgedruckt wird): `Mensch(roh)`
+/// druckt `roh`, also bliebe ein Fehlgriff auf `Mensch` im Roundtrip unsichtbar. Die Variante entscheidet ueber `vorschlag_typ` und
+/// im Store ueber das Recht, `bestaetigt` zu schreiben.
+#[test]
+fn schreiber_string_wird_zur_richtigen_variante() {
+    let s = |t: &str| t.parse::<Schreiber>().unwrap();
+    for (text, soll) in [
+        ("llm:chat", Schreiber::Llm("chat".to_owned())),
+        ("llm:", Schreiber::Llm(String::new())),
+        ("berechnet:maps", Schreiber::Berechnet("maps".to_owned())),
+        ("berechnet:", Schreiber::Berechnet(String::new())),
+        ("import:beleg", Schreiber::ImportBeleg),
+        ("import:vorjahr", Schreiber::ImportVorjahr),
+        ("import:kontoauszug", Schreiber::ImportKontoauszug),
+        ("import:elster", Schreiber::ImportElster),
+        ("engine", Schreiber::Engine),
+        (
+            "abgeleitet:beweist",
+            Schreiber::Abgeleitet("beweist".to_owned()),
+        ),
+        ("abgeleitet:", Schreiber::Abgeleitet(String::new())),
+        ("julius", Schreiber::Mensch("julius".to_owned())),
+        ("", Schreiber::Mensch(String::new())),
+    ] {
+        assert_eq!(s(text), soll, "{text:?}");
+        assert_eq!(soll.to_string(), text, "Display von {soll:?}");
+        assert_eq!(
+            serde_json::to_string(&soll).unwrap(),
+            format!("{text:?}"),
+            "JSON von {soll:?}"
+        );
+        assert_eq!(
+            serde_json::from_str::<Schreiber>(&format!("{text:?}")).unwrap(),
+            soll,
+            "aus JSON {text:?}"
+        );
+    }
+    // Knapp daneben ist ein Mensch mit diesem Namen, nie eine Sonderrolle (fail-closed: kein Sonderrecht aus einem Tippfehler).
+    for roh in [
+        "import:vorjahre",
+        "import:vorjahr ",
+        "Import:vorjahr",
+        "import:",
+        "import",
+        "import:beleg:x",
+        "import:elster2",
+        "import:kontoauszugs",
+        "engine ",
+        "engines",
+        "Engine",
+        "xengine",
+        "llm",
+        "LLM:chat",
+        " llm:chat",
+        "xllm:chat",
+        "berechnet",
+        "abgeleitet",
+        "Abgeleitet:x",
+    ] {
+        assert_eq!(s(roh), Schreiber::Mensch(roh.to_owned()), "{roh:?}");
+    }
+}
+
+/// Der Vorschlags-Typ je Schreiber (`store.py:111-118`): nur `llm`, `beleg`, `kontoauszug`, `maps` sind katalog-restringiert.
+#[test]
+fn schreiber_vorschlag_typ_je_variante() {
+    for (text, typ) in [
+        ("llm:chat", Some("llm")),
+        ("import:beleg", Some("beleg")),
+        ("import:kontoauszug", Some("kontoauszug")),
+        ("berechnet:maps", Some("maps")),
+        ("import:vorjahr", None),
+        ("import:elster", None),
+        ("engine", None),
+        ("abgeleitet:ableitung", None),
+        ("julius", None),
+    ] {
+        assert_eq!(
+            text.parse::<Schreiber>().unwrap().vorschlag_typ(),
+            typ,
+            "{text}"
+        );
+    }
+}
+
+/// Die Alt-Form des Herkunfts-Vektors (`{"herkunft": ...}`) nimmt keinen unbekannten Schluessel an: ein dritter Schluesselsatz
+/// faellt als Ladefehler auf, statt als `Alt` fehlgedeutet zu werden.
+#[test]
+fn herkunft_alt_form_weist_unbekannte_schluessel_ab() {
+    let alt: HerkunftVektor = serde_json::from_str(r#"{"herkunft":"mensch"}"#).unwrap();
+    assert!(alt.als_voll().is_none());
+    assert_eq!(alt.herkunft_achse().as_str(), "mensch");
+    for json in [
+        r#"{"herkunft":"mensch","unbekannt":1}"#,
+        r#"{"herkunft":"mensch","pruef_tiefe":"amtlich"}"#,
+        r#"{"herkunft":"mensch","haftung":"nutzer"}"#,
+    ] {
+        assert!(
+            serde_json::from_str::<HerkunftVektor>(json).is_err(),
+            "{json}"
+        );
+    }
 }
