@@ -578,6 +578,57 @@ mod tests {
         }
     }
 
+    /// Ein Store mit bestätigten Events `(feld_id, wert)`.
+    fn store_mit(paare: &[(String, Value)]) -> Store {
+        let mut datei = Store::leer(2025, Some("k1".into())).into_datei();
+        for (i, (fid, wert)) in paare.iter().enumerate() {
+            let mut e = json!({
+                "ts": format!("2026-01-01T00:00:{:02}+00:00", i % 60), "feld_id": fid, "wert": wert,
+                "zustand": "bestaetigt",
+                "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+                "schreiber": "ui:laie", "signal": {"signal_1": null, "signal_2": "ok"},
+                "ersetzt": null,
+            });
+            e["event_id"] = json!(EventId::von_json(&e).to_string());
+            datei.events.push(serde_json::from_value(e).unwrap());
+        }
+        Store::aus_datei(datei)
+    }
+
+    /// Auftrag 6, Mutant C008: der Wert besonderer Kategorien (Art. 9 DSGVO) bleibt draußen, die Zahl
+    /// der ausgelassenen Angaben steht da (`_erklaer_kontext`, `api.py:1279`). Ohne Bindung gilt die
+    /// Feld-ID als Fragetext.
+    #[test]
+    fn kontext_laesst_besondere_kategorien_draussen_und_zaehlt_sie() {
+        let store = store_mit(&[
+            ("bruttoarbeitslohn".into(), json!(4_000_000)),
+            ("kist_konfession".into(), json!("evangelisch")),
+            ("rentner_grad_der_behinderung".into(), json!(50)),
+        ]);
+        let kontext = erklaer_kontext(&store, &BindungIndex::new(), None);
+        assert_eq!(
+            kontext,
+            "Das hat der Nutzer bereits bestätigt:\n- bruttoarbeitslohn → 4000000\n\
+             (2 weitere Angaben liegen vor, dürfen dir aber nicht übermittelt werden \
+— es sind Gesundheits- oder Konfessionsangaben. Frage nicht danach und behandle sie als beantwortet.)"
+        );
+        assert!(!kontext.contains("evangelisch"));
+    }
+
+    /// Auftrag 6, Mutant C009: höchstens `KONTEXT_MAX` (40) bestätigte Angaben gehen an das Modell,
+    /// nicht 41 (`_ERKLAER_KONTEXT_MAX`, `api.py:1276`).
+    #[test]
+    fn kontext_nennt_hoechstens_vierzig_angaben() {
+        let paare = |n: usize| -> Vec<(String, Value)> {
+            (1..=n).map(|i| (format!("feld_{i:02}"), json!(i))).collect()
+        };
+        for (n, soll) in [(39, 39), (40, 40), (41, 40), (60, 40)] {
+            let kontext = erklaer_kontext(&store_mit(&paare(n)), &BindungIndex::new(), None);
+            assert_eq!(kontext.lines().count(), 1 + soll, "{n} Angaben");
+            assert!(kontext.starts_with("Das hat der Nutzer bereits bestätigt:\n- feld_01 → 1\n"));
+        }
+    }
+
     #[test]
     fn chat_501_hat_den_wortlaut_aus_python() {
         let v = chat_501();

@@ -425,3 +425,19 @@ fn ablegen(
         .append_roh(&neu, katalog.as_ref(), BindungNachschlag::neu(&sb.index))
         .map_err(|e: AbweisungRoh| Abbruch::Abgewiesen(Abgewiesen(e.to_string())))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Auftrag 6, Mutant X11: `str(e)[:200]` kürzt auf 200 Zeichen, nicht auf Bytes und nicht auf 199.
+    #[test]
+    fn kopf200_kuerzt_auf_zweihundert_zeichen() {
+        let lang = "ä".repeat(250);
+        assert_eq!(kopf200(&lang), "ä".repeat(200));
+        let genau = "x".repeat(200);
+        assert_eq!(kopf200(&genau), genau);
+        assert_eq!(kopf200("kurz"), "kurz");
+        assert_eq!(kopf200(""), "");
+    }
+}
