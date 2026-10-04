@@ -1119,3 +1119,38 @@ fn ableitung_liest_eine_zahl_nicht_als_datum() {
     .unwrap();
     assert_eq!(aktive(&s).len(), 1, "{:?}", aktive(&s));
 }
+
+/// Python `_rechne_ab`, Ausloeser ueber das `und_feld`: der Quellwert kommt dann aus der Akte, und
+/// dort zaehlt nur ein BESTAETIGTES Quellfeld (`qev.get("zustand") != "bestaetigt"` -> weiter). Ein
+/// vorlaeufiger Geburtsdatum-Vorschlag rechnet nichts aus, auch wenn der Haushaltszeitraum danach
+/// bestaetigt wird (Geld: sonst stuende das Kind als unter 14 in der Akte, ohne dass jemand das
+/// Datum bestaetigt hat). Gegenprobe im selben Test: dasselbe Datum bestaetigt -> das Ziel
+/// entsteht. Dritte Probe: ohne Quellfeld in der Akte entsteht nichts (`qev is None`).
+#[test]
+fn und_feld_ausloeser_liest_nur_eine_bestaetigte_quelle() {
+    let zeitraum = bestaetigt(KIND_ZEITRAUM, &json!("01.03-31.10"));
+
+    // Quelle nur vorlaeufig (Vorjahres-Uebernahme), und_feld danach bestaetigt: kein Ziel.
+    let mut s = leerer_store(2025);
+    let vorschlag = vorlaeufig(
+        KIND_GEB,
+        &json!("15.06.2012"),
+        Schreiber::ImportVorjahr,
+        "vorjahr",
+    );
+    anhaengen(&mut s, &vorschlag).unwrap();
+    anhaengen(&mut s, &zeitraum).unwrap();
+    assert!(!hat(&s, KIND_UNTER_14), "{:?}", aktive(&s));
+    assert_eq!(aktive(&s).len(), 2, "{:?}", aktive(&s));
+
+    // Gegenprobe: dieselbe Reihenfolge mit bestaetigter Quelle schreibt das Ziel.
+    let mut s = leerer_store(2025);
+    anhaengen(&mut s, &bestaetigt(KIND_GEB, &json!("15.06.2012"))).unwrap();
+    anhaengen(&mut s, &zeitraum).unwrap();
+    assert_eq!(s.aktives(KIND_UNTER_14).unwrap().wert, PyWert::Bool(true));
+
+    // Ohne Quellfeld in der Akte loest das und_feld allein nichts aus.
+    let mut s = leerer_store(2025);
+    anhaengen(&mut s, &zeitraum).unwrap();
+    assert_eq!(aktive(&s).len(), 1, "{:?}", aktive(&s));
+}
