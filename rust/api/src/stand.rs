@@ -265,3 +265,131 @@ pub(crate) fn bescheid_fehler(e: &BescheidFehler) -> ApiFehler {
     }
     ApiFehler::unerwartet(e.python_klasse().unwrap_or("OverflowError"), e.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use domain::Cent;
+    use engine::zugriff::teil1::fehler::EngineFehler;
+
+    use super::*;
+
+    type Fehler = IntervallFehler<SlotFehler<BescheidFehler>>;
+
+    fn klasse(e: &ApiFehler) -> &str {
+        match e {
+            ApiFehler::Unerwartet { typ, .. } => typ,
+            ApiFehler::Status(s, _) => panic!("Status {s} statt einer Ausnahme"),
+        }
+    }
+
+    /// Auftrag 8 (Mutanten H170, H171, H172, H200): die Python-Klasse jedes Fehlers des Rings. Keiner dieser
+    /// Wege ist über HTTP zu erreichen (die Bindung der Scheibe ist vollständig, jede Achse hat Werte);
+    /// darum prüft der Test die Zuordnung selbst. `min([])` ist `ValueError`, `bindung[fid]` `KeyError`,
+    /// eine Summe über einen Nicht-Zahlwert `TypeError`; was Python nicht kennt (Rundung), heißt
+    /// `OverflowError`; ein Betrag, den die Rechnung nicht fasst, ist 422.
+    #[test]
+    #[allow(clippy::default_trait_access)] // `rust_decimal` ist keine Abhaengigkeit der api; der Typ folgt aus der Variante
+    fn fehlerklassen_wie_python() {
+        let s = |e: SlotFehler<BescheidFehler>| Fehler::Bescheid(e);
+        assert_eq!(
+            klasse(&intervall_fehler(&Fehler::LeereAchse("a".into()))),
+            "ValueError"
+        );
+        assert_eq!(
+            klasse(&intervall_fehler(&s(SlotFehler::UnbekanntesFeld(
+                "a".into()
+            )))),
+            "KeyError"
+        );
+        assert_eq!(
+            klasse(&intervall_fehler(&s(SlotFehler::SummandNichtGanzzahl(
+                "a".into()
+            )))),
+            "TypeError"
+        );
+        assert_eq!(
+            klasse(&intervall_fehler(&s(SlotFehler::Slot(
+                BescheidFehler::SlotFehlt("a".into())
+            )))),
+            "KeyError"
+        );
+        // Ohne Python-Klasse und kein Überlauf: `OverflowError`, auch auf dem Weg über die Slots.
+        let rundung = || BescheidFehler::Engine(EngineFehler::NichtCentGenau(Default::default()));
+        assert_eq!(klasse(&bescheid_fehler(&rundung())), "OverflowError");
+        assert_eq!(
+            klasse(&intervall_fehler(&s(SlotFehler::Slot(rundung())))),
+            "OverflowError"
+        );
+        // Überlauf: der Nutzer hat einen zu großen Betrag eingegeben, kein Programmfehler.
+        for e in [
+            Fehler::Ueberlauf("a".into()),
+            s(SlotFehler::Ueberlauf("a".into())),
+            s(SlotFehler::Slot(BescheidFehler::Ueberlauf("a"))),
+        ] {
+            assert!(
+                matches!(intervall_fehler(&e), ApiFehler::Status(422, _)),
+                "{e}"
+            );
+        }
+        assert!(matches!(
+            bescheid_fehler(&BescheidFehler::Ueberlauf("a")),
+            ApiFehler::Status(422, _)
+        ));
+    }
+
+    /// Auftrag 8 (Mutant H174): `min_cent` ist die untere, `max_cent` die obere Grenze; `min_offen` und
+    /// `max_offen` tragen beide `offen`. Die Fälle des Orakels haben alle `min == max`.
+    #[test]
+    fn intervall_json_hat_min_vor_max() {
+        let iv = Intervall {
+            spanne: Spanne::Zahl {
+                min: Cent::new(100),
+                max: Cent::new(250),
+                offen: true,
+            },
+            gedeckelt: true,
+            exakt_bzgl_top_k: 3,
+            rest_felder: vec!["r".into()],
+            offene_achsen: vec!["o".into()],
+            nicht_fixierbar: vec!["n".into()],
+        };
+        assert_eq!(
+            intervall_json(&iv),
+            json!({
+                "min_cent": 100, "max_cent": 250, "min_offen": true, "max_offen": true,
+                "gedeckelt": true, "exakt_bzgl_top_k": 3, "rest_felder": ["r"],
+                "offene_achsen": ["o"], "nicht_fixierbar": ["n"],
+            })
+        );
+        let zu = Intervall {
+            spanne: Spanne::Zahl {
+                min: Cent::new(-5),
+                max: Cent::new(-5),
+                offen: false,
+            },
+            gedeckelt: false,
+            exakt_bzgl_top_k: 0,
+            rest_felder: vec![],
+            offene_achsen: vec![],
+            nicht_fixierbar: vec![],
+        };
+        assert_eq!(intervall_json(&zu)["min_offen"], json!(false));
+        assert_eq!(intervall_json(&zu)["max_offen"], json!(false));
+        let nf = Intervall {
+            spanne: Spanne::NichtFixierbar,
+            gedeckelt: false,
+            exakt_bzgl_top_k: 0,
+            rest_felder: vec![],
+            offene_achsen: vec!["a".into()],
+            nicht_fixierbar: vec!["a".into()],
+        };
+        assert_eq!(
+            intervall_json(&nf),
+            json!({
+                "min_cent": null, "max_cent": null, "min_offen": true, "max_offen": true,
+                "gedeckelt": false, "exakt_bzgl_top_k": 0, "rest_felder": [],
+                "offene_achsen": ["a"], "nicht_fixierbar": ["a"],
+            })
+        );
+    }
+}

@@ -326,13 +326,16 @@ mod tests {
     fn ergebnis_inhalt_kappt_offen_auf_zwoelf() {
         let offen: Vec<String> = (0..15).map(|i| format!("f{i}")).collect();
         let obj = pw(
-            &serde_json::json!({"grund": "offen", "zahl_cent": null, "offen": offen}).to_string(),
+            &serde_json::json!({"grund": "offen", "zahl_cent": 12345, "offen": offen}).to_string(),
         );
         let PyWert::Objekt(o) = ergebnis_inhalt(&obj) else {
             panic!("kein Objekt")
         };
         let namen: Vec<&str> = o.iter().map(|(k, _)| k.as_str()).collect();
         assert_eq!(namen, ["grund", "zahl_cent", "offen_anzahl", "offen"]);
+        // Jeder Schlüssel trägt seinen eigenen Wert (Auftrag 8, Mutant H156: `zahl_cent` aus `grund`).
+        assert_eq!(o[0].1, PyWert::Text("offen".into()));
+        assert_eq!(o[1].1, PyWert::Ganz(12345));
         assert_eq!(o[2].1, PyWert::Ganz(15));
         let PyWert::Liste(l) = &o[3].1 else {
             panic!("offen")
@@ -343,6 +346,29 @@ mod tests {
             ergebnis_inhalt(&PyWert::Null).repr(),
             "{'grund': None, 'zahl_cent': None, 'offen_anzahl': 0, 'offen': []}"
         );
+    }
+
+    /// `datetime.now(timezone.utc).isoformat()`: die Zeit liegt zwischen den Uhren davor und danach,
+    /// auf die Mikrosekunde, und trägt die sechs Stellen, sobald es welche gibt (Auftrag 8, Mutant D155:
+    /// auf die Sekunde gekürzt läge sie vor `davor`). Nur bei genau 0 µs (1 zu 10^6) entfällt der Bruch.
+    #[test]
+    fn iso_jetzt_liegt_in_der_gegenwart_auf_die_mikrosekunde() {
+        for _ in 0..50 {
+            let davor = chrono::Utc::now().timestamp_micros();
+            let s = iso_jetzt();
+            let danach = chrono::Utc::now().timestamp_micros();
+            let t = chrono::DateTime::parse_from_rfc3339(&s).unwrap();
+            let mikro = t.timestamp_micros();
+            assert!(
+                davor <= mikro && mikro <= danach,
+                "{davor} <= {s} <= {danach}"
+            );
+            assert!(s.ends_with("+00:00"), "{s}");
+            assert!(
+                s.len() == 32 || (s.len() == 25 && mikro % 1_000_000 == 0),
+                "{s}"
+            );
+        }
     }
 
     #[test]

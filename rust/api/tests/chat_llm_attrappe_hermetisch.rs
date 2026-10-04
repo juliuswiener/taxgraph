@@ -56,16 +56,17 @@ fn modell(stufe: &'static str, inhalt: &Value) -> Schritt {
     }
 }
 
+/// Ein `rechenweg` des Modells (Schema `dialog`): Basis, Faktor, Erklaerung. Er geht unveraendert in die
+/// Antwort (`vorschlaege`, `konflikte`).
+fn rechenweg() -> Value {
+    json!({"basis": 1_200_000, "faktor": 0.5, "erklaerung": "12000 Euro Unterhalt im Jahr, ein halbes Jahr"})
+}
+
 /// Die drei Stufen eines Gespraechs mit fuenf Vorschlaegen: zwei gueltige, ein scheibenfremdes Feld,
 /// ein Wert vom falschen Typ und ein Feld, das der Katalog dem Modell nicht freigibt (nicht `askable`).
 fn drei_stufen() -> Vec<Schritt> {
     vec![
-        modell(
-            "aussagen",
-            &json!({"aussagen": [
-                {"text": "Der Nutzer veranlagt gemeinsam mit seiner Frau", "beleg": "gemeinsam mit meiner Frau"},
-                {"text": "Der Nutzer zahlte 6000 Euro Unterhalt", "beleg": "6000 Euro Unterhalt"}]}),
-        ),
+        aussagen_stufe(),
         modell("zuordnung", &json!({"zuordnungen": []})),
         modell(
             "dialog",
@@ -73,7 +74,7 @@ fn drei_stufen() -> Vec<Schritt> {
                 {"feld_id": "veranlagung", "wert": "zusammen", "beleg": "gemeinsam mit meiner Frau",
                  "begruendung": "b0", "aussage": 0, "rechenweg": null},
                 {"feld_id": "realsplitting_unterhaltsleistungen", "wert": 600_000, "beleg": "6000 Euro Unterhalt",
-                 "begruendung": "b1", "aussage": 1, "rechenweg": null},
+                 "begruendung": "b1", "aussage": 1, "rechenweg": rechenweg()},
                 {"feld_id": "gibt_es_nicht", "wert": 1, "beleg": "Merkzeichen G",
                  "begruendung": "b2", "aussage": 1, "rechenweg": null},
                 {"feld_id": "fahrtkosten_pausch_gdb80_oder_70g", "wert": "ja", "beleg": "Merkzeichen G",
@@ -236,6 +237,30 @@ fn dialog_anfrage(gesehen: &Gesehen) -> Value {
         .clone()
 }
 
+/// Der `detail` der letzten `llm_call`-Zeile im Audit.
+fn letzte_llm_zeile(d: &Dienst) -> String {
+    let audit = std::fs::read_to_string(d.zustand.konfig.audit_pfad()).unwrap();
+    audit
+        .lines()
+        .rev()
+        .map(|z| serde_json::from_str::<Value>(z).unwrap())
+        .find(|z| z["action"] == "llm_call")
+        .map_or_else(
+            || panic!("keine llm_call-Zeile: {audit}"),
+            |z| z["detail"].as_str().unwrap().to_owned(),
+        )
+}
+
+/// Die erste Stufe der Szenarien `drei_stufen`.
+fn aussagen_stufe() -> Schritt {
+    modell(
+        "aussagen",
+        &json!({"aussagen": [
+            {"text": "Der Nutzer veranlagt gemeinsam mit seiner Frau", "beleg": "gemeinsam mit meiner Frau"},
+            {"text": "Der Nutzer zahlte 6000 Euro Unterhalt", "beleg": "6000 Euro Unterhalt"}]}),
+    )
+}
+
 #[tokio::test]
 async fn chat_vom_dienst_bis_zur_akte() {
     let skript: Skript = Arc::new(Mutex::new(Vec::new()));
@@ -305,6 +330,8 @@ async fn chat_vom_dienst_bis_zur_akte() {
         v[0]["rechenweg"].is_null() && v[0]["enum_labels"].is_object(),
         "{a}"
     );
+    // Der Rechenweg des Modells geht unveraendert durch (Mutant H53: `null`).
+    assert_eq!(v[1]["rechenweg"], rechenweg(), "{a}");
     // Abgelehnt: in der Reihenfolge der Vorschlaege, mit Klasse und Feld, nie mit dem Wert.
     assert_eq!(
         a["abgelehnt"],
@@ -405,9 +432,13 @@ async fn chat_vom_dienst_bis_zur_akte() {
         "dialog",
         &json!({"vorschlaege": [
             {"feld_id": "veranlagung", "wert": "einzel", "beleg": "gemeinsam mit meiner Frau",
-             "begruendung": "neu", "aussage": 0, "rechenweg": null},
+             "begruendung": "neu", "aussage": 0, "rechenweg": rechenweg()},
             {"feld_id": "kap_antrag_guenstigerpruefung", "wert": false, "beleg": "100 Euro Lohn",
-             "begruendung": "b4", "aussage": 1, "rechenweg": null}],
+             "begruendung": "b4", "aussage": 1, "rechenweg": null},
+            {"feld_id": "realsplitting_unterhaltsleistungen", "wert": 700_000, "beleg": "6000 Euro Unterhalt",
+             "begruendung": "noch ein Wert", "aussage": 1, "rechenweg": null},
+            {"feld_id": "", "wert": 1, "beleg": "100 Euro Lohn",
+             "begruendung": "ohne Feld", "aussage": 1, "rechenweg": null}],
             "rueckfragen": [], "antwort": "", "unsicher": true}),
     );
     *skript.lock().unwrap() = stufen;
@@ -420,8 +451,10 @@ async fn chat_vom_dienst_bis_zur_akte() {
         "{a}"
     );
     assert_eq!(a["unsicher"], json!(true), "{a}");
+    // Ein Vorschlag ohne Feld steht nicht unter `abgelehnt` und hat keinen Grund (Mutant H56).
+    assert_eq!(a["abgelehnt_gruende"].as_object().unwrap().len(), 1, "{a}");
     let k = a["konflikte"].as_array().unwrap();
-    assert_eq!(k.len(), 1, "{a}");
+    assert_eq!(k.len(), 2, "{a}");
     assert_eq!(
         (
             k[0]["feld_id"].as_str(),
@@ -439,8 +472,28 @@ async fn chat_vom_dienst_bis_zur_akte() {
         )
     );
     assert_eq!(k[0]["aktuelles_event_id"], ev[0]["event_id"], "{a}");
-    assert!(
-        k[0]["gross"].is_boolean() && k[0]["rechenweg"].is_null(),
+    // `gross`: `veranlagung` steuert selbst andere Regeln (Python: `_ist_struktureller_konflikt` ist wahr),
+    // `realsplitting_unterhaltsleistungen` nicht (falsch). Der Rechenweg geht unveraendert durch (H37, H39).
+    assert_eq!(
+        (k[0]["gross"].clone(), k[0]["rechenweg"].clone()),
+        (json!(true), rechenweg()),
+        "{a}"
+    );
+    assert_eq!(
+        (
+            k[1]["feld_id"].as_str(),
+            k[1]["aktueller_wert"].clone(),
+            k[1]["vorschlag_wert"].clone(),
+            k[1]["gross"].clone(),
+            k[1]["rechenweg"].clone()
+        ),
+        (
+            Some("realsplitting_unterhaltsleistungen"),
+            json!(600_000),
+            json!(700_000),
+            json!(false),
+            Value::Null
+        ),
         "{a}"
     );
     assert_eq!(
@@ -453,6 +506,58 @@ async fn chat_vom_dienst_bis_zur_akte() {
         3,
         "{a}"
     );
+    gesehen.lock().unwrap().clear();
+
+    // --- Rueckfragen: hoechstens eine je Aussage, die uebrigen zaehlen als zurueckgestellt.
+    let frage = |text: &str, feld: &str, aussage: i64| json!({"frage": text, "feld_id": feld, "aussage": aussage});
+    *skript.lock().unwrap() = vec![
+        aussagen_stufe(),
+        modell("zuordnung", &json!({"zuordnungen": []})),
+        modell(
+            "dialog",
+            &json!({"vorschlaege": [], "rueckfragen": [
+                frage("Wie hoch war dein Bruttoarbeitslohn?", "bruttoarbeitslohn", 1),
+                frage("Und der Lohn deiner Frau?", "", 1),
+                frage("Wie lange seid ihr verheiratet?", "", 0)],
+                "antwort": "", "unsicher": false}),
+        ),
+    ];
+    let (s, a) = post(&d, "/fall/ch1/chat", &json!({"text": TEXT})).await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(
+        a["rueckfragen"],
+        json!([
+            frage(
+                "Wie hoch war dein Bruttoarbeitslohn?",
+                "bruttoarbeitslohn",
+                1
+            ),
+            frage("Wie lange seid ihr verheiratet?", "", 0)
+        ]),
+        "{a}"
+    );
+    assert_eq!(a["rueckfragen_zurueckgestellt"], json!(1), "{a}");
+    gesehen.lock().unwrap().clear();
+
+    // --- Die Zuordnung der zweiten Stufe verengt den Katalog der dritten; ein Instanzfeld bringt sein
+    // Zaehlfeld mit, ein Feld einer anderen Regel bleibt draussen (Mutant H31: `instanz_gruppe` fehlt).
+    *skript.lock().unwrap() = vec![
+        aussagen_stufe(),
+        modell(
+            "zuordnung",
+            &json!({"zuordnungen": [{"aussage": 0, "regeln": ["p10_1_3_kv_pv_kind"]}]}),
+        ),
+        modell(
+            "dialog",
+            &json!({"vorschlaege": [], "rueckfragen": [], "antwort": "", "unsicher": false}),
+        ),
+    ];
+    let (s, a) = post(&d, "/fall/ch1/chat", &json!({"text": TEXT})).await;
+    assert_eq!(s, 200, "{a}");
+    let system = nachricht(&dialog_anfrage(&gesehen), "system");
+    assert!(system.contains("- kind_kv:"), "{system}");
+    assert!(system.contains("- fam_anzahl_kinder:"), "{system}");
+    assert!(!system.contains("- veranlagung:"), "{system}");
     gesehen.lock().unwrap().clear();
 
     // --- Der Kontext an das Modell: das offene Feld mit Kurzhilfe und Gesetzestext, dann die
@@ -506,6 +611,9 @@ Das hat der Nutzer bereits bestätigt:\n";
     for (z, ende) in zeilen.iter().zip(soll) {
         assert!(z.starts_with("- ") && z.ends_with(ende), "{z}");
     }
+    // Die Bindung fuehrt den Fragetext von `kap_antrag_guenstigerpruefung` ausdruecklich leer: `None`
+    // wie `str(None)` in Python (Mutant H23).
+    assert_eq!(zeilen[0], "- None → ja", "{kontext}");
     assert!(
         zeilen[soll.len()]
             .starts_with("(2 weitere Angaben liegen vor, dürfen dir aber nicht übermittelt werden"),
@@ -653,8 +761,33 @@ Das hat der Nutzer bereits bestätigt:\n";
     );
     skript.lock().unwrap().clear();
 
+    // --- Stufe 1 antwortet abgeschnitten (zweimal): 501, und das Protokoll nennt den Anbieter, der
+    // geantwortet hat, obwohl der Aufruf scheiterte.
+    *skript.lock().unwrap() = vec![Schritt {
+        stufe: "aussagen",
+        status: 200,
+        body: json!({
+            "provider": "StubAnbieter",
+            "choices": [{"finish_reason": "length", "message": {"content": "{"}}]
+        })
+        .to_string(),
+        oft: true,
+    }];
+    let (s, a) = post(&d, "/fall/ch1/chat", &json!({"text": TEXT})).await;
+    assert_eq!(
+        (s, a["fehler"].as_str()),
+        (501, Some("not_implemented")),
+        "{a}"
+    );
+    let zeile = letzte_llm_zeile(&d);
+    assert!(
+        zeile.contains("stufe=1, ergebnis=kein_ergebnis, grund=abgeschnitten, versuche=2, provider='StubAnbieter'"),
+        "{zeile}"
+    );
+    skript.lock().unwrap().clear();
+
     // --- Fehlende Umgebung: 501 ohne Anfrage an den Dienst; der Anbieter des vorigen Aufrufs steht
-    // nicht im Protokoll.
+    // nicht im Protokoll (Mutant H06: der Thread haelt `StubAnbieter` vom Aufruf davor).
     gesehen.lock().unwrap().clear();
     std::env::remove_var("LLM_API_KEY");
     let (s, a) = post(&d, "/fall/ch1/chat", &json!({"text": TEXT})).await;
@@ -667,15 +800,23 @@ Das hat der Nutzer bereits bestätigt:\n";
         gesehen.lock().unwrap().is_empty(),
         "der Dienst wurde gefragt"
     );
+    let zeile = letzte_llm_zeile(&d);
+    assert!(
+        zeile.contains(
+            "stufe=1, ergebnis=kein_ergebnis, grund=sonstiger_fehler, versuche=1, provider=''"
+        ),
+        "{zeile}"
+    );
     std::env::set_var("LLM_API_KEY", "SYNTHETISCH-LLM-SCHLUESSEL");
 
     // --- Mitschnitt (`TAXGRAPH_FLOW=1`): der Nutzertext mit dem Feld, die drei Stufen der KI.
     std::env::set_var("TAXGRAPH_FLOW", "1");
     *skript.lock().unwrap() = drei_stufen();
+    // Der Text steht gekuerzt (`strip`) im Mitschnitt, auch wenn der Client Leerraum davor und danach schickt.
     let (s, a) = post(
         &d,
         "/fall/ch1/chat",
-        &json!({"text": TEXT, "feld_id": "bruttoarbeitslohn"}),
+        &json!({"text": format!(" \t\u{a0}{TEXT}\n  "), "feld_id": "bruttoarbeitslohn"}),
     )
     .await;
     std::env::remove_var("TAXGRAPH_FLOW");

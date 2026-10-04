@@ -53,6 +53,16 @@ PROBEN = [
     "stammdaten_iban", "kist_konfession", "vv_entgelt_quote_prozent", "gibt_es_nicht", "gibt_es_nicht__2", "bruttoarbeitslohn__x1",
 ]
 
+# Zwei Vermietungsobjekte (Instanz `__2`) und eine zweite Rente: Wirkung auf Ring und Guard, je bestaetigt
+# und vorlaeufig. Dazu ein vorlaeufiges Einzelfeld, das der Ring liest. Ohne diese Faelle sah kein Fall den
+# Unterschied zwischen "nur bestaetigt" und "auch vorlaeufig" und zwischen Ring mit und ohne Store
+# (Auftrag 8, Mutanten H177, H184, H190, H211, H212, H215, H238).
+VV_ZWEI = {"kein_vuv": False, "vv_einnahmen": 600000, "vv_anzahl_objekte": 2, "vv_einnahmen__2": 1200000,
+           "vv_gebaeude_afa__2": 100000, "vv_schuldzinsen__2": 50000, "vv_erhaltungsaufwand__2": 30000,
+           "vv_sonstige_wk__2": 20000, "vv_entgelt_quote_prozent__2": 100}
+RENTE_ZWEI = {"rentner_renten_art__2": "gesetzliche_rente", "rentner_jahresrente__2": 1200000,
+              "rentner_renten_beginn_jahr__2": 2020, "rentner_alter_bei_rentenbeginn__2": 65}
+
 FAELLE = [
     dict(name="gesamt_kegel", scheibe="gesamt", basis="kegel_gesamt", voll=True, proben=PROBEN),
     dict(name="gesamt_vorlaeufiger_lohn", scheibe="gesamt", basis="kegel_gesamt", vorlaeufig=["bruttoarbeitslohn"]),
@@ -65,6 +75,18 @@ FAELLE = [
     dict(name="rentner_rentenbeginn_offen", scheibe="rentner_gesamt", basis="kegel_rentner", ohne=["rentner_renten_beginn_jahr"]),
     dict(name="ep_leer", scheibe="ep", voll=True),
     dict(name="n_vor_gwg_leer", scheibe="n_vor_gwg", voll=True),
+    dict(name="gesamt_vorlaeufige_vorsorge", scheibe="gesamt", basis="kegel_gesamt",
+         setze={"vor_an_anteil_rv": 300000}, vorlaeufig=["vor_an_anteil_rv"]),
+    dict(name="gesamt_zwei_objekte_bestaetigt", scheibe="gesamt", basis="kegel_gesamt", setze=VV_ZWEI, voll=True),
+    dict(name="gesamt_zwei_objekte_vorlaeufig", scheibe="gesamt", basis="kegel_gesamt", setze=VV_ZWEI,
+         vorlaeufig=[k for k in VV_ZWEI if k.endswith("__2")]),
+    dict(name="rentner_zweite_rente_bestaetigt", scheibe="rentner_gesamt", basis="kegel_rentner", setze=RENTE_ZWEI),
+    dict(name="rentner_zweite_rente_vorlaeufig", scheibe="rentner_gesamt", basis="kegel_rentner", setze=RENTE_ZWEI,
+         vorlaeufig=list(RENTE_ZWEI)),
+    dict(name="rentner_folgejahr_ohne_freibetrag", scheibe="rentner_gesamt", basis="kegel_rentner",
+         setze={"rentner_renten_beginn_jahr": 2020}, ohne=["rentner_rentenfreibetrag"]),
+    dict(name="rentner_folgejahr_mit_freibetrag", scheibe="rentner_gesamt", basis="kegel_rentner",
+         setze={"rentner_renten_beginn_jahr": 2020}),
 ]
 
 

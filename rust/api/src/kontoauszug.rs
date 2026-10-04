@@ -372,15 +372,31 @@ mod tests {
         json!(format!("{MARKE}{typ}"))
     }
 
+    /// `json_laden` in einem eigenen Thread mit Frist: eine Schleife, die nicht endet, macht den Test
+    /// rot (Auftrag 8, Mutanten D185/D187), statt den Lauf einzufrieren.
     fn laden(text: &str) -> Option<Value> {
-        json_laden(text).ok().map(|(wert, _)| wert)
+        let (tx, rx) = std::sync::mpsc::channel();
+        let eingabe = text.to_owned();
+        std::thread::spawn(move || {
+            let _ = tx.send(json_laden(&eingabe).ok().map(|(wert, _)| wert));
+        });
+        rx.recv_timeout(std::time::Duration::from_secs(10))
+            .unwrap_or_else(|_| {
+                let anfang: String = text.chars().take(40).collect();
+                panic!("json_laden endet nicht: {anfang:?}")
+            })
     }
 
     /// `base64.b64decode(text, validate=True)` aus `CPython` 3.14: gleiche Eingaben, gleiche Ausgänge
     /// (Fehlerfall `None`). Die Werte stammen aus einem Lauf von Python, nicht aus dem Code hier.
     #[test]
     fn base64_streng_wie_python_validate() {
-        let faelle: [(&str, Option<&[u8]>); 41] = [
+        let faelle: [(&str, Option<&[u8]>); 45] = [
+            // Länge 1 mod 4 trägt nie Daten, auch nicht mit Auffüllung (Mutant H102).
+            ("Q=", None),
+            ("QUJDR=", None),
+            ("QUJDR==", None),
+            ("QUJDQUJD=", None),
             ("", Some(&[])),
             ("QUJD", Some(&[65, 66, 67])),
             ("QUI=", Some(&[65, 66])),
@@ -707,5 +723,37 @@ mod tests {
         ] {
             assert_eq!(lies(kaputt.clone()), ungueltig, "{kaputt}");
         }
+    }
+
+    /// Die Schwelle, mit der `pdf_lesen` liest, ist die aus Python (`parse_pdf_zeilen(..., schwelle=0.6)`,
+    /// `kontoauszug_writer.py:289`): eine Zeile mit Konfidenz 0,55 fällt heraus, eine mit 0,6 bleibt
+    /// (Auftrag 8, Mutant H112). `pdf_lesen` selbst braucht Tesseract; die Schwelle prüft der Test an
+    /// der Funktion, der sie übergeben wird.
+    #[test]
+    fn pdf_schwelle_ist_die_aus_python() {
+        let zeile = "01.03.2025 Maler Huber -480,00 EUR";
+        let lies = |konfidenz: f64| {
+            let conf = std::collections::BTreeMap::from([(0_usize, konfidenz)]);
+            let (tx, verworfen) = parse_pdf_zeilen(zeile, &conf, PDF_SCHWELLE);
+            (tx.len(), verworfen)
+        };
+        assert_eq!(lies(0.55), (0, 1));
+        assert_eq!(lies(0.59), (0, 1));
+        assert_eq!(lies(0.6), (1, 0));
+        assert_eq!(lies(0.95), (1, 0));
+    }
+
+    /// Ein Inhalt, der kein Text ist, liest das CSV wie der leere Text: nichts, kein Fehler. Der Ersatz
+    /// `""` ist von jedem anderen Text ohne Datenzeile nicht zu unterscheiden (Mutant H129, gleichwertig).
+    #[test]
+    fn csv_ohne_text_ist_wie_csv_ohne_zeilen() {
+        let ergebnis = |t: &str| {
+            parse_csv(t)
+                .map(|(tx, n)| (tx.len(), n))
+                .map_err(|e| e.to_string())
+        };
+        assert_eq!(ergebnis(""), Ok((0, 0)));
+        assert_eq!(ergebnis("x"), ergebnis(""));
+        assert_eq!(ergebnis("datum;betrag;verwendungszweck\n"), Ok((0, 0)));
     }
 }

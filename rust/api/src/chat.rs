@@ -636,6 +636,15 @@ mod tests {
         let vertrag = v["vertrag"].as_str().unwrap();
         assert!(vertrag.contains("schreiber='llm:…'"));
         assert!(vertrag.ends_with("Zwei-Signal-Klick."));
+        // Auftrag 8 (Mutant H71): das ganze `CHAT_501` (`api.py:862`), Zeichen für Zeichen aus Python.
+        assert_eq!(
+            v,
+            json!({
+                "fehler": "not_implemented",
+                "vertrag": "LLM-Chat schreibt qua Store-Auflage A ausschliesslich vorlaeufig-Events (schreiber='llm:…', herkunft.herkunft='llm_vorschlag', signal_2=null); Bestätigung bleibt der menschliche Zwei-Signal-Klick.",
+                "stufe": "spätere Stufe mit eigenem Julius-Cap — kein LLM-Call in dieser Stufe.",
+            })
+        );
     }
 
     /// Ein Store mit Events `(feld_id, wert, zustand, ersetzt)`; `ersetzt` ist der Index eines frueheren Events.
@@ -685,5 +694,188 @@ mod tests {
                 ("c", "5".to_owned())
             ]
         );
+    }
+
+    /// Eine Bindung der echten Registry als Vorlage; die Tests ändern an der Kopie, was sie prüfen.
+    fn vorlage() -> bindung::Bindung {
+        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        bindung::lade_registry(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .find(|b| b.feld_id == "bruttoarbeitslohn")
+            .unwrap()
+    }
+
+    /// Auftrag 8 (Mutanten H09, H10): `_wert_klartext` (`api.py:1246`): `cent` teilt durch 100 (auch `bool`
+    /// und `float`, wie in Python), `bool` folgt `frage_invertiert`, `enum` nimmt das Etikett, alles andere
+    /// den Text mit Einheit. Die Soll-Werte sind die von Python (`f"{wert / 100:.2f} EUR"` und so fort).
+    #[test]
+    fn wert_klartext_wie_python() {
+        use domain::Feldtyp;
+        let v = vorlage();
+        let k = |typ: Feldtyp, invertiert: bool, einheit: Option<&str>, fid: &str, wert: PyWert| {
+            let mut b = v.clone();
+            b.typ = typ;
+            b.frage_invertiert = invertiert;
+            b.einheit = einheit.map(str::to_owned);
+            let index: BindungIndex<'_> = HashMap::from([(fid.to_owned(), &b)]);
+            wert_klartext(fid, &wert, &index)
+        };
+        let cent = |wert: PyWert| k(Feldtyp::Cent, false, Some("EUR"), "f", wert);
+        assert_eq!(cent(PyWert::Ganz(123_456)), "1234,56 EUR");
+        assert_eq!(cent(PyWert::Ganz(-150)), "-1,50 EUR");
+        assert_eq!(cent(PyWert::Ganz(5)), "0,05 EUR");
+        assert_eq!(cent(PyWert::Ganz(0)), "0,00 EUR");
+        assert_eq!(cent(PyWert::Bool(true)), "0,01 EUR");
+        assert_eq!(cent(PyWert::Bool(false)), "0,00 EUR");
+        assert_eq!(cent(PyWert::Gleit(150.0)), "1,50 EUR");
+        assert_eq!(
+            cent(PyWert::GrossGanz(u64::MAX)),
+            "184467440737095520,00 EUR"
+        );
+        // Kein Betrag: der Text mit Einheit wie bei jedem anderen Typ.
+        assert_eq!(cent(PyWert::Text("abc".into())), "abc EUR");
+        assert_eq!(cent(PyWert::Null), "None EUR");
+        assert_eq!(
+            k(Feldtyp::Cent, false, None, "f", PyWert::Text("abc".into())),
+            "abc"
+        );
+
+        let bool_ = |invertiert: bool, wert: PyWert| k(Feldtyp::Bool, invertiert, None, "f", wert);
+        for (wert, ja) in [
+            (PyWert::Bool(true), true),
+            (PyWert::Bool(false), false),
+            (PyWert::Ganz(0), false),
+            (PyWert::Ganz(2), true),
+            (PyWert::Text(String::new()), false),
+            (PyWert::Text("x".into()), true),
+            (PyWert::Null, false),
+        ] {
+            assert_eq!(
+                bool_(false, wert.clone()),
+                if ja { "ja" } else { "nein" },
+                "{wert:?}"
+            );
+            assert_eq!(
+                bool_(true, wert.clone()),
+                if ja { "nein" } else { "ja" },
+                "{wert:?} invertiert"
+            );
+        }
+
+        let enum_ = |fid: &str, wert: PyWert| k(Feldtyp::Enum, false, None, fid, wert);
+        assert_eq!(
+            enum_("veranlagung", PyWert::Text("zusammen".into())),
+            "Zusammenveranlagung mit Ehe- oder Lebenspartner"
+        );
+        assert_eq!(
+            enum_("veranlagung", PyWert::Text("unbekannt".into())),
+            "unbekannt"
+        );
+        assert_eq!(enum_("veranlagung", PyWert::Ganz(3)), "3");
+        assert_eq!(enum_("f", PyWert::Text("einzel".into())), "einzel");
+
+        let ganz = |einheit: Option<&str>, wert: PyWert| k(Feldtyp::Int, false, einheit, "f", wert);
+        assert_eq!(ganz(Some("Jahre"), PyWert::Ganz(3)), "3 Jahre");
+        assert_eq!(ganz(Some("Jahre"), PyWert::Text("x".into())), "x Jahre");
+        assert_eq!(ganz(Some(""), PyWert::Ganz(3)), "3");
+        assert_eq!(ganz(None, PyWert::Ganz(3)), "3");
+
+        // Ohne Bindung bleibt der Text des Werts.
+        assert_eq!(
+            wert_klartext("zz", &PyWert::Ganz(5), &BindungIndex::new()),
+            "5"
+        );
+        assert_eq!(
+            wert_klartext("zz", &PyWert::Bool(true), &BindungIndex::new()),
+            "True"
+        );
+    }
+
+    /// Auftrag 8 (Mutanten D006, D007, H19, H23): die Kopfzeilen des Kontexts (`_erklaer_kontext`,
+    /// `api.py:1279`): Kurzhilfe und Gesetzestext nur, wo das Feld sie führt; ein Fragetext, den die
+    /// Bindung leer führt, heißt `None`, wie `str(None)` in Python.
+    #[test]
+    fn kontext_nennt_nur_was_das_offene_feld_hat() {
+        let v = vorlage();
+        let leer = store_mit(&[]);
+        let kontext = |hilfe: &str, quelle: &str, zitat: &str, frage: Option<&str>| {
+            let mut b = v.clone();
+            b.hilfe_kurz = hilfe.to_owned();
+            b.anker_ref.quelle = quelle.to_owned();
+            b.anker_ref.zitatanker = zitat.to_owned();
+            b.fragetext_laie = frage.map(str::to_owned);
+            let index: BindungIndex<'_> = HashMap::from([(b.feld_id.clone(), &b)]);
+            erklaer_kontext(&leer, &index, Some("bruttoarbeitslohn"))
+        };
+        let frage = "Die Frage, um die es geht: „F“";
+        assert_eq!(
+            kontext("H", "Q", "Z", Some("F")),
+            format!("{frage}\nDazu gehört laut Feldbeschreibung: H\nWörtlicher Gesetzestext dazu — Q: „Z“")
+        );
+        assert_eq!(
+            kontext("", "Q", "Z", Some("F")),
+            format!("{frage}\nWörtlicher Gesetzestext dazu — Q: „Z“")
+        );
+        assert_eq!(
+            kontext("H", "", "Z", Some("F")),
+            format!("{frage}\nDazu gehört laut Feldbeschreibung: H\nWörtlicher Gesetzestext dazu — : „Z“")
+        );
+        assert_eq!(
+            kontext("H", "Q", "", Some("F")),
+            format!("{frage}\nDazu gehört laut Feldbeschreibung: H\nWörtlicher Gesetzestext dazu — Q: „“")
+        );
+        assert_eq!(
+            kontext("H", "", "", Some("F")),
+            format!("{frage}\nDazu gehört laut Feldbeschreibung: H")
+        );
+        assert_eq!(
+            kontext("", "", "", None),
+            "Die Frage, um die es geht: „None“"
+        );
+        // Ein Feld, das es nicht gibt, ist keine Frage.
+        assert_eq!(
+            erklaer_kontext(&leer, &BindungIndex::new(), Some("bruttoarbeitslohn")),
+            ""
+        );
+
+        // Ein bestätigtes Feld, dessen Bindung den Fragetext leer führt, steht als `None` in der Liste.
+        let mut b = v.clone();
+        b.fragetext_laie = None;
+        b.typ = domain::Feldtyp::Bool;
+        b.frage_invertiert = false;
+        let index: BindungIndex<'_> = HashMap::from([(b.feld_id.clone(), &b)]);
+        let store = store_mit(&[(b.feld_id.clone(), json!(true))]);
+        assert_eq!(
+            erklaer_kontext(&store, &index, None),
+            "Das hat der Nutzer bereits bestätigt:\n- None → ja"
+        );
+    }
+
+    /// Auftrag 8 (Mutant H34): `body.get("feld_id") or None` — leerer Text, `null`, fehlender Schlüssel
+    /// und jeder wahre Nicht-Text sind kein Feld; Liste und Objekt mit Inhalt sind nicht hashbar.
+    #[test]
+    fn offenes_feld_wie_python() {
+        let feld = |b: Value| offenes_feld(&b).map(|f| f.map(str::to_owned));
+        assert_eq!(feld(json!({"feld_id": "a"})).unwrap(), Some("a".to_owned()));
+        for kein_feld in [
+            json!({"feld_id": ""}),
+            json!({"feld_id": null}),
+            json!({}),
+            json!({"feld_id": 5}),
+            json!({"feld_id": true}),
+            json!({"feld_id": []}),
+            json!({"feld_id": {}}),
+        ] {
+            assert_eq!(feld(kein_feld.clone()).unwrap(), None, "{kein_feld}");
+        }
+        for unhashbar in [json!({"feld_id": [1]}), json!({"feld_id": {"a": 1}})] {
+            let ApiFehler::Unerwartet { typ, .. } = feld(unhashbar.clone()).unwrap_err() else {
+                panic!("{unhashbar}")
+            };
+            assert_eq!(typ, "TypeError", "{unhashbar}");
+        }
     }
 }
