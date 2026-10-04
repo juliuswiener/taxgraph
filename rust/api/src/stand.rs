@@ -131,7 +131,10 @@ fn spanne(
 ///
 /// PARITÄT: Python rechnet mit jedem `int` weiter und scheitert erst im Ring (`params/<vz>`);
 /// [`Vz`] kennt nur 2024–2026. Ein Fall mit anderem Jahr kann nur von Hand angelegt werden
-/// (`POST /fall` prueft `params/`).
+/// (`POST /fall` prueft `params/`). Gewollte Abweichung, Eintraege 1b (Jahr 10^38, `stand`) und 1h
+/// (Jahr 2099, `stand`/`fragen`/`ergebnis`; vollstaendige Akte: beide 500) in
+/// `rust/parity/tests/api_http_paritaet.rs`, `dokumentierte_abweichungen`; die gesaettigte Zahl im
+/// Text von `deklaration` steht dort als 1i.
 pub(crate) fn jahr(store: &Store) -> Result<Vz, ApiFehler> {
     let j = store.veranlagungszeitraum();
     u16::try_from(j)
