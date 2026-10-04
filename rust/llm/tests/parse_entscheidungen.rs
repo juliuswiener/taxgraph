@@ -91,3 +91,42 @@ fn chat_parse_kappt_den_beleg_bei_300_und_trimmt_die_feld_id_nicht() {
         assert_eq!(v[0].feld_id, " km ");
     }
 }
+
+/// Python `str(r.get("frage", "")).strip()[:300]`: die Frage wird erst gestrippt, dann bei 300
+/// Zeichen gekappt; genau 300 bleiben.
+#[test]
+fn rueckfragen_parse_kappt_die_frage_bei_300() {
+    for (laenge, soll) in [(299, 299), (300, 300), (301, 300), (400, 300)] {
+        let text =
+            json!({"rueckfragen": [{"frage": format!(" {} ", "a".repeat(laenge)), "feld_id": ""}]})
+                .to_string();
+        let r = rueckfragen_parse(&text, 3).oder_leer_wie_python();
+        assert_eq!(r[0].frage.chars().count(), soll, "laenge {laenge}");
+    }
+}
+
+/// Python `str(v).strip()` fuer `feld_id` der Rueckfrage: Leerraum faellt weg.
+#[test]
+fn rueckfragen_parse_strippt_die_feld_id() {
+    let text = json!({"rueckfragen": [{"frage": "?", "feld_id": "  km \t"}]}).to_string();
+    let r = rueckfragen_parse(&text, 3).oder_leer_wie_python();
+    assert_eq!(r[0].feld_id, "km");
+}
+
+/// Python `_antwort_parse`: die Antwort wird gestrippt und bei 2000 Zeichen gekappt, genau 2000
+/// bleiben. Ein JSON, das kein Objekt ist, ergibt `("", False)` und gilt als tolerant gelesen,
+/// nicht als schemagerecht.
+#[test]
+fn antwort_parse_kappt_bei_2000_und_liest_nichtobjekte_tolerant() {
+    for (laenge, soll) in [(1999, 1999), (2000, 2000), (2001, 2000), (2500, 2000)] {
+        let text =
+            json!({"antwort": format!(" {} ", "a".repeat(laenge)), "unsicher": false}).to_string();
+        let (antwort, unsicher) = antwort_parse(&text).oder_leer_wie_python();
+        assert_eq!(antwort.chars().count(), soll, "laenge {laenge}");
+        assert!(!unsicher);
+    }
+    assert!(matches!(
+        antwort_parse("[1]"),
+        Antwort::Tolerant((ref a, false)) if a.is_empty()
+    ));
+}
