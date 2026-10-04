@@ -166,9 +166,7 @@ fn audit_spur_je_pfad() {
     assert_eq!(spur().len(), n_vorher + 2);
 }
 
-/// Eine Nutzerdatei von Hand: Python-bcrypt hasht ein Passwort von genau 72 Byte (und meldet nur
-/// darueber `ValueError`), `registriere` selbst schreibt so einen Hash nicht (siehe den
-/// `#[ignore]`-Test darunter) — der Hash kommt deshalb vom abschneidenden `bcrypt::hash`.
+/// Eine Nutzerdatei von Hand mit einem schnellen Hash (Kosten 4) vom abschneidenden `bcrypt::hash`.
 fn auth_mit_nutzer(dir: &std::path::Path, name: &str, passwort: &str) -> Auth {
     let hash = bcrypt::hash(passwort, 4).unwrap();
     let datei = dir.join("users.json");
@@ -202,9 +200,10 @@ fn passwort_grenze_72_byte_gilt_in_bytes_und_erst_fuer_vorhandene_nutzer() {
     let a = auth_mit_nutzer(dir.path(), "anna", &ae36);
     assert!(a.login(&an("anna", &ae36)).is_ok());
 
-    // Registrieren: 71 Byte gehen, 73 Byte werden abgewiesen (Python-bcrypt 5: `ValueError`).
+    // Registrieren: 71 und 72 Byte gehen, 73 Byte werden abgewiesen (Python-bcrypt 5: `ValueError`).
     let a = Auth::neu(GEHEIM.into(), dir.path().join("neu.json"), None);
     a.registriere(&an("berta", &"p".repeat(71))).unwrap();
+    a.registriere(&an("dora", &ae36)).unwrap();
     let fehler = a.registriere(&an("carla", &pw73)).unwrap_err();
     assert!(
         matches!(fehler, AuthFehler::PasswortUeber72Bytes),
@@ -212,17 +211,102 @@ fn passwort_grenze_72_byte_gilt_in_bytes_und_erst_fuer_vorhandene_nutzer() {
     );
 }
 
-/// PRODUKTFEHLER-VERDACHT, nicht behoben (Auftrag: Mutationsmessung, nur Testcode): `bcrypt` 0.19
-/// zaehlt das NUL-Byte mit und weist `non_truncating_hash` ab 72 Byte ab; Python-bcrypt 5.0.0
-/// hasht 72 Byte und meldet erst ab 73 `ValueError` (`register` -> 201, `login` -> 200). Rust
-/// antwortet bei genau 72 Byte mit 500. Unter `--ignored` rot.
+/// Python-bcrypt 5.0.0 hasht ein Passwort von genau 72 Byte (`register` -> 201, `login` -> 200) und
+/// meldet erst ab 73 Byte `ValueError` (500). Rust hat dort einmal mit 500 abgewiesen, weil
+/// `bcrypt::non_truncating_hash` das NUL-Byte mitzaehlt; jetzt hasht `registriere` bis 72 Byte
+/// abschneidend (es geht kein Passwortbyte verloren) und weist erst darueber ab.
 #[test]
-#[ignore = "Produktfehler-Verdacht: registriere weist 72 Byte ab (bcrypt zaehlt das NUL mit), Python-bcrypt 5 nimmt sie"]
 fn registrieren_mit_72_byte_passwort_wie_python() {
     let dir = tempfile::tempdir().unwrap();
-    let a = Auth::neu(GEHEIM.into(), dir.path().join("users.json"), None);
+    let datei = dir.path().join("users.json");
+    let a = Auth::neu(GEHEIM.into(), datei.clone(), None);
     a.registriere(&an("julius", &"p".repeat(72))).unwrap();
     assert!(a.login(&an("julius", &"p".repeat(72))).is_ok());
+    // Ein falsches Byte ganz hinten (Byte 72) wird gesehen: nichts ist abgeschnitten.
+    let fast = format!("{}q", "p".repeat(71));
+    assert!(matches!(
+        a.login(&an("julius", &fast)).unwrap_err(),
+        AuthFehler::Falsch
+    ));
+
+    // 73 Byte: Fehler, und die Datei bekommt keinen Eintrag.
+    let vorher = std::fs::read_to_string(&datei).unwrap();
+    let fehler = a.registriere(&an("anna", &"p".repeat(73))).unwrap_err();
+    assert!(
+        matches!(fehler, AuthFehler::PasswortUeber72Bytes),
+        "{fehler:?}"
+    );
+    assert_eq!(fehler.status(), 500);
+    assert_eq!(std::fs::read_to_string(&datei).unwrap(), vorher);
+}
+
+/// Hashes von Python-bcrypt 5.0.0 (`hashpw(pw, gensalt(4))`, erzeugt am 2026-10-04): 71 Byte, 72 Byte und
+/// 24 Zeichen zu je 3 Byte (`U+20AC`) = 72 Byte. Der Gegenweg, Hashes von Rust durch Python pruefen
+/// lassen, steht im Bericht (`berichte/auth-eingang-mutation.md`).
+const PYTHON_HASHES: [(&str, &str); 3] = [
+    (
+        "71",
+        "$2b$04$lXxqIQ9uvj7Vf1nIt1TGm.tzOfMmKqzI2OXwuTrmompdfggkAOHfq",
+    ),
+    (
+        "72",
+        "$2b$04$YKjIUfswBSM.j/6SxB/7NeQbSn2cz8YcVpBH5kykWjRwW8nyRpOka",
+    ),
+    (
+        "24x3",
+        "$2b$04$EH0Bn1raC345ybDLAqwRp.mkN/F.WHaR2wsR3nDeqB6U4scQx0xb.",
+    ),
+];
+
+fn passwort_zu(fall: &str) -> String {
+    match fall {
+        "71" => "p".repeat(71),
+        "72" => "p".repeat(72),
+        _ => "\u{20ac}".repeat(24),
+    }
+}
+
+#[test]
+fn python_hashes_gelten_und_rust_hash_hat_die_72_byte_form() {
+    let dir = tempfile::tempdir().unwrap();
+    for (fall, py_hash) in PYTHON_HASHES {
+        let pw = passwort_zu(fall);
+        assert_eq!(pw.len(), if fall == "71" { 71 } else { 72 }, "{fall}");
+
+        // Python -> Rust: ein Nutzer mit dem Python-Hash meldet sich an; ein anderes Passwort nicht.
+        let datei = dir.path().join(format!("py-{fall}.json"));
+        let bestand = json!({"users": {"julius": {"password_hash": py_hash, "created_at": "2026-01-01T00:00:00+00:00"}}});
+        std::fs::write(&datei, bestand.to_string()).unwrap();
+        let a = Auth::neu(GEHEIM.into(), datei, None);
+        assert!(a.login(&an("julius", &pw)).is_ok(), "{fall}");
+        let anders: String = std::iter::once('x').chain(pw.chars().skip(1)).collect();
+        assert!(
+            matches!(
+                a.login(&an("julius", &anders)).unwrap_err(),
+                AuthFehler::Falsch
+            ),
+            "{fall}"
+        );
+
+        // Rust -> Python: `registriere` schreibt einen Hash, der denselben Regeln folgt. Bei 72 Byte
+        // faellt das NUL weg, ein Anhang aendert nichts (Python schneidet bei 72 Byte ab); bei 71 Byte
+        // steht das NUL im Hash, ein Anhang aendert ihn.
+        let datei = dir.path().join(format!("rs-{fall}.json"));
+        let a = Auth::neu(GEHEIM.into(), datei.clone(), None);
+        a.registriere(&an("julius", &pw)).unwrap();
+        let bestand: Value =
+            serde_json::from_str(&std::fs::read_to_string(&datei).unwrap()).unwrap();
+        let hash = bestand["users"]["julius"]["password_hash"]
+            .as_str()
+            .unwrap();
+        assert!(hash.starts_with("$2b$12$"), "{fall}: {hash}");
+        assert!(a.login(&an("julius", &pw)).is_ok(), "{fall}");
+        assert_eq!(
+            bcrypt::verify(format!("{pw}Z"), hash).unwrap(),
+            pw.len() == 72,
+            "{fall}: Anhang hinter dem Passwort"
+        );
+    }
 }
 
 #[test]

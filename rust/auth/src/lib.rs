@@ -179,11 +179,13 @@ impl Auth {
         if nutzer.contains_key(name.as_str()) {
             return Err(AuthFehler::Existiert(name));
         }
-        let hash =
-            bcrypt::non_truncating_hash(&a.password, BCRYPT_KOSTEN).map_err(|e| match e {
-                bcrypt::BcryptError::Truncation(_) => AuthFehler::PasswortUeber72Bytes,
-                andere => AuthFehler::Bcrypt(andere),
-            })?;
+        // Python-bcrypt 5 hasht bis 72 Byte (bei 72 faellt das End-NUL weg) und wirft erst darueber
+        // `ValueError`. `bcrypt::hash` schneidet genauso ab; `non_truncating_hash` wiese schon 72 Byte
+        // ab, weil es das NUL mitzaehlt. Ueber 72 Byte ginge ein Passwortbyte verloren: Fehler.
+        if a.password.len() > 72 {
+            return Err(AuthFehler::PasswortUeber72Bytes);
+        }
+        let hash = bcrypt::hash(&a.password, BCRYPT_KOSTEN)?;
         nutzer.insert(
             name.as_str().to_owned(),
             serde_json::json!({"password_hash": hash, "created_at": iso_jetzt()}),
