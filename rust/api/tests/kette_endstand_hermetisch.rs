@@ -85,15 +85,29 @@ async fn sende(d: &Dienst, methode: &str, pfad: &str, body: Option<&Value>) -> (
 /// Legt den Fall der Scheibe an, schreibt jedes Paar ueber die echte Route `POST /event` (als Nutzer-Klick,
 /// bestaetigt) und liefert `GET /ergebnis`.
 async fn ergebnis(scheibe: &str, paare: &[(&'static str, Value)]) -> Value {
+    ergebnis_vorlaeufig(scheibe, paare, &[]).await
+}
+
+/// Wie `ergebnis`, aber die Felder in `vorlaeufig` schreibt der Fall ohne `signal_2` als `vorlaeufig`.
+async fn ergebnis_vorlaeufig(
+    scheibe: &str,
+    paare: &[(&'static str, Value)],
+    vorlaeufig: &[&str],
+) -> Value {
     let d = dienst();
     let kopf = json!({"fall_id": "kette", "scheibe": scheibe, "veranlagungszeitraum": 2025});
     let (status, antwort) = sende(&d, "POST", "/fall", Some(&kopf)).await;
     assert_eq!(status, 201, "POST /fall: {antwort}");
     for (feld, wert) in paare {
+        let (zustand, signal_2) = if vorlaeufig.contains(feld) {
+            ("vorlaeufig", Value::Null)
+        } else {
+            ("bestaetigt", json!(format!("ok@{feld}")))
+        };
         let rumpf = json!({
-            "feld_id": feld, "wert": wert, "zustand": "bestaetigt", "schreiber": "ui:laie",
+            "feld_id": feld, "wert": wert, "zustand": zustand, "schreiber": "ui:laie",
             "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
-            "signal": {"signal_1": null, "signal_2": format!("ok@{feld}")},
+            "signal": {"signal_1": null, "signal_2": signal_2},
             "ts": "2026-01-01T00:00:00+00:00",
         });
         let (status, antwort) = sende(&d, "POST", "/fall/kette/event", Some(&rumpf)).await;
@@ -1409,4 +1423,33 @@ async fn g27_ausbildungsfreibetrag_mindert_das_zu_versteuernde_einkommen() {
     )
     .await;
     erwarte_kette("g27", &a, 1_346_400, [58_770, 57_534, 13_464, 13_464]);
+}
+
+/// Wie `g26` (Alter genau 55, Antrag auf den ermaessigten Satz), aber der ANTRAG ist nur VORLAEUFIG (kein `signal_2`): er
+/// zaehlt nicht, die Fuenftelung gilt. Das Feld liegt ausserhalb des Pflicht-Kegels und ist kein Betrag, darum sperrt es die
+/// Zahl nicht (`ring_betrag_vorlaeufig` nennt nur Betragsfelder).
+fn g28_p34_antrag_nur_vorlaeufig_aenderungen() -> Paare {
+    vec![
+        ("kein_gewinn", json!(false)),
+        ("rentner_alter_55_oder_berufsunfaehig", json!(true)),
+        ("rentner_freibetrag_erstmalig", json!(true)),
+        ("rentner_veraeusserungsgewinn", json!(12_000_000)),
+        ("antrag_ermaessigter_satz", json!(true)),
+        ("geburtsjahr", json!(1970)),
+        ("dauernd_berufsunfaehig", json!(false)),
+    ]
+}
+
+/// Python: der nur vorlaeufige Antrag zaehlt nicht, die Zahl ist die Fuenftelung (4.458.400 ct, wie `g21`), nicht der
+/// ermaessigte Satz (2.813.600 ct, `g26`). Der Bescheid liest nur Bestaetigtes (`nur_bestaetigt`): ein Vorschlag bewegt die
+/// festgesetzte Steuer nie, bevor der Mensch ihn bestaetigt hat.
+#[tokio::test]
+async fn g28_vorlaeufiger_antrag_aendert_die_festgesetzte_steuer_nicht() {
+    let a = ergebnis_vorlaeufig(
+        "gesamt",
+        &mit(kegel_gesamt(), g28_p34_antrag_nur_vorlaeufig_aenderungen()),
+        &["antrag_ermaessigter_satz"],
+    )
+    .await;
+    erwarte_kette("g28", &a, 4_458_400, [133_770, 133_734, 44_584, 44_584]);
 }

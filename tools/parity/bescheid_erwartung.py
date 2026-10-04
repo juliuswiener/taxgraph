@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Python-Erwartung fuer die festen Funktionsfaelle in `rust/bescheid/tests/*_hermetisch.rs`.
+"""Python-Erwartung fuer die festen Funktionsfaelle in `rust/bescheid/tests/*_hermetisch.rs` und `rust/elster/tests/*_hermetisch.rs`.
 
 WARUM ES DIESE DATEI GIBT. Die hermetischen Tests dort laufen ohne `PARITY=1` und ohne Python; ihre Erwartungswerte sind
 eingefroren. Dieses Skript rechnet sie nach: es baut aus einer kurzen Ereignisliste denselben Store wie
-`bescheid::testhilfe::store` und fragt `tools/parity/bescheid_oracle` (Python-Referenz `produkt/bescheid/*.py`). Es ist das
-Gegenstueck zu `kette_erwartung.py`, das ganze Faelle ueber die HTTP-Endpunkte rechnet.
+`bescheid::testhilfe::store` und fragt `tools/parity/bescheid_oracle` (Praefix `bescheid.`, Python-Referenz
+`produkt/bescheid/*.py`) oder `tools/parity/elster_oracle` (Praefix `elster.`). Es ist das Gegenstueck zu
+`kette_erwartung.py`, das ganze Faelle ueber die HTTP-Endpunkte rechnet.
 
 Aufruf (aus dem Repo-Wurzelverzeichnis), eine JSON-Anfrage je Zeile auf stdin:
 
@@ -12,7 +13,7 @@ Aufruf (aus dem Repo-Wurzelverzeichnis), eine JSON-Anfrage je Zeile auf stdin:
            "args":{"gde":20000,"ausserg":0,"veranlagung":"einzel"}}' | python3 tools/parity/bescheid_erwartung.py
 
 `events`: Liste `[feld_id, wert, bestaetigt]` (wie `(feld_id, wert, bestaetigt)` im Rust-Test); alle weiteren Schluessel
-(`fn`, `vz`, `args`, `nur_bestaetigt`, ...) gehen unveraendert an `bescheid_oracle.handle`. Ausgabe: die Antwort, eine Zeile je Anfrage.
+(`fn`, `vz`, `args`, `nur_bestaetigt`, ...) gehen unveraendert an `handle` des gewaehlten Orakels. Ausgabe: die Antwort, eine Zeile je Anfrage.
 
 TEMP-WURZEL: `$TAXGRAPH_DATEN` zeigt auf ein frisches Verzeichnis, das am Ende verschwindet.
 SICHERHEIT: alle Werte sind ERFUNDEN (keine echten Steuerdaten).
@@ -32,7 +33,8 @@ atexit.register(shutil.rmtree, WURZEL, ignore_errors=True)
 os.environ["TAXGRAPH_DATEN"] = WURZEL      # VOR dem Import
 
 sys.path.insert(0, HERE)
-import bescheid_oracle as ORAKEL           # noqa: E402
+import bescheid_oracle as BESCHEID         # noqa: E402
+import elster_oracle as ELSTER             # noqa: E402
 
 
 def baue_store(events: list, vz: int) -> dict:
@@ -53,7 +55,8 @@ def main() -> int:
         events = req.pop("events", None)
         if events is not None:
             req["store"] = baue_store(events, int(req.get("vz", 2025)))
-        print(json.dumps(ORAKEL.handle(req), ensure_ascii=False, sort_keys=True))
+        orakel = ELSTER if str(req.get("fn", "")).startswith("elster.") else BESCHEID
+        print(json.dumps(orakel.handle(req), ensure_ascii=False, sort_keys=True))
     return 0
 
 

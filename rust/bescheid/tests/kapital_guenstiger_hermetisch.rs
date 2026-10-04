@@ -15,7 +15,7 @@
 //! HERKUNFT DER ERWARTUNGSWERTE: die Ausgabe des Python-Orakels auf denselben Feldern, gemessen am 2026-10-04:
 //! `python3 tools/parity/kette_erwartung.py --datei=rust/bescheid/tests/kapital_guenstiger_hermetisch.rs gesamt
 //! kegel_t08 <FALL>_aenderungen`. Das Skript legt den Fall ueber die echten Endpunkte an und liest `kap_guenstiger` aus den
-//! `extras` von `_feste_zahl`; `zahl` ist die festzusetzende ESt in Cent. Kein Wert ist aus dem Rust-Code abgelesen.
+//! `extras` von `_feste_zahl`; `zahl` ist die festzusetzende `ESt` in Cent. Kein Wert ist aus dem Rust-Code abgelesen.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,

@@ -10,11 +10,12 @@ einen Wert aendert -- dann pruefte der Rust-Test einen anderen Fall als Python.
 
 Aufruf (aus dem Repo-Wurzelverzeichnis):
 
-    python3 tools/parity/kette_erwartung.py [--datei=PFAD] SCHEIBE BASIS_FN AENDERUNGS_FN [AENDERUNGS_FN ...]
+    python3 tools/parity/kette_erwartung.py [--datei=PFAD] [--vorlaeufig=FELD,FELD] SCHEIBE BASIS_FN AENDERUNGS_FN [AENDERUNGS_FN ...]
     python3 tools/parity/kette_erwartung.py gesamt kegel_gesamt g5_vg_einzel_p34_aenderungen
     python3 tools/parity/kette_erwartung.py an_gesamt kegel_an_gesamt a4_partner_kv_pv_aenderungen
 
 `--datei` waehlt eine andere Rust-Testdatei mit denselben Funktionsformen (Vorgabe: die API-Testdatei oben).
+`--vorlaeufig` schreibt die genannten Felder als VORLAEUFIG (kein `signal_2`) statt bestaetigt, wie `ergebnis_vorlaeufig` im Rust-Test.
 
 Ausgabe je Fall (eine JSON-Zeile): `grund`, `zahl` (Cent), `solz`, `kist`, `mobil` (Mobilitaetspraemie), `abschluss`
 (Abschlusszahlung), `kette` (GdE/zvE/tarifliche/festzusetzende in EURO), `p31` (Sieger des § 31) und `kap_guenstiger`
@@ -47,6 +48,21 @@ sys.path.insert(0, HERE)
 from korpus_faelle import lege_an          # noqa: E402  (setzt sys.path und TAXGRAPH_NO_AUTH)
 from _kegel import kegel_fuer              # noqa: E402
 import api as API                          # noqa: E402
+import korpus_faelle as KF                 # noqa: E402
+
+VORLAEUFIG: set = set()
+_LAIE = KF._laie
+
+
+def _laie_vorlaeufig(feld_id: str, wert):
+    """Wie `korpus_faelle._laie`, aber die Felder in `VORLAEUFIG` ohne `signal_2` und als `vorlaeufig`."""
+    e = _LAIE(feld_id, wert)
+    if feld_id in VORLAEUFIG:
+        e["zustand"], e["signal"] = "vorlaeufig", {"signal_1": None, "signal_2": None}
+    return e
+
+
+KF._laie = _laie_vorlaeufig
 
 
 # `extras["kap_guenstiger_gewonnen"]` erreicht die HTTP-Antwort nie; hier wird `_feste_zahl` abgehoert.
@@ -94,8 +110,14 @@ def kompakt(a: dict, extras: dict | None = None) -> dict:
 
 def main(argv: list[str]) -> int:
     datei = TESTDATEI
-    if argv and argv[0].startswith("--datei="):
-        datei, argv = os.path.abspath(argv[0].split("=", 1)[1]), argv[1:]
+    while argv and argv[0].startswith("--"):
+        if argv[0].startswith("--datei="):
+            datei = os.path.abspath(argv[0].split("=", 1)[1])
+        elif argv[0].startswith("--vorlaeufig="):
+            VORLAEUFIG.update(f for f in argv[0].split("=", 1)[1].split(",") if f)
+        else:
+            sys.exit(__doc__)
+        argv = argv[1:]
     if len(argv) < 3:
         sys.exit(__doc__)
     scheibe, basis_fn, *faelle = argv
