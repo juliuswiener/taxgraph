@@ -52,7 +52,8 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
     Die drei Gitter-Lücken aus jenem Eintrag (Unterhalt § 33a Höchstbetrag-Boden, Rente Boden, Rente `renten_beginn_jahr == vz`) schloss seit `1805712b` (Merge von `orch/wertwache-sweep`)
     ein Operator-Sweep über die Rümpfe der elf Funktionen; das Fixture hat jetzt 3683 Fälle (`rust/fixtures/README.md`). Worker-Bericht `~/.cache/taxgraph-tmp/berichte/wertwache-sweep.md`
     (von mir gelesen, nicht nachgemessen): 249 Operator-Mutanten, 227 rot, 21 grün, 1 ohne Kompilat; die 21 grünen belegt der Bericht je Gruppe als gleichwertig; vorher (Fixture von
-    `1fdc6c0a`, derselbe Sweep) waren 83 grün, das Gitter-Update schloss 62 Lücken. Laut Merge-Nachricht `1805712b` (Instruktor) sind V1 bis V23 wie erwartet und V15 bis V17 jetzt rot.
+    `1fdc6c0a`, derselbe Sweep) waren 83 grün, das Gitter-Update schloss 62 Lücken. Instruktor-Nachmessung auf `7babaac8` ohne `PARITY` (Vault `audits/wertwache-fixture-ohne-orakel-2026-10-04.md`, Abschnitt „Nachtrag 2026-10-04: Operator-Sweep“; von mir nicht wiederholt):
+    V1 bis V23 wie erwartet, V15 bis V17 jetzt rot, V6 (gleichwertig) und V23 (`gewst` nicht im Fixture) bleiben grün; die 249 Operator-Mutanten des Workers hat der Instruktor nicht wiederholt.
     Grenzen laut Bericht: Operatoren außerhalb der Liste (`!x`-Entfernung, Bedingung negieren, `if`/`else`-Tausch) sind nicht gelaufen; Funktionen außerhalb der 11 (zum Beispiel `gewst`)
     haben keinen Fixture-Wächter und hängen weiter am Python-Vergleich; einige Stellen hängen an zwei oder drei Fällen (Abschnitt „Dünne Stellen“ im Bericht).
   - **(d) Binärdefekt des Harness:** behoben, `eebe4578` ist in main (`git merge-base --is-ancestor eebe4578 HEAD`).
@@ -74,12 +75,12 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
   Bruttolohn von 9223372036854775800 ct in der Scheibe `gesamt`: `stand`, `fragen` und `ergebnis` antworten in Rust 422, in Python 200; Kommentar
   `api_http_paritaet.rs:5964`, Test ab Zeile 6309). Vault `audits/ueberlauf-guard-am-uebersetzer-2026-10-04.md` (Messung des Instruktors, von mir nicht wiederholt): 23 von 25 eigenen
   Mutanten rot, 2 gleichwertig; 12 der 26 Übersetzer-Funktionen haben keinen roten Test (ihre Unerreichbarkeit über HTTP beruht auf Gitter und Ableitung).
-  **Wächter gegen den Rückfall** (seit `b7eb0c01`, Merge von `orch/h8-waechter`; Instruktor laut Merge-Nachricht: 32 eigene Mutanten alle wie erwartet, Kontrollen grün, von mir nicht wiederholt):
+  **Wächter gegen den Rückfall** (seit `b7eb0c01`, Merge von `orch/h8-waechter`; Vault `audits/ueberlauf-waechter-text-2026-10-04.md`: 84 Testfälle; Instruktor-Nachmessung mit 32 Mutanten bzw. Kontrollen, alle wie erwartet, von mir nicht wiederholt):
   `tests/test_ueberlauf_waechter_text.py` prüft nur Text (kein Catala, kein Rust-Bau). Erstens steht `mpz_get_si` in `rust/catala-sys/csrc/` nur im Makro `TG_AUS`; der Wächter liest die
   Zeilenverkettung mit, meldet ein totes oder zerlegtes Makro und ignoriert Kommentare und bloße Umformatierung. Zweitens bleibt `overflow-checks = true` ausdrücklich im `[profile.dev]` (`rust/Cargo.toml:68`), und der Test liest
   das Makefile mit, um zu prüfen, welches Profil `make serve` baut. `--release` ist verboten: `make serve` baut mit `cargo build` im dev-Profil (`Makefile:113` begründet es,
   `tests/test_make_serve.py` prüft, dass `--release` im Befehl fehlt). Eine technische Sperre gegen einen von Hand gestarteten `cargo build --release` gibt es nicht (abgeleitet aus dem
-  Fehlen von `[profile.release]`, nicht gemessen); ein solcher Bau ließe jedes ungeprüft geschriebene `+`/`-` der Geldrechnung still umbrechen (Vault
+  Fehlen von `[profile.release]`, nicht gemessen; der Vault-Eintrag nennt es unter „Nicht geprüft“ ebenso); ein solcher Bau ließe jedes ungeprüft geschriebene `+`/`-` der Geldrechnung still umbrechen (Vault
   `audits/ueberlauf-casts-ueber-http-keine-stille-falschzahl-2026-10-04.md`, abgeleitet, nicht gemessen).
   **Weitere Stelle im Rust-Code selbst** (`orch/h8-p23-gewinn`, Merge `0197bf76`; Vault `audits/ueberlauf-casts-ueber-http-keine-stille-falschzahl-2026-10-04.md`): Im Gewinn aus privaten Veräußerungsgeschäften (§ 23) kippte `wrapping_sub` bei
   Preis 0 und Anschaffungs- und Werbungskosten von je 9·10^18 ct das Vorzeichen (+446 744 073 709 551 616 ct statt −1,8·10^19 ct). Jetzt `checked_sub`
