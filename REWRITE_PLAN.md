@@ -45,10 +45,13 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
   - **(c) Gesamtlauf mit Orakel:** `PARITY=1 cargo test --workspace --no-fail-fast`: 1580 passed / 0 failed / 21 ignored, 120 Binaries, 782 s mit Bau
     (derselbe Vault-Eintrag; die 21 ignorierten sind die bekannten offenen Defekte, `offene_defekte.rs` in api, bescheid und elster).
   - **(b) Gegenproben:** 15 von 15 (N-G1 bis N-G6, A-G1 bis A-G9) je rot auf `c9d13e6f`: Vault
-    `audits/g-gegenproben-15-von-15-rot-und-solz-konstante-2026-10-04.md`. **Grenze, nicht Teil der 15:** der Solz-Faktor 118 statt 119
-    (`rust/engine/src/zugriff/teil2/solz.rs`) lässt alle Rust-Tests ohne `PARITY=1` grün (`cargo test --workspace --exclude parity`); nur mit
-    `PARITY=1` fallen 3 von 4 Tests der Suite `zugriff_teil2_paritaet` auf. Solange Python das Orakel bleibt, ist die Lücke klein; fiele es weg,
-    brauchte die Stelle eingefrorene Referenzwerte.
+    `audits/g-gegenproben-15-von-15-rot-und-solz-konstante-2026-10-04.md`. Die Grenze, die dieser Lauf fand (der Solz-Faktor 118 statt 119 in
+    `rust/engine/src/zugriff/teil2/solz.rs` ließ ohne `PARITY=1` alle Rust-Tests grün), ist seit `1fdc6c0a` geschlossen: `rust/fixtures/wertwache_orakel.json`
+    (1686 feste Fälle aus dem Python-Lauf, 11 Funktionen) und `rust/engine/tests/wertwache_orakel_werte.rs` rechnen sie ohne Python nach (Vault
+    `audits/wertwache-fixture-ohne-orakel-2026-10-04.md`). Messung des Instruktors dort, von mir nicht wiederholt: 18 von 23 eigenen Mutanten rot, darunter der Solz-Faktor 118. Die
+    anderen 5 sind grün: 2 gleichwertig oder außerhalb des Fixtures, **3 sind echte Lücken im Gitter** (Unterhalt § 33a Höchstbetrag-Boden, Rente Boden,
+    Rente `renten_beginn_jahr == vz`). Diese 3 sind Stand 2026-10-04 offen; ein Operator-Sweep (`orch/wertwache-sweep`) ist beauftragt und noch nicht gelaufen.
+    Funktionen außerhalb der 11 (zum Beispiel `gewst`) haben keinen Fixture-Wächter und hängen weiter am Python-Vergleich.
   - **(d) Binärdefekt des Harness:** behoben, `eebe4578` ist in main (`git merge-base --is-ancestor eebe4578 HEAD`).
   - **(e) die Entscheidung:** Julius, nach Ermessen des Instruktors.
 - *Rauchprobe auf einer Kopie der echten Daten* (`PARITY=1 CARGO_TARGET_DIR=<Verzeichnis auf Platte> python3 tools/parity/rauchprobe_echtdaten.py`, `7d08e023`;
@@ -57,15 +60,18 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
   je 5-mal Rust 500 / Python 200 und `deklaration` 1-mal ein anderer Text. Alle 16 liegen an fünf Fällen mit einem Jahr außerhalb 2024..2026 (2099, −5, eine
   38-stellige Zahl). Ursache und Messung: Bericht `~/.cache/taxgraph-tmp/berichte/rauchprobe-abweichungen.md`. Als gewollte Abweichungen geführt (`6efc1c72`): 1h (Jahr 2099,
   `stand`/`fragen`/`ergebnis`; mit vollständiger Akte antworten beide 500) und 1i (`deklaration` mit Jahr jenseits von i64: gleicher Satz, Rust nennt `i64::MAX`,
-  Python die Zahl; `rust/store/src/store.rs:412-414`) in `rust/parity/tests/api_http_paritaet.rs`, `dokumentierte_abweichungen`, neben 1b. Für `stand`/`fragen`/`ergebnis` mit Jahr −5 gilt derselbe Mechanismus; der Harness prüft dort nur `deklaration` (kein eigener Test, in der Rauchprobe gemessen). Die Einträge stehen seit dem
-  Merge von `orch/cutover-abw` in main. Bei eingeschalteter Anmeldung kann kein Nutzer diese Fälle öffnen: Sie haben kein Besitzerfeld, beide Dienste antworten mit 403
+  Python die Zahl; `rust/store/src/store.rs:412-414`) in `rust/parity/tests/api_http_paritaet.rs`, `dokumentierte_abweichungen`, neben 1b. Für `stand`/`fragen`/`ergebnis` mit Jahr −5 gilt derselbe Mechanismus; der Harness prüft dort nur `deklaration` (kein eigener Test, in der Rauchprobe gemessen). Die Einträge 1h und 1i stehen in main (Merge von `orch/cutover-abw`; Block ab
+  `api_http_paritaet.rs:6027`, die Funktion `dokumentierte_abweichungen` beginnt bei Zeile 5848). Bei eingeschalteter Anmeldung kann kein Nutzer diese Fälle öffnen: Sie haben kein Besitzerfeld, beide Dienste antworten mit 403
   (15 von 15 Abfragen gemessen, Bericht `rauchprobe-abweichungen.md`).
 - *Überlauf-Regel:* ein Betrag, den die Rechnung nicht in `i64` fasst, ist in Rust ein 422 („Ein eingegebener Betrag ist zu groß für die Berechnung“) statt einer
-  falschen Zahl; Python rechnet weiter und antwortet 200 (Vault `decisions/betrag-ausserhalb-i64-rechnung-antwortet-422-statt-500.md`, Abweichungen 1c bis 1f). Bis zum
-  Shim-Guard waren Entfernungspauschale, EÜR-Gewinn, Mitunternehmer-Summe, Kirchensteuer-Abzug und AGB-Abzug einzeln abgesichert; die Gesamtrechnung (Gesamtbetrag der
-  Einkünfte, zu versteuerndes Einkommen) zeigte bei absurden Eingaben einen falschen Zwischenwert (Vault `audits/ueberlauf-i64-entfernungspauschale-und-nachbarn-2026-10-04.md`).
-  **Seit dem Merge von `orch/h8-shim-guard`** prüft ein einziger Prüfer im C-Übersetzer zum Rechenkern jede gelesene Ausgabe auf 64 Bit (Abweichung 1g; Plan im Vault, selber
-  Eintrag, „Was daraus folgt“ 1); damit ist auch die Gesamtrechnung abgedeckt. Vor diesem Merge gilt der Vault-Befund: Die Gesamtrechnung ist offen.
+  falschen Zahl; Python rechnet weiter und antwortet 200 (Vault `decisions/betrag-ausserhalb-i64-rechnung-antwortet-422-statt-500.md`, Abweichungen 1c bis 1f). Seit `81892228` (Merge von
+  `orch/h8-shim-guard`) gilt das für jede gelesene Rechenausgabe, nicht mehr stellenweise: das Makro `TG_AUS` (`rust/catala-sys/csrc/shim.c:50`) merkt sich, ob der Wert in 64 Bit
+  passt, und `Ausgabe::cent()` (`rust/catala-sys/src/lib.rs:118`) meldet es beim Lesen. Vorher war es an fünf Stellen einzeln geprüft (Entfernungspauschale, EÜR-Gewinn,
+  Mitunternehmer-Summe, Kirchensteuer-Abzug, AGB-Abzug) und die Gesamtrechnung zeigte bei absurden Eingaben einen falschen Zwischenwert. Neue gewollte Abweichung 1g (ein
+  Bruttolohn von 9223372036854775800 ct in der Scheibe `gesamt`: `stand`, `fragen` und `ergebnis` antworten in Rust 422, in Python 200; Kommentar
+  `api_http_paritaet.rs:5964`, Test ab Zeile 6309). Vault `audits/ueberlauf-guard-am-uebersetzer-2026-10-04.md` (Messung des Instruktors, von mir nicht wiederholt): 23 von 25 eigenen
+  Mutanten rot, 2 gleichwertig; 12 der 26 Übersetzer-Funktionen haben keinen roten Test (ihre Unerreichbarkeit über HTTP beruht auf Gitter und Ableitung); ein Test, der ein neues
+  `mpz_get_si` im Klartext verbietet, existiert nicht.
 - *Messung am Produktstart auf Kopien* (Rohdaten `~/.cache/taxgraph-tmp/cutover-smoke/serve-A.log`, `rundlauf.out`; der echte Bestand wurde nicht beschrieben): `make serve`
   sichert zuerst; eine Anfrage ohne Token ergibt 401, auch wenn `TAXGRAPH_NO_AUTH=1` geerbt war; SIGTERM endet mit „Server heruntergefahren“; ein von Rust
   geschriebenes Ereignis liest Python identisch (`ergebnis`, `stand`, `fragen`) und umgekehrt (Fall mit 46 Ereignissen).
@@ -625,7 +631,7 @@ Bescheid-Text und XML bleiben identisch, jeder Fixture-Diff wird im Commit erkl�
 | F3 | Hartkodierte Gesetzeswerte (`runner.py:462-467,1052,1703-1706`) nach `params/`? | Port übernimmt sie als benannte `const` mit § im Doc-Kommentar; Umzug separat |
 | F4 | `versand.py` (Echtversand) portieren? | Nein — Julius-Vorbehalt |
 | F5 | Löschkandidaten in `pipeline/` | Nicht Teil des Ports |
-| F6 | Cutover löscht Python | Schritt 10, Teil (A), ist vollzogen (2026-10-04); Python wird NICHT gelöscht: Referenz, Orakel der Vergleichssuiten, Rückfall (`make serve-python`). Das Löschen ist eine eigene Entscheidung nach einer Beobachtungszeit; an ihr hängen die Solz-Lücke und die Frage eingefrorener Referenzwerte |
+| F6 | Cutover löscht Python | Schritt 10, Teil (A), ist vollzogen (2026-10-04); Python wird NICHT gelöscht: Referenz, Orakel der Vergleichssuiten, Rückfall (`make serve-python`). Das Löschen ist eine eigene Entscheidung nach einer Beobachtungszeit; an ihr hängt die Frage eingefrorener Referenzwerte: für 11 Funktionen liegen sie seit `1fdc6c0a` vor (`rust/fixtures/wertwache_orakel.json`), für die übrigen nicht (Vault `audits/wertwache-fixture-ohne-orakel-2026-10-04.md`) |
 | F7 | YAML-Crate (`serde_yaml` archiviert) | `serde_yaml_ng` oder `serde_norway` nach Doku-Check; Duplikat-Schlüssel-Verhalten per Test belegt |
 
 ---
