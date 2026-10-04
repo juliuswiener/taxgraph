@@ -679,6 +679,36 @@ fn eine_unlesbare_nutzerdatei_ist_ein_speicherfehler_und_kein_leerer_bestand() {
     assert_eq!(fehler.status(), 500);
 }
 
+/// Die tmp-Datei entsteht mit `O_EXCL`: legt ein anderer Prozess zwischen dem Loeschen und dem Anlegen
+/// einen Symlink auf `<pfad>.tmp`, scheitert `registriere`, statt durch den Link in eine fremde Datei zu
+/// schreiben (`create(true).truncate(true)` folgte ihm; gemessen: 40 von 40 Versuchen schrieben durch).
+/// Ein Pflanzer-Thread legt den Link in einer Schleife an. Der Test kann an richtigem Code nie rot werden
+/// (die Opferdatei bleibt unberuehrt, egal wer den Wettlauf gewinnt); am Mutanten genuegt ein Treffer.
+// ponytail: Der Treffer am Mutanten ist wahrscheinlich, nicht sicher (hier in jedem Versuch). Upgrade: eine
+// Einspritzstelle zwischen `remove_file` und `open`, falls das je zu selten rot wird.
+#[test]
+fn die_tmp_datei_folgt_keinem_untergeschobenen_symlink() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    let dir = tempfile::tempdir().unwrap();
+    let opfer = dir.path().join("opfer.txt");
+    std::fs::write(&opfer, "OPFER").unwrap();
+    let tmp = dir.path().join("users.json.tmp");
+    let a = Auth::neu(GEHEIM.into(), dir.path().join("users.json"), None);
+    let halt = AtomicBool::new(false);
+    std::thread::scope(|s| {
+        s.spawn(|| {
+            while !halt.load(Ordering::Relaxed) {
+                let _ = std::os::unix::fs::symlink(&opfer, &tmp);
+            }
+        });
+        for i in 0..5 {
+            let _ = a.registriere(&an(&format!("nutzer{i}"), "geheim123"));
+        }
+        halt.store(true, Ordering::Relaxed);
+    });
+    assert_eq!(std::fs::read_to_string(&opfer).unwrap(), "OPFER");
+}
+
 /// Das Audit ist ein Nebenkanal: scheitert das Anhaengen, laufen Registrieren, Anmelden, Abweisen und
 /// Abmelden trotzdem durch. Python hat hier keinen `try` und bricht ab (bewusste Abweichung, siehe
 /// `Auth::protokolliere`).
