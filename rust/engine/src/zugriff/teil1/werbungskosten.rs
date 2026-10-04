@@ -116,7 +116,7 @@ pub fn entfernungspauschale(
     p: &Params,
 ) -> Result<Euro, EngineFehler> {
     let r = p.entfernungspauschale(e.veranlagungszeitraum)?;
-    let out = ep_scope::berechnen(EpScopeEingabe {
+    let scope = EpScopeEingabe {
         entfernung_km_roh: e.entfernung_km_roh,
         arbeitstage: e.arbeitstage,
         eigenes_oder_ueberlassenes_kfz: e.eigenes_oder_ueberlassenes_kfz,
@@ -125,7 +125,8 @@ pub fn entfernungspauschale(
         satz_ab_21_km: satz_cent(r.satz_ab_21_km)?,
         staffelgrenze_km: r.staffelgrenze_km,
         hoechstbetrag: in_cent(r.hoechstbetrag_ohne_kfz)?,
-    })?;
+    };
+    let out = ep_scope::berechnen(scope)?;
     Ok(Cent::new(out.abziehbarer_betrag_cent).floor_euro())
 }
 

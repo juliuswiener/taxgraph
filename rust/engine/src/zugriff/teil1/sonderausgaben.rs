@@ -59,9 +59,18 @@ pub struct P10KistEingabe {
 /// assert_eq!(p10_kist(&e).unwrap(), Euro::new(0));
 /// ```
 pub fn p10_kist(e: &P10KistEingabe) -> Result<Euro, EngineFehler> {
+    let (gezahlt, erstattet) = (
+        in_cent(e.gezahlte_kirchensteuer)?,
+        in_cent(e.erstattete_kirchensteuer)?,
+    );
+    // Der Scope gibt `gezahlt - erstattet` nur aus, wenn es positiv ist; er rechnet exakt (GMP), der Shim liest mit `mpz_get_si`:
+    // ausserhalb `i64` kaeme still der Wert mod 2^63 an (Bericht h8-ep-fenster, Schritt 6).
+    if gezahlt.get() > erstattet.get() {
+        ok(gezahlt.get().checked_sub(erstattet.get()), "kist abzug")?;
+    }
     let c = kirchensteuer::berechnen(KirchensteuerabzugEingabe {
-        gezahlte_kirchensteuer: in_cent(e.gezahlte_kirchensteuer)?,
-        erstattete_kirchensteuer: in_cent(e.erstattete_kirchensteuer)?,
+        gezahlte_kirchensteuer: gezahlt,
+        erstattete_kirchensteuer: erstattet,
     })?;
     Ok(c.floor_euro())
 }

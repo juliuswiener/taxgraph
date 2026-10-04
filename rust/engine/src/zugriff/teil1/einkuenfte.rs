@@ -223,9 +223,13 @@ pub struct EuerGewinnEingabe {
 /// assert_eq!(euer_gewinn(&e).unwrap(), Euro::new(-150));
 /// ```
 pub fn euer_gewinn(e: &EuerGewinnEingabe) -> Result<Euro, EngineFehler> {
+    let (einnahmen, ausgaben) = (in_cent(e.betriebseinnahmen)?, in_cent(e.betriebsausgaben)?);
+    // Der Scope bildet die Differenz exakt (GMP), der Shim liest sie mit `mpz_get_si`: ausserhalb `i64` kaeme still ihr Wert
+    // mod 2^63 an (Bericht h8-ep-fenster, Schritt 6).
+    ok(einnahmen.get().checked_sub(ausgaben.get()), "euer gewinn")?;
     let c = euer::berechnen(EuerEingabe {
-        betriebseinnahmen: in_cent(e.betriebseinnahmen)?,
-        betriebsausgaben: in_cent(e.betriebsausgaben)?,
+        betriebseinnahmen: einnahmen,
+        betriebsausgaben: ausgaben,
     })?;
     Ok(c.floor_euro())
 }
@@ -261,11 +265,24 @@ pub struct MitunternehmerEinkuenfteEingabe {
 pub fn mitunternehmer_einkuenfte(
     e: &MitunternehmerEinkuenfteEingabe,
 ) -> Result<Euro, EngineFehler> {
-    let c = mitunternehmer::berechnen(MitunternehmerEingabe {
+    let eingabe = MitunternehmerEingabe {
         gewinnanteil: in_cent(e.gewinnanteil)?,
         verguetung_taetigkeit: in_cent(e.verguetung_taetigkeit)?,
         verguetung_darlehen: in_cent(e.verguetung_darlehen)?,
         verguetung_ueberlassung: in_cent(e.verguetung_ueberlassung)?,
-    })?;
+    };
+    // Der Scope summiert exakt (GMP), der Shim liest die Summe mit `mpz_get_si`: ausserhalb `i64` kaeme still ihr Wert mod 2^63
+    // an. Geprueft wird die Summe, nicht die Teilsummen: `M + M - M - M` ist 0 und bleibt ein Wert (Bericht h8-ep-fenster).
+    let summe = [
+        eingabe.gewinnanteil,
+        eingabe.verguetung_taetigkeit,
+        eingabe.verguetung_darlehen,
+        eingabe.verguetung_ueberlassung,
+    ]
+    .iter()
+    .map(|c| i128::from(c.get()))
+    .sum::<i128>();
+    ok(i64::try_from(summe).ok(), "mitunternehmer summe")?;
+    let c = mitunternehmer::berechnen(eingabe)?;
     Ok(c.floor_euro())
 }

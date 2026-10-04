@@ -5941,20 +5941,37 @@ fn dokumentierte_abweichungen() {
     //     1d: `vpf_fruehstuecke_gestellt_anzahl` 16470307208669242 (zu 560 ct) plus ein Mittagessen (1120 ct): die Summe der
     //         Kuerzungen laeuft ueber (`vpf k28`); alle vier Routen, `deklaration` an der Addition. Gegenprobe: das Fruehstueck
     //         allein passt gerade, beide Seiten 200 mit derselben Zahl.
-    //     1e: `ep_entfernung_km` 10^15 bei 366 Arbeitstagen: `Tage * (km - 20) * 38 ct` laeuft ueber (`ab21_roh`); nur `ergebnis`
-    //         rechnet den erhoehten Teil ab dem 21. km, `stand`, `fragen` und `deklaration` bleiben auf beiden Seiten 200.
-    //         Gegenprobe: 6 * 10^14 km, beide Seiten 200 mit derselben Zahl. NICHT hier festgehalten: zwischen 663170264369776
-    //         und 663170264369791 km (366 Tage) wickelt der Catala-Scope der Entfernungspauschale still und Rust antwortet 200
-    //         mit einer falschen Zahl, wo Python die richtige nennt. Das ist ein Defekt, keine gewollte Abweichung
-    //         (Bericht h8-abweichung-422, Abschnitt Befund).
+    //     1e: `ep_entfernung_km` bei 366 Arbeitstagen und Kfz, zwei Schwellen: ab 663170264369776 km passt der Jahresbetrag der
+    //         Entfernungspauschale in Cent nicht mehr in `i64` (`ep_gesamt`), ab 663170264369792 km schon `Tage * (km - 20) * 38 ct`
+    //         (`ab21_roh`). Der Catala-Scope rechnet den Jahresbetrag exakt, der C-Shim liest ihn mit `mpz_get_si` und bekommt still
+    //         die unteren 63 Bit. Vor h8-ep-fenster, gemessen bei entferntem Aufruf der Vorab-Pruefung (Anlage `parity_dok_stand_vorher.log`):
+    //         `ergebnis` zwischen ...776 und ...791 km 200 mit `zahl_cent` 691900 (...776) und 660100 (...791) statt Pythons 0; `stand`
+    //         200 mit `intervall.min_cent`/`max_cent` 691900 und 660100 statt 0 (falsche Zahl); `fragen` (alle Punkte) und `stand` bei
+    //         10^15 km 200 mit demselben Koerper wie Python, ihr Koerper haengt von der Zahl nicht ab. Jetzt: `stand`, `fragen`,
+    //         `ergebnis` Rust 422 (`ep_gesamt`), Python 200. Fuer `fragen` und `stand` bei 10^15 km ist das eine Nebenwirkung: der Fehler
+    //         der Pauschale wird auf diesen Routen nicht unterdrueckt (fail-closed, wie 1d). `deklaration` rechnet die Pauschale nicht,
+    //         beide Seiten 200 mit gleichem Koerper. Ohne Kfz deckelt der Scope auf 4500 EUR: `stand` und `fragen` bleiben 200,
+    //         `ergebnis` meldet 422 an der Teilrechnung `ab21_roh` (Python nennt `zahl_cent` 589100).
+    //         Gegenprobe: 6 * 10^14 km, beide Seiten 200 mit derselben Zahl. Punkte: 10^15 und ...776, ...791 km mit Kfz, 10^15 ohne.
+    //     1f: Scheibe `gesamt`, `kein_gewinn` falsch, die Summe im Scope der Gewinn-Einkuenfte laeuft ueber `i64`: Mitunternehmer
+    //         (`gewinnanteil` und `verguetung_taetigkeit` je 9223372036854775800 ct = 92233720368547758 EUR) und EUeR
+    //         (`betriebseinnahmen` 9223372036854775800 ct, `sonstige_betriebsausgaben` -9223372036854775800 ct). Der Catala-Scope
+    //         summiert exakt, der C-Shim liest mit `mpz_get_si` die unteren 63 Bit. Vor dem Fix antwortete Rust auf `stand`,
+    //         `fragen` und `ergebnis` 200, `ergebnis` mit `zahl_cent` 4150517416584808200 (Python 8301034833169457400). Jetzt Rust
+    //         422 (`mitunternehmer summe`, `euer gewinn`), Python 200; `deklaration` rechnet die Einkuenfte nicht (gleicher Koerper).
+    //         Gegenprobe: je 10^15 ct, beide Seiten 200 mit derselben Zahl. NICHT behoben, siehe Bericht h8-ep-fenster: die Summen
+    //         des Gesamt-Scopes (`gesamtbetrag_der_einkuenfte`, `zu_versteuerndes_einkommen` in der `kette` von `ergebnis`).
     let meldung = "Ein eingegebener Betrag ist zu groß für die Berechnung";
-    let akte = |id: &str, aendern: &[(&'static str, Value)]| {
+    let akte_in = |id: &str,
+                   scheibe: &str,
+                   basis: Vec<(&'static str, Value)>,
+                   aendern: &[(&'static str, Value)]| {
         let neu = Anfrage::neu("dok ueberlauf Fall", "POST", "/fall")
             .token(&alice)
-            .json(&json!({"fall_id": id, "scheibe": "an_gesamt", "veranlagungszeitraum": 2025}));
+            .json(&json!({"fall_id": id, "scheibe": scheibe, "veranlagungszeitraum": 2025}));
         let (py, rs) = zweimal(&neu);
         assert_eq!((py.status, rs.status), (201, 201), "{id}");
-        let mut felder = kegel_an_voll();
+        let mut felder = basis;
         for (f, w) in aendern {
             felder.retain(|(g, _)| g != f);
             felder.push((*f, w.clone()));
@@ -5967,6 +5984,9 @@ fn dokumentierte_abweichungen() {
             );
             assert_eq!((py.status, rs.status), (201, 201), "{id} {feld}");
         }
+    };
+    let akte = |id: &str, aendern: &[(&'static str, Value)]| {
+        akte_in(id, "an_gesamt", kegel_an_voll(), aendern);
     };
     let lies = |id: &str, route: &str| {
         let (py, rs) = zweimal(
@@ -6062,20 +6082,139 @@ fn dokumentierte_abweichungen() {
             assert_eq!(zahl(&py).0, json!("bestaetigt"));
         }
     }
-    // 1e: 10^15 km.
-    akte("dok_entfernung", &entfernung(1_000_000_000_000_000));
-    for route in ["stand", "fragen", "ergebnis", "deklaration"] {
-        let (py, rs) = lies("dok_entfernung", route);
-        if route == "ergebnis" {
-            assert_eq!((py.status, rs.status), (200, 422), "entfernung {route}");
+    // 1e: Entfernung, die den Jahresbetrag der Entfernungspauschale ausserhalb i64 bringt (366 Tage). Mit Kfz (kein Hoechstbetrag)
+    //     gibt der Catala-Scope den Betrag aus, und `stand`, `fragen` und `ergebnis` rechnen ihn: Rust 422 (`ep_gesamt`), Python 200.
+    //     `deklaration` rechnet ihn nicht: beide Seiten 200 mit gleichem Koerper. Ohne Kfz deckelt der Scope auf 4500 EUR: `stand`
+    //     und `fragen` bleiben 200, nur `ergebnis` meldet 422, an der Teilrechnung `ab21_roh` (erhoehter Teil ab dem 21. km).
+    for (id, km, kfz) in [
+        ("dok_entfernung", 1_000_000_000_000_000_i64, true),
+        ("dok_entfernung_776", 663_170_264_369_776, true),
+        ("dok_entfernung_791", 663_170_264_369_791, true),
+        ("dok_entfernung_ohne_kfz", 1_000_000_000_000_000, false),
+    ] {
+        akte(
+            id,
+            &[
+                ("ep_entfernung_km", json!(km)),
+                ("ep_arbeitstage", json!(366)),
+                ("ep_eigenes_kfz", json!(kfz)),
+            ],
+        );
+        for route in ["stand", "fragen", "ergebnis", "deklaration"] {
+            let (py, rs) = lies(id, route);
+            if route == "ergebnis" {
+                println!(
+                    "  {id} ergebnis zahl: py={:?} | rs={:?}",
+                    zahl(&py),
+                    zahl(&rs)
+                );
+            }
+            let marke = match (route, kfz) {
+                ("deklaration", _) | ("stand" | "fragen", false) => None,
+                ("ergebnis", false) => Some("Ueberlauf in ab21_roh"),
+                _ => Some("Ueberlauf in ep_gesamt"),
+            };
+            let Some(marke) = marke else {
+                assert_eq!((py.status, rs.status), (200, 200), "{id} {route}");
+                if route == "deklaration" {
+                    let (a, b): (Value, Value) = (
+                        serde_json::from_slice(&py.body).unwrap(),
+                        serde_json::from_slice(&rs.body).unwrap(),
+                    );
+                    assert_eq!(a, b, "{id} {route}: gleicher Koerper");
+                }
+                continue;
+            };
+            assert_eq!((py.status, rs.status), (200, 422), "{id} {route}");
             let text = String::from_utf8_lossy(&rs.body).into_owned();
             assert!(
-                text.contains(meldung) && text.contains("Ueberlauf in ab21_roh"),
-                "entfernung {route}: {text}"
+                text.contains(meldung) && text.contains(marke),
+                "{id} {route}: {text}"
             );
-            assert_eq!(zahl(&py).0, json!("bestaetigt"));
-        } else {
-            assert_eq!((py.status, rs.status), (200, 200), "entfernung {route}");
+            if route == "ergebnis" {
+                assert_eq!(zahl(&py).0, json!("bestaetigt"), "{id}");
+                if kfz {
+                    assert_eq!(zahl(&py).1, json!(0), "{id}");
+                }
+            }
+        }
+    }
+    // 1f: Gewinn-Einkuenfte, Scheibe `gesamt` (Mitunternehmer-Summe, EUeR-Differenz).
+    let m100: i64 = (i64::MAX / 100) * 100;
+    let gewinn = |felder: &[(&'static str, Value)]| {
+        let mut basis = kegel_gesamt();
+        basis.retain(|(f, _)| *f != "kein_gewinn");
+        basis.push(("kein_gewinn", json!(false)));
+        basis.extend(felder.iter().cloned());
+        basis
+    };
+    for (id, felder, marke) in [
+        (
+            "dok_mitunternehmer_innen",
+            vec![
+                ("gewinnanteil", json!(1_000_000_000_000_000_i64)),
+                ("verguetung_taetigkeit", json!(1_000_000_000_000_000_i64)),
+            ],
+            None,
+        ),
+        (
+            "dok_mitunternehmer",
+            vec![
+                ("gewinnanteil", json!(m100)),
+                ("verguetung_taetigkeit", json!(m100)),
+            ],
+            Some("Ueberlauf in mitunternehmer summe"),
+        ),
+        (
+            "dok_euer",
+            vec![
+                ("betriebseinnahmen", json!(m100)),
+                ("sonstige_betriebsausgaben", json!(-m100)),
+                ("afa_jahresbetrag", json!(0)),
+            ],
+            Some("Ueberlauf in euer gewinn"),
+        ),
+    ] {
+        akte_in(id, "gesamt", gewinn(&[]), &felder);
+        for route in ["stand", "fragen", "ergebnis", "deklaration"] {
+            let (py, rs) = lies(id, route);
+            if route == "ergebnis" {
+                println!(
+                    "  {id} ergebnis zahl: py={:?} | rs={:?}",
+                    zahl(&py),
+                    zahl(&rs)
+                );
+            }
+            match (route, marke) {
+                ("deklaration", _) | (_, None) => {
+                    assert_eq!((py.status, rs.status), (200, 200), "{id} {route}");
+                    if route == "deklaration" {
+                        let (a, b): (Value, Value) = (
+                            serde_json::from_slice(&py.body).unwrap(),
+                            serde_json::from_slice(&rs.body).unwrap(),
+                        );
+                        assert_eq!(a, b, "{id} {route}: gleicher Koerper");
+                    }
+                    if route == "ergebnis" {
+                        assert_eq!(zahl(&py), zahl(&rs), "{id} {route}");
+                    }
+                }
+                (_, Some(marke)) => {
+                    assert_eq!((py.status, rs.status), (200, 422), "{id} {route}");
+                    let text = String::from_utf8_lossy(&rs.body).into_owned();
+                    assert!(
+                        text.contains(meldung) && text.contains(marke),
+                        "{id} {route}: {text}"
+                    );
+                    if route == "ergebnis" {
+                        assert_eq!(
+                            (zahl(&py).0, zahl(&py).1),
+                            (json!("bestaetigt"), json!(8_301_034_833_169_457_400_i64)),
+                            "{id}"
+                        );
+                    }
+                }
+            }
         }
     }
     // 2. Jahr ausserhalb von i64 bei DELETE: Python gibt die Ganzzahl, Rust einen Float.
