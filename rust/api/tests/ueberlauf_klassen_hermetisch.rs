@@ -349,6 +349,8 @@ async fn ein_jahr_ausserhalb_u16_mit_jahresabhaengiger_sperre_bleibt_ein_500_kon
 /// base 10: 'abc'` auf allen drei Routen, auch mit Jahr 67561 -- Rust meldet dort stattdessen den Jahresfehler ("Konvention, kein
 /// Orakel": strenger, das Jahr wird zuerst abgelehnt). Gegenprobe: Jahr 2025 meldet den Guard-Fehler mit Pythons Klasse
 /// `ValueError` (der Text ist Rust-eigen, `int(kein Zahlwert)`, nicht `invalid literal ...`).
+/// Das Jahr 2023 (passt in `u16`, ist kein `Vz`) steht seit h8-ueberlauf-luecke mit in der Liste: nur dieser Fall macht
+/// `Vz::try_from(j)` an der Stelle von `fragen` sichtbar (Mutant V2), denn `jahr()` lehnt das Jahr dort sonst ohnehin ab.
 #[tokio::test]
 async fn ein_jahr_ausserhalb_u16_mit_kaputtem_guard_feld_meldet_den_jahresfehler_konvention() {
     let d = dienst();
@@ -358,7 +360,7 @@ async fn ein_jahr_ausserhalb_u16_mit_kaputtem_guard_feld_meldet_den_jahresfehler
         ("geburtsjahr", json!(1960)),
     ];
     let mut falsch = Vec::new();
-    for vz in ["2025", "67561"] {
+    for vz in ["2025", "67561", "2023"] {
         let id = format!("k{vz}");
         fall_geaendert(&d, &id, &kaputt).await;
         let pfad = d.zustand.konfig.faelle.join(format!("{id}.json"));
@@ -374,11 +376,11 @@ async fn ein_jahr_ausserhalb_u16_mit_kaputtem_guard_feld_meldet_den_jahresfehler
             let (s, a) = route(&d, &id, r).await;
             let fehler = a["fehler"].as_str().unwrap_or("");
             let erwartet = if vz == "2025" {
-                "ValueError: Python ValueError: int(kein Zahlwert)"
+                "ValueError: Python ValueError: int(kein Zahlwert)".to_owned()
             } else {
-                "ValueError: kein unterstuetzter Veranlagungszeitraum: 67561"
+                format!("ValueError: kein unterstuetzter Veranlagungszeitraum: {vz}")
             };
-            if s != 500 || !fehler.starts_with(erwartet) {
+            if s != 500 || !fehler.starts_with(&erwartet) {
                 falsch.push(format!(
                     "Jahr {vz} {r}: {s} {a}, erwartet 500 mit {erwartet:?}"
                 ));
@@ -511,6 +513,184 @@ async fn ein_betrag_ausserhalb_i64_ueber_post_event_ist_ein_422_und_nie_ein_500(
             r => falsch.push(format!(
                 "{feld}={wert}: 422 vom Store erwartet, gekommen {r:?}"
             )),
+        }
+    }
+    assert!(falsch.is_empty(), "{falsch:#?}");
+}
+
+/// V1-V6 (Bericht h8-ueberlauf-luecke): ein Jahr, das in `u16` PASST, aber kein `Vz` ist (2023; die Aufzaehlung kennt 2024..=2026).
+/// Die Kette `u16::try_from(jahr)` -> `Vz::try_from(j)` an den Routen `stand` (zwei Stellen), `fragen`, `ergebnis` und `deklaration`
+/// laesst nur das zweite Glied sichtbar werden, wenn das Jahr schon in `u16` liegt: ein Mutant, der `Vz::try_from(j).ok()` durch
+/// `Some(Vz::Vz2025)` ersetzt, rechnet mit Jahr 2025 weiter. Alle fuenf lieferten unter `cargo test -p api` gruen (Mutanten V1-V5).
+/// Sichtbar wird das ueber dieselben Faelle wie A8-A11: Abs.-3-Sperre (Jahr 2025: 200 mit Sperre; 2023: 500) und Ring-Ueberlauf der
+/// `deklaration` (Jahr 2025: 422 mit der Betragsmeldung; 2023: 500).
+///
+/// Rust: 500 `ValueError: kein unterstuetzter Veranlagungszeitraum: 2023` auf `stand`, `fragen` und `ergebnis`; `deklaration` meldet
+/// Pythons Text. Python (`orakel_luecke_vz.py`, 2023, Faelle wie `orakel_a8.py`/`orakel_a11.py`): `deklaration` -> `ValueError`
+/// "Veranlagungsjahr 2023 ist kein Steuerjahr (erwartet 2024..2100). ..." (Rust gleich); `stand` und `ergebnis` antworten 200 mit der
+/// Sperre (Python rechnet mit dem Jahr 2023 weiter: "Konvention, kein Orakel", Rust ist strenger, siehe `stand::jahr`), `fragen`
+/// antwortet 500 (`FileNotFoundError`, `params/2023` fehlt) -- dort stuetzt Python den Status.
+#[tokio::test]
+async fn ein_jahr_das_in_u16_passt_aber_kein_steuerjahr_ist_wird_nie_auf_2025_gesetzt() {
+    let d = dienst();
+    let abs3: [(&'static str, Value); 3] = [
+        ("antrag_ermaessigter_satz", json!(true)),
+        ("rentner_veraeusserungsgewinn", json!(600_000_000)),
+        ("geburtsjahr", json!(1960)),
+    ];
+    let mut falsch = Vec::new();
+    // stand, fragen, ergebnis (V1-V4)
+    for vz in ["2025", "2023"] {
+        let id = format!("s{vz}");
+        fall_geaendert(&d, &id, &abs3).await;
+        let pfad = d.zustand.konfig.faelle.join(format!("{id}.json"));
+        let text = std::fs::read_to_string(&pfad).unwrap();
+        let anker = "\"veranlagungszeitraum\":2025";
+        assert_eq!(text.matches(anker).count(), 1, "Anker {anker}: {text}");
+        std::fs::write(
+            &pfad,
+            text.replace(anker, &format!("\"veranlagungszeitraum\":{vz}")),
+        )
+        .unwrap();
+        for r in ["stand", "fragen", "ergebnis"] {
+            let (s, a) = route(&d, &id, r).await;
+            let gesperrt = a["grund"] == "abs3_ueber_5mio_offen"
+                || a["ring_gesperrt"] == "abs3_ueber_5mio_offen";
+            let fehler = a["fehler"].as_str().unwrap_or("");
+            let ok = if vz == "2025" {
+                s == 200 && gesperrt
+            } else {
+                s == 500
+                    && fehler
+                        .starts_with("ValueError: kein unterstuetzter Veranlagungszeitraum: 2023")
+            };
+            if !ok {
+                falsch.push(format!("Jahr {vz} {r}: {s} {a}"));
+            }
+        }
+    }
+    // deklaration (V6, api/src/deklaration.rs:46): Ring-Ueberlauf, der Parameter des Jahres braucht
+    for (vz, ok) in [("2023", false), ("2025", true)] {
+        let id = format!("d{vz}");
+        fall_geaendert(&d, &id, &[("tage_24h", json!(i64::MAX))]).await;
+        let pfad = d.zustand.konfig.faelle.join(format!("{id}.json"));
+        let text = std::fs::read_to_string(&pfad).unwrap();
+        for anker in ["\"scheibe\":\"an_gesamt\"", "\"veranlagungszeitraum\":2025"] {
+            assert_eq!(text.matches(anker).count(), 1, "Anker {anker}: {text}");
+        }
+        std::fs::write(
+            &pfad,
+            text.replace("\"scheibe\":\"an_gesamt\"", "\"scheibe\":\"ep\"")
+                .replace(
+                    "\"veranlagungszeitraum\":2025",
+                    &format!("\"veranlagungszeitraum\":{vz}"),
+                ),
+        )
+        .unwrap();
+        let (s, a) = route(&d, &id, "deklaration").await;
+        let fehler = a["fehler"].as_str().unwrap_or("");
+        let (status, erwartet) = if ok {
+            (422, MELDUNG.to_owned())
+        } else {
+            (
+                500,
+                format!(
+                    "ValueError: Veranlagungsjahr {vz} ist kein Steuerjahr (erwartet 2024..2100). "
+                ),
+            )
+        };
+        if s != status || !fehler.starts_with(&erwartet) {
+            falsch.push(format!(
+                "deklaration, Jahr {vz}: {s} {a}, erwartet {status} mit {erwartet:?}"
+            ));
+        }
+    }
+    assert!(falsch.is_empty(), "{falsch:#?}");
+}
+
+/// (Fall, Felder, Route, erwarteter Status, Marke im Meldungstext)
+type HttpFall = (
+    &'static str,
+    Vec<(&'static str, Value)>,
+    &'static str,
+    u16,
+    &'static str,
+);
+
+/// Zwei Ueberlaufstellen der Engine, die ueber die HTTP-Haut mit gueltigen Feldern erreichbar sind (Bericht h8-ueberlauf-luecke,
+/// Sonde `sonde_luecke`): Mahlzeiten-Anzahlen (`int` ohne Bereich: 16470307208669242 Fruehstuecke zu 560 ct und ein Mittagessen zu
+/// 1120 ct laufen als Summe ueber, Marke `vpf k28`) und eine Entfernung 1e15 km bei 366 Arbeitstagen (`Tage * (km - 20) * 38 ct`,
+/// Marke `ab21_roh`; nur `ergebnis` rechnet den erhoehten Teil ab dem 21. km, `stand`, `fragen` und `deklaration` bleiben 200).
+/// Rust meldet 422 mit der Betragsmeldung, nie 500 und nie eine Zahl. Python (`orakel_luecke_http.py`, Bereichspruefung des Stores
+/// aus) antwortet in beiden Faellen auf allen vier Routen mit 200 (`ergebnis`: 662900 bzw. 0 Cent): der 422 ist die fail-closed-
+/// Konvention von Rust, "zwischen". Gegenproben (ein Fruehstueck allein, 30 km): 200 wie in Python; der Test prueft dort
+/// nur den Status.
+#[tokio::test]
+async fn mahlzeiten_und_entfernung_ausserhalb_i64_sind_ueber_http_ein_422_und_nie_ein_500() {
+    let d = dienst();
+    let frueh = json!(16_470_307_208_669_242_i64);
+    let mahlzeit = |extra: Vec<(&'static str, Value)>| {
+        let mut f = vec![("vpf_keine_mahlzeitengestellung", json!(false))];
+        f.extend(extra);
+        f
+    };
+    let faelle: Vec<HttpFall> = vec![
+        (
+            "m1",
+            mahlzeit(vec![
+                ("vpf_fruehstuecke_gestellt_anzahl", frueh.clone()),
+                ("vpf_mittagessen_gestellt_anzahl", json!(1)),
+            ]),
+            "stand",
+            422,
+            "vpf k28",
+        ),
+        ("m1", Vec::new(), "fragen", 422, "vpf k28"),
+        ("m1", Vec::new(), "ergebnis", 422, "vpf k28"),
+        (
+            "m2",
+            mahlzeit(vec![("vpf_fruehstuecke_gestellt_anzahl", frueh)]),
+            "stand",
+            200,
+            "",
+        ),
+        (
+            "k1",
+            vec![
+                ("ep_entfernung_km", json!(1_000_000_000_000_000_i64)),
+                ("ep_arbeitstage", json!(366)),
+            ],
+            "ergebnis",
+            422,
+            "ab21_roh",
+        ),
+        ("k1", Vec::new(), "stand", 200, ""),
+        (
+            "k2",
+            vec![
+                ("ep_entfernung_km", json!(30)),
+                ("ep_arbeitstage", json!(220)),
+            ],
+            "ergebnis",
+            200,
+            "",
+        ),
+    ];
+    let mut falsch = Vec::new();
+    let mut angelegt = Vec::new();
+    for (id, felder, r, status, marke) in faelle {
+        if !angelegt.contains(&id) {
+            fall_geaendert(&d, id, &felder).await;
+            angelegt.push(id);
+        }
+        let (s, a) = route(&d, id, r).await;
+        let fehler = a["fehler"].as_str().unwrap_or("");
+        let ok = s == status
+            && (status != 422 || (fehler.starts_with(MELDUNG) && fehler.contains(marke)));
+        if !ok {
+            falsch.push(format!(
+                "{id} {r}: {s} {a}, erwartet {status} mit {marke:?}"
+            ));
         }
     }
     assert!(falsch.is_empty(), "{falsch:#?}");
