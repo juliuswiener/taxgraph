@@ -19,7 +19,11 @@
     clippy::panic
 )]
 
-use domain::{nur_xml_zeichen, repr_float, Feldtyp, Feldzustand, PyWert, Signal2, Wert, Zustand};
+use domain::{
+    nur_xml_zeichen, repr_float, Cent, Euro, Feldtyp, Feldzustand, Km, PyWert, Satz, Signal2, Wert,
+    Zustand,
+};
+use rust_decimal::Decimal;
 
 const BS: char = '\\';
 
@@ -166,4 +170,14 @@ fn feldzustand_und_signal_geben_ihren_inhalt_zurueck() {
     );
     // Die Pruefung schneidet Leerraum nur fuer den Test auf "leer" ab; der Text bleibt, wie er kam.
     assert_eq!(Signal2::new(" a ").unwrap().as_str(), " a ");
+}
+
+/// `get` gibt den Rohwert zurueck, den `new` bekam (Mutationsmessung N4e: `Km::get` liefert `Decimal::ZERO`, kein Test merkte es).
+#[test]
+fn geldtypen_geben_ihren_rohwert_zurueck() {
+    assert_eq!(Cent::new(-1505).get(), -1505);
+    assert_eq!(Euro::new(4500).get(), 4500);
+    assert_eq!(Satz::new(Decimal::new(30, 2)).get(), Decimal::new(30, 2));
+    assert_eq!(Km::new(Decimal::new(106, 1)).get(), Decimal::new(106, 1));
+    assert_eq!(Km::new(Decimal::new(-5, 1)).get(), Decimal::new(-5, 1));
 }
