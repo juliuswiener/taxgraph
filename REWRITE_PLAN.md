@@ -69,7 +69,7 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
   (15 von 15 Abfragen gemessen, Bericht `rauchprobe-abweichungen.md`).
 - *Überlauf-Regel:* ein Betrag, den die Rechnung nicht in `i64` fasst, ist in Rust ein 422 („Ein eingegebener Betrag ist zu groß für die Berechnung“) statt einer
   falschen Zahl; Python rechnet weiter und antwortet 200 (Vault `decisions/betrag-ausserhalb-i64-rechnung-antwortet-422-statt-500.md`, Abweichungen 1c bis 1f). Seit `81892228` (Merge von
-  `orch/h8-shim-guard`) gilt das für jede gelesene Rechenausgabe, nicht mehr stellenweise: das Makro `TG_AUS` (`rust/catala-sys/csrc/shim.c:50`) merkt sich, ob der Wert in 64 Bit
+  `orch/h8-shim-guard`) gilt das für jede gelesene Rechenausgabe, nicht mehr stellenweise: das Makro `TG_AUS` (`rust/catala-sys/csrc/shim.c:50`) merkt sich, ob der Wert in `long`
   passt, und `Ausgabe::cent()` (`rust/catala-sys/src/lib.rs:118`) meldet es beim Lesen. Vorher war es an fünf Stellen einzeln geprüft (Entfernungspauschale, EÜR-Gewinn,
   Mitunternehmer-Summe, Kirchensteuer-Abzug, AGB-Abzug) und die Gesamtrechnung zeigte bei absurden Eingaben einen falschen Zwischenwert. Neue gewollte Abweichung 1g (ein
   Bruttolohn von 9223372036854775800 ct in der Scheibe `gesamt`: `stand`, `fragen` und `ergebnis` antworten in Rust 422, in Python 200; Kommentar
@@ -96,10 +96,10 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
   1. `make serve` baut im dev-Profil (opt-level 1), nie mit `--release`: `rust/Cargo.toml` hat kein `[profile.release]` (`grep -c profile.release rust/Cargo.toml` → 0), Cargo
      schaltet im Release-Bau `overflow-checks` und `debug-assertions` ab, und nur der dev-Bau wird von `rust/parity` und `make ui-rust` gemessen. Seit `b7eb0c01` steht `overflow-checks = true` ausdrücklich im `[profile.dev]` (`rust/Cargo.toml:68`);
      `tests/test_ueberlauf_waechter_text.py` verlangt die Zeile. Kaltbau in leerem
-     Zielordner: 123 Crates, 40 s, 870 MB (`cutover-smoke/cargo-build.log`).
+     Zielordner: 123 Crates und 40 s laut `cutover-smoke/cargo-build.log`, 870 MB laut Bericht `berichte/cutover-bau.md`.
   2. Die Anmeldung ist an: `make serve` entfernt `TAXGRAPH_NO_AUTH` aus der Umgebung (`env -u TAXGRAPH_NO_AUTH`, geprüft in `tests/test_make_serve.py`). Ein Fall ohne Besitzerfeld ist für jedes Konto gesperrt (403, wie in Python); im echten Bestand haben 39 von 192
      Fällen ein Besitzerfeld (gemessen, Bericht `rauchprobe-abweichungen.md`). Das ist unverändert gegenüber Python.
-  3. `make backup` läuft vor jedem Start (`SICHERN=0` überspringt): rund 29,5 MB je Start bei 37 MB Bestand (`cutover-smoke/serve-A.log`: 29 455 291 B); `BACKUP_DIR`
+  3. `make backup` läuft vor jedem Start (`SICHERN=0` überspringt): rund 29,5 MB je Start bei 37 MB Bestand (Größe des Archivs unter `cutover-smoke/backups/`: 29 455 291 B); `BACKUP_DIR`
      (Standard `../taxgraph-backups`, neben dem Checkout) wächst, ein Aufräumen ist nicht gebaut.
   4. `AUTH_USERS` (Standard `produkt/auth/users.json`) und `TAXGRAPH_USER_STORE` laufen auseinander, wenn jemand die Variable setzt: `make backup` sichert weiter die
      Standarddatei. Dann `make serve AUTH_USERS=<Pfad>` aufrufen. Bestand vor dem Cutover, nicht verändert.
@@ -110,10 +110,10 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
 - *Trockenläufe des vollen Tors* (kein Endtor; Skript `~/.cache/taxgraph-tmp/gate-final/run.sh`, ein eigener Worktree, eigene Ziele, `nice -n 10`; Logs
   `~/.cache/taxgraph-tmp/gate-final/log-trocken2/zusammenfassung.txt` und `log-1fdc6c0a/zusammenfassung.txt`; Messung des Forks `cutover-bau`, 2026-10-04). Reihenfolge der Schritte:
   `make build-python`, clippy, `cargo test --workspace --exclude parity`, TESTMAP-Test, `make unit`, `make golden`, `make ui-rust`, Parity (`PARITY=1`, eigenes zweites Zielverzeichnis), Korpus-Tests.
-  - Lauf 1, Basis `b6516035`, Parity `PARITY_N=200`, ohne `.env`, Last 30 bis 38, kalte Ziele: build-python unter 1 s; clippy 23 s, 0 Warnungen; `cargo test` 196 s, 1437 passed / 0 failed / 21 ignored;
+  - Lauf 1, Basis `b6516035`, Parity `PARITY_N=200`, ohne `.env`, Last laut Log-Kopf 29,86 / 30,50 / 26,22 (1, 5, 15 min), kalte Ziele: build-python unter 1 s; clippy 23 s, 0 Warnungen; `cargo test` 196 s, 1437 passed / 0 failed / 21 ignored;
     TESTMAP 451 Dateien, 0 ohne Zeile; `make unit` 436 s, 4362 passed / 87 skipped / 21 xfailed; golden 135/135 in 1 s; `make ui-rust` 236 s, 249 passed / 23 xfailed;
     Parity 637 s, 192 passed / 0 failed / 0 ignored in 25 Binaries. Summe 1529 s (25,5 min). Nichts rot.
-  - Lauf 2, Basis `1fdc6c0a`, Parity `N=std` (Abdeckungs-Wächter scharf), mit `.env`, Last 5 bis 11, warme Ziele: 0,2 s; clippy 7,4 s, 0; `cargo test` 84,3 s, 1463 / 0 / 21; TESTMAP 453 / 0;
+  - Lauf 2, Basis `1fdc6c0a`, Parity `N=std` (Abdeckungs-Wächter scharf), mit `.env`, Last laut Log-Kopf 7,51 / 11,03 / 18,10 (1, 5, 15 min), warme Ziele: 0,2 s; clippy 7,4 s, 0; `cargo test` 84,3 s, 1463 / 0 / 21; TESTMAP 453 / 0;
     `make unit` 308,7 s, 4429 passed / 19 skipped / 22 xfailed; golden 135/135; `make ui-rust` 132,9 s, 249 / 23; Parity 645,2 s, 192 / 0 / 0 in 25 Binaries; die drei Testdateien, deren 4 Tests bei
     leerer Datenwurzel skippen, gegen den Korpus (Kopie) 6,8 s, 18 passed / 1 xfailed / 0 skipped. Summe 1186 s (19,8 min). Nichts rot.
   - Was die Läufe zeigen: (i) `tests/conftest.py` lädt `<Wurzel>/.env`; ein frischer Worktree hat keine, dann überspringt `make unit` 68 ERiC-Tests („ERiC oder Hersteller-ID fehlt“). Mit der `.env` (Symlink aus dem
@@ -121,7 +121,7 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
     `tests/test_p23_mehrfachverkauf_bricht_so_maxoccurs.py::test_eric_hat_ueberhaupt_geantwortet_zwei_verkaeufe`: ohne `.env` skipped, mit `.env` xfail (21 xfailed + 1 skipped bei denselben 22 Node-IDs ohne `.env`).
     (iii) Das Skript setzt `XDG_DATA_HOME` auf ein leeres Verzeichnis, damit nichts in den echten Bestand schreibt; dadurch skippen 4 Tests wegen leerem Bestand, die mit dem Korpus (Kopie) grün laufen.
     (iv) Bei `N` ungleich Standard sind die Abdeckungs-Wächter aus, bei `N=200` meldet das Log 11 Stellen. (v) Parity braucht ein eigenes Zielverzeichnis, weil jedes andere `cargo test -p api` im selben Ziel das Binärprogramm der Harness ersetzt.
-  - Zeitplan Endtor bei Last 30: etwa 27 min (Planwert 1600 s, Lauf 1 plus Korpus-Tests, ERiC bis 16 s und Parity mit `N=std`; Wachstum durch spätere Merges nicht gemessen), Limit 2000 s.
+  - Zeitplan Endtor bei Last 30: etwa 27 min (Planwert 1600 s, aufgerundet aus Lauf 1 plus Korpus-Tests, plus die 15 ERiC-Dateien (10,5 s, `gate-final/eric-dateien.log`) plus der Parity-Unterschied von `N=std` zu `N=200`; Wachstum durch spätere Merges nicht gemessen), Limit 2000 s (Vorgabe des Instruktors, keine Messung).
 - *Endtor auf dem finalen main:* **TOR: von Instruktor.** Zwei Läufe nacheinander: Lauf A alle neun Schritte mit `N=std`, Lauf B nur Parity mit `PARITY_N=10000`. Beide stehen aus, ebenso der Tag `<TAG>`.
   Letzter voller Lauf mit Zahlen auf main: „Gates auf `057b7ec3`“ unten.
 - *Nicht gemessen:* ein einzelner `PARITY_N=10000`-Lauf über alle Suiten (Lauf B des Endtors); ein Betrieb mit `TAXGRAPH_NO_AUTH=1` gegen den echten Bestand (dort wären die 16 Abweichungen sichtbar);
