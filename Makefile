@@ -9,7 +9,7 @@
 OPAM_ENV := eval $$(opam env --switch=taxgraph --set-switch)
 VENV312  := oracle/.venv312/bin/activate
 
-.PHONY: all s01 s03 tests build-python s02 clean backup restore
+.PHONY: all s01 s03 tests build-python s02 clean backup restore serve serve-python
 
 all: unit tests s02
 
@@ -101,6 +101,35 @@ restore:
 	tar xzf $(ARCHIV) -C $(FAELLE_ROOT) faelle
 	tar xzf $(ARCHIV) -C $(dir $(AUTH_USERS)) $(notdir $(AUTH_USERS)) 2>/dev/null || \
 		echo "Hinweis: $(notdir $(AUTH_USERS)) nicht im Archiv (altes Backup?) — Konten NICHT wiederhergestellt."
+
+## Produktstart (REWRITE_PLAN Schritt 10, Cutover 2026-10-04): der Rust-Dienst ist das Produkt, der
+## Python-Dienst bleibt Referenz, Orakel und Rueckfall (`serve-python`). Beide lesen dieselben
+## Umgebungsvariablen und dieselben Dateien (Bestand unter $(FAELLE_ROOT)/faelle, Konten in
+## produkt/auth/users.json, .env.llm/.env.maps/.env aus der Repo-Wurzel) — der Wechsel in beide
+## Richtungen braucht keine Migration.
+## SICHERUNG: beide Ziele sichern den Bestand vor dem Start mit `make backup` (rund 30 MB je Start,
+## BACKUP_DIR waechst). Scheitert die Sicherung, startet nichts. SICHERN=0 ueberspringt sie.
+## AUTH IST AN: `env -u TAXGRAPH_NO_AUTH` raeumt ein aus der Shell geerbtes Einzelnutzer-Opt-out ab.
+## Ein Bau mit `--release` ist hier bewusst NICHT vorgesehen: Cargo schaltet dort overflow-checks und
+## debug-assertions ab, und kein Vergleichslauf (rust/parity, `make ui-rust`) hat diesen Bau je
+## gemessen. Das dev-Profil (opt-level 1, rust/Cargo.toml) ist der gepruefte Bau, nur ohne die
+## Test-Uhr (`festzeit`): der Dienst hat die echte Uhr.
+## SERVE_TARGET liegt ausserhalb des Checkouts (target/ ist mehrere GB gross). TAXGRAPH_JWT_SECRET
+## setzen, damit Anmeldungen einen Neustart ueberleben (ohne: zufaellig je Start, wie in Python).
+SERVE_PORT   ?= 8000
+SERVE_TARGET ?= $(HOME)/.cache/taxgraph-serve/target
+SICHERN      ?= 1
+SICHERN_ZIEL  = $(if $(filter 1,$(SICHERN)),backup)
+
+serve: $(SICHERN_ZIEL)
+	cd rust && CARGO_TARGET_DIR=$(SERVE_TARGET) cargo build -p api --bin taxgraph-api
+	@echo "Rust-Dienst auf http://127.0.0.1:$(SERVE_PORT), Bestand $(FAELLE_ROOT)/faelle"
+	exec env -u TAXGRAPH_NO_AUTH TAXGRAPH_ROOT=$(CURDIR) $(SERVE_TARGET)/debug/taxgraph-api $(SERVE_PORT)
+
+## Rueckfall und Referenz: der Python-Dienst, wie er bis zum Cutover lief.
+serve-python: $(SICHERN_ZIEL)
+	@echo "Python-Dienst auf http://127.0.0.1:$(SERVE_PORT), Bestand $(FAELLE_ROOT)/faelle"
+	exec env -u TAXGRAPH_NO_AUTH python3 produkt/haut/server.py $(SERVE_PORT)
 
 
 ## S0.1: §32a tariff tests only.
