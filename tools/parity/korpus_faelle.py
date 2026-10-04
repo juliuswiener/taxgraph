@@ -88,14 +88,14 @@ def lege_an(fall_id: str, scheibe: str, gesetzt: dict) -> str:
     except API.ApiError as e:
         if e.status == 409:
             return "vorhanden"
-        return f"ABWEISUNG: {e.status} {e.detail}"
+        return f"ABWEISUNG: {e.status} {e}"
     if st != 201:
         return f"ABWEISUNG: {st}"
     for feld_id, wert in kegel_fuer(scheibe, dict(gesetzt)):
         try:
             st, _ = API.event(fall_id, _laie(feld_id, wert))
         except API.ApiError as e:
-            return f"ABWEISUNG bei {feld_id}: {e.status} {e.detail}"
+            return f"ABWEISUNG bei {feld_id}: {e.status} {e}"
         if st != 201:
             return f"ABWEISUNG bei {feld_id}: {st}"
     return "neu"
