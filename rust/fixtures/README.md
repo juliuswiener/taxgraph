@@ -109,3 +109,20 @@ Der Generator braucht die gebaute Catala-Engine (`make build-python`) und ist de
 Ausgabe): zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed (geprueft bei `PYTHONHASHSEED` 1 und 777).
 Aendert sich ein Orakel (`runner.py`, Catala-Regeln), ist das Fixture neu zu erzeugen; der Rust-Test zeigt dann, wo
 Rust vom Orakel abweicht.
+
+## `eingang_orakel.json`
+
+Eingaben fuer die Crate `eingang` samt den Antworten des Python-Orakels (`produkt/eingang/*` ueber
+`tools/parity/schritt8_oracle.py`). Konsumenten: `rust/eingang/tests/orakel_werte.rs` (Werte: CSV-
+Zeilenmaschine, Betragsparser, Schluesselwoerter, Rundung, Vorjahr, eDaten, Beleg) und
+`rust/eingang/tests/ocr_pfade.rs` (Abschnitt `ocr`: je Fall drei Shell-Skripte als `pdftotext`/`pdftoppm`/
+`tesseract`, dieselben unter Python und Rust). Beide hermetisch, ohne Python zur Laufzeit. Der Generator
+legt `OMP_THREAD_LIMIT=7` in die Umgebung, damit sichtbar wird, dass nur `tesseract` ihn auf 1 setzt.
+
+```
+python3 tools/parity/extract_eingang_orakel.py
+```
+
+Aendert sich ein Leser in `produkt/eingang/`, ist das Fixture neu zu erzeugen; der Rust-Test zeigt dann,
+wo Rust vom Orakel abweicht. Das Fixture ist deterministisch (Seed im Generator): zwei Laeufe geben
+dieselbe Datei.

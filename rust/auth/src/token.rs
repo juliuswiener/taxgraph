@@ -137,6 +137,17 @@ mod tests {
     }
 
     #[test]
+    fn iat_und_nbf_gleich_jetzt_gelten_erst_danach_nicht() {
+        // PyJWT: `iat > now` und `nbf > now` sind Fehler, Gleichheit gilt.
+        for k in ["iat", "nbf"] {
+            let p = |w: i64| json!({ k: w }).as_object().cloned().unwrap();
+            assert!(claims_gueltig(&p(99), 100), "{k} davor");
+            assert!(claims_gueltig(&p(100), 100), "{k} gleich");
+            assert!(!claims_gueltig(&p(101), 100), "{k} danach");
+        }
+    }
+
+    #[test]
     fn ohne_exp_gueltig_wie_pyjwt() {
         assert!(claims_gueltig(&serde_json::Map::new(), 1_000_000_000));
     }
