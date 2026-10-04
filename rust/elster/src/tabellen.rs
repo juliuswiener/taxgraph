@@ -355,6 +355,7 @@ pub(crate) fn suche<'a>(tabelle: &'a [(&'a str, &'a str)], schluessel: &str) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::regal::ist_kz_form;
     use serde_json::{json, Map, Value};
 
     /// Ein Muster als Ja/Nein-Urteil ueber einen Wert.
@@ -447,11 +448,6 @@ mod tests {
         ))
     }
 
-    /// Die Form einer Kennzahl `E` + 7 Ziffern: sie trennt Kz-Literale von Feldnamen und Texten.
-    fn ist_kz_form(s: &str) -> bool {
-        s.len() == 8 && s.starts_with('E') && s[1..].bytes().all(|b| b.is_ascii_digit())
-    }
-
     /// `(Feld, &[(Kz, Text), …])` aus `ABSENDER_HERKUNFT`, in Lesereihenfolge: ein Literal ohne
     /// Kz-Form beginnt ein neues Feld, ein Kz-Literal gehoert mit dem naechsten Literal zum Feld davor.
     fn absender_herkunft(literale: Vec<String>) -> Value {
@@ -508,6 +504,8 @@ mod tests {
         let weiche = crate::regal::wortliche(
             crate::regal::zone_bis(d, "let kz = if norm.starts_with(", ";").unwrap_or_else(|e| panic!("{d} {e}")),
         );
+        // Genau diese drei: ein viertes Literal (neuer Zweig der Weiche) bliebe sonst ungelesen.
+        assert_eq!(weiche.len(), 3, "iban_weiche: Vorwahl, Inland-Kz, Ausland-Kz erwartet, gefunden {weiche:?}");
         // Die Kz-Literale von `bankverbindung` in Lesereihenfolge: IBAN DE, IBAN Ausland, keine, Kontoinhaber.
         let bank_kz: Vec<String> = crate::regal::wortliche(
             crate::regal::zone(d, "fn bankverbindung(&mut self)", "{", "}").unwrap_or_else(|e| panic!("{d} {e}")),
@@ -515,6 +513,8 @@ mod tests {
         .into_iter()
         .filter(|s| ist_kz_form(s))
         .collect();
+        // Genau diese vier: ein fuenftes Kz in `bankverbindung` bliebe sonst ungelesen.
+        assert_eq!(bank_kz.len(), 4, "bankverbindung: vier Kz-Literale erwartet, gefunden {bank_kz:?}");
         // Die Reihenfolge der Sanierungsarten (Python: `P35C_REIHENFOLGE`): Schluessel der ersten Zeilen
         // von `VERZWEIGUNG[p35c]`, in Lesereihenfolge. Eine `Map` sortiert, daher eine Liste.
         let art_reihenfolge: Vec<Value> = crate::regal::wortliche(
@@ -738,6 +738,33 @@ mod tests {
             veraltet.is_empty(),
             "Regal-Eintrag ohne Gegenstueck im Quelltext (umbenannt oder gestrichen):\n  {}",
             veraltet.join("\n  ")
+        );
+    }
+
+    /// Jedes exakte Kz-Literal im Produktionstext von `rust/elster/src` hat einen Grund: `aus_regal()`
+    /// liest es aus dem Quelltext und vergleicht es mit der Fixture, es steht in einer Tabelle von
+    /// `tabellen.rs`, oder das Regal fuehrt seine Funktion als `Verhalten` mit benannten Tests
+    /// (`kz_wache.rs`). Eine neue Kz in einem Funktionskoerper, die nichts davon liest, macht den
+    /// Standardlauf rot — die Klasse von Nr 59.
+    #[test]
+    fn jedes_kz_literal_ist_von_der_fixture_gelesen() {
+        let (_, gelesen) = crate::regal::aufzeichnen(aus_allem);
+        assert!(!gelesen.is_empty(), "aus_regal() hat nichts aus dem Quelltext gelesen");
+        let befund = crate::kz_wache::kz_literal_befund(&gelesen);
+        // Ohne Funde in den Dateien mit Kz waere „kein Fehler“ nichts wert: die Abtastung sah dann nichts.
+        for datei in ["tabellen.rs", "kz_format.rs", "deklaration.rs", "xml.rs"] {
+            assert!(
+                befund.je_datei.iter().any(|(d, n)| d == datei && *n > 0),
+                "kz_wache sieht in {datei} kein Kz-Literal: {:?}",
+                befund.je_datei
+            );
+        }
+        assert!(
+            befund.fehler.is_empty(),
+            "Kz-Literal ohne Leser. Entweder in eine Tabelle von tabellen.rs (Schluessel im Generator \
+             `dump_kz_tabellen.py`), oder die Zone in aus_regal() lesen, oder — wenn nur Verhaltenstests \
+             sie decken — `Zuordnung::Verhalten` im Regal eintragen:\n  {}",
+            befund.fehler.join("\n  ")
         );
     }
 
