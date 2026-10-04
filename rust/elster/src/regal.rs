@@ -73,6 +73,7 @@ pub(crate) const REGAL: &[Datei] = &[
             ("BASIS_KV", Zuordnung::Regel("verzweigung")),
             ("BASIS_PV", Zuordnung::Regel("verzweigung")),
             ("VERZWEIGUNG", Zuordnung::Schluessel("verzweigung")),
+            ("VERZWEIGUNG", Zuordnung::Schluessel("p35c_massnahme_art_reihenfolge")),
             ("PARTNER_VERZWEIGUNG", Zuordnung::Schluessel("partner_verzweigung")),
             ("PARTNER_INSTANZ", Zuordnung::Schluessel("partner_instanz")),
             ("PFLEGE_KZ", Zuordnung::Schluessel("pflege_kz")),
@@ -81,6 +82,8 @@ pub(crate) const REGAL: &[Datei] = &[
             ("KAP_NULL_GRUND", Zuordnung::Schluessel("kap_null_grund")),
             ("PFLICHTFELDER", Zuordnung::Schluessel("pflichtfelder")),
             ("WERTEKODIERUNG", Zuordnung::Schluessel("wertekodierung")),
+            ("WERTEKODIERUNG", Zuordnung::Schluessel("hinweise")),
+            ("WERTEKODIERUNG", Zuordnung::Schluessel("wertekodierung_andere_ohne_code")),
             ("rente_wert", Zuordnung::Funktion("verzweigung")),
             ("rente_beginn", Zuordnung::Funktion("verzweigung")),
             ("konfession_code", Zuordnung::Funktion("wertekodierung")),
@@ -103,7 +106,6 @@ pub(crate) const REGAL: &[Datei] = &[
             ("kz_wert", Zuordnung::Funktion("datums_kz")),
             ("schreibe_kz", Zuordnung::Funktion("null_unzulaessig")),
             ("null_unzulaessig", Zuordnung::Funktion("null_unzulaessig/je_vz")),
-            ("ist_leerraum_zeile", Zuordnung::Ausnahme("Helfer ohne Fixture-Wert")),
         ],
         vollstaendig: true,
     },
@@ -112,13 +114,15 @@ pub(crate) const REGAL: &[Datei] = &[
         text: include_str!("deklaration.rs"),
         eintraege: &[
             ("P35A_SUMME_AUS_POSTEN", Zuordnung::Schluessel("p35a_summe_aus_posten")),
-            ("IBAN_PRAEFIX", Zuordnung::Schluessel("iban_weiche/praefix")),
-            ("IBAN_INLAND_KZ", Zuordnung::Schluessel("iban_weiche/inland")),
-            ("IBAN_AUSLAND_KZ", Zuordnung::Schluessel("iban_weiche/ausland")),
-            ("BV_KEINE_KZ", Zuordnung::Schluessel("bankverbindung/keine_bankverbindung")),
-            ("BV_KONTOINHABER_KZ", Zuordnung::Schluessel("bankverbindung/kontoinhaber")),
-            ("PFLEGE_GRAD_KZ", Zuordnung::Schluessel("pflege/grad_kz")),
-            ("PFLEGE_H_KZ", Zuordnung::Schluessel("pflege/h_kz")),
+            // Diese Regeln stehen als Literale in Methoden von `Bau`; ihr Top-Level-Name ist `deklariere`.
+            ("deklariere", Zuordnung::Funktion("iban_weiche/praefix")),
+            ("deklariere", Zuordnung::Funktion("iban_weiche/inland")),
+            ("deklariere", Zuordnung::Funktion("iban_weiche/ausland")),
+            ("deklariere", Zuordnung::Funktion("bankverbindung/iban")),
+            ("deklariere", Zuordnung::Funktion("bankverbindung/keine_bankverbindung")),
+            ("deklariere", Zuordnung::Funktion("bankverbindung/kontoinhaber")),
+            ("deklariere", Zuordnung::Funktion("pflege/grad_kz")),
+            ("deklariere", Zuordnung::Funktion("pflege/h_kz")),
             ("iban_muster", Zuordnung::Funktion("regex/iban")),
             ("zustand_text", Zuordnung::Ausnahme("Helfer ohne Fixture-Wert")),
             ("iban_pruefziffer_gueltig", Zuordnung::Ausnahme("ISO 13616 Modulo 97, keine Python-Tabelle")),
@@ -130,7 +134,7 @@ pub(crate) const REGAL: &[Datei] = &[
         text: include_str!("xml.rs"),
         eintraege: &[
             ("NS_ELSTER", Zuordnung::Schluessel("elster_xml/ns_elster")),
-            ("NS_E10_FORMAT", Zuordnung::Schluessel("elster_xml/ns_e10_format")),
+            ("erzeuge_xml", Zuordnung::Funktion("elster_xml/ns_e10_format")),
             ("TESTMERKER_ERIC", Zuordnung::Schluessel("elster_xml/testmerker_eric")),
             ("E10_AUSSCHLUSS_DATENART", Zuordnung::Schluessel("elster_xml/e10_ausschluss_datenart")),
             ("INSTANZ_CONTAINER_TIEFER", Zuordnung::Schluessel("elster_xml/instanz_container_tiefer")),
@@ -138,7 +142,6 @@ pub(crate) const REGAL: &[Datei] = &[
             ("INSTANZ_NUMMER_FELDER", Zuordnung::Schluessel("elster_xml/instanz_nummer_felder")),
             ("ABSENDER_HERKUNFT", Zuordnung::Schluessel("elster_xml/absender_herkunft")),
             ("ABSENDER_STRASSE_ZUSATZ_KZ", Zuordnung::Schluessel("elster_xml/absender_strasse_zusatz_kz")),
-            ("CACHE", Zuordnung::Ausnahme("Schema-Puffer nach VZ, kein Python-Wert")),
         ],
         vollstaendig: false,
     },
@@ -148,13 +151,11 @@ pub(crate) const REGAL: &[Datei] = &[
         eintraege: &[
             ("XS", Zuordnung::Schluessel("xsd_verify/xs_namespace")),
             ("MAX_DEPTH", Zuordnung::Schluessel("xsd_verify/max_depth")),
-            ("DATENART_DEFAULT", Zuordnung::Schluessel("xsd_verify/datenart/default")),
-            ("DATENART_PRAEFIX_E60", Zuordnung::Schluessel("xsd_verify/datenart/routing/60")),
-            ("DATENART_E77", Zuordnung::Schluessel("xsd_verify/datenart/routing/60")),
-            ("ERIC_PFLICHT_KIND", Zuordnung::Schluessel("elster_xml/eric_pflicht_trotz_optional")),
+            ("datenart", Zuordnung::Funktion("xsd_verify/datenart/default")),
+            ("datenart", Zuordnung::Funktion("xsd_verify/datenart/routing/60")),
+            ("schema_info", Zuordnung::Funktion("elster_xml/eric_pflicht_trotz_optional")),
             ("datenart", Zuordnung::Funktion("xsd_verify/datenart")),
             ("ist_ja_typ", Zuordnung::Funktion("xsd_verify/ja_typ_pattern")),
-            ("MINI_XSD", Zuordnung::Ausnahme("selbst gebautes Schema, nur im Testmodul (Lizenz)")),
         ],
         vollstaendig: false,
     },
@@ -171,7 +172,7 @@ pub(crate) const REGAL: &[Datei] = &[
         name: "xmllint.rs",
         text: include_str!("xmllint.rs"),
         eintraege: &[
-            ("EXTERN_SCHEMA_MUSTER", Zuordnung::Schluessel("eric/extern_schema_muster")),
+            ("finde_xsd_schema", Zuordnung::Funktion("eric/extern_schema_muster")),
         ],
         vollstaendig: false,
     },
@@ -199,8 +200,6 @@ pub(crate) const REGAL: &[Datei] = &[
         name: "py.rs",
         text: include_str!("py.rs"),
         eintraege: &[
-            ("INT", Zuordnung::Ausnahme("D-Nummern des int-Helfers, nur im Testmodul")),
-            ("REPR", Zuordnung::Ausnahme("D-Nummern des repr-Helfers, nur im Testmodul")),
         ],
         vollstaendig: false,
     },
@@ -216,60 +215,11 @@ pub(crate) const REGAL: &[Datei] = &[
         name: "lib.rs",
         text: include_str!("lib.rs"),
         eintraege: &[
-            ("testhilfe", Zuordnung::Ausnahme("versteckte Testhilfe, kein Wert")),
         ],
         vollstaendig: true,
     },
-    Datei {
-        name: "regal.rs",
-        text: include_str!("regal.rs"),
-        eintraege: &[
-            ("REGAL", Zuordnung::Regel("das Regal selbst")),
-            ("PROBE_PAARE", Zuordnung::Regel("das Regal selbst")),
-            ("Datei", Zuordnung::Ausnahme("Datensatz des Regals")),
-            ("Zuordnung", Zuordnung::Ausnahme("Datensatz des Regals")),
-            ("KÜRZEL", Zuordnung::Ausnahme("Baustein der Suchwoerter, damit sie sich nicht selbst finden")),
-            ("WORTER", Zuordnung::Ausnahme("Baustein der Suchwoerter")),
-            ("wort_const", Zuordnung::Funktion("Bildung des Suchwortes")),
-            ("wort_static", Zuordnung::Funktion("Bildung des Suchwortes")),
-            ("oberster_name", Zuordnung::Funktion("Bildung des Namens")),
-            ("name_am_anfang", Zuordnung::Funktion("Bildung des Namens")),
-            ("top_level_namen", Zuordnung::Funktion("Bildung des Regals")),
-            ("einzel", Zuordnung::Funktion("Lesen aus dem Quelltext")),
-            ("menge", Zuordnung::Funktion("Lesen aus dem Quelltext")),
-            ("folge", Zuordnung::Funktion("Lesen aus dem Quelltext")),
-            ("paar_objekt", Zuordnung::Funktion("Lesen aus dem Quelltext")),
-            ("erste_menge", Zuordnung::Funktion("Lesen aus dem Quelltext")),
-            ("wortliche", Zuordnung::Funktion("Lesen aus dem Quelltext")),
-            ("zone", Zuordnung::Funktion("Lesen aus dem Quelltext")),
-            ("anker_zone", Zuordnung::Funktion("Lesen aus dem Quelltext")),
-            ("datei_von", Zuordnung::Funktion("Lesen aus dem Quelltext")),
-            ("ort_vergleich", Zuordnung::Funktion("Ortsvergleich")),
-            ("zeile_der", Zuordnung::Funktion("Ortsvergleich")),
-            ("text_der", Zuordnung::Funktion("Lesen aus dem Quelltext")),
-            ("konfession_codes", Zuordnung::Funktion("Regel: wertekodierung")),
-            ("rentenart_wert", Zuordnung::Funktion("Regel: verzweigung")),
-            ("rentenart_beginn", Zuordnung::Funktion("Regel: verzweigung")),
-            ("ibans", Zuordnung::Funktion("Regel: regex/iban")),
-            ("pruefziffer_bei", Zuordnung::Funktion("Regel: regex/iban")),
-            ("klassen", Zuordnung::Funktion("Regel: eric_rc/klassen")),
-            ("sonstige_klasse", Zuordnung::Funktion("Regel: eric_rc/klassen")),
-            ("keine_bank", Zuordnung::Funktion("Regel: bankverbindung")),
-            ("kontoinhaber_bei", Zuordnung::Funktion("Regel: bankverbindung")),
-            ("datenarten", Zuordnung::Funktion("Regel: xsd_verify/datenart")),
-            ("ja_typen", Zuordnung::Funktion("Regel: xsd_verify/ja_typ_pattern")),
-            ("laengen_grenze", Zuordnung::Funktion("Regel: regex/iban")),
-            ("hole", Zuordnung::Ausnahme("Vergleich gegen die Fixture")),
-            ("vergleiche", Zuordnung::Ausnahme("Vergleich gegen die Fixture")),
-            ("proben", Zuordnung::Ausnahme("Vergleich gegen die Fixture")),
-            ("wert", Zuordnung::Ausnahme("Vergleich gegen die Fixture")),
-            ("regal_fehler", Zuordnung::Ausnahme("Bildung des Guards")),
-            ("gemeldete_schluessel", Zuordnung::Ausnahme("Bildung des Guards")),
-            ("top_level_funktionen", Zuordnung::Funktion("Bildung des Regals")),
-            ("traeger", Zuordnung::Funktion("Bildung des Regals")),
-        ],
-        vollstaendig: true,
-    },];
+    // `regal.rs` fuehrt sich nicht selbst: seine Hilfen sind Werkzeug, keine Tabelle.
+];
 
 /// Die Proben, die ein Rust-Praedikat und die Fixture bestehen muessen. Pfad = Schluessel, unter
 /// dem die Fixture `proben` traegt; der Wert ist das Python-Ergebnis (gemessen, kein Rat).
@@ -296,32 +246,20 @@ pub(crate) const PROBE_PAARE: &[(&str, &[(&str, bool)])] = &[
     ]),
 ];
 
-/// Die Suchwoerter werden zusammengeschrieben: sonst faende `regal.rs` sein eigenes Suchmuster
-/// und zaehlte sich selbst als Tabelle.
-const KÜRZEL: [&str; 4] = ["co", "n", "fu", "ti"];
-const WORTER: [&str; 3] = ["st", "n", "ti"];
-
-fn wort_const() -> String {
-    format!("{}{}t ", KÜRZEL[0], WORTER[1])
-}
-
-fn wort_static() -> String {
-    format!("{}{}c ", WORTER[0], KÜRZEL[3])
-}
-
 /// Name des Eintrags in einer Zeile, die mit `wort` beginnt (nach `pub`, `pub(crate)`). `i` zeigt
 /// auf den Anfang des Wortes; die Zeile davor muss leer sein — eine eingerueckte Zeile gehoert
 /// einem Funktionskoerper oder einem Testmodul und ist kein Top-Level-Eintrag.
 fn oberster_name<'a>(text: &'a str, i: usize, wort: &str) -> Option<&'a str> {
     let anfang = text[..i].rfind('\n').map_or(0, |j| j + 1);
-    let vor = text[anfang..i].trim_start();
-    let vor = vor.strip_prefix("pub(").unwrap_or(vor);
-    let vor = if vor.contains(')') {
-        vor.splitn(2, ')').nth(1).unwrap_or("").trim_start()
-    } else {
-        vor
+    // Kein `trim_start`: eine eingerueckte Zeile ist nie Top-Level.
+    let vor = &text[anfang..i];
+    let vor = match vor.strip_prefix("pub") {
+        Some(rest) => rest
+            .strip_prefix('(')
+            .map_or(rest, |k| k.split_once(')').map_or("", |(_, nach)| nach))
+            .trim_start_matches(' '),
+        None => vor,
     };
-    let vor = vor.strip_prefix("pub ").unwrap_or(vor);
     if !vor.is_empty() {
         return None;
     }
@@ -340,11 +278,13 @@ fn name_am_anfang(ohne: &str) -> &str {
 /// Die Top-Level-Konstanten und Statik-Variablen eines Textes, sortiert, ohne Doppelung.
 pub(crate) fn top_level_namen(text: &str) -> Vec<&str> {
     let mut aus = Vec::new();
-    for wort in [wort_const(), wort_static()] {
+    for wort in ["const ", "static "] {
         let mut i = 0;
-        while let Some(j) = text[i..].find(wort.as_str()) {
+        while let Some(j) = text[i..].find(wort) {
             let p = i + j;
-            if let Some(name) = oberster_name(text, p, wort.as_str()) {
+            // `const fn` ist eine Funktion, keine Konstante.
+            let ist_funktion = text[p + wort.len()..].starts_with("fn ");
+            if let Some(name) = oberster_name(text, p, wort).filter(|_| !ist_funktion) {
                 if !name.is_empty() {
                     aus.push(name);
                 }
@@ -361,27 +301,21 @@ pub(crate) fn top_level_namen(text: &str) -> Vec<&str> {
 /// Code stehen und nur ueber ihre Proben messbar sind.
 pub(crate) fn top_level_funktionen(text: &str) -> Vec<&str> {
     let mut aus = Vec::new();
-    let wort = format!("{}{} ", KÜRZEL[2], WORTER[2]);
-    let mut i = 0;
-    while let Some(j) = text[i..].find(wort.as_str()) {
-        let p = i + j;
-        if let Some(name) = oberster_name(text, p, wort.as_str()) {
-            if !name.is_empty() {
-                aus.push(name);
+    for wort in ["fn ", "const fn "] {
+        let mut i = 0;
+        while let Some(j) = text[i..].find(wort) {
+            let p = i + j;
+            if let Some(name) = oberster_name(text, p, wort) {
+                if !name.is_empty() {
+                    aus.push(name);
+                }
             }
+            i = p + wort.len();
         }
-        i = p + wort.len();
     }
     aus.sort_unstable();
     aus.dedup();
     aus
-}
-
-/// Traegt `name` in der Datei etwas: Konstante, Statik-Variable oder Funktion?
-pub(crate) fn traeger(name: &str, text: &str) -> bool {
-    top_level_namen(text).iter().any(|n| *n == name)
-        || top_level_funktionen(text).iter().any(|n| *n == name)
-        || text.contains(&format!("fn {name}("))
 }
 
 /// Die Regal-Datei ihres Namens wegen.
@@ -400,6 +334,22 @@ pub(crate) fn zone(name: &str, anker: &str, offnen: &str, schliessen: &str) -> R
     anker_zone(text, anker, offnen, schliessen)
 }
 
+/// Von der Zeile mit `anker` bis zum ersten `ende` danach, einschliesslich: fuer Text, der mit `\`
+/// ueber Zeilen laeuft, und fuer Anweisungen, deren Klammern nichts zaehlen sollen.
+pub(crate) fn zone_bis(name: &str, anker: &str, ende: &str) -> Result<&'static str, String> {
+    let text = datei_von(name)
+        .ok_or_else(|| format!("Datei {name} fehlt im Regal"))?
+        .text;
+    let i = text
+        .find(anker)
+        .ok_or_else(|| format!("Anker {anker:?} nicht gefunden"))?;
+    let anfang = text[..i].rfind('\n').map_or(0, |j| j + 1);
+    let j = text[i..]
+        .find(ende)
+        .ok_or_else(|| format!("Ende {ende:?} nach {anker:?} fehlt"))?;
+    Ok(&text[anfang..i + j + ende.len()])
+}
+
 pub(crate) fn anker_zone(
     text: &'static str,
     anker: &str,
@@ -416,13 +366,20 @@ pub(crate) fn anker_zone(
             .map_or(text.len(), |j| anfang + j);
         return Ok(&text[anfang..ende]);
     }
-    let start = text[anfang..]
-        .find(offnen)
-        .ok_or_else(|| format!("{offnen} fehlt in der Ankerzeile {anker:?}"))?;
+    // Bei `const X: &[&str] = &[…]` zaehlt die Klammer des Wertes, nicht die des Typs links vom `=`.
+    let zeilenende = text[anfang..].find('\n').map_or(text.len(), |j| anfang + j);
+    let ab = text[anfang..zeilenende]
+        .find(" = ")
+        .map_or(anfang, |j| anfang + j + 3);
+    let start = ab
+        + text[ab..]
+            .find(offnen)
+            .ok_or_else(|| format!("{offnen} fehlt in der Ankerzeile {anker:?}"))?;
     let mut tiefe = 0usize;
-    let mut i = anfang + start;
+    let mut i = start;
     while i < text.len() {
-        if text[i..].starts_with(offnen) {
+        // Byteweise vergleichen: `text[i..]` paniert mitten in einem Mehrbyte-Zeichen („Straße“).
+        if text.as_bytes()[i..].starts_with(offnen.as_bytes()) {
             tiefe += 1;
             i += offnen.len();
             continue;
@@ -431,7 +388,7 @@ pub(crate) fn anker_zone(
             i += 2;
             continue;
         }
-        if text[i..].starts_with(schliessen) {
+        if text.as_bytes()[i..].starts_with(schliessen.as_bytes()) {
             tiefe = tiefe.checked_sub(1).ok_or_else(|| format!("einseitiges {schliessen:?}"))?;
             i += schliessen.len();
             if tiefe == 0 {
@@ -445,32 +402,35 @@ pub(crate) fn anker_zone(
 }
 
 /// Alle `"..."`-Literale eines Textstuecks, in Reihenfolge des Lesens.
+///
+/// Rust-Zeilenfortsetzung: ein `\` vor dem Zeilenende streicht den Umbruch und den fuehrenden
+/// Leerraum der Folgezeile, wie der Compiler es tut.
 pub(crate) fn wortliche(text: &str) -> Vec<String> {
-    let b = text.as_bytes();
     let mut aus = Vec::new();
-    let mut i = 0;
-    while i < b.len() {
-        if b[i] != b'"' {
-            i += 1;
+    let mut zeichen = text.chars().peekable();
+    while let Some(c) = zeichen.next() {
+        if c != '"' {
             continue;
         }
-        i += 1;
         let mut innen = String::new();
-        while i < b.len() && b[i] != b'"' {
-            if b[i] == b'\\' && i + 1 < b.len() {
-                i += 1;
-                innen.push(match b[i] {
-                    b'n' => '\n',
-                    b't' => '\t',
-                    b'r' => '\r',
-                    other => other as char,
-                });
-            } else {
-                innen.push(b[i] as char);
+        while let Some(c) = zeichen.next() {
+            match c {
+                '"' => break,
+                '\\' => match zeichen.next() {
+                    Some('n') => innen.push('\n'),
+                    Some('t') => innen.push('\t'),
+                    Some('r') => innen.push('\r'),
+                    Some('\n') => {
+                        while zeichen.peek().is_some_and(|x| x.is_whitespace()) {
+                            zeichen.next();
+                        }
+                    }
+                    Some(anderes) => innen.push(anderes),
+                    None => break,
+                },
+                _ => innen.push(c),
             }
-            i += 1;
         }
-        i += 1;
         aus.push(innen);
     }
     aus
@@ -492,74 +452,12 @@ pub(crate) fn folge(text: &str) -> Value {
 /// `(Schluessel, Wert)`-Paare eines Textstuecks als Objekt.
 pub(crate) fn paar_objekt(text: &str) -> Value {
     let w = wortliche(text);
-    assert!(w.len() % 2 == 0, "unaarige Literale in {text:?}");
+    assert!(w.len().is_multiple_of(2), "unaarige Literale in {text:?}");
     let mut m = serde_json::Map::new();
     for paar in w.chunks(2) {
         m.insert(paar[0].clone(), Value::String(paar[1].clone()));
     }
     Value::Object(m)
-}
-
-/// Die ersten `n` Literale eines Textstuecks, als Menge.
-pub(crate) fn erste_menge(text: &str, n: usize) -> Value {
-    let mut liste: Vec<String> = wortliche(text).into_iter().take(n).collect();
-    liste.sort_unstable();
-    Value::Array(liste.into_iter().map(Value::from).collect())
-}
-
-/// Der Textwert einer Regel, die ueber mehrere Zeilen laufen kann (Rust haelt `--\\` am
-/// Zeilenende, Python setzt seine Stuecke in Klammern zusammen): die konkatenzierten Literale
-/// ab der `n`-ten Zeile mit `anker`, bis eine Zeile das Literal mit `",` schliesst.
-pub(crate) fn text_der(datei: &str, anker: &str, n: usize) -> String {
-    let text = datei_von(datei)
-        .unwrap_or_else(|| panic!("Datei {datei} fehlt im Regal"))
-        .text;
-    let mut fund = 0;
-    let mut start = None;
-    for (i, zeile) in text.lines().enumerate() {
-        if zeile.contains(anker) {
-            if fund == n {
-                start = Some(i);
-                break;
-            }
-            fund += 1;
-        }
-    }
-    let start = start.unwrap_or_else(|| panic!("Anker {anker:?} ({n}.) nicht in {datei}"));
-    let mut wert = String::new();
-    let mut offen;
-    for zeile in text.lines().skip(start) {
-        let rest = zeile.find(anker).map_or(zeile, |i| &zeile[i + anker.len()..]);
-        let mut i = 0;
-        let bytes = rest.as_bytes();
-        while i < bytes.len() {
-            if bytes[i] != b'"' {
-                i += 1;
-                continue;
-            }
-            let ende = rest[i + 1..]
-                .find('"')
-                .unwrap_or_else(|| panic!("offenes Literal in {zeile:?}"));
-            let innen = &rest[i + 1..i + 1 + ende];
-            if !innen.contains('\\') {
-                wert.push_str(innen);
-            }
-            let nach = &rest[i + 2 + ende..];
-            offen = !nach.trim_start().starts_with(',') && !nach.trim_start().is_empty();
-            i = i + 2 + ende;
-            if !offen {
-                return wert;
-            }
-        }
-    }
-    panic!("kein Literal-Ende nach {anker:?} in {datei}");
-}
-
-/// Zeilennummer des Ankers in der Regal-Datei (1-basiert, wie der Compiler).
-pub(crate) fn zeile_der(datei: &str, anker: &str) -> Option<usize> {
-    let text = datei_von(datei)?.text;
-    let i = text.find(anker)?;
-    Some(text[..i].lines().count() + 1)
 }
 
 /// Das `n`-te Literal eines Textstuecks (fuer Einzelwerte, z. B. einen Namespace).
@@ -570,53 +468,13 @@ pub(crate) fn einzel(text: &str, n: usize) -> String {
         .unwrap_or_else(|| panic!("kein Literal {n} in {text:?}"))
 }
 
-/// Der `zeile`-Knoten der Fixture gegen den Rust-Quelltext: dieselbe Datei, derselbe Anker,
-/// dieselbe Zahl. Ein Anker, den der Generator nicht mehr findet, ist ein Fehler, kein Skip.
-pub(crate) fn ort_vergleich(pfad: &str, fix: &Value) -> Vec<String> {
-    let Some(ort) = hole(fix, pfad) else {
-        return vec![format!("{pfad}: fehlt in der Fixture")];
-    };
-    let (Some(datei), Some(anker), Some(zeile)) = (
-        ort.get("datei").and_then(Value::as_str),
-        ort.get("anker").and_then(Value::as_str),
-        ort.get("zeile").and_then(Value::as_i64),
-    ) else {
-        return vec![format!("{pfad}: unvollstaendiger Orts-Knoten {ort}")];
-    };
-    match datei_von(datei) {
-        None => vec![format!("{pfad}: Datei {datei} fehlt im Regal")],
-        Some(_) => match zeile_der(datei, anker) {
-            None => vec![format!("{pfad}: Anker {anker:?} nicht in {datei}")],
-            Some(rust) if rust as i64 != zeile => {
-                vec![format!("{pfad}: Zeile Rust {rust}, Fixture {zeile}")]
-            }
-            Some(_) => Vec::new(),
-        },
-    }
-}
-
-/// Ein String-Wert fuer den Vergleich.
-#[must_use]
-pub fn wert(s: &str) -> Value {
-    Value::String(s.to_owned())
-}
-
 /// Eine Fixture-Referenz; `None` bei fehlendem Pfad. Pfade getrennt durch `/`.
 pub(crate) fn hole<'a>(fix: &'a Value, pfad: &str) -> Option<&'a Value> {
     let mut aktuell = fix;
     for teil in pfad.split('/') {
-        aktuell = aktuell.get(&*teil)?;
+        aktuell = aktuell.get(teil)?;
     }
     Some(aktuell)
-}
-
-/// Eintrag-fuer-Eintrag-Vergleich eines Rust-Wertes gegen die Fixture.
-pub(crate) fn vergleiche(pfad: &str, fix: &Value, rust: Value) -> Vec<String> {
-    match hole(fix, pfad) {
-        None => vec![format!("{pfad}: fehlt in der Fixture")],
-        Some(f) if *f == rust => Vec::new(),
-        Some(f) => vec![format!("{pfad}: Rust {rust}, Fixture {f}")],
-    }
 }
 
 /// Proben-Vergleich: Rust-Praedikat gegen die Paare des Regals, Fixture gegen dieselben Paare.
@@ -676,13 +534,11 @@ pub(crate) fn regal_fehler() -> (Vec<String>, Vec<String>) {
                 }
             }
         }
-        for (e, zuordnung) in datei.eintraege {
-            let traegt = match zuordnung {
-                Zuordnung::Funktion(_) => top_level_funktionen(datei.text)
-                    .iter()
-                    .any(|n| *n == *e),
-                _ => namen.iter().any(|n| n == e),
-            };
+        for (e, _) in datei.eintraege {
+            // Eine Konstante oder eine Funktion kann tragen: eine Regel, die als Code steht, hat
+            // nur ihre Funktion als Namen.
+            let traegt = namen.iter().any(|n| n == e)
+                || top_level_funktionen(datei.text).contains(e);
             if !traegt {
                 veraltet.push(format!("{}::{e}", datei.name));
             }
@@ -695,14 +551,15 @@ pub(crate) fn regal_fehler() -> (Vec<String>, Vec<String>) {
     (fehlt, veraltet)
 }
 
-/// Die Schluessel, die das Regal der Fixture zuordnet (ohne `Regel` und `Ausnahme`).
-/// Die Schluessel des Regals, die die Fixture haben muss.
+/// Die Pfade, die das Regal der Fixture zuordnet und die die Fixture haben muss: `Schluessel`
+/// und `Funktion` (dessen Text ein Pfad ist, kein Satz). `Regel` und `Ausnahme` zaehlen nicht.
 pub(crate) fn gemeldete_schluessel() -> Vec<&'static str> {
     let mut aus: Vec<&'static str> = REGAL
         .iter()
         .flat_map(|d| d.eintraege.iter())
         .filter_map(|(_, z)| match z {
             Zuordnung::Schluessel(s) => Some(*s),
+            Zuordnung::Funktion(s) if !s.contains(' ') => Some(*s),
             _ => None,
         })
         .collect();

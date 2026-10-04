@@ -357,6 +357,9 @@ mod tests {
     use super::*;
     use serde_json::{json, Map, Value};
 
+    /// Ein Muster als Ja/Nein-Urteil ueber einen Wert.
+    type Urteil = fn(&str) -> bool;
+
     /// Abbild der Kz-Tabellen aus `est_mapping.py`, erzeugt von `tools/parity/dump_kz_tabellen.py`
     /// (Python-Gegenstueck: `tests/test_kz_tabellen_fixture.py`). Beide Tests laufen ohne `PARITY=1`:
     /// ein Tausch oder Tippfehler in `tabellen.rs` ist sonst nur mit dem Python-Orakel sichtbar
@@ -420,29 +423,62 @@ mod tests {
     /// Der Wert einer Regal-Zone: Literale als Menge, Liste oder Paarobjekt. Ein fehlender
     /// Anker ist ein Fehler der Zone, nie ein Skip — sonst waere „nichts gefunden" gruen.
     fn zone_menge(datei: &str, anker: &str, offnen: &str, ende: &str) -> Value {
-        crate::regal::menge(&crate::regal::zone(datei, anker, offnen, ende).unwrap_or_else(|e| panic!("{datei} {e}")))
+        crate::regal::menge(crate::regal::zone(datei, anker, offnen, ende).unwrap_or_else(|e| panic!("{datei} {e}")))
     }
 
     fn zone_liste(datei: &str, anker: &str, offnen: &str, ende: &str) -> Value {
-        crate::regal::folge(&crate::regal::zone(datei, anker, offnen, ende).unwrap_or_else(|e| panic!("{datei} {e}")))
+        crate::regal::folge(crate::regal::zone(datei, anker, offnen, ende).unwrap_or_else(|e| panic!("{datei} {e}")))
     }
 
     fn zone_paare(datei: &str, anker: &str, offnen: &str, ende: &str) -> Value {
-        crate::regal::paar_objekt(&crate::regal::zone(datei, anker, offnen, ende).unwrap_or_else(|e| panic!("{datei} {e}")))
+        crate::regal::paar_objekt(crate::regal::zone(datei, anker, offnen, ende).unwrap_or_else(|e| panic!("{datei} {e}")))
     }
 
     /// Das n-te Literal einer einzeiligen Zone.
     fn zone_einzel(datei: &str, anker: &str, n: usize) -> Value {
-        json!(crate::regal::einzel(&crate::regal::zone(datei, anker, "", "").unwrap_or_else(|e| panic!("{datei} {e}")), n))
+        json!(crate::regal::einzel(crate::regal::zone(datei, anker, "", "").unwrap_or_else(|e| panic!("{datei} {e}")), n))
+    }
+
+    /// Das erste Literal ab der Ankerzeile bis `ende`: ein Text, der mit `\` ueber Zeilen laeuft.
+    fn zone_text(datei: &str, anker: &str, ende: &str) -> Value {
+        json!(crate::regal::einzel(
+            crate::regal::zone_bis(datei, anker, ende).unwrap_or_else(|e| panic!("{datei} {e}")),
+            0
+        ))
+    }
+
+    /// Die Form einer Kennzahl `E` + 7 Ziffern: sie trennt Kz-Literale von Feldnamen und Texten.
+    fn ist_kz_form(s: &str) -> bool {
+        s.len() == 8 && s.starts_with('E') && s[1..].bytes().all(|b| b.is_ascii_digit())
+    }
+
+    /// `(Feld, &[(Kz, Text), …])` aus `ABSENDER_HERKUNFT`, in Lesereihenfolge: ein Literal ohne
+    /// Kz-Form beginnt ein neues Feld, ein Kz-Literal gehoert mit dem naechsten Literal zum Feld davor.
+    fn absender_herkunft(literale: Vec<String>) -> Value {
+        let mut m: Map<String, Value> = Map::new();
+        let mut feld = String::new();
+        let mut es = literale.into_iter();
+        while let Some(l) = es.next() {
+            if ist_kz_form(&l) {
+                let text = es.next().unwrap_or_default();
+                if let Some(a) = m.entry(feld.clone()).or_insert_with(|| json!([])).as_array_mut() {
+                    a.push(json!([l, text]));
+                }
+            } else {
+                feld = l;
+            }
+        }
+        Value::Object(m)
     }
 
     /// Das erste Literal der Zeile mit `anker`, als Text (nicht als `Value`).
     fn einzel_der(datei: &str, anker: &str) -> String {
-        crate::regal::einzel(&crate::regal::zone(datei, anker, "", "").unwrap_or_else(|e| panic!("{datei} {e}")), 0)
+        crate::regal::einzel(crate::regal::zone(datei, anker, "", "").unwrap_or_else(|e| panic!("{datei} {e}")), 0)
     }
 
     /// Die Ueberlebenden der Inventur: Regeln, die nicht in `tabellen.rs` stehen. Jede ist
     /// eine Zone in der Regal-Datei, kein handgeschriebener Wert.
+    #[allow(clippy::too_many_lines, reason = "flache Tabelle: eine Zeile je Fixture-Schluessel")]
     fn aus_regal() -> Value {
         let kf = "kz_format.rs";
         let d = "deklaration.rs";
@@ -468,6 +504,26 @@ mod tests {
             .collect();
         nicht_geprueft_klassen.sort_unstable();
         nicht_geprueft_klassen.dedup();
+        // `let kz = if norm.starts_with("DE") { "E…" } else { "E…" };` — Vorwahl, Inland-Kz, Ausland-Kz.
+        let weiche = crate::regal::wortliche(
+            crate::regal::zone_bis(d, "let kz = if norm.starts_with(", ";").unwrap_or_else(|e| panic!("{d} {e}")),
+        );
+        // Die Kz-Literale von `bankverbindung` in Lesereihenfolge: IBAN DE, IBAN Ausland, keine, Kontoinhaber.
+        let bank_kz: Vec<String> = crate::regal::wortliche(
+            crate::regal::zone(d, "fn bankverbindung(&mut self)", "{", "}").unwrap_or_else(|e| panic!("{d} {e}")),
+        )
+        .into_iter()
+        .filter(|s| ist_kz_form(s))
+        .collect();
+        // Die Reihenfolge der Sanierungsarten (Python: `P35C_REIHENFOLGE`): Schluessel der ersten Zeilen
+        // von `VERZWEIGUNG[p35c]`, in Lesereihenfolge. Eine `Map` sortiert, daher eine Liste.
+        let art_reihenfolge: Vec<Value> = crate::regal::wortliche(
+            crate::regal::zone_bis("tabellen.rs", "(\"waende\", \"", "]").unwrap_or_else(|e| panic!("tabellen.rs {e}")),
+        )
+        .chunks(2)
+        .map(|paar| json!(paar[0]))
+        .collect();
+        let andere_felder: Vec<&str> = WERTEKODIERUNG.iter().map(|w| w.feld).collect();
         let vorwahl_e77 = zone_einzel("xsd.rs", "if kz.get(1..3) == Some(", 0)
             .as_str()
             .map(str::to_owned)
@@ -485,42 +541,36 @@ mod tests {
                     "2024": zone_menge(kf, "const NULL_UNZULAESSIG_KZ_2024", "[", "]"),
                     "2025": zone_menge(kf, "const NULL_UNZULAESSIG_KZ_2025", "[", "]"),
                 },
-                "vereinigung": zone_einzel(kf, "pub const NULL_UNZULAESSIG_KZ_VEREINIGUNG", 0),
+                // Ein Alias ohne eigenes Literal: gemessen wird der Wert, nicht der Quelltext.
+                "vereinigung": sortiert(crate::NULL_UNZULAESSIG_KZ_VEREINIGUNG),
             },
             "multiplikation": zone_liste("tabellen.rs", "pub(crate) const MULTIPLIKATION", "[", "]"),
             "p35a_summe_aus_posten": Value::Array(
-                crate::regal::wortliche(&crate::regal::zone(d, "const P35A_SUMME_AUS_POSTEN", "[", "]").unwrap())
+                crate::regal::wortliche(crate::regal::zone(d, "const P35A_SUMME_AUS_POSTEN", "[", "]").unwrap())
                     .chunks(2)
                     .map(|c| json!([c[0], c[1]]))
                     .collect(),
             ),
             "iban_weiche": {
-                "praefix": zone_einzel(d, "let kz = if norm.starts_with(", 0),
-                "inland": zone_einzel(d, "let kz = if norm.starts_with(", 1),
-                "ausland": zone_einzel(d, "let kz = if norm.starts_with(", 2),
+                "praefix": weiche[0],
+                "inland": weiche[1],
+                "ausland": weiche[2],
             },
             "bankverbindung": {
-                "iban": [zone_einzel(d, "fn bankverbindung(&mut self)", 0),
-                         zone_einzel(d, "fn bankverbindung(&mut self)", 1)],
-                "keine_bankverbindung": zone_einzel(d, "fn bankverbindung(&mut self)", 2),
-                "kontoinhaber": zone_einzel(d, "fn bankverbindung(&mut self)", 3),
+                "iban": [bank_kz[0], bank_kz[1]],
+                "keine_bankverbindung": bank_kz[2],
+                "kontoinhaber": bank_kz[3],
             },
-            "p35c_massnahme_art_reihenfolge": Value::Array(
-                crate::regal::paar_objekt(&crate::regal::zone("tabellen.rs", "p35c_massnahme_einzelbetrag", "[", "]").unwrap())
-                    .as_object()
-                    .map(|m| m.keys().map(|k| json!(k.clone())).collect())
-                    .unwrap_or_default(),
-            ),
+            "p35c_massnahme_art_reihenfolge": art_reihenfolge,
             "kap_felder_a": zone_liste("tabellen.rs", "pub(crate) const KAP_FELDER_A", "[", "]"),
             "kap_felder_b": zone_liste("tabellen.rs", "pub(crate) const KAP_FELDER_B", "[", "]"),
-            "kap_null_grund": json!(crate::regal::text_der("tabellen.rs", "pub(crate) const KAP_NULL_GRUND", 0)),
+            "kap_null_grund": zone_text("tabellen.rs", "pub(crate) const KAP_NULL_GRUND", ";"),
             "hinweise": {
-                "kist_konfession": json!(crate::regal::text_der("tabellen.rs", "Ihre Konfession laesst sich", 0)),
-                "kist_konfession_partner":
-                    json!(crate::regal::text_der("tabellen.rs", "Die Konfession Ihres Ehegatten", 0)),
+                "kist_konfession": zone_text("tabellen.rs", "Ihre Konfession laesst sich", "\","),
+                "kist_konfession_partner": zone_text("tabellen.rs", "Die Konfession Ihres Ehegatten", "\","),
             },
             "wertekodierung_andere_ohne_code": {
-                "felder": zone_menge("tabellen.rs", "pub(crate) const WERTEKODIERUNG", "[", "]"),
+                "felder": sortiert(&andere_felder),
                 "ohne_code": Value::Array(
                     Konfession::ALLE
                         .into_iter()
@@ -548,24 +598,16 @@ mod tests {
             },
             "elster_xml": {
                 "ns_elster": json!(crate::NS_ELSTER),
-                "ns_e10_format": zone_einzel(x, "let mut e10 = Knoten::neu", 0),
+                "ns_e10_format": zone_einzel(x, "elstererklaerung/est/e10/v{vz}", 0),
                 "testmerker_eric": zone_einzel(x, "const TESTMERKER_ERIC", 0),
                 "pflicht_default": zone_paare(x, "const PFLICHT_DEFAULT", "[", "]"),
                 "instanz_nummer_felder": zone_menge(x, "const INSTANZ_NUMMER_FELDER", "[", "]"),
                 "e10_ausschluss_datenart": zone_menge(x, "const E10_AUSSCHLUSS_DATENART", "[", "]"),
                 "instanz_container_tiefer": zone_paare(x, "const INSTANZ_CONTAINER_TIEFER", "[", "]"),
                 "absender_strasse_zusatz_kz": zone_einzel(x, "const ABSENDER_STRASSE_ZUSATZ_KZ", 0),
-                "absender_herkunft": Value::Object(
-                    crate::regal::wortliche(&crate::regal::zone(x, "const ABSENDER_HERKUNFT", "[", "]").unwrap())
-                        .chunks(2)
-                        .map(|c| (c[0].clone(), json!([c[1].clone()])))
-                        .fold(Map::new(), |mut m, (k, v)| {
-                            m.entry(k).or_insert(json!([])).as_array_mut().map(|a| {
-                                if let Value::Array(x) = v { a.push(x[0].clone()) }
-                            });
-                            m
-                        }),
-                ),
+                "absender_herkunft": absender_herkunft(crate::regal::wortliche(
+                    crate::regal::zone(x, "const ABSENDER_HERKUNFT", "[", "]").unwrap_or_else(|e| panic!("{x} {e}")),
+                )),
                 "eric_pflicht_trotz_optional": {
                     schluessel_e10_v: zone_menge("xsd.rs", "if !v.iter().any", "{", "}"),
                 },
@@ -605,6 +647,12 @@ mod tests {
             "partner_verzweigung": verzweigung(PARTNER_VERZWEIGUNG),
             "partner_instanz": objekt(PARTNER_INSTANZ),
             "pflege_kz": sortiert(PFLEGE_KZ),
+            "pflichtfelder": Value::Array(
+                PFLICHTFELDER
+                    .iter()
+                    .map(|(b, v, felder)| json!({"bedingung": b.als_str(), "eric_version": v, "felder": sortiert(felder)}))
+                    .collect(),
+            ),
             "wertekodierung": wertekodierung(),
         })
     }
@@ -627,10 +675,103 @@ mod tests {
         }
     }
 
+    /// Die Fixture ohne `proben`: die vergleicht `proben_gleich_fixture` getrennt, denn Rust und
+    /// Python haben verschiedene Regex-Engines — vergleichbar ist nur das Urteil ueber dieselben Werte.
+    fn fixture_ohne_proben() -> Value {
+        let mut f = fixture();
+        if let Some(o) = f.as_object_mut() {
+            o.remove("proben");
+        }
+        f
+    }
+
+    /// Tabellen aus `tabellen.rs` und Regeln aus den anderen Dateien, in der Form der ganzen Fixture.
+    fn aus_allem() -> Value {
+        let mut alles = aus_tabellen();
+        if let (Some(a), Value::Object(r)) = (alles.as_object_mut(), aus_regal()) {
+            a.extend(r);
+        }
+        alles
+    }
+
+    #[test]
+    fn proben_gleich_fixture() {
+        let fix = fixture();
+        let regeln: [(&str, Urteil); 5] = [
+            ("regex/iban", crate::deklaration::iban_muster),
+            ("regex/instanz", |s| crate::instanz::instanz_re().is_some_and(|r| r.is_match(s))),
+            ("regex/steuernummer", crate::xml::stnr_muster),
+            ("xsd_verify/kz_pattern", crate::xsd::ist_kz),
+            ("xsd_verify/ja_typ_pattern", crate::ist_ja_typ),
+        ];
+        let mut aus: Vec<String> = Vec::new();
+        for (pfad, rust) in regeln {
+            aus.extend(crate::regal::proben(pfad, &fix, rust));
+        }
+        let mut in_fixture: Vec<&str> = fix["proben"]
+            .as_object()
+            .map(|m| m.keys().map(String::as_str).collect())
+            .unwrap_or_default();
+        let mut im_regal: Vec<&str> = crate::regal::PROBE_PAARE.iter().map(|(n, _)| *n).collect();
+        let mut hier: Vec<&str> = regeln.iter().map(|(n, _)| *n).collect();
+        in_fixture.sort_unstable();
+        im_regal.sort_unstable();
+        hier.sort_unstable();
+        assert_eq!(in_fixture, im_regal, "Proben-Pfade: Fixture gegen PROBE_PAARE");
+        assert_eq!(im_regal, hier, "Proben-Pfade: PROBE_PAARE gegen diesen Test");
+        assert!(aus.is_empty(), "Rust urteilt anders als Python ueber dieselben Werte:\n  {}", aus.join("\n  "));
+    }
+
+    /// Eine neue Top-Level-Konstante oder -Funktion in einer als vollstaendig gefuehrten Datei, die
+    /// niemandem zugeordnet ist, macht den Standardlauf rot (und umgekehrt ein Regal-Eintrag, dessen
+    /// Konstante es nicht mehr gibt).
+    #[test]
+    fn jede_tabelle_ist_eingetragen() {
+        let (fehlt, veraltet) = crate::regal::regal_fehler();
+        assert!(
+            fehlt.is_empty(),
+            "ohne Regal-Eintrag in regal.rs (neue Tabelle? Schluessel im Generator `dump_kz_tabellen.py` \
+             anlegen und hier zuordnen, sonst als Ausnahme mit Grund):\n  {}",
+            fehlt.join("\n  ")
+        );
+        assert!(
+            veraltet.is_empty(),
+            "Regal-Eintrag ohne Gegenstueck im Quelltext (umbenannt oder gestrichen):\n  {}",
+            veraltet.join("\n  ")
+        );
+    }
+
+    /// Jeder Pfad des Regals steht in der Fixture, und jeder Top-Level-Schluessel der Fixture gehoert
+    /// einem Pfad des Regals: kein Schluessel ohne Tabelle, keine Tabelle ohne Schluessel.
+    #[test]
+    fn kein_schluessel_ohne_tabelle() {
+        let fix = fixture();
+        let pfade = crate::regal::gemeldete_schluessel();
+        let fehlt_in_fixture: Vec<&str> = pfade
+            .iter()
+            .copied()
+            .filter(|p| {
+                crate::regal::hole(&fix, p).is_none() && fix.get("proben").and_then(|x| x.get(*p)).is_none()
+            })
+            .collect();
+        let ohne_regal: Vec<&str> = fix
+            .as_object()
+            .map(|m| {
+                m.keys()
+                    .map(String::as_str)
+                    .filter(|k| *k != "proben")
+                    .filter(|k| !pfade.iter().any(|p| p == k || p.starts_with(&format!("{k}/"))))
+                    .collect()
+            })
+            .unwrap_or_default();
+        assert!(fehlt_in_fixture.is_empty(), "Regal-Pfad ohne Schluessel in der Fixture: {fehlt_in_fixture:?}");
+        assert!(ohne_regal.is_empty(), "Fixture-Schluessel ohne Regal-Eintrag: {ohne_regal:?}");
+    }
+
     #[test]
     fn tabellen_gleich_fixture() {
         let mut aus = Vec::new();
-        abweichungen("", &aus_tabellen(), &fixture(), &mut aus);
+        abweichungen("", &aus_allem(), &fixture_ohne_proben(), &mut aus);
         assert!(
             aus.is_empty(),
             "tabellen.rs weicht von rust/fixtures/kz_tabellen.json ab (est_mapping.py ist die Quelle: \

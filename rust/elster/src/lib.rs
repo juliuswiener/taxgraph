@@ -30,6 +30,8 @@ mod geordnet;
 mod instanz;
 mod kz_format;
 mod py;
+// Nur im Testbau: das Regal liest die Quelltexte der Crate (`include_str!`) und gehoert nicht ins Binary.
+#[cfg(test)]
 mod regal;
 mod tabellen;
 #[doc(hidden)]

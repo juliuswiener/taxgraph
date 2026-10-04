@@ -599,7 +599,7 @@ impl Bau<'_> {
 }
 
 /// `^[A-Z]{2}[0-9]{2}[0-9A-Z]{1,30}$` (`String_MinL5_MaxL34_Musterm188614856_CType`).
-fn iban_muster(s: &str) -> bool {
+pub(crate) fn iban_muster(s: &str) -> bool {
     let b = s.as_bytes();
     (5..=34).contains(&b.len())
         && b.iter().take(2).all(u8::is_ascii_uppercase)

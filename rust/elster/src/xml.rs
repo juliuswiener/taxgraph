@@ -446,7 +446,7 @@ fn leite_steuernummer_ab(snapshot: &Felder) -> Option<String> {
 }
 
 /// `^[0-9]{4}0[0-9]{8}$` (Python-`$`: ein abschliessendes `\n` passt mit).
-fn stnr_muster(s: &str) -> bool {
+pub(crate) fn stnr_muster(s: &str) -> bool {
     let b = s.strip_suffix('\n').unwrap_or(s).as_bytes();
     b.len() == 13 && b.iter().all(u8::is_ascii_digit) && b.get(4) == Some(&b'0')
 }
