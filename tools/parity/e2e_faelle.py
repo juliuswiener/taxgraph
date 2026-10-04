@@ -115,11 +115,26 @@ GESAMT = dict(ARBEITNEHMER, **{
 # Die Angestellte mit Hausnummerzusatz: E0101207 neben E0101206, und der Zusatz in <AbsStr> ("Musterstraße 7a").
 HAUSNUMMER_ZUSATZ = dict(ARBEITNEHMER, stammdaten_hausnummerzusatz="a")
 
+# Zwei Vermietungsobjekte (Anlage V, Laufende_Nummer_V 1 und 2) und zwei Kinder (Anlage Kind, Kinderzahl-Waechter):
+# die Nummer der zweiten Instanz kommt aus ihrem Index (XSD-unique), die Kinderzahl aus 1 + weiteren Kind-Instanzen.
+INSTANZEN = dict(ARBEITNEHMER, **{
+    "kein_vuv": False,
+    "vv_einnahmen": 960_000, "vv_gebaeude_afa": 300_000, "vv_schuldzinsen": 250_000,
+    "vv_erhaltungsaufwand": 80_000, "vv_sonstige_wk": 40_000,
+    "vv_einnahmen__2": 480_000, "vv_gebaeude_afa__2": 150_000, "vv_schuldzinsen__2": 90_000,
+    "vv_erhaltungsaufwand__2": 20_000, "vv_sonstige_wk__2": 10_000,
+    "vv_entgelt_quote_prozent": 100, "vv_entgelt_quote_prozent__2": 100,
+    "fam_anzahl_kinder": 2,
+    "kind_idnr": "12345678901", "kind_idnr__2": "23456789012",
+    "kind_geburtsdatum": "10.05.2010", "kind_geburtsdatum__2": "20.09.2012",
+})
+
 FAELLE: list[tuple[str, str, dict]] = [
     ("arbeitnehmer", "gesamt", ARBEITNEHMER),
     ("rentner", "rentner_gesamt", RENTNER),
     ("gesamt", "gesamt", GESAMT),
     ("hausnummer_zusatz", "gesamt", HAUSNUMMER_ZUSATZ),
+    ("instanzen", "gesamt", INSTANZEN),
 ]
 
 

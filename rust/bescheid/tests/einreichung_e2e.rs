@@ -98,3 +98,18 @@ fn hausnummer_zusatz() {
         "der Zusatz erreicht <AbsStr> nicht"
     );
 }
+
+/// Zwei Vermietungsobjekte und zwei Kinder (Vault `bescheid-elster-mutation`, Mutanten X02 und X17): die zweite Anlage V
+/// traegt `Laufende_Nummer_V` 2 (aus dem Index der Instanz; die XSD verlangt eindeutige Nummern), und der Kinderzahl-Waechter
+/// zaehlt das erste Kind (`kind_anlagen`) zu den weiteren Kind-Instanzen (`1 + n`). Das Rust-XML ist gleich dem Python-XML
+/// (`pruefe`); die Zeilen darunter halten fest, dass die Python-Datei beides ueberhaupt traegt.
+#[test]
+fn instanzen() {
+    pruefe("instanzen");
+    let python = std::fs::read_to_string(fixture("instanzen.xml")).unwrap();
+    for nr in ["1", "2"] {
+        let kz = format!("<Laufende_Nummer_V>{nr}</Laufende_Nummer_V>");
+        assert_eq!(python.matches(&kz).count(), 1, "{kz} im Python-XML");
+    }
+    assert_eq!(python.matches("<Kind>").count(), 2, "zwei Kind-Container");
+}

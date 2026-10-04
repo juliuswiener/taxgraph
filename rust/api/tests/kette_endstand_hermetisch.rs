@@ -85,15 +85,29 @@ async fn sende(d: &Dienst, methode: &str, pfad: &str, body: Option<&Value>) -> (
 /// Legt den Fall der Scheibe an, schreibt jedes Paar ueber die echte Route `POST /event` (als Nutzer-Klick,
 /// bestaetigt) und liefert `GET /ergebnis`.
 async fn ergebnis(scheibe: &str, paare: &[(&'static str, Value)]) -> Value {
+    ergebnis_vorlaeufig(scheibe, paare, &[]).await
+}
+
+/// Wie `ergebnis`, aber die Felder in `vorlaeufig` schreibt der Fall ohne `signal_2` als `vorlaeufig`.
+async fn ergebnis_vorlaeufig(
+    scheibe: &str,
+    paare: &[(&'static str, Value)],
+    vorlaeufig: &[&str],
+) -> Value {
     let d = dienst();
     let kopf = json!({"fall_id": "kette", "scheibe": scheibe, "veranlagungszeitraum": 2025});
     let (status, antwort) = sende(&d, "POST", "/fall", Some(&kopf)).await;
     assert_eq!(status, 201, "POST /fall: {antwort}");
     for (feld, wert) in paare {
+        let (zustand, signal_2) = if vorlaeufig.contains(feld) {
+            ("vorlaeufig", Value::Null)
+        } else {
+            ("bestaetigt", json!(format!("ok@{feld}")))
+        };
         let rumpf = json!({
-            "feld_id": feld, "wert": wert, "zustand": "bestaetigt", "schreiber": "ui:laie",
+            "feld_id": feld, "wert": wert, "zustand": zustand, "schreiber": "ui:laie",
             "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
-            "signal": {"signal_1": null, "signal_2": format!("ok@{feld}")},
+            "signal": {"signal_1": null, "signal_2": signal_2},
             "ts": "2026-01-01T00:00:00+00:00",
         });
         let (status, antwort) = sende(&d, "POST", "/fall/kette/event", Some(&rumpf)).await;
@@ -1087,4 +1101,355 @@ async fn r7_rentner_kind_gleichstand_haelt_das_kindergeld() {
     erwarte_kette("r7", &a, 1_606_600, [84_483, 84_411, 16_066, 16_066]);
     assert_eq!(a["kette"]["p31"]["guenstiger"], "kindergeld", "{a}");
     assert_eq!(a["kette"]["p31"]["kindergeld"].as_i64(), Some(3060), "{a}");
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Zahlen-Faelle der Zweige, Folge (k9, Auftrag 5): sechs Mutanten, die main auf 11e05f50 gemessen hat und die diese Datei
+// gruen liess. Herkunft der Erwartung wie oben: `python3 tools/parity/kette_erwartung.py SCHEIBE BASIS_FN AENDERUNGS_FN`.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// Zusammenveranlagung, nur der Ehegatte hat Einkuenfte: 200.000 EUR Gewerbegewinn, Messbetrag 5.000 EUR, Hebesatz 450.
+/// § 35 Abs. 1: 4 x Messbetrag = 20.000 EUR ist der KLEINSTE der drei Werte (gezahlte `GewSt` 22.500 EUR, Deckel 3 ist die
+/// ganze tarifliche Steuer).
+fn g18_p35_vierfacher_messbetrag_bindet_aenderungen() -> Paare {
+    vec![
+        ("veranlagung", json!("zusammen")),
+        ("bruttoarbeitslohn", json!(0)),
+        ("bruttoarbeitslohn_partner", json!(0)),
+        ("kap_kapitalertraege_partner", json!(0)),
+        ("kap_gewinn_aktien_partner", json!(0)),
+        ("kap_gewinn_sonstige_partner", json!(0)),
+        ("kap_verlust_aktien_partner", json!(0)),
+        ("kap_verlust_sonstige_partner", json!(0)),
+        ("kein_gewinn", json!(false)),
+        ("einkuenfte_gewinn", json!(0)),
+        ("gewinn_betriebsart_partner", json!("gewerbe")),
+        ("einkuenfte_gewinn_partner", json!(20_000_000)),
+        ("gewst_messbetrag_partner", json!(500_000)),
+        ("gewst_hebesatz_partner", json!(450)),
+    ]
+}
+
+/// Wie `g18`, aber 80.000 EUR Lohn der Person A neben 20.000 EUR Gewerbegewinn des Ehegatten (Messbetrag 3.000 EUR,
+/// Hebesatz 500): 4 x Messbetrag = 12.000 EUR und gezahlte `GewSt` 15.000 EUR liegen UEBER dem Deckel 3 (Anteil der
+/// Gewerbeeinkuenfte an der Summe der positiven Einkuenfte x tarifliche Steuer); der Deckel 3 bindet.
+fn g19_p35_deckel_drei_bindet_aenderungen() -> Paare {
+    vec![
+        ("veranlagung", json!("zusammen")),
+        ("bruttoarbeitslohn", json!(8_000_000)),
+        ("bruttoarbeitslohn_partner", json!(0)),
+        ("kap_kapitalertraege_partner", json!(0)),
+        ("kap_gewinn_aktien_partner", json!(0)),
+        ("kap_gewinn_sonstige_partner", json!(0)),
+        ("kap_verlust_aktien_partner", json!(0)),
+        ("kap_verlust_sonstige_partner", json!(0)),
+        ("kein_gewinn", json!(false)),
+        ("einkuenfte_gewinn", json!(0)),
+        ("gewinn_betriebsart_partner", json!("gewerbe")),
+        ("einkuenfte_gewinn_partner", json!(2_000_000)),
+        ("gewst_messbetrag_partner", json!(300_000)),
+        ("gewst_hebesatz_partner", json!(500)),
+    ]
+}
+
+/// Wie `g12`, aber der Ehegatte erfuellt nur EINE der beiden Voraussetzungen des Freibetrags (§ 16 Abs. 4: Alter/
+/// Berufsunfaehigkeit ja, erstmalige Inanspruchnahme nein): kein Freibetrag, `netto_vg_partner` ist der volle Gewinn
+/// 20.000 EUR.
+fn g20_partner_vg_nur_ein_haken_aenderungen() -> Paare {
+    vec![
+        ("veranlagung", json!("zusammen")),
+        ("bruttoarbeitslohn_partner", json!(0)),
+        ("kap_kapitalertraege_partner", json!(0)),
+        ("kap_gewinn_aktien_partner", json!(0)),
+        ("kap_gewinn_sonstige_partner", json!(0)),
+        ("kap_verlust_aktien_partner", json!(0)),
+        ("kap_verlust_sonstige_partner", json!(0)),
+        ("kein_gewinn", json!(false)),
+        ("einkuenfte_gewinn", json!(1_000_000)),
+        ("rentner_veraeusserungsgewinn_partner", json!(2_000_000)),
+        ("rentner_alter_55_oder_berufsunfaehig_partner", json!(true)),
+        ("rentner_freibetrag_erstmalig_partner", json!(false)),
+    ]
+}
+
+/// Wie `g5` (120.000 EUR Veraeusserungsgewinn), aber MIT Antrag auf den ermaessigten Satz und OHNE Berechtigung (kein
+/// Geburtsjahr, nicht dauernd berufsunfaehig): § 34 Abs. 3 Satz 1 verlangt beides, es gilt die Fuenftelung des Abs. 1.
+fn g21_p34_antrag_ohne_berechtigung_aenderungen() -> Paare {
+    vec![
+        ("kein_gewinn", json!(false)),
+        ("rentner_alter_55_oder_berufsunfaehig", json!(true)),
+        ("rentner_freibetrag_erstmalig", json!(true)),
+        ("rentner_veraeusserungsgewinn", json!(12_000_000)),
+        ("antrag_ermaessigter_satz", json!(true)),
+        ("dauernd_berufsunfaehig", json!(false)),
+    ]
+}
+
+/// Zusammenveranlagung, Person A ist berechtigt (dauernd berufsunfaehig) und stellt den Antrag, hat aber KEINEN
+/// Veraeusserungsgewinn; der Ehegatte hat 120.000 EUR: § 34 Abs. 3 gilt nur fuer die ausserordentlichen Einkuenfte der
+/// Person A (`netto_vg` > 0), hier gilt die Fuenftelung ueber den Gewinn des Ehegatten.
+fn g22_p34_antrag_a_ohne_vg_partner_mit_vg_aenderungen() -> Paare {
+    vec![
+        ("veranlagung", json!("zusammen")),
+        ("bruttoarbeitslohn_partner", json!(0)),
+        ("kap_kapitalertraege_partner", json!(0)),
+        ("kap_gewinn_aktien_partner", json!(0)),
+        ("kap_gewinn_sonstige_partner", json!(0)),
+        ("kap_verlust_aktien_partner", json!(0)),
+        ("kap_verlust_sonstige_partner", json!(0)),
+        ("kein_gewinn", json!(false)),
+        ("einkuenfte_gewinn", json!(1_000_000)),
+        ("rentner_veraeusserungsgewinn_partner", json!(12_000_000)),
+        ("rentner_alter_55_oder_berufsunfaehig_partner", json!(true)),
+        ("rentner_freibetrag_erstmalig_partner", json!(true)),
+        ("antrag_ermaessigter_satz", json!(true)),
+        ("dauernd_berufsunfaehig", json!(true)),
+    ]
+}
+
+/// § 9 Abs. 1 Nr. 6 / § 7: Arbeitsmittel zu 800,01 EUR (80.001 ct), Nutzungsdauer 3 Jahre, KEIN Sofortabzug gewaehlt: die
+/// Grenze von 800,00 EUR ist ueberschritten, es gilt die lineare `AfA`. Dazu 30 km Pendelstrecke an 220 Tagen (wie `g14`).
+fn g23_arbeitsmittel_800_01_eur_afa_aenderungen() -> Paare {
+    vec![
+        ("ep_arbeitstage", json!(220)),
+        ("ep_entfernung_km", json!(30)),
+        ("am_anschaffungskosten", json!(80_001)),
+        ("arbeitsmittel_nutzungsdauer", json!(3)),
+        ("am_afa_ist_anschaffungsjahr", json!(false)),
+        ("am_gwg_sofortabzug_gewaehlt", json!(false)),
+    ]
+}
+
+/// Wie `g18`, dazu 30.000 EUR Progressionseinkuenfte (§ 32b): die Anrechnung laeuft im nachgezogenen Wrapper `p32b_wrapper`,
+/// nicht in `p35_credit`. 4 x Messbetrag = 20.000 EUR bleibt der kleinste der drei Werte. (Person A hat keine `GewSt`: die
+/// Kombination aus Progressionseinkuenfte und `GewSt` der Person A sperrt `p32b_kombi_offen`.)
+fn g24_p35_vierfacher_messbetrag_bindet_nach_p32b_aenderungen() -> Paare {
+    vec![
+        ("veranlagung", json!("zusammen")),
+        ("bruttoarbeitslohn", json!(0)),
+        ("bruttoarbeitslohn_partner", json!(0)),
+        ("kap_kapitalertraege_partner", json!(0)),
+        ("kap_gewinn_aktien_partner", json!(0)),
+        ("kap_gewinn_sonstige_partner", json!(0)),
+        ("kap_verlust_aktien_partner", json!(0)),
+        ("kap_verlust_sonstige_partner", json!(0)),
+        ("kein_gewinn", json!(false)),
+        ("einkuenfte_gewinn", json!(0)),
+        ("gewinn_betriebsart_partner", json!("gewerbe")),
+        ("einkuenfte_gewinn_partner", json!(20_000_000)),
+        ("gewst_messbetrag_partner", json!(500_000)),
+        ("p32b_progressionseinkuenfte", json!(3_000_000)),
+        ("gewst_hebesatz_partner", json!(450)),
+    ]
+}
+
+/// Wie `g19`, dazu 30.000 EUR Progressionseinkuenfte (§ 32b): der Deckel 3 rechnet im Wrapper mit der Steuer nach § 32b
+/// (`t_32b`) und bindet wieder.
+fn g25_p35_deckel_drei_bindet_nach_p32b_aenderungen() -> Paare {
+    vec![
+        ("veranlagung", json!("zusammen")),
+        ("bruttoarbeitslohn", json!(8_000_000)),
+        ("bruttoarbeitslohn_partner", json!(0)),
+        ("kap_kapitalertraege_partner", json!(0)),
+        ("kap_gewinn_aktien_partner", json!(0)),
+        ("kap_gewinn_sonstige_partner", json!(0)),
+        ("kap_verlust_aktien_partner", json!(0)),
+        ("kap_verlust_sonstige_partner", json!(0)),
+        ("kein_gewinn", json!(false)),
+        ("einkuenfte_gewinn", json!(0)),
+        ("gewinn_betriebsart_partner", json!("gewerbe")),
+        ("einkuenfte_gewinn_partner", json!(2_000_000)),
+        ("gewst_messbetrag_partner", json!(300_000)),
+        ("p32b_progressionseinkuenfte", json!(3_000_000)),
+        ("gewst_hebesatz_partner", json!(500)),
+    ]
+}
+
+/// § 35 Abs. 1 `EStG`, Anrechnung ohne § 32b (`p35_credit`): die tarifliche Steuer 62.144 EUR sinkt um genau 20.000 EUR =
+/// 4 x Messbetrag (5.000 EUR); gezahlte `GewSt` (22.500 EUR) und Deckel 3 (die ganze tarifliche Steuer) sind groesser.
+/// Python: festzusetzende Steuer 42.144 EUR.
+#[tokio::test]
+async fn g18_p35_vierfacher_messbetrag_ist_der_kleinste_wert() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(
+            kegel_gesamt(),
+            g18_p35_vierfacher_messbetrag_bindet_aenderungen(),
+        ),
+    )
+    .await;
+    erwarte_kette("g18", &a, 4_214_400, [200_000, 199_928, 62_144, 42_144]);
+}
+
+/// § 35 Abs. 1 `EStG`, Anrechnung ohne § 32b: der Deckel 3 (20.000 / 98.770 EUR der Einkuenfte x tarifliche Steuer 20.922 EUR)
+/// ist der kleinste Wert; die Anrechnung betraegt 4.236 EUR. Python: festzusetzende Steuer 16.686 EUR.
+#[tokio::test]
+async fn g19_p35_deckel_drei_ist_der_kleinste_wert() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), g19_p35_deckel_drei_bindet_aenderungen()),
+    )
+    .await;
+    erwarte_kette("g19", &a, 1_668_600, [98_770, 98_698, 20_922, 16_686]);
+}
+
+/// § 16 Abs. 4 `EStG`: der Freibetrag verlangt BEIDE Voraussetzungen. Der Ehegatte ist berufsunfaehig, nimmt den Freibetrag
+/// aber nicht erstmalig in Anspruch: kein Freibetrag, die 20.000 EUR gehen voll in die `GdE` (88.770 EUR). Python: 17.204 EUR.
+#[tokio::test]
+async fn g20_partner_vg_braucht_beide_voraussetzungen_fuer_den_freibetrag() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), g20_partner_vg_nur_ein_haken_aenderungen()),
+    )
+    .await;
+    erwarte_kette("g20", &a, 1_720_400, [88_770, 88_698, 17_204, 17_204]);
+}
+
+/// § 34 Abs. 3 Satz 1 `EStG`: der Antrag allein reicht nicht, die Berechtigung (ab 55 oder dauernd berufsunfaehig) muss
+/// dazukommen. Ohne sie gilt die Fuenftelung (Python: dieselbe Zahl wie `g5` und `g8`, 4.458.400 ct).
+#[tokio::test]
+async fn g21_p34_antrag_ohne_berechtigung_bleibt_fuenftelung() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(
+            kegel_gesamt(),
+            g21_p34_antrag_ohne_berechtigung_aenderungen(),
+        ),
+    )
+    .await;
+    erwarte_kette("g21", &a, 4_458_400, [133_770, 133_734, 44_584, 44_584]);
+}
+
+/// § 34 Abs. 3 `EStG` gilt fuer die ausserordentlichen Einkuenfte der Person A: hat nur der Ehegatte einen
+/// Veraeusserungsgewinn, bleibt es bei der Fuenftelung, auch wenn A berechtigt ist und den Antrag stellt. Der Test pinnt nur
+/// das Verhalten des Orakels; ob der Ehegatte mit eigener Berechtigung den Antrag fuer SEINEN Gewinn stellen duerfte
+/// (Abs. 3 Satz 1 spricht vom Steuerpflichtigen), ist hier nicht geprueft und bleibt offen.
+#[tokio::test]
+async fn g22_p34_antrag_von_a_gilt_nicht_fuer_den_gewinn_des_ehegatten() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(
+            kegel_gesamt(),
+            g22_p34_antrag_a_ohne_vg_partner_mit_vg_aenderungen(),
+        ),
+    )
+    .await;
+    erwarte_kette("g22", &a, 3_459_400, [143_770, 143_698, 34_594, 34_594]);
+}
+
+/// § 9 Abs. 1 Nr. 6 / § 7 Abs. 1 `EStG`: ein Arbeitsmittel zu 800,01 EUR liegt ueber der Grenze; es zaehlt die lineare `AfA`
+/// (266 EUR im Folgejahr, `GdE` 57.578 EUR = 57.844 - 266), nicht der Sofortabzug. Python: 1.346.700 ct.
+#[tokio::test]
+async fn g23_arbeitsmittel_zu_800_01_eur_sind_afa_pflichtig() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(
+            kegel_gesamt(),
+            g23_arbeitsmittel_800_01_eur_afa_aenderungen(),
+        ),
+    )
+    .await;
+    erwarte_kette("g23", &a, 1_346_700, [57_578, 57_542, 13_467, 13_467]);
+}
+
+/// Wie `g18` mit 30.000 EUR Progressionseinkuenfte: die Anrechnung rechnet `p32b_wrapper` nach. 4 x Messbetrag (20.000 EUR)
+/// ist wieder der kleinste Wert. Python: tarifliche 62.144 EUR, festzusetzende 44.991 EUR (= Steuer nach § 32b 64.991 - 20.000).
+#[tokio::test]
+async fn g24_p35_nach_p32b_vierfacher_messbetrag_ist_der_kleinste_wert() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(
+            kegel_gesamt(),
+            g24_p35_vierfacher_messbetrag_bindet_nach_p32b_aenderungen(),
+        ),
+    )
+    .await;
+    erwarte_kette("g24", &a, 4_499_100, [200_000, 199_928, 62_144, 44_991]);
+}
+
+/// Wie `g19` mit 30.000 EUR Progressionseinkuenfte: im Wrapper bindet der Deckel 3 (Anteil x Steuer nach § 32b). Python:
+/// festzusetzende Steuer 19.748 EUR.
+#[tokio::test]
+async fn g25_p35_nach_p32b_deckel_drei_ist_der_kleinste_wert() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(
+            kegel_gesamt(),
+            g25_p35_deckel_drei_bindet_nach_p32b_aenderungen(),
+        ),
+    )
+    .await;
+    erwarte_kette("g25", &a, 1_974_800, [98_770, 98_698, 20_922, 19_748]);
+}
+
+/// § 34 Abs. 3 Satz 1 `EStG`: Alter GENAU 55 (Geburtsjahr 1970, Veranlagungsjahr 2025) berechtigt, auch ohne dauernde
+/// Berufsunfaehigkeit; dazu der Antrag und 120.000 EUR Veraeusserungsgewinn. Python `vz - geburtsjahr >= 55`.
+fn g26_p34_abs3_alter_genau_55_aenderungen() -> Paare {
+    vec![
+        ("kein_gewinn", json!(false)),
+        ("rentner_alter_55_oder_berufsunfaehig", json!(true)),
+        ("rentner_freibetrag_erstmalig", json!(true)),
+        ("rentner_veraeusserungsgewinn", json!(12_000_000)),
+        ("antrag_ermaessigter_satz", json!(true)),
+        ("geburtsjahr", json!(1970)),
+        ("dauernd_berufsunfaehig", json!(false)),
+    ]
+}
+
+/// § 33a Abs. 2 `EStG`: ein Kind in Berufsausbildung, auswaerts untergebracht (Ausbildungsfreibetrag 1.200 EUR).
+fn g27_ausbildungsfreibetrag_aenderungen() -> Paare {
+    vec![("p33a_ausbildung_anzahl_kinder", json!(1))]
+}
+
+/// § 34 Abs. 3 Satz 1 `EStG`: wer GENAU 55 Jahre alt wird (2025 - 1970), ist berechtigt. Mit Antrag gilt der ermaessigte
+/// Satz: Python 2.813.600 ct (die Fuenftelung desselben Falls waere 4.458.400 ct, siehe `g21`).
+#[tokio::test]
+async fn g26_p34_abs3_gilt_ab_genau_55_jahren() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), g26_p34_abs3_alter_genau_55_aenderungen()),
+    )
+    .await;
+    erwarte_kette("g26", &a, 2_813_600, [133_770, 133_734, 28_136, 28_136]);
+}
+
+/// § 33a Abs. 2 `EStG`: der Ausbildungsfreibetrag mindert das zu versteuernde Einkommen um 1.200 EUR (zvE 57.534 statt
+/// 58.734 EUR). Python: 1.346.400 ct statt 1.392.400 ct.
+#[tokio::test]
+async fn g27_ausbildungsfreibetrag_mindert_das_zu_versteuernde_einkommen() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), g27_ausbildungsfreibetrag_aenderungen()),
+    )
+    .await;
+    erwarte_kette("g27", &a, 1_346_400, [58_770, 57_534, 13_464, 13_464]);
+}
+
+/// Wie `g26` (Alter genau 55, Antrag auf den ermaessigten Satz), aber der ANTRAG ist nur VORLAEUFIG (kein `signal_2`): er
+/// zaehlt nicht, die Fuenftelung gilt. Das Feld liegt ausserhalb des Pflicht-Kegels und ist kein Betrag, darum sperrt es die
+/// Zahl nicht (`ring_betrag_vorlaeufig` nennt nur Betragsfelder).
+fn g28_p34_antrag_nur_vorlaeufig_aenderungen() -> Paare {
+    vec![
+        ("kein_gewinn", json!(false)),
+        ("rentner_alter_55_oder_berufsunfaehig", json!(true)),
+        ("rentner_freibetrag_erstmalig", json!(true)),
+        ("rentner_veraeusserungsgewinn", json!(12_000_000)),
+        ("antrag_ermaessigter_satz", json!(true)),
+        ("geburtsjahr", json!(1970)),
+        ("dauernd_berufsunfaehig", json!(false)),
+    ]
+}
+
+/// Python: der nur vorlaeufige Antrag zaehlt nicht, die Zahl ist die Fuenftelung (4.458.400 ct, wie `g21`), nicht der
+/// ermaessigte Satz (2.813.600 ct, `g26`). Der Bescheid liest nur Bestaetigtes (`nur_bestaetigt`): ein Vorschlag bewegt die
+/// festgesetzte Steuer nie, bevor der Mensch ihn bestaetigt hat.
+#[tokio::test]
+async fn g28_vorlaeufiger_antrag_aendert_die_festgesetzte_steuer_nicht() {
+    let a = ergebnis_vorlaeufig(
+        "gesamt",
+        &mit(kegel_gesamt(), g28_p34_antrag_nur_vorlaeufig_aenderungen()),
+        &["antrag_ermaessigter_satz"],
+    )
+    .await;
+    erwarte_kette("g28", &a, 4_458_400, [133_770, 133_734, 44_584, 44_584]);
 }
