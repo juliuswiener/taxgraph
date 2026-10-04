@@ -30,6 +30,7 @@ mod an_gesamt;
 pub mod ausgaben;
 mod gesamt;
 mod gesamt_tarif;
+pub(crate) mod kinderfreibetrag;
 mod rechnen;
 mod rentner;
 mod rentner_tarif;

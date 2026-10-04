@@ -11,7 +11,10 @@ use crate::deklaration::konstanten::{
     VV_GESAMT_FELDER,
 };
 use crate::deklaration::Cfg;
-use crate::{ist_true, ist_zusammen, wert, BescheidFehler, Felder};
+use crate::zweige::kinderfreibetrag::{auswerten, Befund};
+use crate::{
+    feld_int_oder_null, ist_true, ist_zusammen, wert, BescheidFehler, Felder, Instanzquelle,
+};
 
 /// Alle Pruefungen des `gesamt_guard`-Zweigs in Python-Reihenfolge; endet IMMER (mit `None` oder Grund).
 pub(super) fn gesamt_guard(k: &K<'_>, cfg: &Cfg) -> Grund {
@@ -37,6 +40,7 @@ pub(super) fn gesamt_guard(k: &K<'_>, cfg: &Cfg) -> Grund {
     sperre!(p35a_p35c(k));
     sperre!(gwg(k));
     sperre!(kinderbetreuung(k));
+    sperre!(kind_freibetrag(k));
     if cfg
         .fremd_arten
         .iter()
@@ -343,6 +347,34 @@ fn gwg(k: &K<'_>) -> Grund {
             if nein("gwg_verzeichnis_ab_250") {
                 return Ok(Some(Sperrgrund::GwgAbschreibungOffen));
             }
+        }
+    }
+    Ok(None)
+}
+
+/// § 32 Abs. 6 Satz 2 und 5 je Kind (Julius 2026-10-04): was der Rahmen `tarif::rahmen` je Kind nicht bestimmen
+/// kann, sperrt hier, statt den Normalfall zu rechnen. Rust-eigen: Python kennt die Gruende nicht und rechnet Kinderzahl
+/// mal Betrag.
+///
+/// Geprueft werden BEIDE Sichten, die der Ring danach rechnet: die rohe (Schaetz-Pfad, alle Werte) und die strenge
+/// (festgesetzte Zahl, nur bestaetigte Werte). Die strenge kann einen Widerspruch zeigen, den die rohe nicht hat
+/// (ein Zeitraum vorlaeufig, der andere bestaetigt); ohne sie bekaeme die streng rechnende Zahl einen Fehler statt
+/// einer Sperre. Kinderzahl und Veranlagungsart stehen hier roh; die strenge Zahl liest sie nur, wenn der Kegel bestaetigt
+/// ist (`veranlagung` ist Kegel-Feld) oder die Zahl ist 0 und der Rahmen liest keine Kinder.
+fn kind_freibetrag(k: &K<'_>) -> Grund {
+    if k.q.beide().is_none() {
+        return Ok(None);
+    }
+    let kinder = feld_int_oder_null(k.f, "fam_anzahl_kinder")?;
+    let zusammen = ist_zusammen(k.f);
+    let jahr = k.vz.map(domain::Vz::jahr);
+    for streng in [false, true] {
+        let q = Instanzquelle {
+            nur_bestaetigt: streng,
+            ..*k.q
+        };
+        if let Befund::Gesperrt(sperre) = auswerten(&q, kinder, zusammen, jahr)? {
+            return Ok(Some(sperre.grund()));
         }
     }
     Ok(None)

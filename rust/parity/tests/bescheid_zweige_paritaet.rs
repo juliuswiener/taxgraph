@@ -935,6 +935,19 @@ const EXTRA_FELDER: &[&str] = &[
     "gewst_hebesatz",
 ];
 
+/// Die vier Felder je Kind, die `bescheid::zweige::kinderfreibetrag` liest (Kindschaftsverhaeltnis und Zeitraum je
+/// Ehegatte). Der Generator erzeugt sie NICHT: Python rechnet je Kind nicht (`Kinderzahl * Betrag`, Julius 2026-10-04:
+/// Python eingefroren, "c: A" nur in Rust), Rust sperrt bei Verhaeltnis 3, unlesbarem oder verschiedenem Zeitraum und kuerzt
+/// Freibetrag UND Kindergeld nach Monaten. Zufallswerte gaben 378 von 4.800 Faellen Rust-Fehler gegen eine Python-Zahl.
+/// Der Normalfall (alle vier Felder fehlen) ist der Paritaetsbereich; je Kind misst
+/// `rust/bescheid/tests/kinderfreibetrag_je_kind_hermetisch.rs`, ohne Python.
+const JE_KIND_FELDER: &[&str] = &[
+    "kind_kindschaftsverhaeltnis_a",
+    "kind_kindschaftsverh_zeitraum_a",
+    "kind_kindschaftsverhaeltnis_b",
+    "kind_kindschaftsverh_zeitraum_b",
+];
+
 /// Die Renten-Felder, ohne die `_rente_instanz` nur Fehler-Zeilen liefert; wie Kegel-Felder behandelt.
 const RENTE_KERN: &[&str] = &[
     "rentner_renten_art",
@@ -954,6 +967,7 @@ fn generiere_events(c: &mut Cursor, q: &str, fest: &[(&str, Value)]) -> Vec<(Str
     ids.extend(EXTRA_FELDER.iter().map(|s| (*s).to_owned()));
     ids.sort();
     ids.dedup();
+    ids.retain(|f| !JE_KIND_FELDER.contains(&f.as_str()));
     let inst_zustand = [
         c.chance(bestaetigt_pct),
         c.chance(bestaetigt_pct),
