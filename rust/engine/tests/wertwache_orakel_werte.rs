@@ -12,6 +12,11 @@
 //! `erhoehte <= 0` -> `< 0` im Progressionsvorbehalt u. a. Zwei davon fand selbst `PARITY_N=100000` erst nach
 //! 1 bzw. 4 Treffern. Hier stehen die Nachbarn jeder Schwelle fest im Fixture.
 //!
+//! Das Fixture ist gegen einen Operator-Sweep ueber die Rumpfe der elf Funktionen gehaertet (Bericht
+//! `wertwache-sweep.md`): `<`/`<=`, `>`/`>=`, `==`/`!=`, `min`/`max`, `.max(0)` -> `.max(1)`, Literal +-1, `&&`/`||`;
+//! 249 Mutanten, 227 rot, 21 nachweislich gleichwertig, 1 ohne Kompilat. Die Zeilen der Gitter sind je Zweig kommentiert
+//! (`tools/parity/extract_wertwache_orakel.py`).
+//!
 //! Je Funktion ein Test, damit ein roter Lauf die Stelle benennt. Neu erzeugen:
 //! `python3 tools/parity/extract_wertwache_orakel.py`.
 #![allow(
@@ -204,12 +209,12 @@ fn p32b_1_grenzen_gegen_orakel() {
 
 #[test]
 fn p34c_1_grenzen_gegen_orakel() {
-    mit_mindestens("catala_p34c_1", 200, 50);
+    mit_mindestens("catala_p34c_1", 400, 90);
 }
 
 #[test]
 fn kst_nenner_b_grenzen_gegen_orakel() {
-    mit_mindestens("catala_kst_nenner_b", 30, 12);
+    mit_mindestens("catala_kst_nenner_b", 900, 650);
 }
 
 #[test]
@@ -219,12 +224,15 @@ fn behinderten_pb_grenzen_gegen_orakel() {
 
 #[test]
 fn p33a_unterhalt_grenzen_gegen_orakel() {
-    mit_mindestens("catala_p33a_unterhalt", 170, 150);
+    mit_mindestens("catala_p33a_unterhalt", 400, 270);
 }
 
 #[test]
 fn renten_einkuenfte_grenzen_gegen_orakel() {
-    mit_mindestens("catala_renten_einkuenfte", 150, 100);
+    let (n, nicht_null, fehler) = pruefe("catala_renten_einkuenfte");
+    assert!(n >= 800 && nicht_null >= 300, "renten: {n} Faelle, {nicht_null} rechnend");
+    // Aa-Folgejahr ohne Freibetrag, Beginn nach dem VZ, nicht ringfaehige Art, fehlende Pflichtfelder
+    assert!(fehler >= 200, "renten: nur {fehler} Fehlerantworten (Aa-Zweig im Fixture?)");
 }
 
 #[test]
