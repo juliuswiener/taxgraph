@@ -261,8 +261,21 @@ fn aussagen_stufe() -> Schritt {
     )
 }
 
-#[tokio::test]
-async fn chat_vom_dienst_bis_zur_akte() {
+/// Auftrag k9-2 (Mutant C46): der Anbieter-Merker (`llm::letzter_anbieter`) liegt je Thread. Ob der Aufruf mit
+/// fehlender Umgebung den Anbieter des vorigen Aufrufs sieht, hängt davon ab, ob beide auf demselben Thread des
+/// Blocking-Pools laufen; mit dem Pool des `#[tokio::test]` entscheidet das der Zufall (der Mutant überlebte
+/// einen Lauf). Eine Laufzeit mit genau EINEM Blocking-Thread macht es zur Regel.
+#[test]
+fn chat_vom_dienst_bis_zur_akte() {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .max_blocking_threads(1)
+        .build()
+        .unwrap()
+        .block_on(chat_vom_dienst_bis_zur_akte_lauf());
+}
+
+async fn chat_vom_dienst_bis_zur_akte_lauf() {
     let skript: Skript = Arc::new(Mutex::new(Vec::new()));
     let gesehen: Gesehen = Arc::new(Mutex::new(Vec::new()));
     let basis = attrappen_dienst(skript.clone(), gesehen.clone());
@@ -890,5 +903,60 @@ Das hat der Nutzer bereits bestätigt:\n";
             .iter()
             .all(|z| z.contains("provider='StubAnbieter', finish='stop'")),
         "{letzte:?}"
+    );
+
+    // --- Kontoauszug (Auftrag k9-2, Mutant K46): eine Buchung ohne Stichwort geht an das Modell. Der Aufruf
+    // hat kein Antwortschema, der Dienst führt ihn unter dem Namen `?`. Das Modell nennt `spende`; die Buchung
+    // wird übernommen, als Vorschlag des Modells (`quelle: llm`), und das Modell sah nur den Zweck und den Betrag.
+    gesehen.lock().unwrap().clear();
+    *skript.lock().unwrap() = vec![Schritt {
+        stufe: "?",
+        status: 200,
+        body: json!({
+            "provider": "StubAnbieter",
+            "choices": [{"finish_reason": "stop", "message": {"content": json!({"kategorie": "spende"}).to_string()}}]
+        })
+        .to_string(),
+        oft: true,
+    }];
+    let (s, a) = post(
+        &d,
+        "/fall",
+        &json!({"fall_id": "ko1", "scheibe": "gesamt", "veranlagungszeitraum": 2025}),
+    )
+    .await;
+    assert_eq!(s, 201, "{a}");
+    let (s, a) = post(
+        &d,
+        "/fall/ko1/kontoauszug",
+        &json!({"format": "csv", "inhalt": "datum;betrag;verwendungszweck\n01.03.2025;-50,00;Einkauf Wochenmarkt\n"}),
+    )
+    .await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(
+        a,
+        json!({"uebernommen": 1, "transaktionen": 1, "verworfen": 0}),
+        "{a}"
+    );
+    let ereignisse = akte(&d, "ko1")["events"].as_array().unwrap().clone();
+    assert_eq!(ereignisse.len(), 1, "{ereignisse:?}");
+    assert_eq!(ereignisse[0]["feld_id"], json!("spenden_betrag"));
+    assert_eq!(ereignisse[0]["wert"], json!(5000));
+    assert_eq!(ereignisse[0]["zustand"], json!("vorlaeufig"));
+    assert_eq!(
+        ereignisse[0]["signal"]["signal_1"]["quelle"],
+        json!("llm"),
+        "{ereignisse:?}"
+    );
+    assert_eq!(
+        ereignisse[0]["signal"]["signal_1"]["kategorie"],
+        json!("spende")
+    );
+    let anfragen = gesehen.lock().unwrap().clone();
+    assert_eq!(anfragen.len(), 1, "{anfragen:?}");
+    assert_eq!(anfragen[0].0, "?");
+    assert_eq!(
+        nachricht(&anfragen[0].1, "user"),
+        "Zweck: Einkauf Wochenmarkt\nBetrag: -50.00 EUR"
     );
 }

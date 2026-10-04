@@ -55,6 +55,10 @@ const EIN_BILD: &str = "for a; do p=$a; done; : > \"$p-1.png\"";
 /// Exit 1 ohne Ausgabe: so endet `pdftoppm` auf einer Datei, die es nicht umwandeln kann, und
 /// `tesseract` ohne die `deu`-Sprachdaten.
 const EXIT_EINS: &str = "exit 1";
+/// Exit 0 ohne Bild: `pdftoppm` legt keine Seite ab (Python: `glob(...)[0]` wirft `IndexError`).
+const KEIN_BILD: &str = "exit 0";
+/// Ausgabe, die kein UTF-8 ist (zwei Bytes, die in keiner UTF-8-Folge vorkommen).
+const KEIN_UTF8: &str = "printf '\\377\\376'";
 
 /// Der Wortlaut der 422-Antwort bei `pdftoppm` mit Fehlercode; wortgleich mit Python.
 const BILDER: &str = "Kontoauszug nicht lesbar: Die Seiten der Datei lassen sich nicht in Bilder umwandeln (beschädigt oder nicht unterstützt).";
@@ -213,6 +217,24 @@ const FAELLE: &[Fall] = &[
         ],
         status: 503,
         enthaelt: TEXTERKENNUNG,
+    },
+    // Auftrag k9-2 (Mutanten K30, K31): zwei Fehler, die Python nicht fängt -- 500 mit der Klasse der Ausnahme.
+    // `pdftoppm` endet ohne Fehlercode und legt keine Seite ab: `IndexError`.
+    Fall {
+        name: "pdftoppm ohne Bild (Einzelseite)",
+        stubs: &[
+            ("pdftotext", EINE_LEERE_SEITE, 0o755),
+            ("pdftoppm", KEIN_BILD, 0o755),
+        ],
+        status: 500,
+        enthaelt: "IndexError",
+    },
+    // Die Ausgabe von `pdftotext` ist kein UTF-8: `UnicodeDecodeError`.
+    Fall {
+        name: "pdftotext schreibt kein UTF-8",
+        stubs: &[("pdftotext", KEIN_UTF8, 0o755)],
+        status: 500,
+        enthaelt: "UnicodeDecodeError",
     },
     // Gegenprobe: nur ein FEHLENDES Programm ist ein Betriebsproblem. Eines, das da ist und nicht
     // starten darf (Pythons PermissionError), bleibt ein 500 — kein Catch-all.

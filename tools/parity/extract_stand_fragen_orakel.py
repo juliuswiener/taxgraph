@@ -87,6 +87,17 @@ FAELLE = [
          setze={"rentner_renten_beginn_jahr": 2020}, ohne=["rentner_rentenfreibetrag"]),
     dict(name="rentner_folgejahr_mit_freibetrag", scheibe="rentner_gesamt", basis="kegel_rentner",
          setze={"rentner_renten_beginn_jahr": 2020}),
+    # Auftrag k9-2 (Mutanten F10/H215, F06): Gewichte der Fragen-Reihenfolge. Zweite Rente mit Beginn 2020: MIT Store ist
+    # der Rentenfreibetrag der zweiten Instanz nicht fixiert, der Ring wirft, es gibt keine Gewichte (Vordruck-Ordnung);
+    # OHNE Store (Mutant) rechnet der Ring, die Gewichte sind 0 und ordnen alphabetisch. Eine offene Achse (vorlaeufig)
+    # macht den Unterschied sichtbar; ohne sie sind beide Gewichts-Maps leer.
+    dict(name="rentner_zweite_rente_offene_achse", scheibe="rentner_gesamt", basis="kegel_rentner",
+         setze={**RENTE_ZWEI, "rentner_hinterbliebenenbezuege": False}, vorlaeufig=["rentner_hinterbliebenenbezuege"]),
+    # Teil-Ring `ep_werbungskosten` (nur n_vor_gwg): mit bestaetigter Entfernung und vorlaeufigen Arbeitstagen hat
+    # `ep_arbeitstage` ein Gewicht und steht vorn; ohne Gewichte (Mutant F06) steht `ep_ziel_des_weges` vorn.
+    dict(name="n_vor_gwg_teil_ring_gewicht", scheibe="n_vor_gwg",
+         setze={"ep_entfernung_km": 30, "ep_arbeitstage": 220, "ep_oepnv_kosten": 0, "ep_eigenes_kfz": False},
+         vorlaeufig=["ep_arbeitstage"], voll=True),
 ]
 
 

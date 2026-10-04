@@ -570,6 +570,12 @@ mod tests {
             ("fail-closed (Typ): f=GEHEIM-123", "fail-closed (Typ): f"),
             ("fail-closed: signal_2 muss Text oder null sein", "fail-closed: f"),
             ("fail-closed (GEHEIM-123): f=1", "fail-closed: f"),
+            // Auftrag k9-2 (Mutant C01): der Unterstrich gehört zum Alphabet der Klasse (`[A-Za-z0-9_/]`).
+            (
+                "fail-closed (wert_ungueltig): f=1",
+                "fail-closed (wert_ungueltig): f",
+            ),
+            ("fail-closed (_): f=1", "fail-closed (_): f"),
             ("fail-closed (Typ", "fail-closed: f"),
             ("fail-closed ()", "fail-closed: f"),
             ("etwas anderes mit GEHEIM-123", "ValueError: f"),
@@ -613,6 +619,21 @@ mod tests {
 — es sind Gesundheits- oder Konfessionsangaben. Frage nicht danach und behandle sie als beantwortet.)"
         );
         assert!(!kontext.contains("evangelisch"));
+        // Auftrag k9-2 (Mutant C24): EINE zurückgehaltene Angabe wird genauso genannt (Python: `if zurueckgehalten:`).
+        let eine = erklaer_kontext(
+            &store_mit(&[
+                ("bruttoarbeitslohn".into(), json!(4_000_000)),
+                ("kist_konfession".into(), json!("evangelisch")),
+            ]),
+            &BindungIndex::new(),
+            None,
+        );
+        assert_eq!(
+            eine,
+            "Das hat der Nutzer bereits bestätigt:\n- bruttoarbeitslohn → 4000000\n\
+             (1 weitere Angaben liegen vor, dürfen dir aber nicht übermittelt werden \
+— es sind Gesundheits- oder Konfessionsangaben. Frage nicht danach und behandle sie als beantwortet.)"
+        );
     }
 
     /// Auftrag 6, Mutant C009: höchstens `KONTEXT_MAX` (40) bestätigte Angaben gehen an das Modell,
@@ -681,6 +702,12 @@ mod tests {
             ("d", json!(6), "vorlaeufig", None),
             ("e", json!(7), "bestaetigt", None),
             ("e", json!(8), "vorlaeufig", None),
+            // Auftrag k9-2 (Mutant C17): zwischen einem Event und seinem Ersatz steht ein anderes Feld. `f` steht
+            // dann hinter `g` (die Stelle seines ersten, NICHT ersetzten Events); zählte das ersetzte Event mit,
+            // stünde `f` davor. `_aktives` (CPython 3.14) liefert `a, b, c, d, e, g, f`.
+            ("f", json!(9), "bestaetigt", None),
+            ("g", json!(10), "bestaetigt", None),
+            ("f", json!(11), "bestaetigt", Some(8)),
         ]);
         let ist: Vec<(&str, String)> = bestaetigte(&store)
             .iter()
@@ -691,7 +718,9 @@ mod tests {
             vec![
                 ("a", "3".to_owned()),
                 ("b", "2".to_owned()),
-                ("c", "5".to_owned())
+                ("c", "5".to_owned()),
+                ("g", "10".to_owned()),
+                ("f", "11".to_owned()),
             ]
         );
     }

@@ -108,7 +108,7 @@ async fn stand_und_fragen_wie_python() {
     std::env::remove_var("TAXGRAPH_FLOW");
     let o = orakel();
     let faelle = o["faelle"].as_array().unwrap();
-    assert_eq!(faelle.len(), 18);
+    assert_eq!(faelle.len(), 20);
     for f in faelle {
         let name = f["name"].as_str().unwrap();
         let d = dienst();

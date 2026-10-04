@@ -144,10 +144,11 @@ Der Generator ist deterministisch: zweimal erzeugt ergibt dieselben Bytes, unabh
 
 ## `api_stand_fragen_orakel.json`
 
-Achtzehn Faelle (Scheiben `gesamt`, `an_gesamt`, `rentner_gesamt`, `ep`, `n_vor_gwg`; darunter zwei Vermietungsobjekte,
+Zwanzig Faelle (Scheiben `gesamt`, `an_gesamt`, `rentner_gesamt`, `ep`, `n_vor_gwg`; darunter zwei Vermietungsobjekte,
 eine zweite Rente, ein vorlaeufiges Einzelfeld und ein Rentenbeginn im Folgejahr ohne Freibetrag, je bestaetigt und
 vorlaeufig, damit die Faelle den Unterschied zwischen Ring mit und ohne Store, zwischen "nur bestaetigt" und
-"auch vorlaeufig" und den Fehler `RentenfreibetragFixierungOffen` sehen) samt den Antworten des Python-Servers
+"auch vorlaeufig" und den Fehler `RentenfreibetragFixierungOffen` sehen; dazu zwei Faelle mit einer offenen Achse, damit die
+Gewichte der Fragen-Reihenfolge sichtbar werden: Teil-Ring `ep_werbungskosten` und Gesamt-Ring ohne Gewichte wegen des Fehlers) samt den Antworten des Python-Servers
 (`api.stand`, `api.fragen`, `api.frage_einzeln` aus `produkt/haut/api.py`, im selben Prozess mit denselben Ereignissen):
 `events` (die Rumpfe von `POST /fall/<id>/event`, Reihenfolge ist Semantik), `stand` (die ganze Antwort), `fragen` (die
 ganze Antwort, nur bei den grossen Faellen; sonst `fragen_ids` und der Sperrgrund), `kopf` (was der Mitschnitt fuer

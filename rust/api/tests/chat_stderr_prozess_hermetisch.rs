@@ -20,16 +20,30 @@ use serde_json::{json, Value};
 
 const TEXT: &str = "Ich habe 6000 Euro Unterhalt gezahlt und 100 Euro Lohn bekommen.";
 
-/// Antwort des Attrappen-Dienstes je Stufe (Schemaname der Anfrage). `abweisungen`: der dritte Schritt
-/// schlaegt Felder vor, die der Server ablehnt, oder genau ein gueltiges.
-fn inhalt(stufe: &str, abweisungen: bool) -> Value {
+/// Was der dritte Schritt des Attrappen-Dienstes vorschlaegt.
+#[derive(Clone, Copy)]
+enum Modus {
+    /// Genau ein gueltiges Feld: nichts ist abzulehnen.
+    Gueltig,
+    /// Fuenf Vorschlaege, die der Server ablehnt: drei mit unbekannter Feld-ID, zwei ohne.
+    Abweisungen,
+    /// Ein einziger Vorschlag ohne Feld-ID (Auftrag k9-2, Mutant C39).
+    EineLeere,
+}
+
+/// Antwort des Attrappen-Dienstes je Stufe (Schemaname der Anfrage).
+fn inhalt(stufe: &str, modus: Modus) -> Value {
     match stufe {
         "aussagen" => json!({"aussagen": [
             {"text": "Der Nutzer zahlte 6000 Euro Unterhalt", "beleg": "6000 Euro Unterhalt"}]}),
         "zuordnung" => json!({"zuordnungen": []}),
-        _ if !abweisungen => json!({"vorschlaege": [
+        _ if matches!(modus, Modus::Gueltig) => json!({"vorschlaege": [
             {"feld_id": "realsplitting_unterhaltsleistungen", "wert": 600_000, "beleg": "6000 Euro Unterhalt",
              "begruendung": "x", "aussage": 0, "rechenweg": null}],
+            "rueckfragen": [], "antwort": "", "unsicher": false}),
+        _ if matches!(modus, Modus::EineLeere) => json!({"vorschlaege": [
+            {"feld_id": "", "wert": 4, "beleg": "100 Euro Lohn",
+             "begruendung": "ohne Feld", "aussage": 0, "rechenweg": null}],
             "rueckfragen": [], "antwort": "", "unsicher": false}),
         _ => json!({"vorschlaege": [
             {"feld_id": "zzz_unbekannt", "wert": 1, "beleg": "100 Euro Lohn",
@@ -74,7 +88,7 @@ fn lies_nachricht(s: &mut TcpStream) -> (String, Vec<u8>) {
     (String::new(), Vec::new())
 }
 
-fn attrappen_dienst(abweisungen: bool) -> String {
+fn attrappen_dienst(modus: Modus) -> String {
     let l = TcpListener::bind("127.0.0.1:0").unwrap();
     let basis = format!("http://127.0.0.1:{}", l.local_addr().unwrap().port());
     std::thread::spawn(move || {
@@ -87,7 +101,7 @@ fn attrappen_dienst(abweisungen: bool) -> String {
                 .unwrap_or("?");
             let body = json!({
                 "provider": "StubAnbieter",
-                "choices": [{"finish_reason": "stop", "message": {"content": inhalt(stufe, abweisungen).to_string()}}]
+                "choices": [{"finish_reason": "stop", "message": {"content": inhalt(stufe, modus).to_string()}}]
             })
             .to_string();
             let antwort = format!(
@@ -172,7 +186,7 @@ fn starte(llm_basis: &str, daten: &std::path::Path) -> Prozess {
 #[test]
 fn beobachtung_nennt_feld_ids_und_zahlen_nie_den_text() {
     let tmp = tempfile::tempdir().unwrap();
-    let basis = attrappen_dienst(true);
+    let basis = attrappen_dienst(Modus::Abweisungen);
     let mut p = starte(&basis, tmp.path());
     let (s, a) = sende(
         p.port,
@@ -218,7 +232,7 @@ fn beobachtung_nennt_feld_ids_und_zahlen_nie_den_text() {
 fn ohne_abweisung_schreibt_der_prozess_keine_beobachtung() {
     // Kein Vorschlag, also nichts abzulehnen: keine der beiden Zeilen (Mutanten D020, D022, K021).
     let tmp = tempfile::tempdir().unwrap();
-    let basis = attrappen_dienst(false);
+    let basis = attrappen_dienst(Modus::Gueltig);
     let mut p = starte(&basis, tmp.path());
     let (s, _) = sende(
         p.port,
@@ -238,4 +252,38 @@ fn ohne_abweisung_schreibt_der_prozess_keine_beobachtung() {
         .read_to_string(&mut err)
         .unwrap();
     assert!(!err.contains("[haut.chat]"), "{err}");
+}
+
+/// Auftrag k9-2 (Mutant C39): EIN Vorschlag ohne Feld-ID ist schon eine Beobachtung wert (Python: `if malformt:`),
+/// und die erste Zeile (Felder außerhalb des Katalogs) fehlt, weil es keine gibt.
+#[test]
+fn ein_vorschlag_ohne_feld_id_schreibt_genau_die_zeile_mit_eins() {
+    let tmp = tempfile::tempdir().unwrap();
+    let basis = attrappen_dienst(Modus::EineLeere);
+    let mut p = starte(&basis, tmp.path());
+    let (s, _) = sende(
+        p.port,
+        "/fall",
+        &json!({"fall_id": "pc3", "scheibe": "gesamt", "veranlagungszeitraum": 2025}),
+    );
+    assert_eq!(s, 201);
+    let (s, a) = sende(p.port, "/fall/pc3/chat", &json!({"text": TEXT}));
+    assert_eq!(s, 200, "{a}");
+    let _ = p.kind.kill();
+    let mut err = String::new();
+    p.kind
+        .stderr
+        .take()
+        .unwrap()
+        .read_to_string(&mut err)
+        .unwrap();
+    let zeilen: Vec<&str> = err
+        .lines()
+        .filter(|z| z.starts_with("[haut.chat]"))
+        .collect();
+    assert_eq!(
+        zeilen,
+        ["[haut.chat] LLM-Vorschläge mit fehlender/leerer feld_id abgelehnt: 1"],
+        "{err}"
+    );
 }

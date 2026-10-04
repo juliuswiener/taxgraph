@@ -467,6 +467,13 @@ mod tests {
             ("[NaN\n]", Some(json!([float()]))),
             ("[ NaN , NaN ]", Some(json!([float(), float()]))),
             ("[5 NaN]", None),
+            // Auftrag k9-2 (Mutant K04): ein Wort, dem ein Doppelpunkt folgt, ist kein Wort am Ende. Mit dem
+            // Ersatztext wäre `{"…float": 1}` ein gültiges Objekt; Python lehnt `{NaN: 1}` ab (Schlüssel ohne
+            // Anführungszeichen).
+            ("{NaN: 1}", None),
+            ("{Infinity: 1}", None),
+            ("{-Infinity: 1}", None),
+            (r#"{"a": 1, NaN: 2}"#, None),
             ("[12345678901234567890]", Some(json!([ganz()]))),
             (
                 "[9223372036854775807]",

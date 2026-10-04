@@ -340,6 +340,39 @@ async fn deckel_der_llm_aufrufe_ist_kein_stilles_kuerzen() {
             json!({"uebernommen": 0, "transaktionen": 50, "verworfen": 0})
         )
     );
+    // Auftrag k9-2 (Mutant K40): EINE übersprungene Buchung ist schon ein Hinweis wert (Python: `> 0`). Die
+    // Antwort stammt aus `api.kontoauszug` (CPython 3.14), 51 Buchungen ohne Stichwort, kein Schlüssel.
+    let eine: Vec<Value> = (0..51)
+        .map(|i| json!({"datum": "d", "betrag": -100 - i, "verwendungszweck": format!("Einkauf {i}")}))
+        .collect();
+    let (status, antwort) = auszug(&d, "kd3", json!({"format": "json", "inhalt": eine})).await;
+    assert_eq!(
+        (status, antwort),
+        (
+            200,
+            json!({"uebernommen": 0, "transaktionen": 51, "verworfen": 0, "llm_uebersprungen": 1,
+                "hinweis": "1 Buchung(en) wurden NICHT automatisch eingeordnet — die Grenze von 50 Klassifikationen je Auszug war erreicht. Bitte diese Buchungen selbst zuordnen oder den Auszug in kleineren Zeiträumen hochladen."})
+        )
+    );
+}
+
+/// Auftrag k9-2 (Mutant K34): ein CSV, das Python mit `csv.Error` abbricht (ein `\r` mitten im ungequoteten Feld),
+/// ist ein 500 mit der Klasse `Error` -- nicht `ValueError`. Text und Klasse stammen aus `api.kontoauszug`
+/// (`CPython` 3.14: `csv.Error: new-line character seen in unquoted field - do you need to open the file with
+/// newline=''?`); die Klasse heißt dort `Error`, weil `_dispatch` `type(e).__name__` nimmt.
+#[tokio::test]
+async fn ein_csv_mit_zeilenumbruch_im_feld_ist_ein_500_error() {
+    let d = dienst();
+    let (status, antwort) = auszug(&d, "ke", json!({"format": "csv", "inhalt": "a\rb\n"})).await;
+    assert_eq!(
+        (status, antwort),
+        (
+            500,
+            json!({"fehler": "Error: new-line character seen in unquoted field - do you need to open the file with newline=''?"})
+        )
+    );
+    // Die Akte bleibt leer: nichts wurde übernommen.
+    assert!(events(&d, "ke").is_empty());
 }
 
 #[tokio::test]
