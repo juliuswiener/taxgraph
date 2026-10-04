@@ -56,3 +56,33 @@ python3 tools/parity/extract_interview_orakel.py
 
 Aendert sich `traverser.py` oder die Bindung, ist das Fixture neu zu erzeugen; der Rust-Test zeigt
 dann, wo Rust vom Orakel abweicht. `git diff` auf der Datei zeigt, was sich am Orakel geaendert hat.
+
+## `konsistenz_orakel.json`
+
+Snapshots (Feld -> `[wert, "b"|"v"]`, Scheibe, Vorjahr) fuer die Crate `konsistenz` samt den Antworten des
+Python-Orakels (`produkt/konsistenz/*`, ueber `tools/parity/oracle_konsistenz.py`): `preflight(...)` und
+`unvollstaendige_instanzen` je Snapshot, dazu `eur` und die fuenf Tabellen. Lange Texte (`grund`, `hinweis`)
+stehen einmal in `texte` und im Szenario als `{"$t": index}`. Konsument:
+`rust/konsistenz/tests/orakel_werte.rs` (hermetisch, ohne Python). Floats und Ganzzahlen ueber `i64` stehen nur
+dort, wo Rust sie wie Python behandelt (`flag_check`, `check_pauschalen`, `partner_check`); die Betrags-Pruefungen
+aus `preflight.py` zaehlen einen Float in Rust absichtlich nicht (`// PARITAET:` in der Crate-Doku).
+
+```
+python3 tools/parity/extract_konsistenz_orakel.py
+```
+
+## `intervall_orakel.json`
+
+Szenarien fuer die Crate `intervall` samt den Antworten von `produkt/unsicherheit/intervall.py`: `sicht` (Pythons
+Rohlesung aller echten Bindungen, Reihenfolge der Rust-Registry), `iv` (`intervall(...)` ueber synthetische Bindung,
+Snapshot, Deckel) und `slots` (`bescheid_via_slots(...)`). Beide Seiten rechnen ueber dieselbe synthetische Engine
+(`oracle_konsistenz._synth`: Summe ueber `gewicht(name) * zahl(wert)`). Konsument:
+`rust/intervall/tests/orakel_werte.rs` (hermetisch, ohne Python).
+
+```
+python3 tools/parity/extract_intervall_orakel.py
+```
+
+Aendert sich ein Orakel (`produkt/konsistenz/*`, `intervall.py`) oder die Bindung, sind die Fixtures neu zu
+erzeugen; der Rust-Test zeigt dann, wo Rust vom Orakel abweicht. Beide Generatoren sind deterministisch
+(fester Seed, sortierte Ausgabe): zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed.
