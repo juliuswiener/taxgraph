@@ -21,7 +21,9 @@ REICHT EINE QUELLE? Nein, solange zwei Laeufe den Korpus aus verschiedenen Datei
     macht `cargo test` rot, nicht aber `make golden` und den CI-Job `golden` (dort `134/134`, Exit 0);
     auf der Python-Seite faengt ihn erst dieser Test.
   - Kein Rust-Pin sieht, was `golden_lauf.py` wirklich rechnet. Wird dessen Glob enger, bleiben Verzeichnis
-    und Fixture bei 135, und der Python-Lauf meldet weniger. Das faengt nur der zweite Test.
+    und Fixture bei 135, und der Python-Lauf meldet weniger. Das faengt nur der zweite Test. Ebenso, wenn
+    `main()` einen Fall uebergeht, ohne den Nenner zu senken: der zweite Test zaehlt auch die gedruckten
+    Ergebniszeilen.
   - Dieser Test sieht die Fixture nicht; sie bleibt bei golden_kopf.rs.
 Entfaellt der Python-Lauf, entfaellt dieser Test mit ihm.
 
@@ -39,11 +41,14 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 # ponytail: Die Zahl steht hart hier und in den beiden Rust-Dateien. Eine gemeinsame Quelle gaebe die
 # Kreuzpruefung auf; der Test zaehlt nur. Ein Tausch bei gleicher Zahl (Fall A raus, Fall B rein) bleibt
 # gruen -- die IDs gegen die Dateien prueft golden_kopf.rs (ids_sind_die_yaml_dateien_in_ihrer_reihenfolge).
-# Ein Fall, den `main()` uebergeht, ohne `len(cases)` zu senken, bleibt hier ebenfalls unsichtbar.
 N_FAELLE = 135
 
 # `print(f"\n{len(cases) - len(failures)}/{len(cases)} Faelle bestanden.")` in golden_lauf.main()
 SCHLUSSZEILE = re.compile(r"^(\d+)/(\d+) Faelle bestanden\.$", re.MULTILINE)
+# `print(f"OK       {cid}  ...")` oder `print(f"FAIL     {cid}  -> ...")` in golden_lauf.main(), eine je Fall
+# ponytail: Der Test zaehlt gedruckte Zeilen und haengt damit am Wortlaut. Ein geaenderter Wortlaut macht ihn
+# rot, und die Meldung sagt es. Sauberer waere, wenn `main()` die Zahl der gerechneten Faelle selbst druckt.
+ERGEBNISZEILE = re.compile(r"^(?:OK|FAIL) +\S", re.MULTILINE)
 
 
 def test_das_verzeichnis_hat_genau_n_faelle():
@@ -56,7 +61,8 @@ def test_das_verzeichnis_hat_genau_n_faelle():
 
 
 def test_der_python_lauf_meldet_genau_n_faelle():
-    """Der echte Lauf als eigener Prozess: gepinnt wird die Zahl, die er SELBST meldet.
+    """Der echte Lauf als eigener Prozess: gepinnt wird die Zahl, die er SELBST meldet, und die Zahl der
+    Faelle, die er wirklich rechnet (eine Zeile `OK ...` oder `FAIL ...` je Fall).
 
     Die Zahl der Dateien allein sagt nichts darueber, was `golden_lauf.py` rechnet (siehe Kopf, zweiter
     Punkt). Eigener Prozess mit `-I` wie die Gegenprobe in tests/test_ci_konfiguration.py: das Skript legt
@@ -79,3 +85,8 @@ def test_der_python_lauf_meldet_genau_n_faelle():
         f"Der Golden-Lauf rechnet {gesamt} Faelle statt {N_FAELLE} ({bestanden} bestanden): ein Fall fehlt, "
         f"ist dazugekommen, oder der Glob in golden_lauf.main() ist enger oder weiter geworden. "
         f"Gewollt? Dann die Zahl in den DREI Dateien aus dem Kopf dieser Datei nachziehen.")
+    gerechnet = len(ERGEBNISZEILE.findall(r.stdout))
+    assert gerechnet == N_FAELLE, (
+        f"Der Golden-Lauf meldet {gesamt} Faelle, rechnet aber {gerechnet} (Zeilen `OK ...`/`FAIL ...`): "
+        f"main() uebergeht Faelle, oder der Wortlaut dieser Zeilen hat sich geaendert und ERGEBNISZEILE hier "
+        f"gehoert nachgezogen.")
