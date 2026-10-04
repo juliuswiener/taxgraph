@@ -87,6 +87,27 @@ fn jede_abweisung_ausser_den_fuenf_wertpruefungen_bricht_die_vorjahr_uebernahme_
     assert_eq!(store.aktive().count(), 1);
 }
 
+/// Pythons `int(...)` meldet keinen Platz; die Crate nennt ihn: der Index zaehlt ab 0 und ist der Platz
+/// in der Liste, nicht die Zahl der lesbaren Buchungen davor (`api` gibt den Text als 500 weiter).
+#[test]
+fn ein_unlesbarer_betrag_im_json_nennt_den_platz_der_buchung() {
+    use eingang::kontoauszug::{aus_json, KontoauszugFehler};
+    let fehler = aus_json(&json!([{"betrag": 1}, {"betrag": "x"}, {"betrag": "y"}])).unwrap_err();
+    assert!(
+        matches!(fehler, KontoauszugFehler::BetragUngueltig { index: 1 }),
+        "{fehler:?}"
+    );
+    assert_eq!(
+        fehler.to_string(),
+        "Transaktion 1: betrag nicht ganzzahlig lesbar"
+    );
+    let fehler = aus_json(&json!([{"betrag": null}])).unwrap_err();
+    assert!(
+        matches!(fehler, KontoauszugFehler::BetragUngueltig { index: 0 }),
+        "{fehler:?}"
+    );
+}
+
 #[test]
 fn eine_zeile_ueber_der_backtracking_grenze_wird_verworfen_und_gezaehlt() {
     let kurz = "01.03.2025 Maler -480,00 EUR";

@@ -662,3 +662,65 @@ fn nutzerdatei_ohne_users_objekt_oder_kein_json_ist_ein_500() {
     );
     assert_eq!(fehler.status(), 500);
 }
+
+/// Nur eine fehlende Nutzerdatei ist ein leerer Bestand; jeder andere Lesefehler ist ein 500. Sonst
+/// meldete sich ein Nutzer als "unbekannt" ab (401), obwohl die Datei nur unlesbar ist, und
+/// `registriere` legte einen Bestand mit einem einzigen Nutzer an.
+#[test]
+fn eine_unlesbare_nutzerdatei_ist_ein_speicherfehler_und_kein_leerer_bestand() {
+    let dir = tempfile::tempdir().unwrap();
+    // Der Pfad der Nutzerdatei ist ein Verzeichnis: `read_to_string` scheitert mit `IsADirectory`.
+    let a = Auth::neu(GEHEIM.into(), dir.path().to_path_buf(), None);
+    let fehler = a.login(&an("julius", "geheim123")).unwrap_err();
+    assert!(matches!(fehler, AuthFehler::Speicher(_)), "{fehler:?}");
+    assert_eq!(fehler.status(), 500);
+    let fehler = a.registriere(&an("julius", "geheim123")).unwrap_err();
+    assert!(matches!(fehler, AuthFehler::Speicher(_)), "{fehler:?}");
+    assert_eq!(fehler.status(), 500);
+}
+
+/// Das Audit ist ein Nebenkanal: scheitert das Anhaengen, laufen Registrieren, Anmelden, Abweisen und
+/// Abmelden trotzdem durch. Python hat hier keinen `try` und bricht ab (bewusste Abweichung, siehe
+/// `Auth::protokolliere`).
+#[test]
+fn ein_audit_fehler_kippt_keine_anmeldung() {
+    let dir = tempfile::tempdir().unwrap();
+    // Der Audit-Pfad ist ein Verzeichnis: jedes Anhaengen scheitert.
+    let audit = dir.path().join("audit");
+    std::fs::create_dir(&audit).unwrap();
+    let a = Auth::neu(
+        GEHEIM.into(),
+        dir.path().join("users.json"),
+        Some(audit.clone()),
+    );
+    a.registriere(&an("julius", "geheim123")).unwrap();
+    let token = a.login(&an("julius", "geheim123")).unwrap();
+    assert_eq!(a.pruefe_token(&token).as_deref(), Some("julius"));
+    assert!(matches!(
+        a.login(&an("julius", "falsch1234")).unwrap_err(),
+        AuthFehler::Falsch
+    ));
+    assert!(matches!(a.weise_ab("a b"), AuthFehler::Falsch));
+    assert_eq!(a.logout(&token).as_deref(), Some("julius"));
+    // Gegenprobe: das Verzeichnis ist unberuehrt, es wurde nichts geschrieben.
+    assert_eq!(std::fs::read_dir(&audit).unwrap().count(), 0);
+}
+
+/// PyJWT weist ein `sub`, das kein Text ist, mit `InvalidSubjectError` ab. Ein solches Token meldet
+/// keinen Nutzer und sperrt beim Abmelden nichts: liesse die Pruefung es durch, truege `logout` seine
+/// `jti` trotzdem in die Sperrliste ein, und ein echtes Token mit derselben `jti` waere gesperrt.
+#[test]
+fn ein_token_mit_nicht_text_sub_sperrt_beim_abmelden_nichts() {
+    let a = ohne_datei();
+    let echt = fremd(&json!({"sub": "anna", "jti": "geteilt", "exp": jetzt() + 3600}));
+    for kein_text in [json!(5), json!(null), json!(["anna"]), json!(true)] {
+        let t = fremd(&json!({"sub": kein_text, "jti": "geteilt", "exp": jetzt() + 3600}));
+        assert_eq!(a.pruefe_token(&t), None, "{kein_text}");
+        assert_eq!(a.logout(&t), None, "{kein_text}");
+        assert_eq!(
+            a.pruefe_token(&echt).as_deref(),
+            Some("anna"),
+            "{kein_text}"
+        );
+    }
+}

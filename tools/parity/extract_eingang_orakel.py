@@ -587,7 +587,12 @@ def main() -> None:
     lstb += [{n: "100.00"} for n in lstb_namen] + [{"ArbnAnteilArblVers": "5.00", "LSteuer": "8200.00"}, {}]
     lstb += [{"ArbnAnteilArblVers": a, "ArbnAnteilKrankVers": b} for a, b in
              [("1.00", "2.00"), ("", "2.00"), ("1.00", ""), ("", ""), ("-1.00", "1.00"), ("0", "0")]]
-    lersl = [[{"Betrag": r.wahl(kurzwerte), "Art": r.wahl(["ALG", " Krankengeld ", "", "ALG", None, "Zuschuss"])}
+    # Jedes Element der Python-Tabellen (LSTB und die Quellen von LSTB_SUMMEN), je mit eigenem Betrag und alle in einem
+    # Beleg: ein vertauschtes Zielfeld, ein verlorenes Element oder ein falsches Trennzeichen in der Summen-Kategorie faellt auf.
+    from produkt.eingang import vast_mapping as VM  # noqa: E402
+    lstb_alle = list(VM.LSTB) + [n for quellen in VM.LSTB_SUMMEN.values() for n, _d in quellen]
+    lstb += [{n: f"{i + 1}.00" for i, n in enumerate(lstb_alle)}] + [{n: f"{i + 1}.50"} for i, n in enumerate(lstb_alle)]
+    lersl =[[{"Betrag": r.wahl(kurzwerte), "Art": r.wahl(["ALG", " Krankengeld ", "", "ALG", None, "Zuschuss"])}
               for _ in range(r.n(4))] for _ in range(200)]
     halb = "50000000000000000.00"
     lersl += [[{"Betrag": "1.00", "Art": "A"}, {"Betrag": "-1.00", "Art": "B"}], [{"Betrag": "1.00", "Art": "B"}, {"Betrag": "1.00", "Art": "A"},
