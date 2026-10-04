@@ -112,14 +112,30 @@ def _abschlusszahlung_cent(felder: dict, zahl_cent: int):
         "vorauszahlungen_cent": int(vor or 0)})
 
 
+def _kette_endstand(g_endstand: dict, endwert: int) -> dict:
+    """Die Rechenweg-Kette aus dem ENDSTAND eines § 31-Laufs statt aus dem Vor-Korrektur-Rohstand.
+
+    Die drei oberen Stufen rechnet der Catala-Gesamtfall auf dem finalen `g2` desselben Laufs —
+    § 34 (modifizierter Tarif), § 35 (Anrechnung in `steuerermaessigungen`) und § 31
+    (`freibetraege_kinder`) stecken in diesem Dict. Die letzte Stufe ersetzt der zurückgegebene
+    Endwert des Laufs: nur er enthält die Terme AUSSERHALB der Engine — den § 32b-Zuschlag
+    (Post-Engine-Wrapper) und die § 32d-Abgeltungsteuer (`kap_st_k`, `result = est_raw + kap_st_k`).
+    Vorher speiste die Kette `g`/`rentner_g` und endete um diese Terme zu niedrig; der Wächter
+    verwarf sie still (120.000 EUR Veräußerungsgewinn: 34.338 statt 30.358 EUR; 30.000 EUR
+    Kapitalerträge: 13.924 statt 21.174 EUR)."""
+    import runner
+    kette = runner.catala_gesamt_kette(g_endstand)
+    kette["festzusetzende_est"] = endwert
+    return kette
+
+
 def _setze_kette(extras: dict, kette: dict, est: int) -> None:
     """Rechenweg-Kette nur, wenn ihre letzte Stufe exakt die ausgegebene Steuer `est` (EURO) ist —
-    [[rechenweg-wird-nur-korrekt-angezeigt]]. Die Kette rechnet auf dem Rohstand VOR den
-    Korrekturen in _festzusetzende(_r) (§ 34, § 35, § 32b, § 32d) und endete dort bei einer
-    anderen Steuer als die Zahl darüber (120.000 EUR Veräußerungsgewinn: 34.338 statt 30.358 EUR).
-    Abweichung = Schlüssel absent, die Oberfläche zeigt dann den Hinweis statt der Tabelle."""
-    # ponytail: prüft nur die letzte Stufe — heben sich zwei Korrekturen auf den Euro genau auf,
-    # stimmen die Zwischenstufen nicht. Upgrade: die Kette aus dem Endstand von _festzusetzende speisen.
+    [[rechenweg-wird-nur-korrekt-angezeigt]]. Seit dem Endstand-Fix p24a ist sie das Netz, nicht
+    mehr die Entschuldigung: gespeist wird die Kette aus dem Endstand von _festzusetzende(_r)
+    (s. _kette_endstand), also muss diese Gleichung immer aufgehen. Spricht sie an, fehlt einer
+    Seite eine Korrektur — die Oberfläche zeigt dann den Hinweis statt der Tabelle (Schlüssel
+    absent), statt zwei Steuern unter demselben Label."""
     if kette["festzusetzende_est"] == est:
         extras["kette"] = kette
 
@@ -822,6 +838,11 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         # unabhaengig vom §31-Ergebnis) minus §32d-Kapitalsteuer. solz_info wird von
         # _festzusetzende je Lauf befuellt; der letzte Lauf (KiFB>0) ueberschreibt.
         solz_info = {}
+        # Rechenweg-Kette aus dem Endstand: je § 31-Lauf (Schluessel = freibetrag) sein finales g2
+        # und sein Endwert (s. _kette_endstand). Anders als solz_info gilt der Eintrag auch fuer den
+        # fb=0-Lauf bei Kindern — dort gewinnt oft das Kindergeld, und dann ist ES der Lauf, aus
+        # dem die Kette kommen muss.
+        kette_end: dict = {}
 
         # §32b Progressionsvorbehalt (Stufe-1, Lohnersatz, Post-Engine-Wrapper)
         pe_raw = _c("p32b_progressionseinkuenfte") // 100
@@ -925,6 +946,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
                     solz_info["est_roh_ohne_kap"] = est_raw
                     solz_info["est_roh_mit_kap"] = est_raw
                     solz_info["est_ohne_p35"] = est_ohne_p35
+                kette_end[freibetrag] = (g2, est_raw)
                 return est_raw
             est_mit = runner.catala_est(dict(g2, einkuenfte_kapitalvermoegen=kapitaleinkuenfte))
             kap_st = runner.catala_kapital_steuer({
@@ -975,6 +997,7 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
                 if extras is not None:
                     extras["kist_kap_cent"] = kist_kap_cent
                     extras["kap_guenstiger_gewonnen"] = guenstiger
+            kette_end[freibetrag] = (g2, result)
             return result
 
         # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6): bei
@@ -1001,11 +1024,11 @@ def _zweig_festzusetzende_est_gesamt(vz: int, bindung: dict, felder, store, nur_
         if extras is not None:
             if kinder > 0:
                 _setze_kette(extras, _kette_p31(
-                    runner.catala_gesamt_kette(g),
-                    runner.catala_gesamt_kette(dict(g, freibetraege_kinder=_fb_kind)),
+                    _kette_endstand(*kette_end[0]),
+                    _kette_endstand(*kette_end[_fb_kind]),
                     _fb_guenstiger, _kg_kind), est)
             else:
-                _setze_kette(extras, runner.catala_gesamt_kette(g), est)
+                _setze_kette(extras, _kette_endstand(*kette_end[0]), est)
         # SolZ §3, §4 SolzG: Basis = KiFB-fiktive ESt (§3 Abs.2) minus §32d-Kapitalsteuer (§3 Abs.3 S.1);
         # §32d-Kapital-SolZ 5,5% ohne Freigrenze (§3 Abs.3 S.2) wird von catala_solz separat addiert.
         if solz_container is not None and "est_mit_fb" in solz_info:
@@ -1249,6 +1272,9 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         # §3 Abs.2 SolzG: SolZ-Basis = KiFB-fiktive ESt (immer mit §32 Abs.6-Freibetraegen;
         # solz_info_r wird im KiFB-Lauf und im § 32d-Kapital-Lauf gefüllt.
         solz_info_r = {}
+        # Rechenweg-Kette aus dem Endstand, 1:1 gesamt-Präzedenz: je § 31-Lauf sein finales g2 und
+        # sein Endwert (s. _kette_endstand, Python `kette_end` im gesamt-Zweig).
+        kette_end_r: dict = {}
 
         # §32b Progressionsvorbehalt (Rentner-Ring, 1:1 gesamt-Präzedenz)
         pe_raw = _c("p32b_progressionseinkuenfte") // 100
@@ -1384,6 +1410,7 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
                 solz_info_r["est_roh_ohne_kap"] = solz_info_r.get("est_roh_ohne_kap", result)
                 solz_info_r["kap_st"] = solz_info_r.get("kap_st", 0)
                 solz_info_r["est_ohne_p35"] = est_ohne_p35
+            kette_end_r[freibetrag] = (g2, result)
             return result
 
         # § 31 Familienleistungsausgleich (Günstigerprüfung Kindergeld vs Kinderfreibetrag § 32 Abs. 6, Fund D):
@@ -1410,11 +1437,11 @@ def _zweig_festzusetzende_est_rentner(vz: int, bindung: dict, felder, store, nur
         if extras is not None:
             if kinder > 0:
                 _setze_kette(extras, _kette_p31(
-                    runner.catala_gesamt_kette(rentner_g),
-                    runner.catala_gesamt_kette(dict(rentner_g, freibetraege_kinder=_fb_kind_r)),
+                    _kette_endstand(*kette_end_r[0]),
+                    _kette_endstand(*kette_end_r[_fb_kind_r]),
                     _fb_guenstiger_r, _kg_kind_r), est)
             else:
-                _setze_kette(extras, runner.catala_gesamt_kette(rentner_g), est)
+                _setze_kette(extras, _kette_endstand(*kette_end_r[0]), est)
         # SolZ §3, §4 SolzG: Basis = KiFB-fiktive ESt (§3 Abs.2) minus §32d-Kapitalsteuer (§3 Abs.3 S.1);
         # §32d-Kapital-SolZ 5,5% ohne Freigrenze (§3 Abs.3 S.2) wird von catala_solz separat addiert.
         if solz_container is not None and "est_mit_fb" in solz_info_r:

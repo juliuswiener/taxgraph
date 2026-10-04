@@ -173,12 +173,12 @@ AUSNAHMEN = {
         "Einkommensstruktur (§34-CHOOSER-Guard)."),
     "catala_gesamt_tarifliche": (
         "tarifliche ESt je Zweig — hängt an g2/rentner_g, s. catala_gesamt_zve."),
-    "catala_gesamt_kette": (
-        "P5.4 Rechenweg-Kette (bescheid_zweige.py:905/1278, kinder==0-Gate) — bündelt intern über "
-        "_gesamt_out(s) exakt die vier bereits oben begründeten Werte (catala_gesamt_gde/_zve/"
-        "_tarifliche, catala_est) in EINEM Dict-Rückgabewert. Aufgerufen mit g (gesamt) bzw. "
-        "rentner_g (rentner) — derselbe branch-eigene Sachverhalt, keine neue Rechenstelle. Teilt "
-        "sich den Namen, nicht den Sinn: exakt dieselbe Divergenzursache wie catala_gesamt_gde."),
+    # catala_gesamt_kette stand hier bis p24a (Rechenweg-Kette aus dem Endstand): beide Zweige
+    # rufen den Accessor nicht mehr selbst, sondern ueber den EINEN Modul-Helfer `_kette_endstand`
+    # -- die Bauart, die der Modul-Docstring ausnimmt ("Python-Funktionsaufruf mit gleichem Input
+    # kann nicht auseinanderlaufen"). Der Eintrag waere tot (test_ausnahmeliste_und_vergleichsliste_
+    # haben_keine_toten_eintraege). Kette gleich Zahl haelt stattdessen
+    # tests/test_rechenweg_endstand.py samt dem Waechter `_setze_kette`.
     "catala_est": (
         "die eigentliche Steuerfestsetzung — g2/rentner_g sind je Zweig eigene Dicts mit "
         "unterschiedlichen Einkunftsarten, mehrere Aufrufstellen je Zweig (Kapital-"
