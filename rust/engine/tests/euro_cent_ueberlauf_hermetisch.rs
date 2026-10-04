@@ -4,8 +4,8 @@
 //! `checked_sub`). Je Fundstelle meldet Rust `EngineFehler::Ueberlauf(<Marke>)` statt einer falschen Zahl — im
 //! Standardlauf (ohne `PARITY=1`, ohne Python).
 //!
-//! Die Mutanten (Bericht h8-hermetisch5, Bestand 354 passed / 0 failed, gemessen 2026-10-04 auf f77a7776 + den
-//! h4-Tests): Pa1-Pf6 ersetzen je ein `in_cent(<feld>)?` durch `Ok(Cent::new(<feld>.get().wrapping_mul(100)))`
+//! Die Mutanten (Bericht h8-hermetisch5, Bestand 354 passed / 0 failed, gemessen 2026-10-04 auf
+//! 0aa91677): Pa1-Pf6 ersetzen je ein `in_cent(<feld>)?` durch `Ok(Cent::new(<feld>.get().wrapping_mul(100)))`
 //! (Pruefung fort, Wert gewickelt); N1 trifft `fehler::in_cent` selbst; N2-N10 die Guards `ok(checked_sub)`,
 //! `checked_mul(14)`, `checked_mul(satz)`, `checked_sub(a)`, `checked_add(65)`, `checked_sub(1)`; N6
 //! (`checked_div_euclid(100)` -> `div_euclid`) und I6 sind nach Quelle unerreichbar (ponytail an der Stelle).
@@ -92,6 +92,7 @@ type Eingabe = (&'static str, Roeh);
 /// Die i64-Grenze als `i128` — dieselbe Schranke, die `checked_mul(100)` und `i64::try_from` pruefen.
 const GRENZE_OBEN: i128 = 9_223_372_036_854_775_807_i128;
 const GRENZE_UNTEN: i128 = -9_223_372_036_854_775_808_i128;
+#[allow(clippy::type_complexity)] // eine Tabelle von Faellen, keine Logik
 const FAELLE: &[(&str, &str, &[Eingabe], i128, Option<&str>)] = &[
     ("GdE 92.233.720.368.547.758 EUR (x 100 passt gerade) [passt gerade noch]", "p33_zumutbar", &[
         ("anzahl_kinder", Roeh::Ganz(0)),

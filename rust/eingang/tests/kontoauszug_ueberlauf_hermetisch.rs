@@ -1,7 +1,7 @@
 //! Ueberlaufpfade des Kontoauszug-Imports (`eingang::kontoauszug`): Betraege, die kein `i64` faengt,
 //! scheitern als `KontoauszugFehler::BetragUeberlauf` (API: 500 `OverflowError`) — Standardlauf, ohne Python.
 //!
-//! Die Mutanten (Bericht h8-hermetisch5, gemessen 2026-10-04 auf f77a7776 + den h4-Tests, Bestand 137
+//! Die Mutanten (Bericht h8-hermetisch5, gemessen 2026-10-04 auf 0aa91677, Bestand 137
 //! passed / 0 failed): E1 `eur_cent_signed`: `ganz.parse::<i64>()?.checked_mul(100)` -> `wrapping_mul(100)`;
 //! E3 `aus_json`: `PyInt::Ueberlauf => return Err(BetragUeberlauf(..))` -> `PyInt::Wert(0)` (der Fehlerzweig
 //! ist fort, der Betrag wird still 0); E4 `betrag_tragbar`: `PyInt::Ueberlauf => false` -> `true`;
@@ -34,7 +34,7 @@ use serde_json::json;
 use store::Store;
 
 /// Die Zahlengrenzen, die `eur_cent_signed` als unlesbar verwerfen muss (Python: `None` bei
-/// `cent > _I64_MAX`; i64::MAX selbst ist lesbar).
+/// `cent > _I64_MAX`; `i64::MAX` selbst ist lesbar).
 #[test]
 fn eur_cent_signed_verwirft_betraege_ausserhalb_i64_und_liest_die_grenze() {
     let mut falsch = Vec::new();
@@ -46,6 +46,11 @@ fn eur_cent_signed_verwirft_betraege_ausserhalb_i64_und_liest_die_grenze() {
         // `_I64_MAX` (`kontoauszug_writer._eur_cent_signed`), deshalb ist auch -i64::MAX unlesbar.
         ("-92.233.720.368.547.758,08", None),
         ("-92.233.720.368.547.758,09", None),
+        // Die ganzen Euro passen noch in i64, mal 100 nicht (E1): erst 92.233.720.368.547.759 EUR ueberlaeuft.
+        ("92.233.720.368.547.759,00", None),
+        ("-92.233.720.368.547.759,00", None),
+        ("1.234.567.890.123.456.789,00", None),
+        ("9.223.372.036.854.775.807,00", None),
         ("-12.345.678.901.234.567.890,12", None),
         // Gegenprobe: ein Alltagsbetrag bleibt lesbar.
         ("1.234,56", Some(123_456)),

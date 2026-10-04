@@ -5,7 +5,8 @@
 //! `in_cent(r.jahrespauschale | r.tagespauschale_pro_tag | r.tagespauschale_hoechstbetrag)?`
 //! durch `Ok(Cent::new((…).get().wrapping_mul(100)))`, Pf6 dasselbe für
 //! `in_cent(r.hoechstbetrag_ohne_kfz)`, Pd3 für `in_cent(k.hoechstbetrag)` in
-//! `ermaessigungen.rs`. Alle fünf überleben den Bestand und jeden Fall mit echten Parametern:
+//! `ermaessigungen.rs`; N14 in `teil2/rente.rs` (`zehntel`: `i64::try_from(v).ok()` -> `Some(unwrap_or(0))`,
+//! ein Satz ausserhalb `i64` wird still zu 0 statt zur Sperre). Alle sechs überleben den Bestand und jeden Fall mit echten Parametern:
 //! die echten Caps (1.260, 6, 1.900, 4.500 EUR) bleiben mit × 100 innerhalb `i64`. Erreichbar
 //! ist die Stelle nur mit gepatchter Parameterdatei — dieselbe Bauweise wie h4 für die
 //! EP-Deckel, dort wurde der Cap gesenkt, hier wird er gehoben.
@@ -37,10 +38,12 @@ use engine::zugriff::teil1::fehler::EngineFehler;
 use engine::zugriff::teil1::werbungskosten::{
     entfernungspauschale, raumkosten, EntfernungspauschaleEingabe, RaumkostenEingabe,
 };
+use engine::zugriff::teil2::rente::{renten_einkuenfte, RentenEingabe, Rentenart};
+use engine::zugriff::teil2::EngineFehler as Teil2Fehler;
 use rust_decimal::Decimal;
 
-/// `i64::MAX / 100 + 1` EUR: × 100 bereits ausserhalb `i64`, als Euro noch darstellbar.
-const GROSS: &str = "92233720368547759";
+// Die Obergrenze 92233720368547759 in den Patches unten ist `i64::MAX / 100 + 1` EUR: × 100 schon ausserhalb `i64`, als Euro
+// noch darstellbar.
 
 fn kopiere_params(from: &Path, nach: &Path) {
     std::fs::create_dir_all(nach).unwrap();
@@ -59,15 +62,19 @@ fn kopiere_params(from: &Path, nach: &Path) {
 /// Stellen ersetzt ist. Jeder Anker muss in der Originaldatei genau einmal treffen — sonst ist
 /// der Test gegen eine geänderte Dateiformatierung taub, und das soll er laut sein.
 fn params_gepatcht(zelle: &str, datei: &str, stellen: &[(&str, &str)]) -> Params {
-    let baz = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let wurzel =
         std::env::temp_dir().join(format!("taxgraph-h8-pz-{zelle}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&wurzel);
-    kopiere_params(&baz.join("params"), &wurzel.join("params"));
+    kopiere_params(&repo.join("params"), &wurzel.join("params"));
     let pfad = wurzel.join("params").join(datei);
     let mut text = std::fs::read_to_string(&pfad).unwrap();
     for (alt, neu) in stellen {
-        assert_eq!(text.matches(*alt).count(), 1, "Anker nicht einwandfrei in {datei}: {alt:?}");
+        assert_eq!(
+            text.matches(*alt).count(),
+            1,
+            "Anker nicht einwandfrei in {datei}: {alt:?}"
+        );
         text = text.replacen(alt, neu, 1);
     }
     std::fs::write(&pfad, text).unwrap();
@@ -77,7 +84,10 @@ fn params_gepatcht(zelle: &str, datei: &str, stellen: &[(&str, &str)]) -> Params
 }
 
 fn gepatcht(zelle: &str, datei: &str, stellen: &[(&str, &str)]) -> (Params, String) {
-    (params_gepatcht(zelle, datei, stellen), format!("{zelle}: {datei}"))
+    (
+        params_gepatcht(zelle, datei, stellen),
+        format!("{zelle}: {datei}"),
+    )
 }
 
 fn meldet_ueberlauf(r: Result<Euro, EngineFehler>, stelle: &str) {
@@ -111,7 +121,10 @@ fn arbeitszimmer_caps_aus_params_melden_ueberlauf() {
     let (p, stelle) = gepatcht(
         "pf2",
         datei,
-        &[("jahrespauschale:\n  wert: 1260\n", "jahrespauschale:\n  wert: 92233720368547759\n")],
+        &[(
+            "jahrespauschale:\n  wert: 1260\n",
+            "jahrespauschale:\n  wert: 92233720368547759\n",
+        )],
     );
     let r = raumkosten(&az_eingabe(true, 200_000_000, 0), &p);
     meldet_ueberlauf(r, &format!("{stelle} (Pf2)"));
@@ -123,10 +136,14 @@ fn arbeitszimmer_caps_aus_params_melden_ueberlauf() {
         "pf3",
         datei,
         &[
-            ("tagespauschale_pro_tag:\n  wert: 6\n",
-             "tagespauschale_pro_tag:\n  wert: 92233720368547759\n"),
-            ("tagespauschale_hoechstbetrag:\n  wert: 1260\n",
-             "tagespauschale_hoechstbetrag:\n  wert: 1000000000000000\n"),
+            (
+                "tagespauschale_pro_tag:\n  wert: 6\n",
+                "tagespauschale_pro_tag:\n  wert: 92233720368547759\n",
+            ),
+            (
+                "tagespauschale_hoechstbetrag:\n  wert: 1260\n",
+                "tagespauschale_hoechstbetrag:\n  wert: 1000000000000000\n",
+            ),
         ],
     );
     let r = raumkosten(&az_eingabe(false, 0, 1), &p);
@@ -187,4 +204,61 @@ fn kohorten_und_ep_hoechstbetraege_melden_ueberlauf() {
     };
     let r = entfernungspauschale(&e, &p);
     meldet_ueberlauf(r, &format!("{stelle} (Pf6)"));
+}
+
+/// N14: der Ertragsanteil-Prozentsatz der Kohorte 0 aus `params/kohorten/rente_ertragsanteil_p22.yaml`,
+/// auf einen Wert gehoben, dessen Zehntel (`prozent * 10`) kein `i64` mehr ist. Die echten Tabellen
+/// tragen 1 bis 100 (gemessen: Ertragsanteil 1..59, Besteuerungsanteil 50..100, Versorgungsfreibetrag
+/// 0..40 Prozent), die Stelle ist nur mit gepatchter Datei erreichbar — dasselbe Harness wie oben,
+/// gleiche Schwaeche (Datensatz, kein Quelltext-Mutant).
+///
+/// Python-Folien (`orakel_n14.py`, Jahresrente 1.000 EUR, VZ 2025, bb, Alter 0): 1e22 Prozent ->
+/// 99.999.999.999.999.991.611.290 EUR, ausserhalb `i64` (Art: klar, das Orakel stuetzt die Sperre);
+/// 1e18 Prozent -> 9.999.999.999.999.999.898 EUR, ebenfalls ausserhalb `i64` (Art: klar; das Zehntel
+/// selbst ist 1e19 und damit groesser als `i64::MAX`: die Sperre sitzt an der `zehntel`-Stelle);
+/// 9,2e17 Prozent -> 9.199.999.999.999.999.898 EUR, innerhalb (Zehntel 9,2e18 passt: Gegenprobe).
+#[test]
+fn rente_prozent_aus_params_ausserhalb_i64_meldet_ueberlauf() {
+    let datei = "kohorten/rente_ertragsanteil_p22.yaml";
+    let anker = "  0: {ertragsanteil_prozent: 59.0}\n";
+    let rente = |prozent: &str, zelle: &str| {
+        let p = params_gepatcht(
+            zelle,
+            datei,
+            &[(
+                anker,
+                &format!("  0: {{ertragsanteil_prozent: {prozent}}}\n"),
+            )],
+        );
+        let e = RentenEingabe {
+            vz: Vz::Vz2025,
+            art: Rentenart::Bb {
+                alter_bei_rentenbeginn: 0,
+            },
+            jahresrente: Euro::new(1000),
+        };
+        renten_einkuenfte(&e, &p)
+    };
+    let marke = |r: Result<Euro, Teil2Fehler>| match r {
+        Ok(e) => format!("Zahl {}", e.get()),
+        Err(Teil2Fehler::Basis(EngineFehler::Ueberlauf(m))) => format!("Ueberlauf({m})"),
+        Err(other) => format!("{other:?}"),
+    };
+    // Sperre: Zehntel ausserhalb i64 (1e23 bzw. 1e19).
+    assert_eq!(
+        marke(rente("10000000000000000000000.0", "n14a")),
+        "Ueberlauf(teil2 i64)",
+        "1e22 Prozent"
+    );
+    assert_eq!(
+        marke(rente("1000000000000000000.0", "n14b")),
+        "Ueberlauf(teil2 i64)",
+        "1e18 Prozent"
+    );
+    // Gegenprobe: 9,2e17 Prozent -> Zehntel 9,2e18 passt; Rust liefert die Python-Zahl.
+    assert_eq!(
+        marke(rente("920000000000000000.0", "n14c")),
+        "Zahl 9199999999999999898",
+        "9,2e17 Prozent"
+    );
 }

@@ -2,13 +2,15 @@
 //! `VastFehler::Ueberlauf` (Python: `OverflowError`), Unlesbares als `NichtLesbar` (Python:
 //! `ValueError`) — Standardlauf, ohne Python.
 //!
-//! Die Mutanten (Bericht h8-hermetisch5, Bestand 0aa91677 + die h4-Tests): E6 in `zerlege`
+//! Die Mutanten (Bericht h8-hermetisch5, Bestand 0aa91677): E6 in `zerlege`
 //! (`exp.checked_sub(nachkommastellen)` -> `wrapping_sub`) — nur der Fall mit Exponent exakt
 //! `i64::MIN` erreicht die Stelle, alle anderen Exponenten scheitern vorher am `parse`; E7
 //! (`inf`/`Infinity`: `Ueberlauf` -> `NichtLesbar`); E8 (`betrag.parse::<i64>()`-Fehlerzweig:
 //! `Ueberlauf` -> `NichtLesbar`); E10 in `aus_lersl` (`checked_add` -> `wrapping_add` ohne
 //! Fehlerzweig). E9 (19-Stellen-Schranke -> 99) ist verhaltensgleich: was die Schranke nicht
-//! faengt, faengt der `parse::<i64>` zwei Zeilen tiefer — dieselbe Klasse, desselbe Text.
+//! faengt, faengt der `parse::<i64>` zwei Zeilen tiefer — dieselbe Klasse, desselbe Text. Am Wert gemessen (Sonde im Messbaum,
+//! `e9_original.out` / `e9_mutant.out`): 15 Eingaben, darunter `1e20`, `1e50`, `1e97`, `1e98`, `1e99` (Exponent zwischen den
+//! Schranken) und `1e100`, `1e999999` (darueber), liefern mit Original und Mutante dieselbe Antwort, Zeichen fuer Zeichen.
 //!
 //! HERKUNFT DER ERWARTUNGSWERTE: `produkt/eingang/vast_mapping._cent` und `.aus_lersl` auf
 //! dieselben Texte (Orakel-Skript `orakel_ea5.py`, Log: Anlagen zum Bericht). Python trennt
@@ -55,19 +57,51 @@ const FAEELLE: &[(&str, Option<&str>, Erw)] = &[
     // Rust als NichtLesbar ab — Parsing-Abweichung, keine Ueberlaufstelle; Befund im Bericht
     // h8-hermetisch5, kein Fall hier (kein Mutant E1-E10 beruehrt `gueltig`).
     // Die i64-Grenze selbst (E8-Gegenproben): MAX Cent passt, beide Vorzeichen.
-    ("i64::MAX Cent", Some("92233720368547758,07"), Erw::Wert(9_223_372_036_854_775_807)),
-    ("i64::MAX Cent negativ", Some("-92233720368547758,07"), Erw::Wert(-9_223_372_036_854_775_807)),
-    ("auf 19 Stellen gerundet (half-even)", Some("9223372036854775,807"), Erw::Wert(922_337_203_685_477_581)),
+    (
+        "i64::MAX Cent",
+        Some("92233720368547758,07"),
+        Erw::Wert(9_223_372_036_854_775_807),
+    ),
+    (
+        "i64::MAX Cent negativ",
+        Some("-92233720368547758,07"),
+        Erw::Wert(-9_223_372_036_854_775_807),
+    ),
+    (
+        "auf 19 Stellen gerundet (half-even)",
+        Some("9223372036854775,807"),
+        Erw::Wert(922_337_203_685_477_581),
+    ),
     // Einen Cent drueber: OverflowError, symmetrisch — auch -2**63 weist Python ab (Doku _cent).
-    ("i64::MAX + 1 Cent", Some("92233720368547758,08"), Erw::Ueberlauf),
-    ("-2**63 Cent (symmetrisch abgewiesen)", Some("-92233720368547758,08"), Erw::Ueberlauf),
-    ("20 Vorkommastellen", Some("922337203685477580,70"), Erw::Ueberlauf),
+    (
+        "i64::MAX + 1 Cent",
+        Some("92233720368547758,08"),
+        Erw::Ueberlauf,
+    ),
+    (
+        "-2**63 Cent (symmetrisch abgewiesen)",
+        Some("-92233720368547758,08"),
+        Erw::Ueberlauf,
+    ),
+    (
+        "20 Vorkommastellen",
+        Some("922337203685477580,70"),
+        Erw::Ueberlauf,
+    ),
     ("1e400", Some("1e400"), Erw::Ueberlauf),
     ("1e308 (E-Form riesig)", Some("1e308"), Erw::Ueberlauf),
     // E6: Exponent exakt i64::MIN — das `parse` gelingt, die Subtraktion der Nachkommastelle
     // rutscht darunter; Python: ValueError (nicht lesbar), NICHT OverflowError.
-    ("Exponent i64::MIN", Some("1,0e-9223372036854775808"), Erw::NichtLesbar),
-    ("Exponent jenseits i64", Some("1e9223372036854775808"), Erw::NichtLesbar),
+    (
+        "Exponent i64::MIN",
+        Some("1,0e-9223372036854775808"),
+        Erw::NichtLesbar,
+    ),
+    (
+        "Exponent jenseits i64",
+        Some("1e9223372036854775808"),
+        Erw::NichtLesbar,
+    ),
     ("1e-400 (rundet auf 0)", Some("1e-400"), Erw::Wert(0)),
     // E7: die float-Namen sind Python-`Infinity` -> OverflowError, nicht ValueError.
     ("inf", Some("inf"), Erw::Ueberlauf),
@@ -86,12 +120,21 @@ fn der_vast_leser_scheidet_ueberlauf_von_unlesbar_wie_python() {
     for (name, text, erwartet) in FAEELLE {
         let kam = ist(&cent(*text));
         if &kam != erwartet {
-            falsch.push(format!("{name} ({text:?}): erwartet {erwartet:?}, gekommen {kam:?}"));
+            falsch.push(format!(
+                "{name} ({text:?}): erwartet {erwartet:?}, gekommen {kam:?}"
+            ));
         }
     }
-    assert_eq!(FAEELLE.len(), 24, "die Zahl der VaSt-Faelle hat sich verschoben");
     assert_eq!(
-        FAEELLE.iter().filter(|(_, _, e)| matches!(e, Erw::Ueberlauf)).count(),
+        FAEELLE.len(),
+        24,
+        "die Zahl der VaSt-Faelle hat sich verschoben"
+    );
+    assert_eq!(
+        FAEELLE
+            .iter()
+            .filter(|(_, _, e)| matches!(e, Erw::Ueberlauf))
+            .count(),
         9,
         "die Zahl der Ueberlauf-Erwartungen hat sich verschoben"
     );
@@ -100,10 +143,20 @@ fn der_vast_leser_scheidet_ueberlauf_von_unlesbar_wie_python() {
 
 /// (Erwartung, Leistungen) wie `orakel_ea5.json`; Summe ausserhalb i64: `Ueberlauf` je
 /// Summand (Python prueft die laufende Summe gegen i64, `aus_lersl`).
-const LERSL: &[(&str, &[(&str, &str)], Result<i64, ()>)] = &[
+/// `(Name, Leistungen (Art, Betrag), Erwartung)`.
+type LerslFall = (
+    &'static str,
+    &'static [(&'static str, &'static str)],
+    Result<i64, ()>,
+);
+
+const LERSL: &[LerslFall] = &[
     (
         "zwei Betraege je i64::MAX Cent: die Summe passt in kein i64 (E10)",
-        &[("92233720368547758,07", "ALG"), ("92233720368547758,07", "Kzg")],
+        &[
+            ("92233720368547758,07", "ALG"),
+            ("92233720368547758,07", "Kzg"),
+        ],
         Err(()),
     ),
     (
@@ -117,7 +170,11 @@ const LERSL: &[(&str, &[(&str, &str)], Result<i64, ()>)] = &[
         Err(()),
     ),
     ("ein normaler Betrag", &[("1234.00", "ALG")], Ok(123_400)),
-    ("nur Nullen: kein Satz", &[("0.00", "ALG"), ("0.00", "Kzg")], Ok(0)),
+    (
+        "nur Nullen: kein Satz",
+        &[("0.00", "ALG"), ("0.00", "Kzg")],
+        Ok(0),
+    ),
 ];
 
 #[test]
@@ -126,11 +183,14 @@ fn die_lersl_summe_ueber_i64_meldet_ueberlauf_statt_zu_wickeln() {
     for (name, leistungen, erwartet) in LERSL {
         let l: Vec<Leistung> = leistungen
             .iter()
-            .map(|(b, a)| Leistung { betrag: Some((*b).to_owned()), art: Some((*a).to_owned()) })
+            .map(|(b, a)| Leistung {
+                betrag: Some((*b).to_owned()),
+                art: Some((*a).to_owned()),
+            })
             .collect();
         let kam = match aus_lersl(&l) {
             Ok(s) => Ok(s.first().map_or(0, |x| x.wert)),
-            Err(VastFehler::Ueberlauf(_)) | Err(VastFehler::NichtLesbar(_)) => Err(()),
+            Err(VastFehler::Ueberlauf(_) | VastFehler::NichtLesbar(_)) => Err(()),
         };
         match (erwartet, &kam) {
             (Ok(w), Ok(k)) if k == w => {}
@@ -138,6 +198,10 @@ fn die_lersl_summe_ueber_i64_meldet_ueberlauf_statt_zu_wickeln() {
             _ => falsch.push(format!("{name}: erwartet {erwartet:?}, gekommen {kam:?}")),
         }
     }
-    assert_eq!(LERSL.len(), 5, "die Zahl der LErsL-Faelle hat sich verschoben");
+    assert_eq!(
+        LERSL.len(),
+        5,
+        "die Zahl der LErsL-Faelle hat sich verschoben"
+    );
     assert!(falsch.is_empty(), "{falsch:#?}");
 }

@@ -2,14 +2,19 @@
 //! die sie in `i128` haelt (`produkt/haut/server.py::_ganzzahl_im_i64`, `decisions/
 //! tuer-und-speicher-weisen-ab-was-die-fallakte-nicht-exakt-halten-kann`). Standardlauf, ohne Python.
 //!
-//! Die Mutanten (Bericht h8-hermetisch5, gemessen 2026-10-04 auf f77a7776 + h4, `cargo test -p store
+//! Die Mutanten (Bericht h8-hermetisch5, gemessen 2026-10-04 auf 0aa91677, `cargo test -p store
 //! -p api -p bescheid -p eingang -p intervall --lib --tests`, 403 passed / 0 failed): S1
 //! `sperrform`: `KommazahlUeberlauf` nie (`is_ok_and(f64::is_infinite)` -> `false`), S3 `sperrform`:
 //! `GanzzahlUeberlauf` nie (`(ganzzahl && ausserhalb)` -> `false`), S4 `visit_u128`: Wert ueber
 //! `i128::MAX` wird 0 statt `i128::MAX`, S5 `als_i64_saettigend`: obere Grenze saettigt nach
-//! `i64::MIN` (`is_positive` -> `is_negative`). S2 (`parse::<u64>().is_err()` zu `||`) faengt der
-//! Bestand (`b4_ganzzahl_ueberlauf_sperrt_mit_namen`), S6 (Klammertiefe `wrapping_sub`) pannt nur in
-//! Debug und ist hier aussen vor, S7 (`visit_f64` ohne `trunc()`) ist durch keine JSON-Zahl erreichbar.
+//! `i64::MIN` (`is_positive` -> `is_negative`), S7 `visit_f64`: `v.trunc() as i128` -> `i128::from(v.trunc() as
+//! i64)` (die Saettigung nach `i64` zieht in den Rohwert vor; erreichbar ueber `serde_json::from_value`, wo ein
+//! Deserializer eine Kommazahl liefert — `ein_jahr_als_kommazahl_...` unten). S2 (`parse::<u64>().is_err()` zu
+//! `||`) faengt der Bestand (`b4_ganzzahl_ueberlauf_sperrt_mit_namen`). S6 (`finde_sperrform`, Klammertiefe
+//! `saturating_sub` -> `wrapping_sub`): auf jeder Datei, die Python als JSON liest, faellt die Tiefe nie unter 0 und beide rechnen
+//! gleich; erst ein Text mit ueberzaehliger schliessender Klammer (kein JSON, Python: `JSONDecodeError`) unterscheidet sie: das
+//! Original meldet einen Fehler, die Mutante PANIKT (`attempt to add with overflow` an `tiefe += 1`, gemessen: Sonde im Messbaum,
+//! `s6_original.out` / `s6_mutant.out`) -- `eine_ueberzaehlige_schliessende_klammer_ist_ein_fehler_und_keine_panik` unten.
 //!
 //! HERKUNFT DER ERWARTUNGSWERTE: die Rumpf-Grenze ist Python nachgerechnet — `server._ganzzahl_im_i64`
 //! (im Orakel-Lauf `tools/parity/schritt8_oracle.py` haelt dieselben Zeichenketten) laesst
@@ -33,6 +38,7 @@ use domain::{Achsenwert, Feldzustand, Herkunft, PruefTiefe, PyWert, Schreiber, S
 use serde_json::json;
 use store::{
     Abweisung, BindungNachschlag, NeuesEvent, PersistenzFehler, Sperrform, Store, StoreDatei,
+    Veranlagungsjahr,
 };
 
 fn nachschlag() -> BindungNachschlag<'static> {
@@ -192,7 +198,7 @@ fn append_weist_dieselben_zahlen_ab_wie_die_sperrform_der_akten_datei() {
     for (name, wert) in gross {
         let mut s = Store::leer(2025, None);
         match s.append(&event("ep_arbeitstage", wert), None, nachschlag()) {
-            Err(Abweisung::TypInkonform { .. }) | Err(Abweisung::Magnitude { .. }) => {}
+            Err(Abweisung::TypInkonform { .. } | Abweisung::Magnitude { .. }) => {}
             Err(e) => falsch.push(format!(
                 "{name}: Abweisung (Typ/Magnitude) erwartet, gekommen {e:?}"
             )),
@@ -238,7 +244,7 @@ fn ein_jahr_ausserhalb_i64_saettigt_und_wird_nie_ein_steuerjahr() {
     let p3 = schreibe("vz-67561", &akte(zwei_63, "1"));
     let d3: StoreDatei = store::lade(&p3).unwrap();
     if u16::try_from(i64::try_from(d3.veranlagungszeitraum.0).unwrap_or(i64::MAX))
-        .is_ok_and(|j| u16::from(j) == 2025)
+        .is_ok_and(|j| j == 2025)
     {
         falsch.push(
             "i64::MAX als u16 = 2025 (Wrap): die Schranke muss die i64-Zahl pruefen".to_owned(),
@@ -248,5 +254,79 @@ fn ein_jahr_ausserhalb_i64_saettigt_und_wird_nie_ein_steuerjahr() {
     let _ = std::fs::remove_file(p2);
     let _ = std::fs::remove_file(p3);
     let _ = max_u16_ueber;
+    assert!(falsch.is_empty(), "{falsch:#?}");
+}
+
+/// S7: ein Jahr, das ein Deserializer als Kommazahl liefert (`serde_json::from_value`, wie die
+/// Parity-Tests; `persistenz::lade` liest Ziffern und kommt hier nicht vorbei), wird wie Pythons
+/// `int(float)` Richtung Null abgeschnitten und bleibt bis `i128` exakt. Die Saettigung auf `i64`
+/// gehoert allein in `als_i64_saettigend`: der Rohwert `Veranlagungsjahr.0` ist das, was die Akte
+/// beim Speichern wieder schreibt.
+///
+/// Python-Folien: `int(1e30) = 1000000000000000019884624838656`, `int(1e19) = 10000000000000000000`,
+/// `int(9e18) = 9000000000000000000`, `int(2025.9) = 2025`, `int(-2025.9) = -2025` (gemessen,
+/// Python 3.14). Die Faelle ueber 9,2e18 (alle vier ersten) trennen `v.trunc() as i128` von
+/// `i128::from(v.trunc() as i64)`; 9e18 und die Jahreszahlen sind die Gegenproben darunter.
+#[test]
+fn ein_jahr_als_kommazahl_schneidet_ab_und_haelt_die_i128_breite() {
+    let faelle: [(f64, i128); 8] = [
+        (1e30, 1_000_000_000_000_000_019_884_624_838_656),
+        (-1e30, -1_000_000_000_000_000_019_884_624_838_656),
+        (1e19, 10_000_000_000_000_000_000),
+        (-1e19, -10_000_000_000_000_000_000),
+        (9.0e18, 9_000_000_000_000_000_000),
+        (-9.0e18, -9_000_000_000_000_000_000),
+        (2025.9, 2025),
+        (-2025.9, -2025),
+    ];
+    let mut falsch = Vec::new();
+    for (f, erwartet) in faelle {
+        let ist: Veranlagungsjahr = serde_json::from_value(json!(f)).unwrap();
+        if ist.0 != erwartet {
+            falsch.push(format!("{f:e}: erwartet {erwartet}, gekommen {}", ist.0));
+        }
+    }
+    // S4-Beleg: `serde_json::from_str` liest ein Jahr ueber `i128::MAX` nie als `u128` (das
+    // wuerde `visit_u128` rufen), sondern meldet `NumberOutOfRange` — `visit_u128` ist ueber diese
+    // Naht unerreichbar. 10^39 ist rund das 5,9-fache von `i128::MAX` (1,7e38); Python haelt die exakte Zahl.
+    let zu_gross = format!("1{}", "0".repeat(39));
+    let fehler = serde_json::from_str::<Veranlagungsjahr>(&zu_gross)
+        .unwrap_err()
+        .to_string();
+    assert!(fehler.contains("out of range"), "10^39 als Jahr: {fehler}");
+    assert!(falsch.is_empty(), "{falsch:#?}");
+}
+
+/// S6: Text mit ueberzaehliger schliessender Klammer vor dem Objekt ist kein JSON; Python `json.loads` wirft `JSONDecodeError`
+/// (gemessen fuer alle drei Texte). Rust meldet einen Fehler und panikt nie: `}` bei Tiefe 0 bleibt bei 0 (`saturating_sub`). Die
+/// Fehlerart ist Rust-eigen (`Sperrform` fuer einen Text, dessen `events` nach dem Objektanfang ein `1e999` tragen, sonst
+/// `Format`), keine Python-Stuetze; die Messgroesse ist die fehlende Panik.
+#[test]
+fn eine_ueberzaehlige_schliessende_klammer_ist_ein_fehler_und_keine_panik() {
+    let kopf = r#"{"version":1,"veranlagungszeitraum":2025,"events":"#;
+    let mut falsch = Vec::new();
+    for (name, text, sperrform) in [
+        (
+            "klammer_inf",
+            format!("}}{kopf}[{{\"wert\":1e999}}]}}"),
+            true,
+        ),
+        ("klammer_gueltig", format!("}}{kopf}[]}}"), false),
+        (
+            "zwei_klammern_inf",
+            format!("]}}{kopf}[{{\"wert\":1e999}}]}}"),
+            true,
+        ),
+    ] {
+        let r = store::lade(&schreibe(name, &text));
+        let ok = matches!(
+            (&r, sperrform),
+            (Err(PersistenzFehler::Sperrform { .. }), true)
+                | (Err(PersistenzFehler::Format(..)), false)
+        );
+        if !ok {
+            falsch.push(format!("{name}: {:?}", r.map(|_| ())));
+        }
+    }
     assert!(falsch.is_empty(), "{falsch:#?}");
 }
