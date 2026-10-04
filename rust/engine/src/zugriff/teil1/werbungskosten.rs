@@ -63,7 +63,7 @@ pub fn raumkosten(e: &RaumkostenEingabe, p: &Params) -> Result<Euro, EngineFehle
         tagespauschale_pro_tag: in_cent(r.tagespauschale_pro_tag)?,
         tagespauschale_hoechstbetrag: in_cent(r.tagespauschale_hoechstbetrag)?,
     })?;
-    Ok(Cent::new(out.abzug_gesamt_cent).floor_euro())
+    Ok(Cent::new(out.abzug_gesamt_cent()?).floor_euro())
 }
 
 /// Eingabe fuer [`entfernungspauschale`] und [`ep_ab_21km`].
@@ -127,7 +127,7 @@ pub fn entfernungspauschale(
         hoechstbetrag: in_cent(r.hoechstbetrag_ohne_kfz)?,
     };
     let out = ep_scope::berechnen(scope)?;
-    Ok(Cent::new(out.abziehbarer_betrag_cent).floor_euro())
+    Ok(Cent::new(out.abziehbarer_betrag_cent()?).floor_euro())
 }
 
 /// Euro-Satz in ganzen Cent, abgeschnitten. Python: `int(Decimal(str(satz)) * 100)`.

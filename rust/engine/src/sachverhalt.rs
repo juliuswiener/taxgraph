@@ -79,15 +79,15 @@ impl Sachverhalt {
                 } else {
                     tarif::festzusetzende_est_gesamt(eingabe, vz)
                 }?;
-                Ok(Cent::new(ergebnis.festzusetzende_est_cent))
+                Ok(Cent::new(ergebnis.festzusetzende_est_cent()?))
             }
             Self::Entfernungspauschale(eingabe) => {
                 let ergebnis = entfernungspauschale::berechnen(eingabe)?;
-                Ok(Cent::new(ergebnis.abziehbarer_betrag_cent))
+                Ok(Cent::new(ergebnis.abziehbarer_betrag_cent()?))
             }
             Self::Arbeitszimmer(eingabe) => {
                 let ergebnis = arbeitszimmer::berechnen(eingabe)?;
-                Ok(Cent::new(ergebnis.abzug_gesamt_cent))
+                Ok(Cent::new(ergebnis.abzug_gesamt_cent()?))
             }
             Self::BruttoarbeitslohnZusammen { eingabe, vz } => {
                 Ok(tarif::festzusetzende_est_zusammen(eingabe, vz)?)

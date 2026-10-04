@@ -9,7 +9,8 @@
 //! erst ab 663170264369792 km an, es blieb ein Fenster von 16 km (366 Tage), in dem die HTTP-Haut 200 mit falscher Zahl antwortete.
 //!
 //! ERWARTUNG: Wo der Jahresbetrag nicht in `i64` passt UND der Scope ihn ausgibt (Kfz: kein Hoechstbetrag), meldet Rust
-//! `EngineFehler::Ueberlauf("ep_gesamt")`. Ohne Kfz deckelt der Scope den Betrag auf den Hoechstbetrag, bevor der Shim ihn liest;
+//! `EngineFehler::Ueberlauf("Entfernungspauschale__abziehbarer_betrag")` (der Guard im Shim, Bericht h8-shim-guard; bis dahin eine Vorab-Rechnung
+//! `ep_gesamt`). Ohne Kfz deckelt der Scope den Betrag auf den Hoechstbetrag, bevor der Shim ihn liest;
 //! das Ergebnis ist exakt (Python liefert dasselbe), also bleibt es ein Wert -- ein Fehler waere hier eine Ablehnung einer
 //! richtigen Rechnung.
 //!
@@ -40,8 +41,9 @@ use engine::zugriff::teil1::werbungskosten::{
 };
 use rust_decimal::Decimal;
 
-const UEBERLAUF: &str = r#"Err(Ueberlauf("ep_gesamt"))"#;
-const SACHVERHALT_UEBERLAUF: &str = r#"Err(Entfernungspauschale(Ueberlauf("ep_gesamt")))"#;
+const UEBERLAUF: &str = r#"Err(Ueberlauf("Entfernungspauschale__abziehbarer_betrag"))"#;
+const SACHVERHALT_UEBERLAUF: &str =
+    r#"Err(Catala(Ueberlauf("Entfernungspauschale__abziehbarer_betrag")))"#;
 /// Die alte Sperre der Teilprodukte in `ep_ab_21km` (schlaegt erst am Ende des Fensters an).
 const AB21_ROH: &str = r#"Err(Ueberlauf("ab21_roh"))"#;
 
@@ -270,7 +272,7 @@ const NULLFAKTOR: &[(&str, i64, i64, bool, i64, i64, i64, &str)] = &[
         30,
         38,
         20,
-        "Ok((450000, 450000))",
+        "Ok(450000)",
     ),
     (
         "B: Satz ab 21 km = 0",
@@ -280,7 +282,7 @@ const NULLFAKTOR: &[(&str, i64, i64, bool, i64, i64, i64, &str)] = &[
         30,
         0,
         20,
-        "Ok((450000, 450000))",
+        "Ok(450000)",
     ),
     (
         "C: Satz bis 20 km = 0",
@@ -290,7 +292,7 @@ const NULLFAKTOR: &[(&str, i64, i64, bool, i64, i64, i64, &str)] = &[
         0,
         38,
         20,
-        "Ok((450000, 450000))",
+        "Ok(450000)",
     ),
     (
         "D: Staffelgrenze 0 (bis = 0)",
@@ -300,7 +302,7 @@ const NULLFAKTOR: &[(&str, i64, i64, bool, i64, i64, i64, &str)] = &[
         30,
         38,
         0,
-        "Ok((450000, 450000))",
+        "Ok(450000)",
     ),
     // mit Kfz derselbe Fall: der Scope gibt den Betrag ungedeckelt aus, er passt nicht in i64
     ("A mit Kfz", 10, i64::MAX, true, 30, 38, 20, ENG_UEBERLAUF),
@@ -308,28 +310,10 @@ const NULLFAKTOR: &[(&str, i64, i64, bool, i64, i64, i64, &str)] = &[
     ("C mit Kfz", 100, i64::MAX, true, 0, 38, 20, ENG_UEBERLAUF),
     ("D mit Kfz", 100, i64::MAX, true, 30, 38, 0, ENG_UEBERLAUF),
     // Kontrollen ohne Ueberlauf: unveraendert Ok (Python 60000 und 120000 ct)
-    (
-        "A, 200 Tage",
-        10,
-        200,
-        false,
-        30,
-        38,
-        20,
-        "Ok((60000, 60000))",
-    ),
-    (
-        "B, 200 Tage",
-        100,
-        200,
-        false,
-        30,
-        0,
-        20,
-        "Ok((120000, 120000))",
-    ),
+    ("A, 200 Tage", 10, 200, false, 30, 38, 20, "Ok(60000)"),
+    ("B, 200 Tage", 100, 200, false, 30, 0, 20, "Ok(120000)"),
 ];
-const ENG_UEBERLAUF: &str = r#"Err(Ueberlauf("ep_gesamt"))"#;
+const ENG_UEBERLAUF: &str = r#"Err(Catala(Ueberlauf("Entfernungspauschale__abziehbarer_betrag")))"#;
 
 #[test]
 fn ohne_kfz_ist_ein_nullfaktor_kein_grund_fuer_einen_fehler() {
@@ -348,10 +332,92 @@ fn ohne_kfz_ist_ein_nullfaktor_kein_grund_fuer_einen_fehler() {
                     staffelgrenze_km: grenze,
                     hoechstbetrag: Cent::new(450_000),
                 })
-                .map(|e| (e.entfernungspauschale_cent, e.abziehbarer_betrag_cent))
+                .and_then(|e| Ok(e.abziehbarer_betrag_cent()?))
             );
             (ist != soll).then(|| format!("{name}: ist {ist}, soll {soll}"))
         })
         .collect();
     melde(&abweichend, NULLFAKTOR.len());
 }
+
+/// Gegenprobe zur alten Vorab-Rechnung `gesamt_pruefen` (Zweig `!positiv`): ein NEGATIVER Faktor (negative Tage oder km) ist KEIN Grund
+/// fuer einen Fehler. Der Scope nimmt `abziehbarer_betrag = if oepnv > entfernungspauschale then oepnv else entfernungspauschale`;
+/// ein negativer, ausserhalb `i64` liegender `entfernungspauschale`-Wert aendert den abziehbaren Betrag nicht (= OePNV-Kosten, hier 0).
+/// Die alte Rechnung lehnte diese Faelle mit 422 ab, Python rechnet 0 bzw. die OePNV-Kosten: ueberstreng. Der Guard prueft nur das
+/// FELD, das gelesen wird (`abziehbarer_betrag`), und das passt in `i64`.
+/// Lazy-Beleg: am selben Ergebnis ist `entfernungspauschale_cent()` (nicht gelesen, ausserhalb `i64`) ein Ueberlauf, `abziehbarer_betrag_cent()` ein Wert.
+/// Gegenfall mit positivem Ueberlauf: negativer Satz bis 20 km mal positive Tage -> `entfernungspauschale` positiv und gross.
+/// HERKUNFT: Python-Orakel `orakel_neg.py` -> `orakel_neg.out` (Anlagen zu h8-ep-fenster, Catala-Scope `EP.berechnung` direkt):
+/// `tage_neg` (km 10, Tage -(2^63-1)): `entfernungspauschale_ct` -2767011611056432742100, `abziehbarer_ct` 0, mit und ohne Kfz;
+/// `km_neg` (km -10^18, 366 Tage): -10980000000000000000000 / 0; `tage_neg_oepnv_gross` (`OePNV` 10^12 EUR): abziehbar 100000000000000;
+/// `satz_bis_neg_pro_tag_pos` (km 100, Tage 2^63-1, Satz bis 20 km -30): ohne Kfz 450000 / 450000, mit Kfz 22505027769925652969080 (ausserhalb `i64`).
+#[test]
+fn ep_negativer_faktor_ist_ok() {
+    let m = i64::MAX;
+    let lauf = |km: i64, tage: i64, kfz: bool, oepnv_ct: i64, satz_bis: i64| {
+        ep_berechnen(ScopeEingabe {
+            entfernung_km_roh: Km::new(Decimal::from(km)),
+            arbeitstage: tage,
+            eigenes_oder_ueberlassenes_kfz: kfz,
+            oepnv_kosten_jahr: Cent::new(oepnv_ct),
+            satz_bis_20_km: Cent::new(satz_bis),
+            satz_ab_21_km: Cent::new(38),
+            staffelgrenze_km: 20,
+            hoechstbetrag: Cent::new(450_000),
+        })
+        .unwrap()
+    };
+    let abziehbar =
+        |e: &catala_sys::EntfernungspauschaleErgebnis| format!("{:?}", e.abziehbarer_betrag_cent());
+    let mut abweichend: Vec<String> = Vec::new();
+    // (Name, Ergebnis, soll abziehbarer Betrag)
+    let faelle = [
+        ("tage_neg ohne Kfz", lauf(10, -m, false, 0, 30), "Ok(0)"),
+        ("tage_neg mit Kfz", lauf(10, -m, true, 0, 30), "Ok(0)"),
+        (
+            "km_neg ohne Kfz",
+            lauf(-1_000_000_000_000_000_000, 366, false, 0, 30),
+            "Ok(0)",
+        ),
+        (
+            "km_neg mit Kfz",
+            lauf(-1_000_000_000_000_000_000, 366, true, 0, 30),
+            "Ok(0)",
+        ),
+        (
+            "tage_neg, OePNV 10^12 EUR",
+            lauf(10, -m, true, 100_000_000_000_000, 30),
+            "Ok(100000000000000)",
+        ),
+        (
+            "Satz bis 20 km negativ, ohne Kfz",
+            lauf(100, m, false, 0, -30),
+            "Ok(450000)",
+        ),
+    ];
+    for (name, e, soll) in &faelle {
+        let ist = abziehbar(e);
+        if ist != *soll {
+            abweichend.push(format!("{name}: ist {ist}, soll {soll}"));
+        }
+    }
+    // Gegenfall: der abziehbare Betrag selbst liegt ausserhalb `i64` (Kfz, kein Hoechstbetrag): Ueberlauf wie bisher.
+    let gross = lauf(100, m, true, 0, -30);
+    let ist = abziehbar(&gross);
+    if ist != ENG_UEBERLAUF_CATALA {
+        abweichend.push(format!(
+            "Satz bis 20 km negativ, mit Kfz: ist {ist}, soll {ENG_UEBERLAUF_CATALA}"
+        ));
+    }
+    // Lazy-Beleg: das nicht gelesene Feld desselben Ergebnisses ist ausserhalb `i64`, der Guard schlaegt nur beim Lesen an.
+    let neg = lauf(10, -m, true, 0, 30);
+    let ungelesen = format!("{:?}", neg.entfernungspauschale_cent());
+    let soll = r#"Err(Ueberlauf("Entfernungspauschale__entfernungspauschale"))"#;
+    if ungelesen != soll {
+        abweichend.push(format!(
+            "tage_neg mit Kfz, entfernungspauschale_cent: ist {ungelesen}, soll {soll}"
+        ));
+    }
+    melde(&abweichend, faelle.len() + 2);
+}
+const ENG_UEBERLAUF_CATALA: &str = r#"Err(Ueberlauf("Entfernungspauschale__abziehbarer_betrag"))"#;
