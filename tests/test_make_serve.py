@@ -37,6 +37,17 @@ def test_sichern_null_ueberspringt_nur_die_sicherung():
     assert "debug/taxgraph-api" in aus
 
 
+def test_serve_port_gilt_in_start_und_meldezeile():
+    # Wer den Port in der Startzeile festschreibt (`... taxgraph-api 8000`), startet auf dem falschen
+    # Port, waehrend die Meldezeile den gewuenschten nennt: beide Zeilen tragen SERVE_PORT.
+    for ziel, ende in (("serve", "debug/taxgraph-api 9123"), ("serve-python", "produkt/haut/server.py 9123")):
+        zeilen = _trocken(ziel, "SERVE_PORT=9123", "SICHERN=0").splitlines()
+        start = [z for z in zeilen if z.startswith("exec ")]
+        meldung = [z for z in zeilen if z.startswith("echo ")]
+        assert len(start) == 1 and start[0].endswith(ende), (ziel, start)
+        assert len(meldung) == 1 and "http://127.0.0.1:9123" in meldung[0], (ziel, meldung)
+
+
 def test_serve_python_ist_der_rueckfall_mit_derselben_sicherung():
     aus = _trocken("serve-python")
     assert "tar czf" in aus
