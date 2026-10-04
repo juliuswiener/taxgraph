@@ -94,6 +94,26 @@ impl BescheidFehler {
             Self::Ueberlauf(_) => None,
         }
     }
+
+    /// `true`, wenn die Rechnung an der `i64`-Grenze scheitert: Python rechnet dort mit unbeschraenkten
+    /// `int` weiter und haette eine Zahl geliefert. Das ist ein Fehler der Eingabe (ein Betrag, den die
+    /// Rechnung nicht fasst), kein Programmfehler. Gilt fuer [`BescheidFehler::Ueberlauf`] und den
+    /// `Ueberlauf` der Teil-1- und Teil-2-Accessoren.
+    ///
+    /// ```
+    /// use bescheid::BescheidFehler;
+    /// assert!(BescheidFehler::Ueberlauf("Addition").ist_ueberlauf());
+    /// assert!(!BescheidFehler::BindungFehlt.ist_ueberlauf());
+    /// ```
+    #[must_use]
+    pub fn ist_ueberlauf(&self) -> bool {
+        matches!(
+            self,
+            Self::Ueberlauf(_)
+                | Self::Engine(EngineFehler1::Ueberlauf(_))
+                | Self::EngineTeil2(EngineFehler2::Basis(EngineFehler1::Ueberlauf(_)))
+        )
+    }
 }
 
 /// Die drei Python-Parameter `store`, `bindung`, `nur_bestaetigt` der Instanz-Summen.

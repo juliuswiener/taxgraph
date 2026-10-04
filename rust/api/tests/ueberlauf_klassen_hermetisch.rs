@@ -1,9 +1,13 @@
-//! Die Fehlerklasse eines Ueberlaufs an der HTTP-Naht (`rust/api`): wo Python mit beliebig grossen `int` weiterrechnet und Rust
-//! in `i64` ueberlaeuft, antwortet `GET /fall/{id}/stand` und `/ergebnis` mit 500 und der Klasse `OverflowError`, nie mit
-//! `ValueError` und nie mit einer Zahl (`api/src/stand.rs`, `slot_klasse`, `intervall_fehler`, `bescheid_fehler`). Standardlauf,
-//! ohne Python-Server.
+//! Der Ueberlauf an der HTTP-Naht (`rust/api`): wo Python mit beliebig grossen `int` weiterrechnet und Rust in `i64` ueberlaeuft,
+//! antwortet `GET /fall/{id}/stand`, `/fragen`, `/ergebnis` und `/deklaration` mit 422 und der Meldung "Ein eingegebener Betrag ist zu
+//! gross ..." -- nie mit einer Zahl, nie mit einem 500 (`api/src/stand.rs`, `ueberlauf_422`, `intervall_fehler`, `bescheid_fehler`;
+//! Bericht h8-befund-12). Seit h8-befund-12 ist das ein 422: ein Betrag, den `POST /event` annimmt (z. B. `bruttoarbeitslohn` =
+//! `i64::MIN`), ist eine Eingabe des Nutzers und kein Programmfehler; vorher antwortete Rust 500 `OverflowError`/`CatalaError`.
+//! Standardlauf, ohne Python-Server.
 //!
-//! Die Mutanten (Bericht h8-hermetisch5, Bestand 0aa91677, `cargo test -p api`, 201 passed / 0 failed): A1 `slot_klasse`
+//! Die Mutanten A1/A2/A4 (Bericht h8-hermetisch5, Bestand 0aa91677, `cargo test -p api`, 201 passed / 0 failed; damals mit
+//! 500 `OverflowError`; seit h8-befund-12 liegen ihre Stellen hinter dem 422 und sind nur noch ueber `Dezimal`/`NichtCentGenau`
+//! erreichbar): A1 `slot_klasse`
 //! (`SlotFehler::Slot(b)`: `unwrap_or("OverflowError")` -> `"ValueError"`), A2 `slot_klasse` (`SlotFehler::Ueberlauf` ->
 //! `"ValueError"`), A4 `bescheid_fehler` (`unwrap_or("OverflowError")` -> `"ValueError"`), A8/A9/A10 Guard-Jahr von `stand`/`fragen`/
 //! `ergebnis` und A11 Ring-Jahr von `deklaration` (`try_from(..).ok()` -> `as u16`); alle sieben ueberleben den Bestand und werden
@@ -39,6 +43,9 @@ use http_body_util::BodyExt;
 use serde_json::{json, Value};
 use store::{BindungNachschlag, NeuesEvent, Store};
 use tower::ServiceExt;
+
+/// Der Anfang der 422-Meldung bei einem Ueberlauf (`api/src/stand.rs`, `ueberlauf_422`).
+const MELDUNG: &str = "Ein eingegebener Betrag ist zu groß für die Berechnung";
 
 struct Dienst {
     zustand: Zustand,
@@ -178,18 +185,19 @@ async fn route(d: &Dienst, id: &str, route: &str) -> (u16, Value) {
     sende(d, "GET", &format!("/fall/{id}/{route}"), None).await
 }
 
-/// A1, A2, A4 (Konvention, kein Orakel): ein Ueberlauf an der Naht ist ein 500 mit der Klasse `OverflowError`, nie `ValueError`.
+/// A1, A2, A4 (Konvention, kein Orakel): ein Ueberlauf an der Naht ist ein 422 mit der Meldung "Ein eingegebener Betrag ist zu
+/// gross ...", nie ein 500 und nie eine Zahl (h8-befund-12; vorher 500 `OverflowError`).
 /// Python (`orakel_ap5.py`, Bereichspruefung des Stores aus, `api.stand`/`api.ergebnis` im selben Prozess) antwortet in ALLEN
 /// Faellen unten mit 200 und einer Zahl (`bestaetigt`, `zahl_cent` 0, ausser der Kontrolle: 661100); der 500 ist die fail-closed-
-/// Konvention von Rust (`stand.rs`: "wo Python mit beliebig grossen `int` weiterrechnet und Rust ueberlaeuft"), also "zwischen",
-/// und der Text hinter der Klasse ist Rust-eigen. Die Klasse ist die Messgroesse:
+/// Konvention von Rust (`stand.rs`: "GEWOLLTE ABWEICHUNG ... Python rechnet mit beliebig grossen `int` weiter"), also "zwischen",
+/// und der Text der Meldung ist Rust-eigen. Der Status und der Meldungsanfang sind die Messgroesse:
 /// - A2 `slot_klasse(SlotFehler::Ueberlauf)`: `basis_kv` `i64::MAX` plus `basis_pv` 1 (derselbe Slot `basis_kv_pv`), Route `stand`;
 /// - A4 `bescheid_fehler`: dieselben Felder, Route `ergebnis` (`feste_zahl` meldet `Ueberlauf("feste_zahl")`);
 /// - A1 `slot_klasse(SlotFehler::Slot(Ueberlauf))`: `tage_24h` `i64::MAX`, die Addition im Ring ueberlaeuft, Route `stand`.
 ///
 /// Die Gegenproben (`basis_pv` 0, keine Aenderung) liefern 200 und die Python-Zahl.
 #[tokio::test]
-async fn ein_ueberlauf_an_der_naht_ist_ein_overflow_error_und_nie_ein_value_error() {
+async fn ein_ueberlauf_an_der_naht_ist_ein_422_mit_klarer_meldung_und_nie_ein_500() {
     let d = dienst();
     let m = i64::MAX;
     fall_geaendert(&d, "ok", &[]).await;
@@ -218,18 +226,18 @@ async fn ein_ueberlauf_an_der_naht_ist_ein_overflow_error_und_nie_ein_value_erro
             falsch.push(format!("Gegenprobe {id} stand: {s} {a}"));
         }
     }
-    // (Fall, Route, Klasse und Text-Anfang des `fehler`-Felds)
+    // (Fall, Route): 422 und der Anfang der Meldung
     let ueberlaeufe = [
-        ("slot", "stand", "OverflowError: "),
-        ("slot", "ergebnis", "OverflowError: "),
-        ("ring", "stand", "OverflowError: "),
-        ("ring", "ergebnis", "OverflowError: "),
+        ("slot", "stand"),
+        ("slot", "ergebnis"),
+        ("ring", "stand"),
+        ("ring", "ergebnis"),
     ];
-    for (id, r, anfang) in ueberlaeufe {
+    for (id, r) in ueberlaeufe {
         let (s, a) = route(&d, id, r).await;
         let fehler = a["fehler"].as_str().unwrap_or("");
-        if s != 500 || !fehler.starts_with(anfang) {
-            falsch.push(format!("{id} {r}: {s} {a}, erwartet 500 mit {anfang:?}"));
+        if s != 422 || !fehler.starts_with(MELDUNG) {
+            falsch.push(format!("{id} {r}: {s} {a}, erwartet 422 mit {MELDUNG:?}"));
         }
     }
     assert!(falsch.is_empty(), "{falsch:#?}");
@@ -242,7 +250,7 @@ async fn ein_ueberlauf_an_der_naht_ist_ein_overflow_error_und_nie_ein_value_erro
 /// (`orakel_a11.py`: Python, `api.deklaration`, Bereichspruefung des Stores aus, Akte mit Jahr 67561 und -63511 und demselben Event,
 /// antwortet mit dem `ValueError` "Veranlagungsjahr <vz> ist kein Steuerjahr ..."). Die Akte wird als `an_gesamt` mit Jahr 2025
 /// angelegt und danach von Hand auf Scheibe `ep` (kein Guard) und das Jahr umgeschrieben, wie im Orakel. Gegenprobe: Jahr 2025
-/// meldet denselben Ring-Ueberlauf als `OverflowError` -- sonst wuerde der Test nichts messen.
+/// meldet denselben Ring-Ueberlauf als 422 mit der Betragsmeldung (vorher `OverflowError`) -- sonst wuerde der Test nichts messen.
 #[tokio::test]
 async fn deklaration_mit_ring_ueberlauf_lehnt_ein_jahr_ausserhalb_u16_zuerst_ab() {
     let d = dienst();
@@ -266,13 +274,20 @@ async fn deklaration_mit_ring_ueberlauf_lehnt_ein_jahr_ausserhalb_u16_zuerst_ab(
         .unwrap();
         let (s, a) = route(&d, &id, "deklaration").await;
         let fehler = a["fehler"].as_str().unwrap_or("");
-        let erwartet = if ok {
-            "OverflowError: ".to_owned()
+        let (status, erwartet) = if ok {
+            (422, MELDUNG.to_owned())
         } else {
-            format!("ValueError: Veranlagungsjahr {vz} ist kein Steuerjahr (erwartet 2024..2100). ")
+            (
+                500,
+                format!(
+                    "ValueError: Veranlagungsjahr {vz} ist kein Steuerjahr (erwartet 2024..2100). "
+                ),
+            )
         };
-        if s != 500 || !fehler.starts_with(&erwartet) {
-            falsch.push(format!("Jahr {vz}: {s} {a}, erwartet 500 mit {erwartet:?}"));
+        if s != status || !fehler.starts_with(&erwartet) {
+            falsch.push(format!(
+                "Jahr {vz}: {s} {a}, erwartet {status} mit {erwartet:?}"
+            ));
         }
     }
     assert!(falsch.is_empty(), "{falsch:#?}");
@@ -368,6 +383,134 @@ async fn ein_jahr_ausserhalb_u16_mit_kaputtem_guard_feld_meldet_den_jahresfehler
                     "Jahr {vz} {r}: {s} {a}, erwartet 500 mit {erwartet:?}"
                 ));
             }
+        }
+    }
+    assert!(falsch.is_empty(), "{falsch:#?}");
+}
+
+/// Legt Fall `id` (`an_gesamt`, 2025) an und schreibt den vollen Kegel ueber `POST /fall/{id}/event`, wie die Oberflaeche es tut
+/// -- mit der Bereichspruefung des Stores, ohne den Umweg ueber die Akte. `Err` nennt das erste Feld, das der Store abweist.
+async fn fall_ueber_event(
+    d: &Dienst,
+    id: &str,
+    aendern: &[(&'static str, Value)],
+) -> Result<(), String> {
+    let rumpf = json!({"fall_id": id, "scheibe": "an_gesamt", "veranlagungszeitraum": 2025});
+    let (status, antwort) = sende(d, "POST", "/fall", Some(&rumpf)).await;
+    assert_eq!(status, 201, "POST /fall: {antwort}");
+    let mut felder = kegel_an_voll();
+    for (f, w) in aendern {
+        felder.retain(|(g, _)| g != f);
+        felder.push((f, w.clone()));
+    }
+    for (feld, wert) in felder {
+        let event = json!({
+            "feld_id": feld, "wert": wert, "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "schreiber": "ui:laie", "signal": {"signal_1": null, "signal_2": format!("ok@{feld}")},
+        });
+        let (s, a) = sende(d, "POST", &format!("/fall/{id}/event"), Some(&event)).await;
+        if s != 201 {
+            return Err(format!("{feld}: {s} {a}"));
+        }
+    }
+    Ok(())
+}
+
+/// h8-befund-12: ein Betrag, den `POST /event` annimmt und den die Rechnung nicht in `i64` fasst, ist ein 422 mit der Betragsmeldung --
+/// auf `stand`, `fragen` und `ergebnis`, nie ein 500 (vorher `CatalaError` oder `OverflowError`, je nach Accessor). Gemessen mit
+/// echtem Python-Server und echtem Rust-Server (beide `TAXGRAPH_NO_AUTH=1`, Skripte `mess12b.py`, `mess12c.py`, 22 Zahlfelder je
+/// `i64::MAX`, `i64::MIN`, ±10^17): Python antwortet in jedem dieser Faelle auf allen Routen mit 200 und rechnet weiter (`ergebnis`
+/// `bestaetigt`, `zahl_cent` 0 bzw. 661100); der 422 ist Rusts gewollte Abweichung ("zwischen": nur das Zwischenprodukt Euro in Cent
+/// liegt ausserhalb `i64`). Elf Eingaben erreichen die Stelle: `bruttoarbeitslohn` `i64::MIN`, `ep_oepnv_kosten` `i64::MAX`,
+/// `ep_entfernung_km` `i64::MAX` und 10^17 (nur `ergebnis`, Zwischenprodukt `ab21_roh`), und sieben Vorsorgebetraege `i64::MIN`.
+/// Alle anderen Zahlfelder weist `POST /event` selbst ab (Bereich, Vorzeichen) oder die Rechnung kommt durch.
+///
+/// Gegenproben ("knapp", Python = Rust): `bruttoarbeitslohn` `i64::MAX` (`zahl_cent` 4150517416582623200), 10^17 (44999999997974100)
+/// und -10^17 (0), `basis_kv` `i64::MAX` (0) und -10^17 (661100) rechnen auf allen drei Routen mit 200. Der Store weist
+/// `ep_arbeitstage` `i64::MAX` ab (422, Bereich 0..=366): der `CatalaError` der Akte von Hand ist ueber HTTP nicht erreichbar.
+#[tokio::test]
+async fn ein_betrag_ausserhalb_i64_ueber_post_event_ist_ein_422_und_nie_ein_500() {
+    let d = dienst();
+    let (hoch, tief) = (i64::MAX, i64::MIN);
+    let vorsorge = [
+        "basis_kv",
+        "basis_pv",
+        "vorsorge_arbeitslosenversicherung",
+        "vorsorge_erwerbsunfaehigkeit",
+        "vorsorge_unfall_haftpflicht",
+        "vorsorge_rv_alt_mit_ueberschuss",
+        "vorsorge_rv_alt_ohne_ueberschuss",
+    ];
+    // (Feld, Wert, Routen mit 422); die uebrigen der drei Routen antworten 200 wie Python
+    let mut ueberlaeufe: Vec<(&'static str, i64, &[&str])> = vec![
+        ("bruttoarbeitslohn", tief, &["stand", "fragen", "ergebnis"]),
+        ("ep_oepnv_kosten", hoch, &["stand", "fragen", "ergebnis"]),
+        ("ep_entfernung_km", hoch, &["ergebnis"]),
+        ("ep_entfernung_km", 10_i64.pow(17), &["ergebnis"]),
+    ];
+    ueberlaeufe.extend(
+        vorsorge
+            .iter()
+            .map(|f| (*f, tief, &["stand", "fragen", "ergebnis"][..])),
+    );
+    let mut falsch = Vec::new();
+    for (i, (feld, wert, routen)) in ueberlaeufe.iter().enumerate() {
+        let id = format!("u{i}");
+        if let Err(e) = fall_ueber_event(&d, &id, &[(feld, json!(wert))]).await {
+            falsch.push(format!("{feld}={wert}: POST /event abgewiesen: {e}"));
+            continue;
+        }
+        for r in ["stand", "fragen", "ergebnis"] {
+            let (status, antwort) = route(&d, &id, r).await;
+            let fehler = antwort["fehler"].as_str().unwrap_or("");
+            let ok = if routen.contains(&r) {
+                status == 422
+                    && fehler.starts_with(MELDUNG)
+                    && !fehler.contains(&wert.unsigned_abs().to_string())
+            } else {
+                status == 200
+            };
+            if !ok {
+                falsch.push(format!("{feld}={wert} {r}: {status} {antwort}"));
+            }
+        }
+    }
+    // Gegenproben: Python = Rust, 200 auf allen drei Routen; `ergebnis` traegt die Python-Zahl.
+    let knapp: [(&'static str, i64, i64); 5] = [
+        ("bruttoarbeitslohn", hoch, 4_150_517_416_582_623_200),
+        ("bruttoarbeitslohn", 10_i64.pow(17), 44_999_999_997_974_100),
+        ("bruttoarbeitslohn", -(10_i64.pow(17)), 0),
+        ("basis_kv", hoch, 0),
+        ("basis_kv", -(10_i64.pow(17)), 661_100),
+    ];
+    for (i, (feld, wert, zahl)) in knapp.iter().enumerate() {
+        let id = format!("k{i}");
+        if let Err(e) = fall_ueber_event(&d, &id, &[(feld, json!(wert))]).await {
+            falsch.push(format!("{feld}={wert}: POST /event abgewiesen: {e}"));
+            continue;
+        }
+        for r in ["stand", "fragen", "ergebnis"] {
+            let (status, antwort) = route(&d, &id, r).await;
+            let ok = status == 200
+                && (r != "ergebnis"
+                    || (antwort["grund"] == "bestaetigt" && antwort["zahl_cent"] == *zahl));
+            if !ok {
+                falsch.push(format!("Gegenprobe {feld}={wert} {r}: {status} {antwort}"));
+            }
+        }
+    }
+    // Der Store weist die Felder ab, deren Ueberlauf nur ueber eine Akte von Hand erreichbar ist.
+    for (feld, wert) in [
+        ("ep_arbeitstage", hoch),
+        ("tage_24h", hoch),
+        ("ep_oepnv_kosten", tief),
+    ] {
+        match fall_ueber_event(&d, &format!("a{feld}"), &[(feld, json!(wert))]).await {
+            Err(e) if e.starts_with(&format!("{feld}: 422 ")) => {}
+            r => falsch.push(format!(
+                "{feld}={wert}: 422 vom Store erwartet, gekommen {r:?}"
+            )),
         }
     }
     assert!(falsch.is_empty(), "{falsch:#?}");

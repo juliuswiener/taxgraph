@@ -17,10 +17,27 @@ use crate::anzeige::{anzeige_metadaten, badge};
 use crate::fehler::ApiFehler;
 use crate::zustand::Zustand;
 
+/// 422 fuer einen Betrag, den die Rechnung nicht fasst.
+///
+/// GEWOLLTE ABWEICHUNG (Korrektheit vor Paritaet, `REWRITE_PLAN.md` §4): Python rechnet mit beliebig
+/// grossen `int` weiter und antwortet 200 mit einer Zahl; Rust rechnet in `i64`. Ein Betrag, der dort
+/// ueberlaeuft (z. B. `bruttoarbeitslohn` = `i64::MIN` ueber `POST /event`, das ihn annimmt), ist eine
+/// Eingabe des Nutzers und kein Programmfehler: 422 mit einer Meldung, die sagt, dass ein Betrag zu gross
+/// ist, statt eines 500 mit einer Python-Klasse, die es dort nie gab. Der Text traegt keinen Wert aus dem Store.
+fn ueberlauf_422(e: &dyn std::fmt::Display) -> ApiFehler {
+    ApiFehler::status(
+        422,
+        format!(
+            "Ein eingegebener Betrag ist zu groß für die Berechnung — bitte prüfe die Beträge. ({e})"
+        ),
+    )
+}
+
 /// Die Python-Klasse der Ausnahme, die `_dispatch` an `{"fehler": "Klasse: Text"}` baut.
 ///
-/// PARITÄT: wo Python mit beliebig grossen `int` weiterrechnet und Rust ueberlaeuft, gibt es hier
-/// `OverflowError` (500) statt einer Zahl. Das ist ehrlicher als ein stilles Wrap.
+/// Ein `i64`-Ueberlauf kommt hier nie an: [`intervall_fehler`] und [`bescheid_fehler`] fangen ihn
+/// vorher als 422 ab ([`ueberlauf_422`]). Was bleibt, hat eine Python-Klasse oder keine
+/// (`Dezimal`, `NichtCentGenau`) und gilt als `OverflowError`.
 fn slot_klasse(e: &SlotFehler<BescheidFehler>) -> &'static str {
     match e {
         SlotFehler::Slot(b) => b.python_klasse().unwrap_or("OverflowError"),
@@ -33,7 +50,10 @@ fn slot_klasse(e: &SlotFehler<BescheidFehler>) -> &'static str {
 pub(crate) fn intervall_fehler(e: &IntervallFehler<SlotFehler<BescheidFehler>>) -> ApiFehler {
     match e {
         IntervallFehler::LeereAchse(_) => ApiFehler::unerwartet("ValueError", e.to_string()),
-        IntervallFehler::Ueberlauf(_) => ApiFehler::unerwartet("OverflowError", e.to_string()),
+        IntervallFehler::Ueberlauf(_) | IntervallFehler::Bescheid(SlotFehler::Ueberlauf(_)) => {
+            ueberlauf_422(e)
+        }
+        IntervallFehler::Bescheid(SlotFehler::Slot(b)) if b.ist_ueberlauf() => ueberlauf_422(e),
         IntervallFehler::Bescheid(s) => ApiFehler::unerwartet(slot_klasse(s), e.to_string()),
     }
 }
@@ -237,5 +257,8 @@ pub fn stand(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort, Ap
 }
 
 pub(crate) fn bescheid_fehler(e: &BescheidFehler) -> ApiFehler {
+    if e.ist_ueberlauf() {
+        return ueberlauf_422(e);
+    }
     ApiFehler::unerwartet(e.python_klasse().unwrap_or("OverflowError"), e.to_string())
 }
