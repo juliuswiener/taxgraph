@@ -139,6 +139,12 @@ fn ergebnis(f: &Fall) -> Ausgang {
 
 /// `feste_zahl` allein, ohne den K2-Guard davor: so sieht der Rahmen einen Fall, den der Guard durchliess.
 fn ohne_guard(f: &Fall) -> Ausgang {
+    ohne_guard_im(f, VZ)
+}
+
+/// Wie [`ohne_guard`] im Veranlagungszeitraum `vz`: das Steuerjahr, das `tarif::rahmen` an `auswerten` reicht, kommt
+/// aus diesem Parameter von `feste_zahl`.
+fn ohne_guard_im(f: &Fall, vz: Vz) -> Ausgang {
     let kegel = f.cfg.kegel(|d| panic!("KONTROLLE: Kegel aus {d}")).unwrap();
     let kegel: Vec<&str> = kegel.iter().map(String::as_str).collect();
     let umg = Umgebung {
@@ -146,7 +152,7 @@ fn ohne_guard(f: &Fall) -> Ausgang {
         index: &f.index,
         params: params(),
     };
-    match feste_zahl(&f.felder, &f.cfg, VZ, &kegel, &umg, Some(&f.store), None) {
+    match feste_zahl(&f.felder, &f.cfg, vz, &kegel, &umg, Some(&f.store), None) {
         Ok(Ok(z)) => Ausgang::Zahl(z.zahl.get(), Box::new(z.extras.kette)),
         Ok(Err(k)) => Ausgang::Anders(format!("ohne Zahl: {:?}", k.grund)),
         Err(e) => Ausgang::Anders(format!("{e:?}")),
@@ -442,6 +448,21 @@ fn rahmen_ohne_guard_meldet_die_sperre_statt_zu_raten() {
         a,
         Ausgang::Anders("KindFreibetragGesperrt(KindZeitraumUnlesbar)".to_owned())
     );
+}
+
+/// Das Steuerjahr, das `tarif::rahmen` durchreicht, bindet den 29.02.: ueber den Weg des Rahmens (`feste_zahl`, ohne
+/// Guard) ist `29.02-31.12` im Schaltjahr 2024 rechenbar und 2025 und 2026 gesperrt. Im Schaltjahr gilt der
+/// Zeitraum Februar bis Dezember: elf Monate Kindergeld, 11 x 250 Euro (`params/2024/kindergeld_p66.yaml`).
+/// Faengt ein Jahr daneben (`jahr() + 1`, `jahr() - 1`, ein fester Wert) in `tarif.rs` ab: 2024 wird gesperrt oder
+/// 2025 rechenbar.
+#[test]
+fn rahmen_bindet_den_schalttag_an_das_steuerjahr() {
+    let schalttag = kind_n(1, ("1", "29.02-31.12"), ("1", GANZ));
+    let im_jahr = |vz: Vz| ohne_guard_im(&fall(Scheibe::Gesamt, &basis_einzel(1), &schalttag), vz);
+    assert_eq!(kindergeld(&kette(im_jahr(Vz::Vz2024))), 2_750);
+    let gesperrt = Ausgang::Anders("KindFreibetragGesperrt(KindZeitraumUnlesbar)".to_owned());
+    assert_eq!(im_jahr(Vz::Vz2025), gesperrt);
+    assert_eq!(im_jahr(Vz::Vz2026), gesperrt);
 }
 
 /// Wie die Nachbar-Waechter (Python `store is not None and bindung is not None`): ohne Bindung liest der Guard keine
