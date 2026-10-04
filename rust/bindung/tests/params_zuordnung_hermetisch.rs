@@ -638,3 +638,23 @@ fn datei_ohne_endung_im_jahresverzeichnis_wird_uebergangen() {
     let p = w.lade();
     assert_eq!(p.grundfreibetrag(Vz::Vz2025).unwrap(), Euro::new(12_096));
 }
+
+/// `dezimalzahl` liest eine YAML-Ganzzahl als `Decimal` aus `i64`, nicht ueber `f64`: ab 2^53 verliert `f64` die letzte Stelle
+/// (Mutationsmessung N4e: `return Some(Decimal::from(i))` entfernt, der Weg ueber `as_f64()` lieferte fuer 2^53 + 1 den Wert 2^53).
+#[test]
+fn dezimalzahl_aus_grosser_ganzzahl_bleibt_exakt() {
+    for (text, soll) in [
+        ("9007199254740993", Decimal::from(9_007_199_254_740_993_i64)),
+        ("9223372036854775807", Decimal::from(i64::MAX)),
+        ("83.5", Decimal::new(835, 1)),
+    ] {
+        let w = Wurzel::neu("dezimal-gross");
+        w.ersetze(
+            "kohorten/rente_besteuerungsanteil_p22.yaml",
+            "2025: {besteuerungsanteil_prozent: 83.5}",
+            &format!("2025: {{besteuerungsanteil_prozent: {text}}}"),
+        );
+        let satz = w.lade().rente_besteuerungsanteil(2025).unwrap().unwrap();
+        assert_eq!(satz.get(), soll, "{text}");
+    }
+}
