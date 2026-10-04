@@ -4,12 +4,14 @@
 //!
 //! Python-`dict`-Semantik bleibt erhalten: ein Schluessel ist `None`, solange kein Lauf ihn gesetzt hat
 //! (`Schluessel absent = nicht rechenbar`, `_feste_zahl`), und spaetere Laeufe ueberschreiben.
+use bindung::Params;
 use domain::{Cent, Euro, PyWert};
-use engine::zugriff::teil1::ermaessigungen::{p36_abschlusszahlung, P36AbschlusszahlungEingabe};
-use engine::zugriff::teil2::gesamt::GesamtKette;
+use engine::zugriff::teil1::ermaessigungen::{P36AbschlusszahlungEingabe, p36_abschlusszahlung};
+use engine::zugriff::teil2::gesamt::{GesamtKette, gesamt_kette};
 
 use super::rechnen::R;
-use crate::{wert, zahl_int, Felder};
+use super::tarif::Endstand;
+use crate::{Felder, wert, zahl_int};
 use domain::Zustand;
 
 /// Wer die Guenstigerpruefung § 31 gewonnen hat (`kette["p31"]["guenstiger"]`).
@@ -171,12 +173,31 @@ pub fn abschlusszahlung_cent(felder: &Felder, zahl_cent: Cent) -> R<Option<Cent>
 /// setze_kette(&mut extras, kette(9_000), Euro::new(9_000));
 /// assert!(extras.kette.is_some());
 /// ```
-// ponytail: prueft nur die letzte Stufe (Python-Befund) — heben sich zwei Korrekturen auf den Euro
-// genau auf, stimmen die Zwischenstufen nicht. Upgrade: die Kette aus dem Endstand speisen.
+// Seit dem Endstand-Fix (p24a) ist das das Netz, nicht die Entschuldigung: die Kette kommt aus dem
+// Endstand des Laufs (s. `kette_endstand`), also muss diese Gleichung immer aufgehen. Spricht sie
+// an, fehlt einer Seite eine Korrektur.
 pub fn setze_kette(extras: &mut Extras, kette: Kette, est: Euro) {
     if kette.festzusetzende_est == est {
         extras.kette = Some(kette);
     }
+}
+
+/// Die Rechenweg-Kette aus dem ENDSTAND eines § 31-Laufs statt aus dem Vor-Korrektur-Rohstand
+/// (Python `bescheid_zweige._kette_endstand`).
+///
+/// Die drei oberen Stufen rechnet der Gesamtfall auf dem finalen `g2` desselben Laufs — § 34
+/// (modifizierter Tarif), § 35 (`steuerermaessigungen`) und § 31 (`freibetraege_kinder`) stecken in
+/// diesem Dict. Die letzte Stufe ersetzt der Endwert des Laufs: nur er enthaelt die Terme
+/// AUSSERHALB der Engine, den § 32b-Zuschlag (Post-Engine-Wrapper) und die § 32d-Abgeltungsteuer
+/// (`kap_st_k`). Vorher speiste die Kette das Basis-`g` und endete um diese Terme zu niedrig;
+/// `setze_kette` verwarf sie still (30.000 EUR Kapitalertraege: 13.924 statt 21.174 EUR).
+///
+/// # Errors
+/// Wie [`engine::zugriff::teil2::gesamt::gesamt_kette`].
+pub(super) fn kette_endstand(e: &Endstand, p: &Params) -> R<Kette> {
+    let mut kette = Kette::from(gesamt_kette(&e.g2, p)?);
+    kette.festzusetzende_est = e.wert;
+    Ok(kette)
 }
 
 /// `f"{n:,}".replace(",", ".")` — Tausenderpunkte wie Python.

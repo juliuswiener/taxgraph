@@ -2,12 +2,12 @@
 //! Bescheid bei gegebenem § 32-Abs.-6-Kinderfreibetrag (`bescheid_zweige.py:859-1013`).
 //! Reihenfolge: § 34 → § 35 → Est → § 32b → Kapital § 32d. (Der Rentner-Zweig macht § 32b NACH Kapital.)
 use domain::{Cent, Euro};
-use engine::zugriff::teil2::est::{tarif_est, TarifEingabe};
-use engine::zugriff::teil2::gesamt::{gesamt_tarifliche, gesamt_zve, GesamtfallEingabe};
-use engine::zugriff::teil2::sonstige::{p32b_1, ProgressionsvorbehaltEingabe};
+use engine::zugriff::teil2::est::{TarifEingabe, tarif_est};
+use engine::zugriff::teil2::gesamt::{GesamtfallEingabe, gesamt_tarifliche, gesamt_zve};
+use engine::zugriff::teil2::sonstige::{ProgressionsvorbehaltEingabe, p32b_1};
 
-use super::rechnen::{add, mal, mal_div, max0, sub, R};
-use super::tarif::{kapital, p34_chooser, p35_credit, Lage, SolzInfo};
+use super::rechnen::{R, add, mal, mal_div, max0, sub};
+use super::tarif::{Endstand, Lage, SolzInfo, kapital, p34_chooser, p35_credit};
 
 /// § 32b Post-Engine-Wrapper (Progressionsvorbehalt) mit nachgezogenem § 35-Deckel-3. `est_raw` ist
 /// die ESt des `g2` ohne § 32b; Rueckgabe `(est_raw', est_ohne_p35)`.
@@ -54,6 +54,10 @@ fn p32b_wrapper(l: &Lage<'_>, g2: &GesamtfallEingabe, est_raw: Euro) -> R<(Euro,
 /// Schreibt `info` (SolZ-Zwischenstand) und — im § 32d-Fall — `kist_kap_cent`/`kap_guenstiger_gewonnen`
 /// in die Extras, jeweils nur im Lauf mit Freibetrag > 0 oder ohne Kinder.
 ///
+/// `ende` bekommt JEDEN Lauf seinen Endstand (finale Eingabe + zurueckgegebener Wert) — die
+/// Rechenweg-Kette wird daraus gespeist (Python `kette_end`), nicht aus `g`. Anders als `info`
+/// gilt er auch fuer den fb=0-Lauf bei Kindern (Kindergeld-Sieg).
+///
 /// # Errors
 /// Accessor- und Ueberlauf-Fehler.
 pub(super) fn festzusetzende(
@@ -61,6 +65,7 @@ pub(super) fn festzusetzende(
     g: &GesamtfallEingabe,
     freibetrag: Euro,
     info: &mut Option<SolzInfo>,
+    ende: &mut Option<Endstand>,
 ) -> R<Euro> {
     let g2 = GesamtfallEingabe {
         freibetraege_kinder: freibetrag,
@@ -73,8 +78,8 @@ pub(super) fn festzusetzende(
         g2.steuerermaessigungen = add(g2.steuerermaessigungen, credit)?;
     }
     let mut est_raw = l.est(&g2)?; // KEIN Kapital (est_regulaer_ohne_kap)
-                                   // § 51a Abs. 2 S. 3: die KiSt-Basis traegt die § 35-Anrechnung NICHT; NEU rechnen statt zurueck-
-                                   // zuaddieren (der Kredit ist nur bis zum Catala-Deckel wirksam).
+    // § 51a Abs. 2 S. 3: die KiSt-Basis traegt die § 35-Anrechnung NICHT; NEU rechnen statt zurueck-
+    // zuaddieren (der Kredit ist nur bis zum Catala-Deckel wirksam).
     let mut est_ohne_p35 = if l.pe_active() || credit.get() == 0 {
         est_raw
     } else {
@@ -95,6 +100,7 @@ pub(super) fn festzusetzende(
                 est_ohne_p35,
             });
         }
+        *ende = Some(Endstand { g2, wert: est_raw });
         return Ok(est_raw);
     }
     let (_est_mit, kap) = kapital(l, &g2, est_raw)?;
@@ -110,5 +116,6 @@ pub(super) fn festzusetzende(
             e.kap_guenstiger_gewonnen = Some(kap.guenstiger);
         });
     }
+    *ende = Some(Endstand { g2, wert: result });
     Ok(result)
 }
