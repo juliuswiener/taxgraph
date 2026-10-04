@@ -1064,6 +1064,19 @@ mod tests {
         assert!(!iban_muster("DE8937"[..3].to_string().as_str()));
     }
 
+    /// Die Laengengrenzen 5 bis 34 Zeichen, gegen Pythons `est_mapping._IBAN_PATTERN`
+    /// (`re.compile(r"^[A-Z]{2}[0-9]{2}[0-9A-Z]{1,30}$").match`, `est_mapping.py:688`). Gemessen 2026-10-04 am
+    /// Python-Muster mit `"DE89" + "0" * (n - 4)`: n = 4 Nein, 5 Ja, 33 Ja, 34 Ja, 35 Nein. Die Mutationsmessung
+    /// (`bescheid-elster-mutation`, D01) liess `5..=34` -> `5..34` in jedem Lauf gruen, auch mit `PARITY=1`: keine IBAN
+    /// mit 34 Zeichen kam vor. Die Pruefziffer ist hier nicht Gegenstand (`iban_pruefziffer_gueltig` prueft sie getrennt).
+    #[test]
+    fn iban_muster_laengengrenzen_wie_python() {
+        let iban = |n: usize| format!("DE89{}", "0".repeat(n - 4));
+        for (n, python) in [(4, false), (5, true), (33, true), (34, true), (35, false)] {
+            assert_eq!(iban_muster(&iban(n)), python, "Laenge {n}");
+        }
+    }
+
     /// Die Jahresregel selbst (`null_unzulaessig`, `est_mapping.py:198-229`). Ohne diesen Test
     /// bliebe die Regel unbelegt: `deklariere` allein prueft nur, dass sie ueberhaupt greift.
     ///
