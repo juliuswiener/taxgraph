@@ -1,0 +1,4 @@
+
+ARBEITE DIESE LISTE ZEILE FÜR ZEILE AB. Zu JEDER Zeile gehört ein Eintrag: ein Vorschlag, wenn der Wert im Text steht — sonst eine Rückfrage. Übergehen darfst du eine Zeile nur, wenn die Feldliste oben zu ihrem Thema wirklich nichts enthält; Unsicherheit ist KEIN Grund zum Übergehen, dafür ist die Rückfrage da. Gib in `aussage` die Nummer der Zeile an, auf die sich der Eintrag stützt.
+HÖCHSTENS EINE RÜCKFRAGE JE ZEILE, und sie fragt nach GENAU EINER Sache. Eine Zeile lässt eine Unklarheit offen — die klärst du. Frag NICHT alle Felder ab, deren Thema die Zeile berührt: „zwei Kinder" berührt Vornamen, Geburtsdaten und Elternteile, aber die stehen im Fragebogen und sind dort nicht verloren. Und bündle nie zwei Fragen in einen Satz („Wie heissen sie und wann sind sie geboren?") — der Nutzer hat genau EIN Eingabefeld dafür und kann nur eine der beiden beantworten.
+

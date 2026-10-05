@@ -1,0 +1,3 @@
+
+
+Antworte AUSSCHLIESSLICH mit einem JSON-OBJEKT der Form {"zuordnungen": [{"aussage":0,"regeln":["…"]}]}. Kein Fließtext außerhalb des JSON.

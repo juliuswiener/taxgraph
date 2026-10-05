@@ -1,15 +1,17 @@
-//! GENERIERT von `tools/parity/gen_enum_labels.py` aus `produkt/haut/api_constants.py`.
-//! NICHT von Hand pflegen. Neu erzeugen:
+//! Von Hand gepflegt (seit Stufe 2; der Erzeuger ist geloescht).
 //!
-//! ```text
-//! python3 tools/parity/gen_enum_labels.py
-//! ```
+//! Ursprung: `ENUM_LABELS` aus `produkt/haut/api_constants.py` samt der abgeleiteten Schluessel
+//! am Ende des Moduls, Stand `2dd056a6`. Verlauf des Erzeugers:
+//! `git show 2dd056a6:tools/parity/gen_enum_labels.py`.
 //!
-//! `ENUM_LABELS` (`api_constants.py:951`): je Enum-Feld die Anzeigetexte seiner Werte, in
-//! Pythons Einfuegereihenfolge, samt der abgeleiteten Schluessel am Ende des Moduls.
-//! `#[rustfmt::skip]` haelt das Generator-Layout, damit ein erneuter Lauf byte-stabil bleibt.
+//! Je Enum-Feld die Anzeigetexte seiner Werte, in Pythons Einfuegereihenfolge.
+//! `#[rustfmt::skip]` haelt das Tabellenlayout.
 //!
-//! Drift faengt `enum_labels_gleich` (`rust/parity/tests/api_http_paritaet.rs`).
+//! Wer einen Anzeigetext absichtlich aendert, traegt die Abweichung mit Grund in die
+//! Abweichungsliste ein (`rust/fixtures/README.md`); `enum_labels_gleich`
+//! (`rust/parity/tests/api_http_paritaet.rs`, nur mit `PARITY=1`) vergleicht weiter mit Python.
+//! Dass jeder Wert einen Text hat und keiner dem Rohwert gleicht, prueft
+//! `rust/api/tests/enum_labels_vollstaendig.rs`.
 
 /// `feld_id -> [(enum-wert, anzeigetext)]`.
 #[rustfmt::skip]
