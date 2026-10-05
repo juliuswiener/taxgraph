@@ -4,12 +4,14 @@
 //!
 //! Warum ein Text-Waechter: Ein Rueckfall auf `produkt/bindung` kompiliert, laeuft und bleibt gruen,
 //! solange beide Verzeichnisse gleich sind. Er faellt erst auf, wenn ein Feld nur in `daten` steht
-//! und ein Test es nicht sieht. Der Waechter findet jede Stelle, die den Pfad als Zeichenkette
+//! und ein Test es nicht sieht. Der Waechter zaehlt jede Stelle, die den Pfad als Zeichenkette
 //! (Anfuehrungszeichen) nennt, auch in Doctests.
 //!
-//! Ausnahmen stehen in [`AUSNAHMEN`] mit Grund. Eine Ausnahme, die nichts mehr trifft, ist selbst
-//! ein Fehler: die Liste soll nur schrumpfen (Stufe 2 leert sie, wenn die Python-Fixtures
-//! eingefroren sind).
+//! Ausnahmen stehen in [`AUSNAHMEN`] mit Grund und mit der erlaubten Trefferzahl. Eine Ausnahme
+//! gilt nicht fuer die ganze Datei: ein Treffer mehr als erlaubt ist ein Fehler (sonst bliebe ein
+//! Rueckfall in einer freigestellten Datei unbemerkt), ein Treffer weniger auch (die Liste
+//! schrumpft nur bewusst; Stufe 2 leert sie, wenn die Python-Fixtures eingefroren sind). Nur
+//! `parity/` hat keine Obergrenze und muss mindestens einen Treffer behalten.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -19,32 +21,56 @@
 
 use std::path::{Path, PathBuf};
 
-/// `(Pfad ab `rust/` mit Schraegstrich-Ende fuer ein Verzeichnis, Grund)`.
-const AUSNAHMEN: &[(&str, &str)] = &[
-    (
-        "parity/",
-        "PARITY=1-Suiten vergleichen Rust mit dem Python-Orakel, das produkt/bindung liest; sie fallen mit Python weg",
-    ),
-    (
-        "bindung/tests/daten_verzeichnis.rs",
-        "Attrappe: legt das Python-Verzeichnis nur an, um zu belegen, dass der Lader es nicht ansieht",
-    ),
-    (
-        "api/tests/daten_im_dienst.rs",
-        "Attrappe: legt das Python-Verzeichnis nur an, um zu belegen, dass der Dienst es nicht ansieht",
-    ),
-    (
-        "interview/src/lib.rs",
-        "python_orakel_registry: die Eingabe der eingefrorenen Python-Antworten (interview, konsistenz); Stufe 2",
-    ),
-    (
-        "eingang/tests/orakel_werte.rs",
-        "vergleicht mit Pythons eingefrorener Antwort ueber produkt/bindung; Stufe 2",
-    ),
-    (
-        "intervall/tests/orakel_werte.rs",
-        "vergleicht mit Pythons eingefrorener Antwort (368 Felder) ueber produkt/bindung; Stufe 2",
-    ),
+/// Eine freigestellte Datei oder ein freigestelltes Verzeichnis.
+struct Ausnahme {
+    /// Pfad ab `rust/`; ein Schraegstrich am Ende meint ein Verzeichnis.
+    pfad: &'static str,
+    /// Genau so viele Treffer sind erlaubt. `None`: keine Obergrenze (mindestens einer).
+    erlaubt: Option<usize>,
+    grund: &'static str,
+}
+
+impl Ausnahme {
+    fn trifft(&self, rel: &str) -> bool {
+        if self.pfad.ends_with('/') {
+            rel.starts_with(self.pfad)
+        } else {
+            rel == self.pfad
+        }
+    }
+}
+
+const AUSNAHMEN: &[Ausnahme] = &[
+    Ausnahme {
+        pfad: "parity/",
+        erlaubt: None,
+        grund: "PARITY=1-Suiten vergleichen Rust mit dem Python-Orakel, das produkt/bindung liest; sie fallen mit Python weg",
+    },
+    Ausnahme {
+        pfad: "bindung/tests/daten_verzeichnis.rs",
+        erlaubt: Some(1),
+        grund: "Attrappe: legt das Python-Verzeichnis nur an, um zu belegen, dass der Lader es nicht ansieht",
+    },
+    Ausnahme {
+        pfad: "api/tests/daten_im_dienst.rs",
+        erlaubt: Some(1),
+        grund: "Attrappe: legt das Python-Verzeichnis nur an, um zu belegen, dass der Dienst es nicht ansieht",
+    },
+    Ausnahme {
+        pfad: "interview/src/lib.rs",
+        erlaubt: Some(1),
+        grund: "nur python_orakel_registry: die Eingabe der eingefrorenen Python-Antworten (interview, konsistenz); Stufe 2",
+    },
+    Ausnahme {
+        pfad: "eingang/tests/orakel_werte.rs",
+        erlaubt: Some(1),
+        grund: "vergleicht mit Pythons eingefrorener Antwort ueber produkt/bindung; Stufe 2",
+    },
+    Ausnahme {
+        pfad: "intervall/tests/orakel_werte.rs",
+        erlaubt: Some(1),
+        grund: "vergleicht mit Pythons eingefrorener Antwort (368 Felder) ueber produkt/bindung; Stufe 2",
+    },
 ];
 
 fn rust_wurzel() -> PathBuf {
@@ -61,20 +87,22 @@ fn python_bindung_als_join() -> String {
     ["join(\"produkt\")", "join(\"bindung\")"].join(".")
 }
 
-/// Wahr, wenn die Zeile den Pfad zur Python-Bindung als Zeichenkette nennt: `produkt/bindung`
-/// zwischen Anfuehrungszeichen, oder `.join("produkt").join("bindung")`. Prosa in einem Kommentar
-/// (`produkt/bindung` in Backticks) ist kein Treffer.
-fn nennt_den_pfad(zeile: &str) -> bool {
+/// Wie oft die Zeile den Pfad zur Python-Bindung als Zeichenkette nennt: `produkt/bindung`
+/// zwischen Anfuehrungszeichen, oder `.join("produkt").join("bindung")`. Jedes Vorkommen zaehlt
+/// einzeln, auch zwei in einer Zeile. Prosa in einem Kommentar (`produkt/bindung` in Backticks)
+/// ist kein Treffer.
+fn zaehle_pfad(zeile: &str) -> usize {
     let pfad = python_bindung();
+    let mut n = 0;
     let mut ab = 0;
     while let Some(i) = zeile[ab..].find(&pfad) {
         let pos = ab + i;
         if zeile[..pos].matches('"').count() % 2 == 1 {
-            return true;
+            n += 1;
         }
         ab = pos + pfad.len();
     }
-    zeile.contains(&python_bindung_als_join())
+    n + zeile.matches(&python_bindung_als_join()).count()
 }
 
 fn alle_rs(dir: &Path, aus: &mut Vec<PathBuf>) {
@@ -92,7 +120,8 @@ fn alle_rs(dir: &Path, aus: &mut Vec<PathBuf>) {
     }
 }
 
-/// Alle `.rs`-Dateien unter `rust/` mit ihren Treffern: `(Pfad ab rust/, Zeilennummern)`.
+/// Alle `.rs`-Dateien unter `rust/` mit ihren Treffern: `(Pfad ab rust/, Zeilennummern)`. Eine
+/// Zeile mit zwei Treffern steht zweimal in der Liste, die Laenge ist also die Trefferzahl.
 fn treffer() -> Vec<(String, Vec<usize>)> {
     let wurzel = rust_wurzel().canonicalize().unwrap();
     let mut dateien = Vec::new();
@@ -105,12 +134,10 @@ fn treffer() -> Vec<(String, Vec<usize>)> {
             continue;
         }
         let text = std::fs::read_to_string(&d).unwrap();
-        let zeilen: Vec<usize> = text
-            .lines()
-            .enumerate()
-            .filter(|(_, z)| nennt_den_pfad(z))
-            .map(|(i, _)| i + 1)
-            .collect();
+        let mut zeilen: Vec<usize> = Vec::new();
+        for (i, z) in text.lines().enumerate() {
+            zeilen.extend(std::iter::repeat_n(i + 1, zaehle_pfad(z)));
+        }
         if !zeilen.is_empty() {
             let rel = d
                 .strip_prefix(&wurzel)
@@ -123,69 +150,146 @@ fn treffer() -> Vec<(String, Vec<usize>)> {
     aus
 }
 
-fn ausgenommen(rel: &str) -> bool {
-    AUSNAHMEN.iter().any(|(p, _)| {
-        if p.ends_with('/') {
-            rel.starts_with(p)
-        } else {
-            rel == *p
+/// Treffer ausserhalb der Ausnahmen und Treffer ueber der erlaubten Zahl, je Datei mit Zeilen.
+fn zu_viele(gefunden: &[(String, Vec<usize>)], ausnahmen: &[Ausnahme]) -> Vec<String> {
+    let mut aus = Vec::new();
+    for (rel, zeilen) in gefunden {
+        match ausnahmen.iter().find(|a| a.trifft(rel)) {
+            None => aus.push(format!("rust/{rel}: Zeilen {zeilen:?}: keine Ausnahme")),
+            Some(Ausnahme {
+                erlaubt: Some(erlaubt),
+                grund,
+                ..
+            }) if zeilen.len() > *erlaubt => aus.push(format!(
+                "rust/{rel}: {} Treffer, erlaubt {erlaubt} ({grund}), Zeilen {zeilen:?}",
+                zeilen.len()
+            )),
+            Some(_) => {}
         }
-    })
+    }
+    aus
 }
 
-/// Der Waechter selbst: kein Treffer ausserhalb der Ausnahmen.
+/// Ausnahmen, die weniger treffen als erlaubt (bei `None`: gar nichts mehr).
+fn zu_wenige(gefunden: &[(String, Vec<usize>)], ausnahmen: &[Ausnahme]) -> Vec<String> {
+    let mut aus = Vec::new();
+    for a in ausnahmen {
+        let n: usize = gefunden
+            .iter()
+            .filter(|(rel, _)| a.trifft(rel))
+            .map(|(_, z)| z.len())
+            .sum();
+        match a.erlaubt {
+            Some(erlaubt) if n < erlaubt => aus.push(format!(
+                "Ausnahme `{}` ({}) erlaubt {erlaubt} Treffer, es sind {n}: die Zahl in AUSNAHMEN senken oder die Ausnahme streichen",
+                a.pfad, a.grund
+            )),
+            None if n == 0 => aus.push(format!(
+                "Ausnahme `{}` ({}) trifft nichts mehr: aus AUSNAHMEN streichen",
+                a.pfad, a.grund
+            )),
+            _ => {}
+        }
+    }
+    aus
+}
+
+/// Der Waechter selbst: kein Treffer ausserhalb der Ausnahmen, und keine Ausnahme mit mehr
+/// Treffern als erlaubt.
 #[test]
 fn kein_rust_code_nennt_den_pfad_zur_python_bindung() {
-    let fremde: Vec<String> = treffer()
-        .into_iter()
-        .filter(|(rel, _)| !ausgenommen(rel))
-        .map(|(rel, z)| format!("rust/{rel}: Zeilen {z:?}"))
-        .collect();
+    let zuviel = zu_viele(&treffer(), AUSNAHMEN);
     assert!(
-        fremde.is_empty(),
+        zuviel.is_empty(),
         "Rust-Code nennt den Pfad zur Python-Bindung; er soll `bindung::lade_registry_der_wurzel` rufen:\n{}",
-        fremde.join("\n")
+        zuviel.join("\n")
     );
 }
 
-/// Die Liste der Ausnahmen darf nur schrumpfen: jede Ausnahme trifft noch mindestens einen Pfad.
-/// Sonst bliebe ein Freibrief fuer eine Stelle stehen, die es nicht mehr gibt.
+/// Die Liste der Ausnahmen darf nur bewusst schrumpfen: jede Ausnahme trifft genau so oft wie
+/// erlaubt. Sonst bliebe ein Freibrief fuer eine Stelle stehen, die es nicht mehr gibt.
 #[test]
-fn jede_ausnahme_trifft_noch_etwas() {
-    let gefunden = treffer();
-    for (pfad, grund) in AUSNAHMEN {
-        let trifft = gefunden.iter().any(|(rel, _)| {
-            if pfad.ends_with('/') {
-                rel.starts_with(pfad)
-            } else {
-                rel == pfad
-            }
-        });
-        assert!(
-            trifft,
-            "Ausnahme `{pfad}` ({grund}) trifft nichts mehr: aus AUSNAHMEN streichen"
-        );
-    }
+fn jede_ausnahme_trifft_noch_genau_so_oft_wie_erlaubt() {
+    let zuwenig = zu_wenige(&treffer(), AUSNAHMEN);
+    assert!(zuwenig.is_empty(), "{}", zuwenig.join("\n"));
 }
 
-/// Der Erkenner selbst: er findet den Pfad im Zeichenkettenliteral und im `join`, und er laesst
-/// Prosa in Backticks in Ruhe. Ohne diesen Test koennte ein kaputter Erkenner beide Tests oben
-/// gruen halten.
+/// Der Erkenner selbst: er findet den Pfad im Zeichenkettenliteral und im `join`, zaehlt jedes
+/// Vorkommen und laesst Prosa in Backticks in Ruhe. Ohne diesen Test koennte ein kaputter Erkenner
+/// die Tests oben gruen halten.
 #[test]
 fn erkenner_findet_den_pfad_nur_als_zeichenkette() {
     let p = python_bindung();
-    assert!(nennt_den_pfad(&format!("let x = w.join(\"{p}\");")));
-    assert!(nennt_den_pfad(&format!("let x = w.join(\"../../{p}\");")));
-    assert!(nennt_den_pfad(&format!(
-        "/// # let pfad = Path::new(m).join(\"../../{p}\");"
-    )));
-    assert!(nennt_den_pfad(&format!(
-        "let x = concat!(env!(\"M\"), \"/../../{p}\");"
-    )));
-    assert!(nennt_den_pfad(&format!("r.{}", python_bindung_als_join())));
+    assert_eq!(zaehle_pfad(&format!("let x = w.join(\"{p}\");")), 1);
+    assert_eq!(zaehle_pfad(&format!("let x = w.join(\"../../{p}\");")), 1);
+    assert_eq!(
+        zaehle_pfad(&format!(
+            "/// # let pfad = Path::new(m).join(\"../../{p}\");"
+        )),
+        1
+    );
+    assert_eq!(
+        zaehle_pfad(&format!("let x = concat!(env!(\"M\"), \"/../../{p}\");")),
+        1
+    );
+    assert_eq!(zaehle_pfad(&format!("r.{}", python_bindung_als_join())), 1);
+    // Zwei Vorkommen in einer Zeile zaehlen zweimal.
+    assert_eq!(zaehle_pfad(&format!("[\"{p}\", \"{p}\"]")), 2);
     // Prosa: kein Treffer.
-    assert!(!nennt_den_pfad(&format!("/// Die Bindung liegt in `{p}`.")));
-    assert!(!nennt_den_pfad(&format!("//! Quelle: {p}/schema.json")));
+    assert_eq!(zaehle_pfad(&format!("/// Die Bindung liegt in `{p}`.")), 0);
+    assert_eq!(zaehle_pfad(&format!("//! Quelle: {p}/schema.json")), 0);
     // Der neue Ort ist keiner.
-    assert!(!nennt_den_pfad("let x = w.join(\"rust/bindung/daten\");"));
+    assert_eq!(zaehle_pfad("let x = w.join(\"rust/bindung/daten\");"), 0);
+}
+
+/// Die Pruefung der Trefferzahl selbst, an erfundenen Treffern: eine Ausnahme mit Obergrenze
+/// schlaegt bei einem Treffer mehr UND bei einem weniger an, eine ohne Obergrenze nur, wenn sie
+/// nichts mehr trifft, und eine Datei ohne Ausnahme ist immer ein Verstoss. Ohne diesen Test
+/// koennte die Zaehlung selbst kaputt sein, ohne dass der Waechter es zeigt.
+#[test]
+fn trefferzahl_pruefung_schlaegt_bei_mehr_und_bei_weniger_an() {
+    const A: &[Ausnahme] = &[
+        Ausnahme {
+            pfad: "a/lib.rs",
+            erlaubt: Some(1),
+            grund: "g",
+        },
+        Ausnahme {
+            pfad: "frei/",
+            erlaubt: None,
+            grund: "g",
+        },
+    ];
+    let t = |p: &str, z: &[usize]| (p.to_owned(), z.to_vec());
+
+    // genau erlaubt: sauber
+    let genau = [t("a/lib.rs", &[7]), t("frei/x.rs", &[1, 2, 3, 4, 5])];
+    assert!(zu_viele(&genau, A).is_empty());
+    assert!(zu_wenige(&genau, A).is_empty());
+
+    // einer mehr als erlaubt: zu viele, mit Dateiname und Zeilen
+    let mehr = [t("a/lib.rs", &[7, 90]), t("frei/x.rs", &[1])];
+    let v = zu_viele(&mehr, A);
+    assert_eq!(v.len(), 1, "{v:?}");
+    assert!(
+        v[0].contains("rust/a/lib.rs") && v[0].contains("[7, 90]"),
+        "{v:?}"
+    );
+    assert!(zu_wenige(&mehr, A).is_empty());
+
+    // einer weniger als erlaubt: zu wenige
+    let weniger = [t("frei/x.rs", &[1])];
+    let w = zu_wenige(&weniger, A);
+    assert_eq!(w.len(), 1, "{w:?}");
+    assert!(w[0].contains("a/lib.rs"), "{w:?}");
+
+    // freigestelltes Verzeichnis ohne Treffer: zu wenige
+    let leer = [t("a/lib.rs", &[7])];
+    let w = zu_wenige(&leer, A);
+    assert_eq!(w.len(), 1, "{w:?}");
+    assert!(w[0].contains("frei/"), "{w:?}");
+
+    // Datei ohne Ausnahme: immer zu viel
+    let fremd = [t("b/c.rs", &[3])];
+    assert_eq!(zu_viele(&fremd, A).len(), 1);
 }
