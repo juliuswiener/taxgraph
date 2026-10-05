@@ -12,6 +12,9 @@
 //!
 //! Ehrlichkeit: ein unbeschränktes Feld ohne Vorschlag ist nicht fixierbar — dann gibt es keine
 //! Zahl ([`Spanne::NichtFixierbar`]), kein erfundener Ersatzwert.
+// Tor 2b (REWRITE_PLAN §9): kein Float im Rechenpfad. `clippy.toml` sperrt die Typen `f64`/`f32`,
+// dies hier die Rechnung mit abgeleitetem Typ (`d.to_f64()? * x`, Literale). Testcode ist ausgenommen.
+#![cfg_attr(not(test), deny(clippy::float_arithmetic))]
 #![cfg_attr(
     test,
     allow(
