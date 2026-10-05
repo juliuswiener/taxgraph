@@ -86,6 +86,26 @@ fn kategorie_wort_und_rueckweg() {
     }
 }
 
+/// ABWEICHUNG VON PYTHON, gewollt (`kontoauszug.rs`, `parse_kategorie`): Eine Liste oder ein Objekt als `kategorie` wirft in
+/// Python `TypeError` (unhashable) ungefangen in `in _KATEGORIEN`; Rust gibt `None`, die Buchung bleibt unklassifiziert.
+/// Eine Zahl und `null` sind in beiden Sprachen keine Kategorie.
+#[test]
+fn weicht_von_python_ab_kategorie_liste_oder_objekt_ist_none() {
+    for text in [
+        r#"{"kategorie": ["spende"]}"#,
+        r#"{"kategorie": {"spende": 1}}"#,
+        r#"{"kategorie": []}"#,
+        r#"{"kategorie": 5}"#,
+    ] {
+        assert_eq!(parse_kategorie(text), None, "{text}");
+    }
+    assert_eq!(
+        parse_kategorie(r#"{"kategorie": "spende"}"#),
+        Some(Kategorie::Spende),
+        "Kontrolle: eine Zeichenkette gilt"
+    );
+}
+
 /// `_parse_llm_kategorie`: erstes `{` bis letztes `}`, als JSON, `kategorie` aus der MVP-Menge.
 #[test]
 #[rustfmt::skip]

@@ -9,6 +9,23 @@ use llm::parse::{antwort_parse, aussagen_parse, chat_parse, rueckfragen_parse, z
 use llm::Antwort;
 use serde_json::json;
 
+/// ABWEICHUNG VON PYTHON, gewollt (`parse.rs`, `index`): Python liest `int(w)` und gibt auch eine Zahl ueber `i64` als
+/// Aussage-Nummer zurueck (`int(1e30)`), und `int(inf)` wirft `OverflowError` ungefangen. Rust gibt in beiden Faellen `None`;
+/// `inf` selbst kommt ueber `serde_json` nicht an (`Infinity` ist dort kein JSON), die erreichbare Seite ist die Zahl ausserhalb `i64`.
+#[test]
+fn weicht_von_python_ab_index_ausserhalb_i64_ist_none() {
+    use llm::parse::index;
+    assert_eq!(index(&json!(i64::MAX)), Some(i64::MAX), "Grenze selbst");
+    assert_eq!(index(&json!(0)), Some(0));
+    assert_eq!(index(&json!(-1)), None);
+    assert_eq!(index(&json!(1e30)), None, "Python: 10**30");
+    assert_eq!(
+        index(&json!(18_446_744_073_709_551_615_u64)),
+        None,
+        "Python: 2**64 - 1"
+    );
+}
+
 /// Kaputtes JSON ist `Unlesbar`, nicht eine leere, tolerant gelesene Antwort: der Aufrufer
 /// unterscheidet „das Modell hat nichts vorgeschlagen" von „die Antwort war Muell". Python gibt in
 /// beiden Faellen `[]`; die Unterscheidung ist Rust-eigen.
