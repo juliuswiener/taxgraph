@@ -24,6 +24,9 @@
     )
 )]
 
+// Nur im Testbau: die Abdeckung der Deklaration (Bindung × Transform-Tabellen, Weg B voll W8).
+#[cfg(test)]
+mod abdeckung;
 mod deklaration;
 mod eric;
 mod geordnet;
