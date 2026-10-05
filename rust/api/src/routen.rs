@@ -32,9 +32,15 @@ macro_rules! id {
         "(?P<id>[A-Za-z0-9_-]{1,64})"
     };
 }
+// Die Obergrenze kommt aus `domain` (`max_feld_id_laenge!`), damit Route und Registry-Test
+// (`rust/bindung/tests/registry_quer.rs`) dieselbe Zahl lesen.
 macro_rules! fid {
     () => {
-        "(?P<fid>[A-Za-z0-9_]{1,64})"
+        concat!(
+            "(?P<fid>[A-Za-z0-9_]{1,",
+            domain::max_feld_id_laenge!(),
+            "})"
+        )
     };
 }
 
@@ -209,3 +215,24 @@ tabelle![
         fall::loeschen
     ),
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::EINTRAEGE;
+
+    /// Das URL-Muster der Feld-Kennung liest die Obergrenze aus `domain`, dieselbe Zahl wie der
+    /// Registry-Test `rust/bindung/tests/registry_quer.rs`. Ein Wortlaut `{1,64}` im Muster waere
+    /// eine zweite Quelle, die beim naechsten Aendern der Zahl still abweicht.
+    #[test]
+    fn feld_kennung_im_muster_hat_die_obergrenze_aus_domain() {
+        let erwartet = format!("(?P<fid>[A-Za-z0-9_]{{1,{}}})", domain::MAX_FELD_ID_LAENGE);
+        let mit_fid: Vec<_> = EINTRAEGE
+            .iter()
+            .filter(|e| e.muster.contains("(?P<fid>"))
+            .collect();
+        assert!(mit_fid.len() >= 2, "nur {} Routen mit fid", mit_fid.len());
+        for e in mit_fid {
+            assert!(e.muster.contains(&erwartet), "{}: {}", e.ort, e.muster);
+        }
+    }
+}

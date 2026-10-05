@@ -13,6 +13,24 @@ use std::fmt;
 use std::num::NonZeroU16;
 use std::str::FromStr;
 
+/// Die Laengengrenze einer Feld-Kennung im URL-Muster `[A-Za-z0-9_]{1,N}` (`server.py` `_FID`,
+/// `rust/api/src/routen.rs`). Als Makro, weil der Router das Muster mit `concat!` zu einem
+/// Literal baut; die Konstante [`MAX_FELD_ID_LAENGE`] hat denselben Wert aus derselben Stelle.
+///
+/// Der Namenstest [`ist_gueltige_feld_id`] kennt die Grenze nicht (Entscheidung
+/// feld-kennung-folgt-der-schema-regel-und-instanz-eins-bleibt-gepinnt). Eine laengere Kennung ist
+/// als Bindung gueltig und ueber die Route nicht erreichbar; das haelt der Registry-Test
+/// `rust/bindung/tests/registry_quer.rs` aus den Daten heraus.
+#[macro_export]
+macro_rules! max_feld_id_laenge {
+    () => {
+        64
+    };
+}
+
+/// Laengste Feld-Kennung, die das URL-Muster der Route annimmt (siehe [`max_feld_id_laenge`]).
+pub const MAX_FELD_ID_LAENGE: usize = max_feld_id_laenge!();
+
 /// Prueft die Schema-Regel fuer einen Feldnamen, `^[a-z][a-z0-9_]*$` (`pattern` in
 /// `produkt/store/schema.json` und `produkt/bindung/schema.json`), ohne Regex-Abhaengigkeit.
 ///
