@@ -1,8 +1,8 @@
 //! Verhalten der Crate `konsistenz` gegen das PYTHON-Orakel, hermetisch.
 //!
 //! `rust/fixtures/konsistenz_orakel.json` haelt Snapshots (Feld -> Wert, bestaetigt/vorlaeufig), Scheibe und
-//! Vorjahr samt den Antworten von `produkt/konsistenz/*` (`preflight(...)`, `unvollstaendige_instanzen`), erzeugt
-//! von `tools/parity/extract_konsistenz_orakel.py`. Dieser Test spielt dieselben Snapshots gegen `konsistenz`
+//! Vorjahr samt den Antworten von `produkt/konsistenz/*` (`preflight(...)`, `unvollstaendige_instanzen`); eingefroren,
+//! der Erzeuger ist geloescht (Verlauf: `git show 2dd056a6:tools/parity/extract_konsistenz_orakel.py`). Dieser Test spielt dieselben Snapshots gegen `konsistenz`
 //! und vergleicht je oeffentliche Funktion: `flag_widersprueche`, `partner_ohne_zusammen`,
 //! `alleinerziehend_mit_zusammen`, `pauschal_hinweise`, `nicht_gerechnete_angaben`,
 //! `plausibilitaets_widersprueche`, `unvollstaendige_instanzen`, `vorlaeufige_ring_betraege`, `preflight`,

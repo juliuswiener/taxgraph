@@ -1,8 +1,8 @@
 //! Verhalten der Crate `interview` gegen das PYTHON-Orakel, hermetisch.
 //!
 //! `rust/fixtures/interview_orakel.json` haelt Szenarien (Events + Sicht) und die Antworten von
-//! `produkt/traverser/traverser.py` bzw. `produkt/haut/bindung_rollen.py`, erzeugt von
-//! `tools/parity/extract_interview_orakel.py`. Dieser Test spielt dieselben Szenarien gegen
+//! `produkt/traverser/traverser.py` bzw. `produkt/haut/bindung_rollen.py`; eingefroren, der Erzeuger ist
+//! geloescht (Verlauf: `git show 2dd056a6:tools/parity/extract_interview_orakel.py`). Dieser Test spielt dieselben Szenarien gegen
 //! `interview` und vergleicht: Frageliste (mit und ohne Unsicherheits-Beitrag), Relevanz je Regel,
 //! Instanz-Zahl und fehlende Instanzen, Gate-Gewicht je Sicht, `justification`/`trace_ergebnis`,
 //! Kegel und Achsen-Bindung. Ohne Python zur Laufzeit; die Paritaet mit echten Fall-Dateien
