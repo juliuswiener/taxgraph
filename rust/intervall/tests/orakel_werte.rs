@@ -1,8 +1,9 @@
 //! Verhalten der Crate `intervall` gegen das PYTHON-Orakel, hermetisch.
 //!
 //! `rust/fixtures/intervall_orakel.json` haelt Szenarien (synthetische Bindung in Python-Form, Snapshot,
-//! Deckel, Feldwerte) samt den Antworten von `produkt/unsicherheit/intervall.py`, erzeugt von
-//! `tools/parity/extract_intervall_orakel.py`. Dieser Test spielt dieselben Szenarien gegen `intervall`:
+//! Deckel, Feldwerte) samt den Antworten von `produkt/unsicherheit/intervall.py`, eingefroren (der Erzeuger
+//! ist geloescht; Verlauf: `git show 2dd056a6:tools/parity/extract_intervall_orakel.py`). Dieser Test spielt
+//! dieselben Szenarien gegen `intervall`:
 //! `AchsenBindung::from` auf allen echten Bindungen, `intervall(...)` und `bescheid_via_slots(...)`.
 //! Beide Seiten rechnen ueber dieselbe SYNTHETISCHE Engine: Summe ueber `gewicht(name) * zahl(wert)` mit
 //! `gewicht = (Summe der UTF-8-Bytes) mod 7 - 3`; `zahl` = int, bool 0/1, String-Laenge in Codepoints,

@@ -5765,9 +5765,9 @@ spec.loader.exec_module(ac)
 json.dump([[f, [[w, t] for w, t in l.items()]] for f, l in ac.ENUM_LABELS.items()], sys.stdout)
 "#;
 
-/// Die erzeugte Tabelle `api::enum_labels` ist die Tabelle aus `api_constants.py`: Schluessel,
-/// Werte, Texte und Reihenfolge. Aendert sich Python, wird dieser Test rot, bis
-/// `tools/parity/gen_enum_labels.py` neu laeuft.
+/// Die Tabelle `api::enum_labels` ist die Tabelle aus `api_constants.py`: Schluessel,
+/// Werte, Texte und Reihenfolge. Seit Stufe 2 ist sie von Hand gepflegt (der Erzeuger ist geloescht);
+/// eine gewollte Aenderung eines Labels macht diesen Parity-Test rot und gehoert in die Abweichungsliste.
 #[test]
 fn enum_labels_gleich() {
     if skip() {
@@ -5790,7 +5790,7 @@ fn enum_labels_gleich() {
         .collect();
     assert_eq!(
         py, rust,
-        "ENUM_LABELS weicht ab: python3 tools/parity/gen_enum_labels.py"
+        "ENUM_LABELS weicht von api_constants.py ab (von Hand gepflegt seit Stufe 2): gewollt? dann in die Abweichungsliste"
     );
     let werte: usize = rust
         .as_array()

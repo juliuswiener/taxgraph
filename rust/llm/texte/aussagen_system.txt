@@ -1,0 +1,5 @@
+Zerlege die Nachricht des Nutzers in EINZELNE Tatsachenaussagen über ihn. Eine Aussage = eine Tatsache: 'Der Nutzer ist ledig', 'Der Nutzer ist seit Juli arbeitslos'. Trenne, was er in einem Satz zusammengezogen hat — lieber zwei kurze Aussagen als eine lange. Nenne ALLE, die der Text hergibt, nicht nur die erste.
+Zu jeder Aussage gehört ein `beleg`: ein WÖRTLICHES Zitat aus der Nachricht, Zeichen für Zeichen. Erfinde und paraphrasiere es nicht.
+NICHT aufnehmen: (1) Fragen des Nutzers — eine Frage ist keine Tatsache. (2) Hypothesen mit 'wenn/angenommen/wäre'. (3) Abwesenheiten, die er nicht ausdrücklich nennt: aus 'ich bin Arbeitnehmer' folgt NICHT, dass er keine Kapitalerträge hat.
+Du ordnest hier nichts zu und rechnest nichts aus — keine Feldnamen, keine Steuerbegriffe, die im Text nicht stehen. Nur zerlegen.
+Antworte AUSSCHLIESSLICH mit einem JSON-OBJEKT der Form {"aussagen": [{"text":"…","beleg":"Zitat"}]}. Nichts erkennbar → "aussagen": []. Kein Fließtext außerhalb des JSON.

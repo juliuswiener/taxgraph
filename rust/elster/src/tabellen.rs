@@ -361,8 +361,8 @@ mod tests {
     /// Ein Muster als Ja/Nein-Urteil ueber einen Wert.
     type Urteil = fn(&str) -> bool;
 
-    /// Abbild der Kz-Tabellen aus `est_mapping.py`, erzeugt von `tools/parity/dump_kz_tabellen.py`
-    /// (Python-Gegenstueck: `tests/test_kz_tabellen_fixture.py`). Beide Tests laufen ohne `PARITY=1`:
+    /// Abbild der Kz-Tabellen aus `est_mapping.py`, eingefroren (der Erzeuger ist geloescht; Verlauf:
+    /// `git show 2dd056a6:tools/parity/dump_kz_tabellen.py`). Die Tests laufen ohne `PARITY=1`:
     /// ein Tausch oder Tippfehler in `tabellen.rs` ist sonst nur mit dem Python-Orakel sichtbar
     /// (`elster_paritaet`); `Kz::ist_gueltig` prueft nur die Form, nicht, ob die Kz die richtige ist.
     const FIXTURE: &str = include_str!("../../fixtures/kz_tabellen.json");
@@ -631,7 +631,7 @@ mod tests {
         r
     }
 
-    /// Die Tabellen in der Form von `dump_kz_tabellen.tabellen()`.
+    /// Die Tabellen in der Form der Fixture.
     fn aus_tabellen() -> Value {
         json!({
             "konstante_kz": sortiert(KONSTANTE_KZ),
@@ -730,8 +730,8 @@ mod tests {
         let (fehlt, veraltet) = crate::regal::regal_fehler();
         assert!(
             fehlt.is_empty(),
-            "ohne Regal-Eintrag in regal.rs (neue Tabelle? Schluessel im Generator `dump_kz_tabellen.py` \
-             anlegen und hier zuordnen, sonst als Ausnahme mit Grund):\n  {}",
+            "ohne Regal-Eintrag in regal.rs (neue Tabelle? Die Fixture ist eingefroren; \
+             eine Rust-eigene Tabelle steht hier als Ausnahme mit Grund):\n  {}",
             fehlt.join("\n  ")
         );
         assert!(
@@ -761,8 +761,8 @@ mod tests {
         }
         assert!(
             befund.fehler.is_empty(),
-            "Kz-Literal ohne Leser. Entweder in eine Tabelle von tabellen.rs (Schluessel im Generator \
-             `dump_kz_tabellen.py`), oder die Zone in aus_regal() lesen, oder — wenn nur Verhaltenstests \
+            "Kz-Literal ohne Leser. Entweder in eine Tabelle von tabellen.rs, oder die Zone \
+             in aus_regal() lesen, oder — wenn nur Verhaltenstests \
              sie decken — `Zuordnung::Verhalten` im Regal eintragen:\n  {}",
             befund.fehler.join("\n  ")
         );
@@ -801,8 +801,9 @@ mod tests {
         abweichungen("", &aus_allem(), &fixture_ohne_proben(), &mut aus);
         assert!(
             aus.is_empty(),
-            "tabellen.rs weicht von rust/fixtures/kz_tabellen.json ab (est_mapping.py ist die Quelle: \
-             erst `python3 tools/parity/dump_kz_tabellen.py`, dann tabellen.rs nachziehen):\n  {}",
+            "tabellen.rs weicht von rust/fixtures/kz_tabellen.json ab (Stand von est_mapping.py, \
+             eingefroren; eine gewollte Abweichung steht als Eintrag mit Grund in der Abweichungsliste, \
+             `rust/fixtures/README.md`, nicht als Aenderung der Fixture):\n  {}",
             aus.join("\n  ")
         );
     }

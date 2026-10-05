@@ -1,8 +1,9 @@
 //! Sperrgrund: die abschliessende Menge der Gruende, aus denen `ergebnis()` KEINE
 //! Zahl liefert (`produkt/bescheid/bescheid_deklaration.py: SPERRGRUND_KLARTEXT`,
 //! `produkt/haut/api.py: ergebnis()`). Der Klartext jeder Variante ist byte-identisch
-//! aus der Python-Quelle uebernommen (`tools/parity/dump_sperrgruende.py` ->
-//! `rust/fixtures/sperrgrund_klartext.json`); ein Rust-Test vergleicht beide (unten).
+//! aus der Python-Quelle uebernommen (`rust/fixtures/sperrgrund_klartext.json`, eingefroren; der Erzeuger
+//! ist geloescht, Verlauf: `git show 2dd056a6:tools/parity/dump_sperrgruende.py`); ein Rust-Test
+//! vergleicht beide (unten).
 //!
 //! `grund` in `api.py: ergebnis()` ist entweder `None` (kein Sperrgrund), das Literal
 //! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 57 Python-Schluessel unten
@@ -333,8 +334,8 @@ impl FromStr for Sperrgrund {
 mod tests {
     use super::{Sperrgrund, UNBEKANNTER_SPERRGRUND};
 
-    /// Parity-Fixture, per Build-Script-losem `include_str!` eingebettet -- direkt aus
-    /// `tools/parity/dump_sperrgruende.py` erzeugt, kein manuell abgetippter Text.
+    /// Parity-Fixture, per Build-Script-losem `include_str!` eingebettet -- eingefroren, direkt aus der
+    /// Python-Quelle erzeugt (Erzeuger geloescht), kein manuell abgetippter Text.
     const FIXTURE: &str = include_str!("../../fixtures/sperrgrund_klartext.json");
 
     #[test]

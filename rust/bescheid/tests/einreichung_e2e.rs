@@ -1,9 +1,9 @@
 //! E2E: eine Fall-Datei bis zum ELSTER-XML, Byte fuer Byte wie Python.
 //!
 //! Unter `rust/fixtures/e2e/` liegen je Fall die Fall-Datei `<fall>.json` und `<fall>.xml`, das
-//! XML, das `api.einreichen` fuer denselben Fall in die ERiC-Pruefung gaebe. Beides schreibt
-//! `tools/parity/e2e_faelle.py` ueber den Nutzerpfad (`fall_anlegen`, `event`, `einreichen`). Der
-//! Test laedt die Fall-Datei wie der Server (`store::lade`), ruft [`einreichungs_xml`] und verlangt:
+//! XML, das `api.einreichen` fuer denselben Fall in die ERiC-Pruefung gaebe. Beides schrieb ein Python-Skript
+//! ueber den Nutzerpfad (`fall_anlegen`, `event`, `einreichen`); die Dateien sind eingefroren, der Erzeuger
+//! ist geloescht (Verlauf: `git show 2dd056a6:tools/parity/e2e_faelle.py`). Der Test laedt die Fall-Datei wie der Server (`store::lade`), ruft [`einreichungs_xml`] und verlangt:
 //!
 //! 1. das XML gleich der Python-Datei, Byte fuer Byte,
 //! 2. das XML gueltig gegen das amtliche Schema (`elster11_E10_<vz>_extern.xsd`, xmllint).
@@ -18,7 +18,9 @@
 //! am Writer haelt: Guard und Deklaration liefen durch, das XML ist ungeprueft. Liegen die Schemas,
 //! prueft der Test voll, gleich ob die Variable gesetzt ist.
 //!
-//! Neu erzeugen: `python3 tools/parity/e2e_faelle.py` aus der Repo-Wurzel.
+//! Die Dateien werden nicht neu erzeugt. Aendert ein Rust-eigenes Feld das XML, steht die Abweichung mit
+//! Grund in der Abweichungsliste (`rust/fixtures/README.md`); die `.xml` wird von Hand gepflegt und lokal
+//! gegen die XSD geprueft.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use std::path::{Path, PathBuf};

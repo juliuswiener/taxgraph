@@ -4,7 +4,8 @@
 //! der Zuordnung und `!elster_zeichen` in `erstes_unerlaubtes_zeichen` blieben gruen).
 //!
 //! Das Fixture `rust/fixtures/zeichensatz_orakel.json` haelt je Codepunkt (U+0000..U+10FFFF ohne Surrogate), ob Python ihn
-//! durchlaesst, wie die Meldung ihn nennt und welchen Rat sie gibt. Neu erzeugen: `python3 tools/parity/extract_zeichensatz_orakel.py`.
+//! durchlaesst, wie die Meldung ihn nennt und welchen Rat sie gibt. Eingefroren; der Erzeuger ist geloescht
+//! (Verlauf: `git show 2dd056a6:tools/parity/extract_zeichensatz_orakel.py`).
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
