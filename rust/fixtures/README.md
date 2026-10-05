@@ -47,11 +47,62 @@ Die Fixtures mit Antworten von Python — `interview_`, `konsistenz_`, `interval
 eingefroren. Ihre Erzeuger sind geloescht; der letzte Stand liegt im Verlauf (`git show 2dd056a6:tools/parity/<name>.py`).
 Die Dateien werden nicht neu erzeugt und nicht von Hand geaendert. Eine gewollte Abweichung von Rust zu Python
 steht als Eintrag mit Grund in einer Liste im Test; der Test verlangt, dass die Abweichung weiter besteht. Die
-Abweichungsliste der Fixtures steht in diesem Verzeichnis (folgt mit Stufe 2, Phase B).
+Abweichungsliste steht im Abschnitt „Abweichungsliste“ weiter unten.
 
 Ausnahmen: `golden_cases.json` (Extrakt aus `golden/cases/*.yaml`, `tools/parity/extract_golden.py` bleibt) und
-`begleitfelder_formen.json` (von Hand gepflegt). `api_stand_fragen_orakel.json` wird ein Rust-eigener
-Golden-Master (Stufe 2, Phase B).
+`begleitfelder_formen.json` (von Hand gepflegt). `api_stand_fragen_orakel.json` bleibt vorerst eingefroren; der
+Umbau zu einem Rust-eigenen Golden-Master (S2.2) wartet auf die Waechter der Stufe 3.
+
+## Abweichungsliste
+
+Jede Stelle, an der Rust absichtlich von Python abweicht, mit Grund und dem Test, der sie haelt. Stand: Stufe 2,
+Python-Stand `2dd056a6`.
+
+Regeln:
+
+1. Eine gewollte Abweichung hat einen Eintrag in dieser Liste UND einen Test ohne `PARITY=1`, der das heutige
+   Rust-Verhalten festhaelt. Gleicht jemand Rust an Python an, wird der Test rot. Wer den Test aendert, aendert
+   oder streicht den Eintrag im selben Commit.
+2. Die eingefrorenen Fixtures (siehe oben) werden dafuer nie angefasst. Eine Abweichung steht in der Liste eines
+   Tests oder in einem eigenen Test, nie als Aenderung in der Datei.
+3. Spalte „Pruefung“: **M** = Mutant gemessen. Die Abweichung im Quelltext zurueckgebaut oder verschoben, der
+   genannte Test wurde rot, die Basis war gruen. **T** = Test vorhanden, nicht mutiert (die Zusage steht im
+   Kommentar des Tests).
+
+| Nr | Ort | Python | Rust | Grund | Test (ohne `PARITY=1`) | Pruefung |
+|----|-----|--------|------|-------|------------------------|----------|
+| 1 | `eingang`, VaSt-Betrag, vier Eingaben `1__2`, `1_`, `_1`, `1e1_0` | `Decimal` streicht Unterstriche | `NichtLesbar` | VaSt-XML traegt keine Unterstriche | `rust/eingang/tests/orakel_werte.rs::vast_betraege_wie_orakel` (`UNTERSTRICH_ABWEICHUNG`, genau vier) | T |
+| 2 | `domain`, Sperrgruende `KindFreibetragVerteilungOffen`, `KindZeitraumUnlesbar` | kennt sie nicht | Klartext und Kennung laufen rund | Entscheidung Julius 2026-10-04 | `rust/domain/src/sperrgrund.rs::tests::rust_eigene_gruende_haben_klartext_und_laufen_rund` | T |
+| 3 | `api`, `elster`: Ganzzahl ausserhalb `i64` | rechnet mit beliebig grossen `int` weiter | HTTP 422, nie 500, nie Umbruch | Korrektheit vor Paritaet (`REWRITE_PLAN.md` §4) | `rust/api/tests/ueberlauf_klassen_hermetisch.rs` (elf Eingaben); `rust/elster/src/deklaration.rs::tests::p23_gewinn_ausserhalb_i64_ist_ein_fehler_statt_umbruch` | T |
+| 4 | `domain`, Feld-Kennung `"x\n"` | `$` passt auch vor `\n`, das Schema nimmt es an | abgelehnt | fail-closed | `rust/domain/src/feld_id.rs::tests::basis_id_nimmt_genau_die_schema_regel_an` | M |
+| 5 | `llm`, HTTP-Client, vier Eingaben (`Content-Length: abc`, URL ohne Schema, fremdes Schema, IPv6 ohne Port) | liest die Antwort bis zum Verbindungsende bzw. scheitert voruebergehend (drei Versuche) | endgueltiger Fehler nach einem Versuch | Befund der Messung, keine Absicht | `rust/llm/tests/client_netz.rs::weicht_von_python_ab_vier_eingaben_enden_in_rust_anders` | T |
+| 6 | `llm`, `content` der Antwort ist Liste, Zahl oder Objekt | `.strip()` wirft `AttributeError` ungefangen (Dienst: 500) | endgueltiger Fehler `AttributeError` | der Aufruf bricht nicht ab | `rust/llm/tests/client_netz.rs::weicht_von_python_ab_inhalt_ohne_zeichenkette_ist_endgueltig` | M |
+| 7 | `llm`, Fehlerkoerper mit Schluessel ueber der 300-Zeichen-Kante | kuerzt, dann maskiert; der Anfang des Schluessels bleibt stehen | maskiert, dann kuerzt | Sicherheit | `rust/llm/tests/client_netz.rs::weicht_von_python_ab_schluessel_an_der_schnittkante_wird_maskiert` | M |
+| 8 | `llm`, Aussage-Nummer ausserhalb `i64` (`1e30`, `2^64-1`) | `int(...)` gibt die grosse Zahl; `int(inf)` wirft ungefangen | `None` | `inf` kommt ueber `serde_json` nicht an; nur die Zahl ausserhalb `i64` ist erreichbar | `rust/llm/tests/parse_entscheidungen.rs::weicht_von_python_ab_index_ausserhalb_i64_ist_none` | M |
+| 9 | `llm`, `kategorie` ist Liste oder Objekt | `TypeError` (unhashable) ungefangen | `None`, Buchung bleibt unklassifiziert | der Aufruf bricht nicht ab | `rust/llm/tests/kontoauszug_entscheidungen.rs::weicht_von_python_ab_kategorie_liste_oder_objekt_ist_none` | M |
+| 10 | `konsistenz`, Betragspruefungen (`bestaetigter_betrag`, `vorlaeufige_ring_betraege`): ein Float | zaehlt als Betrag (`isinstance(w, (int, float))`) | zaehlt nicht | Wertebereich: der Store laesst auf `cent`-Feldern nur Ganzzahlen zu (Auflage T); 0 Floats in 192 echten Faellen | `rust/konsistenz/src/preflight.rs::tests::float_ist_kein_betrag_abweichung_von_python` | M |
+| 11 | `auth`, Audit scheitert | kein `try`, bricht ab | Anmelden, Abweisen und Abmelden laufen durch | das Audit ist ein Nebenkanal | `rust/auth/tests/entscheidungen.rs::ein_audit_fehler_kippt_keine_anmeldung` | T |
+
+### Offen: Rust-Seite nicht hermetisch geprueft
+
+Diese Abweichungen stehen heute in einer `PARITY=1`-Suite, im Kommentar des Quelltexts oder in beidem. Ob ein Test
+ohne `PARITY=1` die Rust-Seite haelt, ist nicht gemessen. Faellt Python weg, fallen die Parity-Suiten mit, und
+diese Zusagen haetten keinen Halter mehr. Vor der Loeschung von Python je Zeile pruefen und mit einem Mutanten
+belegen.
+
+- `rust/parity/tests/extern_stub/fremd_abweichungen.rs`: A1 (`NaN`, `Infinity`, `1e400` in `rechenweg` und
+  `vorschlag_wert`: Rust gueltiges JSON), A3 (ORS-Entfernung `NaN`: Rust 503), C (einzelnes Surrogat im Text: Rust
+  verwirft die ganze Antwort). B und A2 stehen oben als Nr. 6, 8 und 9.
+- `rust/parity/tests/wert_paritaet.rs`: `D1_ABWEICHUNGEN` (vier Eintraege: Ganzzahl ausserhalb
+  `i64::MIN..=u64::MAX` wird `Gleit`), die JSON-Lader (`NaN`/`Infinity`, `-0`, Surrogat; 28 Abweichungen), die
+  YAML-Lader (YAML 1.2 gegen 1.1; 227 Abweichungen), `repr_str` escapet Cf, Co und Cn nicht (`ponytail`).
+- `rust/parity/tests/store_append_paritaet.rs::d20_reihenfolge_typ_vor_signal`: Rust meldet `ZweiSignalFehlend`
+  vor `TypInkonform`.
+- `rust/parity/tests/elster_paritaet.rs` (Luecke bei Instanzen): dicht gezaehlt, kein leeres `<Einz>`.
+- `rust/store/src/fehler_log.rs`: drei Abweichungen der Bauart (Aufrufstelle statt Traceback, `Meta` als Struct,
+  Fall-Kennung mit Muster als Parameter).
+- `rust/elster/tests/offene_defekte.rs` und `rust/bescheid/tests/offene_defekte.rs`: je eine „gewollte Abweichung“
+  im Kommentar eines Tests.
 
 ## `interview_orakel.json`
 
@@ -137,5 +188,5 @@ ganze Antwort, nur bei den grossen Faellen; sonst `fragen_ids` und der Sperrgrun
 `fragen` schreibt) und `einzeln` (Antwort je Probe-Feld). `event_id` jedes Felds in `stand` steht als `<event_id>` da:
 der Server haengt die Uhrzeit an das Ereignis. Konsument: `rust/api/tests/stand_fragen_orakel_hermetisch.rs`
 (hermetisch, ohne `PARITY=1`, ohne Python). Die Ereignislisten der Basisfaelle las der Erzeuger aus
-`rust/api/tests/kette_endstand_hermetisch.rs`. Eingefroren; Stufe 2, Phase B macht daraus einen Rust-eigenen
-Golden-Master.
+`rust/api/tests/kette_endstand_hermetisch.rs`. Eingefroren; der Umbau zu einem Rust-eigenen
+Golden-Master (S2.2) wartet auf die Waechter der Stufe 3.

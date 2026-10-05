@@ -691,6 +691,70 @@ mod tests {
         }
     }
 
+    /// GEWOLLTE ABWEICHUNG von Python (Wertebereich, Crate-Doku `lib.rs`): ein Float ist in den Betragspruefungen
+    /// KEIN Betrag. Python nimmt `isinstance(wert, (int, float))` (`preflight.py:89-98`), `1500.5` gilt dort als Betrag und
+    /// loest die Pruefung aus. Der Store laesst auf `cent`-Feldern nur Ganzzahlen zu (Auflage T; 0 Floats in 192 echten
+    /// Faellen). Wer Floats hier zaehlen laesst, aendert den Wertebereich und traegt die Abweichung neu ein.
+    #[test]
+    fn float_ist_kein_betrag_abweichung_von_python() {
+        use crate::lesung::test_snap;
+        use domain::Zustand::{Bestaetigt, Vorlaeufig};
+
+        let bestaetigt = |w: PyWert| test_snap(&[("bruttoarbeitslohn", w, Bestaetigt)]);
+        for (wert, erwartet) in [
+            (PyWert::Ganz(1500), Some(1500)),
+            (PyWert::Gleit(1500.5), None), // Python: 1500.5
+            (PyWert::Gleit(1500.0), None), // Python: 1500.0
+            (PyWert::Bool(true), None),    // Python: ebenfalls kein Betrag
+        ] {
+            assert_eq!(
+                bestaetigter_betrag(&bestaetigt(wert.clone()), "bruttoarbeitslohn"),
+                erwartet,
+                "{wert:?}"
+            );
+        }
+
+        let reg = interview::doctest_registry().unwrap();
+        let g = Graph::aus_registry(&reg);
+
+        // Lohnsteuer ueber dem Lohn: mit Ganzzahlen ein Widerspruch (Kontrolle), mit Floats keiner (Python: einer).
+        let lohn = |brutto: PyWert, steuer: PyWert| {
+            plausibilitaets_widersprueche(
+                &test_snap(&[
+                    ("bruttoarbeitslohn", brutto, Bestaetigt),
+                    ("p36_lohnsteuer", steuer, Bestaetigt),
+                ]),
+                None,
+                &g,
+            )
+        };
+        let w = lohn(PyWert::Ganz(100_000), PyWert::Ganz(200_000));
+        assert_eq!(w.len(), 1, "Kontrolle mit Ganzzahlen");
+        assert_eq!(w[0].feld_id, "p36_lohnsteuer");
+        for (brutto, steuer) in [
+            (PyWert::Gleit(100_000.0), PyWert::Gleit(200_000.0)),
+            (PyWert::Ganz(100_000), PyWert::Gleit(200_000.0)),
+            (PyWert::Gleit(100_000.0), PyWert::Ganz(200_000)),
+        ] {
+            assert!(
+                lohn(brutto.clone(), steuer.clone()).is_empty(),
+                "{brutto:?} / {steuer:?}"
+            );
+        }
+
+        // Vorlaeufiger Ring-Betrag: eine Ganzzahl wird gemeldet (Kontrolle), ein Float nicht (Python: ja).
+        let vorlaeufig = |w: PyWert| {
+            vorlaeufige_ring_betraege(&test_snap(&[("bruttoarbeitslohn", w, Vorlaeufig)]), &g)
+        };
+        let v = vorlaeufig(PyWert::Ganz(150_000));
+        assert_eq!(
+            v.iter().map(|b| (b.feld_id, b.wert)).collect::<Vec<_>>(),
+            [("bruttoarbeitslohn", 150_000)],
+            "Kontrolle mit Ganzzahl"
+        );
+        assert!(vorlaeufig(PyWert::Gleit(1500.0)).is_empty());
+    }
+
     #[test]
     fn aufzaehlung_wie_python() {
         assert_eq!(aufzaehlung("Kind", &[3]), "Kind 3");

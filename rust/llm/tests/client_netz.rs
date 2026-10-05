@@ -334,6 +334,43 @@ fn weicht_von_python_ab_vier_eingaben_enden_in_rust_anders() {
     ]);
 }
 
+/// ABWEICHUNG VON PYTHON, gewollt (`client.rs`, `content` keine Zeichenkette): Python ruft `.strip()` auf einer Liste, einer Zahl
+/// oder einem Objekt und stuerzt mit `AttributeError` ausserhalb jeder Behandlung (der Dienst antwortet 500). Rust meldet das als
+/// endgueltigen Fehler; der Aufruf bricht nicht ab. Eine leere oder falsche Liste/Zahl/Zeichenkette zaehlt dagegen wie in Python als leer.
+#[test]
+#[rustfmt::skip]
+fn weicht_von_python_ab_inhalt_ohne_zeichenkette_ist_endgueltig() {
+    pruefe(vec![
+        ("inhalt_liste", "", Some(vec![Aktion::Roh(antwort(200, "{\"choices\": [{\"message\": {\"content\": [\"x\"]}, \"finish_reason\": \"stop\"}]}"))]), false, (1, 3, 1), 1, "", Erw::Err("endgueltig", "", 1, Msg::Genau("LLM-Aufruf fehlgeschlagen: AttributeError"))),
+        ("inhalt_zahl", "", Some(vec![Aktion::Roh(antwort(200, "{\"choices\": [{\"message\": {\"content\": 5}, \"finish_reason\": \"stop\"}]}"))]), false, (1, 3, 1), 1, "", Erw::Err("endgueltig", "", 1, Msg::Genau("LLM-Aufruf fehlgeschlagen: AttributeError"))),
+        ("inhalt_objekt", "", Some(vec![Aktion::Roh(antwort(200, "{\"choices\": [{\"message\": {\"content\": {\"a\": 1}}, \"finish_reason\": \"stop\"}]}"))]), false, (1, 3, 1), 1, "", Erw::Err("endgueltig", "", 1, Msg::Genau("LLM-Aufruf fehlgeschlagen: AttributeError"))),
+    ]);
+}
+
+/// ABWEICHUNG VON PYTHON, gewollt (Sicherheit, `client.rs`, Fehlerkoerper): Python kuerzt den Koerper auf 300 Zeichen und maskiert
+/// danach; ein Schluessel, der ueber die Schnittkante ragt, bliebe als Anfang stehen (hier `sk-test-GE`). Rust maskiert zuerst
+/// und kuerzt dann. Der Schluessel beginnt bei Zeichen 290 und endet bei 308.
+#[test]
+fn weicht_von_python_ab_schluessel_an_der_schnittkante_wird_maskiert() {
+    let nachrichten = aussagen_prompt(&filtere("hallo").0);
+    let koerper = format!("{}{SCHLUESSEL}", "a".repeat(290));
+    let stub = Stub::starte(vec![Aktion::Roh(antwort(400, &koerper))]);
+    let e = chat(stub.basis("/v1"), (1, 3, 1))
+        .complete(&nachrichten, None)
+        .unwrap_err();
+    assert_eq!(
+        e.to_string(),
+        format!(
+            "LLM-Aufruf fehlgeschlagen: HTTP 400 {}<KEY>",
+            "a".repeat(290)
+        )
+    );
+    assert!(
+        !e.to_string().contains("sk-"),
+        "Anfang des Schluessels: {e}"
+    );
+}
+
 /// `letzter_anbieter` folgt der letzten gelesenen Antwort und ist leer, wenn der Aufruf vor dem Lesen endet (`_merke`).
 #[test]
 #[rustfmt::skip]

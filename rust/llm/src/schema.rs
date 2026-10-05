@@ -12,8 +12,8 @@ use serde_json::Value;
 use crate::texte;
 
 fn lade(json: &str) -> Value {
-    // Generierter, im Test gepruefter JSON-Text; `Null` waere ein Generat-Fehler, den
-    // `schemas_sind_objekte` sofort meldet.
+    // Von Hand gepflegter JSON-Text (`texte/*_schema.json`); `Null` waere ein Tippfehler darin, den
+    // `schemas_sind_objekte` sofort meldet. Den Inhalt haelt `schemas_wie_python` (`tests/prompt_entscheidungen.rs`).
     serde_json::from_str(json).unwrap_or(Value::Null)
 }
 

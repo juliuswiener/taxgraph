@@ -197,3 +197,29 @@ fn dialog_prompt_wie_python() {
         assert!(m[0].inhalt().contains("vor.\n\nFür die ANTWORT"), "ein Feld: Aussagen und Kontext");
     }
 }
+
+/// Die drei JSON-Schemas, wie `llm::schema` sie dem Anbieter gibt (`rust/llm/texte/*_schema.json`, von Hand gepflegt seit
+/// Stufe 2): Kennung (Zeichenzahl, FNV-1a-64) der kompakten Serialisierung des geparsten Werts. `serde_json` ordnet die
+/// Schluessel, die Reihenfolge in der Datei und Leerraum aendern die Kennung nicht; jedes Feld, jedes `required`, jede
+/// `description` tut es. Vorher pruefte kein Test mehr als `strict` und `additionalProperties` (`schemas_sind_objekte`).
+/// Wer ein Schema bewusst aendert, aendert Datei und Kennung im selben Commit — wie bei den Prompts.
+#[test]
+fn schemas_wie_python() {
+    use llm::schema::{AUSSAGEN_SCHEMA, DIALOG_SCHEMA, ZUORDNUNG_SCHEMA};
+    let k = |v: &serde_json::Value| kennung(&serde_json::to_string(v).unwrap());
+    assert_eq!(
+        k(&DIALOG_SCHEMA),
+        (2710, 0x309e_797e_cf7e_4698),
+        "DIALOG_SCHEMA"
+    );
+    assert_eq!(
+        k(&AUSSAGEN_SCHEMA),
+        (581, 0x91ce_247d_c907_64a6),
+        "AUSSAGEN_SCHEMA"
+    );
+    assert_eq!(
+        k(&ZUORDNUNG_SCHEMA),
+        (600, 0x6516_7715_2316_d818),
+        "ZUORDNUNG_SCHEMA"
+    );
+}
