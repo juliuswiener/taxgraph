@@ -393,7 +393,7 @@ def tabelle_quellen() -> list[P]:
         q("Summe hoechstens 3,7e17", R, r"Summe höchstens (3,7)·10\^17", "rust/elster/src/deklaration.rs", r"<= {0}e17"),
         q("0 stille Falschzahlen", R, r"^\s+(0) stille Falschzahlen über HTTP", UC, r"\*\*{0} stille Falschzahlen:"),
         q("ERiC-Skips mit .env", R, r"Hauptbaum\) sind es (0);", ZF2, r"^SKIPS unit gesamt=19 ERiC/Hersteller-ID={0} "),
-        q("Test-ID 74931", R, r"Test-ID (74931) hilft", "tools/parity/e2e_faelle.py", r'TEST_HERSTELLER_ID = "{0}"'),
+        q("Test-ID 74931", R, r"Test-ID (74931) hilft", "rust/bescheid/tests/einreichung_e2e.rs", r'Some\("{0}"\.to_owned\(\)\)'),
         q("ERiC-Dateien Anzahl", R, r"plus die (15) ERiC-Dateien", T / "gate-final" / "eric-dateien.log", r"^# {0} Testdateien"),
         q("Befunde 4 bis 7", R, r"Befunde (4) bis (7)\)", BEREIT, r"\(Befunde {0}–{1}\)"),
         q("Befund 7", R, r"dort Befund (7)\)", BEREIT, r"Python-Antworten \(Befund {0}\)"),

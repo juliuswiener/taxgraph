@@ -4,7 +4,8 @@
 //! Auftrag 8 (Mutationsmessung der duennen `api`-Dateien): fuer `stand.rs` und `fragen.rs` hielt nur
 //! der Vergleich mit Python die Gestalt der Antwort (Engine-Name, Spanne, Sperrgrund, Teil-Ringe,
 //! Metadaten jeder Frage). Hier stehen die Antworten fest in `rust/fixtures/api_stand_fragen_orakel.json`;
-//! `tools/parity/extract_stand_fragen_orakel.py` erzeugt sie neu (`api.stand`, `api.fragen`,
+//! sie sind eingefroren; der Erzeuger ist geloescht (Verlauf:
+//! `git show 2dd056a6:tools/parity/extract_stand_fragen_orakel.py`: `api.stand`, `api.fragen`,
 //! `api.frage_einzeln` im selben Prozess, mit denselben Ereignissen).
 //!
 //! Die Ereignisse spielt der Test ueber die echte Route `POST /event` ein. Nur `event_id` jedes Felds

@@ -1,7 +1,8 @@
 //! PDF-Text und OCR (`eingang::ocr`) gegen die Antworten des PYTHON-Orakels, hermetisch: `PATH` zeigt je
 //! Fall auf ein Verzeichnis mit drei Shell-Skripten (`pdftotext`, `pdftoppm`, `tesseract`, nur
-//! Builtins), die dieselben Skripte laufen unter Python (`tools/parity/extract_eingang_orakel.py`) und
-//! hier. Die Faelle stehen in `rust/fixtures/eingang_orakel.json`, Abschnitt `ocr`.
+//! Builtins), die dieselben Skripte liefen unter Python (eingefroren; der Erzeuger ist geloescht, Verlauf:
+//! `git show 2dd056a6:tools/parity/extract_eingang_orakel.py`) und laufen hier. Die Faelle stehen in
+//! `rust/fixtures/eingang_orakel.json`, Abschnitt `ocr`.
 //!
 //! Sie decken die Entscheidungsstellen des Lesers: Seitendeckel 40/41 (Voll-Scan und gemischt),
 //! Plausibilitaet ab 20 Zeichen nach `strip`, Seitennummer und Zeilenversatz im gemischten PDF,

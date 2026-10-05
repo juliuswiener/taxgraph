@@ -1,8 +1,8 @@
 //! Wertwache der engine gegen das PYTHON-Orakel, hermetisch (ohne `PARITY=1`, ohne Python).
 //!
 //! `rust/fixtures/wertwache_orakel.json` haelt feste Grenzfaelle samt den Antworten des laufenden Orakels
-//! (`runner.catala_*` ueber `tools/parity/oracle.py`), erzeugt von `tools/parity/extract_wertwache_orakel.py`.
-//! Dieser Test spielt dieselben rohen Sachverhalt-dicts ueber dieselben Adapter wie die Parity-Suiten
+//! (`runner.catala_*` ueber `tools/parity/oracle.py`), eingefroren (der Erzeuger ist geloescht; Verlauf:
+//! `git show 2dd056a6:tools/parity/extract_wertwache_orakel.py`). Dieser Test spielt dieselben rohen Sachverhalt-dicts ueber dieselben Adapter wie die Parity-Suiten
 //! (`rust/parity/tests/zugriff_teil{1,2}/adapter.rs`) gegen `engine::zugriff` und vergleicht Wert oder
 //! Ausnahmeklasse.
 //!
@@ -15,10 +15,9 @@
 //! Das Fixture ist gegen einen Operator-Sweep ueber die Rumpfe der elf Funktionen gehaertet (Bericht
 //! `wertwache-sweep.md`): `<`/`<=`, `>`/`>=`, `==`/`!=`, `min`/`max`, `.max(0)` -> `.max(1)`, Literal +-1, `&&`/`||`;
 //! 249 Mutanten, 227 rot, 21 nachweislich gleichwertig, 1 ohne Kompilat. Die Zeilen der Gitter sind je Zweig kommentiert
-//! (`tools/parity/extract_wertwache_orakel.py`).
+//! (im Verlauf des geloeschten Erzeugers, siehe oben).
 //!
-//! Je Funktion ein Test, damit ein roter Lauf die Stelle benennt. Neu erzeugen:
-//! `python3 tools/parity/extract_wertwache_orakel.py`.
+//! Je Funktion ein Test, damit ein roter Lauf die Stelle benennt. Die Datei wird nicht neu erzeugt.
 #![allow(
     clippy::too_many_lines,
     clippy::unwrap_used,

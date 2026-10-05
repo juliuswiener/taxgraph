@@ -40,6 +40,19 @@ Geld ist.
 python3 tools/parity/extract_golden.py
 ```
 
+## Eingefroren (Stufe 2)
+
+Die Fixtures mit Antworten von Python — `interview_`, `konsistenz_`, `intervall_`, `wertwache_`, `eingang_`,
+`zeichensatz_`, `api_stand_fragen_orakel.json`, `kz_tabellen.json`, `sperrgrund_klartext.json` und `e2e/` — sind
+eingefroren. Ihre Erzeuger sind geloescht; der letzte Stand liegt im Verlauf (`git show 2dd056a6:tools/parity/<name>.py`).
+Die Dateien werden nicht neu erzeugt und nicht von Hand geaendert. Eine gewollte Abweichung von Rust zu Python
+steht als Eintrag mit Grund in einer Liste im Test; der Test verlangt, dass die Abweichung weiter besteht. Die
+Abweichungsliste der Fixtures steht in diesem Verzeichnis (folgt mit Stufe 2, Phase B).
+
+Ausnahmen: `golden_cases.json` (Extrakt aus `golden/cases/*.yaml`, `tools/parity/extract_golden.py` bleibt) und
+`begleitfelder_formen.json` (von Hand gepflegt). `api_stand_fragen_orakel.json` wird ein Rust-eigener
+Golden-Master (Stufe 2, Phase B).
+
 ## `interview_orakel.json`
 
 Szenarien fuer die Crate `interview` samt den Antworten des Python-Orakels
@@ -48,14 +61,9 @@ Szenarien fuer die Crate `interview` samt den Antworten des Python-Orakels
 Semantik), eine Sicht (voll, Teil-Bindung oder selbstgebaute Felder) und die erwarteten Antworten.
 Die Frageliste steht als Positionen in der Sicht-Reihenfolge, die Relevanz als Abweichung zur
 Relevanz des leeren Stores. Der Unsicherheits-Beitrag steht nicht im Fixture, die Formel steht in
-Generator und Test.
+Test (der Erzeuger ist geloescht).
 
-```
-python3 tools/parity/extract_interview_orakel.py
-```
-
-Aendert sich `traverser.py` oder die Bindung, ist das Fixture neu zu erzeugen; der Rust-Test zeigt
-dann, wo Rust vom Orakel abweicht. `git diff` auf der Datei zeigt, was sich am Orakel geaendert hat.
+Eingefroren: Der Rust-Test zeigt, wo Rust vom Orakel abweicht.
 
 ## `konsistenz_orakel.json`
 
@@ -67,10 +75,6 @@ stehen einmal in `texte` und im Szenario als `{"$t": index}`. Konsument:
 dort, wo Rust sie wie Python behandelt (`flag_check`, `check_pauschalen`, `partner_check`); die Betrags-Pruefungen
 aus `preflight.py` zaehlen einen Float in Rust absichtlich nicht (`// PARITAET:` in der Crate-Doku).
 
-```
-python3 tools/parity/extract_konsistenz_orakel.py
-```
-
 ## `intervall_orakel.json`
 
 Szenarien fuer die Crate `intervall` samt den Antworten von `produkt/unsicherheit/intervall.py`: `sicht` (Pythons
@@ -79,13 +83,8 @@ Snapshot, Deckel) und `slots` (`bescheid_via_slots(...)`). Beide Seiten rechnen 
 (`oracle_konsistenz._synth`: Summe ueber `gewicht(name) * zahl(wert)`). Konsument:
 `rust/intervall/tests/orakel_werte.rs` (hermetisch, ohne Python).
 
-```
-python3 tools/parity/extract_intervall_orakel.py
-```
-
-Aendert sich ein Orakel (`produkt/konsistenz/*`, `intervall.py`) oder die Bindung, sind die Fixtures neu zu
-erzeugen; der Rust-Test zeigt dann, wo Rust vom Orakel abweicht. Beide Generatoren sind deterministisch
-(fester Seed, sortierte Ausgabe): zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed.
+Eingefroren: Der Rust-Test zeigt, wo Rust vom Orakel abweicht. Die Erzeuger waren deterministisch (fester Seed,
+sortierte Ausgabe).
 
 ## `wertwache_orakel.json`
 
@@ -101,14 +100,8 @@ der ihn faengt. Konsument:
 `rust/engine/tests/wertwache_orakel_werte.rs` (hermetisch, ohne `PARITY=1`, ohne Python; benutzt die Adapter der
 Parity-Suiten).
 
-```
-python3 tools/parity/extract_wertwache_orakel.py
-```
-
-Der Generator braucht die gebaute Catala-Engine (`make build-python`) und ist deterministisch (feste Gitter, sortierte
-Ausgabe): zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed (geprueft bei `PYTHONHASHSEED` 1 und 777).
-Aendert sich ein Orakel (`runner.py`, Catala-Regeln), ist das Fixture neu zu erzeugen; der Rust-Test zeigt dann, wo
-Rust vom Orakel abweicht.
+Eingefroren: Der Rust-Test zeigt, wo Rust vom Orakel abweicht. Der Erzeuger brauchte die gebaute Catala-Engine
+(`make build-python`) und war deterministisch (feste Gitter, sortierte Ausgabe).
 
 ## `eingang_orakel.json`
 
@@ -116,16 +109,10 @@ Eingaben fuer die Crate `eingang` samt den Antworten des Python-Orakels (`produk
 `tools/parity/schritt8_oracle.py`). Konsumenten: `rust/eingang/tests/orakel_werte.rs` (Werte: CSV-
 Zeilenmaschine, Betragsparser, Schluesselwoerter, Rundung, Vorjahr, eDaten, Beleg) und
 `rust/eingang/tests/ocr_pfade.rs` (Abschnitt `ocr`: je Fall drei Shell-Skripte als `pdftotext`/`pdftoppm`/
-`tesseract`, dieselben unter Python und Rust). Beide hermetisch, ohne Python zur Laufzeit. Der Generator
-legt `OMP_THREAD_LIMIT=7` in die Umgebung, damit sichtbar wird, dass nur `tesseract` ihn auf 1 setzt.
+`tesseract`, dieselben unter Python und Rust). Beide hermetisch, ohne Python zur Laufzeit. Der Erzeuger
+legte `OMP_THREAD_LIMIT=7` in die Umgebung, damit sichtbar wird, dass nur `tesseract` ihn auf 1 setzt.
 
-```
-python3 tools/parity/extract_eingang_orakel.py
-```
-
-Aendert sich ein Leser in `produkt/eingang/`, ist das Fixture neu zu erzeugen; der Rust-Test zeigt dann,
-wo Rust vom Orakel abweicht. Das Fixture ist deterministisch (Seed im Generator): zwei Laeufe geben
-dieselbe Datei.
+Eingefroren: Der Rust-Test zeigt, wo Rust vom Orakel abweicht. Das Fixture war deterministisch (Seed im Erzeuger).
 
 ## `zeichensatz_orakel.json`
 
@@ -135,12 +122,7 @@ Meldung das Zeichen nennt, `null` = das Zeichen selbst, und der Rat), dazu volle
 `element_meldung`. Konsument: `rust/domain/tests/zeichensatz_hermetisch.rs` (hermetisch, ohne `PARITY=1`, ohne Python).
 Der Paritaetstest `rust/parity/tests/store_zeichensatz_paritaet.rs` prueft dasselbe live gegen Python.
 
-```
-python3 tools/parity/extract_zeichensatz_orakel.py
-```
-
-Der Generator ist deterministisch: zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed (geprueft bei
-`PYTHONHASHSEED` 1 und 777).
+Eingefroren; der Erzeuger war deterministisch.
 
 ## `api_stand_fragen_orakel.json`
 
@@ -154,12 +136,6 @@ Gewichte der Fragen-Reihenfolge sichtbar werden: Teil-Ring `ep_werbungskosten` u
 ganze Antwort, nur bei den grossen Faellen; sonst `fragen_ids` und der Sperrgrund), `kopf` (was der Mitschnitt fuer
 `fragen` schreibt) und `einzeln` (Antwort je Probe-Feld). `event_id` jedes Felds in `stand` steht als `<event_id>` da:
 der Server haengt die Uhrzeit an das Ereignis. Konsument: `rust/api/tests/stand_fragen_orakel_hermetisch.rs`
-(hermetisch, ohne `PARITY=1`, ohne Python). Die Ereignislisten der Basisfaelle liest der Generator aus
-`rust/api/tests/kette_endstand_hermetisch.rs`.
-
-```
-python3 tools/parity/extract_stand_fragen_orakel.py
-```
-
-Der Generator ist deterministisch: zweimal erzeugt ergibt dieselben Bytes, unabhaengig vom Hash-Seed (geprueft bei
-`PYTHONHASHSEED` 1, 2 und 777).
+(hermetisch, ohne `PARITY=1`, ohne Python). Die Ereignislisten der Basisfaelle las der Erzeuger aus
+`rust/api/tests/kette_endstand_hermetisch.rs`. Eingefroren; Stufe 2, Phase B macht daraus einen Rust-eigenen
+Golden-Master.

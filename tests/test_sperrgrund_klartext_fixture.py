@@ -1,15 +1,16 @@
 """Die Klartexte der Sperrgründe stehen in `rust/fixtures/sperrgrund_klartext.json` so, wie Python sie führt.
 
-`tools/parity/dump_sperrgruende.py` schreibt `SPERRGRUND_KLARTEXT` und `UNBEKANNTER_SPERRGRUND` aus
-`bescheid_deklaration.py` in diese Datei; Rust (`domain::Sperrgrund::klartext`) wird gegen sie geprüft
+Die Datei hält `SPERRGRUND_KLARTEXT` und `UNBEKANNTER_SPERRGRUND` aus `bescheid_deklaration.py`, eingefroren
+(der Erzeuger ist gelöscht, Stufe 2; Verlauf: `git show 2dd056a6:tools/parity/dump_sperrgruende.py`);
+Rust (`domain::Sperrgrund::klartext`) wird gegen sie geprüft
 (`klartext_ist_byte_identisch_zur_python_quelle`). Die Datei ist ein Abbild. Ändert jemand einen Klartext oder
-fügt einen Grund hinzu und erzeugt sie nicht neu, merkte das bisher nur `PARITY=1`
+fügt einen Grund hinzu und zieht die Datei nicht nach, merkte das früher nur `PARITY=1`
 (`bescheid_deklaration_paritaet::sperrgrund_klartext_literale`): der Standardlauf blieb grün, und Rust prüfte
 gegen einen veralteten Text (gemessen 2026-10-03: Mutation eines Python-Klartexts, `cargo test -p domain` grün).
 
 Dieser Test braucht weder Rust noch `PARITY=1`: er vergleicht das Python-Dict mit der Datei, Schlüsselmenge UND
-Texte (Byte für Byte). Rot heißt: `python3 tools/parity/dump_sperrgruende.py` laufen lassen und die Datei
-committen.
+Texte (Byte für Byte). Rot heißt: Python-Klartext oder Datei wurden angefasst. Beide gelten als eingefroren;
+eine gewollte Abweichung steht als Eintrag mit Grund in der Abweichungsliste in Rust, nicht in dieser Datei.
 
 NULL LLM."""
 from __future__ import annotations
@@ -27,7 +28,7 @@ for _sub in ("produkt/haut", "produkt/store", "produkt/eingang", "produkt/mappin
 import bescheid_deklaration as BD  # noqa: E402
 
 FIXTURE = os.path.join(ROOT, "rust", "fixtures", "sperrgrund_klartext.json")
-HINWEIS = "Fixture neu erzeugen: python3 tools/parity/dump_sperrgruende.py, dann rust/fixtures/ committen."
+HINWEIS = "Fixture und Python-Klartext sind eingefroren (Erzeuger gelöscht); gewollte Abweichungen gehören in die Abweichungsliste."
 
 
 def _fixture() -> dict:

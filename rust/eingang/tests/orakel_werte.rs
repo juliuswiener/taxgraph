@@ -1,6 +1,7 @@
 //! `rust/eingang` gegen die Antworten des PYTHON-Orakels, hermetisch: `rust/fixtures/eingang_orakel.json`
-//! (erzeugt von `tools/parity/extract_eingang_orakel.py` aus `produkt/eingang/*` ueber
-//! `tools/parity/schritt8_oracle.py`) haelt Eingaben und die Antwort von Python; dieser Test spielt
+//! (eingefroren; der Erzeuger ist geloescht, Verlauf: `git show 2dd056a6:tools/parity/extract_eingang_orakel.py`;
+//! Python-Seite: `produkt/eingang/*` ueber `tools/parity/schritt8_oracle.py`) haelt Eingaben und die Antwort
+//! von Python; dieser Test spielt
 //! dieselben Eingaben gegen die Crate und vergleicht. Ohne `PARITY=1`, ohne Python zur Laufzeit.
 //!
 //! Der feste Anteil dessen, was `rust/parity/tests/eingang_paritaet.rs` zufaellig zieht, plus

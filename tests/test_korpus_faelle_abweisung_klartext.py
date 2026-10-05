@@ -3,8 +3,8 @@
 Ticket `korpus-faelle-liest-ein-feld-das-apierror-nicht-hat`: beide `except API.ApiError`-Zweige
 lasen `e.detail`. `ApiError` (produkt/haut/api.py) traegt nur `status` und die Meldung (`str(e)`).
 Jede Abweisung beim Anlegen oder bei einem Event warf deshalb einen AttributeError im Werkzeug,
-statt "ABWEISUNG: <status> <grund>" zu liefern; `korpus_faelle.main` und `e2e_faelle.baue` zeigen
-dem Menschen genau diese Zeile.
+statt "ABWEISUNG: <status> <grund>" zu liefern; `korpus_faelle.main` (und früher der E2E-Erzeuger, in Stufe 2
+gelöscht) zeigt dem Menschen genau diese Zeile.
 
 Kein Netzwerk, kein Server, kein Schreiben: `API.fall_anlegen` und `API.event` sind ersetzt, die
 Abweisung ist ein echtes `API.ApiError`. Zwei Faelle, weil `lege_an` zwei `except`-Zweige hat und
