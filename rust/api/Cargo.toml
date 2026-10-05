@@ -49,3 +49,4 @@ domain = { path = "../domain", features = ["testhilfe"] }
 http-body-util = { workspace = true }
 proptest = { workspace = true }
 tempfile = { workspace = true }
+sha2 = { workspace = true }
