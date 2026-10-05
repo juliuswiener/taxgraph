@@ -11,6 +11,9 @@
 //! `PARITAET`-Kommentar zu Python-`.get(k, 0)`-Fail-Open-Defaults: diese Defaults entstehen erst
 //! beim Zusammenbau der rohen Sachverhalt-Dicts (Teil B), nicht hier. Was hier gilt: kein
 //! Eingabe-Struct leitet `Default` ab -- jedes Feld muss der Aufrufer explizit setzen.
+// Tor 2b (REWRITE_PLAN §9): kein Float im Rechenpfad. `clippy.toml` sperrt die Typen `f64`/`f32`,
+// dies hier die Rechnung mit abgeleitetem Typ (`d.to_f64()? * x`, Literale). Testcode ist ausgenommen.
+#![cfg_attr(not(test), deny(clippy::float_arithmetic))]
 #![cfg_attr(
     test,
     allow(

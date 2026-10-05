@@ -1,4 +1,4 @@
-doc-valid-idents = ["PyJWT", "HS256", "ValueError", "TypeError", "OverflowError", ".."]
+# Tor 2b (REWRITE_PLAN §9): kein Float im Rechenpfad. Testcode nimmt `lib.rs` per `cfg_attr(test, allow(...))` aus.
 disallowed-types = [
     { path = "f64", reason = "Tor 2b: kein Float im Rechenpfad (REWRITE_PLAN §9, Geld ist Ganzzahl oder Decimal)" },
     { path = "f32", reason = "Tor 2b: kein Float im Rechenpfad (REWRITE_PLAN §9, Geld ist Ganzzahl oder Decimal)" },

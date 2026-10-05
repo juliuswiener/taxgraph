@@ -3,4 +3,6 @@
 disallowed-types = [
     { path = "serde_json::Value", reason = "Tor 2: interview liest PyWert, Value nur im Testcode" },
     { path = "serde_json::Map", reason = "Tor 2: interview liest PyWert, Value nur im Testcode" },
+    { path = "f64", reason = "Tor 2b: kein Float im Rechenpfad (REWRITE_PLAN §9, Geld ist Ganzzahl oder Decimal)" },
+    { path = "f32", reason = "Tor 2b: kein Float im Rechenpfad (REWRITE_PLAN §9, Geld ist Ganzzahl oder Decimal)" },
 ]

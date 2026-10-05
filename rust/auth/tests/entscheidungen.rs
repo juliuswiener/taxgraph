@@ -5,6 +5,7 @@
 //! (`berichte/auth-eingang-mutation.md`): diese Stellen hielt vorher kein Test.
 #![allow(
     clippy::cast_precision_loss, // Zeitstempel in Sekunden: weit unter 2^52
+    clippy::disallowed_types, // f64: nur als JSON-Claim-Wert der von Hand signierten Test-Tokens
     clippy::expect_used,
     clippy::indexing_slicing,
     clippy::unwrap_used
