@@ -21,29 +21,18 @@ pub enum RegistryFehler {
     },
     #[error("konnte Verzeichnis {pfad} nicht lesen: {nachricht}")]
     Verzeichnis { pfad: PathBuf, nachricht: String },
-    /// Der Dienst fuehrt die Felder je Dateiname (`bindung_n_vor_gwg.yaml` ist ein Schluessel);
-    /// derselbe Name in `produkt/bindung` und `rust/bindung/felder` wuerde einen verdecken.
-    #[error("Dateiname {name} liegt in beiden Verzeichnissen: {erste} und {zweite}")]
-    DoppelterDateiname {
-        name: String,
-        erste: PathBuf,
-        zweite: PathBuf,
-    },
 }
 
-/// Alle geladenen `bindung_*.yaml`-Dateien: je Verzeichnis nach Pfad sortiert, die Verzeichnisse
-/// in der Reihenfolge, in der sie geladen wurden.
+/// Alle geladenen `bindung_*.yaml`-Dateien, nach Pfad sortiert.
 #[derive(Debug)]
 pub struct Registry {
     pub dateien: Vec<(PathBuf, BindungDatei)>,
 }
 
-/// Wo die gemeinsame Bindung liegt, die Python und Rust lesen (eingefroren).
-pub const PYTHON_BINDUNG: &str = "produkt/bindung";
-
-/// Wo die Felder liegen, die nur Rust kennt (Weg B leicht, Entscheidung 2026-10-05). Python liest
-/// dieses Verzeichnis nicht.
-pub const RUST_FELDER: &str = "rust/bindung/felder";
+/// Wo die Bindung liegt, die der Dienst liest: Rust-Besitz (Weg B voll, Entscheidung 2026-10-05).
+/// Der Inhalt begann als byteweise Kopie von `produkt/bindung` und waechst ohne Python weiter;
+/// Python liest dieses Verzeichnis nicht.
+pub const BINDUNG_VERZEICHNIS: &str = "rust/bindung/daten";
 
 /// Die `bindung_*.yaml`-Dateien eines Verzeichnisses (nicht rekursiv, alphabetisch).
 /// `FELD_BESTAND.yaml` (und jede andere Datei ohne das Praefix) faellt durch den
@@ -71,8 +60,9 @@ fn bindung_pfade(verzeichnis: &Path) -> Result<Vec<PathBuf>, RegistryFehler> {
 /// `feld_id`-Eindeutigkeit ueber alle Dateien hinweg. `FELD_BESTAND.yaml` (und jede andere
 /// Datei ohne das Praefix) faellt durch den Dateinamen-Filter, keine Sonderbehandlung noetig.
 ///
-/// Das ist die Registry der **gemeinsamen** Bindung. Wer wissen will, was der Dienst kennt, nimmt
-/// [`lade_registry_der_wurzel`]; Tests gegen die Python-Orakel bleiben bei dieser Funktion.
+/// Wer wissen will, was der Dienst kennt, nimmt [`lade_registry_der_wurzel`]. Diese Funktion
+/// bleibt fuer Verzeichnisse, die der Aufrufer selbst benennt: hermetische Tests mit eigenen YAMLs
+/// und die Python-Orakel, deren Antworten ueber `produkt/bindung` berechnet sind.
 ///
 /// # Errors
 /// [`RegistryFehler`] beim ersten Lade-, Validierungs- oder Eindeutigkeitsfehler.
@@ -80,11 +70,11 @@ pub fn lade_registry(verzeichnis: &Path) -> Result<Registry, RegistryFehler> {
     baue(bindung_pfade(verzeichnis)?)
 }
 
-/// Die Registry, die der Dienst benutzt: `produkt/bindung` (Pflicht) und `rust/bindung/felder`
-/// (die Felder nur fuer Rust). `feld_id` und Dateiname sind ueber beide Verzeichnisse eindeutig.
+/// Die Registry, die der Dienst benutzt: alle `bindung_*.yaml` in [`BINDUNG_VERZEICHNIS`] unter
+/// `wurzel`. Jeder Rust-Code, der die Bindung liest, geht hierher, nie ueber einen eigenen Pfad.
 ///
-/// Fehlt `rust/bindung/felder`, gilt die gemeinsame Bindung allein: ein Checkout ohne Rust-Felder
-/// ist gueltig, nur ein fehlendes `produkt/bindung` ist ein Fehler.
+/// Das Verzeichnis ist Pflicht: fehlt es, ist das ein Fehler und keine leere Registry, denn ein
+/// Dienst ohne Felder liefe weiter und meldete nichts.
 ///
 /// ```
 /// let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -93,25 +83,10 @@ pub fn lade_registry(verzeichnis: &Path) -> Result<Registry, RegistryFehler> {
 /// ```
 ///
 /// # Errors
-/// [`RegistryFehler`] beim ersten Lade-, Validierungs- oder Eindeutigkeitsfehler;
-/// [`RegistryFehler::DoppelterDateiname`], wenn ein Dateiname in beiden Verzeichnissen steht.
+/// [`RegistryFehler`] beim ersten Lade-, Validierungs- oder Eindeutigkeitsfehler, auch wenn das
+/// Verzeichnis fehlt.
 pub fn lade_registry_der_wurzel(wurzel: &Path) -> Result<Registry, RegistryFehler> {
-    let mut pfade = bindung_pfade(&wurzel.join(PYTHON_BINDUNG))?;
-    let rust = wurzel.join(RUST_FELDER);
-    if rust.is_dir() {
-        for pfad in bindung_pfade(&rust)? {
-            let name = pfad.file_name();
-            if let Some(erste) = pfade.iter().find(|p| p.file_name() == name) {
-                return Err(RegistryFehler::DoppelterDateiname {
-                    name: name.map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
-                    erste: erste.clone(),
-                    zweite: pfad,
-                });
-            }
-            pfade.push(pfad);
-        }
-    }
-    baue(pfade)
+    lade_registry(&wurzel.join(BINDUNG_VERZEICHNIS))
 }
 
 fn baue(pfade: Vec<PathBuf>) -> Result<Registry, RegistryFehler> {

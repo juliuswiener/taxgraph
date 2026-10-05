@@ -6,8 +6,8 @@
 //! ohne Label zeigt dem Nutzer `land_forst` statt „Land- und Forstwirtschaft", ohne dass etwas
 //! scheitert. Ersetzt `tests/test_enum_labels.py` (Python-Test, entfaellt mit Python).
 //!
-//! Die Registry kommt aus `bindung::lade_registry_der_wurzel`: Felder in `produkt/bindung/` UND in
-//! `rust/bindung/felder/` (Weg B leicht) brauchen ein Label.
+//! Die Registry kommt aus `bindung::lade_registry_der_wurzel`, also aus `rust/bindung/daten/`:
+//! jedes Enum-Feld dort braucht ein Label, auch ein neues nur fuer Rust.
 //!
 //! Die Auslieferung der Labels an die Oberflaeche (`/fragen`, `/chat`) belegen `lesen_naht.rs` und
 //! `chat_llm_attrappe_hermetisch.rs`; hier steht nur die Tabelle.
@@ -36,13 +36,13 @@ const LESBAR_ROH: [&str; 13] = [
     "Kanada",
 ];
 
-/// `produkt/bindung/` und `rust/bindung/felder/` liegen unter der Wurzel, zwei Ebenen ueber dem Crate.
+/// `rust/bindung/daten/` liegt unter der Wurzel, zwei Ebenen ueber dem Crate.
 fn wurzel() -> std::path::PathBuf {
     std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-/// `feld_id -> enum_werte` jeder askable Enum-Bindung mit Werten, ueber alle Bindungsdateien beider
-/// Verzeichnisse (so laedt der Dienst sie: `bindung::lade_registry_der_wurzel`).
+/// `feld_id -> enum_werte` jeder askable Enum-Bindung mit Werten, ueber alle Bindungsdateien (so
+/// laedt der Dienst sie: `bindung::lade_registry_der_wurzel`).
 fn askable_enums() -> BTreeMap<String, Vec<String>> {
     let reg = bindung::lade_registry_der_wurzel(&wurzel()).expect("Registry");
     reg.dateien

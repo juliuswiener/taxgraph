@@ -6,7 +6,7 @@
 //! (`api.py:447-491`), und prueft ihre Antwort auf Gestalt.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-/// `produkt/bindung/` liegt zwei Ebenen ueber dem Crate.
+/// Die Wurzel (mit `rust/bindung/daten/`) liegt zwei Ebenen ueber dem Crate.
 fn wurzel() -> std::path::PathBuf {
     std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
@@ -14,7 +14,7 @@ fn wurzel() -> std::path::PathBuf {
 /// `bindung::lade_registry` (`api._scheibe_bindung` laedt hierueber die Feldtabelle).
 #[test]
 fn bindung_ist_erreichbar() {
-    let reg = bindung::lade_registry(&wurzel().join("produkt/bindung")).expect("Registry");
+    let reg = bindung::lade_registry_der_wurzel(&wurzel()).expect("Registry");
     let n: usize = reg.dateien.iter().map(|(_, d)| d.bindungen.len()).sum();
     assert!(n > 300, "nur {n} Bindungen geladen — falscher Pfad?");
 }
@@ -22,7 +22,7 @@ fn bindung_ist_erreichbar() {
 /// `interview::{Graph, Sicht}` (`api.py` uebergibt die Scheiben-Bindung als `Sicht`).
 #[test]
 fn interview_ist_erreichbar() {
-    let reg = bindung::lade_registry(&wurzel().join("produkt/bindung")).expect("Registry");
+    let reg = bindung::lade_registry_der_wurzel(&wurzel()).expect("Registry");
     let graph = interview::Graph::aus_registry(&reg);
     let sicht = graph.sicht(["ep_arbeitstage", "ep_entfernung_km"]).expect("Sicht");
     assert_eq!(sicht.feld_ids().count(), 2);
@@ -31,7 +31,7 @@ fn interview_ist_erreichbar() {
 /// `interview::relevanz` — das ist die Funktion, deren Ergebnis `/stand` als `relevanz` liefert.
 #[test]
 fn interview_rechnet_relevanz() {
-    let reg = bindung::lade_registry(&wurzel().join("produkt/bindung")).expect("Registry");
+    let reg = bindung::lade_registry_der_wurzel(&wurzel()).expect("Registry");
     let graph = interview::Graph::aus_registry(&reg);
     let store = store::Store::leer(2025, None);
     let rel = interview::relevanz(&store, graph.alle(), &graph);

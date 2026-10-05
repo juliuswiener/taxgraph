@@ -177,8 +177,8 @@ fn der_llm_rueckfall_bekommt_den_zweck_und_den_betrag_mit_vorzeichen() {
 #[test]
 fn ein_slot_der_nur_mit_minijob_beginnt_gehoert_nicht_zum_minijob_beleg() {
     use eingang::beleg::{beleg_felder, BelegTyp};
-    let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-    let mut alle: Vec<bindung::Bindung> = bindung::lade_registry(&wurzel)
+    let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let mut alle: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&wurzel)
         .unwrap()
         .dateien
         .into_iter()

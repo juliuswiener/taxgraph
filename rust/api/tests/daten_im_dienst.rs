@@ -1,9 +1,9 @@
-//! Der Dienst liest `rust/bindung/felder` neben `produkt/bindung` (Weg B leicht, 2026-10-05).
+//! Der Dienst liest `rust/bindung/daten` und kein anderes Verzeichnis (Weg B voll, 2026-10-05).
 //!
-//! Der Lader selbst ist in `rust/bindung/tests/rust_felder_verzeichnis.rs` geprueft. Hier steht nur,
-//! dass der Dienst ihn benutzt: ein Feld, das nur in `rust/bindung/felder` steht, ist im Katalog des
-//! Dienstes (`Zustand::katalog`), und eine `feld_id` in beiden Verzeichnissen endet in einer
-//! unerwarteten Ausnahme (500) statt in einer stillen Doppelbelegung.
+//! Der Lader selbst ist in `rust/bindung/tests/daten_verzeichnis.rs` geprueft. Hier steht nur,
+//! dass der Dienst ihn benutzt: ein Feld in `rust/bindung/daten` ist im Katalog des Dienstes
+//! (`Zustand::katalog`), ein Feld in `produkt/bindung` nicht, und eine `feld_id` in zwei Dateien
+//! endet in einer unerwarteten Ausnahme (500) statt in einer stillen Doppelbelegung.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -51,41 +51,50 @@ fn zustand(wurzel: &Path, tmp: &Path) -> Zustand {
 }
 
 #[test]
-fn feld_nur_in_rust_felder_ist_im_katalog_des_dienstes() {
+fn feld_in_rust_daten_ist_im_katalog_des_dienstes() {
     let wurzel = tempfile::tempdir().unwrap();
     let tmp = tempfile::tempdir().unwrap();
+    schreibe(
+        wurzel.path(),
+        "rust/bindung/daten",
+        "bindung_r.yaml",
+        &bindung("feld_rust_fragbar", true),
+    );
+    schreibe(
+        wurzel.path(),
+        "rust/bindung/daten",
+        "bindung_s.yaml",
+        &bindung("feld_rust_nicht_fragbar", false),
+    );
+    // Attrappe: das Verzeichnis, das nur Python liest. Der Dienst darf es nicht ansehen.
     schreibe(
         wurzel.path(),
         "produkt/bindung",
         "bindung_a.yaml",
-        &bindung("feld_python", false),
-    );
-    schreibe(
-        wurzel.path(),
-        "rust/bindung/felder",
-        "bindung_r.yaml",
-        &bindung("feld_nur_rust", true),
+        &bindung("feld_nur_python", true),
     );
     let katalog = zustand(wurzel.path(), tmp.path()).katalog().unwrap();
     // askable => der Sprachmodell-Schreiber darf es vorschlagen (store.py:139-162).
-    assert!(katalog.erlaubt("llm", "feld_nur_rust"));
-    // Kontrolle: die gemeinsame Bindung ist weiter da, und ihr nicht fragbares Feld ist es nicht.
-    assert!(!katalog.erlaubt("llm", "feld_python"));
+    assert!(katalog.erlaubt("llm", "feld_rust_fragbar"));
+    // Kontrolle: ein nicht fragbares Rust-Feld ist es nicht, ein Feld nur in `produkt/bindung`
+    // gibt es fuer den Dienst nicht.
+    assert!(!katalog.erlaubt("llm", "feld_rust_nicht_fragbar"));
+    assert!(!katalog.erlaubt("llm", "feld_nur_python"));
 }
 
 #[test]
-fn feld_id_in_beiden_verzeichnissen_ist_eine_unerwartete_ausnahme() {
+fn feld_id_in_zwei_dateien_ist_eine_unerwartete_ausnahme() {
     let wurzel = tempfile::tempdir().unwrap();
     let tmp = tempfile::tempdir().unwrap();
     schreibe(
         wurzel.path(),
-        "produkt/bindung",
+        "rust/bindung/daten",
         "bindung_a.yaml",
         &bindung("feld_x", false),
     );
     schreibe(
         wurzel.path(),
-        "rust/bindung/felder",
+        "rust/bindung/daten",
         "bindung_r.yaml",
         &bindung("feld_x", false),
     );

@@ -155,13 +155,13 @@ fn unvollstaendige_bindung_ist_500_wie_python() {
     }
 }
 
-/// Eine Wurzel, deren `produkt/bindung/` leer ist: `ep` findet keine seiner sechs Felder (500 mit
+/// Eine Wurzel, deren `rust/bindung/daten/` leer ist: `ep` findet keine seiner sechs Felder (500 mit
 /// der Liste in Scheibenreihenfolge), `n_vor_gwg` findet seine Datei nicht — `FileNotFoundError`,
 /// nie eine Scheibe mit null Feldern, die „vollstaendig" aussaehe.
 #[test]
 fn leere_bindung_ist_ein_fehler_nie_eine_leere_scheibe() {
     let wurzel = tempfile::tempdir().unwrap();
-    std::fs::create_dir_all(wurzel.path().join("produkt/bindung")).unwrap();
+    std::fs::create_dir_all(wurzel.path().join("rust/bindung/daten")).unwrap();
     let d = dienst_in(wurzel.path());
 
     let ep = Cfg::fuer(Scheibe::Ep).felder_roh().unwrap();

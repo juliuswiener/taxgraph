@@ -37,9 +37,10 @@ const FIXTURE: &str = include_str!("../../fixtures/intervall_orakel.json");
 
 /// Faellt eine Zahl, wurde das Fixture gekuerzt -- dann waere der Test gruen, weil er weniger prueft.
 ///
-/// Die 368 Felder sind die gemeinsame Bindung `produkt/bindung` (Pythons Antwort, eingefroren). Die
-/// Tests laden sie mit `lade_registry`, nicht mit `lade_registry_der_wurzel`: ein Feld in
-/// `rust/bindung/felder` (Weg B leicht, 2026-10-05) aendert diese Zahl nicht.
+/// Die 368 Felder sind `produkt/bindung` (Pythons Eingabe, eingefroren). Die Tests laden sie mit
+/// `lade_registry` auf diesem Verzeichnis, nicht mit `lade_registry_der_wurzel`: ein Feld in
+/// `rust/bindung/daten` (Weg B voll, 2026-10-05) aendert diese Zahl nicht. Faellt mit dem Fixture
+/// weg (Stufe 2).
 const N_SICHT: usize = 368;
 const N_IV: usize = 287;
 const N_SLOTS: usize = 106;

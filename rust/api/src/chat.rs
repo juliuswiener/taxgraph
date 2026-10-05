@@ -727,8 +727,8 @@ mod tests {
 
     /// Eine Bindung der echten Registry als Vorlage; die Tests ändern an der Kopie, was sie prüfen.
     fn vorlage() -> bindung::Bindung {
-        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        bindung::lade_registry(&pfad)
+        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
             .dateien
             .into_iter()

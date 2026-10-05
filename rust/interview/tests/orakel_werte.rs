@@ -33,9 +33,9 @@ const FIXTURE: &str = include_str!("../../fixtures/interview_orakel.json");
 /// Szenarien im Fixture. Faellt die Zahl, wurde das Fixture gekuerzt -- dann waere der Test gruen,
 /// weil er weniger prueft.
 ///
-/// Das Fixture ist Pythons Antwort ueber die gemeinsame Bindung `produkt/bindung`;
-/// `interview::doctest_registry` laedt genau sie. Felder in `rust/bindung/felder` (Weg B leicht,
-/// 2026-10-05) kennt dieser Test nicht und verschieben keine der drei Zahlen.
+/// Das Fixture ist Pythons Antwort ueber `produkt/bindung`; `interview::python_orakel_registry`
+/// laedt genau sie. Felder, die nur `rust/bindung/daten` kennt (Weg B voll, 2026-10-05), sieht
+/// dieser Test nicht und verschieben keine der drei Zahlen.
 const N_SZENARIEN: usize = 83;
 const N_SICHTEN: usize = 13;
 const N_ROLLEN: usize = 5;
@@ -47,7 +47,7 @@ fn fixture() -> &'static Value {
 
 fn registry() -> &'static Registry {
     static CELL: OnceLock<Registry> = OnceLock::new();
-    CELL.get_or_init(|| interview::doctest_registry().expect("registry"))
+    CELL.get_or_init(|| interview::python_orakel_registry().expect("registry"))
 }
 
 fn graph() -> &'static Graph<'static> {

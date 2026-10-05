@@ -2,7 +2,7 @@
 //! aber-nicht-einloesbar`, Entscheidung `hausnummer-zusatz-bekommt-ein-bindungsfeld`).
 //!
 //! `stammdaten_hausnummerzusatz` (Kz `E0101207`, Laenge 1-6, kein Zeilenumbruch) steht in der
-//! gemeinsamen Bindungstabelle `produkt/bindung/`; Python und Rust lesen dieselbe YAML. Doppelt
+//! Bindungstabelle `rust/bindung/daten/` (bei der Uebernahme eine Kopie der gemeinsamen). Doppelt
 //! gefuehrt sind nur die Feldlisten der Scheiben: Rust spiegelt `STAMMDATEN_FELDER` und die
 //! `felder` von `gesamt` und `rentner_gesamt` von Hand. Darum ein Test je Liste -- fehlt der Name in
 //! GENAU EINER, wird genau dieser Test rot, ohne `PARITY=1` und ohne Python.

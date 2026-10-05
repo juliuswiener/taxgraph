@@ -1,6 +1,6 @@
-//! Laedt alle realen Laufzeit-YAMLs (`produkt/bindung/bindung_*.yaml`, `params/<vz>/*.yaml`,
+//! Laedt alle realen Laufzeit-YAMLs (`rust/bindung/daten/bindung_*.yaml`, `params/<vz>/*.yaml`,
 //! `params/kohorten/*.yaml`) und zaehlt sie -- 25 + 58 + 8 = 91, Stand 2026-09-29 (siehe
-//! `REWRITE_PLAN.md`). Negative Tests fuer unbekannte Felder (`bindung_*.yaml`,
+//! `REWRITE_PLAN.md`); die Bindungsdateien mit Untergrenze, die anderen genau. Negative Tests fuer unbekannte Felder (`bindung_*.yaml`,
 //! `deny_unknown_fields`) und doppelte `feld_id` (Registry) liegen mit in dieser Datei.
 #![allow(
     clippy::unwrap_used,
@@ -9,7 +9,9 @@
     clippy::panic
 )]
 
-use bindung::{lade_kohorten, lade_params, lade_registry, BindungDatei, RegistryFehler};
+use bindung::{
+    lade_kohorten, lade_params, lade_registry, lade_registry_der_wurzel, BindungDatei, RegistryFehler,
+};
 
 fn repo_root() -> std::path::PathBuf {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -27,14 +29,17 @@ fn yaml_dateien(verzeichnis: &std::path::Path) -> Vec<std::path::PathBuf> {
 
 #[test]
 fn alle_bindung_yamls_laden() {
-    let verzeichnis = repo_root().join("produkt").join("bindung");
+    let verzeichnis = repo_root();
     let registry =
-        lade_registry(&verzeichnis).unwrap_or_else(|e| panic!("Registry-Aufbau gescheitert: {e}"));
-    assert_eq!(
-        registry.dateien.len(),
-        25,
-        "erwartete 25 bindung_*.yaml-Dateien in {}",
-        verzeichnis.display()
+        lade_registry_der_wurzel(&verzeichnis).unwrap_or_else(|e| panic!("Registry-Aufbau gescheitert: {e}"));
+    // Untergrenze, keine feste Zahl: ein neues Feld darf in einer neuen Datei stehen. 25 Dateien
+    // standen bei der Uebernahme der Bindung nach `rust/bindung/daten` (2026-10-05); weniger heisst,
+    // dass eine verschwunden ist. Eine Ratsche pro Feld ist Sache des Bindungs-Datenwaechters.
+    assert!(
+        registry.dateien.len() >= 25,
+        "erwartete mindestens 25 bindung_*.yaml-Dateien unter {}, fand {}",
+        verzeichnis.display(),
+        registry.dateien.len()
     );
 }
 
