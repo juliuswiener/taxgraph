@@ -25,8 +25,8 @@ fn bindung(feld_id: &str, askable: bool) -> String {
     };
     format!(
         "version: 1\nscheibe: test\nbindungen:\n  - feld_id: {feld_id}\n    quelle: {{regel_id: r, signatur_slot: s}}\n    typ: bool\n    \
-         askable: {askable}\n{frage}    hilfe_kurz: T\n    beispielwert: true\n    elster_kz: \"E0123456\"\n    vz_gueltigkeit: [2025]\n    \
-         anker_ref: {{quelle: Q, zitatanker: Z}}\n"
+         askable: {askable}\n{frage}    hilfe_kurz: Tipp\n    beispielwert: true\n    elster_kz: \"E0123456\"\n    vz_gueltigkeit: [2025]\n    \
+         anker_ref: {{quelle: Q, zitatanker: Zit}}\n"
     )
 }
 

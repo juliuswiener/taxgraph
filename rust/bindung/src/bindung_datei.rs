@@ -46,6 +46,118 @@ pub enum BindungFehler {
         min: i64,
         max: i64,
     },
+    #[error("{feld_id}: fragetext_laie nennt ein Gesetzeskuerzel oder eine Fundstelle ({fragetext:?}), der Laie liest Klartext")]
+    FragetextMitGesetzeskuerzel { feld_id: String, fragetext: String },
+    #[error("{wo}: {was} braucht mindestens {min} Zeichen")]
+    ZuKurz {
+        wo: String,
+        was: &'static str,
+        min: usize,
+    },
+    #[error("{feld_id}: enum_werte darf nicht leer sein")]
+    EnumWerteLeer { feld_id: String },
+    #[error("{feld_id}: feld_bedingung braucht genau eines von wert/wert_nicht")]
+    FeldBedingungNichtGenauEins { feld_id: String },
+    #[error("{feld_id}: ungueltige instanz_gruppe {gruppe:?} (erwartet ^[a-z][a-z0-9_]*$)")]
+    UngueltigeInstanzGruppe { feld_id: String, gruppe: String },
+    #[error("instanz_gruppen {gruppe}: max {max} liegt ausserhalb von {}..={}", MIN_INSTANZ_MAX, MAX_INSTANZ_MAX)]
+    InstanzGruppeMaxAusserhalb { gruppe: String, max: u32 },
+    #[error("regel_bedingungen {regel_id}: ungueltiges feld {feld:?} (erwartet ^[a-z][a-z0-9_]*$)")]
+    UngueltigesRegelBedingungFeld { regel_id: String, feld: String },
+    #[error("version {0} ist zu klein, mindestens 1")]
+    VersionZuKlein(u32),
+}
+
+/// Mindestlaenge von `hilfe_kurz` und `anker_ref.zitatanker` (Schema: `minLength: 3`).
+const MIN_KURZTEXT: usize = 3;
+/// Mindestlaenge einer Begruendung, die kurz sein darf (`regel_bedingung.grund`, `luecke.grund`).
+const MIN_GRUND_KURZ: usize = 5;
+/// Mindestlaenge einer Begruendung, die eine Entscheidung erklaert (`feld_bedingung.grund`,
+/// `ableitung.grund`, `instanz_gruppe.grund`, `thema_zuerst.grund`).
+const MIN_GRUND_LANG: usize = 40;
+/// Grenzen von `instanz_gruppe.max` (Schema: `minimum 1`, `maximum 20`).
+const MIN_INSTANZ_MAX: u32 = 1;
+const MAX_INSTANZ_MAX: u32 = 20;
+
+/// Weniger als `min` Zeichen, gezaehlt nach Zeichen und nicht nach Bytes (wie `minLength`).
+fn zu_kurz(text: &str, min: usize) -> bool {
+    text.chars().count() < min
+}
+
+/// Ein Baustein der kleinen Mustersuche in [`nennt_gesetzeskuerzel`]: ein festes Zeichen, ein
+/// optionales Leerzeichen (`\s?`) oder eine Ziffer (`[0-9]`).
+enum Baustein {
+    Zeichen(char),
+    Leerraum,
+    Ziffer,
+}
+
+/// Passt `muster` am Anfang von `zeichen`?
+fn passt_am_anfang(zeichen: &[char], muster: &[Baustein]) -> bool {
+    let mut i = 0;
+    for baustein in muster {
+        match baustein {
+            Baustein::Zeichen(soll) => {
+                if zeichen.get(i) != Some(soll) {
+                    return false;
+                }
+                i += 1;
+            }
+            Baustein::Leerraum => {
+                if zeichen.get(i).is_some_and(|c| c.is_whitespace()) {
+                    i += 1;
+                }
+            }
+            Baustein::Ziffer => {
+                if !zeichen.get(i).is_some_and(char::is_ascii_digit) {
+                    return false;
+                }
+                i += 1;
+            }
+        }
+    }
+    true
+}
+
+/// Steht `muster` irgendwo in `text`?
+fn enthaelt_muster(text: &str, muster: &[Baustein]) -> bool {
+    let zeichen: Vec<char> = text.chars().collect();
+    (0..zeichen.len()).any(|anfang| {
+        zeichen
+            .get(anfang..)
+            .is_some_and(|rest| passt_am_anfang(rest, muster))
+    })
+}
+
+/// Das Verbot aus `schema.json` fuer `fragetext_laie`: der Laie liest Klartext, kein Gesetz. Das
+/// Schema verbietet (Regex-Suche) `§|EStG|GewStG|KStG|Abs\.|i\.\s?S\.\s?d\.|Satz\s?[0-9]|Aufwendungen i`.
+/// Ohne Regex-Abhaengigkeit nachgebaut; `\s` ist hier `char::is_whitespace`.
+fn nennt_gesetzeskuerzel(text: &str) -> bool {
+    use Baustein::{Leerraum, Zeichen, Ziffer};
+    const TEILE: [&str; 6] = ["§", "EStG", "GewStG", "KStG", "Abs.", "Aufwendungen i"];
+    // i. S. d.
+    let i_s_d = [
+        Zeichen('i'),
+        Zeichen('.'),
+        Leerraum,
+        Zeichen('S'),
+        Zeichen('.'),
+        Leerraum,
+        Zeichen('d'),
+        Zeichen('.'),
+    ];
+    // Satz 3
+    let satz_ziffer = [
+        Zeichen('S'),
+        Zeichen('a'),
+        Zeichen('t'),
+        Zeichen('z'),
+        Leerraum,
+        Ziffer,
+    ];
+    TEILE.iter().any(|teil| text.contains(teil))
+        || enthaelt_muster(text, &i_s_d)
+        || enthaelt_muster(text, &satz_ziffer)
 }
 
 /// `^[a-z][a-z0-9_]*$` ohne Regex-Abhaengigkeit (nur ASCII, wie das Schema selbst). Die eine Regel
@@ -291,6 +403,70 @@ impl Bindung {
         if let Some(bereich) = &self.bereich {
             self.pruefe_bereich(bereich)?;
         }
+        self.pruefe_schema_reste()
+    }
+
+    /// Die Regeln aus `schema.json`, die `serde` nicht kennt: Mindestlaengen, das Verbot von
+    /// Gesetzeskuerzeln im Fragetext, nicht leere `enum_werte`, genau eine Bedingung in
+    /// `feld_bedingung`, Muster von `instanz_gruppe`. Ohne sie gilt eine Bindung als gueltig, die der
+    /// Laie nicht lesen kann (Fragetext mit Paragraf) oder deren Bedingung zwei Antworten hat und
+    /// still eine davon gewinnen laesst.
+    fn pruefe_schema_reste(&self) -> Result<(), BindungFehler> {
+        let kurz = |was: &'static str, min: usize| BindungFehler::ZuKurz {
+            wo: self.feld_id.clone(),
+            was,
+            min,
+        };
+        if zu_kurz(&self.hilfe_kurz, MIN_KURZTEXT) {
+            return Err(kurz("hilfe_kurz", MIN_KURZTEXT));
+        }
+        if zu_kurz(&self.anker_ref.zitatanker, MIN_KURZTEXT) {
+            return Err(kurz("anker_ref.zitatanker", MIN_KURZTEXT));
+        }
+        if let Some(fragetext) = &self.fragetext_laie {
+            if nennt_gesetzeskuerzel(fragetext) {
+                return Err(BindungFehler::FragetextMitGesetzeskuerzel {
+                    feld_id: self.feld_id.clone(),
+                    fragetext: fragetext.clone(),
+                });
+            }
+        }
+        if self.enum_werte.as_ref().is_some_and(Vec::is_empty) {
+            return Err(BindungFehler::EnumWerteLeer {
+                feld_id: self.feld_id.clone(),
+            });
+        }
+        if let Some(gruppe) = &self.instanz_gruppe {
+            if !ist_gueltige_feld_id(gruppe) {
+                return Err(BindungFehler::UngueltigeInstanzGruppe {
+                    feld_id: self.feld_id.clone(),
+                    gruppe: gruppe.clone(),
+                });
+            }
+        }
+        if let Some(bedingung) = &self.feld_bedingung {
+            if bedingung.wert.is_some() == bedingung.wert_nicht.is_some() {
+                return Err(BindungFehler::FeldBedingungNichtGenauEins {
+                    feld_id: self.feld_id.clone(),
+                });
+            }
+            if zu_kurz(&bedingung.grund, MIN_GRUND_LANG) {
+                return Err(BindungFehler::ZuKurz {
+                    wo: format!("{}.feld_bedingung", self.feld_id),
+                    was: "grund",
+                    min: MIN_GRUND_LANG,
+                });
+            }
+        }
+        if let Some(ableitung) = &self.ableitung {
+            if zu_kurz(&ableitung.grund, MIN_GRUND_LANG) {
+                return Err(BindungFehler::ZuKurz {
+                    wo: format!("{}.ableitung", self.feld_id),
+                    was: "grund",
+                    min: MIN_GRUND_LANG,
+                });
+            }
+        }
         Ok(())
     }
 
@@ -433,8 +609,74 @@ pub struct BindungDatei {
     pub themen_zuerst: Vec<ThemaZuerst>,
 }
 
-/// Laedt und validiert eine `bindung_*.yaml`-Datei (jede [`Bindung`] einzeln ueber
-/// [`Bindung::validieren`]).
+impl BindungDatei {
+    /// Jede [`Bindung`] einzeln ueber [`Bindung::validieren`], dazu die Regeln der Abschnitte
+    /// `luecken`, `regel_bedingungen`, `instanz_gruppen` und `themen_zuerst` aus `schema.json`,
+    /// die `serde` nicht kennt (Mindestlaengen der Begruendungen, `instanz_gruppe.max` von 1 bis 20,
+    /// Muster von `regel_bedingung.feld`) und `version` mindestens 1.
+    ///
+    /// # Errors
+    /// [`BindungFehler`] bei der ersten verletzten Regel.
+    pub fn validieren(&self) -> Result<(), BindungFehler> {
+        if self.version < 1 {
+            return Err(BindungFehler::VersionZuKlein(self.version));
+        }
+        for b in &self.bindungen {
+            b.validieren()?;
+        }
+        for luecke in &self.luecken {
+            if zu_kurz(&luecke.grund, MIN_GRUND_KURZ) {
+                return Err(BindungFehler::ZuKurz {
+                    wo: format!("luecken {}", luecke.regel_id),
+                    was: "grund",
+                    min: MIN_GRUND_KURZ,
+                });
+            }
+        }
+        for bedingung in &self.regel_bedingungen {
+            if !ist_gueltige_feld_id(&bedingung.feld) {
+                return Err(BindungFehler::UngueltigesRegelBedingungFeld {
+                    regel_id: bedingung.regel_id.clone(),
+                    feld: bedingung.feld.clone(),
+                });
+            }
+            if zu_kurz(&bedingung.grund, MIN_GRUND_KURZ) {
+                return Err(BindungFehler::ZuKurz {
+                    wo: format!("regel_bedingungen {}", bedingung.regel_id),
+                    was: "grund",
+                    min: MIN_GRUND_KURZ,
+                });
+            }
+        }
+        for gruppe in &self.instanz_gruppen {
+            if !(MIN_INSTANZ_MAX..=MAX_INSTANZ_MAX).contains(&gruppe.max) {
+                return Err(BindungFehler::InstanzGruppeMaxAusserhalb {
+                    gruppe: gruppe.gruppe.clone(),
+                    max: gruppe.max,
+                });
+            }
+            if zu_kurz(&gruppe.grund, MIN_GRUND_LANG) {
+                return Err(BindungFehler::ZuKurz {
+                    wo: format!("instanz_gruppen {}", gruppe.gruppe),
+                    was: "grund",
+                    min: MIN_GRUND_LANG,
+                });
+            }
+        }
+        for thema in &self.themen_zuerst {
+            if zu_kurz(&thema.grund, MIN_GRUND_LANG) {
+                return Err(BindungFehler::ZuKurz {
+                    wo: format!("themen_zuerst {}", thema.regel_id),
+                    was: "grund",
+                    min: MIN_GRUND_LANG,
+                });
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Laedt und validiert eine `bindung_*.yaml`-Datei ([`BindungDatei::validieren`]).
 ///
 /// # Errors
 /// [`BindungFehler`] bei I/O-, YAML- oder Validierungsfehlern.
@@ -447,9 +689,7 @@ pub fn lade_bindung(pfad: &Path) -> Result<BindungDatei, BindungFehler> {
         pfad: pfad.to_path_buf(),
         nachricht: e.to_string(),
     })?;
-    for b in &datei.bindungen {
-        b.validieren()?;
-    }
+    datei.validieren()?;
     Ok(datei)
 }
 
@@ -474,8 +714,8 @@ mod tests {
             format!(
                 "version: 1\nscheibe: test\nbindungen:\n  - feld_id: testfeld\n    \
                  quelle: {{regel_id: r, signatur_slot: s}}\n    typ: bool\n    askable: false\n    \
-                 hilfe_kurz: T\n    beispielwert: true\n    elster_kz: \"{kz}\"\n    \
-                 vz_gueltigkeit: [2025]\n    anker_ref: {{quelle: Q, zitatanker: Z}}\n"
+                 hilfe_kurz: Tipp\n    beispielwert: true\n    elster_kz: \"{kz}\"\n    \
+                 vz_gueltigkeit: [2025]\n    anker_ref: {{quelle: Q, zitatanker: Zit}}\n"
             )
         };
         assert!(serde_yaml_ng::from_str::<BindungDatei>(&yaml("E0123456")).is_ok());

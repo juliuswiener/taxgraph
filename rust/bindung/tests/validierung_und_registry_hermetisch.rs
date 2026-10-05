@@ -26,8 +26,8 @@ fn bindung(
     let frage = fragetext.map_or(String::new(), |t| format!("    fragetext_laie: \"{t}\"\n"));
     let yaml = format!(
         "version: 1\nscheibe: test\nbindungen:\n  - feld_id: testfeld\n    quelle: {{regel_id: r, signatur_slot: s}}\n    typ: {typ}\n    \
-         askable: {askable}\n{frage}    frage_invertiert: {invertiert}\n    hilfe_kurz: T\n    beispielwert: true\n    \
-         elster_kz: \"E0123456\"\n    vz_gueltigkeit: [2025]\n    anker_ref: {{quelle: Q, zitatanker: Z}}\n"
+         askable: {askable}\n{frage}    frage_invertiert: {invertiert}\n    hilfe_kurz: Tipp\n    beispielwert: true\n    \
+         elster_kz: \"E0123456\"\n    vz_gueltigkeit: [2025]\n    anker_ref: {{quelle: Q, zitatanker: Zit}}\n"
     );
     let datei: BindungDatei = serde_yaml_ng::from_str(&yaml).unwrap();
     datei.bindungen[0].validieren()
@@ -106,8 +106,8 @@ fn verzeichnis(name: &str) -> PathBuf {
 fn gueltig(feld_id: &str) -> String {
     format!(
         "version: 1\nscheibe: test\nbindungen:\n  - feld_id: {feld_id}\n    quelle: {{regel_id: r, signatur_slot: s}}\n    typ: bool\n    \
-         askable: false\n    hilfe_kurz: T\n    beispielwert: true\n    elster_kz: \"E0123456\"\n    vz_gueltigkeit: [2025]\n    \
-         anker_ref: {{quelle: Q, zitatanker: Z}}\n"
+         askable: false\n    hilfe_kurz: Tipp\n    beispielwert: true\n    elster_kz: \"E0123456\"\n    vz_gueltigkeit: [2025]\n    \
+         anker_ref: {{quelle: Q, zitatanker: Zit}}\n"
     )
 }
 
@@ -169,8 +169,8 @@ fn registry_weist_doppelte_feld_id_ueber_dateigrenzen_ab() {
 fn mit_vz(feld_id: &str, vz: &str) -> Result<(), BindungFehler> {
     let yaml = format!(
         "version: 1\nscheibe: test\nbindungen:\n  - feld_id: {feld_id}\n    quelle: {{regel_id: r, signatur_slot: s}}\n    typ: bool\n    \
-         askable: false\n    hilfe_kurz: T\n    beispielwert: true\n    elster_kz: \"E0123456\"\n    vz_gueltigkeit: {vz}\n    \
-         anker_ref: {{quelle: Q, zitatanker: Z}}\n"
+         askable: false\n    hilfe_kurz: Tipp\n    beispielwert: true\n    elster_kz: \"E0123456\"\n    vz_gueltigkeit: {vz}\n    \
+         anker_ref: {{quelle: Q, zitatanker: Zit}}\n"
     );
     let datei: BindungDatei = serde_yaml_ng::from_str(&yaml).unwrap();
     datei.bindungen[0].validieren()
@@ -206,8 +206,8 @@ fn lade_bindung_gibt_den_validierungsfehler_weiter() {
     let d = verzeichnis("validierung");
     let ok = gueltig("feld_a");
     let zwei = format!(
-        "{ok}  - feld_id: feld_b\n    quelle: {{regel_id: r, signatur_slot: s}}\n    typ: bool\n    askable: false\n    hilfe_kurz: T\n    \
-         beispielwert: true\n    elster_kz: \"E0123456\"\n    vz_gueltigkeit: []\n    anker_ref: {{quelle: Q, zitatanker: Z}}\n"
+        "{ok}  - feld_id: feld_b\n    quelle: {{regel_id: r, signatur_slot: s}}\n    typ: bool\n    askable: false\n    hilfe_kurz: Tipp\n    \
+         beispielwert: true\n    elster_kz: \"E0123456\"\n    vz_gueltigkeit: []\n    anker_ref: {{quelle: Q, zitatanker: Zit}}\n"
     );
     std::fs::write(d.join("bindung_ok.yaml"), &ok).unwrap();
     assert_eq!(
@@ -253,15 +253,15 @@ bindungen:
     quelle: {regel_id: r, signatur_slot: s}
     typ: int
     askable: false
-    hilfe_kurz: T
+    hilfe_kurz: Tipp
     beispielwert: 1
     elster_kz: \"E0123456\"
     vz_gueltigkeit: [2025]
-    anker_ref: {quelle: Q, zitatanker: Z}
+    anker_ref: {quelle: Q, zitatanker: Zit}
     bereich: {min: 0, max: 10}
     beweist: {feld_id: anderes, wert: true}
-    feld_bedingung: {feld: anderes, wert: true, grund: G}
-    ableitung: {aus: anderes, art: uebernahme, grund: G}
+    feld_bedingung: {feld: anderes, wert: true, grund: Begruendung fuer den Test mit mehr als vierzig Zeichen}
+    ableitung: {aus: anderes, art: uebernahme, grund: Begruendung fuer den Test mit mehr als vierzig Zeichen}
 luecken:
   - {regel_id: r, signatur_slot: s, grund: G}
 regel_bedingungen:
@@ -285,7 +285,7 @@ fn jeder_abschnitt_weist_unbekannte_schluessel_ab() {
             "{regel_id: r, signatur_slot: s}\n    typ",
             "{regel_id: r, signatur_slot: s, extra: 1}\n    typ",
         ),
-        ("anker_ref", "zitatanker: Z}", "zitatanker: Z, extra: 1}"),
+        ("anker_ref", "zitatanker: Zit}", "zitatanker: Zit, extra: 1}"),
         ("bereich", "max: 10}", "max: 10, extra: 1}"),
         (
             "beweist",
@@ -294,13 +294,13 @@ fn jeder_abschnitt_weist_unbekannte_schluessel_ab() {
         ),
         (
             "feld_bedingung",
-            "grund: G}\n    ableitung",
-            "grund: G, extra: 1}\n    ableitung",
+            "grund: Begruendung fuer den Test mit mehr als vierzig Zeichen}\n    ableitung",
+            "grund: Begruendung fuer den Test mit mehr als vierzig Zeichen, extra: 1}\n    ableitung",
         ),
         (
             "ableitung",
-            "art: uebernahme, grund: G}",
-            "art: uebernahme, grund: G, extra: 1}",
+            "art: uebernahme, grund: Begruendung fuer den Test mit mehr als vierzig Zeichen}",
+            "art: uebernahme, grund: Begruendung fuer den Test mit mehr als vierzig Zeichen, extra: 1}",
         ),
         (
             "luecke",

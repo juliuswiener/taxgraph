@@ -24,8 +24,8 @@ fn pruefe(typ: &str, beispielwert: &str, bereich: Option<&str>) -> Result<(), Bi
     let bereich = bereich.map_or(String::new(), |b| format!("    bereich: {b}\n"));
     let yaml = format!(
         "version: 1\nscheibe: test\nbindungen:\n  - feld_id: testfeld\n    quelle: {{regel_id: r, signatur_slot: s}}\n    typ: {typ}\n    \
-         askable: false\n    hilfe_kurz: T\n    beispielwert: {beispielwert}\n    enum_werte: [a]\n{bereich}    \
-         elster_kz: \"E0123456\"\n    vz_gueltigkeit: [2025]\n    anker_ref: {{quelle: Q, zitatanker: Z}}\n"
+         askable: false\n    hilfe_kurz: Tipp\n    beispielwert: {beispielwert}\n    enum_werte: [a]\n{bereich}    \
+         elster_kz: \"E0123456\"\n    vz_gueltigkeit: [2025]\n    anker_ref: {{quelle: Q, zitatanker: Zit}}\n"
     );
     let datei: BindungDatei = serde_yaml_ng::from_str(&yaml).unwrap();
     datei.bindungen[0].validieren()
