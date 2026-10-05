@@ -6,6 +6,9 @@
 //! ohne Label zeigt dem Nutzer `land_forst` statt „Land- und Forstwirtschaft", ohne dass etwas
 //! scheitert. Ersetzt `tests/test_enum_labels.py` (Python-Test, entfaellt mit Python).
 //!
+//! Die Registry kommt aus `bindung::lade_registry_der_wurzel`: Felder in `produkt/bindung/` UND in
+//! `rust/bindung/felder/` (Weg B leicht) brauchen ein Label.
+//!
 //! Die Auslieferung der Labels an die Oberflaeche (`/fragen`, `/chat`) belegen `lesen_naht.rs` und
 //! `chat_llm_attrappe_hermetisch.rs`; hier steht nur die Tabelle.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
@@ -33,14 +36,15 @@ const LESBAR_ROH: [&str; 13] = [
     "Kanada",
 ];
 
-/// `produkt/bindung/` liegt zwei Ebenen ueber dem Crate.
+/// `produkt/bindung/` und `rust/bindung/felder/` liegen unter der Wurzel, zwei Ebenen ueber dem Crate.
 fn wurzel() -> std::path::PathBuf {
     std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-/// `feld_id -> enum_werte` jeder askable Enum-Bindung mit Werten, ueber alle Bindungsdateien.
+/// `feld_id -> enum_werte` jeder askable Enum-Bindung mit Werten, ueber alle Bindungsdateien beider
+/// Verzeichnisse (so laedt der Dienst sie: `bindung::lade_registry_der_wurzel`).
 fn askable_enums() -> BTreeMap<String, Vec<String>> {
-    let reg = bindung::lade_registry(&wurzel().join("produkt/bindung")).expect("Registry");
+    let reg = bindung::lade_registry_der_wurzel(&wurzel()).expect("Registry");
     reg.dateien
         .iter()
         .flat_map(|(_, d)| d.bindungen.iter())
