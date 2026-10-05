@@ -1,0 +1,91 @@
+# Bindungstabelle § 51a EStG i.V.m. Landes-KiStG — Kirchensteuer-Festsetzung (Zuschlagsteuer).
+# kist = est_mit_fb (Maßstabsteuer nach § 51a-Basis) × Hebesatz.
+# NICHT die SolZ-Basis: § 51a Abs. 2 S. 3 EStG nimmt § 35 aus der KiSt-Basis heraus,
+# § 3 Abs. 2 SolzG nicht. Der Ring übergibt dafür est_ohne_p35 (nicht est_roh_ohne_kap).
+# konfession + bundesland = Laien-Enums (askable); est_mit_fb = ring-derived (Lücke).
+# Hebesatz-Grounding (8 % BY/BW, 9 % übrige) amtlich in anker_ref.datei; KEINE EStG-Konstante.
+# kist_konfession -> E0100402 (Religionsschlüssel ESt1A, Enum_Religionsschluessel_ab_VZ_2014_3):
+# Laien-Enum -> XSD-Code-Übersetzung läuft über est_mapping.WERTEKODIERUNG (Klasse i), nicht 1:1.
+# kist_bundesland bleibt elster_kz null (kein eigenes Kz, wird aus Wohnsitz/Finanzamt abgeleitet).
+
+version: 1
+scheibe: "§51a Kirchensteuer (Zuschlagsteuer auf die Maßstabsteuer)"
+
+bindungen:
+  - feld_id: kist_konfession
+    quelle:
+      regel_id: p51a_kirchensteuer
+      signatur_slot: konfession
+    typ: enum
+    enum_werte: [keine, evangelisch, roemisch-katholisch, andere]
+    askable: true
+    fragetext_laie: "Gehörst du einer Kirche an, die Kirchensteuer erhebt (evangelisch oder römisch-katholisch)?"
+    hilfe_kurz: "Nur evangelische und römisch-katholische Kirche erheben hier Kirchensteuer. Andere Religionsgemeinschaften oder kein Bekenntnis: keine Kirchensteuer."
+    beispielwert: roemisch-katholisch
+    elster_kz: E0100402
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 51a EStG i.V.m. Landes-KiStG (Kirchensteuer als Zuschlag der Mitglieder steuererhebender Religionsgemeinschaften)"
+      zitatanker: "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer"
+      datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    # Wert "andere" hat KEINEN verifizierten Religionsschlüssel-Code (~35 mögliche XSD-Werte, kein
+    # Raten) -> fail-closed in nicht_deklariert (est_mapping.WERTEKODIERUNG). Julius-Entscheidung offen.
+    # GELOEST 2026-08-10 (Julius-Entscheidung, war ACHTUNG Kopplung): jeder kirchensteuerpflichtige
+    # Code (alles außer "11") verlangt laut checkESt ZUSÄTZLICH Lohnsteuer (E0200301, jetzt gebunden
+    # in bindung_p36_abschlusszahlung.yaml) UND Kirchensteuer (E0200501, kirchensteuer_arbeitgeber
+    # unten) auf Anlage N — beide jetzt gebunden, Paar-Zwang erfuellt. "keine" (-> Code 11) bleibt
+    # unveraendert sauber (keine Kirchensteuer-Deklaration noetig).
+
+  - feld_id: kirchensteuer_arbeitgeber
+    quelle:
+      regel_id: p2_festzusetzung_einzel
+      signatur_slot: kirchensteuer_arbeitgeber
+    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Kirchensteuer wurde im Jahr von deinem Arbeitgeber einbehalten (nur falls kirchensteuerpflichtig)?"
+    hilfe_kurz: "Steht auf der Lohnsteuerbescheinigung, falls dort Kirchensteuer abgeführt wurde. Bei konfessionslos: 0."
+    beispielwert: 0
+    herkunft_slots: ["Lohnsteuerbescheinigung"]
+    elster_kz: E0200501
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 51a EStG i.V.m. Landes-KiStG (Kirchensteuer als Zuschlag der Mitglieder steuererhebender Religionsgemeinschaften)"
+      zitatanker: "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer"
+      datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+    # Julius-Entscheidung 2026-08-10: echte Deklaration statt 0,00-Platzhalter (revidiert die
+    # bisherige Nicht-Deklaration von p36_lohnsteuer, s. dort). Reines Anlage-N-Deklarationsfeld,
+    # kein Ring-Input (p51a_kirchensteuer rechnet die FESTGESETZTE Kirchensteuer aus est_mit_fb,
+    # nicht die vom Arbeitgeber bereits einbehaltene) -- daher signatur_slot = eigene feld_id unter
+    # der Pseudoregel p2_festzusetzung_einzel, wie bei den Stammdaten-Feldern (bindung_an_gesamt.yaml).
+    # Paar-Zwang (gemessen reports/adjudikation/entscheidungsvorlage_restfehler_2026-08-10.md:161-164):
+    # sobald kist_konfession ≠ "keine" ist, verlangt checkESt E0200301 UND E0200501 zusammen.
+    # Komma-Dezimal OHNE E60-Präfix (est_mapping._KOMMA_OHNE_E60_KZ deckt das ab).
+
+  - feld_id: kist_bundesland
+    quelle:
+      regel_id: p51a_kirchensteuer
+      signatur_slot: bundesland
+    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. Landes-KiStG: der Hebesatz des Bundeslandes wird nur gebraucht, um die Kirchensteuer eines Mitglieds zu berechnen. Bei kist_konfession='keine' gibt es keine Kirchensteuer und damit keinen Hebesatz anzuwenden."}
+    typ: enum
+    enum_werte: [baden_wuerttemberg, bayern, berlin, brandenburg, bremen, hamburg, hessen,
+                 mecklenburg_vorpommern, niedersachsen, nordrhein_westfalen, rheinland_pfalz,
+                 saarland, sachsen, sachsen_anhalt, schleswig_holstein, thueringen]
+    askable: true
+    fragetext_laie: "In welchem Bundesland wohnst du?"
+    hilfe_kurz: "Bayern und Baden-Württemberg erheben 8 %, alle übrigen Länder 9 % Kirchensteuer."
+    beispielwert: bayern
+    elster_kz: null
+    elster_kz_grund: "Bundesland wird für die ELSTER-Übermittlung aus dem Finanzamt/Wohnsitz abgeleitet, kein eigenes Kz im ESt-Formular; fail-closed statt Rate-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Landes-KiStG Hebesatz (8 v.H. Bayern/Baden-Württemberg, 9 v.H. übrige Länder)"
+      zitatanker: "8 v.H. in Bayern + Baden-Württemberg, 9 v.H. in den übrigen 14 Bundesländern"
+      datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+
+luecken:
+  - regel_id: p51a_kirchensteuer
+    signatur_slot: est_mit_fb
+    grund: "Ring-derived (kein Laien-Input): Maßstabsteuer nach § 51a EStG = veranlagte ESt mit Kinderfreibetrag, ohne §32d-Abgeltung-Kapital und OHNE § 35-GewSt-Anrechnung (Abs. 2 S. 3). Wird beim Ring-Wiring aus solz_info['est_ohne_p35'] geliefert — NICHT aus est_mit_fb/est_roh_ohne_kap, das ist die SolZ-Basis und traegt § 35."

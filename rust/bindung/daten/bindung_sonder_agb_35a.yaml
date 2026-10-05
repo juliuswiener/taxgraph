@@ -1,0 +1,731 @@
+# Bindungstabelle — Scheiben-Ausbau: Sonderausgaben/KiSt + agB §33 + §35a (Task #11).
+# Validiert gegen schema.json (kein neues Schema). Quelle Kz: 2026-07-12-kz-kandidaten-weitere-anlagen.
+# Signaturen/Bedingungen: pipeline/produktion/rules.yaml (signature/geltungsbedingungen).
+version: 1
+scheibe: "Sonderausgaben/KiSt (p10_1_4/p10_1_7) + agB §33 (p33_1_2) + §35a (p35a_2_3)"
+
+bindungen:
+  # ========================= Sonderausgaben — KiSt (p10_1_4_kirchensteuer) =========================
+  - feld_id: kist_gezahlt
+    quelle: {regel_id: p10_1_4_kirchensteuer, signatur_slot: gezahlte_kirchensteuer}
+    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel Kirchensteuer hast du dieses Jahr gezahlt?"
+    hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung oder deinem Steuerbescheid."
+    beispielwert: 60000
+    herkunft_slots: null
+    # E10/SA/KiSt/Gezahlt/Sum — Summen-Kz. Der Einzelposten (E0108004 + Art E0108003) liegt
+    # unter Gezahlt/Einz; unser Feld ist die Jahressumme, also das Sum-Kz. Belegt 2026-08-05.
+    elster_kz: E0107601
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 4 EStG"
+      zitatanker: "gezahlte Kirchensteuer"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: kist_erstattet
+    quelle: {regel_id: p10_1_4_kirchensteuer, signatur_slot: erstattete_kirchensteuer}
+    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wurde dir dieses Jahr Kirchensteuer erstattet (zurückgezahlt)? Wenn ja, wie viel?"
+    hilfe_kurz: "Erstattete Kirchensteuer mindert, was du absetzen kannst. Wenn nichts, gib 0 ein."
+    beispielwert: 0
+    herkunft_slots: null
+    # E10/SA/KiSt/Erstattet — eigener Zweig neben Gezahlt, kein Sum/Einz-Paar. Belegt 2026-08-05.
+    elster_kz: E0107602
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 4b Satz 2 EStG"
+      zitatanker: "erstatteten Aufwendungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  # ========================= Sonderausgaben — Berufsausbildung (p10_1_7) =========================
+  - feld_id: berufsausbildung_aufwendungen
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p10_1_7_berufsausbildung, signatur_slot: aufwendungen}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Was hast du dieses Jahr für deine eigene erste Berufsausbildung oder ein Erststudium bezahlt?"
+    hilfe_kurz: "Zum Beispiel Studiengebühren, Fachbücher, Fahrten. Bis 6.000 Euro im Jahr."
+    beispielwert: 200000
+    herkunft_slots: null
+    # E10/SA/AW_eig_BAusb/Sum — Summen-Kz. Einzelposten liegen unter Einz (E0108002 Betrag +
+    # E0108201 Bezeichnung); unser Feld ist die Jahressumme. xs:documentation ist nur
+    # "Höhe der Aufwendungen" — der Kontext steckt im Element-Pfad. Belegt 2026-08-05.
+    elster_kz: E0108202
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 7 EStG"
+      zitatanker: "bis zu 6 000 Euro im Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  # ---- Einzelaufstellung: ohne sie weist das Finanzamt die Erklaerung zurueck ----
+  # Gemessen 2026-08-19: mit der Summe allein antwortet checkESt rc=610001002, "Es wurde die
+  # Summe der Aufwendungen fuer die eigene Berufsausbildung angegeben, bitte geben Sie auch die
+  # Bezeichnung der Ausbildung und die Art und Hoehe der einzelnen Aufwendungen an". Dieselbe
+  # Bauart wie bei § 35c: eine Summe ohne Einzelzeile ist keine vollstaendige Erklaerung.
+  #
+  # MVP-GRENZE, ausdruecklich: EIN Ausbildungsposten je Erklaerung. Das Schema erlaubt bis zu
+  # zehn (Einz maxOccurs=10, E10-2025.xsd:9324-9334). Mehrere Posten brauchten eine
+  # instanz_gruppe wie bei § 35a — und dabei zuerst eine Haertung von elster_xml.py:532, das
+  # den Instanz-Container als kz_path[:2] ableitet; bei AW_eig_BAusb waere das ('E10','SA'),
+  # und SA hat maxOccurs=1. Ein zweiter Posten legte damit vermutlich ein zweites <SA> an,
+  # statt in AW_eig_BAusb/Einz zu wiederholen. Fuer EINE Instanz ist der Pfad erprobt
+  # (E0108202 laeuft seit 2026-08-05 darueber), fuer mehrere ist er ungetestet.
+  #
+  # signatur_slot zeigt bei beiden ins Leere (s. SIGNATUR_SLOT_ZEIGT_INS_LEERE in
+  # tests/test_bindungstabelle.py): p10_1_7_berufsausbildung hat genau EINEN Rechen-Input,
+  # `aufwendungen`, den das Summenfeld oben belegt. Die Regel fuehrt zwar eine
+  # geltungsbedingung (hoechstbetrag_gilt_je_person), aber die sagt "der Hoechstbetrag steht
+  # jedem Ehegatten einzeln zu" — sie an eine Ausbildungsbezeichnung zu haengen behauptete
+  # einen Zusammenhang, den es nicht gibt.
+  - feld_id: berufsausbildung_bezeichnung
+    quelle: {regel_id: p10_1_7_berufsausbildung, signatur_slot: bezeichnung_der_ausbildung}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Ausbildung war das, und wofür hast du bezahlt?"
+    hilfe_kurz: "Zum Beispiel: Studium Betriebswirtschaft, Semesterbeiträge und Fachbücher. Das Finanzamt will neben der Summe wissen, worum es ging."
+    # KEIN Gedankenstrich (—, U+2014) im Beispielwert. Gemessen 2026-08-19: ERiC antwortet
+    # darauf "Das Feld '$/SA[1]/AW_eig_BAusb[1]/Einz[1]/E0108201[1]$' enthält ein oder mehrere
+    # ungültige Zeichen". Umlaute, ß, Bindestrich, Komma und Punkt sind dagegen erlaubt — je
+    # einzeln gegen das amtliche Plugin geprüft. Der Beispielwert ist kein Dekor: er ist der
+    # Probewert der Feldmatrix-Sweeps, ein unzulässiges Zeichen darin macht dort einen
+    # Scheinbefund.
+    beispielwert: "Studium Betriebswirtschaft, Semesterbeiträge und Fachbücher"
+    herkunft_slots: null
+    elster_kz: E0108201
+    elster_kz_grund: "E0108201 [SA/AW_eig_BAusb/Einz], XSD-Label 'Bezeichnung der Ausbildung, Art der Aufwendungen' (E10-2025.xsd:9335-9348). Freitext 1-999 Zeichen, aber NICHT jedes Zeichen: der Gedankenstrich (U+2014) wird abgelehnt, Umlaute/ß/Bindestrich/Komma/Punkt nicht."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 7 EStG"
+      zitatanker: "bis zu 6 000 Euro im Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: berufsausbildung_einzelbetrag
+    quelle: {regel_id: p10_1_7_berufsausbildung, signatur_slot: einzelaufwendung}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: derselbe Betrag wie die Jahressumme, in der Einzelzeile der Anlage."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0108002
+    elster_kz_grund: "E0108002 [SA/AW_eig_BAusb/Einz], XSD-Label 'Höhe der Aufwendungen' (E10-2025.xsd:9335-9348). Traegt bei EINEM Posten denselben Betrag wie die Summe E0108202 — das Formular verlangt beides, wer nur die Summe schreibt, bekommt die Beanstandung oben. Nicht askable: den Nutzer denselben Betrag zweimal eintippen zu lassen, waere eine Frage ohne Erkenntnisgewinn und eine zweite Repraesentation derselben Sache."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 7 EStG"
+      zitatanker: "bis zu 6 000 Euro im Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  # ========================= agB §33 (p33_1_2_agb_abzug) =========================
+  - feld_id: agb_aufwendungen
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33_1_2_agb_abzug, signatur_slot: aussergewoehnliche_belastungen}
+    # Eingangsfrage (2026-08-26, E2E-Durchgang auf Julius' Bitte). Frage 24 von 24: „Hattest du groessere aussergewoehnliche Ausgaben?" stand HINTER „Waren die Ausgaben notwendig?" und „Konntest du sie nicht vermeiden?" — zwei Merkmalen von Ausgaben, die niemand erhoben hatte.
+    eingangsfrage: true
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hattest du dieses Jahr größere außergewöhnliche Ausgaben, die du zwangsläufig tragen musstest (zum Beispiel Krankheitskosten)? Wenn ja, wie viel insgesamt?"
+    hilfe_kurz: "Nach Abzug von Erstattungen (z. B. Krankenkasse). Ein zumutbarer Eigenanteil wird automatisch abgezogen."
+    beispielwert: 300000
+    herkunft_slots: null
+    elster_kz: E0161804
+    elster_kz_grund: "AgB/And_Aufw hat 3 Unterbuckets (Pflege E0161404/Beh_Aufw E0161504/Sonst E0161804); Fragetext ist generisch ('größere außergewöhnliche Ausgaben ... z.B. Krankheitskosten') und passt strukturell am ehesten auf den Sonst-Catch-all. Lead-Adjudikation (reports/review/2026-07-20-xsd-kz-section-sweep-findings.md Cluster A); Pflege/Beh_Aufw bleiben außerhalb des Feld-Katalogs (kein stiller Drop, Transparenz-Notiz)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33 Abs. 2 S. 1 EStG"
+      zitatanker: "den Umständen nach notwendig sind und einen angemessenen Betrag nicht übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"
+  # § 33b Abs. 5 S. 4: Wird der Behinderten-Pauschbetrag eines Kindes auf den
+  # Steuerpflichtigen uebertragen, sind genau die Aufwendungen, die der Pauschbetrag
+  # abgilt, nicht zusaetzlich als agB nach § 33 abziehbar. agb_aufwendungen ist nicht
+  # nach Aufwandsart getrennt — deshalb dieses Feld: der behinderungsbedingte Anteil,
+  # den der Ring bei Uebertragung herausrechnet. Fallweit wie agb_aufwendungen selbst
+  # (die Uebertragung ist per Kind, die Aufwendungen sind die des Steuerpflichtigen).
+  #
+  # Gebunden als geltungsbedingung, NICHT an den agb-Slot. Grund: das Feld ist ein
+  # Subtrahend, und slot_beitrag kennt nur exakt|summand. Als zweiter "summand" am
+  # selben Slot deklariert wuerde intervall.py:188 es ADDIEREN — Vorzeichenfehler in
+  # der Unsicherheitsrechnung. Praezedenz: p9_4a_kuerzung_nach_entgelt, ebenfalls ein
+  # cent-Kuerzungsfeld an einer geltungsbedingung.
+  - feld_id: behinderungsbedingte_aufwendungen
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: kein_uebertragener_behinderten_pb_fuer_dieselben_aufwendungen}
+    feld_bedingung: {feld: keine_behinderung_pflege, wert: false, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus; das Wahlrecht zwischen Pauschbetrag und Einzelnachweis besteht nur fuer behinderungsbedingte Aufwendungen. `keine_behinderung_pflege` erhebt die Existenz — wer bestaetigt, keine zu haben, hat weder solche Aufwendungen noch ein Wahlrecht darueber. Die Felder sitzen in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel der oben genannten außergewöhnlichen Ausgaben entfiel auf die Behinderung — also auf Hilfe bei den täglichen Verrichtungen, auf Pflege oder auf erhöhten Wäschebedarf?"
+    hilfe_kurz: "Nur wenn du den Pauschbetrag eines Kindes auf dich überträgst. Diese Aufwendungen deckt der Pauschbetrag bereits ab, sie können nicht zusätzlich abgesetzt werden."
+    beispielwert: 100000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Reines Rechenfeld fuer die Kuerzung nach § 33b Abs. 5 S. 4. Der Wert wird nicht uebermittelt, sondern von agb_aufwendungen abgezogen; ELSTER erhaelt in E0161804 den bereits bereinigten Betrag. Ein eigenes Kz gibt es dafuer im XSD nicht."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 5 S. 4 EStG"
+      zitatanker: "In diesen Fällen besteht für Aufwendungen, für die der Behinderten-Pauschbetrag gilt, kein Anspruch auf eine Steuerermäßigung nach § 33"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  # § 33b Abs. 1 S. 1: wer wegen eigener Behinderung einen GdB-Pauschbetrag hat, kann ihn
+  # nur ANSTELLE der agB-Ermaessigung fuer dieselben Aufwendungen geltend machen (S.2: nur
+  # einheitlich ausuebbar), nicht zusaetzlich. Anders als Abs. 5 S. 4 (Kind-PB-Uebertragung,
+  # oben) ist das ein WAHLRECHT — kein Automatismus, der Ring darf nicht selbst entscheiden.
+  # Reine Ja/Nein-Frage, kein Betragsfeld; die Kuerzung nutzt weiterhin
+  # behinderungsbedingte_aufwendungen (oben), nur die Bedingung dafuer ist eine andere.
+  #
+  # Gebunden als geltungsbedingung (neue Bedingung an derselben Regel p33_1_2_agb_abzug),
+  # nicht an einen Slot — reine Tatbestands-Voraussetzung wie agb_zwangslaeufig.
+  - feld_id: behinderungsbedingte_aufwendungen_wahlrecht_pb
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb}
+    feld_bedingung: {feld: keine_behinderung_pflege, wert: false, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus; das Wahlrecht zwischen Pauschbetrag und Einzelnachweis besteht nur fuer behinderungsbedingte Aufwendungen. `keine_behinderung_pflege` erhebt die Existenz — wer bestaetigt, keine zu haben, hat weder solche Aufwendungen noch ein Wahlrecht darueber. Die Felder sitzen in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Möchtest du für deine behinderungsbedingten Aufwendungen deinen Behinderten-Pauschbetrag nutzen, statt sie einzeln als außergewöhnliche Belastung abzusetzen?"
+    hilfe_kurz: "Beides zusammen geht nicht (§ 33b Abs. 1 Satz 2): entweder der Pauschbetrag oder der Einzelnachweis für dieselben Aufwendungen. Nur relevant, wenn du selbst einen Grad-der-Behinderung-Pauschbetrag hast."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld — reines Rechenfeld wie behinderungsbedingte_aufwendungen (oben), kein Weg ins XSD."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 1 Satz 1 EStG"
+      zitatanker: "anstelle einer Steuerermäßigung nach § 33 einen Pauschbetrag nach Absatz 3 geltend machen (Behinderten-Pauschbetrag)"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  # § 33b Abs. 1 S. 1 gilt PRO PERSON (Subjekt "Menschen mit Behinderungen", Anspruch nach
+  # Abs. 2/3 individuell nach eigenem GdB) — bei Zusammenveranlagung braucht der Partner
+  # dieselbe Wahlrecht/Sperrgrund-Mechanik wie Person A, unabhaengig von deren Entscheidung
+  # (BACKLOG p33b-partner-pb-doppelabzug: Partner-PB lief bisher unconditional neben
+  # agb_aufwendungen, 1.168-1.234 EUR stiller Doppelabzug). "Davon"-Teilmenge auf derselben
+  # Achse (fallweit) wie agb_aufwendungen selbst, wie behinderungsbedingte_aufwendungen oben.
+  - feld_id: behinderungsbedingte_aufwendungen_partner
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb_partner}
+    # DIESE ZWEI FELDER BRAUCHEN ZWEI BEDINGUNGEN UND KOENNEN NUR EINE TRAGEN (2026-08-28).
+    #
+    # Bis heute stand hier `keine_behinderung_pflege` — das Kreuz des NUTZERS, das woertlich nur
+    # nach der eigenen Person und den Kindern fragt (Messung im Nachbarfeld derselben Klasse,
+    # rentner_grad_der_behinderung_partner: 302 EUR zu viel Steuer). Der naheliegende Tausch gegen
+    # `keine_behinderung_pflege_partner` schlug fehl und wurde gemessen zurueckgenommen: dieses
+    # Feld liegt als einziges Partner-Feld NICHT in p2_festzusetzung_zusammen, sondern in
+    # p33_1_2_agb_abzug — einer Regel, die auch den Einzelveranlagten trifft. Das Partner-Kreuz
+    # wird einem Einzelveranlagten nie gestellt, bleibt also unbeantwortet, und fail-closed heisst
+    # dann „fragen": jeder Alleinstehende bekam beide Fragen nach den Aufwendungen eines Partners,
+    # den er nicht hat.
+    #
+    # Deshalb die VERANLAGUNGSART als Bedingung. Sie ist in jedem Fall besser als der Zustand
+    # davor: bis heute bekam ein Alleinstehender MIT Behinderung diese beiden Partner-Fragen
+    # (`keine_behinderung_pflege=false` liess sie stehen). Was fehlt, ist die zusaetzliche
+    # Feinsteuerung ueber das Partner-Kreuz — ein Ehepaar ohne Behinderung bekommt die beiden
+    # Fragen weiterhin. Dafuer braeuchte `feld_bedingung` ein `und_feld`, wie `ableitung` es
+    # schon hat (schema.json). Bewusst NICHT hier entschieden: das Schema ist nicht Teil dieses
+    # Auftrags.
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 33b Abs. 1 EStG setzt eine amtlich festgestellte Behinderung voraus, und der Pauschbetrag samt Wahlrecht steht der behinderten Person selbst zu. Aufwendungen eines Partners sind ueberhaupt nur zu erklaeren, wenn dieser nach § 26b EStG mitveranlagt wird — wer allein veranlagt wird, hat keinen Partner, dessen Aufwendungen in diese Erklaerung gehoerten. Das Feld sitzt in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel der außergewöhnlichen Ausgaben eures Haushalts entfiel auf die Behinderung deines Partners/deiner Partnerin — also auf Hilfe bei den täglichen Verrichtungen, auf Pflege oder auf erhöhten Wäschebedarf?"
+    hilfe_kurz: "Nur relevant, wenn dein Partner/deine Partnerin einen eigenen Grad-der-Behinderung-Pauschbetrag hat. Diese Aufwendungen deckt der Pauschbetrag ab, sie können nicht zusätzlich abgesetzt werden."
+    beispielwert: 100000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Reines Rechenfeld fuer die Kuerzung nach § 33b Abs. 1 S. 1/2 auf Partner-Seite, spiegelt behinderungsbedingte_aufwendungen. Kein eigenes Kz im XSD."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 1 Satz 1 EStG"
+      zitatanker: "anstelle einer Steuerermäßigung nach § 33 einen Pauschbetrag nach Absatz 3 geltend machen (Behinderten-Pauschbetrag)"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  - feld_id: behinderungsbedingte_aufwendungen_wahlrecht_pb_partner
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: eigener_pauschbetrag_wahlrecht_nicht_zusaetzlich_zur_agb_partner}
+    # Dieselbe Lage wie beim Betragsfeld darueber — dort steht die ausfuehrliche Begruendung,
+    # warum hier die Veranlagungsart und nicht das Partner-Kreuz die Bedingung ist.
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 33b Abs. 1 S. 1 EStG raeumt das Wahlrecht zwischen Pauschbetrag und Einzelnachweis der behinderten Person selbst ein; es steht jedem Ehegatten fuer sich zu (Person A und Partner sind unabhaengig, s. test_p33b_partner_wahlrecht). Ein Wahlrecht des Partners gibt es nur, wenn dieser nach § 26b EStG mitveranlagt wird — wer allein veranlagt wird, hat keines zu treffen. Die Felder sitzen in p33_1_2_agb_abzug (allgemeine aussergewoehnliche Belastungen), die fuer fast jeden gilt und deshalb nicht als ganze Regel entfallen darf — deshalb auf Feldebene."}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Möchte dein Partner/deine Partnerin für die eigenen behinderungsbedingten Aufwendungen seinen/ihren Behinderten-Pauschbetrag nutzen, statt sie einzeln als außergewöhnliche Belastung abzusetzen?"
+    hilfe_kurz: "Beides zusammen geht nicht (§ 33b Abs. 1 Satz 2): entweder der Pauschbetrag oder der Einzelnachweis für dieselben Aufwendungen. Nur relevant, wenn dein Partner/deine Partnerin einen eigenen GdB-Pauschbetrag hat. Unabhängig von deiner eigenen Wahl."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld — spiegelt behinderungsbedingte_aufwendungen_wahlrecht_pb, kein Weg ins XSD."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 1 Satz 1 EStG"
+      zitatanker: "anstelle einer Steuerermäßigung nach § 33 einen Pauschbetrag nach Absatz 3 geltend machen (Behinderten-Pauschbetrag)"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  - feld_id: agb_zwangslaeufig
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: agb_ist_zwangslaeufig}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Musstest du diese Ausgaben zwangsläufig tragen (aus rechtlichen, tatsächlichen oder sittlichen Gründen)?"
+    hilfe_kurz: "Zum Beispiel Krankheitskosten kannst du nicht einfach weglassen."
+    beispielwert: true
+    abwesenheitswert: true
+    # Begruendung: 2026-09-26, p33-gate-Abwesenheitswert (tests/_kegel.py). Ein FEHLENDES
+    # Merkmal sperrt (das leistet der Kegel); ein bestaetigtes NEIN rechnet 0 — der Fueller darf
+    # also nicht NEIN heissen, weil der Guard (bescheid_abzuege.py: shared_steuer_sonder_agb)
+    # `is False` als "Tatbestand verneint" liest und den agB-Abzug dann auf 0 kuerzt.
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33 Abs. 2 S. 1 EStG"
+      zitatanker: "aus rechtlichen, tatsächlichen oder sittlichen Gründen nicht entziehen"
+      datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"
+  - feld_id: agb_notwendig_angemessen
+    quelle: {regel_id: p33_1_2_agb_abzug, geltungsbedingung: agb_notwendig_und_angemessen}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Waren die Ausgaben notwendig und der Höhe nach angemessen?"
+    hilfe_kurz: "Übermäßig teure oder unnötige Ausgaben zählen nicht."
+    beispielwert: true
+    abwesenheitswert: true
+    # Begruendung: 2026-09-26, p33-gate-Abwesenheitswert (tests/_kegel.py). Siehe agb_zwangslaeufig.
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33 Abs. 2 S. 1 EStG"
+      zitatanker: "den Umständen nach notwendig sind und einen angemessenen Betrag nicht übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p33_2026-07-11.txt"
+
+  # ========================= §35a Haushaltsnahe (p35a_2_3_haushaltsnahe) =========================
+  # Sum-Felder (E01041xx/E01072xx/E01112xx): checkESt verlangt neben der Summe eine Einzelaufstellung
+  # (Einz[maxOccurs=99] im XSD) -- rc=610001002, wenn Sum ohne Einz uebermittelt wird (gemessen
+  # 2026-08-10, s. reports/adjudikation/anlage-haushaltsnahe-einzelaufstellung-2026-08-10.md).
+  # Die drei Sum-Felder bleiben als Kz, werden aber NICHT mehr direkt erfragt (askable:false) --
+  # der Wert kommt aus der Summe der instanz_gruppe-Eintraege unten (_mit_ring_werten-Injektion,
+  # Praezedenz kap_sparer_pauschbetrag_genutzt). Eine Quelle statt zwei, sonst laufen Summe und
+  # Einzelaufstellung auseinander (kap_zusammenveranlagung-Praezedenz, 2026-07-30).
+  - feld_id: hh_minijob_aufwendungen
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: minijob_aufwendungen}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Summe der Minijob-Aufwendungen (berechnet aus den Einzelposten unten)."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0104109
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 1 EStG"
+      zitatanker: "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_minijob_betrag
+    instanz_gruppe: hh_minijob
+    vorschlagbar_von: [kontoauszug, beleg]
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Was hast du einer Haushaltshilfe auf Minijob-Basis gezahlt?"
+    hilfe_kurz: "Ein einzelner Zahlungsposten (z. B. ein Monat). Mehrere Zahlungen? Trag sie einzeln ein."
+    beispielwert: 25000
+    herkunft_slots: ["Minijob-Bescheinigung: Aufwendungen"]
+    elster_kz: E0104108
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 1 EStG"
+      zitatanker: "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_minijob_art
+    instanz_gruppe: hh_minijob
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wofür war das (zum Beispiel 'Haushaltshilfe')? Optional."
+    hilfe_kurz: "Kurze Bezeichnung der Tätigkeit, freiwillig (XSD minOccurs=0)."
+    beispielwert: "Haushaltshilfe"
+    herkunft_slots: null
+    elster_kz: E0104206
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 1 EStG"
+      zitatanker: "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_dienstleistungen
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: haushaltsnahe_dienstleistungen}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Summe der haushaltsnahen Dienstleistungen (berechnet aus den Einzelposten unten)."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0107208
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 2 EStG"
+      zitatanker: "gilt nur für Arbeitskosten"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_dienstleistung_betrag
+    instanz_gruppe: hh_dienstleistung
+    vorschlagbar_von: [kontoauszug, beleg]
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: dienstleistungen_sind_keine_handwerkerleistungen}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Was hast du an Arbeitskosten für haushaltsnahe Dienstleistungen gezahlt (ohne Material)?"
+    hilfe_kurz: "Ein einzelner Rechnungsposten. Nur die Arbeitskosten, nicht das Material."
+    beispielwert: 50000
+    herkunft_slots: ["Dienstleistungsrechnung: Arbeitskosten"]
+    elster_kz: E0107207
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 2 EStG"
+      zitatanker: "gilt nur für Arbeitskosten"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_dienstleistung_art
+    instanz_gruppe: hh_dienstleistung
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: dienstleistungen_sind_keine_handwerkerleistungen}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wofür war das (zum Beispiel 'Gartenpflege')? Optional."
+    hilfe_kurz: "Kurze Bezeichnung der Dienstleistung, freiwillig (XSD minOccurs=0)."
+    beispielwert: "Gartenpflege"
+    herkunft_slots: null
+    elster_kz: E0107206
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 2 EStG"
+      zitatanker: "gilt nur für Arbeitskosten"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_handwerker_arbeitskosten
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: handwerker_arbeitskosten}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Summe der Handwerker-Arbeitskosten (berechnet aus den Einzelposten unten)."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0111215
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 3 EStG"
+      zitatanker: "für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  # E0170601 (Rechnungsbetrag inkl. Material, Einz-Element) bewusst NICHT gebunden: minOccurs=0
+  # im XSD, und der bestehende Fragetext fragt ohnehin nur die Arbeitskosten/Lohnanteile (Zeile
+  # "handwerkerbetrag_enthaelt_nur_arbeitskosten" unten) -- ein Gesamtrechnungsbetrag-Feld würde
+  # eine Angabe verlangen, die nirgends im Produkt sonst erfragt wird. Minimal-Scope, XSD-Beleg
+  # in reports/adjudikation/anlage-haushaltsnahe-einzelaufstellung-2026-08-10.md.
+  - feld_id: hh_handwerker_betrag
+    instanz_gruppe: hh_handwerker
+    vorschlagbar_von: [kontoauszug, beleg]
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: handwerker_nur_renovierung_erhaltung_modernisierung}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Was hast du an Arbeitskosten für Handwerkerleistungen gezahlt (ohne Material)?"
+    hilfe_kurz: "Ein einzelner Rechnungsposten. Nur die Arbeitskosten, nicht das Material."
+    beispielwert: 60000
+    herkunft_slots: ["Handwerkerrechnung: Arbeitskosten"]
+    elster_kz: E0111214
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 3 EStG"
+      zitatanker: "für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_handwerker_art
+    instanz_gruppe: hh_handwerker
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: handwerker_nur_renovierung_erhaltung_modernisierung}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wofür war das (zum Beispiel 'Heizungswartung')? Optional."
+    hilfe_kurz: "Kurze Bezeichnung der Handwerkerleistung, freiwillig (XSD minOccurs=0)."
+    beispielwert: "Heizungswartung"
+    herkunft_slots: null
+    elster_kz: E0111217
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 3 EStG"
+      zitatanker: "für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: p35a_mitveranlagung
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: mitveranlagung}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wollt ihr die Kosten für Handwerker und Haushaltshilfe gemeinsam geltend machen?"
+    hilfe_kurz: "Bei Zusammenveranlagung wird der Höchstbetrag für haushaltsnahe Leistungen nur einmal gewährt und der Abzugsbetrag geteilt."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein spezifisches Kz für Mitveranlagung im §35a-Kontext. Reine Ring-Logik zur Halbierung des Abzugs."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 5 EStG"
+      zitatanker: "Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge nach den Absätzen 1 bis 3 insgesamt jeweils nur einmal in Anspruch nehmen."
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  # Top-Level-Screening (Julius-Entscheid 2026-08-14): die drei bestehenden bool-Gates
+  # (rechnung_unbar, in_eu_ewr, keine_foerderung) sind TATBESTANDSMERKMALE — sie fragen nach den
+  # Bedingungen des Abzugs, nicht danach, ob es ihn überhaupt zu prüfen gibt. Wer nie einen
+  # Handwerker im Haus hatte, wurde trotzdem durch alle neun hh-Felder geführt. Dieses Feld ist
+  # die vorgelagerte Ob-Frage; bei "nein" schließt relevanz() die ganze Regel aus und nimmt alle
+  # neun aus dem Dialog.
+  # POSITIVE Benennung mit Absicht: app.js:283 invertiert bool-Antworten NUR bei Feldern mit
+  # "kein_"-Präfix. Ein "kein_haushaltsnahe"-Feld hätte hier eine stille Inversion geerbt, die
+  # niemand beim Lesen der Bindung sieht.
+  # EINGANGSFRAGE der Regel: sie fragt, OB es haushaltsnahe Aufwendungen gibt. Die drei anderen
+  # Gates (hh_handwerker_keine_foerderung, hh_in_eu_ewr, hh_rechnung_unbar) fragen nach MERKMALEN
+  # dieser Aufwendungen und ergeben ohne sie keinen Sinn. Alle vier tragen gate_gewicht 10 — sie
+  # schalten dieselben Felder ab —, und der Gleichstand wurde bis 2026-08-21 ALPHABETISCH
+  # gebrochen: "hh_handwerker_" liegt vor "hh_hat_". Gemessen im echten Nutzerlauf bekam Julius
+  # deshalb "Wurden die Handwerkerleistungen NICHT öffentlich gefördert?" als erste Frage dieser
+  # Regel — zu Handwerkern, nach denen nie jemand gefragt hatte.
+  - feld_id: hh_hat_aufwendungen
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: haushaltsnahe_aufwendungen_vorhanden}
+    eingangsfrage: true
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hattest du dieses Jahr Kosten für Handwerker, Haushaltshilfe oder haushaltsnahe Dienstleistungen?"
+    hilfe_kurz: "Zum Beispiel Handwerkerrechnung, Putzhilfe, Gartenpflege, Winterdienst oder Schornsteinfeger. Wenn nein, entfallen alle weiteren Fragen dazu."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag (Ob-Frage vor den Tatbestandsmerkmalen), kein Deklarationsfeld — es steuert nur, ob die § 35a-Fragen überhaupt gestellt werden."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 1-3 EStG"
+      zitatanker: "Für haushaltsnahe Beschäftigungsverhältnisse"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_rechnung_unbar
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: rechnung_und_unbare_zahlung}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hast du für diese Leistungen eine Rechnung bekommen und per Überweisung (nicht bar) bezahlt?"
+    hilfe_kurz: "Barzahlung wird nicht anerkannt — es muss aufs Konto der Firma gegangen sein."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 5 S. 3 EStG"
+      zitatanker: "die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_in_eu_ewr
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: haushalt_in_eu_ewr}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Liegt der Haushalt, in dem gearbeitet wurde, in der EU oder im Europäischen Wirtschaftsraum?"
+    hilfe_kurz: "In Deutschland ist das automatisch erfüllt."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 4 S. 1 EStG"
+      zitatanker: "Europäischen Union oder dem Europäischen Wirtschaftsraum"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+  - feld_id: hh_handwerker_keine_foerderung
+    quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: handwerker_keine_oeffentliche_foerderung}
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt seit 2026-08-26 nach der Anwesenheit
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wurden die Handwerkerleistungen öffentlich gefördert (zum Beispiel durch einen KfW-Zuschuss oder ein zinsverbilligtes Darlehen)?"
+    hilfe_kurz: "Öffentlich geförderte Maßnahmen zählen hier nicht mit."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 3 S. 2 EStG"
+      zitatanker: "nicht für öffentlich geförderte Maßnahmen"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+
+  # ===== Spende §10b (Beleg-Writer Stufe 1b: Zuwendungsbestätigung, herkunft_slots=Label-Anker) =====
+  - feld_id: spenden_betrag
+    vorschlagbar_von: [kontoauszug, beleg]
+    quelle: {regel_id: p10b_spenden, signatur_slot: zuwendungen}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr an gemeinnützige Vereine, Stiftungen oder Kirchen gespendet (Geldspenden mit Spendenquittung)?"
+    hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung (Spendenquittung). Nur Spenden an inländische Empfänger."
+    beispielwert: 30000
+    herkunft_slots: ["Zuwendungsbestätigung: Betrag"]
+    elster_kz: E0108105
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10b Abs. 1 S. 1 EStG"
+      zitatanker: "Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke"
+      datei: "sources/gesetze-im-internet/estg_p10b_2026-07-13.txt"
+
+  # STILLGELEGT SEIT 2026-09-26: weder gefragt noch geschrieben, solange es kein Feld fuer Zeile 9
+  # gibt (die Vermoegensstock-Spende selbst). Dieses Feld ist Zeile 11: wie viel von Zeile 9 im
+  # Jahr zaehlen soll. Ohne Betrag in Zeile 9 hat es keinen Gegenstand, und ERiC lehnt es ab, auch
+  # mit Wert 0 (rc=610001002, Zeile 9, Meldung 1115). Entschieden vom Instructor, Vault:
+  # decisions/allgemeine-spenden-gehoeren-in-zeile-5.
+  #
+  # Die Messung, fuer die das Feld gebaut wurde, war ein Folgefehler. Am 2026-08-19 stand
+  # spenden_betrag auf E0108405, also in Zeile 9 statt in Zeile 5. Deshalb antwortete checkESt
+  # rc=610001002, "Bitte geben Sie an, in welcher Hoehe die 2025 geleisteten Spenden in den
+  # Vermoegensstock einer Stiftung im Veranlagungszeitraum 2025 beruecksichtigt werden sollen".
+  #
+  # Das Feld bleibt in der Bindung, statt zu verschwinden (FELD_BESTAND.yaml): ein schon
+  # bestaetigter Wert bleibt im Store und landet in nicht_deklariert, mit dem Grund unten. Den
+  # Preflight-Hinweis "steht in der Erklaerung, wird aber nicht gerechnet" gibt es dafuer nicht
+  # mehr — er waere jetzt falsch.
+  #
+  # Fuer den Wiederaufbau: Zeile 11 ist E0108509 [SA/Zuw/Sp_erh_Verm_Stift], Typ GanzzahlNichtNeg
+  # (0 zulaessig). NICHT E0108607 — das ist der Vorjahres-Rest (Spenden aus Vorjahren, die bisher
+  # nicht beruecksichtigt wurden); der Backlog nannte faelschlich diese Kz. Die Kz steht hier im
+  # Kommentar und nicht im elster_kz_grund, weil der Grund nur Codes zitieren darf, die das Feld
+  # auch schreibt (tests/test_bindungstabelle.py, test_q).
+  #
+  # BIS 2026-09-26 GALT, UND FUER EIN ZEILE-9-FELD GILT ES WIEDER:
+  #
+  # GEFRAGT, NICHT AUF 0 GESETZT — und das war eine Entscheidung, keine Selbstverstaendlichkeit.
+  # Eine stille 0 haette fuer JEDEN Nutzer behauptet, er wolle nichts als Vermoegensstock-Spende
+  # beruecksichtigt sehen. Fuer fast alle stimmt das. Fuer den, der eine Stiftung mit aufbaut,
+  # waere es der Verzicht auf bis zu eine Million Abzugsvolumen (§ 10b Abs. 1a, ueber zehn Jahre
+  # verteilbar) — ohne dass er je gefragt worden waere.
+  #
+  # DER RECHENKERN KENNT ABS. 1A NICHT. rules.yaml sagt es ueber sich selbst: "Vortrag (S. 9),
+  # Stiftungs-Vermoegensstock (Abs. 1a) und Parteispenden (Abs. 2, § 34g) sind eigene
+  # Zuschnitte". Ein Wert > 0 wird also korrekt DEKLARIERT, aber nicht gerechnet: die angezeigte
+  # Steuer faellt zu hoch aus, der Bescheid guenstiger. Das ist die ungefaehrliche Richtung —
+  # niemand zahlt zu viel, niemand wird boese ueberrascht —, aber der Nutzer soll es wissen.
+  # Deshalb gab es den Preflight-Hinweis in produkt/konsistenz/check_nicht_gerechnet.py.
+  #
+  # Die Alternative waere ein Sperrgrund gewesen: dann bekaeme der Betroffene GAR KEINE
+  # Erklaerung. Das bestraft genau den, den es schuetzen soll.
+  #
+  # signatur_slot zeigt ins Leere: p10b_spenden kennt nur zuwendungen und
+  # gesamtbetrag_der_einkuenfte, und die zwei Geltungsbedingungen betreffen beide den
+  # 20-Prozent-Deckel des Abs. 1 — an einer Abs.-1a-Angabe behaupteten sie einen falschen
+  # Zusammenhang.
+  - feld_id: spenden_vermoegensstock
+    quelle: {regel_id: p10b_spenden, signatur_slot: vermoegensstock_betrag}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Gemeint ist nur der Sonderfall, dass du einer Stiftung beim Aufbau ihres Vermögens geholfen hast — nicht die normale Spende an eine Stiftung. Im Zweifel 0."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Stillgelegt seit 2026-09-26 (Instructor, Vault decisions/allgemeine-spenden-gehoeren-in-zeile-5): Zeile 11 der Anlage Sonderausgaben sagt, wie viel von Zeile 9 (Vermoegensstock einer Stiftung) im Jahr zaehlen soll. Ohne Zeile-9-Feld hat sie keinen Gegenstand, und ERiC lehnt sie ab, auch mit Wert 0 (rc=610001002, Meldung 1115). Weder gefragt noch geschrieben, bis es ein Feld fuer Zeile 9 gibt."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10b Abs. 1a S. 1 EStG"
+      zitatanker: "in das zu erhaltende Vermögen (Vermögensstock) einer Stiftung"
+      datei: "sources/gesetze-im-internet/estg_p10b_2026-07-13.txt"
+
+luecken:
+  # -- KiSt: beide Geltungsbedingungen sind MVP-Annahmen (kein Laien-Gate) --
+  - regel_id: p10_1_4_kirchensteuer
+    geltungsbedingung: keine_zuschlagsteuer_kappung
+    grund: "MVP-Annahme: KiSt ist nicht als Zuschlag zur Abgeltungsteuer gezahlt (AN ohne KapErtr); keine Laien-Abfrage in dieser Scheibe."
+  - regel_id: p10_1_4_kirchensteuer
+    geltungsbedingung: kein_erstattungsueberhang
+    grund: "Erstattungsüberhang (erstattet > gezahlt) wird nach § 10 Abs. 4b hinzugerechnet — außerhalb Scope, Null-Boden im Output; keine eigene Abfrage."
+  # -- Berufsausbildung --
+  - regel_id: p10_1_7_berufsausbildung
+    geltungsbedingung: hoechstbetrag_gilt_je_person
+    grund: "Modellierungs-Annahme: der 6.000-Euro-Höchstbetrag gilt je Person (Ehegatten-Verdopplung), keine Laien-Abfrage."
+  # -- agB: zumutbare Belastung ist berechnete Zwischengröße (p33_3), nicht deklariert --
+  - regel_id: p33_1_2_agb_abzug
+    signatur_slot: zumutbare_belastung
+    grund: "Berechnete Größe = Output von p33_3_zumutbare_belastung (aus Gesamtbetrag der Einkünfte/Kinder/Splitting); die Regel rechnet sie, keine Laien-Abfrage."
+  - regel_id: p33_1_2_agb_abzug
+    geltungsbedingung: keine_ausgeschlossenen_aufwendungen
+    grund: "Annahme: die Aufwendungen sind nicht schon als Werbungskosten/Betriebsausgaben/Sonderausgaben berücksichtigt (Dedup, andere Scheiben)."
+  # -- Spende §10b: der Höchstbetrag-Deckel rechnet mit dem GdE, keine Laien-Abfrage --
+  - regel_id: p10b_spenden
+    signatur_slot: gesamtbetrag_der_einkuenfte
+    grund: "Berechnete §-2-Größe (Gesamtbetrag der Einkünfte) als Bemessung für den 20-%-Spenden-Höchstbetrag; die Regel/Integration liefert sie, kein Laien-Feld."
+  - regel_id: p10b_spenden
+    geltungsbedingung: gde_ist_p2_ergebnis
+    grund: "Kopplung: der Gesamtbetrag der Einkünfte ist das §-2-Ergebnis; keine eigene Abfrage."
+  - regel_id: p10b_spenden
+    geltungsbedingung: nur_zwanzig_prozent_gde_deckel
+    grund: "Der 20-%-GdE-Höchstbetrag (§ 10b Abs. 1 S. 1) ist Rechenlogik der Regel; keine Laien-Abfrage."
+  - regel_id: p33_1_2_agb_abzug
+    geltungsbedingung: zumutbare_belastung_ist_p33_3_ergebnis
+    grund: "Modellierungs-Kopplung: die abgezogene zumutbare Belastung ist das p33_3-Ergebnis; keine eigene Abfrage."
+  - regel_id: p33_1_2_agb_abzug
+    geltungsbedingung: keine_behinderungsbedingten_fahrtkosten
+    grund: "AUFGELÖST: Fahrtkostenpauschale jetzt in eigener Scheibe (p33_2a) und IN den agb-Slot von catala_p33_agb integriert. Die alte Abgrenzung 'außerhalb dieser Scheibe' gilt nicht mehr — die Pauschale ist Teil der agB-Bemessung."
+  # -- §35a: die übrigen 6 Geltungsbedingungen sind Qualifikationen/Annahmen ohne eigene Laien-Abfrage.
+  # Die 3 topf-identifizierenden Bedingungen (minijob_ist_.../dienstleistungen_sind_.../handwerker_nur_...)
+  # stehen NICHT mehr hier -- seit der Einzelaufstellung sind sie echt gebunden (Art- UND Betrag-Feld
+  # jedes Topfs, quelle.geltungsbedingung), nicht mehr bloß Fragetext-Annahme. Siehe Bindungen oben. --
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: keine_beruecksichtigung_als_wk_sa_agb
+    grund: "Annahme: die Beträge sind nicht schon als Betriebsausgaben/Werbungskosten berücksichtigt (Dedup)."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: handwerkerbetrag_enthaelt_nur_arbeitskosten
+    grund: "Die Abfrage hh_handwerker_betrag fragt bereits nur die Arbeitskosten (Fragetext + Hilfe, 'ohne Material'); Annahme im Feld materialisiert."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: dienstleistungsbetrag_enthaelt_nur_arbeitskosten
+    grund: "Die Abfrage hh_dienstleistung_betrag fragt bereits nur die Arbeitskosten (Fragetext 'ohne Material'); Annahme im Feld materialisiert."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: kein_gemeinsamer_haushalt_zweier_alleinstehender
+    grund: "Sonderfall gemeinsamer Haushalt zweier Alleinstehender (Höchstbeträge nur einmal) — außerhalb dieser Scheibe."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: antrag_gestellt
+    grund: "Der Abzug wird durch die Angabe in der Erklärung beantragt; die Eingabe der Beträge IST der Antrag, keine separate Abfrage."
+  - regel_id: p35a_2_3_haushaltsnahe
+    geltungsbedingung: keine_pflege_oder_heimkosten
+    grund: "Pflege-/Heimkosten sind ein eigener § 35a-Zweig (Abs. 2 S. 2) außerhalb dieser Erst-Scheibe."

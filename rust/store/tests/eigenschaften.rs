@@ -28,8 +28,8 @@ fn nachschlag() -> BindungNachschlag<'static> {
     static MAP: OnceLock<HashMap<String, &'static Bindung>> = OnceLock::new();
     BindungNachschlag::neu(MAP.get_or_init(|| {
         store::baue_nachschlag(BINDUNGEN.get_or_init(|| {
-            let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-            bindung::lade_registry(&pfad)
+            let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+            bindung::lade_registry_der_wurzel(&pfad)
                 .unwrap()
                 .dateien
                 .into_iter()

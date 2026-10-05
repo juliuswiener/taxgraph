@@ -47,7 +47,7 @@ fn graph() -> &'static Graph<'static> {
     CELL.get_or_init(|| {
         // Die Registry lebt so lange wie der Testprozess.
         let registry = Box::leak(Box::new(
-            interview::doctest_registry().expect("Registry laedt"),
+            interview::python_orakel_registry().expect("Registry laedt"),
         ));
         Graph::aus_registry(registry)
     })

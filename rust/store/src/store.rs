@@ -1447,8 +1447,8 @@ mod tests {
     #[test]
     fn text_mit_steuerzeichen_wird_abgewiesen_auflage_t() {
         // Ticket elster-xml-steuerzeichen-im-textwert: echte Bindung, typ=text.
-        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        let bindungen: Vec<Bindung> = bindung::lade_registry(&pfad)
+        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<Bindung> = bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
             .dateien
             .into_iter()
@@ -1482,8 +1482,8 @@ mod tests {
     }
 
     fn echte_bindungen() -> Vec<Bindung> {
-        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        bindung::lade_registry(&pfad)
+        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
             .dateien
             .into_iter()

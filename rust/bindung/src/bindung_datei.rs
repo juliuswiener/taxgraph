@@ -1,4 +1,4 @@
-//! `bindung_*.yaml`: eine Bindungstabelle (`produkt/bindung/schema.json`, "Bindungstabelle
+//! `bindung_*.yaml`: eine Bindungstabelle (`rust/bindung/daten/schema.json`, "Bindungstabelle
 //! (UI-Kern, Task #11)"). Struktur und Feldnamen folgen dem Schema 1:1; `deny_unknown_fields`
 //! ueberall, weil das Schema selbst `additionalProperties: false` ist.
 //!

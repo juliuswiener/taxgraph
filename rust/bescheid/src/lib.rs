@@ -662,7 +662,7 @@ pub mod testhilfe {
     fn bindungen() -> &'static [Bindung] {
         static B: OnceLock<Vec<Bindung>> = OnceLock::new();
         B.get_or_init(|| {
-            let reg = bindung::lade_registry(&repo().join("produkt/bindung")).unwrap();
+            let reg = bindung::lade_registry_der_wurzel(&repo()).unwrap();
             reg.dateien
                 .into_iter()
                 .flat_map(|(_, d)| d.bindungen)

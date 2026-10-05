@@ -4,7 +4,7 @@
 //! `SCHEIBEN` in Python. Diese Datei haelt die Eigenschaften fest, die ohne Python noch gelten
 //! muessen:
 //!
-//! - Jedes Feld einer Scheibe steht in der Registry (`produkt/bindung` **und** `rust/bindung/felder`).
+//! - Jedes Feld einer Scheibe steht in der Registry (`rust/bindung/daten`).
 //!   Ein Feld, das dort fehlt, laesst `scheibe_bindung` die ganze Scheibe mit 500 abweisen.
 //! - Der Kegel (die Felder, die ueber Freigabe oder Sperre des Scheibenbetrags entscheiden) liegt in
 //!   den Feldern, ist ohne Dopplung und fragbar. Fehlt ein Kegel-Feld oder steht eines doppelt, zaehlt
@@ -102,7 +102,7 @@ fn jedes_feld_jeder_scheibe_steht_in_der_registry() {
             .collect();
         assert!(
             fehlt.is_empty(),
-            "{s:?}: Felder ohne Bindung in produkt/bindung oder rust/bindung/felder: {fehlt:?}"
+            "{s:?}: Felder ohne Bindung in rust/bindung/daten: {fehlt:?}"
         );
     }
 }

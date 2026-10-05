@@ -46,8 +46,8 @@ pub use instanz::{fehlende_instanzen, instanz_anzahl, instanz_feld_id, FehlendeI
 pub use relevanz::{gate_gewicht, relevanz, Bedingungsstand, RegelRelevanz, Regelstatus};
 pub use rollen::{relevante_kegel_felder, ring_bindung, rollen, AchsenBindung, AufbauBindung};
 
-/// Laedt die echte Registry fuer Doctests (`produkt/bindung`, **ohne** `rust/bindung/felder`: die
-/// Python-Orakel kennen nur die gemeinsame Bindung). Nicht Teil der API.
+/// Laedt die echte Registry fuer Doctests und Tests (`rust/bindung/daten`, wie der Dienst). Nicht
+/// Teil der API.
 ///
 /// ```
 /// assert!(interview::doctest_registry().is_some());
@@ -55,6 +55,22 @@ pub use rollen::{relevante_kegel_felder, ring_bindung, rollen, AchsenBindung, Au
 #[doc(hidden)]
 #[must_use]
 pub fn doctest_registry() -> Option<bindung::Registry> {
+    let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    bindung::lade_registry_der_wurzel(&wurzel).ok()
+}
+
+/// Die Registry, ueber die Python seine eingefrorenen Orakel-Antworten berechnet hat
+/// (`produkt/bindung`, nicht `rust/bindung/daten`). Nur die Tests, die eine Fixture-Antwort von
+/// Python vergleichen (`orakel_werte`), nehmen sie: dieselbe Eingabe wie das Fixture, auch wenn
+/// `rust/bindung/daten` ein Feld mehr kennt. Faellt mit den Python-Fixtures weg (Weg B voll,
+/// Stufe 2). Nicht Teil der API.
+///
+/// ```
+/// assert!(interview::python_orakel_registry().is_some());
+/// ```
+#[doc(hidden)]
+#[must_use]
+pub fn python_orakel_registry() -> Option<bindung::Registry> {
     let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
     bindung::lade_registry(&pfad).ok()
 }

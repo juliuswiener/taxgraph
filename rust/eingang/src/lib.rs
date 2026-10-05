@@ -21,7 +21,7 @@ pub mod vast;
 pub mod vorjahr;
 pub mod vorschlag;
 
-/// Laedt die echte Registry als Nachschlag fuer Doctests (`produkt/bindung`). Nicht Teil der API.
+/// Laedt die echte Registry als Nachschlag fuer Doctests (`rust/bindung/daten`). Nicht Teil der API.
 ///
 /// ```
 /// assert!(eingang::doctest_bindung().is_some());
@@ -34,8 +34,8 @@ pub fn doctest_bindung(
         Option<std::collections::HashMap<String, &'static bindung::Bindung>>,
     > = std::sync::OnceLock::new();
     N.get_or_init(|| {
-        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        let reg = bindung::lade_registry(&pfad).ok()?;
+        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let reg = bindung::lade_registry_der_wurzel(&pfad).ok()?;
         let alle: Vec<bindung::Bindung> = reg
             .dateien
             .into_iter()

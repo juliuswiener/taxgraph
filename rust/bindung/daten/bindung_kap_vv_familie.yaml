@@ -1,0 +1,1176 @@
+# Bindungstabelle — Scheibe 3: Kapital §20 + V+V §21 + Familie (§24b/§31/§32) (Task #11).
+# Validiert gegen schema.json (kein neues Schema). Signaturen/Bedingungen: rules.yaml.
+# §20/§21/Kind-E-Nr: im 2026-07-12-Katalog konzeptbelegt, XSD-E-Nr Sektions-Lookup-Nachtrag -> null+grund.
+version: 1
+scheibe: "Kapital §20 (p20_6/p20_9) + V+V §21 (p21/p21_2) + Familie (p24b/p31/p32_6)"
+
+bindungen:
+  # ========================= Kapital §20 — Sparer-Pauschbetrag (p20_9) =========================
+  - feld_id: kap_kapitalertraege
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p20_9_sparer_pauschbetrag, signatur_slot: kapitalertraege}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe Kapitalerträge hattest du dieses Jahr (Zinsen, Dividenden, Gewinne aus Verkäufen)?"
+    hilfe_kurz: "Steht in deiner Steuerbescheinigung von Bank oder Broker. Die ersten 1.000 Euro sind steuerfrei."
+    beispielwert: 300000
+    herkunft_slots: null
+    elster_kz: E1900701
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 9 S. 1 EStG"
+      zitatanker: "als Werbungskosten ein Betrag von 1 000 Euro abzuziehen"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  # ========================= Kapital §20 — Verlustverrechnung (p20_6) =========================
+  - feld_id: kap_gewinn_aktien
+    quelle: {regel_id: p20_6_verlustverrechnung, signatur_slot: gewinn_aktien}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe Gewinne aus dem Verkauf von Aktien hattest du dieses Jahr?"
+    hilfe_kurz: "Nur die Gewinne aus verkauften Aktien (ein Teil deiner gesamten Kapitalerträge). Wichtig, weil Aktienverluste steuerlich nur mit Aktiengewinnen verrechnet werden dürfen."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: E1900901
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 4 EStG"
+      zitatanker: "aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  - feld_id: kap_verlust_aktien
+    quelle: {regel_id: p20_6_verlustverrechnung, signatur_slot: verlust_aktien}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe Verluste aus dem Verkauf von Aktien hattest du dieses Jahr?"
+    hilfe_kurz: "Aktienverluste können nur mit Aktiengewinnen verrechnet werden (eigener Topf)."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: E1901301
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 4 EStG"
+      zitatanker: "aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  - feld_id: kap_gewinn_sonstige
+    quelle: {regel_id: p20_6_verlustverrechnung, signatur_slot: gewinn_sonstige}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe sonstige Kapitalgewinne (außer Aktien) hattest du dieses Jahr?"
+    hilfe_kurz: "Zum Beispiel Gewinne aus Fonds oder Zertifikaten."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: Modell-Mismatch. Wert in E1900701. E1900904 enger als unser Feld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 1 EStG"
+      zitatanker: "nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  - feld_id: kap_verlust_sonstige
+    quelle: {regel_id: p20_6_verlustverrechnung, signatur_slot: verlust_sonstige}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe sonstige Kapitalverluste (außer Aktien) hattest du dieses Jahr?"
+    hilfe_kurz: "Sonstige Verluste werden in ihrem eigenen Topf verrechnet."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: E1901201
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 1 EStG"
+      zitatanker: "nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  # Antrag Günstigerprüfung (§ 32d Abs. 6): Ring-berechnet, kein Nutzer-Opt-in fuer DIESEN
+  # Antrag. NICHT an den vom Ring beim Rechnen gewaehlten Zweig gekoppelt (kap_st < abgeltung)
+  # — das war der urspruengliche Entwurf und blockierte genau den HAEUFIGEREN Fall (Abgeltung
+  # guenstiger bleibt uneinreichbar, rc=610001002, gemessen 2026-08-10). § 32d Abs. 6 S. 1: die
+  # Hinzurechnung zur tariflichen ESt erfolgt nur, "wenn dies zu einer niedrigeren
+  # Einkommensteuer ... führt" — der Antrag löst eine PRÜFUNG aus und kann strukturell nicht
+  # schlechterstellen. Jetzt gesetzt, sobald irgendein KAP-Betragsfeld erklärt wird (eigen ODER
+  # — bei Zusammenveranlagung — Partner). S.3/S.4: EIN Antrag je Erklaerung (auch bei
+  # Zusammenveranlagung fuer saemtliche Kapitalertraege beider Ehegatten) — deshalb kein
+  # eigenes Partner-FELD und keine zweite Bindung. Injektion in _mit_ring_werten
+  # (produkt/haut/api.py).
+  #
+  # KORREKTUR 2026-08-20: hier stand "kein Partner-Zwilling, kein eigenes distinktes Kz je
+  # Person (XSD: E1900401 erscheint schemaweit genau einmal)". Der erste Halbsatz war falsch
+  # und hat einen Abgabe-Blocker verursacht. "Schemaweit genau einmal" heisst einmal IM
+  # PERSON-CONTAINER, nicht einmal je Erklaerung: E1900401 sitzt in Ant_2368107_CType, das von
+  # KAP_67907_CType gefuehrt wird — und KAP_67907_CType traegt einen eigenen <Person>-
+  # Diskriminator, existiert also je Person einmal. Genau wie E1900701 (kap_kapitalertraege),
+  # das fuer den Partner dieselbe Kz-Nummer in der Person-B-Instanz benutzt (PARTNER_INSTANZ).
+  # Der Antrag ist EIN Antrag (S.4), muss aber in BEIDEN Person-Containern stehen; checkESt
+  # verlangt das woertlich ("...ist dieser Antrag auch bei der Ehefrau / bei Person B zu
+  # stellen"). Die Spiegelung sitzt in est_mapping.deklariere() — es gibt bewusst kein
+  # zweites Feld, weil S.4 einen eigenstaendigen Partner-Antrag rechtlich ausschliesst.
+  # Gate: tests/test_kap_antrag_person_b.py
+  # Anlage KAP Zeile 16 (Kz 217/417): der IN ANSPRUCH GENOMMENE Sparer-Pauschbetrag. Ohne dieses
+  # Feld bleibt die Erklaerung uneinreichbar, auch MIT Antrag — gemessen 2026-08-10, Kz direkt in
+  # die Deklaration injiziert, Basisfall + kap_kapitalertraege=5.000:
+  #   ohne beides            rc=610001002  "...einen Grund fuer die Angabe ... angeben"
+  #   nur E1901401           rc=610001002  derselbe Blocker
+  #   nur E1900401           rc=610001002  "...keine Angabe zum in Anspruch genommenen
+  #                                          Sparer-Pauschbetrag"
+  #   E1900401 + E1901401    rc=0          einreichbar
+  # Abgeleitet, nicht gefragt: catala_sparer_pb liefert die Kapitaleinkuenfte NACH Abzug, der
+  # genutzte Pauschbetrag ist die Differenz zum verrechneten Rohbetrag. Der Vordruck vermerkt bei
+  # dieser Zeile ausdruecklich "(ggf. 0)" — 0 ist ein zulaessiger Wert, kein fehlender.
+  - feld_id: kap_sparer_pauschbetrag_genutzt
+    quelle: {regel_id: p20_9_sparer_pauschbetrag, geltungsbedingung: sparer_pb_1000_2000_konstante}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "In Anspruch genommener Sparer-Pauschbetrag (berechnet, ggf. 0)"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E1901401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 9 S. 1 EStG"
+      zitatanker: "als Werbungskosten ein Betrag von 1 000 Euro abzuziehen"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  - feld_id: kap_antrag_guenstigerpruefung
+    quelle: {regel_id: p32d_1_abgeltung, geltungsbedingung: guenstigerpruefung_beantragt}
+    typ: bool
+    einheit: null
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Automatisch gestellt, wenn die tarifliche Besteuerung günstiger ist als die 25 %-Abgeltungsteuer."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: E1900401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32d Abs. 6 S. 1 EStG"
+      zitatanker: "wenn dies zu einer niedrigeren Einkommensteuer einschließlich Zuschlagsteuern führt"
+      datei: "sources/gesetze-im-internet/estg_p32d_2026-07-13.txt"
+  # KAP Stufe 3 (Zeile 41, Kz 284/484): noch nicht angerechnete auslaendische Quellensteuer (q).
+  # Kz belegt in reports/adjudikation/anlage-kap-kz-zuordnung-2026-08-10.md. ABGRENZUNG: Zeile 40
+  # (E1905001, von der Bank bereits angerechnet) und Zeile 42 (E1905201, fiktive Quellensteuer)
+  # sind eigene Konzepte, NICHT dieses Feld. Formel (e-4q)/(4+k) nur im kirchensteuerpflichtigen
+  # Fall (p32d_1_kirchensteuer); ohne Kirchensteuerpflicht reduziert q die Abgeltungsteuer direkt
+  # nach § 32d Abs. 1 S. 1+2 (Ring-Logik, api.py, kein eigener rule_id-Zweig fuer den k=0-Fall).
+  # Deckel: nur Jahres-Summe (Abs. 5 S. 3, q <= kap_st) gebaut. Der engere Pro-Kapitalertrag-
+  # 25 %-Deckel (Abs. 5 S. 1) ist NICHT pruefbar (kein Einzelposten-Datenmodell) — offene Frage.
+  - feld_id: kap_q_auslaendische_steuer
+    quelle: {regel_id: p32d_1_kirchensteuer, signatur_slot: anrechenbare_auslaendische_steuer}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel ausländische Quellensteuer auf deine Kapitalerträge wurde noch nicht angerechnet (z. B. von deiner Bank)?"
+    hilfe_kurz: "Anlage KAP Zeile 41. Nur die noch nicht angerechnete ausländische Steuer — bereits von der Bank angerechnete Beträge (Zeile 40) hier nicht nochmal eintragen."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: E1905101
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32d Abs. 1 S. 2 EStG"
+      zitatanker: "die nach Maßgabe des Absatzes 5 anrechenbaren ausländischen Steuern"
+      datei: "sources/gesetze-im-internet/estg_p32d_2026-07-13.txt"
+
+  # ===== §20 Kapital Person-B (Zusammenveranlagung): Klasse-g-Zwillinge, Anlage-KAP-Instanz B =====
+  # Anlage KAP wird PER PERSON gefüllt (jeder Ehegatte eigener Sparer-Pauschbetrag § 20 Abs. 9 S. 3);
+  # KEIN distinkter Person-B-Kz (Schema-Recon 2026-07-18: E1900701/E19009xx = per-Person-Instanz, kein
+  # Ehegatte-Kz) → est_mapping Klasse g mappt _partner auf DENSELBEN Person-A-Kz im person_b-Bucket, kein
+  # neuer Kz. K2-Guard partner_check: nur bei veranlagung==zusammen. Accessor summiert A+B (dev-1-Nachtrag).
+  - feld_id: kap_kapitalertraege_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_kapitalertraege_partner}
+    # Julius, echter Durchgang 2026-08-28 (L1 #58-62, L3 #48-52): fuenf Fragen nach den
+    # Kapitalertraegen des Partners, obwohl „keine Kapitalertraege" angekreuzt war. Das vorhandene
+    # Kreuz `kein_kap` fragt woertlich nach „dir" und konnte diese Felder deshalb nicht abschalten.
+    feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 EStG setzt Einkuenfte aus Kapitalvermoegen voraus, und § 26b EStG ermittelt sie je Ehegatten getrennt — jeder hat eine eigene Steuerbescheinigung und einen eigenen Sparer-Pauschbetrag. Ohne bestaetigte Kapitalertraege des Partners gibt es zu dessen Anlage KAP nichts zu erklaeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe Kapitalerträge hatte dein zusammen veranlagter Ehe-/Lebenspartner dieses Jahr (Zinsen, Dividenden, Gewinne)?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung: jeder Ehegatte hat einen eigenen Sparer-Pauschbetrag (1.000 Euro), deshalb person-individuell aus der Steuerbescheinigung des Partners."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-KAP-Instanz B (Klasse g): derselbe Kz E1900701 wie Person A, zweites Sub-Dokument — kein distinktes Partner-Kz (Schema-Recon: keine Ehegatte-Kapitalerträge-Kz). herkunft_slots=null (Beleg füllt nur Person A)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 9 S. 3 EStG"
+      zitatanker: "gemeinsamer Sparer-Pauschbetrag von 2 000 Euro"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  - feld_id: kap_gewinn_aktien_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_gewinn_aktien_partner}
+    feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 Abs. 2 S. 1 Nr. 1 EStG erfasst Gewinne aus der Veraeusserung von Aktien als Einkuenfte aus Kapitalvermoegen, und § 26b EStG ermittelt sie je Ehegatten getrennt. Ohne bestaetigte Kapitalertraege des Partners gibt es zu dessen Anlage KAP nichts zu erklaeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe Gewinne aus dem Verkauf von Aktien hatte dein Ehe-/Lebenspartner dieses Jahr?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung, person-individuell: Aktienverluste des Partners verrechnen sich nur mit seinen eigenen Aktiengewinnen."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-KAP-Instanz B (Klasse g): derselbe Kz E1900901 wie Person A, kein distinktes Partner-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 4 EStG"
+      zitatanker: "aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  - feld_id: kap_verlust_aktien_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_verlust_aktien_partner}
+    feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 Abs. 6 S. 4 EStG verrechnet Verluste aus Aktien nur mit Gewinnen aus Aktien, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte Kapitalertraege des Partners gibt es weder Gewinne noch Verluste, die zu verrechnen waeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe Verluste aus dem Verkauf von Aktien hatte dein Ehe-/Lebenspartner dieses Jahr?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung, person-individuell (eigener Aktien-Verlusttopf des Partners)."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-KAP-Instanz B (Klasse g): derselbe Kz E1901301 wie Person A, kein distinktes Partner-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 4 EStG"
+      zitatanker: "aus der Veräußerung von Aktien entstehen, dürfen nur mit Gewinnen aus Kapitalvermögen"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  - feld_id: kap_verlust_sonstige_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_verlust_sonstige_partner}
+    feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 Abs. 6 EStG verrechnet Verluste aus Kapitalvermoegen, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte Kapitalertraege des Partners gibt es weder Gewinne noch Verluste, die zu verrechnen waeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe sonstige Kapitalverluste (außer Aktien) hatte dein Ehe-/Lebenspartner dieses Jahr?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung, person-individuell (eigener sonstiger Verlusttopf des Partners)."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-KAP-Instanz B (Klasse g): derselbe Kz E1901201 wie Person A, kein distinktes Partner-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 1 EStG"
+      zitatanker: "nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+  # Register-B K2-Fix (2026-07-19): sonstiger Kapital-GEWINN Person-B — spiegelbildlich zu kap_gewinn_sonstige
+  # (Person A). VORHER hart 0 in api.py (stiller Under-tax, Ehegatte-Gewinn nie besteuert); jetzt symmetrisch
+  # deklariert -> dev-1s Fold liest den Read-Key, kein stiller Falschwert.
+  - feld_id: kap_gewinn_sonstige_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: kap_gewinn_sonstige_partner}
+    feld_bedingung: {feld: kein_kap_partner, wert: false, grund: "§ 20 Abs. 2 EStG erfasst Gewinne aus der Veraeusserung von Kapitalanlagen, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte Kapitalertraege des Partners gibt es zu dessen Anlage KAP nichts zu erklaeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe sonstige Kapitalgewinne (außer Aktien) hatte dein Ehe-/Lebenspartner dieses Jahr?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung, person-individuell (z. B. Gewinne aus Fonds oder Zertifikaten des Partners)."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: derselbe Status wie Person A. Wert in E1900701 (person_b)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 20 Abs. 6 S. 1 EStG"
+      zitatanker: "nicht mit Einkünften aus anderen Einkunftsarten ausgeglichen werden"
+      datei: "sources/gesetze-im-internet/estg_p20_2026-07-13.txt"
+
+  # ========================= V+V §21 — laufende Einkünfte (p21) =========================
+  # Zurechnung des Überschusses. Bei Einzelveranlagung und bei Alleineigentum entfällt der
+  # ganze Betrag auf Person A — Person B (E0701802) ist ein benannter Nachtrag zusammen mit
+  # der Miteigentums-Aufteilung.
+  - feld_id: vv_ueberschuss_person_a
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: dem Steuerpflichtigen zugerechneter Überschuss"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0701801
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_summe_werbungskosten
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Summe der Werbungskosten des Objekts"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0705701
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_ueberschuss
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Einnahmen minus Werbungskosten (Ergebniszeile der Anlage V)"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0701601
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  # Die drei Nutzungs-Flags und die Nebenkosten-Frage tragen `gate: false`: sie sind DEKLARATION.
+  # Der Vordruck verlangt sie, § 21 gilt aber unabhaengig von der Antwort. Ohne das Flag waere
+  # jede dieser Fragen ein bool-Gate — und der Normalfall antwortet dreimal "nein", was dem
+  # Vermieter die ganze Anlage V aus dem Dialog genommen haette (gemessen 2026-08-16: 155 statt
+  # 174 Fragen, kein einziges vv_-Betragsfeld mehr). Dieselbe Falle wie beim
+  # Verpflegungsmehraufwand (519199e).
+  - feld_id: vv_nutzung_ferienwohnung
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: bool
+    einheit: null
+    askable: true
+    gate: false
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wurde das Objekt ganz oder teilweise als Ferienwohnung genutzt?"
+    hilfe_kurz: "Ferienwohnungen werden anders behandelt als Dauervermietung — das Finanzamt fragt danach ausdrücklich."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0700703
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_nutzung_an_angehoerige
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: bool
+    einheit: null
+    askable: true
+    gate: false
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wurde das Objekt ganz oder teilweise an Angehörige zu Wohnzwecken vermietet?"
+    hilfe_kurz: "Bei Vermietung an Angehörige prüft das Finanzamt, ob die Miete ortsüblich ist."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0700704
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_nutzung_kurzfristig
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: bool
+    einheit: null
+    askable: true
+    gate: false
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wurde das Objekt ganz oder teilweise kurzfristig vermietet?"
+    hilfe_kurz: "Zum Beispiel tage- oder wochenweise über eine Vermittlungsplattform."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0700705
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_einnahmen_summe_gesamt
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Summe aller Einnahmen aus dem Objekt"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0701401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_objekt_strasse
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wo liegt das vermietete Objekt? Straße und Hausnummer."
+    hilfe_kurz: "Je vermietetem Objekt eine eigene Anlage V. Bei mehreren Objekten ist heute nur eines erklärbar (folgt)."
+    beispielwert: "Mietweg 7"
+    herkunft_slots: null
+    elster_kz: E0700407
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_objekt_plz
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Postleitzahl des vermieteten Objekts?"
+    hilfe_kurz: "Fünfstellig."
+    beispielwert: "12345"
+    herkunft_slots: null
+    elster_kz: E0700503
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_objekt_ort
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Ort des vermieteten Objekts?"
+    hilfe_kurz: "Nur der Ortsname."
+    beispielwert: "Musterstadt"
+    herkunft_slots: null
+    elster_kz: E0700504
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_wohneinheit_bezeichnung
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: objekt_unbewegliches_vermoegen}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie heißt die vermietete Wohneinheit? (z. B. Stockwerk oder Wohnungsnummer)"
+    hilfe_kurz: "Das Finanzamt will Bezeichnung und Mieteinnahme zusammen sehen. Bei einem Einfamilienhaus reicht „gesamtes Haus“."
+    beispielwert: "1. OG links"
+    herkunft_slots: null
+    elster_kz: E0701202
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen, insbesondere von Grundstücken, Gebäuden, Gebäudeteilen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_nebenkosten_nicht_vereinbart
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt seit 2026-08-26 nach der Anwesenheit
+    typ: bool
+    einheit: null
+    askable: true
+    gate: false
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wurden mit dem Mieter Neben- und Betriebskosten gesondert vereinbart?"
+    hilfe_kurz: "Antworte mit ja, wenn die Miete eine Pauschale ohne getrennte Nebenkostenabrechnung ist. Bei getrennter Abrechnung antworte nein und trage die umgelegten Kosten ein."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: E0702404
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_nebenkosten_umgelegt
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viel hast du im Jahr an Neben- und Betriebskosten auf die Mieter umgelegt?"
+    hilfe_kurz: "Nur wenn ihr sie gesondert vereinbart habt. Diese Umlagen sind Einnahmen und stehen in der Anlage V in einer eigenen Zeile."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: E0700501
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_mieteinnahmen_summe
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, geltungsbedingung: einnahmen_aufteilung_und_summe}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Summe der Mieteinnahmen für Wohnungen"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0700206
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  - feld_id: vv_einnahmen
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: einnahmen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hohe Mieteinnahmen hattest du dieses Jahr (Kaltmiete plus umgelegte Nebenkosten)?"
+    hilfe_kurz: "Alles, was der Mieter dir gezahlt hat."
+    beispielwert: 1200000
+    herkunft_slots: null
+    elster_kz: E0700201
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+  - feld_id: vv_gebaeude_afa
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: gebaeude_afa}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel schreibst du jährlich für das vermietete Gebäude ab (Fachwort: AfA)?"
+    hilfe_kurz: "Meist ein fester Prozentsatz der Anschaffungskosten des Gebäudes (ohne Grundstück)."
+    beispielwert: 300000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-V-Cross-Check 2026-07-17: kein einzelner Gebäude-AfA-Summen-Kz — die AfA wird über Art-Flag (E0703302) + Detail-Betrag (E0703304 je Zuordnung Direkt/Verhaelt, § 7 Abs. 4/5/5a) deklariert; 1:1-Eintrag wäre semantisch schief. Bleibt Lücke."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+  - feld_id: vv_schuldzinsen
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: schuldzinsen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele Zinsen hast du dieses Jahr für den Kredit auf die vermietete Immobilie gezahlt?"
+    hilfe_kurz: "Nur die Zinsen, nicht die Tilgung."
+    beispielwert: 200000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-V-Cross-Check 2026-07-17: die E10-Submission deklariert KEIN eigenes Schuldzinsen-Betrags-Kz — der Vordruck-Detailbetrag aggregiert in die WK-Summe (E0703838). Bleibt Lücke (Modell feiner als Submission)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+  - feld_id: vv_erhaltungsaufwand
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: erhaltungsaufwand}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Was hast du dieses Jahr für Reparaturen und Instandhaltung der vermieteten Immobilie ausgegeben?"
+    hilfe_kurz: "Zum Beispiel neue Heizung, Malerarbeiten, Reparaturen."
+    beispielwert: 100000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-V-Cross-Check 2026-07-17: kein eigenes Erhaltungsaufwand-Betrags-Kz in der E10-Submission — aggregiert in die WK-Summe (E0703838). Bleibt Lücke."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+  - feld_id: vv_sonstige_wk
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_vermietung_einkuenfte, signatur_slot: sonstige_werbungskosten}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Welche sonstigen Kosten hattest du dieses Jahr rund um die Vermietung (Hausgeld, Versicherung, Fahrten)?"
+    hilfe_kurz: "Alle weiteren Ausgaben, die mit der Vermietung zusammenhängen."
+    beispielwert: 50000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-V-Cross-Check 2026-07-17: kein eigenes Betrags-Kz — aggregiert in die WK-Summe (E0703838). Bleibt Lücke."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung von unbeweglichem Vermögen"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  # ========================= V+V §21 — verbilligte Vermietung (p21_2, 66/50%-Gate) =========================
+  - feld_id: vv_werbungskosten
+    quelle: {regel_id: p21_2_verbilligte_vermietung_wk, signatur_slot: werbungskosten}
+    typ: cent
+    einheit: EUR
+    askable: false
+    fragetext_laie: "Wie hoch waren deine gesamten Kosten für die vermietete Wohnung (Abschreibung, Zinsen, Reparaturen, Sonstiges zusammen)?"
+    hilfe_kurz: "Bei verbilligter Vermietung an Angehörige können die Kosten anteilig gekürzt werden."
+    beispielwert: 800000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-V-Cross-Check 2026-07-17: unser Modell ist feiner als die Submission — die WK-Summe entsteht deterministisch in der est_mapping-Schicht aus den Detail-Slots (afa/schuldzinsen/erhaltung/sonstige). AGGREGATIONS-ZIEL-Kz = E0703838 (Abzugsfähige Werbungskosten), mit Zuordnungsart-Vorbehalt ([Einz]/[Sum]/[Direkt]/[Verhaelt], Mehrfachzeilen je Objekt). Kein Direkt-Eintrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 2 EStG"
+      zitatanker: "weniger als 50 Prozent der ortsüblichen Marktmiete"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+  - feld_id: vv_entgelt_quote_prozent
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_2_verbilligte_vermietung_wk, signatur_slot: entgelt_quote_prozent}
+    typ: int
+    einheit: "%"
+    bereich: {min: 0, max: 100, grund: "Prozentsatz der ortsüblichen Marktmiete (Miete/Marktmiete), physikalisch 0..100"}
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel Prozent der ortsüblichen Miete verlangst du (falls du verbilligt vermietest, z. B. an Angehörige)?"
+    hilfe_kurz: "Ab 66 % kannst du die Kosten voll absetzen, unter 50 % nur anteilig."
+    beispielwert: 100
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: Semantik-Unterschied. E0708601 = Kürzungs-%, Entgelt-Quote nicht deckungsgleich."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 2 S. 1 EStG"
+      zitatanker: "weniger als 50 Prozent der ortsüblichen Marktmiete"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+  - feld_id: vv_wohnzwecke
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_2_verbilligte_vermietung_wk, geltungsbedingung: wohnung_zu_wohnzwecken_ueberlassen}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wird die Wohnung zum Wohnen vermietet (nicht gewerblich)?"
+    hilfe_kurz: "Die verbilligte-Vermietung-Regel gilt nur für Wohnungen zu Wohnzwecken."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 2 S. 1 EStG"
+      zitatanker: "Überlassung einer Wohnung zu Wohnzwecken"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+  - feld_id: vv_auf_dauer
+    instanz_gruppe: vv_objekt
+    quelle: {regel_id: p21_2_verbilligte_vermietung_wk, geltungsbedingung: auf_dauer_angelegte_wohnungsvermietung}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Vermietest du die Wohnung dauerhaft (nicht nur vorübergehend)?"
+    hilfe_kurz: "Bei nur kurzzeitiger Vermietung gelten andere Regeln."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein), kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 2 S. 2 EStG"
+      zitatanker: "bei auf Dauer angelegter Wohnungsvermietung"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  # ========================= Familie — Entlastungsbetrag Alleinerziehende (p24b) =========================
+  - feld_id: fam_alleinstehend
+    quelle: {regel_id: p24b_entlastungsbetrag, signatur_slot: alleinstehend}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Bist du alleinerziehend (du wohnst mit deinem Kind zusammen, aber ohne einen anderen Erwachsenen im Haushalt)?"
+    hilfe_kurz: "Es darf keine andere erwachsene Person mit im Haushalt leben (außer eigene Kinder)."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Vordruck kodiert die NEGATION (E0503701/E0503821 = schädliche Haushaltsgemeinschaft mit weiterer volljähriger Person); unser Slot 'alleinstehend' ist die Umkehrung → Übersetzung gehört in die est_mapping-Schicht, kein Direkt-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 24b Abs. 3 S. 1 EStG"
+      zitatanker: "Allein stehend im Sinne des Absatzes 1 sind Steuerpflichtige"
+      datei: "sources/gesetze-im-internet/estg_p24b_2026-07-09.txt"
+  - feld_id: fam_anzahl_kinder
+    quelle: {regel_id: p24b_entlastungsbetrag, signatur_slot: anzahl_kinder}
+    typ: int
+    einheit: Kinder
+    bereich: {min: 0, max: 20, grund: "Anzahl berücksichtigungsfähiger Kinder; praktische Obergrenze"}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Für wie viele Kinder stehen dir in diesem Jahr Kindergeld oder ein Kinderfreibetrag zu?"
+    hilfe_kurz: "Zähle nur Kinder, für die du im Steuerjahr Anspruch auf Kindergeld oder Kinderfreibetrag hattest — nicht einfach alle Kinder im Haushalt."
+    beispielwert: 1
+    # Wer sagt, für wie viele Kinder ihm Kindergeld zusteht, hat damit gesagt, DASS er Kinder hat.
+    # Ohne diese Zeile stand `kein_kind` danach auf Position 2 von 320 und fragte es noch einmal
+    # (Julius im Durchgang 2026-08-25: „frage gerade beantwortet wird jetzt wieder gestellt").
+    # `ab: 1` mit Absicht: bei 0 Kindern wird NICHTS abgeleitet, dann bleibt die Existenzfrage
+    # stehen. Die Bindung selbst lässt 0 zu (bereich.min), und aus einer 0 einen stillen Wert zu
+    # machen wäre die schlechtere Hälfte des Handels.
+    beweist: {feld_id: kein_kind, wert: false, ab: 1}
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl = Anzahl der Kind-Anlagen (je Kind eine Anlage im E10), kein Einzel-Zähl-Kz; ergibt sich aus der Zahl der ausgefüllten Anlagen Kind."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 24b Abs. 1 S. 1 EStG"
+      zitatanker: "Freibetrag nach § 32 Absatz 6 oder Kindergeld zusteht"
+      datei: "sources/gesetze-im-internet/estg_p24b_2026-07-09.txt"
+  - feld_id: fam_monate_ohne_voraussetzung
+    quelle: {regel_id: p24b_entlastungsbetrag, signatur_slot: monate_ohne_voraussetzung}
+    typ: int
+    einheit: Monate
+    bereich: {min: 0, max: 12, grund: "Kalendermonate im Veranlagungszeitraum ohne Voraussetzung"}
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In wie vielen Monaten dieses Jahr warst du NICHT alleinerziehend (z. B. weil ein Partner mit im Haushalt lebte)?"
+    hilfe_kurz: "Für jeden vollen Monat ohne die Voraussetzungen wird der Entlastungsbetrag anteilig gekürzt."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Aus dem EfA-Zeitraum (E0503801 'im Zeitraum') abgeleitet; die Regel rechnet die vollen Kalendermonate ohne Voraussetzung, kein direkter Monats-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 24b Abs. 4 EStG"
+      zitatanker: "Für jeden vollen Kalendermonat, in dem die Voraussetzungen des Absatzes 1 nicht vorgelegen haben"
+      datei: "sources/gesetze-im-internet/estg_p24b_2026-07-09.txt"
+  # fam_kinder_im_haushalt (p24b) + fam_kinder_beruecksichtigt (p32_6) GELOESCHT 2026-08-12
+  # (reports/adjudikation/tote-gate-felder-unfallkosten-analyse-2026-08-12.md, Commit 391d49f):
+  # auf drei Achsen tot gemessen — kein Accessor in api.py/golden/runner.py, elster_kz: null,
+  # scheiben-unerreichbar (nie in api_constants.py-Tupeln, UNERREICHBAR_BEKANNT dokumentierte
+  # das seit 92cdca69). Redundant zu fam_anzahl_kinder, das seit 92cdca69 bereits nach der
+  # anspruchsberechtigten Kinderzahl fragt. _scheibe_bindung() filtert unerreichbare Felder vor
+  # dem Traverser raus — kein Under-tax-Risiko durch die Loeschung, reines totes Gewicht.
+
+  # ===== Anlage Kind — Per-Kind-Formfelder (Repeated-Instance-Konsument, instanz_gruppe:kind) =====
+  # Kind 1 = Basis-feld_id (0 Regression zum count-MVP-Tarif), Kind 2..N = __n-Instanz (Kz-Reuse je Kind).
+  # Zwei Achsen: Kind-Instanz (instanz_gruppe) × Elternteil A/B (zwei distinkte Basis-Kz je Konzept, K_Verh_A/B).
+  # TARIF-/RING-NEUTRAL: die count-MVP-Tarifrechnung (Kinderfreibetrag/Kindergeld = count×Betrag) bleibt; dies
+  # ist die Anlage-Kind-FORM-Vervollständigung (Submission). Kz adjudiziert + byte-offset-verifiziert (msg 2873).
+  # Anlage Kind, Zeile 1 (Kz E0500107, Sektion Allg). PFLICHT, sobald eine Kind-Instanz
+  # ueberhaupt entsteht — gemessen 2026-08-11 gegen checkESt:
+  #   fam_anzahl_kinder=1 allein   rc=0          Kinderfreibetrag laeuft ohne Anlage Kind
+  #   + kind_idnr                  rc=610001002  "Tragen Sie bitte den Vornamen des Kindes
+  #                                               ein (1. Anlage Kind)."
+  # Das Feld fehlte bis dahin repo-weit. Damit war jede kindbezogene Abzugsposition ausser
+  # dem Freibetrag uneinreichbar (§ 10 Abs. 1 Nr. 5 Betreuungskosten, § 10 Abs. 1 Nr. 3
+  # KV/PV des Kindes, § 33b Abs. 5 Uebertragung des Pauschbetrags).
+  # Kein Rechenfeld: der Vorname geht in keine Regel ein, er identifiziert die Instanz
+  # gegenueber dem Finanzamt. Deshalb quelle wie kind_idnr (dieselbe Identifikationsnaht),
+  # aber ohne eigene Geltungsbedingung — er ist Formvoraussetzung, nicht Tatbestand.
+  - feld_id: kind_vorname
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie heißt dein Kind mit Vornamen?"
+    hilfe_kurz: "Das Finanzamt ordnet die Anlage Kind über den Vornamen zu. Bei mehreren Kindern jeweils der Vorname des einzelnen Kindes."
+    beispielwert: "Anna"
+    herkunft_slots: null
+    elster_kz: E0500107
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_idnr
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    muster: '^(?:[0-9]{11})$'
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet die steuerliche Identifikationsnummer deines Kindes (11 Ziffern)?"
+    hilfe_kurz: "Die Identifikationsnummer des Kindes steht auf dem Schreiben des Bundeszentralamts für Steuern. Bei mehreren Kindern jeweils die des einzelnen Kindes."
+    beispielwert: "13579246007"
+    herkunft_slots: null
+    elster_kz: E0500406
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  # Geburtsdatum (Kz E0500701, Anlage Kind Allg). Bis 2026-08-11 als kind_geburtsjahr (int,
+  # OHNE Kz) gefuehrt — E0500701 verlangt aber ein volles Datum (TT.MM.JJJJ), kein Jahr.
+  # Weg (1) statt eines zweiten Feldes: kind_geburtsjahr hatte 0 Leser ausserhalb von
+  # Test-Fixturen (grep *.py repo-weit), seine geltungsbedingung kind_durch_idnr_identifiziert
+  # haengt an der toten p32_6-Anbindung (Kommentar bei fam_kinder_beruecksichtigt oben) — ein
+  # zweites Feld haette dieselbe Sache zweimal repraesentiert (Naht-Blindstelle, s.
+  # kap_zusammenveranlagung-Vorfall). Deshalb umbenannt+umtypisiert statt dupliziert.
+  - feld_id: kind_geburtsdatum
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: datum   # war `text` mit Muster (2026-08-26): als `datum` gibt die Oberflaeche einen Datumswaehler statt TT.MM.JJJJ zum Abtippen
+    muster: '^\d{2}\.\d{2}\.\d{4}$'
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann ist dein Kind geboren?"
+    hilfe_kurz: "Das Geburtsdatum deines Kindes im Format TT.MM.JJJJ (z.B. 15.03.2015). Bei mehreren Kindern jeweils das des einzelnen Kindes."
+    beispielwert: "15.03.2015"
+    herkunft_slots: null
+    elster_kz: E0500701
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  # Familienkasse (Kz E0500706, Anlage Kind Allg). Formvoraussetzung wie kind_vorname/
+  # kind_idnr — geht in keine Regel ein, identifiziert nur die zustaendige Stelle gegenueber
+  # dem Finanzamt. checkESt verlangt sie zusammen mit Vorname+Geburtsdatum ("Vorname,
+  # Geburtsdatum und Familienkasse wurden nicht gemeinsam angegeben"), gemessen 2026-08-11.
+  - feld_id: kind_familienkasse
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Familienkasse ist für das Kindergeld deines Kindes zuständig?"
+    hilfe_kurz: "Steht auf dem Kindergeldbescheid, z.B. 'Familienkasse Bayern Nord'. Bei mehreren Kindern jeweils die des einzelnen Kindes."
+    beispielwert: "Familienkasse Bayern Nord"
+    herkunft_slots: null
+    elster_kz: E0500706
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  # Wohnsitz Inland, Zeitraum (Kz E0500703, Anlage Kind WS/Inl). checkESt-Beanstandung "Angaben
+  # zur Aufenthaltsdauer im In-/Ausland" (gemessen 2026-08-11) — kein Feld deckte das bislang ab.
+  # Nur der Inland-Zeitraum; der Auslands-Zweig (E0500704/E0500103/E0500104) bleibt unbebaut
+  # (kein Testfall braucht ihn — Kind mit Auslandswohnsitz ist nicht Teil dieses Blockers).
+  - feld_id: kind_wohnsitz_inland_zeitraum
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
+    standardwert: "01.01-31.12"
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum hatte dein Kind seinen Wohnsitz im Inland?"
+    hilfe_kurz: "Meist das ganze Jahr. Nur bei Zuzug/Wegzug den genauen Zeitraum angeben. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0500703
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_kindschaftsverhaeltnis_a
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverhaeltnis_elternteil_a}
+    typ: enum
+    enum_werte: ["1", "2", "3"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Verhältnis steht das Kind zu dir? 1 = leibliches Kind/Adoptivkind, 2 = Pflegekind, 3 = Enkelkind/Stiefkind"
+    hilfe_kurz: "1 = leibliches Kind/Adoptivkind, 2 = Pflegekind, 3 = Enkelkind/Stiefkind"
+    beispielwert: "1"
+    herkunft_slots: null
+    elster_kz: E0500807
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 1 EStG"
+      zitatanker: "im ersten Grad mit dem Steuerpflichtigen verwandte Kinder"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_kindschaftsverhaeltnis_b
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverhaeltnis_elternteil_b}
+    typ: enum
+    enum_werte: ["1", "2", "3"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Verhältnis steht das Kind zur zweiten Person? 1 = leibliches Kind/Adoptivkind, 2 = Pflegekind, 3 = Enkelkind/Stiefkind"
+    hilfe_kurz: "1 = leibliches Kind/Adoptivkind, 2 = Pflegekind, 3 = Enkelkind/Stiefkind"
+    beispielwert: "1"
+    herkunft_slots: null
+    elster_kz: E0500808
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 1 EStG"
+      zitatanker: "im ersten Grad mit dem Steuerpflichtigen verwandte Kinder"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_kindschaftsverh_zeitraum_a
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverh_zeitraum_elternteil_a}
+    typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
+    standardwert: "01.01-31.12"
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum dieses Jahr bestand das Verhältnis zwischen dir und dem Kind (von – bis)?"
+    hilfe_kurz: "Meist das ganze Jahr. Nur bei Geburt, Adoption oder Wegfall im Jahr den genauen Zeitraum angeben. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0500601
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 2 EStG"
+      zitatanker: "Besteht bei einem angenommenen Kind das Kindschaftsverhältnis zu den leiblichen Eltern weiter"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_kindschaftsverh_zeitraum_b
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kindschaftsverh_zeitraum_elternteil_b}
+    typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
+    standardwert: "01.01-31.12"
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum dieses Jahr bestand das Verhältnis zwischen der zweiten Person und dem Kind (von – bis)?"
+    hilfe_kurz: "Bei gemeinsamer Erklärung: der Zeitraum für die zweite Person. Meist das ganze Jahr. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0500805
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 2 EStG"
+      zitatanker: "Besteht bei einem angenommenen Kind das Kindschaftsverhältnis zu den leiblichen Eltern weiter"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  # Anderer Elternteil bei NICHT zusammen veranlagten Eltern (K_Verh_and_P/Ang_Pers im XSD,
+  # neben K_Verh_A/K_Verh_B). Gemessen 2026-08-12: kind_kindschaftsverhaeltnis_b/E0500808 ist
+  # bei veranlagung=einzel checkESt zufolge UNZULAESSIG ("Es handelt sich um eine
+  # Einzelveranlagung, daher sind Angaben zum Kindschaftsverhaeltnis zur Ehefrau nicht
+  # zulaessig") — K_Verh_B bildet den MITERKLAERENDEN Ehegatten ab, nicht den anderen
+  # Elternteil allgemein. Fuer Einzelveranlagung verlangt checkESt stattdessen diese
+  # Personenangaben zum anderen Elternteil als Drittperson (E0501103/104/106/903). Die
+  # Adresse (E0501105) und der Weit_Ang-Zweig (Tod/Ausland/unbekannter Aufenthalt, E0501102/
+  # E0503903/E0501513) bleiben unbebaut — kein Testfall dieses Blockers braucht sie.
+  - feld_id: kind_anderer_elternteil_name
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie heißt der andere Elternteil deines Kindes (Vor- und Nachname)?"
+    hilfe_kurz: "Nur nötig, wenn ihr nicht zusammen veranlagt werdet. Format: Vorname Nachname."
+    beispielwert: "Michael Beispiel"
+    herkunft_slots: null
+    elster_kz: E0501103
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_anderer_elternteil_geburtsdatum
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: datum   # war `text` mit Muster (2026-08-26): als `datum` gibt die Oberflaeche einen Datumswaehler statt TT.MM.JJJJ zum Abtippen
+    muster: '^\d{2}\.\d{2}\.\d{4}$'
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann ist der andere Elternteil deines Kindes geboren?"
+    hilfe_kurz: "Nur nötig, wenn ihr nicht zusammen veranlagt werdet. Format: TT.MM.JJJJ (z.B. 01.01.1985)."
+    beispielwert: "01.01.1985"
+    herkunft_slots: null
+    elster_kz: E0501104
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 12 EStG"
+      zitatanker: "Identifizierung des Kindes durch die an dieses Kind vergebene Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_anderer_elternteil_kindschaftsverhaeltnis
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: enum
+    enum_werte: ["1", "2"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Verhältnis steht das Kind zum anderen Elternteil? 1 = leibliches Kind/Adoptivkind, 2 = Pflegekind"
+    hilfe_kurz: "1 = leibliches Kind/Adoptivkind, 2 = Pflegekind"
+    beispielwert: "1"
+    herkunft_slots: null
+    elster_kz: E0501106
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 1 EStG"
+      zitatanker: "im ersten Grad mit dem Steuerpflichtigen verwandte Kinder"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_anderer_elternteil_zeitraum
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
+    standardwert: "01.01-31.12"
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum dieses Jahr bestand das Verhältnis zwischen dem anderen Elternteil und dem Kind (von – bis)?"
+    hilfe_kurz: "Meist das ganze Jahr. Nur bei Geburt, Adoption oder Wegfall im Jahr den genauen Zeitraum angeben. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0501903
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 2 EStG"
+      zitatanker: "Besteht bei einem angenommenen Kind das Kindschaftsverhältnis zu den leiblichen Eltern weiter"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+
+luecken:
+  # -- §20 Annahmen --
+  - regel_id: p20_9_sparer_pauschbetrag
+    signatur_slot: zusammenveranlagung
+    grund: "Geteiltes Laien-Feld = veranlagung (Mantelbogen, § 26). Das frühere eigene Feld kap_zusammenveranlagung stellte dieselbe Frage ein zweites Mal und konnte ihr widersprechen: bei veranlagung=einzel + Flag=true wurde der Sparer-Pauschbetrag verdoppelt, ohne das Partner-Kapital zu addieren (250 € zu wenig Steuer, gemessen 2026-07-30). Ein Mischzustand aus Einzel- und gemeinsamer Kapital-Veranlagung existiert in § 26 EStG nicht — der Ring liest die Veranlagungsart jetzt nur noch aus veranlagung."
+  - regel_id: p20_9_sparer_pauschbetrag
+    geltungsbedingung: sparer_pb_1000_2000_konstante
+    grund: "Konstante 1.000/2.000 Euro (Parameter), keine Laien-Abfrage. Seit 2026-08-10 haengt an derselben Bedingung zusaetzlich das NICHT-askable Feld kap_sparer_pauschbetrag_genutzt (Kz E1901401, Anlage KAP Zeile 16): der in Anspruch genommene Betrag ist deklarationspflichtig, bleibt aber berechnet — die Konstante wird weiterhin nicht gefragt."
+  # -- §32d Abs. 6 Guenstigerpruefung: Rechen-Slots, keine Laien-Fragen --
+  # Seit 2026-08-10 bindet kap_antrag_guenstigerpruefung (Kz E1900401) an diese Regel. Damit
+  # verlangt test_b_vollstaendigkeit, dass ALLE askable Slots der Regel gebunden oder als Luecke
+  # dokumentiert sind. Die drei hier sind Ring-Ergebnisse und koennen es nicht sein.
+  - regel_id: p32d_1_abgeltung
+    signatur_slot: kapitaleinkuenfte
+    grund: "Ring-Ergebnis, keine Laien-Abfrage: die nach § 20 ermittelten Kapitaleinkuenfte entstehen aus kap_kapitalertraege und der Verlustverrechnung (p20_6) nach Abzug des Sparer-Pauschbetrags (catala_sparer_pb). Der Nutzer nennt die Rohbetraege, nicht das Zwischenergebnis."
+  - regel_id: p32d_1_abgeltung
+    signatur_slot: est_regulaer_mit_kap
+    grund: "Tarifergebnis aus der § 2-Integration (p32a), nicht abfragbar. rules.yaml sagt es selbst unter der Bedingung tarifwerte_sind_p2_ergebnis: 'est_regulaer_mit_kap / est_regulaer_ohne_kap sind p32a-Tarifergebnisse (mit/ohne Hinzurechnung der Kapitaleinkuenfte)'. Andockung wie § 31, kein Selbst-Tarif."
+  - regel_id: p32d_1_abgeltung
+    signatur_slot: est_regulaer_ohne_kap
+    grund: "Gegenstueck zu est_regulaer_mit_kap, dieselbe Herkunft (p32a-Tarif ohne Hinzurechnung). Die Differenz beider ist die Guenstiger-Entscheidung selbst — ein Rechenergebnis, das der Nutzer nicht liefern kann."
+  - regel_id: p32d_1_abgeltung
+    geltungsbedingung: tarifwerte_sind_p2_ergebnis
+    grund: "Beschreibt die HERKUNFT der Tarifwerte (p32a-Ergebnisse aus der § 2-Integration, Andockung wie § 31), nicht einen Sachverhalt des Nutzers. Nichts daran ist abfragbar — die Bedingung dokumentiert, dass der Ring die Werte nicht selbst tarifiert."
+  - regel_id: p32d_1_abgeltung
+    geltungsbedingung: keine_kirchensteuer_auf_kapitalertraege
+    grund: "Verzweigung zwischen glattem 25-%-Satz und der KiSt-ermaessigten Formel (e-4q)/(4+k), s. rules.yaml Z.4143f. Der Sachverhalt dahinter wird bereits ueber kist_konfession erfragt (bindung_kist.yaml) und vom Ring ausgewertet — ein zweites Feld waere dieselbe Frage ein zweites Mal, mit der Moeglichkeit zu widersprechen. Praezedenz: kap_zusammenveranlagung, gestrichen aus genau diesem Grund (250 EUR Under-tax, gemessen 2026-07-30, s. Luecke p20_9/zusammenveranlagung oben)."
+  # -- §32d Abs. 1 S. 3-5 KiSt-ermaessigte Formel (p32d_1_kirchensteuer), seit KAP Stufe 3 --
+  - regel_id: p32d_1_kirchensteuer
+    signatur_slot: kapitaleinkuenfte
+    grund: "Dieselbe Herkunft wie bei p32d_1_abgeltung/kapitaleinkuenfte (oben): Ring-Ergebnis aus kap_kapitalertraege nach Verlustverrechnung (p20_6) und Sparer-Pauschbetrag (catala_sparer_pb), keine eigene Abfrage."
+  - regel_id: p32d_1_kirchensteuer
+    signatur_slot: kirchensteuersatz
+    grund: "Abgeleitet aus kist_bundesland (bindung_p51a_kirchensteuer.yaml, 8 % Bayern/Baden-Wuerttemberg, 9 % uebrige Laender laut dortigem anker_ref) — derselbe Hebesatz wie bei der § 51a-Kirchensteuer-Festsetzung, keine zweite Abfrage."
+  - regel_id: p32d_1_kirchensteuer
+    geltungsbedingung: kirchensteuerpflicht_besteht
+    grund: "Derselbe Sachverhalt wie keine_kirchensteuer_auf_kapitalertraege bei p32d_1_abgeltung (oben): ueber kist_konfession erfragt (bindung_p51a_kirchensteuer.yaml) und vom Ring ausgewertet, keine zweite Abfrage."
+  - regel_id: p32d_1_kirchensteuer
+    geltungsbedingung: keine_guenstigerpruefung_beantragt
+    grund: "Deckt sich mit kap_antrag_guenstigerpruefung (oben, E1900401): der Ring wendet die Abgeltung-Formel nur an, wenn kap_st == abgeltung, sonst laeuft der Guenstiger-Zweig — kein eigenes Feld noetig."
+  - regel_id: p32d_1_kirchensteuer
+    geltungsbedingung: kapitaleinkuenfte_nicht_negativ
+    grund: "Guard-Bedingung der Regel, im Ring als fruehe Rueckgabe bei kapitaleinkuenfte <= 0 materialisiert (produkt/haut/api.py), kein eigenes Feld."
+  - regel_id: p20_6_verlustverrechnung
+    geltungsbedingung: aktienverlust_nur_gegen_aktiengewinn
+    grund: "Topf-Trennung Aktien ist Rechenlogik der Regel (eigene Verrechnung), im Feld-Zuschnitt (getrennte Aktien-/Sonstige-Felder) materialisiert."
+  - regel_id: p20_6_verlustverrechnung
+    geltungsbedingung: verlustvortrag_ist_10d_grenze
+    grund: "Verlustvortrag folgt § 10d-Grenze (andere Regel/Scheibe), keine eigene Abfrage."
+  # -- §21 Annahmen --
+  - regel_id: p21_vermietung_einkuenfte
+    geltungsbedingung: einkuenfte_ueberschuss_einnahmen_ueber_wk
+    grund: "Einkünfte = Einnahmen − Werbungskosten (Überschussrechnung); Struktur, kein eigenes Ja/Nein-Feld."
+  - regel_id: p21_2_verbilligte_vermietung_wk
+    geltungsbedingung: entgelt_quote_ausserhalb_prognosekorridor
+    grund: "Die 50/66-%-Schwelle rechnet die Regel aus der eingegebenen Entgelt-Quote (vv_entgelt_quote_prozent); keine eigene Abfrage."
+  # -- Familie p24b --
+  - regel_id: p24b_entlastungsbetrag
+    geltungsbedingung: alleinstehend_im_sinne_des_absatzes_3
+    grund: "Materialisiert im Feld fam_alleinstehend (Slot alleinstehend)."
+  - regel_id: p24b_entlastungsbetrag
+    geltungsbedingung: monate_ohne_voraussetzung_sind_volle_kalendermonate
+    grund: "Konvention: volle Kalendermonate (ganzzahl_monate); im Feld fam_monate_ohne_voraussetzung materialisiert."
+  - regel_id: p24b_entlastungsbetrag
+    geltungsbedingung: kinder_mit_freibetrag_oder_kindergeld_im_haushalt
+    grund: "War fam_kinder_im_haushalt, geloescht 2026-08-12 (reports/adjudikation/tote-gate-felder-unfallkosten-analyse-2026-08-12.md): dritte Achse tot — kein Accessor in api.py/golden/runner.py, elster_kz: null, scheiben-unerreichbar. fam_anzahl_kinder ist seit 92cdca69 per geschaerfter Selbstdeklaration bereits die anspruchsberechtigte Kinderzahl."
+  # -- Familie p32_6 (geteilte Slots + Annahmen) --
+  - regel_id: p32_6_kinderfreibetraege
+    signatur_slot: anzahl_kinder
+    grund: "Geteiltes Laien-Feld = fam_anzahl_kinder (Slot anzahl_kinder in p24b); im UI einmalige Abfrage, intern auf beide Regeln verteilt."
+  - regel_id: p32_6_kinderfreibetraege
+    signatur_slot: zusammenveranlagung
+    grund: "Geteiltes Laien-Feld = veranlagung (Mantelbogen, § 26); einmalige Abfrage."
+  - regel_id: p32_6_kinderfreibetraege
+    geltungsbedingung: kind_zu_beiden_ehegatten
+    grund: "Verdopplung der Freibeträge bei Zusammenveranlagung ist Rechenlogik der Regel; keine eigene Abfrage."
+  - regel_id: p32_6_kinderfreibetraege
+    geltungsbedingung: keine_uebertragung_oder_sonderfaelle
+    grund: "Übertragung des Kinderfreibetrags / Sonderfälle (Anlage Kind) außerhalb dieser Erst-Scheibe."
+  - regel_id: p32_6_kinderfreibetraege
+    geltungsbedingung: kinder_sind_zu_beruecksichtigen
+    grund: "War fam_kinder_beruecksichtigt, geloescht 2026-08-12 (reports/adjudikation/tote-gate-felder-unfallkosten-analyse-2026-08-12.md): die Regel wird im Ring gar nicht aufgerufen, der Kinderfreibetrag laeuft direkt ueber runner._kinderfreibetrag(vz, veranlagung) * fam_anzahl_kinder (api.py:876). fam_anzahl_kinder ist seit 92cdca69 per geschaerfter Selbstdeklaration bereits die anspruchsberechtigte Kinderzahl."
+  # -- Familie p31 (Günstiger-Knoten; alle Inputs berechnet, keine askable Slots) --
+  - regel_id: p31_familienleistungsausgleich
+    signatur_slot: est_ohne_freibetraege
+    grund: "Berechnete Tarifgröße (Kindergeld-Zweig: tarifl. ESt ohne Kinderfreibeträge + Kindergeld); kein Laien-Feld."
+  - regel_id: p31_familienleistungsausgleich
+    signatur_slot: est_mit_freibetraegen
+    grund: "Berechnete Tarifgröße (Freibetrag-Zweig: tarifl. ESt mit Kinderfreibeträgen); kein Laien-Feld."
+  - regel_id: p31_familienleistungsausgleich
+    signatur_slot: kindergeld
+    grund: "Berechneter Kindergeld-Anspruchsbetrag (§ 66, je Kind × Monate); ergibt sich aus fam_anzahl_kinder, kein eigenes Feld."
+  - regel_id: p31_familienleistungsausgleich
+    geltungsbedingung: tarifwerte_sind_p32a_ergebnis
+    grund: "Modellierungs-Kopplung: die beiden Tarifwerte sind § 32a-Ergebnisse; keine Abfrage."
+  - regel_id: p31_familienleistungsausgleich
+    geltungsbedingung: kindergeld_ist_anspruchsbetrag
+    grund: "Der Kindergeld-Zweig rechnet mit dem ANSPRUCH (nicht dem Ausgezahlten); Rechenlogik, keine Abfrage."
+  - regel_id: p31_familienleistungsausgleich
+    geltungsbedingung: zusammenveranlagte_eltern
+    grund: "Veranlagungsart (veranlagung) steuert die Freibeträge; keine eigene Abfrage."
+  - regel_id: p31_familienleistungsausgleich
+    geltungsbedingung: keine_kindergeld_sonderfaelle
+    grund: "Kindergeld-Sonderfälle (Zählkinder, Auslandskinder) außerhalb dieser Scheibe."

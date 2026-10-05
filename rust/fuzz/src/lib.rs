@@ -5,12 +5,13 @@ use std::sync::OnceLock;
 
 use bindung::Bindung;
 
-/// Die echten Bindungsdateien des Repos (`produkt/bindung/bindung_*.yaml`), einmal je Prozess.
+/// Die echten Bindungsdateien des Repos (`rust/bindung/daten/bindung_*.yaml`), einmal je Prozess.
 pub fn nachschlag() -> &'static HashMap<String, &'static Bindung> {
     static N: OnceLock<HashMap<String, &'static Bindung>> = OnceLock::new();
     N.get_or_init(|| {
-        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../../produkt/bindung");
-        let reg = bindung::lade_registry(std::path::Path::new(dir)).expect("Bindungsregistry ladbar");
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
+        let reg = bindung::lade_registry_der_wurzel(std::path::Path::new(dir))
+            .expect("Bindungsregistry ladbar");
         let alle: Vec<Bindung> = reg.dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect();
         let alle: &'static [Bindung] = Box::leak(alle.into_boxed_slice());
         alle.iter().map(|b| (b.feld_id.clone(), b)).collect()

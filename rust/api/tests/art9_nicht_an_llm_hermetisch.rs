@@ -91,28 +91,17 @@ fn wurzel() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-/// `(feld_id, Fragetext oder "")` jeder Bindung, die der Dienst kennt.
-///
-/// ponytail: die Verzeichnisliste steht hier von Hand. Weg B leicht legt `rust/bindung/felder/` neben
-/// `produkt/bindung/` an; es wird mitgelesen, sobald es da ist. Ein dritter Ort muss hier eingetragen werden,
-/// sonst bleiben seine Felder ungeprueft (Aufwand bei Bedarf: den gemeinsamen Lader von `Zustand` rufen).
+/// `(feld_id, Fragetext oder "")` jeder Bindung, die der Dienst kennt: alle Dateien in
+/// `rust/bindung/daten`, geladen wie der Dienst es tut (`bindung::lade_registry_der_wurzel`).
 fn bindungen() -> Vec<(String, String)> {
-    let w = wurzel();
-    let mut verzeichnisse = vec![w.join("produkt/bindung")];
-    let rust = w.join("rust/bindung/felder");
-    if rust.is_dir() {
-        verzeichnisse.push(rust);
-    }
+    let registry = bindung::lade_registry_der_wurzel(&wurzel()).unwrap();
     let mut alle = Vec::new();
-    for v in verzeichnisse {
-        let registry = bindung::lade_registry(&v).unwrap();
-        for (_, datei) in &registry.dateien {
-            for b in &datei.bindungen {
-                alle.push((
-                    b.feld_id.clone(),
-                    b.fragetext_laie.clone().unwrap_or_default(),
-                ));
-            }
+    for (_, datei) in &registry.dateien {
+        for b in &datei.bindungen {
+            alle.push((
+                b.feld_id.clone(),
+                b.fragetext_laie.clone().unwrap_or_default(),
+            ));
         }
     }
     alle

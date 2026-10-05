@@ -1,4 +1,4 @@
-//! Eigenschaften der Deklaration ueber die ECHTE Bindung (`produkt/bindung/*.yaml`), ohne
+//! Eigenschaften der Deklaration ueber die ECHTE Bindung (`rust/bindung/daten/*.yaml`), ohne
 //! Python: Round-Trip, fail-closed, Rundung zugunsten der Steuerpflichtigen, Instanz-Meet.
 #![allow(
     clippy::unwrap_used,
@@ -23,8 +23,8 @@ use store::SnapshotFeld;
 fn bindungen() -> &'static [Bindung] {
     static CELL: OnceLock<Vec<Bindung>> = OnceLock::new();
     CELL.get_or_init(|| {
-        // Gemeinsame Bindung UND `rust/bindung/felder`: ein Kz eines Rust-Felds gehoert in dieselbe
-        // Pruefung gegen das XSD wie jedes andere (Weg B leicht, 2026-10-05).
+        // Die Bindung des Dienstes (`rust/bindung/daten`): ein Kz eines Rust-Felds gehoert in dieselbe
+        // Pruefung gegen das XSD wie jedes andere (Weg B voll, 2026-10-05).
         let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         bindung::lade_registry_der_wurzel(&wurzel)
             .expect("Bindung laedt")

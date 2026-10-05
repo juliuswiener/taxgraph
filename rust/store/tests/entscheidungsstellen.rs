@@ -32,8 +32,8 @@ const TS: &str = "2026-01-01T00:00:00+00:00";
 fn bindungen() -> &'static Vec<Bindung> {
     static BINDUNGEN: OnceLock<Vec<Bindung>> = OnceLock::new();
     BINDUNGEN.get_or_init(|| {
-        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        bindung::lade_registry(&pfad)
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
             .dateien
             .into_iter()
