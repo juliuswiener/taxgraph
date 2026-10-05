@@ -33,6 +33,19 @@ pub enum BindungFehler {
     UngueltigeFeldId(String),
     #[error("{feld_id}: vz_gueltigkeit darf nicht leer sein")]
     LeereVzGueltigkeit { feld_id: String },
+    #[error("{feld_id}: bereich gibt es nur bei typ cent/int, nicht bei typ {typ}")]
+    BereichBeiFremdemTyp { feld_id: String, typ: String },
+    #[error("{feld_id}: bereich min {min} liegt ueber max {max}, jede Zahl ausser 0 waere abgewiesen")]
+    BereichVerdreht { feld_id: String, min: i64, max: i64 },
+    #[error("{feld_id}: negativer cent-Bereich (min {min}) braucht bereich.grund, die Verlust-Begruendung")]
+    NegativerCentBereichOhneGrund { feld_id: String, min: i64 },
+    #[error("{feld_id}: beispielwert {beispielwert} liegt ausserhalb des eigenen bereich [{min}, {max}]")]
+    BeispielwertAusserhalbBereich {
+        feld_id: String,
+        beispielwert: String,
+        min: i64,
+        max: i64,
+    },
 }
 
 /// `^[a-z][a-z0-9_]*$` ohne Regex-Abhaengigkeit (nur ASCII, wie das Schema selbst). Die eine Regel
@@ -235,8 +248,9 @@ pub struct Bindung {
 }
 
 impl Bindung {
-    /// Die vier `allOf`-Regeln aus `schema.json` plus `feld_id`-Zeichensatz und
-    /// nicht-leere `vz_gueltigkeit`, die `serde` allein nicht ausdruecken kann.
+    /// Die vier `allOf`-Regeln aus `schema.json` plus `feld_id`-Zeichensatz,
+    /// nicht-leere `vz_gueltigkeit` und die Bereichs-Regeln, die `serde` allein nicht
+    /// ausdruecken kann.
     ///
     /// # Errors
     /// [`BindungFehler`], wenn eine der Regeln verletzt ist.
@@ -273,6 +287,59 @@ impl Bindung {
             return Err(BindungFehler::InvertiertOhneBoolAskable {
                 feld_id: self.feld_id.clone(),
             });
+        }
+        if let Some(bereich) = &self.bereich {
+            self.pruefe_bereich(bereich)?;
+        }
+        Ok(())
+    }
+
+    /// Die Bereichs-Regeln, die `Bereich` als reiner Datentyp nicht kennt. Der Store weist eine
+    /// Zahl ausserhalb von `min..=max` ab (ausser 0); ein falscher Bereich macht das Feld also
+    /// unbenutzbar, ohne dass der Dienst es meldet.
+    // ponytail: ein Gleitkomma-`beispielwert` wird in f64 gegen die Grenzen verglichen. Die Grenzen
+    // sind kleine Ganzzahlen (Jahre, Tage, Cent bis ein paar Milliarden); ab 2^53 waere der
+    // Vergleich um eine Einheit ungenau. Upgrade: Decimal-Vergleich, falls ein Bereich so gross wird.
+    #[allow(clippy::cast_precision_loss)]
+    fn pruefe_bereich(&self, bereich: &Bereich) -> Result<(), BindungFehler> {
+        if !matches!(self.typ, Feldtyp::Cent | Feldtyp::Int) {
+            return Err(BindungFehler::BereichBeiFremdemTyp {
+                feld_id: self.feld_id.clone(),
+                typ: format!("{:?}", self.typ),
+            });
+        }
+        if bereich.min > bereich.max {
+            return Err(BindungFehler::BereichVerdreht {
+                feld_id: self.feld_id.clone(),
+                min: bereich.min,
+                max: bereich.max,
+            });
+        }
+        if matches!(self.typ, Feldtyp::Cent)
+            && bereich.min < 0
+            && bereich.grund.as_deref().is_none_or(str::is_empty)
+        {
+            return Err(BindungFehler::NegativerCentBereichOhneGrund {
+                feld_id: self.feld_id.clone(),
+                min: bereich.min,
+            });
+        }
+        if let Value::Number(zahl) = &self.beispielwert {
+            let innerhalb = match zahl.as_i64() {
+                Some(i) => bereich.min <= i && i <= bereich.max,
+                // Gleitkomma oder ueber i64: Vergleich in f64, die Grenzen sind klein.
+                None => zahl
+                    .as_f64()
+                    .is_some_and(|f| bereich.min as f64 <= f && f <= bereich.max as f64),
+            };
+            if !innerhalb {
+                return Err(BindungFehler::BeispielwertAusserhalbBereich {
+                    feld_id: self.feld_id.clone(),
+                    beispielwert: zahl.to_string(),
+                    min: bereich.min,
+                    max: bereich.max,
+                });
+            }
         }
         Ok(())
     }
