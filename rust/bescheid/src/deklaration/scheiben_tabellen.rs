@@ -1,10 +1,10 @@
 //! Die Scheibenlisten: welche Felder eine Scheibe traegt und welche davon der Kegel sind.
 //!
-//! **Von Hand gepflegte Rust-Quelle** (Weg B leicht, Entscheidung 2026-10-05, Vault
+//! **Von Hand gepflegte Rust-Quelle** (Weg B leicht/voll, Entscheidung 2026-10-05, Vault
 //! `decisions/weg-b-leicht-und-art9-schutz-als-test.md`). Der Stand ist am 2026-10-05 aus `SCHEIBEN`
 //! in `produkt/haut/api_constants.py` uebernommen; der Generator `tools/parity/gen_scheiben_tabellen.py`
 //! und der Parity-Vergleich der Listen sind gestrichen. Python ist eingefroren und aendert sich nicht
-//! mehr, ein Feld nur fuer Rust steht deshalb hier und in `rust/bindung/felder`.
+//! mehr, ein Feld nur fuer Rust steht deshalb hier und in `rust/bindung/daten`.
 //!
 //! Die Feld-Tupel sind **nicht ableitbar**: kein `bindung_*.yaml` traegt einen
 //! Scheiben-Schluessel, die Zuordnung Feld -> Scheibe steht nur hier.
@@ -12,7 +12,7 @@
 //!
 //! Waechter: `rust/bescheid/tests/scheiben_tabellen_konsistenz.rs`. Wer ein Feld aufnimmt:
 //!
-//! 1. das Feld steht in der Registry (`produkt/bindung` oder `rust/bindung/felder`),
+//! 1. das Feld steht in der Registry (`rust/bindung/daten`),
 //! 2. der Eintrag steht hier, ein Kegel-Feld auch in den Feldern der Scheibe und ist `askable`,
 //! 3. die Laenge (und das Array hier) stimmt mit der Zahl im Konsistenztest ueberein.
 
@@ -39,7 +39,7 @@ pub(super) const SCHEIBEN_EP_KEGEL: [&str; 4] = [
 // Wer die Namen aendert, aendert BEIDE Stellen.
 
 // `SCHEIBEN['n_vor_gwg']["felder"]` ist `None` -- die Feldliste kommt zur
-// Laufzeit aus `produkt/bindung/bindung_n_vor_gwg.yaml` (`Cfg::felder_datei`).
+// Laufzeit aus `rust/bindung/daten/bindung_n_vor_gwg.yaml` (`Cfg::felder_datei`).
 
 // `SCHEIBEN['n_vor_gwg']["kegel"]` ist `None` -- der Kegel ist der volle `felder`-Satz.
 

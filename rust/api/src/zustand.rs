@@ -86,8 +86,7 @@ impl Zustand {
             let pfad = self
                 .konfig
                 .wurzel
-                .join("produkt")
-                .join("bindung")
+                .join(bindung::BINDUNG_VERZEICHNIS)
                 .join(datei);
             return Err(ApiFehler::unerwartet(
                 "FileNotFoundError",
@@ -124,8 +123,8 @@ impl Zustand {
         }
         // PARITÄT: Python meldet hier den Typ der YAML- oder OS-Ausnahme; die Registry prueft
         // strenger (doppelte `feld_id`). Beides trifft nur ein kaputtes Repo.
-        // Neben `produkt/bindung` liest der Dienst `rust/bindung/felder`: die Felder, die nur Rust
-        // kennt (Weg B leicht, 2026-10-05). Python liest sie nicht.
+        // Der Dienst liest `rust/bindung/daten` (Rust-Besitz, Weg B voll, 2026-10-05), nicht mehr
+        // `produkt/bindung`. Python liest dieses Verzeichnis nicht.
         let registry = bindung::lade_registry_der_wurzel(&self.konfig.wurzel)
             .map_err(|e| ApiFehler::unerwartet("OSError", e.to_string()))?;
         let je_datei = registry
@@ -147,7 +146,7 @@ impl Zustand {
     /// Feld, nicht an der Scheibe.
     ///
     /// # Errors
-    /// 500, wenn `produkt/bindung` nicht lesbar ist.
+    /// 500, wenn `rust/bindung/daten` nicht lesbar ist.
     pub fn katalog(&self) -> Result<store::Katalog, ApiFehler> {
         let b = self.bindungen()?;
         Ok(store::Katalog::aus_bindungen(

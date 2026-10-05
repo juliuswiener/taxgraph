@@ -123,7 +123,7 @@ fn quelldateien() -> Vec<(String, String)> {
 }
 
 fn bindungs_kennungen() -> BTreeSet<String> {
-    let reg = bindung::lade_registry(&repo_root().join("produkt").join("bindung"))
+    let reg = bindung::lade_registry_der_wurzel(&repo_root())
         .unwrap_or_else(|e| panic!("Registry-Aufbau gescheitert: {e}"));
     reg.dateien
         .iter()

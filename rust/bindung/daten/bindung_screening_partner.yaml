@@ -1,0 +1,177 @@
+# Screening-Flags fuer den PARTNER (2026-08-28).
+#
+# ANLASS, vier echte Durchgaenge: die Ankreuzliste fragte nur nach „dir", nie nach „euch". Der
+# ganze Partner-Zweig trug kein einziges Gate. Ein Ehepaar, das alle achtzehn vorhandenen Kreuze
+# verneint, bekam in der Scheibe `gesamt` 88 Fragen — davon 32 zum Partner, waehrend derselbe
+# Mensch allein veranlagt 56 Fragen und keine einzige Partner-Frage bekam. Fuenf Fragen nach den
+# Kapitalertraegen des Partners trotz angekreuztem „keine Kapitalertraege", drei nach Verguetungen
+# aus einer Gesellschafterstellung, die nie erhoben wurde.
+#
+# WARUM EIGENE KREUZE UND NICHT DIE VORHANDENEN MITBENUTZT — das ist der Kern, und er ist gemessen,
+# nicht abgewogen:
+#
+# Neun Partner-Felder hingen bereits an einem ICH-Kreuz. Alle Ich-Kreuze sind woertlich in der
+# ersten Person gestellt. `keine_behinderung_pflege` fragt „Hast du selbst oder hat eines deiner
+# Kinder eine amtlich festgestellte Behinderung…?" — der Partner kommt darin nicht vor. Wer nur
+# einen behinderten PARTNER hat, antwortet wahrheitsgemaess „nein" und verliert damit die Frage
+# nach dessen Grad der Behinderung fuer immer. Ueber den echten Rechenweg gemessen
+# (Scheibe rentner_gesamt, VZ 2025, zusammen veranlagt, Partner-GdB 50):
+#
+#     Partner-GdB erfasst      5.532,00 EUR
+#     Frage kam nie            5.834,00 EUR      -> 302,00 EUR ZU VIEL STEUER
+#
+# Dieselbe Bauart bei `kein_gewinn`: es nahm dem Paar die Gewerbesteuer-Anrechnung des Partners
+# (§ 35, Kz E0801606/E0801705), wenn nur der Partner ein Gewerbe hatte.
+#
+# bindung_screening_ausgaben.yaml formuliert das Prinzip selbst, drei Zeilen ueber der Stelle, an
+# der es gebrochen wurde: „ein Flag darf nur abschalten, wonach es auch gefragt hat."
+#
+# Sachlich dahinter § 26b EStG: bei Zusammenveranlagung werden die Einkuenfte zwar zusammen-
+# gerechnet, ERMITTELT werden sie aber je Person getrennt (eigene Anlage N, eigene Anlage KAP).
+# Die Existenz eines Sachverhalts ist personenbezogen. Ein Kreuz, dessen Text „du" sagt, kann
+# nicht fuer zwei Menschen sprechen — und die Gegenrichtung („hattet ihr…?") waere derselbe
+# Fehler spiegelverkehrt: ein Paar, bei dem nur einer betroffen ist, bekaeme wieder beide Bloecke.
+#
+# BAUART, dieselbe wie bei den achtzehn vorhandenen Flags:
+#
+#   1. Das Feld benennt die ABWESENHEIT, die Frage fragt nach der ANWESENHEIT. Die Umkehr ist
+#      DEKLARIERT (`frage_invertiert: true`), nicht am Feldnamen geraten.
+#
+#   2. Jedes Flag ist das EINZIGE Feld einer eigenen Pseudo-Regel. Ein askable bool an der
+#      geltungsbedingung einer ECHTEN Regel IST ein Gate, und relevanz() wertet die Gates einer
+#      Regel konjunktiv aus — lagen zwei Flags auf derselben Pseudoregel, naehme eine bejahte
+#      Frage der anderen ihre Antwort.
+#
+#   3. `beispielwert: false` — der Normalfall schliesst NICHTS vor. Nur eine BESTAETIGTE Antwort
+#      schaltet ab; unbeantwortet und vorlaeufig schliessen nie aus (fail-closed).
+#
+# DIE WIRKUNG LAEUFT UEBER `feld_bedingung` JE FELD, NICHT UEBER `regel_bedingungen`. Das ist
+# erzwungen, nicht gewaehlt: 44 der 48 fragbaren Partner-Felder liegen in EINER Regel
+# (p2_festzusetzung_zusammen), und die traegt auch die Stammdaten, die jede Zusammenveranlagung
+# braucht. Ein regel-weiter Schalter naehme dem Paar Vorname und Geburtsdatum des Partners mit.
+#
+# `feld_bedingung: {feld: veranlagung, wert: zusammen}` an den Flags selbst: ein Alleinstehender
+# bekommt diese vier Kreuze nie zu sehen. Solange `veranlagung` unbeantwortet ist, stehen sie da
+# — fail-closed wie ueberall, und `veranlagung` traegt ohnehin das hoechste Gate-Gewicht.
+#
+# KEIN Kz: Anwendbarkeits-Flags, keine Deklarationsfelder. WICHTIG dazu, weil es beim Messen fast
+# in die Irre gefuehrt haette: die Felder, die diese Flags abschalten, tragen in der Bindung zwar
+# durchgehend `elster_kz: null`, ueber produkt/mapping/est_mapping.py aber sehr wohl Kennzahlen
+# (E1900701, E1900901, E1901201, E1901301, E0801606, E0801705, E0109706, E0109708 und drei ueber
+# ein Art-Feld verzweigte). Wer nur die YAML liest, haelt sie faelschlich fuer wirkungslos. Genau
+# deshalb darf ein Gate darauf ausschliesslich an der ANTWORT DES PARTNERS haengen.
+#
+# WIRKSAM ERST MIT EINTRAG IN DIE SCHEIBE: PARTNER_SCREENING in produkt/haut/api_constants.py.
+# Ein Feld, das hier steht und dort nicht, wird nie gefragt — tote Verdrahtung.
+version: 1
+scheibe: "Screening-Flags Partner (Kapital, Gewinn, sonstige Einkuenfte, Behinderung/Pflege)"
+
+bindungen:
+  # --- Kapitalertraege des Partners (5 Felder) ------------------------------------------------
+  # Julius' Befund, zweimal: fuenf Fragen `kap_*_partner`, obwohl „keine Kapitalertraege"
+  # angekreuzt war (L1 #58-62 trotz #22, L3 #48-52 trotz #11).
+  - feld_id: kein_kap_partner
+    quelle: {regel_id: p2_einkunftsart_kap_partner, geltungsbedingung: keine_kapitaleinkuenfte_partner}
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 26b EStG: nur bei Zusammenveranlagung sind die Einkuenfte des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen. Fail-closed: solange die Veranlagungsart unbeantwortet ist, bleibt das Kreuz stehen."}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hatte dein Ehe-/Lebenspartner dieses Jahr Kapitalerträge (Zinsen, Dividenden, Kursgewinne)?"
+    hilfe_kurz: "Getrennt von deinen eigenen zu beantworten: jeder Ehegatte hat eine eigene Steuerbescheinigung und einen eigenen Sparer-Pauschbetrag. Bei Nein entfallen fünf Fragen."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag, kein Deklarationsfeld — die Kapitalertraege des Partners selbst tragen ihre eigenen Kz in der Anlage-KAP-Instanz B (E1900701 ff.)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 5 EStG"
+      zitatanker: "Einkünfte aus Kapitalvermögen"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+
+  # --- Gewinneinkuenfte des Partners (11 Felder) ----------------------------------------------
+  # Deckt drei Bloecke ab: den Gewinn selbst samt Gewerbesteuer-Anrechnung, die Sonderverguetungen
+  # des Mitunternehmers (§ 15 Abs. 1 S. 1 Nr. 2 — Julius' Befund L1 #66-68, L3 #56-58: drei Fragen,
+  # die eine nie erhobene Gesellschafterstellung voraussetzen) und den Veraeusserungsgewinn.
+  #
+  # DASS DER VERAEUSSERUNGSGEWINN HIERHER GEHOERT und nicht zu den sonstigen Einkuenften, hat eine
+  # Symmetrieprobe gegen die Ich-Seite ergeben: dort haengen `rentner_veraeusserungsgewinn` und
+  # `rentner_veraeusserungs_betriebsart` ueber p16_4_freibetrag an `kein_gewinn`. Die
+  # Betriebsveraeusserung ist § 16, eine Gewinneinkunft. Die erste Zuordnung dieser Datei hatte
+  # sie bei `kein_sonstige` — die Probe hat es gefangen.
+  - feld_id: kein_gewinn_partner
+    quelle: {regel_id: p2_einkunftsart_gewinn_partner, geltungsbedingung: keine_gewinneinkuenfte_partner}
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 26b EStG: nur bei Zusammenveranlagung sind die Einkuenfte des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen. Fail-closed: solange die Veranlagungsart unbeantwortet ist, bleibt das Kreuz stehen."}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hatte dein Ehe-/Lebenspartner dieses Jahr Einkünfte aus einem Gewerbe, aus Land-/Forstwirtschaft oder aus selbständiger/freiberuflicher Arbeit?"
+    hilfe_kurz: "Auch eine Beteiligung als Gesellschafter und der Verkauf eines Betriebs gehören dazu. Wenn dein Partner nur Arbeitslohn oder Rente bezieht, antworte mit Nein — dann entfallen elf Fragen."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag, kein Deklarationsfeld — Gewinn, Gewerbesteuer-Messbetrag und Hebesatz des Partners tragen ihre eigenen Kz (E0801606, E0801705)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 2 EStG"
+      zitatanker: "Einkünfte aus Gewerbebetrieb"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+
+  # --- sonstige Einkuenfte des Partners (5 Felder) --------------------------------------------
+  # Die fuenf Renten-Felder des Partners. Sie liegen nur in der Scheibe `rentner_gesamt`, nicht in
+  # `gesamt` — das Kreuz wirkt dort trotzdem richtig: solange es unbeantwortet ist, schliesst es
+  # nichts aus (fail-closed), und beantwortbar ist es nur, wo es in der Scheibe steht.
+  - feld_id: kein_sonstige_partner
+    quelle: {regel_id: p2_einkunftsart_sonstige_partner, geltungsbedingung: keine_sonstigen_einkuenfte_partner}
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 26b EStG: nur bei Zusammenveranlagung sind die Einkuenfte des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen. Fail-closed: solange die Veranlagungsart unbeantwortet ist, bleibt das Kreuz stehen."}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Bezog dein Ehe-/Lebenspartner dieses Jahr eine Rente oder hatte er sonstige Einkünfte?"
+    hilfe_kurz: "Gemeint sind vor allem Renten — gesetzliche Rente, Betriebsrente, private Rente. Wenn dein Partner nur Arbeitslohn bezieht, antworte mit Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag, kein Deklarationsfeld — die Renten des Partners selbst tragen ihre eigenen Kz in der Anlage-R-Instanz B."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 7 EStG"
+      zitatanker: "sonstige Einkünfte im Sinne des § 22"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+
+  # --- Behinderung und Pflege des Partners (4 Felder) -----------------------------------------
+  # DAS IST DER TEURE. Bis heute hingen drei dieser vier Felder an `keine_behinderung_pflege`, das
+  # woertlich nur nach der eigenen Person und den Kindern fragt. Gemessen: 302,00 EUR zu viel
+  # Steuer bei Partner-GdB 50 (s. Kopf dieser Datei). Das vierte Feld
+  # (rentner_hilflos_blind_taubblind_partner) hing an gar nichts und wurde ausnahmslos gefragt.
+  #
+  # Die Frage nennt beide Tatbestaende, die sie abschaltet — Behinderung UND Pflege —, weil ein
+  # Flag nur abschalten darf, wonach es auch gefragt hat.
+  - feld_id: keine_behinderung_pflege_partner
+    quelle: {regel_id: p33b_behinderung_pflege_partner_vorhanden, geltungsbedingung: keine_behinderung_und_keine_pflege_partner}
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 26b EStG: nur bei Zusammenveranlagung sind die Verhaeltnisse des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen. Fail-closed: solange die Veranlagungsart unbeantwortet ist, bleibt das Kreuz stehen."}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner eine amtlich festgestellte Behinderung, oder hatte er behinderungsbedingte Ausgaben?"
+    hilfe_kurz: "Amtlich festgestellt heißt: es gibt einen Bescheid oder Ausweis mit einem Grad der Behinderung ab 20. Getrennt von deiner eigenen Behinderung zu beantworten — der Pauschbetrag steht jedem Ehegatten für sich zu."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag, kein Deklarationsfeld — Grad der Behinderung und Merkzeichen des Partners tragen ihre eigenen Kz (E0109708, E0109706)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 2 Nr. 1 EStG"
+      zitatanker: "Grad der Behinderung auf mindestens 20 festgestellt ist"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"

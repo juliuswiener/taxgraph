@@ -32,8 +32,8 @@ const VZ: i64 = 2025;
 fn bindungen() -> &'static [Bindung] {
     static CELL: OnceLock<Vec<Bindung>> = OnceLock::new();
     CELL.get_or_init(|| {
-        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        bindung::lade_registry(&pfad)
+        let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        bindung::lade_registry_der_wurzel(&pfad)
             .expect("Bindung laedt")
             .dateien
             .into_iter()

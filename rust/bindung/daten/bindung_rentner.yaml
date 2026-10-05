@@ -1,0 +1,807 @@
+# Bindungstabelle — Scheibe 4: Rentner-Familie (§22/§24a/§33b/§16 Abs. 4/§34) (Task #11).
+# Validiert gegen schema.json (kein neues Schema). Signaturen/Bedingungen: rules.yaml.
+# Kohorten-Parameter (besteuerungsanteil_prozent/prozentsatz) sind aus dem Jahr-Feld abgeleitet ->
+# Lücke; der Renten-Beginn-Jahr treibt die Kohortentabelle (askable). Pauschbeträge = Enum-Staffel,
+# askable grad/pflegegrad/Flags. E-Nr Rentner-Anlagen (R/Behinderung) -> XSD-Nachtrag -> null+grund.
+version: 1
+scheibe: "Rente §22 (p22_1) + Altersentlastung §24a (p24a) + Pauschbeträge §33b (Behinderten/Hinterbliebenen/Pflege) + Veräußerungsfreibetrag §16 Abs. 4 (p16_4) + Fünftel §34 (p34_fuenftel_ao_est, nur Lücken)"
+
+bindungen:
+  # ========================= Rente §22 Nr. 1 — Besteuerungsanteil (p22_1) =========================
+  - feld_id: rentner_jahresrente
+    instanz_gruppe: rente
+    quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, signatur_slot: jahresrente}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel Rente hast du dieses Jahr insgesamt bekommen (der volle Jahresbetrag, bevor etwas abgezogen wird)?"
+    hilfe_kurz: "Der gesamte Jahresbetrag deiner Rente. Steht in der Mitteilung deines Rentenversicherungsträgers."
+    beispielwert: 1800000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein festes 1:1-Kz: die Anlage-R-Zeile hängt an rentner_renten_art (Klasse-f-Verzweigung in est_mapping): gesetzl/berufsst/basisrente → E1800301, private Leibrente → E1801601, sonstige → E1803102."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "Bemessungsgrundlage für den der Besteuerung unterliegenden Anteil ist der Jahresbetrag der Rente"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_renten_beginn_jahr
+    instanz_gruppe: rente
+    quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: besteuerungsanteil_aus_kohortentabelle}
+    typ: int
+    einheit: Jahr
+    bereich: {min: 1955, max: 2060, grund: "Renten-Beginn-Jahr; Kohorten-Besteuerung ab 2005 (AltEinkG), davor 50 %; untere/obere Grenze deckt realistische Rentenbeginne."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Seit welchem Jahr bekommst du deine Rente?"
+    hilfe_kurz: "Das Jahr, in dem deine Rente zum ersten Mal gezahlt wurde. Danach richtet sich, welcher Anteil der Rente steuerpflichtig ist."
+    beispielwert: 2015
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein festes 1:1-Kz: Anlage-R-Zeile hängt an rentner_renten_art (Klasse-f-Verzweigung): gesetzl/berufsst/basisrente → E1800501, private Leibrente → E1801701, sonstige → E1803202. Jahr-Granularität; ERiC-Datum-Format = Submission-Layer."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "maßgebenden Prozentsatz aus der nachstehenden Tabelle"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  # renten_art_basis_oder_ertragsanteil = gb-Weiche aa/bb. Die bb-Berechnung braucht KEINE eigene Regel
+  # (Instructor-Entscheid 2026-07-18): die Arithmetik (jahresrente x prozent/100) ist identisch zu
+  # p22_1_leibrente_besteuerungsanteil, nur die %-Quelle unterscheidet (Ertragsanteil-Params statt
+  # Besteuerungsanteil-Kohorten). Der Accessor gated die bb-Multiplikation gegen dieselben p22_1-test_seeds;
+  # die bb-Werte + Rechtsgrundlage liegen in params/kohorten/rente_ertragsanteil_p22.yaml (§ 22 Nr. 1 S. 3
+  # lit. a bb). Der Gate validiert gb-Existenz für Pseudoregel-Scopes nicht, die Abdeckung ist über die
+  # Kz-Verzweigung + den Drift-Wächter gesichert.
+  - feld_id: rentner_renten_art
+    instanz_gruppe: rente
+    quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: renten_art_basis_oder_ertragsanteil}
+    typ: enum
+    einheit: null
+    enum_werte: ["gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente", "private_leibrente", "sonstige_leibrente"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Um welche Art von Rente geht es hauptsächlich?"
+    hilfe_kurz: "Gesetzliche Rente, berufsständisches Versorgungswerk (z. B. für Ärzte oder Anwälte) und Rürup-Rente werden gleich besteuert (nach dem Jahr des Rentenbeginns). Eine private Rentenversicherung wird niedriger besteuert — dann zählt dein Alter bei Rentenbeginn."
+    beispielwert: "gesetzliche_rente"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche (steuert die Kz-Verzweigung Klasse f + den Rechenpfad aa/bb), kein eigenes Betragsfeld. bb (private/sonstige Leibrente) rechnet mit der p22_1-Arithmetik (jahresrente x prozent/100), Prozentsatz aus den Ertragsanteil-Params (§ 22 Nr. 1 S. 3 lit. a bb, params/kohorten/rente_ertragsanteil_p22.yaml) — KEINE eigene Regel (Instructor-Entscheid 2026-07-18); die aa-Werte rechnet p22_1 aus der Besteuerungsanteil-Kohorte."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "aus den gesetzlichen Rentenversicherungen, der landwirtschaftlichen Alterskasse, den berufsständischen Versorgungseinrichtungen"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+
+  # ===== §22 bb-Ertragsanteil-Key (Alter) + aa-Rentenfreibetrag-Fixierung (K2, Instructor-Ruling 2026-07-18) =====
+  - feld_id: rentner_alter_bei_rentenbeginn
+    instanz_gruppe: rente
+    quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: ertragsanteil_alter_bei_rentenbeginn}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 100, grund: "Bei Rentenbeginn vollendetes Lebensjahr; die Ertragsanteil-Tabelle § 22 Nr. 1 S. 3 a bb schlüsselt nach diesem Alter (Werte 0..97, darüber gedeckelt auf 97)."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie alt warst du (vollendetes Lebensjahr), als deine private Rente zu laufen begann?"
+    hilfe_kurz: "Nur bei einer privaten Leibrente: der steuerpflichtige Ertragsanteil richtet sich nach deinem Alter bei Rentenbeginn (z. B. mit 65 sind es 18 %)."
+    beispielwert: 65
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein eigenes Kz: das Alter wird aus dem Rentenbeginn (E1801701 'Beginn der Rente') minus Geburtsdatum (Mantelbogen) DERIVED (wie die Jahr↔Datum-Brücke). Lookup-Key der bb-Ertragsanteil-Tabelle params/kohorten/rente_ertragsanteil_p22.yaml, kein Deklarationsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. bb EStG"
+      zitatanker: "Bei Beginn der Rente vollendetes Lebensjahr"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_rentenfreibetrag
+    instanz_gruppe: rente
+    quelle: {regel_id: p22_1_leibrente_besteuerungsanteil, geltungsbedingung: rentenfreibetrag_fixierung_folgejahr}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Falls deine gesetzliche Rente NICHT in diesem Jahr zum ersten Mal gezahlt wurde: wie hoch ist dein steuerfreier Renten-Freibetrag laut deinem letzten Steuerbescheid (in Euro)?"
+    hilfe_kurz: "Ab dem zweiten Rentenjahr ist der steuerfreie Teil in Euro festgeschrieben (Rentenerhöhungen sind dann voll steuerpflichtig). Der Betrag steht in deinem Vorjahres-Bescheid. Im ersten Rentenjahr leer lassen."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein Anlage-R-Kz (das Finanzamt errechnet + fixiert den steuerfreien Teil, der Steuerpflichtige deklariert ihn nicht als Kz). Laienfeld für den fixierten Euro-Betrag aus dem Vorjahres-Bescheid; nur aa-Folgejahr. Der Accessor rechnet damit exakt (jahresrente − rentenfreibetrag) statt %×aktuelle-Rente (K2, sonst Untersteuerung der Rentenerhöhungen)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa S. 4 EStG"
+      zitatanker: "der steuerfreie Teil der Rente"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+
+  # ===== §22 Rente Person-B (Zusammenveranlagung): Anlage-R-Instanz B, Klasse-g×f. Jeder Ehegatte hat
+  # EIGENEN Besteuerungsanteil (eigene Kohorte/eigenes Alter) + EIGENE Rentenfreibetrag-Fixierung. KEIN
+  # distinkter Ehegatte-Kz (Schema-Recon) → Reuse Person-A-Kz im person_b-Bucket (aa/bb je renten_art_partner,
+  # est_mapping PARTNER_VERZWEIGUNG). K2 partner_check: nur bei veranlagung==zusammen. Accessor je Person (dev-1). =====
+  - feld_id: rentner_renten_art_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_renten_art_weiche}
+    # Auf der Ich-Seite haengt dieser ganze Block ueber regel_bedingungen an `kein_sonstige`
+    # (p22_1_leibrente_besteuerungsanteil). Die Partner-Felder liegen dagegen in
+    # p2_festzusetzung_zusammen und waren deshalb bis 2026-08-28 durch nichts abschaltbar.
+    feld_bedingung: {feld: kein_sonstige_partner, wert: false, grund: "§ 22 Nr. 1 S. 3 Buchst. a EStG besteuert Leibrenten als sonstige Einkuenfte, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte sonstige Einkuenfte des Partners gibt es keine Rente, zu der Art, Hoehe, Beginn oder Freibetrag zu erklaeren waeren. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    typ: enum
+    einheit: null
+    enum_werte: ["gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente", "private_leibrente", "sonstige_leibrente"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Um welche Art von Rente geht es bei deinem zusammen veranlagten Ehe-/Lebenspartner hauptsächlich?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung: der Partner hat einen eigenen Besteuerungs-/Ertragsanteil je nach Rentenart (gesetzlich/Versorgungswerk/Rürup nach Beginn-Jahr, private Rente nach Alter bei Beginn)."
+    beispielwert: "gesetzliche_rente"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Partner-Art-Weiche (steuert die Klasse-g×f-Kz-Verzweigung von rentner_jahresrente_partner aa/bb im person_b-Bucket), kein eigenes Betragsfeld/Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "aus den gesetzlichen Rentenversicherungen, der landwirtschaftlichen Alterskasse, den berufsständischen Versorgungseinrichtungen"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_jahresrente_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: rentner_jahresrente_partner}
+    feld_bedingung: {feld: kein_sonstige_partner, wert: false, grund: "§ 22 Nr. 1 S. 3 Buchst. a EStG besteuert Leibrenten als sonstige Einkuenfte, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte sonstige Einkuenfte des Partners gibt es keine Rente, deren Jahresbetrag zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel Rente hat dein zusammen veranlagter Ehe-/Lebenspartner dieses Jahr insgesamt bekommen (voller Jahresbetrag)?"
+    hilfe_kurz: "Der gesamte Jahresbetrag der Rente des Partners, aus der Mitteilung seines Rentenversicherungsträgers."
+    beispielwert: 1800000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-R-Instanz B (Klasse g×f): aa/bb-Kz je rentner_renten_art_partner im person_b-Bucket (gesetzl/berufsst/basis → E1800301, priv → E1801601, sonst → E1803102), DIESELBEN Person-A-Kz — kein distinktes Ehegatte-Kz. Kz-Wahl in est_mapping."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "aus den gesetzlichen Rentenversicherungen, der landwirtschaftlichen Alterskasse, den berufsständischen Versorgungseinrichtungen"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_renten_beginn_jahr_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_besteuerungsanteil_aus_kohortentabelle}
+    feld_bedingung: {feld: kein_sonstige_partner, wert: false, grund: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG bestimmt den Besteuerungsanteil nach dem Jahr des Rentenbeginns, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte sonstige Einkuenfte des Partners gibt es keine Rente, deren Beginn zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: int
+    einheit: Jahr
+    bereich: {min: 1955, max: 2060, grund: "Renten-Beginn-Jahr des Partners (Kohorten-Besteuerung, eigene Kohorte je Ehegatte)."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Seit welchem Jahr bekommt dein Ehe-/Lebenspartner seine Rente?"
+    hilfe_kurz: "Das Jahr des ersten Rentenbezugs des Partners; bestimmt seinen eigenen Besteuerungsanteil (gesetzliche Rente)."
+    beispielwert: 2015
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-R-Instanz B (Klasse g×f): aa → E1800501 / bb-priv → E1801701 / sonst → E1803202 im person_b-Bucket je rentner_renten_art_partner, DIESELBEN Person-A-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "maßgebenden Prozentsatz aus der nachstehenden Tabelle"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_alter_bei_rentenbeginn_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_ertragsanteil_alter}
+    feld_bedingung: {feld: kein_sonstige_partner, wert: false, grund: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. bb EStG bemisst den Ertragsanteil nach dem Alter bei Rentenbeginn, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte sonstige Einkuenfte des Partners gibt es keine Rente, zu der ein Alter bei Rentenbeginn zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 100, grund: "Bei Rentenbeginn vollendetes Lebensjahr des Partners; bb-Ertragsanteil-Lookup (private Leibrente)."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie alt war dein Ehe-/Lebenspartner (vollendetes Lebensjahr), als seine private Rente zu laufen begann?"
+    hilfe_kurz: "Nur bei einer privaten Leibrente des Partners: der steuerpflichtige Ertragsanteil richtet sich nach seinem Alter bei Rentenbeginn."
+    beispielwert: 65
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein eigenes Kz: DERIVED aus Partner-Rentenbeginn − Geburtsdatum. bb-Lookup-Key der Ertragsanteil-Tabelle (params/kohorten/rente_ertragsanteil_p22.yaml) für Person B."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. bb EStG"
+      zitatanker: "Bei Beginn der Rente vollendetes Lebensjahr"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rentner_rentenfreibetrag_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: partner_rentenfreibetrag_fixierung_folgejahr}
+    feld_bedingung: {feld: kein_sonstige_partner, wert: false, grund: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa S. 5 EStG schreibt den einmal ermittelten Rentenfreibetrag fuer die Folgejahre fest, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte sonstige Einkuenfte des Partners gibt es keine Rente, fuer die ein Freibetrag festgeschrieben waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Falls die gesetzliche Rente deines Partners NICHT in diesem Jahr zum ersten Mal gezahlt wurde: wie hoch ist sein steuerfreier Renten-Freibetrag laut letztem Bescheid (in Euro)?"
+    hilfe_kurz: "Ab dem zweiten Rentenjahr des Partners ist sein steuerfreier Teil in Euro festgeschrieben. Steht im Vorjahres-Bescheid. Im ersten Rentenjahr des Partners leer lassen."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kein Anlage-R-Kz (Laienfeld für den fixierten Euro-Betrag des Partners, aa-Folgejahr). Der Accessor rechnet je Person exakt (jahresrente_partner − rentenfreibetrag_partner) statt %×aktuelle-Rente (K2 per Person)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa S. 4 EStG"
+      zitatanker: "der steuerfreie Teil der Rente"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+
+  # ========================= Altersentlastungsbetrag §24a (p24a) =========================
+  - feld_id: rentner_alter_64_erfuellt
+    quelle: {regel_id: p24a_altersentlastungsbetrag, geltungsbedingung: alter_64_vor_bezugsjahr_vollendet}
+    ableitung: {aus: stammdaten_geburtsdatum, art: alter_am_jahresbeginn_erreicht, schwelle: 64, grund: "§ 24a S. 3 EStG stellt darauf ab, ob der Steuerpflichtige vor Beginn des Kalenderjahres das 64. Lebensjahr vollendet hat. Das ergibt sich aus dem Geburtsdatum, das die Stammdaten erheben — die Frage danach ist rechnerisch redundant. Fehlt das Geburtsdatum, fragt das Programm stattdessen das Geburtsjahr (`geburtsjahr`, bindung_an_gesamt.yaml); dieses Feld hier wird nie gefragt (Julius 2026-10-03)."}
+    typ: bool
+    einheit: null
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Der Altersentlastungsbetrag steht dir zu, wenn du zu Beginn des Jahres bereits 64 Jahre alt warst."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Alters-Voraussetzung (Ja/Nein), ergibt sich aus dem Geburtsdatum im Mantelbogen; kein eigenes Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 24a S. 3 EStG"
+      zitatanker: "das 64. Lebensjahr vollendet hatte"
+      datei: "sources/gesetze-im-internet/estg_p24a_2026-07-13.txt"
+
+  # ========================= Behinderten-Pauschbetrag §33b Abs. 1-3 =========================
+  - feld_id: rentner_grad_der_behinderung
+    quelle: {regel_id: p33b_behinderten_pauschbetrag, signatur_slot: grad_der_behinderung}
+    typ: int
+    einheit: null
+    # Das ELSTER-Schema laesst an E0109708 nur 17 Werte zu (pattern 20|25|...|100 in E10-2025.xsd).
+    # bereich bleibt die Spannweite fuer das Unsicherheits-Derivat; die ZULAESSIGEN Werte stehen in
+    # enum_werte und werden fail-closed geprueft (store._wert_erlaubt, Auflage T). Ohne die Liste
+    # liesse der Bereich jeden Zwischenwert durch, und ERiC weist dann die GANZE Erklaerung ab.
+    # Die 0 ist mit aufgefuehrt: sie heisst „nichts anzugeben" und kommt in 39 echten Faellen vor.
+    # _schreibe_kz laesst sie aus der Deklaration weg (Vault: decisions/speichern-lehnt-nullwerte-nicht-ab).
+    bereich: {min: 20, max: 100, grund: "Spannweite des Grads der Behinderung. Zulaessig sind nur die Werte in enum_werte — Zehner- und Fuenferschritte des amtlichen Musters."}
+    enum_werte: ["0", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95", "100"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welchen Grad der Behinderung hat dein Schwerbehindertenausweis (eine Zahl zwischen 20 und 100)?"
+    hilfe_kurz: "Steht in deinem Feststellungsbescheid oder Schwerbehindertenausweis. Je höher der Grad, desto höher der Pauschbetrag."
+    beispielwert: 50
+    herkunft_slots: null
+    elster_kz: E0109708
+    elster_kz_grund: "E0109708 [Ausw_Rentb_Besch], XSD-Label 'Grad der Behinderung' — stpfl. Person (Block 66196332, E01097); Vordruck Anlage Außergewöhnliche Belastungen agb_2025 erster GdB-Block (kurz-Kz 105). Sektions-Pfad-belegt (Hash-Gruppierung + Dok-Order + Vordruck-Header, Instructor msg 2719)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 3 S. 2 EStG"
+      zitatanker: "Als Pauschbetrag werden gewährt bei einem Grad der Behinderung von mindestens"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  - feld_id: rentner_hilflos_blind_taubblind
+    quelle: {regel_id: p33b_behinderten_pauschbetrag, signatur_slot: ist_hilflos_blind_taubblind}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Bist du hilflos, blind oder taubblind (Merkzeichen H, Bl oder TBl im Ausweis)?"
+    hilfe_kurz: "Mit einem dieser Merkzeichen bekommst du den höchsten Pauschbetrag, unabhängig vom Grad der Behinderung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0109706
+    elster_kz_grund: "E0109706 [Geh_Steh_Blind_Hilfl], XSD-Label 'blind / taubblind / ständig hilflos (Merkzeichen Bl, TBl und/oder H)' — stpfl. Person (Block 66196332, E01097); Vordruck agb_2025 kurz-Kz 103. NICHT E0505807 (=Person B/Ehegatte). Sektions-Pfad-belegt (Instructor msg 2719)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 3 S. 3 EStG"
+      zitatanker: "Blinde und Taubblinde erhalten einen Pauschbetrag von 7 400 Euro"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  # ========================= Hinterbliebenen-Pauschbetrag §33b Abs. 4 =========================
+  - feld_id: rentner_hinterbliebenenbezuege
+    quelle: {regel_id: p33b_hinterbliebenen_pauschbetrag, signatur_slot: hat_hinterbliebenenbezuege}
+    eingangsfrage: true
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Bekommst du Hinterbliebenenbezüge (z. B. Witwen-, Witwer- oder Waisenrente nach gesetzlichen Vorschriften)?"
+    hilfe_kurz: "Wenn dir laufende Hinterbliebenenbezüge bewilligt sind, steht dir ein Pauschbetrag von 370 Euro zu."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0109704
+    elster_kz_grund: "E0109704 [Hinterbl], XSD-Label 'Ich beantrage den Hinterbliebenen-Pauschbetrag' — Person-A-eigen; Vordruck agb_2025 Hinterbliebenen-Pauschbetrag. NICHT E0505805 (=Übertragung/Kind-Transfer §33b Abs.5). Sektions-Pfad-belegt (Instructor msg 2719)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 4 EStG"
+      zitatanker: "einen Pauschbetrag von 370 Euro"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  # ========================= Pflege-Pauschbetrag §33b Abs. 6 =========================
+  - feld_id: rentner_pflegegrad
+    quelle: {regel_id: p33b_pflege_pauschbetrag, signatur_slot: pflegegrad}
+    typ: int
+    einheit: null
+    bereich: {min: 1, max: 5, grund: "Pflegegrade 1..5 (SGB XI); Pflege-Pauschbetrag wird ab Pflegegrad 2 gewährt (gestaffelt bis 5)."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welchen Pflegegrad hat die Person, die du zu Hause unentgeltlich pflegst (eine Zahl zwischen 1 und 5)?"
+    hilfe_kurz: "Den Pflege-Pauschbetrag gibt es, wenn du jemanden mit Pflegegrad 2 bis 5 ohne Bezahlung pflegst."
+    beispielwert: 3
+    herkunft_slots: null
+    elster_kz: E0161606
+    elster_kz_grund: "E0161606 [Ang_pflegebeduerft_Pers], XSD-Label 'Für die pflegebedürftige Person wurde folgender Pflegegrad festgestellt' (§33b Abs.6, gepflegte Person); Vordruck agb_2025 Pflege-Pauschbetrag. 1 Instanz-Hash im Schema (single-MVP; mehrere Gepflegte = Repeated-GAP). Sektions-Pfad-belegt (Instructor msg 2719)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 3 EStG"
+      zitatanker: "Als Pflege-Pauschbetrag wird gewährt"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  - feld_id: rentner_gepflegter_hilflos
+    quelle: {regel_id: p33b_pflege_pauschbetrag, signatur_slot: ist_hilflos}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Ist die von dir gepflegte Person hilflos (Merkzeichen H)?"
+    hilfe_kurz: "Bei einer hilflosen Person (Merkzeichen H) gilt der höchste Pflege-Pauschbetrag."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0161808
+    elster_kz_grund: "E0161808 [Ang_pflegebeduerft_Pers], XSD-Label 'Für die pflegebedürftige Person wurde das Merkzeichen H festgestellt' (§33b Abs.6, selbe gepflegte-Person-Instanz wie E0161606); Vordruck agb_2025 Pflege-Pauschbetrag. Sektions-Pfad-belegt (Instructor msg 2719)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 3 EStG"
+      zitatanker: "Als Pflege-Pauschbetrag wird gewährt"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  # ===== Pflege-Pauschbetrag: die Pflichtangaben neben der Betrags-Staffel =====
+  # Ohne diese fünf lehnt checkESt den Pflege-Pauschbetrag ab (gemessen 2026-08-14, rc=610001002).
+  # ERiC gab seine Anforderungen in DREI Schichten preis — erst Wohnsitz + Helferzahl, nach deren
+  # Ergänzung IdNr + Personenangaben + "durch wen die Pflege erfolgt". Wer nach der ersten grünen
+  # Meldung aufhört, hält einen halben Bau für fertig.
+  #
+  # Keines der fünf trägt einen signatur_slot: der Betrag hängt an Pflegegrad und Merkzeichen H,
+  # nicht am Wohnort oder der Helferzahl. Sie hängen an drei NEUEN Geltungsbedingungen der Regel
+  # (Julius-Entscheid 2026-08-15: Deklarations-Pflichtfelder dürfen eine eigene Bedingung
+  # bekommen, aber nur mit wörtlichem Gesetzesanker — geprüft vom deckt_ab-Freeze-Gate).
+  - feld_id: rentner_gepflegter_wohnsitz_inland
+    quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: pflege_persoenlich_in_eu_ewr}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wohnt die Person, die du pflegst, in Deutschland?"
+    hilfe_kurz: "Gemeint ist der Wohnsitz oder gewöhnliche Aufenthalt im Inland. Auch ein anderer EU-Staat oder ein EWR-Staat zählt."
+    beispielwert: true
+    herkunft_slots: null
+    # E0161607 [AgB/Pflege_PB/Einz/Ang_pflegebeduerft_Pers], JaNein12BaseCType, XSD-Label
+    # "Die pflegebedürftige Person hat ihren Wohnsitz / gewöhnlichen Aufenthalt im Inland".
+    # Selbe Instanz wie E0161606/E0161808 (Pflegegrad, Merkzeichen H).
+    elster_kz: E0161607
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 1 EStG"
+      zitatanker: "diese Wohnung in einem Mitgliedstaat der Europäischen Union oder in einem Staat gelegen ist, auf den das Abkommen über den Europäischen Wirtschaftsraum anzuwenden ist"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: rentner_pflege_durch
+    quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: pflege_persoenlich_in_eu_ewr}
+    typ: enum
+    enum_werte: ["1", "2", "3"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wer von euch pflegt die Person?"
+    hilfe_kurz: "Bei Einzelveranlagung ist es immer die erste Antwort. Pflegt ihr gemeinsam, wird der Pauschbetrag geteilt."
+    beispielwert: "1"
+    herkunft_slots: null
+    # E0106507 [AgB/Pflege_PB/Einz/Ang_pflegende_Pers], Enum: 1 = "Steuerpflichtige Person /
+    # Ehemann / Person A", 2 = "Ehefrau / Person B", 3 = "beide Ehegatten / Lebenspartner"
+    # (Werte samt Beschriftung aus E10-2025.xsd gelesen, nicht aus dem Vordruck abgeschrieben).
+    elster_kz: E0106507
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 1 EStG"
+      zitatanker: "die Pflege entweder in seiner Wohnung oder in der Wohnung des Pflegebedürftigen persönlich durchführt"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: rentner_gepflegter_idnr
+    quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: idnr_der_gepflegten_person}
+    typ: text
+    muster: '^(?:[0-9]{11})$'
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet die steuerliche Identifikationsnummer der Person, die du pflegst (11 Ziffern)?"
+    hilfe_kurz: "Ohne diese Nummer gibt es den Pflege-Pauschbetrag nicht — das Gesetz verlangt sie ausdrücklich. Zu finden auf jedem Steuerbescheid der Person oder auf ihrem Schreiben vom Bundeszentralamt für Steuern."
+    beispielwert: "12345678911"
+    herkunft_slots: null
+    # E0161506 [AgB/Pflege_PB/Einz/Ang_pflegebeduerft_Pers], IDNrBaseCType.
+    elster_kz: E0161506
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 8 EStG"
+      zitatanker: "Voraussetzung für die Gewährung des Pflege-Pauschbetrags ist die Angabe der erteilten Identifikationsnummer (§ 139b der Abgabenordnung) der gepflegten Person"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: rentner_gepflegter_angaben
+    quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: idnr_der_gepflegten_person}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wer ist die Person, die du pflegst? Bitte Name, Anschrift, Geburtsdatum und in welchem Verhältnis sie zu dir steht."
+    hilfe_kurz: "Alles in ein Feld, zum Beispiel: „Maria Muster, Musterweg 3, 12345 Musterstadt, geb. am 4. Februar, meine Mutter“."
+    beispielwert: "Maria Muster, Musterweg 3, 12345 Musterstadt, meine Mutter"
+    herkunft_slots: null
+    # E0110601 [AgB/Pflege_PB/Einz/Ang_pflegebeduerft_Pers], String_MinL1_MaxL999.
+    elster_kz: E0110601
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 8 EStG"
+      zitatanker: "der gepflegten Person in der Einkommensteuererklärung des Steuerpflichtigen"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  - feld_id: rentner_pflege_weitere_personen
+    quelle: {regel_id: p33b_pflege_pauschbetrag, geltungsbedingung: teilung_bei_mehreren_pflegepersonen}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 9, grund: "Anzahl weiterer Pflegepersonen; 0 ist der Normalfall und laut ERiC ausdrücklich anzugeben. Höchstens 9: das Schema erlaubt ein Zeichen (E10-2025.xsd, Muster .{0,1}; die Gruppe führt höchstens 9 weitere Personen)."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele weitere Personen pflegen diese Person außer dir noch unentgeltlich? (0, wenn du allein pflegst)"
+    hilfe_kurz: "Teilen sich mehrere den Pauschbetrag, wird er nach Köpfen aufgeteilt. Pflegst du allein, trag 0 ein — die Angabe ist Pflicht."
+    beispielwert: 0
+    herkunft_slots: null
+    # E0106603 [AgB/Pflege_PB/Einz/Ang_an_Pflege_bet_Pers], GanzzahlNichtNegOhneFuehrNull,
+    # XSD-Label "Anzahl der weiteren an der Pflege beteiligten Personen — Sofern an der Pflege
+    # keine weiteren Personen beteiligt (sind), ist eine 0 einzutragen".
+    elster_kz: E0106603
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 6 S. 9 EStG"
+      zitatanker: "wird der Pflege-Pauschbetrag nach der Zahl der Pflegepersonen"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  # ========== Ehegatte-Behinderung §33b (Partner-Zwillinge, NUR Zusammenveranlagung §26b) ==========
+  # Klasse g (est_mapping PARTNER_INSTANZ), NICHT Klasse 1: KEIN distinktes Person-B-Kz. E05058
+  # (Ueb_PB_Beh_Hbl/Beh) ist der §33b Abs.5-Übertragungsmechanismus für den Behinderten-Pauschbetrag
+  # EINES KINDES auf die Eltern — strukturell fremd zur Fragestellung (Ehegatte hat selbst eine
+  # Behinderung). AgB_67907_CType.Beh hat maxOccurs=2 (Person A/B, E10-2025.xsd Z.9622-9639); Person B
+  # nutzt bei zweiter Block-Instanz DIESELBEN Kz wie Person A (E0109708/E0109706), kein eigenes Kz
+  # (XSD-Kz-Section-Sweep Cluster C, reports/review/2026-07-20-xsd-kz-section-sweep-findings.md).
+  # K2-Guard produkt/konsistenz/partner_check: Partner-Feld gesetzt aber veranlagung!=zusammen ->
+  # Widerspruch (fail-closed). Hinterbliebenen-Partner = benannte GAP (kein E10-Kz, belegt),
+  # Pflege-Partner = N/A (gepflegte-Person-Block), Tarif-Integration = kein Ring diese Runde (wie
+  # Person A). Store-/Feldseite folgt person_b-Bucket (wie kap_kapitalertraege_partner).
+  - feld_id: rentner_grad_der_behinderung_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: grad_der_behinderung_partner}
+    # DER TEURE FALL, gemessen 2026-08-28. Hier stand `keine_behinderung_pflege` — das Kreuz des
+    # NUTZERS, das woertlich fragt „Hast du SELBST oder hat eines DEINER KINDER eine amtlich
+    # festgestellte Behinderung…?". Der Partner kommt darin nicht vor. Wer nur einen behinderten
+    # Partner hat, verneinte wahrheitsgemaess — und verlor dessen Pauschbetrag fuer immer, weil
+    # diese Frage danach nie mehr kam. Ueber den echten Rechenweg gemessen (rentner_gesamt,
+    # VZ 2025, zusammen, Partner-GdB 50): 5.532 EUR gegen 5.834 EUR, also 302 EUR zu viel Steuer.
+    # Die alte Begruendung behauptete die Deckung sogar ausdruecklich („wer sie bestaetigt
+    # verneint, hat auch fuer den Partner keinen Grad anzugeben") — die Frage deckt den Partner
+    # aber nicht ab. Ein Flag darf nur abschalten, wonach es auch gefragt hat.
+    feld_bedingung: {feld: keine_behinderung_pflege_partner, wert: false, grund: "§ 33b Abs. 1 und 2 EStG setzen eine amtlich festgestellte Behinderung voraus, und der Pauschbetrag steht jedem Ehegatten fuer sich zu (§ 26b EStG rechnet die Einkuenfte zusammen, aendert aber nichts an den personenbezogenen Merkmalen). Ohne bestaetigte Behinderung des Partners ist fuer ihn kein Grad anzugeben. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: int
+    einheit: null
+    # Dieselben 17 Werte wie rentner_grad_der_behinderung: der Partner-Grad laeuft ueber dessen Kz
+    # E0109708 mit (est_mapping.PARTNER_INSTANZ, zweite Beh-Block-Instanz). Die beiden Felder MUESSEN
+    # dieselbe Werteliste tragen — sonst liesse eines durch, was das andere abweist.
+    # Die 0 ist mit aufgefuehrt: „nichts anzugeben", siehe das eigene Feld oben.
+    bereich: {min: 20, max: 100, grund: "Spannweite des Grads der Behinderung des Partners. Zulaessig sind nur die Werte in enum_werte — Zehner- und Fuenferschritte des amtlichen Musters."}
+    enum_werte: ["0", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95", "100"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welchen Grad der Behinderung hat dein zusammen veranlagter Ehe-/Lebenspartner (eine Zahl zwischen 20 und 100)?"
+    hilfe_kurz: "Nur bei Zusammenveranlagung: jeder Ehegatte hat einen eigenen Behinderten-Pauschbetrag nach seinem eigenen Grad der Behinderung."
+    beispielwert: 50
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse g (Instanz-Reuse): derselbe Kz E0109708 wie Person A, zweite AgB_67907_CType.Beh-Block-Instanz (maxOccurs=2, Person A/B) — kein distinktes Ehegatte-Kz. E0505809 (Ueb_PB_Beh_Hbl/Beh) ist §33b Abs.5-Kind-Übertragungsmechanismus, strukturell fremd (XSD-Kz-Section-Sweep Cluster C)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 3 S. 2 EStG"
+      zitatanker: "Als Pauschbetrag werden gewährt bei einem Grad der Behinderung von mindestens"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+  - feld_id: rentner_hilflos_blind_taubblind_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: ist_hilflos_blind_taubblind_partner}
+    # Hing an gar nichts und wurde deshalb ausnahmslos gefragt — auch dem Paar, das jede
+    # Behinderung verneint hatte. Das Nachbarfeld (Grad der Behinderung) war immerhin gegated,
+    # nur am falschen Kreuz; dieses hier an keinem.
+    feld_bedingung: {feld: keine_behinderung_pflege_partner, wert: false, grund: "§ 33b Abs. 3 S. 4 EStG knuepft den erhoehten Pauschbetrag an die Merkzeichen H, Bl und TBl, die Teil der amtlichen Feststellung sind. Ohne bestaetigte Behinderung des Partners gibt es keine Feststellung, aus der ein Merkzeichen hervorginge. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Ist dein zusammen veranlagter Ehe-/Lebenspartner hilflos, blind oder taubblind (Merkzeichen H, Bl oder TBl)?"
+    hilfe_kurz: "Mit einem dieser Merkzeichen bekommt der Partner den höchsten Pauschbetrag, unabhängig vom Grad der Behinderung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse g (Instanz-Reuse): derselbe Kz E0109706 wie Person A, zweite AgB_67907_CType.Beh-Block-Instanz (maxOccurs=2, Person A/B) — kein distinktes Ehegatte-Kz. E0505807 (Ueb_PB_Beh_Hbl/Beh) ist §33b Abs.5-Kind-Übertragungsmechanismus, strukturell fremd (XSD-Kz-Section-Sweep Cluster C)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 3 S. 3 EStG"
+      zitatanker: "Blinde und Taubblinde erhalten einen Pauschbetrag von 7 400 Euro"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  # ========================= Veräußerungsfreibetrag §16 Abs. 4 (p16_4) =========================
+  # `gate: false` auf den VIER Voraussetzungen (2026-09-26, backlog
+  # betriebsverkauf-unter-55-fragt-den-gewinn-nie, decisions/nein-zum-freibetrag-laesst-die-gewinnfrage-stehen).
+  # Ein Gate schaltet zwischen zwei RECHENWEGEN um (`antrag_ermaessigter_satz` waehlt zwischen zwei Kz
+  # und zwei Betraegen). § 16 Abs. 4 S. 1 rechnet in beiden Faellen gleich — die Antwort entfernt nur
+  # einen Abzug. DIESE Entscheidung liegt in bescheid_zweige.py (`p16_4_gate_ok`) und im Sperrgrund,
+  # nicht in der Ausschlusslogik des Traversers. Zweimal dieselbe Entscheidung im Code, und die
+  # zweite Fassung ist die, die den Rueckweg frisst.
+  # GEMESSEN an HEAD: `alter55=False` schloss die ganze regel_id aus -> 0 von 6 p16_4-Feldern in
+  # naechste_fragen; ein Veraeusserungsgewinn von 100.000 EUR wurde nie gefragt (42.000 EUR Steuer).
+  # Zweite Wirkung derselben Ursache: die Sperre `p16_4_gate_offen` wartet auf die BESTAETIGUNG genau
+  # dieser zwei Bools — die Ausschlussregel loeschte die Fragen, die sie hebt. Kein Rueckweg.
+  # `gate: false` heisst hier NICHT „ohne Wirkung": der Freibetrag entfaellt weiter, wenn die
+  # Voraussetzung nicht erfuellt ist. Es heisst: die Voraussetzung des FREIBETRAGS ist keine
+  # Voraussetzung der REGEL. `relevanz()` bleibt unberuehrt, echte Gates schliessen weiter aus
+  # (Kontrollfall in tests/test_p16_4_freibetrag_fragt_den_gewinn.py).
+  - feld_id: rentner_veraeusserungsgewinn
+    quelle: {regel_id: p16_4_freibetrag, signatur_slot: veraeusserungsgewinn}
+    # Bis 2026-08-28 hing die GANZE Regel ueber regel_bedingungen an `kein_gewinn`. Das war fuer
+    # den Einzelveranlagten richtig und fuer das Ehepaar eine Sackgasse: die Regel traegt auch die
+    # beiden Partner-Gates, und das Kreuz des Nutzers schaltete sie mit ab (Begruendung dort).
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 16 Abs. 1 EStG rechnet den Gewinn aus der Veraeusserung eines Betriebs zu den Einkuenften aus Gewerbebetrieb, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Wer bestaetigt, selbst keine Gewinneinkuenfte zu haben, hat keinen eigenen Betrieb veraeussert. Auf Feldebene statt regel-weit, weil dieselbe Regel die Freibetrags-Gates des PARTNERS traegt — die duerfen von der Antwort des Nutzers nicht mit abgeschaltet werden."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war dein Gewinn aus dem Verkauf oder der Aufgabe deines Betriebs?"
+    hilfe_kurz: "Der Gewinn aus der Betriebsveräußerung/-aufgabe. Bis 45.000 Euro bleibt auf Antrag steuerfrei (ab 136.000 Euro Gewinn schmilzt der Freibetrag ab)."
+    beispielwert: 15000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse-f VERZWEIGUNG je rentner_veraeusserungs_betriebsart (kein fixes Feld-Kz; Kz-Wahl in est_mapping), alle drei Anlagen per XSD-Walk verifiziert: gewerbe -> E0801301 [VAe_G_FB_Antr] 'Veräußerungsgewinn vor Abzug des Freibetrags nach § 16 Abs. 4 EStG' (Anlage G); selbstaendig -> E0804501 [Vor_FB] (Anlage S, echte S-Zeile, NICHT Beteiligungsquoten-Anteil-Sub); land_forst -> E0901201 [VAe_G_FB_Antr] (Anlage L)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 3 EStG"
+      zitatanker: "45 000 Euro übersteigt"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_veraeusserungs_betriebsart
+    quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: veraeusserungs_betriebsart_weiche}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 16 Abs. 1 EStG rechnet den Veraeusserungsgewinn zu den Einkuenften aus Gewerbebetrieb; die Betriebsart ist ein Merkmal dieses Gewinns und ohne ihn gegenstandslos. Auf Feldebene statt regel-weit, weil dieselbe Regel die Freibetrags-Gates des PARTNERS traegt — die duerfen von der Antwort des Nutzers nicht mit abgeschaltet werden."}
+    typ: enum
+    einheit: null
+    enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Aus welcher Art von Betrieb stammt der Veräußerungsgewinn?"
+    hilfe_kurz: "Gewerbebetrieb / Mitunternehmeranteil (Anlage G), selbständige/freiberufliche Tätigkeit (Anlage S) oder Land- und Forstwirtschaft (Anlage L). Der Freibetrag nach § 16 Abs. 4 gilt für alle drei gleich; die Auswahl steuert nur, in welche Anlage der Gewinn eingetragen wird."
+    beispielwert: "gewerbe"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche (steuert die Klasse-f-Kz-Verzweigung des Veräußerungsgewinns nach Anlage G/S/L), kein eigenes Betragsfeld/Kz. § 16 Abs. 4 ist anlage-agnostisch; die Weiche wählt nur den Deklarations-Kz. Alle drei Zweige (gewerbe/selbstaendig/land_forst) sind auf reale Kz verdrahtet."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 1 S. 1 EStG"
+      zitatanker: "Gewinne, die erzielt werden bei der Veräußerung"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_alter_55_oder_berufsunfaehig
+    quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: alter_55_oder_berufsunfaehig}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 16 Abs. 4 S. 1 EStG gewaehrt den Freibetrag dem Steuerpflichtigen, der das 55. Lebensjahr vollendet hat oder dauernd berufsunfaehig ist — und zwar auf seinen eigenen Veraeusserungsgewinn. Ohne eigene Gewinneinkuenfte gibt es keinen, auf den er anzuwenden waere. Auf Feldebene statt regel-weit, weil dieselbe Regel das gleichnamige Gate des PARTNERS traegt."}
+    gate: false
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Warst du beim Verkauf des Betriebs mindestens 55 Jahre alt — oder dauerhaft berufsunfähig?"
+    hilfe_kurz: "Der Freibetrag steht dir nur zu, wenn eine dieser Voraussetzungen erfüllt ist."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Persönliche Voraussetzung (Ja/Nein) zum Veräußerungsfreibetrag; kein eigenes Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 1 EStG"
+      zitatanker: "das 55. Lebensjahr vollendet"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_freibetrag_erstmalig
+    quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: freibetrag_einmal_im_leben}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 16 Abs. 4 S. 2 EStG gewaehrt den Freibetrag nur EINMAL im Leben; die Frage danach setzt einen eigenen Veraeusserungsgewinn voraus. Ohne eigene Gewinneinkuenfte gibt es nichts, wofuer der Freibetrag erstmalig in Anspruch genommen wuerde. Auf Feldebene statt regel-weit, weil dieselbe Regel das gleichnamige Gate des PARTNERS traegt."}
+    gate: false
+    typ: bool
+    einheit: null
+    askable: true
+    # KEIN vorjahr-Flag (bewusst, s. tests/test_vorjahr_writer.py): wird der Freibetrag dieses Jahr
+    # gewaehrt, muss die Antwort naechstes Jahr auf false kippen — literale Kopie wuerde ihn faelschlich
+    # als weiter verfuegbar zeigen (§ 16 Abs. 4 S. 2 EStG, nur einmal im Leben).
+    fragetext_laie: "Hast du diesen Freibetrag für einen Betriebsverkauf noch nie zuvor in Anspruch genommen?"
+    hilfe_kurz: "Diesen Freibetrag gibt es nur einmal im Leben. Antworte mit Ja, wenn du ihn noch nie genutzt hast."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Einmaligkeits-Voraussetzung (Ja/Nein); lebenslange Einmal-Gewährung, kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 2 EStG"
+      zitatanker: "nur einmal zu gewähren"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+
+  # ===== Veräußerungsfreibetrag §16 Abs. 4 Person-B (Store-Modell A) =====
+  # _partner-Zwillinge der 4 Freibetrags-Felder oben. § 16 Abs. 4 ist PRO STEUERPFLICHTIGEN zu gewähren
+  # (Gesetzeswortlaut "dem Steuerpflichtigen", nicht "dem Ehepaar" — verifiziert gegen
+  # sources/gesetze-im-internet/estg_p16_2026-07-14.txt). Kz via Klasse f×g PARTNER_VERZWEIGUNG
+  # (est_mapping), dieselben Anlage-Kz wie Person A, Instanz B (person_b-Bucket). Nur die Deklaration
+  # (dieses Kapitel) — der zweite Freibetrags-Aufruf + die gespiegelte p16_4_gate_offen-Sperre sind
+  # Stufe 2 (Ring, produkt/haut/api.py), zurückgestellt bis zum _bescheid_fn-Refactor.
+  #
+  # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding, statt p16_4_freibetrag): dieselbe
+  # Naht wie bruttoarbeitslohn_partner/einkuenfte_gewinn_partner in bindung_an_gesamt.yaml — die
+  # echten Bedingungen von p16_4_freibetrag in rules.yaml (alter_55_oder_berufsunfaehig,
+  # freibetrag_einmal_im_leben, auf_antrag) kennen nur Person A, ein zweiter Aufruf fuer Person B
+  # existiert nicht (Stufe 2). p2_festzusetzung_zusammen ist der in dieser Datei etablierte
+  # Sammel-regel_id fuer Person-B-Felder ohne eigenen Ring-Slot; loest sich auf, sobald Stufe 2
+  # den echten zweiten p16_4_freibetrag-Aufruf fuer Person B verdrahtet.
+  - feld_id: rentner_veraeusserungsgewinn_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: veraeusserungsgewinn_partner}
+    # Gehoert zu den GEWINNeinkuenften, nicht zu den sonstigen: § 16 steht in § 2 Abs. 1 S. 1 Nr. 2.
+    # Auf der Ich-Seite haengen die beiden Schwesterfelder ueber p16_4_freibetrag ebenfalls an
+    # `kein_gewinn`. Eine Symmetrieprobe gegen die Ich-Seite hat die erste, falsche Zuordnung
+    # dieser Bindung (`kein_sonstige_partner`) gefangen.
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 16 Abs. 1 EStG rechnet den Gewinn aus der Veraeusserung eines Betriebs zu den Einkuenften aus Gewerbebetrieb, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Ohne bestaetigte Gewinneinkuenfte des Partners gibt es keinen Betrieb, dessen Veraeusserung zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war der Gewinn deines Ehe-/Lebenspartners aus dem Verkauf oder der Aufgabe seines Betriebs?"
+    hilfe_kurz: "Der Gewinn deines Partners aus seiner eigenen Betriebsveräußerung/-aufgabe. Bis 45.000 Euro bleibt auf Antrag steuerfrei — der Freibetrag steht JEDEM Steuerpflichtigen einzeln zu, nicht dem Ehepaar gemeinsam."
+    beispielwert: 8000000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse f×g PARTNER_VERZWEIGUNG je rentner_veraeusserungs_betriebsart_partner (est_mapping): dieselben Anlage-Kz wie Person A (gewerbe=E0801301, selbstaendig=E0804501, land_forst=E0901201), Instanz B (person_b-Bucket) — kein distinktes Ehegatte-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 1 EStG"
+      zitatanker: "so wird der Veräußerungsgewinn auf Antrag zur Einkommensteuer nur herangezogen, soweit er 45 000 Euro übersteigt"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_veraeusserungs_betriebsart_partner
+    # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): Art-Weiche fuer Person B, keine
+    # echte p16_4_freibetrag-Bedingung (s. Kommentar am Block-Anfang). Loest sich mit Stufe 2 auf.
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: veraeusserungs_betriebsart_partner_weiche}
+    # Julius, echter Durchgang 2026-08-28: „Aus welcher Art von Betrieb stammt der
+    # Veraeusserungsgewinn deines Partners?" kam VOR der Frage, ob es ueberhaupt einen gibt
+    # (L1 #53 vor #65=0, L3 #43 vor #55=0) — und danach stand „gewerbe" als Betriebsart eines
+    # nicht existierenden Gewinns in den Daten. Gemessen: Position 97 gegen 119 von 315.
+    # Mit diesem Kreuz entfaellt das Paar gemeinsam, sobald der Partner keine Gewinneinkuenfte hat.
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 16 Abs. 1 EStG rechnet den Gewinn aus der Veraeusserung eines Betriebs zu den Einkuenften aus Gewerbebetrieb; die Betriebsart ist ein Merkmal dieses Gewinns und ohne ihn gegenstandslos. § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: enum
+    einheit: null
+    enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Aus welcher Art von Betrieb stammt der Veräußerungsgewinn deines Ehe-/Lebenspartners?"
+    hilfe_kurz: "Gewerbebetrieb / Mitunternehmeranteil (Anlage G), selbständige/freiberufliche Tätigkeit (Anlage S) oder Land- und Forstwirtschaft (Anlage L) — für den Betrieb deines Partners."
+    beispielwert: "gewerbe"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche Person B (steuert die Klasse f×g-Kz-Verzweigung des Partner-Veräußerungsgewinns nach Anlage G/S/L), kein eigenes Betragsfeld/Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 1 S. 1 EStG"
+      zitatanker: "Gewinne, die erzielt werden bei der Veräußerung"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_alter_55_oder_berufsunfaehig_partner
+    # regel_id bleibt p16_4_freibetrag (NICHT p2_festzusetzung_zusammen), aus zwei Gruenden.
+    # (1) Der Grund, der beim Bau galt: dieses Feld war ein askables bool-Gate, und auf einem
+    #     Sammel-Scope riss eine bestaetigte False-Antwort per traverser.relevanz() die GANZE
+    #     regel_id inkl. aller sachfremden Felder aus naechste_fragen() (s.
+    #     test_p_sammelscope_ohne_bool_gate, 2026-08-12, Dialog-Durchstich Task C /
+    #     pv_auf_gebaeude-Fund).
+    # (2) Seit 2026-09-26 traegt das Feld `gate: false` (s. Block-Anfang): der erste Grund
+    #     traegt nicht mehr, der zweite schon — die Bindung zeigt weiterhin auf die ECHTE
+    #     Bedingung dieser regel_id in rules.yaml (`alter_55_oder_berufsunfaehig_partner`),
+    #     und genau das prueft tests/test_bindungstabelle.py gegen die Ground Truth. Ein Umzug
+    #     auf den Sammel-Scope waere eine eigene Entscheidung, nicht Teil dieser Reparatur.
+    # Die fiktive _partner-Bedingung ist daher in GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE dokumentiert.
+    quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: alter_55_oder_berufsunfaehig_partner}
+    # DIESES FELD WAR DIE SACKGASSE. Es hing ueber regel_bedingungen an `kein_gewinn` — dem Kreuz
+    # des NUTZERS. Ein Ehepaar, bei dem nur der Partner einen Betrieb verkauft hatte, beantwortete
+    # 208 Fragen bis zur leeren Warteschlange und bekam `p16_4_gate_offen` und keine Zahl: der
+    # Sperrgrund liest den Veraeusserungsgewinn des Partners, die Frage, die ihn aufloest, war
+    # aber vom Kreuz des Nutzers abgeschaltet.
+    # Die Bedingung ist die VERANLAGUNGSART, nicht `kein_gewinn_partner` — gemessen und so
+    # entschieden: das Partner-Kreuz wird einem Einzelveranlagten nie gestellt, bleibt also
+    # unbeantwortet, und fail-closed heisst dann „fragen". Jeder Alleinstehende bekaeme diese
+    # beiden Fragen nach dem Betriebsverkauf eines Partners, den er nicht hat
+    # (test_alleinstehender_bekommt_keine_partner_frage hat es prompt rot gemacht). Dieselbe Lage
+    # und dieselbe Entscheidung wie bei behinderungsbedingte_aufwendungen_partner: `feld_bedingung`
+    # traegt nur EINE Bedingung, und von beiden moeglichen ist die sicherere die richtige. Preis:
+    # ein Ehepaar ohne Gewinneinkuenfte des Partners bekommt diese zwei Fragen weiterhin.
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 16 Abs. 4 S. 1 EStG knuepft den Freibetrag an das Alter bzw. die Berufsunfaehigkeit DERJENIGEN Person, die den Betrieb veraeussert hat. Einen Freibetrag des Partners gibt es nur, wenn dieser nach § 26b EStG mitveranlagt wird — wer allein veranlagt wird, hat keinen Partner, dessen Betriebsveraeusserung in diese Erklaerung gehoerte."}
+    gate: false
+    typ: bool
+    einheit: null
+    askable: true
+    # vorjahr: uebernehmbar — wie Person A. Begruendung (das Feld mischt zwei Tatbestaende
+    # unterschiedlicher Monotonie unter EINEM Bool: Alter ist monoton [steigt nur], dauernde
+    # Berufsunfaehigkeit ist es rechtlich NICHT [Nachpruefung durch den Rentenversicherungstraeger
+    # moeglich]): die Vorjahres-Uebernahme schreibt in JEDEM Fall (uebernehmbar UND vorschlag
+    # identisch, vorjahr_writer.py Zeile 50) nur zustand=vorlaeufig, NIE bestaetigt — der Mensch sieht
+    # den alten Wert nur als Vorbelegung und muss ihn im neuen VZ aktiv gegen DIESEN Veraeusserungsfall
+    # neu bestaetigen (Store-Guard ^import:vorjahr, store.append_event erzwingt Zwei-Signal). Die
+    # Nicht-Monotonie der Berufsunfaehigkeit ist damit strukturell abgefangen wie bei Person A — anders
+    # als bei rentner_freibetrag_erstmalig (wo die Uebernahme des ALTEN Werts einen materiell FALSCHEN
+    # Vorschlag waere, weil die Nutzung selbst den Zustand kippt) aendert eine blosse Vorbelegung hier
+    # nichts an der Pflicht zur Neu-Bestaetigung; keine partnerspezifische Abweichung noetig.
+    vorjahr: uebernehmbar
+    fragetext_laie: "War dein Ehe-/Lebenspartner beim Verkauf seines Betriebs mindestens 55 Jahre alt — oder dauerhaft berufsunfähig?"
+    hilfe_kurz: "Der Freibetrag steht deinem Partner nur zu, wenn eine dieser Voraussetzungen bei IHM erfüllt ist (§ 16 Abs. 4 gilt pro Person)."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Persönliche Voraussetzung (Ja/Nein) zum Veräußerungsfreibetrag des Partners; kein eigenes Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 1 EStG"
+      zitatanker: "das 55. Lebensjahr vollendet"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+  - feld_id: rentner_freibetrag_erstmalig_partner
+    # regel_id bleibt p16_4_freibetrag: gleicher Grund wie rentner_alter_55_oder_berufsunfaehig_
+    # partner oben — bool-Gate darf nicht auf den Sammel-Scope (test_p_sammelscope_ohne_bool_gate).
+    quelle: {regel_id: p16_4_freibetrag, geltungsbedingung: freibetrag_einmal_im_leben_partner}
+    # Dieselbe Lage wie beim Nachbarfeld darueber — dort steht, warum hier die Veranlagungsart
+    # und nicht `kein_gewinn_partner` die Bedingung ist.
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 16 Abs. 4 S. 2 EStG gewaehrt den Freibetrag nur EINMAL im Leben, und zwar je Person; jeder Ehegatte hat sein eigenes Kontingent. Ein Kontingent des Partners gibt es nur, wenn dieser nach § 26b EStG mitveranlagt wird — wer allein veranlagt wird, hat keines zu verbrauchen. Zweites der beiden Felder, die die Sackgasse bildeten (s. Nachbarfeld)."}
+    gate: false
+    typ: bool
+    einheit: null
+    askable: true
+    # KEIN vorjahr-Flag (bewusst, s. tests/test_vorjahr_writer.py, ratsche
+    # test_bestand_felder_tragen_kein_vorjahr_flag): wie rentner_freibetrag_erstmalig (Person A) — wird
+    # der Freibetrag dieses Jahr gewaehrt, muss die Antwort naechstes Jahr auf false kippen; eine
+    # literale Kopie wuerde ihn faelschlich als weiter verfuegbar zeigen (§ 16 Abs. 4 S. 2 EStG, nur
+    # einmal im Leben — gilt PRO Steuerpflichtigem, also unabhaengig fuer Person A und Person B).
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner diesen Freibetrag für einen Betriebsverkauf noch nie zuvor in Anspruch genommen?"
+    hilfe_kurz: "Diesen Freibetrag gibt es nur einmal im Leben — für jede Person einzeln. Antworte mit Ja, wenn dein Partner ihn noch nie genutzt hat."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Einmaligkeits-Voraussetzung (Ja/Nein) des Partners; lebenslange Einmal-Gewährung PRO PERSON, kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 16 Abs. 4 S. 2 EStG"
+      zitatanker: "nur einmal zu gewähren"
+      datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
+
+luecken:
+  # -- §22 Nr. 1 — Kohorten-Parameter + State-Annahme --
+  - regel_id: p22_1_leibrente_besteuerungsanteil
+    signatur_slot: besteuerungsanteil_prozent
+    grund: "Abgeleitet aus rentner_renten_beginn_jahr via Kohortentabelle (§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa); der Prozentsatz ist kein Laien-Feld, er ergibt sich aus dem Renten-Beginn-Jahr."
+  - regel_id: p22_1_leibrente_besteuerungsanteil
+    geltungsbedingung: rentenfreibetrag_fixierung_ist_folgejahr_state
+    grund: "Der steuerfreie Teil der Rente wird im Jahr NACH dem Rentenbeginn festgeschrieben (State/Kohorten-Konvention); Rechenlogik der Regel, keine eigene Abfrage."
+  # -- §24a — geteilte/berechnete Bemessung + Kohorten-Parameter --
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: arbeitslohn
+    grund: "Bemessungs-Input = Bruttoarbeitslohn (Anlage N), bereits in der N-Scheibe erfasst; für den Altersentlastungsbetrag keine eigene Abfrage, gespeist aus dem Gesamteinkommen."
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: positive_andere_einkuenfte
+    grund: "Abgeleitet = Summe der positiven anderen Einkünfte (die nicht aus nichtselbständiger Arbeit sind); rechnet die Regel aus den übrigen Einkünften, keine eigene Abfrage."
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: prozentsatz
+    grund: "Kohorten-Parameter (maßgebender Prozentsatz), abgeleitet aus dem Jahr nach Vollendung des 64. Lebensjahres via § 24a-Tabelle; kein Laien-Feld. (Höchstbetrag = params-Key, auto-exempt.)"
+  - regel_id: p24a_altersentlastungsbetrag
+    geltungsbedingung: prozentsatz_hoechstbetrag_aus_kohortentabelle
+    grund: "In rentner_gesamt liefert §24a strukturell 0 (kein Nicht-Renten-Einkommen; §22-Leibrente ist §24a-S.2-ausgeschlossen); Prozentsatz/Höchstbetrag = Kohortentabelle §24a, der Kohorten-Schlüssel (Feld geburtsjahr) ist in der gesamt-Bindung materialisiert (§24a gesamt-only)."
+  - regel_id: p24a_altersentlastungsbetrag
+    geltungsbedingung: bemessung_netto_nach_ausschluessen
+    grund: "Bemessung nach Ausschluss bestimmter Einkünfte (u. a. nicht solche aus nichtselbständiger Arbeit); Rechenlogik der Regel auf den bereits erfassten Einkünften, keine eigene Abfrage."
+  # -- §33b — Staffel-/Override-Rechenlogik (in den Feldern materialisiert) --
+  - regel_id: p33b_behinderten_pauschbetrag
+    geltungsbedingung: gdb_stufenfunktion_von_mindestens
+    grund: "Die Stufenfunktion (Pauschbetrag je GdB-Stufe) ist Rechenlogik der Regel; im Feld rentner_grad_der_behinderung materialisiert."
+  - regel_id: p33b_behinderten_pauschbetrag
+    geltungsbedingung: hilflos_blind_taubblind_override
+    grund: "Der Höchst-Pauschbetrag bei H/Bl/TBl überschreibt die GdB-Staffel; im Feld rentner_hilflos_blind_taubblind materialisiert."
+  - regel_id: p33b_hinterbliebenen_pauschbetrag
+    geltungsbedingung: hinterbliebenenbezuege_bewilligt
+    grund: "Voraussetzung 'laufende Hinterbliebenenbezüge bewilligt'; im Feld rentner_hinterbliebenenbezuege materialisiert."
+  - regel_id: p33b_pflege_pauschbetrag
+    geltungsbedingung: pflegegrad_staffel
+    grund: "Die Pflegegrad-Staffel (Betrag je Pflegegrad 2..5 bzw. hilflos) ist Rechenlogik der Regel; in den Feldern rentner_pflegegrad + rentner_gepflegter_hilflos materialisiert."
+  # -- §16 Abs. 4 — Antrag (Geltendmachung selbst) --
+  - regel_id: p16_4_freibetrag
+    geltungsbedingung: auf_antrag
+    grund: "Der Antrag ist die Geltendmachung selbst (Eintrag in der Anlage); kein eigenes Ja/Nein-Feld neben rentner_veraeusserungsgewinn."
+  # -- §34 Abs. 1 Fünftelregelung — berechnete Tarif-Inputs + §2-Integrations-Qualifikation --
+  - regel_id: p34_fuenftel_ao_est
+    signatur_slot: est_verbleibendes_zve
+    grund: "Berechnete Tarifgröße (ESt für das um die ao-Einkünfte verminderte zvE); Tarif-Andockung, kein Laien-Feld."
+  - regel_id: p34_fuenftel_ao_est
+    signatur_slot: est_verbleibendes_zve_plus_fuenftel_ao
+    grund: "Berechnete Tarifgröße (ESt für verbleibendes zvE zzgl. eines Fünftels der ao-Einkünfte); Tarif-Andockung, kein Laien-Feld."
+  - regel_id: p34_fuenftel_ao_est
+    geltungsbedingung: ao_einkuenfte_zusammengeballt
+    grund: "Ao-Qualifikation/Zusammenballung (§ 34 Abs. 2: Abfindung Nr. 2, mehrjährige Vergütung Nr. 4 usw.) erfolgt in der § 2-Integration; hier sind beide ESt-Vergleichswerte bereits Inputs. Der ao-Einkünfte-BETRAG hat keinen rules.yaml-Input-Slot (nur der golden-Accessor 'ausserordentliche_einkuenfte') -> askable ao-Feld braucht Integrations-Andock-Entscheid (offene Frage an Instructor)."
+  - regel_id: p34_fuenftel_ao_est
+    geltungsbedingung: verbleibendes_zve_nicht_negativ
+    grund: "Fallweiche zum Sonderpfad § 34 Abs. 1 S. 3 (negatives verbleibendes zvE); berechnet in der § 2-Integration, keine Abfrage."

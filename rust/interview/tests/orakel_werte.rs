@@ -47,7 +47,7 @@ fn fixture() -> &'static Value {
 
 fn registry() -> &'static Registry {
     static CELL: OnceLock<Registry> = OnceLock::new();
-    CELL.get_or_init(|| interview::doctest_registry().expect("registry"))
+    CELL.get_or_init(|| interview::python_orakel_registry().expect("registry"))
 }
 
 fn graph() -> &'static Graph<'static> {

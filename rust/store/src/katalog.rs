@@ -25,8 +25,8 @@ impl Katalog {
     /// JEDEM `askable`-Feld ausser `LLM_NICHT_VORSCHLAGBAR`).
     ///
     /// ```
-    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad).unwrap()
+    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad).unwrap()
     /// #     .dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect();
     /// let katalog = store::Katalog::aus_bindungen(&bindungen);
     /// // kap_kapitalertraege: `vorschlagbar_von: [beleg]`, `askable: true`
@@ -60,8 +60,8 @@ impl Katalog {
     ///
     /// ```
     /// assert!(!store::Katalog::default().erlaubt("beleg", "kap_kapitalertraege"));
-    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad).unwrap()
+    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad).unwrap()
     /// #     .dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect();
     /// let katalog = store::Katalog::aus_bindungen(&bindungen);
     /// assert!(katalog.erlaubt("beleg", "kap_kapitalertraege"));

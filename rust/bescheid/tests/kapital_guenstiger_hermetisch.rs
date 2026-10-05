@@ -35,7 +35,7 @@ use serde_json::{json, Value};
 
 type Paare = Vec<(&'static str, Value)>;
 
-/// Slot der Zweige -> Feld, das ihn speist (`produkt/bindung`, Scheibe `gesamt`).
+/// Slot der Zweige -> Feld, das ihn speist (`rust/bindung/daten`, Scheibe `gesamt`).
 const SLOTS: [(&str, &str); 6] = [
     ("arbeitstage", "ep_arbeitstage"),
     ("entfernung_km_roh", "ep_entfernung_km"),

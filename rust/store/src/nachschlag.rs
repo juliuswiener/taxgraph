@@ -59,8 +59,8 @@ impl<'a> BindungNachschlag<'a> {
     /// Direkter Nachschlag ohne Instanz-Aufloesung.
     ///
     /// ```
-    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad).unwrap()
+    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad).unwrap()
     /// #     .dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect();
     /// let map = store::baue_nachschlag(&bindungen);
     /// let nachschlag = store::BindungNachschlag::neu(&map);
@@ -77,8 +77,8 @@ impl<'a> BindungNachschlag<'a> {
     /// Aufrufer — hier nur der Nachschlag selbst).
     ///
     /// ```
-    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad).unwrap()
+    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad).unwrap()
     /// #     .dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect();
     /// let map = store::baue_nachschlag(&bindungen);
     /// let nachschlag = store::BindungNachschlag::neu(&map);
@@ -96,8 +96,8 @@ impl<'a> BindungNachschlag<'a> {
     /// eines einzelnen `feld_id`).
     ///
     /// ```
-    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad).unwrap()
+    /// # let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    /// # let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad).unwrap()
     /// #     .dateien.into_iter().flat_map(|(_, d)| d.bindungen).collect();
     /// let map = store::baue_nachschlag(&bindungen);
     /// let nachschlag = store::BindungNachschlag::neu(&map);
@@ -113,8 +113,8 @@ impl<'a> BindungNachschlag<'a> {
 /// (`registry::Registry`).
 ///
 /// ```
-/// let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-/// let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+/// let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+/// let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
 ///     .unwrap()
 ///     .dateien
 ///     .into_iter()

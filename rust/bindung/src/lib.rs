@@ -1,5 +1,5 @@
 //! `bindung` — Typen und Lader fuer die YAML-Konfigurationsschicht: Bindungstabellen
-//! (`produkt/bindung/bindung_*.yaml`, Schema: `produkt/bindung/schema.json`) und die
+//! (`rust/bindung/daten/bindung_*.yaml`, Schema: `rust/bindung/daten/schema.json`) und die
 //! Parameterschicht (`params/<vz>/*.yaml`, `params/kohorten/*.yaml`, Dokumentation:
 //! `params/schema.md`). Haengt von `domain` ab (wiederverwendet `Feldtyp` fuer den
 //! Bindungstyp, statt ihn ein zweites Mal zu deklarieren).
@@ -34,5 +34,5 @@ pub use params_zugriff::{
     FahrtkostenPauschalen, P33bPauschbetraege, SatzHoechstbetrag, VersorgungsfreibetragKohorte,
 };
 pub use registry::{
-    lade_registry, lade_registry_der_wurzel, Registry, RegistryFehler, PYTHON_BINDUNG, RUST_FELDER,
+    lade_registry, lade_registry_der_wurzel, Registry, RegistryFehler, BINDUNG_VERZEICHNIS,
 };

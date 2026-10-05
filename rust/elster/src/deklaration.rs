@@ -1108,8 +1108,8 @@ mod tests {
         //
         // Der Pflege-Block raeumt E0106603 ohne Pflegegrad weg (`pflegeblock`); die Begleit-Kz
         // halten ihn zusammen, wie in `pflegeblock_folgt_dem_xsd_enum`.
-        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
             .dateien
             .into_iter()
@@ -1170,8 +1170,8 @@ mod tests {
     /// GANZE Menge des Blocks, nicht das Fehlen eines einzelnen Kz.
     #[test]
     fn pflegeblock_folgt_dem_xsd_enum() {
-        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
             .dateien
             .into_iter()
@@ -1280,8 +1280,8 @@ mod tests {
                         }))
             })
         };
-        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
             .dateien
             .into_iter()
@@ -1357,8 +1357,8 @@ mod tests {
     /// `veranl.get("wert") == "zusammen"`: nur genau dieser Text, kein anderer Typ.
     #[test]
     fn antrag_spiegelt_nur_bei_bestaetigter_zusammenveranlagung() {
-        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
             .dateien
             .into_iter()
@@ -1420,8 +1420,8 @@ mod tests {
     /// Liste und Objekt sind `TypeError` (nicht hashbar).
     #[test]
     fn enum_felder_schlagen_nach_wie_python_dict_get() {
-        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
             .dateien
             .into_iter()
@@ -1529,8 +1529,8 @@ mod tests {
     /// Person A und den Partner. `ArtKz::paare` und damit die Kz-Prueflinge folgen dieser Folge.
     #[test]
     fn enum_typen_sind_die_bindungswerte() {
-        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
             .dateien
             .into_iter()
@@ -1593,8 +1593,8 @@ mod tests {
         use super::DeklarationsFehler;
 
         const NEUN_E18: i64 = 9_000_000_000_000_000_000;
-        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
-        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry(&pfad)
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
             .dateien
             .into_iter()
