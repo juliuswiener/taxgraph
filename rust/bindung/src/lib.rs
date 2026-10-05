@@ -33,4 +33,6 @@ pub use params_zugriff::{
 pub use params_zugriff::{
     FahrtkostenPauschalen, P33bPauschbetraege, SatzHoechstbetrag, VersorgungsfreibetragKohorte,
 };
-pub use registry::{lade_registry, Registry, RegistryFehler};
+pub use registry::{
+    lade_registry, lade_registry_der_wurzel, Registry, RegistryFehler, PYTHON_BINDUNG, RUST_FELDER,
+};

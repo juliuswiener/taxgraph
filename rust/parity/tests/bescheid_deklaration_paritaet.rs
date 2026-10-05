@@ -635,6 +635,29 @@ fn formen(
 
 // ---------------------------------------------------------------- Konstanten und Literale
 
+/// Ohne die Scheibenlisten: `felder`, `kegel`, `teil_ringe` je Scheibe und die daraus geschnittenen
+/// `ring_kandidaten`. Seit Weg B leicht (2026-10-05) sind die Listen in `scheiben_tabellen.rs` von
+/// Hand gepflegte Rust-Quelle; ein Feld nur fuer Rust darf dort stehen, ohne dass dieser Vergleich
+/// rot wird. Ihre Eigenschaften haelt `rust/bescheid/tests/scheiben_tabellen_konsistenz.rs`.
+fn ohne_scheibenlisten(mut v: Value) -> Value {
+    if let Some(o) = v.as_object_mut() {
+        o.remove("ring_kandidaten");
+        for cfg in o
+            .get_mut("cfg")
+            .and_then(Value::as_object_mut)
+            .into_iter()
+            .flat_map(|c| c.values_mut())
+        {
+            if let Some(c) = cfg.as_object_mut() {
+                for schluessel in ["felder", "kegel", "teil_ringe"] {
+                    assert!(c.remove(schluessel).is_some(), "Cfg ohne {schluessel}");
+                }
+            }
+        }
+    }
+    v
+}
+
 #[test]
 fn konstanten_gleich() {
     if skip() {
@@ -642,16 +665,14 @@ fn konstanten_gleich() {
     }
     let py = frage_roh(&json!({"fn": "bescheid.konstanten"}));
     let rust = dk::testhilfe::konstanten_json();
-    assert_eq!(py["deklaration"], rust, "Tabellen weichen ab");
+    assert_eq!(
+        ohne_scheibenlisten(py["deklaration"].clone()),
+        ohne_scheibenlisten(rust.clone()),
+        "Tabellen weichen ab"
+    );
     let n = rust["tabellen"].as_object().unwrap().len();
-    let ring: usize = rust["ring_kandidaten"]
-        .as_object()
-        .unwrap()
-        .values()
-        .map(|v| v.as_array().unwrap().len())
-        .sum();
     let d = frage_roh(&json!({"fn": "bescheid.dateien"}));
-    eprintln!("konstanten_gleich: {n} Tabellen, {ring} Ring-Kandidaten (5 Scheiben), 5 Cfg, 0 Abweichungen");
+    eprintln!("konstanten_gleich: {n} Tabellen, 5 Cfg ohne Scheibenlisten, 0 Abweichungen");
     eprintln!("Python-Dateien (Orakel): {d}");
 }
 

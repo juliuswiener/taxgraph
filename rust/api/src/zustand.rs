@@ -124,7 +124,9 @@ impl Zustand {
         }
         // PARITÄT: Python meldet hier den Typ der YAML- oder OS-Ausnahme; die Registry prueft
         // strenger (doppelte `feld_id`). Beides trifft nur ein kaputtes Repo.
-        let registry = bindung::lade_registry(&self.konfig.wurzel.join("produkt").join("bindung"))
+        // Neben `produkt/bindung` liest der Dienst `rust/bindung/felder`: die Felder, die nur Rust
+        // kennt (Weg B leicht, 2026-10-05). Python liest sie nicht.
+        let registry = bindung::lade_registry_der_wurzel(&self.konfig.wurzel)
             .map_err(|e| ApiFehler::unerwartet("OSError", e.to_string()))?;
         let je_datei = registry
             .dateien
