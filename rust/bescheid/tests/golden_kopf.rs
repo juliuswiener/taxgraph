@@ -52,6 +52,33 @@ fn wurzel() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// Zaehlt im Rohtext die Stellen `"erwartung"`, `:`, `{` — gleich, wie die Datei eingerueckt ist und ob
+/// Leerraum um den Doppelpunkt steht. Eine feste Zeichenfolge zaehlte in einer kompakt geschriebenen Datei null.
+fn zaehle_erwartungsbloecke(text: &str) -> usize {
+    let schluessel = format!("\"{ERWARTUNG}\"");
+    text.match_indices(&schluessel)
+        .filter(|(i, _)| {
+            text[i + schluessel.len()..]
+                .trim_start()
+                .strip_prefix(':')
+                .is_some_and(|rest| rest.trim_start().starts_with('{'))
+        })
+        .count()
+}
+
+/// Die Zaehlung haengt nicht von der Schreibweise der Datei ab.
+#[test]
+fn ak2_blockzaehlung_ist_formatunabhaengig() {
+    let eingerueckt = "[\n  {\"id\": \"a\", \"erwartung\": {\n      \"tarifliche_est\": 1\n  }}\n]";
+    let kompakt = r#"[{"id":"a","erwartung":{"tarifliche_est":1}},{"id":"b","erwartung":{"tarifliche_est":2}}]"#;
+    let mit_leerraum = "{\"erwartung\"\n :\t{ }}";
+    let kein_block = r#"{"id":"erwartung","erwartung":5,"x":["erwartung"]}"#;
+    assert_eq!(zaehle_erwartungsbloecke(eingerueckt), 1);
+    assert_eq!(zaehle_erwartungsbloecke(kompakt), 2);
+    assert_eq!(zaehle_erwartungsbloecke(mit_leerraum), 1);
+    assert_eq!(zaehle_erwartungsbloecke(kein_block), 0);
+}
+
 /// AK1: die Datei existiert und zaehlt genau [`N_FAELLE`] Faelle.
 #[test]
 fn ak1_korpus_da_und_in_der_gemessenen_zahl() {
@@ -123,7 +150,7 @@ fn ak2_jeder_fall_hat_genau_eine_erwartung() {
     // Ein im Text doppelt geschriebener Schluessel `erwartung` laest serde_json als einen Fall mit dem
     // letzten Block; der erste waere still weg. Rohe Zaetzung gegen die Zahl der Faelle.
     let text = std::fs::read_to_string(datei()).unwrap();
-    let roh = text.matches(&format!("\"{ERWARTUNG}\": {{")).count();
+    let roh = zaehle_erwartungsbloecke(&text);
     assert_eq!(
         roh,
         faelle.len(),
