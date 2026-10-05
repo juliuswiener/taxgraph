@@ -46,7 +46,8 @@ pub use instanz::{fehlende_instanzen, instanz_anzahl, instanz_feld_id, FehlendeI
 pub use relevanz::{gate_gewicht, relevanz, Bedingungsstand, RegelRelevanz, Regelstatus};
 pub use rollen::{relevante_kegel_felder, ring_bindung, rollen, AchsenBindung, AufbauBindung};
 
-/// Laedt die echte Registry fuer Doctests (`produkt/bindung`). Nicht Teil der API.
+/// Laedt die echte Registry fuer Doctests (`produkt/bindung`, **ohne** `rust/bindung/felder`: die
+/// Python-Orakel kennen nur die gemeinsame Bindung). Nicht Teil der API.
 ///
 /// ```
 /// assert!(interview::doctest_registry().is_some());

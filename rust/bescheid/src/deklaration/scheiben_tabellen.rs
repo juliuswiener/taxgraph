@@ -1,16 +1,20 @@
-//! GENERIERT von `tools/parity/gen_scheiben_tabellen.py` aus `produkt/haut/api_constants.py`.
-//! NICHT von Hand pflegen. Neu erzeugen:
+//! Die Scheibenlisten: welche Felder eine Scheibe traegt und welche davon der Kegel sind.
 //!
-//! ```text
-//! python3 tools/parity/gen_scheiben_tabellen.py
-//! ```
+//! **Von Hand gepflegte Rust-Quelle** (Weg B leicht, Entscheidung 2026-10-05, Vault
+//! `decisions/weg-b-leicht-und-art9-schutz-als-test.md`). Der Stand ist am 2026-10-05 aus `SCHEIBEN`
+//! in `produkt/haut/api_constants.py` uebernommen; der Generator `tools/parity/gen_scheiben_tabellen.py`
+//! und der Parity-Vergleich der Listen sind gestrichen. Python ist eingefroren und aendert sich nicht
+//! mehr, ein Feld nur fuer Rust steht deshalb hier und in `rust/bindung/felder`.
 //!
 //! Die Feld-Tupel sind **nicht ableitbar**: kein `bindung_*.yaml` traegt einen
-//! Scheiben-Schluessel, die Zuordnung Feld -> Scheibe steht nur in `SCHEIBEN`.
-//! `#[rustfmt::skip]` haelt das Generator-Layout, damit ein erneuter Lauf byte-stabil bleibt.
+//! Scheiben-Schluessel, die Zuordnung Feld -> Scheibe steht nur hier.
+//! `#[rustfmt::skip]` haelt das Layout (vier Namen je Zeile), damit ein Diff eine Zeile zeigt.
 //!
-//! Drift faengt `konstanten_gleich` (`rust/parity/tests/bescheid_deklaration_paritaet.rs`):
-//! es vergleicht jede Tabelle hier gegen das Orakel.
+//! Waechter: `rust/bescheid/tests/scheiben_tabellen_konsistenz.rs`. Wer ein Feld aufnimmt:
+//!
+//! 1. das Feld steht in der Registry (`produkt/bindung` oder `rust/bindung/felder`),
+//! 2. der Eintrag steht hier, ein Kegel-Feld auch in den Feldern der Scheibe und ist `askable`,
+//! 3. die Laenge (und das Array hier) stimmt mit der Zahl im Konsistenztest ueberein.
 
 /// `SCHEIBEN['ep']["felder"]` = `EP_FELDER + EP_FORMALIEN`
 #[rustfmt::skip]
@@ -31,9 +35,8 @@ pub(super) const SCHEIBEN_EP_KEGEL: [&str; 4] = [
 // `bescheid_zweige.py:489` Kommentar), kein Code liest ihn. Die Feldnamen liegen
 // verbatim in `SCHEIBEN_EP_KEGEL` und in `SCHEIBEN_N_VOR_GWG_TEIL_0_FELDER`.
 // ponytail: zwei Kopien derselben vier Namen statt einer geteilten Konstanten.
-// Deduplizieren hiesse, den Generator Teilausdruecke erkennen zu lassen -- das
-// beruehrt den Parity-Vertrag fuer vier gesparte Feldnamen. Ticket, nicht Bau.
-// Wer die Namen aendert, aendert BEIDE Stellen und `produkt/haut/api_constants.py`.
+// Deduplizieren spart vier Feldnamen und beruehrt zwei Konstanten. Ticket, nicht Bau.
+// Wer die Namen aendert, aendert BEIDE Stellen.
 
 // `SCHEIBEN['n_vor_gwg']["felder"]` ist `None` -- die Feldliste kommt zur
 // Laufzeit aus `produkt/bindung/bindung_n_vor_gwg.yaml` (`Cfg::felder_datei`).
