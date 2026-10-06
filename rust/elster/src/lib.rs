@@ -11,8 +11,9 @@
 //!   (`elster/checkest_gate.py`, `elster/smoke_test.py`).
 //! - [`validiere_xsd`]: `xmllint`-Struktur-Gate (`elster/submission/validate_xsd.py`).
 //!
-//! Nicht portiert: `elster/versand.py` (Echtversand ist Julius vorbehalten) und das Tooling
-//! `kz_extract`, `validate_mapping`, `bench`, `fuzz`, `eric_gate`.
+//! Der Echtversand (`elster/versand.py`) liegt NICHT hier, sondern in der eigenen Crate `versand`, an der
+//! kein anderer Crate haengt. Nicht portiert: das Tooling `kz_extract`, `validate_mapping`, `bench`, `fuzz`,
+//! `eric_gate`.
 #![deny(unsafe_code)]
 #![cfg_attr(
     test,

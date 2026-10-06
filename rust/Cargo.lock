@@ -1679,6 +1679,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "versand"
+version = "0.0.0"
+dependencies = [
+ "elster",
+ "libloading",
+ "roxmltree",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

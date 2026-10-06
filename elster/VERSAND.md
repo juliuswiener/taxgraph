@@ -7,6 +7,35 @@ Der Code dazu: `elster/versand.py`. Der ruft `EricBearbeiteVorgang` mit `ERIC_VA
 auf — das ist der einzige Aufruf im ganzen Repo, der wirklich ins Netz geht und beim Finanzamt
 ankommt. Alles andere (`checkest_gate.py`, `/einreichen`) validiert nur lokal.
 
+## 0. Der Rust-Weg (seit 2026-10-06)
+
+Es gibt das Programm `taxgraph-versand` (Crate `rust/versand`). Es nimmt dieselben Optionen wie
+`versand.py` und hat dieselben Sperren. Sonst gilt alles unten unverändert, nur der Aufruf ändert sich:
+
+```bash
+cd rust
+cargo run -p versand --bin taxgraph-versand -- \
+    --xml ../pfad/zur/fall.xml --datenart ESt_2025 --dry-run
+```
+
+Statt `python3 elster/versand.py` schreibst du also `cargo run -p versand --bin taxgraph-versand --` und
+hängst die Optionen an (`--dry-run`, `--testversand`, `--echtversand --freigabe "…"`). Das Zertifikat
+kommt aus `$ELSTER_ZERTIFIKAT_PFAD` (oder `--zertifikat`), die PIN aus `$ELSTER_ZERTIFIKAT_PIN`. ERiC
+findet das Programm über `$ERIC_DIR` (sonst `~/02_Software/eric`). Es liest keine `.env`; lade sie wie unten
+beschrieben mit `set -a; . ./.env; set +a`.
+
+Drei Unterschiede zu Python, alle strenger:
+
+1. Die zweite Eingabe der Freigabe-Phrase beim Echtversand verlangt ein **Terminal**. Eine Phrase aus einer
+   Pipe (`echo … |`) lehnt das Programm ab.
+2. Das Programm liest den Merker aus dem XML-Baum. Ein `<Testmerker>` in einem Kommentar oder außerhalb von
+   `TransferHeader` zählt nicht als Testmerker; zwei Merker oder ein unlesbares XML brechen ab.
+3. Bei `rc ≠ 0` druckt es den Rückgabetext von ERiC und nennt den Ort von `eric.log` (den Inhalt nicht: er
+   enthält Auszüge der Erklärung).
+
+Der Rust-Weg ist bisher nur gegen eine Attrappe von `libericapi.so` geprüft, nie mit einem echten
+Zertifikat. Mach den ersten Lauf mit `--dry-run`, dann mit `--testversand`.
+
 ## 1. Was du brauchst
 
 - **Dein ELSTER-Zertifikat** (`.pfx`- oder `.p12`-Datei), das du von ELSTER bekommst/hast.

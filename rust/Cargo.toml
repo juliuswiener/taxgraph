@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["catala-sys", "domain", "bindung", "parity", "store", "engine", "elster", "interview", "konsistenz", "intervall", "auth", "llm", "eingang", "bescheid", "api"]
+members = ["catala-sys", "domain", "bindung", "parity", "store", "engine", "elster", "interview", "konsistenz", "intervall", "auth", "llm", "eingang", "bescheid", "api", "versand"]
 
 [workspace.package]
 edition = "2021"
