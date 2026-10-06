@@ -8,9 +8,12 @@
 //!   `xml.rs::blatt_text` auf `None` setzt, liess alle 2051 Tests gruen. Das Schema liegt nur lokal;
 //!   die CI sieht diese Pruefung ueber den hermetischen Gegenstueck-Test in `src/xml.rs`.
 //! - **Zuordnung** (`zuordnung_feld_zu_kz_ist_bewusst`): `kz_zuordnung.tsv` haelt fest, welches Kz
-//!   jedes Feld der Bindung traegt. Vertauschte sich ein Paar gueltiger Kz (Lohnsteuer unter dem
-//!   Kz der Kirchensteuer), blieb jeder Rust-Test gruen: nur Pins gegen Python-Antworten wurden rot
-//!   (Sonde K4, 5 Tests, alle Pins). Hermetisch, braucht kein Schema.
+//!   jedes Feld der Bindung traegt und ob das Feld `askable` (fragbar) ist. Vertauschte sich ein
+//!   Paar gueltiger Kz (Lohnsteuer unter dem Kz der Kirchensteuer), blieb jeder Rust-Test gruen:
+//!   nur Pins gegen Python-Antworten wurden rot (Sonde K4, 5 Tests, alle Pins). Dasselbe galt fuer
+//!   `askable: true -> false` bei `kinderbetreuungskosten` (Mutant D3): das Feld wird nicht mehr
+//!   gefragt, sein Kz verschwindet still aus Formular und Deklaration, und nur
+//!   `stand_und_fragen_wie_python` wurde rot (zufaellig). Hermetisch, braucht kein Schema.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -113,9 +116,17 @@ fn ja_typ_nein_wird_nach_typ_geschrieben() {
 /// Die eingefrorene Zuordnung, neben dem Test.
 const ZUORDNUNG: &str = include_str!("kz_zuordnung.tsv");
 
-/// Die Zeilen der TSV: `feld_id <Tab> Kz`; `#`-Zeilen und Leerzeilen zaehlen nicht. Eine doppelte
-/// `feld_id` oder eine Zeile ohne zwei Spalten ist ein Fehler der Datei, kein Befund der Bindung.
-fn lies_tsv(text: &str) -> BTreeMap<String, String> {
+/// Eine Zeile der Zuordnung: das Kz des Felds und ob das Feld fragbar (`askable`) ist.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Zeile {
+    kz: String,
+    askable: bool,
+}
+
+/// Die Zeilen der TSV: `feld_id <Tab> Kz <Tab> askable`; `#`-Zeilen und Leerzeilen zaehlen nicht.
+/// Eine doppelte `feld_id`, eine Zeile ohne drei Spalten und ein `askable` ausser `true`/`false`
+/// sind Fehler der Datei, kein Befund der Bindung.
+fn lies_tsv(text: &str) -> BTreeMap<String, Zeile> {
     let mut m = BTreeMap::new();
     for (i, zeile) in text.lines().enumerate() {
         if zeile.is_empty() || zeile.starts_with('#') {
@@ -123,12 +134,26 @@ fn lies_tsv(text: &str) -> BTreeMap<String, String> {
         }
         let spalten: Vec<&str> = zeile.split('\t').collect();
         assert!(
-            spalten.len() == 2,
-            "kz_zuordnung.tsv Zeile {}: zwei Spalten (feld_id, Kz) erwartet, gefunden {}",
+            spalten.len() == 3,
+            "kz_zuordnung.tsv Zeile {}: drei Spalten (feld_id, Kz, askable) erwartet, gefunden {}",
             i + 1,
             spalten.len()
         );
-        let vorher = m.insert(spalten[0].to_owned(), spalten[1].to_owned());
+        let askable = match spalten[2] {
+            "true" => true,
+            "false" => false,
+            anderes => panic!(
+                "kz_zuordnung.tsv Zeile {}: askable muss true oder false sein, nicht {anderes:?}",
+                i + 1
+            ),
+        };
+        let vorher = m.insert(
+            spalten[0].to_owned(),
+            Zeile {
+                kz: spalten[1].to_owned(),
+                askable,
+            },
+        );
         assert!(
             vorher.is_none(),
             "kz_zuordnung.tsv Zeile {}: feld_id {} steht zweimal",
@@ -140,39 +165,54 @@ fn lies_tsv(text: &str) -> BTreeMap<String, String> {
 }
 
 /// Was `ist` (die Registry) von `soll` (der TSV) unterscheidet, eine Zeile je Abweichung.
-fn abweichungen(soll: &BTreeMap<String, String>, ist: &BTreeMap<String, String>) -> Vec<String> {
+fn abweichungen(soll: &BTreeMap<String, Zeile>, ist: &BTreeMap<String, Zeile>) -> Vec<String> {
     let mut a = Vec::new();
-    for (feld, kz) in ist {
+    for (feld, z) in ist {
         match soll.get(feld) {
             None => a.push(format!(
-                "neu: {feld} traegt in der Bindung {kz}, die TSV kennt das Feld nicht"
+                "neu: {feld} traegt in der Bindung {} (askable {}), die TSV kennt das Feld nicht",
+                z.kz, z.askable
             )),
-            Some(s) if s != kz => a.push(format!(
-                "geaendert: {feld} traegt in der Bindung {kz}, die TSV haelt {s}"
+            Some(s) if s.kz != z.kz => a.push(format!(
+                "geaendert: {feld} traegt in der Bindung {}, die TSV haelt {}",
+                z.kz, s.kz
+            )),
+            Some(s) if s.askable != z.askable => a.push(format!(
+                "askable geaendert: {feld} ({}) ist in der Bindung askable {}, die TSV haelt {} — \
+                 ein Feld, das nicht mehr gefragt wird, verliert sein Kz still aus Formular und Deklaration",
+                z.kz, z.askable, s.askable
             )),
             Some(_) => {}
         }
     }
-    for (feld, kz) in soll {
+    for (feld, s) in soll {
         if !ist.contains_key(feld) {
             a.push(format!(
-                "weg: die TSV haelt {feld} -> {kz}, die Bindung hat fuer das Feld kein Kz mehr"
+                "weg: die TSV haelt {feld} -> {}, die Bindung hat fuer das Feld kein Kz mehr",
+                s.kz
             ));
         }
     }
     a
 }
 
-/// Jedes Feld der Bindung mit `elster_kz` steht mit genau diesem Kz in der TSV, und umgekehrt.
-/// Ein Unterschied ist ein Entscheid: Zeile aendern und den Grund in den Commit schreiben.
+/// Jedes Feld der Bindung mit `elster_kz` steht mit genau diesem Kz und demselben `askable` in der
+/// TSV, und umgekehrt. Ein Unterschied ist ein Entscheid: Zeile aendern und den Grund in den Commit
+/// schreiben.
 #[test]
 fn zuordnung_feld_zu_kz_ist_bewusst() {
-    let ist: BTreeMap<String, String> = bindungen()
+    let ist: BTreeMap<String, Zeile> = bindungen()
         .iter()
         .filter_map(|b| {
-            b.elster_kz
-                .as_ref()
-                .map(|k| (b.feld_id.clone(), k.as_str().to_owned()))
+            b.elster_kz.as_ref().map(|k| {
+                (
+                    b.feld_id.clone(),
+                    Zeile {
+                        kz: k.as_str().to_owned(),
+                        askable: b.askable,
+                    },
+                )
+            })
         })
         .collect();
     let soll = lies_tsv(ZUORDNUNG);
@@ -191,36 +231,61 @@ fn zuordnung_feld_zu_kz_ist_bewusst() {
     );
 }
 
-/// Der Vergleich selbst, an erfundenen Paaren: er findet ein vertauschtes Paar (beide Kz gueltig),
-/// ein verlorenes Kz und ein neues Feld, und er schweigt, wo nichts abweicht.
+/// Der Vergleich selbst, an erfundenen Zeilen: er findet ein vertauschtes Paar (beide Kz gueltig),
+/// ein verlorenes Kz, ein neues Feld und ein umgeschaltetes `askable` in beide Richtungen, und er
+/// schweigt, wo nichts abweicht.
 #[test]
-fn zuordnung_vergleich_erkennt_tausch_verlust_und_neues_feld() {
-    let paar = |l: &[(&str, &str)]| -> BTreeMap<String, String> {
+fn zuordnung_vergleich_erkennt_tausch_verlust_neues_feld_und_askable() {
+    let paar = |l: &[(&str, &str, bool)]| -> BTreeMap<String, Zeile> {
         l.iter()
-            .map(|(f, k)| ((*f).to_owned(), (*k).to_owned()))
+            .map(|(f, k, a)| {
+                (
+                    (*f).to_owned(),
+                    Zeile {
+                        kz: (*k).to_owned(),
+                        askable: *a,
+                    },
+                )
+            })
             .collect()
     };
-    let soll = paar(&[("lohn", "E1"), ("kist", "E2"), ("spende", "E3")]);
+    let soll = paar(&[("lohn", "E1", true), ("kist", "E2", true), ("ring", "E3", false)]);
     assert!(abweichungen(&soll, &soll).is_empty());
-    let getauscht = paar(&[("lohn", "E2"), ("kist", "E1"), ("spende", "E3")]);
+    let getauscht = paar(&[("lohn", "E2", true), ("kist", "E1", true), ("ring", "E3", false)]);
     assert_eq!(abweichungen(&soll, &getauscht).len(), 2);
-    let verloren = paar(&[("lohn", "E1"), ("kist", "E2")]);
+    let verloren = paar(&[("lohn", "E1", true), ("kist", "E2", true)]);
     let a = abweichungen(&soll, &verloren);
     assert_eq!(a.len(), 1, "{a:?}");
     assert!(a[0].starts_with("weg: "), "{a:?}");
-    let neu = paar(&[("lohn", "E1"), ("kist", "E2"), ("spende", "E3"), ("x", "E4")]);
+    let neu = paar(&[
+        ("lohn", "E1", true),
+        ("kist", "E2", true),
+        ("ring", "E3", false),
+        ("x", "E4", true),
+    ]);
     let a = abweichungen(&soll, &neu);
     assert_eq!(a.len(), 1, "{a:?}");
     assert!(a[0].starts_with("neu: "), "{a:?}");
+    // fragbar -> nicht fragbar (das Feld wird nicht mehr gefragt) und nicht fragbar -> fragbar
+    // (ein berechneter Wert wuerde von der Eingabe ueberschrieben).
+    for (feld, kz, jetzt) in [("lohn", "E1", false), ("ring", "E3", true)] {
+        let mut ist = soll.clone();
+        ist.insert(feld.to_owned(), Zeile { kz: kz.to_owned(), askable: jetzt });
+        let a = abweichungen(&soll, &ist);
+        assert_eq!(a.len(), 1, "{feld}: {a:?}");
+        assert!(a[0].starts_with("askable geaendert: "), "{a:?}");
+    }
 }
 
-/// Die TSV selbst ist wohlgeformt: jede zweite Spalte ist ein Kz (`E` und sieben Ziffern).
+/// Die TSV selbst ist wohlgeformt: jede zweite Spalte ist ein Kz (`E` und sieben Ziffern), jede
+/// dritte `true` oder `false` (`lies_tsv` bricht sonst ab).
 #[test]
 fn zuordnung_tsv_traegt_nur_gueltige_kz() {
-    for (feld, kz) in &lies_tsv(ZUORDNUNG) {
+    for (feld, z) in &lies_tsv(ZUORDNUNG) {
         assert!(
-            domain::Kz::new(kz.clone()).is_ok(),
-            "{feld}: {kz} ist kein Kz"
+            domain::Kz::new(z.kz.clone()).is_ok(),
+            "{feld}: {} ist kein Kz",
+            z.kz
         );
     }
 }

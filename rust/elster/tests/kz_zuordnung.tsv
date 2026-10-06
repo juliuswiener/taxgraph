@@ -1,175 +1,179 @@
-# Kz-Sperre: welches ELSTER-Kz jedes Feld der Bindung traegt (Stand 6fe9971b, Registry rust/bindung/daten).
+# Kz-Sperre: welches ELSTER-Kz jedes Feld der Bindung traegt und ob das Feld fragbar ist (Stand 6fe9971b,
+# Registry rust/bindung/daten; Spalte askable seit dem Folgeauftrag zu D3).
 # Gelesen und verglichen von rust/elster/tests/kz_sperre.rs::zuordnung_feld_zu_kz_ist_bewusst.
 # Regel: eine Zeile aendern, ergaenzen oder streichen ist ein Entscheid mit Grund. Der Grund steht im
 # Commit (welches Feld, welches Kz, warum). Der Test wird rot, sobald Registry und diese Datei
-# auseinanderlaufen: ein vertauschtes Kz-Paar, ein verlorenes Kz und ein neues Feld mit Kz.
+# auseinanderlaufen: ein vertauschtes Kz-Paar, ein verlorenes Kz, ein neues Feld mit Kz und ein
+# umgeschaltetes askable. askable=false bei einem Feld mit Kz heisst: das Feld wird nicht gefragt, sein Wert
+# kommt aus dem Ring (berechnet); wird so ein Feld fragbar, ueberschreibt die Eingabe den Rechenwert;
+# wird ein Eingabefeld nicht mehr fragbar, verliert es still seine Angabe in Formular und Deklaration.
 # Schuetzt vor dem versehentlichen Tausch, nicht vor einer urspruenglich falschen Wahl: die Wahl
 # belegt das Schema (tests/bindungs_typ_vs_xsd_typ.rs), nicht diese Datei.
-# Spalten (Tab): feld_id, Kz. Sortiert nach feld_id.
-agb_aufwendungen	E0161804
-berufsausbildung_aufwendungen	E0108202
-berufsausbildung_bezeichnung	E0108201
-berufsausbildung_einzelbetrag	E0108002
-bruttoarbeitslohn	E0200201
-dba_auslaendische_einkuenfte	E0601401
-dba_gezahlte_auslaendische_steuer	E0601901
-dhf_begruendet_am	E0206103
-dhf_beschaeftigungsort	E0206404
-dhf_bestanden_bis	E0206304
-dhf_eigener_hausstand	E0206504
-dhf_grund	E0206205
-dhf_hausstand_plz_ort	E0206505
-dhf_hausstand_seit	E0206506
-dhf_unterkunftskosten_monat	E0207611
-ep_arbeitstage	E0203503
-ep_entfernung_km	E0203504
-ep_oepnv_kosten	E0203611
-ep_ziel_adresse	E0203501
-ep_ziel_des_weges	E0203003
-fahrtkosten_pausch_ag_bl_tbl_h	E0161806
-fahrtkosten_pausch_gdb80_oder_70g	E0161706
-gewst_hebesatz	E0801705
-gewst_messbetrag	E0801606
-gewst_zu_zahlen	E0801704
-gwg_anschaffungskosten_netto	E6002301
-hh_dienstleistung_art	E0107206
-hh_dienstleistung_betrag	E0107207
-hh_dienstleistungen	E0107208
-hh_handwerker_arbeitskosten	E0111215
-hh_handwerker_art	E0111217
-hh_handwerker_betrag	E0111214
-hh_minijob_art	E0104206
-hh_minijob_aufwendungen	E0104109
-hh_minijob_betrag	E0104108
-kap_antrag_guenstigerpruefung	E1900401
-kap_gewinn_aktien	E1900901
-kap_kapitalertraege	E1900701
-kap_q_auslaendische_steuer	E1905101
-kap_sparer_pauschbetrag_genutzt	E1901401
-kap_verlust_aktien	E1901301
-kap_verlust_sonstige	E1901201
-kind_anderer_elternteil_geburtsdatum	E0501104
-kind_anderer_elternteil_kindschaftsverhaeltnis	E0501106
-kind_anderer_elternteil_name	E0501103
-kind_anderer_elternteil_zeitraum	E0501903
-kind_betreuung_dienstleister	E0506101
-kind_betreuung_eigenanteil	E0506604
-kind_betreuung_eigenanteil_betrag	E0506605
-kind_betreuung_eigenanteil_zeitraum	E0506606
-kind_betreuung_einzelbetrag	E0506104
-kind_betreuung_haushaltszugehoerigkeit_zeitraum	E0505202
-kind_betreuung_kein_gemeinsamer_haushalt_zeitraum	E0505201
-kind_betreuung_zeitraum	E0506103
-kind_familienkasse	E0500706
-kind_geburtsdatum	E0500701
-kind_grad_der_behinderung	E0505809
-kind_hilflos_blind_taubblind	E0505807
-kind_hinterbliebenen_uebertragung	E0505805
-kind_idnr	E0500406
-kind_kindschaftsverh_zeitraum_a	E0500601
-kind_kindschaftsverh_zeitraum_b	E0500805
-kind_kindschaftsverhaeltnis_a	E0500807
-kind_kindschaftsverhaeltnis_b	E0500808
-kind_kv	E0503110
-kind_pv	E0503310
-kind_vorname	E0500107
-kind_wohnsitz_inland_zeitraum	E0500703
-kinderbetreuungskosten	E0506105
-kirchensteuer_arbeitgeber	E0200501
-kist_erstattet	E0107602
-kist_gezahlt	E0107601
-kist_konfession	E0100402
-kist_konfession_partner	E0101002
-p22_nr3_einkuenfte	E0305301
-p22_nr3_einnahmen	E0305101
-p22_nr3_einnahmen_art	E0305103
-p22_nr3_einnahmen_einzelbetrag	E0305104
-p22_nr3_werbungskosten	E0305201
-p32b_progressionseinkuenfte	E0104801
-p33a_haushalt_anschrift	E0120101
-p33a_haushalt_personenzahl	E0120108
-p33a_kindergeld_anspruch	E0122613
-p33a_person_beruf_familienstand	E0120202
-p33a_person_geburtsdatum	E0120203
-p33a_person_hat_einkuenfte	E0123313
-p33a_person_hat_vermoegen	E0123105
-p33a_person_idnr	E0120211
-p33a_person_im_inlaendischen_haushalt	E0122505
-p33a_person_name	E0120201
-p33a_unterhalt_aufwendungen	E0120103
-p33a_unterhalt_kv_pv	E0124401
-p33a_unterstuetzungszeitraum	E0120109
-p33a_verwandtschaftsverhaeltnis	E0120701
-p33a_weitere_person_beteiligt	E0124801
-p33a_zahlungszeitraum	E0120104
-p35c_baubeginn_massnahme	E0240901
-p35c_bereits_ermaessigung_frueher	E0240803
-p35c_eigene_wohnflaeche_qm	E0240802
-p35c_energieberater_aufwendungen	E0242001
-p35c_foerderung_in_anspruch	E0240902
-p35c_gebaeude_herstellungsbeginn	E0240402
-p35c_gesamtflaeche_qm	E0240801
-p35c_objekt_plz_ort	E0240501
-p35c_objekt_strasse	E0240401
-p35c_sanierungsaufwendungen	E0241901
-p36_kapitalertragsteuer	E1904701
-p36_kapitalertragsteuer_kist	E1904801
-p36_kapitalertragsteuer_solz	E1904901
-p36_lohnsteuer	E0200301
-p9_4a_kuerzung_nach_entgelt	E0205508
-realsplitting_empfaenger_kv_krankengeld	E0300829
-realsplitting_empfaenger_kv_pv	E0300717
-realsplitting_unterhaltsleistungen	E0304601
-rentner_gepflegter_angaben	E0110601
-rentner_gepflegter_hilflos	E0161808
-rentner_gepflegter_idnr	E0161506
-rentner_gepflegter_wohnsitz_inland	E0161607
-rentner_grad_der_behinderung	E0109708
-rentner_hilflos_blind_taubblind	E0109706
-rentner_hinterbliebenenbezuege	E0109704
-rentner_pflege_durch	E0106507
-rentner_pflege_weitere_personen	E0106603
-rentner_pflegegrad	E0161606
-schulgeld	E0505607
-sonstige_betriebsausgaben	E6004901
-spenden_betrag	E0108105
-stammdaten_bic	E0102201
-stammdaten_geburtsdatum	E0100401
-stammdaten_geburtsdatum_partner	E0101001
-stammdaten_hausnummer	E0101206
-stammdaten_hausnummerzusatz	E0101207
-stammdaten_keine_bankverbindung	E0102002
-stammdaten_nachname	E0100201
-stammdaten_nachname_partner	E0100901
-stammdaten_plz	E0100601
-stammdaten_strasse	E0101104
-stammdaten_vorname	E0100301
-stammdaten_vorname_partner	E0100801
-stammdaten_wohnort	E0100602
-steuerklasse	E0200002
-tage_24h	E0205409
-tage_an_abreise	E0205302
-tage_ueber_8h_eintaegig	E0205201
-vor_ag_anteil_rv	E2000801
-vor_an_anteil_rv	E2000401
-vor_rv_ausserhalb_lstb	E2000601
-vorsorge_arbeitslosenversicherung	E2001403
-vorsorge_erwerbsunfaehigkeit	E2001503
-vorsorge_rv_alt_mit_ueberschuss	E2001903
-vorsorge_rv_alt_ohne_ueberschuss	E2002003
-vorsorge_unfall_haftpflicht	E2001803
-vv_einnahmen	E0700201
-vv_einnahmen_summe_gesamt	E0701401
-vv_mieteinnahmen_summe	E0700206
-vv_nebenkosten_nicht_vereinbart	E0702404
-vv_nebenkosten_umgelegt	E0700501
-vv_nutzung_an_angehoerige	E0700704
-vv_nutzung_ferienwohnung	E0700703
-vv_nutzung_kurzfristig	E0700705
-vv_objekt_ort	E0700504
-vv_objekt_plz	E0700503
-vv_objekt_strasse	E0700407
-vv_summe_werbungskosten	E0705701
-vv_ueberschuss	E0701601
-vv_ueberschuss_person_a	E0701801
-vv_wohneinheit_bezeichnung	E0701202
+# Spalten (Tab): feld_id, Kz, askable (true/false). Sortiert nach feld_id.
+agb_aufwendungen	E0161804	true
+berufsausbildung_aufwendungen	E0108202	true
+berufsausbildung_bezeichnung	E0108201	true
+berufsausbildung_einzelbetrag	E0108002	false
+bruttoarbeitslohn	E0200201	true
+dba_auslaendische_einkuenfte	E0601401	true
+dba_gezahlte_auslaendische_steuer	E0601901	true
+dhf_begruendet_am	E0206103	true
+dhf_beschaeftigungsort	E0206404	true
+dhf_bestanden_bis	E0206304	true
+dhf_eigener_hausstand	E0206504	true
+dhf_grund	E0206205	true
+dhf_hausstand_plz_ort	E0206505	true
+dhf_hausstand_seit	E0206506	true
+dhf_unterkunftskosten_monat	E0207611	true
+ep_arbeitstage	E0203503	true
+ep_entfernung_km	E0203504	true
+ep_oepnv_kosten	E0203611	true
+ep_ziel_adresse	E0203501	true
+ep_ziel_des_weges	E0203003	true
+fahrtkosten_pausch_ag_bl_tbl_h	E0161806	true
+fahrtkosten_pausch_gdb80_oder_70g	E0161706	true
+gewst_hebesatz	E0801705	true
+gewst_messbetrag	E0801606	true
+gewst_zu_zahlen	E0801704	false
+gwg_anschaffungskosten_netto	E6002301	true
+hh_dienstleistung_art	E0107206	true
+hh_dienstleistung_betrag	E0107207	true
+hh_dienstleistungen	E0107208	false
+hh_handwerker_arbeitskosten	E0111215	false
+hh_handwerker_art	E0111217	true
+hh_handwerker_betrag	E0111214	true
+hh_minijob_art	E0104206	true
+hh_minijob_aufwendungen	E0104109	false
+hh_minijob_betrag	E0104108	true
+kap_antrag_guenstigerpruefung	E1900401	false
+kap_gewinn_aktien	E1900901	true
+kap_kapitalertraege	E1900701	true
+kap_q_auslaendische_steuer	E1905101	true
+kap_sparer_pauschbetrag_genutzt	E1901401	false
+kap_verlust_aktien	E1901301	true
+kap_verlust_sonstige	E1901201	true
+kind_anderer_elternteil_geburtsdatum	E0501104	true
+kind_anderer_elternteil_kindschaftsverhaeltnis	E0501106	true
+kind_anderer_elternteil_name	E0501103	true
+kind_anderer_elternteil_zeitraum	E0501903	true
+kind_betreuung_dienstleister	E0506101	true
+kind_betreuung_eigenanteil	E0506604	true
+kind_betreuung_eigenanteil_betrag	E0506605	true
+kind_betreuung_eigenanteil_zeitraum	E0506606	true
+kind_betreuung_einzelbetrag	E0506104	true
+kind_betreuung_haushaltszugehoerigkeit_zeitraum	E0505202	true
+kind_betreuung_kein_gemeinsamer_haushalt_zeitraum	E0505201	true
+kind_betreuung_zeitraum	E0506103	true
+kind_familienkasse	E0500706	true
+kind_geburtsdatum	E0500701	true
+kind_grad_der_behinderung	E0505809	true
+kind_hilflos_blind_taubblind	E0505807	true
+kind_hinterbliebenen_uebertragung	E0505805	true
+kind_idnr	E0500406	true
+kind_kindschaftsverh_zeitraum_a	E0500601	true
+kind_kindschaftsverh_zeitraum_b	E0500805	true
+kind_kindschaftsverhaeltnis_a	E0500807	true
+kind_kindschaftsverhaeltnis_b	E0500808	true
+kind_kv	E0503110	true
+kind_pv	E0503310	true
+kind_vorname	E0500107	true
+kind_wohnsitz_inland_zeitraum	E0500703	true
+kinderbetreuungskosten	E0506105	true
+kirchensteuer_arbeitgeber	E0200501	true
+kist_erstattet	E0107602	true
+kist_gezahlt	E0107601	true
+kist_konfession	E0100402	true
+kist_konfession_partner	E0101002	true
+p22_nr3_einkuenfte	E0305301	true
+p22_nr3_einnahmen	E0305101	true
+p22_nr3_einnahmen_art	E0305103	true
+p22_nr3_einnahmen_einzelbetrag	E0305104	false
+p22_nr3_werbungskosten	E0305201	false
+p32b_progressionseinkuenfte	E0104801	true
+p33a_haushalt_anschrift	E0120101	true
+p33a_haushalt_personenzahl	E0120108	true
+p33a_kindergeld_anspruch	E0122613	true
+p33a_person_beruf_familienstand	E0120202	true
+p33a_person_geburtsdatum	E0120203	true
+p33a_person_hat_einkuenfte	E0123313	true
+p33a_person_hat_vermoegen	E0123105	true
+p33a_person_idnr	E0120211	true
+p33a_person_im_inlaendischen_haushalt	E0122505	true
+p33a_person_name	E0120201	true
+p33a_unterhalt_aufwendungen	E0120103	true
+p33a_unterhalt_kv_pv	E0124401	true
+p33a_unterstuetzungszeitraum	E0120109	true
+p33a_verwandtschaftsverhaeltnis	E0120701	true
+p33a_weitere_person_beteiligt	E0124801	true
+p33a_zahlungszeitraum	E0120104	true
+p35c_baubeginn_massnahme	E0240901	true
+p35c_bereits_ermaessigung_frueher	E0240803	true
+p35c_eigene_wohnflaeche_qm	E0240802	true
+p35c_energieberater_aufwendungen	E0242001	true
+p35c_foerderung_in_anspruch	E0240902	false
+p35c_gebaeude_herstellungsbeginn	E0240402	true
+p35c_gesamtflaeche_qm	E0240801	true
+p35c_objekt_plz_ort	E0240501	true
+p35c_objekt_strasse	E0240401	true
+p35c_sanierungsaufwendungen	E0241901	true
+p36_kapitalertragsteuer	E1904701	true
+p36_kapitalertragsteuer_kist	E1904801	true
+p36_kapitalertragsteuer_solz	E1904901	true
+p36_lohnsteuer	E0200301	true
+p9_4a_kuerzung_nach_entgelt	E0205508	false
+realsplitting_empfaenger_kv_krankengeld	E0300829	true
+realsplitting_empfaenger_kv_pv	E0300717	true
+realsplitting_unterhaltsleistungen	E0304601	true
+rentner_gepflegter_angaben	E0110601	true
+rentner_gepflegter_hilflos	E0161808	true
+rentner_gepflegter_idnr	E0161506	true
+rentner_gepflegter_wohnsitz_inland	E0161607	true
+rentner_grad_der_behinderung	E0109708	true
+rentner_hilflos_blind_taubblind	E0109706	true
+rentner_hinterbliebenenbezuege	E0109704	true
+rentner_pflege_durch	E0106507	true
+rentner_pflege_weitere_personen	E0106603	true
+rentner_pflegegrad	E0161606	true
+schulgeld	E0505607	true
+sonstige_betriebsausgaben	E6004901	true
+spenden_betrag	E0108105	true
+stammdaten_bic	E0102201	true
+stammdaten_geburtsdatum	E0100401	true
+stammdaten_geburtsdatum_partner	E0101001	true
+stammdaten_hausnummer	E0101206	true
+stammdaten_hausnummerzusatz	E0101207	true
+stammdaten_keine_bankverbindung	E0102002	true
+stammdaten_nachname	E0100201	true
+stammdaten_nachname_partner	E0100901	true
+stammdaten_plz	E0100601	true
+stammdaten_strasse	E0101104	true
+stammdaten_vorname	E0100301	true
+stammdaten_vorname_partner	E0100801	true
+stammdaten_wohnort	E0100602	true
+steuerklasse	E0200002	true
+tage_24h	E0205409	true
+tage_an_abreise	E0205302	true
+tage_ueber_8h_eintaegig	E0205201	true
+vor_ag_anteil_rv	E2000801	true
+vor_an_anteil_rv	E2000401	true
+vor_rv_ausserhalb_lstb	E2000601	true
+vorsorge_arbeitslosenversicherung	E2001403	true
+vorsorge_erwerbsunfaehigkeit	E2001503	true
+vorsorge_rv_alt_mit_ueberschuss	E2001903	true
+vorsorge_rv_alt_ohne_ueberschuss	E2002003	true
+vorsorge_unfall_haftpflicht	E2001803	true
+vv_einnahmen	E0700201	true
+vv_einnahmen_summe_gesamt	E0701401	false
+vv_mieteinnahmen_summe	E0700206	false
+vv_nebenkosten_nicht_vereinbart	E0702404	true
+vv_nebenkosten_umgelegt	E0700501	true
+vv_nutzung_an_angehoerige	E0700704	true
+vv_nutzung_ferienwohnung	E0700703	true
+vv_nutzung_kurzfristig	E0700705	true
+vv_objekt_ort	E0700504	true
+vv_objekt_plz	E0700503	true
+vv_objekt_strasse	E0700407	true
+vv_summe_werbungskosten	E0705701	false
+vv_ueberschuss	E0701601	false
+vv_ueberschuss_person_a	E0701801	false
+vv_wohneinheit_bezeichnung	E0701202	true
