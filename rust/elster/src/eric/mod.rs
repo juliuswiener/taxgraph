@@ -2,7 +2,7 @@
 //! Bibliothek (`elster/smoke_test.py::find_eric_lib`).
 //!
 //! Nur `ERIC_VALIDIERE` — die Pruefung laeuft lokal im checkESt-Plugin, KEIN Netz, KEIN Versand.
-//! Ein Versand-Flag gibt es in dieser Crate nicht (Echtversand ist Julius vorbehalten,
+//! Ein Versand-Flag gibt es in dieser Crate nicht (der Echtversand liegt in der Crate `versand`,
 //! `REWRITE_PLAN.md` F4).
 //!
 //! Falsch-Gruen-Sperre: nur `rc == 0` ist [`EricKlasse::Plausibel`]. Vier Klassen heissen

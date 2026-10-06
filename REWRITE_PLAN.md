@@ -33,7 +33,7 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) ist weder
   → 22; `make golden`) und Rückfall. Ein Löschen hätte alle Vergleichssuiten und die 135 Golden-Fälle ihrer Gegenseite beraubt und `tests/` schon in
   `conftest.py` zum Abbruch gebracht (Messung an Wegwerf-Kopien: Vault `audits/cutover-bereitschaft-rust-port-2026-10-03.md`, Befunde 4 bis 7).
   Das Löschen ist eine eigene Entscheidung nach einer Beobachtungszeit (F6) und braucht vorher eine Aufzeichnung der Python-Antworten (dort Befund 7).
-  Der Echtversand `versand.py` bleibt Python (F4, Vorbehalt Julius); `POST /fall/<id>/einreichen` prüft in beiden Diensten nur
+  Der Echtversand liegt in Rust in der eigenen Crate `versand` (F4, am 2026-10-06 von Julius freigegeben; das Einreichen bleibt bei ihm; `versand.py` bleibt bis zur Löschung von Python); `POST /fall/<id>/einreichen` prüft in beiden Diensten nur
   (`rust/api/src/einreichen.rs:1-8`, `produkt/haut/api.py:685-691`).
 - *Rückfall:* (1) schnell: `make serve-python`; beide Dienste lesen dieselben Dateien und Umgebungsvariablen, es gibt keine Migration.
   (2) Code: der lokale Tag `python-standard-letzter` (`git rev-parse python-standard-letzter` → `904f6215c94d3fdf7653b6087c5c4048d01b13c2`, nicht gepusht) ist der Elterncommit
@@ -446,8 +446,8 @@ Workspace unter `rust/`. Zyklenfrei, von unten nach oben:
 | `api` | `haut/server.py`, `haut/api.py`, `haut/flow.py`, `haut/ors_client.py`, `haut/api_auth.py` | axum, typisierte Handler, utoipa, statisches Frontend |
 | `parity` (dev) | — | liest Python-Korpus, ruft Rust, diff |
 
-`elster/versand.py` (Echtversand, kein Produktionsaufrufer, explicit) wird **nicht** portiert: Echtversand
-ist Julius vorbehalten. `elster/{kz_extract,validate_mapping,bench,fuzz,eric_gate}.py` sind Tooling.
+`elster/versand.py` (Echtversand, kein Produktionsaufrufer, explicit) wurde zunächst **nicht** portiert (Vorbehalt Julius);
+seit 2026-10-06 gibt es den Rust-Weg in der eigenen Crate `versand` (Programm `taxgraph-versand`, nie vom Dienst aus erreichbar; das Einreichen bleibt bei Julius). `elster/{kz_extract,validate_mapping,bench,fuzz,eric_gate}.py` sind Tooling.
 
 ---
 
@@ -673,7 +673,7 @@ Bescheid-Text und XML bleiben identisch, jeder Fixture-Diff wird im Commit erkl�
 | F1 | Negativformat P1 korrigieren? | Ja, korrekt bauen (Korrektheit vor Parität, §4); Abweichung mit Fixture-Diff im Commit erklärt |
 | F2 | Instanz `x__1`: welche Regel? | Traverser-Regel (`__1` ist keine Instanz); `est_mapping`-Aufrufstellen per Parität prüfen |
 | F3 | Hartkodierte Gesetzeswerte (`runner.py:462-467,1052,1703-1706`) nach `params/`? | Port übernimmt sie als benannte `const` mit § im Doc-Kommentar; Umzug separat |
-| F4 | `versand.py` (Echtversand) portieren? | Nein — Julius-Vorbehalt |
+| F4 | `versand.py` (Echtversand) portieren? | Ja, seit 2026-10-06 (Julius): Crate `versand`, nur das Programm `taxgraph-versand` sendet; das Einreichen bleibt bei Julius |
 | F5 | Löschkandidaten in `pipeline/` | Nicht Teil des Ports |
 | F6 | Cutover löscht Python | Schritt 10, Teil (A), ist vollzogen (2026-10-04); Python wird NICHT gelöscht: Referenz, Orakel der Vergleichssuiten, Rückfall (`make serve-python`). Das Löschen ist eine eigene Entscheidung nach einer Beobachtungszeit; an ihr hängt die Frage eingefrorener Referenzwerte: für 11 Funktionen liegen sie seit `1fdc6c0a` vor (`rust/fixtures/wertwache_orakel.json`), für die übrigen nicht (Vault `audits/wertwache-fixture-ohne-orakel-2026-10-04.md`) |
 | F7 | YAML-Crate (`serde_yaml` archiviert) | `serde_yaml_ng` oder `serde_norway` nach Doku-Check; Duplikat-Schlüssel-Verhalten per Test belegt |
