@@ -4,6 +4,10 @@
 //! haelt nur, solange (1) `ERIC_SENDE` nirgends sonst vorkommt, (2) keine andere Crate an `versand`
 //! haengt und (3) `sende` genau eine Aufrufstelle hat: das Programm, das zwei Huerden vor sich hat.
 //! Jeder Test zaehlt vorher, was er durchsucht hat; ein leerer Scan waere sonst ein gruener Test.
+//!
+//! Grenze: Der Waechter sucht den NAMEN `ERIC_SENDE`, nicht den Wert `1 << 2`; wer das Flag unter einem
+//! anderen Namen oder als nackte Zahl schreibt, bleibt ihm verborgen (den Wert faengt allein der Test in
+//! `versand_hermetisch.rs`, der an der Attrappe `flags=6` liest).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use std::path::{Path, PathBuf};

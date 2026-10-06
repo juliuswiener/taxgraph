@@ -165,7 +165,10 @@ impl Lauf {
 
     /// Schreibt ein XML ins Wegwerf-Verzeichnis (je Inhalt eine eigene Datei) und gibt den Pfad.
     fn xml_datei(&self, xml: &[u8]) -> String {
-        let p = self.wurzel.path().join(format!("fall_{}.xml", xml.len()));
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        xml.hash(&mut h);
+        let p = self.wurzel.path().join(format!("fall_{:x}.xml", h.finish()));
         std::fs::write(&p, xml).unwrap();
         p.to_string_lossy().into_owned()
     }
@@ -473,6 +476,17 @@ fn das_programm_im_dry_run_laedt_eric_nie_und_zeigt_weder_pfad_noch_pin() {
     assert_eq!(rc, 0);
     assert!(aus.contains("merker_konsistent: false") && aus.contains("WARNUNG"), "{aus}");
     assert!(l.eric_unberuehrt());
+
+    // Zwei Testmerker: die Anzeige nennt den ERSTEN (`merker_im_xml`), der Modus ist inkonsistent.
+    let zwei = b"<Elster><TransferHeader><Testmerker>700000004</Testmerker>\
+<Testmerker>700000009</Testmerker></TransferHeader></Elster>";
+    let datei = l.xml_datei(zwei);
+    let (rc, aus) = l.programm(&["--xml", &datei, "--datenart", "ESt_2025", "--dry-run"], "", false);
+    assert_eq!(rc, 0);
+    assert!(aus.contains("merker_im_xml: 700000004"), "{aus}");
+    assert!(!aus.contains("700000009"), "die Anzeige nennt nicht den ersten Merker: {aus}");
+    assert!(aus.contains("merker_konsistent: false") && aus.contains("WARNUNG"), "{aus}");
+    assert!(l.eric_unberuehrt());
 }
 
 #[test]
@@ -565,6 +579,18 @@ fn das_programm_meldet_einen_fehlschlag_mit_exit_eins_und_dem_rueckgabetext() {
     assert!(aus.contains("TEXT-VON-ERIC") && aus.contains("eric.log"), "{aus}");
     assert!(aus.contains("Telenummer: (keine"), "{aus}");
     assert!(!aus.contains(PIN) && !aus.contains(ZERT_NAME), "{aus}");
+}
+
+#[test]
+fn das_programm_meldet_rc_null_ohne_telenummer_als_kein_erfolg() {
+    // rc 0 allein ist kein Erfolg: ohne Telenummer Exit 1 und "KEIN ERFOLG" (nicht Exit 0).
+    let Some(l) = Lauf::neu("0\n<Elster><Erfolg/></Elster>") else { return };
+    let datei = l.xml_datei(XML_TEST);
+    let (rc, aus) = l.programm(&["--xml", &datei, "--datenart", "ESt_2025", "--testversand"], "", false);
+    assert_eq!(rc, 1, "{aus}");
+    assert!(aus.contains("[versand] rc=0") && aus.contains("KEIN ERFOLG"), "{aus}");
+    assert!(aus.contains("Telenummer: (keine"), "{aus}");
+    assert_eq!(l.zaehler("zaehler"), Some(1), "ERiC wurde gerufen, der Versand war nur kein Erfolg");
 }
 
 #[test]
