@@ -878,7 +878,8 @@ fn die_ring_kandidaten_je_scheibe_sind_der_schnitt_aus_der_definition() {
         );
         gesamt += soll.len();
     }
-    // Boden: eine leere Schnittmenge waere in jeder Scheibe gleich. Gemessen 2026-10-06: 204 (28 + 99 + 77).
+    // Boden: eine leere Schnittmenge waere in jeder Scheibe gleich. Gemessen 2026-10-06: 204 (28 + 99 + 77);
+    // seit dem Rentner-Ring fuer Lohn und Versorgung 209 (28 + 99 + 82).
     assert!(
         gesamt > 190,
         "nur {gesamt} Ring-Kandidaten ueber alle Scheiben"

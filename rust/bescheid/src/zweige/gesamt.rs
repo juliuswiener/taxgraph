@@ -214,7 +214,20 @@ pub(super) fn nr3_euro(f: &Felder) -> R<Euro> {
 
 /// § 19-Einkuenfte Person A (+B) samt Versorgungsbezuegen (§ 19 Abs. 2) in EURO.
 fn einkuenfte_ns<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots, ns_wk: Euro, zusammen: bool) -> R<Euro> {
-    let (f, vz, p) = (r.f(), r.vz(), r.p());
+    let lohn = Euro::new(py_int(slot(slots, "bruttoarbeitslohn")?)?.div_euclid(100));
+    einkuenfte_ns_aus_lohn(r.f(), r.vz(), r.p(), lohn, ns_wk, zusammen)
+}
+
+/// [`einkuenfte_ns`] mit dem Bruttoarbeitslohn Person A als Argument. Der Rentner-Ring liest keine
+/// Slots und reicht den Lohn aus dem Feld herein; Versorgungsbezuege und Alters-Gate sind dieselben.
+pub(super) fn einkuenfte_ns_aus_lohn(
+    f: &Felder,
+    vz: Vz,
+    p: &bindung::Params,
+    lohn: Euro,
+    ns_wk: Euro,
+    zusammen: bool,
+) -> R<Euro> {
     let c = |k: &str| feld_int_oder_null(f, k);
     let jahresrente = c("versorgung_jahresrente")?;
     let bemessung = c("versorgung_bemessungsgrundlage")?;
@@ -232,7 +245,7 @@ fn einkuenfte_ns<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots, ns_wk: Euro, zusammen
         };
         gate_erfuellt = alter >= grenze;
     }
-    let mut basis = py_int(slot(slots, "bruttoarbeitslohn")?)?.div_euclid(100);
+    let mut basis = lohn.get();
     let versorgt = jahresrente > 0 && bemessung > 0 && beginn > 0;
     if versorgt && !gate_erfuellt {
         basis = crate::plus(basis, jahresrente.div_euclid(100))?;

@@ -9,8 +9,8 @@ use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
 use super::gesamt::{
-    entlastung_24b, gde_fall, kist_ueberhang, netto_vg, nr3_euro, p35_person_a, pauschbetraege_a,
-    pauschbetrag_partner, vorsorge_slots,
+    einkuenfte_ns_aus_lohn, entlastung_24b, gde_fall, kist_ueberhang, netto_vg, nr3_euro,
+    p35_person_a, pauschbetraege_a, pauschbetrag_partner, vorsorge_slots,
 };
 use super::rechnen::{add, max0, summe_euro, R};
 use super::tarif::{leerer_gesamtfall, rahmen, Lage, Modus, P35};
@@ -165,12 +165,18 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     // §§ 13-18 Gewinn: laufend + § 16-vg netto (+ Gewinn des Ehegatten erst danach, s. u.).
     let netto_vg = netto_vg(f)?;
     let (laufend, mitu) = laufender_gewinn(f, &q)?;
-    // § 24a-Bemessung: nur Nicht-§19-Einkuenfte (Gewinn + § 23); Leibrente § 22 Nr. 1 ist ausgenommen.
+    // § 19-Einkuenfte Person A: Arbeitslohn und Versorgungsbezuege wie im gesamt-Ring (derselbe Kern). Der
+    // Rentner-Ring liest keine Slots, der Lohn kommt aus dem Feld; Werbungskosten ausser dem Pauschbetrag
+    // kennt die Scheibe nicht, Person B (`bruttoarbeitslohn_partner`) ebenso wenig.
+    let lohn = feld_euro_oder_null(f, "bruttoarbeitslohn")?;
+    let ns = einkuenfte_ns_aus_lohn(f, vz, p, lohn, Euro::new(0), false)?;
+    // § 24a-Bemessung: Arbeitslohn plus Nicht-§19-Einkuenfte (Gewinn + § 23); Versorgungsbezuege und
+    // Leibrente § 22 Nr. 1 sind ausgenommen (§ 24a Satz 2 Nr. 1 und 2).
     let alt = p24a_altersentlastung(
         &P24aAltersentlastungEingabe {
             veranlagungszeitraum: i64::from(vz.jahr()),
             geburtsjahr: feld_int_oder_null(f, "geburtsjahr")?,
-            arbeitslohn: Euro::new(0),
+            arbeitslohn: lohn,
             positive_andere_einkuenfte: max0(summe_euro(&[laufend, netto_vg, p23])?),
         },
         p,
@@ -180,6 +186,7 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     let veranlagung = VeranlagungWert::aus_oder_einzel(feld_veranlagung(f));
     let zusammen = veranlagung.zusammen();
     let mut g = GesamtfallEingabe {
+        einkuenfte_nichtselbststaendig: ns,
         einkuenfte_sonstige: renten,
         einkuenfte_gewinn: summe_euro(&[laufend, netto_vg, gewinn_partner])?,
         altersentlastungsbetrag: alt,
@@ -202,10 +209,10 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     g.steuerermaessigungen = s.steuerermaessigungen;
     g.sonderausgaben = s.sonderausgaben;
     g.aussergewoehnliche_belastungen = s.aussergewoehnliche_belastungen;
-    // § 35: Zaehler wie gesamt; Nenner = renten (§ 22 IM Nenner) + einkuenfte_gewinn, OHNE Ueberhang.
+    // § 35: Zaehler wie gesamt; Nenner = § 19 + renten (§ 22 IM Nenner) + einkuenfte_gewinn, OHNE Ueberhang.
     let (mb, hs, zaehler) = p35_person_a(f, laufend, mitu)?;
     let (mb_ges, z_ges, gezahlt) = p35_summen(f, mb, hs, zaehler)?;
-    let nenner = add(max0(renten), max0(g.einkuenfte_gewinn))?;
+    let nenner = summe_euro(&[max0(ns), max0(renten), max0(g.einkuenfte_gewinn)])?;
     let lage = Lage {
         vz,
         p,

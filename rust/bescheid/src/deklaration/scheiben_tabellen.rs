@@ -205,8 +205,11 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 ];
 
 /// `SCHEIBEN['rentner_gesamt']["felder"]` = `RENTNER_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + GESAMT_PARTNER_KAP + AGB_TATBESTAND`
+/// plus, nur in Rust (2026-10-06, Vault `rentner-ring-liest-versorgungsbezuege-vor-der-scheibe`), die sieben letzten Namen:
+/// `bruttoarbeitslohn` und `steuerklasse` (die zwei Pflichtfelder der Lohnsteuer-Gruppe) und `GESAMT_VERSORGUNG`. Der
+/// Rentner-Ring liest sie (`zweige/rentner.rs`); sie sind keine Kegel-Felder, die Scheibe bekommt keine neue Pflichtfrage.
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 255] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 262] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -271,7 +274,8 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 255] = [
     "kap_antrag_guenstigerpruefung", "kap_sparer_pauschbetrag_genutzt", "p36_kapitalertragsteuer", "p36_kapitalertragsteuer_solz",
     "p36_kapitalertragsteuer_kist", "kap_q_auslaendische_steuer", "kap_kapitalertraege_partner", "kap_gewinn_aktien_partner",
     "kap_gewinn_sonstige_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner", "agb_zwangslaeufig",
-    "agb_notwendig_angemessen",
+    "agb_notwendig_angemessen", "bruttoarbeitslohn", "steuerklasse", "versorgung_jahresrente",
+    "versorgung_bemessungsgrundlage", "versorgung_beginn_jahr", "versorgung_art", "versorgung_alter_bei_beginn",
 ];
 
 /// `SCHEIBEN['rentner_gesamt']["kegel"]` = `RENTNER_KEGEL + AGB_TATBESTAND`

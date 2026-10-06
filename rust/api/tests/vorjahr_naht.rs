@@ -381,13 +381,22 @@ async fn vorjahr_nach_rentner_gesamt_uebernimmt_das_geburtsjahr() {
     )
     .await;
     assert_eq!(s, 200, "{a}");
-    // `bruttoarbeitslohn` und `ep_entfernung_km` kennt die Scheibe nicht, `verlustvortrag_bestand`
-    // ist eine Vergleichsgröße: 4 von 7 Feldern der Quelle.
+    // `ep_entfernung_km` kennt die Scheibe nicht, `verlustvortrag_bestand` ist eine Vergleichsgröße:
+    // 5 von 7 Feldern der Quelle. `bruttoarbeitslohn` zählt seit dem 2026-10-06 mit (die Scheibe
+    // fragt Lohn und Versorgung, Backlog `rentner-scheibe-fragt-lohnsteuer-ohne-die-zwei-pflichtfelder`).
     assert_eq!(
         a,
-        json!({"uebernommen": 4, "uebersprungen": [], "vorjahr_fall_id": "vq1"})
+        json!({"uebernommen": 5, "uebersprungen": [], "vorjahr_fall_id": "vq1"})
     );
     let ziel = akte(&d, "zrg");
+    assert!(
+        ziel["events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|e| e["feld_id"] == "bruttoarbeitslohn"),
+        "der Lohn kommt aus dem Vorjahr in die Rentner-Scheibe"
+    );
     let geburtsjahr: Vec<&Value> = ziel["events"]
         .as_array()
         .unwrap()

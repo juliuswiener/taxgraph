@@ -952,8 +952,11 @@ fn pflicht_voll() -> Vec<(&'static str, Value)> {
 ///
 /// Gemessen wird die Invariante, nicht „die Meldung soll weg": jede gemeldete Pflichtluecke muss
 /// ein Feld der Scheibe sein. Ein Kegel-Fix macht den Test gruen, ein Filter im Melder nicht.
+///
+/// GEBAUT 2026-10-06 (Vault `rentner-scheibe-fragt-lohnsteuer-ohne-die-zwei-pflichtfelder`): die Feldliste von
+/// `rentner_gesamt` traegt `bruttoarbeitslohn` und `steuerklasse`, und der Rentner-Ring rechnet sie
+/// (`rentner_lohn_versorgung_hermetisch.rs`). Der `#[ignore]` ist weg; Rot ohne die zwei Felder in der Liste.
 #[test]
-#[ignore = "der Kegel von rentner_gesamt (SCHEIBEN_RENTNER_GESAMT_FELDER) kennt aus der Gruppe 'alle_oder_keins' nur p36_lohnsteuer — nicht bruttoarbeitslohn und nicht steuerklasse. ERiC verlangt sie trotzdem (rc=610001002, gemessen 2026-10-01). Python: test_pflichtfelder_luecken_ohne_leser.py::test_rentner_gesamt_meldet_keine_felder_die_sein_kegel_nie_fragt. Vault: tickets/rentner-scheibe-fragt-lohnsteuer-ohne-die-zwei-pflichtfelder.md. Rot sehen: --ignored"]
 fn rentner_gesamt_meldet_keine_felder_die_sein_kegel_nie_fragt() {
     // Der „Kegel" des Python-Tests ist `SCHEIBEN["rentner_gesamt"]["felder"]` (die Fragen der
     // Scheibe), nicht `cfg["kegel"]` (die Pflicht-Spannen-Achsen, `Cfg::kegel`).
@@ -963,10 +966,8 @@ fn rentner_gesamt_meldet_keine_felder_die_sein_kegel_nie_fragt() {
         .into_iter()
         .collect();
     assert!(
-        kegel.contains("p36_lohnsteuer") && !kegel.contains("bruttoarbeitslohn"),
-        "KONTROLLE: der Kegel von rentner_gesamt traegt p36_lohnsteuer={} und bruttoarbeitslohn={}",
         kegel.contains("p36_lohnsteuer"),
-        kegel.contains("bruttoarbeitslohn")
+        "KONTROLLE: die Feldliste von rentner_gesamt traegt p36_lohnsteuer nicht"
     );
     let paare: Vec<(&'static str, Value)> = pflicht_voll()
         .into_iter()
