@@ -20,7 +20,7 @@
 )]
 
 use bescheid::deklaration::mit_ring_werten;
-use bescheid::testhilfe::{felder, params, store};
+use bescheid::testhilfe::{felder, index, params, store};
 use domain::{PyWert, Vz};
 use serde_json::{json, Value};
 
@@ -97,4 +97,87 @@ fn unbestaetigt_bleibt_unberechnet() {
         ("gewst_hebesatz", json!(400), false),
     ];
     assert_eq!(zu_zahlen(&vorlaeufiger_hebesatz, "gewst_zu_zahlen"), None);
+}
+
+/// Die Felder je Person: (Messbetrag, Hebesatz, Ergebnis).
+const PERSONEN: [(&str, &str, &str); 2] = [
+    ("gewst_messbetrag", "gewst_hebesatz", "gewst_zu_zahlen"),
+    (
+        "gewst_messbetrag_partner",
+        "gewst_hebesatz_partner",
+        "gewst_zu_zahlen_partner",
+    ),
+];
+
+/// Grenzfaelle 0 und 1 fuer Messbetrag und Hebesatz, je Person. Die Bedingung der Rechnung heisst
+/// `m > 0 && s > 0`: eine Null auf einer der beiden Seiten ergibt KEINEN Ring-Wert (sonst stuende
+/// 0 EUR Gewerbesteuer als berechnete Tatsache da, obwohl kein Hebesatz vorliegt), eine Eins rechnet.
+/// Bei einem Messbetrag unter 100 Cent ist der abgerundete Betrag 0 EUR; das Ergebnis 0 wird gesetzt
+/// (das Schema laesst es zu, siehe `deklaration_schreibt_nullen_nur_wo_das_schema_sie_erlaubt`).
+///
+/// Erwartung = Rust heute = Python (`bescheid_deklaration._mit_ring_werten`, `produkt/`, nur gelesen
+/// und mit denselben acht Eingaben ausgefuehrt: Messbetrag 0, Hebesatz 0, 1 Cent, Hebesatz 1,
+/// 99 und 100 Cent, negative Werte; alle Ergebnisse gleich).
+/// Mutanten, die vorher in allen Tests gruen blieben: `m >= 0 && s > 0` und `m > 0 && s >= 0`.
+#[test]
+fn nullen_und_einsen_an_der_grenze_je_person() {
+    // (Messbetrag in Cent, Hebesatz in Prozent, erwarteter Ring-Wert in Cent)
+    let faelle: [(i64, i64, Option<i64>); 9] = [
+        (0, 400, None),
+        (500_000, 0, None),
+        (0, 0, None),
+        (1, 400, Some(0)),
+        (500_000, 1, Some(5_000)),
+        (1, 1, Some(0)),
+        (99, 400, Some(0)),
+        (100, 1, Some(1)),
+        (-1, 400, None),
+    ];
+    for (messbetrag, hebesatz, erwartet) in faelle {
+        for (mfeld, hfeld, ziel) in PERSONEN {
+            let ev: [Ev; 2] = [
+                (mfeld, json!(messbetrag), true),
+                (hfeld, json!(hebesatz), true),
+            ];
+            assert_eq!(
+                zu_zahlen(&ev, ziel),
+                erwartet.map(ganz),
+                "{ziel}: Messbetrag {messbetrag} Cent, Hebesatz {hebesatz} %"
+            );
+        }
+    }
+}
+
+/// D19 an derselben Grenze: das Schema (E10-2025) fuehrt E0801606 (Messbetrag) und E0801704
+/// (zu zahlende Gewerbesteuer) als `GanzzahlNichtNeg…` (0 erlaubt), den Hebesatz E0801705 als
+/// `GanzzahlPos…` (0 verboten). Ein Messbetrag unter 100 Cent steht deshalb als 0 in der
+/// Deklaration, ein Hebesatz 0 entfaellt. Die Menge der verbotenen Nullen prueft gegen das Schema
+/// `rust/elster/tests/eigenschaften.rs::kz_mengen_aus_xsd`; hier steht ihre Wirkung auf diese drei Kz.
+/// Person B schreibt in `person_b`, dieselben Kz.
+#[test]
+fn deklaration_schreibt_nullen_nur_wo_das_schema_sie_erlaubt() {
+    let deklaration = |ev: &[Ev]| {
+        let mut f = felder(&store(ev));
+        mit_ring_werten(&mut f, Some(Vz::Vz2025), params()).unwrap();
+        elster::deklariere(&f, index(), 2025, None).unwrap()
+    };
+    let wert = |m: &std::collections::BTreeMap<String, Value>, kz: &str| m.get(kz).and_then(Value::as_i64);
+    for (mfeld, hfeld, _) in PERSONEN {
+        let partner = mfeld.ends_with("_partner");
+        let bucket = |d: &elster::Deklaration| {
+            if partner { d.person_b.clone() } else { d.deklaration.clone() }
+        };
+        // 1 Cent Messbetrag: abgerundet 0 EUR; E0801606 und E0801704 tragen die 0, der Hebesatz seine 400.
+        let d = deklaration(&[(mfeld, json!(1), true), (hfeld, json!(400), true)]);
+        let m = bucket(&d);
+        assert_eq!(wert(&m, "E0801606"), Some(0), "{mfeld}: E0801606 darf 0 tragen");
+        assert_eq!(wert(&m, "E0801704"), Some(0), "{mfeld}: E0801704 darf 0 tragen");
+        assert_eq!(wert(&m, "E0801705"), Some(400), "{hfeld}");
+        // Hebesatz 0: das Schema verbietet die 0, E0801705 entfaellt; kein Ring-Wert, also kein E0801704.
+        let d = deklaration(&[(mfeld, json!(500_000), true), (hfeld, json!(0), true)]);
+        let m = bucket(&d);
+        assert_eq!(wert(&m, "E0801606"), Some(5_000), "{mfeld}");
+        assert_eq!(wert(&m, "E0801705"), None, "{hfeld}: Hebesatz 0 muss entfallen (D19)");
+        assert_eq!(wert(&m, "E0801704"), None, "{mfeld}: ohne Hebesatz keine berechnete Steuer");
+    }
 }
