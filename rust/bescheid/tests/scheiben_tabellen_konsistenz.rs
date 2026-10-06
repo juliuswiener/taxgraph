@@ -45,18 +45,14 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// `kind_anderer_elternteil_tod_am` und `kind_anderer_elternteil_ausland_zeitraum` neu in `gesamt`
 /// und `rentner_gesamt`, 352 -> 354 und 250 -> 252; B Option 1 am 2026-10-06: die vier Partner-Felder zu § 34 Abs. 3
 /// `antrag_ermaessigter_satz_partner`, `dauernd_berufsunfaehig_partner`, `ermaessigung_einmal_genutzt_partner` und
-/// `p34_abs3_antragsbetrag_partner` in beiden, 354 -> 358 und 252 -> 256; vorher 2026-10-05, `9c07d98e`).
+/// `p34_abs3_antragsbetrag_partner` in beiden, 354 -> 358 und 252 -> 256; danach am 2026-10-06 das doppelte
+/// `geburtsjahr` in `rentner_gesamt` einmal, 256 -> 255; vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 84, 33),
     (Scheibe::Gesamt, 358, 35),
-    (Scheibe::RentnerGesamt, 256, 28),
+    (Scheibe::RentnerGesamt, 255, 28),
 ];
-
-/// Felder, die in einer Liste zweimal stehen. `geburtsjahr` stand schon in `SCHEIBEN['rentner_gesamt']`
-/// in Python doppelt und wurde so uebernommen. Wirkung der Dopplung: nicht gemessen; jede weitere
-/// Dopplung ist ein Fehler.
-const BEKANNTE_DOPPLUNG: [(Scheibe, &str); 1] = [(Scheibe::RentnerGesamt, "geburtsjahr")];
 
 fn registry() -> &'static Registry {
     static CELL: OnceLock<Registry> = OnceLock::new();
@@ -139,15 +135,16 @@ fn n_vor_gwg_datei_und_teil_ringe_stehen_in_der_registry() {
     }
 }
 
+/// Jede Scheibe führt jedes Feld einmal. Ein Feld doppelt in der Liste bricht die Vorjahr-Übernahme
+/// am zweiten Eintrag mit 422 ab (`rust/api/tests/vorjahr_naht.rs`).
 #[test]
-fn felder_sind_dopplungsfrei_bis_auf_die_bekannte() {
+fn felder_sind_dopplungsfrei() {
     for s in MIT_LISTE {
-        let erwartet: Vec<&str> = BEKANNTE_DOPPLUNG
-            .iter()
-            .filter(|(b, _)| *b == s)
-            .map(|(_, f)| *f)
-            .collect();
-        assert_eq!(doppelte(felder(s)), erwartet, "{s:?}: doppelte Felder");
+        assert_eq!(
+            doppelte(felder(s)),
+            Vec::<&str>::new(),
+            "{s:?}: doppelte Felder"
+        );
     }
 }
 
