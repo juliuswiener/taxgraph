@@ -311,7 +311,7 @@ ui-rust-gegenprobe:
 ## tests/ und rust/) und laufen deshalb auch dann weiter, wenn `tests/` geloescht ist. Ohne venv312
 ## ueberspringt sich test_gettsim_crosscheck (1 skipped); `make gettsim-crosscheck` faehrt ihn echt.
 ## Nur 14 s, daher ohne -n. Steht hier und nicht bei `unit`, weil REWRITE_PLAN.md und
-## tools/docs_zahlen_pruefen.py Makefile-Zeilen verankern (113, 235-253); Zeilen davor verschieben sie.
+## tools/docs_zahlen_pruefen.py Makefile-Zeilen verankern; Zeilen davor verschieben sie.
 unit-stufe-b:
 	python3 -m pytest pipeline/tests -q
 
