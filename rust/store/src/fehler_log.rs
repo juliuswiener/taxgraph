@@ -257,6 +257,31 @@ mod tests {
         );
     }
 
+    /// Abweichung von Python (Moduldoku, Punkt 1): `quelle` ist die Aufrufstelle von `protokolliere` (`#[track_caller]`).
+    /// Python liest den innersten Traceback-Rahmen; Rust hat keinen und nennt die Stelle, die den Fehler meldet.
+    #[test]
+    fn quelle_ist_die_aufrufstelle_von_protokolliere() {
+        let dir =
+            std::env::temp_dir().join(format!("taxgraph-store-test-quelle-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pfad = dir.join("fehler.log");
+        let _ = std::fs::remove_file(&pfad);
+        let zeile = line!() + 1;
+        protokolliere(
+            &pfad,
+            "server.dispatch",
+            &Testfehler,
+            Stufe::Fehler,
+            None,
+            Meta::default(),
+        )
+        .unwrap();
+        let eintraege = super::lies(&pfad).unwrap();
+        assert_eq!(eintraege.len(), 1);
+        assert_eq!(eintraege[0].quelle, format!("{}:{zeile}", file!()));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
     #[test]
     fn protokolliere_und_lies_roundtrip() {
         let dir =

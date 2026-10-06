@@ -43,15 +43,14 @@ python3 tools/parity/extract_golden.py
 ## Eingefroren (Stufe 2)
 
 Die Fixtures mit Antworten von Python — `interview_`, `konsistenz_`, `intervall_`, `wertwache_`, `eingang_`,
-`zeichensatz_`, `api_stand_fragen_orakel.json`, `kz_tabellen.json`, `sperrgrund_klartext.json` und `e2e/` — sind
-eingefroren. Ihre Erzeuger sind geloescht; der letzte Stand liegt im Verlauf (`git show 2dd056a6:tools/parity/<name>.py`).
+`zeichensatz_`, `kz_tabellen.json`, `sperrgrund_klartext.json` und `e2e/` — sind eingefroren. Ihre Erzeuger sind geloescht; der letzte Stand liegt im Verlauf (`git show 2dd056a6:tools/parity/<name>.py`).
 Die Dateien werden nicht neu erzeugt und nicht von Hand geaendert. Eine gewollte Abweichung von Rust zu Python
 steht als Eintrag mit Grund in einer Liste im Test; der Test verlangt, dass die Abweichung weiter besteht. Die
 Abweichungsliste steht im Abschnitt „Abweichungsliste“ weiter unten.
 
 Ausnahmen: `golden_cases.json` (Extrakt aus `golden/cases/*.yaml`, `tools/parity/extract_golden.py` bleibt) und
-`begleitfelder_formen.json` (von Hand gepflegt). `api_stand_fragen_orakel.json` bleibt vorerst eingefroren; der
-Umbau zu einem Rust-eigenen Golden-Master (S2.2) wartet auf die Waechter der Stufe 3.
+`begleitfelder_formen.json` (von Hand gepflegt). `api_stand_fragen_orakel.json` ist seit S2.2 ein Rust-eigener
+Golden-Master (eigener Abschnitt unten) und wird mit `TAXGRAPH_GOLDEN_NEU=1` neu geschrieben.
 
 ## Abweichungsliste
 
@@ -82,27 +81,38 @@ Regeln:
 | 9 | `llm`, `kategorie` ist Liste oder Objekt | `TypeError` (unhashable) ungefangen | `None`, Buchung bleibt unklassifiziert | der Aufruf bricht nicht ab | `rust/llm/tests/kontoauszug_entscheidungen.rs::weicht_von_python_ab_kategorie_liste_oder_objekt_ist_none` | M |
 | 10 | `konsistenz`, Betragspruefungen (`bestaetigter_betrag`, `vorlaeufige_ring_betraege`): ein Float | zaehlt als Betrag (`isinstance(w, (int, float))`) | zaehlt nicht | Wertebereich: der Store laesst auf `cent`-Feldern nur Ganzzahlen zu (Auflage T); 0 Floats in 192 echten Faellen | `rust/konsistenz/src/preflight.rs::tests::float_ist_kein_betrag_abweichung_von_python` | M |
 | 11 | `auth`, Audit scheitert | kein `try`, bricht ab | Anmelden, Abweisen und Abmelden laufen durch | das Audit ist ein Nebenkanal | `rust/auth/tests/entscheidungen.rs::ein_audit_fehler_kippt_keine_anmeldung` | T |
+| 12 | `llm`, Dialogantwort: `NaN`, `Infinity`, `-Infinity`, `1e400` in `wert`, `rechenweg`, `aussage`; einzelnes Surrogat-Escape in `begruendung` | `json.loads` liest alle fuenf; die Antwort gilt | ganze Antwort `Antwort::Unlesbar` (Rueckfall des Dienstes), nie ein halb gelesener Vorschlag | `serde_json` ist strikt; die Fuenf sind kein gueltiges JSON | `rust/llm/tests/parse_entscheidungen.rs::weicht_von_python_ab_nan_unendlich_und_einzelnes_surrogat_machen_die_antwort_unlesbar` (neun Eingaben, eine Kontrolle) | M |
+| 13 | `llm`, ORS-Antwort mit UTF-8-BOM, in UTF-16, oder mit `NaN`, `Infinity`, `-Infinity`, `1e400` im Koerper | `json.loads(bytes)` liest sie | „nicht verfuegbar“ (Dienst: 503) | `serde_json` liest nichts davon | `rust/llm/tests/ors_netz.rs::weicht_von_python_ab_ors_antwort_mit_bom_utf16_nan_ist_nicht_verfuegbar` (sechs Eingaben, eine Kontrolle) | M (BOM, `NaN`); UTF-16 T |
+| 14 | `llm`, Anbieterantwort mit `NaN`, `Infinity`, `-Infinity`, `1e400` irgendwo im Koerper | Python nimmt die Antwort an | endgueltiger Fehler `JSONDecodeError` nach einem Versuch | `serde_json` ist strikt | `rust/llm/tests/client_netz.rs::weicht_von_python_ab_anbieterantwort_mit_nan_ist_endgueltig` (vier Eingaben, eine Kontrolle) | M |
+| 15 | `store`, `fehler_log`: Feld `quelle` | innerster Traceback-Rahmen (Datei:Zeile des Fehlers) | Aufrufstelle von `protokolliere` (`#[track_caller]`) | Rust hat keinen Traceback | `rust/store/src/fehler_log.rs::tests::quelle_ist_die_aufrufstelle_von_protokolliere` | M |
+| 16 | `domain`, JSON-Lader von `PyWert`: 23 Skalare (`NaN`, `Infinity`, `1e400`, `-0`, Surrogat-Escapes) und 5 Strukturen | `json.loads` | Fehler, oder anderer Wert (je Eintrag in der Liste) | `serde_json` ist strikt, liest `-0` als `-0.0` und eine grosse Ganzzahl als Gleitkomma | `rust/domain/tests/lader_abweichungen_hermetisch.rs::json_lader_haelt_die_abweichungen_von_json_loads` (genau 23 + 5) | M |
+| 17 | `domain`, YAML-Lader von `PyWert`: 114 Skalare und 113 Strukturen (`yes`/`no`/`on`/`off`, `007`, `1:30`, `1_000`, `0o17` ...) | YAML 1.1 (`yaml.safe_load`) | YAML 1.2 (`serde_yaml_ng`) | andere Bibliothek, anderer Standard | `rust/domain/tests/lader_abweichungen_hermetisch.rs::yaml_lader_haelt_die_abweichungen_von_safe_load` (genau 114 + 113) | M |
+| 18 | `domain`, Ganzzahl ausserhalb `i64::MIN..=u64::MAX` (D1, vier Eintraege) | beliebig grosses `int` | `Gleit`: gleich der Nachbarzahl | `PyWert` fuehrt keine Ganzzahl ausserhalb des Bereichs | `rust/domain/tests/lader_abweichungen_hermetisch.rs::d1_ganzzahl_ausserhalb_des_bereichs_ist_gleich_der_nachbarzahl` | M |
+| 19 | `domain`, `store` (typisierter Pfad `Store::append`): `bestaetigt` mit leerem `signal_2` zusammen mit typ-inkonformem Wert (D20) | meldet zuerst Auflage T (`TypInkonform`) | `Signal2::new` weist das leere Signal schon beim Bau ab (`ZweiSignalFehlend`); der Rohpfad `append_roh` (HTTP) haelt Pythons Reihenfolge | der Typ macht „bestaetigt ohne Signal“ unbaubar; Aufheben braeuchte einen Umbau des Typs | `rust/domain/tests/fehlertexte_hermetisch.rs::betrag_herkunft_und_signal_melden_ihren_text` (`Signal2::new("  ")` scheitert); Rohpfad: `rust/store/tests/append_roh.rs::bestaetigt_braucht_ein_signal_2_das_nicht_leer_ist` | M (Bau); Reihenfolge im typisierten Pfad T |
+| 20 | `domain`, `repr_str`: Zeichen der Kategorien Cf (U+0600), Co (U+E000), Cn (U+0378) | `repr` escapet sie (`'\u0600'`) | bleiben stehen (`ponytail` an `repr_str`: Kategorientabelle fehlt) | Annaeherung an `str.isprintable()` | `rust/domain/src/py_text.rs::tests::repr_str_wie_cpython` | T |
 
-### Offen: Rust-Seite nicht hermetisch geprueft
+### Geprueft ohne eigene Zeile, und was offen bleibt
 
-Diese Abweichungen stehen heute in einer `PARITY=1`-Suite, im Kommentar des Quelltexts oder in beidem. Ob ein Test
-ohne `PARITY=1` die Rust-Seite haelt, ist nicht gemessen. Faellt Python weg, fallen die Parity-Suiten mit, und
-diese Zusagen haetten keinen Halter mehr. Vor der Loeschung von Python je Zeile pruefen und mit einem Mutanten
-belegen.
+Stand S2.6: die Rust-Seite der Abweichungen aus `rust/parity/tests/extern_stub/fremd_abweichungen.rs` (A1, A3, C),
+`wert_paritaet.rs` (Lader, D1, `repr_str`) und `store_append_paritaet.rs` (D20) steht jetzt in der Tabelle oben
+(Nr. 12 bis 20). Faellt Python weg, haelt jeder dieser Tests die Rust-Seite weiter. Die zwei Listen der Lader tragen
+je Eintrag die Spalte `CPython` als Herkunft; geprueft wird nur die Rust-Seite.
 
-- `rust/parity/tests/extern_stub/fremd_abweichungen.rs`: A1 (`NaN`, `Infinity`, `1e400` in `rechenweg` und
-  `vorschlag_wert`: Rust gueltiges JSON), A3 (ORS-Entfernung `NaN`: Rust 503), C (einzelnes Surrogat im Text: Rust
-  verwirft die ganze Antwort). B und A2 stehen oben als Nr. 6, 8 und 9.
-- `rust/parity/tests/wert_paritaet.rs`: `D1_ABWEICHUNGEN` (vier Eintraege: Ganzzahl ausserhalb
-  `i64::MIN..=u64::MAX` wird `Gleit`), die JSON-Lader (`NaN`/`Infinity`, `-0`, Surrogat; 28 Abweichungen), die
-  YAML-Lader (YAML 1.2 gegen 1.1; 227 Abweichungen), `repr_str` escapet Cf, Co und Cn nicht (`ponytail`).
-- `rust/parity/tests/store_append_paritaet.rs::d20_reihenfolge_typ_vor_signal`: Rust meldet `ZweiSignalFehlend`
-  vor `TypInkonform`.
-- `rust/parity/tests/elster_paritaet.rs` (Luecke bei Instanzen): dicht gezaehlt, kein leeres `<Einz>`.
-- `rust/store/src/fehler_log.rs`: drei Abweichungen der Bauart (Aufrufstelle statt Traceback, `Meta` als Struct,
-  Fall-Kennung mit Muster als Parameter).
-- `rust/elster/tests/offene_defekte.rs` und `rust/bescheid/tests/offene_defekte.rs`: je eine „gewollte Abweichung“
-  im Kommentar eines Tests.
+- `rust/elster/tests/eigenschaften.rs::luecke_im_instanzindex_zaehlt_dicht_ohne_leeres_einz`: keine Abweichung von
+  Python (beide zaehlen dicht), nur vom alten XML der vier Bestandsgruppen (leeres `<Einz>`). Der Test haelt die
+  Rust-Seite (M: Rang „spaerlich“ statt „dicht“ wird rot).
+- `rust/store/src/fehler_log.rs`: von den drei Abweichungen der Bauart steht eine in der Tabelle (Nr. 15). `Meta` als
+  Struct und die Fall-Kennung mit Muster als Parameter sind Sache des Typs; der Compiler haelt sie, kein Laufzeit-Test.
+- `rust/elster/tests/offene_defekte.rs` und `rust/bescheid/tests/offene_defekte.rs`: die „gewollte Abweichung“ im
+  Kommentar je eines Tests beschreibt die Gestaltung des Tests, keine Verhaltensabweichung von Python. Keine Zeile.
+
+Nicht hermetisch uebernommen und offen:
+
+- `rust/parity/tests/wert_paritaet.rs::lader_echte_dateien_gegen_cpython` und `YAML_KONTEXT_AUSNAHMEN`: die Lader gegen die echten
+  YAML-Dateien des Repos. Die Ausnahmen stehen nur in der Parity-Suite.
+- Dass KEINE weitere Abweichung dazukommt, misst nur der Vergleich mit `CPython` (`PARITY=1`). Die Tests oben halten
+  die bekannten Abweichungen fest, sie suchen keine neuen. Fuer die Zeit nach Python braucht es einen Ersatz fuer
+  diese Frage (zum Beispiel einen eingefrorenen Mitschnitt der Antworten von `CPython` je Eingabe).
 
 ## `interview_orakel.json`
 
@@ -181,12 +191,29 @@ Zwanzig Faelle (Scheiben `gesamt`, `an_gesamt`, `rentner_gesamt`, `ep`, `n_vor_g
 eine zweite Rente, ein vorlaeufiges Einzelfeld und ein Rentenbeginn im Folgejahr ohne Freibetrag, je bestaetigt und
 vorlaeufig, damit die Faelle den Unterschied zwischen Ring mit und ohne Store, zwischen "nur bestaetigt" und
 "auch vorlaeufig" und den Fehler `RentenfreibetragFixierungOffen` sehen; dazu zwei Faelle mit einer offenen Achse, damit die
-Gewichte der Fragen-Reihenfolge sichtbar werden: Teil-Ring `ep_werbungskosten` und Gesamt-Ring ohne Gewichte wegen des Fehlers) samt den Antworten des Python-Servers
-(`api.stand`, `api.fragen`, `api.frage_einzeln` aus `produkt/haut/api.py`, im selben Prozess mit denselben Ereignissen):
+Gewichte der Fragen-Reihenfolge sichtbar werden: Teil-Ring `ep_werbungskosten` und Gesamt-Ring ohne Gewichte wegen des Fehlers) samt den Antworten von GET /stand, GET /fragen und GET /feld/{fid}/frage. Bis `2dd056a6` waren das die Antworten des
+Python-Servers (`api.stand`, `api.fragen`, `api.frage_einzeln` aus `produkt/haut/api.py`, im selben Prozess mit denselben
+Ereignissen; `git show 2dd056a6:rust/fixtures/api_stand_fragen_orakel.json`). Der Inhalt blieb bei der Umstellung gleich
+(Beleg im Commit: alle 20 Faelle gleich, auch `kopf`, den der alte Test nur fuer einen Fall verglich); nur `fall_id` heisst
+in der Datei jetzt in jedem Fall `sf`. Aufbau eines Falls:
 `events` (die Rumpfe von `POST /fall/<id>/event`, Reihenfolge ist Semantik), `stand` (die ganze Antwort), `fragen` (die
 ganze Antwort, nur bei den grossen Faellen; sonst `fragen_ids` und der Sperrgrund), `kopf` (was der Mitschnitt fuer
 `fragen` schreibt) und `einzeln` (Antwort je Probe-Feld). `event_id` jedes Felds in `stand` steht als `<event_id>` da:
 der Server haengt die Uhrzeit an das Ereignis. Konsument: `rust/api/tests/stand_fragen_orakel_hermetisch.rs`
 (hermetisch, ohne `PARITY=1`, ohne Python). Die Ereignislisten der Basisfaelle las der Erzeuger aus
-`rust/api/tests/kette_endstand_hermetisch.rs`. Eingefroren; der Umbau zu einem Rust-eigenen
-Golden-Master (S2.2) wartet auf die Waechter der Stufe 3.
+`rust/api/tests/kette_endstand_hermetisch.rs`.
+
+**Golden-Master (S2.2).** Die Datei gehoert Rust. Der Test spielt jeden Fall durch die echten Routen und vergleicht jede
+Antwort Feld fuer Feld mit der Datei; die Meldung nennt je Fall bis zu zwoelf Pfade (`.stand.felder.<fid>.wert: ist …,
+soll …`). Bei einer gewollten Aenderung (neues Bindungsfeld in einer Scheibe, neuer Fragetext, neuer Anzeigetext):
+
+```
+TAXGRAPH_GOLDEN_NEU=1 cargo test -p api --test stand_fragen_orakel_hermetisch
+git diff rust/fixtures/api_stand_fragen_orakel.json    # LESEN
+```
+
+Das Neuschreiben nimmt jede heutige Antwort als richtig; der Diff ist die einzige Pruefung, und ein Mensch gibt ihn
+frei. In der CI (`CI` gesetzt) ist es verboten. Die Datei steht zeilenweise (ein Feld, eine Frage, ein Ereignis je Zeile),
+damit der Diff lesbar ist; das Format kommt vom Schreiber im Test, die Eingaben (`name`, `scheibe`, `events`) und die Huelle
+eines Falls bleiben beim Neuschreiben stehen. Ein neuer Fall: `name`, `scheibe`, `events` und eine leere Huelle
+(`"fragen": {}` oder `"fragen_ids": []`, dazu `"einzeln": {"<feld_id>": {}}`), dann `N_FAELLE` im Test anheben.

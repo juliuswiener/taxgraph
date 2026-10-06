@@ -127,6 +127,57 @@ fn antwort_und_fehler_wie_python() {
     );
 }
 
+/// ABWEICHUNG VON PYTHON, gewollt (`ors.rs`, Kopf: "Abweichungen von `urllib`"): `json.loads(bytes)` liest eine Antwort mit
+/// UTF-8-Byte-Order-Mark, mit UTF-16 und mit `NaN`, `Infinity`, `-Infinity` oder `1e400` (= `inf`) im Koerper. `serde_json`
+/// liest nichts davon; Rust meldet "nicht verfuegbar" (der Dienst antwortet 503), wo Python die Antwort liest.
+#[test]
+fn weicht_von_python_ab_ors_antwort_mit_bom_utf16_nan_ist_nicht_verfuegbar() {
+    let mit_koerper = |koerper: &[u8]| -> Vec<u8> {
+        let mut roh = format!(
+            "HTTP/1.1 200 X\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            koerper.len()
+        )
+        .into_bytes();
+        roh.extend_from_slice(koerper);
+        roh
+    };
+    let utf16: Vec<u8> = r#"{"features": []}"#.encode_utf16().flat_map(u16::to_le_bytes).collect();
+    let faelle: Vec<(&str, Vec<u8>)> = vec![
+        (
+            "utf8_bom",
+            [&[0xEF, 0xBB, 0xBF][..], br#"{"features": []}"#].concat(),
+        ),
+        ("utf16_le", [&[0xFF, 0xFE][..], &utf16].concat()),
+        ("nan", br#"{"features": [], "x": NaN}"#.to_vec()),
+        ("infinity", br#"{"features": [], "x": Infinity}"#.to_vec()),
+        (
+            "minus_infinity",
+            br#"{"features": [], "x": -Infinity}"#.to_vec(),
+        ),
+        (
+            "zahl_ueber_f64",
+            br#"{"features": [], "x": 1e400}"#.to_vec(),
+        ),
+    ];
+    for (name, koerper) in faelle {
+        let stub = Stub::starte(vec![Aktion::Roh(mit_koerper(&koerper))]);
+        let r = ors_an(&stub).geocode("x");
+        assert_eq!(
+            r.unwrap_err().0,
+            "ORS-Aufruf fehlgeschlagen: JSONDecodeError",
+            "{name}"
+        );
+    }
+    // Kontrolle: derselbe Koerper ohne die Besonderheit wird gelesen.
+    let stub = Stub::starte(vec![Aktion::Roh(mit_koerper(
+        br#"{"features": [], "x": 1}"#,
+    ))]);
+    assert_eq!(
+        ors_an(&stub).geocode("x").unwrap(),
+        json!({"features": [], "x": 1})
+    );
+}
+
 /// `_TIMEOUT` 8: eine Antwort nach 7,5 s kommt an (Python liest sie).
 #[test]
 fn antwort_nach_7_5_sekunden_kommt_an() {
