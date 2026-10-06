@@ -151,6 +151,12 @@ fn ergebnis(f: &Fall) -> Ausgang {
             Err(e) => return Ausgang::Anders(format!("Guard: {e:?}")),
         }
     }
+    ohne_sperre(f)
+}
+
+/// Der Ausgang ohne den K2-Guard, nur `feste_zahl`: so erreicht ein Test den Chooser (`zweige/tarif.rs::p34_chooser`)
+/// auch dort, wo im Produkt die Sperren davor greifen. Der Chooser ist die zweite Linie hinter ihnen.
+fn ohne_sperre(f: &Fall) -> Ausgang {
     let kegel = f.cfg.kegel(|d| panic!("KONTROLLE: Kegel aus {d}")).unwrap();
     let kegel: Vec<&str> = kegel.iter().map(String::as_str).collect();
     let umg = Umgebung {
@@ -331,6 +337,53 @@ fn der_antrag_gilt_je_person_fuer_den_eigenen_gewinn() {
     // beide beantragen, nur der Partner hat einen Gewinn: Abs. 3 fuer den Partner
     let k = kette(gesamt(&mit(mit_antrag(partner_gewinn(500_000)), a_antrag)));
     assert_eq!(stufen(&k), [558_770, 558_698, 114_946, 114_946]);
+}
+
+// ---------------------------------------------------------------- Chooser ohne Sperre (zweite Linie)
+
+fn gesamt_ohne_sperre(basis: &[(&'static str, Value)]) -> Ausgang {
+    ohne_sperre(&fall(Scheibe::Gesamt, basis, &Vec::new()))
+}
+
+/// Ueber 5 Millionen Euro nimmt der Chooser den ermaessigten Satz fuer den Partner nicht, auch wenn keine Sperre davor
+/// steht: die Grenze steht in `p34_chooser` selbst. Im Produkt sperrt `abs3_partner_antrag_ueber_5mio_offen` davor
+/// (`ueber_fuenf_millionen_sperrt_und_die_grenze_selbst_nicht`); hier ist sie umgangen. Mit Antrag rechnet der Chooser
+/// dann wie ohne Antrag die Fuenftelregel (2.156.648 Euro, Handrechnung wie oben), nicht den Abs.-3-Wert auf den ganzen
+/// Gewinn (1.246.931 Euro). Eine Zahl auf den Gewinn ueber der Grenze ist das nicht, nur der Beleg, dass der Chooser
+/// Abs. 3 dort nicht anwendet.
+#[test]
+fn der_chooser_nimmt_abs3_fuer_den_partner_ueber_fuenf_millionen_nicht() {
+    let beantragt = gesamt_ohne_sperre(&mit_antrag(partner_gewinn(5_000_001)));
+    let unbeantragt = gesamt_ohne_sperre(&partner_gewinn(5_000_001));
+    assert_eq!(beantragt, unbeantragt, "Antrag ueber 5 Mio ist im Chooser wirkungslos");
+    let k = kette(beantragt);
+    assert_eq!(stufen(&k), [5_058_771, 5_058_699, 2_156_648, 2_156_648]);
+    // dieselbe Kontrolle auf der Grenze: dort gilt der Antrag (1.246.931 Euro, siehe oben)
+    let k = kette(gesamt_ohne_sperre(&mit_antrag(partner_gewinn(5_000_000))));
+    assert_eq!(stufen(&k), [5_058_770, 5_058_698, 1_246_931, 1_246_931]);
+}
+
+/// Haben beide einen Gewinn und beantragen beide den Satz, rechnet der Chooser Abs. 3 fuer A (A zuerst): der Gewinn des
+/// Partners bliebe ungeglaettet. Im Produkt sperrt `abs3_partner_gewinn_offen` davor
+/// (`beide_gewinn_mit_antrag_von_a_behaelt_den_bisherigen_grund`); hier ist die Sperre umgangen, damit die Reihenfolge im
+/// Chooser selbst gepinnt ist. Handrechnung VZ 2025 (A 300.000, Partner 500.000 Euro, zvE 858.698): A zuerst
+/// 212.920 + 68.068 = 280.988 Euro (Satz 22,69 % auf 300.000); der Partner zuerst waere 128.828 + 113.448 = 242.276 Euro.
+#[test]
+fn der_chooser_nimmt_bei_zwei_antraegen_den_gewinn_von_a() {
+    let a = vec![
+        ("rentner_veraeusserungsgewinn", json!(cent(300_000))),
+        ("rentner_veraeusserungs_betriebsart", json!("gewerbe")),
+        ("rentner_alter_55_oder_berufsunfaehig", json!(true)),
+        ("rentner_freibetrag_erstmalig", json!(true)),
+        ("antrag_ermaessigter_satz", json!(true)),
+        ("geburtsjahr", json!(1970)),
+        ("dauernd_berufsunfaehig", json!(false)),
+        ("ermaessigung_einmal_genutzt", json!(false)),
+    ];
+    let beide = mit(mit_antrag(partner_gewinn(500_000)), a);
+    assert_eq!(gesamt(&beide), gesperrt(GRUND_BEIDE_A), "im Produkt gesperrt");
+    let k = kette(gesamt_ohne_sperre(&beide));
+    assert_eq!(stufen(&k), [858_770, 858_698, 280_988, 280_988]);
 }
 
 // ---------------------------------------------------------------- Sperren (AK3)
