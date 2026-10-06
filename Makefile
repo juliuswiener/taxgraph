@@ -251,6 +251,22 @@ abgabeweg-freigabe:
 	PYTHONPATH=tests$${PYTHONPATH:+:$$PYTHONPATH} \
 	python3 -m pytest tests/test_einreichen_durchstich.py -q -rs -p skip_ist_rot
 
+## Rust-Gegenstueck zu abgabeweg-freigabe (V2): rust/api/tests/einreichen_eric_echt.rs startet den
+## echten Dienst (taxgraph-api, echter Socket), baut einen Fall ueber die Routen und ruft POST
+## /fall/{id}/einreichen mit der ECHTEN ERiC-Bibliothek und der ECHTEN Herstellerkennung. Nur Pruefung
+## (ERIC_VALIDIERE), kein Versand. Der Test ist #[ignore]: `cargo test --workspace` und die CI laufen
+## ohne ihn, `checkESt` selbst deckt die CI also NICHT. Hier laeuft er mit --ignored, und jede fehlende
+## Voraussetzung (Bibliothek, ID) oder ein anderer Lauf als genau ein bestandener Test macht das Ziel rot.
+## Herstellerkennung wie bei abgabeweg-freigabe aus der gitignorierten .env; das Protokoll liegt in
+## rust/target/ (der Test nennt weder ID noch Antwortrumpf). Die Verdrahtung (Ziel, --ignored, Testname,
+## #[ignore]) haelt rust/api/tests/einreichen_eric_echt.rs::die_freigabe_ist_verdrahtet in der CI fest.
+abgabeweg-freigabe-rust:
+	if [ -z "$$ELSTER_HERSTELLER_ID" ] && [ -f .env ]; then set -a; . ./.env; set +a; fi; \
+	mkdir -p rust/target; log=rust/target/abgabeweg-freigabe-rust.log; \
+	(cd rust && cargo test -p api --test einreichen_eric_echt -- --ignored --exact einreichen_ueber_den_echten_endpunkt_mit_echtem_checkest) > $$log 2>&1; rc=$$?; \
+	cat $$log; \
+	[ $$rc -eq 0 ] && grep -q "test result: ok. 1 passed" $$log
+
 ## Rust-Port (REWRITE_PLAN.md). Der generierte Catala-C-Backend liegt committed unter
 ## rust/catala-sys/generated/ -- catala-c regeneriert ihn (braucht den Opam-Switch).
 catala-c:
