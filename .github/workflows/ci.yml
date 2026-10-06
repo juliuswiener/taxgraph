@@ -324,6 +324,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgmp-dev poppler-utils
 
+      # Rust ist gepinnt, nicht "stable": ubuntu-latest rollt Runner-Images mit verschiedenem Rust
+      # gleichzeitig aus. clippy 1.99.0 (2026-09-28) bringt das Lint assert_is_empty; 557b7072 lief auf
+      # dem Image 20261004 deshalb rot (3 Treffer in ring_scheiben.rs), 4ddc4f3f auf dem Image 20260927
+      # gruen, bei gleichem Quelltext in diesen Zeilen. Lokal ist 1.98.0 das Tor. Anheben: erst die
+      # Treffer des neuen Lints im Baum beheben, dann die Zahl hier und lokal zugleich aendern.
+      - name: Rust 1.98.0 festlegen
+        run: |
+          rustup toolchain install 1.98.0 --profile minimal --component clippy
+          rustup default 1.98.0
+          rustc --version
+          cargo clippy --version
+
       # Der Schluessel haengt an Cargo.lock UND rust/Cargo.toml: dort steht `[profile.dev]
       # opt-level = 1`. Die Stufe steckt im Hash jedes gebauten Artefakts; mit dem alten Schluessel
       # (nur Cargo.lock) holte der Job nach der Umstellung den mit opt-level 0 gebauten Cache, baute
