@@ -1,0 +1,31 @@
+# vz_gueltigkeit-Bestand: Ratsche gegen das stille Verengen und Erweitern der Veranlagungsjahre eines Felds.
+#
+# WORUM ES GEHT: Jedes Feld der Bindung sagt in `vz_gueltigkeit`, fuer welche Veranlagungsjahre es gilt. Rust liest die
+# Liste nur im Pruefwerkzeug fuer das amtliche Schema (`elster::pruefe_bindung`: steht das Kz in jedem genannten Jahr im
+# Schema?). Im Dienst und in der Ergebnisberechnung liest sie niemand. Gemessen am 2026-10-06 (Abnahme-Folgeauftrag 2):
+# 10 Aenderungen an 8 Feldern (enger, weiter, leer, ein Jahr ohne Schema) liessen alle Rust-Tests gruen, ausser der
+# leeren Liste, die der Lader abweist. Damit wanderte das Jahr eines Felds ohne Meldung.
+#
+# WAS DIESE DATEI HAELT (Pruefung: rust/bindung/tests/vz_bestand.rs):
+#   standard:   die Jahre, die jedes Feld traegt, das nicht unter `abweichend` steht (heute 366 von 368 Feldern).
+#   abweichend: feld_id -> {jahre, grund}. Das Feld traegt GENAU diese Jahre. `grund` hat mehr als 30 Zeichen und sagt,
+#               woher die Abweichung kommt (nicht nur dass es sie gibt). Ein Eintrag, dessen Jahre dem Standard
+#               gleichen, ist ueberfluessig und rot; ein Eintrag fuer ein Feld, das es nicht mehr gibt, ebenso.
+#
+# JEDE Aenderung an der Jahresliste eines Felds ist damit ein Entscheid: eine Zeile hier und der Grund im Commit.
+# Fuer Kz-Felder prueft zusaetzlich rust/elster/tests/vz_gueltigkeit_schema.rs gegen das amtliche Schema (steht das Kz
+# im Schema des Jahres, ist das Jahr gelistet; steht es nicht darin, ist es nicht gelistet) — fuer die Jahre, zu denen
+# lokal ein Schema liegt (2024, 2025). Das Jahr 2026 hat kein lokales Schema; fuer 2026 und fuer Felder ohne Kz haelt
+# nur diese Datei.
+#
+# Diese Datei ist keine zweite Wahrheit ueber die Gueltigkeit: sie haelt nur fest, was ohne Entscheid nicht wandern darf.
+
+standard: [2024, 2025, 2026]
+
+abweichend:
+  realsplitting_empfaenger_kv_pv:
+    jahre: [2025, 2026]
+    grund: "Kz E0300717 steht erst im Schema E10-2025, nicht in E10-2023 und E10-2024 (gemessen 2026-10-06 an den ERiC-44.2-Schemas); ein Jahr 2024 wuerde einen Kz-Fehler im Pruefwerkzeug ausloesen."
+  realsplitting_empfaenger_kv_krankengeld:
+    jahre: [2025, 2026]
+    grund: "Kz E0300829 steht erst im Schema E10-2025, nicht in E10-2023 und E10-2024 (gemessen 2026-10-06 an den ERiC-44.2-Schemas); ein Jahr 2024 wuerde einen Kz-Fehler im Pruefwerkzeug ausloesen."
