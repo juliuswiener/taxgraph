@@ -8,10 +8,14 @@
 //! Umlaute zu ae/oe/ue/ss, alles klein, jede Folge von Leerraum zu einem Leerzeichen. Beide Seiten
 //! (Anker und Quelltext) laufen durch sie; der Anker muss dann ein Stueck des Quelltexts sein.
 //!
-//! Die Quelldatei ist `anker_ref.datei`, sonst `norm_source` der Regel aus `pipeline/produktion/rules.yaml`.
-//! Heute tragen alle Anker eine Datei; `rules.yaml` wird nur gelesen, wenn ein Anker keine hat. Die Datei
-//! muss unter `sources/` liegen (kein `..`, kein Symlink hinaus): ein Anker gegen eine Datei ausserhalb
-//! belegt nichts, sondern liest, was gerade dort liegt.
+//! Die Quelldatei ist `anker_ref.datei`. Fehlt sie oder ist sie leer, ist das ein Fehler. Das ist strenger
+//! als das Python-Werkzeug, das dann auf `norm_source` der Regel in `pipeline/produktion/rules.yaml`
+//! zurueckfaellt: die Bindung gehoert seit Stufe 1 Rust, und kein Rust-Test soll den Python-Baum lesen.
+//! Die Datei muss unter `sources/` liegen (kein `..`, kein Symlink hinaus): ein Anker gegen eine Datei
+//! ausserhalb belegt nichts, sondern liest, was gerade dort liegt.
+//!
+//! Jede Bindung der Registry wird gezaehlt: `verglichen` plus `ohne_quelle` ist die Zahl der Bindungen,
+//! unabhaengig gezaehlt aus `Registry::dateien`. Eine Untergrenze allein liesse Bindungen unbemerkt fallen.
 //!
 //! Was dieser Waechter NICHT sieht: ob der Anker zur Fundstelle (`anker_ref.quelle`) passt, ob die
 //! Quelldatei die richtige Fassung des Gesetzes ist und ob der Anker das Feld wirklich traegt. Er prueft nur,
@@ -27,10 +31,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 use std::sync::OnceLock;
 
-use serde::Deserialize;
+use bindung::Registry;
 
-/// Wo `norm_source` je Regel steht, wenn ein Anker keine eigene Datei nennt.
-const RULES_YAML: &str = "pipeline/produktion/rules.yaml";
 /// Untergrenzen: ohne sie wuerde der Waechter gruen, weil seine Menge leer ist (heute 368 Anker, 40 Dateien).
 const MINDESTENS_ANKER: usize = 300;
 const MINDESTENS_DATEIEN: usize = 30;
@@ -64,56 +66,16 @@ fn normalisiere(text: &str) -> String {
 /// Was die Pruefung von einer Bindung braucht.
 struct Anker<'a> {
     feld_id: &'a str,
-    regel_id: &'a str,
     datei: Option<&'a str>,
     zitatanker: &'a str,
 }
 
-#[derive(Deserialize)]
-struct RegelnDatei {
-    regeln: Vec<Regel>,
-}
-
-#[derive(Deserialize)]
-struct Regel {
-    rule_id: String,
-    norm_source: Option<String>,
-}
-
-/// `rule_id` -> `norm_source`, ohne leere Eintraege (Python: `if not datei`).
-fn lade_norm_quellen(wurzel: &Path) -> BTreeMap<String, String> {
-    let pfad = wurzel.join(RULES_YAML);
-    let text = std::fs::read_to_string(&pfad).unwrap_or_else(|e| panic!("{}: {e}", pfad.display()));
-    let datei: RegelnDatei =
-        serde_yaml_ng::from_str(&text).unwrap_or_else(|e| panic!("{}: {e}", pfad.display()));
-    datei
-        .regeln
-        .into_iter()
-        .filter_map(|r| {
-            r.norm_source
-                .filter(|s| !s.is_empty())
-                .map(|s| (r.rule_id, s))
-        })
-        .collect()
-}
-
-/// Die Quelldatei eines Ankers: seine eigene, sonst `norm_source` seiner Regel, sonst ein Fehler.
-fn quelldatei<'a>(
-    anker: &Anker<'a>,
-    norm_quellen: &'a BTreeMap<String, String>,
-) -> Result<&'a str, String> {
-    if let Some(datei) = anker.datei.filter(|d| !d.is_empty()) {
-        return Ok(datei);
-    }
-    norm_quellen
-        .get(anker.regel_id)
-        .map(String::as_str)
-        .ok_or_else(|| {
-            format!(
-                "{}: keine Quelldatei (weder anker_ref.datei noch norm_source der Regel {})",
-                anker.feld_id, anker.regel_id
-            )
-        })
+/// Die Quelldatei eines Ankers: seine eigene `datei`. Fehlt sie oder ist sie leer, ist das ein Fehler.
+fn quelldatei<'a>(anker: &Anker<'a>) -> Result<&'a str, String> {
+    anker
+        .datei
+        .filter(|d| !d.is_empty())
+        .ok_or_else(|| format!("{}: anker_ref.datei fehlt oder ist leer", anker.feld_id))
 }
 
 /// Nur relative Pfade `sources/...` ohne `..`.
@@ -149,21 +111,26 @@ struct Befund {
     fehler: Vec<String>,
     /// Anker, deren Quelltext gelesen und mit dem Anker verglichen wurde (auch bei Fehlschlag).
     verglichen: usize,
+    /// Anker, bei denen es keinen Quelltext zum Vergleichen gab (keine Datei, nicht lesbar, ausserhalb).
+    /// `verglichen + ohne_quelle` ist die Zahl der Anker, die `pruefe` gesehen hat.
+    ohne_quelle: usize,
     dateien: BTreeSet<String>,
 }
 
-fn pruefe(wurzel: &Path, anker: &[Anker], norm_quellen: &BTreeMap<String, String>) -> Befund {
+fn pruefe(wurzel: &Path, anker: &[Anker]) -> Befund {
     let mut befund = Befund {
         fehler: Vec::new(),
         verglichen: 0,
+        ohne_quelle: 0,
         dateien: BTreeSet::new(),
     };
     let mut quellen: BTreeMap<&str, Result<String, String>> = BTreeMap::new();
     for a in anker {
-        let datei = match quelldatei(a, norm_quellen) {
+        let datei = match quelldatei(a) {
             Ok(d) => d,
             Err(e) => {
                 befund.fehler.push(e);
+                befund.ohne_quelle += 1;
                 continue;
             }
         };
@@ -174,6 +141,7 @@ fn pruefe(wurzel: &Path, anker: &[Anker], norm_quellen: &BTreeMap<String, String
             Ok(q) => q,
             Err(e) => {
                 befund.fehler.push(format!("{}: {e}", a.feld_id));
+                befund.ohne_quelle += 1;
                 continue;
             }
         };
@@ -197,29 +165,27 @@ fn wurzel() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// Die Registry, die der Dienst liest.
+fn registry() -> &'static Registry {
+    static CELL: OnceLock<Registry> = OnceLock::new();
+    CELL.get_or_init(|| bindung::lade_registry_der_wurzel(&wurzel()).expect("Registry laedt"))
+}
+
 /// Die Pruefung auf der Registry, die der Dienst liest.
 fn echter_befund() -> &'static Befund {
     static CELL: OnceLock<Befund> = OnceLock::new();
     CELL.get_or_init(|| {
-        let wurzel = wurzel();
-        let registry = bindung::lade_registry_der_wurzel(&wurzel).expect("Registry laedt");
-        let anker: Vec<Anker> = registry
+        let anker: Vec<Anker> = registry()
             .dateien
             .iter()
             .flat_map(|(_, d)| d.bindungen.iter())
             .map(|b| Anker {
                 feld_id: &b.feld_id,
-                regel_id: &b.quelle.regel_id,
                 datei: b.anker_ref.datei.as_deref(),
                 zitatanker: &b.anker_ref.zitatanker,
             })
             .collect();
-        let norm_quellen = if anker.iter().any(|a| a.datei.is_none_or(str::is_empty)) {
-            lade_norm_quellen(&wurzel)
-        } else {
-            BTreeMap::new()
-        };
-        pruefe(&wurzel, &anker, &norm_quellen)
+        pruefe(&wurzel(), &anker)
     })
 }
 
@@ -255,22 +221,20 @@ fn es_gibt_anker_und_quelldateien_zu_pruefen() {
     );
 }
 
-/// Der Rueckfall auf `norm_source` ist heute ungenutzt (alle Anker tragen eine Datei). Damit er nicht
-/// still verrottet, muss `rules.yaml` lesbar bleiben und Quellen tragen.
+/// Jede Bindung der Registry wird geprueft, keine faellt still heraus. Die Zahl kommt auf einem anderen Weg
+/// als die Anker von `echter_befund` (Summe der Laengen je Datei, keine Iteratorkette): ein Filter oder ein
+/// `skip` in der Kette liesse eine Untergrenze wie `MINDESTENS_ANKER` gruen, diese Gleichung nicht.
 #[test]
-fn rules_yaml_traegt_norm_quellen_fuer_den_rueckfall() {
-    let quellen = lade_norm_quellen(&wurzel());
-    // Heute 7 von 106 Regeln; die Untergrenze haelt den Test nur davon ab, leer wahr zu werden.
-    assert!(quellen.len() >= 5, "nur {} norm_source", quellen.len());
+fn jede_bindung_der_registry_wird_geprueft() {
+    let bindungen: usize = registry().dateien.iter().map(|(_, d)| d.bindungen.len()).sum();
+    let befund = echter_befund();
+    assert!(bindungen >= MINDESTENS_ANKER, "nur {bindungen} Bindungen in der Registry");
     assert_eq!(
-        quellen
-            .get("p9_1_3_nr5_doppelte_haushaltsfuehrung")
-            .map(String::as_str),
-        Some("sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt")
-    );
-    assert!(
-        quellen.values().all(|d| pruefe_pfad(d).is_ok()),
-        "norm_source ausserhalb von sources/"
+        befund.verglichen + befund.ohne_quelle,
+        bindungen,
+        "{} verglichen + {} ohne Quelltext, aber {bindungen} Bindungen in der Registry",
+        befund.verglichen,
+        befund.ohne_quelle
     );
 }
 
@@ -328,23 +292,18 @@ fn pfad_nur_unter_sources_und_ohne_ausbruch() {
 }
 
 #[test]
-fn quelldatei_ist_die_eigene_sonst_die_norm_source_sonst_ein_fehler() {
-    let quellen = BTreeMap::from([("r1".to_owned(), "sources/aus_regel.txt".to_owned())]);
-    let anker = |datei: Option<&'static str>, regel_id: &'static str| Anker {
+fn quelldatei_ist_die_eigene_sonst_ein_fehler() {
+    let anker = |datei: Option<&'static str>| Anker {
         feld_id: "f",
-        regel_id,
         datei,
         zitatanker: "z",
     };
-    assert_eq!(
-        quelldatei(&anker(Some("sources/eigene.txt"), "r1"), &quellen),
-        Ok("sources/eigene.txt")
-    );
-    assert_eq!(quelldatei(&anker(None, "r1"), &quellen), Ok("sources/aus_regel.txt"));
-    // Eine leere Datei zaehlt wie keine (Python: `if not datei`).
-    assert_eq!(quelldatei(&anker(Some(""), "r1"), &quellen), Ok("sources/aus_regel.txt"));
-    let fehler = quelldatei(&anker(None, "unbekannt"), &quellen).unwrap_err();
-    assert!(fehler.contains("unbekannt"), "{fehler}");
+    assert_eq!(quelldatei(&anker(Some("sources/eigene.txt"))), Ok("sources/eigene.txt"));
+    // Keine Datei und eine leere Datei sind dasselbe: ein Fehler, der das Feld nennt.
+    for ohne in [None, Some("")] {
+        let fehler = quelldatei(&anker(ohne)).unwrap_err();
+        assert!(fehler.starts_with("f: ") && fehler.contains("datei fehlt"), "{ohne:?}: {fehler}");
+    }
 }
 
 fn hermetische_wurzel(name: &str) -> PathBuf {
@@ -364,14 +323,12 @@ fn hermetische_wurzel(name: &str) -> PathBuf {
 #[test]
 fn die_pruefung_erkennt_ihre_fehlerfaelle() {
     let wurzel = hermetische_wurzel("fehlerfaelle");
-    let quellen = BTreeMap::new();
     let anker = |zitat: &'static str, datei: Option<&'static str>| Anker {
         feld_id: "f",
-        regel_id: "r",
         datei,
         zitatanker: zitat,
     };
-    let befund = |a: &Anker| pruefe(&wurzel, std::slice::from_ref(a), &quellen);
+    let befund = |a: &Anker| pruefe(&wurzel, std::slice::from_ref(a));
     let gesetz = Some("sources/gesetz.txt");
     // Gefunden: Gross-/Kleinschreibung, Umlaute, Leerraum und Zeilenumbruch sind egal.
     for gut in [
@@ -393,18 +350,56 @@ fn die_pruefung_erkennt_ihre_fehlerfaelle() {
     let b = befund(&anker(" \t\n ", gesetz));
     assert_eq!(b.fehler.len(), 1);
     assert!(b.fehler[0].contains("nur Leerraum"), "{:?}", b.fehler);
-    // Datei fehlt, liegt ausserhalb von sources/ (obwohl sie existiert), kein Weg zu einer Datei.
+    // Datei fehlt, liegt ausserhalb von sources/ (obwohl sie existiert), keine Datei genannt.
     for (datei, teil) in [
         (Some("sources/gibt_es_nicht.txt"), "nicht lesbar"),
         (Some("../geheim.txt"), "liegt nicht unter sources/"),
         (Some("geheim.txt"), "liegt nicht unter sources/"),
         (Some("sources/../geheim.txt"), "verlaesst sources/"),
-        (None, "keine Quelldatei"),
+        (None, "datei fehlt"),
+        (Some(""), "datei fehlt"),
     ] {
         let b = befund(&anker("ausserhalb", datei));
         assert_eq!(b.fehler.len(), 1, "{datei:?}: {:?}", b.fehler);
         assert!(b.fehler[0].contains(teil), "{datei:?}: {:?}", b.fehler);
+        assert_eq!((b.verglichen, b.ohne_quelle), (0, 1), "{datei:?}");
     }
+}
+
+/// Die Bindung gehoert Rust: ein Anker ohne `datei` (oder mit leerer) ist ein Fehler, kein Rueckfall auf
+/// eine Regel im Python-Baum. Der Anker steht im Quelltext (der erste der drei besteht); ein Fehler der
+/// beiden anderen muss die fehlende Datei nennen, sonst haette etwas anderes die Datei ersetzt.
+#[test]
+fn anker_ohne_datei_ist_ein_fehler() {
+    let wurzel = hermetische_wurzel("ohne_datei");
+    let zitat = "Die Aufwendungen für Kinder-\nbetreuung";
+    let mit = |datei| Anker {
+        feld_id: "mit",
+        datei,
+        zitatanker: zitat,
+    };
+    let anker = [
+        mit(Some("sources/gesetz.txt")),
+        Anker {
+            feld_id: "keine",
+            ..mit(None)
+        },
+        Anker {
+            feld_id: "leer",
+            ..mit(Some(""))
+        },
+    ];
+    let b = pruefe(&wurzel, &anker);
+    assert_eq!(b.fehler.len(), 2, "{:?}", b.fehler);
+    // Der Fehler nennt die fehlende Datei, nicht einen Lesefehler einer Ersatzdatei.
+    for (fehler, feld) in b.fehler.iter().zip(["keine", "leer"]) {
+        assert!(
+            fehler.starts_with(&format!("{feld}: ")) && fehler.contains("datei fehlt"),
+            "{fehler}"
+        );
+    }
+    // Keiner der drei faellt aus der Zaehlung: einer verglichen, zwei ohne Quelltext.
+    assert_eq!((b.verglichen, b.ohne_quelle), (1, 2));
 }
 
 #[cfg(unix)]
@@ -414,11 +409,10 @@ fn ein_symlink_aus_sources_hinaus_wird_abgewiesen() {
     std::os::unix::fs::symlink(wurzel.join("geheim.txt"), wurzel.join("sources/hinaus.txt")).unwrap();
     let anker = Anker {
         feld_id: "f",
-        regel_id: "r",
         datei: Some("sources/hinaus.txt"),
         zitatanker: "Nur ausserhalb von sources",
     };
-    let b = pruefe(&wurzel, std::slice::from_ref(&anker), &BTreeMap::new());
+    let b = pruefe(&wurzel, std::slice::from_ref(&anker));
     assert_eq!(b.fehler.len(), 1, "{:?}", b.fehler);
     assert!(b.fehler[0].contains("Symlink"), "{:?}", b.fehler);
 }
