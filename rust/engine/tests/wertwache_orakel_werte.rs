@@ -3,7 +3,7 @@
 //! `rust/fixtures/wertwache_orakel.json` haelt feste Grenzfaelle samt den Antworten des laufenden Orakels
 //! (`runner.catala_*` ueber `tools/parity/oracle.py`), eingefroren (der Erzeuger ist geloescht; Verlauf:
 //! `git show 2dd056a6:tools/parity/extract_wertwache_orakel.py`). Dieser Test spielt dieselben rohen Sachverhalt-dicts ueber dieselben Adapter wie die Parity-Suiten
-//! (`rust/parity/tests/zugriff_teil{1,2}/adapter.rs`) gegen `engine::zugriff` und vergleicht Wert oder
+//! (Kopien in `rust/engine/tests/zugriff_adapter/teil{1,2}.rs`) gegen `engine::zugriff` und vergleicht Wert oder
 //! Ausnahmeklasse.
 //!
 //! Warum das noetig ist: der Zufallsgenerator von `zugriff_teil2_paritaet` zieht Grenzwerte nur selten und nie
@@ -26,13 +26,14 @@
     clippy::panic
 )]
 
-// Die Adapter sind die der Parity-Suiten (dict -> typisierte Eingabe, mit Pythons Lesestellen); hier wird nur
-// ein Teil davon gerufen.
+// Die Adapter (dict -> typisierte Eingabe, mit Pythons Lesestellen) sind Kopien der Adapter der Parity-Suiten,
+// bei der Anlage byte-gleich (sha256 im Commit); hier wird nur ein Teil davon gerufen. Die Originale in
+// `rust/parity/tests/zugriff_teil{1,2}/adapter.rs` bleiben, bis die Parity faellt.
 #[allow(dead_code)]
-#[path = "../../parity/tests/zugriff_teil1/adapter.rs"]
+#[path = "zugriff_adapter/teil1.rs"]
 mod adapter1;
 #[allow(dead_code)]
-#[path = "../../parity/tests/zugriff_teil2/adapter.rs"]
+#[path = "zugriff_adapter/teil2.rs"]
 mod adapter2;
 
 use std::path::PathBuf;
