@@ -2,7 +2,7 @@
 //!
 //! Pythons Server ruft ERiC (Singlethread-API) immer aus seinem Hauptthread. [`elster::validiere`]
 //! gibt dafuer jeden Auftrag an einen eigenen Thread. Der Test baut die Attrappe von
-//! `libericapi.so` (`parity/tests/eric_attrappe/eric_attrappe.c`, die auch der Vergleichslauf
+//! `libericapi.so` (`elster/tests/eric_attrappe/eric_attrappe.c`, die auch der Vergleichslauf
 //! benutzt), ruft `validiere` aus mehreren Threads nacheinander auf und liest, auf welchem Thread
 //! die Attrappe jeden Aufruf sah. Nie die echte Bibliothek.
 //!
@@ -21,7 +21,7 @@ fn alle_aufrufe_laufen_auf_einem_thread() {
     std::fs::create_dir_all(&lib).unwrap();
     std::fs::create_dir_all(&steuer).unwrap();
     let quelle = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../parity/tests/eric_attrappe/eric_attrappe.c");
+        .join("tests/eric_attrappe/eric_attrappe.c");
     let gebaut = Command::new("cc")
         .args(["-shared", "-fPIC", "-O0", "-o"])
         .arg(lib.join("libericapi.so"))

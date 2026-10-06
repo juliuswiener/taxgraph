@@ -7,6 +7,7 @@
 //! Beide Server laden dieselbe Datei (`ERIC_DIR`), jeder mit eigenen Steuerdateien
 //! (`ERIC_ATTRAPPE_DIR`). Der Lauf vergleicht Antwort, Audit, `fehler.log`, Fallakte mit Snapshot
 //! UND das XML, das `ERiC` sah, samt Datenart und Flags.
+//! Die Attrappe liegt in `rust/elster/tests/eric_attrappe/` (gemeinsam mit `elster`, `api` und `versand`).
 //!
 //! Nie die echte Bibliothek und nie eine echte Hersteller-ID: `ERIC_DIR` zeigt in ein Wegwerf-
 //! Verzeichnis, `HOME` ebenso (sonst fiele die Suche auf `~/02_Software/eric` zurueck), die
@@ -297,7 +298,7 @@ fn szenarien() -> Vec<E> {
 
 /// Baut die Attrappe nach `ziel`.
 fn baue_attrappe(ziel: &Path) {
-    let quelle = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/eric_attrappe/eric_attrappe.c");
+    let quelle = Path::new(env!("CARGO_MANIFEST_DIR")).join("../elster/tests/eric_attrappe/eric_attrappe.c");
     let st = Command::new("cc")
         .args(["-shared", "-fPIC", "-O0", "-Wall", "-Wextra", "-o"])
         .arg(ziel)

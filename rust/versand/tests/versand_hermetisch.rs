@@ -1,7 +1,7 @@
 //! Der Versandpfad gegen die ATTRAPPE von `libericapi.so` — nie die echte Bibliothek, nie ein
 //! Zertifikat, nie eine echte PIN, nie das Netz.
 //!
-//! Die Attrappe (`eric_attrappe.c`, dieselbe wie im Vergleichslauf; Orte siehe `ATTRAPPE_QUELLEN`) wird mit
+//! Die Attrappe (`eric_attrappe.c`, dieselbe wie im Vergleichslauf; Ort siehe `ATTRAPPE_QUELLE`) wird mit
 //! `cc -shared -fPIC` gebaut und antwortet nach Steuerdateien in `$ERIC_ATTRAPPE_DIR`; sie schreibt
 //! auf, was sie bekam: Flags, Crypto-Parameter (die PIN nur als Laenge), den Pfad des Zertifikats, die
 //! Zahl der Aufrufe. Jeder Test liest daraus, WAS bei ERiC ankam — und bei jeder Sperre, dass NICHTS
@@ -29,13 +29,8 @@ const ANTWORT_ERFOLG: &str =
 const PIN: &str = "PIN-SENTINEL-4711";
 const ZERT_NAME: &str = "zertifikat-SENTINEL-9f3a.pfx";
 
-/// Wo die Attrappe liegt. Der Ort ausserhalb von `parity/` ist der kuenftige (die Loeschung von
-/// `rust/parity` verschiebt die Datei dorthin); solange er fehlt, gilt der heutige. Der Rueckfall
-/// wird mit dem Verschieben gegenstandslos und kann dann entfallen.
-const ATTRAPPE_QUELLEN: [&str; 2] = [
-    "../elster/tests/eric_attrappe/eric_attrappe.c",
-    "../parity/tests/eric_attrappe/eric_attrappe.c",
-];
+/// Wo die Attrappe liegt: ausserhalb von `parity/`, das nach der Abnahme geloescht wird.
+const ATTRAPPE_QUELLE: &str = "../elster/tests/eric_attrappe/eric_attrappe.c";
 
 static SPERRE: Mutex<()> = Mutex::new(());
 static BIBLIOTHEK: OnceLock<Option<PathBuf>> = OnceLock::new();
@@ -47,11 +42,8 @@ fn bibliothek() -> Option<&'static Path> {
             let lib = Path::new(env!("CARGO_TARGET_TMPDIR")).join("versand_attrappe");
             std::fs::create_dir_all(&lib).unwrap();
             let ziel = lib.join("libericapi.so");
-            let quelle = ATTRAPPE_QUELLEN
-                .iter()
-                .map(|p| Path::new(env!("CARGO_MANIFEST_DIR")).join(p))
-                .find(|p| p.is_file())
-                .expect("die Quelle der Attrappe liegt an keinem der bekannten Orte");
+            let quelle = Path::new(env!("CARGO_MANIFEST_DIR")).join(ATTRAPPE_QUELLE);
+            assert!(quelle.is_file(), "die Quelle der Attrappe fehlt: {}", quelle.display());
             let gebaut = Command::new("cc")
                 .args(["-shared", "-fPIC", "-O0", "-o"])
                 .arg(&ziel)
@@ -165,7 +157,10 @@ impl Lauf {
 
     /// Schreibt ein XML ins Wegwerf-Verzeichnis (je Inhalt eine eigene Datei) und gibt den Pfad.
     fn xml_datei(&self, xml: &[u8]) -> String {
-        let p = self.wurzel.path().join(format!("fall_{}.xml", xml.len()));
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        xml.hash(&mut h);
+        let p = self.wurzel.path().join(format!("fall_{:x}.xml", h.finish()));
         std::fs::write(&p, xml).unwrap();
         p.to_string_lossy().into_owned()
     }
@@ -473,6 +468,17 @@ fn das_programm_im_dry_run_laedt_eric_nie_und_zeigt_weder_pfad_noch_pin() {
     assert_eq!(rc, 0);
     assert!(aus.contains("merker_konsistent: false") && aus.contains("WARNUNG"), "{aus}");
     assert!(l.eric_unberuehrt());
+
+    // Zwei Testmerker: die Anzeige nennt den ERSTEN (`merker_im_xml`), der Modus ist inkonsistent.
+    let zwei = b"<Elster><TransferHeader><Testmerker>700000004</Testmerker>\
+<Testmerker>700000009</Testmerker></TransferHeader></Elster>";
+    let datei = l.xml_datei(zwei);
+    let (rc, aus) = l.programm(&["--xml", &datei, "--datenart", "ESt_2025", "--dry-run"], "", false);
+    assert_eq!(rc, 0);
+    assert!(aus.contains("merker_im_xml: 700000004"), "{aus}");
+    assert!(!aus.contains("700000009"), "die Anzeige nennt nicht den ersten Merker: {aus}");
+    assert!(aus.contains("merker_konsistent: false") && aus.contains("WARNUNG"), "{aus}");
+    assert!(l.eric_unberuehrt());
 }
 
 #[test]
@@ -565,6 +571,18 @@ fn das_programm_meldet_einen_fehlschlag_mit_exit_eins_und_dem_rueckgabetext() {
     assert!(aus.contains("TEXT-VON-ERIC") && aus.contains("eric.log"), "{aus}");
     assert!(aus.contains("Telenummer: (keine"), "{aus}");
     assert!(!aus.contains(PIN) && !aus.contains(ZERT_NAME), "{aus}");
+}
+
+#[test]
+fn das_programm_meldet_rc_null_ohne_telenummer_als_kein_erfolg() {
+    // rc 0 allein ist kein Erfolg: ohne Telenummer Exit 1 und "KEIN ERFOLG" (nicht Exit 0).
+    let Some(l) = Lauf::neu("0\n<Elster><Erfolg/></Elster>") else { return };
+    let datei = l.xml_datei(XML_TEST);
+    let (rc, aus) = l.programm(&["--xml", &datei, "--datenart", "ESt_2025", "--testversand"], "", false);
+    assert_eq!(rc, 1, "{aus}");
+    assert!(aus.contains("[versand] rc=0") && aus.contains("KEIN ERFOLG"), "{aus}");
+    assert!(aus.contains("Telenummer: (keine"), "{aus}");
+    assert_eq!(l.zaehler("zaehler"), Some(1), "ERiC wurde gerufen, der Versand war nur kein Erfolg");
 }
 
 #[test]
