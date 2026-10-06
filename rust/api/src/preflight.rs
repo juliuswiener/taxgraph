@@ -43,7 +43,18 @@ pub fn preflight(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort
         .materialisiere(None)
         .map_err(|e| ApiFehler::unerwartet("ValueError", e.to_string()))?;
     let scheibe: HashSet<String> = sb.index.keys().cloned().collect();
-    let e = konsistenz::preflight(
+    // Erschoepfend, ohne `..`: eine achte Liste in `PreflightErgebnis` bricht hier den Bau, statt still
+    // nicht ausgeliefert zu werden (Ampel rot ohne Grund, `preflight.py` liefert alle Listen).
+    let konsistenz::PreflightErgebnis {
+        widersprueche_flag,
+        widersprueche_partner,
+        widersprueche_alleinerziehend,
+        widersprueche_plausibilitaet,
+        hinweise_pauschalen,
+        hinweise_nicht_gerechnet,
+        hinweise_betrag_vorlaeufig,
+        status,
+    } = konsistenz::preflight(
         &felder,
         Some(&scheibe),
         vorjahr_verlustvortrag(store),
@@ -62,7 +73,7 @@ pub fn preflight(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort
     nimm(
         "widerspruch",
         "flag",
-        e.widersprueche_flag
+        widersprueche_flag
             .iter()
             .map(|w| w.grund.as_str())
             .collect(),
@@ -70,7 +81,7 @@ pub fn preflight(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort
     nimm(
         "widerspruch",
         "partner",
-        e.widersprueche_partner
+        widersprueche_partner
             .iter()
             .map(|w| w.grund.as_str())
             .collect(),
@@ -78,7 +89,7 @@ pub fn preflight(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort
     nimm(
         "widerspruch",
         "alleinerziehend",
-        e.widersprueche_alleinerziehend
+        widersprueche_alleinerziehend
             .iter()
             .map(|w| w.grund.as_str())
             .collect(),
@@ -86,7 +97,7 @@ pub fn preflight(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort
     nimm(
         "widerspruch",
         "plausibilitaet",
-        e.widersprueche_plausibilitaet
+        widersprueche_plausibilitaet
             .iter()
             .map(|w| w.grund.as_str())
             .collect(),
@@ -94,26 +105,23 @@ pub fn preflight(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort
     nimm(
         "hinweis",
         "pauschale",
-        e.hinweise_pauschalen.iter().map(|h| h.hinweis).collect(),
+        hinweise_pauschalen.iter().map(|h| h.hinweis).collect(),
     );
     nimm(
         "hinweis",
         "nicht_gerechnet",
-        e.hinweise_nicht_gerechnet
-            .iter()
-            .map(|h| h.hinweis)
-            .collect(),
+        hinweise_nicht_gerechnet.iter().map(|h| h.hinweis).collect(),
     );
     nimm(
         "hinweis",
         "betrag_vorlaeufig",
-        e.hinweise_betrag_vorlaeufig
+        hinweise_betrag_vorlaeufig
             .iter()
             .map(|h| h.hinweis.as_str())
             .collect(),
     );
     Ok(Antwort::neu(
         200,
-        json!({"fall_id": fall_id.as_str(), "status": e.status.als_str(), "items": items}),
+        json!({"fall_id": fall_id.as_str(), "status": status.als_str(), "items": items}),
     ))
 }
