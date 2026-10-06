@@ -66,6 +66,18 @@ pub enum BindungFehler {
     UngueltigesRegelBedingungFeld { regel_id: String, feld: String },
     #[error("version {0} ist zu klein, mindestens 1")]
     VersionZuKlein(u32),
+    #[error("{feld_id}: muster {muster:?} ist keine gueltige Regex der regex-Crate ({nachricht}); der Store wiese jeden Wert des Feldes ab")]
+    UngueltigesMuster {
+        feld_id: String,
+        muster: String,
+        nachricht: String,
+    },
+    #[error("{feld_id}: beispielwert {beispielwert:?} passt nicht zum eigenen muster {muster:?}")]
+    BeispielwertPasstNichtZumMuster {
+        feld_id: String,
+        beispielwert: String,
+        muster: String,
+    },
 }
 
 /// Mindestlaenge von `hilfe_kurz` und `anker_ref.zitatanker` (Schema: `minLength: 3`).
@@ -403,7 +415,38 @@ impl Bindung {
         if let Some(bereich) = &self.bereich {
             self.pruefe_bereich(bereich)?;
         }
+        self.pruefe_muster()?;
         self.pruefe_schema_reste()
+    }
+
+    /// `muster` muss eine Regex sein, die die `regex`-Crate uebersetzt, und der `beispielwert` muss
+    /// dazu passen. Der Store faengt ein ungueltiges Muster fail-closed ab (`store::passt_muster`:
+    /// "nicht passend"), ein Feld mit kaputtem Muster nimmt also keinen einzigen Wert mehr an, ohne
+    /// dass der Dienst beim Start etwas meldet. Auch ein Muster, das Pythons `re` kennt und die
+    /// `regex`-Crate nicht (Lookahead, Rueckverweis), fiele so still aus.
+    fn pruefe_muster(&self) -> Result<(), BindungFehler> {
+        let Some(muster) = &self.muster else {
+            return Ok(());
+        };
+        // Derselbe Rahmen wie `store::passt_muster` (`re.fullmatch`): das Muster gilt fuer den
+        // ganzen Wert. Aendert sich der Rahmen dort, muss er hier mit.
+        let regex = regex::Regex::new(&format!("^(?:{muster})$")).map_err(|e| {
+            BindungFehler::UngueltigesMuster {
+                feld_id: self.feld_id.clone(),
+                muster: muster.clone(),
+                nachricht: e.to_string().lines().last().unwrap_or_default().to_string(),
+            }
+        })?;
+        if let Value::String(beispiel) = &self.beispielwert {
+            if !regex.is_match(beispiel) {
+                return Err(BindungFehler::BeispielwertPasstNichtZumMuster {
+                    feld_id: self.feld_id.clone(),
+                    beispielwert: beispiel.clone(),
+                    muster: muster.clone(),
+                });
+            }
+        }
+        Ok(())
     }
 
     /// Die Regeln aus `schema.json`, die `serde` nicht kennt: Mindestlaengen, das Verbot von

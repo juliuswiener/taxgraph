@@ -198,6 +198,7 @@ name = "bindung"
 version = "0.0.0"
 dependencies = [
  "domain",
+ "regex",
  "rust_decimal",
  "serde",
  "serde_json",

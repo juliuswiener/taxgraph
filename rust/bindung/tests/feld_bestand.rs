@@ -6,8 +6,10 @@
 //! Dienst stuerzt nicht ab und meldet nichts. Der Test erzwingt, dass jemand das Streichen
 //! begruendet und sagt, was aus vorhandenen Angaben wird.
 //!
-//! Die Ratsche kennt nur diese eine Richtung. Ein neues Feld braucht keinen Eintrag, es kann
-//! nichts verlieren; eine Liste, die jedes neue Feld mitfuehren muesste, verrottete.
+//! Die Gegenrichtung (Entscheid 2026-10-06): Jedes Feld der Bindung steht in `felder:`. Ein Feld,
+//! das dort fehlt, kann aus der Bindung verschwinden, ohne dass ein Test es sieht (61 Felder
+//! waren es bis zum 2026-10-06). Jedes neue Feld kostet damit eine Zeile in `FELD_BESTAND.yaml`;
+//! die Fehlermeldung nennt sie.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -19,8 +21,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use bindung::{
-    lade_feld_bestand, lade_feld_bestand_der_wurzel, lade_registry_der_wurzel, verschwundene,
-    wiederaufgetauchte, zu_knappe_begruendungen, FeldBestandFehler, MIN_ZEICHEN_BEGRUENDUNG,
+    bestand_zeilen, lade_feld_bestand, lade_feld_bestand_der_wurzel, lade_registry_der_wurzel,
+    nicht_erfasste, verschwundene, wiederaufgetauchte, zu_knappe_begruendungen, FeldBestandFehler,
+    MIN_ZEICHEN_BEGRUENDUNG,
 };
 
 fn wurzel() -> PathBuf {
@@ -55,6 +58,46 @@ fn kein_feld_ist_unbegruendet_verschwunden() {
         weg.len(),
         &weg[..weg.len().min(15)]
     );
+}
+
+/// Die Gegenrichtung: jedes Feld der Bindung steht in `felder:`.
+#[test]
+fn jedes_heutige_feld_steht_im_bestand() {
+    let bestand = lade_feld_bestand_der_wurzel(&wurzel()).unwrap();
+    let erfasst: BTreeSet<String> = bestand.felder.iter().cloned().collect();
+    let fehlend = nicht_erfasste(&heutige_felder(), &erfasst);
+    assert!(
+        fehlend.is_empty(),
+        "{} feld_id(s) stehen in der Bindung, aber nicht in rust/bindung/daten/FELD_BESTAND.yaml: \
+         {:?}\nTrage sie in rust/bindung/daten/FELD_BESTAND.yaml unter `felder:` ein, je eine Zeile, \
+         alphabetisch einsortiert:\n{}\nOhne den Eintrag bemerkte niemand, wenn das Feld aus der \
+         Bindung verschwindet, und die Angaben der Nutzer dazu wirkten still nicht mehr.",
+        fehlend.len(),
+        &fehlend[..fehlend.len().min(15)],
+        bestand_zeilen(&fehlend)
+    );
+}
+
+/// Selbstprobe der Gegenrichtung auf erfundenen Mengen, samt Wortlaut der Zeilen.
+#[test]
+fn die_gegenrichtung_erkennt_ihren_eigenen_fehlerfall() {
+    let erfasst = menge(&["a", "b"]);
+    // Ein neues Feld c ohne Eintrag.
+    assert_eq!(
+        nicht_erfasste(&menge(&["a", "b", "c"]), &erfasst),
+        vec!["c".to_string()]
+    );
+    // Alles erfasst, und ein Feld, das nur noch im Bestand steht, ist hier kein Fund.
+    assert!(nicht_erfasste(&menge(&["a"]), &erfasst).is_empty());
+    assert!(nicht_erfasste(&menge(&["a", "b"]), &erfasst).is_empty());
+    // Mehrere Funde bleiben sortiert (Mengen sind es von Haus aus), je eine Zeile.
+    let fehlend = nicht_erfasste(&menge(&["b", "z", "a", "m"]), &menge(&["a"]));
+    assert_eq!(
+        fehlend,
+        vec!["b".to_string(), "m".to_string(), "z".to_string()]
+    );
+    assert_eq!(bestand_zeilen(&fehlend), "  - b\n  - m\n  - z");
+    assert_eq!(bestand_zeilen(&[]), "");
 }
 
 #[test]

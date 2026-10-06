@@ -1,8 +1,10 @@
 # Feld-Bestand der Bindungstabelle — Ratsche gegen stillen Verlust von Nutzerangaben
 #
 # ERZEUGT 2026-08-19 aus produkt/bindung/ (307 Felder). Diese Datei ist KEINE zweite Wahrheit
-# ueber die Bindung: sie sagt nur, welche feld_ids es EINMAL GAB. Neue Felder muessen hier
-# nicht eingetragen werden — die Ratsche kennt nur eine Richtung.
+# ueber die Bindung: sie sagt nur, welche feld_ids es EINMAL GAB. In Rust (seit 2026-10-06) prueft
+# die Ratsche BEIDE Richtungen: jedes Feld der Bindung muss hier stehen, sonst schuetzt sie es nicht.
+# Wer ein Feld anlegt, traegt es unter `felder:` ein (alphabetisch, eine Zeile); der Test
+# rust/bindung/tests/feld_bestand.rs::jedes_heutige_feld_steht_im_bestand nennt die Zeilen.
 #
 # AUFGEFUELLT 2026-10-06 in rust/bindung/daten auf alle 368 feld_ids der Registry (61 Felder, die seit der
 # Erfassung dazukamen und bis dahin ungeschuetzt waren). Die Kopie in produkt/bindung/ bleibt bei 307.
