@@ -1,0 +1,70 @@
+# Bereichs-Bestand: Ratsche gegen den stillen Verlust und das stille Aufweichen eines Wertebereichs.
+#
+# WORUM ES GEHT: Bei der Erfassung trugen 42 Felder der Bindung `bereich: {min, max}`. Der Dienst weist beim Speichern jede
+# Zahl ausserhalb von min..max ab (HTTP 422), nur die 0 bleibt zulaessig. Verschwindet `bereich` bei einem
+# Feld, oder wird er weiter, nimmt der Dienst danach Werte an, die vorher abgewiesen wurden (z. B. -1 Kinder
+# oder 367 Arbeitstage), und der Ring rechnet still damit. Kein Absturz, keine Meldung. Der Rand-Test in
+# rust/api/tests/bereich_rand_hermetisch.rs liest die Felder live aus der Registry: faellt ein Feld heraus,
+# faellt es dort einfach aus der Pruefung.
+#
+# WAS DIESE DATEI HAELT (Pruefung: rust/bindung/tests/bereich_bestand.rs):
+#   felder:   feld_id -> min, max, so wie sie bei der Erfassung (2026-10-06) in rust/bindung/daten standen.
+#             Ein Feld, das hier steht, muss noch einen `bereich` tragen, und zwar GENAU diesen.
+#             Neue Felder mit `bereich` brauchen keinen Eintrag (Einbahn: es kann nichts verlieren).
+#   entfernt: feld_id -> Begruendung (mehr als 30 Zeichen: warum der Bereich wegfaellt UND was aus
+#             Angaben wird, die ausserhalb des alten Bereichs liegen). Ein Eintrag hier nimmt das Feld aus
+#             `felder` heraus; er gilt nur, solange das Feld wirklich keinen `bereich` mehr traegt.
+#
+# WARUM GENAU UND NICHT NUR "NICHT WEITER": wuerde die Pruefung nur ein Weiterwerden melden, koennte jemand
+# den Bereich zuerst enger machen (ohne Meldung) und spaeter wieder auf den alten Wert weiten (ohne Meldung).
+# Beides aendert, was Nutzer eingeben duerfen. Jede Aenderung von min oder max ist ein Entscheid: eine Zeile
+# hier und der Grund im Commit (welches Feld, welche Grenze, warum). Das kostet eine Zeile je Aenderung.
+#
+# Diese Datei ist keine zweite Wahrheit ueber den Bereich: sie haelt nur fest, was ohne Entscheid nicht
+# wandern darf. Ob ein Bereich fachlich stimmt, belegen `anker_ref` und der Rand-Test, nicht diese Datei.
+
+entfernt: {}
+
+felder:
+  am_anschaffung_monat: {min: 1, max: 12}
+  arbeitsmittel_nutzungsdauer: {min: 1, max: 30}
+  dhf_monate: {min: 0, max: 12}
+  ep_arbeitstage: {min: 0, max: 366}
+  fam_anzahl_kinder: {min: 0, max: 20}
+  fam_monate_ohne_voraussetzung: {min: 0, max: 12}
+  geburtsjahr: {min: 1900, max: 2010}
+  geburtsjahr_partner: {min: 1900, max: 2010}
+  gewst_hebesatz: {min: 1, max: 999}
+  gewst_hebesatz_partner: {min: 1, max: 999}
+  gwg_anzahl: {min: 0, max: 9}
+  hh_anzahl_dienstleistungen: {min: 0, max: 9}
+  hh_anzahl_handwerker: {min: 0, max: 9}
+  hh_anzahl_minijobs: {min: 0, max: 5}
+  kind_grad_der_behinderung: {min: 20, max: 100}
+  p23_anzahl_verkaeufe: {min: 0, max: 9}
+  p33a_ausbildung_anzahl_kinder: {min: 0, max: 20}
+  p33a_haushalt_personenzahl: {min: 1, max: 20}
+  p35c_eigene_wohnflaeche_qm: {min: 1, max: 100000}
+  p35c_gesamtflaeche_qm: {min: 1, max: 100000}
+  rentner_alter_bei_rentenbeginn: {min: 0, max: 100}
+  rentner_alter_bei_rentenbeginn_partner: {min: 0, max: 100}
+  rentner_anzahl_renten: {min: 0, max: 5}
+  rentner_grad_der_behinderung: {min: 20, max: 100}
+  rentner_grad_der_behinderung_partner: {min: 20, max: 100}
+  rentner_pflege_weitere_personen: {min: 0, max: 9}
+  rentner_pflegegrad: {min: 1, max: 5}
+  rentner_renten_beginn_jahr: {min: 1955, max: 2060}
+  rentner_renten_beginn_jahr_partner: {min: 1955, max: 2060}
+  tage_24h: {min: 1, max: 366}
+  tage_an_abreise: {min: 1, max: 366}
+  tage_ueber_8h_eintaegig: {min: 1, max: 366}
+  uebernachtung_monate: {min: 0, max: 12}
+  uebernachtung_monate_bisher: {min: 0, max: 600}
+  versorgung_alter_bei_beginn: {min: 18, max: 100}
+  versorgung_beginn_jahr: {min: 1955, max: 2060}
+  vpf_abwesenheit_stunden: {min: 0, max: 24}
+  vpf_tage_24h_nach_drei_monaten: {min: 0, max: 366}
+  vpf_tage_an_abreise_nach_drei_monaten: {min: 0, max: 366}
+  vpf_tage_ueber_8h_nach_drei_monaten: {min: 0, max: 366}
+  vv_anzahl_objekte: {min: 0, max: 9}
+  vv_entgelt_quote_prozent: {min: 0, max: 100}
