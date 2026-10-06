@@ -93,8 +93,8 @@ fn lader_melden_pfad_und_ursache() {
 fn gueltig(feld_id: &str) -> String {
     format!(
         "version: 1\nscheibe: test\nbindungen:\n  - feld_id: {feld_id}\n    quelle: {{regel_id: r, signatur_slot: s}}\n    typ: bool\n    \
-         askable: false\n    hilfe_kurz: T\n    beispielwert: true\n    elster_kz: \"E0123456\"\n    vz_gueltigkeit: [2025]\n    \
-         anker_ref: {{quelle: Q, zitatanker: Z}}\n"
+         askable: false\n    hilfe_kurz: Tipp\n    beispielwert: true\n    elster_kz: \"E0123456\"\n    vz_gueltigkeit: [2025]\n    \
+         anker_ref: {{quelle: Q, zitatanker: Zit}}\n"
     )
 }
 
