@@ -47,6 +47,9 @@ fn pruefe_datei(version: u32, zeilen: &str, abschnitte: &str) -> Result<(), Bind
     datei.validieren()
 }
 
+/// Eine Pruefung, die einen Text der Laenge `n` einsetzt und das Ergebnis von `validieren` liefert.
+type LaengenPruefung<'a> = &'a dyn Fn(usize) -> Result<(), BindungFehler>;
+
 fn pruefe(zeilen: &str) -> Result<(), BindungFehler> {
     pruefe_datei(1, zeilen, "")
 }
@@ -323,6 +326,127 @@ fn version_ist_mindestens_eins() {
         "{fehler}"
     );
     assert!(fehlertext(pruefe_datei(0, "", "")).contains("version"));
+}
+
+/// Jede Mindestlaenge an n-1, n und n+1. Die Zahlen sind
+/// hier ausgeschrieben und nicht aus dem Lader gelesen: sie sind die Zahlen aus `schema.json`, und
+/// ein Test, der die Konstante des Laders benutzte, bemerkte nicht, wenn sie sich verschiebt. Ein
+/// Mutant `<` zu `<=`, `n` zu `n+1` oder `n-1` faellt an genau einer der drei Stellen auf.
+#[test]
+fn jede_mindestlaenge_haelt_an_n_minus_1_n_und_n_plus_1() {
+    let x = |n: usize| "x".repeat(n);
+    let hilfe = |n: usize| {
+        let yaml = format!(
+            "version: 1\nscheibe: test\nbindungen:\n{}",
+            BASIS.replace("hilfe_kurz: Tipp", &format!("hilfe_kurz: \"{}\"", x(n)))
+        );
+        serde_yaml_ng::from_str::<BindungDatei>(&yaml)
+            .unwrap()
+            .validieren()
+    };
+    let anker = |n: usize| {
+        let yaml = format!(
+            "version: 1\nscheibe: test\nbindungen:\n{}",
+            BASIS.replace("zitatanker: Zit", &format!("zitatanker: \"{}\"", x(n)))
+        );
+        serde_yaml_ng::from_str::<BindungDatei>(&yaml)
+            .unwrap()
+            .validieren()
+    };
+    let luecke = |n: usize| {
+        pruefe_datei(
+            1,
+            "",
+            &format!(
+                "luecken:\n  - {{regel_id: r, signatur_slot: s, grund: \"{}\"}}\n",
+                x(n)
+            ),
+        )
+    };
+    let regel_bedingung = |n: usize| {
+        pruefe_datei(
+            1,
+            "",
+            &format!(
+                "regel_bedingungen:\n  - {{regel_id: r, feld: anderes, wert: true, grund: \"{}\"}}\n",
+                x(n)
+            ),
+        )
+    };
+    let feld_bedingung = |n: usize| {
+        pruefe(&format!(
+            "    feld_bedingung: {{feld: anderes, wert: true, grund: \"{}\"}}\n",
+            x(n)
+        ))
+    };
+    let ableitung = |n: usize| {
+        pruefe(&format!(
+            "    ableitung: {{aus: anderes, art: uebernahme, grund: \"{}\"}}\n",
+            x(n)
+        ))
+    };
+    let instanz_grund = |n: usize| {
+        pruefe_datei(
+            1,
+            "",
+            &format!(
+                "instanz_gruppen:\n  - {{gruppe: g, anzahl_feld: n, etikett: E, max: 3, grund: \"{}\"}}\n",
+                x(n)
+            ),
+        )
+    };
+    let thema = |n: usize| {
+        pruefe_datei(
+            1,
+            "",
+            &format!("themen_zuerst:\n  - {{regel_id: r, grund: \"{}\"}}\n", x(n)),
+        )
+    };
+    // (Name, kleinste erlaubte Laenge, Pruefung). Unter der Grenze Fehler, ab der Grenze gueltig.
+    let laengen: [(&str, usize, LaengenPruefung); 8] = [
+        ("hilfe_kurz", 3, &hilfe),
+        ("anker_ref.zitatanker", 3, &anker),
+        ("luecken.grund", 5, &luecke),
+        ("regel_bedingungen.grund", 5, &regel_bedingung),
+        ("feld_bedingung.grund", 40, &feld_bedingung),
+        ("ableitung.grund", 40, &ableitung),
+        ("instanz_gruppen.grund", 40, &instanz_grund),
+        ("themen_zuerst.grund", 40, &thema),
+    ];
+    for (name, n, pruefung) in laengen {
+        assert!(
+            pruefung(n - 1).is_err(),
+            "{name}: {} Zeichen sind zu kurz",
+            n - 1
+        );
+        assert!(pruefung(n).is_ok(), "{name}: {n} Zeichen reichen");
+        assert!(pruefung(n + 1).is_ok(), "{name}: {} Zeichen reichen", n + 1);
+    }
+}
+
+/// `instanz_gruppen.max`: 1 bis 20, beide Raender mit ihren Nachbarn (0/1/2 und 19/20/21).
+#[test]
+fn instanz_gruppen_max_haelt_an_beiden_raendern() {
+    let max = |m: u32| {
+        pruefe_datei(
+            1,
+            "",
+            &format!(
+                "instanz_gruppen:\n  - {{gruppe: g, anzahl_feld: n, etikett: E, max: {m}, grund: \"{}\"}}\n",
+                "x".repeat(40)
+            ),
+        )
+    };
+    for (m, gueltig) in [
+        (0, false),
+        (1, true),
+        (2, true),
+        (19, true),
+        (20, true),
+        (21, false),
+    ] {
+        assert_eq!(max(m).is_ok(), gueltig, "instanz_gruppen.max {m}");
+    }
 }
 
 /// Der Dienst laedt ueber `lade_bindung` und `lade_registry`, nicht ueber `validieren`: auch dort
