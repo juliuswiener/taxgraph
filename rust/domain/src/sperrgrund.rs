@@ -7,7 +7,7 @@
 //!
 //! `grund` in `api.py: ergebnis()` ist entweder `None` (kein Sperrgrund), das Literal
 //! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 57 Python-Schluessel unten
-//! (dazu zwei Rust-eigene, siehe `KindFreibetragVerteilungOffen`). Die
+//! (dazu fuenf Rust-eigene, siehe `KindFreibetragVerteilungOffen` und `Abs3PartnerAntragGewinnOffen`). Die
 //! dritte Moeglichkeit bildet [`Sperrgrund::Bestaetigt`] ab; sie hat bewusst KEINEN
 //! eigenen Klartext (die Python-Quelle hat auch keinen fuer sie).
 use std::fmt;
@@ -29,6 +29,14 @@ pub enum Sperrgrund {
     /// `"bestaetigt"`: kein Sperrgrund, das Ergebnis steht. Kein Klartext (Python hat
     /// auch keinen).
     Bestaetigt,
+    /// Rust-eigen (B Option 1, 2026-10-06, `abs3_partner_antrag_gewinn_offen`): der EHEGATTE beantragt den ermaessigten Satz
+    /// nach § 34 Abs. 3 `EStG` und Person A hat ebenfalls einen Veraeusserungsgewinn. Der Gegenpart zu
+    /// [`Sperrgrund::Abs3PartnerGewinnOffen`] (dort beantragt A, der Partner hat den Gewinn), mit Klartext aus Sicht des Nutzers. Python
+    /// kennt den Grund nicht, weil es den Antrag des Partners nicht kennt.
+    Abs3PartnerAntragGewinnOffen,
+    /// Rust-eigen (wie [`Sperrgrund::Abs3PartnerAntragGewinnOffen`]), `abs3_partner_antrag_ueber_5mio_offen`: der Gewinn des
+    /// beantragenden Ehegatten liegt ueber 5 Mio Euro.
+    Abs3PartnerAntragUeber5mioOffen,
     Abs3PartnerGewinnOffen,
     Abs3Ueber5mioOffen,
     AlleinerziehendKonsistenzOffen,
@@ -37,6 +45,9 @@ pub enum Sperrgrund {
     BehinderungsbedingteAufwendungenWahlrechtOffen,
     BehinderungsbedingteAufwendungenWahlrechtPartnerOffen,
     BerufsunfaehigkeitOffen,
+    /// Rust-eigen (wie [`Sperrgrund::Abs3PartnerAntragGewinnOffen`]), `berufsunfaehigkeit_partner_offen`: der Ehegatte hat den
+    /// Antrag gestellt, ist nach dem Alter nicht berechtigt, und seine dauernde Berufsunfaehigkeit ist unbeantwortet.
+    BerufsunfaehigkeitPartnerOffen,
     DbaKapitalOffen,
     DbaMultiCountryOffen,
     DhfTatbestandOffen,
@@ -100,6 +111,8 @@ impl Sperrgrund {
     pub const fn als_str(self) -> &'static str {
         match self {
             Self::Bestaetigt => "bestaetigt",
+            Self::Abs3PartnerAntragGewinnOffen => "abs3_partner_antrag_gewinn_offen",
+            Self::Abs3PartnerAntragUeber5mioOffen => "abs3_partner_antrag_ueber_5mio_offen",
             Self::Abs3PartnerGewinnOffen => "abs3_partner_gewinn_offen",
             Self::Abs3Ueber5mioOffen => "abs3_ueber_5mio_offen",
             Self::AlleinerziehendKonsistenzOffen => "alleinerziehend_konsistenz_offen",
@@ -112,6 +125,7 @@ impl Sperrgrund {
                 "behinderungsbedingte_aufwendungen_wahlrecht_partner_offen"
             }
             Self::BerufsunfaehigkeitOffen => "berufsunfaehigkeit_offen",
+            Self::BerufsunfaehigkeitPartnerOffen => "berufsunfaehigkeit_partner_offen",
             Self::DbaKapitalOffen => "dba_kapital_offen",
             Self::DbaMultiCountryOffen => "dba_multi_country_offen",
             Self::DhfTatbestandOffen => "dhf_tatbestand_offen",
@@ -176,6 +190,8 @@ impl Sperrgrund {
     pub const fn klartext(self) -> Option<&'static str> {
         match self {
             Self::Bestaetigt => None,
+            Self::Abs3PartnerAntragGewinnOffen => Some("Dein Ehepartner hat den ermäßigten Steuersatz für den Verkauf oder die Aufgabe seines Betriebs beantragt, und du hast ebenfalls einen Gewinn aus dem Verkauf oder der Aufgabe eines Betriebs. Wie beide Gewinne zusammen zu versteuern sind, rechnet die Software noch nicht. Damit du keine falsche Zahl bekommst, bleibt die Berechnung gesperrt. Dieser Fall braucht steuerliche Beratung."),
+            Self::Abs3PartnerAntragUeber5mioOffen => Some("Dein Ehepartner hat den ermäßigten Steuersatz für den Verkauf oder die Aufgabe seines Betriebs beantragt, und sein Gewinn liegt über fünf Millionen Euro. Der ermäßigte Satz gilt nur bis zu dieser Grenze; wie der Teil darüber zu versteuern ist, rechnet die Software noch nicht. Dieser Fall braucht steuerliche Beratung."),
             Self::Abs3PartnerGewinnOffen => Some("Du hast den ermäßigten Steuersatz für den Verkauf oder die Aufgabe deines Betriebs beantragt, und dein Ehepartner hat ebenfalls einen Gewinn aus dem Verkauf oder der Aufgabe eines Betriebs. Wie beide Gewinne zusammen zu versteuern sind, rechnet die Software noch nicht. Damit du keine falsche Zahl bekommst, bleibt die Berechnung gesperrt. Dieser Fall braucht steuerliche Beratung."),
             Self::Abs3Ueber5mioOffen => Some("Du hast den ermäßigten Steuersatz für den Verkauf oder die Aufgabe deines Betriebs beantragt, und der Gewinn liegt über fünf Millionen Euro. Der ermäßigte Satz gilt nur bis zu dieser Grenze; wie der Teil darüber zu versteuern ist, rechnet die Software noch nicht. Dieser Fall braucht steuerliche Beratung."),
             Self::AlleinerziehendKonsistenzOffen => Some("Zwei Angaben passen nicht zusammen: Du hast angegeben, allein stehend zu sein, und zugleich eine gemeinsame Veranlagung mit Ehe- oder Lebenspartner gewählt. Den Entlastungsbetrag für Alleinerziehende gibt es nur, wenn du nicht gemeinsam veranlagt wirst. Bitte sieh dir beide Angaben noch einmal an."),
@@ -184,6 +200,7 @@ impl Sperrgrund {
             Self::BehinderungsbedingteAufwendungenWahlrechtOffen => Some("Du hast eine Behinderung angegeben und zusätzlich Kosten, die dadurch entstanden sind. Hier hast du die Wahl: entweder der Pauschbetrag ohne Nachweis oder deine tatsächlichen Kosten mit Belegen. Welcher Weg günstiger ist, hängt an der Höhe deiner Kosten — deshalb kann die Software das nicht für dich entscheiden. Bitte beantworte die Frage nach dem Pauschbetrag."),
             Self::BehinderungsbedingteAufwendungenWahlrechtPartnerOffen => Some("Für deinen Ehe- oder Lebenspartner ist eine Behinderung angegeben und zusätzlich Kosten, die dadurch entstanden sind. Auch hier gibt es die Wahl zwischen dem Pauschbetrag ohne Nachweis und den tatsächlichen Kosten mit Belegen. Welcher Weg günstiger ist, hängt an der Höhe der Kosten — deshalb kann die Software das nicht entscheiden. Bitte beantworte die Frage nach dem Pauschbetrag für deinen Partner."),
             Self::BerufsunfaehigkeitOffen => Some("Du hast den ermäßigten Steuersatz für den Verkauf oder die Aufgabe deines Betriebs beantragt. Vor dem 55. Geburtstag steht er dir nur zu, wenn du dauernd berufsunfähig bist. Bitte beantworte diese Frage, auch wenn die Antwort „nein“ ist."),
+            Self::BerufsunfaehigkeitPartnerOffen => Some("Dein Ehepartner hat den ermäßigten Steuersatz für den Verkauf oder die Aufgabe seines Betriebs beantragt. Vor dem 55. Geburtstag steht er ihm nur zu, wenn er dauernd berufsunfähig ist. Bitte beantworte diese Frage zu deinem Ehepartner, auch wenn die Antwort „nein“ ist."),
             Self::DbaKapitalOffen => Some("Du hast Kapitalerträge angegeben und zugleich ausländische Einkünfte. Ob und wie eine im Ausland gezahlte Steuer auf deine Kapitalerträge angerechnet wird, rechnet die Software noch nicht. Dieser Fall braucht steuerliche Beratung."),
             Self::DbaMultiCountryOffen => Some("Du hast Einkünfte aus mehr als einem ausländischen Staat. Jedes Land hat ein eigenes Abkommen mit Deutschland darüber, wo besteuert wird; mehrere Länder zugleich rechnet die Software noch nicht. Dieser Fall braucht steuerliche Beratung."),
             Self::DhfTatbestandOffen => Some("Du hast Kosten für eine zweite Wohnung am Arbeitsort angegeben. Ob sie absetzbar sind, hängt an drei Voraussetzungen: dass die zweite Wohnung beruflich veranlasst ist, dass du an deinem Hauptwohnsitz einen eigenen Hausstand führst und dass du dich dort finanziell an den Kosten beteiligst. Bitte beantworte diese drei Fragen."),
@@ -258,6 +275,8 @@ impl FromStr for Sperrgrund {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "bestaetigt" => Ok(Self::Bestaetigt),
+            "abs3_partner_antrag_gewinn_offen" => Ok(Self::Abs3PartnerAntragGewinnOffen),
+            "abs3_partner_antrag_ueber_5mio_offen" => Ok(Self::Abs3PartnerAntragUeber5mioOffen),
             "abs3_partner_gewinn_offen" => Ok(Self::Abs3PartnerGewinnOffen),
             "abs3_ueber_5mio_offen" => Ok(Self::Abs3Ueber5mioOffen),
             "alleinerziehend_konsistenz_offen" => Ok(Self::AlleinerziehendKonsistenzOffen),
@@ -270,6 +289,7 @@ impl FromStr for Sperrgrund {
                 Ok(Self::BehinderungsbedingteAufwendungenWahlrechtPartnerOffen)
             }
             "berufsunfaehigkeit_offen" => Ok(Self::BerufsunfaehigkeitOffen),
+            "berufsunfaehigkeit_partner_offen" => Ok(Self::BerufsunfaehigkeitPartnerOffen),
             "dba_kapital_offen" => Ok(Self::DbaKapitalOffen),
             "dba_multi_country_offen" => Ok(Self::DbaMultiCountryOffen),
             "dhf_tatbestand_offen" => Ok(Self::DhfTatbestandOffen),
@@ -361,9 +381,10 @@ mod tests {
         );
     }
 
-    /// Rust-eigene Gruende (Julius 2026-10-04, Kinderfreibetrag je Kind): Python kennt sie nicht, die Fixture fuehrt
-    /// sie nicht. Sie haben Klartext, und ihre Kennung laeuft rund. Der Test haelt die Abweichung fest: nimmt Python
-    /// einen der Gruende auf, wird er rot und die Fixture ist nachzuziehen.
+    /// Rust-eigene Gruende (Julius 2026-10-04, Kinderfreibetrag je Kind; B Option 1 2026-10-06, Antrag des Ehegatten nach
+    /// § 34 Abs. 3): Python kennt sie nicht, die Fixture fuehrt sie nicht. Sie haben Klartext, und ihre Kennung laeuft
+    /// rund. Der Test haelt die Abweichung fest: nimmt Python einen der Gruende auf, wird er rot und die Fixture ist
+    /// nachzuziehen.
     #[test]
     fn rust_eigene_gruende_haben_klartext_und_laufen_rund() {
         let fixture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
@@ -371,6 +392,9 @@ mod tests {
         for grund in [
             Sperrgrund::KindFreibetragVerteilungOffen,
             Sperrgrund::KindZeitraumUnlesbar,
+            Sperrgrund::Abs3PartnerAntragGewinnOffen,
+            Sperrgrund::Abs3PartnerAntragUeber5mioOffen,
+            Sperrgrund::BerufsunfaehigkeitPartnerOffen,
         ] {
             assert!(
                 !klartext.contains_key(grund.als_str()),
@@ -378,6 +402,33 @@ mod tests {
             );
             assert!(grund.klartext().is_some_and(|t| t.len() > 100), "{grund}");
             assert_eq!(grund.als_str().parse::<Sperrgrund>().unwrap(), grund);
+        }
+    }
+
+    /// Der Wortlaut der drei Gruende zum Antrag des Ehegatten: wer spricht (der Ehepartner beantragt, du hast den anderen
+    /// Gewinn), und was die Software tut. Ein Text, der aus Sicht von Person A spraeche („Du hast ... beantragt“),
+    /// stuende dem Nutzer falsch gegenueber. Pinnt Teile des Wortlauts, nicht jedes Zeichen.
+    #[test]
+    fn die_gruende_zum_antrag_des_ehegatten_sprechen_aus_sicht_des_nutzers() {
+        for (grund, teile) in [
+            (
+                Sperrgrund::Abs3PartnerAntragGewinnOffen,
+                &["Dein Ehepartner hat", "beantragt", "du hast ebenfalls einen Gewinn", "bleibt die Berechnung gesperrt"][..],
+            ),
+            (
+                Sperrgrund::Abs3PartnerAntragUeber5mioOffen,
+                &["Dein Ehepartner hat", "beantragt", "sein Gewinn liegt über fünf Millionen Euro"][..],
+            ),
+            (
+                Sperrgrund::BerufsunfaehigkeitPartnerOffen,
+                &["Dein Ehepartner hat", "beantragt", "Vor dem 55. Geburtstag", "dauernd berufsunfähig", "Frage zu deinem Ehepartner"][..],
+            ),
+        ] {
+            let text = grund.klartext().unwrap();
+            for teil in teile {
+                assert!(text.contains(teil), "{grund}: {teil:?} fehlt in {text:?}");
+            }
+            assert!(!text.starts_with("Du hast"), "{grund}: spricht aus Sicht von Person A");
         }
     }
 

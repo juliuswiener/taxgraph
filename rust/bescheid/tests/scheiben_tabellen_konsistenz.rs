@@ -43,12 +43,14 @@ const MIT_LISTE: [Scheibe; 4] = [
 
 /// `(Scheibe, Felder, Kegel)`. Die Zahlen sind der Stand vom 2026-10-06 (C2: die beiden Felder
 /// `kind_anderer_elternteil_tod_am` und `kind_anderer_elternteil_ausland_zeitraum` neu in `gesamt`
-/// und `rentner_gesamt`, 352 -> 354 und 250 -> 252; vorher 2026-10-05, `9c07d98e`).
+/// und `rentner_gesamt`, 352 -> 354 und 250 -> 252; B Option 1 am 2026-10-06: die vier Partner-Felder zu § 34 Abs. 3
+/// `antrag_ermaessigter_satz_partner`, `dauernd_berufsunfaehig_partner`, `ermaessigung_einmal_genutzt_partner` und
+/// `p34_abs3_antragsbetrag_partner` in beiden, 354 -> 358 und 252 -> 256; vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 84, 33),
-    (Scheibe::Gesamt, 354, 35),
-    (Scheibe::RentnerGesamt, 252, 28),
+    (Scheibe::Gesamt, 358, 35),
+    (Scheibe::RentnerGesamt, 256, 28),
 ];
 
 /// Felder, die in einer Liste zweimal stehen. `geburtsjahr` stand schon in `SCHEIBEN['rentner_gesamt']`
@@ -297,6 +299,7 @@ const BETRAGSFELDER_OHNE_KZ: &[&str] = &[
     "p23_werbungskosten",
     "p33a_andere_einkuenfte_bezuege",
     "p34_abs3_antragsbetrag",
+    "p34_abs3_antragsbetrag_partner",
     "p35c_massnahme_einzelbetrag",
     "p36_lohnsteuer_partner",
     "p36_vorauszahlungen",

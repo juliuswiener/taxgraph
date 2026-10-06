@@ -471,6 +471,27 @@ fn regeln() -> Vec<Regel> {
         ],
         &["p34_abs3_antragsbetrag"],
     ));
+    // (8b) Dieselbe Zeile fuer den Ehegatten (B Option 1): Antrag und Gewinn des Partners sind die zwei Ausloeser.
+    // `veranlagung` ist Begleiter, kein Ausloeser: jede Scheibe fuehrt es, und `jede_scheibe_fuehrt_zu_jedem_ausloeser_...`
+    // verlangt das Ergebnisfeld von jeder Scheibe mit EINEM Ausloeser (`an_gesamt` fuehrt nur `veranlagung`). Ohne
+    // Zusammenveranlagung ist `netto_vg_partner` 0 (`einzelveranlagung_liest_die_partner_angaben_nicht`).
+    r.push(regel(
+        "p34_antrag_partner",
+        &[
+            ("antrag_ermaessigter_satz_partner", json!(true)),
+            ("rentner_veraeusserungsgewinn_partner", json!(50_000_000)),
+        ],
+        &[
+            ("veranlagung", json!("zusammen")),
+            ("rentner_veraeusserungs_betriebsart_partner", json!("gewerbe")),
+            ("rentner_alter_55_oder_berufsunfaehig_partner", json!(true)),
+            ("rentner_freibetrag_erstmalig_partner", json!(true)),
+            ("geburtsjahr_partner", json!(1955)),
+            ("dauernd_berufsunfaehig_partner", json!(false)),
+            ("ermaessigung_einmal_genutzt_partner", json!(false)),
+        ],
+        &["p34_abs3_antragsbetrag_partner"],
+    ));
     r
 }
 
@@ -537,7 +558,7 @@ fn die_ergebnisfelder_der_tabelle_sind_die_nicht_fragbaren_literale_des_rings() 
         im_ring, in_tabelle,
         "ring_werte.rs nennt nicht fragbare Felder, die keine Regel hat (links) oder umgekehrt (rechts)"
     );
-    assert_eq!(in_tabelle.len(), 19, "Stand 2026-10-06: 19 Ergebnisfelder");
+    assert_eq!(in_tabelle.len(), 20, "Stand 2026-10-06: 20 Ergebnisfelder");
     for r in regeln() {
         for f in r
             .ausloeser

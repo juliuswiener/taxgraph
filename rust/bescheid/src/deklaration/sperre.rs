@@ -37,9 +37,9 @@ use rust_decimal::Decimal;
 use store::SnapshotFeld;
 
 use super::konstanten::{AN_GESAMT_FLAGS, AN_GESAMT_PARTNER, VOR_FELDER, VOR_PARTNER_FELDER};
-use super::ring_werte::{abs3_wird_gerechnet, bestaetigte};
+use super::ring_werte::{abs3_wird_gerechnet, abs3_wird_gerechnet_partner, bestaetigte};
 use super::{c2, Cfg};
-use crate::abzuege::abs3_eligible;
+use crate::abzuege::{abs3_eligible, abs3_eligible_partner};
 use crate::{
     ist_false, ist_positive_zahl, ist_true, ist_zusammen, wert, zahl_dezimal, BescheidFehler,
     Felder, Instanzquelle,
@@ -106,6 +106,8 @@ pub fn an_gesamt_sperrgrund(
     }
     sperre!(abs3_guards(&k));
     sperre!(abs3_partner_gewinn(&k));
+    sperre!(abs3_partner_guards(&k));
+    sperre!(abs3_partner_antrag_gewinn(&k));
     sperre_o!(an_gesamt_luecken(&k));
     if let Some(cfg) = cfg.filter(|c| c.gesamt_guard) {
         return gesamt::gesamt_guard(&k, cfg);
@@ -125,22 +127,35 @@ fn abs3_guards(k: &K<'_>) -> Grund {
     {
         return Ok(Some(Sperrgrund::Abs3Ueber5mioOffen));
     }
-    // `{**felder, "dauernd_berufsunfaehig": {"wert": True}}`: die Frage an `abs3_eligible` selbst.
-    if !bestaetigt(k.f, "dauernd_berufsunfaehig") && !abs3_eligible(k.f, vz)? {
-        let mut mit_bu = k.f.clone();
-        mit_bu.insert(
-            "dauernd_berufsunfaehig".to_owned(),
-            SnapshotFeld {
-                wert: PyWert::Bool(true),
-                zustand: Zustand::Bestaetigt,
-                herkunft: super::berechnet_herkunft()?,
-            },
-        );
-        if abs3_eligible(&mit_bu, vz)? {
-            return Ok(Some(Sperrgrund::BerufsunfaehigkeitOffen));
-        }
+    if bu_antwort_entscheidet(k.f, vz, "dauernd_berufsunfaehig", abs3_eligible)? {
+        return Ok(Some(Sperrgrund::BerufsunfaehigkeitOffen));
     }
     Ok(None)
+}
+
+/// Haengt die Berechtigung nach § 34 Abs. 3 S. 1 allein an der unbeantworteten Berufsunfaehigkeit? Ja, wenn das Feld nicht
+/// bestaetigt ist, `berechtigt` mit dem Stand `false` sagt und mit einem bestaetigten `true` im Feld `ja`. Python:
+/// `{**felder, "dauernd_berufsunfaehig": {"wert": True}}`, die Frage an `abs3_eligible` selbst. Geteilt zwischen Person A
+/// ([`abs3_guards`]) und dem Ehegatten ([`abs3_partner_guards`]).
+fn bu_antwort_entscheidet(
+    f: &Felder,
+    vz: Vz,
+    feld: &str,
+    berechtigt: fn(&Felder, Vz) -> Result<bool, BescheidFehler>,
+) -> Result<bool, BescheidFehler> {
+    if bestaetigt(f, feld) || berechtigt(f, vz)? {
+        return Ok(false);
+    }
+    let mut mit_bu = f.clone();
+    mit_bu.insert(
+        feld.to_owned(),
+        SnapshotFeld {
+            wert: PyWert::Bool(true),
+            zustand: Zustand::Bestaetigt,
+            herkunft: super::berechnet_herkunft()?,
+        },
+    );
+    berechtigt(&mit_bu, vz)
 }
 
 /// § 34 Abs. 3 fuer A + Veraeusserungsgewinn des Ehegatten (Python `abs3_partner_gewinn_offen`, `AK2b`,
@@ -156,6 +171,41 @@ fn abs3_partner_gewinn(k: &K<'_>) -> Grund {
         && abs3_wird_gerechnet(&fb, k.vz)?
     {
         return Ok(Some(Sperrgrund::Abs3PartnerGewinnOffen));
+    }
+    Ok(None)
+}
+
+/// § 34 Abs. 3 fuer den EHEGATTEN (B Option 1, 2026-10-06): Excess ueber 5 Mio und unbeantwortete Berufsunfaehigkeit des
+/// Partners, die Gegenstuecke zu [`abs3_guards`]. Nur bei Zusammenveranlagung und gestelltem Antrag des Partners; alles auf
+/// bestaetigten Feldern (ein vorlaeufiger Antrag oder Wert urteilt nicht, wie der Chooser).
+fn abs3_partner_guards(k: &K<'_>) -> Grund {
+    let Some(vz) = k.vz else { return Ok(None) };
+    let fb = bestaetigte(k.f);
+    if !ist_zusammen(&fb) || !ist_true(wert(&fb, "antrag_ermaessigter_satz_partner")) {
+        return Ok(None);
+    }
+    if abs3_eligible_partner(&fb, vz)?
+        && c2(&fb, "rentner_veraeusserungsgewinn_partner")?.div_euclid(100) > 5_000_000
+    {
+        return Ok(Some(Sperrgrund::Abs3PartnerAntragUeber5mioOffen));
+    }
+    if bu_antwort_entscheidet(&fb, vz, "dauernd_berufsunfaehig_partner", abs3_eligible_partner)? {
+        return Ok(Some(Sperrgrund::BerufsunfaehigkeitPartnerOffen));
+    }
+    Ok(None)
+}
+
+/// § 34 Abs. 3 fuer den EHEGATTEN + Veraeusserungsgewinn von A (B Option 1, 2026-10-06): das Spiegelbild von
+/// [`abs3_partner_gewinn`]. Der Chooser glaettet nur den Gewinn des Partners, der von A bliebe in der Fuenftelregel, und wie
+/// beide Gewinne gegeneinander laufen (§ 34 Abs. 3 S. 5), ist offen. Trigger = ROHER Gewinn von A (vor Freibetrag) > 0 UND der
+/// Chooser nimmt Abs. 3 fuer den Partner ([`abs3_wird_gerechnet_partner`]). Alles auf bestaetigten Feldern. Hinter den
+/// Sperren in [`abs3_partner_guards`], die ihren eigenen Text haben.
+fn abs3_partner_antrag_gewinn(k: &K<'_>) -> Grund {
+    let fb = bestaetigte(k.f);
+    if ist_positive_zahl(wert(&fb, "rentner_veraeusserungsgewinn"))
+        && abs3_wird_gerechnet_partner(&fb, k.vz)?
+    {
+        return Ok(Some(Sperrgrund::Abs3PartnerAntragGewinnOffen));
     }
     Ok(None)
 }

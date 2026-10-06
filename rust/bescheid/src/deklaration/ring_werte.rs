@@ -16,8 +16,10 @@ use store::SnapshotFeld;
 
 use super::c2;
 use super::konstanten::VERPFLEGUNG_TAGE;
-use crate::abzuege::abs3_eligible;
-use crate::einkuenfte::{KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE, KAP_TOEPFE_PARTNER};
+use crate::abzuege::{abs3_eligible, abs3_eligible_partner};
+use crate::einkuenfte::{
+    netto_vg_partner, KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE, KAP_TOEPFE_PARTNER,
+};
 use crate::zweige::netto_vg;
 use crate::{
     cent_zu_euro, euro_plus, feld_int_oder_null, ist_positive_zahl, ist_true, ist_zusammen, minus,
@@ -393,19 +395,43 @@ pub(super) fn abs3_wird_gerechnet(fb: &Felder, vz: Option<Vz>) -> R<bool> {
     Ok(0 < netto && netto <= 5_000_000)
 }
 
+/// Der § 34-Chooser nimmt Abs. 3 fuer den EHEGATTEN (B Option 1, 2026-10-06): Antrag des Partners UND
+/// [`abs3_eligible_partner`] UND Zusammenveranlagung UND 0 < `netto_vg_partner` <= 5 Mio (`tarif::p34_chooser`, dort
+/// ohne die Zusammenveranlagung, weil `netto_vg_partner` bei Einzelveranlagung 0 ist). `fb` = nur bestaetigte Felder
+/// ([`bestaetigte`]). Eine Stelle fuer die Antragszeile des Partners ([`p34_antrag`]) und die Sperre
+/// `abs3_partner_antrag_gewinn_offen` (`sperre::abs3_partner_antrag_gewinn`). `vz = None` nie.
+pub(super) fn abs3_wird_gerechnet_partner(fb: &Felder, vz: Option<Vz>) -> R<bool> {
+    let Some(vz) = vz else {
+        return Ok(false);
+    };
+    if !ist_true(wert(fb, "antrag_ermaessigter_satz_partner")) || !abs3_eligible_partner(fb, vz)? {
+        return Ok(false);
+    }
+    let netto = netto_vg_partner(fb)?.get();
+    Ok(0 < netto && netto <= 5_000_000)
+}
+
 /// (8) § 34 Abs. 3 Antragszeile (`E0801602` G / `E0805003` S / `E0901704` L, je nach
 /// `rentner_veraeusserungs_betriebsart`, `est_mapping.VERZWEIGUNG`): der Gewinn der Basiszeile, fuer
 /// den der ermaessigte Satz beantragt wird. Geschrieben nur, was der Chooser auch rechnet
 /// ([`abs3_wird_gerechnet`]); nur bestaetigte Felder zaehlen. Ueber 5 Mio sperrt
 /// `abs3_ueber_5mio_offen` vorher, mit Gewinn beim Ehegatten `abs3_partner_gewinn_offen`.
 ///
-/// ponytail: nur Person A (AK2 des Eintrags p34-antrag-ohne-kennzahl-erreicht-elster-nicht);
+/// Dieselbe Zeile fuer den Ehegatten (`p34_abs3_antragsbetrag_partner`, B Option 1, 2026-10-06), nur wenn der Chooser
+/// Abs. 3 fuer SEINEN Gewinn rechnet ([`abs3_wird_gerechnet_partner`]); sie geht ueber `PARTNER_VERZWEIGUNG` nach
+/// `rentner_veraeusserungs_betriebsart_partner` in den Container der Person-B-Anlage. Ueber 5 Mio sperrt
+/// `abs3_partner_antrag_ueber_5mio_offen`, mit Gewinn bei A `abs3_partner_antrag_gewinn_offen`.
+///
 /// `vz = None` (Jahr ohne Parameter) schreibt nichts, wie Python bei `vz == 0`.
 fn p34_antrag(f: &mut Felder, vz: Option<Vz>, h: &HerkunftVektor) -> R<()> {
     let fb = bestaetigte(f);
     if abs3_wird_gerechnet(&fb, vz)? {
         let vg_cent = feld_int_oder_null(&fb, "rentner_veraeusserungsgewinn")?;
         setze(f, "p34_abs3_antragsbetrag", PyWert::Ganz(vg_cent), h);
+    }
+    if abs3_wird_gerechnet_partner(&fb, vz)? {
+        let vg_cent = feld_int_oder_null(&fb, "rentner_veraeusserungsgewinn_partner")?;
+        setze(f, "p34_abs3_antragsbetrag_partner", PyWert::Ganz(vg_cent), h);
     }
     Ok(())
 }

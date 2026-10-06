@@ -46,10 +46,35 @@ use crate::{
 pub fn abs3_eligible(f: &Felder, vz: Vz) -> Result<bool, BescheidFehler> {
     // PARITÄT: fail-open default — fehlendes geburtsjahr = 0 = "kein Alter bekannt" (kein Fehler).
     let gj = feld_int_oder_null(f, "geburtsjahr")?;
-    let alter_ge_55 = gj > 0 && i64::from(vz.jahr()) - gj >= 55;
     let berufsunfaehig = ist_true(wert(f, "dauernd_berufsunfaehig"));
     let einmal_genutzt = ist_true(wert(f, "ermaessigung_einmal_genutzt"));
-    Ok((alter_ge_55 || berufsunfaehig) && !einmal_genutzt)
+    Ok(abs3_berechtigt(vz, gj, berufsunfaehig, einmal_genutzt))
+}
+
+/// § 34 Abs. 3 S. 1 und S. 4 fuer den EHEGATTEN (B Option 1, 2026-10-06): dieselbe Regel wie [`abs3_eligible`], auf den
+/// Feldern des Partners (`geburtsjahr_partner`, `dauernd_berufsunfaehig_partner`, `ermaessigung_einmal_genutzt_partner`).
+/// Ob der Partner ueberhaupt mitveranlagt wird, prueft der Aufrufer (`antrag_ermaessigter_satz_partner` ebenso).
+///
+/// # Errors
+/// [`BescheidFehler::Ueberlauf`] bei einem `geburtsjahr_partner` jenseits von `i64`.
+///
+/// ```
+/// use bescheid::{abzuege::abs3_eligible_partner, Felder};
+/// assert!(!abs3_eligible_partner(&Felder::new(), domain::Vz::Vz2025).unwrap());
+/// ```
+pub fn abs3_eligible_partner(f: &Felder, vz: Vz) -> Result<bool, BescheidFehler> {
+    let gj = feld_int_oder_null(f, "geburtsjahr_partner")?;
+    let berufsunfaehig = ist_true(wert(f, "dauernd_berufsunfaehig_partner"));
+    let einmal_genutzt = ist_true(wert(f, "ermaessigung_einmal_genutzt_partner"));
+    Ok(abs3_berechtigt(vz, gj, berufsunfaehig, einmal_genutzt))
+}
+
+/// Die gemeinsame Regel von [`abs3_eligible`] und [`abs3_eligible_partner`]: (55. Lebensjahr vollendet ODER dauernd
+/// berufsunfaehig) UND nicht schon einmal genutzt. Die Aufrufer lesen die Felder mit Literalen, damit
+/// `tests/feld_kennung_gate.rs` jede Kennung gegen die Bindung prueft.
+fn abs3_berechtigt(vz: Vz, geburtsjahr: i64, berufsunfaehig: bool, einmal_genutzt: bool) -> bool {
+    let alter_ge_55 = geburtsjahr > 0 && i64::from(vz.jahr()) - geburtsjahr >= 55;
+    (alter_ge_55 || berufsunfaehig) && !einmal_genutzt
 }
 
 /// `oepnv_kosten_jahr` Naht-CENT → EURO (Store liefert Cent, der Runner-Accessor erwartet Euro).
