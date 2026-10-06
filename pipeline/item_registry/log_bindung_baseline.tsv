@@ -1,4 +1,4 @@
-# Grandfather-Baseline fuer das Triage-Log-Bindungs-Gate (tests/test_triage_log_bindung.py).
+# Grandfather-Baseline fuer das Triage-Log-Bindungs-Gate (pipeline/tests/test_triage_log_bindung.py).
 #
 # HERKUNFT: Historische Triage (vor 2026-07-16) loggte nur abweichung-Items in den
 #   entscheidungs_log; annahme/norm_teil-Items blieben ohne maschinenlesbare

@@ -11,7 +11,7 @@ VENV312  := oracle/.venv312/bin/activate
 
 .PHONY: all s01 s03 tests build-python s02 clean backup restore serve serve-python
 
-all: unit tests s02
+all: unit unit-stufe-b tests s02
 
 ## Run all Catala/Clerk scope tests (S0.1 tariff, S0.3 Arbeitszimmer/Homeoffice).
 tests:
@@ -75,6 +75,12 @@ backup:
 ## Rueckfrage zeigt den AUFGELOESTEN Zielpfad, faengt damit auch einen Tippfehler im Variablen-
 ## namen selbst (z.B. FAELE_ROOT= zeigt still auf den Default, und genau der steht dann sichtbar
 ## in der Frage). CONFIRM=yes ueberspringt die Rueckfrage fuer Skripte/den Round-Trip-Test.
+##
+## Totalverlust heisst: es kann auch das DatenVERZEICHNIS selbst fehlen (frische Maschine), nicht nur
+## faelle/ darunter. Das `mkdir -p` vor dem Entpacken ist dafuer noetig — ohne es scheitert
+## `tar -C $(FAELLE_ROOT)` mit `Cannot chdir` (rc 2, gemessen 2026-10-06) und die Sicherung ist auf
+## genau dem Weg unbenutzbar, fuer den sie da ist. Waechter:
+## rust/api/tests/backup_restore_rundlauf.rs::restore_legt_das_datenverzeichnis_bei_totalverlust_an.
 ##
 ## Die Vorher-Sicherung unterscheidet "nichts da" von "ging schief": existiert faelle/ nicht,
 ## wird sie mit Hinweis UEBERSPRUNGEN — sonst waere ausgerechnet die Wiederherstellung nach
@@ -153,7 +159,7 @@ s02: build-python
 ## reports/review/2026-07-16-gettsim-crosscheck.md + runs the gate.
 gettsim-crosscheck: build-python
 	. $(VENV312); python oracle/gettsim/golden_crosscheck.py
-	. $(VENV312); python -m pytest tests/test_gettsim_crosscheck.py -q
+	. $(VENV312); python -m pytest pipeline/tests/test_gettsim_crosscheck.py -q
 
 ## Phase-1 deliverable: Arbeitnehmerfall end-to-end (Bruttolohn -> festzusetzende ESt)
 ## differential vs GETTSIM. Regenerates reports/p1-arbeitnehmerfall.md.
@@ -245,6 +251,22 @@ abgabeweg-freigabe:
 	PYTHONPATH=tests$${PYTHONPATH:+:$$PYTHONPATH} \
 	python3 -m pytest tests/test_einreichen_durchstich.py -q -rs -p skip_ist_rot
 
+## Rust-Gegenstueck zu abgabeweg-freigabe (V2): rust/api/tests/einreichen_eric_echt.rs startet den
+## echten Dienst (taxgraph-api, echter Socket), baut einen Fall ueber die Routen und ruft POST
+## /fall/{id}/einreichen mit der ECHTEN ERiC-Bibliothek und der ECHTEN Herstellerkennung. Nur Pruefung
+## (ERIC_VALIDIERE), kein Versand. Der Test ist #[ignore]: `cargo test --workspace` und die CI laufen
+## ohne ihn, `checkESt` selbst deckt die CI also NICHT. Hier laeuft er mit --ignored, und jede fehlende
+## Voraussetzung (Bibliothek, ID) oder ein anderer Lauf als genau ein bestandener Test macht das Ziel rot.
+## Herstellerkennung wie bei abgabeweg-freigabe aus der gitignorierten .env; das Protokoll liegt in
+## rust/target/ (der Test nennt weder ID noch Antwortrumpf). Die Verdrahtung (Ziel, --ignored, Testname,
+## #[ignore]) haelt rust/api/tests/einreichen_eric_echt.rs::die_freigabe_ist_verdrahtet in der CI fest.
+abgabeweg-freigabe-rust:
+	if [ -z "$$ELSTER_HERSTELLER_ID" ] && [ -f .env ]; then set -a; . ./.env; set +a; fi; \
+	mkdir -p rust/target; log=rust/target/abgabeweg-freigabe-rust.log; \
+	(cd rust && cargo test -p api --test einreichen_eric_echt -- --ignored --exact einreichen_ueber_den_echten_endpunkt_mit_echtem_checkest) > $$log 2>&1; rc=$$?; \
+	cat $$log; \
+	[ $$rc -eq 0 ] && grep -q "test result: ok. 1 passed" $$log
+
 ## Rust-Port (REWRITE_PLAN.md). Der generierte Catala-C-Backend liegt committed unter
 ## rust/catala-sys/generated/ -- catala-c regeneriert ihn (braucht den Opam-Switch).
 catala-c:
@@ -283,6 +305,15 @@ ui-rust-gegenprobe:
 	@if UI_RUST_GEGENPROBE=1 PYTHONPATH=tools/ui_rust python3 -m pytest -p ui_rust_plugin tests/test_ui_login.py -q -p no:cacheprovider; \
 	then echo "GEGENPROBE FEHLGESCHLAGEN: die Tests blieben gruen, obwohl Rust sofort endet"; exit 1; \
 	else echo "Gegenprobe rot, wie gewollt: ohne Rust-Prozess laufen die UI-Tests nicht"; fi
+
+## Stufe-B-Tests (pipeline/, ebilanz/, GETTSIM-Gegenprobe) unter pipeline/tests/. Sie brauchen weder
+## produkt/ noch tests/conftest.py noch Catala (gemessen 2026-10-06: gruen in einem Baum ohne produkt/,
+## tests/ und rust/) und laufen deshalb auch dann weiter, wenn `tests/` geloescht ist. Ohne venv312
+## ueberspringt sich test_gettsim_crosscheck (1 skipped); `make gettsim-crosscheck` faehrt ihn echt.
+## Nur 14 s, daher ohne -n. Steht hier und nicht bei `unit`, weil REWRITE_PLAN.md und
+## tools/docs_zahlen_pruefen.py Makefile-Zeilen verankern; Zeilen davor verschieben sie.
+unit-stufe-b:
+	python3 -m pytest pipeline/tests -q
 
 clean:
 	$(OPAM_ENV); clerk clean || true

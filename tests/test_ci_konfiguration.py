@@ -107,7 +107,7 @@ def test_alle_importierten_fremdpakete_stehen_im_manifest():
     # Zustand zu ignorieren, und genau davon hat diese CI schon zu viel gesehen.
     erzeugt = {"pkg", "runner", "catala_runtime", "rt"}
 
-    # Gescannt wird die TRANSITIVE HÜLLE der Modulebene-Importe ab tests/ — genau diese, aus
+    # Gescannt wird die TRANSITIVE HÜLLE der Modulebene-Importe ab tests/ und pipeline/tests/ — genau diese, aus
     # zwei gemessenen Gründen:
     #
     # (1) NICHT NUR tests/. `requests`, dessen Fehlen die CI monatelang lahmlegte, wird von
@@ -116,7 +116,7 @@ def test_alle_importierten_fremdpakete_stehen_im_manifest():
     #     aus dem Manifest nahm — sie konnte den Fall nicht sehen, für den sie gebaut war.
     #
     # (2) NICHT ALLES. Die zweite Fassung scannte pipeline/ vollständig und meldete fastapi
-    #     und pydantic aus pipeline/ui/app.py. Die brechen nichts: tests/test_ui_backend.py
+    #     und pydantic aus pipeline/ui/app.py. Die brechen nichts: pipeline/tests/test_ui_backend.py
     #     importiert fastapi INNERHALB von Funktionen, und ein Funktions-Import lässt die
     #     Collection unberührt — er wird zum Skip, nicht zum Abbruch. Sie ins Manifest zu
     #     zwingen hiesse, eine schwere Entwicklungs-Abhängigkeit in jeden CI-Job zu ziehen,
@@ -128,7 +128,7 @@ def test_alle_importierten_fremdpakete_stehen_im_manifest():
         """Modulebene-Importe bis zum ersten `pytest.importorskip(...)`.
 
         Der Abbruch dort ist der dritte Anlauf dieses Tests und kam wieder aus einer Messung:
-        tests/test_gettsim_crosscheck.py ruft in Zeile 22 `pytest.importorskip("gettsim")` und
+        pipeline/tests/test_gettsim_crosscheck.py ruft in Zeile 22 `pytest.importorskip("gettsim")` und
         importiert erst in Zeile 27 `golden_crosscheck` — das über harness.py numpy zieht.
         Ohne diese Regel meldete der Test numpy als fehlend, obwohl die Sammlung dieser Datei
         längst mit einem Skip beendet ist, bevor sie dorthin kommt.
@@ -165,7 +165,8 @@ def test_alle_importierten_fremdpakete_stehen_im_manifest():
         modul_datei.setdefault(p.stem, p)
 
     fehlend: dict[str, str] = {}
-    offen = sorted((ROOT / "tests").glob("*.py"))
+    # pipeline/tests/ seit 2026-10-06: die Stufe-B-Tests (CI-Job `stufe-b`) liegen nicht mehr unter tests/.
+    offen = sorted((ROOT / "tests").glob("*.py")) + sorted((ROOT / "pipeline" / "tests").glob("*.py"))
     gesehen: set[pathlib.Path] = set()
     while offen:
         datei = offen.pop()

@@ -100,6 +100,7 @@ zvE-Werte plus Randwerte durch Catala und GETTSIM schickt und
 | `make params-check` | Ableitung/Validierung der Tarifkoeffizienten. |
 | `make eric-gate` | ERiC-Offline-Gate: E10-2025-XSD-Struktur + checkESt. Prueft eine Minimal-XML, **kein** Abgabeweg-Nachweis. |
 | `make abgabeweg-freigabe` | Lokaler Freigabenachweis des ERiC-Abgabewegs ueber den echten HTTP-Endpunkt. Braucht ERiC + Herstellerkennung, jeder Skip wird zu exit != 0. |
+| `make abgabeweg-freigabe-rust` | Dasselbe fuer den Rust-Dienst (`rust/api/tests/einreichen_eric_echt.rs`): echter Prozess `taxgraph-api`, echte ERiC-Bibliothek, echte Herstellerkennung, nur Pruefung. Jede fehlende Voraussetzung und jeder andere Lauf als genau ein bestandener Test ist exit != 0. |
 | `make clean` | Build- und Zwischenartefakte entfernen. |
 
 ## Der Abgabeweg wird lokal nachgewiesen, nicht in CI
@@ -136,6 +137,11 @@ Unterschied zu einem gruenen CI-Lauf. Voraussetzungen:
 Plausibilitaetspruefung laeuft rein lokal. Nachgemessen mit `strace`: im ganzen Lauf kein
 einziger Netz-Syscall ausserhalb von `127.0.0.1` (dem Testserver des Durchstichs).
 `elster/versand.py` (mit `ERIC_SENDE`) wird von diesem Ziel nicht geladen.
+
+**Der Rust-Dienst hat sein eigenes Ziel**: `make abgabeweg-freigabe-rust`. Es laedt die ID wie das
+Python-Ziel aus der `.env`, startet `taxgraph-api` als Prozess und prueft nur (kein Versand). Die CI
+laeuft ohne den echten Test (`#[ignore]`) und deckt nur die Verdrahtung: das Make-Ziel, `--ignored`, den
+Testnamen und das `#[ignore]` am Test. `checkESt` selbst prueft die CI nicht.
 
 `make eric-gate` ist **kein** Ersatz: es prueft eine Minimal-XML gegen das amtliche Schema
 und zaehlt die GESPERRT-Grenze der Herstellerkennung als Bestehen. Es laeuft auch dann

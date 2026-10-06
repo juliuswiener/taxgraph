@@ -6,7 +6,7 @@ Deterministisch, reine stdlib, kein LLM, keine Cascade/Formalisierer, Registry
 unberuehrt. Output: ebilanz/katalog_6.7.json + ebilanz/katalog_6.8.json.
 
 Regenerieren:  python ebilanz/katalog.py        (schreibt die JSONs)
-Der Gate (tests/test_ebilanz_katalog.py) parst frisch und prueft die JSONs +
+Der Gate (pipeline/tests/test_ebilanz_katalog.py) parst frisch und prueft die JSONs +
 die gepinnten Kennzahlen gegen Drift.
 """
 

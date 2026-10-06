@@ -12,7 +12,7 @@ der schon einmal passiert ist oder der still passieren koennte:
 
 Diese Tests laufen ohne Catala-Toolchain und ohne Netz.
 
-    python -m pytest tests/ -q
+    make unit-stufe-b
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ import sys
 import pytest
 import yaml
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "pipeline"))
 sys.path.insert(0, os.path.join(ROOT, "pipeline", "produktion"))

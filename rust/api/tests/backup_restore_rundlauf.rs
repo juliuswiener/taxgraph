@@ -13,6 +13,8 @@
 //!   echter Restore legt vorher selbst eine Sicherung an.
 //! - Totalverlust: Bestand und Nutzerdatei sind weg (frische Maschine), `restore` muss trotzdem laufen.
 //! - Scheitert die Vorher-Sicherung, bricht `restore` ab, BEVOR etwas geloescht wird.
+//! - Totalverlust auch in der Variante "Datenverzeichnis existiert gar nicht" (B8): `restore` muss es
+//!   anlegen, sonst scheitert `tar -C` (rc 2).
 //!
 //! Sicherheit: jede `make`-Zeile bekommt `FAELLE_ROOT`, `AUTH_USERS` und `BACKUP_DIR` aus derselben Stelle ([`Umgebung`])
 //! und ein `HOME` im Testordner, `TAXGRAPH_DATEN` und `XDG_DATA_HOME` fehlen: auch ein vergessener Operand
@@ -403,6 +405,52 @@ async fn restore_stellt_nach_totalverlust_wieder_her() {
         r.status.success(),
         "restore auf leeres Ziel:\n{}",
         ausgabe(&r)
+    );
+    assert_eq!(inhalte(&u.faelle()), akten, "Bestand weicht ab");
+    assert_eq!(
+        std::fs::read(u.users()).unwrap(),
+        konten,
+        "Nutzerdatei weicht ab"
+    );
+    assert_eq!(
+        u.archive().len(),
+        1,
+        "ohne Bestand gibt es nichts zu sichern, die Vorher-Sicherung entfaellt"
+    );
+    pruefe_wiederhergestellt(&u, &stand_a).await;
+}
+
+/// Totalverlust des Datenverzeichnisses selbst (B8, V4 Stapel 1e): nicht nur `faelle/` ist weg, das
+/// Verzeichnis existiert nicht — der Zustand auf einer frisch installierten Maschine.
+/// `restore` muss es anlegen; ohne das `mkdir -p` vor dem Entpacken scheitert `tar -C`
+/// (`Cannot chdir`, rc 2) und die Sicherung ist auf genau dem Weg unbenutzbar, fuer den sie da ist.
+#[tokio::test]
+async fn restore_legt_das_datenverzeichnis_bei_totalverlust_an() {
+    let u = Umgebung::neu();
+    let stand_a = bestand_aufbauen(&u).await;
+    let akten = inhalte(&u.faelle());
+    let konten = std::fs::read(u.users()).unwrap();
+    let r = u.sichern();
+    assert!(r.status.success(), "make backup:\n{}", ausgabe(&r));
+    let archiv = u.archive().remove(0);
+
+    // Das Datenverzeichnis ist weg, nicht nur sein Inhalt: `tar -C` faende kein Ziel mehr.
+    std::fs::remove_dir_all(u.daten()).unwrap();
+    std::fs::remove_file(u.users()).unwrap();
+    assert!(
+        !u.daten().exists(),
+        "KONTROLLE: das Datenverzeichnis existiert noch"
+    );
+
+    let r = u.wiederherstellen(&archiv, true, "");
+    assert!(
+        r.status.success(),
+        "restore ohne Datenverzeichnis:\n{}",
+        ausgabe(&r)
+    );
+    assert!(
+        u.daten().is_dir(),
+        "restore hat das Datenverzeichnis nicht angelegt"
     );
     assert_eq!(inhalte(&u.faelle()), akten, "Bestand weicht ab");
     assert_eq!(

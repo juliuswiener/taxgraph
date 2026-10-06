@@ -7,7 +7,7 @@ Quell-Umbau, der einen golden-Anker bricht, wurde vom billigen Dauergate
 `make unit` (pytest, kein Catala) NICHT gefangen; er fiel erst im vollen
 `make golden` auf. Dieses Modul zieht die golden/cases-Anker in dieselbe
 billige, Catala-freie Freeze-Pruefung wie das deckt_ab-Gate
-(tests/test_deckt_ab_freeze.py) - dieselbe `_normalize`-Mechanik.
+(pipeline/tests/test_deckt_ab_freeze.py) - dieselbe `_normalize`-Mechanik.
 
 `gates._normalize` ist zeichengleich mit `golden/runner.py:normalize`
 (beide: _UMLAUT-Transliteration + lower + Whitespace-Kollaps), das Verdikt
@@ -21,7 +21,7 @@ import glob
 import os
 import sys
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "pipeline"))
 

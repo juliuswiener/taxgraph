@@ -1,7 +1,7 @@
 # Das GETTSIM-Vergleichs-Oracle (oracle/.venv312, Python 3.12 — GETTSIM verlangt es).
 #
 # HIER IST DIE VERSION EIN ZAHLENWERT, KEIN ABLAUFDETAIL. GETTSIM ist das unabhängige
-# Rechenmodell, gegen das unsere Catala-Regeln geprüft werden: tests/test_gettsim_crosscheck.py
+# Rechenmodell, gegen das unsere Catala-Regeln geprüft werden: pipeline/tests/test_gettsim_crosscheck.py
 # führt eine Allowlist bekannter Abweichungen (KNOWN_DEVIATIONS, u.a. GETTSIM-Bug #1209
 # Splitting-Rundung), und eine NEUE Abweichung schlägt rot — das ist der Zweck des Gates.
 #
@@ -35,6 +35,8 @@ ttsim-backend==1.2.1
 # Drumherum für den Testlauf im selben venv. tests/conftest.py importiert `server` (f0e1c71),
 # damit zieht jede Collection unter tests/ den vollen server->auth-Importpfad — ohne bcrypt und
 # PyJWT scheitert schon das Sammeln von test_gettsim_crosscheck.py, nicht erst ein Test.
+# Seit 2026-10-06 liegt die Datei unter pipeline/tests/, ohne conftest: dieser Grund entfaellt.
+# bcrypt/PyJWT bleiben, bis ein CI-Lauf ohne sie gruen gesehen ist.
 pyyaml>=6.0
 jsonschema>=4.0
 bcrypt>=4.0

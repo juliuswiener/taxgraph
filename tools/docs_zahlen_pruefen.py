@@ -9,15 +9,19 @@ Je Zeile: der Anker (Regex mit Gruppen) sucht die Zahl im Doc-Text und ergibt So
 Quelldatei liefert den Ist-Wert. Status: OK (Soll = Ist), ABWEICHUNG (Ist anders, oder der Anker trifft nicht genau eine
 Zeile: der Doc-Text wurde geaendert), NUR ENDTOR (nur ein schwerer Lauf liefert die Zahl, wird nicht ausgefuehrt).
 Quellen: Baum (git-Stand dieser Arbeitskopie), Logs der Trockenlaeufe und des Endtors (log-endtor-A, log-endtor-B) unter ~/.cache/taxgraph-tmp/gate-final/, Berichte unter
-~/.cache/taxgraph-tmp/berichte/, Vault-Notizen unter ~/00_projects/vault/audits/. Bei Logs, Berichten und Vault-Notizen heisst OK:
+~/.cache/taxgraph-tmp/berichte/, Vault-Notizen unter ~/00_projects/vault/audits/ (ueberholte, ersetzte Notizen liegen seit
+`note supersede` unter audits/archive/; dort prueft der Pruefer sie weiter). Bei Logs, Berichten und Vault-Notizen heisst OK:
 der Doc-Text gibt die genannte Quelle richtig wieder, nicht: die Zahl gilt auf dem heutigen Baum.
+Dazu je ein im Doc genannter Vault-Pfad (`audits/x.md`, `decisions/y.md` ...): die Datei muss unter genau diesem Pfad liegen.
 Leichte Kommandos nur: grep, wc, ls, git merge-base/cat-file/rev-parse/diff/grep, python3 tests/test_testmap_vollstaendig.py, python3 -c.
 Exit 0: keine ABWEICHUNG; 1: mindestens eine; 2: Aufruffehler.
 """
 from __future__ import annotations
 
 import argparse
+import contextlib
 import glob
+import io
 import json
 import math
 import os
@@ -25,6 +29,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
@@ -35,7 +40,9 @@ T = HOME / ".cache" / "taxgraph-tmp"
 LOG1 = T / "gate-final" / "log-trocken2"
 LOG2 = T / "gate-final" / "log-1fdc6c0a"
 BER = T / "berichte"
-VAULT = HOME / "00_projects" / "vault" / "audits"
+VAULT_WURZEL = HOME / "00_projects" / "vault"
+VAULT = VAULT_WURZEL / "audits"
+VAULT_ARCHIV = VAULT / "archive"       # `note supersede` zieht ueberholte und ersetzte Notizen hierher (Vault 9294e33, 2026-10-06)
 DOCS = ("README.md", "CLAUDE.md", "REWRITE_PLAN.md")
 ERLAUBT = {"grep", "wc", "ls", "git", "python3"}
 WORTE = {"zwei": "2", "drei": "3", "vier": "4", "fuenf": "5", "fünf": "5", "sechs": "6", "elf": "11"}
@@ -192,8 +199,8 @@ def b(zahl, doc, anker, kommando, ist=r"(\d+)", **kw) -> P:
 
 
 R, RD = "REWRITE_PLAN.md", "README.md"
-PV = VAULT / "parity-voll-stufe-1-und-2-2026-10-04.md"
-GG = VAULT / "g-gegenproben-15-von-15-rot-und-solz-konstante-2026-10-04.md"
+PV = VAULT_ARCHIV / "parity-voll-stufe-1-und-2-2026-10-04.md"
+GG = VAULT_ARCHIV / "g-gegenproben-15-von-15-rot-und-solz-konstante-2026-10-04.md"
 WF = VAULT / "wertwache-fixture-ohne-orakel-2026-10-04.md"
 UG = VAULT / "ueberlauf-guard-am-uebersetzer-2026-10-04.md"
 UW = VAULT / "ueberlauf-waechter-text-2026-10-04.md"
@@ -224,12 +231,12 @@ def fundstellen() -> list[P]:
         ("einreichen.rs Kopf", R, r"\(`rust/api/src/einreichen\.rs:(1-8)`, `produkt", "rust/api/src/einreichen.rs", "ERIC_VALIDIERE"),
         ("api.py einreichen", R, r"api\.py:(685-691)", "produkt/haut/api.py", "^def einreichen"),
         ("store.rs veranlagungszeitraum", R, r"store\.rs:(412-414)", "rust/store/src/store.rs", "pub fn veranlagungszeitraum"),
-        ("auth lib.rs Geheimnis", R, r"auth/src/lib\.rs:(112-113)", "rust/auth/src/lib.rs", "zufaellig je Start"),
+        ("auth lib.rs Geheimnis", R, r"auth/src/lib\.rs:(115-116)", "rust/auth/src/lib.rs", "zufaellig je Start"),
         ("shim.c TG_AUS", R, r"csrc/shim\.c:(50)", "rust/catala-sys/csrc/shim.c", "^#define TG_AUS"),
         ("lib.rs Ausgabe::cent", R, r"src/lib\.rs:(118)", "rust/catala-sys/src/lib.rs", "pub fn cent"),
         ("Cargo.toml overflow-checks (Waechter)", R, r"`rust/Cargo\.toml:(68)`\), und der Test", "rust/Cargo.toml", "^overflow-checks = true"),
         ("Cargo.toml overflow-checks (Betriebsfolge)", R, r"`rust/Cargo\.toml:(68)`\);", "rust/Cargo.toml", "^overflow-checks = true"),
-        ("Makefile --release", R, r"`Makefile:(113)`", "Makefile", "Ein Bau mit `--release`"),
+        ("Makefile --release", R, r"`Makefile:(119)`", "Makefile", "Ein Bau mit `--release`"),
         ("Test 1h/1i Block", R, r"^\s*`api_http_paritaet\.rs:(6027)`", APIT, "// 1h/1i"),
         ("Test dokumentierte_abweichungen", R, r"beginnt bei Zeile (5848)", APIT, "fn dokumentierte_abweichungen"),
         ("Test 1g Kommentar", R, r"api_http_paritaet\.rs:(5964)", APIT, "1g: Scheibe `gesamt`, EIN Betrag"),
@@ -248,6 +255,20 @@ def hashes() -> list[P]:
               "6efc1c72", "81892228", "b7eb0c01", "0197bf76", "b6516035", "057b7ec3", "7cd5e048", "88ee0bf", "904f6215"):
         rows.append(P(f"Commit {h}", R, rf"`({h})`", kommando=f"git cat-file -t {h}", ist=r"^(commit)", erste=True,
                       modus="da"))
+    return rows
+
+
+VAULT_ZITAT = re.compile(r"(?<![\w/.-])((?:audits|decisions|research|architecture|backlog|tickets)/(?:archive/)?[\w.-]+\.md)")
+
+
+def vault_pfade(texte: dict[str, str], wurzel: Path = VAULT_WURZEL) -> list[P]:
+    """Je Vault-Pfad, den ein Doc nennt: die Datei liegt unter genau diesem Pfad. Zog `note supersede` die Notiz ins Archiv, stimmt
+    der genannte Pfad nicht mehr: ABWEICHUNG, der Doc-Text gehoert auf `<ordner>/archive/<name>.md`. Der Pfad ist der Anker."""
+    rows = []
+    for doc, text in texte.items():
+        for vp in sorted(set(VAULT_ZITAT.findall(text))):
+            rows.append(P(f"Vault-Pfad {vp}", doc, r"(?<![\w/.-])(" + re.escape(vp) + r")(?![\w.-])", kommando=f"ls vault/{vp}", ist=r"(ja)", erste=True, modus="da",
+                          lauf=lambda vp=vp: "ja" if (wurzel / vp).is_file() else ""))
     return rows
 
 
@@ -291,7 +312,7 @@ def tabelle() -> list[P]:
         b("HTTP 403 README (Code)", RD, r"Konto gesperrt \((403)\)", 'grep -n "Fall ohne user_id" produkt/haut/api.py', ist=r"user_id → (\d+)"),
         b("Commit eebe4578 ist in HEAD", R, r"`(eebe4578)` ist in main", "git merge-base --is-ancestor eebe4578 HEAD", ist=r"rc=(0)", modus="da"),
     ]
-    rows += hashes() + fundstellen()
+    rows += hashes() + fundstellen() + vault_pfade(lies_docs())
     return rows + tabelle_quellen()
 
 
@@ -373,7 +394,7 @@ def tabelle_quellen() -> list[P]:
     ]
     # --- Abdeckung der uebrigen Zahlen der hinzugefuegten Doc-Zeilen (Ergaenzung nach dem Abdeckungslauf)
     DEC = Path.home() / "00_projects" / "vault" / "decisions" / "betrag-ausserhalb-i64-rechnung-antwortet-422-statt-500.md"
-    BEREIT = VAULT / "cutover-bereitschaft-rust-port-2026-10-03.md"
+    BEREIT = VAULT_ARCHIV / "cutover-bereitschaft-rust-port-2026-10-03.md"
     HTTP = "rust/parity/tests/api_http_paritaet.rs"
     rows += [
         q("(a) 0 failed je Suite", R, r"141 passed / (0) failed, Summe", PV, r"141 passed, {0} failed"),
@@ -705,6 +726,28 @@ def selbsttest() -> int:
     echt[R] = echt[R].replace("→ 22; `make golden`", "→ 23; `make golden`")
     zeile_ = next(p for p in tabelle() if p.zahl == "Parity-Suiten")
     assert pruefe(zeile_, echt)[4] == "ABWEICHUNG", "echte Zeile erkennt die geaenderte Zahl nicht"
+    # Vault-Pfade: ein Pfad, den es gibt, ist OK; ein erfundener und ein Pfad, der nach `note supersede` im Archiv liegt, sind rot.
+    with tempfile.TemporaryDirectory() as tmp:
+        wurzel = Path(tmp)
+        for rel in ("audits/da.md", "audits/archive/alt.md"):
+            (wurzel / rel).parent.mkdir(parents=True, exist_ok=True)
+            (wurzel / rel).write_text("x", encoding="utf-8")
+        vt = {"X.md": "Vault `audits/da.md`, `audits/erfunden.md`, `audits/alt.md`, `audits/archive/alt.md`; kein Pfad: rust/audits/x.md, audits/\n"}
+        pfade = vault_pfade(vt, wurzel)
+        assert [p.zahl.removeprefix("Vault-Pfad ") for p in pfade] == ["audits/alt.md", "audits/archive/alt.md", "audits/da.md", "audits/erfunden.md"], \
+            [p.zahl for p in pfade]
+        status = {p.zahl.removeprefix("Vault-Pfad "): pruefe(p, vt)[4] for p in pfade}
+        assert status == {"audits/da.md": "OK", "audits/archive/alt.md": "OK", "audits/erfunden.md": "ABWEICHUNG", "audits/alt.md": "ABWEICHUNG"}, status
+        # Quelle: eine fehlende Datei ist ABWEICHUNG, eine vorhandene mit dem Muster OK.
+        (wurzel / "q.md").write_text("Summe 22 Suiten\n", encoding="utf-8")
+        qt = {"X.md": "Wert 22 Suiten\n"}
+        da = q("da", "X.md", r"(\d+) Suiten", wurzel / "q.md", r"Summe {0} Suiten")
+        weg = q("weg", "X.md", r"(\d+) Suiten", wurzel / "erfunden.md", r"Summe {0} Suiten")
+        assert (pruefe(da, qt)[4], pruefe(weg, qt)[4]) == ("OK", "ABWEICHUNG")
+        # Gegenprobe: mit vorhandener Quelle 0 blind; mit fehlender Quelle blind, obwohl die Zeile rot ist (Rot aus dem falschen Grund).
+        with contextlib.redirect_stdout(io.StringIO()):
+            assert gegenprobe([da], qt) == 0, "Gegenprobe meldet eine gute Zeile als blind"
+            assert gegenprobe([weg], qt) == 1, "Gegenprobe laesst eine Zeile ohne Quelle durch"
     print("Selbsttest ok")
     return 0
 
@@ -728,14 +771,20 @@ def mutiere(p: P, texte: dict[str, str]) -> Optional[dict[str, str]]:
     return {**texte, p.doc: "\n".join(zeilen)} if getan else None
 
 
-def gegenprobe() -> int:
+def gegenprobe(rows: Optional[list[P]] = None, texte: Optional[dict[str, str]] = None) -> int:
     """Jede nicht-NUR-ENDTOR-Zeile muss mit einer um 1 geaenderten Doc-Zahl ABWEICHUNG (oder ANKER FEHLT) melden.
-    Eine Zeile, die gruen bleibt, prueft die Zahl nicht (zu loses Muster)."""
-    texte = lies_docs()
+    Eine Zeile, die gruen bleibt, prueft die Zahl nicht (zu loses Muster). Eine Zeile, die schon OHNE Mutation nicht OK ist
+    (Quelle fehlt), zaehlt als blind: ihr Rot kommt dann von der fehlenden Quelle, nicht von der geaenderten Zahl, und die
+    Probe beweist nichts. Gemessen 2026-10-06: mit 22 fehlenden Quellen meldete die Probe vorher `0 blind`."""
+    texte = texte if texte is not None else lies_docs()
     blind = []
     n = 0
-    for p in tabelle():
+    for p in rows if rows is not None else tabelle():
         if p.endtor:
+            continue
+        basis = pruefe(p, texte)[4]
+        if basis != "OK":
+            blind.append((p.zahl, f"ohne Mutation schon {basis}: die Probe beweist nichts"))
             continue
         m = mutiere(p, texte)
         if m is None:

@@ -1,9 +1,10 @@
 """Jede Testdatei hat eine Zeile in rust/TESTMAP.tsv.
 
 Die Karte sagt je Testdatei, was sie prueft und was sie ersetzt oder dass sie bleibt. Eine Datei ohne
-Zeile steht in keiner Zaehlung des Cutover-Plans. Der Test sucht die Dateien in `tests/` (Python) und
-in `rust/*/tests/` (Rust, dazu Hilfsquellen `.py`/`.c`), nicht deren Inhalt, und braucht nichts ausser
-dem Baum. Daten (yaml, txt, proptest-regressions) und `#[cfg(test)]` im Quelltext zaehlen nicht.
+Zeile steht in keiner Zaehlung des Cutover-Plans. Der Test sucht die Dateien in `tests/` und
+`pipeline/tests/` (Python) und in `rust/*/tests/` (Rust, dazu Hilfsquellen `.py`/`.c`), nicht deren
+Inhalt, und braucht nichts ausser dem Baum. Daten (yaml, txt, proptest-regressions) und `#[cfg(test)]`
+im Quelltext zaehlen nicht.
 Spalte 2 und 3 der Karte halten den Stand beim Anlegen der Zeile; kein Test prueft oder zieht sie nach.
 
 `python3 tests/test_testmap_vollstaendig.py` nennt die Zahl und die Liste der fehlenden Dateien.
@@ -16,7 +17,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KARTE = "rust/TESTMAP.tsv"
-MUSTER = ("tests/**/*.py", "rust/*/tests/**/*.rs", "rust/*/tests/**/*.py", "rust/*/tests/**/*.c")
+MUSTER = ("tests/**/*.py", "pipeline/tests/**/*.py", "rust/*/tests/**/*.rs", "rust/*/tests/**/*.py",
+          "rust/*/tests/**/*.c")
 
 
 def testdateien(wurzel: str = ROOT) -> list[str]:
@@ -50,22 +52,27 @@ def test_der_finder_sieht_beide_seiten():
     assert any(d.startswith("tests/test_") and d.endswith(".py") for d in dateien)
     assert any(d.startswith("rust/") and d.endswith(".rs") for d in dateien)
     assert "tests/test_testmap_vollstaendig.py" in dateien
+    assert any(d.startswith("pipeline/tests/test_") and d.endswith(".py") for d in dateien)
 
 
 def test_der_finder_meldet_eine_fehlende_zeile(tmp_path):
-    for pfad in ("tests/test_a.py", "tests/test_b.py", "rust/x/tests/y.rs", "rust/x/tests/sub/z.rs"):
+    for pfad in ("tests/test_a.py", "tests/test_b.py", "pipeline/tests/test_c.py", "pipeline/tests/test_d.py",
+                 "rust/x/tests/y.rs", "rust/x/tests/sub/z.rs"):
         datei = tmp_path / pfad
         datei.parent.mkdir(parents=True, exist_ok=True)
         datei.write_text("", encoding="utf-8")
     (tmp_path / "tests/__pycache__").mkdir()
     (tmp_path / "tests/__pycache__/test_a.py").write_text("", encoding="utf-8")
+    (tmp_path / "pipeline/tests/daten.yaml").write_text("", encoding="utf-8")
+    (tmp_path / "pipeline/quellen.py").write_text("", encoding="utf-8")
     (tmp_path / "tests/daten.txt").write_text("", encoding="utf-8")
     (tmp_path / "rust").mkdir(exist_ok=True)
     kopf = "file\tlines\tn_tests\txfail\tcategory\ttarget_module\tnote\n"
     zeile = "{}\t0\t0\t0\tGOLDEN\t-\tx\n"
-    (tmp_path / KARTE).write_text(kopf + zeile.format("tests/test_a.py") + zeile.format("rust/x/tests/y.rs"),
+    (tmp_path / KARTE).write_text(kopf + zeile.format("tests/test_a.py") + zeile.format("pipeline/tests/test_c.py")
+                                  + zeile.format("rust/x/tests/y.rs"),
                                   encoding="utf-8")
-    assert luecken(str(tmp_path)) == ["rust/x/tests/sub/z.rs", "tests/test_b.py"]
+    assert luecken(str(tmp_path)) == ["pipeline/tests/test_d.py", "rust/x/tests/sub/z.rs", "tests/test_b.py"]
 
 
 if __name__ == "__main__":
