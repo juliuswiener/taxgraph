@@ -224,7 +224,7 @@ def fundstellen() -> list[P]:
         ("einreichen.rs Kopf", R, r"\(`rust/api/src/einreichen\.rs:(1-8)`, `produkt", "rust/api/src/einreichen.rs", "ERIC_VALIDIERE"),
         ("api.py einreichen", R, r"api\.py:(685-691)", "produkt/haut/api.py", "^def einreichen"),
         ("store.rs veranlagungszeitraum", R, r"store\.rs:(412-414)", "rust/store/src/store.rs", "pub fn veranlagungszeitraum"),
-        ("auth lib.rs Geheimnis", R, r"auth/src/lib\.rs:(112-113)", "rust/auth/src/lib.rs", "zufaellig je Start"),
+        ("auth lib.rs Geheimnis", R, r"auth/src/lib\.rs:(115-116)", "rust/auth/src/lib.rs", "zufaellig je Start"),
         ("shim.c TG_AUS", R, r"csrc/shim\.c:(50)", "rust/catala-sys/csrc/shim.c", "^#define TG_AUS"),
         ("lib.rs Ausgabe::cent", R, r"src/lib\.rs:(118)", "rust/catala-sys/src/lib.rs", "pub fn cent"),
         ("Cargo.toml overflow-checks (Waechter)", R, r"`rust/Cargo\.toml:(68)`\), und der Test", "rust/Cargo.toml", "^overflow-checks = true"),
