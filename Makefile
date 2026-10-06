@@ -76,6 +76,12 @@ backup:
 ## namen selbst (z.B. FAELE_ROOT= zeigt still auf den Default, und genau der steht dann sichtbar
 ## in der Frage). CONFIRM=yes ueberspringt die Rueckfrage fuer Skripte/den Round-Trip-Test.
 ##
+## Totalverlust heisst: es kann auch das DatenVERZEICHNIS selbst fehlen (frische Maschine), nicht nur
+## faelle/ darunter. Das `mkdir -p` vor dem Entpacken ist dafuer noetig — ohne es scheitert
+## `tar -C $(FAELLE_ROOT)` mit `Cannot chdir` (rc 2, gemessen 2026-10-06) und die Sicherung ist auf
+## genau dem Weg unbenutzbar, fuer den sie da ist. Waechter:
+## rust/api/tests/backup_restore_rundlauf.rs::restore_legt_das_datenverzeichnis_bei_totalverlust_an.
+##
 ## Die Vorher-Sicherung unterscheidet "nichts da" von "ging schief": existiert faelle/ nicht,
 ## wird sie mit Hinweis UEBERSPRUNGEN — sonst waere ausgerechnet die Wiederherstellung nach
 ## Datenverlust blockiert (gemessen 2026-08-17: `backup` bricht mit `tar: faelle: Cannot stat`
