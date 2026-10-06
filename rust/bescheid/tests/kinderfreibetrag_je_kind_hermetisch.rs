@@ -577,3 +577,38 @@ fn rentner_scheibe_kuerzt_das_kindergeld_nach_monaten() {
     assert_eq!(kindergeld(&voll), 3_060);
     assert_eq!(kindergeld(&teil), 2_295);
 }
+
+// ---------------------------------------------------------------- `IdNr` des Kindes (Satz 12, nicht gebaut)
+
+/// IST-ZUSTAND, Satz 12 nicht gebaut, Entscheidung offen (§ 32 Abs. 6 Satz 12 bis 14 `EStG`: die Identifizierung des Kindes
+/// ueber die `IdNr` ist „Voraussetzung fuer die Beruecksichtigung des Kinderfreibetrags“, Satz 13 laesst eine andere geeignete
+/// Identifizierung zu, Satz 14 wirkt rueckwirkend; Kopfkommentar von `kinderfreibetrag.rs`, Bericht `kind-vorarbeit.md`, 3.2).
+/// Der Rechenweg liest `kind_idnr` am Kinderfreibetrag nie: ein Kind ohne `IdNr`, mit gueltiger, mit zu kurzer und mit einer
+/// `IdNr` aus Buchstaben rechnet dieselbe Zahl, und der Freibetrag gewinnt. Wird Satz 12 gebaut (Hinweis oder Sperre), wird dieser
+/// Test rot, und die Erwartung gehoert in dieselbe Aenderung. Rot ohne diese Entscheidung heisst: die `IdNr` bewegt die Zahl
+/// ploetzlich, ohne dass es jemand entschieden hat.
+#[test]
+fn ist_zustand_der_kinderfreibetrag_haengt_nicht_an_der_idnr_des_kindes() {
+    let normal = kind_n(1, ("1", GANZ), ("1", GANZ));
+    let ohne = zusammen(1, &normal);
+    assert!(matches!(ohne, Ausgang::Zahl(..)), "{ohne:?}");
+    for (name, idnr) in [
+        ("gueltige IdNr", "13579246007"),
+        ("zu kurz (10 Zeichen)", "1234567890"),
+        ("keine Ziffern", "abcdefghijk"),
+    ] {
+        let mut mit = normal.clone();
+        mit.push(("kind_idnr", json!(idnr), true));
+        assert_eq!(
+            zusammen(1, &mit),
+            ohne,
+            "{name}: die IdNr bewegt die Zahl (IST-ZUSTAND: Satz 12 nicht gebaut)"
+        );
+    }
+    let k = kette(ohne);
+    assert_eq!(
+        k.p31.as_ref().unwrap().guenstiger,
+        P31Sieger::Freibetraege,
+        "ohne IdNr gewinnt der Freibetrag (IST-ZUSTAND)"
+    );
+}
