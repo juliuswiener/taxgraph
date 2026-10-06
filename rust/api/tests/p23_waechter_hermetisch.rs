@@ -28,6 +28,16 @@
 //! Die Baselines R0/Z0/G0 sind die Positivkontrolle: sie zeigen, dass der Kegel vollstaendig ist und die
 //! Engine eine Zahl liefert. Ohne sie waere "gesperrt" nicht von "Kegel offen" zu unterscheiden.
 //!
+//! ZAEHL-INSTANZ `__2`: ein zweiter Verkauf steht nur unter `p23_*__2` (kein Feld unter dem Basisnamen).
+//! `FLAG_NEGIERT` findet ihn ueber `instanz_feld_ids_text` (Basis plus `basis__<n>`); sonst liefe ein
+//! Verkauf in der zweiten Zaehl-Instanz still durch. R4/R5 (`rentner_gesamt`) sind die Python-Werte aus
+//! derselben Sonde (`flag_konsistenz_offen`, beide ohne Zahl). R6 und G5-G7 haben keinen eigenen Python-Lauf:
+//! G5/G6 sind G3/G4 der Sonde mit `__2` statt Basisnamen, R6/G7 laufen ueber `fremd_arten`, das nur das
+//! Kreuz liest und kein p23-Feld. Gemessen am 2026-10-07 auf 26e9395a: `instanz_feld_ids_text` ohne den
+//! Instanz-Zweig und `ist_instanz_suffix` ohne die Ziffer 2 machen genau R4, R5, G5, G6 rot; die zehn
+//! Tests mit Basisnamen bleiben gruen. Die Unit-Tests in `konsistenz` fangen beide Mutanten auf
+//! Funktionsebene; neu ist der Pin ueber die Route (`GET /ergebnis`).
+//!
 //! ponytail: die Erwartungswerte sind eingefroren. Faellt Python (Orakel) weg und aendert sich der
 //! Tarif oder der Kegel, rechnet man R0/Z0/G0 von Hand nach und zieht die Konstanten nach; die
 //! Differenz 2.100.000 Cent (42 % von 50.000 EUR, Zone 4) gilt nur fuer diesen Fall.
@@ -232,6 +242,16 @@ fn verkauf() -> Paare {
     ]
 }
 
+/// Derselbe Verkauf, aber NUR unter der zweiten Zaehl-Instanz `__2`: kein Feld unter dem Basisnamen.
+fn verkauf_zaehl_2() -> Paare {
+    vec![
+        ("p23_veraeusserungs_typ__2", json!("grundstueck")),
+        ("p23_veraeusserungspreis__2", json!(10_000_000)),
+        ("p23_anschaffung_herstellungskosten__2", json!(5_000_000)),
+        ("p23_werbungskosten__2", json!(0)),
+    ]
+}
+
 /// Haengt das Kreuz `kein_p23_verkauf` mit `wert` an (`None`: nie gefragt) und danach den Verkauf, wenn
 /// `mit_verkauf`.
 fn akte(mut kegel: Paare, kreuz: Option<bool>, mit_verkauf: bool) -> Paare {
@@ -241,6 +261,15 @@ fn akte(mut kegel: Paare, kreuz: Option<bool>, mit_verkauf: bool) -> Paare {
     if mit_verkauf {
         kegel.extend(verkauf());
     }
+    kegel
+}
+
+/// Wie [`akte`], aber der Verkauf steht nur unter `__2`.
+fn akte_zaehl_2(mut kegel: Paare, kreuz: Option<bool>) -> Paare {
+    if let Some(w) = kreuz {
+        kegel.push(("kein_p23_verkauf", json!(w)));
+    }
+    kegel.extend(verkauf_zaehl_2());
     kegel
 }
 
@@ -307,6 +336,40 @@ async fn r3_rentner_kreuz_verneint_trotz_verkauf_sperrt_flag_konsistenz_offen() 
     erwarte_sperre("R3", &a, FLAG_NIE_GEFRAGT, R0);
 }
 
+/// Zaehl-Instanz `__2`: Kreuz "kein Verkauf", der Verkauf steht nur unter `p23_*__2`. Python-Fall R4.
+/// Faengt `instanz_feld_ids_text`; ohne die Instanz-Suche saehe `FLAG_NEGIERT` keinen Betrag.
+#[tokio::test]
+async fn r4_rentner_kreuz_verneint_verkauf_nur_unter_zaehl_2_sperrt_flag_konsistenz_offen() {
+    let a = ergebnis(
+        "rentner_gesamt",
+        &akte_zaehl_2(kegel_rentner("einzel"), Some(true)),
+    )
+    .await;
+    erwarte_sperre("R4", &a, FLAG_NIE_GEFRAGT, R0);
+}
+
+/// Zaehl-Instanz `__2`, Kreuz nie gefragt. Python-Fall R5.
+#[tokio::test]
+async fn r5_rentner_kreuz_nie_gefragt_verkauf_nur_unter_zaehl_2_sperrt_flag_konsistenz_offen() {
+    let a = ergebnis(
+        "rentner_gesamt",
+        &akte_zaehl_2(kegel_rentner("einzel"), None),
+    )
+    .await;
+    erwarte_sperre("R5", &a, FLAG_NIE_GEFRAGT, R0);
+}
+
+/// Zaehl-Instanz `__2`, Kreuz bejaht: `fremd_arten` liest nur das Kreuz, nicht den Ort des Betrags.
+#[tokio::test]
+async fn r6_rentner_kreuz_bejaht_verkauf_nur_unter_zaehl_2_sperrt_einkunftsart_nicht_ring_faehig() {
+    let a = ergebnis(
+        "rentner_gesamt",
+        &akte_zaehl_2(kegel_rentner("einzel"), Some(false)),
+    )
+    .await;
+    erwarte_sperre("R6", &a, FLAG_BEJAHT, R0);
+}
+
 // ---- Rentner, zusammen ----------------------------------------------------------------------------
 
 fn kegel_rentner_zusammen() -> Paare {
@@ -365,4 +428,25 @@ async fn g1_gesamt_verkauf_bejaht_sperrt_einkunftsart_nicht_ring_faehig() {
 async fn g3_gesamt_verkauf_kreuz_nie_gefragt_sperrt_flag_konsistenz_offen() {
     let a = ergebnis("gesamt", &akte(kegel_gesamt(), None, true)).await;
     erwarte_sperre("G3", &a, FLAG_NIE_GEFRAGT, G0);
+}
+
+/// Zaehl-Instanz `__2` auf `gesamt`, Kreuz nie gefragt (G3 der Sonde mit `__2`).
+#[tokio::test]
+async fn g5_gesamt_kreuz_nie_gefragt_verkauf_nur_unter_zaehl_2_sperrt_flag_konsistenz_offen() {
+    let a = ergebnis("gesamt", &akte_zaehl_2(kegel_gesamt(), None)).await;
+    erwarte_sperre("G5", &a, FLAG_NIE_GEFRAGT, G0);
+}
+
+/// Zaehl-Instanz `__2` auf `gesamt`, Kreuz "kein Verkauf" (G4 der Sonde mit `__2`).
+#[tokio::test]
+async fn g6_gesamt_kreuz_verneint_verkauf_nur_unter_zaehl_2_sperrt_flag_konsistenz_offen() {
+    let a = ergebnis("gesamt", &akte_zaehl_2(kegel_gesamt(), Some(true))).await;
+    erwarte_sperre("G6", &a, FLAG_NIE_GEFRAGT, G0);
+}
+
+/// Zaehl-Instanz `__2` auf `gesamt`, Kreuz bejaht: nur `fremd_arten` faengt es (`kein_sonstige` = "nein").
+#[tokio::test]
+async fn g7_gesamt_kreuz_bejaht_verkauf_nur_unter_zaehl_2_sperrt_einkunftsart_nicht_ring_faehig() {
+    let a = ergebnis("gesamt", &akte_zaehl_2(kegel_gesamt(), Some(false))).await;
+    erwarte_sperre("G7", &a, FLAG_BEJAHT, G0);
 }
