@@ -136,11 +136,18 @@ fn die_ratsche_erkennt_ihren_eigenen_fehlerfall() {
     assert_eq!(wiederaufgetauchte(&heute, &zombie), vec!["b".to_string()]);
     assert!(wiederaufgetauchte(&heute, &entfernt).is_empty());
 
-    // Begruendung: genau 30 Zeichen sind zu knapp, 31 reichen.
-    let knapp = BTreeMap::from([("c".to_string(), "x".repeat(MIN_ZEICHEN_BEGRUENDUNG))]);
-    assert_eq!(zu_knappe_begruendungen(&knapp), vec!["c".to_string()]);
-    let reicht = BTreeMap::from([("c".to_string(), "x".repeat(MIN_ZEICHEN_BEGRUENDUNG + 1))]);
-    assert!(zu_knappe_begruendungen(&reicht).is_empty());
+    // Begruendung: 29 und genau 30 Zeichen sind zu knapp, 31 und 32 reichen. Die Zahlen stehen hier
+    // ausgeschrieben und nicht als Konstante des Laders: wanderte die Konstante, wanderte sonst die
+    // Erwartung mit.
+    for (laenge, knapp) in [(29, true), (30, true), (31, false), (32, false)] {
+        let eintrag = BTreeMap::from([("c".to_string(), "x".repeat(laenge))]);
+        assert_eq!(
+            zu_knappe_begruendungen(&eintrag),
+            if knapp { vec!["c".to_string()] } else { vec![] },
+            "{laenge} Zeichen"
+        );
+    }
+    assert_eq!(MIN_ZEICHEN_BEGRUENDUNG, 30);
 
     // Gezaehlt wird nach Zeichen, nicht nach Bytes: 16 Umlaute sind 32 Bytes, aber nur 16 Zeichen.
     let wenige_umlaute = BTreeMap::from([("c".to_string(), "ä".repeat(16))]);
@@ -148,8 +155,7 @@ fn die_ratsche_erkennt_ihren_eigenen_fehlerfall() {
         zu_knappe_begruendungen(&wenige_umlaute),
         vec!["c".to_string()]
     );
-    let viele_umlaute =
-        BTreeMap::from([("c".to_string(), "ä".repeat(MIN_ZEICHEN_BEGRUENDUNG + 1))]);
+    let viele_umlaute = BTreeMap::from([("c".to_string(), "ä".repeat(31))]);
     assert!(zu_knappe_begruendungen(&viele_umlaute).is_empty());
 }
 
