@@ -43,15 +43,14 @@ python3 tools/parity/extract_golden.py
 ## Eingefroren (Stufe 2)
 
 Die Fixtures mit Antworten von Python — `interview_`, `konsistenz_`, `intervall_`, `wertwache_`, `eingang_`,
-`zeichensatz_`, `api_stand_fragen_orakel.json`, `kz_tabellen.json`, `sperrgrund_klartext.json` und `e2e/` — sind
-eingefroren. Ihre Erzeuger sind geloescht; der letzte Stand liegt im Verlauf (`git show 2dd056a6:tools/parity/<name>.py`).
+`zeichensatz_`, `kz_tabellen.json`, `sperrgrund_klartext.json` und `e2e/` — sind eingefroren. Ihre Erzeuger sind geloescht; der letzte Stand liegt im Verlauf (`git show 2dd056a6:tools/parity/<name>.py`).
 Die Dateien werden nicht neu erzeugt und nicht von Hand geaendert. Eine gewollte Abweichung von Rust zu Python
 steht als Eintrag mit Grund in einer Liste im Test; der Test verlangt, dass die Abweichung weiter besteht. Die
 Abweichungsliste steht im Abschnitt „Abweichungsliste“ weiter unten.
 
 Ausnahmen: `golden_cases.json` (Extrakt aus `golden/cases/*.yaml`, `tools/parity/extract_golden.py` bleibt) und
-`begleitfelder_formen.json` (von Hand gepflegt). `api_stand_fragen_orakel.json` bleibt vorerst eingefroren; der
-Umbau zu einem Rust-eigenen Golden-Master (S2.2) wartet auf die Waechter der Stufe 3.
+`begleitfelder_formen.json` (von Hand gepflegt). `api_stand_fragen_orakel.json` ist seit S2.2 ein Rust-eigener
+Golden-Master (eigener Abschnitt unten) und wird mit `TAXGRAPH_GOLDEN_NEU=1` neu geschrieben.
 
 ## Abweichungsliste
 
@@ -181,12 +180,29 @@ Zwanzig Faelle (Scheiben `gesamt`, `an_gesamt`, `rentner_gesamt`, `ep`, `n_vor_g
 eine zweite Rente, ein vorlaeufiges Einzelfeld und ein Rentenbeginn im Folgejahr ohne Freibetrag, je bestaetigt und
 vorlaeufig, damit die Faelle den Unterschied zwischen Ring mit und ohne Store, zwischen "nur bestaetigt" und
 "auch vorlaeufig" und den Fehler `RentenfreibetragFixierungOffen` sehen; dazu zwei Faelle mit einer offenen Achse, damit die
-Gewichte der Fragen-Reihenfolge sichtbar werden: Teil-Ring `ep_werbungskosten` und Gesamt-Ring ohne Gewichte wegen des Fehlers) samt den Antworten des Python-Servers
-(`api.stand`, `api.fragen`, `api.frage_einzeln` aus `produkt/haut/api.py`, im selben Prozess mit denselben Ereignissen):
+Gewichte der Fragen-Reihenfolge sichtbar werden: Teil-Ring `ep_werbungskosten` und Gesamt-Ring ohne Gewichte wegen des Fehlers) samt den Antworten von GET /stand, GET /fragen und GET /feld/{fid}/frage. Bis `2dd056a6` waren das die Antworten des
+Python-Servers (`api.stand`, `api.fragen`, `api.frage_einzeln` aus `produkt/haut/api.py`, im selben Prozess mit denselben
+Ereignissen; `git show 2dd056a6:rust/fixtures/api_stand_fragen_orakel.json`). Der Inhalt blieb bei der Umstellung gleich
+(Beleg im Commit: alle 20 Faelle gleich, auch `kopf`, den der alte Test nur fuer einen Fall verglich); nur `fall_id` heisst
+in der Datei jetzt in jedem Fall `sf`. Aufbau eines Falls:
 `events` (die Rumpfe von `POST /fall/<id>/event`, Reihenfolge ist Semantik), `stand` (die ganze Antwort), `fragen` (die
 ganze Antwort, nur bei den grossen Faellen; sonst `fragen_ids` und der Sperrgrund), `kopf` (was der Mitschnitt fuer
 `fragen` schreibt) und `einzeln` (Antwort je Probe-Feld). `event_id` jedes Felds in `stand` steht als `<event_id>` da:
 der Server haengt die Uhrzeit an das Ereignis. Konsument: `rust/api/tests/stand_fragen_orakel_hermetisch.rs`
 (hermetisch, ohne `PARITY=1`, ohne Python). Die Ereignislisten der Basisfaelle las der Erzeuger aus
-`rust/api/tests/kette_endstand_hermetisch.rs`. Eingefroren; der Umbau zu einem Rust-eigenen
-Golden-Master (S2.2) wartet auf die Waechter der Stufe 3.
+`rust/api/tests/kette_endstand_hermetisch.rs`.
+
+**Golden-Master (S2.2).** Die Datei gehoert Rust. Der Test spielt jeden Fall durch die echten Routen und vergleicht jede
+Antwort Feld fuer Feld mit der Datei; die Meldung nennt je Fall bis zu zwoelf Pfade (`.stand.felder.<fid>.wert: ist …,
+soll …`). Bei einer gewollten Aenderung (neues Bindungsfeld in einer Scheibe, neuer Fragetext, neuer Anzeigetext):
+
+```
+TAXGRAPH_GOLDEN_NEU=1 cargo test -p api --test stand_fragen_orakel_hermetisch
+git diff rust/fixtures/api_stand_fragen_orakel.json    # LESEN
+```
+
+Das Neuschreiben nimmt jede heutige Antwort als richtig; der Diff ist die einzige Pruefung, und ein Mensch gibt ihn
+frei. In der CI (`CI` gesetzt) ist es verboten. Die Datei steht zeilenweise (ein Feld, eine Frage, ein Ereignis je Zeile),
+damit der Diff lesbar ist; das Format kommt vom Schreiber im Test, die Eingaben (`name`, `scheibe`, `events`) und die Huelle
+eines Falls bleiben beim Neuschreiben stehen. Ein neuer Fall: `name`, `scheibe`, `events` und eine leere Huelle
+(`"fragen": {}` oder `"fragen_ids": []`, dazu `"einzeln": {"<feld_id>": {}}`), dann `N_FAELLE` im Test anheben.
