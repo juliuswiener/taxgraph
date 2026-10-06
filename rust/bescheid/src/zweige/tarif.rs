@@ -21,7 +21,7 @@ use super::ausgaben::{kette_endstand, kette_p31, kist_konfession, setze_kette, E
 use super::kinderfreibetrag::{auswerten, Befund};
 use super::rechnen::{add, mal, mal_div, max0, sub, R};
 use super::VeranlagungWert;
-use crate::abzuege::abs3_eligible;
+use crate::abzuege::{abs3_eligible, abs3_eligible_partner};
 use crate::{ist_true, py_int, wert, BescheidFehler, Felder, Instanzquelle};
 
 /// Laender mit 8 % (`runner._KIST_BY_BW`).
@@ -109,6 +109,11 @@ impl Lage<'_> {
 /// § 34-Chooser (XOR): Abs. 1 Fuenftel (Default) gegen Abs. 3 ermaessigter Durchschnittssatz (auf
 /// Antrag). Setzt `tarif_modifiziert`/`tarifliche_est_modifiziert`, sobald ein ao-Gewinn vorliegt.
 ///
+/// Abs. 3 gilt je Person fuer deren EIGENEN Gewinn: A mit `antrag_ermaessigter_satz` fuer `netto_vg`, der Ehegatte mit
+/// `antrag_ermaessigter_satz_partner` fuer `netto_vg_partner` (B Option 1, 2026-10-06). Haben beide einen Gewinn und
+/// beantragt einer, rechnet der Chooser A (der Gewinn des anderen bliebe ungeglaettet): diesen Fall sperren die Guards
+/// vorher (`abs3_partner_gewinn_offen`, `abs3_partner_antrag_gewinn_offen`).
+///
 /// # Errors
 /// Accessor- und Ueberlauf-Fehler.
 pub(super) fn p34_chooser(l: &Lage<'_>, g2: GesamtfallEingabe) -> R<GesamtfallEingabe> {
@@ -120,15 +125,27 @@ pub(super) fn p34_chooser(l: &Lage<'_>, g2: GesamtfallEingabe) -> R<GesamtfallEi
     if zve2.get() <= 0 {
         return Ok(g2);
     }
-    let abs3 = ist_true(wert(l.f, "antrag_ermaessigter_satz"))
+    let abs3_a = ist_true(wert(l.f, "antrag_ermaessigter_satz"))
         && abs3_eligible(l.f, l.vz)?
         && 0 < l.netto_vg.get()
         && l.netto_vg.get() <= 5_000_000;
-    let modifiziert = if abs3 {
+    // `netto_vg_partner` ist bei Einzelveranlagung 0 (`gewinn_partner_anteil`): der Partner-Antrag zaehlt dort nie.
+    let abs3_partner = ist_true(wert(l.f, "antrag_ermaessigter_satz_partner"))
+        && abs3_eligible_partner(l.f, l.vz)?
+        && 0 < l.netto_vg_partner.get()
+        && l.netto_vg_partner.get() <= 5_000_000;
+    let abs3_ao = if abs3_a {
+        Some(l.netto_vg)
+    } else if abs3_partner {
+        Some(l.netto_vg_partner)
+    } else {
+        None
+    };
+    let modifiziert = if let Some(abs3_ao) = abs3_ao {
         // § 34 Abs. 3: Grundtarif(zvE - ao) + ermaessigter Satz * min(ao, 5 Mio).
-        let est_rest = l.tarif(l.veranlagung, max0(sub(zve2, l.netto_vg)?))?;
+        let est_rest = l.tarif(l.veranlagung, max0(sub(zve2, abs3_ao)?))?;
         let est_ao = ermaessigter_durchschnittssatz(&DurchschnittssatzEingabe {
-            ao_einkuenfte: l.netto_vg,
+            ao_einkuenfte: abs3_ao,
             est_gesamt_zzgl_progression: gesamt_tarifliche(&g2, l.p)?,
             bemessungsgrundlage_durchschnitt: zve2,
         })?;

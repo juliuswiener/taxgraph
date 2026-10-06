@@ -106,7 +106,9 @@ fn akte(scheibe: Option<&str>) -> store::Store {
 /// 2026-10-02 (`gesamt` 350 -> 351, `rentner_gesamt` 247 -> 248 mit dem Zwilling `p34_abs3_antragsbetrag`,
 /// gemessen 2026-10-03; beide +1 mit `stammdaten_hausnummerzusatz`: 352 und 249, gemessen 2026-10-03;
 /// beide +2 mit den Satz-3-Feldern `kind_anderer_elternteil_tod_am` und `..._ausland_zeitraum`:
-/// 354 und 251, C2 am 2026-10-06).
+/// 354 und 251, C2 am 2026-10-06; beide +4 mit den Partner-Feldern zu § 34 Abs. 3
+/// `antrag_ermaessigter_satz_partner`, `dauernd_berufsunfaehig_partner`, `ermaessigung_einmal_genutzt_partner`
+/// und `p34_abs3_antragsbetrag_partner`: 358 und 255, B Option 1 am 2026-10-06).
 /// `n_vor_gwg` liest die YAML: 0 statt 69 waere der stille Rueckfall auf "leer".
 #[test]
 fn scheibe_bindung_wie_python() {
@@ -115,8 +117,8 @@ fn scheibe_bindung_wie_python() {
         ("ep", 6),
         ("n_vor_gwg", 69),
         ("an_gesamt", 84),
-        ("gesamt", 354),
-        ("rentner_gesamt", 251),
+        ("gesamt", 358),
+        ("rentner_gesamt", 255),
     ] {
         let sb = d.zustand.scheibe_bindung(&akte(Some(scheibe))).unwrap();
         assert_eq!(sb.cfg.scheibe().to_string(), scheibe);

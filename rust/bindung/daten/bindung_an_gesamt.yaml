@@ -1496,10 +1496,9 @@ bindungen:
   # sonstige_betriebsausgaben/afa_jahresbetrag) bewusst NICHT dupliziert: Anlage EÜR ist Datenart E77,
   # ein eigenes Dokument OHNE Person-A/B-Indexfeld (E77-2025.xsd hat keinen Enum_INDEXFELD_PERSON-Treffer,
   # anders als E10 — verifiziert 2026-08-12) — der Partner-Betrieb braeuchte ein zweites E77-Dokument,
-  # die Mechanik dafuer fehlt (BACKLOG partnerseite-gewinneinkuenfte-fehlt-strukturell). §34 Abs.3-Flags ebenfalls NICHT dupliziert:
-  # diese Felder werden an Person A gerade korrigiert (ermaessigung_einmal_genutzt invertiert,
-  # dauernd_berufsunfaehig ohne Alter-55-ODER-Verknuepfung) — ein Partner-Pendant waere heute die
-  # Verdopplung eines bekannten Fehlers.
+  # die Mechanik dafuer fehlt (BACKLOG partnerseite-gewinneinkuenfte-fehlt-strukturell). §34 Abs.3-Flags: bis 2026-10-06 bewusst NICHT
+  # dupliziert (Person A wurde noch korrigiert); jetzt gebaut, die vier Felder stehen hinter
+  # gewst_zu_zahlen_partner unten (Abweichung Nr. 23 in rust/fixtures/README.md).
   - feld_id: einkuenfte_gewinn_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: einkuenfte_gewinn_partner}
     feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus, und § 26b EStG ermittelt sie je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen selbstaendigen PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Angaben samt Gewerbesteuer-Anrechnung. Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
@@ -1706,6 +1705,95 @@ bindungen:
       quelle: "§ 35 Abs. 1 S. 1 EStG"
       zitatanker: "tatsächlich zu zahlende Gewerbesteuer"
       datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
+
+  # ===== § 34 Abs. 3 Ermäßigter Durchschnittssatz fuer den PARTNER (B Option 1, 2026-10-06) =====
+  # Zwillinge der Person-A-Felder weiter oben (antrag_ermaessigter_satz, dauernd_berufsunfaehig,
+  # ermaessigung_einmal_genutzt, p34_abs3_antragsbetrag). § 34 Abs. 3 S. 1 stellt auf DEN
+  # Steuerpflichtigen ab, der das 55. Lebensjahr vollendet hat oder dauernd berufsunfaehig ist; bei
+  # Zusammenveranlagung ist das je Ehegatte zu pruefen (S. 4: einmal im Leben, je Person). Die Rechnung des
+  # Satzes fuer den Gewinn des Partners steht in bescheid/src/zweige/tarif.rs (p34_chooser), und zwar nur,
+  # wenn NUR der Partner einen Veraeusserungsgewinn hat: bei Gewinn auch bei Person A sperrt
+  # abs3_partner_antrag_gewinn_offen (S. 5 laesst die Ermaessigung nur fuer EINEN Gewinn zu, und wie der
+  # Chooser beide Gewinne gegeneinander setzt, ist offen). Das Alter 55 liest der Rechner aus
+  # geburtsjahr_partner (abgeleitet aus dem Geburtsdatum des Partners), wie bei Person A aus geburtsjahr.
+  # signatur_slot auf p2_festzusetzung_zusammen (wie geburtsjahr_partner), KEIN geltungsbedingung: ein
+  # fragbares bool-Gate auf diesem Sammel-Scope schliesst bei bestaetigtem false die ganze Regel aus
+  # (registry_quer::kein_fragbares_bool_gate_auf_einem_sammel_scope). KEIN feld_bedingung: bei bestaetigter
+  # Einzelveranlagung faellt die ganze Regel p2_festzusetzung_zusammen weg (bindung_regel_bedingungen.yaml,
+  # veranlagung = zusammen), solange die Veranlagung offen ist, bleiben die Fragen stehen (fail-closed). Anders als die
+  # Felder unter p16_4_freibetrag (rentner_alter_55_oder_berufsunfaehig_partner), die diesen Schutz nicht erben.
+  # Preis: ein Ehepaar ohne Gewinn des Partners bekommt die drei Fragen weiterhin.
+  - feld_id: antrag_ermaessigter_satz_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: antrag_ermaessigter_satz_partner}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Möchte dein Ehe-/Lebenspartner für seinen Veräußerungsgewinn den ermäßigten Steuersatz beantragen? (nur einmal im Leben möglich, ab 55 oder bei dauernder Berufsunfähigkeit)"
+    hilfe_kurz: "Alternative zur Fünftelregelung (§ 34 Abs. 1): 56 % des durchschnittlichen Steuersatzes deines Partners (mind. 14 %) auf bis zu 5 Mio Euro seines Veräußerungsgewinns. Nur EINMAL im Leben, nur ab dem 55. Lebensjahr oder bei dauernder Berufsunfähigkeit. Ohne Antrag gilt die Fünftelregelung. Die Software rechnet den Antrag nur, wenn nur dein Partner einen Veräußerungsgewinn hat."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Antrags-Tatbestand (§ 34 Abs. 3 S. 1 „auf Antrag“) des Partners, kein Betragsfeld; steuert den Abs.1-vs-Abs.3-Chooser fuer den Gewinn des Partners. Die Antragszeile der Anlage steht an p34_abs3_antragsbetrag_partner."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 1 EStG"
+      zitatanker: "so kann auf Antrag abweichend von Absatz 1 die auf den Teil dieser außerordentlichen Einkünfte, der den Betrag von insgesamt 5 Millionen Euro nicht übersteigt, entfallende Einkommensteuer nach einem ermäßigten Steuersatz bemessen werden"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  - feld_id: dauernd_berufsunfaehig_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: dauernd_berufsunfaehig_partner}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Ist dein Ehe-/Lebenspartner im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig?"
+    hilfe_kurz: "Alternative zur Altersgrenze (55): wer dauernd berufsunfähig ist, kann den ermäßigten Satz (§ 34 Abs. 3) auch vor 55 beantragen. Nachweis über den Rentenversicherungsträger."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Eligibility-Alternative zu Alter≥55 (§ 34 Abs. 3 S. 1 „oder wenn er im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig ist“) fuer den Partner, kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 1 EStG"
+      zitatanker: "oder wenn er im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig ist"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  - feld_id: ermaessigung_einmal_genutzt_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: ermaessigung_einmal_genutzt_partner}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner den ermäßigten Steuersatz für Veräußerungsgewinne in einem früheren Jahr schon einmal in Anspruch genommen?"
+    hilfe_kurz: "Die Ermäßigung gibt es nur EINMAL im Leben (§ 34 Abs. 3 S. 4), für jede Person einzeln. Wenn dein Partner sie früher schon genutzt hat, ist ein erneuter Antrag ausgeschlossen — dann gilt die Fünftelregelung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Einmal-im-Leben-Sperre (§ 34 Abs. 3 S. 4) des Partners, Selbst-Bestätigung (FA-tracked); kein Betragsfeld. Ein True SPERRT den Abs.3-Zweig fuer den Partner (fail-closed → Abs.1)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 4 EStG"
+      zitatanker: "Die Ermäßigung nach den Sätzen 1 bis 3 kann der Steuerpflichtige nur einmal im Leben in Anspruch nehmen"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  # Berechnete Antragszeile des Partners: der Gewinn der Basiszeile des Partners, fuer den der ermaessigte Satz
+  # beantragt wird. Entsteht in mit_ring_werten nur, wenn der Chooser Abs. 3 fuer den Partner auch rechnet
+  # (Antrag UND abs3_eligible_partner UND zusammen UND 0 < netto_vg_partner <= 5 Mio) und wird ueber
+  # est_mapping.PARTNER_VERZWEIGUNG nach rentner_veraeusserungs_betriebsart_partner auf die Antrags-Kz der
+  # Anlage gelenkt (Person-B-Instanz). antrag_ermaessigter_satz_partner selbst bleibt ohne Kz.
+  - feld_id: p34_abs3_antragsbetrag_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: p34_abs3_antragsbetrag_partner}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: der Veräußerungsgewinn des Partners, für den der ermäßigte Steuersatz beantragt wird."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Verzweigt (PARTNER_VERZWEIGUNG, Klasse f×g): das Kz haengt an rentner_veraeusserungs_betriebsart_partner, dieselben Kz wie Person A — gewerbe E0801602 [G/VAe_G_v_FB/Betr_TBetr_MUAnt/VAe_G_FB_Antr] / selbstaendig E0805003 [S/VAe_Gew/Vor_FB] / land_forst E0901704 [L/VAe_G_v_FB/VAe_G_FB_Antr], je im Container der Basiszeile der Person-B-Instanz, Schema E10-2024 und E10-2025 (E10-2026 liegt im ERiC-Paket 44.2.4.0 nicht vor: fuer 2026 ist die Antragszeile des Partners UNGEPRUEFT, wie bei Person A). Der kein-FB-Zweig bleibt unbeschrieben (E0801903 / E0805305 / E0902002)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 1 EStG"
+      zitatanker: "so kann auf Antrag abweichend von Absatz 1 die auf den Teil dieser außerordentlichen Einkünfte, der den Betrag von insgesamt 5 Millionen Euro nicht übersteigt, entfallende Einkommensteuer nach einem ermäßigten Steuersatz bemessen werden"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
 
 luecken:
   # -- §24a Altersentlastungsbetrag: Bemessungs-Inputs + Kohorten-Parameter (gesamt-Kontext, §24a gesamt-only) --

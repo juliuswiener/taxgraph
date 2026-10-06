@@ -198,6 +198,14 @@ pub(crate) const PARTNER_VERZWEIGUNG: &[Verzweigung] = &[
         art_feld: "rentner_veraeusserungs_betriebsart_partner",
         kz: ArtKz::Text(VERAEUSSERUNG),
     },
+    // Rust-eigen (B Option 1, 2026-10-06): die Antragszeile zu § 34 Abs. 3 fuer den Ehegatten. Python kennt sie nicht
+    // (`partner_verzweigung` der Fixture fuehrt sie nicht); `tabellen_gleich_fixture` nimmt sie aus dem Vergleich und
+    // `die_antragszeile_des_partners_traegt_die_kz_von_person_a` haelt ihren Inhalt fest.
+    Verzweigung {
+        feld: "p34_abs3_antragsbetrag_partner",
+        art_feld: "rentner_veraeusserungs_betriebsart_partner",
+        kz: ArtKz::Text(ANTRAG_ABS3),
+    },
     Verzweigung {
         feld: "basis_kv_partner",
         art_feld: "versicherungsart_partner",
@@ -805,14 +813,44 @@ mod tests {
     /// im Commit, Tabelle und Fixture aendern sich zusammen.
     #[test]
     fn tabellen_gleich_fixture() {
+        let mut rust = aus_allem();
+        let fix = fixture_ohne_proben();
+        // Die Rust-eigenen Zeilen (README `rust/fixtures/README.md`, Abweichung Nr. 23) stehen nur in Rust: sie
+        // fallen aus dem Vergleich, und die Fixture darf sie nicht fuehren (sonst ist die Abweichung keine mehr).
+        for (tabelle, feld) in RUST_EIGENE_ZEILEN {
+            let weg = rust.get_mut(tabelle).and_then(Value::as_object_mut);
+            assert!(weg.is_some_and(|m| m.remove(feld).is_some()), "{tabelle}/{feld} fehlt in tabellen.rs");
+            assert!(fix[tabelle].get(feld).is_none(), "Python kennt {tabelle}/{feld} jetzt: Eintrag streichen");
+        }
         let mut aus = Vec::new();
-        abweichungen("", &aus_allem(), &fixture_ohne_proben(), &mut aus);
+        abweichungen("", &rust, &fix, &mut aus);
         assert!(
             aus.is_empty(),
             "tabellen.rs weicht von rust/fixtures/kz_tabellen.json ab (Stand von est_mapping.py, \
              eingefroren; eine gewollte Abweichung steht als Eintrag mit Grund in der Abweichungsliste, \
              `rust/fixtures/README.md`, nicht als Aenderung der Fixture):\n  {}",
             aus.join("\n  ")
+        );
+    }
+
+    /// Zeilen der Tabellen, die es nur in Rust gibt: `(Tabelle der Fixture, Feld)`. Jede steht mit Grund im README
+    /// (`rust/fixtures/README.md`) und hat einen eigenen Test.
+    const RUST_EIGENE_ZEILEN: [(&str, &str); 1] =
+        [("partner_verzweigung", "p34_abs3_antragsbetrag_partner")];
+
+    /// Abweichung Nr. 23: die Antragszeile zu § 34 Abs. 3 fuer den Ehegatten ist Person As Zeile mit der Weiche des
+    /// Partners: dieselben drei Kz je Betriebsart (E0801602 / E0805003 / E0901704), gelenkt von
+    /// `rentner_veraeusserungs_betriebsart_partner`. Ein vertauschtes oder fehlendes Kz faellt hier auf, nicht erst im Schema.
+    #[test]
+    fn die_antragszeile_des_partners_traegt_die_kz_von_person_a() {
+        let rust = verzweigung(PARTNER_VERZWEIGUNG);
+        let partner = &rust["p34_abs3_antragsbetrag_partner"];
+        let person_a = &fixture()["verzweigung"]["p34_abs3_antragsbetrag"];
+        assert_eq!(partner["art_feld"], "rentner_veraeusserungs_betriebsart_partner");
+        assert_eq!(partner["kz"], person_a["kz"]);
+        assert_eq!(
+            partner["kz"],
+            json!({"gewerbe": "E0801602", "selbstaendig": "E0805003", "land_forst": "E0901704"})
         );
     }
 

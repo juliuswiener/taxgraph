@@ -31,7 +31,10 @@ use regex::Regex;
 /// drei Leser, 184 davon mit Literal, 143 verschiedene Literale, minus die Ausnahme `x` = 142. Ein Lauf
 /// darunter hat Aufrufe verloren (Datei verschoben, Leser umbenannt) und prüft nichts mehr -- rot, nicht
 /// grün. Wächst NUR bewusst; wer einen Aufruf mit Absicht löscht, senkt die Zahl im selben Commit.
-const MIN_LITERALE: usize = 142;
+/// B Option 1 (2026-10-06): 233 Aufrufe, 196 mit Literal, 146 verschiedene Literale, minus `x` = 145; neu sind die
+/// vier Partner-Felder zu § 34 Abs. 3 (`antrag_ermaessigter_satz_partner`, `geburtsjahr_partner`,
+/// `dauernd_berufsunfaehig_partner`, `ermaessigung_einmal_genutzt_partner`).
+const MIN_LITERALE: usize = 145;
 
 /// Ausnahmen: (Datei unter `src/`, Literal, Grund). Kommentarzeilen (`//`, `///`, `//!`) zählen nicht
 /// als Code; damit entfällt der Doctest von `feld_int_oder_null` (`"a"`, `"b"`, `"fehlt"`, `lib.rs`

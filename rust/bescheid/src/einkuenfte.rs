@@ -357,6 +357,33 @@ pub fn gewinn_partner_anteil(f: &Felder) -> Result<(Euro, Euro, Euro), BescheidF
         return Ok((null, null, null));
     }
     let (laufend, mitu) = laufender_gewinn_partner(f)?;
+    let netto_vg = netto_vg_partner(f)?;
+    Ok((euro_plus(laufend, netto_vg)?, mitu, netto_vg))
+}
+
+/// Der § 16-Veraeusserungsgewinn des Ehegatten NACH dem § 16 Abs. 4-Freibetrag (EURO), bei 0 gefloort; nur bei
+/// Zusammenveranlagung, sonst 0. Der Freibetrag gilt je Person und nur bei bestaetigtem S. 1 UND S. 2. Eine Stelle fuer
+/// [`gewinn_partner_anteil`] und die Antragszeile/Sperren des § 34 Abs. 3 (`abs3_wird_gerechnet_partner`): sie lesen den
+/// Gewinn, ohne den laufenden Gewinn des Partners zu rechnen.
+///
+/// # Errors
+/// Accessor- und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::einkuenfte::netto_vg_partner;
+/// use bescheid::testhilfe::{felder, store};
+/// use serde_json::json;
+/// let zusammen = felder(&store(&[
+///     ("veranlagung", json!("zusammen"), true),
+///     ("rentner_veraeusserungsgewinn_partner", json!(10_000_000), true),
+/// ]));
+/// assert_eq!(netto_vg_partner(&zusammen).unwrap().get(), 100_000); // ohne bestaetigte S.-1/S.-2-Angaben: kein Freibetrag
+/// ```
+pub fn netto_vg_partner(f: &Felder) -> Result<Euro, BescheidFehler> {
+    let null = Euro::new(0);
+    if !ist_zusammen(f) {
+        return Ok(null);
+    }
     let vg_euro = feld_euro_oder_null(f, "rentner_veraeusserungsgewinn_partner")?;
     // Nur ein bestaetigtes True auf BEIDEN Bools gewaehrt den Freibetrag (S. 1 erfuellt).
     let gate_ok = ist_true(wert(f, "rentner_alter_55_oder_berufsunfaehig_partner"))
@@ -372,7 +399,7 @@ pub fn gewinn_partner_anteil(f: &Felder) -> Result<(Euro, Euro, Euro), BescheidF
     let netto_vg = Euro::new(minus(vg_euro.get(), fb.get())?.max(0));
     // Der Freibetrag gehoert zu einem Gewinn: ohne Gewinn kein Freibetrag, nie ein Phantom-Verlust.
     debug_assert!(netto_vg.get() >= 0 && fb.get() >= 0);
-    Ok((euro_plus(laufend, netto_vg)?, mitu, netto_vg))
+    Ok(netto_vg)
 }
 
 // ---------------------------------------------------------------- Kapital (§ 20) und § 23

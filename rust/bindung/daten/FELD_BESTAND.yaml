@@ -35,6 +35,7 @@ felder:
   - am_gwg_sofortabzug_gewaehlt
   - am_massgebliche_ak
   - antrag_ermaessigter_satz
+  - antrag_ermaessigter_satz_partner
   - arbeitsmittel_nutzungsdauer
   - basis_kv
   - basis_kv_partner
@@ -51,6 +52,7 @@ felder:
   - bruttoarbeitslohn
   - bruttoarbeitslohn_partner
   - dauernd_berufsunfaehig
+  - dauernd_berufsunfaehig_partner
   - dba_abzug_statt_anrechnung
   - dba_auslaendische_einkuenfte
   - dba_einkunftsart
@@ -80,6 +82,7 @@ felder:
   - ep_ziel_adresse
   - ep_ziel_des_weges
   - ermaessigung_einmal_genutzt
+  - ermaessigung_einmal_genutzt_partner
   - fahrtkosten_pausch_ag_bl_tbl_h
   - fahrtkosten_pausch_gdb80_oder_70g
   - fam_alleinstehend
@@ -228,6 +231,7 @@ felder:
   - p33a_weitere_person_beteiligt
   - p33a_zahlungszeitraum
   - p34_abs3_antragsbetrag
+  - p34_abs3_antragsbetrag_partner
   - p35a_mitveranlagung
   - p35c_baubeginn_massnahme
   - p35c_bereits_ermaessigung_frueher

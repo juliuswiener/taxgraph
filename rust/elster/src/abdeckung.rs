@@ -242,7 +242,8 @@ fn transform_konfig_ist_konsistent() {
 /// Transform-Quellen, die BEWUSST nicht fragbar sind: `(feld_id, Grund)`. Ein Eintrag braucht einen
 /// Grund, der sagt, woher der Wert stattdessen kommt. Gemessen am Stand `49f86741` (M): von den 52
 /// Transform-Quellen sind genau diese drei nicht fragbar, alle drei Ring-Werte (`hilfe_kurz`
-/// „Berechnet", `askable: false`, `elster_kz: null` mit Grund in der Bindung). Jede weitere nicht
+/// „Berechnet", `askable: false`, `elster_kz: null` mit Grund in der Bindung); seit B Option 1
+/// (2026-10-06) vier, mit `p34_abs3_antragsbetrag_partner`. Jede weitere nicht
 /// fragbare Quelle ist ein Verstoss, bis jemand sie hier mit Grund nennt.
 const NICHT_FRAGBAR_ERLAUBT: &[(&str, &str)] = &[
     (
@@ -252,6 +253,10 @@ const NICHT_FRAGBAR_ERLAUBT: &[(&str, &str)] = &[
     (
         "p34_abs3_antragsbetrag",
         "Ring-Wert: p34_antrag() in ring_werte.rs schreibt den Veraeusserungsgewinn, wenn der Chooser Abs. 3 rechnet",
+    ),
+    (
+        "p34_abs3_antragsbetrag_partner",
+        "Ring-Wert: p34_antrag() in ring_werte.rs schreibt den Veraeusserungsgewinn des Partners, wenn der Chooser Abs. 3 fuer ihn rechnet",
     ),
     (
         "p35c_massnahme_einzelbetrag",

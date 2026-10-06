@@ -67,7 +67,7 @@ const VERDAECHTIG: [&str; 14] = [
 
 /// GEPRUEFT, KEIN ART. 9: das Suchwort greift daneben. Jeder Eintrag mit Grund; ohne die Liste muesste das Suchwort
 /// so eng werden, dass es echte Faelle verpasst, oder die Sperre so weit, dass sie den Chat verstuemmelt.
-const GEPRUEFT_UNVERFAENGLICH: [(&str, &str); 14] = [
+const GEPRUEFT_UNVERFAENGLICH: [(&str, &str); 15] = [
     ("basis_pv", "Beitrag zur Pflegeversicherung, kein Merkmal"),
     ("basis_pv_partner", "Beitrag zur Pflegeversicherung, kein Merkmal"),
     ("kind_pv", "Beitrag zur Pflegeversicherung des Kindes, kein Merkmal"),
@@ -84,6 +84,10 @@ const GEPRUEFT_UNVERFAENGLICH: [(&str, &str); 14] = [
     (
         "antrag_ermaessigter_satz",
         "Antrag auf ermaessigten Satz; die Voraussetzung selbst steht in dauernd_berufsunfaehig und ist gesperrt",
+    ),
+    (
+        "antrag_ermaessigter_satz_partner",
+        "Antrag des Partners auf ermaessigten Satz; die Voraussetzung selbst steht in dauernd_berufsunfaehig_partner und ist gesperrt",
     ),
 ];
 
