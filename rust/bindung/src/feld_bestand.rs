@@ -4,10 +4,13 @@
 //! diesem Feld gemacht haben -- aus der Oberflaeche, aus der Deklaration, aus dem Ergebnis. Die
 //! Events bleiben im Store liegen und wirken nicht mehr. Kein Absturz, keine Meldung.
 //!
-//! Die Datei sagt nur, welche `feld_id`s es EINMAL gab (`felder`) und welche bewusst entfernt
-//! wurden (`entfernt`, mit Begruendung). Sie ist keine zweite Wahrheit ueber die Bindung: neue
-//! Felder brauchen keinen Eintrag, die Ratsche kennt nur eine Richtung. Die Pruefung selbst
-//! steht in `rust/bindung/tests/feld_bestand.rs`; hier liegen der Lader und die reinen
+//! Die Datei sagt, welche `feld_id`s es gibt oder gab (`felder`) und welche bewusst entfernt
+//! wurden (`entfernt`, mit Begruendung). Sie ist keine zweite Wahrheit ueber die Bindung. Die
+//! Ratsche prueft beide Richtungen: Was in `felder` steht, bleibt in der Bindung oder wandert mit
+//! Begruendung nach `entfernt` ([`verschwundene`]); und jedes Feld der Bindung steht in `felder`
+//! ([`nicht_erfasste`]), sonst schuetzte sie es nicht. Die zweite Richtung kostet je neues Feld
+//! eine Zeile; die Fehlermeldung nennt sie. Die Pruefung selbst steht in
+//! `rust/bindung/tests/feld_bestand.rs`; hier liegen der Lader und die reinen
 //! Vergleichsfunktionen, damit die Selbstprobe auf erfundenen Daten laufen kann.
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -84,6 +87,23 @@ pub fn verschwundene(
         .filter(|f| !heute.contains(*f) && !entfernt.contains_key(*f))
         .cloned()
         .collect()
+}
+
+/// Die Gegenrichtung: Felder der Bindung, die nicht in `felder` stehen, sortiert. Solange ein Feld
+/// dort fehlt, bemerkte niemand sein Loeschen: [`verschwundene`] sieht nur, was erfasst ist.
+#[must_use]
+pub fn nicht_erfasste(heute: &BTreeSet<String>, erfasst: &BTreeSet<String>) -> Vec<String> {
+    heute.difference(erfasst).cloned().collect()
+}
+
+/// Die Zeilen, die in `FELD_BESTAND.yaml` unter `felder:` einzutragen sind, eine je `feld_id`.
+#[must_use]
+pub fn bestand_zeilen(fehlend: &[String]) -> String {
+    fehlend
+        .iter()
+        .map(|feld| format!("  - {feld}"))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// Tote Eintraege: Felder unter `entfernt`, die heute wieder in der Bindung stehen. Ein solcher

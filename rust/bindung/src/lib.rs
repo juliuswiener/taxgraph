@@ -26,9 +26,9 @@ pub use bindung_datei::{
     Luecke, Quelle, RegelBedingung, SlotBeitrag, ThemaZuerst, Vorjahr, VorschlagsSchreiber,
 };
 pub use feld_bestand::{
-    lade_feld_bestand, lade_feld_bestand_der_wurzel, verschwundene, wiederaufgetauchte,
-    zu_knappe_begruendungen, FeldBestand, FeldBestandFehler, FELD_BESTAND_DATEI,
-    MIN_ZEICHEN_BEGRUENDUNG,
+    bestand_zeilen, lade_feld_bestand, lade_feld_bestand_der_wurzel, nicht_erfasste, verschwundene,
+    wiederaufgetauchte, zu_knappe_begruendungen, FeldBestand, FeldBestandFehler,
+    FELD_BESTAND_DATEI, MIN_ZEICHEN_BEGRUENDUNG,
 };
 pub use kohorten_datei::{lade_kohorten, KohortenDatei, KohortenFehler};
 pub use params_datei::{lade_params, Authority, ParamsDatei, ParamsFehler};
