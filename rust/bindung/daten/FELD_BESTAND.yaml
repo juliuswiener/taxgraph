@@ -4,6 +4,9 @@
 # ueber die Bindung: sie sagt nur, welche feld_ids es EINMAL GAB. Neue Felder muessen hier
 # nicht eingetragen werden — die Ratsche kennt nur eine Richtung.
 #
+# AUFGEFUELLT 2026-10-06 in rust/bindung/daten auf alle 368 feld_ids der Registry (61 Felder, die seit der
+# Erfassung dazukamen und bis dahin ungeschuetzt waren). Die Kopie in produkt/bindung/ bleibt bei 307.
+#
 # WOZU: verschwindet eine feld_id aus der Bindung, verschwinden damit die Angaben, die Nutzer
 # zu diesem Feld gemacht haben — aus der Oberflaeche, aus der Deklaration, aus dem Ergebnis.
 # Die Events bleiben im Store liegen und materialisieren weiter zu einem Wert, den niemand mehr
@@ -40,6 +43,8 @@ felder:
   - behinderungsbedingte_aufwendungen_wahlrecht_pb
   - behinderungsbedingte_aufwendungen_wahlrecht_pb_partner
   - berufsausbildung_aufwendungen
+  - berufsausbildung_bezeichnung
+  - berufsausbildung_einzelbetrag
   - betriebseinnahmen
   - bruttoarbeitslohn
   - bruttoarbeitslohn_partner
@@ -51,9 +56,15 @@ felder:
   - dba_mehrere_staaten
   - dba_methode
   - dba_staat
+  - dhf_begruendet_am
   - dhf_beruflich_veranlasst
+  - dhf_beschaeftigungsort
+  - dhf_bestanden_bis
   - dhf_eigener_hausstand
   - dhf_finanzielle_beteiligung
+  - dhf_grund
+  - dhf_hausstand_plz_ort
+  - dhf_hausstand_seit
   - dhf_im_inland
   - dhf_keine_pflicht_dienstwohnung
   - dhf_monate
@@ -64,6 +75,8 @@ felder:
   - ep_eigenes_kfz
   - ep_entfernung_km
   - ep_oepnv_kosten
+  - ep_ziel_adresse
+  - ep_ziel_des_weges
   - ermaessigung_einmal_genutzt
   - fahrtkosten_pausch_ag_bl_tbl_h
   - fahrtkosten_pausch_gdb80_oder_70g
@@ -74,16 +87,24 @@ felder:
   - geburtsjahr_partner
   - gewinn_betriebsart
   - gewinn_betriebsart_partner
+  - gewinn_bezeichnung
+  - gewinn_bezeichnung_partner
   - gewinnanteil
   - gewinnanteil_partner
   - gewst_hebesatz
   - gewst_hebesatz_partner
   - gewst_messbetrag
   - gewst_messbetrag_partner
+  - gewst_zu_zahlen
+  - gewst_zu_zahlen_partner
   - gwg_anschaffungskosten_netto
+  - gwg_anzahl
   - gwg_bewegliches_selbstaendig_nutzbar
   - gwg_netto_ohne_vorsteuer
   - gwg_verzeichnis_ab_250
+  - hh_anzahl_dienstleistungen
+  - hh_anzahl_handwerker
+  - hh_anzahl_minijobs
   - hh_dienstleistung_art
   - hh_dienstleistung_betrag
   - hh_dienstleistungen
@@ -111,10 +132,27 @@ felder:
   - kap_verlust_sonstige
   - kap_verlust_sonstige_partner
   - kein_gewinn
+  - kein_gewinn_partner
   - kein_kap
+  - kein_kap_partner
   - kein_kind
+  - kein_p23_verkauf
+  - kein_realsplitting
   - kein_sonstige
+  - kein_sonstige_partner
+  - kein_unterhalt
+  - kein_verlustvortrag
   - kein_vuv
+  - keine_arbeitsmittel
+  - keine_auslandseinkuenfte
+  - keine_behinderung_pflege
+  - keine_behinderung_pflege_partner
+  - keine_berufsausbildung
+  - keine_energetische_sanierung
+  - keine_lohnersatzleistungen
+  - keine_spenden
+  - keine_versorgungsbezuege
+  - keine_zweitwohnung
   - kind_anderer_elternteil_geburtsdatum
   - kind_anderer_elternteil_kindschaftsverhaeltnis
   - kind_anderer_elternteil_name
@@ -127,6 +165,8 @@ felder:
   - kind_betreuung_einzelbetrag
   - kind_betreuung_haushaltszugehoerigkeit_zeitraum
   - kind_betreuung_kein_gemeinsamer_haushalt_zeitraum
+  - kind_betreuung_rechnung_ueberweisung
+  - kind_betreuung_reine_betreuung
   - kind_betreuung_zeitraum
   - kind_familienkasse
   - kind_geburtsdatum
@@ -155,15 +195,35 @@ felder:
   - mit_anspruch_auf_zuschuss
   - mit_anspruch_auf_zuschuss_partner
   - p22_nr3_einkuenfte
+  - p22_nr3_einnahmen
+  - p22_nr3_einnahmen_art
+  - p22_nr3_einnahmen_einzelbetrag
+  - p22_nr3_werbungskosten
   - p23_anschaffung_herstellungskosten
+  - p23_anzahl_verkaeufe
   - p23_veraeusserungs_typ
   - p23_veraeusserungspreis
   - p23_werbungskosten
   - p32b_progressionseinkuenfte
   - p33a_andere_einkuenfte_bezuege
   - p33a_ausbildung_anzahl_kinder
+  - p33a_haushalt_anschrift
+  - p33a_haushalt_personenzahl
+  - p33a_kindergeld_anspruch
+  - p33a_person_beruf_familienstand
+  - p33a_person_geburtsdatum
+  - p33a_person_hat_einkuenfte
+  - p33a_person_hat_vermoegen
+  - p33a_person_idnr
+  - p33a_person_im_inlaendischen_haushalt
+  - p33a_person_name
   - p33a_unterhalt_aufwendungen
   - p33a_unterhalt_kv_pv
+  - p33a_unterstuetzungszeitraum
+  - p33a_verwandtschaftsverhaeltnis
+  - p33a_weitere_person_beteiligt
+  - p33a_zahlungszeitraum
+  - p34_abs3_antragsbetrag
   - p35a_mitveranlagung
   - p35c_baubeginn_massnahme
   - p35c_bereits_ermaessigung_frueher
@@ -200,6 +260,7 @@ felder:
   - rentner_alter_64_erfuellt
   - rentner_alter_bei_rentenbeginn
   - rentner_alter_bei_rentenbeginn_partner
+  - rentner_anzahl_renten
   - rentner_freibetrag_erstmalig
   - rentner_freibetrag_erstmalig_partner
   - rentner_gepflegter_angaben
@@ -229,11 +290,13 @@ felder:
   - schulgeld
   - sonstige_betriebsausgaben
   - spenden_betrag
+  - spenden_vermoegensstock
   - stammdaten_art_est_erklaerung
   - stammdaten_bic
   - stammdaten_geburtsdatum
   - stammdaten_geburtsdatum_partner
   - stammdaten_hausnummer
+  - stammdaten_hausnummerzusatz
   - stammdaten_iban
   - stammdaten_keine_bankverbindung
   - stammdaten_nachname
@@ -304,6 +367,7 @@ felder:
   - vpf_tage_24h_nach_drei_monaten
   - vpf_tage_an_abreise_nach_drei_monaten
   - vpf_tage_ueber_8h_nach_drei_monaten
+  - vv_anzahl_objekte
   - vv_auf_dauer
   - vv_einnahmen
   - vv_einnahmen_summe_gesamt

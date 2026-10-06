@@ -81,19 +81,29 @@ fn negativer_cent_bereich_braucht_eine_begruendung() {
         Some("{min: -5, max: 5, grund: \"Verlust moeglich\"}")
     )
     .is_ok());
-    for ohne in ["{min: -5, max: 5}", "{min: -5, max: 5, grund: \"\"}"] {
+    for (min, ohne) in [
+        (-5, "{min: -5, max: 5}"),
+        (-5, "{min: -5, max: 5, grund: \"\"}"),
+        // Die Grenze selbst: -1 ist der kleinste negative Wert und braucht schon einen Grund.
+        (-1, "{min: -1, max: 5}"),
+        (-1, "{min: -1, max: 5, grund: \"\"}"),
+    ] {
         let fehler = pruefe("cent", "0", Some(ohne)).unwrap_err();
         assert!(
             matches!(
                 fehler,
-                BindungFehler::NegativerCentBereichOhneGrund { min: -5, .. }
+                BindungFehler::NegativerCentBereichOhneGrund { min: m, .. } if m == min
             ),
             "{ohne}: {fehler}"
         );
     }
     // Nur cent: ein negativer int-Bereich braucht keinen Grund, und 0 ist nicht negativ.
     assert!(pruefe("int", "0", Some("{min: -5, max: 5}")).is_ok());
-    assert!(pruefe("cent", "0", Some("{min: 0, max: 5}")).is_ok());
+    assert!(pruefe("int", "0", Some("{min: -1, max: 5}")).is_ok());
+    // n-1, n, n+1 um die Null: -1 braucht einen Grund, 0 und 1 nicht.
+    assert!(pruefe("cent", "1", Some("{min: 0, max: 5}")).is_ok());
+    assert!(pruefe("cent", "1", Some("{min: 1, max: 5}")).is_ok());
+    assert!(pruefe("cent", "0", Some("{min: -1, max: 5, grund: \"Verlust\"}")).is_ok());
 }
 
 #[test]
