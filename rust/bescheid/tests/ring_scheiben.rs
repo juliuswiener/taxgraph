@@ -156,6 +156,7 @@ fn nur_die_zwei_gesamtscheiben_tragen_eine_erklaerung() {
         [Scheibe::Gesamt, Scheibe::RentnerGesamt],
         "die Abgabescheiben haben sich geaendert: die Paarregel unten gilt nur fuer diese"
     );
+    let mut fehlende: Vec<(Scheibe, usize)> = Vec::new();
     for s in [Scheibe::Ep, Scheibe::NVorGwg, Scheibe::AnGesamt] {
         let Err((scheibe, fehlen)) = abgabe_pruefung(s) else {
             panic!("{s}: die Teilrechnung laeuft in die Abgabe");
@@ -165,7 +166,20 @@ fn nur_die_zwei_gesamtscheiben_tragen_eine_erklaerung() {
             !fehlen.is_empty(),
             "{s}: 409 ohne Angabe, welche Felder fehlen"
         );
+        fehlende.push((s, fehlen.len()));
     }
+    // `STAMMDATEN_FELDER` traegt Rust privat (`konstanten.rs`, `pub(super)`, 13 Felder); die Zahl der
+    // fehlenden Felder je Teilrechnung ist die einzige oeffentliche Stelle, die sie zaehlt. Keine der
+    // drei Teilrechnungen fuehrt eines davon, alle drei melden also 13 (gemessen 2026-10-06, wie
+    // Pythons Doctest der Scheibe `an_gesamt`). Ein zusaetzliches Stammdatenfeld macht diese Zeile
+    // rot, nicht gruen; ebenso eine Teilrechnung, die doch eines aufnimmt (dann waere die 13 zu hoch).
+    for (scheibe, anzahl) in &fehlende {
+        assert_eq!(
+            *anzahl, 13,
+            "{scheibe}: meldet {anzahl} fehlende Stammdatenfelder statt aller 13"
+        );
+    }
+    assert_eq!(fehlende.len(), 3);
 }
 
 // ------------------------------------------------------- Naht 1: Abzugs-Kz ohne Kuerzungs-Kz
