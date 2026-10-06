@@ -199,6 +199,8 @@ const ITEM_ANFANG: &[&str] = &[
 struct Abtaster<'a> {
     text: &'a str,
     b: &'a [u8],
+    /// Welche Literale ein Fund sind (die Wache: Kz-Form; `abdeckung.rs`: Bezeichner-Form).
+    treffer: fn(&str) -> bool,
     i: usize,
     /// Tiefe der Klammern `(`, `[`, `{` zusammen.
     tiefe: usize,
@@ -257,7 +259,7 @@ impl Abtaster<'_> {
         }
     }
 
-    /// Haelt `text[inhalt_von..inhalt_bis]` als Fund fest, wenn es eine Kz ist und kein Testcode laeuft.
+    /// Haelt `text[inhalt_von..inhalt_bis]` als Fund fest, wenn `treffer` es annimmt und kein Testcode laeuft.
     fn fund(&mut self, von: usize, bis: usize, inhalt_von: usize, inhalt_bis: usize) {
         if self.test_ab.is_some() {
             return;
@@ -265,7 +267,7 @@ impl Abtaster<'_> {
         if let Some(kz) = self
             .text
             .get(inhalt_von..inhalt_bis)
-            .filter(|s| ist_kz_form(s))
+            .filter(|s| (self.treffer)(s))
         {
             self.aus.funde.push(KzFund {
                 von,
@@ -289,8 +291,9 @@ impl Abtaster<'_> {
                 self.vorwort.clear();
             }
         } else {
+            // `test` als Wort (`not(test)`, `all(test, …)`); `feature = "testhilfe"` ist keins.
             assert!(
-                !(attr.starts_with("#[cfg(") && attr.contains("test")),
+                !(attr.starts_with("#[cfg(") && (attr.contains("(test") || attr.contains(",test"))),
                 "kz_wache kennt `{attr}` nicht: cfg(test) nur als `#[cfg(test)]` vor einem Item; Abtastung erweitern"
             );
         }
@@ -383,9 +386,16 @@ impl Abtaster<'_> {
 
 /// Alle exakten Kz-Literale ausserhalb von `#[cfg(test)]` in `text`, dazu die Testmodul-Dateien.
 pub(crate) fn abtasten(text: &str) -> Abtastung {
+    abtasten_mit(text, ist_kz_form)
+}
+
+/// Wie [`abtasten`], aber mit eigener Form: jedes Literal ausserhalb von `#[cfg(test)]`, das
+/// `treffer` annimmt. `KzFund::kz` heisst dann „der Literal-Text".
+pub(crate) fn abtasten_mit(text: &str, treffer: fn(&str) -> bool) -> Abtastung {
     Abtaster {
         text,
         b: text.as_bytes(),
+        treffer,
         i: 0,
         tiefe: 0,
         item: None,
@@ -399,7 +409,7 @@ pub(crate) fn abtasten(text: &str) -> Abtastung {
 }
 
 /// Alle `.rs`-Dateien unter `dir` als Pfad relativ zu `wurzel` (mit `/`), sortiert.
-fn rs_dateien(wurzel: &Path, dir: &Path, aus: &mut Vec<String>) {
+pub(crate) fn rs_dateien(wurzel: &Path, dir: &Path, aus: &mut Vec<String>) {
     let mut pfade: Vec<_> = fs::read_dir(dir)
         .unwrap()
         .map(|e| e.unwrap().path())
@@ -429,7 +439,7 @@ fn text_von(wurzel: &Path, rel: &str) -> Cow<'static, str> {
 }
 
 /// Die Dateien, die `#[cfg(test)] mod NAME;` in `rel` meint.
-fn modul_dateien(rel: &str, name: &str) -> [String; 2] {
+pub(crate) fn modul_dateien(rel: &str, name: &str) -> [String; 2] {
     let (dir, datei) = rel.rsplit_once('/').map_or(("", rel), |(d, f)| (d, f));
     let vorn = if dir.is_empty() {
         String::new()
@@ -617,6 +627,23 @@ const T: fn(u8) -> u8 = h; const U: &str = "E0100012";
     #[should_panic(expected = "kz_wache kennt")]
     fn eine_unbekannte_cfg_form_bricht_ab() {
         let _ = abtasten("#[cfg(not(test))]\nfn x() {}\n");
+    }
+
+    #[test]
+    fn eine_cfg_mit_feature_testhilfe_ist_kein_cfg_test() {
+        // `domain/src/lib.rs` hat `#[cfg(feature = "testhilfe")]`; die Abtastung ueber alle Crates darf daran nicht abbrechen.
+        let abt = abtasten("#[cfg(feature = \"testhilfe\")]\nfn x() { let _ = \"E0100001\"; }\n");
+        assert_eq!(abt.funde.len(), 1);
+    }
+
+    #[test]
+    fn abtasten_mit_nimmt_die_form_des_aufrufers() {
+        let abt = abtasten_mit(
+            "fn f() { let _ = (\"veranlagung\", \"E0100001\", 'x', \"A\"); }\n#[cfg(test)]\nfn t() { let _ = \"nur_test\"; }\n",
+            |s| s.chars().all(|c| c.is_ascii_lowercase() || c == '_'),
+        );
+        let texte: Vec<&str> = abt.funde.iter().map(|f| f.kz.as_str()).collect();
+        assert_eq!(texte, ["veranlagung"]);
     }
 
     #[test]
