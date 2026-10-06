@@ -56,6 +56,21 @@ fn modell(stufe: &'static str, inhalt: &Value) -> Schritt {
     }
 }
 
+/// Wie [`modell`], aber mit dem Text unveraendert, auch wo er kein JSON ist (`NaN`, `1e400`, ein einzelnes
+/// Surrogat): der aeussere Koerper bleibt gueltiges JSON, nur der Inhalt der ersten Wahl ist es nicht.
+fn modell_roh(stufe: &'static str, text: &str) -> Schritt {
+    Schritt {
+        stufe,
+        status: 200,
+        body: json!({
+            "provider": "StubAnbieter",
+            "choices": [{"finish_reason": "stop", "message": {"content": text}}]
+        })
+        .to_string(),
+        oft: false,
+    }
+}
+
 /// Ein `rechenweg` des Modells (Schema `dialog`): Basis, Faktor, Erklaerung. Er geht unveraendert in die
 /// Antwort (`vorschlaege`, `konflikte`).
 fn rechenweg() -> Value {
@@ -735,6 +750,109 @@ Das hat der Nutzer bereits bestätigt:\n";
         gesehen.lock().unwrap().is_empty(),
         "der Dienst wurde gefragt"
     );
+
+    // --- Stufe 3 liefert einen Wert, den JSON nicht kennt (`NaN`, `1e400`, `Infinity`), oder ein einzelnes
+    // Surrogat (V4 Stapel 1e, P1a/P1c): Rust wertet die GANZE Antwort als unlesbar (fail-closed), auch den
+    // gueltigen Vorschlag daneben. Python liest `NaN` als Zahl und schickt ungueltiges JSON weiter
+    // (`rust/fixtures/README.md`, Nr. 12). Verlangt: 200 mit gueltigem JSON, kein Vorschlag, beide Aussagen
+    // `kein_feld`, die Akte bleibt unberuehrt. Die Kontrolle schreibt dieselbe Gestalt mit gueltigen Werten.
+    let gueltig = r#"{"feld_id": "veranlagung", "wert": "zusammen", "beleg": "gemeinsam mit meiner Frau", "begruendung": "b0", "aussage": 0, "rechenweg": null}"#;
+    let zweiter = |wert: &str, begruendung: &str, rechenweg: &str| {
+        format!(
+            r#"{{"feld_id": "realsplitting_unterhaltsleistungen", "wert": {wert}, "beleg": "6000 Euro Unterhalt", "begruendung": "{begruendung}", "aussage": 1, "rechenweg": {rechenweg}}}"#
+        )
+    };
+    let dialog = |zweiter: &str| {
+        format!(
+            r#"{{"vorschlaege": [{gueltig}, {zweiter}], "rueckfragen": [], "antwort": "ok", "unsicher": false}}"#
+        )
+    };
+    let stufen_mit = |dialog_text: &str| {
+        vec![
+            aussagen_stufe(),
+            modell(
+                "zuordnung",
+                &json!({"zuordnungen": [
+                    {"aussage": 0, "regeln": ["p2_festzusetzung_einzel"]},
+                    {"aussage": 1, "regeln": ["p10_1a_realsplitting"]}]}),
+            ),
+            modell_roh("dialog", dialog_text),
+        ]
+    };
+    let status = |a: &Value| -> Vec<String> {
+        a["aussagen"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| x["status"].as_str().unwrap().to_owned())
+            .collect()
+    };
+    for fall in ["nan0", "nan1"] {
+        let (s, a) = post(
+            &d,
+            "/fall",
+            &json!({"fall_id": fall, "scheibe": "gesamt", "veranlagungszeitraum": 2025}),
+        )
+        .await;
+        assert_eq!(s, 201, "{a}");
+    }
+    *skript.lock().unwrap() = stufen_mit(&dialog(&zweiter("600000", "b1", "null")));
+    let (s, a) = post(&d, "/fall/nan0/chat", &json!({"text": TEXT})).await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(
+        a["vorschlaege"].as_array().unwrap().len(),
+        2,
+        "KONTROLLE: {a}"
+    );
+    assert_eq!(status(&a), ["vorschlag", "vorschlag"], "KONTROLLE: {a}");
+    assert_eq!(akte(&d, "nan0")["events"].as_array().unwrap().len(), 2);
+    let vorher = akte(&d, "nan1");
+    for (name, zweiter_text) in [
+        ("wert NaN", zweiter("NaN", "b1", "null")),
+        ("wert 1e400", zweiter("1e400", "b1", "null")),
+        (
+            "rechenweg basis Infinity",
+            zweiter(
+                "600000",
+                "b1",
+                r#"{"basis": Infinity, "faktor": 1, "erklaerung": "e"}"#,
+            ),
+        ),
+        ("begruendung Surrogat", zweiter("600000", r"\ud800", "null")),
+    ] {
+        *skript.lock().unwrap() = stufen_mit(&dialog(&zweiter_text));
+        let (s, a) = post(&d, "/fall/nan1/chat", &json!({"text": TEXT})).await;
+        assert_eq!(s, 200, "{name}: {a}");
+        assert_eq!(a["vorschlaege"], json!([]), "{name}: {a}");
+        assert_eq!(status(&a), ["kein_feld", "kein_feld"], "{name}: {a}");
+        assert_eq!(akte(&d, "nan1"), vorher, "{name}: die Akte wurde beruehrt");
+        assert!(!a.to_string().contains("NaN"), "{name}: {a}");
+    }
+    // Stufe 3 faellt aus (Anbieter 500, zweimal): kein Vorschlag, beide Aussagen `werte_ausgefallen`, die Akte bleibt.
+    *skript.lock().unwrap() = vec![
+        aussagen_stufe(),
+        modell(
+            "zuordnung",
+            &json!({"zuordnungen": [{"aussage": 0, "regeln": ["p2_festzusetzung_einzel"]}]}),
+        ),
+        Schritt {
+            stufe: "dialog",
+            status: 500,
+            body: r#"{"error": "x"}"#.to_owned(),
+            oft: true,
+        },
+    ];
+    let (s, a) = post(&d, "/fall/nan1/chat", &json!({"text": TEXT})).await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(a["vorschlaege"], json!([]), "{a}");
+    assert_eq!(
+        status(&a),
+        ["werte_ausgefallen", "werte_ausgefallen"],
+        "{a}"
+    );
+    assert_eq!(akte(&d, "nan1"), vorher, "die Akte wurde beruehrt");
+    skript.lock().unwrap().clear();
+    gesehen.lock().unwrap().clear();
 
     // --- Stufe 1 faellt aus: 501 mit dem Vertrag, die Akte bleibt, das Fehlerprotokoll warnt.
     let vorher = akte(&d, "ch1");

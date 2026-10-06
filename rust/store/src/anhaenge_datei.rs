@@ -25,9 +25,25 @@ fn oeffne_zum_anhaengen(pfad: &Path) -> io::Result<File> {
 
 /// Haengt `zeile` (ohne eigenen Zeilenumbruch) an und fsynct danach
 /// (`audit.py:71-74`: `f.write(line); f.flush(); os.fsync(f.fileno())`).
+///
+/// Zeile und Umbruch gehen in EINEM `write` hinaus: `writeln!` auf eine ungepufferte `File` schriebe
+/// zwei, und bei gleichzeitigen Faeden (Anmeldung und Dispatcher schreiben in dieselbe Datei) klebte
+/// dann Zeile an Zeile (gemessen: `store/tests/audit_parallel.rs`).
+///
+/// ponytail: unteilbar ist das nur, solange EIN `write` die ganze Zeile schreibt. Mit `O_APPEND`
+/// (`append(true)` oben) setzt der Kern die Position und schreibt unter der Sperre der Datei. Die
+/// Grenze `PIPE_BUF` von 4096 Byte betrifft Rohre, nicht Dateien: gemessen 2026-10-06 (Linux 7.1,
+/// 6 Faeden, je 30 Zeilen) bleiben Zeilen bis 4 MiB auf tmpfs und ext4 ganz; der Test
+/// `lange_zeilen_bleiben_ganz` haelt 16 KiB fest. Nicht verlaesslich: NFS und ein Teilschreiben
+/// (Platte voll, Signal), bei dem `write_all` mit einem zweiten `write` fortsetzt. Die Zeilen der
+/// Aufrufer sind kurz (nur Metadaten, unter 1 KiB). Upgrade bei einer Netzablage: `flock` um den
+/// Aufruf.
 pub(crate) fn haenge_zeile_an(pfad: &Path, zeile: &str) -> io::Result<()> {
     let mut f = oeffne_zum_anhaengen(pfad)?;
-    writeln!(f, "{zeile}")?;
+    let mut puffer = String::with_capacity(zeile.len() + 1);
+    puffer.push_str(zeile);
+    puffer.push('\n');
+    f.write_all(puffer.as_bytes())?;
     f.flush()?;
     f.sync_all()
 }
