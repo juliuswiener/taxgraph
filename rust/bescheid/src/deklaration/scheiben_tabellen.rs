@@ -206,7 +206,7 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 
 /// `SCHEIBEN['rentner_gesamt']["felder"]` = `RENTNER_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + GESAMT_PARTNER_KAP + AGB_TATBESTAND`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 256] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 255] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -218,7 +218,7 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 256] = [
     "rentner_rentenfreibetrag", "rentner_rentenfreibetrag_partner", "rentner_grad_der_behinderung_partner", "rentner_hilflos_blind_taubblind_partner",
     "rentner_renten_art_partner", "rentner_jahresrente_partner", "rentner_renten_beginn_jahr_partner", "rentner_alter_bei_rentenbeginn_partner",
     "einkuenfte_gewinn", "gewinn_bezeichnung", "rentner_veraeusserungsgewinn", "rentner_veraeusserungs_betriebsart",
-    "p34_abs3_antragsbetrag", "gewinn_betriebsart", "geburtsjahr", "betriebseinnahmen",
+    "p34_abs3_antragsbetrag", "gewinn_betriebsart", "betriebseinnahmen",
     "sonstige_betriebsausgaben", "afa_jahresbetrag", "gwg_anschaffungskosten_netto", "gwg_bewegliches_selbstaendig_nutzbar",
     "gwg_netto_ohne_vorsteuer", "gwg_verzeichnis_ab_250", "gewinnanteil", "verguetung_taetigkeit",
     "verguetung_darlehen", "verguetung_ueberlassung", "antrag_ermaessigter_satz", "dauernd_berufsunfaehig",

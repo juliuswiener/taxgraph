@@ -364,3 +364,37 @@ async fn ziel_scheibe_bestimmt_die_felder() {
     .await;
     assert_eq!(a["uebernommen"], 4);
 }
+
+/// Die Scheibe `rentner_gesamt` führt jedes Feld einmal. Stand `geburtsjahr` zweimal in ihrer Liste,
+/// brach die Übernahme am zweiten Eintrag mit 422 ab („hat schon ein aktives Event“); Entscheidung
+/// `rentner-gesamt-fuehrt-jedes-feld-einmal-das-doppelte-geburtsjahr-faellt-weg`.
+#[tokio::test]
+async fn vorjahr_nach_rentner_gesamt_uebernimmt_das_geburtsjahr() {
+    let d = dienst();
+    quelle(&d, "vq1", &stamm()).await;
+    fall_anlegen(&d, "alice", "zrg", "rentner_gesamt", 2025).await;
+    let (s, a) = sende(
+        &d,
+        "alice",
+        "/fall/zrg/vorjahr",
+        &json!({"vorjahr_fall_id": "vq1"}),
+    )
+    .await;
+    assert_eq!(s, 200, "{a}");
+    // `bruttoarbeitslohn` und `ep_entfernung_km` kennt die Scheibe nicht, `verlustvortrag_bestand`
+    // ist eine Vergleichsgröße: 4 von 7 Feldern der Quelle.
+    assert_eq!(
+        a,
+        json!({"uebernommen": 4, "uebersprungen": [], "vorjahr_fall_id": "vq1"})
+    );
+    let ziel = akte(&d, "zrg");
+    let geburtsjahr: Vec<&Value> = ziel["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["feld_id"] == "geburtsjahr")
+        .collect();
+    assert_eq!(geburtsjahr.len(), 1, "genau ein Event fuer geburtsjahr");
+    assert_eq!(geburtsjahr[0]["wert"], 1980);
+    assert_eq!(geburtsjahr[0]["zustand"], "vorlaeufig");
+}

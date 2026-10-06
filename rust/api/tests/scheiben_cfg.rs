@@ -90,19 +90,18 @@ fn felder_null_ohne_datei_ist_ein_fehler_kein_leerer_satz() {
 }
 
 #[test]
-fn rentner_gesamt_traegt_das_doppelte_geburtsjahr_nicht_still_weg() {
-    // Befund aus helfer-spec.md: rentner_gesamt hat 256 Feld-Eintraege, aber nur 255 verschiedene
-    // (249/248 bis zum Zwilling p34_abs3_antragsbetrag, 250/249 mit stammdaten_hausnummerzusatz,
-    // 2026-10-03; 252/251 seit C2 2026-10-06, die beiden Satz-3-Felder; 256/255 seit B Option 1
-    // 2026-10-06, die vier Partner-Felder zu § 34 Abs. 3).
-    // Folge in Python: _scheibe_felder 250, _scheibe_bindung 249, Differenz verschwindet ohne
-    // Meldung. Hier wird die Differenz SICHTBAR gemacht, nicht wegnormalisiert.
+fn rentner_gesamt_fuehrt_jedes_feld_einmal() {
+    // Python fuehrt `geburtsjahr` in `SCHEIBEN['rentner_gesamt']` doppelt (roh 250, distinct 249 am
+    // 2026-10-03; 252/251 seit C2, 256/255 seit B Option 1, beides 2026-10-06). Rust fuehrt es einmal
+    // (2026-10-06): das zweite Vorkommen brach die Vorjahr-Uebernahme mit 422 ab
+    // (`vorjahr_naht.rs`, `vorjahr_nach_rentner_gesamt_uebernimmt_das_geburtsjahr`). Roh und
+    // distinct sind seither gleich.
     let c = Cfg::fuer(Scheibe::RentnerGesamt);
     let f = c.felder(ohne_datei).unwrap();
-    assert_eq!(f.len(), 256, "roh gezaehlt wie _scheibe_felder");
+    assert_eq!(f.len(), 255, "roh gezaehlt");
     let n_geburtsjahr = f.iter().filter(|x| x.as_str() == "geburtsjahr").count();
-    assert_eq!(n_geburtsjahr, 2, "das Duplikat ist da und wird nicht versteckt");
+    assert_eq!(n_geburtsjahr, 1, "geburtsjahr steht einmal in der Liste");
     let distinct: std::collections::HashSet<_> = f.iter().collect();
-    assert_eq!(distinct.len(), 255, "distinct wie _scheibe_bindung");
-    assert_eq!(c.kegel(ohne_datei).unwrap().len(), 28, "der Meet laeuft ueber 28, nicht 256");
+    assert_eq!(distinct.len(), 255, "jedes Feld genau einmal");
+    assert_eq!(c.kegel(ohne_datei).unwrap().len(), 28, "der Meet laeuft ueber 28, nicht 255");
 }
