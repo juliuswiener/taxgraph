@@ -1,7 +1,7 @@
 //! Der Versandpfad gegen die ATTRAPPE von `libericapi.so` — nie die echte Bibliothek, nie ein
 //! Zertifikat, nie eine echte PIN, nie das Netz.
 //!
-//! Die Attrappe (`eric_attrappe.c`, dieselbe wie im Vergleichslauf; Orte siehe `ATTRAPPE_QUELLEN`) wird mit
+//! Die Attrappe (`eric_attrappe.c`, dieselbe wie im Vergleichslauf; Ort siehe `ATTRAPPE_QUELLE`) wird mit
 //! `cc -shared -fPIC` gebaut und antwortet nach Steuerdateien in `$ERIC_ATTRAPPE_DIR`; sie schreibt
 //! auf, was sie bekam: Flags, Crypto-Parameter (die PIN nur als Laenge), den Pfad des Zertifikats, die
 //! Zahl der Aufrufe. Jeder Test liest daraus, WAS bei ERiC ankam — und bei jeder Sperre, dass NICHTS
@@ -29,13 +29,8 @@ const ANTWORT_ERFOLG: &str =
 const PIN: &str = "PIN-SENTINEL-4711";
 const ZERT_NAME: &str = "zertifikat-SENTINEL-9f3a.pfx";
 
-/// Wo die Attrappe liegt. Der Ort ausserhalb von `parity/` ist der kuenftige (die Loeschung von
-/// `rust/parity` verschiebt die Datei dorthin); solange er fehlt, gilt der heutige. Der Rueckfall
-/// wird mit dem Verschieben gegenstandslos und kann dann entfallen.
-const ATTRAPPE_QUELLEN: [&str; 2] = [
-    "../elster/tests/eric_attrappe/eric_attrappe.c",
-    "../parity/tests/eric_attrappe/eric_attrappe.c",
-];
+/// Wo die Attrappe liegt: ausserhalb von `parity/`, das nach der Abnahme geloescht wird.
+const ATTRAPPE_QUELLE: &str = "../elster/tests/eric_attrappe/eric_attrappe.c";
 
 static SPERRE: Mutex<()> = Mutex::new(());
 static BIBLIOTHEK: OnceLock<Option<PathBuf>> = OnceLock::new();
@@ -47,11 +42,8 @@ fn bibliothek() -> Option<&'static Path> {
             let lib = Path::new(env!("CARGO_TARGET_TMPDIR")).join("versand_attrappe");
             std::fs::create_dir_all(&lib).unwrap();
             let ziel = lib.join("libericapi.so");
-            let quelle = ATTRAPPE_QUELLEN
-                .iter()
-                .map(|p| Path::new(env!("CARGO_MANIFEST_DIR")).join(p))
-                .find(|p| p.is_file())
-                .expect("die Quelle der Attrappe liegt an keinem der bekannten Orte");
+            let quelle = Path::new(env!("CARGO_MANIFEST_DIR")).join(ATTRAPPE_QUELLE);
+            assert!(quelle.is_file(), "die Quelle der Attrappe fehlt: {}", quelle.display());
             let gebaut = Command::new("cc")
                 .args(["-shared", "-fPIC", "-O0", "-o"])
                 .arg(&ziel)

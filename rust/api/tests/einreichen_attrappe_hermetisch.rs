@@ -1,5 +1,5 @@
 //! `POST /fall/{id}/einreichen` ab dem Aufruf von `ERiC`, hermetisch: gegen die ATTRAPPE von
-//! `libericapi.so` (`rust/parity/tests/eric_attrappe/eric_attrappe.c`), ohne Python, ohne
+//! `libericapi.so` (`rust/elster/tests/eric_attrappe/eric_attrappe.c`), ohne Python, ohne
 //! `PARITY=1`, ohne Netz.
 //!
 //! Auftrag 6 (Mutationsmessung der Crate `api`): die Antworten nach dem `ERiC`-Urteil
@@ -98,7 +98,7 @@ fn faelle() -> Vec<(&'static str, Value)> {
 
 fn baue_attrappe(ziel: &Path) {
     let quelle =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../parity/tests/eric_attrappe/eric_attrappe.c");
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../elster/tests/eric_attrappe/eric_attrappe.c");
     let st = Command::new("cc")
         .args(["-shared", "-fPIC", "-O0", "-Wall", "-Wextra", "-o"])
         .arg(ziel)
