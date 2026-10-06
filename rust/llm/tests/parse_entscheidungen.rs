@@ -9,6 +9,48 @@ use llm::parse::{antwort_parse, aussagen_parse, chat_parse, rueckfragen_parse, z
 use llm::Antwort;
 use serde_json::json;
 
+/// ABWEICHUNG VON PYTHON, gewollt (`parse.rs`, `lies`): `json.loads` liest `NaN`, `Infinity`, `-Infinity` und `1e400` (= `inf`)
+/// als Zahl und ein einzelnes Surrogat-Escape (`"\ud800"`) als Zeichenkette; Python liest die Antwort, lehnt hoechstens das
+/// Feld ab, und das Ergebnis ist kein gueltiges JSON (`NaN` im Body). `serde_json` lehnt alle fuenf ab; Rust wertet die ganze
+/// Antwort als unlesbar (Rueckfall des Dienstes: `kein_feld`, `werte_ausgefallen`), nie als halb gelesenen Vorschlag.
+#[test]
+fn weicht_von_python_ab_nan_unendlich_und_einzelnes_surrogat_machen_die_antwort_unlesbar() {
+    let dialog = |wert: &str, rechenweg: &str, begruendung: &str, aussage: &str| {
+        format!(
+            r#"{{"vorschlaege": [{{"feld_id": "bruttoarbeitslohn", "wert": {wert}, "beleg": "60000 Euro brutto", "begruendung": "{begruendung}", "aussage": {aussage}, "rechenweg": {rechenweg}}}], "rueckfragen": [], "antwort": "ok", "unsicher": false}}"#
+        )
+    };
+    // Kontrolle: dieselbe Gestalt mit gueltigen Werten wird gelesen.
+    assert!(
+        matches!(
+            chat_parse(&dialog("60000", "null", "b", "0")),
+            Antwort::Schemagerecht(_)
+        ),
+        "Kontrolle"
+    );
+    let rechenweg =
+        |basis: &str| format!(r#"{{"basis": {basis}, "faktor": 1, "erklaerung": "e"}}"#);
+    for (name, text) in [
+        ("wert NaN", dialog("NaN", "null", "b", "0")),
+        ("wert Infinity", dialog("Infinity", "null", "b", "0")),
+        ("wert -Infinity", dialog("-Infinity", "null", "b", "0")),
+        ("wert 1e400", dialog("1e400", "null", "b", "0")),
+        (
+            "rechenweg basis NaN",
+            dialog("1", &rechenweg("NaN"), "b", "0"),
+        ),
+        (
+            "rechenweg basis 1e400",
+            dialog("1", &rechenweg("1e400"), "b", "0"),
+        ),
+        ("aussage Infinity", dialog("1", "null", "b", "Infinity")),
+        ("aussage 1e400", dialog("1", "null", "b", "1e400")),
+        ("begruendung Surrogat", dialog("1", "null", r"\ud800", "0")),
+    ] {
+        assert_eq!(chat_parse(&text), Antwort::Unlesbar, "{name}");
+    }
+}
+
 /// ABWEICHUNG VON PYTHON, gewollt (`parse.rs`, `index`): Python liest `int(w)` und gibt auch eine Zahl ueber `i64` als
 /// Aussage-Nummer zurueck (`int(1e30)`), und `int(inf)` wirft `OverflowError` ungefangen. Rust gibt in beiden Faellen `None`;
 /// `inf` selbst kommt ueber `serde_json` nicht an (`Infinity` ist dort kein JSON), die erreichbare Seite ist die Zahl ausserhalb `i64`.

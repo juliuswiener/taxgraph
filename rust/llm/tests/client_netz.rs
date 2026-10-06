@@ -347,6 +347,26 @@ fn weicht_von_python_ab_inhalt_ohne_zeichenkette_ist_endgueltig() {
     ]);
 }
 
+/// ABWEICHUNG VON PYTHON, gewollt (`client.rs`, Antwortkoerper des Anbieters): `json.loads` liest `NaN`, `Infinity` und `1e400`
+/// (= `inf`) irgendwo im Koerper, Python nimmt die Antwort an. `serde_json` lehnt den Koerper ab; Rust meldet einen
+/// endgueltigen Fehler `JSONDecodeError`. Die Antwort enthaelt sonst einen gueltigen Inhalt: die Ablehnung kommt nur vom Zahlwort.
+#[test]
+#[rustfmt::skip]
+fn weicht_von_python_ab_anbieterantwort_mit_nan_ist_endgueltig() {
+    let koerper = |zusatz: &str| format!("{{\"choices\": [{{\"message\": {{\"content\": \"{{}}\"}}, \"finish_reason\": \"stop\"}}], \"usage\": {zusatz}}}");
+    let fall = |name: &'static str, zusatz: &str| -> Fall {
+        (name, "", Some(vec![Aktion::Roh(antwort(200, &koerper(zusatz)))]), false, (1, 3, 1), 1, "", Erw::Err("endgueltig", "", 1, Msg::Genau("LLM-Aufruf fehlgeschlagen: JSONDecodeError")))
+    };
+    pruefe(vec![
+        fall("usage_nan", "NaN"),
+        fall("usage_infinity", "Infinity"),
+        fall("usage_minus_infinity", "-Infinity"),
+        fall("usage_ueber_f64", "1e400"),
+        // Kontrolle: dieselbe Gestalt mit einer gueltigen Zahl wird gelesen.
+        ("usage_gueltig", "", Some(vec![Aktion::Roh(antwort(200, &koerper("1")))]), false, (1, 3, 1), 1, "", Erw::Ok("{}", "", "stop")),
+    ]);
+}
+
 /// ABWEICHUNG VON PYTHON, gewollt (Sicherheit, `client.rs`, Fehlerkoerper): Python kuerzt den Koerper auf 300 Zeichen und maskiert
 /// danach; ein Schluessel, der ueber die Schnittkante ragt, bliebe als Anfang stehen (hier `sk-test-GE`). Rust maskiert zuerst
 /// und kuerzt dann. Der Schluessel beginnt bei Zeichen 290 und endet bei 308.
