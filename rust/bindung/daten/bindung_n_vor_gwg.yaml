@@ -371,10 +371,15 @@ bindungen:
     quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, geltungsbedingung: keine_verpflichtende_dienst_oder_werkswohnung}
     typ: bool
     einheit: null
-    askable: true
+    # GESTRICHEN 2026-10-06 (Entscheidung Julius, "erstmal streichen"; VZ 2026 ist ein eigenes Paket).
+    # Die Frage wird nicht mehr gestellt, das Feld bleibt: eine schon gegebene Antwort steht im Store
+    # und soll eine Akte nicht sperren (ohne das Feld meldet /deklaration "Feld nicht in der
+    # Bindungstabelle", unvollstaendig, und `einreichungs_xml` bricht ab). Muster: spenden_vermoegensstock.
+    # Die Annahme steckt weiter in der Rechnung (Scope kennt die Wohnungsart nicht) und bleibt in
+    # `annahmen_offen` der Regel genannt. Die Frage lautete: "Ist deine Zweitwohnung im Ausland eine
+    # Dienst- oder Werkswohnung, die du verpflichtend nutzen musst?" (positiv gefragt, `frage_invertiert: true`).
+    askable: false
     vorjahr: uebernehmbar
-    # Wie vpf_keine_mahlzeitengestellung: Verneinung in der Mitte des Namens, Frage positiv.
-    frage_invertiert: true
     # KEIN Gate (2026-08-20). § 9 Abs. 1 S. 3 Nr. 5 S. 4 Hs. 2 sagt über die Dienstwohnung genau
     # eines: "die Grenze von 2 000 Euro bei einer Unterkunft im AUSLAND gilt nicht, wenn eine
     # Dienst- oder Werkswohnung verpflichtend und zweckgebunden genutzt werden muss". Sie hebt eine
@@ -384,12 +389,12 @@ bindungen:
     # Inland eine Werkswohnung hat und wahrheitsgemäß "ja" antwortete, verlor den kompletten
     # dHf-Abzug — gemessen 3.178,00 EUR zu viel Steuer bei 1.000 EUR Miete über 12 Monate.
     gate: false
-    fragetext_laie: "Ist deine Zweitwohnung im Ausland eine Dienst- oder Werkswohnung, die du verpflichtend nutzen musst?"
+    fragetext_laie: null
     hilfe_kurz: "Nur wichtig, wenn deine Zweitwohnung im Ausland liegt."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein) zur 2.000-Euro-Auslandsgrenze, kein Betragsfeld."
+    elster_kz_grund: "Frage gestrichen 2026-10-06 (Entscheidung Julius: erstmal streichen, VZ 2026 ist ein eigenes Paket). Die Antwort bewegt kein Ergebnis: Ja/Nein ohne Kz und ohne Slot; die Dienstwohnung hebt nur die 2.000-Euro-Auslandsgrenze auf (§ 9 Abs. 1 S. 3 Nr. 5 S. 4 Hs. 2 EStG), und im Ausland rechnet die Scheibe nicht (ausland_dhf_nicht_ring_faehig). Eine schon gegebene Antwort bleibt im Store und wird nicht deklariert."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 4 Halbsatz 2 EStG"

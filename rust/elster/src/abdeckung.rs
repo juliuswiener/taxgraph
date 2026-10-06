@@ -730,11 +730,9 @@ fn der_naehe_pruefer_findet_tippfehler_und_veraltete_ausnahmen() {
     assert_eq!(alt, vec!["nicht_da"]);
 }
 
-/// Fragbare Felder, die kein Rust-Literal und keinen Kanal in der Registry haben. Heute eines.
-const OHNE_LESER_ERLAUBT: &[(&str, &str)] = &[(
-    "dhf_keine_pflicht_dienstwohnung",
-    "gate: false seit 2026-08-20 (bindung_n_vor_gwg.yaml): die Frage ist ein Hinweis, Rust liest das Feld nirgends; ob sie bleibt, ist offen",
-)];
+/// Fragbare Felder, die kein Rust-Literal und keinen Kanal in der Registry haben. Heute keines
+/// (`dhf_keine_pflicht_dienstwohnung`, bis 2026-10-06 der einzige Eintrag, ist seitdem `askable: false`).
+const OHNE_LESER_ERLAUBT: &[(&str, &str)] = &[];
 
 /// Hat die Registry selbst einen Leser fuer das Feld: das Kz (`deklariere`), den Slot (`intervall`),
 /// das Screening-Flag (Scheibe `gesamt`), das Zaehlfeld einer Instanzgruppe (`api/src/chat.rs`) oder
