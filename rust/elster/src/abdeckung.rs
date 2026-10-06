@@ -26,7 +26,7 @@ use store::SnapshotFeld;
 
 use crate::tabellen::{
     DOKUMENTIERT_AGGREGAT, MULTIPLIKATION, NEGATION, P23_BETRAGSFELDER, PARTNER_INSTANZ,
-    PARTNER_VERZWEIGUNG, VERZWEIGUNG,
+    P23_ART_FELD, PARTNER_VERZWEIGUNG, VERZWEIGUNG,
 };
 use crate::{deklariere, Deklaration, Felder, IBAN_TRANSFORM_ZIEL_KZ, KONSTANTE_KZ};
 
@@ -94,6 +94,7 @@ fn transform_quellen() -> BTreeSet<&'static str> {
     }
     q.extend(PARTNER_INSTANZ.iter().map(|(f, _)| *f));
     q.extend(P23_BETRAGSFELDER.iter().copied());
+    q.insert(P23_ART_FELD);
     q.insert("stammdaten_iban");
     q
 }
@@ -225,4 +226,90 @@ fn transform_konfig_ist_konsistent() {
         kollidiert.is_empty(),
         "Transform-Ziel-Kz kollidiert mit einem 1:1-Kz: {kollidiert:?}"
     );
+}
+
+/// Transform-Quellen, die BEWUSST nicht fragbar sind: `(feld_id, Grund)`. Ein Eintrag braucht einen
+/// Grund, der sagt, woher der Wert stattdessen kommt. Gemessen am Stand `49f86741` (M): von den 52
+/// Transform-Quellen sind genau diese drei nicht fragbar, alle drei Ring-Werte (`hilfe_kurz`
+/// „Berechnet", `askable: false`, `elster_kz: null` mit Grund in der Bindung). Jede weitere nicht
+/// fragbare Quelle ist ein Verstoss, bis jemand sie hier mit Grund nennt.
+const NICHT_FRAGBAR_ERLAUBT: &[(&str, &str)] = &[
+    (
+        "gewst_zu_zahlen_partner",
+        "Ring-Wert: gewerbesteuer() in bescheid/src/deklaration/ring_werte.rs rechnet Messbetrag mal Hebesatz des Partnerbetriebs",
+    ),
+    (
+        "p34_abs3_antragsbetrag",
+        "Ring-Wert: p34_antrag() in ring_werte.rs schreibt den Veraeusserungsgewinn, wenn der Chooser Abs. 3 rechnet",
+    ),
+    (
+        "p35c_massnahme_einzelbetrag",
+        "Ring-Wert: einzelzeilen() in ring_werte.rs setzt p35c_sanierungsaufwendungen in die Zeile der Massnahmenart",
+    ),
+];
+
+/// Aus `quellen` die, die in `askable` als nicht fragbar stehen und nicht namentlich erlaubt sind
+/// (Verstoesse), und die Ausnahmen, die keinen Zweck mehr haben, weil die Quelle fragbar ist oder
+/// keine Quelle mehr (veraltet). `askable`: `feld_id` → fragbar; ein Feld, das fehlt, prueft
+/// `transform_konfig_ist_konsistent`.
+fn nicht_fragbare_quellen<'a>(
+    quellen: &BTreeSet<&'a str>,
+    askable: &BTreeMap<&str, bool>,
+    erlaubt: &[(&'a str, &str)],
+) -> (Vec<&'a str>, Vec<&'a str>) {
+    let nicht = |f: &str| askable.get(f) == Some(&false);
+    let verstoesse = quellen
+        .iter()
+        .copied()
+        .filter(|f| nicht(f) && !erlaubt.iter().any(|(e, _)| e == f))
+        .collect();
+    let veraltet = erlaubt
+        .iter()
+        .map(|(e, _)| *e)
+        .filter(|e| !quellen.contains(e) || !nicht(e))
+        .collect();
+    (verstoesse, veraltet)
+}
+
+/// Aussage 6: Jede Transform-Quelle wird gefragt. Eine Quelle, die nicht fragbar ist, liefert der
+/// Tabelle nie einen Wert: das Kz bleibt leer, ohne dass ein Test es merkt. Die Mutanten
+/// `askable: true -> false` bei `fam_alleinstehend` und `stammdaten_iban` blieben in elster, bescheid
+/// und bindung gruen. `bescheid::scheiben_tabellen_konsistenz::jedes_kegel_feld_ist_fragbar` prueft
+/// nur die vier `*_KEGEL`-Listen; `fam_anzahl_kinder`, `rentner_jahresrente` und `rentner_renten_art`
+/// stehen dort (zufaellig), die beiden anderen nur in den `*_FELDER`-Listen.
+#[test]
+fn jede_transform_quelle_ist_fragbar() {
+    let askable: BTreeMap<&str, bool> = bindungen()
+        .iter()
+        .map(|b| (b.feld_id.as_str(), b.askable))
+        .collect();
+    for (feld, grund) in NICHT_FRAGBAR_ERLAUBT {
+        assert!(grund.len() >= 20, "{feld}: Ausnahme ohne tragenden Grund");
+    }
+    let (verstoesse, veraltet) =
+        nicht_fragbare_quellen(&transform_quellen(), &askable, NICHT_FRAGBAR_ERLAUBT);
+    assert!(
+        verstoesse.is_empty(),
+        "Transform-Quellen, die nicht askable sind (die Tabelle bekommt nie einen Wert): {verstoesse:?}"
+    );
+    assert!(
+        veraltet.is_empty(),
+        "Ausnahmen ohne Zweck (Quelle ist fragbar oder keine Quelle mehr): {veraltet:?}"
+    );
+}
+
+/// Der Pruefer selbst, an erfundenen Eingaben: er meldet eine nicht fragbare Quelle, laesst eine
+/// namentlich erlaubte durch und meldet eine Ausnahme, deren Quelle fragbar ist oder fehlt.
+#[test]
+fn der_quellen_pruefer_findet_verstoss_ausnahme_und_veraltete_ausnahme() {
+    let quellen: BTreeSet<&str> = ["a", "b", "c"].into_iter().collect();
+    let askable: BTreeMap<&str, bool> =
+        [("a", true), ("b", false), ("c", false), ("x", true)].into_iter().collect();
+    let (v, alt) = nicht_fragbare_quellen(&quellen, &askable, &[]);
+    assert_eq!((v, alt), (vec!["b", "c"], vec![]));
+    let (v, alt) = nicht_fragbare_quellen(&quellen, &askable, &[("b", "berechnet")]);
+    assert_eq!((v, alt), (vec!["c"], vec![]));
+    // "a" ist fragbar, "x" keine Quelle: beide Ausnahmen sind ohne Zweck.
+    let (v, alt) = nicht_fragbare_quellen(&quellen, &askable, &[("a", "g"), ("x", "g")]);
+    assert_eq!((v, alt), (vec!["b", "c"], vec!["a", "x"]));
 }
