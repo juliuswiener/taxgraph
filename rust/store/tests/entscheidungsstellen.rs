@@ -790,7 +790,8 @@ fn ersetzt_guard_traegt_den_wortlaut_von_python() {
     }
 }
 
-/// Katalog (K1), Magnitude (F2), Typ (Steuerzeichen), Format und Auflage B: Wortlaut aus Python.
+/// Katalog (K1), Magnitude (F2), Typ (Steuerzeichen), Format und Auflage B: Wortlaut aus Python, ausser Format:
+/// Es nennt den Wert nicht (Abweichung Nr. 24).
 #[test]
 fn katalog_magnitude_typ_format_und_b_tragen_den_wortlaut_von_python() {
     let karte = echte_karte();
@@ -853,13 +854,13 @@ fn katalog_magnitude_typ_format_und_b_tragen_den_wortlaut_von_python() {
         "fail-closed (Typ): ep_ziel_adresse=[Steuerzeichen im Text, Wert nicht geloggt] passt \
          nicht zum Bindungstyp 'text' — der Ring läse das sonst still als 0 (Stille-Null-Klasse)."
     );
-    // F: das Muster steht unveraendert in der Meldung.
+    // F: das Muster steht unveraendert in der Meldung, der Wert nicht (Abweichung Nr. 24).
     assert_eq!(
         text(anhaengen(
             &mut leerer_store(2025),
             &bestaetigt(KIND_ZEITRAUM, &json!("abc"))
         )),
-        "fail-closed (Format): kind_betreuung_haushaltszugehoerigkeit_zeitraum='abc' passt nicht \
+        "fail-closed (Format): kind_betreuung_haushaltszugehoerigkeit_zeitraum passt nicht \
          zum Muster '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\\.(10|11|12|01|02|03|04|05|06|07|08|09)-\
          (0[1-9]|[1-2][0-9]|3[0-1])\\.(10|11|12|01|02|03|04|05|06|07|08|09))$' der Bindung — ein \
          formal falscher Wert wird spätestens beim Finanzamt abgelehnt."

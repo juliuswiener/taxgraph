@@ -1218,7 +1218,6 @@ fn pruefe_bindung(
         if !passt_muster(muster, s) {
             return Err(Abweisung::FormatInkonform {
                 feld_id: feld_id.to_string(),
-                wert: wert.repr(),
                 muster: muster.clone(),
             });
         }

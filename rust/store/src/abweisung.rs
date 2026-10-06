@@ -87,16 +87,14 @@ pub enum Abweisung {
         typ: &'static str,
     },
 
-    /// Auflage F/Format (`store.py:245-248`): `wert` passt nicht auf `bindung.muster`.
+    /// Auflage F/Format (`store.py:245-248`): `wert` passt nicht auf `bindung.muster`. Die Meldung nennt das Feld
+    /// und das Muster, nie den Wert (PII: `IdNr`, Geburtsdatum, Adresse; Abweichung Nr. 24 in `fixtures/README.md`,
+    /// Python nennt ihn). Die Variante traegt ihn darum auch nicht: ein `{:?}` auf die Abweisung zeigte ihn sonst.
     #[error(
-        "fail-closed (Format): {feld_id}={wert} passt nicht zum Muster '{muster}' der Bindung — \
+        "fail-closed (Format): {feld_id} passt nicht zum Muster '{muster}' der Bindung — \
          ein formal falscher Wert wird spätestens beim Finanzamt abgelehnt."
     )]
-    FormatInkonform {
-        feld_id: String,
-        wert: String,
-        muster: String,
-    },
+    FormatInkonform { feld_id: String, muster: String },
 
     /// Auflage Z/Zeichensatz (`store.py::_pruefe_typ_konformitaet`, Vault
     /// `decisions/elster-zeichensatz-beim-speichern-abweisen`): ein `typ: text`-Wert mit einem Zeichen

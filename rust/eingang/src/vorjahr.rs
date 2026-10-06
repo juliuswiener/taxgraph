@@ -251,7 +251,6 @@ mod tests {
         }));
         assert!(ueberspringt(Abweisung::FormatInkonform {
             feld_id: "f".into(),
-            wert: "w".into(),
             muster: "m".into(),
         }));
         assert!(ueberspringt(Abweisung::NegativerBetrag {

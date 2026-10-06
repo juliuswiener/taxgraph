@@ -113,6 +113,7 @@ async fn elf_ziffern_werden_angenommen() {
 }
 
 /// Jede Abweichung vom Muster `11 Ziffern` ist ein 422 mit der Meldung „fail-closed (Format)“, an beiden Instanzen.
+/// Die Meldung nennt das Feld und das Muster, nie die eingegebene Nummer (eine Personenkennung, `abweisung.rs`).
 #[tokio::test]
 async fn jede_abweichung_vom_muster_wird_mit_422_abgewiesen() {
     let d = dienst();
@@ -134,6 +135,17 @@ async fn jede_abweichung_vom_muster_wird_mit_422_abgewiesen() {
             assert!(
                 text.contains("fail-closed (Format)"),
                 "{feld} {name}: 422, aber nicht die Format-Abweisung: {text}"
+            );
+            // `trim_end`: JSON maskiert den Umbruch als `\n`; mit ihm im Suchtext fände die Prüfung nie etwas.
+            let nummer = wert.trim_end();
+            assert!(
+                !text.contains(nummer),
+                "{feld} {name}: die Meldung nennt die eingegebene Nummer {nummer:?}: {text}"
+            );
+            // Gegenprobe gegen eine leere Meldung: Feld und Muster stehen weiter drin.
+            assert!(
+                text.contains(feld) && text.contains("passt nicht zum Muster '"),
+                "{feld} {name}: die Meldung nennt Feld und Muster nicht mehr: {text}"
             );
         }
     }
