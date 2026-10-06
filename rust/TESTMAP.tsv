@@ -1,4 +1,21 @@
 file	lines_bei_anlage	n_tests_bei_anlage	xfail	category	target_module	replacing_guarantee_or_note
+pipeline/tests/test_cascade_queue_status.py	85	10	0	TOOLING	pipeline/cascade	queue status false-green rule
+pipeline/tests/test_client_core.py	374	40	0	TOOLING	pipeline/client	mask_key, dry_run, RoleCallError
+pipeline/tests/test_deckt_ab_freeze.py	143	7	0	TOOLING	pipeline/quellen	deckt_ab freeze gate
+pipeline/tests/test_ebilanz_feldmapping.py	143	7	0	NOT_PORTED	ebilanz/feldmapping.yaml	serde deny_unknown_fields; status enum sicher{rule_id}/unklar{begruendung}; taxonomie_konzept gegen Konzept-enum: Luecke offen
+pipeline/tests/test_ebilanz_katalog.py	215	10	0	TOOLING	ebilanz/katalog, linkbase	XBRL linkbase parsing -> catalogue generation; pinned counts
+pipeline/tests/test_gate_semantik.py	629	58	0	TOOLING	pipeline/run, cascade, yamlstrict	[deps: catala mentions] cascade gate semantics
+pipeline/tests/test_gettsim_crosscheck.py	84	4	0	TOOLING	oracle/gettsim/golden_crosscheck	[deps: catala] GETTSIM allowlist; minority GOLDEN
+pipeline/tests/test_golden_anker_freeze.py	117	4	0	TOOLING	golden/cases loader + pipeline.gates	[deps: catala] anchor freeze
+pipeline/tests/test_hinweis_provenance.py	66	4	0	TOOLING	pipeline/run	hinweis provenance in report.json
+pipeline/tests/test_item_registry.py	238	19	0	TOOLING	pipeline/item_registry	registry ratchet
+pipeline/tests/test_judge_mehrheit.py	371	26	0	TOOLING	pipeline/judge	majority judge
+pipeline/tests/test_praezedenz.py	238	13	0	TOOLING	pipeline/ui/praezedenz.py	pipeline triage UI stays Python
+pipeline/tests/test_provenance_stamp.py	160	12	0	TOOLING	pipeline/provenance.py	pipeline stays Python
+pipeline/tests/test_quellen.py	59	4	0	TOOLING	pipeline/quellen.py	pipeline stays Python
+pipeline/tests/test_snapshot.py	173	12	0	TOOLING	pipeline/snapshot.py	pipeline stays Python
+pipeline/tests/test_triage_log_bindung.py	124	3	0	TOOLING	pipeline/item_registry	pipeline stays Python
+pipeline/tests/test_ui_backend.py	196	12	0	TOOLING	pipeline/ui/service.py	pipeline triage UI stays Python
 tests/_ablage_leck_probe.py	31	1	0	NOT_PORTED	(pytest conftest)	Attrappe zu tests/test_ablage_endet_an_der_testdatei.py, keine Testdatei (Name mit _, pytest sammelt sie nur auf der Befehlszeile): lenkt api.FAELLE und audit.AUDIT_DIR per Zuweisung um und setzt nie zurueck. Bleibt mit dem Waechter in Python. Rust hat keine Zuweisung an Modul-Globals fuer diese Pfade: Konfig liegt im Zustand (rust/api/src/zustand.rs:24)
 tests/conftest.py	411	0	0	NOT_PORTED	produkt/auth/audit	[deps: catala-guard,eric-skip] pytest fixtures + guard against writes to real audit.jsonl -> store::audit, Pfad ist Parameter von anhaengen()/lies() (kein globales AUDIT_DIR), tempdir je cargo test
 tests/_kegel.py	171	0	0	NOT_PORTED	produkt/haut/api_constants (SCHEIBEN kegel)	test helper duplicating Pflicht-Kegel -> Kegel derived from one const SCHEIBEN table, tests call the same fn
@@ -46,7 +63,6 @@ tests/test_bindungs_typ_vs_xsd_typ.py	288	4	0	INTEGRATION	produkt/bindung vs els
 tests/test_bindung_texte_lesbar.py	137	4	0	NOT_PORTED	produkt/bindung (texts)	seit loeschplan-v4 Stapel 1c rust/bindung/tests/texte_lesbar.rs: keine ASCII-Umschrift (geprueft Liste von 16 Woertern plus das datengetriebene zweite Netz), keine Feld-Kennung im Laientext (gegen die echten feld_id, Gross-/Kleinschreibung zaehlt); die Texte kommen aus dem geparsten YAML statt aus einem Zeilen-Regex (711 statt 736 Zeilentreffer, null-Zeilen zaehlen nicht)
 tests/test_bindung_yaml_laedt.py	123	4	0	NOT_PORTED	produkt/bindung (YAML)	Lade-Validierung in Rust: bindung/tests/lade_alle_yamls.rs (91 YAML, deny_unknown_fields, Duplikat); Laufzeit statt Build, kein include_str
 tests/test_bootstrap_wie_server.py	246	7	0	NOT_PORTED	produkt/haut/server bootstrap	[deps: catala] sys.path side-effect ordering -> Cargo module resolution, no runtime path
-tests/test_cascade_queue_status.py	85	10	0	TOOLING	pipeline/cascade	queue status false-green rule
 tests/test_charge30_p24a_p24b_p31.py	85	8	0	GOLDEN	golden/runner (catala_p24a/p24b/p31)	[deps: catala] accessor seeds
 tests/test_chat_beleg_gate.py	98	7	0	PROPERTY	produkt/haut/api_llm	proptest: suggestion whose quote is not a substring of user text is rejected
 tests/test_chat_parse_verliert_rechenweg.py	115	3	3	NOT_PORTED	produkt/haut/api_llm (_chat_parse)	serde Deserialize of LlmVorschlag with required `rechenweg` field -> silent loss impossible
@@ -57,12 +73,10 @@ tests/test_checkest_feldmatrix.py	444	9	0	INTEGRATION	elster/checkest_gate, elst
 tests/test_checkest_gate.py	161	19	0	NOT_PORTED	elster/checkest_gate (klassifiziere_rc)	EricKlasse statt EricRc (rust/store/src/store.rs:162): klassifiziere_rc (rust/elster/src/eric/mod.rs:48) bildet 610301200 auf IoGateNichtGeprueft, nicht_geprueft() deckt die vier ungeprueft-Klassen; kein bool ok
 tests/test_check_pauschalen.py	167	22	0	PROPERTY	produkt/konsistenz/check_pauschalen	active income source & missing Pauschal field <=> hint
 tests/test_ci_konfiguration.py	950	23	0	TOOLING	.github workflow / requirements / Makefile	[deps: catala-pin, eric-markers] CI manifest, pins, skip markers, import-time env leaks; Rust side: Cargo.lock + #[cfg(feature)]
-tests/test_client_core.py	374	40	0	TOOLING	pipeline/client	mask_key, dry_run, RoleCallError
 tests/test_conftest_env_umlenkung.py	95	3	0	NOT_PORTED	(pytest conftest)	Waechter fuer die Umlenkung in tests/conftest.py: der Sitzungsstart laedt die .env mit audit.AUDIT_DIR auf ein Temp-Verzeichnis umgelenkt und stellt sie danach wieder her (Unterprozess mit TAXGRAPH_AUDIT_DIR als "echter" Ablage und einer .env aus ungueltigem UTF-8; Positivkontrolle ohne conftest: genau eine Zeile). Nur Python-Problem: Rust laedt die Env-Dateien mit der Konfig als Parameter (rust/api/src/konfig.rs lade_env_dateien), es gibt kein globales AUDIT_DIR und keine pytest-Sitzung
 tests/test_dateirechte.py	148	7	0	INTEGRATION	produkt/auth, store (file perms)	0600 for secret files; Rust: single write helper with OpenOptions::mode(0o600) + 1 test
 tests/test_datenwurzel_ausserhalb_repo.py	347	12	2	NOT_PORTED	produkt/store (data root)	Konfig::aus_env als einziger Konstruktor (rust/api/src/konfig.rs:48; im Produktcode gerufen von zustand.rs:39 und main.rs:54, einziger Leser von TAXGRAPH_DATEN/XDG_DATA_HOME), XDG_DATA_HOME von Hand statt directories-Crate. Kein Import-Zeit-Global -> Pythons Zwei-Repraesentationen-Defekt (api_constants.FAELLE beim Import gebunden vs _daten_wurzel() je Aufruf) kann hier nicht entstehen. Der xfail test_faelle_und_daten_wurzel_laufen_nicht_auseinander ist in Rust richtig -> normaler gruener Test rust/api/tests/datenwurzel.rs::eine_wurzel_gilt_sofort_und_fuer_jeden_aufruf (+ xdg_konvention_und_leerzeichen_zaehlen_wie_ungesetzt); Gegenprobe: OnceLock-Cache in aus_env -> beide rot
 tests/test_dba_einkunftsart_routing.py	182	20	0	GOLDEN	produkt/haut/api_constants (DBA_METHOD_MAP)	DBA Polen method per Einkunftsart table; minority: exhaustive match on (Staat,Einkunftsart) enums
-tests/test_deckt_ab_freeze.py	143	7	0	TOOLING	pipeline/quellen	deckt_ab freeze gate
 tests/test_deklaration_grenzen.py	261	3	0	INTEGRATION	produkt/haut/api (/deklaration,/einreichen)	[deps: http-local] unconfirmed values absent, sperre on einreichen
 tests/test_deklarations_abdeckung.py	184	9	0	PROPERTY	produkt/mapping/est_mapping vs bindung (deklariere, Tabellen)	Rust-Gegenstueck rust/elster/src/abdeckung.rs (cfg(test)-Modul, 6 Tests, ohne Schema und ohne Python; Weg B voll W8): jedes eingetragene Kz erscheint in der Deklaration, jedes Feld ohne Kz ist nicht_deklariert oder Transform-Quelle, kein Phantom-Kz, Person-B-Kz sind Person-A-Kz, Transform-Konfig stimmig (Quellen existieren, keine Kz-Kollision, Ziel kollidiert nicht). NichtDeklariert existiert in Rust (Deklaration.nicht_deklariert); die feld_id-Eindeutigkeit prueft RegistryFehler::DoppelteFeldId. Entfaellt: die Negativproben (Tamper am Ergebnis), die der Python-Pruefer selbst pruefen; der Boden von 300 Eintraegen ersetzt die Positivkontrolle es_gibt_ueberhaupt_bindungen_und_der_fall_traegt_sie
 tests/test_deklaration_umgeht_waechter_gepinnt.py	109	3	2	NOT_PORTED	produkt/haut/api (/deklaration)	Deklaration only constructible via Sperrgrund guard (Freigegeben<Deklaration>) -> endpoint cannot bypass. xfail test_deklaration_erkennt_widerspruch_NICHT_bug_gepinnt = Rust-Gegenstueck rust/api/tests/offene_defekte.rs::deklaration_umgeht_den_waechter_nicht (2 gruene Kontrollen daneben). ZWEI Blocker, in dieser Reihenfolge: (1) GET /fall/{id}/deklaration ist 501-Stub (api/src/routen/lesen.rs:65); (2) nach der Portierung fehlt der Aufruf von an_gesamt_sperrgrund, anders als /ergebnis und /einreichen. Ob /deklaration sperren SOLL oder warnen, ist offen: decisions/deklaration-darf-verweigern.md (Option 1 empfohlen, nicht entschieden) — der Test verlangt deshalb nur, was in beiden Optionen gilt: keine Antwort, die den Widerspruch als vollstaendig ausgibt
@@ -74,8 +88,6 @@ tests/test_differential_zone_a.py	84	1	0	PROPERTY	produkt/mapping/est_mapping + 
 tests/test_differential_zone_b.py	251	5	0	PROPERTY	produkt/mapping/est_mapping + elster_xml	see zone_a
 tests/test_differential_zone_c.py	205	3	0	PROPERTY	produkt/mapping/est_mapping + elster_xml	see zone_a (incl. Person-B fields)
 tests/test_differential_zone_d.py	239	5	0	PROPERTY	produkt/mapping/est_mapping + elster_xml	see zone_a
-tests/test_ebilanz_feldmapping.py	143	7	0	NOT_PORTED	ebilanz/feldmapping.yaml	serde deny_unknown_fields; status enum sicher{rule_id}/unklar{begruendung}; taxonomie_konzept gegen Konzept-enum: Luecke offen
-tests/test_ebilanz_katalog.py	215	10	0	TOOLING	ebilanz/katalog, linkbase	XBRL linkbase parsing -> catalogue generation; pinned counts
 tests/test_ehepaar_gegenprobe.py	167	2	0	GOLDEN	elster/elster_xml + bescheid	[deps: catala] Zusammenveranlagung 2x50k; minority: A/B symmetry property
 tests/test_eingangsfrage_zuerst.py	331	9	0	PROPERTY	produkt/traverser/traverser	existence before feature questions (same property as detailfrage)
 tests/test_einheiten.py	118	8	0	NOT_PORTED	produkt/engine/runner, intervall	[deps: catala] Cent/Euro newtypes -> unit mix does not compile
@@ -110,18 +122,14 @@ tests/test_fragetext_behauptet_nichts.py	141	5	0	NOT_PORTED	produkt/bindung (fra
 tests/test_fragetexte_anrede.py	80	3	0	NOT_PORTED	produkt/bindung (fragetext)	seit loeschplan-v4 Stapel 1c rust/bindung/tests/texte_lesbar.rs::kein_fragetext_siezt (Fragetext und Kurzhilfe jedes fragbaren Felds, Boden 500, gemessen 682) und ::die_muster_greifen_ueberhaupt
 tests/test_gate_naht_guard_liest_zustand.py	273	8	0	NOT_PORTED	produkt/bescheid/bescheid_deklaration + runner	[deps: catala,http-local] der Ring nimmt EINEN typisierten Snapshot<Z: Marke> (rust/bescheid/src/zweige/snapshot.rs:28,41) -> kann nicht zwei Sichten lesen; der Guard liest daneben &Felder; minority INTEGRATION
 tests/test_gate_polaritaet.py	357	9	0	PROPERTY	produkt/traverser/traverser (relevanz)	normal-case answer never disables a rule; enum GateArt{Tatbestand,Deklaration}: kein Ersatz gebaut - Luecke offen
-tests/test_gate_semantik.py	629	58	0	TOOLING	pipeline/run, cascade, yamlstrict	[deps: catala mentions] cascade gate semantics
-tests/test_gettsim_crosscheck.py	84	4	0	TOOLING	oracle/gettsim/golden_crosscheck	[deps: catala] GETTSIM allowlist; minority GOLDEN
 tests/test_gewinn_partner_ring.py	362	10	0	PROPERTY	produkt/bescheid/bescheid_einkuenfte	[deps: catala] symmetry Person A/B for §§13-18 Gewinn
 tests/test_gewinn_quelle_offen_trifft_alle_betriebsarten.py	152	2	3	PROPERTY	produkt/bescheid/bescheid_deklaration	for all Betriebsart (exhaustive enum) gewinn_quelle_offen behaves identically; xfail test_euer_und_passende_summe_liefert_keinen_bescheid[gewerbe|land_forst|selbstaendig] = 3 Rust-Gegenstuecke rust/bescheid/tests/offene_defekte.rs::gewinn_quelle_offen_{gewerbe,land_forst,selbstaendig}: gewinn_quelle_offen (sperre/einkunft.rs, fn gewinn) sperrt bei Direktwert>0 UND EUeR>0 ohne gewinn_betriebsart zu fragen, auch wenn die Summe zur EUeR passt
-tests/test_golden_anker_freeze.py	117	4	0	TOOLING	golden/cases loader + pipeline.gates	[deps: catala] anchor freeze
 tests/test_golden_fallzahl.py	92	2	0	TOOLING	golden/golden_lauf.py (Fallzahl)	[deps: catala] Fallzahl 135 des Python-Golden-Laufs: Test 1 zaehlt golden/cases/*.yaml, Test 2 liest die Schlusszeile des Laufs als Prozess und zaehlt dessen Ergebniszeilen OK/FAIL (ohne Catala-Engine rot, kein Skip); die Zahl steht dreifach, Ersatz fuer Test 1 sind die Rust-Pins rust/bescheid/tests/golden_kopf.rs (ak1_korpus_da_und_in_der_gemessenen_zahl) und rust/engine/tests/golden_werte.rs (fallzahl_ist_135); Test 2 bleibt mit dem Python-Lauf; minority GOLDEN
 tests/test_gwg_direktwert_quelle.py	255	10	0	NOT_PORTED	produkt/bescheid/bescheid_einkuenfte + bescheid_deklaration	guard and EUeR switch share one const set -> cannot diverge
 tests/test_gwg_tatbestand_sperre.py	309	10	0	PROPERTY	produkt/bescheid/bescheid_deklaration	fail-closed: open GWG Tatbestand => Sperre. Seit 2026-10-03 ist auch ein GWG ohne Sofortabzug sichtbar offen statt still 0: bestaetigt "netto: nein" => gwg_mehrwertsteuer_offen, nicht selbstaendig nutzbar / ueber 800 EUR / ueber 250 EUR ohne Verzeichnis => gwg_abschreibung_offen. Rust-Gegenstuecke ohne #[ignore] in rust/bescheid/tests/offene_defekte.rs: gwg_ohne_sofortabzug_ist_offen_nicht_stille_null, gwg_sofortabzug_bleibt_wo_er_zusteht, gwg_vorlaeufiges_nein_ist_keine_antwort; beide Seiten gegeneinander: rust/parity/tests/bescheid_deklaration_paritaet.rs::gezielte_faelle
 tests/test_haushalt_35a_10b.py	97	7	0	GOLDEN	golden/runner (catala_p35a/p10b)	[deps: catala] accessor seeds
 tests/test_hausnummer_zusatz.py	191	9	0	INTEGRATION	produkt/bindung (stammdaten_hausnummerzusatz) + produkt/store + produkt/eingang/elster_xml	[deps: http-local; AK4 und die Schema-Probe brauchen das ERiC-E10-XSD] Der Hausnummerzusatz hat ein Bindungsfeld (Kz E0101207, Laenge 1-6, kein Zeilenumbruch): AK1 Eintrag und Scheibenlisten, AK2 Deklaration und XML neben E0101206, AK3 Grenzen im Store und ueber POST /event (422), AK4 der Zusatz erreicht <AbsStr>. Rust: rust/bescheid/tests/hausnummer_zusatz.rs (AK1-AK3, hermetisch) und rust/bescheid/tests/einreichung_e2e.rs::hausnummer_zusatz (AK2/AK4, Byte fuer Byte gegen das Python-XML).
 tests/test_haut_chat.py	435	13	0	INTEGRATION	produkt/haut/api (/chat)	[deps: catala partial] LLM suggests never sets; trait fake
-tests/test_hinweis_provenance.py	66	4	0	TOOLING	pipeline/run	hinweis provenance in report.json
 tests/test_idor_und_csp.py	232	8	0	INTEGRATION	produkt/haut/api (vorjahr) + server headers	[deps: http-local] IDOR + CSP headers
 tests/test_import_identitaet_gate.py	80	3	0	NOT_PORTED	produkt/haut/server bootstrap	dual module identity -> one crate path per module in Rust
 tests/test_instanz_eins_wird_abgewiesen.py	119	8	0	INTEGRATION	produkt/haut/api (POST /event) + est_mapping, flag_check (Instanzzaehler)	x__1 ist keine Instanz: die Schreib-Route weist es ab, jeder Leser versteht den Zaehler gleich (Regel [2-9]|[1-9][0-9]+). Rust: rust/api/tests/event_naht.rs::instanz_eins_wird_abgewiesen_und_der_rest_geht_durch (ohne Python), Python gegen Rust in rust/parity/tests/api_http_paritaet.rs::instanz_eins_wird_abgewiesen, parse_instanz gegen Python in rust/parity/tests/elster_paritaet.rs::kz_format_sweep und rust/parity/tests/feld_kennung_paritaet.rs::feld_kennung_gegen_python
@@ -129,8 +137,6 @@ tests/test_instanz_kern.py	181	11	0	PROPERTY	produkt/mapping/est_mapping + store
 tests/test_instanz_luecke.py	161	3	0	PROPERTY	produkt/traverser (naechste_fragen)	[deps: http-local] all instances 1..N stay queued until answered
 tests/test_instanz_luecke_wird_gemeldet.py	255	11	0	PROPERTY	produkt/traverser/traverser	skipped instance is reported
 tests/test_intervall_relevanz_naht.py	115	2	0	PROPERTY	produkt/haut/api (stand) + intervall	[deps: catala] header respects relevanz like /ergebnis
-tests/test_item_registry.py	238	19	0	TOOLING	pipeline/item_registry	registry ratchet
-tests/test_judge_mehrheit.py	371	26	0	TOOLING	pipeline/judge	majority judge
 tests/test_kap_antrag_kz.py	56	1	0	GOLDEN	produkt/bescheid_deklaration (_mit_ring_werten)	Kz E1900401 declarable
 tests/test_kap_antrag_person_b.py	199	6	0	PROPERTY	produkt/mapping/est_mapping + elster_xml	[deps: eric] Antrag in both person containers: A/B symmetry; minority GOLDEN
 tests/test_kap_deklaration_verschweigt_topf.py	153	2	1	PROPERTY	produkt/bescheid/bescheid_deklaration	Topf amount never silently dropped when aggregate=0; xfail test_topf_wird_versteuert_aber_als_null_deklariert = Rust-Gegenstueck rust/bescheid/tests/offene_defekte.rs::kap_topf_versteuert_aber_als_null_deklariert: elster::deklariere schreibt E1900701 1:1 aus dem rohen kap_kapitalertraege, der Topf kap_gewinn_sonstige hat kein Kz
@@ -193,7 +199,6 @@ tests/test_p10_1_9_schulgeld_accessor.py	57	8	0	GOLDEN	golden/runner.py (catala_
 tests/test_p10_1_9_schulgeld_ring.py	179	2	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	ring differential; needs: Catala
 tests/test_p10_1a_accessor.py	46	4	0	GOLDEN	golden/runner.py (catala_p10_1a)	Realsplitting accessor seeds; needs: Catala
 tests/test_p10_1a_ring.py	204	3	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	ring differential + Zustimmungs-Gate; needs: Catala
-tests/test_p101_mobilitaetspraemie_accessor.py	123	9	0	GOLDEN	golden/runner.py (catala_p101)	accessor seeds; needs: Catala
 tests/test_p101_ring.py	203	4	0	GOLDEN	produkt/bescheid/bescheid_zweige.py	/ergebnis mobilitaetspraemie_cent hand values; needs: Catala
 tests/test_p10_kv_pv.py	87	5	0	GOLDEN	golden/runner.py (catala_p10_kv_pv)	Hoechstbetrag cases; needs: Catala
 tests/test_p16_4_freibetrag_fragt_den_gewinn.py	140	6	0	INTEGRATION	produkt/traverser/traverser.py	traverser question flow; borderline: splitting regel_id into two typed rules would make it NOT_PORTED
@@ -242,13 +247,10 @@ tests/test_pflichtfelder_am_writer.py	100	3	0	GOLDEN	produkt/eingang/elster_xml 
 tests/test_pflichtfelder_eric_sweep.py	242	3	0	INTEGRATION	produkt/mapping/est_mapping.py	sweep against real ERiC; needs: ERiC
 tests/test_pflichtfelder_luecken_ohne_leser.py	228	3	8	INTEGRATION	produkt/elster (Deklaration::pflichtfelder_luecken) + api (/einreichen)	Zwei Vollstaendigkeitsbegriffe: eingaben_konsistent (stimmt das Vorhandene) vs pflichtfelder_luecken (fehlt etwas). BEIDE xfails haben ein Rust-Gegenstueck: test_abgabegate_nennt_die_pflichtfeldluecke_selbst -> rust/api/tests/offene_defekte.rs::abgabegate_nennt_die_pflichtfeldluecke_selbst (Blocker in dieser Reihenfolge: (1) POST /einreichen ist 501-Stub, api/src/routen/schreiben.rs:25; (2) danach fehlt der Leser von pflichtfelder_luecken — elster::Deklaration hat den Accessor, kein Handler ruft ihn; erwartet 409 deklaration_unvollstaendig mit bruttoarbeitslohn); test_rentner_gesamt_meldet_keine_felder_die_sein_kegel_nie_fragt -> rust/bescheid/tests/offene_defekte.rs::rentner_gesamt_meldet_keine_felder_die_sein_kegel_nie_fragt (der Kegel von rentner_gesamt kennt aus 'alle_oder_keins' nur p36_lohnsteuer, nicht bruttoarbeitslohn/steuerklasse; ERiC verlangt sie trotzdem, rc=610001002). Die Kontrolle test_kontrollzeile_vollstaendiger_fall_hat_keine_luecke (kein xfail) hat kein eigenes Rust-Gegenstueck. Vault: tickets/zwei-vollstaendigkeitsbegriffe-einer-davon-gelesen.md, tickets/rentner-scheibe-fragt-lohnsteuer-ohne-die-zwei-pflichtfelder.md
 tests/test_pii_filter.py	442	29	0	PROPERTY	produkt/haut (pii filter)	for all texts: no IdNr/IBAN survives; PII-free text unchanged
-tests/test_praezedenz.py	238	13	0	TOOLING	pipeline/ui/praezedenz.py	pipeline triage UI stays Python
 tests/test_preflight_erreichbarkeit.py	114	3	0	NOT_PORTED	produkt/konsistenz/preflight.py	PreflightErgebnis wird in rust/api/src/preflight.rs seit loeschplan-v4 Stapel 1b ohne `..` zerlegt: eine achte Liste bricht den Bau (E0027), statt still nicht ausgeliefert zu werden; Ampel und Items: rust/api/tests/lesen_naht.rs::preflight_ampel_und_items (Ampel/PreflightErgebnis: rust/konsistenz/src/preflight.rs:214,242)
 tests/test_preflight_plausibilitaet.py	378	40	0	GOLDEN	produkt/konsistenz/preflight.py	real-run plausibility cases
 tests/test_preflight.py	208	7	0	INTEGRATION	produkt/haut/api.py	GET /fall/{id}/preflight incl. owner check
 tests/test_progression_gehoert_in_gesamt.py	33	3	0	PROPERTY	produkt/bescheid/bescheid_zweige.py	fail-closed: Lohnersatz in an_gesamt always gates
-tests/test_provenance_stamp.py	160	12	0	TOOLING	pipeline/provenance.py	pipeline stays Python
-tests/test_quellen.py	59	4	0	TOOLING	pipeline/quellen.py	pipeline stays Python
 tests/test_realsplitting_krankengeld_kuerzung.py	165	8	0	GOLDEN	golden/runner.py; bescheid_abzuege.py	4-%-Kuerzung cases; needs: Catala
 tests/test_rechenweg_durchgereicht.py	118	4	0	NOT_PORTED	produkt/haut/api.py	typed Ergebnis{kette: Kette} response struct -> no dict key dropped at seam
 tests/test_rechenweg_endstand.py	131	2	0	INTEGRATION	produkt/bescheid/bescheid_zweige.py	Rechenweg-Kette aus dem ENDSTAND (p24a): § 32d-Fall endet bei der gezahlten Steuer (nicht kette=None); zwoelf Faelle mit denselben Konstanten wie rust/api/tests/kette_endstand_hermetisch.rs (gesamt + Kinder + rentner)
@@ -277,7 +279,6 @@ tests/test_screening_partner.py	363	13	0	PROPERTY	produkt/traverser/traverser.py
 tests/test_sechs_abgabe_luecken_blockmatrix.py	211	3	0	INTEGRATION	produkt/mapping/est_mapping.py	nacktes Kernfeld -> ERiC block matrix; needs: ERiC
 tests/test_server_sigterm.py	143	2	0	INTEGRATION	produkt/haut/server.py	process-level SIGTERM shutdown (tokio graceful shutdown)
 tests/test_slot_fn_reader_existiert.py	288	3	0	NOT_PORTED	produkt/haut/api.py	AST scan -> slots as struct fields, not string keys; rename is compile error
-tests/test_snapshot.py	173	12	0	TOOLING	pipeline/snapshot.py	pipeline stays Python
 tests/test_solz_accessor.py	89	10	0	GOLDEN	golden/runner.py (catala_solz)	hand values; needs: Catala
 tests/test_solz_ring.py	416	8	0	GOLDEN	produkt/bescheid/bescheid_zweige.py	solz_cent per Scheibe; needs: Catala
 tests/test_sonderausgaben_p10c.py	78	4	0	GOLDEN	produkt/bescheid/bescheid_abzuege.py	§10c floor cases; needs: Catala
@@ -298,10 +299,8 @@ tests/test_store_zeichensatz.py	293	13	0	INTEGRATION	produkt/store (Auflage Z) +
 tests/test_testmap_vollstaendig.py	74	3	0	TOOLING	(Repo-Lint fuer rust/TESTMAP.tsv)	Jede Datei in tests/ und jede Quelle in rust/*/tests/ hat eine Zeile in dieser Karte (Spalte 1 = Pfad); ohne Zeile rot. Bleibt ein Repo-Lint in Python wie tests/test_backlog_verweise.py; hermetisch, laeuft in make unit; python3 tests/test_testmap_vollstaendig.py nennt Zahl und Liste der fehlenden Dateien
 tests/test_thema_am_stueck_im_durchgang.py	264	5	0	PROPERTY	produkt/traverser/traverser.py	topic contiguity over a whole run
 tests/test_traverser.py	441	29	0	INTEGRATION	produkt/traverser/traverser.py	traverser core; minority rules.yaml sweep -> serde
-tests/test_triage_log_bindung.py	124	3	0	TOOLING	pipeline/item_registry	pipeline stays Python
 tests/test_ueberlauf_waechter_text.py	437	15	0	TOOLING	rust/catala-sys/csrc/shim.c; rust/Cargo.toml [profile.dev]; Makefile serve	[deps: none] Textpruefung ohne Catala, Rust-Bau und Python-Orakel: mpz_get_si nur im Makro TG_AUS; make serve baut dev, dort overflow-checks = true. Beide Waechter gegen Text-Mutanten und Umformatierung geprueft. Rust-Gegenstuecke (Python entfaellt, Julius 2026-10-05): rust/catala-sys/tests/shim_ueberlauf_waechter.rs (Waechter 1), rust/api/tests/ueberlauf_profil_waechter.rs (Waechter 2)
 tests/test_ui_a11y.py	179	2	0	INTEGRATION	produkt/haut (static UI)	Playwright + axe-core; needs: Playwright, network (CDN)
-tests/test_ui_backend.py	196	12	0	TOOLING	pipeline/ui/service.py	pipeline triage UI stays Python
 tests/test_ui_chat_aussagen.py	685	17	0	INTEGRATION	produkt/haut (UI + api_llm)	needs: Playwright
 tests/test_ui_chat_wartezustand.py	424	10	0	INTEGRATION	produkt/haut (UI)	needs: Playwright
 tests/test_ui_feldtypen.py	326	10	0	INTEGRATION	produkt/haut (UI)	needs: Playwright

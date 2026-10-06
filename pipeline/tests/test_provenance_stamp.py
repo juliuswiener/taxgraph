@@ -12,7 +12,7 @@ deterministisch, der Stamp traegt ihn, die Rollen-Ladung ist strikt.
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "pipeline"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "pipeline"))
 
 import provenance as PV  # noqa: E402
 from client import RoleConfig, Completion  # noqa: E402

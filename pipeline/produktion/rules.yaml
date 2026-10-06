@@ -1940,7 +1940,7 @@ regeln:
   # 0 von allen gebundenen Feldern kaeme ohne aus), und eine Pflichtangabe ohne Rechenwirkung
   # hatte damit keinen Platz. Julius-Entscheid 2026-08-15: Deklarations-Pflichtfelder duerfen eine
   # eigene Bedingung bekommen — mit Ankerpflicht, also einem woertlichen Gesetzeszitat, das das
-  # deckt_ab-Freeze-Gate (tests/test_deckt_ab_freeze.py) gegen die Quelldatei prueft.
+  # deckt_ab-Freeze-Gate (pipeline/tests/test_deckt_ab_freeze.py) gegen die Quelldatei prueft.
   - bedingung: pflege_persoenlich_in_eu_ewr
     deckt_ab: die Pflege entweder in seiner Wohnung oder in der Wohnung des Pflegebedürftigen persönlich durchführt und diese Wohnung in einem Mitgliedstaat der Europäischen Union oder in einem Staat gelegen ist, auf den das Abkommen über den Europäischen Wirtschaftsraum anzuwenden ist
     quelle: § 33b Abs. 6 S. 1 EStG

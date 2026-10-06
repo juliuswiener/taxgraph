@@ -82,7 +82,7 @@ python pipeline/produktion/run.py --regate   # rekonstruiert das Verdikt aus Sna
 Ein Live-Report in `runs/` schlaegt den Snapshot (in-flight vor Archiv); der
 Snapshot ist kanonisch nur, wenn kein Live-Report existiert. Ein manipulierter
 Snapshot (catala_a geaendert, Hash nicht) failt hart — nie stiller PASS
-(`tests/test_snapshot.py`). Snapshots nach einer Abnahme nachziehen:
+(`pipeline/tests/test_snapshot.py`). Snapshots nach einer Abnahme nachziehen:
 `python pipeline/snapshot.py write --all`.
 
 ## Repo-Layout

@@ -4,7 +4,7 @@
 # Jede Zeile: welche produktive Regel (rule_id + signature.output) welche
 # E-Bilanz-Position (taxonomie_konzept, de-gaap-ci-Name) speist. kategorie +
 # Existenz sind gegen ebilanz/katalog_6.7.json + katalog_6.8.json geprueft
-# (BEIDE Versionen kategorie-gleich; Gate tests/test_ebilanz_feldmapping.py).
+# (BEIDE Versionen kategorie-gleich; Gate pipeline/tests/test_ebilanz_feldmapping.py).
 #
 # HARTE REGEL (Instructor msg 2129): keine geratenen Zuordnungen. Unsichere
 # Mappings status: unklar mit Begruendung. Lieber wenige sichere als viele

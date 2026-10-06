@@ -6,8 +6,8 @@
 //! blieb bisher unbemerkt (eine geloeschte oder umbenannte Testdatei, deren Zeile weiter in den Zaehlungen
 //! des Cutover-Plans steht).
 //!
-//! Gesucht wird wie im Python-Test: `tests/**/*.py` (nur solange `tests/` besteht), `rust/*/tests/**/*.rs`,
-//! `rust/*/tests/**/*.py`, `rust/*/tests/**/*.c`. Daten (yaml, txt, proptest-regressions) und `#[cfg(test)]` im
+//! Gesucht wird wie im Python-Test: `tests/**/*.py` (nur solange `tests/` besteht), `pipeline/tests/**/*.py`
+//! (die Stufe-B-Tests, `make unit-stufe-b`), `rust/*/tests/**/*.rs`, `rust/*/tests/**/*.py`, `rust/*/tests/**/*.c`. Daten (yaml, txt, proptest-regressions) und `#[cfg(test)]` im
 //! Quelltext zaehlen nicht. Versteckte Ordner, `__pycache__` und Bauverzeichnisse (`rust/target*`) bleiben aus.
 //!
 //! Grenzen: Der Test sucht die Dateien, nicht ihren Inhalt. Spalte 2 und 3 halten den Stand bei der Anlage; ob
@@ -65,9 +65,10 @@ fn sammle(dir: &Path, endungen: &[&str], aus: &mut Vec<PathBuf>) {
 /// Relative Pfade (mit `/`) aller Testdateien unter `wurzel`.
 fn testdateien(wurzel: &Path) -> BTreeSet<String> {
     let mut pfade = Vec::new();
-    let python = wurzel.join("tests");
-    if python.is_dir() {
-        sammle(&python, &["py"], &mut pfade);
+    for python in [wurzel.join("tests"), wurzel.join("pipeline/tests")] {
+        if python.is_dir() {
+            sammle(&python, &["py"], &mut pfade);
+        }
     }
     for e in std::fs::read_dir(wurzel.join("rust")).unwrap() {
         let krate = e.unwrap().path();
@@ -214,8 +215,8 @@ fn jede_zeile_hat_sieben_spalten_und_stimmige_werte() {
     );
 }
 
-/// Der Finder sieht den echten Baum: die Datei selbst und, solange `tests/` besteht, auch Python-Testdateien.
-/// Ein Finder, der kaum etwas findet, faellt ausserdem an den Zeilen ohne Datei auf.
+/// Der Finder sieht den echten Baum: die Datei selbst und, solange `tests/` und `pipeline/tests/` bestehen, auch deren
+/// Python-Testdateien. Ein Finder, der kaum etwas findet, faellt ausserdem an den Zeilen ohne Datei auf.
 #[test]
 fn der_finder_sieht_den_echten_baum() {
     let wurzel = repo_wurzel();
@@ -231,6 +232,13 @@ fn der_finder_sieht_den_echten_baum() {
             "tests/ besteht, aber der Finder sieht keine Python-Testdatei"
         );
     }
+    if wurzel.join("pipeline/tests").is_dir() {
+        assert!(
+            dateien.iter().any(|d| d.starts_with("pipeline/tests/test_")
+                && Path::new(d).extension().is_some_and(|x| x == "py")),
+            "pipeline/tests/ besteht, aber der Finder sieht keine Python-Testdatei"
+        );
+    }
 }
 
 fn schreibe(wurzel: &Path, pfad: &str) {
@@ -239,8 +247,9 @@ fn schreibe(wurzel: &Path, pfad: &str) {
     std::fs::write(p, "").unwrap();
 }
 
-/// Der Finder auf einem gebauten Baum: Tiefe, alle drei Endungen unter `rust/`, Python nur unter `tests/`; Daten,
-/// `__pycache__`, versteckte Ordner, Bauverzeichnisse und `src/` bleiben aus; ohne `tests/` bricht er nicht ab.
+/// Der Finder auf einem gebauten Baum: Tiefe, alle drei Endungen unter `rust/`, Python nur unter `tests/` und
+/// `pipeline/tests/`; Daten, `__pycache__`, versteckte Ordner, Bauverzeichnisse und `src/` bleiben aus; ohne `tests/`
+/// und ohne `pipeline/tests/` bricht er nicht ab.
 #[test]
 fn der_finder_folgt_dem_muster_und_laesst_fremdes_aus() {
     let wurzel = std::env::temp_dir().join(format!("testmap-waechter-{}", std::process::id()));
@@ -251,6 +260,12 @@ fn der_finder_folgt_dem_muster_und_laesst_fremdes_aus() {
         "tests/__pycache__/test_a.py",
         "tests/.pytest_cache/x.py",
         "tests/daten.txt",
+        "pipeline/tests/test_c.py",
+        "pipeline/tests/sub/test_d.py",
+        "pipeline/tests/__pycache__/test_c.py",
+        "pipeline/tests/.pytest_cache/x.py",
+        "pipeline/tests/daten.yaml",
+        "pipeline/quellen.py",
         "rust/x/tests/y.rs",
         "rust/x/tests/sub/z.rs",
         "rust/x/tests/sub/tief/w.py",
@@ -267,6 +282,8 @@ fn der_finder_folgt_dem_muster_und_laesst_fremdes_aus() {
     let erwartet: BTreeSet<String> = [
         "tests/test_a.py",
         "tests/sub/test_b.py",
+        "pipeline/tests/test_c.py",
+        "pipeline/tests/sub/test_d.py",
         "rust/x/tests/y.rs",
         "rust/x/tests/sub/z.rs",
         "rust/x/tests/sub/tief/w.py",
@@ -277,6 +294,7 @@ fn der_finder_folgt_dem_muster_und_laesst_fremdes_aus() {
     .collect();
     let mit_tests = testdateien(&wurzel);
     std::fs::remove_dir_all(wurzel.join("tests")).unwrap();
+    std::fs::remove_dir_all(wurzel.join("pipeline/tests")).unwrap();
     let ohne_tests = testdateien(&wurzel);
     let _ = std::fs::remove_dir_all(&wurzel);
     assert_eq!(mit_tests, erwartet);

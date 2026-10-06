@@ -11,7 +11,7 @@ VENV312  := oracle/.venv312/bin/activate
 
 .PHONY: all s01 s03 tests build-python s02 clean backup restore serve serve-python
 
-all: unit tests s02
+all: unit unit-stufe-b tests s02
 
 ## Run all Catala/Clerk scope tests (S0.1 tariff, S0.3 Arbeitszimmer/Homeoffice).
 tests:
@@ -159,7 +159,7 @@ s02: build-python
 ## reports/review/2026-07-16-gettsim-crosscheck.md + runs the gate.
 gettsim-crosscheck: build-python
 	. $(VENV312); python oracle/gettsim/golden_crosscheck.py
-	. $(VENV312); python -m pytest tests/test_gettsim_crosscheck.py -q
+	. $(VENV312); python -m pytest pipeline/tests/test_gettsim_crosscheck.py -q
 
 ## Phase-1 deliverable: Arbeitnehmerfall end-to-end (Bruttolohn -> festzusetzende ESt)
 ## differential vs GETTSIM. Regenerates reports/p1-arbeitnehmerfall.md.
@@ -289,6 +289,15 @@ ui-rust-gegenprobe:
 	@if UI_RUST_GEGENPROBE=1 PYTHONPATH=tools/ui_rust python3 -m pytest -p ui_rust_plugin tests/test_ui_login.py -q -p no:cacheprovider; \
 	then echo "GEGENPROBE FEHLGESCHLAGEN: die Tests blieben gruen, obwohl Rust sofort endet"; exit 1; \
 	else echo "Gegenprobe rot, wie gewollt: ohne Rust-Prozess laufen die UI-Tests nicht"; fi
+
+## Stufe-B-Tests (pipeline/, ebilanz/, GETTSIM-Gegenprobe) unter pipeline/tests/. Sie brauchen weder
+## produkt/ noch tests/conftest.py noch Catala (gemessen 2026-10-06: gruen in einem Baum ohne produkt/,
+## tests/ und rust/) und laufen deshalb auch dann weiter, wenn `tests/` geloescht ist. Ohne venv312
+## ueberspringt sich test_gettsim_crosscheck (1 skipped); `make gettsim-crosscheck` faehrt ihn echt.
+## Nur 14 s, daher ohne -n. Steht hier und nicht bei `unit`, weil REWRITE_PLAN.md und
+## tools/docs_zahlen_pruefen.py Makefile-Zeilen verankern (113, 235-253); Zeilen davor verschieben sie.
+unit-stufe-b:
+	python3 -m pytest pipeline/tests -q
 
 clean:
 	$(OPAM_ENV); clerk clean || true

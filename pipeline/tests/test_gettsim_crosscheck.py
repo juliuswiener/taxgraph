@@ -8,8 +8,8 @@ Verankert das Ergebnis von oracle/gettsim/golden_crosscheck.py deterministisch:
      Klasse oder ein echter Catala-Fehler) schlaegt rot.
 
 GETTSIM steckt nur im venv312 (oracle/.venv312). Ohne gettsim wird der Test
-uebersprungen (laeuft in `make unit` mit reinem python3 als skip; aktiv unter
-`. oracle/.venv312/bin/activate && python -m pytest tests/test_gettsim_crosscheck.py`
+uebersprungen (laeuft in `make unit-stufe-b` mit reinem python3 als skip; aktiv unter
+`. oracle/.venv312/bin/activate && python -m pytest pipeline/tests/test_gettsim_crosscheck.py`
 bzw. `make gettsim-crosscheck`).
 """
 from __future__ import annotations
@@ -21,7 +21,7 @@ import pytest
 
 pytest.importorskip("gettsim", reason="GETTSIM nur im venv312 verfuegbar")
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, os.path.join(ROOT, "oracle", "gettsim"))
 
 import golden_crosscheck as GC  # noqa: E402
