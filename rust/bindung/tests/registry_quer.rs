@@ -313,7 +313,7 @@ fn kein_fragbares_bool_gate_auf_einem_sammel_scope() {
 
 /// `(Ort, Text)` einer festen Jahreszahl, die kein VZ-Bezug ist; der Grund steht daneben. Wer eine neue
 /// Ausnahme braucht, traegt sie hier mit Grund ein, statt den Test zu lockern.
-const JAHR_AUSNAHMEN: [(&str, &str, &str); 3] = [
+const JAHR_AUSNAHMEN: [(&str, &str, &str); 4] = [
     (
         "kind_geburtsdatum",
         "hilfe_kurz",
@@ -321,6 +321,11 @@ const JAHR_AUSNAHMEN: [(&str, &str, &str); 3] = [
     ),
     (
         "kind_anderer_elternteil_geburtsdatum",
+        "hilfe_kurz",
+        "Formatbeispiel TT.MM.JJJJ (z.B. 01.01.1985), kein VZ-Bezug.",
+    ),
+    (
+        "kind_anderer_elternteil_tod_am",
         "hilfe_kurz",
         "Formatbeispiel TT.MM.JJJJ (z.B. 01.01.1985), kein VZ-Bezug.",
     ),

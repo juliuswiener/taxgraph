@@ -41,12 +41,14 @@ const MIT_LISTE: [Scheibe; 4] = [
     Scheibe::RentnerGesamt,
 ];
 
-/// `(Scheibe, Felder, Kegel)`. Die Zahlen sind der Stand vom 2026-10-05 (`9c07d98e`).
+/// `(Scheibe, Felder, Kegel)`. Die Zahlen sind der Stand vom 2026-10-06 (C2: die beiden Felder
+/// `kind_anderer_elternteil_tod_am` und `kind_anderer_elternteil_ausland_zeitraum` neu in `gesamt`
+/// und `rentner_gesamt`, 352 -> 354 und 250 -> 252; vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 84, 33),
-    (Scheibe::Gesamt, 352, 35),
-    (Scheibe::RentnerGesamt, 250, 28),
+    (Scheibe::Gesamt, 354, 35),
+    (Scheibe::RentnerGesamt, 252, 28),
 ];
 
 /// Felder, die in einer Liste zweimal stehen. `geburtsjahr` stand schon in `SCHEIBEN['rentner_gesamt']`

@@ -97,7 +97,7 @@ pub(super) const SCHEIBEN_AN_GESAMT_KEGEL: [&str; 33] = [
 
 /// `SCHEIBEN['gesamt']["felder"]` = `VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER + GESAMT_VERSORGUNG + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + PARTNER_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN + GESAMT_DBA + GESAMT_P23 + P23_SCREENING + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG + VERPFLEGUNG_EINZELREISE + AGB_TATBESTAND + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER + STEUERKLASSE_FELDER + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 352] = [
+pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 354] = [
     "vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand",
     "vv_sonstige_wk", "vv_entgelt_quote_prozent", "vv_wohnzwecke", "vv_auf_dauer",
     "veranlagung", "bruttoarbeitslohn", "ep_arbeitstage", "ep_entfernung_km",
@@ -127,7 +127,8 @@ pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 352] = [
     "kind_idnr", "kind_vorname", "kind_kindschaftsverhaeltnis_a", "kind_kindschaftsverh_zeitraum_a",
     "kind_geburtsdatum", "kind_familienkasse", "kind_wohnsitz_inland_zeitraum", "kind_kindschaftsverhaeltnis_b",
     "kind_kindschaftsverh_zeitraum_b", "kind_anderer_elternteil_name", "kind_anderer_elternteil_geburtsdatum", "kind_anderer_elternteil_kindschaftsverhaeltnis",
-    "kind_anderer_elternteil_zeitraum", "kind_grad_der_behinderung", "kind_hilflos_blind_taubblind", "kind_hinterbliebenen_uebertragung",
+    "kind_anderer_elternteil_zeitraum", "kind_anderer_elternteil_tod_am",
+    "kind_anderer_elternteil_ausland_zeitraum", "kind_grad_der_behinderung", "kind_hilflos_blind_taubblind", "kind_hinterbliebenen_uebertragung",
     "kind_behinderten_pb_antrag", "kind_pb_nicht_selbst_genutzt", "behinderungsbedingte_aufwendungen", "behinderungsbedingte_aufwendungen_wahlrecht_pb",
     "behinderungsbedingte_aufwendungen_partner", "behinderungsbedingte_aufwendungen_wahlrecht_pb_partner", "fahrtkosten_pausch_gdb80_oder_70g", "fahrtkosten_pausch_ag_bl_tbl_h",
     "geburtsjahr", "fam_alleinstehend", "fam_monate_ohne_voraussetzung", "p35a_mitveranlagung",
@@ -204,7 +205,7 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 
 /// `SCHEIBEN['rentner_gesamt']["felder"]` = `RENTNER_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + GESAMT_PARTNER_KAP + AGB_TATBESTAND`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 250] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 252] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -233,7 +234,8 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 250] = [
     "kind_kv", "kind_pv", "kind_idnr", "kind_vorname",
     "kind_kindschaftsverhaeltnis_a", "kind_kindschaftsverh_zeitraum_a", "kind_geburtsdatum", "kind_familienkasse",
     "kind_wohnsitz_inland_zeitraum", "kind_kindschaftsverhaeltnis_b", "kind_kindschaftsverh_zeitraum_b", "kind_anderer_elternteil_name",
-    "kind_anderer_elternteil_geburtsdatum", "kind_anderer_elternteil_kindschaftsverhaeltnis", "kind_anderer_elternteil_zeitraum", "kind_grad_der_behinderung",
+    "kind_anderer_elternteil_geburtsdatum", "kind_anderer_elternteil_kindschaftsverhaeltnis", "kind_anderer_elternteil_zeitraum",
+    "kind_anderer_elternteil_tod_am", "kind_anderer_elternteil_ausland_zeitraum", "kind_grad_der_behinderung",
     "kind_hilflos_blind_taubblind", "kind_hinterbliebenen_uebertragung", "kind_behinderten_pb_antrag", "kind_pb_nicht_selbst_genutzt",
     "behinderungsbedingte_aufwendungen", "behinderungsbedingte_aufwendungen_wahlrecht_pb", "behinderungsbedingte_aufwendungen_partner", "behinderungsbedingte_aufwendungen_wahlrecht_pb_partner",
     "fahrtkosten_pausch_gdb80_oder_70g", "fahrtkosten_pausch_ag_bl_tbl_h", "geburtsjahr", "fam_alleinstehend",
