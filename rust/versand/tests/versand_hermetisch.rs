@@ -120,6 +120,12 @@ impl Lauf {
         sende(Some(&self.lib), xml, "ESt_2025", &self.zertifikat(), modus)
     }
 
+    /// Jeder erzeugte Rueckgabepuffer wurde freigegeben (und es gab welche).
+    fn puffer_ausgeglichen(&self) -> bool {
+        let erzeugt = self.zaehler("puffer_erzeugt");
+        erzeugt.is_some() && erzeugt == self.zaehler("puffer_freigegeben")
+    }
+
     /// ERiC wurde nicht einmal geladen.
     fn eric_unberuehrt(&self) -> bool {
         self.zaehler("init_zaehler").is_none()
@@ -147,7 +153,13 @@ impl Lauf {
         let args: Vec<String> = args.iter().map(|s| (*s).to_owned()).collect();
         let mut aus = Vec::new();
         let rc = lauf(&args, &env, &mut stdin.as_bytes(), terminal, &mut aus);
-        (rc, String::from_utf8(aus).unwrap())
+        let aus = String::from_utf8(aus).unwrap();
+        // S8 fuer JEDEN Programmlauf: nie die PIN, nie der Zertifikatspfad in der Ausgabe.
+        assert!(
+            !aus.contains(PIN) && !aus.contains(ZERT_NAME),
+            "PIN oder Zertifikatspfad in der Ausgabe von {args:?}:\n{aus}"
+        );
+        (rc, aus)
     }
 
     /// Schreibt ein XML ins Wegwerf-Verzeichnis (je Inhalt eine eigene Datei) und gibt den Pfad.
@@ -308,6 +320,8 @@ fn der_testversand_kommt_mit_flags_crypto_und_xml_bei_eric_an() {
     assert_eq!(l.zaehler("zaehler"), Some(1));
     assert_eq!(l.zaehler("init_zaehler"), Some(1));
     assert_eq!(l.zaehler("beende_zaehler"), Some(1), "EricBeende am Ende");
+    assert_eq!(l.zaehler("puffer_erzeugt"), Some(2), "Rueckgabe- und Serverantwort-Puffer");
+    assert!(l.puffer_ausgeglichen(), "ein Puffer wurde nicht freigegeben");
 }
 
 #[test]
@@ -328,6 +342,7 @@ fn ein_misserfolg_bleibt_ein_misserfolg_und_raeumt_auf() {
     assert!(!a.erfolg());
     assert_eq!(l.datei("zertifikat_geschlossen").unwrap(), "77\n");
     assert_eq!(l.zaehler("beende_zaehler"), Some(1));
+    assert!(l.puffer_ausgeglichen(), "ein Puffer wurde nicht freigegeben");
 }
 
 #[test]
@@ -346,6 +361,18 @@ fn ein_ladefehler_von_eric_ruft_weder_zertifikat_noch_senden() {
         l.sende(XML_TEST, &Modus::Testversand),
         Err(VersandFehler::Eric(EricFehler::Init(5)))
     );
+    assert_eq!(l.zaehler("zertifikat_zaehler"), None);
+    assert_eq!(l.zaehler("zaehler"), None);
+}
+
+#[test]
+fn scheitert_das_anheben_der_meldungsgrenze_wird_nie_gesendet() {
+    let Some(l) = Lauf::neu(&erfolgs_skript()) else { return };
+    std::fs::write(l.steuer("einstellung_rc"), "3").unwrap();
+    assert!(matches!(
+        l.sende(XML_TEST, &Modus::Testversand),
+        Err(VersandFehler::Eric(EricFehler::Einstellung { rc: 3, .. }))
+    ));
     assert_eq!(l.zaehler("zertifikat_zaehler"), None);
     assert_eq!(l.zaehler("zaehler"), None);
 }

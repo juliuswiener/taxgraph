@@ -22,6 +22,7 @@
  * Nur fuer `rust/versand` (der Vergleichslauf sieht davon nichts; die Dateien oben bleiben byte-gleich):
  *   skript           ein Block darf "--SERVER--" tragen: danach der Text fuer den Serverantwort-Puffer
  *   init_zaehler     Zahl der EricInitialisiere-Aufrufe; beende_zaehler: der EricBeende-Aufrufe
+ *   puffer_erzeugt, puffer_freigegeben  Zahl der Rueckgabepuffer, die erzeugt und freigegeben wurden
  *   zertifikat_rc    Rueckgabe von EricGetHandleToCertificate (fehlt die Datei: 0, Handle 77)
  *   zertifikat_pfad, zertifikat_zaehler, zertifikat_geschlossen  was die Zertifikatsfunktionen sahen
  *   gesehen/<n>.crypto  Version, Handle und PIN-LAENGE des Crypto-Parameters (nie die PIN selbst)
@@ -114,6 +115,7 @@ int EricEinstellungSetzen(const char *name, const char *wert) {
 }
 
 void *EricRueckgabepufferErzeugen(void) {
+    zaehle("puffer_erzeugt");
     Puffer *p = malloc(sizeof *p);
     p->text = strdup("");
     return p;
@@ -124,6 +126,7 @@ const char *EricRueckgabepufferInhalt(void *h) {
 }
 
 int EricRueckgabepufferFreigeben(void *h) {
+    zaehle("puffer_freigegeben");
     if (h) {
         free(((Puffer *)h)->text);
         free(h);
