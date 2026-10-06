@@ -26,7 +26,7 @@ import sys
 
 import yaml
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 REGDIR = os.path.join(ROOT, "pipeline", "item_registry")
 sys.path.insert(0, os.path.join(ROOT, "pipeline"))
 

@@ -18,7 +18,7 @@ Instructor-Praezisierungen (2026-07-14):
      NUR, wenn kein Live-Report existiert.
   3. Integritaet: load_snapshot verifiziert sha256(catala_a). Ein manipulierter
      Snapshot (catala_a geaendert, Hash nicht) FAILt hart - nie stiller PASS. Der
-     Negativtest in tests/test_snapshot.py haelt das fest.
+     Negativtest in pipeline/tests/test_snapshot.py haelt das fest.
 
 Nur verified*-Regeln werden gesnapshottet: der Snapshot ist ein Vertrauensanker,
 kein Arbeitsstand. flagged_for_review/discovery_triage/... bleiben in runs/.

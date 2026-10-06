@@ -70,6 +70,27 @@ jobs:
       - name: CI-Konfiguration und Dateirechte
         run: python3 -m pytest tests/test_ci_konfiguration.py tests/test_dateirechte.py -q
 
+  # Stufe-B-Tests (pipeline/tests/, Makefile-Ziel `unit-stufe-b`): ohne produkt/, ohne tests/conftest.py,
+  # ohne Catala-Toolchain. Eigener Job, weil `tests/` mit dem Loeschplan (L2) entfaellt und diese 247
+  # Tests dann ihren Lauf behalten muessen. Sekunden, nur das Manifest. Die sechs fastapi-Tests aus
+  # test_ui_backend.py und test_gettsim_crosscheck.py skippen sich hier selbst (kein fastapi, kein
+  # gettsim im Manifest); den Crosscheck faehrt der Job gettsim-crosscheck unten echt.
+  stufe-b:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python-Abhaengigkeiten
+        run: pip install -r requirements-ci.txt
+
+      - name: pytest pipeline/tests (ohne Catala-Toolchain)
+        run: python3 -m pytest pipeline/tests -q
+
   # Voller Gate: Catala/Clerk-Toolchain (docs/setup.md) dazu, damit die catala-gebundenen
   # Tests ECHT laufen statt zu skippen. `clerk test -W rules/` (Makefile-Ziel `tests`) ist
   # BEWUSST NICHT drin: Projekt-Fakt (Memory clerk-test-rules-preexisting-fails) — dieser
@@ -219,7 +240,7 @@ jobs:
 
   # Differentielles Rechen-Oracle: unsere Catala-Werte gegen GETTSIM. Faengt Rechen-
   # Regressionen, die die Unit-Suite nicht sieht. Die bekannten Divergenzen stehen als
-  # Allowlist in tests/test_gettsim_crosscheck.py (KNOWN_DEVIATIONS, GETTSIM-Bug #1209
+  # Allowlist in pipeline/tests/test_gettsim_crosscheck.py (KNOWN_DEVIATIONS, GETTSIM-Bug #1209
   # Splitting-Rundung) — eine NEUE Abweichung schlaegt rot, das ist der Zweck.
   # Braucht — anders als golden — die venv312: golden_crosscheck.py importiert GETTSIM.
   gettsim-crosscheck:
@@ -260,6 +281,8 @@ jobs:
       # jede Collection unter tests/ den vollen server->auth-Importpfad, unabhaengig vom
       # Testinhalt. Fehlen sie in diesem isolierten venv312, schlaegt schon die Collection
       # von test_gettsim_crosscheck.py fehl (ModuleNotFoundError), nicht erst ein Test.
+      # Seit 2026-10-06 liegt die Datei unter pipeline/tests/, ohne conftest: dieser Grund
+      # entfaellt. bcrypt/PyJWT bleiben installiert, bis ein CI-Lauf ohne sie gruen gesehen ist.
       - name: venv312 mit GETTSIM
         run: |
           set -e
@@ -274,7 +297,7 @@ jobs:
           eval $(opam env --switch=taxgraph --set-switch)
           . oracle/.venv312/bin/activate
           python oracle/gettsim/golden_crosscheck.py
-          python -m pytest tests/test_gettsim_crosscheck.py -q
+          python -m pytest pipeline/tests/test_gettsim_crosscheck.py -q
 
   # Rust-Port (REWRITE_PLAN.md), Schritt 1 "Foundation". `rust/catala-sys/generated/` (der
   # Catala-C-Backend) ist COMMITTED -- dieser Job braucht deshalb weder den Opam-Switch noch
