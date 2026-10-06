@@ -222,10 +222,13 @@ impl Drop for PufferWaechter<'_> {
     }
 }
 
-/// Fuer Aufrufer ausserhalb: ein Log-Verzeichnis nur fuer den Besitzer (0700), das bleibt.
+/// Ein Log-Verzeichnis nur fuer den Besitzer (0700, wie `tempfile.mkdtemp`: `eric.log` nennt
+/// Auszuege der Erklaerung), das nach dem Lauf bleibt. `tempfile` legt es sonst mit 0755 an.
 pub(crate) fn neues_log_dir() -> Result<PathBuf, EricFehler> {
+    use std::os::unix::fs::PermissionsExt;
     tempfile::Builder::new()
         .prefix("eric_versand_")
+        .permissions(std::fs::Permissions::from_mode(0o700))
         .tempdir()
         .map(tempfile::TempDir::keep)
         .map_err(|e| EricFehler::LogDir(e.to_string()))

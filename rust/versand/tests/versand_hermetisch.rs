@@ -11,6 +11,7 @@
 //! (`SPERRE`). Braucht `cc`. Fehlt es, scheitert der Test — ausser mit `TAXGRAPH_OHNE_CC=1`.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::{Mutex, MutexGuard, OnceLock};
@@ -320,6 +321,10 @@ fn der_testversand_kommt_mit_flags_crypto_und_xml_bei_eric_an() {
     assert_eq!(l.zaehler("zaehler"), Some(1));
     assert_eq!(l.zaehler("init_zaehler"), Some(1));
     assert_eq!(l.zaehler("beende_zaehler"), Some(1), "EricBeende am Ende");
+    // eric.log nennt Auszuege der Erklaerung: das Verzeichnis gehoert nur dem Besitzer (0700).
+    assert!(a.log_pfad.is_file(), "eric.log fehlt: {:?}", a.log_pfad);
+    let modus = std::fs::metadata(a.log_pfad.parent().unwrap()).unwrap().permissions().mode() & 0o777;
+    assert_eq!(modus, 0o700, "Log-Verzeichnis {:?}", a.log_pfad.parent());
     assert_eq!(l.zaehler("puffer_erzeugt"), Some(2), "Rueckgabe- und Serverantwort-Puffer");
     assert!(l.puffer_ausgeglichen(), "ein Puffer wurde nicht freigegeben");
 }
@@ -625,5 +630,57 @@ fn das_programm_meldet_nutzungsfehler_mit_exit_zwei_und_liest_nichts() {
         let (rc, aus) = l.programm(&args, "", false);
         assert_eq!(rc, 2, "{args:?}: {aus}");
     }
+    assert!(l.eric_unberuehrt());
+}
+
+// ------------------------------------------------------------------ main.rs: der echte Prozess
+
+impl Lauf {
+    /// Das gebaute Programm als Prozess: eigene Umgebung (nur diese Variablen, `HOME` im
+    /// Wegwerf-Verzeichnis, damit ERiC NIE unter `~/02_Software` gesucht wird), stdin ist /dev/null.
+    fn prozess(&self, args: &[&str], mit_pin: bool) -> (Option<i32>, String) {
+        let lib_dir = self.lib.parent().unwrap();
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_taxgraph-versand"));
+        cmd.args(args)
+            .env_clear()
+            .env("HOME", self.wurzel.path())
+            .env("ERIC_DIR", lib_dir)
+            .env("ERIC_ATTRAPPE_DIR", self.wurzel.path().join("steuer"))
+            .env("ELSTER_ZERTIFIKAT_PFAD", self.zert_pfad())
+            .stdin(std::process::Stdio::null());
+        if mit_pin {
+            cmd.env("ELSTER_ZERTIFIKAT_PIN", PIN);
+        }
+        let out = cmd.output().unwrap();
+        let text = String::from_utf8(out.stdout).unwrap();
+        assert!(!text.contains(PIN) && !text.contains(ZERT_NAME), "{text}");
+        (out.status.code(), text)
+    }
+}
+
+#[test]
+fn das_programm_liest_die_umgebung_und_setzt_den_exit_code() {
+    let Some(l) = Lauf::neu(&erfolgs_skript()) else { return };
+    let datei = l.xml_datei(XML_TEST);
+    // Mit Pfad und PIN aus der Umgebung und ERiC ueber $ERIC_DIR: ein Testversand gegen die Attrappe.
+    let (code, aus) = l.prozess(&["--xml", &datei, "--datenart", "ESt_2025", "--testversand"], true);
+    assert_eq!(code, Some(0), "{aus}");
+    assert!(aus.contains("Telenummer: N552026081012345"), "{aus}");
+    assert_eq!(l.datei("gesehen/1.crypto").unwrap(), format!("version=3\nhandle=77\npin_laenge={}\n", PIN.len()));
+    // Ohne PIN in der Umgebung bricht es vor ERiC ab.
+    let (code, aus) = l.prozess(&["--xml", &datei, "--datenart", "ESt_2025", "--testversand"], false);
+    assert_eq!(code, Some(2), "{aus}");
+    assert!(aus.contains("Keine PIN gesetzt"), "{aus}");
+    assert_eq!(l.zaehler("zaehler"), Some(1), "der zweite Lauf hat ERiC nicht mehr gerufen");
+}
+
+#[test]
+fn das_programm_als_prozess_erkennt_kein_terminal() {
+    let Some(l) = Lauf::neu(&erfolgs_skript()) else { return };
+    let datei = l.xml_datei(XML_ECHT);
+    let args = ["--xml", &datei, "--datenart", "ESt_2025", "--echtversand", "--freigabe", ECHTVERSAND_FREIGABE];
+    let (code, aus) = l.prozess(&args, true);
+    assert_eq!(code, Some(2), "{aus}");
+    assert!(aus.contains("kein Terminal"), "{aus}");
     assert!(l.eric_unberuehrt());
 }
