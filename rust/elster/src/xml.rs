@@ -924,4 +924,45 @@ mod tests {
             assert!(text.contains("Bankverbindungs-Entscheidung"), "{text}");
         }
     }
+
+    /// Ein Ja-Typ-Kz mit dem Schema-Typ `typ` und den Aufzaehlungswerten `enums`. Der Name ist
+    /// erfunden: geprueft wird die Entscheidung je Typ, nicht ein echtes Kz (die `kz_wache` sieht
+    /// den Testcode nicht, und ein erfundener Name haelt sie auch dann ruhig).
+    fn ja_kz(typ: &str, enums: &[&str]) -> HashMap<String, KzMeta> {
+        HashMap::from([(
+            "KZ_PROBE".to_owned(),
+            KzMeta {
+                type_name: typ.to_owned(),
+                enums: enums.iter().map(|e| (*e).to_owned()).collect(),
+                patterns: Vec::new(),
+                is_ja: true,
+            },
+        )])
+    }
+
+    fn blatt(meta: &HashMap<String, KzMeta>, wert: &Value) -> Option<String> {
+        blatt_text(Some(&"KZ_PROBE".to_owned()), wert, meta)
+    }
+
+    /// Hermetisches Gegenstueck zu `tests/kz_sperre.rs::ja_typ_nein_wird_nach_typ_geschrieben`
+    /// (dort mit dem echten Schema, hier ohne: die CI hat keines). `JaNein12` kennt zwei echte
+    /// Antworten, Nein ist `2`. Fehlte das Element, verschwaende die gegebene Antwort, und checkESt
+    /// beanstandet „Bitte geben Sie an, ob …" (gemessen 2026-08-16).
+    #[test]
+    fn janein12_nein_wird_als_zwei_geschrieben() {
+        let meta = ja_kz("JaNein12BaseCType", &["1", "2"]);
+        assert_eq!(blatt(&meta, &json!(true)).as_deref(), Some("1"));
+        assert_eq!(blatt(&meta, &json!(false)).as_deref(), Some("2"));
+    }
+
+    /// Ankreuzfelder (`Ja1`, `JaX`) kennen nur „angekreuzt": Nein ergibt kein Element, sonst bliebe
+    /// ein leerer Container stehen und checkESt wiese die Abgabe ab.
+    #[test]
+    fn ankreuzfeld_nein_ergibt_kein_element() {
+        for (typ, wert) in [("Ja1BaseCType", "1"), ("JaXBaseCType", "X")] {
+            let meta = ja_kz(typ, &[wert]);
+            assert_eq!(blatt(&meta, &json!(true)).as_deref(), Some(wert), "{typ}");
+            assert_eq!(blatt(&meta, &json!(false)), None, "{typ}");
+        }
+    }
 }

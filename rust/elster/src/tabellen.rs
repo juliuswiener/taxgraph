@@ -795,6 +795,14 @@ mod tests {
         assert!(ohne_regal.is_empty(), "Fixture-Schluessel ohne Regal-Eintrag: {ohne_regal:?}");
     }
 
+    /// Die Sperre gegen eine verschobene Klassifikation (Weg B voll, Stufe 3, W10 d). Die Fixture haelt,
+    /// welche Kz Abzug sind (aufrunden) und welche Einnahme (abrunden), die Kz-Paare der Verzweigungen
+    /// (§ 35c) und die Transform-Quellen. Wandert ein Kz mit lebendem Feld aus der Abzugsliste
+    /// (Sonde `QX1b`) oder aendert sich eine Zeile der Verzweigung (`QP1` bis `QP3`), wird NUR dieser Test rot:
+    /// der Proptest `rundung_zugunsten_je_bindung` in `tests/eigenschaften.rs` leitet seine Erwartung aus
+    /// `kz_format` ab, derselben Tabelle, die er pruefen soll. Die Fixture ist deshalb eine Sperre, keine
+    /// Python-Antwort, die bei Abweichung neu erzeugt wird: eine Abweichung ist ein Entscheid mit Grund
+    /// im Commit, Tabelle und Fixture aendern sich zusammen.
     #[test]
     fn tabellen_gleich_fixture() {
         let mut aus = Vec::new();
