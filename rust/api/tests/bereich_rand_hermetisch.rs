@@ -18,10 +18,20 @@
 //! - Die 0 bleibt zulaessig, auch unter einem Minimum > 0 ("nichts anzugeben", Vault
 //!   `decisions/speichern-lehnt-nullwerte-nicht-ab`); fuer die Felder mit `enum_werte` gilt das nicht, sie sind die Kontrolle.
 //!
-//! Grenzen: der Basis-Kegel (`gesamt`/`rentner_gesamt`, einzel bzw. zusammen) setzt jedes Pflichtfeld, aber nicht jedes
-//! Bereichsfeld wird von der Rechnung GELESEN (z. B. liest der Ring `gewst_hebesatz` nur mit `kein_gewinn = false` und
-//! `gewst_messbetrag`). Ein Randwert, den der Basis-Kegel nicht liest, belegt hier nur den Schreibweg. Die Positivkontrolle
-//! `basis_kegel_rechnen_und_tragen_eine_zahl` haelt fest, dass jeder Basis-Kegel rechnet (sonst waere jedes `< 500` leer wahr).
+//! Reichere Kegel (`reichere_kegel_machen_den_rand_im_ergebnis_wirksam`): Der Basis-Kegel (`gesamt`/`rentner_gesamt`, einzel
+//! bzw. zusammen) setzt jedes Pflichtfeld, aber die Rechnung LIEST nicht jedes Bereichsfeld (z. B. `gewst_hebesatz` nur mit
+//! `kein_gewinn = false` und `gewst_messbetrag`). Gemessen (Bericht `w-rand-auftrag2-messung.md`): im Basis-Kegel aendern nur
+//! 12 von 42 Feldern die Antwort von `/ergebnis`. Acht weitere machen reine Fixture-Kegel wirksam (Ueberlagerung unveraendert
+//! aus einem vorhandenen Test, Quelle je Gruppe unten); fuer sie prueft der zweite Test min und max bis in den Ring und haelt
+//! fest, dass sich die Zahl zwischen min und max aendert (Positivkontrolle: sonst liest der Ring das Feld nicht mehr, und das
+//! `< 500` waere leer wahr).
+//!
+//! Grenzen: 22 der 42 Felder pruefen hier nur den Schreibweg (422/201) und `< 500` bei gleicher Rechnung: 12 liest der Ring
+//! nie (Zaehler und Flaechen fuer Formularfragen und die ELSTER-Erklaerung), 8 liest er, aber kein vorhandener Kegel macht sie
+//! wirksam (`fam_monate_ohne_voraussetzung`, `versorgung_alter_bei_beginn`, `geburtsjahr_partner`, `am_anschaffung_monat`,
+//! `uebernachtung_monate_bisher`, `vpf_tage_*_nach_drei_monaten`), 2 haengen an einem aus Fixture-Feldern zusammengesetzten
+//! Kegel (`dhf_monate`, `arbeitsmittel_nutzungsdauer`). Die Positivkontrolle `basis_kegel_rechnen_und_tragen_eine_zahl` haelt
+//! fest, dass jeder Basis-Kegel rechnet.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -435,6 +445,216 @@ async fn jedes_bereichsfeld_nimmt_den_rand_an_weist_den_nachbarn_ab_und_rechnet_
         "{} von {faelle} Faellen ueber {} Bereichsfelder verletzt:\n{falsch:#?}",
         falsch.len(),
         felder.len()
+    );
+}
+
+/// Ein reicherer Kegel: die Basis der Scheibe `gesamt` plus eine Ueberlagerung, die EIN Bereichsfeld in `/ergebnis` wirksam macht.
+struct Gruppe {
+    feld: &'static str,
+    zusammen: bool,
+    ueberlagerung: Paare,
+    /// Woher die Ueberlagerung stammt (nur fuer die Meldung).
+    quelle: &'static str,
+}
+
+/// Die acht Gruppen mit reinem Fixture-Kegel (Bericht `w-rand-auftrag2-messung.md`). Jede Ueberlagerung steht so in der Quelle.
+fn gruppen() -> Vec<Gruppe> {
+    vec![
+        Gruppe {
+            feld: "gewst_hebesatz",
+            zusammen: false,
+            ueberlagerung: vec![
+                ("kein_gewinn", json!(false)),
+                ("einkuenfte_gewinn", json!(5_000_000)),
+                ("gewinn_betriebsart", json!("gewerbe")),
+                ("gewst_messbetrag", json!(150_000)),
+                ("gewst_hebesatz", json!(400)),
+            ],
+            quelle: "kette_endstand_hermetisch.rs::g2_p35_gewerbesteuer_aenderungen",
+        },
+        Gruppe {
+            feld: "gewst_hebesatz_partner",
+            zusammen: true,
+            ueberlagerung: vec![
+                ("veranlagung", json!("zusammen")),
+                ("bruttoarbeitslohn", json!(0)),
+                ("bruttoarbeitslohn_partner", json!(0)),
+                ("kap_kapitalertraege_partner", json!(0)),
+                ("kap_gewinn_aktien_partner", json!(0)),
+                ("kap_gewinn_sonstige_partner", json!(0)),
+                ("kap_verlust_aktien_partner", json!(0)),
+                ("kap_verlust_sonstige_partner", json!(0)),
+                ("kein_gewinn", json!(false)),
+                ("einkuenfte_gewinn", json!(0)),
+                ("gewinn_betriebsart_partner", json!("gewerbe")),
+                ("einkuenfte_gewinn_partner", json!(5_000_000)),
+                ("gewst_messbetrag_partner", json!(1_000_000)),
+                ("gewst_hebesatz_partner", json!(400)),
+                ("p32b_progressionseinkuenfte", json!(3_000_000)),
+                ("hh_dienstleistungen", json!(2_000_000)),
+                ("hh_in_eu_ewr", json!(true)),
+                ("hh_rechnung_unbar", json!(true)),
+            ],
+            quelle: "kette_endstand_hermetisch.rs::g17_p35_credit_uebersteigt_die_steuer_aenderungen",
+        },
+        Gruppe {
+            feld: "fam_anzahl_kinder",
+            zusammen: true,
+            ueberlagerung: vec![
+                ("veranlagung", json!("zusammen")),
+                ("bruttoarbeitslohn", json!(30_000_000)),
+                ("kap_kapitalertraege", json!(3_000_000)),
+                ("kein_kap", json!(false)),
+                ("bruttoarbeitslohn_partner", json!(0)),
+                ("kap_kapitalertraege_partner", json!(0)),
+                ("kap_gewinn_aktien_partner", json!(0)),
+                ("kap_gewinn_sonstige_partner", json!(0)),
+                ("kap_verlust_aktien_partner", json!(0)),
+                ("kap_verlust_sonstige_partner", json!(0)),
+                ("fam_anzahl_kinder", json!(1)),
+            ],
+            quelle: "kette_endstand_hermetisch.rs::g4_kind_freibetrag_p32d_aenderungen (der Kindergeld-Kegel g3 laesst das Feld stumm: Kindergeld siegt, die Steuer bleibt gleich)",
+        },
+        Gruppe {
+            feld: "kind_grad_der_behinderung",
+            zusammen: false,
+            ueberlagerung: vec![
+                ("fam_anzahl_kinder", json!(1)),
+                ("kind_idnr", json!("12345678901")),
+                ("kind_behinderten_pb_antrag", json!(true)),
+                ("kind_pb_nicht_selbst_genutzt", json!(true)),
+            ],
+            quelle: "bescheid/src/abzuege.rs, Doctest von kind_behinderten_pb_daten",
+        },
+        Gruppe {
+            feld: "ep_arbeitstage",
+            zusammen: false,
+            ueberlagerung: vec![
+                ("ep_arbeitstage", json!(220)),
+                ("ep_entfernung_km", json!(30)),
+                ("am_anschaffungskosten", json!(80_000)),
+                ("arbeitsmittel_nutzungsdauer", json!(3)),
+                ("am_afa_ist_anschaffungsjahr", json!(false)),
+                ("am_gwg_sofortabzug_gewaehlt", json!(true)),
+            ],
+            quelle: "kette_endstand_hermetisch.rs::g14_arbeitsmittel_genau_800_aenderungen",
+        },
+        Gruppe {
+            feld: "vv_entgelt_quote_prozent",
+            zusammen: false,
+            ueberlagerung: vec![
+                ("vv_einnahmen", json!(960_000)),
+                ("vv_gebaeude_afa", json!(300_000)),
+                ("vv_schuldzinsen", json!(250_000)),
+                ("vv_erhaltungsaufwand", json!(80_000)),
+                ("vv_sonstige_wk", json!(40_000)),
+                ("vv_nebenkosten_umgelegt", json!(180_000)),
+                ("kein_vuv", json!(false)),
+            ],
+            quelle: "fixtures/e2e/gesamt.json (die VV-Events; kein_vuv = false, sonst sperrt die Flag-Konsistenz)",
+        },
+        Gruppe {
+            feld: "versorgung_beginn_jahr",
+            zusammen: false,
+            ueberlagerung: vec![
+                ("versorgung_jahresrente", json!(1_800_000)),
+                ("versorgung_bemessungsgrundlage", json!(1_500_000)),
+                ("versorgung_beginn_jahr", json!(2020)),
+            ],
+            quelle: "bescheid/tests/sperre_scheiben_hermetisch.rs, Gruppe versorgung, Fall 'beides bestaetigt'",
+        },
+        Gruppe {
+            feld: "uebernachtung_monate",
+            zusammen: false,
+            ueberlagerung: vec![
+                ("uebernachtung_kosten_monat", json!(60_000)),
+                ("uebernachtung_im_inland", json!(true)),
+                ("uebernachtung_monate_bisher", json!(0)),
+                ("uebernachtung_monate", json!(6)),
+                ("uebernachtung_auswaerts", json!(true)),
+                ("uebernachtung_alleinnutzung", json!(true)),
+                ("uebernachtung_keine_lange_unterbrechung", json!(true)),
+            ],
+            quelle: "bescheid/tests/sperre_scheiben_hermetisch.rs, Gruppe wk, Fall 'Uebernachtung, Ort, Bedingungen, Zeitraum'",
+        },
+    ]
+}
+
+fn signatur(l: &Lauf) -> String {
+    let (status, antwort) = &l.ergebnis;
+    format!("{status}/{}/{}", antwort["grund"], antwort["zahl_cent"])
+}
+
+/// Die acht reichen Kegel: min und max werden angenommen, rechnen bis in den Ring ("bestaetigt", nie 500), und die Zahl
+/// aendert sich zwischen min und max. Die 0 unter min > 0 (ausser Enum) bleibt zulaessig und rechnet ohne 500.
+#[tokio::test]
+async fn reichere_kegel_machen_den_rand_im_ergebnis_wirksam() {
+    let alle = registry();
+    let felder = bereichsfelder(&alle);
+    let d = dienst();
+    let mut falsch: Vec<String> = Vec::new();
+    let mut n = 0_u32;
+    let gruppen = gruppen();
+    // Positivkontrolle: ohne Gruppen liefe die Schleife leer.
+    assert!(
+        gruppen.len() >= 8,
+        "nur {} Gruppen: die reichen Kegel liefen leer",
+        gruppen.len()
+    );
+    for g in &gruppen {
+        let Some(f) = felder.iter().find(|f| f.id == g.feld) else {
+            falsch.push(format!(
+                "{}: kein Bereichsfeld mehr (Quelle {}): Gruppe pruefen oder streichen",
+                g.feld, g.quelle
+            ));
+            continue;
+        };
+        let (min, max) = (f.bereich.min, f.bereich.max);
+        let mut werte = vec![("min", min, true), ("max", max, true)];
+        if !f.mit_enum && min > 0 {
+            werte.push(("0", 0, false));
+        }
+        let mut signaturen: Vec<String> = Vec::new();
+        for (name, wert, muss_rechnen) in werte {
+            n += 1;
+            let kegel = g
+                .ueberlagerung
+                .iter()
+                .fold(basis(GESAMT, g.zusammen), |k, (feld, w)| {
+                    mit(k, feld, w.clone())
+                });
+            let l = fahre(&d, &format!("w9-reich-{n}"), GESAMT, kegel, g.feld, wert).await;
+            let kopf = format!("{} {name}={wert} (Kegel {})", g.feld, g.quelle);
+            if l.feld != 201 {
+                falsch.push(format!("{kopf}: Event {} statt 201", l.feld));
+            }
+            if let Err(e) = unter500(&l) {
+                falsch.push(format!("{kopf}: {e}"));
+            }
+            if muss_rechnen {
+                let (status, antwort) = &l.ergebnis;
+                if *status != 200 || antwort["grund"] != "bestaetigt" {
+                    falsch.push(format!(
+                        "{kopf}: /ergebnis {status} {antwort}, erwartet 200 und grund bestaetigt"
+                    ));
+                }
+                signaturen.push(signatur(&l));
+            }
+        }
+        // Positivkontrolle je Gruppe: der Rand aendert die Zahl ueberhaupt.
+        if signaturen.len() == 2 && signaturen[0] == signaturen[1] {
+            falsch.push(format!(
+                "{}: min und max geben dieselbe Antwort {} (Kegel {}): der Ring liest das Feld unter diesem Kegel nicht, \
+                 das Rand-Ergebnis belegt nichts",
+                g.feld, signaturen[0], g.quelle
+            ));
+        }
+    }
+    assert!(
+        falsch.is_empty(),
+        "{} Verstoesse in {} Gruppen:\n{falsch:#?}",
+        falsch.len(),
+        gruppen.len()
     );
 }
 
