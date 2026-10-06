@@ -24,14 +24,14 @@ CI-Lauf 37010730963 auf `8e48cf7`: **alle fünf Jobs grün** (erster ganz grüne
 (nicht gemessen); gepusht wird nur auf Julius' Wort.
 
 **Cutover vollzogen (2026-10-04; Julius: Push und Cutover „nach deinem Ermessen“).** Die Voraussetzungen stehen unter „Offen“ 1.
-Der Cutover hat zwei trennbare Teile (Vault `audits/cutover-bereitschaft-rust-port-2026-10-03.md`, „Was daraus folgt“): (A) Rust ist der
+Der Cutover hat zwei trennbare Teile (Vault `audits/archive/cutover-bereitschaft-rust-port-2026-10-03.md`, „Was daraus folgt“): (A) Rust ist der
 gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) war am 2026-10-04 weder vollzogen noch beschlossen; beschlossen ist es seit 2026-10-06 (Julius: „Nach der Abnahme können wir Python löschen.“), vollzogen ist es noch nicht.** Stand dazu: Absatz „Nachtrag 2026-10-06“ unten.
 
 - *Was sich ändert (A):* `make serve` startet den Rust-Dienst (`taxgraph-api`) und ist der Standard-Start; `make serve-python` startet den
   Python-Dienst. Gebaut mit `f81dba31` (Makefile, `tests/test_make_serve.py`) und `5f346eb5` (Test: `SERVE_PORT` gilt in Start- und Meldezeile).
 - *Was bleibt, und warum (Stand 2026-10-04; seit 2026-10-06 beschlossen, dass es nach der Abnahme fällt, siehe „Nachtrag 2026-10-06“):* Python wird nicht gelöscht. Es bleibt Orakel der Vergleichssuiten (`rust/parity`, `ls rust/parity/tests/*_paritaet.rs | wc -l`
   → 22; `make golden`) und Rückfall. Ein Löschen hätte alle Vergleichssuiten und die 135 Golden-Fälle ihrer Gegenseite beraubt und `tests/` schon in
-  `conftest.py` zum Abbruch gebracht (Messung an Wegwerf-Kopien: Vault `audits/cutover-bereitschaft-rust-port-2026-10-03.md`, Befunde 4 bis 7).
+  `conftest.py` zum Abbruch gebracht (Messung an Wegwerf-Kopien: Vault `audits/archive/cutover-bereitschaft-rust-port-2026-10-03.md`, Befunde 4 bis 7).
   Das Löschen ist eine eigene Entscheidung (F6) und braucht vorher eine Aufzeichnung der Python-Antworten (dort Befund 7). Die Aufzeichnung liegt seit 2026-10-05 vor (Merge `2dd056a6`, lokal in `~/.local/share/taxgraph-aufzeichnung/2026-10-05`, nicht im Repo; Test `rust/api/tests/echtakten_vergleich.rs`).
   Der Echtversand liegt in Rust in der eigenen Crate `versand` (F4, am 2026-10-06 von Julius freigegeben; das Einreichen bleibt bei ihm; `versand.py` bleibt bis zur Löschung von Python); `POST /fall/<id>/einreichen` prüft in beiden Diensten nur
   (`rust/api/src/einreichen.rs:1-8`, `produkt/haut/api.py:685-691`).
@@ -42,11 +42,11 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) war am 20
 - *Messbelege der Voraussetzungen* (jede Zahl mit Quelle; „Bericht“ heißt: aus dem genannten Bericht übernommen, hier nicht neu gemessen):
   - **(a) 10 000 Fälle je Suite:** `PARITY_N=10000`, jede der 17 Suiten mit Fallzahl-Schalter einzeln: 141 passed / 0 failed, Summe 2858 s.
     Als ein Lauf zuerst nicht gemessen (abgeleitet etwa 49,7 min: 2858 s + 126,5 s für die fünf Suiten ohne Schalter + 0,2 s); bei `N` ungleich Standard sind die
-    Abdeckungs-Wächter aus (`fallzahl::wache_gilt`). Ein einzelner Lauf mit `PARITY_N=10000` über alle 25 Binaries (Lauf B des Endtors, gemessen auf `7cd5e048`) ist grün: 192 passed / 0 failed in 2644 s, Punkt „Endtor“ unten. Vault `audits/parity-voll-stufe-1-und-2-2026-10-04.md` (Baum `23003002`).
+    Abdeckungs-Wächter aus (`fallzahl::wache_gilt`). Ein einzelner Lauf mit `PARITY_N=10000` über alle 25 Binaries (Lauf B des Endtors, gemessen auf `7cd5e048`) ist grün: 192 passed / 0 failed in 2644 s, Punkt „Endtor“ unten. Vault `audits/archive/parity-voll-stufe-1-und-2-2026-10-04.md` (Baum `23003002`).
   - **(c) Gesamtlauf mit Orakel:** `PARITY=1 cargo test --workspace --no-fail-fast`: 1580 passed / 0 failed / 21 ignored, 120 Binaries, 782 s mit Bau
     (derselbe Vault-Eintrag; die 21 ignorierten sind die bekannten offenen Defekte, `offene_defekte.rs` in api, bescheid und elster).
   - **(b) Gegenproben:** 15 von 15 (N-G1 bis N-G6, A-G1 bis A-G9) je rot auf `c9d13e6f`: Vault
-    `audits/g-gegenproben-15-von-15-rot-und-solz-konstante-2026-10-04.md`. Die Grenze, die dieser Lauf fand (der Solz-Faktor 118 statt 119 in
+    `audits/archive/g-gegenproben-15-von-15-rot-und-solz-konstante-2026-10-04.md`. Die Grenze, die dieser Lauf fand (der Solz-Faktor 118 statt 119 in
     `rust/engine/src/zugriff/teil2/solz.rs` ließ ohne `PARITY=1` alle Rust-Tests grün), ist **geschlossen**: Seit `1fdc6c0a` rechnen `rust/fixtures/wertwache_orakel.json`
     (feste Fälle aus dem Python-Lauf, 11 Funktionen) und `rust/engine/tests/wertwache_orakel_werte.rs` sie ohne Python nach (Vault
     `audits/wertwache-fixture-ohne-orakel-2026-10-04.md`: 18 von 23 Mutanten des Instruktors rot, darunter der Solz-Faktor 118; Instruktor-Messung, von mir nicht wiederholt).
@@ -79,7 +79,7 @@ gestartete Dienst, (B) Python wird gelöscht. **Vollzogen ist (A). (B) war am 20
   **Wächter gegen den Rückfall** (seit `b7eb0c01`, Merge von `orch/h8-waechter`; Vault `audits/ueberlauf-waechter-text-2026-10-04.md`: 84 Testfälle; Instruktor-Nachmessung mit 28 Läufen (22 Mutanten rot, 6 Kontrollen grün), alle wie erwartet, von mir nicht wiederholt):
   `tests/test_ueberlauf_waechter_text.py` prüft nur Text (kein Catala, kein Rust-Bau). Erstens steht `mpz_get_si` in `rust/catala-sys/csrc/` nur im Makro `TG_AUS`; der Wächter liest die
   Zeilenverkettung mit, meldet ein totes oder zerlegtes Makro und ignoriert Kommentare und bloße Umformatierung. Zweitens bleibt `overflow-checks = true` ausdrücklich im `[profile.dev]` (`rust/Cargo.toml:68`), und der Test liest
-  das Makefile mit, um zu prüfen, welches Profil `make serve` baut. `--release` ist verboten: `make serve` baut mit `cargo build` im dev-Profil (`Makefile:113` begründet es,
+  das Makefile mit, um zu prüfen, welches Profil `make serve` baut. `--release` ist verboten: `make serve` baut mit `cargo build` im dev-Profil (`Makefile:119` begründet es,
   `tests/test_make_serve.py` prüft, dass `--release` im Befehl fehlt). Eine technische Sperre gegen einen von Hand gestarteten `cargo build --release` gibt es nicht (abgeleitet aus dem
   Fehlen von `[profile.release]`, nicht gemessen; der Vault-Eintrag nennt es unter „Nicht geprüft“ ebenso); ein solcher Bau ließe jedes ungeprüft geschriebene `+`/`-` der Geldrechnung still umbrechen (Vault
   `audits/ueberlauf-casts-ueber-http-keine-stille-falschzahl-2026-10-04.md`, abgeleitet, nicht gemessen).
