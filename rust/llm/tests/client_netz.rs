@@ -3,8 +3,8 @@
 //! Skript fuer einen lokalen Stub (Antworten, Schweigen, Abbruch, Troepfeln); die Erwartung ist der Lauf des
 //! Python-Clients gegen DASSELBE Skript: Ergebnis, Fehlerklasse, Grund, Versuche, Text der Meldung, Zahl der Anfragen,
 //! `letzter_anbieter`. Wo Rust den Text der Python-Ausnahme nicht kennt (`AttributeError`, `IndexError`,
-//! `RemoteDisconnected`, `[Errno 111]`), gilt nur die Klasse. Vier Eingaben, in denen Rust ANDERS endet als Python, steht im Test
-//! `weicht_von_python_ab_vier_eingaben_enden_in_rust_anders` (festgehaltenes Rust-Verhalten, kein Soll). Kein Test ruft
+//! `RemoteDisconnected`, `[Errno 111]`), gilt nur die Klasse. Drei Eingaben, in denen Rust ANDERS endet als Python, steht im Test
+//! `weicht_von_python_ab_drei_eingaben_enden_in_rust_anders` (festgehaltenes Rust-Verhalten, kein Soll). Kein Test ruft
 //! Python, kein Test geht ins Netz.
 #![allow(
     clippy::unwrap_used,
@@ -318,10 +318,10 @@ fn basis_url_wie_python() {
     ]);
 }
 
-/// ABWEICHUNG VON PYTHON, keine Absicht (Befund der Messung, `rust/llm/src/http.rs` unveraendert): vier Eingaben enden in Rust anders als in Python. Der Test haelt das heutige Rust-Verhalten fest, damit eine Aenderung auffaellt; er ist kein Soll. Die Zeile je Eingabe nennt, was Python tut.
+/// ABWEICHUNG VON PYTHON, keine Absicht (Befund der Messung): drei Eingaben enden in Rust anders als in Python. Der Test haelt das heutige Rust-Verhalten fest, damit eine Aenderung auffaellt; er ist kein Soll. Die Zeile je Eingabe nennt, was Python tut. Die vierte Eingabe, IPv6 ohne Port (`http://[::1]/v1`), ist behoben: `zerlege` nimmt Port 80 oder 443 (`http::tests::url_zerlegen_ipv6_literal`); ein Test gegen den echten Port 80 entfaellt, weil er sich nicht binden laesst.
 #[test]
 #[rustfmt::skip]
-fn weicht_von_python_ab_vier_eingaben_enden_in_rust_anders() {
+fn weicht_von_python_ab_drei_eingaben_enden_in_rust_anders() {
     pruefe(vec![
         // http_laenge_keine_zahl: Python liest bei `Content-Length: abc` bis zum Ende der Verbindung und liefert die Antwort.
         ("http_laenge_keine_zahl", "", Some(vec![Aktion::Roh("HTTP/1.1 200 OK\r\nContent-Length: abc\r\nConnection: close\r\n\r\n{\"choices\": [{\"message\": {\"content\": \"{\\\"aussagen\\\": []}\"}, \"finish_reason\": \"stop\"}], \"provider\": \"fake\"}".as_bytes().to_vec())]), false, (1, 3, 1), 1, "", Erw::Err("endgueltig", "", 1, Msg::Genau("LLM-Aufruf fehlgeschlagen: Content-Length"))),
@@ -329,8 +329,6 @@ fn weicht_von_python_ab_vier_eingaben_enden_in_rust_anders() {
         ("url_ohne_schema", "127.0.0.1:{port}/v1", Some(vec![Aktion::Roh(antwort(200, &ok_body("{\"aussagen\": []}", "stop", "fake"))), Aktion::Roh(antwort(200, &ok_body("{\"aussagen\": []}", "stop", "fake"))), Aktion::Roh(antwort(200, &ok_body("{\"aussagen\": []}", "stop", "fake")))]), false, (1, 3, 1), 0, "", Erw::Err("endgueltig", "", 1, Msg::Genau("LLM-Aufruf fehlgeschlagen: unbekanntes URL-Schema"))),
         // url_fremdes_schema: Python versucht FTP und scheitert voruebergehend (drei Versuche, hier nach Socket-Timeout).
         ("url_fremdes_schema", "ftp://127.0.0.1:{port}/v1", Some(vec![Aktion::Roh(antwort(200, &ok_body("{\"aussagen\": []}", "stop", "fake"))), Aktion::Roh(antwort(200, &ok_body("{\"aussagen\": []}", "stop", "fake"))), Aktion::Roh(antwort(200, &ok_body("{\"aussagen\": []}", "stop", "fake")))]), false, (1, 3, 1), 0, "", Erw::Err("endgueltig", "", 1, Msg::Genau("LLM-Aufruf fehlgeschlagen: unbekanntes URL-Schema"))),
-        // url_ipv6_ohne_port: Python nimmt Port 80 und scheitert beim Verbinden voruebergehend (drei Versuche).
-        ("url_ipv6_ohne_port", "http://[::1]/v1", Some(vec![Aktion::Roh(antwort(200, &ok_body("{\"aussagen\": []}", "stop", "fake"))), Aktion::Roh(antwort(200, &ok_body("{\"aussagen\": []}", "stop", "fake"))), Aktion::Roh(antwort(200, &ok_body("{\"aussagen\": []}", "stop", "fake")))]), false, (1, 3, 1), 0, "", Erw::Err("endgueltig", "", 1, Msg::Genau("LLM-Aufruf fehlgeschlagen: Port keine Zahl"))),
     ]);
 }
 

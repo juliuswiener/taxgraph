@@ -81,13 +81,18 @@ fn zerlege(url: &str) -> Result<Ziel, Transport> {
     let (autoritaet, pfad) = rest.find('/').map_or((rest, "/"), |i| {
         (rest.get(..i).unwrap_or(""), rest.get(i..).unwrap_or("/"))
     });
+    let standard = if tls { 443 } else { 80 };
     let (host, port) = match autoritaet.rsplit_once(':') {
+        // `[::1]` ohne Port: das letzte `:` liegt IM Literal, nicht vor einer Portnummer.
+        _ if autoritaet.starts_with('[') && autoritaet.ends_with(']') => {
+            (autoritaet.to_owned(), standard)
+        }
         Some((h, p)) if !h.contains(']') || h.ends_with(']') => (
             h.to_owned(),
             p.parse()
                 .map_err(|_| Transport::Kaputt("Port keine Zahl".into()))?,
         ),
-        _ => (autoritaet.to_owned(), if tls { 443 } else { 80 }),
+        _ => (autoritaet.to_owned(), standard),
     };
     Ok(Ziel {
         tls,
@@ -95,6 +100,16 @@ fn zerlege(url: &str) -> Result<Ziel, Transport> {
         port,
         pfad: pfad.to_owned(),
     })
+}
+
+/// Wert des `Host:`-Kopfs: der Standardport (443 bei TLS, 80 ohne) bleibt weg, jeder andere steht dabei.
+/// Eigene Funktion, weil ein Test den Standardport nicht binden kann (`bind` auf 80/443 gibt Errno 13).
+fn host_kopf(tls: bool, host: &str, port: u16) -> String {
+    if (tls && port == 443) || (!tls && port == 80) {
+        host.to_owned()
+    } else {
+        format!("{host}:{port}")
+    }
 }
 
 fn verbinde(ziel: &Ziel, socket: Duration) -> Result<Strom, Transport> {
@@ -183,11 +198,7 @@ pub(crate) fn senden(
 ) -> Result<Antwort, Transport> {
     let ziel = zerlege(url)?;
     let mut strom = verbinde(&ziel, socket)?;
-    let host = if (ziel.tls && ziel.port == 443) || (!ziel.tls && ziel.port == 80) {
-        ziel.host.clone()
-    } else {
-        format!("{}:{}", ziel.host, ziel.port)
-    };
+    let host = host_kopf(ziel.tls, &ziel.host, ziel.port);
     let mut kopf_text = format!("{methode} {} HTTP/1.1\r\nHost: {host}\r\n", ziel.pfad);
     for (name, wert) in kopf {
         let _ = write!(kopf_text, "{name}: {wert}\r\n");
@@ -344,7 +355,7 @@ fn lies_koerper(
 
 #[cfg(test)]
 mod tests {
-    use super::zerlege;
+    use super::{host_kopf, zerlege};
 
     #[test]
     fn url_zerlegen() {
@@ -359,5 +370,47 @@ mod tests {
             .ok()
             .unwrap();
         assert_eq!((z.tls, z.port), (true, 443));
+    }
+
+    /// IPv6-Literal in Klammern: ohne Port 80 (`http`) oder 443 (`https`), mit Port dessen Zahl. Python (`http.client`)
+    /// liefert fuer `[::1]` Host `::1` und dieselben Ports; Rust behaelt die Klammern im Host (`verbinde` entfernt sie).
+    #[test]
+    fn url_zerlegen_ipv6_literal() {
+        // `Err` traegt den Fehlertext: eine rote Zeile nennt so den Grund, nicht nur ein `unwrap` auf `None`.
+        let fall = |url: &str| {
+            zerlege(url)
+                .map(|z| (z.tls, z.host, z.port, z.pfad))
+                .map_err(|e| format!("{e:?}"))
+        };
+        assert_eq!(
+            fall("http://[::1]/v1"),
+            Ok((false, "[::1]".to_owned(), 80, "/v1".to_owned()))
+        );
+        assert_eq!(
+            fall("https://[::1]/v1"),
+            Ok((true, "[::1]".to_owned(), 443, "/v1".to_owned()))
+        );
+        assert_eq!(
+            fall("http://[::1]:8080/v1"),
+            Ok((false, "[::1]".to_owned(), 8080, "/v1".to_owned()))
+        );
+        // ohne Pfad: die Autoritaet ist die ganze Rest-Zeichenkette
+        assert_eq!(
+            fall("http://[::1]"),
+            Ok((false, "[::1]".to_owned(), 80, "/".to_owned()))
+        );
+    }
+
+    /// `Host:`-Kopf an allen vier Ecken von (TLS, Port): nur der Standardport der JEWEILIGEN Schicht entfaellt.
+    /// (http, 443) und (https, 80) sind keine Standardports und tragen den Port; das fangen `&&` -> `||` und `443` -> `444`.
+    #[test]
+    fn host_kopf_laesst_nur_den_standardport_weg() {
+        assert_eq!(host_kopf(false, "h", 80), "h");
+        assert_eq!(host_kopf(true, "h", 443), "h");
+        assert_eq!(host_kopf(false, "h", 443), "h:443");
+        assert_eq!(host_kopf(true, "h", 80), "h:80");
+        assert_eq!(host_kopf(false, "h", 8080), "h:8080");
+        assert_eq!(host_kopf(true, "[::1]", 443), "[::1]");
+        assert_eq!(host_kopf(false, "[::1]", 8080), "[::1]:8080");
     }
 }
