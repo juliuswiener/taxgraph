@@ -7,7 +7,7 @@
 # leeren Liste, die der Lader abweist. Damit wanderte das Jahr eines Felds ohne Meldung.
 #
 # WAS DIESE DATEI HAELT (Pruefung: rust/bindung/tests/vz_bestand.rs):
-#   standard:   die Jahre, die jedes Feld traegt, das nicht unter `abweichend` steht (heute 366 von 368 Feldern).
+#   standard:   die Jahre, die jedes Feld traegt, das nicht unter `abweichend` steht (heute 366 von 370 Feldern).
 #   abweichend: feld_id -> {jahre, grund}. Das Feld traegt GENAU diese Jahre. `grund` hat mehr als 30 Zeichen und sagt,
 #               woher die Abweichung kommt (nicht nur dass es sie gibt). Ein Eintrag, dessen Jahre dem Standard
 #               gleichen, ist ueberfluessig und rot; ein Eintrag fuer ein Feld, das es nicht mehr gibt, ebenso.
@@ -23,6 +23,12 @@
 standard: [2024, 2025, 2026]
 
 abweichend:
+  kind_anderer_elternteil_ausland_zeitraum:
+    jahre: [2024, 2025]
+    grund: "Kz E0503903 ist nur fuer 2024 und 2025 bestaetigt: die Schemas E10-2024 und E10-2025 (ERiC-44.2-Dokumentation) fuehren es, zu 2026 liegt lokal kein Schema, also ist 2026 ungeprueft. Das Paket VZ 2026 entscheidet neu, sobald ein 2026er Schema da ist (C2, gebaut 2026-10-06)."
+  kind_anderer_elternteil_tod_am:
+    jahre: [2024, 2025]
+    grund: "Kz E0501102 ist nur fuer 2024 und 2025 bestaetigt: die Schemas E10-2024 und E10-2025 (ERiC-44.2-Dokumentation) fuehren es, zu 2026 liegt lokal kein Schema, also ist 2026 ungeprueft. Das Paket VZ 2026 entscheidet neu, sobald ein 2026er Schema da ist (C2, gebaut 2026-10-06)."
   realsplitting_empfaenger_kv_pv:
     jahre: [2025, 2026]
     grund: "Kz E0300717 steht erst im Schema E10-2025, nicht in E10-2023 und E10-2024 (gemessen 2026-10-06 an den ERiC-44.2-Schemas); ein Jahr 2024 wuerde einen Kz-Fehler im Pruefwerkzeug ausloesen."

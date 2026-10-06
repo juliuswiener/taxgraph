@@ -155,9 +155,11 @@ felder:
   - keine_spenden
   - keine_versorgungsbezuege
   - keine_zweitwohnung
+  - kind_anderer_elternteil_ausland_zeitraum
   - kind_anderer_elternteil_geburtsdatum
   - kind_anderer_elternteil_kindschaftsverhaeltnis
   - kind_anderer_elternteil_name
+  - kind_anderer_elternteil_tod_am
   - kind_anderer_elternteil_zeitraum
   - kind_behinderten_pb_antrag
   - kind_betreuung_dienstleister

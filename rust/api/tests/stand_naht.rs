@@ -104,7 +104,9 @@ fn akte(scheibe: Option<&str>) -> store::Store {
 /// SCHRITT 0c: `_cfg` und `_scheibe_bindung` (`api.py:171-195`) im `api`-Crate; `stand` ruft beide
 /// zuerst (`api.py:454-455`). Die Zahlen sind `len(api._scheibe_bindung({"scheibe": s}))`, gemessen
 /// 2026-10-02 (`gesamt` 350 -> 351, `rentner_gesamt` 247 -> 248 mit dem Zwilling `p34_abs3_antragsbetrag`,
-/// gemessen 2026-10-03; beide +1 mit `stammdaten_hausnummerzusatz`: 352 und 249, gemessen 2026-10-03).
+/// gemessen 2026-10-03; beide +1 mit `stammdaten_hausnummerzusatz`: 352 und 249, gemessen 2026-10-03;
+/// beide +2 mit den Satz-3-Feldern `kind_anderer_elternteil_tod_am` und `..._ausland_zeitraum`:
+/// 354 und 251, C2 am 2026-10-06).
 /// `n_vor_gwg` liest die YAML: 0 statt 69 waere der stille Rueckfall auf "leer".
 #[test]
 fn scheibe_bindung_wie_python() {
@@ -113,8 +115,8 @@ fn scheibe_bindung_wie_python() {
         ("ep", 6),
         ("n_vor_gwg", 69),
         ("an_gesamt", 84),
-        ("gesamt", 352),
-        ("rentner_gesamt", 249),
+        ("gesamt", 354),
+        ("rentner_gesamt", 251),
     ] {
         let sb = d.zustand.scheibe_bindung(&akte(Some(scheibe))).unwrap();
         assert_eq!(sb.cfg.scheibe().to_string(), scheibe);

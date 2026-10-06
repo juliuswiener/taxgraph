@@ -995,8 +995,11 @@ bindungen:
   # zulaessig") — K_Verh_B bildet den MITERKLAERENDEN Ehegatten ab, nicht den anderen
   # Elternteil allgemein. Fuer Einzelveranlagung verlangt checkESt stattdessen diese
   # Personenangaben zum anderen Elternteil als Drittperson (E0501103/104/106/903). Die
-  # Adresse (E0501105) und der Weit_Ang-Zweig (Tod/Ausland/unbekannter Aufenthalt, E0501102/
-  # E0503903/E0501513) bleiben unbebaut — kein Testfall dieses Blockers braucht sie.
+  # Adresse (E0501105) und der Rest des Weit_Ang-Zweigs bleiben unbebaut: E0501513 ("Wohnsitz oder
+  # Aufenthalt des anderen Elternteils nicht zu ermitteln, Vater amtlich nicht feststellbar") nennt
+  # § 32 Abs. 6 Satz 3 nicht, und das zugehoerige Ja-Feld haengt an einem Feld, nach dem die
+  # Software nicht fragt. Gebaut am 2026-10-06 (C2, Julius: "bauen"): die beiden Felder unten,
+  # E0501102 (Todestag) und E0503903 (Ausland-Zeitraum) — sie entscheiden § 32 Abs. 6 Satz 3 Nr. 1.
   - feld_id: kind_anderer_elternteil_name
     instanz_gruppe: kind
     quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
@@ -1068,6 +1071,49 @@ bindungen:
     anker_ref:
       quelle: "§ 32 Abs. 2 EStG"
       zitatanker: "Besteht bei einem angenommenen Kind das Kindschaftsverhältnis zu den leiblichen Eltern weiter"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  # § 32 Abs. 6 Satz 3 Nr. 1 (gebaut 2026-10-06, C2): die beiden Beträge stehen dem Steuerpflichtigen
+  # auch dann zu, wenn der andere Elternteil verstorben oder nicht unbeschränkt einkommensteuerpflichtig
+  # ist. Bei Einzelveranlagung hat er sonst nur ein Zwölftel je Monat; hier sind es beide. Die
+  # Gueltigkeit endet 2025, weil die beiden Kz nur in den Schemas 2024 und 2025 belegt sind und zu 2026
+  # lokal kein Schema liegt (`rust/bindung/tests/vz_bestand.yaml`; `rust/fixtures/README.md`, Abweichung Nr. 22).
+  - feld_id: kind_anderer_elternteil_tod_am
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: datum
+    muster: '^\d{2}\.\d{2}\.\d{4}$'
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    feld_bedingung: {feld: veranlagung, wert: einzel, grund: "§ 32 Abs. 6 Satz 3 Nr. 1 EStG gibt die verdoppelten Betraege des Satzes 2, wenn der ANDERE Elternteil verstorben ist. Bei Zusammenveranlagung tragen beide Ehegatten das Kind und haben die vollen Betraege schon nach Satz 2; der Fall bleibt ohne Wirkung, und der Weit_Ang-Zweig der Anlage Kind gilt im Schema nur fuer nicht zusammen veranlagte Eltern."}
+    fragetext_laie: "Ist der andere Elternteil deines Kindes verstorben? Wenn ja, gib den Tag des Todes an."
+    hilfe_kurz: "Nur nötig, wenn ihr nicht zusammen veranlagt werdet. Liegt der Tod länger als ein Jahr zurück, ist das ganze Jahr gemeint. Format: TT.MM.JJJJ (z.B. 01.01.1985)."
+    beispielwert: "01.01.2020"
+    herkunft_slots: null
+    elster_kz: E0501102
+    vz_gueltigkeit: [2024, 2025]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 3 Nr. 1 EStG"
+      zitatanker: "Die Beträge nach Satz 2 stehen dem Steuerpflichtigen auch dann zu"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+  - feld_id: kind_anderer_elternteil_ausland_zeitraum
+    instanz_gruppe: kind
+    quelle: {regel_id: p32_6_kinderfreibetraege, geltungsbedingung: kind_durch_idnr_identifiziert}
+    typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    feld_bedingung: {feld: veranlagung, wert: einzel, grund: "§ 32 Abs. 6 Satz 3 Nr. 1 EStG gibt die verdoppelten Betraege des Satzes 2, wenn der ANDERE Elternteil nicht unbeschränkt einkommensteuerpflichtig ist. Bei Zusammenveranlagung tragen beide Ehegatten das Kind und haben die vollen Betraege schon nach Satz 2; der Fall bleibt ohne Wirkung, und der Weit_Ang-Zweig der Anlage Kind gilt im Schema nur fuer nicht zusammen veranlagte Eltern."}
+    fragetext_laie: "In welchem Zeitraum dieses Jahr lebte der andere Elternteil deines Kindes im Ausland, ohne in Deutschland voll steuerpflichtig zu sein?"
+    hilfe_kurz: "Nur nötig, wenn ihr nicht zusammen veranlagt werdet. Gemeint ist: In dieser Zeit musste der andere Elternteil in Deutschland nicht sein ganzes Einkommen versteuern, weil er im Ausland lebte. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0503903
+    vz_gueltigkeit: [2024, 2025]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 3 Nr. 1 EStG"
+      zitatanker: "Die Beträge nach Satz 2 stehen dem Steuerpflichtigen auch dann zu"
       datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
 
 luecken:

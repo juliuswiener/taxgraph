@@ -199,16 +199,19 @@ fn basis_einzel(kinder: i64) -> Paare {
     ]
 }
 
+/// Die Feld-ID der Instanz `n` (1 = Basis-Feld-ID, `n` >= 2 = `__n`).
+fn instanz_id(n: u8, basis: &'static str) -> &'static str {
+    if n == 1 {
+        basis
+    } else {
+        // `Box::leak`: die Instanz-IDs der Test-Tabelle sind `&'static str`, wie die Basis-IDs.
+        Box::leak(format!("{basis}__{n}").into_boxed_str())
+    }
+}
+
 /// Die vier Kind-Felder der Instanz `n` (1 = Basis-Feld-ID, `n` >= 2 = `__n`), alle bestaetigt.
 fn kind_n(n: u8, a: (&str, &str), b: (&str, &str)) -> KindEvents {
-    // `Box::leak`: die Instanz-IDs der Test-Tabelle sind `&'static str`, wie die Basis-IDs.
-    let id = |basis: &'static str| -> &'static str {
-        if n == 1 {
-            basis
-        } else {
-            Box::leak(format!("{basis}__{n}").into_boxed_str())
-        }
-    };
+    let id = |basis: &'static str| instanz_id(n, basis);
     vec![
         (id("kind_kindschaftsverhaeltnis_a"), json!(a.0), true),
         (id("kind_kindschaftsverh_zeitraum_a"), json!(a.1), true),
@@ -611,4 +614,484 @@ fn ist_zustand_der_kinderfreibetrag_haengt_nicht_an_der_idnr_des_kindes() {
         P31Sieger::Freibetraege,
         "ohne IdNr gewinnt der Freibetrag (IST-ZUSTAND)"
     );
+}
+
+// ---------------------------------------------------------------- Satz 3 Nr. 1: anderer Elternteil verstorben / im Ausland (C2)
+//
+// § 32 Abs. 6 Satz 3 Nr. 1 EStG (`sources/gesetze-im-internet/estg_p32_2026-07-11.txt`): "Die Betraege nach Satz 2
+// stehen dem Steuerpflichtigen auch dann zu, wenn 1. der andere Elternteil verstorben oder nicht unbeschraenkt
+// einkommensteuerpflichtig ist". Satz 2 sind die verdoppelten Betraege. Bei Einzelveranlagung bekommt der
+// Ueberlebende (oder der Elternteil im Inland) in jedem solchen Monat BEIDE Zwoelftel statt einem (Satz 5 je Monat).
+// Zwei Angaben je Kind, nur bei Einzelveranlagung, Kz E0501102 (Todestag, TT.MM.JJJJ) und E0503903 (Zeitraum
+// TT.MM-TT.MM, in dem der andere Elternteil im Ausland lebte).
+//
+// HANDRECHNUNG (VZ 2025, nur aus `params/`, kein Wert aus dem Rust-Code): Freibetrag je Elternteil 3.336 + 1.464 =
+// 4.800 Euro (`kinderfreibetrag_p32.yaml`), Kindergeld 255 Euro je Monat = 3.060 Euro (`kindergeld_p66.yaml`),
+// zvE = Bruttolohn - 1.230 (`arbeitnehmerpauschbetrag.yaml`) - 36 (`sonderausgabenpauschbetrag.yaml`), Tarif
+// § 32a (`einkommensteuertarif_p32a.yaml`), die Steuer auf volle Euro abgerundet. Ein Personenmonat sind 400 Euro.
+//
+// Zone 3 (bis 68.480): y = (zvE - 17.443) / 10.000, Steuer = (176,64 y + 2.397) y + 1.015,13.
+// Zone 4 (bis 277.825): 0,42 zvE - 10.911,92. Zone 5: 0,45 zvE - 19.246,67.
+//
+//   zvE vor Kind   ohne Satz 3 (12 PM = 4.800)   Satz 3 ganzes Jahr (24 PM = 9.600)
+//   50.000         Steuer 10.691 (y 3,2557)        mit 40.400: 7.448 (y 2,2957) + 3.060 = 10.508 < 10.691
+//   60.000         Steuer 14.415 (y 4,2557)        mit 50.400: 10.833 (y 3,2957) + 3.060 = 13.893 < 14.415
+//   80.000         Steuer 22.688 (22.688,08)       mit 70.400: 18.656 (18.656,08) + 3.060 = 21.716 < 22.688
+//
+// Ohne Satz 3 gewinnt bei Einzelveranlagung das Kindergeld: 50.000 mit 4.800 abgezogen ergibt 9.029 + 3.060 = 12.089
+// > 10.691; ebenso 14.415 gegen 12.583 + 3.060 = 15.643 und 22.688 gegen 20.672 + 3.060 = 23.732. Die Ersparnis durch
+// Satz 3 ist 183 / 522 / 972 Euro (10.691 - 10.508, 14.415 - 13.893, 22.688 - 21.716).
+
+const TOD: &str = "kind_anderer_elternteil_tod_am";
+const AUSLAND: &str = "kind_anderer_elternteil_ausland_zeitraum";
+
+/// Eine Zeile der Handrechnung, alles Euro: (zvE, tarifliche Steuer, festzusetzende Steuer, Sieger der Guenstigerpruefung).
+type Soll = (i64, i64, i64, P31Sieger);
+
+fn pruefe(k: &Kette, soll: &Soll, wo: &str) {
+    let ist = (
+        k.zu_versteuerndes_einkommen.get(),
+        k.tarifliche_est.get(),
+        k.festzusetzende_est.get(),
+        k.p31.as_ref().expect("KONTROLLE: kein p31").guenstiger,
+    );
+    assert_eq!(&ist, soll, "{wo}");
+}
+
+/// Die beiden Angaben zum anderen Elternteil der Instanz `n`, bestaetigt; `None` = nicht geschrieben.
+fn satz3(n: u8, tod: Option<Value>, ausland: Option<Value>) -> KindEvents {
+    let mut e = Vec::new();
+    if let Some(w) = tod {
+        e.push((instanz_id(n, TOD), w, true));
+    }
+    if let Some(w) = ausland {
+        e.push((instanz_id(n, AUSLAND), w, true));
+    }
+    e
+}
+
+fn tod(datum: &str) -> KindEvents {
+    satz3(1, Some(json!(datum)), None)
+}
+
+fn ausland(zeitraum: &str) -> KindEvents {
+    satz3(1, None, Some(json!(zeitraum)))
+}
+
+/// Einzelveranlagung, ein Bruttolohn in Euro, `kinder` Kinder.
+fn einzel_brutto(brutto_euro: i64, kinder: i64, kind: &KindEvents) -> Ausgang {
+    let basis = vec![
+        ("veranlagung", json!("einzel")),
+        ("bruttoarbeitslohn", json!(brutto_euro * 100)),
+        ("fam_anzahl_kinder", json!(kinder)),
+    ];
+    rechne(Scheibe::Gesamt, &basis, kind)
+}
+
+/// Bruttolohn und Handrechnung bei zvE 50.000 / 60.000 / 80.000 Euro vor dem Kind (Brutto = zvE + 1.266):
+/// `(Brutto, ohne Satz 3, Satz 3 ein ganzes Jahr)`.
+fn faelle_50_60_80() -> [(i64, Soll, Soll); 3] {
+    [
+        (
+            51_266,
+            (50_000, 10_691, 10_691, P31Sieger::Kindergeld),
+            (40_400, 7_448, 10_508, P31Sieger::Freibetraege),
+        ),
+        (
+            61_266,
+            (60_000, 14_415, 14_415, P31Sieger::Kindergeld),
+            (50_400, 10_833, 13_893, P31Sieger::Freibetraege),
+        ),
+        (
+            81_266,
+            (80_000, 22_688, 22_688, P31Sieger::Kindergeld),
+            (70_400, 18_656, 21_716, P31Sieger::Freibetraege),
+        ),
+    ]
+}
+
+/// Zone 5, zvE vor dem Kind 298.734 Euro (Brutto 300.000): jeder Personenmonat mehr senkt den Abzug sichtbar, weil
+/// ab 18 Personenmonaten (7.200 Euro x 45 % = 3.240 > 3.060) der Freibetrag das Kindergeld schlaegt. Brutto 300.000.
+const BRUTTO_ZONE_5: i64 = 300_000;
+/// Ohne Satz 3: 4.800 x 0,45 = 2.160 < 3.060, das Kindergeld gewinnt; 0,45 x 298.734 - 19.246,67 = 115.183,63.
+const OHNE_ZONE_5: Soll = (298_734, 115_183, 115_183, P31Sieger::Kindergeld);
+
+/// Zone 5 mit Freibetrag `fb` Euro und Kindergeld 3.060: (298.734 - fb, Steuer darauf, Steuer + 3.060, Freibetraege).
+/// Die Zahlen stehen unten je Fall mit der Rechnung; hier nur die Form.
+const fn zone5(fb: i64, tarifl: i64, kindergeld: i64) -> Soll {
+    (298_734 - fb, tarifl, tarifl + kindergeld, P31Sieger::Freibetraege)
+}
+
+/// Ein Elternteil im Vorjahr verstorben: der Ueberlebende hat in allen zwoelf Monaten beide Zwoelftel (24 Personenmonate,
+/// 9.600 Euro), das Kindergeld bleibt 3.060. Gegenprobe im selben Test: ohne die Angabe gewinnt das Kindergeld.
+#[test]
+fn tod_im_vorjahr_gibt_den_vollen_betrag_bei_50_60_80_tausend() {
+    for (brutto, ohne, mit) in faelle_50_60_80() {
+        let k0 = kette(einzel_brutto(brutto, 1, &Vec::new()));
+        pruefe(&k0, &ohne, &format!("ohne Angabe, brutto {brutto}"));
+        let k = kette(einzel_brutto(brutto, 1, &tod("31.12.2024")));
+        pruefe(&k, &mit, &format!("Tod 31.12.2024, brutto {brutto}"));
+        assert_eq!(kindergeld(&k), 3_060, "das Kindergeld bleibt zwoelf Monate");
+    }
+}
+
+/// Der Todestag liegt im Jahr 2000 oder am 01.01.1900: lesbar, lange vorbei, das ganze Jahr zaehlt.
+#[test]
+fn tod_lange_vorher_zaehlt_das_ganze_jahr() {
+    let (brutto, _, mit) = faelle_50_60_80()[0];
+    for datum in ["29.02.2000", "01.01.1900", "31.12.2024"] {
+        let k = kette(einzel_brutto(brutto, 1, &tod(datum)));
+        pruefe(&k, &mit, datum);
+    }
+}
+
+/// Der andere Elternteil lebte das ganze Jahr im Ausland und war nicht unbeschraenkt steuerpflichtig: dieselben Zahlen.
+#[test]
+fn ausland_ganzes_jahr_gibt_den_vollen_betrag_bei_50_60_80_tausend() {
+    for (brutto, _, mit) in faelle_50_60_80() {
+        let k = kette(einzel_brutto(brutto, 1, &ausland(GANZ)));
+        pruefe(&k, &mit, &format!("Ausland {GANZ}, brutto {brutto}"));
+        assert_eq!(kindergeld(&k), 3_060);
+    }
+}
+
+/// Beides zugleich (verstorben UND vorher im Ausland): die Monate werden vereinigt, nicht addiert. 24 Personenmonate
+/// sind die Obergrenze (zwei Elternteile mal zwoelf Monate), nie 36.
+#[test]
+fn tod_und_ausland_ganzes_jahr_zaehlen_die_monate_einmal() {
+    for (brutto, _, mit) in faelle_50_60_80() {
+        let mut kind = tod("31.12.2024");
+        kind.extend(ausland(GANZ));
+        let k = kette(einzel_brutto(brutto, 1, &kind));
+        pruefe(&k, &mit, &format!("Tod und Ausland, brutto {brutto}"));
+    }
+}
+
+/// Tod im Juli (15.07.): sechs Monate, 18 Personenmonate, Freibetrag 7.200. Bei 50 / 60 / 80 Tausend reicht das nicht,
+/// das Kindergeld gewinnt weiter: 8.228 + 3.060 = 11.288 > 10.691; 11.698 + 3.060 = 14.758 > 14.415;
+/// 19.664 + 3.060 = 22.724 > 22.688 (mit 7.200 abgezogen: Steuer von 42.800 / 52.800 / 72.800).
+#[test]
+fn tod_im_juli_aendert_bei_50_60_80_tausend_nichts() {
+    for (brutto, ohne, _) in faelle_50_60_80() {
+        let k = kette(einzel_brutto(brutto, 1, &tod("15.07.2025")));
+        pruefe(&k, &ohne, &format!("Tod 15.07.2025, brutto {brutto}"));
+    }
+}
+
+/// Todesmonat und Monatsgrenze, Zone 5. Der Monat des Todes zaehlt voll (Anleitung zur Anlage Kind: Freibetraege "fuer
+/// jeden angefangenen Kalendermonat"; derselbe Rechenweg wie bei Satz 5): der Tod am 30.06. gibt Juni bis Dezember =
+/// 7 Monate, der Tod am 01.07. und am 31.07. gleich Juli bis Dezember = 6 Monate.
+///   7 Monate: 12 + 7 = 19 PM, 19 x 400 = 7.600; zvE 291.134; 0,45 x 291.134 - 19.246,67 = 111.763,63 -> 111.763;
+///             mit Kindergeld 114.823 < 115.183.
+///   6 Monate: 18 PM, 7.200; zvE 291.534; 111.943,63 -> 111.943; mit Kindergeld 115.003 < 115.183.
+#[test]
+fn todesmonat_zaehlt_voll_und_die_monatsgrenze_verschiebt_um_einen_monat() {
+    let sieben = zone5(7_600, 111_763, 3_060);
+    let sechs = zone5(7_200, 111_943, 3_060);
+    for (datum, soll) in [
+        ("30.06.2025", &sieben),
+        ("01.06.2025", &sieben),
+        ("01.07.2025", &sechs),
+        ("15.07.2025", &sechs),
+        ("31.07.2025", &sechs),
+    ] {
+        let k = kette(einzel_brutto(BRUTTO_ZONE_5, 1, &tod(datum)));
+        pruefe(&k, soll, datum);
+        assert_eq!(kindergeld(&k), 3_060, "{datum}");
+    }
+}
+
+/// Tod am 01.01.2025: das ganze Jahr zaehlt (zwoelf Monate), wie ein Tod im Vorjahr. 24 PM = 9.600; zvE 289.134;
+/// 0,45 x 289.134 - 19.246,67 = 110.863,63 -> 110.863; mit Kindergeld 113.923.
+#[test]
+fn tod_am_ersten_januar_zaehlt_das_ganze_jahr() {
+    let ganz = zone5(9_600, 110_863, 3_060);
+    for datum in ["01.01.2025", "31.12.2024"] {
+        let k = kette(einzel_brutto(BRUTTO_ZONE_5, 1, &tod(datum)));
+        pruefe(&k, &ganz, datum);
+    }
+}
+
+/// Der Tod nach dem Jahr oder am Jahresende wirkt nicht oder zu wenig, um etwas zu bewegen: ein Tod 2026 aendert
+/// nichts (das Jahr 2025 hatte zwei Elternteile), der 31.12.2025 gibt einen Monat (13 PM = 5.200 Euro, 2.340 < 3.060:
+/// das Kindergeld gewinnt weiter).
+#[test]
+fn tod_nach_dem_jahr_aendert_nichts_und_der_letzte_tag_gibt_einen_monat() {
+    let ohne = kette(einzel_brutto(BRUTTO_ZONE_5, 1, &Vec::new()));
+    pruefe(&ohne, &OHNE_ZONE_5, "ohne Angabe");
+    for datum in ["01.01.2026", "31.12.2025", "31.12.2999"] {
+        let k = kette(einzel_brutto(BRUTTO_ZONE_5, 1, &tod(datum)));
+        pruefe(&k, &OHNE_ZONE_5, datum);
+    }
+}
+
+/// Ausland-Zeitraum, Zone 5: jeder angefangene Monat zaehlt.
+///   "01.04-31.10": April bis Oktober = 7 Monate, 19 PM, wie oben (111.763).
+///   "30.04-31.10": ebenfalls 7 Monate (der 30.04. zaehlt als April).
+///   "01.05-31.10": Mai bis Oktober = 6 Monate, 18 PM (111.943).
+///   "15.03-14.10": Maerz bis Oktober = 8 Monate, 20 PM = 8.000; zvE 290.734; 111.583,63 -> 111.583; 114.643 < 115.183.
+#[test]
+fn ausland_zeitraum_zaehlt_die_angefangenen_monate() {
+    let sieben = zone5(7_600, 111_763, 3_060);
+    let sechs = zone5(7_200, 111_943, 3_060);
+    let acht = zone5(8_000, 111_583, 3_060);
+    for (zeitraum, soll) in [
+        ("01.04-31.10", &sieben),
+        ("30.04-31.10", &sieben),
+        ("01.05-31.10", &sechs),
+        ("15.03-14.10", &acht),
+    ] {
+        let k = kette(einzel_brutto(BRUTTO_ZONE_5, 1, &ausland(zeitraum)));
+        pruefe(&k, soll, zeitraum);
+    }
+}
+
+/// Ein leeres Feld ist keine Angabe: `null` und `""` bedeuten beim Ausland-Zeitraum KEIN Monat (nicht das ganze Jahr,
+/// wie beim Kindschaftszeitraum). Sonst bekaeme jeder, der das Feld leer laesst, den doppelten Freibetrag.
+#[test]
+fn leeres_ausland_feld_ist_kein_monat() {
+    for leer in [json!(""), Value::Null] {
+        let kind = satz3(1, None, Some(leer.clone()));
+        let k = kette(einzel_brutto(BRUTTO_ZONE_5, 1, &kind));
+        pruefe(&k, &OHNE_ZONE_5, &format!("Ausland {leer:?}"));
+    }
+    let kind = satz3(1, Some(json!("")), None);
+    let k = kette(einzel_brutto(BRUTTO_ZONE_5, 1, &kind));
+    pruefe(&k, &OHNE_ZONE_5, "Tod leer");
+    let kind = satz3(1, Some(Value::Null), None);
+    let k = kette(einzel_brutto(BRUTTO_ZONE_5, 1, &kind));
+    pruefe(&k, &OHNE_ZONE_5, "Tod null");
+}
+
+/// Die Monate von Tod und Ausland werden vereinigt: Tod am 01.04. (April bis Dezember, 9 Monate) und Ausland
+/// "01.03-30.06" (Maerz bis Juni): zusammen Maerz bis Dezember = 10 Monate, 22 PM = 8.800; zvE 289.934;
+/// 0,45 x 289.934 - 19.246,67 = 111.223,63 -> 111.223; mit Kindergeld 114.283. Eine Summe (9 + 4 = 13) gaebe 25 PM.
+#[test]
+fn tod_und_ausland_mit_ueberschneidung_zaehlen_die_vereinigung() {
+    let mut kind = tod("01.04.2025");
+    kind.extend(ausland("01.03-30.06"));
+    let k = kette(einzel_brutto(BRUTTO_ZONE_5, 1, &kind));
+    pruefe(&k, &zone5(8_800, 111_223, 3_060), "Maerz bis Dezember");
+}
+
+/// Satz 3 gilt nur in den Monaten, in denen das Kind zum Steuerpflichtigen gehoert (Satz 5 zaehlt Monate, in denen die
+/// Voraussetzungen fuer den Freibetrag vorliegen): das Kind gehoert ihm erst ab Juli (6 Monate), der andere Elternteil
+/// ist seit dem 01.03. verstorben (Maerz bis Dezember). Beide Mengen zusammen: Juli bis Dezember = 6 Monate Satz 3
+/// -> 6 + 6 = 12 PM = 4.800; das Kindergeld folgt dem Kind: 6 x 255 = 1.530. Zone 5: zvE 293.934;
+/// 0,45 x 293.934 - 19.246,67 = 113.023,63 -> 113.023; mit Kindergeld 114.553 < 115.183. Ohne den Schnitt waeren es
+/// 6 + 10 = 16 PM.
+#[test]
+fn satz_3_zaehlt_nur_in_den_monaten_des_kindes() {
+    let mut kind = kind_n(1, ("1", ZWEITE_HAELFTE), ("1", GANZ));
+    kind.extend(tod("01.03.2025"));
+    let k = kette(einzel_brutto(BRUTTO_ZONE_5, 1, &kind));
+    pruefe(&k, &(293_934, 113_023, 114_553, P31Sieger::Freibetraege), "ab Juli");
+    assert_eq!(kindergeld(&k), 1_530);
+}
+
+/// Zwei Kinder, nur das zweite (Instanz `__2`) hat einen verstorbenen anderen Elternteil: 12 + 24 = 36 PM = 14.400;
+/// das Kindergeld bleibt 2 x 3.060 = 6.120. Zone 5: zvE 284.334; 0,45 x 284.334 - 19.246,67 = 108.703,63 -> 108.703;
+/// mit Kindergeld 114.823 < 115.183. Ohne Satz 3 (24 PM = 9.600): 110.863 + 6.120 = 116.983 > 115.183, das Kindergeld
+/// gewinnt. Die Angabe von Kind 2 wirkt nicht auf Kind 1: stuende sie bei Kind 1, waeren es dieselben 36 PM, darum
+/// steht der Gegenfall (Tod nur bei Kind 1) daneben und muss gleich sein; ein Tod bei einem Kind 3 ohne Kinderzahl
+/// zaehlt nicht.
+#[test]
+fn zweites_kind_traegt_seinen_eigenen_todestag() {
+    let normal = kind_n(1, ("1", GANZ), ("1", GANZ));
+    let mut kind = normal.clone();
+    kind.extend(satz3(2, Some(json!("31.12.2024")), None));
+    let k = kette(einzel_brutto(BRUTTO_ZONE_5, 2, &kind));
+    pruefe(
+        &k,
+        &(284_334, 108_703, 114_823, P31Sieger::Freibetraege),
+        "Tod bei Kind 2",
+    );
+    assert_eq!(kindergeld(&k), 6_120);
+    let mut kind1 = normal;
+    kind1.extend(satz3(1, Some(json!("31.12.2024")), None));
+    let k1 = kette(einzel_brutto(BRUTTO_ZONE_5, 2, &kind1));
+    assert_eq!(k1, k, "Tod bei Kind 1 statt bei Kind 2: dieselbe Summe");
+    let ohne = kette(einzel_brutto(BRUTTO_ZONE_5, 2, &Vec::new()));
+    pruefe(
+        &ohne,
+        &(298_734, 115_183, 115_183, P31Sieger::Kindergeld),
+        "zwei Kinder ohne Satz 3",
+    );
+    let mut ueber = kind_n(1, ("1", GANZ), ("1", GANZ));
+    ueber.extend(satz3(3, Some(json!("31.12.2024")), None));
+    assert_eq!(
+        einzel_brutto(BRUTTO_ZONE_5, 2, &ueber),
+        einzel_brutto(BRUTTO_ZONE_5, 2, &Vec::new()),
+        "Instanz 3 gibt es bei zwei Kindern nicht"
+    );
+}
+
+/// Zusammenveranlagung liest die beiden Felder nicht: beide Ehegatten haben das Kind, die Betraege sind dort schon
+/// verdoppelt (Satz 2), und der Zweig `Weit_Ang` der Anlage Kind gilt nur fuer nicht zusammen veranlagte Eltern.
+#[test]
+fn zusammenveranlagung_liest_die_satz_3_felder_nicht() {
+    let ohne = zusammen(1, &Vec::new());
+    assert!(matches!(ohne, Ausgang::Zahl(..)), "{ohne:?}");
+    let mut kind = tod("31.12.2024");
+    kind.extend(ausland(GANZ));
+    assert_eq!(zusammen(1, &kind), ohne);
+    // Auch ein kaputter Wert sperrt dort nicht: der Rahmen liest ihn nie.
+    let mut kaputt = tod("31.02.2025");
+    kaputt.extend(ausland("kaputt"));
+    assert_eq!(zusammen(1, &kaputt), ohne);
+}
+
+/// Nicht lesbare Angaben sperren, nie raten, nie "kein Tod". Das Datum ist `TT.MM.JJJJ`, streng.
+#[test]
+fn unlesbarer_todestag_sperrt() {
+    let faelle = [
+        ("31.02.2025", "31. Februar gibt es nicht"),
+        ("29.02.2025", "2025 ist kein Schaltjahr"),
+        ("29.02.2100", "2100 ist kein Schaltjahr"),
+        ("31.04.2025", "31. April gibt es nicht"),
+        ("00.03.2025", "Tag 0"),
+        ("15.00.2025", "Monat 0"),
+        ("15.13.2025", "Monat 13"),
+        ("1.3.2025", "Tag und Monat zweistellig"),
+        ("15.03.25", "Jahr vierstellig"),
+        ("15.03.20255", "Jahr zu lang"),
+        ("2025-03-15", "ISO-Form"),
+        ("15/03/2025", "Schraegstriche"),
+        (" 15.03.2025", "Leerzeichen davor"),
+        ("15.03.2025\n", "angehaengter Zeilenumbruch"),
+        ("15.03.999", "Jahr dreistellig"),
+        ("abc", "kein Datum"),
+    ];
+    let mut falsch = Vec::new();
+    for (text, warum) in faelle {
+        let a = einzel(1, &tod(text));
+        if a != Ausgang::Gesperrt(GRUND_ZEITRAUM.to_owned()) {
+            falsch.push(format!("{text:?} ({warum}): {a:?}"));
+        }
+    }
+    for w in [json!(5), json!(true), json!(["15.03.2025"]), json!(2025.5)] {
+        let a = einzel(1, &satz3(1, Some(w.clone()), None));
+        if a != Ausgang::Gesperrt(GRUND_ZEITRAUM.to_owned()) {
+            falsch.push(format!("{w}: {a:?}"));
+        }
+    }
+    assert!(falsch.is_empty(), "{falsch:#?}");
+}
+
+/// Der Ausland-Zeitraum wird wie jeder Zeitraum der Kinder gelesen (`TT.MM-TT.MM` im Steuerjahr).
+#[test]
+fn unlesbarer_ausland_zeitraum_sperrt() {
+    let faelle = [
+        ("31.02-31.12", "31. Februar gibt es nicht"),
+        ("29.02-31.12", "2025 ist kein Schaltjahr"),
+        ("01.12-01.01", "Ende vor Anfang"),
+        ("1.1-31.12", "Tag und Monat zweistellig"),
+        ("01.01 - 31.12", "Leerzeichen"),
+        ("01.13-31.12", "Monat 13"),
+        ("abc", "kein Zeitraum"),
+        ("01.01.2025-31.12.2025", "Datum statt Tag und Monat"),
+    ];
+    let mut falsch = Vec::new();
+    for (text, warum) in faelle {
+        let a = einzel(1, &ausland(text));
+        if a != Ausgang::Gesperrt(GRUND_ZEITRAUM.to_owned()) {
+            falsch.push(format!("{text:?} ({warum}): {a:?}"));
+        }
+    }
+    for w in [json!(5), json!(true), json!(2025.5)] {
+        let a = einzel(1, &satz3(1, None, Some(w.clone())));
+        if a != Ausgang::Gesperrt(GRUND_ZEITRAUM.to_owned()) {
+            falsch.push(format!("{w}: {a:?}"));
+        }
+    }
+    assert!(falsch.is_empty(), "{falsch:#?}");
+}
+
+/// Gegenprobe: was gerade noch lesbar ist, sperrt nicht. Der 29.02. eines Todestags gilt nach dem Kalender SEINES
+/// Jahres (2024 und 2000 waren Schaltjahre), nicht nach dem Steuerjahr.
+#[test]
+fn lesbare_angaben_an_den_grenzen_sperren_nicht() {
+    for datum in [
+        "29.02.2024",
+        "29.02.2000",
+        "31.12.2025",
+        "01.01.2025",
+        "28.02.2025",
+        "01.01.1900",
+        "15.03.0000",
+    ] {
+        let a = einzel(1, &tod(datum));
+        assert!(matches!(a, Ausgang::Zahl(..)), "{datum}: {a:?}");
+    }
+    for zeitraum in ["01.01-31.12", "28.02-28.02", "31.12-31.12"] {
+        let a = einzel(1, &ausland(zeitraum));
+        assert!(matches!(a, Ausgang::Zahl(..)), "{zeitraum}: {a:?}");
+    }
+}
+
+/// Ein vorlaeufiger, lesbarer Todestag bewegt die festgesetzte Zahl nie (Zwei-Signal-Invariante), wie beim
+/// Teiljahr-Zeitraum: sie rechnet mit dem Normalfall, der Guard sperrt nicht.
+#[test]
+fn vorlaeufiger_todestag_bewegt_die_festgesetzte_zahl_nicht() {
+    let ohne = einzel_brutto(BRUTTO_ZONE_5, 1, &Vec::new());
+    let mut kind = tod("31.12.2024");
+    kind.extend(ausland(GANZ));
+    for e in &mut kind {
+        e.2 = false;
+    }
+    assert_eq!(einzel_brutto(BRUTTO_ZONE_5, 1, &kind), ohne);
+}
+
+/// Der Guard sieht auch vorlaeufige Werte: ein vorlaeufiger, unlesbarer Todestag oder Zeitraum sperrt, statt dass
+/// die Schaetz-Zahl (die ihn liest) mit einem Fehler endet.
+#[test]
+fn vorlaeufig_unlesbar_sperrt() {
+    for (tod_w, ausland_w) in [(Some(json!("31.02.2025")), None), (None, Some(json!("kaputt")))] {
+        let mut kind = satz3(1, tod_w, ausland_w);
+        for e in &mut kind {
+            e.2 = false;
+        }
+        let a = einzel(1, &kind);
+        assert_eq!(a, Ausgang::Gesperrt(GRUND_ZEITRAUM.to_owned()), "{kind:?}");
+    }
+}
+
+/// Der Rahmen verlaesst sich nicht auf den Guard (wie bei den Zeitraeumen): erreicht ihn ein unlesbarer Todestag,
+/// meldet er die Sperre als Fehler, statt "kein Tod" zu rechnen.
+#[test]
+fn rahmen_ohne_guard_meldet_einen_unlesbaren_todestag() {
+    let a = ohne_guard(&fall(Scheibe::Gesamt, &basis_einzel(1), &tod("31.02.2025")));
+    assert_eq!(
+        a,
+        Ausgang::Anders("KindFreibetragGesperrt(KindZeitraumUnlesbar)".to_owned())
+    );
+    let a = ohne_guard(&fall(Scheibe::Gesamt, &basis_einzel(1), &ausland("kaputt")));
+    assert_eq!(
+        a,
+        Ausgang::Anders("KindFreibetragGesperrt(KindZeitraumUnlesbar)".to_owned())
+    );
+}
+
+/// Ein Kind, das zu keinem der beiden im Sinn von Abs. 1 gehoert (Stiefkind), bleibt gesperrt, auch mit Todestag:
+/// Satz 3 setzt ein Kindschaftsverhaeltnis voraus.
+#[test]
+fn stiefkind_bleibt_auch_mit_todestag_gesperrt() {
+    let mut kind = kind_n(1, ("3", GANZ), ("1", GANZ));
+    kind.extend(tod("31.12.2024"));
+    assert_eq!(
+        einzel(1, &kind),
+        Ausgang::Gesperrt(GRUND_VERTEILUNG.to_owned())
+    );
+}
+
+/// Rentner-Scheibe, derselbe Rahmen: ein Todestag im Vorjahr gibt auch dort den vollen Betrag. Beginnjahr 2025
+/// ohne Einkuenfte: zvE 0, der Freibetrag aendert die Steuer nicht -- darum sieht man nur, dass die Scheibe
+/// rechnet (Zahl) und mit unlesbarem Wert sperrt.
+#[test]
+fn rentner_scheibe_liest_die_satz_3_felder() {
+    let basis = basis_rentner();
+    let a = rechne(Scheibe::RentnerGesamt, &basis, &tod("31.12.2024"));
+    assert!(matches!(a, Ausgang::Zahl(..)), "{a:?}");
+    let a = rechne(Scheibe::RentnerGesamt, &basis, &tod("31.02.2025"));
+    assert_eq!(a, Ausgang::Gesperrt(GRUND_ZEITRAUM.to_owned()));
 }

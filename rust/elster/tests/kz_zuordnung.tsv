@@ -52,9 +52,11 @@ kap_q_auslaendische_steuer	E1905101	true
 kap_sparer_pauschbetrag_genutzt	E1901401	false
 kap_verlust_aktien	E1901301	true
 kap_verlust_sonstige	E1901201	true
+kind_anderer_elternteil_ausland_zeitraum	E0503903	true
 kind_anderer_elternteil_geburtsdatum	E0501104	true
 kind_anderer_elternteil_kindschaftsverhaeltnis	E0501106	true
 kind_anderer_elternteil_name	E0501103	true
+kind_anderer_elternteil_tod_am	E0501102	true
 kind_anderer_elternteil_zeitraum	E0501903	true
 kind_betreuung_dienstleister	E0506101	true
 kind_betreuung_eigenanteil	E0506604	true
