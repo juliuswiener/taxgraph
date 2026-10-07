@@ -17,6 +17,9 @@
 //!
 //! Fehler-Parität: Python-Ausnahme ↔ Rust-`Err` je Aufruf; ist die Rust-Klasse bekannt und nicht die
 //! Sammelklasse `CatalaError`, muss sie gleich heißen.
+//! Gewollte Abweichung: `festzusetzende_est_rentner` rechnet in Rust seit Nr. 25 Lohn und Versorgung, Python
+//! nie. Rust sieht dort die sieben Felder als leer (`GEWOLLT_ABWEICHEND_NR25`), und `nr25_wirksam` verlangt je
+//! Block, dass das Maskieren mindestens ein Ergebnis bewegt.
 //! Negativkontrolle: `negativkontrolle_*` stört ein Rust-Ergebnis um 1 und verlangt genau eine
 //! Abweichung; `PARITY_STOERUNG=1` schaltet dieselbe Störung in `reale_faelle` (Lauf wird rot).
 //!
@@ -265,8 +268,60 @@ fn klasse(e: &SlotFehler<BescheidFehler>) -> Option<&'static str> {
 /// Ergebnis der Rust-Seite: `None` = kein Accessor, `Some(Ok(json))`, `Some(Err(klasse))`.
 type RustErgebnis = Option<Result<Value, (Option<&'static str>, String)>>;
 
+/// Die Zweig-Groesse, bei der Rust gewollt von Python abweicht (Abweichung Nr. 25).
+const RENTNER: &str = "festzusetzende_est_rentner";
+
+/// GEWOLLT ABWEICHEND (Abweichung Nr. 25, `rust/fixtures/README.md`; Entscheidung
+/// `rentner-vergleich-maskiert-die-sieben-felder-aus-abweichung-25`): der Rust-Rentner-Ring liest Lohn und
+/// Versorgungsbezuege, Python (eingefroren) liest sie nie. Fuer [`RENTNER`] sieht Rust diese sieben Felder
+/// im Vergleich als leer; sonst bliebe der ganze Zweig rot und belegte nichts mehr. Die Wirkung der Felder
+/// selbst belegt `rust/bescheid/tests/rentner_lohn_versorgung_hermetisch.rs`, hier prueft
+/// [`nr25_wirksam`], dass das Maskieren in jedem Block wirklich ein Ergebnis bewegt hat.
+/// Die Liste folgt Nr. 25, nicht dem Minimum: der Ring rechnet Versorgung nur, wenn Jahresrente, Bemessung
+/// und Beginn alle gesetzt sind, und liest `steuerklasse` nie. Ein Feld weniger in der Liste bleibt
+/// deshalb gruen (gemessen fuer `versorgung_jahresrente`), ohne Lohn sofort rot.
+const GEWOLLT_ABWEICHEND_NR25: [&str; 7] = [
+    "bruttoarbeitslohn",
+    "steuerklasse",
+    "versorgung_jahresrente",
+    "versorgung_bemessungsgrundlage",
+    "versorgung_beginn_jahr",
+    "versorgung_art",
+    "versorgung_alter_bei_beginn",
+];
+
+thread_local! {
+    /// Aufrufe je Test-Thread (= je Block), in denen das Maskieren das Rust-Ergebnis des Rentner-Zweigs bewegt hat.
+    static NR25_BEWEGT: Cell<u64> = const { Cell::new(0) };
+}
+
+/// Wachposten gegen ein totes Maskieren: hat im Block kein einziger Aufruf ein anderes Ergebnis gegeben,
+/// maskiert die Liste nichts mehr (Feld umbenannt, Ring liest es nicht mehr) und der Vergleich belegt
+/// weniger als er vorgibt.
+fn nr25_wirksam(block: &str) {
+    let n = NR25_BEWEGT.with(Cell::get);
+    eprintln!("{block}: Maskieren der sieben Felder (Nr. 25) bewegte {n} Rentner-Ergebnisse");
+    assert!(
+        n > 0,
+        "{block}: das Maskieren der sieben Felder (Nr. 25) bewegt kein Ergebnis: die Liste maskiert nichts"
+    );
+}
+
+/// Rust-Seite eines Falls. Die Rentner-Groesse laeuft mit den sieben Feldern der Abweichung Nr. 25 als leer.
 fn rust_lauf(fall: &Fall, antwort: &Value) -> RustErgebnis {
-    let (felder, store): (Felder, Option<Store>) = match (&fall.store, &fall.felder) {
+    let roh = rust_lauf_mit(fall, antwort, false);
+    if fall.q != RENTNER {
+        return roh;
+    }
+    let maskiert = rust_lauf_mit(fall, antwort, true);
+    if format!("{roh:?}") != format!("{maskiert:?}") {
+        NR25_BEWEGT.with(|c| c.set(c.get() + 1));
+    }
+    maskiert
+}
+
+fn rust_lauf_mit(fall: &Fall, antwort: &Value, maskiere_nr25: bool) -> RustErgebnis {
+    let (mut felder, store): (Felder, Option<Store>) = match (&fall.store, &fall.felder) {
         (Some(s), _) => {
             let datei: StoreDatei =
                 serde_json::from_value(s.clone()).expect("Store-Datei deserialisiert");
@@ -293,6 +348,11 @@ fn rust_lauf(fall: &Fall, antwort: &Value) -> RustErgebnis {
     let mut werte = Werte::neu();
     for fid in ids("werte_ids") {
         werte.setze(&fid, felder[&fid].wert.clone());
+    }
+    if maskiere_nr25 {
+        for fid in GEWOLLT_ABWEICHEND_NR25 {
+            felder.remove(fid);
+        }
     }
     let solz = Cell::new(None);
     let extras = RefCell::new(Extras::default());
@@ -623,6 +683,7 @@ fn reale_faelle() {
     }
     b.drucke("reale_faelle", faelle);
     b.wache_rechnet("reale_faelle", LEER_REALE);
+    nr25_wirksam("reale_faelle");
     eprintln!(
         "reale_faelle: {} von {} Dateien GELESEN, {mit_store} mit Store, {kein_store} ohne Store \
          übersprungen, {vz_ersatz} mit VZ außerhalb 2024–2026 (Ersatz 2025), {} unlesbar",
@@ -755,6 +816,7 @@ fn golden_faelle() {
     }
     b.drucke("golden_faelle", n);
     b.wache_rechnet("golden_faelle", LEER_GOLDEN);
+    nr25_wirksam("golden_faelle");
     assert_eq!(n, faelle.len() * 2 * QUANTITAETEN.len() * 2);
     assert_eq!(b.abweichungen(), 0);
 }
@@ -1164,6 +1226,7 @@ fn generierte_faelle() {
         1200,
     ) {
         b.wache_rechnet("generierte_faelle", LEER_GENERIERTE);
+        nr25_wirksam("generierte_faelle");
     }
     assert!(n.get() >= 4 * generierte_je_quantitaet().min(1000) as usize);
     assert_eq!(b.abweichungen(), 0);
