@@ -3,13 +3,13 @@
 use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 
-use bindung::{Bindung, Bindungspunkt, Vorjahr};
+use bindung::{Bindung, Bindungspunkt, FeldBedingung, Vorjahr};
 use domain::PyWert;
 use store::{Event, Store};
 
 use crate::antwort::{Aktiv, Antwort};
 use crate::graph::{Graph, Sicht};
-use crate::instanz::instanz_unvollstaendig;
+use crate::instanz::{instanz_antworten, instanz_unvollstaendig};
 use crate::relevanz::{
     bedingung_je_instanz, gate_gewicht, relevanz_mit, Bedingungsstand, Regelstatus,
 };
@@ -25,7 +25,8 @@ use crate::relevanz::{
 /// Voraussetzung.
 ///
 /// Guenstiger-sicher by construction: ALLE offenen askable Felder nicht-ausgeschlossener Regeln
-/// stehen in der Queue — kein Zweig faellt wegen eines vorlaeufigen Siegers weg. Ein leerer
+/// stehen in der Queue — kein Zweig faellt wegen eines vorlaeufigen Siegers weg (einzige Ausnahme:
+/// `feld_bedingung.groesser_als`, siehe `feld_ausgeschlossen`). Ein leerer
 /// `beitrag` gilt wie keiner (Python: `if beitrag:`).
 ///
 /// ```
@@ -110,6 +111,13 @@ fn vorjahr_uebernommen(b: &Bindung, ev: Option<&Event>) -> bool {
 /// Veranlagungsjahr `vz` minus Geburtsjahr genau diese Zahl ergibt; jedes BESTAETIGTE andere Geburtsjahr schliesst es aus,
 /// ein fehlendes oder vorlaeufiges nicht (fail-closed wie `wert`). Ein bestaetigter Wert, der kein Ganzzahl-Geburtsjahr ist,
 /// schliesst ebenfalls nicht aus: die Frage bleibt.
+///
+/// Rust-eigen (Abweichung Nr. 34): `und` haengt weitere Bedingungen an; das Feld faellt weg, sobald EINE Bedingung der Kette
+/// es ausschliesst. `groesser_als` meint einen Betrag in `feld` und gilt als POSITIVER BEWEIS, der einzige Fall, in dem diese
+/// Funktion bei Schweigen ausschliesst: das Feld bleibt nur, wenn mindestens eine Instanz von `feld` bestaetigt ueber der
+/// Schwelle liegt. Das bricht den Satz "alle offenen Felder stehen in der Queue" mit Absicht und nur fuer Folgefragen, deren
+/// Fehlen nichts kostet (der Anteil am Schulgeld-Hoechstbetrag: keine Antwort heisst "je zur Haelfte"); die Eingangsfrage nach
+/// dem Betrag selbst steht weiter in der Queue und schaltet sie frei.
 fn feld_ausgeschlossen(
     b: &Bindung,
     aktiv: &Aktiv<'_>,
@@ -120,6 +128,35 @@ fn feld_ausgeschlossen(
     let Some(bed) = &b.feld_bedingung else {
         return false;
     };
+    bed.kette()
+        .any(|glied| bedingung_schliesst_aus(glied, aktiv, sicht, graph, vz))
+}
+
+/// Liegt der Betrag `w` echt ueber `schwelle`? Nur eine Zahl belegt einen Betrag; Text, Wahrheitswert und Null nicht.
+// ponytail: `Gleit` wird in f64 gegen die Schwelle verglichen, genau bis 2^53. Die Schwellen sind kleine Ganzzahlen (heute 0);
+// Upgrade: Decimal-Vergleich, falls eine Schwelle so gross wird.
+#[allow(clippy::cast_precision_loss)]
+fn ueber_schwelle(w: &PyWert, schwelle: i64) -> bool {
+    match w {
+        PyWert::Ganz(n) => *n > schwelle,
+        PyWert::Gleit(x) => *x > schwelle as f64,
+        _ => false,
+    }
+}
+
+/// Schliesst GENAU DIESE Bedingung (ein Glied der Kette) das Feld aus?
+fn bedingung_schliesst_aus(
+    bed: &FeldBedingung,
+    aktiv: &Aktiv<'_>,
+    sicht: &Sicht<'_>,
+    graph: &Graph<'_>,
+    vz: i64,
+) -> bool {
+    if let Some(schwelle) = bed.groesser_als {
+        return !instanz_antworten(aktiv, sicht, graph, &bed.feld).iter().any(
+            |a| matches!(a, Antwort::Bestaetigt(w) if ueber_schwelle(w, schwelle)),
+        );
+    }
     let stand = if let Some(alter) = bed.alter_im_vz {
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| {
             matches!(w, PyWert::Ganz(gj) if vz.checked_sub(*gj) != Some(alter))
@@ -480,11 +517,20 @@ mod tests {
 
     /// Steht die Frage `feld` in der Queue eines Falls (VZ 2025), der nur `geburtsjahr` kennt?
     fn frage_steht(feld: &str, geburtsjahr: Option<(PyWert, bool)>) -> bool {
+        let antworten = geburtsjahr
+            .into_iter()
+            .map(|(w, b)| ("geburtsjahr", w, b))
+            .collect();
+        frage_steht_bei(feld, antworten)
+    }
+
+    /// Steht die Frage `feld` in der Queue eines Falls (VZ 2025), der nur diese `antworten` `(Feld, Wert, bestaetigt)` kennt?
+    fn frage_steht_bei(feld: &str, antworten: Vec<(&str, PyWert, bool)>) -> bool {
         let reg = crate::doctest_registry().expect("registry");
         let g = Graph::aus_registry(&reg);
-        let events = geburtsjahr
+        let events = antworten
             .into_iter()
-            .map(|(w, b)| ereignis("geburtsjahr", w, b))
+            .map(|(f, w, b)| ereignis(f, w, b))
             .collect();
         let s = Store::aus_datei(store::StoreDatei {
             version: 1,
@@ -525,5 +571,61 @@ mod tests {
                 "ein bestaetigter Wert, der keine Ganzzahl ist ({kein_jahr:?}), schliesst die Frage nicht aus"
             );
         }
+    }
+
+    /// `feld_bedingung.groesser_als` mit `und` (Abweichung Nr. 34): die Anteilsfrage des Schulgelds steht nur bei
+    /// Einzelveranlagung UND bestaetigtem Schulgeld ueber 0. Anders als die uebrigen Arten gilt hier POSITIVER BEWEIS: Schweigen,
+    /// ein vorlaeufiger Wert und jeder Wert, der keine Zahl ueber 0 ist, lassen die Frage nicht stehen. Mit zwei Kindern genuegt
+    /// eines; die Queue fuehrt Felder, nicht Kinder.
+    #[test]
+    fn die_betragsbedingung_verlangt_bestaetigtes_schulgeld_ueber_0_und_einzelveranlagung() {
+        const ANTEIL: &str = "kind_schulgeld_aufteilung_prozent";
+        let einzel = || ("veranlagung", PyWert::Text("einzel".to_owned()), true);
+        let kinder = |n| ("fam_anzahl_kinder", PyWert::Ganz(n), true);
+        let steht = |antworten: Vec<(&str, PyWert, bool)>| frage_steht_bei(ANTEIL, antworten);
+        let kind1 = |w: PyWert, b: bool| ("schulgeld", w, b);
+        let kind2 = |w: PyWert, b: bool| ("schulgeld__2", w, b);
+
+        // Der Schnitt bei 0, Rand von i64 ohne Ueberlauf.
+        for (wert, erwartet) in [
+            (PyWert::Ganz(1), true),
+            (PyWert::Ganz(300_000), true),
+            (PyWert::Ganz(i64::MAX), true),
+            (PyWert::Ganz(0), false),
+            (PyWert::Ganz(-1), false),
+            (PyWert::Ganz(i64::MIN), false),
+            (PyWert::Gleit(0.5), true),
+            (PyWert::Gleit(0.0), false),
+            (PyWert::Gleit(-0.5), false),
+        ] {
+            assert_eq!(
+                steht(vec![kinder(1), einzel(), kind1(wert.clone(), true)]),
+                erwartet,
+                "bestaetigtes Schulgeld {wert:?}"
+            );
+        }
+        // Kein Beleg: Schweigen, ein vorlaeufiger Wert, ein Wert, der keine Zahl ist.
+        assert!(!steht(vec![kinder(1), einzel()]), "ohne Schulgeld");
+        assert!(!steht(vec![kinder(1), einzel(), kind1(PyWert::Ganz(300_000), false)]), "vorlaeufig");
+        for kein_betrag in [PyWert::Text("300000".to_owned()), PyWert::Bool(true), PyWert::Null] {
+            assert!(
+                !steht(vec![kinder(1), einzel(), kind1(kein_betrag.clone(), true)]),
+                "ein bestaetigter Wert, der keine Zahl ist ({kein_betrag:?}), belegt kein Schulgeld"
+            );
+        }
+        // Die erste Bedingung (`und`): Zusammenveranlagung schliesst aus, Schweigen auf die Veranlagung nicht.
+        let zusammen = ("veranlagung", PyWert::Text("zusammen".to_owned()), true);
+        let schulgeld = || kind1(PyWert::Ganz(300_000), true);
+        assert!(!steht(vec![kinder(1), zusammen, schulgeld()]), "Zusammenveranlagung");
+        assert!(steht(vec![kinder(1), schulgeld()]), "Veranlagung unbeantwortet");
+        assert!(steht(vec![kinder(1), einzel(), schulgeld()]), "Einzelveranlagung");
+        // Zwei Kinder: ein bestaetigtes Schulgeld ueber 0 genuegt, gleich bei welchem Kind; ein offenes Kind ohne Beleg nicht.
+        let (null, viel) = (PyWert::Ganz(0), PyWert::Ganz(300_000));
+        assert!(steht(vec![kinder(2), einzel(), kind1(viel.clone(), true), kind2(null.clone(), true)]), "Kind 1");
+        assert!(steht(vec![kinder(2), einzel(), kind1(null.clone(), true), kind2(viel.clone(), true)]), "Kind 2");
+        assert!(steht(vec![kinder(2), einzel(), kind2(viel.clone(), true)]), "Kind 2, Kind 1 offen");
+        assert!(!steht(vec![kinder(2), einzel(), kind1(null.clone(), true), kind2(null.clone(), true)]), "beide 0");
+        assert!(!steht(vec![kinder(2), einzel(), kind1(null.clone(), true)]), "Kind 1 0, Kind 2 offen");
+        assert!(!steht(vec![kinder(2), einzel(), kind1(viel, false), kind2(null, true)]), "Kind 1 nur vorlaeufig");
     }
 }

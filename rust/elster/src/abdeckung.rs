@@ -796,6 +796,7 @@ fn jedes_fragbare_feld_hat_einen_leser() {
     let bedingungsziele: BTreeSet<&str> = bindungen()
         .iter()
         .filter_map(|b| b.feld_bedingung.as_ref())
+        .flat_map(bindung::FeldBedingung::kette)
         .map(|c| c.feld.as_str())
         .collect();
     assert!(
@@ -803,6 +804,12 @@ fn jedes_fragbare_feld_hat_einen_leser() {
         "Kanaele leer: {} Zaehlfelder, {} Bedingungsziele",
         anzahl_felder.len(),
         bedingungsziele.len()
+    );
+    // Abweichung Nr. 34: auch das Ziel einer zweiten Bedingung (`und`) ist ein Leser. `schulgeld` steht nur dort als Ziel
+    // (`kind_schulgeld_aufteilung_prozent`, `groesser_als`); faellt die Kette aus der Sammlung, verschwindet es.
+    assert!(
+        bedingungsziele.contains("schulgeld"),
+        "die Ziele der `und`-Bedingungen fehlen in den Bedingungszielen"
     );
     let fragbar: Vec<(&str, bool)> = bindungen()
         .iter()

@@ -203,6 +203,71 @@ fn feld_bedingung_hat_genau_eine_bedingung_und_eine_lange_begruendung() {
     assert!(kurz.to_string().contains("feld_bedingung"), "{kurz}");
 }
 
+/// Abweichung Nr. 34: `groesser_als` ist die vierte Art, und `und` haengt eine zweite Bedingung an, die ZUSAETZLICH gelten
+/// muss. Jede Bedingung der Kette traegt genau eine Art und ihre eigene lange Begruendung; sonst gewaenne eine Antwort still,
+/// oder eine Begruendung fehlte der zweiten Bedingung.
+#[test]
+fn feld_bedingung_kennt_groesser_als_und_eine_zweite_bedingung() {
+    let grund = format!("grund: \"{GRUND_40}\"");
+    let bedingung = |inhalt: &str| pruefe(&format!("    feld_bedingung: {{feld: anderes, {inhalt}}}\n"));
+    // Die vierte Art.
+    for gut in ["groesser_als: 0", "groesser_als: 1", "groesser_als: -5"] {
+        assert!(bedingung(&format!("{gut}, {grund}")).is_ok(), "{gut}");
+    }
+    for (name, wert) in [
+        ("wert und groesser_als", "wert: true, groesser_als: 0"),
+        ("wert_nicht und groesser_als", "wert_nicht: true, groesser_als: 0"),
+        ("Alter und groesser_als", "alter_im_vz: 55, groesser_als: 0"),
+        ("alle vier", "wert: true, wert_nicht: true, alter_im_vz: 55, groesser_als: 0"),
+    ] {
+        let fehler = bedingung(&format!("{wert}, {grund}")).unwrap_err();
+        assert!(
+            matches!(fehler, BindungFehler::FeldBedingungNichtGenauEins { .. }),
+            "{name}: {fehler}"
+        );
+    }
+    // Die zweite Bedingung: jede der vier Arten ist erlaubt, genau eine, mit eigener Begruendung.
+    let mit_und = |innen: &str| {
+        bedingung(&format!(
+            "wert: true, {grund}, und: {{feld: weiteres, {innen}}}"
+        ))
+    };
+    for gut in ["wert: true", "wert_nicht: true", "alter_im_vz: 55", "groesser_als: 0"] {
+        assert!(mit_und(&format!("{gut}, {grund}")).is_ok(), "und {gut}");
+    }
+    for (name, innen) in [
+        ("zwei Arten in der zweiten", format!("wert: true, groesser_als: 0, {grund}")),
+        ("keine Art in der zweiten", grund.clone()),
+    ] {
+        let fehler = mit_und(&innen).unwrap_err();
+        assert!(
+            matches!(fehler, BindungFehler::FeldBedingungNichtGenauEins { .. }),
+            "{name}: {fehler}"
+        );
+        assert!(fehler.to_string().contains("testfeld"), "{name}: {fehler}");
+    }
+    let kurz = mit_und(&format!("groesser_als: 0, grund: \"{GRUND_39}\"")).unwrap_err();
+    assert!(matches!(kurz, BindungFehler::ZuKurz { min: 40, .. }), "{kurz}");
+    assert!(kurz.to_string().contains("feld_bedingung.und"), "{kurz}");
+    // Die erste Bedingung wird auch dann geprueft, wenn die zweite stimmt.
+    let fehler = pruefe(&format!(
+        "    feld_bedingung: {{feld: anderes, wert: true, wert_nicht: true, {grund}, und: {{feld: weiteres, groesser_als: 0, {grund}}}}}\n"
+    ))
+    .unwrap_err();
+    assert!(matches!(fehler, BindungFehler::FeldBedingungNichtGenauEins { .. }), "{fehler}");
+    // Die Kette ist rekursiv: eine dritte Bedingung wird so streng geprueft wie die zweite.
+    let dritte = |innen: &str| {
+        bedingung(&format!(
+            "wert: true, {grund}, und: {{feld: b, wert: true, {grund}, und: {{feld: c, {innen}}}}}"
+        ))
+    };
+    assert!(dritte(&format!("groesser_als: 0, {grund}")).is_ok());
+    let fehler = dritte(&format!("wert: true, groesser_als: 0, {grund}")).unwrap_err();
+    assert!(matches!(fehler, BindungFehler::FeldBedingungNichtGenauEins { .. }), "{fehler}");
+    let kurz = dritte(&format!("groesser_als: 0, grund: \"{GRUND_39}\"")).unwrap_err();
+    assert!(matches!(kurz, BindungFehler::ZuKurz { min: 40, .. }), "{kurz}");
+}
+
 #[test]
 fn ableitung_braucht_eine_lange_begruendung() {
     let ableitung = |grund: &str| {

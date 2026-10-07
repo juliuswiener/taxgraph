@@ -117,8 +117,9 @@ fn frage<'a>(fragen: &'a Value, feld: &str) -> Option<&'a Value> {
         .find(|q| q["feld_id"] == feld)
 }
 
-/// Einzelveranlagung und unbeantwortete Veranlagung zeigen die Frage (mit zwei Kindern: je Kind); Zusammenveranlagung
-/// zeigt sie nicht.
+/// Mit Schulgeld: Einzelveranlagung und unbeantwortete Veranlagung zeigen die Frage (mit zwei Kindern: je Kind);
+/// Zusammenveranlagung zeigt sie nicht. Ohne Schulgeld zeigt sie keine Veranlagung (Abweichung Nr. 34,
+/// `schulgeld_anteilsfrage_bedingung.rs`).
 #[tokio::test]
 async fn die_frage_steht_nur_bei_einzelveranlagung_und_solange_sie_offen_ist() {
     for (veranlagung, erwartet) in [
@@ -127,7 +128,7 @@ async fn die_frage_steht_nur_bei_einzelveranlagung_und_solange_sie_offen_ist() {
         (Some("zusammen"), false),
     ] {
         let d = dienst();
-        let mut paare = vec![("fam_anzahl_kinder", json!(2))];
+        let mut paare = vec![("fam_anzahl_kinder", json!(2)), ("schulgeld", json!(300_000))];
         if let Some(v) = veranlagung {
             paare.push(("veranlagung", json!(v)));
         }

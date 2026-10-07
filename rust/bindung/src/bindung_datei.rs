@@ -56,7 +56,7 @@ pub enum BindungFehler {
     },
     #[error("{feld_id}: enum_werte darf nicht leer sein")]
     EnumWerteLeer { feld_id: String },
-    #[error("{feld_id}: feld_bedingung braucht genau eines von wert/wert_nicht/alter_im_vz")]
+    #[error("{feld_id}: feld_bedingung braucht genau eines von wert/wert_nicht/alter_im_vz/groesser_als")]
     FeldBedingungNichtGenauEins { feld_id: String },
     #[error("{feld_id}: ungueltige instanz_gruppe {gruppe:?} (erwartet ^[a-z][a-z0-9_]*$)")]
     UngueltigeInstanzGruppe { feld_id: String, gruppe: String },
@@ -290,12 +290,13 @@ pub struct Beweist {
 
 /// Dieses Feld entfaellt, wenn `feld` einen anderen Wert als `wert` traegt (oder GENAU
 /// `wert_nicht`, wo eine Existenzfrage ein Auswahlfeld ist; oder, bei `alter_im_vz`, wenn `feld` ein
-/// Geburtsjahr ist, das im Veranlagungsjahr NICHT das angegebene Alter ergibt).
+/// Geburtsjahr ist, das im Veranlagungsjahr NICHT das angegebene Alter ergibt; oder, bei
+/// `groesser_als`, solange `feld` nicht bestaetigt ueber der Schwelle liegt).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FeldBedingung {
     pub feld: String,
-    /// Genau eines von `wert`/`wert_nicht`/`alter_im_vz` ist gesetzt (Schema: `oneOf`;
+    /// Genau eines von `wert`/`wert_nicht`/`alter_im_vz`/`groesser_als` ist gesetzt (Schema: `oneOf`;
     /// [`Bindung::validieren`] prueft es nach) -- ausgeschrieben statt XOR-Typ, weil hier (anders
     /// als bei `Quelle`) keine nachgeschaltete Regel darauf angewiesen ist, dass genau eines
     /// gesetzt ist.
@@ -306,6 +307,36 @@ pub struct FeldBedingung {
     /// GENAU diese Zahl ergibt (die Person wird in diesem Jahr so alt). Ein Altersvergleich, den
     /// `wert`/`wert_nicht` nicht ausdruecken (nur Gleichheit gegen den Wert eines anderen Felds).
     pub alter_im_vz: Option<i64>,
+    /// `feld` ist ein Betrag; das Feld bleibt nur, wenn mindestens eine Instanz von `feld` einen
+    /// BESTAETIGTEN Wert ueber dieser Schwelle traegt (Abweichung Nr. 34, Rust-eigen). Anders als
+    /// die uebrigen Arten gilt POSITIVER BEWEIS: Schweigen und ein vorlaeufiger Wert schliessen
+    /// ebenfalls aus. Fuer eine Folgefrage, die ohne den Betrag gegenstandslos ist (der Anteil am
+    /// Schulgeld-Hoechstbetrag), und deren Fehlen nichts kostet (keine Antwort heisst hier: Normalfall).
+    pub groesser_als: Option<i64>,
+    /// Eine zweite Bedingung, die ZUSAETZLICH gelten muss: das Feld entfaellt, sobald eine Bedingung
+    /// der Kette es ausschliesst. `feld_bedingung` hat nur einen Platz je Feld; `und` ist der zweite.
+    pub und: Option<Box<FeldBedingung>>,
+}
+
+impl FeldBedingung {
+    /// Diese Bedingung und jede, die per `und` folgt, in Reihenfolge der Kette.
+    pub fn kette(&self) -> impl Iterator<Item = &FeldBedingung> {
+        std::iter::successors(Some(self), |b| b.und.as_deref())
+    }
+
+    /// Genau eine Art (`wert`/`wert_nicht`/`alter_im_vz`/`groesser_als`) ist gesetzt.
+    fn hat_genau_eine_art(&self) -> bool {
+        [
+            self.wert.is_some(),
+            self.wert_nicht.is_some(),
+            self.alter_im_vz.is_some(),
+            self.groesser_als.is_some(),
+        ]
+        .into_iter()
+        .filter(|g| *g)
+        .count()
+            == 1
+    }
 }
 
 /// Berechnungsart einer [`Ableitung`].
@@ -494,22 +525,20 @@ impl Bindung {
             }
         }
         if let Some(bedingung) = &self.feld_bedingung {
-            let gesetzt = [
-                bedingung.wert.is_some(),
-                bedingung.wert_nicht.is_some(),
-                bedingung.alter_im_vz.is_some(),
-            ];
-            if gesetzt.into_iter().filter(|g| *g).count() != 1 {
-                return Err(BindungFehler::FeldBedingungNichtGenauEins {
-                    feld_id: self.feld_id.clone(),
-                });
-            }
-            if zu_kurz(&bedingung.grund, MIN_GRUND_LANG) {
-                return Err(BindungFehler::ZuKurz {
-                    wo: format!("{}.feld_bedingung", self.feld_id),
-                    was: "grund",
-                    min: MIN_GRUND_LANG,
-                });
+            // Jede Bedingung der Kette (`und`) wie die erste: genau eine Art, lange Begruendung.
+            for (i, glied) in bedingung.kette().enumerate() {
+                if !glied.hat_genau_eine_art() {
+                    return Err(BindungFehler::FeldBedingungNichtGenauEins {
+                        feld_id: self.feld_id.clone(),
+                    });
+                }
+                if zu_kurz(&glied.grund, MIN_GRUND_LANG) {
+                    return Err(BindungFehler::ZuKurz {
+                        wo: format!("{}.feld_bedingung{}", self.feld_id, ".und".repeat(i)),
+                        was: "grund",
+                        min: MIN_GRUND_LANG,
+                    });
+                }
             }
         }
         if let Some(ableitung) = &self.ableitung {
