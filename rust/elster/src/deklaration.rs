@@ -46,8 +46,8 @@ const DBA_ABZUG: &str = "dba_abzug_statt_anrechnung";
 const DBA_STEUER: &str = "dba_gezahlte_auslaendische_steuer";
 
 /// Der Grund der Abgabe-Sperre bei gewaehltem Abzug und gezahlter Steuer ueber 0 (`dba_abzug_statt_anrechnung` ohne Kz):
-/// die Rechnung zieht die Steuer ab, das XML meldet sie als anzurechnende Steuer (`E0601901`). Die Wahl des Nutzers ginge in
-/// der Erklaerung still verloren.
+/// die Rechnung zieht die Steuer ab (bei DBA-Freistellung seit Abweichung Nr. 35 nicht mehr: dort gibt es keinen Abzug), das XML meldet sie als
+/// anzurechnende Steuer (`E0601901`). Die Wahl des Nutzers ginge in der Erklaerung still verloren.
 const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: Die Erklärung kann diesen Abzug noch nicht tragen und würde die Steuer als Anrechnung melden. Die Abgabe ist deshalb gesperrt. Antworte „nein“ (Anrechnung), wenn du abgeben willst, oder trage den Abzug im Formular selbst ein.";
 
 /// Die materialisierte Felder-Ebene eines Snapshots (`feld_id -> {wert, zustand, herkunft}`).
