@@ -7,7 +7,7 @@
 # leeren Liste, die der Lader abweist. Damit wanderte das Jahr eines Felds ohne Meldung.
 #
 # WAS DIESE DATEI HAELT (Pruefung: rust/bindung/tests/vz_bestand.rs):
-#   standard:   die Jahre, die jedes Feld traegt, das nicht unter `abweichend` steht (heute 373 von 377 Feldern).
+#   standard:   die Jahre, die jedes Feld traegt, das nicht unter `abweichend` steht (heute 374 von 378 Feldern).
 #   abweichend: feld_id -> {jahre, grund}. Das Feld traegt GENAU diese Jahre. `grund` hat mehr als 30 Zeichen und sagt,
 #               woher die Abweichung kommt (nicht nur dass es sie gibt). Ein Eintrag, dessen Jahre dem Standard
 #               gleichen, ist ueberfluessig und rot; ein Eintrag fuer ein Feld, das es nicht mehr gibt, ebenso.

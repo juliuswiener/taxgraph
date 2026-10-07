@@ -1,0 +1,37 @@
+# Steuerermäßigung für Zuwendungen an politische Parteien nach § 34g Satz 1 Nr. 1 und Satz 2 EStG (Abweichung Nr. 31 in
+# rust/fixtures/README.md). Veranlagungszeitraum 2025.
+# Wortlaut Satz 2 in der Fassung dieses Jahres: "Die Ermäßigung beträgt 50 Prozent der Ausgaben, höchstens jeweils 825 Euro
+# für Ausgaben nach den Nummern 1 und 2, im Fall der Zusammenveranlagung von Ehegatten höchstens jeweils 1 650 Euro."
+# Quelle: sources/gesetze-im-internet/estg_p34g_2025-12-18.txt. Fassung bis 31.12.2025 (Archivkopie der amtlichen Seite vom 2025-12-18).
+# Die Zahlen stammen aus diesem Wortlaut, nicht aus der Anleitung zum Vordruck und nicht aus dem Gedächtnis
+# (Vault: decisions/parteispenden-deckel-kommt-je-jahr-aus-der-eingefrorenen-fassung). Dass die Datei den Wortlaut wiedergibt,
+# prüft rust/bindung/tests/parteispenden_werte_gegen_gesetz.rs bei jedem Lauf gegen den Text.
+# Der Deckel gilt je Nummer (Parteien, Wählervereinigungen) für sich. Gebaut ist nur Nummer 1 (Parteien, Zeile 7 der Anlage
+# Sonderausgaben); der Teil einer Spende über dem Deckel wirkt nach § 10b Abs. 2 EStG als Sonderausgabe und ist NICHT gebaut.
+
+parameter: parteispenden_p34g
+veranlagungszeitraum: 2025
+authority: gesetz
+redistributable: true
+gueltig_ab: "2025-01-01"
+
+ermaessigungssatz:
+  wert: 0.5
+  einheit: faktor
+  veranlagungszeitraum: 2025
+  rechtsquelle: {gesetz: "EStG", paragraph: "34g", absatz: "", nummer: "1"}
+  datenquelle: "§ 34g Satz 2 EStG: 50 Prozent der Ausgaben, sources/gesetze-im-internet/estg_p34g_2025-12-18.txt (Wortlaut, alle drei Fassungen gleich)"
+
+hoechstbetrag_einzel:
+  wert: 825
+  einheit: euro
+  veranlagungszeitraum: 2025
+  rechtsquelle: {gesetz: "EStG", paragraph: "34g", absatz: "", nummer: "1"}
+  datenquelle: "§ 34g Satz 2 EStG: höchstens jeweils 825 Euro für Ausgaben nach den Nummern 1 und 2, sources/gesetze-im-internet/estg_p34g_2025-12-18.txt"
+
+hoechstbetrag_zusammen:
+  wert: 1650
+  einheit: euro
+  veranlagungszeitraum: 2025
+  rechtsquelle: {gesetz: "EStG", paragraph: "34g", absatz: "", nummer: "1"}
+  datenquelle: "§ 34g Satz 2 EStG: im Fall der Zusammenveranlagung von Ehegatten höchstens jeweils 1 650 Euro, sources/gesetze-im-internet/estg_p34g_2025-12-18.txt"

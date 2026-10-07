@@ -50,12 +50,14 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// fuenf `versorgung_*`-Felder neu in `rentner_gesamt`, 255 -> 262, der Kegel bleibt bei 28; danach am 2026-10-07
 /// `kind_schulgeld_aufteilung_prozent` in beiden (Abweichung Nr. 26), 358 -> 359 und 262 -> 263; danach am 2026-10-07 `gwg_ohne_vorsteuerabzug` in beiden (Abweichung Nr. 27),
 /// 359 -> 360 und 263 -> 264; danach am 2026-10-07 `ep_unfallkosten` in `an_gesamt` und `gesamt` (Abweichung Nr. 28),
-/// 84 -> 85 und 360 -> 361, die Kegel bleiben bei 33 und 35, `rentner_gesamt` bei 264; vorher 2026-10-05, `9c07d98e`).
+/// 84 -> 85 und 360 -> 361, die Kegel bleiben bei 33 und 35, `rentner_gesamt` bei 264; danach am 2026-10-07
+/// `parteispenden_betrag` in `gesamt` und `rentner_gesamt` (Abweichung Nr. 31), 361 -> 362 und 264 -> 265, die Kegel bleiben;
+/// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 85, 33),
-    (Scheibe::Gesamt, 361, 35),
-    (Scheibe::RentnerGesamt, 264, 28),
+    (Scheibe::Gesamt, 362, 35),
+    (Scheibe::RentnerGesamt, 265, 28),
 ];
 
 fn registry() -> &'static Registry {

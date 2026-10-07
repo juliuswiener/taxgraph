@@ -599,8 +599,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie viel hast du dieses Jahr an gemeinnützige Vereine, Stiftungen oder Kirchen gespendet (Geldspenden mit Spendenquittung)?"
-    hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung (Spendenquittung). Nur Spenden an inländische Empfänger."
+    fragetext_laie: "Wie viel hast du dieses Jahr an gemeinnützige Vereine, Stiftungen oder Kirchen gespendet (Geldspenden mit Spendenquittung, ohne Spenden an Parteien)?"
+    hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung (Spendenquittung). Nur Spenden an inländische Empfänger. Spenden und Mitgliedsbeiträge an Parteien gibst du in einer eigenen Frage an, denn Parteispenden mindern die Steuer anders."
     beispielwert: 30000
     herkunft_slots: ["Zuwendungsbestätigung: Betrag"]
     elster_kz: E0108105
@@ -609,6 +609,34 @@ bindungen:
       quelle: "§ 10b Abs. 1 S. 1 EStG"
       zitatanker: "Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke"
       datei: "sources/gesetze-im-internet/estg_p10b_2026-07-13.txt"
+
+  # ===== Spenden an politische Parteien, § 34g (gebaut 2026-10-07, Abweichung Nr. 31 in rust/fixtures/README.md) =====
+  # Zeile 7 der Anlage Sonderausgaben (Kz E0108701, Knoten Sp_MB/Polit_P/Sum_Best; E10-2024.xsd und E10-2025.xsd, fuer VZ 2026
+  # liegt lokal kein Schema vor). Eine Partei-Spende senkt die STEUER um die Haelfte, hoechstens um den Deckel des Jahres
+  # (params/<vz>/parteispenden_p34g.yaml); sie steht NIE in den Sonderausgaben (`spenden_betrag`, Zeile 5). Der Teil ueber dem
+  # Deckel waere nach § 10b Abs. 2 EStG ein Sonderausgabenabzug: NICHT gebaut (ponytail; die Rechnung rechnet dort zu hoch,
+  # nie zu niedrig, die Erklaerung nennt die volle Spende, und das Finanzamt rechnet den Rest).
+  # Gleiche Regel wie `spenden_betrag` (`p10b_spenden`): die Eingangsfrage `keine_spenden` schliesst beide Fragen aus. KEIN Gate
+  # und keine `geltungsbedingung`: ein Betragsfeld daran wuerde zum Gate (Vault: decisions/ein-neues-betragsfeld-haengt-an-
+  # feld-bedingung-nie-an-geltungsbedingung); `signatur_slot` ist nur ein Etikett, der Ring liest das Feld beim Feldnamen.
+  # Nummer 2 (unabhaengige Waehlervereinigungen, Zeile 8, Kz E0108801) ist NICHT gebaut; der Hilfetext sagt es.
+  - feld_id: parteispenden_betrag
+    quelle: {regel_id: p10b_spenden, signatur_slot: parteispenden}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr an politische Parteien gespendet (Spenden und Mitgliedsbeiträge, mit Spendenquittung)?"
+    hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung der Partei. Mitgliedsbeiträge zählen mit. Eine Spende an eine Partei senkt deine Steuer direkt um die Hälfte des Betrags, bis zu einem Höchstbetrag je Jahr; bei Ehegatten gilt der doppelte. Spenden an unabhängige Wählervereinigungen sind hier noch nicht vorgesehen."
+    beispielwert: 50000
+    herkunft_slots: null
+    elster_kz: E0108701
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34g Satz 1 Nr. 1 EStG"
+      zitatanker: "politische Parteien im Sinne des § 2 des Parteiengesetzes"
+      datei: "sources/gesetze-im-internet/estg_p34g_2026-09-26.txt"
 
   # STILLGELEGT SEIT 2026-09-26: weder gefragt noch geschrieben, solange es kein Feld fuer Zeile 9
   # gibt (die Vermoegensstock-Spende selbst). Dieses Feld ist Zeile 11: wie viel von Zeile 9 im

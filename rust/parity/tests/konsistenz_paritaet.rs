@@ -343,6 +343,8 @@ fn pruefe(
 
 #[test]
 fn konstanten_gleich() {
+    // Abweichung Nr. 28 und Nr. 31: diese zwei Felder stehen nur in Rust (wie `konsistenz/tests/orakel_werte.rs`).
+    const NUR_RUST: [&str; 2] = ["ep_unfallkosten", "parteispenden_betrag"];
     if skip() {
         return;
     }
@@ -350,10 +352,17 @@ fn konstanten_gleich() {
     let flag: Value = k::FLAG_NEGIERT.iter().map(|(f, l)| json!([f, l])).collect();
     assert_eq!(flag, py["flag_negiert"]);
     assert_eq!(json!(k::PARTNER_FELDER), py["partner_felder"]);
+    let ohne_rust_felder: Vec<&str> = k::RING_BETRAGSFELDER
+        .iter()
+        .copied()
+        .filter(|f| !NUR_RUST.contains(f))
+        .collect();
     assert_eq!(
-        json!(k::RING_BETRAGSFELDER.as_slice()),
-        py["ring_betragsfelder"]
+        ohne_rust_felder.len() + NUR_RUST.len(),
+        k::RING_BETRAGSFELDER.len(),
+        "{NUR_RUST:?} fehlt in RING_BETRAGSFELDER"
     );
+    assert_eq!(json!(ohne_rust_felder), py["ring_betragsfelder"]);
     let ng: Value = k::NICHT_GERECHNET
         .iter()
         .map(|(f, t)| json!([f, t]))

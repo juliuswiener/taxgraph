@@ -822,6 +822,18 @@ mod tests {
             assert!(weg.is_some_and(|m| m.remove(feld).is_some()), "{tabelle}/{feld} fehlt in tabellen.rs");
             assert!(fix[tabelle].get(feld).is_none(), "Python kennt {tabelle}/{feld} jetzt: Eintrag streichen");
         }
+        // Dasselbe fuer ein Kz, das nur in Rust steht (Abweichung Nr. 31): genau ein Treffer je Liste in Rust, keiner in der Fixture.
+        for (pfad, kz) in RUST_EIGENE_KZ {
+            let liste = rust.pointer_mut(pfad).and_then(Value::as_array_mut);
+            let entfernt = liste.map(|l| {
+                let vorher = l.len();
+                l.retain(|x| x != kz);
+                vorher - l.len()
+            });
+            assert_eq!(entfernt, Some(1), "{kz} steht nicht genau einmal in {pfad} von tabellen.rs");
+            let in_fixture = fix.pointer(pfad).and_then(Value::as_array).is_some_and(|l| l.iter().any(|x| x == kz));
+            assert!(!in_fixture, "Python kennt {kz} in {pfad} jetzt: Eintrag streichen");
+        }
         let mut aus = Vec::new();
         abweichungen("", &rust, &fix, &mut aus);
         assert!(
@@ -837,6 +849,16 @@ mod tests {
     /// (`rust/fixtures/README.md`) und hat einen eigenen Test.
     const RUST_EIGENE_ZEILEN: [(&str, &str); 1] =
         [("partner_verzweigung", "p34_abs3_antragsbetrag_partner")];
+
+    /// Kz, die es nur in Rust gibt: `(JSON-Pfad der Liste, Kz)`. E0108701 (Spenden an Parteien, Zeile 7 der Anlage
+    /// Sonderausgaben) steht in den vier Listen, die `kz_format.rs` fuehrt; Python (`est_mapping.py`) kennt das Kz nicht.
+    /// Grund und Test: README `rust/fixtures/README.md`, Abweichung Nr. 31 (`bescheid/tests/parteispenden_einreichung_hermetisch.rs`).
+    const RUST_EIGENE_KZ: [(&str, &str); 4] = [
+        ("/abzugs_kz", "E0108701"),
+        ("/null_unzulaessig/je_vz/2024", "E0108701"),
+        ("/null_unzulaessig/je_vz/2025", "E0108701"),
+        ("/null_unzulaessig/vereinigung", "E0108701"),
+    ];
 
     /// Abweichung Nr. 23: die Antragszeile zu § 34 Abs. 3 fuer den Ehegatten ist Person As Zeile mit der Weiche des
     /// Partners: dieselben drei Kz je Betriebsart (E0801602 / E0805003 / E0901704), gelenkt von

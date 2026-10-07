@@ -473,7 +473,17 @@ fn abzugs_kz_mengengleich() {
     }
     let py_liste = py_abzugs_kz();
     let py: BTreeSet<&str> = py_liste.iter().map(String::as_str).collect();
-    let rust: BTreeSet<&str> = elster::ABZUGS_KZ.iter().copied().collect();
+    // Abweichung Nr. 31: E0108701 (Spenden an Parteien) steht nur in Rust. Ein zweites Rust-Kz braucht seinen eigenen Eintrag hier.
+    let nur_in_rust: [&str; 1] = ["E0108701"];
+    let rust: BTreeSet<&str> = elster::ABZUGS_KZ
+        .iter()
+        .copied()
+        .filter(|k| !nur_in_rust.contains(k))
+        .collect();
+    assert!(
+        nur_in_rust.iter().all(|k| elster::ABZUGS_KZ.contains(k)),
+        "ein Rust-Kz der Ausnahmeliste steht nicht mehr in ABZUGS_KZ: {nur_in_rust:?}"
+    );
     let nur_py: Vec<_> = py.difference(&rust).collect();
     let nur_rust: Vec<_> = rust.difference(&py).collect();
     println!(

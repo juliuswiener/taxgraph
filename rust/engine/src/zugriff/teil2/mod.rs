@@ -20,6 +20,7 @@ pub mod gewerbe;
 pub mod kapital;
 pub mod p23;
 pub mod p33;
+pub mod p34g;
 pub mod p35c;
 pub mod rente;
 pub mod solz;

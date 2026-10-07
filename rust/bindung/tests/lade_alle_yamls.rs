@@ -1,6 +1,6 @@
 //! Laedt alle realen Laufzeit-YAMLs (`rust/bindung/daten/bindung_*.yaml`, `params/<vz>/*.yaml`,
 //! `params/kohorten/*.yaml`) und zaehlt sie -- 25 + 58 + 8 = 91, Stand 2026-09-29 (siehe
-//! `REWRITE_PLAN.md`); die Bindungsdateien mit Untergrenze, die anderen genau. Negative Tests fuer unbekannte Felder (`bindung_*.yaml`,
+//! `REWRITE_PLAN.md`; seit 2026-10-07 61 Jahresdateien, Abweichung Nr. 31); die Bindungsdateien mit Untergrenze, die anderen genau. Negative Tests fuer unbekannte Felder (`bindung_*.yaml`,
 //! `deny_unknown_fields`) und doppelte `feld_id` (Registry) liegen mit in dieser Datei.
 #![allow(
     clippy::unwrap_used,
@@ -61,7 +61,8 @@ fn alle_params_yamls_laden() {
         "params-Ladefehler:\n{}",
         fehler.join("\n")
     );
-    assert_eq!(anzahl, 58, "erwartete 58 params/<vz>/*.yaml-Dateien");
+    // 58 + 3: `parteispenden_p34g.yaml` je Jahr (Abweichung Nr. 31).
+    assert_eq!(anzahl, 61, "erwartete 61 params/<vz>/*.yaml-Dateien");
 }
 
 #[test]
