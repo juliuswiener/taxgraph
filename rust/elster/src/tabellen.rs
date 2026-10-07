@@ -810,7 +810,8 @@ mod tests {
     /// der Proptest `rundung_zugunsten_je_bindung` in `tests/eigenschaften.rs` leitet seine Erwartung aus
     /// `kz_format` ab, derselben Tabelle, die er pruefen soll. Die Fixture ist deshalb eine Sperre, keine
     /// Python-Antwort, die bei Abweichung neu erzeugt wird: eine Abweichung ist ein Entscheid mit Grund
-    /// im Commit, Tabelle und Fixture aendern sich zusammen.
+    /// im Commit. Sie steht in `RUST_EIGENE_ZEILEN` oder `RUST_EIGENE_KZ` und in der Abweichungsliste
+    /// (README `rust/fixtures/README.md`, Regel 2); die Fixture bleibt unberuehrt.
     #[test]
     fn tabellen_gleich_fixture() {
         let mut rust = aus_allem();
