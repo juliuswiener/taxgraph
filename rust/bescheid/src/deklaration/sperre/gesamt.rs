@@ -292,7 +292,8 @@ fn p35a_p35c(k: &K<'_>) -> Grund {
 ///
 /// 1. "selbstaendig nutzbar" BESTAETIGT nein -> [`Sperrgrund::GwgAbschreibungOffen`] (nie ein GWG);
 /// 2. "netto ohne Vorsteuer" BESTAETIGT nein -> [`Sperrgrund::GwgMehrwertsteuerOffen`] (der Betrag
-///    ist brutto, die Folgefrage fehlt noch);
+///    ist brutto); frei nur, wenn die Folgefrage `gwg_ohne_vorsteuerabzug` BESTAETIGT ja sagt (der
+///    Kleinunternehmer zieht brutto ab, Abweichung Nr. 27) und der Betrag 800 EUR nicht uebersteigt;
 /// 3. Betrag ueber 800 EUR -> `GwgAbschreibungOffen`; die Tatbestandsfragen sind gegenstandslos;
 /// 4. unbeantwortete Voraussetzung (Verzeichnis nur ueber 250 EUR) -> [`Sperrgrund::GwgTatbestandOffen`];
 ///    "Verzeichnis" BESTAETIGT nein ueber 250 EUR -> `GwgAbschreibungOffen`.
@@ -316,15 +317,23 @@ fn gwg(k: &K<'_>) -> Grund {
             continue;
         }
         // BESTAETIGTES "nein" ist eine Antwort, keine Luecke; ein vorlaeufiges zaehlt nicht.
-        let nein = |id: &str| {
+        let antwort = |id: &str, soll: bool| {
             inst.felder.get(id).is_some_and(|x| {
-                x.zustand == domain::Zustand::Bestaetigt && x.wert == PyWert::Bool(false)
+                x.zustand == domain::Zustand::Bestaetigt && x.wert == PyWert::Bool(soll)
             })
         };
+        let nein = |id: &str| antwort(id, false);
         if nein("gwg_bewegliches_selbstaendig_nutzbar") {
             return Ok(Some(Sperrgrund::GwgAbschreibungOffen));
         }
-        if nein("gwg_netto_ohne_vorsteuer") {
+        // "Netto: nein" heisst, der Betrag ist brutto. Wer die Mehrwertsteuer nicht zurueckbekommt (Folgefrage BESTAETIGT
+        // ja, der Kleinunternehmer), zieht ihn brutto ab (`gwg_abzug`, § 9b Abs. 1 EStG). Ohne dieses ja sperrt es weiter:
+        // ein Regelbesteuerer, der brutto eingab, oder keine Antwort. Ueber 800 EUR mit Mehrwertsteuer sperrt es auch bei ja:
+        // die Grenze gilt netto, den Nettobetrag kennt die Software nicht.
+        // ponytail: das Band 800,01 bis ca. 952 EUR (19 %) bleibt gesperrt; ein Nettobetrag-Feld machte es rechenbar.
+        if nein("gwg_netto_ohne_vorsteuer")
+            && (!antwort("gwg_ohne_vorsteuerabzug", true) || betrag > Decimal::from(80_000))
+        {
             return Ok(Some(Sperrgrund::GwgMehrwertsteuerOffen));
         }
         // Ueber 800 EUR (Schwelle in Cent) ist der Sofortabzug ausgeschlossen: nichts zu fragen,

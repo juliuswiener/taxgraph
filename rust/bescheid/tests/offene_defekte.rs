@@ -1001,17 +1001,53 @@ fn rentner_gesamt_meldet_keine_felder_die_sein_kegel_nie_fragt() {
 /// Kegel von `tests/test_gwg_tatbestand_sperre.py::_KEGEL` (Gesamt): ein EUeR-Weg ohne Betraege, damit
 /// die GWG-Zeile das Einzige ist, das die Steuer bewegt.
 fn gwg_basis(sonstige_cent: i64) -> Vec<(&'static str, Value)> {
+    gwg_basis_von(6_000_000, 0, sonstige_cent)
+}
+
+/// [`gwg_basis`] mit waehlbarem Arbeitslohn und Betriebseinnahmen (Cent). Der Lohn-Fall (60.000 EUR, keine Einnahmen) ist der
+/// von `test_gwg_tatbestand_sperre.py`; der Gewinn-Fall (kein Lohn, 50.000 EUR Betriebseinnahmen) der der Sonde des Backlogs.
+fn gwg_basis_von(lohn_cent: i64, einnahmen_cent: i64, sonstige_cent: i64) -> Vec<(&'static str, Value)> {
     vec![
-        ("bruttoarbeitslohn", json!(6_000_000)),
+        ("bruttoarbeitslohn", json!(lohn_cent)),
         ("vv_entgelt_quote_prozent", json!(100)),
         ("kein_gewinn", json!(false)),
-        ("betriebseinnahmen", json!(0)),
+        ("betriebseinnahmen", json!(einnahmen_cent)),
         ("sonstige_betriebsausgaben", json!(sonstige_cent)),
         ("afa_jahresbetrag", json!(0)),
         // wie in Python bewusst True: sie halten die Regel p33_1_2_agb_abzug im Kegel offen
         ("agb_zwangslaeufig", json!(true)),
         ("agb_notwendig_angemessen", json!(true)),
     ]
+}
+
+/// Die Antworten zu EINEM Geraet; `None` = nicht beantwortet.
+#[derive(Clone, Copy, Default)]
+struct GwgAntworten {
+    betrag: Option<i64>,
+    nutzbar: Option<bool>,
+    netto: Option<bool>,
+    /// `gwg_ohne_vorsteuerabzug`: die Folgefrage zu "netto: nein" (Abweichung Nr. 27).
+    ohne_abzug: Option<bool>,
+    verzeichnis: Option<bool>,
+}
+
+/// Das `Fall`-Gespann zu einer Basis und den Antworten eines Geraets (alle bestaetigt).
+fn gwg_fall(basis: Vec<(&'static str, Value)>, a: GwgAntworten) -> Fall {
+    let mut paare = basis;
+    if let Some(b) = a.betrag {
+        paare.push(("gwg_anschaffungskosten_netto", json!(b)));
+    }
+    for (feld, wert) in [
+        ("gwg_bewegliches_selbstaendig_nutzbar", a.nutzbar),
+        ("gwg_netto_ohne_vorsteuer", a.netto),
+        ("gwg_ohne_vorsteuerabzug", a.ohne_abzug),
+        ("gwg_verzeichnis_ab_250", a.verzeichnis),
+    ] {
+        if let Some(w) = wert {
+            paare.push((feld, json!(w)));
+        }
+    }
+    fall(Scheibe::Gesamt, &paare, &[])
 }
 
 /// `None` = nicht beantwortet.
@@ -1022,20 +1058,14 @@ fn gwg_lauf(
     verzeichnis: Option<bool>,
     sonstige_cent: i64,
 ) -> (Grund, Option<i64>) {
-    let mut paare = gwg_basis(sonstige_cent);
-    if let Some(b) = betrag {
-        paare.push(("gwg_anschaffungskosten_netto", json!(b)));
-    }
-    for (feld, wert) in [
-        ("gwg_bewegliches_selbstaendig_nutzbar", nutzbar),
-        ("gwg_netto_ohne_vorsteuer", netto),
-        ("gwg_verzeichnis_ab_250", verzeichnis),
-    ] {
-        if let Some(w) = wert {
-            paare.push((feld, json!(w)));
-        }
-    }
-    ergebnis(&fall(Scheibe::Gesamt, &paare, &[]))
+    let a = GwgAntworten {
+        betrag,
+        nutzbar,
+        netto,
+        ohne_abzug: None,
+        verzeichnis,
+    };
+    ergebnis(&gwg_fall(gwg_basis(sonstige_cent), a))
 }
 
 /// `test_gwg_tatbestand_sperre.py::OFFEN_FAELLE`: jedes Geraet mit Betrag > 0, das keinen Sofortabzug
@@ -1118,4 +1148,184 @@ fn gwg_vorlaeufiges_nein_ist_keine_antwort() {
         ergebnis(&f),
         (Grund::Sperre(Sperrgrund::GwgTatbestandOffen), None)
     );
+}
+
+// ---------------------------------------------------------------- GWG: Folgefrage "Mehrwertsteuer selbst getragen"
+
+/// Die zwei Einkommen, an denen der Schaden des Kleinunternehmers gemessen ist: `(Name, Lohn, Betriebseinnahmen, Schaden)`,
+/// alles in Cent. Schaden = Steuer des Falls OHNE das Geraet minus Steuer mit 790 EUR als sonstige Betriebsausgabe, also was
+/// die stille 0 kostete. Die zwei Zahlen des Backlogs messen DASSELBE bei anderem Einkommen: 304,00 EUR in
+/// `test_gwg_tatbestand_sperre.py` (Python, 60.000 EUR Lohn, 1392400 gegen 1362000), 279,00 EUR in der Sonde
+/// `pruef_gwg_brutto.sh` (Python, kein Lohn, 50.000 EUR Betriebseinnahmen, 1067800 gegen 1039900).
+const KLEINUNTERNEHMER_EINKOMMEN: [(&str, i64, i64, i64); 2] = [
+    ("Lohn 60.000 EUR", 6_000_000, 0, 30_400),
+    ("Betriebseinnahmen 50.000 EUR", 0, 5_000_000, 27_900),
+];
+
+/// Ein Kleinunternehmer: der Preis steht mit Mehrwertsteuer da, er bekommt sie nicht zurueck (Folgefrage "ja").
+fn kleinunternehmer(betrag: i64, verzeichnis: Option<bool>) -> GwgAntworten {
+    GwgAntworten {
+        betrag: Some(betrag),
+        nutzbar: Some(true),
+        netto: Some(false),
+        ohne_abzug: Some(true),
+        verzeichnis,
+    }
+}
+
+/// Steuer (Cent) eines Falls ohne Geraet (die sonstige Betriebsausgabe steckt schon in `basis`): die Referenz, gegen die ein
+/// Sofortabzug gleich hoch rechnen muss.
+fn gwg_referenz(basis: Vec<(&'static str, Value)>) -> Option<i64> {
+    let (grund, zahl) = ergebnis(&gwg_fall(basis, GwgAntworten::default()));
+    assert_eq!(grund, Grund::Bestaetigt, "KONTROLLE: die Referenz rechnet");
+    zahl
+}
+
+/// Backlog `gwg-sofortabzug-entfaellt-ohne-nettobetrag` AK-R1 (Abweichung Nr. 27): 790 EUR brutto, Netto-Frage "nein",
+/// Folgefrage `gwg_ohne_vorsteuerabzug` "ja" -> Abzug 790 EUR, gleich der sonstigen Betriebsausgabe, bei beiden Einkommen.
+/// Auch der Kz-Wert der Anlage `EUeR` (`E6002301`) steht dann mit dem Bruttobetrag da. Die zwei KONTROLLE-Zeilen messen den
+/// Schaden, den die Sperre heute noch verhindert: 304,00 EUR (Lohn) und 279,00 EUR (Betriebseinnahmen).
+#[test]
+fn gwg_kleinunternehmer_zieht_den_bruttobetrag_ab() {
+    for (name, lohn, einnahmen, schaden) in KLEINUNTERNEHMER_EINKOMMEN {
+        let basis = |sonstige| gwg_basis_von(lohn, einnahmen, sonstige);
+        let (g_ohne, ohne) = ergebnis(&gwg_fall(basis(0), GwgAntworten::default()));
+        let referenz = gwg_referenz(basis(79_000));
+        assert_eq!(g_ohne, Grund::Bestaetigt, "KONTROLLE: Fall ohne Geraet, {name}");
+        assert_eq!(
+            ohne.unwrap() - referenz.unwrap(),
+            schaden,
+            "KONTROLLE: Schaden der stillen 0 bei {name}"
+        );
+        let f = gwg_fall(basis(0), kleinunternehmer(79_000, Some(true)));
+        assert_eq!(
+            ergebnis(&f),
+            (Grund::Bestaetigt, referenz),
+            "DEFEKT: Kleinunternehmer mit 790 EUR brutto, Folgefrage ja, {name}"
+        );
+        assert_eq!(
+            deklaration(&f).deklaration.get("E6002301"),
+            Some(&json!("790,00")),
+            "E6002301 traegt den Bruttobetrag, {name}"
+        );
+    }
+}
+
+/// AK-R1, Gegenseite: die Grenzen gelten brutto wie netto (800,00 EUR kein Ueberschuss, 250,00 EUR ohne Verzeichnis), die
+/// Folgefrage aendert nichts, wo der Preis netto ist, und ein Betrag von 0 braucht sie nicht.
+#[test]
+fn gwg_kleinunternehmer_grenzen_und_normalfall_bleiben() {
+    let referenz = |sonstige| gwg_referenz(gwg_basis(sonstige));
+    let lauf = |a: GwgAntworten| ergebnis(&gwg_fall(gwg_basis(0), a));
+    for (name, a, abzug) in [
+        ("800,00 brutto: die Grenze", kleinunternehmer(80_000, Some(true)), 80_000),
+        ("250,00 brutto, Verzeichnis nein: erst darueber Pflicht", kleinunternehmer(25_000, Some(false)), 25_000),
+        ("200,00 brutto, Verzeichnis nie gefragt", kleinunternehmer(20_000, None), 20_000),
+        ("500,00 brutto, Verzeichnis ja", kleinunternehmer(50_000, Some(true)), 50_000),
+    ] {
+        assert_eq!(lauf(a), (Grund::Bestaetigt, referenz(abzug)), "{name}");
+    }
+    // Netto-Frage "ja": der Betrag ist netto, die Folgefrage zaehlt nicht, ob sie "ja" oder "nein" sagt.
+    for folge in [Some(true), Some(false), None] {
+        let a = GwgAntworten {
+            netto: Some(true),
+            ohne_abzug: folge,
+            ..kleinunternehmer(79_000, Some(true))
+        };
+        assert_eq!(lauf(a), (Grund::Bestaetigt, referenz(79_000)), "Netto-Frage ja, Folgefrage {folge:?}");
+    }
+    let null = GwgAntworten {
+        ohne_abzug: Some(false),
+        ..kleinunternehmer(0, Some(true))
+    };
+    assert_eq!(lauf(null).0, Grund::Bestaetigt, "Betrag 0: nichts wegzulassen, der Ausweg");
+}
+
+/// AK-R2: wo die Folgefrage kein bestaetigtes "ja" traegt, sperrt `gwg_mehrwertsteuer_offen` weiter, wie vor dem Bau. Dazu
+/// das Band ueber 800 EUR mit Mehrwertsteuer (`ponytail:` in der Entscheidung: mit einem Nettobetrag-Feld rechenbar) und die
+/// Pruefungen, die nach der Folgefrage kommen (Nutzbarkeit, Verzeichnis).
+#[test]
+fn gwg_folgefrage_ohne_bestaetigtes_ja_sperrt_weiter() {
+    use Sperrgrund::{GwgAbschreibungOffen as Afa, GwgMehrwertsteuerOffen as Mwst, GwgTatbestandOffen as Tatbestand};
+    let a = |betrag, nutzbar, ohne_abzug, verzeichnis| GwgAntworten {
+        betrag: Some(betrag),
+        nutzbar,
+        netto: Some(false),
+        ohne_abzug,
+        verzeichnis,
+    };
+    let (ja, nein) = (Some(true), Some(false));
+    let faelle = [
+        ("790, Folgefrage nein (Regelbesteuerer gab brutto ein)", a(79_000, ja, nein, ja), Mwst),
+        ("790, Folgefrage unbeantwortet", a(79_000, ja, None, ja), Mwst),
+        ("800,01 brutto, Folgefrage ja: ueber der Grenze", a(80_001, ja, ja, ja), Mwst),
+        ("850 brutto, Folgefrage ja: das Band bis ca. 952 EUR", a(85_000, ja, ja, ja), Mwst),
+        ("1000 brutto, Folgefrage ja", a(100_000, ja, ja, ja), Mwst),
+        ("500, Folgefrage ja, Verzeichnis nein", a(50_000, ja, ja, nein), Afa),
+        ("500, Folgefrage ja, nicht selbstaendig nutzbar", a(50_000, nein, ja, ja), Afa),
+        ("790, Folgefrage nein UND nicht nutzbar: die Nutzbarkeit geht vor", a(79_000, nein, nein, ja), Afa),
+        ("500, Folgefrage ja, Verzeichnis unbeantwortet", a(50_000, ja, ja, None), Tatbestand),
+    ];
+    for (name, antworten, erwartet) in faelle {
+        assert_eq!(
+            ergebnis(&gwg_fall(gwg_basis(0), antworten)),
+            (Grund::Sperre(erwartet), None),
+            "{name}"
+        );
+    }
+}
+
+/// AK-R2, Zwei-Signal-Regel: ein VORLAEUFIGES "ja" auf die Folgefrage (Vorjahres-Vorschlag) ist keine Antwort. Es oeffnet
+/// den Abzug nicht; die Sperre bleibt `GwgMehrwertsteuerOffen`.
+#[test]
+fn gwg_vorlaeufige_folgefrage_oeffnet_den_abzug_nicht() {
+    let mut paare = gwg_basis(0);
+    paare.extend([
+        ("gwg_anschaffungskosten_netto", json!(79_000)),
+        ("gwg_bewegliches_selbstaendig_nutzbar", json!(true)),
+        ("gwg_netto_ohne_vorsteuer", json!(false)),
+        ("gwg_verzeichnis_ab_250", json!(true)),
+    ]);
+    let f = fall(
+        Scheibe::Gesamt,
+        &paare,
+        &[("gwg_ohne_vorsteuerabzug", json!(true))],
+    );
+    assert_eq!(
+        ergebnis(&f),
+        (Grund::Sperre(Sperrgrund::GwgMehrwertsteuerOffen), None)
+    );
+}
+
+/// AK-R4 (Pin zu `99c4313`): ein Direktwert `einkuenfte_gewinn` UND eine GWG-Zeile im selben Fall sind zwei Gewinn-Quellen:
+/// `GewinnQuelleOffen`. Der Doppelquellen-Waechter liest dieselbe Menge wie der EUeR-Umschalter
+/// (`GEWINN_QUELLEN_MENGEN`, `einkuenfte.rs`); faellt `gwg_anschaffungskosten_netto` aus ihr, rechnet der Fall still
+/// weiter. Nur der Direktwert und nur das GWG rechnen weiter.
+#[test]
+fn gwg_direktwert_neben_gwg_zeile_ist_doppelquelle() {
+    let lauf = |direktwert: Option<i64>, gwg_cent: Option<i64>| {
+        let mut paare = gwg_basis(0);
+        if let Some(d) = direktwert {
+            paare.push(("einkuenfte_gewinn", json!(d)));
+        }
+        let a = GwgAntworten {
+            betrag: gwg_cent,
+            nutzbar: gwg_cent.map(|_| true),
+            netto: gwg_cent.map(|_| true),
+            verzeichnis: gwg_cent.map(|_| true),
+            ..GwgAntworten::default()
+        };
+        ergebnis(&gwg_fall(paare, a))
+    };
+    assert_eq!(
+        lauf(Some(5_000_000), Some(60_000)),
+        (Grund::Sperre(Sperrgrund::GewinnQuelleOffen), None),
+        "DEFEKT: Direktwert 50.000 EUR UND GWG 600 EUR sind zwei Quellen"
+    );
+    let (g, zahl) = lauf(Some(5_000_000), None);
+    assert_eq!(g, Grund::Bestaetigt, "KONTROLLE: nur der Direktwert rechnet");
+    assert!(zahl.is_some(), "KONTROLLE: nur der Direktwert hat eine Zahl");
+    let (g, zahl) = lauf(None, Some(60_000));
+    assert_eq!(g, Grund::Bestaetigt, "KONTROLLE: nur das GWG rechnet");
+    assert!(zahl.is_some(), "KONTROLLE: nur das GWG hat eine Zahl");
 }

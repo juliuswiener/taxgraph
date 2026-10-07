@@ -189,14 +189,18 @@ fn gwg_abzug(fi: &Felder) -> Result<Euro, BescheidFehler> {
     let netto = feld_int_oder_null(fi, "gwg_anschaffungskosten_netto")?;
     // Alle `Euro::new(0)` hier rechnen ein Geraet OHNE Sofortabzug. Eine festgesetzte Zahl darf diese 0 nicht still
     // zeigen: `sperre::gesamt::gwg` sperrt jede solche Instanz mit Betrag > 0 (`GwgAbschreibungOffen` /
-    // `GwgMehrwertsteuerOffen`, seit 2026-10-03). Die 0 gilt nur fuer die Schaetzung (/stand).
+    // `GwgMehrwertsteuerOffen`, seit 2026-10-03). Die 0 gilt nur fuer die Schaetzung (/stand). Beide Stellen muessen
+    // dieselbe Instanz gleich lesen: wer hier einen Fall freigibt, gibt ihn dort frei (Folgefrage, siehe unten).
     // CENT-GUARD: die 800-EUR-Schwelle wird VOR der Euro-Rundung in Cent geprueft.
     if netto > 80_000 {
         return Ok(Euro::new(0));
     }
-    // Ein verneinter Tatbestand ist eine rechenbare Antwort: das WG gehoert in die AfA.
+    // Ein verneinter Tatbestand ist eine rechenbare Antwort: das WG gehoert in die AfA. Ausnahme "netto: nein": wer die
+    // Mehrwertsteuer nicht zurueckbekommt (`gwg_ohne_vorsteuerabzug`, Folgefrage), zieht den eingegebenen Bruttobetrag ab
+    // (§ 9b Abs. 1 EStG; Abweichung Nr. 27). Die Grenze von 800 EUR hat oben schon auf diesem Betrag entschieden.
+    let brutto_ist_abzug = ist_true(wert(fi, "gwg_ohne_vorsteuerabzug"));
     if ist_false(wert(fi, "gwg_bewegliches_selbstaendig_nutzbar"))
-        || ist_false(wert(fi, "gwg_netto_ohne_vorsteuer"))
+        || (ist_false(wert(fi, "gwg_netto_ohne_vorsteuer")) && !brutto_ist_abzug)
         || (netto > 25_000 && ist_false(wert(fi, "gwg_verzeichnis_ab_250")))
     {
         return Ok(Euro::new(0));
