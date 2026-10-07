@@ -152,7 +152,7 @@ pub(super) fn pauschbetrag_partner(f: &Felder, vz: Vz, p: &bindung::Params) -> R
 }
 
 /// § 24a Altersentlastung Person A/B und § 24b Entlastungsbetrag: `(alt24a_a, alt24a_b, ent24b)`.
-fn entlastungen(
+pub(super) fn entlastungen(
     f: &Felder,
     vz: Vz,
     p: &bindung::Params,

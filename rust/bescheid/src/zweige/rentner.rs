@@ -1,7 +1,6 @@
 //! `_zweig_festzusetzende_est_rentner` (`bescheid_zweige.py:1072-1480`), Teil 1: § 22-Renten,
 //! § 33b, Gewinn, § 24a/§ 24b und der Aufbau des Gesamtfalls. Tarif-Teil: `rentner_tarif.rs`.
 use domain::{Euro, PyWert, Vz};
-use engine::zugriff::teil1::ermaessigungen::{p24a_altersentlastung, P24aAltersentlastungEingabe};
 use engine::zugriff::teil2::gesamt::{gesamt_gde, GesamtfallEingabe};
 use engine::zugriff::teil2::rente::{renten_einkuenfte, RentenEingabe, Rentenart};
 use intervall::Slots;
@@ -9,7 +8,7 @@ use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
 use super::gesamt::{
-    einkuenfte_ns_aus_lohn, entlastung_24b, gde_fall, kist_ueberhang, netto_vg, nr3_euro,
+    einkuenfte_ns_aus_lohn, entlastungen, gde_fall, kist_ueberhang, netto_vg, nr3_euro,
     p35_person_a, pauschbetraege_a, pauschbetrag_partner, vorsorge_slots,
 };
 use super::rechnen::{add, max0, summe_euro, R};
@@ -174,17 +173,16 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     let lohn = feld_euro_oder_null(f, "bruttoarbeitslohn")?;
     let ns = einkuenfte_ns_aus_lohn(f, vz, p, lohn, Euro::new(0), zusammen)?;
     // § 24a-Bemessung: Arbeitslohn plus Nicht-§19-Einkuenfte (Gewinn + § 23); Versorgungsbezuege und
-    // Leibrente § 22 Nr. 1 sind ausgenommen (§ 24a Satz 2 Nr. 1 und 2).
-    let alt = p24a_altersentlastung(
-        &P24aAltersentlastungEingabe {
-            veranlagungszeitraum: i64::from(vz.jahr()),
-            geburtsjahr: feld_int_oder_null(f, "geburtsjahr")?,
-            arbeitslohn: lohn,
-            positive_andere_einkuenfte: max0(summe_euro(&[laufend, netto_vg, p23])?),
-        },
+    // Leibrente § 22 Nr. 1 sind ausgenommen (§ 24a Satz 2 Nr. 1 und 2). § 24a gilt je Person: der Ehegatte hat
+    // eigenen Lohn und eigenes Geburtsjahr (Abweichung Nr. 36), sonst wie im Gesamt-Zweig (`entlastungen`).
+    let (alt_a, alt_b, ent) = entlastungen(
+        f,
+        vz,
         p,
+        zusammen,
+        max0(summe_euro(&[laufend, netto_vg, p23])?),
     )?;
-    let ent = entlastung_24b(f)?;
+    let alt = add(alt_a, alt_b)?;
     let (gewinn_partner, _mitu_partner, netto_vg_partner) = gewinn_partner_anteil(f)?;
     let mut g = GesamtfallEingabe {
         einkuenfte_nichtselbststaendig: ns,
