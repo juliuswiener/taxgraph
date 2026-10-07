@@ -11,7 +11,7 @@ use engine::zugriff::teil2::gesamt::{gesamt_kette, GesamtKette};
 
 use super::rechnen::R;
 use super::tarif::Endstand;
-use crate::{wert, zahl_int, Felder};
+use crate::{ist_zusammen, plus, wert, zahl_int, Felder};
 use domain::Zustand;
 
 /// Wer die Guenstigerpruefung § 31 gewonnen hat (`kette["p31"]["guenstiger"]`).
@@ -110,7 +110,15 @@ fn best_zahl<'a>(felder: &'a Felder, fid: &str) -> Option<&'a PyWert> {
 /// `zahl_cent`. `None`, wenn kein einziges Anrechnungsfeld BESTAETIGT vorliegt.
 ///
 /// PARITÄT: fail-open default — ein fehlendes Anrechnungsfeld zaehlt 0 (`int(x or 0)`), solange
-/// mindestens eines der fuenf da ist.
+/// mindestens eines der sechs da ist.
+///
+/// GEWOLLT ABWEICHEND (Abweichung Nr. 38, `rust/fixtures/README.md`; Entscheidung
+/// `abschlusszahlung-rechnet-die-lohnsteuer-beider-ehegatten-an`): bei Zusammenveranlagung zaehlt die einbehaltene
+/// Lohnsteuer des Ehegatten (`p36_lohnsteuer_partner`) zur Lohnsteuer von Person A. § 36 Abs. 2 Satz 1 Nr. 2 rechnet
+/// die durch Steuerabzug erhobene Steuer auf die bei der Veranlagung erfassten Einkuenfte an, ohne Person. Python
+/// (eingefroren) liest das Feld nie. Ohne Zusammenveranlagung zaehlt ein bestaetigter Wert dort nicht. Beide Lohnsteuern sind
+/// EINE Abzugsteuer: § 36 Abs. 3 S. 2 rundet "die Summe der Betraege einer einzelnen Abzugsteuer" auf, also wird erst
+/// addiert und dann einmal aufgerundet (in `p36_abschlusszahlung`), nicht jeder Betrag fuer sich.
 ///
 /// # Errors
 /// [`BescheidFehler::Ueberlauf`], Accessor-Fehler.
@@ -126,6 +134,20 @@ fn best_zahl<'a>(felder: &'a Felder, fid: &str) -> Option<&'a PyWert> {
 /// // ohne ein bestaetigtes Anrechnungsfeld gibt es keine Zahl
 /// let leer = felder(&store(&[("p36_lohnsteuer", json!(100_000), false)]));
 /// assert_eq!(abschlusszahlung_cent(&leer, Cent::new(250_000)).unwrap(), None);
+/// // Zusammenveranlagung: die Lohnsteuer des Ehegatten (400 EUR) kommt dazu → 1.100 EUR
+/// let paar = felder(&store(&[
+///     ("veranlagung", json!("zusammen"), true),
+///     ("p36_lohnsteuer", json!(100_000), true),
+///     ("p36_lohnsteuer_partner", json!(40_000), true),
+/// ]));
+/// assert_eq!(abschlusszahlung_cent(&paar, Cent::new(250_000)).unwrap(), Some(Cent::new(110_000)));
+/// // Einzelveranlagung: dieselbe Angabe zaehlt nicht
+/// let einzel = felder(&store(&[
+///     ("veranlagung", json!("einzel"), true),
+///     ("p36_lohnsteuer", json!(100_000), true),
+///     ("p36_lohnsteuer_partner", json!(40_000), true),
+/// ]));
+/// assert_eq!(abschlusszahlung_cent(&einzel, Cent::new(250_000)).unwrap(), Some(Cent::new(150_000)));
 /// ```
 pub fn abschlusszahlung_cent(felder: &Felder, zahl_cent: Cent) -> R<Option<Cent>> {
     let ids = [
@@ -136,7 +158,12 @@ pub fn abschlusszahlung_cent(felder: &Felder, zahl_cent: Cent) -> R<Option<Cent>
         "p36_kapitalertragsteuer_kist",
     ];
     let werte = ids.map(|i| best_zahl(felder, i));
-    if werte.iter().all(Option::is_none) {
+    let partner = if ist_zusammen(felder) {
+        best_zahl(felder, "p36_lohnsteuer_partner")
+    } else {
+        None
+    };
+    if werte.iter().all(Option::is_none) && partner.is_none() {
         return Ok(None);
     }
     let cent = |n: Option<&PyWert>| -> R<Cent> {
@@ -146,7 +173,7 @@ pub fn abschlusszahlung_cent(felder: &Felder, zahl_cent: Cent) -> R<Option<Cent>
     let [lst, vor, kapest, solz, kist] = werte;
     Ok(Some(p36_abschlusszahlung(&P36AbschlusszahlungEingabe {
         festzusetzende_est_cent: zahl_cent,
-        lohnsteuer_cent: cent(lst)?,
+        lohnsteuer_cent: Cent::new(plus(cent(lst)?.get(), cent(partner)?.get())?),
         kapitalertragsteuer_cent: cent(kapest)?,
         kapitalertragsteuer_solz_cent: cent(solz)?,
         kapitalertragsteuer_kist_cent: cent(kist)?,

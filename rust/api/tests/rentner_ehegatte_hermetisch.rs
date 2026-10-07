@@ -459,7 +459,7 @@ async fn der_altersentlastungsbetrag_des_ehegatten_ist_derselbe_wie_auf_der_sche
 
 /// AK2: Die Lohnsteuer des Ehegatten ist beantwortbar und wird nur gefragt, wenn der Ehegatte Lohn hat (Bedingung der
 /// Bindung, `feld_bedingung` auf `bruttoarbeitslohn_partner`, nicht gleich 0) und nur bei Zusammenveranlagung. Sie aendert die
-/// Steuer nicht: der Bescheid rechnet keine einbehaltene Lohnsteuer des Ehegatten an (eigenes Ticket).
+/// Steuer (`zahl_cent`) nicht, wohl aber die Abschlusszahlung (Abweichung Nr. 38, Test weiter unten).
 #[tokio::test]
 async fn die_lohnsteuer_des_ehegatten_wird_nur_bei_seinem_lohn_und_nur_zusammen_gefragt() {
     let ohne_lohn = fragen_ids(&fall_mit("rentner_gesamt", &mit(paar(2_000_000), lohn_partner(0))).await).await;
@@ -572,4 +572,50 @@ async fn die_meldung_zu_fehlenden_versorgungsangaben_nennt_den_ehegatten() {
         assert!(klartext.contains("gemeinsamer Veranlagung"), "{name}: {klartext}");
         assert!(klartext.contains("jede Person einzeln"), "{name}: {klartext}");
     }
+}
+
+/// Abweichung Nr. 38: Lohnsteuer (5.000 EUR) und Vorauszahlungen (1.000 EUR) von Person A.
+fn anrechnung_a() -> Paare {
+    vec![("p36_lohnsteuer", json!(500_000)), ("p36_vorauszahlungen", json!(100_000))]
+}
+
+/// Die einbehaltene Lohnsteuer des Ehegatten (`p36_lohnsteuer_partner`) in EURO.
+fn lohnsteuer_partner(euro: i64) -> Paare {
+    vec![("p36_lohnsteuer_partner", json!(euro * 100))]
+}
+
+fn abschlusszahlung(a: &Value) -> i64 {
+    assert_eq!(a["grund"], json!("bestaetigt"), "keine Zahl: {a}");
+    a["abschlusszahlung_cent"].as_i64().unwrap_or_else(|| panic!("keine Abschlusszahlung: {a}"))
+}
+
+/// Abweichung Nr. 38, AK4: Bei Zusammenveranlagung zieht `abschlusszahlung_cent` in `GET /ergebnis` die Lohnsteuer des Ehegatten
+/// ab, auf der Rentner-Scheibe wie auf `gesamt`. 3.000 EUR Lohnsteuer des Ehegatten senken die Abschlusszahlung um genau 3.000 EUR,
+/// die Steuer (`zahl_cent`) bleibt gleich. Kontrolle: ohne den Ehegatten ist die Abschlusszahlung die Steuer minus 6.000 EUR.
+#[tokio::test]
+async fn die_lohnsteuer_des_ehegatten_senkt_die_abschlusszahlung_auf_rentner_und_gesamt() {
+    let rentner_basis = mit(mit(paar(4_000_000), lohn_partner(20_000)), anrechnung_a());
+    let gesamt_basis = mit(gesamt_zusammen(60_000), anrechnung_a());
+    for (scheibe, basis) in [("rentner_gesamt", rentner_basis), ("gesamt", gesamt_basis)] {
+        let ohne = ergebnis_der(scheibe, &basis).await;
+        let mit_lst = ergebnis_der(scheibe, &mit(basis.clone(), lohnsteuer_partner(3_000))).await;
+        assert_eq!(zahl(&mit_lst), zahl(&ohne), "{scheibe}: die Lohnsteuer des Ehegatten aendert die Steuer nicht");
+        assert_eq!(abschlusszahlung(&ohne), zahl(&ohne) - 600_000, "{scheibe}: Kontrolle ohne den Ehegatten: {ohne}");
+        assert_eq!(
+            abschlusszahlung(&ohne) - abschlusszahlung(&mit_lst),
+            300_000,
+            "{scheibe}: die Lohnsteuer des Ehegatten fehlt in der Abschlusszahlung. ohne: {ohne} mit: {mit_lst}"
+        );
+    }
+}
+
+/// Abweichung Nr. 38, AK3: Bei Einzelveranlagung zaehlt ein bestaetigter Wert im Feld des Ehegatten nicht. Die Abschlusszahlung
+/// ist mit und ohne ihn dieselbe.
+#[tokio::test]
+async fn bei_einzelveranlagung_zaehlt_die_lohnsteuer_des_ehegatten_nicht() {
+    let basis = mit(rentner(4_000_000, "einzel"), anrechnung_a());
+    let ohne = ergebnis(&basis).await;
+    let mit_lst = ergebnis(&mit(basis, lohnsteuer_partner(3_000))).await;
+    assert_eq!(abschlusszahlung(&ohne), zahl(&ohne) - 600_000, "Kontrolle: Person A allein: {ohne}");
+    assert_eq!(abschlusszahlung(&mit_lst), abschlusszahlung(&ohne), "einzeln veranlagt: der Wert des Ehegatten zaehlt nicht. {mit_lst}");
 }

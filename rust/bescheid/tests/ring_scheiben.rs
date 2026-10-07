@@ -740,9 +740,9 @@ fn ring_quellen() -> Vec<PathBuf> {
 /// (`fid("gewinnanteil")`, `s = if partner { "_partner" } ...`). Python fand diese Felder ueber seine
 /// `PARTNER`-Namen aus `api_constants`; hier gilt der Suffix je Datei fuer jedes Literal derselben Datei.
 ///
-/// ponytail: je Datei, nicht je Aufruf. `ausgaben.rs` fuehrt `p36_lohnsteuer`, aber keinen Suffix, daher kein
-/// `p36_lohnsteuer_partner` (gemessen: mit dem Suffix ueber alle Dateien wuerde dieses eine Feld zu viel).
-/// Upgrade: Aufrufstellen auswerten statt Dateien.
+/// ponytail: je Datei, nicht je Aufruf. `ausgaben.rs` fuehrt keinen Suffix; `p36_lohnsteuer_partner` steht dort seit
+/// Abweichung Nr. 38 als eigenes Literal (vor Nr. 38 gemessen: mit dem Suffix ueber alle Dateien waere dieses eine Feld zu
+/// viel gewesen). Upgrade: Aufrufstellen auswerten statt Dateien.
 fn abgeleitet() -> BTreeSet<String> {
     let mut erreichbar = BTreeSet::new();
     for pfad in ring_quellen() {

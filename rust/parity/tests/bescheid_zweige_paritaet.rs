@@ -1370,22 +1370,41 @@ fn negativkontrolle_erkennt_genau_eine_abweichung() {
 
 // ---------------------------------------------------------------- _abschlusszahlung_cent
 
+/// GEWOLLT ABWEICHEND (Abweichung Nr. 38, `rust/fixtures/README.md`; Entscheidung
+/// `abschlusszahlung-rechnet-die-lohnsteuer-beider-ehegatten-an`): Rust rechnet bei Zusammenveranlagung die Lohnsteuer des
+/// Ehegatten (`p36_lohnsteuer_partner`) in die Abschlusszahlung, Python (eingefroren) liest das Feld nie. Fuer den Vergleich
+/// [`abschlusszahlung_paritaet`] sieht Rust das Feld als leer, sonst bliebe jeder Fall mit Zusammenveranlagung und
+/// Ehegatten-Lohnsteuer rot. Die Wirkung des Felds selbst belegt
+/// `rust/bescheid/tests/abschlusszahlung_ehegatte_hermetisch.rs`.
+const GEWOLLT_ABWEICHEND_NR38: [&str; 1] = ["p36_lohnsteuer_partner"];
+
 /// `_abschlusszahlung_cent` gegen Python: reale Fälle und generierte Snapshots (die `p36_*`-Felder
-/// stehen in `SCHEIBEN`), je mit mehreren festgesetzten Beträgen (Erstattung, 0, Nachzahlung).
+/// stehen in `SCHEIBEN`), je mit mehreren festgesetzten Beträgen (Erstattung, 0, Nachzahlung). Rust sieht
+/// [`GEWOLLT_ABWEICHEND_NR38`] als leer; als Wachposten gegen ein totes Maskieren bricht der Block ab, wenn das Maskieren
+/// kein einziges Rust-Ergebnis bewegt hat.
 #[test]
 fn abschlusszahlung_paritaet() {
     if skip() {
         return;
     }
     let (n, mit_wert, nur_none, abw) = (Cell::new(0), Cell::new(0), Cell::new(0), Cell::new(0));
+    let bewegt = Cell::new(0_u64);
     let pruefe = |store: &Value| {
         let datei: StoreDatei = serde_json::from_value(store.clone()).expect("Store");
-        let felder = Store::aus_datei(datei).materialisiere(None).unwrap().0;
+        let roh = Store::aus_datei(datei).materialisiere(None).unwrap().0;
+        let mut felder = roh.clone();
+        for fid in GEWOLLT_ABWEICHEND_NR38 {
+            felder.remove(fid);
+        }
         for zahl in [-500_000_i64, 0, 123_456, 9_876_543] {
             let py = frage(
                 &json!({"fn": "bescheid.abschlusszahlung", "store": store, "zahl_cent": zahl}),
             );
             let r = bescheid::zweige::abschlusszahlung_cent(&felder, Cent::new(zahl));
+            let unmaskiert = bescheid::zweige::abschlusszahlung_cent(&roh, Cent::new(zahl));
+            if format!("{unmaskiert:?}") != format!("{r:?}") {
+                bewegt.set(bewegt.get() + 1);
+            }
             n.set(n.get() + 1);
             let gleich = match (py.get("ok"), py.get("err"), &r) {
                 (Some(Value::Null), _, Ok(None)) => {
@@ -1440,12 +1459,17 @@ fn abschlusszahlung_paritaet() {
         })
         .unwrap();
     eprintln!(
-        "abschlusszahlung: {} Vergleiche; mit Betrag {}, ohne Anrechnungsfeld (None) {}; Abweichungen {}",
+        "abschlusszahlung: {} Vergleiche; mit Betrag {}, ohne Anrechnungsfeld (None) {}; Maskieren (Nr. 38) bewegte {}; Abweichungen {}",
         n.get(),
         mit_wert.get(),
         nur_none.get(),
+        bewegt.get(),
         abw.get()
     );
     assert!(mit_wert.get() > 100 && nur_none.get() > 100);
+    assert!(
+        bewegt.get() > 0,
+        "das Maskieren von p36_lohnsteuer_partner (Nr. 38) bewegt kein Ergebnis: die Liste maskiert nichts"
+    );
     assert_eq!(abw.get(), 0);
 }

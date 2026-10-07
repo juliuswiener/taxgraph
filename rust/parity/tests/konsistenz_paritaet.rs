@@ -343,9 +343,10 @@ fn pruefe(
 
 #[test]
 fn konstanten_gleich() {
-    // Abweichung Nr. 28, Nr. 31 und Nr. 33: diese sechs Felder stehen nur in Rust (wie `konsistenz/tests/orakel_werte.rs`).
-    const NUR_RUST: [&str; 6] = [
+    // Abweichung Nr. 28, Nr. 31, Nr. 33 und Nr. 38: diese sieben Felder stehen nur in Rust (wie `konsistenz/tests/orakel_werte.rs`).
+    const NUR_RUST: [&str; 7] = [
         "ep_unfallkosten",
+        "p36_lohnsteuer_partner",
         "parteispenden_betrag",
         "versorgung_alter_bei_beginn_partner",
         "versorgung_beginn_jahr_partner",
