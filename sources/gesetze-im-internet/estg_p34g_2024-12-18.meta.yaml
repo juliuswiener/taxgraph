@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p34g/2024-12-18"
+  norm: "§ 34g EStG"
+  fassung: "Fassung bis 31.12.2024 (amtliche Seite, Archivkopie vom 2024-12-18)"
+  quelle_url: "https://web.archive.org/web/20241218124941id_/https://www.gesetze-im-internet.de/estg/__34g.html"
+  abrufdatum: "2026-10-07"
+  datei: "estg_p34g_2024-12-18.txt"
+  sha256: "07732d98ece3a6f6136468dc80f91cf8b251cee897f7941a0e21eb9418f41c8c"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["geplant: Steuerermäßigung Parteispenden, Höchstbetrag je VZ (vault backlog parteispenden-erfragt-aber-kein-feld)"]

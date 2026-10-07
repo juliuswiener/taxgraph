@@ -23,6 +23,7 @@ Ohne beides wird nichts geschrieben.
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import html
 import os
@@ -37,7 +38,11 @@ OUT = os.path.join(ROOT, "sources", "gesetze-im-internet")
 def fetch(url: str) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=60) as r:
-        return r.read().decode("utf-8", "replace")
+        raw = r.read()
+    # Archivkopien (web.archive.org .../id_/) liefern den gzip-Koerper roh aus, auch ohne Accept-Encoding
+    if raw[:2] == b"\x1f\x8b":
+        raw = gzip.decompress(raw)
+    return raw.decode("utf-8", "replace")
 
 
 def entstrippen(raw: str, start: str, ende: str | None) -> str:

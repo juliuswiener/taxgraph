@@ -1,0 +1,10 @@
+Quelle: https://web.archive.org/web/20251218054015id_/https://www.gesetze-im-internet.de/estg/__34g.html
+Abgerufen: 2026-10-07
+Norm: § 34g EStG
+Fassung: Fassung bis 31.12.2025 (amtliche Seite, Archivkopie vom 2025-12-18)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+1 Die tarifliche Einkommensteuer, vermindert um die sonstigen Steuerermäßigungen mit Ausnahme des § 34f Absatz 3, ermäßigt sich bei Zuwendungen an 1. politische Parteien im Sinne des § 2 des Parteiengesetzes, sofern die jeweilige Partei nicht gemäß § 18 Absatz 7 des Parteiengesetzes von der staatlichen Teilfinanzierung ausgeschlossen ist, und 2. Vereine ohne Parteicharakter, wenn a) der Zweck des Vereins ausschließlich darauf gerichtet ist, durch Teilnahme mit eigenen Wahlvorschlägen an Wahlen auf Bundes-, Landes- oder Kommunalebene bei der politischen Willensbildung mitzuwirken, und b) der Verein auf Bundes-, Landes- oder Kommunalebene bei der jeweils letzten Wahl wenigstens ein Mandat errungen oder der zuständigen Wahlbehörde oder dem zuständigen Wahlorgan angezeigt hat, dass er mit eigenen Wahlvorschlägen auf Bundes-, Landes- oder Kommunalebene an der jeweils nächsten Wahl teilnehmen will. 2 Nimmt der Verein an der jeweils nächsten Wahl nicht teil, wird die Ermäßigung nur für die bis zum Wahltag an ihn geleisteten Beiträge und Spenden gewährt. 3 Die Ermäßigung für Beiträge und Spenden an den Verein wird erst wieder gewährt, wenn er sich mit eigenen Wahlvorschlägen an einer Wahl beteiligt hat. 4 Die Ermäßigung wird in diesem Fall nur für Beiträge und Spenden gewährt, die nach Beginn des Jahres, in dem die Wahl stattfindet, geleistet werden. 2 Die Ermäßigung beträgt 50 Prozent der Ausgaben, höchstens jeweils 825 Euro für Ausgaben nach den Nummern 1 und 2, im Fall der Zusammenveranlagung von Ehegatten höchstens jeweils 1 650 Euro. 3 § 10b Absatz 3 und 4 gilt entsprechend.
