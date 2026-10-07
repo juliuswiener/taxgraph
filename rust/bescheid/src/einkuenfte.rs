@@ -555,6 +555,9 @@ pub struct DbaErgebnis {
 ///
 /// `f` ist der Feld-Snapshot der aufrufenden Quantitaet, `gde_p10d` der `GdE` fuer § 10d.
 ///
+/// Wahl `dba_abzug_statt_anrechnung` (§ 34c Abs. 2) und Methode Freistellung schliessen sich aus: die Freistellung gewinnt,
+/// kein Abzug (Abweichung Nr. 35, Test `p34c_abzug_rechnung.rs`).
+///
 /// # Errors
 /// Accessor-, Python-`AttributeError`- (`dba_staat` kein Text) und Ueberlauf-Fehler.
 ///
@@ -605,7 +608,14 @@ pub fn shared_dba_sonstige(
     };
     let mut anrechnung = Euro::new(0);
     let mut progression = None;
-    if ist_true(wert(f, "dba_abzug_statt_anrechnung")) && gezahlt.get() > 0 && ausland.get() > 0 {
+    // ABWEICHUNG VON PYTHON (Nr. 35): bei Freistellung gibt es keinen Abzug (§ 34c Abs. 6 S. 1 und 2 EStG: Abs. 2 gilt
+    // nur, wo das Abkommen die Anrechnung vorsieht). Python bucht den Abzug vor der Methodenpruefung; Rust laesst die
+    // Freistellung gewinnen, dann gilt der Zweig darunter (Progressionsvorbehalt).
+    if ist_true(wert(f, "dba_abzug_statt_anrechnung"))
+        && gezahlt.get() > 0
+        && ausland.get() > 0
+        && methode != "freistellung"
+    {
         g.sonstige_abzuege_vom_einkommen = euro_plus(g.sonstige_abzuege_vom_einkommen, gezahlt)?;
     } else if gezahlt.get() > 0 || ausland.get() > 0 {
         if methode == "freistellung" {

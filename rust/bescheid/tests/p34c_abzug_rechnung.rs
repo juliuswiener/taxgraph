@@ -14,6 +14,10 @@
 //! wie Python. Der Unterschied bei den Einkuenften (Gesamtbetrag, Altersentlastung u. a.) ist nicht gemessen. Die Tests
 //! unten pinnen das Verhalten des Zweigs, nicht seine Richtigkeit gegen das Gesetz.
 //!
+//! **Abweichung Nr. 35 (Freistellung schlaegt die Wahl).** Bei einem Abkommen mit Freistellung gibt es keinen Abzug
+//! (§ 34c Abs. 6 S. 1 und 2 `EStG`). Die drei Tests `bei_freistellung_*` und `bei_anrechnungsabkommen_*` halten das fest;
+//! Python bucht dort den Abzug (Vault: `p34c-bei-dba-freistellung-rechnet-der-bescheid-keinen-abzug`).
+//!
 //! HERKUNFT DER ERWARTUNGSWERTE: VZ 2025, von Hand. Lohn 50.000 Euro, Sonderausgaben-Pauschbetrag 36 Euro (§ 10c,
 //! `params/2025/`), also zvE ohne Abzug 49.964 Euro (`engine::zugriff::teil2::gesamt`, Doctest `gesamt_zve`). Gezahlte
 //! Steuer 700 Euro, Auslandseinkuenfte 5.000 Euro. Hoechstbetrag der Anrechnung (Abs. 1 S. 2): tarifliche Steuer x
@@ -139,8 +143,8 @@ fn abzug_braucht_steuer_und_auslandseinkuenfte() {
 }
 
 /// Ohne gezahlte Steuer gibt es nichts abzuziehen: die Wahl `true` aendert dann nichts an der Freistellung. Die 5.000 Euro
-/// gehen in den Progressionsvorbehalt (`dba_methode` = Freistellung), genau wie ohne die Wahl; nur mit Steuer ueber 0 nimmt
-/// der Abzugszweig den Fall (Python: dieselbe Reihenfolge der Zweige).
+/// gehen in den Progressionsvorbehalt (`dba_methode` = Freistellung), genau wie ohne die Wahl. Mit Steuer ueber 0 gilt seit
+/// Nr. 35 dasselbe (Test `bei_freistellung_ueber_dba_methode_gibt_es_keinen_abzug`); Python buchte dort den Abzug.
 #[test]
 fn ohne_steuer_bleibt_die_freistellung_im_progressionsvorbehalt() {
     for wahl in [true, false] {
@@ -156,6 +160,95 @@ fn ohne_steuer_bleibt_die_freistellung_im_progressionsvorbehalt() {
         );
         assert_eq!(erg.dba_anrechnung.get(), 0, "Wahl {wahl}");
         assert_eq!(g.sonstige_abzuege_vom_einkommen.get(), 0, "Wahl {wahl}");
+    }
+}
+
+/// Abweichung Nr. 35 (§ 34c Abs. 6 S. 1 und 2 `EStG`): bei Freistellung gibt es keinen Abzug. Das Abkommen stellt die
+/// Auslandseinkuenfte steuerfrei; Abs. 2 gilt nur dort, wo das Abkommen die Anrechnung vorsieht. Die Wahl `true` aendert
+/// dann nichts: weder Abzug noch Anrechnung, die 5.000 Euro gehen in den Progressionsvorbehalt, das zvE bleibt bei
+/// 49.964 Euro. Der Lauf mit Wahl `false` muss dasselbe zeigen.
+#[test]
+fn bei_freistellung_ueber_dba_methode_gibt_es_keinen_abzug() {
+    for wahl in [true, false] {
+        let (g, erg) = lauf(&[
+            (STEUER, json!(cent(700))),
+            (EINKUENFTE, json!(cent(5_000))),
+            ("dba_methode", json!("dba_freistellung")),
+            (WAHL, json!(wahl)),
+        ]);
+        assert_eq!(g.sonstige_abzuege_vom_einkommen.get(), 0, "Wahl {wahl}");
+        assert_eq!(erg.dba_anrechnung.get(), 0, "Wahl {wahl}");
+        assert_eq!(
+            g.anzurechnende_auslaendische_steuern.get(),
+            0,
+            "Wahl {wahl}"
+        );
+        assert_eq!(
+            erg.p32b_progressionseinkuenfte,
+            Some(Euro::new(5_000)),
+            "Wahl {wahl}"
+        );
+        assert_eq!(zve(&g), 49_964, "Wahl {wahl}");
+    }
+}
+
+/// Dasselbe, wenn die Freistellung aus Staat und Einkunftsart folgt (`dba_methode_fuer`, nicht aus `dba_methode`): USA und
+/// Oesterreich je pauschal, Polen nur fuer Ruhegehaelter. Beide Wege zur Methode muessen den Abzug ausschliessen.
+#[test]
+fn bei_freistellung_ueber_staat_und_einkunftsart_gibt_es_keinen_abzug() {
+    let faelle: [(&str, Option<&str>); 3] =
+        [("us", None), ("at", None), ("pl", Some("ruhegehaelter"))];
+    for (staat, art) in faelle {
+        let mut paare = vec![
+            (STEUER, json!(cent(700))),
+            (EINKUENFTE, json!(cent(5_000))),
+            ("dba_staat", json!(staat)),
+            (WAHL, json!(true)),
+        ];
+        if let Some(a) = art {
+            paare.push(("dba_einkunftsart", json!(a)));
+        }
+        let (g, erg) = lauf(&paare);
+        let fall = format!("{staat} {art:?}");
+        assert_eq!(g.sonstige_abzuege_vom_einkommen.get(), 0, "{fall}");
+        assert_eq!(erg.dba_anrechnung.get(), 0, "{fall}");
+        assert_eq!(
+            erg.p32b_progressionseinkuenfte,
+            Some(Euro::new(5_000)),
+            "{fall}"
+        );
+        assert_eq!(zve(&g), 49_964, "{fall}");
+    }
+}
+
+/// KONTROLLE zu Nr. 35: sieht das Abkommen die Anrechnung vor, bleibt der Abzug erlaubt (§ 34c Abs. 6 S. 2). Niederlande
+/// pauschal, Polen fuer Dividenden: die 700 Euro mindern das Einkommen wie ohne Abkommen, nichts wird angerechnet, kein
+/// Progressionsvorbehalt. Ohne diese Kontrolle bestuende der Fix auch, wenn er den Abzug ueberall abschaltete.
+#[test]
+fn bei_anrechnungsabkommen_bleibt_der_abzug_erlaubt() {
+    let faelle: [(Option<&str>, Option<&str>); 3] = [
+        (None, None),
+        (Some("nl"), None),
+        (Some("pl"), Some("dividenden")),
+    ];
+    for (staat, art) in faelle {
+        let mut paare = vec![
+            (STEUER, json!(cent(700))),
+            (EINKUENFTE, json!(cent(5_000))),
+            (WAHL, json!(true)),
+        ];
+        if let Some(s) = staat {
+            paare.push(("dba_staat", json!(s)));
+        }
+        if let Some(a) = art {
+            paare.push(("dba_einkunftsart", json!(a)));
+        }
+        let (g, erg) = lauf(&paare);
+        let fall = format!("{staat:?} {art:?}");
+        assert_eq!(g.sonstige_abzuege_vom_einkommen.get(), 700, "{fall}");
+        assert_eq!(erg.dba_anrechnung.get(), 0, "{fall}");
+        assert_eq!(erg.p32b_progressionseinkuenfte, None, "{fall}");
+        assert_eq!(zve(&g), 49_264, "{fall}");
     }
 }
 

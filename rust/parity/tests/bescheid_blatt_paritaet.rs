@@ -438,6 +438,9 @@ struct Zeile {
 struct Bilanz {
     zeilen: BTreeMap<&'static str, Zeile>,
     abweichungen: Vec<String>,
+    /// Faelle, in denen die absichtliche Abweichung Nr. 35 (Freistellung schlaegt die Abzugswahl) den Vergleich
+    /// getragen hat; siehe [`nr35_python_ohne_wahl`].
+    nr35: u64,
 }
 
 fn nicht_leer(v: &Value) -> bool {
@@ -581,6 +584,55 @@ impl Bilanz {
     }
 }
 
+/// Das Feld der Abzugswahl (§ 34c Abs. 2 `EStG`), das Rust bei Freistellung nicht mehr liest (Abweichung Nr. 35).
+const ABZUGSWAHL: &str = "dba_abzug_statt_anrechnung";
+
+/// Derselbe Fall mit der Abzugswahl auf `false` (nur die Store-Form; die Fall-Vorlagen des Golden-Masters tragen das
+/// Feld nicht). Die Events werden neu gehasht wie in [`event`]; ein spaeteres Event auf denselben Schluessel gewinnt, darum
+/// werden alle umgeschrieben.
+fn ohne_abzugswahl(fall: &Fall) -> Fall {
+    let mut f = fall.clone();
+    let events = f
+        .store
+        .as_mut()
+        .and_then(|s| s.get_mut("events"))
+        .and_then(Value::as_array_mut);
+    for e in events
+        .into_iter()
+        .flatten()
+        .filter(|e| e["feld_id"] == ABZUGSWAHL)
+    {
+        e["wert"] = json!(false);
+        if let Some(o) = e.as_object_mut() {
+            o.remove("event_id");
+        }
+        e["event_id"] = json!(EventId::von_json(e).to_string());
+    }
+    f
+}
+
+/// Abweichung Nr. 35 (`rust/fixtures/README.md`): bei Freistellung rechnet Rust keinen Abzug nach § 34c Abs. 2, Python
+/// bucht ihn vor der Methodenpruefung (`bescheid_einkuenfte.py`, Zweig `dba_abzug_statt_anrechnung`). Liefert dann Pythons
+/// Antwort auf denselben Fall OHNE die Wahl, und nur dann: Python und Rust muessen sich unterscheiden, Rust muss den
+/// Freistellungs-Zweig genommen haben (`p32b_progressionseinkuenfte` nicht leer), und Rusts Antwort muss genau Pythons
+/// Antwort ohne Wahl sein. Jede andere Abweichung bleibt eine.
+fn nr35_python_ohne_wahl(
+    fall: &Fall,
+    py: &Value,
+    rust: &Result<Value, BescheidFehler>,
+) -> Option<Value> {
+    let (Some(p), Ok(r)) = (py.get("ok"), rust) else {
+        return None;
+    };
+    if p == r || r["p32b_progressionseinkuenfte"].is_null() {
+        return None;
+    }
+    let ohne = frage(&ohne_abzugswahl(fall).request(&["shared_dba_sonstige"]))
+        ["bescheid.shared_dba_sonstige"]
+        .clone();
+    (ohne.get("ok") == Some(r)).then_some(ohne)
+}
+
 /// Ein Fall gegen Python und Rust; `stoere_erste` verfälscht das erste Rust-Ergebnis (Negativkontrolle).
 fn vergleiche_fall(b: &mut Bilanz, fall: &Fall, ort: &str, werte: bool, stoere_erste: bool) {
     let py = frage(&fall.request(FUNKTIONEN));
@@ -593,7 +645,14 @@ fn vergleiche_fall(b: &mut Bilanz, fall: &Fall, ort: &str, werte: bool, stoere_e
                 gestoert = stoere(v);
             }
         }
-        b.vergleiche(n, &py[format!("bescheid.{n}")], r, ort, werte);
+        let mut py_n = py[format!("bescheid.{n}")].clone();
+        if *n == "shared_dba_sonstige" {
+            if let Some(ohne) = nr35_python_ohne_wahl(fall, &py_n, &r) {
+                py_n = ohne;
+                b.nr35 += 1;
+            }
+        }
+        b.vergleiche(n, &py_n, r, ort, werte);
     }
 }
 
@@ -1300,7 +1359,17 @@ fn generierte_faelle() {
     );
     if wachen {
         b.borrow().wache_rechnet("generierte_faelle", &[]);
+        // Wachposten gegen eine tote Maskierung (Abweichung Nr. 35): trifft kein Fall die Freistellung mit gewaehltem
+        // Abzug, belegt "0 Abweichungen" den Zweig nicht mehr (Generator geaendert, oder Rust bucht den Abzug wieder).
+        assert!(
+            b.borrow().nr35 > 0,
+            "generierte_faelle: kein Fall traegt Abweichung Nr. 35 (Freistellung gewinnt gegen die Abzugswahl)"
+        );
     }
+    eprintln!(
+        "generierte_faelle: Abweichung Nr. 35 trug den Vergleich in {} Faellen",
+        b.borrow().nr35
+    );
     ergebnis.unwrap();
     assert!(n.get() >= if wachen { 1000 } else { n_faelle as usize });
 }
