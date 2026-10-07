@@ -129,6 +129,43 @@ bindungen:
       zitatanker: "erste Tätigkeitsstätte"
       datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
 
+  # Unfallkosten auf dem Weg zur Arbeit: zusaetzlich zur Entfernungspauschale abziehbar (gebaut 2026-10-07, Abweichung Nr. 28 in
+  # rust/fixtures/README.md; Vault: decisions/unfallkosten-folgen-der-bmf-verwaltungssicht). Wortlaut: BMF-Schreiben vom
+  # 18.11.2021, Rz. 30, eingefroren unter sources/bmf/bmf_entfernungspauschalen_wortlaut_2021-11-18.txt.
+  # KEIN Gate und kein Kegel-Feld: eine freiwillige Angabe ueber einen Betrag, leer heisst 0. Der Hoechstbetrag 4.500 EUR gilt
+  # fuer die Pauschale, nicht fuer dieses Feld (der Ring addiert den Betrag NACH der Pauschale, `zweige/wk.rs::mit_unfallkosten`).
+  # Kein `vorjahr`: ein Unfall ist ein einmaliges Ereignis, der Betrag des Vorjahres waere ein falscher Vorschlag.
+  # ponytail: nur der Weg zwischen Wohnung und erster Taetigkeitsstaette. Dieselbe Rz. 30 nennt Unfaelle auf Familienheimfahrten
+  # (doppelte Haushaltsfuehrung) und Rz. 29 den pauschalen Kilometersatz fuer Menschen mit Behinderungen; beides ist nicht gebaut.
+  # Upgrade: je ein eigenes Feld mit eigener Frage, derselbe Aufruf in `mit_unfallkosten`.
+  # ponytail: Kz UNGEPRUEFT, die Abgabe sperrt bei einem Betrag ueber 0 (`elster::deklaration`, 409 deklaration_unvollstaendig).
+  # Kandidat ist N/Wk/Weitere_Wk/Sonst (E0205405 Bezeichnung, E0205406 Betrag, Summe E0204803; E10-2025.xsd:18252-18273). Die
+  # Zuordnung "Unfallkosten gehoeren dorthin" ist in keiner gelesenen Anleitung belegt, ERiC `checkESt` lief nicht, und fuer den
+  # VZ 2026 liegt lokal kein Schema vor (nur Schema/2020 bis 2025). Upgrade: Anleitung zur Anlage N lesen, XSD 2026 holen,
+  # Kz eintragen, Sperre in `elster::deklaration` streichen.
+  - feld_id: ep_unfallkosten
+    feld_bedingung: {feld: ep_entfernung_km, wert_nicht: 0, grund: "Unfallkosten sind nur neben einer Entfernungspauschale abziehbar (BMF-Schreiben vom 18.11.2021, Rz. 30): sie entstehen auf dem Weg zwischen Wohnung und erster Tätigkeitsstätte. Wer bestätigt, dass dieser Weg 0 Kilometer lang ist, hat keinen solchen Weg."}
+    # `signatur_slot` ist hier nur ein Etikett (Vault: decisions/slot-und-bedingungsnamen-sind-etiketten-z6-gestrichen): der Ring
+    # liest `ep_unfallkosten` beim Feldnamen, kein Catala-Eingang. Eine `geltungsbedingung` waere falsch: sie machte das Feld zum
+    # Gate (Queue-Spitze, `annahmen_offen`; gemessen am Golden-Master: die Frage stand vor `ep_arbeitstage`).
+    quelle: {regel_id: p09_entfernungspauschale, signatur_slot: unfallkosten_arbeitsweg}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Hattest du auf dem Weg zur Arbeit einen Unfall? Wie viel Geld hat dich der Unfall in diesem Jahr gekostet?"
+    hilfe_kurz: "Nur Kosten, die du selbst getragen hast und die keine Versicherung ersetzt hat: Reparatur und Abschleppen deines Fahrzeugs sowie Arzt- und Behandlungskosten nach dem Unfall. Wenn nichts: leer lassen oder 0. Die Finanzverwaltung lässt diese Kosten zusätzlich zur Pauschale zu, auch Schäden am Fahrzeug und am Weg; der Bundesfinanzhof (VI R 8/18) sieht Fahrzeug- und Wegschäden mit der Pauschale als abgegolten an. TaxGraph folgt der Finanzverwaltung, ein Finanzamt kann das anders sehen. Achtung: Die Berechnung zieht den Betrag ab, aber das ELSTER-Formular nimmt ihn noch nicht auf. Die Abgabe über TaxGraph ist deshalb gesperrt, solange hier ein Betrag über 0 steht."
+    beispielwert: 150000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kz ungeprueft (kz_status offen): E10-2025.xsd hat kein Feld mit 'Unfall' im Namen oder Label. Der Kandidat N/Wk/Weitere_Wk/Sonst (E0205405 Bezeichnung, E0205406 Betrag, Summe E0204803) ist NICHT belegt, Anleitung zur Anlage N nicht gelesen, ERiC checkESt nicht gelaufen, Schema fuer VZ 2026 nicht lokal. Bis dahin sperrt die Abgabe bei einem Betrag ueber 0."
+    kz_status: offen
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "BMF-Schreiben vom 18.11.2021 (BStBl I S. 2315), Rz. 30, LStH 2026 Anhang 14"
+      zitatanker: "weiterhin neben der Entfernungspauschale zu berücksichtigen"
+      datei: "sources/bmf/bmf_entfernungspauschalen_wortlaut_2021-11-18.txt"
+
   # ========================= dHf — p9_1_3_nr5_doppelte_haushaltsfuehrung =========================
   - feld_id: dhf_unterkunftskosten_monat
     quelle: {regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung, signatur_slot: unterkunftskosten_monat}

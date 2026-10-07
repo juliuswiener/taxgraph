@@ -133,7 +133,13 @@ async fn die_queue_ist_nach_den_gewichten_des_rings_geordnet() {
         .iter()
         .map(|f| f["feld_id"].as_str().unwrap())
         .collect();
-    assert_eq!(ids.len(), 31);
+    // 31 Fragen wie in Python, dazu die eine nur-Rust-Frage `ep_unfallkosten` (Abweichung Nr. 28): die Entfernung dieses Falls
+    // ist unbeantwortet, und Schweigen schliesst die Frage nicht aus (`wert_nicht: 0`, fail-closed).
+    assert_eq!(ids.iter().filter(|f| **f != "ep_unfallkosten").count(), 31);
+    assert!(ids.contains(&"ep_unfallkosten"), "{ids:?}");
+    assert_eq!(ids.len(), 32);
+    // Die Python-Reihenfolge gilt fuer die uebrigen 31; die Frage steht, ohne Beitrag, alphabetisch unter den Slots.
+    let ids: Vec<&str> = ids.into_iter().filter(|f| *f != "ep_unfallkosten").collect();
     // Gemessen mit Python (`g_an2` im Harness ist derselbe Fall): mit Gewichten steht die Adresse vor
     // dem Ziel des Weges, ohne Beitrag (`None`) kehrt sich das um.
     assert_eq!(

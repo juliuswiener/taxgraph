@@ -69,7 +69,15 @@ def main() -> int:
     ap.add_argument("--fassung", default="geltende Fassung 2026")
     ap.add_argument("--abrufdatum", required=True)
     ap.add_argument("--verwendet-in", default="")
+    # Standard bleibt Gesetzestext unter sources/gesetze-im-internet; ein BMF-Schreiben braucht
+    # --out sources/bmf --authority verwaltung --ebene schreiben --norm-uri <bmf/...>.
+    ap.add_argument("--out", default=OUT, help="Zielordner (Vorgabe: sources/gesetze-im-internet)")
+    ap.add_argument("--authority", default="gesetz", choices=["gesetz", "verwaltung"])
+    ap.add_argument("--ebene", default="paragraph", choices=["paragraph", "schreiben"],
+                    help="Einfrier-Ebene: ganzer Paragraph oder ganzes BMF-Schreiben")
+    ap.add_argument("--norm-uri", default="", help="Vorgabe: der Name mit '/' statt '_'")
     args = ap.parse_args()
+    out = os.path.abspath(args.out)
 
     body = entstrippen(fetch(args.url), args.start, args.ende)
 
@@ -82,10 +90,12 @@ def main() -> int:
         raise SystemExit("Erwartete Passage(n) fehlen, nichts geschrieben:\n  "
                          + "\n  ".join(repr(f) for f in fehlend))
 
-    txt = os.path.join(OUT, f"{args.name}.txt")
+    txt = os.path.join(out, f"{args.name}.txt")
+    ebene_text = ("ganzer Paragraph (Konvention, siehe sources/README.md)" if args.ebene == "paragraph"
+                  else "ganzes BMF-Schreiben (Randziffern, Abschnitte und Beispiele wie abgerufen)")
     kopf = (f"Quelle: {args.url}\nAbgerufen: {args.abrufdatum}\n"
             f"Norm: {args.norm}\nFassung: {args.fassung}\n"
-            f"Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).\n"
+            f"Einfrier-Ebene: {ebene_text}.\n"
             f"Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.\n\n"
             f"--- Wortlaut (abgerufener Ausschnitt) ---\n\n")
     with open(txt, "w", encoding="utf-8") as f:
@@ -93,18 +103,18 @@ def main() -> int:
 
     sha = hashlib.sha256(open(txt, "rb").read()).hexdigest()
     verwendet = f'["{args.verwendet_in}"]' if args.verwendet_in else "[]"
-    with open(os.path.join(OUT, f"{args.name}.meta.yaml"), "w", encoding="utf-8") as f:
+    with open(os.path.join(out, f"{args.name}.meta.yaml"), "w", encoding="utf-8") as f:
         f.write(f'''dokument:
-  norm_uri: "{args.name.replace('_', '/')}"
+  norm_uri: "{args.norm_uri or args.name.replace('_', '/')}"
   norm: "{args.norm}"
   fassung: "{args.fassung}"
   quelle_url: "{args.url}"
   abrufdatum: "{args.abrufdatum}"
   datei: "{args.name}.txt"
   sha256: "{sha}"
-  authority: gesetz
+  authority: {args.authority}
   redistributable: true
-  einfrier_ebene: paragraph
+  einfrier_ebene: {args.ebene}
   verwendet_in: {verwendet}
 ''')
     print(f"{args.name}: {len(body)} Zeichen, {len(args.erwarte)} Passage(n) verifiziert, "

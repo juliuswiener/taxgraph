@@ -26,7 +26,7 @@ use intervall::Slots;
 
 use super::rechnen::{add, max0, sub, summe_euro, R};
 use super::tarif::{leerer_gesamtfall, rahmen, Lage, Modus, P35};
-use super::wk::{am_gesamt, ep_eingabe, wk_teile};
+use super::wk::{am_gesamt, ep_eingabe, mit_unfallkosten, wk_teile};
 use super::{gesamt_tarif, slot, Marke, Ring, VeranlagungWert};
 use crate::abzuege::{p33b_kind_pauschbetraege, shared_steuer_sonder_agb};
 use crate::einkuenfte::{
@@ -297,7 +297,7 @@ fn ns_werbungskosten<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<Euro> {
         },
         p,
     )?;
-    add(wk, afa)
+    add(mit_unfallkosten(f, wk)?, afa)
 }
 
 /// Einkommensteuer-Slots fuer die Altersvorsorge § 10 Abs. 1 Nr. 2 (VOR): `(gesamtbeitraege, ag)`.
