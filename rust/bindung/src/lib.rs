@@ -37,7 +37,8 @@ pub use params_zugriff::{
     ParamsWertFehler, VerpflegungSaetze,
 };
 pub use params_zugriff::{
-    FahrtkostenPauschalen, P33bPauschbetraege, SatzHoechstbetrag, VersorgungsfreibetragKohorte,
+    FahrtkostenPauschalen, P33bPauschbetraege, ParteispendenErmaessigung, SatzHoechstbetrag,
+    VersorgungsfreibetragKohorte,
 };
 pub use registry::{
     lade_registry, lade_registry_der_wurzel, Registry, RegistryFehler, BINDUNG_VERZEICHNIS,

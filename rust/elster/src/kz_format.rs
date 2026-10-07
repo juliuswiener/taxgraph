@@ -13,7 +13,8 @@ use serde_json::Value;
 
 use crate::py::{self, PyFehler};
 
-/// Kz, die Abzuege/Aufwendungen/Verluste deklarieren — aufrunden (`est_mapping.py:35-102`).
+/// Kz, die Abzuege/Aufwendungen/Verluste deklarieren — aufrunden (`est_mapping.py:35-102`). E0108701 (Spenden an Parteien,
+/// Abweichung Nr. 31) steht nur in Rust.
 ///
 /// E0703838 traegt kein Bindungsfeld mehr; es bleibt, weil es sachlich richtig klassifiziert ist.
 /// Die KV/PV-Kz E2001203 … E2003202 schreibt die KV/PV-Weiche `basis_kv`/`basis_pv`.
@@ -29,10 +30,10 @@ pub const ABZUGS_KZ: &[&str] = &[
     "E0703838", "E2000401", "E2000801", "E2000601", "E1901301", "E1901201", "E0161804", "E0104109",
     "E0107208", "E0111215", "E2001203", "E2001505", "E2001805", "E2002105", "E2003104", "E2003202",
     "E2001403", "E2001503", "E2001803", "E2001903", "E2002003", "E0505607", "E0503110", "E0503310",
-    "E0107601", "E0108202", "E0108105", "E0304601", "E0506105", "E0120103", "E0124401", "E0203611",
-    "E0207611", "E0705701", "E0305201", "E0241901", "E0242001", "E0108002", "E0104108", "E0107207",
-    "E0111214", "E0506104", "E0241001", "E0241101", "E0241201", "E0241301", "E0241302", "E0241401",
-    "E0241501", "E0241601", "E0241701",
+    "E0107601", "E0108202", "E0108105", "E0108701", "E0304601", "E0506105", "E0120103", "E0124401",
+    "E0203611", "E0207611", "E0705701", "E0305201", "E0241901", "E0242001", "E0108002", "E0104108",
+    "E0107207", "E0111214", "E0506104", "E0241001", "E0241101", "E0241201", "E0241301", "E0241302",
+    "E0241401", "E0241501", "E0241601", "E0241701",
 ];
 
 /// Kz vom XSD-Typ `DezimalzahlNichtNegOhneFuehrNull_MaxL15_MaxVK12_MinNK2_MaxNK2_CType_RABE`
@@ -58,8 +59,9 @@ pub const KOMMA_OHNE_E60_KZ: &[&str] = &[
 /// JE VERANLAGUNGSJAHR, seit 2026-10-01 (`est_mapping.py:167-191`). Vorher war die Menge flach
 /// fuer alle Jahre. `E10-2024.xsd` verbietet die 0 zusaetzlich in E0106603 (Anzahl weiterer
 /// Pflegepersonen), waehrend `E10-2025.xsd` sie dort erlaubt und das XSD-Label sie sogar verlangt
-/// (`bindung_rentner.yaml`). Beide Mengen sind aus `est_mapping.py` uebernommen: 2024 hat 36 Kz,
-/// 2025 hat 35 und ist Teilmenge von 2024 — der Unterschied ist genau E0106603.
+/// (`bindung_rentner.yaml`). Beide Mengen sind aus `est_mapping.py` uebernommen, dazu ein Kz nur in Rust (E0108701,
+/// Parteispenden, Abweichung Nr. 31): 2024 hat 37 Kz, 2025 hat 36 und ist Teilmenge von 2024 — der Unterschied ist genau
+/// E0106603.
 ///
 /// ponytail: eingefroren am 2026-10-01, je Jahr, damit `deklariere` ohne XSD laeuft und in jeder
 /// Umgebung dieselbe Deklaration ergibt. Die Jahresliste waechst nur, wenn ein Jahres-XSD
@@ -70,19 +72,19 @@ pub const KOMMA_OHNE_E60_KZ: &[&str] = &[
 /// Fuer 2024 prueft sie niemand; Upgrade: beide Tests ueber die Jahresliste laufen lassen.
 const NULL_UNZULAESSIG_KZ_2024: &[&str] = &[
     "E0104108", "E0104109", "E0106603", "E0107207", "E0107208", "E0108002", "E0108105", "E0108202",
-    "E0109708", "E0111214", "E0111215", "E0161606", "E0203503", "E0203504", "E0205201", "E0205302",
-    "E0205409", "E0207611", "E0240801", "E0240802", "E0241001", "E0241101", "E0241201", "E0241301",
-    "E0241302", "E0241401", "E0241501", "E0241601", "E0241701", "E0241901", "E0242001", "E0305201",
-    "E0505809", "E0506104", "E0506105", "E0801705",
+    "E0108701", "E0109708", "E0111214", "E0111215", "E0161606", "E0203503", "E0203504", "E0205201",
+    "E0205302", "E0205409", "E0207611", "E0240801", "E0240802", "E0241001", "E0241101", "E0241201",
+    "E0241301", "E0241302", "E0241401", "E0241501", "E0241601", "E0241701", "E0241901", "E0242001",
+    "E0305201", "E0505809", "E0506104", "E0506105", "E0801705",
 ];
 
 /// Die Jahresmenge 2025 — siehe [`NULL_UNZULAESSIG_KZ_2024`]. Teilmenge von 2024.
 const NULL_UNZULAESSIG_KZ_2025: &[&str] = &[
-    "E0104108", "E0104109", "E0107207", "E0107208", "E0108002", "E0108105", "E0108202", "E0109708",
-    "E0111214", "E0111215", "E0161606", "E0203503", "E0203504", "E0205201", "E0205302", "E0205409",
-    "E0207611", "E0240801", "E0240802", "E0241001", "E0241101", "E0241201", "E0241301", "E0241302",
-    "E0241401", "E0241501", "E0241601", "E0241701", "E0241901", "E0242001", "E0305201", "E0505809",
-    "E0506104", "E0506105", "E0801705",
+    "E0104108", "E0104109", "E0107207", "E0107208", "E0108002", "E0108105", "E0108202", "E0108701",
+    "E0109708", "E0111214", "E0111215", "E0161606", "E0203503", "E0203504", "E0205201", "E0205302",
+    "E0205409", "E0207611", "E0240801", "E0240802", "E0241001", "E0241101", "E0241201", "E0241301",
+    "E0241302", "E0241401", "E0241501", "E0241601", "E0241701", "E0241901", "E0242001", "E0305201",
+    "E0505809", "E0506104", "E0506105", "E0801705",
 ];
 
 /// Die Vereinigung aller bekannten Jahresmengen (`est_mapping.py:193-195`). Wer sie liest, statt

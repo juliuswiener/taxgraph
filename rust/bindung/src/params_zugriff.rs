@@ -125,6 +125,18 @@ pub struct SatzHoechstbetrag {
     pub hoechstbetrag_je_kind: Euro,
 }
 
+/// § 34g Satz 2 `EStG`: Satz und Hoechstbetraege der Steuerermaessigung fuer Zuwendungen an politische Parteien
+/// (`parteispenden_p34g.yaml`, Abweichung Nr. 31). Nur Rust; Python kennt die Datei nicht.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ParteispendenErmaessigung {
+    /// Anteil der Ausgaben (z. B. `0.5`), nicht Prozent.
+    pub satz: Satz,
+    /// Hoechstbetrag der Ermaessigung je Steuerpflichtigen.
+    pub hoechstbetrag_einzel: Euro,
+    /// Hoechstbetrag der Ermaessigung bei Zusammenveranlagung von Ehegatten.
+    pub hoechstbetrag_zusammen: Euro,
+}
+
 /// § 19 Abs. 2 S. 3 `EStG`: eine Zeile von `versorgungsfreibetrag_p19_2.yaml`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VersorgungsfreibetragKohorte {
@@ -587,6 +599,30 @@ impl Params {
     /// ```
     pub fn schulgeld(&self, vz: Vz) -> Result<SatzHoechstbetrag, ParamsWertFehler> {
         self.satz_hoechstbetrag(vz, "schulgeld_p10.yaml")
+    }
+
+    /// § 34g Satz 2 `EStG` Parteispenden (`parteispenden_p34g.yaml`): Satz und Hoechstbetraege der Ermaessigung. Ein Jahr ohne
+    /// diese Datei ist ein Fehler ([`ParamsWertFehler::DateiFehlt`]), kein Standardwert: ohne belegte Fassung rechnet der Aufrufer
+    /// nicht (Vault: `decisions/parteispenden-deckel-kommt-je-jahr-aus-der-eingefrorenen-fassung`).
+    ///
+    /// # Errors
+    /// Wie [`Params::grundfreibetrag`].
+    ///
+    /// ```
+    /// let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
+    /// assert_eq!(p.parteispenden_p34g(domain::Vz::Vz2025).unwrap().hoechstbetrag_einzel, domain::Euro::new(825));
+    /// assert_eq!(p.parteispenden_p34g(domain::Vz::Vz2026).unwrap().hoechstbetrag_zusammen, domain::Euro::new(3300));
+    /// ```
+    pub fn parteispenden_p34g(
+        &self,
+        vz: Vz,
+    ) -> Result<ParteispendenErmaessigung, ParamsWertFehler> {
+        let d = "parteispenden_p34g.yaml";
+        Ok(ParteispendenErmaessigung {
+            satz: Satz::new(self.dezimal(vz, d, "ermaessigungssatz")?),
+            hoechstbetrag_einzel: self.euro(vz, d, "hoechstbetrag_einzel")?,
+            hoechstbetrag_zusammen: self.euro(vz, d, "hoechstbetrag_zusammen")?,
+        })
     }
 
     /// § 66 `EStG` Kindergeld je Kind und Monat (`kindergeld_p66.yaml`).

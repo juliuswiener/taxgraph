@@ -17,6 +17,7 @@ use engine::zugriff::teil2::p33::{
     behinderten_pb, hinterbliebenen_pb, p33_2a_fahrtkostenpauschale, BehindertenPbEingabe,
     FahrtkostenpauschaleEingabe, HinterbliebenenPbEingabe,
 };
+use engine::zugriff::teil2::p34g::{p34g_parteispenden, ParteispendenEingabe};
 use engine::zugriff::teil2::p35c::{
     p35c_energieberater, p35c_jahresdeckel, p35c_sanierung, JahresdeckelEingabe, SanierungEingabe,
 };
@@ -382,8 +383,32 @@ fn hh_summe(
     feld_int_oder_null(f, sum_fid)
 }
 
-/// § 35a (haushaltsnahe) + § 35c (Sanierung, Energieberater, Jahresdeckel), EURO.
-fn steuerermaessigungen(f: &Felder, q: &Instanzquelle<'_>) -> Result<Euro, BescheidFehler> {
+/// § 34g (Parteispenden: 50 % der Spenden, hoechstens der Deckel des Jahres), EURO. Nur Rust (Abweichung Nr. 31). Die Spende
+/// steht NUR hier und nie in den Sonderausgaben: sie senkt die Steuer, nicht das Einkommen.
+fn parteispenden_ermaessigung(
+    f: &Felder,
+    veranlagung: Veranlagung,
+    vz: Vz,
+    p: &Params,
+) -> Result<Euro, BescheidFehler> {
+    Ok(p34g_parteispenden(
+        &ParteispendenEingabe {
+            vz,
+            spenden: feld_euro_oder_null(f, "parteispenden_betrag")?,
+            zusammen: veranlagung == Veranlagung::Zusammen,
+        },
+        p,
+    )?)
+}
+
+/// § 35a (haushaltsnahe) + § 35c (Sanierung, Energieberater, Jahresdeckel) + § 34g (Parteispenden), EURO.
+fn steuerermaessigungen(
+    f: &Felder,
+    q: &Instanzquelle<'_>,
+    veranlagung: Veranlagung,
+    vz: Vz,
+    p: &Params,
+) -> Result<Euro, BescheidFehler> {
     let base = p35a_haushaltsnahe(&P35aHaushaltsnaheEingabe {
         hh_minijob_aufwendungen: cent_zu_euro(hh_summe(
             f,
@@ -433,7 +458,10 @@ fn steuerermaessigungen(f: &Felder, q: &Instanzquelle<'_>) -> Result<Euro, Besch
         energieberater_ermaessigung: energieberater,
         ist_uebernaechstes_foerderjahr: uebernaechstes,
     })?;
-    euro_plus(base, deckel)
+    euro_plus(
+        euro_plus(base, deckel)?,
+        parteispenden_ermaessigung(f, veranlagung, vz, p)?,
+    )
 }
 
 /// KV/PV-Sonderausgaben einer Person; `partner` waehlt die `_partner`-Felder (ohne Kind-Beitraege).
@@ -617,7 +645,7 @@ pub fn shared_steuer_sonder_agb(
     p: &Params,
 ) -> Result<SteuerSonderAgb, BescheidFehler> {
     Ok(SteuerSonderAgb {
-        steuerermaessigungen: steuerermaessigungen(f, q)?,
+        steuerermaessigungen: steuerermaessigungen(f, q, veranlagung, vz, p)?,
         sonderausgaben: sonderausgaben(gde, veranlagung, f, vz, q, p)?,
         aussergewoehnliche_belastungen: aussergewoehnliche_belastungen(
             gde,

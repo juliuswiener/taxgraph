@@ -124,6 +124,7 @@ p36_kapitalertragsteuer_kist	E1904801	true
 p36_kapitalertragsteuer_solz	E1904901	true
 p36_lohnsteuer	E0200301	true
 p9_4a_kuerzung_nach_entgelt	E0205508	false
+parteispenden_betrag	E0108701	true
 realsplitting_empfaenger_kv_krankengeld	E0300829	true
 realsplitting_empfaenger_kv_pv	E0300717	true
 realsplitting_unterhaltsleistungen	E0304601	true

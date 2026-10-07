@@ -299,21 +299,23 @@ fn fixture_unverkuerzt() {
 
 #[test]
 fn konstanten_wie_orakel() {
+    // Abweichung Nr. 28 und Nr. 31: `ep_unfallkosten` und `parteispenden_betrag` stehen nur in Rust (Python kennt die Felder
+    // nicht). Der Rest ist das Orakel, und genau diese ZWEI Felder sind ausgenommen: ein drittes Rust-Feld braucht seine
+    // eigene Zeile hier.
+    const NUR_RUST: [&str; 2] = ["ep_unfallkosten", "parteispenden_betrag"];
     let py = &fixture()["konstanten"];
     let flag: Value = k::FLAG_NEGIERT.iter().map(|(f, l)| json!([f, l])).collect();
     assert_eq!(flag, py["flag_negiert"], "FLAG_NEGIERT");
     assert_eq!(json!(k::PARTNER_FELDER), py["partner_felder"]);
-    // Abweichung Nr. 28: `ep_unfallkosten` steht nur in Rust (Python kennt das Feld nicht). Der Rest ist das Orakel, und
-    // genau EIN Feld ist ausgenommen: ein zweites Rust-Feld braucht seine eigene Zeile hier.
     let ohne_rust_felder: Vec<&str> = k::RING_BETRAGSFELDER
         .iter()
         .copied()
-        .filter(|f| *f != "ep_unfallkosten")
+        .filter(|f| !NUR_RUST.contains(f))
         .collect();
     assert_eq!(
-        ohne_rust_felder.len() + 1,
+        ohne_rust_felder.len() + NUR_RUST.len(),
         k::RING_BETRAGSFELDER.len(),
-        "ep_unfallkosten fehlt in RING_BETRAGSFELDER"
+        "{NUR_RUST:?} fehlt in RING_BETRAGSFELDER"
     );
     assert_eq!(json!(ohne_rust_felder), py["ring_betragsfelder"]);
     let ng: Value = k::NICHT_GERECHNET

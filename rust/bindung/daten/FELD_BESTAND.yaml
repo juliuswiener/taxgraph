@@ -257,6 +257,7 @@ felder:
   - p36_lohnsteuer_partner
   - p36_vorauszahlungen
   - p9_4a_kuerzung_nach_entgelt
+  - parteispenden_betrag
   - person_b_idnr
   - pv_anzahl_einheiten
   - pv_auf_gebaeude
