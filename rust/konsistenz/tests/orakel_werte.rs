@@ -299,10 +299,17 @@ fn fixture_unverkuerzt() {
 
 #[test]
 fn konstanten_wie_orakel() {
-    // Abweichung Nr. 28 und Nr. 31: `ep_unfallkosten` und `parteispenden_betrag` stehen nur in Rust (Python kennt die Felder
-    // nicht). Der Rest ist das Orakel, und genau diese ZWEI Felder sind ausgenommen: ein drittes Rust-Feld braucht seine
-    // eigene Zeile hier.
-    const NUR_RUST: [&str; 2] = ["ep_unfallkosten", "parteispenden_betrag"];
+    // Abweichung Nr. 28, Nr. 31 und Nr. 33: `ep_unfallkosten`, `parteispenden_betrag` und die vier Betragsfelder der Versorgung
+    // des Ehegatten stehen nur in Rust (Python kennt die Felder nicht). Der Rest ist das Orakel, und genau diese SECHS Felder
+    // sind ausgenommen: ein siebtes Rust-Feld braucht seine eigene Zeile hier.
+    const NUR_RUST: [&str; 6] = [
+        "ep_unfallkosten",
+        "parteispenden_betrag",
+        "versorgung_alter_bei_beginn_partner",
+        "versorgung_beginn_jahr_partner",
+        "versorgung_bemessungsgrundlage_partner",
+        "versorgung_jahresrente_partner",
+    ];
     let py = &fixture()["konstanten"];
     let flag: Value = k::FLAG_NEGIERT.iter().map(|(f, l)| json!([f, l])).collect();
     assert_eq!(flag, py["flag_negiert"], "FLAG_NEGIERT");

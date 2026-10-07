@@ -5884,6 +5884,9 @@ json.dump([[f, [[w, t] for w, t in l.items()]] for f, l in ac.ENUM_LABELS.items(
 /// eine gewollte Aenderung eines Labels macht diesen Parity-Test rot und gehoert in die Abweichungsliste.
 #[test]
 fn enum_labels_gleich() {
+    // Abweichung Nr. 33: `versorgung_art_partner` steht nur in Rust (Python kennt das Feld nicht). Ein zweites Rust-Feld
+    // braucht seinen eigenen Eintrag hier.
+    const NUR_RUST: [&str; 1] = ["versorgung_art_partner"];
     if skip() {
         return;
     }
@@ -5900,8 +5903,14 @@ fn enum_labels_gleich() {
     let py: Value = serde_json::from_slice(&aus.stdout).unwrap();
     let rust: Value = api::enum_labels::ENUM_LABELS
         .iter()
+        .filter(|(f, _)| !NUR_RUST.contains(f))
         .map(|(f, l)| json!([f, l.iter().map(|(w, t)| json!([w, t])).collect::<Vec<_>>()]))
         .collect();
+    assert_eq!(
+        api::enum_labels::ENUM_LABELS.len(),
+        rust.as_array().unwrap().len() + NUR_RUST.len(),
+        "{NUR_RUST:?} fehlt in ENUM_LABELS"
+    );
     assert_eq!(
         py, rust,
         "ENUM_LABELS weicht von api_constants.py ab (von Hand gepflegt seit Stufe 2): gewollt? dann in die Abweichungsliste"

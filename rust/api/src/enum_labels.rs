@@ -15,7 +15,7 @@
 
 /// `feld_id -> [(enum-wert, anzeigetext)]`.
 #[rustfmt::skip]
-pub const ENUM_LABELS: [(&str, &[(&str, &str)]); 26] = [
+pub const ENUM_LABELS: [(&str, &[(&str, &str)]); 27] = [
     ("dba_einkunftsart", &[
         ("unbewegliches_vermoegen", "Unbewegliches Vermögen (z. B. Immobilie)"),
         ("unternehmensgewinne", "Unternehmensgewinne"),
@@ -138,6 +138,12 @@ pub const ENUM_LABELS: [(&str, &[(&str, &str)]); 26] = [
         ("privat", "Privat versichert"),
     ]),
     ("versorgung_art", &[
+        ("beamtenrechtlich", "Beamtenrechtliches Ruhegehalt"),
+        ("hinterbliebene", "Witwen- oder Waisengeld"),
+        ("erwerbsminderung", "Rente wegen Erwerbsminderung"),
+        ("altersgrenze_sonstige", "Betriebsrente oder Direktversicherung"),
+    ]),
+    ("versorgung_art_partner", &[
         ("beamtenrechtlich", "Beamtenrechtliches Ruhegehalt"),
         ("hinterbliebene", "Witwen- oder Waisengeld"),
         ("erwerbsminderung", "Rente wegen Erwerbsminderung"),

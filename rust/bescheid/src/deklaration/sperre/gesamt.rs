@@ -36,6 +36,9 @@ pub(super) fn gesamt_guard(k: &K<'_>, cfg: &Cfg) -> Grund {
         sperre!(rente(k, cfg));
     }
     sperre_o!(versorgung(k.f));
+    if ist_zusammen(k.f) {
+        sperre_o!(versorgung_partner(k.f));
+    }
     sperre!(behinderung_wahlrecht(k));
     sperre!(p35a_p35c(k));
     sperre!(gwg(k));
@@ -162,17 +165,42 @@ fn rente_partner(k: &K<'_>) -> Option<Sperrgrund> {
     )
 }
 
-/// § 19 Abs. 2 Versorgungsfreibetrag: Beginnjahr und Bemessungsgrundlage BESTAETIGT gesetzt.
+/// § 19 Abs. 2 Versorgungsfreibetrag: Beginnjahr und Bemessungsgrundlage BESTAETIGT gesetzt. Fuer Person A.
 fn versorgung(f: &Felder) -> Option<Sperrgrund> {
-    if !positiv(f, "versorgung_jahresrente") {
+    versorgung_von(
+        f,
+        "versorgung_jahresrente",
+        "versorgung_beginn_jahr",
+        "versorgung_bemessungsgrundlage",
+    )
+}
+
+/// Dasselbe fuer Person B (Abweichung Nr. 33), nur bei Zusammenveranlagung: Der Ring rechnet einen Bezug des Ehegatten
+/// ohne Beginnjahr oder Bemessungsgrundlage sonst gar nicht (`versorgt` ist falsch), und der angegebene Betrag fehlte still
+/// in der Steuer. Derselbe Grund wie bei Person A, KEIN neuer Sperrgrund. Ohne Angabe zum Ehegatten sperrt nichts.
+fn versorgung_partner(f: &Felder) -> Option<Sperrgrund> {
+    versorgung_von(
+        f,
+        "versorgung_jahresrente_partner",
+        "versorgung_beginn_jahr_partner",
+        "versorgung_bemessungsgrundlage_partner",
+    )
+}
+
+fn versorgung_von(
+    f: &Felder,
+    jahresrente: &str,
+    beginn_jahr: &str,
+    bemessungsgrundlage: &str,
+) -> Option<Sperrgrund> {
+    if !positiv(f, jahresrente) {
         return None;
     }
     // `isinstance(x, int) and x > 0` — Pythons bool zaehlt als int (True > 0).
-    let beginn_ok = py_int_wert(wert(f, "versorgung_beginn_jahr")).is_some_and(|b| b > 0)
-        && bestaetigt(f, "versorgung_beginn_jahr");
-    let bmg_ok = zahl_wert(wert(f, "versorgung_bemessungsgrundlage"))
-        .is_some_and(|b| b > Decimal::ZERO)
-        && bestaetigt(f, "versorgung_bemessungsgrundlage");
+    let beginn_ok =
+        py_int_wert(wert(f, beginn_jahr)).is_some_and(|b| b > 0) && bestaetigt(f, beginn_jahr);
+    let bmg_ok = zahl_wert(wert(f, bemessungsgrundlage)).is_some_and(|b| b > Decimal::ZERO)
+        && bestaetigt(f, bemessungsgrundlage);
     (!(beginn_ok && bmg_ok)).then_some(Sperrgrund::VersorgungsfreibetragOffen)
 }
 

@@ -24,7 +24,7 @@ use crate::zahl::{als_text, eur, ganzzahl, leer_nach_strip};
 /// Die Betragsfelder, die der Ring liest (`produkt/haut/api_constants.py:748`,
 /// `RING_BETRAGSFELDER`). Dieselbe Menge wie die Klasse-C-Sperre in `_feste_zahl`, damit Sperre
 /// und Hinweis nicht auseinanderlaufen.
-pub const RING_BETRAGSFELDER: [&str; 121] = [
+pub const RING_BETRAGSFELDER: [&str; 125] = [
     "afa_jahresbetrag",
     "agb_aufwendungen",
     "am_anschaffung_monat",
@@ -118,9 +118,13 @@ pub const RING_BETRAGSFELDER: [&str; 121] = [
     "verguetung_ueberlassung_partner",
     "verlustvortrag_bestand",
     "versorgung_alter_bei_beginn",
+    "versorgung_alter_bei_beginn_partner",
     "versorgung_beginn_jahr",
+    "versorgung_beginn_jahr_partner",
     "versorgung_bemessungsgrundlage",
+    "versorgung_bemessungsgrundlage_partner",
     "versorgung_jahresrente",
+    "versorgung_jahresrente_partner",
     "vor_ag_anteil_rv",
     "vor_ag_anteil_rv_partner",
     "vor_an_anteil_rv",

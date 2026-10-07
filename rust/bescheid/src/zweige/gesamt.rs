@@ -218,8 +218,92 @@ fn einkuenfte_ns<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots, ns_wk: Euro, zusammen
     einkuenfte_ns_aus_lohn(r.f(), r.vz(), r.p(), lohn, ns_wk, zusammen)
 }
 
+/// Die Felder der Versorgungsbezuege EINER Person (§ 19 Abs. 2 `EStG`) und das Feld des Grades der Behinderung, das IHR
+/// Alters-Gate setzt. Die Namen stehen als Literale: der Scanner hinter `RING_BETRAGSFELDER`
+/// (`bescheid/tests/ring_scheiben.rs`) liest den Quelltext des Rings.
+struct VersorgungsFelder {
+    jahresrente: &'static str,
+    bemessungsgrundlage: &'static str,
+    beginn_jahr: &'static str,
+    art: &'static str,
+    alter_bei_beginn: &'static str,
+    grad_der_behinderung: &'static str,
+}
+
+/// Person A.
+const VERSORGUNG_A: VersorgungsFelder = VersorgungsFelder {
+    jahresrente: "versorgung_jahresrente",
+    bemessungsgrundlage: "versorgung_bemessungsgrundlage",
+    beginn_jahr: "versorgung_beginn_jahr",
+    art: "versorgung_art",
+    alter_bei_beginn: "versorgung_alter_bei_beginn",
+    grad_der_behinderung: "rentner_grad_der_behinderung",
+};
+
+/// Person B (§ 26b), Abweichung Nr. 33: Python kennt diese Felder nicht, nur die Rentner-Scheibe fragt sie.
+const VERSORGUNG_B: VersorgungsFelder = VersorgungsFelder {
+    jahresrente: "versorgung_jahresrente_partner",
+    bemessungsgrundlage: "versorgung_bemessungsgrundlage_partner",
+    beginn_jahr: "versorgung_beginn_jahr_partner",
+    art: "versorgung_art_partner",
+    alter_bei_beginn: "versorgung_alter_bei_beginn_partner",
+    grad_der_behinderung: "rentner_grad_der_behinderung_partner",
+};
+
+/// Der Versorgungsbezug einer Person, wie der Ring ihn liest.
+struct Versorgungsbezug {
+    jahresrente: i64,
+    bemessungsgrundlage: i64,
+    beginn_jahr: i64,
+    /// Jahresrente, Bemessungsgrundlage und Beginnjahr alle gesetzt.
+    versorgt: bool,
+    /// § 19 Abs. 2 S. 2 Nr. 2 Alters-Gate erfuellt (ohne Gate: ja).
+    gate_erfuellt: bool,
+}
+
+fn versorgungsbezug(f: &Felder, n: &VersorgungsFelder) -> R<Versorgungsbezug> {
+    let c = |k: &str| feld_int_oder_null(f, k);
+    let jahresrente = c(n.jahresrente)?;
+    let bemessungsgrundlage = c(n.bemessungsgrundlage)?;
+    let beginn_jahr = c(n.beginn_jahr)?;
+    let alter = c(n.alter_bei_beginn)?;
+    // § 19 Abs. 2 S. 2 Nr. 2 Alters-Gate: nur bei altersgrenze_sonstige (63. Lj, 60. bei GdB >= 50).
+    let mut gate_erfuellt = true;
+    if matches!(wert(f, n.art), Some(PyWert::Text(s)) if s == "altersgrenze_sonstige") && alter > 0
+    {
+        let grenze = if c(n.grad_der_behinderung)? >= 50 {
+            60
+        } else {
+            63
+        };
+        gate_erfuellt = alter >= grenze;
+    }
+    Ok(Versorgungsbezug {
+        jahresrente,
+        bemessungsgrundlage,
+        beginn_jahr,
+        versorgt: jahresrente > 0 && bemessungsgrundlage > 0 && beginn_jahr > 0,
+        gate_erfuellt,
+    })
+}
+
+/// Die Einkuenfte aus einem Versorgungsbezug nach Versorgungsfreibetrag, Zuschlag und Pauschbetrag.
+fn einkuenfte_aus_versorgung(v: &Versorgungsbezug, p: &bindung::Params) -> R<Euro> {
+    Ok(einkuenfte_versorgung(
+        &EinkuenfteVersorgungEingabe {
+            versorgung_jahresrente: cent_zu_euro(v.jahresrente),
+            freibetrag: VersorgungsfreibetragEingabe {
+                bemessungsgrundlage: cent_zu_euro(v.bemessungsgrundlage),
+                beginn_jahr: v.beginn_jahr,
+            },
+        },
+        p,
+    )?)
+}
+
 /// [`einkuenfte_ns`] mit dem Bruttoarbeitslohn Person A als Argument. Der Rentner-Ring liest keine
 /// Slots und reicht den Lohn aus dem Feld herein; Versorgungsbezuege und Alters-Gate sind dieselben.
+/// Bei Zusammenveranlagung (`zusammen`) kommen Lohn und Versorgung der Person B in DIESELBE Summe.
 pub(super) fn einkuenfte_ns_aus_lohn(
     f: &Felder,
     vz: Vz,
@@ -228,54 +312,39 @@ pub(super) fn einkuenfte_ns_aus_lohn(
     ns_wk: Euro,
     zusammen: bool,
 ) -> R<Euro> {
-    let c = |k: &str| feld_int_oder_null(f, k);
-    let jahresrente = c("versorgung_jahresrente")?;
-    let bemessung = c("versorgung_bemessungsgrundlage")?;
-    let beginn = c("versorgung_beginn_jahr")?;
-    let alter = c("versorgung_alter_bei_beginn")?;
-    // § 19 Abs. 2 S. 2 Nr. 2 Alters-Gate: nur bei altersgrenze_sonstige (63. Lj, 60. bei GdB >= 50).
-    let mut gate_erfuellt = true;
-    if matches!(wert(f, "versorgung_art"), Some(PyWert::Text(s)) if s == "altersgrenze_sonstige")
-        && alter > 0
-    {
-        let grenze = if c("rentner_grad_der_behinderung")? >= 50 {
-            60
-        } else {
-            63
-        };
-        gate_erfuellt = alter >= grenze;
-    }
+    let a = versorgungsbezug(f, &VERSORGUNG_A)?;
     let mut basis = lohn.get();
-    let versorgt = jahresrente > 0 && bemessung > 0 && beginn > 0;
-    if versorgt && !gate_erfuellt {
-        basis = crate::plus(basis, jahresrente.div_euclid(100))?;
+    if a.versorgt && !a.gate_erfuellt {
+        basis = crate::plus(basis, a.jahresrente.div_euclid(100))?;
     }
     let mut ns = einkuenfte_nichtselbststaendig(&EinkuenfteNichtselbststaendigEingabe {
         veranlagungszeitraum: vz,
         bruttoarbeitslohn: Euro::new(basis),
         werbungskosten: ns_wk,
     })?;
-    // Person B (§ 26b): § 19-Einkuenfte des Ehegatten in DIESELBE Summe, Person-B-WK MVP 0.
-    if zusammen {
-        let b = einkuenfte_nichtselbststaendig(&EinkuenfteNichtselbststaendigEingabe {
+    // Person B (§ 26b): § 19-Einkuenfte des Ehegatten in DIESELBE Summe, Person-B-WK MVP 0. Ein Versorgungsbezug vor dem
+    // Alters-Gate zaehlt wie bei Person A als Arbeitslohn.
+    let b = if zusammen {
+        let b = versorgungsbezug(f, &VERSORGUNG_B)?;
+        let mut basis_b = feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?.get();
+        if b.versorgt && !b.gate_erfuellt {
+            basis_b = crate::plus(basis_b, b.jahresrente.div_euclid(100))?;
+        }
+        let einkuenfte_b = einkuenfte_nichtselbststaendig(&EinkuenfteNichtselbststaendigEingabe {
             veranlagungszeitraum: vz,
-            bruttoarbeitslohn: feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?,
+            bruttoarbeitslohn: Euro::new(basis_b),
             werbungskosten: Euro::new(0),
         })?;
-        ns = add(ns, b)?;
+        ns = add(ns, einkuenfte_b)?;
+        Some(b)
+    } else {
+        None
+    };
+    if a.versorgt && a.gate_erfuellt {
+        ns = add(ns, einkuenfte_aus_versorgung(&a, p)?)?;
     }
-    if versorgt && gate_erfuellt {
-        let v = einkuenfte_versorgung(
-            &EinkuenfteVersorgungEingabe {
-                versorgung_jahresrente: cent_zu_euro(jahresrente),
-                freibetrag: VersorgungsfreibetragEingabe {
-                    bemessungsgrundlage: cent_zu_euro(bemessung),
-                    beginn_jahr: beginn,
-                },
-            },
-            p,
-        )?;
-        ns = add(ns, v)?;
+    if let Some(b) = b.filter(|b| b.versorgt && b.gate_erfuellt) {
+        ns = add(ns, einkuenfte_aus_versorgung(&b, p)?)?;
     }
     Ok(ns)
 }

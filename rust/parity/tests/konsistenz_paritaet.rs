@@ -343,8 +343,15 @@ fn pruefe(
 
 #[test]
 fn konstanten_gleich() {
-    // Abweichung Nr. 28 und Nr. 31: diese zwei Felder stehen nur in Rust (wie `konsistenz/tests/orakel_werte.rs`).
-    const NUR_RUST: [&str; 2] = ["ep_unfallkosten", "parteispenden_betrag"];
+    // Abweichung Nr. 28, Nr. 31 und Nr. 33: diese sechs Felder stehen nur in Rust (wie `konsistenz/tests/orakel_werte.rs`).
+    const NUR_RUST: [&str; 6] = [
+        "ep_unfallkosten",
+        "parteispenden_betrag",
+        "versorgung_alter_bei_beginn_partner",
+        "versorgung_beginn_jahr_partner",
+        "versorgung_bemessungsgrundlage_partner",
+        "versorgung_jahresrente_partner",
+    ];
     if skip() {
         return;
     }

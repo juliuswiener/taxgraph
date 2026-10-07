@@ -344,10 +344,15 @@ felder:
   - versicherungsart
   - versicherungsart_partner
   - versorgung_alter_bei_beginn
+  - versorgung_alter_bei_beginn_partner
   - versorgung_art
+  - versorgung_art_partner
   - versorgung_beginn_jahr
+  - versorgung_beginn_jahr_partner
   - versorgung_bemessungsgrundlage
+  - versorgung_bemessungsgrundlage_partner
   - versorgung_jahresrente
+  - versorgung_jahresrente_partner
   - vor_ag_anteil_rv
   - vor_ag_anteil_rv_partner
   - vor_an_anteil_rv
