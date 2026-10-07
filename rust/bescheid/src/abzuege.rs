@@ -206,7 +206,9 @@ pub fn p10_1_5_gate_fehlend(
     Ok(treffer)
 }
 
-/// Per-Kind-Summe § 10 Abs. 1 Nr. 9 (Schulgeld); `f` liefert nur die Veranlagungsart.
+/// Per-Kind-Summe § 10 Abs. 1 Nr. 9 (Schulgeld); `f` liefert nur die Veranlagungsart. Bei Einzelveranlagung
+/// kappt der Anteil des Nutzers am Hoechstbetrag (`kind_schulgeld_aufteilung_prozent`, Kz `E0504603`, Abweichung
+/// Nr. 26) den Deckel je Kind; ohne Anteil gilt die Haelfte. Die Zusammenveranlagung liest das Feld nicht.
 ///
 /// # Errors
 /// Wie [`kinderbetreuung_summe`].
@@ -235,10 +237,19 @@ pub fn schulgeld_summe(
             continue;
         }
         if let Some(aufw) = positive_zahl(wert(&inst.felder, "schulgeld"))? {
+            let anteil_prozent = if splitting {
+                None
+            } else {
+                wert(&inst.felder, "kind_schulgeld_aufteilung_prozent")
+                    .and_then(PyWert::zahl_ohne_bool)
+                    .map(py_int)
+                    .transpose()?
+            };
             let e = SchulgeldEingabe {
                 vz,
                 aufwendungen: cent_zu_euro(aufw),
                 splitting,
+                anteil_prozent,
             };
             total = euro_plus(total, p10_1_9_schulgeld(&e, p)?)?;
         }

@@ -117,6 +117,83 @@ fn p23_verlust_bekommt_seinen_kz_und_gewinn_null_keinen() {
     );
 }
 
+const ANTEIL: &str = "kind_schulgeld_aufteilung_prozent";
+
+/// Der Kz-Wert `E0504603` des Kindes `index`, oder `None`. Kind 1 steht auf oberster Ebene der Deklaration (wie jedes
+/// Feld ohne `__N`), Kind 2 und folgende in den Instanzen der Gruppe `kind`.
+fn anteil_kz(d: &Deklaration, index: u64) -> Option<Value> {
+    if index == 1 {
+        return d.deklaration.get("E0504603").cloned();
+    }
+    instanzen(d, "kind")
+        .into_iter()
+        .find(|(i, _)| *i == index)
+        .and_then(|(_, kz)| kz.into_iter().find(|(k, _)| k == "E0504603").map(|(_, v)| v))
+}
+
+/// ABWEICHUNG Nr. 26 (`rust/fixtures/README.md`, nur Rust, kein Python-Orakel): der Anteil am Schulgeld-Hoechstbetrag je
+/// Kind (`E0504603`) steht im XML nur bei bestaetigter Einzelveranlagung und einem Anteil, der von 50 abweicht. 50 heisst
+/// "je zur Haelfte" und ist kein gesonderter Antrag; die 0 erlaubt das Schema (`[1-9].*|0`) und gehoert hinein. Bei
+/// Zusammenveranlagung oder offener Veranlagung bleibt die Angabe draussen, und der Grund steht in `nicht_deklariert`.
+/// Jedes Kind traegt seinen eigenen Wert (Kind 2 ueber `..__2`).
+#[test]
+fn schulgeld_anteil_steht_im_kind_nur_bei_einzelveranlagung_und_abweichung_von_50() {
+    const ANTEIL_2: &str = "kind_schulgeld_aufteilung_prozent__2";
+    // `veranlagung`: Wert und Zustand; `anteile`: je Kind ein Anteil, Kind 1 und Kind 2 tragen immer dasselbe Schulgeld.
+    let kz = |veranlagung: Option<(&str, Zustand)>, anteile: &[(&str, i64)]| {
+        let mut paare = vec![
+            ("schulgeld", json!(2_000_000)),
+            ("schulgeld__2", json!(2_000_000)),
+        ];
+        if let Some((v, _)) = veranlagung {
+            paare.push(("veranlagung", json!(v)));
+        }
+        for (fid, n) in anteile {
+            paare.push((*fid, json!(*n)));
+        }
+        let mut f = felder(&paare);
+        if let Some((_, zustand)) = veranlagung {
+            f.get_mut("veranlagung").unwrap().zustand = zustand;
+        }
+        deklariere(&f, index(), 2025, None).unwrap()
+    };
+    let einzel = Some(("einzel", Zustand::Bestaetigt));
+    let d = kz(einzel, &[(ANTEIL, 100), (ANTEIL_2, 30)]);
+    assert_eq!(anteil_kz(&d, 1), Some(json!(100)), "Kind 1, Anteil 100");
+    assert_eq!(anteil_kz(&d, 2), Some(json!(30)), "Kind 2, Anteil 30");
+    assert!(!d.nicht_deklariert.iter().any(|e| e.feld_id.starts_with(ANTEIL)), "{:?}", d.nicht_deklariert);
+
+    let d = kz(einzel, &[(ANTEIL, 0)]);
+    assert_eq!(anteil_kz(&d, 1), Some(json!(0)), "die 0 ist erlaubt und kein 'nichts anzugeben'");
+
+    // Jeder Fall nennt beide Kinder: Kind 1 laeuft ueber `feld`, Kind 2 ueber `instanz_feld` (zwei Zweige).
+    for (name, d) in [
+        ("Einzel, Anteil 50", kz(einzel, &[(ANTEIL, 50), (ANTEIL_2, 50)])),
+        (
+            "Zusammen, Anteil 30",
+            kz(Some(("zusammen", Zustand::Bestaetigt)), &[(ANTEIL, 30), (ANTEIL_2, 30)]),
+        ),
+        (
+            "Einzel nur vorlaeufig, Anteil 30",
+            kz(Some(("einzel", Zustand::Vorlaeufig)), &[(ANTEIL, 30), (ANTEIL_2, 30)]),
+        ),
+        ("Veranlagung nie beantwortet, Anteil 30", kz(None, &[(ANTEIL, 30), (ANTEIL_2, 30)])),
+    ] {
+        for (kind, feld) in [(1, ANTEIL), (2, ANTEIL_2)] {
+            assert_eq!(anteil_kz(&d, kind), None, "{name}, Kind {kind}: E0504603 darf nicht im XML stehen");
+            assert!(
+                d.nicht_deklariert.iter().any(|e| e.feld_id == feld),
+                "{name}, Kind {kind}: das Weglassen steht mit Grund in nicht_deklariert: {:?}",
+                d.nicht_deklariert
+            );
+        }
+    }
+    // Ohne Antwort schreibt nichts etwas: die Schulgeld-Summe `E0505607` bleibt der einzige Schulgeld-Kz.
+    let d = kz(einzel, &[]);
+    assert_eq!(anteil_kz(&d, 1), None);
+    assert_eq!(anteil_kz(&d, 2), None);
+}
+
 /// Ein zweites Vermietungsobjekt: die vier Werbungskosten-Felder (270.000 ct = 2.700 EUR) laufen in die Aggregat-Summe
 /// E0703838 der Instanz 2, positiv; die Einnahmen (4.800 EUR) stehen in E0700201. Python: Summe 2.700, vier Quellfelder.
 #[test]

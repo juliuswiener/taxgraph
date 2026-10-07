@@ -432,6 +432,138 @@ fn schulgeld_faelle() -> Vec<Fall<i64>> {
     ]
 }
 
+/// Das Feld, in dem der Nutzer bei Einzelveranlagung seinen Anteil am Hoechstbetrag nennt (Kz `E0504603`).
+const ANTEIL: &str = "kind_schulgeld_aufteilung_prozent";
+
+// Eine Tabelle von Faellen, keine Logik: die Laenge ist die Zahl der Faelle.
+//
+// ABWEICHUNG Nr. 26 (`rust/fixtures/README.md`): Python kennt den Anteil nicht, hier steht KEIN Wert aus dem Orakel.
+// Die Erwartungen sind von Hand aus § 10 Abs. 1 Nr. 9 `EStG` gerechnet (Satz 1: 30 % des Entgelts, hoechstens 5.000 EUR;
+// Satz 5: je Elternpaar nur einmal) und dem Formular (`E0504603`: "der bei mir zu beruecksichtigende Anteil beträgt (in %)"):
+// Hoechstbetrag des Nutzers = 5.000 EUR * Anteil / 100; ohne Anteil (oder 50) die Haelfte, also 2.500 EUR wie bisher.
+#[allow(clippy::too_many_lines)]
+fn schulgeld_anteil_faelle() -> Vec<Fall<i64>> {
+    let einzel = || t("veranlagung", "einzel", true);
+    let zusammen = || t("veranlagung", "zusammen", true);
+    vec![
+        Fall {
+            name: "Einzel, 20.000 EUR (30 % = 6.000), Anteil 100: gedeckelt auf 5.000",
+            events: vec![einzel(), z("schulgeld", 2_000_000, true), z(ANTEIL, 100, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 5000,
+        },
+        Fall {
+            name: "Einzel, 20.000 EUR, Anteil 70: 5.000 * 70 / 100 = 3.500",
+            events: vec![einzel(), z("schulgeld", 2_000_000, true), z(ANTEIL, 70, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 3500,
+        },
+        Fall {
+            name: "Einzel, 20.000 EUR, Anteil 30: 1.500",
+            events: vec![einzel(), z("schulgeld", 2_000_000, true), z(ANTEIL, 30, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 1500,
+        },
+        Fall {
+            name: "Einzel, 20.000 EUR, Anteil 50: wie ohne Anteil, 2.500",
+            events: vec![einzel(), z("schulgeld", 2_000_000, true), z(ANTEIL, 50, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 2500,
+        },
+        Fall {
+            name: "Einzel, 20.000 EUR, ohne Anteil: je zur Haelfte, 2.500 (Normalfall, kein Sperrgrund)",
+            events: vec![einzel(), z("schulgeld", 2_000_000, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 2500,
+        },
+        Fall {
+            name: "Einzel, 20.000 EUR, Anteil 0: kein Abzug (das Schema erlaubt die 0)",
+            events: vec![einzel(), z("schulgeld", 2_000_000, true), z(ANTEIL, 0, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 0,
+        },
+        Fall {
+            name: "Einzel, 20.000 EUR, Anteil 150 (von Hand geaenderte Akte): auf 100 geklammert, 5.000",
+            events: vec![einzel(), z("schulgeld", 2_000_000, true), z(ANTEIL, 150, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 5000,
+        },
+        Fall {
+            name: "Einzel, 20.000 EUR, Anteil -10 (von Hand geaenderte Akte): auf 0 geklammert, kein Abzug",
+            events: vec![einzel(), z("schulgeld", 2_000_000, true), z(ANTEIL, -10, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 0,
+        },
+        Fall {
+            name: "Einzel, 4.000 EUR (30 % = 1.200), Anteil 100: der Anteil hebt nur den Deckel, nicht den Betrag",
+            events: vec![einzel(), z("schulgeld", 400_000, true), z(ANTEIL, 100, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 1200,
+        },
+        Fall {
+            name: "Einzel, 4.000 EUR, Anteil 30: 30 % = 1.200 unter dem Deckel 1.500, bleibt 1.200",
+            events: vec![einzel(), z("schulgeld", 400_000, true), z(ANTEIL, 30, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 1200,
+        },
+        Fall {
+            name: "Einzel, Anteil aber kein Schulgeld: kein Abzug",
+            events: vec![einzel(), z(ANTEIL, 100, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 0,
+        },
+        Fall {
+            name: "zusammen, 20.000 EUR, Anteil 30: die Zusammenveranlagung liest den Anteil nicht, 5.000",
+            events: vec![zusammen(), z("schulgeld", 2_000_000, true), z(ANTEIL, 30, true)],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 5000,
+        },
+        Fall {
+            name: "Einzel, zwei Kinder: Kind 1 Anteil 100 (5.000), Kind 2 ohne Anteil (2.500); der Anteil gilt je Kind",
+            events: vec![
+                einzel(),
+                z("schulgeld", 2_000_000, true),
+                z(ANTEIL, 100, true),
+                z("schulgeld__2", 2_000_000, true),
+            ],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 7500,
+        },
+        Fall {
+            name: "Einzel, zwei Kinder: Kind 1 ohne Anteil (2.500), Kind 2 Anteil 20 (1.000)",
+            events: vec![
+                einzel(),
+                z("schulgeld", 2_000_000, true),
+                z("schulgeld__2", 2_000_000, true),
+                z("kind_schulgeld_aufteilung_prozent__2", 20, true),
+            ],
+            nur_bestaetigt: false,
+            mit_store: true,
+            erwartet: 3500,
+        },
+        Fall {
+            name: "ohne Store (Alt-Aufrufer): 0",
+            events: vec![einzel(), z("schulgeld", 2_000_000, true), z(ANTEIL, 100, true)],
+            nur_bestaetigt: false,
+            mit_store: false,
+            erwartet: 0,
+        },
+    ]
+}
+
 // Eine Tabelle von Faellen, keine Logik: die Laenge ist die Zahl der Faelle.
 #[allow(clippy::too_many_lines)]
 fn pb_faelle() -> Vec<Fall<PbErgebnis>> {
@@ -660,18 +792,28 @@ fn sa_ergebnis<E>(fall: &Fall<E>, st: &Store) -> [i64; 3] {
 
 /// Alle Faelle durchlaufen, dann melden: unter einer Mutation zeigt die Meldung jeden roten Fall.
 fn pruefe<E: PartialEq + Debug>(faelle: &[Fall<E>], rechne: impl Fn(&Fall<E>, &Store) -> E) {
+    pruefe_gegen(faelle, "Python-Orakel", rechne);
+}
+
+/// Wie [`pruefe`], aber mit der Quelle der Erwartung im Text: `erwartet` stammt hier nicht aus dem Python-Orakel.
+fn pruefe_gegen<E: PartialEq + Debug>(
+    faelle: &[Fall<E>],
+    quelle_der_erwartung: &str,
+    rechne: impl Fn(&Fall<E>, &Store) -> E,
+) {
     assert!(!faelle.is_empty(), "Tabelle ist leer");
     let abweichend: Vec<String> = faelle
         .iter()
         .filter_map(|f| {
             let got = rechne(f, &store(&f.events));
-            (got != f.erwartet)
-                .then(|| format!("{}: Rust {got:?}, Orakel {:?}", f.name, f.erwartet))
+            (got != f.erwartet).then(|| {
+                format!("{}: Rust {got:?}, {quelle_der_erwartung} {:?}", f.name, f.erwartet)
+            })
         })
         .collect();
     assert!(
         abweichend.is_empty(),
-        "{} von {} Faellen weichen vom Python-Orakel ab: {abweichend:#?}",
+        "{} von {} Faellen weichen von der Erwartung ({quelle_der_erwartung}) ab: {abweichend:#?}",
         abweichend.len(),
         faelle.len()
     );
@@ -714,6 +856,41 @@ fn schulgeld_vorlaeufige_kinder_zaehlen_und_zusammenveranlagung_gilt() {
             .unwrap()
             .get()
     });
+}
+
+/// AK-R1 (Abweichung Nr. 26): Einzelveranlagung, ein Kind, 20.000 EUR Schulgeld (30 % = 6.000), Anteil 100 -> der volle
+/// Hoechstbetrag von 5.000 EUR statt der Haelfte. Der Fall allein, damit die rote Zeile `left: 2500, right: 5000` zeigt.
+#[test]
+fn schulgeld_einzel_anteil_100() {
+    let st = store(&[
+        t("veranlagung", "einzel", true),
+        z("schulgeld", 2_000_000, true),
+        z(ANTEIL, 100, true),
+    ]);
+    let q = Instanzquelle {
+        store: Some(&st),
+        bindung: Some(index()),
+        nur_bestaetigt: false,
+    };
+    let abzug = schulgeld_summe(&q, Vz::Vz2025, &felder(&st), params()).unwrap();
+    assert_eq!(abzug.get(), 5000);
+}
+
+/// Der Anteil des Nutzers am Hoechstbetrag (`E0504603`), je Kind: bei Einzelveranlagung 5.000 EUR * Anteil / 100, ohne
+/// Anteil und bei 50 die Haelfte (2.500 EUR, wie vor Abweichung Nr. 26); der Anteil hebt nur den Deckel, nie den Betrag; die
+/// Zusammenveranlagung liest ihn nicht; ohne Store ist die Summe 0. Der Name beginnt mit `schulgeld_faelle`, damit das
+/// Pruefkommando AK-R2 des Backlogs (`... schulgeld_faelle`) diesen Test trifft und nicht null Tests laufen laesst.
+#[test]
+fn schulgeld_faelle_einzel_anteil_je_kind() {
+    pruefe_gegen(
+        &schulgeld_anteil_faelle(),
+        "Handrechnung aus der Norm",
+        |fall, st| {
+            schulgeld_summe(&quelle(st, fall), Vz::Vz2025, &snapshot(fall, st), params())
+                .unwrap()
+                .get()
+        },
+    );
 }
 
 /// § 33b Abs. 5: ein Kind uebertraegt seinen Pauschbetrag nur mit `IdNr` (11 Zeichen), Antrag und `nicht selbst genutzt`; `GdB`, Merkzeichen H/Bl/TBl (7.400 EUR statt Staffel) und Hinterbliebenenbezuege (370 EUR zusaetzlich) gehen je Kind in die Summe. Bei `nur_bestaetigt = false` zaehlt auch ein vorlaeufiges Kind; ohne Store ist alles leer.

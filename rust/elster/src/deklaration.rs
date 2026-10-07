@@ -26,6 +26,12 @@ use crate::tabellen::{
     WERTEKODIERUNG,
 };
 
+/// Nur Rust (Abweichung Nr. 26): der Anteil am Schulgeld-Hoechstbetrag je Kind (Kz `E0504603`).
+const SCHULGELD_ANTEIL: &str = "kind_schulgeld_aufteilung_prozent";
+
+/// Der Anteil, der "je zur Haelfte" heisst; er steht nicht im XML.
+const SCHULGELD_ANTEIL_HAELFTE: i64 = 50;
+
 /// Die materialisierte Felder-Ebene eines Snapshots (`feld_id -> {wert, zustand, herkunft}`).
 pub type Felder = BTreeMap<String, SnapshotFeld>;
 
@@ -359,6 +365,32 @@ impl Bau<'_> {
         self.unvollstaendig.push(Eintrag::neu(feld_id, grund));
     }
 
+    /// Gehoert der Anteil am Schulgeld-Hoechstbetrag (`E0504603`, Abweichung Nr. 26) eines Kindes ins XML? Nur bei
+    /// bestaetigter Einzelveranlagung und einem Anteil ungleich 50. Das Kz sagt: "laut gemeinsamem Antrag NICHT je zur
+    /// Haelfte aufzuteilen, mein Anteil ist ..."; bei 50 gibt es keinen solchen Antrag. Der Abschnitt `Elt_k_ZV` gilt im
+    /// Schema nur fuer Eltern ohne Zusammenveranlagung, und die Rechnung liest den Anteil ebenso nur bei Einzelveranlagung
+    /// (`bescheid::abzuege::schulgeld_summe`). Sonst bleibt die Angabe draussen, und der Grund steht in `nicht_deklariert`.
+    fn schulgeld_anteil_gehoert_ins_xml(&mut self, feld_id: &str, wert: &PyWert) -> Ergebnis<bool> {
+        let einzel = self.snapshot.get("veranlagung").is_some_and(|v| {
+            v.zustand == Zustand::Bestaetigt
+                && matches!(
+                    Lage::veranlagung(Some(&v.wert)),
+                    Lage::Gueltig(Veranlagung::Einzel)
+                )
+        });
+        let anteil = py::int(wert).map_err(wert_fehler(feld_id))?;
+        if einzel && anteil != SCHULGELD_ANTEIL_HAELFTE {
+            return Ok(true);
+        }
+        let grund = if einzel {
+            "Anteil 50 = je zur Hälfte, kein gesonderter Antrag der Eltern"
+        } else {
+            "Der Anteil am Schulgeld-Höchstbetrag gilt nur bei bestätigter Einzelveranlagung"
+        };
+        self.nicht(feld_id, grund);
+        Ok(false)
+    }
+
     /// `_deklariere_instanz` (`est_mapping.py:590-632`).
     fn instanz_feld(
         &mut self,
@@ -421,6 +453,12 @@ impl Bau<'_> {
         } else if let Some(p23) = P23_BETRAGSFELDER.iter().find(|f| **f == basis) {
             let n = py::int(wert).map_err(&fehler)?;
             self.instanz(gruppe, idx).rohdaten.insert(p23, n);
+        } else if let (SCHULGELD_ANTEIL, Some(kz)) = (basis, kz_von(b)) {
+            if self.schulgeld_anteil_gehoert_ins_xml(feld_id, wert)? {
+                let null_kz = self.null_kz;
+                let felder = &mut self.instanz(gruppe, idx).felder;
+                schreibe_kz(felder, kz, wert, Some(b.typ), null_kz).map_err(&fehler)?;
+            }
         } else if let Some(kz) = kz_von(b) {
             let null_kz = self.null_kz;
             let felder = &mut self.instanz(gruppe, idx).felder;
@@ -591,6 +629,12 @@ impl Bau<'_> {
             }
         } else if feld_id == "stammdaten_iban" {
             self.iban(feld_id, wert);
+        } else if let (SCHULGELD_ANTEIL, Some(kz)) = (feld_id, kz_von(b)) {
+            // Kind 1 (ohne `__N`) steht auf oberster Ebene, Kind 2.. in den Instanzen (`instanz_feld`).
+            if self.schulgeld_anteil_gehoert_ins_xml(feld_id, wert)? {
+                schreibe_kz(&mut self.deklaration, kz, wert, Some(b.typ), self.null_kz)
+                    .map_err(&fehler)?;
+            }
         } else if let Some(kz) = kz_von(b) {
             schreibe_kz(&mut self.deklaration, kz, wert, Some(b.typ), self.null_kz)
                 .map_err(&fehler)?;

@@ -53,10 +53,16 @@ pub struct SchulgeldEingabe {
     pub aufwendungen: Euro,
     /// Zusammenveranlagung verdoppelt den Hoechstbetrag. PARITÄT: Python setzt fehlend = False.
     pub splitting: bool,
+    /// Nur Rust, kein Python-Gegenstueck (Abweichung Nr. 26 in `rust/fixtures/README.md`): der Anteil des
+    /// Steuerpflichtigen am Hoechstbetrag in Prozent laut gemeinsamem Antrag der Eltern (Kz `E0504603`).
+    /// `None` heisst je zur Haelfte. Bei `splitting` ohne Wirkung.
+    pub anteil_prozent: Option<i64>,
 }
 
 /// § 10 Abs. 1 Nr. 9 `EStG`: Schulgeld je Kind, EURO.
-/// `min(int(aufw x abzugssatz), hb)`, `hb` bei Splitting verdoppelt.
+/// `min(int(aufw x abzugssatz), hb)`, `hb` bei Splitting verdoppelt. Ohne Splitting nennt
+/// `anteil_prozent` den Anteil des Steuerpflichtigen am vollen Hoechstbetrag (Satz 1: 5.000 EUR, die
+/// Parameterdatei fuehrt die Haelfte); ohne Anteil gilt die Haelfte.
 ///
 /// # Errors
 /// [`EngineFehler::Ueberlauf`] jenseits von `i64`.
@@ -65,12 +71,21 @@ pub struct SchulgeldEingabe {
 /// # use engine::zugriff::teil2::sonderausgaben::*;
 /// # use domain::{Euro, Vz};
 /// # let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
-/// let e = SchulgeldEingabe { vz: Vz::Vz2025, aufwendungen: Euro::new(20000), splitting: true };
+/// let e = SchulgeldEingabe { vz: Vz::Vz2025, aufwendungen: Euro::new(20000), splitting: true, anteil_prozent: None };
 /// assert_eq!(p10_1_9_schulgeld(&e, &p).unwrap(), Euro::new(5000));
+/// let allein = SchulgeldEingabe { splitting: false, anteil_prozent: Some(100), ..e };
+/// assert_eq!(p10_1_9_schulgeld(&allein, &p).unwrap(), Euro::new(5000));
 /// ```
 pub fn p10_1_9_schulgeld(e: &SchulgeldEingabe, p: &Params) -> Result<Euro, EngineFehler> {
     let s = p.schulgeld(e.vz)?;
-    let hb = z(s.hoechstbetrag_je_kind) * if e.splitting { 2 } else { 1 };
+    let halb = z(s.hoechstbetrag_je_kind);
+    let hb = match (e.splitting, e.anteil_prozent) {
+        (true, _) => halb * 2,
+        (false, None) => halb,
+        // Der Store weist Werte ausserhalb 0..=100 ab (`bereich`); der Clamp haelt den Deckel auch bei einer von
+        // Hand geaenderten Akte zwischen 0 und dem Gesetzeswert von Satz 1.
+        (false, Some(anteil)) => halb * 2 * i128::from(anteil.clamp(0, 100)) / 100,
+    };
     satz_mit_deckel(e.aufwendungen, s, hb)
 }
 

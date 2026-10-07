@@ -304,6 +304,8 @@ pub fn p10_1_9_schulgeld(a: &[Value], p: &Params) -> Roh {
         vz: vz_bei_aufwand(d)?,
         aufwendungen: eur(d, "aufwendungen"),
         splitting: flag(d, "splitting"),
+        // Python kennt den Anteil nicht (Abweichung Nr. 26): das Orakel rechnet immer ohne.
+        anteil_prozent: None,
     };
     Ok(e(sonderausgaben::p10_1_9_schulgeld(&e_, p)?))
 }
