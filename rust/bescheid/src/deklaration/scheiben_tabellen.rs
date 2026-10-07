@@ -214,8 +214,12 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 /// versorgung-wird-gefragt-nicht-gesperrt`): Lohn, Steuerklasse und die fuenf Versorgungsfelder des Ehegatten, bei
 /// Zusammenveranlagung. Der Ring liest Lohn und Versorgung (`zweige/gesamt.rs::einkuenfte_ns_aus_lohn`, Person B); der
 /// Kegel bleibt bei 28.
+/// Und die zwei allerallerletzten, ebenfalls nur in Rust (2026-10-07, Abweichung Nr. 36, Vault `rentner-ehegatte-lohn-wird-
+/// wie-im-gesamtfall-mit-lohnsteuer-und-altersentlastung-gerechnet`): `p36_lohnsteuer_partner` (die Lohnsteuer des Ehegatten,
+/// gefragt nur bei seinem Lohn ueber 0) und `geburtsjahr_partner` (fuer seinen Altersentlastungsbetrag nach § 24a, wie
+/// `geburtsjahr` bei Person A; `zweige/rentner.rs` rechnet § 24a je Person wie `zweige/gesamt.rs`). Der Kegel bleibt bei 28.
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 274] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 276] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -284,6 +288,7 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 274] = [
     "versorgung_bemessungsgrundlage", "versorgung_beginn_jahr", "versorgung_art", "versorgung_alter_bei_beginn",
     "bruttoarbeitslohn_partner", "steuerklasse_partner", "versorgung_jahresrente_partner", "versorgung_bemessungsgrundlage_partner",
     "versorgung_beginn_jahr_partner", "versorgung_art_partner", "versorgung_alter_bei_beginn_partner",
+    "p36_lohnsteuer_partner", "geburtsjahr_partner",
 ];
 
 /// `SCHEIBEN['rentner_gesamt']["kegel"]` = `RENTNER_KEGEL + AGB_TATBESTAND`

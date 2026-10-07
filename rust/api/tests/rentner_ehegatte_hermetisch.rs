@@ -13,6 +13,10 @@
 //! **Wo es sitzt.** `SCHEIBEN_RENTNER_GESAMT_FELDER` (`bescheid/src/deklaration/scheiben_tabellen.rs`); der Kegel
 //! (28 Pflichtfelder) bleibt, die Angaben zum Ehegatten sind keine neuen Pflichtfragen.
 //!
+//! **Abweichung Nr. 36.** Zum Lohn des Ehegatten gehoeren seine einbehaltene Lohnsteuer (`p36_lohnsteuer_partner`) und sein
+//! Geburtsjahr (`geburtsjahr_partner`, fuer den Altersentlastungsbetrag nach § 24a): beide sind jetzt auf der Scheibe
+//! beantwortbar, und der Ring rechnet § 24a je Person wie `gesamt`. Der Ring zuerst: `bescheid/tests/rentner_ehegatte_hermetisch.rs`.
+//!
 //! HERKUNFT DER ERWARTUNGSWERTE: die Zahlen sind Vergleiche, keine Konstanten. Der Anker ist die Scheibe `an_gesamt`: eine
 //! Rentnerin ohne eigene Einkuenfte, deren Mann einen Lohn hat, zahlt dieselbe Steuer wie der Arbeitnehmer mit demselben Lohn
 //! und demselben Ehegatten (zwei Ringe, ein Ergebnis). Die Euro-Betraege von Hand gerechnet stehen in
@@ -376,6 +380,127 @@ async fn der_lohn_des_ehegatten_kostet_dieselbe_steuer_wie_auf_der_arbeitnehmer_
     assert!(zahl(&rentnerin) > zahl(&ergebnis(&paar(0)).await), "der Lohn kostet Steuer");
 }
 
+/// Geburtsjahr des Ehegatten (`geburtsjahr_partner`, Abweichung Nr. 36).
+fn geboren_partner(jahr: i64) -> Paare {
+    vec![("geburtsjahr_partner", json!(jahr))]
+}
+
+/// Abweichung Nr. 36, AK1: Der Altersentlastungsbetrag (§ 24a `EStG`) des Ehegatten senkt die Steuer. Ehegatte mit 20.000 Euro
+/// Lohn auf 40.000 Euro Rente, geboren 1955 (VZ 2025: Kohorte 2020, 16,0 %, hoechstens 760 Euro) gegen geboren 1990: die
+/// Steuer des Aelteren ist kleiner (heute gleich, der Rentner-Ring rechnet § 24a nur fuer Person A).
+#[tokio::test]
+async fn der_altersentlastungsbetrag_des_ehegatten_senkt_die_steuer_ueber_http() {
+    let fall = |jahr| mit(mit(paar(4_000_000), lohn_partner(20_000)), geboren_partner(jahr));
+    let jung = zahl(&ergebnis(&fall(1990)).await);
+    let alt = zahl(&ergebnis(&fall(1955)).await);
+    assert!(alt < jung, "der Altersentlastungsbetrag des Ehegatten senkt die Steuer: alt {alt} < jung {jung}");
+}
+
+/// Pflicht-Kegel `gesamt` (35 Felder) fuer eine Person A ohne jede Einkunft, ZUSAMMEN veranlagt, mit dem Lohn des Ehegatten
+/// (`bruttoarbeitslohn_partner`), alle Kreuze "nein"/"kein".
+fn gesamt_zusammen(euro_partner: i64) -> Paare {
+    let mut p: Paare = vec![
+        ("vv_einnahmen", json!(0)),
+        ("vv_gebaeude_afa", json!(0)),
+        ("vv_schuldzinsen", json!(0)),
+        ("vv_erhaltungsaufwand", json!(0)),
+        ("vv_sonstige_wk", json!(0)),
+        ("vv_entgelt_quote_prozent", json!(100)),
+        ("veranlagung", json!("zusammen")),
+        ("bruttoarbeitslohn", json!(0)),
+        ("bruttoarbeitslohn_partner", json!(euro_partner * 100)),
+        ("ep_arbeitstage", json!(0)),
+        ("ep_entfernung_km", json!(0)),
+        ("ep_oepnv_kosten", json!(0)),
+        ("ep_eigenes_kfz", json!(false)),
+        ("vor_an_anteil_rv", json!(0)),
+        ("vor_ag_anteil_rv", json!(0)),
+        ("vor_rv_ausserhalb_lstb", json!(0)),
+        ("versicherungsart", json!("gesetzlich_an")),
+        ("basis_kv", json!(0)),
+        ("basis_pv", json!(0)),
+        ("vorsorge_arbeitslosenversicherung", json!(0)),
+        ("vorsorge_erwerbsunfaehigkeit", json!(0)),
+        ("vorsorge_unfall_haftpflicht", json!(0)),
+        ("vorsorge_rv_alt_mit_ueberschuss", json!(0)),
+        ("vorsorge_rv_alt_ohne_ueberschuss", json!(0)),
+        ("mit_anspruch_auf_zuschuss", json!(false)),
+        ("kap_kapitalertraege", json!(0)),
+        ("kap_gewinn_aktien", json!(0)),
+        ("kap_verlust_aktien", json!(0)),
+        ("kap_gewinn_sonstige", json!(0)),
+        ("kap_verlust_sonstige", json!(0)),
+        ("kein_gewinn", json!(true)),
+        ("kein_kap", json!(true)),
+        ("kein_vuv", json!(true)),
+        ("kein_sonstige", json!(true)),
+        ("agb_zwangslaeufig", json!(true)),
+        ("agb_notwendig_angemessen", json!(true)),
+        ("versicherungsart_partner", json!("gesetzlich_an")),
+    ];
+    p.extend(partner_kap());
+    p
+}
+
+/// Anker AK1: eine Rentnerin ohne Rente, Ehegatte 60.000 Euro Lohn, geboren 1955, zahlt dieselbe Steuer wie das Paar auf der
+/// Scheibe `gesamt` (Person A ohne Einkunft, Ehegatte 60.000 Euro, geboren 1955). Der Rechenweg von `gesamt` rechnet § 24a je
+/// Person schon heute; der Anker ist die Zahl dort, nicht der Rentner-Ring. 60.000 Euro, weil bei 20.000 Euro beide Steuern 0
+/// waeren (doppelter Grundfreibetrag) und der Vergleich nichts maesse.
+#[tokio::test]
+async fn der_altersentlastungsbetrag_des_ehegatten_ist_derselbe_wie_auf_der_scheibe_gesamt() {
+    let rentnerin = ergebnis(&mit(mit(paar(0), lohn_partner(60_000)), geboren_partner(1955))).await;
+    let gesamt = ergebnis_der("gesamt", &mit(gesamt_zusammen(60_000), geboren_partner(1955))).await;
+    assert_eq!(zahl(&rentnerin), zahl(&gesamt), "Rentnerin: {rentnerin}");
+    // Kontrolle: der Anker misst etwas. Ohne Geburtsjahr zahlt das Paar auf `gesamt` mehr, und die Steuer ist nicht 0.
+    let ohne = ergebnis_der("gesamt", &gesamt_zusammen(60_000)).await;
+    assert!(zahl(&gesamt) > 0, "Steuer ueber 0: {gesamt}");
+    assert!(zahl(&gesamt) < zahl(&ohne), "der Altersentlastungsbetrag senkt die Steuer auf gesamt: {gesamt} < {ohne}");
+}
+
+/// AK2: Die Lohnsteuer des Ehegatten ist beantwortbar und wird nur gefragt, wenn der Ehegatte Lohn hat (Bedingung der
+/// Bindung, `feld_bedingung` auf `bruttoarbeitslohn_partner`, nicht gleich 0) und nur bei Zusammenveranlagung. Sie aendert die
+/// Steuer nicht: der Bescheid rechnet keine einbehaltene Lohnsteuer des Ehegatten an (eigenes Ticket).
+#[tokio::test]
+async fn die_lohnsteuer_des_ehegatten_wird_nur_bei_seinem_lohn_und_nur_zusammen_gefragt() {
+    let ohne_lohn = fragen_ids(&fall_mit("rentner_gesamt", &mit(paar(2_000_000), lohn_partner(0))).await).await;
+    assert!(!ohne_lohn.iter().any(|i| i == "p36_lohnsteuer_partner"), "Lohn 0: {ohne_lohn:?}");
+    let mit_lohn = fragen_ids(&fall_mit("rentner_gesamt", &mit(paar(2_000_000), lohn_partner(6_000))).await).await;
+    assert!(mit_lohn.iter().any(|i| i == "p36_lohnsteuer_partner"), "Lohn 6.000: {mit_lohn:?}");
+    let einzel = fragen_ids(&fall_mit("rentner_gesamt", &rentner(2_000_000, "einzel")).await).await;
+    assert!(!einzel.iter().any(|i| i == "p36_lohnsteuer_partner"), "Einzelveranlagung: {einzel:?}");
+    let d = fall_mit("rentner_gesamt", &mit(paar(2_000_000), lohn_partner(6_000))).await;
+    let (status, antwort) = event_post(&d, "p36_lohnsteuer_partner", &json!(50_000)).await;
+    assert_eq!(status, 201, "POST /event p36_lohnsteuer_partner: {antwort}");
+}
+
+/// AK2: Das Geburtsjahr des Ehegatten ist beantwortbar und steht bei Zusammenveranlagung in den Fragen, bei Einzelveranlagung
+/// nicht. Es steht EINMAL: ist das Geburtsdatum des Ehegatten bekannt, leitet der Speicher das Jahr ab und die Frage faellt weg
+/// (Ableitung `jahr_aus_datum`, dieselbe wie auf `gesamt`).
+#[tokio::test]
+async fn das_geburtsjahr_des_ehegatten_wird_einmal_gefragt() {
+    let ids = fragen_ids(&fall_mit("rentner_gesamt", &paar(2_000_000)).await).await;
+    assert!(ids.iter().any(|i| i == "geburtsjahr_partner"), "Zusammenveranlagung: {ids:?}");
+    let ids = fragen_ids(&fall_mit("rentner_gesamt", &rentner(2_000_000, "einzel")).await).await;
+    assert!(!ids.iter().any(|i| i == "geburtsjahr_partner"), "Einzelveranlagung: {ids:?}");
+    let d = fall_mit(
+        "rentner_gesamt",
+        &mit(paar(2_000_000), vec![("stammdaten_geburtsdatum_partner", json!("01.01.1955"))]),
+    )
+    .await;
+    let ids = fragen_ids(&d).await;
+    assert!(!ids.iter().any(|i| i == "geburtsjahr_partner"), "Geburtsdatum bekannt, Jahr abgeleitet: {ids:?}");
+    // Und die Ableitung zaehlt: das abgeleitete Jahr senkt die Steuer wie das direkt genannte.
+    let direkt = zahl(&ergebnis(&mit(mit(paar(4_000_000), lohn_partner(20_000)), geboren_partner(1955))).await);
+    let abgeleitet = zahl(
+        &ergebnis(&mit(
+            mit(paar(4_000_000), lohn_partner(20_000)),
+            vec![("stammdaten_geburtsdatum_partner", json!("01.01.1955"))],
+        ))
+        .await,
+    );
+    assert_eq!(abgeleitet, direkt, "Geburtsdatum 1955 gleich Geburtsjahr 1955");
+}
+
 /// AK4: Zusammenveranlagung ohne Angabe zum Ehegatten sperrt nicht. Es gibt eine Zahl, und sie ist dieselbe wie mit
 /// bestaetigten Nullen.
 #[tokio::test]
@@ -395,12 +520,15 @@ async fn ohne_angaben_zum_ehegatten_bleibt_die_erklaerung_abgabefaehig() {
 async fn die_deklaration_traegt_lohn_und_steuerklasse_und_nennt_die_versorgung_als_nicht_deklariert() {
     let mut p = mit(paar(2_000_000), lohn_partner(40_000));
     p.push(("steuerklasse_partner", json!("1")));
+    p.push(("p36_lohnsteuer_partner", json!(600_000)));
     p.extend(versorgung_partner(30_000));
     let d = fall_mit("rentner_gesamt", &p).await;
     let (status, dekl) = sende(&d, "GET", "/fall/reh/deklaration", None).await;
     assert_eq!(status, 200, "{dekl}");
     assert_eq!(dekl["person_b"]["E0200201"], json!(40_000), "Lohn des Ehegatten: {}", dekl["person_b"]);
     assert_eq!(dekl["person_b"]["E0200002"], json!("1"), "Steuerklasse des Ehegatten: {}", dekl["person_b"]);
+    // Abweichung Nr. 36: die einbehaltene Lohnsteuer des Ehegatten (Anlage N, Person B) steht jetzt auch in der Erklaerung.
+    assert_eq!(dekl["person_b"]["E0200301"], json!("6000,00"), "Lohnsteuer des Ehegatten: {}", dekl["person_b"]);
     let nicht: Vec<&str> = dekl["nicht_deklariert"]
         .as_array()
         .unwrap()

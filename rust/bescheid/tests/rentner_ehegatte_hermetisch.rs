@@ -13,7 +13,13 @@
 //! mit der Zusammenveranlagung; der Kern rechnet Lohn und Versorgung von Person B (`*_partner`). Die Tests hier setzen die
 //! Felder ohne Scheiben-Gate in den Store, sie messen den Ring; die Scheibe misst `api/tests/rentner_ehegatte_hermetisch.rs`.
 //!
+//! **Abweichung Nr. 36.** Der Ring rechnet auch den Altersentlastungsbetrag (§ 24a `EStG`) des Ehegatten, mit seinem Lohn und
+//! seinem Geburtsjahr (`zweige/rentner.rs` ruft `zweige/gesamt.rs::entlastungen`, den Weg des Gesamt-Zweigs). Vorher: nur
+//! Person A.
+//!
 //! HERKUNFT DER ERWARTUNGSWERTE: VZ 2025, von Hand aus dem Gesetzestext und `params/`, nie aus dem Rust-Code gelesen.
+//! - Altersentlastungsbetrag (§ 24a, `estg_p24a_2026-07-13.txt`, Tabelle): das auf die Vollendung des 64. Lebensjahres folgende
+//!   Kalenderjahr bestimmt Satz und Hoechstbetrag: 2020 (geboren 1955) 16,0 % / 760 Euro, 2025 (geboren 1960) 13,2 % / 627 Euro.
 //! - Arbeitslohn des Ehegatten: Einkuenfte = Lohn − 1.230 Euro (`params/2025/arbeitnehmerpauschbetrag.yaml`, § 9a Satz 1
 //!   Nr. 1a; jeder Ehegatte hat seinen eigenen).
 //! - Versorgungsbezug: Einkuenfte = Bezug − (min(13,2 % der Bemessungsgrundlage, 990) + 297) − 102 Euro
@@ -343,6 +349,61 @@ fn lohn_und_versorgung_des_ehegatten_addieren_sich() {
     let mut p = lohn_partner(20_000);
     p.extend(versorgung_partner(30_000));
     assert_eq!(gdb(&paar(p)) - ohne, 18_770 + 28_611);
+}
+
+// ---------------------------------------------------------------- § 24a Altersentlastungsbetrag des Ehegatten (Nr. 36)
+
+/// Der Gesamtbetrag der Einkuenfte des Falls mit dem Lohn des Ehegatten `lohn` Euro, abzueglich dem des selben Falls ohne
+/// Geburtsjahr des Ehegatten: das ist der Altersentlastungsbetrag des Ehegatten in Euro.
+fn altersentlastung_partner(lohn: i64, geburtsjahr: Option<i64>, veranlagung: &'static str) -> i64 {
+    let ohne = gdb(&mit_veranlagung(veranlagung, lohn_partner(lohn)));
+    let mut p = lohn_partner(lohn);
+    if let Some(jahr) = geburtsjahr {
+        p.push(("geburtsjahr_partner", json!(jahr)));
+    }
+    ohne - gdb(&mit_veranlagung(veranlagung, p))
+}
+
+/// § 24a (`estg_p24a_2026-07-13.txt`, Tabelle): geboren 1955 vollendet das 64. Lebensjahr 2019, das folgende Kalenderjahr ist
+/// 2020: 16,0 % des Arbeitslohns, hoechstens 760 Euro. Bei 20.000 Euro Lohn des Ehegatten greift der Hoechstbetrag (3.200 > 760),
+/// bei 2.000 Euro der Prozentsatz (320 < 760). Heute: 0, der Rentner-Ring rechnet § 24a nur fuer Person A.
+#[test]
+fn der_altersentlastungsbetrag_des_ehegatten_folgt_seinem_geburtsjahr_und_seinem_lohn() {
+    assert_eq!(altersentlastung_partner(20_000, Some(1955), "zusammen"), 760, "Hoechstbetrag der Kohorte 2020");
+    assert_eq!(altersentlastung_partner(2_000, Some(1955), "zusammen"), 320, "16,0 % von 2.000");
+    // Kohorte 2025 (geboren 1960): 13,2 %, hoechstens 627 Euro. Geboren 1961 vollendet das 64. Lebensjahr erst 2025: kein Betrag.
+    assert_eq!(altersentlastung_partner(20_000, Some(1960), "zusammen"), 627, "geboren 1960");
+    assert_eq!(altersentlastung_partner(20_000, Some(1961), "zusammen"), 0, "geboren 1961");
+}
+
+/// Ohne Lohn des Ehegatten ist die Bemessung null (Satz 2: Leibrenten und Versorgungsbezuege bleiben ausser Betracht), und ohne
+/// sein Geburtsjahr gibt es keinen Betrag. Das Geburtsjahr von Person A zaehlt fuer den Ehegatten nicht.
+#[test]
+fn der_altersentlastungsbetrag_des_ehegatten_braucht_seinen_lohn_und_sein_geburtsjahr() {
+    assert_eq!(altersentlastung_partner(0, Some(1955), "zusammen"), 0, "ohne Lohn");
+    assert_eq!(altersentlastung_partner(20_000, None, "zusammen"), 0, "ohne Geburtsjahr");
+    let ohne = gdb(&paar(lohn_partner(20_000)));
+    let mut nur_a = lohn_partner(20_000);
+    nur_a.push(("geburtsjahr", json!(1955)));
+    assert_eq!(ohne - gdb(&paar(nur_a)), 0, "Person A hat keinen Lohn: ihr Geburtsjahr gibt dem Ehegatten nichts");
+}
+
+/// Person A und der Ehegatte haben je ihren eigenen Altersentlastungsbetrag mit eigenem Lohn und eigener Kohorte: A geboren
+/// 1955 (760 Euro), der Ehegatte geboren 1960 (627 Euro), beide mit 20.000 Euro Lohn: zusammen 1.387 Euro.
+#[test]
+fn der_altersentlastungsbetrag_beider_ehegatten_zaehlt_je_fuer_sich() {
+    let lohn_a = || vec![("bruttoarbeitslohn", json!(cent(20_000)))];
+    let ohne = gdb(&paar([lohn_a(), lohn_partner(20_000)].concat()));
+    let mit = gdb(&paar(
+        [lohn_a(), lohn_partner(20_000), vec![("geburtsjahr", json!(1955)), ("geburtsjahr_partner", json!(1960))]].concat(),
+    ));
+    assert_eq!(ohne - mit, 760 + 627);
+}
+
+/// Bei Einzelveranlagung zaehlt der Ehegatte nicht, also auch sein Altersentlastungsbetrag nicht.
+#[test]
+fn bei_einzelveranlagung_gibt_es_keinen_altersentlastungsbetrag_fuer_den_ehegatten() {
+    assert_eq!(altersentlastung_partner(20_000, Some(1955), "einzel"), 0);
 }
 
 /// Person A und der Ehegatte haben je eine eigene Versorgung: beide zusammen bringen 28.611 + 28.611.
