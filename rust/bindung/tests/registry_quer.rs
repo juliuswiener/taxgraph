@@ -93,15 +93,14 @@ fn pruefe_verweise(art: &str, verweise: &[(String, &str)], mindestens: usize) {
     );
 }
 
+/// Jede Bedingung der Kette zaehlt, auch die zweite (`und`, Abweichung Nr. 34): ein Tippfehler im Feld der zweiten Bedingung
+/// liesse die Frage still fuer immer wegfallen (`groesser_als` verlangt einen Beleg, und ein Feld, das es nicht gibt, liefert nie einen).
 #[test]
 fn feld_bedingung_zeigt_auf_ein_feld_das_es_gibt() {
     let verweise: Vec<(String, &str)> = bindungen()
         .into_iter()
-        .filter_map(|b| {
-            b.feld_bedingung
-                .as_ref()
-                .map(|fb| (b.feld_id.clone(), fb.feld.as_str()))
-        })
+        .filter_map(|b| b.feld_bedingung.as_ref().map(|fb| (b, fb)))
+        .flat_map(|(b, fb)| fb.kette().map(move |glied| (b.feld_id.clone(), glied.feld.as_str())))
         .collect();
     pruefe_verweise("feld_bedingung", &verweise, 50);
 }
@@ -479,8 +478,8 @@ fn partner_kreuz_ist_das_einzige_fragbare_feld_seiner_regel() {
     assert!(geteilt.is_empty(), "{geteilt:?}");
 }
 
-/// Die Felder, von deren Antwort die Frage nach `b` abhaengt: die eigene `feld_bedingung` und die
-/// `regel_bedingungen` der Regel von `b` (der Traverser wertet beide aus).
+/// Die Felder, von deren Antwort die Frage nach `b` abhaengt: die eigene `feld_bedingung` (mit jeder `und`-Bedingung der
+/// Kette) und die `regel_bedingungen` der Regel von `b` (der Traverser wertet beide aus).
 fn gate_felder(b: &Bindung) -> BTreeSet<String> {
     let mut gates: BTreeSet<String> = regel_bedingungen()
         .into_iter()
@@ -488,7 +487,7 @@ fn gate_felder(b: &Bindung) -> BTreeSet<String> {
         .map(|r| r.feld.clone())
         .collect();
     if let Some(fb) = &b.feld_bedingung {
-        gates.insert(fb.feld.clone());
+        gates.extend(fb.kette().map(|glied| glied.feld.clone()));
     }
     gates
 }
