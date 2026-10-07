@@ -676,6 +676,11 @@ fn konstanten_gleich() {
     eprintln!("Python-Dateien (Orakel): {d}");
 }
 
+/// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27 in
+/// `rust/fixtures/README.md`: `gwg_mehrwertsteuer_offen` nennt seit der Folgefrage `gwg_ohne_vorsteuerabzug` den Weg des
+/// Kleinunternehmers). Dieselbe Liste und dieselbe Strenge wie `domain::sperrgrund::tests::ABWEICHENDER_KLARTEXT`.
+const ABWEICHENDER_KLARTEXT: [&str; 1] = ["gwg_mehrwertsteuer_offen"];
+
 #[test]
 fn sperrgrund_klartext_literale() {
     if skip() {
@@ -695,13 +700,23 @@ fn sperrgrund_klartext_literale() {
     alle.extend(["bestaetigt", "unbekannt_xyz", "", "Abs3_Ueber_5mio_offen"].map(String::from));
     alle.sort();
     alle.dedup();
-    let (mut gleich, mut typisiert) = (0_usize, 0_usize);
+    let (mut gleich, mut typisiert, mut abweichend) = (0_usize, 0_usize, 0_usize);
     for l in &alle {
         let py = frage_roh(
             &json!({"fn": "bescheid.fall", "funktionen": ["bescheid.sperrgrund_klartext"],
             "felder": {}, "vz": 2025, "nur_bestaetigt": false, "args": {"grund": l}}),
         );
-        let erwartet = py["bescheid.sperrgrund_klartext"]["ok"].as_str().unwrap();
+        let python = py["bescheid.sperrgrund_klartext"]["ok"].as_str().unwrap();
+        // Streng: ein Grund, dessen Klartext Rust absichtlich anders sagt (Abweichung Nr. 27), muss ABWEICHEN. Wird er
+        // gleich, ist die Liste falsch; eine Zeile, die nie vergleicht, waere sonst gruen und leer.
+        let erwartet = if ABWEICHENDER_KLARTEXT.contains(&l.as_str()) {
+            let rust = dk::sperrgrund_klartext_text(Some(l));
+            assert!(rust.is_some_and(|t| t != python), "Literal {l:?}: gleich dem Python-Text, dann raus aus der Liste");
+            abweichend += 1;
+            rust.unwrap()
+        } else {
+            python
+        };
         assert_eq!(
             dk::sperrgrund_klartext_text(Some(l)),
             Some(erwartet),
@@ -717,6 +732,11 @@ fn sperrgrund_klartext_literale() {
             typisiert += 1;
         }
     }
+    assert_eq!(
+        abweichend,
+        ABWEICHENDER_KLARTEXT.len(),
+        "jeder abweichende Grund steht unter den Python-Literalen"
+    );
     // None bleibt None (Python `if grund is None: return None`).
     let py_none = frage_roh(
         &json!({"fn": "bescheid.fall", "funktionen": ["bescheid.sperrgrund_klartext"],
@@ -734,7 +754,7 @@ fn sperrgrund_klartext_literale() {
         assert!(schluessel.contains(r), "{r:?} fehlt in SPERRGRUND_KLARTEXT");
     }
     eprintln!(
-        "sperrgrund_klartext_literale: {} Literale (Python: {} Klartext-Schlüssel, {} Rückgaben der Guards), {gleich} byte-gleich, {typisiert} typisiert, 0 Abweichungen",
+        "sperrgrund_klartext_literale: {} Literale (Python: {} Klartext-Schlüssel, {} Rückgaben der Guards), {gleich} geprüft, davon {abweichend} mit absichtlich anderem Text (Abweichung Nr. 27), {typisiert} typisiert, 0 ungewollte Abweichungen",
         alle.len(),
         schluessel.len(),
         rueck.len()

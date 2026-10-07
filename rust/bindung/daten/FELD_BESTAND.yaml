@@ -106,6 +106,7 @@ felder:
   - gwg_anzahl
   - gwg_bewegliches_selbstaendig_nutzbar
   - gwg_netto_ohne_vorsteuer
+  - gwg_ohne_vorsteuerabzug
   - gwg_verzeichnis_ab_250
   - hh_anzahl_dienstleistungen
   - hh_anzahl_handwerker

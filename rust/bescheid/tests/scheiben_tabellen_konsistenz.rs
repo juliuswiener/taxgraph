@@ -48,12 +48,13 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// `p34_abs3_antragsbetrag_partner` in beiden, 354 -> 358 und 252 -> 256; danach am 2026-10-06 das doppelte
 /// `geburtsjahr` in `rentner_gesamt` einmal, 256 -> 255; danach am 2026-10-06 `bruttoarbeitslohn`, `steuerklasse` und die
 /// fuenf `versorgung_*`-Felder neu in `rentner_gesamt`, 255 -> 262, der Kegel bleibt bei 28; danach am 2026-10-07
-/// `kind_schulgeld_aufteilung_prozent` in beiden (Abweichung Nr. 26), 358 -> 359 und 262 -> 263; vorher 2026-10-05, `9c07d98e`).
+/// `kind_schulgeld_aufteilung_prozent` in beiden (Abweichung Nr. 26), 358 -> 359 und 262 -> 263; danach am 2026-10-07 `gwg_ohne_vorsteuerabzug` in beiden (Abweichung Nr. 27),
+/// 359 -> 360 und 263 -> 264; vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 84, 33),
-    (Scheibe::Gesamt, 359, 35),
-    (Scheibe::RentnerGesamt, 263, 28),
+    (Scheibe::Gesamt, 360, 35),
+    (Scheibe::RentnerGesamt, 264, 28),
 ];
 
 fn registry() -> &'static Registry {

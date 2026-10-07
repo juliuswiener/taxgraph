@@ -1381,11 +1381,12 @@ bindungen:
     # Voraussetzung der Regel: "nein" heisst nicht "§ 6 Abs. 2 gilt nicht", sondern "der
     # eingegebene Betrag ist brutto" — und dann gilt die Regel mit dem Bruttobetrag (§ 9b Abs. 1
     # EStG, Anleitung EÜR 2025 Z. 1126). Als Gate schloss ein wahrheitsgemaesses "nein" des
-    # Kleinunternehmers die ganze Regel aus, samt der Folgefrage, die seinen Abzug rettet.
+    # Kleinunternehmers die ganze Regel aus, samt der Folgefrage, die seinen Abzug rettet (`gwg_ohne_vorsteuerabzug`, seit
+    # 2026-10-07, siehe unten).
     gate: false
     vorjahr: uebernehmbar
     fragetext_laie: "Ist der Preis, den du angibst, ohne Mehrwertsteuer (netto)?"
-    hilfe_kurz: "Wenn du die Mehrwertsteuer vom Finanzamt zurückbekommst, rechnest du netto. Bekommst du sie nicht zurück (zum Beispiel als Kleinunternehmer), gibst du den Preis mit Mehrwertsteuer an und antwortest hier mit nein."
+    hilfe_kurz: "Wenn du die Mehrwertsteuer vom Finanzamt zurückbekommst, rechnest du netto. Bekommst du sie nicht zurück (zum Beispiel als Kleinunternehmer), gibst du den Preis mit Mehrwertsteuer an und antwortest hier mit nein. Danach folgt eine Frage, ob du die Mehrwertsteuer selbst getragen hast; die beantwortest du dann mit ja."
     beispielwert: true
     herkunft_slots: null
     elster_kz: null
@@ -1395,6 +1396,33 @@ bindungen:
       quelle: "§ 6 Abs. 2 S. 1 EStG"
       zitatanker: "vermindert um einen darin enthaltenen Vorsteuerbetrag"
       datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+  # Folgefrage zu `gwg_netto_ohne_vorsteuer` = nein (gebaut 2026-10-07, Abweichung Nr. 27 in rust/fixtures/README.md;
+  # Vault: decisions/gwg-ohne-vorsteuerabzug-zieht-den-bruttobetrag-ab). Wer die Mehrwertsteuer nicht zurueckbekommt
+  # (Kleinunternehmer), zieht den Bruttobetrag ab (§ 9b Abs. 1 EStG). Normalfall dieser Frage ist "ja": wer hier ankommt,
+  # hat vorher "nein" auf die Netto-Frage gesagt. Ein "nein" (Regelbesteuerer, der brutto eingab) und die fehlende Antwort
+  # sperren weiter (`gwg_mehrwertsteuer_offen`), ebenso ein Preis ueber 800 EUR mit Mehrwertsteuer (ponytail: das Band
+  # 800,01 bis ca. 952 EUR waere mit einem Nettobetrag-Feld rechenbar). Kein Gate: die Frage haelt die Regel nicht auf
+  # `unentschieden`, sie erhebt eine Angabe UEBER DEN BETRAG wie die Netto-Frage.
+  - feld_id: gwg_ohne_vorsteuerabzug
+    instanz_gruppe: gwg
+    quelle: {regel_id: p6_2_gwg_sofortabzug, geltungsbedingung: brutto_ist_abzug_ohne_vorsteuerabzug}
+    typ: bool
+    einheit: null
+    askable: true
+    gate: false
+    feld_bedingung: {feld: gwg_netto_ohne_vorsteuer, wert: false, grund: "Die Frage klärt nur den Fall, dass der angegebene Preis die Mehrwertsteuer enthält (Netto-Frage mit nein beantwortet). Wer den Preis ohne Mehrwertsteuer angibt, hat nichts zu klären: dann zählt der angegebene Betrag. Fail-closed: solange die Netto-Frage offen ist, bleibt die Folgefrage stehen."}
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hast du die Mehrwertsteuer für diesen Kauf selbst getragen, bekommst du sie also nicht vom Finanzamt zurück (zum Beispiel als Kleinunternehmer)?"
+    hilfe_kurz: "Antworte mit ja, wenn du die Mehrwertsteuer nicht vom Finanzamt zurückbekommst. Dann zählt der Preis mit Mehrwertsteuer, bis 800 Euro setzt du ihn sofort ab. Bekommst du die Mehrwertsteuer zurück, gib stattdessen den Preis ohne sie an und antworte oben mit ja."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Reine Geltungsbedingung ohne eigenes Deklarationsfeld; der Betrag steht im Kz E6002301 der Anlage EÜR (bei Kleinunternehmern brutto)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9b Abs. 1 EStG"
+      zitatanker: "soweit er bei der Umsatzsteuer abgezogen werden kann, nicht zu den Anschaffungs- oder Herstellungskosten"
+      datei: "sources/gesetze-im-internet/estg_p9b_2026-09-26.txt"
   - feld_id: gwg_bewegliches_selbstaendig_nutzbar
     instanz_gruppe: gwg
     quelle: {regel_id: p6_2_gwg_sofortabzug, geltungsbedingung: bewegliches_abnutzbares_anlagevermoegen_selbstaendig_nutzbar}

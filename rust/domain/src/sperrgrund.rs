@@ -212,7 +212,7 @@ impl Sperrgrund {
             Self::GewinnQuelleOffen => Some("Deinen Gewinn hast du auf zwei Wegen angegeben: einmal als fertigen Betrag und einmal aufgeteilt in Betriebseinnahmen, Betriebsausgaben und Abschreibungen. Welcher der beiden gilt, kann die Software nicht raten. Bitte lass einen der beiden Wege stehen."),
             Self::GewstHebesatzOffen => Some("Zu deinem Gewerbebetrieb fehlt der Hebesatz deiner Gemeinde, oder er steht auf 0 oder darunter. Ein Hebesatz von 0 oder darunter ist nicht möglich, jede Gemeinde muss einen Mindestsatz erheben. Ohne ihn lässt sich nicht berechnen, wie viel Gewerbesteuer auf deine Einkommensteuer angerechnet wird. Den Hebesatz findest du auf deinem Gewerbesteuerbescheid oder auf der Internetseite deiner Gemeinde."),
             Self::GwgAbschreibungOffen => Some("Ein Gerät, das du als Sofortabzug erfasst hast, kommt dafür nicht in Frage: Es kostet mehr als 800 Euro ohne Mehrwertsteuer, du kannst es nicht allein benutzen, oder du hast es ab 250 Euro weder in einer Liste noch in deiner Buchführung festgehalten. Dann verteilt sich der Abzug über mehrere Jahre (Abschreibung). Diese Abschreibung rechnet die Software hier noch nicht, und das Gerät still wegzulassen wäre falsch. Das Ergebnis bleibt deshalb offen. Trage das Gerät bitte nicht hier ein, sondern bei der Abschreibung."),
-            Self::GwgMehrwertsteuerOffen => Some("Bei einem als Sofortabzug erfassten Gerät hast du angegeben, dass der Preis die Mehrwertsteuer enthält. Was du dann absetzen darfst, hängt davon ab, ob du die Mehrwertsteuer vom Finanzamt zurückbekommst: als Kleinunternehmer zählt der Preis mit Mehrwertsteuer, sonst der Preis ohne. Diese Unterscheidung kann die Software noch nicht treffen. Einen Abzug von null Euro will sie dir nicht zeigen, deshalb bleibt das Ergebnis offen. Bekommst du die Mehrwertsteuer zurück, gib den Preis ohne sie an und beantworte die Frage nach dem Preis ohne Mehrwertsteuer mit Ja."),
+            Self::GwgMehrwertsteuerOffen => Some("Bei einem als Sofortabzug erfassten Gerät hast du angegeben, dass der Preis die Mehrwertsteuer enthält. Was du dann absetzen darfst, hängt davon ab, ob du die Mehrwertsteuer vom Finanzamt zurückbekommst. Bekommst du sie zurück, gib den Preis ohne Mehrwertsteuer an und beantworte die Frage nach dem Preis ohne Mehrwertsteuer mit Ja. Bekommst du sie nicht zurück, zum Beispiel als Kleinunternehmer, zählt der Preis mit Mehrwertsteuer: Beantworte dann die Frage, ob du die Mehrwertsteuer selbst getragen hast, mit Ja. Das gilt, solange der Preis mit Mehrwertsteuer höchstens 800 Euro beträgt. Liegt er darüber, kann die Software noch nicht rechnen, ob das Gerät ein geringwertiges Wirtschaftsgut bleibt. Einen Abzug von null Euro will sie dir nicht zeigen, deshalb bleibt das Ergebnis offen. Trage das Gerät in diesem Fall bitte nicht hier ein, sondern bei der Abschreibung."),
             Self::GwgTatbestandOffen => Some("Zu einem als Sofortabzug erfassten Gerät fehlt noch eine Antwort zu einer der Voraussetzungen — ob es allein benutzbar ist, ob der Betrag den Vorsteuerabzug schon abgezogen hat, oder (ab 250 Euro) ob du dazu eine Liste geführt hast oder es aus deiner Buchführung ersichtlich ist. Bitte beantworte die offene Frage zu diesem Gerät."),
             Self::HandwerkerFoerderungOffen => Some("Zu deinen Handwerkerkosten fehlt noch die Antwort, ob du dafür öffentliche Fördermittel bekommen hast — etwa einen zinsverbilligten Kredit oder einen steuerfreien Zuschuss. Für geförderte Maßnahmen gibt es die Steuerermäßigung nicht. Bitte beantworte diese Frage, auch wenn du keine Förderung bekommen hast."),
             Self::HaushaltEuEwrOffen => Some("Für deine Kosten für Handwerker, Haushaltshilfe oder haushaltsnahe Dienstleistungen fehlt noch die Antwort, ob der Haushalt in der Europäischen Union oder im Europäischen Wirtschaftsraum liegt. Nur dann gibt es die Steuerermäßigung. Bitte beantworte diese Frage — bei einem Haushalt in Deutschland ist sie automatisch mit Ja beantwortet."),
@@ -369,6 +369,9 @@ mod tests {
         );
         for (schluessel, erwartet) in klartext {
             let grund: Sperrgrund = schluessel.parse().unwrap();
+            if ABWEICHENDER_KLARTEXT.contains(&schluessel.as_str()) {
+                continue; // `abweichender_klartext_bleibt_abweichend` haelt diese Gruende
+            }
             assert_eq!(
                 grund.klartext().unwrap(),
                 erwartet.as_str().unwrap(),
@@ -379,6 +382,31 @@ mod tests {
             UNBEKANNTER_SPERRGRUND,
             fixture["unbekannt"].as_str().unwrap()
         );
+    }
+
+    /// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27 in
+    /// `rust/fixtures/README.md`). Streng: jeder Eintrag steht in der Fixture, sein Text weicht ab und nennt den neuen Weg.
+    const ABWEICHENDER_KLARTEXT: [&str; 1] = ["gwg_mehrwertsteuer_offen"];
+
+    /// `gwg_mehrwertsteuer_offen`: Python sagt "Diese Unterscheidung kann die Software noch nicht treffen". Seit der Folgefrage
+    /// `gwg_ohne_vorsteuerabzug` stimmt das nicht mehr; der Text nennt dem Kleinunternehmer den Weg und die 800-Euro-Grenze.
+    /// Wird der Python-Text hier wieder gleich (oder der Wortlaut kuerzer), ist die Liste oder der Text falsch.
+    #[test]
+    fn abweichender_klartext_bleibt_abweichend() {
+        let fixture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+        let klartext = fixture["klartext"].as_object().unwrap();
+        for schluessel in ABWEICHENDER_KLARTEXT {
+            let python = klartext[schluessel].as_str().unwrap();
+            let rust = schluessel.parse::<Sperrgrund>().unwrap().klartext().unwrap();
+            assert_ne!(rust, python, "{schluessel}: gleich dem Python-Text, dann raus aus der Liste");
+            assert!(
+                !rust.contains("noch nicht treffen"),
+                "{schluessel}: der Satz stimmt seit der Folgefrage nicht mehr"
+            );
+            for teil in ["Kleinunternehmer", "selbst getragen", "800 Euro", "bei der Abschreibung"] {
+                assert!(rust.contains(teil), "{schluessel}: der Text nennt {teil:?} nicht");
+            }
+        }
     }
 
     /// Rust-eigene Gruende (Julius 2026-10-04, Kinderfreibetrag je Kind; B Option 1 2026-10-06, Antrag des Ehegatten nach

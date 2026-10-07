@@ -97,13 +97,14 @@ fn rentner_gesamt_fuehrt_jedes_feld_einmal() {
     // (`vorjahr_naht.rs`, `vorjahr_nach_rentner_gesamt_uebernimmt_das_geburtsjahr`). Roh und
     // distinct sind seither gleich. Seit 2026-10-06 stehen sieben Felder nur in Rust dazu
     // (`bruttoarbeitslohn`, `steuerklasse`, fuenf `versorgung_*`): 262; seit 2026-10-07 acht mit
-    // `kind_schulgeld_aufteilung_prozent` (Abweichung Nr. 26): 263.
+    // `kind_schulgeld_aufteilung_prozent` (Abweichung Nr. 26): 263; seit 2026-10-07 neun mit
+    // `gwg_ohne_vorsteuerabzug` (Abweichung Nr. 27): 264.
     let c = Cfg::fuer(Scheibe::RentnerGesamt);
     let f = c.felder(ohne_datei).unwrap();
-    assert_eq!(f.len(), 263, "roh gezaehlt");
+    assert_eq!(f.len(), 264, "roh gezaehlt");
     let n_geburtsjahr = f.iter().filter(|x| x.as_str() == "geburtsjahr").count();
     assert_eq!(n_geburtsjahr, 1, "geburtsjahr steht einmal in der Liste");
     let distinct: std::collections::HashSet<_> = f.iter().collect();
-    assert_eq!(distinct.len(), 263, "jedes Feld genau einmal");
+    assert_eq!(distinct.len(), 264, "jedes Feld genau einmal");
     assert_eq!(c.kegel(ohne_datei).unwrap().len(), 28, "der Meet laeuft ueber 28, nicht 255");
 }
