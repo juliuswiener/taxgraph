@@ -132,16 +132,10 @@ fn feld_ausgeschlossen(
         .any(|glied| bedingung_schliesst_aus(glied, aktiv, sicht, graph, vz))
 }
 
-/// Liegt der Betrag `w` echt ueber `schwelle`? Nur eine Zahl belegt einen Betrag; Text, Wahrheitswert und Null nicht.
-// ponytail: `Gleit` wird in f64 gegen die Schwelle verglichen, genau bis 2^53. Die Schwellen sind kleine Ganzzahlen (heute 0);
-// Upgrade: Decimal-Vergleich, falls eine Schwelle so gross wird.
-#[allow(clippy::cast_precision_loss)]
+/// Liegt der Betrag `w` echt ueber `schwelle`? Nur eine Ganzzahl belegt einen Betrag: `cent` und `int` sind ganzzahlig (kein
+/// Float im Rechenpfad, Tor 2b); Text, Wahrheitswert, Null und eine Kommazahl belegen nichts.
 fn ueber_schwelle(w: &PyWert, schwelle: i64) -> bool {
-    match w {
-        PyWert::Ganz(n) => *n > schwelle,
-        PyWert::Gleit(x) => *x > schwelle as f64,
-        _ => false,
-    }
+    matches!(w, PyWert::Ganz(n) if *n > schwelle)
 }
 
 /// Schliesst GENAU DIESE Bedingung (ein Glied der Kette) das Feld aus?
@@ -594,9 +588,6 @@ mod tests {
             (PyWert::Ganz(0), false),
             (PyWert::Ganz(-1), false),
             (PyWert::Ganz(i64::MIN), false),
-            (PyWert::Gleit(0.5), true),
-            (PyWert::Gleit(0.0), false),
-            (PyWert::Gleit(-0.5), false),
         ] {
             assert_eq!(
                 steht(vec![kinder(1), einzel(), kind1(wert.clone(), true)]),
@@ -604,13 +595,18 @@ mod tests {
                 "bestaetigtes Schulgeld {wert:?}"
             );
         }
-        // Kein Beleg: Schweigen, ein vorlaeufiger Wert, ein Wert, der keine Zahl ist.
+        // Kein Beleg: Schweigen, ein vorlaeufiger Wert, ein Wert, der keine Ganzzahl ist (auch eine Kommazahl ueber 0).
         assert!(!steht(vec![kinder(1), einzel()]), "ohne Schulgeld");
         assert!(!steht(vec![kinder(1), einzel(), kind1(PyWert::Ganz(300_000), false)]), "vorlaeufig");
-        for kein_betrag in [PyWert::Text("300000".to_owned()), PyWert::Bool(true), PyWert::Null] {
+        for kein_betrag in [
+            PyWert::Text("300000".to_owned()),
+            PyWert::Bool(true),
+            PyWert::Null,
+            PyWert::Gleit(300_000.5),
+        ] {
             assert!(
                 !steht(vec![kinder(1), einzel(), kind1(kein_betrag.clone(), true)]),
-                "ein bestaetigter Wert, der keine Zahl ist ({kein_betrag:?}), belegt kein Schulgeld"
+                "ein bestaetigter Wert, der keine Ganzzahl ist ({kein_betrag:?}), belegt kein Schulgeld"
             );
         }
         // Die erste Bedingung (`und`): Zusammenveranlagung schliesst aus, Schweigen auf die Veranlagung nicht.

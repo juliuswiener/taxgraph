@@ -307,11 +307,12 @@ pub struct FeldBedingung {
     /// GENAU diese Zahl ergibt (die Person wird in diesem Jahr so alt). Ein Altersvergleich, den
     /// `wert`/`wert_nicht` nicht ausdruecken (nur Gleichheit gegen den Wert eines anderen Felds).
     pub alter_im_vz: Option<i64>,
-    /// `feld` ist ein Betrag; das Feld bleibt nur, wenn mindestens eine Instanz von `feld` einen
-    /// BESTAETIGTEN Wert ueber dieser Schwelle traegt (Abweichung Nr. 34, Rust-eigen). Anders als
-    /// die uebrigen Arten gilt POSITIVER BEWEIS: Schweigen und ein vorlaeufiger Wert schliessen
-    /// ebenfalls aus. Fuer eine Folgefrage, die ohne den Betrag gegenstandslos ist (der Anteil am
-    /// Schulgeld-Hoechstbetrag), und deren Fehlen nichts kostet (keine Antwort heisst hier: Normalfall).
+    /// `feld` ist ein Betrag (`cent` oder `int`, ganzzahlig); das Feld bleibt nur, wenn mindestens
+    /// eine Instanz von `feld` einen BESTAETIGTEN Wert ueber dieser Schwelle traegt (Abweichung
+    /// Nr. 34, Rust-eigen). Anders als die uebrigen Arten gilt POSITIVER BEWEIS: Schweigen und ein
+    /// vorlaeufiger Wert schliessen ebenfalls aus. Fuer eine Folgefrage, die ohne den Betrag
+    /// gegenstandslos ist (der Anteil am Schulgeld-Hoechstbetrag), und deren Fehlen nichts kostet
+    /// (keine Antwort heisst hier: Normalfall).
     pub groesser_als: Option<i64>,
     /// Eine zweite Bedingung, die ZUSAETZLICH gelten muss: das Feld entfaellt, sobald eine Bedingung
     /// der Kette es ausschliesst. `feld_bedingung` hat nur einen Platz je Feld; `und` ist der zweite.

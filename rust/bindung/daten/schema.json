@@ -369,7 +369,7 @@
             },
             "groesser_als": {
               "type": "integer",
-              "description": "Alternative zu `wert`, wo ein BETRAG entscheidet (Rust-eigen, Python kennt sie nicht): `feld` ist ein Betrag, und das Feld bleibt nur, wenn mindestens eine Instanz von `feld` einen BESTAETIGTEN Wert ueber dieser Schwelle traegt. Anders als alle uebrigen Arten gilt hier POSITIVER BEWEIS: Schweigen und ein vorlaeufiger Wert schliessen ebenfalls aus. Nur fuer eine Folgefrage, deren Fehlen nichts kostet (keine Antwort heisst: Normalfall). Fuer den Anteil am Schulgeld-Hoechstbetrag: nur bei Schulgeld ueber 0."
+              "description": "Alternative zu `wert`, wo ein BETRAG entscheidet (Rust-eigen, Python kennt sie nicht): `feld` ist ein Betrag (`cent` oder `int`, ganzzahlig), und das Feld bleibt nur, wenn mindestens eine Instanz von `feld` einen BESTAETIGTEN Wert ueber dieser Schwelle traegt. Anders als alle uebrigen Arten gilt hier POSITIVER BEWEIS: Schweigen und ein vorlaeufiger Wert schliessen ebenfalls aus. Nur fuer eine Folgefrage, deren Fehlen nichts kostet (keine Antwort heisst: Normalfall). Fuer den Anteil am Schulgeld-Hoechstbetrag: nur bei Schulgeld ueber 0."
             },
             "und": {
               "$ref": "#/$defs/bindung/properties/feld_bedingung",
