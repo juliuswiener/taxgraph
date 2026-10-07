@@ -243,8 +243,8 @@ fn rentner() -> Paare {
     ]
 }
 
-/// `rentner_gesamt` zusammen; die Scheibe kennt `bruttoarbeitslohn_partner` nicht, ihr Partner-Kegel sind
-/// die fuenf KAP-Felder (Nullen).
+/// `rentner_gesamt` zusammen; `bruttoarbeitslohn_partner` kennt die Scheibe seit Abweichung Nr. 33, aber nicht im
+/// Kegel: ihr Partner-Kegel sind die fuenf KAP-Felder (Nullen).
 fn rentner_zusammen() -> Paare {
     plus(
         mit(rentner(), "veranlagung", json!("zusammen")),
@@ -291,8 +291,8 @@ fn an() -> Paare {
     ]
 }
 
-/// Der Partner-Kegel von `rentner_gesamt`: nur die fuenf KAP-Felder (Nullen); die Scheibe kennt
-/// `bruttoarbeitslohn_partner` nicht.
+/// Der Partner-Kegel von `rentner_gesamt`: nur die fuenf KAP-Felder (Nullen); `bruttoarbeitslohn_partner` gehoert
+/// seit Abweichung Nr. 33 zur Scheibe, aber nicht zum Kegel.
 fn partner_kap() -> Paare {
     vec![
         ("kap_kapitalertraege_partner", json!(0)),

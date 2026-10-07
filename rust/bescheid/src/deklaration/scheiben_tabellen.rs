@@ -210,8 +210,12 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 /// plus, nur in Rust (2026-10-06, Vault `rentner-ring-liest-versorgungsbezuege-vor-der-scheibe`), die sieben letzten Namen:
 /// `bruttoarbeitslohn` und `steuerklasse` (die zwei Pflichtfelder der Lohnsteuer-Gruppe) und `GESAMT_VERSORGUNG`. Der
 /// Rentner-Ring liest sie (`zweige/rentner.rs`); sie sind keine Kegel-Felder, die Scheibe bekommt keine neue Pflichtfrage.
+/// Und die sieben allerletzten, ebenfalls nur in Rust (2026-10-07, Abweichung Nr. 33, Vault `rentner-ehegatte-lohn-und-
+/// versorgung-wird-gefragt-nicht-gesperrt`): Lohn, Steuerklasse und die fuenf Versorgungsfelder des Ehegatten, bei
+/// Zusammenveranlagung. Der Ring liest Lohn und Versorgung (`zweige/gesamt.rs::einkuenfte_ns_aus_lohn`, Person B); der
+/// Kegel bleibt bei 28.
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 267] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 274] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -278,6 +282,8 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 267] = [
     "kap_gewinn_sonstige_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner", "agb_zwangslaeufig",
     "agb_notwendig_angemessen", "bruttoarbeitslohn", "steuerklasse", "versorgung_jahresrente",
     "versorgung_bemessungsgrundlage", "versorgung_beginn_jahr", "versorgung_art", "versorgung_alter_bei_beginn",
+    "bruttoarbeitslohn_partner", "steuerklasse_partner", "versorgung_jahresrente_partner", "versorgung_bemessungsgrundlage_partner",
+    "versorgung_beginn_jahr_partner", "versorgung_art_partner", "versorgung_alter_bei_beginn_partner",
 ];
 
 /// `SCHEIBEN['rentner_gesamt']["kegel"]` = `RENTNER_KEGEL + AGB_TATBESTAND`

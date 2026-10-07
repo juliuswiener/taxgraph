@@ -53,12 +53,14 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// 84 -> 85 und 360 -> 361, die Kegel bleiben bei 33 und 35, `rentner_gesamt` bei 264; danach am 2026-10-07
 /// `parteispenden_betrag` in `gesamt` und `rentner_gesamt` (Abweichung Nr. 31), 361 -> 362 und 264 -> 265, die Kegel bleiben;
 /// danach am 2026-10-07 `alter_55_vor_verkauf` und `alter_55_vor_verkauf_partner` in beiden (Abweichung Nr. 32), 362 -> 364 und 265 -> 267, die Kegel bleiben;
+/// danach am 2026-10-07 `bruttoarbeitslohn_partner`, `steuerklasse_partner` und die fuenf `versorgung_*_partner`-Felder in
+/// `rentner_gesamt` (Abweichung Nr. 33), 267 -> 274, der Kegel bleibt bei 28, `gesamt` bei 364;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 85, 33),
     (Scheibe::Gesamt, 364, 35),
-    (Scheibe::RentnerGesamt, 267, 28),
+    (Scheibe::RentnerGesamt, 274, 28),
 ];
 
 fn registry() -> &'static Registry {
@@ -326,7 +328,11 @@ const BETRAGSFELDER_OHNE_KZ: &[&str] = &[
     "verguetung_ueberlassung_partner",
     "verlustvortrag_bestand",
     "versorgung_bemessungsgrundlage",
+    // Seit 2026-10-07 (Abweichung Nr. 33): nicht in der Python-Liste. Wie `versorgung_bemessungsgrundlage` und
+    // `versorgung_jahresrente` von Person A: kein Kz, der Betrag steht mit Grund in `nicht_deklariert`.
+    "versorgung_bemessungsgrundlage_partner",
     "versorgung_jahresrente",
+    "versorgung_jahresrente_partner",
     "vor_ag_anteil_rv_partner",
     "vor_an_anteil_rv_partner",
     "vor_rv_ausserhalb_lstb_partner",

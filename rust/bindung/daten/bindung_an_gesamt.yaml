@@ -1473,6 +1473,109 @@ bindungen:
       zitatanker: "Für die Durchführung des Lohnsteuerabzugs werden Arbeitnehmer in Steuerklassen eingereiht."
       datei: "sources/gesetze-im-internet/estg_p38b_2026-08-10.txt"
 
+  # ========================= Versorgungsbezüge Person B (§ 19 Abs. 2) — Abweichung Nr. 33 ==============
+  # Rust-eigen (Python kennt diese fünf Felder nicht): die Rentner-Scheibe fragt Lohn, Steuerklasse und Versorgung des
+  # Ehegatten bei Zusammenveranlagung, analog zu Person A (Entscheidung `rentner-ehegatte-lohn-und-versorgung-wird-gefragt-
+  # nicht-gesperrt`). Der Rentner-Ring liest sie in `zweige/gesamt.rs::einkuenfte_ns_aus_lohn` (Person B).
+  #
+  # Die Bedingung "nur bei Zusammenveranlagung" kommt wie bei `bruttoarbeitslohn_partner` aus der Regel
+  # `p2_festzusetzung_zusammen` (regel_bedingungen: bei bestaetigtem `einzel` faellt die ganze Regel weg). KEINE
+  # `geltungsbedingung`: ein Betragsfeld ist kein Gate (Entscheidung `ein-neues-betragsfeld-haengt-an-feld-bedingung-nie-an-
+  # geltungsbedingung`). `signatur_slot` ist ein Etikett, der Ring liest beim Feldnamen.
+  - feld_id: versorgung_jahresrente_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_jahresrente_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel Versorgung hat dein Ehe-/Lebenspartner dieses Jahr insgesamt bekommen (Ruhegehalt, Betriebsrente, Witwen-/Waisengeld)?"
+    hilfe_kurz: "Der Jahresbetrag der Pension, Betriebsrente oder Versorgung deines Partners, bevor etwas abgezogen wird. Steht in seiner Versorgungsmitteilung."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wie `versorgung_jahresrente` von Person A: kein Kz-Eintrag in Rust, die Kz-Wahl hinge an der Versorgungsart (Anlage N oder R). Person B (Person-Multiplikation) bekaeme dieselben Kz in der zweiten Instanz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 1 EStG"
+      zitatanker: "bleiben ein nach einem Prozentsatz ermittelter, auf einen Höchstbetrag begrenzter Betrag"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_bemessungsgrundlage_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_bemessungsgrundlage_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Welcher Betrag steht im Steuerbescheid deines Partners als Bemessungsgrundlage für den Versorgungsfreibetrag (in Euro)?"
+    hilfe_kurz: "Das Zwölffache des Monatsbezugs bei Versorgungsbeginn, plus anrechenbare Sonderzahlungen. Dieser Wert ändert sich nie — auch Rentensteigerungen ändern ihn nicht. Der Betrag steht im Steuerbescheid deines Partners."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wie `versorgung_bemessungsgrundlage` von Person A: keine Anlage-Kz (interne Bemessung fuer den Freibetrag, kein Deklarationsfeld)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 4 EStG"
+      zitatanker: "das Zwölffache des Versorgungsbezugs für den ersten vollen Monat, jeweils zuzüglich voraussichtlicher Sonderzahlungen"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_beginn_jahr_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_beginn_jahr_partner}
+    typ: int
+    einheit: Jahr
+    bereich: {min: 1955, max: 2060, grund: "Jahr des Versorgungsbeginns; Kohorten-Staffel nach dem Jahr bestimmt den Freibetrag lebenslang."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Jahr hat dein Ehe-/Lebenspartner die Versorgung zum ersten Mal bekommen?"
+    hilfe_kurz: "Das Jahr der Pensionierung oder des Betriebsrenten-Starts deines Partners. Dieses Jahr bestimmt seinen Steuerfreibetrag für immer."
+    beispielwert: 2020
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wie `versorgung_beginn_jahr` von Person A: Kohorten-Schluessel fuer den Freibetrag (Jahr-Granularitaet). Kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 3 EStG"
+      zitatanker: "Jahr des Versorgungsbeginns"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_art_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_art_partner}
+    typ: enum
+    einheit: null
+    enum_werte: ["beamtenrechtlich", "hinterbliebene", "erwerbsminderung", "altersgrenze_sonstige"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Art von Versorgung bekommt dein Ehe-/Lebenspartner?"
+    hilfe_kurz: "Beamtenrechtlich: Ruhegehalt eines Beamten oder öffentlichen Körperschaft. Hinterbliebene: Witwen-, Waisengeld. Erwerbsminderung: Rente wegen Behinderung. Altersgrenze: Betriebsrente, Direktversicherung."
+    beispielwert: "beamtenrechtlich"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wie `versorgung_art` von Person A: Art-Weiche fuer das Alters-Gate. Kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 1-2 EStG"
+      zitatanker: "auf Grund beamtenrechtlicher oder entsprechender gesetzlicher Vorschriften"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_alter_bei_beginn_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_alter_bei_beginn_partner}
+    feld_bedingung: {feld: versorgung_art_partner, wert: altersgrenze_sonstige, grund: "§ 19 Abs. 2 S. 2 Nr. 2 EStG: das Alters-Gate (63. Lebensjahr, 60. bei Schwerbehinderung) gilt nur fuer Versorgungsbezuege, die nicht auf beamtenrechtlichen oder entsprechenden Vorschriften beruhen und nicht Hinterbliebenen- oder Erwerbsminderungsbezuege sind. `versorgung_art_partner` erhebt genau diese Art. Fail-closed ueber `wert`: nur eine BESTAETIGTE andere Art schliesst die Frage aus; unbeantwortet und vorlaeufig lassen sie stehen."}
+    typ: int
+    einheit: null
+    bereich: {min: 18, max: 100, grund: "Vollendetes Lebensjahr bei Versorgungsbeginn; Alters-Gate nach dem Jahr (63 Lj, 60 Lj bei Schwerbehinderung)."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie alt war dein Ehe-/Lebenspartner (vollendetes Lebensjahr), als die Versorgung begonnen hat?"
+    hilfe_kurz: "Nur bei nicht-beamtenrechtlichen Versorgungen nötig. Der Freibetrag wird nur gewährt, wenn dein Partner mindestens 63 Jahre alt war (oder 60, falls schwerbehindert)."
+    beispielwert: 63
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wie `versorgung_alter_bei_beginn` von Person A: Alters-Gate fuer den Ring, nur bei versorgung_art_partner=altersgrenze_sonstige gefragt. Kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"
+      zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
   - feld_id: p36_lohnsteuer_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
     feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: die Lohnsteuerbescheinigung stellt der Arbeitgeber am Ende des Dienstverhaeltnisses aus; einbehaltene Lohnsteuer, Steuerklasse und die beiden Rentenversicherungsanteile stehen darauf. Ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es weder Arbeitgeber noch Bescheinigung, aus der etwas abzulesen waere. `bruttoarbeitslohn_partner` erhebt genau diese Existenz. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus — unbeantwortet und ein vorlaeufiger Beleg-Vorschlag lassen die Frage stehen. NICHT gegated sind die Vorsorge-Felder des Partners (basis_kv_partner, basis_pv_partner, vorsorge_*_partner und vor_rv_ausserhalb_lstb_partner = Beitraege AUSSERHALB der Lohnsteuerbescheinigung): die traegt auch ein Partner ohne Anstellung, und eine Bedingung darauf naehme ihm den Vorsorgeabzug."}

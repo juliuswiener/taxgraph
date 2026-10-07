@@ -167,9 +167,12 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     let (laufend, mitu) = laufender_gewinn(f, &q)?;
     // § 19-Einkuenfte Person A: Arbeitslohn und Versorgungsbezuege wie im gesamt-Ring (derselbe Kern). Der
     // Rentner-Ring liest keine Slots, der Lohn kommt aus dem Feld; Werbungskosten ausser dem Pauschbetrag
-    // kennt die Scheibe nicht, Person B (`bruttoarbeitslohn_partner`) ebenso wenig.
+    // kennt die Scheibe nicht. Bei Zusammenveranlagung zaehlen Lohn und Versorgung des Ehegatten (Person B,
+    // `*_partner`, Abweichung Nr. 33) in dieselbe Summe, sonst nicht.
+    let veranlagung = VeranlagungWert::aus_oder_einzel(feld_veranlagung(f));
+    let zusammen = veranlagung.zusammen();
     let lohn = feld_euro_oder_null(f, "bruttoarbeitslohn")?;
-    let ns = einkuenfte_ns_aus_lohn(f, vz, p, lohn, Euro::new(0), false)?;
+    let ns = einkuenfte_ns_aus_lohn(f, vz, p, lohn, Euro::new(0), zusammen)?;
     // § 24a-Bemessung: Arbeitslohn plus Nicht-§19-Einkuenfte (Gewinn + § 23); Versorgungsbezuege und
     // Leibrente § 22 Nr. 1 sind ausgenommen (§ 24a Satz 2 Nr. 1 und 2).
     let alt = p24a_altersentlastung(
@@ -183,8 +186,6 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     )?;
     let ent = entlastung_24b(f)?;
     let (gewinn_partner, _mitu_partner, netto_vg_partner) = gewinn_partner_anteil(f)?;
-    let veranlagung = VeranlagungWert::aus_oder_einzel(feld_veranlagung(f));
-    let zusammen = veranlagung.zusammen();
     let mut g = GesamtfallEingabe {
         einkuenfte_nichtselbststaendig: ns,
         einkuenfte_sonstige: renten,

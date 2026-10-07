@@ -44,7 +44,7 @@ use tower::ServiceExt;
 
 /// Zahl der Faelle im Golden-Master. Ein gestrichener Fall faellt im Vergleich nicht auf (die Datei
 /// traegt die Eingaben selbst); diese Zahl haelt ihn auf.
-const N_FAELLE: usize = 20;
+const N_FAELLE: usize = 21;
 
 /// Bis zu dieser Tiefe schreibt der Schreiber Objekte und Listen mit Unterstrukturen zeilenweise; darunter
 /// steht ein Wert in einer Zeile. Wurzel 0, `faelle` 1, Fall 2, `stand`/`fragen`/`einzeln` 3,

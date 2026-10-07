@@ -656,7 +656,9 @@ fn die_rentner_scheibe_rechnet_den_partner_antrag_ebenso() {
             ("rentner_veraeusserungs_betriebsart_partner", json!("gewerbe")),
             ("rentner_alter_55_oder_berufsunfaehig_partner", json!(true)),
             ("rentner_freibetrag_erstmalig_partner", json!(true)),
-            ("bruttoarbeitslohn_partner", json!(6_000_000)),
+            // 0, nicht 60.000: bis Abweichung Nr. 33 las der Rentner-Ring den Lohn des Ehegatten nie, der Wert war
+            // ohne Wirkung. Seither zaehlt er (Lohn - 1.230 EUR im Gesamtbetrag); die Handrechnung oben hat keinen.
+            ("bruttoarbeitslohn_partner", json!(0)),
             ("kap_kapitalertraege_partner", json!(0)),
             ("kap_gewinn_aktien_partner", json!(0)),
             ("kap_gewinn_sonstige_partner", json!(0)),

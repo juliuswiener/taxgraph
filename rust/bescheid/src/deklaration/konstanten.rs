@@ -283,7 +283,7 @@ pub(super) const RING_GESAMT: [&str; 101] = [
     "vpf_tage_ueber_8h_nach_drei_monaten",
 ];
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_RENTNER_GESAMT: [&str; 83] = [
+pub(super) const RING_RENTNER_GESAMT: [&str; 88] = [
     "afa_jahresbetrag",
     "agb_aufwendungen",
     "basis_kv_partner",
@@ -293,6 +293,7 @@ pub(super) const RING_RENTNER_GESAMT: [&str; 83] = [
     "berufsausbildung_aufwendungen",
     "betriebseinnahmen",
     "bruttoarbeitslohn",
+    "bruttoarbeitslohn_partner",
     "dba_auslaendische_einkuenfte",
     "dba_gezahlte_auslaendische_steuer",
     "einkuenfte_gewinn",
@@ -356,9 +357,13 @@ pub(super) const RING_RENTNER_GESAMT: [&str; 83] = [
     "verguetung_ueberlassung_partner",
     "verlustvortrag_bestand",
     "versorgung_alter_bei_beginn",
+    "versorgung_alter_bei_beginn_partner",
     "versorgung_beginn_jahr",
+    "versorgung_beginn_jahr_partner",
     "versorgung_bemessungsgrundlage",
+    "versorgung_bemessungsgrundlage_partner",
     "versorgung_jahresrente",
+    "versorgung_jahresrente_partner",
     "vor_ag_anteil_rv_partner",
     "vor_an_anteil_rv_partner",
     "vor_rv_ausserhalb_lstb_partner",

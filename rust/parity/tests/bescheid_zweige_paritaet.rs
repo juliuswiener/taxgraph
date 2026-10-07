@@ -280,7 +280,10 @@ const RENTNER: &str = "festzusetzende_est_rentner";
 /// Die Liste folgt Nr. 25, nicht dem Minimum: der Ring rechnet Versorgung nur, wenn Jahresrente, Bemessung
 /// und Beginn alle gesetzt sind, und liest `steuerklasse` nie. Ein Feld weniger in der Liste bleibt
 /// deshalb gruen (gemessen fuer `versorgung_jahresrente`), ohne Lohn sofort rot.
-const GEWOLLT_ABWEICHEND_NR25: [&str; 7] = [
+/// Abweichung Nr. 33 (Entscheidung `rentner-ehegatte-lohn-und-versorgung-wird-gefragt-nicht-gesperrt`): dieselben sieben
+/// Felder fuer den Ehegatten (`*_partner`). Der Ring liest sie bei Zusammenveranlagung, Python nie. Gemessen ist das
+/// Maskieren der sieben neuen Namen hier NICHT (Python-Orakel in diesem Lauf nicht gebaut).
+const GEWOLLT_ABWEICHEND_NR25: [&str; 14] = [
     "bruttoarbeitslohn",
     "steuerklasse",
     "versorgung_jahresrente",
@@ -288,6 +291,13 @@ const GEWOLLT_ABWEICHEND_NR25: [&str; 7] = [
     "versorgung_beginn_jahr",
     "versorgung_art",
     "versorgung_alter_bei_beginn",
+    "bruttoarbeitslohn_partner",
+    "steuerklasse_partner",
+    "versorgung_jahresrente_partner",
+    "versorgung_bemessungsgrundlage_partner",
+    "versorgung_beginn_jahr_partner",
+    "versorgung_art_partner",
+    "versorgung_alter_bei_beginn_partner",
 ];
 
 thread_local! {
