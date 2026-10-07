@@ -454,4 +454,76 @@ mod tests {
         let (a, b) = (feld("a", Some(("b", None))), feld("b", Some(("a", None))));
         assert_eq!(ids(&nach_ausloesern(vec![&a, &b])), ["a", "b"]);
     }
+
+    /// Ein Ereignis fuer `feld_id` mit dem rohen Wert `wert`, am Store vorbei geschrieben (die Bindung prueft hier nichts).
+    fn ereignis(feld_id: &str, wert: PyWert, bestaetigt: bool) -> store::Event {
+        use domain::{Achsenwert, Herkunft, PruefTiefe, Schreiber, Zustand};
+        let mut e = store::Event {
+            event_id: store::EventId::aus_bytes([0; 32]),
+            ts: "2026-10-07T10:00:00Z".to_owned(),
+            feld_id: feld_id.to_owned(),
+            wert,
+            zustand: if bestaetigt { Zustand::Bestaetigt } else { Zustand::Vorlaeufig },
+            herkunft: Herkunft {
+                herkunft: Achsenwert::new("laie").unwrap(),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: Achsenwert::new("nutzer").unwrap(),
+            }
+            .into(),
+            schreiber: Schreiber::Mensch("julius".to_owned()),
+            signal: None,
+            ersetzt: None,
+        };
+        e.event_id = e.berechne_event_id().unwrap();
+        e
+    }
+
+    /// Steht die Frage `feld` in der Queue eines Falls (VZ 2025), der nur `geburtsjahr` kennt?
+    fn frage_steht(feld: &str, geburtsjahr: Option<(PyWert, bool)>) -> bool {
+        let reg = crate::doctest_registry().expect("registry");
+        let g = Graph::aus_registry(&reg);
+        let events = geburtsjahr
+            .into_iter()
+            .map(|(w, b)| ereignis("geburtsjahr", w, b))
+            .collect();
+        let s = Store::aus_datei(store::StoreDatei {
+            version: 1,
+            veranlagungszeitraum: store::Veranlagungsjahr(2025),
+            fall_id: None,
+            scheibe: None,
+            user_id: None,
+            events,
+            snapshots: Vec::new(),
+            vorjahr_referenz: None,
+        });
+        let ohne_beitrag: Option<&HashMap<String, i64>> = None;
+        naechste_fragen(&s, g.alle(), &g, ohne_beitrag).contains(&feld)
+    }
+
+    /// `feld_bedingung.alter_im_vz` (Abweichung Nr. 32): die Frage nach dem 55. Geburtstag steht nur, wenn das BESTAETIGTE
+    /// Geburtsjahr im Veranlagungsjahr genau 55 Jahre ergibt (2025 − 1970). Jedes andere bestaetigte Ganzzahl-Geburtsjahr
+    /// schliesst sie aus, auch am Rand von `i64` (kein Ueberlauf). Fail-closed: kein, ein vorlaeufiges oder ein bestaetigtes
+    /// Geburtsjahr, das keine Ganzzahl ist, schliesst sie nicht aus.
+    #[test]
+    fn die_altersbedingung_schliesst_nur_ein_bestaetigtes_anderes_geburtsjahr_aus() {
+        let frage = |gj| frage_steht("alter_55_vor_verkauf", gj);
+        let bestaetigt = |w: PyWert| Some((w, true));
+        let vorlaeufig = |w: PyWert| Some((w, false));
+        assert!(frage(bestaetigt(PyWert::Ganz(1970))), "2025 minus 1970 ist 55");
+        for anders in [1969, 1971, 1900, 2010, 0, -1] {
+            assert!(!frage(bestaetigt(PyWert::Ganz(anders))), "geboren {anders}");
+        }
+        for rand in [i64::MIN, i64::MAX] {
+            assert!(!frage(bestaetigt(PyWert::Ganz(rand))), "geboren {rand}: kein Ueberlauf, kein 55. Jahr");
+        }
+        assert!(frage(None), "ohne Geburtsjahr bleibt die Frage");
+        assert!(frage(vorlaeufig(PyWert::Ganz(1971))), "ein vorlaeufiges Geburtsjahr schliesst nicht aus");
+        assert!(frage(vorlaeufig(PyWert::Ganz(1970))), "ein vorlaeufiges Geburtsjahr im Jahr 55 laesst die Frage stehen");
+        for kein_jahr in [PyWert::Text("1971".to_owned()), PyWert::Gleit(1971.0), PyWert::Bool(false), PyWert::Null] {
+            assert!(
+                frage(bestaetigt(kein_jahr.clone())),
+                "ein bestaetigter Wert, der keine Ganzzahl ist ({kein_jahr:?}), schliesst die Frage nicht aus"
+            );
+        }
+    }
 }
