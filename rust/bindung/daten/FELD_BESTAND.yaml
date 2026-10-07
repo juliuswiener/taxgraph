@@ -79,6 +79,7 @@ felder:
   - ep_eigenes_kfz
   - ep_entfernung_km
   - ep_oepnv_kosten
+  - ep_unfallkosten
   - ep_ziel_adresse
   - ep_ziel_des_weges
   - ermaessigung_einmal_genutzt

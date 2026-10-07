@@ -32,6 +32,13 @@ const SCHULGELD_ANTEIL: &str = "kind_schulgeld_aufteilung_prozent";
 /// Der Anteil, der "je zur Haelfte" heisst; er steht nicht im XML.
 const SCHULGELD_ANTEIL_HAELFTE: i64 = 50;
 
+/// Nur Rust (Abweichung Nr. 28): Unfallkosten auf dem Weg zur Arbeit, zusaetzlich zur Entfernungspauschale.
+const UNFALLKOSTEN: &str = "ep_unfallkosten";
+
+/// Der Grund der Abgabe-Sperre bei Unfallkosten ueber 0 (`ep_unfallkosten` ohne geprueftes Kz): die Rechnung zieht den
+/// Betrag ab, das XML traegt ihn nicht. Die Steuer im Bescheid und die Zahl der Erklaerung wuerden auseinanderlaufen.
+const UNFALLKOSTEN_SPERRE: &str = "Unfallkosten über 0 Euro: Für diesen Betrag gibt es noch kein geprüftes ELSTER-Kennzeichen. Die Abgabe ist deshalb gesperrt. Setze den Betrag auf 0 oder lösche ihn, wenn du ohne diesen Abzug abgeben willst.";
+
 /// Die materialisierte Felder-Ebene eines Snapshots (`feld_id -> {wert, zustand, herkunft}`).
 pub type Felder = BTreeMap<String, SnapshotFeld>;
 
@@ -391,6 +398,23 @@ impl Bau<'_> {
         Ok(false)
     }
 
+    /// `ep_unfallkosten` OHNE geprueftes Kz (Abweichung Nr. 28): der Betrag steht mit Grund in `nicht_deklariert`. Ueber 0
+    /// sperrt er die Abgabe ([`UNFALLKOSTEN_SPERRE`], 409 `deklaration_unvollstaendig`), denn die Rechnung zieht ihn ab und
+    /// das XML trug ihn nicht: ein Bescheid, dessen Abzug die Erklaerung verschweigt, ist die bekannte Naht-Luecke.
+    /// Traegt die Bindung ein Kz, greift dieser Zweig nicht mehr: die Sperre faellt mit dem Eintrag.
+    fn unfallkosten(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) -> Ergebnis<()> {
+        let betrag = py::int(wert).map_err(wert_fehler(feld_id))?;
+        let grund = b
+            .elster_kz_grund
+            .clone()
+            .unwrap_or_else(|| "kein elster_kz".to_owned());
+        self.nicht(feld_id, grund);
+        if betrag > 0 {
+            self.offen(feld_id, UNFALLKOSTEN_SPERRE);
+        }
+        Ok(())
+    }
+
     /// `_deklariere_instanz` (`est_mapping.py:590-632`).
     fn instanz_feld(
         &mut self,
@@ -635,6 +659,8 @@ impl Bau<'_> {
                 schreibe_kz(&mut self.deklaration, kz, wert, Some(b.typ), self.null_kz)
                     .map_err(&fehler)?;
             }
+        } else if let (UNFALLKOSTEN, None) = (feld_id, kz_von(b)) {
+            self.unfallkosten(feld_id, wert, b)?;
         } else if let Some(kz) = kz_von(b) {
             schreibe_kz(&mut self.deklaration, kz, wert, Some(b.typ), self.null_kz)
                 .map_err(&fehler)?;

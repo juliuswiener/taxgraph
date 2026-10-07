@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "bmf/2021-11-18/IV-C-5-S-2351-20-10001-002/wortlaut"
+  norm: "BMF-Schreiben Entfernungspauschalen v. 18.11.2021 (BStBl I 2021, 2315), Wortlaut LStH 2026 Anhang 14 (Abschnitt 4 Rz. 30: Unfallkosten)"
+  fassung: "18.11.2021, LStH 2026 Anhang 14"
+  quelle_url: "https://esth.bundesfinanzministerium.de/lsth/2026/B-Anhaenge/Anhang-14/inhalt.html"
+  abrufdatum: "2026-10-07"
+  datei: "bmf_entfernungspauschalen_wortlaut_2021-11-18.txt"
+  sha256: "97211351135a919e34ab25ddbea33b8a4b3e35ead5fad2a13174a7b23208f8ed"
+  authority: verwaltung
+  redistributable: true
+  einfrier_ebene: schreiben
+  verwendet_in: ["rust/bindung/daten/bindung_n_vor_gwg.yaml (ep_unfallkosten)"]

@@ -303,10 +303,19 @@ fn konstanten_wie_orakel() {
     let flag: Value = k::FLAG_NEGIERT.iter().map(|(f, l)| json!([f, l])).collect();
     assert_eq!(flag, py["flag_negiert"], "FLAG_NEGIERT");
     assert_eq!(json!(k::PARTNER_FELDER), py["partner_felder"]);
+    // Abweichung Nr. 28: `ep_unfallkosten` steht nur in Rust (Python kennt das Feld nicht). Der Rest ist das Orakel, und
+    // genau EIN Feld ist ausgenommen: ein zweites Rust-Feld braucht seine eigene Zeile hier.
+    let ohne_rust_felder: Vec<&str> = k::RING_BETRAGSFELDER
+        .iter()
+        .copied()
+        .filter(|f| *f != "ep_unfallkosten")
+        .collect();
     assert_eq!(
-        json!(k::RING_BETRAGSFELDER.as_slice()),
-        py["ring_betragsfelder"]
+        ohne_rust_felder.len() + 1,
+        k::RING_BETRAGSFELDER.len(),
+        "ep_unfallkosten fehlt in RING_BETRAGSFELDER"
     );
+    assert_eq!(json!(ohne_rust_felder), py["ring_betragsfelder"]);
     let ng: Value = k::NICHT_GERECHNET
         .iter()
         .map(|(f, t)| json!([f, t]))

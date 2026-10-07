@@ -51,6 +51,7 @@ Kurzzitat gegen Quellsegment).
 | § 10c EStG | geltend (36 Euro) | 2026-07-09 | gesetz |
 | § 9 Abs. 1 Nr. 4/Abs. 2 EStG | 2026 (StAendG 2025, 0,38 ab km 1) | 2026-07-09 | gesetz |
 | BMF-Schreiben Entfernungspauschalen | 18.11.2021 (BStBl I 2021, 2315) | 2026-07-09 | verwaltung |
+| BMF-Schreiben Entfernungspauschalen, Wortlaut (LStH 2026 Anhang 14, Rz. 30 Unfallkosten) | 18.11.2021 (BStBl I 2021, 2315) | 2026-10-07 | verwaltung |
 
 ## Einfrier-Ebene: mindestens ein ganzer Paragraph
 

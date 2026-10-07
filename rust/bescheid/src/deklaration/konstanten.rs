@@ -147,13 +147,14 @@ pub(super) fn ring_kandidaten(scheibe: Scheibe) -> &'static [&'static str] {
 }
 
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_AN_GESAMT: [&str; 28] = [
+pub(super) const RING_AN_GESAMT: [&str; 29] = [
     "am_anschaffung_monat",
     "am_anschaffungskosten",
     "arbeitsmittel_nutzungsdauer",
     "basis_kv_partner",
     "basis_pv_partner",
     "bruttoarbeitslohn_partner",
+    "ep_unfallkosten",
     "p36_lohnsteuer",
     "p36_vorauszahlungen",
     "uebernachtung_kosten_monat",
@@ -178,7 +179,7 @@ pub(super) const RING_AN_GESAMT: [&str; 28] = [
     "vpf_tage_ueber_8h_nach_drei_monaten",
 ];
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_GESAMT: [&str; 99] = [
+pub(super) const RING_GESAMT: [&str; 100] = [
     "afa_jahresbetrag",
     "agb_aufwendungen",
     "am_anschaffung_monat",
@@ -197,6 +198,7 @@ pub(super) const RING_GESAMT: [&str; 99] = [
     "dhf_unterkunftskosten_monat",
     "einkuenfte_gewinn",
     "einkuenfte_gewinn_partner",
+    "ep_unfallkosten",
     "fam_anzahl_kinder",
     "fam_monate_ohne_voraussetzung",
     "geburtsjahr",

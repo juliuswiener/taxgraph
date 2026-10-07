@@ -9,13 +9,15 @@ use engine::zugriff::teil1::werbungskosten::EntfernungspauschaleEingabe;
 use intervall::Slots;
 use rust_decimal::Decimal;
 
-use super::rechnen::R;
+use super::rechnen::{add, R};
 use super::slot;
 use crate::abzuege::oepnv_eur;
 use crate::{
-    cent_zu_euro, feld_int_oder_null, ist_true, py_int, summe, wert, BescheidFehler, Felder,
+    cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_true, py_int, summe, wert,
+    BescheidFehler, Felder,
 };
 
+const UNFALLKOSTEN: &str = "ep_unfallkosten";
 const DHF_KOSTEN: &str = "dhf_unterkunftskosten_monat";
 const DHF_BEDINGUNGEN: [&str; 3] = [
     "dhf_beruflich_veranlasst",
@@ -88,6 +90,22 @@ pub(super) fn ep_eingabe(vz: Vz, slots: &Slots) -> R<EntfernungspauschaleEingabe
         eigenes_oder_ueberlassenes_kfz: kfz.truthy(),
         oepnv_kosten_jahr: oepnv,
     })
+}
+
+/// Unfallkosten auf dem Weg zur Arbeit (`ep_unfallkosten`, Abweichung Nr. 28): BMF-Schreiben vom 18.11.2021, Rz. 30 — sie
+/// sind „weiterhin neben der Entfernungspauschale zu beruecksichtigen“. Sie kommen deshalb NACH `werbungskosten_n` zu den
+/// Werbungskosten dazu und liegen ausserhalb des Hoechstbetrags von 4.500 EUR der Pauschale. Python kennt das Feld nicht.
+///
+/// Leer, 0 und negativ heissen 0: `nicht_negativ` haelt die Schreibseite, das Laden prueft nie.
+///
+/// ponytail: nur der Weg zwischen Wohnung und erster Taetigkeitsstaette; Familienheimfahrten und der Kilometersatz fuer
+/// Menschen mit Behinderungen (selbe Rz. 30, Rz. 29) stehen nicht darin. Upgrade: je ein eigenes Feld, derselbe Aufruf.
+///
+/// # Errors
+/// [`BescheidFehler::Ueberlauf`].
+pub(super) fn mit_unfallkosten(f: &Felder, wk: Euro) -> R<Euro> {
+    let unfall = feld_euro_oder_null(f, UNFALLKOSTEN)?;
+    add(wk, Euro::new(unfall.get().max(0)))
 }
 
 fn alle_true(f: &Felder, ids: &[&str]) -> bool {
