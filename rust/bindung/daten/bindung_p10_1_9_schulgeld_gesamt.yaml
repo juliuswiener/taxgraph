@@ -8,6 +8,9 @@ bindungen:
     instanz_gruppe: kind
     vorschlagbar_von: [beleg, llm]
     quelle: {regel_id: p10_1_9_schulgeld, signatur_slot: aufwendungen}
+    # Eingangsfrage (2026-10-07, mit `kind_schulgeld_aufteilung_prozent`): "Wie viel Schulgeld hast du gezahlt?" ist die
+    # Existenzfrage des Themas. Ohne die Zeile stuende die Frage nach dem Anteil am Hoechstbetrag VOR ihr.
+    eingangsfrage: true
     typ: cent
     einheit: EUR
     askable: true
@@ -22,6 +25,40 @@ bindungen:
       quelle: "§ 10 Abs. 1 Nr. 9 S. 1 EStG"
       zitatanker: "30 Prozent des Entgelts, höchstens 5 000 Euro, das der Steuerpflichtige für ein Kind, für das er Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kindergeld hat, für dessen Besuch einer Schule"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  # Anteil am Höchstbetrag (gebaut 2026-10-07, Abweichung Nr. 26 in rust/fixtures/README.md). Das Gesetz gewährt
+  # den Höchstbetrag je Kind "je Elternpaar nur einmal"; der Vordruck (Anlage Kind, Schulgeld, Eltern ohne
+  # Zusammenveranlagung) fragt den Anteil, wenn laut gemeinsamem Antrag NICHT je zur Hälfte aufgeteilt wird.
+  # Leer oder 50 rechnet wie bisher (2.500 EUR Höchstbetrag je Kind bei Einzelveranlagung); Anteil p ergibt
+  # 5.000 EUR * p / 100. Zusammenveranlagung liest das Feld nicht (feld_bedingung, wie die Satz-3-Felder des
+  # Kinderfreibetrags). Das Kz steht nur im XML, wenn der Anteil von 50 abweicht (rust/elster/src/deklaration.rs).
+  # NICHT als Gate gedacht und nicht sperrend: "je zur Hälfte" ist der Normalfall, eine fehlende Antwort heisst
+  # hälftig, nicht gesperrt (Vault: decisions/schulgeld-anteil-je-kind-in-prozent-wird-in-rust-gebaut).
+  - feld_id: kind_schulgeld_aufteilung_prozent
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_9_schulgeld, geltungsbedingung: schulgeld_anteil_am_hoechstbetrag}
+    # `gate: false`: der Anteil ist keine Rechen-Voraussetzung, sondern DEKLARATION mit Normalfall. Ohne die Zeile
+    # stuende die ganze Schulgeld-Regel auf `unentschieden`, bis jeder Nutzer mit Kind den Anteil beantwortet hat
+    # (gemessen im Golden-Master: `status` von `relevant` auf `unentschieden`). Mit ihr bleibt die Regel `relevant`,
+    # und die Annahme "je zur Haelfte" steht als offene Annahme in `annahmen_offen` statt still in der Rechnung.
+    gate: false
+    typ: int
+    einheit: Prozent
+    bereich: {min: 0, max: 100, grund: "Anteil des Steuerpflichtigen am Höchstbetrag in Prozent; das Schema (E0504603) lässt 0 bis 100 zu."}
+    askable: true
+    vorjahr: vorschlag
+    feld_bedingung: {feld: veranlagung, wert: einzel, grund: "Der Anteil am Höchstbetrag gilt nur für Eltern, die nicht zusammen veranlagt werden: das Kz E0504603 steht im Schema im Abschnitt Schulgeld/Elt_k_ZV (Eltern ohne Zusammenveranlagung). Bei Zusammenveranlagung steht beiden Ehegatten zusammen der volle Höchstbetrag von 5.000 Euro je Kind zu, ein Anteil entfällt."}
+    fragetext_laie: "Wie viel Prozent des Höchstbetrags für das Schulgeld dieses Kindes stehen dir zu? Nur nötig, wenn ihr als Eltern gemeinsam beantragt habt, den Höchstbetrag nicht je zur Hälfte aufzuteilen."
+    hilfe_kurz: "Ohne gemeinsamen Antrag teilen sich die Eltern den Höchstbetrag je zur Hälfte (50). Hast du mit dem anderen Elternteil gemeinsam eine andere Aufteilung beantragt, trage deinen Anteil ein, zum Beispiel 100, wenn du das Schulgeld allein trägst und der andere Elternteil auf seinen Anteil verzichtet. Antwortest du 50, rechnet die Software wie ohne Antrag."
+    # Nicht 50: bei 50 (je zur Haelfte) steht das Kz nicht im XML, und die Abdeckungspruefung
+    # (rust/elster/src/abdeckung.rs) rechnet mit dem Beispielwert jedes Felds und verlangt sein Kz.
+    beispielwert: 60
+    herkunft_slots: null
+    elster_kz: E0504603
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 9 S. 5 EStG"
+      zitatanker: "Der Höchstbetrag nach Satz 1 wird für jedes Kind, bei dem die Voraussetzungen vorliegen, je Elternpaar nur einmal gewährt"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
 
 luecken:
   - regel_id: p10_1_9_schulgeld
@@ -29,4 +66,4 @@ luecken:
     grund: "Kind-Qualifikation (§ 10 Abs. 1 Nr. 9 S. 1: 'für den Besuch einer Schule') wird vorgelagert überprüft; Ausschluss Beherbergung/Betreuung/Verpflegung (S. 1) im Fragetext adressiert."
   - regel_id: p10_1_9_schulgeld
     geltungsbedingung: dreissig_prozent_deckel_2500_je_kind
-    grund: "30%-Quote + 2.500€-je-Kind-Deckel (§ 10 Abs. 1 Nr. 9 S. 1) sind im pure-python Accessor catala_p10_1_9_schulgeld materialisiert; Verdopplung auf 5.000 bei Zusammenveranlagung (S. 5) im Accessor."
+    grund: "30%-Quote + 2.500€-je-Kind-Deckel (§ 10 Abs. 1 Nr. 9 S. 1) sind im pure-python Accessor catala_p10_1_9_schulgeld materialisiert; Verdopplung auf 5.000 bei Zusammenveranlagung (S. 5) im Accessor; bei Einzelveranlagung kappt der Anteil des Nutzers (kind_schulgeld_aufteilung_prozent, Kz E0504603) den Höchstbetrag auf 5.000 * Anteil / 100, ohne Anteil gilt die Hälfte."

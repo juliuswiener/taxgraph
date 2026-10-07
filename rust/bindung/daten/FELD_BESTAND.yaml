@@ -188,6 +188,7 @@ felder:
   - kind_kv
   - kind_pb_nicht_selbst_genutzt
   - kind_pv
+  - kind_schulgeld_aufteilung_prozent
   - kind_unter_14_haushaltszugehoerig
   - kind_vorname
   - kind_wohnsitz_inland_zeitraum

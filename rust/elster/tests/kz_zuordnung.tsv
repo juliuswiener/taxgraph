@@ -78,6 +78,7 @@ kind_kindschaftsverhaeltnis_a	E0500807	true
 kind_kindschaftsverhaeltnis_b	E0500808	true
 kind_kv	E0503110	true
 kind_pv	E0503310	true
+kind_schulgeld_aufteilung_prozent	E0504603	true
 kind_vorname	E0500107	true
 kind_wohnsitz_inland_zeitraum	E0500703	true
 kinderbetreuungskosten	E0506105	true
