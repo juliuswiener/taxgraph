@@ -39,6 +39,17 @@ const UNFALLKOSTEN: &str = "ep_unfallkosten";
 /// Betrag ab, das XML traegt ihn nicht. Die Steuer im Bescheid und die Zahl der Erklaerung wuerden auseinanderlaufen.
 const UNFALLKOSTEN_SPERRE: &str = "Unfallkosten über 0 Euro: Für diesen Betrag gibt es noch kein geprüftes ELSTER-Kennzeichen. Die Abgabe ist deshalb gesperrt. Setze den Betrag auf 0 oder lösche ihn, wenn du ohne diesen Abzug abgeben willst.";
 
+/// Nur Rust (Abweichung Nr. 29): die Wahl "Abzug statt Anrechnung" der auslaendischen Steuer (§ 34c Abs. 2 EStG).
+const DBA_ABZUG: &str = "dba_abzug_statt_anrechnung";
+
+/// Die gezahlte auslaendische Steuer; die Wahl sperrt nur zusammen mit einem Betrag ueber 0 in diesem Feld.
+const DBA_STEUER: &str = "dba_gezahlte_auslaendische_steuer";
+
+/// Der Grund der Abgabe-Sperre bei gewaehltem Abzug und gezahlter Steuer ueber 0 (`dba_abzug_statt_anrechnung` ohne Kz):
+/// die Rechnung zieht die Steuer ab, das XML meldet sie als anzurechnende Steuer (`E0601901`). Die Wahl des Nutzers ginge in
+/// der Erklaerung still verloren.
+const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: Die Erklärung kann diesen Abzug noch nicht tragen und würde die Steuer als Anrechnung melden. Die Abgabe ist deshalb gesperrt. Antworte „nein“ (Anrechnung), wenn du abgeben willst, oder trage den Abzug im Formular selbst ein.";
+
 /// Die materialisierte Felder-Ebene eines Snapshots (`feld_id -> {wert, zustand, herkunft}`).
 pub type Felder = BTreeMap<String, SnapshotFeld>;
 
@@ -415,6 +426,26 @@ impl Bau<'_> {
         Ok(())
     }
 
+    /// `dba_abzug_statt_anrechnung` OHNE Kz (Abweichung Nr. 29): der Marker steht mit Grund in `nicht_deklariert`. Ist die
+    /// Wahl `true` und die gezahlte Steuer (bestaetigt) ueber 0, sperrt er die Abgabe ([`DBA_ABZUG_SPERRE`], 409
+    /// `deklaration_unvollstaendig`): die Rechnung (`bescheid::einkuenfte::shared_dba_sonstige`) zieht die Steuer ab, das XML
+    /// schriebe sie als Anrechnung unter `E0601901`. Die Sperre braucht die Auslandseinkuenfte NICHT: die Rechnung zieht nur
+    /// bei Einkuenften ueber 0 ab, die Erklaerung meldet aber auch bei 0 die Anrechnung, die der Nutzer abgewaehlt hat.
+    /// Gezaehlt wird in Cent, wie bei den Unfallkosten: ein Cent genuegt.
+    fn dba_abzug(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) {
+        let grund = b
+            .elster_kz_grund
+            .clone()
+            .unwrap_or_else(|| "kein elster_kz".to_owned());
+        self.nicht(feld_id, grund);
+        let steuer_ueber_null = self.snapshot.get(DBA_STEUER).is_some_and(|s| {
+            s.zustand == Zustand::Bestaetigt && py::int(&s.wert).is_ok_and(|cent| cent > 0)
+        });
+        if matches!(wert, PyWert::Bool(true)) && steuer_ueber_null {
+            self.offen(feld_id, DBA_ABZUG_SPERRE);
+        }
+    }
+
     /// `_deklariere_instanz` (`est_mapping.py:590-632`).
     fn instanz_feld(
         &mut self,
@@ -661,6 +692,8 @@ impl Bau<'_> {
             }
         } else if let (UNFALLKOSTEN, None) = (feld_id, kz_von(b)) {
             self.unfallkosten(feld_id, wert, b)?;
+        } else if let (DBA_ABZUG, None) = (feld_id, kz_von(b)) {
+            self.dba_abzug(feld_id, wert, b);
         } else if let Some(kz) = kz_von(b) {
             schreibe_kz(&mut self.deklaration, kz, wert, Some(b.typ), self.null_kz)
                 .map_err(&fehler)?;

@@ -134,6 +134,11 @@ bindungen:
     hilfe_kurz: "Standard ist die Anrechnung (§34c Abs.1, meist günstiger). Der Abzug (Abs.2) lohnt nur in Sonderfällen — z.B. wenn keine deutsche Steuer da ist, auf die angerechnet werden könnte. Ohne Antrag wird angerechnet."
     beispielwert: false
     herkunft_slots: null
+    # ponytail: kein Kz, die Abgabe sperrt (rust/elster/src/deklaration.rs, DBA_ABZUG_SPERRE), wenn der Marker true und die
+    # gezahlte Steuer ueber 0 ist. Grenze: die Erklaerung kann den Abzug nicht tragen. Upgrade-Pfad: die Anleitung zur
+    # Anlage AUS lesen (liegt lokal nicht), dann den Betrag unter E0600920 (Staat_Spez_InvFonds/Ek, "in Zeile 7 abgezogene
+    # auslaendische Steuern nach § 34c Abs. 2", ein Betrag, KEIN Marker) statt unter E0601901 schreiben und die Einkuenfte
+    # der Quell-Anlage kuerzen; dann die Sperre streichen. Je Ehegatte eine eigene Anlage AUS, je Staat ein Block: nicht gebaut.
     elster_kz: null
     elster_kz_grund: "Antrags-/Wahlrechts-Marker (Anlage-AUS) — reine Ring-Weiche (Abzug statt Anrechnung), Kz-Recon = dev-2-Folgeticket (null-MVP)."
     vz_gueltigkeit: [2024, 2025, 2026]
