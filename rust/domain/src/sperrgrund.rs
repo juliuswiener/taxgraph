@@ -250,7 +250,7 @@ impl Sperrgrund {
             Self::VerpflegungDreimonatsfristAufteilungOffen => Some("Du warst länger als drei Monate am selben auswärtigen Ort tätig. Die Verpflegungspauschale gibt es nur für die ersten drei Monate, danach entfällt sie. Deshalb braucht die Berechnung zu jeder Art von Abwesenheitstag zusätzlich die Zahl der Tage, die nach diesen drei Monaten lagen. Bitte ergänze diese Angabe."),
             Self::VerpflegungDreimonatsfristUnterbrechungOffen => Some("Du warst länger als drei Monate am selben auswärtigen Ort tätig, hast aber für die Zeit nach Ablauf der drei Monate keine Abwesenheitstage angegeben. Das ist möglich, wenn du die Tätigkeit dort mindestens vier Wochen unterbrochen hast — dann beginnt die Frist neu. Bitte beantworte die Frage, ob es eine solche Unterbrechung gab."),
             Self::VerpflegungReduktionOffen => Some("Zu deinen Auswärtstätigkeiten fehlt noch die Antwort, ob dir dabei Mahlzeiten gestellt wurden — also Frühstück, Mittag- oder Abendessen von deinem Arbeitgeber oder auf dessen Veranlassung. Jede gestellte Mahlzeit kürzt die Verpflegungspauschale. Bitte beantworte diese Frage, auch wenn keine Mahlzeiten gestellt wurden."),
-            Self::VersorgungsfreibetragOffen => Some("Du hast Versorgungsbezüge angegeben — etwa eine Betriebsrente oder eine Beamtenpension. Für den Freibetrag darauf braucht die Berechnung zwei Angaben: das Jahr, in dem die Versorgung begann, und den Betrag, aus dem der Freibetrag berechnet wird. Beides findest du in deiner Lohnsteuerbescheinigung oder in der Mitteilung deiner Versorgungsstelle."),
+            Self::VersorgungsfreibetragOffen => Some("Du hast Versorgungsbezüge angegeben — etwa eine Betriebsrente oder eine Beamtenpension. Für den Freibetrag darauf braucht die Berechnung zwei Angaben: das Jahr, in dem die Versorgung begann, und den Betrag, aus dem der Freibetrag berechnet wird. Beides findest du in deiner Lohnsteuerbescheinigung oder in der Mitteilung deiner Versorgungsstelle. Bei gemeinsamer Veranlagung gelten die zwei Angaben für jede Person einzeln: Prüfe sie auch für die Versorgungsbezüge deines Ehegatten."),
             Self::VvInstanzOffen => Some("Zu einer deiner vermieteten Immobilien sind die Angaben unvollständig. Jedes weitere Objekt braucht dieselben Angaben wie das erste: Mieteinnahmen, Gebäudeabschreibung, Schuldzinsen, Erhaltungsaufwand, sonstige Werbungskosten und den Anteil, der entgeltlich vermietet ist. Bitte ergänze die fehlenden Angaben."),
         }
     }
@@ -384,12 +384,28 @@ mod tests {
         );
     }
 
-    /// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27 in
-    /// `rust/fixtures/README.md`). Streng: jeder Eintrag steht in der Fixture, sein Text weicht ab und nennt den neuen Weg.
-    const ABWEICHENDER_KLARTEXT: [&str; 1] = ["gwg_mehrwertsteuer_offen"];
+    /// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27 und Nr. 37 in
+    /// `rust/fixtures/README.md`). Streng: jeder Eintrag steht in der Fixture, sein Text weicht ab und nennt, was er neu sagt
+    /// (`pflichtteile`).
+    const ABWEICHENDER_KLARTEXT: [&str; 2] = ["gwg_mehrwertsteuer_offen", "versorgungsfreibetrag_offen"];
 
-    /// `gwg_mehrwertsteuer_offen`: Python sagt "Diese Unterscheidung kann die Software noch nicht treffen". Seit der Folgefrage
-    /// `gwg_ohne_vorsteuerabzug` stimmt das nicht mehr; der Text nennt dem Kleinunternehmer den Weg und die 800-Euro-Grenze.
+    /// Was der abweichende Text eines Grunds nennen muss und welchen Satz er nicht mehr enthalten darf. Ein Eintrag in
+    /// `ABWEICHENDER_KLARTEXT` ohne Zeile hier ist ein Fehler: die Pruefung bricht ab, statt nichts zu messen.
+    fn pflichtteile(schluessel: &str) -> (Option<&'static str>, &'static [&'static str]) {
+        match schluessel {
+            // Python sagt "Diese Unterscheidung kann die Software noch nicht treffen". Seit der Folgefrage
+            // `gwg_ohne_vorsteuerabzug` stimmt das nicht mehr; der Text nennt dem Kleinunternehmer den Weg und die 800-Euro-Grenze.
+            "gwg_mehrwertsteuer_offen" => (
+                Some("noch nicht treffen"),
+                &["Kleinunternehmer", "selbst getragen", "800 Euro", "bei der Abschreibung"],
+            ),
+            // Seit Nr. 33 fragt die Rentner-Scheibe die Versorgung des Ehegatten mit, und der Grund gilt fuer ihn. Python spricht nur
+            // zu Person A; der Text sagt, dass bei gemeinsamer Veranlagung die zwei Angaben je Person gelten.
+            "versorgungsfreibetrag_offen" => (None, &["gemeinsamer Veranlagung", "jede Person einzeln", "deines Ehegatten"]),
+            _ => panic!("{schluessel}: in ABWEICHENDER_KLARTEXT, aber ohne Zeile in pflichtteile"),
+        }
+    }
+
     /// Wird der Python-Text hier wieder gleich (oder der Wortlaut kuerzer), ist die Liste oder der Text falsch.
     #[test]
     fn abweichender_klartext_bleibt_abweichend() {
@@ -399,11 +415,11 @@ mod tests {
             let python = klartext[schluessel].as_str().unwrap();
             let rust = schluessel.parse::<Sperrgrund>().unwrap().klartext().unwrap();
             assert_ne!(rust, python, "{schluessel}: gleich dem Python-Text, dann raus aus der Liste");
-            assert!(
-                !rust.contains("noch nicht treffen"),
-                "{schluessel}: der Satz stimmt seit der Folgefrage nicht mehr"
-            );
-            for teil in ["Kleinunternehmer", "selbst getragen", "800 Euro", "bei der Abschreibung"] {
+            let (verboten, teile) = pflichtteile(schluessel);
+            if let Some(satz) = verboten {
+                assert!(!rust.contains(satz), "{schluessel}: der Satz {satz:?} stimmt nicht mehr");
+            }
+            for teil in teile {
                 assert!(rust.contains(teil), "{schluessel}: der Text nennt {teil:?} nicht");
             }
         }
