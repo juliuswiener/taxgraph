@@ -156,19 +156,25 @@ async fn der_schreibweg_nimmt_0_bis_100_je_kind_an_und_weist_den_rest_ab() {
         let (status, antwort) = sende(&d, "POST", "/fall/sf/event", Some(&ereignis(feld, &wert))).await;
         assert_eq!(status, 201, "{feld} {wert}: {antwort}");
     }
-    for wert in [
-        json!(101),
-        json!(-1),
-        Value::Null,
-        json!(""),
-        json!("50"),
-        json!(50.5),
-        json!(true),
+    // Der Grund steht im Text unter `fehler` und gehoert zur Pruefung: `ANTEIL` hat oben schon ein aktives Event (100). Ein
+    // Wert, den die Bereichspruefung durchliesse (Mutant `max: 200`), scheiterte trotzdem mit 422 "fail-closed (B): ...
+    // schon ein aktives Event" und sah von aussen wie eine Abweisung aus. Darum muss 101 und -1 "(Bereich)" nennen und der
+    // Rest "(Typ)"; nur dann haengt das Rot an `bereich {min: 0, max: 100}` der Bindung.
+    for (wert, grund) in [
+        (json!(101), "(Bereich)"),
+        (json!(-1), "(Bereich)"),
+        (Value::Null, "(Typ)"),
+        (json!(""), "(Typ)"),
+        (json!("50"), "(Typ)"),
+        (json!(50.5), "(Typ)"),
+        (json!(true), "(Typ)"),
     ] {
         let (status, antwort) = sende(&d, "POST", "/fall/sf/event", Some(&ereignis(ANTEIL, &wert))).await;
+        assert_eq!(status, 422, "{wert}: Status {status}, erwartet 422: {antwort}");
+        let text = antwort["fehler"].as_str().unwrap_or_default();
         assert!(
-            (400..500).contains(&status),
-            "{wert}: Status {status}, erwartet eine Abweisung: {antwort}"
+            text.contains(grund),
+            "{wert}: erwartet den Grund {grund}, Antwort: {antwort}"
         );
     }
 }
