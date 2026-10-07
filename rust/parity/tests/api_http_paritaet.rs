@@ -63,9 +63,12 @@ const NORMALISIERUNGEN: &[(&str, &str)] = &[
     ("audit.ts", "Zeitstempel der Anfrage"),
     ("audit.null", "Python schreibt fall_id/detail als null, Rust laesst fehlende Felder weg"),
     ("flow.ts", "Zeitstempel der Zeile; der Rest der Zeile wird als Text verglichen (Form des `ts` prueft Suite 18, `flow_paritaet`)"),
-    ("format.wert", "Abweichung Nr. 24 (README): `fail-closed (Format)` nennt in Rust den Wert nicht, in Python schon; im Body wird `=<repr>` zwischen Feld und ` passt nicht zum Muster` gestrichen, der Rest der Meldung bleibt im Vergleich"),
-    ("format.laenge", "Abweichung Nr. 24: `Content-Length` einer Antwort mit `fail-closed (Format)` wird nicht verglichen (Python-Body traegt den Wert, Rust nicht); der Body davor schon"),
-    ("format.grund", "Abweichung Nr. 24: im Fluss-Mitschnitt bleibt vom `grund` einer Format-Abweisung nur `fail-closed (Format): <feld>`; Python schneidet die Meldung mit Wert bei 200 Zeichen, Rust die ohne, die Schnittkanten lagen sonst verschieden"),
+    ("format.wert", "Abweichung Nr. 24 (README): `fail-closed (Format)` nennt in Rust den Wert nicht, in Python schon; im Body wird `=<repr>` zwischen Feld und ` passt nicht zum Muster` gestrichen, der Rest der Meldung bleibt im Vergleich. Dasselbe gilt seit Nr. 30 fuer `fail-closed (Typ)` (`typ.wert`), vor ` passt nicht zum Bindungstyp`"),
+    ("format.laenge", "Abweichung Nr. 24: `Content-Length` einer Antwort mit `fail-closed (Format)` wird nicht verglichen (Python-Body traegt den Wert, Rust nicht); der Body davor schon. Seit Nr. 30 ebenso fuer `fail-closed (Typ)` (`typ.laenge`)"),
+    ("format.grund", "Abweichung Nr. 24: im Fluss-Mitschnitt bleibt vom `grund` einer Format-Abweisung nur `fail-closed (Format): <feld>`; Python schneidet die Meldung mit Wert bei 200 Zeichen, Rust die ohne, die Schnittkanten lagen sonst verschieden. Seit Nr. 30 ebenso fuer die Typ-Abweisung (`typ.grund`)"),
+    ("typ.wert", "Abweichung Nr. 30 (README): `fail-closed (Typ)` nennt in Rust den Wert nicht, in Python schon; im Body wird `=<repr>` zwischen Feld und ` passt nicht zum Bindungstyp` gestrichen. Bei einem Steuerzeichen nennt Python den Ersatztext `[Steuerzeichen im Text, Wert nicht geloggt]`, Rust fuehrt ihn weiter, die Streichung erfasst ihn"),
+    ("typ.laenge", "Abweichung Nr. 30: `Content-Length` einer Antwort mit `fail-closed (Typ)` wird nicht verglichen (Python-Body traegt den Wert, Rust nicht); der Body davor schon"),
+    ("typ.grund", "Abweichung Nr. 30: im Fluss-Mitschnitt bleibt vom `grund` einer Typ-Abweisung nur `fail-closed (Typ): <feld>`; dieselbe Schnittkantenlage wie bei `format.grund`"),
     ("users.password_hash", "bcrypt-Salz ist zufaellig"),
     ("users.created_at", "Zeitstempel der Registrierung"),
     ("fehler.log", "nur Anzahl und `ort`: Typ (Python-Klasse gegen Rust-Typname), Aufrufstelle und die PII-gefilterte Fall-Kennung unterscheiden sich im Bau"),
@@ -575,28 +578,73 @@ fn json_body(a: &Antwort) -> Option<Value> {
 }
 
 const FORMAT_KOPF: &str = "fail-closed (Format): ";
+const TYP_KOPF: &str = "fail-closed (Typ): ";
 
-/// Abweichung Nr. 24 (`rust/fixtures/README.md`): Python meldet `fail-closed (Format): <feld>=<repr> passt nicht zum Muster
-/// ...`, Rust `<feld> passt nicht zum Muster ...`. Die Spanne `=<repr>` in der Python-Form; `None` in der Rust-Form.
-fn format_wert_spanne(meldung: &str) -> Option<std::ops::Range<usize>> {
-    let rest = meldung.strip_prefix(FORMAT_KOPF)?;
-    let ende = rest.find(" passt nicht zum Muster")?;
+/// Eine Abweisung, deren Rust-Meldung den Wert nicht nennt, deren Python-Meldung ihn aber nennt: der Schluessel der
+/// Normalisierung, der Kopf der Meldung und der Anschlag hinter dem Wert. Abweichung Nr. 24 (`Format`) und Nr. 30 (`Typ`,
+/// Julius 2026-10-07, Vault `decisions/fehlertexte-nennen-bei-typ-und-format-den-wert-nicht-mehr`).
+const OHNE_WERT: [(&str, &str, &str); 2] = [
+    ("format", FORMAT_KOPF, "passt nicht zum Muster"),
+    ("typ", TYP_KOPF, "passt nicht zum Bindungstyp"),
+];
+
+/// `=<repr>` der Python-Form, zwischen Feld und Anschlag; `None`, wenn die Meldung keine dieser Klassen ist oder nichts zu
+/// streichen hat. Rust nennt den Wert nicht, also auch nicht bei einem Steuerzeichen (dort steht in Python der Ersatztext,
+/// der mitgestrichen wird).
+fn wert_spanne(meldung: &str, kopf: &str, anschlag: &str) -> Option<std::ops::Range<usize>> {
+    let rest = meldung.strip_prefix(kopf)?;
+    let ende = rest.find(&format!(" {anschlag}"))?;
     let gleich = rest[..ende].find('=')?;
-    Some(FORMAT_KOPF.len() + gleich..FORMAT_KOPF.len() + ende)
+    Some(kopf.len() + gleich..kopf.len() + ende)
 }
 
-/// Der Body einer Antwort trägt eine Format-Meldung (`fehler`), in welcher Form auch immer.
-fn hat_format_meldung(antwort: &Antwort) -> bool {
+/// Klasse und Spanne der ersten Trefferklasse in [`OHNE_WERT`]; `None` bei einer anderen Klasse.
+fn ohne_wert_spanne(meldung: &str) -> Option<(&'static str, std::ops::Range<usize>)> {
+    OHNE_WERT
+        .iter()
+        .find_map(|(klasse, kopf, anschlag)| Some((*klasse, wert_spanne(meldung, kopf, anschlag)?)))
+}
+
+fn format_wert_spanne(meldung: &str) -> Option<std::ops::Range<usize>> {
+    wert_spanne(meldung, FORMAT_KOPF, OHNE_WERT[0].2)
+}
+
+fn typ_wert_spanne(meldung: &str) -> Option<std::ops::Range<usize>> {
+    wert_spanne(meldung, TYP_KOPF, OHNE_WERT[1].2)
+}
+
+/// Der Body einer Antwort trägt eine Meldung einer dieser Klassen (`fehler`), in welcher Form auch immer. Beide Seiten
+/// unterscheiden sich in der Laenge, `Content-Length` bleibt dort darum ausser Vergleich.
+fn hat_ohne_wert_meldung(antwort: &Antwort) -> bool {
     json_body(antwort)
-        .and_then(|b| b["fehler"].as_str().map(|t| t.starts_with(FORMAT_KOPF)))
+        .and_then(|b| {
+            b["fehler"].as_str().map(|t| {
+                OHNE_WERT
+                    .iter()
+                    .any(|(_, kopf, _)| t.starts_with(kopf))
+            })
+        })
         .unwrap_or(false)
 }
 
-/// Im Fluss-Mitschnitt (Text, `json.dumps(.., ensure_ascii=False)`) bleibt vom `grund` einer Format-Abweisung nur
-/// `fail-closed (Format): <feld>`; alles bis zum Ende des JSON-Textes entfaellt. Gekuerzt wird auf BEIDEN Seiten.
-fn kuerze_format_grund(zeile: &str) -> Option<String> {
-    const MARKE: &str = "\"grund\": \"fail-closed (Format): ";
-    let von = zeile.find(MARKE)? + MARKE.len();
+/// Der Schluessel der Klasse einer Antwort mit einer solchen Meldung (`None` sonst).
+fn meldungs_klasse(antwort: &Antwort) -> Option<&'static str> {
+    let text = json_body(antwort)?.get("fehler")?.as_str()?.to_owned();
+    ohne_wert_spanne(&text).map(|(klasse, _)| klasse)
+}
+
+/// Im Fluss-Mitschnitt (Text, `json.dumps(.., ensure_ascii=False)`) bleibt vom `grund` einer solchen Abweisung nur
+/// `fail-closed (Format): <feld>` bzw. `fail-closed (Typ): <feld>`; alles bis zum Ende des JSON-Textes entfaellt. Gekuerzt
+/// wird auf BEIDEN Seiten: Python schneidet die Meldung mit Wert bei 200 Zeichen ab, Rust die ohne Wert.
+fn kuerze_ohne_wert_grund(zeile: &str) -> Option<String> {
+    let marke = OHNE_WERT
+        .iter()
+        .find_map(|(_, kopf, _)| {
+            zeile
+                .contains(&format!("\"grund\": \"{kopf}"))
+                .then(|| format!("\"grund\": \"{kopf}"))
+        })?;
+    let von = zeile.find(&marke)? + marke.len();
     let rest = &zeile[von..];
     let feld_ende = rest.find(['=', ' '])?;
     let mut maskiert = false;
@@ -614,9 +662,13 @@ fn normiere_antwort(v: &mut Value, norm: &mut BTreeMap<&'static str, usize>) {
         *norm.entry("login.token").or_default() += 1;
     }
     if let Some(Value::String(t)) = v.get_mut("fehler") {
-        if let Some(spanne) = format_wert_spanne(t) {
+        if let Some((klasse, spanne)) = ohne_wert_spanne(t) {
             t.replace_range(spanne, "");
-            *norm.entry("format.wert").or_default() += 1;
+            let schluessel: &'static str = match klasse {
+                "format" => "format.wert",
+                _ => "typ.wert",
+            };
+            *norm.entry(schluessel).or_default() += 1;
         }
     }
     // `detail` nennt bei leerem ERiC-Puffer den Pfad von eric.log; sein Verzeichnisname ist zufaellig
@@ -647,7 +699,8 @@ fn vergleiche(
         return d;
     }
     // Abweichung Nr. 24: der Python-Body nennt den Wert, der Rust-Body nicht, die Laengen sind verschieden.
-    let format_laenge = hat_format_meldung(py) || hat_format_meldung(rs);
+    let ohne_wert = hat_ohne_wert_meldung(py) || hat_ohne_wert_meldung(rs);
+    let klasse = meldungs_klasse(py).or_else(|| meldungs_klasse(rs));
     for k in [
         "content-type",
         "content-length",
@@ -655,8 +708,12 @@ fn vergleiche(
         "x-content-type-options",
         "referrer-policy",
     ] {
-        if k == "content-length" && format_laenge {
-            *norm.entry("format.laenge").or_default() += 1;
+        if k == "content-length" && ohne_wert {
+            *norm.entry(match klasse {
+                Some("format") => "format.laenge",
+                _ => "typ.laenge",
+            })
+            .or_default() += 1;
             continue;
         }
         if py.kopf.get(k) != rs.kopf.get(k) {
@@ -735,9 +792,10 @@ fn normiere_flow(zeilen: Vec<String>, norm: &mut BTreeMap<&'static str, usize>) 
                 }
                 None => z,
             };
-            match kuerze_format_grund(&z) {
+            match kuerze_ohne_wert_grund(&z) {
                 Some(gekuerzt) => {
-                    *norm.entry("format.grund").or_default() += 1;
+                    *norm.entry(if z.contains(TYP_KOPF) { "typ.grund" } else { "format.grund" })
+                        .or_default() += 1;
                     gekuerzt
                 }
                 None => z,
@@ -5862,10 +5920,11 @@ fn enum_labels_gleich() {
 
 // ---------------------------------------------------------------- Wirksamkeit und Grenzen
 
-/// Abweichung Nr. 24, ohne `PARITY=1`: die Normalisierung nimmt NUR den Wert aus der Format-Meldung. Python- und Rust-Form
-/// ergeben denselben Text; jede andere Meldung, jede Rust-Form und jede andere Abweisungsklasse bleiben, wie sie sind.
+/// Abweichung Nr. 24 und Nr. 30, ohne `PARITY=1`: die Normalisierung nimmt NUR den Wert aus der Format- und aus der
+/// Typ-Meldung. Python- und Rust-Form ergeben denselben Text; jede andere Meldung, jede Rust-Form und jede andere
+/// Abweisungsklasse bleiben, wie sie sind.
 #[test]
-fn format_normalisierung_nimmt_nur_den_wert() {
+fn normalisierung_nimmt_nur_den_wert_der_typ_und_format_meldung() {
     let py = "fail-closed (Format): kind_idnr='1234567890' passt nicht zum Muster '^(?:[0-9]{11})$' der Bindung — Rest.";
     let rs = "fail-closed (Format): kind_idnr passt nicht zum Muster '^(?:[0-9]{11})$' der Bindung — Rest.";
     let mut a = py.to_owned();
@@ -5890,11 +5949,51 @@ fn format_normalisierung_nimmt_nur_den_wert() {
         "fail-closed (Format): f='a\\\"b\\\\' passt nicht zum Muster '^(?:[0-9]{11})$' der Bin",
         "fail-closed (Format): f='1234567890' passt nicht zum Muster '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\\\\.(10|11|1",
     ] {
-        assert_eq!(kuerze_format_grund(&zeile(grund)).as_deref(), Some(erwartet.as_str()), "{grund}");
+        assert_eq!(kuerze_ohne_wert_grund(&zeile(grund)).as_deref(), Some(erwartet.as_str()), "{grund}");
     }
-    let andere = zeile("fail-closed (Typ): f=1 passt nicht zum Bindungstyp 'int'");
-    assert_eq!(kuerze_format_grund(&andere), None, "andere Klassen bleiben im Mitschnitt");
-    assert_eq!(kuerze_format_grund("{\"ts\": \"<TS>\", \"kind\": \"antwort\"}"), None);
+    for fremd in [
+        zeile("fail-closed (Bereich): f=1 liegt ausserhalb des erlaubten Bereichs 0 bis 366"),
+        zeile("{\"ts\": \"<TS>\", \"kind\": \"antwort\"}"),
+    ] {
+        assert_eq!(kuerze_ohne_wert_grund(&fremd), None, "{fremd}");
+    }
+
+    // Typ (Nr. 30): Python `f=<repr>`, Rust ohne Wert; Steuerzeichen: Python den Ersatztext, Rust nichts.
+    let py_typ = "fail-closed (Typ): kind_pv=True passt nicht zum Bindungstyp 'cent' — Rest.";
+    let rs_typ = "fail-closed (Typ): kind_pv passt nicht zum Bindungstyp 'cent' — Rest.";
+    let mut a = py_typ.to_owned();
+    a.replace_range(typ_wert_spanne(py_typ).unwrap(), "");
+    assert_eq!(a, rs_typ, "Python-Form ohne den Wert ist die Rust-Form");
+    assert_eq!(typ_wert_spanne(rs_typ), None, "die Rust-Form hat nichts zu streichen");
+    let py_sz = "fail-closed (Typ): ep_ziel_adresse=[Steuerzeichen im Text, Wert nicht geloggt] passt \
+         nicht zum Bindungstyp 'text' — Rest.";
+    let mut a = py_sz.to_owned();
+    a.replace_range(typ_wert_spanne(py_sz).unwrap(), "");
+    assert_eq!(
+        a,
+        "fail-closed (Typ): ep_ziel_adresse passt nicht zum Bindungstyp 'text' — Rest.",
+        "der Ersatztext fuer ein Steuerzeichen geht mit dem Wert hinaus"
+    );
+    for fremd in [
+        "fail-closed (Format): kind_idnr='x' passt nicht zum Muster 'm'",
+        "fail-closed (Bereich): f=5 passt nicht zum Bindungstyp 'int'",
+        "kind_pv=True passt nicht zum Bindungstyp 'cent'",
+        "fail-closed (Typ): kind_pv=True ohne den Rest der Meldung",
+    ] {
+        assert_eq!(typ_wert_spanne(fremd), None, "{fremd}");
+    }
+    let erwarteter_typ = zeile("fail-closed (Typ): f");
+    for grund in [
+        "fail-closed (Typ): f='12345678901234567890' passt nicht zum Bindungstyp 'cent' der Bin",
+        "fail-closed (Typ): f passt nicht zum Bindungstyp 'cent' der Bindung — Rest.",
+        "fail-closed (Typ): f=[Steuerzeichen im Text, Wert nicht geloggt] passt nicht zum Bindungstyp 'text'",
+    ] {
+        assert_eq!(
+            kuerze_ohne_wert_grund(&zeile(grund)).as_deref(),
+            Some(erwarteter_typ.as_str()),
+            "{grund}"
+        );
+    }
 }
 
 /// Negativkontrolle: stoert `anfrage` die Rust-Antwort, MUSS eine Abweichung gemeldet werden.

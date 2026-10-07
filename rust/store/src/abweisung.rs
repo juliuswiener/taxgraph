@@ -15,6 +15,9 @@ use domain::Schreiber;
 
 use crate::canonical::EventId;
 
+/// Was in der Typ-Meldung hinter dem Feld steht, wenn der Text ein Steuerzeichen enthielt (`store.py::_pruefe_typ_konformitaet`).
+pub(crate) const STEUERZEICHEN_ANZEIGE: &str = "=[Steuerzeichen im Text, Wert nicht geloggt]";
+
 /// Eine der Auflagen A/K1/F2/T/B hat ein `append` abgewiesen.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum Abweisung {
@@ -76,14 +79,18 @@ pub enum Abweisung {
     #[error("fail-closed (Wert): {feld_id}={grund}")]
     WertNichtDarstellbar { feld_id: String, grund: String },
 
-    /// Auflage T (`store.py:228-231`, Stille-Null-Klasse): `wert` passt nicht zum Bindungstyp.
+    /// Auflage T (`store.py:228-231`, Stille-Null-Klasse): `wert` passt nicht zum Bindungstyp. Die Meldung nennt das Feld und den
+    /// Typ, nie den Wert (PII: eine `IdNr` als Zahl, ein Datum, eine Adresse; Abweichung Nr. 30 in `fixtures/README.md`, Python
+    /// nennt ihn). Die Variante traegt ihn darum auch nicht: ein `{:?}` auf die Abweisung zeigte ihn sonst. Nur dass der Text ein
+    /// Steuerzeichen enthielt, bleibt in der Meldung stehen (`steuerzeichen`), wie in Python.
     #[error(
-        "fail-closed (Typ): {feld_id}={wert} passt nicht zum Bindungstyp '{typ}' — der Ring läse \
-         das sonst still als 0 (Stille-Null-Klasse)."
+        "fail-closed (Typ): {feld_id}{} passt nicht zum Bindungstyp '{typ}' — der Ring läse \
+         das sonst still als 0 (Stille-Null-Klasse).",
+        if *.steuerzeichen { STEUERZEICHEN_ANZEIGE } else { "" }
     )]
     TypInkonform {
         feld_id: String,
-        wert: String,
+        steuerzeichen: bool,
         typ: &'static str,
     },
 

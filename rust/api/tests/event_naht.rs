@@ -268,7 +268,8 @@ async fn abweisungen_tragen_den_wortlaut_von_python() {
             "Typ",
             ok(ARBEITSTAGE, "1.5"),
             422,
-            "fail-closed (Typ): ep_arbeitstage=1.5 passt nicht zum Bindungstyp 'int' — der Ring läse \
+            // Abweichung Nr. 30: der Wert fehlt im Text (Python nennt ihn: `ep_arbeitstage=1.5`).
+            "fail-closed (Typ): ep_arbeitstage passt nicht zum Bindungstyp 'int' — der Ring läse \
              das sonst still als 0 (Stille-Null-Klasse).",
         ),
         (
