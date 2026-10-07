@@ -179,7 +179,7 @@ pub(super) const RING_AN_GESAMT: [&str; 29] = [
     "vpf_tage_ueber_8h_nach_drei_monaten",
 ];
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_GESAMT: [&str; 101] = [
+pub(super) const RING_GESAMT: [&str; 102] = [
     "afa_jahresbetrag",
     "agb_aufwendungen",
     "am_anschaffung_monat",
@@ -232,6 +232,7 @@ pub(super) const RING_GESAMT: [&str; 101] = [
     "p36_kapitalertragsteuer_kist",
     "p36_kapitalertragsteuer_solz",
     "p36_lohnsteuer",
+    "p36_lohnsteuer_partner",
     "p36_vorauszahlungen",
     "parteispenden_betrag",
     "pv_anzahl_einheiten",
@@ -283,7 +284,7 @@ pub(super) const RING_GESAMT: [&str; 101] = [
     "vpf_tage_ueber_8h_nach_drei_monaten",
 ];
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_RENTNER_GESAMT: [&str; 89] = [
+pub(super) const RING_RENTNER_GESAMT: [&str; 90] = [
     "afa_jahresbetrag",
     "agb_aufwendungen",
     "basis_kv_partner",
@@ -336,6 +337,7 @@ pub(super) const RING_RENTNER_GESAMT: [&str; 89] = [
     "p36_kapitalertragsteuer_kist",
     "p36_kapitalertragsteuer_solz",
     "p36_lohnsteuer",
+    "p36_lohnsteuer_partner",
     "p36_vorauszahlungen",
     "parteispenden_betrag",
     "realsplitting_empfaenger_kv_krankengeld",

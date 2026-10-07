@@ -864,6 +864,20 @@ async fn g9_abschlusszahlung_zieht_alle_fuenf_anrechnungen_ab() {
     assert_eq!(a["abschlusszahlung_cent"].as_i64(), Some(458_000), "{a}");
 }
 
+/// Abweichung Nr. 38: Bei Einzelveranlagung zaehlt ein bestaetigter Wert im Feld des Ehegatten (`p36_lohnsteuer_partner`, hier
+/// 3.000 EUR) nicht. Wie `g9` mit demselben Python-Wert: Steuer 1.392.400 ct, Abschlusszahlung 458.000 ct. Wuerde die Rechnung den
+/// Wert des Ehegatten ohne Zusammenveranlagung abziehen, kaeme 158.000 ct heraus.
+#[tokio::test]
+async fn g9_abschlusszahlung_einzeln_ignoriert_die_lohnsteuer_des_ehegatten() {
+    let mit_ehegatte = mit(
+        g9_abschlusszahlung_aenderungen(),
+        vec![("p36_lohnsteuer_partner", json!(300_000))],
+    );
+    let a = ergebnis("gesamt", &mit(kegel_gesamt(), mit_ehegatte)).await;
+    erwarte_kette("g9e", &a, 1_392_400, [58_770, 58_734, 13_924, 13_924]);
+    assert_eq!(a["abschlusszahlung_cent"].as_i64(), Some(458_000), "{a}");
+}
+
 /// § 16 Abs. 4 `EStG`: ein Veraeusserungsgewinn UNTER dem Freibetrag (20.000 EUR gegen 45.000 EUR) laesst `netto_vg` bei 0,
 /// er erzeugt keinen Verlust. Python: dieselbe Zahl wie die Gegenprobe `g0` (1.392.400 ct, `GdE` 58.770 EUR).
 #[tokio::test]
