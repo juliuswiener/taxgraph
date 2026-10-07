@@ -110,6 +110,41 @@ pub fn klassifiziere_det(zweck: &str) -> Option<Kategorie> {
         .map(|(k, _)| *k)
 }
 
+/// Parteinamen (kleingeschrieben), bei denen `uebernehme` fuer eine Spende KEINEN Vorschlag schreibt: Eine Parteispende
+/// gehoert nicht in `spenden_betrag`, sondern ins eigene Feld `parteispenden_betrag` (Abweichung Nr. 39).
+// ponytail: geschlossene Liste. Sie trifft nur diese Namen in genau dieser Schreibweise: keine Beugung ("Gruenen", "Linken"),
+// keine Waehlervereinigung, kein Ortsverband mit eigenem Namen; solche Buchungen bekommen weiter den alten Vorschlag. Mehr
+// verlangt eine Quelle der Parteinamen (das Repo hat keine), nicht weitere Eintraege von Hand.
+const PARTEINAMEN: [&str; 12] = [
+    "partei",
+    "parteispende",
+    "spd",
+    "cdu",
+    "csu",
+    "fdp",
+    "afd",
+    "bsw",
+    "grüne",
+    "bündnis 90",
+    "die linke",
+    "freie wähler",
+];
+
+/// Nennt der Zweck einen Parteinamen als GANZES Wort? Ein Treffer mitten in einem Wort ("Schlafdecke" enthaelt "afd") zaehlt
+/// nicht; Satzzeichen, Bindestrich und Schraegstrich begrenzen ein Wort ("SPD-Ortsverband", "Bündnis 90/Die Grünen"), Buchstaben
+/// und Ziffern nicht.
+fn nennt_partei(zweck: &str) -> bool {
+    let z = zweck.to_lowercase();
+    let wortzeichen = |c: Option<char>| c.is_some_and(char::is_alphanumeric);
+    PARTEINAMEN.iter().any(|name| {
+        z.match_indices(name).any(|(anfang, _)| {
+            let davor = z.get(..anfang).and_then(|s| s.chars().next_back());
+            let danach = z.get(anfang + name.len()..).and_then(|s| s.chars().next());
+            !wortzeichen(davor) && !wortzeichen(danach)
+        })
+    })
+}
+
 /// Eine Buchung. `datum` bleibt roher JSON-Wert: der JSON-Zweig reicht ihn unveraendert in
 /// `signal_1` durch.
 #[derive(Debug, Clone, PartialEq)]
@@ -595,6 +630,9 @@ pub struct Uebernahme {
 /// eigenen Schreibungen ergaenzt — wie Python; ein zwischenzeitlich abgeleitetes Feld weist der
 /// Store dann ab.
 ///
+/// Eine Buchung der Kategorie Spende, deren Zweck einen Parteinamen nennt (`PARTEINAMEN`), bekommt KEINEN Vorschlag
+/// (Abweichung Nr. 39, `rust/fixtures/README.md`): Python schriebe sie nach `spenden_betrag`.
+///
 /// # Errors
 /// [`KontoauszugFehler`] (Store-Abweisung, Betragsueberlauf).
 ///
@@ -644,6 +682,11 @@ pub fn uebernehme(
             }
         }
         let Some(kategorie) = kategorie else { continue };
+        // GEWOLLT ABWEICHEND von Python (Abweichung Nr. 39): Eine Spende, deren Zweck eine Partei nennt, gehoert nicht
+        // in `spenden_betrag`. Die Pruefung steht hinter beiden Wegen der Kategorisierung (Schluesselwort und LLM).
+        if kategorie == Kategorie::Spende && nennt_partei(zweck) {
+            continue;
+        }
         let feld = zielfeld(kategorie);
         if bindung.get(feld).is_none() || aktiv.contains(feld) {
             continue;
