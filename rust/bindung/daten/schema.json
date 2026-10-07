@@ -361,6 +361,11 @@
             },
             "wert_nicht": {
               "description": "Alternative zu `wert`, wo die Existenzfrage ein AUSWAHLFELD ist: das Feld entfaellt, wenn `feld` GENAU diesen Wert traegt. Fuer kist_konfession, das drei zutreffende Werte hat und einen ausschliessenden ('keine')."
+            },
+            "alter_im_vz": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Alternative zu `wert`, wo ein ALTER entscheidet (Rust-eigen, Python kennt sie nicht): `feld` ist ein Geburtsjahr, und das Feld bleibt nur, wenn Veranlagungsjahr minus Geburtsjahr GENAU diese Zahl ergibt. Es entfaellt bei einer BESTAETIGTEN Antwort mit anderem Ergebnis; ein fehlendes oder vorlaeufiges Geburtsjahr schliesst nicht aus (fail-closed). Fuer die Frage nach dem 55. Geburtstag im Jahr der Vollendung."
             }
           },
           "required": [
@@ -374,8 +379,9 @@
                 "wert"
               ],
               "not": {
-                "required": [
-                  "wert_nicht"
+                "anyOf": [
+                  {"required": ["wert_nicht"]},
+                  {"required": ["alter_im_vz"]}
                 ]
               }
             },
@@ -384,8 +390,20 @@
                 "wert_nicht"
               ],
               "not": {
-                "required": [
-                  "wert"
+                "anyOf": [
+                  {"required": ["wert"]},
+                  {"required": ["alter_im_vz"]}
+                ]
+              }
+            },
+            {
+              "required": [
+                "alter_im_vz"
+              ],
+              "not": {
+                "anyOf": [
+                  {"required": ["wert"]},
+                  {"required": ["wert_nicht"]}
                 ]
               }
             }

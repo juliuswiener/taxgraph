@@ -628,6 +628,30 @@ bindungen:
       quelle: "§ 34 Abs. 3 S. 4 EStG"
       zitatanker: "Die Ermäßigung nach den Sätzen 1 bis 3 kann der Steuerpflichtige nur einmal im Leben in Anspruch nehmen"
       datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  # 55. Geburtstag im Jahr der Vollendung (Julius 2026-10-07, Vault decisions/ermaessigter-satz-fragt-im-jahr-der-
+  # vollendung-nach-dem-55-geburtstag, Abweichung Nr. 32). Das Geburtsjahr allein sagt nicht, ob der Geburtstag VOR dem
+  # Verkauf lag; im Jahr, in dem VZ − geburtsjahr genau 55 ergibt, fragt die Software nach. "nein" macht die Person ueber das
+  # Alter nicht berechtigt (dauernde Berufsunfaehigkeit bleibt), "ja" und keine Antwort berechtigen wie bisher. Die Frage
+  # steht NUR in diesem Jahr: feld_bedingung alter_im_vz auf geburtsjahr (ein Altersvergleich, den wert/wert_nicht nicht
+  # koennen); ein fehlendes Geburtsjahr schliesst sie nicht aus (fail-closed). KEIN geltungsbedingung (ein fragbares
+  # bool-Gate auf dem Sammel-Scope schluesse bei bestaetigtem false die ganze Regel aus).
+  - feld_id: alter_55_vor_verkauf
+    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, signatur_slot: alter_55_vor_verkauf}
+    feld_bedingung: {feld: geburtsjahr, alter_im_vz: 55, grund: "Die Frage gilt nur im Jahr, in dem die Person nach ihrem Geburtsjahr 55 wird: davor und danach beantwortet das Geburtsjahr, ob das 55. Lebensjahr vollendet ist (§ 34 Abs. 3 S. 1 EStG)."}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hattest du deinen 55. Geburtstag schon, bevor du deinen Betrieb verkauft oder aufgegeben hast?"
+    hilfe_kurz: "Du wirst in diesem Jahr 55. Für den ermäßigten Steuersatz zählt, dass du das 55. Lebensjahr vollendet hattest, als der Gewinn entstand. Dein Geburtsjahr allein zeigt das nicht. Ohne Antwort rechnet das Programm, als wärst du schon 55 gewesen."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Eligibility-Auskunft zur Altersgrenze (§ 34 Abs. 3 S. 1 „das 55. Lebensjahr vollendet hat“), kein Betragsfeld; die Antragszeile steht an p34_abs3_antragsbetrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 1 EStG"
+      zitatanker: "das 55. Lebensjahr vollendet hat"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
   # Berechnete Antragszeile (Vault backlog p34-antrag-ohne-kennzahl-erreicht-elster-nicht, AK1/AK3): der Gewinn der
   # Basiszeile, für den der ermäßigte Satz beantragt wird. Entsteht in _mit_ring_werten nur, wenn der Chooser
   # Abs. 3 auch rechnet (Antrag UND _abs3_eligible UND 0 < netto_vg <= 5 Mio) und wird über
@@ -1771,6 +1795,28 @@ bindungen:
     anker_ref:
       quelle: "§ 34 Abs. 3 S. 4 EStG"
       zitatanker: "Die Ermäßigung nach den Sätzen 1 bis 3 kann der Steuerpflichtige nur einmal im Leben in Anspruch nehmen"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  # 55. Geburtstag des Partners im Jahr der Vollendung (Zwilling von alter_55_vor_verkauf, Abweichung Nr. 32): dieselbe Regel
+  # auf geburtsjahr_partner. Wie die anderen Partner-Felder: signatur_slot auf p2_festzusetzung_zusammen, KEIN
+  # geltungsbedingung; die feld_bedingung ist die ALTERSbedingung, nicht die Einzelveranlagung (die faellt mit der Regel weg,
+  # bindung_regel_bedingungen.yaml). Preis wie bei den drei Partner-Fragen: ein Ehepaar ohne Gewinn des Partners bekommt die
+  # Frage im Jahr der Vollendung weiterhin.
+  - feld_id: alter_55_vor_verkauf_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: alter_55_vor_verkauf_partner}
+    feld_bedingung: {feld: geburtsjahr_partner, alter_im_vz: 55, grund: "Die Frage gilt nur im Jahr, in dem der Partner nach seinem Geburtsjahr 55 wird: davor und danach beantwortet das Geburtsjahr, ob das 55. Lebensjahr vollendet ist (§ 34 Abs. 3 S. 1 EStG)."}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hatte dein Ehe-/Lebenspartner seinen 55. Geburtstag schon, bevor er seinen Betrieb verkauft oder aufgegeben hat?"
+    hilfe_kurz: "Dein Partner wird in diesem Jahr 55. Für den ermäßigten Steuersatz zählt, dass er das 55. Lebensjahr vollendet hatte, als der Gewinn entstand. Sein Geburtsjahr allein zeigt das nicht. Ohne Antwort rechnet das Programm, als wäre er schon 55 gewesen."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Eligibility-Auskunft zur Altersgrenze des Partners (§ 34 Abs. 3 S. 1 „das 55. Lebensjahr vollendet hat“), kein Betragsfeld; die Antragszeile steht an p34_abs3_antragsbetrag_partner."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 1 EStG"
+      zitatanker: "das 55. Lebensjahr vollendet hat"
       datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
   # Berechnete Antragszeile des Partners: der Gewinn der Basiszeile des Partners, fuer den der ermaessigte Satz
   # beantragt wird. Entsteht in mit_ring_werten nur, wenn der Chooser Abs. 3 fuer den Partner auch rechnet

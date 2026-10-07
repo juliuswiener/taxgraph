@@ -45,6 +45,7 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
 ) -> Vec<&'r str> {
     let aktiv = Aktiv::aus(store);
     let rel = relevanz_mit(&aktiv, sicht, graph);
+    let vz = store.datei().veranlagungszeitraum.als_i64_saettigend();
     let kand: Vec<&'r Bindung> = sicht
         .iter()
         .filter(|b| {
@@ -55,7 +56,7 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
                 && rel
                     .get(b.quelle.regel_id.as_str())
                     .is_none_or(|r| r.status != Regelstatus::Ausgeschlossen)
-                && !feld_ausgeschlossen(b, &aktiv, sicht, graph)
+                && !feld_ausgeschlossen(b, &aktiv, sicht, graph, vz)
         })
         .collect();
     let gw = gate_gewicht(sicht, graph);
@@ -104,16 +105,26 @@ fn vorjahr_uebernommen(b: &Bindung, ev: Option<&Event>) -> bool {
 /// kennt nur `Option`. Ein ausdrueckliches `wert_nicht: null` hiesse in Python "gleich None";
 /// in keiner `bindung_*.yaml` belegt (gemessen: 42× `wert: false`, 8× `"zusammen"`, 5×
 /// `wert_nicht: "keine"`, 4× `wert_nicht: 0`, 3× `wert: true`).
+///
+/// Rust-eigen (Abweichung Nr. 32): `alter_im_vz` meint ein Geburtsjahr in `feld`. Das Feld bleibt nur im Jahr, in dem
+/// Veranlagungsjahr `vz` minus Geburtsjahr genau diese Zahl ergibt; jedes BESTAETIGTE andere Geburtsjahr schliesst es aus,
+/// ein fehlendes oder vorlaeufiges nicht (fail-closed wie `wert`). Ein bestaetigter Wert, der kein Ganzzahl-Geburtsjahr ist,
+/// schliesst ebenfalls nicht aus: die Frage bleibt.
 fn feld_ausgeschlossen(
     b: &Bindung,
     aktiv: &Aktiv<'_>,
     sicht: &Sicht<'_>,
     graph: &Graph<'_>,
+    vz: i64,
 ) -> bool {
     let Some(bed) = &b.feld_bedingung else {
         return false;
     };
-    let stand = if let Some(nicht) = &bed.wert_nicht {
+    let stand = if let Some(alter) = bed.alter_im_vz {
+        bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| {
+            matches!(w, PyWert::Ganz(gj) if vz.checked_sub(*gj) != Some(alter))
+        })
+    } else if let Some(nicht) = &bed.wert_nicht {
         let nicht = PyWert::from(nicht.clone());
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| w.py_eq(&nicht))
     } else {
@@ -442,5 +453,77 @@ mod tests {
     fn ausloeser_mit_eigener_ableitung_zaehlt_nicht() {
         let (a, b) = (feld("a", Some(("b", None))), feld("b", Some(("a", None))));
         assert_eq!(ids(&nach_ausloesern(vec![&a, &b])), ["a", "b"]);
+    }
+
+    /// Ein Ereignis fuer `feld_id` mit dem rohen Wert `wert`, am Store vorbei geschrieben (die Bindung prueft hier nichts).
+    fn ereignis(feld_id: &str, wert: PyWert, bestaetigt: bool) -> store::Event {
+        use domain::{Achsenwert, Herkunft, PruefTiefe, Schreiber, Zustand};
+        let mut e = store::Event {
+            event_id: store::EventId::aus_bytes([0; 32]),
+            ts: "2026-10-07T10:00:00Z".to_owned(),
+            feld_id: feld_id.to_owned(),
+            wert,
+            zustand: if bestaetigt { Zustand::Bestaetigt } else { Zustand::Vorlaeufig },
+            herkunft: Herkunft {
+                herkunft: Achsenwert::new("laie").unwrap(),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: Achsenwert::new("nutzer").unwrap(),
+            }
+            .into(),
+            schreiber: Schreiber::Mensch("julius".to_owned()),
+            signal: None,
+            ersetzt: None,
+        };
+        e.event_id = e.berechne_event_id().unwrap();
+        e
+    }
+
+    /// Steht die Frage `feld` in der Queue eines Falls (VZ 2025), der nur `geburtsjahr` kennt?
+    fn frage_steht(feld: &str, geburtsjahr: Option<(PyWert, bool)>) -> bool {
+        let reg = crate::doctest_registry().expect("registry");
+        let g = Graph::aus_registry(&reg);
+        let events = geburtsjahr
+            .into_iter()
+            .map(|(w, b)| ereignis("geburtsjahr", w, b))
+            .collect();
+        let s = Store::aus_datei(store::StoreDatei {
+            version: 1,
+            veranlagungszeitraum: store::Veranlagungsjahr(2025),
+            fall_id: None,
+            scheibe: None,
+            user_id: None,
+            events,
+            snapshots: Vec::new(),
+            vorjahr_referenz: None,
+        });
+        let ohne_beitrag: Option<&HashMap<String, i64>> = None;
+        naechste_fragen(&s, g.alle(), &g, ohne_beitrag).contains(&feld)
+    }
+
+    /// `feld_bedingung.alter_im_vz` (Abweichung Nr. 32): die Frage nach dem 55. Geburtstag steht nur, wenn das BESTAETIGTE
+    /// Geburtsjahr im Veranlagungsjahr genau 55 Jahre ergibt (2025 − 1970). Jedes andere bestaetigte Ganzzahl-Geburtsjahr
+    /// schliesst sie aus, auch am Rand von `i64` (kein Ueberlauf). Fail-closed: kein, ein vorlaeufiges oder ein bestaetigtes
+    /// Geburtsjahr, das keine Ganzzahl ist, schliesst sie nicht aus.
+    #[test]
+    fn die_altersbedingung_schliesst_nur_ein_bestaetigtes_anderes_geburtsjahr_aus() {
+        let frage = |gj| frage_steht("alter_55_vor_verkauf", gj);
+        let bestaetigt = |w: PyWert| Some((w, true));
+        let vorlaeufig = |w: PyWert| Some((w, false));
+        assert!(frage(bestaetigt(PyWert::Ganz(1970))), "2025 minus 1970 ist 55");
+        for anders in [1969, 1971, 1900, 2010, 0, -1] {
+            assert!(!frage(bestaetigt(PyWert::Ganz(anders))), "geboren {anders}");
+        }
+        for rand in [i64::MIN, i64::MAX] {
+            assert!(!frage(bestaetigt(PyWert::Ganz(rand))), "geboren {rand}: kein Ueberlauf, kein 55. Jahr");
+        }
+        assert!(frage(None), "ohne Geburtsjahr bleibt die Frage");
+        assert!(frage(vorlaeufig(PyWert::Ganz(1971))), "ein vorlaeufiges Geburtsjahr schliesst nicht aus");
+        assert!(frage(vorlaeufig(PyWert::Ganz(1970))), "ein vorlaeufiges Geburtsjahr im Jahr 55 laesst die Frage stehen");
+        for kein_jahr in [PyWert::Text("1971".to_owned()), PyWert::Gleit(1971.0), PyWert::Bool(false), PyWert::Null] {
+            assert!(
+                frage(bestaetigt(kein_jahr.clone())),
+                "ein bestaetigter Wert, der keine Ganzzahl ist ({kein_jahr:?}), schliesst die Frage nicht aus"
+            );
+        }
     }
 }

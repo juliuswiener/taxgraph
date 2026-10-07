@@ -56,7 +56,7 @@ pub enum BindungFehler {
     },
     #[error("{feld_id}: enum_werte darf nicht leer sein")]
     EnumWerteLeer { feld_id: String },
-    #[error("{feld_id}: feld_bedingung braucht genau eines von wert/wert_nicht")]
+    #[error("{feld_id}: feld_bedingung braucht genau eines von wert/wert_nicht/alter_im_vz")]
     FeldBedingungNichtGenauEins { feld_id: String },
     #[error("{feld_id}: ungueltige instanz_gruppe {gruppe:?} (erwartet ^[a-z][a-z0-9_]*$)")]
     UngueltigeInstanzGruppe { feld_id: String, gruppe: String },
@@ -289,17 +289,23 @@ pub struct Beweist {
 }
 
 /// Dieses Feld entfaellt, wenn `feld` einen anderen Wert als `wert` traegt (oder GENAU
-/// `wert_nicht`, wo eine Existenzfrage ein Auswahlfeld ist).
+/// `wert_nicht`, wo eine Existenzfrage ein Auswahlfeld ist; oder, bei `alter_im_vz`, wenn `feld` ein
+/// Geburtsjahr ist, das im Veranlagungsjahr NICHT das angegebene Alter ergibt).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FeldBedingung {
     pub feld: String,
-    /// Genau eines von `wert`/`wert_nicht` ist gesetzt (Schema: `oneOf`, Rust prueft es nicht
-    /// nach) -- ausgeschrieben statt XOR-Typ, weil hier (anders als bei `Quelle`) keine
-    /// nachgeschaltete Regel darauf angewiesen ist, dass genau eines gesetzt ist.
+    /// Genau eines von `wert`/`wert_nicht`/`alter_im_vz` ist gesetzt (Schema: `oneOf`;
+    /// [`Bindung::validieren`] prueft es nach) -- ausgeschrieben statt XOR-Typ, weil hier (anders
+    /// als bei `Quelle`) keine nachgeschaltete Regel darauf angewiesen ist, dass genau eines
+    /// gesetzt ist.
     pub wert: Option<Value>,
     pub grund: String,
     pub wert_nicht: Option<Value>,
+    /// `feld` ist ein Geburtsjahr; das Feld bleibt nur, wenn Veranlagungsjahr minus Geburtsjahr
+    /// GENAU diese Zahl ergibt (die Person wird in diesem Jahr so alt). Ein Altersvergleich, den
+    /// `wert`/`wert_nicht` nicht ausdruecken (nur Gleichheit gegen den Wert eines anderen Felds).
+    pub alter_im_vz: Option<i64>,
 }
 
 /// Berechnungsart einer [`Ableitung`].
@@ -488,7 +494,12 @@ impl Bindung {
             }
         }
         if let Some(bedingung) = &self.feld_bedingung {
-            if bedingung.wert.is_some() == bedingung.wert_nicht.is_some() {
+            let gesetzt = [
+                bedingung.wert.is_some(),
+                bedingung.wert_nicht.is_some(),
+                bedingung.alter_im_vz.is_some(),
+            ];
+            if gesetzt.into_iter().filter(|g| *g).count() != 1 {
                 return Err(BindungFehler::FeldBedingungNichtGenauEins {
                     feld_id: self.feld_id.clone(),
                 });
