@@ -1176,16 +1176,11 @@ fn pruefe_bindung(
         Ok(domain::Wert::Cent(n) | domain::Wert::Int(n)) => Some(n),
         Ok(_) => None,
         Err(_) => {
-            // Ein Wert mit Steuerzeichen bleibt aus der Meldung (422-detail an Nutzer und Log,
-            // PII); der Ersatztext steht wortgleich in `store.py::_pruefe_typ_konformitaet`.
-            let steuerzeichen = text.is_some_and(|s| !domain::nur_xml_zeichen(s));
+            // Der Wert bleibt aus der Meldung (422-detail an Nutzer und Log, PII; Abweichung Nr. 30). Nur der Hinweis auf ein
+            // Steuerzeichen bleibt, wie in `store.py::_pruefe_typ_konformitaet`.
             return Err(Abweisung::TypInkonform {
                 feld_id: feld_id.to_string(),
-                wert: if steuerzeichen {
-                    "[Steuerzeichen im Text, Wert nicht geloggt]".to_string()
-                } else {
-                    wert.repr()
-                },
+                steuerzeichen: text.is_some_and(|s| !domain::nur_xml_zeichen(s)),
                 typ: eintrag.typ.als_str(),
             });
         }

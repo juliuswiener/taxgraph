@@ -867,6 +867,35 @@ fn katalog_magnitude_typ_format_und_b_tragen_den_wortlaut_von_python() {
     );
 }
 
+/// Auflage T (Abweichung Nr. 30): der Typ-Text nennt Feld und Typ, nie den Wert. Python nennt ihn
+/// (`<feld>=<repr> passt nicht ...`). Auch ein `{:?}` auf die Abweisung zeigt ihn nicht: die Variante traegt ihn nicht.
+#[test]
+fn typ_text_ohne_wert() {
+    // (Feld, falscher Wert, Typ der Bindung, Schreibweise des Wertes in Pythons Text)
+    let faelle = [
+        ("bruttoarbeitslohn", json!("GEHEIM-123"), "cent", "GEHEIM-123"),
+        ("bruttoarbeitslohn", json!(true), "cent", "True"),
+        ("ep_arbeitstage", json!(1.5), "int", "1.5"),
+        ("ep_ziel_adresse", json!(13_579_246_007_i64), "text", "13579246007"),
+    ];
+    for (feld, wert, typ, schreibweise) in faelle {
+        let fehler = anhaengen(&mut leerer_store(2025), &bestaetigt(feld, &wert)).unwrap_err();
+        assert!(matches!(fehler, Abweisung::TypInkonform { .. }), "{feld}: {fehler:?}");
+        assert_eq!(
+            fehler.to_string(),
+            format!(
+                "fail-closed (Typ): {feld} passt nicht zum Bindungstyp '{typ}' — der Ring läse das \
+                 sonst still als 0 (Stille-Null-Klasse)."
+            ),
+            "{feld}"
+        );
+        assert!(
+            !format!("{fehler:?}").contains(schreibweise),
+            "{feld}: die Abweisung zeigt den Wert {schreibweise:?} im Debug-Text: {fehler:?}"
+        );
+    }
+}
+
 /// Auflage B: das `ersetzt`-Ziel fehlt, gehoert zu einem anderen Feld, ist schon ersetzt.
 #[test]
 fn ersetzt_ziel_traegt_den_wortlaut_von_python() {

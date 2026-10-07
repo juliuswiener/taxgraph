@@ -246,7 +246,7 @@ mod tests {
         let ueberspringt = |a: Abweisung| ist_pruef_abweisung(&a.into());
         assert!(ueberspringt(Abweisung::TypInkonform {
             feld_id: "f".into(),
-            wert: "w".into(),
+            steuerzeichen: false,
             typ: "int",
         }));
         assert!(ueberspringt(Abweisung::FormatInkonform {
