@@ -366,6 +366,14 @@
               "type": "integer",
               "minimum": 1,
               "description": "Alternative zu `wert`, wo ein ALTER entscheidet (Rust-eigen, Python kennt sie nicht): `feld` ist ein Geburtsjahr, und das Feld bleibt nur, wenn Veranlagungsjahr minus Geburtsjahr GENAU diese Zahl ergibt. Es entfaellt bei einer BESTAETIGTEN Antwort mit anderem Ergebnis; ein fehlendes oder vorlaeufiges Geburtsjahr schliesst nicht aus (fail-closed). Fuer die Frage nach dem 55. Geburtstag im Jahr der Vollendung."
+            },
+            "groesser_als": {
+              "type": "integer",
+              "description": "Alternative zu `wert`, wo ein BETRAG entscheidet (Rust-eigen, Python kennt sie nicht): `feld` ist ein Betrag (`cent` oder `int`, ganzzahlig), und das Feld bleibt nur, wenn mindestens eine Instanz von `feld` einen BESTAETIGTEN Wert ueber dieser Schwelle traegt. Anders als alle uebrigen Arten gilt hier POSITIVER BEWEIS: Schweigen und ein vorlaeufiger Wert schliessen ebenfalls aus. Nur fuer eine Folgefrage, deren Fehlen nichts kostet (keine Antwort heisst: Normalfall). Fuer den Anteil am Schulgeld-Hoechstbetrag: nur bei Schulgeld ueber 0."
+            },
+            "und": {
+              "$ref": "#/$defs/bindung/properties/feld_bedingung",
+              "description": "Eine zweite Bedingung, die ZUSAETZLICH gelten muss (Rust-eigen): das Feld entfaellt, sobald eine Bedingung der Kette es ausschliesst. Jede Bedingung der Kette traegt genau eine Art und ihre eigene Begruendung. Es gibt nur einen Platz je Feld; `und` ist der zweite."
             }
           },
           "required": [
@@ -381,7 +389,8 @@
               "not": {
                 "anyOf": [
                   {"required": ["wert_nicht"]},
-                  {"required": ["alter_im_vz"]}
+                  {"required": ["alter_im_vz"]},
+                  {"required": ["groesser_als"]}
                 ]
               }
             },
@@ -392,7 +401,8 @@
               "not": {
                 "anyOf": [
                   {"required": ["wert"]},
-                  {"required": ["alter_im_vz"]}
+                  {"required": ["alter_im_vz"]},
+                  {"required": ["groesser_als"]}
                 ]
               }
             },
@@ -403,7 +413,20 @@
               "not": {
                 "anyOf": [
                   {"required": ["wert"]},
-                  {"required": ["wert_nicht"]}
+                  {"required": ["wert_nicht"]},
+                  {"required": ["groesser_als"]}
+                ]
+              }
+            },
+            {
+              "required": [
+                "groesser_als"
+              ],
+              "not": {
+                "anyOf": [
+                  {"required": ["wert"]},
+                  {"required": ["wert_nicht"]},
+                  {"required": ["alter_im_vz"]}
                 ]
               }
             }

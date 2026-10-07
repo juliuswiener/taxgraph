@@ -46,7 +46,19 @@ bindungen:
     bereich: {min: 0, max: 100, grund: "Anteil des Steuerpflichtigen am Höchstbetrag in Prozent; das Schema (E0504603) lässt 0 bis 100 zu."}
     askable: true
     vorjahr: vorschlag
-    feld_bedingung: {feld: veranlagung, wert: einzel, grund: "Der Anteil am Höchstbetrag gilt nur für Eltern, die nicht zusammen veranlagt werden: das Kz E0504603 steht im Schema im Abschnitt Schulgeld/Elt_k_ZV (Eltern ohne Zusammenveranlagung). Bei Zusammenveranlagung steht beiden Ehegatten zusammen der volle Höchstbetrag von 5.000 Euro je Kind zu, ein Anteil entfällt."}
+    # Zwei Bedingungen, beide muessen gelten (Abweichung Nr. 34): Einzelveranlagung (`wert`) UND ein bestaetigtes Schulgeld
+    # ueber 0 (`und` mit `groesser_als`). Die zweite ist POSITIVER BEWEIS: ohne bestaetigtes Schulgeld steht die Frage nicht,
+    # auch bei Schweigen. Die Eingangsfrage `schulgeld` steht vorn in der Queue und schaltet sie frei; eine fehlende Antwort auf
+    # den Anteil heisst weiter "je zur Haelfte", die Rechnung aendert sich nicht. Vault: decisions/schulgeld-anteilsfrage-
+    # erscheint-nur-bei-schulgeld-ueber-0.
+    feld_bedingung:
+      feld: veranlagung
+      wert: einzel
+      grund: "Der Anteil am Höchstbetrag gilt nur für Eltern, die nicht zusammen veranlagt werden: das Kz E0504603 steht im Schema im Abschnitt Schulgeld/Elt_k_ZV (Eltern ohne Zusammenveranlagung). Bei Zusammenveranlagung steht beiden Ehegatten zusammen der volle Höchstbetrag von 5.000 Euro je Kind zu, ein Anteil entfällt."
+      und:
+        feld: schulgeld
+        groesser_als: 0
+        grund: "Der Anteil am Höchstbetrag wirkt nur auf ein Schulgeld, das gezahlt wurde: ohne bestätigtes Schulgeld über 0 Euro gibt es nichts aufzuteilen, und die Frage verlängerte nur das Interview. Ohne Antwort rechnet die Software hälftig."
     fragetext_laie: "Wie viel Prozent des Höchstbetrags für das Schulgeld dieses Kindes stehen dir zu? Nur nötig, wenn ihr als Eltern gemeinsam beantragt habt, den Höchstbetrag nicht je zur Hälfte aufzuteilen."
     hilfe_kurz: "Ohne gemeinsamen Antrag teilen sich die Eltern den Höchstbetrag je zur Hälfte (50). Hast du mit dem anderen Elternteil gemeinsam eine andere Aufteilung beantragt, trage deinen Anteil ein, zum Beispiel 100, wenn du das Schulgeld allein trägst und der andere Elternteil auf seinen Anteil verzichtet. Antwortest du 50, rechnet die Software wie ohne Antrag."
     # Nicht 50: bei 50 (je zur Haelfte) steht das Kz nicht im XML, und die Abdeckungspruefung
