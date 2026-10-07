@@ -162,6 +162,8 @@ fn ein_parteiname_mitten_im_wort_loest_nicht_aus() {
             "Spende Verein Grüner Weg",   // "grüne" am Wortanfang von "grüner"
             "Spende Gruppe CDU2",         // eine Ziffer gehoert zum Wort
             "Spende Bündnis 900",         // "bündnis 90" vor einer weiteren Ziffer
+            "Spende Parteiämter e.V.",    // "partei" vor einem Nicht-ASCII-Buchstaben
+            "Spende äCDU",                // "cdu" nach einem Nicht-ASCII-Buchstaben
         ]
         .map(str::to_owned),
     );
