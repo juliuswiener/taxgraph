@@ -550,3 +550,26 @@ async fn ein_unvollstaendiger_versorgungsbezug_des_ehegatten_sperrt_mit_dem_best
     assert_eq!(a["grund"], json!("versorgungsfreibetrag_offen"), "{a}");
     assert!(a["zahl_cent"].is_null(), "gesperrt heisst keine Zahl: {a}");
 }
+
+/// Abweichung Nr. 37: Fehlt beim Ehegatten das Beginnjahr, die Bemessungsgrundlage oder beides, nennt die Meldung (`klartext`
+/// in `GET /ergebnis`) den Ehegatten und sagt, dass die zwei Angaben je Person gelten. Der Grund ist derselbe wie fuer
+/// Person A (keine neue Kennung), und die Meldung ist fuer jede der drei Luecken dieselbe.
+#[tokio::test]
+async fn die_meldung_zu_fehlenden_versorgungsangaben_nennt_den_ehegatten() {
+    let ohne = |feld: &str| -> Paare { versorgung_partner(30_000).into_iter().filter(|(f, _)| *f != feld).collect() };
+    let nur_bezug: Paare = vec![("versorgung_jahresrente_partner", json!(3_000_000))];
+    let luecken = [
+        ("Beginnjahr und Bemessung fehlen", nur_bezug),
+        ("Bemessung fehlt", ohne("versorgung_bemessungsgrundlage_partner")),
+        ("Beginnjahr fehlt", ohne("versorgung_beginn_jahr_partner")),
+    ];
+    for (name, versorgung) in luecken {
+        let a = ergebnis(&mit(paar(2_000_000), versorgung)).await;
+        assert_eq!(a["grund"], json!("versorgungsfreibetrag_offen"), "{name}: {a}");
+        assert!(a["zahl_cent"].is_null(), "{name}: gesperrt heisst keine Zahl: {a}");
+        let klartext = a["klartext"].as_str().unwrap_or_else(|| panic!("{name}: kein Klartext: {a}"));
+        assert!(klartext.contains("deines Ehegatten"), "{name}: die Meldung nennt den Ehegatten nicht: {klartext}");
+        assert!(klartext.contains("gemeinsamer Veranlagung"), "{name}: {klartext}");
+        assert!(klartext.contains("jede Person einzeln"), "{name}: {klartext}");
+    }
+}
