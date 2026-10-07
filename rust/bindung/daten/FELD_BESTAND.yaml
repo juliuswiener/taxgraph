@@ -29,6 +29,8 @@ felder:
   - agb_aufwendungen
   - agb_notwendig_angemessen
   - agb_zwangslaeufig
+  - alter_55_vor_verkauf
+  - alter_55_vor_verkauf_partner
   - am_afa_ist_anschaffungsjahr
   - am_anschaffung_monat
   - am_anschaffungskosten

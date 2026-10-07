@@ -45,6 +45,7 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
 ) -> Vec<&'r str> {
     let aktiv = Aktiv::aus(store);
     let rel = relevanz_mit(&aktiv, sicht, graph);
+    let vz = store.datei().veranlagungszeitraum.als_i64_saettigend();
     let kand: Vec<&'r Bindung> = sicht
         .iter()
         .filter(|b| {
@@ -55,7 +56,7 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
                 && rel
                     .get(b.quelle.regel_id.as_str())
                     .is_none_or(|r| r.status != Regelstatus::Ausgeschlossen)
-                && !feld_ausgeschlossen(b, &aktiv, sicht, graph)
+                && !feld_ausgeschlossen(b, &aktiv, sicht, graph, vz)
         })
         .collect();
     let gw = gate_gewicht(sicht, graph);
@@ -104,16 +105,26 @@ fn vorjahr_uebernommen(b: &Bindung, ev: Option<&Event>) -> bool {
 /// kennt nur `Option`. Ein ausdrueckliches `wert_nicht: null` hiesse in Python "gleich None";
 /// in keiner `bindung_*.yaml` belegt (gemessen: 42× `wert: false`, 8× `"zusammen"`, 5×
 /// `wert_nicht: "keine"`, 4× `wert_nicht: 0`, 3× `wert: true`).
+///
+/// Rust-eigen (Abweichung Nr. 32): `alter_im_vz` meint ein Geburtsjahr in `feld`. Das Feld bleibt nur im Jahr, in dem
+/// Veranlagungsjahr `vz` minus Geburtsjahr genau diese Zahl ergibt; jedes BESTAETIGTE andere Geburtsjahr schliesst es aus,
+/// ein fehlendes oder vorlaeufiges nicht (fail-closed wie `wert`). Ein bestaetigter Wert, der kein Ganzzahl-Geburtsjahr ist,
+/// schliesst ebenfalls nicht aus: die Frage bleibt.
 fn feld_ausgeschlossen(
     b: &Bindung,
     aktiv: &Aktiv<'_>,
     sicht: &Sicht<'_>,
     graph: &Graph<'_>,
+    vz: i64,
 ) -> bool {
     let Some(bed) = &b.feld_bedingung else {
         return false;
     };
-    let stand = if let Some(nicht) = &bed.wert_nicht {
+    let stand = if let Some(alter) = bed.alter_im_vz {
+        bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| {
+            matches!(w, PyWert::Ganz(gj) if vz.checked_sub(*gj) != Some(alter))
+        })
+    } else if let Some(nicht) = &bed.wert_nicht {
         let nicht = PyWert::from(nicht.clone());
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| w.py_eq(&nicht))
     } else {

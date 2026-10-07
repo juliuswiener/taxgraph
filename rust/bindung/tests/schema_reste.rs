@@ -167,9 +167,13 @@ fn feld_bedingung_hat_genau_eine_bedingung_und_eine_lange_begruendung() {
     assert!(bedingung("wert: 0").is_ok(), "0 ist ein gesetzter Wert");
     assert!(bedingung("wert_nicht: true").is_ok());
     assert!(bedingung("wert_nicht: false").is_ok());
+    assert!(bedingung("alter_im_vz: 55").is_ok(), "ein Alter ist die dritte Art");
     for (name, wert) in [
         ("beide", "wert: true, wert_nicht: true"),
         ("beide, falsch", "wert: false, wert_nicht: false"),
+        ("wert und Alter", "wert: true, alter_im_vz: 55"),
+        ("wert_nicht und Alter", "wert_nicht: true, alter_im_vz: 55"),
+        ("alle drei", "wert: true, wert_nicht: true, alter_im_vz: 55"),
     ] {
         let fehler = bedingung(wert).unwrap_err();
         assert!(

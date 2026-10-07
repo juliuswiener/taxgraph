@@ -33,9 +33,9 @@ use crate::{
     BescheidFehler, Felder, Instanzquelle,
 };
 
-/// § 34 Abs. 3 S. 1: (Alter ≥ 55 [aus `geburtsjahr`] ODER dauernd berufsunfaehig) UND § 34 Abs. 3
-/// S. 4 nicht schon einmal genutzt. Geteilt zwischen Chooser und Guard; `antrag_ermaessigter_satz`
-/// prueft der Aufrufer separat.
+/// § 34 Abs. 3 S. 1: (Alter ≥ 55 [aus `geburtsjahr`, im Jahr der Vollendung mit der Antwort auf `alter_55_vor_verkauf`]
+/// ODER dauernd berufsunfaehig) UND § 34 Abs. 3 S. 4 nicht schon einmal genutzt. Geteilt zwischen Chooser und Guard;
+/// `antrag_ermaessigter_satz` prueft der Aufrufer separat.
 ///
 /// # Errors
 /// [`BescheidFehler::Ueberlauf`] bei einem `geburtsjahr` jenseits von `i64`.
@@ -47,14 +47,16 @@ use crate::{
 pub fn abs3_eligible(f: &Felder, vz: Vz) -> Result<bool, BescheidFehler> {
     // PARITÄT: fail-open default — fehlendes geburtsjahr = 0 = "kein Alter bekannt" (kein Fehler).
     let gj = feld_int_oder_null(f, "geburtsjahr")?;
+    let geburtstag_nach_verkauf = ist_false(wert(f, "alter_55_vor_verkauf"));
     let berufsunfaehig = ist_true(wert(f, "dauernd_berufsunfaehig"));
     let einmal_genutzt = ist_true(wert(f, "ermaessigung_einmal_genutzt"));
-    Ok(abs3_berechtigt(vz, gj, berufsunfaehig, einmal_genutzt))
+    Ok(abs3_berechtigt(vz, gj, geburtstag_nach_verkauf, berufsunfaehig, einmal_genutzt))
 }
 
 /// § 34 Abs. 3 S. 1 und S. 4 fuer den EHEGATTEN (B Option 1, 2026-10-06): dieselbe Regel wie [`abs3_eligible`], auf den
-/// Feldern des Partners (`geburtsjahr_partner`, `dauernd_berufsunfaehig_partner`, `ermaessigung_einmal_genutzt_partner`).
-/// Ob der Partner ueberhaupt mitveranlagt wird, prueft der Aufrufer (`antrag_ermaessigter_satz_partner` ebenso).
+/// Feldern des Partners (`geburtsjahr_partner`, `alter_55_vor_verkauf_partner`, `dauernd_berufsunfaehig_partner`,
+/// `ermaessigung_einmal_genutzt_partner`). Ob der Partner ueberhaupt mitveranlagt wird, prueft der Aufrufer
+/// (`antrag_ermaessigter_satz_partner` ebenso).
 ///
 /// # Errors
 /// [`BescheidFehler::Ueberlauf`] bei einem `geburtsjahr_partner` jenseits von `i64`.
@@ -65,16 +67,32 @@ pub fn abs3_eligible(f: &Felder, vz: Vz) -> Result<bool, BescheidFehler> {
 /// ```
 pub fn abs3_eligible_partner(f: &Felder, vz: Vz) -> Result<bool, BescheidFehler> {
     let gj = feld_int_oder_null(f, "geburtsjahr_partner")?;
+    let geburtstag_nach_verkauf = ist_false(wert(f, "alter_55_vor_verkauf_partner"));
     let berufsunfaehig = ist_true(wert(f, "dauernd_berufsunfaehig_partner"));
     let einmal_genutzt = ist_true(wert(f, "ermaessigung_einmal_genutzt_partner"));
-    Ok(abs3_berechtigt(vz, gj, berufsunfaehig, einmal_genutzt))
+    Ok(abs3_berechtigt(vz, gj, geburtstag_nach_verkauf, berufsunfaehig, einmal_genutzt))
 }
 
 /// Die gemeinsame Regel von [`abs3_eligible`] und [`abs3_eligible_partner`]: (55. Lebensjahr vollendet ODER dauernd
 /// berufsunfaehig) UND nicht schon einmal genutzt. Die Aufrufer lesen die Felder mit Literalen, damit
 /// `tests/feld_kennung_gate.rs` jede Kennung gegen die Bindung prueft.
-fn abs3_berechtigt(vz: Vz, geburtsjahr: i64, berufsunfaehig: bool, einmal_genutzt: bool) -> bool {
-    let alter_ge_55 = geburtsjahr > 0 && i64::from(vz.jahr()) - geburtsjahr >= 55;
+///
+/// Das Geburtsjahr sagt im Jahr der Vollendung (Veranlagungsjahr minus Geburtsjahr gleich 55) nicht, ob der Geburtstag vor
+/// dem Verkauf lag. Dort entscheidet die Antwort: `geburtstag_nach_verkauf` (ein bestaetigtes "nein") nimmt das Alter, "ja" und
+/// keine Antwort lassen es (Julius 2026-10-07, Abweichung Nr. 32). In jedem anderen Jahr bleibt die Antwort ohne Wirkung.
+fn abs3_berechtigt(
+    vz: Vz,
+    geburtsjahr: i64,
+    geburtstag_nach_verkauf: bool,
+    berufsunfaehig: bool,
+    einmal_genutzt: bool,
+) -> bool {
+    // Die Subtraktion steht hinter `geburtsjahr > 0`: ein `geburtsjahr` nahe `i64::MIN` liefe sonst ueber (dev-Profil:
+    // `overflow-checks`), obwohl "kein Alter bekannt" gemeint ist.
+    let alter_ge_55 = geburtsjahr > 0 && {
+        let alter = i64::from(vz.jahr()) - geburtsjahr;
+        alter >= 55 && !(alter == 55 && geburtstag_nach_verkauf)
+    };
     (alter_ge_55 || berufsunfaehig) && !einmal_genutzt
 }
 
@@ -690,6 +708,82 @@ mod tests {
         assert!(abs3_eligible(&f, Vz::Vz2025).unwrap());
         let f = felder(&store(&[("geburtsjahr", json!(1990), true)]));
         assert!(!abs3_eligible(&f, Vz::Vz2025).unwrap());
+    }
+
+    /// Das 55. Lebensjahr im Jahr der Vollendung (Abweichung Nr. 32): VZ 2025 minus Geburtsjahr 1970 ergibt genau 55. Nur
+    /// dort entscheidet die Antwort auf `alter_55_vor_verkauf` (`_partner`): "nein" nimmt die Berechtigung ueber das Alter,
+    /// "ja" und keine Antwort lassen sie. In jedem anderen Jahr bleibt die Antwort ohne Wirkung ("nein" bei 56 und 65 Jahren
+    /// aendert nichts, "ja" bei 54 und 35 macht niemanden berechtigt). Die Berufsunfaehigkeit und die einmalige Nutzung
+    /// gelten unabhaengig davon. Beide Personen, dieselbe Tabelle.
+    #[test]
+    fn abs3_55_geburtstag_entscheidet_nur_im_jahr_der_vollendung() {
+        // (Geburtsjahr, Antwort, berufsunfaehig, einmal genutzt, berechtigt)
+        let tabelle: [(i64, Option<bool>, bool, bool, bool); 12] = [
+            (1970, None, false, false, true),
+            (1970, Some(true), false, false, true),
+            (1970, Some(false), false, false, false),
+            (1970, Some(false), true, false, true),
+            (1970, Some(true), false, true, false),
+            (1969, Some(false), false, false, true),
+            (1960, Some(false), false, false, true),
+            (1971, Some(true), false, false, false),
+            (1990, Some(true), false, false, false),
+            (1971, None, false, false, false),
+            (1971, Some(true), true, false, true),
+            (1960, None, false, false, true),
+        ];
+        for (gj, antwort, bu, einmal, soll) in tabelle {
+            for partner in [false, true] {
+                let (n_gj, n_antwort, n_bu, n_einmal) = if partner {
+                    (
+                        "geburtsjahr_partner",
+                        "alter_55_vor_verkauf_partner",
+                        "dauernd_berufsunfaehig_partner",
+                        "ermaessigung_einmal_genutzt_partner",
+                    )
+                } else {
+                    (
+                        "geburtsjahr",
+                        "alter_55_vor_verkauf",
+                        "dauernd_berufsunfaehig",
+                        "ermaessigung_einmal_genutzt",
+                    )
+                };
+                let mut ev = vec![(n_gj, json!(gj), true)];
+                if let Some(a) = antwort {
+                    ev.push((n_antwort, json!(a), true));
+                }
+                if bu {
+                    ev.push((n_bu, json!(true), true));
+                }
+                if einmal {
+                    ev.push((n_einmal, json!(true), true));
+                }
+                let f = felder(&store(&ev));
+                let ist = if partner {
+                    abs3_eligible_partner(&f, Vz::Vz2025)
+                } else {
+                    abs3_eligible(&f, Vz::Vz2025)
+                }
+                .unwrap();
+                assert_eq!(
+                    ist, soll,
+                    "geboren {gj}, Antwort {antwort:?}, berufsunfaehig {bu}, einmal genutzt {einmal}, Partner {partner}"
+                );
+            }
+        }
+        // Ein Geburtsjahr am Rand von `i64` laeuft nicht ueber (dev-Profil: `overflow-checks`): kein Alter bekannt, nie berechtigt.
+        for gj in [i64::MIN, i64::MAX, 0, -1] {
+            assert!(!abs3_berechtigt(Vz::Vz2025, gj, true, false, false), "geburtsjahr {gj}");
+            assert!(!abs3_berechtigt(Vz::Vz2025, gj, false, false, false), "geburtsjahr {gj}");
+        }
+        // Die Jahresgrenze haengt am Veranlagungsjahr, nicht an einer festen Zahl: VZ 2026 minus 1971 ergibt 55.
+        let f = felder(&store(&[
+            ("geburtsjahr", json!(1971), true),
+            ("alter_55_vor_verkauf", json!(false), true),
+        ]));
+        assert!(!abs3_eligible(&f, Vz::Vz2026).unwrap(), "2026: 1971 wird 55, nein");
+        assert!(!abs3_eligible(&f, Vz::Vz2025).unwrap(), "2025: 1971 wird 54, nicht berechtigt");
     }
 
     #[test]
