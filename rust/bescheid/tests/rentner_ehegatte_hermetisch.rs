@@ -400,6 +400,127 @@ fn der_altersentlastungsbetrag_beider_ehegatten_zaehlt_je_fuer_sich() {
     assert_eq!(ohne - mit, 760 + 627);
 }
 
+/// Gewerbe-Gewinn von Person A (`euro` Euro, Messbetrag 0): die Felder, mit denen die Rentner-Scheibe einen laufenden Gewinn
+/// nimmt (`kein_gewinn` auf nein).
+fn gewinn_a(euro: i64) -> Paare {
+    vec![
+        ("kein_gewinn", json!(false)),
+        ("einkuenfte_gewinn", json!(cent(euro))),
+        ("gewinn_betriebsart", json!("gewerbe")),
+        ("gewst_hebesatz", json!(400)),
+        ("gewst_messbetrag", json!(0)),
+    ]
+}
+
+/// Veraeusserungsgewinn nach § 16 von Person A (`euro` Euro) mit beiden Gate-Antworten fuer den Freibetrag nach § 16 Abs. 4
+/// (55 Jahre oder berufsunfaehig, erstmalig) auf ja, dazu `kein_gewinn` auf nein.
+fn veraeusserungsgewinn_a(euro: i64) -> Paare {
+    vec![
+        ("kein_gewinn", json!(false)),
+        ("rentner_veraeusserungsgewinn", json!(cent(euro))),
+        ("rentner_alter_55_oder_berufsunfaehig", json!(true)),
+        ("rentner_freibetrag_erstmalig", json!(true)),
+    ]
+}
+
+/// Der Altersentlastungsbetrag von Person A in Euro: Gesamtbetrag der Einkuenfte ohne Geburtsjahr abzueglich dem mit
+/// Geburtsjahr 1955, bei `lohn` Euro Arbeitslohn und den weiteren Angaben `weitere` (Einzelveranlagung).
+fn altersentlastung_a(lohn: i64, weitere: &[(&'static str, Value)]) -> i64 {
+    let basis = || {
+        let mut p = vec![("bruttoarbeitslohn", json!(cent(lohn)))];
+        p.extend(weitere.iter().cloned());
+        mit_veranlagung("einzel", p)
+    };
+    let mut mit = basis();
+    mit.push(("geburtsjahr", json!(1955)));
+    gdb(&basis()) - gdb(&mit)
+}
+
+/// § 24a Satz 1: der Prozentsatz gilt fuer den Arbeitslohn UND fuer die positive Summe der Einkuenfte, die nicht aus nichtselb-
+/// staendiger Arbeit sind (Gewinn aus Gewerbe und Veraeusserungsgewinn zaehlen, die Rente nicht, Satz 2 Nr. 2). Person A, geboren
+/// 1955 (Kohorte 2020: 16,0 %, hoechstens 760 Euro), Rente 20.000 Euro im Hintergrund. Von Hand:
+/// - Lohn 2.000 Euro, kein weiteres Einkommen: 16,0 % von 2.000 = 320.
+/// - Lohn 2.000 Euro, Gewinn 1.000 Euro: 16,0 % von 3.000 = 480 (ueber 320, unter dem Hoechstbetrag).
+/// - Lohn 0, Gewinn 3.000 Euro: 16,0 % von 3.000 = 480 (kein Lohn noetig).
+/// - Lohn 2.000 Euro, Gewinn 20.000 Euro: 16,0 % von 22.000 = 3.520, gedeckelt auf 760.
+/// - Lohn 2.000 Euro, Veraeusserungsgewinn 46.000 Euro: nach dem Freibetrag von 45.000 Euro (§ 16 Abs. 4, `estg_p16_2026-07-14.txt`;
+///   unter der Schwelle von 136.000 Euro ungekuerzt) bleiben 1.000 Euro, also 16,0 % von 3.000 = 480.
+///
+/// Der Rentner-Zweig reicht diese Summe an `entlastungen` weiter (`max0(summe_euro(&[laufend, netto_vg, p23]))`); ein Aufruf mit
+/// 0 gaebe in den Faellen 2 bis 5 jeweils 320 (mit Lohn) oder 0 (ohne Lohn), ohne den laufenden Gewinn oder ohne den
+/// Veraeusserungsgewinn in der Summe fehlt der Zuwachs.
+#[test]
+fn der_altersentlastungsbetrag_von_person_a_rechnet_die_nicht_lohn_einkuenfte_in_die_bemessung() {
+    assert_eq!(altersentlastung_a(2_000, &[]), 320, "Lohn 2.000, kein weiteres Einkommen");
+    assert_eq!(altersentlastung_a(2_000, &gewinn_a(1_000)), 480, "Lohn 2.000, Gewinn 1.000");
+    assert_eq!(altersentlastung_a(0, &gewinn_a(3_000)), 480, "kein Lohn, Gewinn 3.000");
+    assert_eq!(altersentlastung_a(2_000, &gewinn_a(20_000)), 760, "Hoechstbetrag");
+    assert_eq!(altersentlastung_a(2_000, &veraeusserungsgewinn_a(46_000)), 480, "Veraeusserungsgewinn 46.000 nach Freibetrag");
+}
+
+/// Ein Verkauf nach § 23 (`p23_*`) erreicht im Rentner-Ring nie eine Zahl, also gibt es keine Bemessung aus § 23 fuer § 24a:
+/// mit `kein_p23_verkauf` auf nein sperrt `einkunftsart_nicht_ring_faehig` (`fremd_arten` der Scheibe), auf ja oder ohne Antwort
+/// sperrt `flag_konsistenz_offen`. Das ist der Beleg, dass `p23` in `max0(summe_euro(&[laufend, netto_vg, p23]))` (`zweige/
+/// rentner.rs`) kein eigener Test braucht: faellt eine der drei Sperren weg, wird dieser Test rot, und dann braucht `p23` einen.
+#[test]
+fn ein_verkauf_nach_p23_erreicht_im_rentner_ring_nie_eine_zahl() {
+    let verkauf = |flag: Option<bool>| {
+        let mut p = vec![
+            ("p23_veraeusserungspreis", json!(cent(5_000))),
+            ("p23_anschaffung_herstellungskosten", json!(cent(4_000))),
+            ("p23_werbungskosten", json!(0)),
+            ("p23_veraeusserungs_typ", json!("grundstueck")),
+        ];
+        if let Some(f) = flag {
+            p.push(("kein_p23_verkauf", json!(f)));
+        }
+        mit_veranlagung("einzel", p)
+    };
+    // Gegenprobe: dieselbe Frage "kein Verkauf: ja" ohne Verkaufsdaten gibt eine Zahl, die Sperren oben kommen also von den Daten.
+    let _ = kette(&mit_veranlagung("einzel", vec![("kein_p23_verkauf", json!(true))]));
+    assert_eq!(gesperrt_mit(&verkauf(Some(false))), "einkunftsart_nicht_ring_faehig");
+    assert_eq!(gesperrt_mit(&verkauf(Some(true))), "flag_konsistenz_offen");
+    assert_eq!(gesperrt_mit(&verkauf(None)), "flag_konsistenz_offen");
+}
+
+/// Der Entlastungsbetrag fuer Alleinerziehende (§ 24b) in Euro: Gesamtbetrag der Einkuenfte der Einzelveranlagung ohne die
+/// Angaben abzueglich dem mit `alleinstehend`, `kinder` Kindern und `monate` vollen Monaten ohne Voraussetzung.
+fn entlastung_24b(alleinstehend: bool, kinder: i64, monate: i64) -> i64 {
+    let ohne = gdb(&mit_veranlagung("einzel", vec![]));
+    let mit = gdb(&mit_veranlagung(
+        "einzel",
+        vec![
+            ("fam_alleinstehend", json!(alleinstehend)),
+            ("fam_anzahl_kinder", json!(kinder)),
+            ("fam_monate_ohne_voraussetzung", json!(monate)),
+        ],
+    ));
+    ohne - mit
+}
+
+/// § 24b (`estg_p24b_2026-07-09.txt`): Absatz 2: 4.260 Euro fuer das erste Kind, 240 Euro je weiteres Kind; Absatz 4: je voller
+/// Monat ohne die Voraussetzung ein Zwoelftel weniger. Von Hand: 1 Kind 4.260; 2 Kinder 4.500; 1 Kind und 6 Monate ohne
+/// Voraussetzung 4.260 − 6 × 355 = 2.130. Wer nicht allein steht, bekommt nichts. Der Rentner-Zweig reicht den Betrag aus
+/// `entlastungen` an den Gesamtfall weiter (`entlastungsbetrag_alleinerziehende`); ohne ihn bliebe die Rentnerin mit Kind bei 0.
+#[test]
+fn der_entlastungsbetrag_fuer_alleinerziehende_mindert_den_gesamtbetrag_der_rentnerin() {
+    assert_eq!(entlastung_24b(true, 1, 0), 4_260, "ein Kind");
+    assert_eq!(entlastung_24b(true, 2, 0), 4_500, "zwei Kinder");
+    assert_eq!(entlastung_24b(true, 1, 6), 2_130, "ein Kind, sechs Monate ohne Voraussetzung");
+    assert_eq!(entlastung_24b(false, 1, 0), 0, "nicht allein stehend");
+    assert_eq!(entlastung_24b(true, 0, 0), 0, "kein Kind");
+    // Die Steuer sinkt: dasselbe Kind, einmal allein stehend und einmal nicht (der Kinderfreibetrag haengt nur am Kind).
+    let steuer = |alleinstehend: bool| {
+        kette(&mit_veranlagung(
+            "einzel",
+            vec![("fam_alleinstehend", json!(alleinstehend)), ("fam_anzahl_kinder", json!(1))],
+        ))
+        .festzusetzende_est
+        .get()
+    };
+    assert!(steuer(true) < steuer(false), "{} < {}", steuer(true), steuer(false));
+}
+
 /// Bei Einzelveranlagung zaehlt der Ehegatte nicht, also auch sein Altersentlastungsbetrag nicht.
 #[test]
 fn bei_einzelveranlagung_gibt_es_keinen_altersentlastungsbetrag_fuer_den_ehegatten() {
