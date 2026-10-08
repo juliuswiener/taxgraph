@@ -277,6 +277,43 @@ fn die_steuer_folgt_der_formel_fuer_jeden_betrag() {
     }
 }
 
+/// Der Fragetext trennt die zwei Bedeutungen des Betrags (Julius 2026-10-08): bei Freistellung ZUSAETZLICH zum uebrigen
+/// Einkommen, nach deutschem Recht ermittelt (Einnahmen minus anteilige Werbungskosten, nicht der Bruttolohn); bei
+/// Anrechnung weiter der ANTEIL der bereits erfassten Einkuenfte. Quelle der Ermittlung: Anleitung zur Anlage N-AUS 2025,
+/// Zeilen 57 bis 59. Der Rechner erkennt eine Doppelzaehlung nicht (naechster Test); der Text ist die einzige Schranke.
+#[test]
+fn der_fragetext_trennt_freistellung_von_anrechnung() {
+    let b = index()[EINKUENFTE];
+    let frage = b
+        .fragetext_laie
+        .as_deref()
+        .expect("KONTROLLE: Fragetext fehlt");
+    for teil in [
+        "Werbungskosten",
+        "nicht der Bruttolohn",
+        "Freistellung",
+        "zusätzlich",
+        "Anrechnung",
+    ] {
+        assert!(frage.contains(teil), "Fragetext ohne `{teil}`: {frage}");
+    }
+    for teil in [
+        "Freistellung",
+        "NICHT in deinen übrigen Einkünften",
+        "Einnahmen minus anteilige Werbungskosten",
+        "nicht der Bruttolohn",
+        "Steuersatz",
+        "ANTEIL deiner bereits deklarierten Einkünfte",
+        "keine zusätzlichen Beträge",
+    ] {
+        assert!(
+            b.hilfe_kurz.contains(teil),
+            "Hilfetext ohne `{teil}`: {}",
+            b.hilfe_kurz
+        );
+    }
+}
+
 /// BEKANNTE GRENZE, hier festgehalten und nicht gutgeheissen: erfasst jemand die 20.000 Euro auch im Lohn (zvE 70.000 statt
 /// 50.000) UND als Freistellung, zaehlen sie doppelt. Die Steuer ist dann 20.912 Euro (Satz der Summe 90.000, angewendet auf
 /// 70.000) statt der 13.205 Euro des richtigen Falls. Der Rechner kann die Doppelzaehlung nicht erkennen; schuetzen kann nur
