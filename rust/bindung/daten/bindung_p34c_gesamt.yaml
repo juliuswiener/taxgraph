@@ -1,8 +1,13 @@
 # Bindungstabelle — §34c Abs.1 EStG DBA-Anrechnung ausländischer Steuer (Stufe-1).
-# Single-Country-Nicht-DBA / DBA-Anrechnungsmethode. Fail-closed: Freistellungs-DBA,
-# multi-country, §32d-Kapital → sperr. Muster: felder OPTIONAL (absent→0→safe).
+# Single-Country-Nicht-DBA / DBA-Anrechnungsmethode. Fail-closed: multi-country, §32d-Kapital → sperr.
+# Freistellungs-DBA (Abweichung Nr. 40, Julius 2026-10-08): der Bescheid rechnet den Progressionsvorbehalt (§32b), die
+# Abgabe sperrt, bis die Erklaerung die Einkuenfte traegt; neben §34/§35 sperrt der Bescheid (dba_freistellung_offen).
+# Muster: felder OPTIONAL (absent→0→safe).
 # Kz: null+MVP (Anlage-AUS-Kz = dev-2-Folgeticket, XSD-recon nicht rushed).
-# Teilmenge-Invariant (Q1): dba_auslaendische_einkuenfte ⊆ Welteinkommen, NIE additiv zur GdE.
+# dba_auslaendische_einkuenfte hat ZWEI Bedeutungen je Methode:
+#  - Anrechnung / kein Abkommen (Teilmenge-Invariant Q1): ⊆ Welteinkommen, NIE additiv zur GdE.
+#  - Freistellung (Abweichung Nr. 40): ZUSAETZLICH zum uebrigen Einkommen (steht nicht darin), nach deutschem Recht ermittelt
+#    (Einnahmen minus anteilige Werbungskosten, nicht der Bruttolohn); es hebt nur den Steuersatz (§32b Abs. 2 Nr. 2).
 # Task §34c-Stufe-1, Stand 2026-07-21.
 version: 1
 scheibe: "§34c Abs.1 DBA-Anrechnung ausländischer Steuer (gesamt + rentner)"
@@ -36,11 +41,11 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Welche Methode gilt im Doppelbesteuerungsabkommen mit diesem Staat für deine Einkünfte?"
-    hilfe_kurz: "Die meisten DBA sehen Freistellung vor (dann kein §34c); bei Anrechnungs-DBA oder ohne DBA greift §34c. Frag deinen Steuerberater oder lies dein DBA nach."
+    hilfe_kurz: "Die meisten DBA sehen Freistellung vor (dann kein §34c); bei Anrechnungs-DBA oder ohne DBA greift §34c. Bei Freistellung bleiben die Einkünfte in Deutschland steuerfrei, erhöhen aber den Steuersatz auf dein übriges Einkommen (Progressionsvorbehalt). Frag deinen Steuerberater oder lies dein DBA nach."
     beispielwert: kein_dba
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "DBA-Methoden-Marker — kein direkter Kz (reine Ring-Logik, nicht deklariert). Freistellung → fail-closed (dba_freistellung_offen, §32b ung ungebaut)."
+    elster_kz_grund: "DBA-Methoden-Marker — kein direkter Kz (reine Ring-Logik, nicht deklariert). Freistellung: der Bescheid rechnet den Progressionsvorbehalt (§32b, Abweichung Nr. 40); die Abgabe sperrt (bescheid::deklaration::einreichung), neben §34/§35 sperrt der Bescheid mit dba_freistellung_offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 34c Abs. 6 S. 1 EStG"
@@ -110,8 +115,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Von den oben bereits erfassten Einkünften: welcher Teil stammt aus diesem Staat?"
-    hilfe_kurz: "⚠ Wichtig: nur der ANTEIL deiner bereits deklarierten Einkünfte, der aus dem Ausland stammt — keine zusätzlichen Beträge. Der Betrag dient nur zur Berechnung des Höchstbetrags der Anrechnung."
+    fragetext_laie: "Wie hoch sind deine Einkünfte aus diesem Staat, nach Abzug der Werbungskosten (nicht der Bruttolohn)? Bei Freistellung zählt der Betrag zusätzlich zu deinen übrigen Einkünften, bei Anrechnung nur der Teil, der schon darin steht."
+    hilfe_kurz: "⚠ Wichtig, je nach Methode. Freistellung (die Einkünfte sind in Deutschland steuerfrei): der Betrag steht NICHT in deinen übrigen Einkünften, trage ihn zusätzlich ein, ermittelt nach deutschem Recht (Einnahmen minus anteilige Werbungskosten, nicht der Bruttolohn). Er erhöht nur den Steuersatz auf dein übriges Einkommen. Anrechnung oder kein Abkommen: nur der ANTEIL deiner bereits deklarierten Einkünfte, der aus dem Ausland stammt — keine zusätzlichen Beträge. Er dient nur zur Berechnung des Höchstbetrags der Anrechnung."
     beispielwert: 4000000
     herkunft_slots: null
     # E10/AUS/Staat_Spez_InvFonds/Ek — "Einkünfte (einschließlich der gemäß § 3 Nr. 40 und

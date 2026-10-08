@@ -8,8 +8,8 @@ use konsistenz::flag_widersprueche;
 use super::{bestaetigt, oder_null_positiv, positiv, zahl_wert, Grund, K};
 use crate::deklaration::konstanten::AGB_KIST;
 use crate::einkuenfte::{
-    EUER_KOMPONENTEN, GEWINN_QUELLEN_MENGEN, KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE,
-    KAP_TOEPFE_PARTNER,
+    dba_freistellung_aktiv, EUER_KOMPONENTEN, GEWINN_QUELLEN_MENGEN, KAP_ERTRAEGE,
+    KAP_ERTRAEGE_PARTNER, KAP_TOEPFE, KAP_TOEPFE_PARTNER,
 };
 use crate::{ist_false, ist_true, ist_zusammen, wert, Felder};
 
@@ -27,11 +27,27 @@ pub(super) fn dba_p32b_p16(k: &K<'_>) -> Grund {
     if positiv(f, "p32b_progressionseinkuenfte") && p32b_koinzidenz(f) {
         return Ok(Some(Sperrgrund::P32bKombiOffen));
     }
+    // Freigestellte Auslandseinkuenfte (Abweichung Nr. 40): der Vorbehalt wird allein gerechnet. Zusammen mit § 34 oder
+    // § 35 bleibt die Kombination unaufgeloest, wie beim Lohnersatz (oben); die Gewerbesteuer des Ehegatten zaehlt hier mit
+    // (der Deckel in `gesamt_tarif::p32b_wrapper` summiert beide).
+    let nachbar = p32b_nachbarn(f) || (ist_zusammen(f) && positiv(f, "gewst_messbetrag_partner"));
+    if nachbar && dba_freistellung_aktiv(f)? {
+        return Ok(Some(Sperrgrund::DbaFreistellungOffen));
+    }
     Ok(p16_4(f))
 }
 
 /// § 32b Post-Engine NACH § 34/§ 35/§ 34c: Co-Praesenz ist in Stufe 1 unaufgeloest.
 fn p32b_koinzidenz(f: &Felder) -> bool {
+    p32b_nachbarn(f)
+        // 3. § 34c DBA-Anrechnung
+        || positiv(f, "dba_gezahlte_auslaendische_steuer")
+        || positiv(f, "dba_auslaendische_einkuenfte")
+}
+
+/// Die Steuerarten, die der Post-Engine-Zweig § 32b nur allein rechnet: § 34 (ermaessigter Satz) und § 35
+/// (Gewerbesteuer). Der Lohnersatz ([`p32b_koinzidenz`]) und die Freistellung (Abweichung Nr. 40) sperren daran.
+fn p32b_nachbarn(f: &Felder) -> bool {
     // 1. § 34 ao-Gewinn / ermaessigter Satz
     positiv(f, "rentner_veraeusserungsgewinn")
         || ist_true(wert(f, "antrag_ermaessigter_satz"))
@@ -39,9 +55,6 @@ fn p32b_koinzidenz(f: &Felder) -> bool {
         || (ist_zusammen(f) && positiv(f, "rentner_veraeusserungsgewinn_partner"))
         // 2. § 35 Gewerbesteuer
         || positiv(f, "gewst_messbetrag")
-        // 3. § 34c DBA-Anrechnung
-        || positiv(f, "dba_gezahlte_auslaendische_steuer")
-        || positiv(f, "dba_auslaendische_einkuenfte")
 }
 
 /// § 16 Abs. 4: Veraeusserungsgewinn > 0 verlangt beide Bedingungs-Bools BESTAETIGT (egal welcher

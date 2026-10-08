@@ -11,7 +11,22 @@ use store::{SnapshotFehler, Store};
 
 use super::konstanten::STAMMDATEN_FELDER;
 use super::{an_gesamt_sperrgrund, mit_ring_werten, scheibe_bindung, Cfg, ScheibenFehler};
-use crate::{BescheidFehler, BindungIndex, Instanzquelle};
+use crate::einkuenfte::dba_freistellung_angabe;
+use crate::{BescheidFehler, BindungIndex, Felder, Instanzquelle};
+
+/// Der Grund der Abgabe-Sperre bei freigestellten Auslandsangaben (Abweichung Nr. 40): der Bescheid rechnet den
+/// Progressionsvorbehalt, das XML meldete die Angaben aber unter dem Block der Anrechnung (`E0601401`, `E0601901`, Anlage AUS,
+/// `Staat_Spez_InvFonds`). Das Finanzamt sahe Einkuenfte mit anzurechnender Steuer, wo das Abkommen sie freistellt.
+const DBA_FREISTELLUNG_SPERRE: &str = "Steuerfreie Auslandseinkünfte (Freistellung nach einem Doppelbesteuerungsabkommen): Die Erklärung kann sie noch nicht an der richtigen Stelle melden und würde sie als Einkünfte mit anzurechnender Steuer eintragen. Die Abgabe ist deshalb gesperrt. Trage diese Einkünfte im Formular selbst ein (Anlage N-AUS für Arbeitslohn, sonst Anlage AUS).";
+
+/// Der Eintrag der Abgabe-Sperre, wenn die Akte freigestellte Auslandsangaben ueber 0 traegt ([`DBA_FREISTELLUNG_SPERRE`]).
+fn dba_freistellung_eintrag(felder: &Felder) -> Result<Option<Eintrag>, BescheidFehler> {
+    Ok(dba_freistellung_angabe(felder)?.map(|feld_id| Eintrag {
+        feld_id: feld_id.to_owned(),
+        grund: DBA_FREISTELLUNG_SPERRE.to_owned(),
+        hinweis: None,
+    }))
+}
 
 /// Was `api.einreichen` vor der ERiC-Pruefung in der Hand haelt.
 #[derive(Debug, Clone)]
@@ -144,10 +159,14 @@ pub fn einreichungs_xml(
         i64::from(vz.jahr()),
         Some(&sid),
     )?;
-    if !deklaration.eingaben_konsistent() {
-        return Err(EinreichFehler::DeklarationUnvollstaendig(
-            deklaration.unvollstaendig().to_vec(),
-        ));
+    // ponytail: nur die Abgabe sperrt hier, die Vorschau `/deklaration` zeigt den Eintrag nicht (der Bescheid kennt die
+    // Methode, `elster::deklariere` nicht). Upgrade-Pfad: die Methodentabellen nach `domain` heben, dann sperrt
+    // `deklariere` selbst, wie bei Unfallkosten und Abzug.
+    let dba_offen = dba_freistellung_eintrag(&felder)?;
+    if !deklaration.eingaben_konsistent() || dba_offen.is_some() {
+        let mut offen = deklaration.unvollstaendig().to_vec();
+        offen.extend(dba_offen);
+        return Err(EinreichFehler::DeklarationUnvollstaendig(offen));
     }
     let xml = erzeuge_xml(
         &deklaration,

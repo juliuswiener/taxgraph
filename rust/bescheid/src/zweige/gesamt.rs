@@ -31,7 +31,7 @@ use super::{gesamt_tarif, slot, Marke, Ring, VeranlagungWert};
 use crate::abzuege::{p33b_kind_pauschbetraege, shared_steuer_sonder_agb};
 use crate::einkuenfte::{
     gewinn_partner_anteil, laufender_gewinn, p20_kapitaleinkuenfte, p23_ansonsten_einkuenfte,
-    p35_summen, shared_dba_sonstige,
+    p35_summen, progressionseinkuenfte, shared_dba_sonstige,
 };
 use crate::{
     cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_false, ist_true, py_int, summe,
@@ -483,7 +483,7 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
             gezahlt,
             nenner,
         },
-        pe_raw: feld_euro_oder_null(f, "p32b_progressionseinkuenfte")?,
+        pe_raw: progressionseinkuenfte(f, &dba)?,
         kapitaleinkuenfte,
         kinder: feld_int_oder_null(f, "fam_anzahl_kinder")?,
         q: r.q(),
