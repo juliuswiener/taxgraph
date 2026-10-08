@@ -854,8 +854,11 @@ mod tests {
     /// Kz, die es nur in Rust gibt: `(JSON-Pfad der Liste, Kz)`. E0108701 (Spenden an Parteien, Zeile 7 der Anlage
     /// Sonderausgaben) steht in den vier Listen, die `kz_format.rs` fuehrt; Python (`est_mapping.py`) kennt das Kz nicht.
     /// Grund und Test: README `rust/fixtures/README.md`, Abweichung Nr. 31 (`bescheid/tests/parteispenden_einreichung_hermetisch.rs`).
-    const RUST_EIGENE_KZ: [(&str, &str); 4] = [
+    /// E0600920 (abgezogene auslaendische Steuer, § 34c Abs. 2, Anlage AUS Zeile 10) steht nur in `ABZUGS_KZ`; sein Schema-Typ
+    /// erlaubt die 0. Grund und Test: Abweichung Nr. 41 (`bescheid/tests/p34c_abzug_einreichung_hermetisch.rs`).
+    const RUST_EIGENE_KZ: [(&str, &str); 5] = [
         ("/abzugs_kz", "E0108701"),
+        ("/abzugs_kz", "E0600920"),
         ("/null_unzulaessig/je_vz/2024", "E0108701"),
         ("/null_unzulaessig/je_vz/2025", "E0108701"),
         ("/null_unzulaessig/vereinigung", "E0108701"),

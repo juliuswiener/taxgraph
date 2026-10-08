@@ -103,6 +103,8 @@ bindungen:
     # E10/AUS/Staat_Spez_InvFonds/Anzur_ausl_St — "für alle Einkunftsarten".
     # Ein-Staat-Fall: dba_mehrere_staaten=true ist fail-closed gesperrt (Stufe-1), es gibt
     # also genau einen Staat-Container. Belegt 2026-08-05.
+    # Bei bestaetigter Wahl dba_abzug_statt_anrechnung=true und Steuer ueber 0 schreibt deklariere den Betrag NICHT hierher,
+    # sondern aufgerundet nach E0600920 (Abweichung Nr. 41, rust/elster/src/deklaration.rs, DBA_ABZUG_KZ).
     elster_kz: E0601901
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
@@ -140,10 +142,11 @@ bindungen:
     beispielwert: false
     herkunft_slots: null
     # ponytail: kein Kz, die Abgabe sperrt (rust/elster/src/deklaration.rs, DBA_ABZUG_SPERRE), wenn der Marker true und die
-    # gezahlte Steuer ueber 0 ist. Grenze: die Erklaerung kann den Abzug nicht tragen. Upgrade-Pfad: die Anleitung zur
-    # Anlage AUS lesen (liegt lokal nicht), dann den Betrag unter E0600920 (Staat_Spez_InvFonds/Ek, "in Zeile 7 abgezogene
-    # auslaendische Steuern nach § 34c Abs. 2", ein Betrag, KEIN Marker) statt unter E0601901 schreiben und die Einkuenfte
-    # der Quell-Anlage kuerzen; dann die Sperre streichen. Je Ehegatte eine eigene Anlage AUS, je Staat ein Block: nicht gebaut.
+    # gezahlte Steuer ueber 0 ist. Die Erklaerung traegt den Betrag seit Abweichung Nr. 41 unter E0600920 (Anlage AUS Zeile 10,
+    # Staat_Spez_InvFonds, "abgezogene auslaendische Steuern nach § 34c Abs. 2", ein Betrag, KEIN Marker) statt unter E0601901,
+    # und der Bescheid kuerzt die Werbungskosten der Anlage N. Grenze: die Zeile "Sonstige Werbungskosten" der Anlage N
+    # (Weitere_Wk/Sonst) schreibt die Erklaerung noch nicht. Upgrade-Pfad: diese Zeile bauen und mit einem checkESt-Lauf
+    # belegen (Hersteller-ID), dann die Sperre streichen. Je Ehegatte eine eigene Anlage AUS, je Staat ein Block: nicht gebaut.
     elster_kz: null
     elster_kz_grund: "Antrags-/Wahlrechts-Marker (Anlage-AUS) — reine Ring-Weiche (Abzug statt Anrechnung), Kz-Recon = dev-2-Folgeticket (null-MVP)."
     vz_gueltigkeit: [2024, 2025, 2026]

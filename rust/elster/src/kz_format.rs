@@ -14,7 +14,7 @@ use serde_json::Value;
 use crate::py::{self, PyFehler};
 
 /// Kz, die Abzuege/Aufwendungen/Verluste deklarieren — aufrunden (`est_mapping.py:35-102`). E0108701 (Spenden an Parteien,
-/// Abweichung Nr. 31) steht nur in Rust.
+/// Abweichung Nr. 31) und E0600920 (abgezogene auslaendische Steuer, § 34c Abs. 2, Abweichung Nr. 41) stehen nur in Rust.
 ///
 /// E0703838 traegt kein Bindungsfeld mehr; es bleibt, weil es sachlich richtig klassifiziert ist.
 /// Die KV/PV-Kz E2001203 … E2003202 schreibt die KV/PV-Weiche `basis_kv`/`basis_pv`.
@@ -30,10 +30,10 @@ pub const ABZUGS_KZ: &[&str] = &[
     "E0703838", "E2000401", "E2000801", "E2000601", "E1901301", "E1901201", "E0161804", "E0104109",
     "E0107208", "E0111215", "E2001203", "E2001505", "E2001805", "E2002105", "E2003104", "E2003202",
     "E2001403", "E2001503", "E2001803", "E2001903", "E2002003", "E0505607", "E0503110", "E0503310",
-    "E0107601", "E0108202", "E0108105", "E0108701", "E0304601", "E0506105", "E0120103", "E0124401",
-    "E0203611", "E0207611", "E0705701", "E0305201", "E0241901", "E0242001", "E0108002", "E0104108",
-    "E0107207", "E0111214", "E0506104", "E0241001", "E0241101", "E0241201", "E0241301", "E0241302",
-    "E0241401", "E0241501", "E0241601", "E0241701",
+    "E0107601", "E0108202", "E0108105", "E0108701", "E0600920", "E0304601", "E0506105", "E0120103",
+    "E0124401", "E0203611", "E0207611", "E0705701", "E0305201", "E0241901", "E0242001", "E0108002",
+    "E0104108", "E0107207", "E0111214", "E0506104", "E0241001", "E0241101", "E0241201", "E0241301",
+    "E0241302", "E0241401", "E0241501", "E0241601", "E0241701",
 ];
 
 /// Kz vom XSD-Typ `DezimalzahlNichtNegOhneFuehrNull_MaxL15_MaxVK12_MinNK2_MaxNK2_CType_RABE`

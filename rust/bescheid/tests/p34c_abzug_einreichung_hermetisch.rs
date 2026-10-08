@@ -1,9 +1,12 @@
-//! § 34c Abs. 2 `EStG`, Abzug statt Anrechnung (Abweichung Nr. 29 in `rust/fixtures/README.md`): die Rechnung zieht die
-//! gezahlte auslaendische Steuer ab, wenn `dba_abzug_statt_anrechnung` wahr ist; das ELSTER-XML kennt den Abzug nicht
-//! und schriebe die Steuer immer als anzurechnende Steuer (Kz `E0601901`). Der Marker selbst hat kein Kz. Ein Bescheid,
-//! dessen Abzug die Erklaerung als Anrechnung meldet, waere die bekannte Naht-Luecke. Darum sperrt `deklariere` die Abgabe,
-//! wenn die Wahl `true` ist UND die gezahlte Steuer ueber 0 liegt (`einreichungs_xml` -> `DeklarationUnvollstaendig` ->
-//! 409 `deklaration_unvollstaendig`, `api/src/einreichen.rs`). Alles andere aendert sich nicht.
+//! § 34c Abs. 2 `EStG`, Abzug statt Anrechnung (Abweichungen Nr. 29 und Nr. 41 in `rust/fixtures/README.md`): die Rechnung
+//! kuerzt die Einkuenfte um die gezahlte auslaendische Steuer, wenn `dba_abzug_statt_anrechnung` wahr ist. Die Erklaerung
+//! traegt diesen Betrag seit Nr. 41 unter `E0600920` (Anlage AUS, Zeile 10, "abgezogene auslaendische Steuern nach § 34c
+//! Abs. 2", aufgerundet) und NICHT mehr als anzurechnende Steuer unter `E0601901`. Der Marker selbst hat kein Kz.
+//!
+//! Die ABGABE bleibt gesperrt, wenn die Wahl `true` ist UND die gezahlte Steuer ueber 0 liegt (`einreichungs_xml` ->
+//! `DeklarationUnvollstaendig` -> 409 `deklaration_unvollstaendig`, `api/src/einreichen.rs`): der Bescheid kuerzt die
+//! Werbungskosten der Anlage N, und diese Zeile (`Weitere_Wk/Sonst`, "Sonstige Werbungskosten") schreibt die Erklaerung noch
+//! nicht. Ohne sie wichen Erklaerung und Bescheid um den Abzug voneinander ab. Alles andere aendert sich nicht.
 //!
 //! Der Test geht ueber `einreichungs_xml` und nicht ueber `POST /einreichen`: der HTTP-Weg ruft danach `ERiC`. Die Sperre
 //! liegt VOR dem Writer, ihr Ergebnis braucht kein ERiC-Schema. Die Akte ist `rust/fixtures/e2e/gesamt.json` (vollstaendig,
@@ -26,9 +29,9 @@ use std::path::Path;
 
 use bescheid::deklaration::{einreichungs_xml, EinreichFehler};
 use bescheid::testhilfe::{index, params};
-use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Sperrgrund, Zustand};
-use elster::deklariere;
+use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Sperrgrund, Vz, Zustand};
 use elster::testhilfe::schemas_da;
+use elster::{deklariere, erzeuge_xml, validiere_xsd_text, XmlOptionen};
 use serde_json::{json, Value};
 use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
 
@@ -36,6 +39,11 @@ const WAHL: &str = "dba_abzug_statt_anrechnung";
 const STEUER: &str = "dba_gezahlte_auslaendische_steuer";
 const EINKUENFTE: &str = "dba_auslaendische_einkuenfte";
 const ART: &str = "dba_einkunftsart";
+
+/// Anlage AUS Zeile 10: "abgezogene ausländische Steuern nach § 34c Abs. 2 `EStG`" (E10-2025.xsd, `Staat_Spez_InvFonds`).
+const ABZUG_KZ: &str = "E0600920";
+/// Anlage AUS: die anzurechnende ausländische Steuer ("für alle Einkunftsarten").
+const ANRECHNUNG_KZ: &str = "E0601901";
 
 /// Ein Wert mit dem Zustand `bestaetigt` (zwei Signale) oder `vorlaeufig` (ohne zweites Signal).
 fn setze(s: &mut Store, feld: &str, wert: Value, zustand: Zustand) {
@@ -81,12 +89,7 @@ fn akte_mit(wahl: Option<bool>, steuer: Option<i64>, steuer_zustand: Zustand) ->
 /// Wie [`akte_mit`], mit der Einkunftsart der Auslandseinkuenfte. Arbeitslohn und einzeln veranlagt (die Akte `gesamt.json`)
 /// ist der Fall, den die Rechnung traegt; jede andere Art sperrt schon den Bescheid (`dba_abzug_offen`,
 /// `p34c_abzug_sperre.rs`), bevor die Erklaerung sperren kann.
-fn akte_voll(
-    wahl: Option<bool>,
-    steuer: Option<i64>,
-    steuer_zustand: Zustand,
-    art: &str,
-) -> Store {
+fn akte_voll(wahl: Option<bool>, steuer: Option<i64>, steuer_zustand: Zustand, art: &str) -> Store {
     let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../fixtures/e2e/gesamt.json");
     let roh: Value = serde_json::from_slice(&std::fs::read(pfad).unwrap()).unwrap();
     let mut s = Store::aus_datei(serde_json::from_value(roh).unwrap());
@@ -129,8 +132,8 @@ fn kz_wert(s: &Store, kz: &str) -> Option<String> {
 
 /// KONTROLLE zuerst: die Anrechnung (ohne Wahl oder mit Wahl `false`) kommt durch `deklariere`, sie endet im XML (mit
 /// Schema) oder am Writer (ohne), und die gezahlte Steuer steht als anzurechnende Steuer unter `E0601901`, die
-/// Einkuenfte unter `E0601401`. Sonst belegte die Sperre unten nichts: ein Fall, der aus anderem Grund sperrt, laesst sie
-/// gruen.
+/// Einkuenfte unter `E0601401`; `E0600920` (der Abzug) fehlt. Sonst belegte die Sperre unten nichts: ein Fall, der aus
+/// anderem Grund sperrt, laesst sie gruen.
 #[test]
 fn kontrolle_die_anrechnung_ist_einreichbar_und_traegt_die_steuer() {
     for wahl in [None, Some(false)] {
@@ -151,12 +154,91 @@ fn kontrolle_die_anrechnung_ist_einreichbar_und_traegt_die_steuer() {
             Some("5000"),
             "Wahl {wahl:?}"
         );
+        assert_eq!(kz_wert(&s, ABZUG_KZ), None, "Wahl {wahl:?}");
     }
 }
 
+/// AK4: bei gewaehltem Abzug und gezahlter Steuer ueber 0 traegt `deklariere` die Steuer unter `E0600920` (Anlage AUS,
+/// Zeile 10) und NICHT unter `E0601901`. Aufgerundet (ein Aufwand, "zu Ihren Gunsten"): 700,00 -> 700, 700,01 -> 701,
+/// 0,01 -> 1. Die Einkuenfte der Anlage AUS (`E0601401`) bleiben unveraendert: ob Zeile 7 "nach Abzug" gemeint ist, ist offen.
+#[test]
+fn abzug_gewaehlt_traegt_die_steuer_unter_e0600920_aufgerundet_und_nicht_als_anrechnung() {
+    for (cent, euro) in [(70_000, "700"), (70_001, "701"), (1, "1")] {
+        let s = akte(Some(true), Some(cent));
+        assert_eq!(
+            kz_wert(&s, ABZUG_KZ).as_deref(),
+            Some(euro),
+            "{cent} Cent: der Abzug"
+        );
+        assert_eq!(
+            kz_wert(&s, ANRECHNUNG_KZ),
+            None,
+            "{cent} Cent: dieselbe Steuer darf nicht zusaetzlich als Anrechnung stehen"
+        );
+        assert_eq!(
+            kz_wert(&s, "E0601401").as_deref(),
+            Some("5000"),
+            "{cent} Cent"
+        );
+    }
+    // Gegenprobe zur Rundung: die Anrechnung rundet dieselben 70.001 Cent ab (Einnahme-Seite, `E0601901`).
+    assert_eq!(
+        kz_wert(&akte(Some(false), Some(70_001)), ANRECHNUNG_KZ).as_deref(),
+        Some("700")
+    );
+}
+
+/// Der Writer setzt `E0600920` ins XML, wo das Schema es erwartet. Der Writer verweigert selbst jede unvollstaendige
+/// Deklaration (`erzeuge_xml`: "kein Submission-XML"), also auch die mit der Abzug-Sperre. Der Test baut darum die
+/// Deklaration der Anrechnung (Wahl `false`, ohne Sperre) und tauscht NUR den Schluessel: `E0601901` -> `E0600920`, mit dem
+/// Betrag des echten Abzug-Laufs (`abzug_gewaehlt_traegt_die_steuer_unter_e0600920_*`). Das Element steht mit diesem Betrag
+/// im Text; die Schema-Pruefung (`xmllint`) faellt fuer den Abzug nicht schlechter aus als fuer die Anrechnung derselben
+/// Akte. Das zeigt, dass das Schema `E0600920` an dieser Stelle nimmt; ein ERiC-Lauf (`checkESt`) ist es nicht. Ohne Schema
+/// entfaellt der Test.
+#[test]
+fn der_writer_setzt_e0600920_ins_xml_und_das_schema_nimmt_es_wie_die_anrechnung() {
+    if !schemas_da(2025) {
+        return;
+    }
+    let xml = |abzug: bool| {
+        let s = akte(Some(false), Some(70_001));
+        let (felder, _) = s.materialisiere(None).unwrap();
+        let mut d = deklariere(&felder, index(), 2025, None).unwrap();
+        if abzug {
+            let echt = kz_wert(&akte(Some(true), Some(70_001)), ABZUG_KZ).unwrap();
+            d.deklaration.remove(ANRECHNUNG_KZ).unwrap();
+            d.deklaration
+                .insert(ABZUG_KZ.to_owned(), json!(echt.parse::<i64>().unwrap()));
+        }
+        let opt = XmlOptionen {
+            hersteller_id: Some("74931".to_owned()),
+            snapshot: Some(&felder),
+            ..XmlOptionen::default()
+        };
+        erzeuge_xml(&d, &opt).unwrap()
+    };
+    let (abzug, anrechnung) = (xml(true), xml(false));
+    assert!(
+        abzug.contains("<E0600920>701</E0600920>"),
+        "Abzug-XML ohne E0600920"
+    );
+    assert!(!abzug.contains("<E0601901>"), "Abzug-XML mit Anrechnung");
+    assert!(
+        anrechnung.contains("<E0601901>700</E0601901>") && !anrechnung.contains("<E0600920>"),
+        "Kontrolle: Anrechnung"
+    );
+    let (ok_abzug, meldung) = validiere_xsd_text(abzug.as_bytes(), Vz::Vz2025);
+    let (ok_anrechnung, _) = validiere_xsd_text(anrechnung.as_bytes(), Vz::Vz2025);
+    println!("xmllint 2025: Abzug-XML {ok_abzug}, Anrechnungs-XML {ok_anrechnung}");
+    assert_eq!(
+        ok_abzug, ok_anrechnung,
+        "Abzug-XML gegen das Schema: {meldung}"
+    );
+}
+
 /// Die Wahl `true` und eine gezahlte Steuer ueber 0 sperren die Abgabe mit EIGENEM Grund (409
-/// `deklaration_unvollstaendig`); dieser Grund nennt Abzug, Anrechnung und die Sperre, kein anderes Feld steht in der
-/// Liste. Ein Cent genuegt, wie bei den Unfallkosten.
+/// `deklaration_unvollstaendig`); dieser Grund nennt Abzug, Anrechnung und die Sperre, dazu die fehlende Zeile in Anlage N
+/// und den `checkESt`-Lauf, kein anderes Feld steht in der Liste. Ein Cent genuegt, wie bei den Unfallkosten.
 #[test]
 fn abzug_gewaehlt_und_steuer_ueber_null_sperren_die_abgabe_mit_eigenem_grund() {
     for cent in [70_000, 1] {
@@ -168,7 +250,15 @@ fn abzug_gewaehlt_und_steuer_ueber_null_sperren_die_abgabe_mit_eigenem_grund() {
             "{cent} Cent: die Sperre nennt genau dieses Feld, erhalten {r:?}"
         );
         let grund = &e.first().unwrap().1;
-        for teil in ["Abzug", "Anrechnung", "gesperrt", "nein"] {
+        for teil in [
+            "Abzug",
+            "Anrechnung",
+            "gesperrt",
+            "nein",
+            "Anlage N",
+            "Sonstige Werbungskosten",
+            "checkESt",
+        ] {
             assert!(grund.contains(teil), "Grund ohne `{teil}`: {grund}");
         }
     }
@@ -224,10 +314,11 @@ fn eine_unbestaetigte_steuer_sperrt_nur_mit_ihrem_eigenen_grund() {
 }
 
 /// Der Marker steht NIE im XML-Teil der Deklaration: er kommt mit Grund in `nicht_deklariert` (kein Kz, kein erfundener
-/// Wert), bei Wahl `true` und Steuer ueber 0 zusaetzlich unter `unvollstaendig`, sonst nicht. Die Steuer bleibt dabei
-/// unter `E0601901`: die Sperre ersetzt sie nicht, sie haelt nur die Abgabe an.
+/// Wert), bei Wahl `true` und Steuer ueber 0 zusaetzlich unter `unvollstaendig`, sonst nicht. Die Steuer steht dabei an
+/// genau EINER Stelle: unter `E0600920` bei Abzug mit Steuer ueber 0, sonst unter `E0601901` (auch die bestaetigte 0 bei
+/// Wahl `true`: ohne Steuer gibt es nichts abzuziehen).
 #[test]
-fn der_marker_steht_mit_grund_in_nicht_deklariert_und_die_steuer_bleibt_unveraendert() {
+fn der_marker_steht_mit_grund_in_nicht_deklariert_und_die_steuer_steht_an_einer_stelle() {
     for (wahl, steuer, gesperrt) in [
         (true, 70_000_i64, true),
         (true, 0, false),
@@ -255,10 +346,17 @@ fn der_marker_steht_mit_grund_in_nicht_deklariert_und_die_steuer_bleibt_unveraen
             d.unvollstaendig()
         );
         // Cent -> volle Euro: 70.000 Cent stehen als "700" im Kz, eine bestaetigte 0 als "0".
+        let euro = Some((steuer / 100).to_string());
+        let (abzug, anrechnung) = if gesperrt { (euro, None) } else { (None, euro) };
         assert_eq!(
-            kz_wert(&s, "E0601901"),
-            Some((steuer / 100).to_string()),
-            "Wahl {wahl}, {steuer} Cent"
+            kz_wert(&s, ABZUG_KZ),
+            abzug,
+            "Wahl {wahl}, {steuer} Cent: Abzug"
+        );
+        assert_eq!(
+            kz_wert(&s, ANRECHNUNG_KZ),
+            anrechnung,
+            "Wahl {wahl}, {steuer} Cent: Anrechnung"
         );
     }
 }

@@ -45,10 +45,17 @@ const DBA_ABZUG: &str = "dba_abzug_statt_anrechnung";
 /// Die gezahlte auslaendische Steuer; die Wahl sperrt nur zusammen mit einem Betrag ueber 0 in diesem Feld.
 const DBA_STEUER: &str = "dba_gezahlte_auslaendische_steuer";
 
+/// Das Kz der abgezogenen auslaendischen Steuer (§ 34c Abs. 2 EStG, Anlage AUS Zeile 10, `Staat_Spez_InvFonds`). Bei gewaehltem
+/// Abzug und gezahlter Steuer ueber 0 steht die Steuer hier und NICHT unter `E0601901` (Abweichung Nr. 41); aufgerundet
+/// (`ABZUGS_KZ`).
+const DBA_ABZUG_KZ: &str = "E0600920";
+
 /// Der Grund der Abgabe-Sperre bei gewaehltem Abzug und gezahlter Steuer ueber 0 (`dba_abzug_statt_anrechnung` ohne Kz):
-/// die Rechnung zieht die Steuer ab (bei DBA-Freistellung seit Abweichung Nr. 35 nicht mehr: dort gibt es keinen Abzug), das XML meldet sie als
-/// anzurechnende Steuer (`E0601901`). Die Wahl des Nutzers ginge in der Erklaerung still verloren.
-const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: Die Erklärung kann diesen Abzug noch nicht tragen und würde die Steuer als Anrechnung melden. Die Abgabe ist deshalb gesperrt. Antworte „nein“ (Anrechnung), wenn du abgeben willst, oder trage den Abzug im Formular selbst ein.";
+/// der Bescheid kuerzt die Einkuenfte der Anlage N um die Steuer (bei DBA-Freistellung seit Abweichung Nr. 35 nicht mehr: dort
+/// gibt es keinen Abzug). Die Erklaerung traegt die Steuer unter `E0600920`, aber die Zeile "Sonstige Werbungskosten" der
+/// Anlage N (`Weitere_Wk/Sonst`) schreibt sie noch nicht (Abweichung Nr. 41): ohne sie liefen Bescheid und Erklaerung um den
+/// Abzug auseinander. Die Sperre faellt, wenn die Zeile gebaut und mit `checkESt` belegt ist.
+const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: Die Erklärung trägt den Betrag in der Anlage AUS. Die Zeile „Sonstige Werbungskosten“ in der Anlage N fehlt noch. Dort kürzt der Bescheid deine Einkünfte. Die Abgabe ist deshalb gesperrt, bis ein checkESt-Lauf diese Zeile belegt. Antworte „nein“ (Anrechnung), wenn du abgeben willst, oder trage den Abzug im Formular selbst ein.";
 
 /// Die materialisierte Felder-Ebene eines Snapshots (`feld_id -> {wert, zustand, herkunft}`).
 pub type Felder = BTreeMap<String, SnapshotFeld>;
@@ -426,22 +433,33 @@ impl Bau<'_> {
         Ok(())
     }
 
+    /// Wahr, wenn der Nutzer den Abzug statt der Anrechnung bestaetigt gewaehlt hat (Wahl `true`) und die gezahlte Steuer
+    /// bestaetigt ueber 0 liegt. Dann steht die Steuer unter [`DBA_ABZUG_KZ`] (Abweichung Nr. 41, `feld`) und die Abgabe ist
+    /// gesperrt ([`Bau::dba_abzug`]). Beide Zweige lesen diese eine Bedingung: sonst stuende die Steuer an der falschen
+    /// Stelle oder die Sperre griffe nicht. Gezaehlt wird in Cent, wie bei den Unfallkosten: ein Cent genuegt.
+    fn abzug_gewaehlt(&self) -> bool {
+        let bestaetigt = |id: &str| {
+            self.snapshot
+                .get(id)
+                .filter(|s| s.zustand == Zustand::Bestaetigt)
+        };
+        bestaetigt(DBA_ABZUG).is_some_and(|w| matches!(w.wert, PyWert::Bool(true)))
+            && bestaetigt(DBA_STEUER).is_some_and(|s| py::int(&s.wert).is_ok_and(|cent| cent > 0))
+    }
+
     /// `dba_abzug_statt_anrechnung` OHNE Kz (Abweichung Nr. 29): der Marker steht mit Grund in `nicht_deklariert`. Ist die
     /// Wahl `true` und die gezahlte Steuer (bestaetigt) ueber 0, sperrt er die Abgabe ([`DBA_ABZUG_SPERRE`], 409
-    /// `deklaration_unvollstaendig`): die Rechnung (`bescheid::einkuenfte::shared_dba_sonstige`) zieht die Steuer ab, das XML
-    /// schriebe sie als Anrechnung unter `E0601901`. Die Sperre braucht die Auslandseinkuenfte NICHT: die Rechnung zieht nur
-    /// bei Einkuenften ueber 0 ab, die Erklaerung meldet aber auch bei 0 die Anrechnung, die der Nutzer abgewaehlt hat.
-    /// Gezaehlt wird in Cent, wie bei den Unfallkosten: ein Cent genuegt.
-    fn dba_abzug(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) {
+    /// `deklaration_unvollstaendig`): der Bescheid kuerzt die Werbungskosten der Anlage N (`bescheid::einkuenfte::
+    /// dba_abzug_werbungskosten`, Abweichung Nr. 41), diese Zeile schreibt die Erklaerung nicht. Die Steuer selbst steht dann
+    /// unter `E0600920` ([`Bau::abzug_gewaehlt`]). Die Sperre braucht die Auslandseinkuenfte NICHT: die Rechnung kuerzt nur bei
+    /// Einkuenften ueber 0, die Erklaerung meldet aber auch bei 0 den Abzug, den der Nutzer gewaehlt hat.
+    fn dba_abzug(&mut self, feld_id: &str, b: &Bindung) {
         let grund = b
             .elster_kz_grund
             .clone()
             .unwrap_or_else(|| "kein elster_kz".to_owned());
         self.nicht(feld_id, grund);
-        let steuer_ueber_null = self.snapshot.get(DBA_STEUER).is_some_and(|s| {
-            s.zustand == Zustand::Bestaetigt && py::int(&s.wert).is_ok_and(|cent| cent > 0)
-        });
-        if matches!(wert, PyWert::Bool(true)) && steuer_ueber_null {
+        if self.abzug_gewaehlt() {
             self.offen(feld_id, DBA_ABZUG_SPERRE);
         }
     }
@@ -693,7 +711,17 @@ impl Bau<'_> {
         } else if let (UNFALLKOSTEN, None) = (feld_id, kz_von(b)) {
             self.unfallkosten(feld_id, wert, b)?;
         } else if let (DBA_ABZUG, None) = (feld_id, kz_von(b)) {
-            self.dba_abzug(feld_id, wert, b);
+            self.dba_abzug(feld_id, b);
+        } else if feld_id == DBA_STEUER && self.abzug_gewaehlt() {
+            // Abweichung Nr. 41: bei gewaehltem Abzug steht die Steuer unter `E0600920`, nicht als Anrechnung unter `E0601901`.
+            schreibe_kz(
+                &mut self.deklaration,
+                DBA_ABZUG_KZ,
+                wert,
+                Some(b.typ),
+                self.null_kz,
+            )
+            .map_err(&fehler)?;
         } else if let Some(kz) = kz_von(b) {
             schreibe_kz(&mut self.deklaration, kz, wert, Some(b.typ), self.null_kz)
                 .map_err(&fehler)?;
@@ -1515,6 +1543,60 @@ mod tests {
             assert!(!gespiegelt(Some((w.clone(), z))), "{w} {z:?}");
         }
         assert!(!gespiegelt(None));
+    }
+
+    /// Abweichung Nr. 41: bei bestaetigter Wahl `true` und gezahlter Steuer ueber 0 steht die Steuer aufgerundet unter dem
+    /// Abzugs-Kz `E0600920` und NICHT unter `E0601901`; in jedem anderen Fall (Wahl `false`, Wahl nur vorlaeufig, Steuer 0)
+    /// bleibt es bei der Anrechnung, abgerundet. Das Regal (`regal.rs`) fuehrt dieses Literal als `Verhalten` mit diesem Test.
+    #[test]
+    fn abzug_traegt_die_steuer_unter_dem_abzugs_kz_und_nicht_als_anrechnung() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
+            wert: wert.into(),
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        // (Wahl, Zustand der Wahl, Steuer in Cent) -> (Abzug E0600920, Anrechnung E0601901)
+        let faelle = [
+            (true, Zustand::Bestaetigt, 70_001, Some(701), None),
+            (true, Zustand::Bestaetigt, 1, Some(1), None),
+            (false, Zustand::Bestaetigt, 70_001, None, Some(700)),
+            (true, Zustand::Vorlaeufig, 70_001, None, Some(700)),
+            (true, Zustand::Bestaetigt, 0, None, Some(0)),
+        ];
+        for (wahl, zustand, cent, abzug, anrechnung) in faelle {
+            let felder = Felder::from([
+                ("dba_abzug_statt_anrechnung".to_owned(), feld(json!(wahl), zustand)),
+                (
+                    "dba_gezahlte_auslaendische_steuer".to_owned(),
+                    feld(json!(cent), Zustand::Bestaetigt),
+                ),
+            ]);
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            assert_eq!(
+                d.deklaration.get("E0600920"),
+                abzug.map(|e| json!(e)).as_ref(),
+                "Wahl {wahl} {zustand:?}, {cent} Cent: Abzug"
+            );
+            assert_eq!(
+                d.deklaration.get("E0601901"),
+                anrechnung.map(|e| json!(e)).as_ref(),
+                "Wahl {wahl} {zustand:?}, {cent} Cent: Anrechnung"
+            );
+        }
     }
 
     /// Python `dict.get(wert)` an allen drei Aufrufstellen der Enum-Felder: Konfession (`feld`),
