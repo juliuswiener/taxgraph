@@ -540,13 +540,30 @@ pub fn p23_ansonsten_einkuenfte(q: &Instanzquelle<'_>) -> Result<Euro, BescheidF
 
 /// Ergebnis von [`shared_dba_sonstige`]. `g` traegt `sonstige_abzuege_vom_einkommen` und
 /// `anzurechnende_auslaendische_steuern`; `p32b_progressionseinkuenfte` hat in [`GesamtfallEingabe`]
-/// keinen Platz (Python schreibt es nur in `g_dict`, kein Rechenweg liest es dort).
+/// keinen Platz. Python schreibt es nur in `g_dict`, kein Rechenweg liest es dort (Altlast, GAP-002). Rust liest es ueber
+/// [`progressionseinkuenfte`] in den Zweigen `gesamt` und `rentner` (Abweichung Nr. 40).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DbaErgebnis {
     /// Der zurueckgegebene `dba_anrechnung` (EURO).
     pub dba_anrechnung: Euro,
     /// `Some(ausland)` nur im Freistellungs-Zweig (Progressionsvorbehalt).
     pub p32b_progressionseinkuenfte: Option<Euro>,
+}
+
+/// Alle Einkuenfte, die den Steuersatz anheben (§ 32b Abs. 2 S. 1 `EStG`): die Lohnersatzleistungen des Nutzers (Nr. 1,
+/// Feld `p32b_progressionseinkuenfte`) plus die freigestellten Auslandseinkuenfte (Nr. 3, [`DbaErgebnis`]). Beide Zweige
+/// (`gesamt`, `rentner`) lesen diese Summe als `pe_raw`.
+///
+/// # Errors
+/// Accessor- und Ueberlauf-Fehler.
+pub(crate) fn progressionseinkuenfte(
+    f: &Felder,
+    dba: &DbaErgebnis,
+) -> Result<Euro, BescheidFehler> {
+    euro_plus(
+        feld_euro_oder_null(f, "p32b_progressionseinkuenfte")?,
+        dba.p32b_progressionseinkuenfte.unwrap_or(Euro::new(0)),
+    )
 }
 
 /// Die DBA-Methode der Akte: der Wert `dba_freistellung` im Feld `dba_methode` gilt, sonst entscheiden Staat und
@@ -570,6 +587,25 @@ pub(crate) fn dba_methode_der_akte(f: &Felder) -> Result<&'static str, BescheidF
 pub(crate) fn dba_freistellung_aktiv(f: &Felder) -> Result<bool, BescheidFehler> {
     let ausland = feld_euro_oder_null(f, "dba_auslaendische_einkuenfte")?;
     Ok(ausland.get() > 0 && dba_methode_der_akte(f)? == "freistellung")
+}
+
+/// Die Angabe, die bei Freistellung in der Erklaerung stuende, obwohl sie dort nicht hingehoert: die Auslandseinkuenfte
+/// oder, ohne sie, die gezahlte auslaendische Steuer (beide ueber 0 Cent). Das XML meldete beide unter dem Block der
+/// Anrechnung (`E0601401`, `E0601901`). Die Abgabe sperrt daran (`deklaration::einreichungs_xml`, Abweichung Nr. 40).
+///
+/// # Errors
+/// Accessor- und `AttributeError`-Fehler wie [`shared_dba_sonstige`].
+pub(crate) fn dba_freistellung_angabe(f: &Felder) -> Result<Option<&'static str>, BescheidFehler> {
+    for fid in [
+        "dba_auslaendische_einkuenfte",
+        "dba_gezahlte_auslaendische_steuer",
+    ] {
+        // In Cent gezaehlt wie bei der Sperre zum Abzug (Nr. 29): ein Cent genuegt.
+        if feld_int_oder_null(f, fid)? > 0 {
+            return Ok((dba_methode_der_akte(f)? == "freistellung").then_some(fid));
+        }
+    }
+    Ok(None)
 }
 
 /// § 33a (Unterhalt, Ausbildungsfreibetrag) + § 10d Abs. 2 (Verlustabzug) + DBA-Anrechnung (§ 34c).

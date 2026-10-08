@@ -206,7 +206,7 @@ impl Sperrgrund {
             Self::BehinderungsbedingteAufwendungenWahlrechtPartnerOffen => Some("Für deinen Ehe- oder Lebenspartner ist eine Behinderung angegeben und zusätzlich Kosten, die dadurch entstanden sind. Auch hier gibt es die Wahl zwischen dem Pauschbetrag ohne Nachweis und den tatsächlichen Kosten mit Belegen. Welcher Weg günstiger ist, hängt an der Höhe der Kosten — deshalb kann die Software das nicht entscheiden. Bitte beantworte die Frage nach dem Pauschbetrag für deinen Partner."),
             Self::BerufsunfaehigkeitOffen => Some("Du hast den ermäßigten Steuersatz für den Verkauf oder die Aufgabe deines Betriebs beantragt. Vor dem 55. Geburtstag steht er dir nur zu, wenn du dauernd berufsunfähig bist. Bitte beantworte diese Frage, auch wenn die Antwort „nein“ ist."),
             Self::BerufsunfaehigkeitPartnerOffen => Some("Dein Ehepartner hat den ermäßigten Steuersatz für den Verkauf oder die Aufgabe seines Betriebs beantragt. Vor dem 55. Geburtstag steht er ihm nur zu, wenn er dauernd berufsunfähig ist. Bitte beantworte diese Frage zu deinem Ehepartner, auch wenn die Antwort „nein“ ist."),
-            Self::DbaFreistellungOffen => Some("Du hast Einkünfte aus einem Staat angegeben, dessen Abkommen mit Deutschland sie in Deutschland steuerfrei stellt (Freistellung). Steuerfreie Auslandseinkünfte erhöhen trotzdem den Steuersatz auf dein übriges Einkommen (Progressionsvorbehalt). Diesen Fall rechnet die Software noch nicht. Damit du keine zu niedrige Steuer bekommst, bleibt die Berechnung gesperrt. Dieser Fall braucht steuerliche Beratung."),
+            Self::DbaFreistellungOffen => Some("Du hast Einkünfte aus einem Staat angegeben, dessen Abkommen mit Deutschland sie in Deutschland steuerfrei stellt (Freistellung), und zusätzlich einen Betriebsverkauf oder Gewerbesteuer. Steuerfreie Auslandseinkünfte erhöhen den Steuersatz auf dein übriges Einkommen (Progressionsvorbehalt). Wie sich das mit dem ermäßigten Steuersatz für den Verkauf oder mit der Anrechnung der Gewerbesteuer verzahnt, rechnet die Software noch nicht. Damit du keine falsche Zahl bekommst, bleibt die Berechnung gesperrt. Dieser Fall braucht steuerliche Beratung."),
             Self::DbaKapitalOffen => Some("Du hast Kapitalerträge angegeben und zugleich ausländische Einkünfte. Ob und wie eine im Ausland gezahlte Steuer auf deine Kapitalerträge angerechnet wird, rechnet die Software noch nicht. Dieser Fall braucht steuerliche Beratung."),
             Self::DbaMultiCountryOffen => Some("Du hast Einkünfte aus mehr als einem ausländischen Staat. Jedes Land hat ein eigenes Abkommen mit Deutschland darüber, wo besteuert wird; mehrere Länder zugleich rechnet die Software noch nicht. Dieser Fall braucht steuerliche Beratung."),
             Self::DhfTatbestandOffen => Some("Du hast Kosten für eine zweite Wohnung am Arbeitsort angegeben. Ob sie absetzbar sind, hängt an drei Voraussetzungen: dass die zweite Wohnung beruflich veranlasst ist, dass du an deinem Hauptwohnsitz einen eigenen Hausstand führst und dass du dich dort finanziell an den Kosten beteiligst. Bitte beantworte diese drei Fragen."),
@@ -484,12 +484,18 @@ mod tests {
         }
     }
 
-    /// Der Grund `dba_freistellung_offen` nennt die Freistellung, den Progressionsvorbehalt und was die Software tut
-    /// (sperrt, damit keine zu niedrige Steuer erscheint). Pinnt Teile des Wortlauts.
+    /// Der Grund `dba_freistellung_offen` nennt die Freistellung, den Progressionsvorbehalt, die Kombination, die er
+    /// sperrt (Betriebsverkauf, Gewerbesteuer), und was die Software tut. Pinnt Teile des Wortlauts.
     #[test]
-    fn der_grund_zur_dba_freistellung_nennt_vorbehalt_und_sperre() {
+    fn der_grund_zur_dba_freistellung_nennt_vorbehalt_kombination_und_sperre() {
         let text = Sperrgrund::DbaFreistellungOffen.klartext().unwrap();
-        for teil in ["Freistellung", "Progressionsvorbehalt", "bleibt die Berechnung gesperrt"] {
+        for teil in [
+            "Freistellung",
+            "Progressionsvorbehalt",
+            "Betriebsverkauf",
+            "Gewerbesteuer",
+            "bleibt die Berechnung gesperrt",
+        ] {
             assert!(text.contains(teil), "{teil:?} fehlt in {text:?}");
         }
     }
