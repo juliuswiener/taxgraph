@@ -136,6 +136,13 @@ fn nachbarn() -> Vec<(&'static str, Paare)> {
                 ("gewst_hebesatz_partner", json!(400)),
             ],
         ),
+        (
+            "Veraeusserungsgewinn des Ehegatten",
+            vec![
+                ("veranlagung", json!("zusammen")),
+                ("rentner_veraeusserungsgewinn_partner", json!(cent(10_000))),
+            ],
+        ),
     ]
 }
 
@@ -190,8 +197,8 @@ fn freistellung_allein_sperrt_den_bescheid_nicht() {
     }
 }
 
-/// Freistellung zusammen mit § 34 oder § 35 sperrt mit `dba_freistellung_offen`, ueber beide Wege zur Methode. Die
-/// Gewerbesteuer des Ehegatten zaehlt mit (Zusammenveranlagung).
+/// Freistellung zusammen mit § 34 oder § 35 sperrt mit `dba_freistellung_offen`, ueber beide Wege zur Methode. Gewerbesteuer
+/// und Veraeusserungsgewinn des Ehegatten zaehlen mit (Zusammenveranlagung).
 #[test]
 fn freistellung_mit_betriebsverkauf_oder_gewerbesteuer_sperrt() {
     for (name, mehr) in nachbarn() {
@@ -256,6 +263,86 @@ fn ohne_freigestellte_einkuenfte_sperrt_der_bescheid_nicht() {
     for (name, paare) in faelle {
         assert_ne!(grund_beide(&paare), Some(FREI), "{name}");
     }
+}
+
+/// Die Nachbarn zaehlen nur, wenn sie wirklich den DBA-Zweig des Guards erreichen: der Antrag allein in `nachbarn` stoesst
+/// zuerst an die Berufsunfaehigkeits-Frage und belegte darum nie, dass 0 Euro Auslandseinkuenfte nicht sperren (Mutant
+/// `>= 0` ueberlebte). Hier steht jeder Nachbar neben Methode Freistellung ohne Einkuenfte ueber 0.
+#[test]
+fn ohne_freigestellte_einkuenfte_sperrt_auch_kein_nachbar_der_den_guard_erreicht() {
+    let methode = (METHODE, json!("dba_freistellung"));
+    let basen: [(&str, Paare); 3] = [
+        ("nur die Methode", vec![methode.clone()]),
+        (
+            "Einkuenfte 0",
+            vec![(EINKUENFTE, json!(0)), methode.clone()],
+        ),
+        (
+            "nur gezahlte Steuer",
+            vec![(STEUER, json!(cent(700))), methode],
+        ),
+    ];
+    for (nachbar, mehr) in nachbarn() {
+        for (basis, paare) in &basen {
+            let mut p = paare.clone();
+            p.extend(mehr.iter().cloned());
+            for s in SCHEIBEN {
+                assert_ne!(grund(s, &p), Some(FREI), "{nachbar} neben {basis} [{s}]");
+            }
+        }
+    }
+}
+
+/// Gewerbesteuer und Veraeusserungsgewinn des Ehegatten sind nur bei Zusammenveranlagung ein Nachbar: bei
+/// Einzelveranlagung gehoeren sie nicht zur Rechnung der Person. Kontrolle im selben Fall: mit Zusammenveranlagung sperrt
+/// dieselbe Akte.
+#[test]
+fn die_nachbarn_des_ehegatten_zaehlen_nur_bei_zusammenveranlagung() {
+    let faelle: [(&str, Paare); 2] = [
+        (
+            "Gewerbesteuer des Ehegatten",
+            vec![
+                ("gewst_messbetrag_partner", json!(cent(100))),
+                ("gewst_hebesatz_partner", json!(400)),
+            ],
+        ),
+        (
+            "Veraeusserungsgewinn des Ehegatten",
+            vec![("rentner_veraeusserungsgewinn_partner", json!(cent(10_000)))],
+        ),
+    ];
+    for (name, mehr) in faelle {
+        let zusammen = frei_mit(&[&[("veranlagung", json!("zusammen"))], &mehr[..]].concat());
+        assert_eq!(grund_beide(&zusammen), Some(FREI), "{name}, zusammen");
+        let einzel = frei_mit(&[&[("veranlagung", json!("einzel"))], &mehr[..]].concat());
+        for s in SCHEIBEN {
+            assert_ne!(grund(s, &einzel), Some(FREI), "{name}, einzeln [{s}]");
+        }
+    }
+}
+
+/// Die Koinzidenz des Lohnersatzes zaehlt auch die gezahlte Auslandssteuer allein (ohne Auslandseinkuenfte, ohne Nachbar):
+/// § 34c-Anrechnung neben § 32b bleibt unaufgeloest und sperrt mit `p32b_kombi_offen`. Kontrolle: der Lohnersatz allein
+/// sperrt nicht.
+#[test]
+fn lohnersatz_neben_nur_gezahlter_steuer_sperrt_als_kombination() {
+    let lohnersatz = ("p32b_progressionseinkuenfte", json!(cent(5_000)));
+    let steuer = (STEUER, json!(cent(700)));
+    assert_eq!(
+        grund_beide(std::slice::from_ref(&lohnersatz)),
+        None,
+        "Lohnersatz allein"
+    );
+    assert_eq!(
+        grund_beide(&[lohnersatz.clone(), steuer.clone()]),
+        Some("p32b_kombi_offen"),
+        "mit gezahlter Steuer"
+    );
+    assert_eq!(
+        grund_beide(&[lohnersatz, steuer, (METHODE, json!("dba_freistellung"))]),
+        Some("p32b_kombi_offen"),
+        "mit gezahlter Steuer und Methode Freistellung"
+    );
 }
 
 /// Die Reihenfolge im Guard: mehrere Staaten, Kapital zusammen mit Auslandseinkuenften und Lohnersatz zusammen mit
