@@ -515,7 +515,8 @@ async fn ohne_angaben_zum_ehegatten_bleibt_die_erklaerung_abgabefaehig() {
 /// Die Deklaration (`GET /deklaration`, schreibt nichts, reicht nichts ein): Lohn und Steuerklasse des Ehegatten stehen in
 /// Anlage N der Person B (E0200201, E0200002). Die Versorgung des Ehegatten hat KEIN Kz, wie die von Person A: ihre fuenf
 /// Felder stehen mit Grund in `nicht_deklariert`, nichts verschwindet unsichtbar. Dass der Betrag im Bescheid steht und im
-/// XML fehlt, sperrt die Abgabe NICHT (bekannte Luecke, fuer A seit Nr. 25 dieselbe; hier nicht geschlossen, siehe Bericht).
+/// XML fehlt, sperrt die Abgabe seit Abweichung Nr. 42: `unvollstaendig` nennt den bestaetigten Betrag des Ehegatten bei
+/// Zusammenveranlagung (die Sperre selbst prueft `versorgung_abgabe_sperre_hermetisch.rs`).
 #[tokio::test]
 async fn die_deklaration_traegt_lohn_und_steuerklasse_und_nennt_die_versorgung_als_nicht_deklariert() {
     let mut p = mit(paar(2_000_000), lohn_partner(40_000));
@@ -539,6 +540,16 @@ async fn die_deklaration_traegt_lohn_und_steuerklasse_und_nennt_die_versorgung_a
     for feld in &EHEGATTEN_FELDER[2..6] {
         assert!(nicht.contains(feld), "{feld} fehlt in nicht_deklariert: {nicht:?}");
     }
+    let offen: Vec<&str> = dekl["unvollstaendig"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e["feld_id"].as_str().unwrap())
+        .collect();
+    assert!(
+        offen.contains(&"versorgung_jahresrente_partner"),
+        "der Bezug des Ehegatten sperrt die Abgabe nicht: {offen:?}"
+    );
 }
 
 /// Ein Versorgungsbezug des Ehegatten ohne Beginnjahr und Bemessungsgrundlage sperrt mit dem bestehenden Grund
