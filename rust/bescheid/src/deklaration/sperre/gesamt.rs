@@ -323,7 +323,8 @@ fn p35a_p35c(k: &K<'_>) -> Grund {
 /// 2. "netto ohne Vorsteuer" BESTAETIGT nein -> [`Sperrgrund::GwgMehrwertsteuerOffen`] (der Betrag
 ///    ist brutto); frei nur, wenn die Folgefrage `gwg_ohne_vorsteuerabzug` BESTAETIGT ja sagt (der
 ///    Kleinunternehmer zieht brutto ab, Abweichung Nr. 27) und der Betrag 800 EUR nicht uebersteigt;
-/// 3. Betrag ueber 800 EUR -> `GwgAbschreibungOffen`; die Tatbestandsfragen sind gegenstandslos;
+/// 3. Betrag ueber 800 EUR -> `GwgAbschreibungOffen`; die Tatbestandsfragen sind gegenstandslos, nur die
+///    Netto-Frage zaehlt, sobald die Angaben der Einzel-`AfA` da sind (offen -> [`Sperrgrund::GwgTatbestandOffen`]);
 /// 4. unbeantwortete Voraussetzung (Verzeichnis nur ueber 250 EUR) -> [`Sperrgrund::GwgTatbestandOffen`];
 ///    "Verzeichnis" BESTAETIGT nein ueber 250 EUR -> `GwgAbschreibungOffen`.
 ///
@@ -381,19 +382,24 @@ fn gwg(k: &K<'_>) -> Grund {
         {
             return Ok(Some(Sperrgrund::GwgMehrwertsteuerOffen));
         }
-        // Ueber 800 EUR (Schwelle in Cent) ist der Sofortabzug ausgeschlossen: nichts zu fragen,
-        // aber auch nicht still weglassen.
-        if betrag > Decimal::from(80_000) {
-            if afa_moeglich {
-                continue;
-            }
-            return Ok(Some(Sperrgrund::GwgAbschreibungOffen));
-        }
         let offen = |id: &str| {
             inst.felder
                 .get(id)
                 .is_none_or(|x| x.zustand != domain::Zustand::Bestaetigt)
         };
+        // Ueber 800 EUR (Schwelle in Cent) ist der Sofortabzug ausgeschlossen: nichts zu fragen,
+        // aber auch nicht still weglassen. Mit Angaben rechnet die AfA auf dem eingegebenen Betrag; ob er netto oder brutto
+        // ist, sagt nur die Netto-Frage (ihr bestaetigtes "nein" hat oben schon gesperrt). Offen heisst: der Betrag kann
+        // brutto sein, die AfA zu hoch, die Steuer zu niedrig. Also sperrt sie hier wie bis 800 EUR.
+        if betrag > Decimal::from(80_000) {
+            if !afa_moeglich {
+                return Ok(Some(Sperrgrund::GwgAbschreibungOffen));
+            }
+            if offen("gwg_netto_ohne_vorsteuer") {
+                return Ok(Some(Sperrgrund::GwgTatbestandOffen));
+            }
+            continue;
+        }
         if offen("gwg_bewegliches_selbstaendig_nutzbar") || offen("gwg_netto_ohne_vorsteuer") {
             return Ok(Some(Sperrgrund::GwgTatbestandOffen));
         }

@@ -393,6 +393,27 @@ fn ein_vorlaeufiges_verzeichnis_sperrt_auch_das_nicht_allein_nutzbare_geraet() {
     }
 }
 
+/// Ueber 800 EUR rechnet die `AfA` auf dem eingegebenen Betrag. Ob er netto oder brutto ist, sagt die Netto-Frage: ist sie
+/// offen (nie beantwortet oder nur vorlaeufig), kann der Betrag brutto sein und die `AfA` zu hoch (zu wenig Steuer). Bis
+/// 800 EUR sperrt eine offene Netto-Frage mit `GwgTatbestandOffen`; ueber 800 EUR muss sie es auch.
+#[test]
+fn ueber_800_eur_sperrt_eine_offene_netto_frage() {
+    let vz = Vz::Vz2025;
+    let t3 = Geraet { betrag: 100_000, nd: Some(5), monat: Some(1), ..GUT }; // 1.000 EUR, 5 Jahre, Januar: 200 EUR
+    let offen = (Grund::Sperre(Sperrgrund::GwgTatbestandOffen), None);
+    let alle = geraet_paare(basis(0, 5_000_000, 0), t3, false);
+    let ohne_netto: Vec<(&'static str, Value)> =
+        alle.iter().filter(|(f, _)| *f != "gwg_netto_ohne_vorsteuer").cloned().collect();
+    // Nie beantwortet.
+    assert_eq!(ergebnis(&fall(Scheibe::Gesamt, &ohne_netto, &[]), vz), offen, "Netto-Frage unbeantwortet");
+    // Nur vorlaeufig beantwortet.
+    let vorlaeufig = [("gwg_netto_ohne_vorsteuer", json!(true))];
+    assert_eq!(ergebnis(&fall(Scheibe::Gesamt, &ohne_netto, &vorlaeufig), vz), offen, "Netto-Frage vorlaeufig");
+    // Kontrolle: bestaetigt "ja" rechnet die AfA (200 EUR).
+    let soll = (Grund::Bestaetigt, referenz(vz, 0, 5_000_000, 200));
+    assert_eq!(ergebnis(&mit_geraet(0, 5_000_000, t3), vz), soll, "Netto-Frage bestaetigt");
+}
+
 /// AK8: die `AfA` rechnet nur, wenn die Grundlage feststeht. "Netto: nein" ohne Folgefrage-ja sperrt auch bei einem
 /// nicht allein nutzbaren Geraet mit beantworteten Angaben; der Kleinunternehmer (Folgefrage ja) schreibt den Bruttobetrag
 /// ab, ueber 800 EUR gilt das nicht.
