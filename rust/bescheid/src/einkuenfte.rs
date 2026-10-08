@@ -549,6 +549,29 @@ pub struct DbaErgebnis {
     pub p32b_progressionseinkuenfte: Option<Euro>,
 }
 
+/// Die DBA-Methode der Akte: der Wert `dba_freistellung` im Feld `dba_methode` gilt, sonst entscheiden Staat und
+/// Einkunftsart ([`dba_methode_fuer`]). Die Rechnung ([`shared_dba_sonstige`]) und die Sperren lesen dieselbe Stelle.
+///
+/// # Errors
+/// Python-`AttributeError` (`dba_staat` kein Text).
+pub(crate) fn dba_methode_der_akte(f: &Felder) -> Result<&'static str, BescheidFehler> {
+    if matches!(wert(f, "dba_methode"), Some(PyWert::Text(s)) if s == "dba_freistellung") {
+        Ok("freistellung")
+    } else {
+        dba_methode_fuer(wert(f, "dba_staat"), wert(f, "dba_einkunftsart"))
+    }
+}
+
+/// Wahr, wenn die Akte freigestellte Auslandseinkuenfte ueber 0 Euro traegt (Methode Freistellung, § 32b Abs. 1 S. 1
+/// Nr. 3 `EStG`). Genau diese Faelle setzen in [`shared_dba_sonstige`] einen Progressionsvorbehalt ueber 0.
+///
+/// # Errors
+/// Accessor- und `AttributeError`-Fehler wie [`shared_dba_sonstige`].
+pub(crate) fn dba_freistellung_aktiv(f: &Felder) -> Result<bool, BescheidFehler> {
+    let ausland = feld_euro_oder_null(f, "dba_auslaendische_einkuenfte")?;
+    Ok(ausland.get() > 0 && dba_methode_der_akte(f)? == "freistellung")
+}
+
 /// § 33a (Unterhalt, Ausbildungsfreibetrag) + § 10d Abs. 2 (Verlustabzug) + DBA-Anrechnung (§ 34c).
 /// Setzt `g.sonstige_abzuege_vom_einkommen` und `g.anzurechnende_auslaendische_steuern`; die
 /// Anrechnungs-Rechnung liest `g` nach dem ersten der beiden (Reihenfolge wie Python).
@@ -600,12 +623,7 @@ pub fn shared_dba_sonstige(
     let gezahlt = feld_euro_oder_null(f, "dba_gezahlte_auslaendische_steuer")?;
     let ausland = feld_euro_oder_null(f, "dba_auslaendische_einkuenfte")?;
     // Python berechnet die Methode IMMER (auch wenn kein Zweig sie braucht) — sie kann werfen.
-    let methode = if matches!(wert(f, "dba_methode"), Some(PyWert::Text(s)) if s == "dba_freistellung")
-    {
-        "freistellung"
-    } else {
-        dba_methode_fuer(wert(f, "dba_staat"), wert(f, "dba_einkunftsart"))?
-    };
+    let methode = dba_methode_der_akte(f)?;
     let mut anrechnung = Euro::new(0);
     let mut progression = None;
     // ABWEICHUNG VON PYTHON (Nr. 35): bei Freistellung gibt es keinen Abzug (§ 34c Abs. 6 S. 1 und 2 EStG: Abs. 2 gilt

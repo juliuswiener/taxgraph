@@ -8,8 +8,8 @@ use konsistenz::flag_widersprueche;
 use super::{bestaetigt, oder_null_positiv, positiv, zahl_wert, Grund, K};
 use crate::deklaration::konstanten::AGB_KIST;
 use crate::einkuenfte::{
-    EUER_KOMPONENTEN, GEWINN_QUELLEN_MENGEN, KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE,
-    KAP_TOEPFE_PARTNER,
+    dba_freistellung_aktiv, EUER_KOMPONENTEN, GEWINN_QUELLEN_MENGEN, KAP_ERTRAEGE,
+    KAP_ERTRAEGE_PARTNER, KAP_TOEPFE, KAP_TOEPFE_PARTNER,
 };
 use crate::{ist_false, ist_true, ist_zusammen, wert, Felder};
 
@@ -26,6 +26,10 @@ pub(super) fn dba_p32b_p16(k: &K<'_>) -> Grund {
     }
     if positiv(f, "p32b_progressionseinkuenfte") && p32b_koinzidenz(f) {
         return Ok(Some(Sperrgrund::P32bKombiOffen));
+    }
+    // Freigestellte Auslandseinkuenfte (Abweichung Nr. 40): der Progressionsvorbehalt ist noch nicht gerechnet.
+    if dba_freistellung_aktiv(f)? {
+        return Ok(Some(Sperrgrund::DbaFreistellungOffen));
     }
     Ok(p16_4(f))
 }
