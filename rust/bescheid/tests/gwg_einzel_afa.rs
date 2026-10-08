@@ -349,6 +349,19 @@ fn ohne_bestaetigte_angaben_bleibt_die_sperre() {
         let g = Geraet { nd: Some(nd), monat: Some(monat), ..t1 };
         assert_eq!(ergebnis(&mit_geraet(0, 5_000_000, g), vz), sperre, "Nutzungsdauer {nd}, Monat {monat}");
     }
+    // Nur ganze Zahlen zaehlen: kein Bool (Pythons `True` ist 1), keine Kommazahl, kein Text.
+    for (nd, monat) in [
+        (json!(3), json!(true)),
+        (json!(true), json!(7)),
+        (json!(3), json!(7.5)),
+        (json!(3.5), json!(7)),
+        (json!(3), json!("7")),
+    ] {
+        let mut paare = geraet_paare(basis(0, 5_000_000, 0), t1, false);
+        paare.push(("gwg_nutzungsdauer", nd.clone()));
+        paare.push(("gwg_anschaffung_monat", monat.clone()));
+        assert_eq!(ergebnis(&fall(Scheibe::Gesamt, &paare, &[]), vz), sperre, "Nutzungsdauer {nd}, Monat {monat}");
+    }
     // Vorlaeufig zaehlt nicht (Zwei-Signal-Regel).
     let paare = geraet_paare(basis(0, 5_000_000, 0), t1, false);
     let beide = [
