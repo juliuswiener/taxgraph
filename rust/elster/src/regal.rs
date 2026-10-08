@@ -151,6 +151,14 @@ pub(crate) const REGAL: &[Datei] = &[
         text: include_str!("deklaration.rs"),
         eintraege: &[
             ("P35A_SUMME_AUS_POSTEN", Zuordnung::Schluessel("p35a_summe_aus_posten")),
+            // Abweichung Nr. 41: das Kz des Abzugs nach § 34c Abs. 2 gibt es in Python nicht; der Test deckt das Literal.
+            (
+                "DBA_ABZUG_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0600920"],
+                    tests: &["abzug_traegt_die_steuer_unter_dem_abzugs_kz_und_nicht_als_anrechnung"],
+                },
+            ),
             // Diese Regeln stehen als Literale in Methoden von `Bau`; ihr Top-Level-Name ist `deklariere`.
             ("deklariere", Zuordnung::Funktion("iban_weiche/praefix")),
             ("deklariere", Zuordnung::Funktion("iban_weiche/inland")),

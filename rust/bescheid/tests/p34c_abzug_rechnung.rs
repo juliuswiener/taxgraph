@@ -9,10 +9,11 @@
 //! Sperre haelt die Abgabe an, WEIL die Rechnung den Abzug rechnet. Rechnete der Zweig nichts, wuerde die Sperre ohne Grund
 //! sperren. Dieses Modul haelt fest, was der Zweig tut, und dass die Anrechnung ohne Wahl unveraendert bleibt.
 //!
-//! **Bekannte Abweichung vom Gesetz, hier nur festgehalten, nicht geaendert.** Das Gesetz zieht die Steuer "bei der
-//! Ermittlung der Einkuenfte" ab (§ 34c Abs. 2); die Rechnung zieht sie vom Einkommen ab (`sonstige_abzuege_vom_einkommen`),
-//! wie Python. Der Unterschied bei den Einkuenften (Gesamtbetrag, Altersentlastung u. a.) ist nicht gemessen. Die Tests
-//! unten pinnen das Verhalten des Zweigs, nicht seine Richtigkeit gegen das Gesetz.
+//! **Abweichung Nr. 41 (der Abzug kuerzt die Einkuenfte).** Das Gesetz zieht die Steuer "bei der Ermittlung der Einkuenfte"
+//! ab (§ 34c Abs. 2). Python und Rust bis Nr. 40 zogen sie vom Einkommen ab (`sonstige_abzuege_vom_einkommen`). Rust kuerzt
+//! seit Nr. 41 die Werbungskosten der Anlage N (`dba_abzug_werbungskosten`, Test `p34c_abzug_einkuenfte.rs`); der Zweig
+//! `shared_dba_sonstige` rechnet bei gewaehltem Abzug darum WEDER Abzug NOCH Anrechnung. Die Tests unten halten diese
+//! Untaetigkeit fest; die Wirkung auf die Zahl steht in `p34c_abzug_einkuenfte.rs`.
 //!
 //! **Abweichung Nr. 35 (Freistellung schlaegt die Wahl).** Bei einem Abkommen mit Freistellung gibt es keinen Abzug
 //! (§ 34c Abs. 6 S. 1 und 2 `EStG`). Die drei Tests `bei_freistellung_*` und `bei_anrechnungsabkommen_*` halten das fest;
@@ -109,20 +110,21 @@ fn ohne_wahl_rechnet_die_anrechnung_und_laesst_das_einkommen_stehen() {
     }
 }
 
-/// Der Abzug (Wahl `true`, Steuer und Einkuenfte ueber 0): die 700 Euro mindern das Einkommen, es wird NICHTS angerechnet.
-/// zvE 49.964 − 700 = 49.264 Euro.
+/// Der Abzug (Wahl `true`, Steuer und Einkuenfte ueber 0): `shared_dba_sonstige` rechnet NICHTS (Nr. 41): kein Abzug beim
+/// Einkommen (der steht bei den Einkuenften), keine Anrechnung. Das zvE bleibt bei 49.964 Euro. Ein Zweig, der den Abzug
+/// beim Einkommen liesse, kuerzte die Steuer zweimal (hier und bei den Einkuenften).
 #[test]
-fn abzug_gewaehlt_zieht_die_steuer_vom_einkommen_ab_und_rechnet_keine_anrechnung() {
+fn abzug_gewaehlt_rechnet_hier_weder_abzug_noch_anrechnung() {
     let (g, erg) = lauf(&[
         (STEUER, json!(cent(700))),
         (EINKUENFTE, json!(cent(5_000))),
         (WAHL, json!(true)),
     ]);
-    assert_eq!(g.sonstige_abzuege_vom_einkommen.get(), 700);
+    assert_eq!(g.sonstige_abzuege_vom_einkommen.get(), 0);
     assert_eq!(erg.dba_anrechnung.get(), 0, "der Abzug rechnet nichts an");
     assert_eq!(g.anzurechnende_auslaendische_steuern.get(), 0);
     assert_eq!(erg.p32b_progressionseinkuenfte, None);
-    assert_eq!(zve(&g), 49_264);
+    assert_eq!(zve(&g), 49_964);
 }
 
 /// Der Abzug haengt an BEIDEN Betraegen: ohne Auslandseinkuenfte oder ohne gezahlte Steuer gibt es nichts abzuziehen. Mit
@@ -222,8 +224,9 @@ fn bei_freistellung_ueber_staat_und_einkunftsart_gibt_es_keinen_abzug() {
 }
 
 /// KONTROLLE zu Nr. 35: sieht das Abkommen die Anrechnung vor, bleibt der Abzug erlaubt (§ 34c Abs. 6 S. 2). Niederlande
-/// pauschal, Polen fuer Dividenden: die 700 Euro mindern das Einkommen wie ohne Abkommen, nichts wird angerechnet, kein
-/// Progressionsvorbehalt. Ohne diese Kontrolle bestuende der Fix auch, wenn er den Abzug ueberall abschaltete.
+/// pauschal, Polen fuer Dividenden: der Abzug ist aktiv wie ohne Abkommen, also wird NICHTS angerechnet (700 Euro
+/// gezahlt, Anrechnung 0) und es gibt keinen Progressionsvorbehalt. Ohne diese Kontrolle bestuende der Fix auch, wenn er den
+/// Abzug ueberall abschaltete: dann wuerden die 700 Euro angerechnet.
 #[test]
 fn bei_anrechnungsabkommen_bleibt_der_abzug_erlaubt() {
     let faelle: [(Option<&str>, Option<&str>); 3] = [
@@ -245,10 +248,10 @@ fn bei_anrechnungsabkommen_bleibt_der_abzug_erlaubt() {
         }
         let (g, erg) = lauf(&paare);
         let fall = format!("{staat:?} {art:?}");
-        assert_eq!(g.sonstige_abzuege_vom_einkommen.get(), 700, "{fall}");
+        assert_eq!(g.sonstige_abzuege_vom_einkommen.get(), 0, "{fall}");
         assert_eq!(erg.dba_anrechnung.get(), 0, "{fall}");
         assert_eq!(erg.p32b_progressionseinkuenfte, None, "{fall}");
-        assert_eq!(zve(&g), 49_264, "{fall}");
+        assert_eq!(zve(&g), 49_964, "{fall}");
     }
 }
 
