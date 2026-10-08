@@ -599,8 +599,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie viel hast du dieses Jahr an gemeinnützige Vereine, Stiftungen oder Kirchen gespendet (Geldspenden mit Spendenquittung, ohne Spenden an Parteien)?"
-    hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung (Spendenquittung). Nur Spenden an inländische Empfänger. Spenden und Mitgliedsbeiträge an Parteien gibst du in einer eigenen Frage an, denn Parteispenden mindern die Steuer anders."
+    fragetext_laie: "Wie viel hast du dieses Jahr an gemeinnützige Vereine, Stiftungen oder Kirchen gespendet (Geldspenden mit Spendenquittung, ohne Spenden an Parteien und Wählervereinigungen)?"
+    hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung (Spendenquittung). Nur Spenden an inländische Empfänger. Spenden und Mitgliedsbeiträge an Parteien und Spenden an unabhängige Wählervereinigungen gibst du in eigenen Fragen an, denn sie mindern die Steuer anders."
     beispielwert: 30000
     herkunft_slots: ["Zuwendungsbestätigung: Betrag"]
     elster_kz: E0108105
@@ -620,7 +620,7 @@ bindungen:
   # Gleiche Regel wie `spenden_betrag` (`p10b_spenden`): die Eingangsfrage `keine_spenden` schliesst beide Fragen aus. KEIN Gate
   # und keine `geltungsbedingung`: ein Betragsfeld daran wuerde zum Gate (Vault: decisions/ein-neues-betragsfeld-haengt-an-
   # feld-bedingung-nie-an-geltungsbedingung); `signatur_slot` ist nur ein Etikett, der Ring liest das Feld beim Feldnamen.
-  # Nummer 2 (unabhaengige Waehlervereinigungen, Zeile 8, Kz E0108801) ist NICHT gebaut; der Hilfetext sagt es.
+  # Nummer 2 (unabhaengige Waehlervereinigungen, Zeile 8, Kz E0108801) ist das Feld `waehlervereinigungen_betrag` darunter.
   - feld_id: parteispenden_betrag
     quelle: {regel_id: p10b_spenden, signatur_slot: parteispenden}
     typ: cent
@@ -629,7 +629,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viel hast du dieses Jahr an politische Parteien gespendet (Spenden und Mitgliedsbeiträge, mit Spendenquittung)?"
-    hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung der Partei. Mitgliedsbeiträge zählen mit. Eine Spende an eine Partei senkt deine Steuer direkt um die Hälfte des Betrags, bis zu einem Höchstbetrag je Jahr; bei Ehegatten gilt der doppelte. Spenden an unabhängige Wählervereinigungen sind hier noch nicht vorgesehen."
+    hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung der Partei. Mitgliedsbeiträge zählen mit. Eine Spende an eine Partei senkt deine Steuer direkt um die Hälfte des Betrags, bis zu einem Höchstbetrag je Jahr; bei Ehegatten gilt der doppelte. Spenden an unabhängige Wählervereinigungen gibst du in einer eigenen Frage an, nicht hier."
     beispielwert: 50000
     herkunft_slots: null
     elster_kz: E0108701
@@ -637,6 +637,32 @@ bindungen:
     anker_ref:
       quelle: "§ 34g Satz 1 Nr. 1 EStG"
       zitatanker: "politische Parteien im Sinne des § 2 des Parteiengesetzes"
+      datei: "sources/gesetze-im-internet/estg_p34g_2026-09-26.txt"
+
+  # ===== Spenden an unabhaengige Waehlervereinigungen, § 34g Satz 1 Nr. 2 (Abweichung Nr. 44 in rust/fixtures/README.md) =====
+  # Zeile 8 der Anlage Sonderausgaben (Kz E0108801, Knoten Sp_MB/Unabh_Waehl_V/Sum_Best; E10-2024.xsd und E10-2025.xsd, fuer VZ
+  # 2026 liegt lokal kein Schema vor). Dieselbe Rechnung wie die Parteien, mit eigenem Hoechstbetrag ("jeweils" in § 34g Satz 2):
+  # 50 % der Spende, hoechstens der Deckel des Jahres aus params/<vz>/parteispenden_p34g.yaml, getrennt von Nr. 1. Einen Teil
+  # ueber dem Hoechstbetrag als Sonderausgabe gibt es hier NICHT: § 10b Abs. 2 EStG nennt nur Parteien. Die Erklaerung nennt die
+  # volle Spende ("stets in voller Hoehe", Anleitung Sonderausgaben). Die Voraussetzungen von Nr. 2 (Verein ohne Parteicharakter,
+  # Mandat oder Anzeige der Wahlteilnahme) fragt das Produkt NICHT ab; der Hilfetext nennt sie. Sonst wie `parteispenden_betrag`:
+  # kein Gate, keine `geltungsbedingung`, hinter der Eingangsfrage `keine_spenden`.
+  - feld_id: waehlervereinigungen_betrag
+    quelle: {regel_id: p10b_spenden, signatur_slot: waehlervereinigungen}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr an unabhängige Wählervereinigungen gespendet (Spenden und Mitgliedsbeiträge, mit Spendenquittung)?"
+    hilfe_kurz: "Gemeint sind Vereine, die nur an Wahlen teilnehmen und keine Partei sind. Der Betrag steht auf der Zuwendungsbestätigung der Vereinigung. Die Vereinigung muss die gesetzlichen Voraussetzungen erfüllen; ob sie es tut, prüft das Finanzamt. Eine Spende an eine Wählervereinigung senkt deine Steuer direkt um die Hälfte des Betrags, bis zu einem Höchstbetrag je Jahr; bei Ehegatten gilt der doppelte. Dieser Höchstbetrag gilt zusätzlich zu dem für Parteien. Trage den ganzen Betrag ein, auch wenn er über dem Höchstbetrag liegt. Spenden an Parteien gibst du in einer eigenen Frage an."
+    beispielwert: 50000
+    herkunft_slots: null
+    elster_kz: E0108801
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34g Satz 1 Nr. 2 EStG"
+      zitatanker: "Vereine ohne Parteicharakter"
       datei: "sources/gesetze-im-internet/estg_p34g_2026-09-26.txt"
 
   # STILLGELEGT SEIT 2026-09-26: weder gefragt noch geschrieben, solange es kein Feld fuer Zeile 9

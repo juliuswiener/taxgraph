@@ -299,11 +299,11 @@ fn fixture_unverkuerzt() {
 
 #[test]
 fn konstanten_wie_orakel() {
-    // Abweichung Nr. 28, Nr. 31, Nr. 33 und Nr. 38: `ep_unfallkosten`, `parteispenden_betrag`, die vier Betragsfelder der
-    // Versorgung des Ehegatten und seine einbehaltene Lohnsteuer (`p36_lohnsteuer_partner`) stehen nur in Rust (Python kennt
-    // die Felder im Ring nicht). Der Rest ist das Orakel, und genau diese SIEBEN Felder sind ausgenommen: ein achtes
-    // Rust-Feld braucht seine eigene Zeile hier.
-    const NUR_RUST: [&str; 7] = [
+    // Abweichung Nr. 28, Nr. 31, Nr. 33, Nr. 38 und Nr. 44: `ep_unfallkosten`, `parteispenden_betrag`, die vier Betragsfelder der
+    // Versorgung des Ehegatten, seine einbehaltene Lohnsteuer (`p36_lohnsteuer_partner`) und `waehlervereinigungen_betrag` stehen
+    // nur in Rust (Python kennt die Felder im Ring nicht). Der Rest ist das Orakel, und genau diese ACHT Felder sind
+    // ausgenommen: ein neuntes Rust-Feld braucht seine eigene Zeile hier.
+    const NUR_RUST: [&str; 8] = [
         "ep_unfallkosten",
         "p36_lohnsteuer_partner",
         "parteispenden_betrag",
@@ -311,6 +311,7 @@ fn konstanten_wie_orakel() {
         "versorgung_beginn_jahr_partner",
         "versorgung_bemessungsgrundlage_partner",
         "versorgung_jahresrente_partner",
+        "waehlervereinigungen_betrag",
     ];
     let py = &fixture()["konstanten"];
     let flag: Value = k::FLAG_NEGIERT.iter().map(|(f, l)| json!([f, l])).collect();

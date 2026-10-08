@@ -97,7 +97,7 @@ pub(super) const SCHEIBEN_AN_GESAMT_KEGEL: [&str; 33] = [
 
 /// `SCHEIBEN['gesamt']["felder"]` = `VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER + GESAMT_VERSORGUNG + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + PARTNER_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN + GESAMT_DBA + GESAMT_P23 + P23_SCREENING + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG + VERPFLEGUNG_EINZELREISE + AGB_TATBESTAND + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER + STEUERKLASSE_FELDER + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 365] = [
+pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 366] = [
     "vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand",
     "vv_sonstige_wk", "vv_entgelt_quote_prozent", "vv_wohnzwecke", "vv_auf_dauer",
     "veranlagung", "bruttoarbeitslohn", "ep_arbeitstage", "ep_entfernung_km",
@@ -118,7 +118,7 @@ pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 365] = [
     "hh_minijob_aufwendungen", "hh_dienstleistungen", "hh_handwerker_arbeitskosten", "hh_minijob_betrag",
     "hh_minijob_art", "hh_dienstleistung_betrag", "hh_dienstleistung_art", "hh_handwerker_betrag",
     "hh_handwerker_art", "hh_in_eu_ewr", "hh_handwerker_keine_foerderung", "hh_rechnung_unbar",
-    "spenden_betrag", "parteispenden_betrag", "spenden_vermoegensstock", "agb_aufwendungen", "fam_anzahl_kinder",
+    "spenden_betrag", "parteispenden_betrag", "waehlervereinigungen_betrag", "spenden_vermoegensstock", "agb_aufwendungen", "fam_anzahl_kinder",
     "berufsausbildung_aufwendungen", "berufsausbildung_bezeichnung", "berufsausbildung_einzelbetrag", "kist_gezahlt",
     "kist_erstattet", "kinderbetreuungskosten", "kind_unter_14_haushaltszugehoerig", "kind_betreuung_reine_betreuung",
     "kind_betreuung_rechnung_ueberweisung", "kind_betreuung_dienstleister", "kind_betreuung_zeitraum", "kind_betreuung_eigenanteil",
@@ -219,7 +219,7 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 /// gefragt nur bei seinem Lohn ueber 0) und `geburtsjahr_partner` (fuer seinen Altersentlastungsbetrag nach § 24a, wie
 /// `geburtsjahr` bei Person A; `zweige/rentner.rs` rechnet § 24a je Person wie `zweige/gesamt.rs`). Der Kegel bleibt bei 28.
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 277] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 278] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -239,7 +239,8 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 277] = [
     "verlustvortrag_bestand", "hh_hat_aufwendungen", "hh_minijob_aufwendungen", "hh_dienstleistungen",
     "hh_handwerker_arbeitskosten", "hh_minijob_betrag", "hh_minijob_art", "hh_dienstleistung_betrag",
     "hh_dienstleistung_art", "hh_handwerker_betrag", "hh_handwerker_art", "hh_in_eu_ewr",
-    "hh_handwerker_keine_foerderung", "hh_rechnung_unbar", "spenden_betrag", "parteispenden_betrag", "spenden_vermoegensstock",
+    "hh_handwerker_keine_foerderung", "hh_rechnung_unbar", "spenden_betrag", "parteispenden_betrag", "waehlervereinigungen_betrag",
+    "spenden_vermoegensstock",
     "agb_aufwendungen", "fam_anzahl_kinder", "berufsausbildung_aufwendungen", "berufsausbildung_bezeichnung",
     "berufsausbildung_einzelbetrag", "kist_gezahlt", "kist_erstattet", "kinderbetreuungskosten",
     "kind_unter_14_haushaltszugehoerig", "kind_betreuung_reine_betreuung", "kind_betreuung_rechnung_ueberweisung", "kind_betreuung_dienstleister",

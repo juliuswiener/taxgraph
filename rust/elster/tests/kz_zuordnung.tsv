@@ -181,3 +181,4 @@ vv_summe_werbungskosten	E0705701	false
 vv_ueberschuss	E0701601	false
 vv_ueberschuss_person_a	E0701801	false
 vv_wohneinheit_bezeichnung	E0701202	true
+waehlervereinigungen_betrag	E0108801	true
