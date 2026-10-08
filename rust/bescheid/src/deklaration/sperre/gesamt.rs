@@ -366,7 +366,7 @@ fn gwg(k: &K<'_>) -> Grund {
                 .and_then(|x| ganzzahl(Some(&x.wert)))
         };
         let afa_moeglich = matches!(
-            (angabe("gwg_nutzungsdauer"), angabe("gwg_anschaffung_monat")),
+            (angabe("gwg_nutzungsdauer"), angabe("gwg_kaufmonat")),
             (Some(nd), Some(monat)) if gwg_afa_angaben_gueltig(nd, monat)
         );
         if nein("gwg_bewegliches_selbstaendig_nutzbar") && !afa_moeglich {

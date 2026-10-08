@@ -1525,7 +1525,7 @@ bindungen:
       quelle: "§ 7 Abs. 1 S. 2 EStG"
       zitatanker: "Die Absetzung bemisst sich hierbei nach der betriebsgewöhnlichen Nutzungsdauer des Wirtschaftsguts."
       datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
-  - feld_id: gwg_anschaffung_monat
+  - feld_id: gwg_kaufmonat
     instanz_gruppe: gwg
     quelle: {regel_id: p6_2_gwg_sofortabzug, signatur_slot: gwg_afa_anschaffung_monat}
     typ: int

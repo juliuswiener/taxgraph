@@ -198,7 +198,7 @@ fn name(zweite: bool, feld: &'static str) -> &'static str {
         "gwg_verzeichnis_ab_250" => "gwg_verzeichnis_ab_250__2",
         "gwg_ohne_vorsteuerabzug" => "gwg_ohne_vorsteuerabzug__2",
         "gwg_nutzungsdauer" => "gwg_nutzungsdauer__2",
-        "gwg_anschaffung_monat" => "gwg_anschaffung_monat__2",
+        "gwg_kaufmonat" => "gwg_kaufmonat__2",
         _ => panic!("KONTROLLE: kein Name fuer die zweite Instanz: {feld}"),
     }
 }
@@ -219,7 +219,7 @@ fn geraet_paare(
         paare.push((name(zweite, "gwg_nutzungsdauer"), json!(nd)));
     }
     if let Some(m) = g.monat {
-        paare.push((name(zweite, "gwg_anschaffung_monat"), json!(m)));
+        paare.push((name(zweite, "gwg_kaufmonat"), json!(m)));
     }
     paare
 }
@@ -359,14 +359,14 @@ fn ohne_bestaetigte_angaben_bleibt_die_sperre() {
     ] {
         let mut paare = geraet_paare(basis(0, 5_000_000, 0), t1, false);
         paare.push(("gwg_nutzungsdauer", nd.clone()));
-        paare.push(("gwg_anschaffung_monat", monat.clone()));
+        paare.push(("gwg_kaufmonat", monat.clone()));
         assert_eq!(ergebnis(&fall(Scheibe::Gesamt, &paare, &[]), vz), sperre, "Nutzungsdauer {nd}, Monat {monat}");
     }
     // Vorlaeufig zaehlt nicht (Zwei-Signal-Regel).
     let paare = geraet_paare(basis(0, 5_000_000, 0), t1, false);
     let beide = [
         ("gwg_nutzungsdauer", json!(3)),
-        ("gwg_anschaffung_monat", json!(7)),
+        ("gwg_kaufmonat", json!(7)),
     ];
     for i in 0..2 {
         let mut bestaetigt = paare.clone();

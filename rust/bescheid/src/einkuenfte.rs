@@ -274,7 +274,7 @@ fn gwg_afa_abzug(fi: &Felder) -> Result<Euro, BescheidFehler> {
         return Ok(Euro::new(0));
     }
     let nutzungsdauer = feld_int_oder_null(fi, "gwg_nutzungsdauer")?;
-    let monat = feld_int_oder_null(fi, "gwg_anschaffung_monat")?;
+    let monat = feld_int_oder_null(fi, "gwg_kaufmonat")?;
     if !gwg_afa_angaben_gueltig(nutzungsdauer, monat) {
         return Ok(Euro::new(0));
     }
@@ -303,7 +303,7 @@ fn gwg_afa_abzug(fi: &Felder) -> Result<Euro, BescheidFehler> {
 ///     ("gwg_anschaffungskosten_netto", json!(60_000), true),
 ///     ("gwg_verzeichnis_ab_250", json!(false), true),
 ///     ("gwg_nutzungsdauer", json!(3), true),
-///     ("gwg_anschaffung_monat", json!(7), true),
+///     ("gwg_kaufmonat", json!(7), true),
 /// ]));
 /// assert_eq!(gwg_afa_summe(&f, &q).unwrap().get(), 100); // 600 EUR, 3 Jahre, ab Juli: 200 x 6/12
 /// let mit_sofortabzug = felder(&store(&[("gwg_anschaffungskosten_netto", json!(60_000), true)]));
