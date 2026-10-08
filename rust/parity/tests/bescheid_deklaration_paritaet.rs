@@ -678,9 +678,14 @@ fn konstanten_gleich() {
 
 /// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27 in
 /// `rust/fixtures/README.md`: `gwg_mehrwertsteuer_offen` nennt seit der Folgefrage `gwg_ohne_vorsteuerabzug` den Weg des
-/// Kleinunternehmers; Abweichung Nr. 37: `versorgungsfreibetrag_offen` nennt den Ehegatten). Dieselbe Liste und dieselbe
+/// Kleinunternehmers; Abweichung Nr. 37: `versorgungsfreibetrag_offen` nennt den Ehegatten; Abweichung Nr. 45:
+/// `gwg_abschreibung_offen` nennt Nutzungsdauer und Kaufmonat der Einzel-AfA). Dieselbe Liste und dieselbe
 /// Strenge wie `domain::sperrgrund::tests::ABWEICHENDER_KLARTEXT`.
-const ABWEICHENDER_KLARTEXT: [&str; 2] = ["gwg_mehrwertsteuer_offen", "versorgungsfreibetrag_offen"];
+const ABWEICHENDER_KLARTEXT: [&str; 3] = [
+    "gwg_mehrwertsteuer_offen",
+    "versorgungsfreibetrag_offen",
+    "gwg_abschreibung_offen",
+];
 
 #[test]
 fn sperrgrund_klartext_literale() {
@@ -708,7 +713,7 @@ fn sperrgrund_klartext_literale() {
             "felder": {}, "vz": 2025, "nur_bestaetigt": false, "args": {"grund": l}}),
         );
         let python = py["bescheid.sperrgrund_klartext"]["ok"].as_str().unwrap();
-        // Streng: ein Grund, dessen Klartext Rust absichtlich anders sagt (Abweichung Nr. 27, Nr. 37), muss ABWEICHEN. Wird er
+        // Streng: ein Grund, dessen Klartext Rust absichtlich anders sagt (Abweichung Nr. 27, Nr. 37, Nr. 45), muss ABWEICHEN. Wird er
         // gleich, ist die Liste falsch; eine Zeile, die nie vergleicht, waere sonst gruen und leer.
         let erwartet = if ABWEICHENDER_KLARTEXT.contains(&l.as_str()) {
             let rust = dk::sperrgrund_klartext_text(Some(l));

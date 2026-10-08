@@ -5,12 +5,13 @@ use rust_decimal::Decimal;
 use store::SnapshotFeld;
 
 use super::einkunft::{betrag_offen, dba_p32b_p16, flag_kapital_gewinn};
-use super::{bestaetigt, positiv, py_int_wert, werbungskosten, zahl_wert, Grund, K};
+use super::{bestaetigt, ganzzahl, positiv, py_int_wert, werbungskosten, zahl_wert, Grund, K};
 use crate::deklaration::konstanten::{
     GESAMT_PARTNER_19, GESAMT_PARTNER_KAP, RENTNER_22, RENTNER_22_PARTNER, RENTNER_AA_ARTEN,
     VV_GESAMT_FELDER,
 };
 use crate::deklaration::Cfg;
+use crate::einkuenfte::gwg_afa_angaben_gueltig;
 use crate::zweige::kinderfreibetrag::{auswerten, Befund};
 use crate::{
     feld_int_oder_null, ist_true, ist_zusammen, wert, BescheidFehler, Felder, Instanzquelle,
@@ -322,9 +323,15 @@ fn p35a_p35c(k: &K<'_>) -> Grund {
 /// 2. "netto ohne Vorsteuer" BESTAETIGT nein -> [`Sperrgrund::GwgMehrwertsteuerOffen`] (der Betrag
 ///    ist brutto); frei nur, wenn die Folgefrage `gwg_ohne_vorsteuerabzug` BESTAETIGT ja sagt (der
 ///    Kleinunternehmer zieht brutto ab, Abweichung Nr. 27) und der Betrag 800 EUR nicht uebersteigt;
-/// 3. Betrag ueber 800 EUR -> `GwgAbschreibungOffen`; die Tatbestandsfragen sind gegenstandslos;
+/// 3. Betrag ueber 800 EUR -> `GwgAbschreibungOffen`; die Tatbestandsfragen sind gegenstandslos, nur die
+///    Netto-Frage zaehlt, sobald die Angaben der Einzel-`AfA` da sind (offen -> [`Sperrgrund::GwgTatbestandOffen`]);
 /// 4. unbeantwortete Voraussetzung (Verzeichnis nur ueber 250 EUR) -> [`Sperrgrund::GwgTatbestandOffen`];
 ///    "Verzeichnis" BESTAETIGT nein ueber 250 EUR -> `GwgAbschreibungOffen`.
+///
+/// Einzel-`AfA` (Abweichung Nr. 45): sind Nutzungsdauer und Kaufmonat BESTAETIGT und im Bereich
+/// ([`gwg_afa_angaben_gueltig`]), entfaellt jedes `GwgAbschreibungOffen` in 1, 3 und 4: das Geraet rechnet
+/// im Kaufjahr als `AfA` (`einkuenfte::gwg_afa_summe`). Die Grundlage muss feststehen: 2 gilt weiter, auch bei
+/// "nicht allein nutzbar" (die Reihenfolge 1 vor 2 gilt nur ohne diese Angaben, wie in Python).
 ///
 /// Bis 2026-10-03 war ein beantwortetes "nein" und der Betrag ueber 800 EUR ein stiller Abzug von 0
 /// (`gwg_abzug` nullt weiter, die Sperre ist das Urteil fuer jede festgesetzte Zahl). Ein Betrag von
@@ -351,7 +358,18 @@ fn gwg(k: &K<'_>) -> Grund {
             })
         };
         let nein = |id: &str| antwort(id, false);
-        if nein("gwg_bewegliches_selbstaendig_nutzbar") {
+        // Nutzungsdauer und Kaufmonat: ganze Zahlen (kein Bool, keine Kommazahl), BESTAETIGT, im Bereich.
+        let angabe = |id: &str| {
+            inst.felder
+                .get(id)
+                .filter(|x| x.zustand == domain::Zustand::Bestaetigt)
+                .and_then(|x| ganzzahl(Some(&x.wert)))
+        };
+        let afa_moeglich = matches!(
+            (angabe("gwg_nutzungsdauer"), angabe("gwg_kaufmonat")),
+            (Some(nd), Some(monat)) if gwg_afa_angaben_gueltig(nd, monat)
+        );
+        if nein("gwg_bewegliches_selbstaendig_nutzbar") && !afa_moeglich {
             return Ok(Some(Sperrgrund::GwgAbschreibungOffen));
         }
         // "Netto: nein" heisst, der Betrag ist brutto. Wer die Mehrwertsteuer nicht zurueckbekommt (Folgefrage BESTAETIGT
@@ -364,24 +382,34 @@ fn gwg(k: &K<'_>) -> Grund {
         {
             return Ok(Some(Sperrgrund::GwgMehrwertsteuerOffen));
         }
-        // Ueber 800 EUR (Schwelle in Cent) ist der Sofortabzug ausgeschlossen: nichts zu fragen,
-        // aber auch nicht still weglassen.
-        if betrag > Decimal::from(80_000) {
-            return Ok(Some(Sperrgrund::GwgAbschreibungOffen));
-        }
         let offen = |id: &str| {
             inst.felder
                 .get(id)
                 .is_none_or(|x| x.zustand != domain::Zustand::Bestaetigt)
         };
+        // Ueber 800 EUR (Schwelle in Cent) ist der Sofortabzug ausgeschlossen: nichts zu fragen,
+        // aber auch nicht still weglassen. Mit Angaben rechnet die AfA auf dem eingegebenen Betrag; ob er netto oder brutto
+        // ist, sagt nur die Netto-Frage (ihr bestaetigtes "nein" hat oben schon gesperrt). Offen heisst: der Betrag kann
+        // brutto sein, die AfA zu hoch, die Steuer zu niedrig. Also sperrt sie hier wie bis 800 EUR.
+        if betrag > Decimal::from(80_000) {
+            if !afa_moeglich {
+                return Ok(Some(Sperrgrund::GwgAbschreibungOffen));
+            }
+            if offen("gwg_netto_ohne_vorsteuer") {
+                return Ok(Some(Sperrgrund::GwgTatbestandOffen));
+            }
+            continue;
+        }
         if offen("gwg_bewegliches_selbstaendig_nutzbar") || offen("gwg_netto_ohne_vorsteuer") {
             return Ok(Some(Sperrgrund::GwgTatbestandOffen));
         }
+        // Auch ein nicht allein nutzbares Geraet mit Angaben beantwortet das Verzeichnis, wenn der Betrag ueber 250 EUR liegt: eine
+        // offene (vorlaeufige) Antwort macht die Instanz vorlaeufig, und die festgesetzte Zahl liesse das Geraet still weg.
         if betrag > Decimal::from(25_000) {
             if offen("gwg_verzeichnis_ab_250") {
                 return Ok(Some(Sperrgrund::GwgTatbestandOffen));
             }
-            if nein("gwg_verzeichnis_ab_250") {
+            if nein("gwg_verzeichnis_ab_250") && !afa_moeglich {
                 return Ok(Some(Sperrgrund::GwgAbschreibungOffen));
             }
         }

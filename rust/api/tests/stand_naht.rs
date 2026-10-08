@@ -130,10 +130,10 @@ fn scheibe_bindung_wie_python() {
     let d = dienst();
     for (scheibe, n) in [
         ("ep", 6),
-        ("n_vor_gwg", 71),
+        ("n_vor_gwg", 73),
         ("an_gesamt", 85),
-        ("gesamt", 366),
-        ("rentner_gesamt", 278),
+        ("gesamt", 368),
+        ("rentner_gesamt", 280),
     ] {
         let sb = d.zustand.scheibe_bindung(&akte(Some(scheibe))).unwrap();
         assert_eq!(sb.cfg.scheibe().to_string(), scheibe);

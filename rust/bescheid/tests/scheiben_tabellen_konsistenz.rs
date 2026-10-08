@@ -65,8 +65,8 @@ const MIT_LISTE: [Scheibe; 4] = [
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 85, 33),
-    (Scheibe::Gesamt, 366, 35),
-    (Scheibe::RentnerGesamt, 278, 28),
+    (Scheibe::Gesamt, 368, 35),
+    (Scheibe::RentnerGesamt, 280, 28),
 ];
 
 fn registry() -> &'static Registry {
