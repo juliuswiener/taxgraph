@@ -3,7 +3,9 @@
 //!
 //! **Worum es geht.** Eine Spende an eine Partei senkt nicht das Einkommen, sondern die Steuer selbst: um die Haelfte des
 //! Betrags, hoechstens um einen Deckel je Veranlagungsjahr (825 Euro bis 2025, 1.650 Euro ab 2026; bei Zusammenveranlagung das
-//! Doppelte). Die Rechnung traegt den Betrag in `steuerermaessigungen` ein, nie in `sonderausgaben`.
+//! Doppelte). Die Rechnung traegt den Betrag in `steuerermaessigungen` ein; der Teil ueber der Basis der Ermaessigung wirkt
+//! zusaetzlich als Sonderausgabe (§ 10b Abs. 2, Abweichung Nr. 43, geprueft in `parteispenden_sonderausgaben.rs`). Die Faelle
+//! dieser Datei liegen alle auf oder unter der Basis; dort bleiben die Sonderausgaben unveraendert.
 //!
 //! **Warum es zaehlt.** Vor dem Bau fehlte das Feld: wer 500 Euro an eine Partei gespendet hatte, trug sie als gewoehnliche
 //! Spende ein (154 Euro Ersparnis) oder liess sie weg (0 Euro). Zustehend sind 250 Euro.
@@ -15,7 +17,7 @@
 //! Text, nicht dieser Test.
 //!
 //! Abgerundet wird auf ganze Euro (`ponytail`: halbe Euro der Ermaessigung fallen weg, hoechstens 0,50 Euro zu wenig; der
-//! Gesetzestext nennt keine Rundung). Der Sonderausgabenabzug des Teils ueber dem Deckel (§ 10b Abs. 2) ist NICHT gebaut.
+//! Gesetzestext nennt keine Rundung).
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,

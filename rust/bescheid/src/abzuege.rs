@@ -17,7 +17,9 @@ use engine::zugriff::teil2::p33::{
     behinderten_pb, hinterbliebenen_pb, p33_2a_fahrtkostenpauschale, BehindertenPbEingabe,
     FahrtkostenpauschaleEingabe, HinterbliebenenPbEingabe,
 };
-use engine::zugriff::teil2::p34g::{p34g_parteispenden, ParteispendenEingabe};
+use engine::zugriff::teil2::p34g::{
+    p10b_parteispenden_sonderausgabe, p34g_parteispenden, ParteispendenEingabe,
+};
 use engine::zugriff::teil2::p35c::{
     p35c_energieberater, p35c_jahresdeckel, p35c_sanierung, JahresdeckelEingabe, SanierungEingabe,
 };
@@ -401,22 +403,40 @@ fn hh_summe(
     feld_int_oder_null(f, sum_fid)
 }
 
+/// Die Eingabe fuer § 34g und § 10b Abs. 2: die Parteispende des Falls, einzeln oder zusammen veranlagt.
+fn parteispenden_eingabe(
+    f: &Felder,
+    veranlagung: Veranlagung,
+    vz: Vz,
+) -> Result<ParteispendenEingabe, BescheidFehler> {
+    Ok(ParteispendenEingabe {
+        vz,
+        spenden: feld_euro_oder_null(f, "parteispenden_betrag")?,
+        zusammen: veranlagung == Veranlagung::Zusammen,
+    })
+}
+
 /// § 34g (Parteispenden: 50 % der Spenden, hoechstens der Deckel des Jahres), EURO. Nur Rust (Abweichung Nr. 31). Die Spende
-/// steht NUR hier und nie in den Sonderausgaben: sie senkt die Steuer, nicht das Einkommen.
+/// steht hier bis zur Basis der Ermaessigung: sie senkt die Steuer, nicht das Einkommen. Der Teil darueber wirkt als Sonderausgabe
+/// ([`parteispenden_sonderausgabe`]).
 fn parteispenden_ermaessigung(
     f: &Felder,
     veranlagung: Veranlagung,
     vz: Vz,
     p: &Params,
 ) -> Result<Euro, BescheidFehler> {
-    Ok(p34g_parteispenden(
-        &ParteispendenEingabe {
-            vz,
-            spenden: feld_euro_oder_null(f, "parteispenden_betrag")?,
-            zusammen: veranlagung == Veranlagung::Zusammen,
-        },
-        p,
-    )?)
+    Ok(p34g_parteispenden(&parteispenden_eingabe(f, veranlagung, vz)?, p)?)
+}
+
+/// § 10b Abs. 2: der Teil einer Parteispende ueber der Basis der Ermaessigung, bis zum Deckel des Jahres, EURO. Nur Rust
+/// (Abweichung Nr. 43). Waehlervereinigungen und die allgemeine Spende (`spenden_betrag`, § 10b Abs. 1) zaehlen nicht mit.
+fn parteispenden_sonderausgabe(
+    f: &Felder,
+    veranlagung: Veranlagung,
+    vz: Vz,
+    p: &Params,
+) -> Result<Euro, BescheidFehler> {
+    Ok(p10b_parteispenden_sonderausgabe(&parteispenden_eingabe(f, veranlagung, vz)?, p)?)
 }
 
 /// § 35a (haushaltsnahe) + § 35c (Sanierung, Energieberater, Jahresdeckel) + § 34g (Parteispenden), EURO.
@@ -509,7 +529,7 @@ fn kv_pv_sonderausgaben(
     })?)
 }
 
-/// Sonderausgaben (§ 10, § 10b, § 10 Abs. 1a), EURO.
+/// Sonderausgaben (§ 10, § 10b einschliesslich Abs. 2, § 10 Abs. 1a), EURO.
 fn sonderausgaben(
     gde: Euro,
     veranlagung: Veranlagung,
@@ -522,6 +542,7 @@ fn sonderausgaben(
         zuwendungen: feld_euro_oder_null(f, "spenden_betrag")?,
         gesamtbetrag_der_einkuenfte: gde,
     })?;
+    sa = euro_plus(sa, parteispenden_sonderausgabe(f, veranlagung, vz, p)?)?;
     sa = euro_plus(
         sa,
         p10_kist(&P10KistEingabe {

@@ -6,8 +6,18 @@
 # Die Zahlen stammen aus diesem Wortlaut, nicht aus der Anleitung zum Vordruck und nicht aus dem Gedächtnis
 # (Vault: decisions/parteispenden-deckel-kommt-je-jahr-aus-der-eingefrorenen-fassung). Dass die Datei den Wortlaut wiedergibt,
 # prüft rust/bindung/tests/parteispenden_werte_gegen_gesetz.rs bei jedem Lauf gegen den Text.
-# Der Deckel gilt je Nummer (Parteien, Wählervereinigungen) für sich. Gebaut ist nur Nummer 1 (Parteien, Zeile 7 der Anlage
-# Sonderausgaben); der Teil einer Spende über dem Deckel wirkt nach § 10b Abs. 2 EStG als Sonderausgabe und ist NICHT gebaut.
+# Der Deckel gilt je Nummer (Parteien, Wählervereinigungen) für sich. Gebaut ist Nummer 1 (Parteien, Zeile 7 der Anlage
+# Sonderausgaben) samt dem Teil einer Spende über der Basis der Ermäßigung, der nach § 10b Abs. 2 EStG als Sonderausgabe wirkt
+# (Abweichung Nr. 43). Nicht gebaut sind Nummer 2 (Wählervereinigungen) und die Ausschlussklausel (Partei von der staatlichen
+# Teilfinanzierung ausgeschlossen).
+# Sonderausgaben-Deckel: § 10b Abs. 2 Satz 1 EStG, Wortlaut "bis zur Höhe von insgesamt 1.650 Euro und im Fall(e) der
+# Zusammenveranlagung von Ehegatten bis zur Höhe von insgesamt 3.300 Euro im Kalenderjahr abzugsfähig". Quelle:
+# sources/gesetze-im-internet/estg_p10b_ab-2020-01-01.txt. Fassung ab 2020-01-01 (Wortlaut von Julius am 2026-10-08 eingefügt, Herkunftsseite nicht genannt). Dass sie für dieses
+# Jahr gilt, ist abgeleitet (derived): bis zur Änderung zum 1.1.2026 nennt keine Quelle im Korpus eine andere Fassung.
+# Basis der Ermäßigung = Höchstbetrag der Ermäßigung / Satz; nur der Teil der Spende darüber ist Sonderausgabe (Satz 2: "nur
+# insoweit ..., als für sie nicht eine Steuerermäßigung nach § 34g gewährt worden ist"). Dass die Lesart "zusätzlich" gilt, sagt die
+# Anleitung zur Anlage Sonderausgaben 2025 (sources/bfinv/anleitungen/anl_sonderausgaben_2025.txt:56-58); Julius lässt sie als
+# Beleg gelten (Vault: decisions/antworten-auf-die-entscheidungsvorlage-2026-10-08).
 
 parameter: parteispenden_p34g
 veranlagungszeitraum: 2024
@@ -35,3 +45,17 @@ hoechstbetrag_zusammen:
   veranlagungszeitraum: 2024
   rechtsquelle: {gesetz: "EStG", paragraph: "34g", absatz: "", nummer: "1"}
   datenquelle: "§ 34g Satz 2 EStG: im Fall der Zusammenveranlagung von Ehegatten höchstens jeweils 1 650 Euro, sources/gesetze-im-internet/estg_p34g_2024-12-18.txt"
+
+sonderausgaben_hoechstbetrag_einzel:
+  wert: 1650
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: "EStG", paragraph: "10b", absatz: "2", nummer: ""}
+  datenquelle: "§ 10b Abs. 2 Satz 1 EStG: bis zur Höhe von insgesamt 1.650 Euro, sources/gesetze-im-internet/estg_p10b_ab-2020-01-01.txt"
+
+sonderausgaben_hoechstbetrag_zusammen:
+  wert: 3300
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: "EStG", paragraph: "10b", absatz: "2", nummer: ""}
+  datenquelle: "§ 10b Abs. 2 Satz 1 EStG: im Fall der Zusammenveranlagung von Ehegatten bis zur Höhe von insgesamt 3.300 Euro, sources/gesetze-im-internet/estg_p10b_ab-2020-01-01.txt"
