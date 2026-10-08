@@ -2,11 +2,14 @@
 //! `rust/fixtures/README.md`). Nur Rust, kein Python-Gegenstueck und kein Catala-Scope: die Rechnung ist ein Satz mit Deckel.
 //!
 //! Dazu der Teil einer Spende ueber der Basis der Ermaessigung als Sonderausgabe (§ 10b Abs. 2, Abweichung Nr. 43):
-//! [`p10b_parteispenden_sonderausgabe`].
+//! [`p10b_parteispenden_sonderausgabe`]. Nr. 2 (unabhaengige Waehlervereinigungen, Zeile 8, Abweichung Nr. 44) rechnet mit derselben
+//! Funktion [`p34g_parteispenden`], einmal je Nummer: "jeweils" in § 34g Satz 2 heisst zwei getrennte Hoechstbetraege. Einen
+//! Sonderausgabenteil gibt es bei Nr. 2 nicht, § 10b Abs. 2 nennt nur Parteien.
 //!
 //! ponytail: reines Rust ohne Catala-Regel (`rules/estg/p34g` gibt es nicht). Upgrade-Pfad: ein Scope `Parteispenden` in
-//! `rules/estg`, eingecheckter C-Export, Aufruf wie `p35a_haushaltsnahe`. Nicht gebaut sind Nummer 2 (unabhaengige
-//! Waehlervereinigungen, Zeile 8) und die Ausschlussklausel (Partei von der staatlichen Teilfinanzierung ausgeschlossen).
+//! `rules/estg`, eingecheckter C-Export, Aufruf wie `p35a_haushaltsnahe`. Nicht gebaut sind die Ausschlussklausel (Partei von der
+//! staatlichen Teilfinanzierung ausgeschlossen) und die Voraussetzungen von Nr. 2 (Verein ohne Parteicharakter, Mandat oder
+//! Anzeige der Wahlteilnahme).
 use domain::{Euro, Vz};
 
 use super::{euro, int_durch_satz, int_mal_satz, z, EngineFehler};
@@ -16,13 +19,14 @@ use bindung::Params;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ParteispendenEingabe {
     pub vz: Vz,
-    /// Spenden und Mitgliedsbeitraege an politische Parteien, ganze Euro (das Cent-Feld, abgerundet).
+    /// Spenden und Mitgliedsbeitraege an politische Parteien (Nr. 1) oder an Waehlervereinigungen (Nr. 2), ganze Euro (das Cent-Feld,
+    /// abgerundet). Der Aufrufer ruft je Nummer einmal.
     pub spenden: Euro,
     /// Zusammenveranlagung von Ehegatten: der Deckel gilt in der doppelten Hoehe (`hoechstbetrag_zusammen`).
     pub zusammen: bool,
 }
 
-/// § 34g Satz 1 Nr. 1 und Satz 2 `EStG`: die Ermaessigung der tariflichen Steuer, EURO. `min(int(spenden x satz), Deckel)`,
+/// § 34g Satz 1 Nr. 1 oder Nr. 2 und Satz 2 `EStG`: die Ermaessigung der tariflichen Steuer, EURO. `min(int(spenden x satz), Deckel)`,
 /// Satz und Deckel je Veranlagungsjahr aus `params/<vz>/parteispenden_p34g.yaml`. Halbe Euro fallen weg (`int()` schneidet ab).
 /// Bei `spenden <= 0` liest die Funktion die Parameterdatei nie und gibt 0: ein Fall ohne Parteispende rechnet auch in einem
 /// Jahr, dem die Datei fehlt. Mit einem Betrag ueber 0 und ohne Datei bricht sie ab (Parameterfehler), statt mit einem

@@ -1,5 +1,5 @@
-# Steuerermäßigung für Zuwendungen an politische Parteien nach § 34g Satz 1 Nr. 1 und Satz 2 EStG (Abweichung Nr. 31 in
-# rust/fixtures/README.md). Veranlagungszeitraum 2025.
+# Steuerermäßigung für Zuwendungen an politische Parteien und Wählervereinigungen nach § 34g Satz 1 Nr. 1, Nr. 2 und Satz 2
+# EStG (Abweichung Nr. 31 und Nr. 44 in rust/fixtures/README.md). Veranlagungszeitraum 2025.
 # Wortlaut Satz 2 in der Fassung dieses Jahres: "Die Ermäßigung beträgt 50 Prozent der Ausgaben, höchstens jeweils 825 Euro
 # für Ausgaben nach den Nummern 1 und 2, im Fall der Zusammenveranlagung von Ehegatten höchstens jeweils 1 650 Euro."
 # Quelle: sources/gesetze-im-internet/estg_p34g_2025-12-18.txt. Fassung bis 31.12.2025 (Archivkopie der amtlichen Seite vom 2025-12-18).
@@ -8,8 +8,9 @@
 # prüft rust/bindung/tests/parteispenden_werte_gegen_gesetz.rs bei jedem Lauf gegen den Text.
 # Der Deckel gilt je Nummer (Parteien, Wählervereinigungen) für sich. Gebaut ist Nummer 1 (Parteien, Zeile 7 der Anlage
 # Sonderausgaben) samt dem Teil einer Spende über der Basis der Ermäßigung, der nach § 10b Abs. 2 EStG als Sonderausgabe wirkt
-# (Abweichung Nr. 43). Nicht gebaut sind Nummer 2 (Wählervereinigungen) und die Ausschlussklausel (Partei von der staatlichen
-# Teilfinanzierung ausgeschlossen).
+# (Abweichung Nr. 43). Gebaut ist auch Nummer 2 (Wählervereinigungen, Zeile 8, Abweichung Nr. 44): dieselbe Rechnung mit
+# eigenem Höchstbetrag und ohne Sonderausgabenteil (§ 10b Abs. 2 nennt nur Parteien). Nicht gebaut ist die Ausschlussklausel
+# (Partei von der staatlichen Teilfinanzierung ausgeschlossen).
 # Sonderausgaben-Deckel: § 10b Abs. 2 Satz 1 EStG, Wortlaut "bis zur Höhe von insgesamt 1.650 Euro und im Fall(e) der
 # Zusammenveranlagung von Ehegatten bis zur Höhe von insgesamt 3.300 Euro im Kalenderjahr abzugsfähig". Quelle:
 # sources/gesetze-im-internet/estg_p10b_ab-2020-01-01.txt. Fassung ab 2020-01-01 (Wortlaut von Julius am 2026-10-08 eingefügt, Herkunftsseite nicht genannt). Dass sie für dieses
@@ -29,21 +30,21 @@ ermaessigungssatz:
   wert: 0.5
   einheit: faktor
   veranlagungszeitraum: 2025
-  rechtsquelle: {gesetz: "EStG", paragraph: "34g", absatz: "", nummer: "1"}
+  rechtsquelle: {gesetz: "EStG", paragraph: "34g", absatz: "", nummer: "1 und 2"}
   datenquelle: "§ 34g Satz 2 EStG: 50 Prozent der Ausgaben, sources/gesetze-im-internet/estg_p34g_2025-12-18.txt (Wortlaut, alle drei Fassungen gleich)"
 
 hoechstbetrag_einzel:
   wert: 825
   einheit: euro
   veranlagungszeitraum: 2025
-  rechtsquelle: {gesetz: "EStG", paragraph: "34g", absatz: "", nummer: "1"}
+  rechtsquelle: {gesetz: "EStG", paragraph: "34g", absatz: "", nummer: "1 und 2"}
   datenquelle: "§ 34g Satz 2 EStG: höchstens jeweils 825 Euro für Ausgaben nach den Nummern 1 und 2, sources/gesetze-im-internet/estg_p34g_2025-12-18.txt"
 
 hoechstbetrag_zusammen:
   wert: 1650
   einheit: euro
   veranlagungszeitraum: 2025
-  rechtsquelle: {gesetz: "EStG", paragraph: "34g", absatz: "", nummer: "1"}
+  rechtsquelle: {gesetz: "EStG", paragraph: "34g", absatz: "", nummer: "1 und 2"}
   datenquelle: "§ 34g Satz 2 EStG: im Fall der Zusammenveranlagung von Ehegatten höchstens jeweils 1 650 Euro, sources/gesetze-im-internet/estg_p34g_2025-12-18.txt"
 
 sonderausgaben_hoechstbetrag_einzel:

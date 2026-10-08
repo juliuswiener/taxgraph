@@ -179,7 +179,7 @@ pub(super) const RING_AN_GESAMT: [&str; 29] = [
     "vpf_tage_ueber_8h_nach_drei_monaten",
 ];
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_GESAMT: [&str; 102] = [
+pub(super) const RING_GESAMT: [&str; 103] = [
     "afa_jahresbetrag",
     "agb_aufwendungen",
     "am_anschaffung_monat",
@@ -282,9 +282,10 @@ pub(super) const RING_GESAMT: [&str; 102] = [
     "vpf_tage_24h_nach_drei_monaten",
     "vpf_tage_an_abreise_nach_drei_monaten",
     "vpf_tage_ueber_8h_nach_drei_monaten",
+    "waehlervereinigungen_betrag",
 ];
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_RENTNER_GESAMT: [&str; 90] = [
+pub(super) const RING_RENTNER_GESAMT: [&str; 91] = [
     "afa_jahresbetrag",
     "agb_aufwendungen",
     "basis_kv_partner",
@@ -375,4 +376,5 @@ pub(super) const RING_RENTNER_GESAMT: [&str; 90] = [
     "vorsorge_rv_alt_mit_ueberschuss_partner",
     "vorsorge_rv_alt_ohne_ueberschuss_partner",
     "vorsorge_unfall_haftpflicht_partner",
+    "waehlervereinigungen_betrag",
 ];

@@ -211,7 +211,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
-    fragetext_laie: "Hast du dieses Jahr an gemeinnützige Vereine, Stiftungen, Kirchen oder Parteien gespendet?"
+    fragetext_laie: "Hast du dieses Jahr an gemeinnützige Vereine, Stiftungen, Kirchen, Parteien oder unabhängige Wählervereinigungen gespendet?"
     hilfe_kurz: "Zum Beispiel eine Dauerspende, eine Fluthilfe oder der Mitgliedsbeitrag an einen gemeinnützigen Verein. Ohne Spendenquittung geht es meist nicht."
     beispielwert: false
     herkunft_slots: null

@@ -103,13 +103,14 @@ fn rentner_gesamt_fuehrt_jedes_feld_einmal() {
     // `alter_55_vor_verkauf_partner` (Abweichung Nr. 32): 267; seit 2026-10-07 vierzehn mit `bruttoarbeitslohn_partner`,
     // `steuerklasse_partner` und den fuenf `versorgung_*_partner` (Abweichung Nr. 33): 274; seit 2026-10-07
     // sechzehn mit `p36_lohnsteuer_partner` und `geburtsjahr_partner` (Abweichung Nr. 36): 276; seit 2026-10-08
-    // siebzehn mit `dba_fiktive_steuer_vorhanden` (Abweichung Nr. 41): 277.
+    // siebzehn mit `dba_fiktive_steuer_vorhanden` (Abweichung Nr. 41): 277; seit 2026-10-08 achtzehn mit
+    // `waehlervereinigungen_betrag` (Abweichung Nr. 44): 278.
     let c = Cfg::fuer(Scheibe::RentnerGesamt);
     let f = c.felder(ohne_datei).unwrap();
-    assert_eq!(f.len(), 277, "roh gezaehlt");
+    assert_eq!(f.len(), 278, "roh gezaehlt");
     let n_geburtsjahr = f.iter().filter(|x| x.as_str() == "geburtsjahr").count();
     assert_eq!(n_geburtsjahr, 1, "geburtsjahr steht einmal in der Liste");
     let distinct: std::collections::HashSet<_> = f.iter().collect();
-    assert_eq!(distinct.len(), 277, "jedes Feld genau einmal");
+    assert_eq!(distinct.len(), 278, "jedes Feld genau einmal");
     assert_eq!(c.kegel(ohne_datei).unwrap().len(), 28, "der Meet laeuft ueber 28, nicht 255");
 }
