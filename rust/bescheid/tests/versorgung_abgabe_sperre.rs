@@ -188,7 +188,7 @@ fn bezug_von_person_a_sperrt_die_abgabe() {
     );
     let grund = &e[0].1;
     assert!(
-        grund.contains("Versorgungsbezüge") && grund.contains("gesperrt") && grund.contains("Formular"),
+        grund.starts_with("Versorgungsbezüge über 0 Euro") && grund.contains("gesperrt") && grund.contains("Formular"),
         "der Grund nennt Bezug, Sperre und Formular nicht: {grund}"
     );
     let (offen, nicht) = deklaration_der(&s);
