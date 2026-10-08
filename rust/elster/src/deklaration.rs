@@ -57,6 +57,16 @@ const DBA_ABZUG_KZ: &str = "E0600920";
 /// Abzug auseinander. Die Sperre faellt, wenn die Zeile gebaut und mit `checkESt` belegt ist.
 const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: Die Erklärung trägt den Betrag in der Anlage AUS. Die Zeile „Sonstige Werbungskosten“ in der Anlage N fehlt noch. Dort kürzt der Bescheid deine Einkünfte. Die Abgabe ist deshalb gesperrt, bis ein checkESt-Lauf diese Zeile belegt. Antworte „nein“ (Anrechnung), wenn du abgeben willst, oder trage den Abzug im Formular selbst ein.";
 
+/// Nur Rust (Abweichung Nr. 42): der Jahresbetrag der Versorgungsbezuege von Person A und, bei Zusammenveranlagung, des
+/// Ehegatten (Abweichung Nr. 33). Beide Felder tragen kein Kz.
+const VERSORGUNG: &str = "versorgung_jahresrente";
+const VERSORGUNG_PARTNER: &str = "versorgung_jahresrente_partner";
+
+/// Der Grund der Abgabe-Sperre bei einem bestaetigten Versorgungsbezug ueber 0 (`VERSORGUNG`, `VERSORGUNG_PARTNER` ohne Kz):
+/// der Bescheid rechnet den Bezug ein (Versorgungsfreibetrag, Zuschlag, Pauschbetrag), das XML traegt ihn nicht. Die Sperre
+/// faellt, wenn die Bindung ein geprueftes Kz traegt (Abweichung Nr. 42).
+const VERSORGUNG_SPERRE: &str = "Versorgungsbezüge über 0 Euro: Der Bescheid rechnet sie ein, aber die Erklärung trägt sie noch nicht, denn für diesen Betrag gibt es noch kein geprüftes ELSTER-Kennzeichen. Die Abgabe ist deshalb gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+
 /// Die materialisierte Felder-Ebene eines Snapshots (`feld_id -> {wert, zustand, herkunft}`).
 pub type Felder = BTreeMap<String, SnapshotFeld>;
 
@@ -433,6 +443,36 @@ impl Bau<'_> {
         Ok(())
     }
 
+    /// Hat der Nutzer die Zusammenveranlagung bestaetigt? Nur dann zaehlt der Ehegatte im Bescheid (Abweichung Nr. 33).
+    fn zusammen_bestaetigt(&self) -> bool {
+        self.snapshot.get("veranlagung").is_some_and(|v| {
+            v.zustand == Zustand::Bestaetigt
+                && matches!(
+                    Lage::veranlagung(Some(&v.wert)),
+                    Lage::Gueltig(Veranlagung::Zusammen)
+                )
+        })
+    }
+
+    /// `versorgung_jahresrente` und `versorgung_jahresrente_partner` OHNE Kz (Abweichung Nr. 42): der Betrag steht mit Grund in
+    /// `nicht_deklariert`. Ein bestaetigter Betrag ueber 0 sperrt die Abgabe ([`VERSORGUNG_SPERRE`], 409
+    /// `deklaration_unvollstaendig`), denn der Bescheid rechnet den Bezug ein und das XML traegt ihn nicht. Der Betrag des
+    /// Ehegatten sperrt nur bei bestaetigter Zusammenveranlagung: bei Einzelveranlagung zaehlt er im Bescheid nicht. Ein
+    /// vorlaeufiger Betrag erreicht diesen Zweig nicht; er behaelt den Grund "Pflicht-Bestaetigung fehlt" (`feld`). Ein Wert,
+    /// aus dem sich keine ganze Zahl lesen laesst (`None`), zaehlt wie im Bescheid als 0 und wirft keinen Fehler (wie
+    /// [`Bau::abzug_gewaehlt`]). Traegt die Bindung ein Kz, greift dieser Zweig nicht mehr: die Sperre faellt mit dem Eintrag.
+    fn versorgung(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) {
+        let grund = b
+            .elster_kz_grund
+            .clone()
+            .unwrap_or_else(|| "kein elster_kz".to_owned());
+        self.nicht(feld_id, grund);
+        let zaehlt = feld_id == VERSORGUNG || self.zusammen_bestaetigt();
+        if zaehlt && py::int(wert).is_ok_and(|cent| cent > 0) {
+            self.offen(feld_id, VERSORGUNG_SPERRE);
+        }
+    }
+
     /// Wahr, wenn der Nutzer den Abzug statt der Anrechnung bestaetigt gewaehlt hat (Wahl `true`) und die gezahlte Steuer
     /// bestaetigt ueber 0 liegt. Dann steht die Steuer unter [`DBA_ABZUG_KZ`] (Abweichung Nr. 41, `feld`) und die Abgabe ist
     /// gesperrt ([`Bau::dba_abzug`]). Beide Zweige lesen diese eine Bedingung: sonst stuende die Steuer an der falschen
@@ -710,6 +750,8 @@ impl Bau<'_> {
             }
         } else if let (UNFALLKOSTEN, None) = (feld_id, kz_von(b)) {
             self.unfallkosten(feld_id, wert, b)?;
+        } else if let (VERSORGUNG | VERSORGUNG_PARTNER, None) = (feld_id, kz_von(b)) {
+            self.versorgung(feld_id, wert, b);
         } else if let (DBA_ABZUG, None) = (feld_id, kz_von(b)) {
             self.dba_abzug(feld_id, b);
         } else if feld_id == DBA_STEUER && self.abzug_gewaehlt() {
