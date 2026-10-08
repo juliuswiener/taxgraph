@@ -1398,7 +1398,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Was hat das Gerät oder Werkzeug gekostet (Preis ohne Mehrwertsteuer, wenn du sie zurückbekommst)?"
-    hilfe_kurz: "Bis 800 Euro netto kannst du es sofort komplett als Betriebsausgabe absetzen. Kostet es mehr als 800 Euro netto, schreib es stattdessen über die Abschreibung (AfA) ab — nicht hier. Jedes Wirtschaftsgut einzeln eintragen (die 800-Euro-Grenze gilt je Stück)."
+    hilfe_kurz: "Bis 800 Euro netto kannst du es sofort komplett als Betriebsausgabe absetzen. Kostet es mehr, verteilt sich der Abzug über mehrere Jahre (Abschreibung, AfA): Trag es trotzdem hier ein und nenne unten Nutzungsdauer und Kaufmonat, dann rechnet die Software das Kaufjahr. Jedes Wirtschaftsgut einzeln eintragen (die 800-Euro-Grenze gilt je Stück)."
     beispielwert: 60000
     herkunft_slots: null
     elster_kz: E6002301
@@ -1468,7 +1468,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Kannst du das Gerät alleine benutzen (also ohne dass es fest zu einem anderen Gerät gehört)?"
-    hilfe_kurz: "Zum Beispiel ein Laptop ja, ein einzelner Drucker-Toner nein."
+    hilfe_kurz: "Zum Beispiel ein Laptop ja, ein einzelner Drucker-Toner nein. Bei nein verteilt sich der Abzug über mehrere Jahre (Abschreibung); nenne dann unten Nutzungsdauer und Kaufmonat."
     beispielwert: true
     herkunft_slots: null
     elster_kz: null
@@ -1486,7 +1486,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Sind Anschaffungsdatum und Kosten für Geräte über 250 Euro entweder in einer eigenen Liste festgehalten oder aus deiner normalen Buchführung ersichtlich?"
-    hilfe_kurz: "Für Geräte über 250 Euro netto ist das vorgeschrieben — als eigene Liste, oder es reicht, wenn deine Buchführung diese Angaben schon enthält."
+    hilfe_kurz: "Für Geräte über 250 Euro netto ist das vorgeschrieben — als eigene Liste, oder es reicht, wenn deine Buchführung diese Angaben schon enthält. Bei nein verteilt sich der Abzug über mehrere Jahre (Abschreibung); nenne dann unten Nutzungsdauer und Kaufmonat."
     beispielwert: true
     herkunft_slots: null
     elster_kz: null
@@ -1496,6 +1496,53 @@ bindungen:
       quelle: "§ 6 Abs. 2 S. 4 EStG"
       zitatanker: "in ein besonderes, laufend zu führendes Verzeichnis aufzunehmen"
       datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+  # Einzel-AfA im Kaufjahr (gebaut 2026-10-08, Abweichung Nr. 45 in rust/fixtures/README.md; Vault:
+  # backlog/taxgraph/gwg-ohne-verzeichnis-verschwindet-statt-abgeschrieben, Nachtrag Punkt 5). Ein Geraet ohne Sofortabzug
+  # (ueber 250 EUR ohne Verzeichnis, nicht allein nutzbar, ueber 800 EUR) wird nach § 7 Abs. 1 abgeschrieben, wenn beide Angaben
+  # bestaetigt sind; sonst sperrt `gwg_abschreibung_offen` wie bisher. Die zwei Fragen stehen immer da (kein Gate, keine
+  # `feld_bedingung`): die Ausloeser sind drei, `feld_bedingung` kennt nur UND.
+  # ponytail: immer fragen kostet jedem Nutzer mit Geraet zwei Fragen; ODER in `feld_bedingung` fragte nur bei Bedarf.
+  # ponytail: nur das Kaufjahr; Folgejahre traegt der Nutzer in `afa_jahresbetrag` ein (die Restjahr-Rechnung fehlt).
+  # Eigene Slot-Etiketten, nicht die der Arbeitsmittel-Felder (Test `registry_quer`). KEIN `vorjahr`-Flag (bewusst, vgl.
+  # `am_afa_ist_anschaffungsjahr`): Kaufmonat und Nutzungsdauer gehoeren zu diesem Geraet in diesem Jahr, eine Uebernahme aus
+  # dem Vorjahr waere falsch. Ein vorlaeufiger Wert machte ausserdem die ganze `gwg`-Instanz vorlaeufig (die festgesetzte Zahl
+  # liesse ein Geraet mit Sofortabzug still weg).
+  - feld_id: gwg_nutzungsdauer
+    instanz_gruppe: gwg
+    quelle: {regel_id: p6_2_gwg_sofortabzug, signatur_slot: gwg_afa_nutzungsdauer_jahre}
+    typ: int
+    einheit: Jahre
+    askable: true
+    fragetext_laie: "Über wie viele Jahre schreibst du das Gerät ab (übliche Nutzungsdauer)?"
+    hilfe_kurz: "Nur nötig, wenn du das Gerät nicht sofort absetzen kannst (über 800 Euro, ohne Verzeichnis oder nicht allein nutzbar). Typisch: 3 Jahre für einen Laptop, 5 Jahre für Möbel."
+    beispielwert: 3
+    bereich: {min: 1, max: 30, grund: "Nutzungsdauer in Jahren"}
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Nutzungsdauer geht in die lineare AfA-Rechnung; kein eigenes Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 7 Abs. 1 S. 2 EStG"
+      zitatanker: "Die Absetzung bemisst sich hierbei nach der betriebsgewöhnlichen Nutzungsdauer des Wirtschaftsguts."
+      datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
+  - feld_id: gwg_anschaffung_monat
+    instanz_gruppe: gwg
+    quelle: {regel_id: p6_2_gwg_sofortabzug, signatur_slot: gwg_afa_anschaffung_monat}
+    typ: int
+    einheit: null
+    askable: true
+    fragetext_laie: "In welchem Monat hast du das Gerät gekauft? (1 = Januar, 12 = Dezember)"
+    hilfe_kurz: "Nur nötig, wenn du das Gerät nicht sofort absetzen kannst. Im Kaufjahr wird die Abschreibung nur anteilig gerechnet, ab dem Kaufmonat. Die Folgejahre trägst du bei der Abschreibung (AfA) selbst ein."
+    beispielwert: 10
+    bereich: {min: 1, max: 12, grund: "Monat (1-12)"}
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anschaffungsmonat für pro-rata-temporis AfA; kein eigenes Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 7 Abs. 1 S. 4 EStG"
+      zitatanker: "Im Jahr der Anschaffung oder Herstellung des Wirtschaftsguts vermindert sich für dieses Jahr der Absetzungsbetrag nach Satz 1 um jeweils ein Zwölftel für jeden vollen Monat, der dem Monat der Anschaffung oder Herstellung vorangeht."
+      datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
 
 luecken:
   # EP-Parameter satz_bis_20_km/satz_ab_21_km/staffelgrenze_km/hoechstbetrag: auto-exempt (Namen in params/<vz>/-Keys).

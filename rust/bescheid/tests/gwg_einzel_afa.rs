@@ -1,5 +1,5 @@
 //! Hermetisch (Abweichung Nr. 45): ein Geraet, das keinen Sofortabzug bekommt (ueber 250 EUR ohne Verzeichnis,
-//! nicht selbstaendig nutzbar, ueber 800 EUR), wird im Kaufjahr abgeschrieben (§ 7 Abs. 1 EStG, ueber § 4 Abs. 3 S. 3),
+//! nicht selbstaendig nutzbar, ueber 800 EUR), wird im Kaufjahr abgeschrieben (§ 7 Abs. 1 `EStG`, ueber § 4 Abs. 3 S. 3),
 //! statt die Zahl zu sperren. Der Nutzer nennt Nutzungsdauer und Kaufmonat; Folgejahre traegt er weiter in
 //! `afa_jahresbetrag` ein.
 //!
@@ -236,7 +236,7 @@ fn referenz(vz: Vz, lohn: i64, einnahmen: i64, afa_euro: i64) -> Option<i64> {
     zahl
 }
 
-/// KONTROLLE: der Messaufbau ist nicht blind -- ein AfA-Betrag im Handfeld aendert die Steuer, in jedem Jahr und Einkommen.
+/// KONTROLLE: der Messaufbau ist nicht blind -- ein `AfA`-Betrag im Handfeld aendert die Steuer, in jedem Jahr und Einkommen.
 #[test]
 fn die_referenz_bewegt_die_steuer() {
     for vz in VZS {
@@ -363,7 +363,24 @@ fn ohne_bestaetigte_angaben_bleibt_die_sperre() {
     }
 }
 
-/// AK8: die AfA rechnet nur, wenn die Grundlage feststeht. "Netto: nein" ohne Folgefrage-ja sperrt auch bei einem
+/// Ein nicht allein nutzbares Geraet ueber 250 EUR mit Angaben beantwortet trotzdem das Verzeichnis: ist die Antwort nur
+/// vorlaeufig, ist die ganze Instanz vorlaeufig, und die festgesetzte Zahl liesse das Geraet still weg. Also sperrt es.
+/// Mit bestaetigter Antwort (auch "nein") rechnet es.
+#[test]
+fn ein_vorlaeufiges_verzeichnis_sperrt_auch_das_nicht_allein_nutzbare_geraet() {
+    let vz = Vz::Vz2025;
+    let t2 = Geraet { nutzbar: false, nd: Some(3), monat: Some(7), ..GUT };
+    let paare = geraet_paare(basis(0, 5_000_000, 0), t2, false);
+    let offen = ergebnis(&fall(Scheibe::Gesamt, &paare, &[("gwg_verzeichnis_ab_250", json!(true))]), vz);
+    assert_eq!(offen, (Grund::Sperre(Sperrgrund::GwgTatbestandOffen), None), "Verzeichnis vorlaeufig");
+    let soll = (Grund::Bestaetigt, referenz(vz, 0, 5_000_000, 100));
+    for verzeichnis in [true, false] {
+        let g = Geraet { verzeichnis, ..t2 };
+        assert_eq!(ergebnis(&mit_geraet(0, 5_000_000, g), vz), soll, "Verzeichnis bestaetigt {verzeichnis}");
+    }
+}
+
+/// AK8: die `AfA` rechnet nur, wenn die Grundlage feststeht. "Netto: nein" ohne Folgefrage-ja sperrt auch bei einem
 /// nicht allein nutzbaren Geraet mit beantworteten Angaben; der Kleinunternehmer (Folgefrage ja) schreibt den Bruttobetrag
 /// ab, ueber 800 EUR gilt das nicht.
 #[test]
@@ -388,7 +405,7 @@ fn die_afa_rechnet_nur_bei_feststehender_grundlage() {
 }
 
 /// AK9: mehrere Geraete summieren; ein Sofortabzug-Geraet daneben bleibt Sofortabzug; ein Geraet, das nur in der
-/// zweiten Instanz steht, zaehlt (der Gewinn-Zweig laeuft auch dann, wenn nur die AfA-Summe ueber 0 liegt).
+/// zweiten Instanz steht, zaehlt (der Gewinn-Zweig laeuft auch dann, wenn nur die `AfA`-Summe ueber 0 liegt).
 #[test]
 fn mehrere_geraete_summieren_und_die_zweite_instanz_zaehlt() {
     let vz = Vz::Vz2025;
@@ -411,7 +428,7 @@ fn mehrere_geraete_summieren_und_die_zweite_instanz_zaehlt() {
     assert_eq!(ist, (Grund::Bestaetigt, referenz(vz, 0, 5_000_000, 120)), "nur Instanz 2");
 }
 
-/// AK6 fuer die zweite Scheibe: `rentner_gesamt` gibt dieselbe Sperre, also auch dieselbe AfA.
+/// AK6 fuer die zweite Scheibe: `rentner_gesamt` gibt dieselbe Sperre, also auch dieselbe `AfA`.
 #[test]
 fn die_rentner_scheibe_rechnet_die_afa() {
     let vz = Vz::Vz2025;

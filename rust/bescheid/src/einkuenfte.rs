@@ -4,8 +4,8 @@
 //! Quelle: `produkt/bescheid/bescheid_einkuenfte.py` plus die dort importierten Konstanten und
 //! `dba_methode_fuer` aus `produkt/haut/api_constants.py` (im Rust-Baum bisher nicht vorhanden).
 use bindung::Params;
-use domain::{Euro, PyWert, Veranlagung, Vz};
-use engine::zugriff::teil1::afa::{p6_2_gwg, P62GwgEingabe};
+use domain::{Cent, Euro, PyWert, Veranlagung, Vz};
+use engine::zugriff::teil1::afa::{p6_2_gwg, p7_linear_afa, P62GwgEingabe, P7LinearAfaEingabe};
 use engine::zugriff::teil1::einkuenfte::{
     euer_gewinn, mitunternehmer_einkuenfte, p16_4_freibetrag, p3_nr72_photovoltaik,
     EuerGewinnEingabe, MitunternehmerEinkuenfteEingabe, P164FreibetragEingabe,
@@ -189,7 +189,8 @@ fn gwg_abzug(fi: &Felder) -> Result<Euro, BescheidFehler> {
     let netto = feld_int_oder_null(fi, "gwg_anschaffungskosten_netto")?;
     // Alle `Euro::new(0)` hier rechnen ein Geraet OHNE Sofortabzug. Eine festgesetzte Zahl darf diese 0 nicht still
     // zeigen: `sperre::gesamt::gwg` sperrt jede solche Instanz mit Betrag > 0 (`GwgAbschreibungOffen` /
-    // `GwgMehrwertsteuerOffen`, seit 2026-10-03). Die 0 gilt nur fuer die Schaetzung (/stand). Beide Stellen muessen
+    // `GwgMehrwertsteuerOffen`, seit 2026-10-03), ausser Nutzungsdauer und Kaufmonat stehen fest: dann rechnet
+    // `gwg_afa_abzug` das Kaufjahr (Nr. 45). Die 0 gilt nur fuer die Schaetzung (/stand). Beide Stellen muessen
     // dieselbe Instanz gleich lesen: wer hier einen Fall freigibt, gibt ihn dort frei (Folgefrage, siehe unten).
     // CENT-GUARD: die 800-EUR-Schwelle wird VOR der Euro-Rundung in Cent geprueft.
     if netto > 80_000 {
@@ -238,6 +239,84 @@ pub fn gwg_sofortabzug_summe(f: &Felder, q: &Instanzquelle<'_>) -> Result<Euro, 
     for inst in q.instanzen("gwg")? {
         if q.zaehlt(&inst) {
             total = euro_plus(total, gwg_abzug(&inst.felder)?)?;
+        }
+    }
+    Ok(total)
+}
+
+/// Nutzungsdauer (1 bis 30 Jahre) und Kaufmonat (1 bis 12) der Einzel-`AfA` eines Geraets (Abweichung Nr. 45).
+/// Die Bindung (`bereich`) weist alles andere schon bei der Eingabe ab; dieselbe Grenze gilt hier fuer einen Store,
+/// der an ihr vorbei geschrieben wurde. Die Sperre (`sperre::gesamt::gwg`) und die Rechnung lesen diese eine Stelle.
+#[must_use]
+pub fn gwg_afa_angaben_gueltig(nutzungsdauer: i64, monat: i64) -> bool {
+    (1..=30).contains(&nutzungsdauer) && (1..=12).contains(&monat)
+}
+
+/// § 7 Abs. 1 Einzel-`AfA` im Kaufjahr fuer EIN Geraet, das keinen Sofortabzug bekommt, EURO (Abweichung Nr. 45).
+///
+/// Ein Geraet ohne Sofortabzug heisst: ueber 800 EUR, nicht allein nutzbar, oder ueber 250 EUR ohne Verzeichnis
+/// (dieselben Bedingungen wie [`gwg_abzug`], das dort 0 gibt). Die Grundlage muss feststehen: "netto: nein" rechnet nur
+/// mit der Folgefrage "ja" (Kleinunternehmer, Bruttobetrag, § 9b Abs. 1) und bis 800 EUR, wie die Sperre
+/// `GwgMehrwertsteuerOffen`. Ohne gueltige Nutzungsdauer und Kaufmonat 0 (die Sperre sagt dem Nutzer, was fehlt).
+///
+/// ponytail: nur das Kaufjahr (Anteil nach Kaufmonat); Folgejahre traegt der Nutzer in `afa_jahresbetrag` ein.
+/// Upgrade: ein Kennzeichen "Kaufjahr" je Geraet und die Restjahr-Rechnung, die `p7_linear_afa` nicht kennt.
+fn gwg_afa_abzug(fi: &Felder) -> Result<Euro, BescheidFehler> {
+    let netto = feld_int_oder_null(fi, "gwg_anschaffungskosten_netto")?;
+    let ohne_sofortabzug = netto > 80_000
+        || ist_false(wert(fi, "gwg_bewegliches_selbstaendig_nutzbar"))
+        || (netto > 25_000 && ist_false(wert(fi, "gwg_verzeichnis_ab_250")));
+    if netto <= 0 || !ohne_sofortabzug {
+        return Ok(Euro::new(0));
+    }
+    let brutto_ist_abzug = ist_true(wert(fi, "gwg_ohne_vorsteuerabzug"));
+    if ist_false(wert(fi, "gwg_netto_ohne_vorsteuer")) && (!brutto_ist_abzug || netto > 80_000) {
+        return Ok(Euro::new(0));
+    }
+    let nutzungsdauer = feld_int_oder_null(fi, "gwg_nutzungsdauer")?;
+    let monat = feld_int_oder_null(fi, "gwg_anschaffung_monat")?;
+    if !gwg_afa_angaben_gueltig(nutzungsdauer, monat) {
+        return Ok(Euro::new(0));
+    }
+    Ok(p7_linear_afa(&P7LinearAfaEingabe {
+        anschaffungskosten_cent: Cent::new(netto),
+        anschaffungskosten: Euro::new(0),
+        nutzungsdauer,
+        anschaffung_monat: monat,
+        ist_anschaffungsjahr: true,
+    })?)
+}
+
+/// Einzel-`AfA`-Σ (EURO) ueber alle `gwg`-Instanzen, die Gegenstueck zu [`gwg_sofortabzug_summe`]: ein Geraet zaehlt
+/// in genau einer der beiden Summen. Bei `nur_bestaetigt` zaehlt eine vorlaeufige Instanz nicht.
+///
+/// # Errors
+/// Instanz-, Accessor- und Ueberlauf-Fehler.
+///
+/// ```
+/// use bescheid::einkuenfte::gwg_afa_summe;
+/// use bescheid::testhilfe::{felder, store};
+/// use bescheid::Instanzquelle;
+/// use serde_json::json;
+/// let q = Instanzquelle { store: None, bindung: None, nur_bestaetigt: true };
+/// let f = felder(&store(&[
+///     ("gwg_anschaffungskosten_netto", json!(60_000), true),
+///     ("gwg_verzeichnis_ab_250", json!(false), true),
+///     ("gwg_nutzungsdauer", json!(3), true),
+///     ("gwg_anschaffung_monat", json!(7), true),
+/// ]));
+/// assert_eq!(gwg_afa_summe(&f, &q).unwrap().get(), 100); // 600 EUR, 3 Jahre, ab Juli: 200 x 6/12
+/// let mit_sofortabzug = felder(&store(&[("gwg_anschaffungskosten_netto", json!(60_000), true)]));
+/// assert_eq!(gwg_afa_summe(&mit_sofortabzug, &q).unwrap().get(), 0); // Sofortabzug, keine AfA
+/// ```
+pub fn gwg_afa_summe(f: &Felder, q: &Instanzquelle<'_>) -> Result<Euro, BescheidFehler> {
+    if q.beide().is_none() {
+        return gwg_afa_abzug(f);
+    }
+    let mut total = Euro::new(0);
+    for inst in q.instanzen("gwg")? {
+        if q.zaehlt(&inst) {
+            total = euro_plus(total, gwg_afa_abzug(&inst.felder)?)?;
         }
     }
     Ok(total)
@@ -305,18 +384,23 @@ pub fn laufender_gewinn_partner(f: &Felder) -> Result<(Euro, Euro), BescheidFehl
 /// ```
 pub fn laufender_gewinn(f: &Felder, q: &Instanzquelle<'_>) -> Result<(Euro, Euro), BescheidFehler> {
     let gwg_summe = gwg_sofortabzug_summe(f, q)?;
+    let gwg_afa = gwg_afa_summe(f, q)?;
     let mitu = mitu_komponente(f, "")?;
     let quelle_da = GEWINN_QUELLEN_MENGEN.iter().try_fold(false, |acc, k| {
         Ok::<_, BescheidFehler>(acc || feld_int_oder_null(f, k)? != 0)
     })?;
-    let mut gewinn = if quelle_da || gwg_summe.get() > 0 {
+    // Die AfA-Summe schaltet den EUeR-Zweig auch allein ein: ein Geraet nur in Instanz 2 hat kein Basisfeld.
+    let mut gewinn = if quelle_da || gwg_summe.get() > 0 || gwg_afa.get() > 0 {
         let ausgaben = summe(&[
             feld_int_oder_null(f, "sonstige_betriebsausgaben")?,
             feld_int_oder_null(f, "afa_jahresbetrag")?,
         ])?;
         let euer = euer_gewinn(&EuerGewinnEingabe {
             betriebseinnahmen: feld_euro_oder_null(f, "betriebseinnahmen")?,
-            betriebsausgaben: euro_plus(cent_zu_euro(ausgaben), gwg_summe)?,
+            betriebsausgaben: euro_plus(
+                euro_plus(cent_zu_euro(ausgaben), gwg_summe)?,
+                gwg_afa,
+            )?,
         })?;
         euro_plus(euer, mitu)?
     } else {

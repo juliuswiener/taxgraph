@@ -223,7 +223,7 @@ impl Sperrgrund {
             Self::GewinnAngabenOffen => Some("Du hast angegeben, dass du Gewinneinkünfte hast. Es fehlen noch Angaben zu deiner Einnahmen-Überschuss-Rechnung: Betriebseinnahmen, sonstige Betriebsausgaben oder Abschreibungen. Trag bei jeder dieser Angaben einen Betrag ein, auch wenn er 0 € ist. Oder gib deinen Gewinn direkt als Gesamtbetrag an."),
             Self::GewinnQuelleOffen => Some("Deinen Gewinn hast du auf zwei Wegen angegeben: einmal als fertigen Betrag und einmal aufgeteilt in Betriebseinnahmen, Betriebsausgaben und Abschreibungen. Welcher der beiden gilt, kann die Software nicht raten. Bitte lass einen der beiden Wege stehen."),
             Self::GewstHebesatzOffen => Some("Zu deinem Gewerbebetrieb fehlt der Hebesatz deiner Gemeinde, oder er steht auf 0 oder darunter. Ein Hebesatz von 0 oder darunter ist nicht möglich, jede Gemeinde muss einen Mindestsatz erheben. Ohne ihn lässt sich nicht berechnen, wie viel Gewerbesteuer auf deine Einkommensteuer angerechnet wird. Den Hebesatz findest du auf deinem Gewerbesteuerbescheid oder auf der Internetseite deiner Gemeinde."),
-            Self::GwgAbschreibungOffen => Some("Ein Gerät, das du als Sofortabzug erfasst hast, kommt dafür nicht in Frage: Es kostet mehr als 800 Euro ohne Mehrwertsteuer, du kannst es nicht allein benutzen, oder du hast es ab 250 Euro weder in einer Liste noch in deiner Buchführung festgehalten. Dann verteilt sich der Abzug über mehrere Jahre (Abschreibung). Diese Abschreibung rechnet die Software hier noch nicht, und das Gerät still wegzulassen wäre falsch. Das Ergebnis bleibt deshalb offen. Trage das Gerät bitte nicht hier ein, sondern bei der Abschreibung."),
+            Self::GwgAbschreibungOffen => Some("Ein Gerät, das du als Sofortabzug erfasst hast, kommt dafür nicht in Frage: Es kostet mehr als 800 Euro ohne Mehrwertsteuer, du kannst es nicht allein benutzen, oder du hast es ab 250 Euro weder in einer Liste noch in deiner Buchführung festgehalten. Dann verteilt sich der Abzug über mehrere Jahre (Abschreibung). Die Software rechnet den Anteil für das Kaufjahr, sobald du zu diesem Gerät die Nutzungsdauer in Jahren und den Kaufmonat angibst. Bitte beantworte diese beiden Fragen. Die Folgejahre trägst du bei der Abschreibung selbst ein. Das Gerät still wegzulassen wäre falsch, deshalb bleibt das Ergebnis offen, bis beide Angaben da sind."),
             Self::GwgMehrwertsteuerOffen => Some("Bei einem als Sofortabzug erfassten Gerät hast du angegeben, dass der Preis die Mehrwertsteuer enthält. Was du dann absetzen darfst, hängt davon ab, ob du die Mehrwertsteuer vom Finanzamt zurückbekommst. Bekommst du sie zurück, gib den Preis ohne Mehrwertsteuer an und beantworte die Frage nach dem Preis ohne Mehrwertsteuer mit Ja. Bekommst du sie nicht zurück, zum Beispiel als Kleinunternehmer, zählt der Preis mit Mehrwertsteuer: Beantworte dann die Frage, ob du die Mehrwertsteuer selbst getragen hast, mit Ja. Das gilt, solange der Preis mit Mehrwertsteuer höchstens 800 Euro beträgt. Liegt er darüber, kann die Software noch nicht rechnen, ob das Gerät ein geringwertiges Wirtschaftsgut bleibt. Einen Abzug von null Euro will sie dir nicht zeigen, deshalb bleibt das Ergebnis offen. Trage das Gerät in diesem Fall bitte nicht hier ein, sondern bei der Abschreibung."),
             Self::GwgTatbestandOffen => Some("Zu einem als Sofortabzug erfassten Gerät fehlt noch eine Antwort zu einer der Voraussetzungen — ob es allein benutzbar ist, ob der Betrag den Vorsteuerabzug schon abgezogen hat, oder (ab 250 Euro) ob du dazu eine Liste geführt hast oder es aus deiner Buchführung ersichtlich ist. Bitte beantworte die offene Frage zu diesem Gerät."),
             Self::HandwerkerFoerderungOffen => Some("Zu deinen Handwerkerkosten fehlt noch die Antwort, ob du dafür öffentliche Fördermittel bekommen hast — etwa einen zinsverbilligten Kredit oder einen steuerfreien Zuschuss. Für geförderte Maßnahmen gibt es die Steuerermäßigung nicht. Bitte beantworte diese Frage, auch wenn du keine Förderung bekommen hast."),
@@ -398,10 +398,14 @@ mod tests {
         );
     }
 
-    /// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27 und Nr. 37 in
+    /// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27, Nr. 37 und Nr. 45 in
     /// `rust/fixtures/README.md`). Streng: jeder Eintrag steht in der Fixture, sein Text weicht ab und nennt, was er neu sagt
     /// (`pflichtteile`).
-    const ABWEICHENDER_KLARTEXT: [&str; 2] = ["gwg_mehrwertsteuer_offen", "versorgungsfreibetrag_offen"];
+    const ABWEICHENDER_KLARTEXT: [&str; 3] = [
+        "gwg_mehrwertsteuer_offen",
+        "versorgungsfreibetrag_offen",
+        "gwg_abschreibung_offen",
+    ];
 
     /// Was der abweichende Text eines Grunds nennen muss und welchen Satz er nicht mehr enthalten darf. Ein Eintrag in
     /// `ABWEICHENDER_KLARTEXT` ohne Zeile hier ist ein Fehler: die Pruefung bricht ab, statt nichts zu messen.
@@ -416,6 +420,12 @@ mod tests {
             // Seit Nr. 33 fragt die Rentner-Scheibe die Versorgung des Ehegatten mit, und der Grund gilt fuer ihn. Python spricht nur
             // zu Person A; der Text sagt, dass bei gemeinsamer Veranlagung die zwei Angaben je Person gelten.
             "versorgungsfreibetrag_offen" => (None, &["gemeinsamer Veranlagung", "jede Person einzeln", "deines Ehegatten"]),
+            // Python sagt "Diese Abschreibung rechnet die Software hier noch nicht". Seit der Einzel-AfA (Nr. 45) rechnet sie das Kaufjahr,
+            // sobald der Nutzer Nutzungsdauer und Kaufmonat nennt; der Text sagt, was fehlt.
+            "gwg_abschreibung_offen" => (
+                Some("hier noch nicht"),
+                &["Nutzungsdauer", "Kaufmonat", "Kaufjahr", "Folgejahre"],
+            ),
             _ => panic!("{schluessel}: in ABWEICHENDER_KLARTEXT, aber ohne Zeile in pflichtteile"),
         }
     }

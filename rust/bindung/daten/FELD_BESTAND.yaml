@@ -106,10 +106,12 @@ felder:
   - gewst_messbetrag_partner
   - gewst_zu_zahlen
   - gewst_zu_zahlen_partner
+  - gwg_anschaffung_monat
   - gwg_anschaffungskosten_netto
   - gwg_anzahl
   - gwg_bewegliches_selbstaendig_nutzbar
   - gwg_netto_ohne_vorsteuer
+  - gwg_nutzungsdauer
   - gwg_ohne_vorsteuerabzug
   - gwg_verzeichnis_ab_250
   - hh_anzahl_dienstleistungen
