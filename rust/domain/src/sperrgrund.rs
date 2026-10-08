@@ -7,7 +7,7 @@
 //!
 //! `grund` in `api.py: ergebnis()` ist entweder `None` (kein Sperrgrund), das Literal
 //! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 57 Python-Schluessel unten
-//! (dazu sechs Rust-eigene, siehe `KindFreibetragVerteilungOffen`, `Abs3PartnerAntragGewinnOffen` und `DbaFreistellungOffen`). Die
+//! (dazu sieben Rust-eigene, siehe `KindFreibetragVerteilungOffen`, `Abs3PartnerAntragGewinnOffen`, `DbaFreistellungOffen` und `DbaAbzugOffen`). Die
 //! dritte Moeglichkeit bildet [`Sperrgrund::Bestaetigt`] ab; sie hat bewusst KEINEN
 //! eigenen Klartext (die Python-Quelle hat auch keinen fuer sie).
 use std::fmt;
@@ -48,6 +48,10 @@ pub enum Sperrgrund {
     /// Rust-eigen (wie [`Sperrgrund::Abs3PartnerAntragGewinnOffen`]), `berufsunfaehigkeit_partner_offen`: der Ehegatte hat den
     /// Antrag gestellt, ist nach dem Alter nicht berechtigt, und seine dauernde Berufsunfaehigkeit ist unbeantwortet.
     BerufsunfaehigkeitPartnerOffen,
+    /// Rust-eigen (Julius 2026-10-08, `dba_abzug_offen`, Abweichung Nr. 41): der Abzug der auslaendischen Steuer
+    /// (§ 34c Abs. 2 `EStG`) in einem Fall, den die Rechnung nicht traegt: nicht Arbeitslohn, Zusammenveranlagung, Rentner-Scheibe
+    /// oder fiktive Steuer. Python rechnet den Abzug beim Einkommen und kennt den Grund nicht.
+    DbaAbzugOffen,
     /// Rust-eigen (Julius 2026-10-08, `dba_freistellung_offen`): Auslandseinkuenfte, die ein Abkommen freistellt
     /// (Progressionsvorbehalt, § 32b Abs. 1 Nr. 3 `EStG`). Python kennt den Grund nicht (es hat ihn vor dem Audit
     /// 2026-08-16 verloren und rechnet den Vorbehalt nirgends).
@@ -130,6 +134,7 @@ impl Sperrgrund {
             }
             Self::BerufsunfaehigkeitOffen => "berufsunfaehigkeit_offen",
             Self::BerufsunfaehigkeitPartnerOffen => "berufsunfaehigkeit_partner_offen",
+            Self::DbaAbzugOffen => "dba_abzug_offen",
             Self::DbaFreistellungOffen => "dba_freistellung_offen",
             Self::DbaKapitalOffen => "dba_kapital_offen",
             Self::DbaMultiCountryOffen => "dba_multi_country_offen",
@@ -206,6 +211,7 @@ impl Sperrgrund {
             Self::BehinderungsbedingteAufwendungenWahlrechtPartnerOffen => Some("Für deinen Ehe- oder Lebenspartner ist eine Behinderung angegeben und zusätzlich Kosten, die dadurch entstanden sind. Auch hier gibt es die Wahl zwischen dem Pauschbetrag ohne Nachweis und den tatsächlichen Kosten mit Belegen. Welcher Weg günstiger ist, hängt an der Höhe der Kosten — deshalb kann die Software das nicht entscheiden. Bitte beantworte die Frage nach dem Pauschbetrag für deinen Partner."),
             Self::BerufsunfaehigkeitOffen => Some("Du hast den ermäßigten Steuersatz für den Verkauf oder die Aufgabe deines Betriebs beantragt. Vor dem 55. Geburtstag steht er dir nur zu, wenn du dauernd berufsunfähig bist. Bitte beantworte diese Frage, auch wenn die Antwort „nein“ ist."),
             Self::BerufsunfaehigkeitPartnerOffen => Some("Dein Ehepartner hat den ermäßigten Steuersatz für den Verkauf oder die Aufgabe seines Betriebs beantragt. Vor dem 55. Geburtstag steht er ihm nur zu, wenn er dauernd berufsunfähig ist. Bitte beantworte diese Frage zu deinem Ehepartner, auch wenn die Antwort „nein“ ist."),
+            Self::DbaAbzugOffen => Some("Du hast gewählt, die im Ausland gezahlte Steuer abzuziehen, statt sie anrechnen zu lassen. Die Software rechnet diesen Abzug nur in einem Fall: Arbeitslohn, einzeln veranlagt, ohne Rente und ohne fiktive Steuer. Fiktiv heißt: Ein Abkommen sieht die Steuer als gezahlt an, obwohl der andere Staat sie dir erlassen hat. Dein Fall weicht davon ab. Damit du keine falsche Zahl bekommst, bleibt die Berechnung gesperrt. Wenn du weiterrechnen willst, wähle bei der Frage zum Abzug „nein“. Dann rechnet die Software die Anrechnung."),
             Self::DbaFreistellungOffen => Some("Du hast Einkünfte aus einem Staat angegeben, dessen Abkommen mit Deutschland sie in Deutschland steuerfrei stellt (Freistellung), und zusätzlich einen Betriebsverkauf oder Gewerbesteuer. Steuerfreie Auslandseinkünfte erhöhen den Steuersatz auf dein übriges Einkommen (Progressionsvorbehalt). Wie sich das mit dem ermäßigten Steuersatz für den Verkauf oder mit der Anrechnung der Gewerbesteuer verzahnt, rechnet die Software noch nicht. Damit du keine falsche Zahl bekommst, bleibt die Berechnung gesperrt. Dieser Fall braucht steuerliche Beratung."),
             Self::DbaKapitalOffen => Some("Du hast Kapitalerträge angegeben und zugleich ausländische Einkünfte. Ob und wie eine im Ausland gezahlte Steuer auf deine Kapitalerträge angerechnet wird, rechnet die Software noch nicht. Dieser Fall braucht steuerliche Beratung."),
             Self::DbaMultiCountryOffen => Some("Du hast Einkünfte aus mehr als einem ausländischen Staat. Jedes Land hat ein eigenes Abkommen mit Deutschland darüber, wo besteuert wird; mehrere Länder zugleich rechnet die Software noch nicht. Dieser Fall braucht steuerliche Beratung."),
@@ -296,6 +302,7 @@ impl FromStr for Sperrgrund {
             }
             "berufsunfaehigkeit_offen" => Ok(Self::BerufsunfaehigkeitOffen),
             "berufsunfaehigkeit_partner_offen" => Ok(Self::BerufsunfaehigkeitPartnerOffen),
+            "dba_abzug_offen" => Ok(Self::DbaAbzugOffen),
             "dba_freistellung_offen" => Ok(Self::DbaFreistellungOffen),
             "dba_kapital_offen" => Ok(Self::DbaKapitalOffen),
             "dba_multi_country_offen" => Ok(Self::DbaMultiCountryOffen),
@@ -447,6 +454,7 @@ mod tests {
             Sperrgrund::Abs3PartnerAntragUeber5mioOffen,
             Sperrgrund::BerufsunfaehigkeitPartnerOffen,
             Sperrgrund::DbaFreistellungOffen,
+            Sperrgrund::DbaAbzugOffen,
         ] {
             assert!(
                 !klartext.contains_key(grund.als_str()),
@@ -495,6 +503,24 @@ mod tests {
             "Betriebsverkauf",
             "Gewerbesteuer",
             "bleibt die Berechnung gesperrt",
+        ] {
+            assert!(text.contains(teil), "{teil:?} fehlt in {text:?}");
+        }
+    }
+
+    /// Der Grund `dba_abzug_offen` nennt den Abzug, den einen Fall, den die Software rechnet, die fiktive Steuer (mit Erklaerung),
+    /// den Ausweg (Anrechnung waehlen) und was die Software tut. Pinnt Teile des Wortlauts.
+    #[test]
+    fn der_grund_zum_dba_abzug_nennt_fall_fiktive_steuer_ausweg_und_sperre() {
+        let text = Sperrgrund::DbaAbzugOffen.klartext().unwrap();
+        for teil in [
+            "Abzug",
+            "Arbeitslohn",
+            "fiktive Steuer",
+            "Fiktiv heißt",
+            "bleibt die Berechnung gesperrt",
+            "wähle bei der Frage zum Abzug „nein“",
+            "Dann rechnet die Software die Anrechnung",
         ] {
             assert!(text.contains(teil), "{teil:?} fehlt in {text:?}");
         }

@@ -58,6 +58,7 @@ felder:
   - dba_abzug_statt_anrechnung
   - dba_auslaendische_einkuenfte
   - dba_einkunftsart
+  - dba_fiktive_steuer_vorhanden
   - dba_gezahlte_auslaendische_steuer
   - dba_mehrere_staaten
   - dba_methode

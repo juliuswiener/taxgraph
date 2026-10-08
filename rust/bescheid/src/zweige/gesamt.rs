@@ -30,8 +30,8 @@ use super::wk::{am_gesamt, ep_eingabe, mit_unfallkosten, wk_teile};
 use super::{gesamt_tarif, slot, Marke, Ring, VeranlagungWert};
 use crate::abzuege::{p33b_kind_pauschbetraege, shared_steuer_sonder_agb};
 use crate::einkuenfte::{
-    gewinn_partner_anteil, laufender_gewinn, p20_kapitaleinkuenfte, p23_ansonsten_einkuenfte,
-    p35_summen, progressionseinkuenfte, shared_dba_sonstige,
+    dba_abzug_werbungskosten, gewinn_partner_anteil, laufender_gewinn, p20_kapitaleinkuenfte,
+    p23_ansonsten_einkuenfte, p35_summen, progressionseinkuenfte, shared_dba_sonstige,
 };
 use crate::{
     cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_false, ist_true, py_int, summe,
@@ -366,7 +366,12 @@ fn ns_werbungskosten<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<Euro> {
         },
         p,
     )?;
-    add(mit_unfallkosten(f, wk)?, afa)
+    // § 34c Abs. 2 (Abweichung Nr. 41): der gewaehlte Abzug der Auslandssteuer zaehlt wie Werbungskosten mit, VOR dem
+    // Vergleich mit dem Arbeitnehmer-Pauschbetrag in `einkuenfte_nichtselbststaendig`.
+    add(
+        add(mit_unfallkosten(f, wk)?, afa)?,
+        dba_abzug_werbungskosten(f)?,
+    )
 }
 
 /// Einkommensteuer-Slots fuer die Altersvorsorge § 10 Abs. 1 Nr. 2 (VOR): `(gesamtbeitraege, ag)`.

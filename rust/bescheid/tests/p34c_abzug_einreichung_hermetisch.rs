@@ -26,7 +26,7 @@ use std::path::Path;
 
 use bescheid::deklaration::{einreichungs_xml, EinreichFehler};
 use bescheid::testhilfe::{index, params};
-use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Zustand};
+use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Sperrgrund, Zustand};
 use elster::deklariere;
 use elster::testhilfe::schemas_da;
 use serde_json::{json, Value};
@@ -35,6 +35,7 @@ use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
 const WAHL: &str = "dba_abzug_statt_anrechnung";
 const STEUER: &str = "dba_gezahlte_auslaendische_steuer";
 const EINKUENFTE: &str = "dba_auslaendische_einkuenfte";
+const ART: &str = "dba_einkunftsart";
 
 /// Ein Wert mit dem Zustand `bestaetigt` (zwei Signale) oder `vorlaeufig` (ohne zweites Signal).
 fn setze(s: &mut Store, feld: &str, wert: Value, zustand: Zustand) {
@@ -74,11 +75,24 @@ fn akte(wahl: Option<bool>, steuer: Option<i64>) -> Store {
 
 /// Wie [`akte`], mit dem Zustand der gezahlten Steuer (`Vorlaeufig`: noch nicht bestaetigt).
 fn akte_mit(wahl: Option<bool>, steuer: Option<i64>, steuer_zustand: Zustand) -> Store {
+    akte_voll(wahl, steuer, steuer_zustand, "unselbstaendige_arbeit")
+}
+
+/// Wie [`akte_mit`], mit der Einkunftsart der Auslandseinkuenfte. Arbeitslohn und einzeln veranlagt (die Akte `gesamt.json`)
+/// ist der Fall, den die Rechnung traegt; jede andere Art sperrt schon den Bescheid (`dba_abzug_offen`,
+/// `p34c_abzug_sperre.rs`), bevor die Erklaerung sperren kann.
+fn akte_voll(
+    wahl: Option<bool>,
+    steuer: Option<i64>,
+    steuer_zustand: Zustand,
+    art: &str,
+) -> Store {
     let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../fixtures/e2e/gesamt.json");
     let roh: Value = serde_json::from_slice(&std::fs::read(pfad).unwrap()).unwrap();
     let mut s = Store::aus_datei(serde_json::from_value(roh).unwrap());
     if wahl.is_some() || steuer.is_some() {
         setze(&mut s, EINKUENFTE, json!(500_000), Zustand::Bestaetigt);
+        setze(&mut s, ART, json!(art), Zustand::Bestaetigt);
     }
     if let Some(c) = steuer {
         setze(&mut s, STEUER, json!(c), steuer_zustand);
@@ -158,6 +172,24 @@ fn abzug_gewaehlt_und_steuer_ueber_null_sperren_die_abgabe_mit_eigenem_grund() {
             assert!(grund.contains(teil), "Grund ohne `{teil}`: {grund}");
         }
     }
+}
+
+/// Ein Abzug in einem Fall, den die Rechnung nicht traegt (hier: Zinsen statt Arbeitslohn), endet schon im BESCHEID mit
+/// `Gesperrt(DbaAbzugOffen)`, nicht erst in der Liste der Erklaerung (Abweichung Nr. 41). KONTROLLE: derselbe Fall mit
+/// Arbeitslohn kommt in die Erklaerung und sperrt dort mit dem Abzug-Grund (`abzug_gewaehlt_und_steuer_ueber_null_*`).
+#[test]
+fn ein_nicht_getragener_abzug_endet_im_bescheid_mit_dba_abzug_offen() {
+    let s = akte_voll(Some(true), Some(70_000), Zustand::Bestaetigt, "zinsen");
+    let r = lauf(&s);
+    assert!(
+        matches!(r, Err(EinreichFehler::Gesperrt(Sperrgrund::DbaAbzugOffen))),
+        "erhalten {r:?}"
+    );
+    let kontrolle = lauf(&akte(Some(true), Some(70_000)));
+    assert!(
+        matches!(kontrolle, Err(EinreichFehler::DeklarationUnvollstaendig(_))),
+        "Arbeitslohn: erhalten {kontrolle:?}"
+    );
 }
 
 /// Nichts sperrt, wenn eine der beiden Bedingungen fehlt: Wahl `true` ohne Steuer (nie beantwortet oder 0), Wahl `false`

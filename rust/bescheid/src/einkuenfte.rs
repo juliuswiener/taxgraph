@@ -608,6 +608,56 @@ pub(crate) fn dba_freistellung_angabe(f: &Felder) -> Result<Option<&'static str>
     Ok(None)
 }
 
+/// Wahr, wenn der Abzug der auslaendischen Steuer (§ 34c Abs. 2 `EStG`) gewaehlt ist und etwas abzuziehen ist: Wahl `true`,
+/// gezahlte Steuer und Auslandseinkuenfte ueber 0 Euro und keine Freistellung (dort gibt es keinen Abzug, Abweichung Nr. 35).
+/// `methode` ist [`dba_methode_der_akte`].
+///
+/// # Errors
+/// Accessor-Fehler.
+fn dba_abzug_aktiv(f: &Felder, methode: &str) -> Result<bool, BescheidFehler> {
+    Ok(ist_true(wert(f, "dba_abzug_statt_anrechnung"))
+        && feld_euro_oder_null(f, "dba_gezahlte_auslaendische_steuer")?.get() > 0
+        && feld_euro_oder_null(f, "dba_auslaendische_einkuenfte")?.get() > 0
+        && methode != "freistellung")
+}
+
+/// Wahr, wenn ein gewaehlter Abzug ([`dba_abzug_gewaehlt`]) in einem Fall steht, den die Rechnung traegt: Arbeitslohn
+/// (`dba_einkunftsart` = `unselbstaendige_arbeit`), keine Zusammenveranlagung (das Feld hat kein Partnerfeld, die Anlage N
+/// wuerde der falschen Person gekuerzt) und keine fiktive Steuer (§ 34c Abs. 6 S. 2 `EStG`: dafuer gilt Abs. 2 nicht). Die
+/// Rentner-Scheibe traegt ihn nie; das prueft der Guard mit der Scheibe (`sperre/einkunft.rs::dba_p32b_p16`).
+pub(crate) fn dba_abzug_getragen(f: &Felder) -> bool {
+    matches!(wert(f, "dba_einkunftsart"), Some(PyWert::Text(s)) if s == "unselbstaendige_arbeit")
+        && !ist_zusammen(f)
+        && !ist_true(wert(f, "dba_fiktive_steuer_vorhanden"))
+}
+
+/// Wahr, wenn die Akte den Abzug der auslaendischen Steuer waehlt und es etwas abzuziehen gibt (siehe [`dba_abzug_aktiv`]).
+///
+/// # Errors
+/// Accessor- und `AttributeError`-Fehler wie [`shared_dba_sonstige`].
+pub(crate) fn dba_abzug_gewaehlt(f: &Felder) -> Result<bool, BescheidFehler> {
+    dba_abzug_aktiv(f, dba_methode_der_akte(f)?)
+}
+
+/// Der Abzug nach § 34c Abs. 2 `EStG` als Werbungskosten der Anlage N (EURO): die gezahlte Steuer, wenn der Abzug gewaehlt ist
+/// und die Rechnung ihn traegt ([`dba_abzug_getragen`]), sonst 0. Der Abzug gilt "bei der Ermittlung der Einkuenfte" und bei
+/// Arbeitslohn "wie Werbungskosten" (Anleitung Anlage AUS 2025, Zeile 10): er bildet mit den uebrigen Werbungskosten EINE
+/// Summe, die den Arbeitnehmer-Pauschbetrag ersetzt, wo sie ihn uebersteigt (Abweichung Nr. 41; Python zog den Betrag
+/// erst vom Einkommen ab).
+///
+/// ponytail: nur Arbeitslohn der Person A. Andere Einkunftsarten (Betriebsausgabe, Werbungskosten bei V+V oder KAP) und der
+/// Ehegatte brauchen die Quell-Anlage je Fall; bis dahin sperrt der Guard (`dba_abzug_offen`).
+///
+/// # Errors
+/// Accessor- und `AttributeError`-Fehler wie [`shared_dba_sonstige`].
+pub(crate) fn dba_abzug_werbungskosten(f: &Felder) -> Result<Euro, BescheidFehler> {
+    if dba_abzug_gewaehlt(f)? && dba_abzug_getragen(f) {
+        feld_euro_oder_null(f, "dba_gezahlte_auslaendische_steuer")
+    } else {
+        Ok(Euro::new(0))
+    }
+}
+
 /// § 33a (Unterhalt, Ausbildungsfreibetrag) + § 10d Abs. 2 (Verlustabzug) + DBA-Anrechnung (§ 34c).
 /// Setzt `g.sonstige_abzuege_vom_einkommen` und `g.anzurechnende_auslaendische_steuern`; die
 /// Anrechnungs-Rechnung liest `g` nach dem ersten der beiden (Reihenfolge wie Python).
@@ -615,7 +665,9 @@ pub(crate) fn dba_freistellung_angabe(f: &Felder) -> Result<Option<&'static str>
 /// `f` ist der Feld-Snapshot der aufrufenden Quantitaet, `gde_p10d` der `GdE` fuer § 10d.
 ///
 /// Wahl `dba_abzug_statt_anrechnung` (§ 34c Abs. 2) und Methode Freistellung schliessen sich aus: die Freistellung gewinnt,
-/// kein Abzug (Abweichung Nr. 35, Test `p34c_abzug_rechnung.rs`).
+/// kein Abzug (Abweichung Nr. 35, Test `p34c_abzug_rechnung.rs`). Der Abzug selbst steht NICHT hier: er kuerzt die Einkuenfte
+/// ([`dba_abzug_werbungskosten`]), nicht das Einkommen; diese Funktion rechnet bei gewaehltem Abzug weder Abzug noch
+/// Anrechnung (Abweichung Nr. 41).
 ///
 /// # Errors
 /// Accessor-, Python-`AttributeError`- (`dba_staat` kein Text) und Ueberlauf-Fehler.
@@ -665,13 +717,10 @@ pub fn shared_dba_sonstige(
     // ABWEICHUNG VON PYTHON (Nr. 35): bei Freistellung gibt es keinen Abzug (§ 34c Abs. 6 S. 1 und 2 EStG: Abs. 2 gilt
     // nur, wo das Abkommen die Anrechnung vorsieht). Python bucht den Abzug vor der Methodenpruefung; Rust laesst die
     // Freistellung gewinnen, dann gilt der Zweig darunter (Progressionsvorbehalt).
-    if ist_true(wert(f, "dba_abzug_statt_anrechnung"))
-        && gezahlt.get() > 0
-        && ausland.get() > 0
-        && methode != "freistellung"
-    {
-        g.sonstige_abzuege_vom_einkommen = euro_plus(g.sonstige_abzuege_vom_einkommen, gezahlt)?;
-    } else if gezahlt.get() > 0 || ausland.get() > 0 {
+    // ABWEICHUNG VON PYTHON (Nr. 41): ein gewaehlter Abzug steht bei den Einkuenften (`dba_abzug_werbungskosten`, vom Zweig
+    // `gesamt` in die Werbungskosten der Anlage N gelegt), nicht hier beim Einkommen. Hier bleibt er ohne Wirkung: weder
+    // Abzug noch Anrechnung.
+    if !dba_abzug_aktiv(f, methode)? && (gezahlt.get() > 0 || ausland.get() > 0) {
         if methode == "freistellung" {
             progression = Some(ausland);
         } else {

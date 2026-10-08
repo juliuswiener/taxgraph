@@ -8,8 +8,8 @@ use konsistenz::flag_widersprueche;
 use super::{bestaetigt, oder_null_positiv, positiv, zahl_wert, Grund, K};
 use crate::deklaration::konstanten::AGB_KIST;
 use crate::einkuenfte::{
-    dba_freistellung_aktiv, EUER_KOMPONENTEN, GEWINN_QUELLEN_MENGEN, KAP_ERTRAEGE,
-    KAP_ERTRAEGE_PARTNER, KAP_TOEPFE, KAP_TOEPFE_PARTNER,
+    dba_abzug_gewaehlt, dba_abzug_getragen, dba_freistellung_aktiv, EUER_KOMPONENTEN,
+    GEWINN_QUELLEN_MENGEN, KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE, KAP_TOEPFE_PARTNER,
 };
 use crate::{ist_false, ist_true, ist_zusammen, wert, Felder};
 
@@ -33,6 +33,13 @@ pub(super) fn dba_p32b_p16(k: &K<'_>) -> Grund {
     let nachbar = p32b_nachbarn(f) || (ist_zusammen(f) && positiv(f, "gewst_messbetrag_partner"));
     if nachbar && dba_freistellung_aktiv(f)? {
         return Ok(Some(Sperrgrund::DbaFreistellungOffen));
+    }
+    // Abzug der auslaendischen Steuer (Abweichung Nr. 41): die Rechnung kuerzt die Einkuenfte nur fuer Arbeitslohn einer
+    // einzeln veranlagten Person ohne fiktive Steuer, ausserhalb der Rentner-Scheibe (`dba_abzug_getragen`). Jeder andere Fall
+    // sperrt, statt den Betrag zu verlieren oder an die falsche Einkunftsart zu haengen.
+    let rentner = k.cfg.is_some_and(|c| c.rentner);
+    if dba_abzug_gewaehlt(f)? && (rentner || !dba_abzug_getragen(f)) {
+        return Ok(Some(Sperrgrund::DbaAbzugOffen));
     }
     Ok(p16_4(f))
 }

@@ -151,6 +151,40 @@ bindungen:
       quelle: "§ 34c Abs. 2 EStG"
       zitatanker: "auf Antrag bei der Ermittlung der Einkünfte abzuziehen"
       datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+  # Folgefrage zum Abzug (gebaut 2026-10-08, Abweichung Nr. 41 in rust/fixtures/README.md). Der Abzug gilt nur fuer die
+  # tatsaechlich gezahlte Steuer; eine nach dem Abkommen als gezahlt geltende (fiktive) Steuer wird nur angerechnet, nie
+  # abgezogen (§ 34c Abs. 6 S. 2 EStG; Anleitung Anlage AUS 2025, Zeile 13). Der Bescheid rechnet den Abzug darum nur ohne
+  # fiktive Steuer: "ja" sperrt mit `dba_abzug_offen`. Normalfall ist "nein"; "nein" und keine Antwort rechnen den Abzug (wie
+  # `dba_mehrere_staaten`). Kein Gate (keine `geltungsbedingung`): die Frage haelt die Regel nicht auf `unentschieden`
+  # (Vault: decisions/ein-neues-betragsfeld-haengt-an-feld-bedingung-nie-an-geltungsbedingung).
+  - feld_id: dba_fiktive_steuer_vorhanden
+    quelle: {regel_id: p34c_2_abzug_statt_anrechnung, signatur_slot: fiktive_steuer_vorhanden}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    # Zwei Bedingungen, beide muessen gelten: der Abzug ist nicht mit "nein" abgewaehlt (`wert: true`: nur ein bestaetigtes
+    # "nein" streicht die Frage, Schweigen laesst sie stehen) UND eine bestaetigte gezahlte Steuer ueber 0 (`und` mit
+    # `groesser_als`, positiver Beweis). Ohne gezahlte Steuer gibt es keinen Abzug, dessen Betrag zu kuerzen waere.
+    feld_bedingung:
+      feld: dba_abzug_statt_anrechnung
+      wert: true
+      grund: "§ 34c Abs. 2 EStG erlaubt den Abzug nur für die tatsächlich gezahlte Steuer. Wer den Abzug nicht gewählt hat, rechnet die Anrechnung, und die Frage nach einer fiktiven Steuer ändert dort nichts. Schweigen auf die Abzugsfrage lässt die Folgefrage stehen, damit niemand den Abzug rechnen lässt, ohne sie gesehen zu haben."
+      und:
+        feld: dba_gezahlte_auslaendische_steuer
+        groesser_als: 0
+        grund: "Ohne bestätigte gezahlte Steuer über 0 Euro gibt es keinen Abzug und damit keinen Betrag, den eine fiktive Steuer kürzen könnte. Die Frage verlängerte nur das Interview."
+    fragetext_laie: "Ist ein Teil der Steuer „fiktiv“, hat Deutschland sie also laut Abkommen als gezahlt anzusehen, obwohl der andere Staat sie dir erlassen hat?"
+    hilfe_kurz: "Das ist selten. Fiktive Steuer gibt es nur, wenn ein Abkommen eine Steuer ausdrücklich als gezahlt gelten lässt. Man kann diese Steuer anrechnen, aber nicht abziehen. Antwortest du mit ja, rechnet die Software den Abzug nicht und sperrt die Berechnung; wähle dann die Anrechnung. Im Zweifel antworte mit nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Feld (reine Ring-Logik, nicht deklariert). Bestätigt oder vorläufig true bei gewähltem Abzug → dba_abzug_offen (fail-closed). Anlage AUS Zeile 13 (E0602001) trägt die fiktive Steuer selbst; die Software meldet sie nicht."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34c Abs. 6 S. 2 EStG"
+      zitatanker: "bei nach dem Abkommen als gezahlt geltenden ausländischen Steuerbeträgen sind Absatz 1 Satz 3 und Absatz 2 nicht anzuwenden"
+      datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
 
 # ===== Lücken + Geltungsbedingungen (Nicht-Feld-Logik) =====
 luecken:

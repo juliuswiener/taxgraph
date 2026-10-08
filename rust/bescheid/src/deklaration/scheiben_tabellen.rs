@@ -97,7 +97,7 @@ pub(super) const SCHEIBEN_AN_GESAMT_KEGEL: [&str; 33] = [
 
 /// `SCHEIBEN['gesamt']["felder"]` = `VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER + GESAMT_VERSORGUNG + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + PARTNER_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN + GESAMT_DBA + GESAMT_P23 + P23_SCREENING + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG + VERPFLEGUNG_EINZELREISE + AGB_TATBESTAND + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER + STEUERKLASSE_FELDER + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 364] = [
+pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 365] = [
     "vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand",
     "vv_sonstige_wk", "vv_entgelt_quote_prozent", "vv_wohnzwecke", "vv_auf_dauer",
     "veranlagung", "bruttoarbeitslohn", "ep_arbeitstage", "ep_entfernung_km",
@@ -159,7 +159,7 @@ pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 364] = [
     "vv_nutzung_ferienwohnung", "vv_nutzung_an_angehoerige", "vv_nutzung_kurzfristig", "vv_einnahmen_summe_gesamt",
     "vv_summe_werbungskosten", "vv_ueberschuss", "vv_ueberschuss_person_a", "dba_staat",
     "dba_methode", "dba_einkunftsart", "dba_mehrere_staaten", "dba_gezahlte_auslaendische_steuer",
-    "dba_auslaendische_einkuenfte", "dba_abzug_statt_anrechnung", "p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten",
+    "dba_auslaendische_einkuenfte", "dba_abzug_statt_anrechnung", "dba_fiktive_steuer_vorhanden", "p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten",
     "p23_werbungskosten", "p23_veraeusserungs_typ", "kein_p23_verkauf", "p22_nr3_einkuenfte",
     "p22_nr3_einnahmen", "p22_nr3_einnahmen_art", "p22_nr3_einnahmen_einzelbetrag", "p22_nr3_werbungskosten",
     "p33a_unterhalt_aufwendungen", "p33a_unterhalt_kv_pv", "p33a_andere_einkuenfte_bezuege", "p33a_ausbildung_anzahl_kinder",
@@ -219,7 +219,7 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 /// gefragt nur bei seinem Lohn ueber 0) und `geburtsjahr_partner` (fuer seinen Altersentlastungsbetrag nach § 24a, wie
 /// `geburtsjahr` bei Person A; `zweige/rentner.rs` rechnet § 24a je Person wie `zweige/gesamt.rs`). Der Kegel bleibt bei 28.
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 276] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 277] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -255,7 +255,7 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 276] = [
     "fahrtkosten_pausch_gdb80_oder_70g", "fahrtkosten_pausch_ag_bl_tbl_h", "geburtsjahr", "fam_alleinstehend",
     "fam_monate_ohne_voraussetzung", "p35a_mitveranlagung", "dba_staat", "dba_methode",
     "dba_einkunftsart", "dba_mehrere_staaten", "dba_gezahlte_auslaendische_steuer", "dba_auslaendische_einkuenfte",
-    "dba_abzug_statt_anrechnung", "p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten", "p23_werbungskosten",
+    "dba_abzug_statt_anrechnung", "dba_fiktive_steuer_vorhanden", "p23_veraeusserungspreis", "p23_anschaffung_herstellungskosten", "p23_werbungskosten",
     "p23_veraeusserungs_typ", "p33a_unterhalt_aufwendungen", "p33a_unterhalt_kv_pv", "p33a_andere_einkuenfte_bezuege",
     "p33a_ausbildung_anzahl_kinder", "p33a_person_name", "p33a_person_beruf_familienstand", "p33a_person_geburtsdatum",
     "p33a_haushalt_anschrift", "p33a_haushalt_personenzahl", "p33a_unterstuetzungszeitraum", "p33a_zahlungszeitraum",
