@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p10b/ab-2020-01-01"
+  norm: "§ 10b EStG (Steuerbegünstigte Zwecke)"
+  fassung: "Fassung ab 01.01.2020 (von Julius am 2026-10-08 eingefügt, Herkunftsseite nicht genannt)"
+  quelle_url: "keine (Text von Julius am 2026-10-08 in die Sitzung eingefügt)"
+  abrufdatum: "2026-10-08"
+  datei: "estg_p10b_ab-2020-01-01.txt"
+  sha256: "dbec04a8c84e5ed3acbac4719a7d70c14539170a937b228d9b8b7b62b63707cd"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["geplant: Parteispenden über dem Höchstbetrag als Sonderausgabe (§ 10b Abs. 2), VZ 2024 und 2025 (vault backlog parteispenden-ueber-dem-deckel-waehlervereinigungen-und-kontoauszug-fehlen)"]
