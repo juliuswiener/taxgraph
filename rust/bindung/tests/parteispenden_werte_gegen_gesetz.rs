@@ -1,5 +1,6 @@
-//! Satz und Hoechstbetraege der Parteispenden-Ermaessigung gegen das GESETZ, nicht gegen die YAML (Abweichung Nr. 31 in
-//! `rust/fixtures/README.md`; Entscheidung `parteispenden-deckel-kommt-je-jahr-aus-der-eingefrorenen-fassung`, Option 1).
+//! Satz und Hoechstbetraege der Parteispenden-Ermaessigung (§ 34g) und der Deckel des Sonderausgabenabzugs (§ 10b Abs. 2) gegen das
+//! GESETZ, nicht gegen die YAML (Abweichungen Nr. 31 und Nr. 43 in `rust/fixtures/README.md`; Entscheidung
+//! `parteispenden-deckel-kommt-je-jahr-aus-der-eingefrorenen-fassung`, Option 1).
 //!
 //! `werte_gegen_gesetz.rs` und `params_zuordnung_hermetisch.rs` zeigen den Weg: ein Test, der die YAML mit dem Zugriff vergleicht,
 //! bliebe gruen, wenn Datei und Zugriff dieselbe falsche Zahl meinten. Hier steht der Erwartungswert nicht im Test. Er wird bei
@@ -12,6 +13,11 @@
 //! fuer dieses Jahr, weil eine Aenderung der Betraege zum Jahreswechsel in Kraft tritt (Steueraenderungsgesetz 2025 zum
 //! 1.1.2026). Das ist ABGELEITET (`derived`) aus den Abrufdaten, nicht aus dem Gesetzestext: er nennt sein Inkrafttreten nicht.
 //! Nicht belegt ist, ob der Wortlaut zwischen dem Abrufdatum und dem 31.12. des Jahres gleich blieb.
+//!
+//! § 10b ABS. 2. Fuer 2026 liegt die Abrufkopie vom 2026-07-13 vor. Fuer 2024 und 2025 gilt die Fassung ab 2020-01-01
+//! (`estg_p10b_ab-2020-01-01`, Wortlaut von Julius eingefuegt, Herkunftsseite nicht genannt). Dass sie fuer beide Jahre gilt, ist
+//! ABGELEITET: keine Quelle im Korpus nennt eine andere Fassung vor dem 1.1.2026. Beide Fassungen schreiben die Tausender
+//! verschieden ("1.650" und "3 300") und "Falle" neben "Fall": der Parser nimmt beides.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -31,6 +37,13 @@ const JAHRE: [(u16, Vz, &str); 3] = [
     (2024, Vz::Vz2024, "estg_p34g_2024-12-18"),
     (2025, Vz::Vz2025, "estg_p34g_2025-12-18"),
     (2026, Vz::Vz2026, "estg_p34g_2026-09-26"),
+];
+
+/// `(Veranlagungsjahr, Vz, Datei des Wortlauts)` fuer § 10b Abs. 2.
+const JAHRE_10B: [(u16, Vz, &str); 3] = [
+    (2024, Vz::Vz2024, "estg_p10b_ab-2020-01-01"),
+    (2025, Vz::Vz2025, "estg_p10b_ab-2020-01-01"),
+    (2026, Vz::Vz2026, "estg_p10b_2026-07-13"),
 ];
 
 fn wurzel() -> PathBuf {
@@ -61,6 +74,23 @@ fn satz_2(text: &str) -> Result<(i64, i64, i64), String> {
             .map_err(|e| format!("keine Zahl {:?}: {e}", &t[i]))
     };
     Ok((zahl(1)?, zahl(2)?, zahl(3)?))
+}
+
+/// `(Deckel einzeln, Deckel zusammen)` aus § 10b Abs. 2 Satz 1. Ein Fehler heisst: der Text ist nicht mehr der Satz, den der Parser
+/// kennt (nie ein stiller Standardwert).
+fn p10b_abs_2(text: &str) -> Result<(i64, i64), String> {
+    let wortlaut = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let re = Regex::new(
+        r"Zuwendungen an politische Parteien .{0,200}?bis zur Höhe von insgesamt (\d+(?:[. ]\d{3})*) Euro und im Fall(?:e)? der Zusammenveranlagung von Ehegatten bis zur Höhe von insgesamt (\d+(?:[. ]\d{3})*) Euro im Kalenderjahr abzugsfähig",
+    )
+    .unwrap();
+    let t = re.captures(&wortlaut).ok_or("Abs. 2 Satz 1 nicht gefunden")?;
+    let zahl = |i: usize| -> Result<i64, String> {
+        t[i].replace(['.', ' '], "")
+            .parse::<i64>()
+            .map_err(|e| format!("keine Zahl {:?}: {e}", &t[i]))
+    };
+    Ok((zahl(1)?, zahl(2)?))
 }
 
 fn params() -> Params {
@@ -107,6 +137,40 @@ fn kontrolle_der_parser_unterscheidet_die_fassungen() {
     assert!(satz_2("Die Ermäßigung beträgt viel.").is_err());
 }
 
+/// Beide Deckel des Sonderausgabenabzugs jedes Jahres gleich dem Wortlaut von § 10b Abs. 2 Satz 1 seiner Fassung.
+#[test]
+fn sonderausgaben_deckel_jedes_jahres_sind_der_wert_im_gesetz() {
+    let p = params();
+    for (jahr, vz, datei) in JAHRE_10B {
+        let (einzel, zusammen) = p10b_abs_2(&quelle(datei)).unwrap();
+        let ist = p.parteispenden_p34g(vz).unwrap();
+        assert_eq!(
+            ist.sonderausgaben_hoechstbetrag_einzel,
+            Euro::new(einzel),
+            "{jahr}: Sonderausgaben-Deckel einzeln (Wortlaut {datei})"
+        );
+        assert_eq!(
+            ist.sonderausgaben_hoechstbetrag_zusammen,
+            Euro::new(zusammen),
+            "{jahr}: Sonderausgaben-Deckel zusammen (Wortlaut {datei})"
+        );
+    }
+}
+
+/// KONTROLLE: der Parser unterscheidet die Fassungen und liest die Zahlen, die der Wortlaut traegt (Punkt als Tausendertrenner in
+/// der einen, Leerzeichen in der anderen Fassung), und meldet einen Text ohne den Satz als Fehler.
+#[test]
+fn kontrolle_der_parser_fuer_abs_2_unterscheidet_die_fassungen() {
+    let gelesen: Vec<_> = JAHRE_10B
+        .iter()
+        .map(|(_, _, d)| p10b_abs_2(&quelle(d)).unwrap())
+        .collect();
+    assert_eq!(gelesen[0], (1_650, 3_300), "ab 2020-01-01, fuer 2024");
+    assert_eq!(gelesen[1], (1_650, 3_300), "ab 2020-01-01, fuer 2025");
+    assert_eq!(gelesen[2], (3_300, 6_600), "2026-07-13");
+    assert!(p10b_abs_2("Zuwendungen an politische Parteien sind abzugsfähig.").is_err());
+}
+
 /// Jede Zahl der Parameterdatei nennt in `datenquelle` die Datei ihres Jahres, nicht die eines anderen: eine 2025er Zahl, die ins
 /// 2026er Jahr kopiert wurde, fiele sonst nur auf, wenn die Werte voneinander abweichen.
 #[test]
@@ -123,6 +187,36 @@ fn jede_zahl_nennt_die_quelle_ihres_jahres() {
             "ermaessigungssatz",
             "hoechstbetrag_einzel",
             "hoechstbetrag_zusammen",
+        ] {
+            let eintrag = d
+                .werte
+                .get(schluessel)
+                .unwrap_or_else(|| panic!("{schluessel} fehlt in {}", pfad.display()));
+            let quelle = eintrag["datenquelle"].as_str().unwrap();
+            assert!(
+                quelle.contains(&format!("{datei}.txt")),
+                "{jahr} {schluessel}: datenquelle nennt {datei}.txt nicht: {quelle}"
+            );
+            assert_eq!(
+                eintrag["veranlagungszeitraum"].as_u64(),
+                Some(u64::from(jahr))
+            );
+        }
+    }
+}
+
+/// Auch die Deckel des Sonderausgabenabzugs nennen die Quelle ihres Jahres, nicht die eines anderen.
+#[test]
+fn jeder_sonderausgaben_deckel_nennt_die_quelle_seines_jahres() {
+    for (jahr, _, datei) in JAHRE_10B {
+        let pfad = wurzel()
+            .join("params")
+            .join(jahr.to_string())
+            .join("parteispenden_p34g.yaml");
+        let d = lade_params(&pfad).unwrap();
+        for schluessel in [
+            "sonderausgaben_hoechstbetrag_einzel",
+            "sonderausgaben_hoechstbetrag_zusammen",
         ] {
             let eintrag = d
                 .werte

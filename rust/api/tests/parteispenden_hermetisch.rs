@@ -12,7 +12,8 @@
 //!
 //! **Wo es sitzt.** `rust/bindung/daten/bindung_sonder_agb_35a.yaml` (Feld, Texte), `rust/bescheid/src/abzuege.rs::
 //! steuerermaessigungen` (Rechnung), `params/<vz>/parteispenden_p34g.yaml` (Deckel). Die Rechnung im Einzelnen prueft
-//! `rust/bescheid/tests/parteispenden_ermaessigung.rs`, den Kz im XML `parteispenden_einreichung_hermetisch.rs`.
+//! `rust/bescheid/tests/parteispenden_ermaessigung.rs`, den Teil ueber der Basis als Sonderausgabe (§ 10b Abs. 2, Abweichung
+//! Nr. 43) `parteispenden_sonderausgaben.rs`, den Kz im XML `parteispenden_einreichung_hermetisch.rs`.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -371,18 +372,38 @@ async fn fuenfhundert_euro_an_eine_partei_senken_die_steuer_um_zweihundertfuenfz
     assert_eq!(null, Some(ohne), "Parteispende 0");
 }
 
-/// Der Deckel je Jahr ueber die echte Route: 4.000 Euro Parteispende, ledig, geben 825 Euro (2025) und 1.650 Euro (2026) weniger
-/// Steuer (Wortlaut 2025-12-18 und 2026-09-26). Beide Jahre rechnen mit demselben Fall.
+/// Der Deckel je Jahr ueber die echte Route: 4.000 Euro Parteispende, ledig, 45.000 Euro Lohn. Die Ermaessigung ist 825 Euro (2025) und
+/// 1.650 Euro (2026) (Wortlaut 2025-12-18 und 2026-09-26). Der Rest ueber der Basis der Ermaessigung wirkt als Sonderausgabe
+/// (§ 10b Abs. 2, Abweichung Nr. 43). Die Basis ist die Spende, bei der die Ermaessigung ihren Hoechstbetrag erreicht: 2025
+/// 2 x 825 = 1.650 Euro, Sonderausgabe min(4.000 - 1.650, 1.650) = 1.650 Euro; 2026 2 x 1.650 = 3.300 Euro, Sonderausgabe
+/// min(4.000 - 3.300, 3.300) = 700 Euro (von Hand gerechnet).
+///
+/// Erwartung ohne den Tarif nachzubauen: die Ersparnis der Partei ist die Ersparnis einer allgemeinen Spende in Hoehe der
+/// Sonderausgabe (§ 10b Abs. 1, dieselbe Rechnung des Einkommens) PLUS die Ermaessigung. Dazu eine Schranke aus dem Gesetz: die
+/// Ersparnis einer Sonderausgabe liegt zwischen 14 % (Eingangssteuersatz) und 45 % (Spitzensteuersatz) von ihr. Soli faellt bei
+/// dieser Steuer unter die Freigrenze, die Ersparnis ist also reine Einkommensteuer.
 #[tokio::test]
 async fn der_deckel_gilt_je_veranlagungsjahr() {
-    for (vz, erwartet) in [(2025, 82_500), (2026, 165_000)] {
+    // (Jahr, Ermaessigung in Cent, Sonderausgabe in Euro)
+    for (vz, ermaessigung, sonderausgabe) in [(2025, 82_500, 1_650), (2026, 165_000, 700)] {
         let (_, ohne) = ergebnis(vz, &kegel(4_500_000)).await;
-        let (g, mit_spende) = ergebnis(vz, &mit(4_500_000, vec![(FELD, json!(400_000))])).await;
+        let (g, partei) = ergebnis(vz, &mit(4_500_000, vec![(FELD, json!(400_000))])).await;
+        let (_, allgemein) = ergebnis(
+            vz,
+            &mit(4_500_000, vec![(ALLGEMEIN, json!(sonderausgabe * 100))]),
+        )
+        .await;
         assert_eq!(g, "bestaetigt", "{vz}");
+        let (ohne, partei, allgemein) = (ohne.unwrap(), partei.unwrap(), allgemein.unwrap());
+        let sparnis_sonderausgabe = ohne - allgemein;
+        assert!(
+            sonderausgabe * 14 <= sparnis_sonderausgabe && sparnis_sonderausgabe <= sonderausgabe * 45,
+            "KONTROLLE {vz}: {sonderausgabe} Euro Sonderausgabe sparen zwischen 14 % und 45 %, erhalten {sparnis_sonderausgabe} Cent"
+        );
         assert_eq!(
-            ohne.unwrap() - mit_spende.unwrap(),
-            erwartet,
-            "{vz}: 4.000 Euro Parteispende"
+            ohne - partei,
+            sparnis_sonderausgabe + ermaessigung,
+            "{vz}: 4.000 Euro Parteispende = Ermaessigung {ermaessigung} Cent + Ersparnis von {sonderausgabe} Euro Sonderausgabe"
         );
     }
 }

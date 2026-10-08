@@ -138,6 +138,16 @@ fn int_mal_satz(aufw: Euro, satz: Satz) -> Result<i128, EngineFehler> {
     Ok(z(aufw) * i128::from(zaehler) / i128::from(nenner))
 }
 
+/// `betrag / satz`, exakt: `betrag * nenner / zaehler` in `i128`; `/` schneidet Richtung 0 ab. Kein Python-Gegenstueck
+/// (Abweichung Nr. 43).
+///
+/// # Errors
+/// [`EngineFehler::DivisionDurchNull`] bei Satz 0.
+fn int_durch_satz(betrag: Euro, satz: Satz) -> Result<i128, EngineFehler> {
+    let (zaehler, nenner) = zu_bruch(satz.get()).map_err(Basis::from)?;
+    floor_div(z(betrag) * i128::from(nenner), i128::from(zaehler))
+}
+
 /// Rohwert eines [`Euro`] als `i128`.
 fn z(e: Euro) -> i128 {
     i128::from(e.get())

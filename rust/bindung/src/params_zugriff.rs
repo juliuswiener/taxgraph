@@ -125,8 +125,9 @@ pub struct SatzHoechstbetrag {
     pub hoechstbetrag_je_kind: Euro,
 }
 
-/// § 34g Satz 2 `EStG`: Satz und Hoechstbetraege der Steuerermaessigung fuer Zuwendungen an politische Parteien
-/// (`parteispenden_p34g.yaml`, Abweichung Nr. 31). Nur Rust; Python kennt die Datei nicht.
+/// § 34g Satz 2 `EStG`: Satz und Hoechstbetraege der Steuerermaessigung fuer Zuwendungen an politische Parteien, dazu der Deckel
+/// des Sonderausgabenabzugs nach § 10b Abs. 2 `EStG` (`parteispenden_p34g.yaml`, Abweichungen Nr. 31 und Nr. 43). Nur Rust;
+/// Python kennt die Datei nicht.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ParteispendenErmaessigung {
     /// Anteil der Ausgaben (z. B. `0.5`), nicht Prozent.
@@ -135,6 +136,10 @@ pub struct ParteispendenErmaessigung {
     pub hoechstbetrag_einzel: Euro,
     /// Hoechstbetrag der Ermaessigung bei Zusammenveranlagung von Ehegatten.
     pub hoechstbetrag_zusammen: Euro,
+    /// § 10b Abs. 2 Satz 1: Deckel der Sonderausgabe je Steuerpflichtigen (der Teil ueber der Basis der Ermaessigung).
+    pub sonderausgaben_hoechstbetrag_einzel: Euro,
+    /// § 10b Abs. 2 Satz 1: Deckel der Sonderausgabe bei Zusammenveranlagung von Ehegatten.
+    pub sonderausgaben_hoechstbetrag_zusammen: Euro,
 }
 
 /// § 19 Abs. 2 S. 3 `EStG`: eine Zeile von `versorgungsfreibetrag_p19_2.yaml`.
@@ -601,9 +606,10 @@ impl Params {
         self.satz_hoechstbetrag(vz, "schulgeld_p10.yaml")
     }
 
-    /// § 34g Satz 2 `EStG` Parteispenden (`parteispenden_p34g.yaml`): Satz und Hoechstbetraege der Ermaessigung. Ein Jahr ohne
-    /// diese Datei ist ein Fehler ([`ParamsWertFehler::DateiFehlt`]), kein Standardwert: ohne belegte Fassung rechnet der Aufrufer
-    /// nicht (Vault: `decisions/parteispenden-deckel-kommt-je-jahr-aus-der-eingefrorenen-fassung`).
+    /// § 34g Satz 2 `EStG` Parteispenden (`parteispenden_p34g.yaml`): Satz und Hoechstbetraege der Ermaessigung, dazu die
+    /// Deckel des Sonderausgabenabzugs nach § 10b Abs. 2. Ein Jahr ohne diese Datei ist ein Fehler
+    /// ([`ParamsWertFehler::DateiFehlt`]), kein Standardwert: ohne belegte Fassung rechnet der Aufrufer nicht (Vault:
+    /// `decisions/parteispenden-deckel-kommt-je-jahr-aus-der-eingefrorenen-fassung`).
     ///
     /// # Errors
     /// Wie [`Params::grundfreibetrag`].
@@ -612,6 +618,8 @@ impl Params {
     /// let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
     /// assert_eq!(p.parteispenden_p34g(domain::Vz::Vz2025).unwrap().hoechstbetrag_einzel, domain::Euro::new(825));
     /// assert_eq!(p.parteispenden_p34g(domain::Vz::Vz2026).unwrap().hoechstbetrag_zusammen, domain::Euro::new(3300));
+    /// assert_eq!(p.parteispenden_p34g(domain::Vz::Vz2025).unwrap().sonderausgaben_hoechstbetrag_einzel, domain::Euro::new(1650));
+    /// assert_eq!(p.parteispenden_p34g(domain::Vz::Vz2026).unwrap().sonderausgaben_hoechstbetrag_zusammen, domain::Euro::new(6600));
     /// ```
     pub fn parteispenden_p34g(
         &self,
@@ -622,6 +630,8 @@ impl Params {
             satz: Satz::new(self.dezimal(vz, d, "ermaessigungssatz")?),
             hoechstbetrag_einzel: self.euro(vz, d, "hoechstbetrag_einzel")?,
             hoechstbetrag_zusammen: self.euro(vz, d, "hoechstbetrag_zusammen")?,
+            sonderausgaben_hoechstbetrag_einzel: self.euro(vz, d, "sonderausgaben_hoechstbetrag_einzel")?,
+            sonderausgaben_hoechstbetrag_zusammen: self.euro(vz, d, "sonderausgaben_hoechstbetrag_zusammen")?,
         })
     }
 

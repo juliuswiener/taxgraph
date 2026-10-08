@@ -613,9 +613,10 @@ bindungen:
   # ===== Spenden an politische Parteien, § 34g (gebaut 2026-10-07, Abweichung Nr. 31 in rust/fixtures/README.md) =====
   # Zeile 7 der Anlage Sonderausgaben (Kz E0108701, Knoten Sp_MB/Polit_P/Sum_Best; E10-2024.xsd und E10-2025.xsd, fuer VZ 2026
   # liegt lokal kein Schema vor). Eine Partei-Spende senkt die STEUER um die Haelfte, hoechstens um den Deckel des Jahres
-  # (params/<vz>/parteispenden_p34g.yaml); sie steht NIE in den Sonderausgaben (`spenden_betrag`, Zeile 5). Der Teil ueber dem
-  # Deckel waere nach § 10b Abs. 2 EStG ein Sonderausgabenabzug: NICHT gebaut (ponytail; die Rechnung rechnet dort zu hoch,
-  # nie zu niedrig, die Erklaerung nennt die volle Spende, und das Finanzamt rechnet den Rest).
+  # (params/<vz>/parteispenden_p34g.yaml); sie steht bis zur Basis der Ermaessigung (Hoechstbetrag / 0,5) NIE in den
+  # Sonderausgaben (`spenden_betrag`, Zeile 5). Der Teil ueber der Basis wirkt nach § 10b Abs. 2 EStG als Sonderausgabe, bis zu
+  # dessen Deckel (gebaut, Abweichung Nr. 43; `bescheid/src/abzuege.rs::parteispenden_sonderausgabe`). Die Erklaerung nennt die
+  # volle Spende unter demselben Kz (E0108701 traegt beide Normen, §§ 34g, 10b EStG).
   # Gleiche Regel wie `spenden_betrag` (`p10b_spenden`): die Eingangsfrage `keine_spenden` schliesst beide Fragen aus. KEIN Gate
   # und keine `geltungsbedingung`: ein Betragsfeld daran wuerde zum Gate (Vault: decisions/ein-neues-betragsfeld-haengt-an-
   # feld-bedingung-nie-an-geltungsbedingung); `signatur_slot` ist nur ein Etikett, der Ring liest das Feld beim Feldnamen.
