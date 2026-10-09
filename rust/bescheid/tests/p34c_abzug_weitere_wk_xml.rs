@@ -30,7 +30,7 @@ use std::path::Path;
 
 use bescheid::deklaration::mit_ring_werten;
 use bescheid::testhilfe::{index, params};
-use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Vz, Zustand};
+use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, PyWert, Vz, Zustand};
 use elster::testhilfe::schemas_da;
 use elster::{deklariere, erzeuge_xml, validiere_xsd_text, Deklaration, Felder, XmlOptionen};
 use serde_json::{json, Value};
@@ -298,6 +298,40 @@ fn die_sperre_des_abzugs_bleibt() {
     )
     .expect_err("die Sperre haelt das XML zurueck");
     assert!(fehler.0.contains(WAHL), "XmlFehler `{}`", fehler.0);
+}
+
+/// FEHLERWEG (Mutant R8 der Nachmessung in main): ein bestaetigtes `dba_staat` ohne Text bricht die Rechnung des Abzugs ab
+/// (`dba_methode_fuer` ruft `strip()` auf einem Nicht-Text: `AttributeError`, Python-Klasse wie im Original). Der Ring gibt
+/// den Fehler weiter und schreibt keine Zeile; er faengt ihn NICHT ab und laesst die Zeile still weg. Die Methode wird vor der
+/// Wahl ausgewertet, der Fehler kommt also auch bei Wahl `false`. KONTROLLE: derselbe Fall mit einem Staat als Text laeuft
+/// durch und schreibt die Zeile.
+#[test]
+fn ein_dba_staat_ohne_text_bricht_den_ring_ab_statt_die_zeile_still_wegzulassen() {
+    for staat in [json!(5), json!(true), json!(["AT"])] {
+        for wahl in [true, false] {
+            let s = akte(None, Some((wahl, 70_000)), &[("dba_staat", staat.clone())]);
+            let (mut felder, _) = s.materialisiere(None).unwrap();
+            let fehler = mit_ring_werten(&mut felder, Some(Vz::Vz2025), params())
+                .expect_err(&format!("dba_staat {staat}, Wahl {wahl}: der Ring muss den Fehler weitergeben"));
+            assert_eq!(
+                fehler.python_klasse(),
+                Some("AttributeError"),
+                "dba_staat {staat}, Wahl {wahl}: Fehler `{fehler}`"
+            );
+            assert!(
+                !felder.contains_key("dba_abzug_zeile_cent"),
+                "dba_staat {staat}, Wahl {wahl}: trotz Fehler steht eine Zeile im Ring"
+            );
+        }
+    }
+    let s = akte(None, Some((true, 70_000)), &[("dba_staat", json!("Atlantis"))]);
+    let (mut felder, _) = s.materialisiere(None).unwrap();
+    mit_ring_werten(&mut felder, Some(Vz::Vz2025), params()).expect("ein Staat als Text rechnet");
+    assert!(
+        matches!(felder.get("dba_abzug_zeile_cent").map(|f| &f.wert), Some(PyWert::Ganz(70_000))),
+        "Kontrolle: mit einem Staat als Text steht die Zeile, erhalten {:?}",
+        felder.get("dba_abzug_zeile_cent").map(|f| &f.wert)
+    );
 }
 
 fn tag_text<'a>(xml: &'a str, tag: &str) -> Option<&'a str> {
