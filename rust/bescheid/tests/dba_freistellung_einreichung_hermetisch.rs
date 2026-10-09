@@ -33,6 +33,9 @@ use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
 const EINKUENFTE: &str = "dba_auslaendische_einkuenfte";
 const STEUER: &str = "dba_gezahlte_auslaendische_steuer";
 const METHODE: &str = "dba_methode";
+/// Seit Abweichung Nr. 51 braucht jede Akte mit Auslandseinkuenften einen Staat. Das Feld `dba_methode` geht dem Staat vor
+/// (`dba_methode_der_akte`): Frankreich aendert die Methode nicht.
+const STAAT: &str = "dba_staat";
 
 /// Ein bestaetigter Wert (zwei Signale).
 fn setze(s: &mut Store, feld: &str, wert: Value) {
@@ -94,10 +97,11 @@ fn sperre(r: &Result<String, EinreichFehler>) -> Vec<(String, String)> {
 #[test]
 fn kontrolle_die_anrechnung_ist_einreichbar() {
     for paare in [
-        vec![(STEUER, json!(70_000)), (EINKUENFTE, json!(2_000_000))],
+        vec![(STEUER, json!(70_000)), (EINKUENFTE, json!(2_000_000)), (STAAT, json!("Frankreich"))],
         vec![
             (STEUER, json!(70_000)),
             (EINKUENFTE, json!(2_000_000)),
+            (STAAT, json!("Frankreich")),
             (METHODE, json!("dba_anrechnung")),
         ],
     ] {
@@ -117,24 +121,25 @@ fn freigestellte_einkuenfte_sperren_die_abgabe_mit_eigenem_grund() {
             "Methode",
             vec![
                 (EINKUENFTE, json!(2_000_000)),
+                (STAAT, json!("Frankreich")),
                 (METHODE, json!("dba_freistellung")),
             ],
         ),
         (
             "USA",
-            vec![(EINKUENFTE, json!(2_000_000)), ("dba_staat", json!("us"))],
+            vec![(EINKUENFTE, json!(2_000_000)), (STAAT, json!("USA"))],
         ),
         (
             "Polen, Ruhegehaelter",
             vec![
                 (EINKUENFTE, json!(2_000_000)),
-                ("dba_staat", json!("pl")),
+                (STAAT, json!("Polen")),
                 ("dba_einkunftsart", json!("ruhegehaelter")),
             ],
         ),
         (
             "ein Cent",
-            vec![(EINKUENFTE, json!(1)), (METHODE, json!("dba_freistellung"))],
+            vec![(EINKUENFTE, json!(1)), (STAAT, json!("Frankreich")), (METHODE, json!("dba_freistellung"))],
         ),
     ];
     for (name, paare) in faelle {
@@ -161,11 +166,15 @@ fn bei_freistellung_sperrt_auch_die_gezahlte_steuer_allein() {
         (METHODE, json!("dba_freistellung")),
     ]));
     let e = sperre(&r);
+    // Zwei Gruende zur selben Steuer: die Freistellung (dieser Test) und, seit Abweichung Nr. 51, die Steuer ohne Einkuenfte
+    // (`checkESt` lehnt sie auch mit Freistellung ab, rc=610001002). Beide stehen in der Liste, keine andere Angabe.
     assert_eq!(
         e.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(),
-        [STEUER],
+        [STEUER, STEUER],
         "erhalten {r:?}"
     );
+    assert!(e.iter().any(|(_, g)| g.contains("Freistellung")), "kein Grund nennt die Freistellung: {r:?}");
+    assert!(e.iter().any(|(_, g)| g.contains("Ohne Einkünfte") || g.contains("ohne Einkünfte")), "kein Grund nennt die fehlenden Einkuenfte: {r:?}");
 }
 
 /// Ohne Einkuenfte und ohne Steuer ueber 0 sperrt die Freistellung nicht: kein Betrag, der falsch stuende. Der Lauf endet
@@ -174,10 +183,11 @@ fn bei_freistellung_sperrt_auch_die_gezahlte_steuer_allein() {
 fn freistellung_ohne_betrag_sperrt_nichts() {
     for paare in [
         vec![(METHODE, json!("dba_freistellung"))],
-        vec![(EINKUENFTE, json!(0)), (METHODE, json!("dba_freistellung"))],
+        vec![(EINKUENFTE, json!(0)), (STAAT, json!("Frankreich")), (METHODE, json!("dba_freistellung"))],
         vec![
             (EINKUENFTE, json!(0)),
             (STEUER, json!(0)),
+            (STAAT, json!("Frankreich")),
             (METHODE, json!("dba_freistellung")),
         ],
     ] {

@@ -269,17 +269,17 @@ abgabeweg-freigabe-rust:
 
 ## Block-Matrix gegen checkESt in Rust (Option b, Vault: blockmatrix-laeuft-in-rust-gesperrte-zeilen-ueber-den-test-umweg;
 ## Ersatz fuer tests/test_checkest_blockmatrix.py): rust/bescheid/tests/checkest_blockmatrix.rs baut zwoelf Bloecke und die Zeilen
-## Sonstiges der Anlage N (Nr. 48, Nr. 49) ueber den Abgabeweg und gibt das XML an die ECHTE ERiC-Bibliothek (nur Pruefung,
-## ERIC_VALIDIERE, kein Versand). Beide Tests sind #[ignore]: die CI hat kein ERiC. Fehlende Bibliothek, fehlende oder gesperrte
-## (74931) ID ist ein panic; ein anderer Lauf als genau zwei bestandene Tests macht das Ziel rot. Herstellerkennung wie bei
+## Sonstiges der Anlage N (Nr. 48, Nr. 49) und die Anlage AUS (Staat Nr. 51, Abzug Nr. 41) ueber den Abgabeweg und gibt das XML an die
+## ECHTE ERiC-Bibliothek (nur Pruefung, ERIC_VALIDIERE, kein Versand). Die drei Tests sind #[ignore]: die CI hat kein ERiC. Fehlende
+## Bibliothek, fehlende oder gesperrte (74931) ID ist ein panic; ein anderer Lauf als genau drei bestandene Tests macht das Ziel rot. Herstellerkennung wie bei
 ## abgabeweg-freigabe-rust aus der gitignorierten .env; das Protokoll liegt in rust/target/ und nennt die ID nie. Die Verdrahtung
 ## (Ziel, --ignored, --exact, Testnamen, #[ignore]) haelt checkest_blockmatrix.rs::die_blockmatrix_ist_verdrahtet in der CI fest.
 blockmatrix-rust:
 	if [ -z "$$ELSTER_HERSTELLER_ID" ] && [ -f .env ]; then set -a; . ./.env; set +a; fi; \
 	mkdir -p rust/target; log=rust/target/blockmatrix-rust.log; \
-	(cd rust && cargo test -p bescheid --test checkest_blockmatrix -- --ignored --nocapture --test-threads=1 --exact zwoelf_bloecke_gegen_echtes_checkest zeilen_nr48_nr49_gegen_echtes_checkest) > $$log 2>&1; rc=$$?; \
+	(cd rust && cargo test -p bescheid --test checkest_blockmatrix -- --ignored --nocapture --test-threads=1 --exact zwoelf_bloecke_gegen_echtes_checkest zeilen_nr48_nr49_gegen_echtes_checkest ausland_staat_und_nr41_gegen_echtes_checkest) > $$log 2>&1; rc=$$?; \
 	cat $$log; \
-	[ $$rc -eq 0 ] && grep -q "test result: ok. 2 passed" $$log
+	[ $$rc -eq 0 ] && grep -q "test result: ok. 3 passed" $$log
 
 ## Rust-Port (REWRITE_PLAN.md). Der generierte Catala-C-Backend liegt committed unter
 ## rust/catala-sys/generated/ -- catala-c regeneriert ihn (braucht den Opam-Switch).

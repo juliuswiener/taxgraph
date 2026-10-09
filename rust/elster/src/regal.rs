@@ -191,6 +191,14 @@ pub(crate) const REGAL: &[Datei] = &[
                     ],
                 },
             ),
+            // Abweichung Nr. 51: der Staat der Auslandseinkuenfte (Anlage AUS "1. Staat") gibt es in Python nicht; der Test deckt das Literal.
+            (
+                "STAAT_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0600301"],
+                    tests: &["der_staat_steht_als_listentext_in_e0600301_genau_mit_den_einkuenften"],
+                },
+            ),
             // Diese Regeln stehen als Literale in Methoden von `Bau`; ihr Top-Level-Name ist `deklariere`.
             ("deklariere", Zuordnung::Funktion("iban_weiche/praefix")),
             ("deklariere", Zuordnung::Funktion("iban_weiche/inland")),
