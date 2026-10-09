@@ -13,6 +13,7 @@ bindungen:
   - feld_id: bruttoarbeitslohn
     vorschlagbar_von: [beleg]
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: bruttoarbeitslohn}
+    feld_bedingung: {feld: kein_lohn_pension, wert: false, grund: "Wer bestaetigt, neben der Rente weder Arbeitslohn noch eine Pension (Versorgungsbezug) zu haben, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus, Schweigen nicht."}
     typ: cent
     einheit: EUR
     askable: true
@@ -35,6 +36,7 @@ bindungen:
   # sechs Steuerklassen aus § 38b Abs. 1 EStG -- kein WERTEKODIERUNG-Eintrag noetig.
   - feld_id: steuerklasse
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: steuerklasse}
+    feld_bedingung: {feld: kein_lohn_pension, wert: false, grund: "Wer bestaetigt, neben der Rente weder Arbeitslohn noch eine Pension (Versorgungsbezug) zu haben, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus, Schweigen nicht."}
     typ: enum
     enum_werte: ["1", "2", "3", "4", "5", "6"]
     einheit: null
@@ -54,6 +56,7 @@ bindungen:
   # ========================= Versorgungsbezüge (§ 19 Abs. 2, p19_2) =========================
   - feld_id: versorgung_jahresrente
     quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: jahresrente}
+    feld_bedingung: {feld: kein_lohn_pension, wert: false, grund: "Wer bestaetigt, neben der Rente weder Arbeitslohn noch eine Pension (Versorgungsbezug) zu haben, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus, Schweigen nicht."}
     typ: cent
     einheit: EUR
     askable: true
@@ -72,6 +75,7 @@ bindungen:
 
   - feld_id: versorgung_bemessungsgrundlage
     quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: bemessungsgrundlage}
+    feld_bedingung: {feld: kein_lohn_pension, wert: false, grund: "Wer bestaetigt, neben der Rente weder Arbeitslohn noch eine Pension (Versorgungsbezug) zu haben, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus, Schweigen nicht."}
     typ: cent
     einheit: EUR
     askable: true
@@ -90,6 +94,7 @@ bindungen:
 
   - feld_id: versorgung_beginn_jahr
     quelle: {regel_id: p19_2_versorgungsfreibetrag, geltungsbedingung: versorgungsbeginn_kohorte}
+    feld_bedingung: {feld: kein_lohn_pension, wert: false, grund: "Wer bestaetigt, neben der Rente weder Arbeitslohn noch eine Pension (Versorgungsbezug) zu haben, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus, Schweigen nicht."}
     typ: int
     einheit: Jahr
     bereich: {min: 1955, max: 2060, grund: "Jahr des Versorgungsbeginns; Kohorten-Staffel nach dem Jahr bestimmt den Freibetrag lebenslang."}
@@ -109,6 +114,7 @@ bindungen:
 
   - feld_id: versorgung_art
     quelle: {regel_id: p19_2_versorgungsfreibetrag, geltungsbedingung: art_beamtenrechtlich_oder_nicht}
+    feld_bedingung: {feld: kein_lohn_pension, wert: false, grund: "Wer bestaetigt, neben der Rente weder Arbeitslohn noch eine Pension (Versorgungsbezug) zu haben, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus, Schweigen nicht."}
     typ: enum
     einheit: null
     enum_werte: ["beamtenrechtlich", "hinterbliebene", "erwerbsminderung", "altersgrenze_sonstige"]
@@ -128,6 +134,7 @@ bindungen:
 
   - feld_id: versorgung_alter_bei_beginn
     quelle: {regel_id: p19_2_versorgungsfreibetrag, geltungsbedingung: altersgrenze_sonstige_alter}
+    feld_bedingung: {feld: kein_lohn_pension, wert: false, grund: "Wer bestaetigt, neben der Rente weder Arbeitslohn noch eine Pension (Versorgungsbezug) zu haben, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus, Schweigen nicht."}
     typ: int
     einheit: null
     bereich: {min: 18, max: 100, grund: "Vollendetes Lebensjahr bei Versorgungsbeginn; Alters-Gate nach dem Jahr (63 Lj, 60 Lj bei Schwerbehinderung)."}
@@ -797,6 +804,7 @@ bindungen:
   - feld_id: bruttoarbeitslohn_partner
     vorschlagbar_von: [beleg]
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: bruttoarbeitslohn_partner}
+    feld_bedingung: {feld: kein_lohn_pension_partner, wert: false, grund: "Wer bestaetigt, dass der Ehe-/Lebenspartner weder Arbeitslohn noch eine Pension (Versorgungsbezug) hatte, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension_partner` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus."}
     typ: cent
     einheit: EUR
     askable: true
@@ -831,7 +839,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
   - feld_id: vor_an_anteil_rv_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: vor_gesamtbeitraege_partner}
-    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: der Arbeitnehmeranteil zur Rentenversicherung steht unter Nummer 23 der Lohnsteuerbescheinigung. Er ist ein Anteil des Arbeitslohns — ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) ist er zwangslaeufig null, und es gibt keine Bescheinigung, auf der er stuende. Der Vorsorgeabzug des Partners geht dadurch NICHT verloren: Beitraege ausserhalb der Lohnsteuerbescheinigung — der Weg fuer einen freiwillig oder als Selbstaendiger einzahlenden Partner — laufen ueber `vor_rv_ausserhalb_lstb_partner`, und das bleibt ungegated. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus."}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: der Arbeitnehmeranteil zur Rentenversicherung steht unter Nummer 23 der Lohnsteuerbescheinigung. Er ist ein Anteil des Arbeitslohns — ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) ist er zwangslaeufig null, und es gibt keine Bescheinigung, auf der er stuende. Der Vorsorgeabzug des Partners geht dadurch NICHT verloren: Beitraege ausserhalb der Lohnsteuerbescheinigung — der Weg fuer einen freiwillig oder als Selbstaendiger einzahlenden Partner — laufen ueber `vor_rv_ausserhalb_lstb_partner`, und das bleibt ungegated. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus.", und: {feld: kein_lohn_pension_partner, wert: false, grund: "Wer bestaetigt, dass der Ehe-/Lebenspartner weder Arbeitslohn noch eine Pension (Versorgungsbezug) hatte, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension_partner` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus."}}
     slot_beitrag: summand
     typ: cent
     einheit: EUR
@@ -850,7 +858,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: vor_ag_anteil_rv_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: vor_gesamtbeitraege_partner}
-    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: der Arbeitgeberanteil zur Rentenversicherung steht unter Nummer 22 der Lohnsteuerbescheinigung. Er ist ein Anteil des Arbeitslohns — ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es keinen Arbeitgeber, der ihn traegt. Der Vorsorgeabzug des Partners geht dadurch NICHT verloren: Beitraege ausserhalb der Lohnsteuerbescheinigung laufen ueber `vor_rv_ausserhalb_lstb_partner`, und das bleibt ungegated. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus."}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: der Arbeitgeberanteil zur Rentenversicherung steht unter Nummer 22 der Lohnsteuerbescheinigung. Er ist ein Anteil des Arbeitslohns — ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es keinen Arbeitgeber, der ihn traegt. Der Vorsorgeabzug des Partners geht dadurch NICHT verloren: Beitraege ausserhalb der Lohnsteuerbescheinigung laufen ueber `vor_rv_ausserhalb_lstb_partner`, und das bleibt ungegated. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus.", und: {feld: kein_lohn_pension_partner, wert: false, grund: "Wer bestaetigt, dass der Ehe-/Lebenspartner weder Arbeitslohn noch eine Pension (Versorgungsbezug) hatte, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension_partner` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus."}}
     slot_beitrag: summand
     typ: cent
     einheit: EUR
@@ -1455,7 +1463,7 @@ bindungen:
   # PARTNER_INSTANZ in est_mapping.py routet auf DIESELBEN Person-A-Kz (kein eigenes Ehegatte-Kz).
   - feld_id: steuerklasse_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
-    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: die Steuerklasse steht unter Nummer 1 der Lohnsteuerbescheinigung, die der Arbeitgeber ausstellt. Ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es keinen Arbeitgeber, der eine Lohnsteuerklasse anwendet, und keine Bescheinigung, auf der sie stuende. `bruttoarbeitslohn_partner` erhebt genau diese Existenz. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus — unbeantwortet und ein vorlaeufiger Beleg-Vorschlag lassen die Frage stehen. Das Feld traegt kein elster_kz, entfaellt also aus der Frageliste, ohne der Deklaration etwas zu nehmen."}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: die Steuerklasse steht unter Nummer 1 der Lohnsteuerbescheinigung, die der Arbeitgeber ausstellt. Ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es keinen Arbeitgeber, der eine Lohnsteuerklasse anwendet, und keine Bescheinigung, auf der sie stuende. `bruttoarbeitslohn_partner` erhebt genau diese Existenz. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus — unbeantwortet und ein vorlaeufiger Beleg-Vorschlag lassen die Frage stehen. Das Feld traegt kein elster_kz, entfaellt also aus der Frageliste, ohne der Deklaration etwas zu nehmen.", und: {feld: kein_lohn_pension_partner, wert: false, grund: "Wer bestaetigt, dass der Ehe-/Lebenspartner weder Arbeitslohn noch eine Pension (Versorgungsbezug) hatte, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension_partner` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus."}}
     typ: enum
     enum_werte: ["1", "2", "3", "4", "5", "6"]
     einheit: null
@@ -1484,6 +1492,7 @@ bindungen:
   # geltungsbedingung`). `signatur_slot` ist ein Etikett, der Ring liest beim Feldnamen.
   - feld_id: versorgung_jahresrente_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_jahresrente_partner}
+    feld_bedingung: {feld: kein_lohn_pension_partner, wert: false, grund: "Wer bestaetigt, dass der Ehe-/Lebenspartner weder Arbeitslohn noch eine Pension (Versorgungsbezug) hatte, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension_partner` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus."}
     typ: cent
     einheit: EUR
     askable: true
@@ -1502,6 +1511,7 @@ bindungen:
 
   - feld_id: versorgung_bemessungsgrundlage_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_bemessungsgrundlage_partner}
+    feld_bedingung: {feld: kein_lohn_pension_partner, wert: false, grund: "Wer bestaetigt, dass der Ehe-/Lebenspartner weder Arbeitslohn noch eine Pension (Versorgungsbezug) hatte, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension_partner` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus."}
     typ: cent
     einheit: EUR
     askable: true
@@ -1520,6 +1530,7 @@ bindungen:
 
   - feld_id: versorgung_beginn_jahr_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_beginn_jahr_partner}
+    feld_bedingung: {feld: kein_lohn_pension_partner, wert: false, grund: "Wer bestaetigt, dass der Ehe-/Lebenspartner weder Arbeitslohn noch eine Pension (Versorgungsbezug) hatte, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension_partner` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus."}
     typ: int
     einheit: Jahr
     bereich: {min: 1955, max: 2060, grund: "Jahr des Versorgungsbeginns; Kohorten-Staffel nach dem Jahr bestimmt den Freibetrag lebenslang."}
@@ -1539,6 +1550,7 @@ bindungen:
 
   - feld_id: versorgung_art_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_art_partner}
+    feld_bedingung: {feld: kein_lohn_pension_partner, wert: false, grund: "Wer bestaetigt, dass der Ehe-/Lebenspartner weder Arbeitslohn noch eine Pension (Versorgungsbezug) hatte, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension_partner` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus."}
     typ: enum
     einheit: null
     enum_werte: ["beamtenrechtlich", "hinterbliebene", "erwerbsminderung", "altersgrenze_sonstige"]
@@ -1558,7 +1570,7 @@ bindungen:
 
   - feld_id: versorgung_alter_bei_beginn_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_alter_bei_beginn_partner}
-    feld_bedingung: {feld: versorgung_art_partner, wert: altersgrenze_sonstige, grund: "§ 19 Abs. 2 S. 2 Nr. 2 EStG: das Alters-Gate (63. Lebensjahr, 60. bei Schwerbehinderung) gilt nur fuer Versorgungsbezuege, die nicht auf beamtenrechtlichen oder entsprechenden Vorschriften beruhen und nicht Hinterbliebenen- oder Erwerbsminderungsbezuege sind. `versorgung_art_partner` erhebt genau diese Art. Fail-closed ueber `wert`: nur eine BESTAETIGTE andere Art schliesst die Frage aus; unbeantwortet und vorlaeufig lassen sie stehen."}
+    feld_bedingung: {feld: versorgung_art_partner, wert: altersgrenze_sonstige, grund: "§ 19 Abs. 2 S. 2 Nr. 2 EStG: das Alters-Gate (63. Lebensjahr, 60. bei Schwerbehinderung) gilt nur fuer Versorgungsbezuege, die nicht auf beamtenrechtlichen oder entsprechenden Vorschriften beruhen und nicht Hinterbliebenen- oder Erwerbsminderungsbezuege sind. `versorgung_art_partner` erhebt genau diese Art. Fail-closed ueber `wert`: nur eine BESTAETIGTE andere Art schliesst die Frage aus; unbeantwortet und vorlaeufig lassen sie stehen.", und: {feld: kein_lohn_pension_partner, wert: false, grund: "Wer bestaetigt, dass der Ehe-/Lebenspartner weder Arbeitslohn noch eine Pension (Versorgungsbezug) hatte, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension_partner` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus."}}
     typ: int
     einheit: null
     bereich: {min: 18, max: 100, grund: "Vollendetes Lebensjahr bei Versorgungsbeginn; Alters-Gate nach dem Jahr (63 Lj, 60 Lj bei Schwerbehinderung)."}
@@ -1578,7 +1590,7 @@ bindungen:
 
   - feld_id: p36_lohnsteuer_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
-    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: die Lohnsteuerbescheinigung stellt der Arbeitgeber am Ende des Dienstverhaeltnisses aus; einbehaltene Lohnsteuer, Steuerklasse und die beiden Rentenversicherungsanteile stehen darauf. Ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es weder Arbeitgeber noch Bescheinigung, aus der etwas abzulesen waere. `bruttoarbeitslohn_partner` erhebt genau diese Existenz. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus — unbeantwortet und ein vorlaeufiger Beleg-Vorschlag lassen die Frage stehen. NICHT gegated sind die Vorsorge-Felder des Partners (basis_kv_partner, basis_pv_partner, vorsorge_*_partner und vor_rv_ausserhalb_lstb_partner = Beitraege AUSSERHALB der Lohnsteuerbescheinigung): die traegt auch ein Partner ohne Anstellung, und eine Bedingung darauf naehme ihm den Vorsorgeabzug."}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: die Lohnsteuerbescheinigung stellt der Arbeitgeber am Ende des Dienstverhaeltnisses aus; einbehaltene Lohnsteuer, Steuerklasse und die beiden Rentenversicherungsanteile stehen darauf. Ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es weder Arbeitgeber noch Bescheinigung, aus der etwas abzulesen waere. `bruttoarbeitslohn_partner` erhebt genau diese Existenz. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus — unbeantwortet und ein vorlaeufiger Beleg-Vorschlag lassen die Frage stehen. NICHT gegated sind die Vorsorge-Felder des Partners (basis_kv_partner, basis_pv_partner, vorsorge_*_partner und vor_rv_ausserhalb_lstb_partner = Beitraege AUSSERHALB der Lohnsteuerbescheinigung): die traegt auch ein Partner ohne Anstellung, und eine Bedingung darauf naehme ihm den Vorsorgeabzug.", und: {feld: kein_lohn_pension_partner, wert: false, grund: "Wer bestaetigt, dass der Ehe-/Lebenspartner weder Arbeitslohn noch eine Pension (Versorgungsbezug) hatte, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension_partner` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus."}}
     typ: cent
     nicht_negativ: true
     einheit: EUR

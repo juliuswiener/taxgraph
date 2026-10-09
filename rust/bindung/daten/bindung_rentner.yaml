@@ -751,6 +751,57 @@ bindungen:
       zitatanker: "nur einmal zu gewähren"
       datei: "sources/gesetze-im-internet/estg_p16_2026-07-14.txt"
 
+  # ========================= Eingangsfrage Lohn/Pension (Abweichung Nr. 46) =========================
+  # Zwei Kreuze nach dem Muster `kein_gewinn`: "nein" (true) verbirgt die acht Fragen zu Lohn, Steuerklasse, Lohnsteuer und
+  # Versorgung von Person A (`bruttoarbeitslohn` ... `versorgung_alter_bei_beginn`, `p36_lohnsteuer`) und die zehn des
+  # Ehegatten; "ja" (false) und Schweigen lassen alles stehen. NICHT dahinter: die Kegel-Pflichtfelder `vor_an_anteil_rv`
+  # und `vor_ag_anteil_rv` (verborgen und doch Pflicht ergaebe fuer immer `input_kegel_nicht_bestaetigt`) und `geburtsjahr`/
+  # `geburtsjahr_partner` (tragen auch die 55-Jahre-Frage). Kein `screening`: Ueberspringen darf kein stilles "nein" sein.
+  # ponytail: kein FLAG_NEGIERT. Das Kreuz aendert nur die Fragenliste, nie die Rechnung -- wer "nein" sagt, obwohl ein Lohn
+  # gespeichert ist, bekommt keine Widerspruchsmeldung, der Wert zaehlt weiter (zu viel Steuer, "ja" hebt es auf; Test
+  # `ein_gespeicherter_wert_zaehlt_trotz_nein_weiter`). Mit FLAG_NEGIERT wuerden 42 Lohn-Tests und 3 Orakel-Vergleiche rot,
+  # weil ein unbeantwortetes Kreuz dort wie "ja" zaehlt (konsistenz/src/flag.rs); Ausbau, wenn der Bestand solche Faelle zeigt.
+  - feld_id: kein_lohn_pension
+    quelle: {regel_id: p2_einkunftsart_lohn_pension, geltungsbedingung: kein_arbeitslohn_und_keine_pension}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true
+    eingangsfrage: true
+    fragetext_laie: "Hattest du dieses Jahr neben deiner Rente Arbeitslohn oder eine Pension (Ruhegehalt, Betriebsrente, Witwen- oder Waisengeld)?"
+    hilfe_kurz: "Arbeitslohn: auch ein Minijob oder ein Nebenjob. Pension: Ruhegehalt, Betriebsrente einer Firma, Witwen- oder Waisengeld. Nur die gesetzliche Rente: Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag, kein Deklarationsfeld: es schaltet nur die Fragen zu Lohn und Versorgung ab."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Gehälter, Löhne, Gratifikationen, Tantiemen und andere Bezüge und Vorteile für eine Beschäftigung"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: kein_lohn_pension_partner
+    quelle: {regel_id: p2_einkunftsart_lohn_pension_partner, geltungsbedingung: kein_arbeitslohn_und_keine_pension_partner}
+    feld_bedingung: {feld: veranlagung, wert: zusammen, grund: "§ 26b EStG: nur bei Zusammenveranlagung sind die Einkuenfte des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen. Fail-closed: solange die Veranlagungsart unbeantwortet ist, bleibt das Kreuz stehen."}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true
+    eingangsfrage: true
+    fragetext_laie: "Hatte dein Ehe-/Lebenspartner dieses Jahr Arbeitslohn oder eine Pension (Ruhegehalt, Betriebsrente, Witwen- oder Waisengeld)?"
+    hilfe_kurz: "Arbeitslohn: auch ein Minijob oder ein Nebenjob. Pension: Ruhegehalt, Betriebsrente einer Firma, Witwen- oder Waisengeld. Nur die gesetzliche Rente: Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag, kein Deklarationsfeld: es schaltet nur die Fragen zu Lohn und Versorgung des Partners ab."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Gehälter, Löhne, Gratifikationen, Tantiemen und andere Bezüge und Vorteile für eine Beschäftigung"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
 luecken:
   # -- §22 Nr. 1 — Kohorten-Parameter + State-Annahme --
   - regel_id: p22_1_leibrente_besteuerungsanteil

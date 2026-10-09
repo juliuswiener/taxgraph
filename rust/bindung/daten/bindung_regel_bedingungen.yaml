@@ -413,7 +413,11 @@ instanz_gruppen:
 # Nur der EINSTIEG wird hier festgelegt, nicht die ganze Ordnung: was nicht genannt ist, sortiert
 # sich weiter nach Gewicht und Thema.
 themen_zuerst:
+  - regel_id: p2_einkunftsart_lohn_pension
+    grund: "Die Eingangsfrage nach Arbeitslohn oder Pension steht vor den Fragen, die sie abschaltet. Ohne diesen Eintrag stand sie hinter dem Lohn (gemessen: Platz 57 gegen 13), weil eine feld_bedingung nicht in das Gate-Gewicht zaehlt (relevanz.rs)."
   - regel_id: p2_festzusetzung_einzel
     grund: "Stammdaten (Name, Anschrift, Geburtsdatum, Steuernummer, IBAN, Steuerklasse) plus Bruttoarbeitslohn. Jeder Steuerpflichtige muss sie angeben, sie sind ohne Nachschlagen zu beantworten und sie eroeffnen den Fragebogen in der Form, die ein Papierformular auch haette."
+  - regel_id: p2_einkunftsart_lohn_pension_partner
+    grund: "Die Eingangsfrage nach Arbeitslohn oder Pension des Partners steht vor den Fragen, die sie abschaltet, und hinter `veranlagung`, weil sie nur bei Zusammenveranlagung erscheint."
   - regel_id: p2_festzusetzung_zusammen
     grund: "Dieselben Angaben fuer den Ehe-/Lebenspartner. Steht direkt hinter den eigenen Stammdaten, weil es dieselbe Sorte Frage ist — und entfaellt ganz, sobald veranlagung=einzel bestaetigt ist."

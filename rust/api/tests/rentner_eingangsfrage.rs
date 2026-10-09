@@ -134,6 +134,21 @@ async fn antworte(d: &Dienst, feld: &str, wert: Value) {
     assert_eq!(status, 201, "POST {feld}: {antwort}");
 }
 
+/// Aendert eine bestehende Antwort: der Store verlangt die `event_id` des aktiven Events als `ersetzt`.
+async fn aendere(d: &Dienst, feld: &str, wert: Value) {
+    let (status, stand) = sende(d, "GET", "/fall/reh/stand", None).await;
+    assert_eq!(status, 200, "GET /stand: {stand}");
+    let rumpf = json!({
+        "feld_id": feld, "wert": wert, "zustand": "bestaetigt", "schreiber": "ui:laie",
+        "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": format!("ok@{feld}")},
+        "ts": "2026-01-02T00:00:00+00:00",
+        "ersetzt": stand["felder"][feld]["event_id"].clone(),
+    });
+    let (status, antwort) = sende(d, "POST", "/fall/reh/event", Some(&rumpf)).await;
+    assert_eq!(status, 201, "POST (aendern) {feld}: {antwort}");
+}
+
 async fn neuer_fall() -> Dienst {
     let d = dienst();
     let kopf = json!({"fall_id": "reh", "scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025});
@@ -352,8 +367,8 @@ async fn der_wechsel_von_nein_auf_ja_zeigt_die_felder_wieder() {
     antworte(&d, "kein_lohn_pension_partner", json!(true)).await;
     let nein = fragen_ids(&d).await;
     assert!(vorhandene(&nein, &A_HINTER_DEM_KREUZ).is_empty() && vorhandene(&nein, &P_HINTER_DEM_KREUZ).is_empty());
-    antworte(&d, "kein_lohn_pension", json!(false)).await;
-    antworte(&d, "kein_lohn_pension_partner", json!(false)).await;
+    aendere(&d, "kein_lohn_pension", json!(false)).await;
+    aendere(&d, "kein_lohn_pension_partner", json!(false)).await;
     let ja = fragen_ids(&d).await;
     assert!(fehlende(&ja, &A_HINTER_DEM_KREUZ).is_empty(), "A fehlt nach dem Wechsel: {:?}", fehlende(&ja, &A_HINTER_DEM_KREUZ));
     assert!(fehlende(&ja, &P_HINTER_DEM_KREUZ).is_empty(), "Ehegatte fehlt nach dem Wechsel: {:?}", fehlende(&ja, &P_HINTER_DEM_KREUZ));
@@ -472,6 +487,12 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter() {
     let nein = zahl(&d).await;
     assert!(ohne_lohn < offen, "der Lohn des Ehegatten zaehlt nicht: {ohne_lohn} gegen {offen}");
     assert_eq!(nein, offen, "das Kreuz hat die Rechnung geaendert");
+    let (_, stand) = sende(&d, "GET", "/fall/reh/stand", None).await;
+    assert_eq!(
+        stand["felder"]["bruttoarbeitslohn_partner"]["wert"],
+        json!(6_000_000),
+        "der gespeicherte Lohn ist nach dem Kreuz nicht mehr im Store: {stand}"
+    );
     // Person A, gleiches Verhalten.
     let a_lohn = mit(rentner(4_000_000, "einzel"), vec![("bruttoarbeitslohn", json!(3_000_000)), ("steuerklasse", json!("1"))]);
     let a_offen = zahl(&fall_mit(&a_lohn).await).await;

@@ -20,6 +20,7 @@ scheibe: "§36 Anrechnung (Abschlusszahlung/Erstattung)"
 bindungen:
   - feld_id: p36_lohnsteuer
     quelle: {regel_id: p36_2_anrechnung, signatur_slot: lohnsteuer}
+    feld_bedingung: {feld: kein_lohn_pension, wert: false, grund: "Wer bestaetigt, neben der Rente weder Arbeitslohn noch eine Pension (Versorgungsbezug) zu haben, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus, Schweigen nicht."}
     typ: cent
     nicht_negativ: true
     einheit: EUR
