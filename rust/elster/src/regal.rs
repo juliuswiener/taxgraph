@@ -160,25 +160,35 @@ pub(crate) const REGAL: &[Datei] = &[
                 },
             ),
             // Abweichung Nr. 48: die Zeile "Sonstiges" der Anlage N fuer die Unfallkosten gibt es in Python nicht; der Test deckt die Literale.
+            // Abweichung Nr. 49: dieselben Kz tragen die zweite Zeile (Abzug nach § 34c Abs. 2), die Summe bildet beide Zeilen.
             (
                 "UNFALLKOSTEN_TEXT_KZ",
                 Zuordnung::Verhalten {
                     kz: &["E0205405"],
-                    tests: &["unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges"],
+                    tests: &[
+                        "unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges",
+                        "abzug_steht_als_zweite_zeile_sonstiges_und_die_summe_bildet_beide_zeilen",
+                    ],
                 },
             ),
             (
                 "UNFALLKOSTEN_BETRAG_KZ",
                 Zuordnung::Verhalten {
                     kz: &["E0205406"],
-                    tests: &["unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges"],
+                    tests: &[
+                        "unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges",
+                        "abzug_steht_als_zweite_zeile_sonstiges_und_die_summe_bildet_beide_zeilen",
+                    ],
                 },
             ),
             (
                 "WEITERE_WK_SUMME_KZ",
                 Zuordnung::Verhalten {
                     kz: &["E0204803"],
-                    tests: &["unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges"],
+                    tests: &[
+                        "unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges",
+                        "abzug_steht_als_zweite_zeile_sonstiges_und_die_summe_bildet_beide_zeilen",
+                    ],
                 },
             ),
             // Diese Regeln stehen als Literale in Methoden von `Bau`; ihr Top-Level-Name ist `deklariere`.

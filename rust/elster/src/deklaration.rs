@@ -1812,6 +1812,75 @@ mod tests {
         }
     }
 
+    /// Abweichung Nr. 49: der Ring-Wert `dba_abzug_zeile_cent` steht als ZWEITE Zeile "Sonstiges" in der Gruppe `weitere_wk`,
+    /// Instanz 2, aufgerundet, mit einer Bezeichnung, die § 34c nennt; `E0204803` ist die Summe der GERUNDETEN Zeilen
+    /// (Unfallkosten in `deklaration`, Abzug in der Instanz). Der Wert allein sperrt nichts (die Sperre haengt am Marker
+    /// `dba_abzug_statt_anrechnung`); bei 0 steht keine Zeile. Das Regal fuehrt die Literale mit diesem Test.
+    #[test]
+    fn abzug_steht_als_zweite_zeile_sonstiges_und_die_summe_bildet_beide_zeilen() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("berechnet"),
+                pruef_tiefe: PruefTiefe::Amtlich,
+                haftung: a("system"),
+            }
+            .into(),
+        };
+        assert_eq!(domain::zeichensatz::erstes_unerlaubtes_zeichen(super::DBA_ABZUG_ZEILE_TEXT), None);
+        // (Unfallkosten in Cent, Abzug in Cent) -> (Zeile Unfallkosten, Zeile Abzug, Summe), volle Euro
+        let faelle = [
+            (None, Some(70_001), None, Some(701), Some(701)),
+            (Some(150_001), Some(70_001), Some(1501), Some(701), Some(2202)),
+            (Some(150_001), None, Some(1501), None, Some(1501)),
+            (Some(150_001), Some(0), Some(1501), None, Some(1501)),
+            (None, Some(0), None, None, None),
+        ];
+        for (unfall, abzug, z_unfall, z_abzug, summe) in faelle {
+            let mut felder = Felder::new();
+            if let Some(c) = unfall {
+                felder.insert("ep_unfallkosten".to_owned(), feld(json!(c)));
+            }
+            if let Some(c) = abzug {
+                felder.insert("dba_abzug_zeile_cent".to_owned(), feld(json!(c)));
+            }
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            let name = format!("Unfall {unfall:?}, Abzug {abzug:?}");
+            assert_eq!(d.deklaration.get("E0205406"), z_unfall.map(|e| json!(e)).as_ref(), "{name}: Zeile Unfallkosten");
+            assert_eq!(d.deklaration.get("E0204803"), summe.map(|e| json!(e)).as_ref(), "{name}: Summe");
+            let instanzen: Vec<_> = d.anlage_instanzen.iter().filter(|(g, _)| g == "weitere_wk").collect();
+            if let Some(e) = z_abzug {
+                assert_eq!(instanzen.len(), 1, "{name}: genau eine Gruppe weitere_wk");
+                let zeilen = &instanzen[0].1;
+                assert_eq!(zeilen.len(), 1, "{name}: genau eine Zeile");
+                assert_eq!(zeilen[0].index, 2, "{name}: Instanz 2");
+                assert_eq!(zeilen[0].felder.get("E0205406"), Some(&json!(e)), "{name}: Betrag");
+                let text = zeilen[0].felder.get("E0205405").and_then(Value::as_str).unwrap_or_default();
+                assert!(text.contains("34c") && !text.contains("Unfall"), "{name}: Bezeichnung `{text}`");
+                assert!(d.nicht_deklariert.iter().all(|e| e.feld_id != "dba_abzug_zeile_cent"), "{name}");
+            } else {
+                assert!(instanzen.is_empty(), "{name}: keine Gruppe weitere_wk");
+            }
+            let sperre_unfall = unfall.is_some();
+            assert_eq!(
+                d.unvollstaendig().iter().any(|e| e.feld_id == "ep_unfallkosten"),
+                sperre_unfall,
+                "{name}: nur die Unfallkosten sperren"
+            );
+            assert!(d.unvollstaendig().iter().all(|e| e.feld_id != "dba_abzug_zeile_cent"), "{name}: der Ring-Wert sperrt nichts");
+        }
+    }
+
     /// Python `dict.get(wert)` an allen drei Aufrufstellen der Enum-Felder: Konfession (`feld`),
     /// Rentenart als Instanz (`instanz_feld`) und beim Partner (`verzweigung`). Drei
     /// Nicht-Treffer bleiben getrennt: Text ohne Schluessel und Null/Bool/Zahl geben keinen Code,
