@@ -33,7 +33,7 @@ const SCHULGELD_ANTEIL: &str = "kind_schulgeld_aufteilung_prozent";
 const SCHULGELD_ANTEIL_HAELFTE: i64 = 50;
 
 /// Nur Rust (Abweichung Nr. 28): Unfallkosten auf dem Weg zur Arbeit, zusaetzlich zur Entfernungspauschale.
-const UNFALLKOSTEN: &str = "ep_unfallkosten";
+pub(crate) const UNFALLKOSTEN: &str = "ep_unfallkosten";
 
 /// Die Zeile "Sonstiges" der Anlage N, in die die Unfallkosten gehoeren (Abweichung Nr. 48, `N/Wk/Weitere_Wk/Sonst`,
 /// `E10-2025.xsd:18231-18274`; Anleitung zur Anlage N "Zeile 62 bis 64"): Bezeichnung, Betrag in volle Euro (aufgerundet,
@@ -41,6 +41,15 @@ const UNFALLKOSTEN: &str = "ep_unfallkosten";
 const UNFALLKOSTEN_TEXT_KZ: &str = "E0205405";
 const UNFALLKOSTEN_BETRAG_KZ: &str = "E0205406";
 const WEITERE_WK_SUMME_KZ: &str = "E0204803";
+
+/// Die drei Kz der Zeile "Sonstiges", die `Bau::unfallkosten` aus EINEM Feld ableitet (kein Bindungs-Kz, wie bei der IBAN):
+/// die Abdeckungstests (`abdeckung.rs`) kennen sie als Transform-Ziele.
+#[cfg(test)]
+pub(crate) const UNFALLKOSTEN_ZIEL_KZ: [&str; 3] = [
+    UNFALLKOSTEN_TEXT_KZ,
+    UNFALLKOSTEN_BETRAG_KZ,
+    WEITERE_WK_SUMME_KZ,
+];
 
 /// Die Bezeichnung in `E0205405`. Das Schema (`NAEnum_BEWERBUNGSKOSTEN_3`) kennt keine Aufzaehlung; ob ERiC den Text gegen die
 /// Namensliste der Dokumentation prueft, ist ohne `checkESt` offen (deshalb bleibt die Sperre).
@@ -1674,6 +1683,59 @@ mod tests {
                 anrechnung.map(|e| json!(e)).as_ref(),
                 "Wahl {wahl} {zustand:?}, {cent} Cent: Anrechnung"
             );
+        }
+    }
+
+    /// Abweichung Nr. 48: ein bestaetigter Betrag ueber 0 in `ep_unfallkosten` steht aufgerundet unter `E0205406`, mit der
+    /// Bezeichnung `E0205405` und der Summe `E0204803`, UND sperrt die Abgabe; bei 0 steht nichts in der Deklaration und der
+    /// Betrag bleibt in `nicht_deklariert`. Das Regal (`regal.rs`) fuehrt die drei Literale als `Verhalten` mit diesem Test.
+    #[test]
+    fn unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        // Cent -> (Betrag E0205406, ob die Zeile steht)
+        for (cent, euro) in [(150_000, Some(1500)), (150_001, Some(1501)), (1, Some(1)), (0, None)] {
+            let felder = Felder::from([("ep_unfallkosten".to_owned(), feld(json!(cent)))]);
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            let zeile = ["E0205405", "E0205406", "E0204803"].map(|kz| d.deklaration.get(kz));
+            match euro {
+                Some(e) => {
+                    assert_eq!(zeile[1], Some(&json!(e)), "{cent} Cent: Betrag");
+                    assert_eq!(zeile[2], Some(&json!(e)), "{cent} Cent: Summe");
+                    assert!(
+                        zeile[0].and_then(Value::as_str).is_some_and(|t| t.contains("Unfall")),
+                        "{cent} Cent: Bezeichnung {:?}",
+                        zeile[0]
+                    );
+                    assert!(
+                        d.unvollstaendig().iter().any(|e| e.feld_id == "ep_unfallkosten"),
+                        "{cent} Cent: die Sperre ist weg"
+                    );
+                    assert!(d.nicht_deklariert.iter().all(|e| e.feld_id != "ep_unfallkosten"));
+                }
+                None => {
+                    assert!(zeile.iter().all(Option::is_none), "{cent} Cent: {zeile:?}");
+                    assert!(d.unvollstaendig().is_empty(), "{cent} Cent: {:?}", d.unvollstaendig());
+                    assert!(d.nicht_deklariert.iter().any(|e| e.feld_id == "ep_unfallkosten"));
+                }
+            }
         }
     }
 
