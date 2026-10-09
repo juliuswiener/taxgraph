@@ -291,6 +291,11 @@ async fn eine_halb_gefuellte_lohn_gruppe_nennt_lohn_und_steuerklasse() {
     let text = pflicht_text(&v);
     assert!(text.contains("Bruttoarbeitslohn"), "{text}");
     assert!(text.contains("Steuerklasse"), "{text}");
+    // Die Frage endet am Fragezeichen: der Klammerzusatz dahinter gehoert zum Hilfetext, nicht in den Satz.
+    assert!(
+        !text.contains("(steht auf der Lohnsteuerbescheinigung)"),
+        "{text}"
+    );
     assert!(!text.contains("Nachname"), "keine Stammdaten-Luecke: {text}");
     assert!(!text.contains(EINGANGSFRAGE), "Kreuz nicht gesetzt: {text}");
 }
