@@ -250,11 +250,37 @@ async fn sieben_stammdaten_sind_ein_item_mit_sieben_fragen() {
     let d = rentner_mit(&[]).await;
     let text = pflicht_text(&vorab(&d).await);
     assert_eq!(text.matches('»').count(), 7, "{text}");
+    // Der Rahmensatz sagt, was die Liste bedeutet: ohne ihn stuende nur eine Reihe von Fragen im Kasten.
+    assert!(
+        text.starts_with(
+            "Für die Abgabe fehlen noch Angaben. Bitte beantworte: »Wie lautet dein Nachname?«"
+        ),
+        "{text}"
+    );
     assert!(text.contains("Wie lautet dein Nachname?"), "{text}");
     assert!(text.contains("Kirche"), "{text}");
     // Die letzte Frage haengt mit "und" an, die davor mit Komma.
     assert!(text.contains("?« und »Gehörst du einer Kirche"), "{text}");
     assert!(text.contains("?«, »Wie lautet dein Vorname?"), "{text}");
+}
+
+/// Fehlt genau eine Angabe, steht genau diese eine Frage im Satz, ohne "und" und ohne Komma davor. Das ist der
+/// haeufigste Fall im Alltag (alles ausgefuellt bis auf eine Angabe).
+#[tokio::test]
+async fn eine_offene_frage_steht_allein_im_satz() {
+    let ohne_nachname: Paare = stammdaten()
+        .into_iter()
+        .filter(|(f, _)| *f != "stammdaten_nachname")
+        .collect();
+    let d = rentner_mit(&mit(kegel(), ohne_nachname)).await;
+    let v = vorab(&d).await;
+    assert_eq!(v["status"], "AMBER", "{v}");
+    let text = pflicht_text(&v);
+    assert_eq!(text.matches('»').count(), 1, "{text}");
+    assert_eq!(
+        text,
+        "Für die Abgabe fehlen noch Angaben. Bitte beantworte: »Wie lautet dein Nachname?«."
+    );
 }
 
 // ------------------------------------------------------------------------------------------------ AK2
@@ -337,9 +363,36 @@ async fn ein_nein_mit_gespeicherter_lohnsteuer_nennt_die_eingangsfrage() {
     assert_eq!(v["status"], "AMBER", "{v}");
     let text = pflicht_text(&v);
     assert!(text.contains(EINGANGSFRAGE), "{text}");
+    // Der Nutzer hat "nein" angekreuzt; der Satz sagt, welche Antwort er pruefen soll.
+    assert!(text.contains("hast du „nein“ angekreuzt"), "{text}");
     assert!(!text.contains("Bruttoarbeitslohn"), "{text}");
     assert!(!text.contains("Steuerklasse"), "{text}");
     assert!(!text.contains('_'), "{text}");
+}
+
+/// Wie A4, aber der gespeicherte Wert ist der Lohn: Dann fehlen Steuerklasse UND Lohnsteuer, beide hinter dem Kreuz.
+/// Der Satz nennt nur die Eingangsfrage (ein Fragezeichen-Paar), keine der beiden verborgenen Fragen.
+#[tokio::test]
+async fn ein_nein_mit_gespeichertem_lohn_nennt_nur_die_eingangsfrage() {
+    let d = rentner_mit(&mit(
+        mit(kegel(), stammdaten()),
+        vec![
+            ("bruttoarbeitslohn", json!(4_000_000)),
+            ("kein_lohn_pension", json!(true)),
+        ],
+    ))
+    .await;
+    let sichtbar = fragen_ids(&d).await;
+    for feld in ["bruttoarbeitslohn", "steuerklasse", "p36_lohnsteuer"] {
+        assert!(!sichtbar.iter().any(|f| f == feld), "{feld} sichtbar");
+    }
+    let v = vorab(&d).await;
+    assert_eq!(v["status"], "AMBER", "{v}");
+    let text = pflicht_text(&v);
+    assert!(text.contains(EINGANGSFRAGE), "{text}");
+    // Genau eine Frage in »«: die Eingangsfrage. Eine genannte Lohnsteuer- oder Steuerklassen-Frage waere die zweite.
+    assert_eq!(text.matches('»').count(), 1, "{text}");
+    assert!(!text.contains("Bitte beantworte"), "{text}");
 }
 
 /// Kreuz "ja" (es gibt Lohn oder Pension): die Lohn-Gruppe ist sichtbar und wird mit ihren Fragen genannt.
