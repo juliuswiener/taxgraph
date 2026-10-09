@@ -808,8 +808,10 @@ fn iban_pruefziffer_gueltig(iban: &str) -> bool {
 }
 
 /// `_pflichtfelder_luecken` (`est_mapping.py:496-513`): sieht Feld-ABWESENHEIT, die die
-/// Hauptschleife per Konstruktion nicht sehen kann.
-fn pflichtfelder_luecken(snapshot: &Felder) -> Vec<Eintrag> {
+/// Hauptschleife per Konstruktion nicht sehen kann. Oeffentlich seit Abweichung Nr. 47: `GET /preflight` nennt dieselben
+/// Luecken wie `GET /deklaration` (`pflichtfelder_vollstaendig`), statt eine zweite Liste zu fuehren.
+#[must_use]
+pub fn pflichtfelder_luecken(snapshot: &Felder) -> Vec<Eintrag> {
     let mut luecken = Vec::new();
     for (bedingung, version, felder) in PFLICHTFELDER {
         if matches!(bedingung, PflichtBedingung::AlleOderKeins)

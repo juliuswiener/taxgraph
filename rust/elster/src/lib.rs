@@ -49,8 +49,8 @@ mod xmllint;
 mod xsd;
 
 pub use deklaration::{
-    deklariere, Aggregat, AnlageInstanz, BindungIndex, Deklaration, DeklarationsFehler, Eintrag,
-    Felder, KindAnlage,
+    deklariere, pflichtfelder_luecken, Aggregat, AnlageInstanz, BindungIndex, Deklaration,
+    DeklarationsFehler, Eintrag, Felder, KindAnlage,
 };
 pub use eric::{
     eric_log_pfad, find_eric_lib, gekappt_verdacht, klasse_name, klassifiziere_rc, nicht_geprueft,

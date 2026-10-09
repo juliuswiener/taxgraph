@@ -4,7 +4,7 @@
 //!
 //! Der Hinweis sperrt nichts und ist kein Freigabe-Kriterium: Er steht in `items`, die Ampel steigt hoechstens von GREEN auf
 //! AMBER, RED bleibt RED. Die Quelle ist `elster::pflichtfelder_luecken`, dieselbe Liste, die `/deklaration` liest (7
-//! Stammdaten, zwei "alle oder keins"-Gruppen); sie kennt weniger als ERiC. Ein fehlender Hinweis heisst deshalb NICHT
+//! Stammdaten, zwei "alle oder keins"-Gruppen); sie kennt weniger als `ERiC`. Ein fehlender Hinweis heisst deshalb NICHT
 //! "abgabefaehig".
 //!
 //! Gemessen wird ueber die HTTP-Schnittstelle, so wie die Oberflaeche sie liest (`items`, nicht `status`).
@@ -352,7 +352,7 @@ async fn ein_ja_zur_eingangsfrage_laesst_die_lohn_gruppe_beim_namen() {
 }
 
 /// Die Pflichtliste kennt keine Felder des Ehegatten. Eine gespeicherte Lohnsteuer des Ehegatten ohne Lohn ergibt
-/// deshalb KEINEN Pflichtfeld-Hinweis, auch mit Kreuz "nein". Das ist die Grenze der Liste (ERiC kennt mehr), kein
+/// deshalb KEINEN Pflichtfeld-Hinweis, auch mit Kreuz "nein". Das ist die Grenze der Liste (`ERiC` kennt mehr), kein
 /// Freibrief: Ein fehlender Hinweis heisst nicht "abgabefaehig".
 #[tokio::test]
 async fn die_pflichtliste_kennt_den_ehegatten_nicht() {
