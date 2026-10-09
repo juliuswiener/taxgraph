@@ -1503,7 +1503,9 @@ bindungen:
   # `feld_bedingung`): die Ausloeser sind drei, `feld_bedingung` kennt nur UND.
   # ponytail: immer fragen kostet jedem Nutzer mit Geraet zwei Fragen; ODER in `feld_bedingung` fragte nur bei Bedarf.
   # ponytail: nur das Kaufjahr; Folgejahre traegt der Nutzer in `afa_jahresbetrag` ein (die Restjahr-Rechnung fehlt).
-  # Eigene Slot-Etiketten, nicht die der Arbeitsmittel-Felder (Test `registry_quer`). KEIN `vorjahr`-Flag (bewusst, vgl.
+  # Eigene Slot-Etiketten, nicht die der Arbeitsmittel-Felder (Test `die_slot_namen_der_geraetefelder_gehoeren_in_der_scheibe_nur_ihnen`
+  # in `rust/bescheid/tests/gwg_einzel_afa.rs`; `registry_quer` zaehlt Slots je `regel_id` und sieht den Namensgleichstand nicht).
+  # KEIN `vorjahr`-Flag (bewusst, vgl.
   # `am_afa_ist_anschaffungsjahr`): Kaufmonat und Nutzungsdauer gehoeren zu diesem Geraet in diesem Jahr, eine Uebernahme aus
   # dem Vorjahr waere falsch. Ein vorlaeufiger Wert machte ausserdem die ganze `gwg`-Instanz vorlaeufig (die festgesetzte Zahl
   # liesse ein Geraet mit Sofortabzug still weg).
