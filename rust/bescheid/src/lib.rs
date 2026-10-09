@@ -79,6 +79,10 @@ pub enum BescheidFehler {
     /// Aufrufer ohne Guard gerechnet. Rust-eigen, Python kennt ihn nicht.
     #[error("Kinderfreibetrag je Kind nicht bestimmbar ({0}); der Guard haette sperren muessen")]
     KindFreibetragGesperrt(Sperrgrund),
+    /// Der Versorgungsbezug passt nicht zum Bruttoarbeitslohn ([`Sperrgrund::VersorgungUeberLohn`], Abweichung Nr. 50). Der
+    /// K2-Guard faengt das vorher ab; kommt der Fehler an, hat ein Aufrufer ohne Guard gerechnet. Rust-eigen.
+    #[error("Versorgungsbezug und Bruttoarbeitslohn passen nicht zusammen ({0}); der Guard haette sperren muessen")]
+    VersorgungGesperrt(Sperrgrund),
 }
 
 impl BescheidFehler {
@@ -99,7 +103,7 @@ impl BescheidFehler {
             Self::BindungFehlt => Some("AttributeError"),
             Self::SlotFehlt(_) => Some("KeyError"),
             Self::Python { klasse, .. } => Some(klasse),
-            Self::Ueberlauf(_) | Self::KindFreibetragGesperrt(_) => None,
+            Self::Ueberlauf(_) | Self::KindFreibetragGesperrt(_) | Self::VersorgungGesperrt(_) => None,
         }
     }
 

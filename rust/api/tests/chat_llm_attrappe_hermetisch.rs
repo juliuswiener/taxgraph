@@ -445,7 +445,7 @@ async fn chat_vom_dienst_bis_zur_akte_lauf() {
         "{system}"
     );
     assert!(system.contains("(Typ int, Bereich {'min': 20, 'max': 100, 'grund': 'Spannweite des Grads der Behinderung des Kindes."), "{system}");
-    assert!(system.contains("- bruttoarbeitslohn: Wie hoch war dein Bruttoarbeitslohn dieses Jahr? (steht auf der Lohnsteuerbescheinigung) (Typ cent)"), "{system}");
+    assert!(system.contains("- bruttoarbeitslohn: Wie hoch war dein Bruttoarbeitslohn dieses Jahr? (Nummer 3 der Lohnsteuerbescheinigung) (Typ cent)"), "{system}");
     assert!(
         !system.contains("- kap_antrag_guenstigerpruefung:"),
         "{system}"
@@ -614,8 +614,8 @@ async fn chat_vom_dienst_bis_zur_akte_lauf() {
     .await;
     assert_eq!(s, 200, "{a}");
     let system = nachricht(&dialog_anfrage(&gesehen), "system");
-    let kopf = "Die Frage, um die es geht: „Wie hoch war dein Bruttoarbeitslohn dieses Jahr? (steht auf der Lohnsteuerbescheinigung)“\n\
-Dazu gehört laut Feldbeschreibung: Der Bruttoarbeitslohn einschließlich Sachbezüge steht unter Nummer 3 der Lohnsteuerbescheinigung.\n\
+    let kopf = "Die Frage, um die es geht: „Wie hoch war dein Bruttoarbeitslohn dieses Jahr? (Nummer 3 der Lohnsteuerbescheinigung)“\n\
+Dazu gehört laut Feldbeschreibung: Der Bruttoarbeitslohn einschließlich Sachbezüge steht unter Nummer 3 der Lohnsteuerbescheinigung. Hast du Versorgungsbezüge (Nummer 8), sind sie in diesem Betrag schon enthalten: Trag Nummer 3 unverändert ein.\n\
 Wörtlicher Gesetzestext dazu — § 19 Abs. 1 S. 1 Nr. 1 EStG: „Gehälter, Löhne, Gratifikationen, Tantiemen und andere Bezüge und Vorteile für eine Beschäftigung“\n\
 Das hat der Nutzer bereits bestätigt:\n";
     let von = system

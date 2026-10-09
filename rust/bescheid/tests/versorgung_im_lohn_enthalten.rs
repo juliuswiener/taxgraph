@@ -3,7 +3,7 @@
 //!
 //! **Worum es geht.** Wer Versorgungsbezuege hat, bekommt eine Lohnsteuerbescheinigung. Nr. 3 ist der Bruttoarbeitslohn und
 //! ENTHAELT den Bezug; Nr. 8 nennt den Bezug noch einmal einzeln ("in 3. enthaltene Versorgungsbezuege", Vordruck Anlage N
-//! Zeile 11: "im Bruttoarbeitslohn laut Zeile 5 enthalten"). TaxGraph fragt beide Betraege. Der Bescheid addierte sie bisher:
+//! Zeile 11: "im Bruttoarbeitslohn laut Zeile 5 enthalten"). `TaxGraph` fragt beide Betraege. Der Bescheid addierte sie bisher:
 //! der Bezug zahlte doppelt Steuer.
 //!
 //! **Warum es zaehlt.** Wer Nr. 3 und Nr. 8 abschreibt, bekam einen Gesamtbetrag der Einkuenfte, der um den Bezug (abzueglich
@@ -292,6 +292,39 @@ fn das_alters_gate_haelt_den_bezug_im_lohn() {
     assert_eq!(altersgrenze(63, 0), 47_381, "63 Jahre: Versorgungsbezug");
     assert_eq!(altersgrenze(59, 50), 48_770, "59 Jahre, Grad 50: Arbeitslohn");
     assert_eq!(altersgrenze(60, 50), 47_381, "60 Jahre, Grad 50: Versorgungsbezug");
+}
+
+/// § 24a Satz 2 Nr. 1: Versorgungsbezuege bleiben bei der Bemessung des Altersentlastungsbetrags ausser Betracht. Der Lohn
+/// enthaelt den Bezug, also ist die Bemessung Lohn minus Bezug. Geboren 1955 (Kohorte 2020: 16,0 %, hoechstens 760 Euro,
+/// `estg_p24a_2026-07-13.txt`): Lohn 6.000 mit Bezug 4.000 → Arbeitslohn 2.000 → 16,0 % = 320. Bliebe der Bezug in der Bemessung,
+/// waeren es 16,0 % von 6.000 = 960, gekappt auf 760. Vor dem Alters-Gate ist der Bezug Arbeitslohn und bleibt in der Bemessung.
+#[test]
+fn der_altersentlastungsbetrag_bemisst_sich_ohne_den_versorgungsbezug_im_lohn() {
+    let betrag = |zusammen: bool, person_b: bool, gate_alter: Option<i64>| {
+        let (lohn_p, mut bezug, geburtsjahr) = if person_b {
+            (lohn_partner(6_000), versorgung_partner(4_000), "geburtsjahr_partner")
+        } else {
+            (lohn(6_000), versorgung(4_000), "geburtsjahr")
+        };
+        if let Some(alter) = gate_alter {
+            let (art, alter_feld) = if person_b {
+                ("versorgung_art_partner", "versorgung_alter_bei_beginn_partner")
+            } else {
+                ("versorgung_art", "versorgung_alter_bei_beginn")
+            };
+            bezug.push((art, json!("altersgrenze_sonstige")));
+            bezug.push((alter_feld, json!(alter)));
+        }
+        let basis = [lohn_p, bezug].concat();
+        let ohne = gdb(&rentner(zusammen, basis.clone()));
+        let mut p = basis;
+        p.push((geburtsjahr, json!(1955)));
+        ohne - gdb(&rentner(zusammen, p))
+    };
+    assert_eq!(betrag(false, false, None), 320, "Person A");
+    assert_eq!(betrag(true, true, None), 320, "Person B");
+    assert_eq!(betrag(false, false, Some(62)), 760, "Person A vor dem Alters-Gate: der Bezug ist Arbeitslohn");
+    assert_eq!(betrag(false, false, Some(63)), 320, "Person A ab dem Alters-Gate");
 }
 
 /// KONTROLLE: ohne Bezug aendert sich nichts. Der Lohn allein ist Lohn minus Pauschbetrag (20.000 − 1.230 = 18.770).

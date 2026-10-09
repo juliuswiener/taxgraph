@@ -12,7 +12,7 @@
 //! Sperre, die Inhalte der echten Deklaration (`deklaration`, `person_b`, `anlage_instanzen`) kommen hinein. Was `deklariere`
 //! berechnet hat, kommt aus dem Store, nicht aus dem Test. Fehlt das ERiC-Schema (CI), entfaellt der XML-Test.
 //!
-//! `checkest_nimmt_die_zeilen_11_bis_13_an` ist `#[ignore]`: er braucht ERiC und die registrierte Hersteller-ID
+//! `checkest_nimmt_die_zeilen_11_bis_13_an` ist `#[ignore]`: er braucht `ERiC` und die registrierte Hersteller-ID
 //! (`ELSTER_HERSTELLER_ID`, nie im Repo, nie in einer Meldung). Er prueft nur offline (`ERIC_VALIDIERE`), nichts geht raus.
 #![allow(
     clippy::unwrap_used,
@@ -176,11 +176,16 @@ fn alle_tags<'a>(xml: &'a str, tag: &str) -> Vec<&'a str> {
     gefunden
 }
 
+/// Die Optionen der Produktion (`einreichungs_xml`): Jahr, Empfaenger, `abgabefaehig` und der Testmerker aus dem Standard. Ohne
+/// sie fehlt dem XML der Vorsatz, und `checkESt` meldet die Pflichtfelder von Absender und Unterfallart.
 fn xml_von(d: &Deklaration, felder: &Felder, hersteller: Option<&str>) -> String {
     erzeuge_xml(
         d,
         &XmlOptionen {
+            vz: 2025,
+            empfaenger_land: "BY".to_owned(),
             hersteller_id: hersteller.map(str::to_owned),
+            abgabefaehig: true,
             snapshot: Some(felder),
             ..XmlOptionen::default()
         },
@@ -233,7 +238,7 @@ fn der_bezug_steht_in_den_zeilen_11_bis_13_und_zeile_5_bleibt_der_lohn() {
     assert_eq!(trio(&d.person_b), None, "Person B hat keinen Bezug");
 }
 
-/// Beide Betraege auf volle Euro ABgerundet, wie der Bescheid (`cent_zu_euro`): 30.000,99 -> 30000, 28.000,50 -> 28000.
+/// Beide Betraege auf volle Euro abgerundet, wie der Bescheid (`cent_zu_euro`): 30.000,99 -> 30000, 28.000,50 -> 28000.
 #[test]
 fn die_zeilen_runden_ab_wie_der_bescheid() {
     let (d, _) = deklaration(&mit(lohn(50_000), bezug(3_000_099, 2_800_050, 2020, "beamtenrechtlich")));
@@ -259,11 +264,13 @@ fn das_alters_gate_entscheidet_ob_die_zeilen_stehen() {
 /// unter 1 Euro geben keine Zeile, auch kein Teil des Trios.
 #[test]
 fn ohne_bezug_oder_ohne_betrag_stehen_keine_zeilen() {
-    let faelle: [(&str, Paare); 4] = [
+    let faelle: [(&str, Paare); 5] = [
         ("kein Bezug", lohn(50_000)),
         ("Bezug 0", mit(lohn(50_000), bezug(0, 2_800_000, 2020, "beamtenrechtlich"))),
         ("Bemessungsgrundlage 0", mit(lohn(50_000), bezug(3_000_000, 0, 2020, "beamtenrechtlich"))),
         ("Bezug unter 1 Euro", mit(lohn(50_000), bezug(99, 99, 2020, "beamtenrechtlich"))),
+        // Das Schema nimmt `E0200902` nur ab 1 Euro: ein Bezug mit Bemessungsgrundlage unter 1 Euro bekommt auch keine Zeile 11.
+        ("Bemessungsgrundlage unter 1 Euro", mit(lohn(50_000), bezug(3_000_000, 99, 2020, "beamtenrechtlich"))),
     ];
     for (name, mehr) in faelle {
         let (d, _) = deklaration(&mehr);
@@ -393,7 +400,9 @@ fn checkest_nimmt_die_zeilen_11_bis_13_an() {
             !elster::nicht_geprueft(klasse),
             "{name}: rc={rc} klasse={klasse:?}: kein Plausibilitaetsurteil (ID gesperrt oder Pruefung vor dem Urteil abgebrochen)"
         );
-        (rc, regeln(&antwort))
+        let r = regeln(&antwort);
+        eprintln!("checkESt {name}: rc={rc} klasse={klasse:?} Regeln={r:?}");
+        (rc, r)
     };
     let rein = mit(lohn(20_000), bezug(2_000_000, 2_000_000, 2020, "beamtenrechtlich"));
     let gemischt = mit(lohn(68_500), bezug(2_000_000, 2_000_000, 2020, "beamtenrechtlich"));

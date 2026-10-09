@@ -67,12 +67,14 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// 280 -> 282, der Kegel bleibt bei 28, `gesamt` bei 368;
 /// danach am 2026-10-09 `dba_abzug_zeile_cent` in `gesamt` und `rentner_gesamt` (Abweichung Nr. 49),
 /// 368 -> 369 und 282 -> 283, die Kegel bleiben;
+/// danach am 2026-10-10 `versorgung_zeile` und `versorgung_zeile_partner` in `gesamt` und `rentner_gesamt` (Abweichung Nr. 50),
+/// 369 -> 371 und 283 -> 285, die Kegel bleiben;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 85, 33),
-    (Scheibe::Gesamt, 369, 35),
-    (Scheibe::RentnerGesamt, 283, 28),
+    (Scheibe::Gesamt, 371, 35),
+    (Scheibe::RentnerGesamt, 285, 28),
 ];
 
 fn registry() -> &'static Registry {

@@ -633,9 +633,17 @@ async fn reichere_kegel_machen_den_rand_im_ergebnis_wirksam() {
             }
             if muss_rechnen {
                 let (status, antwort) = &l.ergebnis;
-                if *status != 200 || antwort["grund"] != "bestaetigt" {
+                // Abweichung Nr. 50: der Versorgungsbeginn bis 2060 ist als Eingabe gueltig, aber ein Jahr nach dem
+                // Veranlagungsjahr (2025) sperrt der Bescheid mit eigenem Grund (ERiC lehnt es ab, Regel `Arbeitslohn_ab08_5`).
+                // Der Rand ist trotzdem wirksam: er endet nicht in 500, und die Antwort aendert sich gegen `min`.
+                let soll = if g.feld == "versorgung_beginn_jahr" && name == "max" {
+                    "versorgungsbeginn_nach_vz"
+                } else {
+                    "bestaetigt"
+                };
+                if *status != 200 || antwort["grund"] != soll {
                     falsch.push(format!(
-                        "{kopf}: /ergebnis {status} {antwort}, erwartet 200 und grund bestaetigt"
+                        "{kopf}: /ergebnis {status} {antwort}, erwartet 200 und grund {soll}"
                     ));
                 }
                 signaturen.push(signatur(&l));

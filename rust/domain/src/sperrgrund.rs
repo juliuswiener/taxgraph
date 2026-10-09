@@ -7,7 +7,8 @@
 //!
 //! `grund` in `api.py: ergebnis()` ist entweder `None` (kein Sperrgrund), das Literal
 //! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 57 Python-Schluessel unten
-//! (dazu sieben Rust-eigene, siehe `KindFreibetragVerteilungOffen`, `Abs3PartnerAntragGewinnOffen`, `DbaFreistellungOffen` und `DbaAbzugOffen`). Die
+//! (dazu neun Rust-eigene, siehe `KindFreibetragVerteilungOffen`, `Abs3PartnerAntragGewinnOffen`, `DbaFreistellungOffen`, `DbaAbzugOffen`,
+//! `VersorgungUeberLohn` und `VersorgungsbeginnNachVz`). Die
 //! dritte Moeglichkeit bildet [`Sperrgrund::Bestaetigt`] ab; sie hat bewusst KEINEN
 //! eigenen Klartext (die Python-Quelle hat auch keinen fuer sie).
 use std::fmt;
@@ -109,7 +110,14 @@ pub enum Sperrgrund {
     VerpflegungDreimonatsfristAufteilungOffen,
     VerpflegungDreimonatsfristUnterbrechungOffen,
     VerpflegungReduktionOffen,
+    /// Rust-eigen (Abweichung Nr. 50, `versorgung_ueber_lohn`): der Versorgungsbezug ist hoeher als der Bruttoarbeitslohn. Nr. 3
+    /// der Lohnsteuerbescheinigung enthaelt den Bezug (Nr. 8), also kann er nicht groesser sein als sie. Python kennt den
+    /// Grund nicht (es addiert Lohn und Bezug).
+    VersorgungUeberLohn,
     VersorgungsfreibetragOffen,
+    /// Rust-eigen (wie [`Sperrgrund::VersorgungUeberLohn`]), `versorgungsbeginn_nach_vz`: das Jahr des Versorgungsbeginns
+    /// liegt nach dem Veranlagungsjahr (`ERiC` lehnt es ab, Regel `Arbeitslohn_ab08_5`).
+    VersorgungsbeginnNachVz,
     VvInstanzOffen,
 }
 
@@ -189,7 +197,9 @@ impl Sperrgrund {
                 "verpflegung_dreimonatsfrist_unterbrechung_offen"
             }
             Self::VerpflegungReduktionOffen => "verpflegung_reduktion_offen",
+            Self::VersorgungUeberLohn => "versorgung_ueber_lohn",
             Self::VersorgungsfreibetragOffen => "versorgungsfreibetrag_offen",
+            Self::VersorgungsbeginnNachVz => "versorgungsbeginn_nach_vz",
             Self::VvInstanzOffen => "vv_instanz_offen",
         }
     }
@@ -263,6 +273,8 @@ impl Sperrgrund {
             Self::VerpflegungDreimonatsfristUnterbrechungOffen => Some("Du warst länger als drei Monate am selben auswärtigen Ort tätig, hast aber für die Zeit nach Ablauf der drei Monate keine Abwesenheitstage angegeben. Das ist möglich, wenn du die Tätigkeit dort mindestens vier Wochen unterbrochen hast — dann beginnt die Frist neu. Bitte beantworte die Frage, ob es eine solche Unterbrechung gab."),
             Self::VerpflegungReduktionOffen => Some("Zu deinen Auswärtstätigkeiten fehlt noch die Antwort, ob dir dabei Mahlzeiten gestellt wurden — also Frühstück, Mittag- oder Abendessen von deinem Arbeitgeber oder auf dessen Veranlassung. Jede gestellte Mahlzeit kürzt die Verpflegungspauschale. Bitte beantworte diese Frage, auch wenn keine Mahlzeiten gestellt wurden."),
             Self::VersorgungsfreibetragOffen => Some("Du hast Versorgungsbezüge angegeben — etwa eine Betriebsrente oder eine Beamtenpension. Für den Freibetrag darauf braucht die Berechnung zwei Angaben: das Jahr, in dem die Versorgung begann, und den Betrag, aus dem der Freibetrag berechnet wird. Beides findest du in deiner Lohnsteuerbescheinigung oder in der Mitteilung deiner Versorgungsstelle. Bei gemeinsamer Veranlagung gelten die zwei Angaben für jede Person einzeln: Prüfe sie auch für die Versorgungsbezüge deines Ehegatten."),
+            Self::VersorgungUeberLohn => Some("Dein Versorgungsbezug ist höher als dein Bruttoarbeitslohn, oder du hast keinen Bruttoarbeitslohn eingetragen. Das passt nicht zusammen: Der Bruttoarbeitslohn (Nummer 3 der Lohnsteuerbescheinigung) enthält den Versorgungsbezug (Nummer 8) schon. Trage bei Bruttoarbeitslohn den ganzen Betrag aus Nummer 3 ein, nicht nur den Teil ohne Versorgung. Bei gemeinsamer Veranlagung gilt das für jede Person einzeln: Prüfe es auch für deinen Ehegatten."),
+            Self::VersorgungsbeginnNachVz => Some("Das Jahr, in dem deine Versorgung begonnen hat, liegt nach dem Jahr dieser Steuererklärung. Eine Versorgung, die erst später beginnt, gehört nicht in diese Erklärung. Bitte prüfe das Jahr des Versorgungsbeginns. Bei gemeinsamer Veranlagung gilt das für jede Person einzeln: Prüfe es auch für deinen Ehegatten."),
             Self::VvInstanzOffen => Some("Zu einer deiner vermieteten Immobilien sind die Angaben unvollständig. Jedes weitere Objekt braucht dieselben Angaben wie das erste: Mieteinnahmen, Gebäudeabschreibung, Schuldzinsen, Erhaltungsaufwand, sonstige Werbungskosten und den Anteil, der entgeltlich vermietet ist. Bitte ergänze die fehlenden Angaben."),
         }
     }
@@ -357,7 +369,9 @@ impl FromStr for Sperrgrund {
                 Ok(Self::VerpflegungDreimonatsfristUnterbrechungOffen)
             }
             "verpflegung_reduktion_offen" => Ok(Self::VerpflegungReduktionOffen),
+            "versorgung_ueber_lohn" => Ok(Self::VersorgungUeberLohn),
             "versorgungsfreibetrag_offen" => Ok(Self::VersorgungsfreibetragOffen),
+            "versorgungsbeginn_nach_vz" => Ok(Self::VersorgungsbeginnNachVz),
             "vv_instanz_offen" => Ok(Self::VvInstanzOffen),
             other => Err(UnbekannterSperrgrund(other.to_owned())),
         }
@@ -465,6 +479,8 @@ mod tests {
             Sperrgrund::BerufsunfaehigkeitPartnerOffen,
             Sperrgrund::DbaFreistellungOffen,
             Sperrgrund::DbaAbzugOffen,
+            Sperrgrund::VersorgungUeberLohn,
+            Sperrgrund::VersorgungsbeginnNachVz,
         ] {
             assert!(
                 !klartext.contains_key(grund.als_str()),
@@ -533,6 +549,27 @@ mod tests {
             "Dann rechnet die Software die Anrechnung",
         ] {
             assert!(text.contains(teil), "{teil:?} fehlt in {text:?}");
+        }
+    }
+
+    /// Die zwei Gruende zur Versorgung (Abweichung Nr. 50): `versorgung_ueber_lohn` nennt die beiden Nummern der
+    /// Lohnsteuerbescheinigung und was der Nutzer tut; `versorgungsbeginn_nach_vz` nennt das Jahr. Pinnt Teile des Wortlauts.
+    #[test]
+    fn die_gruende_zur_versorgung_nennen_nummern_jahr_und_ausweg() {
+        for (grund, teile) in [
+            (
+                Sperrgrund::VersorgungUeberLohn,
+                &["Bruttoarbeitslohn", "Nummer 3", "Nummer 8", "ganzen Betrag", "jede Person einzeln"][..],
+            ),
+            (
+                Sperrgrund::VersorgungsbeginnNachVz,
+                &["Jahr, in dem deine Versorgung begonnen hat", "nach dem Jahr dieser Steuererklärung", "jede Person einzeln"][..],
+            ),
+        ] {
+            let text = grund.klartext().unwrap();
+            for teil in teile {
+                assert!(text.contains(teil), "{grund}: {teil:?} fehlt in {text:?}");
+            }
         }
     }
 

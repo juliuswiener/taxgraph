@@ -18,8 +18,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie hoch war dein Bruttoarbeitslohn dieses Jahr? (steht auf der Lohnsteuerbescheinigung)"
-    hilfe_kurz: "Der Bruttoarbeitslohn einschließlich Sachbezüge steht unter Nummer 3 der Lohnsteuerbescheinigung."
+    fragetext_laie: "Wie hoch war dein Bruttoarbeitslohn dieses Jahr? (Nummer 3 der Lohnsteuerbescheinigung)"
+    hilfe_kurz: "Der Bruttoarbeitslohn einschließlich Sachbezüge steht unter Nummer 3 der Lohnsteuerbescheinigung. Hast du Versorgungsbezüge (Nummer 8), sind sie in diesem Betrag schon enthalten: Trag Nummer 3 unverändert ein."
     beispielwert: 4000000
     herkunft_slots: ["Lohnsteuerbescheinigung Nr. 3"]
     elster_kz: E0200201
@@ -61,8 +61,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie viel Versorgung hast du dieses Jahr insgesamt bekommen (Ruhegehalt, Betriebsrente, Witwen-/Waisengeld)?"
-    hilfe_kurz: "Der Jahresbetrag deiner Pension, Betriebsrente oder Versorgung, bevor etwas abgezogen wird. Steht in der Versorgungsmitteilung."
+    fragetext_laie: "Wie hoch waren deine Versorgungsbezüge dieses Jahr? (Nummer 8 der Lohnsteuerbescheinigung: in Nummer 3 enthaltene Versorgungsbezüge)"
+    hilfe_kurz: "Der Jahresbetrag deiner Pension (Ruhegehalt, Werkspension, Witwen-/Waisengeld), bevor etwas abgezogen wird. Er steht unter Nummer 8 der Lohnsteuerbescheinigung und steckt schon in deinem Bruttoarbeitslohn (Nummer 3). Renten aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehören nicht hierher."
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
@@ -80,8 +80,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Welcher Betrag steht in deinem Steuerbescheid als Bemessungsgrundlage für den Versorgungsfreibetrag (in Euro)?"
-    hilfe_kurz: "Das Zwölffache des Monatsbezugs bei Versorgungsbeginn, plus anrechenbare Sonderzahlungen. Dieser Wert ändert sich nie — auch Rentensteigerungen ändern ihn nicht. Der Betrag steht im Steuerbescheid."
+    fragetext_laie: "Welcher Betrag steht als Bemessungsgrundlage für den Versorgungsfreibetrag auf deiner Lohnsteuerbescheinigung (Nummer 29, in Euro)?"
+    hilfe_kurz: "Das Zwölffache des Monatsbezugs bei Versorgungsbeginn, plus anrechenbare Sonderzahlungen. Dieser Wert ändert sich nie — auch Rentensteigerungen ändern ihn nicht. Der Betrag steht unter Nummer 29 der Lohnsteuerbescheinigung."
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
@@ -100,8 +100,8 @@ bindungen:
     bereich: {min: 1955, max: 2060, grund: "Jahr des Versorgungsbeginns; Kohorten-Staffel nach dem Jahr bestimmt den Freibetrag lebenslang."}
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "In welchem Jahr hast du die Versorgung zum ersten Mal bekommen?"
-    hilfe_kurz: "Das Jahr der Pensionierung oder des Betriebsrenten-Starts. Dieses Jahrgang bestimmt deinen Steuerfreibetrag für immer."
+    fragetext_laie: "In welchem Jahr hast du die Versorgung zum ersten Mal bekommen? (Nummer 30 der Lohnsteuerbescheinigung)"
+    hilfe_kurz: "Das Jahr der Pensionierung oder des Versorgungsbeginns. Dieses Jahr bestimmt deinen Steuerfreibetrag für immer. Es kann nicht nach dem Jahr dieser Steuererklärung liegen."
     beispielwert: 2020
     herkunft_slots: null
     elster_kz: null
@@ -121,7 +121,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Welche Art von Versorgung bekommst du?"
-    hilfe_kurz: "Beamtenrechtlich: Ruhegehalt eines Beamten oder öffentlichen Körperschaft. Hinterbliebene: Witwen-, Waisengeld. Erwerbsminderung: Rente wegen Behinderung. Altersgrenze: Betriebsrente, Direktversicherung."
+    hilfe_kurz: "Beamtenrechtlich: Ruhegehalt eines Beamten oder öffentlichen Körperschaft. Hinterbliebene: Witwen-, Waisengeld. Erwerbsminderung: Rente wegen Behinderung. Altersgrenze: Pension deines früheren Arbeitgebers, die ab einer Altersgrenze gezahlt wird (Werkspension)."
     beispielwert: "beamtenrechtlich"
     herkunft_slots: null
     elster_kz: null
@@ -146,6 +146,28 @@ bindungen:
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Alters-Gate für die Haut-Logik; nur bei versorgung_art=altersgrenze_sonstige abgefragt. Kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"
+      zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  # Ring-Wert (Abweichung Nr. 50): wahr, wenn die Erklaerung den Bezug in den Zeilen 11 bis 13 der Anlage N traegt (Betrag
+  # E0200801, Bemessungsgrundlage E0200902, Beginnjahr E0201307). `mit_ring_werten` setzt ihn nur aus bestaetigten Feldern, wenn
+  # der Bescheid den Bezug als steuerbeguenstigten Versorgungsbezug rechnet (Alters-Gate erfuellt). `deklariere` schreibt daraus
+  # die drei Zeilen. Die Kz stehen NICHT an den drei Feldern oben: ein Kz dort liesse die Sperre von selbst fallen und kippte die
+  # Reihenfolge der Fragen (Weg 2 der Qualifikation, wie bei den Unfallkosten).
+  - feld_id: versorgung_zeile
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: versorgung_zeile}
+    typ: bool
+    einheit: null
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Ob die Zeilen 11 bis 13 der Anlage N den Versorgungsbezug tragen (automatisch)"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Ring-Wert, kein Eingabefeld: `deklariere` leitet daraus drei Kz ab (E0200801 Betrag, E0200902 Bemessungsgrundlage, E0201307 Beginnjahr), nach dem Muster von dba_abzug_zeile_cent. Die Abgabe bleibt gesperrt (Abweichung Nr. 42), bis ein checkESt-Lauf die Zeilen belegt."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"
@@ -826,8 +848,8 @@ bindungen:
     # kostete aber eine Frage MEHR fuer jeden — und diese hier steht ohnehin in der Queue.
     eingangsfrage: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie hoch war der Bruttoarbeitslohn deines Ehe-/Lebenspartners dieses Jahr?"
-    hilfe_kurz: "Person-individuell, weil jeder Ehegatte einen EIGENEN Arbeitnehmer-Pauschbetrag hat; steht auf der Lohnsteuerbescheinigung des Partners (Nummer 3)."
+    fragetext_laie: "Wie hoch war der Bruttoarbeitslohn deines Ehe-/Lebenspartners dieses Jahr? (Nummer 3 seiner Lohnsteuerbescheinigung)"
+    hilfe_kurz: "Person-individuell, weil jeder Ehegatte einen EIGENEN Arbeitnehmer-Pauschbetrag hat; steht auf der Lohnsteuerbescheinigung des Partners (Nummer 3). Versorgungsbezüge deines Partners (Nummer 8) sind darin schon enthalten."
     beispielwert: 3800000
     herkunft_slots: null
     elster_kz: null
@@ -1497,8 +1519,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie viel Versorgung hat dein Ehe-/Lebenspartner dieses Jahr insgesamt bekommen (Ruhegehalt, Betriebsrente, Witwen-/Waisengeld)?"
-    hilfe_kurz: "Der Jahresbetrag der Pension, Betriebsrente oder Versorgung deines Partners, bevor etwas abgezogen wird. Steht in seiner Versorgungsmitteilung."
+    fragetext_laie: "Wie hoch waren die Versorgungsbezüge deines Ehe-/Lebenspartners dieses Jahr? (Nummer 8 seiner Lohnsteuerbescheinigung: in Nummer 3 enthaltene Versorgungsbezüge)"
+    hilfe_kurz: "Der Jahresbetrag der Pension deines Partners (Ruhegehalt, Werkspension, Witwen-/Waisengeld), bevor etwas abgezogen wird. Er steht unter Nummer 8 seiner Lohnsteuerbescheinigung und steckt schon in seinem Bruttoarbeitslohn (Nummer 3). Renten aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehören nicht hierher."
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
@@ -1516,8 +1538,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Welcher Betrag steht im Steuerbescheid deines Partners als Bemessungsgrundlage für den Versorgungsfreibetrag (in Euro)?"
-    hilfe_kurz: "Das Zwölffache des Monatsbezugs bei Versorgungsbeginn, plus anrechenbare Sonderzahlungen. Dieser Wert ändert sich nie — auch Rentensteigerungen ändern ihn nicht. Der Betrag steht im Steuerbescheid deines Partners."
+    fragetext_laie: "Welcher Betrag steht als Bemessungsgrundlage für den Versorgungsfreibetrag auf der Lohnsteuerbescheinigung deines Partners (Nummer 29, in Euro)?"
+    hilfe_kurz: "Das Zwölffache des Monatsbezugs bei Versorgungsbeginn, plus anrechenbare Sonderzahlungen. Dieser Wert ändert sich nie — auch Rentensteigerungen ändern ihn nicht. Der Betrag steht unter Nummer 29 der Lohnsteuerbescheinigung deines Partners."
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
@@ -1536,8 +1558,8 @@ bindungen:
     bereich: {min: 1955, max: 2060, grund: "Jahr des Versorgungsbeginns; Kohorten-Staffel nach dem Jahr bestimmt den Freibetrag lebenslang."}
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "In welchem Jahr hat dein Ehe-/Lebenspartner die Versorgung zum ersten Mal bekommen?"
-    hilfe_kurz: "Das Jahr der Pensionierung oder des Betriebsrenten-Starts deines Partners. Dieses Jahr bestimmt seinen Steuerfreibetrag für immer."
+    fragetext_laie: "In welchem Jahr hat dein Ehe-/Lebenspartner die Versorgung zum ersten Mal bekommen? (Nummer 30 seiner Lohnsteuerbescheinigung)"
+    hilfe_kurz: "Das Jahr der Pensionierung oder des Versorgungsbeginns deines Partners. Dieses Jahr bestimmt seinen Steuerfreibetrag für immer. Es kann nicht nach dem Jahr dieser Steuererklärung liegen."
     beispielwert: 2020
     herkunft_slots: null
     elster_kz: null
@@ -1557,7 +1579,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Welche Art von Versorgung bekommt dein Ehe-/Lebenspartner?"
-    hilfe_kurz: "Beamtenrechtlich: Ruhegehalt eines Beamten oder öffentlichen Körperschaft. Hinterbliebene: Witwen-, Waisengeld. Erwerbsminderung: Rente wegen Behinderung. Altersgrenze: Betriebsrente, Direktversicherung."
+    hilfe_kurz: "Beamtenrechtlich: Ruhegehalt eines Beamten oder öffentlichen Körperschaft. Hinterbliebene: Witwen-, Waisengeld. Erwerbsminderung: Rente wegen Behinderung. Altersgrenze: Pension seines früheren Arbeitgebers, die ab einer Altersgrenze gezahlt wird (Werkspension)."
     beispielwert: "beamtenrechtlich"
     herkunft_slots: null
     elster_kz: null
@@ -1582,6 +1604,25 @@ bindungen:
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Wie `versorgung_alter_bei_beginn` von Person A: Alters-Gate fuer den Ring, nur bei versorgung_art_partner=altersgrenze_sonstige gefragt. Kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"
+      zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  # Ring-Wert des Ehegatten (Abweichung Nr. 50), wie `versorgung_zeile` von Person A: die drei Zeilen stehen in der zweiten Anlage N.
+  # Der Ring setzt ihn nur bei bestaetigter Zusammenveranlagung.
+  - feld_id: versorgung_zeile_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_zeile_partner}
+    typ: bool
+    einheit: null
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Ob die Zeilen 11 bis 13 der zweiten Anlage N den Versorgungsbezug des Ehegatten tragen (automatisch)"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Ring-Wert, kein Eingabefeld: wie `versorgung_zeile` von Person A, die drei Kz stehen in der zweiten Instanz der Anlage N. Die Abgabe bleibt gesperrt (Abweichung Nr. 42), bis ein checkESt-Lauf die Zeilen belegt."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"

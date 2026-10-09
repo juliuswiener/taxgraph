@@ -40,6 +40,10 @@ pub(super) fn gesamt_guard(k: &K<'_>, cfg: &Cfg) -> Grund {
     if ist_zusammen(k.f) {
         sperre_o!(versorgung_partner(k.f));
     }
+    sperre!(versorgung_stimmig(k, false));
+    if ist_zusammen(k.f) {
+        sperre!(versorgung_stimmig(k, true));
+    }
     sperre!(behinderung_wahlrecht(k));
     sperre!(p35a_p35c(k));
     sperre!(gwg(k));
@@ -203,6 +207,28 @@ fn versorgung_von(
     let bmg_ok = zahl_wert(wert(f, bemessungsgrundlage)).is_some_and(|b| b > Decimal::ZERO)
         && bestaetigt(f, bemessungsgrundlage);
     (!(beginn_ok && bmg_ok)).then_some(Sperrgrund::VersorgungsfreibetragOffen)
+}
+
+/// Rust-eigen (Abweichung Nr. 50): der Bezug einer Person muss zum Rest der Eingabe passen. (1) Er beginnt nicht nach dem
+/// Veranlagungsjahr (`ERiC` lehnt das ab, Regel `Arbeitslohn_ab08_5`). (2) Er steckt im Bruttoarbeitslohn, denn Nr. 3 der
+/// Lohnsteuerbescheinigung enthaelt Nr. 8, also ist er nicht groesser als der Lohn: der Ring rechnet Lohn minus Bezug. Beide
+/// Pruefungen setzen einen Bezug ueber 0 voraus; fehlen Beginnjahr oder Bemessungsgrundlage, hat [`versorgung`] schon gesperrt.
+/// `partner`: Person B, der Aufrufer fragt nur bei Zusammenveranlagung.
+fn versorgung_stimmig(k: &K<'_>, partner: bool) -> Grund {
+    let (rente, beginn) = if partner {
+        ("versorgung_jahresrente_partner", "versorgung_beginn_jahr_partner")
+    } else {
+        ("versorgung_jahresrente", "versorgung_beginn_jahr")
+    };
+    if !positiv(k.f, rente) {
+        return Ok(None);
+    }
+    if let (Some(b), Some(vz)) = (py_int_wert(wert(k.f, beginn)), k.vz) {
+        if b > i64::from(vz.jahr()) {
+            return Ok(Some(Sperrgrund::VersorgungsbeginnNachVz));
+        }
+    }
+    Ok(crate::zweige::versorgung_ueber_lohn(k.f, partner)?.then_some(Sperrgrund::VersorgungUeberLohn))
 }
 
 /// Kind-PB-Uebertragung (§ 33b Abs. 5): Kind mit `IdNr` (≥ 11 Zeichen), Antrag und "nicht selbst genutzt".

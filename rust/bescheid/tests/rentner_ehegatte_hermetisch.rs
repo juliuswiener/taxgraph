@@ -227,6 +227,13 @@ fn versorgung_partner(euro: i64) -> Paare {
     ]
 }
 
+/// Ein reiner Pensionaer als Ehegatte (Abweichung Nr. 50): Nr. 3 der Lohnsteuerbescheinigung (Bruttoarbeitslohn) enthaelt den
+/// Bezug aus Nr. 8, beide sind `euro`. Der Arbeitslohn ist 0, es bleibt die Versorgung; die Erwartungswerte unten gelten
+/// unveraendert. Lohn und Bezug in einem Fall: `versorgung_im_lohn_enthalten.rs`.
+fn pensionaer_partner(euro: i64) -> Paare {
+    [lohn_partner(euro), versorgung_partner(euro)].concat()
+}
+
 // ---------------------------------------------------------------- Arbeitslohn des Ehegatten
 
 /// 6.000, 60.000 und 600.000 Euro Lohn des Ehegatten: der Gesamtbetrag waechst um Lohn minus dessen Arbeitnehmer-
@@ -282,7 +289,7 @@ fn versorgungsbezuege_des_ehegatten_gehen_nach_freibetrag_zuschlag_und_pauschbet
     let ohne = kette(&paar(vec![]));
     let mut steuer = vec![ohne.festzusetzende_est.get()];
     for (euro, einkuenfte) in [(0, 0), (30_000, 28_611), (60_000, 58_611)] {
-        let mit = kette(&paar(versorgung_partner(euro)));
+        let mit = kette(&paar(pensionaer_partner(euro)));
         assert_eq!(
             mit.gesamtbetrag_der_einkuenfte.get() - ohne.gesamtbetrag_der_einkuenfte.get(),
             einkuenfte,
@@ -304,7 +311,7 @@ fn versorgungsbezuege_des_ehegatten_gehen_nach_freibetrag_zuschlag_und_pauschbet
 fn der_versorgungsfreibetrag_folgt_beginnjahr_und_bemessung_des_ehegatten() {
     let ohne = gdb(&paar(vec![]));
     let beginn = |jahr: i64| {
-        let mut p = versorgung_partner(30_000);
+        let mut p = pensionaer_partner(30_000);
         p.push(("versorgung_beginn_jahr_partner", json!(jahr)));
         gdb(&paar(p)) - ohne
     };
@@ -312,7 +319,7 @@ fn der_versorgungsfreibetrag_folgt_beginnjahr_und_bemessung_des_ehegatten() {
     assert_eq!(beginn(2005), 25_998, "Beginn 2005");
     // Eine kleine Bemessungsgrundlage (5.000 Euro) liegt unter dem Hoechstbetrag und senkt den Freibetrag:
     // 13,2 % von 5.000 = 660, Zuschlag 297 (hoechstens Bemessung minus Freibetrag, Satz 5: 4.340, greift nicht).
-    let mut p = versorgung_partner(30_000);
+    let mut p = pensionaer_partner(30_000);
     p.push(("versorgung_bemessungsgrundlage_partner", json!(cent(5_000))));
     assert_eq!(gdb(&paar(p)) - ohne, 30_000 - (660 + 297) - 102, "Bemessung 5.000");
 }
@@ -324,7 +331,7 @@ fn der_versorgungsfreibetrag_folgt_beginnjahr_und_bemessung_des_ehegatten() {
 fn das_alters_gate_gilt_fuer_den_ehegatten_mit_seinem_eigenen_grad() {
     let ohne = gdb(&paar(vec![]));
     let altersgrenze = |alter: i64, gdb_partner: i64, gdb_a: i64| {
-        let mut p = versorgung_partner(30_000);
+        let mut p = pensionaer_partner(30_000);
         p.push(("versorgung_art_partner", json!("altersgrenze_sonstige")));
         p.push(("versorgung_alter_bei_beginn_partner", json!(alter)));
         p.push(("rentner_grad_der_behinderung_partner", json!(gdb_partner)));
@@ -342,11 +349,12 @@ fn das_alters_gate_gilt_fuer_den_ehegatten_mit_seinem_eigenen_grad() {
     );
 }
 
-/// Lohn und Versorgung des Ehegatten addieren sich: 20.000 Euro Lohn (18.770) und 30.000 Euro Versorgung (28.611).
+/// Lohn und Versorgung des Ehegatten zaehlen je einmal (Abweichung Nr. 50): sein Lohn von 50.000 Euro (Nr. 3) enthaelt den Bezug
+/// von 30.000 Euro (Nr. 8). Arbeitslohn 20.000 (18.770) plus Versorgung (28.611). Vor Nr. 50 addierten sich Lohn 20.000 und Bezug.
 #[test]
-fn lohn_und_versorgung_des_ehegatten_addieren_sich() {
+fn der_lohn_des_ehegatten_enthaelt_den_bezug_und_beide_zaehlen_je_einmal() {
     let ohne = gdb(&paar(vec![]));
-    let mut p = lohn_partner(20_000);
+    let mut p = lohn_partner(50_000);
     p.extend(versorgung_partner(30_000));
     assert_eq!(gdb(&paar(p)) - ohne, 18_770 + 28_611);
 }
@@ -531,8 +539,9 @@ fn bei_einzelveranlagung_gibt_es_keinen_altersentlastungsbetrag_fuer_den_ehegatt
 #[test]
 fn die_versorgung_beider_ehegatten_zaehlt_je_fuer_sich() {
     let ohne = gdb(&paar(vec![]));
-    let mut p = versorgung_partner(30_000);
+    let mut p = pensionaer_partner(30_000);
     p.extend([
+        ("bruttoarbeitslohn", json!(cent(30_000))),
         ("versorgung_jahresrente", json!(cent(30_000))),
         ("versorgung_bemessungsgrundlage", json!(cent(30_000))),
         ("versorgung_beginn_jahr", json!(2025)),

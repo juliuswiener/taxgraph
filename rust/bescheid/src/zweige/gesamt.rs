@@ -1,7 +1,7 @@
 //! `_zweig_festzusetzende_est_gesamt` (`bescheid_zweige.py:414-1069`), Teil 1: der Aufbau des
 //! Gesamtfalls `g` aus Einkuenften, Freibetraegen und Abzuegen. Der Tarif-Teil (`_festzusetzende`,
 //! § 31, SolZ, KiSt) steht in `gesamt_tarif.rs`.
-use domain::{Euro, PyWert, Vz};
+use domain::{Euro, PyWert, Sperrgrund, Vz};
 use engine::zugriff::teil1::einkuenfte::{
     einkuenfte_nichtselbststaendig, p16_4_freibetrag, p21_2_verbilligt, vermietung_einkuenfte,
     EinkuenfteNichtselbststaendigEingabe, P164FreibetragEingabe, P212VerbilligtEingabe,
@@ -35,7 +35,7 @@ use crate::einkuenfte::{
 };
 use crate::{
     cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_false, ist_true, py_int, summe,
-    wert, zahl_int, Felder,
+    wert, zahl_int, BescheidFehler, Felder,
 };
 
 /// § 21 Ueberschuss EINES Objekts (Einnahmen − Werbungskosten), Naht-CENT → EURO. Kein Floor pro
@@ -160,11 +160,16 @@ pub(super) fn entlastungen(
     positive_andere: Euro,
 ) -> R<(Euro, Euro, Euro)> {
     let jahr = i64::from(vz.jahr());
+    // § 24a Satz 2 Nr. 1: Versorgungsbezuege (§ 19 Abs. 2) bleiben ausser Betracht. Der Lohn enthaelt den Bezug (Abweichung
+    // Nr. 50), also geht er hier vom Lohn ab, soweit der Bescheid ihn als Versorgungsbezug rechnet.
     let alt_a = p24a_altersentlastung(
         &P24aAltersentlastungEingabe {
             veranlagungszeitraum: jahr,
             geburtsjahr: feld_int_oder_null(f, "geburtsjahr")?,
-            arbeitslohn: feld_euro_oder_null(f, "bruttoarbeitslohn")?,
+            arbeitslohn: Euro::new(arbeitslohn_ohne_bezug(
+                feld_euro_oder_null(f, "bruttoarbeitslohn")?.get(),
+                &versorgungsbezug(f, &VERSORGUNG_A)?,
+            )?),
             positive_andere_einkuenfte: positive_andere,
         },
         p,
@@ -175,7 +180,10 @@ pub(super) fn entlastungen(
             &P24aAltersentlastungEingabe {
                 veranlagungszeitraum: jahr,
                 geburtsjahr: feld_int_oder_null(f, "geburtsjahr_partner")?,
-                arbeitslohn: feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?,
+                arbeitslohn: Euro::new(arbeitslohn_ohne_bezug(
+                    feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?.get(),
+                    &versorgungsbezug(f, &VERSORGUNG_B)?,
+                )?),
                 positive_andere_einkuenfte: Euro::new(0),
             },
             p,
@@ -301,9 +309,51 @@ fn einkuenfte_aus_versorgung(v: &Versorgungsbezug, p: &bindung::Params) -> R<Eur
     )?)
 }
 
+/// Der Arbeitslohn EINER Person ohne ihren Versorgungsbezug (Abweichung Nr. 50). Nr. 3 der Lohnsteuerbescheinigung, der
+/// Bruttoarbeitslohn (`lohn`), ENTHAELT den Bezug aus Nr. 8 (Vordruck Anlage N Zeile 11: "im Bruttoarbeitslohn laut Zeile 5
+/// enthalten"). Ein steuerbeguenstigter Bezug (Alters-Gate erfuellt) kommt als Versorgungseinkunft dazu und geht deshalb
+/// vom Lohn ab. Ein Bezug vor dem Alters-Gate ist normaler Arbeitslohn und steckt schon in `lohn`: er zaehlt einmal. Der
+/// Bezug kann nicht groesser sein als der Lohn; der Guard sperrt das vorher ([`Sperrgrund::VersorgungUeberLohn`]), kommt der
+/// Fehler an, hat ein Aufrufer ohne Guard gerechnet. Python addiert beide Betraege.
+fn arbeitslohn_ohne_bezug(lohn: i64, v: &Versorgungsbezug) -> R<i64> {
+    let bezug = v.jahresrente.div_euclid(100);
+    if bezug > lohn {
+        return Err(BescheidFehler::VersorgungGesperrt(
+            Sperrgrund::VersorgungUeberLohn,
+        ));
+    }
+    if v.versorgt && v.gate_erfuellt {
+        crate::minus(lohn, bezug)
+    } else {
+        Ok(lohn)
+    }
+}
+
+/// Ist der Bezug einer Person groesser als ihr Bruttoarbeitslohn? `partner` waehlt Person B (`*_partner`). Der Guard
+/// ([`Sperrgrund::VersorgungUeberLohn`]) und der Ring ([`arbeitslohn_ohne_bezug`]) rechnen mit derselben Zahl, in Euro.
+pub(crate) fn versorgung_ueber_lohn(f: &Felder, partner: bool) -> R<bool> {
+    let (lohn, bezug) = if partner {
+        ("bruttoarbeitslohn_partner", &VERSORGUNG_B)
+    } else {
+        ("bruttoarbeitslohn", &VERSORGUNG_A)
+    };
+    let bezug = feld_int_oder_null(f, bezug.jahresrente)?.div_euclid(100);
+    Ok(bezug > feld_euro_oder_null(f, lohn)?.get())
+}
+
+/// Gehoert der Bezug einer Person in die Zeilen 11 bis 13 der Anlage N (Abweichung Nr. 50)? Ja, wenn der Bescheid ihn als
+/// Versorgungsbezug rechnet (Jahresrente, Bemessungsgrundlage und Beginnjahr gesetzt, Alters-Gate erfuellt) und beide Betraege
+/// auf volle Euro mindestens 1 ergeben: `E0200801` ist im Schema ein Betrag "nicht null" (`ponytail:` ein Bezug unter 1 Euro
+/// bekommt keine Zeile). Der Ring-Wert `versorgung_zeile` setzt `mit_ring_werten` daraus; `elster` kennt das Gate nicht.
+pub(crate) fn versorgung_zeilen(f: &Felder, partner: bool) -> R<bool> {
+    let v = versorgungsbezug(f, if partner { &VERSORGUNG_B } else { &VERSORGUNG_A })?;
+    Ok(v.versorgt && v.gate_erfuellt && v.jahresrente >= 100 && v.bemessungsgrundlage >= 100)
+}
+
 /// [`einkuenfte_ns`] mit dem Bruttoarbeitslohn Person A als Argument. Der Rentner-Ring liest keine
 /// Slots und reicht den Lohn aus dem Feld herein; Versorgungsbezuege und Alters-Gate sind dieselben.
 /// Bei Zusammenveranlagung (`zusammen`) kommen Lohn und Versorgung der Person B in DIESELBE Summe.
+/// Der Lohn enthaelt den Bezug ([`arbeitslohn_ohne_bezug`], Abweichung Nr. 50).
 pub(super) fn einkuenfte_ns_aus_lohn(
     f: &Felder,
     vz: Vz,
@@ -313,23 +363,17 @@ pub(super) fn einkuenfte_ns_aus_lohn(
     zusammen: bool,
 ) -> R<Euro> {
     let a = versorgungsbezug(f, &VERSORGUNG_A)?;
-    let mut basis = lohn.get();
-    if a.versorgt && !a.gate_erfuellt {
-        basis = crate::plus(basis, a.jahresrente.div_euclid(100))?;
-    }
+    let basis = arbeitslohn_ohne_bezug(lohn.get(), &a)?;
     let mut ns = einkuenfte_nichtselbststaendig(&EinkuenfteNichtselbststaendigEingabe {
         veranlagungszeitraum: vz,
         bruttoarbeitslohn: Euro::new(basis),
         werbungskosten: ns_wk,
     })?;
-    // Person B (§ 26b): § 19-Einkuenfte des Ehegatten in DIESELBE Summe, Person-B-WK MVP 0. Ein Versorgungsbezug vor dem
-    // Alters-Gate zaehlt wie bei Person A als Arbeitslohn.
+    // Person B (§ 26b): § 19-Einkuenfte des Ehegatten in DIESELBE Summe, Person-B-WK MVP 0. Sein Lohn enthaelt wie bei
+    // Person A den Bezug.
     let b = if zusammen {
         let b = versorgungsbezug(f, &VERSORGUNG_B)?;
-        let mut basis_b = feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?.get();
-        if b.versorgt && !b.gate_erfuellt {
-            basis_b = crate::plus(basis_b, b.jahresrente.div_euclid(100))?;
-        }
+        let basis_b = arbeitslohn_ohne_bezug(feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?.get(), &b)?;
         let einkuenfte_b = einkuenfte_nichtselbststaendig(&EinkuenfteNichtselbststaendigEingabe {
             veranlagungszeitraum: vz,
             bruttoarbeitslohn: Euro::new(basis_b),

@@ -507,6 +507,30 @@ fn regeln() -> Vec<Regel> {
         &[],
         &["dba_abzug_zeile_cent"],
     ));
+    // (10) Zeilen 11 bis 13 der Anlage N: der Versorgungsbezug steckt im Bruttoarbeitslohn (Abweichung Nr. 50). Die Zeile
+    // folgt dem Bescheid: Jahresrente, Bemessungsgrundlage und Beginnjahr gesetzt (`versorgt`), Alters-Gate erfuellt (hier
+    // ohne Art, also ja), beide Betraege auf volle Euro mindestens 1. Die drei Felder sind Ausloeser.
+    r.push(regel(
+        "versorgung_zeile",
+        &[
+            ("versorgung_jahresrente", json!(3_000_000)),
+            ("versorgung_bemessungsgrundlage", json!(3_000_000)),
+            ("versorgung_beginn_jahr", json!(2025)),
+        ],
+        &[],
+        &["versorgung_zeile"],
+    ));
+    // (10b) Dieselbe Zeile fuer den Ehegatten: nur bei Zusammenveranlagung (`veranlagung` ist Begleiter wie bei 8b).
+    r.push(regel(
+        "versorgung_zeile_partner",
+        &[
+            ("versorgung_jahresrente_partner", json!(3_000_000)),
+            ("versorgung_bemessungsgrundlage_partner", json!(3_000_000)),
+            ("versorgung_beginn_jahr_partner", json!(2025)),
+        ],
+        &[("veranlagung", json!("zusammen"))],
+        &["versorgung_zeile_partner"],
+    ));
     r
 }
 
@@ -573,7 +597,11 @@ fn die_ergebnisfelder_der_tabelle_sind_die_nicht_fragbaren_literale_des_rings() 
         im_ring, in_tabelle,
         "ring_werte.rs nennt nicht fragbare Felder, die keine Regel hat (links) oder umgekehrt (rechts)"
     );
-    assert_eq!(in_tabelle.len(), 21, "Stand 2026-10-09: 21 Ergebnisfelder (Abweichung Nr. 49: dba_abzug_zeile_cent)");
+    assert_eq!(
+        in_tabelle.len(),
+        23,
+        "Stand 2026-10-10: 23 Ergebnisfelder (Abweichung Nr. 49: dba_abzug_zeile_cent; Nr. 50: versorgung_zeile, versorgung_zeile_partner)"
+    );
     for r in regeln() {
         for f in r
             .ausloeser

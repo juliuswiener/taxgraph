@@ -229,6 +229,12 @@ fn versorgung_partner(euro: i64) -> Paare {
     ]
 }
 
+/// Ein reiner Pensionaer als Ehegatte (Abweichung Nr. 50): Nr. 3 der Lohnsteuerbescheinigung (Bruttoarbeitslohn) enthaelt den
+/// Bezug aus Nr. 8, beide sind `euro`. Ein Bezug ohne so hohen Lohn sperrt (`versorgung_ueber_lohn`).
+fn pensionaer_partner(euro: i64) -> Paare {
+    [lohn_partner(euro), versorgung_partner(euro)].concat()
+}
+
 fn zahl(a: &Value) -> i64 {
     assert_eq!(a["grund"], json!("bestaetigt"), "keine Zahl: {a}");
     a["zahl_cent"]
@@ -317,9 +323,9 @@ async fn der_lohn_des_ehegatten_aendert_die_steuer_ueber_http() {
 #[tokio::test]
 async fn die_versorgung_des_ehegatten_aendert_die_steuer_ueber_http() {
     let ohne = zahl(&ergebnis(&paar(2_000_000)).await);
-    let null = zahl(&ergebnis(&mit(paar(2_000_000), versorgung_partner(0))).await);
-    let dreissig = zahl(&ergebnis(&mit(paar(2_000_000), versorgung_partner(30_000))).await);
-    let sechzig = zahl(&ergebnis(&mit(paar(2_000_000), versorgung_partner(60_000))).await);
+    let null = zahl(&ergebnis(&mit(paar(2_000_000), pensionaer_partner(0))).await);
+    let dreissig = zahl(&ergebnis(&mit(paar(2_000_000), pensionaer_partner(30_000))).await);
+    let sechzig = zahl(&ergebnis(&mit(paar(2_000_000), pensionaer_partner(60_000))).await);
     assert_eq!(null, ohne, "0 Euro Versorgung aendern nichts");
     assert!(
         ohne < dreissig && dreissig < sechzig,
@@ -513,12 +519,13 @@ async fn ohne_angaben_zum_ehegatten_bleibt_die_erklaerung_abgabefaehig() {
 }
 
 /// Die Deklaration (`GET /deklaration`, schreibt nichts, reicht nichts ein): Lohn und Steuerklasse des Ehegatten stehen in
-/// Anlage N der Person B (E0200201, E0200002). Die Versorgung des Ehegatten hat KEIN Kz, wie die von Person A: ihre fuenf
-/// Felder stehen mit Grund in `nicht_deklariert`, nichts verschwindet unsichtbar. Dass der Betrag im Bescheid steht und im
-/// XML fehlt, sperrt die Abgabe seit Abweichung Nr. 42: `unvollstaendig` nennt den bestaetigten Betrag des Ehegatten bei
-/// Zusammenveranlagung (die Sperre selbst prueft `versorgung_abgabe_sperre_hermetisch.rs`).
+/// Anlage N der Person B (E0200201, E0200002). Der Bezug des Ehegatten steht seit Abweichung Nr. 50 in den Zeilen 11 bis 13
+/// der zweiten Anlage N (E0200801, E0200902, E0201307, wie bei Person A); die Art (Weiche des Alters-Gates) ist kein Feld der
+/// Erklaerung und bleibt mit Grund in `nicht_deklariert`, nichts verschwindet unsichtbar. Die Abgabe bleibt gesperrt
+/// (Abweichung Nr. 42): `unvollstaendig` nennt den bestaetigten Betrag des Ehegatten bei Zusammenveranlagung (die Sperre
+/// selbst prueft `versorgung_abgabe_sperre_hermetisch.rs`).
 #[tokio::test]
-async fn die_deklaration_traegt_lohn_und_steuerklasse_und_nennt_die_versorgung_als_nicht_deklariert() {
+async fn die_deklaration_traegt_lohn_steuerklasse_und_die_versorgungszeilen_und_nennt_die_art_als_nicht_deklariert() {
     let mut p = mit(paar(2_000_000), lohn_partner(40_000));
     p.push(("steuerklasse_partner", json!("1")));
     p.push(("p36_lohnsteuer_partner", json!(600_000)));
@@ -536,10 +543,16 @@ async fn die_deklaration_traegt_lohn_und_steuerklasse_und_nennt_die_versorgung_a
         .iter()
         .map(|e| e["feld_id"].as_str().unwrap())
         .collect();
-    // Die vier beantworteten Versorgungsfelder (die Alters-Frage entfaellt bei `beamtenrechtlich`).
-    for feld in &EHEGATTEN_FELDER[2..6] {
-        assert!(nicht.contains(feld), "{feld} fehlt in nicht_deklariert: {nicht:?}");
+    // Die drei Zeilen des Bezugs (Abweichung Nr. 50): Betrag, Bemessungsgrundlage, Beginnjahr; der Ring-Wert ist kein Feld.
+    assert_eq!(dekl["person_b"]["E0200801"], json!(30_000), "Bezug des Ehegatten: {}", dekl["person_b"]);
+    assert_eq!(dekl["person_b"]["E0200902"], json!(30_000), "Bemessungsgrundlage des Ehegatten: {}", dekl["person_b"]);
+    assert_eq!(dekl["person_b"]["E0201307"], json!(2025), "Beginnjahr des Ehegatten: {}", dekl["person_b"]);
+    assert!(dekl["deklaration"].get("E0200801").is_none(), "nichts bei Person A: {}", dekl["deklaration"]);
+    // Die drei Felder stehen nicht mehr in `nicht_deklariert`, die Art (Weiche) schon; die Alters-Frage entfaellt bei `beamtenrechtlich`.
+    for feld in &EHEGATTEN_FELDER[2..5] {
+        assert!(!nicht.contains(feld), "{feld} steht in der Erklaerung, nicht in nicht_deklariert: {nicht:?}");
     }
+    assert!(nicht.contains(&"versorgung_art_partner"), "die Art ist kein Feld der Erklaerung: {nicht:?}");
     let offen: Vec<&str> = dekl["unvollstaendig"]
         .as_array()
         .unwrap()

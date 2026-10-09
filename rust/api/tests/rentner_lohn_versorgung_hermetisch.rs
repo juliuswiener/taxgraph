@@ -178,6 +178,12 @@ fn versorgung(euro: i64) -> Paare {
     ]
 }
 
+/// Ein reiner Pensionaer (Abweichung Nr. 50): Nr. 3 der Lohnsteuerbescheinigung (Bruttoarbeitslohn) enthaelt den Bezug aus
+/// Nr. 8, beide sind `euro`. Ein Bezug ohne so hohen Lohn sperrt (`versorgung_ueber_lohn`).
+fn pensionaer(euro: i64) -> Paare {
+    [lohn(euro), versorgung(euro)].concat()
+}
+
 fn zahl(a: &Value) -> i64 {
     assert_eq!(a["grund"], json!("bestaetigt"), "keine Zahl: {a}");
     a["zahl_cent"]
@@ -227,9 +233,9 @@ async fn der_lohn_aendert_die_steuer_ueber_http() {
 #[tokio::test]
 async fn die_versorgung_aendert_die_steuer_ueber_http() {
     let ohne = zahl(&ergebnis(&rentner(2_000_000)).await);
-    let null = zahl(&ergebnis(&mit(rentner(2_000_000), versorgung(0))).await);
-    let dreissig = zahl(&ergebnis(&mit(rentner(2_000_000), versorgung(30_000))).await);
-    let sechzig = zahl(&ergebnis(&mit(rentner(2_000_000), versorgung(60_000))).await);
+    let null = zahl(&ergebnis(&mit(rentner(2_000_000), pensionaer(0))).await);
+    let dreissig = zahl(&ergebnis(&mit(rentner(2_000_000), pensionaer(30_000))).await);
+    let sechzig = zahl(&ergebnis(&mit(rentner(2_000_000), pensionaer(60_000))).await);
     assert_eq!(null, ohne, "0 Euro Versorgung aendern nichts");
     assert!(
         ohne < dreissig && dreissig < sechzig,
