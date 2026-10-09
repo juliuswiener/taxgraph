@@ -148,6 +148,8 @@ felder:
   - kein_kap
   - kein_kap_partner
   - kein_kind
+  - kein_lohn_pension
+  - kein_lohn_pension_partner
   - kein_p23_verkauf
   - kein_realsplitting
   - kein_sonstige

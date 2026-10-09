@@ -218,8 +218,12 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 /// wie-im-gesamtfall-mit-lohnsteuer-und-altersentlastung-gerechnet`): `p36_lohnsteuer_partner` (die Lohnsteuer des Ehegatten,
 /// gefragt nur bei seinem Lohn ueber 0) und `geburtsjahr_partner` (fuer seinen Altersentlastungsbetrag nach § 24a, wie
 /// `geburtsjahr` bei Person A; `zweige/rentner.rs` rechnet § 24a je Person wie `zweige/gesamt.rs`). Der Kegel bleibt bei 28.
+/// Und die zwei Kreuze am Ende, ebenfalls nur in Rust (2026-10-09, Abweichung Nr. 46, Vault `rentner-eingangsfrage-lohn-oder-
+/// pension-wird-gebaut`): `kein_lohn_pension` (Person A) und `kein_lohn_pension_partner` (Ehegatte, nur bei
+/// Zusammenveranlagung). "Nein" verbirgt acht und zehn Felder dieser Liste; der Ring liest gespeicherte Werte wie bisher.
+/// Der Kegel bleibt bei 28.
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 280] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 282] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -290,6 +294,7 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 280] = [
     "bruttoarbeitslohn_partner", "steuerklasse_partner", "versorgung_jahresrente_partner", "versorgung_bemessungsgrundlage_partner",
     "versorgung_beginn_jahr_partner", "versorgung_art_partner", "versorgung_alter_bei_beginn_partner",
     "p36_lohnsteuer_partner", "geburtsjahr_partner",
+    "kein_lohn_pension", "kein_lohn_pension_partner",
 ];
 
 /// `SCHEIBEN['rentner_gesamt']["kegel"]` = `RENTNER_KEGEL + AGB_TATBESTAND`

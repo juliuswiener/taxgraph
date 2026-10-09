@@ -272,7 +272,8 @@ impl<'r> Graph<'r> {
     /// ```
     /// let reg = interview::doctest_registry().unwrap();
     /// let g = interview::Graph::aus_registry(&reg);
-    /// assert_eq!(g.themen_zuerst().first(), Some(&"p2_festzusetzung_einzel"));
+    /// assert_eq!(g.themen_zuerst().first(), Some(&"p2_einkunftsart_lohn_pension"));
+    /// assert_eq!(g.themen_zuerst().get(1), Some(&"p2_festzusetzung_einzel"));
     /// ```
     #[must_use]
     pub fn themen_zuerst(&self) -> &[&'r str] {
