@@ -645,11 +645,13 @@ fn der_verdrahtungs_test_wird_bei_jedem_bruch_rot() {
 
 #[test]
 fn die_id_pruefung_laesst_nur_eine_echte_id_durch() {
-    assert!(pruefe_id(None).is_err(), "fehlende ID");
-    assert!(pruefe_id(Some("")).is_err(), "leere ID");
-    assert!(pruefe_id(Some("  \n")).is_err(), "ID nur aus Leerraum");
-    assert!(pruefe_id(Some(PLATZHALTER_ID)).is_err(), "Platzhalter-ID");
-    assert!(pruefe_id(Some(" 74931\n")).is_err(), "Platzhalter-ID mit Leerraum");
-    assert!(pruefe_id(Some("00000000000")).is_err(), "ID aus Nullen");
+    // Der Grund zaehlt: "fehlt" und "Platzhalter" sind zwei Fehler, ein Tausch faellt auf.
+    let grund = |roh: Option<&str>| pruefe_id(roh).expect_err("diese ID muss abgelehnt werden");
+    assert!(grund(None).contains("fehlt"), "fehlende ID");
+    assert!(grund(Some("")).contains("fehlt"), "leere ID");
+    assert!(grund(Some("  \n")).contains("fehlt"), "ID nur aus Leerraum");
+    assert!(grund(Some(PLATZHALTER_ID)).contains("Platzhalter"), "Platzhalter-ID");
+    assert!(grund(Some(" 74931\n")).contains("Platzhalter"), "Platzhalter-ID mit Leerraum");
+    assert!(grund(Some("00000000000")).contains("Platzhalter"), "ID aus Nullen");
     assert_eq!(pruefe_id(Some(" abc12\n")), Ok("abc12".to_owned()), "eine ID geht, Leerraum faellt weg");
 }
