@@ -48,12 +48,18 @@ const BETRAG_KZ: &str = "E0205406";
 const SUMME_KZ: &str = "E0204803";
 
 fn setze(s: &mut Store, feld: &str, wert: Value) {
+    setze_mit(s, feld, wert, Zustand::Bestaetigt);
+}
+
+/// Ein Wert mit dem Zustand `bestaetigt` (zwei Signale) oder `vorlaeufig` (ohne zweites Signal).
+fn setze_mit(s: &mut Store, feld: &str, wert: Value, zustand: Zustand) {
     let leer = HashMap::new();
+    let bestaetigt = zustand == Zustand::Bestaetigt;
     s.append_roh(
         &NeuesEventRoh {
             feld_id: feld.to_owned(),
             wert: wert.into(),
-            zustand: Zustand::Bestaetigt,
+            zustand,
             herkunft: HerkunftVektor::Voll(Herkunft {
                 herkunft: Achsenwert::new("laie").unwrap(),
                 pruef_tiefe: PruefTiefe::Ungeprueft,
@@ -62,8 +68,8 @@ fn setze(s: &mut Store, feld: &str, wert: Value) {
             schreiber: "ui:laie".to_owned(),
             signal: Signal {
                 signal_1: Some(None),
-                signal_2: Some(format!("ok@{feld}")),
-                signal_2_fehlt: false,
+                signal_2: bestaetigt.then(|| format!("ok@{feld}")),
+                signal_2_fehlt: !bestaetigt,
             },
             signal_2_fremd: None,
             ersetzt: None,
@@ -175,7 +181,7 @@ fn der_abzug_steht_als_zeile_sonstiges_aufgerundet_und_in_der_summe() {
 }
 
 /// AK2: Unfallkosten UND Abzug. Zwei Zeilen; die Summe ist die Summe der GERUNDETEN Zeilen: 1.500,01 + 700,01 Euro sind
-/// 1.501 + 701 = 2.202. Die aufgerundete Rohsumme (220.002 Cent) waere 2.201 und ERiC weist ab 1 Euro Differenz die ganze
+/// 1.501 + 701 = 2.202. Die aufgerundete Rohsumme (220.002 Cent) waere 2.201 und `ERiC` weist ab 1 Euro Differenz die ganze
 /// Erklaerung ab (Vault `aufwand-einzelposten-aufrunden-summe-aus-posten`). ROT, solange nur eine Zeile steht.
 #[test]
 fn unfallkosten_und_abzug_stehen_in_zwei_zeilen_die_summe_ist_die_der_gerundeten_zeilen() {
@@ -216,7 +222,8 @@ fn nur_unfallkosten_bleiben_eine_zeile() {
 /// die einzige, die Summe ist ihr Betrag.
 #[test]
 fn ohne_abzug_im_bescheid_steht_keine_abzugszeile() {
-    let faelle: [(&str, Option<(bool, i64)>, Vec<(&str, Value)>); 6] = [
+    type Fall<'a> = (&'a str, Option<(bool, i64)>, Vec<(&'a str, Value)>);
+    let faelle: [Fall<'_>; 6] = [
         ("Wahl nein", Some((false, 70_000)), vec![]),
         ("Steuer 0", Some((true, 0)), vec![]),
         ("keine Auslandseinkuenfte", Some((true, 70_000)), vec![(EINKUENFTE, json!(0))]),
@@ -243,6 +250,26 @@ fn ohne_abzug_im_bescheid_steht_keine_abzugszeile() {
                 "{name}, Unfallkosten {unfall:?}: Summe"
             );
         }
+    }
+}
+
+/// KONTROLLE (gruen heute, schuetzt den Bau): eine nur VORLAEUFIGE gezahlte Steuer gibt keine Zeile. Die Sperre und
+/// `E0600920` in `elster` lesen nur bestaetigte Werte (`Bau::abzug_gewaehlt`); schriebe der Ring den Betrag aus dem rohen
+/// Feld, stuende die Zeile ohne `E0600920` in der Erklaerung.
+#[test]
+fn ein_vorlaeufiger_betrag_gibt_keine_abzugszeile() {
+    for unfall in [None, Some(150_001)] {
+        let mut s = akte(unfall, None, &[]);
+        setze(&mut s, EINKUENFTE, json!(500_000));
+        setze(&mut s, ART, json!("unselbstaendige_arbeit"));
+        setze(&mut s, WAHL, json!(true));
+        setze_mit(&mut s, STEUER, json!(70_001), Zustand::Vorlaeufig);
+        let (mut felder, _) = s.materialisiere(None).unwrap();
+        mit_ring_werten(&mut felder, Some(Vz::Vz2025), params()).unwrap();
+        let d = deklariere(&felder, index(), 2025, None).unwrap();
+        let z = zeilen(&d);
+        assert_eq!(z.len(), usize::from(unfall.is_some()), "Unfallkosten {unfall:?}: erhalten {z:?}");
+        assert_eq!(d.deklaration.get("E0600920"), None, "Unfallkosten {unfall:?}: E0600920 ohne bestaetigte Steuer");
     }
 }
 
@@ -312,9 +339,9 @@ fn xml_ohne_sperre(unfall: Option<i64>, abzug_cent: i64) -> (String, usize) {
     let (mut sauber, _) = deklaration(None, Some((false, abzug_cent)), &[]);
     assert!(sauber.unvollstaendig().is_empty(), "die Anrechnung sperrt schon");
     let n_vorher = xml_von(&sauber, &felder).matches("<N>").count();
-    sauber.deklaration = mit.deklaration.clone();
-    sauber.person_b = mit.person_b.clone();
-    sauber.anlage_instanzen = mit.anlage_instanzen.clone();
+    sauber.deklaration.clone_from(&mit.deklaration);
+    sauber.person_b.clone_from(&mit.person_b);
+    sauber.anlage_instanzen.clone_from(&mit.anlage_instanzen);
     (xml_von(&sauber, &felder), n_vorher)
 }
 
