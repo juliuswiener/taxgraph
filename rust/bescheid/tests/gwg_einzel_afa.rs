@@ -18,10 +18,11 @@
 use std::collections::HashMap;
 
 use bescheid::deklaration::{an_gesamt_sperrgrund, feste_zahl, Cfg, KeineZahl};
+use bescheid::einkuenfte::gwg_afa_summe;
 use bescheid::testhilfe::{felder, index, params, store};
 use bescheid::zweige::Umgebung;
 use bescheid::{Felder, Instanzquelle};
-use bindung::Bindung;
+use bindung::{Bindung, Bindungspunkt};
 use domain::{Feldtyp, Scheibe, Sperrgrund, Vz};
 use intervall::AchsenBindung;
 use serde_json::{json, Value};
@@ -478,4 +479,134 @@ fn die_rentner_scheibe_rechnet_die_afa() {
     let g = Geraet { verzeichnis: false, nd: Some(3), monat: Some(7), ..GUT };
     let ist = ergebnis(&rentner(geraet_paare(basis(0, 5_000_000, 0), g, false)), vz);
     assert_eq!(ist, mit_100, "Rentner-Scheibe, 600 EUR ohne Verzeichnis, 3 Jahre, Monat 7");
+}
+
+// ------------------------------------------------------------------ Ueberlebende der Nachmessung in main (38887430)
+
+/// Die Grenzen der Nutzungsdauer gelten: 30 Jahre ist gueltig (ein Mutant `1..=29` sperrte es), ebenso 1 Jahr. Soll von Hand:
+/// 1.000 EUR / 30 = 33,33 -> 33 EUR (Monat 1); 1.000 EUR / 1 Jahr = 1.000 EUR (Monat 1) und 1.000 x 1/12 = 83,33 -> 83 (Monat 12).
+#[test]
+fn die_grenzen_der_nutzungsdauer_rechnen() {
+    let t3 = Geraet { betrag: 100_000, ..GUT };
+    for vz in VZS {
+        for (ek, lohn, einn) in EINKOMMEN {
+            for (nd, monat, soll_afa) in [(30, 1, 33), (1, 1, 1_000), (1, 12, 83)] {
+                let g = Geraet { nd: Some(nd), monat: Some(monat), ..t3 };
+                let soll = (Grund::Bestaetigt, referenz(vz, lohn, einn, soll_afa));
+                assert_eq!(
+                    ergebnis(&mit_geraet(lohn, einn, g), vz),
+                    soll,
+                    "{} {ek}: Nutzungsdauer {nd}, Monat {monat}",
+                    vz.jahr()
+                );
+            }
+        }
+    }
+}
+
+/// Bis 250 EUR bleibt es beim Sofortabzug, auch wenn das Verzeichnis mit "nein" beantwortet ist (die Verzeichnispflicht
+/// beginnt erst ueber 250 EUR, § 6 Abs. 2 S. 4 `EStG`) und Nutzungsdauer und Monat dastehen: kein Doppelabzug. Ein Cent
+/// mehr (250,01 EUR) ohne Verzeichnis gibt keinen Sofortabzug mehr, sondern die `AfA`: 250,01 / 3 Jahre = 83,34 -> 83 EUR.
+#[test]
+fn bis_250_eur_bleibt_der_sofortabzug_auch_ohne_verzeichnis() {
+    for vz in VZS {
+        for (ek, lohn, einn) in EINKOMMEN {
+            let g = |betrag| Geraet { betrag, verzeichnis: false, nd: Some(3), monat: Some(1), ..GUT };
+            for (betrag, soll_abzug) in [(20_000, 200), (25_000, 250), (25_001, 83)] {
+                let soll = (Grund::Bestaetigt, referenz(vz, lohn, einn, soll_abzug));
+                assert_eq!(
+                    ergebnis(&mit_geraet(lohn, einn, g(betrag)), vz),
+                    soll,
+                    "{} {ek}: {betrag} Cent ohne Verzeichnis",
+                    vz.jahr()
+                );
+            }
+        }
+    }
+}
+
+/// `gwg_afa_summe` ohne Store und Bindung: die Felder der ersten Instanz, wie sie die Schaetzung liest. Das ist die
+/// Rechnung HINTER der Sperre (`sperre::gesamt::gwg`): in der festgesetzten Zahl faengt die Sperre "netto: nein" ab, die
+/// Schaetzung rechnet trotzdem, also muss die Rechnung dieselbe Grundlage selbst verlangen.
+fn afa_direkt(g: Geraet) -> i64 {
+    let events: Vec<(&str, Value, bool)> =
+        geraet_paare(Vec::new(), g, false).into_iter().map(|(f, w)| (f, w, true)).collect();
+    let q = Instanzquelle { store: None, bindung: None, nur_bestaetigt: true };
+    gwg_afa_summe(&felder(&store(&events)), &q).unwrap().get()
+}
+
+/// Die Rechnung prueft die Netto-Grundlage selbst: "Netto: nein" rechnet nur mit der Folgefrage "ja" und nur bis 800 EUR
+/// (die Grenze gilt netto, den Nettobetrag kennt die Software nicht). 800,00 EUR rechnet, 800,01 EUR nicht.
+/// Die erste Zeile ist die Kontrolle: die Rechnung liefert ueberhaupt etwas (600 EUR / 4 Jahre, Monat 1 = 150 EUR).
+#[test]
+fn die_rechnung_verlangt_die_netto_grundlage_selbst() {
+    let t1 = Geraet { verzeichnis: false, nd: Some(4), monat: Some(1), ..GUT };
+    assert_eq!(afa_direkt(t1), 150, "KONTROLLE: Netto ja, 600 EUR, 4 Jahre");
+    for ohne_abzug in [None, Some(false)] {
+        let g = Geraet { netto: false, ohne_abzug, ..t1 };
+        assert_eq!(afa_direkt(g), 0, "Netto nein, Folgefrage {ohne_abzug:?}");
+    }
+    let klein = Geraet { netto: false, ohne_abzug: Some(true), ..t1 };
+    assert_eq!(afa_direkt(klein), 150, "Netto nein, Folgefrage ja (Bruttobetrag)");
+    assert_eq!(afa_direkt(Geraet { betrag: 80_000, ..klein }), 200, "genau 800 EUR brutto, 4 Jahre");
+    assert_eq!(afa_direkt(Geraet { betrag: 80_001, ..klein }), 0, "800,01 EUR brutto");
+    assert_eq!(afa_direkt(Geraet { betrag: 100_000, ..klein }), 0, "1.000 EUR brutto");
+    assert_eq!(afa_direkt(Geraet { betrag: 80_001, ..t1 }), 200, "800,01 EUR netto: 200,0025 -> 200 EUR");
+}
+
+/// Eine vorlaeufige Instanz zaehlt in der strengen Summe nicht (Zwei-Signal-Regel, `Instanzquelle::zaehlt`), in der
+/// rohen schon. Die Kontrolle ist die rohe Summe: sie zeigt, dass die Instanz rechnet (100 EUR) und der Messaufbau nicht blind ist.
+#[test]
+fn eine_vorlaeufige_instanz_zaehlt_nicht_in_der_afa_summe() {
+    let g = Geraet { verzeichnis: false, nd: Some(3), monat: Some(7), ..GUT }; // 600 EUR, 3 Jahre, ab Juli: 100 EUR
+    let paare = geraet_paare(basis(0, 5_000_000, 0), g, false);
+    let summe = |f: &Fall, nur_bestaetigt: bool| {
+        let q = Instanzquelle { store: Some(&f.store), bindung: Some(&f.index), nur_bestaetigt };
+        gwg_afa_summe(&f.felder, &q).unwrap().get()
+    };
+    let vorlaeufig = fall(Scheibe::Gesamt, &paare, &[("gwg_verzeichnis_ab_250", json!(false))]);
+    assert_eq!(summe(&vorlaeufig, false), 100, "KONTROLLE: roh zaehlt die Instanz");
+    assert_eq!(summe(&vorlaeufig, true), 0, "streng zaehlt eine vorlaeufige Instanz nicht");
+    let bestaetigt = fall(Scheibe::Gesamt, &paare, &[]);
+    assert_eq!(summe(&bestaetigt, true), 100, "streng zaehlt die bestaetigte Instanz");
+}
+
+/// Ein `AfA`-Geraet allein in der zweiten Instanz, ohne Einnahmen und ohne Handfelder: dann schaltet nur die `AfA`-Summe den
+/// Gewinn-Zweig ein (`GEWINN_QUELLEN_MENGEN` kennt von den Geraetefeldern nur das Basisfeld der ersten Instanz). Ohne sie
+/// bliebe die `AfA` still weg. Soll: dieselbe Steuer wie ohne Geraet mit 120 EUR im Handfeld (600 EUR / 5 Jahre, Monat 1).
+#[test]
+fn ein_afa_geraet_allein_in_instanz_2_schaltet_den_gewinn_zweig_ein() {
+    let g = Geraet { nutzbar: false, nd: Some(5), monat: Some(1), ..GUT };
+    for vz in VZS {
+        let soll = (Grund::Bestaetigt, referenz(vz, 6_000_000, 0, 120));
+        assert!(soll.1 < referenz(vz, 6_000_000, 0, 0), "KONTROLLE: Messung blind {}", vz.jahr());
+        let paare = geraet_paare(basis(6_000_000, 0, 0), g, true);
+        assert_eq!(ergebnis(&fall(Scheibe::Gesamt, &paare, &[]), vz), soll, "{}", vz.jahr());
+    }
+}
+
+/// Die Slots der Rechnung (`intervall::bescheid_via_slots`) tragen den Slot-Namen allein, ohne `regel_id`: zwei Felder einer
+/// Scheibe mit demselben Namen ueberschreiben einander (das spaetere gewinnt). Die zwei Geraetefelder brauchen also
+/// Slot-Namen, die in der Scheibe sonst niemand traegt, auch nicht ein Feld einer anderen Regel (`arbeitsmittel_nutzungsdauer`
+/// bindet auf `nutzungsdauer`). Heute liest kein Rechenzweig diese Namen; der Test haelt, was der Kommentar in
+/// `bindung_n_vor_gwg.yaml` verspricht.
+#[test]
+fn die_slot_namen_der_geraetefelder_gehoeren_in_der_scheibe_nur_ihnen() {
+    let slot = |b: &Bindung| match &b.quelle.bindungspunkt {
+        Bindungspunkt::SignaturSlot(s) => Some(s.clone()),
+        Bindungspunkt::Geltungsbedingung(_) => None,
+    };
+    for scheibe in [Scheibe::Gesamt, Scheibe::RentnerGesamt] {
+        let ids = Cfg::fuer(scheibe)
+            .felder(|d| panic!("KONTROLLE: {scheibe} liest Felder aus {d}"))
+            .unwrap();
+        let teil: Vec<&Bindung> = ids.iter().map(|f| index()[f.as_str()]).collect();
+        for feld in ["gwg_nutzungsdauer", "gwg_kaufmonat"] {
+            let eigener = slot(index()[feld]).expect("KONTROLLE: das Geraetefeld hat einen Slot");
+            assert!(teil.iter().any(|b| b.feld_id == feld), "KONTROLLE: {feld} steht in {scheibe}");
+            let traeger: Vec<&str> =
+                teil.iter().filter(|b| slot(b).as_deref() == Some(eigener.as_str())).map(|b| b.feld_id.as_str()).collect();
+            assert_eq!(traeger, [feld], "Slot {eigener} in {scheibe}");
+        }
+    }
 }
