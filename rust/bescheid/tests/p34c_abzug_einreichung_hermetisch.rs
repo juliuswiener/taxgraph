@@ -39,6 +39,8 @@ const WAHL: &str = "dba_abzug_statt_anrechnung";
 const STEUER: &str = "dba_gezahlte_auslaendische_steuer";
 const EINKUENFTE: &str = "dba_auslaendische_einkuenfte";
 const ART: &str = "dba_einkunftsart";
+/// Seit Abweichung Nr. 51 braucht jede Akte mit Auslandseinkuenften einen Staat; Frankreich rechnet wie "kein Staat" (Anrechnung).
+const STAAT: &str = "dba_staat";
 
 /// Anlage AUS Zeile 10: "abgezogene ausländische Steuern nach § 34c Abs. 2 `EStG`" (E10-2025.xsd, `Staat_Spez_InvFonds`).
 const ABZUG_KZ: &str = "E0600920";
@@ -96,6 +98,7 @@ fn akte_voll(wahl: Option<bool>, steuer: Option<i64>, steuer_zustand: Zustand, a
     if wahl.is_some() || steuer.is_some() {
         setze(&mut s, EINKUENFTE, json!(500_000), Zustand::Bestaetigt);
         setze(&mut s, ART, json!(art), Zustand::Bestaetigt);
+        setze(&mut s, STAAT, json!("Frankreich"), Zustand::Bestaetigt);
     }
     if let Some(c) = steuer {
         setze(&mut s, STEUER, json!(c), steuer_zustand);

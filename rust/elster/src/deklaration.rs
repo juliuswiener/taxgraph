@@ -94,6 +94,45 @@ const DBA_ABZUG_KZ: &str = "E0600920";
 /// Bescheids; in den zwei Faellen dazwischen (keine Auslandseinkuenfte, Freistellung) steht keine Zeile, der Text sagt "soweit".
 const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: Die Erklärung trägt den Betrag in der Anlage AUS und, soweit der Bescheid deine Einkünfte kürzt, in der Zeile „Sonstiges“ der Anlage N. Ein checkESt-Lauf hat diese Zeile noch nie angenommen. Die Abgabe ist deshalb gesperrt. Antworte „nein“ (Anrechnung), wenn du abgeben willst, oder trage den Abzug im Formular selbst ein.";
 
+/// Nur Rust (Abweichung Nr. 51): der Staat der Auslandseinkuenfte (Anlage AUS, Zeile "1. Staat"), die Einkuenfte aus diesem
+/// Staat (Kz kommt aus der Bindung, Anlage AUS Zeile 7) und die Tabelle der Listentexte. Das Feld hat kein Kz in der Bindung:
+/// der Wert ist ein Bindungswert, das Schema will den Namen aus seiner Laenderliste ([`Bau::dba_staat`]).
+pub(crate) const DBA_STAAT: &str = "dba_staat";
+const DBA_EINKUENFTE: &str = "dba_auslaendische_einkuenfte";
+
+/// Das Kz "aus dem Staat / Spezial-Investmentfonds" (Anlage AUS, `Staat_Spez_InvFonds/E0600301`). Der Typ ist Klartext aus der
+/// Laenderliste des Schemas (197 Eintraege, nur in der Dokumentation, keine Aufzaehlung). `checkESt` prueft den Text nicht
+/// (26 Texte gemessen, alle rc=0): die Gegenprobe gegen die Liste steht in `bescheid/tests/dba_staat_kz.rs`.
+pub(crate) const STAAT_KZ: &str = "E0600301";
+
+/// Die 15 benannten Bindungswerte von `dba_staat` und ihr Text in der Laenderliste. 12 sind gleich, `Oesterreich`, `Tschechien` und
+/// `Grossbritannien` weichen ab. `sonstiger_staat` hat keinen Eintrag und sperrt ([`STAAT_SPERRE`]).
+const DBA_STAAT_LISTENTEXT: &[(&str, &str)] = &[
+    ("Deutschland", "Deutschland"),
+    ("Frankreich", "Frankreich"),
+    ("Italien", "Italien"),
+    ("Oesterreich", "Österreich"),
+    ("Schweiz", "Schweiz"),
+    ("Niederlande", "Niederlande"),
+    ("Polen", "Polen"),
+    ("Tschechien", "Tschechische Republik"),
+    ("Dänemark", "Dänemark"),
+    ("Luxemburg", "Luxemburg"),
+    ("Türkei", "Türkei"),
+    ("Grossbritannien", "Vereinigtes Königreich"),
+    ("Spanien", "Spanien"),
+    ("USA", "USA"),
+    ("Kanada", "Kanada"),
+];
+
+/// Der Grund der Abgabe-Sperre bei Auslandseinkuenften ohne benennbaren Staat: `sonstiger_staat`, ein fehlender oder ein
+/// unbekannter Wert. Die Erklaerung braucht den Namen aus der amtlichen Laenderliste; ohne ihn lehnt `checkESt` die Akte ab.
+const STAAT_SPERRE: &str = "Auslandseinkünfte ohne Staat: Die Erklärung braucht den Staat, aus dem die Einkünfte stammen, mit seinem Namen aus der amtlichen Länderliste. Für „sonstiger Staat“ und für eine fehlende oder unbekannte Angabe gibt es diesen Namen noch nicht. Die Abgabe ist deshalb gesperrt. Wähle den Staat in der Liste, wenn er dort steht, oder trage die Anlage AUS im amtlichen Formular selbst ein.";
+
+/// Der Grund der Abgabe-Sperre bei auslaendischer Steuer (Anrechnung oder Abzug) ohne Einkuenfte aus dem Staat: die Anlage AUS
+/// verlangt zur Steuer die Einkuenfte, auch mit dem Wert 0; `checkESt` lehnt die Akte sonst mit rc=610001002 ab.
+const STEUER_OHNE_EINKUENFTE_SPERRE: &str = "Ausländische Steuer ohne Einkünfte: Die Anlage AUS verlangt zur Steuer die Einkünfte aus dem Staat, auch mit dem Wert 0. Die Abgabe ist deshalb gesperrt. Trage die Einkünfte aus diesem Staat ein, oder lösche die Steuer, wenn du ohne Auslandseinkünfte abgibst.";
+
 /// Nur Rust (Abweichung Nr. 42): der Jahresbetrag der Versorgungsbezuege von Person A und, bei Zusammenveranlagung, des
 /// Ehegatten (Abweichung Nr. 33). Beide Felder tragen kein Kz.
 const VERSORGUNG: &str = "versorgung_jahresrente";
@@ -585,6 +624,55 @@ impl Bau<'_> {
         }
     }
 
+    /// Steht das Kz des Felds (aus der Bindung, kein Literal) in der Deklaration von Person A?
+    fn kz_des_felds_steht(&self, feld_id: &str) -> bool {
+        self.bindung
+            .get(feld_id)
+            .and_then(|b| kz_von(b))
+            .is_some_and(|kz| self.deklaration.contains_key(kz))
+    }
+
+    /// Der Staat der Auslandseinkuenfte (Abweichung Nr. 51), NACH der Feldschleife, denn er haengt daran, ob die Einkuenfte
+    /// ([`DBA_EINKUENFTE`], `E0601401`) und die Steuer (`E0601901` oder, bei gewaehltem Abzug, [`DBA_ABZUG_KZ`]) schon stehen.
+    ///
+    /// 1. Einkuenfte stehen und der Wert ist ein benannter Staat: [`STAAT_KZ`] traegt den Listentext ([`DBA_STAAT_LISTENTEXT`]).
+    /// 2. Einkuenfte stehen, der Staat fehlt, ist `sonstiger_staat` oder unbekannt: nichts im XML, Sperre ([`STAAT_SPERRE`]).
+    /// 3. Einkuenfte fehlen, die Steuer steht: Sperre ([`STEUER_OHNE_EINKUENFTE_SPERRE`]), auch ohne Staat. `checkESt` lehnt
+    ///    Steuer ohne Einkuenfte mit und ohne Staat ab (15 Kombinationen gemessen).
+    /// 4. Einkuenfte und Steuer fehlen: kein Staat im XML (`checkESt` lehnt "Staat ohne Einkuenfte" ab), keine Sperre.
+    ///
+    /// Ein vorlaeufiger Staat hat seinen Eintrag ("Pflicht-Bestaetigung fehlt") schon aus [`Bau::feld`].
+    fn dba_staat(&mut self) {
+        let snapshot = self.snapshot;
+        let staat = snapshot.get(DBA_STAAT);
+        if staat.is_some_and(|s| s.zustand != Zustand::Bestaetigt) {
+            return;
+        }
+        let hat_einkuenfte = self.kz_des_felds_steht(DBA_EINKUENFTE);
+        let hat_steuer =
+            self.kz_des_felds_steht(DBA_STEUER) || self.deklaration.contains_key(DBA_ABZUG_KZ);
+        if !hat_einkuenfte {
+            if hat_steuer {
+                self.offen(DBA_STEUER, STEUER_OHNE_EINKUENFTE_SPERRE);
+            }
+            if staat.is_some() {
+                self.nicht(DBA_STAAT, "Staat ohne Einkünfte aus diesem Staat: die Anlage AUS nennt den Staat nur mit Einkünften");
+            }
+            return;
+        }
+        let text = staat.and_then(|s| match &s.wert {
+            PyWert::Text(t) => suche(DBA_STAAT_LISTENTEXT, t),
+            _ => None,
+        });
+        if let Some(text) = text {
+            self.deklaration
+                .insert(STAAT_KZ.to_owned(), Value::String(text.to_owned()));
+        } else {
+            self.nicht(DBA_STAAT, "Staat ohne Listentext: sonstiger Staat, fehlende oder unbekannte Angabe");
+            self.offen(DBA_STAAT, STAAT_SPERRE);
+        }
+    }
+
     /// `_deklariere_instanz` (`est_mapping.py:590-632`).
     fn instanz_feld(
         &mut self,
@@ -821,6 +909,8 @@ impl Bau<'_> {
                     hinweis: Some(cfg.hinweis_unbekannt.to_owned()),
                 }),
             }
+        } else if feld_id == DBA_STAAT {
+            // Abweichung Nr. 51: der Staat steht nach der Feldschleife (`Bau::dba_staat`), nicht hier.
         } else if feld_id == "stammdaten_iban" {
             self.iban(feld_id, wert);
         } else if let (SCHULGELD_ANTEIL, Some(kz)) = (feld_id, kz_von(b)) {
@@ -1011,6 +1101,7 @@ pub fn deklariere(
     bau.bankverbindung();
     bau.kap_nulldeklaration()?;
     bau.pflegeblock();
+    bau.dba_staat();
     bau.antrag_person_b();
     let dokumentiert = bau.dokumentiert();
     bau.p23_gewinn()?;
@@ -1810,6 +1901,83 @@ mod tests {
                 assert!(d.nicht_deklariert.iter().any(|e| e.feld_id == "ep_unfallkosten"));
             }
         }
+    }
+
+    /// Abweichung Nr. 51: der Staat der Auslandseinkuenfte steht als Listentext unter `E0600301`, genau dann, wenn die
+    /// Einkuenfte `E0601401` stehen. Drei Bindungswerte weichen vom Listentext ab. `sonstiger_staat`, ein fehlender und ein
+    /// unbekannter Wert schreiben nichts und sperren (`dba_staat`); Steuer ohne Einkuenfte sperrt (`dba_gezahlte_auslaendische_steuer`);
+    /// ein Staat ohne Einkuenfte und ohne Steuer steht nicht und sperrt nicht. Das Regal fuehrt das Literal mit diesem Test.
+    /// Die ganze Akte und die Gegenprobe gegen die Laenderliste des Schemas stehen in `bescheid/tests/dba_staat_kz.rs`.
+    #[test]
+    fn der_staat_steht_als_listentext_in_e0600301_genau_mit_den_einkuenften() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        // (Staat, Einkuenfte vorhanden, Steuer vorhanden) -> (Text unter E0600301, Sperre zum Staat, Sperre zur Steuer)
+        let faelle = [
+            (Some("Frankreich"), true, false, Some("Frankreich"), false, false),
+            (Some("Oesterreich"), true, false, Some("Österreich"), false, false),
+            (Some("Tschechien"), true, true, Some("Tschechische Republik"), false, false),
+            (Some("Grossbritannien"), true, false, Some("Vereinigtes Königreich"), false, false),
+            (Some("sonstiger_staat"), true, false, None, true, false),
+            (Some("Atlantis"), true, false, None, true, false),
+            (None, true, false, None, true, false),
+            (Some("Frankreich"), false, false, None, false, false),
+            (Some("Frankreich"), false, true, None, false, true),
+            (None, false, true, None, false, true),
+        ];
+        for (staat, einkuenfte, steuer, text, sperre_staat, sperre_steuer) in faelle {
+            let mut felder = Felder::new();
+            if let Some(s) = staat {
+                felder.insert("dba_staat".to_owned(), feld(json!(s)));
+            }
+            if einkuenfte {
+                felder.insert("dba_auslaendische_einkuenfte".to_owned(), feld(json!(500_000)));
+            }
+            if steuer {
+                felder.insert("dba_gezahlte_auslaendische_steuer".to_owned(), feld(json!(70_000)));
+            }
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            let name = format!("{staat:?}, Einkünfte {einkuenfte}, Steuer {steuer}");
+            assert_eq!(
+                d.deklaration.get("E0600301"),
+                text.map(|t| json!(t)).as_ref(),
+                "{name}: Text"
+            );
+            let sperre = |id: &str| d.unvollstaendig().iter().any(|e| e.feld_id == id);
+            assert_eq!(sperre("dba_staat"), sperre_staat, "{name}: Sperre zum Staat");
+            assert_eq!(sperre("dba_gezahlte_auslaendische_steuer"), sperre_steuer, "{name}: Sperre zur Steuer");
+        }
+        // Ein vorlaeufiger Staat steht nicht im Kz: der Eintrag "Pflicht-Bestaetigung fehlt" kommt aus `feld`, genau einmal.
+        let vorlaeufig = Felder::from([
+            (
+                "dba_staat".to_owned(),
+                SnapshotFeld { zustand: Zustand::Vorlaeufig, ..feld(json!("Frankreich")) },
+            ),
+            ("dba_auslaendische_einkuenfte".to_owned(), feld(json!(500_000))),
+        ]);
+        let d = deklariere(&vorlaeufig, &index, 2025, None).unwrap();
+        assert_eq!(d.deklaration.get("E0600301"), None, "vorläufiger Staat steht im Kz");
+        let gruende: Vec<&str> =
+            d.unvollstaendig().iter().filter(|e| e.feld_id == "dba_staat").map(|e| e.grund.as_str()).collect();
+        assert_eq!(gruende.len(), 1, "{gruende:?}");
+        assert!(gruende[0].contains("Bestätigung"), "{gruende:?}");
     }
 
     /// Abweichung Nr. 49: der Ring-Wert `dba_abzug_zeile_cent` steht als ZWEITE Zeile "Sonstiges" in der Gruppe `weitere_wk`,

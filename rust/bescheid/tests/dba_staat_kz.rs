@@ -1,6 +1,6 @@
 //! Anlage AUS, Zeile "1. Staat" (`E0600301`, Abweichung Nr. 51 in `rust/fixtures/README.md`): wer Auslandseinkuenfte erklaert,
 //! muss den Staat nennen. Die amtliche Pruefung (`checkESt`) lehnt jede Akte mit Auslandseinkuenften ohne Staat ab
-//! (rc=610001002), auch die Anrechnung, die nicht gesperrt ist. TaxGraph fragt den Staat (`dba_staat`), schrieb ihn aber nicht.
+//! (rc=610001002), auch die Anrechnung, die nicht gesperrt ist. `TaxGraph` fragt den Staat (`dba_staat`), schrieb ihn aber nicht.
 //!
 //! Der Staat steht als KLARTEXT aus der amtlichen Laenderliste im Schema, nicht als Schluessel. Drei Bindungswerte weichen vom
 //! Listentext ab (`Oesterreich`, `Tschechien`, `Grossbritannien`), `sonstiger_staat` hat keinen. `checkESt` prueft den Text
@@ -12,7 +12,7 @@
 //! 3. Der Staat steht genau dann, wenn die Einkuenfte `E0601401` stehen. Steuer (Anrechnung oder Abzug) ohne Einkuenfte sperrt.
 //!
 //! Der Test geht ueber `einreichungs_xml` (Ring, Guard, `deklariere`), nicht ueber `POST /einreichen`: die Sperre liegt VOR dem
-//! Writer und braucht kein ERiC. Die Akte ist `rust/fixtures/e2e/gesamt.json` (vollstaendig, ohne Auslandsangaben) plus die
+//! Writer und braucht kein `ERiC`. Die Akte ist `rust/fixtures/e2e/gesamt.json` (vollstaendig, ohne Auslandsangaben) plus die
 //! Auslandsangaben des jeweiligen Falls. Nur die Gegenprobe gegen die Laenderliste liest das ERiC-Schema und entfaellt ohne.
 #![allow(
     clippy::unwrap_used,
@@ -230,7 +230,7 @@ fn jeder_geschriebene_text_steht_in_der_laenderliste_des_schemas() {
     for (bindungswert, _) in STAATEN {
         let s = akte(&Ausland::mit_staat(json!(bindungswert)));
         let text = kz_wert(&s, STAAT_KZ).unwrap_or_else(|| panic!("{bindungswert}: kein E0600301"));
-        assert!(liste.iter().any(|e| *e == text), "{bindungswert}: '{text}' steht nicht in der Laenderliste");
+        assert!(liste.contains(&text), "{bindungswert}: '{text}' steht nicht in der Laenderliste");
     }
 }
 

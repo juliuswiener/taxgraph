@@ -40,6 +40,8 @@ const WAHL: &str = "dba_abzug_statt_anrechnung";
 const STEUER: &str = "dba_gezahlte_auslaendische_steuer";
 const EINKUENFTE: &str = "dba_auslaendische_einkuenfte";
 const ART: &str = "dba_einkunftsart";
+/// Seit Abweichung Nr. 51 braucht jede Akte mit Auslandseinkuenften einen Staat; Frankreich rechnet wie "kein Staat" (Anrechnung).
+const STAAT: &str = "dba_staat";
 const FIKTIV: &str = "dba_fiktive_steuer_vorhanden";
 const UNFALL: &str = "ep_unfallkosten";
 
@@ -103,6 +105,7 @@ fn akte(unfall: Option<i64>, abzug: Option<(bool, i64)>, anders: &[(&str, Value)
     if let Some((wahl, steuer)) = abzug {
         felder.push((EINKUENFTE, json!(500_000)));
         felder.push((ART, json!("unselbstaendige_arbeit")));
+        felder.push((STAAT, json!("Frankreich")));
         felder.push((STEUER, json!(steuer)));
         felder.push((WAHL, json!(wahl)));
     }

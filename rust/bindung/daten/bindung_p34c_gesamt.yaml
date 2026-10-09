@@ -27,7 +27,7 @@ bindungen:
     beispielwert: Frankreich
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage-AUS-Staatenschlüssel — Kz-Recon = dev-2-Folgeticket (null-MVP). Single-Country Stufe-1; multi-country (>1 Staat) sperrt dba_multi_country_offen."
+    elster_kz_grund: "Anlage AUS Zeile „1. Staat“ (E0600301): kein Bindungs-Kz, weil das Schema Klartext aus seiner Länderliste verlangt, nicht den Bindungswert. rust/elster/src/deklaration.rs (dba_staat, Abweichung Nr. 51) schreibt den Listentext aus einer eigenen Tabelle, nur zusammen mit den Einkünften E0601401; sonstiger_staat, eine fehlende oder unbekannte Angabe sperren die Abgabe. Single-Country Stufe-1; multi-country (>1 Staat) sperrt dba_multi_country_offen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 34c Abs. 1 S. 1 EStG"

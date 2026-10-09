@@ -28,7 +28,7 @@ use bindung::{Bindung, Bindungspunkt};
 use domain::{Achsenwert, Herkunft, PruefTiefe, Zustand};
 use store::SnapshotFeld;
 
-use crate::deklaration::{UNFALLKOSTEN, UNFALLKOSTEN_ZIEL_KZ};
+use crate::deklaration::{DBA_STAAT, STAAT_KZ, UNFALLKOSTEN, UNFALLKOSTEN_ZIEL_KZ};
 use crate::kz_wache::{abtasten_mit, modul_dateien, rs_dateien};
 use crate::tabellen::{
     DOKUMENTIERT_AGGREGAT, MULTIPLIKATION, NEGATION, P23_BETRAGSFELDER, PARTNER_INSTANZ,
@@ -110,6 +110,8 @@ fn transform_quellen() -> BTreeSet<&'static str> {
     q.insert("stammdaten_iban");
     // Abweichung Nr. 48: die Unfallkosten sind Quelle der Zeile "Sonstiges" (drei Kz, `UNFALLKOSTEN_ZIEL_KZ`).
     q.insert(UNFALLKOSTEN);
+    // Abweichung Nr. 51: der Staat ist Quelle von `STAAT_KZ` (Listentext aus `DBA_STAAT_LISTENTEXT`), das Feld hat kein Bindungs-Kz.
+    q.insert(DBA_STAAT);
     q
 }
 
@@ -182,6 +184,7 @@ fn kein_phantom_kz_in_der_deklaration() {
     erlaubt.extend(KONSTANTE_KZ.iter().copied());
     erlaubt.extend(IBAN_TRANSFORM_ZIEL_KZ.iter().copied());
     erlaubt.extend(UNFALLKOSTEN_ZIEL_KZ);
+    erlaubt.insert(STAAT_KZ);
     let phantome: Vec<&str> = deklaration()
         .deklaration
         .keys()
