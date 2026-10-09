@@ -1,6 +1,7 @@
 //! Unfallkosten auf dem Arbeitsweg (`ep_unfallkosten`, Abweichung Nr. 28 in `rust/fixtures/README.md`): die Rechnung zieht den
-//! Betrag ab, das ELSTER-XML traegt ihn nicht (der Kz ist UNGEPRUEFT, `kz_status: offen`). Ein Bescheid, dessen Abzug die
-//! Erklaerung verschweigt, waere die bekannte Naht-Luecke. Darum sperrt `deklariere` die Abgabe bei einem Betrag ueber 0
+//! Betrag ab. Seit Abweichung Nr. 48 traegt die Deklaration ihn in der Zeile "Sonstiges" der Anlage N (`unfallkosten_weitere_wk_xml.rs`),
+//! aber der Kz ist UNGEPRUEFT (`kz_status: offen`, `checkESt` lief nie). Ein Bescheid, dessen Abzug eine ungepruefte
+//! Zeile traegt, bleibt gesperrt. Darum sperrt `deklariere` die Abgabe bei einem Betrag ueber 0
 //! (`einreichungs_xml` -> `DeklarationUnvollstaendig` -> 409 `deklaration_unvollstaendig`, `api/src/einreichen.rs`), und bei
 //! leerem Feld oder 0 aendert sich nichts.
 //!
@@ -140,11 +141,14 @@ fn null_und_leer_aendern_die_abgabe_nicht() {
     }
 }
 
-/// Der Betrag steht NIE im XML-Teil der Deklaration: er kommt mit Grund in `nicht_deklariert` (AK5: kein Kz, kein
-/// erfundener Wert). Bei einem Betrag ueber 0 steht er zusaetzlich unter `unvollstaendig`, bei 0 nicht.
+/// Abweichung Nr. 48: bei 0 steht nichts in der Deklaration, der Betrag kommt mit Grund in `nicht_deklariert` (kein Kz,
+/// kein erfundener Wert) und die Abgabe ist nicht gesperrt. Ueber 0 steht der Betrag unter `E0205406` (Zeile "Sonstiges"
+/// der Anlage N, aufgerundet) mit Bezeichnung `E0205405` und Summe `E0204803`; er steht dann NICHT mehr in
+/// `nicht_deklariert`, aber weiter unter `unvollstaendig`: die Zeile ist UNGEPRUEFT (`checkESt` lief nie), die Sperre bleibt.
+/// Das XML selbst liest `unfallkosten_weitere_wk_xml.rs`.
 #[test]
-fn der_betrag_steht_mit_grund_in_nicht_deklariert_und_nie_im_xml() {
-    for (cent, gesperrt) in [(0_i64, false), (150_000, true)] {
+fn der_betrag_steht_ueber_null_in_der_zeile_sonstiges_und_die_sperre_bleibt() {
+    for (cent, euro) in [(0_i64, None), (150_000, Some("1500")), (150_001, Some("1501"))] {
         let s = akte(Some(cent));
         let (felder, _) = s.materialisiere(None).unwrap();
         let d = deklariere(&felder, index(), 2025, None).unwrap();
@@ -153,25 +157,35 @@ fn der_betrag_steht_mit_grund_in_nicht_deklariert_und_nie_im_xml() {
             .iter()
             .filter(|e| e.feld_id == FELD)
             .collect();
-        assert_eq!(nicht.len(), 1, "{cent} Cent: {:?}", d.nicht_deklariert);
-        assert!(
-            nicht.first().unwrap().grund.contains("kz_status offen"),
-            "der Grund nennt den offenen Kz nicht: {:?}",
-            nicht.first()
-        );
-        assert_eq!(
-            d.unvollstaendig().iter().any(|e| e.feld_id == FELD),
-            gesperrt,
-            "{cent} Cent: {:?}",
-            d.unvollstaendig()
-        );
-        // Die Kandidaten aus dem `ponytail:` der Bindung sind UNGEPRUEFT: kein Betrag unter einem geratenen Kz.
-        for kz in ["E0205405", "E0205406"] {
-            assert!(
-                !d.deklaration.contains_key(kz),
-                "{kz} traegt einen ungeprueften Betrag: {:?}",
-                d.deklaration.get(kz)
-            );
+        let kz = |k: &str| d.deklaration.get(k).map(|v| v.to_string().trim_matches('"').to_owned());
+        match euro {
+            None => {
+                assert_eq!(nicht.len(), 1, "{cent} Cent: {:?}", d.nicht_deklariert);
+                assert!(
+                    nicht.first().unwrap().grund.contains("kz_status offen"),
+                    "der Grund nennt den offenen Kz nicht: {:?}",
+                    nicht.first()
+                );
+                for k in ["E0205405", "E0205406", "E0204803"] {
+                    assert_eq!(kz(k), None, "{cent} Cent: {k} ohne Betrag");
+                }
+                assert!(d.unvollstaendig().iter().all(|e| e.feld_id != FELD));
+            }
+            Some(euro) => {
+                assert!(nicht.is_empty(), "{cent} Cent: {:?}", d.nicht_deklariert);
+                assert_eq!(kz("E0205406").as_deref(), Some(euro), "{cent} Cent: Betrag");
+                assert_eq!(kz("E0204803").as_deref(), Some(euro), "{cent} Cent: Summe");
+                assert!(
+                    kz("E0205405").is_some_and(|t| t.contains("Unfall")),
+                    "{cent} Cent: Bezeichnung {:?}",
+                    kz("E0205405")
+                );
+                assert!(
+                    d.unvollstaendig().iter().any(|e| e.feld_id == FELD),
+                    "{cent} Cent: die Sperre ist weg: {:?}",
+                    d.unvollstaendig()
+                );
+            }
         }
     }
 }

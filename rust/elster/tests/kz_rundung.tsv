@@ -31,7 +31,8 @@ E0200201	ab	Bruttoarbeitslohn einschließlich Sachbezüge
 E0200301	komma	Lohnsteuer
 E0200501	komma	Kirchensteuer des Arbeitnehmers
 E0203611	auf	Aufwendungen für Fahrten mit öffentlichen Verkehrsmitteln (ohne Fähr- 
-E0205508	ab	Kürzungsbeträge wegen Mahlzeitengestellung (eigene Zuzahlungen sind gg
+E0205406	auf	Betrag
+E0205508	abKürzungsbeträge wegen Mahlzeitengestellung (eigene Zuzahlungen sind gg
 E0207611	auf	Aufwendungen (z. B. Miete einschließlich Stellplatz- / Garagenkosten, 
 E0241001	auf	Aufwendungen für die Wärmedämmung von Wänden
 E0241101	auf	Aufwendungen für die Wärmedämmung von Dachflächen

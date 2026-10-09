@@ -35,8 +35,19 @@ const SCHULGELD_ANTEIL_HAELFTE: i64 = 50;
 /// Nur Rust (Abweichung Nr. 28): Unfallkosten auf dem Weg zur Arbeit, zusaetzlich zur Entfernungspauschale.
 const UNFALLKOSTEN: &str = "ep_unfallkosten";
 
-/// Der Grund der Abgabe-Sperre bei Unfallkosten ueber 0 (`ep_unfallkosten` ohne geprueftes Kz): die Rechnung zieht den
-/// Betrag ab, das XML traegt ihn nicht. Die Steuer im Bescheid und die Zahl der Erklaerung wuerden auseinanderlaufen.
+/// Die Zeile "Sonstiges" der Anlage N, in die die Unfallkosten gehoeren (Abweichung Nr. 48, `N/Wk/Weitere_Wk/Sonst`,
+/// `E10-2025.xsd:18231-18274`; Anleitung zur Anlage N "Zeile 62 bis 64"): Bezeichnung, Betrag in volle Euro (aufgerundet,
+/// `ABZUGS_KZ`) und die Summe der weiteren Werbungskosten. Dass es die Zeilen 62 und 63 sind, folgt aus Schema und Vordruck.
+const UNFALLKOSTEN_TEXT_KZ: &str = "E0205405";
+const UNFALLKOSTEN_BETRAG_KZ: &str = "E0205406";
+const WEITERE_WK_SUMME_KZ: &str = "E0204803";
+
+/// Die Bezeichnung in `E0205405`. Das Schema (`NAEnum_BEWERBUNGSKOSTEN_3`) kennt keine Aufzaehlung; ob ERiC den Text gegen die
+/// Namensliste der Dokumentation prueft, ist ohne `checkESt` offen (deshalb bleibt die Sperre).
+const UNFALLKOSTEN_TEXT: &str = "Unfallkosten Arbeitsweg";
+
+/// Der Grund der Abgabe-Sperre bei Unfallkosten ueber 0: das XML traegt den Betrag seit Abweichung Nr. 48 unter
+/// [`UNFALLKOSTEN_BETRAG_KZ`], aber kein `checkESt`-Lauf hat die Zeile je angenommen. Die Sperre faellt mit dem ersten Lauf.
 const UNFALLKOSTEN_SPERRE: &str = "Unfallkosten über 0 Euro: Für diesen Betrag gibt es noch kein geprüftes ELSTER-Kennzeichen. Die Abgabe ist deshalb gesperrt. Setze den Betrag auf 0 oder lösche ihn, wenn du ohne diesen Abzug abgeben willst.";
 
 /// Nur Rust (Abweichung Nr. 29): die Wahl "Abzug statt Anrechnung" der auslaendischen Steuer (§ 34c Abs. 2 EStG).
@@ -426,19 +437,42 @@ impl Bau<'_> {
         Ok(false)
     }
 
-    /// `ep_unfallkosten` OHNE geprueftes Kz (Abweichung Nr. 28): der Betrag steht mit Grund in `nicht_deklariert`. Ueber 0
-    /// sperrt er die Abgabe ([`UNFALLKOSTEN_SPERRE`], 409 `deklaration_unvollstaendig`), denn die Rechnung zieht ihn ab und
-    /// das XML trug ihn nicht: ein Bescheid, dessen Abzug die Erklaerung verschweigt, ist die bekannte Naht-Luecke.
-    /// Traegt die Bindung ein Kz, greift dieser Zweig nicht mehr: die Sperre faellt mit dem Eintrag.
+    /// `ep_unfallkosten` OHNE geprueftes Kz (Abweichung Nr. 28, Nr. 48). Ueber 0 steht der Betrag in der Zeile "Sonstiges" der
+    /// Anlage N ([`UNFALLKOSTEN_BETRAG_KZ`], aufgerundet auf volle Euro; Bezeichnung [`UNFALLKOSTEN_TEXT_KZ`]; Summe
+    /// [`WEITERE_WK_SUMME_KZ`]), und die Abgabe bleibt gesperrt ([`UNFALLKOSTEN_SPERRE`], 409 `deklaration_unvollstaendig`),
+    /// bis `checkESt` die Zeile einmal angenommen hat: die Sperre haelt auch `erzeuge_xml` zurueck. Bei 0 und leer steht
+    /// nichts im XML und der Grund in `nicht_deklariert`.
+    /// Fuer die Sperre genuegt der Wegfall des `offen`-Aufrufs; die Zeile bleibt.
+    ///
+    /// ponytail: die Summe ist die EINE Zeile. Kommt der § 34c-Abzug als zweite `Sonst`-Zeile dazu (Ticket
+    /// `p34c-abzug-in-weitere-wk-sonst-zweite-zeile`), muss [`WEITERE_WK_SUMME_KZ`] die Summe der gerundeten Zeilen sein,
+    /// und der Schreiber braucht eine abgeleitete zweite Zeile (er kennt Wiederholung nur ueber gespeicherte Instanzfelder).
     fn unfallkosten(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) -> Ergebnis<()> {
         let betrag = py::int(wert).map_err(wert_fehler(feld_id))?;
-        let grund = b
-            .elster_kz_grund
-            .clone()
-            .unwrap_or_else(|| "kein elster_kz".to_owned());
-        self.nicht(feld_id, grund);
         if betrag > 0 {
+            schreibe_kz(
+                &mut self.deklaration,
+                UNFALLKOSTEN_BETRAG_KZ,
+                wert,
+                Some(b.typ),
+                self.null_kz,
+            )
+            .map_err(wert_fehler(feld_id))?;
+            self.deklaration.insert(
+                UNFALLKOSTEN_TEXT_KZ.to_owned(),
+                Value::String(UNFALLKOSTEN_TEXT.to_owned()),
+            );
+            if let Some(euro) = self.deklaration.get(UNFALLKOSTEN_BETRAG_KZ).cloned() {
+                self.deklaration
+                    .insert(WEITERE_WK_SUMME_KZ.to_owned(), euro);
+            }
             self.offen(feld_id, UNFALLKOSTEN_SPERRE);
+        } else {
+            let grund = b
+                .elster_kz_grund
+                .clone()
+                .unwrap_or_else(|| "kein elster_kz".to_owned());
+            self.nicht(feld_id, grund);
         }
         Ok(())
     }
