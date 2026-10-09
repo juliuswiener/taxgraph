@@ -1687,8 +1687,8 @@ mod tests {
     }
 
     /// Abweichung Nr. 48: ein bestaetigter Betrag ueber 0 in `ep_unfallkosten` steht aufgerundet unter `E0205406`, mit der
-    /// Bezeichnung `E0205405` und der Summe `E0204803`, UND sperrt die Abgabe; bei 0 steht nichts in der Deklaration und der
-    /// Betrag bleibt in `nicht_deklariert`. Das Regal (`regal.rs`) fuehrt die drei Literale als `Verhalten` mit diesem Test.
+    /// Bezeichnung `E0205405` und der Summe `E0204803`, UND sperrt die Abgabe; bei 0 und bei einem negativen Wert steht nichts
+    /// in der Deklaration, der Betrag bleibt in `nicht_deklariert` und nichts sperrt. Das Regal (`regal.rs`) fuehrt die drei Literale als `Verhalten` mit diesem Test.
     #[test]
     fn unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges() {
         let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -1711,7 +1711,14 @@ mod tests {
             .into(),
         };
         // Cent -> (Betrag E0205406, ob die Zeile steht)
-        for (cent, euro) in [(150_000, Some(1500)), (150_001, Some(1501)), (1, Some(1)), (0, None)] {
+        // -500: ein negativer Wert im Store zaehlt im Bescheid als 0 (`ein_negativer_wert_im_store_zaehlt_als_null`), also keine Zeile, keine Sperre.
+        for (cent, euro) in [
+            (150_000, Some(1500)),
+            (150_001, Some(1501)),
+            (1, Some(1)),
+            (0, None),
+            (-500, None),
+        ] {
             let felder = Felder::from([("ep_unfallkosten".to_owned(), feld(json!(cent)))]);
             let d = deklariere(&felder, &index, 2025, None).unwrap();
             let zeile = ["E0205405", "E0205406", "E0204803"].map(|kz| d.deklaration.get(kz));
