@@ -252,6 +252,9 @@ async fn sieben_stammdaten_sind_ein_item_mit_sieben_fragen() {
     assert_eq!(text.matches('»').count(), 7, "{text}");
     assert!(text.contains("Wie lautet dein Nachname?"), "{text}");
     assert!(text.contains("Kirche"), "{text}");
+    // Die letzte Frage haengt mit "und" an, die davor mit Komma.
+    assert!(text.contains("?« und »Gehörst du einer Kirche"), "{text}");
+    assert!(text.contains("?«, »Wie lautet dein Vorname?"), "{text}");
 }
 
 // ------------------------------------------------------------------------------------------------ AK2
