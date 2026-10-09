@@ -143,6 +143,10 @@ fn pruefe_schema(xml: &str) {
 /// Der Betrag steht im ERZEUGTEN XML unter `Sonst`, aufgerundet auf volle Euro, und in `Sum`; das Schema nimmt ihn.
 #[test]
 fn unfallkosten_stehen_im_erzeugten_xml_unter_weitere_wk_sonst_und_in_der_summe() {
+    // `erzeuge_xml` verlangt das Schema; ohne ERiC-Auslieferung (CI) gibt es kein XML zu lesen.
+    if !schemas_da(2025) {
+        return;
+    }
     for (cent, euro) in [(150_000, "1500"), (150_001, "1501"), (1, "1")] {
         let xml = xml_ohne_sperre(cent);
         let block = weitere_wk(&xml).unwrap_or_else(|| panic!("{cent} Cent: kein <Weitere_Wk> im XML"));
@@ -199,6 +203,9 @@ fn die_sperre_bleibt_trotz_betrag_im_xml() {
 /// Ohne Unfallkosten und mit 0 Cent bleibt das XML wie vorher: kein `Sonst`, keine Summe, dieselbe Deklaration.
 #[test]
 fn ohne_unfallkosten_und_mit_null_steht_keine_zeile_im_xml() {
+    if !schemas_da(2025) {
+        return;
+    }
     let (leer, felder) = deklaration(None);
     let (null, _) = deklaration(Some(0));
     for (name, d) in [("nicht gesetzt", &leer), ("0 Cent", &null)] {
