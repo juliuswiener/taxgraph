@@ -33,13 +33,18 @@ const E10_AUSSCHLUSS_DATENART: &[&str] = &["E6002301", "E6004901"];
 /// `<R>` traegt maxOccurs=2 (ein `<R>` je PERSON), die Renten einer Person stehen als `<Einz>` in
 /// `<Leibr_gesetzl>`/`<Leibr_priv>`/`<Leibr_sonst>` (je maxOccurs=1). Ohne Eintrag legt die zweite
 /// Rente einer Person ein zweites `<R>` an (`PersonB`) — ERiC lehnt ab (rc=610001002).
-/// Muss mit `elster_xml.py::INSTANZ_CONTAINER_TIEFER` wortgleich sein (Paritaetskriterium).
+/// `weitere_wk` (nur Rust, Abweichung Nr. 49): die zweite Zeile "Sonstiges" der Anlage N, `<Sonst>` unter `<Weitere_Wk>`
+/// (maxOccurs=99) unter `<Wk>` unter `<N>`. Ohne Eintrag legte die Zeile ein zweites `<N>` an, das ist die Anlage N der
+/// Person B, und `xmllint` nimmt das an (gemessen 2026-10-09).
+/// Bis auf `weitere_wk` wortgleich mit `elster_xml.py::INSTANZ_CONTAINER_TIEFER` (Paritaetskriterium; die Ausnahme steht in
+/// `tabellen.rs::RUST_EIGENE_PAARE`).
 const INSTANZ_CONTAINER_TIEFER: &[(&str, &str)] = &[
     ("p23_veraeusserung", "Einz"),
     ("hh_minijob", "Einz"),
     ("hh_dienstleistung", "Einz"),
     ("hh_handwerker", "Einz"),
     ("rente", "Einz"),
+    ("weitere_wk", "Sonst"),
 ];
 /// Skalare Pflicht-Diskriminatoren ohne Kz.
 const PFLICHT_DEFAULT: &[(&str, &str)] = &[("Person", "PersonA"), ("Laufende_Nummer_V", "1")];

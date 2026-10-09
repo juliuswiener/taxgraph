@@ -144,9 +144,10 @@ bindungen:
     # ponytail: kein Kz, die Abgabe sperrt (rust/elster/src/deklaration.rs, DBA_ABZUG_SPERRE), wenn der Marker true und die
     # gezahlte Steuer ueber 0 ist. Die Erklaerung traegt den Betrag seit Abweichung Nr. 41 unter E0600920 (Anlage AUS Zeile 10,
     # Staat_Spez_InvFonds, "abgezogene auslaendische Steuern nach § 34c Abs. 2", ein Betrag, KEIN Marker) statt unter E0601901,
-    # und der Bescheid kuerzt die Werbungskosten der Anlage N. Grenze: die Zeile "Sonstige Werbungskosten" der Anlage N
-    # (Weitere_Wk/Sonst) schreibt die Erklaerung noch nicht. Upgrade-Pfad: diese Zeile bauen und mit einem checkESt-Lauf
-    # belegen (Hersteller-ID), dann die Sperre streichen. Je Ehegatte eine eigene Anlage AUS, je Staat ein Block: nicht gebaut.
+    # und der Bescheid kuerzt die Werbungskosten der Anlage N. Seit Abweichung Nr. 49 steht der Abzug auch als zweite Zeile
+    # "Sonstiges" der Anlage N (Weitere_Wk/Sonst, Ring-Wert dba_abzug_zeile_cent). Grenze: kein checkESt-Lauf hat die Zeile je
+    # angenommen. Upgrade-Pfad: einen Lauf mit Hersteller-ID belegen, dann die Sperre streichen. Je Ehegatte eine eigene
+    # Anlage AUS, je Staat ein Block: nicht gebaut.
     elster_kz: null
     elster_kz_grund: "Antrags-/Wahlrechts-Marker (Anlage-AUS) — reine Ring-Weiche (Abzug statt Anrechnung), Kz-Recon = dev-2-Folgeticket (null-MVP)."
     vz_gueltigkeit: [2024, 2025, 2026]
@@ -187,6 +188,27 @@ bindungen:
     anker_ref:
       quelle: "§ 34c Abs. 6 S. 2 EStG"
       zitatanker: "bei nach dem Abkommen als gezahlt geltenden ausländischen Steuerbeträgen sind Absatz 1 Satz 3 und Absatz 2 nicht anzuwenden"
+      datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+  # Ring-Wert (Abweichung Nr. 49): die gezahlte Steuer in CENT, die der Bescheid als Abzug rechnet (`dba_abzug_werbungskosten`
+  # ueber 0, nur aus bestaetigten Feldern). `mit_ring_werten` setzt ihn; `deklariere` schreibt daraus die zweite Zeile
+  # "Sonstiges" der Anlage N (Weitere_Wk/Sonst, E0205405 Bezeichnung, E0205406 Betrag aufgerundet) und nimmt sie in die Summe
+  # E0204803. Die enge Bedingung des Bescheids liegt in `bescheid`, nicht in `elster`: die Methodentabelle steht dort.
+  - feld_id: dba_abzug_zeile_cent
+    quelle: {regel_id: p34c_2_abzug_statt_anrechnung, signatur_slot: abzug_zeile_sonstiges}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Berechneter Abzug der ausländischen Steuer für die Zeile Sonstiges der Anlage N (automatisch)"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Ring-Wert, kein Eingabefeld: `deklariere` leitet daraus drei Kz ab (E0205405 Bezeichnung, E0205406 Betrag, Summe E0204803), nach dem Muster von ep_unfallkosten. Die Abgabe bleibt gesperrt (dba_abzug_statt_anrechnung), bis ein checkESt-Lauf die Zeile belegt."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34c Abs. 2 EStG"
+      zitatanker: "auf Antrag bei der Ermittlung der Einkünfte abzuziehen"
       datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
 
 # ===== Lücken + Geltungsbedingungen (Nicht-Feld-Logik) =====

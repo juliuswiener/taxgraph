@@ -65,12 +65,14 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// 366 -> 368 und 278 -> 280, die Kegel bleiben;
 /// danach am 2026-10-09 `kein_lohn_pension` und `kein_lohn_pension_partner` in `rentner_gesamt` (Abweichung Nr. 46),
 /// 280 -> 282, der Kegel bleibt bei 28, `gesamt` bei 368;
+/// danach am 2026-10-09 `dba_abzug_zeile_cent` in `gesamt` und `rentner_gesamt` (Abweichung Nr. 49),
+/// 368 -> 369 und 282 -> 283, die Kegel bleiben;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 85, 33),
-    (Scheibe::Gesamt, 368, 35),
-    (Scheibe::RentnerGesamt, 282, 28),
+    (Scheibe::Gesamt, 369, 35),
+    (Scheibe::RentnerGesamt, 283, 28),
 ];
 
 fn registry() -> &'static Registry {
@@ -297,6 +299,9 @@ const BETRAGSFELDER_OHNE_KZ: &[&str] = &[
     "behinderungsbedingte_aufwendungen_partner",
     "betriebseinnahmen",
     "bruttoarbeitslohn_partner",
+    // Seit 2026-10-09 (Abweichung Nr. 49): nicht in der Python-Liste. Ring-Wert ohne Kz; `deklariere` leitet daraus die zweite
+    // Zeile "Sonstiges" der Anlage N ab (E0205405, E0205406, E0204803). Die Abgabe bleibt gesperrt, bis `checkESt` sie annimmt.
+    "dba_abzug_zeile_cent",
     "einkuenfte_gewinn",
     "einkuenfte_gewinn_partner",
     // Seit 2026-10-07 (Abweichung Nr. 28): nicht in der Python-Liste. Kz offen, die Abgabe sperrt bei einem Betrag ueber 0.

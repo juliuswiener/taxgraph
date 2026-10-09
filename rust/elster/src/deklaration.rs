@@ -59,6 +59,22 @@ const UNFALLKOSTEN_TEXT: &str = "Unfallkosten Arbeitsweg";
 /// [`UNFALLKOSTEN_BETRAG_KZ`], aber kein `checkESt`-Lauf hat die Zeile je angenommen. Die Sperre faellt mit dem ersten Lauf.
 const UNFALLKOSTEN_SPERRE: &str = "Unfallkosten über 0 Euro: Für diesen Betrag gibt es noch kein geprüftes ELSTER-Kennzeichen. Die Abgabe ist deshalb gesperrt. Setze den Betrag auf 0 oder lösche ihn, wenn du ohne diesen Abzug abgeben willst.";
 
+/// Nur Rust (Abweichung Nr. 49): der Ring-Wert zur zweiten Zeile "Sonstiges" der Anlage N, die gezahlte auslaendische Steuer in
+/// CENT, wenn der BESCHEID den Abzug nach § 34c Abs. 2 `EStG` rechnet (`bescheid::deklaration::mit_ring_werten`). Das Feld hat kein
+/// Kz; [`Bau::dba_abzug_zeile`] leitet daraus dieselben zwei Kz ab wie die Unfallkosten ([`UNFALLKOSTEN_TEXT_KZ`],
+/// [`UNFALLKOSTEN_BETRAG_KZ`]), in der Gruppe [`WEITERE_WK_GRUPPE`] als Instanz [`DBA_ABZUG_ZEILE_INDEX`].
+const DBA_ABZUG_ZEILE: &str = "dba_abzug_zeile_cent";
+
+/// Die Bezeichnung der Abzugszeile in `E0205405`. Wie bei den Unfallkosten kennt das Schema keine Aufzaehlung; ob ERiC den Text
+/// gegen die Namensliste prueft, ist ohne `checkESt` offen (deshalb bleibt die Sperre). Der Text steht im ELSTER-Zeichensatz.
+const DBA_ABZUG_ZEILE_TEXT: &str = "Abzug ausländische Steuer nach § 34c Abs. 2 EStG";
+
+/// Die Gruppe in `anlage_instanzen`, die die zweite Zeile "Sonstiges" traegt, und ihr Index. Instanz 1 ist die Zeile der
+/// Unfallkosten in `deklaration`; der Schreiber legt die Instanz 2 in dasselbe `Weitere_Wk` (`INSTANZ_CONTAINER_TIEFER` in
+/// `xml.rs`) und zaehlt den Rang dicht, auch wenn Instanz 1 fehlt.
+const WEITERE_WK_GRUPPE: &str = "weitere_wk";
+const DBA_ABZUG_ZEILE_INDEX: u64 = 2;
+
 /// Nur Rust (Abweichung Nr. 29): die Wahl "Abzug statt Anrechnung" der auslaendischen Steuer (§ 34c Abs. 2 EStG).
 const DBA_ABZUG: &str = "dba_abzug_statt_anrechnung";
 
@@ -72,10 +88,11 @@ const DBA_ABZUG_KZ: &str = "E0600920";
 
 /// Der Grund der Abgabe-Sperre bei gewaehltem Abzug und gezahlter Steuer ueber 0 (`dba_abzug_statt_anrechnung` ohne Kz):
 /// der Bescheid kuerzt die Einkuenfte der Anlage N um die Steuer (bei DBA-Freistellung seit Abweichung Nr. 35 nicht mehr: dort
-/// gibt es keinen Abzug). Die Erklaerung traegt die Steuer unter `E0600920`, aber die Zeile "Sonstige Werbungskosten" der
-/// Anlage N (`Weitere_Wk/Sonst`) schreibt sie noch nicht (Abweichung Nr. 41): ohne sie liefen Bescheid und Erklaerung um den
-/// Abzug auseinander. Die Sperre faellt, wenn die Zeile gebaut und mit `checkESt` belegt ist.
-const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: Die Erklärung trägt den Betrag in der Anlage AUS. Die Zeile „Sonstige Werbungskosten“ in der Anlage N fehlt noch. Dort kürzt der Bescheid deine Einkünfte. Die Abgabe ist deshalb gesperrt, bis ein checkESt-Lauf diese Zeile belegt. Antworte „nein“ (Anrechnung), wenn du abgeben willst, oder trage den Abzug im Formular selbst ein.";
+/// gibt es keinen Abzug). Die Erklaerung traegt die Steuer unter `E0600920` und, seit Abweichung Nr. 49, als zweite Zeile
+/// "Sonstiges" der Anlage N (`Weitere_Wk/Sonst`, [`DBA_ABZUG_ZEILE`]). Kein `checkESt`-Lauf hat diese Zeile je angenommen: die
+/// Sperre faellt mit dem ersten Lauf. Die Sperre nutzt die WEITE Bedingung ([`Bau::abzug_gewaehlt`]), die Zeile die enge des
+/// Bescheids; in den zwei Faellen dazwischen (keine Auslandseinkuenfte, Freistellung) steht keine Zeile, der Text sagt "soweit".
+const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: Die Erklärung trägt den Betrag in der Anlage AUS und, soweit der Bescheid deine Einkünfte kürzt, in der Zeile „Sonstiges“ der Anlage N. Ein checkESt-Lauf hat diese Zeile noch nie angenommen. Die Abgabe ist deshalb gesperrt. Antworte „nein“ (Anrechnung), wenn du abgeben willst, oder trage den Abzug im Formular selbst ein.";
 
 /// Nur Rust (Abweichung Nr. 42): der Jahresbetrag der Versorgungsbezuege von Person A und, bei Zusammenveranlagung, des
 /// Ehegatten (Abweichung Nr. 33). Beide Felder tragen kein Kz.
@@ -447,15 +464,12 @@ impl Bau<'_> {
     }
 
     /// `ep_unfallkosten` OHNE geprueftes Kz (Abweichung Nr. 28, Nr. 48). Ueber 0 steht der Betrag in der Zeile "Sonstiges" der
-    /// Anlage N ([`UNFALLKOSTEN_BETRAG_KZ`], aufgerundet auf volle Euro; Bezeichnung [`UNFALLKOSTEN_TEXT_KZ`]; Summe
-    /// [`WEITERE_WK_SUMME_KZ`]), und die Abgabe bleibt gesperrt ([`UNFALLKOSTEN_SPERRE`], 409 `deklaration_unvollstaendig`),
-    /// bis `checkESt` die Zeile einmal angenommen hat: die Sperre haelt auch `erzeuge_xml` zurueck. Bei 0 und leer steht
-    /// nichts im XML und der Grund in `nicht_deklariert`.
-    /// Fuer die Sperre genuegt der Wegfall des `offen`-Aufrufs; die Zeile bleibt.
-    ///
-    /// ponytail: die Summe ist die EINE Zeile. Kommt der § 34c-Abzug als zweite `Sonst`-Zeile dazu (Ticket
-    /// `p34c-abzug-in-weitere-wk-sonst-zweite-zeile`), muss [`WEITERE_WK_SUMME_KZ`] die Summe der gerundeten Zeilen sein,
-    /// und der Schreiber braucht eine abgeleitete zweite Zeile (er kennt Wiederholung nur ueber gespeicherte Instanzfelder).
+    /// Anlage N ([`UNFALLKOSTEN_BETRAG_KZ`], aufgerundet auf volle Euro; Bezeichnung [`UNFALLKOSTEN_TEXT_KZ`]; die Summe
+    /// [`WEITERE_WK_SUMME_KZ`] bildet [`weitere_wk_summe`] aus allen Zeilen), und die Abgabe bleibt gesperrt
+    /// ([`UNFALLKOSTEN_SPERRE`], 409 `deklaration_unvollstaendig`), bis `checkESt` die Zeile einmal angenommen hat: die Sperre
+    /// haelt auch `erzeuge_xml` zurueck. Bei 0 und leer steht nichts im XML und der Grund in `nicht_deklariert`.
+    /// Fuer die Sperre genuegt der Wegfall des `offen`-Aufrufs; die Zeile bleibt. Die zweite Zeile, der Abzug nach § 34c Abs. 2
+    /// `EStG`, schreibt [`Bau::dba_abzug_zeile`] (Abweichung Nr. 49).
     fn unfallkosten(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) -> Ergebnis<()> {
         let betrag = py::int(wert).map_err(wert_fehler(feld_id))?;
         if betrag > 0 {
@@ -471,11 +485,35 @@ impl Bau<'_> {
                 UNFALLKOSTEN_TEXT_KZ.to_owned(),
                 Value::String(UNFALLKOSTEN_TEXT.to_owned()),
             );
-            if let Some(euro) = self.deklaration.get(UNFALLKOSTEN_BETRAG_KZ).cloned() {
-                self.deklaration
-                    .insert(WEITERE_WK_SUMME_KZ.to_owned(), euro);
-            }
             self.offen(feld_id, UNFALLKOSTEN_SPERRE);
+        } else {
+            let grund = b
+                .elster_kz_grund
+                .clone()
+                .unwrap_or_else(|| "kein elster_kz".to_owned());
+            self.nicht(feld_id, grund);
+        }
+        Ok(())
+    }
+
+    /// `dba_abzug_zeile_cent` OHNE Kz (Abweichung Nr. 49): der Ring setzt den Wert nur, wenn der Bescheid den Abzug nach § 34c
+    /// Abs. 2 `EStG` rechnet und nur aus bestaetigten Feldern. Ueber 0 steht der Betrag, aufgerundet auf volle Euro
+    /// ([`UNFALLKOSTEN_BETRAG_KZ`]), mit der Bezeichnung [`DBA_ABZUG_ZEILE_TEXT`] als zweite Zeile "Sonstiges" in der Gruppe
+    /// [`WEITERE_WK_GRUPPE`], Instanz [`DBA_ABZUG_ZEILE_INDEX`]. Die Sperre setzt dieser Zweig nicht: sie haengt am Marker
+    /// `dba_abzug_statt_anrechnung` ([`Bau::dba_abzug`], weite Bedingung). Die Summe bildet [`weitere_wk_summe`].
+    fn dba_abzug_zeile(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) -> Ergebnis<()> {
+        let betrag = py::int(wert).map_err(wert_fehler(feld_id))?;
+        if betrag > 0 {
+            let null_kz = self.null_kz;
+            let zeile = &mut self
+                .instanz(WEITERE_WK_GRUPPE, DBA_ABZUG_ZEILE_INDEX)
+                .felder;
+            schreibe_kz(zeile, UNFALLKOSTEN_BETRAG_KZ, wert, Some(b.typ), null_kz)
+                .map_err(wert_fehler(feld_id))?;
+            zeile.insert(
+                UNFALLKOSTEN_TEXT_KZ.to_owned(),
+                Value::String(DBA_ABZUG_ZEILE_TEXT.to_owned()),
+            );
         } else {
             let grund = b
                 .elster_kz_grund
@@ -797,6 +835,8 @@ impl Bau<'_> {
             self.versorgung(feld_id, wert, b);
         } else if let (DBA_ABZUG, None) = (feld_id, kz_von(b)) {
             self.dba_abzug(feld_id, b);
+        } else if let (DBA_ABZUG_ZEILE, None) = (feld_id, kz_von(b)) {
+            self.dba_abzug_zeile(feld_id, wert, b)?;
         } else if feld_id == DBA_STEUER && self.abzug_gewaehlt() {
             // Abweichung Nr. 41: bei gewaehltem Abzug steht die Steuer unter `E0600920`, nicht als Anrechnung unter `E0601901`.
             schreibe_kz(
@@ -976,6 +1016,7 @@ pub fn deklariere(
     bau.p23_gewinn()?;
     let anlage_instanzen = bau.instanzen_ausgabe();
     p35a_summe_aus_posten(&mut bau.deklaration, &anlage_instanzen);
+    weitere_wk_summe(&mut bau.deklaration, &anlage_instanzen);
     Ok(Deklaration {
         basis_snapshot: snapshot_id.map(ToString::to_string),
         deklaration: bau.deklaration,
@@ -1025,6 +1066,34 @@ fn p35a_summe_aus_posten(
         if summe > 0 && deklaration.contains_key(summe_kz) {
             deklaration.insert(summe_kz.to_owned(), Value::from(summe));
         }
+    }
+}
+
+/// [`WEITERE_WK_SUMME_KZ`] = Summe der GERUNDETEN Zeilen "Sonstiges" der Anlage N (Aufwand: Vault
+/// `aufwand-einzelposten-aufrunden-summe-aus-posten`; `ERiC` weist ab 1 Euro Differenz ab): die Zeile in `deklaration`
+/// (Unfallkosten, Instanz 1, Abweichung Nr. 48) und die der Gruppe [`WEITERE_WK_GRUPPE`] (Abzug nach § 34c Abs. 2 `EStG`,
+/// Abweichung Nr. 49). Ohne Zeile keine Summe.
+fn weitere_wk_summe(
+    deklaration: &mut BTreeMap<String, Value>,
+    instanzen: &[(String, Vec<AnlageInstanz>)],
+) {
+    let zeilen: Vec<i64> = deklaration
+        .get(UNFALLKOSTEN_BETRAG_KZ)
+        .into_iter()
+        .chain(
+            instanzen
+                .iter()
+                .filter(|(gruppe, _)| gruppe == WEITERE_WK_GRUPPE)
+                .flat_map(|(_, ii)| ii)
+                .filter_map(|i| i.felder.get(UNFALLKOSTEN_BETRAG_KZ)),
+        )
+        .filter_map(Value::as_i64)
+        .collect();
+    if !zeilen.is_empty() {
+        deklaration.insert(
+            WEITERE_WK_SUMME_KZ.to_owned(),
+            Value::from(zeilen.iter().sum::<i64>()),
+        );
     }
 }
 
@@ -1740,6 +1809,75 @@ mod tests {
                 assert!(d.unvollstaendig().is_empty(), "{cent} Cent: {:?}", d.unvollstaendig());
                 assert!(d.nicht_deklariert.iter().any(|e| e.feld_id == "ep_unfallkosten"));
             }
+        }
+    }
+
+    /// Abweichung Nr. 49: der Ring-Wert `dba_abzug_zeile_cent` steht als ZWEITE Zeile "Sonstiges" in der Gruppe `weitere_wk`,
+    /// Instanz 2, aufgerundet, mit einer Bezeichnung, die § 34c nennt; `E0204803` ist die Summe der GERUNDETEN Zeilen
+    /// (Unfallkosten in `deklaration`, Abzug in der Instanz). Der Wert allein sperrt nichts (die Sperre haengt am Marker
+    /// `dba_abzug_statt_anrechnung`); bei 0 steht keine Zeile. Das Regal fuehrt die Literale mit diesem Test.
+    #[test]
+    fn abzug_steht_als_zweite_zeile_sonstiges_und_die_summe_bildet_beide_zeilen() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("berechnet"),
+                pruef_tiefe: PruefTiefe::Amtlich,
+                haftung: a("system"),
+            }
+            .into(),
+        };
+        assert_eq!(domain::zeichensatz::erstes_unerlaubtes_zeichen(super::DBA_ABZUG_ZEILE_TEXT), None);
+        // (Unfallkosten in Cent, Abzug in Cent) -> (Zeile Unfallkosten, Zeile Abzug, Summe), volle Euro
+        let faelle = [
+            (None, Some(70_001), None, Some(701), Some(701)),
+            (Some(150_001), Some(70_001), Some(1501), Some(701), Some(2202)),
+            (Some(150_001), None, Some(1501), None, Some(1501)),
+            (Some(150_001), Some(0), Some(1501), None, Some(1501)),
+            (None, Some(0), None, None, None),
+        ];
+        for (unfall, abzug, z_unfall, z_abzug, summe) in faelle {
+            let mut felder = Felder::new();
+            if let Some(c) = unfall {
+                felder.insert("ep_unfallkosten".to_owned(), feld(json!(c)));
+            }
+            if let Some(c) = abzug {
+                felder.insert("dba_abzug_zeile_cent".to_owned(), feld(json!(c)));
+            }
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            let name = format!("Unfall {unfall:?}, Abzug {abzug:?}");
+            assert_eq!(d.deklaration.get("E0205406"), z_unfall.map(|e| json!(e)).as_ref(), "{name}: Zeile Unfallkosten");
+            assert_eq!(d.deklaration.get("E0204803"), summe.map(|e| json!(e)).as_ref(), "{name}: Summe");
+            let instanzen: Vec<_> = d.anlage_instanzen.iter().filter(|(g, _)| g == "weitere_wk").collect();
+            if let Some(e) = z_abzug {
+                assert_eq!(instanzen.len(), 1, "{name}: genau eine Gruppe weitere_wk");
+                let zeilen = &instanzen[0].1;
+                assert_eq!(zeilen.len(), 1, "{name}: genau eine Zeile");
+                assert_eq!(zeilen[0].index, 2, "{name}: Instanz 2");
+                assert_eq!(zeilen[0].felder.get("E0205406"), Some(&json!(e)), "{name}: Betrag");
+                let text = zeilen[0].felder.get("E0205405").and_then(Value::as_str).unwrap_or_default();
+                assert!(text.contains("34c") && !text.contains("Unfall"), "{name}: Bezeichnung `{text}`");
+                assert!(d.nicht_deklariert.iter().all(|e| e.feld_id != "dba_abzug_zeile_cent"), "{name}");
+            } else {
+                assert!(instanzen.is_empty(), "{name}: keine Gruppe weitere_wk");
+            }
+            let sperre_unfall = unfall.is_some();
+            assert_eq!(
+                d.unvollstaendig().iter().any(|e| e.feld_id == "ep_unfallkosten"),
+                sperre_unfall,
+                "{name}: nur die Unfallkosten sperren"
+            );
+            assert!(d.unvollstaendig().iter().all(|e| e.feld_id != "dba_abzug_zeile_cent"), "{name}: der Ring-Wert sperrt nichts");
         }
     }
 

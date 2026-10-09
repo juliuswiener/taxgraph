@@ -835,6 +835,13 @@ mod tests {
             let in_fixture = fix.pointer(pfad).and_then(Value::as_array).is_some_and(|l| l.iter().any(|x| x == kz));
             assert!(!in_fixture, "Python kennt {kz} in {pfad} jetzt: Eintrag streichen");
         }
+        // Und fuer ein Schluessel-Wert-Paar, das nur in Rust steht (Abweichung Nr. 49): genau dieser Wert in Rust, kein Schluessel in der Fixture.
+        for (pfad, schluessel, wert) in RUST_EIGENE_PAARE {
+            let paar = rust.pointer_mut(pfad).and_then(Value::as_object_mut).and_then(|m| m.remove(schluessel));
+            assert_eq!(paar, Some(json!(wert)), "{schluessel} steht nicht mit `{wert}` in {pfad} von tabellen.rs");
+            let in_fixture = fix.pointer(pfad).and_then(Value::as_object).is_some_and(|m| m.contains_key(schluessel));
+            assert!(!in_fixture, "Python kennt {schluessel} in {pfad} jetzt: Eintrag streichen");
+        }
         let mut aus = Vec::new();
         abweichungen("", &rust, &fix, &mut aus);
         assert!(
@@ -872,6 +879,13 @@ mod tests {
         ("/null_unzulaessig/vereinigung", "E0108701"),
         ("/null_unzulaessig/vereinigung", "E0108801"),
     ];
+
+    /// Paare `(JSON-Pfad der Tabelle, Schluessel, Wert)`, die es nur in Rust gibt. `weitere_wk` -> `Sonst` in
+    /// `INSTANZ_CONTAINER_TIEFER` (`xml.rs`): die zweite Zeile "Sonstiges" der Anlage N, der Abzug nach § 34c Abs. 2 `EStG`.
+    /// Python kennt die Zeile nicht. Grund und Test: Abweichung Nr. 49 (`bescheid/tests/p34c_abzug_weitere_wk_xml.rs`, Test
+    /// `das_xml_traegt_beide_zeilen_unter_einem_weitere_wk_und_das_schema_nimmt_es`).
+    const RUST_EIGENE_PAARE: [(&str, &str, &str); 1] =
+        [("/elster_xml/instanz_container_tiefer", "weitere_wk", "Sonst")];
 
     /// Abweichung Nr. 23: die Antragszeile zu § 34 Abs. 3 fuer den Ehegatten ist Person As Zeile mit der Weiche des
     /// Partners: dieselben drei Kz je Betriebsart (E0801602 / E0805003 / E0901704), gelenkt von
