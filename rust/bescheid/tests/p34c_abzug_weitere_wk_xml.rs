@@ -161,11 +161,13 @@ fn abzug_zeilen(z: &[(String, String)]) -> Vec<&(String, String)> {
     z.iter().filter(|(bez, _)| !bez.contains("Unfall")).collect()
 }
 
-/// AK1: nur der Abzug. Aufgerundet wie alle Aufwaende ("zu Ihren Gunsten"): 700,00 -> 700, 700,01 -> 701, 0,01 -> 1. Die
-/// Summe der weiteren Werbungskosten ist diese eine Zeile. ROT, solange die Erklaerung den Abzug nicht schreibt.
+/// AK1: nur der Abzug. Aufgerundet wie alle Aufwaende ("zu Ihren Gunsten"): 700,00 -> 700, 700,01 -> 701, 1,00 -> 1, 1,01 -> 2.
+/// Die Summe der weiteren Werbungskosten ist diese eine Zeile. ROT, solange die Erklaerung den Abzug nicht schreibt. Unter
+/// 1,00 Euro rechnet der Bescheid keinen Abzug (er rundet ab, `dba_abzug_aktiv` verlangt Euro ueber 0): dort steht keine Zeile
+/// (Kontrolle `ohne_abzug_im_bescheid_steht_keine_abzugszeile`, Fall "Steuer unter 1 Euro").
 #[test]
 fn der_abzug_steht_als_zeile_sonstiges_aufgerundet_und_in_der_summe() {
-    for (cent, euro) in [(70_000, "700"), (70_001, "701"), (1, "1")] {
+    for (cent, euro) in [(70_000, "700"), (70_001, "701"), (100, "1"), (101, "2")] {
         let (d, _) = deklaration(None, Some((true, cent)), &[]);
         let z = zeilen(&d);
         let abzug = abzug_zeilen(&z);
@@ -223,9 +225,11 @@ fn nur_unfallkosten_bleiben_eine_zeile() {
 #[test]
 fn ohne_abzug_im_bescheid_steht_keine_abzugszeile() {
     type Fall<'a> = (&'a str, Option<(bool, i64)>, Vec<(&'a str, Value)>);
-    let faelle: [Fall<'_>; 6] = [
+    let faelle: [Fall<'_>; 7] = [
         ("Wahl nein", Some((false, 70_000)), vec![]),
         ("Steuer 0", Some((true, 0)), vec![]),
+        // Der Bescheid rundet die Steuer ab (99 Cent -> 0 Euro) und rechnet keinen Abzug; die Sperre in `elster` zaehlt Cent.
+        ("Steuer unter 1 Euro", Some((true, 99)), vec![]),
         ("keine Auslandseinkuenfte", Some((true, 70_000)), vec![(EINKUENFTE, json!(0))]),
         (
             "Freistellung",

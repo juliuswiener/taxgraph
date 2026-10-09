@@ -56,6 +56,7 @@ felder:
   - dauernd_berufsunfaehig
   - dauernd_berufsunfaehig_partner
   - dba_abzug_statt_anrechnung
+  - dba_abzug_zeile_cent
   - dba_auslaendische_einkuenfte
   - dba_einkunftsart
   - dba_fiktive_steuer_vorhanden

@@ -237,8 +237,9 @@ fn der_writer_setzt_e0600920_ins_xml_und_das_schema_nimmt_es_wie_die_anrechnung(
 }
 
 /// Die Wahl `true` und eine gezahlte Steuer ueber 0 sperren die Abgabe mit EIGENEM Grund (409
-/// `deklaration_unvollstaendig`); dieser Grund nennt Abzug, Anrechnung und die Sperre, dazu die fehlende Zeile in Anlage N
-/// und den `checkESt`-Lauf, kein anderes Feld steht in der Liste. Ein Cent genuegt, wie bei den Unfallkosten.
+/// `deklaration_unvollstaendig`); dieser Grund nennt Abzug, Anrechnung und die Sperre, dazu die Zeile "Sonstiges" in Anlage N
+/// (seit Abweichung Nr. 49 steht sie in der Erklaerung, aber kein `checkESt`-Lauf hat sie angenommen) und den
+/// `checkESt`-Lauf, kein anderes Feld steht in der Liste. Ein Cent genuegt, wie bei den Unfallkosten.
 #[test]
 fn abzug_gewaehlt_und_steuer_ueber_null_sperren_die_abgabe_mit_eigenem_grund() {
     for cent in [70_000, 1] {
@@ -256,11 +257,13 @@ fn abzug_gewaehlt_und_steuer_ueber_null_sperren_die_abgabe_mit_eigenem_grund() {
             "gesperrt",
             "nein",
             "Anlage N",
-            "Sonstige Werbungskosten",
+            "Sonstiges",
             "checkESt",
+            "noch nie angenommen",
         ] {
             assert!(grund.contains(teil), "Grund ohne `{teil}`: {grund}");
         }
+        assert!(!grund.contains("fehlt noch"), "der Grund behauptet noch, die Zeile fehle: {grund}");
     }
 }
 

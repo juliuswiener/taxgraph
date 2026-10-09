@@ -18,7 +18,8 @@ use super::c2;
 use super::konstanten::VERPFLEGUNG_TAGE;
 use crate::abzuege::{abs3_eligible, abs3_eligible_partner};
 use crate::einkuenfte::{
-    netto_vg_partner, KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE, KAP_TOEPFE_PARTNER,
+    dba_abzug_werbungskosten, netto_vg_partner, KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE,
+    KAP_TOEPFE_PARTNER,
 };
 use crate::zweige::netto_vg;
 use crate::{
@@ -82,7 +83,25 @@ pub fn mit_ring_werten(felder: &mut Felder, vz: Option<Vz>, p: &Params) -> R<()>
     haushaltsnah(felder, &h)?;
     vermietung(felder, &h)?;
     einzelzeilen(felder, &h)?;
-    p34_antrag(felder, vz, &h)
+    p34_antrag(felder, vz, &h)?;
+    dba_abzug_zeile(felder, &h)
+}
+
+// ---------------------------------------------------------------- (9) Abzug nach § 34c Abs. 2 als Zeile "Sonstiges"
+
+/// (9) `dba_abzug_zeile_cent` (Abweichung Nr. 49): die gezahlte auslaendische Steuer in CENT, wenn der Bescheid sie als Abzug
+/// rechnet (`dba_abzug_werbungskosten` ueber 0 Euro: Wahl, Steuer und Auslandseinkuenfte, keine Freistellung, Arbeitslohn, keine
+/// Zusammenveranlagung, keine fiktive Steuer). Gelesen werden nur BESTAETIGTE Felder ([`bestaetigte`]), wie im Chooser und in
+/// der Sperre von `elster`: ein vorlaeufiger Betrag gibt keine Zeile. Die Zeile steht so nur dort, wo der Bescheid den Abzug
+/// rechnet, nicht in der weiteren Bedingung der Sperre. Die Methodentabelle liegt in `bescheid`; `deklariere` (in `elster`)
+/// kann diese Bedingung nicht selbst auswerten und schreibt aus dem Wert die Zeile.
+fn dba_abzug_zeile(f: &mut Felder, h: &HerkunftVektor) -> R<()> {
+    let fb = bestaetigte(f);
+    if dba_abzug_werbungskosten(&fb)?.get() > 0 {
+        let cent = feld_int_oder_null(&fb, "dba_gezahlte_auslaendische_steuer")?;
+        setze(f, "dba_abzug_zeile_cent", PyWert::Ganz(cent), h);
+    }
+    Ok(())
 }
 
 // ---------------------------------------------------------------- (1) Verpflegungskuerzung
