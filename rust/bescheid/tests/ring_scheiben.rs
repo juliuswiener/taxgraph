@@ -492,6 +492,21 @@ fn regeln() -> Vec<Regel> {
         ],
         &["p34_abs3_antragsbetrag_partner"],
     ));
+    // (9) § 34c Abs. 2: die Zeile "Sonstiges" zum Abzug der auslaendischen Steuer (Abweichung Nr. 49). Der Bescheid rechnet den
+    // Abzug nur bei Wahl, Steuer und Auslandseinkuenften ueber 0 im Arbeitslohn (`dba_abzug_werbungskosten`); jedes der vier
+    // Felder ist Ausloeser. Keine Zusammenveranlagung und keine fiktive Steuer gelten, solange `veranlagung` und
+    // `dba_fiktive_steuer_vorhanden` fehlen.
+    r.push(regel(
+        "p34c_abzug_zeile",
+        &[
+            ("dba_abzug_statt_anrechnung", json!(true)),
+            ("dba_gezahlte_auslaendische_steuer", json!(70_000)),
+            ("dba_auslaendische_einkuenfte", json!(500_000)),
+            ("dba_einkunftsart", json!("unselbstaendige_arbeit")),
+        ],
+        &[],
+        &["dba_abzug_zeile_cent"],
+    ));
     r
 }
 
@@ -558,7 +573,7 @@ fn die_ergebnisfelder_der_tabelle_sind_die_nicht_fragbaren_literale_des_rings() 
         im_ring, in_tabelle,
         "ring_werte.rs nennt nicht fragbare Felder, die keine Regel hat (links) oder umgekehrt (rechts)"
     );
-    assert_eq!(in_tabelle.len(), 20, "Stand 2026-10-06: 20 Ergebnisfelder");
+    assert_eq!(in_tabelle.len(), 21, "Stand 2026-10-09: 21 Ergebnisfelder (Abweichung Nr. 49: dba_abzug_zeile_cent)");
     for r in regeln() {
         for f in r
             .ausloeser

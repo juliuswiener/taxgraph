@@ -299,6 +299,9 @@ const BETRAGSFELDER_OHNE_KZ: &[&str] = &[
     "behinderungsbedingte_aufwendungen_partner",
     "betriebseinnahmen",
     "bruttoarbeitslohn_partner",
+    // Seit 2026-10-09 (Abweichung Nr. 49): nicht in der Python-Liste. Ring-Wert ohne Kz; `deklariere` leitet daraus die zweite
+    // Zeile "Sonstiges" der Anlage N ab (E0205405, E0205406, E0204803). Die Abgabe bleibt gesperrt, bis `checkESt` sie annimmt.
+    "dba_abzug_zeile_cent",
     "einkuenfte_gewinn",
     "einkuenfte_gewinn_partner",
     // Seit 2026-10-07 (Abweichung Nr. 28): nicht in der Python-Liste. Kz offen, die Abgabe sperrt bei einem Betrag ueber 0.
