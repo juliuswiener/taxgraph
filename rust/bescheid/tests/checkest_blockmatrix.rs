@@ -15,10 +15,12 @@
 //! keinen Schalter. Fuer `ERiC` braucht der Umweg `abgabefaehig: true` und den Snapshot, sonst fehlt der `<Vorsatz>`.
 //! Die Sperren fallen nicht mit diesem Test, sondern auf Julius' Wort.
 //!
-//! NICHT DABEI. Nr. 41 (`E0600920`, Anlage AUS): jede Akte mit Auslandseinkuenften scheitert bei `checkESt` an der fehlenden
-//! Staat-Angabe (`dba_staat` hat `elster_kz: null`); die Zeile steht erst nach dem Ticket "Staat der Auslandseinkuenfte".
+//! ANLAGE AUS (Abweichung Nr. 51, Staat als Listentext in `E0600301`). Jede Akte mit Auslandseinkuenften scheiterte bei `checkESt`
+//! an der fehlenden Staat-Angabe; seit Nr. 51 steht der Staat. Der dritte echte Test misst die Anrechnung ueber den echten Abgabeweg
+//! (Block "Ausland Anrechnung"), den Abzug nach § 34c Abs. 2 (Nr. 41, `E0600920`) ueber den Umweg und drei Kontrollen, die `ERiC`
+//! beanstanden MUSS: Staat ohne Einkuenfte, Einkuenfte ohne Staat, Steuer ohne Einkuenfte.
 //!
-//! KEIN SKIP. Beide echten Tests sind `#[ignore]` (`cargo test --workspace` und die CI laufen ohne sie: `ERiC` und die Hersteller-ID
+//! KEIN SKIP. Die echten Tests sind `#[ignore]` (`cargo test --workspace` und die CI laufen ohne sie: `ERiC` und die Hersteller-ID
 //! gehoeren nicht auf einen Runner, Entscheid Julius 2026-09-12). Wer sie mit `--ignored` ruft, will den echten Weg: jede fehlende
 //! Voraussetzung ist ein `panic`, nie ein `return`. Lokal: `make blockmatrix-rust` (laedt die ID aus der gitignorierten `.env`).
 //! Die CI deckt nur die Verdrahtung (`die_blockmatrix_ist_verdrahtet`) und die ID-Pruefung (`die_id_pruefung_*`).
@@ -49,9 +51,10 @@ use serde_json::{json, Value};
 use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
 
 /// Die Namen der echten Tests: Make-Ziel und Verdrahtungs-Test pruefen sie.
-const ECHTE_TESTS: [&str; 2] = [
+const ECHTE_TESTS: [&str; 3] = [
     "zwoelf_bloecke_gegen_echtes_checkest",
     "zeilen_nr48_nr49_gegen_echtes_checkest",
+    "ausland_staat_und_nr41_gegen_echtes_checkest",
 ];
 const MAKE_ZIEL: &str = "blockmatrix-rust";
 /// Die Zahl der Bloecke der Python-Matrix. Faellt eine Zeile aus `bloecke()` weg, wird der Test rot, nicht kleiner.
@@ -450,24 +453,38 @@ fn xml_abgabe(d: &Deklaration, felder: &Felder, id: &str) -> String {
 /// Der Umweg `xml_ohne_sperre`: die Deklaration der Akte mit den Zeilen (gesperrt: Unfallkosten ueber 0, Abzug gewaehlt) und eine
 /// saubere Deklaration derselben Basis ohne beide. Aus der echten kommen nur die drei Kz der Zeile "Sonstiges" und die
 /// Instanzgruppen mit dem Betrag; was `deklariere` fuer Zeilen und Summe berechnet hat, kommt aus dem Store, nicht aus dem Test.
-/// Der Auslandsblock (Anlage AUS) bleibt draussen: sein Staat-Kz fehlt (siehe Kopf). Gibt die saubere Deklaration, den Snapshot
-/// der echten Akte und die Namen der gesperrten Felder zurueck.
+/// Der Auslandsblock (Anlage AUS) bleibt hier draussen; Nr. 41 misst `ausland_staat_und_nr41_gegen_echtes_checkest`. Gibt die
+/// saubere Deklaration, den Snapshot der echten Akte und die Namen der gesperrten Felder zurueck.
 fn ohne_sperre(unfall: Option<i64>, abzug: Option<i64>) -> (Deklaration, Felder, Vec<String>) {
+    ohne_sperre_kz(unfall, abzug, &SONST_KZ, true)
+}
+
+/// Wie [`ohne_sperre`], mit den Kz, die aus der echten Deklaration in die saubere wandern (`kz`), und dem Wunsch, auch die
+/// Instanzgruppe mit der Zeile "Sonstiges" zu uebernehmen (`mit_instanzen`). Nr. 41 braucht den Auslandsblock ([`AUSLAND_KZ`]) und
+/// keine Zeile; Nr. 48/49 brauchen die Zeile und keinen Auslandsblock.
+fn ohne_sperre_kz(
+    unfall: Option<i64>,
+    abzug: Option<i64>,
+    kz: &[&str],
+    mit_instanzen: bool,
+) -> (Deklaration, Felder, Vec<String>) {
     let (mit, felder) = deklaration(unfall, abzug);
     let gesperrt: Vec<String> = mit.unvollstaendig().iter().map(|e| e.feld_id.clone()).collect();
     let (mut sauber, _) = deklaration(None, None);
     assert!(sauber.unvollstaendig().is_empty(), "die Vergleichsakte ohne Zeilen sperrt schon");
-    for kz in SONST_KZ {
-        if let Some(wert) = mit.deklaration.get(kz) {
-            sauber.deklaration.insert(kz.to_owned(), wert.clone());
+    for k in kz {
+        if let Some(wert) = mit.deklaration.get(*k) {
+            sauber.deklaration.insert((*k).to_owned(), wert.clone());
         }
     }
-    sauber.anlage_instanzen = mit
-        .anlage_instanzen
-        .iter()
-        .filter(|(_, insts)| insts.iter().any(|i| i.felder.contains_key(SONST_KZ[1])))
-        .cloned()
-        .collect();
+    if mit_instanzen {
+        sauber.anlage_instanzen = mit
+            .anlage_instanzen
+            .iter()
+            .filter(|(_, insts)| insts.iter().any(|i| i.felder.contains_key(SONST_KZ[1])))
+            .cloned()
+            .collect();
+    }
     (sauber, felder, gesperrt)
 }
 
@@ -526,6 +543,125 @@ fn zeilen_nr48_nr49_gegen_echtes_checkest() {
 
     // Nr. 48 und Nr. 49 zusammen: zwei Zeilen unter einem Weitere_Wk, die Summe ist die der gerundeten Zeilen (1.501 + 701 = 2.202).
     pruefe_zeilen("Nr48_und_Nr49", Some(150_001), Some(70_001), 2, &id);
+}
+
+// ----------------------------------------------------------------------------- Anlage AUS: Staat, Anrechnung, Nr. 41
+
+/// Anlage AUS, `Staat_Spez_InvFonds`: Staat (Abweichung Nr. 51), Einkuenfte, anzurechnende Steuer, abgezogene Steuer (Nr. 41).
+const STAAT_KZ: &str = "E0600301";
+const EINKUENFTE_KZ: &str = "E0601401";
+const ANRECHNUNG_KZ: &str = "E0601901";
+const ABZUG_KZ: &str = "E0600920";
+const AUSLAND_KZ: [&str; 4] = [STAAT_KZ, EINKUENFTE_KZ, ANRECHNUNG_KZ, ABZUG_KZ];
+
+/// Die Auslandsangaben der Anrechnung: 5.000 Euro aus Arbeitslohn in Frankreich, `steuer` in Cent.
+fn ausland_felder(steuer: i64) -> Vec<(&'static str, Value)> {
+    vec![
+        (ART, json!("unselbstaendige_arbeit")),
+        (EINKUENFTE, json!(500_000)),
+        ("dba_staat", json!("Frankreich")),
+        ("dba_mehrere_staaten", json!(false)),
+        (STEUER, json!(steuer)),
+    ]
+}
+
+/// Die Deklaration der Anrechnung (Basis plus Auslandsangaben), so wie die Produktion sie baut: Ring, dann `deklariere`. Sie
+/// sperrt nicht; die Kontrollen unten nehmen aus ihr Kz heraus und lassen `ERiC` urteilen.
+fn anrechnung_deklaration() -> (Deklaration, Felder) {
+    let mut s = leere_akte();
+    for (f, w) in basis().into_iter().chain(ausland_felder(70_000)) {
+        setze(&mut s, f, w);
+    }
+    let (mut felder, _) = s.materialisiere(None).unwrap();
+    mit_ring_werten(&mut felder, Some(Vz::Vz2025), params()).unwrap();
+    let d = deklariere(&felder, index(), 2025, None).unwrap();
+    assert!(d.unvollstaendig().is_empty(), "die Anrechnung sperrt schon: {:?}", d.unvollstaendig());
+    (d, felder)
+}
+
+/// Die Anlage AUS gegen das echte `checkESt` (Abweichung Nr. 51 und Nr. 41): der Block "Ausland Anrechnung" ueber den echten
+/// Abgabeweg, der Abzug nach § 34c Abs. 2 (`E0600920`) ueber den Umweg, und Kontrollen, die `ERiC` beanstanden MUSS. Der Staat
+/// steht genau dann, wenn die Einkuenfte stehen (auch mit dem Wert 0); Steuer ohne Einkuenfte lehnt `ERiC` auch mit Staat ab.
+#[test]
+#[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make blockmatrix-rust`"]
+fn ausland_staat_und_nr41_gegen_echtes_checkest() {
+    let id = voraussetzungen();
+
+    // Block "Ausland Anrechnung": der echte Abgabeweg (Guard, Ring, deklariere, erzeuge_xml), nicht gesperrt.
+    let xml = block_xml(&ausland_felder(70_000), &id).unwrap_or_else(|g| panic!("Ausland_Anrechnung: kein XML: {g}"));
+    assert!(xml.contains("<E0600301>Frankreich</E0600301>"), "Ausland_Anrechnung: der Staat steht nicht im XML");
+    assert!(xml.contains("<E0601901>700</E0601901>"), "Ausland_Anrechnung: die Steuer steht nicht unter E0601901");
+    let u = urteil(&xml, &id);
+    eprintln!("{:<40} {}", "Ausland_Anrechnung", u.zeile());
+    assert!(u.plausibel(), "Ausland_Anrechnung: nicht rc=0: {}", u.zeile());
+
+    // Kontrollen: ohne die Paarung beanstandet ERiC die Akte, mit dem Text der Zeile. Aus der Anrechnung wird je Kontrolle ein
+    // Kz-Satz entfernt.
+    let (d, felder) = anrechnung_deklaration();
+    let kontrollen: [(&str, &[&str], &str); 3] = [
+        ("K_Staat_ohne_Einkuenfte", &[EINKUENFTE_KZ, ANRECHNUNG_KZ], "nicht erklärt"),
+        ("K_Einkuenfte_ohne_Staat", &[STAAT_KZ], "aus welchem Staat"),
+        ("K_Steuer_ohne_Einkuenfte", &[EINKUENFTE_KZ], "keine Einkünfte"),
+    ];
+    for (name, entfernt, soll) in kontrollen {
+        let mut m = d.clone();
+        for kz in entfernt {
+            assert!(m.deklaration.remove(*kz).is_some(), "{name}: {kz} stand nicht in der Anrechnung");
+        }
+        let u = urteil(&xml_abgabe(&m, &felder, &id), &id);
+        eprintln!("{name:<40} {}", u.zeile());
+        assert!(
+            u.rc == RC_PLAUSIBILITAET && u.meldungen.iter().any(|x| x.contains(soll)),
+            "{name}: ERiC muss rc={RC_PLAUSIBILITAET} mit `{soll}` geben, gab: {}",
+            u.zeile()
+        );
+    }
+
+    // Nullwerte: "erklaert" heisst vorhanden, auch mit 0 (gemessen 2026-10-10). Einkuenfte 0 mit Staat sind rc=0, ohne Staat nicht.
+    let mut null_mit_staat = d.clone();
+    null_mit_staat.deklaration.remove(ANRECHNUNG_KZ);
+    null_mit_staat.deklaration.insert(EINKUENFTE_KZ.to_owned(), json!(0));
+    let u = urteil(&xml_abgabe(&null_mit_staat, &felder, &id), &id);
+    eprintln!("{:<40} {}", "Einkuenfte_null_mit_Staat", u.zeile());
+    assert!(u.plausibel(), "Einkuenfte_null_mit_Staat: nicht rc=0: {}", u.zeile());
+    let mut null_ohne_staat = null_mit_staat;
+    null_ohne_staat.deklaration.remove(STAAT_KZ);
+    let u = urteil(&xml_abgabe(&null_ohne_staat, &felder, &id), &id);
+    eprintln!("{:<40} {}", "K_Einkuenfte_null_ohne_Staat", u.zeile());
+    assert!(
+        u.rc == RC_PLAUSIBILITAET && u.meldungen.iter().any(|x| x.contains("aus welchem Staat")),
+        "K_Einkuenfte_null_ohne_Staat: ERiC muss den fehlenden Staat beanstanden, gab: {}",
+        u.zeile()
+    );
+
+    // Nr. 41: der Abzug (gesperrt) mit Staat und Einkuenften, Umweg `xml_ohne_sperre`. Allein, ohne die Zeile "Sonstiges".
+    let (sauber, felder, gesperrt) = ohne_sperre_kz(None, Some(70_001), &AUSLAND_KZ, false);
+    assert_eq!(gesperrt, [WAHL], "Nr. 41 muss genau dba_abzug_statt_anrechnung sperren (sonst misst der Umweg die falsche Sperre)");
+    let xml = xml_abgabe(&sauber, &felder, &id);
+    assert!(xml.contains("<E0600920>701</E0600920>"), "Nr41_abzug: die Steuer steht nicht unter E0600920");
+    assert!(xml.contains("<E0600301>Frankreich</E0600301>"), "Nr41_abzug: der Staat steht nicht im XML");
+    assert!(!xml.contains("<Sonst>"), "Nr41_abzug: die Zeile Sonstiges gehoert nicht in diesen Fall");
+    let u = urteil(&xml, &id);
+    eprintln!("{:<40} gesperrt={gesperrt:?} {}", "Nr41_abzug", u.zeile());
+    assert!(u.plausibel(), "Nr41_abzug: nicht rc=0: {}", u.zeile());
+    let mut ohne_staat = sauber;
+    ohne_staat.deklaration.remove(STAAT_KZ);
+    let u = urteil(&xml_abgabe(&ohne_staat, &felder, &id), &id);
+    eprintln!("{:<40} {}", "K_Nr41_ohne_Staat", u.zeile());
+    assert!(
+        u.rc == RC_PLAUSIBILITAET && u.meldungen.iter().any(|x| x.contains("aus welchem Staat")),
+        "K_Nr41_ohne_Staat: ERiC muss den fehlenden Staat beanstanden, gab: {}",
+        u.zeile()
+    );
+
+    // Nr. 41 und Nr. 49 zusammen: der Abzug steht in der Anlage AUS (E0600920) UND als zweite Zeile "Sonstiges" der Anlage N.
+    let kz: Vec<&str> = [&AUSLAND_KZ[..], &SONST_KZ[..]].concat();
+    let (sauber, felder, _) = ohne_sperre_kz(None, Some(70_001), &kz, true);
+    let xml = xml_abgabe(&sauber, &felder, &id);
+    assert_eq!(xml.matches("<Sonst>").count(), 1, "Nr41_und_Nr49: erwartet eine Zeile <Sonst>");
+    let u = urteil(&xml, &id);
+    eprintln!("{:<40} {}", "Nr41_und_Nr49", u.zeile());
+    assert!(u.plausibel(), "Nr41_und_Nr49: nicht rc=0: {}", u.zeile());
 }
 
 // ----------------------------------------------------------------------------- Verdrahtung (laeuft in der CI)
@@ -600,8 +736,9 @@ fn die_blockmatrix_ist_verdrahtet() {
 /// Ein Make-Ziel, das `verdrahtung` annimmt.
 fn muster_ziel() -> String {
     format!(
-        "{MAKE_ZIEL}:\n\t(cd rust && cargo test -p bescheid --test checkest_blockmatrix -- --ignored --nocapture --exact {} {}) > $$log 2>&1; rc=$$?; \\\n\tgrep -q 'test result: ok. 2 passed' $$log\n",
-        ECHTE_TESTS[0], ECHTE_TESTS[1]
+        "{MAKE_ZIEL}:\n\t(cd rust && cargo test -p bescheid --test checkest_blockmatrix -- --ignored --nocapture --exact {}) > $$log 2>&1; rc=$$?; \\\n\tgrep -q 'test result: ok. {} passed' $$log\n",
+        ECHTE_TESTS.join(" "),
+        ECHTE_TESTS.len()
     )
 }
 
@@ -639,8 +776,9 @@ fn der_verdrahtungs_test_wird_bei_jedem_bruch_rot() {
     // dazu: falsche Testdatei (auch als Vorsilbe), kein Nachweis, dass beide Tests liefen
     rot(&ziel, &quelle, "anderer_test", "--test anderer_test");
     rot(&ziel.replace("--test checkest_blockmatrix", "--test checkest_blockmatrix2"), &quelle, DATEI, "--test checkest_blockmatrix");
-    rot(&ziel.replace("2 passed", "1 passed"), &quelle, DATEI, "2 passed");
-    rot(&ziel.replace("test result: ok. 2 passed", "ok"), &quelle, DATEI, "2 passed");
+    let soll = format!("{} passed", ECHTE_TESTS.len());
+    rot(&ziel.replace(&soll, &format!("{} passed", ECHTE_TESTS.len() - 1)), &quelle, DATEI, &soll);
+    rot(&ziel.replace(&format!("test result: ok. {soll}"), "ok"), &quelle, DATEI, &soll);
 }
 
 #[test]
