@@ -668,7 +668,9 @@ impl Bau<'_> {
             self.deklaration
                 .insert(STAAT_KZ.to_owned(), Value::String(text.to_owned()));
         } else {
-            self.nicht(DBA_STAAT, "Staat ohne Listentext: sonstiger Staat, fehlende oder unbekannte Angabe");
+            if staat.is_some() {
+                self.nicht(DBA_STAAT, "Staat ohne Listentext: sonstiger Staat oder unbekannte Angabe");
+            }
             self.offen(DBA_STAAT, STAAT_SPERRE);
         }
     }
@@ -1961,6 +1963,9 @@ mod tests {
                 "{name}: Text"
             );
             let sperre = |id: &str| d.unvollstaendig().iter().any(|e| e.feld_id == id);
+            // Ein geschriebener Staat steht NICHT in `nicht_deklariert`, ein beantworteter, aber nicht geschriebener schon.
+            let in_nicht = d.nicht_deklariert.iter().any(|e| e.feld_id == "dba_staat");
+            assert_eq!(in_nicht, staat.is_some() && text.is_none(), "{name}: nicht_deklariert");
             assert_eq!(sperre("dba_staat"), sperre_staat, "{name}: Sperre zum Staat");
             assert_eq!(sperre("dba_gezahlte_auslaendische_steuer"), sperre_steuer, "{name}: Sperre zur Steuer");
         }
