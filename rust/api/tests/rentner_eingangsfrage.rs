@@ -415,7 +415,7 @@ async fn bei_ja_gelten_die_alten_bedingungen_des_ehegatten_weiter() {
 }
 
 /// AK2: Das Kreuz haengt als `und`-Glied an jedem der fuenf Felder mit alter Bedingung. Hier laesst die alte Bedingung das
-/// Feld stehen (Lohn ungleich 0, Art = altersgrenze_sonstige); nur das Kreuz verbirgt es.
+/// Feld stehen (Lohn ungleich 0, Art = `altersgrenze_sonstige`); nur das Kreuz verbirgt es.
 #[tokio::test]
 async fn das_kreuz_haengt_als_und_glied_an_den_fuenf_feldern_mit_alter_bedingung() {
     let d = fall_mit(&mit(
@@ -507,7 +507,7 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter() {
 /// "Nein" spart 8 Fragen je Person (Ehegatte: 10); "ja" kostet nichts gegenueber heute (147 und 196).
 #[tokio::test]
 async fn die_fragenzahl_vor_und_nach_den_antworten() {
-    let faelle: [(&str, &'static str, Option<bool>, Option<bool>, usize); 9] = [
+    let faelle = [
         ("einzel offen", "einzel", None, None, 148),
         ("einzel nein", "einzel", Some(true), None, 139),
         ("einzel ja", "einzel", Some(false), None, 147),
