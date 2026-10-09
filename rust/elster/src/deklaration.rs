@@ -1715,26 +1715,23 @@ mod tests {
             let felder = Felder::from([("ep_unfallkosten".to_owned(), feld(json!(cent)))]);
             let d = deklariere(&felder, &index, 2025, None).unwrap();
             let zeile = ["E0205405", "E0205406", "E0204803"].map(|kz| d.deklaration.get(kz));
-            match euro {
-                Some(e) => {
-                    assert_eq!(zeile[1], Some(&json!(e)), "{cent} Cent: Betrag");
-                    assert_eq!(zeile[2], Some(&json!(e)), "{cent} Cent: Summe");
-                    assert!(
-                        zeile[0].and_then(Value::as_str).is_some_and(|t| t.contains("Unfall")),
-                        "{cent} Cent: Bezeichnung {:?}",
-                        zeile[0]
-                    );
-                    assert!(
-                        d.unvollstaendig().iter().any(|e| e.feld_id == "ep_unfallkosten"),
-                        "{cent} Cent: die Sperre ist weg"
-                    );
-                    assert!(d.nicht_deklariert.iter().all(|e| e.feld_id != "ep_unfallkosten"));
-                }
-                None => {
-                    assert!(zeile.iter().all(Option::is_none), "{cent} Cent: {zeile:?}");
-                    assert!(d.unvollstaendig().is_empty(), "{cent} Cent: {:?}", d.unvollstaendig());
-                    assert!(d.nicht_deklariert.iter().any(|e| e.feld_id == "ep_unfallkosten"));
-                }
+            if let Some(e) = euro {
+                assert_eq!(zeile[1], Some(&json!(e)), "{cent} Cent: Betrag");
+                assert_eq!(zeile[2], Some(&json!(e)), "{cent} Cent: Summe");
+                assert!(
+                    zeile[0].and_then(Value::as_str).is_some_and(|t| t.contains("Unfall")),
+                    "{cent} Cent: Bezeichnung {:?}",
+                    zeile[0]
+                );
+                assert!(
+                    d.unvollstaendig().iter().any(|e| e.feld_id == "ep_unfallkosten"),
+                    "{cent} Cent: die Sperre ist weg"
+                );
+                assert!(d.nicht_deklariert.iter().all(|e| e.feld_id != "ep_unfallkosten"));
+            } else {
+                assert!(zeile.iter().all(Option::is_none), "{cent} Cent: {zeile:?}");
+                assert!(d.unvollstaendig().is_empty(), "{cent} Cent: {:?}", d.unvollstaendig());
+                assert!(d.nicht_deklariert.iter().any(|e| e.feld_id == "ep_unfallkosten"));
             }
         }
     }
