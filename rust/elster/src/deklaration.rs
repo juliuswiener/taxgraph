@@ -1839,12 +1839,15 @@ mod tests {
         };
         assert_eq!(domain::zeichensatz::erstes_unerlaubtes_zeichen(super::DBA_ABZUG_ZEILE_TEXT), None);
         // (Unfallkosten in Cent, Abzug in Cent) -> (Zeile Unfallkosten, Zeile Abzug, Summe), volle Euro
+        // -500: ein negativer Wert zaehlt wie 0 (Mutant W3 der Nachmessung in main: `betrag != 0` schriebe eine Zeile).
         let faelle = [
             (None, Some(70_001), None, Some(701), Some(701)),
             (Some(150_001), Some(70_001), Some(1501), Some(701), Some(2202)),
             (Some(150_001), None, Some(1501), None, Some(1501)),
             (Some(150_001), Some(0), Some(1501), None, Some(1501)),
             (None, Some(0), None, None, None),
+            (Some(150_001), Some(-500), Some(1501), None, Some(1501)),
+            (None, Some(-500), None, None, None),
         ];
         for (unfall, abzug, z_unfall, z_abzug, summe) in faelle {
             let mut felder = Felder::new();
@@ -1871,6 +1874,9 @@ mod tests {
             } else {
                 assert!(instanzen.is_empty(), "{name}: keine Gruppe weitere_wk");
             }
+            // Bei 0 und negativ steht der Wert mit Grund in `nicht_deklariert` (Mutant W6: der Eintrag fehlte); bei einer Zeile nicht.
+            let eintraege = d.nicht_deklariert.iter().filter(|e| e.feld_id == "dba_abzug_zeile_cent").count();
+            assert_eq!(eintraege, usize::from(abzug.is_some_and(|c| c <= 0)), "{name}: Eintrag in nicht_deklariert");
             let sperre_unfall = unfall.is_some();
             assert_eq!(
                 d.unvollstaendig().iter().any(|e| e.feld_id == "ep_unfallkosten"),
