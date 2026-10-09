@@ -858,10 +858,13 @@ mod tests {
     /// Test: Abweichung Nr. 44 (`bescheid/tests/waehlervereinigungen_einreichung_hermetisch.rs`).
     /// E0600920 (abgezogene auslaendische Steuer, § 34c Abs. 2, Anlage AUS Zeile 10) steht nur in `ABZUGS_KZ`; sein Schema-Typ
     /// erlaubt die 0. Grund und Test: Abweichung Nr. 41 (`bescheid/tests/p34c_abzug_einreichung_hermetisch.rs`).
-    const RUST_EIGENE_KZ: [(&str, &str); 9] = [
+    /// E0205406 (Unfallkosten, Zeile "Sonstiges" der Anlage N, `Weitere_Wk/Sonst`) steht nur in `ABZUGS_KZ`. Grund und Test:
+    /// Abweichung Nr. 48 (`bescheid/tests/unfallkosten_weitere_wk_xml.rs`).
+    const RUST_EIGENE_KZ: [(&str, &str); 10] = [
         ("/abzugs_kz", "E0108701"),
         ("/abzugs_kz", "E0108801"),
         ("/abzugs_kz", "E0600920"),
+        ("/abzugs_kz", "E0205406"),
         ("/null_unzulaessig/je_vz/2024", "E0108701"),
         ("/null_unzulaessig/je_vz/2024", "E0108801"),
         ("/null_unzulaessig/je_vz/2025", "E0108701"),

@@ -28,6 +28,7 @@ use bindung::{Bindung, Bindungspunkt};
 use domain::{Achsenwert, Herkunft, PruefTiefe, Zustand};
 use store::SnapshotFeld;
 
+use crate::deklaration::{UNFALLKOSTEN, UNFALLKOSTEN_ZIEL_KZ};
 use crate::kz_wache::{abtasten_mit, modul_dateien, rs_dateien};
 use crate::tabellen::{
     DOKUMENTIERT_AGGREGAT, MULTIPLIKATION, NEGATION, P23_BETRAGSFELDER, PARTNER_INSTANZ,
@@ -107,6 +108,8 @@ fn transform_quellen() -> BTreeSet<&'static str> {
     q.extend(P23_BETRAGSFELDER.iter().copied());
     q.insert(P23_ART_FELD);
     q.insert("stammdaten_iban");
+    // Abweichung Nr. 48: die Unfallkosten sind Quelle der Zeile "Sonstiges" (drei Kz, `UNFALLKOSTEN_ZIEL_KZ`).
+    q.insert(UNFALLKOSTEN);
     q
 }
 
@@ -178,6 +181,7 @@ fn kein_phantom_kz_in_der_deklaration() {
     erlaubt.extend(verzweigung_ziel_kz());
     erlaubt.extend(KONSTANTE_KZ.iter().copied());
     erlaubt.extend(IBAN_TRANSFORM_ZIEL_KZ.iter().copied());
+    erlaubt.extend(UNFALLKOSTEN_ZIEL_KZ);
     let phantome: Vec<&str> = deklaration()
         .deklaration
         .keys()

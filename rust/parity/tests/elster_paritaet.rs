@@ -474,9 +474,10 @@ fn abzugs_kz_mengengleich() {
     let py_liste = py_abzugs_kz();
     let py: BTreeSet<&str> = py_liste.iter().map(String::as_str).collect();
     // Abweichung Nr. 31: E0108701 (Spenden an Parteien) steht nur in Rust. Abweichung Nr. 41: E0600920 (abgezogene
-    // auslaendische Steuer, § 34c Abs. 2) ebenso. Abweichung Nr. 44: E0108801 (Spenden an Waehlervereinigungen) ebenso. Ein
-    // weiteres Rust-Kz braucht seinen eigenen Eintrag hier.
-    let nur_in_rust: [&str; 3] = ["E0108701", "E0108801", "E0600920"];
+    // auslaendische Steuer, § 34c Abs. 2) ebenso. Abweichung Nr. 44: E0108801 (Spenden an Waehlervereinigungen) ebenso.
+    // Abweichung Nr. 48: E0205406 (Unfallkosten, Zeile "Sonstiges" der Anlage N) ebenso. Ein weiteres Rust-Kz braucht
+    // seinen eigenen Eintrag hier.
+    let nur_in_rust: [&str; 4] = ["E0108701", "E0108801", "E0600920", "E0205406"];
     let rust: BTreeSet<&str> = elster::ABZUGS_KZ
         .iter()
         .copied()

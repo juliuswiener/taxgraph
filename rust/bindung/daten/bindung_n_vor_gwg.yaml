@@ -139,10 +139,11 @@ bindungen:
   # (doppelte Haushaltsfuehrung) und Rz. 29 den pauschalen Kilometersatz fuer Menschen mit Behinderungen; beides ist nicht gebaut.
   # Upgrade: je ein eigenes Feld mit eigener Frage, derselbe Aufruf in `mit_unfallkosten`.
   # ponytail: Kz UNGEPRUEFT, die Abgabe sperrt bei einem Betrag ueber 0 (`elster::deklaration`, 409 deklaration_unvollstaendig).
-  # Kandidat ist N/Wk/Weitere_Wk/Sonst (E0205405 Bezeichnung, E0205406 Betrag, Summe E0204803; E10-2025.xsd:18252-18273). Die
-  # Zuordnung "Unfallkosten gehoeren dorthin" ist in keiner gelesenen Anleitung belegt, ERiC `checkESt` lief nicht, und fuer den
-  # VZ 2026 liegt lokal kein Schema vor (nur Schema/2020 bis 2025). Upgrade: Anleitung zur Anlage N lesen, XSD 2026 holen,
-  # Kz eintragen, Sperre in `elster::deklaration` streichen.
+  # Ein Betrag ueber 0 steht seit Abweichung Nr. 48 in der Zeile "Sonstiges" der Anlage N (N/Wk/Weitere_Wk/Sonst: E0205405
+  # Bezeichnung, E0205406 Betrag aufgerundet, Summe E0204803; E10-2025.xsd:18231-18274; Anleitung zur Anlage N "Zeile 62 bis 64").
+  # `elster_kz` bleibt null, weil `Bau::unfallkosten` die drei Kz schreibt (nicht der allgemeine Kz-Weg). ERiC `checkESt` lief
+  # nie, und fuer den VZ 2026 liegt lokal kein Schema vor (nur Schema/2020 bis 2025). Upgrade: nach dem ersten checkESt-Lauf
+  # den `offen`-Aufruf in `Bau::unfallkosten` streichen (die Sperre faellt, die Zeile bleibt), XSD 2026 holen.
   - feld_id: ep_unfallkosten
     feld_bedingung: {feld: ep_entfernung_km, wert_nicht: 0, grund: "Unfallkosten sind nur neben einer Entfernungspauschale abziehbar (BMF-Schreiben vom 18.11.2021, Rz. 30): sie entstehen auf dem Weg zwischen Wohnung und erster Tätigkeitsstätte. Wer bestätigt, dass dieser Weg 0 Kilometer lang ist, hat keinen solchen Weg."}
     # `signatur_slot` ist hier nur ein Etikett (Vault: decisions/slot-und-bedingungsnamen-sind-etiketten-z6-gestrichen): der Ring
@@ -158,7 +159,7 @@ bindungen:
     beispielwert: 150000
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kz ungeprueft (kz_status offen): E10-2025.xsd hat kein Feld mit 'Unfall' im Namen oder Label. Der Kandidat N/Wk/Weitere_Wk/Sonst (E0205405 Bezeichnung, E0205406 Betrag, Summe E0204803) ist NICHT belegt, Anleitung zur Anlage N nicht gelesen, ERiC checkESt nicht gelaufen, Schema fuer VZ 2026 nicht lokal. Bis dahin sperrt die Abgabe bei einem Betrag ueber 0."
+    elster_kz_grund: "Kz ungeprueft (kz_status offen): E10-2025.xsd hat kein Feld mit 'Unfall' im Namen oder Label. Ein Betrag ueber 0 steht in der Zeile Sonstiges der Anlage N (N/Wk/Weitere_Wk/Sonst: E0205405 Bezeichnung, E0205406 Betrag, Summe E0204803; Anleitung zur Anlage N, Zeile 62 bis 64), aber ERiC checkESt hat die Zeile nie angenommen und das Schema fuer VZ 2026 liegt nicht lokal. Darum sperrt die Abgabe bei einem Betrag ueber 0. Bei 0 oder leer steht nichts im XML."
     kz_status: offen
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:

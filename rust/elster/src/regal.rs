@@ -159,6 +159,28 @@ pub(crate) const REGAL: &[Datei] = &[
                     tests: &["abzug_traegt_die_steuer_unter_dem_abzugs_kz_und_nicht_als_anrechnung"],
                 },
             ),
+            // Abweichung Nr. 48: die Zeile "Sonstiges" der Anlage N fuer die Unfallkosten gibt es in Python nicht; der Test deckt die Literale.
+            (
+                "UNFALLKOSTEN_TEXT_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0205405"],
+                    tests: &["unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges"],
+                },
+            ),
+            (
+                "UNFALLKOSTEN_BETRAG_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0205406"],
+                    tests: &["unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges"],
+                },
+            ),
+            (
+                "WEITERE_WK_SUMME_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0204803"],
+                    tests: &["unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges"],
+                },
+            ),
             // Diese Regeln stehen als Literale in Methoden von `Bau`; ihr Top-Level-Name ist `deklariere`.
             ("deklariere", Zuordnung::Funktion("iban_weiche/praefix")),
             ("deklariere", Zuordnung::Funktion("iban_weiche/inland")),
