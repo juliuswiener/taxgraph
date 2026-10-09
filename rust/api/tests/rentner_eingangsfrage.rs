@@ -495,7 +495,9 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter() {
     );
     // Person A, gleiches Verhalten.
     let a_lohn = mit(rentner(4_000_000, "einzel"), vec![("bruttoarbeitslohn", json!(3_000_000)), ("steuerklasse", json!("1"))]);
+    let a_ohne = zahl(&fall_mit(&rentner(4_000_000, "einzel")).await).await;
     let a_offen = zahl(&fall_mit(&a_lohn).await).await;
+    assert!(a_ohne < a_offen, "der Lohn von Person A zaehlt nicht: {a_ohne} gegen {a_offen}");
     let d = fall_mit(&a_lohn).await;
     antworte(&d, "kein_lohn_pension", json!(true)).await;
     assert_eq!(zahl(&d).await, a_offen, "das Kreuz von Person A hat die Rechnung geaendert");
