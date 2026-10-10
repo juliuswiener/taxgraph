@@ -2237,6 +2237,20 @@ mod tests {
         }
     }
 
+    /// Abweichung Nr. 53: der Grund der Abgabe-Sperre bei Versorgungsbezuegen sagt nicht mehr, ein `checkESt`-Lauf habe die
+    /// Zeilen 11 bis 13 "noch nie angenommen" (Nr. 50 hat sie offline angenommen, rc=0), und nimmt die Rente mit Leistungsmitteilung
+    /// aus. Die Sperre selbst bleibt (Abweichung Nr. 42): der Text nennt sie und das amtliche Formular.
+    #[test]
+    fn die_versorgung_sperre_sagt_nicht_noch_nie_angenommen_und_nimmt_die_leistungsmitteilung_aus() {
+        let text = super::VERSORGUNG_SPERRE;
+        assert!(!text.contains("noch nie angenommen"), "{text}");
+        assert!(
+            text.contains("Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht in diese Zeilen"),
+            "{text}"
+        );
+        assert!(text.starts_with("Versorgungsbezüge über 0 Euro") && text.contains("gesperrt") && text.contains("Formular"), "{text}");
+    }
+
     /// Python `dict.get(wert)` an allen drei Aufrufstellen der Enum-Felder: Konfession (`feld`),
     /// Rentenart als Instanz (`instanz_feld`) und beim Partner (`verzweigung`). Drei
     /// Nicht-Treffer bleiben getrennt: Text ohne Schluessel und Null/Bool/Zahl geben keinen Code,
