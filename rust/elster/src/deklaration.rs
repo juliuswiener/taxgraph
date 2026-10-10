@@ -100,7 +100,7 @@ const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: Die Er
 pub(crate) const DBA_STAAT: &str = "dba_staat";
 const DBA_EINKUENFTE: &str = "dba_auslaendische_einkuenfte";
 
-/// Nur Rust (Abweichung Nr. 55): die Folgefrage zu `sonstiger_staat`. Ihr Wert ist selbst der Listentext (182 Eintraege der
+/// Nur Rust (Abweichung Nr. 58): die Folgefrage zu `sonstiger_staat`. Ihr Wert ist selbst der Listentext (182 Eintraege der
 /// Laenderliste, die 15 benannten stehen bei [`DBA_STAAT`]); [`Bau::dba_staat`] schreibt ihn nach [`STAAT_KZ`], wenn der Wert
 /// in den `enum_werte` der Bindung steht. Die Gegenprobe gegen die Liste des Schemas steht in `bescheid/tests/dba_staat_kz.rs`.
 pub(crate) const DBA_STAAT_SONSTIGER: &str = "dba_staat_sonstiger";
@@ -161,7 +161,7 @@ const DBA_STAAT_LISTENTEXT: &[(&str, &str)] = &[
 /// `dba_staat`. Die Erklaerung braucht den Namen aus der amtlichen Laenderliste; ohne ihn lehnt `checkESt` die Akte ab.
 const STAAT_SPERRE: &str = "Auslandseinkünfte ohne Staat: Die Erklärung braucht den Staat, aus dem die Einkünfte stammen, mit seinem Namen aus der amtlichen Länderliste. Für eine fehlende oder unbekannte Angabe gibt es diesen Namen nicht. Die Abgabe ist deshalb gesperrt. Wähle den Staat in der Liste, oder wähle „Anderer Staat“ und nenne ihn bei der Folgefrage.";
 
-/// Der Grund der Abgabe-Sperre bei `sonstiger_staat` ohne gueltige Folgefrage (Abweichung Nr. 55): die Erklaerung braucht den Namen des
+/// Der Grund der Abgabe-Sperre bei `sonstiger_staat` ohne gueltige Folgefrage (Abweichung Nr. 58): die Erklaerung braucht den Namen des
 /// Staates, und nur der Nutzer kennt ihn. Das Feld der Sperre ist die Folgefrage, nicht `dba_staat`: dort steht die Antwort schon.
 const STAAT_SONSTIGER_SPERRE: &str = "Auslandseinkünfte aus „Anderer Staat“: Die Erklärung braucht den Namen des Staates aus der amtlichen Länderliste. Die Abgabe ist deshalb gesperrt, bis du ihn nennst. Beantworte die Frage, aus welchem Staat die Einkünfte stammen. Steht der Staat nicht in der Liste, trage die Anlage AUS im amtlichen Formular selbst ein.";
 
@@ -1062,7 +1062,7 @@ impl Bau<'_> {
                 }),
             }
         } else if feld_id == DBA_STAAT || feld_id == DBA_STAAT_SONSTIGER {
-            // Abweichung Nr. 51 und Nr. 55: der Staat steht nach der Feldschleife (`Bau::dba_staat`), nicht hier.
+            // Abweichung Nr. 51 und Nr. 58: der Staat steht nach der Feldschleife (`Bau::dba_staat`), nicht hier.
         } else if feld_id == "stammdaten_iban" {
             self.iban(feld_id, wert);
         } else if let (SCHULGELD_ANTEIL, Some(kz)) = (feld_id, kz_von(b)) {
@@ -2125,7 +2125,7 @@ mod tests {
     /// unbekannter Wert schreiben nichts und sperren (`dba_staat`); Steuer ohne Einkuenfte sperrt (`dba_gezahlte_auslaendische_steuer`);
     /// ein Staat ohne Einkuenfte und ohne Steuer steht nicht und sperrt nicht. Das Regal fuehrt das Literal mit diesem Test.
     /// Die ganze Akte und die Gegenprobe gegen die Laenderliste des Schemas stehen in `bescheid/tests/dba_staat_kz.rs`.
-    /// Abweichung Nr. 55 haengt die Folgefrage `dba_staat_sonstiger` (Name zu `sonstiger_staat`) an dieselbe Tabelle.
+    /// Abweichung Nr. 58 haengt die Folgefrage `dba_staat_sonstiger` (Name zu `sonstiger_staat`) an dieselbe Tabelle.
     #[test]
     #[allow(clippy::too_many_lines, reason = "eine Fall-Tabelle mit der Zeile je Eingabe, geteilt wuerde die Setup-Zeilen doppeln")]
     fn der_staat_steht_als_listentext_in_e0600301_genau_mit_den_einkuenften() {
@@ -2150,7 +2150,7 @@ mod tests {
         };
         // (Staat, Folgefrage, Einkuenfte vorhanden, Steuer vorhanden)
         //   -> (Text unter E0600301, Feld der Sperre zum Staat, Sperre zur Steuer)
-        // Die Folgefrage (Abweichung Nr. 55) zaehlt nur bei bestaetigtem `sonstiger_staat`; ihr Wert muss in ihren `enum_werte` stehen.
+        // Die Folgefrage (Abweichung Nr. 58) zaehlt nur bei bestaetigtem `sonstiger_staat`; ihr Wert muss in ihren `enum_werte` stehen.
         let faelle = [
             (Some("Frankreich"), None, true, false, Some("Frankreich"), None, false),
             (Some("Oesterreich"), None, true, false, Some("Österreich"), None, false),
@@ -2202,6 +2202,9 @@ mod tests {
             // Ein geschriebener Staat steht NICHT in `nicht_deklariert`, ein beantworteter, aber nicht geschriebener schon.
             let in_nicht = d.nicht_deklariert.iter().any(|e| e.feld_id == "dba_staat");
             assert_eq!(in_nicht, staat.is_some() && text.is_none(), "{name}: nicht_deklariert");
+            // Die Folgefrage ist Quelle von `E0600301` oder ueberholt; ein Eintrag steht nie bei ihr, sondern bei `dba_staat`.
+            let folge_in_nicht = d.nicht_deklariert.iter().any(|e| e.feld_id == "dba_staat_sonstiger");
+            assert!(!folge_in_nicht, "{name}: die Folgefrage steht in nicht_deklariert");
             for feld_der_sperre in ["dba_staat", "dba_staat_sonstiger"] {
                 assert_eq!(
                     sperre(feld_der_sperre),
@@ -2226,7 +2229,7 @@ mod tests {
         assert_eq!(gruende.len(), 1, "{gruende:?}");
         assert!(gruende[0].contains("Bestätigung"), "{gruende:?}");
 
-        // Abweichung Nr. 55: eine vorlaeufige Folgefrage steht nicht im Kz und sperrt genau einmal (der Eintrag aus `feld`, bei
+        // Abweichung Nr. 58: eine vorlaeufige Folgefrage steht nicht im Kz und sperrt genau einmal (der Eintrag aus `feld`, bei
         // `sonstiger_staat` kein zweiter aus `dba_staat`). Das gilt auch bei einem benannten Staat: wie jedes vorlaeufige Feld sperrt sie
         // (Eigenschaft `vorlaeufig_deklariert_nie`), obwohl die Oberflaeche sie dann nicht mehr fragt. ponytail: eine ueberholte
         // vorlaeufige Folgefrage bleibt gesperrt, bis der Nutzer erneut "Anderer Staat" waehlt oder sie bestaetigt; selten, fail-closed.

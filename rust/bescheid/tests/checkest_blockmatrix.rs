@@ -601,7 +601,7 @@ fn ausland_staat_und_nr41_gegen_echtes_checkest() {
     eprintln!("{:<40} {}", "Ausland_Anrechnung", u.zeile());
     assert!(u.plausibel(), "Ausland_Anrechnung: nicht rc=0: {}", u.zeile());
 
-    // Abweichung Nr. 55: "Anderer Staat" mit dem Namen aus der Folgefrage `dba_staat_sonstiger`. Fuenf Namen, die ein Rohwert oder die
+    // Abweichung Nr. 58: "Anderer Staat" mit dem Namen aus der Folgefrage `dba_staat_sonstiger`. Fuenf Namen, die ein Rohwert oder die
     // XML-Ausgabe verfaelschen koennte: ein gewoehnlicher, einer mit Komma, mit Apostroph, mit Umlaut und mit Bindestrich.
     // Kontrolle: ohne die Folgefrage baut der Abgabeweg kein XML.
     let anderer_staat = |name: Option<&str>| -> Vec<(&'static str, Value)> {

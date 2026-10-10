@@ -1,4 +1,4 @@
-//! Anlage AUS, Staat der Auslandseinkuenfte (Abweichung Nr. 55): die Folgefrage `dba_staat_sonstiger` ueber die HTTP-Naht. Ohne
+//! Anlage AUS, Staat der Auslandseinkuenfte (Abweichung Nr. 58): die Folgefrage `dba_staat_sonstiger` ueber die HTTP-Naht. Ohne
 //! `PARITY=1`, ohne Python, ohne Netz, ohne `ERiC`.
 //!
 //! **Worum es geht.** Wer bei "Aus welchem Staat?" "Anderer Staat" waehlt, nennt den Staat in einer Folgefrage mit der amtlichen

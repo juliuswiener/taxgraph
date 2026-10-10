@@ -131,7 +131,7 @@ fn akte(scheibe: Option<&str>) -> store::Store {
 /// beide +2 mit `versorgung_zeile` und `versorgung_zeile_partner`: 371 und 285, Abweichung Nr. 50 am 2026-10-10;
 /// beide +7 mit den sieben Feldern des privaten Verkaufs (`p23_bezeichnung` bis `p23_einkunftsquelle`): 378 und 292, Abweichung
 /// Nr. 54 am 2026-10-10;
-/// beide +1 mit `dba_staat_sonstiger`: 379 und 293, Abweichung Nr. 55.
+/// beide +1 mit `dba_staat_sonstiger`: 379 und 293, Abweichung Nr. 58.
 /// `n_vor_gwg` liest die YAML: 0 statt 69 waere der stille Rueckfall auf "leer".
 #[test]
 fn scheibe_bindung_wie_python() {

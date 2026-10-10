@@ -508,7 +508,7 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter() {
 
 /// AK5: Die Fragenzahl vor und nach den Antworten. Die Kreuze selbst verlassen die Liste, sobald sie beantwortet sind.
 /// "Nein" spart 8 Fragen je Person (Ehegatte: 10); "ja" kostet nichts gegenueber heute (143 und 192). Seit der Folgefrage
-/// `dba_staat_sonstiger` (Abweichung Nr. 55) steht je Fall eine Frage mehr in der Liste (144 und 193).
+/// `dba_staat_sonstiger` (Abweichung Nr. 58) steht je Fall eine Frage mehr in der Liste (144 und 193).
 /// Seit Abweichung Nr. 54 haengen die Fragen zum privaten Verkauf am Kreuz `kein_p23_verkauf` (hier "nein"), nicht mehr an
 /// `kein_sonstige`: vier Fragen weniger in jedem Fall (147 -> 143, 196 -> 192).
 #[tokio::test]

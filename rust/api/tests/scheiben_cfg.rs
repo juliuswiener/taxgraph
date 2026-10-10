@@ -111,7 +111,7 @@ fn rentner_gesamt_fuehrt_jedes_feld_einmal() {
     // `versorgung_zeile_partner` (Abweichung Nr. 50): 285; seit 2026-10-10 zweiunddreissig mit den sieben Feldern des
     // privaten Verkaufs (`p23_bezeichnung`, `p23_anschaffungsdatum`, `p23_veraeusserungsdatum`, `p23_afa`, `p23_eigennutzung`,
     // `p23_taeglicher_gebrauch`, `p23_einkunftsquelle`; Abweichung Nr. 54): 292; seit 2026-10-11 dreiunddreissig mit
-    // `dba_staat_sonstiger` (Abweichung Nr. 55): 293.
+    // `dba_staat_sonstiger` (Abweichung Nr. 58): 293.
     let c = Cfg::fuer(Scheibe::RentnerGesamt);
     let f = c.felder(ohne_datei).unwrap();
     assert_eq!(f.len(), 293, "roh gezaehlt");

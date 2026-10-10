@@ -39,7 +39,7 @@ const EINKUENFTE: &str = "dba_auslaendische_einkuenfte";
 const ART: &str = "dba_einkunftsart";
 const STEUER: &str = "dba_gezahlte_auslaendische_steuer";
 const WAHL: &str = "dba_abzug_statt_anrechnung";
-/// Die Folgefrage zu `sonstiger_staat` (Abweichung Nr. 55): der Name des Staates aus der amtlichen Laenderliste.
+/// Die Folgefrage zu `sonstiger_staat` (Abweichung Nr. 58): der Name des Staates aus der amtlichen Laenderliste.
 const FOLGE: &str = "dba_staat_sonstiger";
 
 /// Anlage AUS, `Staat_Spez_InvFonds`: "aus dem Staat / Spezial-Investmentfonds".
@@ -277,7 +277,7 @@ fn sonstiger_staat_fehlender_und_unbekannter_wert_schreiben_nichts_und_sperren_m
         ("Listentext Tschechische Republik", Some(json!("Tschechische Republik"))),
     ];
     for (name, staat) in faelle {
-        // `sonstiger_staat` ohne Folgefrage sperrt an der Folgefrage (Abweichung Nr. 55), jeder andere Fall an `dba_staat`.
+        // `sonstiger_staat` ohne Folgefrage sperrt an der Folgefrage (Abweichung Nr. 58), jeder andere Fall an `dba_staat`.
         let (feld, anderes) = if staat == Some(json!("sonstiger_staat")) { (FOLGE, STAAT) } else { (STAAT, FOLGE) };
         let s = akte(&Ausland { staat, einkuenfte: true, steuer: None, abzug: false });
         assert_eq!(kz_wert(&s, STAAT_KZ), None, "{name}: der Staat darf nicht im XML stehen");
@@ -291,7 +291,7 @@ fn sonstiger_staat_fehlender_und_unbekannter_wert_schreiben_nichts_und_sperren_m
     }
 }
 
-/// Die Folgefrage zu `sonstiger_staat` (Abweichung Nr. 55) bei bestaetigtem `sonstiger_staat`: der Name, den der Nutzer waehlt,
+/// Die Folgefrage zu `sonstiger_staat` (Abweichung Nr. 58) bei bestaetigtem `sonstiger_staat`: der Name, den der Nutzer waehlt,
 /// steht als Listentext in `E0600301`, und die Akte sperrt nicht. Zur Gegenprobe gehoeren die vier Sonderfaelle der Liste:
 /// ein Name mit Komma ("Korea, Republik"), mit Apostroph ("Cote d'Ivoire"), mit Umlaut ("Äthiopien") und mit Bindestrich
 /// ("Papua-Neuguinea"). Der Name erreicht das XML unverfaelscht (Komma und Umlaut stehen im Elementtext, der Apostroph darf

@@ -118,7 +118,7 @@ fn transform_quellen() -> BTreeSet<&'static str> {
     q.insert(UNFALLKOSTEN);
     // Abweichung Nr. 51: der Staat ist Quelle von `STAAT_KZ` (Listentext aus `DBA_STAAT_LISTENTEXT`), das Feld hat kein Bindungs-Kz.
     q.insert(DBA_STAAT);
-    // Abweichung Nr. 55: die Folgefrage zu `sonstiger_staat` ist selbst der Listentext von `STAAT_KZ`.
+    // Abweichung Nr. 58: die Folgefrage zu `sonstiger_staat` ist selbst der Listentext von `STAAT_KZ`.
     q.insert(DBA_STAAT_SONSTIGER);
     q
 }
