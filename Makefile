@@ -277,9 +277,9 @@ abgabeweg-freigabe-rust:
 blockmatrix-rust:
 	if [ -z "$$ELSTER_HERSTELLER_ID" ] && [ -f .env ]; then set -a; . ./.env; set +a; fi; \
 	mkdir -p rust/target; log=rust/target/blockmatrix-rust.log; \
-	(cd rust && cargo test -p bescheid --test checkest_blockmatrix -- --ignored --nocapture --test-threads=1 --exact zwoelf_bloecke_gegen_echtes_checkest zeilen_nr48_nr49_gegen_echtes_checkest ausland_staat_und_nr41_gegen_echtes_checkest privatverkauf_gegen_echtes_checkest) > $$log 2>&1; rc=$$?; \
+	(cd rust && cargo test -p bescheid --test checkest_blockmatrix -- --ignored --nocapture --test-threads=1 --exact zwoelf_bloecke_gegen_echtes_checkest zeilen_nr48_nr49_gegen_echtes_checkest zeilen_nr48_nr49_vz2024_gegen_echtes_checkest ausland_staat_und_nr41_gegen_echtes_checkest privatverkauf_gegen_echtes_checkest) > $$log 2>&1; rc=$$?; \
 	cat $$log; \
-	[ $$rc -eq 0 ] && grep -q "test result: ok. 4 passed" $$log
+	[ $$rc -eq 0 ] && grep -q "test result: ok. 5 passed" $$log
 
 ## Rust-Port (REWRITE_PLAN.md). Der generierte Catala-C-Backend liegt committed unter
 ## rust/catala-sys/generated/ -- catala-c regeneriert ihn (braucht den Opam-Switch).

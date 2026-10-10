@@ -9,15 +9,13 @@
 //! KONTROLLEN. Ein gruener Lauf ohne `ERiC` saehe gleich aus. Darum laufen vor den Bloecken die Basis allein (muss `rc=0` sein) und
 //! zwei Akten, die `ERiC` beanstanden MUSS (Kind ohne Vorname, Anlage V nur mit Einnahmen): `rc=610001002` mit lesbarer Meldung.
 //!
-//! GESPERRTE ZEILEN (Abweichung Nr. 48 Unfallkosten, Nr. 49 § 34c-Abzug). Mit offener Sperre baut das Produkt kein XML
-//! (`einreichungs_xml` und `erzeuge_xml` lehnen ab). Der Test nimmt den Umweg der Schema-Tests (`xml_ohne_sperre`): die Deklaration
-//! derselben Akte ohne den sperrenden Grund, mit den Zeilen der echten. Das liegt nur hier in `rust/*/tests/`; das Produkt hat dafuer
-//! keinen Schalter. Fuer `ERiC` braucht der Umweg `abgabefaehig: true` und den Snapshot, sonst fehlt der `<Vorsatz>`.
-//! Die Sperren fallen nicht mit diesem Test, sondern auf Julius' Wort.
+//! ZEILEN "SONSTIGES" (Abweichung Nr. 48 Unfallkosten, Nr. 49 § 34c-Abzug). Beide Sperren fielen auf Julius' Wort am 2026-10-10,
+//! nachdem dieser Test die Zeilen gemessen hatte: der ECHTE Abgabeweg (`einreichungs_xml`) baut das XML, kein Umweg. Wo der
+//! Bescheid den Abzug nicht rechnet, bleibt die Sperre des Abzugs (`p34c_abzug_weitere_wk_xml.rs`); sie hat hier keinen Fall.
 //!
 //! ANLAGE AUS (Abweichung Nr. 51, Staat als Listentext in `E0600301`). Jede Akte mit Auslandseinkuenften scheiterte bei `checkESt`
 //! an der fehlenden Staat-Angabe; seit Nr. 51 steht der Staat. Der dritte echte Test misst die Anrechnung ueber den echten Abgabeweg
-//! (Block "Ausland Anrechnung"), den Abzug nach § 34c Abs. 2 (Nr. 41, `E0600920`) ueber den Umweg und drei Kontrollen, die `ERiC`
+//! (Block "Ausland Anrechnung"), den Abzug nach § 34c Abs. 2 (Nr. 41, `E0600920`) ueber den echten Abgabeweg und drei Kontrollen, die `ERiC`
 //! beanstanden MUSS: Staat ohne Einkuenfte, Einkuenfte ohne Staat, Steuer ohne Einkuenfte.
 //!
 //! ANLAGE SO, PRIVATVERKAUF (Abweichung Nr. 54, Spike AK0 in `checkest_privatverkauf_spike.rs`). Der vierte echte Test misst, was der
@@ -59,9 +57,10 @@ use serde_json::{json, Value};
 use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
 
 /// Die Namen der echten Tests: Make-Ziel und Verdrahtungs-Test pruefen sie.
-const ECHTE_TESTS: [&str; 4] = [
+const ECHTE_TESTS: [&str; 5] = [
     "zwoelf_bloecke_gegen_echtes_checkest",
     "zeilen_nr48_nr49_gegen_echtes_checkest",
+    "zeilen_nr48_nr49_vz2024_gegen_echtes_checkest",
     "ausland_staat_und_nr41_gegen_echtes_checkest",
     "privatverkauf_gegen_echtes_checkest",
 ];
@@ -156,9 +155,13 @@ fn basis() -> Vec<(&'static str, Value)> {
 }
 
 fn leere_akte() -> Store {
+    leere_akte_vz(2025)
+}
+
+fn leere_akte_vz(vz: i64) -> Store {
     Store::aus_datei(
         serde_json::from_value(
-            json!({"version": 1, "veranlagungszeitraum": 2025, "scheibe": "gesamt", "events": []}),
+            json!({"version": 1, "veranlagungszeitraum": vz, "scheibe": "gesamt", "events": []}),
         )
         .unwrap(),
     )
@@ -201,7 +204,12 @@ impl Urteil {
 }
 
 fn urteil(xml: &str, id: &str) -> Urteil {
-    let (rc, antwort) = validiere(xml.as_bytes(), "ESt_2025")
+    urteil_vz(xml, id, 2025)
+}
+
+/// Wie [`urteil`], fuer die Datenart `ESt_<vz>`.
+fn urteil_vz(xml: &str, id: &str, vz: i64) -> Urteil {
+    let (rc, antwort) = validiere(xml.as_bytes(), &format!("ESt_{vz}"))
         .unwrap_or_else(|e| panic!("ERiC laedt nicht oder bricht ab: {e:?}"));
     Urteil { rc, klasse: klassifiziere_rc(i64::from(rc)), meldungen: meldungen(&antwort, id) }
 }
@@ -397,7 +405,7 @@ fn zwoelf_bloecke_gegen_echtes_checkest() {
     assert!(rot.is_empty(), "{} von {ANZAHL_BLOECKE} Bloecken nicht rc=0: {rot:?}", rot.len());
 }
 
-// ----------------------------------------------------------------------------- Nr. 48 und Nr. 49 ueber den Umweg
+// ----------------------------------------------------------------------------- Nr. 48 und Nr. 49: die Zeilen "Sonstiges"
 
 const WAHL: &str = "dba_abzug_statt_anrechnung";
 const STEUER: &str = "dba_gezahlte_auslaendische_steuer";
@@ -410,7 +418,16 @@ const SONST_KZ: [&str; 3] = ["E0205405", "E0205406", "E0204803"];
 /// Die e2e-artige Akte: Basis plus ein Arbeitsweg, dazu auf Wunsch Unfallkosten (Cent) und der Abzug der auslaendischen Steuer
 /// (`Some(Steuer in Cent)`, Wahl Abzug).
 fn zeilen_akte(unfall: Option<i64>, abzug: Option<i64>) -> Store {
-    let mut s = leere_akte();
+    zeilen_akte_vz(2025, unfall, abzug)
+}
+
+fn zeilen_akte_vz(vz: i64, unfall: Option<i64>, abzug: Option<i64>) -> Store {
+    zeilen_akte_voll(vz, unfall, abzug, 500_000)
+}
+
+/// Wie [`zeilen_akte_vz`], mit den Auslandseinkuenften in Cent (nur mit Abzug gesetzt).
+fn zeilen_akte_voll(vz: i64, unfall: Option<i64>, abzug: Option<i64>, einkuenfte: i64) -> Store {
+    let mut s = leere_akte_vz(vz);
     for (f, w) in basis() {
         setze(&mut s, f, w);
     }
@@ -427,7 +444,7 @@ fn zeilen_akte(unfall: Option<i64>, abzug: Option<i64>) -> Store {
         setze(&mut s, UNFALL, json!(cent));
     }
     if let Some(steuer) = abzug {
-        setze(&mut s, EINKUENFTE, json!(500_000));
+        setze(&mut s, EINKUENFTE, json!(einkuenfte));
         setze(&mut s, ART, json!("unselbstaendige_arbeit"));
         setze(&mut s, "dba_staat", json!("Frankreich"));
         setze(&mut s, "dba_mehrere_staaten", json!(false));
@@ -459,51 +476,30 @@ fn xml_abgabe(d: &Deklaration, felder: &Felder, id: &str) -> String {
     .unwrap_or_else(|e| panic!("erzeuge_xml scheitert: {}", e.to_string().replace(id, "<ID>")))
 }
 
-/// Der Umweg `xml_ohne_sperre`: die Deklaration der Akte mit den Zeilen (gesperrt: Unfallkosten ueber 0, Abzug gewaehlt) und eine
-/// saubere Deklaration derselben Basis ohne beide. Aus der echten kommen nur die drei Kz der Zeile "Sonstiges" und die
-/// Instanzgruppen mit dem Betrag; was `deklariere` fuer Zeilen und Summe berechnet hat, kommt aus dem Store, nicht aus dem Test.
-/// Der Auslandsblock (Anlage AUS) bleibt hier draussen; Nr. 41 misst `ausland_staat_und_nr41_gegen_echtes_checkest`. Gibt die
-/// saubere Deklaration, den Snapshot der echten Akte und die Namen der gesperrten Felder zurueck.
-fn ohne_sperre(unfall: Option<i64>, abzug: Option<i64>) -> (Deklaration, Felder, Vec<String>) {
-    ohne_sperre_kz(unfall, abzug, &SONST_KZ, true)
+/// Der echte Abgabeweg einer Zeilen-Akte: Guard, Ring, `deklariere`, `erzeuge_xml` (`einreichungs_xml`), kein Umweg. `Err` nennt
+/// den Grund, aus dem der Guard, eine Sperre oder der Writer kein XML baut.
+fn echter_abgabeweg(unfall: Option<i64>, abzug: Option<i64>, id: &str) -> Result<String, String> {
+    echter_abgabeweg_vz(2025, unfall, abzug, id)
 }
 
-/// Wie [`ohne_sperre`], mit den Kz, die aus der echten Deklaration in die saubere wandern (`kz`), und dem Wunsch, auch die
-/// Instanzgruppe mit der Zeile "Sonstiges" zu uebernehmen (`mit_instanzen`). Nr. 41 braucht den Auslandsblock ([`AUSLAND_KZ`]) und
-/// keine Zeile; Nr. 48/49 brauchen die Zeile und keinen Auslandsblock.
-fn ohne_sperre_kz(
-    unfall: Option<i64>,
-    abzug: Option<i64>,
-    kz: &[&str],
-    mit_instanzen: bool,
-) -> (Deklaration, Felder, Vec<String>) {
-    let (mit, felder) = deklaration(unfall, abzug);
-    let gesperrt: Vec<String> = mit.unvollstaendig().iter().map(|e| e.feld_id.clone()).collect();
-    let (mut sauber, _) = deklaration(None, None);
-    assert!(sauber.unvollstaendig().is_empty(), "die Vergleichsakte ohne Zeilen sperrt schon");
-    for k in kz {
-        if let Some(wert) = mit.deklaration.get(*k) {
-            sauber.deklaration.insert((*k).to_owned(), wert.clone());
-        }
-    }
-    if mit_instanzen {
-        sauber.anlage_instanzen = mit
-            .anlage_instanzen
-            .iter()
-            .filter(|(_, insts)| insts.iter().any(|i| i.felder.contains_key(SONST_KZ[1])))
-            .cloned()
-            .collect();
-    }
-    (sauber, felder, gesperrt)
+fn echter_abgabeweg_vz(vz: i64, unfall: Option<i64>, abzug: Option<i64>, id: &str) -> Result<String, String> {
+    echter_abgabeweg_ek(vz, unfall, abzug, 500_000, id)
 }
 
-/// Fall mit Zahl der erwarteten `<Sonst>`-Zeilen im XML; `rc=0` und 0 Meldungen.
+/// Wie [`echter_abgabeweg_vz`], mit den Auslandseinkuenften in Cent.
+fn echter_abgabeweg_ek(vz: i64, unfall: Option<i64>, abzug: Option<i64>, einkuenfte: i64, id: &str) -> Result<String, String> {
+    einreichungs_xml(&zeilen_akte_voll(vz, unfall, abzug, einkuenfte), index(), params(), "BY", Some(id.to_owned()))
+        .map(|e| e.xml)
+        .map_err(|f| f.to_string().replace(id, "<ID>"))
+}
+
+/// Fall mit Zahl der erwarteten `<Sonst>`-Zeilen im XML, ueber den echten Abgabeweg; `rc=0` und 0 Meldungen.
 fn pruefe_zeilen(name: &str, unfall: Option<i64>, abzug: Option<i64>, sonst: usize, id: &str) {
-    let (sauber, felder, gesperrt) = ohne_sperre(unfall, abzug);
-    let xml = xml_abgabe(&sauber, &felder, id);
+    let xml = echter_abgabeweg(unfall, abzug, id)
+        .unwrap_or_else(|g| panic!("{name}: kein XML ueber den echten Abgabeweg: {g}"));
     let n = xml.matches("<Sonst>").count();
     let u = urteil(&xml, id);
-    eprintln!("{name:<40} gesperrt={gesperrt:?} sonst={n} {}", u.zeile());
+    eprintln!("{name:<40} sonst={n} {}", u.zeile());
     assert_eq!(n, sonst, "{name}: erwartet {sonst} Zeilen <Sonst> im XML, gefunden {n}");
     assert!(u.plausibel(), "{name}: nicht rc=0: {}", u.zeile());
 }
@@ -518,14 +514,17 @@ fn zeilen_nr48_nr49_gegen_echtes_checkest() {
     // Kontrolle: die Akte ohne beide Zeilen ist einreichbar, ihr XML hat keine Zeile "Sonstiges".
     pruefe_zeilen("K0_arbeitsweg_ohne_zeilen", None, None, 0, &id);
 
-    // Nr. 48 allein: 150.001 Cent Unfallkosten, aufgerundet 1.501 EUR.
-    let (sauber, felder, gesperrt) = ohne_sperre(Some(150_001), None);
-    assert_eq!(gesperrt, [UNFALL], "Nr. 48 muss genau ep_unfallkosten sperren (sonst misst der Umweg die falsche Sperre)");
-    let xml = xml_abgabe(&sauber, &felder, &id);
-    assert!(xml.contains("<E0205406>1501</E0205406>"), "Nr. 48: die Zeile steht nicht im XML");
+    // Nr. 48 allein: 150.001 Cent Unfallkosten, aufgerundet 1.501 EUR. Die Sperre ist gefallen (Julius, 2026-10-10): der ECHTE
+    // Abgabeweg (Guard, Ring, deklariere, erzeuge_xml) baut das XML, ohne Umweg.
+    let echt = echter_abgabeweg(Some(150_001), None, &id)
+        .unwrap_or_else(|g| panic!("Nr48_unfallkosten: kein XML ueber den echten Abgabeweg: {g}"));
+    assert!(echt.contains("<E0205406>1501</E0205406>"), "Nr48_unfallkosten: die Zeile steht nicht im XML");
     pruefe_zeilen("Nr48_unfallkosten", Some(150_001), None, 1, &id);
 
     // Kontrollen zu Nr. 48: dieselbe Zeile ohne Bezeichnung und mit falscher Summe beanstandet ERiC, mit dem Text der Zeile.
+    // Sie brauchen die Deklaration (Kz entfernen), nicht das fertige XML.
+    let (sauber, felder) = deklaration(Some(150_001), None);
+    assert!(sauber.unvollstaendig().is_empty(), "Nr. 48 sperrt nicht mehr: {:?}", sauber.unvollstaendig());
     let mut ohne_text = sauber.clone();
     ohne_text.deklaration.remove(SONST_KZ[0]);
     let u = urteil(&xml_abgabe(&ohne_text, &felder, &id), &id);
@@ -545,23 +544,81 @@ fn zeilen_nr48_nr49_gegen_echtes_checkest() {
         u.zeile()
     );
 
-    // Nr. 49 allein: Abzug statt Anrechnung, 70.001 Cent Steuer, aufgerundet 701 EUR.
-    let (_, _, gesperrt) = ohne_sperre(None, Some(70_001));
-    assert_eq!(gesperrt, [WAHL], "Nr. 49 muss genau dba_abzug_statt_anrechnung sperren");
+    // Nr. 49 allein: Abzug statt Anrechnung, 70.001 Cent Steuer, aufgerundet 701 EUR, ueber den echten Abgabeweg. Zeile 10 der
+    // Anlage AUS (`E0600920`) steht mit 701, Zeile 7 (`E0601401`) NACH dem Abzug mit 5.000 - 701 = 4.299, die Anrechnung fehlt.
     pruefe_zeilen("Nr49_abzug", None, Some(70_001), 1, &id);
+    let echt = echter_abgabeweg(None, Some(70_001), &id)
+        .unwrap_or_else(|g| panic!("Nr49_abzug: kein XML ueber den echten Abgabeweg: {g}"));
+    assert!(echt.contains("<E0600920>701</E0600920>"), "Nr49_abzug: Zeile 10 steht nicht mit 701 im XML");
+    assert!(echt.contains("<E0601401>4299</E0601401>"), "Nr49_abzug: Zeile 7 steht nicht nach dem Abzug im XML");
+    assert!(!echt.contains("<E0601901>"), "Nr49_abzug: Anrechnung neben dem Abzug");
+
+    // Zeile 7 negativ: 500 Euro Einkuenfte, 700,01 Euro Steuer -> Zeile 7 = 500 - 701 = -201. Die Anleitung nennt negative
+    // Einkuenfte durch den Abzug ausdruecklich; das Schema erlaubt sie, `ERiC` muss sie annehmen.
+    let echt = echter_abgabeweg_ek(2025, None, Some(70_001), 50_000, &id)
+        .unwrap_or_else(|g| panic!("Nr49_abzug_negativ: kein XML ueber den echten Abgabeweg: {g}"));
+    assert!(echt.contains("<E0601401>-201</E0601401>"), "Nr49_abzug_negativ: Zeile 7 steht nicht mit -201 im XML");
+    let u = urteil(&echt, &id);
+    eprintln!("{:<40} {}", "Nr49_abzug_zeile7_negativ", u.zeile());
+    assert!(u.plausibel(), "Nr49_abzug_negativ: nicht rc=0: {}", u.zeile());
 
     // Nr. 48 und Nr. 49 zusammen: zwei Zeilen unter einem Weitere_Wk, die Summe ist die der gerundeten Zeilen (1.501 + 701 = 2.202).
     pruefe_zeilen("Nr48_und_Nr49", Some(150_001), Some(70_001), 2, &id);
 }
 
+/// Nr. 48 und Nr. 49 fuer den Veranlagungszeitraum 2024 (`ESt_2024`): dieselben Zeilen "Sonstiges" und der Abzug in der Anlage AUS
+/// gegen das echte `checkESt`, ueber den echten Abgabeweg. Die Sperren galten fuer beide Jahre; ohne diesen Lauf fielen sie fuer 2024
+/// ungemessen. Kontrollen: die Akte ohne die Zeile ist einreichbar (sonst liesse ein Fehler sich nicht der Zeile zuschreiben), und
+/// dieselbe Zeile ohne Bezeichnung beanstandet `ERiC`.
+#[test]
+#[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make blockmatrix-rust`"]
+fn zeilen_nr48_nr49_vz2024_gegen_echtes_checkest() {
+    let id = voraussetzungen();
+    assert!(schemas_da(2024), "ERiC-Schema fuer VZ 2024 fehlt: ohne es baut der Writer kein XML");
+
+    let ohne = echter_abgabeweg_vz(2024, None, None, &id)
+        .unwrap_or_else(|g| panic!("K0_vz2024: kein XML ueber den echten Abgabeweg: {g}"));
+    assert!(!ohne.contains("<Sonst>"), "K0_vz2024: Zeile Sonstiges ohne Unfallkosten");
+    let u = urteil_vz(&ohne, &id, 2024);
+    eprintln!("{:<40} {}", "K0_vz2024_arbeitsweg_ohne_zeile", u.zeile());
+    assert!(u.plausibel(), "K0_vz2024: nicht rc=0: {}", u.zeile());
+
+    let xml = echter_abgabeweg_vz(2024, Some(150_001), None, &id)
+        .unwrap_or_else(|g| panic!("Nr48_vz2024: kein XML ueber den echten Abgabeweg: {g}"));
+    assert!(xml.contains("<E0205406>1501</E0205406>"), "Nr48_vz2024: die Zeile steht nicht im XML");
+    assert_eq!(xml.matches("<Sonst>").count(), 1, "Nr48_vz2024: erwartet eine Zeile <Sonst>");
+    let u = urteil_vz(&xml, &id, 2024);
+    eprintln!("{:<40} {}", "Nr48_vz2024_unfallkosten", u.zeile());
+    assert!(u.plausibel(), "Nr48_vz2024: nicht rc=0: {}", u.zeile());
+
+    let bezeichnung = "<E0205405>Unfallkosten Arbeitsweg</E0205405>";
+    assert!(xml.contains(bezeichnung), "Nr48_vz2024: die Bezeichnung steht nicht wie erwartet im XML");
+    let u = urteil_vz(&xml.replacen(bezeichnung, "", 1), &id, 2024);
+    eprintln!("{:<40} {}", "K_vz2024_ohne_bezeichnung", u.zeile());
+    assert!(
+        u.rc == RC_PLAUSIBILITAET && u.meldungen.iter().any(|m| m.contains("sonstigen Werbungskosten")),
+        "Kontrolle VZ 2024 ohne Bezeichnung: ERiC muss die Zeile beanstanden, gab: {}",
+        u.zeile()
+    );
+
+    // Nr. 49 und Nr. 41 mit den Unfallkosten: zwei Zeilen, Summe 1.501 + 701 = 2.202, Zeile 10 mit 701, Zeile 7 nach dem Abzug.
+    let xml = echter_abgabeweg_vz(2024, Some(150_001), Some(70_001), &id)
+        .unwrap_or_else(|g| panic!("Nr49_vz2024: kein XML ueber den echten Abgabeweg: {g}"));
+    assert_eq!(xml.matches("<Sonst>").count(), 2, "Nr49_vz2024: erwartet zwei Zeilen <Sonst>");
+    assert!(xml.contains("<E0204803>2202</E0204803>"), "Nr49_vz2024: Summe nicht 2202");
+    assert!(xml.contains("<E0600920>701</E0600920>"), "Nr49_vz2024: Zeile 10 steht nicht mit 701 im XML");
+    assert!(xml.contains("<E0601401>4299</E0601401>"), "Nr49_vz2024: Zeile 7 steht nicht nach dem Abzug im XML");
+    let u = urteil_vz(&xml, &id, 2024);
+    eprintln!("{:<40} {}", "Nr48_Nr49_vz2024", u.zeile());
+    assert!(u.plausibel(), "Nr49_vz2024: nicht rc=0: {}", u.zeile());
+}
+
 // ----------------------------------------------------------------------------- Anlage AUS: Staat, Anrechnung, Nr. 41
 
-/// Anlage AUS, `Staat_Spez_InvFonds`: Staat (Abweichung Nr. 51), Einkuenfte, anzurechnende Steuer, abgezogene Steuer (Nr. 41).
+/// Anlage AUS, `Staat_Spez_InvFonds`: Staat (Abweichung Nr. 51), Einkuenfte, anzurechnende Steuer.
 const STAAT_KZ: &str = "E0600301";
 const EINKUENFTE_KZ: &str = "E0601401";
 const ANRECHNUNG_KZ: &str = "E0601901";
-const ABZUG_KZ: &str = "E0600920";
-const AUSLAND_KZ: [&str; 4] = [STAAT_KZ, EINKUENFTE_KZ, ANRECHNUNG_KZ, ABZUG_KZ];
 
 /// Die Auslandsangaben der Anrechnung: 5.000 Euro aus Arbeitslohn in Frankreich, `steuer` in Cent.
 fn ausland_felder(steuer: i64) -> Vec<(&'static str, Value)> {
@@ -589,7 +646,7 @@ fn anrechnung_deklaration() -> (Deklaration, Felder) {
 }
 
 /// Die Anlage AUS gegen das echte `checkESt` (Abweichung Nr. 51 und Nr. 41): der Block "Ausland Anrechnung" ueber den echten
-/// Abgabeweg, der Abzug nach § 34c Abs. 2 (`E0600920`) ueber den Umweg, und Kontrollen, die `ERiC` beanstanden MUSS. Der Staat
+/// Abgabeweg, der Abzug nach § 34c Abs. 2 (`E0600920`) ebenso, und Kontrollen, die `ERiC` beanstanden MUSS. Der Staat
 /// steht genau dann, wenn die Einkuenfte stehen (auch mit dem Wert 0); Steuer ohne Einkuenfte lehnt `ERiC` auch mit Staat ab.
 #[test]
 #[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make blockmatrix-rust`"]
@@ -643,34 +700,28 @@ fn ausland_staat_und_nr41_gegen_echtes_checkest() {
         u.zeile()
     );
 
-    // Nr. 41: der Abzug (gesperrt) mit Staat und Einkuenften, Umweg `xml_ohne_sperre`. Allein, ohne die Zeile "Sonstiges".
-    let (sauber, felder, gesperrt) = ohne_sperre_kz(None, Some(70_001), &AUSLAND_KZ, false);
-    assert_eq!(gesperrt, [WAHL], "Nr. 41 muss genau dba_abzug_statt_anrechnung sperren (sonst misst der Umweg die falsche Sperre)");
-    let xml = xml_abgabe(&sauber, &felder, &id);
-    assert!(xml.contains("<E0600920>701</E0600920>"), "Nr41_abzug: die Steuer steht nicht unter E0600920");
-    assert!(xml.contains("<E0600301>Frankreich</E0600301>"), "Nr41_abzug: der Staat steht nicht im XML");
-    assert!(!xml.contains("<Sonst>"), "Nr41_abzug: die Zeile Sonstiges gehoert nicht in diesen Fall");
+    // Nr. 41 und Nr. 49: der Abzug in der Anlage AUS (Zeile 10, `E0600920`, mit Staat und Einkuenften) UND als Zeile "Sonstiges" der
+    // Anlage N, ueber den echten Abgabeweg (die Sperre ist gefallen, Julius 2026-10-10). Zeile 7 steht nach dem Abzug.
+    let xml = echter_abgabeweg(None, Some(70_001), &id)
+        .unwrap_or_else(|g| panic!("Nr41_und_Nr49: kein XML ueber den echten Abgabeweg: {g}"));
+    assert!(xml.contains("<E0600920>701</E0600920>"), "Nr41_und_Nr49: die Steuer steht nicht unter E0600920");
+    assert!(xml.contains("<E0600301>Frankreich</E0600301>"), "Nr41_und_Nr49: der Staat steht nicht im XML");
+    assert_eq!(xml.matches("<Sonst>").count(), 1, "Nr41_und_Nr49: erwartet eine Zeile <Sonst>");
     let u = urteil(&xml, &id);
-    eprintln!("{:<40} gesperrt={gesperrt:?} {}", "Nr41_abzug", u.zeile());
-    assert!(u.plausibel(), "Nr41_abzug: nicht rc=0: {}", u.zeile());
-    let mut ohne_staat = sauber;
-    ohne_staat.deklaration.remove(STAAT_KZ);
-    let u = urteil(&xml_abgabe(&ohne_staat, &felder, &id), &id);
+    eprintln!("{:<40} {}", "Nr41_und_Nr49", u.zeile());
+    assert!(u.plausibel(), "Nr41_und_Nr49: nicht rc=0: {}", u.zeile());
+
+    // Kontrolle: derselbe Abzug ohne Staat beanstandet `ERiC`.
+    let (mut d, felder) = deklaration(None, Some(70_001));
+    assert!(d.unvollstaendig().is_empty(), "der getragene Abzug sperrt: {:?}", d.unvollstaendig());
+    assert!(d.deklaration.remove(STAAT_KZ).is_some(), "K_Nr41_ohne_Staat: {STAAT_KZ} stand nicht im Abzug");
+    let u = urteil(&xml_abgabe(&d, &felder, &id), &id);
     eprintln!("{:<40} {}", "K_Nr41_ohne_Staat", u.zeile());
     assert!(
         u.rc == RC_PLAUSIBILITAET && u.meldungen.iter().any(|x| x.contains("aus welchem Staat")),
         "K_Nr41_ohne_Staat: ERiC muss den fehlenden Staat beanstanden, gab: {}",
         u.zeile()
     );
-
-    // Nr. 41 und Nr. 49 zusammen: der Abzug steht in der Anlage AUS (E0600920) UND als zweite Zeile "Sonstiges" der Anlage N.
-    let kz: Vec<&str> = [&AUSLAND_KZ[..], &SONST_KZ[..]].concat();
-    let (sauber, felder, _) = ohne_sperre_kz(None, Some(70_001), &kz, true);
-    let xml = xml_abgabe(&sauber, &felder, &id);
-    assert_eq!(xml.matches("<Sonst>").count(), 1, "Nr41_und_Nr49: erwartet eine Zeile <Sonst>");
-    let u = urteil(&xml, &id);
-    eprintln!("{:<40} {}", "Nr41_und_Nr49", u.zeile());
-    assert!(u.plausibel(), "Nr41_und_Nr49: nicht rc=0: {}", u.zeile());
 }
 
 // ----------------------------------------------------------------------------- Anlage SO: Privatverkauf (Nr. 54)

@@ -3,10 +3,11 @@
 //! traegt diesen Betrag seit Nr. 41 unter `E0600920` (Anlage AUS, Zeile 10, "abgezogene auslaendische Steuern nach § 34c
 //! Abs. 2", aufgerundet) und NICHT mehr als anzurechnende Steuer unter `E0601901`. Der Marker selbst hat kein Kz.
 //!
-//! Die ABGABE bleibt gesperrt, wenn die Wahl `true` ist UND die gezahlte Steuer ueber 0 liegt (`einreichungs_xml` ->
-//! `DeklarationUnvollstaendig` -> 409 `deklaration_unvollstaendig`, `api/src/einreichen.rs`): der Bescheid kuerzt die
-//! Werbungskosten der Anlage N, und diese Zeile (`Weitere_Wk/Sonst`, "Sonstige Werbungskosten") schreibt die Erklaerung noch
-//! nicht. Ohne sie wichen Erklaerung und Bescheid um den Abzug voneinander ab. Alles andere aendert sich nicht.
+//! Die ABGABE sperrt, wenn die Wahl `true` ist, die gezahlte Steuer ueber 0 liegt UND der Bescheid den Abzug nicht rechnet
+//! (`einreichungs_xml` -> `DeklarationUnvollstaendig` -> 409 `deklaration_unvollstaendig`, `api/src/einreichen.rs`): die
+//! Erklaerung meldete `E0600920` sonst ohne die Zeile der Anlage N (`Weitere_Wk/Sonst`, "Sonstige Werbungskosten"). Rechnet der
+//! Bescheid den Abzug, steht die Zeile und nichts sperrt: `checkESt` hat sie angenommen, Julius gab die Sperre am 2026-10-10
+//! frei (Abweichung Nr. 49). Alles andere aendert sich nicht.
 //!
 //! Der Test geht ueber `einreichungs_xml` und nicht ueber `POST /einreichen`: der HTTP-Weg ruft danach `ERiC`. Die Sperre
 //! liegt VOR dem Writer, ihr Ergebnis braucht kein ERiC-Schema. Die Akte ist `rust/fixtures/e2e/gesamt.json` (vollstaendig,
@@ -163,7 +164,8 @@ fn kontrolle_die_anrechnung_ist_einreichbar_und_traegt_die_steuer() {
 
 /// AK4: bei gewaehltem Abzug und gezahlter Steuer ueber 0 traegt `deklariere` die Steuer unter `E0600920` (Anlage AUS,
 /// Zeile 10) und NICHT unter `E0601901`. Aufgerundet (ein Aufwand, "zu Ihren Gunsten"): 700,00 -> 700, 700,01 -> 701,
-/// 0,01 -> 1. Die Einkuenfte der Anlage AUS (`E0601401`) bleiben unveraendert: ob Zeile 7 "nach Abzug" gemeint ist, ist offen.
+/// 0,01 -> 1. Die Einkuenfte der Anlage AUS (`E0601401`) bleiben hier unveraendert, weil `kz_wert` OHNE Ring ruft (kein Ring-Wert,
+/// die Zeile "Sonstiges" ist nicht getragen); mit Ring stehen sie nach dem Abzug (`p34c_abzug_weitere_wk_xml.rs`).
 #[test]
 fn abzug_gewaehlt_traegt_die_steuer_unter_e0600920_aufgerundet_und_nicht_als_anrechnung() {
     for (cent, euro) in [(70_000, "700"), (70_001, "701"), (1, "1")] {
@@ -239,13 +241,28 @@ fn der_writer_setzt_e0600920_ins_xml_und_das_schema_nimmt_es_wie_die_anrechnung(
     );
 }
 
-/// Die Wahl `true` und eine gezahlte Steuer ueber 0 sperren die Abgabe mit EIGENEM Grund (409
-/// `deklaration_unvollstaendig`); dieser Grund nennt Abzug, Anrechnung und die Sperre, dazu die Zeile "Sonstiges" in Anlage N
-/// (seit Abweichung Nr. 49 steht sie in der Erklaerung, aber kein `checkESt`-Lauf hat sie angenommen) und den
-/// `checkESt`-Lauf, kein anderes Feld steht in der Liste. Ein Cent genuegt, wie bei den Unfallkosten.
+/// Wo der Bescheid den Abzug rechnet (Arbeitslohn, einzeln, Steuer ab 1 Euro), sperrt die Abgabe NICHT mehr (Julius,
+/// 2026-10-10, nach dem `checkESt`-Lauf): der echte Weg endet im XML (mit Schema) oder am Writer (ohne), mit `E0600920`.
 #[test]
-fn abzug_gewaehlt_und_steuer_ueber_null_sperren_die_abgabe_mit_eigenem_grund() {
-    for cent in [70_000, 1] {
+fn abzug_gewaehlt_und_vom_bescheid_gerechnet_sperrt_die_abgabe_nicht() {
+    for cent in [70_000, 70_001, 100] {
+        let r = lauf(&akte(Some(true), Some(cent)));
+        assert!(sperre(&r).is_empty(), "{cent} Cent sperrt: {r:?}");
+        assert_eq!(r.is_ok(), schemas_da(2025), "{cent} Cent: {r:?}");
+        if let Ok(xml) = r {
+            assert!(xml.contains("<E0600920>"), "{cent} Cent: Zeile 10 steht nicht im XML");
+            assert!(xml.contains("<Sonst>"), "{cent} Cent: die Zeile Sonstiges steht nicht im XML");
+        }
+    }
+}
+
+/// Wo der Bescheid den Abzug NICHT rechnet, obwohl Wahl und Steuer (in Cent) ueber 0 liegen, sperrt die Abgabe mit EIGENEM
+/// Grund (409 `deklaration_unvollstaendig`): unter 1 Euro Steuer (der Bescheid rundet ab). Der Grund nennt Abzug, Anrechnung und
+/// die Sperre und sagt, dass der Bescheid keinen Abzug rechnet; kein anderes Feld steht in der Liste. Die Faelle Freistellung und
+/// keine Auslandseinkuenfte stehen in `p34c_abzug_weitere_wk_xml.rs::der_abzug_sperrt_nur_dort_wo_der_bescheid_ihn_nicht_rechnet`.
+#[test]
+fn abzug_gewaehlt_aber_vom_bescheid_nicht_gerechnet_sperrt_die_abgabe_mit_eigenem_grund() {
+    for cent in [1, 99] {
         let r = lauf(&akte(Some(true), Some(cent)));
         let e = sperre(&r);
         assert_eq!(
@@ -254,25 +271,16 @@ fn abzug_gewaehlt_und_steuer_ueber_null_sperren_die_abgabe_mit_eigenem_grund() {
             "{cent} Cent: die Sperre nennt genau dieses Feld, erhalten {r:?}"
         );
         let grund = &e.first().unwrap().1;
-        for teil in [
-            "Abzug",
-            "Anrechnung",
-            "gesperrt",
-            "nein",
-            "Anlage N",
-            "Sonstiges",
-            "checkESt",
-            "noch nie angenommen",
-        ] {
+        for teil in ["Abzug", "Anrechnung", "gesperrt", "nein", "rechnet der Bescheid keinen Abzug"] {
             assert!(grund.contains(teil), "Grund ohne `{teil}`: {grund}");
         }
-        assert!(!grund.contains("fehlt noch"), "der Grund behauptet noch, die Zeile fehle: {grund}");
+        assert!(!grund.contains("noch nie angenommen"), "der Grund verweist noch auf den fehlenden checkESt-Lauf: {grund}");
     }
 }
 
 /// Ein Abzug in einem Fall, den die Rechnung nicht traegt (hier: Zinsen statt Arbeitslohn), endet schon im BESCHEID mit
 /// `Gesperrt(DbaAbzugOffen)`, nicht erst in der Liste der Erklaerung (Abweichung Nr. 41). KONTROLLE: derselbe Fall mit
-/// Arbeitslohn kommt in die Erklaerung und sperrt dort mit dem Abzug-Grund (`abzug_gewaehlt_und_steuer_ueber_null_*`).
+/// Arbeitslohn kommt in die Erklaerung und sperrt dort nicht (`abzug_gewaehlt_und_vom_bescheid_gerechnet_*`).
 #[test]
 fn ein_nicht_getragener_abzug_endet_im_bescheid_mit_dba_abzug_offen() {
     let s = akte_voll(Some(true), Some(70_000), Zustand::Bestaetigt, "zinsen");
@@ -283,9 +291,10 @@ fn ein_nicht_getragener_abzug_endet_im_bescheid_mit_dba_abzug_offen() {
     );
     let kontrolle = lauf(&akte(Some(true), Some(70_000)));
     assert!(
-        matches!(kontrolle, Err(EinreichFehler::DeklarationUnvollstaendig(_))),
+        !matches!(kontrolle, Err(EinreichFehler::Gesperrt(_) | EinreichFehler::DeklarationUnvollstaendig(_))),
         "Arbeitslohn: erhalten {kontrolle:?}"
     );
+    assert_eq!(kontrolle.is_ok(), schemas_da(2025), "Arbeitslohn: {kontrolle:?}");
 }
 
 /// Nichts sperrt, wenn eine der beiden Bedingungen fehlt: Wahl `true` ohne Steuer (nie beantwortet oder 0), Wahl `false`
@@ -320,7 +329,8 @@ fn eine_unbestaetigte_steuer_sperrt_nur_mit_ihrem_eigenen_grund() {
 }
 
 /// Der Marker steht NIE im XML-Teil der Deklaration: er kommt mit Grund in `nicht_deklariert` (kein Kz, kein erfundener
-/// Wert), bei Wahl `true` und Steuer ueber 0 zusaetzlich unter `unvollstaendig`, sonst nicht. Die Steuer steht dabei an
+/// Wert), bei Wahl `true` und Steuer ueber 0 zusaetzlich unter `unvollstaendig`, sonst nicht. `deklariere` laeuft hier OHNE Ring
+/// (kein Ring-Wert, die Zeile "Sonstiges" ist nicht getragen); mit Ring sperrt nur der nicht gerechnete Abzug. Die Steuer steht dabei an
 /// genau EINER Stelle: unter `E0600920` bei Abzug mit Steuer ueber 0, sonst unter `E0601901` (auch die bestaetigte 0 bei
 /// Wahl `true`: ohne Steuer gibt es nichts abzuziehen).
 #[test]

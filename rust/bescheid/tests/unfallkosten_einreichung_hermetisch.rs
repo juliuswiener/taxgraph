@@ -1,13 +1,11 @@
 //! Unfallkosten auf dem Arbeitsweg (`ep_unfallkosten`, Abweichung Nr. 28 in `rust/fixtures/README.md`): die Rechnung zieht den
-//! Betrag ab. Seit Abweichung Nr. 48 traegt die Deklaration ihn in der Zeile "Sonstiges" der Anlage N (`unfallkosten_weitere_wk_xml.rs`),
-//! aber der Kz ist UNGEPRUEFT (`kz_status: offen`, `checkESt` lief nie). Ein Bescheid, dessen Abzug eine ungepruefte
-//! Zeile traegt, bleibt gesperrt. Darum sperrt `deklariere` die Abgabe bei einem Betrag ueber 0
-//! (`einreichungs_xml` -> `DeklarationUnvollstaendig` -> 409 `deklaration_unvollstaendig`, `api/src/einreichen.rs`), und bei
-//! leerem Feld oder 0 aendert sich nichts.
+//! Betrag ab. Seit Abweichung Nr. 48 traegt die Deklaration ihn in der Zeile "Sonstiges" der Anlage N (`unfallkosten_weitere_wk_xml.rs`).
+//! `checkESt` hat die Zeile angenommen (`checkest_blockmatrix.rs`, `zeilen_nr48_nr49_gegen_echtes_checkest`); die Sperre fiel auf
+//! Julius' Wort am 2026-10-10. `deklariere` sperrt die Abgabe bei einem Betrag ueber 0 nicht mehr, `einreichungs_xml` liefert das
+//! XML, und bei leerem Feld oder 0 aendert sich nichts.
 //!
-//! Der Test geht ueber `einreichungs_xml` und nicht ueber `POST /einreichen`: der HTTP-Weg ruft danach `ERiC`. Die Sperre
-//! liegt VOR dem Writer, ihr Ergebnis braucht kein ERiC-Schema. Die Akte ist `rust/fixtures/e2e/gesamt.json` (vollstaendig,
-//! mit Stammdaten), mit einem Arbeitsweg von 30 km und 220 Tagen.
+//! Der Test geht ueber `einreichungs_xml` und nicht ueber `POST /einreichen`: der HTTP-Weg ruft danach `ERiC`. Die Akte ist
+//! `rust/fixtures/e2e/gesamt.json` (vollstaendig, mit Stammdaten), mit einem Arbeitsweg von 30 km und 220 Tagen.
 //!
 //! Fehlt das ERiC-Schema, endet der Lauf OHNE Betrag am Writer mit `XmlNichtBaubar`, nachdem Guard und Deklaration liefen
 //! (wie in `dienstwohnung_einreichung_hermetisch.rs`); mit Schema ist es ein XML.
@@ -97,7 +95,8 @@ fn sperre(r: &Result<String, EinreichFehler>) -> Vec<(String, String)> {
 }
 
 /// KONTROLLE zuerst: derselbe Arbeitsweg OHNE Unfallkosten kommt durch `deklariere`; er endet im XML (mit Schema) oder
-/// am Writer (ohne). Sonst belegte die Sperre unten nichts: ein Fall, der aus anderem Grund sperrt, laesst sie gruen.
+/// am Writer (ohne). Sonst belegte der Test unten nichts: ein Fall, der aus anderem Grund sperrt, wuerde ihn rot machen und
+/// die Ursache verdecken.
 #[test]
 fn kontrolle_der_arbeitsweg_ohne_unfallkosten_ist_einreichbar() {
     let ohne = lauf(&akte(None));
@@ -108,21 +107,16 @@ fn kontrolle_der_arbeitsweg_ohne_unfallkosten_ist_einreichbar() {
     );
 }
 
-/// AK5: ein Betrag ueber 0 sperrt die Abgabe mit EIGENEM Grund (409 `deklaration_unvollstaendig`), und dieser Grund nennt
-/// den Abzug und die Sperre; kein anderes Feld steht in der Liste.
+/// Ein Betrag ueber 0 sperrt die Abgabe NICHT (Julius, 2026-10-10): kein offener Eintrag, und der Lauf endet im XML mit der
+/// Zeile (mit Schema) oder am Writer (ohne), nie in `DeklarationUnvollstaendig`.
 #[test]
-fn unfallkosten_ueber_null_sperren_die_abgabe_mit_eigenem_grund() {
+fn unfallkosten_ueber_null_sperren_die_abgabe_nicht() {
     for cent in [150_000, 1] {
         let r = lauf(&akte(Some(cent)));
-        let e = sperre(&r);
-        assert_eq!(
-            e.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(),
-            [FELD],
-            "{cent} Cent: die Sperre nennt genau dieses Feld, erhalten {r:?}"
-        );
-        let grund = &e.first().unwrap().1;
-        for teil in ["Unfallkosten", "Kennzeichen", "gesperrt", "auf 0"] {
-            assert!(grund.contains(teil), "Grund ohne `{teil}`: {grund}");
+        assert!(sperre(&r).is_empty(), "{cent} Cent sperrt: {r:?}");
+        assert_eq!(r.is_ok(), schemas_da(2025), "{cent} Cent: {r:?}");
+        if let Ok(xml) = r {
+            assert!(xml.contains("<E0205406>"), "{cent} Cent: die Zeile steht nicht im XML");
         }
     }
 }
@@ -144,10 +138,10 @@ fn null_und_leer_aendern_die_abgabe_nicht() {
 /// Abweichung Nr. 48: bei 0 steht nichts in der Deklaration, der Betrag kommt mit Grund in `nicht_deklariert` (kein Kz,
 /// kein erfundener Wert) und die Abgabe ist nicht gesperrt. Ueber 0 steht der Betrag unter `E0205406` (Zeile "Sonstiges"
 /// der Anlage N, aufgerundet) mit Bezeichnung `E0205405` und Summe `E0204803`; er steht dann NICHT mehr in
-/// `nicht_deklariert`, aber weiter unter `unvollstaendig`: die Zeile ist UNGEPRUEFT (`checkESt` lief nie), die Sperre bleibt.
+/// `nicht_deklariert` und nicht mehr unter `unvollstaendig`: `checkESt` hat die Zeile angenommen, die Sperre ist gefallen.
 /// Das XML selbst liest `unfallkosten_weitere_wk_xml.rs`.
 #[test]
-fn der_betrag_steht_ueber_null_in_der_zeile_sonstiges_und_die_sperre_bleibt() {
+fn der_betrag_steht_ueber_null_in_der_zeile_sonstiges_und_sperrt_nicht() {
     for (cent, euro) in [(0_i64, None), (150_000, Some("1500")), (150_001, Some("1501"))] {
         let s = akte(Some(cent));
         let (felder, _) = s.materialisiere(None).unwrap();
@@ -162,8 +156,8 @@ fn der_betrag_steht_ueber_null_in_der_zeile_sonstiges_und_die_sperre_bleibt() {
             None => {
                 assert_eq!(nicht.len(), 1, "{cent} Cent: {:?}", d.nicht_deklariert);
                 assert!(
-                    nicht.first().unwrap().grund.contains("kz_status offen"),
-                    "der Grund nennt den offenen Kz nicht: {:?}",
+                    nicht.first().unwrap().grund.contains("Zeile Sonstiges"),
+                    "der Grund nennt die Zeile Sonstiges nicht: {:?}",
                     nicht.first()
                 );
                 for k in ["E0205405", "E0205406", "E0204803"] {
@@ -181,8 +175,8 @@ fn der_betrag_steht_ueber_null_in_der_zeile_sonstiges_und_die_sperre_bleibt() {
                     kz("E0205405")
                 );
                 assert!(
-                    d.unvollstaendig().iter().any(|e| e.feld_id == FELD),
-                    "{cent} Cent: die Sperre ist weg: {:?}",
+                    d.unvollstaendig().iter().all(|e| e.feld_id != FELD),
+                    "{cent} Cent: die Sperre steht noch: {:?}",
                     d.unvollstaendig()
                 );
             }

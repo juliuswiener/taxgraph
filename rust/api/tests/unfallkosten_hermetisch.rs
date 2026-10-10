@@ -7,12 +7,13 @@
 //!
 //! **Warum es zaehlt.** Vor dem Bau fehlte die Frage: wer 1.500 EUR Unfallkosten hatte, gab sie nirgends an und zahlte etwa
 //! 500 EUR Steuer zu viel. Umgekehrt darf der Betrag das ELSTER-Formular nie verfehlen, ohne dass der Nutzer es erfaehrt: das
-//! Kennzeichen ist ungeprueft, also sperrt die Abgabe ab einem Betrag ueber 0 (409), die Zahl im Bescheid bleibt.
+//! Kennzeichen steht in der Zeile "Sonstiges" der Anlage N, und `checkESt` hat sie angenommen; die Abgabe sperrt nicht mehr
+//! (Julius, 2026-10-10).
 //!
 //! **Wo es sitzt.** `rust/bindung/daten/bindung_n_vor_gwg.yaml` (Feld, Bedingung, Hilfetext), `rust/bescheid/src/zweige/wk.rs::
-//! mit_unfallkosten` (Rechnung), `rust/elster/src/deklaration.rs::unfallkosten` (Sperre). Die Rechnung im Einzelnen pruefen
-//! `rust/bescheid/tests/unfallkosten_neben_entfernungspauschale.rs`, die Sperre `unfallkosten_einreichung_hermetisch.rs`; hier
-//! stehen Frage, Hilfetext, Schreibweg, Ergebnis und die 409-Antwort.
+//! mit_unfallkosten` (Rechnung), `rust/elster/src/deklaration.rs::unfallkosten` (Zeile). Die Rechnung im Einzelnen pruefen
+//! `rust/bescheid/tests/unfallkosten_neben_entfernungspauschale.rs`, die Zeile `unfallkosten_einreichung_hermetisch.rs`; hier
+//! stehen Frage, Hilfetext, Schreibweg, Ergebnis und der Einreichungsweg.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -218,10 +219,10 @@ async fn die_frage_steht_nur_mit_einer_entfernungspauschale() {
     );
 }
 
-/// AK4: der Hilfetext nennt beide Ansichten (BMF gegen BFH VI R 8/18), sagt, welcher `TaxGraph` folgt, und warnt vor der Sperre
-/// der Abgabe. Der Fragetext des Laien nennt keinen Paragrafen.
+/// AK4: der Hilfetext nennt beide Ansichten (BMF gegen BFH VI R 8/18), sagt, welcher `TaxGraph` folgt, und nennt die Zeile der
+/// Erklaerung. Er warnt nicht mehr vor einer Sperre der Abgabe. Der Fragetext des Laien nennt keinen Paragrafen.
 #[tokio::test]
-async fn der_hilfetext_nennt_bmf_gegen_bfh_und_die_sperre() {
+async fn der_hilfetext_nennt_bmf_gegen_bfh_und_die_zeile_ohne_sperre() {
     let d = dienst();
     fall(&d, &kegel(Some(30))).await;
     let (status, fragen) = sende(&d, "GET", "/fall/uk/fragen", None).await;
@@ -238,11 +239,13 @@ async fn der_hilfetext_nennt_bmf_gegen_bfh_und_die_sperre() {
         "Bundesfinanzhof",
         "VI R 8/18",
         "TaxGraph folgt der Finanzverwaltung",
-        "Abgabe",
-        "gesperrt",
+        "Sonstiges",
         "zusätzlich zur Pauschale",
     ] {
         assert!(hilfe.contains(teil), "Hilfetext ohne `{teil}`: {hilfe}");
+    }
+    for teil in ["gesperrt", "noch nicht auf"] {
+        assert!(!hilfe.contains(teil), "Hilfetext warnt noch vor einer Sperre (`{teil}`): {hilfe}");
     }
     assert!(!q["fragetext_laie"].as_str().unwrap().contains('§'), "{q}");
     assert_eq!(
@@ -322,44 +325,51 @@ async fn unfallkosten_senken_die_steuer_wie_ein_gleich_hoher_abzug() {
     );
 }
 
-/// AK5 ueber die echte Route: eine vollstaendige Akte (`rust/fixtures/e2e/gesamt.json`, mit Stammdaten) mit Arbeitsweg und
-/// einem Betrag ueber 0 wird beim Einreichen mit 409 `deklaration_unvollstaendig` abgewiesen, und die Liste nennt genau
-/// dieses Feld mit dem Grund. Die Sperre liegt VOR dem Writer und vor `ERiC`: der Test setzt weder `ERiC` noch ein Schema voraus.
+/// Die echte Route: eine vollstaendige Akte (`rust/fixtures/e2e/gesamt.json`, mit Stammdaten) mit Arbeitsweg wird beim
+/// Einreichen mit einem Betrag ueber 0 nicht mehr mit 409 `deklaration_unvollstaendig` abgewiesen. Der Lauf kommt an der
+/// Deklaration vorbei und endet dort, wo er ohne den Betrag auch endet (kein Schema, kein `ERiC`, kein Versand im Test): beide
+/// Antworten tragen denselben `grund`, und es ist keiner der Gruende vor der Deklaration.
 #[tokio::test]
-async fn einreichen_mit_unfallkosten_ist_409_mit_eigenem_grund() {
-    let d = dienst();
-    let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../fixtures/e2e/gesamt.json");
-    let mut akte: Value = serde_json::from_slice(&std::fs::read(pfad).unwrap()).unwrap();
-    for e in akte["events"].as_array_mut().unwrap() {
-        match e["feld_id"].as_str() {
-            Some("ep_entfernung_km") => e["wert"] = json!(30),
-            Some("ep_arbeitstage") => e["wert"] = json!(220),
-            Some("ep_eigenes_kfz") => e["wert"] = json!(true),
-            _ => {}
+async fn einreichen_mit_unfallkosten_kommt_an_der_deklaration_vorbei() {
+    async fn grund(unfall: Option<i64>) -> (u16, String, Value) {
+        let d = dienst();
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../fixtures/e2e/gesamt.json");
+        let mut akte: Value = serde_json::from_slice(&std::fs::read(pfad).unwrap()).unwrap();
+        for e in akte["events"].as_array_mut().unwrap() {
+            match e["feld_id"].as_str() {
+                Some("ep_entfernung_km") => e["wert"] = json!(30),
+                Some("ep_arbeitstage") => e["wert"] = json!(220),
+                Some("ep_eigenes_kfz") => e["wert"] = json!(true),
+                _ => {}
+            }
         }
+        akte["fall_id"] = json!("uk");
+        akte["user_id"] = json!("alice");
+        std::fs::write(
+            d.zustand.konfig.faelle.join("uk.json"),
+            serde_json::to_vec(&akte).unwrap(),
+        )
+        .unwrap();
+        if let Some(cent) = unfall {
+            let (status, antwort) = sende(&d, "POST", "/fall/uk/event", Some(&ereignis(FELD, &json!(cent)))).await;
+            assert_eq!(status, 201, "POST /event: {antwort}");
+        }
+        let (status, a) = sende(&d, "POST", "/fall/uk/einreichen", Some(&json!({}))).await;
+        let grund = a["grund"].as_str().unwrap_or_default().to_owned();
+        (status, grund, a)
     }
-    akte["fall_id"] = json!("uk");
-    akte["user_id"] = json!("alice");
-    std::fs::write(
-        d.zustand.konfig.faelle.join("uk.json"),
-        serde_json::to_vec(&akte).unwrap(),
-    )
-    .unwrap();
-    let (status, antwort) = sende(&d, "POST", "/fall/uk/event", Some(&ereignis(FELD, &json!(150_000)))).await;
-    assert_eq!(status, 201, "POST /event: {antwort}");
-
-    let (status, a) = sende(&d, "POST", "/fall/uk/einreichen", Some(&json!({}))).await;
-    assert_eq!(status, 409, "erwartet 409, erhalten {status}: {a}");
-    assert_eq!(a["grund"], "deklaration_unvollstaendig", "{a}");
-    let eintraege = a["unvollstaendig"].as_array().unwrap();
-    assert_eq!(
-        eintraege.iter().filter_map(|e| e["feld_id"].as_str()).collect::<Vec<_>>(),
-        [FELD],
-        "{a}"
-    );
-    let grund = eintraege[0]["grund"].as_str().unwrap();
+    let (status_ohne, ohne, a_ohne) = grund(None).await;
+    // KONTROLLE: die Akte ohne Betrag ist an der Deklaration vorbei; sonst beweist die Gleichheit unten nichts.
     assert!(
-        grund.contains("gesperrt") && grund.contains("Kennzeichen"),
-        "der Grund nennt die Sperre nicht: {grund}"
+        ["xml_nicht_baubar", "eric_nicht_verfuegbar", "kein_pruefmodul_fuer_vz", "plausibilitaet_verletzt", "rc_kein_plausibilitaetsverdikt"]
+            .contains(&ohne.as_str()),
+        "die Akte ohne Unfallkosten endet schon vor dem Writer: {a_ohne}"
+    );
+    let (status_mit, mit, a_mit) = grund(Some(150_000)).await;
+    assert_ne!(mit, "deklaration_unvollstaendig", "Unfallkosten sperren die Abgabe noch: {a_mit}");
+    assert_eq!(
+        (status_mit, &mit),
+        (status_ohne, &ohne),
+        "der Betrag aendert den Ausgang des Einreichens: ohne {a_ohne}, mit {a_mit}"
     );
 }

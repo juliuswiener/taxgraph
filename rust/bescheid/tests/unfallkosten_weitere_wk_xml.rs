@@ -1,12 +1,11 @@
 //! Unfallkosten im ERZEUGTEN XML (Abweichung Nr. 48, Punkt 8 der Entscheidungen vom 2026-10-08): der Betrag steht unter
 //! `N/Wk/Weitere_Wk/Sonst` (`E0205405` Bezeichnung, `E0205406` Betrag in volle Euro, aufgerundet) und in der Summe `Sum`
-//! (`E0204803`). Die Abgabe bleibt gesperrt (`UNFALLKOSTEN_SPERRE`), bis `checkESt` die Zeile einmal angenommen hat;
-//! dieser Test belegt nur, was OHNE ELSTER belegbar ist: Betrag, Ort im Dokument, Rundung, Schema.
+//! (`E0204803`). Die Abgabe ist NICHT gesperrt: `checkESt` hat die Zeile angenommen (`checkest_blockmatrix.rs`,
+//! `zeilen_nr48_nr49_gegen_echtes_checkest`, rc=0 mit Kontrollen rc=610001002; die Sperre fiel auf Julius' Wort 2026-10-10).
+//! Dieser Test belegt, was OHNE ELSTER belegbar ist: Betrag, Ort im Dokument, Rundung, Schema.
 //!
 //! Die Tests lesen das XML, das `erzeuge_xml` aus der Deklaration macht, nicht nur `deklaration`: ein Betrag in der
-//! Deklaration, den der Schreiber nicht ins Dokument setzt, bliebe sonst grün. Die Sperre hält das Produkt davon ab, dieses
-//! XML zu bauen (`erzeuge_xml` lehnt jede Deklaration mit offenem Eintrag ab); `xml_ohne_sperre` beschreibt den Umweg des
-//! Tests. Die Kontrolle am Ende belegt, dass
+//! Deklaration, den der Schreiber nicht ins Dokument setzt, bliebe sonst grün. Die Kontrolle am Ende belegt, dass
 //! `xmllint` einen falschen Betrag in dieser Zeile wirklich ablehnt, sonst belegte das Schema-Grün nichts.
 //!
 //! Die Zeilen 62 bis 64 der Anlage N 2025 (Anleitung `anl_n_2025.txt:220-228`, `:284`) sind `Sonst`, `Sonst`, `Sum`;
@@ -96,26 +95,15 @@ fn xml_von(d: &Deklaration, felder: &Felder) -> String {
 
 const UNFALL_KZ: [&str; 3] = ["E0205405", "E0205406", "E0204803"];
 
-/// Das XML, das die Deklaration MIT Unfallkosten ergäbe, wäre die Sperre nicht da. `erzeuge_xml` lehnt jede Deklaration
-/// mit offenem Eintrag ab ("kein Submission-XML"), also auch diese: die Sperre hält das Produkt davon ab, das XML
-/// überhaupt zu bauen. Darum nimmt der Test die Deklaration der Akte OHNE Unfallkosten (keine Sperre) und setzt genau die
-/// drei Kz hinein, die `deklariere` für den Betrag berechnet hat. Zwei Prüfungen halten das ehrlich: außer diesen Kz
-/// unterscheiden sich beide Deklarationen in nichts, und der Betrag kommt aus dem Store über `deklariere`, nicht aus dem Test.
-fn xml_ohne_sperre(cent: i64) -> String {
-    let (mit, felder) = deklaration(Some(cent));
-    let (mut sauber, _) = deklaration(None);
+/// Das XML der Akte MIT Unfallkosten, auf dem Weg des Produkts: `deklariere`, dann `erzeuge_xml`, ohne Umweg. Die Deklaration
+/// hat keinen offenen Eintrag (sonst lehnte `erzeuge_xml` sie ab), und die drei Kz kommen aus dem Store über `deklariere`.
+fn xml_der_akte(cent: i64) -> String {
+    let (d, felder) = deklaration(Some(cent));
+    assert!(d.unvollstaendig().is_empty(), "{cent} Cent: die Akte sperrt: {:?}", d.unvollstaendig());
     for kz in UNFALL_KZ {
-        let wert = mit
-            .deklaration
-            .get(kz)
-            .unwrap_or_else(|| panic!("{cent} Cent: `deklariere` setzt {kz} nicht"));
-        sauber.deklaration.insert(kz.to_owned(), wert.clone());
+        assert!(d.deklaration.contains_key(kz), "{cent} Cent: `deklariere` setzt {kz} nicht");
     }
-    assert_eq!(
-        mit.deklaration, sauber.deklaration,
-        "{cent} Cent: die Deklaration unterscheidet sich in mehr als den drei Kz"
-    );
-    xml_von(&sauber, &felder)
+    xml_von(&d, &felder)
 }
 
 /// Der Text zwischen `<tag>` und `</tag>`, das erste Vorkommen.
@@ -148,7 +136,7 @@ fn unfallkosten_stehen_im_erzeugten_xml_unter_weitere_wk_sonst_und_in_der_summe(
         return;
     }
     for (cent, euro) in [(150_000, "1500"), (150_001, "1501"), (1, "1")] {
-        let xml = xml_ohne_sperre(cent);
+        let xml = xml_der_akte(cent);
         let block = weitere_wk(&xml).unwrap_or_else(|| panic!("{cent} Cent: kein <Weitere_Wk> im XML"));
         let sonst = tag_text(block, "Sonst").unwrap_or_else(|| panic!("{cent} Cent: kein <Sonst>: {block}"));
         assert_eq!(
@@ -172,12 +160,21 @@ fn unfallkosten_stehen_im_erzeugten_xml_unter_weitere_wk_sonst_und_in_der_summe(
     }
 }
 
-/// Die Sperre bleibt (Julius, 2026-10-08): der Betrag steht im XML, die Abgabe bleibt gesperrt.
+/// Die Sperre ist weg (Julius, 2026-10-10, nach dem `checkESt`-Lauf): ein Betrag über 0 steht in der Deklaration, kein offener
+/// Eintrag nennt das Feld, und `erzeuge_xml` baut das XML mit der Zeile, auch ohne Schema-Prüfung durch den Test.
 #[test]
-fn die_sperre_bleibt_trotz_betrag_im_xml() {
+fn die_sperre_ist_weg_und_erzeuge_xml_baut_das_xml_mit_dem_betrag() {
+    if !schemas_da(2025) {
+        return;
+    }
     for cent in [150_000, 1] {
         let (d, felder) = deklaration(Some(cent));
-        let fehler = erzeuge_xml(
+        assert!(
+            d.unvollstaendig().iter().all(|e| e.feld_id != FELD),
+            "{cent} Cent: die Sperre steht noch: {:?}",
+            d.unvollstaendig()
+        );
+        let xml = erzeuge_xml(
             &d,
             &XmlOptionen {
                 hersteller_id: Some("74931".to_owned()),
@@ -185,18 +182,8 @@ fn die_sperre_bleibt_trotz_betrag_im_xml() {
                 ..XmlOptionen::default()
             },
         )
-        .expect_err("die Sperre hält das XML zurück");
-        assert!(fehler.0.contains(FELD), "{cent} Cent: XmlFehler `{}`", fehler.0);
-        let luecken = d.unvollstaendig();
-        let grund = luecken
-            .iter()
-            .find(|e| e.feld_id == FELD)
-            .unwrap_or_else(|| panic!("{cent} Cent: die Sperre ist weg"));
-        assert!(
-            grund.grund.contains("gesperrt"),
-            "{cent} Cent: Sperrgrund `{}`",
-            grund.grund
-        );
+        .unwrap_or_else(|e| panic!("{cent} Cent: erzeuge_xml lehnt ab: {}", e.0));
+        assert!(xml.contains("<E0205406>"), "{cent} Cent: der Betrag steht nicht im XML");
     }
 }
 

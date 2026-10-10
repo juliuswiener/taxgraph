@@ -6,17 +6,18 @@
 //! `aufwand-einzelposten-aufrunden-summe-aus-posten`), nicht die aufgerundete Rohsumme.
 //!
 //! Die Zeile steht nur, wenn der Bescheid den Abzug auch rechnet (enge Bedingung: Wahl `true`, Steuer und Auslandseinkuenfte
-//! ueber 0, keine Freistellung, Arbeitslohn, keine Zusammenveranlagung, keine fiktive Steuer). Die Sperre in `elster` nutzt die
-//! weitere (Wahl und Steuer ueber 0) und BLEIBT, bis `checkESt` die Zeile einmal angenommen hat (Entscheid von Julius,
-//! 2026-10-08, Punkt 8): ohne sie wichen Erklaerung und Bescheid um den Abzug voneinander ab.
+//! ueber 0, keine Freistellung, Arbeitslohn, keine Zusammenveranlagung, keine fiktive Steuer). `checkESt` hat die Zeile
+//! angenommen (`checkest_blockmatrix.rs`), Julius gab die Sperre am 2026-10-10 frei: die Sperre in `elster` nutzt die weitere
+//! Bedingung (Wahl und Steuer ueber 0) und gilt nur noch, wo der Bescheid den Abzug NICHT rechnet; sonst wichen Erklaerung
+//! und Bescheid um den Abzug voneinander ab (`der_abzug_sperrt_nur_dort_wo_der_bescheid_ihn_nicht_rechnet`).
 //!
 //! Die Deklaration entsteht wie in der Produktion: Ring (`mit_ring_werten`), dann `deklariere`. Der Guard fehlt hier
 //! absichtlich: in der Produktion sperrt er jeden Fall, den die Rechnung nicht traegt (`DbaAbzugOffen`), VOR `deklariere`;
 //! dieser Test zeigt, dass die Zeile auch ohne den Guard nur bei der engen Bedingung steht.
 //!
 //! Die Tests lesen die Zeilen aus `deklaration` UND aus `anlage_instanzen` (jede Gruppe) und nennen keine Gruppe: wie der Bau
-//! die zweite Zeile traegt, ist seine Wahl. Das erzeugte XML baut `xml_ohne_sperre`, weil `erzeuge_xml` jede Deklaration mit
-//! offenem Eintrag ablehnt (siehe `unfallkosten_weitere_wk_xml.rs`); fehlt das ERiC-Schema (CI), entfaellt dieser Test.
+//! die zweite Zeile traegt, ist seine Wahl. Das erzeugte XML baut `erzeuge_xml` aus der Deklaration der Akte (keine Sperre
+//! im getragenen Fall); fehlt das ERiC-Schema (CI), entfaellt dieser Test.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -280,27 +281,52 @@ fn ein_vorlaeufiger_betrag_gibt_keine_abzugszeile() {
     }
 }
 
-/// Die Sperre bleibt (Julius, 2026-10-08, Punkt 8): mit der Zeile im XML sperrt die Abgabe weiter, bis `checkESt` sie
-/// einmal angenommen hat. Der Grund nennt die Sperre; `erzeuge_xml` lehnt die Deklaration ab. Gruen heute und danach.
+/// Die Sperre des Abzugs (Julius gab sie am 2026-10-10 frei, nachdem `checkESt` Zeile und Anlage AUS angenommen hat) gilt nur
+/// noch, wo der Bescheid den Abzug NICHT rechnet: dort meldete die Erklaerung `E0600920` ohne die Zeile der Anlage N.
+/// Wo der Bescheid ihn rechnet (die Zeile steht), sperrt nichts, und `erzeuge_xml` baut das XML. KONTROLLE: Wahl `false` und
+/// Steuer 0 sperren nie. Der Guard fehlt hier absichtlich (siehe oben): in der Produktion sperrt er die Faelle "fiktive Steuer"
+/// und "Zinsen" schon vorher mit `DbaAbzugOffen`; dieser Test zeigt, dass auch `deklariere` allein sie nicht durchlaesst.
 #[test]
-fn die_sperre_des_abzugs_bleibt() {
-    let (d, felder) = deklaration(None, Some((true, 70_000)), &[]);
-    let luecke = d
-        .unvollstaendig()
-        .iter()
-        .find(|e| e.feld_id == WAHL)
-        .unwrap_or_else(|| panic!("die Sperre ist weg: {:?}", d.unvollstaendig()));
-    assert!(luecke.grund.contains("gesperrt"), "Sperrgrund `{}`", luecke.grund);
-    let fehler = erzeuge_xml(
-        &d,
-        &XmlOptionen {
-            hersteller_id: Some("74931".to_owned()),
-            snapshot: Some(&felder),
-            ..XmlOptionen::default()
-        },
-    )
-    .expect_err("die Sperre haelt das XML zurueck");
-    assert!(fehler.0.contains(WAHL), "XmlFehler `{}`", fehler.0);
+fn der_abzug_sperrt_nur_dort_wo_der_bescheid_ihn_nicht_rechnet() {
+    type Fall<'a> = (&'a str, Option<(bool, i64)>, Vec<(&'a str, Value)>);
+    // (Name, Akte, Zeile steht, Sperre am Marker)
+    let faelle: [(Fall<'_>, bool, bool); 10] = [
+        (("getragen 700,00", Some((true, 70_000)), vec![]), true, false),
+        (("getragen 700,01", Some((true, 70_001)), vec![]), true, false),
+        (("getragen 1,00", Some((true, 100)), vec![]), true, false),
+        (("Wahl nein", Some((false, 70_000)), vec![]), false, false),
+        (("Steuer 0", Some((true, 0)), vec![]), false, false),
+        (("Steuer unter 1 Euro", Some((true, 99)), vec![]), false, true),
+        (("keine Auslandseinkuenfte", Some((true, 70_000)), vec![(EINKUENFTE, json!(0))]), false, true),
+        (("Freistellung", Some((true, 70_000)), vec![("dba_methode", json!("dba_freistellung"))]), false, true),
+        (("fiktive Steuer", Some((true, 70_000)), vec![(FIKTIV, json!(true))]), false, true),
+        (("Zinsen statt Arbeitslohn", Some((true, 70_000)), vec![(ART, json!("zinsen"))]), false, true),
+    ];
+    for ((name, abzug, anders), zeile_steht, sperre) in &faelle {
+        let (d, felder) = deklaration(None, *abzug, anders);
+        assert_eq!(!zeilen(&d).is_empty(), *zeile_steht, "{name}: Zeile Sonstiges ({:?})", zeilen(&d));
+        let luecke = d.unvollstaendig().iter().find(|e| e.feld_id == WAHL).cloned();
+        assert_eq!(luecke.is_some(), *sperre, "{name}: Sperre am Marker ({:?})", d.unvollstaendig());
+        if let Some(l) = luecke {
+            assert!(
+                l.grund.contains("gesperrt") && l.grund.contains("rechnet der Bescheid keinen Abzug"),
+                "{name}: Sperrgrund `{}`",
+                l.grund
+            );
+            assert!(
+                erzeuge_xml(
+                    &d,
+                    &XmlOptionen {
+                        hersteller_id: Some("74931".to_owned()),
+                        snapshot: Some(&felder),
+                        ..XmlOptionen::default()
+                    },
+                )
+                .is_err_and(|f| f.0.contains(WAHL)),
+                "{name}: die Sperre haelt das XML nicht zurueck"
+            );
+        }
+    }
 }
 
 /// FEHLERWEG (Mutant R8 der Nachmessung in main): ein bestaetigtes `dba_staat` ohne Text bricht die Rechnung des Abzugs ab
@@ -369,21 +395,16 @@ fn xml_von(d: &Deklaration, felder: &Felder) -> String {
     .unwrap()
 }
 
-/// Das XML, das die Deklaration mit Unfallkosten und Abzug ergaebe, waeren die Sperren nicht da. `erzeuge_xml` lehnt jede
-/// Deklaration mit offenem Eintrag ab. Der Test nimmt darum die Deklaration derselben Akte mit der ANRECHNUNG (Wahl `false`,
-/// ohne Unfallkosten: keine Sperre) und setzt die Inhalte der echten Deklaration hinein: `deklaration`, `person_b` und
-/// `anlage_instanzen`. Was `deklariere` fuer Zeilen und Summe berechnet hat, kommt aus dem Store, nicht aus dem Test.
-/// Gibt zurueck: das XML und die Zahl der `<N>`-Bloecke der Anrechnung (Vergleich: eine zweite Zeile darf kein zweites `<N>`
-/// anlegen).
-fn xml_ohne_sperre(unfall: Option<i64>, abzug_cent: i64) -> (String, usize) {
+/// Das XML der Akte mit Unfallkosten und Abzug auf dem Weg des Produkts (Ring, `deklariere`, `erzeuge_xml`), ohne Umweg: keine
+/// der beiden Zeilen sperrt. Gibt zurueck: das XML und die Zahl der `<N>`-Bloecke der Anrechnung derselben Akte (Vergleich: eine
+/// zweite Zeile darf kein zweites `<N>` anlegen).
+fn xml_der_akte(unfall: Option<i64>, abzug_cent: i64) -> (String, usize) {
     let (mit, felder) = deklaration(unfall, Some((true, abzug_cent)), &[]);
-    let (mut sauber, _) = deklaration(None, Some((false, abzug_cent)), &[]);
-    assert!(sauber.unvollstaendig().is_empty(), "die Anrechnung sperrt schon");
-    let n_vorher = xml_von(&sauber, &felder).matches("<N>").count();
-    sauber.deklaration.clone_from(&mit.deklaration);
-    sauber.person_b.clone_from(&mit.person_b);
-    sauber.anlage_instanzen.clone_from(&mit.anlage_instanzen);
-    (xml_von(&sauber, &felder), n_vorher)
+    assert!(mit.unvollstaendig().is_empty(), "die Akte sperrt: {:?}", mit.unvollstaendig());
+    let (anrechnung, _) = deklaration(None, Some((false, abzug_cent)), &[]);
+    assert!(anrechnung.unvollstaendig().is_empty(), "die Anrechnung sperrt schon");
+    let n_vorher = xml_von(&anrechnung, &felder).matches("<N>").count();
+    (xml_von(&mit, &felder), n_vorher)
 }
 
 /// AK3: das ERZEUGTE XML traegt beide Zeilen als zwei `<Sonst>` unter EINEM `<Weitere_Wk>`, vor `<Sum>`; kein zweites `<N>`
@@ -394,7 +415,7 @@ fn das_xml_traegt_beide_zeilen_unter_einem_weitere_wk_und_das_schema_nimmt_es() 
     if !schemas_da(2025) {
         return;
     }
-    let (xml, n_vorher) = xml_ohne_sperre(Some(150_001), 70_001);
+    let (xml, n_vorher) = xml_der_akte(Some(150_001), 70_001);
     assert_eq!(xml.matches("<Weitere_Wk>").count(), 1, "genau ein <Weitere_Wk>");
     assert_eq!(xml.matches("<N>").count(), n_vorher, "eine zweite Zeile legt kein zweites <N> an");
     let block = tag_text(&xml, "Weitere_Wk").expect("kein <Weitere_Wk> im XML");
@@ -416,4 +437,24 @@ fn das_xml_traegt_beide_zeilen_unter_einem_weitere_wk_und_das_schema_nimmt_es() 
     assert_eq!(tag_text(sum, SUMME_KZ), Some("2202"), "Summe der gerundeten Zeilen ({sum})");
     let (ok, meldung) = validiere_xsd_text(xml.as_bytes(), Vz::Vz2025);
     assert!(ok, "xmllint gegen E10-2025.xsd: {meldung}");
+}
+
+/// Anlage AUS im ERZEUGTEN XML: Zeile 10 traegt die aufgerundete Steuer (`E0600920`), Zeile 7 (`E0601401`) steht NACH dem Abzug,
+/// um genau diese Zahl gekuerzt (Anleitung AUS Zeile 10; Schema: `E0600920` = "in Zeile 7 abgezogene" Steuern). 5.000 Euro
+/// Einkuenfte, 700,01 Euro Steuer: Zeile 10 = 701, Zeile 7 = 4.299. Bei Anrechnung (Wahl `false`) bleibt Zeile 7 bei 5.000 und die
+/// Steuer steht unter `E0601901`. ROT, solange Zeile 7 den Abzug nicht abzieht.
+#[test]
+fn das_xml_traegt_zeile_7_nach_dem_abzug_und_zeile_10_mit_der_steuer() {
+    if !schemas_da(2025) {
+        return;
+    }
+    let (xml, _) = xml_der_akte(None, 70_001);
+    assert_eq!(tag_text(&xml, "E0600920"), Some("701"), "Zeile 10");
+    assert_eq!(tag_text(&xml, "E0601401"), Some("4299"), "Zeile 7 nach dem Abzug");
+    assert!(!xml.contains("<E0601901>"), "Anrechnung neben dem Abzug");
+    let (anrechnung, felder) = deklaration(None, Some((false, 70_001)), &[]);
+    let xml = xml_von(&anrechnung, &felder);
+    assert_eq!(tag_text(&xml, "E0601401"), Some("5000"), "Anrechnung: Zeile 7 unveraendert");
+    assert_eq!(tag_text(&xml, "E0601901"), Some("700"), "Anrechnung: Steuer");
+    assert!(!xml.contains("<E0600920>"), "Abzug neben der Anrechnung");
 }

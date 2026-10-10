@@ -1,0 +1,313 @@
+Quelle: https://www.formulare-bfinv.de/ (docs/, Julius 2026-10-10)
+Abgerufen: 2026-10-10
+Titel: Anleitung Anlage AUS 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+Anleitung zur Anlage AUS                                                                                                  2025
+Allgemeines        Sie haben ausländische Einkünfte erzielt?                    tragungen in den Zeilen 27 bis 34 und 54 der Anla­-
+                   Dann nutzen Sie bitte die Anlage AUS. Tragen Sie             ge KAP sowie in den Zeilen 25 bis 28 der Anlage
+                   bitte die ausländischen Einkünfte ein, die aus einem         KAP-BET. Ausländische Einkünfte aus nichtselb­-
+                   Staat stammen,                                               ständiger Arbeit müssen Sie grundsätzlich nur in
+                        mit dem kein Doppelbesteuerungsabkommen                 den Anlagen N und N-AUS angeben. Wenn Sie die
+                        (DBA) besteht (beachten Sie hierzu bitte die Erläu­-    im Ausland gezahlten Steuern anrechnen lassen wol­-
+                        terungen zu den Zeilen 4 bis 35) oder                   len, dann tragen Sie bitte die ausländischen Einkünfte
+                        mit dem ein DBA besteht. Hierbei ist es unerheb­-       und die darauf entfallende ausländische Steuer zu­-
+                        lich, ob die Einkünfte im Inland (ggf. mit Steueran­-   sätzlich in der Anlage AUS ein. Dies gilt nicht für die
+                        rechnung) besteuert werden können (beachten Sie         Schweizerische Abzugsteuer. Beachten Sie hierzu
+                        hierzu bitte die Erläuterungen zu den Zeilen 4          bitte Zeile 26 der Anlage N.
+                        bis 35) oder im Inland von der Besteuerung freige­-     Fassen Sie bitte die Einkünfte aus einem Staat in
+                        stellt sind. Sind die ausländischen Einkünfte im In­-   einer Spalte zusammen. Ausländische Investment­-
+                        land von der Besteuerung freigestellt, müssen Sie       fonds müssen Sie jeweils dem Staat zuordnen, in dem
+                        diese Einkünfte nur eintragen, wenn sie dem Pro­-       der Investmentfonds aufgelegt wird und dessen Recht
+                        gressionsvorbehalt unterliegen (beachten Sie hier­-     er unterliegt. Tragen Sie bitte die Einkünfte aus jedem
+                        zu bitte die Erläuterungen zu den Zeilen 36             Spezial-Investmentfonds jeweils in einer gesonderten
+                        bis 52).                                                Spalte ein. Hatten Sie Einkünfte aus mehr als drei
+                   Soweit im Folgenden nichts Anderes beschrieben               Staaten / Spezial-Investmentfonds, verwenden Sie
+                   wird, geht Ihr Finanzamt davon aus, dass Sie die Ein­-       bitte weitere Anlagen AUS. Die Einkünfte müssen Sie
+                   künfte auch in den übrigen Anlagen zur Einkom­-              nach deutschem Steuerrecht ermitteln. Kürzen Sie
+                   mensteuererklärung (Anlage G, L, R-AUS, R-AV /               hierfür die Einnahmen um die Betriebsausgaben, Wer­-
+                   bAV, S, SO, V, V-Sonstige) eingetragen haben und             bungskosten oder ggf. um die Pauschbeträge, die mit
+                   die Einkünfte im Quellenstaat nach dortigem Recht            den Einnahmen in einem Zusammenhang stehen.
+                   besteuert werden. Haben Sie Einkünfte aus Kapi­-             Rechnen Sie bitte die Beträge in ausländischer Wäh­-
+                   talvermögen, können Sie diese nur in der Anlage              rung nach dem maßgeblichen Kurs zum Zeitpunkt des
+                   AUS eintragen, wenn die tarifliche Einkommen­-               Zu- oder Abflusses um.
+                   steuer Anwendung findet. Hierzu gehören die Ein­-
+
+Zeile 4 bis 13     Ausländische Einkünfte, die im Inland steuerpflichtig        Einkünfte aus den einzelnen Staaten / Spezial-Invest­-
+Einkünfte und      sind, müssen Sie stets in den Anlagen zur Einkom­-           mentfonds müssen Sie dabei nach deutschem Steuer­-
+anzurechnende      mensteuererklärung angeben. Dies gilt unabhängig             recht ermitteln. Geben Sie bitte auch die Einkünfte
+ausländische       davon, ob ein DBA besteht oder nicht. Haben Sie auf          i. S. d. § 20 Abs. 2 Außensteuergesetz (AStG) an. Die
+Steuern            diese Einkünfte im Ausland eine Steuer gezahlt, die          Verrechnungen nach § 2a EStG, die Sie in den Zei­-
+                   der deutschen Einkommensteuer entspricht, wird               len 31 bis 35 vornehmen müssen, geben Sie bei der
+                   diese Steuer grundsätzlich auf die deutsche Einkom­-         Übertragung der ausländischen Einkünfte bitte in
+                   mensteuer angerechnet (§ 34c Abs. 1 Einkommen­-              Zeile 7 an. Wegen der weiteren Auswirkungen des
+                   steuergesetz – EStG). Beachten Sie hierzu bitte das          § 2a EStG beachten Sie bitte die Erläuterungen zu
+                   jeweilige DBA. Wenn eine Steueranrechnung durch              den Zeilen 31 bis 35.
+                   ein DBA ausgeschlossen oder eingeschränkt wird,              Bei der Ermittlung ausländischer Einkünfte, die nach
+                   kann die Steuer nicht angerechnet werden. Ihr Finanz­-       § 34d Nr. 3, 4, 6, 7 und 8 Buchst. c EStG zum Gewinn
+                   amt rechnet Ihnen eine gezahlte ausländische Steuer          eines inländischen Betriebes gehören, ziehen Sie die
+                   bis zu dem Betrag an, bis zu dem auf die ausländi­-          Betriebsausgaben und Betriebsvermögensminderun­-
+                   schen Einkünfte eine deutsche Einkommensteuer ent­-          gen ab, die mit den zugrundeliegenden Einnahmen in
+                   fällt.                                                       wirtschaftlichem Zusammenhang stehen. Die Einnah­-
+                   Bei den Einkünften aus Kapitalvermögen ist die               men und die damit im Zusammenhang stehenden Be­-
+                   Einkommensteuer grundsätzlich durch den Steu­-               triebsausgaben oder Werbungskosten werden nur zu
+                   erabzug abgegolten. Bei diesem Steuerabzug                   60 % angesetzt, soweit die Einkünfte dem sog. Teilein­-
+                   wurde auch die ausländische Steuer angerechnet.              künfteverfahren unterliegen. Tragen Sie bitte dennoch
+                   Sie müssen die Zeilen 4 bis 13 daher nur ausfüllen           in den dafür vorgesehenen Eintragungsfeldern der
+                        in den Fällen des § 32d Abs. 2 EStG und                 Zeile 7 jeweils den vollen Betrag ein. Das Gleiche gilt
+                        bei Einkünften aus einem Spezial-Investment­-           für Erträge aus Investmentfonds, bei denen das Teil­-
+                        fonds.                                                  freistellungsverfahren angewandt wird. Haben Sie Ein­-
+                   Der Höchstbetrag für die Steueranrechnung ist für die        künfte aus einem Spezial-Investmentfonds erzielt,
+                   Einkünfte und die Steuern aus jedem einzelnen aus­-          bezeichnen Sie bitte jeden einzelnen Spezial-Invest­-
+                   ländischen Staat oder Spezial-Investmentfonds ge­-           mentfonds in Zeile 4. Tragen Sie die Einkünfte und die
+                   sondert zu ermitteln. Deshalb müssen Sie Ihre auslän­-       ausländischen Steuern für jeden Spezial-Investment­-
+                   dischen Einkünfte und Steuern für jeden Herkunfts­-          fonds getrennt in die dazugehörigen Spalten in voller
+                   staat / Spezial-Investmentfonds einzeln angeben. Die         Höhe ein.
+
+
+
+
+Anleitung zur Anlage AUS - September 2025
+                                                                -2-
+
+Zeile 10          Entfällt die ausländische Steuer auf nicht steuerfreie       mittelbar oder über eine Beteiligung bezogen haben.
+                  ausländische Einkünfte, können Sie diese bei der Er­-        Einen Antrag nach § 34c Abs. 2 EStG stellen Sie da­-
+                  mittlung der jeweiligen Einkünfte insoweit wie Be­-          durch, dass Sie die Steuern bei der Ermittlung der Ein­-
+                  triebsausgaben oder Werbungskosten abziehen.                 künfte abziehen und die abgezogene Steuer in
+                  Stellen Sie hierfür einen Antrag nach § 34c Abs. 2           Zeile 10 eintragen. Es entfällt die Angabe in Zeile 12.
+                  EStG. Alternativ können Sie auch die in den Zeilen 12        Der Abzug kann für Sie günstiger sein, wenn er z. B.
+                  und 13 beschriebene Anrechnung wählen. Dieses An­-           zu negativen ausländischen Einkünften führt.
+                  tragsrecht können Sie für die Steuern aus jedem ein­-        Die nach DBA fiktive ausländische Steuer kann nicht
+                  zelnen Staat oder Spezial-Investmentfonds unter­-            abgezogen werden. Beachten Sie hierzu bitte die Er­-
+                  schiedlich ausüben. Für die Steuern aus allen Ein­-          läuterungen zu Zeile 13. Sie haben in diesen Fällen
+                  kunftsarten eines Herkunftsstaates können Sie somit          kein Wahlrecht. Die fiktive Steuer können Sie deshalb
+                  einheitlich entweder Steueranrechnung oder -abzug            nur anrechnen lassen und in die Zeilen 12 und 13 ein­-
+                  wählen, unabhängig davon, ob Sie die Einkünfte un­-          tragen.
+
+Zeile 12          In Zeile 12 tragen Sie bitte die Steuern ein, die für Ihre   Zeile 12 eintragen. Die Steuerbeträge können Sie aber
+                  ausländischen Einkünfte vom Herkunftsland unmittel­-         wie Betriebsausgaben oder Werbungskosten bei der
+                  bar erhoben und von Ihnen endgültig gezahlt worden           Ermittlung der Einkünfte der jeweiligen Einkunftsart
+                  sind. Tragen Sie hier nur etwas ein, wenn Sie die An­-       abziehen (§ 34c Abs. 3 EStG).
+                  rechnung auf die deutsche Einkommensteuer in An­-            Berücksichtigen Sie diese bitte bei der Ermittlung der
+                  spruch nehmen wollen. Reichen Sie bitte die Nach­-           in Zeile 7 einzutragenden Einkünfte und tragen Sie die
+                  weise dieser gezahlten Steuern ein (§ 68b Einkom­-           Steuerbeträge bitte in Zeile 11 ein.
+                  mensteuer-Durchführungsverordnung).                          Die Steuer kann nur angerechnet werden, soweit die
+                  Eine ausländische Steuer kann nicht angerechnet wer­-        ausländischen Einkünfte jeweils für den einzelnen
+                  den, wenn                                                    Staat oder Spezial-Investmentfonds bei der deutschen
+                      diese Steuer im Ausland einem Ermäßigungsan­-            Einkommensteuerveranlagung in die Einkunftsermitt­-
+                      spruch unterliegt (unabhängig davon, ob Sie die­-        lung einbezogen werden. Unterliegen die ausländi­-
+                      sen Ermäßigungsanspruch geltend machen oder              schen Einkünfte nicht der deutschen Steuer oder sind
+                      nicht, auch wenn der Ermäßigungsanspruch be­-            sie nach dem DBA freigestellt, können Sie die Steuer
+                      reits verjährt ist),                                     nicht anrechnen lassen (z. B. bei Einkünften aus priva­-
+                      die ausländische Steuer nicht der deutschen Ein­-        ten Veräußerungsgeschäften außerhalb der Fristen
+                      kommensteuer entspricht,                                 des § 23 EStG). Für Einkünfte i. S. d. § 2a EStG kann
+                      die ausländische Steuer nicht in dem Staat erho­-        hingegen die Steuer bei der Höchstbetragsberech­-
+                      ben wird, aus dem die Einkünfte stammen, oder            nung nach § 34c Abs. 1 EStG angerechnet werden.
+                      ausländische Einkünfte i. S. d. § 34d EStG nicht         Beachten Sie hierzu bitte die Erläuterungen zu den
+                      gegeben sind.                                            Zeilen 31 bis 35.
+                  In diesen Fällen dürfen Sie die Steuerbeträge nicht in
+
+Zeile 13          Nach einigen DBA ist bei ausländischen Einkünften            nahmen in einer gesonderten Aufstellung an und be­-
+                  (Dividenden, Zinsen und Lizenzgebühren) auf die              zeichnen Sie dort die Einkunftsquelle. Zur Anrechnung
+                  deutsche Einkommensteuer nicht die tatsächlich ge­-          fiktiver ausländischer Steuer auf Einnahmen aus Kapi­-
+                  zahlte, sondern eine fiktive Steuer anzurechnen. Die         talvermögen beachten Sie bitte die Erläuterungen zu
+                  Höhe der fiktiven Steuer ist im jeweiligen DBA be­-          den Zeilen 37 bis 42 in der Anleitung zur Anlage KAP.
+                  stimmt. Geben Sie bitte die in Zeile 7 enthaltenen Ein­-
+
+Zeile 14          Unter bestimmten Voraussetzungen können Sie bean­-           ten Einkünfte ein, für die Sie die Festsetzung des
+Pauschal zu       tragen, dass die deutsche Einkommensteuer mit                Pauschbetrags beantragen. Erläutern Sie bitte die Er­-
+besteuernde       einem Pauschbetrag festgesetzt werden soll (§ 34c            mittlung in einer gesonderten Aufstellung. Für Einkünf­-
+Einkünfte         Abs. 5 EStG). Die Einkommensteuer beträgt 25 % der           te, die nach § 34c Abs. 5 EStG mit einem Pauschbe­-
+                  begünstigten Einkünfte. Beachten Sie zu weiteren Ein­-       trag besteuert werden, können Sie die Steuer nicht an­-
+                  zelheiten bitte das Schreiben des Bundesministeriums         rechnen lassen. Die Einkünfte und die darauf im Aus­-
+                  der Finanzen vom 10. April 1984, Bundessteuerblatt I         land gezahlte Steuer dürfen nicht in den Zeilen 5
+                  Seite 252.                                                   bis 13 enthalten sein.
+                  Tragen Sie bitte in Zeile 14 den Betrag der begünstig­-
+
+Zeile 15 und 16   Für die anrechenbare ausländische Steuer nach § 50d          sprechende Kopien bitte nach. Die zugrunde liegen­-
+Anrechnung        Abs. 7 Satz 2 EStG reichen Sie bitte eine Kopie des          den Einkünfte aus einer inländischen Kasse einer ju­-
+ausländischer     ausländischen Steuerbescheids und des Zahlungs­-             ristischen Person des öffentlichen Rechts tragen Sie
+Steuer nach       nachweises ein. Erhalten Sie diese Unterlagen erst           bitte in Zeile 15 ein.
+§ 50d Abs. 7      nach Abgabe der Steuererklärung, reichen Sie ent­-
+Satz 2 EStG
+
+
+      Neu!
+                                                                       -3-
+
+Tragen Sie in Zeile 18 bitte die Steuerabzugsbeträge            ausländischen Steuerbescheids und des Zahlungs­-             Zeile 17 und 18
+ein, die mit den Einkünften im Zusammenhang stehen              nachweises ein. Die zugrundeliegenden inländischen              Anrechnung
+und reichen Sie die Steuerbescheinigungen ein. Für              Einkünfte (Sondervergütungen sowie Erträge und Auf­-          ausländischer
+die anrechenbare ausländische Steuer nach § 50d                 wendungen des Sonderbetriebsvermögens) tragen Sie               Steuer nach
+Abs. 10 Satz 5 EStG reichen Sie bitte eine Kopie des            bitte in Zeile 17 ein.                                         § 50d Abs. 10
+                                                                                                                                 Satz 5 EStG
+
+Der Hinzurechnungsbetrag wird gesondert und ggf.                Summe der Einkünfte ein Kürzungsbetrag abzuziehen,            Zeile 19 bis 24
+einheitlich festgestellt. Tragen Sie bitte in die Zeilen 19     soweit in den Vorjahren Hinzurechnungsbeträge als          Hinzurechnungs-​
+bis 22                                                          sog. Hinzurechnungskorrekturvolumen gesondert und               besteuerung
+     das feststellende Finanzamt,                               einheitlich festgestellt wurden. Tragen Sie bitte den               nach den
+     die Steuernummer,                                          Kürzungsbetrag in der Anlage G, Anlage L, Anlage S          §§ 7 bis 13 AStG
+     den Staat, in dem sich der Sitz oder die Geschäfts­-       und / oder Anlage KAP ein.
+     leitung der Zwischengesellschaft befindet, und             Die Anrechnung von Steuern nach § 12 Abs. 1 AStG
+     den festgestellten Betrag, ggf. erhöht um die auf          erfolgt von Amts wegen. Die Anrechnung von Steuern
+     Antrag anzurechnenden Steuern nach § 12 Abs. 1             nach § 12 Abs. 1 AStG a. F. i. V. m. § 21 Abs. 4 Satz 3
+     AStG a. F. i. V. m. § 21 Abs. 4 Satz 3 AStG,               AStG können Sie in Zeile 23 beantragen. Die Anrech­-
+ein.                                                            nung von Steuern nach § 12 Abs. 2 AStG können Sie
+Bei Ausschüttungen aus einer Beteiligung an einer               in Zeile 24 beantragen.
+Zwischengesellschaft, bei Gewinnen aus der Veräuße­-            Sind Ihnen aus mehreren Zwischengesellschaften Be­-
+rung von Anteilen an der Zwischengesellschaft sowie             träge zugerechnet worden, erläutern Sie diese bitte
+bei Einlagenrückgewähr ist bei der Ermittlung der               gesondert.
+
+Einkünfte einer Familienstiftung, die Geschäftsleitung          dischen Familienstiftung stellt das Finanzamt nach           Zeile 25 bis 30
+und Sitz im Ausland hat, werden der Stifterin oder dem          § 18 Abs. 4 AStG gesondert und ggf. einheitlich fest.             Familien-​
+Stifter zugerechnet, wenn sie oder er unbeschränkt              Tragen Sie in die Zeilen 25 bis 28 bitte das für die             stiftungen
+steuerpflichtig ist. Ist die Stifterin oder der Stifter nicht   Feststellung zuständige Finanzamt, die dortige Steuer­-
+unbeschränkt steuerpflichtig, werden die Einkünfte              nummer und die festgestellten Einkünfte ein, die der
+den unbeschränkt steuerpflichtigen Personen, die be­-           tariflichen Einkommensteuer unterliegen.
+zugs- oder anfallsberechtigt sind, entsprechend ihrem           Wenn Sie die vom Finanzamt festgestellten Steuern,
+Anteil zugerechnet. Das gilt nicht, wenn eine Familien­-        die auf diese Einkünfte entfallen, anrechnen lassen
+stiftung die Geschäftsleitung oder ihren Sitz in einem          wollen, dann können Sie dies in Zeile 29 beantragen.
+EU- / EWR-Staat hat und Sie nachweisen können,                  Anzurechnende Steuern auf die nach § 15 Abs. 11
+dass das Stiftungsvermögen der Verfügungsmacht der              AStG befreiten Zuwendungen tragen Sie bitte in
+bezugs- oder anfallsberechtigten Personen rechtlich             Zeile 30 ein.
+und tatsächlich entzogen ist. Die Einkünfte der auslän­-
+
+Die folgenden negativen Einkünfte aus Drittstaaten                 EStG), es sei denn, die Berücksichtigung der Ver­-        Zeile 31 bis 35
+(keine EU- / EWR-Staaten) können nach § 2a Abs. 1                  luste ist nach § 2a Abs. 2 EStG zulässig,               Nicht nach DBA
+EStG nur mit positiven Einkünften derselben Art und                Einkünfte aus der Beteiligung an einem Handels­-              steuerfreie
+aus demselben Staat ausgeglichen werden:                           gewerbe als stiller Gesellschafter und aus partiari­-           negative
+    Einkünfte aus einer in einem Drittstaat belegenen              schen Darlehen, wenn der Schuldner Wohnsitz,            Einkünfte i. S. d.
+    land- und forstwirtschaftlichen Betriebsstätte (§ 2a           Sitz oder Geschäftsleitung in einem Drittstaat hat             § 2a EStG
+    Abs. 1 Satz 1 Nr. 1 EStG),                                     (§ 2a Abs. 1 Satz 1 Nr. 5 EStG),
+    Einkünfte aus einer in einem Drittstaat belegenen              Einkünfte aus der Vermietung und Verpachtung
+    gewerblichen Betriebsstätte (§ 2a Abs. 1 Satz 1                von unbeweglichem Vermögen oder von Sachin­-
+    Nr. 2 EStG), es sei denn, die Berücksichtigung der             begriffen, wenn diese in einem Drittstaat belegen
+    Verluste ist nach § 2a Abs. 2 EStG zulässig,                   sind (§ 2a Abs. 1 Satz 1 Nr. 6 Buchst. a EStG),
+    Gewinnminderungen aus Teilwertabschreibungen                   Einkünfte aus der entgeltlichen Überlassung von
+    von Anteilen an Drittstaaten-Körperschaften (§ 2a              Schiffen, sofern der Überlassende nicht nachweist,
+    Abs. 1 Satz 1 Nr. 3 Buchst. a EStG), es sei denn,              dass diese ausschließlich oder fast ausschließlich
+    die Berücksichtigung ist nach § 2a Abs. 2 EStG zu­-            in einem anderen Staat als einem Drittstaat einge­-
+    lässig,                                                        setzt worden sind, es sei denn, es handelt sich um
+    Gewinnminderungen aus der Veräußerung oder                     Handelsschiffe, die von einem Vercharterer ausge­-
+    Entnahme von zu einem Betriebsvermögen gehö­-                  rüstet überlassen, oder an in einem anderen als
+    renden Anteilen an Drittstaaten-Körperschaften,                einem Drittstaat ansässige Ausrüster, die die Vor­-
+    aus deren Auflösung oder Kapitalherabsetzung                   aussetzungen des § 510 Abs. 1 des Handelsge­-
+    (§ 2a Abs. 1 Satz 1 Nr. 3 Buchst. b EStG), es sei              setzbuches (HGB) erfüllen, überlassen, oder ins­-
+    denn, die Berücksichtigung ist nach § 2a Abs. 2                gesamt nur vorübergehend an in einem Drittstaat
+    EStG zulässig,                                                 ansässige Ausrüster, die die Voraussetzungen des
+    Einkünfte aus der Veräußerung von Beteiligungen                § 510 Abs. 1 HGB erfüllen, überlassen worden
+    i. S. d. § 17 EStG an Drittstaaten-Kapitalgesell­-             sind (§ 2a Abs. 1 Satz 1 Nr. 6 Buchst. b EStG),
+    schaften, aus deren Auflösung, Kapitalherabset­-               hierbei genügt es, wenn es sich um positive Ein­-
+    zung oder -rückzahlung (§ 2a Abs. 1 Satz 1 Nr. 4               künfte der jeweils selben Art handelt, sie müssen
+                                                                -4-
+
+                       nicht aus demselben Staat stammen,                      in den Jahren 1985 bis 2024 erzielt wurden. Bezeich­-
+                       Gewinnminderungen aus Teilwertabschreibungen            nen Sie bitte die Art der Einkünfte durch Angabe der
+                       oder der Übertragung von unbeweglichem Vermö­-          Nummer des § 2a Abs. 1 Satz 1 EStG der für das je­-
+                       gen, Sachinbegriffen und Schiffen, wenn sie zu          weilige Jahr geltenden Fassung.
+                       einem Betriebsvermögen gehören (§ 2a Abs. 1             Haben Sie in den Jahren 1985 bis 2024 negative aus­-
+                       Satz 1 Nr. 6 Buchst. c EStG),                           ländische Einkünfte i. S. d. § 2a Abs. 1 EStG erzielt,
+                       Gewinnminderungen aus Teilwertabschreibungen,           die noch nicht mit positiven Einkünften ausgeglichen
+                       aus der Veräußerung oder Entnahme von Anteilen          worden sind, geben Sie bitte den noch nicht ausgegli­-
+                       an Körperschaften mit Sitz oder Geschäftsleitung        chenen Betrag in der dritten Spalte an.
+                       in einem anderen Staat als einem Drittstaat, soweit     Tragen Sie bitte in die vierte Spalte die negativen Ein­-
+                       sie zu einem Betriebsvermögen gehören und die           künfte des Jahres 2025 ein. Bitte geben Sie in der
+                       Gewinnminderungen auf einen Tatbestand i. S. d.         fünften Spalte an, ob und falls ja, in welcher Anlage
+                       § 2a Abs. 1 Satz 1 Nr. 1 bis 6 EStG zurückzufüh­-       und Zeile zur Einkommensteuererklärung diese Ein­-
+                       ren sind (§ 2a Abs. 1 Satz 1 Nr. 7 Buchst. a EStG),     künfte enthalten sind. Haben Sie im Jahr 2025 positive
+                       Einkünfte aus der Auflösung oder Kapitalherabset­-      Einkünfte derselben Art aus demselben Staat erzielt,
+                       zung von Körperschaften mit Sitz oder Geschäfts­-       tragen Sie diese bitte in die sechste Spalte ein. In der
+                       leitung in einem anderen Staat als einem Dritt­-        siebten Spalte geben Sie bitte an, in welcher Anlage
+                       staat, soweit die Einkünfte auf einen Tatbestand        und Zeile der Einkommensteuererklärung diese ent­-
+                       i. S. d. § 2a Abs. 1 Satz 1 Nr. 1 bis 6 EStG zurück­-   halten sind. Haben Sie die Zusammenveranlagung ge­-
+                       zuführen sind (§ 2a Abs. 1 Satz 1 Nr. 7 Buchst. b       wählt, werden negative Einkünfte der einen Person mit
+                       EStG) sowie                                             positiven Einkünften der anderen Person der jeweils
+                       Einkünfte aus der Veräußerung von Beteiligungen         selben Art und aus demselben Staat ausgeglichen
+                       i. S. d. § 17 EStG an Kapitalgesellschaften mit Sitz    oder verrechnet, soweit Sie die negativen Einkünfte
+                       oder Geschäftsleitung in einem anderen Staat als        nicht mit eigenen positiven Einkünften ausgleichen
+                       einem Drittstaat, aus deren Auflösung, Kapitalher­-     oder verrechnen lassen können. Die Angaben hierzu
+                       absetzung oder Kapitalrückzahlung, soweit die           sind für jede Person auf der eigenen Anlage AUS an­-
+                       Einkünfte auf einen Tatbestand i. S. d. § 2a Abs. 1     zugeben.
+                       Satz 1 Nr. 1 bis 6 EStG zurückzuführen sind (§ 2a       Wenn Sie nach der Verrechnung keine verbleibenden
+                       Abs. 1 Satz 1 Nr. 7 Buchst. c EStG)                     negativen Einkünfte mehr haben, müssen Sie die posi­-
+                  Es ist unerheblich, in welcher Einkunftsart die negati­-     tiven Einkünfte des Jahres 2025 in den Anlagen zur
+                  ven Einkünfte anfallen. In den Fällen des § 2a Abs. 1        Einkommensteuererklärung in der Höhe erklären, in
+                  Satz 1 Nr. 7 EStG ist auf Tatbestände der jeweils sel­-      denen sie nicht beim Verlustausgleich verrechnet wur­-
+                  ben Art – unabhängig davon unter welchen Buchsta­-           den.
+                  ben der Nr. 7 diese fallen – und aus demselben Staat         Geben Sie bitte die im Ausland für diese Einkünfte ge­-
+                  abzustellen.                                                 zahlten Steuern in den Zeilen 10 bis 13 an. Geben Sie
+                  Haben Sie im Jahr 2025 entsprechende negative Ein­-          bitte die Einkünfte unabhängig davon an, ob Ihr Fi­-
+                  künfte erzielt, geben Sie bitte in den Zeilen 31 bis 35      nanzamt die ausländischen Einkünfte nach § 2a
+                  in der ersten Spalte den Staat an, aus dem die Ein­-         Abs. 1 und 2 EStG bei der Besteuerung berücksichtigt.
+                  künfte stammen. Bezeichnen Sie in der zweiten Spalte         Die am 31. Dezember 2025 verbleibenden negativen
+                  bitte die Art der Einkünfte durch Angabe der Nummer          Einkünfte werden durch Ihr Finanzamt gesondert fest­-
+                  des § 2a Abs. 1 Satz 1 EStG.                                 gestellt.
+                  Dasselbe gilt für negative ausländische Einkünfte, die
+
+
+Zeile 36 bis 41   Wenn Einkünfte aufgrund eines DBA im Inland steuer­-         angeben. Beachten Sie hierzu bitte die Erläuterungen
+Progressions-​    frei sind, dürfen Sie diese nicht in den übrigen Anlagen     zu Zeile 43. Einkünfte, die Sie in Zeile 42 eintragen
+vorbehalt         zur Einkommensteuererklärung eintragen (ausgenom­-           müssen, geben Sie bitte auch in den Zeilen 36 bis 40
+                  men Anlage N und Anlage N-AUS). Die Einkünfte un­-           an.
+                  terliegen jedoch in der Regel dem Progressionsvorbe­-        Negative Einkünfte i. S. d. § 2a Abs. 1 EStG tragen
+                  halt. Das heißt, dass Ihr Finanzamt die Einkünfte in die     Sie bitte in die Zeilen 48 bis 52 ein.
+                  Bemessung des Steuersatzes einbezieht, der auf das           Wenn die Einkünfte i. S. d. § 32b Abs. 1 Satz 2 EStG
+                  zu versteuernde Einkommen anzuwenden ist. Geben              nicht dem Progressionsvorbehalt unterliegen, müssen
+                  Sie die Höhe dieser Einkünfte, die Einkunftsquelle und       Sie diese nicht in die Zeilen 36 bis 40 eintragen.
+                  die Einkunftsart bitte getrennt nach Staaten an. Haben       Die Summe der ausländischen Kapitalerträge laut
+                  Sie aus demselben Staat steuerfreie Einkünfte aus            Zeile 41 unterliegt nur dann dem Progressionsvorbe­-
+                  mehreren Einkunftsquellen erzielt und reicht der vor­-       halt, wenn Ihr Finanzamt bei der Günstigerprüfung
+                  gegebene Platz nicht aus, machen Sie die Angaben             nach § 32d Abs. 6 EStG die steuerpflichtigen Kapital­-
+                  bitte in einer gesonderten Aufstellung. In den Zeilen 36     erträge der tariflichen Einkommensteuer unterwirft.
+                  bis 40 müssen Sie auch außerordentliche Einkünfte
+                                                                 -5-
+
+Der am 31. Dezember 2025 verbleibende Betrag wird         gejahre noch nicht ausgeglichen worden sind (§ 2a                  Zeile 42
+durch Ihr Finanzamt gesondert festgestellt.               Abs. 3 Satz 3 i. V. m. § 52 Abs. 2 Satz 3 und 4 EStG,
+Sie haben vor 2025 bei der Ermittlung des Gesamtbe­-      § 2 Abs. 1 Satz 3 AuslInvG).
+trags der Einkünfte Verluste aus einer gewerblichen, in   Sie müssen die Hinzurechnung auch dann vorneh­-
+einem ausländischen Staat gelegenen Betriebsstätte        men, wenn
+nach                                                          sich die positiven Einkünfte aufgrund eines Veräu­-
+    § 2a Abs. 3 Satz 1 i. V. m. § 52 Abs. 2 Satz 3            ßerungsgewinns ergeben,
+    und 4 EStG oder                                           eine ausländische Betriebsstätte in eine Kapitalge­-
+    § 2 Abs. 1 Satz 1 des Auslandsinvestitionsgeset­-         sellschaft umgewandelt wird (§ 2a Abs. 4 Satz 1
+    zes (AuslInvG)                                            Nr. 1 i. V. m. § 52 Abs. 2 Satz 3 und 4 EStG, § 2
+abgezogen?                                                    Abs. 2 AuslInvG),
+Dann müssen Sie dem Gesamtbetrag der Einkünfte                eine ausländische Betriebsstätte entgeltlich oder
+2025 die positive Summe der Einkünfte aus gewerbli­-          unentgeltlich übertragen wird,
+chen Betriebsstätten desselben Staates bis zur Höhe           eine ausländische Betriebsstätte aufgegeben wird,
+des Betrages hinzurechnen. Den Betrag können Sie              die unbeschränkte Steuerpflicht beendet wird oder
+nur in der Höhe hinzurechnen, bis zu der Sie in den           die Ansässigkeit im Inland beendet wird (§ 2a
+vergangenen Jahren Verluste abgezogen haben, die              Abs. 4 Satz 1 Nr. 2 und 3, Satz 2 i. V. m. § 52
+aber durch Hinzurechnung positiver Einkünfte der Fol­-        Abs. 2 Satz 3 und 4 EStG).
+
+Außerordentliche Einkünfte, die nach einem DBA steu­-     werblichen Betriebsstätte mindern in voller Höhe die               Zeile 43
+erfrei sind (z. B. Veräußerungsgewinne aus einer ge­-     Einkünfte, die dem Progressionsvorbehalt unterliegen.
+werblichen Betriebsstätte), werden nach § 32b EStG        Diese dürfen Sie daher nicht in Zeile 43 eintragen.
+bei der Berechnung des Progressionsvorbehalts von         Wenn die außerordentlichen Einkünfte i. S. d. § 32b
+Ihrem Finanzamt mit einem Fünftel berücksichtigt.         Abs. 1 Satz 2 EStG nicht dem Progressionsvorbehalt
+Diese Einkünfte müssen Sie auch in die Zeilen 36          unterliegen, müssen Sie diese nicht in Zeile 43 eintra­-
+bis 38 eintragen. Veräußerungsverluste aus einer ge­-     gen.
+
+Handelt es sich bei der Veräußerung von ausländi­-        glichenen negativen Einkünfte laut Zeile 45 sind              Zeile 45 bis 47
+schem unbeweglichen Vermögen um ein privates Ver­-        gemäß § 10d EStG rück- oder vortragsfähig. Sie min­-          Progressions-​
+äußerungsgeschäft (§ 23 EStG) und sind die Einkünfte      dern die im Jahr 2024 oder in den folgenden Kalender­-             vorbehalt
+nach DBA steuerfrei, unterliegen diese dem Progressi­-    jahren erzielten positiven Einkünfte. Die Verrechnung       i. V. m. privaten
+onsvorbehalt. Beachten Sie bitte für die Veräußerung      nach § 10d Abs. 2 EStG (Verlustvortrag aus 2024)             Veräußerungs-​
+die Erläuterungen zu den Zeilen 34 bis 66 der Anlei­-     führt Ihr Finanzamt durch.                                        geschäften
+tung zur Anlage SO. Negative Einkünfte kann Ihr Fi­-      Falls Sie auf die Verrechnung nach Maßgabe des
+nanzamt beim Verlustausgleich nur beschränkt be­-         § 10d Abs. 1 EStG (Verlustrücktrag nach 2024) ver­-
+rücksichtigen. Sie dürfen diese nur mit positiven Ein­-   zichten möchten, tragen Sie bitte in Zeile 47 eine „1“
+künften aus privaten Veräußerungsgeschäften ver­-         ein. Ihr Finanzamt stellt dann einen entsprechenden
+rechnen lassen, die dem Progressionsvorbehalt unter­-     verbleibenden Verlustvortrag fest. Dieser kann in künf­-
+liegen.                                                   tigen Jahren berücksichtigt werden.
+Die nicht im Jahr 2025 mit positiven Einkünften ausge­-
+
+Hinsichtlich dieser Einkünfte gelten die Erläuterungen träge (der Zeilen 36 bis 40) sich diese Einkünfte bezie­-        Zeile 48 bis 52
+zu den Zeilen 31 bis 35 entsprechend. Geben Sie in hen.                                                                      Nach DBA
+der siebten Spalte an, auf welche hinzugefügten Ein­-                                                                       steuerfreie
+                                                                                                                               negative
+                                                                                                                              Einkünfte
+                                                                                                                     i. S. d. § 2a EStG
+
