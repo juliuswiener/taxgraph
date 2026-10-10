@@ -466,12 +466,50 @@ fn der_altersentlastungsbetrag_von_person_a_rechnet_die_nicht_lohn_einkuenfte_in
     assert_eq!(altersentlastung_a(2_000, &veraeusserungsgewinn_a(46_000)), 480, "Veraeusserungsgewinn 46.000 nach Freibetrag");
 }
 
-/// Ein Verkauf nach § 23 (`p23_*`) erreicht im Rentner-Ring nie eine Zahl, also gibt es keine Bemessung aus § 23 fuer § 24a:
-/// mit `kein_p23_verkauf` auf nein sperrt `einkunftsart_nicht_ring_faehig` (`fremd_arten` der Scheibe), auf ja oder ohne Antwort
-/// sperrt `flag_konsistenz_offen`. Das ist der Beleg, dass `p23` in `max0(summe_euro(&[laufend, netto_vg, p23]))` (`zweige/
-/// rentner.rs`) kein eigener Test braucht: faellt eine der drei Sperren weg, wird dieser Test rot, und dann braucht `p23` einen.
+/// Ein vollstaendiger, steuerpflichtiger privater Verkauf nach § 23 von Person A: Grundstueck, gekauft `kauf`, verkauft `verkauf`
+/// (TT.MM.JJJJ, Verkauf 2025), Preis und Anschaffungskosten in Cent, das Kreuz `kein_p23_verkauf` auf nein.
+fn privatverkauf_a(kauf: &'static str, verkauf: &'static str, preis: i64, kosten: i64) -> Paare {
+    vec![
+        ("kein_p23_verkauf", json!(false)),
+        ("p23_veraeusserungs_typ", json!("grundstueck")),
+        ("p23_bezeichnung", json!("Testobjekt")),
+        ("p23_anschaffungsdatum", json!(kauf)),
+        ("p23_veraeusserungsdatum", json!(verkauf)),
+        ("p23_veraeusserungspreis", json!(preis)),
+        ("p23_anschaffung_herstellungskosten", json!(kosten)),
+        ("p23_werbungskosten", json!(0)),
+        ("p23_afa", json!(0)),
+        ("p23_eigennutzung", json!("nein")),
+    ]
+}
+
+/// Der private Verkauf (Abweichung Nr. 54) gehoert zur Bemessung des Altersentlastungsbetrags: § 24a Satz 2 nimmt nur Versorgungs-
+/// bezuege, Leibrenten und Teile von § 22 Nr. 4 aus, nicht den Gewinn aus § 22 Nr. 2 (`estg_p24a_2026-07-13.txt`). Gleiche Rente und
+/// gleiches Geburtsjahr wie oben (1955, 16,0 %, hoechstens 760 Euro). Von Hand:
+/// - Lohn 2.000 Euro, Gewinn aus dem Verkauf 1.000,00 Euro (die Freigrenze ist erreicht): 16,0 % von 3.000 = 480.
+/// - Lohn 2.000 Euro, Gewinn 999,99 Euro: unter der Freigrenze, der Gewinn zaehlt nicht, 16,0 % von 2.000 = 320.
+/// - Lohn 0, Gewinn 3.000 Euro: 16,0 % von 3.000 = 480.
+/// - Lohn 2.000 Euro, Gewinn 3.000 Euro, aber nach mehr als zehn Jahren verkauft (steuerfrei): 320.
+///
+/// Der Rentner-Zweig reicht `p23` in `max0(summe_euro(&[laufend, netto_vg, p23]))` an `entlastungen` weiter (`zweige/rentner.rs`);
+/// ohne `p23` in der Summe waeren die Faelle 1 und 3 bei 320 und 0.
 #[test]
-fn ein_verkauf_nach_p23_erreicht_im_rentner_ring_nie_eine_zahl() {
+fn der_altersentlastungsbetrag_von_person_a_rechnet_den_privatverkauf_in_die_bemessung() {
+    let pflichtig = |preis: i64, kosten: i64| privatverkauf_a("15.06.2020", "10.03.2025", cent(preis), cent(kosten));
+    assert_eq!(altersentlastung_a(2_000, &pflichtig(11_000, 10_000)), 480, "Lohn 2.000, Gewinn 1.000,00");
+    let knapp = privatverkauf_a("15.06.2020", "10.03.2025", cent(11_000), cent(10_000) + 1);
+    assert_eq!(altersentlastung_a(2_000, &knapp), 320, "Lohn 2.000, Gewinn 999,99: unter der Freigrenze");
+    assert_eq!(altersentlastung_a(0, &pflichtig(13_000, 10_000)), 480, "kein Lohn, Gewinn 3.000");
+    let frei = privatverkauf_a("15.06.2014", "10.03.2025", cent(13_000), cent(10_000));
+    assert_eq!(altersentlastung_a(2_000, &frei), 320, "Lohn 2.000, Gewinn 3.000 steuerfrei nach der Frist");
+}
+
+/// Ein unvollstaendiger Verkauf nach § 23 (`p23_*`, hier ohne Daten und Eigennutzung) erreicht im Rentner-Ring keine Zahl: mit
+/// `kein_p23_verkauf` auf nein sperrt `p23_angaben_offen` (der Guard der Scheibe, Abweichung Nr. 54), auf ja oder ohne Antwort
+/// sperrt `flag_konsistenz_offen`. Der vollstaendige Verkauf rechnet seit Nr. 54 (`api/tests/p23_befreiungen_hermetisch.rs`), sein
+/// Beitrag zum Altersentlastungsbetrag steht im Test davor. Faellt eine der drei Sperren weg, wird dieser Test rot.
+#[test]
+fn ein_unvollstaendiger_verkauf_nach_p23_erreicht_im_rentner_ring_nie_eine_zahl() {
     let verkauf = |flag: Option<bool>| {
         let mut p = vec![
             ("p23_veraeusserungspreis", json!(cent(5_000))),
@@ -486,7 +524,7 @@ fn ein_verkauf_nach_p23_erreicht_im_rentner_ring_nie_eine_zahl() {
     };
     // Gegenprobe: dieselbe Frage "kein Verkauf: ja" ohne Verkaufsdaten gibt eine Zahl, die Sperren oben kommen also von den Daten.
     let _ = kette(&mit_veranlagung("einzel", vec![("kein_p23_verkauf", json!(true))]));
-    assert_eq!(gesperrt_mit(&verkauf(Some(false))), "einkunftsart_nicht_ring_faehig");
+    assert_eq!(gesperrt_mit(&verkauf(Some(false))), "p23_angaben_offen");
     assert_eq!(gesperrt_mit(&verkauf(Some(true))), "flag_konsistenz_offen");
     assert_eq!(gesperrt_mit(&verkauf(None)), "flag_konsistenz_offen");
 }

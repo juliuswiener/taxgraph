@@ -679,12 +679,14 @@ fn konstanten_gleich() {
 /// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27 in
 /// `rust/fixtures/README.md`: `gwg_mehrwertsteuer_offen` nennt seit der Folgefrage `gwg_ohne_vorsteuerabzug` den Weg des
 /// Kleinunternehmers; Abweichung Nr. 37: `versorgungsfreibetrag_offen` nennt den Ehegatten; Abweichung Nr. 45:
-/// `gwg_abschreibung_offen` nennt Nutzungsdauer und Kaufmonat der Einzel-AfA). Dieselbe Liste und dieselbe
+/// `gwg_abschreibung_offen` nennt Nutzungsdauer und Kaufmonat der Einzel-AfA; Abweichung Nr. 54:
+/// `flag_konsistenz_offen` nennt den privaten Verkauf unter den sonstigen Einkuenften). Dieselbe Liste und dieselbe
 /// Strenge wie `domain::sperrgrund::tests::ABWEICHENDER_KLARTEXT`.
-const ABWEICHENDER_KLARTEXT: [&str; 3] = [
+const ABWEICHENDER_KLARTEXT: [&str; 4] = [
     "gwg_mehrwertsteuer_offen",
     "versorgungsfreibetrag_offen",
     "gwg_abschreibung_offen",
+    "flag_konsistenz_offen",
 ];
 
 #[test]

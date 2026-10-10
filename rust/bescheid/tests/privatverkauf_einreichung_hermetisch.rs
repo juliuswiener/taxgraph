@@ -1,0 +1,303 @@
+//! Privatverkauf (Abweichung Nr. 54): was die Erklaerung traegt und wann die Abgabe sperrt. Standardlauf, ohne `PARITY=1`, ohne Python.
+//!
+//! **Worum es geht.** Der Bescheid rechnet einen privaten Verkauf (`api/tests/p23_befreiungen_hermetisch.rs`). Die Erklaerung traegt
+//! nur steuerpflichtige Verkaeufe in die Anlage SO: Bezeichnung, beide Daten und Gewinn unter den Kz der Art (Grundstueck
+//! E0306111/E0306201/E0306202/E0306801, anderes Wirtschaftsgut E0307101/E0307201/E0307202/E0307701). Ein steuerfreier Verkauf (Frist
+//! abgelaufen, selbst bewohnt, taeglicher Gebrauch) steht NICHT drin: wo er im Formular stuende, sagt nur die Anleitung zur Anlage SO,
+//! und die liegt der Software nicht vor. Die Abgabe sperrt dann mit Klartext, die Rechnung bleibt richtig.
+//!
+//! **Warum es zaehlt.** Ohne die Sperre truege der Schreiber jeden Verkauf der Akte ein, also auch den steuerfreien, und das
+//! Finanzamt saehe einen Gewinn, den es nicht besteuern darf.
+//!
+//! Der Test geht ueber `einreichungs_xml` und nicht ueber `POST /einreichen` (der HTTP-Weg ruft danach `ERiC`). Die Akte ist
+//! `rust/fixtures/e2e/gesamt.json` (Scheibe `gesamt`, vollstaendig, `kein_sonstige` = ja) mit dem Kreuz `kein_p23_verkauf` = nein und
+//! den Verkaeufen dieses Tests. Erwartete Werte von Hand aus dem Gesetz: Gewinn = Preis - (Anschaffungskosten - `AfA`) - Werbungskosten,
+//! in vollen Euro abgerundet (`checkESt` rechnet den Gewinn nach und lehnt Abweichungen mit rc=610001002 ab, Spike AK0).
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing,
+    clippy::disallowed_types
+)]
+
+use std::collections::{BTreeMap, HashMap};
+use std::path::Path;
+
+use bescheid::deklaration::{einreichungs_xml, EinreichFehler, Einreichung};
+use bescheid::testhilfe::{index, params};
+use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Sperrgrund, Zustand};
+use elster::testhilfe::schemas_da;
+use serde_json::{json, Value};
+use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
+
+/// Ein bestaetigter Wert (zwei Signale).
+fn setze(s: &mut Store, feld: &str, wert: Value) {
+    let leer = HashMap::new();
+    s.append_roh(
+        &NeuesEventRoh {
+            feld_id: feld.to_owned(),
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: HerkunftVektor::Voll(Herkunft {
+                herkunft: Achsenwert::new("laie").unwrap(),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: Achsenwert::new("nutzer").unwrap(),
+            }),
+            schreiber: "ui:laie".to_owned(),
+            signal: Signal {
+                signal_1: Some(None),
+                signal_2: Some(format!("ok@{feld}")),
+                signal_2_fehlt: false,
+            },
+            signal_2_fremd: None,
+            ersetzt: None,
+            ts: Some("2026-09-01T00:00:00+00:00".to_owned()),
+        },
+        None,
+        BindungNachschlag::neu(&leer),
+    )
+    .unwrap();
+}
+
+fn name(basis: &str, n: u8) -> String {
+    if n == 1 {
+        basis.to_owned()
+    } else {
+        format!("{basis}__{n}")
+    }
+}
+
+/// Ein vollstaendiger Verkauf der Instanz `n` (Daten TT.MM.JJJJ, Betraege in Cent, Werbungskosten und `AfA` 0). Beim Grundstueck "keine
+/// Eigennutzung", beim anderen Wirtschaftsgut "kein taeglicher Gebrauch, keine Einkunftsquelle".
+fn verkauf(n: u8, typ: &str, a: &str, v: &str, preis: i64, ak: i64) -> Vec<(String, Value)> {
+    let mut k = vec![
+        (name("p23_veraeusserungs_typ", n), json!(typ)),
+        (name("p23_bezeichnung", n), json!("Testobjekt")),
+        (name("p23_anschaffungsdatum", n), json!(a)),
+        (name("p23_veraeusserungsdatum", n), json!(v)),
+        (name("p23_veraeusserungspreis", n), json!(preis)),
+        (name("p23_anschaffung_herstellungskosten", n), json!(ak)),
+        (name("p23_werbungskosten", n), json!(0)),
+        (name("p23_afa", n), json!(0)),
+    ];
+    if typ == "anderes_wg" {
+        k.push((name("p23_taeglicher_gebrauch", n), json!(false)));
+        k.push((name("p23_einkunftsquelle", n), json!(false)));
+    } else {
+        k.push((name("p23_eigennutzung", n), json!("nein")));
+    }
+    k
+}
+
+fn mit(mut k: Vec<(String, Value)>, n: u8, basis: &str, wert: Value) -> Vec<(String, Value)> {
+    let ziel = name(basis, n);
+    match k.iter_mut().find(|(f, _)| *f == ziel) {
+        Some(e) => e.1 = wert,
+        None => k.push((ziel, wert)),
+    }
+    k
+}
+
+/// Steuerpflichtig: gekauft 15.06.2020, verkauft 10.03.2025, Gewinn 50.000 EUR.
+fn pflichtig(n: u8) -> Vec<(String, Value)> {
+    verkauf(n, "grundstueck", "15.06.2020", "10.03.2025", 10_000_000, 5_000_000)
+}
+
+/// Die vollstaendige Akte mit dem Kreuz "ich habe verkauft" und den gegebenen Verkaeufen.
+fn akte(verkaeufe: Vec<(String, Value)>) -> Store {
+    let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../fixtures/e2e/gesamt.json");
+    let roh: Value = serde_json::from_slice(&std::fs::read(pfad).unwrap()).unwrap();
+    let mut s = Store::aus_datei(serde_json::from_value(roh).unwrap());
+    setze(&mut s, "kein_p23_verkauf", json!(false));
+    for (feld, wert) in verkaeufe {
+        setze(&mut s, &feld, wert);
+    }
+    s
+}
+
+fn lauf(s: &Store) -> Result<Einreichung, EinreichFehler> {
+    einreichungs_xml(s, index(), params(), "BY", Some("74931".to_owned()))
+}
+
+/// Die Eintraege der Abgabe-Sperre als `(feld_id, grund)`; leer, wenn `lauf` nicht mit `DeklarationUnvollstaendig` endet.
+fn sperre(r: &Result<Einreichung, EinreichFehler>) -> Vec<(String, String)> {
+    match r {
+        Err(EinreichFehler::DeklarationUnvollstaendig(e)) => e
+            .iter()
+            .map(|x| (x.feld_id.clone(), x.grund.clone()))
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+
+/// Die Kz der Instanz `index` (1-basiert) der Gruppe `p23_veraeusserung` der Erklaerung.
+fn kz_der_instanz(e: &Einreichung, index: u64) -> BTreeMap<String, Value> {
+    e.deklaration
+        .anlage_instanzen
+        .iter()
+        .filter(|(g, _)| g == "p23_veraeusserung")
+        .flat_map(|(_, ii)| ii)
+        .find(|i| i.index == index)
+        .map(|i| i.felder.clone())
+        .unwrap_or_default()
+}
+
+fn erwarte_einreichbar(name: &str, r: &Result<Einreichung, EinreichFehler>) {
+    assert!(sperre(r).is_empty(), "{name}: sperrt schon: {r:?}");
+    if schemas_da(2025) {
+        assert!(r.is_ok(), "{name}: {r:?}");
+    }
+}
+
+/// Kontrolle zuerst: ein steuerpflichtiger Verkauf sperrt die Abgabe nicht und steht mit allen vier Kz in der Erklaerung. Ohne sie
+/// bewiese die Sperre unten nichts (ein Fall, der aus anderem Grund sperrt, liesse sie gruen).
+#[test]
+fn steuerpflichtiges_grundstueck_steht_mit_vier_kz_in_der_erklaerung() {
+    let r = lauf(&akte(pflichtig(1)));
+    erwarte_einreichbar("Grundstueck", &r);
+    if let Ok(e) = &r {
+        assert_eq!(
+            kz_der_instanz(e, 1),
+            BTreeMap::from([
+                ("E0306111".to_owned(), json!("Testobjekt")),
+                ("E0306201".to_owned(), json!("15.06.2020")),
+                ("E0306202".to_owned(), json!("10.03.2025")),
+                ("E0306801".to_owned(), json!(50_000)),
+            ])
+        );
+        if schemas_da(2025) {
+            assert!(e.xml.contains("E0306801") && e.xml.contains("Testobjekt"), "XML ohne den Verkauf");
+        }
+    }
+}
+
+#[test]
+fn steuerpflichtiges_wirtschaftsgut_steht_mit_seinen_kz_in_der_erklaerung() {
+    let v = verkauf(1, "anderes_wg", "15.02.2025", "20.08.2025", 10_000_000, 5_000_000);
+    let r = lauf(&akte(v));
+    erwarte_einreichbar("Wirtschaftsgut", &r);
+    if let Ok(e) = &r {
+        assert_eq!(
+            kz_der_instanz(e, 1),
+            BTreeMap::from([
+                ("E0307101".to_owned(), json!("Testobjekt")),
+                ("E0307201".to_owned(), json!("15.02.2025")),
+                ("E0307202".to_owned(), json!("20.08.2025")),
+                ("E0307701".to_owned(), json!(50_000)),
+            ])
+        );
+    }
+}
+
+/// Die Abschreibung mindert die Anschaffungskosten: 100.000 - (80.000 - 10.000) - 5.000 Werbungskosten = 25.000 EUR. `checkESt`
+/// rechnet den Gewinn aus den Einzelbetraegen nach (Spike AK0); ein anderer Wert wuerde mit rc=610001002 abgewiesen.
+#[test]
+fn der_gewinn_in_der_erklaerung_traegt_die_abschreibung() {
+    let v = verkauf(1, "grundstueck", "15.06.2020", "10.03.2025", 10_000_000, 8_000_000);
+    let v = mit(mit(v, 1, "p23_afa", json!(1_000_000)), 1, "p23_werbungskosten", json!(500_000));
+    let r = lauf(&akte(v));
+    erwarte_einreichbar("AfA", &r);
+    if let Ok(e) = &r {
+        assert_eq!(kz_der_instanz(e, 1).get("E0306801"), Some(&json!(25_000)));
+    }
+}
+
+/// Ein Verlust steht als negativer Gewinn in der Erklaerung (-10.000 EUR) und sperrt nichts.
+#[test]
+fn ein_verlust_steht_negativ_in_der_erklaerung() {
+    let v = verkauf(1, "grundstueck", "15.06.2020", "10.03.2025", 4_000_000, 5_000_000);
+    let r = lauf(&akte(v));
+    erwarte_einreichbar("Verlust", &r);
+    if let Ok(e) = &r {
+        assert_eq!(kz_der_instanz(e, 1).get("E0306801"), Some(&json!(-10_000)));
+    }
+}
+
+/// Ein Gewinn von 0 steht als 0 in der Erklaerung: das Kz ist beim Grundstueck Pflicht (Spike AK0), das Schema erlaubt die 0.
+#[test]
+fn ein_gewinn_von_null_steht_als_null_in_der_erklaerung() {
+    let v = verkauf(1, "grundstueck", "15.06.2020", "10.03.2025", 5_000_000, 5_000_000);
+    let r = lauf(&akte(v));
+    erwarte_einreichbar("Gewinn 0", &r);
+    if let Ok(e) = &r {
+        assert_eq!(kz_der_instanz(e, 1).get("E0306801"), Some(&json!(0)));
+    }
+}
+
+/// Ein steuerpflichtiger Verkauf unter der Freigrenze (600 EUR) steht trotzdem in der Erklaerung: die Freigrenze wendet das
+/// Finanzamt auf die Summe an, die Software meldet den Verkauf.
+#[test]
+fn verkauf_unter_der_freigrenze_steht_in_der_erklaerung() {
+    let v = verkauf(1, "grundstueck", "15.06.2020", "10.03.2025", 1_000_000, 940_000);
+    let r = lauf(&akte(v));
+    erwarte_einreichbar("Freigrenze", &r);
+    if let Ok(e) = &r {
+        assert_eq!(kz_der_instanz(e, 1).get("E0306801"), Some(&json!(600)));
+    }
+}
+
+/// Jeder steuerfreie Verkauf sperrt die Abgabe mit EIGENEM Grund (409 `deklaration_unvollstaendig`): Frist abgelaufen, selbst bewohnt
+/// (beide Arten), taeglicher Gebrauch. Die Liste nennt genau den Verkauf, der Grund die Anlage SO und die Sperre.
+#[test]
+fn steuerfreier_verkauf_sperrt_die_abgabe_mit_eigenem_grund() {
+    let frist = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+    let bewohnt = mit(pflichtig(1), 1, "p23_eigennutzung", json!("ausschliesslich"));
+    let drei_jahre = mit(pflichtig(1), 1, "p23_eigennutzung", json!("letzte_drei_jahre"));
+    let gebrauch = mit(
+        verkauf(1, "anderes_wg", "15.02.2025", "20.08.2025", 10_000_000, 5_000_000),
+        1,
+        "p23_taeglicher_gebrauch",
+        json!(true),
+    );
+    for (name, v) in [
+        ("Frist abgelaufen", frist),
+        ("selbst bewohnt", bewohnt),
+        ("drei Jahre bewohnt", drei_jahre),
+        ("taeglicher Gebrauch", gebrauch),
+    ] {
+        let r = lauf(&akte(v));
+        let e = sperre(&r);
+        assert_eq!(
+            e.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(),
+            ["p23_veraeusserungspreis"],
+            "{name}: die Sperre nennt genau diesen Verkauf, erhalten {r:?}"
+        );
+        let grund = &e.first().unwrap().1;
+        for teil in ["steuerfrei", "Anlage SO", "gesperrt"] {
+            assert!(grund.contains(teil), "{name}: Grund ohne `{teil}`: {grund}");
+        }
+    }
+}
+
+/// Der zweite Verkauf ist steuerfrei, der erste steuerpflichtig: die Sperre nennt den zweiten, mit dem Suffix seiner Instanz.
+#[test]
+fn die_sperre_nennt_den_steuerfreien_verkauf_unter_seiner_instanz() {
+    let mut v = pflichtig(1);
+    v.extend(verkauf(2, "grundstueck", "15.06.2014", "11.03.2025", 10_000_000, 5_000_000));
+    let r = lauf(&akte(v));
+    let e = sperre(&r);
+    assert_eq!(
+        e.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(),
+        ["p23_veraeusserungspreis__2"],
+        "{r:?}"
+    );
+}
+
+/// Was die Software nicht rechnet, sperrt schon VOR der Erklaerung mit dem Grund des Verkaufs (409 `gesperrt`).
+#[test]
+fn kryptowert_und_unvollstaendige_angaben_sperren_vor_der_erklaerung() {
+    let krypto = mit(pflichtig(1), 1, "p23_veraeusserungs_typ", json!("kryptowert"));
+    match lauf(&akte(krypto)) {
+        Err(EinreichFehler::Gesperrt(g)) => assert_eq!(g, Sperrgrund::P23VerkaufNichtGerechnet),
+        anders => panic!("Kryptowert: {anders:?}"),
+    }
+    let ohne_datum: Vec<_> = pflichtig(1)
+        .into_iter()
+        .filter(|(f, _)| f != "p23_veraeusserungsdatum")
+        .collect();
+    match lauf(&akte(ohne_datum)) {
+        Err(EinreichFehler::Gesperrt(g)) => assert_eq!(g, Sperrgrund::P23AngabenOffen),
+        anders => panic!("Datum fehlt: {anders:?}"),
+    }
+}

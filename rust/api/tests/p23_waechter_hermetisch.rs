@@ -1,14 +1,23 @@
 //! § 23 `EStG`: die zwei Waechter gegen den 21.000-EUR-Fehler im Standardlauf (ohne `PARITY=1`, ohne Python).
 //!
 //! Ein Rentner mit privatem Grundstuecksverkauf (Gewinn 50.000 EUR) zahlt 21.000,00 EUR zu viel
-//! festgesetzte Einkommensteuer, wenn weder `flag_konsistenz_offen` noch `einkunftsart_nicht_ring_faehig`
+//! festgesetzte Einkommensteuer, wenn weder `flag_konsistenz_offen` noch der Guard des Verkaufs
 //! greift (Vault `backlog/taxgraph/p23-sonstige-kreuz-kopplung-rentner-reachable`, Audit
 //! `p23-gesperrt-statt-falsch-gerechnet`). Zwei voneinander unabhaengige Waechter fangen den Fall:
 //!
 //! - `FLAG_NEGIERT["kein_p23_verkauf"]` (`rust/konsistenz/src/flag.rs`): Kreuz nie beantwortet oder
 //!   "kein Verkauf" trotz Betraegen -> `flag_konsistenz_offen`;
-//! - `fremd_arten` enthaelt `kein_p23_verkauf` (`rust/bescheid/src/deklaration.rs`, Scheiben `gesamt`
-//!   und `rentner_gesamt`): Kreuz bejaht -> `einkunftsart_nicht_ring_faehig`.
+//! - `p23_sperrgrund` (`rust/bescheid/src/privatverkauf.rs`, aufgerufen in `sperre/gesamt.rs`, Scheiben `gesamt`
+//!   und `rentner_gesamt`): Kreuz bejaht -> der Verkauf wird gerechnet (`p23_befreiungen_hermetisch.rs`) oder
+//!   sperrt mit `p23_angaben_offen` / `p23_verkauf_nicht_gerechnet`.
+//!
+//! UMBAU Abweichung Nr. 54 (2026-10-10): bis dahin sperrte `fremd_arten` jeden bejahten Verkauf mit
+//! `einkunftsart_nicht_ring_faehig` (R2, R6, Z2, G1, G7). Der Verkauf dieses Tests hat bewusst nur die vier alten
+//! Felder, also weder Daten noch Eigennutzung: eine unvollstaendige Angabe. Sie sperrt jetzt mit `p23_angaben_offen`
+//! (Z2, Ehepaar: `p23_verkauf_nicht_gerechnet`). Ein VOLLSTAENDIGER Verkauf rechnet und steht in
+//! `p23_befreiungen_hermetisch.rs`. R1, R3-R5, Z1, G3, G5, G6 (das Kreuz) bleiben unveraendert und sind die Gegenprobe des
+//! ersten Waechters. Die Mutanten M2a/M2b (`fremd_arten` ohne `kein_p23_verkauf`) gibt es nicht mehr; ihr Gegenstueck ist
+//! das Streichen von `p23_sperrgrund` aus `gesamt_guard` (macht R2, R6, Z2, G1, G7 rot).
 //!
 //! Beide Rust-Waechter sind da und tragen. Ihre Gegenprobe lief bisher nur im Differenz-Harness
 //! (`rust/parity/tests/bescheid_deklaration_paritaet.rs`, `api_http_paritaet.rs`) und damit nur mit
@@ -21,7 +30,9 @@
 //! HERKUNFT DER ERWARTUNGSWERTE: jede Zahl und jeder Grund unten ist die Ausgabe des Python-Servers
 //! (`server.py`, HEAD 57944f48, 2026-10-03, Sonde `sonde_angepasst.py`, dieselben Events ueber
 //! `POST /fall/{id}/event`): R0 5.917.000, Z0 4.824.200, G0 7.255.600 Cent. Kein Wert ist aus dem
-//! Rust-Code abgelesen. Dieselben Zahlen stehen im Vault-Eintrag (59.170,00 EUR / 72.556,00 EUR).
+//! Rust-Code abgelesen. Dieselben Zahlen stehen im Vault-Eintrag (59.170,00 EUR / 72.556,00 EUR). Die Gruende `p23_angaben_offen`
+//! und `p23_verkauf_nicht_gerechnet` (R2, R6, Z2, G1, G7) gibt es in Python nicht: sie sind Entwurf von Nr. 54, ihr Gegenstueck
+//! im Orakel sperrt mit `einkunftsart_nicht_ring_faehig`.
 //! Ohne Waechter kaeme je Verkaufsfall Baseline + 2.100.000 Cent (R1 8.017.000, G1 9.355.600; Python-
 //! Mutationsproben M1/M2a/M2b, gleicher Tag); die Fehlermeldung dieser Tests rechnet diese Differenz aus.
 //!
@@ -32,8 +43,8 @@
 //! `FLAG_NEGIERT` findet ihn ueber `instanz_feld_ids_text` (Basis plus `basis__<n>`); sonst liefe ein
 //! Verkauf in der zweiten Zaehl-Instanz still durch. R4/R5 (`rentner_gesamt`) sind die Python-Werte aus
 //! derselben Sonde (`flag_konsistenz_offen`, beide ohne Zahl). R6 und G5-G7 haben keinen eigenen Python-Lauf:
-//! G5/G6 sind G3/G4 der Sonde mit `__2` statt Basisnamen, R6/G7 laufen ueber `fremd_arten`, das nur das
-//! Kreuz liest und kein p23-Feld. Gemessen am 2026-10-07 auf 26e9395a: `instanz_feld_ids_text` ohne den
+//! G5/G6 sind G3/G4 der Sonde mit `__2` statt Basisnamen, R6/G7 laufen ueber `p23_sperrgrund`, der jede
+//! Instanz der Gruppe liest (seit Nr. 54; vorher `fremd_arten`, das nur das Kreuz las). Gemessen am 2026-10-07 auf 26e9395a: `instanz_feld_ids_text` ohne den
 //! Instanz-Zweig und `ist_instanz_suffix` ohne die Ziffer 2 machen genau R4, R5, G5, G6 rot; die zehn
 //! Tests mit Basisnamen bleiben gruen. Die Unit-Tests in `konsistenz` fangen beide Mutanten auf
 //! Funktionsebene; neu ist der Pin ueber die Route (`GET /ergebnis`).
@@ -68,7 +79,10 @@ const Z0: i64 = 4_824_200;
 const G0: i64 = 7_255_600;
 
 const FLAG_NIE_GEFRAGT: &str = "flag_konsistenz_offen";
-const FLAG_BEJAHT: &str = "einkunftsart_nicht_ring_faehig";
+/// Kreuz bejaht, aber der Verkauf ist unvollstaendig (keine Daten, keine Eigennutzung): Nr. 54, vorher `einkunftsart_nicht_ring_faehig`.
+const ANGABEN_OFFEN: &str = "p23_angaben_offen";
+/// Ehepaar mit Verkauf: nicht gerechnet (Nr. 54).
+const NICHT_GERECHNET: &str = "p23_verkauf_nicht_gerechnet";
 
 type Paare = Vec<(&'static str, Value)>;
 
@@ -314,15 +328,15 @@ async fn r1_rentner_verkauf_kreuz_nie_gefragt_sperrt_flag_konsistenz_offen() {
     erwarte_sperre("R1", &a, FLAG_NIE_GEFRAGT, R0);
 }
 
-/// Der ehrliche Verkaeufer: Kreuz bejaht. Faengt `fremd_arten` von `rentner_gesamt`.
+/// Der ehrliche Verkaeufer: Kreuz bejaht, der Verkauf ohne Daten. Faengt `p23_sperrgrund` in `rentner_gesamt`.
 #[tokio::test]
-async fn r2_rentner_verkauf_bejaht_sperrt_einkunftsart_nicht_ring_faehig() {
+async fn r2_rentner_verkauf_bejaht_aber_unvollstaendig_sperrt_p23_angaben_offen() {
     let a = ergebnis(
         "rentner_gesamt",
         &akte(kegel_rentner("einzel"), Some(false), true),
     )
     .await;
-    erwarte_sperre("R2", &a, FLAG_BEJAHT, R0);
+    erwarte_sperre("R2", &a, ANGABEN_OFFEN, R0);
 }
 
 /// Kreuz "kein Verkauf" trotz Betraegen: der Widerspruch. Faengt `FLAG_NEGIERT`.
@@ -359,15 +373,15 @@ async fn r5_rentner_kreuz_nie_gefragt_verkauf_nur_unter_zaehl_2_sperrt_flag_kons
     erwarte_sperre("R5", &a, FLAG_NIE_GEFRAGT, R0);
 }
 
-/// Zaehl-Instanz `__2`, Kreuz bejaht: `fremd_arten` liest nur das Kreuz, nicht den Ort des Betrags.
+/// Zaehl-Instanz `__2`, Kreuz bejaht: `p23_sperrgrund` liest die Instanz `__2` wie die erste.
 #[tokio::test]
-async fn r6_rentner_kreuz_bejaht_verkauf_nur_unter_zaehl_2_sperrt_einkunftsart_nicht_ring_faehig() {
+async fn r6_rentner_kreuz_bejaht_verkauf_nur_unter_zaehl_2_sperrt_p23_angaben_offen() {
     let a = ergebnis(
         "rentner_gesamt",
         &akte_zaehl_2(kegel_rentner("einzel"), Some(false)),
     )
     .await;
-    erwarte_sperre("R6", &a, FLAG_BEJAHT, R0);
+    erwarte_sperre("R6", &a, ANGABEN_OFFEN, R0);
 }
 
 // ---- Rentner, zusammen ----------------------------------------------------------------------------
@@ -399,13 +413,13 @@ async fn z1_rentner_zusammen_verkauf_kreuz_nie_gefragt_sperrt_flag_konsistenz_of
 }
 
 #[tokio::test]
-async fn z2_rentner_zusammen_verkauf_bejaht_sperrt_einkunftsart_nicht_ring_faehig() {
+async fn z2_rentner_zusammen_verkauf_bejaht_sperrt_p23_verkauf_nicht_gerechnet() {
     let a = ergebnis(
         "rentner_gesamt",
         &akte(kegel_rentner_zusammen(), Some(false), true),
     )
     .await;
-    erwarte_sperre("Z2", &a, FLAG_BEJAHT, Z0);
+    erwarte_sperre("Z2", &a, NICHT_GERECHNET, Z0);
 }
 
 // ---- gesamt ---------------------------------------------------------------------------------------
@@ -416,12 +430,12 @@ async fn g0_gesamt_ohne_verkauf_rechnet_7_255_600() {
     erwarte_zahl("G0", &a, G0);
 }
 
-/// Ehrliches Ja auf `gesamt`; `kein_sonstige = true` (der Nutzer trennt die Fragen). Nur `kein_p23_verkauf`
-/// in `fremd_arten` faengt das -- `kein_sonstige` steht auf "nein" und sperrt nicht.
+/// Ehrliches Ja auf `gesamt`; `kein_sonstige = true` (der Nutzer trennt die Fragen). Nur `p23_sperrgrund` faengt das,
+/// `kein_sonstige` steht auf "nein" und sperrt nicht (seit Nr. 54 auch `fremd_arten` nicht mehr fuer den Verkauf).
 #[tokio::test]
-async fn g1_gesamt_verkauf_bejaht_sperrt_einkunftsart_nicht_ring_faehig() {
+async fn g1_gesamt_verkauf_bejaht_aber_unvollstaendig_sperrt_p23_angaben_offen() {
     let a = ergebnis("gesamt", &akte(kegel_gesamt(), Some(false), true)).await;
-    erwarte_sperre("G1", &a, FLAG_BEJAHT, G0);
+    erwarte_sperre("G1", &a, ANGABEN_OFFEN, G0);
 }
 
 #[tokio::test]
@@ -444,9 +458,9 @@ async fn g6_gesamt_kreuz_verneint_verkauf_nur_unter_zaehl_2_sperrt_flag_konsiste
     erwarte_sperre("G6", &a, FLAG_NIE_GEFRAGT, G0);
 }
 
-/// Zaehl-Instanz `__2` auf `gesamt`, Kreuz bejaht: nur `fremd_arten` faengt es (`kein_sonstige` = "nein").
+/// Zaehl-Instanz `__2` auf `gesamt`, Kreuz bejaht: nur `p23_sperrgrund` faengt es (`kein_sonstige` = "nein").
 #[tokio::test]
-async fn g7_gesamt_kreuz_bejaht_verkauf_nur_unter_zaehl_2_sperrt_einkunftsart_nicht_ring_faehig() {
+async fn g7_gesamt_kreuz_bejaht_verkauf_nur_unter_zaehl_2_sperrt_p23_angaben_offen() {
     let a = ergebnis("gesamt", &akte_zaehl_2(kegel_gesamt(), Some(false))).await;
-    erwarte_sperre("G7", &a, FLAG_BEJAHT, G0);
+    erwarte_sperre("G7", &a, ANGABEN_OFFEN, G0);
 }

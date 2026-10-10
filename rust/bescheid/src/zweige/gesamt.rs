@@ -31,8 +31,9 @@ use super::{gesamt_tarif, slot, Marke, Ring, VeranlagungWert};
 use crate::abzuege::{p33b_kind_pauschbetraege, shared_steuer_sonder_agb};
 use crate::einkuenfte::{
     dba_abzug_werbungskosten, gewinn_partner_anteil, laufender_gewinn, p20_kapitaleinkuenfte,
-    p23_ansonsten_einkuenfte, p35_summen, progressionseinkuenfte, shared_dba_sonstige,
+    p35_summen, progressionseinkuenfte, shared_dba_sonstige,
 };
+use crate::privatverkauf::p23_privatverkauf;
 use crate::{
     cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_false, ist_true, py_int, summe,
     wert, zahl_int, BescheidFehler, Felder,
@@ -503,7 +504,7 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
     g.aussergewoehnliche_belastungen = s.aussergewoehnliche_belastungen;
     let kapitaleinkuenfte = p20_kapitaleinkuenfte(f, zusammen, vz, p)?;
     // § 23 + § 22 Nr. 3 in einkuenfte_sonstige; der KiSt-Ueberhang laeuft mangels Slot dort mit.
-    g.einkuenfte_sonstige = add(p23_ansonsten_einkuenfte(&q)?, nr3_euro(f)?)?;
+    g.einkuenfte_sonstige = add(p23_privatverkauf(&q, vz, p)?, nr3_euro(f)?)?;
     g.einkuenfte_sonstige = add(g.einkuenfte_sonstige, ueberhang)?;
     // § 10d Abs. 2 Verlustvortrag, § 33a, DBA (§ 34c): auf der vollen GdE.
     let gde_p10d = gesamt_gde(&gde_fall(&g), p)?;

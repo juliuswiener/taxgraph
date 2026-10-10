@@ -1,0 +1,21 @@
+# Freigrenze der privaten Veräußerungsgeschäfte nach § 23 Abs. 3 Satz 5 EStG (Abweichung Nr. 54 in rust/fixtures/README.md).
+# Veranlagungszeitraum 2024. Wortlaut: "Gewinne bleiben steuerfrei, wenn der aus den privaten Veräußerungsgeschäften erzielte
+# Gesamtgewinn im Kalenderjahr weniger als 1 000 Euro betragen hat." Es ist eine Freigrenze: ab 1.000 Euro ist der GANZE
+# Gesamtgewinn steuerpflichtig, nicht nur der Teil darüber.
+# Quelle: sources/gesetze-im-internet/estg_p23_2024-12-23.txt. Fassung bis 31.12.2024 (Archivkopie der amtlichen Seite vom 2024-12-23).
+# Die Zahl stammt aus diesem Wortlaut, nicht aus dem Gedächtnis (Vault: decisions/privatverkauf-wird-in-stufen-gebaut-hauptperson-zuerst-krypto-und-ehegatte-bleiben-gesperrt,
+# Punkt 6). Dass die Datei den Wortlaut wiedergibt, prüft rust/bindung/tests/privatverkauf_werte_gegen_gesetz.rs bei jedem Lauf.
+# Die Fassungen bis 31.12.2024, bis 31.12.2025 und die Abrufkopie 2026 sind wortgleich (gemessen 2026-10-10).
+
+parameter: privatverkauf_p23
+veranlagungszeitraum: 2024
+authority: gesetz
+redistributable: true
+gueltig_ab: "2024-01-01"
+
+freigrenze:
+  wert: 1000
+  einheit: euro
+  veranlagungszeitraum: 2024
+  rechtsquelle: {gesetz: "EStG", paragraph: "23", absatz: "3", satz: "5"}
+  datenquelle: "§ 23 Abs. 3 Satz 5 EStG: gesamtgewinn im Kalenderjahr weniger als 1 000 Euro, sources/gesetze-im-internet/estg_p23_2024-12-23.txt (Wortlaut, alle drei Fassungen gleich)"

@@ -105,6 +105,32 @@ const DBA_EINKUENFTE: &str = "dba_auslaendische_einkuenfte";
 /// (26 Texte gemessen, alle rc=0): die Gegenprobe gegen die Liste steht in `bescheid/tests/dba_staat_kz.rs`.
 pub(crate) const STAAT_KZ: &str = "E0600301";
 
+/// Abweichung Nr. 54: Instanz-Felder des Privatverkaufs, deren Kz vom Wert des Art-Felds ([`P23_ART_FELD`]) abhaengt.
+/// Gemessen am `checkESt`-Spike AK0: beim Grundstueck sind Bezeichnung, beide Daten und der Gewinn Pflicht, beim anderen
+/// Wirtschaftsgut nur die Art (E0307101) und der Gewinn; die Daten E0307201/E0307202 sind dort freiwillig, `TaxGraph` schreibt sie.
+pub(crate) const P23_ARTFELDER: &[(&str, &[(&str, &str)])] = &[
+    (
+        "p23_bezeichnung",
+        &[("grundstueck", "E0306111"), ("anderes_wg", "E0307101")],
+    ),
+    (
+        "p23_anschaffungsdatum",
+        &[("grundstueck", "E0306201"), ("anderes_wg", "E0307201")],
+    ),
+    (
+        "p23_veraeusserungsdatum",
+        &[("grundstueck", "E0306202"), ("anderes_wg", "E0307202")],
+    ),
+];
+
+/// Abweichung Nr. 54: Rechenfelder des Privatverkaufs ohne Kz (Eigennutzung, taeglicher Gebrauch, Einkunftsquelle). Sie entscheiden,
+/// ob ein Verkauf steuerpflichtig ist; die Erklaerung traegt nur steuerpflichtige Verkaeufe (Abgabe-Sperre in `bescheid`).
+pub(crate) const P23_RECHENFELDER: &[&str] = &[
+    "p23_eigennutzung",
+    "p23_taeglicher_gebrauch",
+    "p23_einkunftsquelle",
+];
+
 /// Die 15 benannten Bindungswerte von `dba_staat` und ihr Text in der Laenderliste. 12 sind gleich, `Oesterreich`, `Tschechien` und
 /// `Grossbritannien` weichen ab. `sonstiger_staat` hat keinen Eintrag und sperrt ([`STAAT_SPERRE`]).
 const DBA_STAAT_LISTENTEXT: &[(&str, &str)] = &[
@@ -820,9 +846,8 @@ impl Bau<'_> {
                     }
                 }
             }
-        } else if let Some(p23) = P23_BETRAGSFELDER.iter().find(|f| **f == basis) {
-            let n = py::int(wert).map_err(&fehler)?;
-            self.instanz(gruppe, idx).rohdaten.insert(p23, n);
+        } else if self.p23_feld(idx, basis, feld_id, wert, b)? {
+            // Abweichung Nr. 54: Feld eines Privatverkaufs, `p23_feld` hat es geschrieben oder bewusst uebergangen.
         } else if let (SCHULGELD_ANTEIL, Some(kz)) = (basis, kz_von(b)) {
             if self.schulgeld_anteil_gehoert_ins_xml(feld_id, wert)? {
                 let null_kz = self.null_kz;
@@ -1036,9 +1061,8 @@ impl Bau<'_> {
         } else if let Some(kz) = kz_von(b) {
             schreibe_kz(&mut self.deklaration, kz, wert, Some(b.typ), self.null_kz)
                 .map_err(&fehler)?;
-        } else if let Some(p23) = P23_BETRAGSFELDER.iter().find(|f| **f == feld_id) {
-            let n = py::int(wert).map_err(&fehler)?;
-            self.instanz("p23_veraeusserung", 1).rohdaten.insert(p23, n);
+        } else if self.p23_feld(1, feld_id, feld_id, wert, b)? {
+            // Abweichung Nr. 54: Feld des ersten Privatverkaufs, `p23_feld` hat es geschrieben oder bewusst uebergangen.
         } else {
             let grund = b
                 .elster_kz_grund
@@ -1424,7 +1448,64 @@ impl Bau<'_> {
         out
     }
 
-    /// § 23 Gewinn je Instanz = Preis − AK/HK − WK, dann an die Kz des Veraeusserungstyps.
+    /// Abweichung Nr. 54: ein Feld der Privatverkaufs-Instanz `idx` (Betrag, Bezeichnung, Datum oder Rechenfeld). `false`: `basis` gehoert
+    /// nicht dazu. Betraege gehen in die `rohdaten` (der Gewinn entsteht in [`Bau::p23_gewinn`]), Bezeichnung und Daten an das Kz der Art,
+    /// die Rechenfelder (Eigennutzung, taeglicher Gebrauch, Einkunftsquelle) schreiben nichts: `bescheid::privatverkauf` liest sie.
+    fn p23_feld(
+        &mut self,
+        idx: u64,
+        basis: &str,
+        feld_id: &str,
+        wert: &PyWert,
+        b: &Bindung,
+    ) -> Ergebnis<bool> {
+        if let Some(p23) = P23_BETRAGSFELDER.iter().find(|f| **f == basis) {
+            let n = py::int(wert).map_err(wert_fehler(feld_id))?;
+            self.instanz("p23_veraeusserung", idx).rohdaten.insert(p23, n);
+        } else if let Some((_, tabelle)) = P23_ARTFELDER.iter().find(|(f, _)| *f == basis) {
+            self.p23_artfeld(idx, feld_id, wert, b, tabelle)?;
+        } else {
+            return Ok(P23_RECHENFELDER.contains(&basis));
+        }
+        Ok(true)
+    }
+
+    /// Abweichung Nr. 54: ein Textfeld oder Datum des Privatverkaufs an das Kz seiner Art (Grundstueck, anderes Wirtschaftsgut).
+    /// Ohne bestaetigte Art bleibt der Kz-Zweig offen; Kryptowert und Beteiligung haben keinen Zweig (die Berechnung sperrt vorher).
+    fn p23_artfeld(
+        &mut self,
+        idx: u64,
+        feld_id: &str,
+        wert: &PyWert,
+        b: &Bindung,
+        tabelle: &[(&str, &str)],
+    ) -> Ergebnis<()> {
+        let fehler = wert_fehler(feld_id);
+        let art_feld = if idx == 1 {
+            P23_ART_FELD.to_owned()
+        } else {
+            format!("{P23_ART_FELD}__{idx}")
+        };
+        let Some(art) = self
+            .snapshot
+            .get(&art_feld)
+            .filter(|a| a.zustand == Zustand::Bestaetigt)
+        else {
+            self.offen(feld_id, format!("{art_feld} unbestätigt — Kz-Zweig offen"));
+            return Ok(());
+        };
+        if let Some(kz) = nachschlagen(tabelle, &art.wert).map_err(&fehler)? {
+            let null_kz = self.null_kz;
+            let felder = &mut self.instanz("p23_veraeusserung", idx).felder;
+            schreibe_kz(felder, kz, wert, Some(b.typ), null_kz).map_err(&fehler)?;
+        } else {
+            let grund = format!("p23-Typ '{}' ohne Kz-Zweig", art.wert.py_str());
+            self.nicht(feld_id, grund);
+        }
+        Ok(())
+    }
+
+    /// § 23 Gewinn je Instanz = Preis − (AK/HK − `AfA`) − WK (Abs. 3 S. 1 und 4), dann an die Kz des Veraeusserungstyps.
     fn p23_gewinn(&mut self) -> Ergebnis<()> {
         const GRUPPE: &str = "p23_veraeusserung";
         let Some(gruppe) = self.instanzen.get(&GRUPPE.to_owned()) else {
@@ -1433,16 +1514,18 @@ impl Bau<'_> {
         // GEWOLLTE ABWEICHUNG von Python (Korrektheit vor Paritaet): Python rechnet die Differenz
         // exakt (Preis 0, AK = WK = 9e18 ct ergibt -1,8e19 ct). Ausserhalb von `i64` meldet Rust
         // `Ueberlauf` (HTTP 422) statt zu rechnen; `wrapping_sub` kippte dort das Vorzeichen
-        // (+446744073709551616 ct statt eines Verlusts). Ueber HTTP heute nicht erreichbar: der
-        // Guard sperrt jede § 23-Eingabe vor `deklariere()` mit 409. Darum kein Parity-Eintrag.
+        // (+446744073709551616 ct statt eines Verlusts). Ueber HTTP seit Abweichung Nr. 54 hoechstens
+        // nach dem Guard erreichbar: `bescheid::privatverkauf` rechnet denselben Gewinn vorher in Cent
+        // mit `i128` und meldet einen Ueberlauf als Fehler. Darum kein Parity-Eintrag.
         let gewinne = gruppe
             .schluessel()
             .iter()
             .filter_map(|idx| gruppe.get(idx).map(|inst| (*idx, inst)))
             .map(|(idx, inst)| {
                 let roh = |k: &str| inst.rohdaten.get(k).copied().unwrap_or(0);
-                let gewinn = roh("p23_veraeusserungspreis")
-                    .checked_sub(roh("p23_anschaffung_herstellungskosten"))
+                let gewinn = roh("p23_anschaffung_herstellungskosten")
+                    .checked_sub(roh("p23_afa"))
+                    .and_then(|kosten| roh("p23_veraeusserungspreis").checked_sub(kosten))
                     .and_then(|d| d.checked_sub(roh("p23_werbungskosten")))
                     .ok_or_else(|| DeklarationsFehler::Ueberlauf {
                         feld_id: format!("p23_veraeusserung__{idx}"),
@@ -1452,9 +1535,8 @@ impl Bau<'_> {
             })
             .collect::<Ergebnis<Vec<(u64, i64)>>>()?;
         for (idx, gewinn) in gewinne {
-            if gewinn == 0 {
-                continue;
-            }
+            // Abweichung Nr. 54: auch ein Gewinn von 0 steht in der Erklaerung. Bezeichnung und beide Daten sind jetzt Teil der Zeile,
+            // und `checkESt` verlangt beim Grundstueck dann den Gewinn (Spike AK0, Pflicht-Kz E0306801); ohne die Zeile fehlte er.
             let art_feld = if idx == 1 {
                 P23_ART_FELD.to_owned()
             } else {
@@ -1517,7 +1599,7 @@ impl Bau<'_> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{BTreeSet, HashMap};
+    use std::collections::{BTreeMap, BTreeSet, HashMap};
     use std::path::Path;
 
     use domain::{Achsenwert, Herkunft, Konfession, PruefTiefe, Rentenart};
@@ -2422,12 +2504,96 @@ mod tests {
         assert_eq!(codes, 6, "gepruefte Codes");
     }
 
+    /// Abweichung Nr. 54: Bezeichnung und beide Daten eines Privatverkaufs stehen unter dem Kz seiner Art, der Gewinn nach AfA-Minderung
+    /// der Kosten unter dem Gewinn-Kz; die Rechenfelder (Eigennutzung, taeglicher Gebrauch, Einkunftsquelle) schreiben nichts. Jedes
+    /// der sechs Kz-Literale von `P23_ARTFELDER` steht hier mit seinem Wert: ein anderes Literal macht den Test rot (Regal: `Verhalten`).
+    /// Gemessen am `checkESt`-Spike AK0 (`bescheid/tests/checkest_privatverkauf_spike.rs`).
+    #[test]
+    fn privatverkauf_schreibt_bezeichnung_und_daten_an_das_kz_der_art() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        // Zwei Verkaeufe: Instanz 1 ein Grundstueck (ohne Suffix), Instanz 2 ein anderes Wirtschaftsgut (`__2`).
+        let mut felder = Felder::new();
+        for (suffix, typ, name, kauf, verkauf) in [
+            ("", "grundstueck", "Wohnung Musterstrasse 1", "15.06.2020", "10.03.2025"),
+            ("__2", "anderes_wg", "Goldbarren", "01.02.2025", "20.08.2025"),
+        ] {
+            for (f, w) in [
+                ("p23_veraeusserungs_typ", json!(typ)),
+                ("p23_bezeichnung", json!(name)),
+                ("p23_anschaffungsdatum", json!(kauf)),
+                ("p23_veraeusserungsdatum", json!(verkauf)),
+                ("p23_veraeusserungspreis", json!(20_000_000)),
+                ("p23_anschaffung_herstellungskosten", json!(15_000_000)),
+                ("p23_afa", json!(1_000_000)),
+                ("p23_werbungskosten", json!(500_000)),
+                ("p23_eigennutzung", json!("nein")),
+                ("p23_taeglicher_gebrauch", json!(false)),
+                ("p23_einkunftsquelle", json!(false)),
+            ] {
+                felder.insert(format!("{f}{suffix}"), feld(w));
+            }
+        }
+        let d = deklariere(&felder, &index, 2025, None).unwrap();
+        let (gruppe, instanzen) = &d.anlage_instanzen[0];
+        assert_eq!(gruppe, "p23_veraeusserung");
+        assert_eq!(instanzen.len(), 2);
+        // 200.000 - (150.000 - 10.000) - 5.000 = 55.000 EUR in beiden Verkaeufen.
+        let grundstueck: BTreeMap<_, _> = instanzen[0].felder.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+        assert_eq!(
+            grundstueck,
+            BTreeMap::from([
+                ("E0306111", json!("Wohnung Musterstrasse 1")),
+                ("E0306201", json!("15.06.2020")),
+                ("E0306202", json!("10.03.2025")),
+                ("E0306801", json!(55_000)),
+            ])
+        );
+        let wirtschaftsgut: BTreeMap<_, _> = instanzen[1].felder.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+        assert_eq!(
+            wirtschaftsgut,
+            BTreeMap::from([
+                ("E0307101", json!("Goldbarren")),
+                ("E0307201", json!("01.02.2025")),
+                ("E0307202", json!("20.08.2025")),
+                ("E0307701", json!(55_000)),
+            ])
+        );
+        // Die Rechenfelder erzeugen weder eine Luecke noch einen Eintrag "nicht deklariert"; nur das Art-Feld selbst steht dort (wie vorher).
+        assert!(d.eingaben_konsistent(), "{:?}", d.unvollstaendig());
+        let fremd: Vec<&str> = d
+            .nicht_deklariert
+            .iter()
+            .map(|e| e.feld_id.as_str())
+            .filter(|f| f.starts_with("p23_") && !f.starts_with("p23_veraeusserungs_typ"))
+            .collect();
+        assert!(fremd.is_empty(), "{fremd:?}");
+    }
+
     /// § 23-Gewinn = Preis − AK/HK − WK ausserhalb von `i64`: Fehler statt Umbruch.
     ///
     /// GEWOLLTE ABWEICHUNG von Python, das exakt rechnet. Mit `wrapping_sub` ergab Preis 0 bei
     /// AK = WK = 9e18 ct **+446744073709551616** ct statt eines Verlusts von 1,8e19 ct (das
-    /// Vorzeichen kippte). Ueber HTTP ist die Stelle nicht erreichbar (der Guard sperrt § 23 mit
-    /// 409, bericht h8-casts), darum der Test auf Funktionsebene.
+    /// Vorzeichen kippte). Ueber HTTP ist die Stelle nicht erreichbar (bericht h8-casts: damals
+    /// sperrte der Guard § 23 mit 409; seit Abweichung Nr. 54 rechnet `bescheid::privatverkauf`
+    /// den Gewinn vorher in `i128` und meldet den Ueberlauf), darum der Test auf Funktionsebene.
     #[test]
     fn p23_gewinn_ausserhalb_i64_ist_ein_fehler_statt_umbruch() {
         use super::DeklarationsFehler;

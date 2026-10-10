@@ -88,6 +88,12 @@ pub enum Sperrgrund {
     LohnersatzBetragOffen,
     LufEuerOffen,
     P164GateOffen,
+    /// Rust-eigen (Nr. 54, `p23_angaben_offen`): ein privater Verkauf ist bejaht, aber eine Angabe dazu fehlt oder passt nicht
+    /// (Art, Daten, Eigennutzung, Preis, Anschaffungskosten und `AfA`). Der Nutzer kann sie nachtragen. Python kennt den Grund nicht.
+    P23AngabenOffen,
+    /// Rust-eigen (Nr. 54, `p23_verkauf_nicht_gerechnet`): ein privater Verkauf, den die Software bewusst nicht rechnet
+    /// (Kryptowerte, Beteiligung, Verkauf bei Zusammenveranlagung, nur teilweise Eigennutzung). Python kennt den Grund nicht.
+    P23VerkaufNichtGerechnet,
     P32bKombiOffen,
     P35cDoppelfoerderungOffen,
     /// Rust-eigen (Nr. 52, `partner_einkunftsart_nicht_ring_faehig`): der Ehegatte hat bei Zusammenveranlagung "sonstige
@@ -177,6 +183,8 @@ impl Sperrgrund {
             Self::P164GateOffen => "p16_4_gate_offen",
             Self::P32bKombiOffen => "p32b_kombi_offen",
             Self::P35cDoppelfoerderungOffen => "p35c_doppelfoerderung_offen",
+            Self::P23AngabenOffen => "p23_angaben_offen",
+            Self::P23VerkaufNichtGerechnet => "p23_verkauf_nicht_gerechnet",
             Self::PartnerEinkunftsartNichtRingFaehig => "partner_einkunftsart_nicht_ring_faehig",
             Self::PartnerKegelOffen => "partner_kegel_offen",
             Self::PartnerKonsistenzOffen => "partner_konsistenz_offen",
@@ -234,7 +242,7 @@ impl Sperrgrund {
             Self::EinkunftsartNichtRingFaehig => Some("Du hast angegeben, dass du eine Einkunftsart hast, die in dieser Berechnung noch nicht mitgerechnet werden kann — je nach Fall Renten und andere sonstige Einkünfte, Einnahmen aus Vermietung, Kapitalerträge, Gewinn aus einem Betrieb oder der Verkauf eines Grundstücks oder eines anderen Vermögensgegenstands. Ein Ergebnis ohne diese Einkünfte wäre zu niedrig, deshalb rechnet die Software hier nicht weiter."),
             Self::EngineUnavailable => Some("Alle nötigen Angaben liegen vor, aber der Rechenkern liefert für diesen Fall gerade kein Ergebnis. Das liegt an der Software, nicht an deinen Angaben. Bitte versuche es später noch einmal, und melde den Fall, wenn er bestehen bleibt."),
             Self::FahrtkostenpauschaleOffen => Some("Für die Fahrtkostenpauschale bei Behinderung fehlt noch eine Antwort: ob du eines der Merkzeichen aG, Bl, TBl oder H hast, oder ob dein Grad der Behinderung mindestens 80 beträgt (oder mindestens 70 mit Merkzeichen G). Bitte beantworte die Fragen, auch wenn die Antwort „nein“ ist."),
-            Self::FlagKonsistenzOffen => Some("Zwei Angaben passen nicht zusammen: Bei einer Einkunftsart hast du angegeben, dass du sie nicht hast, und an anderer Stelle trotzdem einen Betrag dazu eingetragen. Es geht um eine der vier Fragen, ob du Gewinneinkünfte, Kapitalerträge, Einnahmen aus Vermietung oder sonstige Einkünfte wie Renten hast. Bitte sieh dir an, welche der beiden Angaben stimmt."),
+            Self::FlagKonsistenzOffen => Some("Zwei Angaben passen nicht zusammen: Bei einer Einkunftsart hast du angegeben, dass du sie nicht hast, und an anderer Stelle trotzdem einen Betrag dazu eingetragen. Es geht um eine der vier Fragen, ob du Gewinneinkünfte, Kapitalerträge, Einnahmen aus Vermietung oder sonstige Einkünfte hast. Zu den sonstigen Einkünften zählen Renten und der private Verkauf eines Grundstücks oder eines anderen Gegenstands. Bitte sieh dir an, welche der beiden Angaben stimmt."),
             Self::GewinnAngabenOffen => Some("Du hast angegeben, dass du Gewinneinkünfte hast. Es fehlen noch Angaben zu deiner Einnahmen-Überschuss-Rechnung: Betriebseinnahmen, sonstige Betriebsausgaben oder Abschreibungen. Trag bei jeder dieser Angaben einen Betrag ein, auch wenn er 0 € ist. Oder gib deinen Gewinn direkt als Gesamtbetrag an."),
             Self::GewinnQuelleOffen => Some("Deinen Gewinn hast du auf zwei Wegen angegeben: einmal als fertigen Betrag und einmal aufgeteilt in Betriebseinnahmen, Betriebsausgaben und Abschreibungen. Welcher der beiden gilt, kann die Software nicht raten. Bitte lass einen der beiden Wege stehen."),
             Self::GewstHebesatzOffen => Some("Zu deinem Gewerbebetrieb fehlt der Hebesatz deiner Gemeinde, oder er steht auf 0 oder darunter. Ein Hebesatz von 0 oder darunter ist nicht möglich, jede Gemeinde muss einen Mindestsatz erheben. Ohne ihn lässt sich nicht berechnen, wie viel Gewerbesteuer auf deine Einkommensteuer angerechnet wird. Den Hebesatz findest du auf deinem Gewerbesteuerbescheid oder auf der Internetseite deiner Gemeinde."),
@@ -257,6 +265,8 @@ impl Sperrgrund {
             Self::P164GateOffen => Some("Es ist ein Gewinn aus dem Verkauf oder der Aufgabe eines Betriebs angegeben — bei dir oder bei deinem Partner. Dafür gibt es einen Freibetrag, aber nur unter zwei Bedingungen: Die betreffende Person ist mindestens 55 Jahre alt oder dauernd berufsunfähig, und sie hat diesen Freibetrag noch nie in Anspruch genommen. Bitte beantworte beide Fragen."),
             Self::P32bKombiOffen => Some("Du hast Lohnersatzleistungen wie Eltern-, Kranken- oder Arbeitslosengeld angegeben und zusätzlich einen Betriebsverkauf, Gewerbesteuer oder ausländische Einkünfte. Diese Kombination rechnet die Software noch nicht: Lohnersatzleistungen erhöhen den Steuersatz, und wie sich das mit den anderen Ermäßigungen verzahnt, ist offen. Dieser Fall braucht steuerliche Beratung."),
             Self::P35cDoppelfoerderungOffen => Some("Zu deiner energetischen Sanierung fehlt noch die Antwort, ob du dafür schon anderweitig gefördert wurdest — etwa durch öffentliche Zuschüsse oder weil du dieselben Kosten bereits als Handwerkerleistung geltend machst. In diesen Fällen entfällt die Steuerermäßigung ganz. Bitte beantworte diese Frage, auch wenn keine andere Förderung vorliegt."),
+            Self::P23AngabenOffen => Some("Du hast einen privaten Verkauf angegeben. Zu diesem Verkauf fehlt noch eine Angabe, oder zwei Angaben passen nicht zusammen: die Art des Verkaufs, das Kaufdatum und das Verkaufsdatum (das Verkaufsdatum muss im Steuerjahr liegen und darf nicht vor dem Kaufdatum liegen), bei einem Grundstück ob du es selbst bewohnt hast, bei einem anderen Gegenstand ob du ihn täglich gebraucht oder daraus Einkünfte erzielt hast, der Verkaufspreis, oder eine Abschreibung, die höher ist als die Anschaffungskosten. Bitte trage die Angaben zu jedem Verkauf vollständig ein."),
+            Self::P23VerkaufNichtGerechnet => Some("Du hast einen privaten Verkauf angegeben, den die Software noch nicht rechnet. Das betrifft Kryptowerte (zum Beispiel Bitcoin), den Anteil an einer Beteiligung, einen Verkauf bei gemeinsamer Veranlagung mit deinem Ehe- oder Lebenspartner und ein Grundstück, das du nur zum Teil selbst bewohnt hast. Ein Ergebnis ohne diesen Verkauf wäre falsch, deshalb rechnet die Software hier nicht weiter. Dieser Fall braucht steuerliche Beratung."),
             Self::PartnerEinkunftsartNichtRingFaehig => Some("Du hast angegeben, dass dein Ehe- oder Lebenspartner Renten oder andere sonstige Einkünfte hat. Diese Einkünfte rechnet die Software in der gemeinsamen Berechnung noch nicht mit. Ein Ergebnis ohne sie wäre zu niedrig, deshalb rechnet die Software hier nicht weiter."),
             Self::PartnerKegelOffen => Some("Zu deinem Ehe- oder Lebenspartner fehlen noch Angaben, die die gemeinsame Berechnung braucht — je nach Fall der Bruttoarbeitslohn, die Kapitalerträge oder die Art der Krankenversicherung. Ein Ergebnis für nur eine der beiden Personen wäre falsch. Bitte ergänze die offenen Angaben zu deinem Partner."),
             Self::PartnerKonsistenzOffen => Some("Zwei Angaben passen nicht zusammen: Du hast etwas zu deinem Ehe- oder Lebenspartner eingetragen — etwa dessen Behinderung, Kapitalerträge oder Rente — aber keine gemeinsame Veranlagung gewählt. Angaben zum Partner zählen nur in einer gemeinsamen Erklärung. Bitte sieh dir beide Angaben noch einmal an."),
@@ -351,6 +361,8 @@ impl FromStr for Sperrgrund {
             "p16_4_gate_offen" => Ok(Self::P164GateOffen),
             "p32b_kombi_offen" => Ok(Self::P32bKombiOffen),
             "p35c_doppelfoerderung_offen" => Ok(Self::P35cDoppelfoerderungOffen),
+            "p23_angaben_offen" => Ok(Self::P23AngabenOffen),
+            "p23_verkauf_nicht_gerechnet" => Ok(Self::P23VerkaufNichtGerechnet),
             "partner_einkunftsart_nicht_ring_faehig" => Ok(Self::PartnerEinkunftsartNichtRingFaehig),
             "partner_kegel_offen" => Ok(Self::PartnerKegelOffen),
             "partner_konsistenz_offen" => Ok(Self::PartnerKonsistenzOffen),
@@ -422,10 +434,11 @@ mod tests {
     /// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27, Nr. 37, Nr. 45 und Nr. 53 in
     /// `rust/fixtures/README.md`). Streng: jeder Eintrag steht in der Fixture, sein Text weicht ab und nennt, was er neu sagt
     /// (`pflichtteile`).
-    const ABWEICHENDER_KLARTEXT: [&str; 3] = [
+    const ABWEICHENDER_KLARTEXT: [&str; 4] = [
         "gwg_mehrwertsteuer_offen",
         "versorgungsfreibetrag_offen",
         "gwg_abschreibung_offen",
+        "flag_konsistenz_offen",
     ];
 
     /// Was der abweichende Text eines Grunds nennen muss und welchen Satz er nicht mehr enthalten darf. Ein Eintrag in
@@ -451,6 +464,13 @@ mod tests {
             "gwg_abschreibung_offen" => (
                 Some("hier noch nicht"),
                 &["Nutzungsdauer", "Kaufmonat", "Kaufjahr", "Folgejahre"],
+            ),
+            // Python zaehlt bei den vier Fragen nur "sonstige Einkuenfte wie Renten". Seit Nr. 54 gehoert der private Verkauf eines
+            // Grundstuecks oder anderen Gegenstands dazu (Anlage SO, § 23 EStG): wer ihn eintraegt und "keine sonstigen Einkuenfte"
+            // sagt, widerspricht sich, und der Text soll das nennen.
+            "flag_konsistenz_offen" => (
+                Some("sonstige Einkünfte wie Renten hast"),
+                &["private Verkauf", "Grundstücks"],
             ),
             _ => panic!("{schluessel}: in ABWEICHENDER_KLARTEXT, aber ohne Zeile in pflichtteile"),
         }
@@ -494,6 +514,8 @@ mod tests {
             Sperrgrund::VersorgungUeberLohn,
             Sperrgrund::VersorgungsbeginnNachVz,
             Sperrgrund::PartnerEinkunftsartNichtRingFaehig,
+            Sperrgrund::P23AngabenOffen,
+            Sperrgrund::P23VerkaufNichtGerechnet,
         ] {
             assert!(
                 !klartext.contains_key(grund.als_str()),
@@ -529,6 +551,33 @@ mod tests {
             }
             assert!(!text.starts_with("Du hast"), "{grund}: spricht aus Sicht von Person A");
         }
+    }
+
+    /// Die zwei Gruende zum privaten Verkauf (Nr. 54) nennen den Verkauf und sagen, was der Nutzer tun kann: Angaben nachtragen
+    /// (`p23_angaben_offen`) oder wissen, dass der Fall nicht gerechnet wird und warum (`p23_verkauf_nicht_gerechnet`: Krypto,
+    /// Beteiligung, Ehegatte, Teilnutzung). Pinnt Teile des Wortlauts.
+    #[test]
+    fn die_gruende_zum_privaten_verkauf_nennen_den_verkauf_und_den_anlass() {
+        for (grund, teile) in [
+            (
+                Sperrgrund::P23AngabenOffen,
+                &["privaten Verkauf", "Kaufdatum", "Verkaufsdatum", "selbst bewohnt", "Abschreibung", "vollständig ein"][..],
+            ),
+            (
+                Sperrgrund::P23VerkaufNichtGerechnet,
+                &["privaten Verkauf", "Kryptowerte", "Beteiligung", "Ehe- oder Lebenspartner", "zum Teil selbst bewohnt", "rechnet die Software hier nicht weiter"][..],
+            ),
+        ] {
+            let text = grund.klartext().unwrap();
+            for teil in teile {
+                assert!(text.contains(teil), "{grund}: {teil:?} fehlt in {text:?}");
+            }
+        }
+        assert_ne!(
+            Sperrgrund::P23AngabenOffen.klartext(),
+            Sperrgrund::P23VerkaufNichtGerechnet.klartext(),
+            "nachtragbar und nicht gerechnet sind zwei verschiedene Auskuenfte"
+        );
     }
 
     /// Der Grund `partner_einkunftsart_nicht_ring_faehig` nennt den Partner und seine Einkuenfte, sagt, warum die Software

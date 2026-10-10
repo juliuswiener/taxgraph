@@ -12,6 +12,7 @@ use store::{SnapshotFehler, Store};
 use super::konstanten::STAMMDATEN_FELDER;
 use super::{an_gesamt_sperrgrund, mit_ring_werten, scheibe_bindung, Cfg, ScheibenFehler};
 use crate::einkuenfte::dba_freistellung_angabe;
+use crate::privatverkauf::p23_steuerfreier_verkauf;
 use crate::{BescheidFehler, BindungIndex, Felder, Instanzquelle};
 
 /// Der Grund der Abgabe-Sperre bei freigestellten Auslandsangaben (Abweichung Nr. 40): der Bescheid rechnet den
@@ -24,6 +25,29 @@ fn dba_freistellung_eintrag(felder: &Felder) -> Result<Option<Eintrag>, Bescheid
     Ok(dba_freistellung_angabe(felder)?.map(|feld_id| Eintrag {
         feld_id: feld_id.to_owned(),
         grund: DBA_FREISTELLUNG_SPERRE.to_owned(),
+        hinweis: None,
+    }))
+}
+
+/// Der Grund der Abgabe-Sperre bei einem steuerfreien privaten Verkauf (Abweichung Nr. 54): der Bescheid rechnet ihn als steuerfrei
+/// (Frist abgelaufen, selbst bewohnt, taeglicher Gebrauch), die Erklaerung traegt ihn aber nicht. Ob und wo ein solcher Verkauf in der
+/// Anlage SO steht, sagt nur die Anleitung zur Anlage SO; sie liegt der Software nicht vor, und geraten wird nicht.
+const P23_STEUERFREI_SPERRE: &str = "Steuerfreier privater Verkauf (Frist abgelaufen, selbst bewohnt oder Gegenstand des täglichen Gebrauchs): Dein Bescheid rechnet den Verkauf richtig als steuerfrei. Die Erklärung kann ihn aber noch nicht eintragen, weil der Software die Anleitung zur Anlage SO fehlt. Die Abgabe ist deshalb gesperrt. Trage den Verkauf im Formular selbst ein, wenn das Finanzamt ihn kennen soll.";
+
+/// Der Eintrag der Abgabe-Sperre, wenn die Akte einen bestaetigten, steuerfreien Verkauf traegt ([`P23_STEUERFREI_SPERRE`]).
+fn p23_steuerfrei_eintrag(
+    store: &Store,
+    bindung: &BindungIndex<'_>,
+    vz: Vz,
+) -> Result<Option<Eintrag>, BescheidFehler> {
+    let q = Instanzquelle {
+        store: Some(store),
+        bindung: Some(bindung),
+        nur_bestaetigt: false,
+    };
+    Ok(p23_steuerfreier_verkauf(&q, vz)?.map(|feld_id| Eintrag {
+        feld_id,
+        grund: P23_STEUERFREI_SPERRE.to_owned(),
         hinweis: None,
     }))
 }
@@ -163,9 +187,13 @@ pub fn einreichungs_xml(
     // Methode, `elster::deklariere` nicht). Upgrade-Pfad: die Methodentabellen nach `domain` heben, dann sperrt
     // `deklariere` selbst, wie bei Unfallkosten und Abzug.
     let dba_offen = dba_freistellung_eintrag(&felder)?;
-    if !deklaration.eingaben_konsistent() || dba_offen.is_some() {
+    // Dasselbe gilt fuer den steuerfreien privaten Verkauf (Nr. 54): der Schreiber in `elster` kennt die Befreiung nicht und truege
+    // jeden Verkauf der Akte in die Anlage SO ein; ein steuerfreier stuende dort wie ein steuerpflichtiger.
+    let p23_offen = p23_steuerfrei_eintrag(store, &bindung, vz)?;
+    if !deklaration.eingaben_konsistent() || dba_offen.is_some() || p23_offen.is_some() {
         let mut offen = deklaration.unvollstaendig().to_vec();
         offen.extend(dba_offen);
+        offen.extend(p23_offen);
         return Err(EinreichFehler::DeklarationUnvollstaendig(offen));
     }
     let xml = erzeuge_xml(
