@@ -347,7 +347,7 @@ bindungen:
     eingangsfrage: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viele verschiedene Renten bekommst du?"
-    hilfe_kurz: "Zum Beispiel gesetzliche Rente und zusätzlich eine Betriebsrente — das sind zwei. Jede wird getrennt erfasst, weil Beginn und Art den steuerpflichtigen Anteil bestimmen."
+    hilfe_kurz: "Zum Beispiel gesetzliche Rente und zusätzlich eine private Rentenversicherung — das sind zwei. Jede wird getrennt erfasst, weil Beginn und Art den steuerpflichtigen Anteil bestimmen."
     beispielwert: 1
     herkunft_slots: null
     elster_kz: null

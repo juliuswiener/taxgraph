@@ -61,7 +61,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Um welche Art von Rente geht es hauptsächlich?"
-    hilfe_kurz: "Gesetzliche Rente, berufsständisches Versorgungswerk (z. B. für Ärzte oder Anwälte) und Rürup-Rente werden gleich besteuert (nach dem Jahr des Rentenbeginns). Eine private Rentenversicherung wird niedriger besteuert — dann zählt dein Alter bei Rentenbeginn."
+    hilfe_kurz: "Gesetzliche Rente, berufsständisches Versorgungswerk (z. B. für Ärzte oder Anwälte) und Rürup-Rente werden gleich besteuert (nach dem Jahr des Rentenbeginns). Eine private Rentenversicherung wird niedriger besteuert — dann zählt dein Alter bei Rentenbeginn. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht hierher: die Software rechnet sie noch nicht."
     beispielwert: "gesetzliche_rente"
     herkunft_slots: null
     elster_kz: null
@@ -127,7 +127,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Um welche Art von Rente geht es bei deinem zusammen veranlagten Ehe-/Lebenspartner hauptsächlich?"
-    hilfe_kurz: "Nur bei Zusammenveranlagung: der Partner hat einen eigenen Besteuerungs-/Ertragsanteil je nach Rentenart (gesetzlich/Versorgungswerk/Rürup nach Beginn-Jahr, private Rente nach Alter bei Beginn)."
+    hilfe_kurz: "Nur bei Zusammenveranlagung: der Partner hat einen eigenen Besteuerungs-/Ertragsanteil je nach Rentenart (gesetzlich/Versorgungswerk/Rürup nach Beginn-Jahr, private Rente nach Alter bei Beginn). Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht hierher: die Software rechnet sie noch nicht."
     beispielwert: "gesetzliche_rente"
     herkunft_slots: null
     elster_kz: null
@@ -769,8 +769,8 @@ bindungen:
     vorjahr: vorschlag
     frage_invertiert: true
     eingangsfrage: true
-    fragetext_laie: "Hattest du dieses Jahr neben deiner Rente Arbeitslohn oder eine Pension (Ruhegehalt, Betriebsrente, Witwen- oder Waisengeld)?"
-    hilfe_kurz: "Arbeitslohn: auch ein Minijob oder ein Nebenjob. Pension: Ruhegehalt, Betriebsrente einer Firma, Witwen- oder Waisengeld. Nur die gesetzliche Rente: Nein."
+    fragetext_laie: "Hattest du dieses Jahr neben deiner Rente Arbeitslohn oder eine Pension (Ruhegehalt, Werkspension, Witwen- oder Waisengeld)?"
+    hilfe_kurz: "Arbeitslohn: auch ein Minijob oder ein Nebenjob. Pension: Ruhegehalt, Werkspension deines früheren Arbeitgebers, Witwen- oder Waisengeld. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung zählt hier nicht. Nur die gesetzliche Rente: Nein."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
@@ -790,8 +790,8 @@ bindungen:
     vorjahr: vorschlag
     frage_invertiert: true
     eingangsfrage: true
-    fragetext_laie: "Hatte dein Ehe-/Lebenspartner dieses Jahr Arbeitslohn oder eine Pension (Ruhegehalt, Betriebsrente, Witwen- oder Waisengeld)?"
-    hilfe_kurz: "Arbeitslohn: auch ein Minijob oder ein Nebenjob. Pension: Ruhegehalt, Betriebsrente einer Firma, Witwen- oder Waisengeld. Nur die gesetzliche Rente: Nein."
+    fragetext_laie: "Hatte dein Ehe-/Lebenspartner dieses Jahr Arbeitslohn oder eine Pension (Ruhegehalt, Werkspension, Witwen- oder Waisengeld)?"
+    hilfe_kurz: "Arbeitslohn: auch ein Minijob oder ein Nebenjob. Pension: Ruhegehalt, Werkspension des früheren Arbeitgebers, Witwen- oder Waisengeld. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung zählt hier nicht. Nur die gesetzliche Rente: Nein."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null

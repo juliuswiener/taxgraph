@@ -260,8 +260,9 @@ fn pos(ids: &[String], feld: &str) -> Option<usize> {
 // ---------------------------------------------------------------- die Kreuze ------------------------------------------
 
 /// AK1/AK2/AK7: beide Kreuze sind invertierte Ankreuzfragen, die Lohn und Pension beim Namen nennen. Die Texte tragen
-/// die Begriffe, an denen ein Rentner sein "ja" erkennt (Minijob, Nebenjob, Ruhegehalt, Betriebsrente, Witwen- und
-/// Waisengeld) und sagen, dass die gesetzliche Rente allein "nein" heisst.
+/// die Begriffe, an denen ein Rentner sein "ja" erkennt (Minijob, Nebenjob, Ruhegehalt, Werkspension, Witwen- und
+/// Waisengeld) und sagen, dass die gesetzliche Rente allein "nein" heisst. Seit Nr. 53 steht dort die Werkspension statt der
+/// Betriebsrente: eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung ist keine Pension (`renten_leistungsmitteilung_texte.rs`).
 #[tokio::test]
 async fn die_kreuze_nennen_lohn_und_pension_mit_den_begriffen_des_rentners() {
     let d = fall_mit(&rentner(2_000_000, "zusammen")).await;
@@ -275,7 +276,7 @@ async fn die_kreuze_nennen_lohn_und_pension_mit_den_begriffen_des_rentners() {
         assert_eq!(q["frage_invertiert"], json!(true), "{kreuz}: das Feld nennt die Abwesenheit");
         assert_eq!(q["screening"], json!(false), "{kreuz}: Ueberspringen darf kein stilles 'nein' sein");
         let text = format!("{} {}", q["fragetext_laie"].as_str().unwrap(), q["hilfe_kurz"].as_str().unwrap());
-        for wort in ["Arbeitslohn", "Pension", "Minijob", "Nebenjob", "Ruhegehalt", "Betriebsrente", "Witwen", "Waisen"] {
+        for wort in ["Arbeitslohn", "Pension", "Minijob", "Nebenjob", "Ruhegehalt", "Werkspension", "Witwen", "Waisen"] {
             assert!(text.contains(wort), "{kreuz}: das Wort {wort} fehlt im Text: {text}");
         }
         assert!(text.contains("gesetzliche Rente"), "{kreuz}: der Text sagt nicht, dass die gesetzliche Rente allein 'nein' heisst: {text}");

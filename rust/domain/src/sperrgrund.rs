@@ -278,8 +278,8 @@ impl Sperrgrund {
             Self::VerpflegungDreimonatsfristAufteilungOffen => Some("Du warst länger als drei Monate am selben auswärtigen Ort tätig. Die Verpflegungspauschale gibt es nur für die ersten drei Monate, danach entfällt sie. Deshalb braucht die Berechnung zu jeder Art von Abwesenheitstag zusätzlich die Zahl der Tage, die nach diesen drei Monaten lagen. Bitte ergänze diese Angabe."),
             Self::VerpflegungDreimonatsfristUnterbrechungOffen => Some("Du warst länger als drei Monate am selben auswärtigen Ort tätig, hast aber für die Zeit nach Ablauf der drei Monate keine Abwesenheitstage angegeben. Das ist möglich, wenn du die Tätigkeit dort mindestens vier Wochen unterbrochen hast — dann beginnt die Frist neu. Bitte beantworte die Frage, ob es eine solche Unterbrechung gab."),
             Self::VerpflegungReduktionOffen => Some("Zu deinen Auswärtstätigkeiten fehlt noch die Antwort, ob dir dabei Mahlzeiten gestellt wurden — also Frühstück, Mittag- oder Abendessen von deinem Arbeitgeber oder auf dessen Veranlassung. Jede gestellte Mahlzeit kürzt die Verpflegungspauschale. Bitte beantworte diese Frage, auch wenn keine Mahlzeiten gestellt wurden."),
-            Self::VersorgungsfreibetragOffen => Some("Du hast Versorgungsbezüge angegeben — etwa eine Betriebsrente oder eine Beamtenpension. Für den Freibetrag darauf braucht die Berechnung zwei Angaben: das Jahr, in dem die Versorgung begann, und den Betrag, aus dem der Freibetrag berechnet wird. Beides findest du in deiner Lohnsteuerbescheinigung oder in der Mitteilung deiner Versorgungsstelle. Bei gemeinsamer Veranlagung gelten die zwei Angaben für jede Person einzeln: Prüfe sie auch für die Versorgungsbezüge deines Ehegatten."),
-            Self::VersorgungUeberLohn => Some("Dein Versorgungsbezug ist höher als dein Bruttoarbeitslohn, oder du hast keinen Bruttoarbeitslohn eingetragen. Das passt nicht zusammen: Der Bruttoarbeitslohn (Nummer 3 der Lohnsteuerbescheinigung) enthält den Versorgungsbezug (Nummer 8) schon. Trage bei Bruttoarbeitslohn den ganzen Betrag aus Nummer 3 ein, nicht nur den Teil ohne Versorgung. Bei gemeinsamer Veranlagung gilt das für jede Person einzeln: Prüfe es auch für deinen Ehegatten."),
+            Self::VersorgungsfreibetragOffen => Some("Du hast Versorgungsbezüge angegeben — etwa eine Werkspension deines früheren Arbeitgebers oder eine Beamtenpension. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht hierher. Für den Freibetrag darauf braucht die Berechnung zwei Angaben: das Jahr, in dem die Versorgung begann, und den Betrag, aus dem der Freibetrag berechnet wird. Beides findest du in deiner Lohnsteuerbescheinigung oder in der Mitteilung deiner Versorgungsstelle. Bei gemeinsamer Veranlagung gelten die zwei Angaben für jede Person einzeln: Prüfe sie auch für die Versorgungsbezüge deines Ehegatten."),
+            Self::VersorgungUeberLohn => Some("Dein Versorgungsbezug ist höher als dein Bruttoarbeitslohn, oder du hast keinen Bruttoarbeitslohn eingetragen. Das passt nicht zusammen: Der Bruttoarbeitslohn (Nummer 3 der Lohnsteuerbescheinigung) enthält den Versorgungsbezug (Nummer 8) schon. Trage bei Bruttoarbeitslohn den ganzen Betrag aus Nummer 3 ein, nicht nur den Teil ohne Versorgung. Bei gemeinsamer Veranlagung gilt das für jede Person einzeln: Prüfe es auch für deinen Ehegatten. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht hierher: Sie hat eine Leistungsmitteilung statt einer Lohnsteuerbescheinigung."),
             Self::VersorgungsbeginnNachVz => Some("Das Jahr, in dem deine Versorgung begonnen hat, liegt nach dem Jahr dieser Steuererklärung. Eine Versorgung, die erst später beginnt, gehört nicht in diese Erklärung. Bitte prüfe das Jahr des Versorgungsbeginns. Bei gemeinsamer Veranlagung gilt das für jede Person einzeln: Prüfe es auch für deinen Ehegatten."),
             Self::VvInstanzOffen => Some("Zu einer deiner vermieteten Immobilien sind die Angaben unvollständig. Jedes weitere Objekt braucht dieselben Angaben wie das erste: Mieteinnahmen, Gebäudeabschreibung, Schuldzinsen, Erhaltungsaufwand, sonstige Werbungskosten und den Anteil, der entgeltlich vermietet ist. Bitte ergänze die fehlenden Angaben."),
         }
@@ -419,7 +419,7 @@ mod tests {
         );
     }
 
-    /// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27, Nr. 37 und Nr. 45 in
+    /// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27, Nr. 37, Nr. 45 und Nr. 53 in
     /// `rust/fixtures/README.md`). Streng: jeder Eintrag steht in der Fixture, sein Text weicht ab und nennt, was er neu sagt
     /// (`pflichtteile`).
     const ABWEICHENDER_KLARTEXT: [&str; 3] = [
@@ -439,8 +439,13 @@ mod tests {
                 &["Kleinunternehmer", "selbst getragen", "800 Euro", "bei der Abschreibung"],
             ),
             // Seit Nr. 33 fragt die Rentner-Scheibe die Versorgung des Ehegatten mit, und der Grund gilt fuer ihn. Python spricht nur
-            // zu Person A; der Text sagt, dass bei gemeinsamer Veranlagung die zwei Angaben je Person gelten.
-            "versorgungsfreibetrag_offen" => (None, &["gemeinsamer Veranlagung", "jede Person einzeln", "deines Ehegatten"]),
+            // zu Person A; der Text sagt, dass bei gemeinsamer Veranlagung die zwei Angaben je Person gelten. Seit Nr. 53 nennt er die
+            // Werkspension statt der Betriebsrente und nimmt die Rente mit Leistungsmitteilung (Pensionskasse, Pensionsfonds,
+            // Direktversicherung) aus: sie ist nach § 22 Nr. 5 EStG kein Versorgungsbezug.
+            "versorgungsfreibetrag_offen" => (
+                Some("Betriebsrente"),
+                &["gemeinsamer Veranlagung", "jede Person einzeln", "deines Ehegatten", "Werkspension", "mit Leistungsmitteilung gehört nicht hierher"],
+            ),
             // Python sagt "Diese Abschreibung rechnet die Software hier noch nicht". Seit der Einzel-AfA (Nr. 45) rechnet sie das Kaufjahr,
             // sobald der Nutzer Nutzungsdauer und Kaufmonat nennt; der Text sagt, was fehlt.
             "gwg_abschreibung_offen" => (

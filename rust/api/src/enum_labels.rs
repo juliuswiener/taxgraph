@@ -141,13 +141,13 @@ pub const ENUM_LABELS: [(&str, &[(&str, &str)]); 27] = [
         ("beamtenrechtlich", "Beamtenrechtliches Ruhegehalt"),
         ("hinterbliebene", "Witwen- oder Waisengeld"),
         ("erwerbsminderung", "Rente wegen Erwerbsminderung"),
-        ("altersgrenze_sonstige", "Betriebsrente oder Direktversicherung"),
+        ("altersgrenze_sonstige", "Pension des früheren Arbeitgebers (Werkspension)"),
     ]),
     ("versorgung_art_partner", &[
         ("beamtenrechtlich", "Beamtenrechtliches Ruhegehalt"),
         ("hinterbliebene", "Witwen- oder Waisengeld"),
         ("erwerbsminderung", "Rente wegen Erwerbsminderung"),
-        ("altersgrenze_sonstige", "Betriebsrente oder Direktversicherung"),
+        ("altersgrenze_sonstige", "Pension des früheren Arbeitgebers (Werkspension)"),
     ]),
     ("gewinn_betriebsart_partner", &[
         ("gewerbe", "Gewerbebetrieb"),
