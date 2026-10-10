@@ -23,9 +23,10 @@
 //! ANLAGE SO, PRIVATVERKAUF (Abweichung Nr. 54, Spike AK0 in `checkest_privatverkauf_spike.rs`). Der vierte echte Test misst, was der
 //! Schreiber fuer steuerpflichtige Verkaeufe baut (Grundstueck, anderes Wirtschaftsgut, mit Abschreibung, Verlust, Gewinn 0, zwei
 //! Verkaeufe) ueber den echten Abgabeweg, und fuenf Kontrollen, die `ERiC` beanstanden MUSS (Pflicht-Kz fehlt, Gewinn passt nicht zu
-//! den Einzelbetraegen). Ein Verkauf mit abgelaufener Frist und ein Gegenstand des taeglichen Gebrauchs stehen nicht in der Erklaerung
-//! (Anleitung Anlage SO); die Faelle "ausserhalb" messen, dass `ERiC` die Akte ohne den SO-Block mit `rc=0` nimmt. Ein selbst bewohnter
-//! Verkauf sperrt die Abgabe (`privatverkauf_einreichung_hermetisch.rs`).
+//! den Einzelbetraegen). Ein Verkauf mit abgelaufener Frist (auch ein selbst bewohnter) und ein Gegenstand des taeglichen Gebrauchs
+//! stehen nicht in der Erklaerung (Anleitung Anlage SO); die Faelle "ausserhalb" messen, dass `ERiC` die Akte ohne den SO-Block mit
+//! `rc=0` nimmt. Ein selbst bewohntes Grundstueck innerhalb der Frist steht mit Haken, Zeitraum, Flaeche und Gewinn 0 in der Zeile 36
+//! (Spike-Fall Gx7); die Faelle "Eigennutzung" messen das, zwei Kontrollen messen, dass `ERiC` die Zeile ohne Flaeche oder Zeitraum abweist.
 //!
 //! KEIN SKIP. Die echten Tests sind `#[ignore]` (`cargo test --workspace` und die CI laufen ohne sie: `ERiC` und die Hersteller-ID
 //! gehoeren nicht auf einen Runner, Entscheid Julius 2026-09-12). Wer sie mit `--ignored` ruft, will den echten Weg: jede fehlende
@@ -712,6 +713,21 @@ fn so_verkauf(n: u8, typ: &str, daten: (&str, &str), betraege: [i64; 4]) -> Vec<
     k
 }
 
+/// Ein selbst bewohntes Grundstueck der Instanz `n` (Preis 200.000, Anschaffungskosten 150.000 EUR): Eigennutzung `art`, 120 m²
+/// Wohnflaeche, bewohnt vom `zeitraum.0` bis zum `zeitraum.1`.
+fn so_bewohnt(n: u8, art: &str, daten: (&str, &str), zeitraum: (&str, &str)) -> Vec<(String, Value)> {
+    let mut k = so_verkauf(n, "grundstueck", daten, [20_000_000, 15_000_000, 0, 0]);
+    for (feld, wert) in &mut k {
+        if *feld == so_name("p23_eigennutzung", n) {
+            *wert = json!(art);
+        }
+    }
+    k.push((so_name("p23_wohnflaeche", n), json!(120)));
+    k.push((so_name("p23_eigennutzung_von", n), json!(zeitraum.0)));
+    k.push((so_name("p23_eigennutzung_bis", n), json!(zeitraum.1)));
+    k
+}
+
 /// Die Basis-Akte plus Verkaeufe, ueber den echten Abgabeweg (Guard, Ring, `deklariere`, `erzeuge_xml`) zum XML.
 fn so_xml(verkaeufe: &[(String, Value)], id: &str) -> Result<String, String> {
     let zusatz: Vec<(&str, Value)> = verkaeufe.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
@@ -772,6 +788,8 @@ fn privatverkauf_gegen_echtes_checkest() {
     // Betraege in Cent: Preis, Anschaffungskosten, AfA, Werbungskosten.
     let mut zwei = grundstueck(kauf, [20_000_000, 15_000_000, 0, 0]);
     zwei.extend(wirtschaftsgut(2, [10_000_000, 5_000_000, 0, 0]));
+    let mut eigen_und_wg = so_bewohnt(1, "ausschliesslich", kauf, ("15.06.2020", "10.03.2025"));
+    eigen_und_wg.extend(wirtschaftsgut(2, [10_000_000, 5_000_000, 0, 0]));
     let faelle: Vec<SoFall<'_>> = vec![
         (
             "SO_Grundstueck",
@@ -790,6 +808,18 @@ fn privatverkauf_gegen_echtes_checkest() {
         // Beim Wirtschaftsgut gibt es kein AfA-Kz: 100.000 - (50.000 - 10.000) = 60.000 EUR stehen als Gewinn.
         ("SO_Wirtschaftsgut_AfA", wirtschaftsgut(1, [10_000_000, 5_000_000, 1_000_000, 0]), vec![("E0307701", "60000")]),
         ("SO_zwei_Verkaeufe", zwei.clone(), vec![("E0306801", "50000"), ("E0307701", "50000")]),
+        // Eigennutzung (Zeile 36, Spike-Fall Gx7): Haken, Zeitraum von-bis, Flaeche; der Gewinn ist 0, obwohl der volle Gewinn 50.000 EUR waere.
+        (
+            "SO_Eigennutzung_ausschliesslich",
+            so_bewohnt(1, "ausschliesslich", kauf, ("15.06.2020", "10.03.2025")),
+            vec![("E0306301", "X"), ("E0306302", "15.06.2020-10.03.2025"), ("E0306303", "120"), ("E0306801", "0")],
+        ),
+        (
+            "SO_Eigennutzung_letzte_drei_Jahre",
+            so_bewohnt(1, "letzte_drei_jahre", kauf, ("01.01.2023", "10.03.2025")),
+            vec![("E0306301", "X"), ("E0306302", "01.01.2023-10.03.2025"), ("E0306303", "120"), ("E0306801", "0")],
+        ),
+        ("SO_Eigennutzung_und_Wirtschaftsgut", eigen_und_wg.clone(), vec![("E0306801", "0"), ("E0307701", "50000")]),
     ];
     for (name, verkaeufe, kz_im_xml) in &faelle {
         let xml = so_xml(verkaeufe, &id).unwrap_or_else(|g| panic!("{name}: kein XML: {g}"));
@@ -818,8 +848,16 @@ fn privatverkauf_gegen_echtes_checkest() {
     };
     let mut gemischt = grundstueck(kauf, [20_000_000, 15_000_000, 0, 0]);
     gemischt.extend(frei(2, "grundstueck", ("15.06.2014", "10.03.2025")));
+    // Selbst bewohnt, aber die Frist ist abgelaufen: nicht in der Erklaerung, und ohne Flaeche und Zeitraum.
+    let mut alt_bewohnt = frei(1, "grundstueck", ("15.06.2014", "10.03.2025"));
+    for (feld, wert) in &mut alt_bewohnt {
+        if feld == "p23_eigennutzung" {
+            *wert = json!("ausschliesslich");
+        }
+    }
     let ausserhalb: Vec<AusserhalbFall<'_>> = vec![
         ("SO_Frist_abgelaufen_allein", frei(1, "grundstueck", ("15.06.2014", "10.03.2025")), 0),
+        ("SO_Eigennutzung_Frist_abgelaufen_allein", alt_bewohnt, 0),
         ("SO_taeglicher_Gebrauch_allein", frei(1, "anderes_wg", ("15.02.2025", "20.08.2025")), 0),
         ("SO_steuerpflichtig_und_Frist_abgelaufen", gemischt, 1),
     ];
@@ -840,7 +878,10 @@ fn privatverkauf_gegen_echtes_checkest() {
     // entfernt oder der Gewinn verschoben.
     let (g, g_felder) = so_deklaration(&grundstueck(kauf, [20_000_000, 15_000_000, 0, 0]));
     let (w, w_felder) = so_deklaration(&wirtschaftsgut(1, [10_000_000, 5_000_000, 0, 0]));
-    let kontrollen: [(&str, Deklaration, &Felder); 5] = [
+    let (b, b_felder) = so_deklaration(&so_bewohnt(1, "ausschliesslich", kauf, ("15.06.2020", "10.03.2025")));
+    let kontrollen: [(&str, Deklaration, &Felder); 7] = [
+        ("K_Eigennutzung_ohne_Flaeche", so_abgeaendert(&b, 1, "E0306303", None), &b_felder),
+        ("K_Eigennutzung_ohne_Zeitraum", so_abgeaendert(&b, 1, "E0306302", None), &b_felder),
         ("K_Grundstueck_ohne_Bezeichnung", so_abgeaendert(&g, 1, "E0306111", None), &g_felder),
         ("K_Grundstueck_ohne_Verkaufsdatum", so_abgeaendert(&g, 1, "E0306202", None), &g_felder),
         ("K_Grundstueck_ohne_Gewinn", so_abgeaendert(&g, 1, "E0306801", None), &g_felder),

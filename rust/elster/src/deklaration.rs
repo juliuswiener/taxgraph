@@ -123,11 +123,30 @@ pub(crate) const P23_ARTFELDER: &[(&str, &[(&str, &str)])] = &[
     ),
 ];
 
-/// Abweichung Nr. 54: Rechenfelder des Privatverkaufs ohne Kz (Eigennutzung, taeglicher Gebrauch, Einkunftsquelle, Gebaeude der
-/// letzten zehn Jahre). Sie entscheiden,
-/// ob ein Verkauf steuerpflichtig ist; die Erklaerung traegt nur steuerpflichtige Verkaeufe (Abgabe-Sperre in `bescheid`).
+/// Abweichung Nr. 54 (Anlage SO, Zeile 36): die Kz eines selbst bewohnten Grundstuecks innerhalb der Frist: der Haken "zu eigenen
+/// Wohnzwecken", der Zeitraum (`TT.MM.JJJJ-TT.MM.JJJJ`) und die Flaeche in m². Der Gewinn daneben ist 0 und steht ohne Einzelbetraege
+/// (`checkESt`-Fall Gx7, rc=0; `bescheid/tests/checkest_blockmatrix.rs`).
+pub(crate) const P23_EIGENNUTZUNG_KZ: [&str; 3] = ["E0306301", "E0306302", "E0306303"];
+
+/// Abweichung Nr. 54: was die Nutzung eines Grundstuecks zu eigenen Wohnzwecken fuer die Erklaerung bedeutet ([`Bau::p23_nutzung`]).
+enum Nutzung {
+    /// Keine Eigennutzung bestaetigt, oder kein Grundstueck: Gewinn und Kz wie bei jedem Verkauf.
+    Keine,
+    /// Eigennutzung, aber dieses Feld fehlt oder ist unbestaetigt: die Zeile 36 ist offen.
+    Fehlt(&'static str),
+    /// Eigennutzung mit Wohnflaeche und Zeitraum: die Kz aus [`P23_EIGENNUTZUNG_KZ`] mit ihren Werten.
+    Kz([(&'static str, Value); 3]),
+}
+
+/// Abweichung Nr. 54: Rechenfelder des Privatverkaufs ohne eigenes Kz (Eigennutzung samt Wohnflaeche und Zeitraum, taeglicher Gebrauch,
+/// Einkunftsquelle, Gebaeude der letzten zehn Jahre). Sie entscheiden, ob ein Verkauf steuerpflichtig ist (`bescheid::privatverkauf`
+/// nimmt die Verkaeufe ausserhalb der Erklaerung vorher aus dem Snapshot); `p23_eigennutzung` und die drei Felder dahinter liest
+/// ausserdem [`Bau::p23_gewinn`] fuer die Kz in [`P23_EIGENNUTZUNG_KZ`].
 pub(crate) const P23_RECHENFELDER: &[&str] = &[
     "p23_eigennutzung",
+    "p23_wohnflaeche",
+    "p23_eigennutzung_von",
+    "p23_eigennutzung_bis",
     "p23_taeglicher_gebrauch",
     "p23_einkunftsquelle",
     "p23_gebaeude_in_frist",
@@ -1452,7 +1471,8 @@ impl Bau<'_> {
 
     /// Abweichung Nr. 54: ein Feld der Privatverkaufs-Instanz `idx` (Betrag, Bezeichnung, Datum oder Rechenfeld). `false`: `basis` gehoert
     /// nicht dazu. Betraege gehen in die `rohdaten` (der Gewinn entsteht in [`Bau::p23_gewinn`]), Bezeichnung und Daten an das Kz der Art,
-    /// die Rechenfelder (Eigennutzung, taeglicher Gebrauch, Einkunftsquelle) schreiben nichts: `bescheid::privatverkauf` liest sie.
+    /// die Rechenfelder (Eigennutzung, taeglicher Gebrauch, Einkunftsquelle) schreiben hier nichts: `bescheid::privatverkauf` liest sie, und
+    /// die Eigennutzung samt Wohnflaeche und Zeitraum setzt erst [`Bau::p23_gewinn`] in die Kz der Zeile 36.
     fn p23_feld(
         &mut self,
         idx: u64,
@@ -1507,7 +1527,40 @@ impl Bau<'_> {
         Ok(())
     }
 
-    /// § 23 Gewinn je Instanz = Preis − (AK/HK − `AfA`) − WK (Abs. 3 S. 1 und 4), dann an die Kz des Veraeusserungstyps.
+    /// Abweichung Nr. 54 (Anlage SO, Zeile 36): traegt das Grundstueck der Instanz `idx` Haken, Zeitraum und Flaeche? Das gilt, wenn die
+    /// Eigennutzung bestaetigt `ausschliesslich` oder `letzte_drei_jahre` ist. Teilnutzung (`teilweise`) und `nein` tragen nichts: die
+    /// Teilnutzung sperrt vorher (`bescheid::privatverkauf`). Das Feld, das fehlt, nennt [`Nutzung::Fehlt`]; die Reihenfolge ist Flaeche,
+    /// Beginn, Ende. `feld_id` ist die Instanz fuer eine Fehlermeldung.
+    fn p23_nutzung(&self, idx: u64, grundstueck: bool, feld_id: &str) -> Ergebnis<Nutzung> {
+        let bestaetigt = |basis: &str| {
+            let name = if idx == 1 { basis.to_owned() } else { format!("{basis}__{idx}") };
+            self.snapshot.get(&name).filter(|f| f.zustand == Zustand::Bestaetigt)
+        };
+        let eigen = bestaetigt("p23_eigennutzung")
+            .is_some_and(|f| matches!(&f.wert, PyWert::Text(t) if t == "ausschliesslich" || t == "letzte_drei_jahre"));
+        if !grundstueck || !eigen {
+            return Ok(Nutzung::Keine);
+        }
+        let Some(flaeche) = bestaetigt("p23_wohnflaeche") else {
+            return Ok(Nutzung::Fehlt("p23_wohnflaeche"));
+        };
+        let (Some(PyWert::Text(von)), Some(PyWert::Text(bis))) = (
+            bestaetigt("p23_eigennutzung_von").map(|f| &f.wert),
+            bestaetigt("p23_eigennutzung_bis").map(|f| &f.wert),
+        ) else {
+            return Ok(Nutzung::Fehlt("p23_eigennutzung_von und p23_eigennutzung_bis"));
+        };
+        let [haken, zeitraum, qm] = P23_EIGENNUTZUNG_KZ;
+        let flaeche = py::int(&flaeche.wert).map_err(wert_fehler(feld_id))?;
+        Ok(Nutzung::Kz([
+            (haken, Value::Bool(true)),
+            (zeitraum, Value::String(format!("{von}-{bis}"))),
+            (qm, Value::from(flaeche)),
+        ]))
+    }
+
+    /// § 23 Gewinn je Instanz = Preis − (AK/HK − `AfA`) − WK (Abs. 3 S. 1 und 4), dann an die Kz des Veraeusserungstyps. Ein selbst
+    /// bewohntes Grundstueck traegt stattdessen den Gewinn 0 und die Kz der Zeile 36 ([`Bau::p23_nutzung`]).
     fn p23_gewinn(&mut self) -> Ergebnis<()> {
         const GRUPPE: &str = "p23_veraeusserung";
         let Some(gruppe) = self.instanzen.get(&GRUPPE.to_owned()) else {
@@ -1553,15 +1606,29 @@ impl Bau<'_> {
                 self.offen(&feld_id, format!("{art_feld} unbestätigt — Kz-Zweig offen"));
                 continue;
             };
+            let grundstueck = matches!(&art.wert, PyWert::Text(t) if t == "grundstueck");
             if let Some(kz) =
                 nachschlagen(P23_GEWINN_KZ, &art.wert).map_err(wert_fehler(&feld_id))?
             {
+                // Ein selbst bewohntes Grundstueck traegt Haken, Zeitraum und Flaeche; sein Gewinn ist steuerfrei und steht als 0.
+                let (gewinn, nutzung) = match self.p23_nutzung(idx, grundstueck, &feld_id)? {
+                    Nutzung::Keine => (gewinn, Vec::new()),
+                    Nutzung::Fehlt(feld) => {
+                        self.offen(&feld_id, format!("{feld} fehlt oder ist unbestätigt — Zeile 36 der Anlage SO offen"));
+                        continue;
+                    }
+                    Nutzung::Kz(zeile_36) => (0, Vec::from(zeile_36)),
+                };
                 let v = cent_nach_kz(
                     Cent::new(gewinn),
                     &kz_pruefen(kz).map_err(wert_fehler(&feld_id))?,
                 )
                 .als_json();
-                self.instanz(GRUPPE, idx).felder.insert(kz.to_owned(), v);
+                let felder = &mut self.instanz(GRUPPE, idx).felder;
+                felder.insert(kz.to_owned(), v);
+                for (nutzung_kz, wert) in nutzung {
+                    felder.insert(nutzung_kz.to_owned(), wert);
+                }
             } else {
                 let grund = format!("p23-Typ '{}' ohne Kz-Zweig", art.wert.py_str());
                 self.nicht(&feld_id, grund);
@@ -2504,6 +2571,114 @@ mod tests {
         // KONTROLLE: zwei Felder mit je drei Codes (keine, evangelisch, roemisch-katholisch);
         // „andere" hat keinen. Ein Lauf ohne Code haette nichts geprueft.
         assert_eq!(codes, 6, "gepruefte Codes");
+    }
+
+    /// Abweichung Nr. 54 (Anlage SO, Zeile 36): ein selbst bewohntes Grundstueck traegt Haken, Zeitraum und Flaeche und den Gewinn 0,
+    /// jedes der drei Kz-Literale von `P23_EIGENNUTZUNG_KZ` steht hier mit seinem Wert (Regal: `Verhalten`). Vier Gegenproben in einer
+    /// Akte, damit sie sich nicht gegenseitig verdecken: Instanz 2 ist "nein" (Gewinn voll, kein Kz der Zeile 36), Instanz 3 ein anderes
+    /// Wirtschaftsgut mit einer liegengebliebenen Eigennutzung, Instanz 4 `letzte_drei_jahre` (Suffix `__4`), Instanz 5 `teilweise`
+    /// (die Teilnutzung traegt keine Zeile 36; sie sperrt schon vorher in `bescheid`). Fehlt der Zeitraum, steht die Zeile 36 offen und der
+    /// Gewinn nicht in der Erklaerung.
+    #[test]
+    fn selbst_bewohntes_grundstueck_traegt_haken_zeitraum_und_flaeche_und_den_gewinn_null() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        // (Suffix, Art, Eigennutzung); Preis 200.000, Kosten 150.000 EUR: der volle Gewinn waere 50.000 EUR.
+        let faelle = [
+            ("", "grundstueck", "ausschliesslich"),
+            ("__2", "grundstueck", "nein"),
+            ("__3", "anderes_wg", "ausschliesslich"),
+            ("__4", "grundstueck", "letzte_drei_jahre"),
+            ("__5", "grundstueck", "teilweise"),
+        ];
+        let mut felder = Felder::new();
+        for (suffix, typ, eigen) in faelle {
+            for (f, w) in [
+                ("p23_veraeusserungs_typ", json!(typ)),
+                ("p23_bezeichnung", json!("Haus")),
+                ("p23_anschaffungsdatum", json!("15.06.2020")),
+                ("p23_veraeusserungsdatum", json!("10.03.2025")),
+                ("p23_veraeusserungspreis", json!(20_000_000)),
+                ("p23_anschaffung_herstellungskosten", json!(15_000_000)),
+                ("p23_eigennutzung", json!(eigen)),
+                ("p23_wohnflaeche", json!(120)),
+                ("p23_eigennutzung_von", json!("01.03.2020")),
+                ("p23_eigennutzung_bis", json!("09.03.2025")),
+            ] {
+                felder.insert(format!("{f}{suffix}"), feld(w));
+            }
+        }
+        let d = deklariere(&felder, &index, 2025, None).unwrap();
+        let (_, instanzen) = &d.anlage_instanzen[0];
+        let kz = |i: usize| -> BTreeMap<&str, Value> { instanzen[i].felder.iter().map(|(k, v)| (k.as_str(), v.clone())).collect() };
+        assert_eq!(instanzen.len(), 5);
+        assert_eq!(
+            kz(0),
+            BTreeMap::from([
+                ("E0306111", json!("Haus")),
+                ("E0306201", json!("15.06.2020")),
+                ("E0306202", json!("10.03.2025")),
+                ("E0306301", json!(true)),
+                ("E0306302", json!("01.03.2020-09.03.2025")),
+                ("E0306303", json!(120)),
+                ("E0306801", json!(0)),
+            ])
+        );
+        let voll = BTreeMap::from([
+            ("E0306111", json!("Haus")),
+            ("E0306201", json!("15.06.2020")),
+            ("E0306202", json!("10.03.2025")),
+            ("E0306801", json!(50_000)),
+        ]);
+        assert_eq!(kz(1), voll, "Eigennutzung nein: voller Gewinn, keine Zeile 36");
+        assert_eq!(
+            kz(2),
+            BTreeMap::from([
+                ("E0307101", json!("Haus")),
+                ("E0307201", json!("15.06.2020")),
+                ("E0307202", json!("10.03.2025")),
+                ("E0307701", json!(50_000)),
+            ]),
+            "anderes Wirtschaftsgut: die liegengebliebene Eigennutzung zaehlt nicht"
+        );
+        assert_eq!(kz(3).get("E0306302"), Some(&json!("01.03.2020-09.03.2025")), "Instanz 4 traegt ihren eigenen Zeitraum");
+        assert_eq!(kz(3).get("E0306801"), Some(&json!(0)));
+        assert_eq!(kz(4), voll, "Teilnutzung: keine Zeile 36, der Gewinn bleibt voll");
+        assert!(d.eingaben_konsistent(), "{:?}", d.unvollstaendig());
+        // Wohnflaeche und Zeitraum sind bekannte Felder: sie stehen nicht unter "nicht deklariert" (nur das Art-Feld selbst steht dort).
+        let fremd: Vec<&str> = d
+            .nicht_deklariert
+            .iter()
+            .map(|e| e.feld_id.as_str())
+            .filter(|f| f.starts_with("p23_") && !f.starts_with("p23_veraeusserungs_typ"))
+            .collect();
+        assert!(fremd.is_empty(), "{fremd:?}");
+
+        // Ohne Zeitraum ist die Zeile 36 offen: ein Eintrag in `unvollstaendig`, und der Gewinn steht nicht in der Erklaerung.
+        felder.remove("p23_eigennutzung_bis");
+        let d = deklariere(&felder, &index, 2025, None).unwrap();
+        assert!(!d.eingaben_konsistent());
+        let offen: Vec<&str> = d.unvollstaendig().iter().map(|e| e.feld_id.as_str()).collect();
+        assert_eq!(offen, ["p23_veraeusserung__1"], "{offen:?}");
+        let erste = d.anlage_instanzen[0].1.iter().find(|i| i.index == 1);
+        assert!(erste.is_none_or(|i| !i.felder.contains_key("E0306801")), "Gewinn trotz offener Zeile 36");
     }
 
     /// Abweichung Nr. 54: Bezeichnung und beide Daten eines Privatverkaufs stehen unter dem Kz seiner Art, der Gewinn nach AfA-Minderung

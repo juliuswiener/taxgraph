@@ -276,6 +276,14 @@ fn verkauf(n: u8, typ: &str, a: &str, v: &str, preis: i64, ak: i64) -> Paare {
     k
 }
 
+/// Wie `grundstueck_pflichtig`, aber selbst bewohnt (Eigennutzung `art`) mit 120 m² Wohnflaeche, bewohnt vom 15.06.2020 bis zum 10.03.2025.
+fn bewohnt(n: u8, art: &str) -> Paare {
+    let k = mit(grundstueck_pflichtig(n), n, "p23_eigennutzung", json!(art));
+    let k = mit(k, n, "p23_wohnflaeche", json!(120));
+    let k = mit(k, n, "p23_eigennutzung_von", json!("15.06.2020"));
+    mit(k, n, "p23_eigennutzung_bis", json!("10.03.2025"))
+}
+
 /// Ersetzt den Wert von `basis` in Instanz `n` (oder haengt das Feld an).
 fn mit(mut k: Paare, n: u8, basis: &str, wert: Value) -> Paare {
     let ziel = name(basis, n);
@@ -357,14 +365,25 @@ async fn grundstueck_am_zehnten_jahrestag_ist_steuerpflichtig_am_tag_danach_frei
 
 #[tokio::test]
 async fn grundstueck_nur_selbst_bewohnt_ist_steuerfrei() {
-    let v = mit(grundstueck_pflichtig(1), 1, "p23_eigennutzung", json!("ausschliesslich"));
-    rentner("A4", v, R0).await;
+    rentner("A4", bewohnt(1, "ausschliesslich"), R0).await;
 }
 
 #[tokio::test]
 async fn grundstueck_in_den_letzten_drei_jahren_bewohnt_ist_steuerfrei() {
-    let v = mit(grundstueck_pflichtig(1), 1, "p23_eigennutzung", json!("letzte_drei_jahre"));
-    rentner("A5", v, R0).await;
+    rentner("A5", bewohnt(1, "letzte_drei_jahre"), R0).await;
+}
+
+/// Ein selbst bewohnter Verkauf innerhalb der Frist braucht Wohnflaeche und Zeitraum (Zeile 36 der Anlage SO): ohne eines davon ist die
+/// Angabe offen, und der Bescheid nennt keine Zahl. Gegenprobe: dasselbe Grundstueck, vor mehr als zehn Jahren gekauft, steht nicht in der
+/// Erklaerung und braucht beides nicht (A4c).
+#[tokio::test]
+async fn selbst_bewohnter_verkauf_ohne_flaeche_oder_zeitraum_sperrt_mit_angaben_offen() {
+    for fehlt in ["p23_wohnflaeche", "p23_eigennutzung_von", "p23_eigennutzung_bis"] {
+        rentner_gesperrt(fehlt, ohne(bewohnt(1, "ausschliesslich"), 1, fehlt), ANGABEN_OFFEN).await;
+    }
+    rentner_gesperrt("A4b", mit(bewohnt(1, "ausschliesslich"), 1, "p23_wohnflaeche", json!(0)), ANGABEN_OFFEN).await;
+    let alt = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+    rentner("A4c", mit(alt, 1, "p23_eigennutzung", json!("ausschliesslich")), R0).await;
 }
 
 /// Teilweise bewohnt: der steuerpflichtige Anteil ist nicht gerechnet, also gesperrt statt falsch.
@@ -683,8 +702,8 @@ async fn gesamt_laesst_den_steuerfreien_verkauf_weg() {
 }
 
 /// Die Vorschau zeigt, was die Abgabe schreibt: ein Verkauf mit abgelaufener Frist steht nicht darin (die Anleitung zur Anlage SO erfasst
-/// nur Verkaeufe innerhalb der Frist), der steuerpflichtige daneben schon. Der selbst bewohnte Verkauf bleibt in der Vorschau, solange die
-/// Abgabe ihn mit eigenem Grund sperrt.
+/// nur Verkaeufe innerhalb der Frist), der steuerpflichtige daneben schon. Der selbst bewohnte Verkauf innerhalb der Frist steht mit der
+/// Zeile 36 (Haken, Zeitraum, Flaeche) und dem Gewinn 0 darin; ein selbst bewohnter nach Ablauf der Frist nicht.
 #[tokio::test]
 async fn die_vorschau_zeigt_den_verkauf_ausserhalb_der_erklaerung_nicht() {
     let frei = mit(
@@ -695,13 +714,19 @@ async fn die_vorschau_zeigt_den_verkauf_ausserhalb_der_erklaerung_nicht() {
     );
     let mut v = frei;
     v.extend(mit(grundstueck_pflichtig(2), 2, "p23_bezeichnung", json!("Steuerpflichtiger Verkauf")));
-    let bewohnt = mit(grundstueck_pflichtig(3), 3, "p23_eigennutzung", json!("ausschliesslich"));
-    v.extend(mit(bewohnt, 3, "p23_bezeichnung", json!("Selbst bewohnter Verkauf")));
+    v.extend(mit(bewohnt(3, "ausschliesslich"), 3, "p23_bezeichnung", json!("Selbst bewohnter Verkauf")));
+    // Selbst bewohnt, aber vor mehr als zehn Jahren gekauft: nicht in der Erklaerung, und ohne Flaeche und Zeitraum.
+    let alt_bewohnt = mit(verkauf(4, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000), 4, "p23_eigennutzung", json!("ausschliesslich"));
+    v.extend(mit(alt_bewohnt, 4, "p23_bezeichnung", json!("Alter bewohnter Verkauf")));
     let d = vorschau("gesamt", &akte(kegel_gesamt(), v)).await;
     let text = d["anlage_instanzen"].to_string();
     assert!(text.contains("Steuerpflichtiger Verkauf") && text.contains("E0306801"), "der steuerpflichtige Verkauf fehlt: {text}");
     assert!(text.contains("Selbst bewohnter Verkauf"), "der selbst bewohnte Verkauf fehlt in der Vorschau: {text}");
+    for kz in ["E0306301", "E0306302", "E0306303"] {
+        assert_eq!(text.matches(kz).count(), 1, "{kz} steht genau einmal (nur der selbst bewohnte Verkauf innerhalb der Frist): {text}");
+    }
     assert!(!text.contains("Freier Verkauf"), "der Verkauf mit abgelaufener Frist steht in der Vorschau: {text}");
+    assert!(!text.contains("Alter bewohnter Verkauf"), "der selbst bewohnte Verkauf nach Ablauf der Frist steht in der Vorschau: {text}");
     assert_eq!(text.matches("E0306801").count(), 2, "genau zwei Gewinn-Kz (steuerpflichtig und selbst bewohnt): {text}");
 }
 
@@ -779,6 +804,36 @@ async fn ein_minus_in_den_betragsfeldern_wird_beim_speichern_abgewiesen() {
     }
 }
 
+/// Die Wohnflaeche (Zeile 36) nimmt nur ganze Quadratmeter von 1 bis 100.000 an; die 0 bleibt zulaessig ("nichts anzugeben", `lese()`
+/// sperrt sie bei einem selbst bewohnten Verkauf innerhalb der Frist). Ein Minus, ein Bruch und mehr als 100.000 weist das Speichern ab.
+#[tokio::test]
+async fn die_wohnflaeche_nimmt_nur_ganze_quadratmeter_im_bereich_an() {
+    let d = dienst();
+    let kopf = json!({"fall_id": "p23", "scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025});
+    let (status, antwort) = sende(&d, "POST", "/fall", Some(&kopf)).await;
+    assert_eq!(status, 201, "POST /fall: {antwort}");
+    let setze = |feld: &'static str, wert: Value| {
+        json!({
+            "feld_id": feld, "wert": wert, "zustand": "bestaetigt", "schreiber": "ui:laie",
+            "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "signal": {"signal_1": null, "signal_2": format!("ok@{feld}{wert}")},
+            "ts": "2026-01-01T00:00:00+00:00",
+        })
+    };
+    // Ein angenommener Wert belegt sein Feld (ein zweites Event braucht `ersetzt`): jeder bekommt eine eigene Instanz.
+    for (feld, wert, erwartet) in [
+        ("p23_wohnflaeche", json!(-1), 422),
+        ("p23_wohnflaeche", json!(100_001), 422),
+        ("p23_wohnflaeche", json!(1.5), 422),
+        ("p23_wohnflaeche", json!(0), 201),
+        ("p23_wohnflaeche__2", json!(120), 201),
+        ("p23_wohnflaeche__3", json!(100_000), 201),
+    ] {
+        let (status, antwort) = sende(&d, "POST", "/fall/p23/event", Some(&setze(feld, wert.clone()))).await;
+        assert_eq!(status, erwartet, "{feld} = {wert}: {antwort}");
+    }
+}
+
 // ---- Fragetexte -------------------------------------------------------------------------------------
 
 /// Was der Nutzer liest (`GET /feld/{fid}/frage`): in der Scheibe `gesamt` zaehlt das Kreuz `kein_sonstige` den Verkauf nicht mehr
@@ -800,6 +855,9 @@ async fn die_fragetexte_trennen_den_verkauf_von_den_sonstigen_einkuenften() {
         "p23_afa",
         "p23_anschaffungsdatum",
         "p23_gebaeude_in_frist",
+        "p23_wohnflaeche",
+        "p23_eigennutzung_von",
+        "p23_eigennutzung_bis",
     ] {
         let (status, q) = sende(&d, "GET", &format!("/fall/p23/feld/{fid}/frage"), None).await;
         assert_eq!(status, 200, "{fid}: {q}");
@@ -820,6 +878,10 @@ async fn die_fragetexte_trennen_den_verkauf_von_den_sonstigen_einkuenften() {
         "{}",
         texte["p23_gebaeude_in_frist"]
     );
+    // Zeile 36: Wohnflaeche in Quadratmetern, Zeitraum von-bis; der Erbe zaehlt ab dem eigenen Einzug.
+    assert!(texte["p23_wohnflaeche"].contains("Quadratmeter"), "{}", texte["p23_wohnflaeche"]);
+    assert!(texte["p23_eigennutzung_von"].contains("Einzug"), "{}", texte["p23_eigennutzung_von"]);
+    assert!(texte["p23_eigennutzung_bis"].contains("Übergabe"), "{}", texte["p23_eigennutzung_bis"]);
     // Die Anleitung Anlage SO nennt drei Quellen der abgezogenen Abschreibung und die Anschaffung nach 2008.
     assert!(
         texte["p23_afa"].contains("Arbeitnehmer") && texte["p23_afa"].contains("Kapitalerträgen") && texte["p23_afa"].contains("31.12.2008"),

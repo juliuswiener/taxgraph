@@ -12,7 +12,7 @@ use store::{SnapshotFehler, Store};
 use super::konstanten::STAMMDATEN_FELDER;
 use super::{an_gesamt_sperrgrund, mit_ring_werten, scheibe_bindung, Cfg, ScheibenFehler};
 use crate::einkuenfte::dba_freistellung_angabe;
-use crate::privatverkauf::{p23_ohne_verkaeufe_ausserhalb_der_erklaerung, p23_steuerfreier_verkauf};
+use crate::privatverkauf::p23_ohne_verkaeufe_ausserhalb_der_erklaerung;
 use crate::{BescheidFehler, BindungIndex, Felder, Instanzquelle};
 
 /// Der Grund der Abgabe-Sperre bei freigestellten Auslandsangaben (Abweichung Nr. 40): der Bescheid rechnet den
@@ -25,30 +25,6 @@ fn dba_freistellung_eintrag(felder: &Felder) -> Result<Option<Eintrag>, Bescheid
     Ok(dba_freistellung_angabe(felder)?.map(|feld_id| Eintrag {
         feld_id: feld_id.to_owned(),
         grund: DBA_FREISTELLUNG_SPERRE.to_owned(),
-        hinweis: None,
-    }))
-}
-
-/// Der Grund der Abgabe-Sperre bei einem selbst bewohnten privaten Verkauf (Abweichung Nr. 54): der Bescheid rechnet ihn als steuerfrei,
-/// die Erklaerung traegt ihn aber noch nicht. Die Anleitung zur Anlage SO sagt nur "nicht versteuern", nicht ob er einzutragen ist; das
-/// Schema fuehrt Eigennutzung, Zeitraum und Quadratmeter in der Grundstueckszeile (Zeile 36). Frist abgelaufen und taeglicher Gebrauch
-/// sperren nicht: sie stehen laut Anleitung nicht in der Erklaerung ([`p23_ohne_verkaeufe_ausserhalb_der_erklaerung`]).
-const P23_STEUERFREI_SPERRE: &str = "Steuerfreier privater Verkauf (selbst bewohnt): Dein Bescheid rechnet den Verkauf richtig als steuerfrei. Die Erklärung trägt ihn aber noch nicht ein, weil sie dafür die Wohnfläche und den Zeitraum der Nutzung bräuchte (Anlage SO, Zeile 36), die die Software noch nicht abfragt. Die Abgabe ist deshalb gesperrt. Trage den Verkauf im Formular selbst ein, wenn das Finanzamt ihn kennen soll.";
-
-/// Der Eintrag der Abgabe-Sperre, wenn die Akte einen bestaetigten, steuerfreien Verkauf traegt ([`P23_STEUERFREI_SPERRE`]).
-fn p23_steuerfrei_eintrag(
-    store: &Store,
-    bindung: &BindungIndex<'_>,
-    vz: Vz,
-) -> Result<Option<Eintrag>, BescheidFehler> {
-    let q = Instanzquelle {
-        store: Some(store),
-        bindung: Some(bindung),
-        nur_bestaetigt: false,
-    };
-    Ok(p23_steuerfreier_verkauf(&q, vz)?.map(|feld_id| Eintrag {
-        feld_id,
-        grund: P23_STEUERFREI_SPERRE.to_owned(),
         hinweis: None,
     }))
 }
@@ -178,8 +154,9 @@ pub fn einreichungs_xml(
     // Das Jahr kommt aus dem FALL, nie als stiller Vorgabewert: `store.veranlagungszeitraum()`.
     // `deklariere` prueft es erneut (`null_unzulaessig`, `est_mapping.py:198-229`) und weist es
     // ab, wenn es fehlt, 0 oder unplausibel ist — dieselbe Stelle wie `EM.deklariere(vz=...)`.
-    // Frist abgelaufen und taeglicher Gebrauch gehoeren nicht in die Anlage SO (Anleitung): der Schreiber in `elster` kennt die Befreiung
-    // nicht und truege jeden Verkauf der Akte ein, darum fallen diese Instanzen hier aus dem Snapshot, auch aus dem fuer `erzeuge_xml`.
+    // Frist abgelaufen (auch bei Eigennutzung) und taeglicher Gebrauch gehoeren nicht in die Anlage SO (Anleitung): der Schreiber in
+    // `elster` kennt die Frist nicht und truege jeden Verkauf der Akte ein, darum fallen diese Instanzen hier aus dem Snapshot, auch aus
+    // dem fuer `erzeuge_xml`.
     let q = Instanzquelle {
         store: Some(store),
         bindung: Some(&bindung),
@@ -196,13 +173,9 @@ pub fn einreichungs_xml(
     // Methode, `elster::deklariere` nicht). Upgrade-Pfad: die Methodentabellen nach `domain` heben, dann sperrt
     // `deklariere` selbst, wie bei Unfallkosten und Abzug.
     let dba_offen = dba_freistellung_eintrag(&felder)?;
-    // Dasselbe gilt fuer den steuerfreien privaten Verkauf (Nr. 54): der Schreiber in `elster` kennt die Befreiung nicht und truege
-    // jeden Verkauf der Akte in die Anlage SO ein; ein steuerfreier stuende dort wie ein steuerpflichtiger.
-    let p23_offen = p23_steuerfrei_eintrag(store, &bindung, vz)?;
-    if !deklaration.eingaben_konsistent() || dba_offen.is_some() || p23_offen.is_some() {
+    if !deklaration.eingaben_konsistent() || dba_offen.is_some() {
         let mut offen = deklaration.unvollstaendig().to_vec();
         offen.extend(dba_offen);
-        offen.extend(p23_offen);
         return Err(EinreichFehler::DeklarationUnvollstaendig(offen));
     }
     let xml = erzeuge_xml(

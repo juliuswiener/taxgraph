@@ -1,6 +1,6 @@
 //! § 23 `EStG` im Bescheid: private Veraeusserungsgeschaefte der Hauptperson (Abweichung Nr. 54 in `rust/fixtures/README.md`).
 //!
-//! Drei Aufgaben an einer Stelle, damit Rechnung, Sperre und Abgabe dieselbe Lesart der Instanz teilen:
+//! Drei Aufgaben an einer Stelle, damit Rechnung, Sperre und Erklaerung dieselbe Lesart der Instanz teilen:
 //!
 //! * [`p23_privatverkauf`]: die Einkuenfte aus privaten Veraeusserungsgeschaeften fuer den Ring. Steuerfreie Verkaeufe (Frist
 //!   abgelaufen, Eigennutzung, taeglicher Gebrauch) tragen nichts bei; ueber die Freigrenze des Veranlagungsjahrs entscheidet der
@@ -8,13 +8,14 @@
 //!   bleibt als Parity-Gegenstueck unveraendert bestehen.
 //! * [`p23_sperrgrund`]: der Guard. Ein bejahter Verkauf, den die Software nicht rechnet (Kryptowert, Beteiligung, Ehegatte,
 //!   Teilnutzung, Gebaeude der letzten zehn Jahre auf einem Grundstueck mit abgelaufener Frist), sperrt mit [`Sperrgrund::P23VerkaufNichtGerechnet`]; fehlende oder unstimmige Angaben sperren mit
-//!   [`Sperrgrund::P23AngabenOffen`]. Beides VOR jeder Zahl: ein Verkauf wird nie still weggelassen.
-//! * [`p23_ohne_verkaeufe_ausserhalb_der_erklaerung`]: Frist abgelaufen und Gegenstand des taeglichen Gebrauchs stehen NICHT in der
-//!   Erklaerung (Anleitung Anlage SO, `sources/bfinv/anleitungen/anl_so_2025.txt`: die Zeilen 34 bis 57 tragen nur Verkaeufe innerhalb
-//!   der Frist; Gegenstaende des taeglichen Gebrauchs "muessen Sie hier nicht angeben"). Der Schreiber in `elster` kennt die Befreiung
-//!   nicht und truege jede Instanz ein, darum nimmt diese Funktion sie vorher aus dem Snapshot.
-//! * [`p23_steuerfreier_verkauf`]: die Abgabe-Sperre fuer den selbst bewohnten Verkauf. Die Anleitung sagt nur "nicht versteuern",
-//!   nicht ob er einzutragen ist; die Zeile 36 (Eigennutzung, Zeitraum, m²) baut ein eigenes Paket. Die Rechnung bleibt richtig.
+//!   [`Sperrgrund::P23AngabenOffen`], bei einem selbst bewohnten Verkauf innerhalb der Frist auch fehlende Wohnflaeche und Zeitraum
+//!   (Zeile 36). Beides VOR jeder Zahl: ein Verkauf wird nie still weggelassen.
+//! * [`p23_ohne_verkaeufe_ausserhalb_der_erklaerung`]: Frist abgelaufen (auch bei Eigennutzung) und Gegenstand des taeglichen Gebrauchs
+//!   stehen NICHT in der Erklaerung (Anleitung Anlage SO, `sources/bfinv/anleitungen/anl_so_2025.txt`: die Zeilen 34 bis 57 tragen nur
+//!   Verkaeufe innerhalb der Frist; Gegenstaende des taeglichen Gebrauchs "muessen Sie hier nicht angeben"). Der Schreiber in `elster`
+//!   kennt die Frist nicht und truege jede Instanz ein, darum nimmt diese Funktion sie vorher aus dem Snapshot. Ein selbst bewohnter
+//!   Verkauf innerhalb der Frist bleibt und steht mit Haken, Zeitraum, Flaeche und Gewinn 0 in der Erklaerung (`elster`,
+//!   `P23_EIGENNUTZUNG_KZ`, `checkESt`-Fall Gx7).
 use bindung::Params;
 use domain::{Cent, Euro, PyWert, Sperrgrund, Vz, Zustand};
 use elster::{parse_instanz, Instanz};
@@ -26,7 +27,8 @@ use engine::zugriff::teil2::privatverkauf::{
 use std::collections::BTreeSet;
 
 use crate::{
-    ist_false, ist_zusammen, wert, zahl_oder_null, BescheidFehler, Felder, Instanzquelle,
+    ist_false, ist_zusammen, positive_zahl, wert, zahl_oder_null, BescheidFehler, Felder,
+    Instanzquelle,
 };
 
 /// Die Instanz-Gruppe der Verkaeufe in der Bindung (`bindung_p23_gesamt.yaml`).
@@ -35,6 +37,8 @@ const GRUPPE: &str = "p23_veraeusserung";
 /// Ein gelesener, in sich stimmiger Verkauf.
 struct Verkauf {
     befreiung: Befreiung,
+    /// Ob die Anlage SO den Verkauf traegt: innerhalb der Frist und kein Gegenstand des taeglichen Gebrauchs.
+    in_erklaerung: bool,
     /// Gewinn (positiv) oder Verlust (negativ) in Cent, nach `AfA`-Minderung der Kosten.
     gewinn: Cent,
 }
@@ -107,14 +111,20 @@ fn lese(inst: &Instanz, vz: Option<Vz>) -> Result<Result<Verkauf, Sperrgrund>, B
     if falsches_jahr || veraeusserung < anschaffung {
         return Ok(Err(offen));
     }
-    let befreiung = p23_befreiung(&VerkaufEingabe {
+    let eingabe = VerkaufEingabe {
         art,
         anschaffung,
         veraeusserung,
         eigennutzung,
         taeglicher_gebrauch,
         einkunftsquelle,
-    });
+    };
+    let befreiung = p23_befreiung(&eingabe);
+    // Die Anlage SO traegt nur Verkaeufe innerhalb der Frist, auch die selbst bewohnten (Zeilen 34 bis 57). `p23_befreiung` prueft die
+    // Eigennutzung VOR der Frist; ohne sie beantwortet dieselbe Funktion, ob die Frist laeuft und der Gegenstand nicht des taeglichen
+    // Gebrauchs ist.
+    let in_erklaerung = p23_befreiung(&VerkaufEingabe { eigennutzung: Eigennutzung::Nein, ..eingabe })
+        == Befreiung::Steuerpflichtig;
     // Ein Grundstueck mit abgelaufener Frist, ohne Eigennutzung und mit einem Gebaeude der letzten zehn Jahre: der Gebaeudeteil ist
     // steuerpflichtig. Die Aufteilung zwischen Boden und Gebaeude rechnet die Software nicht. Laeuft die Frist noch, zaehlt das ganze
     // Grundstueck; bei Eigennutzung sind Gebaeude und Boden frei: dort aendert die Antwort nichts.
@@ -145,8 +155,21 @@ fn lese(inst: &Instanz, vz: Option<Vz>) -> Result<Result<Verkauf, Sperrgrund>, B
     if afa.get() < 0 || afa > kosten {
         return Ok(Err(offen));
     }
+    // Ein selbst bewohnter Verkauf innerhalb der Frist steht mit Haken, Zeitraum und Flaeche in der Zeile 36 (Gewinn 0): ohne sie
+    // ist die Zeile unvollstaendig und `checkESt` weist sie ab (Fall Gc1, rc=610001002). Nach Ablauf der Frist steht er nicht in der
+    // Erklaerung und braucht beides nicht. Ob der Zeitraum zur Dreijahresregel passt, prueft die Software nicht.
+    if befreiung == Befreiung::Eigennutzung && in_erklaerung {
+        let zeitraum = (
+            text(inst, "p23_eigennutzung_von").and_then(Tag::aus_tt_mm_jjjj),
+            text(inst, "p23_eigennutzung_bis").and_then(Tag::aus_tt_mm_jjjj),
+        );
+        let flaeche = positive_zahl(wert(&inst.felder, "p23_wohnflaeche"))?;
+        if flaeche.is_none() || !matches!(zeitraum, (Some(von), Some(bis)) if von <= bis) {
+            return Ok(Err(offen));
+        }
+    }
     let gewinn = p23_gewinn_nach_afa(preis, kosten, afa, wk)?;
-    Ok(Ok(Verkauf { befreiung, gewinn }))
+    Ok(Ok(Verkauf { befreiung, in_erklaerung, gewinn }))
 }
 
 /// § 23 fuer den Ring, EURO: Σ ueber alle bestaetigten Verkaeufe, die steuerpflichtig sind; dann die Freigrenze des Jahres auf den
@@ -225,39 +248,10 @@ pub(crate) fn p23_sperrgrund(
     Ok(offen.then_some(Sperrgrund::P23AngabenOffen))
 }
 
-/// Die Feld-Id des ersten bestaetigten, selbst bewohnten Verkaufs (Eigennutzung), sonst `None`. Die Abgabe sperrt daran
-/// ([`crate::deklaration`]): so ein Verkauf steht noch nicht in der Erklaerung.
-///
-/// # Errors
-/// Instanz- und Ueberlauf-Fehler.
-pub fn p23_steuerfreier_verkauf(
-    q: &Instanzquelle<'_>,
-    vz: Vz,
-) -> Result<Option<String>, BescheidFehler> {
-    if q.beide().is_none() {
-        return Ok(None);
-    }
-    for inst in q.instanzen(GRUPPE)? {
-        if inst.zustand != Zustand::Bestaetigt {
-            continue;
-        }
-        if let Ok(v) = lese(&inst, Some(vz))? {
-            if v.befreiung == Befreiung::Eigennutzung {
-                return Ok(Some(if inst.index == 1 {
-                    "p23_veraeusserungspreis".to_owned()
-                } else {
-                    format!("p23_veraeusserungspreis__{}", inst.index)
-                }));
-            }
-        }
-    }
-    Ok(None)
-}
-
-/// Nimmt die bestaetigten Verkaeufe, die nicht in die Erklaerung gehoeren (Frist abgelaufen, Gegenstand des taeglichen Gebrauchs), aus
-/// dem Snapshot, ehe `deklariere` ihn liest. Die Anleitung zur Anlage SO: private Veraeusserungsgeschaefte sind nur Verkaeufe innerhalb
-/// der Frist (Zeilen 34 bis 42 "nicht mehr als 10 Jahre", Zeilen 52 bis 57 "nicht mehr als ein Jahr"); Gegenstaende des taeglichen
-/// Gebrauchs "muessen Sie hier nicht angeben". Bescheid und Ring zaehlen diese Verkaeufe schon nicht mit.
+/// Nimmt die bestaetigten Verkaeufe, die nicht in die Erklaerung gehoeren (Frist abgelaufen, auch bei Eigennutzung; Gegenstand des
+/// taeglichen Gebrauchs), aus dem Snapshot, ehe `deklariere` ihn liest. Die Anleitung zur Anlage SO: private Veraeusserungsgeschaefte
+/// sind nur Verkaeufe innerhalb der Frist (Zeilen 34 bis 42 "nicht mehr als 10 Jahre", Zeilen 52 bis 57 "nicht mehr als ein Jahr");
+/// Gegenstaende des taeglichen Gebrauchs "muessen Sie hier nicht angeben". Bescheid und Ring zaehlen diese Verkaeufe schon nicht mit.
 ///
 /// Es faellt jedes Feld der Instanz heraus (Basisname fuer Index 1, `basis__n` sonst), und nur die Felder der Gruppe
 /// `p23_veraeusserung`: eine andere Gruppe mit demselben Index bleibt. Ohne Store oder Bindung geschieht nichts.
@@ -278,7 +272,7 @@ pub fn p23_ohne_verkaeufe_ausserhalb_der_erklaerung(
             continue;
         }
         if let Ok(v) = lese(&inst, Some(vz))? {
-            if matches!(v.befreiung, Befreiung::FristAbgelaufen | Befreiung::TaeglicherGebrauch) {
+            if !v.in_erklaerung {
                 weg.insert(inst.index);
             }
         }

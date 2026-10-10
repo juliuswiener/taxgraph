@@ -229,6 +229,15 @@ pub(crate) const REGAL: &[Datei] = &[
                     tests: &["privatverkauf_schreibt_bezeichnung_und_daten_an_das_kz_der_art"],
                 },
             ),
+            // Abweichung Nr. 54: Haken, Zeitraum und Flaeche eines selbst bewohnten Grundstuecks (Anlage SO, Zeile 36) gibt es in Python nicht;
+            // der Test deckt die Literale (checkESt-Fall Gx7).
+            (
+                "P23_EIGENNUTZUNG_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0306301", "E0306302", "E0306303"],
+                    tests: &["selbst_bewohntes_grundstueck_traegt_haken_zeitraum_und_flaeche_und_den_gewinn_null"],
+                },
+            ),
             // Diese Regeln stehen als Literale in Methoden von `Bau`; ihr Top-Level-Name ist `deklariere`.
             ("deklariere", Zuordnung::Funktion("iban_weiche/praefix")),
             ("deklariere", Zuordnung::Funktion("iban_weiche/inland")),
