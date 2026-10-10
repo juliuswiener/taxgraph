@@ -23,7 +23,9 @@
 //! ANLAGE SO, PRIVATVERKAUF (Abweichung Nr. 54, Spike AK0 in `checkest_privatverkauf_spike.rs`). Der vierte echte Test misst, was der
 //! Schreiber fuer steuerpflichtige Verkaeufe baut (Grundstueck, anderes Wirtschaftsgut, mit Abschreibung, Verlust, Gewinn 0, zwei
 //! Verkaeufe) ueber den echten Abgabeweg, und fuenf Kontrollen, die `ERiC` beanstanden MUSS (Pflicht-Kz fehlt, Gewinn passt nicht zu
-//! den Einzelbetraegen). Ein steuerfreier Verkauf steht nicht in der Erklaerung, die Abgabe sperrt (`privatverkauf_einreichung_hermetisch.rs`).
+//! den Einzelbetraegen). Ein Verkauf mit abgelaufener Frist und ein Gegenstand des taeglichen Gebrauchs stehen nicht in der Erklaerung
+//! (Anleitung Anlage SO); die Faelle "ausserhalb" messen, dass `ERiC` die Akte ohne den SO-Block mit `rc=0` nimmt. Ein selbst bewohnter
+//! Verkauf sperrt die Abgabe (`privatverkauf_einreichung_hermetisch.rs`).
 //!
 //! KEIN SKIP. Die echten Tests sind `#[ignore]` (`cargo test --workspace` und die CI laufen ohne sie: `ERiC` und die Hersteller-ID
 //! gehoeren nicht auf einen Runner, Entscheid Julius 2026-09-12). Wer sie mit `--ignored` ruft, will den echten Weg: jede fehlende
@@ -751,6 +753,9 @@ fn so_abgeaendert(d: &Deklaration, index: u64, kz: &str, neu: Option<Value>) -> 
     m
 }
 
+/// Je Fall ausserhalb der Erklaerung: Name, die Antworten, die Zahl der Gewinn-Kz im XML.
+type AusserhalbFall<'a> = (&'a str, Vec<(String, Value)>, usize);
+
 /// Je Fall: Name, die Antworten, die Kz mit ihrem Wert im XML.
 type SoFall<'a> = (&'a str, Vec<(String, Value)>, Vec<(&'a str, &'a str)>);
 
@@ -791,6 +796,41 @@ fn privatverkauf_gegen_echtes_checkest() {
         for (kz, wert) in kz_im_xml {
             assert!(xml.contains(&format!("<{kz}>{wert}</{kz}>")), "{name}: <{kz}>{wert}</{kz}> steht nicht im XML");
         }
+        let u = urteil(&xml, &id);
+        eprintln!("{name:<40} {}", u.zeile());
+        assert!(u.plausibel(), "{name}: nicht rc=0: {}", u.zeile());
+    }
+
+    // Ausserhalb der Erklaerung: ein Verkauf mit abgelaufener Frist und ein Gegenstand des taeglichen Gebrauchs stehen laut Anleitung
+    // Anlage SO nicht in den Zeilen. `ERiC` muss die Akte ohne SO-Block mit rc=0 nehmen; neben einem steuerpflichtigen Verkauf steht nur
+    // dieser im XML.
+    let frei = |n: u8, typ: &str, daten: (&str, &str)| -> Vec<(String, Value)> {
+        let mut v = so_verkauf(n, typ, daten, [10_000_000, 5_000_000, 0, 0]);
+        for (feld, wert) in &mut v {
+            if *feld == so_name("p23_bezeichnung", n) {
+                *wert = json!("Freier Verkauf");
+            }
+            if *feld == so_name("p23_taeglicher_gebrauch", n) {
+                *wert = json!(true);
+            }
+        }
+        v
+    };
+    let mut gemischt = grundstueck(kauf, [20_000_000, 15_000_000, 0, 0]);
+    gemischt.extend(frei(2, "grundstueck", ("15.06.2014", "10.03.2025")));
+    let ausserhalb: Vec<AusserhalbFall<'_>> = vec![
+        ("SO_Frist_abgelaufen_allein", frei(1, "grundstueck", ("15.06.2014", "10.03.2025")), 0),
+        ("SO_taeglicher_Gebrauch_allein", frei(1, "anderes_wg", ("15.02.2025", "20.08.2025")), 0),
+        ("SO_steuerpflichtig_und_Frist_abgelaufen", gemischt, 1),
+    ];
+    for (name, verkaeufe, gewinne) in &ausserhalb {
+        let xml = so_xml(verkaeufe, &id).unwrap_or_else(|g| panic!("{name}: kein XML: {g}"));
+        assert!(!xml.contains("Freier Verkauf"), "{name}: der Verkauf ausserhalb steht im XML");
+        assert_eq!(
+            xml.matches("<E0306801>").count() + xml.matches("<E0307701>").count(),
+            *gewinne,
+            "{name}: falsche Zahl Gewinn-Kz im XML"
+        );
         let u = urteil(&xml, &id);
         eprintln!("{name:<40} {}", u.zeile());
         assert!(u.plausibel(), "{name}: nicht rc=0: {}", u.zeile());

@@ -192,7 +192,7 @@ bindungen:
     beispielwert: nein
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 1 Nr. 1 S. 3), kein Deklarationsfeld. Ein Verkauf mit Eigennutzung ist steuerfrei und steht nicht in der Erklaerung, bis die Anleitung zur Anlage SO vorliegt (Abgabe-Sperre, Abweichung Nr. 54). Teilnutzung sperrt (p23_verkauf_nicht_gerechnet)."
+    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 1 Nr. 1 S. 3), kein Deklarationsfeld. Ein Verkauf mit Eigennutzung ist steuerfrei und steht noch nicht in der Erklaerung: die Anleitung zur Anlage SO sagt nur \"nicht versteuern\", das Schema fuehrt Eigennutzung, Zeitraum und m2 in der Grundstueckszeile (Abgabe-Sperre, Abweichung Nr. 54). Teilnutzung sperrt (p23_verkauf_nicht_gerechnet)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 23 Abs. 1 Nr. 1 S. 3 EStG"
@@ -210,7 +210,7 @@ bindungen:
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 1 Nr. 2 S. 2), kein Deklarationsfeld. Ein Verkauf des taeglichen Gebrauchs ist steuerfrei und steht nicht in der Erklaerung (Abgabe-Sperre, Abweichung Nr. 54)."
+    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 1 Nr. 2 S. 2), kein Deklarationsfeld. Ein Verkauf des taeglichen Gebrauchs ist steuerfrei und steht nicht in der Erklaerung: die Anleitung zur Anlage SO nennt ihn \"muessen Sie hier nicht angeben\" (Abweichung Nr. 54), die Abgabe sperrt nicht."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 23 Abs. 1 Nr. 2 S. 2 EStG"

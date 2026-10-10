@@ -131,6 +131,27 @@ async fn ergebnis(scheibe: &str, paare: &[(String, Value)]) -> Value {
     ergebnis_mit(scheibe, paare, &[]).await
 }
 
+/// Legt einen Fall an, schreibt jedes Paar (bestaetigt) und liefert `GET /deklaration`, die Vorschau dessen, was die Abgabe schreibt.
+async fn vorschau(scheibe: &str, paare: &[(String, Value)]) -> Value {
+    let d = dienst();
+    let kopf = json!({"fall_id": "p23", "scheibe": scheibe, "veranlagungszeitraum": 2025});
+    let (status, antwort) = sende(&d, "POST", "/fall", Some(&kopf)).await;
+    assert_eq!(status, 201, "POST /fall: {antwort}");
+    for (feld, wert) in paare {
+        let rumpf = json!({
+            "feld_id": feld, "wert": wert, "zustand": "bestaetigt", "schreiber": "ui:laie",
+            "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "signal": {"signal_1": null, "signal_2": format!("ok@{feld}")},
+            "ts": "2026-01-01T00:00:00+00:00",
+        });
+        let (status, antwort) = sende(&d, "POST", "/fall/p23/event", Some(&rumpf)).await;
+        assert_eq!(status, 201, "POST /event {feld}: {antwort}");
+    }
+    let (status, antwort) = sende(&d, "GET", "/fall/p23/deklaration", None).await;
+    assert_eq!(status, 200, "GET /deklaration: {antwort}");
+    antwort
+}
+
 fn p(feld: &str, wert: Value) -> (String, Value) {
     (feld.to_owned(), wert)
 }
@@ -659,6 +680,29 @@ async fn gesamt_laesst_den_steuerfreien_verkauf_weg() {
     let v = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
     let a = ergebnis("gesamt", &akte(kegel_gesamt(), v)).await;
     erwarte_zahl("H2", &a, G0);
+}
+
+/// Die Vorschau zeigt, was die Abgabe schreibt: ein Verkauf mit abgelaufener Frist steht nicht darin (die Anleitung zur Anlage SO erfasst
+/// nur Verkaeufe innerhalb der Frist), der steuerpflichtige daneben schon. Der selbst bewohnte Verkauf bleibt in der Vorschau, solange die
+/// Abgabe ihn mit eigenem Grund sperrt.
+#[tokio::test]
+async fn die_vorschau_zeigt_den_verkauf_ausserhalb_der_erklaerung_nicht() {
+    let frei = mit(
+        verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000),
+        1,
+        "p23_bezeichnung",
+        json!("Freier Verkauf"),
+    );
+    let mut v = frei;
+    v.extend(mit(grundstueck_pflichtig(2), 2, "p23_bezeichnung", json!("Steuerpflichtiger Verkauf")));
+    let bewohnt = mit(grundstueck_pflichtig(3), 3, "p23_eigennutzung", json!("ausschliesslich"));
+    v.extend(mit(bewohnt, 3, "p23_bezeichnung", json!("Selbst bewohnter Verkauf")));
+    let d = vorschau("gesamt", &akte(kegel_gesamt(), v)).await;
+    let text = d["anlage_instanzen"].to_string();
+    assert!(text.contains("Steuerpflichtiger Verkauf") && text.contains("E0306801"), "der steuerpflichtige Verkauf fehlt: {text}");
+    assert!(text.contains("Selbst bewohnter Verkauf"), "der selbst bewohnte Verkauf fehlt in der Vorschau: {text}");
+    assert!(!text.contains("Freier Verkauf"), "der Verkauf mit abgelaufener Frist steht in der Vorschau: {text}");
+    assert_eq!(text.matches("E0306801").count(), 2, "genau zwei Gewinn-Kz (steuerpflichtig und selbst bewohnt): {text}");
 }
 
 #[tokio::test]

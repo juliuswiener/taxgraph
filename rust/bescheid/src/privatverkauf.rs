@@ -9,15 +9,21 @@
 //! * [`p23_sperrgrund`]: der Guard. Ein bejahter Verkauf, den die Software nicht rechnet (Kryptowert, Beteiligung, Ehegatte,
 //!   Teilnutzung, Gebaeude der letzten zehn Jahre auf einem Grundstueck mit abgelaufener Frist), sperrt mit [`Sperrgrund::P23VerkaufNichtGerechnet`]; fehlende oder unstimmige Angaben sperren mit
 //!   [`Sperrgrund::P23AngabenOffen`]. Beides VOR jeder Zahl: ein Verkauf wird nie still weggelassen.
-//! * [`p23_steuerfreier_verkauf`]: die Abgabe-Sperre. Ein steuerfreier Verkauf steht NICHT in der Erklaerung, weil nur die Anleitung
-//!   zur Anlage SO sagt, ob und wie er einzutragen ist (sie liegt nicht im Korpus); die Rechnung bleibt richtig.
+//! * [`p23_ohne_verkaeufe_ausserhalb_der_erklaerung`]: Frist abgelaufen und Gegenstand des taeglichen Gebrauchs stehen NICHT in der
+//!   Erklaerung (Anleitung Anlage SO, `sources/bfinv/anleitungen/anl_so_2025.txt`: die Zeilen 34 bis 57 tragen nur Verkaeufe innerhalb
+//!   der Frist; Gegenstaende des taeglichen Gebrauchs "muessen Sie hier nicht angeben"). Der Schreiber in `elster` kennt die Befreiung
+//!   nicht und truege jede Instanz ein, darum nimmt diese Funktion sie vorher aus dem Snapshot.
+//! * [`p23_steuerfreier_verkauf`]: die Abgabe-Sperre fuer den selbst bewohnten Verkauf. Die Anleitung sagt nur "nicht versteuern",
+//!   nicht ob er einzutragen ist; die Zeile 36 (Eigennutzung, Zeitraum, m²) baut ein eigenes Paket. Die Rechnung bleibt richtig.
 use bindung::Params;
 use domain::{Cent, Euro, PyWert, Sperrgrund, Vz, Zustand};
-use elster::Instanz;
+use elster::{parse_instanz, Instanz};
 use engine::zugriff::teil2::privatverkauf::{
     p23_befreiung, p23_freigrenze_je_vz, p23_gewinn_nach_afa, Art, Befreiung, Eigennutzung, Tag,
     VerkaufEingabe,
 };
+
+use std::collections::BTreeSet;
 
 use crate::{
     ist_false, ist_zusammen, wert, zahl_oder_null, BescheidFehler, Felder, Instanzquelle,
@@ -219,8 +225,8 @@ pub(crate) fn p23_sperrgrund(
     Ok(offen.then_some(Sperrgrund::P23AngabenOffen))
 }
 
-/// Die Feld-Id des ersten bestaetigten, steuerfreien Verkaufs (Frist abgelaufen, Eigennutzung, taeglicher Gebrauch), sonst `None`.
-/// Die Abgabe sperrt daran ([`crate::deklaration`]): so ein Verkauf steht nicht in der Erklaerung.
+/// Die Feld-Id des ersten bestaetigten, selbst bewohnten Verkaufs (Eigennutzung), sonst `None`. Die Abgabe sperrt daran
+/// ([`crate::deklaration`]): so ein Verkauf steht noch nicht in der Erklaerung.
 ///
 /// # Errors
 /// Instanz- und Ueberlauf-Fehler.
@@ -236,7 +242,7 @@ pub fn p23_steuerfreier_verkauf(
             continue;
         }
         if let Ok(v) = lese(&inst, Some(vz))? {
-            if v.befreiung != Befreiung::Steuerpflichtig {
+            if v.befreiung == Befreiung::Eigennutzung {
                 return Ok(Some(if inst.index == 1 {
                     "p23_veraeusserungspreis".to_owned()
                 } else {
@@ -246,4 +252,43 @@ pub fn p23_steuerfreier_verkauf(
         }
     }
     Ok(None)
+}
+
+/// Nimmt die bestaetigten Verkaeufe, die nicht in die Erklaerung gehoeren (Frist abgelaufen, Gegenstand des taeglichen Gebrauchs), aus
+/// dem Snapshot, ehe `deklariere` ihn liest. Die Anleitung zur Anlage SO: private Veraeusserungsgeschaefte sind nur Verkaeufe innerhalb
+/// der Frist (Zeilen 34 bis 42 "nicht mehr als 10 Jahre", Zeilen 52 bis 57 "nicht mehr als ein Jahr"); Gegenstaende des taeglichen
+/// Gebrauchs "muessen Sie hier nicht angeben". Bescheid und Ring zaehlen diese Verkaeufe schon nicht mit.
+///
+/// Es faellt jedes Feld der Instanz heraus (Basisname fuer Index 1, `basis__n` sonst), und nur die Felder der Gruppe
+/// `p23_veraeusserung`: eine andere Gruppe mit demselben Index bleibt. Ohne Store oder Bindung geschieht nichts.
+///
+/// # Errors
+/// Instanz- und Ueberlauf-Fehler.
+pub fn p23_ohne_verkaeufe_ausserhalb_der_erklaerung(
+    felder: &mut Felder,
+    q: &Instanzquelle<'_>,
+    vz: Vz,
+) -> Result<(), BescheidFehler> {
+    let Some((_, bindung)) = q.beide() else {
+        return Ok(());
+    };
+    let mut weg = BTreeSet::new();
+    for inst in q.instanzen(GRUPPE)? {
+        if inst.zustand != Zustand::Bestaetigt {
+            continue;
+        }
+        if let Ok(v) = lese(&inst, Some(vz))? {
+            if matches!(v.befreiung, Befreiung::FristAbgelaufen | Befreiung::TaeglicherGebrauch) {
+                weg.insert(inst.index);
+            }
+        }
+    }
+    felder.retain(|feld_id, _| {
+        let (basis, index) = parse_instanz(feld_id).unwrap_or((feld_id.as_str(), 1));
+        let in_gruppe = bindung
+            .get(basis)
+            .is_some_and(|b| b.instanz_gruppe.as_deref() == Some(GRUPPE));
+        !(in_gruppe && weg.contains(&index))
+    });
+    Ok(())
 }

@@ -2,12 +2,13 @@
 //!
 //! **Worum es geht.** Der Bescheid rechnet einen privaten Verkauf (`api/tests/p23_befreiungen_hermetisch.rs`). Die Erklaerung traegt
 //! nur steuerpflichtige Verkaeufe in die Anlage SO: Bezeichnung, beide Daten und Gewinn unter den Kz der Art (Grundstueck
-//! E0306111/E0306201/E0306202/E0306801, anderes Wirtschaftsgut E0307101/E0307201/E0307202/E0307701). Ein steuerfreier Verkauf (Frist
-//! abgelaufen, selbst bewohnt, taeglicher Gebrauch) steht NICHT drin: wo er im Formular stuende, sagt nur die Anleitung zur Anlage SO,
-//! und die liegt der Software nicht vor. Die Abgabe sperrt dann mit Klartext, die Rechnung bleibt richtig.
+//! E0306111/E0306201/E0306202/E0306801, anderes Wirtschaftsgut E0307101/E0307201/E0307202/E0307701). Ein Verkauf mit abgelaufener
+//! Frist und ein gebrauchter Gegenstand des taeglichen Gebrauchs steht NICHT drin: die Anleitung zur Anlage SO nimmt beide aus den
+//! Zeilen heraus (`sources/bfinv/anleitungen/anl_so_2025.txt`), die Abgabe sperrt nicht. Ein selbst bewohnter Verkauf steht noch nicht
+//! drin: die Abgabe sperrt mit Klartext, die Rechnung bleibt richtig.
 //!
-//! **Warum es zaehlt.** Ohne die Sperre truege der Schreiber jeden Verkauf der Akte ein, also auch den steuerfreien, und das
-//! Finanzamt saehe einen Gewinn, den es nicht besteuern darf.
+//! **Warum es zaehlt.** Ohne den Filter truege der Schreiber jeden Verkauf der Akte ein, also auch den, den das Gesetz nicht erfasst,
+//! und das Finanzamt saehe einen Gewinn, den es nicht besteuern darf.
 //!
 //! Der Test geht ueber `einreichungs_xml` und nicht ueber `POST /einreichen` (der HTTP-Weg ruft danach `ERiC`). Die Akte ist
 //! `rust/fixtures/e2e/gesamt.json` (Scheibe `gesamt`, vollstaendig, `kein_sonstige` = ja) mit dem Kreuz `kein_p23_verkauf` = nein und
@@ -246,25 +247,14 @@ fn verkauf_unter_der_freigrenze_steht_in_der_erklaerung() {
     }
 }
 
-/// Jeder steuerfreie Verkauf sperrt die Abgabe mit EIGENEM Grund (409 `deklaration_unvollstaendig`): Frist abgelaufen, selbst bewohnt
-/// (beide Arten), taeglicher Gebrauch. Die Liste nennt genau den Verkauf, der Grund die Anlage SO und die Sperre.
+/// Ein selbst bewohnter Verkauf sperrt die Abgabe mit EIGENEM Grund (409 `deklaration_unvollstaendig`): beide Arten der Eigennutzung.
+/// Die Liste nennt genau den Verkauf, der Grund die Anlage SO und die Sperre. (Frist abgelaufen und taeglicher Gebrauch sperren nicht:
+/// sie stehen gar nicht in der Erklaerung, siehe `frist_abgelaufen_und_taeglicher_gebrauch_stehen_nicht_in_der_erklaerung`.)
 #[test]
-fn steuerfreier_verkauf_sperrt_die_abgabe_mit_eigenem_grund() {
-    let frist = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+fn selbst_bewohnter_verkauf_sperrt_die_abgabe_mit_eigenem_grund() {
     let bewohnt = mit(pflichtig(1), 1, "p23_eigennutzung", json!("ausschliesslich"));
     let drei_jahre = mit(pflichtig(1), 1, "p23_eigennutzung", json!("letzte_drei_jahre"));
-    let gebrauch = mit(
-        verkauf(1, "anderes_wg", "15.02.2025", "20.08.2025", 10_000_000, 5_000_000),
-        1,
-        "p23_taeglicher_gebrauch",
-        json!(true),
-    );
-    for (name, v) in [
-        ("Frist abgelaufen", frist),
-        ("selbst bewohnt", bewohnt),
-        ("drei Jahre bewohnt", drei_jahre),
-        ("taeglicher Gebrauch", gebrauch),
-    ] {
+    for (name, v) in [("selbst bewohnt", bewohnt), ("drei Jahre bewohnt", drei_jahre)] {
         let r = lauf(&akte(v));
         let e = sperre(&r);
         assert_eq!(
@@ -279,11 +269,11 @@ fn steuerfreier_verkauf_sperrt_die_abgabe_mit_eigenem_grund() {
     }
 }
 
-/// Der zweite Verkauf ist steuerfrei, der erste steuerpflichtig: die Sperre nennt den zweiten, mit dem Suffix seiner Instanz.
+/// Der zweite Verkauf ist selbst bewohnt, der erste steuerpflichtig: die Sperre nennt den zweiten, mit dem Suffix seiner Instanz.
 #[test]
-fn die_sperre_nennt_den_steuerfreien_verkauf_unter_seiner_instanz() {
+fn die_sperre_nennt_den_selbst_bewohnten_verkauf_unter_seiner_instanz() {
     let mut v = pflichtig(1);
-    v.extend(verkauf(2, "grundstueck", "15.06.2014", "11.03.2025", 10_000_000, 5_000_000));
+    v.extend(mit(pflichtig(2), 2, "p23_eigennutzung", json!("ausschliesslich")));
     let r = lauf(&akte(v));
     let e = sperre(&r);
     assert_eq!(
@@ -406,13 +396,73 @@ fn grundstueck_ohne_antwort_zum_gebaeude_sperrt_mit_angaben_offen() {
     }
 }
 
+/// Frist abgelaufen und Gegenstand des taeglichen Gebrauchs sind keine privaten Veraeusserungsgeschaefte der Anlage SO: die
+/// Anleitung nimmt Verkaeufe nach Ablauf der Frist aus den Zeilen 34 bis 57 heraus ("Private Veraeusserungsgeschaefte sind" nur Verkaeufe
+/// innerhalb der Frist) und sagt zum taeglichen Gebrauch: "muessen Sie hier nicht angeben". Die Abgabe sperrt darum nicht, und der
+/// Verkauf steht mit keinem Kz im XML. Gegenprobe: `steuerpflichtiges_grundstueck_steht_mit_vier_kz_in_der_erklaerung`.
+#[test]
+fn frist_abgelaufen_und_taeglicher_gebrauch_stehen_nicht_in_der_erklaerung() {
+    let frist = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+    let gebrauch = mit(
+        verkauf(1, "anderes_wg", "15.02.2025", "20.08.2025", 10_000_000, 5_000_000),
+        1,
+        "p23_taeglicher_gebrauch",
+        json!(true),
+    );
+    for (name, v) in [("Frist abgelaufen", frist), ("taeglicher Gebrauch", gebrauch)] {
+        let r = lauf(&akte(mit(v, 1, "p23_bezeichnung", json!("Freier Verkauf"))));
+        erwarte_einreichbar(name, &r);
+        if let Ok(e) = &r {
+            assert!(kz_der_instanz(e, 1).is_empty(), "{name}: steht mit {:?} in der Erklaerung", kz_der_instanz(e, 1));
+            if schemas_da(2025) {
+                for kz in ["Freier Verkauf", "E0306801", "E0307701"] {
+                    assert!(!e.xml.contains(kz), "{name}: `{kz}` steht im XML");
+                }
+            }
+        }
+    }
+}
+
+/// Ein Verkauf ausserhalb der Erklaerung nimmt nur sich selbst mit: die anderen Verkaeufe stehen unter ihrem Index, und eine andere
+/// Instanz-Gruppe mit demselben Index (`hh_handwerker_betrag__2` in der Akte) bleibt unberuehrt.
+#[test]
+fn der_verkauf_ausserhalb_der_erklaerung_laesst_die_anderen_stehen() {
+    let frei = |n: u8| mit(verkauf(n, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000), n, "p23_bezeichnung", json!("Freier Verkauf"));
+    let handwerker_2 = |e: &Einreichung| {
+        e.deklaration
+            .anlage_instanzen
+            .iter()
+            .any(|(g, ii)| g == "hh_handwerker" && ii.iter().any(|i| i.index == 2))
+    };
+    // Der erste Verkauf ist frei, der zweite steuerpflichtig.
+    let mut v = frei(1);
+    v.extend(pflichtig(2));
+    let r = lauf(&akte(v));
+    erwarte_einreichbar("erster frei", &r);
+    if let Ok(e) = &r {
+        assert!(kz_der_instanz(e, 1).is_empty(), "der freie Verkauf steht in der Erklaerung: {:?}", kz_der_instanz(e, 1));
+        assert_eq!(kz_der_instanz(e, 2).get("E0306801"), Some(&json!(50_000)), "der steuerpflichtige Verkauf fehlt");
+        assert!(handwerker_2(e), "die Instanz 2 einer anderen Gruppe ging mit verloren");
+    }
+    // Umgekehrt: der erste steuerpflichtig, der zweite frei.
+    let mut v = pflichtig(1);
+    v.extend(frei(2));
+    let r = lauf(&akte(v));
+    erwarte_einreichbar("zweiter frei", &r);
+    if let Ok(e) = &r {
+        assert_eq!(kz_der_instanz(e, 1).get("E0306801"), Some(&json!(50_000)), "der steuerpflichtige Verkauf fehlt");
+        assert!(kz_der_instanz(e, 2).is_empty(), "der freie Verkauf steht in der Erklaerung: {:?}", kz_der_instanz(e, 2));
+        assert!(handwerker_2(e), "die Instanz 2 einer anderen Gruppe ging mit verloren");
+    }
+}
+
 /// `p23_steuerfreier_verkauf` nennt nur BESTAETIGTE steuerfreie Verkaeufe: ein Verkauf mit vorlaeufigem Preis ist offen, nicht fertig, und
 /// die Abgabe sperrt dann mit dem Eintrag der Vorlaeufigkeit. Ueber `einreichungs_xml` ist der Zweig nicht zu erreichen, weil der Guard
 /// davor jede vorlaeufige Instanz mit `p23_angaben_offen` sperrt; darum ruft der Test die Funktion selbst. Gegenprobe: derselbe Verkauf
 /// bestaetigt wird genannt.
 #[test]
 fn der_steuerfreie_verkauf_zaehlt_nur_bestaetigt() {
-    let frist = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+    let frist = mit(pflichtig(1), 1, "p23_eigennutzung", json!("ausschliesslich"));
     let nennt = |vorlaeufig: Option<&str>| {
         let mut s = akte(Vec::new());
         for (feld, wert) in &frist {

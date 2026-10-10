@@ -12,7 +12,7 @@ use store::{SnapshotFehler, Store};
 use super::konstanten::STAMMDATEN_FELDER;
 use super::{an_gesamt_sperrgrund, mit_ring_werten, scheibe_bindung, Cfg, ScheibenFehler};
 use crate::einkuenfte::dba_freistellung_angabe;
-use crate::privatverkauf::p23_steuerfreier_verkauf;
+use crate::privatverkauf::{p23_ohne_verkaeufe_ausserhalb_der_erklaerung, p23_steuerfreier_verkauf};
 use crate::{BescheidFehler, BindungIndex, Felder, Instanzquelle};
 
 /// Der Grund der Abgabe-Sperre bei freigestellten Auslandsangaben (Abweichung Nr. 40): der Bescheid rechnet den
@@ -29,10 +29,11 @@ fn dba_freistellung_eintrag(felder: &Felder) -> Result<Option<Eintrag>, Bescheid
     }))
 }
 
-/// Der Grund der Abgabe-Sperre bei einem steuerfreien privaten Verkauf (Abweichung Nr. 54): der Bescheid rechnet ihn als steuerfrei
-/// (Frist abgelaufen, selbst bewohnt, taeglicher Gebrauch), die Erklaerung traegt ihn aber nicht. Ob und wo ein solcher Verkauf in der
-/// Anlage SO steht, sagt nur die Anleitung zur Anlage SO; sie liegt der Software nicht vor, und geraten wird nicht.
-const P23_STEUERFREI_SPERRE: &str = "Steuerfreier privater Verkauf (Frist abgelaufen, selbst bewohnt oder Gegenstand des täglichen Gebrauchs): Dein Bescheid rechnet den Verkauf richtig als steuerfrei. Die Erklärung kann ihn aber noch nicht eintragen, weil der Software die Anleitung zur Anlage SO fehlt. Die Abgabe ist deshalb gesperrt. Trage den Verkauf im Formular selbst ein, wenn das Finanzamt ihn kennen soll.";
+/// Der Grund der Abgabe-Sperre bei einem selbst bewohnten privaten Verkauf (Abweichung Nr. 54): der Bescheid rechnet ihn als steuerfrei,
+/// die Erklaerung traegt ihn aber noch nicht. Die Anleitung zur Anlage SO sagt nur "nicht versteuern", nicht ob er einzutragen ist; das
+/// Schema fuehrt Eigennutzung, Zeitraum und Quadratmeter in der Grundstueckszeile (Zeile 36). Frist abgelaufen und taeglicher Gebrauch
+/// sperren nicht: sie stehen laut Anleitung nicht in der Erklaerung ([`p23_ohne_verkaeufe_ausserhalb_der_erklaerung`]).
+const P23_STEUERFREI_SPERRE: &str = "Steuerfreier privater Verkauf (selbst bewohnt): Dein Bescheid rechnet den Verkauf richtig als steuerfrei. Die Erklärung trägt ihn aber noch nicht ein, weil sie dafür die Wohnfläche und den Zeitraum der Nutzung bräuchte (Anlage SO, Zeile 36), die die Software noch nicht abfragt. Die Abgabe ist deshalb gesperrt. Trage den Verkauf im Formular selbst ein, wenn das Finanzamt ihn kennen soll.";
 
 /// Der Eintrag der Abgabe-Sperre, wenn die Akte einen bestaetigten, steuerfreien Verkauf traegt ([`P23_STEUERFREI_SPERRE`]).
 fn p23_steuerfrei_eintrag(
@@ -177,6 +178,14 @@ pub fn einreichungs_xml(
     // Das Jahr kommt aus dem FALL, nie als stiller Vorgabewert: `store.veranlagungszeitraum()`.
     // `deklariere` prueft es erneut (`null_unzulaessig`, `est_mapping.py:198-229`) und weist es
     // ab, wenn es fehlt, 0 oder unplausibel ist — dieselbe Stelle wie `EM.deklariere(vz=...)`.
+    // Frist abgelaufen und taeglicher Gebrauch gehoeren nicht in die Anlage SO (Anleitung): der Schreiber in `elster` kennt die Befreiung
+    // nicht und truege jeden Verkauf der Akte ein, darum fallen diese Instanzen hier aus dem Snapshot, auch aus dem fuer `erzeuge_xml`.
+    let q = Instanzquelle {
+        store: Some(store),
+        bindung: Some(&bindung),
+        nur_bestaetigt: false,
+    };
+    p23_ohne_verkaeufe_ausserhalb_der_erklaerung(&mut felder, &q, vz)?;
     let deklaration = deklariere(
         &felder,
         &bindung,
