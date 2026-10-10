@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "estg/p23/2024-12-23"
+  norm: "EStG § 23"
+  fassung: "Fassung bis 31.12.2024 (amtliche Seite, Archivkopie vom 2024-12-23)"
+  quelle_url: "https://web.archive.org/web/20241223222840id_/https://www.gesetze-im-internet.de/estg/__23.html"
+  abrufdatum: "2026-10-10"
+  datei: "estg_p23_2024-12-23.txt"
+  sha256: "3a34bf85eb9e9fa383879131057f5a61508b8c4c7cc21b11483eac1dfd17cbf7"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["geplant: Privatverkauf Stufe 1, Freigrenze und Fristen je VZ (vault backlog ehrlich-erklaerter-privatverkauf-verhindert-die-abgabe)"]
