@@ -822,7 +822,6 @@ dependencies = [
  "domain",
  "interview",
  "proptest",
- "serde",
  "serde_json",
  "store",
 ]
@@ -861,7 +860,6 @@ dependencies = [
  "serde",
  "serde_json",
  "store",
- "thiserror",
  "webpki-roots",
 ]
 

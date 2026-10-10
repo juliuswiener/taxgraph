@@ -14,7 +14,6 @@ serde = { workspace = true }
 # `float_roundtrip`: ohne das Feature liest `serde_json` Floats nicht immer korrekt gerundet
 # (1 ULP daneben), Pythons `json.loads` schon — `str(wert)` im Prompt wiche dann ab.
 serde_json = { workspace = true, features = ["float_roundtrip"] }
-thiserror = { workspace = true }
 regex = { workspace = true }
 fancy-regex = { workspace = true }
 rustls = { workspace = true }
