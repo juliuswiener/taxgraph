@@ -141,13 +141,14 @@ bindungen:
     hilfe_kurz: "Standard ist die Anrechnung (§34c Abs.1, meist günstiger). Der Abzug (Abs.2) lohnt nur in Sonderfällen — z.B. wenn keine deutsche Steuer da ist, auf die angerechnet werden könnte. Ohne Antrag wird angerechnet."
     beispielwert: false
     herkunft_slots: null
-    # ponytail: kein Kz, die Abgabe sperrt (rust/elster/src/deklaration.rs, DBA_ABZUG_SPERRE), wenn der Marker true und die
-    # gezahlte Steuer ueber 0 ist. Die Erklaerung traegt den Betrag seit Abweichung Nr. 41 unter E0600920 (Anlage AUS Zeile 10,
-    # Staat_Spez_InvFonds, "abgezogene auslaendische Steuern nach § 34c Abs. 2", ein Betrag, KEIN Marker) statt unter E0601901,
-    # und der Bescheid kuerzt die Werbungskosten der Anlage N. Seit Abweichung Nr. 49 steht der Abzug auch als zweite Zeile
-    # "Sonstiges" der Anlage N (Weitere_Wk/Sonst, Ring-Wert dba_abzug_zeile_cent). Grenze: kein checkESt-Lauf hat die Zeile je
-    # angenommen. Upgrade-Pfad: einen Lauf mit Hersteller-ID belegen, dann die Sperre streichen. Je Ehegatte eine eigene
-    # Anlage AUS, je Staat ein Block: nicht gebaut.
+    # Kein Kz. Die Erklaerung traegt den Betrag seit Abweichung Nr. 41 unter E0600920 (Anlage AUS Zeile 10, Staat_Spez_InvFonds,
+    # "in Zeile 7 abgezogene auslaendische Steuern nach § 34c Abs. 2", ein Betrag, KEIN Marker) statt unter E0601901, und der
+    # Bescheid kuerzt die Werbungskosten der Anlage N. Seit Abweichung Nr. 49 steht der Abzug auch als zweite Zeile "Sonstiges"
+    # der Anlage N (Weitere_Wk/Sonst, Ring-Wert dba_abzug_zeile_cent), und Zeile 7 (E0601401) steht dann NACH dem Abzug, um die
+    # aufgerundete Steuer gekuerzt (Anleitung Anlage AUS Zeile 10). checkESt hat das angenommen (VZ 2024 und 2025); die Abgabe
+    # sperrt nur noch (rust/elster/src/deklaration.rs, DBA_ABZUG_SPERRE), wenn der Marker true und die gezahlte Steuer ueber 0 ist,
+    # der Bescheid den Abzug aber nicht rechnet (Freistellung, keine Auslandseinkuenfte, Steuer unter 1 Euro).
+    # ponytail: je Ehegatte eine eigene Anlage AUS, je Staat ein Block: nicht gebaut.
     elster_kz: null
     elster_kz_grund: "Antrags-/Wahlrechts-Marker (Anlage-AUS) — reine Ring-Weiche (Abzug statt Anrechnung), Kz-Recon = dev-2-Folgeticket (null-MVP)."
     vz_gueltigkeit: [2024, 2025, 2026]

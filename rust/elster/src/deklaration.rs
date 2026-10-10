@@ -82,13 +82,13 @@ const DBA_STEUER: &str = "dba_gezahlte_auslaendische_steuer";
 /// (`ABZUGS_KZ`).
 const DBA_ABZUG_KZ: &str = "E0600920";
 
-/// Der Grund der Abgabe-Sperre bei gewaehltem Abzug und gezahlter Steuer ueber 0 (`dba_abzug_statt_anrechnung` ohne Kz):
-/// der Bescheid kuerzt die Einkuenfte der Anlage N um die Steuer (bei DBA-Freistellung seit Abweichung Nr. 35 nicht mehr: dort
-/// gibt es keinen Abzug). Die Erklaerung traegt die Steuer unter `E0600920` und, seit Abweichung Nr. 49, als zweite Zeile
-/// "Sonstiges" der Anlage N (`Weitere_Wk/Sonst`, [`DBA_ABZUG_ZEILE`]). Kein `checkESt`-Lauf hat diese Zeile je angenommen: die
-/// Sperre faellt mit dem ersten Lauf. Die Sperre nutzt die WEITE Bedingung ([`Bau::abzug_gewaehlt`]), die Zeile die enge des
-/// Bescheids; in den zwei Faellen dazwischen (keine Auslandseinkuenfte, Freistellung) steht keine Zeile, der Text sagt "soweit".
-const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: Die Erklärung trägt den Betrag in der Anlage AUS und, soweit der Bescheid deine Einkünfte kürzt, in der Zeile „Sonstiges“ der Anlage N. Ein checkESt-Lauf hat diese Zeile noch nie angenommen. Die Abgabe ist deshalb gesperrt. Antworte „nein“ (Anrechnung), wenn du abgeben willst, oder trage den Abzug im Formular selbst ein.";
+/// Der Grund der Abgabe-Sperre bei gewaehltem Abzug und gezahlter Steuer ueber 0 (`dba_abzug_statt_anrechnung` ohne Kz), wenn der
+/// Bescheid den Abzug NICHT rechnet (bei DBA-Freistellung seit Abweichung Nr. 35 gibt es keinen Abzug; ohne Auslandseinkuenfte
+/// ueber 0 auch nicht). Die Erklaerung trug die Steuer unter `E0600920` und, seit Abweichung Nr. 49, als zweite Zeile "Sonstiges"
+/// der Anlage N (`Weitere_Wk/Sonst`, [`DBA_ABZUG_ZEILE`]); sie meldete den Abzug dann ohne Zeile. `checkESt` hat Zeile und
+/// Anlage AUS angenommen, die Sperre fiel am 2026-10-10 fuer den getragenen Fall ([`Bau::abzug_zeile_getragen`]). Sie nutzt die
+/// WEITE Bedingung ([`Bau::abzug_gewaehlt`]) abzueglich des getragenen Falls.
+const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: In deinem Fall rechnet der Bescheid keinen Abzug, zum Beispiel weil ein Abkommen die Einkünfte freistellt oder keine Auslandseinkünfte über 0 stehen. Die Erklärung würde den Abzug trotzdem melden. Die Abgabe ist deshalb gesperrt. Antworte „nein“ (Anrechnung), wenn du abgeben willst, oder trage den Abzug im Formular selbst ein.";
 
 /// Nur Rust (Abweichung Nr. 51): der Staat der Auslandseinkuenfte (Anlage AUS, Zeile "1. Staat"), die Einkuenfte aus diesem
 /// Staat (Kz kommt aus der Bindung, Anlage AUS Zeile 7) und die Tabelle der Listentexte. Das Feld hat kein Kz in der Bindung:
@@ -712,21 +712,54 @@ impl Bau<'_> {
             && bestaetigt(DBA_STEUER).is_some_and(|s| py::int(&s.wert).is_ok_and(|cent| cent > 0))
     }
 
+    /// Wahr, wenn der Bescheid den Abzug rechnet und die Erklaerung ihn als zweite Zeile "Sonstiges" der Anlage N traegt: der
+    /// Ring-Wert [`DBA_ABZUG_ZEILE`] steht bestaetigt und ueber 0 im Snapshot (`bescheid::deklaration::mit_ring_werten`, die enge
+    /// Bedingung des Bescheids: Wahl, Steuer und Auslandseinkuenfte ueber 0, keine Freistellung, Arbeitslohn, einzeln, keine
+    /// fiktive Steuer). `deklariere` kann diese Bedingung nicht selbst auswerten; ohne Ring-Wert gilt der Abzug als nicht getragen.
+    fn abzug_zeile_getragen(&self) -> bool {
+        self.snapshot.get(DBA_ABZUG_ZEILE).is_some_and(|s| {
+            s.zustand == Zustand::Bestaetigt && py::int(&s.wert).is_ok_and(|cent| cent > 0)
+        })
+    }
+
     /// `dba_abzug_statt_anrechnung` OHNE Kz (Abweichung Nr. 29): der Marker steht mit Grund in `nicht_deklariert`. Ist die
-    /// Wahl `true` und die gezahlte Steuer (bestaetigt) ueber 0, sperrt er die Abgabe ([`DBA_ABZUG_SPERRE`], 409
-    /// `deklaration_unvollstaendig`): der Bescheid kuerzt die Werbungskosten der Anlage N (`bescheid::einkuenfte::
-    /// dba_abzug_werbungskosten`, Abweichung Nr. 41), diese Zeile schreibt die Erklaerung nicht. Die Steuer selbst steht dann
-    /// unter `E0600920` ([`Bau::abzug_gewaehlt`]). Die Sperre braucht die Auslandseinkuenfte NICHT: die Rechnung kuerzt nur bei
-    /// Einkuenften ueber 0, die Erklaerung meldet aber auch bei 0 den Abzug, den der Nutzer gewaehlt hat.
+    /// Wahl `true` und die gezahlte Steuer (bestaetigt) ueber 0, steht die Steuer unter `E0600920` ([`Bau::abzug_gewaehlt`]).
+    /// Die Abgabe sperrt ([`DBA_ABZUG_SPERRE`], 409 `deklaration_unvollstaendig`) nur, wenn der Bescheid den Abzug nicht rechnet
+    /// ([`Bau::abzug_zeile_getragen`] falsch): dann meldete die Erklaerung `E0600920` ohne die Zeile der Anlage N und ohne
+    /// gekuerzte Einkuenfte. Im getragenen Fall fiel die Sperre am 2026-10-10 (`checkESt` hat Zeile und Anlage AUS angenommen).
+    /// Die Sperre braucht die Auslandseinkuenfte NICHT: die Rechnung kuerzt nur bei Einkuenften ueber 0, die Erklaerung meldet
+    /// aber auch bei 0 den Abzug, den der Nutzer gewaehlt hat.
     fn dba_abzug(&mut self, feld_id: &str, b: &Bindung) {
         let grund = b
             .elster_kz_grund
             .clone()
             .unwrap_or_else(|| "kein elster_kz".to_owned());
         self.nicht(feld_id, grund);
-        if self.abzug_gewaehlt() {
+        if self.abzug_gewaehlt() && !self.abzug_zeile_getragen() {
             self.offen(feld_id, DBA_ABZUG_SPERRE);
         }
+    }
+
+    /// Anlage AUS Zeile 7 NACH dem Abzug (Anleitung zur Anlage AUS, Zeile 10: "bei der Ermittlung der Einkuenfte abziehen und die
+    /// abgezogene Steuer in Zeile 10 eintragen"; Schema: `E0600920` ist "in Zeile `E0601401.Vordruckzeile` abgezogene
+    /// auslaendische Steuern"). Ist die Zeile "Sonstiges" getragen ([`Bau::abzug_zeile_getragen`]), steht `E0601401` um die
+    /// aufgerundete Steuer unter `E0600920` gekuerzt; das Ergebnis darf negativ sein (die Anleitung nennt das, das Schema
+    /// erlaubt es). Die Anrechnung (Wahl `false`) laesst Zeile 7 unberuehrt. NACH der Feldschleife, denn beide Kz stehen erst dann.
+    fn dba_einkuenfte_nach_abzug(&mut self) {
+        if !self.abzug_gewaehlt() || !self.abzug_zeile_getragen() {
+            return;
+        }
+        let Some(kz) = self.bindung.get(DBA_EINKUENFTE).and_then(|b| kz_von(b)) else {
+            return;
+        };
+        let (Some(einkuenfte), Some(abzug)) = (
+            self.deklaration.get(kz).and_then(Value::as_i64),
+            self.deklaration.get(DBA_ABZUG_KZ).and_then(Value::as_i64),
+        ) else {
+            return;
+        };
+        self.deklaration
+            .insert(kz.to_owned(), Value::from(einkuenfte.saturating_sub(abzug)));
     }
 
     /// Steht das Kz des Felds (aus der Bindung, kein Literal) in der Deklaration von Person A?
@@ -1214,6 +1247,7 @@ pub fn deklariere(
     bau.bankverbindung();
     bau.kap_nulldeklaration()?;
     bau.pflegeblock();
+    bau.dba_einkuenfte_nach_abzug();
     bau.dba_staat();
     bau.antrag_person_b();
     let dokumentiert = bau.dokumentiert();
@@ -2014,6 +2048,69 @@ mod tests {
                 anrechnung.map(|e| json!(e)).as_ref(),
                 "Wahl {wahl} {zustand:?}, {cent} Cent: Anrechnung"
             );
+        }
+    }
+
+    /// Der Abzug nach § 34c Abs. 2 steht in der Anlage AUS so, wie die Anleitung (Zeile 10) und das Schema es verlangen:
+    /// `E0600920` heisst "In Zeile 7 (`E0601401`) abgezogene auslaendische Steuern", Zeile 7 steht also NACH dem Abzug. Ist die
+    /// Zeile "Sonstiges" getragen (Ring-Wert `dba_abzug_zeile_cent` bestaetigt und ueber 0: der Bescheid rechnet den Abzug), steht
+    /// `E0601401` um die aufgerundete Steuer gekuerzt, auch negativ; die Abgabe sperrt nicht. Rechnet der Bescheid keinen Abzug
+    /// (Ring-Wert fehlt oder nur vorlaeufig, z. B. bei Freistellung), bleibt die Sperre am Marker und Zeile 7 unveraendert; die
+    /// Anrechnung (Wahl `false`) laesst Zeile 7 unberuehrt. Das Regal (`regal.rs`) fuehrt `E0600920` mit dem Test der Abweichung Nr. 41.
+    #[test]
+    fn abzug_getragen_kuerzt_zeile_7_und_sperrt_nicht_sonst_bleibt_die_sperre() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
+            wert: wert.into(),
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let b = Zustand::Bestaetigt;
+        // (Name, Wahl, Ring-Wert in Cent mit Zustand, Einkuenfte in Cent) -> (E0601401, E0600920, E0601901, Sperre am Marker)
+        let faelle = [
+            ("getragen", true, Some((70_001, b)), 500_000, Some(4299), Some(701), None, false),
+            ("getragen, Einkuenfte unter der Steuer", true, Some((70_001, b)), 70_000, Some(-1), Some(701), None, false),
+            ("Bescheid rechnet keinen Abzug", true, None, 500_000, Some(5000), Some(701), None, true),
+            ("Ring-Wert nur vorlaeufig", true, Some((70_001, Zustand::Vorlaeufig)), 500_000, Some(5000), Some(701), None, true),
+            ("Ring-Wert 0", true, Some((0, b)), 500_000, Some(5000), Some(701), None, true),
+            ("Anrechnung", false, None, 500_000, Some(5000), None, Some(700), false),
+        ];
+        for (name, wahl, ring, einkuenfte, z7, z10, anrechnung, sperre) in faelle {
+            let mut felder = Felder::from([
+                ("dba_abzug_statt_anrechnung".to_owned(), feld(json!(wahl), b)),
+                ("dba_gezahlte_auslaendische_steuer".to_owned(), feld(json!(70_001), b)),
+                ("dba_auslaendische_einkuenfte".to_owned(), feld(json!(einkuenfte), b)),
+                ("dba_staat".to_owned(), feld(json!("Frankreich"), b)),
+            ]);
+            if let Some((cent, zustand)) = ring {
+                felder.insert("dba_abzug_zeile_cent".to_owned(), feld(json!(cent), zustand));
+            }
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            let kz = |k: &str| d.deklaration.get(k).cloned();
+            assert_eq!(kz("E0601401"), z7.map(|e| json!(e)), "{name}: Zeile 7");
+            assert_eq!(kz("E0600920"), z10.map(|e| json!(e)), "{name}: Zeile 10");
+            assert_eq!(kz("E0601901"), anrechnung.map(|e| json!(e)), "{name}: Anrechnung");
+            let gesperrt: Vec<_> = d.unvollstaendig().iter().map(|e| e.feld_id.clone()).collect();
+            // Ein nur vorlaeufiger Ring-Wert steht zusaetzlich mit seinem eigenen Grund ("Pflicht-Bestaetigung fehlt") in der Liste.
+            let soll: Vec<&str> = match (sperre, ring) {
+                (false, _) => vec![],
+                (true, Some((_, Zustand::Vorlaeufig))) => vec!["dba_abzug_statt_anrechnung", "dba_abzug_zeile_cent"],
+                (true, _) => vec!["dba_abzug_statt_anrechnung"],
+            };
+            assert_eq!(gesperrt, soll, "{name}: Sperre");
         }
     }
 
