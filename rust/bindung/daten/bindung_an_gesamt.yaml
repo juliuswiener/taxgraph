@@ -342,12 +342,13 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
-    # Ein falsches „Nein" nimmt Rente, privaten Verkauf und gelegentliche Leistungen still aus der
-    # Rechnung. Deshalb nennt der Text je Regel an diesem Kreuz einen Alltagsfall
-    # (tests/test_screening_gruppe_b.py). Aktien fehlen mit Absicht: § 23 Abs. 2 EStG ordnet sie
+    # Ein falsches „Nein" nimmt Rente und gelegentliche Leistungen still aus der Rechnung. Deshalb nennt der Text je Regel an
+    # diesem Kreuz einen Alltagsfall. Der private Verkauf steht seit Abweichung Nr. 54 NICHT mehr hier: er hat sein eigenes Kreuz
+    # `kein_p23_verkauf` und wird gerechnet. Stünde er hier, sperrte jedes "Ja" die Scheibe `gesamt` mit
+    # `einkunftsart_nicht_ring_faehig`, bevor die Frage zum Verkauf kommt. Aktien fehlen mit Absicht: § 23 Abs. 2 EStG ordnet sie
     # den Kapitalerträgen zu, die `kein_kap` erhebt.
-    fragetext_laie: "Hattest du dieses Jahr sonstige Einkünfte (z. B. eine Rente, den Verkauf einer Wohnung bis 10 Jahre oder von Kryptowährung bis 1 Jahr nach dem Kauf, Geld für das Vermieten einzelner Gegenstände)?"
-    hilfe_kurz: "Rente: gesetzliche, Versorgungswerk, Rürup, private Rentenversicherung oder Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung. Verkauf: Wohnung, Haus oder Grundstück bis 10 Jahre nach dem Kauf; Kryptowährung (z. B. Bitcoin), Gold oder Kunst bis 1 Jahr nach dem Kauf — Auto und Möbel zählen nicht. Vermieten: z. B. Wohnmobil oder Werkzeug, auch gelegentliche Vermittlungen gegen Provision. Nur Arbeitslohn → Nein."
+    fragetext_laie: "Hattest du dieses Jahr sonstige Einkünfte (z. B. eine Rente oder Geld für das Vermieten einzelner Gegenstände)? Den Verkauf einer Wohnung oder eines anderen Gegenstands fragen wir getrennt."
+    hilfe_kurz: "Rente: gesetzliche, Versorgungswerk, Rürup, private Rentenversicherung oder Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung. Vermieten: z. B. Wohnmobil oder Werkzeug, auch gelegentliche Vermittlungen gegen Provision. Einen privaten Verkauf (Wohnung, Haus, Gold, Kunst, Kryptowährung) zählst du hier nicht mit: danach fragen wir getrennt. Nur Arbeitslohn → Nein."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
@@ -361,10 +362,10 @@ bindungen:
   # Screening-Flag "Privater Verkauf" (§ 23 EStG, 2026-08-30): eigene Pseudoregel, gleiche Bauart
   # wie die vier Einkunftsart-Flags darueber -- kein Gate an der echten Regel
   # p23_veraeusserungsgewinn, sonst waere es an deren vier ECHTE Befreiungs-geltungsbedingungen
-  # gekoppelt (relevanz() wertet je regel_id konjunktiv aus). Die Software rechnet die vier
-  # Befreiungen (Spekulationsfrist, Eigennutzung, taeglicher Gebrauch, originaerer Erwerb) noch
-  # nicht -- dieses Kreuz sperrt statt eine ungeprueft zu niedrige Zahl auszugeben, sobald ein
-  # Verkauf bejaht wird (fremd_arten, produkt/haut/api_constants.py).
+  # gekoppelt (relevanz() wertet je regel_id konjunktiv aus). Seit Abweichung Nr. 54 (2026-10-10)
+  # rechnet die Software die Befreiungen (Frist, Eigennutzung, taeglicher Gebrauch, Erbe) und die
+  # Freigrenze; dieses Kreuz schaltet die Fragen zum Verkauf frei (Regel p23_veraeusserungsgewinn,
+  # bindung_regel_bedingungen.yaml). Was sie nicht rechnet, sperrt mit Klartext (p23_sperrgrund).
   - feld_id: kein_p23_verkauf
     quelle: {regel_id: p23_verkauf_vorhanden, geltungsbedingung: veraeusserung_erklaert}
     typ: bool
@@ -378,7 +379,7 @@ bindungen:
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anwendbarkeits-Flag, kein Deklarationsfeld — bestätigt der Nutzer einen Verkauf, sperrt die Berechnung (fremd_arten), statt eine ungeprüfte Zahl auszugeben."
+    elster_kz_grund: "Anwendbarkeits-Flag, kein Deklarationsfeld — bestätigt der Nutzer einen Verkauf, rechnet die Software ihn (Abweichung Nr. 54); was sie nicht rechnet (Krypto, Beteiligung, Ehegatte, Teilnutzung) und unvollständige Angaben sperren mit Klartext (p23_sperrgrund), statt eine ungeprüfte Zahl auszugeben."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 23 Abs. 1 S. 1 EStG"

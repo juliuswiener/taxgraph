@@ -662,3 +662,43 @@ async fn kreuz_kein_verkauf_trotz_eingetragenem_verkauf_sperrt_weiter_mit_dem_fl
     let a = ergebnis("rentner_gesamt", &akte).await;
     erwarte_sperre("K1", &a, "flag_konsistenz_offen");
 }
+
+// ---- Fragetexte -------------------------------------------------------------------------------------
+
+/// Was der Nutzer liest (`GET /feld/{fid}/frage`): in der Scheibe `gesamt` zaehlt das Kreuz `kein_sonstige` den Verkauf nicht mehr
+/// mit (sonst sperrte sein "Ja" mit `einkunftsart_nicht_ring_faehig`, bevor die Frage zum Verkauf kommt), `kein_p23_verkauf` fragt
+/// nach ihm, und die neuen Felder fragen im Du.
+#[tokio::test]
+async fn die_fragetexte_trennen_den_verkauf_von_den_sonstigen_einkuenften() {
+    let d = dienst();
+    let kopf = json!({"fall_id": "p23", "scheibe": "gesamt", "veranlagungszeitraum": 2025});
+    let (status, antwort) = sende(&d, "POST", "/fall", Some(&kopf)).await;
+    assert_eq!(status, 201, "POST /fall: {antwort}");
+    let text = |q: &Value| format!("{} {}", q["fragetext_laie"].as_str().unwrap(), q["hilfe_kurz"].as_str().unwrap());
+    let mut texte = std::collections::BTreeMap::new();
+    for fid in [
+        "kein_sonstige",
+        "kein_p23_verkauf",
+        "p23_veraeusserungs_typ",
+        "p23_eigennutzung",
+        "p23_afa",
+        "p23_anschaffungsdatum",
+    ] {
+        let (status, q) = sende(&d, "GET", &format!("/fall/p23/feld/{fid}/frage"), None).await;
+        assert_eq!(status, 200, "{fid}: {q}");
+        texte.insert(fid, text(&q["frage"]));
+    }
+    let sonstige = &texte["kein_sonstige"];
+    assert!(
+        !sonstige.contains("Jahre nach dem Kauf") && !sonstige.contains("Jahr nach dem Kauf"),
+        "kein_sonstige zaehlt den Verkauf mit seiner Frist mit: {sonstige}"
+    );
+    assert!(sonstige.contains("zählst du hier nicht mit"), "kein_sonstige sagt nicht, dass der Verkauf getrennt gefragt wird: {sonstige}");
+    assert!(texte["kein_p23_verkauf"].contains("verkauft"), "{}", texte["kein_p23_verkauf"]);
+    assert!(texte["p23_veraeusserungs_typ"].contains("Kryptowert"), "{}", texte["p23_veraeusserungs_typ"]);
+    assert!(texte["p23_eigennutzung"].contains("selbst bewohnt"), "{}", texte["p23_eigennutzung"]);
+    assert!(texte["p23_anschaffungsdatum"].contains("Erb"), "Erbfall nicht erklaert: {}", texte["p23_anschaffungsdatum"]);
+    for (fid, t) in &texte {
+        assert!(!t.contains("Sie ") && !t.contains(" Ihre"), "{fid} siezt: {t}");
+    }
+}
