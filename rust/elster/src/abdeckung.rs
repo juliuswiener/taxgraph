@@ -29,7 +29,8 @@ use domain::{Achsenwert, Herkunft, PruefTiefe, Zustand};
 use store::SnapshotFeld;
 
 use crate::deklaration::{
-    DBA_STAAT, P23_ARTFELDER, P23_RECHENFELDER, STAAT_KZ, UNFALLKOSTEN, UNFALLKOSTEN_ZIEL_KZ,
+    DBA_STAAT, P23_ARTFELDER, P23_RECHENFELDER, RAV_BAV_RECHENFELDER, STAAT_KZ, UNFALLKOSTEN,
+    UNFALLKOSTEN_ZIEL_KZ,
 };
 use crate::kz_wache::{abtasten_mit, modul_dateien, rs_dateien};
 use crate::tabellen::{
@@ -112,6 +113,8 @@ fn transform_quellen() -> BTreeSet<&'static str> {
     // Abweichung Nr. 54: Bezeichnung und Daten des Privatverkaufs sind Quelle je Art (zwei Kz), die Rechenfelder schreiben nichts.
     q.extend(P23_ARTFELDER.iter().map(|(f, _)| *f));
     q.extend(P23_RECHENFELDER.iter().copied());
+    // Abweichung Nr. 55: die zwei Fragen der Rente mit Leistungsmitteilung ohne Kz sind Rechenfelder, sie schreiben nichts.
+    q.extend(RAV_BAV_RECHENFELDER.iter().copied());
     q.insert("stammdaten_iban");
     // Abweichung Nr. 48: die Unfallkosten sind Quelle der Zeile "Sonstiges" (drei Kz, `UNFALLKOSTEN_ZIEL_KZ`).
     q.insert(UNFALLKOSTEN);

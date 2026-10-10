@@ -889,8 +889,13 @@ mod tests {
     /// `INSTANZ_CONTAINER_TIEFER` (`xml.rs`): die zweite Zeile "Sonstiges" der Anlage N, der Abzug nach § 34c Abs. 2 `EStG`.
     /// Python kennt die Zeile nicht. Grund und Test: Abweichung Nr. 49 (`bescheid/tests/p34c_abzug_weitere_wk_xml.rs`, Test
     /// `das_xml_traegt_beide_zeilen_unter_einem_weitere_wk_und_das_schema_nimmt_es`).
-    const RUST_EIGENE_PAARE: [(&str, &str, &str); 1] =
-        [("/elster_xml/instanz_container_tiefer", "weitere_wk", "Sonst")];
+    /// `rente_av_bav` -> `Einz`: die Mitteilungen der Anlage R-AV/bAV, eine je `<Einz>` unter `<Leist_AV_betr>`. Python kennt die
+    /// Anlage nicht. Grund und Test: Abweichung Nr. 55 (`bescheid/tests/rav_bav_einreichung_hermetisch.rs`, Test
+    /// `zwei_mitteilungen_stehen_als_zwei_einz_in_derselben_anlage`).
+    const RUST_EIGENE_PAARE: [(&str, &str, &str); 2] = [
+        ("/elster_xml/instanz_container_tiefer", "weitere_wk", "Sonst"),
+        ("/elster_xml/instanz_container_tiefer", "rente_av_bav", "Einz"),
+    ];
 
     /// Abweichung Nr. 23: die Antragszeile zu § 34 Abs. 3 fuer den Ehegatten ist Person As Zeile mit der Weiche des
     /// Partners: dieselben drei Kz je Betriebsart (E0801602 / E0805003 / E0901704), gelenkt von

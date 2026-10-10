@@ -40,7 +40,7 @@ bindungen:
     instanz_gruppe: rente_av_bav
     fragetext_laie: "Wie hoch sind die Leistungen unter Nummer 4 deiner Mitteilung des Anbieters (Jahresbetrag)? Steht dort nichts, trage 0 ein."
     hilfe_kurz: "Nummer 4 sind Leistungen aus einer betrieblichen Altersversorgung, zum Beispiel einer Pensionskasse. Der Betrag wird voll versteuert und steht in der Erklärung (Zeile 10 der Anlage R-AV/bAV), dazu der Beginn der Leistung (Zeile 12)."
-    beispielwert: 0
+    beispielwert: 300000
     herkunft_slots: ["Leistungsmitteilung Nr. 4"]
     elster_kz: E1803301
     vz_gueltigkeit: [2024, 2025, 2026]
@@ -76,7 +76,7 @@ bindungen:
     instanz_gruppe: rente_av_bav
     fragetext_laie: "Wie hoch ist die Leibrente unter Nummer 5 deiner Mitteilung des Anbieters (Jahresbetrag)? Steht dort nichts, trage 0 ein."
     hilfe_kurz: "Nummer 5 ist eine lebenslange Rente aus einem Altersvorsorgevertrag oder einer betrieblichen Altersversorgung. Davon wird nur ein Teil versteuert (Ertragsanteil), der vom Alter bei Rentenbeginn abhängt. Der Betrag steht in der Erklärung (Zeile 15 der Anlage R-AV/bAV), dazu der Beginn der Rente (Zeile 16)."
-    beispielwert: 0
+    beispielwert: 1000000
     herkunft_slots: ["Leistungsmitteilung Nr. 5"]
     elster_kz: E1803501
     vz_gueltigkeit: [2024, 2025, 2026]
