@@ -84,8 +84,71 @@ fn stpfl(rente: Euro, prozent: Satz) -> Result<i128, EngineFehler> {
 /// assert_eq!(renten_einkuenfte(&e, &p).unwrap(), Euro::new(9918));
 /// ```
 pub fn renten_einkuenfte(e: &RentenEingabe, p: &Params) -> Result<Euro, EngineFehler> {
-    let vz = i64::from(e.vz.jahr());
     let wk_pb = z(p.renten_wk_pauschbetrag(e.vz)?);
+    euro((steuerpflichtig_vor_pauschbetrag(e, p)? - wk_pb).max(0))
+}
+
+/// Der steuerpflichtige Anteil EINER Rente VOR dem Werbungskosten-Pauschbetrag, EURO (Abweichung Nr. 55). Die Arme sind die von
+/// [`renten_einkuenfte`]; der Pauschbetrag gilt nach § 9a Satz 1 Nr. 3 `EStG` "insgesamt" fuer alle Renten einer Person und wird
+/// einmal von der Summe abgezogen ([`renten_nach_pauschbetrag`]), nicht je Rente.
+///
+/// # Errors
+/// Wie [`renten_einkuenfte`].
+pub fn renten_stpfl_vor_pauschbetrag(
+    e: &RentenEingabe,
+    p: &Params,
+) -> Result<Euro, EngineFehler> {
+    euro(steuerpflichtig_vor_pauschbetrag(e, p)?)
+}
+
+/// § 9a Satz 1 Nr. 3 `EStG`: der Pauschbetrag von 102 EUR gilt fuer Einnahmen aus § 22 Nr. 1, 1a und 5 `EStG` zusammen (Anleitung
+/// zur Anlage R-AV/bAV, Zeilen 27 bis 33: "insgesamt"). Er wird EINMAL von der Summe der steuerpflichtigen Anteile aller Renten
+/// einer Person abgezogen; das Ergebnis hat den Boden 0. Abweichung Nr. 55: vorher zog `renten_summe` ihn je Rente ab.
+///
+/// `ausgeschlossen` ist der Teil, der in die Bemessung des Altersentlastungsbetrags NICHT eingeht (Leibrenten nach § 22 Nr. 1 Satz 3
+/// Buchst. a und Leistungen nach § 22 Nr. 5 Satz 2 Buchst. a, `EStG` § 24a Satz 2 Nr. 2 und 5), `eingeschlossen` der Teil, der
+/// eingeht (Leistungen nach § 22 Nr. 5 Satz 1 ausser Satz 11, § 24a Satz 2 Nr. 4). Wie der Pauschbetrag auf beide Teile fiele,
+/// sagt das Gesetz nicht.
+// ponytail: der Pauschbetrag mindert zuerst den ausgeschlossenen Teil; der Unterschied zur anderen Wahl ist hoechstens der
+// Altersentlastungsprozentsatz mal 102 EUR. Upgrade: eine Quelle, die die Aufteilung nennt.
+///
+/// # Errors
+/// [`EngineFehler`] bei einem Betrag ausserhalb von `i64`.
+///
+/// ```
+/// # use engine::zugriff::teil2::rente::*;
+/// # use domain::{Euro, Vz};
+/// # let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
+/// let e = renten_nach_pauschbetrag(Euro::new(60), Euro::new(60), Vz::Vz2025, &p).unwrap();
+/// assert_eq!((e.gesamt, e.eingeschlossen), (Euro::new(18), Euro::new(18)));
+/// ```
+pub fn renten_nach_pauschbetrag(
+    ausgeschlossen: Euro,
+    eingeschlossen: Euro,
+    vz: Vz,
+    p: &Params,
+) -> Result<RentenEinkuenfte, EngineFehler> {
+    let pauschbetrag = z(p.renten_wk_pauschbetrag(vz)?);
+    let (aus, ein) = (z(ausgeschlossen), z(eingeschlossen));
+    let rest = (pauschbetrag - aus).max(0);
+    let (aus_nach, ein_nach) = ((aus - pauschbetrag).max(0), (ein - rest).max(0));
+    Ok(RentenEinkuenfte {
+        gesamt: euro(aus_nach + ein_nach)?,
+        eingeschlossen: euro(ein_nach)?,
+    })
+}
+
+/// Ergebnis von [`renten_nach_pauschbetrag`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RentenEinkuenfte {
+    /// Einkuenfte aus allen Renten nach dem Pauschbetrag, Boden 0.
+    pub gesamt: Euro,
+    /// Davon der Teil, der in die Bemessung des Altersentlastungsbetrags eingeht.
+    pub eingeschlossen: Euro,
+}
+
+fn steuerpflichtig_vor_pauschbetrag(e: &RentenEingabe, p: &Params) -> Result<i128, EngineFehler> {
+    let vz = i64::from(e.vz.jahr());
     let steuerpflichtig = match e.art {
         Rentenart::Bb {
             alter_bei_rentenbeginn,
@@ -123,7 +186,7 @@ pub fn renten_einkuenfte(e: &RentenEingabe, p: &Params) -> Result<Euro, EngineFe
         },
         Rentenart::NichtRingfaehig => return Err(EngineFehler::RentenartNichtRingfaehig),
     };
-    euro((steuerpflichtig - wk_pb).max(0))
+    Ok(steuerpflichtig)
 }
 
 /// Eingabe fuer [`p19_2_versorgungsfreibetrag`].
@@ -218,9 +281,71 @@ pub fn einkuenfte_versorgung(
 
 #[cfg(test)]
 mod tests {
-    use super::zehntel;
-    use domain::Satz;
+    use super::{
+        renten_einkuenfte, renten_nach_pauschbetrag, renten_stpfl_vor_pauschbetrag, zehntel,
+        RentenEingabe, Rentenart,
+    };
+    use domain::{Euro, Satz, Vz};
     use rust_decimal::Decimal;
+
+    fn params() -> bindung::Params {
+        bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
+            .unwrap()
+    }
+
+    /// Abweichung Nr. 55, § 9a Satz 1 Nr. 3 `EStG`: der Pauschbetrag von 102 EUR gilt "insgesamt" fuer alle Renten einer Person. Zwei
+    /// Renten mit je 60 EUR bringen 120 - 102 = 18 EUR (vorher: je Rente auf 0 gedeckelt, zusammen 0). Von Hand gerechnet.
+    #[test]
+    fn rav_bav_pauschbetrag_gilt_einmal_fuer_alle_renten() {
+        let p = params();
+        let e = renten_nach_pauschbetrag(Euro::new(60), Euro::new(60), Vz::Vz2025, &p).unwrap();
+        assert_eq!(e.gesamt, Euro::new(18));
+        // Je Rente einzeln: 0 + 0; die Summe nach einmaligem Abzug ist hoeher.
+        let je_rente = |betrag| {
+            renten_einkuenfte(
+                &RentenEingabe {
+                    vz: Vz::Vz2025,
+                    art: Rentenart::Bb { alter_bei_rentenbeginn: 65 },
+                    jahresrente: Euro::new(betrag),
+                },
+                &p,
+            )
+            .unwrap()
+        };
+        assert_eq!(je_rente(333), Euro::new(0)); // 333 * 18 % = 59 EUR, unter dem Pauschbetrag
+        // Boden 0 und die Grenze: unter 102 EUR bleibt nichts, ueber 102 EUR der Rest.
+        for (summe, soll) in [(0, 0), (101, 0), (102, 0), (103, 1), (5000, 4898)] {
+            let e = renten_nach_pauschbetrag(Euro::new(summe), Euro::new(0), Vz::Vz2025, &p).unwrap();
+            assert_eq!(e.gesamt, Euro::new(soll), "Summe {summe}");
+        }
+    }
+
+    /// Der Pauschbetrag mindert zuerst den Teil, der nicht in die Bemessung des Altersentlastungsbetrags eingeht (Annahme, mit
+    /// `ponytail:` an der Funktion). Ausgeschlossen 80, eingeschlossen 100: 22 EUR Pauschbetrag bleiben, eingeschlossen 78.
+    #[test]
+    fn rav_bav_pauschbetrag_mindert_zuerst_den_ausgeschlossenen_teil() {
+        let p = params();
+        let e = renten_nach_pauschbetrag(Euro::new(80), Euro::new(100), Vz::Vz2025, &p).unwrap();
+        assert_eq!((e.gesamt, e.eingeschlossen), (Euro::new(78), Euro::new(78)));
+        let e = renten_nach_pauschbetrag(Euro::new(500), Euro::new(100), Vz::Vz2025, &p).unwrap();
+        assert_eq!((e.gesamt, e.eingeschlossen), (Euro::new(498), Euro::new(100)));
+    }
+
+    /// `renten_einkuenfte` bleibt eine Rente nach Pauschbetrag (Parity-Gegenstueck zu Catala): die Zerlegung aendert nichts.
+    #[test]
+    fn rav_bav_zerlegung_laesst_renten_einkuenfte_unveraendert() {
+        let p = params();
+        for jahresrente in [0, 50, 102, 103, 12_000] {
+            let e = RentenEingabe {
+                vz: Vz::Vz2025,
+                art: Rentenart::Bb { alter_bei_rentenbeginn: 65 },
+                jahresrente: Euro::new(jahresrente),
+            };
+            let vor = renten_stpfl_vor_pauschbetrag(&e, &p).unwrap();
+            let nach = renten_nach_pauschbetrag(vor, Euro::new(0), Vz::Vz2025, &p).unwrap();
+            assert_eq!(nach.gesamt, renten_einkuenfte(&e, &p).unwrap(), "Rente {jahresrente}");
+        }
+    }
 
     /// PARITÄT, bewusst: Python `round(0.8500000000000001 * 10)` rundet das Float-Produkt 8.5
     /// half-even auf 8; exakt ist 8.500000000000001 -> 9. Kein Tabellenwert liegt so

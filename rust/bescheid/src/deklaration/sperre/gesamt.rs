@@ -58,6 +58,9 @@ pub(super) fn gesamt_guard(k: &K<'_>, cfg: &Cfg) -> Grund {
     }
     // Nr. 54: ein bejahter privater Verkauf sperrt nur noch, wenn er nicht rechenbar ist (vorher sperrte schon das Kreuz).
     sperre!(crate::privatverkauf::p23_sperrgrund(k.f, k.q, k.vz));
+    // Nr. 55: eine Rente mit Leistungsmitteilung sperrt, solange sie nicht rechenbar ist (Ehepaar, weitere Nummern, Basisrente,
+    // offene Angaben) oder dem Kreuz widerspricht.
+    sperre!(crate::rav_bav::rav_bav_sperrgrund(k.f, k.q, k.vz));
     // Nr. 52: der Ehegatte bejaht seine sonstigen Einkuenfte; die Scheibe rechnet sie nicht (Python gibt hier eine Zahl).
     if ist_zusammen(k.f)
         && cfg

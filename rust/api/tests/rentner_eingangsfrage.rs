@@ -511,18 +511,20 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter() {
 /// `dba_staat_sonstiger` (Abweichung Nr. 58) steht je Fall eine Frage mehr in der Liste (144 und 193).
 /// Seit Abweichung Nr. 54 haengen die Fragen zum privaten Verkauf am Kreuz `kein_p23_verkauf` (hier "nein"), nicht mehr an
 /// `kein_sonstige`: vier Fragen weniger in jedem Fall (147 -> 143, 196 -> 192).
+/// Seit Abweichung Nr. 55 kommen das Kreuz `kein_rav_bav` und die Zaehlfrage `rav_bav_anzahl` mit den sieben Feldern der Gruppe
+/// `rente_av_bav` dazu: neun Fragen mehr in jedem Fall (die Frage nach der Rente mit Leistungsmitteilung ist noch offen).
 #[tokio::test]
 async fn die_fragenzahl_vor_und_nach_den_antworten() {
     let faelle = [
-        ("einzel offen", "einzel", None, None, 145),
-        ("einzel nein", "einzel", Some(true), None, 136),
-        ("einzel ja", "einzel", Some(false), None, 144),
-        ("zusammen offen", "zusammen", None, None, 195),
-        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 175),
-        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 185),
-        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 183),
-        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 193),
-        ("zusammen ja/offen", "zusammen", Some(false), None, 194),
+        ("einzel offen", "einzel", None, None, 154),
+        ("einzel nein", "einzel", Some(true), None, 145),
+        ("einzel ja", "einzel", Some(false), None, 153),
+        ("zusammen offen", "zusammen", None, None, 204),
+        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 184),
+        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 194),
+        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 192),
+        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 202),
+        ("zusammen ja/offen", "zusammen", Some(false), None, 203),
     ];
     let mut abweichungen = Vec::new();
     for (name, veranlagung, a, b, soll) in faelle {

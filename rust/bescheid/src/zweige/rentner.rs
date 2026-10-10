@@ -2,7 +2,10 @@
 //! § 33b, Gewinn, § 24a/§ 24b und der Aufbau des Gesamtfalls. Tarif-Teil: `rentner_tarif.rs`.
 use domain::{Euro, PyWert, Vz};
 use engine::zugriff::teil2::gesamt::{gesamt_gde, GesamtfallEingabe};
-use engine::zugriff::teil2::rente::{renten_einkuenfte, RentenEingabe, Rentenart};
+use engine::zugriff::teil2::rente::{
+    renten_einkuenfte, renten_nach_pauschbetrag, renten_stpfl_vor_pauschbetrag, RentenEingabe,
+    Rentenart,
+};
 use intervall::Slots;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
@@ -20,6 +23,7 @@ use crate::einkuenfte::{
     progressionseinkuenfte, shared_dba_sonstige,
 };
 use crate::privatverkauf::p23_privatverkauf;
+use crate::rav_bav::rav_bav_einkuenfte;
 use crate::{
     cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, feld_veranlagung, wert, zahl_dezimal,
     Felder,
@@ -69,7 +73,11 @@ fn rentenart(art: Option<&PyWert>, beginn: i64, alter: i64, rf: Option<Euro>) ->
     }
 }
 
-/// § 22-Renten-Einkuenfte EINER Rente (Instanz oder Basis), EURO.
+/// § 22-Renten-Einkuenfte EINER Rente (Instanz oder Basis) VOR dem Werbungskosten-Pauschbetrag, EURO, Boden 0.
+///
+/// Abweichung Nr. 55: der Pauschbetrag von 102 EUR gilt "insgesamt" fuer alle Renten einer Person (§ 9a Satz 1 Nr. 3 `EStG`) und
+/// wird einmal von der Summe abgezogen ([`festzusetzende_est_rentner`]); Python zog ihn je Rente ab (`_rente_instanz`). Der
+/// Boden 0 je Rente bleibt: ein negativer Anteil (Freibetrag ueber dem Jahresbetrag) mindert keine andere Rente.
 ///
 /// PARITÄT: ein unbeantwortetes `rentner_renten_beginn_jahr` (kein `int`) gibt 0 statt eines Fehlers.
 /// Python `isinstance(x, int)` gilt auch fuer `bool` — hier ebenso.
@@ -87,17 +95,17 @@ fn rente_instanz(fi: &Felder, vz: Vz, p: &bindung::Params) -> R<Euro> {
         feld_int_oder_null(fi, "rentner_alter_bei_rentenbeginn")?,
         rentenfreibetrag_euro(wert(fi, "rentner_rentenfreibetrag")),
     );
-    Ok(renten_einkuenfte(
+    Ok(max0(renten_stpfl_vor_pauschbetrag(
         &RentenEingabe {
             vz,
             art,
             jahresrente: feld_euro_oder_null(fi, "rentner_jahresrente")?,
         },
         p,
-    )?)
+    )?))
 }
 
-/// Person A: stumpfe Σ ueber alle `rente`-Instanzen, ohne Store nur die Basis.
+/// Person A: stumpfe Σ ueber alle `rente`-Instanzen VOR dem Pauschbetrag, ohne Store nur die Basis.
 ///
 /// PARITÄT: P8 (`REWRITE_PLAN.md` §4, `bescheid_zweige.py:1110-1127`) — Person A summiert ueber die
 /// Instanz-Naht (`elster::instanzen`), Person B liest unten das FLACHE Feld `rentner_*_partner`. Eine
@@ -145,7 +153,14 @@ fn renten_partner(f: &Felder, vz: Vz, p: &bindung::Params) -> R<Euro> {
 pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slots) -> R<Euro> {
     let (f, vz, p) = (r.f(), r.vz(), r.p());
     let q = r.q();
-    let mut renten = renten_summe(r)?;
+    // Abweichung Nr. 55: der Pauschbetrag gilt einmal fuer die Renten der Anlage R und die Leistungen mit Leistungsmitteilung zusammen
+    // (§ 9a Satz 1 Nr. 3 `EStG`). Die Anlage R und Nr. 5 gehen nicht in die Bemessung des Altersentlastungsbetrags ein, Nr. 1 und
+    // Nr. 4 (`voll`) schon (§ 24a Satz 2); der Pauschbetrag mindert zuerst den Teil, der nicht eingeht.
+    let renten_a = renten_summe(r)?;
+    let rav = rav_bav_einkuenfte(f, &q, vz, p)?;
+    let rav_rente =
+        renten_nach_pauschbetrag(add(renten_a, rav.ertragsanteil)?, rav.voll, vz, p)?;
+    let mut renten = rav_rente.gesamt;
     let zusammen_feld = VeranlagungWert::aus(feld_veranlagung(f)).zusammen();
     if zusammen_feld && wert(f, "rentner_renten_art_partner").is_some_and(PyWert::truthy) {
         renten = add(renten, renten_partner(f, vz, p)?)?;
@@ -181,7 +196,12 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
         vz,
         p,
         zusammen,
-        max0(summe_euro(&[laufend, netto_vg, p23])?),
+        max0(summe_euro(&[
+            laufend,
+            netto_vg,
+            p23,
+            rav_rente.eingeschlossen,
+        ])?),
     )?;
     let alt = add(alt_a, alt_b)?;
     let (gewinn_partner, _mitu_partner, netto_vg_partner) = gewinn_partner_anteil(f)?;

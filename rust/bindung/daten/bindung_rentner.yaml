@@ -61,7 +61,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Um welche Art von Rente geht es hauptsächlich?"
-    hilfe_kurz: "Gesetzliche Rente, berufsständisches Versorgungswerk (z. B. für Ärzte oder Anwälte) und Rürup-Rente werden gleich besteuert (nach dem Jahr des Rentenbeginns). Eine private Rentenversicherung wird niedriger besteuert — dann zählt dein Alter bei Rentenbeginn. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht hierher: die Software rechnet sie noch nicht."
+    hilfe_kurz: "Gesetzliche Rente, berufsständisches Versorgungswerk (z. B. für Ärzte oder Anwälte) und Rürup-Rente werden gleich besteuert (nach dem Jahr des Rentenbeginns). Eine private Rentenversicherung wird niedriger besteuert — dann zählt dein Alter bei Rentenbeginn. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht hierher: danach fragen wir getrennt."
     beispielwert: "gesetzliche_rente"
     herkunft_slots: null
     elster_kz: null
@@ -127,7 +127,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Um welche Art von Rente geht es bei deinem zusammen veranlagten Ehe-/Lebenspartner hauptsächlich?"
-    hilfe_kurz: "Nur bei Zusammenveranlagung: der Partner hat einen eigenen Besteuerungs-/Ertragsanteil je nach Rentenart (gesetzlich/Versorgungswerk/Rürup nach Beginn-Jahr, private Rente nach Alter bei Beginn). Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht hierher: die Software rechnet sie noch nicht."
+    hilfe_kurz: "Nur bei Zusammenveranlagung: der Partner hat einen eigenen Besteuerungs-/Ertragsanteil je nach Rentenart (gesetzlich/Versorgungswerk/Rürup nach Beginn-Jahr, private Rente nach Alter bei Beginn). Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht hierher: für deinen Ehe- oder Lebenspartner rechnet die Software sie noch nicht."
     beispielwert: "gesetzliche_rente"
     herkunft_slots: null
     elster_kz: null

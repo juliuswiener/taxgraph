@@ -154,6 +154,21 @@ pub(crate) const P23_RECHENFELDER: &[&str] = &[
     "p23_gebaeude_in_frist",
 ];
 
+/// Abweichung Nr. 55: die Gruppe der Rente mit Leistungsmitteilung (Anlage R-AV/bAV), ihre drei Betragsfelder (Zeilen 4, 10, 15), die
+/// zwei Beginn-Felder mit dem Betragsfeld, zu dem sie gehoeren (Zeilen 12, 16), und die zwei Rechenfelder ohne Kz. `ERiC` verlangt
+/// Betrag und Beginn gemeinsam (Spike Nr. 55, Fall B und K1): beide stehen nur, wenn der Betrag mindestens einen vollen Euro traegt.
+pub(crate) const RAV_BAV_GRUPPE: &str = "rente_av_bav";
+pub(crate) const RAV_BAV_BETRAGSFELDER: &[&str] = &[
+    "rav_bav_nr1_betrag",
+    "rav_bav_nr4_betrag",
+    "rav_bav_nr5_betrag",
+];
+pub(crate) const RAV_BAV_BEGINNFELDER: &[(&str, &str)] = &[
+    ("rav_bav_nr4_beginn", "rav_bav_nr4_betrag"),
+    ("rav_bav_nr5_beginn", "rav_bav_nr5_betrag"),
+];
+pub(crate) const RAV_BAV_RECHENFELDER: &[&str] = &["rav_bav_andere_nummern", "rav_bav_basisrente"];
+
 /// Die 15 benannten Bindungswerte von `dba_staat` und ihr Text in der Laenderliste. 12 sind gleich, `Oesterreich`, `Tschechien` und
 /// `Grossbritannien` weichen ab. `sonstiger_staat` hat keinen Eintrag und sperrt ([`STAAT_SPERRE`]).
 const DBA_STAAT_LISTENTEXT: &[(&str, &str)] = &[
@@ -934,6 +949,8 @@ impl Bau<'_> {
             }
         } else if self.p23_feld(idx, basis, feld_id, wert, b)? {
             // Abweichung Nr. 54: Feld eines Privatverkaufs, `p23_feld` hat es geschrieben oder bewusst uebergangen.
+        } else if self.rav_bav_feld(idx, basis, feld_id, wert, b)? {
+            // Abweichung Nr. 55: Feld einer weiteren Mitteilung, `rav_bav_feld` hat es geschrieben oder bewusst uebergangen.
         } else if let (SCHULGELD_ANTEIL, Some(kz)) = (basis, kz_von(b)) {
             if self.schulgeld_anteil_gehoert_ins_xml(feld_id, wert)? {
                 let null_kz = self.null_kz;
@@ -1144,6 +1161,8 @@ impl Bau<'_> {
                 self.null_kz,
             )
             .map_err(&fehler)?;
+        } else if self.rav_bav_feld(1, feld_id, feld_id, wert, b)? {
+            // Abweichung Nr. 55: Feld der ersten Mitteilung, `rav_bav_feld` hat es geschrieben oder bewusst uebergangen.
         } else if let Some(kz) = kz_von(b) {
             schreibe_kz(&mut self.deklaration, kz, wert, Some(b.typ), self.null_kz)
                 .map_err(&fehler)?;
@@ -1554,6 +1573,59 @@ impl Bau<'_> {
             self.p23_artfeld(idx, feld_id, wert, b, tabelle)?;
         } else {
             return Ok(P23_RECHENFELDER.contains(&basis));
+        }
+        Ok(true)
+    }
+
+    /// Abweichung Nr. 55: ein Feld der Rente mit Leistungsmitteilung, Instanz `idx`. `false`: `basis` gehoert nicht dazu. Ein Betrag
+    /// unter einem vollen Euro entfaellt, ebenso ein Beginn ohne Betrag derselben Instanz (ohne `nicht_deklariert`: nichts geht verloren,
+    /// der Bescheid rechnet beides mit 0). Die Rechenfelder schreiben nichts: `bescheid::rav_bav` liest sie. Instanz 1 steht in
+    /// `deklaration`, die uebrigen in den Instanzen, wie bei jedem Kz-Feld.
+    fn rav_bav_feld(
+        &mut self,
+        idx: u64,
+        basis: &str,
+        feld_id: &str,
+        wert: &PyWert,
+        b: &Bindung,
+    ) -> Ergebnis<bool> {
+        if RAV_BAV_RECHENFELDER.contains(&basis) {
+            return Ok(true);
+        }
+        let betrag_feld = if RAV_BAV_BETRAGSFELDER.contains(&basis) {
+            basis
+        } else if let Some((_, betrag)) = RAV_BAV_BEGINNFELDER.iter().find(|(f, _)| *f == basis) {
+            *betrag
+        } else {
+            return Ok(false);
+        };
+        let Some(kz) = kz_von(b) else {
+            return Ok(false);
+        };
+        let fehler = wert_fehler(feld_id);
+        // Der Betrag der eigenen Instanz: bei einem Betragsfeld der eigene Wert, bei einem Beginn das bestaetigte Betragsfeld daneben.
+        let betrag = if betrag_feld == basis {
+            Some(py::int(wert).map_err(&fehler)?)
+        } else {
+            let betrag_id = if idx == 1 {
+                betrag_feld.to_owned()
+            } else {
+                format!("{betrag_feld}__{idx}")
+            };
+            self.snapshot
+                .get(&betrag_id)
+                .filter(|a| a.zustand == Zustand::Bestaetigt)
+                .map(|a| py::int(&a.wert).map_err(&fehler))
+                .transpose()?
+        };
+        if betrag.is_some_and(|c| c >= 100) {
+            let null_kz = self.null_kz;
+            let ziel = if idx == 1 {
+                &mut self.deklaration
+            } else {
+                &mut self.instanz(RAV_BAV_GRUPPE, idx).felder
+            };
+            schreibe_kz(ziel, kz, wert, Some(b.typ), null_kz).map_err(&fehler)?;
         }
         Ok(true)
     }
@@ -3034,6 +3106,81 @@ mod tests {
             .iter()
             .map(|e| e.feld_id.as_str())
             .filter(|f| f.starts_with("p23_") && !f.starts_with("p23_veraeusserungs_typ"))
+            .collect();
+        assert!(fremd.is_empty(), "{fremd:?}");
+    }
+
+    /// Abweichung Nr. 55: eine Leistungsmitteilung (Anlage R-AV/bAV) steht je Instanz mit den Kz ihrer Zeilen 4, 10 + 12 und 15 + 16.
+    /// Instanz 1 steht in `deklaration`, Instanz 2 in den Anlage-Instanzen. Ein Betrag unter einem Euro und ein Betrag 0 stehen nicht in
+    /// der Erklaerung, und der Beginn steht nur zu einem Betrag ueber 0: `ERiC` verlangt beide gemeinsam (Spike Nr. 55, Faelle B und K1).
+    /// Die zwei Rechenfelder (weitere Nummern, Basisrente) schreiben nichts. Instanz 3 traegt nichts, ihre Beginn-Felder stehen trotzdem
+    /// im Speicher.
+    #[test]
+    fn rav_bav_schreibt_betraege_und_beginn_nur_zu_einem_betrag_ueber_null() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        // Instanz 1 traegt alle drei Nummern (Cent), Instanz 2 nur Nummer 1 und Nullen mit Beginn, Instanz 3 Betraege unter einem Euro
+        // mit Beginn.
+        let mut felder = Felder::new();
+        for (suffix, nr1, nr4, nr5) in [("", 600_000, 300_000, 1_000_000), ("__2", 250_000, 0, 0), ("__3", 50, 99, 1)] {
+            for (f, w) in [
+                ("rav_bav_nr1_betrag", json!(nr1)),
+                ("rav_bav_nr4_betrag", json!(nr4)),
+                ("rav_bav_nr4_beginn", json!("01.04.2022")),
+                ("rav_bav_nr5_betrag", json!(nr5)),
+                ("rav_bav_nr5_beginn", json!("05.05.2020")),
+                ("rav_bav_andere_nummern", json!(false)),
+                ("rav_bav_basisrente", json!(false)),
+            ] {
+                felder.insert(format!("{f}{suffix}"), feld(w));
+            }
+        }
+        let d = deklariere(&felder, &index, 2025, None).unwrap();
+        let erste: BTreeMap<&str, Value> = ["E1803101", "E1803301", "E1803401", "E1803501", "E1803601"]
+            .into_iter()
+            .filter_map(|kz| d.deklaration.get(kz).map(|v| (kz, v.clone())))
+            .collect();
+        assert_eq!(
+            erste,
+            BTreeMap::from([
+                ("E1803101", json!(6_000)),
+                ("E1803301", json!(3_000)),
+                ("E1803401", json!("01.04.2022")),
+                ("E1803501", json!(10_000)),
+                ("E1803601", json!("05.05.2020")),
+            ])
+        );
+        let (gruppe, instanzen) = &d.anlage_instanzen[0];
+        assert_eq!(gruppe, "rente_av_bav");
+        assert_eq!(d.anlage_instanzen.len(), 1);
+        assert_eq!(instanzen.len(), 1, "Instanz 3 ohne Kz faellt weg: {instanzen:?}");
+        assert_eq!(instanzen[0].index, 2);
+        let zweite: BTreeMap<&str, Value> = instanzen[0].felder.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+        assert_eq!(zweite, BTreeMap::from([("E1803101", json!(2_500))]));
+        // Die Rechenfelder erzeugen weder eine Luecke noch einen Eintrag "nicht deklariert".
+        assert!(d.eingaben_konsistent(), "{:?}", d.unvollstaendig());
+        let fremd: Vec<&str> = d
+            .nicht_deklariert
+            .iter()
+            .map(|e| e.feld_id.as_str())
+            .filter(|f| f.starts_with("rav_bav_"))
             .collect();
         assert!(fremd.is_empty(), "{fremd:?}");
     }

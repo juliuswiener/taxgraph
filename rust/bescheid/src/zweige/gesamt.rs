@@ -19,7 +19,8 @@ use engine::zugriff::teil2::p33::{
     PflegePbEingabe,
 };
 use engine::zugriff::teil2::rente::{
-    einkuenfte_versorgung, EinkuenfteVersorgungEingabe, VersorgungsfreibetragEingabe,
+    einkuenfte_versorgung, renten_nach_pauschbetrag, EinkuenfteVersorgungEingabe,
+    VersorgungsfreibetragEingabe,
 };
 use engine::zugriff::teil2::sonstige::p22_nr3_einkuenfte;
 use intervall::Slots;
@@ -34,6 +35,7 @@ use crate::einkuenfte::{
     p35_summen, progressionseinkuenfte, shared_dba_sonstige,
 };
 use crate::privatverkauf::p23_privatverkauf;
+use crate::rav_bav::rav_bav_einkuenfte;
 use crate::{
     cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_false, ist_true, py_int, summe,
     wert, zahl_int, BescheidFehler, Felder,
@@ -476,11 +478,16 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
     let (laufend, mitu) = laufender_gewinn(f, &q)?;
     let (gewinn_partner, _mitu_partner, netto_vg_partner) = gewinn_partner_anteil(f)?;
     g.einkuenfte_gewinn = summe_euro(&[laufend, netto_vg, gewinn_partner])?;
+    // Leistungen mit Leistungsmitteilung (Abweichung Nr. 55): Pauschbetrag einmal fuer alle Mitteilungen; ihr `voll`-Teil (Nr. 1 und
+    // Nr. 4) geht in die Bemessung des Altersentlastungsbetrags ein (§ 24a Satz 2).
+    let rav = rav_bav_einkuenfte(f, &q, vz, p)?;
+    let rav_rente = renten_nach_pauschbetrag(rav.ertragsanteil, rav.voll, vz, p)?;
     // § 24a/§ 24b mindern den GdE VOR den Abzuegen.
     let positive_andere = max0(summe_euro(&[
         vv,
         g.einkuenfte_gewinn,
         g.einkuenfte_sonstige,
+        rav_rente.eingeschlossen,
     ])?);
     let (alt_a, alt_b, ent24b) = entlastungen(f, vz, p, zusammen, positive_andere)?;
     g.altersentlastungsbetrag = add(alt_a, alt_b)?;
@@ -503,8 +510,12 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
     g.sonderausgaben = s.sonderausgaben;
     g.aussergewoehnliche_belastungen = s.aussergewoehnliche_belastungen;
     let kapitaleinkuenfte = p20_kapitaleinkuenfte(f, zusammen, vz, p)?;
-    // § 23 + § 22 Nr. 3 in einkuenfte_sonstige; der KiSt-Ueberhang laeuft mangels Slot dort mit.
-    g.einkuenfte_sonstige = add(p23_privatverkauf(&q, vz, p)?, nr3_euro(f)?)?;
+    // § 23 + § 22 Nr. 3 + § 22 Nr. 5 in einkuenfte_sonstige; der KiSt-Ueberhang laeuft mangels Slot dort mit.
+    g.einkuenfte_sonstige = summe_euro(&[
+        p23_privatverkauf(&q, vz, p)?,
+        nr3_euro(f)?,
+        rav_rente.gesamt,
+    ])?;
     g.einkuenfte_sonstige = add(g.einkuenfte_sonstige, ueberhang)?;
     // § 10d Abs. 2 Verlustvortrag, § 33a, DBA (§ 34c): auf der vollen GdE.
     let gde_p10d = gesamt_gde(&gde_fall(&g), p)?;

@@ -72,6 +72,9 @@ E0703838	auf	Abzugsfähige Werbungskosten
 E0705701	auf	Summe der Werbungskosten (Summe der Zeilen $E0703511.Vordruckzeile$, $
 E0801606	ab	Gewerbesteuer-Messbetrag
 E0801704	ab	Gewerbesteuer
+E1803101	ab	Leistungen aus einem Altersvorsorgevertrag, einem Pensionsfonds, einer
+E1803301	ab	Leistungen aus einer betrieblichen Altersversorgung laut Nummer 4 der 
+E1803501	ab	Leibrente aus einem Altersvorsorgevertrag oder aus einer betrieblichen
 E1900701	ab	Kapitalerträge
 E1900901	ab	In Zeile $E1900701.Vordruckzeile$ enthaltene Gewinne aus Aktienveräuße
 E1901201	auf	Nicht ausgeglichene Verluste ohne Verluste aus der Veräußerung von Akt

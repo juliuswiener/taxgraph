@@ -153,6 +153,7 @@ felder:
   - kein_lohn_pension
   - kein_lohn_pension_partner
   - kein_p23_verkauf
+  - kein_rav_bav
   - kein_realsplitting
   - kein_sonstige
   - kein_sonstige_partner
@@ -283,6 +284,14 @@ felder:
   - pv_auf_gebaeude
   - pv_bruttoleistung_kwp
   - pv_einnahmen
+  - rav_bav_andere_nummern
+  - rav_bav_anzahl
+  - rav_bav_basisrente
+  - rav_bav_nr1_betrag
+  - rav_bav_nr4_beginn
+  - rav_bav_nr4_betrag
+  - rav_bav_nr5_beginn
+  - rav_bav_nr5_betrag
   - realsplitting_empfaenger_kv_krankengeld
   - realsplitting_empfaenger_kv_pv
   - realsplitting_unterhaltsleistungen

@@ -33,6 +33,7 @@ pub mod abzuege;
 pub mod deklaration;
 pub mod einkuenfte;
 pub mod privatverkauf;
+pub mod rav_bav;
 pub mod zweige;
 
 use domain::{Cent, Euro, Lage, PyWert, Sperrgrund, Veranlagung, Zustand};

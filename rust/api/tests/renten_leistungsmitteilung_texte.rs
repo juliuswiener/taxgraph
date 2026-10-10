@@ -1,8 +1,9 @@
 //! Abweichung Nr. 53 (Stufe 1, nur Anzeigetexte): Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung ist nach
-//! § 22 Nr. 5 `EStG` kein Versorgungsbezug und hat eine Leistungsmitteilung statt einer Lohnsteuerbescheinigung. `TaxGraph` hat
-//! dafuer keinen Eingabeplatz (Anlage R-AV/bAV ist nicht gebaut). Vor Nr. 53 luden mehrere Texte ausdruecklich zur Versorgung
-//! ein ("Betriebsrente oder Direktversicherung"); der Bescheid rechnete dort den Versorgungsfreibetrag (Probefall 6.000 EUR,
-//! VZ 2025: Einkommensteuer 945 EUR zu hoch oder 279 EUR zu niedrig). Die Texte trennen jetzt die zwei Faelle.
+//! § 22 Nr. 5 `EStG` kein Versorgungsbezug und hat eine Leistungsmitteilung statt einer Lohnsteuerbescheinigung. Vor Nr. 53 luden
+//! mehrere Texte ausdruecklich zur Versorgung ein ("Betriebsrente oder Direktversicherung"); der Bescheid rechnete dort den
+//! Versorgungsfreibetrag (Probefall 6.000 EUR, VZ 2025: Einkommensteuer 945 EUR zu hoch oder 279 EUR zu niedrig). Die Texte
+//! trennen die zwei Faelle. Seit Nr. 55 hat die Hauptperson einen Eingabeplatz (Anlage R-AV/bAV, Kreuz `kein_rav_bav`); die Texte
+//! der Hauptperson verweisen darauf und sagen nicht mehr, die Software rechne die Rente nicht. Der Ehegatte hat ihn nicht (Stufe 2).
 //!
 //! Gemessen wird, was der Nutzer sieht: die Einzelfrage `GET /fall/{id}/feld/{fid}/frage` (Fragetext, Hilfe, Auswahltexte) in
 //! jeder Scheibe, die das Feld fuehrt, und der Klartext der zwei Sperrgruende zur Versorgung. Der Wortlaut der Abgabe-Sperre
@@ -13,10 +14,12 @@
 //! - AK2: die Kreuze `kein_lohn_pension` (A und Ehegatte), die Zaehlfrage `rentner_anzahl_renten` und die zwei Sperrtexte
 //!   (`versorgungsfreibetrag_offen`, `versorgung_ueber_lohn`) nennen keine "Betriebsrente" mehr und trennen die Pension des
 //!   Arbeitgebers von der Rente mit Leistungsmitteilung.
-//! - AK3: die Hilfe von `kein_sonstige` und `kein_sonstige_partner` nennt die Rente mit Leistungsmitteilung; dort sperrt die
-//!   Gesamtvariante bei "ja".
-//! - AK4: die Hilfe von `rentner_renten_art` und `rentner_renten_art_partner` sagt, dass solche Renten dort nicht zu waehlen
-//!   sind und die Software sie noch nicht rechnet.
+//! - AK3: die Hilfe von `kein_sonstige` zaehlt die Rente mit Leistungsmitteilung nicht mit ("danach fragen wir getrennt"); die
+//!   von `kein_sonstige_partner` nennt sie weiter, dort sperrt die Gesamtvariante bei "ja".
+//! - AK4: die Hilfe von `rentner_renten_art` sagt, dass solche Renten dort nicht zu waehlen sind und getrennt gefragt werden;
+//!   die von `rentner_renten_art_partner` sagt, dass die Software sie fuer den Partner noch nicht rechnet.
+//! - Nr. 55: die Hilfe von `kein_rav_bav` und die Frage `rav_bav_andere_nummern` nennen, was die Software nicht rechnet
+//!   (Zusammenveranlagung, Werbungskosten ueber 102 Euro).
 //!
 //! Keine Rechnung und keine Sperre aendert sich; nur Texte.
 #![allow(
@@ -194,35 +197,70 @@ fn die_sperrtexte_zur_versorgung_nehmen_die_rente_mit_leistungsmitteilung_aus() 
     );
 }
 
-/// AK3: Die Hilfe der Kreuze zu sonstigen Einkuenften nennt die Rente mit Leistungsmitteilung; "ja" sperrt die
-/// Gesamtvariante (`einkunftsart_nicht_ring_faehig`, fuer den Ehegatten `partner_einkunftsart_nicht_ring_faehig`).
+/// AK3: Die Hilfe des Kreuzes zu sonstigen Einkuenften der Hauptperson zaehlt die Rente mit Leistungsmitteilung nicht mehr mit
+/// (Nr. 55: sie hat ihr eigenes Kreuz `kein_rav_bav`), sondern verweist darauf. Die Hilfe des Partner-Kreuzes nennt sie weiter:
+/// fuer den Ehegatten ist die Anlage R-AV/bAV nicht gebaut, "ja" sperrt die Gesamtvariante
+/// (`partner_einkunftsart_nicht_ring_faehig`).
 #[tokio::test]
-async fn die_kreuze_zu_sonstigen_einkuenften_nennen_die_rente_mit_leistungsmitteilung() {
-    for fid in ["kein_sonstige", "kein_sonstige_partner"] {
-        for (scheibe, q) in fragen_zu(fid).await {
-            let hilfe = q["hilfe_kurz"].as_str().unwrap();
-            assert!(hilfe.contains(RENTE_LM), "{fid} in {scheibe}: {hilfe}");
-            assert!(!hilfe.contains("Betriebsrente"), "{fid} in {scheibe}: {hilfe}");
-        }
+async fn die_kreuze_zu_sonstigen_einkuenften_trennen_die_rente_mit_leistungsmitteilung() {
+    for (scheibe, q) in fragen_zu("kein_sonstige").await {
+        let hilfe = q["hilfe_kurz"].as_str().unwrap();
+        assert!(
+            hilfe.contains(&format!("Eine {RENTE_LM} zählst du hier nicht mit: danach fragen wir getrennt.")),
+            "kein_sonstige in {scheibe}: {hilfe}"
+        );
+        assert!(!hilfe.contains("Betriebsrente"), "kein_sonstige in {scheibe}: {hilfe}");
+    }
+    for (scheibe, q) in fragen_zu("kein_sonstige_partner").await {
+        let hilfe = q["hilfe_kurz"].as_str().unwrap();
+        assert!(hilfe.contains(RENTE_LM), "kein_sonstige_partner in {scheibe}: {hilfe}");
+        assert!(!hilfe.contains("Betriebsrente"), "kein_sonstige_partner in {scheibe}: {hilfe}");
     }
 }
 
-/// AK4: Die Hilfe der Rentenart sagt, dass die Rente mit Leistungsmitteilung dort nicht zu waehlen ist, weil die Software sie
-/// noch nicht rechnet. Die fuenf Rentenarten bleiben unveraendert.
+/// AK4: Die Hilfe der Rentenart sagt, dass die Rente mit Leistungsmitteilung dort nicht zu waehlen ist. Bei der Hauptperson
+/// fragt die Software sie getrennt (Nr. 55) und sagt nicht mehr, sie rechne sie nicht; beim Partner rechnet sie sie noch nicht.
+/// Die fuenf Rentenarten bleiben unveraendert.
 #[tokio::test]
 async fn die_rentenart_nimmt_die_rente_mit_leistungsmitteilung_aus() {
-    for fid in ["rentner_renten_art", "rentner_renten_art_partner"] {
-        for (scheibe, q) in fragen_zu(fid).await {
-            let hilfe = q["hilfe_kurz"].as_str().unwrap();
-            assert!(
-                hilfe.contains(&format!("Eine {RENTE_LM} gehört nicht hierher: die Software rechnet sie noch nicht.")),
-                "{fid} in {scheibe}: {hilfe}"
-            );
-            assert_eq!(
-                q["enum_werte"],
-                json!(["gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente", "private_leibrente", "sonstige_leibrente"]),
-                "{fid} in {scheibe}: die Rentenarten bleiben"
-            );
-        }
+    let arten = json!(["gesetzliche_rente", "berufsstaendische_versorgung", "private_basisrente", "private_leibrente", "sonstige_leibrente"]);
+    for (scheibe, q) in fragen_zu("rentner_renten_art").await {
+        let hilfe = q["hilfe_kurz"].as_str().unwrap();
+        assert!(
+            hilfe.contains(&format!("Eine {RENTE_LM} gehört nicht hierher: danach fragen wir getrennt.")),
+            "rentner_renten_art in {scheibe}: {hilfe}"
+        );
+        assert!(!hilfe.contains("rechnet sie noch nicht"), "rentner_renten_art in {scheibe}: {hilfe}");
+        assert_eq!(q["enum_werte"], arten, "rentner_renten_art in {scheibe}: die Rentenarten bleiben");
+    }
+    for (scheibe, q) in fragen_zu("rentner_renten_art_partner").await {
+        let hilfe = q["hilfe_kurz"].as_str().unwrap();
+        assert!(
+            hilfe.contains(&format!(
+                "Eine {RENTE_LM} gehört nicht hierher: für deinen Ehe- oder Lebenspartner rechnet die Software sie noch nicht."
+            )),
+            "rentner_renten_art_partner in {scheibe}: {hilfe}"
+        );
+        assert_eq!(q["enum_werte"], arten, "rentner_renten_art_partner in {scheibe}: die Rentenarten bleiben");
+    }
+}
+
+/// Nr. 55: Das Kreuz zur Rente mit Leistungsmitteilung sagt, dass die Software sie bei Zusammenveranlagung nicht rechnet, und die
+/// Frage nach weiteren Nummern nennt die Werbungskosten ueber 102 Euro: beides sperrt mit `rav_bav_nicht_gerechnet`, und der
+/// Nutzer soll es vor der Antwort lesen, nicht erst im Sperrtext.
+#[tokio::test]
+async fn die_fragen_zur_mitteilung_nennen_was_die_software_nicht_rechnet() {
+    for (scheibe, q) in fragen_zu("kein_rav_bav").await {
+        let hilfe = q["hilfe_kurz"].as_str().unwrap();
+        assert!(
+            hilfe.contains("Bei Zusammenveranlagung rechnet die Software diese Rente noch nicht und sperrt dann mit einer Erklärung."),
+            "kein_rav_bav in {scheibe}: {hilfe}"
+        );
+    }
+    for (scheibe, q) in fragen_zu("rav_bav_andere_nummern").await {
+        let frage = q["fragetext_laie"].as_str().unwrap();
+        let hilfe = q["hilfe_kurz"].as_str().unwrap();
+        assert!(frage.contains("Werbungskosten über 102 Euro"), "rav_bav_andere_nummern in {scheibe}: {frage}");
+        assert!(hilfe.contains("Pauschbetrag von 102 Euro"), "rav_bav_andere_nummern in {scheibe}: {hilfe}");
     }
 }

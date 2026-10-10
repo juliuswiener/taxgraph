@@ -36,8 +36,12 @@ const E10_AUSSCHLUSS_DATENART: &[&str] = &["E6002301", "E6004901"];
 /// `weitere_wk` (nur Rust, Abweichung Nr. 49): die zweite Zeile "Sonstiges" der Anlage N, `<Sonst>` unter `<Weitere_Wk>`
 /// (maxOccurs=99) unter `<Wk>` unter `<N>`. Ohne Eintrag legte die Zeile ein zweites `<N>` an, das ist die Anlage N der
 /// Person B, und `xmllint` nimmt das an (gemessen 2026-10-09).
-/// Bis auf `weitere_wk` wortgleich mit `elster_xml.py::INSTANZ_CONTAINER_TIEFER` (Paritaetskriterium; die Ausnahme steht in
-/// `tabellen.rs::RUST_EIGENE_PAARE`).
+/// `rente_av_bav` (nur Rust, Abweichung Nr. 55): die Mitteilungen der Anlage R-AV/bAV, `<Einz>` unter `<Leist_AV_betr>` unter
+/// `<RAV_bAV>` (je maxOccurs=1 bis auf `<Einz>`). `<RAV_bAV>` selbst traegt maxOccurs=2 (ein Block je Person): ohne Eintrag legte die
+/// zweite Mitteilung ein zweites `<RAV_bAV>` an, das ist die Anlage der Person B, und `ERiC` lehnt die Einzelveranlagung ab
+/// (Spike Nr. 55, Fall K7).
+/// Bis auf `weitere_wk` und `rente_av_bav` wortgleich mit `elster_xml.py::INSTANZ_CONTAINER_TIEFER` (Paritaetskriterium; die
+/// Ausnahmen stehen in `tabellen.rs::RUST_EIGENE_PAARE`).
 const INSTANZ_CONTAINER_TIEFER: &[(&str, &str)] = &[
     ("p23_veraeusserung", "Einz"),
     ("hh_minijob", "Einz"),
@@ -45,6 +49,7 @@ const INSTANZ_CONTAINER_TIEFER: &[(&str, &str)] = &[
     ("hh_handwerker", "Einz"),
     ("rente", "Einz"),
     ("weitere_wk", "Sonst"),
+    ("rente_av_bav", "Einz"),
 ];
 /// Skalare Pflicht-Diskriminatoren ohne Kz.
 const PFLICHT_DEFAULT: &[(&str, &str)] = &[("Person", "PersonA"), ("Laufende_Nummer_V", "1")];
