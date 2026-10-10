@@ -264,11 +264,13 @@ fn das_alters_gate_entscheidet_ob_die_zeilen_stehen() {
 /// unter 1 Euro geben keine Zeile, auch kein Teil des Trios.
 #[test]
 fn ohne_bezug_oder_ohne_betrag_stehen_keine_zeilen() {
-    let faelle: [(&str, Paare); 5] = [
+    let faelle: [(&str, Paare); 6] = [
         ("kein Bezug", lohn(50_000)),
         ("Bezug 0", mit(lohn(50_000), bezug(0, 2_800_000, 2020, "beamtenrechtlich"))),
         ("Bemessungsgrundlage 0", mit(lohn(50_000), bezug(3_000_000, 0, 2020, "beamtenrechtlich"))),
         ("Bezug unter 1 Euro", mit(lohn(50_000), bezug(99, 99, 2020, "beamtenrechtlich"))),
+        // Der Bezug allein entscheidet, nicht die Bemessungsgrundlage: `E0200801` ist im Schema ein Betrag "nicht null".
+        ("Bezug unter 1 Euro, Bemessungsgrundlage gross", mit(lohn(50_000), bezug(99, 2_800_000, 2020, "beamtenrechtlich"))),
         // Das Schema nimmt `E0200902` nur ab 1 Euro: ein Bezug mit Bemessungsgrundlage unter 1 Euro bekommt auch keine Zeile 11.
         ("Bemessungsgrundlage unter 1 Euro", mit(lohn(50_000), bezug(3_000_000, 99, 2020, "beamtenrechtlich"))),
     ];

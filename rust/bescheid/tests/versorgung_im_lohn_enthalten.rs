@@ -137,6 +137,11 @@ fn ergebnis(f: &Fall) -> Ausgang {
         Ok(None) => {}
         Err(e) => return Ausgang::Anders(format!("Guard: {e:?}")),
     }
+    rechne(f)
+}
+
+/// Die Rechnung ohne den K2-Guard: nur `feste_zahl` (nur bestaetigte Werte).
+fn rechne(f: &Fall) -> Ausgang {
     let kegel = f.cfg.kegel(|d| panic!("KONTROLLE: Kegel aus {d}")).unwrap();
     let kegel: Vec<&str> = kegel.iter().map(String::as_str).collect();
     let umg = Umgebung {
@@ -358,6 +363,31 @@ fn ein_bezug_ueber_dem_lohn_sperrt_person_b_nur_bei_zusammenveranlagung() {
     assert_eq!(gesperrt_mit(&rentner(true, p())), UEBER_LOHN);
     assert_eq!(gesperrt_mit(&rentner(true, versorgung_partner(30_000))), UEBER_LOHN, "ohne Lohn des Ehegatten");
     assert!(gdb(&rentner(false, p())) > 0, "einzel: der Bezug des Ehegatten zaehlt nicht, der Fall rechnet");
+}
+
+/// Zweite Linie hinter dem Guard: rechnet ein Aufrufer OHNE ihn, gibt der Rechenkern selbst keine Zahl, sondern den Fehler
+/// `VersorgungGesperrt`. Ohne die Pruefung im Kern bekaeme er `Lohn − Bezug` mit negativem Ergebnis, eine stille Falschzahl.
+#[test]
+fn der_rechenkern_gibt_ohne_guard_keine_zahl_zu_einem_bezug_ueber_dem_lohn() {
+    let faelle = [
+        ("Person A", rentner(false, [lohn(20_000), versorgung(30_000)].concat())),
+        ("Person B", rentner(true, [lohn_partner(20_000), versorgung_partner(30_000)].concat())),
+    ];
+    for (name, paare) in faelle {
+        match rechne(&fall(&paare)) {
+            Ausgang::Anders(was) => assert!(
+                was.contains("VersorgungGesperrt") && was.contains("VersorgungUeberLohn"),
+                "{name}: anderer Fehler: {was}"
+            ),
+            Ausgang::Zahl(_) => panic!("{name}: der Kern gab eine Zahl zu einem Bezug ueber dem Lohn"),
+            Ausgang::Gesperrt(g) => panic!("{name}: der Kern kennt den Guard nicht, bekommen die Sperre {g}"),
+        }
+    }
+    // KONTROLLE: gleich viel Lohn wie Bezug rechnet auch ohne Guard.
+    assert!(matches!(
+        rechne(&fall(&rentner(false, [lohn(30_000), versorgung(30_000)].concat()))),
+        Ausgang::Zahl(_)
+    ));
 }
 
 /// Der Grund ist lesbar: er nennt Nr. 3 und Nr. 8 der Lohnsteuerbescheinigung und sagt, was der Nutzer tut.

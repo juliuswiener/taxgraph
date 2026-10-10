@@ -421,6 +421,16 @@ fn faelle() -> Vec<Fall> {
         Fall {
             scheibe: Scheibe::RentnerGesamt,
             gruppe: "versorgung",
+            name: "Beginnjahr nach dem Veranlagungsjahr, aber kein Bezug: sperrt nicht (Rest aus dem Vorjahr)",
+            events: vec![
+                z("versorgung_beginn_jahr", 2026, true),
+                z("versorgung_bemessungsgrundlage", 1_500_000, true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "versorgung",
             name: "zusammen, Bezug des Ehegatten ueber seinem Bruttoarbeitslohn",
             events: vec![
                 t("veranlagung", "zusammen", true),
