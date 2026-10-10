@@ -15,6 +15,10 @@ path = "src/lib.rs"
 name = "taxgraph-api"
 path = "src/main.rs"
 
+[[bin]]
+name = "taxgraph-xml"
+path = "src/xml_main.rs"
+
 [features]
 # Testbau fuer den Differenz-Harness: feste Uhr im Store (`store/festzeit`).
 festzeit = ["store/festzeit"]
