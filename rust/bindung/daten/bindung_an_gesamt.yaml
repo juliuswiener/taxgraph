@@ -386,6 +386,31 @@ bindungen:
       zitatanker: "Private Veräußerungsgeschäfte (§ 22 Nummer 2) sind 1. Veräußerungsgeschäfte bei Grundstücken und Rechten, die den Vorschriften des bürgerlichen Rechts über Grundstücke unterliegen"
       datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
 
+  # Screening-Flag "Rente mit Leistungsmitteilung" (§ 22 Nr. 5 EStG, Abweichung Nr. 55, 2026-10-10): eigene Pseudoregel, gleiche
+  # Bauart wie kein_p23_verkauf. Die Rente aus Riester-Vertrag, Pensionskasse, Pensionsfonds oder Direktversicherung steht NICHT
+  # unter kein_sonstige: Stünde sie dort, sperrte jedes "Ja" die Scheibe `gesamt` mit `einkunftsart_nicht_ring_faehig`, bevor die
+  # Frage zu den Beträgen kommt. Dieses Kreuz schaltet die Fragen der Gruppe rente_av_bav frei (Regel p22_nr5_rav_bav_leistung,
+  # bindung_regel_bedingungen.yaml). Was die Software nicht rechnet, sperrt mit Klartext (rav_bav_sperrgrund).
+  - feld_id: kein_rav_bav
+    quelle: {regel_id: p22_nr5_rav_bav_vorhanden, geltungsbedingung: rav_bav_erklaert}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr eine Rente oder eine Auszahlung aus einem Riester-Vertrag, einer Pensionskasse, einem Pensionsfonds oder einer Direktversicherung bekommen (mit einer Leistungsmitteilung deines Anbieters)?"
+    hilfe_kurz: "Gemeint ist die Mitteilung über steuerpflichtige Leistungen, die dein Anbieter dir schickt. Eine gesetzliche Rente, eine Rente aus dem Versorgungswerk und eine Rürup-Rente zählst du hier nicht mit: danach fragen wir getrennt. Eine Werkspension mit Lohnsteuerbescheinigung gehört zum Arbeitslohn. Die Frage gilt für dich, nicht für deinen Ehe- oder Lebenspartner."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag, kein Deklarationsfeld — bestätigt der Nutzer eine solche Rente, rechnet die Software sie (Abweichung Nr. 55); was sie nicht rechnet (andere Nummern der Mitteilung, Basisrente) und unvollständige Angaben sperren mit Klartext (rav_bav_sperrgrund), statt eine ungeprüfte Zahl auszugeben."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 5 S. 1 EStG"
+      zitatanker: "Leistungen aus Altersvorsorgeverträgen, Pensionsfonds, Pensionskassen und Direktversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+
   # ===== Gewinneinkünfte §§ 13-18 (Stufe 1): vorberechneter § 2-Gewinn + Betriebsart-Weiche =====
   # Der bereits ermittelte Gewinn (EÜR § 4 Abs. 3 / Betriebsvermögensvergleich) fließt DIREKT als
   # einkuenfte_gewinn-Summand in die § 2-Stufenfolge (Engine-Slot LIVE, p32a Z.464/559; dev-1s slot_fn

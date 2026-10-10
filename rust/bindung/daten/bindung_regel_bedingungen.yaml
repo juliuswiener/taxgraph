@@ -83,6 +83,11 @@ regel_bedingungen:
     wert: false
     grund: "§ 23 EStG erfasst private Veräußerungsgeschäfte als sonstige Einkünfte (§ 22 Nr. 2 EStG) — wer bestätigt, nichts privat verkauft zu haben, hat kein solches Geschäft. Seit Nr. 54 hängt die Regel am eigenen Kreuz kein_p23_verkauf und nicht mehr an kein_sonstige: auf der Scheibe gesamt endet kein_sonstige = nein in einer Sperre (Rente), der Verkauf soll dort rechenbar sein."
 
+  - regel_id: p22_nr5_rav_bav_leistung
+    feld: kein_rav_bav
+    wert: false
+    grund: "§ 22 Nr. 5 Satz 1 EStG erfasst Leistungen aus Altersvorsorgeverträgen, Pensionsfonds, Pensionskassen und Direktversicherungen als sonstige Einkünfte — wer bestätigt, keine solche Rente und keine Leistungsmitteilung zu haben, hat keine Beträge dazu zu erklären. Das Kreuz kein_rav_bav ist eigen (Abweichung Nr. 55) und hängt nicht an kein_sonstige: auf der Scheibe gesamt endet kein_sonstige = nein in einer Sperre (Rente), die Rente mit Leistungsmitteilung soll dort rechenbar sein."
+
   - regel_id: p22_3_leistungen
     feld: kein_sonstige
     wert: false
@@ -375,6 +380,11 @@ instanz_gruppen:
     etikett: "Verkauf"
     max: 9
     grund: "§ 23 Abs. 3 S. 1 EStG rechnet Gewinn und Verlust je Veraeusserungsgeschaeft. Preis, Anschaffungskosten und Werbungskosten gehoeren zu je EINEM Verkauf; ohne Zaehlfeld liessen sich zwei Verkaeufe nicht trennen und die Zahlen vermischten sich."
+  - gruppe: rente_av_bav
+    anzahl_feld: rav_bav_anzahl
+    etikett: "Mitteilung"
+    max: 5
+    grund: "Die Anlage R-AV/bAV führt je Leistungsmitteilung einen eigenen Posten (Einz unter Leist_AV_betr, bis zu 99). Betrag und Beginn gehören zu je EINER Mitteilung; ohne Zählfeld ließen sich zwei Verträge nicht trennen, und der Ertragsanteil der Nummer 5 hängt am Beginn der jeweiligen Rente."
   - gruppe: hh_handwerker
     anzahl_feld: hh_anzahl_handwerker
     etikett: "Handwerkerleistung"

@@ -1,0 +1,145 @@
+# Bindungstabelle — Leistungen aus Altersvorsorgeverträgen, Pensionsfonds, Pensionskassen und Direktversicherungen
+# (§ 22 Nr. 5 EStG, Anlage R-AV/bAV), Stufe 1: Person A, Zeilen 4, 10 + 12 und 15 + 16.
+# Multi-Instanz wie die Anlage R: pro Leistungsmitteilung ein Satz von Angaben, instanz_gruppe "rente_av_bav" (ein <Einz> unter
+# RAV_bAV/Leist_AV_betr). Abweichung Nr. 55 (2026-10-10): Python kennt weder diese Felder noch ein Kz der Anlage; vorher gab es
+# für die Rente mit Leistungsmitteilung keinen Eingabeplatz (Texte Nr. 53), jetzt rechnet und deklariert TaxGraph die drei Nummern.
+# Kz und Zeilen: Vordruck sources/bfinv/rav_bav_2025.txt, Anleitung sources/bfinv/anleitungen/anl_rav_bav_2025.txt, Schema
+# E10-2025.xsd RAV_bAV_67907_CType (Einz_1464258593_CType). Das Paar Vordruck-Kz / E-Nummer folgt aus gleichem Text und gleicher
+# Reihenfolge; ERiC bestätigt Z10/Z12 und Z15/Z16 selbst in seinen Meldungen (checkESt, Abweichung Nr. 55).
+# Was Stufe 1 nicht rechnet, sperrt mit Klartext (rav_bav_sperrgrund in bescheid): Basisrente, andere Nummern, Werbungskosten über
+# dem Pauschbetrag (nicht gefragt: der Pauschbetrag gilt), Ehegatte als Person B.
+version: 1
+scheibe: "§22 Nr. 5 EStG Leistungen aus Altersvorsorgeverträgen, Pensionsfonds, Pensionskassen und Direktversicherungen (Anlage R-AV/bAV, gesamt + rentner)"
+
+bindungen:
+  - feld_id: rav_bav_nr1_betrag
+    quelle: {regel_id: p22_nr5_rav_bav_leistung, signatur_slot: nr1_betrag}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: rente_av_bav
+    fragetext_laie: "Wie hoch sind die Leistungen unter Nummer 1 deiner Mitteilung des Anbieters (Jahresbetrag)? Steht dort nichts, trage 0 ein."
+    hilfe_kurz: "Die Mitteilung heißt Leistungsmitteilung und kommt von deinem Anbieter (Riester-Vertrag, Pensionskasse, Pensionsfonds oder Direktversicherung). Nummer 1 sind Leistungen, die voll versteuert werden, weil die Beiträge gefördert oder steuerfrei waren. Der Betrag steht in der Erklärung (Zeile 4 der Anlage R-AV/bAV)."
+    beispielwert: 600000
+    herkunft_slots: ["Leistungsmitteilung Nr. 1"]
+    elster_kz: E1803101
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 5 S. 1 EStG"
+      zitatanker: "Leistungen aus Altersvorsorgeverträgen, Pensionsfonds, Pensionskassen und Direktversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+  - feld_id: rav_bav_nr4_betrag
+    quelle: {regel_id: p22_nr5_rav_bav_leistung, signatur_slot: nr4_betrag}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: rente_av_bav
+    fragetext_laie: "Wie hoch sind die Leistungen unter Nummer 4 deiner Mitteilung des Anbieters (Jahresbetrag)? Steht dort nichts, trage 0 ein."
+    hilfe_kurz: "Nummer 4 sind Leistungen aus einer betrieblichen Altersversorgung, zum Beispiel einer Pensionskasse. Der Betrag wird voll versteuert und steht in der Erklärung (Zeile 10 der Anlage R-AV/bAV), dazu der Beginn der Leistung (Zeile 12)."
+    beispielwert: 0
+    herkunft_slots: ["Leistungsmitteilung Nr. 4"]
+    elster_kz: E1803301
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Anlage R-AV/bAV, Zeile 10"
+      zitatanker: "Leistungen aus einer betrieblichen Altersversorgung"
+      datei: "sources/bfinv/rav_bav_2025.txt"
+  - feld_id: rav_bav_nr4_beginn
+    quelle: {regel_id: p22_nr5_rav_bav_leistung, signatur_slot: nr4_beginn}
+    typ: datum
+    muster: '^\d{2}\.\d{2}\.\d{4}$'
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: rente_av_bav
+    fragetext_laie: "Seit wann bekommst du die Leistung unter Nummer 4 (Tag, Monat, Jahr)? Steht dort kein Betrag, lass das Feld leer."
+    hilfe_kurz: "Format TT.MM.JJJJ. Der Beginn der Leistung steht in deiner Mitteilung. Er muss im Steuerjahr oder davor liegen. Das Datum steht in der Erklärung (Zeile 12 der Anlage R-AV/bAV)."
+    beispielwert: "01.04.2022"
+    herkunft_slots: ["Leistungsmitteilung Nr. 4"]
+    elster_kz: E1803401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Anlage R-AV/bAV, Zeile 12"
+      zitatanker: "Beginn der Leistung"
+      datei: "sources/bfinv/rav_bav_2025.txt"
+  - feld_id: rav_bav_nr5_betrag
+    quelle: {regel_id: p22_nr5_rav_bav_leistung, signatur_slot: nr5_betrag}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: rente_av_bav
+    fragetext_laie: "Wie hoch ist die Leibrente unter Nummer 5 deiner Mitteilung des Anbieters (Jahresbetrag)? Steht dort nichts, trage 0 ein."
+    hilfe_kurz: "Nummer 5 ist eine lebenslange Rente aus einem Altersvorsorgevertrag oder einer betrieblichen Altersversorgung. Davon wird nur ein Teil versteuert (Ertragsanteil), der vom Alter bei Rentenbeginn abhängt. Der Betrag steht in der Erklärung (Zeile 15 der Anlage R-AV/bAV), dazu der Beginn der Rente (Zeile 16)."
+    beispielwert: 0
+    herkunft_slots: ["Leistungsmitteilung Nr. 5"]
+    elster_kz: E1803501
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Anlage R-AV/bAV, Zeile 15"
+      zitatanker: "Leibrente aus einem Altersvorsorgevertrag oder aus"
+      datei: "sources/bfinv/rav_bav_2025.txt"
+  - feld_id: rav_bav_nr5_beginn
+    quelle: {regel_id: p22_nr5_rav_bav_leistung, signatur_slot: nr5_beginn}
+    typ: datum
+    muster: '^\d{2}\.\d{2}\.\d{4}$'
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: rente_av_bav
+    fragetext_laie: "Seit wann bekommst du die Rente unter Nummer 5 (Tag, Monat, Jahr)? Steht dort kein Betrag, lass das Feld leer."
+    hilfe_kurz: "Format TT.MM.JJJJ. Der Beginn der Rente steht in deiner Mitteilung. Aus dem Datum und deinem Geburtsdatum rechnet TaxGraph dein Alter bei Rentenbeginn. Das Datum steht in der Erklärung (Zeile 16 der Anlage R-AV/bAV)."
+    beispielwert: "01.04.2022"
+    herkunft_slots: ["Leistungsmitteilung Nr. 5"]
+    elster_kz: E1803601
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Anlage R-AV/bAV, Zeile 16"
+      zitatanker: "Beginn der Rente"
+      datei: "sources/bfinv/rav_bav_2025.txt"
+  - feld_id: rav_bav_andere_nummern
+    quelle: {regel_id: p22_nr5_rav_bav_leistung, signatur_slot: andere_nummern}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: rente_av_bav
+    fragetext_laie: "Stehen in dieser Mitteilung auch Beträge unter anderen Nummern als 1, 4 und 5?"
+    hilfe_kurz: "Zum Beispiel Nummer 2 (Pensionsfonds), 3 (Abfindung einer Kleinbetragsrente), 6 bis 11 (abgekürzte Leibrente, andere Leistungen, schädliche Verwendung, Nachzahlungen). Solche Beträge rechnet die Software noch nicht und sperrt dann mit einer Erklärung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "ENDGUELTIG: Rechenfeld (Abweichung Nr. 55), kein Deklarationsfeld. Ein Ja sperrt die Berechnung (rav_bav_nicht_gerechnet): die Nummern 2, 3 und 6 bis 11 gehoeren in Zeilen, die Stufe 1 nicht schreibt."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Anlage R-AV/bAV, Zeile 18"
+      zitatanker: "Abgekürzte Leibrente aus einem Altersvorsorgever"
+      datei: "sources/bfinv/rav_bav_2025.txt"
+  - feld_id: rav_bav_basisrente
+    quelle: {regel_id: p22_nr5_rav_bav_leistung, signatur_slot: basisrente}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: rente_av_bav
+    fragetext_laie: "Ist der Vertrag hinter dieser Mitteilung eine zertifizierte Basisrente (Rürup-Rente)?"
+    hilfe_kurz: "Eine Basisrente wird anders besteuert als die übrigen Verträge. Das rechnet die Software noch nicht und sperrt bei Ja mit einer Erklärung. Riester-Verträge, Pensionskassen und Direktversicherungen sind keine Basisrente."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "ENDGUELTIG: Rechenfeld (Abweichung Nr. 55), kein Deklarationsfeld. Ein Ja sperrt die Berechnung (rav_bav_nicht_gerechnet): Leistungen auf ungefoerderten Beitraegen eines zertifizierten Basisrentenvertrags werden mit dem Besteuerungsanteil statt dem Ertragsanteil besteuert (BMF Rn. 146); wie die Leistungsmitteilung das auf Nr. 5 abbildet, sagt keine Quelle im Korpus."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "BMF-Schreiben Riester-Förderung Rn. 146"
+      zitatanker: "der Basisrente erfüllt sind (zertifiziert nach § 5a AltZertG), werden hingegen nach § 22"
+      datei: "sources/bmf/bmf_riester_foerderung_2023-10-05.txt"
+
+luecken:
+  - regel_id: p22_nr5_rav_bav_leistung
+    geltungsbedingung: ertragsanteil_alter_bei_rentenbeginn
+    grund: "Das Alter bei Rentenbeginn für den Ertragsanteil der Nummer 5 ist keine Frage: TaxGraph rechnet es aus stammdaten_geburtsdatum und rav_bav_nr5_beginn (vollendetes Lebensjahr, engine::zugriff::teil2::rav_bav::alter_bei_beginn)."
