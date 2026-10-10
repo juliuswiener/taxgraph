@@ -109,12 +109,12 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     instanz_gruppe: rente_av_bav
-    fragetext_laie: "Stehen in dieser Mitteilung auch Beträge unter anderen Nummern als 1, 4 und 5?"
-    hilfe_kurz: "Zum Beispiel Nummer 2 (Pensionsfonds), 3 (Abfindung einer Kleinbetragsrente), 6 bis 11 (abgekürzte Leibrente, andere Leistungen, schädliche Verwendung, Nachzahlungen). Solche Beträge rechnet die Software noch nicht und sperrt dann mit einer Erklärung."
+    fragetext_laie: "Stehen in dieser Mitteilung auch Beträge unter anderen Nummern als 1, 4 und 5, oder hast du für deine Renten mit Leistungsmitteilung Werbungskosten über 102 Euro?"
+    hilfe_kurz: "Zum Beispiel Nummer 2 (Pensionsfonds), 3 (Abfindung einer Kleinbetragsrente), 6 bis 11 (abgekürzte Leibrente, andere Leistungen, schädliche Verwendung, Nachzahlungen). Werbungskosten sind zum Beispiel Kontoführungsgebühren für diese Renten. Die Software setzt dafür den Pauschbetrag von 102 Euro im Jahr an; höhere Kosten und die Beträge anderer Nummern rechnet sie noch nicht und sperrt dann mit einer Erklärung."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "ENDGUELTIG: Rechenfeld (Abweichung Nr. 55), kein Deklarationsfeld. Ein Ja sperrt die Berechnung (rav_bav_nicht_gerechnet): die Nummern 2, 3 und 6 bis 11 gehoeren in Zeilen, die Stufe 1 nicht schreibt."
+    elster_kz_grund: "ENDGUELTIG: Rechenfeld (Abweichung Nr. 55), kein Deklarationsfeld. Ein Ja sperrt die Berechnung (rav_bav_nicht_gerechnet): die Nummern 2, 3 und 6 bis 11 und Werbungskosten ueber dem Pauschbetrag von 102 EUR (Zeilen 27 bis 33) gehoeren in Zeilen, die Stufe 1 nicht schreibt."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "Anlage R-AV/bAV, Zeile 18"

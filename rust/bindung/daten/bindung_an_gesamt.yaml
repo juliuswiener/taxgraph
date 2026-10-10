@@ -348,7 +348,7 @@ bindungen:
     # `einkunftsart_nicht_ring_faehig`, bevor die Frage zum Verkauf kommt. Aktien fehlen mit Absicht: § 23 Abs. 2 EStG ordnet sie
     # den Kapitalerträgen zu, die `kein_kap` erhebt.
     fragetext_laie: "Hattest du dieses Jahr sonstige Einkünfte (z. B. eine Rente oder Geld für das Vermieten einzelner Gegenstände)? Den Verkauf einer Wohnung oder eines anderen Gegenstands fragen wir getrennt."
-    hilfe_kurz: "Rente: gesetzliche, Versorgungswerk, Rürup, private Rentenversicherung oder Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung. Vermieten: z. B. Wohnmobil oder Werkzeug, auch gelegentliche Vermittlungen gegen Provision. Einen privaten Verkauf (Wohnung, Haus, Gold, Kunst, Kryptowährung) zählst du hier nicht mit: danach fragen wir getrennt. Nur Arbeitslohn → Nein."
+    hilfe_kurz: "Rente: gesetzliche, Versorgungswerk, Rürup oder private Rentenversicherung. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung zählst du hier nicht mit: danach fragen wir getrennt. Vermieten: z. B. Wohnmobil oder Werkzeug, auch gelegentliche Vermittlungen gegen Provision. Einen privaten Verkauf (Wohnung, Haus, Gold, Kunst, Kryptowährung) zählst du hier nicht mit: danach fragen wir getrennt. Nur Arbeitslohn → Nein."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
@@ -400,7 +400,7 @@ bindungen:
     vorjahr: vorschlag
     frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
     fragetext_laie: "Hast du dieses Jahr eine Rente oder eine Auszahlung aus einem Riester-Vertrag, einer Pensionskasse, einem Pensionsfonds oder einer Direktversicherung bekommen (mit einer Leistungsmitteilung deines Anbieters)?"
-    hilfe_kurz: "Gemeint ist die Mitteilung über steuerpflichtige Leistungen, die dein Anbieter dir schickt. Eine gesetzliche Rente, eine Rente aus dem Versorgungswerk und eine Rürup-Rente zählst du hier nicht mit: danach fragen wir getrennt. Eine Werkspension mit Lohnsteuerbescheinigung gehört zum Arbeitslohn. Die Frage gilt für dich, nicht für deinen Ehe- oder Lebenspartner."
+    hilfe_kurz: "Gemeint ist die Mitteilung über steuerpflichtige Leistungen, die dein Anbieter dir schickt. Eine gesetzliche Rente, eine Rente aus dem Versorgungswerk und eine Rürup-Rente zählst du hier nicht mit: danach fragen wir getrennt. Eine Werkspension mit Lohnsteuerbescheinigung gehört zum Arbeitslohn. Bei Zusammenveranlagung rechnet die Software diese Rente noch nicht und sperrt dann mit einer Erklärung. Die Frage gilt für dich, nicht für deinen Ehe- oder Lebenspartner."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
