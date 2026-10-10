@@ -505,6 +505,21 @@ impl Params {
         self.euro(vz, "sparer_pauschbetrag_p20_9.yaml", "wert")
     }
 
+    /// § 23 Abs. 3 S. 5 `EStG` Freigrenze der privaten Veraeusserungsgeschaefte (`privatverkauf_p23.yaml`, Abweichung Nr. 54): ab
+    /// diesem Gesamtgewinn je Kalenderjahr ist der GANZE Gewinn steuerpflichtig. Ein Jahr ohne diese Datei ist ein Fehler
+    /// ([`ParamsWertFehler::DateiFehlt`]), kein Standardwert: ohne eingefrorene Fassung rechnet der Aufrufer nicht.
+    ///
+    /// # Errors
+    /// Wie [`Params::grundfreibetrag`].
+    ///
+    /// ```
+    /// let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
+    /// assert_eq!(p.privatverkauf_freigrenze(domain::Vz::Vz2025).unwrap(), domain::Euro::new(1000));
+    /// ```
+    pub fn privatverkauf_freigrenze(&self, vz: Vz) -> Result<Euro, ParamsWertFehler> {
+        self.euro(vz, "privatverkauf_p23.yaml", "freigrenze")
+    }
+
     /// § 32d Abs. 1 S. 1 `EStG` Abgeltungsteuersatz in Prozent (`abgeltungssatz_p32d.yaml`).
     ///
     /// # Errors

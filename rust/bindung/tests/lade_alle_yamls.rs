@@ -61,8 +61,8 @@ fn alle_params_yamls_laden() {
         "params-Ladefehler:\n{}",
         fehler.join("\n")
     );
-    // 58 + 3: `parteispenden_p34g.yaml` je Jahr (Abweichung Nr. 31).
-    assert_eq!(anzahl, 61, "erwartete 61 params/<vz>/*.yaml-Dateien");
+    // 58 + 3: `parteispenden_p34g.yaml` je Jahr (Abweichung Nr. 31); + 3: `privatverkauf_p23.yaml` je Jahr (Abweichung Nr. 54).
+    assert_eq!(anzahl, 64, "erwartete 64 params/<vz>/*.yaml-Dateien");
 }
 
 #[test]
