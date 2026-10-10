@@ -465,6 +465,10 @@ faelle! {
     r_fremd_kein_vuv_false => "rentner_gesamt", mit(rentner(), "kein_vuv", json!(false)), R0, None, "einkunftsart_nicht_ring_faehig";
     a_guard_hebt_sperren_auf => "an_gesamt", mit(an(), "kein_gewinn", json!(false)), A0, None, "einkunftsart_nicht_ring_faehig";
     a_verlustvortrag_luecke => "an_gesamt", mit(an(), "verlustvortrag_bestand", json!(B)), A0, None, "verlustvortrag_gehoert_in_gesamt";
+    // Wie oben, Grund und Szene aus tests/test_paket_b_e2e_http.py (test_an_gesamt_kinder_guard, test_an_gesamt_zusammen_vor_guard);
+    // der Guard selbst mit Gegenfaellen und allen sechs Vorsorgefeldern: rust/bescheid/tests/an_gesamt_luecken_sperren.rs.
+    a_kinder_luecke => "an_gesamt", mit(an(), "fam_anzahl_kinder", json!(2)), A0, None, "kinder_gehoeren_in_gesamt";
+    a_zusammen_mit_vorsorge_sperrt => "an_gesamt", plus(mit(mit(an(), "veranlagung", json!("zusammen")), "vor_an_anteil_rv", json!(350_000)), partner_kegel_an()), A0, None, "partner_vor_offen";
     a_partner_kegel_zusammen => "an_gesamt", plus(mit(an(), "veranlagung", json!("zusammen")), partner_kegel_an()), A0, Some(272_800), "bestaetigt";
     a_partner_kegel_fehlt => "an_gesamt", mit(an(), "veranlagung", json!("zusammen")), A0, None, "partner_kegel_offen";
     gz_partner_kap_feld_fehlt => "gesamt", ohne(gesamt_zusammen(), "kap_gewinn_aktien_partner"), GZ0, None, "partner_kegel_offen";
