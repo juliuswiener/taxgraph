@@ -104,6 +104,14 @@ pub enum Sperrgrund {
     PartnerKonsistenzOffen,
     PartnerVorOffen,
     ProgressionGehoertInGesamt,
+    /// Rust-eigen (Nr. 55, `rav_bav_angaben_offen`): eine Rente mit Leistungsmitteilung ist bejaht, aber eine Angabe dazu fehlt oder
+    /// passt nicht (Betraege, Beginn, Geburtsdatum, Antwort zu weiteren Nummern und zur Basisrente). Der Nutzer kann sie nachtragen.
+    /// Python kennt den Grund nicht.
+    RavBavAngabenOffen,
+    /// Rust-eigen (Nr. 55, `rav_bav_nicht_gerechnet`): eine Rente mit Leistungsmitteilung, die die Software bewusst nicht rechnet
+    /// (Zusammenveranlagung, andere Nummern der Mitteilung, Werbungskosten ueber dem Pauschbetrag, Basisrente). Python kennt den
+    /// Grund nicht.
+    RavBavNichtGerechnet,
     RealsplittingAngabenOffen,
     RechnungUnbarOffen,
     RenteInstanzOffen,
@@ -190,6 +198,8 @@ impl Sperrgrund {
             Self::PartnerKonsistenzOffen => "partner_konsistenz_offen",
             Self::PartnerVorOffen => "partner_vor_offen",
             Self::ProgressionGehoertInGesamt => "progression_gehoert_in_gesamt",
+            Self::RavBavAngabenOffen => "rav_bav_angaben_offen",
+            Self::RavBavNichtGerechnet => "rav_bav_nicht_gerechnet",
             Self::RealsplittingAngabenOffen => "realsplitting_angaben_offen",
             Self::RechnungUnbarOffen => "rechnung_unbar_offen",
             Self::RenteInstanzOffen => "rente_instanz_offen",
@@ -272,6 +282,8 @@ impl Sperrgrund {
             Self::PartnerKonsistenzOffen => Some("Zwei Angaben passen nicht zusammen: Du hast etwas zu deinem Ehe- oder Lebenspartner eingetragen — etwa dessen Behinderung, Kapitalerträge oder Rente — aber keine gemeinsame Veranlagung gewählt. Angaben zum Partner zählen nur in einer gemeinsamen Erklärung. Bitte sieh dir beide Angaben noch einmal an."),
             Self::PartnerVorOffen => Some("Du hast eine gemeinsame Veranlagung gewählt und Beiträge zur Rentenversicherung angegeben. Die Altersvorsorgebeiträge beider Partner rechnet die Software in dieser Zusammenstellung noch nicht. Dieser Fall wird derzeit nicht berechnet."),
             Self::ProgressionGehoertInGesamt => Some("Du hast Lohnersatzleistungen wie Eltern-, Kranken- oder Arbeitslosengeld angegeben. Diese Leistungen sind steuerfrei, erhöhen aber den Steuersatz auf dein übriges Einkommen. Dieser Effekt ist in der gerade laufenden Berechnung nicht enthalten, deshalb rechnet die Software hier nicht weiter."),
+            Self::RavBavAngabenOffen => Some("Du hast eine Rente oder Auszahlung mit Leistungsmitteilung angegeben (Riester-Vertrag, Pensionskasse, Pensionsfonds oder Direktversicherung). Zu dieser Mitteilung fehlt noch eine Angabe, oder zwei Angaben passen nicht zusammen: die Beträge unter Nummer 1, 4 und 5 (steht dort nichts, trage 0 ein), der Beginn der Leistung, wenn unter Nummer 4 oder 5 ein Betrag steht (er darf nicht nach dem Steuerjahr liegen), bei Nummer 5 dein Geburtsdatum, die Antwort, ob die Mitteilung weitere Beträge enthält, und die Antwort, ob der Vertrag eine Basisrente ist. Bitte trage die Angaben zu jeder Mitteilung vollständig ein."),
+            Self::RavBavNichtGerechnet => Some("Du hast eine Rente oder Auszahlung mit Leistungsmitteilung angegeben, die die Software noch nicht rechnet. Das betrifft eine gemeinsame Veranlagung mit deinem Ehe- oder Lebenspartner, Beträge unter anderen Nummern als 1, 4 und 5, Werbungskosten über 102 Euro und eine zertifizierte Basisrente (Rürup-Rente). Ein Ergebnis ohne diese Angaben wäre falsch, deshalb rechnet die Software hier nicht weiter. Dieser Fall braucht steuerliche Beratung."),
             Self::RealsplittingAngabenOffen => Some("Du zahlst Unterhalt an deinen geschiedenen oder getrennt lebenden Ehepartner. Es fehlt noch der Betrag oder die Antwort, ob der Empfänger dem Abzug zugestimmt hat (Anlage U). Ohne Zustimmung gibt es den Abzug nicht. Bitte beantworte beide Fragen."),
             Self::RechnungUnbarOffen => Some("Zu deinen Handwerker- oder Haushaltsdienstleistungen fehlt noch die Antwort, ob du eine Rechnung erhalten und sie überwiesen hast. Barzahlungen erkennt das Finanzamt hier nicht an. Bitte beantworte diese Frage."),
             Self::RenteInstanzOffen => Some("Zu einer deiner Renten oder zu einer Rente deines Partners sind die Angaben unvollständig. Für jede einzelne Rente braucht die Berechnung vier Dinge: die Art der Rente, den Jahresbetrag, das Jahr des Rentenbeginns und das Alter der beziehenden Person zu diesem Zeitpunkt. Bitte ergänze die fehlenden Angaben."),
@@ -368,6 +380,8 @@ impl FromStr for Sperrgrund {
             "partner_konsistenz_offen" => Ok(Self::PartnerKonsistenzOffen),
             "partner_vor_offen" => Ok(Self::PartnerVorOffen),
             "progression_gehoert_in_gesamt" => Ok(Self::ProgressionGehoertInGesamt),
+            "rav_bav_angaben_offen" => Ok(Self::RavBavAngabenOffen),
+            "rav_bav_nicht_gerechnet" => Ok(Self::RavBavNichtGerechnet),
             "realsplitting_angaben_offen" => Ok(Self::RealsplittingAngabenOffen),
             "rechnung_unbar_offen" => Ok(Self::RechnungUnbarOffen),
             "rente_instanz_offen" => Ok(Self::RenteInstanzOffen),
@@ -516,6 +530,8 @@ mod tests {
             Sperrgrund::PartnerEinkunftsartNichtRingFaehig,
             Sperrgrund::P23AngabenOffen,
             Sperrgrund::P23VerkaufNichtGerechnet,
+            Sperrgrund::RavBavAngabenOffen,
+            Sperrgrund::RavBavNichtGerechnet,
         ] {
             assert!(
                 !klartext.contains_key(grund.als_str()),
@@ -576,6 +592,33 @@ mod tests {
         assert_ne!(
             Sperrgrund::P23AngabenOffen.klartext(),
             Sperrgrund::P23VerkaufNichtGerechnet.klartext(),
+            "nachtragbar und nicht gerechnet sind zwei verschiedene Auskuenfte"
+        );
+    }
+
+    /// Die zwei Gruende zur Rente mit Leistungsmitteilung (Nr. 55) nennen die Mitteilung und sagen, was der Nutzer tun kann: Angaben
+    /// nachtragen (`rav_bav_angaben_offen`) oder wissen, dass der Fall nicht gerechnet wird und warum (`rav_bav_nicht_gerechnet`:
+    /// Ehepartner, andere Nummern, Werbungskosten ueber dem Pauschbetrag, Basisrente). Pinnt Teile des Wortlauts.
+    #[test]
+    fn die_gruende_zur_rente_mit_leistungsmitteilung_nennen_die_mitteilung_und_den_anlass() {
+        for (grund, teile) in [
+            (
+                Sperrgrund::RavBavAngabenOffen,
+                &["Leistungsmitteilung", "Nummer 1, 4 und 5", "Beginn", "Geburtsdatum", "Basisrente", "vollständig ein"][..],
+            ),
+            (
+                Sperrgrund::RavBavNichtGerechnet,
+                &["Leistungsmitteilung", "Ehe- oder Lebenspartner", "anderen Nummern", "102 Euro", "Basisrente", "rechnet die Software hier nicht weiter"][..],
+            ),
+        ] {
+            let text = grund.klartext().unwrap();
+            for teil in teile {
+                assert!(text.contains(teil), "{grund}: {teil:?} fehlt in {text:?}");
+            }
+        }
+        assert_ne!(
+            Sperrgrund::RavBavAngabenOffen.klartext(),
+            Sperrgrund::RavBavNichtGerechnet.klartext(),
             "nachtragbar und nicht gerechnet sind zwei verschiedene Auskuenfte"
         );
     }
