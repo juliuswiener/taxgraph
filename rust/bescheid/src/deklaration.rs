@@ -50,6 +50,9 @@ pub struct Cfg {
     multi_objekt: Option<&'static str>,
     multi_rente: Option<&'static str>,
     fremd_arten: &'static [&'static str],
+    /// Rust-eigen (Nr. 52): wie `fremd_arten`, aber die Kreuze des EHEGATTEN; sie zaehlen nur bei Zusammenveranlagung und
+    /// sperren mit `PartnerEinkunftsartNichtRingFaehig`. Steht nicht in `testhilfe::konstanten_json`: Python kennt die Liste nicht.
+    fremd_arten_partner: &'static [&'static str],
     /// `SCHEIBEN[<name>]["felder"]`: die Feld-Ids der Scheibe. `None` heisst **nicht** "keine
     /// Felder", sondern "lies [`Cfg::felder_datei`]" (`n_vor_gwg` ist die einzige solche Scheibe).
     /// Ein Port, der `None` als leer liest, liefert 69 Felder weniger ohne Fehler.
@@ -88,6 +91,7 @@ impl Cfg {
             multi_objekt: None,
             multi_rente: None,
             fremd_arten: &[],
+            fremd_arten_partner: &[],
             felder: None,
             felder_datei: None,
             kegel: None,
@@ -124,6 +128,7 @@ impl Cfg {
                 partner_19: true,
                 multi_objekt: Some("vv_objekt"),
                 fremd_arten: &["kein_sonstige", "kein_p23_verkauf"],
+                fremd_arten_partner: &["kein_sonstige_partner"],
                 ..leer
             },
             Scheibe::RentnerGesamt => Self {
@@ -544,5 +549,32 @@ mod aequivalenz {
         let v = json!(format!("{}5", "0".repeat(4300)));
         assert_eq!(alt(&v), Ok(5));
         assert_eq!(int_oder_null(&v), Err(Some("ValueError")));
+    }
+}
+
+/// Abweichung Nr. 52: die Kreuze des Ehegatten (`fremd_arten_partner`) gibt es nur auf `gesamt`. Auf `rentner_gesamt` kann der
+/// Nutzer `kein_sonstige_partner` nicht schreiben (400), und `an_gesamt`/`ep`/`n_vor_gwg` kennen keinen Ehegatten.
+#[cfg(test)]
+mod fremd_arten_partner {
+    use domain::Scheibe;
+
+    use super::Cfg;
+
+    #[test]
+    fn nur_die_scheibe_gesamt_sperrt_auf_das_kreuz_des_ehegatten() {
+        for s in [
+            Scheibe::Ep,
+            Scheibe::NVorGwg,
+            Scheibe::AnGesamt,
+            Scheibe::Gesamt,
+            Scheibe::RentnerGesamt,
+        ] {
+            let erwartet: &[&str] = if s == Scheibe::Gesamt {
+                &["kein_sonstige_partner"]
+            } else {
+                &[]
+            };
+            assert_eq!(Cfg::fuer(s).fremd_arten_partner, erwartet, "{s:?}");
+        }
     }
 }

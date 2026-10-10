@@ -25,7 +25,8 @@ use crate::zahl::ganzzahl_alt;
 /// - `kein_kap`: § 2 Abs. 1 Nr. 5; `kein_vuv`: Nr. 6; `kein_sonstige`: Nr. 7 (Renten).
 /// - `kein_kap_partner`: Partner-Spiegel der fünf Kap-Felder (§ 26b, Einkünfte je Ehegatte).
 /// - `kein_sonstige_partner`: § 22 Nr. 1 Partner-Rente. Flag nur auf „gesamt", Zielfeld nur auf
-///   „`rentner_gesamt`" — die Scheiben-Fragbarkeit ([`FlagStand::NichtFragbar`]) schließt die Lücke.
+///   „`rentner_gesamt`" — die Scheiben-Fragbarkeit ([`FlagStand::NichtFragbar`]) schließt die Lücke NICHT: ein „ja" auf „gesamt"
+///   rechnete eine Zahl ohne die Rente. Seit Nr. 52 sperrt `Cfg::fremd_arten_partner` (`bescheid`) die Scheibe „gesamt".
 /// - `kein_p23_verkauf`: § 23 Abs. 1/3, private Veräußerungsgeschäfte.
 /// - `kein_gewinn`: § 2 Abs. 1 Nr. 1-3 (§§ 13-18), jeder Betriebsindikator inkl. Verlustjahr,
 ///   GWG und Mitunternehmer (§ 15 Abs. 1 Nr. 2).
