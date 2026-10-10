@@ -1,0 +1,14 @@
+# Eingefrorene amtliche Anleitung (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung zur Anlage R-AV/bAV 2025"
+  quelle_url: "Julius 2026-10-10, im Repo unter docs/Anltg_R_AV_bAV_25.pdf (ungetrackt)"
+  abrufdatum: "2026-10-10"
+  datei: "anl_rav_bav_2025.txt"
+  pdf_datei: "Anltg_R_AV_bAV_25.pdf"
+  sha256: "68217b529c67da45952f33a5b8d14850c05e0ba658e4628d8f3a820885e160be"
+  pdf_sha256: "c92c9dd1564ed4a5eca7e3f200b219f614fca21fb4a44b302c3531126ecf17a8"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Leistungsmitteilung']
+  verwendet_in:
+    - ""
