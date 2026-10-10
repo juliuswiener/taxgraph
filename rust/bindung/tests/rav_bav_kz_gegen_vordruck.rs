@@ -5,7 +5,7 @@
 //! Der Vordruck steht eingefroren in `sources/bfinv/rav_bav_2025.txt`. Der Test liest daraus bei jedem Lauf, welches Vordruck-Kz in
 //! der Zeile 4, 10, 12, 15 und 16 der ersten Rente steht, und prueft, dass das Bindungsfeld dieser Zeile das Schema-Kz traegt, das
 //! dazu gehoert. Das Paar Vordruck-Kz / E-Nummer folgt aus gleichem Text und gleicher Reihenfolge; dass die E-Nummern im Schema
-//! unter `RAV_bAV/Leist_AV_betr/Einz` stehen und ERiC das Paar annimmt, prueft `elster` (Schema) und `bescheid` (`checkESt`).
+//! unter `RAV_bAV/Leist_AV_betr/Einz` stehen und `ERiC` das Paar annimmt, prueft `elster` (Schema) und `bescheid` (`checkESt`).
 //!
 //! Die Hilfe jedes Betragsfelds nennt seine Zeile. Ein Feld auf der falschen Zeile haette einen Text, der den Nutzer in die falsche
 //! Zeile des Formulars schickt.

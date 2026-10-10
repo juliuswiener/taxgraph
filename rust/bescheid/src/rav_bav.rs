@@ -152,17 +152,17 @@ pub fn rav_bav_einkuenfte(
         if !q.zaehlt(&inst) {
             continue;
         }
-        let Ok(g) = lese(&inst, geburt, Some(i32::from(vz.jahr())))? else {
+        let Ok(gelesen) = lese(&inst, geburt, Some(i32::from(vz.jahr())))? else {
             continue;
         };
-        let m = Mitteilung {
+        let mitteilung = Mitteilung {
             vz,
-            nr1: g.nr1,
-            nr4: g.nr4,
-            nr5: g.nr5,
-            alter_bei_beginn_nr5: g.alter_bei_beginn_nr5,
+            nr1: gelesen.nr1,
+            nr4: gelesen.nr4,
+            nr5: gelesen.nr5,
+            alter_bei_beginn_nr5: gelesen.alter_bei_beginn_nr5,
         };
-        let (voll, ertragsanteil) = mitteilung_stpfl(&m, p)?;
+        let (voll, ertragsanteil) = mitteilung_stpfl(&mitteilung, p)?;
         summe.voll = euro_plus(summe.voll, voll)?;
         summe.ertragsanteil = euro_plus(summe.ertragsanteil, ertragsanteil)?;
     }
