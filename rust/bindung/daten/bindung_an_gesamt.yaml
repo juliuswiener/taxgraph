@@ -347,7 +347,7 @@ bindungen:
     # (tests/test_screening_gruppe_b.py). Aktien fehlen mit Absicht: § 23 Abs. 2 EStG ordnet sie
     # den Kapitalerträgen zu, die `kein_kap` erhebt.
     fragetext_laie: "Hattest du dieses Jahr sonstige Einkünfte (z. B. eine Rente, den Verkauf einer Wohnung bis 10 Jahre oder von Kryptowährung bis 1 Jahr nach dem Kauf, Geld für das Vermieten einzelner Gegenstände)?"
-    hilfe_kurz: "Rente: gesetzliche, Versorgungswerk, Rürup oder private Rentenversicherung. Verkauf: Wohnung, Haus oder Grundstück bis 10 Jahre nach dem Kauf; Kryptowährung (z. B. Bitcoin), Gold oder Kunst bis 1 Jahr nach dem Kauf — Auto und Möbel zählen nicht. Vermieten: z. B. Wohnmobil oder Werkzeug, auch gelegentliche Vermittlungen gegen Provision. Nur Arbeitslohn → Nein."
+    hilfe_kurz: "Rente: gesetzliche, Versorgungswerk, Rürup, private Rentenversicherung oder Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung. Verkauf: Wohnung, Haus oder Grundstück bis 10 Jahre nach dem Kauf; Kryptowährung (z. B. Bitcoin), Gold oder Kunst bis 1 Jahr nach dem Kauf — Auto und Möbel zählen nicht. Vermieten: z. B. Wohnmobil oder Werkzeug, auch gelegentliche Vermittlungen gegen Provision. Nur Arbeitslohn → Nein."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null

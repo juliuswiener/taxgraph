@@ -140,9 +140,10 @@ const VERSORGUNG_PARTNER: &str = "versorgung_jahresrente_partner";
 
 /// Der Grund der Abgabe-Sperre bei einem bestaetigten Versorgungsbezug ueber 0 (`VERSORGUNG`, `VERSORGUNG_PARTNER` ohne Kz):
 /// der Bescheid rechnet den Bezug ein (Versorgungsfreibetrag, Zuschlag, Pauschbetrag). Seit Abweichung Nr. 50 traegt das XML
-/// ihn in den Zeilen 11 bis 13 der Anlage N, soweit der Bescheid ihn als Versorgungsbezug rechnet ([`VERSORGUNG_ZEILE`]); kein
-/// `checkESt`-Lauf hat diese Zeilen je angenommen, die Sperre faellt mit dem ersten Lauf (Abweichung Nr. 42).
-const VERSORGUNG_SPERRE: &str = "Versorgungsbezüge über 0 Euro: Die Erklärung trägt sie in den Zeilen 11 bis 13 der Anlage N, soweit der Bescheid sie als Versorgungsbezug rechnet. Ein checkESt-Lauf hat diese Zeilen noch nie angenommen. Die Abgabe ist deshalb gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+/// ihn in den Zeilen 11 bis 13 der Anlage N, soweit der Bescheid ihn als Versorgungsbezug rechnet ([`VERSORGUNG_ZEILE`]); ein
+/// `checkESt`-Lauf hat diese Zeilen mit Nr. 50 offline angenommen (rc=0), die Sperre bleibt trotzdem, bis Julius sie aufhebt
+/// (Abweichung Nr. 42). Seit Nr. 53 nimmt der Text die Rente mit Leistungsmitteilung aus (§ 22 Nr. 5 `EStG`, kein Versorgungsbezug).
+const VERSORGUNG_SPERRE: &str = "Versorgungsbezüge über 0 Euro: Die Erklärung trägt sie in den Zeilen 11 bis 13 der Anlage N, soweit der Bescheid sie als Versorgungsbezug rechnet. Die Abgabe ist dafür noch nicht freigegeben und deshalb gesperrt. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht in diese Zeilen. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
 
 /// Nur Rust (Abweichung Nr. 50): die Ring-Werte zu den Zeilen 11 bis 13 der Anlage N, je Person. `bescheid::deklaration::
 /// mit_ring_werten` setzt sie auf `true`, wenn der Bescheid den Bezug als steuerbeguenstigten Versorgungsbezug rechnet (alle

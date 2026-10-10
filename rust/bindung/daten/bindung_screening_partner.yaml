@@ -136,7 +136,7 @@ bindungen:
     vorjahr: vorschlag
     frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
     fragetext_laie: "Bezog dein Ehe-/Lebenspartner dieses Jahr eine Rente oder hatte er sonstige Einkünfte?"
-    hilfe_kurz: "Gemeint sind vor allem Renten — gesetzliche Rente, Betriebsrente, private Rente. Wenn dein Partner nur Arbeitslohn bezieht, antworte mit Nein."
+    hilfe_kurz: "Gemeint sind vor allem Renten — gesetzliche Rente, Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung, private Rente. Wenn dein Partner nur Arbeitslohn bezieht, antworte mit Nein."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
