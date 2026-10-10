@@ -312,7 +312,7 @@ fn kein_fragbares_bool_gate_auf_einem_sammel_scope() {
 
 /// `(Ort, Text)` einer festen Jahreszahl, die kein VZ-Bezug ist; der Grund steht daneben. Wer eine neue
 /// Ausnahme braucht, traegt sie hier mit Grund ein, statt den Test zu lockern.
-const JAHR_AUSNAHMEN: [(&str, &str, &str); 4] = [
+const JAHR_AUSNAHMEN: [(&str, &str, &str); 5] = [
     (
         "kind_geburtsdatum",
         "hilfe_kurz",
@@ -332,6 +332,11 @@ const JAHR_AUSNAHMEN: [(&str, &str, &str); 4] = [
         "vor_voller_abzug",
         "hilfe_kurz",
         "Rechtstatsache (Vorsorgeaufwand seit 2023 zu 100% ansetzbar), kein VZ-Bezug.",
+    ),
+    (
+        "p23_afa",
+        "hilfe_kurz",
+        "Rechtstatsache (Anleitung Anlage SO: Anschaffung nach dem 31.12.2008, Abschreibung bei den sonstigen Einkuenften), kein VZ-Bezug.",
     ),
 ];
 

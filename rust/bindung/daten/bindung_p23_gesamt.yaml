@@ -1,7 +1,7 @@
 # Bindungstabelle — §23 EStG private Veräußerungsgeschäfte (Stufe-1).
 # Multi-Instanz (wie §21-Multi-Objekt): pro Veräußerung ein Satz von Angaben
 # (Art, Bezeichnung, zwei Daten, Preis, Anschaffungskosten, AfA, Werbungskosten,
-# Eigennutzung, täglicher Gebrauch, Einkunftsquelle). instanz_gruppe: "p23_veraeusserung".
+# Eigennutzung, täglicher Gebrauch, Einkunftsquelle, Gebäude der letzten zehn Jahre). instanz_gruppe: "p23_veraeusserung".
 # Abweichung Nr. 54 (2026-10-10): TaxGraph rechnet die Frist selbst aus den zwei Daten
 # (Grundstück 10 Jahre, andere Wirtschaftsgüter 1 Jahr, mit Einkunftsquelle 10 Jahre) und
 # wendet Eigennutzung und täglichen Gebrauch an; die Angabe "innerhalb der Frist" ist keine
@@ -17,6 +17,9 @@ bindungen:
   - feld_id: p23_veraeusserungspreis
     quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: veraeusserungspreis}
     typ: cent
+    # Kein Minus: ein negativer Preis liesse den Gewinn sinken und machte aus einem Gewinn einen Verlust. Kein eigenes Kz, die Meldung des
+    # Stores nennt darum das Schema (wie bei `p23_afa`). Zweite Sicherung: `lese()` in `bescheid/src/privatverkauf.rs` sperrt geladene Akten.
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: uebernehmbar
@@ -35,6 +38,9 @@ bindungen:
   - feld_id: p23_anschaffung_herstellungskosten
     quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: anschaffungs_herstellungskosten}
     typ: cent
+    # Kein Minus: negative Kosten liessen den Gewinn steigen. Zweite Sicherung: `lese()` sperrt geladene Akten ueber `afa > kosten`
+    # (die Abschreibung ist nie negativ, liegt also bei negativen Kosten immer darueber).
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: uebernehmbar
@@ -53,6 +59,8 @@ bindungen:
   - feld_id: p23_werbungskosten
     quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: werbungskosten}
     typ: cent
+    # Kein Minus: negative Werbungskosten liessen den Gewinn steigen. Zweite Sicherung: `lese()` sperrt geladene Akten.
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: uebernehmbar
@@ -152,12 +160,16 @@ bindungen:
   - feld_id: p23_afa
     quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: afa}
     typ: cent
+    # Kein Minus: eine negative Abschreibung liesse die Anschaffungskosten steigen und den Gewinn sinken (Abs. 3 S. 4 kennt nur Absetzungen).
+    # Das Feld hat kein eigenes Kz (wie `ep_unfallkosten`, `dba_abzug_zeile_cent`); die Meldung des Stores nennt darum das Schema, ohne dass
+    # es hier ein Kz gibt. Zweite Sicherung: `lese()` in `bescheid/src/privatverkauf.rs` sperrt auch geladene Akten mit `afa < 0`.
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag
     instanz_gruppe: p23_veraeusserung
     fragetext_laie: "Hast du für den Verkauf eine Abschreibung (AfA) bei deinen Einkünften abgezogen? Wenn ja, wie viel in Summe?"
-    hilfe_kurz: "Zum Beispiel bei einer vermieteten Wohnung die Abschreibung auf das Gebäude, die du in der Anlage V abgezogen hast, auch erhöhte Abschreibung und Sonderabschreibung. Die Abschreibung senkt die Anschaffungskosten und erhöht so den Gewinn. Hast du nichts abgezogen, trage 0 ein."
+    hilfe_kurz: "Zum Beispiel bei einer vermieteten Wohnung die Abschreibung auf das Gebäude, die du in der Anlage V abgezogen hast. Gemeint ist alles, was du als Arbeitnehmer, bei Kapitalerträgen oder bei Vermietung und Verpachtung abgezogen hast, auch erhöhte Abschreibung und Sonderabschreibung. Hast du das Gut nach dem 31.12.2008 gekauft, zählt auch, was das Finanzamt bei den sonstigen Einkünften berücksichtigt hat. Die Abschreibung senkt die Anschaffungskosten und erhöht so den Gewinn. Hast du nichts abgezogen, trage 0 ein."
     beispielwert: 0
     herkunft_slots: null
     elster_kz: null
@@ -221,6 +233,24 @@ bindungen:
     anker_ref:
       quelle: "§ 23 Abs. 1 Nr. 2 S. 4 EStG"
       zitatanker: "aus deren Nutzung als Einkunftsquelle zumindest in einem Kalenderjahr Einkünfte erzielt werden, erhöht sich der Zeitraum auf zehn Jahre"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_gebaeude_in_frist
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: gebaeude_in_frist}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Nur bei einem Grundstück: Hast du darauf in den letzten zehn Jahren vor dem Verkauf ein Gebäude gebaut, ausgebaut oder erweitert?"
+    hilfe_kurz: "Ja bei zum Beispiel einem Neubau, einem Anbau, einem Dachgeschossausbau oder einer neuen Außenanlage. Dieser Teil ist auch nach Ablauf der Frist steuerpflichtig. Die Software rechnet die Aufteilung zwischen Boden und Gebäude nicht und sperrt dann mit einer Erklärung. Bei anderen Gegenständen wähle Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 1 Nr. 1 S. 2), kein Deklarationsfeld. Ja bei einem Grundstueck mit abgelaufener Frist und ohne Eigennutzung sperrt (p23_verkauf_nicht_gerechnet): der Gebaeudeteil ist steuerpflichtig, die Aufteilung rechnet die Software nicht."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 Nr. 1 S. 2 EStG"
+      zitatanker: "Gebäude und Außenanlagen sind einzubeziehen, soweit sie innerhalb dieses Zeitraums errichtet, ausgebaut oder erweitert werden"
       datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
 
   # ===== Lücken + Geltungsbedingungen =====

@@ -72,12 +72,14 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// danach am 2026-10-10 sieben Felder des privaten Verkaufs in `gesamt` und `rentner_gesamt` (Abweichung Nr. 54:
 /// `p23_bezeichnung`, `p23_anschaffungsdatum`, `p23_veraeusserungsdatum`, `p23_afa`, `p23_eigennutzung`,
 /// `p23_taeglicher_gebrauch`, `p23_einkunftsquelle`), 371 -> 378 und 285 -> 292, die Kegel bleiben;
+/// danach am 2026-10-10 `p23_gebaeude_in_frist` in `gesamt` und `rentner_gesamt` (Abweichung Nr. 54, Gebaeude der letzten zehn Jahre),
+/// 378 -> 379 und 292 -> 293, die Kegel bleiben;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 85, 33),
-    (Scheibe::Gesamt, 378, 35),
-    (Scheibe::RentnerGesamt, 292, 28),
+    (Scheibe::Gesamt, 379, 35),
+    (Scheibe::RentnerGesamt, 293, 28),
 ];
 
 fn registry() -> &'static Registry {

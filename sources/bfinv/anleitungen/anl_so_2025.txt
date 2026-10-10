@@ -1,0 +1,211 @@
+Quelle: docs/Anltg_SO_25.pdf (Julius legt die Datei am 2026-10-10 ab; Dokumenttitel Anltg_SO 2025/4.1.1.0, Stand September 2025)
+Abgerufen: 2026-10-10
+Titel: Anleitung Anlage SO 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+Anleitung zur Anlage SO                                                                                                    2025
+Allgemeines         In die Anlage SO tragen Sie bitte die folgenden Ein­-          pflichtungsgründen beruhen,
+                    künfte ein:                                                    Ausgleichsleistungen zur Vermeidung des Versor­-
+                        aus wiederkehrenden Bezügen (z. B. Versor­-                gungsausgleichs,
+                        gungsleistungen im Rahmen einer Vermögens­-                Ausgleichszahlungen im Rahmen des Versor­-
+                        übertragung),                                              gungsausgleichs,
+                        Unterhaltsleistungen (sog. begrenztes Realsplit­-          Leistungen,
+                        ting),                                                     Abgeordnetenbezüge und / oder
+                        Versorgungsleistungen, die auf besonderen Ver­-            private Veräußerungsgeschäfte
+
+Zeile 4             Tragen Sie hier bitte wiederkehrende Bezüge (z. B.          gungsleistungen im Zusammenhang mit der Vermö­-
+Wiederkehrende      Zeitrenten) ein, wenn Sie diese nicht bereits in der An­-   gensübertragung erhalten haben, müssen Sie nur eine
+Bezüge              lage R, Anlage R-AV / bAV und / oder der Anlage R-          Eintragung machen, soweit bei der zahlungsverpflich­-
+                    AUS eingetragen haben. Dazu gehören auch wieder­-           teten Person die Voraussetzungen für den Sonderaus­-
+                    kehrende Bezüge im Zusammenhang mit Vermögens­-             gabenabzug erfüllt sind. Beachten Sie hierzu bitte die
+                    übertragungen.                                              Erläuterungen zu den Zeilen 15 bis 28 in der Anleitung
+                    Soweit Sie als empfangsberechtigte Person Versor­-          zur Anlage Sonderausgaben.
+
+Zeile 5 bis 7       Tragen Sie in Zeile 5 bitte die Unterhaltsleistungen        ser erhöht sich ggf. um die für Sie übernommenen
+Unterhalts-​        ein, die Sie von der von Ihnen geschiedenen oder            Beiträge zu einer Basis-Kranken- und / oder gesetzli­-
+leistungen          dauernd getrennt lebenden Person erhalten haben,            chen Pflegeversicherung, vgl. Zeile 5 und 6 der Anla­-
+                    vgl. Zeile 4 der Anlage U (2025). Soweit Sie dem            ge U (2025). Beachten Sie bitte hierfür die Erläuterun­-
+                    Abzug der Unterhaltsleistungen als Sonderausgaben           gen zur Anlage U und zu den Zeilen 29 bis 36 in der
+                    nur begrenzt zugestimmt haben, tragen Sie in Zeile 5        Anleitung zur Anlage Sonderausgaben.
+                    bitte den zugestimmten Betrag ein. Ihr Finanzamt be­-       Die Ausführungen zu den erhaltenen Unterhaltsleis­-
+                    grenzt ggf. die von Ihnen zu versteuernden Unterhalts­-     tungen gelten für Lebenspartnerinnen und Lebenspart­-
+                    leistungen automatisch auf einen Höchstbetrag. Die­-        ner gleichermaßen.
+
+Zeile 8             Tragen Sie hier bitte lebenslange und wiederkehrende           Abs. 1 Satz 1 Nr. 1 oder § 18 Abs. 1 des Einkom­-
+Versorgungsleis­-   Versorgungsleistungen ein, die auf besonderen Ver­-            mensteuergesetzes (EStG) ausübt,
+tungen, die auf     pflichtungsgründen beruhen. Eine begünstigte Vermö­-           eines Betriebs oder Teilbetriebs sowie
+besonderen Ver­-    gensübertragung liegt nur vor bei Versorgungsleistun­-         eines mindestens 50 % betragenden Anteils an
+pflichtungsgrün­-   gen im Zusammenhang mit der Übertragung                        einer GmbH, wenn der Übergeber als Geschäfts­-
+den beruhen              eines Mitunternehmeranteils an einer Personenge­-         führer tätig war und der Übernehmer diese Tätig­-
+                         sellschaft, die eine Tätigkeit i. S. d. §§ 13, 15         keit nach der Übertragung übernimmt.
+       Neu!
+
+
+Zeile 9             Tragen Sie hier bitte die Ausgleichsleistungen zur Ver­-    setzungen für den Sonderausgabenabzug erfüllt sind.
+Ausgleichs-​        meidung des Versorgungsausgleichs ein, die Sie von          Beachten Sie bitte hierfür die Erläuterungen zur Anla­-
+leistungen zur      Ihrer geschiedenen Ehegattin oder Ihrem geschiede­-         ge U und zu den Zeilen 40 und 41 in der Anleitung zur
+Vermeidung des      nen Ehegatten oder Ihrer Lebenspartnerin oder Ihrem         Anlage Sonderausgaben. Ausgleichsleistungen, die
+Versorgungs-​       Lebenspartner einer aufgehobenen Lebenspartner­-            aufgrund eines Vertrags oder gerichtlichen Vergleichs
+ausgleichs          schaft erhalten haben, vgl. Zeile 7 der Anlage U            zur Vermeidung eines Versorgungsausgleichs gezahlt
+                    (2025). Eine Eintragung müssen Sie nur machen, so­-         wurden, sind hier ebenfalls einzutragen. Der Vertrag
+                    weit bei der ausgleichspflichtigen Person die Voraus­-      muss notariell beurkundet sein.
+
+Zeile 10            Tragen Sie hier bitte Ausgleichszahlungen im Rahmen         gung machen, soweit bei der ausgleichspflichtigen
+Ausgleichs-​        des Versorgungsausgleichs ein.                              Person die Voraussetzungen für den Sonderausga­-
+zahlungen im        Soweit Sie als empfangsberechtigte Person Aus­-             benabzug erfüllt sind. Beachten Sie hierzu bitte die Er­-
+Rahmen des Ver­-    gleichszahlungen im Rahmen eines Versorgungsaus­-           läuterungen zu den Zeilen 37 bis 39 in der Anleitung
+sorgungs-​          gleichs erhalten haben, müssen Sie nur eine Eintra­-        zur Anlage Sonderausgaben.
+ausgleichs
+
+
+       Neu!
+
+
+Zeile 11 und 13     Wenn Ihre Werbungskosten zu den wiederkehrenden             Ihr Finanzamt zieht den Pauschbetrag hier nur ab, so­-
+Werbungskosten      Bezügen, Ausgleichsleistungen zur Vermeidung des            weit dieser nicht bereits bei den Renteneinkünften
+                    Versorgungsausgleichs und / oder Unterhaltsleistun­-        (Anlage R, Anlage R-AV / bAV und / oder Anlage R-
+                    gen unter dem Pauschbetrag i. H. v. 102 € liegen, be­-      AUS) berücksichtigt worden ist.
+                    rücksichtigt Ihr Finanzamt diesen Pauschbetrag.
+
+
+
+Anleitung zur Anlage SO - September 2025
+                                                               -2-
+
+Zeile 14 bis 21     Geben Sie hier bitte Einkünfte aus Tätigkeiten im Zu­-    Geldprämien ein, die Sie von einem Kreditinstitut für
+Leistungen          sammenhang mit Kryptowerten (z. B. Mining, Forging,       einen Wechsel des Wertpapierdepots erhalten haben.
+                    [passives] Staking, Lending und der Teilnahme an Air­-    Reichen Sie hierzu bitte eine gesonderte Aufstellung
+                    drops oder ähnlichen Vorgängen) an, sofern sie keiner     ein.
+                    anderen Einkunftsart (z. B. Einkünfte aus Gewerbebe­-     Haben Sie im Jahr 2025 Einkünfte aus Leistungen von
+                    trieb oder Kapitalvermögen) zuzurechnen sind. Weite­-     insgesamt weniger als 256 € (Freigrenze) erzielt?
+                    re Einzelheiten entnehmen Sie bitte dem Schreiben         Dann müssen Sie diese in der Anlage SO nicht eintra­-
+       Neu!         des Bundesministeriums der Finanzen vom 6. März           gen. Bei einer Zusammenveranlagung gilt die Frei­-
+                    2025, Bundessteuerblatt (BStBl) I Seite 658. Außer­-      grenze i. H. v. 256 € für jede Person.
+                    dem sind hier Einkünfte aus z. B. gelegentlichen Ver­-    Wenn Sie im Jahr 2025 Verluste aus Leistungen er­-
+                    mittlungen oder aus der Vermietung beweglicher Ge­-       zielt haben, geben Sie diese bitte hier an.
+                    genstände anzugeben. Tragen Sie hier bitte auch
+
+Zeile 21            Die Wirtschafts-Identifikationsnummer wird an wirt­-      genes 5-stelliges Unterscheidungsmerkmal ergänzt.
+Wirtschafts-​       schaftlich Tätige vergeben. Dies umfasst                  Ihnen wurde bereits eine Wirtschafts-Identifikations­-
+Identifikations­-       natürliche Personen, die wirtschaftlich tätig sind,   nummer vom Bundeszentralamt für Steuern (BZSt) zu­-
+nummer                  juristische Personen und                              geteilt? Dann tragen Sie hier bitte die für die Leistun­-
+                        Personenvereinigungen (Gesellschaften / Gemein­-      gen laut den Zeilen 16 und 13 vergebene Wirtschafts-​
+                        schaften).                                            Identifikationsnummer ein.
+                    Die Wirtschafts-Identifikationsnummer besteht aus den     Allgemeine Informationen zur Wirtschafts-Identifikati­-
+                    Buchstaben „DE“ und 9 Ziffern. Für jede wirtschaftli­-    onsnummer erhalten Sie auf der Internetseite des
+                    che Tätigkeit, jeden Betrieb sowie jede Betriebsstätte    BZSt unter www.bzst.de/widnr.
+                    wird die Wirtschafts-Identifikationsnummer um ein ei­-
+
+Zeile 22            Verluste aus Leistungen, die im Jahr 2025 nicht mit       vor.
+Verlustabzug bei    Gewinnen aus Leistungen ausgeglichen wurden, sind         Falls Sie auf die Verrechnung nach Maßgabe des
+Leistungen          nach Maßgabe des § 10d EStG rück- oder vortragsfä­-       § 10d Abs. 1 EStG (Verlustrücktrag ins Jahr 2024) ver­-
+                    hig. Sie mindern die erzielten Gewinne aus Leistungen     zichten möchten, tragen Sie bitte in Zeile 22 eine „1“
+                    im Jahr 2024 oder in den folgenden Jahren. Ihr Fi­-       ein. Ihr Finanzamt stellt dann einen entsprechenden
+                    nanzamt nimmt die Verrechnung nach Maßgabe des            verbleibenden Verlustvortrag fest. Dieser kann in künf­-
+                    § 10d Abs. 2 EStG (Verlustvortrag aus dem Jahr 2024)      tigen Jahren berücksichtigt werden.
+
+Zeile 23 bis 32     In Zeile 23 tragen Sie bitte die Ihnen auf Grund des         Versorgungsabfindungen und
+Abgeordneten-​      Abgeordnetengesetzes oder des Europaabgeordne­-              Versorgungsbezüge
+bezüge              tengesetzes gezahlten                                     ein.
+                        Entschädigungen,                                      Gleiches gilt für vergleichbare Bezüge, die Ihnen auf
+                        Amtszulagen,                                          Grund der entsprechenden Gesetze der Länder ge­-
+                        Zuschüsse zu Kranken- und Pflegeversicherungs­-       zahlt werden, und die Entschädigungen, das Über­-
+                        beiträgen,                                            gangsgeld, das Ruhegehalt und die Hinterbliebenen­-
+                        Übergangsgelder,                                      versorgung, die Ihnen auf Grund des Abgeordneten­-
+                        Überbrückungsgelder,                                  statuts des Europäischen Parlaments von der Europäi­-
+                        Sterbegelder,                                         schen Union gezahlt werden.
+
+Zeile 33            Tragen Sie hier bitte ausschließlich Einkünfte aus Ge­-   Zeilen enthalten sein. Weitere Angaben zur Bezeich­-
+Steuer-​            sellschaften, Gemeinschaften oder ähnlichen Model­-       nung der Steuerstundungsmodelle, der Höhe der Ein­-
+stundungs-​         len i. S. d. § 15b EStG (Steuerstundungsmodelle) ein.     nahmen und der Werbungskosten reichen Sie bitte in
+modelle             Einnahmen und Werbungskosten aus Steuerstun­-             einer gesonderten Aufstellung ein.
+                    dungsmodellen dürfen nicht in den vorangegangenen
+
+Zeile 34 bis 66     Private Veräußerungsgeschäfte sind                            Veräußerungsgeschäfte, bei denen die Veräuße­-
+Private                 Veräußerungen von Grundstücken und Rechten,               rung früher erfolgt, als der Erwerb (Zeile 52
+Veräußerungs-​          die den Vorschriften des bürgerlichen Rechts über         bis 57).
+geschäfte               Grundstücke      unterliegen    (grundstücksgleiche   Als Anschaffung gilt auch
+                        Rechte), bei denen der Zeitraum zwischen An­-             die Überführung eines Wirtschaftsguts in das Pri­-
+                        schaffung und Veräußerung nicht mehr als                  vatvermögen durch Entnahme oder Betriebsaufga­-
+                        10 Jahre beträgt (Zeile 34 bis 42),                       be oder
+                        Veräußerungen von Kryptowerten, bei denen der             der Antrag nach § 21 Abs. 2 Satz 1 Nr. 1 des Um­-
+                        Zeitraum zwischen Anschaffung und Veräußerung             wandlungssteuergesetzes in der am 12. Dezember
+       Neu!             nicht mehr als ein Jahr beträgt (Zeile 43 bis 49          2006 geltenden Fassung.
+                        sowie 56 und 57),                                     Bei unentgeltlichem Erwerb (z. B. Erbschaft, Schen­-
+                        Veräußerungen von anderen Wirtschaftsgütern,          kung) rechnet Ihr Finanzamt dem Rechtsnachfolger
+                        bei denen der Zeitraum zwischen Anschaffung und       die Anschaffung durch den Rechtsvorgänger zu. Die
+                        Veräußerung nicht mehr als ein Jahr beträgt           Anschaffung oder Veräußerung einer unmittelbaren
+                        (Zeile 52 bis 57) und                                 oder mittelbaren Beteiligung an einer Personengesell‐
+                                                                    -3-
+
+schaft oder Gesamthandsgemeinschaft (z. B. Erben­-           Dann müssen Sie diese in der Anlage SO nicht eintra­-
+gemeinschaft) gilt als Anschaffung oder Veräußerung          gen. Bei einer Zusammenveranlagung gilt die Frei­-
+der anteiligen Wirtschaftsgüter.                             grenze i. H. v. 1.000 € für jede Person.
+Haben Sie im Jahr 2025 Gewinne aus privaten Veräu­-          Wenn Sie innerhalb der oben genannten Fristen Ver­-
+ßerungsgeschäften von insgesamt weniger als 1.000 €          luste aus privaten Veräußerungsgeschäften realisiert
+(Freigrenze) erzielt?                                        haben, geben Sie diese bitte hier an.
+
+In den Zeilen 34 bis 42 machen Sie Angaben zu Ver­-               im Jahr der Veräußerung und in den 2 Jahren           Zeile 34 bis 42
+äußerungen von Grundstücken und grundstücksglei­-                 davor zu eigenen Wohnzwecken genutzt wurden.       Grundstücke und
+chen Rechten. Der Zeitraum zwischen der jeweiligen           Eine Zwischenvermietung ist unschädlich und führt           grundstücks-​
+Anschaffung und Veräußerung darf dabei nicht mehr            nicht zu einer Steuerpflicht, soweit Sie das Grundstück   gleiche Rechte
+als 10 Jahre betragen. Maßgeblich für die Berechnung         zusammenhängend
+des Zeitraums zwischen Anschaffung und Veräuße­-                  im Veräußerungsjahr mindestens an einem Tag
+rung ist grundsätzlich das obligatorische Geschäft, das           (d. h. am 1. Januar),
+der Anschaffung oder der Veräußerung zu Grunde                    im Jahr vor der Veräußerung durchgehend und
+liegt (z. B. notarieller Kaufvertrag). Tragen Sie bitte in        im zweiten Jahr vor der Veräußerung ebenfalls
+Zeile 35 die entsprechenden Daten ein.                            mindestens an einem Tag (d. h. am 31. Dezember)
+In die Erklärung über die Veräußerungsgeschäfte sind         zu eigenen Wohnzwecken genutzt haben. Beachten
+auch Gebäude und Außenanlagen einzubeziehen, so­-            Sie hierzu das Schreiben des Bundesministeriums der
+weit sie innerhalb des Zeitraums von 10 Jahren errich­-      Finanzen vom 17. Juni 2020, BStBl I Seite 576. Den
+tet, ausgebaut oder erweitert worden sind. Dies gilt         Gewinn aus der Veräußerung von Grund und Boden
+entsprechend für selbständige Gebäudeteile, Eigen­-          müssen Sie nicht versteuern, sofern er zu dem zu ei­-
+tumswohnungen oder im Teileigentum stehende                  genen Wohnzwecken genutzten Wirtschaftsgut gehört.
+Räume.                                                       Das ist z. B. auch bei einem häuslichen Arbeitszimmer
+Als Veräußerung eines Grundstücks oder grund­-               der Fall, nicht aber bei fremdvermieteten Räumen.
+stücksgleichen Rechts gilt auch die Einlage in das Be­-      Haben Sie ein Grundstück veräußert, bei dem nur ein
+triebsvermögen, wenn die Veräußerung aus dem Be­-            Teil der Besteuerung unterliegt, machen Sie in den
+triebsvermögen innerhalb von 10 Jahren seit Anschaf­-        Zeilen 38 bis 43 bitte nur Angaben zu dem steuer­-
+fung des Grundstücks oder grundstücksgleichen                pflichtigen Teil. Bei Veräußerungsgeschäften mindern
+Rechts erfolgt. Die Gewinne oder Verluste sind in die­-      sich die Anschaffungs- und / oder Herstellungskosten
+sen Fällen jedoch erst in dem Kalenderjahr zu erfas­-        um
+sen, in dem der Preis für die Veräußerung aus dem                 Absetzungen für Abnutzung,
+Betriebsvermögen zugeflossen ist. Als Veräußerung                 erhöhte Absetzungen und
+gilt auch die verdeckte Einlage eines Grundstücks                 Sonderabschreibungen,
+oder grundstücksgleichen Rechts in eine Kapitalge­-          soweit Sie sie bei der Ermittlung der Einkünfte aus
+sellschaft. Hier erfolgt die Erfassung bereits im Jahr       nichtselbständiger Arbeit, Kapitalvermögen oder Ver­-
+der verdeckten Einlage.                                      mietung und Verpachtung abgezogen haben. Haben
+Nicht versteuern müssen Sie die Veräußerung von              Sie das Wirtschaftsgut nach dem 31. Dezember 2008
+Gebäuden, selbständigen Gebäudeteilen, Eigentums­-           angeschafft oder fertiggestellt und wurden die oben
+wohnungen oder im Teileigentum stehender Räume               genannten Abschreibungen durch Ihr Finanzamt bei
+(Wirtschaftsgüter), wenn diese                               der Ermittlung der sonstigen Einkünfte berücksichtigt,
+     im Zeitraum zwischen Anschaffung oder Fertigstel­-      dann mindern sich die Anschaffungs- und / oder Her­-
+     lung und Veräußerung ausschließlich zu eigenen          stellungskosten. Tragen Sie bitte die in Anspruch ge­-
+     Wohnzwecken oder                                        nommenen Beträge in Zeile 40 ein.
+
+In den Zeilen 45 bis 49 sowie 56 und 57 machen Sie           wagen) müssen Sie hier nicht angeben.                       Zeile 45 bis 57
+Angaben zu Veräußerungen von Kryptowerten (z. B.             Wenn Sie das veräußerte Wirtschaftsgut zumindest in           Kryptowerte
+Bitcoin, Ether usw.), wenn dabei der Zeitraum zwi­-          einem Kalenderjahr zur Erzielung von Einkünften ge­-           und andere
+schen Anschaffung und Veräußerung nicht mehr als             nutzt haben, dann verlängert sich die Frist von einem     Wirtschaftsgüter
+ein Jahr beträgt. Weitere Einzelheiten entnehmen Sie         auf 10 Jahre.
+bitte dem Schreiben des Bundesministeriums der Fi­-          Bei den Veräußerungsgeschäften mindern sich die An­-
+nanzen vom 6. März 2025, BStBl I Seite 658. Bei meh­-        schaffungs- und / oder Herstellungskosten um
+reren Veräußerungen erläutern Sie diese bitte in einer           Absetzungen für Abnutzung,
+gesonderten Aufstellung.                                         erhöhte Absetzungen und
+In den Zeilen 52 bis 57 machen Sie Angaben zu Ver­-              Sonderabschreibungen,
+äußerungen von anderen Wirtschaftsgütern, die keine          soweit Sie sie bei der Ermittlung der Einkünfte aus            Neu!
+Grundstücke oder grundstücksgleiche Rechte sowie             nichtselbständiger Arbeit, Kapitalvermögen oder Ver­-
+Kryptowerte sind, wenn dabei der Zeitraum zwischen           mietung und Verpachtung abgezogen haben. Wurden
+Anschaffung und Veräußerung nicht mehr als ein Jahr          die oben genannten Abschreibungen durch Ihr Finanz­-
+beträgt oder die Veräußerung vor dem Erwerb erfolgt          amt bei der Ermittlung der sonstigen Einkünfte berück­-
+(z. B. Fremdwährungen usw.). Die Veräußerungen von           sichtigt, dann mindern sich die Anschaffungs- und /
+Gegenständen des täglichen Gebrauchs (z. B. Jahres­-         oder Herstellungskosten.
+                                                            -4-
+
+Zeile 66         Die Erläuterungen zu Zeile 22 gelten auch für Einkünf­-
+Verlustabzug     te aus privaten Veräußerungsgeschäften.
+zu privaten
+Veräußerungs-​
+geschäften
+

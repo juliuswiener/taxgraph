@@ -224,6 +224,7 @@ felder:
   - p23_bezeichnung
   - p23_eigennutzung
   - p23_einkunftsquelle
+  - p23_gebaeude_in_frist
   - p23_taeglicher_gebrauch
   - p23_veraeusserungs_typ
   - p23_veraeusserungsdatum
