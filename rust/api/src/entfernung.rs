@@ -188,7 +188,7 @@ fn distanz_meter(j: &Value) -> Result<f64, Ausfall> {
     als_float(mit_schluessel(summary, "distance")?)
 }
 
-/// Das Ergebnis von `max(0, round(meter / 1000))`.
+/// Das Ergebnis von `max(0, floor(meter / 1000))`.
 #[derive(Debug, PartialEq)]
 enum Km {
     Ganz(i64),
@@ -196,10 +196,11 @@ enum Km {
     ZuGross(String),
 }
 
-/// `max(0, round(meter / 1000))` (`ors_client.py:97`): `round` rundet gerade, `NaN` und `inf` sind
-/// keine Ganzzahl.
+/// `max(0, floor(meter / 1000))`: § 9 Abs. 1 Satz 3 Nr. 4 `EStG` zählt „jeden vollen Kilometer“,
+/// ein angefangener bleibt weg. Abweichung Nr. 59: Python (`ors_client.py:97`) rundet mit `round`
+/// gerade auf den nächsten Kilometer. `NaN` und `inf` sind keine Ganzzahl.
 fn km_aus(meter: f64) -> Result<Km, Ausfall> {
-    let gerundet = (meter / 1000.0).round_ties_even();
+    let gerundet = (meter / 1000.0).floor();
     if gerundet.is_nan() {
         return Err(python("ValueError", "cannot convert float NaN to integer"));
     }
@@ -409,12 +410,16 @@ mod tests {
         }
     }
 
-    /// `round` rundet gerade; die große Ganzzahl trägt alle Ziffern (`int(1e27)` in Python).
+    /// § 9 Abs. 1 Satz 3 Nr. 4 `EStG` zählt „jeden vollen Kilometer“: ein angefangener bleibt weg
+    /// (Abweichung Nr. 59 von Python `round`); die große Ganzzahl trägt alle Ziffern (`int(1e27)`).
     #[test]
-    fn km_rundet_gerade_und_nennt_die_ganze_zahl() {
+    fn km_zaehlt_nur_volle_und_nennt_die_ganze_zahl() {
         assert_eq!(km_aus(30_400.0).unwrap(), Km::Ganz(30));
         assert_eq!(km_aus(30_500.0).unwrap(), Km::Ganz(30));
-        assert_eq!(km_aus(31_500.0).unwrap(), Km::Ganz(32));
+        assert_eq!(km_aus(31_500.0).unwrap(), Km::Ganz(31));
+        assert_eq!(km_aus(12_600.0).unwrap(), Km::Ganz(12));
+        assert_eq!(km_aus(12_000.0).unwrap(), Km::Ganz(12));
+        assert_eq!(km_aus(999.0).unwrap(), Km::Ganz(0));
         assert_eq!(km_aus(-5000.0).unwrap(), Km::Ganz(0));
         assert_eq!(km_aus(1e30).unwrap(), Km::ZuGross("1000000000000000013287555072".into()));
         assert_eq!(km_aus(1e13).unwrap(), Km::ZuGross("10000000000".into()));

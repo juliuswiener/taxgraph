@@ -168,13 +168,19 @@ async fn entfernung_vom_dienst_bis_zum_event_und_die_grenze_bei_zehn_milliarden_
         json!({"typ": "maps", "dienst": "openrouteservice"})
     );
 
-    // 31 500 m: `round` rundet gerade (32). Das neue Event ersetzt das erste.
+    // 31 500 m sind 31 volle km (§ 9 Abs. 1 Satz 3 Nr. 4 EStG, Abweichung Nr. 59; Python rundete
+    // gerade auf 32). Das neue Event ersetzt das erste.
     *distanz.lock().unwrap() = json!(31_500.0);
     let (s, a) = post(&d, "/fall/en1/entfernung", &rumpf).await;
-    assert_eq!((s, a["km"].clone()), (200, json!(32)), "{a}");
+    assert_eq!((s, a["km"].clone()), (200, json!(31)), "{a}");
     let ev = events(&d, "en1");
     assert_eq!(ev.len(), 2, "{ev:?}");
     assert_eq!(ev[1]["ersetzt"], ev[0]["event_id"], "{ev:?}");
+    // 12 600 m: nicht aufgerundet auf 13.
+    *distanz.lock().unwrap() = json!(12_600.0);
+    let (s, a) = post(&d, "/fall/en1/entfernung", &rumpf).await;
+    assert_eq!((s, a["km"].clone()), (200, json!(12)), "{a}");
+    assert_eq!(events(&d, "en1").len(), 3);
 
     // Genau 10^10 km (1e13 m) passt nicht mehr in die Auflage F2: 422 mit der Abweisung, kein Event.
     *distanz.lock().unwrap() = json!(1e13);
@@ -185,7 +191,7 @@ async fn entfernung_vom_dienst_bis_zum_event_und_die_grenze_bei_zehn_milliarden_
         text.contains("ep_entfernung_km") && text.contains("10000000000"),
         "{text}"
     );
-    assert_eq!(events(&d, "en1").len(), 2);
+    assert_eq!(events(&d, "en1").len(), 3);
     // Knapp darunter (9,99e12 m) geht durch.
     *distanz.lock().unwrap() = json!(9.99e12);
     let (s, a) = post(&d, "/fall/en1/entfernung", &rumpf).await;
