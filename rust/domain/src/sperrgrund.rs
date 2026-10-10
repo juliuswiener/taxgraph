@@ -234,7 +234,7 @@ impl Sperrgrund {
             Self::EinkunftsartNichtRingFaehig => Some("Du hast angegeben, dass du eine Einkunftsart hast, die in dieser Berechnung noch nicht mitgerechnet werden kann — je nach Fall Renten und andere sonstige Einkünfte, Einnahmen aus Vermietung, Kapitalerträge, Gewinn aus einem Betrieb oder der Verkauf eines Grundstücks oder eines anderen Vermögensgegenstands. Ein Ergebnis ohne diese Einkünfte wäre zu niedrig, deshalb rechnet die Software hier nicht weiter."),
             Self::EngineUnavailable => Some("Alle nötigen Angaben liegen vor, aber der Rechenkern liefert für diesen Fall gerade kein Ergebnis. Das liegt an der Software, nicht an deinen Angaben. Bitte versuche es später noch einmal, und melde den Fall, wenn er bestehen bleibt."),
             Self::FahrtkostenpauschaleOffen => Some("Für die Fahrtkostenpauschale bei Behinderung fehlt noch eine Antwort: ob du eines der Merkzeichen aG, Bl, TBl oder H hast, oder ob dein Grad der Behinderung mindestens 80 beträgt (oder mindestens 70 mit Merkzeichen G). Bitte beantworte die Fragen, auch wenn die Antwort „nein“ ist."),
-            Self::FlagKonsistenzOffen => Some("Zwei Angaben passen nicht zusammen: Bei einer Einkunftsart hast du angegeben, dass du sie nicht hast, und an anderer Stelle trotzdem einen Betrag dazu eingetragen. Es geht um eine der vier Fragen, ob du Gewinneinkünfte, Kapitalerträge, Einnahmen aus Vermietung oder sonstige Einkünfte wie Renten hast. Bitte sieh dir an, welche der beiden Angaben stimmt."),
+            Self::FlagKonsistenzOffen => Some("Zwei Angaben passen nicht zusammen: Bei einer Einkunftsart hast du angegeben, dass du sie nicht hast, und an anderer Stelle trotzdem einen Betrag dazu eingetragen. Es geht um eine der vier Fragen, ob du Gewinneinkünfte, Kapitalerträge, Einnahmen aus Vermietung oder sonstige Einkünfte hast. Zu den sonstigen Einkünften zählen Renten und der private Verkauf eines Grundstücks oder eines anderen Gegenstands. Bitte sieh dir an, welche der beiden Angaben stimmt."),
             Self::GewinnAngabenOffen => Some("Du hast angegeben, dass du Gewinneinkünfte hast. Es fehlen noch Angaben zu deiner Einnahmen-Überschuss-Rechnung: Betriebseinnahmen, sonstige Betriebsausgaben oder Abschreibungen. Trag bei jeder dieser Angaben einen Betrag ein, auch wenn er 0 € ist. Oder gib deinen Gewinn direkt als Gesamtbetrag an."),
             Self::GewinnQuelleOffen => Some("Deinen Gewinn hast du auf zwei Wegen angegeben: einmal als fertigen Betrag und einmal aufgeteilt in Betriebseinnahmen, Betriebsausgaben und Abschreibungen. Welcher der beiden gilt, kann die Software nicht raten. Bitte lass einen der beiden Wege stehen."),
             Self::GewstHebesatzOffen => Some("Zu deinem Gewerbebetrieb fehlt der Hebesatz deiner Gemeinde, oder er steht auf 0 oder darunter. Ein Hebesatz von 0 oder darunter ist nicht möglich, jede Gemeinde muss einen Mindestsatz erheben. Ohne ihn lässt sich nicht berechnen, wie viel Gewerbesteuer auf deine Einkommensteuer angerechnet wird. Den Hebesatz findest du auf deinem Gewerbesteuerbescheid oder auf der Internetseite deiner Gemeinde."),
@@ -422,10 +422,11 @@ mod tests {
     /// Gruende, die Python kennt und deren Klartext Rust absichtlich anders sagt (Abweichung Nr. 27, Nr. 37, Nr. 45 und Nr. 53 in
     /// `rust/fixtures/README.md`). Streng: jeder Eintrag steht in der Fixture, sein Text weicht ab und nennt, was er neu sagt
     /// (`pflichtteile`).
-    const ABWEICHENDER_KLARTEXT: [&str; 3] = [
+    const ABWEICHENDER_KLARTEXT: [&str; 4] = [
         "gwg_mehrwertsteuer_offen",
         "versorgungsfreibetrag_offen",
         "gwg_abschreibung_offen",
+        "flag_konsistenz_offen",
     ];
 
     /// Was der abweichende Text eines Grunds nennen muss und welchen Satz er nicht mehr enthalten darf. Ein Eintrag in
@@ -451,6 +452,13 @@ mod tests {
             "gwg_abschreibung_offen" => (
                 Some("hier noch nicht"),
                 &["Nutzungsdauer", "Kaufmonat", "Kaufjahr", "Folgejahre"],
+            ),
+            // Python zaehlt bei den vier Fragen nur "sonstige Einkuenfte wie Renten". Seit Nr. 54 gehoert der private Verkauf eines
+            // Grundstuecks oder anderen Gegenstands dazu (Anlage SO, § 23 EStG): wer ihn eintraegt und "keine sonstigen Einkuenfte"
+            // sagt, widerspricht sich, und der Text soll das nennen.
+            "flag_konsistenz_offen" => (
+                Some("sonstige Einkünfte wie Renten hast"),
+                &["private Verkauf", "Grundstücks"],
             ),
             _ => panic!("{schluessel}: in ABWEICHENDER_KLARTEXT, aber ohne Zeile in pflichtteile"),
         }
