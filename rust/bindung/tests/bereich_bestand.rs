@@ -212,8 +212,8 @@ fn die_ratsche_erkennt_ihre_eigenen_fehlerfaelle() {
     let leer: BTreeMap<String, String> = BTreeMap::new();
 
     // Gleich: nichts zu melden.
-    assert!(verschwundene(&bestand, &bestand, &leer).is_empty());
-    assert!(geaenderte(&bestand, &bestand).is_empty());
+    assert_eq!(verschwundene(&bestand, &bestand, &leer).len(), 0);
+    assert_eq!(geaenderte(&bestand, &bestand).len(), 0);
 
     // c verliert den bereich, ohne Begruendung: Verlust. Mit Begruendung: kein Verlust.
     let ohne_c = BTreeMap::from([paar("a", 0, 20), paar("b", 1, 5)]);
@@ -222,7 +222,7 @@ fn die_ratsche_erkennt_ihre_eigenen_fehlerfaelle() {
         vec!["c".to_string()]
     );
     let begruendet = BTreeMap::from([("c".to_string(), "x".repeat(40))]);
-    assert!(verschwundene(&bestand, &ohne_c, &begruendet).is_empty());
+    assert_eq!(verschwundene(&bestand, &ohne_c, &begruendet).len(), 0);
     // Ein Eintrag fuer ein anderes Feld deckt c nicht.
     let fremd = BTreeMap::from([("z".to_string(), "x".repeat(40))]);
     assert_eq!(
@@ -237,8 +237,8 @@ fn die_ratsche_erkennt_ihre_eigenen_fehlerfaelle() {
         paar("c", 0, 9),
         paar("d", 0, 3),
     ]);
-    assert!(verschwundene(&bestand, &mit_neuem, &leer).is_empty());
-    assert!(geaenderte(&bestand, &mit_neuem).is_empty());
+    assert_eq!(verschwundene(&bestand, &mit_neuem, &leer).len(), 0);
+    assert_eq!(geaenderte(&bestand, &mit_neuem).len(), 0);
 
     // Weiter: min gesenkt, max erhoeht. Beides wird gemeldet, mit "weiter".
     for heute in [
@@ -265,12 +265,12 @@ fn die_ratsche_erkennt_ihre_eigenen_fehlerfaelle() {
         );
     }
     // Ein Feld, das schon unter `entfernt` verschwunden ist, wird nicht als geaendert gemeldet.
-    assert!(geaenderte(&bestand, &ohne_c).is_empty());
+    assert_eq!(geaenderte(&bestand, &ohne_c).len(), 0);
 
     // Zombie: b steht unter `entfernt`, traegt aber noch einen bereich.
     let zombie = BTreeMap::from([("b".to_string(), "x".repeat(40))]);
     assert_eq!(wiederaufgetauchte(&bestand, &zombie), vec!["b".to_string()]);
-    assert!(wiederaufgetauchte(&ohne_c, &begruendet).is_empty());
+    assert_eq!(wiederaufgetauchte(&ohne_c, &begruendet).len(), 0);
 }
 
 fn temp_verzeichnis(name: &str) -> PathBuf {

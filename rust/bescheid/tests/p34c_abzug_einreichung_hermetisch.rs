@@ -344,7 +344,7 @@ fn der_marker_steht_mit_grund_in_nicht_deklariert_und_die_steuer_steht_an_einer_
             "Wahl {wahl}, {steuer} Cent: {:?}",
             d.nicht_deklariert
         );
-        assert!(!nicht.first().unwrap().grund.is_empty());
+        assert_ne!(nicht.first().unwrap().grund.len(), 0);
         assert_eq!(
             d.unvollstaendig().iter().any(|e| e.feld_id == WAHL),
             gesperrt,

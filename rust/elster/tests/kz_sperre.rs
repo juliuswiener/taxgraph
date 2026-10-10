@@ -250,7 +250,7 @@ fn zuordnung_vergleich_erkennt_tausch_verlust_neues_feld_und_askable() {
             .collect()
     };
     let soll = paar(&[("lohn", "E1", true), ("kist", "E2", true), ("ring", "E3", false)]);
-    assert!(abweichungen(&soll, &soll).is_empty());
+    assert_eq!(abweichungen(&soll, &soll).len(), 0);
     let getauscht = paar(&[("lohn", "E2", true), ("kist", "E1", true), ("ring", "E3", false)]);
     assert_eq!(abweichungen(&soll, &getauscht).len(), 2);
     let verloren = paar(&[("lohn", "E1", true), ("kist", "E2", true)]);

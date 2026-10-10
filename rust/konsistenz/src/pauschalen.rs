@@ -135,7 +135,7 @@ mod tests {
             ("vv_einnahmen", PyWert::Ganz(100), Bestaetigt),
             ("vv_schuldzinsen", PyWert::Ganz(5), Bestaetigt),
         ]);
-        assert!(pauschal_hinweise(&s).is_empty());
+        assert_eq!(pauschal_hinweise(&s).len(), 0);
         let s = snap(&[
             ("vv_einnahmen", PyWert::Ganz(100), Bestaetigt),
             ("vv_schuldzinsen", PyWert::Ganz(5), Vorlaeufig),
@@ -146,6 +146,6 @@ mod tests {
     #[test]
     fn bool_ist_kein_ausloeser() {
         let s = snap(&[("bruttoarbeitslohn", PyWert::Bool(true), Bestaetigt)]);
-        assert!(pauschal_hinweise(&s).is_empty());
+        assert_eq!(pauschal_hinweise(&s).len(), 0);
     }
 }

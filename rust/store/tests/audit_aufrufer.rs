@@ -723,9 +723,9 @@ fn die_wertpruefung_trifft_platzhalter_und_ausdruecke_aber_nicht_laengen() {
     assert_eq!(treffer(r#"Some(&format!("a={name:?}"))"#), ["name"]);
     assert_eq!(treffer(r#"Some(&format!("a={}", a.text))"#), ["text"]);
     // Laenge und Leere verraten nichts; fester Text mit dem Wort ist kein Platzhalter.
-    assert!(treffer(r#"Some(&format!("n={}", crate::py::laenge(&c1.text)))"#).is_empty());
-    assert!(treffer(r#"Some(&format!("n={}", antwort.len()))"#).is_empty());
-    assert!(treffer(r#"Some(&format!("n={}", a.beleg.is_empty()))"#).is_empty());
-    assert!(treffer(r#"Some(&format!("name und wert sind fest, n={}", 3))"#).is_empty());
-    assert!(treffer(r#"Some(&format!("a={{wert}}"))"#).is_empty());
+    assert_eq!(treffer(r#"Some(&format!("n={}", crate::py::laenge(&c1.text)))"#).len(), 0);
+    assert_eq!(treffer(r#"Some(&format!("n={}", antwort.len()))"#).len(), 0);
+    assert_eq!(treffer(r#"Some(&format!("n={}", a.beleg.is_empty()))"#).len(), 0);
+    assert_eq!(treffer(r#"Some(&format!("name und wert sind fest, n={}", 3))"#).len(), 0);
+    assert_eq!(treffer(r#"Some(&format!("a={{wert}}"))"#).len(), 0);
 }

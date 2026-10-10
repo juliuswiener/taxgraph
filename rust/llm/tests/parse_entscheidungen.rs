@@ -104,14 +104,9 @@ fn json_ohne_objekt_hat_keine_schluessel() {
         r#"[{"zuordnungen": [{"aussage": 0, "regeln": ["r1"]}]}]"#,
         "5",
     ] {
-        assert!(rueckfragen_parse(text, 3).oder_leer_wie_python().is_empty());
-        assert!(aussagen_parse(text, &gefiltert)
-            .oder_leer_wie_python()
-            .is_empty());
-        assert!(zuordnung_parse(text, &erlaubt, 2)
-            .oder_leer_wie_python()
-            .getroffen
-            .is_empty());
+        assert_eq!(rueckfragen_parse(text, 3).oder_leer_wie_python().len(), 0);
+        assert_eq!(aussagen_parse(text, &gefiltert).oder_leer_wie_python() .len(), 0);
+        assert_eq!(zuordnung_parse(text, &erlaubt, 2).oder_leer_wie_python().getroffen .len(), 0);
     }
 }
 

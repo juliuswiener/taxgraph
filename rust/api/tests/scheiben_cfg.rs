@@ -86,7 +86,7 @@ fn felder_null_ohne_datei_ist_ein_fehler_kein_leerer_satz() {
     // NVorGwg mit einer Datei, die nichts liefert: kein Fehler, aber auch nicht still falsch --
     // die Aufloesung ist Sache des Aufrufers, der die YAML kennt.
     let n = Cfg::fuer(Scheibe::NVorGwg);
-    assert!(n.felder(|_| Vec::new()).unwrap().is_empty());
+    assert_eq!(n.felder(|_| Vec::new()).unwrap().len(), 0);
 }
 
 #[test]

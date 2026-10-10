@@ -530,7 +530,7 @@ fn die_umschrift_und_kennungspruefung_findet_ihre_faelle_und_laesst_die_richtige
         umschriften("steuerfrei, erhoehen aber den Satz auf dein uebriges Einkommen"),
         [("erhoehen", "erhöhen"), ("uebriges", "übriges")]
     );
-    assert!(umschriften("Steuer, dass, Zuschuss, Kasse, für, über, heißt").is_empty());
+    assert_eq!(umschriften("Steuer, dass, Zuschuss, Kasse, für, über, heißt").len(), 0);
     assert_eq!(
         umschriften("Das gilt fuer dich"),
         [("fuer", "für")],
@@ -558,7 +558,7 @@ fn die_umschrift_und_kennungspruefung_findet_ihre_faelle_und_laesst_die_richtige
         kennungen("Wie hoch war dein Bruttoarbeitslohn?", &ids).is_empty(),
         "Substantiv, keine Kennung"
     );
-    assert!(kennungen("TT.MM-TT.MM und Anlage_N", &ids).is_empty());
+    assert_eq!(kennungen("TT.MM-TT.MM und Anlage_N", &ids).len(), 0);
 }
 
 #[test]

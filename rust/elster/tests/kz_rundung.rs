@@ -235,7 +235,7 @@ fn jedes_betrags_kz_hat_eine_bewusste_rundungsklasse() {
 fn die_sperre_erkennt_ihre_eigenen_fehlerfaelle() {
     let tabelle = lies_tabelle(TABELLE);
     let soll = soll_menge();
-    assert!(befunde_der_sperre(&tabelle, &soll).is_empty());
+    assert_eq!(befunde_der_sperre(&tabelle, &soll).len(), 0);
 
     // 1. Ein Abzugs-Kz kippt nach ab (Tabelle sagt auf, der Code sagte ab): erkennt der Vergleich.
     let mut t = tabelle.clone();

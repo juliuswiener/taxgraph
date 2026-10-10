@@ -148,7 +148,7 @@ fn n_vor_gwg_datei_und_teil_ringe_stehen_in_der_registry() {
         .unwrap_or_else(|| panic!("{datei} fehlt in der Registry"));
     assert!(!inhalt.bindungen.is_empty(), "{datei} bindet kein Feld");
     let alle = bindungen();
-    assert!(!cfg.teil_ringe().is_empty());
+    assert_ne!(cfg.teil_ringe().len(), 0);
     for (familie, _, felder) in cfg.teil_ringe() {
         let fehlt: Vec<&&str> = felder.iter().filter(|f| !alle.contains_key(**f)).collect();
         assert!(

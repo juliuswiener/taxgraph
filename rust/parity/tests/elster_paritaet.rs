@@ -902,7 +902,7 @@ fn reale_faelle() {
         "keine realen Faelle gefunden unter {}",
         faelle_verzeichnis().display()
     );
-    assert!(z.abweichungen.is_empty());
+    assert_eq!(z.abweichungen.len(), 0);
 }
 
 // ---------------------------------------------------------------- generierte Stores

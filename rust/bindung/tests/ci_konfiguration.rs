@@ -389,7 +389,7 @@ fn die_pruefungen_schlagen_an() {
     }
     // Ein Wert `1` ohne Anfuehrungszeichen ist fuer GitHub derselbe Text `1`.
     let zahl = GUT.replace("TAXGRAPH_OHNE_XSD: \"1\"", "TAXGRAPH_OHNE_XSD: 1");
-    assert!(ohne_xsd(&laden(&zahl)).is_empty());
+    assert_eq!(ohne_xsd(&laden(&zahl)).len(), 0);
 
     let toml: &[(&str, &str, &str)] = &[
         ("opt-level 0", "opt-level = 1 # Stufe", "opt-level = 0"),
@@ -427,5 +427,5 @@ fn die_pruefungen_schlagen_an() {
     }
     // `opt-level = 1` zaehlt nur im Abschnitt `[profile.dev]`, nicht im Nachbarabschnitt.
     let falsch = "[profile.dev]\noverflow-checks = true\n\n[profile.release]\nopt-level = 1\n";
-    assert!(!profil(falsch).is_empty());
+    assert_ne!(profil(falsch).len(), 0);
 }

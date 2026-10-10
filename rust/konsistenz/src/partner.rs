@@ -192,7 +192,7 @@ mod tests {
                 Bestaetigt,
             ),
         ]);
-        assert!(partner_ohne_zusammen(&s).is_empty());
+        assert_eq!(partner_ohne_zusammen(&s).len(), 0);
     }
 
     #[test]
@@ -210,7 +210,7 @@ mod tests {
             ("veranlagung", PyWert::Text("einzel".to_owned()), Bestaetigt),
             ("fam_alleinstehend", PyWert::Bool(true), Bestaetigt),
         ]);
-        assert!(alleinerziehend_mit_zusammen(&s).is_empty());
+        assert_eq!(alleinerziehend_mit_zusammen(&s).len(), 0);
     }
 
     /// `veranlagung` und `fam_alleinstehend` stehen immer im Snapshot, dazu bis zu drei

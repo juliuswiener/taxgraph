@@ -372,7 +372,7 @@ async fn ein_csv_mit_zeilenumbruch_im_feld_ist_ein_500_error() {
         )
     );
     // Die Akte bleibt leer: nichts wurde übernommen.
-    assert!(events(&d, "ke").is_empty());
+    assert_eq!(events(&d, "ke").len(), 0);
 }
 
 #[tokio::test]
@@ -750,5 +750,5 @@ async fn datum_und_zweck_die_die_akte_nicht_haelt_sind_422() {
     let inhalt = r#"[{"datum": "ok", "betrag": -100, "verwendungszweck": 5}, {"datum": NaN, "betrag": -100, "verwendungszweck": "Maler"}]"#;
     let (s, a) = auszug(&d, "br0", json!({"format": "json", "inhalt": inhalt})).await;
     assert_eq!((s, a), (422, datum_meldung("float")));
-    assert!(events(&d, "br0").is_empty());
+    assert_eq!(events(&d, "br0").len(), 0);
 }

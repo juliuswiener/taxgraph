@@ -307,7 +307,7 @@ async fn die_zweite_kennung_geht_durch_dieselbe_pruefung() {
     let (s, a) = post(json!("bobs")).await;
     assert_eq!(s, 403, "{a}");
     assert_eq!(a, json!({"fehler": "Zugriff auf Fall 'bobs' verweigert"}));
-    assert!(akte(&d, "ziel")["events"].as_array().unwrap().is_empty());
+    assert_eq!(akte(&d, "ziel")["events"].as_array().unwrap().len(), 0);
     // Der Rumpf ist kein Objekt: `body.get` scheitert.
     for (body, klasse) in [
         (json!([1]), "list"),

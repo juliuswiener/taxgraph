@@ -209,14 +209,14 @@ const MAKE_GUT: &str = "serve: $(SICHERN_ZIEL)\n\tcd rust && CARGO_TARGET_DIR=$(
 #[test]
 fn die_text_waechter_schlagen_an() {
     // sauber, auch mit dem Namen im Kommentar und anderer Schreibweise
-    assert!(cargo_probleme(CARGO_GUT).is_empty());
-    assert!(cargo_probleme("[profile.dev]\noverflow-checks=true # an\n").is_empty());
-    assert!(cargo_probleme("[profile]\ndev.overflow-checks = true\n").is_empty());
-    assert!(make_probleme(MAKE_GUT).is_empty());
+    assert_eq!(cargo_probleme(CARGO_GUT).len(), 0);
+    assert_eq!(cargo_probleme("[profile.dev]\noverflow-checks=true # an\n").len(), 0);
+    assert_eq!(cargo_probleme("[profile]\ndev.overflow-checks = true\n").len(), 0);
+    assert_eq!(make_probleme(MAKE_GUT).len(), 0);
     // das Ziel `serve-python` darf `--release` tragen: nur `serve` zaehlt
-    assert!(
-        make_probleme(&MAKE_GUT.replace("serve-python: x\n\tcargo build --release\n", ""))
-            .is_empty()
+    assert_eq!(
+        make_probleme(&MAKE_GUT.replace("serve-python: x\n\tcargo build --release\n", "")).len(),
+        0
     );
 
     let cargo_schlecht = [

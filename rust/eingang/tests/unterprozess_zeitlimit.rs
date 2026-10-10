@@ -533,7 +533,7 @@ fn abweichungen_nennen_neuen_aufruf_ueberfluessige_und_verwaiste_ausnahme() {
     let mit = |d: &str, fk: &str| Fund { datei: d.into(), funktion: fk.into(), zeile: 9, hat_limit: true };
     let a = |d, fk, n| Ausnahme { datei: d, funktion: fk, anzahl: n, grund: "", kein_aufrufer: &[] };
     // sauber: ein Limit ist ok, eine eingetragene Ausnahme ist ok
-    assert!(abweichungen(&[mit("a.rs", "f"), ohne("b.rs", "g")], &[a("b.rs", "g", 1)]).is_empty());
+    assert_eq!(abweichungen(&[mit("a.rs", "f"), ohne("b.rs", "g")], &[a("b.rs", "g", 1)]).len(), 0);
     // neuer Aufruf ohne Limit
     let r = abweichungen(&[ohne("a.rs", "f")], &[]);
     assert_eq!(r.len(), 1, "{r:?}");

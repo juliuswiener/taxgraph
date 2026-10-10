@@ -315,12 +315,12 @@ fn die_helfer_erkennen_ihre_fehlerfaelle() {
         .collect();
     let karte = |z: &[&str]| z.iter().map(ToString::to_string).collect::<Vec<_>>();
 
-    assert!(ohne_zeile(&dateien, &karte(&["rust/a/tests/x.rs", "tests/test_y.py"])).is_empty());
+    assert_eq!(ohne_zeile(&dateien, &karte(&["rust/a/tests/x.rs", "tests/test_y.py"])).len(), 0);
     assert_eq!(
         ohne_zeile(&dateien, &karte(&["rust/a/tests/x.rs"])),
         ["tests/test_y.py"]
     );
-    assert!(ohne_datei(&dateien, &karte(&["rust/a/tests/x.rs", "tests/test_y.py"])).is_empty());
+    assert_eq!(ohne_datei(&dateien, &karte(&["rust/a/tests/x.rs", "tests/test_y.py"])).len(), 0);
     assert_eq!(
         ohne_datei(
             &dateien,
@@ -349,8 +349,8 @@ fn die_formpruefung_erkennt_ihre_fehlerfaelle() {
     let gut = "d1\t1\t0\t0\tGOLDEN\tmodul\tnotiz";
     let karte = |zeilen: &[&str]| format!("{kopf}\n{}\n", zeilen.join("\n"));
 
-    assert!(formfehler(&karte(&[gut, "d2\t2\t3\t0\tTOOLING\t-\tx y"])).is_empty());
-    assert!(formfehler(&format!("{kopf}\n")).is_empty());
+    assert_eq!(formfehler(&karte(&[gut, "d2\t2\t3\t0\tTOOLING\t-\tx y"])).len(), 0);
+    assert_eq!(formfehler(&format!("{kopf}\n")).len(), 0);
 
     let falsche_spalten = [
         ("sechs Spalten", "d2\t1\t0\t0\tGOLDEN\tmodul"),

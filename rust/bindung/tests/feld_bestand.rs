@@ -88,8 +88,8 @@ fn die_gegenrichtung_erkennt_ihren_eigenen_fehlerfall() {
         vec!["c".to_string()]
     );
     // Alles erfasst, und ein Feld, das nur noch im Bestand steht, ist hier kein Fund.
-    assert!(nicht_erfasste(&menge(&["a"]), &erfasst).is_empty());
-    assert!(nicht_erfasste(&menge(&["a", "b"]), &erfasst).is_empty());
+    assert_eq!(nicht_erfasste(&menge(&["a"]), &erfasst).len(), 0);
+    assert_eq!(nicht_erfasste(&menge(&["a", "b"]), &erfasst).len(), 0);
     // Mehrere Funde bleiben sortiert (Mengen sind es von Haus aus), je eine Zeile.
     let fehlend = nicht_erfasste(&menge(&["b", "z", "a", "m"]), &menge(&["a"]));
     assert_eq!(
@@ -158,7 +158,7 @@ fn die_ratsche_erkennt_ihren_eigenen_fehlerfall() {
 
     // c ist begruendet entfernt: kein Verlust.
     let entfernt = BTreeMap::from([("c".to_string(), "x".repeat(40))]);
-    assert!(verschwundene(&erfasst, &heute, &entfernt).is_empty());
+    assert_eq!(verschwundene(&erfasst, &heute, &entfernt).len(), 0);
 
     // Ein Eintrag fuer ein anderes Feld deckt c nicht.
     let fremd = BTreeMap::from([("z".to_string(), "x".repeat(40))]);
@@ -177,7 +177,7 @@ fn die_ratsche_erkennt_ihren_eigenen_fehlerfall() {
     // Zombie: b steht unter `entfernt`, ist aber noch da.
     let zombie = BTreeMap::from([("b".to_string(), "x".repeat(40))]);
     assert_eq!(wiederaufgetauchte(&heute, &zombie), vec!["b".to_string()]);
-    assert!(wiederaufgetauchte(&heute, &entfernt).is_empty());
+    assert_eq!(wiederaufgetauchte(&heute, &entfernt).len(), 0);
 
     // Begruendung: 29 und genau 30 Zeichen sind zu knapp, 31 und 32 reichen. Die Zahlen stehen hier
     // ausgeschrieben und nicht als Konstante des Laders: wanderte die Konstante, wanderte sonst die
@@ -199,7 +199,7 @@ fn die_ratsche_erkennt_ihren_eigenen_fehlerfall() {
         vec!["c".to_string()]
     );
     let viele_umlaute = BTreeMap::from([("c".to_string(), "ä".repeat(31))]);
-    assert!(zu_knappe_begruendungen(&viele_umlaute).is_empty());
+    assert_eq!(zu_knappe_begruendungen(&viele_umlaute).len(), 0);
 }
 
 fn temp_verzeichnis(name: &str) -> PathBuf {
