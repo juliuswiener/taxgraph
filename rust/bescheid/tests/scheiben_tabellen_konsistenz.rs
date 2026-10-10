@@ -69,12 +69,15 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// 368 -> 369 und 282 -> 283, die Kegel bleiben;
 /// danach am 2026-10-10 `versorgung_zeile` und `versorgung_zeile_partner` in `gesamt` und `rentner_gesamt` (Abweichung Nr. 50),
 /// 369 -> 371 und 283 -> 285, die Kegel bleiben;
+/// danach am 2026-10-10 sieben Felder des privaten Verkaufs in `gesamt` und `rentner_gesamt` (Abweichung Nr. 54:
+/// `p23_bezeichnung`, `p23_anschaffungsdatum`, `p23_veraeusserungsdatum`, `p23_afa`, `p23_eigennutzung`,
+/// `p23_taeglicher_gebrauch`, `p23_einkunftsquelle`), 371 -> 378 und 285 -> 292, die Kegel bleiben;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 85, 33),
-    (Scheibe::Gesamt, 371, 35),
-    (Scheibe::RentnerGesamt, 285, 28),
+    (Scheibe::Gesamt, 378, 35),
+    (Scheibe::RentnerGesamt, 292, 28),
 ];
 
 fn registry() -> &'static Registry {
@@ -319,6 +322,9 @@ const BETRAGSFELDER_OHNE_KZ: &[&str] = &[
     "kap_verlust_aktien_partner",
     "kap_verlust_sonstige_partner",
     "kirchensteuer_arbeitgeber_partner",
+    // Seit 2026-10-10 (Abweichung Nr. 54): nicht in der Python-Liste. Abschreibung eines Privatverkaufs, Ring-Wert ohne Kz: sie
+    // mindert die Anschaffungskosten (§ 23 Abs. 3 S. 4 EStG), die Erklaerung traegt nur den berechneten Gewinn.
+    "p23_afa",
     "p23_anschaffung_herstellungskosten",
     "p23_veraeusserungspreis",
     "p23_werbungskosten",

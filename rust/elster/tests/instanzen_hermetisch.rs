@@ -89,10 +89,11 @@ fn instanzen(d: &Deklaration, gruppe: &str) -> Vec<(u64, Vec<(String, Value)>)> 
 }
 
 /// § 23 Abs. 3 `EStG`: der Gewinn je Instanz ist Preis - Anschaffungskosten - Werbungskosten, auch wenn er NEGATIV ist
-/// (Verlust, E0306801); nur ein Gewinn von genau 0 erzeugt keinen Kz. Python: Instanz 1 Grundstueck -5.500 EUR,
-/// Instanz 2 anderes Wirtschaftsgut +4.500 EUR, Instanz 3 (Gewinn 0) fehlt.
+/// (Verlust, E0306801). Python: Instanz 1 Grundstueck -5.500 EUR, Instanz 2 anderes Wirtschaftsgut +4.500 EUR, Instanz 3
+/// (Gewinn 0) fehlt. GEWOLLTE ABWEICHUNG (Nr. 54): Rust schreibt auch den Gewinn 0, Instanz 3 traegt E0306801 = 0. `checkESt`
+/// verlangt das Kz beim Grundstueck als Pflicht (Spike AK0), und das Schema erlaubt die 0 (`-?[1-9].*|0`, 2024 und 2025).
 #[test]
-fn p23_verlust_bekommt_seinen_kz_und_gewinn_null_keinen() {
+fn p23_verlust_bekommt_seinen_kz_und_gewinn_null_ebenfalls() {
     let f = felder(&[
         ("p23_veraeusserungspreis", json!(1_000_000)),
         ("p23_anschaffung_herstellungskosten", json!(1_500_000)),
@@ -113,6 +114,7 @@ fn p23_verlust_bekommt_seinen_kz_und_gewinn_null_keinen() {
         vec![
             (1, vec![("E0306801".to_owned(), json!(-5_500))]),
             (2, vec![("E0307701".to_owned(), json!(4_500))]),
+            (3, vec![("E0306801".to_owned(), json!(0))]),
         ]
     );
 }

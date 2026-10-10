@@ -19,9 +19,9 @@
 //!   Rechtsvorgaengers als Anschaffungsdatum durch.
 //! * **`AfA`** (Abs. 3 Satz 4): die Anschaffungs- oder Herstellungskosten mindern sich um Absetzungen fuer Abnutzung.
 use bindung::Params;
-use domain::{Euro, Vz};
+use domain::{Cent, Vz};
 
-use super::{euro, z, EngineFehler};
+use super::{cent, EngineFehler};
 
 /// Ein Kalendertag, nur fuer die Fristrechnung. Die Ordnung ist die zeitliche (Jahr, Monat, Tag).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -185,51 +185,53 @@ pub fn p23_befreiung(e: &VerkaufEingabe) -> Befreiung {
     }
 }
 
-/// § 23 Abs. 3 S. 1 und S. 4: Gewinn oder Verlust eines Verkaufs, EURO. Die Anschaffungs- oder Herstellungskosten mindern sich um
-/// die abgezogene `AfA`, `Preis - (Kosten - AfA) - Werbungskosten`. Darf negativ sein.
+/// § 23 Abs. 3 S. 1 und S. 4: Gewinn oder Verlust eines Verkaufs, CENT. Die Anschaffungs- oder Herstellungskosten mindern sich um
+/// die abgezogene `AfA`, `Preis - (Kosten - AfA) - Werbungskosten`. Darf negativ sein. Cent statt Euro, weil die Freigrenze
+/// ([`p23_freigrenze_je_vz`]) bei 999,99 und 1.000,00 Euro kippt: ein Abrunden jedes Postens auf volle Euro verschoebe den Gewinn.
 ///
 /// # Errors
 /// [`EngineFehler::Basis`] bei Ueberlauf jenseits von `i64`.
 ///
 /// ```
 /// # use engine::zugriff::teil2::privatverkauf::p23_gewinn_nach_afa;
-/// # use domain::Euro;
-/// // 200.000 - (150.000 - 10.000) - 5.000
-/// let g = p23_gewinn_nach_afa(Euro::new(200_000), Euro::new(150_000), Euro::new(10_000), Euro::new(5_000)).unwrap();
-/// assert_eq!(g, Euro::new(55_000));
+/// # use domain::Cent;
+/// // 200.000,00 - (150.000,00 - 10.000,00) - 5.000,00 Euro
+/// let g = p23_gewinn_nach_afa(Cent::new(20_000_000), Cent::new(15_000_000), Cent::new(1_000_000), Cent::new(500_000)).unwrap();
+/// assert_eq!(g, Cent::new(5_500_000));
 /// ```
 pub fn p23_gewinn_nach_afa(
-    preis: Euro,
-    anschaffungskosten: Euro,
-    afa: Euro,
-    werbungskosten: Euro,
-) -> Result<Euro, EngineFehler> {
-    euro(z(preis) - (z(anschaffungskosten) - z(afa)) - z(werbungskosten))
+    preis: Cent,
+    anschaffungskosten: Cent,
+    afa: Cent,
+    werbungskosten: Cent,
+) -> Result<Cent, EngineFehler> {
+    let z = |c: Cent| i128::from(c.get());
+    cent(z(preis) - (z(anschaffungskosten) - z(afa)) - z(werbungskosten))
 }
 
 /// § 23 Abs. 3 S. 5: Freigrenze je Veranlagungsjahr aus `params/<vz>/privatverkauf_p23.yaml`. Ein Gesamtgewinn unter der Grenze
-/// bleibt steuerfrei (0); ab der Grenze zaehlt der GANZE Gesamtgewinn.
+/// bleibt steuerfrei (0); ab der Grenze zaehlt der GANZE Gesamtgewinn. CENT: 999,99 Euro sind steuerfrei, 1.000,00 Euro nicht.
 ///
 /// # Errors
-/// [`EngineFehler::Basis`], wenn das Jahr keine Parameterdatei hat.
+/// [`EngineFehler::Basis`], wenn das Jahr keine Parameterdatei hat, oder bei Ueberlauf.
 ///
 /// ```
 /// # use engine::zugriff::teil2::privatverkauf::p23_freigrenze_je_vz;
-/// # use domain::{Euro, Vz};
+/// # use domain::{Cent, Vz};
 /// # let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
-/// assert_eq!(p23_freigrenze_je_vz(Euro::new(999), Vz::Vz2025, &p).unwrap(), Euro::new(0));
-/// assert_eq!(p23_freigrenze_je_vz(Euro::new(1_000), Vz::Vz2025, &p).unwrap(), Euro::new(1_000));
+/// assert_eq!(p23_freigrenze_je_vz(Cent::new(99_999), Vz::Vz2025, &p).unwrap(), Cent::new(0));
+/// assert_eq!(p23_freigrenze_je_vz(Cent::new(100_000), Vz::Vz2025, &p).unwrap(), Cent::new(100_000));
 /// ```
 pub fn p23_freigrenze_je_vz(
-    gesamtgewinn: Euro,
+    gesamtgewinn: Cent,
     vz: Vz,
     p: &Params,
-) -> Result<Euro, EngineFehler> {
-    let grenze = p.privatverkauf_freigrenze(vz)?;
-    Ok(if gesamtgewinn.get() >= grenze.get() {
+) -> Result<Cent, EngineFehler> {
+    let grenze = p.privatverkauf_freigrenze(vz)?.to_cent().map_err(EngineFehler::from)?;
+    Ok(if gesamtgewinn >= grenze {
         gesamtgewinn
     } else {
-        Euro::new(0)
+        Cent::new(0)
     })
 }
 
@@ -339,10 +341,12 @@ mod tests {
 
     #[test]
     fn gewinn_mindert_die_kosten_um_die_afa() {
-        let e = |preis, kosten, afa, wk| p23_gewinn_nach_afa(Euro::new(preis), Euro::new(kosten), Euro::new(afa), Euro::new(wk)).unwrap();
-        assert_eq!(e(200_000, 150_000, 0, 5_000), Euro::new(45_000));
-        assert_eq!(e(200_000, 150_000, 10_000, 5_000), Euro::new(55_000));
-        assert_eq!(e(1_000, 1_200, 0, 50), Euro::new(-250));
+        let e = |preis, kosten, afa, wk| p23_gewinn_nach_afa(Cent::new(preis), Cent::new(kosten), Cent::new(afa), Cent::new(wk)).unwrap();
+        assert_eq!(e(20_000_000, 15_000_000, 0, 500_000), Cent::new(4_500_000));
+        assert_eq!(e(20_000_000, 15_000_000, 1_000_000, 500_000), Cent::new(5_500_000));
+        assert_eq!(e(100_000, 120_000, 0, 5_000), Cent::new(-25_000));
+        // Cent-genau: 100.000,00 - 99.000,01 = 999,99 Euro (nicht 1.000 durch Abrunden der Kosten auf 99.000)
+        assert_eq!(e(10_000_000, 9_900_001, 0, 0), Cent::new(99_999));
     }
 
     #[test]
@@ -350,10 +354,11 @@ mod tests {
         let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let p = Params::lade(&wurzel).unwrap();
         for vz in [Vz::Vz2024, Vz::Vz2025, Vz::Vz2026] {
-            assert_eq!(p23_freigrenze_je_vz(Euro::new(999), vz, &p).unwrap(), Euro::new(0), "{vz:?}");
-            assert_eq!(p23_freigrenze_je_vz(Euro::new(1_000), vz, &p).unwrap(), Euro::new(1_000), "{vz:?}");
-            assert_eq!(p23_freigrenze_je_vz(Euro::new(1_001), vz, &p).unwrap(), Euro::new(1_001), "{vz:?}");
-            assert_eq!(p23_freigrenze_je_vz(Euro::new(-5_000), vz, &p).unwrap(), Euro::new(0), "{vz:?}");
+            let f = |c: i64| p23_freigrenze_je_vz(Cent::new(c), vz, &p).unwrap();
+            assert_eq!(f(99_999), Cent::new(0), "{vz:?}: 999,99 Euro");
+            assert_eq!(f(100_000), Cent::new(100_000), "{vz:?}: 1.000,00 Euro");
+            assert_eq!(f(100_001), Cent::new(100_001), "{vz:?}: 1.000,01 Euro");
+            assert_eq!(f(-500_000), Cent::new(0), "{vz:?}: Verlust");
         }
     }
 }

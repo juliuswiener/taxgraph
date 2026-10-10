@@ -221,6 +221,14 @@ pub(crate) const REGAL: &[Datei] = &[
                     tests: &["versorgung_steht_nur_mit_dem_ring_wert_in_den_zeilen_11_bis_13"],
                 },
             ),
+            // Abweichung Nr. 54: Bezeichnung und Daten eines Privatverkaufs je Art (Anlage SO) gibt es in Python nicht; der Test deckt die Literale.
+            (
+                "P23_ARTFELDER",
+                Zuordnung::Verhalten {
+                    kz: &["E0306111", "E0307101", "E0306201", "E0307201", "E0306202", "E0307202"],
+                    tests: &["privatverkauf_schreibt_bezeichnung_und_daten_an_das_kz_der_art"],
+                },
+            ),
             // Diese Regeln stehen als Literale in Methoden von `Bau`; ihr Top-Level-Name ist `deklariere`.
             ("deklariere", Zuordnung::Funktion("iban_weiche/praefix")),
             ("deklariere", Zuordnung::Funktion("iban_weiche/inland")),

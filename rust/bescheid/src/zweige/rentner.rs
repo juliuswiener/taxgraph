@@ -16,9 +16,10 @@ use super::tarif::{leerer_gesamtfall, rahmen, Lage, Modus, P35};
 use super::{rentner_tarif, Marke, Ring, VeranlagungWert};
 use crate::abzuege::{p33b_kind_pauschbetraege, shared_steuer_sonder_agb};
 use crate::einkuenfte::{
-    gewinn_partner_anteil, laufender_gewinn, p20_kapitaleinkuenfte, p23_ansonsten_einkuenfte,
-    p35_summen, progressionseinkuenfte, shared_dba_sonstige,
+    gewinn_partner_anteil, laufender_gewinn, p20_kapitaleinkuenfte, p35_summen,
+    progressionseinkuenfte, shared_dba_sonstige,
 };
+use crate::privatverkauf::p23_privatverkauf;
 use crate::{
     cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, feld_veranlagung, wert, zahl_dezimal,
     Felder,
@@ -158,7 +159,7 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
         ausserg = add(ausserg, pauschbetrag_partner(f, vz, p)?)?;
     }
     // § 23 und § 22 Nr. 3 additiv zu renten.
-    let p23 = p23_ansonsten_einkuenfte(&q)?;
+    let p23 = p23_privatverkauf(&q, vz, p)?;
     renten = add(renten, p23)?;
     renten = add(renten, nr3_euro(f)?)?;
     // §§ 13-18 Gewinn: laufend + § 16-vg netto (+ Gewinn des Ehegatten erst danach, s. u.).

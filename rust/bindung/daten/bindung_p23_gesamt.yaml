@@ -1,10 +1,15 @@
 # Bindungstabelle — §23 EStG private Veräußerungsgeschäfte (Stufe-1).
-# Multi-Instanz (wie §21-Multi-Objekt): pro Veräußerung ein Preis/AK/WK-Tripel
-# + Veräußerungs-Typ (Frist-Fragetext). instanz_gruppe: "p23_veraeusserung".
-# Nur steuerpflichtige Geschäfte innerhalb der Spekulationsfrist (Grundstück 10J,
-# andere WG 1J). Auto-Frist-aus-Datum = Stufe-2-Backlog.
-# Kz: null+MVP (Anlage-SO-Kz = eigene Recon-Runde, nicht gerushed).
-# Task §23-Stufe-1, Stand 2026-07-21.
+# Multi-Instanz (wie §21-Multi-Objekt): pro Veräußerung ein Satz von Angaben
+# (Art, Bezeichnung, zwei Daten, Preis, Anschaffungskosten, AfA, Werbungskosten,
+# Eigennutzung, täglicher Gebrauch, Einkunftsquelle). instanz_gruppe: "p23_veraeusserung".
+# Abweichung Nr. 54 (2026-10-10): TaxGraph rechnet die Frist selbst aus den zwei Daten
+# (Grundstück 10 Jahre, andere Wirtschaftsgüter 1 Jahr, mit Einkunftsquelle 10 Jahre) und
+# wendet Eigennutzung und täglichen Gebrauch an; die Angabe "innerhalb der Frist" ist keine
+# Selbstauskunft mehr. Unentgeltlicher Erwerb ist eine Fristzurechnung (Abs. 1 Satz 3 nach
+# Nr. 3): der Nutzer nennt das Anschaffungsdatum des Rechtsvorgängers.
+# Kz: Gewinn je Verkauf (E0306801 / E0307701) und die Pflichtangaben je Art (Bezeichnung,
+# zwei Daten) aus dem checkESt-Spike AK0; Preis, Kosten und AfA stehen nur im Gewinn.
+# Task §23-Stufe-1, Stand 2026-10-10.
 version: 1
 scheibe: "§23 EStG Private Veräußerungsgeschäfte (gesamt + rentner)"
 
@@ -17,7 +22,7 @@ bindungen:
     vorjahr: uebernehmbar
     instanz_gruppe: p23_veraeusserung
     fragetext_laie: "Wie hoch war der Veräußerungspreis (Verkaufserlös) für dieses Wirtschaftsgut?"
-    hilfe_kurz: "Der Brutto-Verkaufspreis vor Abzug von Nebenkosten (die unter Werbungskosten fallen). Nur eingeben, wenn das Geschäft innerhalb der steuerlichen Spekulationsfrist lag."
+    hilfe_kurz: "Der Brutto-Verkaufspreis vor Abzug von Nebenkosten (die unter Werbungskosten fallen). Ob die Frist abgelaufen ist, rechnet TaxGraph aus den zwei Daten."
     beispielwert: 20000000
     herkunft_slots: null
     elster_kz: null
@@ -67,36 +72,171 @@ bindungen:
     quelle: {regel_id: p23_veraeusserungsgewinn, geltungsbedingung: veraeusserung_innerhalb_frist}
     typ: enum
     einheit: null
-    enum_werte: ["grundstueck", "anderes_wg"]
+    enum_werte: ["grundstueck", "anderes_wg", "kryptowert", "beteiligung"]
     askable: true
     vorjahr: uebernehmbar
     instanz_gruppe: p23_veraeusserung
-    fragetext_laie: "Um welche Art von Wirtschaftsgut handelt es sich?"
-    hilfe_kurz: "Grundstücke und Immobilien: Spekulationsfrist 10 Jahre. Andere Wirtschaftsgüter (z. B. Aktien außerhalb §20, Krypto, Kunst, Edelmetalle): 1 Jahr. Nur angeben, wenn du innerhalb der Frist verkauft hast."
+    fragetext_laie: "Um welche Art von Verkauf handelt es sich?"
+    hilfe_kurz: "Grundstück oder Immobilie (Frist 10 Jahre), anderer Gegenstand wie Gold, Kunst, Schmuck oder ein Oldtimer (Frist 1 Jahr), Kryptowert wie Bitcoin oder der Anteil an einer Beteiligung. Kryptowerte und Beteiligungen rechnet die Software noch nicht und sperrt mit einer Erklärung."
     beispielwert: grundstueck
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage-SO-Kz — Fragetext-Typ (steuert Frist-Hinweis). Kein direkter Kz. Fristberechnung = Stufe-2-Backlog."
+    elster_kz_grund: "Art-Feld der Instanz: steuert das Kz von Gewinn, Bezeichnung und Daten (est_mapping P23_GEWINN-Verzweigung, E0306801 Grundstueck / E0307701 anderes WG). Kryptowert (Virt_Waehr) und Beteiligung (Ant_Ek) haben keinen Kz-Zweig: die Berechnung sperrt vorher (Sperrgrund p23_verkauf_nicht_gerechnet)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 23 Abs. 1 Nr. 1 S. 1 EStG"
       zitatanker: "Veraeusserungsgeschaefte bei Grundstuecken und Rechten, die den Vorschriften des buergerlichen Rechts ueber Grundstuecke"
       datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
 
+  # ===== Abweichung Nr. 54: die Angaben, aus denen TaxGraph Frist und Befreiung rechnet =====
+  # ponytail: alle Fragen erscheinen bei jedem Verkauf, auch die, die nur für Grundstücke (Eigennutzung) oder nur für andere
+  # Gegenstände (täglicher Gebrauch, Einkunftsquelle) gelten; der Hilfetext sagt es, die Rechnung liest nur die passende.
+  # Eine Bedingung je Instanz (`feld_bedingung` auf `p23_veraeusserungs_typ__<n>`) ist nicht gebaut.
+  - feld_id: p23_bezeichnung
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: bezeichnung}
+    typ: text
+    muster: '^(?:[^\n\r]{1,999})$'   # E10-2025.xsd E0306111 / E0307101: String_MinL1_MaxL999
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Was hast du verkauft? Nenne das Grundstück (zum Beispiel mit Straße und Ort) oder den Gegenstand."
+    hilfe_kurz: "Ein paar Worte genügen, zum Beispiel: Eigentumswohnung Musterstraße 1, Berlin, oder: Goldbarren. Die Angabe steht in der Erklärung."
+    beispielwert: "Eigentumswohnung Musterstraße 1, Berlin"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kz haengt an der Art: Grundstueck E0306111 (Bezeichnung des Grundstuecks/Rechts), anderes WG E0307101 (Art des Wirtschaftsguts); beide Pflicht (checkESt-Spike AK0, Abweichung Nr. 54). Der Schreiber waehlt es ueber P23_ARTFELDER."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 Nr. 1 S. 1 EStG"
+      zitatanker: "Veräußerungsgeschäfte bei Grundstücken und Rechten, die den Vorschriften des bürgerlichen Rechts über Grundstücke unterliegen"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_anschaffungsdatum
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: anschaffungsdatum}
+    typ: datum
+    muster: '^\d{2}\.\d{2}\.\d{4}$'
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Wann hast du es gekauft (Tag des Kaufvertrags)? Hast du es geerbt oder geschenkt bekommen, nenne den Tag, an dem der frühere Eigentümer es gekauft hat."
+    hilfe_kurz: "Format TT.MM.JJJJ. Bei Erbe oder Schenkung rechnet das Gesetz dir die Anschaffung des früheren Eigentümers zu (§ 23 Abs. 1): seine Frist läuft weiter. Das Datum steht in der Erklärung."
+    beispielwert: "15.06.2020"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kz haengt an der Art: Grundstueck E0306201, anderes WG E0307201 (beim WG keine Pflicht, TaxGraph schreibt es trotzdem; checkESt-Spike AK0). Bei unentgeltlichem Erwerb das Datum des Rechtsvorgaengers (Abs. 1 Satz 3 nach Nr. 3)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 S. 3 nach Nr. 3 EStG (unentgeltlicher Erwerb)"
+      zitatanker: "Bei unentgeltlichem Erwerb ist dem Einzelrechtsnachfolger für Zwecke dieser Vorschrift die Anschaffung"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_veraeusserungsdatum
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: veraeusserungsdatum}
+    typ: datum
+    muster: '^\d{2}\.\d{2}\.\d{4}$'
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Wann hast du es verkauft (Tag des Kaufvertrags)?"
+    hilfe_kurz: "Format TT.MM.JJJJ. Das Datum muss im Steuerjahr liegen und nach dem Kaufdatum. Aus beiden Daten rechnet TaxGraph, ob die Frist abgelaufen ist."
+    beispielwert: "10.03.2025"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kz haengt an der Art: Grundstueck E0306202, anderes WG E0307202 (beim WG keine Pflicht, TaxGraph schreibt es trotzdem; checkESt-Spike AK0)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 Nr. 1 S. 1 EStG"
+      zitatanker: "bei denen der Zeitraum zwischen Anschaffung und Veräußerung nicht mehr als zehn Jahre beträgt"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_afa
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: afa}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Hast du für den Verkauf eine Abschreibung (AfA) bei deinen Einkünften abgezogen? Wenn ja, wie viel in Summe?"
+    hilfe_kurz: "Zum Beispiel bei einer vermieteten Wohnung die Abschreibung auf das Gebäude, die du in der Anlage V abgezogen hast, auch erhöhte Abschreibung und Sonderabschreibung. Die Abschreibung senkt die Anschaffungskosten und erhöht so den Gewinn. Hast du nichts abgezogen, trage 0 ein."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 3 S. 4). Grundstueck: E0306601 stuende fuer die AfA, TaxGraph schreibt nur den berechneten Gewinn (checkESt rechnet den Gewinn nur nach, wenn Einzelbetraege stehen; Spike AK0). Beim WG gibt es kein AfA-Kz, die AfA steckt im Gewinn."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 3 S. 4 EStG"
+      zitatanker: "Die Anschaffungs- oder Herstellungskosten mindern sich um Absetzungen für Abnutzung"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_eigennutzung
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: eigennutzung}
+    typ: enum
+    enum_werte: ["nein", "ausschliesslich", "letzte_drei_jahre", "teilweise"]
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Nur bei einem Grundstück: Hast du es selbst bewohnt?"
+    hilfe_kurz: "Nein; ausschließlich selbst bewohnt, vom Kauf bis zum Verkauf; im Jahr des Verkaufs und in den zwei Jahren davor selbst bewohnt; oder nur zum Teil selbst bewohnt (zum Beispiel eine Wohnung im Haus vermietet). Der letzte Fall wird nicht gerechnet. Bei anderen Gegenständen wähle Nein."
+    beispielwert: nein
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 1 Nr. 1 S. 3), kein Deklarationsfeld. Ein Verkauf mit Eigennutzung ist steuerfrei und steht nicht in der Erklaerung, bis die Anleitung zur Anlage SO vorliegt (Abgabe-Sperre, Abweichung Nr. 54). Teilnutzung sperrt (p23_verkauf_nicht_gerechnet)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 Nr. 1 S. 3 EStG"
+      zitatanker: "ausschließlich zu eigenen Wohnzwecken oder im Jahr der Veräußerung und in den beiden vorangegangenen Jahren zu eigenen Wohnzwecken genutzt wurden"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_taeglicher_gebrauch
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: taeglicher_gebrauch}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Nur bei einem anderen Gegenstand: War es ein Gegenstand des täglichen Gebrauchs?"
+    hilfe_kurz: "Ja bei zum Beispiel Auto, Möbeln oder Kleidung. Solche Verkäufe sind steuerfrei. Bei einem Grundstück wähle Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 1 Nr. 2 S. 2), kein Deklarationsfeld. Ein Verkauf des taeglichen Gebrauchs ist steuerfrei und steht nicht in der Erklaerung (Abgabe-Sperre, Abweichung Nr. 54)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 Nr. 2 S. 2 EStG"
+      zitatanker: "Ausgenommen sind Veräußerungen von Gegenständen des täglichen Gebrauchs"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_einkunftsquelle
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: einkunftsquelle}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Nur bei einem anderen Gegenstand: Hast du daraus in mindestens einem Jahr Einkünfte erzielt (zum Beispiel vermietet)?"
+    hilfe_kurz: "Ja verlängert die Frist von einem Jahr auf zehn Jahre. Zum Beispiel ein vermietetes Wohnmobil oder eine verpachtete Maschine. Bei einem Grundstück wähle Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 1 Nr. 2 S. 4), kein Deklarationsfeld: sie verlaengert die Frist auf zehn Jahre."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 Nr. 2 S. 4 EStG"
+      zitatanker: "aus deren Nutzung als Einkunftsquelle zumindest in einem Kalenderjahr Einkünfte erzielt werden, erhöht sich der Zeitraum auf zehn Jahre"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+
   # ===== Lücken + Geltungsbedingungen =====
 luecken:
   - regel_id: p23_veraeusserungsgewinn
     geltungsbedingung: veraeusserung_innerhalb_frist
-    grund: "Frist-Input (10J Grundstück/1J sonstige) ist Nutzer-Selbst-Deklaration auf p23_veraeusserungs_typ-Fragetext. Auto-Datums-aus-Tatbestand = Stufe-2-Backlog."
+    grund: "Seit Nr. 54 keine Selbstauskunft mehr: TaxGraph rechnet die Frist (Grundstück 10J, andere Wirtschaftsgüter 1J, mit Einkunftsquelle 10J) aus p23_anschaffungsdatum und p23_veraeusserungsdatum (engine::zugriff::teil2::privatverkauf::p23_befreiung)."
   - regel_id: p23_veraeusserungsgewinn
     geltungsbedingung: nicht_ausschliesslich_eigene_wohnzwecke
-    grund: "Selbstgenutzte Immobilie = steuerfrei (§23 Abs.1 Nr.1 S.3). Nutzer-Selbst-Deklaration über Fragetext-Kontext."
+    grund: "Seit Nr. 54 das Feld p23_eigennutzung (beide Varianten des Gesetzes steuerfrei, Teilnutzung sperrt mit p23_verkauf_nicht_gerechnet), gelesen von p23_befreiung."
   - regel_id: p23_veraeusserungsgewinn
     geltungsbedingung: kein_gegenstand_taeglichen_gebrauchs
-    grund: "Gegenstände des täglichen Gebrauchs = steuerfrei (§23 Abs.1 Nr.2 S.2). Nutzer-Selbst-Deklaration."
+    grund: "Seit Nr. 54 das Feld p23_taeglicher_gebrauch (nur andere Wirtschaftsgüter, §23 Abs.1 Nr.2 S.2), gelesen von p23_befreiung."
   - regel_id: p23_veraeusserungsgewinn
     geltungsbedingung: anschaffung_veraeusserung_originaerer_erwerb
-    grund: "Nur originärer Erwerb (kein Erbe/Schenkung) — §23 Abs.1 S.2/4/5. Stufe-1: User-Deklaration."
+    grund: "Die alte Lesart (nur originärer Erwerb, kein Erbe/Schenkung) war falsch: bei unentgeltlichem Erwerb rechnet §23 Abs.1 S.3 dem Einzelrechtsnachfolger die Anschaffung des Rechtsvorgängers zu. Es gibt keine Frage 'originärer Erwerb'; der Nutzer nennt in p23_anschaffungsdatum das Datum des Rechtsvorgängers (Nr. 54)."
   - regel_id: p23_freigrenze
     signatur_slot: gesamtgewinn
     grund: "Berechnete Größe (Σ der Einzelgewinne aller Instanzen). Ring-Aggregator, kein Laien-Feld."

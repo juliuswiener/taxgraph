@@ -79,9 +79,9 @@ regel_bedingungen:
     grund: "§ 22 Nr. 1 S. 3 Buchst. a EStG besteuert Leibrenten mit ihrem Ertragsanteil — Renten sind sonstige Einkünfte; wer bestätigt, keine zu haben, hat keine Rente zu erklären."
 
   - regel_id: p23_veraeusserungsgewinn
-    feld: kein_sonstige
+    feld: kein_p23_verkauf
     wert: false
-    grund: "§ 23 EStG erfasst private Veräußerungsgeschäfte als sonstige Einkünfte (§ 22 Nr. 2 EStG) — ohne sonstige Einkünfte liegt kein solches Geschäft vor."
+    grund: "§ 23 EStG erfasst private Veräußerungsgeschäfte als sonstige Einkünfte (§ 22 Nr. 2 EStG) — wer bestätigt, nichts privat verkauft zu haben, hat kein solches Geschäft. Seit Nr. 54 hängt die Regel am eigenen Kreuz kein_p23_verkauf und nicht mehr an kein_sonstige: auf der Scheibe gesamt endet kein_sonstige = nein in einer Sperre (Rente), der Verkauf soll dort rechenbar sein."
 
   - regel_id: p22_3_leistungen
     feld: kein_sonstige

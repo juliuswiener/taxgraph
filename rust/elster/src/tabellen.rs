@@ -31,6 +31,7 @@ pub(crate) const DOKUMENTIERT_AGGREGAT: &[(&str, &[&str])] = &[(
 pub(crate) const P23_BETRAGSFELDER: &[&str] = &[
     "p23_veraeusserungspreis",
     "p23_anschaffung_herstellungskosten",
+    "p23_afa",
     "p23_werbungskosten",
 ];
 pub(crate) const P23_ART_FELD: &str = "p23_veraeusserungs_typ";
@@ -867,7 +868,10 @@ mod tests {
     /// erlaubt die 0. Grund und Test: Abweichung Nr. 41 (`bescheid/tests/p34c_abzug_einreichung_hermetisch.rs`).
     /// E0205406 (Unfallkosten, Zeile "Sonstiges" der Anlage N, `Weitere_Wk/Sonst`) steht nur in `ABZUGS_KZ`. Grund und Test:
     /// Abweichung Nr. 48 (`bescheid/tests/unfallkosten_weitere_wk_xml.rs`).
-    const RUST_EIGENE_KZ: [(&str, &str); 10] = [
+    /// `p23_afa` (Abschreibung eines Privatverkaufs, mindert die Anschaffungskosten, § 23 Abs. 3 S. 4 `EStG`) steht nur in
+    /// `P23_BETRAGSFELDER`: Python kennt das Feld nicht. Grund und Test: Abweichung Nr. 54 (`elster/src/deklaration.rs`, Test
+    /// `privatverkauf_schreibt_bezeichnung_und_daten_an_das_kz_der_art`; `bescheid/tests/privatverkauf_einreichung_hermetisch.rs`).
+    const RUST_EIGENE_KZ: [(&str, &str); 11] = [
         ("/abzugs_kz", "E0108701"),
         ("/abzugs_kz", "E0108801"),
         ("/abzugs_kz", "E0600920"),
@@ -878,6 +882,7 @@ mod tests {
         ("/null_unzulaessig/je_vz/2025", "E0108801"),
         ("/null_unzulaessig/vereinigung", "E0108701"),
         ("/null_unzulaessig/vereinigung", "E0108801"),
+        ("/p23/betragsfelder", "p23_afa"),
     ];
 
     /// Paare `(JSON-Pfad der Tabelle, Schluessel, Wert)`, die es nur in Rust gibt. `weitere_wk` -> `Sonst` in

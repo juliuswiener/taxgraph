@@ -217,9 +217,16 @@ felder:
   - p22_nr3_einnahmen_art
   - p22_nr3_einnahmen_einzelbetrag
   - p22_nr3_werbungskosten
+  - p23_afa
   - p23_anschaffung_herstellungskosten
+  - p23_anschaffungsdatum
   - p23_anzahl_verkaeufe
+  - p23_bezeichnung
+  - p23_eigennutzung
+  - p23_einkunftsquelle
+  - p23_taeglicher_gebrauch
   - p23_veraeusserungs_typ
+  - p23_veraeusserungsdatum
   - p23_veraeusserungspreis
   - p23_werbungskosten
   - p32b_progressionseinkuenfte

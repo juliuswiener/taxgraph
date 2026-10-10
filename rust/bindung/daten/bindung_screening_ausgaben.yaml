@@ -361,7 +361,7 @@ bindungen:
   # --- p23_anzahl_verkaeufe: Zaehlfeld der Instanz-Gruppe `p23_veraeusserung` (2026-08-27) ------------------
   - feld_id: p23_anzahl_verkaeufe
     quelle: {regel_id: p23_anzahl_verkaeufe_erhebung, geltungsbedingung: verkaeufe_gezaehlt}
-    feld_bedingung: {feld: kein_sonstige, wert: false, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    feld_bedingung: {feld: kein_p23_verkauf, wert: false, grund: "Seit Nr. 54 haengt die Zahl am eigenen Kreuz `kein_p23_verkauf` (privater Verkauf), nicht mehr an `kein_sonstige`: auf der Scheibe gesamt sperrt `kein_sonstige` = nein wegen der Rente, der Verkauf soll dort rechenbar sein. Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
     typ: int
     einheit: null
     bereich: {min: 0, max: 9, grund: "Zahl der privaten Veraeusserungsgeschaefte"}

@@ -127,7 +127,7 @@ impl Cfg {
                 gesamt_guard: true,
                 partner_19: true,
                 multi_objekt: Some("vv_objekt"),
-                fremd_arten: &["kein_sonstige", "kein_p23_verkauf"],
+                fremd_arten: &["kein_sonstige"],
                 fremd_arten_partner: &["kein_sonstige_partner"],
                 ..leer
             },
@@ -139,7 +139,7 @@ impl Cfg {
                 gesamt_guard: true,
                 rentner: true,
                 multi_rente: Some("rente"),
-                fremd_arten: &["kein_vuv", "kein_p23_verkauf"],
+                fremd_arten: &["kein_vuv"],
                 ..leer
             },
         }

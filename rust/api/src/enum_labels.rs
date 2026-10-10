@@ -15,7 +15,7 @@
 
 /// `feld_id -> [(enum-wert, anzeigetext)]`.
 #[rustfmt::skip]
-pub const ENUM_LABELS: [(&str, &[(&str, &str)]); 27] = [
+pub const ENUM_LABELS: [(&str, &[(&str, &str)]); 28] = [
     ("dba_einkunftsart", &[
         ("unbewegliches_vermoegen", "Unbewegliches Vermögen (z. B. Immobilie)"),
         ("unternehmensgewinne", "Unternehmensgewinne"),
@@ -111,7 +111,15 @@ pub const ENUM_LABELS: [(&str, &[(&str, &str)]); 27] = [
     ]),
     ("p23_veraeusserungs_typ", &[
         ("grundstueck", "Grundstück oder Immobilie"),
-        ("anderes_wg", "Anderes Wirtschaftsgut (z. B. Krypto, Kunst, Edelmetalle)"),
+        ("anderes_wg", "Anderer Gegenstand (z. B. Kunst, Gold, Schmuck, Oldtimer)"),
+        ("kryptowert", "Kryptowert (z. B. Bitcoin)"),
+        ("beteiligung", "Anteil an einer Beteiligung"),
+    ]),
+    ("p23_eigennutzung", &[
+        ("nein", "Nein, nicht selbst bewohnt"),
+        ("ausschliesslich", "Ja, vom Kauf bis zum Verkauf selbst bewohnt"),
+        ("letzte_drei_jahre", "Ja, im Jahr des Verkaufs und in den zwei Jahren davor selbst bewohnt"),
+        ("teilweise", "Nur zum Teil selbst bewohnt"),
     ]),
     ("rentner_renten_art", &[
         ("gesetzliche_rente", "Gesetzliche Rente"),
