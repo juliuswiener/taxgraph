@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung Anlage N-AUS 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (docs/, Julius 2026-10-10)"
+  abrufdatum: "2026-10-10"
+  datei: "anl_n_aus_2025.txt"
+  pdf_datei: "anl_n_aus_2025.pdf"
+  sha256: "508efe389168f8203bf63a2bc2b55d93c4dc79eb155f8ad4c87e57df689f8d8d"
+  pdf_sha256: "7cf6f2bc9a92a040c0d4f2b534896e745bb4c43f259f8c6774e86a236b19eee3"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Anleitung zur Anlage N-AUS']
+  verwendet_in:
+    - ""

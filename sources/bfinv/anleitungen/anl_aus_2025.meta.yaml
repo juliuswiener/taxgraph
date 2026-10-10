@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung Anlage AUS 2025"
+  quelle_url: "https://www.formulare-bfinv.de/ (docs/, Julius 2026-10-10)"
+  abrufdatum: "2026-10-10"
+  datei: "anl_aus_2025.txt"
+  pdf_datei: "anl_aus_2025.pdf"
+  sha256: "047bbbf6c14971c77b8776f2df4645ba7f398f8b6300a2d2e0be043caad8b26b"
+  pdf_sha256: "1294adc4eaaf86b98eccbacc3fb7786a33266f77ed13903c5a98ddab866cf7bf"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Anleitung zur Anlage AUS', 'Zeile 10']
+  verwendet_in:
+    - "rust/elster/src/deklaration.rs (DBA_ABZUG_KZ, Nr. 41/49)"

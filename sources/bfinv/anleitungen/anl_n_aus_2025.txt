@@ -1,0 +1,147 @@
+Quelle: https://www.formulare-bfinv.de/ (docs/, Julius 2026-10-10)
+Abgerufen: 2026-10-10
+Titel: Anleitung Anlage N-AUS 2025
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+Anleitung zur Anlage N-AUS                                                                                           2025
+                   Füllen Sie diese Anlage aus, wenn Sie als unbeschränkt steuerpflichtige Person eine nichtselbständige Tätig­-
+                   keit im Ausland ausgeübt haben und für die hieraus erzielten Einkünfte eine Steuerbefreiung geltend machen
+                   möchten.
+                   Verwenden Sie bitte für jeden Staat eine gesonderte Anlage N-AUS.
+                   Füllen Sie bitte in jedem Fall auch die Anlage N aus.
+                   Soweit Sie Grenzgängerin oder Grenzgänger nach Frankreich, Österreich und / oder in die Schweiz sind, nut­-
+                   zen Sie für Ihre Grenzgängertätigkeit zur Abgabe bei Finanzämtern in Baden-Württemberg bitte statt der Anla­-
+                   ge N-AUS den spezifischen Landesvordruck Anlage N-Gre.
+
+Nachweis- und      Beachten Sie bitte, dass bei Auslandssachverhalten        Reisekalender, arbeitsvertragliche Grundlagen im Zu­-
+Mitwirkungs­-      erhöhte Mitwirkungspflichten gesetzlich vorgeschrie­-     sammenhang mit der Auslandstätigkeit). Einzelheiten
+pflichten          ben sind (§ 90 Abs. 2 der Abgabenordnung). Reichen        dazu entnehmen Sie bitte dem Schreiben des Bundes­-
+                   Sie daher alle Unterlagen in Kopie bereits vollständig    ministeriums der Finanzen vom 12. Dezember 2023,
+                   mit der Steuererklärung ein, die benötigt werden, um      Bundessteuerblatt (BStBl) I Seite 2179.
+                   den Auslandssachverhalt zu überprüfen (z. B. Be­-         Die im Ausland erzielten Einkünfte müssen Sie nach
+                   scheinigung Ihres Arbeitgebers über die Auslandstätig­-   deutschem Steuerrecht ermitteln.
+                   keit und die Besteuerung des Arbeitslohns im Ausland,
+
+Zeile 5            Eine Steuerfreistellung nach einem DBA kommt grund­-    183 Tagen erfolgt oder
+Steuerfreistel­-   sätzlich in Betracht, wenn eine Tätigkeit               für eine Betriebsstätte erfolgt, die der Arbeitgeber
+lung nach den       a) im Ausland für einen ausländischen Arbeitgeber      im Ausland hat.
+Doppel-​               erfolgt,                                         Einzelheiten entnehmen Sie bitte dem Schreiben des
+besteuerungs-​      b) für einen inländischen Arbeitgeber erfolgt,      Bundesministeriums der Finanzen vom 12. Dezember
+abkommen           sofern die Tätigkeit                                 2023, BStBl I Seite 2179.
+(DBA)                  im jeweiligen ausländischen Staat an mehr als
+
+Zeile 5            In sonstigen zwischenstaatlichen Übereinkommen            Übereinkommen kommt auch für unbeschränkt steuer­-
+Steuerbefreiung    (z. B. NATO-Truppenstatut, UN, EU) sind Befreiungen       pflichtige Personen in Betracht, die im Inland eine
+aufgrund           von deutschen Steuern vom Einkommen und vom Ver­-         nichtselbständige Tätigkeit, insbesondere als Beamtin
+sonstiger          mögen möglich für                                         oder Beamter oder sonstige Bedienstete oder sonsti­-
+zwischenstaat-​        Personen,                                             ger Bediensteter einer internationalen Organisation
+licher                 Personenvereinigungen,                                ausgeübt haben.
+Übereinkommen          Körperschaften,                                       Einzelheiten entnehmen Sie bitte dem Schreiben des
+                       internationale Organisationen oder                    Bundesministeriums der Finanzen vom 12. Dezember
+                       ausländische Staaten.                                 2023, BStBl I Seite 2179.
+                   Die Steuerbefreiung nach einem zwischenstaatlichen
+
+Zeile 5            Eine Anwendung kommt nur bei bestimmten Tätigkei­-        Nicht begünstigt ist
+Anwendung des      ten in einem ausländischen Staat in Betracht, wenn           die Tätigkeit des Bordpersonals auf Seeschiffen,
+Auslandstätig­-        der Arbeitgeber Sitz, Geschäftsleitung, Betriebs­-       die Produktion von Schiffen im Ausland,
+keitserlasses          stätte oder einen ständigen Vertreter in einem EU-       die finanzielle Beratung mit Ausnahme der Tätig­-
+(ATE)                   / EWR-Staat hat,                                        keit im Zusammenhang mit der deutschen öffentli­-
+                       mit dem ausländischen Staat kein DBA besteht             chen Entwicklungshilfe im Rahmen der Techni­-
+                       und                                                      schen oder Finanziellen Zusammenarbeit, wenn
+                       für die Tätigkeit kein Arbeitslohn aus inländischen      eine Projektförderung unmittelbar oder mittelbar
+                       öffentlichen Kassen gezahlt wird.                        aus inländischen öffentlichen Mitteln zu mindes­-
+                   Zudem müssen die Einkünfte aus nichtselbständiger            tens 75 % vorliegt,
+                   Arbeit in dem Staat, in dem die Tätigkeit ausgeübt           das Einholen von Aufträgen (Akquisition), ausge­-
+                   wird, einer der deutschen Einkommensteuer entspre­-          nommen die Beteiligung an Ausschreibungen, und
+                   chenden Steuer in einer durchschnittlichen Höhe von          die Tätigkeit im Bereich der humanitären Hilfe.
+                   mindestens 10 % unterliegen.                              Einzelheiten entnehmen Sie bitte dem Schreiben des
+                   Reichen Sie bitte eine Kopie des Nachweises über die      Bundesministeriums der Finanzen vom 10. Juni 2022,
+                   Besteuerung der Einkünfte im Tätigkeitsstaat und die      BStBl I Seite 997.
+                   Höhe der dort abgeführten Steuer ein.
+
+Steueranrech­-     Sofern die Tätigkeit in einem Staat ohne DBA erfolgt      in der Anlage N und der im Ausland gezahlten und um
+nung bei           oder ausnahmsweise das DBA eine Steueranrech­-            einen Ermäßigungsanspruch gekürzten Steuer in der
+ausländischem      nung vorsieht (z. B. Leiharbeitnehmer nach dem DBA        Anlage AUS (Zeile 12) vorzunehmen. Reichen Sie
+Arbeitslohn        mit Frankreich), sind die Angaben zum ausländischen       bitte Nachweise über die im Ausland gezahlten Steu­-
+                   Arbeitslohn, zu den entsprechenden Werbungskosten         ern in Kopie ein.
+
+
+
+
+Anleitung zur Anlage N-AUS - September 2025
+                                                               -2-
+
+Zeile 6 bis 10    Sie haben neben einem Wohnsitz im Inland auch geren persönlichen und wirtschaftlichen Beziehungen
+                  einen Wohnsitz im Ausland?                              (Mittelpunkt der Lebensinteressen) haben.
+                  Dann legen Sie bitte dar, zu welchem Staat Sie die en­-
+
+Zeile 17 bis 21   Bitte geben Sie hier die von Ihnen ausgeübte Tätigkeit      Bei einer Tätigkeit in Belgien oder Dänemark sind nur
+Aufenthalts- /    an, z. B. Berufskraftfahrerin oder Berufskraftfahrer,       die Tage zu zählen, an denen Sie sich zur Arbeitsaus­-
+Ausübungstage     Personal auf Schiffen oder in Flugzeugen oder Tätig­-       übung im anderen Staat tatsächlich aufgehalten
+                  keit als Organ einer Kapitalgesellschaft.                   haben. Im Verhältnis zu Belgien zählen Sie jedoch üb­-
+                  Tragen Sie bitte die Anzahl der Tage ein, an denen Sie      liche Arbeitsunterbrechungen (Samstage, Sonntage,
+                  sich im ausländischen Staat aufgehalten haben (auch         gesetzliche Feiertage) mit, auch wenn Sie sie nicht im
+                  Tage, an denen Sie nicht gearbeitet haben). Eine nur        Tätigkeitsstaat verbracht haben.
+                  kurzfristige Anwesenheit ist als voller Tag zu zählen.      Ausnahme: Wenn Sie Ihre Tätigkeit an Bord eines
+                  Es muss sich nicht um einen zusammenhängenden               Seeschiffs oder Luftfahrzeugs, das im internationalen
+                  Aufenthalt handeln; mehrere Aufenthalte sind zusam­-        Verkehr betrieben wird, ausüben, müssen Sie keine
+                  menzurechnen. Wenn der Aufenthalt mehrere Kalen­-           Angaben zu den Aufenthaltstagen machen. Diese Aus­-
+                  derjahre betrifft, geben Sie bitte den gesamten Zeit­-      nahme gilt nur für die Staaten, bei denen im DBA eine
+                  raum des Auslandsaufenthalts an. Tage, die aus­-            Sonderregelung zur Besteuerung von Personal an
+                  schließlich außerhalb des Tätigkeitsstaats verbracht        Bord von Seeschiffen oder Luftfahrzeugen, die im in­-
+                  werden, zählen Sie nicht mit.                               ternationalen Verkehr betrieben werden, enthalten ist.
+
+Zeile 32 bis 56   Sofern Sie eine Tätigkeit in mehreren ausländischen         einbarten Arbeitstage an.
+Aufteilung des    Staaten ausgeübt haben, tragen Sie in den Zeilen 32         Den tatsächlichen Arbeitstagen im In- und Ausland ist
+Arbeitslohns      bis 38 den insgesamt bezogenen in- und ausländi­-           das für die entsprechende Zeit vereinbarte und nicht
+                  schen Arbeitslohn ein.                                      direkt zugeordnete Arbeitsentgelt gegenüberzustellen.
+                  Die Ermittlung des ausländischen Arbeitslohns erfolgt       Hierzu gehören neben den laufenden Vergütungen
+                  in zwei Berechnungsschritten:                               (z. B. Lohn, Gehalt, sonstige Vorteile) auch Zusatzver­-
+                                                                              gütungen, die auf Ihre nichtselbständige Arbeit inner­-
+                  Direkte Zuordnung (Zeile 39 bis 41)                         halb des gesamten Berechnungszeitraums entfallen
+                  Gehaltsbestandteile, die Ihnen Ihr Arbeitgeber unmit­-      (z. B. Weihnachtsgeld, Urlaubsgeld). Hat sich das ver­-
+                  telbar aufgrund einer konkreten inländischen oder aus­-     einbarte Gehalt während des Kalenderjahres verän­-
+                  ländischen Arbeitsleistung gewährt, müssen Sie vorab        dert (z. B. bei unterjährig beginnenden oder endenden
+                  direkt zuordnen. Dies können z. B. Reisekosten, Über­-      Auslandstätigkeiten), muss der nach DBA steuerfreie
+                  stundenvergütungen, Zuschläge für Sonntags-, Feier­-        Arbeitslohn nach dem jeweiligen Erdienungszeitraum
+                  tags- und Nachtarbeit, Auslandszulagen, projektbezo­-       ermittelt werden. Bitte reichen Sie hierzu eine geson­-
+                  gene Erfolgsprämien oder der Wert der Gestellung            derte Aufstellung ein. Entsprechendes gilt auch für
+                  einer Wohnung im Tätigkeitsstaat sein.                      Lohnbestandteile mit abweichendem Erdienungszeit­-
+                                                                              raum (z. B. Jahresbonus). Halten Sie sich nicht voll­-
+                  Rechnerische Aufteilung nach DBA (Zeile 45)                 ständig an einem Arbeitstag im anderen Staat auf
+                  Die Aufteilung des verbleibenden Arbeitslohns erfolgt       (z. B. an Reisetagen), ist das Arbeitsentgelt für diesen
+                  nach den Grundsätzen des Schreibens des Bundesmi­-          Arbeitstag zeitanteilig aufzuteilen. Dies müssen Sie
+      Neu!        nisteriums der Finanzen vom 12. Dezember 2023,              ggf. schätzen. Legen Sie hierbei bitte die für diesen
+                  BStBl I Seite 2179. Grundlage für die Berechnung des        Tag tatsächliche Arbeitszeit zugrunde. Darüber hinaus
+                  nach DBA steuerfreien Arbeitslohns ist die Zahl der         berücksichtigen Sie bitte bei der Aufteilung, dass Sie
+                  tatsächlichen Arbeitstage innerhalb eines Kalenderjah­-     tatsächliche Arbeitszeiten, die Sie in Durchreisestaa­-
+                  res. Die tatsächlichen Arbeitstage sind alle Tage inner­-   ten verbracht haben, dem Ansässigkeitsstaat zuord­-
+                  halb eines Kalenderjahres, an denen Sie Ihre Tätigkeit      nen müssen (ausgenommen bei Berufskraftfahrerin­-
+                  tatsächlich ausgeübt und für die Sie Arbeitslohn bezo­-     nen und Berufskraftfahrern).
+                  gen haben. Krankheitstage mit oder ohne Lohnfortzah­-
+                  lung, Urlaubstage und Tage des ganztägigen Arbeits­-        Rechnerische Aufteilung nach ATE (Zeile 50)
+                  zeitausgleichs sind folglich keine Arbeitstage. Dage­-      Bei Anwendung des ATE ist der Arbeitslohn nach den
+                  gen können auch Wochenend- oder Feiertage grund­-           tatsächlichen Arbeitstagen aufzuteilen (vgl. Schreiben
+                  sätzlich Arbeitstage sein, wenn Sie an diesen Tagen         des Bundesministeriums der Finanzen vom 8. Oktober
+                  Ihre Tätigkeit tatsächlich ausgeübt haben und diese         2024, BStBl I Seite 1308). Dabei sind die Arbeitstage
+                  durch Ihren Arbeitgeber vergütet wurde. Eine solche         im ATE-Staat zu den Jahresarbeitstagen im In- und
+                  Vergütung liegt auch vor, wenn Ihnen von Ihrem Ar­-         Ausland ins Verhältnis zu setzen. Wegen der Ermitt­-
+                  beitgeber ein entsprechender Arbeitszeitausgleich ge­-      lung der tatsächlichen Arbeitstage beachten Sie bitte
+                  währt wurde. Es kommt weder auf die Zahl der Kalen­-        die Erläuterungen zur „Rechnerischen Aufteilung nach
+                  dertage (365) noch auf die Anzahl der vertraglich ver­-     DBA (Zeile 45)“.
+                                                                   -3-
+
+Neben der Aufteilung des Arbeitslohns müssen Sie            freien Einnahmen zu den Gesamteinnahmen auf. Glei­-         Zeile 57 bis 59
+auch die dazugehörigen Werbungskosten auf die steu­-        ches gilt für die steuerfreien Erstattungen der Wer­-       Aufteilung der
+erfreien und steuerpflichtigen Einnahmen aufteilen.         bungskosten durch Ihren Arbeitgeber. Liegen die ge­-      Werbungskosten
+Dabei müssen Sie ebenfalls zuerst eine direkte Zuord­-      samten verbleibenden Werbungskosten nach Abzug
+nung vornehmen (z. B. Verpflegungsmehraufwendun­-           der Erstattungen (zu steuerfreien und steuerpflichtigen
+gen).                                                       Einnahmen) unterhalb des Arbeitnehmer-Pauschbetra­-
+Teilen Sie bitte die übrigen Werbungskosten (z. B. Ar­-     ges, zieht Ihr Finanzamt den Pauschbetrag vorrangig
+beitsmittel, Berufsbekleidung) im Verhältnis der steuer­-   bei den steuerpflichtigen Einnahmen ab.
+
+Einzelheiten bezüglich der besonderen steuerfreien teriums der Finanzen vom                 12. Dezember 2023,          Zeile 60 bis 62
+Lohnbestandteile (z. B. Abfindungen, Stock Options) BStBl I Seite 2179.
+entnehmen Sie bitte dem Schreiben des Bundesminis­-
+
