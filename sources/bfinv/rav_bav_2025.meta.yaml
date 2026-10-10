@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anlage R-AV/bAV 2025 (Leistungen aus Altersvorsorgevertraegen und betrieblicher Altersversorgung) - amtlicher Vordruck"
+  quelle_url: "Julius 2026-10-10, im Repo unter docs/Anlage_R_AV_bAV_2025.pdf (ungetrackt)"
+  abrufdatum: "2026-10-10"
+  datei: "rav_bav_2025.txt"
+  pdf_datei: "Anlage_R_AV_bAV_2025.pdf"
+  sha256: "b03c0636a120b672f96a3bda69a0276abc172692303d85ded424352b4455ac02"
+  pdf_sha256: "9030179b46df9db6621ba318fe4b89c6b27be71228f44880650f89e72ad1a689"
+  authority: amtlicher_vordruck
+  redistributable: true
+  erwartete_anker: ['Pensionsfonds', 'Leistungsmitteilung']
+  verwendet_in:
+    - ""
