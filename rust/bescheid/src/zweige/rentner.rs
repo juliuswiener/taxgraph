@@ -2,7 +2,9 @@
 //! § 33b, Gewinn, § 24a/§ 24b und der Aufbau des Gesamtfalls. Tarif-Teil: `rentner_tarif.rs`.
 use domain::{Euro, PyWert, Vz};
 use engine::zugriff::teil2::gesamt::{gesamt_gde, GesamtfallEingabe};
-use engine::zugriff::teil2::rente::{renten_einkuenfte, RentenEingabe, Rentenart};
+use engine::zugriff::teil2::rente::{
+    renten_einkuenfte, renten_nach_pauschbetrag, RentenEingabe, Rentenart,
+};
 use intervall::Slots;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
@@ -20,6 +22,7 @@ use crate::einkuenfte::{
     progressionseinkuenfte, shared_dba_sonstige,
 };
 use crate::privatverkauf::p23_privatverkauf;
+use crate::rav_bav::rav_bav_einkuenfte;
 use crate::{
     cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, feld_veranlagung, wert, zahl_dezimal,
     Felder,
@@ -146,6 +149,11 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     let (f, vz, p) = (r.f(), r.vz(), r.p());
     let q = r.q();
     let mut renten = renten_summe(r)?;
+    // Leistungen mit Leistungsmitteilung (Abweichung Nr. 55): Pauschbetrag einmal fuer alle Mitteilungen, ihr `voll`-Teil (Nr. 1 und
+    // Nr. 4) geht in die Bemessung des Altersentlastungsbetrags ein (§ 24a Satz 2).
+    let rav = rav_bav_einkuenfte(f, &q, vz, p)?;
+    let rav_rente = renten_nach_pauschbetrag(rav.ertragsanteil, rav.voll, vz, p)?;
+    renten = add(renten, rav_rente.gesamt)?;
     let zusammen_feld = VeranlagungWert::aus(feld_veranlagung(f)).zusammen();
     if zusammen_feld && wert(f, "rentner_renten_art_partner").is_some_and(PyWert::truthy) {
         renten = add(renten, renten_partner(f, vz, p)?)?;
@@ -181,7 +189,12 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
         vz,
         p,
         zusammen,
-        max0(summe_euro(&[laufend, netto_vg, p23])?),
+        max0(summe_euro(&[
+            laufend,
+            netto_vg,
+            p23,
+            rav_rente.eingeschlossen,
+        ])?),
     )?;
     let alt = add(alt_a, alt_b)?;
     let (gewinn_partner, _mitu_partner, netto_vg_partner) = gewinn_partner_anteil(f)?;
