@@ -1675,8 +1675,8 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        deklariere, gruppe_von, iban_muster, iban_pruefziffer_gueltig, Felder, Feldtyp,
-        SnapshotFeld, Value, Zustand, PARTNER_VERZWEIGUNG, VERZWEIGUNG,
+        deklariere, gruppe_von, iban_muster, iban_pruefziffer_gueltig, Deklaration, Felder, Feldtyp,
+        SnapshotFeld, Value, Zustand, P23_EIGENNUTZUNG_KZ, PARTNER_VERZWEIGUNG, VERZWEIGUNG,
     };
     use crate::tabellen::PFLEGE_KZ;
     use crate::tabellen::WERTEKODIERUNG;
@@ -2679,6 +2679,96 @@ mod tests {
         assert_eq!(offen, ["p23_veraeusserung__1"], "{offen:?}");
         let erste = d.anlage_instanzen[0].1.iter().find(|i| i.index == 1);
         assert!(erste.is_none_or(|i| !i.felder.contains_key("E0306801")), "Gewinn trotz offener Zeile 36");
+    }
+
+    /// Abweichung Nr. 54, Nachmessung `a2c47914` (Mutanten E07 und E11): Zeile 36 liest nur bestaetigte Angaben, und eine fehlende
+    /// Wohnflaeche laesst sie offen, statt den vollen Gewinn ohne Zeile 36 zu schreiben. Je Feld und Zustand ein Fall, damit keiner den
+    /// anderen verdeckt. Die Eigennutzung selbst, nur vorlaeufig, traegt keinen Haken.
+    #[test]
+    fn zeile_36_liest_nur_bestaetigte_angaben_und_eine_fehlende_flaeche_laesst_sie_offen() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
+            wert: wert.into(),
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        // Ein selbst bewohntes Grundstueck, alle Angaben bestaetigt; `aendere` setzt ein Feld auf `Zustand` oder (None) nimmt es weg.
+        let deklaration = |aendere: Option<(&str, Option<Zustand>)>| {
+            let mut felder = Felder::new();
+            for (f, w) in [
+                ("p23_veraeusserungs_typ", json!("grundstueck")),
+                ("p23_bezeichnung", json!("Haus")),
+                ("p23_anschaffungsdatum", json!("15.06.2020")),
+                ("p23_veraeusserungsdatum", json!("10.03.2025")),
+                ("p23_veraeusserungspreis", json!(20_000_000)),
+                ("p23_anschaffung_herstellungskosten", json!(15_000_000)),
+                ("p23_eigennutzung", json!("ausschliesslich")),
+                ("p23_wohnflaeche", json!(120)),
+                ("p23_eigennutzung_von", json!("01.03.2020")),
+                ("p23_eigennutzung_bis", json!("09.03.2025")),
+            ] {
+                felder.insert(f.to_owned(), feld(w, Zustand::Bestaetigt));
+            }
+            if let Some((f, zustand)) = aendere {
+                match zustand {
+                    Some(z) => felder.get_mut(f).unwrap().zustand = z,
+                    None => {
+                        felder.remove(f);
+                    }
+                }
+            }
+            deklariere(&felder, &index, 2025, None).unwrap()
+        };
+        let kz_der_ersten = |d: &Deklaration| -> Vec<String> {
+            d.anlage_instanzen[0]
+                .1
+                .iter()
+                .find(|i| i.index == 1)
+                .map(|i| i.felder.keys().cloned().collect())
+                .unwrap_or_default()
+        };
+
+        // KONTROLLE: alles bestaetigt, dann steht Zeile 36 mit dem Gewinn 0 und nichts ist offen.
+        let ganz = deklaration(None);
+        assert!(ganz.eingaben_konsistent(), "{:?}", ganz.unvollstaendig());
+        assert!(kz_der_ersten(&ganz).contains(&"E0306301".to_owned()), "{:?}", kz_der_ersten(&ganz));
+
+        for f in ["p23_wohnflaeche", "p23_eigennutzung_von", "p23_eigennutzung_bis"] {
+            for zustand in [None, Some(Zustand::Vorlaeufig)] {
+                let d = deklaration(Some((f, zustand)));
+                // Ein vorlaeufiges Feld steht zusaetzlich unter seinem eigenen Namen offen; die Instanz steht je Fall genau einmal da.
+                let offen: Vec<&str> = d
+                    .unvollstaendig()
+                    .iter()
+                    .filter(|e| e.feld_id == "p23_veraeusserung__1")
+                    .map(|e| e.grund.as_str())
+                    .collect();
+                assert_eq!(offen.len(), 1, "{f} {zustand:?}: {:?}", d.unvollstaendig());
+                assert!(offen[0].contains(f), "{f} {zustand:?}: Grund nennt das Feld nicht: {}", offen[0]);
+                let kz = kz_der_ersten(&d);
+                assert!(!kz.contains(&"E0306801".to_owned()), "{f} {zustand:?}: Gewinn trotz offener Zeile 36: {kz:?}");
+                assert!(!kz.contains(&"E0306301".to_owned()), "{f} {zustand:?}: Haken trotz offener Zeile 36: {kz:?}");
+            }
+        }
+
+        // Nur vorlaeufig bestaetigt die Eigennutzung nichts: kein Haken, kein Zeitraum, keine Flaeche in der Erklaerung.
+        let kz = kz_der_ersten(&deklaration(Some(("p23_eigennutzung", Some(Zustand::Vorlaeufig)))));
+        for nutzung_kz in P23_EIGENNUTZUNG_KZ {
+            assert!(!kz.contains(&nutzung_kz.to_owned()), "vorlaeufige Eigennutzung schreibt {nutzung_kz}: {kz:?}");
+        }
     }
 
     /// Abweichung Nr. 54: Bezeichnung und beide Daten eines Privatverkaufs stehen unter dem Kz seiner Art, der Gewinn nach AfA-Minderung
