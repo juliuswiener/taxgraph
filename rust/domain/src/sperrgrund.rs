@@ -561,7 +561,7 @@ mod tests {
         for (grund, teile) in [
             (
                 Sperrgrund::P23AngabenOffen,
-                &["privaten Verkauf", "Kaufdatum", "Verkaufsdatum", "selbst bewohnt", "Abschreibung", "vollständig ein"][..],
+                &["privaten Verkauf", "Kaufdatum", "Verkaufsdatum", "selbst bewohnt", "Wohnfläche", "Abschreibung", "vollständig ein"][..],
             ),
             (
                 Sperrgrund::P23VerkaufNichtGerechnet,
