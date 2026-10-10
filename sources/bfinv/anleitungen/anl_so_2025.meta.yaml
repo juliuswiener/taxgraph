@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Anleitung Anlage SO 2025"
+  quelle_url: "docs/Anltg_SO_25.pdf (Julius legt die Datei am 2026-10-10 ab; Dokumenttitel Anltg_SO 2025/4.1.1.0, Stand September 2025)"
+  abrufdatum: "2026-10-10"
+  datei: "anl_so_2025.txt"
+  pdf_datei: "anl_so_2025.pdf"
+  sha256: "96e31115a672a78b78ec4193a6a8a95ea84ff2c2b9da599729e5c98c53e7eb87"
+  pdf_sha256: "5c9f468c1ce60cbcb7d7d938e80cc871e881e09ecac6e4d9a4f1f390bc622a22"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Private Veräußerungsgeschäfte sind', 'Gegenständen des täglichen Gebrauchs']
+  verwendet_in:
+    - ""
