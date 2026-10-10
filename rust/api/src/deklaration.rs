@@ -2,6 +2,7 @@
 //! ohne Versand. Die Ring-Werte (Verpflegungskuerzung, Kapital-Antrag, haushaltsnahe Summen)
 //! kommen vorher in den Snapshot (`bescheid::deklaration::mit_ring_werten`).
 use bescheid::deklaration::{an_gesamt_sperrgrund, mit_ring_werten, sperrgrund_klartext_text};
+use bescheid::privatverkauf::p23_ohne_verkaeufe_ausserhalb_der_erklaerung;
 use bescheid::Instanzquelle;
 use domain::{FallId, Vz};
 use elster::DeklarationsFehler;
@@ -74,6 +75,16 @@ pub fn deklaration(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwo
                 }),
             ));
         }
+    }
+    // Wie die Abgabe: Frist abgelaufen und taeglicher Gebrauch stehen nicht in der Anlage SO, die Vorschau zeigt sie nicht.
+    if let Some(vz_ring) = ring_jahr {
+        let q = Instanzquelle {
+            store: Some(store),
+            bindung: Some(&sb.index),
+            nur_bestaetigt: false,
+        };
+        p23_ohne_verkaeufe_ausserhalb_der_erklaerung(&mut felder, &q, vz_ring)
+            .map_err(|e| bescheid_fehler(&e))?;
     }
     let d = elster::deklariere(&felder, &sb.index, vz, Some(&sid))
         .map_err(|e| deklarations_fehler(&e))?;

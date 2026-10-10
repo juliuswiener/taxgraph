@@ -223,6 +223,8 @@ felder:
   - p23_anzahl_verkaeufe
   - p23_bezeichnung
   - p23_eigennutzung
+  - p23_eigennutzung_bis
+  - p23_eigennutzung_von
   - p23_einkunftsquelle
   - p23_gebaeude_in_frist
   - p23_taeglicher_gebrauch
@@ -230,6 +232,7 @@ felder:
   - p23_veraeusserungsdatum
   - p23_veraeusserungspreis
   - p23_werbungskosten
+  - p23_wohnflaeche
   - p32b_progressionseinkuenfte
   - p33a_andere_einkuenfte_bezuege
   - p33a_ausbildung_anzahl_kinder

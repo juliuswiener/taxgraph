@@ -1,13 +1,15 @@
 //! Privatverkauf (Abweichung Nr. 54): was die Erklaerung traegt und wann die Abgabe sperrt. Standardlauf, ohne `PARITY=1`, ohne Python.
 //!
 //! **Worum es geht.** Der Bescheid rechnet einen privaten Verkauf (`api/tests/p23_befreiungen_hermetisch.rs`). Die Erklaerung traegt
-//! nur steuerpflichtige Verkaeufe in die Anlage SO: Bezeichnung, beide Daten und Gewinn unter den Kz der Art (Grundstueck
-//! E0306111/E0306201/E0306202/E0306801, anderes Wirtschaftsgut E0307101/E0307201/E0307202/E0307701). Ein steuerfreier Verkauf (Frist
-//! abgelaufen, selbst bewohnt, taeglicher Gebrauch) steht NICHT drin: wo er im Formular stuende, sagt nur die Anleitung zur Anlage SO,
-//! und die liegt der Software nicht vor. Die Abgabe sperrt dann mit Klartext, die Rechnung bleibt richtig.
+//! Verkaeufe innerhalb der Frist in die Anlage SO: Bezeichnung, beide Daten und Gewinn unter den Kz der Art (Grundstueck
+//! E0306111/E0306201/E0306202/E0306801, anderes Wirtschaftsgut E0307101/E0307201/E0307202/E0307701). Ein Verkauf mit abgelaufener
+//! Frist (auch ein selbst bewohnter) und ein gebrauchter Gegenstand des taeglichen Gebrauchs steht NICHT drin: die Anleitung zur Anlage
+//! SO nimmt beide aus den Zeilen heraus (`sources/bfinv/anleitungen/anl_so_2025.txt`), die Abgabe sperrt nicht. Ein selbst bewohntes
+//! Grundstueck innerhalb der Frist steht in der Zeile 36 mit Haken, Zeitraum und Flaeche (E0306301 bis E0306303) und dem Gewinn 0;
+//! fehlen Flaeche oder Zeitraum, sperrt der Guard mit `p23_angaben_offen`.
 //!
-//! **Warum es zaehlt.** Ohne die Sperre truege der Schreiber jeden Verkauf der Akte ein, also auch den steuerfreien, und das
-//! Finanzamt saehe einen Gewinn, den es nicht besteuern darf.
+//! **Warum es zaehlt.** Ohne den Filter truege der Schreiber jeden Verkauf der Akte ein, also auch den, den das Gesetz nicht erfasst,
+//! und das Finanzamt saehe einen Gewinn, den es nicht besteuern darf.
 //!
 //! Der Test geht ueber `einreichungs_xml` und nicht ueber `POST /einreichen` (der HTTP-Weg ruft danach `ERiC`). Die Akte ist
 //! `rust/fixtures/e2e/gesamt.json` (Scheibe `gesamt`, vollstaendig, `kein_sonstige` = ja) mit dem Kreuz `kein_p23_verkauf` = nein und
@@ -25,7 +27,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 use bescheid::deklaration::{einreichungs_xml, EinreichFehler, Einreichung};
-use bescheid::privatverkauf::p23_steuerfreier_verkauf;
+use bescheid::privatverkauf::p23_ohne_verkaeufe_ausserhalb_der_erklaerung;
 use bescheid::testhilfe::{index, params};
 use bescheid::Instanzquelle;
 use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Sperrgrund, Vz, Zustand};
@@ -108,9 +110,24 @@ fn mit(mut k: Vec<(String, Value)>, n: u8, basis: &str, wert: Value) -> Vec<(Str
     k
 }
 
+/// Nimmt das Feld `basis` der Instanz `n` heraus (nie eingetragen).
+fn ohne(mut k: Vec<(String, Value)>, n: u8, basis: &str) -> Vec<(String, Value)> {
+    let ziel = name(basis, n);
+    k.retain(|(f, _)| *f != ziel);
+    k
+}
+
 /// Steuerpflichtig: gekauft 15.06.2020, verkauft 10.03.2025, Gewinn 50.000 EUR.
 fn pflichtig(n: u8) -> Vec<(String, Value)> {
     verkauf(n, "grundstueck", "15.06.2020", "10.03.2025", 10_000_000, 5_000_000)
+}
+
+/// Wie `pflichtig`, aber selbst bewohnt: Eigennutzung `art`, 120 m² Wohnflaeche, bewohnt von `von` bis `bis`.
+fn bewohnt(n: u8, art: &str, von: &str, bis: &str) -> Vec<(String, Value)> {
+    let k = mit(pflichtig(n), n, "p23_eigennutzung", json!(art));
+    let k = mit(k, n, "p23_wohnflaeche", json!(120));
+    let k = mit(k, n, "p23_eigennutzung_von", json!(von));
+    mit(k, n, "p23_eigennutzung_bis", json!(bis))
 }
 
 /// Die vollstaendige Akte mit dem Kreuz "ich habe verkauft" und den gegebenen Verkaeufen.
@@ -246,51 +263,139 @@ fn verkauf_unter_der_freigrenze_steht_in_der_erklaerung() {
     }
 }
 
-/// Jeder steuerfreie Verkauf sperrt die Abgabe mit EIGENEM Grund (409 `deklaration_unvollstaendig`): Frist abgelaufen, selbst bewohnt
-/// (beide Arten), taeglicher Gebrauch. Die Liste nennt genau den Verkauf, der Grund die Anlage SO und die Sperre.
+/// Ein selbst bewohntes Grundstueck innerhalb der Frist steht in der Zeile 36 der Anlage SO: Haken, Zeitraum von-bis und Flaeche in m²,
+/// dazu der Gewinn 0 (der Verkauf ist steuerfrei; der volle Gewinn waere 50.000 EUR). Beide Arten der Eigennutzung. `checkESt` nimmt
+/// genau diese Zeile an (Fall Gx7, `checkest_blockmatrix.rs`). Gegenprobe: `steuerpflichtiges_grundstueck_steht_mit_vier_kz_in_der_erklaerung`.
 #[test]
-fn steuerfreier_verkauf_sperrt_die_abgabe_mit_eigenem_grund() {
-    let frist = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
-    let bewohnt = mit(pflichtig(1), 1, "p23_eigennutzung", json!("ausschliesslich"));
-    let drei_jahre = mit(pflichtig(1), 1, "p23_eigennutzung", json!("letzte_drei_jahre"));
-    let gebrauch = mit(
-        verkauf(1, "anderes_wg", "15.02.2025", "20.08.2025", 10_000_000, 5_000_000),
-        1,
-        "p23_taeglicher_gebrauch",
-        json!(true),
-    );
-    for (name, v) in [
-        ("Frist abgelaufen", frist),
-        ("selbst bewohnt", bewohnt),
-        ("drei Jahre bewohnt", drei_jahre),
-        ("taeglicher Gebrauch", gebrauch),
+fn selbst_bewohntes_grundstueck_steht_mit_haken_zeitraum_flaeche_und_gewinn_null_in_der_erklaerung() {
+    for (name, art, von) in [
+        ("selbst bewohnt", "ausschliesslich", "15.06.2020"),
+        ("drei Jahre bewohnt", "letzte_drei_jahre", "01.01.2023"),
     ] {
-        let r = lauf(&akte(v));
-        let e = sperre(&r);
-        assert_eq!(
-            e.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(),
-            ["p23_veraeusserungspreis"],
-            "{name}: die Sperre nennt genau diesen Verkauf, erhalten {r:?}"
-        );
-        let grund = &e.first().unwrap().1;
-        for teil in ["steuerfrei", "Anlage SO", "gesperrt"] {
-            assert!(grund.contains(teil), "{name}: Grund ohne `{teil}`: {grund}");
+        let r = lauf(&akte(bewohnt(1, art, von, "10.03.2025")));
+        erwarte_einreichbar(name, &r);
+        if let Ok(e) = &r {
+            assert_eq!(
+                kz_der_instanz(e, 1),
+                BTreeMap::from([
+                    ("E0306111".to_owned(), json!("Testobjekt")),
+                    ("E0306201".to_owned(), json!("15.06.2020")),
+                    ("E0306202".to_owned(), json!("10.03.2025")),
+                    ("E0306301".to_owned(), json!(true)),
+                    ("E0306302".to_owned(), json!(format!("{von}-10.03.2025"))),
+                    ("E0306303".to_owned(), json!(120)),
+                    ("E0306801".to_owned(), json!(0)),
+                ]),
+                "{name}"
+            );
+            if schemas_da(2025) {
+                for kz in ["E0306301", "E0306302", "E0306303"] {
+                    assert!(e.xml.contains(kz), "{name}: `{kz}` fehlt im XML");
+                }
+            }
         }
     }
 }
 
-/// Der zweite Verkauf ist steuerfrei, der erste steuerpflichtig: die Sperre nennt den zweiten, mit dem Suffix seiner Instanz.
+/// Ein selbst bewohnter Verkauf innerhalb der Frist ohne Flaeche oder ohne lesbaren Zeitraum ist eine offene Angabe: die Zeile 36 waere
+/// unvollstaendig, `checkESt` wiese sie ab (Fall Gc1, rc=610001002). Er sperrt mit `p23_angaben_offen`, ehe eine Zahl entsteht. Gegenprobe:
+/// die vollstaendige Akte und ein Zeitraum von einem Tag (von = bis) sperren nicht.
 #[test]
-fn die_sperre_nennt_den_steuerfreien_verkauf_unter_seiner_instanz() {
+fn selbst_bewohnter_verkauf_ohne_flaeche_oder_zeitraum_sperrt_mit_angaben_offen() {
+    let voll = bewohnt(1, "ausschliesslich", "15.06.2020", "10.03.2025");
+    erwarte_einreichbar("vollstaendig", &lauf(&akte(voll.clone())));
+    let ein_tag = mit(mit(voll.clone(), 1, "p23_eigennutzung_von", json!("10.03.2025")), 1, "p23_eigennutzung_bis", json!("10.03.2025"));
+    erwarte_einreichbar("ein Tag", &lauf(&akte(ein_tag)));
+    let faelle = [
+        ("ohne Flaeche", ohne(voll.clone(), 1, "p23_wohnflaeche")),
+        ("Flaeche 0", mit(voll.clone(), 1, "p23_wohnflaeche", json!(0))),
+        ("Flaeche minus", mit(voll.clone(), 1, "p23_wohnflaeche", json!(-5))),
+        ("Flaeche als Text", mit(voll.clone(), 1, "p23_wohnflaeche", json!("120"))),
+        ("ohne Beginn", ohne(voll.clone(), 1, "p23_eigennutzung_von")),
+        ("ohne Ende", ohne(voll.clone(), 1, "p23_eigennutzung_bis")),
+        ("Beginn kein Datum", mit(voll.clone(), 1, "p23_eigennutzung_von", json!("31.04.2020"))),
+        ("Ende kein Datum", mit(voll.clone(), 1, "p23_eigennutzung_bis", json!("2025-03-10"))),
+        ("Ende vor Beginn", mit(voll.clone(), 1, "p23_eigennutzung_von", json!("11.03.2025"))),
+    ];
+    for (name, v) in faelle {
+        match lauf(&akte(v)) {
+            Err(EinreichFehler::Gesperrt(g)) => assert_eq!(g, Sperrgrund::P23AngabenOffen, "{name}"),
+            anders => panic!("{name}: muss mit p23_angaben_offen sperren, erhalten {anders:?}"),
+        }
+    }
+}
+
+/// Die Frist begrenzt auch den selbst bewohnten Verkauf: die Anlage SO traegt nur Verkaeufe innerhalb von zehn Jahren (Zeilen 34 bis 42).
+/// Gekauft am 10.03.2015 und verkauft am 10.03.2025 liegt am letzten Tag der Frist und braucht die Zeile 36. Gekauft am 09.03.2015
+/// liegt einen Tag danach: der Verkauf steht nicht in der Erklaerung und braucht weder Flaeche noch Zeitraum.
+#[test]
+fn selbst_bewohntes_grundstueck_nach_ablauf_der_frist_steht_nicht_in_der_erklaerung() {
+    let alt = |kauf: &str| {
+        let v = verkauf(1, "grundstueck", kauf, "10.03.2025", 10_000_000, 5_000_000);
+        mit(mit(v, 1, "p23_eigennutzung", json!("ausschliesslich")), 1, "p23_bezeichnung", json!("Freier Verkauf"))
+    };
+    let r = lauf(&akte(alt("09.03.2015")));
+    erwarte_einreichbar("einen Tag nach der Frist", &r);
+    if let Ok(e) = &r {
+        assert!(kz_der_instanz(e, 1).is_empty(), "steht mit {:?} in der Erklaerung", kz_der_instanz(e, 1));
+        if schemas_da(2025) {
+            for kz in ["Freier Verkauf", "E0306301", "E0306801"] {
+                assert!(!e.xml.contains(kz), "`{kz}` steht im XML");
+            }
+        }
+    }
+    match lauf(&akte(alt("10.03.2015"))) {
+        Err(EinreichFehler::Gesperrt(g)) => assert_eq!(g, Sperrgrund::P23AngabenOffen, "letzter Tag der Frist ohne Zeile 36"),
+        anders => panic!("am letzten Tag der Frist fehlt die Zeile 36: erwartet p23_angaben_offen, erhalten {anders:?}"),
+    }
+    let mit_zeile = mit(mit(mit(alt("10.03.2015"), 1, "p23_wohnflaeche", json!(120)), 1, "p23_eigennutzung_von", json!("10.03.2015")), 1, "p23_eigennutzung_bis", json!("10.03.2025"));
+    let r = lauf(&akte(mit_zeile));
+    erwarte_einreichbar("letzter Tag der Frist mit Zeile 36", &r);
+    if let Ok(e) = &r {
+        assert_eq!(kz_der_instanz(e, 1).get("E0306301"), Some(&json!(true)));
+    }
+}
+
+/// Jede Instanz traegt ihre eigene Zeile 36, und nur die selbst bewohnte: Instanz 1 ist steuerpflichtig (Gewinn voll, kein Haken), Instanz 2
+/// selbst bewohnt (Suffix `__2`), Instanz 3 ein anderes Wirtschaftsgut mit liegengebliebener Eigennutzung (die Frage gilt nur fuer
+/// Grundstuecke, die Zeile 36 gibt es dort nicht).
+#[test]
+fn nur_das_selbst_bewohnte_grundstueck_traegt_die_zeile_36_und_jede_instanz_ihre_eigene() {
     let mut v = pflichtig(1);
-    v.extend(verkauf(2, "grundstueck", "15.06.2014", "11.03.2025", 10_000_000, 5_000_000));
+    v.extend(bewohnt(2, "letzte_drei_jahre", "01.01.2023", "09.03.2025"));
+    let wg = verkauf(3, "anderes_wg", "15.02.2025", "20.08.2025", 10_000_000, 5_000_000);
+    v.extend(mit(mit(mit(mit(wg, 3, "p23_eigennutzung", json!("ausschliesslich")), 3, "p23_wohnflaeche", json!(80)), 3, "p23_eigennutzung_von", json!("01.01.2025")), 3, "p23_eigennutzung_bis", json!("02.01.2025")));
     let r = lauf(&akte(v));
-    let e = sperre(&r);
-    assert_eq!(
-        e.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(),
-        ["p23_veraeusserungspreis__2"],
-        "{r:?}"
-    );
+    erwarte_einreichbar("drei Verkaeufe", &r);
+    if let Ok(e) = &r {
+        assert_eq!(
+            kz_der_instanz(e, 1),
+            BTreeMap::from([
+                ("E0306111".to_owned(), json!("Testobjekt")),
+                ("E0306201".to_owned(), json!("15.06.2020")),
+                ("E0306202".to_owned(), json!("10.03.2025")),
+                ("E0306801".to_owned(), json!(50_000)),
+            ])
+        );
+        let zwei = kz_der_instanz(e, 2);
+        assert_eq!(zwei.get("E0306302"), Some(&json!("01.01.2023-09.03.2025")), "{zwei:?}");
+        assert_eq!(zwei.get("E0306801"), Some(&json!(0)), "{zwei:?}");
+        assert_eq!(
+            kz_der_instanz(e, 3).keys().map(String::as_str).collect::<Vec<_>>(),
+            ["E0307101", "E0307201", "E0307202", "E0307701"],
+            "das Wirtschaftsgut traegt keine Zeile 36"
+        );
+    }
+}
+
+/// Teilnutzung bleibt gesperrt, auch mit Flaeche und Zeitraum: sie braucht die Aufteilung nach dem BMF-Schreiben vom 17.06.2020, das nicht im
+/// Korpus steht. Die Zeile 36 allein wuerde sie als vollstaendig selbst bewohnt melden.
+#[test]
+fn teilnutzung_bleibt_gesperrt_auch_mit_flaeche_und_zeitraum() {
+    match lauf(&akte(bewohnt(1, "teilweise", "15.06.2020", "10.03.2025"))) {
+        Err(EinreichFehler::Gesperrt(g)) => assert_eq!(g, Sperrgrund::P23VerkaufNichtGerechnet),
+        anders => panic!("Teilnutzung muss mit p23_verkauf_nicht_gerechnet sperren, erhalten {anders:?}"),
+    }
 }
 
 /// Was die Software nicht rechnet, sperrt schon VOR der Erklaerung mit dem Grund des Verkaufs (409 `gesperrt`).
@@ -406,23 +511,84 @@ fn grundstueck_ohne_antwort_zum_gebaeude_sperrt_mit_angaben_offen() {
     }
 }
 
-/// `p23_steuerfreier_verkauf` nennt nur BESTAETIGTE steuerfreie Verkaeufe: ein Verkauf mit vorlaeufigem Preis ist offen, nicht fertig, und
-/// die Abgabe sperrt dann mit dem Eintrag der Vorlaeufigkeit. Ueber `einreichungs_xml` ist der Zweig nicht zu erreichen, weil der Guard
-/// davor jede vorlaeufige Instanz mit `p23_angaben_offen` sperrt; darum ruft der Test die Funktion selbst. Gegenprobe: derselbe Verkauf
-/// bestaetigt wird genannt.
+/// Frist abgelaufen und Gegenstand des taeglichen Gebrauchs sind keine privaten Veraeusserungsgeschaefte der Anlage SO: die
+/// Anleitung nimmt Verkaeufe nach Ablauf der Frist aus den Zeilen 34 bis 57 heraus ("Private Veraeusserungsgeschaefte sind" nur Verkaeufe
+/// innerhalb der Frist) und sagt zum taeglichen Gebrauch: "muessen Sie hier nicht angeben". Die Abgabe sperrt darum nicht, und der
+/// Verkauf steht mit keinem Kz im XML. Gegenprobe: `steuerpflichtiges_grundstueck_steht_mit_vier_kz_in_der_erklaerung`.
 #[test]
-fn der_steuerfreie_verkauf_zaehlt_nur_bestaetigt() {
+fn frist_abgelaufen_und_taeglicher_gebrauch_stehen_nicht_in_der_erklaerung() {
     let frist = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
-    let nennt = |vorlaeufig: Option<&str>| {
+    let gebrauch = mit(
+        verkauf(1, "anderes_wg", "15.02.2025", "20.08.2025", 10_000_000, 5_000_000),
+        1,
+        "p23_taeglicher_gebrauch",
+        json!(true),
+    );
+    for (name, v) in [("Frist abgelaufen", frist), ("taeglicher Gebrauch", gebrauch)] {
+        let r = lauf(&akte(mit(v, 1, "p23_bezeichnung", json!("Freier Verkauf"))));
+        erwarte_einreichbar(name, &r);
+        if let Ok(e) = &r {
+            assert!(kz_der_instanz(e, 1).is_empty(), "{name}: steht mit {:?} in der Erklaerung", kz_der_instanz(e, 1));
+            if schemas_da(2025) {
+                for kz in ["Freier Verkauf", "E0306801", "E0307701"] {
+                    assert!(!e.xml.contains(kz), "{name}: `{kz}` steht im XML");
+                }
+            }
+        }
+    }
+}
+
+/// Ein Verkauf ausserhalb der Erklaerung nimmt nur sich selbst mit: die anderen Verkaeufe stehen unter ihrem Index, und eine andere
+/// Instanz-Gruppe mit demselben Index (`hh_handwerker_betrag__2` in der Akte) bleibt unberuehrt.
+#[test]
+fn der_verkauf_ausserhalb_der_erklaerung_laesst_die_anderen_stehen() {
+    let frei = |n: u8| mit(verkauf(n, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000), n, "p23_bezeichnung", json!("Freier Verkauf"));
+    let handwerker_2 = |e: &Einreichung| {
+        e.deklaration
+            .anlage_instanzen
+            .iter()
+            .any(|(g, ii)| g == "hh_handwerker" && ii.iter().any(|i| i.index == 2))
+    };
+    // Der erste Verkauf ist frei, der zweite steuerpflichtig.
+    let mut v = frei(1);
+    v.extend(pflichtig(2));
+    let r = lauf(&akte(v));
+    erwarte_einreichbar("erster frei", &r);
+    if let Ok(e) = &r {
+        assert!(kz_der_instanz(e, 1).is_empty(), "der freie Verkauf steht in der Erklaerung: {:?}", kz_der_instanz(e, 1));
+        assert_eq!(kz_der_instanz(e, 2).get("E0306801"), Some(&json!(50_000)), "der steuerpflichtige Verkauf fehlt");
+        assert!(handwerker_2(e), "die Instanz 2 einer anderen Gruppe ging mit verloren");
+    }
+    // Umgekehrt: der erste steuerpflichtig, der zweite frei.
+    let mut v = pflichtig(1);
+    v.extend(frei(2));
+    let r = lauf(&akte(v));
+    erwarte_einreichbar("zweiter frei", &r);
+    if let Ok(e) = &r {
+        assert_eq!(kz_der_instanz(e, 1).get("E0306801"), Some(&json!(50_000)), "der steuerpflichtige Verkauf fehlt");
+        assert!(kz_der_instanz(e, 2).is_empty(), "der freie Verkauf steht in der Erklaerung: {:?}", kz_der_instanz(e, 2));
+        assert!(handwerker_2(e), "die Instanz 2 einer anderen Gruppe ging mit verloren");
+    }
+}
+
+/// Der Filter nimmt nur BESTAETIGTE Verkaeufe aus dem Snapshot: ein Verkauf mit vorlaeufigem Preis ist offen, nicht fertig, und bleibt
+/// stehen. Ueber `einreichungs_xml` ist der Zweig nicht zu erreichen, weil der Guard davor jede vorlaeufige Instanz mit `p23_angaben_offen`
+/// sperrt; darum ruft der Test die Funktion selbst. Gegenprobe: derselbe Verkauf bestaetigt faellt heraus.
+#[test]
+fn der_filter_nimmt_nur_bestaetigte_verkaeufe_aus_dem_snapshot() {
+    let frist_abgelaufen = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+    let bleibt = |vorlaeufig: Option<&str>| {
         let mut s = akte(Vec::new());
-        for (feld, wert) in &frist {
+        for (feld, wert) in &frist_abgelaufen {
             let zustand = if vorlaeufig == Some(feld.as_str()) { Zustand::Vorlaeufig } else { Zustand::Bestaetigt };
             setze_mit(&mut s, feld, wert.clone(), zustand);
         }
+        let (mut felder, _) = s.materialisiere(None).unwrap();
         let q = Instanzquelle { store: Some(&s), bindung: Some(index()), nur_bestaetigt: false };
-        p23_steuerfreier_verkauf(&q, Vz::Vz2025).unwrap()
+        p23_ohne_verkaeufe_ausserhalb_der_erklaerung(&mut felder, &q, Vz::Vz2025).unwrap();
+        felder.contains_key("p23_veraeusserungspreis")
     };
-    assert_eq!(nennt(None).as_deref(), Some("p23_veraeusserungspreis"), "Gegenprobe: bestaetigt wird genannt");
-    assert_eq!(nennt(Some("p23_veraeusserungspreis")), None, "ein vorlaeufiger Preis macht den Verkauf offen");
-    assert_eq!(nennt(Some("p23_anschaffungsdatum")), None, "ein vorlaeufiges Datum auch");
+    assert!(!bleibt(None), "Gegenprobe: der bestaetigte Verkauf mit abgelaufener Frist faellt heraus");
+    assert!(bleibt(Some("p23_veraeusserungspreis")), "ein vorlaeufiger Preis macht den Verkauf offen: er bleibt stehen");
+    assert!(bleibt(Some("p23_anschaffungsdatum")), "ein vorlaeufiges Datum auch");
 }

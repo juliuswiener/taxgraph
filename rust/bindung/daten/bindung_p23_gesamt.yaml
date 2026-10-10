@@ -1,7 +1,8 @@
 # Bindungstabelle — §23 EStG private Veräußerungsgeschäfte (Stufe-1).
 # Multi-Instanz (wie §21-Multi-Objekt): pro Veräußerung ein Satz von Angaben
 # (Art, Bezeichnung, zwei Daten, Preis, Anschaffungskosten, AfA, Werbungskosten,
-# Eigennutzung, täglicher Gebrauch, Einkunftsquelle, Gebäude der letzten zehn Jahre). instanz_gruppe: "p23_veraeusserung".
+# Eigennutzung samt Wohnfläche und Zeitraum, täglicher Gebrauch, Einkunftsquelle, Gebäude der letzten zehn Jahre).
+# instanz_gruppe: "p23_veraeusserung".
 # Abweichung Nr. 54 (2026-10-10): TaxGraph rechnet die Frist selbst aus den zwei Daten
 # (Grundstück 10 Jahre, andere Wirtschaftsgüter 1 Jahr, mit Einkunftsquelle 10 Jahre) und
 # wendet Eigennutzung und täglichen Gebrauch an; die Angabe "innerhalb der Frist" ist keine
@@ -98,7 +99,8 @@ bindungen:
 
   # ===== Abweichung Nr. 54: die Angaben, aus denen TaxGraph Frist und Befreiung rechnet =====
   # ponytail: alle Fragen erscheinen bei jedem Verkauf, auch die, die nur für Grundstücke (Eigennutzung) oder nur für andere
-  # Gegenstände (täglicher Gebrauch, Einkunftsquelle) gelten; der Hilfetext sagt es, die Rechnung liest nur die passende.
+  # Gegenstände (täglicher Gebrauch, Einkunftsquelle) gelten, Wohnfläche und Zeitraum nur für ein selbst bewohntes Grundstück
+  # innerhalb der Frist; der Hilfetext sagt es, die Rechnung liest nur die passende.
   # Eine Bedingung je Instanz (`feld_bedingung` auf `p23_veraeusserungs_typ__<n>`) ist nicht gebaut.
   - feld_id: p23_bezeichnung
     quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: bezeichnung}
@@ -188,11 +190,69 @@ bindungen:
     vorjahr: vorschlag
     instanz_gruppe: p23_veraeusserung
     fragetext_laie: "Nur bei einem Grundstück: Hast du es selbst bewohnt?"
-    hilfe_kurz: "Nein; ausschließlich selbst bewohnt, vom Kauf bis zum Verkauf; im Jahr des Verkaufs und in den zwei Jahren davor selbst bewohnt; oder nur zum Teil selbst bewohnt (zum Beispiel eine Wohnung im Haus vermietet). Der letzte Fall wird nicht gerechnet. Bei anderen Gegenständen wähle Nein."
+    hilfe_kurz: "Nein; ausschließlich selbst bewohnt, vom Kauf bis zum Verkauf; im Jahr des Verkaufs und in den zwei Jahren davor selbst bewohnt; oder nur zum Teil selbst bewohnt (zum Beispiel eine Wohnung im Haus vermietet). Der letzte Fall wird nicht gerechnet. Bei den ersten beiden Fällen brauchst du Wohnfläche und Zeitraum der Nutzung (nächste Fragen), sofern die Frist noch läuft. Bei anderen Gegenständen wähle Nein."
     beispielwert: nein
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 1 Nr. 1 S. 3), kein Deklarationsfeld. Ein Verkauf mit Eigennutzung ist steuerfrei und steht nicht in der Erklaerung, bis die Anleitung zur Anlage SO vorliegt (Abgabe-Sperre, Abweichung Nr. 54). Teilnutzung sperrt (p23_verkauf_nicht_gerechnet)."
+    elster_kz_grund: "Ring-Input (§ 23 Abs. 1 Nr. 1 S. 3), kein eigenes Kz. Ein Verkauf mit Eigennutzung ist steuerfrei. Er steht innerhalb der Frist in der Grundstueckszeile: Haken E0306301, Zeitraum E0306302, Flaeche E0306303 (aus den drei Feldern darunter) und der Gewinn 0, ohne Einzelbetraege (checkESt-Fall Gx7, Abweichung Nr. 54). Nach Ablauf der Frist steht er nicht in der Erklaerung. Teilnutzung sperrt (p23_verkauf_nicht_gerechnet)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 Nr. 1 S. 3 EStG"
+      zitatanker: "ausschließlich zu eigenen Wohnzwecken oder im Jahr der Veräußerung und in den beiden vorangegangenen Jahren zu eigenen Wohnzwecken genutzt wurden"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_wohnflaeche
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: wohnflaeche}
+    typ: int
+    einheit: null
+    # 0 bleibt beim Speichern zulaessig ("nichts anzugeben"); `lese()` in `bescheid/src/privatverkauf.rs` verlangt bei Eigennutzung innerhalb der Frist mindestens 1.
+    bereich: {min: 1, max: 100000, grund: "Wohnfläche in m²; positiv, Obergrenze großzügig (wie p35c_gesamtflaeche_qm)."}
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Nur bei einem selbst bewohnten Grundstück: Wie viele Quadratmeter Wohnfläche hat es?"
+    hilfe_kurz: "Ganze Quadratmeter, zum Beispiel 120. Die Angabe steht in der Erklärung (Anlage SO, Zeile 36). Bei allen anderen Verkäufen trage 0 ein."
+    beispielwert: 120
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kz E0306303 (Anlage SO Zeile 36, Flaeche zu eigenen Wohnzwecken) nur bei Art Grundstueck mit Eigennutzung ausschliesslich oder letzte_drei_jahre; der Schreiber setzt es in p23_gewinn (P23_EIGENNUTZUNG_KZ), nicht ueber die Bindung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 Nr. 1 S. 3 EStG"
+      zitatanker: "ausschließlich zu eigenen Wohnzwecken oder im Jahr der Veräußerung und in den beiden vorangegangenen Jahren zu eigenen Wohnzwecken genutzt wurden"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_eigennutzung_von
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: eigennutzung_von}
+    typ: datum
+    muster: '^\d{2}\.\d{2}\.\d{4}$'
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Nur bei einem selbst bewohnten Grundstück: Seit wann hast du es selbst bewohnt?"
+    hilfe_kurz: "Format TT.MM.JJJJ. Der erste Tag, an dem du dort gewohnt hast. Bei Erbe oder Schenkung zählt dein Einzug, nicht das Datum des früheren Eigentümers. Die Angabe steht in der Erklärung (Anlage SO, Zeile 36). Bei allen anderen Verkäufen lass das Feld leer."
+    beispielwert: "15.06.2020"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anfang des Zeitraums in Kz E0306302 (Format TT.MM.JJJJ-TT.MM.JJJJ, checkESt-Fall Gx7), nur bei Art Grundstueck mit Eigennutzung ausschliesslich oder letzte_drei_jahre; der Schreiber setzt es in p23_gewinn. Die Software prueft nicht, ob der Zeitraum zur Dreijahresregel passt."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 Nr. 1 S. 3 EStG"
+      zitatanker: "ausschließlich zu eigenen Wohnzwecken oder im Jahr der Veräußerung und in den beiden vorangegangenen Jahren zu eigenen Wohnzwecken genutzt wurden"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+  - feld_id: p23_eigennutzung_bis
+    quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: eigennutzung_bis}
+    typ: datum
+    muster: '^\d{2}\.\d{2}\.\d{4}$'
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    instanz_gruppe: p23_veraeusserung
+    fragetext_laie: "Nur bei einem selbst bewohnten Grundstück: Bis wann hast du es selbst bewohnt?"
+    hilfe_kurz: "Format TT.MM.JJJJ. Der letzte Tag, an dem du dort gewohnt hast; er darf nach dem Verkaufsvertrag liegen, wenn du erst bei der Übergabe ausgezogen bist. Die Angabe steht in der Erklärung (Anlage SO, Zeile 36). Bei allen anderen Verkäufen lass das Feld leer."
+    beispielwert: "10.03.2025"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Ende des Zeitraums in Kz E0306302 (Format TT.MM.JJJJ-TT.MM.JJJJ, checkESt-Fall Gx7), nur bei Art Grundstueck mit Eigennutzung ausschliesslich oder letzte_drei_jahre; der Schreiber setzt es in p23_gewinn. Die Software prueft nicht, ob der Zeitraum zur Dreijahresregel passt."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 23 Abs. 1 Nr. 1 S. 3 EStG"
@@ -210,7 +270,7 @@ bindungen:
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 1 Nr. 2 S. 2), kein Deklarationsfeld. Ein Verkauf des taeglichen Gebrauchs ist steuerfrei und steht nicht in der Erklaerung (Abgabe-Sperre, Abweichung Nr. 54)."
+    elster_kz_grund: "ENDGUELTIG: Ring-Input (§ 23 Abs. 1 Nr. 2 S. 2), kein Deklarationsfeld. Ein Verkauf des taeglichen Gebrauchs ist steuerfrei und steht nicht in der Erklaerung: die Anleitung zur Anlage SO nennt ihn \"muessen Sie hier nicht angeben\" (Abweichung Nr. 54), die Abgabe sperrt nicht."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 23 Abs. 1 Nr. 2 S. 2 EStG"

@@ -74,12 +74,14 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// `p23_taeglicher_gebrauch`, `p23_einkunftsquelle`), 371 -> 378 und 285 -> 292, die Kegel bleiben;
 /// danach am 2026-10-10 `p23_gebaeude_in_frist` in `gesamt` und `rentner_gesamt` (Abweichung Nr. 54, Gebaeude der letzten zehn Jahre),
 /// 378 -> 379 und 292 -> 293, die Kegel bleiben;
+/// danach am 2026-10-10 `p23_wohnflaeche`, `p23_eigennutzung_von` und `p23_eigennutzung_bis` in `gesamt` und `rentner_gesamt`
+/// (Abweichung Nr. 54, Eigennutzung in der Erklaerung), 379 -> 382 und 293 -> 296, die Kegel bleiben;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 85, 33),
-    (Scheibe::Gesamt, 379, 35),
-    (Scheibe::RentnerGesamt, 293, 28),
+    (Scheibe::Gesamt, 382, 35),
+    (Scheibe::RentnerGesamt, 296, 28),
 ];
 
 fn registry() -> &'static Registry {
