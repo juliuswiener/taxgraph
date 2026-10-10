@@ -187,6 +187,11 @@ fn die_sperrtexte_zur_versorgung_nehmen_die_rente_mit_leistungsmitteilung_aus() 
     }
     let offen = Sperrgrund::VersorgungsfreibetragOffen.klartext().unwrap();
     assert!(offen.contains("Werkspension"), "versorgungsfreibetrag_offen: {offen}");
+    let ueber_lohn = Sperrgrund::VersorgungUeberLohn.klartext().unwrap();
+    assert!(
+        ueber_lohn.contains("Sie hat eine Leistungsmitteilung statt einer Lohnsteuerbescheinigung."),
+        "versorgung_ueber_lohn: {ueber_lohn}"
+    );
 }
 
 /// AK3: Die Hilfe der Kreuze zu sonstigen Einkuenften nennt die Rente mit Leistungsmitteilung; "ja" sperrt die

@@ -2250,6 +2250,8 @@ mod tests {
             "{text}"
         );
         assert!(text.starts_with("Versorgungsbezüge über 0 Euro") && text.contains("gesperrt") && text.contains("Formular"), "{text}");
+        assert!(text.contains("noch nicht freigegeben und deshalb gesperrt"), "{text}");
+        assert!(!text.contains("nicht gesperrt"), "{text}");
     }
 
     /// Python `dict.get(wert)` an allen drei Aufrufstellen der Enum-Felder: Konfession (`feld`),
