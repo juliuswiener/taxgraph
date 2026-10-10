@@ -152,6 +152,10 @@ bindungen:
   - feld_id: p23_afa
     quelle: {regel_id: p23_veraeusserungsgewinn, signatur_slot: afa}
     typ: cent
+    # Kein Minus: eine negative Abschreibung liesse die Anschaffungskosten steigen und den Gewinn sinken (Abs. 3 S. 4 kennt nur Absetzungen).
+    # Das Feld hat kein eigenes Kz (wie `ep_unfallkosten`, `dba_abzug_zeile_cent`); die Meldung des Stores nennt darum das Schema, ohne dass
+    # es hier ein Kz gibt. Zweite Sicherung: `lese()` in `bescheid/src/privatverkauf.rs` sperrt auch geladene Akten mit `afa < 0`.
+    nicht_negativ: true
     einheit: EUR
     askable: true
     vorjahr: vorschlag

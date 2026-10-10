@@ -25,20 +25,28 @@ use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 use bescheid::deklaration::{einreichungs_xml, EinreichFehler, Einreichung};
+use bescheid::privatverkauf::p23_steuerfreier_verkauf;
 use bescheid::testhilfe::{index, params};
-use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Sperrgrund, Zustand};
+use bescheid::Instanzquelle;
+use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Sperrgrund, Vz, Zustand};
 use elster::testhilfe::schemas_da;
 use serde_json::{json, Value};
 use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
 
 /// Ein bestaetigter Wert (zwei Signale).
 fn setze(s: &mut Store, feld: &str, wert: Value) {
+    setze_mit(s, feld, wert, Zustand::Bestaetigt);
+}
+
+/// Ein Wert mit dem Zustand `bestaetigt` (zwei Signale) oder `vorlaeufig` (ohne zweites Signal).
+fn setze_mit(s: &mut Store, feld: &str, wert: Value, zustand: Zustand) {
+    let bestaetigt = zustand == Zustand::Bestaetigt;
     let leer = HashMap::new();
     s.append_roh(
         &NeuesEventRoh {
             feld_id: feld.to_owned(),
             wert: wert.into(),
-            zustand: Zustand::Bestaetigt,
+            zustand,
             herkunft: HerkunftVektor::Voll(Herkunft {
                 herkunft: Achsenwert::new("laie").unwrap(),
                 pruef_tiefe: PruefTiefe::Ungeprueft,
@@ -47,8 +55,8 @@ fn setze(s: &mut Store, feld: &str, wert: Value) {
             schreiber: "ui:laie".to_owned(),
             signal: Signal {
                 signal_1: Some(None),
-                signal_2: Some(format!("ok@{feld}")),
-                signal_2_fehlt: false,
+                signal_2: bestaetigt.then(|| format!("ok@{feld}")),
+                signal_2_fehlt: !bestaetigt,
             },
             signal_2_fremd: None,
             ersetzt: None,
@@ -300,4 +308,45 @@ fn kryptowert_und_unvollstaendige_angaben_sperren_vor_der_erklaerung() {
         Err(EinreichFehler::Gesperrt(g)) => assert_eq!(g, Sperrgrund::P23AngabenOffen),
         anders => panic!("Datum fehlt: {anders:?}"),
     }
+}
+
+/// Eine negative Abschreibung (hier −50.000 EUR) ist keine Angabe: sie liesse die Anschaffungskosten steigen und den Gewinn sinken
+/// (100.000 − (50.000 + 50.000) = 0 statt 50.000). Sie sperrt mit `p23_angaben_offen`, ehe eine Zahl entsteht. Der Store weist ein
+/// Minus beim Schreiben ab (`nicht_negativ` an `p23_afa`); diese Akte umgeht ihn (`append_roh` ohne Bindung), wie eine geladene
+/// Altakte, und misst darum den Guard selbst. Gegenprobe: eine Abschreibung in Hoehe der Kosten (50.000 EUR) sperrt nicht.
+#[test]
+fn negative_abschreibung_sperrt_mit_angaben_offen_und_senkt_den_gewinn_nicht() {
+    let negativ = mit(pflichtig(1), 1, "p23_afa", json!(-5_000_000));
+    match lauf(&akte(negativ)) {
+        Err(EinreichFehler::Gesperrt(g)) => assert_eq!(g, Sperrgrund::P23AngabenOffen),
+        anders => panic!("negative AfA muss mit p23_angaben_offen sperren, erhalten {anders:?}"),
+    }
+    let gleich_den_kosten = mit(pflichtig(1), 1, "p23_afa", json!(5_000_000));
+    let r = lauf(&akte(gleich_den_kosten));
+    erwarte_einreichbar("AfA gleich den Kosten", &r);
+    if let Ok(e) = &r {
+        // 100.000 − (50.000 − 50.000) = 100.000 EUR
+        assert_eq!(kz_der_instanz(e, 1).get("E0306801"), Some(&json!(100_000)));
+    }
+}
+
+/// `p23_steuerfreier_verkauf` nennt nur BESTAETIGTE steuerfreie Verkaeufe: ein Verkauf mit vorlaeufigem Preis ist offen, nicht fertig, und
+/// die Abgabe sperrt dann mit dem Eintrag der Vorlaeufigkeit. Ueber `einreichungs_xml` ist der Zweig nicht zu erreichen, weil der Guard
+/// davor jede vorlaeufige Instanz mit `p23_angaben_offen` sperrt; darum ruft der Test die Funktion selbst. Gegenprobe: derselbe Verkauf
+/// bestaetigt wird genannt.
+#[test]
+fn der_steuerfreie_verkauf_zaehlt_nur_bestaetigt() {
+    let frist = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+    let nennt = |vorlaeufig: Option<&str>| {
+        let mut s = akte(Vec::new());
+        for (feld, wert) in &frist {
+            let zustand = if vorlaeufig == Some(feld.as_str()) { Zustand::Vorlaeufig } else { Zustand::Bestaetigt };
+            setze_mit(&mut s, feld, wert.clone(), zustand);
+        }
+        let q = Instanzquelle { store: Some(&s), bindung: Some(index()), nur_bestaetigt: false };
+        p23_steuerfreier_verkauf(&q, Vz::Vz2025).unwrap()
+    };
+    assert_eq!(nennt(None).as_deref(), Some("p23_veraeusserungspreis"), "Gegenprobe: bestaetigt wird genannt");
+    assert_eq!(nennt(Some("p23_veraeusserungspreis")), None, "ein vorlaeufiger Preis macht den Verkauf offen");
+    assert_eq!(nennt(Some("p23_anschaffungsdatum")), None, "ein vorlaeufiges Datum auch");
 }

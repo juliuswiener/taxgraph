@@ -663,6 +663,34 @@ async fn kreuz_kein_verkauf_trotz_eingetragenem_verkauf_sperrt_weiter_mit_dem_fl
     erwarte_sperre("K1", &a, "flag_konsistenz_offen");
 }
 
+/// Eine negative Abschreibung nimmt schon das Speichern nicht an (`nicht_negativ` an `p23_afa`, 422 `fail-closed (Vorzeichen)`): sie senkte
+/// den Gewinn des Verkaufs, ohne dass der Nutzer es merkt. Die 0 und eine positive Abschreibung gehen durch; das gilt auch fuer die
+/// Instanz `__2`. Die Pruefung im Bescheid (`afa.get() < 0`) bleibt als zweite Sicherung fuer geladene Akten
+/// (`privatverkauf_einreichung_hermetisch.rs`, `rentner_ehegatte_hermetisch.rs`).
+#[tokio::test]
+async fn eine_negative_abschreibung_wird_beim_speichern_abgewiesen() {
+    let d = dienst();
+    let kopf = json!({"fall_id": "p23", "scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025});
+    let (status, antwort) = sende(&d, "POST", "/fall", Some(&kopf)).await;
+    assert_eq!(status, 201, "POST /fall: {antwort}");
+    let setze = |feld: &'static str, wert: i64| {
+        json!({
+            "feld_id": feld, "wert": wert, "zustand": "bestaetigt", "schreiber": "ui:laie",
+            "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "signal": {"signal_1": null, "signal_2": format!("ok@{feld}{wert}")},
+            "ts": "2026-01-01T00:00:00+00:00",
+        })
+    };
+    // Je Feld ein Minus (abgewiesen) und ein Wert, der durchgeht: 5.000.000 Cent bei der ersten, 0 bei der zweiten Instanz.
+    for (feld, ok) in [("p23_afa", 5_000_000), ("p23_afa__2", 0)] {
+        let (status, antwort) = sende(&d, "POST", "/fall/p23/event", Some(&setze(feld, -5_000_000))).await;
+        assert_eq!(status, 422, "{feld}: ein Minus muss abgewiesen werden: {antwort}");
+        assert!(antwort.to_string().contains("Vorzeichen"), "{feld}: {antwort}");
+        let (status, antwort) = sende(&d, "POST", "/fall/p23/event", Some(&setze(feld, ok))).await;
+        assert_eq!(status, 201, "{feld}={ok} muss angenommen werden: {antwort}");
+    }
+}
+
 // ---- Fragetexte -------------------------------------------------------------------------------------
 
 /// Was der Nutzer liest (`GET /feld/{fid}/frage`): in der Scheibe `gesamt` zaehlt das Kreuz `kein_sonstige` den Verkauf nicht mehr

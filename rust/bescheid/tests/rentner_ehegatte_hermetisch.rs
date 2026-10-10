@@ -529,6 +529,20 @@ fn ein_unvollstaendiger_verkauf_nach_p23_erreicht_im_rentner_ring_nie_eine_zahl(
     assert_eq!(gesperrt_mit(&verkauf(None)), "flag_konsistenz_offen");
 }
 
+/// Eine negative Abschreibung (−50.000 EUR) senkte den Gewinn des Verkaufs auf 0 (100.000 − (50.000 + 50.000)) und liesse die Zahl 50.000
+/// EUR zu niedrig. Der Guard der Scheibe sperrt mit `p23_angaben_offen`; die Gegenprobe mit `AfA` 0 rechnet. Der Store lehnt das Minus
+/// beim Schreiben ab (`nicht_negativ`), diese Akte umgeht ihn.
+#[test]
+fn eine_negative_abschreibung_sperrt_im_rentner_ring_statt_den_gewinn_zu_senken() {
+    let verkauf = |afa: i64| {
+        let mut p = privatverkauf_a("15.06.2020", "10.03.2025", cent(100_000), cent(50_000));
+        p.push(("p23_afa", json!(afa)));
+        mit_veranlagung("einzel", p)
+    };
+    let _ = kette(&verkauf(0));
+    assert_eq!(gesperrt_mit(&verkauf(-cent(50_000))), "p23_angaben_offen");
+}
+
 /// Der Entlastungsbetrag fuer Alleinerziehende (§ 24b) in Euro: Gesamtbetrag der Einkuenfte der Einzelveranlagung ohne die
 /// Angaben abzueglich dem mit `alleinstehend`, `kinder` Kindern und `monate` vollen Monaten ohne Voraussetzung.
 fn entlastung_24b(alleinstehend: bool, kinder: i64, monate: i64) -> i64 {
