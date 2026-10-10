@@ -51,13 +51,9 @@ pub(crate) const UNFALLKOSTEN_ZIEL_KZ: [&str; 3] = [
     WEITERE_WK_SUMME_KZ,
 ];
 
-/// Die Bezeichnung in `E0205405`. Das Schema (`NAEnum_BEWERBUNGSKOSTEN_3`) kennt keine Aufzaehlung; ob ERiC den Text gegen die
-/// Namensliste der Dokumentation prueft, ist ohne `checkESt` offen (deshalb bleibt die Sperre).
+/// Die Bezeichnung in `E0205405`. Das Schema (`NAEnum_BEWERBUNGSKOSTEN_3`) kennt keine Aufzaehlung; `checkESt` nimmt diesen Text an
+/// (VZ 2025, `bescheid/tests/checkest_blockmatrix.rs::zeilen_nr48_nr49_gegen_echtes_checkest`, rc=0).
 const UNFALLKOSTEN_TEXT: &str = "Unfallkosten Arbeitsweg";
-
-/// Der Grund der Abgabe-Sperre bei Unfallkosten ueber 0: das XML traegt den Betrag seit Abweichung Nr. 48 unter
-/// [`UNFALLKOSTEN_BETRAG_KZ`], aber kein `checkESt`-Lauf hat die Zeile je angenommen. Die Sperre faellt mit dem ersten Lauf.
-const UNFALLKOSTEN_SPERRE: &str = "Unfallkosten über 0 Euro: Für diesen Betrag gibt es noch kein geprüftes ELSTER-Kennzeichen. Die Abgabe ist deshalb gesperrt. Setze den Betrag auf 0 oder lösche ihn, wenn du ohne diesen Abzug abgeben willst.";
 
 /// Nur Rust (Abweichung Nr. 49): der Ring-Wert zur zweiten Zeile "Sonstiges" der Anlage N, die gezahlte auslaendische Steuer in
 /// CENT, wenn der BESCHEID den Abzug nach § 34c Abs. 2 `EStG` rechnet (`bescheid::deklaration::mit_ring_werten`). Das Feld hat kein
@@ -552,13 +548,11 @@ impl Bau<'_> {
         Ok(false)
     }
 
-    /// `ep_unfallkosten` OHNE geprueftes Kz (Abweichung Nr. 28, Nr. 48). Ueber 0 steht der Betrag in der Zeile "Sonstiges" der
+    /// `ep_unfallkosten` OHNE Einzel-Kz (Abweichung Nr. 28, Nr. 48). Ueber 0 steht der Betrag in der Zeile "Sonstiges" der
     /// Anlage N ([`UNFALLKOSTEN_BETRAG_KZ`], aufgerundet auf volle Euro; Bezeichnung [`UNFALLKOSTEN_TEXT_KZ`]; die Summe
-    /// [`WEITERE_WK_SUMME_KZ`] bildet [`weitere_wk_summe`] aus allen Zeilen), und die Abgabe bleibt gesperrt
-    /// ([`UNFALLKOSTEN_SPERRE`], 409 `deklaration_unvollstaendig`), bis `checkESt` die Zeile einmal angenommen hat: die Sperre
-    /// haelt auch `erzeuge_xml` zurueck. Bei 0 und leer steht nichts im XML und der Grund in `nicht_deklariert`.
-    /// Fuer die Sperre genuegt der Wegfall des `offen`-Aufrufs; die Zeile bleibt. Die zweite Zeile, der Abzug nach § 34c Abs. 2
-    /// `EStG`, schreibt [`Bau::dba_abzug_zeile`] (Abweichung Nr. 49).
+    /// [`WEITERE_WK_SUMME_KZ`] bildet [`weitere_wk_summe`] aus allen Zeilen). `checkESt` hat die Zeile angenommen (VZ 2025, Julius
+    /// 2026-10-10 gab die Sperre frei), die Abgabe ist nicht gesperrt. Bei 0 und leer steht nichts im XML und der Grund in
+    /// `nicht_deklariert`. Die zweite Zeile, der Abzug nach § 34c Abs. 2 `EStG`, schreibt [`Bau::dba_abzug_zeile`] (Abweichung Nr. 49).
     fn unfallkosten(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) -> Ergebnis<()> {
         let betrag = py::int(wert).map_err(wert_fehler(feld_id))?;
         if betrag > 0 {
@@ -574,7 +568,6 @@ impl Bau<'_> {
                 UNFALLKOSTEN_TEXT_KZ.to_owned(),
                 Value::String(UNFALLKOSTEN_TEXT.to_owned()),
             );
-            self.offen(feld_id, UNFALLKOSTEN_SPERRE);
         } else {
             let grund = b
                 .elster_kz_grund
@@ -2025,8 +2018,9 @@ mod tests {
     }
 
     /// Abweichung Nr. 48: ein bestaetigter Betrag ueber 0 in `ep_unfallkosten` steht aufgerundet unter `E0205406`, mit der
-    /// Bezeichnung `E0205405` und der Summe `E0204803`, UND sperrt die Abgabe; bei 0 und bei einem negativen Wert steht nichts
-    /// in der Deklaration, der Betrag bleibt in `nicht_deklariert` und nichts sperrt. Das Regal (`regal.rs`) fuehrt die drei Literale als `Verhalten` mit diesem Test.
+    /// Bezeichnung `E0205405` und der Summe `E0204803` und sperrt die Abgabe NICHT (`checkESt` hat die Zeile angenommen, die
+    /// Sperre fiel am 2026-10-10); bei 0 und bei einem negativen Wert steht nichts in der Deklaration, der Betrag bleibt in
+    /// `nicht_deklariert` und nichts sperrt. Das Regal (`regal.rs`) fuehrt die drei Literale als `Verhalten` mit diesem Test.
     #[test]
     fn unfallkosten_stehen_ueber_null_in_der_zeile_sonstiges() {
         let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -2069,8 +2063,9 @@ mod tests {
                     zeile[0]
                 );
                 assert!(
-                    d.unvollstaendig().iter().any(|e| e.feld_id == "ep_unfallkosten"),
-                    "{cent} Cent: die Sperre ist weg"
+                    d.unvollstaendig().is_empty(),
+                    "{cent} Cent: die Sperre steht noch: {:?}",
+                    d.unvollstaendig()
                 );
                 assert!(d.nicht_deklariert.iter().all(|e| e.feld_id != "ep_unfallkosten"));
             } else {
@@ -2226,13 +2221,8 @@ mod tests {
             // Bei 0 und negativ steht der Wert mit Grund in `nicht_deklariert` (Mutant W6: der Eintrag fehlte); bei einer Zeile nicht.
             let eintraege = d.nicht_deklariert.iter().filter(|e| e.feld_id == "dba_abzug_zeile_cent").count();
             assert_eq!(eintraege, usize::from(abzug.is_some_and(|c| c <= 0)), "{name}: Eintrag in nicht_deklariert");
-            let sperre_unfall = unfall.is_some();
-            assert_eq!(
-                d.unvollstaendig().iter().any(|e| e.feld_id == "ep_unfallkosten"),
-                sperre_unfall,
-                "{name}: nur die Unfallkosten sperren"
-            );
-            assert!(d.unvollstaendig().iter().all(|e| e.feld_id != "dba_abzug_zeile_cent"), "{name}: der Ring-Wert sperrt nichts");
+            // Die Sperre der Unfallkosten ist am 2026-10-10 gefallen (`checkESt` hat die Zeile angenommen): nichts sperrt.
+            assert!(d.unvollstaendig().is_empty(), "{name}: es sperrt etwas: {:?}", d.unvollstaendig());
         }
     }
 
