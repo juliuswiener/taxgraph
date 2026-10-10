@@ -7,8 +7,8 @@
 //!
 //! `grund` in `api.py: ergebnis()` ist entweder `None` (kein Sperrgrund), das Literal
 //! `"bestaetigt"` (Erfolg, kein Klartext-Lookup) oder einer der 57 Python-Schluessel unten
-//! (dazu neun Rust-eigene, siehe `KindFreibetragVerteilungOffen`, `Abs3PartnerAntragGewinnOffen`, `DbaFreistellungOffen`, `DbaAbzugOffen`,
-//! `VersorgungUeberLohn` und `VersorgungsbeginnNachVz`). Die
+//! (dazu zehn Rust-eigene, siehe `KindFreibetragVerteilungOffen`, `Abs3PartnerAntragGewinnOffen`, `DbaFreistellungOffen`, `DbaAbzugOffen`,
+//! `VersorgungUeberLohn`, `VersorgungsbeginnNachVz` und `PartnerEinkunftsartNichtRingFaehig`). Die
 //! dritte Moeglichkeit bildet [`Sperrgrund::Bestaetigt`] ab; sie hat bewusst KEINEN
 //! eigenen Klartext (die Python-Quelle hat auch keinen fuer sie).
 use std::fmt;
@@ -90,6 +90,10 @@ pub enum Sperrgrund {
     P164GateOffen,
     P32bKombiOffen,
     P35cDoppelfoerderungOffen,
+    /// Rust-eigen (Nr. 52, `partner_einkunftsart_nicht_ring_faehig`): der Ehegatte hat bei Zusammenveranlagung "sonstige
+    /// Einkuenfte" bejaht (`kein_sonstige_partner` = nein), und die Scheibe `gesamt` rechnet sie nicht. Python liefert dort eine
+    /// Zahl ohne diese Einkuenfte; [`Sperrgrund::EinkunftsartNichtRingFaehig`] spricht den Nutzer selbst an und trifft den Fall nicht.
+    PartnerEinkunftsartNichtRingFaehig,
     PartnerKegelOffen,
     PartnerKonsistenzOffen,
     PartnerVorOffen,
@@ -173,6 +177,7 @@ impl Sperrgrund {
             Self::P164GateOffen => "p16_4_gate_offen",
             Self::P32bKombiOffen => "p32b_kombi_offen",
             Self::P35cDoppelfoerderungOffen => "p35c_doppelfoerderung_offen",
+            Self::PartnerEinkunftsartNichtRingFaehig => "partner_einkunftsart_nicht_ring_faehig",
             Self::PartnerKegelOffen => "partner_kegel_offen",
             Self::PartnerKonsistenzOffen => "partner_konsistenz_offen",
             Self::PartnerVorOffen => "partner_vor_offen",
@@ -252,6 +257,7 @@ impl Sperrgrund {
             Self::P164GateOffen => Some("Es ist ein Gewinn aus dem Verkauf oder der Aufgabe eines Betriebs angegeben — bei dir oder bei deinem Partner. Dafür gibt es einen Freibetrag, aber nur unter zwei Bedingungen: Die betreffende Person ist mindestens 55 Jahre alt oder dauernd berufsunfähig, und sie hat diesen Freibetrag noch nie in Anspruch genommen. Bitte beantworte beide Fragen."),
             Self::P32bKombiOffen => Some("Du hast Lohnersatzleistungen wie Eltern-, Kranken- oder Arbeitslosengeld angegeben und zusätzlich einen Betriebsverkauf, Gewerbesteuer oder ausländische Einkünfte. Diese Kombination rechnet die Software noch nicht: Lohnersatzleistungen erhöhen den Steuersatz, und wie sich das mit den anderen Ermäßigungen verzahnt, ist offen. Dieser Fall braucht steuerliche Beratung."),
             Self::P35cDoppelfoerderungOffen => Some("Zu deiner energetischen Sanierung fehlt noch die Antwort, ob du dafür schon anderweitig gefördert wurdest — etwa durch öffentliche Zuschüsse oder weil du dieselben Kosten bereits als Handwerkerleistung geltend machst. In diesen Fällen entfällt die Steuerermäßigung ganz. Bitte beantworte diese Frage, auch wenn keine andere Förderung vorliegt."),
+            Self::PartnerEinkunftsartNichtRingFaehig => Some("Du hast angegeben, dass dein Ehe- oder Lebenspartner Renten oder andere sonstige Einkünfte hat. Diese Einkünfte rechnet die Software in der gemeinsamen Berechnung noch nicht mit. Ein Ergebnis ohne sie wäre zu niedrig, deshalb rechnet die Software hier nicht weiter."),
             Self::PartnerKegelOffen => Some("Zu deinem Ehe- oder Lebenspartner fehlen noch Angaben, die die gemeinsame Berechnung braucht — je nach Fall der Bruttoarbeitslohn, die Kapitalerträge oder die Art der Krankenversicherung. Ein Ergebnis für nur eine der beiden Personen wäre falsch. Bitte ergänze die offenen Angaben zu deinem Partner."),
             Self::PartnerKonsistenzOffen => Some("Zwei Angaben passen nicht zusammen: Du hast etwas zu deinem Ehe- oder Lebenspartner eingetragen — etwa dessen Behinderung, Kapitalerträge oder Rente — aber keine gemeinsame Veranlagung gewählt. Angaben zum Partner zählen nur in einer gemeinsamen Erklärung. Bitte sieh dir beide Angaben noch einmal an."),
             Self::PartnerVorOffen => Some("Du hast eine gemeinsame Veranlagung gewählt und Beiträge zur Rentenversicherung angegeben. Die Altersvorsorgebeiträge beider Partner rechnet die Software in dieser Zusammenstellung noch nicht. Dieser Fall wird derzeit nicht berechnet."),
@@ -345,6 +351,7 @@ impl FromStr for Sperrgrund {
             "p16_4_gate_offen" => Ok(Self::P164GateOffen),
             "p32b_kombi_offen" => Ok(Self::P32bKombiOffen),
             "p35c_doppelfoerderung_offen" => Ok(Self::P35cDoppelfoerderungOffen),
+            "partner_einkunftsart_nicht_ring_faehig" => Ok(Self::PartnerEinkunftsartNichtRingFaehig),
             "partner_kegel_offen" => Ok(Self::PartnerKegelOffen),
             "partner_konsistenz_offen" => Ok(Self::PartnerKonsistenzOffen),
             "partner_vor_offen" => Ok(Self::PartnerVorOffen),
@@ -481,6 +488,7 @@ mod tests {
             Sperrgrund::DbaAbzugOffen,
             Sperrgrund::VersorgungUeberLohn,
             Sperrgrund::VersorgungsbeginnNachVz,
+            Sperrgrund::PartnerEinkunftsartNichtRingFaehig,
         ] {
             assert!(
                 !klartext.contains_key(grund.als_str()),
@@ -516,6 +524,27 @@ mod tests {
             }
             assert!(!text.starts_with("Du hast"), "{grund}: spricht aus Sicht von Person A");
         }
+    }
+
+    /// Der Grund `partner_einkunftsart_nicht_ring_faehig` nennt den Partner und seine Einkuenfte, sagt, warum die Software
+    /// nicht rechnet (die Zahl waere zu niedrig), und spricht den Nutzer so an, wie er geantwortet hat. Pinnt Teile des Wortlauts.
+    #[test]
+    fn der_grund_zu_den_sonstigen_einkuenften_des_partners_nennt_partner_einkuenfte_und_sperre() {
+        let text = Sperrgrund::PartnerEinkunftsartNichtRingFaehig.klartext().unwrap();
+        for teil in [
+            "dein Ehe- oder Lebenspartner",
+            "Renten oder andere sonstige Einkünfte",
+            "gemeinsamen Berechnung",
+            "zu niedrig",
+            "rechnet die Software hier nicht weiter",
+        ] {
+            assert!(text.contains(teil), "{teil:?} fehlt in {text:?}");
+        }
+        assert_ne!(
+            Some(text),
+            Sperrgrund::EinkunftsartNichtRingFaehig.klartext(),
+            "der Partner-Grund darf nicht den Text der Hauptperson sagen"
+        );
     }
 
     /// Der Grund `dba_freistellung_offen` nennt die Freistellung, den Progressionsvorbehalt, die Kombination, die er

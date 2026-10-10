@@ -56,6 +56,15 @@ pub(super) fn gesamt_guard(k: &K<'_>, cfg: &Cfg) -> Grund {
     {
         return Ok(Some(Sperrgrund::EinkunftsartNichtRingFaehig));
     }
+    // Nr. 52: der Ehegatte bejaht seine sonstigen Einkuenfte; die Scheibe rechnet sie nicht (Python gibt hier eine Zahl).
+    if ist_zusammen(k.f)
+        && cfg
+            .fremd_arten_partner
+            .iter()
+            .any(|fl| crate::ist_false(wert(k.f, fl)))
+    {
+        return Ok(Some(Sperrgrund::PartnerEinkunftsartNichtRingFaehig));
+    }
     // dHf/Verpflegung sind auch im gesamt/rentner-WK-Pfad verdrahtet.
     werbungskosten::dhf_vpf_grund(k)
 }
