@@ -199,6 +199,28 @@ pub(crate) const REGAL: &[Datei] = &[
                     tests: &["der_staat_steht_als_listentext_in_e0600301_genau_mit_den_einkuenften"],
                 },
             ),
+            // Abweichung Nr. 50: die Zeilen 11 bis 13 der Anlage N (Versorgungsbezug) gibt es in Python nicht; der Test deckt die Literale.
+            (
+                "VERSORGUNG_BETRAG_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0200801"],
+                    tests: &["versorgung_steht_nur_mit_dem_ring_wert_in_den_zeilen_11_bis_13"],
+                },
+            ),
+            (
+                "VERSORGUNG_BMG_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0200902"],
+                    tests: &["versorgung_steht_nur_mit_dem_ring_wert_in_den_zeilen_11_bis_13"],
+                },
+            ),
+            (
+                "VERSORGUNG_BEGINN_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0201307"],
+                    tests: &["versorgung_steht_nur_mit_dem_ring_wert_in_den_zeilen_11_bis_13"],
+                },
+            ),
             // Diese Regeln stehen als Literale in Methoden von `Bau`; ihr Top-Level-Name ist `deklariere`.
             ("deklariere", Zuordnung::Funktion("iban_weiche/praefix")),
             ("deklariere", Zuordnung::Funktion("iban_weiche/inland")),

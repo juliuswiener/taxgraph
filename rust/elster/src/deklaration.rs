@@ -139,9 +139,32 @@ const VERSORGUNG: &str = "versorgung_jahresrente";
 const VERSORGUNG_PARTNER: &str = "versorgung_jahresrente_partner";
 
 /// Der Grund der Abgabe-Sperre bei einem bestaetigten Versorgungsbezug ueber 0 (`VERSORGUNG`, `VERSORGUNG_PARTNER` ohne Kz):
-/// der Bescheid rechnet den Bezug ein (Versorgungsfreibetrag, Zuschlag, Pauschbetrag), das XML traegt ihn nicht. Die Sperre
-/// faellt, wenn die Bindung ein geprueftes Kz traegt (Abweichung Nr. 42).
-const VERSORGUNG_SPERRE: &str = "Versorgungsbezüge über 0 Euro: Der Bescheid rechnet sie ein, aber die Erklärung trägt sie noch nicht, denn für diesen Betrag gibt es noch kein geprüftes ELSTER-Kennzeichen. Die Abgabe ist deshalb gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+/// der Bescheid rechnet den Bezug ein (Versorgungsfreibetrag, Zuschlag, Pauschbetrag). Seit Abweichung Nr. 50 traegt das XML
+/// ihn in den Zeilen 11 bis 13 der Anlage N, soweit der Bescheid ihn als Versorgungsbezug rechnet ([`VERSORGUNG_ZEILE`]); kein
+/// `checkESt`-Lauf hat diese Zeilen je angenommen, die Sperre faellt mit dem ersten Lauf (Abweichung Nr. 42).
+const VERSORGUNG_SPERRE: &str = "Versorgungsbezüge über 0 Euro: Die Erklärung trägt sie in den Zeilen 11 bis 13 der Anlage N, soweit der Bescheid sie als Versorgungsbezug rechnet. Ein checkESt-Lauf hat diese Zeilen noch nie angenommen. Die Abgabe ist deshalb gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+
+/// Nur Rust (Abweichung Nr. 50): die Ring-Werte zu den Zeilen 11 bis 13 der Anlage N, je Person. `bescheid::deklaration::
+/// mit_ring_werten` setzt sie auf `true`, wenn der Bescheid den Bezug als steuerbeguenstigten Versorgungsbezug rechnet (alle
+/// drei Angaben bestaetigt, Alters-Gate erfuellt): das Gate kennt `elster` nicht. Beide Felder tragen kein Kz.
+/// [`Bau::versorgung`] und [`Bau::versorgung_angabe`] schreiben daraus Betrag, Bemessungsgrundlage und Beginnjahr der Person
+/// (Person B in die zweite Anlage N, `person_b`).
+const VERSORGUNG_ZEILE: &str = "versorgung_zeile";
+const VERSORGUNG_ZEILE_PARTNER: &str = "versorgung_zeile_partner";
+
+/// Bemessungsgrundlage und Beginnjahr des Versorgungsbezugs (Person A und B). Auch sie tragen kein Kz in der Bindung (Weg 2
+/// der Qualifikation: ein Kz dort kippte die Reihenfolge der Fragen); sie stehen nur im XML, wenn der Ring-Wert es verlangt.
+const VERSORGUNG_BMG: &str = "versorgung_bemessungsgrundlage";
+const VERSORGUNG_BMG_PARTNER: &str = "versorgung_bemessungsgrundlage_partner";
+const VERSORGUNG_BEGINN: &str = "versorgung_beginn_jahr";
+const VERSORGUNG_BEGINN_PARTNER: &str = "versorgung_beginn_jahr_partner";
+
+/// Die Zeilen 11 bis 13 der Anlage N (`N/ArbL/VBez/Einz`): Betrag laut Nr. 8 der Lohnsteuerbescheinigung, Bemessungsgrundlage
+/// laut Nr. 29, Beginnjahr laut Nr. 30. Fundstelle: `E10-2025.xsd` ab Zeile 17626, Vordruck `anlage_n_2025.txt:49-67`. Zeile 5
+/// (`E0200201`, der Bruttoarbeitslohn) bleibt, wie eingegeben: sie ENTHAELT den Bezug.
+const VERSORGUNG_BETRAG_KZ: &str = "E0200801";
+const VERSORGUNG_BMG_KZ: &str = "E0200902";
+const VERSORGUNG_BEGINN_KZ: &str = "E0201307";
 
 /// Die materialisierte Felder-Ebene eines Snapshots (`feld_id -> {wert, zustand, herkunft}`).
 pub type Felder = BTreeMap<String, SnapshotFeld>;
@@ -574,22 +597,84 @@ impl Bau<'_> {
         })
     }
 
-    /// `versorgung_jahresrente` und `versorgung_jahresrente_partner` OHNE Kz (Abweichung Nr. 42): der Betrag steht mit Grund in
-    /// `nicht_deklariert`. Ein bestaetigter Betrag ueber 0 sperrt die Abgabe ([`VERSORGUNG_SPERRE`], 409
-    /// `deklaration_unvollstaendig`), denn der Bescheid rechnet den Bezug ein und das XML traegt ihn nicht. Der Betrag des
-    /// Ehegatten sperrt nur bei bestaetigter Zusammenveranlagung: bei Einzelveranlagung zaehlt er im Bescheid nicht. Ein
-    /// vorlaeufiger Betrag erreicht diesen Zweig nicht; er behaelt den Grund "Pflicht-Bestaetigung fehlt" (`feld`). Ein Wert,
-    /// aus dem sich keine ganze Zahl lesen laesst (`None`), zaehlt wie im Bescheid als 0 und wirft keinen Fehler (wie
-    /// [`Bau::abzug_gewaehlt`]). Traegt die Bindung ein Kz, greift dieser Zweig nicht mehr: die Sperre faellt mit dem Eintrag.
-    fn versorgung(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) {
-        let grund = b
-            .elster_kz_grund
-            .clone()
-            .unwrap_or_else(|| "kein elster_kz".to_owned());
-        self.nicht(feld_id, grund);
+    /// Hat der Ring den Bezug der Person in die Zeilen 11 bis 13 der Anlage N verwiesen (Abweichung Nr. 50)? Der Ring-Wert
+    /// [`VERSORGUNG_ZEILE`] bzw. [`VERSORGUNG_ZEILE_PARTNER`] muss bestaetigt `true` sein.
+    fn versorgung_zeile_gilt(&self, partner: bool) -> bool {
+        let flag = if partner {
+            VERSORGUNG_ZEILE_PARTNER
+        } else {
+            VERSORGUNG_ZEILE
+        };
+        self.snapshot
+            .get(flag)
+            .is_some_and(|s| s.zustand == Zustand::Bestaetigt && matches!(s.wert, PyWert::Bool(true)))
+    }
+
+    /// Schreibt `wert` unter `kz` in die Anlage N der Person: Person A in die Deklaration, Person B in die zweite Instanz
+    /// (`person_b`, wie die Kz aus `PARTNER_INSTANZ`).
+    fn schreibe_versorgung(
+        &mut self,
+        partner: bool,
+        kz: &str,
+        feld_id: &str,
+        wert: &PyWert,
+        b: &Bindung,
+    ) -> Ergebnis<()> {
+        let ziel = if partner {
+            &mut self.person_b
+        } else {
+            &mut self.deklaration
+        };
+        schreibe_kz(ziel, kz, wert, Some(b.typ), self.null_kz).map_err(wert_fehler(feld_id))
+    }
+
+    /// `versorgung_jahresrente` und `versorgung_jahresrente_partner` OHNE Kz (Abweichung Nr. 42, Nr. 50). Steht der Ring-Wert
+    /// ([`Bau::versorgung_zeile_gilt`]) auf `true`, steht der Betrag in Zeile 11 der Anlage N ([`VERSORGUNG_BETRAG_KZ`], auf
+    /// volle Euro abgerundet wie jede Einnahme), sonst mit Grund in `nicht_deklariert` (Bezug vor dem Alters-Gate: er steckt als
+    /// Arbeitslohn in Zeile 5; Bezug unter 1 Euro). Ein bestaetigter Betrag ueber 0 sperrt die Abgabe in beiden Faellen
+    /// ([`VERSORGUNG_SPERRE`], 409 `deklaration_unvollstaendig`), bis `checkESt` die Zeilen einmal angenommen hat; die Sperre
+    /// haelt auch `erzeuge_xml` zurueck. Der Betrag des Ehegatten sperrt nur bei bestaetigter Zusammenveranlagung: bei
+    /// Einzelveranlagung zaehlt er im Bescheid nicht. Ein vorlaeufiger Betrag erreicht diesen Zweig nicht; er behaelt den
+    /// Grund "Pflicht-Bestaetigung fehlt" (`feld`). Ein Wert, aus dem sich keine ganze Zahl lesen laesst (`None`), zaehlt wie
+    /// im Bescheid als 0 und wirft keinen Fehler (wie [`Bau::abzug_gewaehlt`]).
+    fn versorgung(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) -> Ergebnis<()> {
+        let partner = feld_id == VERSORGUNG_PARTNER;
+        if self.versorgung_zeile_gilt(partner) {
+            self.schreibe_versorgung(partner, VERSORGUNG_BETRAG_KZ, feld_id, wert, b)?;
+        } else {
+            let grund = b
+                .elster_kz_grund
+                .clone()
+                .unwrap_or_else(|| "kein elster_kz".to_owned());
+            self.nicht(feld_id, grund);
+        }
         let zaehlt = feld_id == VERSORGUNG || self.zusammen_bestaetigt();
         if zaehlt && py::int(wert).is_ok_and(|cent| cent > 0) {
             self.offen(feld_id, VERSORGUNG_SPERRE);
+        }
+        Ok(())
+    }
+
+    /// Bemessungsgrundlage und Beginnjahr des Versorgungsbezugs OHNE Kz (Abweichung Nr. 50): Zeile 12 ([`VERSORGUNG_BMG_KZ`],
+    /// Euro abgerundet) und Zeile 13 ([`VERSORGUNG_BEGINN_KZ`], das Jahr). Sie stehen nur im XML, wenn der Ring-Wert es
+    /// verlangt ([`Bau::versorgung_zeile_gilt`]): ERiC lehnt Zeile 12 oder 13 ohne Zeile 11 ab (`Arbeitslohn_100200010`,
+    /// `Arbeitslohn_ab08_9`). Sonst steht das Feld mit Grund in `nicht_deklariert`.
+    fn versorgung_angabe(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) -> Ergebnis<()> {
+        let partner = feld_id == VERSORGUNG_BMG_PARTNER || feld_id == VERSORGUNG_BEGINN_PARTNER;
+        let kz = if feld_id == VERSORGUNG_BMG || feld_id == VERSORGUNG_BMG_PARTNER {
+            VERSORGUNG_BMG_KZ
+        } else {
+            VERSORGUNG_BEGINN_KZ
+        };
+        if self.versorgung_zeile_gilt(partner) {
+            self.schreibe_versorgung(partner, kz, feld_id, wert, b)
+        } else {
+            let grund = b
+                .elster_kz_grund
+                .clone()
+                .unwrap_or_else(|| "kein elster_kz".to_owned());
+            self.nicht(feld_id, grund);
+            Ok(())
         }
     }
 
@@ -924,7 +1009,15 @@ impl Bau<'_> {
         } else if let (UNFALLKOSTEN, None) = (feld_id, kz_von(b)) {
             self.unfallkosten(feld_id, wert, b)?;
         } else if let (VERSORGUNG | VERSORGUNG_PARTNER, None) = (feld_id, kz_von(b)) {
-            self.versorgung(feld_id, wert, b);
+            self.versorgung(feld_id, wert, b)?;
+        } else if let (
+            VERSORGUNG_BMG | VERSORGUNG_BMG_PARTNER | VERSORGUNG_BEGINN | VERSORGUNG_BEGINN_PARTNER,
+            None,
+        ) = (feld_id, kz_von(b))
+        {
+            self.versorgung_angabe(feld_id, wert, b)?;
+        } else if let (VERSORGUNG_ZEILE | VERSORGUNG_ZEILE_PARTNER, None) = (feld_id, kz_von(b)) {
+            // Ring-Wert (Abweichung Nr. 50): kein Feld der Erklaerung. `versorgung` und `versorgung_angabe` lesen ihn.
         } else if let (DBA_ABZUG, None) = (feld_id, kz_von(b)) {
             self.dba_abzug(feld_id, b);
         } else if let (DBA_ABZUG_ZEILE, None) = (feld_id, kz_von(b)) {
@@ -2057,6 +2150,90 @@ mod tests {
                 "{name}: nur die Unfallkosten sperren"
             );
             assert!(d.unvollstaendig().iter().all(|e| e.feld_id != "dba_abzug_zeile_cent"), "{name}: der Ring-Wert sperrt nichts");
+        }
+    }
+
+    /// Abweichung Nr. 50: Betrag, Bemessungsgrundlage und Beginnjahr des Versorgungsbezugs stehen NUR bei gesetztem Ring-Wert
+    /// (`versorgung_zeile`, `versorgung_zeile_partner`) in den Zeilen 11 bis 13 der Anlage N: Person A in der Deklaration, Person B
+    /// in `person_b`. Der Betrag und die Bemessungsgrundlage stehen abgerundet auf volle Euro. Ohne Ring-Wert (Bezug vor dem
+    /// Alters-Gate, kein Wert) steht kein Kz, und die drei Felder bleiben mit Grund in `nicht_deklariert`. Die Sperre
+    /// ([`VERSORGUNG_SPERRE`]) steht in beiden Faellen; der Ring-Wert selbst steht in keiner Liste. Das Regal (`regal.rs`) fuehrt
+    /// die drei Literale als `Verhalten` mit diesem Test.
+    #[test]
+    fn versorgung_steht_nur_mit_dem_ring_wert_in_den_zeilen_11_bis_13() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let kz = ["E0200801", "E0200902", "E0201307"];
+        // (Person B?, Ring-Wert) -> die Felder der Person: Bezug 30.000,50 Euro, Bemessungsgrundlage 25.000,99 Euro, Beginn 2020.
+        for partner in [false, true] {
+            let s = if partner { "_partner" } else { "" };
+            for ring in [Some(true), Some(false), None] {
+                let mut felder = Felder::from([
+                    (format!("versorgung_jahresrente{s}"), feld(json!(3_000_050))),
+                    (format!("versorgung_bemessungsgrundlage{s}"), feld(json!(2_500_099))),
+                    (format!("versorgung_beginn_jahr{s}"), feld(json!(2020))),
+                    (format!("versorgung_art{s}"), feld(json!("beamtenrechtlich"))),
+                    ("veranlagung".to_owned(), feld(json!("zusammen"))),
+                ]);
+                if let Some(wahr) = ring {
+                    felder.insert(format!("versorgung_zeile{s}"), feld(json!(wahr)));
+                }
+                let d = deklariere(&felder, &index, 2025, None).unwrap();
+                let name = format!("Person {}, Ring-Wert {ring:?}", if partner { "B" } else { "A" });
+                let (da, db) = if partner { (&d.person_b, &d.deklaration) } else { (&d.deklaration, &d.person_b) };
+                let steht = ring == Some(true);
+                if steht {
+                    assert_eq!(da.get(kz[0]), Some(&json!(30_000)), "{name}: Betrag, abgerundet");
+                    assert_eq!(da.get(kz[1]), Some(&json!(25_000)), "{name}: Bemessungsgrundlage, abgerundet");
+                    assert_eq!(da.get(kz[2]), Some(&json!(2020)), "{name}: Beginnjahr");
+                } else {
+                    assert!(kz.iter().all(|k| da.get(*k).is_none()), "{name}: ohne Ring-Wert kein Kz: {da:?}");
+                }
+                assert!(kz.iter().all(|k| db.get(*k).is_none()), "{name}: nichts bei der anderen Person: {db:?}");
+                // Die drei Felder stehen genau dann in `nicht_deklariert`, wenn keine Zeile steht; die Art (Weiche) immer.
+                let nicht = |f: &str| d.nicht_deklariert.iter().filter(|e| e.feld_id == format!("{f}{s}")).count();
+                for f in ["versorgung_jahresrente", "versorgung_bemessungsgrundlage", "versorgung_beginn_jahr"] {
+                    assert_eq!(nicht(f), usize::from(!steht), "{name}: {f} in nicht_deklariert");
+                }
+                assert_eq!(nicht("versorgung_art"), 1, "{name}: die Art ist kein Feld der Erklaerung");
+                // Der Ring-Wert ist kein Feld der Erklaerung: weder nicht_deklariert noch unvollstaendig.
+                let flag = format!("versorgung_zeile{s}");
+                assert!(d.nicht_deklariert.iter().all(|e| e.feld_id != flag), "{name}");
+                assert!(d.unvollstaendig().iter().all(|e| e.feld_id != flag), "{name}");
+                // Die Sperre bleibt in jedem Fall mit Bezug (Ehegatte: Zusammenveranlagung ist bestaetigt).
+                let gesperrt = d.unvollstaendig().iter().filter(|e| e.feld_id == format!("versorgung_jahresrente{s}")).count();
+                assert_eq!(gesperrt, 1, "{name}: die Sperre bleibt");
+            }
+            // Ein nur VORLAEUFIGER Ring-Wert gibt keine Zeile: der Ring setzt ihn nur aus bestaetigten Feldern.
+            let mut felder = Felder::from([
+                (format!("versorgung_jahresrente{s}"), feld(json!(3_000_050))),
+                (format!("versorgung_bemessungsgrundlage{s}"), feld(json!(2_500_099))),
+                (format!("versorgung_beginn_jahr{s}"), feld(json!(2020))),
+                ("veranlagung".to_owned(), feld(json!("zusammen"))),
+            ]);
+            let mut flag = feld(json!(true));
+            flag.zustand = Zustand::Vorlaeufig;
+            felder.insert(format!("versorgung_zeile{s}"), flag);
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            let da = if partner { &d.person_b } else { &d.deklaration };
+            assert!(kz.iter().all(|k| da.get(*k).is_none()), "Person {}: vorlaeufiger Ring-Wert: {da:?}", if partner { "B" } else { "A" });
         }
     }
 

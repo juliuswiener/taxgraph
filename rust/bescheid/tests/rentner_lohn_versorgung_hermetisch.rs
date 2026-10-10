@@ -17,6 +17,8 @@
 //! - Versorgungsbezug: Einkuenfte = Bezug − (min(13,2 % der Bemessungsgrundlage, 990) + 297) − 102 Euro
 //!   (`estg_p19_2026-07-17.txt`: 2025 → 13,2 / 990 / 297; § 9a Satz 1 Nr. 1b: 102 Euro). Bei 30.000 Euro:
 //!   30.000 − 1.287 − 102 = 28.611.
+//! - Seit Abweichung Nr. 50 steckt der Bezug (Nr. 8 der Lohnsteuerbescheinigung) im Bruttoarbeitslohn (Nr. 3): ein reiner
+//!   Pensionaer traegt Lohn gleich Bezug ein, der Arbeitslohn ist dann 0 (`pensionaer`).
 //! - Alters-Gate (§ 19 Abs. 2 Satz 2 Nr. 2): vor dem 63. Lebensjahr (60. bei Grad der Behinderung ab 50) gilt der
 //!   Bezug als Arbeitslohn, ohne Versorgungsfreibetrag: 30.000 − 1.230 = 28.770.
 //! - § 24a: 2020er Kohorte (Geburtsjahr 1955) 16,0 % bis 760 Euro (`estg_p24a_2026-07-13.txt`); der Arbeitslohn zaehlt
@@ -212,6 +214,13 @@ fn versorgung(euro: i64) -> Paare {
     ]
 }
 
+/// Ein reiner Pensionaer (Abweichung Nr. 50): Nr. 3 der Lohnsteuerbescheinigung (der Bruttoarbeitslohn) enthaelt den Bezug aus
+/// Nr. 8, beide sind `euro`. Der Arbeitslohn ist dann 0, es bleibt die Versorgung; die Erwartungswerte der Versorgung unten
+/// gelten unveraendert. Lohn und Bezug in einem Fall: `versorgung_im_lohn_enthalten.rs`.
+fn pensionaer(euro: i64) -> Paare {
+    [lohn(euro), versorgung(euro)].concat()
+}
+
 /// § 32a Abs. 1 `EStG` fuer VZ 2025, von Hand aus `params/2025/einkommensteuertarif_p32a.yaml` (Euro, abgerundet).
 #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
 fn tarif_2025(zve: i64) -> i64 {
@@ -270,14 +279,14 @@ fn ein_lohn_unter_dem_pauschbetrag_aendert_den_gesamtbetrag_nicht() {
 
 // ---------------------------------------------------------------- Versorgungsbezuege
 
-/// 0, 30.000 und 60.000 Euro Versorgung: Freibetrag (13,2 %, hoechstens 990), Zuschlag 297 und Pauschbetrag 102 Euro
-/// gehen ab, der Rest in den Gesamtbetrag. Heute: dreimal dieselbe Zahl.
+/// 0, 30.000 und 60.000 Euro Versorgung (reiner Pensionaer, Lohn gleich Bezug): Freibetrag (13,2 %, hoechstens 990), Zuschlag
+/// 297 und Pauschbetrag 102 Euro gehen ab, der Rest in den Gesamtbetrag. Heute: dreimal dieselbe Zahl.
 #[test]
 fn versorgungsbezuege_gehen_nach_freibetrag_zuschlag_und_pauschbetrag_in_den_gesamtbetrag() {
     let ohne = kette(&rentner(vec![]));
     let mut steuer = vec![ohne.festzusetzende_est.get()];
     for (euro, einkuenfte) in [(0, 0), (30_000, 28_611), (60_000, 58_611)] {
-        let mit = kette(&rentner(versorgung(euro)));
+        let mit = kette(&rentner(pensionaer(euro)));
         assert_eq!(
             mit.gesamtbetrag_der_einkuenfte.get() - ohne.gesamtbetrag_der_einkuenfte.get(),
             einkuenfte,
@@ -298,7 +307,7 @@ fn versorgungsbezuege_gehen_nach_freibetrag_zuschlag_und_pauschbetrag_in_den_ges
 fn das_alters_gate_gilt_auch_auf_der_rentner_scheibe() {
     let ohne = gdb(&rentner(vec![]));
     let altersgrenze = |alter: i64, gdb_grad: i64| {
-        let mut p = versorgung(30_000);
+        let mut p = pensionaer(30_000);
         p.push(("versorgung_art", json!("altersgrenze_sonstige")));
         p.push(("versorgung_alter_bei_beginn", json!(alter)));
         p.push(("rentner_grad_der_behinderung", json!(gdb_grad)));
@@ -318,11 +327,12 @@ fn das_alters_gate_gilt_auch_auf_der_rentner_scheibe() {
     );
 }
 
-/// Lohn und Versorgung addieren sich: 20.000 Euro Lohn (18.770) und 30.000 Euro Versorgung (28.611).
+/// Lohn und Versorgung zaehlen je einmal (Abweichung Nr. 50): der Lohn von 50.000 Euro (Nr. 3) enthaelt den Bezug von 30.000
+/// Euro (Nr. 8). Arbeitslohn 20.000 (18.770) plus Versorgung (28.611). Vor Nr. 50 addierten sich Lohn 20.000 und Bezug 30.000.
 #[test]
-fn lohn_und_versorgung_addieren_sich() {
+fn der_lohn_enthaelt_den_bezug_und_beide_zaehlen_je_einmal() {
     let ohne = gdb(&rentner(vec![]));
-    let mut p = lohn(20_000);
+    let mut p = lohn(50_000);
     p.extend(versorgung(30_000));
     assert_eq!(gdb(&rentner(p)) - ohne, 18_770 + 28_611);
 }

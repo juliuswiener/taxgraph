@@ -256,6 +256,16 @@ fn bezug_b(euro: i64) -> Paare {
     ]
 }
 
+/// Der Bruttoarbeitslohn (Nr. 3 der Lohnsteuerbescheinigung) enthaelt den Bezug (Abweichung Nr. 50): ein Bezug von `euro`
+/// braucht einen Lohn von mindestens `euro`, sonst sperrt der Bescheid mit `versorgung_ueber_lohn`.
+fn lohn_a(euro: i64) -> Paare {
+    vec![("bruttoarbeitslohn", json!(euro * 100))]
+}
+
+fn lohn_b(euro: i64) -> Paare {
+    vec![("bruttoarbeitslohn_partner", json!(euro * 100))]
+}
+
 /// KONTROLLE: ohne Bezug sperrt nichts, und es gibt eine bestaetigte Zahl.
 #[tokio::test]
 async fn kontrolle_ohne_bezug_sperrt_nichts() {
@@ -275,22 +285,27 @@ async fn kontrolle_bezug_null_sperrt_nichts() {
 }
 
 /// AK1, Rentner-Scheibe: der Bezug von Person A RECHNET (bestaetigte Zahl, hoeher als ohne Bezug) und sperrt die Abgabe; der
-/// Betrag bleibt in `nicht_deklariert`. Ohne die Kontrolle "rechnet" belegte das Rot nichts.
+/// Betrag steht seit Abweichung Nr. 50 in Zeile 11 und nicht mehr in `nicht_deklariert`. Ohne die Kontrolle "rechnet" belegte das
+/// Rot nichts.
 #[tokio::test]
 async fn person_a_rechnet_und_sperrt_auf_rentner_gesamt() {
     let ohne = bericht(&fall_mit("rentner_gesamt", &rentner(2_000_000, "zusammen")).await).await.2;
-    let p = mit(rentner(2_000_000, "zusammen"), bezug_a(30_000));
+    let p = mit(mit(rentner(2_000_000, "zusammen"), lohn_a(30_000)), bezug_a(30_000));
     let (offen, nicht, erg) = bericht(&fall_mit("rentner_gesamt", &p).await).await;
     assert_eq!(erg["grund"], json!("bestaetigt"), "der Bezug rechnet: {erg}");
     assert_ne!(erg["zahl_cent"], ohne["zahl_cent"], "der Bezug aendert die Zahl nicht: {erg}");
     assert_eq!(offen, [A], "unvollstaendig: {offen:?}");
-    assert!(nicht.contains(&A.to_owned()), "{nicht:?}");
+    assert!(!nicht.contains(&A.to_owned()), "der Betrag steht in Zeile 11, nicht in nicht_deklariert: {nicht:?}");
 }
 
 /// AK1, Scheibe `gesamt` (Arbeitnehmer mit Versorgung): nur Person A ist dort beantwortbar, und sie sperrt.
 #[tokio::test]
 async fn person_a_sperrt_auf_gesamt() {
-    let p = mit(gesamt_zusammen(), bezug_a(30_000));
+    // Der Kegel traegt `bruttoarbeitslohn` = 0; ein zweites Event auf dasselbe Feld waere ein Fehler, also ersetzt der Lohn
+    // des Bezugs den Eintrag.
+    let mut kegel = gesamt_zusammen();
+    kegel.retain(|(f, _)| *f != "bruttoarbeitslohn");
+    let p = mit(mit(kegel, lohn_a(30_000)), bezug_a(30_000));
     let (offen, _, erg) = bericht(&fall_mit("gesamt", &p).await).await;
     assert_eq!(erg["grund"], json!("bestaetigt"), "der Bezug rechnet: {erg}");
     assert_eq!(offen, [A], "unvollstaendig: {offen:?}");
@@ -299,11 +314,11 @@ async fn person_a_sperrt_auf_gesamt() {
 /// AK2: der Ehegatte sperrt bei bestaetigter Zusammenveranlagung, und sein Bezug rechnet (bestaetigte Zahl).
 #[tokio::test]
 async fn der_ehegatte_sperrt_bei_zusammenveranlagung() {
-    let p = mit(rentner(2_000_000, "zusammen"), bezug_b(30_000));
+    let p = mit(mit(rentner(2_000_000, "zusammen"), lohn_b(30_000)), bezug_b(30_000));
     let (offen, nicht, erg) = bericht(&fall_mit("rentner_gesamt", &p).await).await;
     assert_eq!(erg["grund"], json!("bestaetigt"), "der Bezug rechnet: {erg}");
     assert_eq!(offen, [B], "unvollstaendig: {offen:?}");
-    assert!(nicht.contains(&B.to_owned()), "{nicht:?}");
+    assert!(!nicht.contains(&B.to_owned()), "der Betrag steht in Zeile 11 der zweiten Anlage N: {nicht:?}");
 }
 
 /// AK2, Gegenprobe: bei Einzelveranlagung zaehlt der Bezug des Ehegatten im Bescheid nicht (gleiche Zahl mit und ohne), also
@@ -324,7 +339,7 @@ async fn der_ehegatte_sperrt_bei_einzelveranlagung_nicht() {
 #[tokio::test]
 async fn ein_vorlaeufiger_betrag_behaelt_den_alten_grund() {
     let rest: Paare = bezug_a(30_000).into_iter().filter(|(f, _)| *f != A).collect();
-    let d = fall_mit("rentner_gesamt", &mit(rentner(2_000_000, "zusammen"), rest)).await;
+    let d = fall_mit("rentner_gesamt", &mit(mit(rentner(2_000_000, "zusammen"), lohn_a(30_000)), rest)).await;
     vorlaeufig(&d, A, &json!(3_000_000)).await;
     let (status, dekl) = sende(&d, "GET", "/fall/vs/deklaration", None).await;
     assert_eq!(status, 200, "{dekl}");

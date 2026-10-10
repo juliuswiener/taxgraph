@@ -97,7 +97,7 @@ pub(super) const SCHEIBEN_AN_GESAMT_KEGEL: [&str; 33] = [
 
 /// `SCHEIBEN['gesamt']["felder"]` = `VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER + GESAMT_VERSORGUNG + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + PARTNER_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN + GESAMT_DBA + GESAMT_P23 + P23_SCREENING + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG + VERPFLEGUNG_EINZELREISE + AGB_TATBESTAND + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER + STEUERKLASSE_FELDER + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 369] = [
+pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 371] = [
     "vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand",
     "vv_sonstige_wk", "vv_entgelt_quote_prozent", "vv_wohnzwecke", "vv_auf_dauer",
     "veranlagung", "bruttoarbeitslohn", "ep_arbeitstage", "ep_entfernung_km",
@@ -192,6 +192,8 @@ pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 369] = [
     "stammdaten_vorname_partner", "stammdaten_geburtsdatum_partner", "kist_konfession_partner",
     // Nur in Rust (2026-10-09, Abweichung Nr. 49): der Ring-Wert zur zweiten Zeile "Sonstiges" der Anlage N (`mit_ring_werten`).
     "dba_abzug_zeile_cent",
+    // Nur in Rust (2026-10-10, Abweichung Nr. 50): die Ring-Werte zu den Zeilen 11 bis 13 der Anlage N, je Person (`mit_ring_werten`).
+    "versorgung_zeile", "versorgung_zeile_partner",
 ];
 
 /// `SCHEIBEN['gesamt']["kegel"]` = `VV_GESAMT_FELDER + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + AGB_TATBESTAND`
@@ -225,7 +227,7 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 /// Zusammenveranlagung). "Nein" verbirgt acht und zehn Felder dieser Liste; der Ring liest gespeicherte Werte wie bisher.
 /// Der Kegel bleibt bei 28.
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 283] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 285] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -300,6 +302,8 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 283] = [
     // Nur in Rust (2026-10-09, Abweichung Nr. 49): der Ring-Wert zur zweiten Zeile "Sonstiges" (der Guard haelt den Abzug hier
     // ab, aber `mit_ring_werten` laeuft vor dem Guard und die Bindung der Scheibe muss das Feld kennen).
     "dba_abzug_zeile_cent",
+    // Nur in Rust (2026-10-10, Abweichung Nr. 50): die Ring-Werte zu den Zeilen 11 bis 13 der Anlage N, je Person.
+    "versorgung_zeile", "versorgung_zeile_partner",
 ];
 
 /// `SCHEIBEN['rentner_gesamt']["kegel"]` = `RENTNER_KEGEL + AGB_TATBESTAND`

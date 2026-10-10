@@ -359,6 +359,8 @@ felder:
   - versorgung_bemessungsgrundlage_partner
   - versorgung_jahresrente
   - versorgung_jahresrente_partner
+  - versorgung_zeile
+  - versorgung_zeile_partner
   - vor_ag_anteil_rv
   - vor_ag_anteil_rv_partner
   - vor_an_anteil_rv
