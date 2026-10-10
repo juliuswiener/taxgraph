@@ -4,12 +4,9 @@
 //!
 //! Die Faelle hier brauchen `GET /fall/{id}/deklaration`, `POST /fall/{id}/einreichen` und
 //! `POST /fall/{id}/kontoauszug`. Alle drei sind portiert (`api/src/deklaration.rs`,
-//! `api/src/einreichen.rs`, `api/src/kontoauszug.rs`). Ein Test ist `#[ignore]`, solange der
-//! Handler den Defekt von Python teilt (`einreichen` liest `pflichtfelder_luecken` nicht). Das ist
-//! der Defekt, den der Python-Test pinnt; der Ignore-Text nennt ihn, damit das Rot nicht als „schon
-//! erledigt" gelesen wird. Die Tests von `deklaration` und `kontoauszug` laufen ohne `#[ignore]`.
-//!
-//! Rot sehen:  `cargo test -p api --test offene_defekte -- --ignored`
+//! `api/src/einreichen.rs`, `api/src/kontoauszug.rs`). Kein Test hier ist mehr `#[ignore]`: ein
+//! Test bekaeme das Attribut nur, solange der Handler einen Defekt von Python teilt, und der
+//! Ignore-Text muesste ihn nennen, damit das Rot nicht als „schon erledigt" gelesen wird.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -223,14 +220,16 @@ async fn kontrolle_das_einreichen_erreicht_den_fall() {
 }
 
 /// `test_pflichtfelder_luecken_ohne_leser.py::test_abgabegate_nennt_die_pflichtfeldluecke_selbst`:
-/// das Abgabe-Gate muss `pflichtfelder_luecken` befragen.
+/// das Abgabe-Gate nennt die Pflichtfeldluecke mit unserem Feldnamen, nicht als ERiC-Fremdmeldung.
 ///
 /// Der Fall ohne `bruttoarbeitslohn` bleibt `eingaben_konsistent` (die vorhandenen Angaben sind
-/// stimmig); `pflichtfelder_luecken` kennt die Luecke, `unvollstaendig` nicht. Weil `einreichen`
-/// in Python nur `eingaben_konsistent` liest (`api.py:731`), laeuft der Fall bis `ERiC` durch und
-/// der Nutzer bekommt eine Fremdmeldung statt unseres Feldnamens.
+/// stimmig); `pflichtfelder_luecken` kennt die Luecke, `unvollstaendig` nicht. Python liest in
+/// `einreichen` nur `eingaben_konsistent` (`api.py:731`) und laeuft bis `ERiC` durch. Rust erreicht
+/// das Ziel ueber das Abgabe-Gate des XML-Writers (Vault `backlog/archive/taxgraph/
+/// zwei-vollstaendigkeitsbegriffe-einer-davon-gelesen.md`, gebaut mit `0fb2c54`): 422
+/// `xml_nicht_baubar`, `detail` nennt genau die Luecke. Der Test pinnt diesen Vertrag, nicht
+/// Pythons 409 `deklaration_unvollstaendig` (nie gebaut, nicht noetig).
 #[tokio::test]
-#[ignore = "POST /einreichen (api/src/einreichen.rs) bildet Python ab und liest pflichtfelder_luecken nicht (elster::Deklaration hat den Accessor, kein Handler ruft ihn): heute 422 'xml_nicht_baubar' aus dem Abgabe-Gate des Writers, wie in Python. Erwartet 409 'deklaration_unvollstaendig' mit bruttoarbeitslohn. Python: test_pflichtfelder_luecken_ohne_leser.py::test_abgabegate_nennt_die_pflichtfeldluecke_selbst. Vault: tickets/zwei-vollstaendigkeitsbegriffe-einer-davon-gelesen.md. Rot sehen: --ignored"]
 async fn abgabegate_nennt_die_pflichtfeldluecke_selbst() {
     let d = dienst();
     let token = fall_anlegen(&d, "gate", "gesamt").await;
@@ -247,21 +246,16 @@ async fn abgabegate_nennt_die_pflichtfeldluecke_selbst() {
         Some("{}"),
     )
     .await;
-    assert_eq!(status, 409, "erwartet 409, erhalten {status}: {text}");
     assert_eq!(
-        json["grund"], "deklaration_unvollstaendig",
-        "der Grund muss die Pflichtfeldluecke nennen, nicht eine ERiC-Fremdmeldung: {json}"
+        (status, json["grund"].as_str()),
+        (422, Some("xml_nicht_baubar")),
+        "der Grund muss die Pflichtfeldluecke nennen, nicht eine ERiC-Fremdmeldung: {status} {text}"
     );
-    let luecken: Vec<&str> = json["unvollstaendig"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter_map(|e| e["feld_id"].as_str())
-        .collect();
-    assert_eq!(
-        luecken,
-        ["bruttoarbeitslohn"],
-        "der Grund muss genau die Luecke nennen, die pflichtfelder_luecken kennt: {json}"
+    assert!(
+        json["detail"]
+            .as_str()
+            .is_some_and(|d| d.contains("fehlend: ['bruttoarbeitslohn']")),
+        "das Detail muss genau die Luecke nennen, die pflichtfelder_luecken kennt: {json}"
     );
 }
 
