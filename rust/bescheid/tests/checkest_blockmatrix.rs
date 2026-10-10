@@ -661,6 +661,35 @@ fn ausland_staat_und_nr41_gegen_echtes_checkest() {
     eprintln!("{:<40} {}", "Ausland_Anrechnung", u.zeile());
     assert!(u.plausibel(), "Ausland_Anrechnung: nicht rc=0: {}", u.zeile());
 
+    // Abweichung Nr. 58: "Anderer Staat" mit dem Namen aus der Folgefrage `dba_staat_sonstiger`. Fuenf Namen, die ein Rohwert oder die
+    // XML-Ausgabe verfaelschen koennte: ein gewoehnlicher, einer mit Komma, mit Apostroph, mit Umlaut und mit Bindestrich.
+    // Kontrolle: ohne die Folgefrage baut der Abgabeweg kein XML.
+    let anderer_staat = |name: Option<&str>| -> Vec<(&'static str, Value)> {
+        let mut felder = ausland_felder(70_000);
+        felder.retain(|(f, _)| *f != "dba_staat");
+        felder.push(("dba_staat", json!("sonstiger_staat")));
+        if let Some(n) = name {
+            felder.push(("dba_staat_sonstiger", json!(n)));
+        }
+        felder
+    };
+    for name in ["Portugal", "Korea, Republik", "Cote d'Ivoire", "Äthiopien", "Papua-Neuguinea"] {
+        let xml = block_xml(&anderer_staat(Some(name)), &id)
+            .unwrap_or_else(|g| panic!("Anderer_Staat {name}: kein XML: {g}"));
+        let roh = format!("<{STAAT_KZ}>{name}</{STAAT_KZ}>");
+        assert!(
+            xml.contains(&roh) || xml.contains(&roh.replace('\'', "&apos;")),
+            "Anderer_Staat {name}: der Name steht nicht im XML"
+        );
+        let u = urteil(&xml, &id);
+        eprintln!("{:<40} {}", format!("Anderer_Staat {name}"), u.zeile());
+        assert!(u.plausibel(), "Anderer_Staat {name}: nicht rc=0: {}", u.zeile());
+    }
+    assert!(
+        block_xml(&anderer_staat(None), &id).is_err(),
+        "Anderer_Staat ohne Name: die Abgabe muss sperren, bevor ein XML entsteht"
+    );
+
     // Kontrollen: ohne die Paarung beanstandet ERiC die Akte, mit dem Text der Zeile. Aus der Anrechnung wird je Kontrolle ein
     // Kz-Satz entfernt.
     let (d, felder) = anrechnung_deklaration();

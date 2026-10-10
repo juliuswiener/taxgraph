@@ -96,6 +96,12 @@ const DBA_ABZUG_SPERRE: &str = "Abzug der ausländischen Steuer gewählt: In dei
 pub(crate) const DBA_STAAT: &str = "dba_staat";
 const DBA_EINKUENFTE: &str = "dba_auslaendische_einkuenfte";
 
+/// Nur Rust (Abweichung Nr. 58): die Folgefrage zu `sonstiger_staat`. Ihr Wert ist selbst der Listentext (182 Eintraege der
+/// Laenderliste, die 15 benannten stehen bei [`DBA_STAAT`]); [`Bau::dba_staat`] schreibt ihn nach [`STAAT_KZ`], wenn der Wert
+/// in den `enum_werte` der Bindung steht. Die Gegenprobe gegen die Liste des Schemas steht in `bescheid/tests/dba_staat_kz.rs`.
+pub(crate) const DBA_STAAT_SONSTIGER: &str = "dba_staat_sonstiger";
+const SONSTIGER_STAAT: &str = "sonstiger_staat";
+
 /// Das Kz "aus dem Staat / Spezial-Investmentfonds" (Anlage AUS, `Staat_Spez_InvFonds/E0600301`). Der Typ ist Klartext aus der
 /// Laenderliste des Schemas (197 Eintraege, nur in der Dokumentation, keine Aufzaehlung). `checkESt` prueft den Text nicht
 /// (26 Texte gemessen, alle rc=0): die Gegenprobe gegen die Liste steht in `bescheid/tests/dba_staat_kz.rs`.
@@ -168,9 +174,13 @@ const DBA_STAAT_LISTENTEXT: &[(&str, &str)] = &[
     ("Kanada", "Kanada"),
 ];
 
-/// Der Grund der Abgabe-Sperre bei Auslandseinkuenften ohne benennbaren Staat: `sonstiger_staat`, ein fehlender oder ein
-/// unbekannter Wert. Die Erklaerung braucht den Namen aus der amtlichen Laenderliste; ohne ihn lehnt `checkESt` die Akte ab.
-const STAAT_SPERRE: &str = "Auslandseinkünfte ohne Staat: Die Erklärung braucht den Staat, aus dem die Einkünfte stammen, mit seinem Namen aus der amtlichen Länderliste. Für „sonstiger Staat“ und für eine fehlende oder unbekannte Angabe gibt es diesen Namen noch nicht. Die Abgabe ist deshalb gesperrt. Wähle den Staat in der Liste, wenn er dort steht, oder trage die Anlage AUS im amtlichen Formular selbst ein.";
+/// Der Grund der Abgabe-Sperre bei Auslandseinkuenften ohne benennbaren Staat: ein fehlender oder ein unbekannter Wert von
+/// `dba_staat`. Die Erklaerung braucht den Namen aus der amtlichen Laenderliste; ohne ihn lehnt `checkESt` die Akte ab.
+const STAAT_SPERRE: &str = "Auslandseinkünfte ohne Staat: Die Erklärung braucht den Staat, aus dem die Einkünfte stammen, mit seinem Namen aus der amtlichen Länderliste. Für eine fehlende oder unbekannte Angabe gibt es diesen Namen nicht. Die Abgabe ist deshalb gesperrt. Wähle den Staat in der Liste, oder wähle „Anderer Staat“ und nenne ihn bei der Folgefrage.";
+
+/// Der Grund der Abgabe-Sperre bei `sonstiger_staat` ohne gueltige Folgefrage (Abweichung Nr. 58): die Erklaerung braucht den Namen des
+/// Staates, und nur der Nutzer kennt ihn. Das Feld der Sperre ist die Folgefrage, nicht `dba_staat`: dort steht die Antwort schon.
+const STAAT_SONSTIGER_SPERRE: &str = "Auslandseinkünfte aus „Anderer Staat“: Die Erklärung braucht den Namen des Staates aus der amtlichen Länderliste. Die Abgabe ist deshalb gesperrt, bis du ihn nennst. Beantworte die Frage, aus welchem Staat die Einkünfte stammen. Steht der Staat nicht in der Liste, trage die Anlage AUS im amtlichen Formular selbst ein.";
 
 /// Der Grund der Abgabe-Sperre bei auslaendischer Steuer (Anrechnung oder Abzug) ohne Einkuenfte aus dem Staat: die Anlage AUS
 /// verlangt zur Steuer die Einkuenfte, auch mit dem Wert 0; `checkESt` lehnt die Akte sonst mit rc=610001002 ab.
@@ -820,18 +830,47 @@ impl Bau<'_> {
             return;
         }
         let text = staat.and_then(|s| match &s.wert {
-            PyWert::Text(t) => suche(DBA_STAAT_LISTENTEXT, t),
+            PyWert::Text(t) => suche(DBA_STAAT_LISTENTEXT, t)
+                .map(str::to_owned)
+                .or_else(|| self.sonstiger_staat_text(t)),
             _ => None,
         });
         if let Some(text) = text {
             self.deklaration
-                .insert(STAAT_KZ.to_owned(), Value::String(text.to_owned()));
+                .insert(STAAT_KZ.to_owned(), Value::String(text));
+        } else if self.staat_ist_sonstiger() {
+            // Eine vorlaeufige Folgefrage hat ihren Eintrag schon aus `Bau::feld`; sonst fehlt sie oder steht nicht in der Liste.
+            if snapshot.get(DBA_STAAT_SONSTIGER).is_none_or(|f| f.zustand == Zustand::Bestaetigt) {
+                self.nicht(DBA_STAAT, "Staat ohne Listentext: sonstiger Staat ohne gueltigen Namen aus der Folgefrage");
+                self.offen(DBA_STAAT_SONSTIGER, STAAT_SONSTIGER_SPERRE);
+            }
         } else {
             if staat.is_some() {
-                self.nicht(DBA_STAAT, "Staat ohne Listentext: sonstiger Staat oder unbekannte Angabe");
+                self.nicht(DBA_STAAT, "Staat ohne Listentext: unbekannte Angabe");
             }
             self.offen(DBA_STAAT, STAAT_SPERRE);
         }
+    }
+
+    /// Steht `dba_staat` bestaetigt auf `sonstiger_staat`? Nur dann zaehlt die Folgefrage [`DBA_STAAT_SONSTIGER`].
+    fn staat_ist_sonstiger(&self) -> bool {
+        self.snapshot.get(DBA_STAAT).is_some_and(|s| {
+            s.zustand == Zustand::Bestaetigt && matches!(&s.wert, PyWert::Text(t) if t == SONSTIGER_STAAT)
+        })
+    }
+
+    /// Der Listentext aus der Folgefrage, wenn `staatwert` `sonstiger_staat` ist: bestaetigt, ein Text und einer der `enum_werte`
+    /// der Bindung. Jeder andere Wert (fehlt, vorlaeufig, kein Text, nicht in der Liste) liefert `None` und sperrt.
+    fn sonstiger_staat_text(&self, staatwert: &str) -> Option<String> {
+        if staatwert != SONSTIGER_STAAT {
+            return None;
+        }
+        let folge = self.snapshot.get(DBA_STAAT_SONSTIGER)?;
+        let PyWert::Text(t) = &folge.wert else {
+            return None;
+        };
+        let erlaubt = self.bindung.get(DBA_STAAT_SONSTIGER)?.enum_werte.as_ref()?;
+        (folge.zustand == Zustand::Bestaetigt && erlaubt.contains(t)).then(|| t.clone())
     }
 
     /// `_deklariere_instanz` (`est_mapping.py:590-632`).
@@ -1069,8 +1108,8 @@ impl Bau<'_> {
                     hinweis: Some(cfg.hinweis_unbekannt.to_owned()),
                 }),
             }
-        } else if feld_id == DBA_STAAT {
-            // Abweichung Nr. 51: der Staat steht nach der Feldschleife (`Bau::dba_staat`), nicht hier.
+        } else if feld_id == DBA_STAAT || feld_id == DBA_STAAT_SONSTIGER {
+            // Abweichung Nr. 51 und Nr. 58: der Staat steht nach der Feldschleife (`Bau::dba_staat`), nicht hier.
         } else if feld_id == "stammdaten_iban" {
             self.iban(feld_id, wert);
         } else if let (SCHULGELD_ANTEIL, Some(kz)) = (feld_id, kz_von(b)) {
@@ -2247,7 +2286,9 @@ mod tests {
     /// unbekannter Wert schreiben nichts und sperren (`dba_staat`); Steuer ohne Einkuenfte sperrt (`dba_gezahlte_auslaendische_steuer`);
     /// ein Staat ohne Einkuenfte und ohne Steuer steht nicht und sperrt nicht. Das Regal fuehrt das Literal mit diesem Test.
     /// Die ganze Akte und die Gegenprobe gegen die Laenderliste des Schemas stehen in `bescheid/tests/dba_staat_kz.rs`.
+    /// Abweichung Nr. 58 haengt die Folgefrage `dba_staat_sonstiger` (Name zu `sonstiger_staat`) an dieselbe Tabelle.
     #[test]
+    #[allow(clippy::too_many_lines, reason = "eine Fall-Tabelle mit der Zeile je Eingabe, geteilt wuerde die Setup-Zeilen doppeln")]
     fn der_staat_steht_als_listentext_in_e0600301_genau_mit_den_einkuenften() {
         let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
@@ -2268,23 +2309,42 @@ mod tests {
             }
             .into(),
         };
-        // (Staat, Einkuenfte vorhanden, Steuer vorhanden) -> (Text unter E0600301, Sperre zum Staat, Sperre zur Steuer)
+        // (Staat, Folgefrage, Einkuenfte vorhanden, Steuer vorhanden)
+        //   -> (Text unter E0600301, Feld der Sperre zum Staat, Sperre zur Steuer)
+        // Die Folgefrage (Abweichung Nr. 58) zaehlt nur bei bestaetigtem `sonstiger_staat`; ihr Wert muss in ihren `enum_werte` stehen.
         let faelle = [
-            (Some("Frankreich"), true, false, Some("Frankreich"), false, false),
-            (Some("Oesterreich"), true, false, Some("Österreich"), false, false),
-            (Some("Tschechien"), true, true, Some("Tschechische Republik"), false, false),
-            (Some("Grossbritannien"), true, false, Some("Vereinigtes Königreich"), false, false),
-            (Some("sonstiger_staat"), true, false, None, true, false),
-            (Some("Atlantis"), true, false, None, true, false),
-            (None, true, false, None, true, false),
-            (Some("Frankreich"), false, false, None, false, false),
-            (Some("Frankreich"), false, true, None, false, true),
-            (None, false, true, None, false, true),
+            (Some("Frankreich"), None, true, false, Some("Frankreich"), None, false),
+            (Some("Oesterreich"), None, true, false, Some("Österreich"), None, false),
+            (Some("Tschechien"), None, true, true, Some("Tschechische Republik"), None, false),
+            (Some("Grossbritannien"), None, true, false, Some("Vereinigtes Königreich"), None, false),
+            (Some("sonstiger_staat"), None, true, false, None, Some("dba_staat_sonstiger"), false),
+            (Some("sonstiger_staat"), Some("Portugal"), true, false, Some("Portugal"), None, false),
+            (Some("sonstiger_staat"), Some("Korea, Republik"), true, true, Some("Korea, Republik"), None, false),
+            (Some("sonstiger_staat"), Some("Cote d'Ivoire"), true, false, Some("Cote d'Ivoire"), None, false),
+            (Some("sonstiger_staat"), Some("Atlantis"), true, false, None, Some("dba_staat_sonstiger"), false),
+            // Ein benannter Staat steht nicht in der Folgefrage (die 15 bleiben bei `dba_staat`): der Wert wird abgelehnt.
+            (Some("sonstiger_staat"), Some("Frankreich"), true, false, None, Some("dba_staat_sonstiger"), false),
+            (Some("sonstiger_staat"), Some("portugal"), true, false, None, Some("dba_staat_sonstiger"), false),
+            // Sonstiger Staat ohne Einkuenfte: nichts zu erklaeren, der Staat steht nicht und sperrt nicht.
+            (Some("sonstiger_staat"), Some("Portugal"), false, false, None, None, false),
+            (Some("sonstiger_staat"), None, false, true, None, None, true),
+            // Eine Antwort, die ein spaeter gewaehlter benannter Staat ueberholt hat, aendert nichts.
+            (Some("Frankreich"), Some("Portugal"), true, false, Some("Frankreich"), None, false),
+            (Some("Atlantis"), Some("Portugal"), true, false, None, Some("dba_staat"), false),
+            (None, Some("Portugal"), true, false, None, Some("dba_staat"), false),
+            (Some("Atlantis"), None, true, false, None, Some("dba_staat"), false),
+            (None, None, true, false, None, Some("dba_staat"), false),
+            (Some("Frankreich"), None, false, false, None, None, false),
+            (Some("Frankreich"), None, false, true, None, None, true),
+            (None, None, false, true, None, None, true),
         ];
-        for (staat, einkuenfte, steuer, text, sperre_staat, sperre_steuer) in faelle {
+        for (staat, folge, einkuenfte, steuer, text, sperre_staat, sperre_steuer) in faelle {
             let mut felder = Felder::new();
             if let Some(s) = staat {
                 felder.insert("dba_staat".to_owned(), feld(json!(s)));
+            }
+            if let Some(f) = folge {
+                felder.insert("dba_staat_sonstiger".to_owned(), feld(json!(f)));
             }
             if einkuenfte {
                 felder.insert("dba_auslaendische_einkuenfte".to_owned(), feld(json!(500_000)));
@@ -2293,7 +2353,7 @@ mod tests {
                 felder.insert("dba_gezahlte_auslaendische_steuer".to_owned(), feld(json!(70_000)));
             }
             let d = deklariere(&felder, &index, 2025, None).unwrap();
-            let name = format!("{staat:?}, Einkünfte {einkuenfte}, Steuer {steuer}");
+            let name = format!("{staat:?}, Folgefrage {folge:?}, Einkünfte {einkuenfte}, Steuer {steuer}");
             assert_eq!(
                 d.deklaration.get("E0600301"),
                 text.map(|t| json!(t)).as_ref(),
@@ -2303,7 +2363,16 @@ mod tests {
             // Ein geschriebener Staat steht NICHT in `nicht_deklariert`, ein beantworteter, aber nicht geschriebener schon.
             let in_nicht = d.nicht_deklariert.iter().any(|e| e.feld_id == "dba_staat");
             assert_eq!(in_nicht, staat.is_some() && text.is_none(), "{name}: nicht_deklariert");
-            assert_eq!(sperre("dba_staat"), sperre_staat, "{name}: Sperre zum Staat");
+            // Die Folgefrage ist Quelle von `E0600301` oder ueberholt; ein Eintrag steht nie bei ihr, sondern bei `dba_staat`.
+            let folge_in_nicht = d.nicht_deklariert.iter().any(|e| e.feld_id == "dba_staat_sonstiger");
+            assert!(!folge_in_nicht, "{name}: die Folgefrage steht in nicht_deklariert");
+            for feld_der_sperre in ["dba_staat", "dba_staat_sonstiger"] {
+                assert_eq!(
+                    sperre(feld_der_sperre),
+                    sperre_staat == Some(feld_der_sperre),
+                    "{name}: Sperre zu {feld_der_sperre}"
+                );
+            }
             assert_eq!(sperre("dba_gezahlte_auslaendische_steuer"), sperre_steuer, "{name}: Sperre zur Steuer");
         }
         // Ein vorlaeufiger Staat steht nicht im Kz: der Eintrag "Pflicht-Bestaetigung fehlt" kommt aus `feld`, genau einmal.
@@ -2320,6 +2389,33 @@ mod tests {
             d.unvollstaendig().iter().filter(|e| e.feld_id == "dba_staat").map(|e| e.grund.as_str()).collect();
         assert_eq!(gruende.len(), 1, "{gruende:?}");
         assert!(gruende[0].contains("Bestätigung"), "{gruende:?}");
+
+        // Abweichung Nr. 58: eine vorlaeufige Folgefrage steht nicht im Kz und sperrt genau einmal (der Eintrag aus `feld`, bei
+        // `sonstiger_staat` kein zweiter aus `dba_staat`). Das gilt auch bei einem benannten Staat: wie jedes vorlaeufige Feld sperrt sie
+        // (Eigenschaft `vorlaeufig_deklariert_nie`), obwohl die Oberflaeche sie dann nicht mehr fragt. ponytail: eine ueberholte
+        // vorlaeufige Folgefrage bleibt gesperrt, bis der Nutzer erneut "Anderer Staat" waehlt oder sie bestaetigt; selten, fail-closed.
+        for (staat, sperrt) in [("sonstiger_staat", true), ("Frankreich", true)] {
+            let folge_vorlaeufig = Felder::from([
+                ("dba_staat".to_owned(), feld(json!(staat))),
+                (
+                    "dba_staat_sonstiger".to_owned(),
+                    SnapshotFeld { zustand: Zustand::Vorlaeufig, ..feld(json!("Portugal")) },
+                ),
+                ("dba_auslaendische_einkuenfte".to_owned(), feld(json!(500_000))),
+            ]);
+            let d = deklariere(&folge_vorlaeufig, &index, 2025, None).unwrap();
+            assert_ne!(d.deklaration.get("E0600301"), Some(&json!("Portugal")), "{staat}: vorläufiger Name steht im Kz");
+            let gruende: Vec<&str> = d
+                .unvollstaendig()
+                .iter()
+                .filter(|e| e.feld_id == "dba_staat_sonstiger")
+                .map(|e| e.grund.as_str())
+                .collect();
+            assert_eq!(gruende.len(), usize::from(sperrt), "{staat}: {gruende:?}");
+            if sperrt {
+                assert!(gruende[0].contains("Bestätigung"), "{gruende:?}");
+            }
+        }
     }
 
     /// Abweichung Nr. 49: der Ring-Wert `dba_abzug_zeile_cent` steht als ZWEITE Zeile "Sonstiges" in der Gruppe `weitere_wk`,

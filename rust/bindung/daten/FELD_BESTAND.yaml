@@ -64,6 +64,7 @@ felder:
   - dba_mehrere_staaten
   - dba_methode
   - dba_staat
+  - dba_staat_sonstiger
   - dhf_begruendet_am
   - dhf_beruflich_veranlasst
   - dhf_beschaeftigungsort

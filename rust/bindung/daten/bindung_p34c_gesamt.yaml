@@ -27,7 +27,47 @@ bindungen:
     beispielwert: Frankreich
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Anlage AUS Zeile „1. Staat“ (E0600301): kein Bindungs-Kz, weil das Schema Klartext aus seiner Länderliste verlangt, nicht den Bindungswert. rust/elster/src/deklaration.rs (dba_staat, Abweichung Nr. 51) schreibt den Listentext aus einer eigenen Tabelle, nur zusammen mit den Einkünften E0601401; sonstiger_staat, eine fehlende oder unbekannte Angabe sperren die Abgabe. Single-Country Stufe-1; multi-country (>1 Staat) sperrt dba_multi_country_offen."
+    elster_kz_grund: "Anlage AUS Zeile „1. Staat“ (E0600301): kein Bindungs-Kz, weil das Schema Klartext aus seiner Länderliste verlangt, nicht den Bindungswert. rust/elster/src/deklaration.rs (dba_staat, Abweichung Nr. 51) schreibt den Listentext aus einer eigenen Tabelle, nur zusammen mit den Einkünften E0601401; bei sonstiger_staat steht der Name aus der Folgefrage dba_staat_sonstiger (Abweichung Nr. 58), fehlt er oder ist er keiner der 182 Namen, sperrt die Abgabe; eine fehlende oder unbekannte Angabe sperrt ebenso. Single-Country Stufe-1; multi-country (>1 Staat) sperrt dba_multi_country_offen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34c Abs. 1 S. 1 EStG"
+      zitatanker: "die Einkünfte aus diesem Staat entfällt"
+      datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+  - feld_id: dba_staat_sonstiger
+    quelle: {regel_id: p34c_1_anrechnung_hoechstbetrag, signatur_slot: staat_listentext}
+    # Folgefrage zu "sonstiger_staat" (Abweichung Nr. 58). Sie haengt an `feld_bedingung`, nicht an `geltungsbedingung`: ein Gate
+    # waere sie nicht, und die Reihenfolge der Fragen bliebe so unberuehrt. Unbeantwortetes `dba_staat` laesst sie stehen
+    # (fail-closed, wie bei den uebrigen Folgefragen); ein bestaetigter benannter Staat streicht sie.
+    feld_bedingung: {feld: dba_staat, wert: "sonstiger_staat", grund: "Die Frage nach dem Namen des Staates gilt nur, wenn der Staat oben nicht in der kurzen Liste stand. Wer einen benannten Staat gewählt hat, nennt ihn schon, und die Folgefrage verlängerte nur das Interview."}
+    typ: enum
+    einheit: null
+    enum_werte: ["Afghanistan", "Ägypten", "Albanien", "Algerien", "Andorra", "Angola", "Antigua und Barbuda", "Äquatorialguinea", "Argentinien",
+                 "Armenien", "Aserbaidschan", "Äthiopien", "Australien", "Bahamas", "Bahrain", "Bangladesch", "Barbados", "Belgien", "Belize",
+                 "Benin", "Bhutan", "Bolivien", "Bosnien und Herzegowina", "Botsuana", "Brasilien", "Brunei Darussalam", "Bulgarien", "Burkina Faso",
+                 "Burundi", "Chile", "China", "Cookinseln", "Costa Rica", "Cote d'Ivoire", "Dominica", "Dominikanische Republik", "Dschibuti",
+                 "Ecuador", "El Salvador", "Eritrea", "Estland", "Eswatini", "Fidschi", "Finnland", "Gabun", "Gambia", "Georgien", "Ghana",
+                 "Grenada", "Griechenland", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Indien", "Indonesien", "Irak",
+                 "Iran", "Irland", "Island", "Israel", "Jamaika", "Japan", "Jemen", "Jordanien", "Kambodscha", "Kamerun", "Kap Verde", "Kasachstan",
+                 "Katar", "Kenia", "Kirgisistan", "Kiribati", "Kolumbien", "Komoren", "Kongo", "Kongo, Demokratische Republik",
+                 "Korea, Demokratische Volksrepublik", "Korea, Republik", "Kosovo", "Kroatien", "Kuba", "Kuwait", "Laos", "Lesotho", "Lettland",
+                 "Libanon", "Liberia", "Libyen", "Liechtenstein", "Litauen", "Madagaskar", "Malawi", "Malaysia", "Malediven", "Mali", "Malta",
+                 "Marokko", "Marshallinseln", "Mauretanien", "Mauritius", "Mexiko", "Föderierte Staaten von Mikronesien", "Moldau", "Monaco",
+                 "Mongolei", "Montenegro", "Mosambik", "Myanmar", "Namibia", "Nauru", "Nepal", "Neuseeland", "Nicaragua", "Niger", "Nigeria", "Niue",
+                 "Nordmazedonien", "Norwegen", "Oman", "Pakistan", "Palau", "Panama", "Papua-Neuguinea", "Paraguay", "Peru", "Philippinen",
+                 "Portugal", "Ruanda", "Rumänien", "Russische Föderation", "Salomonen", "Sambia", "Samoa", "San Marino", "Sao Tome und Principe",
+                 "Saudi-Arabien", "Schweden", "Senegal", "Serbien", "Seychellen", "Sierra Leone", "Simbabwe", "Singapur", "Slowakei", "Slowenien",
+                 "Somalia", "Sri Lanka", "St. Kitts und Nevis", "St. Lucia", "St. Vincent und die Grenadinen", "Südafrika", "Sudan", "Südsudan",
+                 "Surinam", "Syrien", "Tadschikistan", "Tansania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad und Tobago", "Tschad",
+                 "Tunesien", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "Ungarn", "Uruguay", "Usbekistan", "Vanuatu", "Vatikanstadt",
+                 "Venezuela", "Vereinigte Arabische Emirate", "Vietnam", "Weißrussland", "Zentralafrikanische Republik", "Zypern"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Aus welchem Staat stammen die Einkünfte?"
+    hilfe_kurz: "Die Liste ist die amtliche Länderliste der Steuererklärung. Wähle den Staat, aus dem du die Einkünfte hattest. Er steht so in der Erklärung. Steht dein Staat nicht in der Liste, trage die Anlage AUS im amtlichen Formular selbst ein."
+    beispielwert: Portugal
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage AUS Zeile „1. Staat“ (E0600301): kein Bindungs-Kz, wie bei dba_staat. Der Wert ist der Listentext der amtlichen Länderliste (197 Einträge im Schema E10-2025, derselbe Typ wie für die 15 benannten Staaten von dba_staat; 182 davon stehen hier, die 15 benannten bleiben bei dba_staat). rust/elster/src/deklaration.rs (dba_staat, Abweichung Nr. 58) schreibt ihn nach E0600301, nur zusammen mit den Einkünften E0601401 und nur, wenn dba_staat sonstiger_staat ist. Die Berechnung liest dieses Feld nicht."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 34c Abs. 1 S. 1 EStG"

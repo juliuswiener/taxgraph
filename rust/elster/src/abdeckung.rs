@@ -29,7 +29,8 @@ use domain::{Achsenwert, Herkunft, PruefTiefe, Zustand};
 use store::SnapshotFeld;
 
 use crate::deklaration::{
-    DBA_STAAT, P23_ARTFELDER, P23_RECHENFELDER, STAAT_KZ, UNFALLKOSTEN, UNFALLKOSTEN_ZIEL_KZ,
+    DBA_STAAT, DBA_STAAT_SONSTIGER, P23_ARTFELDER, P23_RECHENFELDER, STAAT_KZ, UNFALLKOSTEN,
+    UNFALLKOSTEN_ZIEL_KZ,
 };
 use crate::kz_wache::{abtasten_mit, modul_dateien, rs_dateien};
 use crate::tabellen::{
@@ -117,6 +118,8 @@ fn transform_quellen() -> BTreeSet<&'static str> {
     q.insert(UNFALLKOSTEN);
     // Abweichung Nr. 51: der Staat ist Quelle von `STAAT_KZ` (Listentext aus `DBA_STAAT_LISTENTEXT`), das Feld hat kein Bindungs-Kz.
     q.insert(DBA_STAAT);
+    // Abweichung Nr. 58: die Folgefrage zu `sonstiger_staat` ist selbst der Listentext von `STAAT_KZ`.
+    q.insert(DBA_STAAT_SONSTIGER);
     q
 }
 
