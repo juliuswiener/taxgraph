@@ -53,7 +53,7 @@ fn geocode_anfrage_wie_python() {
         assert_eq!(a.kopfzeilen_vergleichbar(), vec!["accept-encoding: identity", "connection: close"]);
         assert_eq!(a.kopfzeile("Host"), Some(format!("127.0.0.1:{}", stub.port)));
         assert_eq!(a.kopfzeile("User-Agent").as_deref(), Some("taxgraph"));
-        assert!(a.koerper.is_empty());
+        assert_eq!(a.koerper.len(), 0);
     }
 }
 

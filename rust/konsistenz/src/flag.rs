@@ -490,7 +490,7 @@ mod aequivalenz {
     fn d3_d10_predikat() {
         assert_eq!(d3_d10(&json!(u64::MAX)), ["D3"]);
         assert_eq!(d3_d10(&json!(1500.0)), ["D10"]);
-        assert!(d3_d10(&json!(1500)).is_empty());
+        assert_eq!(d3_d10(&json!(1500)).len(), 0);
         assert_eq!(betrag_text(&py(&json!(0.5))), Some("0.5".to_owned()));
         assert_eq!(betrag_text(&py(&json!(true))), Some("True".to_owned()));
         assert_eq!(betrag_text(&py(&json!(null))), None);

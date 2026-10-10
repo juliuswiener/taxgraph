@@ -206,13 +206,13 @@ fn die_ratsche_erkennt_ihre_eigenen_fehlerfaelle() {
         ("b".to_string(), menge(&[2025, 2026])),
     ]);
     // Gleich: nichts zu melden, die Reihenfolge der Jahre zaehlt nicht.
-    assert!(geaenderte(&bestand, &ist).is_empty());
+    assert_eq!(geaenderte(&bestand, &ist).len(), 0);
     let umsortiert = BTreeMap::from([
         ("a".to_string(), menge(&[2026, 2024, 2025])),
         ("b".to_string(), menge(&[2026, 2025])),
     ]);
-    assert!(geaenderte(&bestand, &umsortiert).is_empty());
-    assert!(tote_eintraege(&bestand, &ist).is_empty());
+    assert_eq!(geaenderte(&bestand, &umsortiert).len(), 0);
+    assert_eq!(tote_eintraege(&bestand, &ist).len(), 0);
 
     // Enger: a verliert 2024. Weiter: b bekommt 2024. Anders: a tauscht 2024 gegen 2027. Jedes wird gemeldet.
     for (heute, endung) in [
@@ -259,7 +259,7 @@ fn die_ratsche_erkennt_ihre_eigenen_fehlerfaelle() {
     mit_eintrag
         .abweichend
         .insert("c".to_string(), abw(&[2026], &"x".repeat(40)));
-    assert!(geaenderte(&mit_eintrag, &neu).is_empty());
+    assert_eq!(geaenderte(&mit_eintrag, &neu).len(), 0);
     // Der Eintrag gilt genau: ein Feld mit anderen Jahren als im Eintrag ist rot.
     let falsch = BTreeMap::from([
         ("a".to_string(), menge(&[2024, 2025, 2026])),

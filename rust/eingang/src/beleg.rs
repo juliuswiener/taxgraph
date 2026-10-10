@@ -292,7 +292,7 @@ mod tests {
                 Anker::Label(_) => None,
             })
             .collect();
-        assert!(!nummern.is_empty());
+        assert_ne!(nummern.len(), 0);
         let im_cache = || {
             let cache = NR_MUSTER.lock().unwrap();
             nummern

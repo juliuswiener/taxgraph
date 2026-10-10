@@ -1789,7 +1789,7 @@ mod tests {
                 "{fehler:?}"
             );
         }
-        assert!(store.events().is_empty());
+        assert_eq!(store.events().len(), 0);
     }
 
     /// Entscheidung leerer-zeitstempel-heisst-fehlt-und-wird-die-jetzt-zeit: ein leerer `ts` heisst "fehlt"

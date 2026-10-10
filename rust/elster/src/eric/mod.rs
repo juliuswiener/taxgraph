@@ -388,7 +388,7 @@ mod tests {
     fn zeilen_wie_readlines() {
         assert_eq!(zeilen_wie_python("a\r\nb\rc\nd"), ["a", "b", "c", "d"]);
         assert_eq!(zeilen_wie_python("a\n\n"), ["a", ""]);
-        assert!(zeilen_wie_python("").is_empty());
+        assert_eq!(zeilen_wie_python("").len(), 0);
     }
 
     #[test]

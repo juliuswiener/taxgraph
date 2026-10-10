@@ -1157,7 +1157,7 @@ fn aufzeichnungen_vergleichen_zahl_pfad_kopf_und_body() {
         ungeplant: false,
     };
     let a = [g("/ors/geocode/search?text=x", "")];
-    assert!(vergleiche_aufzeichnungen(&a, &a.clone()).is_empty());
+    assert_eq!(vergleiche_aufzeichnungen(&a, &a.clone()).len(), 0);
     assert_eq!(vergleiche_aufzeichnungen(&a, &[]).len(), 1, "Zahl");
     let pfad = [g("/ors/geocode/search?text=y", "")];
     assert!(vergleiche_aufzeichnungen(&a, &pfad)[0].contains("pfad"));

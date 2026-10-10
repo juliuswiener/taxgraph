@@ -164,7 +164,7 @@ fn der_pruefer_sieht_ein_kz_das_im_jahr_fehlt() {
             vz_gueltigkeit: jahre.to_vec(),
         }]
     };
-    assert!(nicht_genau_einmal(&kz(&[2025])).is_empty());
+    assert_eq!(nicht_genau_einmal(&kz(&[2025])).len(), 0);
     let fehlt = nicht_genau_einmal(&kz(&[2024, 2025]));
     assert_eq!(fehlt.len(), 1, "{fehlt:?}");
     assert!(
@@ -172,5 +172,5 @@ fn der_pruefer_sieht_ein_kz_das_im_jahr_fehlt() {
         "{fehlt:?}"
     );
     // Ein Jahr ohne lokales Schema (2026) zaehlt nicht als Fehler dieses Tests: die Ratsche haelt es.
-    assert!(nicht_genau_einmal(&kz(&[2025, 2026])).is_empty());
+    assert_eq!(nicht_genau_einmal(&kz(&[2025, 2026])).len(), 0);
 }

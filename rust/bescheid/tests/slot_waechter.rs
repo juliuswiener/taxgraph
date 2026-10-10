@@ -391,5 +391,5 @@ fn die_traeger_pruefung_meldet_einen_fehlenden_slot() {
     assert_eq!(fehler.len(), 1, "{fehler:?}");
     assert!(fehler[0].contains("\"b\""), "{fehler:?}");
     let ok: BTreeSet<String> = ["a"].iter().map(|s| (*s).to_owned()).collect();
-    assert!(fehlende_traeger("test", &ok, &t).is_empty());
+    assert_eq!(fehlende_traeger("test", &ok, &t).len(), 0);
 }

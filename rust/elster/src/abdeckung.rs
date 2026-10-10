@@ -732,7 +732,7 @@ fn der_naehe_pruefer_findet_tippfehler_und_veraltete_ausnahmen() {
     let (v, alt) = tippfehler_naehe(&literale, &ids, &[]);
     assert_eq!(v.len(), 2, "{v:?}");
     assert!(v[0].contains("kind_vornam") && v[1].contains("veranlagng"), "{v:?}");
-    assert!(alt.is_empty());
+    assert_eq!(alt.len(), 0);
     let (v, alt) = tippfehler_naehe(
         &literale,
         &ids,

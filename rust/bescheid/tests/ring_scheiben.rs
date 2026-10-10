@@ -250,9 +250,9 @@ fn die_paarregel_findet_einen_abzug_ohne_kuerzung() {
         paare_ohne_kuerzung(&menge(&["E0205302", "E0100401"])),
         [(vec!["E0205302"], "E0205508")]
     );
-    assert!(paare_ohne_kuerzung(&menge(&["E0205409", "E0205508"])).is_empty());
-    assert!(paare_ohne_kuerzung(&menge(&["E0100401"])).is_empty());
-    assert!(paare_ohne_kuerzung(&BTreeSet::new()).is_empty());
+    assert_eq!(paare_ohne_kuerzung(&menge(&["E0205409", "E0205508"])).len(), 0);
+    assert_eq!(paare_ohne_kuerzung(&menge(&["E0100401"])).len(), 0);
+    assert_eq!(paare_ohne_kuerzung(&BTreeSet::new()).len(), 0);
 }
 
 /// Der berechnete Wert kommt an, nicht nur die Bindung: Ring rechnet die Kuerzung (10 Tage, 5 Fruehstuecke,

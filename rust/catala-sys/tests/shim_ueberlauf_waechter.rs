@@ -222,9 +222,9 @@ fn waechter_schlaegt_an_wenn_ein_echter_aufruf_zu_klartext_wird() {
 /// jede Form des Rueckfalls schlaegt an.
 #[test]
 fn waechter_trennt_sauberen_text_vom_rueckfall() {
-    assert!(mit(NUTZER).is_empty());
+    assert_eq!(mit(NUTZER).len(), 0);
     let kommentare = "/* mpz_get_si */ // mpz_get_si\nconst char *s = \"mpz_get_si\";\n";
-    assert!(mit(&format!("{kommentare}{NUTZER}")).is_empty());
+    assert_eq!(mit(&format!("{kommentare}{NUTZER}")).len(), 0);
 
     let rueckfaelle = [
         (
@@ -256,8 +256,8 @@ fn waechter_trennt_sauberen_text_vom_rueckfall() {
 
     // Das Makro verliert die Pruefung, wird doppelt definiert, oder niemand ruft es.
     let ohne_pruefung = MAKRO.replace("mpz_fits_slong_p", "mpz_sgn");
-    assert!(!probleme(&[("shim.c".to_owned(), format!("{ohne_pruefung}{NUTZER}"))]).is_empty());
-    assert!(!probleme(&[("shim.c".to_owned(), format!("{MAKRO}{MAKRO}{NUTZER}"))]).is_empty());
-    assert!(!mit("void f(void) {}\n").is_empty());
-    assert!(!probleme(&[]).is_empty());
+    assert_ne!(probleme(&[("shim.c".to_owned(), format!("{ohne_pruefung}{NUTZER}"))]).len(), 0);
+    assert_ne!(probleme(&[("shim.c".to_owned(), format!("{MAKRO}{MAKRO}{NUTZER}"))]).len(), 0);
+    assert_ne!(mit("void f(void) {}\n").len(), 0);
+    assert_ne!(probleme(&[]).len(), 0);
 }

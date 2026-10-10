@@ -602,7 +602,7 @@ fn die_importe_werden_nach_den_regeln_gelesen() {
         modulebene_importe("import a.b.c as d, e;\nfrom f.g import (\n    h,\n)\n"),
         ["a", "e", "f"]
     );
-    assert!(modulebene_importe("important = 1\nimport_x = 2\n# import kommentar\n").is_empty());
+    assert_eq!(modulebene_importe("important = 1\nimport_x = 2\n# import kommentar\n").len(), 0);
 }
 
 fn tree_a() -> Vec<(&'static str, &'static str)> {

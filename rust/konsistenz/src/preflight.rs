@@ -760,7 +760,7 @@ mod tests {
             [("bruttoarbeitslohn", 150_000)],
             "Kontrolle mit Ganzzahl"
         );
-        assert!(vorlaeufig(PyWert::Gleit(1500.0)).is_empty());
+        assert_eq!(vorlaeufig(PyWert::Gleit(1500.0)).len(), 0);
     }
 
     #[test]

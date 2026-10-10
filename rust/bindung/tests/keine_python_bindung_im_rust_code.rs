@@ -264,8 +264,8 @@ fn trefferzahl_pruefung_schlaegt_bei_mehr_und_bei_weniger_an() {
 
     // genau erlaubt: sauber
     let genau = [t("a/lib.rs", &[7]), t("frei/x.rs", &[1, 2, 3, 4, 5])];
-    assert!(zu_viele(&genau, A).is_empty());
-    assert!(zu_wenige(&genau, A).is_empty());
+    assert_eq!(zu_viele(&genau, A).len(), 0);
+    assert_eq!(zu_wenige(&genau, A).len(), 0);
 
     // einer mehr als erlaubt: zu viele, mit Dateiname und Zeilen
     let mehr = [t("a/lib.rs", &[7, 90]), t("frei/x.rs", &[1])];
@@ -275,7 +275,7 @@ fn trefferzahl_pruefung_schlaegt_bei_mehr_und_bei_weniger_an() {
         v[0].contains("rust/a/lib.rs") && v[0].contains("[7, 90]"),
         "{v:?}"
     );
-    assert!(zu_wenige(&mehr, A).is_empty());
+    assert_eq!(zu_wenige(&mehr, A).len(), 0);
 
     // einer weniger als erlaubt: zu wenige
     let weniger = [t("frei/x.rs", &[1])];
