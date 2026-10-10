@@ -20,6 +20,11 @@
 //! (Block "Ausland Anrechnung"), den Abzug nach § 34c Abs. 2 (Nr. 41, `E0600920`) ueber den Umweg und drei Kontrollen, die `ERiC`
 //! beanstanden MUSS: Staat ohne Einkuenfte, Einkuenfte ohne Staat, Steuer ohne Einkuenfte.
 //!
+//! ANLAGE SO, PRIVATVERKAUF (Abweichung Nr. 54, Spike AK0 in `checkest_privatverkauf_spike.rs`). Der vierte echte Test misst, was der
+//! Schreiber fuer steuerpflichtige Verkaeufe baut (Grundstueck, anderes Wirtschaftsgut, mit Abschreibung, Verlust, Gewinn 0, zwei
+//! Verkaeufe) ueber den echten Abgabeweg, und fuenf Kontrollen, die `ERiC` beanstanden MUSS (Pflicht-Kz fehlt, Gewinn passt nicht zu
+//! den Einzelbetraegen). Ein steuerfreier Verkauf steht nicht in der Erklaerung, die Abgabe sperrt (`privatverkauf_einreichung_hermetisch.rs`).
+//!
 //! KEIN SKIP. Die echten Tests sind `#[ignore]` (`cargo test --workspace` und die CI laufen ohne sie: `ERiC` und die Hersteller-ID
 //! gehoeren nicht auf einen Runner, Entscheid Julius 2026-09-12). Wer sie mit `--ignored` ruft, will den echten Weg: jede fehlende
 //! Voraussetzung ist ein `panic`, nie ein `return`. Lokal: `make blockmatrix-rust` (laedt die ID aus der gitignorierten `.env`).
@@ -51,10 +56,11 @@ use serde_json::{json, Value};
 use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
 
 /// Die Namen der echten Tests: Make-Ziel und Verdrahtungs-Test pruefen sie.
-const ECHTE_TESTS: [&str; 3] = [
+const ECHTE_TESTS: [&str; 4] = [
     "zwoelf_bloecke_gegen_echtes_checkest",
     "zeilen_nr48_nr49_gegen_echtes_checkest",
     "ausland_staat_und_nr41_gegen_echtes_checkest",
+    "privatverkauf_gegen_echtes_checkest",
 ];
 const MAKE_ZIEL: &str = "blockmatrix-rust";
 /// Die Zahl der Bloecke der Python-Matrix. Faellt eine Zeile aus `bloecke()` weg, wird der Test rot, nicht kleiner.
@@ -662,6 +668,153 @@ fn ausland_staat_und_nr41_gegen_echtes_checkest() {
     let u = urteil(&xml, &id);
     eprintln!("{:<40} {}", "Nr41_und_Nr49", u.zeile());
     assert!(u.plausibel(), "Nr41_und_Nr49: nicht rc=0: {}", u.zeile());
+}
+
+// ----------------------------------------------------------------------------- Anlage SO: Privatverkauf (Nr. 54)
+
+// Die Kz, die der Schreiber je Art setzt (`P23_ARTFELDER` und der Gewinn in `elster/src/deklaration.rs`): Grundstueck E0306111,
+// E0306201, E0306202, E0306801 (alle vier Pflicht); anderes Wirtschaftsgut E0307101, E0307201, E0307202, E0307701 (Pflicht nur
+// E0307101 und E0307701, die Daten schreibt `TaxGraph` freiwillig; Spike AK0). Die Faelle unten nennen sie mit ihrem Wert.
+
+fn so_name(basis: &str, n: u8) -> String {
+    if n == 1 {
+        basis.to_owned()
+    } else {
+        format!("{basis}__{n}")
+    }
+}
+
+/// Ein vollstaendiger steuerpflichtiger Verkauf der Instanz `n` als Antworten: Art `typ`, `(Kauf, Verkauf)` als TT.MM.JJJJ, Betraege in
+/// Cent als `[Preis, Anschaffungskosten, AfA, Werbungskosten]`. Beim Grundstueck "keine Eigennutzung", beim anderen Wirtschaftsgut "kein
+/// taeglicher Gebrauch, keine Einkunftsquelle".
+fn so_verkauf(n: u8, typ: &str, daten: (&str, &str), betraege: [i64; 4]) -> Vec<(String, Value)> {
+    let [preis, ak, afa, wk] = betraege;
+    let mut k = vec![
+        (so_name("p23_veraeusserungs_typ", n), json!(typ)),
+        (so_name("p23_bezeichnung", n), json!("Testobjekt")),
+        (so_name("p23_anschaffungsdatum", n), json!(daten.0)),
+        (so_name("p23_veraeusserungsdatum", n), json!(daten.1)),
+        (so_name("p23_veraeusserungspreis", n), json!(preis)),
+        (so_name("p23_anschaffung_herstellungskosten", n), json!(ak)),
+        (so_name("p23_afa", n), json!(afa)),
+        (so_name("p23_werbungskosten", n), json!(wk)),
+    ];
+    if typ == "anderes_wg" {
+        k.push((so_name("p23_taeglicher_gebrauch", n), json!(false)));
+        k.push((so_name("p23_einkunftsquelle", n), json!(false)));
+    } else {
+        k.push((so_name("p23_eigennutzung", n), json!("nein")));
+    }
+    k.push(("kein_p23_verkauf".to_owned(), json!(false)));
+    k
+}
+
+/// Die Basis-Akte plus Verkaeufe, ueber den echten Abgabeweg (Guard, Ring, `deklariere`, `erzeuge_xml`) zum XML.
+fn so_xml(verkaeufe: &[(String, Value)], id: &str) -> Result<String, String> {
+    let zusatz: Vec<(&str, Value)> = verkaeufe.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+    block_xml(&zusatz, id)
+}
+
+/// Die Deklaration einer Akte mit Verkaeufen, wie die Produktion sie baut (Ring, dann `deklariere`); die Kontrollen nehmen aus ihr ein
+/// Kz heraus und lassen `ERiC` urteilen.
+fn so_deklaration(verkaeufe: &[(String, Value)]) -> (Deklaration, Felder) {
+    let mut s = leere_akte();
+    for (f, w) in basis() {
+        setze(&mut s, f, w);
+    }
+    for (f, w) in verkaeufe {
+        setze(&mut s, f, w.clone());
+    }
+    let (mut felder, _) = s.materialisiere(None).unwrap();
+    mit_ring_werten(&mut felder, Some(Vz::Vz2025), params()).unwrap();
+    let d = deklariere(&felder, index(), 2025, None).unwrap();
+    assert!(d.unvollstaendig().is_empty(), "der Verkauf sperrt schon: {:?}", d.unvollstaendig());
+    (d, felder)
+}
+
+/// Dieselbe Deklaration ohne das Kz `kz` in der Instanz `index` der Gruppe `p23_veraeusserung`, oder mit dem Wert `neu`, wenn er gegeben ist.
+fn so_abgeaendert(d: &Deklaration, index: u64, kz: &str, neu: Option<Value>) -> Deklaration {
+    let mut m = d.clone();
+    let felder = m
+        .anlage_instanzen
+        .iter_mut()
+        .filter(|(g, _)| g == "p23_veraeusserung")
+        .flat_map(|(_, ii)| ii.iter_mut())
+        .find(|i| i.index == index)
+        .map(|i| &mut i.felder)
+        .expect("die Instanz fehlt in der Deklaration");
+    match neu {
+        Some(w) => assert!(felder.insert(kz.to_owned(), w).is_some(), "{kz} stand nicht in der Instanz"),
+        None => assert!(felder.remove(kz).is_some(), "{kz} stand nicht in der Instanz"),
+    }
+    m
+}
+
+/// Je Fall: Name, die Antworten, die Kz mit ihrem Wert im XML.
+type SoFall<'a> = (&'a str, Vec<(String, Value)>, Vec<(&'a str, &'a str)>);
+
+/// Der Privatverkauf (Anlage SO) gegen das echte `checkESt`: was der Schreiber fuer steuerpflichtige Verkaeufe baut, ist `rc=0` mit
+/// 0 Meldungen, und `ERiC` beanstandet, was fehlt oder nicht zu den Einzelbetraegen passt. Jedes Kz im XML wird mit seinem Wert
+/// geprueft: ein verschluckter oder vertauschter Wert laesst den Lauf nicht gruen werden.
+#[test]
+#[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make blockmatrix-rust`"]
+fn privatverkauf_gegen_echtes_checkest() {
+    let id = voraussetzungen();
+    let grundstueck = |daten: (&str, &str), betraege: [i64; 4]| so_verkauf(1, "grundstueck", daten, betraege);
+    let wirtschaftsgut = |n: u8, betraege: [i64; 4]| so_verkauf(n, "anderes_wg", ("15.02.2025", "20.08.2025"), betraege);
+    let kauf = ("15.06.2020", "10.03.2025");
+    // Betraege in Cent: Preis, Anschaffungskosten, AfA, Werbungskosten.
+    let mut zwei = grundstueck(kauf, [20_000_000, 15_000_000, 0, 0]);
+    zwei.extend(wirtschaftsgut(2, [10_000_000, 5_000_000, 0, 0]));
+    let faelle: Vec<SoFall<'_>> = vec![
+        (
+            "SO_Grundstueck",
+            grundstueck(kauf, [20_000_000, 15_000_000, 0, 0]),
+            vec![("E0306111", "Testobjekt"), ("E0306201", "15.06.2020"), ("E0306202", "10.03.2025"), ("E0306801", "50000")],
+        ),
+        // 200.000 - (150.000 - 10.000) - 5.000 = 55.000 EUR: die Formel von `checkESt` (Spike AK0).
+        ("SO_Grundstueck_AfA_WK", grundstueck(kauf, [20_000_000, 15_000_000, 1_000_000, 500_000]), vec![("E0306801", "55000")]),
+        ("SO_Grundstueck_Verlust", grundstueck(kauf, [4_000_000, 5_000_000, 0, 0]), vec![("E0306801", "-10000")]),
+        ("SO_Grundstueck_Gewinn_0", grundstueck(kauf, [5_000_000, 5_000_000, 0, 0]), vec![("E0306801", "0")]),
+        (
+            "SO_Wirtschaftsgut",
+            wirtschaftsgut(1, [10_000_000, 5_000_000, 0, 0]),
+            vec![("E0307101", "Testobjekt"), ("E0307201", "15.02.2025"), ("E0307202", "20.08.2025"), ("E0307701", "50000")],
+        ),
+        // Beim Wirtschaftsgut gibt es kein AfA-Kz: 100.000 - (50.000 - 10.000) = 60.000 EUR stehen als Gewinn.
+        ("SO_Wirtschaftsgut_AfA", wirtschaftsgut(1, [10_000_000, 5_000_000, 1_000_000, 0]), vec![("E0307701", "60000")]),
+        ("SO_zwei_Verkaeufe", zwei.clone(), vec![("E0306801", "50000"), ("E0307701", "50000")]),
+    ];
+    for (name, verkaeufe, kz_im_xml) in &faelle {
+        let xml = so_xml(verkaeufe, &id).unwrap_or_else(|g| panic!("{name}: kein XML: {g}"));
+        for (kz, wert) in kz_im_xml {
+            assert!(xml.contains(&format!("<{kz}>{wert}</{kz}>")), "{name}: <{kz}>{wert}</{kz}> steht nicht im XML");
+        }
+        let u = urteil(&xml, &id);
+        eprintln!("{name:<40} {}", u.zeile());
+        assert!(u.plausibel(), "{name}: nicht rc=0: {}", u.zeile());
+    }
+
+    // Kontrollen: ERiC beanstandet, was fehlt. Aus der Deklaration des Grundstuecks bzw. des Wirtschaftsguts wird je Kontrolle ein Kz
+    // entfernt oder der Gewinn verschoben.
+    let (g, g_felder) = so_deklaration(&grundstueck(kauf, [20_000_000, 15_000_000, 0, 0]));
+    let (w, w_felder) = so_deklaration(&wirtschaftsgut(1, [10_000_000, 5_000_000, 0, 0]));
+    let kontrollen: [(&str, Deklaration, &Felder); 5] = [
+        ("K_Grundstueck_ohne_Bezeichnung", so_abgeaendert(&g, 1, "E0306111", None), &g_felder),
+        ("K_Grundstueck_ohne_Verkaufsdatum", so_abgeaendert(&g, 1, "E0306202", None), &g_felder),
+        ("K_Grundstueck_ohne_Gewinn", so_abgeaendert(&g, 1, "E0306801", None), &g_felder),
+        ("K_Wirtschaftsgut_ohne_Art", so_abgeaendert(&w, 1, "E0307101", None), &w_felder),
+        ("K_Wirtschaftsgut_ohne_Gewinn", so_abgeaendert(&w, 1, "E0307701", None), &w_felder),
+    ];
+    for (name, d, felder) in kontrollen {
+        let u = urteil(&xml_abgabe(&d, felder, &id), &id);
+        eprintln!("{name:<40} {}", u.zeile());
+        assert!(
+            u.rc == RC_PLAUSIBILITAET && !u.meldungen.is_empty(),
+            "{name}: ERiC muss rc={RC_PLAUSIBILITAET} mit Meldung geben, gab: {}",
+            u.zeile()
+        );
+    }
 }
 
 // ----------------------------------------------------------------------------- Verdrahtung (laeuft in der CI)
