@@ -25,6 +25,11 @@
 //! Verkaeufe) ueber den echten Abgabeweg, und fuenf Kontrollen, die `ERiC` beanstanden MUSS (Pflicht-Kz fehlt, Gewinn passt nicht zu
 //! den Einzelbetraegen). Ein steuerfreier Verkauf steht nicht in der Erklaerung, die Abgabe sperrt (`privatverkauf_einreichung_hermetisch.rs`).
 //!
+//! ANLAGE R-AV/BAV, RENTE MIT LEISTUNGSMITTEILUNG (Abweichung Nr. 55, Spike in `rente-scope`). Der fuenfte echte Test misst, was der
+//! Schreiber fuer Nummer 1, 4 und 5 baut (je allein, alle drei in einer Mitteilung, zwei Mitteilungen, nur Nullen) ueber den echten
+//! Abgabeweg, fuenf Kontrollen, die `ERiC` beanstanden MUSS (Beginn fehlt, Beginn nach dem Steuerjahr, Beginn der vorhergehenden
+//! Leistung ohne Ende, 0 in Zeile 10 ohne Beginn), und eine Gegenprobe, die `ERiC` annimmt (0 in Zeile 4).
+//!
 //! KEIN SKIP. Die echten Tests sind `#[ignore]` (`cargo test --workspace` und die CI laufen ohne sie: `ERiC` und die Hersteller-ID
 //! gehoeren nicht auf einen Runner, Entscheid Julius 2026-09-12). Wer sie mit `--ignored` ruft, will den echten Weg: jede fehlende
 //! Voraussetzung ist ein `panic`, nie ein `return`. Lokal: `make blockmatrix-rust` (laedt die ID aus der gitignorierten `.env`).
@@ -56,11 +61,12 @@ use serde_json::{json, Value};
 use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
 
 /// Die Namen der echten Tests: Make-Ziel und Verdrahtungs-Test pruefen sie.
-const ECHTE_TESTS: [&str; 4] = [
+const ECHTE_TESTS: [&str; 5] = [
     "zwoelf_bloecke_gegen_echtes_checkest",
     "zeilen_nr48_nr49_gegen_echtes_checkest",
     "ausland_staat_und_nr41_gegen_echtes_checkest",
     "privatverkauf_gegen_echtes_checkest",
+    "rav_bav_gegen_echtes_checkest",
 ];
 const MAKE_ZIEL: &str = "blockmatrix-rust";
 /// Die Zahl der Bloecke der Python-Matrix. Faellt eine Zeile aus `bloecke()` weg, wird der Test rot, nicht kleiner.
@@ -815,6 +821,157 @@ fn privatverkauf_gegen_echtes_checkest() {
             u.zeile()
         );
     }
+}
+
+// ----------------------------------------------------------------------------- Anlage R-AV/bAV: Rente mit Leistungsmitteilung (Nr. 55)
+
+/// Die fuenf Kz, die der Schreiber fuer eine Mitteilung setzt (`RAV_BAV_*` in `elster/src/deklaration.rs`): Zeile 4, 10, 12, 15, 16.
+const RAV_KZ: [&str; 5] = ["E1803101", "E1803301", "E1803401", "E1803501", "E1803601"];
+
+/// Eine vollstaendige Mitteilung der Instanz `n` als Antworten: Betraege in Cent als `[Nr. 1, Nr. 4, Nr. 5]`, `(Beginn Nr. 4, Beginn Nr. 5)`
+/// als TT.MM.JJJJ, keine weiteren Nummern, keine Basisrente. Der Beginn steht nur zu einem Betrag ueber 0 ("Steht dort kein Betrag, lass das
+/// Feld leer"). Das Kreuz `kein_rav_bav` setzt der Aufrufer einmal je Akte (`rav_akte`).
+fn rav_mitteilung(n: u8, betraege: [i64; 3], beginn: (&str, &str)) -> Vec<(String, Value)> {
+    let [nr1, nr4, nr5] = betraege;
+    let mut k = vec![
+        (so_name("rav_bav_nr1_betrag", n), json!(nr1)),
+        (so_name("rav_bav_nr4_betrag", n), json!(nr4)),
+        (so_name("rav_bav_nr5_betrag", n), json!(nr5)),
+        (so_name("rav_bav_andere_nummern", n), json!(false)),
+        (so_name("rav_bav_basisrente", n), json!(false)),
+    ];
+    if nr4 > 0 {
+        k.push((so_name("rav_bav_nr4_beginn", n), json!(beginn.0)));
+    }
+    if nr5 > 0 {
+        k.push((so_name("rav_bav_nr5_beginn", n), json!(beginn.1)));
+    }
+    k
+}
+
+/// Die Mitteilungen einer Akte mit dem Kreuz "ich habe eine Rente mit Leistungsmitteilung" (`kein_rav_bav` = `false`).
+fn rav_akte(mitteilungen: &[Vec<(String, Value)>]) -> Vec<(String, Value)> {
+    let mut k = vec![("kein_rav_bav".to_owned(), json!(false))];
+    k.extend(mitteilungen.iter().flatten().cloned());
+    k
+}
+
+/// Der Text von `<RAV_bAV>` bis `</RAV_bAV>`, wenn die Anlage im XML steht.
+fn rav_block(xml: &str) -> Option<&str> {
+    let von = xml.find("<RAV_bAV>")?;
+    let bis = von + xml[von..].find("</RAV_bAV>")?;
+    Some(&xml[von..bis])
+}
+
+/// Dieselbe Deklaration (Instanz 1 der Anlage R-AV/bAV steht in `deklaration`) ohne das Kz `kz`, oder mit dem Wert `neu`, wenn er gegeben ist.
+fn rav_abgeaendert(d: &Deklaration, kz: &str, neu: Option<Value>) -> Deklaration {
+    let mut m = d.clone();
+    match neu {
+        Some(w) => {
+            m.deklaration.insert(kz.to_owned(), w);
+        }
+        None => assert!(m.deklaration.remove(kz).is_some(), "{kz} stand nicht in der Deklaration"),
+    }
+    m
+}
+
+/// Je Fall: Name, die Antworten, die Kz mit ihrem Wert im XML, die Zahl der `<Einz>`.
+type RavFall<'a> = (&'a str, Vec<(String, Value)>, Vec<(&'a str, &'a str)>, usize);
+
+/// Die Rente mit Leistungsmitteilung (Anlage R-AV/bAV) gegen das echte `checkESt`: was der Schreiber baut, ist `rc=0` mit 0 Meldungen
+/// (die Faelle A, C, D, H, U des Spikes, jetzt ueber den Abgabeweg), und `ERiC` beanstandet, was nicht zusammenpasst (K1, K5, K8, K10).
+/// Jedes Kz im XML wird mit seinem Wert geprueft, und keines der fuenf Kz steht im XML, das die Antworten nicht verlangen: ein
+/// geschriebener Nullbetrag oder Beginn ohne Betrag liesse den Lauf nicht gruen werden. Die zwei Faelle am Ende halten fest, was `ERiC` zu
+/// einer 0 in Zeile 10 ohne Zeile 12 (rot) und zu einer 0 in Zeile 4 (gruen) sagt: das Produkt schreibt beides nicht.
+#[test]
+#[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make blockmatrix-rust`"]
+fn rav_bav_gegen_echtes_checkest() {
+    let id = voraussetzungen();
+    // Alter bei Rentenbeginn der Nr. 5: geboren 05.05.1955, Beginn 01.03.2020 = 64 Jahre.
+    let beginn = ("01.03.2020", "01.03.2020");
+    let faelle: Vec<RavFall<'_>> = vec![
+        ("RAV_A_Nr1", rav_akte(&[rav_mitteilung(1, [600_000, 0, 0], beginn)]), vec![("E1803101", "6000")], 1),
+        (
+            "RAV_C_Nr4_mit_Beginn",
+            rav_akte(&[rav_mitteilung(1, [0, 600_000, 0], beginn)]),
+            vec![("E1803301", "6000"), ("E1803401", "01.03.2020")],
+            1,
+        ),
+        (
+            "RAV_D_Nr5_mit_Beginn",
+            rav_akte(&[rav_mitteilung(1, [0, 0, 600_000], beginn)]),
+            vec![("E1803501", "6000"), ("E1803601", "01.03.2020")],
+            1,
+        ),
+        (
+            "RAV_U_alle_drei_in_einer",
+            rav_akte(&[rav_mitteilung(1, [200_000, 200_000, 200_000], beginn)]),
+            vec![
+                ("E1803101", "2000"),
+                ("E1803301", "2000"),
+                ("E1803401", "01.03.2020"),
+                ("E1803501", "2000"),
+                ("E1803601", "01.03.2020"),
+            ],
+            1,
+        ),
+        (
+            "RAV_H_zwei_Mitteilungen",
+            rav_akte(&[rav_mitteilung(1, [300_000, 0, 0], beginn), rav_mitteilung(2, [0, 0, 300_000], beginn)]),
+            vec![("E1803101", "3000"), ("E1803501", "3000"), ("E1803601", "01.03.2020")],
+            2,
+        ),
+        // Nur Nullen: das Produkt schreibt keine Anlage, die Akte ist die Basis allein.
+        ("RAV_Nullen", rav_akte(&[rav_mitteilung(1, [0, 0, 0], beginn)]), vec![], 0),
+    ];
+    for (name, antworten, kz_im_xml, einz) in &faelle {
+        let zusatz: Vec<(&str, Value)> = antworten.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+        let xml = block_xml(&zusatz, &id).unwrap_or_else(|g| panic!("{name}: kein XML: {g}"));
+        for (kz, wert) in kz_im_xml {
+            assert!(xml.contains(&format!("<{kz}>{wert}</{kz}>")), "{name}: <{kz}>{wert}</{kz}> steht nicht im XML");
+        }
+        for kz in RAV_KZ.iter().filter(|kz| !kz_im_xml.iter().any(|(k, _)| k == *kz)) {
+            assert!(!xml.contains(&format!("<{kz}>")), "{name}: {kz} steht im XML, obwohl die Antworten es nicht verlangen");
+        }
+        let rav = rav_block(&xml);
+        assert_eq!(rav.is_some(), *einz > 0, "{name}: Anlage R-AV/bAV im XML: {}", rav.is_some());
+        assert_eq!(rav.map_or(0, |r| r.matches("<Einz>").count()), *einz, "{name}: Zahl der <Einz>");
+        assert!(!xml.contains("PersonB"), "{name}: die Anlage der Person B steht im XML");
+        let u = urteil(&xml, &id);
+        eprintln!("{name:<40} {}", u.zeile());
+        assert!(u.plausibel(), "{name}: nicht rc=0: {}", u.zeile());
+    }
+
+    // Kontrollen: ERiC beanstandet, was nicht zusammenpasst. Aus der Deklaration einer Mitteilung wird je Kontrolle ein Kz entfernt,
+    // verschoben oder zugefuegt (Umweg ueber `xml_abgabe`: der Guard liesse eine Mitteilung wie K5 nicht bis zum XML).
+    let deklaration_von = |betraege: [i64; 3]| so_deklaration(&rav_akte(&[rav_mitteilung(1, betraege, beginn)]));
+    let (nr4, nr4_felder) = deklaration_von([0, 600_000, 0]);
+    let (nr5, nr5_felder) = deklaration_von([0, 0, 600_000]);
+    let (nr1, nr1_felder) = deklaration_von([600_000, 0, 0]);
+    let kontrollen: [(&str, Deklaration, &Felder); 5] = [
+        ("K1_Z15_ohne_Beginn_Z16", rav_abgeaendert(&nr5, "E1803601", None), &nr5_felder),
+        ("K5_Beginn_Z12_nach_dem_Steuerjahr", rav_abgeaendert(&nr4, "E1803401", Some(json!("01.03.2027"))), &nr4_felder),
+        ("K8_Z13_ohne_Z14", rav_abgeaendert(&nr4, "E1803805", Some(json!("01.03.2020"))), &nr4_felder),
+        ("K10_Beginn_Z16_nach_dem_Steuerjahr", rav_abgeaendert(&nr5, "E1803601", Some(json!("01.03.2027"))), &nr5_felder),
+        // Warum der Schreiber einen Nullbetrag weglaesst: eine 0 in Zeile 10 ohne Beginn in Zeile 12 lehnt `ERiC` ab (gemessen 2026-10-10).
+        ("K11_Z10_0_ohne_Z12", rav_abgeaendert(&nr1, "E1803301", Some(json!(0))), &nr1_felder),
+    ];
+    for (name, d, felder) in kontrollen {
+        let u = urteil(&xml_abgabe(&d, felder, &id), &id);
+        eprintln!("{name:<40} {}", u.zeile());
+        assert!(
+            u.rc == RC_PLAUSIBILITAET && !u.meldungen.is_empty(),
+            "{name}: ERiC muss rc={RC_PLAUSIBILITAET} mit Meldung geben, gab: {}",
+            u.zeile()
+        );
+    }
+
+
+    // Gegenstueck: eine 0 in Zeile 4 nimmt `ERiC` an (gemessen 2026-10-10, Spike K6). Das Weglassen ist eine Wahl des Produkts (keine
+    // Anlage fuer eine Mitteilung ohne Betrag), kein Zwang der Pruefung.
+    let u = urteil(&xml_abgabe(&rav_abgeaendert(&nr1, "E1803101", Some(json!(0))), &nr1_felder, &id), &id);
+    eprintln!("{:<40} {}", "G_Z4_0", u.zeile());
+    assert!(u.plausibel(), "G_Z4_0: nicht rc=0: {}", u.zeile());
 }
 
 // ----------------------------------------------------------------------------- Verdrahtung (laeuft in der CI)
