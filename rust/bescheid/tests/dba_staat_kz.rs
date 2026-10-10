@@ -27,6 +27,7 @@ use std::path::Path;
 
 use bescheid::deklaration::{einreichungs_xml, EinreichFehler};
 use bescheid::testhilfe::{index, params};
+use bindung::Bindungspunkt;
 use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Zustand};
 use elster::testhilfe::schemas_da;
 use elster::{deklariere, finde_schema, kz_meta};
@@ -38,6 +39,8 @@ const EINKUENFTE: &str = "dba_auslaendische_einkuenfte";
 const ART: &str = "dba_einkunftsart";
 const STEUER: &str = "dba_gezahlte_auslaendische_steuer";
 const WAHL: &str = "dba_abzug_statt_anrechnung";
+/// Die Folgefrage zu `sonstiger_staat` (Abweichung Nr. 55): der Name des Staates aus der amtlichen Laenderliste.
+const FOLGE: &str = "dba_staat_sonstiger";
 
 /// Anlage AUS, `Staat_Spez_InvFonds`: "aus dem Staat / Spezial-Investmentfonds".
 const STAAT_KZ: &str = "E0600301";
@@ -131,6 +134,13 @@ fn akte(a: &Ausland) -> Store {
     s
 }
 
+/// Die vollstaendige Akte mit Einkuenften, `dba_staat` = `sonstiger_staat` und der Folgefrage `name`.
+fn akte_mit_folge(name: &str) -> Store {
+    let mut s = akte(&Ausland::mit_staat(json!("sonstiger_staat")));
+    setze(&mut s, FOLGE, json!(name));
+    s
+}
+
 fn lauf(s: &Store) -> Result<String, EinreichFehler> {
     einreichungs_xml(s, index(), params(), "BY", Some("74931".to_owned())).map(|e| e.xml)
 }
@@ -194,9 +204,10 @@ fn die_fuenfzehn_staaten_stehen_als_listentext_in_e0600301() {
 }
 
 /// Die Laenderliste des Schemas: der Dokumentationstext des Typs, den `E0600301` fuehrt (`NAEnum_LAND_OF_WORLD_2020_1_BaseCType`,
-/// ohne Aufzaehlung im Schema). Die Eintraege stehen durch Komma getrennt; wenige tragen selbst ein Komma ("Kongo, Demokratische
-/// Republik"), sie zerfallen in zwei Stuecke. ponytail: Eintraege mit Komma zerfallen, weil kein benannter Staat eines hat;
-/// kommt einer mit Komma dazu, braucht der Test die echte Trennung (Eintrag = Stueck, das mit Grossbuchstaben beginnt).
+/// ohne Aufzaehlung im Schema). Die Eintraege stehen durch Komma OHNE Leerzeichen getrennt; drei tragen selbst ein Komma mit
+/// Leerzeichen ("Kongo, Demokratische Republik", "Korea, Demokratische Volksrepublik", "Korea, Republik"). Ein Stueck, das mit einem
+/// Leerzeichen beginnt, gehoert darum zum vorigen Eintrag. Es muessen 197 Eintraege bleiben (Messung 2026-10-10 und 2026-10-11, VZ
+/// 2024 und 2025 gleich); ein vierter Eintrag mit Komma ohne Leerzeichen liesse die Zahl kippen und der Test wird rot.
 fn laenderliste() -> Vec<String> {
     let pfad = finde_schema(2025, "E10-{jahr}.xsd").expect("E10-2025.xsd");
     let meta = kz_meta(&pfad, "E10").unwrap();
@@ -211,7 +222,19 @@ fn laenderliste() -> Vec<String> {
     let doku = &xsd[ab..];
     let von = doku.find("<xs:documentation>").unwrap() + "<xs:documentation>".len();
     let bis = doku.find("</xs:documentation>").unwrap();
-    doku[von..bis].replace("&apos;", "'").split(',').map(|e| e.trim().to_owned()).collect()
+    let mut liste: Vec<String> = Vec::new();
+    for stueck in doku[von..bis].replace("&apos;", "'").split(',') {
+        match liste.last_mut() {
+            Some(letzter) if stueck.starts_with(' ') => {
+                letzter.push(',');
+                letzter.push_str(stueck);
+            }
+            _ => liste.push(stueck.to_owned()),
+        }
+    }
+    let liste: Vec<String> = liste.iter().map(|e| e.trim().to_owned()).collect();
+    assert_eq!(liste.len(), 197, "die Laenderliste hat nicht mehr 197 Eintraege: sie muss neu gelesen werden");
+    liste
 }
 
 /// AK1, Gegenprobe: jeder Text, den das Produkt schreibt, steht in der Laenderliste des Schemas. `checkESt` prueft das nicht.
@@ -254,15 +277,122 @@ fn sonstiger_staat_fehlender_und_unbekannter_wert_schreiben_nichts_und_sperren_m
         ("Listentext Tschechische Republik", Some(json!("Tschechische Republik"))),
     ];
     for (name, staat) in faelle {
+        // `sonstiger_staat` ohne Folgefrage sperrt an der Folgefrage (Abweichung Nr. 55), jeder andere Fall an `dba_staat`.
+        let (feld, anderes) = if staat == Some(json!("sonstiger_staat")) { (FOLGE, STAAT) } else { (STAAT, FOLGE) };
         let s = akte(&Ausland { staat, einkuenfte: true, steuer: None, abzug: false });
         assert_eq!(kz_wert(&s, STAAT_KZ), None, "{name}: der Staat darf nicht im XML stehen");
         let r = lauf(&s);
         let alle = sperre(&r);
-        let gruende = sperre_zu(&alle, STAAT);
-        assert_eq!(gruende.len(), 1, "{name}: genau ein Sperr-Eintrag zu {STAAT} erwartet, Lauf: {r:?}");
+        let gruende = sperre_zu(&alle, feld);
+        assert_eq!(gruende.len(), 1, "{name}: genau ein Sperr-Eintrag zu {feld} erwartet, Lauf: {r:?}");
         assert!(gruende[0].contains("Staat"), "{name}: der Grund nennt den Staat nicht: {}", gruende[0]);
+        assert!(sperre_zu(&alle, anderes).is_empty(), "{name}: auch {anderes} sperrt: {r:?}");
         assert!(r.is_err(), "{name}: die Abgabe ist nicht gesperrt");
     }
+}
+
+/// Die Folgefrage zu `sonstiger_staat` (Abweichung Nr. 55) bei bestaetigtem `sonstiger_staat`: der Name, den der Nutzer waehlt,
+/// steht als Listentext in `E0600301`, und die Akte sperrt nicht. Zur Gegenprobe gehoeren die vier Sonderfaelle der Liste:
+/// ein Name mit Komma ("Korea, Republik"), mit Apostroph ("Cote d'Ivoire"), mit Umlaut ("Äthiopien") und mit Bindestrich
+/// ("Papua-Neuguinea"). Der Name erreicht das XML unverfaelscht (Komma und Umlaut stehen im Elementtext, der Apostroph darf
+/// escaped stehen).
+#[test]
+fn ein_sonstiger_staat_steht_mit_seinem_listentext_in_e0600301() {
+    let werte = index()[FOLGE].enum_werte.clone().unwrap();
+    for name in &werte {
+        let s = akte_mit_folge(name);
+        assert_eq!(kz_wert(&s, STAAT_KZ).as_deref(), Some(name.as_str()), "Folgefrage {name}: Text in E0600301");
+        assert_eq!(kz_wert(&s, EINKUENFTE_KZ).as_deref(), Some("5000"), "Folgefrage {name}: Einkuenfte");
+    }
+    for name in ["Portugal", "Korea, Republik", "Cote d'Ivoire", "Äthiopien", "Papua-Neuguinea"] {
+        assert!(werte.iter().any(|w| w == name), "{name} fehlt in den enum_werte der Folgefrage");
+        let r = lauf(&akte_mit_folge(name));
+        let alle = sperre(&r);
+        for feld in [STAAT, FOLGE, STEUER] {
+            assert!(sperre_zu(&alle, feld).is_empty(), "Folgefrage {name}: die Sperre zu {feld} greift: {r:?}");
+        }
+        if schemas_da(2025) {
+            let xml = r.unwrap_or_else(|e| panic!("Folgefrage {name}: kein XML: {e:?}"));
+            let roh = format!("<{STAAT_KZ}>{name}</{STAAT_KZ}>");
+            let escaped = roh.replace('\'', "&apos;");
+            assert!(xml.contains(&roh) || xml.contains(&escaped), "Folgefrage {name}: der Name steht nicht im XML");
+        }
+    }
+}
+
+/// Die Folgefrage ist die Liste des Schemas ohne die 15 benannten Staaten: 182 Eintraege, jeder in der Laenderliste, keiner doppelt,
+/// keiner einer der 15 Listentexte (die stehen bei `dba_staat`). Ohne Schema prueft der Test die Form (Zahl, Eindeutigkeit, Abstand
+/// zu den 15); mit Schema auch die Menge gegen die 197.
+#[test]
+fn die_folgefrage_traegt_genau_die_182_uebrigen_staaten_der_laenderliste() {
+    let werte = index()[FOLGE].enum_werte.clone().unwrap();
+    let mut sortiert = werte.clone();
+    sortiert.sort();
+    sortiert.dedup();
+    assert_eq!(sortiert.len(), werte.len(), "die Folgefrage nennt einen Staat doppelt");
+    assert_eq!(werte.len(), 182);
+    for (_, text) in STAATEN {
+        assert!(!werte.iter().any(|w| w == text), "{text} steht bei dba_staat und darf nicht in der Folgefrage stehen");
+    }
+    if !schemas_da(2025) {
+        return;
+    }
+    let liste = laenderliste();
+    let mut erwartet: Vec<String> =
+        liste.iter().filter(|e| !STAATEN.iter().any(|(_, t)| t == e)).cloned().collect();
+    erwartet.sort();
+    assert_eq!(sortiert, erwartet, "die Folgefrage und die Laenderliste des Schemas weichen ab");
+}
+
+/// `sonstiger_staat` mit einem Namen, der kein Eintrag der Folgefrage ist, schreibt nichts und sperrt an der Folgefrage: ein
+/// benannter Staat (er gehoert zu `dba_staat`), ein Tippfehler, ein Name mit Leerzeichen, ein Wert, der kein Text ist. Eine
+/// Antwort, die ein spaeter gewaehlter benannter Staat ueberholt hat, aendert nichts. KONTROLLE: derselbe Fall mit `Portugal` steht.
+#[test]
+fn eine_folgefrage_ausserhalb_der_liste_sperrt_und_eine_ueberholte_antwort_zaehlt_nicht() {
+    let kontrolle = akte_mit_folge("Portugal");
+    assert_eq!(kz_wert(&kontrolle, STAAT_KZ).as_deref(), Some("Portugal"), "die Kontrolle steht schon nicht");
+    assert!(sperre(&lauf(&kontrolle)).is_empty(), "die Kontrolle sperrt schon");
+
+    for (name, wert) in [
+        ("Atlantis", json!("Atlantis")),
+        ("benannter Staat Frankreich", json!("Frankreich")),
+        ("Listentext Österreich", json!("Österreich")),
+        ("kleingeschrieben", json!("portugal")),
+        ("mit Leerzeichen", json!("Portugal ")),
+        ("kein Text", json!(5)),
+        ("sonstiger_staat selbst", json!("sonstiger_staat")),
+    ] {
+        let mut s = akte(&Ausland::mit_staat(json!("sonstiger_staat")));
+        setze(&mut s, FOLGE, wert);
+        assert_eq!(kz_wert(&s, STAAT_KZ), None, "{name}: der Staat darf nicht im XML stehen");
+        let r = lauf(&s);
+        let alle = sperre(&r);
+        assert_eq!(sperre_zu(&alle, FOLGE).len(), 1, "{name}: genau ein Sperr-Eintrag zu {FOLGE} erwartet, Lauf: {r:?}");
+        assert!(r.is_err(), "{name}: die Abgabe ist nicht gesperrt");
+    }
+
+    // Ueberholt: erst "anderer Staat" und Portugal, dann Frankreich. Der Staat ist Frankreich, die alte Antwort stoert nicht.
+    let mut s = akte(&Ausland::mit_staat(json!("Frankreich")));
+    setze(&mut s, FOLGE, json!("Portugal"));
+    assert_eq!(kz_wert(&s, STAAT_KZ).as_deref(), Some("Frankreich"));
+    assert!(sperre(&lauf(&s)).is_empty(), "eine ueberholte Antwort sperrt");
+}
+
+/// Die Folgefrage haengt in der Bindung an `dba_staat` = `sonstiger_staat` (`feld_bedingung`), nicht an einer `geltungsbedingung`:
+/// so entscheidet sie nichts ueber die Regel, und die Reihenfolge der Fragen bleibt. Die Oberflaeche fragt sie nur nach "anderer
+/// Staat" (Test `p34c_staat_folgefrage_hermetisch` in `rust/api`).
+#[test]
+fn die_folgefrage_haengt_an_sonstiger_staat() {
+    let b = &index()[FOLGE];
+    let bed = b.feld_bedingung.as_ref().expect("die Folgefrage hat keine feld_bedingung");
+    assert_eq!(bed.feld, STAAT);
+    assert_eq!(bed.wert, Some(json!("sonstiger_staat")));
+    assert!(b.askable);
+    assert!(
+        matches!(b.quelle.bindungspunkt, Bindungspunkt::SignaturSlot(_)),
+        "die Folgefrage ist ein Gate: {:?}",
+        b.quelle.bindungspunkt
+    );
 }
 
 /// AK3: der Staat steht genau dann, wenn die Einkuenfte `E0601401` stehen. Steuer (Anrechnung `E0601901` oder Abzug `E0600920`)

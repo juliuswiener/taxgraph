@@ -108,7 +108,9 @@ fn kein_label_wiederholt_nur_den_rohwert() {
     for (feld, werte) in askable_enums() {
         for w in werte {
             let Some(t) = label(&feld, &w) else { continue };
-            if LESBAR_ROH.contains(&w.as_str()) {
+            // Abweichung Nr. 55: die Folgefrage `dba_staat_sonstiger` traegt die Namen der amtlichen Laenderliste; jeder ist schon
+            // lesbar und steht so in der Erklaerung, das Label wiederholt ihn mit Absicht.
+            if LESBAR_ROH.contains(&w.as_str()) || feld == "dba_staat_sonstiger" {
                 continue;
             }
             if t == w || (t.contains('_') && t.replace('_', " ") == w.replace('_', " ")) {

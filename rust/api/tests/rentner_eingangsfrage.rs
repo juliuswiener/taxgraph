@@ -507,21 +507,22 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter() {
 // ---------------------------------------------------------------- Fragenzahl (AK5) ----------------------------------------
 
 /// AK5: Die Fragenzahl vor und nach den Antworten. Die Kreuze selbst verlassen die Liste, sobald sie beantwortet sind.
-/// "Nein" spart 8 Fragen je Person (Ehegatte: 10); "ja" kostet nichts gegenueber heute (143 und 192).
+/// "Nein" spart 8 Fragen je Person (Ehegatte: 10); "ja" kostet nichts gegenueber heute (143 und 192). Seit der Folgefrage
+/// `dba_staat_sonstiger` (Abweichung Nr. 55) steht je Fall eine Frage mehr in der Liste (144 und 193).
 /// Seit Abweichung Nr. 54 haengen die Fragen zum privaten Verkauf am Kreuz `kein_p23_verkauf` (hier "nein"), nicht mehr an
 /// `kein_sonstige`: vier Fragen weniger in jedem Fall (147 -> 143, 196 -> 192).
 #[tokio::test]
 async fn die_fragenzahl_vor_und_nach_den_antworten() {
     let faelle = [
-        ("einzel offen", "einzel", None, None, 144),
-        ("einzel nein", "einzel", Some(true), None, 135),
-        ("einzel ja", "einzel", Some(false), None, 143),
-        ("zusammen offen", "zusammen", None, None, 194),
-        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 174),
-        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 184),
-        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 182),
-        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 192),
-        ("zusammen ja/offen", "zusammen", Some(false), None, 193),
+        ("einzel offen", "einzel", None, None, 145),
+        ("einzel nein", "einzel", Some(true), None, 136),
+        ("einzel ja", "einzel", Some(false), None, 144),
+        ("zusammen offen", "zusammen", None, None, 195),
+        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 175),
+        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 185),
+        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 183),
+        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 193),
+        ("zusammen ja/offen", "zusammen", Some(false), None, 194),
     ];
     let mut abweichungen = Vec::new();
     for (name, veranlagung, a, b, soll) in faelle {
