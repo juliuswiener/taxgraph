@@ -1,4 +1,4 @@
-//! Die Freigrenze der privaten Veraeusserungsgeschaefte (§ 23 Abs. 3 Satz 5 EStG) gegen das GESETZ, nicht gegen die YAML
+//! Die Freigrenze der privaten Veraeusserungsgeschaefte (§ 23 Abs. 3 Satz 5 `EStG`) gegen das GESETZ, nicht gegen die YAML
 //! (Abweichung Nr. 54 in `rust/fixtures/README.md`; Entscheidung `privatverkauf-wird-in-stufen-gebaut-hauptperson-zuerst-krypto-und-ehegatte-bleiben-gesperrt`,
 //! Punkt 6).
 //!
