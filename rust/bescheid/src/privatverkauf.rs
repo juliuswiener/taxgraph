@@ -7,7 +7,7 @@
 //!   Gesamtgewinn in Cent. Python rechnet nichts davon und sperrt jeden Verkauf; [`crate::einkuenfte::p23_ansonsten_einkuenfte`]
 //!   bleibt als Parity-Gegenstueck unveraendert bestehen.
 //! * [`p23_sperrgrund`]: der Guard. Ein bejahter Verkauf, den die Software nicht rechnet (Kryptowert, Beteiligung, Ehegatte,
-//!   Teilnutzung), sperrt mit [`Sperrgrund::P23VerkaufNichtGerechnet`]; fehlende oder unstimmige Angaben sperren mit
+//!   Teilnutzung, Gebaeude der letzten zehn Jahre auf einem Grundstueck mit abgelaufener Frist), sperrt mit [`Sperrgrund::P23VerkaufNichtGerechnet`]; fehlende oder unstimmige Angaben sperren mit
 //!   [`Sperrgrund::P23AngabenOffen`]. Beides VOR jeder Zahl: ein Verkauf wird nie still weggelassen.
 //! * [`p23_steuerfreier_verkauf`]: die Abgabe-Sperre. Ein steuerfreier Verkauf steht NICHT in der Erklaerung, weil nur die Anleitung
 //!   zur Anlage SO sagt, ob und wie er einzutragen ist (sie liegt nicht im Korpus); die Rechnung bleibt richtig.
@@ -40,6 +40,13 @@ fn text<'a>(inst: &'a Instanz, feld: &str) -> Option<&'a str> {
     }
 }
 
+fn bool_antwort(inst: &Instanz, feld: &str) -> Option<bool> {
+    match wert(&inst.felder, feld) {
+        Some(PyWert::Bool(b)) => Some(*b),
+        _ => None,
+    }
+}
+
 fn cent(inst: &Instanz, feld: &str) -> Result<Cent, BescheidFehler> {
     Ok(Cent::new(zahl_oder_null(wert(&inst.felder, feld))?))
 }
@@ -66,16 +73,17 @@ fn lese(inst: &Instanz, vz: Option<Vz>) -> Result<Result<Verkauf, Sperrgrund>, B
     } else {
         Eigennutzung::Nein
     };
+    // Nur beim Grundstueck gelesen (Abs. 1 Nr. 1 Satz 2): ein Gebaeude, das in den letzten zehn Jahren entstand, macht den Verkauf auch
+    // nach Ablauf der Frist teilweise steuerpflichtig. Ohne Antwort ist die Angabe offen, nicht "nein".
+    let gebaeude_neu = match (art, bool_antwort(inst, "p23_gebaeude_in_frist")) {
+        (Art::Grundstueck, None) => return Ok(Err(offen)),
+        (Art::Grundstueck, Some(b)) => b,
+        (Art::AnderesWg, _) => false,
+    };
     let (taeglicher_gebrauch, einkunftsquelle) = if art == Art::AnderesWg {
-        let bool_antwort = |feld: &str| -> Option<bool> {
-            match wert(&inst.felder, feld) {
-                Some(PyWert::Bool(b)) => Some(*b),
-                _ => None,
-            }
-        };
         match (
-            bool_antwort("p23_taeglicher_gebrauch"),
-            bool_antwort("p23_einkunftsquelle"),
+            bool_antwort(inst, "p23_taeglicher_gebrauch"),
+            bool_antwort(inst, "p23_einkunftsquelle"),
         ) {
             (Some(t), Some(e)) => (t, e),
             _ => return Ok(Err(offen)),
@@ -93,6 +101,20 @@ fn lese(inst: &Instanz, vz: Option<Vz>) -> Result<Result<Verkauf, Sperrgrund>, B
     if falsches_jahr || veraeusserung < anschaffung {
         return Ok(Err(offen));
     }
+    let befreiung = p23_befreiung(&VerkaufEingabe {
+        art,
+        anschaffung,
+        veraeusserung,
+        eigennutzung,
+        taeglicher_gebrauch,
+        einkunftsquelle,
+    });
+    // Ein Grundstueck mit abgelaufener Frist, ohne Eigennutzung und mit einem Gebaeude der letzten zehn Jahre: der Gebaeudeteil ist
+    // steuerpflichtig. Die Aufteilung zwischen Boden und Gebaeude rechnet die Software nicht. Laeuft die Frist noch, zaehlt das ganze
+    // Grundstueck; bei Eigennutzung sind Gebaeude und Boden frei: dort aendert die Antwort nichts.
+    if gebaeude_neu && befreiung == Befreiung::FristAbgelaufen {
+        return Ok(Err(nicht_gerechnet));
+    }
     // Der Preis muss genannt sein (auch 0): ein fehlender Preis wuerde als Verlust in die Rechnung laufen und den Gesamtgewinn
     // druecken. Kosten und Werbungskosten duerfen fehlen (0): das macht den Gewinn hoeher, nie niedriger.
     if wert(&inst.felder, "p23_veraeusserungspreis")
@@ -107,18 +129,16 @@ fn lese(inst: &Instanz, vz: Option<Vz>) -> Result<Result<Verkauf, Sperrgrund>, B
         cent(inst, "p23_afa")?,
         cent(inst, "p23_werbungskosten")?,
     );
-    // Die AfA mindert die Kosten (Abs. 3 Satz 4); sie ist nie negativ und nie groesser als die Kosten, die sie mindert.
+    // Preis und Werbungskosten sind nie negativ: ein Minus kehrte ihre Wirkung auf den Gewinn um (ein negativer Preis senkte ihn, negative
+    // Werbungskosten hoben ihn). Fuer die Kosten genuegt der Guard unten.
+    if preis.get() < 0 || wk.get() < 0 {
+        return Ok(Err(offen));
+    }
+    // Die AfA mindert die Kosten (Abs. 3 Satz 4); sie ist nie negativ und nie groesser als die Kosten, die sie mindert. Negative Kosten
+    // faengt `afa > kosten` mit ab: die AfA ist dann mindestens 0 und liegt darueber.
     if afa.get() < 0 || afa > kosten {
         return Ok(Err(offen));
     }
-    let befreiung = p23_befreiung(&VerkaufEingabe {
-        art,
-        anschaffung,
-        veraeusserung,
-        eigennutzung,
-        taeglicher_gebrauch,
-        einkunftsquelle,
-    });
     let gewinn = p23_gewinn_nach_afa(preis, kosten, afa, wk)?;
     Ok(Ok(Verkauf { befreiung, gewinn }))
 }

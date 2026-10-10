@@ -685,8 +685,8 @@ fn so_name(basis: &str, n: u8) -> String {
 }
 
 /// Ein vollstaendiger steuerpflichtiger Verkauf der Instanz `n` als Antworten: Art `typ`, `(Kauf, Verkauf)` als TT.MM.JJJJ, Betraege in
-/// Cent als `[Preis, Anschaffungskosten, AfA, Werbungskosten]`. Beim Grundstueck "keine Eigennutzung", beim anderen Wirtschaftsgut "kein
-/// taeglicher Gebrauch, keine Einkunftsquelle".
+/// Cent als `[Preis, Anschaffungskosten, AfA, Werbungskosten]`. Beim Grundstueck "keine Eigennutzung, kein Gebaeude der letzten zehn Jahre", beim
+/// anderen Wirtschaftsgut "kein taeglicher Gebrauch, keine Einkunftsquelle".
 fn so_verkauf(n: u8, typ: &str, daten: (&str, &str), betraege: [i64; 4]) -> Vec<(String, Value)> {
     let [preis, ak, afa, wk] = betraege;
     let mut k = vec![
@@ -704,6 +704,7 @@ fn so_verkauf(n: u8, typ: &str, daten: (&str, &str), betraege: [i64; 4]) -> Vec<
         k.push((so_name("p23_einkunftsquelle", n), json!(false)));
     } else {
         k.push((so_name("p23_eigennutzung", n), json!("nein")));
+        k.push((so_name("p23_gebaeude_in_frist", n), json!(false)));
     }
     k.push(("kein_p23_verkauf".to_owned(), json!(false)));
     k

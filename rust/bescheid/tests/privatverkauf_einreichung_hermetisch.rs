@@ -77,7 +77,7 @@ fn name(basis: &str, n: u8) -> String {
 }
 
 /// Ein vollstaendiger Verkauf der Instanz `n` (Daten TT.MM.JJJJ, Betraege in Cent, Werbungskosten und `AfA` 0). Beim Grundstueck "keine
-/// Eigennutzung", beim anderen Wirtschaftsgut "kein taeglicher Gebrauch, keine Einkunftsquelle".
+/// Eigennutzung, kein Gebaeude der letzten zehn Jahre", beim anderen Wirtschaftsgut "kein taeglicher Gebrauch, keine Einkunftsquelle".
 fn verkauf(n: u8, typ: &str, a: &str, v: &str, preis: i64, ak: i64) -> Vec<(String, Value)> {
     let mut k = vec![
         (name("p23_veraeusserungs_typ", n), json!(typ)),
@@ -94,6 +94,7 @@ fn verkauf(n: u8, typ: &str, a: &str, v: &str, preis: i64, ak: i64) -> Vec<(Stri
         k.push((name("p23_einkunftsquelle", n), json!(false)));
     } else {
         k.push((name("p23_eigennutzung", n), json!("nein")));
+        k.push((name("p23_gebaeude_in_frist", n), json!(false)));
     }
     k
 }
@@ -327,6 +328,81 @@ fn negative_abschreibung_sperrt_mit_angaben_offen_und_senkt_den_gewinn_nicht() {
     if let Ok(e) = &r {
         // 100.000 − (50.000 − 50.000) = 100.000 EUR
         assert_eq!(kz_der_instanz(e, 1).get("E0306801"), Some(&json!(100_000)));
+    }
+}
+
+/// Ein Minus in einem Betragsfeld ist keine Angabe. Jede dieser Akten umgeht den Store (`append_roh` ohne Bindung), wie eine geladene
+/// Altakte, und misst darum den Guard selbst; das Speichern weist ein Minus schon ab (`nicht_negativ`, `api/tests/p23_befreiungen_hermetisch.rs`).
+/// Der Guard sperrt mit `p23_angaben_offen`, ehe eine Zahl entsteht. Gegenprobe: derselbe Betrag mit positivem Vorzeichen sperrt nicht.
+fn erwarte_offen_bei_minus(feld: &str, minus: i64) {
+    match lauf(&akte(mit(pflichtig(1), 1, feld, json!(minus)))) {
+        Err(EinreichFehler::Gesperrt(g)) => assert_eq!(g, Sperrgrund::P23AngabenOffen, "{feld}"),
+        anders => panic!("{feld} = {minus} muss mit p23_angaben_offen sperren, erhalten {anders:?}"),
+    }
+    let r = lauf(&akte(mit(pflichtig(1), 1, feld, json!(-minus))));
+    assert!(!matches!(r, Err(EinreichFehler::Gesperrt(_))), "Gegenprobe {feld} = {}: sperrt schon: {r:?}", -minus);
+}
+
+/// Preis −100.000 EUR liesse den Gewinn um 200.000 EUR sinken (−100.000 − 50.000 statt +50.000): ein Verlust, der keiner ist.
+#[test]
+fn ein_negativer_veraeusserungspreis_sperrt_mit_angaben_offen() {
+    erwarte_offen_bei_minus("p23_veraeusserungspreis", -10_000_000);
+}
+
+/// Anschaffungskosten −50.000 EUR liessen den Gewinn auf 150.000 EUR steigen. Der Guard ist `afa > kosten`: die Abschreibung ist nie
+/// negativ (eigener Guard), also liegt sie bei negativen Kosten immer darueber. Eine eigene Pruefung `kosten < 0` waere nie erreichbar.
+#[test]
+fn negative_anschaffungskosten_sperren_mit_angaben_offen() {
+    erwarte_offen_bei_minus("p23_anschaffung_herstellungskosten", -5_000_000);
+}
+
+/// Werbungskosten −5.000 EUR liessen den Gewinn um 5.000 EUR steigen (Gewinn = Preis − Kosten − Werbungskosten).
+#[test]
+fn negative_werbungskosten_sperren_mit_angaben_offen() {
+    erwarte_offen_bei_minus("p23_werbungskosten", -500_000);
+}
+
+/// Ein Grundstueck, dessen Frist abgelaufen ist (gekauft 2014), kann ein Gebaeude, einen Ausbau oder Anbau tragen, der in den letzten
+/// zehn Jahren entstand (§ 23 Abs. 1 Nr. 1 Satz 2 `EStG`; Anleitung Anlage SO, Zeilen 34 bis 42). Dieser Teil ist steuerpflichtig. Die
+/// Software rechnet die Aufteilung zwischen Boden und Gebaeude nicht und sperrt mit `p23_verkauf_nicht_gerechnet`, statt den ganzen
+/// Verkauf als steuerfrei zu fuehren. Gegenprobe: dasselbe Grundstueck ohne Gebaeude sperrt den Guard nicht.
+#[test]
+fn ein_altes_grundstueck_mit_neuem_gebaeude_sperrt_als_nicht_gerechnet() {
+    let alt = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+    let r = lauf(&akte(alt.clone()));
+    assert!(!matches!(r, Err(EinreichFehler::Gesperrt(_))), "Gegenprobe: ohne Gebaeude sperrt der Guard nicht: {r:?}");
+    match lauf(&akte(mit(alt, 1, "p23_gebaeude_in_frist", json!(true)))) {
+        Err(EinreichFehler::Gesperrt(g)) => assert_eq!(g, Sperrgrund::P23VerkaufNichtGerechnet),
+        anders => panic!("altes Grundstueck mit neuem Gebaeude muss mit p23_verkauf_nicht_gerechnet sperren, erhalten {anders:?}"),
+    }
+}
+
+/// Das Gebaeude sperrt nur, wo es etwas aendert: laeuft die Frist noch, ist das ganze Grundstueck steuerpflichtig; ist es selbst
+/// bewohnt, sind Gebaeude und Boden frei; ein anderes Wirtschaftsgut hat keine Gebaeudefrage und liest das Feld nicht.
+#[test]
+fn das_gebaeude_sperrt_nur_wo_es_den_steuerstatus_aendert() {
+    let laufend = mit(pflichtig(1), 1, "p23_gebaeude_in_frist", json!(true));
+    let r = lauf(&akte(laufend));
+    erwarte_einreichbar("Frist laeuft, Gebaeude ja", &r);
+    if let Ok(e) = &r {
+        assert_eq!(kz_der_instanz(e, 1).get("E0306801"), Some(&json!(50_000)), "das ganze Grundstueck zaehlt");
+    }
+    let alt = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+    let bewohnt = mit(mit(alt, 1, "p23_eigennutzung", json!("ausschliesslich")), 1, "p23_gebaeude_in_frist", json!(true));
+    let r = lauf(&akte(bewohnt));
+    assert!(!matches!(r, Err(EinreichFehler::Gesperrt(_))), "selbst bewohnt: Gebaeude ja sperrt nicht: {r:?}");
+    let wg = verkauf(1, "anderes_wg", "10.01.2024", "11.01.2025", 10_000_000, 5_000_000);
+    let r = lauf(&akte(mit(wg, 1, "p23_gebaeude_in_frist", json!(true))));
+    assert!(!matches!(r, Err(EinreichFehler::Gesperrt(_))), "anderes Wirtschaftsgut liest das Feld nicht: {r:?}");
+}
+
+/// Ein Grundstueck ohne Antwort zum Gebaeude ist eine offene Angabe, keine Antwort "nein".
+#[test]
+fn grundstueck_ohne_antwort_zum_gebaeude_sperrt_mit_angaben_offen() {
+    let ohne: Vec<_> = pflichtig(1).into_iter().filter(|(f, _)| f != "p23_gebaeude_in_frist").collect();
+    match lauf(&akte(ohne)) {
+        Err(EinreichFehler::Gesperrt(g)) => assert_eq!(g, Sperrgrund::P23AngabenOffen),
+        anders => panic!("fehlende Gebaeude-Antwort muss mit p23_angaben_offen sperren, erhalten {anders:?}"),
     }
 }
 

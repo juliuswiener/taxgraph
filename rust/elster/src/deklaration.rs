@@ -123,12 +123,14 @@ pub(crate) const P23_ARTFELDER: &[(&str, &[(&str, &str)])] = &[
     ),
 ];
 
-/// Abweichung Nr. 54: Rechenfelder des Privatverkaufs ohne Kz (Eigennutzung, taeglicher Gebrauch, Einkunftsquelle). Sie entscheiden,
+/// Abweichung Nr. 54: Rechenfelder des Privatverkaufs ohne Kz (Eigennutzung, taeglicher Gebrauch, Einkunftsquelle, Gebaeude der
+/// letzten zehn Jahre). Sie entscheiden,
 /// ob ein Verkauf steuerpflichtig ist; die Erklaerung traegt nur steuerpflichtige Verkaeufe (Abgabe-Sperre in `bescheid`).
 pub(crate) const P23_RECHENFELDER: &[&str] = &[
     "p23_eigennutzung",
     "p23_taeglicher_gebrauch",
     "p23_einkunftsquelle",
+    "p23_gebaeude_in_frist",
 ];
 
 /// Die 15 benannten Bindungswerte von `dba_staat` und ihr Text in der Laenderliste. 12 sind gleich, `Oesterreich`, `Tschechien` und
@@ -2547,6 +2549,7 @@ mod tests {
                 ("p23_eigennutzung", json!("nein")),
                 ("p23_taeglicher_gebrauch", json!(false)),
                 ("p23_einkunftsquelle", json!(false)),
+                ("p23_gebaeude_in_frist", json!(false)),
             ] {
                 felder.insert(format!("{f}{suffix}"), feld(w));
             }

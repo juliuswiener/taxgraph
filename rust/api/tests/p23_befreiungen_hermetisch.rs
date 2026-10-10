@@ -232,8 +232,8 @@ fn name(basis: &str, n: u8) -> String {
 }
 
 /// Ein vollstaendiger Verkauf der Instanz `n`: Art `typ`, Kaufdatum `a`, Verkaufsdatum `v` (TT.MM.JJJJ), Preis und Anschaffungskosten
-/// in Cent, Werbungskosten und Abschreibung 0. Beim Grundstueck "keine Eigennutzung", beim anderen Wirtschaftsgut "kein taeglicher
-/// Gebrauch, keine Einkunftsquelle".
+/// in Cent, Werbungskosten und Abschreibung 0. Beim Grundstueck "keine Eigennutzung, kein Gebaeude der letzten zehn Jahre", beim anderen
+/// Wirtschaftsgut "kein taeglicher Gebrauch, keine Einkunftsquelle".
 fn verkauf(n: u8, typ: &str, a: &str, v: &str, preis: i64, ak: i64) -> Paare {
     let mut k = vec![
         p(&name("p23_veraeusserungs_typ", n), json!(typ)),
@@ -250,6 +250,7 @@ fn verkauf(n: u8, typ: &str, a: &str, v: &str, preis: i64, ak: i64) -> Paare {
         k.push(p(&name("p23_einkunftsquelle", n), json!(false)));
     } else {
         k.push(p(&name("p23_eigennutzung", n), json!("nein")));
+        k.push(p(&name("p23_gebaeude_in_frist", n), json!(false)));
     }
     k
 }
@@ -359,6 +360,28 @@ async fn geerbtes_grundstueck_zaehlt_ab_dem_kaufdatum_des_erblassers() {
     rentner("A7a", frei, R0).await;
     let pflichtig = verkauf(1, "grundstueck", "01.09.2020", "20.03.2025", 10_000_000, 5_000_000);
     rentner("A7b", pflichtig, R0 + PLUS_50_000).await;
+}
+
+/// Gekauft 2014: die Frist von zehn Jahren ist abgelaufen, der Verkauf ist frei. Hat der Nutzer in den letzten zehn Jahren darauf aber
+/// ein Gebaeude gebaut, ausgebaut oder erweitert, ist dieser Teil steuerpflichtig (§ 23 Abs. 1 Nr. 1 Satz 2 `EStG`; Anleitung Anlage SO,
+/// Zeilen 34 bis 42). Die Software rechnet die Aufteilung zwischen Boden und Gebaeude nicht und sperrt, statt 0 EUR zu melden.
+/// Kontrolle zuerst: dasselbe Grundstueck ohne Gebaeude ist frei (sonst bewiese die Sperre nichts).
+#[tokio::test]
+async fn altes_grundstueck_mit_neuem_gebaeude_sperrt_mit_dem_verkauf() {
+    let alt = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+    rentner("A8a", alt.clone(), R0).await;
+    rentner_gesperrt("A8b", mit(alt, 1, "p23_gebaeude_in_frist", json!(true)), NICHT_GERECHNET).await;
+}
+
+/// Das Gebaeude aendert nur, was es aendern muss: laeuft die Frist noch, ist das ganze Grundstueck steuerpflichtig; bei Eigennutzung sind
+/// Gebaeude und Boden frei.
+#[tokio::test]
+async fn gebaeude_der_letzten_zehn_jahre_aendert_nichts_bei_laufender_frist_und_bei_eigennutzung() {
+    let laufend = mit(grundstueck_pflichtig(1), 1, "p23_gebaeude_in_frist", json!(true));
+    rentner("A9a", laufend, R0 + PLUS_50_000).await;
+    let alt = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+    let bewohnt = mit(mit(alt, 1, "p23_eigennutzung", json!("ausschliesslich")), 1, "p23_gebaeude_in_frist", json!(true));
+    rentner("A9b", bewohnt, R0).await;
 }
 
 // ---- anderes Wirtschaftsgut ------------------------------------------------------------------------
@@ -587,6 +610,12 @@ async fn grundstueck_ohne_antwort_zur_eigennutzung_sperrt_mit_angaben_offen() {
 }
 
 #[tokio::test]
+async fn grundstueck_ohne_antwort_zum_gebaeude_sperrt_mit_angaben_offen() {
+    let v = ohne(grundstueck_pflichtig(1), 1, "p23_gebaeude_in_frist");
+    rentner_gesperrt("F8b", v, ANGABEN_OFFEN).await;
+}
+
+#[tokio::test]
 async fn wirtschaftsgut_ohne_antwort_zum_taeglichen_gebrauch_sperrt_mit_angaben_offen() {
     let v = verkauf(1, "anderes_wg", "15.02.2025", "20.08.2025", 10_000_000, 5_000_000);
     let v = ohne(v, 1, "p23_taeglicher_gebrauch");
@@ -633,6 +662,14 @@ async fn gesamt_laesst_den_steuerfreien_verkauf_weg() {
 }
 
 #[tokio::test]
+async fn gesamt_sperrt_das_alte_grundstueck_mit_neuem_gebaeude() {
+    let v = verkauf(1, "grundstueck", "15.06.2014", "10.03.2025", 10_000_000, 5_000_000);
+    let v = mit(v, 1, "p23_gebaeude_in_frist", json!(true));
+    let a = ergebnis("gesamt", &akte(kegel_gesamt(), v)).await;
+    erwarte_sperre("H2b", &a, NICHT_GERECHNET);
+}
+
+#[tokio::test]
 async fn gesamt_sperrt_den_kryptoverkauf_mit_dem_verkauf() {
     let v = mit(grundstueck_pflichtig(1), 1, "p23_veraeusserungs_typ", json!("kryptowert"));
     let a = ergebnis("gesamt", &akte(kegel_gesamt(), v)).await;
@@ -663,12 +700,12 @@ async fn kreuz_kein_verkauf_trotz_eingetragenem_verkauf_sperrt_weiter_mit_dem_fl
     erwarte_sperre("K1", &a, "flag_konsistenz_offen");
 }
 
-/// Eine negative Abschreibung nimmt schon das Speichern nicht an (`nicht_negativ` an `p23_afa`, 422 `fail-closed (Vorzeichen)`): sie senkte
-/// den Gewinn des Verkaufs, ohne dass der Nutzer es merkt. Die 0 und eine positive Abschreibung gehen durch; das gilt auch fuer die
-/// Instanz `__2`. Die Pruefung im Bescheid (`afa.get() < 0`) bleibt als zweite Sicherung fuer geladene Akten
-/// (`privatverkauf_einreichung_hermetisch.rs`, `rentner_ehegatte_hermetisch.rs`).
+/// Ein Minus in einem Betragsfeld des Verkaufs nimmt schon das Speichern nicht an (`nicht_negativ`, 422 `fail-closed (Vorzeichen)`): ein
+/// negativer Preis senkte den Gewinn, negative Kosten, negative Werbungskosten und eine negative Abschreibung hoben ihn, ohne dass der
+/// Nutzer es merkt. Die 0 und ein positiver Betrag gehen durch; das gilt auch fuer die Instanz `__2`. Die Pruefung im Bescheid
+/// (`lese()`) bleibt als zweite Sicherung fuer geladene Akten (`privatverkauf_einreichung_hermetisch.rs`, `rentner_ehegatte_hermetisch.rs`).
 #[tokio::test]
-async fn eine_negative_abschreibung_wird_beim_speichern_abgewiesen() {
+async fn ein_minus_in_den_betragsfeldern_wird_beim_speichern_abgewiesen() {
     let d = dienst();
     let kopf = json!({"fall_id": "p23", "scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025});
     let (status, antwort) = sende(&d, "POST", "/fall", Some(&kopf)).await;
@@ -682,7 +719,14 @@ async fn eine_negative_abschreibung_wird_beim_speichern_abgewiesen() {
         })
     };
     // Je Feld ein Minus (abgewiesen) und ein Wert, der durchgeht: 5.000.000 Cent bei der ersten, 0 bei der zweiten Instanz.
-    for (feld, ok) in [("p23_afa", 5_000_000), ("p23_afa__2", 0)] {
+    for (feld, ok) in [
+        ("p23_afa", 5_000_000),
+        ("p23_afa__2", 0),
+        ("p23_veraeusserungspreis", 10_000_000),
+        ("p23_anschaffung_herstellungskosten", 5_000_000),
+        ("p23_werbungskosten", 500_000),
+        ("p23_veraeusserungspreis__2", 0),
+    ] {
         let (status, antwort) = sende(&d, "POST", "/fall/p23/event", Some(&setze(feld, -5_000_000))).await;
         assert_eq!(status, 422, "{feld}: ein Minus muss abgewiesen werden: {antwort}");
         assert!(antwort.to_string().contains("Vorzeichen"), "{feld}: {antwort}");
@@ -711,6 +755,7 @@ async fn die_fragetexte_trennen_den_verkauf_von_den_sonstigen_einkuenften() {
         "p23_eigennutzung",
         "p23_afa",
         "p23_anschaffungsdatum",
+        "p23_gebaeude_in_frist",
     ] {
         let (status, q) = sende(&d, "GET", &format!("/fall/p23/feld/{fid}/frage"), None).await;
         assert_eq!(status, 200, "{fid}: {q}");
@@ -726,6 +771,17 @@ async fn die_fragetexte_trennen_den_verkauf_von_den_sonstigen_einkuenften() {
     assert!(texte["p23_veraeusserungs_typ"].contains("Kryptowert"), "{}", texte["p23_veraeusserungs_typ"]);
     assert!(texte["p23_eigennutzung"].contains("selbst bewohnt"), "{}", texte["p23_eigennutzung"]);
     assert!(texte["p23_anschaffungsdatum"].contains("Erb"), "Erbfall nicht erklaert: {}", texte["p23_anschaffungsdatum"]);
+    assert!(
+        texte["p23_gebaeude_in_frist"].contains("Gebäude") && texte["p23_gebaeude_in_frist"].contains("zehn Jahren"),
+        "{}",
+        texte["p23_gebaeude_in_frist"]
+    );
+    // Die Anleitung Anlage SO nennt drei Quellen der abgezogenen Abschreibung und die Anschaffung nach 2008.
+    assert!(
+        texte["p23_afa"].contains("Arbeitnehmer") && texte["p23_afa"].contains("Kapitalerträgen") && texte["p23_afa"].contains("31.12.2008"),
+        "{}",
+        texte["p23_afa"]
+    );
     for (fid, t) in &texte {
         assert!(!t.contains("Sie ") && !t.contains(" Ihre"), "{fid} siezt: {t}");
     }

@@ -480,6 +480,7 @@ fn privatverkauf_a(kauf: &'static str, verkauf: &'static str, preis: i64, kosten
         ("p23_werbungskosten", json!(0)),
         ("p23_afa", json!(0)),
         ("p23_eigennutzung", json!("nein")),
+        ("p23_gebaeude_in_frist", json!(false)),
     ]
 }
 
