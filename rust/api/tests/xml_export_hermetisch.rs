@@ -4,7 +4,8 @@
 //! Drei Dinge hält die Datei fest. Erstens: die Bytes sind die, die `POST /einreichen` an `ERiC` gibt
 //! (`rust/fixtures/e2e/gesamt.xml`, dort in `einreichen_attrappe_hermetisch.rs` gegen die Attrappe
 //! belegt). Zweitens: wo `POST /einreichen` sperrt, entsteht keine Datei. Drittens: die Datei
-//! entsteht atomar, nur für den Besitzer lesbar, und ersetzt nie eine vorhandene.
+//! entsteht atomar, nur für den Besitzer lesbar, und ersetzt nie eine vorhandene. Dazu kommt das
+//! Land des Finanzamts: `--land NW` landet in der Datei wie `empfaenger_land` NW in `POST /einreichen`.
 //!
 //! Der XML-Writer braucht `E10-2025.xsd` aus der lokalen `ERiC`-Auslieferung; die CI hat sie nicht
 //! (`TAXGRAPH_OHNE_XSD=1`, wie in `ci.yml`). Die Sperrfälle brauchen sie nicht und laufen immer.
@@ -15,14 +16,49 @@
     clippy::panic
 )]
 
+use std::ffi::{OsStr, OsString};
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use api::konfig::Konfig;
-use api::{einreichen::xml_exportieren, ApiFehler, Zustand};
+use api::{app, einreichen::xml_exportieren, ApiFehler, Zustand};
 use auth::Auth;
+use axum::body::Body;
+use axum::http::Request;
+use http_body_util::BodyExt;
 use serde_json::{json, Value};
+use tower::ServiceExt;
+
+/// Die Tests, die das Prozess-Env ändern (`ELSTER_HERSTELLER_ID`, `ERIC_DIR`, `HOME`) oder einen Prozess
+/// mit diesem Env starten, laufen nacheinander: sonst sähe der eine das Env des anderen halb gesetzt.
+static ENV: Mutex<()> = Mutex::new(());
+
+fn nacheinander() -> MutexGuard<'static, ()> {
+    ENV.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// Setzt Env-Variablen und stellt sie beim Verlassen wieder her, auch bei einem Panic.
+struct Env(Vec<(&'static str, Option<OsString>)>);
+
+impl Env {
+    fn setze(&mut self, name: &'static str, wert: impl AsRef<OsStr>) {
+        self.0.push((name, std::env::var_os(name)));
+        std::env::set_var(name, wert);
+    }
+}
+
+impl Drop for Env {
+    fn drop(&mut self) {
+        for (name, alt) in self.0.drain(..).rev() {
+            match alt {
+                Some(w) => std::env::set_var(name, w),
+                None => std::env::remove_var(name),
+            }
+        }
+    }
+}
 
 fn wurzel() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -193,9 +229,11 @@ fn die_datei_hat_die_bytes_von_einreichen_und_den_testmerker() {
         eprintln!("[xml_export] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
         return;
     }
+    let _nacheinander = nacheinander();
     // Die öffentlich bekannte Platzhalter-ID aus den amtlichen `ERiC`-Beispielen, wie in
     // `einreichen_attrappe_hermetisch.rs`; die Soll-Datei trägt genau sie.
-    std::env::set_var("ELSTER_HERSTELLER_ID", "74931");
+    let mut env = Env(Vec::new());
+    env.setze("ELSTER_HERSTELLER_ID", "74931");
     let tmp = tempfile::tempdir().unwrap();
     let z = dienst(tmp.path());
     let aus = tmp.path().join("aus");
@@ -263,20 +301,113 @@ fn die_geschriebene_datei_besteht_checkest() {
     assert_eq!(rc, 610_001_002, "die Kontrolle haette abgelehnt werden muessen");
 }
 
+/// Die Attrappe von `libericapi.so` (`rust/elster/tests/eric_attrappe/eric_attrappe.c`): sie schreibt auf,
+/// was `ERiC` bekam, sendet nichts und braucht weder Zertifikat noch Hersteller-ID.
+fn baue_attrappe(ziel: &Path) {
+    let quelle =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../elster/tests/eric_attrappe/eric_attrappe.c");
+    let st = Command::new("cc")
+        .args(["-shared", "-fPIC", "-O0", "-Wall", "-Wextra", "-o"])
+        .arg(ziel)
+        .arg(&quelle)
+        .status()
+        .expect("cc fehlt: die Attrappe von libericapi.so laesst sich nicht bauen");
+    assert!(st.success(), "cc scheiterte an {}", quelle.display());
+}
+
+/// Das XML, das die Attrappe im ersten Aufruf sah.
+fn gesehen(steuer: &Path) -> Vec<u8> {
+    std::fs::read(steuer.join("gesehen/1.xml")).expect("ERiC wurde nicht gefragt")
+}
+
+async fn einreichen(z: &Zustand, token: &str, fall: &str, rumpf: &Value) -> (u16, Value) {
+    let text = rumpf.to_string();
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("/fall/{fall}/einreichen"))
+        .header("authorization", token)
+        .header("content-type", "application/json")
+        .header("content-length", text.len().to_string())
+        .body(Body::from(text))
+        .unwrap();
+    let r = app(z.clone()).oneshot(req).await.unwrap();
+    let (teile, rumpf) = r.into_parts();
+    let bytes = rumpf.collect().await.unwrap().to_bytes();
+    let json = serde_json::from_slice(&bytes)
+        .unwrap_or_else(|e| panic!("kein JSON: {e}: {}", String::from_utf8_lossy(&bytes)));
+    (teile.status.as_u16(), json)
+}
+
+/// `--land NW` ist `empfaenger_land` NW: die Datei trägt das Land, und ihre Bytes sind die, die
+/// `POST /einreichen` mit `empfaenger_land` NW an die Attrappe von `ERiC` gibt. Ohne den Vergleich mit
+/// `BY` belegte `NW` nichts: eine feste Vorgabe träfe die Datei nur im einen Fall.
+#[test]
+fn das_land_geht_in_die_datei_wie_in_einreichen() {
+    if !elster::testhilfe::schemas_da(2025) {
+        eprintln!("[xml_export] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
+        return;
+    }
+    let _nacheinander = nacheinander();
+    // Das Schema liegt in der lokalen Auslieferung; zu lesen, solange HOME und ERIC_DIR echt sind.
+    let xsd = elster::finde_schema(2025, "E10-{jahr}.xsd").unwrap();
+    let tmp = tempfile::tempdir().unwrap();
+    let eric = tmp.path().join("eric");
+    std::fs::create_dir_all(eric.join("schema/2025")).unwrap();
+    std::fs::copy(xsd, eric.join("schema/2025/E10-2025.xsd")).unwrap();
+    std::fs::create_dir_all(eric.join("lib")).unwrap();
+    baue_attrappe(&eric.join("lib/libericapi.so"));
+    let steuer = tmp.path().join("steuer");
+    std::fs::create_dir_all(&steuer).unwrap();
+    let home = tmp.path().join("home");
+    std::fs::create_dir_all(&home).unwrap();
+    // ERiC, die Attrappe und das Schema zeigen in Wegwerf-Verzeichnisse: die echte Bibliothek unter
+    // `~/02_Software/eric` wird nie geladen. Die ID ist die öffentlich bekannte Platzhalter-ID.
+    let mut env = Env(Vec::new());
+    env.setze("ERIC_DIR", &eric);
+    env.setze("ERIC_ATTRAPPE_DIR", &steuer);
+    env.setze("HOME", &home);
+    env.setze("ELSTER_HERSTELLER_ID", "74931");
+
+    let z = dienst(tmp.path());
+    let aus = tmp.path().join("aus");
+    std::fs::create_dir_all(&aus).unwrap();
+    let (nw, by) = (aus.join("nw.xml"), aus.join("by.xml"));
+    for (land, ziel) in [("NW", &nw), ("BY", &by)] {
+        xml_exportieren(&z, "e_ges", land, ziel)
+            .unwrap()
+            .unwrap_or_else(|a| panic!("{land}: {}", a.body));
+    }
+    let (nw_text, by_text) = (std::fs::read_to_string(&nw).unwrap(), std::fs::read_to_string(&by).unwrap());
+    assert!(nw_text.contains("<Ziel>NW</Ziel>"), "die Datei fuer NW traegt NW nicht");
+    assert!(!nw_text.contains("<Ziel>BY</Ziel>"), "die Datei fuer NW traegt noch BY");
+    assert!(by_text.contains("<Ziel>BY</Ziel>"), "die Datei fuer BY traegt BY nicht");
+    assert!(nw_text != by_text, "das Land aendert die Datei nicht");
+
+    // Dasselbe Land durch `POST /einreichen`: was ERiC sieht, ist die Datei.
+    let token = format!("Bearer {}", z.auth.stelle_aus("alice").unwrap());
+    std::fs::write(steuer.join("skript"), "0\n<Ok/>").unwrap();
+    let laufzeit = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    let (status, a) = laufzeit.block_on(einreichen(&z, &token, "e_ges", &json!({"empfaenger_land": "NW"})));
+    assert_eq!(status, 200, "{a}");
+    assert_eq!(gesehen(&steuer), std::fs::read(&nw).unwrap(), "einreichen mit NW und die Datei fuer NW weichen ab");
+}
+
 #[test]
 fn das_programm_schreibt_oder_sagt_warum_nicht() {
     if !elster::testhilfe::schemas_da(2025) {
         eprintln!("[xml_export] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
         return;
     }
+    let _nacheinander = nacheinander();
     let tmp = tempfile::tempdir().unwrap();
     let _ = dienst(tmp.path());
     let aus = tmp.path().join("aus");
     std::fs::create_dir_all(&aus).unwrap();
-    let lauf = |fall: &str, ziel: &Path| {
+    let lauf = |fall: &str, ziel: &Path, mehr: &[&str]| {
         Command::new(env!("CARGO_BIN_EXE_taxgraph-xml"))
             .args(["--fall", fall, "--ausgabe"])
             .arg(ziel)
+            .args(mehr)
             .env("TAXGRAPH_DATEN", tmp.path())
             .env("TAXGRAPH_AUDIT_DIR", tmp.path())
             .env("ELSTER_HERSTELLER_ID", "74931")
@@ -286,7 +417,7 @@ fn das_programm_schreibt_oder_sagt_warum_nicht() {
     let soll = std::fs::read(wurzel().join("rust/fixtures/e2e/gesamt.xml")).unwrap();
 
     let ziel = aus.join("a.xml");
-    let o = lauf("e_ges", &ziel);
+    let o = lauf("e_ges", &ziel, &[]);
     assert_eq!(o.status.code(), Some(0), "{}", String::from_utf8_lossy(&o.stderr));
     assert_eq!(std::fs::read(&ziel).unwrap(), soll);
     // Die Ausgabe nennt den Pfad und die Größe, nie die Hersteller-ID.
@@ -298,9 +429,22 @@ fn das_programm_schreibt_oder_sagt_warum_nicht() {
     assert!(ausgabe.contains(&soll.len().to_string()), "{ausgabe}");
     assert!(!ausgabe.contains("74931"), "{ausgabe}");
 
+    // `--land NW` statt der Vorgabe `BY`: die Datei ist `gesamt.xml` mit dem Land NW im Ziel, sonst gleich.
+    let ziel_nw = aus.join("nw.xml");
+    let o = lauf("e_ges", &ziel_nw, &["--land", "NW"]);
+    assert_eq!(o.status.code(), Some(0), "{}", String::from_utf8_lossy(&o.stderr));
+    let soll_nw = String::from_utf8(soll.clone())
+        .unwrap()
+        .replace("<Ziel>BY</Ziel>", "<Ziel>NW</Ziel>");
+    assert!(soll_nw.as_bytes() != soll, "gesamt.xml traegt kein <Ziel>BY</Ziel>");
+    assert!(
+        std::fs::read(&ziel_nw).unwrap() == soll_nw.as_bytes(),
+        "--land NW schreibt nicht gesamt.xml mit NW im Ziel"
+    );
+
     // Gesperrt: Exit 2, der Grund auf stderr, keine Datei.
     let ziel = aus.join("b.xml");
-    let o = lauf("e_sperre", &ziel);
+    let o = lauf("e_sperre", &ziel, &[]);
     assert_eq!(o.status.code(), Some(2), "{}", String::from_utf8_lossy(&o.stderr));
     assert!(String::from_utf8_lossy(&o.stderr).contains("kapital_semantik_offen"));
     assert!(!ziel.exists());
