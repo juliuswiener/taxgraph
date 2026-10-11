@@ -101,7 +101,8 @@ struct Fall {
     felder: Felder,
 }
 
-fn fall(scheibe: Scheibe, paare: &[(String, Value)]) -> Fall {
+/// Ein Feld aus `vorlaeufig` steht als vorlaeufiges Ereignis im Store, alle anderen bestaetigt.
+fn fall_mit(scheibe: Scheibe, paare: &[(String, Value)], vorlaeufig: &[&str]) -> Fall {
     let cfg = Cfg::fuer(scheibe);
     let ids = cfg
         .felder(|d| panic!("KONTROLLE: Scheibe liest Felder aus {d}"))
@@ -110,7 +111,7 @@ fn fall(scheibe: Scheibe, paare: &[(String, Value)]) -> Fall {
     let alle = kegel_fuer(&cfg, paare);
     let events: Vec<(&str, Value, bool)> = alle
         .iter()
-        .map(|(f, w)| (f.as_str(), w.clone(), true))
+        .map(|(f, w)| (f.as_str(), w.clone(), !vorlaeufig.contains(&f.as_str())))
         .collect();
     let store = store(&events);
     Fall {
@@ -124,7 +125,12 @@ fn fall(scheibe: Scheibe, paare: &[(String, Value)]) -> Fall {
 
 /// Der Gesamtbetrag der Einkuenfte in Euro; ein Fall ohne Zahl ist ein Fehlschlag des Tests.
 fn gdb(scheibe: Scheibe, paare: &[(String, Value)]) -> i64 {
-    let f = fall(scheibe, paare);
+    gdb_mit(scheibe, paare, &[])
+}
+
+/// Wie [`gdb`]; ein Feld aus `vorlaeufig` steht als vorlaeufiges Ereignis im Store.
+fn gdb_mit(scheibe: Scheibe, paare: &[(String, Value)], vorlaeufig: &[&str]) -> i64 {
+    let f = fall_mit(scheibe, paare, vorlaeufig);
     let kegel = f.cfg.kegel(|d| panic!("KONTROLLE: Kegel aus {d}")).unwrap();
     let kegel: Vec<&str> = kegel.iter().map(String::as_str).collect();
     let umg = Umgebung {
@@ -267,6 +273,62 @@ fn mehrere_mitteilungen_teilen_sich_einen_pauschbetrag() {
         ]
         .concat();
         assert_eq!(zuwachs(s, beide), 5_898, "{s}");
+    }
+}
+
+/// Mehrere Mitteilungen addieren auch den Ertragsanteil der Nr. 5 (Zeile 15), jede mit dem Ertragsanteil ihres eigenen
+/// Rentenbeginns: Nr. 1 3.000 und Nr. 5 10.000 ab 05.05.2020 (65 Jahre, 18 % = 1.800), dazu Nr. 4 2.000 und Nr. 5 10.000 ab
+/// 05.05.2022 (67 Jahre, 17 % = 1.700). 3.000 + 2.000 + 1.800 + 1.700 − 102 = 8.398. Zaehlte nur die letzte Mitteilung ihren
+/// Ertragsanteil, kaemen 6.598 heraus (Mutant N16 der Nachmessung Nr. 55).
+#[test]
+fn mehrere_mitteilungen_addieren_auch_den_ertragsanteil_der_nr5() {
+    for s in BEIDE {
+        let beide = [
+            mitteilung(1, 3_000, 0, 10_000, BEGINN_65),
+            mitteilung(2, 0, 2_000, 10_000, "05.05.2022"),
+        ]
+        .concat();
+        assert_eq!(zuwachs(s, beide), 8_398, "{s}");
+    }
+}
+
+/// Ein Betrag mit Cent-Rest zaehlt in vollen Euro abgerundet, wie ihn der Schreiber in die Zeile setzt (`kz_rundung.tsv`, Zeilen
+/// `ab`): 3.000,99 Euro in Nr. 1 oder Nr. 4 zaehlen 3.000, nicht 3.001 (Mutant N05 der Nachmessung Nr. 55).
+#[test]
+fn ein_betrag_mit_cent_rest_zaehlt_abgerundet() {
+    for s in BEIDE {
+        for feld in ["rav_bav_nr1_betrag", "rav_bav_nr4_betrag"] {
+            let m = mit(
+                mitteilung(1, 0, 0, 0, BEGINN_65),
+                feld,
+                json!(cent(3_000) + 99),
+            );
+            assert_eq!(zuwachs(s, m), 2_898, "{s}: {feld}");
+        }
+    }
+}
+
+/// Eine vorlaeufige Mitteilung bewegt die festgesetzte Steuer nie (`Instanzquelle::zaehlt`): eine einzige vorlaeufige Angabe macht
+/// die ganze Mitteilung vorlaeufig, und neben einer bestaetigten Mitteilung zaehlt nur diese, mit einem Pauschbetrag (Mutant N14
+/// der Nachmessung Nr. 55). Den Nutzer erreicht der Guard davor mit `rav_bav_angaben_offen`
+/// (`api/tests/rav_bav_waechter_hermetisch.rs`, `o5`); hier steht der Ring allein.
+#[test]
+fn eine_vorlaeufige_mitteilung_zaehlt_im_ring_nicht() {
+    for s in BEIDE {
+        let ohne = gdb(s, &akte(s));
+        let allein = gdb_mit(
+            s,
+            &mit_rente(s, mitteilung(1, 3_000, 0, 0, BEGINN_65)),
+            &["rav_bav_nr1_betrag"],
+        );
+        assert_eq!(allein - ohne, 0, "{s}: einzige Mitteilung vorlaeufig");
+        let beide = [
+            mitteilung(1, 3_000, 0, 0, BEGINN_65),
+            mitteilung(2, 3_000, 0, 0, BEGINN_65),
+        ]
+        .concat();
+        let zweite = gdb_mit(s, &mit_rente(s, beide), &["rav_bav_nr1_betrag__2"]);
+        assert_eq!(zweite - ohne, 2_898, "{s}: zweite Mitteilung vorlaeufig");
     }
 }
 

@@ -99,6 +99,16 @@ async fn sende(d: &Dienst, methode: &str, pfad: &str, body: Option<&Value>) -> (
 /// Legt einen Fall der Scheibe an, schreibt jedes Paar ueber die echte Route `POST /event` (als Nutzer-Klick, bestaetigt; ein Feld
 /// aus `vorlaeufig` ohne zweites Signal) und liefert `GET /ergebnis`.
 async fn ergebnis_mit(scheibe: &str, paare: &[(String, Value)], vorlaeufig: &[&str]) -> Value {
+    antwort_mit(scheibe, paare, vorlaeufig, "/fall/rav/ergebnis").await
+}
+
+/// Wie [`ergebnis_mit`], nur die Antwort von `GET pfad` (zum Beispiel `/fall/rav/fragen`).
+async fn antwort_mit(
+    scheibe: &str,
+    paare: &[(String, Value)],
+    vorlaeufig: &[&str],
+    pfad: &str,
+) -> Value {
     let d = dienst();
     let kopf = json!({"fall_id": "rav", "scheibe": scheibe, "veranlagungszeitraum": 2025});
     let (status, antwort) = sende(&d, "POST", "/fall", Some(&kopf)).await;
@@ -116,8 +126,8 @@ async fn ergebnis_mit(scheibe: &str, paare: &[(String, Value)], vorlaeufig: &[&s
         let (status, antwort) = sende(&d, "POST", "/fall/rav/event", Some(&rumpf)).await;
         assert_eq!(status, 201, "POST /event {feld}: {antwort}");
     }
-    let (status, antwort) = sende(&d, "GET", "/fall/rav/ergebnis", None).await;
-    assert_eq!(status, 200, "GET /ergebnis: {antwort}");
+    let (status, antwort) = sende(&d, "GET", pfad, None).await;
+    assert_eq!(status, 200, "GET {pfad}: {antwort}");
     antwort
 }
 
@@ -686,4 +696,92 @@ async fn w1_betrag_trotz_kreuz_keine_mitteilung_sperrt() {
         &ergebnis("gesamt", &akte(kegel_gesamt(), Some(true), nullen)).await,
         G0,
     );
+}
+
+/// Ein nur vorlaeufiger Betrag zu "keine Mitteilung" (oder ohne Kreuz) ist noch keine Angabe: er sperrt nicht, der Fall rechnet wie
+/// ohne ihn (Mutant N21 der Nachmessung Nr. 55). Erst der bestaetigte Betrag ist der Widerspruch, den `w1` pinnt.
+#[tokio::test]
+async fn w2_ein_vorlaeufiger_betrag_trotz_kreuz_keine_mitteilung_sperrt_nicht() {
+    let vorlaeufig = ["rav_bav_nr1_betrag"];
+    for kreuz in [Some(true), None] {
+        let r = ergebnis_mit(
+            "rentner_gesamt",
+            &akte(kegel_rentner("einzel"), kreuz, mitteilung(1)),
+            &vorlaeufig,
+        )
+        .await;
+        let r_ohne = ergebnis(
+            "rentner_gesamt",
+            &akte(kegel_rentner("einzel"), kreuz, vec![]),
+        )
+        .await;
+        assert_eq!(r["grund"], r_ohne["grund"], "R {kreuz:?}: {r}");
+        assert_eq!(r["zahl_cent"], r_ohne["zahl_cent"], "R {kreuz:?}: {r}");
+        let g = ergebnis_mit(
+            "gesamt",
+            &akte(kegel_gesamt(), kreuz, mitteilung(1)),
+            &vorlaeufig,
+        )
+        .await;
+        let g_ohne = ergebnis("gesamt", &akte(kegel_gesamt(), kreuz, vec![])).await;
+        assert_eq!(g["grund"], g_ohne["grund"], "G {kreuz:?}: {g}");
+        assert_eq!(g["zahl_cent"], g_ohne["zahl_cent"], "G {kreuz:?}: {g}");
+    }
+    erwarte_zahl(
+        "R Kreuz keine Mitteilung",
+        &ergebnis_mit(
+            "rentner_gesamt",
+            &akte(kegel_rentner("einzel"), Some(true), mitteilung(1)),
+            &vorlaeufig,
+        )
+        .await,
+        R0,
+    );
+}
+
+// ---- Fragenfluss ----------------------------------------------------------------------------------
+
+/// Die sieben Felder einer Mitteilung (Gruppe `rente_av_bav`).
+const MITTEILUNG_FELDER: [&str; 7] = [
+    "rav_bav_nr1_betrag",
+    "rav_bav_nr4_betrag",
+    "rav_bav_nr4_beginn",
+    "rav_bav_nr5_betrag",
+    "rav_bav_nr5_beginn",
+    "rav_bav_andere_nummern",
+    "rav_bav_basisrente",
+];
+
+/// Die Fragen der Mitteilung stehen nach "ja, ich habe eine Rente mit Leistungsmitteilung" (`kein_rav_bav` = nein) und solange das
+/// Kreuz offen ist, nach "nein, keine" nicht (Regel `p22_nr5_rav_bav_leistung` in `bindung_regel_bedingungen.yaml`; Mutant N55 der
+/// Nachmessung Nr. 55 drehte den Kreuzwert).
+#[tokio::test]
+async fn f1_die_fragen_der_mitteilung_stehen_nur_nach_ja_und_solange_das_kreuz_offen_ist() {
+    for (scheibe, kegel) in [
+        ("rentner_gesamt", kegel_rentner("einzel")),
+        ("gesamt", kegel_gesamt()),
+    ] {
+        for (kreuz, erwartet) in [(Some(false), true), (None, true), (Some(true), false)] {
+            let fragen = antwort_mit(
+                scheibe,
+                &akte(kegel.clone(), kreuz, vec![]),
+                &[],
+                "/fall/rav/fragen",
+            )
+            .await;
+            let ids: Vec<&str> = fragen["fragen"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|q| q["feld_id"].as_str())
+                .collect();
+            for feld in MITTEILUNG_FELDER {
+                assert_eq!(
+                    ids.contains(&feld),
+                    erwartet,
+                    "{scheibe}, Kreuz {kreuz:?}: {feld}"
+                );
+            }
+        }
+    }
 }
