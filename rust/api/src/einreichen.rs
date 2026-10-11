@@ -15,6 +15,10 @@
 //!
 //! Die Bibliothek laden oder initialisieren scheitert in Python an `AttributeError` (fehlendes
 //! Symbol) mit 500; Rust meldet es wie jeden Ladefehler als 503.
+use std::io::Write as _;
+use std::os::unix::fs::OpenOptionsExt as _;
+use std::path::{Path, PathBuf};
+
 use bescheid::deklaration::{einreichungs_xml, sperrgrund_klartext, EinreichFehler, Einreichung};
 use elster::{
     gekappt_verdacht, klasse_name, klassifiziere_rc, unerwarteter_rc_hinweis, validiere,
@@ -22,11 +26,11 @@ use elster::{
 };
 use serde_json::{json, Map, Value};
 use store::audit::AuditAktion;
-use store::EricBefundEingabe;
+use store::{EricBefundEingabe, Store};
 
 use crate::antwort::Antwort;
 use crate::deklaration::deklarations_fehler;
-use crate::eigener_fall::EigenerFall;
+use crate::eigener_fall::{fall_kennung, fall_pfad, EigenerFall};
 use crate::fehler::ApiFehler;
 use crate::python::{repr, typname, wahr};
 use crate::stand::bescheid_fehler;
@@ -127,6 +131,78 @@ fn abbruch(e: EinreichFehler, fall_id: &str, scheibe_roh: Option<&str>) -> Resul
     }
 }
 
+/// Der Bau bis zum XML. `einreichen` und [`xml_exportieren`] gehen beide hier durch: dieselbe Bindung,
+/// dieselben Parameter, dieselben Bytes.
+fn bau(
+    z: &Dienst,
+    store: &Store,
+    land: &str,
+) -> Result<Result<Einreichung, EinreichFehler>, ApiFehler> {
+    let sb = z.scheibe_bindung(store)?;
+    Ok(einreichungs_xml(store, &sb.index, z.params()?, land, None))
+}
+
+/// `taxgraph-xml`: die Erklärung des Falls `fall_id` als XML-Datei `ziel`, mit Testmerker, byte-gleich dem
+/// XML, das [`einreichen`] an `ERiC` gibt. Liest die Akte nur, sendet nichts, kennt kein Zertifikat.
+///
+/// `Ok(Ok(n))`: `n` Bytes liegen in `ziel`. `Ok(Err(antwort))`: der Bau bricht ab, die Antwort ist die von
+/// `POST /einreichen` an derselben Stelle, und es entsteht keine Datei. Die Datei entsteht atomar
+/// (`ziel.tmp`, dann ein harter Verweis, der an einer vorhandenen Datei scheitert), nur für den
+/// Besitzer lesbar: sie trägt Name, Anschrift und Steuernummer.
+///
+/// Kein Besitzer-Check: wer die Akte im Dateisystem lesen kann, darf ihr XML bauen. Der HTTP-Weg
+/// hält dagegen den Besitz ein.
+///
+/// # Errors
+/// 400 bei einer ungültigen Kennung, 404 ohne Akte, 409 bei vorhandenem `ziel`, 500 wo
+/// `POST /einreichen` 500 meldet oder die Datei sich nicht schreiben lässt.
+pub fn xml_exportieren(
+    z: &Dienst,
+    fall_id: &str,
+    land: &str,
+    ziel: &Path,
+) -> Result<Result<usize, Antwort>, ApiFehler> {
+    let id = fall_kennung(fall_id)?;
+    let pfad = fall_pfad(&z.konfig, &id);
+    if !pfad.exists() {
+        return Err(ApiFehler::status(
+            404,
+            format!("Fall {} existiert nicht", repr(&id.as_str().into())),
+        ));
+    }
+    let store = Store::aus_datei(store::lade(&pfad)?);
+    match bau(z, &store, land)? {
+        Ok(einr) => {
+            schreibe_neu(ziel, einr.xml.as_bytes())?;
+            Ok(Ok(einr.xml.len()))
+        }
+        Err(e) => abbruch(e, id.as_str(), store.datei().scheibe.as_deref()).map(Err),
+    }
+}
+
+/// `bytes` nach `ziel`, atomar und nie über eine vorhandene Datei.
+fn schreibe_neu(ziel: &Path, bytes: &[u8]) -> Result<(), ApiFehler> {
+    let mut name = ziel.as_os_str().to_owned();
+    name.push(".tmp");
+    let tmp = PathBuf::from(name);
+    let mut datei = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(&tmp)?;
+    let geschrieben = datei.write_all(bytes).and_then(|()| datei.sync_all());
+    // Der Verweis entsteht nur, wenn `ziel` fehlt; das `.tmp` geht in jedem Fall weg.
+    let verweis = geschrieben.and_then(|()| std::fs::hard_link(&tmp, ziel));
+    let _ = std::fs::remove_file(&tmp);
+    verweis.map_err(|e| match e.kind() {
+        std::io::ErrorKind::AlreadyExists => ApiFehler::status(
+            409,
+            format!("{} existiert schon, es wird nie überschrieben", ziel.display()),
+        ),
+        _ => e.into(),
+    })
+}
+
 /// `api.einreichen(fall_id, body)` nach dem Owner-Check. Blockiert, solange `ERiC` prüft.
 ///
 /// # Errors
@@ -140,14 +216,7 @@ pub fn einreichen(
 ) -> Result<Antwort, ApiFehler> {
     let fall_id = fall.id().as_str().to_owned();
     let land = empfaenger_land(body);
-    let sb = z.scheibe_bindung(fall.store())?;
-    let gebaut = einreichungs_xml(
-        fall.store(),
-        &sb.index,
-        z.params()?,
-        land.as_deref().unwrap_or("BY"),
-        None,
-    );
+    let gebaut = bau(z, fall.store(), land.as_deref().unwrap_or("BY"))?;
     let einr = match (gebaut, land) {
         // Python wirft `body.get` an der Stelle, an der es `erzeuge_xml` aufruft: vorher endet es
         // wie immer, an `erzeuge_xml` kommt es nicht mehr heran.
