@@ -201,6 +201,51 @@ const STAAT_SONSTIGER_SPERRE: &str = "Auslandseinkünfte aus „Anderer Staat“
 /// verlangt zur Steuer die Einkuenfte, auch mit dem Wert 0; `checkESt` lehnt die Akte sonst mit rc=610001002 ab.
 const STEUER_OHNE_EINKUENFTE_SPERRE: &str = "Ausländische Steuer ohne Einkünfte: Die Anlage AUS verlangt zur Steuer die Einkünfte aus dem Staat, auch mit dem Wert 0. Die Abgabe ist deshalb gesperrt. Trage die Einkünfte aus diesem Staat ein, oder lösche die Steuer, wenn du ohne Auslandseinkünfte abgibst.";
 
+/// Abweichung Nr. 61: die fuenf Vorsorge-Felder des Ehegatten und die Summen-Kz, die sie mit Person A teilen. Die Zeilen 44 bis 48
+/// der Anlage Vorsorgeaufwand tragen die Beitraege der Eheleute zusammen (Anleitung, Beispiel: "Die Summe dieser Betraege ... tragen
+/// sie in Zeile 46 ein"); das Schema kennt dort keine Person (`A_B_LP`, nur "Summe"). Die Felder des Ehegatten tragen kein eigenes Kz.
+const VORSORGE_PARTNER: [(&str, &str); 5] = [
+    ("vorsorge_arbeitslosenversicherung_partner", "E2001403"),
+    ("vorsorge_erwerbsunfaehigkeit_partner", "E2001503"),
+    ("vorsorge_unfall_haftpflicht_partner", "E2001803"),
+    ("vorsorge_rv_alt_mit_ueberschuss_partner", "E2001903"),
+    ("vorsorge_rv_alt_ohne_ueberschuss_partner", "E2002003"),
+];
+
+/// Abweichung Nr. 61: Felder, die der Bescheid in den Gewinn oder in die Kapitaleinkuenfte rechnet und die kein Kz tragen. Die
+/// Erklaerung nannte den Betrag bisher 0 (`E0800302`/`E0803202`, `E1900701`) und sperrte nicht. Jetzt sperrt die Abgabe mit dem
+/// Betrag im Klartext (Vault `die-abgabe-sperrt-wo-die-steuerrechnung-einen-wert-rechnet-den-die-erklaerung-nicht-traegt`).
+/// Bauen liesse sich keiner: die Anleitungen zu Anlage G, S, EUeR und KAP liegen nicht im Quellenkorpus, und die Beteiligungszeile
+/// verlangt Finanzamt und Steuernummer der Gesellschaft (`bindung_an_gesamt.yaml`, `einkuenfte_gewinn`).
+/// Die Betriebseinnahmen-Seite: der Bescheid rechnet daraus den Gewinn, sobald eines davon ungleich 0 ist (`laufender_gewinn`).
+const GEWINN_EUER: [(&str, &str); 4] = [
+    ("betriebseinnahmen", "Betriebseinnahmen"),
+    ("sonstige_betriebsausgaben", "sonstige Betriebsausgaben"),
+    ("afa_jahresbetrag", "Abschreibungen (AfA)"),
+    ("gwg_anschaffungskosten_netto", "Anschaffungskosten eines geringwertigen Wirtschaftsguts"),
+];
+/// Gewinnanteil und Verguetungen aus einer Beteiligung (§ 15 Abs. 1 S. 1 Nr. 2 `EStG`), Person A.
+const GEWINN_MITU: [(&str, &str); 4] = [
+    ("gewinnanteil", "Gewinnanteil aus einer Beteiligung"),
+    ("verguetung_taetigkeit", "Vergütung für Tätigkeit in einer Beteiligung"),
+    ("verguetung_darlehen", "Vergütung für Darlehen an eine Beteiligung"),
+    ("verguetung_ueberlassung", "Vergütung für Überlassung an eine Beteiligung"),
+];
+/// Dieselben Felder des Ehegatten (nur bei Zusammenveranlagung im Bescheid).
+const GEWINN_MITU_PARTNER: [(&str, &str); 4] = [
+    ("gewinnanteil_partner", "Gewinnanteil des Ehegatten aus einer Beteiligung"),
+    ("verguetung_taetigkeit_partner", "Vergütung des Ehegatten für Tätigkeit in einer Beteiligung"),
+    ("verguetung_darlehen_partner", "Vergütung des Ehegatten für Darlehen an eine Beteiligung"),
+    ("verguetung_ueberlassung_partner", "Vergütung des Ehegatten für Überlassung an eine Beteiligung"),
+];
+/// Das Feld des fertigen Gewinns (Direktwert); seine Kz je Art stehen in der Verzweigung (`GEWINN` in `tabellen.rs`).
+const GEWINN_DIREKTWERT: &str = "einkuenfte_gewinn";
+/// Sonstige Kapitalgewinne (Topf ohne Kz), Person A und Ehegatte.
+const KAP_SONSTIGE: [(&str, &str, bool); 2] = [
+    ("kap_gewinn_sonstige", "Sonstige Kapitalgewinne", false),
+    ("kap_gewinn_sonstige_partner", "Sonstige Kapitalgewinne des Ehegatten", true),
+];
+
 /// Nur Rust (Abweichung Nr. 42): der Jahresbetrag der Versorgungsbezuege von Person A und, bei Zusammenveranlagung, des
 /// Ehegatten (Abweichung Nr. 33). Beide Felder tragen kein Kz.
 const VERSORGUNG: &str = "versorgung_jahresrente";
@@ -234,6 +279,43 @@ const VERSORGUNG_BEGINN_PARTNER: &str = "versorgung_beginn_jahr_partner";
 const VERSORGUNG_BETRAG_KZ: &str = "E0200801";
 const VERSORGUNG_BMG_KZ: &str = "E0200902";
 const VERSORGUNG_BEGINN_KZ: &str = "E0201307";
+
+/// Ein Cent-Betrag als Euro mit Komma, fuer die Gruende der Abgabe-Sperre (`1234,50`, `-5,00`).
+fn euro_text(cent: i64) -> String {
+    let betrag = cent.unsigned_abs();
+    let vorzeichen = if cent < 0 { "-" } else { "" };
+    format!("{vorzeichen}{},{:02}", betrag / 100, betrag % 100)
+}
+
+/// Der Grund der Abgabe-Sperre bei einem Betrag aus [`GEWINN_EUER`] ohne Gewinn als fertigen Betrag (Abweichung Nr. 61).
+fn gewinn_euer_grund(label: &str, cent: i64) -> String {
+    format!(
+        "Gewinn aus Einnahmen und Ausgaben: Du hast {label} mit {} Euro angegeben, aber keinen Gewinn als fertigen Betrag. Die \
+         Steuerrechnung rechnet den Gewinn aus diesen Angaben, die Erklärung würde 0 Euro nennen. Die Abgabe ist deshalb \
+         gesperrt. Trage den Gewinn als fertigen Betrag ein, oder trage die Anlage EÜR im amtlichen Formular selbst ein.",
+        euro_text(cent)
+    )
+}
+
+/// Der Grund der Abgabe-Sperre bei Gewinnanteil oder Verguetung aus einer Beteiligung (Abweichung Nr. 61).
+fn gewinn_mitu_grund(label: &str, cent: i64) -> String {
+    format!(
+        "Beteiligung an einer Gesellschaft: Du hast {label} mit {} Euro angegeben. Die Steuerrechnung zählt den Betrag, die \
+         Erklärung hat dafür keine Zeile und würde ihn weglassen; sie bräuchte Finanzamt und Steuernummer der Gesellschaft. Die \
+         Abgabe ist deshalb gesperrt. Trage die Beteiligung in Anlage G oder Anlage S im amtlichen Formular selbst ein.",
+        euro_text(cent)
+    )
+}
+
+/// Der Grund der Abgabe-Sperre bei sonstigen Kapitalgewinnen im Einzeltopf (Abweichung Nr. 61).
+fn kap_topf_grund(label: &str, cent: i64) -> String {
+    format!(
+        "{label}: Du hast {} Euro angegeben. Die Steuerrechnung versteuert den Betrag, die Anlage KAP trägt in ihrer Zeile für \
+         Kapitalerträge aber nur den Gesamtbetrag und würde 0 Euro nennen. Die Abgabe ist deshalb gesperrt. Trage die \
+         Kapitalerträge im amtlichen Formular selbst ein.",
+        euro_text(cent)
+    )
+}
 
 /// Die materialisierte Felder-Ebene eines Snapshots (`feld_id -> {wert, zustand, herkunft}`).
 pub type Felder = BTreeMap<String, SnapshotFeld>;
@@ -661,6 +743,125 @@ impl Bau<'_> {
                     Lage::Gueltig(Veranlagung::Zusammen)
                 )
         })
+    }
+
+    /// Abweichung Nr. 61: ein Vorsorge-Feld des Ehegatten ([`VORSORGE_PARTNER`])? `true`, wenn ja. Bei bestaetigter
+    /// Zusammenveranlagung schreibt [`Bau::vorsorge_partner`] seinen Betrag nach der Feldschleife in die gemeinsame Summe; sonst
+    /// bleibt er draussen, wie im Bescheid (der Ehegatte zaehlt nur bei Zusammenveranlagung), und der Grund steht in `nicht_deklariert`.
+    fn vorsorge_partner_feld(&mut self, feld_id: &str) -> bool {
+        if !VORSORGE_PARTNER.iter().any(|(f, _)| *f == feld_id) {
+            return false;
+        }
+        if !self.zusammen_bestaetigt() {
+            self.nicht(
+                feld_id,
+                "Der Betrag des Ehegatten zaehlt nur bei bestaetigter Zusammenveranlagung; sonst steht er nicht in der Erklaerung",
+            );
+        }
+        true
+    }
+
+    /// Abweichung Nr. 61: die Summe der Zeilen 44 bis 48 der Anlage Vorsorgeaufwand ist die Summe BEIDER Ehegatten. Person A hat
+    /// ihren gerundeten Betrag in der Schleife geschrieben; hier kommt der gerundete Betrag des Ehegatten dazu (Aufwand:
+    /// Einzelposten aufrunden, Summe aus den Posten, Vault `aufwand-einzelposten-aufrunden-summe-aus-posten`). Nur bei bestaetigter
+    /// Zusammenveranlagung und bestaetigtem Betrag; ein vorlaeufiger Betrag steht schon in `unvollstaendig` (`feld`).
+    fn vorsorge_partner(&mut self) -> Ergebnis<()> {
+        if !self.zusammen_bestaetigt() {
+            return Ok(());
+        }
+        for (feld_id, kz) in VORSORGE_PARTNER {
+            let (Some(sfeld), Some(b)) = (self.snapshot.get(feld_id), self.bindung.get(feld_id)) else {
+                continue;
+            };
+            if sfeld.zustand != Zustand::Bestaetigt {
+                continue;
+            }
+            let mut zeile = BTreeMap::new();
+            schreibe_kz(&mut zeile, kz, &sfeld.wert, Some(b.typ), self.null_kz)
+                .map_err(wert_fehler(feld_id))?;
+            let Some(partner) = zeile.get(kz).and_then(Value::as_i64) else {
+                continue;
+            };
+            let eigen = self.deklaration.get(kz).and_then(Value::as_i64).unwrap_or(0);
+            // Beide Betraege sind gerundete Euro aus i64-Cent (hoechstens i64::MAX / 100): die Summe laeuft nicht ueber.
+            self.deklaration
+                .insert(kz.to_owned(), Value::from(eigen.saturating_add(partner)));
+        }
+        Ok(())
+    }
+
+    /// Alle bestaetigten Werte ungleich 0 zu `basis` und seinen Instanzen (`basis__2` ...), in Cent: `(feld_id, cent)`.
+    /// Ein vorlaeufiger Wert steht schon in `unvollstaendig` (`feld`); ein Wert, der keine Ganzzahl ist, kommt nicht vor (der Store
+    /// weist ihn bei einem Cent-Feld beim Speichern ab).
+    fn betraege_ungleich_null(&self, basis: &str) -> Vec<(String, i64)> {
+        self.snapshot
+            .iter()
+            .filter(|(feld_id, _)| {
+                feld_id.as_str() == basis || parse_instanz(feld_id).is_some_and(|(b, _)| b == basis)
+            })
+            .filter(|(_, s)| s.zustand == Zustand::Bestaetigt)
+            .filter_map(|(feld_id, s)| match py::int(&s.wert) {
+                Ok(n) if n != 0 => Some((feld_id.clone(), n)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// Abweichung Nr. 61: die Abgabe sperrt, wo der Bescheid Gewinn oder Kapitaleinkuenfte aus Feldern rechnet, die kein Kz tragen
+    /// ([`GEWINN_EUER`], [`GEWINN_MITU`], [`GEWINN_MITU_PARTNER`], [`KAP_SONSTIGE`]). Die Erklaerung nennt den Betrag sonst als 0.
+    ///
+    /// 1. Betriebseinnahmen-Seite ohne Gewinn als fertigen Betrag: der Bescheid rechnet den Gewinn aus ihr, das Kz traegt 0. Steht
+    ///    der Gewinn als fertiger Betrag (ungleich 0), gilt er; ob er zur Aufschluesselung passt, prueft der Bescheid
+    ///    (`gewinn_quelle_offen`).
+    /// 2. Gewinnanteil und Verguetungen aus einer Beteiligung: der Bescheid rechnet sie in den Gewinn, die Erklaerung hat dafuer
+    ///    keine Zeile. Immer, auch neben einem fertigen Gewinn.
+    /// 3. Sonstige Kapitalgewinne: der Bescheid versteuert den Topf, `E1900701` traegt nur den Aggregat-Wert.
+    ///
+    /// Der Ehegatte zaehlt wie im Bescheid nur bei bestaetigter Zusammenveranlagung. ponytail: die Betriebseinnahmen-Seite wird an
+    /// den Eingabefeldern erkannt, nicht am Rechenergebnis des Bescheids; ein Gewinn von genau 0 aus ihr sperrt darum auch, und
+    /// der Nutzer traegt dann den Gewinn 0 als fertigen Betrag ein. Upgrade-Pfad: Ring-Wert des Bescheid-Gewinns und Vergleich hier.
+    fn gewinn_sperren(&mut self) {
+        let gewinn_steht = VERZWEIGUNG
+            .iter()
+            .filter(|v| v.feld == GEWINN_DIREKTWERT)
+            .filter_map(|v| match v.kz {
+                ArtKz::Text(tabelle) => Some(tabelle),
+                ArtKz::Rente(_) => None,
+            })
+            .flat_map(|tabelle| tabelle.iter().map(|(_, kz)| *kz))
+            .any(|kz| {
+                self.deklaration
+                    .get(kz)
+                    .is_some_and(|v| v.as_f64().is_none_or(|x| x != 0.0))
+            });
+        let zusammen = self.zusammen_bestaetigt();
+        let mut offen: Vec<(String, String)> = Vec::new();
+        if !gewinn_steht {
+            for (basis, label) in GEWINN_EUER {
+                for (feld_id, cent) in self.betraege_ungleich_null(basis) {
+                    offen.push((feld_id, gewinn_euer_grund(label, cent)));
+                }
+            }
+        }
+        let mitu = GEWINN_MITU
+            .iter()
+            .chain(GEWINN_MITU_PARTNER.iter().filter(|_| zusammen));
+        for (basis, label) in mitu {
+            for (feld_id, cent) in self.betraege_ungleich_null(basis) {
+                offen.push((feld_id, gewinn_mitu_grund(label, cent)));
+            }
+        }
+        for (basis, label, partner) in KAP_SONSTIGE {
+            if partner && !zusammen {
+                continue;
+            }
+            for (feld_id, cent) in self.betraege_ungleich_null(basis) {
+                offen.push((feld_id, kap_topf_grund(label, cent)));
+            }
+        }
+        for (feld_id, grund) in offen {
+            self.offen(&feld_id, grund);
+        }
     }
 
     /// Hat der Ring den Bezug der Person in die Zeilen 11 bis 13 der Anlage N verwiesen (Abweichung Nr. 50)? Der Ring-Wert
@@ -1161,6 +1362,8 @@ impl Bau<'_> {
                 self.null_kz,
             )
             .map_err(&fehler)?;
+        } else if self.vorsorge_partner_feld(feld_id) {
+            // Abweichung Nr. 61: Vorsorge-Feld des Ehegatten, `vorsorge_partner_feld` hat es uebergangen, die Summe steht nach der Schleife.
         } else if self.rav_bav_feld(1, feld_id, feld_id, wert, b)? {
             // Abweichung Nr. 55: Feld der ersten Mitteilung, `rav_bav_feld` hat es geschrieben oder bewusst uebergangen.
         } else if let Some(kz) = kz_von(b) {
@@ -1328,6 +1531,8 @@ pub fn deklariere(
     bau.pflegeblock();
     bau.dba_einkuenfte_nach_abzug();
     bau.dba_staat();
+    bau.vorsorge_partner()?;
+    bau.gewinn_sperren();
     bau.antrag_person_b();
     let dokumentiert = bau.dokumentiert();
     bau.p23_gewinn()?;
@@ -2351,6 +2556,171 @@ mod tests {
                 assert!(d.nicht_deklariert.iter().any(|e| e.feld_id == "ep_unfallkosten"));
             }
         }
+    }
+
+    /// Abweichung Nr. 61: die fuenf Summen der Zeilen 44 bis 48 (Anlage Vorsorgeaufwand) tragen die Beitraege BEIDER Ehegatten, jeder
+    /// Betrag einzeln aufgerundet, dann addiert (`aufwand-einzelposten-aufrunden-summe-aus-posten`: 500,01 + 480,01 steht als
+    /// 501 + 481 = 982, nicht als 981). Der Ehegatte zaehlt nur bei bestaetigter Zusammenveranlagung; ein vorlaeufiger Betrag steht
+    /// in `unvollstaendig` und aendert die Summe nicht. Das Regal (`regal.rs`) fuehrt die fuenf Literale als `Verhalten` mit diesem Test.
+    #[test]
+    fn die_vorsorge_summe_traegt_beide_ehegatten_aus_gerundeten_posten() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
+            wert: wert.into(),
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let b = Zustand::Bestaetigt;
+        // Je Kz Person A und Ehegatte, mit anderen Cent-Werten je Kz: ein vertauschtes Kz faellt auf.
+        let paare = [
+            ("E2001403", "vorsorge_arbeitslosenversicherung", 50_001, 48_001, 982),
+            ("E2001503", "vorsorge_erwerbsunfaehigkeit", 30_001, 32_001, 622),
+            ("E2001803", "vorsorge_unfall_haftpflicht", 20_001, 21_001, 412),
+            ("E2001903", "vorsorge_rv_alt_mit_ueberschuss", 40_001, 41_001, 812),
+            ("E2002003", "vorsorge_rv_alt_ohne_ueberschuss", 30_001, 29_001, 592),
+        ];
+        let mut zusammen = Felder::from([("veranlagung".to_owned(), feld(json!("zusammen"), b))]);
+        let mut einzel = Felder::from([("veranlagung".to_owned(), feld(json!("einzel"), b))]);
+        for (_, eigen, cent_a, cent_b, _) in paare {
+            for felder in [&mut zusammen, &mut einzel] {
+                felder.insert(eigen.to_owned(), feld(json!(cent_a), b));
+                felder.insert(format!("{eigen}_partner"), feld(json!(cent_b), b));
+            }
+        }
+        let d = deklariere(&zusammen, &index, 2025, None).unwrap();
+        for (kz, _, _, _, summe) in paare {
+            assert_eq!(d.deklaration.get(kz), Some(&json!(summe)), "zusammen, {kz}: Summe beider Ehegatten");
+        }
+        assert!(d.unvollstaendig().is_empty(), "{:?}", d.unvollstaendig());
+        // Einzelveranlagung: nur Person A (aufgerundet); der Betrag des Ehegatten steht mit Grund in `nicht_deklariert`.
+        let d = deklariere(&einzel, &index, 2025, None).unwrap();
+        for (kz, eigen, cent_a, _, _) in paare {
+            assert_eq!(d.deklaration.get(kz), Some(&json!((cent_a + 99) / 100)), "einzel, {kz}: nur Person A");
+            assert!(d.nicht_deklariert.iter().any(|e| e.feld_id == format!("{eigen}_partner")), "einzel, {eigen}_partner");
+        }
+        // Nur der Ehegatte traegt einen Betrag: die Summe ist sein gerundeter Betrag.
+        let mut nur_partner = zusammen.clone();
+        nur_partner.remove("vorsorge_arbeitslosenversicherung");
+        let d = deklariere(&nur_partner, &index, 2025, None).unwrap();
+        assert_eq!(d.deklaration.get("E2001403"), Some(&json!(481)), "nur der Ehegatte");
+        // Ein vorlaeufiger Betrag des Ehegatten sperrt und zaehlt nicht in die Summe.
+        let mut vorlaeufig = zusammen.clone();
+        vorlaeufig.insert(
+            "vorsorge_arbeitslosenversicherung_partner".to_owned(),
+            feld(json!(48_001), Zustand::Vorlaeufig),
+        );
+        let d = deklariere(&vorlaeufig, &index, 2025, None).unwrap();
+        assert_eq!(d.deklaration.get("E2001403"), Some(&json!(501)), "vorlaeufiger Betrag zaehlt nicht");
+        let gesperrt: Vec<_> = d.unvollstaendig().iter().map(|e| e.feld_id.as_str()).collect();
+        assert_eq!(gesperrt, ["vorsorge_arbeitslosenversicherung_partner"]);
+    }
+
+    /// Abweichung Nr. 61: die Abgabe sperrt, wo der Bescheid Gewinn oder Kapitaleinkuenfte aus Feldern ohne Kz rechnet, mit dem
+    /// Betrag im Klartext. (1) Betriebseinnahmen-Seite ohne Gewinn als fertigen Betrag (ungleich 0) sperrt, auch in einer
+    /// Instanz; steht der Gewinn, sperrt sie nicht. (2) Gewinnanteil und Verguetungen aus einer Beteiligung sperren immer, die
+    /// des Ehegatten nur bei Zusammenveranlagung. (3) Sonstige Kapitalgewinne sperren, die des Ehegatten nur bei
+    /// Zusammenveranlagung. Ein Betrag von 0 und ein vorlaeufiger Betrag erzeugen keinen dieser Gruende.
+    #[test]
+    #[allow(clippy::too_many_lines, reason = "eine Fall-Tabelle mit der Zeile je Eingabe, geteilt wuerde die Setup-Zeilen doppeln")]
+    fn die_abgabe_sperrt_wo_der_bescheid_gewinn_oder_kapital_ohne_kz_rechnet() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
+            wert: wert.into(),
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let b = Zustand::Bestaetigt;
+        // Gesperrte Felder des Falls (mit Text-Bruchstueck des Grundes), ohne die Sperren, die andere Regeln setzen.
+        let sperren = |paare: &[(&str, Value, Zustand)]| -> Vec<(String, String)> {
+            let felder: Felder = paare
+                .iter()
+                .map(|(f, w, z)| ((*f).to_owned(), feld(w.clone(), *z)))
+                .collect();
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            d.unvollstaendig()
+                .iter()
+                .map(|e| (e.feld_id.clone(), e.grund.clone()))
+                .collect()
+        };
+        let art = ("gewinn_betriebsart", json!("gewerbe"), b);
+        let zusammen = ("veranlagung", json!("zusammen"), b);
+        let einzel = ("veranlagung", json!("einzel"), b);
+        // (1) Betriebseinnahmen-Seite.
+        let euer = sperren(&[("betriebseinnahmen", json!(5_000_000), b)]);
+        assert_eq!(euer.len(), 1, "{euer:?}");
+        assert_eq!(euer[0].0, "betriebseinnahmen");
+        assert!(euer[0].1.contains("Betriebseinnahmen mit 50000,00 Euro"), "{}", euer[0].1);
+        assert!(euer[0].1.contains("würde 0 Euro nennen"), "{}", euer[0].1);
+        for basis in ["sonstige_betriebsausgaben", "afa_jahresbetrag", "gwg_anschaffungskosten_netto"] {
+            let s = sperren(&[(basis, json!(-123_456), b)]);
+            assert_eq!(s.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(), [basis]);
+            assert!(s[0].1.contains("-1234,56 Euro"), "{basis}: {}", s[0].1);
+        }
+        let instanz = sperren(&[("gwg_anschaffungskosten_netto__2", json!(60_000), b)]);
+        assert!(
+            instanz.iter().any(|(f, g)| f == "gwg_anschaffungskosten_netto__2" && g.contains("Gewinn aus Einnahmen und Ausgaben")),
+            "{instanz:?}"
+        );
+        // Mit einem fertigen Gewinn ungleich 0 sperrt die Betriebseinnahmen-Seite nicht; mit 0 oder ohne bestaetigte Art schon.
+        let mit_gewinn = sperren(&[art.clone(), ("einkuenfte_gewinn", json!(3_500_000), b), ("betriebseinnahmen", json!(5_000_000), b)]);
+        assert!(mit_gewinn.is_empty(), "{mit_gewinn:?}");
+        let gewinn_null = sperren(&[art.clone(), ("einkuenfte_gewinn", json!(0), b), ("betriebseinnahmen", json!(5_000_000), b)]);
+        assert_eq!(gewinn_null.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(), ["betriebseinnahmen"]);
+        // Ein Betrag von 0 und ein vorlaeufiger Betrag erzeugen den Gewinn-Grund nicht (der vorlaeufige hat seinen eigenen).
+        assert_eq!(sperren(&[("betriebseinnahmen", json!(0), b)]).len(), 0);
+        let vorlaeufig = sperren(&[("betriebseinnahmen", json!(5_000_000), Zustand::Vorlaeufig)]);
+        assert!(vorlaeufig.iter().all(|(_, g)| !g.contains("Gewinn aus Einnahmen")), "{vorlaeufig:?}");
+        // (2) Beteiligung: immer, auch neben einem fertigen Gewinn; der Ehegatte nur bei Zusammenveranlagung.
+        for basis in ["gewinnanteil", "verguetung_taetigkeit", "verguetung_darlehen", "verguetung_ueberlassung"] {
+            let s = sperren(&[art.clone(), ("einkuenfte_gewinn", json!(3_500_000), b), (basis, json!(111_100), b)]);
+            assert_eq!(s.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(), [basis], "{basis}");
+            assert!(s[0].1.contains("1111,00 Euro"), "{basis}: {}", s[0].1);
+            assert!(s[0].1.contains("Finanzamt und Steuernummer der Gesellschaft"), "{}", s[0].1);
+            let partner = format!("{basis}_partner");
+            let ehegatte = |veranlagung: &(&str, Value, Zustand)| {
+                sperren(&[veranlagung.clone(), (partner.as_str(), json!(222_200), b)])
+            };
+            let mit = ehegatte(&zusammen);
+            assert_eq!(mit.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(), [partner.as_str()], "{partner} zusammen");
+            assert!(mit[0].1.contains("2222,00 Euro"), "{}", mit[0].1);
+            assert!(ehegatte(&einzel).is_empty(), "{partner} einzel");
+        }
+        // (3) Sonstige Kapitalgewinne.
+        let kap = sperren(&[("kap_gewinn_sonstige", json!(175_000), b)]);
+        assert_eq!(kap.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(), ["kap_gewinn_sonstige"]);
+        assert!(kap[0].1.contains("1750,00 Euro"), "{}", kap[0].1);
+        assert_eq!(sperren(&[("kap_gewinn_sonstige", json!(0), b)]).len(), 0);
+        let kap_ehegatte = |veranlagung: &(&str, Value, Zustand)| {
+            sperren(&[veranlagung.clone(), ("kap_gewinn_sonstige_partner", json!(175_000), b)])
+        };
+        assert_eq!(kap_ehegatte(&zusammen).len(), 1);
+        assert_eq!(kap_ehegatte(&einzel).len(), 0);
     }
 
     /// Abweichung Nr. 51: der Staat der Auslandseinkuenfte steht als Listentext unter `E0600301`, genau dann, wenn die

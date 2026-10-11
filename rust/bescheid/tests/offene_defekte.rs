@@ -255,6 +255,7 @@ fn euer() -> [(&'static str, Value); 3] {
 
 /// `test_gewinn_quelle_offen_trifft_alle_betriebsarten.py`: Summe UND passende EUeR-Aufschluesselung
 /// liefern einen Bescheid. Kontrolle: nur die Summe (35.000 EUR) liefert 575700 Cent.
+/// Seit Abweichung Nr. 61 sperrt `gewinn_quelle_offen` nur, wenn beide Wege verschiedene Gewinne nennen.
 fn gewinn_quelle(betriebsart: &str) {
     let lauf = |mit_euer: bool| {
         let mut paare = gewinn_basis(betriebsart);
@@ -277,58 +278,61 @@ fn gewinn_quelle(betriebsart: &str) {
 }
 
 #[test]
-#[ignore = "gewinn_quelle_offen (sperre/einkunft.rs, fn gewinn) sperrt bei Direktwert > 0 UND EUeR-Komponente > 0 ohne Abfrage von gewinn_betriebsart, auch wenn die Summe zur EUeR passt. Python: test_gewinn_quelle_offen_trifft_alle_betriebsarten.py::test_euer_und_passende_summe_liefert_keinen_bescheid[land_forst]. Vault: audits/einreichen-sperrgruende-erreichen-den-nutzer-nie.md. Rot sehen: --ignored"]
 fn gewinn_quelle_offen_land_forst() {
     gewinn_quelle("land_forst");
 }
 
 #[test]
-#[ignore = "gewinn_quelle_offen (sperre/einkunft.rs, fn gewinn) sperrt bei Direktwert > 0 UND EUeR-Komponente > 0 ohne Abfrage von gewinn_betriebsart, auch wenn die Summe zur EUeR passt. Python: test_gewinn_quelle_offen_trifft_alle_betriebsarten.py::test_euer_und_passende_summe_liefert_keinen_bescheid[gewerbe]. Vault: audits/einreichen-sperrgruende-erreichen-den-nutzer-nie.md. Rot sehen: --ignored"]
 fn gewinn_quelle_offen_gewerbe() {
     gewinn_quelle("gewerbe");
 }
 
 #[test]
-#[ignore = "gewinn_quelle_offen (sperre/einkunft.rs, fn gewinn) sperrt bei Direktwert > 0 UND EUeR-Komponente > 0 ohne Abfrage von gewinn_betriebsart, auch wenn die Summe zur EUeR passt. Python: test_gewinn_quelle_offen_trifft_alle_betriebsarten.py::test_euer_und_passende_summe_liefert_keinen_bescheid[selbstaendig]. Vault: audits/einreichen-sperrgruende-erreichen-den-nutzer-nie.md. Rot sehen: --ignored"]
 fn gewinn_quelle_offen_selbstaendig() {
     gewinn_quelle("selbstaendig");
 }
 
-/// Direktwert 0 neben positiver `EUeR`: `grund`, `zahl_cent` und der Kz-Wert der Deklaration.
-fn luf_euer_lauf(betriebsart: &str, kz: &str) -> (Grund, Option<i64>, Option<Value>) {
+/// Direktwert 0 neben positiver `EUeR`: `grund`, `zahl_cent`, der Kz-Wert der Deklaration und ob die Abgabe
+/// an der `EUeR`-Angabe sperrt (Abweichung Nr. 61: `unvollstaendig` nennt die Betriebseinnahmen mit ihrem Betrag).
+fn luf_euer_lauf(betriebsart: &str, kz: &str) -> (Grund, Option<i64>, Option<Value>, bool) {
     let mut paare = gewinn_basis(betriebsart);
     paare.extend(euer());
     paare.push(("einkuenfte_gewinn", json!(0)));
     let f = fall(Scheibe::Gesamt, &paare, &[]);
     let (grund, zahl) = ergebnis(&f);
-    (grund, zahl, deklaration(&f).deklaration.get(kz).cloned())
+    let d = deklaration(&f);
+    let gesperrt = d.unvollstaendig().iter().any(|e| {
+        e.feld_id == "betriebseinnahmen" && e.grund.contains("Betriebseinnahmen mit 50000,00 Euro")
+    });
+    (grund, zahl, d.deklaration.get(kz).cloned(), gesperrt)
 }
 
 /// `test_luf_euer_offen_asymmetrie.py`: nie zugleich `bestaetigt`, eine positive Zahl und eine
-/// deklarierte 0. Kontrolle: `land_forst` sperrt mit `luf_euer_offen`.
+/// deklarierte 0, ohne dass die Abgabe sperrt. Kontrolle: `land_forst` sperrt mit `luf_euer_offen`.
+/// Der Bescheid rechnet weiter (575.700 Cent); die Erklaerung nennt 0, deshalb sperrt die Abgabe.
 fn luf_euer_symmetrie(betriebsart: &str, kz: &str) {
-    let (grund, zahl, _) = luf_euer_lauf("land_forst", kz);
+    let (grund, zahl, _, _) = luf_euer_lauf("land_forst", kz);
     assert_eq!(
         (grund, zahl),
         (Grund::Sperre(Sperrgrund::LufEuerOffen), None),
         "KONTROLLE: land_forst sperrt bei Doppelquelle"
     );
-    let (grund, zahl, kz_wert) = luf_euer_lauf(betriebsart, kz);
+    let (grund, zahl, kz_wert, gesperrt) = luf_euer_lauf(betriebsart, kz);
     let deklariert_null = kz_wert.as_ref().and_then(Value::as_f64) == Some(0.0);
     assert!(
-        !(grund == Grund::Bestaetigt && zahl.is_some_and(|z| z != 0) && deklariert_null),
-        "DEFEKT: {betriebsart}, grund={grund:?}, zahl_cent={zahl:?}, {kz}={kz_wert:?}: Ring und Deklaration laufen auseinander"
+        !(grund == Grund::Bestaetigt && zahl.is_some_and(|z| z != 0) && deklariert_null && !gesperrt),
+        "DEFEKT: {betriebsart}, grund={grund:?}, zahl_cent={zahl:?}, {kz}={kz_wert:?}, gesperrt={gesperrt}: Ring und Deklaration laufen auseinander"
     );
+    // Die Abgabe sperrt in diesem Fall auch dann, wenn die Deklaration das Kz ganz weglaesst.
+    assert!(gesperrt, "DEFEKT: {betriebsart}: der Bescheid rechnet 35.000 EUR, die Abgabe sperrt nicht");
 }
 
 #[test]
-#[ignore = "luf_euer_offen (sperre/einkunft.rs, fn gewinn) prueft woertlich gewinn_betriebsart == land_forst; gewerbe rechnet aus der EUeR und deklariert E0800302 = 0. Python: test_luf_euer_offen_asymmetrie.py::test_gewerbeartige_zweige_liefern_bescheid_trotz_doppelquelle[gewerbe]. Vault: audits/ring-gegen-deklaration-ueber-und-untererklaerung.md. Rot sehen: --ignored"]
 fn luf_euer_offen_gewerbe() {
     luf_euer_symmetrie("gewerbe", "E0800302");
 }
 
 #[test]
-#[ignore = "luf_euer_offen (sperre/einkunft.rs, fn gewinn) prueft woertlich gewinn_betriebsart == land_forst; selbstaendig rechnet aus der EUeR und deklariert E0803202 = 0. Python: test_luf_euer_offen_asymmetrie.py::test_gewerbeartige_zweige_liefern_bescheid_trotz_doppelquelle[selbstaendig]. Vault: audits/ring-gegen-deklaration-ueber-und-untererklaerung.md. Rot sehen: --ignored"]
 fn luf_euer_offen_selbstaendig() {
     luf_euer_symmetrie("selbstaendig", "E0803202");
 }
@@ -398,9 +402,11 @@ fn kap_vorlaeufiger_topf_leckt_in_deklaration() {
         basis.is_some() && gruen_zahl > basis,
         "KONTROLLE: bestaetigter Topf erhoeht die Steuer nicht ({basis:?} -> {gruen_zahl:?})"
     );
+    // Abweichung Nr. 61: der bestaetigte Topf hat kein Kz fuer die Kapitalertraege und sperrt die Abgabe mit seinem Betrag;
+    // Antrag und genutzter Pauschbetrag stehen trotzdem.
     assert!(
-        gruen.eingaben_konsistent() && gesetzt(&gruen, "E1900401") && gesetzt(&gruen, "E1901401"),
-        "KONTROLLE: bestaetigter Topf erscheint nicht als E1900401/E1901401: {:?}",
+        unvollstaendig(&gruen) == ["kap_gewinn_sonstige"] && gesetzt(&gruen, "E1900401") && gesetzt(&gruen, "E1901401"),
+        "KONTROLLE: bestaetigter Topf erscheint nicht als E1900401/E1901401 (nur der Topf sperrt): {:?}",
         gruen.deklaration
     );
     let (grund, zahl, leck) = leck_lauf(&[("kein_kap", json!(false))], &topf);
@@ -504,9 +510,10 @@ fn kap_partner_in_gesamt_sperrt_der_guard_vor_der_vorschau() {
     );
     paare.push(topf);
     let (grund, _, dek) = leck_lauf(&paare, &[]);
+    // Abweichung Nr. 61: der bestaetigte Partner-Topf hat kein Kz und sperrt die Abgabe; der Antrag steht trotzdem.
     assert!(
         !matches!(grund, Grund::Sperre(_))
-            && dek.eingaben_konsistent()
+            && unvollstaendig(&dek) == ["kap_gewinn_sonstige_partner"]
             && gesetzt(&dek, "E1900401"),
         "KONTROLLE: bestaetigter Partner-Topf in gesamt: {grund:?}, {:?}",
         dek.deklaration
@@ -529,8 +536,9 @@ fn kap_vorlaeufiger_wert_in_rentner_gesamt_leckt_nicht_in_deklaration() {
         deklaration(&fall(Scheibe::RentnerGesamt, &paare, vorlaeufig))
     };
     let gruen = rentner(&[("kap_gewinn_sonstige_partner", json!(175_000))], &[]);
+    // Abweichung Nr. 61: der bestaetigte Partner-Topf hat kein Kz und sperrt die Abgabe; der Antrag steht trotzdem.
     assert!(
-        gruen.eingaben_konsistent()
+        unvollstaendig(&gruen) == ["kap_gewinn_sonstige_partner"]
             && gesetzt(&gruen, "E1900401")
             && kz(&gruen, "E1901401") == Some(1750.0),
         "KONTROLLE: bestaetigter Partner-Topf in rentner_gesamt traegt keinen Antrag: {:?}",
@@ -706,7 +714,6 @@ fn topf_lauf(sonstige: i64) -> (Grund, Option<i64>, elster::Deklaration) {
 /// `test_kap_deklaration_verschweigt_topf.py`. Kontrolle wie
 /// `test_guard_bleibt_still_bei_reiner_topf_angabe`: `kapital_semantik_offen` schweigt zu Recht.
 #[test]
-#[ignore = "elster::deklariere (elster/src/deklaration.rs) schreibt E1900701 1:1 aus dem rohen kap_kapitalertraege; der Topf kap_gewinn_sonstige hat kein Kz. Bei reiner Topf-Angabe versteuert der Ring 1.750 EUR, die Anlage KAP behauptet E1900701 = 0. Python: test_kap_deklaration_verschweigt_topf.py::test_topf_wird_versteuert_aber_als_null_deklariert. Vault: audits/p20-kap-toepfe-xor-aggregat-steuer-ignoriert-deklaration.md. Rot sehen: --ignored"]
 fn kap_topf_versteuert_aber_als_null_deklariert() {
     let (grund, basis, basis_d) = topf_lauf(0);
     assert_eq!(grund, Grund::Bestaetigt, "KONTROLLE: Basis ohne Kapital");
@@ -722,19 +729,27 @@ fn kap_topf_versteuert_aber_als_null_deklariert() {
         "KONTROLLE: 1.750 EUR im Topf erhoehen die Steuer nicht ({basis:?} -> {topf:?})"
     );
     let (e_basis, e_topf) = (kz(&basis_d, "E1900701"), kz(&topf_d, "E1900701"));
+    // Abweichung Nr. 61: die Erklaerung traegt den Topf nicht (kein Kz), darum sperrt die Abgabe mit dem Betrag.
+    let gesperrt = topf_d
+        .unvollstaendig()
+        .iter()
+        .any(|e| e.feld_id == "kap_gewinn_sonstige" && e.grund.contains("1750,00 Euro"));
     assert!(
-        e_topf != Some(0.0) || e_basis == e_topf,
-        "DEFEKT: E1900701 = {e_topf:?} (Basis {e_basis:?}), waehrend die Steuer um {delta:?} Cent steigt"
+        gesperrt || e_topf != Some(0.0) || e_basis == e_topf,
+        "DEFEKT: E1900701 = {e_topf:?} (Basis {e_basis:?}), waehrend die Steuer um {delta:?} Cent steigt, und die Abgabe sperrt nicht"
     );
+    assert!(gesperrt, "DEFEKT: die Abgabe sperrt den Topf von 1.750 EUR nicht: {:?}", topf_d.unvollstaendig());
+    assert!(basis_d.unvollstaendig().iter().all(|e| e.feld_id != "kap_gewinn_sonstige"), "KONTROLLE: Basis sperrt am Topf");
 }
 
 /// `_GRUND + _kap(...)` aus `test_p20_gewinn_sonstige_e1900701_widerspruch.py`: `grund`,
-/// `zahl_cent`, Deklaration und das XML, das `einreichen` baut.
+/// `zahl_cent`, Deklaration und das XML, das `einreichen` baut. `einreichen` baut es nur mit
+/// `eingaben_konsistent`; sonst ist das XML `None`.
 fn p20_lauf(
     kein_kap: bool,
     ertraege: i64,
     sonstige: i64,
-) -> (Grund, Option<i64>, elster::Deklaration, String) {
+) -> (Grund, Option<i64>, elster::Deklaration, Option<String>) {
     let mut paare = leck_basis();
     paare.extend([
         ("veranlagung", json!("einzel")),
@@ -745,7 +760,7 @@ fn p20_lauf(
     let f = fall(Scheibe::Gesamt, &paare, &[]);
     let (grund, zahl) = ergebnis(&f);
     let d = deklaration(&f);
-    let x = xml(&f, &d);
+    let x = d.eingaben_konsistent().then(|| xml(&f, &d));
     (grund, zahl, d, x)
 }
 
@@ -753,7 +768,6 @@ fn p20_lauf(
 /// es nur ohne Sperre und mit `eingaben_konsistent`; beides ist Kontrolle. Kontrolle wie
 /// `test_gruenkontrolle_aggregat_konsistent`: das Aggregat allein steht als 1750 in Dict und XML.
 #[test]
-#[ignore = "elster::deklariere (elster/src/deklaration.rs) schreibt E1900701 1:1 aus dem rohen kap_kapitalertraege: bei reiner Topf-Angabe steht im XML aus einreichen ausdruecklich <E1900701>0</E1900701>, waehrend der Ring den Topf versteuert. Python: test_p20_gewinn_sonstige_e1900701_widerspruch.py::test_topf_only_steuer_und_deklaration_widersprechen_sich. Vault: audits/p20-kap-toepfe-xor-aggregat-steuer-ignoriert-deklaration.md. Rot sehen: --ignored"]
 fn kap_topf_steht_im_xml_als_null() {
     let (grund, zero, _, _) = p20_lauf(true, 0, 0);
     assert_eq!(grund, Grund::Bestaetigt, "KONTROLLE: Baseline ohne Kapital");
@@ -765,7 +779,7 @@ fn kap_topf_steht_im_xml_als_null() {
     assert!(
         d.eingaben_konsistent()
             && kz(&d, "E1900701") == Some(1750.0)
-            && x.contains("<E1900701>1750</E1900701>"),
+            && x.as_deref().is_some_and(|x| x.contains("<E1900701>1750</E1900701>")),
         "KONTROLLE: Aggregat steht nicht als E1900701 = 1750 in Dict und XML: {:?}",
         d.deklaration.get("E1900701")
     );
@@ -775,13 +789,16 @@ fn kap_topf_steht_im_xml_als_null() {
         grund == Grund::Bestaetigt && delta.is_some_and(|n| n > 0),
         "KONTROLLE: Topf-Lauf sperrt oder erhoeht die Steuer nicht ({grund:?}, delta={delta:?})"
     );
+    // Abweichung Nr. 61: `einreichen` bricht mit `deklaration_unvollstaendig` ab, es entsteht kein XML mit E1900701 = 0.
     assert!(
-        d.eingaben_konsistent(),
-        "KONTROLLE: einreichen braeche mit deklaration_unvollstaendig ab"
+        !d.eingaben_konsistent() && x.is_none(),
+        "DEFEKT: Steuer +{delta:?} Cent aus kap_gewinn_sonstige, aber die Abgabe sperrt nicht (E1900701 = {:?})",
+        kz(&d, "E1900701")
     );
     assert!(
-        !(kz(&d, "E1900701") == Some(0.0) && x.contains("<E1900701>0</E1900701>")),
-        "DEFEKT: Steuer +{delta:?} Cent aus kap_gewinn_sonstige, aber E1900701 steht in Dict und XML auf 0"
+        d.unvollstaendig().iter().any(|e| e.feld_id == "kap_gewinn_sonstige" && e.grund.contains("1750,00 Euro")),
+        "DEFEKT: die Sperre nennt den Topf nicht mit seinem Betrag: {:?}",
+        d.unvollstaendig()
     );
 }
 
