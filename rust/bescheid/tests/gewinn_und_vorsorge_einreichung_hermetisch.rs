@@ -282,6 +282,24 @@ fn ein_abweichender_direktwert_sperrt_weiter_mit_gewinn_quelle_offen() {
     }
 }
 
+/// AK4, Gegenprobe an der Grenze (Nachmessung Nr. 61, O09b): schon ein Euro Unterschied zwischen Direktwert und `EUeR` sperrt,
+/// nach oben (35.001 statt 35.000 Euro) wie nach unten (34.999). Der Abgleich hat keine Toleranz; die Erklaerung wuerde sonst
+/// einen Gewinn tragen, den der Bescheid nicht rechnet.
+#[test]
+fn ein_euro_abweichung_zwischen_direktwert_und_euer_sperrt_nach_oben_wie_nach_unten() {
+    for art in ["gewerbe", "selbstaendig"] {
+        for (richtung, direktwert_cent) in [("nach oben", 3_500_100), ("nach unten", 3_499_900)] {
+            let mut paare = euer(gewinn(art));
+            paare.push(("einkuenfte_gewinn", json!(direktwert_cent)));
+            let r = lauf(&akte(false, &paare));
+            assert!(
+                matches!(r, Err(EinreichFehler::Gesperrt(Sperrgrund::GewinnQuelleOffen))),
+                "{art}, {richtung}: {r:?}"
+            );
+        }
+    }
+}
+
 /// AK1: Mitunternehmer-Komponenten (Person A) haben kein Kz; der Betrag steht im Grund, die Abgabe sperrt. Ein Partner-Betrag
 /// sperrt nur bei Zusammenveranlagung, weil die Rechnung ihn nur dort nimmt.
 #[test]
