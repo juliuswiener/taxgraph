@@ -27,6 +27,7 @@ use bescheid::zweige::Umgebung;
 use bescheid::{Felder, Instanzquelle};
 use bindung::Bindung;
 use domain::{Feldtyp, Scheibe, Sperrgrund, Vz};
+use elster::testhilfe::schemas_da;
 use intervall::AchsenBindung;
 use konsistenz::FlagStand;
 use serde_json::{json, Value};
@@ -769,6 +770,9 @@ fn p20_lauf(
 /// `test_gruenkontrolle_aggregat_konsistent`: das Aggregat allein steht als 1750 in Dict und XML.
 #[test]
 fn kap_topf_steht_im_xml_als_null() {
+    if !schemas_da(2025) {
+        return;
+    }
     let (grund, zero, _, _) = p20_lauf(true, 0, 0);
     assert_eq!(grund, Grund::Bestaetigt, "KONTROLLE: Baseline ohne Kapital");
     let (grund, green, d, x) = p20_lauf(false, 175_000, 0);

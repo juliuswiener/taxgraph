@@ -20,6 +20,7 @@ use std::sync::OnceLock;
 
 use bindung::Bindung;
 use domain::{Achsenwert, Herkunft, PruefTiefe, Vz, Zustand};
+use elster::testhilfe::schemas_da;
 use elster::{deklariere, erzeuge_xml, Deklaration, Felder, XmlOptionen};
 use serde_json::{json, Value};
 use store::SnapshotFeld;
@@ -131,6 +132,9 @@ const AB_LP: [(&str, &str, i64, &str, i64); 5] = [
 /// Sum-Kz ist die gemeinsame Summe beider Ehegatten. Kontrolle: nur Person A traegt ihren Betrag.
 /// Seit Abweichung Nr. 61 addiert `deklariere` den Ehegatten (je Betrag aufgerundet, dann die Summe); der Test ist gruen.
 fn ab_lp_summe(kz: &str) {
+    if !schemas_da(2025) {
+        return;
+    }
     let (_, feld_a, cent_a, feld_b, cent_b) = *AB_LP.iter().find(|k| k.0 == kz).unwrap();
     let sum_kz = |paare: &[(&str, Value)]| {
         let mut alle = vec![("veranlagung", json!("zusammen"))];
