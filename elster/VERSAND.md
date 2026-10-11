@@ -110,6 +110,13 @@ cargo run -p versand --bin taxgraph-versand -- --xml ~/elster/mein_fall.xml --da
 
 Ohne Zertifikat bricht das Programm vor jedem Netzaufruf ab: „Kein Zertifikatspfad gesetzt“.
 
+**Ohne eigenes Zertifikat geht der Testversand mit dem Demo-Zertifikat von ERiC** (gemessen am
+2026-10-11, ein Lauf: `rc=0`, Telenummer `KN6`, ERiC-Log „Daten wurden erfolgreich angenommen“). Setze
+dafür nur für diesen Lauf `ELSTER_ZERTIFIKAT_PFAD` auf
+`$ERIC_DIR/extracted/ERiC-44.2.4.0/Linux-x86_64/Beispiel/ericdemo-python/test-softidnr-pse.pfx` und
+`ELSTER_ZERTIFIKAT_PIN` auf die öffentliche Demo-PIN (`123456`, steht als Vorgabe in
+`Beispiel/ericdemo-cpp/ericdemo/system.cpp`). Trag beides nicht in `.env` ein. Das gilt nur für `--testversand`; ein Echtversand braucht ein echtes Zertifikat.
+
 ## 5. Echtversand — geht wirklich ans Finanzamt
 
 **Heute nicht möglich.** `taxgraph-xml` schreibt nur Dateien mit Testmerker, und `taxgraph-versand`
