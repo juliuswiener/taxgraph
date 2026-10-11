@@ -65,8 +65,8 @@ fn geld(e: &mut Ein, name: &str) -> Result<Cent, String> {
     e.zahl(name).map(Cent::new)
 }
 
-fn cent(name: &'static str, r: Result<Cent, CatalaFehler>) -> Result<Option<Ergebnis>, String> {
-    Ok(Some(einzel(name, r.map(Cent::get))))
+fn cent(name: &'static str, r: Result<Cent, CatalaFehler>) -> Ergebnis {
+    einzel(name, r.map(Cent::get))
 }
 
 /// `zaehler/nenner` als `Decimal`, wenn der Nenner 100 teilt (dann ist der Wert eine Dezimalzahl mit hoechstens
@@ -119,7 +119,7 @@ const ADAPTER: &[(&str, &str, Adapter)] = &[
             aussergewoehnliche_belastungen: geld(e, "aussergewoehnliche_belastungen")?,
             zumutbare_belastung: geld(e, "zumutbare_belastung")?,
         };
-        cent("abzug_agb", agb::berechnen(eingabe))
+        Ok(Some(cent("abzug_agb", agb::berechnen(eingabe))))
     }),
     ("altersentlastungsbetrag", "altersentlastungsbetrag", |e| {
         let arbeitslohn = geld(e, "arbeitslohn")?;
@@ -163,13 +163,13 @@ const ADAPTER: &[(&str, &str, Adapter)] = &[
     }),
     ("berufsausbildung", "berufsausbildung", |e| {
         let eingabe = berufsausbildung::BerufsausbildungEingabe { aufwendungen: geld(e, "aufwendungen")? };
-        cent("abziehbare_sonderausgaben", berufsausbildung::berechnen(eingabe))
+        Ok(Some(cent("abziehbare_sonderausgaben", berufsausbildung::berechnen(eingabe))))
     }),
     ("betriebsfreibetrag", "betriebs_freibetrag", |e| {
         let eingabe = betriebsfreibetrag::BetriebsFreibetragEingabe {
             veraeusserungsgewinn: geld(e, "veraeusserungsgewinn")?,
         };
-        cent("freibetrag", betriebsfreibetrag::berechnen(eingabe))
+        Ok(Some(cent("freibetrag", betriebsfreibetrag::berechnen(eingabe))))
     }),
     ("entfernungspauschale", "entfernungspauschale", |e| {
         let km = als_dezimal(e.bruch("entfernung_km_roh")?);
@@ -206,14 +206,14 @@ const ADAPTER: &[(&str, &str, Adapter)] = &[
             anzahl_kinder: e.zahl("anzahl_kinder")?,
             monate_ohne_voraussetzung: e.zahl("monate_ohne_voraussetzung")?,
         };
-        cent("entlastungsbetrag", entlastungsbetrag::berechnen(eingabe))
+        Ok(Some(cent("entlastungsbetrag", entlastungsbetrag::berechnen(eingabe))))
     }),
     ("euer", "euer_gewinn", |e| {
         let eingabe = euer::EuerEingabe {
             betriebseinnahmen: geld(e, "betriebseinnahmen")?,
             betriebsausgaben: geld(e, "betriebsausgaben")?,
         };
-        cent("gewinn", euer::berechnen(eingabe))
+        Ok(Some(cent("gewinn", euer::berechnen(eingabe))))
     }),
     ("familienleistungsausgleich", "familienleistungsausgleich", |e| {
         let eingabe = familienleistungsausgleich::FamilienleistungsausgleichEingabe {
@@ -221,7 +221,7 @@ const ADAPTER: &[(&str, &str, Adapter)] = &[
             est_mit_freibetraegen: geld(e, "est_mit_freibetraegen")?,
             kindergeld: geld(e, "kindergeld")?,
         };
-        cent("est_nach_familienausgleich", familienleistungsausgleich::berechnen(eingabe))
+        Ok(Some(cent("est_nach_familienausgleich", familienleistungsausgleich::berechnen(eingabe))))
     }),
     ("fuenftelregelung", "ermaessigter_durchschnittssatz", |e| {
         let eingabe = fuenftelregelung::FuenftelregelungEingabe {
@@ -229,18 +229,18 @@ const ADAPTER: &[(&str, &str, Adapter)] = &[
             est_gesamt_zzgl_progression: geld(e, "est_gesamt_zzgl_progression")?,
             bemessungsgrundlage_durchschnitt: geld(e, "bemessungsgrundlage_durchschnitt")?,
         };
-        cent("est_ao", fuenftelregelung::berechnen(eingabe))
+        Ok(Some(cent("est_ao", fuenftelregelung::berechnen(eingabe))))
     }),
     ("gwg", "gwg_sofortabzug", |e| {
         let eingabe = gwg::GwgEingabe { anschaffungskosten_netto: geld(e, "anschaffungskosten_netto")? };
-        cent("sofortabzug", gwg::berechnen(eingabe))
+        Ok(Some(cent("sofortabzug", gwg::berechnen(eingabe))))
     }),
     ("kirchensteuer", "kirchensteuerabzug", |e| {
         let eingabe = kirchensteuer::KirchensteuerabzugEingabe {
             gezahlte_kirchensteuer: geld(e, "gezahlte_kirchensteuer")?,
             erstattete_kirchensteuer: geld(e, "erstattete_kirchensteuer")?,
         };
-        cent("abziehbare_kirchensteuer", kirchensteuer::berechnen(eingabe))
+        Ok(Some(cent("abziehbare_kirchensteuer", kirchensteuer::berechnen(eingabe))))
     }),
     ("mitunternehmer", "mitunternehmer_einkuenfte", |e| {
         let eingabe = mitunternehmer::MitunternehmerEingabe {
@@ -249,26 +249,26 @@ const ADAPTER: &[(&str, &str, Adapter)] = &[
             verguetung_darlehen: geld(e, "verguetung_darlehen")?,
             verguetung_ueberlassung: geld(e, "verguetung_ueberlassung")?,
         };
-        cent("einkuenfte_mitunternehmer", mitunternehmer::berechnen(eingabe))
+        Ok(Some(cent("einkuenfte_mitunternehmer", mitunternehmer::berechnen(eingabe))))
     }),
     ("spenden", "spenden_abzug", |e| {
         let eingabe = spenden::SpendenAbzugEingabe {
             zuwendungen: geld(e, "zuwendungen")?,
             gesamtbetrag_der_einkuenfte: geld(e, "gesamtbetrag_der_einkuenfte")?,
         };
-        cent("spenden_abzug", spenden::berechnen(eingabe))
+        Ok(Some(cent("spenden_abzug", spenden::berechnen(eingabe))))
     }),
     ("tarif", "grundtarif", |e| {
         let zve = geld(e, "zu_versteuerndes_einkommen")?;
-        cent("tarifliche_steuer", tarif::grundtarif(zve, e.vz("veranlagungszeitraum")?))
+        Ok(Some(cent("tarifliche_steuer", tarif::grundtarif(zve, e.vz("veranlagungszeitraum")?))))
     }),
     ("tarif", "splittingtarif", |e| {
         let zve = geld(e, "zu_versteuerndes_einkommen_gemeinsam")?;
-        cent("tarifliche_steuer", tarif::splittingtarif(zve, e.vz("veranlagungszeitraum")?))
+        Ok(Some(cent("tarifliche_steuer", tarif::splittingtarif(zve, e.vz("veranlagungszeitraum")?))))
     }),
     ("tarif", "festzusetzende_est_einzel", |e| {
         let eingabe = einzel_eingabe(e)?;
-        cent("festzusetzende_est", tarif::festzusetzende_est_einzel(eingabe, e.vz("veranlagungszeitraum")?))
+        Ok(Some(cent("festzusetzende_est", tarif::festzusetzende_est_einzel(eingabe, e.vz("veranlagungszeitraum")?))))
     }),
     ("tarif", "festzusetzende_est_einzel_voll", |e| {
         let eingabe = einzel_eingabe(e)?;
@@ -282,7 +282,7 @@ const ADAPTER: &[(&str, &str, Adapter)] = &[
             werbungskosten_b: geld(e, "werbungskosten_b")?,
             sonderausgaben_gemeinsam: geld(e, "sonderausgaben_gemeinsam")?,
         };
-        cent("festzusetzende_est", tarif::festzusetzende_est_zusammen(eingabe, e.vz("veranlagungszeitraum")?))
+        Ok(Some(cent("festzusetzende_est", tarif::festzusetzende_est_zusammen(eingabe, e.vz("veranlagungszeitraum")?))))
     }),
     ("tarif", "festzusetzende_est_gesamt", |e| {
         let eingabe = gesamt_eingabe(e)?;
@@ -314,7 +314,7 @@ const ADAPTER: &[(&str, &str, Adapter)] = &[
             verlustvortrag_bestand: geld(e, "verlustvortrag_bestand")?,
             zusammenveranlagung: e.wahr("zusammenveranlagung")?,
         };
-        cent("verlustabzug", verlustvortrag::berechnen(eingabe))
+        Ok(Some(cent("verlustabzug", verlustvortrag::berechnen(eingabe))))
     }),
     ("vorsorgeaufwendungen", "kranken_pflege_vorsorge", |e| {
         let eingabe = vorsorgeaufwendungen::VorsorgeaufwendungenEingabe {
@@ -322,7 +322,7 @@ const ADAPTER: &[(&str, &str, Adapter)] = &[
             weitere: geld(e, "weitere_vorsorgeaufwendungen")?,
             mit_zuschuss: e.wahr("mit_anspruch_auf_zuschuss")?,
         };
-        cent("abziehbare_kv_pv_vorsorge", vorsorgeaufwendungen::berechnen(eingabe))
+        Ok(Some(cent("abziehbare_kv_pv_vorsorge", vorsorgeaufwendungen::berechnen(eingabe))))
     }),
     ("zumutbare_belastung", "zumutbare_belastung", |e| {
         let eingabe = zumutbare_belastung::ZumutbareBelastungEingabe {
@@ -330,7 +330,7 @@ const ADAPTER: &[(&str, &str, Adapter)] = &[
             anzahl_kinder: e.zahl("anzahl_kinder")?,
             splitting: e.wahr("splitting")?,
         };
-        cent("zumutbare_belastung", zumutbare_belastung::berechnen(eingabe))
+        Ok(Some(cent("zumutbare_belastung", zumutbare_belastung::berechnen(eingabe))))
     }),
 ];
 
@@ -355,7 +355,7 @@ fn spiele_ab(zeilen: &[Zeile]) -> Auswertung {
     for z in zeilen {
         let Some(&(_, funktion, adapter)) = ADAPTER.iter().find(|(_, f, _)| *f == z.funktion) else {
             if !OHNE_MODUL.contains(&z.funktion.as_str()) {
-                a.abweichungen.push(format!("Zeile {} ({}): kein Adapter, Funktion nicht in OHNE_MODUL", z.nr, z.funktion));
+                a.abweichungen.push(format!("Zeile {} ({}): kein Adapter und nicht in OHNE_MODUL", z.nr, z.funktion));
             }
             continue;
         };
@@ -420,7 +420,7 @@ fn die_dezimal_scopes_haben_zeilen_mit_nachkommastellen() {
                 matches!(nenner, 10 | 100) && u64::try_from(zaehler).is_ok_and(|zl| zl % nenner != 0)
             })
             .count();
-        assert!(n >= MINDEST_NACHKOMMA, "{funktion}: {n} Zeilen mit Nachkommastellen, verlangt sind {MINDEST_NACHKOMMA}");
+        assert!(n >= MINDEST_NACHKOMMA, "{funktion}: {n} Zeilen mit Nachkommastellen, verlangt {MINDEST_NACHKOMMA}");
     }
 }
 
