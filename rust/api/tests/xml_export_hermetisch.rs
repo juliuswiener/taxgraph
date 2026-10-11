@@ -457,3 +457,118 @@ fn das_programm_schreibt_oder_sagt_warum_nicht() {
         .unwrap();
     assert_eq!(o.status.code(), Some(1));
 }
+
+/// `taxgraph-xml` mit den Argumenten `args`, die Akte unter `tmp` und der Platzhalter-ID: das Programm liest die
+/// Akte nie aus dem echten Bestand und nie mit der echten Hersteller-ID.
+fn programm(tmp: &Path, args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_taxgraph-xml"))
+        .args(args)
+        .env("TAXGRAPH_DATEN", tmp)
+        .env("TAXGRAPH_AUDIT_DIR", tmp)
+        .env("ELSTER_HERSTELLER_ID", "74931")
+        .output()
+        .unwrap()
+}
+
+/// Ein liegengebliebenes `ziel.tmp` (Abbruch eines früheren Laufs), länger als das XML: `schreibe_neu` öffnet es mit
+/// `create_new` und scheitert, es entsteht keine Datei, und das fremde `.tmp` bleibt, wie es war. Mit `create` schriebe
+/// der Lauf die neuen Bytes an den Anfang der alten Datei und verlinkte sie als Ziel: ein beschädigtes XML mit Name,
+/// Anschrift und Steuernummer.
+#[test]
+fn eine_liegengebliebene_tmp_datei_wird_nie_zum_ziel() {
+    if !elster::testhilfe::schemas_da(2025) {
+        eprintln!("[xml_export] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
+        return;
+    }
+    let _nacheinander = nacheinander();
+    let mut env = Env(Vec::new());
+    env.setze("ELSTER_HERSTELLER_ID", "74931");
+    let tmp = tempfile::tempdir().unwrap();
+    let z = dienst(tmp.path());
+    let aus = tmp.path().join("aus");
+    std::fs::create_dir_all(&aus).unwrap();
+    let soll = std::fs::read(wurzel().join("rust/fixtures/e2e/gesamt.xml")).unwrap();
+    let (ziel, fremd) = (aus.join("e_ges.xml"), aus.join("e_ges.xml.tmp"));
+    let alt = vec![b'x'; soll.len() + 1000];
+    std::fs::write(&fremd, &alt).unwrap();
+
+    let fehler = xml_exportieren(&z, "e_ges", "BY", &ziel)
+        .expect_err("ein liegengebliebenes .tmp darf den Lauf nicht durchlassen");
+    assert!(!ziel.exists(), "das Ziel entstand aus dem liegengebliebenen .tmp: {fehler:?}");
+    assert_eq!(std::fs::read(&fremd).unwrap(), alt, "das fremde .tmp wurde veraendert");
+    assert_eq!(dateien(&aus), vec!["e_ges.xml.tmp".to_owned()]);
+}
+
+/// Eine Option, die zweimal steht, ist ein Aufruffehler (Exit 1): sonst gewänne still der letzte Wert, und `--ausgabe a
+/// --ausgabe b` schriebe nach `b`. Der Fehler kommt vor dem Start des Dienstes: keine Datei, auch wenn der Fall baubar wäre.
+#[test]
+fn eine_doppelt_genannte_option_ist_ein_aufruffehler() {
+    let _nacheinander = nacheinander();
+    let tmp = tempfile::tempdir().unwrap();
+    let _ = dienst(tmp.path());
+    let aus = tmp.path().join("aus");
+    std::fs::create_dir_all(&aus).unwrap();
+    let ziel = aus.join("a.xml");
+    let pfad = ziel.to_str().unwrap();
+    for (option, args) in [
+        ("--fall", vec!["--fall", "e_ges", "--fall", "e_ges", "--ausgabe", pfad]),
+        ("--ausgabe", vec!["--fall", "e_ges", "--ausgabe", pfad, "--ausgabe", pfad]),
+        ("--land", vec!["--fall", "e_ges", "--ausgabe", pfad, "--land", "BY", "--land", "BY"]),
+    ] {
+        let o = programm(tmp.path(), &args);
+        let stderr = String::from_utf8_lossy(&o.stderr);
+        assert_eq!(o.status.code(), Some(1), "{option}: {stderr}");
+        assert!(stderr.contains(&format!("{option} steht zweimal")), "{option}: {stderr}");
+        assert!(!ziel.exists(), "{option}: das Programm schrieb doch");
+    }
+    assert_eq!(dateien(&aus), Vec::<String>::new());
+}
+
+/// Bricht der Bau mit `deklaration_unvollstaendig` ab, nennt das Programm auf stderr, welche Angaben fehlen: ohne die
+/// Liste sähe der Nutzer nur den Grund und müsste raten. Exit 2, keine Datei. Der Fall bricht vor dem Writer ab: der Test
+/// braucht kein Schema und läuft in der CI.
+#[test]
+fn das_programm_nennt_die_fehlenden_angaben() {
+    let _nacheinander = nacheinander();
+    let tmp = tempfile::tempdir().unwrap();
+    let _ = dienst(tmp.path());
+    let aus = tmp.path().join("aus");
+    std::fs::create_dir_all(&aus).unwrap();
+    let ziel = aus.join("e_vorl.xml");
+    let o = programm(tmp.path(), &["--fall", "e_vorl", "--ausgabe", ziel.to_str().unwrap()]);
+    let stderr = String::from_utf8_lossy(&o.stderr);
+    assert_eq!(o.status.code(), Some(2), "{stderr}");
+    assert!(stderr.contains("grund: deklaration_unvollstaendig"), "{stderr}");
+    assert!(stderr.contains("unvollstaendig: ["), "die Liste der fehlenden Angaben fehlt: {stderr}");
+    assert!(stderr.contains("kap_kapitalertraege"), "die Liste nennt die vorlaeufige Angabe nicht: {stderr}");
+    assert!(!ziel.exists());
+}
+
+/// Die Meldung nach dem Schreiben nennt den Testmerker, der in der Datei steht: wer sie liest, schließt daraus, dass die
+/// Datei nichts sendet. Eine Zahl, die nicht zur Datei passt, wäre eine falsche Auskunft über genau diese Zusicherung.
+#[test]
+fn die_meldung_nennt_den_testmerker_der_datei() {
+    if !elster::testhilfe::schemas_da(2025) {
+        eprintln!("[xml_export] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
+        return;
+    }
+    let _nacheinander = nacheinander();
+    let tmp = tempfile::tempdir().unwrap();
+    let _ = dienst(tmp.path());
+    let ziel = tmp.path().join("a.xml");
+    let o = programm(tmp.path(), &["--fall", "e_ges", "--ausgabe", ziel.to_str().unwrap()]);
+    assert_eq!(o.status.code(), Some(0), "{}", String::from_utf8_lossy(&o.stderr));
+    let ausgabe = String::from_utf8_lossy(&o.stdout);
+    let nach = ausgabe
+        .split("Testmerker ")
+        .nth(1)
+        .unwrap_or_else(|| panic!("die Meldung nennt keinen Testmerker: {ausgabe}"));
+    let zahl: String = nach.chars().take_while(char::is_ascii_digit).collect();
+    assert!(!zahl.is_empty(), "{ausgabe}");
+    let xml = std::fs::read_to_string(&ziel).unwrap();
+    assert_eq!(
+        xml.matches(&format!("<Testmerker>{zahl}</Testmerker>")).count(),
+        1,
+        "die Datei traegt nicht den Testmerker {zahl}, den die Meldung nennt: {ausgabe}"
+    );
+}
