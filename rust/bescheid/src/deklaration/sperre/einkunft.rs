@@ -8,10 +8,11 @@ use konsistenz::flag_widersprueche;
 use super::{bestaetigt, oder_null_positiv, positiv, zahl_wert, Grund, K};
 use crate::deklaration::konstanten::AGB_KIST;
 use crate::einkuenfte::{
-    dba_abzug_gewaehlt, dba_abzug_getragen, dba_freistellung_aktiv, EUER_KOMPONENTEN,
-    GEWINN_QUELLEN_MENGEN, KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE, KAP_TOEPFE_PARTNER,
+    dba_abzug_gewaehlt, dba_abzug_getragen, dba_freistellung_aktiv, laufender_gewinn_vor_pv,
+    EUER_KOMPONENTEN, GEWINN_QUELLEN_MENGEN, KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE,
+    KAP_TOEPFE_PARTNER,
 };
-use crate::{ist_false, ist_true, ist_zusammen, wert, Felder};
+use crate::{feld_euro_oder_null, ist_false, ist_true, ist_zusammen, wert, Felder};
 
 /// § 34c DBA (multi-country, § 32d-Kapital), § 32b-Koinzidenz, § 16 Abs. 4 Freibetrag.
 pub(super) fn dba_p32b_p16(k: &K<'_>) -> Grund {
@@ -100,16 +101,32 @@ pub(super) fn flag_kapital_gewinn(k: &K<'_>) -> Option<Sperrgrund> {
     if semantik_eigen || semantik_partner {
         return Some(Sperrgrund::KapitalSemantikOffen);
     }
-    gewinn(f)
+    gewinn(k)
+}
+
+/// Nennen der Direktwert `einkuenfte_gewinn` und die Aufschluesselung (EUeR-Komponenten, GWG, Beteiligung) denselben Gewinn
+/// in vollen Euro (Abweichung Nr. 61)? Dann ist die Doppelangabe keine Doppelquelle: der Bescheid rechnet aus der
+/// Aufschluesselung, die Erklaerung traegt den Direktwert, beides ist dieselbe Zahl. Ein Rechenfehler zaehlt als
+/// "passt nicht" (die Sperre bleibt).
+fn direktwert_passt_zur_aufschluesselung(k: &K<'_>) -> bool {
+    matches!(
+        (
+            feld_euro_oder_null(k.f, "einkuenfte_gewinn"),
+            laufender_gewinn_vor_pv(k.f, k.q),
+        ),
+        (Ok(direkt), Ok((aufgeschluesselt, _))) if direkt == aufgeschluesselt
+    )
 }
 
 /// §§ 13-18: Direktwert UND EUeR-Komponenten (Doppelquelle), Land-/Forstwirtschaft mit `EUeR`,
 /// begonnener EUeR-Weg mit unbeantworteter Angabe. `GEWINN_QUELLEN_MENGEN` ist DIESELBE Menge wie
-/// die des Umschalters in `laufender_gewinn`.
-fn gewinn(f: &Felder) -> Option<Sperrgrund> {
+/// die des Umschalters in `laufender_gewinn`. Eine Doppelangabe sperrt nicht, wenn beide Wege denselben Gewinn nennen
+/// ([`direktwert_passt_zur_aufschluesselung`]).
+fn gewinn(k: &K<'_>) -> Option<Sperrgrund> {
+    let f = k.f;
     let quelle_positiv = GEWINN_QUELLEN_MENGEN.iter().any(|q| positiv(f, q));
     let direktwert = positiv(f, "einkuenfte_gewinn");
-    if direktwert && quelle_positiv {
+    if direktwert && quelle_positiv && !direktwert_passt_zur_aufschluesselung(k) {
         return Some(Sperrgrund::GewinnQuelleOffen);
     }
     let land_forst =

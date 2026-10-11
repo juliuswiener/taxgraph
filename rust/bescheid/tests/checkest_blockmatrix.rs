@@ -31,6 +31,12 @@
 //! Abgabeweg, fuenf Kontrollen, die `ERiC` beanstanden MUSS (Beginn fehlt, Beginn nach dem Steuerjahr, Beginn der vorhergehenden
 //! Leistung ohne Ende, 0 in Zeile 10 ohne Beginn), und eine Gegenprobe, die `ERiC` annimmt (0 in Zeile 4).
 //!
+//! VORSORGE-SUMMEN UND GEWINN (Abweichung Nr. 61). Der siebte echte Test misst die Summe beider Ehegatten in den fuenf Vorsorge-Zeilen
+//! (`E2001403`, `E2001503`, `E2001803`, `E2001903`, `E2002003`) in der Zusammenveranlagung und den Gewinn aus Direktwert und `EUeR`
+//! (`E0800302`, `E0803202`), und vier Kontrollen, die `ERiC` beanstanden MUSS (Kind ohne Vorname, Ehegatte ohne Lohnsteuer, Gewinn ohne
+//! Bezeichnung, Gewinn ohne Betrag). Die Posten ohne Kz (`EUeR`-Felder ohne Direktwert, Mitunternehmer, Topf `kap_gewinn_sonstige`)
+//! sperren die Abgabe und erreichen `ERiC` nie; der Aufrufort-Test dazu ist `gewinn_und_vorsorge_einreichung_hermetisch.rs`.
+//!
 //! KEIN SKIP. Die echten Tests sind `#[ignore]` (`cargo test --workspace` und die CI laufen ohne sie: `ERiC` und die Hersteller-ID
 //! gehoeren nicht auf einen Runner, Entscheid Julius 2026-09-12). Wer sie mit `--ignored` ruft, will den echten Weg: jede fehlende
 //! Voraussetzung ist ein `panic`, nie ein `return`. Lokal: `make blockmatrix-rust` (laedt die ID aus der gitignorierten `.env`).
@@ -62,13 +68,14 @@ use serde_json::{json, Value};
 use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
 
 /// Die Namen der echten Tests: Make-Ziel und Verdrahtungs-Test pruefen sie.
-const ECHTE_TESTS: [&str; 6] = [
+const ECHTE_TESTS: [&str; 7] = [
     "zwoelf_bloecke_gegen_echtes_checkest",
     "zeilen_nr48_nr49_gegen_echtes_checkest",
     "zeilen_nr48_nr49_vz2024_gegen_echtes_checkest",
     "ausland_staat_und_nr41_gegen_echtes_checkest",
     "privatverkauf_gegen_echtes_checkest",
     "rav_bav_gegen_echtes_checkest",
+    "vorsorge_und_gewinn_gegen_echtes_checkest",
 ];
 const MAKE_ZIEL: &str = "blockmatrix-rust";
 /// Die Zahl der Bloecke der Python-Matrix. Faellt eine Zeile aus `bloecke()` weg, wird der Test rot, nicht kleiner.
@@ -223,6 +230,13 @@ fn urteil_vz(xml: &str, id: &str, vz: i64) -> Urteil {
 /// Eine Akte aus Basis plus `zusatz` (ueberschreibt gleichnamige Basisfelder), ueber den echten Abgabeweg zum XML. `Err` nennt den
 /// Grund, aus dem der Guard oder der Writer kein XML baut.
 fn block_xml(zusatz: &[(&str, Value)], id: &str) -> Result<String, String> {
+    einreichungs_xml(&block_akte(zusatz), index(), params(), "BY", Some(id.to_owned()))
+        .map(|e| e.xml)
+        .map_err(|f| f.to_string().replace(id, "<ID>"))
+}
+
+/// Die Akte aus Basis plus `zusatz` (ueberschreibt gleichnamige Basisfelder).
+fn block_akte(zusatz: &[(&str, Value)]) -> Store {
     let mut s = leere_akte();
     let mut paare = basis();
     for (f, w) in zusatz {
@@ -232,9 +246,7 @@ fn block_xml(zusatz: &[(&str, Value)], id: &str) -> Result<String, String> {
     for (f, w) in paare {
         setze(&mut s, f, w);
     }
-    einreichungs_xml(&s, index(), params(), "BY", Some(id.to_owned()))
-        .map(|e| e.xml)
-        .map_err(|f| f.to_string().replace(id, "<ID>"))
+    s
 }
 
 /// Antworten, die der Rust-Guard (`an_gesamt_sperrgrund`) zusaetzlich verlangt. Der Python-Test rief `deklariere` und `erzeuge_xml`
@@ -1134,6 +1146,133 @@ fn rav_bav_gegen_echtes_checkest() {
     let u = urteil(&xml_abgabe(&rav_abgeaendert(&nr1, "E1803101", Some(json!(0))), &nr1_felder, &id), &id);
     eprintln!("{:<40} {}", "G_Z4_0", u.zeile());
     assert!(u.plausibel(), "G_Z4_0: nicht rc=0: {}", u.zeile());
+}
+
+// ----------------------------------------------------------------------------- Abweichung Nr. 61: Vorsorge-Summen und Gewinn
+
+/// Die fuenf Vorsorge-Summen: Kz, Feld Person A, Cent A, Feld Partner, Cent Partner.
+const VORSORGE_SUMMEN: [(&str, &str, i64, &str, i64); 5] = [
+    ("E2001403", "vorsorge_arbeitslosenversicherung", 50_001, "vorsorge_arbeitslosenversicherung_partner", 48_000),
+    ("E2001503", "vorsorge_erwerbsunfaehigkeit", 30_000, "vorsorge_erwerbsunfaehigkeit_partner", 32_000),
+    ("E2001803", "vorsorge_unfall_haftpflicht", 20_000, "vorsorge_unfall_haftpflicht_partner", 21_000),
+    ("E2001903", "vorsorge_rv_alt_mit_ueberschuss", 40_000, "vorsorge_rv_alt_mit_ueberschuss_partner", 41_000),
+    ("E2002003", "vorsorge_rv_alt_ohne_ueberschuss", 30_000, "vorsorge_rv_alt_ohne_ueberschuss_partner", 29_000),
+];
+
+/// Die Vorsorge-Antworten: Person A, dazu auf Wunsch der Ehegatte (Zusammenveranlagung mit dem Stand seiner Stammdaten und Pflichtfelder).
+fn vorsorge_antworten(partner: bool) -> Vec<(&'static str, Value)> {
+    let mut a: Vec<(&'static str, Value)> = VORSORGE_SUMMEN.iter().map(|k| (k.1, json!(k.2))).collect();
+    if partner {
+        a.extend([
+            ("veranlagung", json!("zusammen")),
+            ("stammdaten_nachname_partner", json!("Maier")),
+            ("stammdaten_vorname_partner", json!("Erika")),
+            ("stammdaten_geburtsdatum_partner", json!("01.02.1960")),
+            ("kist_konfession_partner", json!("keine")),
+            ("steuerklasse_partner", json!("1")),
+            ("p36_lohnsteuer_partner", json!(0)),
+            ("bruttoarbeitslohn_partner", json!(0)),
+            ("kap_kapitalertraege_partner", json!(0)),
+            ("kap_gewinn_aktien_partner", json!(0)),
+            ("kap_gewinn_sonstige_partner", json!(0)),
+            ("kap_verlust_aktien_partner", json!(0)),
+            ("kap_verlust_sonstige_partner", json!(0)),
+        ]);
+        a.extend(VORSORGE_SUMMEN.iter().map(|k| (k.3, json!(k.4))));
+    }
+    a
+}
+
+/// Je Fall: Name, die Antworten, die Kz mit ihrem Wert im XML.
+type VorsorgeFall<'a> = (&'a str, &'a Vec<(&'a str, Value)>, Vec<(&'a str, &'a str)>);
+
+/// Gewinn der Betriebsart `art` aus Direktwert 35.000 Euro, auf Wunsch mit der `EUeR` (50.000 - 10.000 - 5.000), die denselben Gewinn nennt.
+fn gewinn_antworten(art: &'static str, euer: bool) -> Vec<(&'static str, Value)> {
+    let mut z: Vec<(&'static str, Value)> = vec![
+        ("kein_gewinn", json!(false)),
+        ("gewinn_betriebsart", json!(art)),
+        ("gewinn_bezeichnung", json!("Testfall")),
+        ("einkuenfte_gewinn", json!(3_500_000)),
+    ];
+    if euer {
+        z.extend([
+            ("betriebseinnahmen", json!(5_000_000)),
+            ("sonstige_betriebsausgaben", json!(1_000_000)),
+            ("afa_jahresbetrag", json!(500_000)),
+        ]);
+    }
+    z
+}
+
+/// Die Deklaration einer Akte aus Basis plus `zusatz`, wie die Produktion sie baut (Ring, dann `deklariere`).
+fn block_deklaration(zusatz: &[(&str, Value)]) -> (Deklaration, Felder) {
+    let (mut felder, _) = block_akte(zusatz).materialisiere(None).unwrap();
+    mit_ring_werten(&mut felder, Some(Vz::Vz2025), params()).unwrap();
+    let d = deklariere(&felder, index(), 2025, None).unwrap();
+    assert!(d.unvollstaendig().is_empty(), "die Akte sperrt schon: {:?}", d.unvollstaendig());
+    (d, felder)
+}
+
+/// Abweichung Nr. 61: die Summe beider Ehegatten in den fuenf Vorsorge-Zeilen und der Gewinn aus Direktwert und `EUeR` gegen das echte
+/// `checkESt`. Die Faelle sind `rc=0` mit 0 Meldungen und tragen die Kz mit ihrem Wert im XML. Vier Kontrollen muss `ERiC` beanstanden
+/// (`rc=610001002`): ein Kind ohne Vorname (`ERiC` wurde erreicht), der Ehegatte mit Steuerklasse und ohne Lohnsteuer (`ERiC` liest in der
+/// Zusammenveranlagung Person B), und der Gewinn ohne Bezeichnung oder ohne Betrag (`ERiC` liest den Gewinnblock).
+#[test]
+#[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make blockmatrix-rust`"]
+fn vorsorge_und_gewinn_gegen_echtes_checkest() {
+    let id = voraussetzungen();
+    let k0 = urteil(&block_xml(&[], &id).expect("K0: die Basis allein baut kein XML"), &id);
+    eprintln!("{:<40} {}", "K0_nur_basis", k0.zeile());
+    assert!(k0.plausibel(), "K0: die Basis allein ist nicht rc=0: {}", k0.zeile());
+    let rot = |name: &str, u: &Urteil| {
+        eprintln!("{name:<40} {}", u.zeile());
+        assert!(
+            u.rc == RC_PLAUSIBILITAET && !u.meldungen.is_empty(),
+            "{name}: ERiC muss rc={RC_PLAUSIBILITAET} mit Meldung geben, gab: {}",
+            u.zeile()
+        );
+    };
+    let kind = vec![("fam_anzahl_kinder", json!(1)), ("kind_idnr", json!("12345678911"))];
+    rot("K1_kind_ohne_vorname", &urteil(&block_xml(&kind, &id).expect("K1: kein XML"), &id));
+
+    // Faelle: Name, Antworten, die Kz mit ihrem Wert im XML (je genau einmal).
+    let a = vorsorge_antworten(false);
+    let ab = vorsorge_antworten(true);
+    let faelle: [VorsorgeFall<'_>; 2] = [
+        ("V_einzel_nur_A", &a, vec![("E2001403", "501"), ("E2001503", "300"), ("E2001803", "200"), ("E2001903", "400"), ("E2002003", "300")]),
+        ("V_zusammen_A_und_B", &ab, vec![("E2001403", "981"), ("E2001503", "620"), ("E2001803", "410"), ("E2001903", "810"), ("E2002003", "590")]),
+    ];
+    for (name, zusatz, kz_im_xml) in faelle {
+        let xml = block_xml(zusatz, &id).unwrap_or_else(|g| panic!("{name}: kein XML: {g}"));
+        for (kz, wert) in &kz_im_xml {
+            assert_eq!(xml.matches(&format!("<{kz}>{wert}</{kz}>")).count(), 1, "{name}: <{kz}>{wert}</{kz}> steht nicht genau einmal im XML");
+        }
+        let u = urteil(&xml, &id);
+        eprintln!("{name:<40} {}", u.zeile());
+        assert!(u.plausibel(), "{name}: nicht rc=0: {}", u.zeile());
+    }
+    // Kontrolle zur Zusammenveranlagung: ohne die Lohnsteuer des Ehegatten beanstandet ERiC Person B.
+    let ohne_lohnsteuer: Vec<(&str, Value)> = ab.iter().filter(|(f, _)| *f != "p36_lohnsteuer_partner").cloned().collect();
+    let xml = block_xml(&ohne_lohnsteuer, &id).expect("K_B_ohne_lohnsteuer: kein XML");
+    rot("K2_ehegatte_ohne_lohnsteuer", &urteil(&xml, &id));
+
+    for (art, kz, name) in [("gewerbe", "E0800302", "G_gewerbe"), ("selbstaendig", "E0803202", "G_selbstaendig")] {
+        for euer in [false, true] {
+            let name = format!("{name}_{}", if euer { "euer_und_summe" } else { "nur_summe" });
+            let xml = block_xml(&gewinn_antworten(art, euer), &id).unwrap_or_else(|g| panic!("{name}: kein XML: {g}"));
+            assert_eq!(xml.matches(&format!("<{kz}>35000</{kz}>")).count(), 1, "{name}: {kz} steht nicht genau einmal mit 35000 im XML");
+            let u = urteil(&xml, &id);
+            eprintln!("{name:<40} {}", u.zeile());
+            assert!(u.plausibel(), "{name}: nicht rc=0: {}", u.zeile());
+        }
+    }
+    // Kontrollen zum Gewinn: dieselbe Deklaration ohne Bezeichnung (E0800301) und ohne Betrag (E0800302).
+    let (d, felder) = block_deklaration(&gewinn_antworten("gewerbe", true));
+    for (name, kz) in [("K3_gewinn_ohne_bezeichnung", "E0800301"), ("K4_gewinn_ohne_betrag", "E0800302")] {
+        let mut m = d.clone();
+        assert!(m.deklaration.remove(kz).is_some(), "{name}: {kz} stand nicht in der Deklaration");
+        rot(name, &urteil(&xml_abgabe(&m, &felder, &id), &id));
+    }
 }
 
 // ----------------------------------------------------------------------------- Verdrahtung (laeuft in der CI)

@@ -238,6 +238,15 @@ pub(crate) const REGAL: &[Datei] = &[
                     tests: &["selbst_bewohntes_grundstueck_traegt_haken_zeitraum_und_flaeche_und_den_gewinn_null"],
                 },
             ),
+            // Abweichung Nr. 61: die fuenf gemeinsamen Summen-Kz der Zeilen 44 bis 48 (Anlage Vorsorgeaufwand) tragen die Beitraege BEIDER
+            // Ehegatten; Python addiert den Ehegatten nicht. Der Test deckt die Literale (ein vertauschtes Kz macht ihn rot).
+            (
+                "VORSORGE_PARTNER",
+                Zuordnung::Verhalten {
+                    kz: &["E2001403", "E2001503", "E2001803", "E2001903", "E2002003"],
+                    tests: &["die_vorsorge_summe_traegt_beide_ehegatten_aus_gerundeten_posten"],
+                },
+            ),
             // Diese Regeln stehen als Literale in Methoden von `Bau`; ihr Top-Level-Name ist `deklariere`.
             ("deklariere", Zuordnung::Funktion("iban_weiche/praefix")),
             ("deklariere", Zuordnung::Funktion("iban_weiche/inland")),

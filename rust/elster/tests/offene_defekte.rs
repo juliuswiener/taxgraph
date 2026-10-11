@@ -15,7 +15,7 @@
     clippy::panic
 )]
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap};
 use std::sync::OnceLock;
 
 use bindung::Bindung;
@@ -129,6 +129,7 @@ const AB_LP: [(&str, &str, i64, &str, i64); 5] = [
 
 /// `test_a_b_lp_summenfehler.py`: `A_B_LP` hat laut E10-2025.xsd keinen Person-Diskriminator, das
 /// Sum-Kz ist die gemeinsame Summe beider Ehegatten. Kontrolle: nur Person A traegt ihren Betrag.
+/// Seit Abweichung Nr. 61 addiert `deklariere` den Ehegatten (je Betrag aufgerundet, dann die Summe); der Test ist gruen.
 fn ab_lp_summe(kz: &str) {
     let (_, feld_a, cent_a, feld_b, cent_b) = *AB_LP.iter().find(|k| k.0 == kz).unwrap();
     let sum_kz = |paare: &[(&str, Value)]| {
@@ -152,31 +153,26 @@ fn ab_lp_summe(kz: &str) {
 }
 
 #[test]
-#[ignore = "A_B_LP-Sum-Kz traegt nur Person A, der Partner-Betrag (elster_kz: null) wird nicht addiert; laut E10-2025.xsd gemeinsame Summe beider Ehegatten. Python: test_a_b_lp_summenfehler.py::test_person_a_und_partner_werden_addiert[E2001403]. Vault: audits/ring-gegen-deklaration-ueber-und-untererklaerung.md. Rot sehen: --ignored"]
 fn ab_lp_summe_e2001403() {
     ab_lp_summe("E2001403");
 }
 
 #[test]
-#[ignore = "A_B_LP-Sum-Kz traegt nur Person A, der Partner-Betrag (elster_kz: null) wird nicht addiert; laut E10-2025.xsd gemeinsame Summe beider Ehegatten. Python: test_a_b_lp_summenfehler.py::test_person_a_und_partner_werden_addiert[E2001503]. Vault: audits/ring-gegen-deklaration-ueber-und-untererklaerung.md. Rot sehen: --ignored"]
 fn ab_lp_summe_e2001503() {
     ab_lp_summe("E2001503");
 }
 
 #[test]
-#[ignore = "A_B_LP-Sum-Kz traegt nur Person A, der Partner-Betrag (elster_kz: null) wird nicht addiert; laut E10-2025.xsd gemeinsame Summe beider Ehegatten. Python: test_a_b_lp_summenfehler.py::test_person_a_und_partner_werden_addiert[E2001803]. Vault: audits/ring-gegen-deklaration-ueber-und-untererklaerung.md. Rot sehen: --ignored"]
 fn ab_lp_summe_e2001803() {
     ab_lp_summe("E2001803");
 }
 
 #[test]
-#[ignore = "A_B_LP-Sum-Kz traegt nur Person A, der Partner-Betrag (elster_kz: null) wird nicht addiert; laut E10-2025.xsd gemeinsame Summe beider Ehegatten. Python: test_a_b_lp_summenfehler.py::test_person_a_und_partner_werden_addiert[E2001903]. Vault: audits/ring-gegen-deklaration-ueber-und-untererklaerung.md. Rot sehen: --ignored"]
 fn ab_lp_summe_e2001903() {
     ab_lp_summe("E2001903");
 }
 
 #[test]
-#[ignore = "A_B_LP-Sum-Kz traegt nur Person A, der Partner-Betrag (elster_kz: null) wird nicht addiert; laut E10-2025.xsd gemeinsame Summe beider Ehegatten. Python: test_a_b_lp_summenfehler.py::test_person_a_und_partner_werden_addiert[E2002003]. Vault: audits/ring-gegen-deklaration-ueber-und-untererklaerung.md. Rot sehen: --ignored"]
 fn ab_lp_summe_e2002003() {
     ab_lp_summe("E2002003");
 }
@@ -210,67 +206,8 @@ fn elf() -> Vec<(&'static str, i64)> {
         .collect()
 }
 
-/// Kz → Texte aller `E` + 7 Ziffern-Elemente (`_kz_werte_aus_xml`).
-fn kz_werte(xml: &str) -> BTreeMap<String, Vec<String>> {
-    let doc = roxmltree::Document::parse(xml).expect("KONTROLLE: XML parst");
-    let mut werte: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    for n in doc.descendants().filter(roxmltree::Node::is_element) {
-        let name = n.tag_name().name();
-        if name.len() == 8 && name.starts_with('E') && name[1..].bytes().all(|b| b.is_ascii_digit())
-        {
-            let text = n.text().unwrap_or_default().to_owned();
-            werte.entry(name.to_owned()).or_default().push(text);
-        }
-    }
-    werte
-}
-
-/// Steht `eur` als `n`, `n.00` oder `n,00` in irgendeinem Kz (`_betrag_im_xml`)?
-fn betrag_im_xml(werte: &BTreeMap<String, Vec<String>>, eur: i64) -> bool {
-    let formen = [eur.to_string(), format!("{eur}.00"), format!("{eur},00")];
-    werte
-        .values()
-        .flatten()
-        .any(|w| formen.iter().any(|f| f == w.trim()))
-}
-
-/// Einzelbetraege und die vier Zwischensummen (`_summen`), je mit Etikett.
-fn elf_betraege() -> Vec<(String, i64)> {
-    let elf = elf();
-    let summe = |felder: &[&str]| {
-        elf.iter()
-            .filter(|(f, _)| felder.contains(f))
-            .map(|(_, c)| c)
-            .sum::<i64>()
-            / 100
-    };
-    let alle: Vec<&str> = elf.iter().map(|(f, _)| *f).collect();
-    let zehn: Vec<&str> = alle
-        .iter()
-        .copied()
-        .filter(|f| *f != KAP_SONSTIGE)
-        .collect();
-    let mut betraege: Vec<(String, i64)> = elf
-        .iter()
-        .map(|(f, c)| ((*f).to_owned(), c / 100))
-        .collect();
-    betraege.extend([
-        (
-            "Summe 6 Person-A-Gewinn-Komponenten".to_owned(),
-            summe(&PERSON_A_GEWINN),
-        ),
-        ("Summe 4 _partner-Felder".to_owned(), summe(&PARTNER_GEWINN)),
-        ("Summe alle elf".to_owned(), summe(&alle)),
-        (
-            "Summe zehn ohne kap_gewinn_sonstige".to_owned(),
-            summe(&zehn),
-        ),
-    ]);
-    betraege
-}
-
 /// `_basis`: Person A/B, Pflichtkegel, Direktwert `einkuenfte_gewinn` bewusst 0.
-fn elf_lauf(mit_elf: bool) -> BTreeMap<String, Vec<String>> {
+fn elf_lauf(mit_elf: bool) -> Deklaration {
     let mut paare: Vec<(&str, Value)> = vec![
         ("bruttoarbeitslohn", json!(5_000_000)),
         ("vor_an_anteil_rv", json!(200_000)),
@@ -301,51 +238,50 @@ fn elf_lauf(mit_elf: bool) -> BTreeMap<String, Vec<String>> {
     if mit_elf {
         paare.extend(elf().into_iter().map(|(f, c)| (f, json!(c))));
     }
-    let felder = bestaetigt(&paare);
-    let d = deklariere(&felder, index(), VZ, None).unwrap();
-    assert!(
-        d.eingaben_konsistent(),
-        "KONTROLLE: eingaben_konsistent (mit_elf={mit_elf}): {:?}",
-        d.unvollstaendig()
-    );
-    kz_werte(&xml(&d, "74931", Some(&felder)))
+    deklariere(&bestaetigt(&paare), index(), VZ, None).unwrap()
 }
 
-/// `test_elf_gewinnfelder_geld_fehlt_im_xml.py`: bestaetigtes Geld landet in der Erklaerung.
-/// Elf Betragsfelder mit `elster_kz: null` erreichen das XML weder einzeln noch als
-/// Zwischensumme. Kontrollen: Leerlauf ohne die elf (kein Betrag im Skelett) und das verdrahtete
-/// `bruttoarbeitslohn_partner` → E0200201 im selben Lauf.
+/// Ein Cent-Betrag so, wie die Gruende der Abgabe-Sperre ihn nennen (`1111,00`).
+fn euro_text(cent: i64) -> String {
+    format!("{},{:02}", cent / 100, cent % 100)
+}
+
+/// `test_elf_gewinnfelder_geld_fehlt_im_xml.py`: bestaetigtes Geld, das der Bescheid rechnet, darf die
+/// Erklaerung nicht als 0 nennen. Elf Betragsfelder (6 Gewinnkomponenten Person A, 4 `_partner`,
+/// `kap_gewinn_sonstige`) tragen `elster_kz: null`. Seit Abweichung Nr. 61 sperrt die Abgabe je Feld mit dem
+/// Betrag im Grund (das Bauen braeuchte die Anleitungen zu Anlage G, S, EUeR und KAP und die Gesellschaft der
+/// Beteiligung). Kontrollen: der Lauf ohne die elf ist konsistent, und das verdrahtete
+/// `bruttoarbeitslohn_partner` steht im selben Lauf unter E0200201.
 #[test]
-#[ignore = "Elf Betragsfelder (6 Gewinnkomponenten Person A, 4 _partner, kap_gewinn_sonstige) haben elster_kz: null und erreichen das XML weder einzeln noch als Zwischensumme; Reparaturrichtung offen. Python: test_elf_gewinnfelder_geld_fehlt_im_xml.py::test_elf_gewinnfelder_und_ihre_summen_erreichen_die_erklaerung. Vault: audits/ring-gegen-deklaration-ueber-und-untererklaerung.md. Rot sehen: --ignored"]
-fn elf_gewinnfelder_erreichen_die_erklaerung() {
+fn elf_gewinnfelder_sperren_die_abgabe_mit_ihrem_betrag() {
     let leer = elf_lauf(false);
-    let fehltreffer: Vec<String> = elf_betraege()
-        .into_iter()
-        .filter(|(_, eur)| betrag_im_xml(&leer, *eur))
-        .map(|(etikett, eur)| format!("{etikett}={eur}"))
-        .collect();
     assert!(
-        fehltreffer.is_empty(),
-        "KONTROLLE: Betrag steht ohne Eingabe im XML: {fehltreffer:?}"
+        leer.eingaben_konsistent(),
+        "KONTROLLE: Lauf ohne die elf ist nicht konsistent: {:?}",
+        leer.unvollstaendig()
     );
     let haupt = elf_lauf(true);
-    assert!(
-        haupt
-            .get("E0200201")
-            .is_some_and(|w| w.iter().any(|t| t == "40000")),
-        "KONTROLLE: E0200201 (bruttoarbeitslohn_partner) fehlt: {:?}",
-        haupt.get("E0200201")
+    assert_eq!(
+        haupt.person_b.get("E0200201"),
+        Some(&json!(40000)),
+        "KONTROLLE: E0200201 (bruttoarbeitslohn_partner) fehlt"
     );
-    let fehlend: Vec<String> = elf_betraege()
+    let fehlend: Vec<String> = elf()
         .into_iter()
-        .filter(|(_, eur)| !betrag_im_xml(&haupt, *eur))
-        .map(|(etikett, eur)| format!("{etikett}={eur}"))
+        .filter(|(feld, cent)| {
+            !haupt
+                .unvollstaendig()
+                .iter()
+                .any(|e| e.feld_id == *feld && e.grund.contains(&format!("{} Euro", euro_text(*cent))))
+        })
+        .map(|(feld, cent)| format!("{feld}={}", euro_text(cent)))
         .collect();
     assert!(
         fehlend.is_empty(),
-        "DEFEKT: {} Betraege/Summen erreichen die Erklaerung nicht: {fehlend:?}",
+        "DEFEKT: {} Felder sperren die Abgabe nicht mit ihrem Betrag: {fehlend:?}",
         fehlend.len()
     );
+    assert_eq!(haupt.unvollstaendig().len(), 11, "{:?}", haupt.unvollstaendig());
 }
 
 // ---------------------------------------------------------------- § 23 Partner-Verkauf

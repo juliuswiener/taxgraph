@@ -383,6 +383,35 @@ pub fn laufender_gewinn_partner(f: &Felder) -> Result<(Euro, Euro), BescheidFehl
 /// assert_eq!((gewinn.get(), mitu.get()), (30_000, 0));
 /// ```
 pub fn laufender_gewinn(f: &Felder, q: &Instanzquelle<'_>) -> Result<(Euro, Euro), BescheidFehler> {
+    let (mut gewinn, mitu) = laufender_gewinn_vor_pv(f, q)?;
+    let pv_frei = p3_nr72_photovoltaik(&P3Nr72PhotovoltaikEingabe {
+        pv_einnahmen: feld_euro_oder_null(f, "pv_einnahmen")?,
+        // PARITÄT: fail-open default — fehlende Leistung/Einheiten = 0 (dann keine Befreiung).
+        pv_bruttoleistung_kwp: feld_int_oder_null(f, "pv_bruttoleistung_kwp")?,
+        pv_anzahl_einheiten: feld_int_oder_null(f, "pv_anzahl_einheiten")?,
+        pv_auf_gebaeude: ist_true(wert(f, "pv_auf_gebaeude")),
+    })?;
+    if pv_frei.get() > 0 {
+        let abzug = pv_frei.get().min(gewinn.get().max(0));
+        // Die PV-Freistellung (§ 3 Nr. 72) mindert nur einen positiven Gewinn, nie darunter.
+        debug_assert!((0..=pv_frei.get()).contains(&abzug));
+        gewinn = Euro::new(minus(gewinn.get(), abzug)?);
+        debug_assert!(gewinn.get() >= 0 || abzug == 0);
+    }
+    Ok((gewinn, mitu))
+}
+
+/// Der laufende Gewinn VOR der PV-Freistellung (§ 3 Nr. 72), EURO: `(gewinn, mitu)`. Der EUeR-Zweig (§ 4 Abs. 3), wenn
+/// irgendeine Komponente aus [`GEWINN_QUELLEN_MENGEN`] oder ein GWG vorliegt, sonst der Direktwert `einkuenfte_gewinn`; beide
+/// plus die Mitunternehmer-Komponente. Die Sperre `gewinn_quelle_offen` vergleicht diesen Wert mit dem Direktwert: passt er,
+/// ist die Doppelangabe keine Doppelquelle (Abweichung Nr. 61).
+///
+/// # Errors
+/// Instanz-, Accessor- und Ueberlauf-Fehler.
+pub fn laufender_gewinn_vor_pv(
+    f: &Felder,
+    q: &Instanzquelle<'_>,
+) -> Result<(Euro, Euro), BescheidFehler> {
     let gwg_summe = gwg_sofortabzug_summe(f, q)?;
     let gwg_afa = gwg_afa_summe(f, q)?;
     let mitu = mitu_komponente(f, "")?;
@@ -390,7 +419,7 @@ pub fn laufender_gewinn(f: &Felder, q: &Instanzquelle<'_>) -> Result<(Euro, Euro
         Ok::<_, BescheidFehler>(acc || feld_int_oder_null(f, k)? != 0)
     })?;
     // Die AfA-Summe schaltet den EUeR-Zweig auch allein ein: ein Geraet nur in Instanz 2 hat kein Basisfeld.
-    let mut gewinn = if quelle_da || gwg_summe.get() > 0 || gwg_afa.get() > 0 {
+    let gewinn = if quelle_da || gwg_summe.get() > 0 || gwg_afa.get() > 0 {
         let ausgaben = summe(&[
             feld_int_oder_null(f, "sonstige_betriebsausgaben")?,
             feld_int_oder_null(f, "afa_jahresbetrag")?,
@@ -406,20 +435,6 @@ pub fn laufender_gewinn(f: &Felder, q: &Instanzquelle<'_>) -> Result<(Euro, Euro
     } else {
         euro_plus(feld_euro_oder_null(f, "einkuenfte_gewinn")?, mitu)?
     };
-    let pv_frei = p3_nr72_photovoltaik(&P3Nr72PhotovoltaikEingabe {
-        pv_einnahmen: feld_euro_oder_null(f, "pv_einnahmen")?,
-        // PARITÄT: fail-open default — fehlende Leistung/Einheiten = 0 (dann keine Befreiung).
-        pv_bruttoleistung_kwp: feld_int_oder_null(f, "pv_bruttoleistung_kwp")?,
-        pv_anzahl_einheiten: feld_int_oder_null(f, "pv_anzahl_einheiten")?,
-        pv_auf_gebaeude: ist_true(wert(f, "pv_auf_gebaeude")),
-    })?;
-    if pv_frei.get() > 0 {
-        let abzug = pv_frei.get().min(gewinn.get().max(0));
-        // Die PV-Freistellung (§ 3 Nr. 72) mindert nur einen positiven Gewinn, nie darunter.
-        debug_assert!((0..=pv_frei.get()).contains(&abzug));
-        gewinn = Euro::new(minus(gewinn.get(), abzug)?);
-        debug_assert!(gewinn.get() >= 0 || abzug == 0);
-    }
     Ok((gewinn, mitu))
 }
 
