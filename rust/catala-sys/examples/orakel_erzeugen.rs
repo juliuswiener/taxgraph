@@ -37,6 +37,9 @@ enum Art {
     Vz,
     /// Bruch `zaehler / nenner` (Catala-`decimal`), Wert 0 bis 150.
     Bruch,
+    /// Wie `Bruch`, aber der Nenner ist 1, 10 oder 100: so fuehrt `engine` den Wert als `Decimal`
+    /// (`Satz`, `Km`), und nur so spielt `engine/tests/catala_orakel_replay.rs` die Zeile ab.
+    Dezimal,
 }
 
 #[derive(Clone, Copy)]
@@ -403,6 +406,50 @@ const SPECS: &[Spec] = &[
         zufall: 400,
         raster: None,
     },
+    // Dezimalzeilen fuer die drei Scopes mit Bruch-Eingabe, die `engine` als `Decimal` fuehrt: dieselben Scopes
+    // noch einmal, die Bruch-Eingabe mit Nenner 1, 10 oder 100. Hinter allen anderen, damit der Zufallsstrom
+    // der Vorgaenger und damit ihre Zeilen byte-gleich bleiben.
+    Spec {
+        name: "altersentlastungsbetrag",
+        datei: "p24a/altersentlastungsbetrag.catala_en",
+        scope: "Altersentlastungsbetrag",
+        eingaben: &[
+            ("arbeitslohn", Art::Geld),
+            ("positive_andere_einkuenfte", Art::Geld),
+            ("prozentsatz", Art::Dezimal),
+            ("hoechstbetrag", Art::Geld),
+        ],
+        ausgaben: &["altersentlastungsbetrag"],
+        zufall: 150,
+        raster: None,
+    },
+    Spec {
+        name: "verbilligte_vermietung_wk",
+        datei: "p21_2/verbilligtevermietungwk.catala_en",
+        scope: "VerbilligteVermietungWk",
+        eingaben: &[("werbungskosten", Art::Geld), ("entgelt_quote_prozent", Art::Dezimal)],
+        ausgaben: &["abziehbare_werbungskosten"],
+        zufall: 150,
+        raster: None,
+    },
+    Spec {
+        name: "entfernungspauschale",
+        datei: "p09_entfernungspauschale/entfernungspauschale.catala_en",
+        scope: "Berechnung",
+        eingaben: &[
+            ("entfernung_km_roh", Art::Dezimal),
+            ("arbeitstage", Art::Ganz(366)),
+            ("eigenes_oder_ueberlassenes_kfz", Art::Wahr),
+            ("oepnv_kosten_jahr", Art::GeldBis(1_000_000)),
+            ("satz_bis_20_km", Art::GeldBis(100)),
+            ("satz_ab_21_km", Art::GeldBis(100)),
+            ("staffelgrenze_km", Art::Ganz(40)),
+            ("hoechstbetrag", Art::GeldBis(1_000_000)),
+        ],
+        ausgaben: &["entfernungspauschale", "abziehbarer_betrag"],
+        zufall: 150,
+        raster: None,
+    },
 ];
 
 /// `SplitMix64`: kein Fremdpaket, damit der Strom ueber Versionen hinweg dieselben Bytes liefert.
@@ -470,6 +517,14 @@ fn wert(rng: &mut Rng, art: Art) -> Wert {
         Art::Vz => Wert::Vz(2024 + u16::try_from(rng.unter(3)).unwrap_or(0)),
         Art::Bruch => {
             let nenner = rng.zwischen(1, 100);
+            Wert::Bruch(rng.zwischen(0, 150 * nenner), u64::try_from(nenner).unwrap_or(1))
+        }
+        Art::Dezimal => {
+            let nenner = match rng.unter(3) {
+                0 => 1,
+                1 => 10,
+                _ => 100,
+            };
             Wert::Bruch(rng.zwischen(0, 150 * nenner), u64::try_from(nenner).unwrap_or(1))
         }
     }

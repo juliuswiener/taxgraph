@@ -9152,3 +9152,453 @@ raumkostenabzug | arbeitszimmer_vorhanden=false ist_mittelpunkt=false tatsaechli
 raumkostenabzug | arbeitszimmer_vorhanden=true ist_mittelpunkt=false tatsaechliche_aufwendungen=785377 jahrespauschale_gewaehlt=true monate_ohne_mittelpunkt=4 homeoffice_tage=270 jahrespauschale=19475 tagespauschale_pro_tag=706 tagespauschale_hoechstbetrag=218 | abzug_arbeitszimmer=12983 abzug_homeoffice=0 abzug_gesamt=12983
 raumkostenabzug | arbeitszimmer_vorhanden=false ist_mittelpunkt=false tatsaechliche_aufwendungen=1215297 jahrespauschale_gewaehlt=false monate_ohne_mittelpunkt=10 homeoffice_tage=7 jahrespauschale=115027 tagespauschale_pro_tag=2000 tagespauschale_hoechstbetrag=234755 | abzug_arbeitszimmer=0 abzug_homeoffice=14000 abzug_gesamt=14000
 raumkostenabzug | arbeitszimmer_vorhanden=true ist_mittelpunkt=true tatsaechliche_aufwendungen=671554 jahrespauschale_gewaehlt=false monate_ohne_mittelpunkt=12 homeoffice_tage=276 jahrespauschale=207112 tagespauschale_pro_tag=1325 tagespauschale_hoechstbetrag=7307 | abzug_arbeitszimmer=671554 abzug_homeoffice=0 abzug_gesamt=671554
+altersentlastungsbetrag | arbeitslohn=24100000 positive_andere_einkuenfte=11100000 prozentsatz=112/1 hoechstbetrag=29 | altersentlastungsbetrag=29
+altersentlastungsbetrag | arbeitslohn=6100000 positive_andere_einkuenfte=7831674105225819829 prozentsatz=467/10 hoechstbetrag=34199999 | altersentlastungsbetrag=34199999
+altersentlastungsbetrag | arbeitslohn=76 positive_andere_einkuenfte=15300000 prozentsatz=7035/100 hoechstbetrag=4817245 | altersentlastungsbetrag=4817245
+altersentlastungsbetrag | arbeitslohn=68 positive_andere_einkuenfte=103184 prozentsatz=1028/10 hoechstbetrag=46974 | altersentlastungsbetrag=46974
+altersentlastungsbetrag | arbeitslohn=6522 positive_andere_einkuenfte=59 prozentsatz=1371/100 hoechstbetrag=38104 | altersentlastungsbetrag=902
+altersentlastungsbetrag | arbeitslohn=31600000 positive_andere_einkuenfte=31300000 prozentsatz=137/1 hoechstbetrag=5833710561 | altersentlastungsbetrag=86173000
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=4805253653 prozentsatz=278/10 hoechstbetrag=19400000 | altersentlastungsbetrag=19400000
+altersentlastungsbetrag | arbeitslohn=22700000 positive_andere_einkuenfte=20700000 prozentsatz=1047/10 hoechstbetrag=8007 | altersentlastungsbetrag=8007
+altersentlastungsbetrag | arbeitslohn=701814 positive_andere_einkuenfte=26400000 prozentsatz=9159/100 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=49300000 positive_andere_einkuenfte=4215364803 prozentsatz=8312/100 hoechstbetrag=984 | altersentlastungsbetrag=984
+altersentlastungsbetrag | arbeitslohn=46000000 positive_andere_einkuenfte=4134353035 prozentsatz=1428/10 hoechstbetrag=24900000 | altersentlastungsbetrag=24900000
+altersentlastungsbetrag | arbeitslohn=8831752253 positive_andere_einkuenfte=400000 prozentsatz=6897/100 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=9199999 positive_andere_einkuenfte=21800001 prozentsatz=2091/100 hoechstbetrag=3554216 | altersentlastungsbetrag=3554216
+altersentlastungsbetrag | arbeitslohn=16 positive_andere_einkuenfte=8293148690 prozentsatz=114/1 hoechstbetrag=902 | altersentlastungsbetrag=902
+altersentlastungsbetrag | arbeitslohn=10399999 positive_andere_einkuenfte=950 prozentsatz=136/1 hoechstbetrag=242495 | altersentlastungsbetrag=242495
+altersentlastungsbetrag | arbeitslohn=55109503 positive_andere_einkuenfte=45600000 prozentsatz=516/10 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=443404 positive_andere_einkuenfte=9994668 prozentsatz=11751/100 hoechstbetrag=163184 | altersentlastungsbetrag=163184
+altersentlastungsbetrag | arbeitslohn=62123766 positive_andere_einkuenfte=30000000 prozentsatz=249/10 hoechstbetrag=89242 | altersentlastungsbetrag=89242
+altersentlastungsbetrag | arbeitslohn=27 positive_andere_einkuenfte=9469929556 prozentsatz=991/10 hoechstbetrag=22500000 | altersentlastungsbetrag=22500000
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=13351120 prozentsatz=6716/100 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=5828 positive_andere_einkuenfte=13900000 prozentsatz=1/1 hoechstbetrag=73099701 | altersentlastungsbetrag=139058
+altersentlastungsbetrag | arbeitslohn=7700000 positive_andere_einkuenfte=541403 prozentsatz=5066/100 hoechstbetrag=99 | altersentlastungsbetrag=99
+altersentlastungsbetrag | arbeitslohn=4139346859 positive_andere_einkuenfte=13062 prozentsatz=84/1 hoechstbetrag=4763616220 | altersentlastungsbetrag=3477062334
+altersentlastungsbetrag | arbeitslohn=228655 positive_andere_einkuenfte=15300000 prozentsatz=3965/100 hoechstbetrag=730 | altersentlastungsbetrag=730
+altersentlastungsbetrag | arbeitslohn=14817 positive_andere_einkuenfte=4899999 prozentsatz=461/10 hoechstbetrag=22099999 | altersentlastungsbetrag=2265730
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=29900000 prozentsatz=11650/100 hoechstbetrag=8858339 | altersentlastungsbetrag=8858339
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=46 prozentsatz=295/10 hoechstbetrag=24000000 | altersentlastungsbetrag=14
+altersentlastungsbetrag | arbeitslohn=33200000 positive_andere_einkuenfte=65044 prozentsatz=656/10 hoechstbetrag=4 | altersentlastungsbetrag=4
+altersentlastungsbetrag | arbeitslohn=17700000 positive_andere_einkuenfte=41848 prozentsatz=13436/100 hoechstbetrag=48400000 | altersentlastungsbetrag=23837947
+altersentlastungsbetrag | arbeitslohn=974485 positive_andere_einkuenfte=32351 prozentsatz=768/10 hoechstbetrag=44300000 | altersentlastungsbetrag=773250
+altersentlastungsbetrag | arbeitslohn=3632 positive_andere_einkuenfte=9129406106 prozentsatz=115/1 hoechstbetrag=8816481 | altersentlastungsbetrag=8816481
+altersentlastungsbetrag | arbeitslohn=700194 positive_andere_einkuenfte=0 prozentsatz=1217/10 hoechstbetrag=20100000 | altersentlastungsbetrag=852136
+altersentlastungsbetrag | arbeitslohn=8399999 positive_andere_einkuenfte=2799999 prozentsatz=290/10 hoechstbetrag=740 | altersentlastungsbetrag=740
+altersentlastungsbetrag | arbeitslohn=958 positive_andere_einkuenfte=0 prozentsatz=97/10 hoechstbetrag=4481418930 | altersentlastungsbetrag=93
+altersentlastungsbetrag | arbeitslohn=24900000 positive_andere_einkuenfte=673547 prozentsatz=6853/100 hoechstbetrag=4799999 | altersentlastungsbetrag=4799999
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=31500000 prozentsatz=587/10 hoechstbetrag=34175798 | altersentlastungsbetrag=18490500
+altersentlastungsbetrag | arbeitslohn=63677 positive_andere_einkuenfte=43700000 prozentsatz=3337/100 hoechstbetrag=41289349 | altersentlastungsbetrag=14603939
+altersentlastungsbetrag | arbeitslohn=72 positive_andere_einkuenfte=5578 prozentsatz=494/10 hoechstbetrag=8907267 | altersentlastungsbetrag=2791
+altersentlastungsbetrag | arbeitslohn=7600000 positive_andere_einkuenfte=0 prozentsatz=7527/100 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=8332780 positive_andere_einkuenfte=0 prozentsatz=14/1 hoechstbetrag=35 | altersentlastungsbetrag=35
+altersentlastungsbetrag | arbeitslohn=3333 positive_andere_einkuenfte=15300000 prozentsatz=7407/100 hoechstbetrag=11300000 | altersentlastungsbetrag=11300000
+altersentlastungsbetrag | arbeitslohn=424 positive_andere_einkuenfte=237219 prozentsatz=4949/100 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=509049074 positive_andere_einkuenfte=5225 prozentsatz=4822/100 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=27244 prozentsatz=863/10 hoechstbetrag=43500000 | altersentlastungsbetrag=23512
+altersentlastungsbetrag | arbeitslohn=4717 positive_andere_einkuenfte=968442 prozentsatz=6/1 hoechstbetrag=43800000 | altersentlastungsbetrag=58390
+altersentlastungsbetrag | arbeitslohn=47900000 positive_andere_einkuenfte=65675 prozentsatz=100/1 hoechstbetrag=28699999 | altersentlastungsbetrag=28699999
+altersentlastungsbetrag | arbeitslohn=72458030 positive_andere_einkuenfte=9412928051 prozentsatz=660/10 hoechstbetrag=5942 | altersentlastungsbetrag=5942
+altersentlastungsbetrag | arbeitslohn=10800000 positive_andere_einkuenfte=3051426 prozentsatz=7006/100 hoechstbetrag=5305911114731342358 | altersentlastungsbetrag=9704309
+altersentlastungsbetrag | arbeitslohn=24 positive_andere_einkuenfte=62849 prozentsatz=1069/10 hoechstbetrag=82 | altersentlastungsbetrag=82
+altersentlastungsbetrag | arbeitslohn=6871 positive_andere_einkuenfte=21500000 prozentsatz=1034/100 hoechstbetrag=3200000 | altersentlastungsbetrag=2223810
+altersentlastungsbetrag | arbeitslohn=181 positive_andere_einkuenfte=18699999 prozentsatz=310/10 hoechstbetrag=25500000 | altersentlastungsbetrag=5797056
+altersentlastungsbetrag | arbeitslohn=44 positive_andere_einkuenfte=5300000 prozentsatz=1485/10 hoechstbetrag=3606259 | altersentlastungsbetrag=3606259
+altersentlastungsbetrag | arbeitslohn=83 positive_andere_einkuenfte=19200000 prozentsatz=2445/100 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=3215409037 positive_andere_einkuenfte=96 prozentsatz=859/10 hoechstbetrag=1900000 | altersentlastungsbetrag=1900000
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=29400000 prozentsatz=10217/100 hoechstbetrag=5900001 | altersentlastungsbetrag=5900001
+altersentlastungsbetrag | arbeitslohn=55 positive_andere_einkuenfte=7604 prozentsatz=10202/100 hoechstbetrag=20195 | altersentlastungsbetrag=7814
+altersentlastungsbetrag | arbeitslohn=5353294 positive_andere_einkuenfte=26800000 prozentsatz=7499/100 hoechstbetrag=877 | altersentlastungsbetrag=877
+altersentlastungsbetrag | arbeitslohn=10000000 positive_andere_einkuenfte=34 prozentsatz=112/1 hoechstbetrag=1400001 | altersentlastungsbetrag=1400001
+altersentlastungsbetrag | arbeitslohn=10000000 positive_andere_einkuenfte=3962908924 prozentsatz=150/1 hoechstbetrag=35200000 | altersentlastungsbetrag=35200000
+altersentlastungsbetrag | arbeitslohn=75588404 positive_andere_einkuenfte=40700001 prozentsatz=562/10 hoechstbetrag=211257 | altersentlastungsbetrag=211257
+altersentlastungsbetrag | arbeitslohn=49300000 positive_andere_einkuenfte=0 prozentsatz=3374/100 hoechstbetrag=46000000 | altersentlastungsbetrag=16633820
+altersentlastungsbetrag | arbeitslohn=2700000 positive_andere_einkuenfte=37600000 prozentsatz=12210/100 hoechstbetrag=7586947 | altersentlastungsbetrag=7586947
+altersentlastungsbetrag | arbeitslohn=23678 positive_andere_einkuenfte=6063491798 prozentsatz=8806/100 hoechstbetrag=42 | altersentlastungsbetrag=42
+altersentlastungsbetrag | arbeitslohn=48400000 positive_andere_einkuenfte=31398 prozentsatz=8321/100 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=298 positive_andere_einkuenfte=800000 prozentsatz=1094/10 hoechstbetrag=93301403 | altersentlastungsbetrag=875526
+altersentlastungsbetrag | arbeitslohn=32400000 positive_andere_einkuenfte=45600000 prozentsatz=816/10 hoechstbetrag=963941 | altersentlastungsbetrag=963941
+altersentlastungsbetrag | arbeitslohn=26100000 positive_andere_einkuenfte=17600000 prozentsatz=386/10 hoechstbetrag=21335 | altersentlastungsbetrag=21335
+altersentlastungsbetrag | arbeitslohn=22935990 positive_andere_einkuenfte=14300000 prozentsatz=84/10 hoechstbetrag=2384 | altersentlastungsbetrag=2384
+altersentlastungsbetrag | arbeitslohn=46500000 positive_andere_einkuenfte=0 prozentsatz=138/1 hoechstbetrag=7996699440 | altersentlastungsbetrag=64170000
+altersentlastungsbetrag | arbeitslohn=41875784 positive_andere_einkuenfte=0 prozentsatz=6056/100 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=77611795 positive_andere_einkuenfte=82850 prozentsatz=1006/10 hoechstbetrag=66081 | altersentlastungsbetrag=66081
+altersentlastungsbetrag | arbeitslohn=79 positive_andere_einkuenfte=21200000 prozentsatz=7572/100 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=23343 positive_andere_einkuenfte=0 prozentsatz=251/10 hoechstbetrag=16182014 | altersentlastungsbetrag=5859
+altersentlastungsbetrag | arbeitslohn=4600000 positive_andere_einkuenfte=46800000 prozentsatz=94/1 hoechstbetrag=31400000 | altersentlastungsbetrag=31400000
+altersentlastungsbetrag | arbeitslohn=31 positive_andere_einkuenfte=82798116 prozentsatz=272/10 hoechstbetrag=41029 | altersentlastungsbetrag=41029
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=26976726 prozentsatz=7/1 hoechstbetrag=182771 | altersentlastungsbetrag=182771
+altersentlastungsbetrag | arbeitslohn=9400000 positive_andere_einkuenfte=1408 prozentsatz=163/10 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=18700000 positive_andere_einkuenfte=48603 prozentsatz=80/1 hoechstbetrag=68209 | altersentlastungsbetrag=68209
+altersentlastungsbetrag | arbeitslohn=45441 positive_andere_einkuenfte=4893 prozentsatz=41/1 hoechstbetrag=3024870805 | altersentlastungsbetrag=20637
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=73637638 prozentsatz=5679/100 hoechstbetrag=65368223 | altersentlastungsbetrag=41818815
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=215836 prozentsatz=94/1 hoechstbetrag=10046 | altersentlastungsbetrag=10046
+altersentlastungsbetrag | arbeitslohn=17328420 positive_andere_einkuenfte=94 prozentsatz=2622/100 hoechstbetrag=59249913 | altersentlastungsbetrag=4543536
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=9045221288 prozentsatz=3296/100 hoechstbetrag=532 | altersentlastungsbetrag=532
+altersentlastungsbetrag | arbeitslohn=25099999 positive_andere_einkuenfte=84414 prozentsatz=14809/100 hoechstbetrag=396 | altersentlastungsbetrag=396
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=30400000 prozentsatz=211/10 hoechstbetrag=43200000 | altersentlastungsbetrag=6414400
+altersentlastungsbetrag | arbeitslohn=700427 positive_andere_einkuenfte=52527 prozentsatz=6352/100 hoechstbetrag=64330287 | altersentlastungsbetrag=478276
+altersentlastungsbetrag | arbeitslohn=750 positive_andere_einkuenfte=92883 prozentsatz=12673/100 hoechstbetrag=506698 | altersentlastungsbetrag=118661
+altersentlastungsbetrag | arbeitslohn=2019547 positive_andere_einkuenfte=2363 prozentsatz=124/1 hoechstbetrag=1126 | altersentlastungsbetrag=1126
+altersentlastungsbetrag | arbeitslohn=480 positive_andere_einkuenfte=1915 prozentsatz=1114/10 hoechstbetrag=97043 | altersentlastungsbetrag=2668
+altersentlastungsbetrag | arbeitslohn=4880712373734128840 positive_andere_einkuenfte=394 prozentsatz=1102/10 hoechstbetrag=68 | altersentlastungsbetrag=68
+altersentlastungsbetrag | arbeitslohn=28600000 positive_andere_einkuenfte=34974 prozentsatz=4/10 hoechstbetrag=12000000 | altersentlastungsbetrag=114540
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=12000000 prozentsatz=5444/100 hoechstbetrag=903245 | altersentlastungsbetrag=903245
+altersentlastungsbetrag | arbeitslohn=29347 positive_andere_einkuenfte=523900 prozentsatz=1867/100 hoechstbetrag=17599999 | altersentlastungsbetrag=103291
+altersentlastungsbetrag | arbeitslohn=5098707 positive_andere_einkuenfte=38100000 prozentsatz=1095/10 hoechstbetrag=427 | altersentlastungsbetrag=427
+altersentlastungsbetrag | arbeitslohn=6243 positive_andere_einkuenfte=424445 prozentsatz=7733/100 hoechstbetrag=938073 | altersentlastungsbetrag=333051
+altersentlastungsbetrag | arbeitslohn=46705828 positive_andere_einkuenfte=885 prozentsatz=13867/100 hoechstbetrag=36700000 | altersentlastungsbetrag=36700000
+altersentlastungsbetrag | arbeitslohn=98044 positive_andere_einkuenfte=0 prozentsatz=884/10 hoechstbetrag=823143 | altersentlastungsbetrag=86671
+altersentlastungsbetrag | arbeitslohn=2547 positive_andere_einkuenfte=4300000 prozentsatz=29/1 hoechstbetrag=38599999 | altersentlastungsbetrag=1247739
+altersentlastungsbetrag | arbeitslohn=7708094 positive_andere_einkuenfte=16462588 prozentsatz=3727/100 hoechstbetrag=7000000 | altersentlastungsbetrag=7000000
+altersentlastungsbetrag | arbeitslohn=2089123 positive_andere_einkuenfte=6229099 prozentsatz=9251/100 hoechstbetrag=3636 | altersentlastungsbetrag=3636
+altersentlastungsbetrag | arbeitslohn=59734 positive_andere_einkuenfte=12 prozentsatz=6252/100 hoechstbetrag=901830 | altersentlastungsbetrag=37353
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=92 prozentsatz=169/10 hoechstbetrag=2419 | altersentlastungsbetrag=16
+altersentlastungsbetrag | arbeitslohn=49700000 positive_andere_einkuenfte=62 prozentsatz=1246/10 hoechstbetrag=49100000 | altersentlastungsbetrag=49100000
+altersentlastungsbetrag | arbeitslohn=27400000 positive_andere_einkuenfte=8734 prozentsatz=380/10 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=18 positive_andere_einkuenfte=31400 prozentsatz=172/10 hoechstbetrag=36900000 | altersentlastungsbetrag=5404
+altersentlastungsbetrag | arbeitslohn=3251417 positive_andere_einkuenfte=40000000 prozentsatz=5995/100 hoechstbetrag=680158069 | altersentlastungsbetrag=25929224
+altersentlastungsbetrag | arbeitslohn=8533726683 positive_andere_einkuenfte=60 prozentsatz=1205/10 hoechstbetrag=9300000 | altersentlastungsbetrag=9300000
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=24 prozentsatz=4648/100 hoechstbetrag=30300000 | altersentlastungsbetrag=11
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=38048981 prozentsatz=3956/100 hoechstbetrag=64169091 | altersentlastungsbetrag=15052177
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=18000000 prozentsatz=1358/10 hoechstbetrag=76 | altersentlastungsbetrag=76
+altersentlastungsbetrag | arbeitslohn=5310 positive_andere_einkuenfte=89923 prozentsatz=23/1 hoechstbetrag=48900000 | altersentlastungsbetrag=21904
+altersentlastungsbetrag | arbeitslohn=5761 positive_andere_einkuenfte=911659 prozentsatz=6223/100 hoechstbetrag=39439168 | altersentlastungsbetrag=570910
+altersentlastungsbetrag | arbeitslohn=1000000 positive_andere_einkuenfte=7055431 prozentsatz=32/1 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=47900000 positive_andere_einkuenfte=8864558 prozentsatz=12228/100 hoechstbetrag=55049456 | altersentlastungsbetrag=55049456
+altersentlastungsbetrag | arbeitslohn=9800000 positive_andere_einkuenfte=15099999 prozentsatz=143/1 hoechstbetrag=30300000 | altersentlastungsbetrag=30300000
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=8128359 prozentsatz=20/1 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=2100000 positive_andere_einkuenfte=15800000 prozentsatz=13076/100 hoechstbetrag=26300000 | altersentlastungsbetrag=23406040
+altersentlastungsbetrag | arbeitslohn=15179568 positive_andere_einkuenfte=300000 prozentsatz=102/1 hoechstbetrag=45897 | altersentlastungsbetrag=45897
+altersentlastungsbetrag | arbeitslohn=22 positive_andere_einkuenfte=30500000 prozentsatz=473/10 hoechstbetrag=63545 | altersentlastungsbetrag=63545
+altersentlastungsbetrag | arbeitslohn=6460160 positive_andere_einkuenfte=5880224806202766638 prozentsatz=77/1 hoechstbetrag=6 | altersentlastungsbetrag=6
+altersentlastungsbetrag | arbeitslohn=853070 positive_andere_einkuenfte=6425979680 prozentsatz=8951/100 hoechstbetrag=2940 | altersentlastungsbetrag=2940
+altersentlastungsbetrag | arbeitslohn=39100000 positive_andere_einkuenfte=41200000 prozentsatz=5218/100 hoechstbetrag=31 | altersentlastungsbetrag=31
+altersentlastungsbetrag | arbeitslohn=18100000 positive_andere_einkuenfte=485213 prozentsatz=1265/10 hoechstbetrag=49200000 | altersentlastungsbetrag=23510294
+altersentlastungsbetrag | arbeitslohn=629 positive_andere_einkuenfte=1909 prozentsatz=1469/10 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=45200001 positive_andere_einkuenfte=20700000 prozentsatz=5546/100 hoechstbetrag=228604 | altersentlastungsbetrag=228604
+altersentlastungsbetrag | arbeitslohn=600000 positive_andere_einkuenfte=44356816 prozentsatz=5396/100 hoechstbetrag=868498 | altersentlastungsbetrag=868498
+altersentlastungsbetrag | arbeitslohn=3499999 positive_andere_einkuenfte=81 prozentsatz=14841/100 hoechstbetrag=260436 | altersentlastungsbetrag=260436
+altersentlastungsbetrag | arbeitslohn=48700000 positive_andere_einkuenfte=439716 prozentsatz=19/1 hoechstbetrag=42100000 | altersentlastungsbetrag=9336546
+altersentlastungsbetrag | arbeitslohn=57975212 positive_andere_einkuenfte=661069 prozentsatz=54/1 hoechstbetrag=8400000 | altersentlastungsbetrag=8400000
+altersentlastungsbetrag | arbeitslohn=91 positive_andere_einkuenfte=44900000 prozentsatz=0/10 hoechstbetrag=262 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=85 positive_andere_einkuenfte=7116751 prozentsatz=13449/100 hoechstbetrag=9958 | altersentlastungsbetrag=9958
+altersentlastungsbetrag | arbeitslohn=7810855709 positive_andere_einkuenfte=3313194612 prozentsatz=397/10 hoechstbetrag=17700001 | altersentlastungsbetrag=17700001
+altersentlastungsbetrag | arbeitslohn=47600001 positive_andere_einkuenfte=37400000 prozentsatz=742/10 hoechstbetrag=49800001 | altersentlastungsbetrag=49800001
+altersentlastungsbetrag | arbeitslohn=3800000 positive_andere_einkuenfte=26499999 prozentsatz=671/10 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=16006862 positive_andere_einkuenfte=20600000 prozentsatz=710/10 hoechstbetrag=6700001 | altersentlastungsbetrag=6700001
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=980696 prozentsatz=102/1 hoechstbetrag=20900001 | altersentlastungsbetrag=1000310
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=0 prozentsatz=36/1 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=7300000 positive_andere_einkuenfte=2472 prozentsatz=115/1 hoechstbetrag=406566 | altersentlastungsbetrag=406566
+altersentlastungsbetrag | arbeitslohn=826 positive_andere_einkuenfte=29499999 prozentsatz=11926/100 hoechstbetrag=22300000 | altersentlastungsbetrag=22300000
+altersentlastungsbetrag | arbeitslohn=47500000 positive_andere_einkuenfte=4756663 prozentsatz=1117/10 hoechstbetrag=60096 | altersentlastungsbetrag=60096
+altersentlastungsbetrag | arbeitslohn=9300000 positive_andere_einkuenfte=750798 prozentsatz=95/1 hoechstbetrag=237 | altersentlastungsbetrag=237
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=3517830 prozentsatz=379/10 hoechstbetrag=7976 | altersentlastungsbetrag=7976
+altersentlastungsbetrag | arbeitslohn=44799999 positive_andere_einkuenfte=0 prozentsatz=67/1 hoechstbetrag=23 | altersentlastungsbetrag=23
+altersentlastungsbetrag | arbeitslohn=0 positive_andere_einkuenfte=3390437312 prozentsatz=31/1 hoechstbetrag=8162668462 | altersentlastungsbetrag=1051035567
+altersentlastungsbetrag | arbeitslohn=83 positive_andere_einkuenfte=702 prozentsatz=84/1 hoechstbetrag=9000000 | altersentlastungsbetrag=659
+altersentlastungsbetrag | arbeitslohn=22200000 positive_andere_einkuenfte=1300000 prozentsatz=343/10 hoechstbetrag=22400000 | altersentlastungsbetrag=8060500
+altersentlastungsbetrag | arbeitslohn=2801 positive_andere_einkuenfte=0 prozentsatz=1765/100 hoechstbetrag=9635 | altersentlastungsbetrag=494
+altersentlastungsbetrag | arbeitslohn=586 positive_andere_einkuenfte=47100001 prozentsatz=7423/100 hoechstbetrag=0 | altersentlastungsbetrag=0
+altersentlastungsbetrag | arbeitslohn=28963906 positive_andere_einkuenfte=84026505 prozentsatz=662/10 hoechstbetrag=16699999 | altersentlastungsbetrag=16699999
+altersentlastungsbetrag | arbeitslohn=50286953 positive_andere_einkuenfte=8129976963 prozentsatz=17/1 hoechstbetrag=49 | altersentlastungsbetrag=49
+verbilligte_vermietung_wk | werbungskosten=29700000 entgelt_quote_prozent=14257/100 | abziehbare_werbungskosten=29700000
+verbilligte_vermietung_wk | werbungskosten=47452 entgelt_quote_prozent=1105/10 | abziehbare_werbungskosten=47452
+verbilligte_vermietung_wk | werbungskosten=22600000 entgelt_quote_prozent=71/1 | abziehbare_werbungskosten=22600000
+verbilligte_vermietung_wk | werbungskosten=16900001 entgelt_quote_prozent=12125/100 | abziehbare_werbungskosten=16900001
+verbilligte_vermietung_wk | werbungskosten=72707285 entgelt_quote_prozent=5235/100 | abziehbare_werbungskosten=38062264
+verbilligte_vermietung_wk | werbungskosten=79674809 entgelt_quote_prozent=11228/100 | abziehbare_werbungskosten=79674809
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=1064/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=69797473 entgelt_quote_prozent=8265/100 | abziehbare_werbungskosten=69797473
+verbilligte_vermietung_wk | werbungskosten=26500000 entgelt_quote_prozent=6235/100 | abziehbare_werbungskosten=16522750
+verbilligte_vermietung_wk | werbungskosten=33600000 entgelt_quote_prozent=80/1 | abziehbare_werbungskosten=33600000
+verbilligte_vermietung_wk | werbungskosten=18 entgelt_quote_prozent=909/10 | abziehbare_werbungskosten=18
+verbilligte_vermietung_wk | werbungskosten=33899999 entgelt_quote_prozent=81/1 | abziehbare_werbungskosten=33899999
+verbilligte_vermietung_wk | werbungskosten=5605080056844326992 entgelt_quote_prozent=1240/10 | abziehbare_werbungskosten=5605080056844326992
+verbilligte_vermietung_wk | werbungskosten=649591923 entgelt_quote_prozent=11080/100 | abziehbare_werbungskosten=649591923
+verbilligte_vermietung_wk | werbungskosten=64216831 entgelt_quote_prozent=1315/10 | abziehbare_werbungskosten=64216831
+verbilligte_vermietung_wk | werbungskosten=4546 entgelt_quote_prozent=40/1 | abziehbare_werbungskosten=1818
+verbilligte_vermietung_wk | werbungskosten=40796222 entgelt_quote_prozent=705/10 | abziehbare_werbungskosten=40796222
+verbilligte_vermietung_wk | werbungskosten=4667 entgelt_quote_prozent=101/1 | abziehbare_werbungskosten=4667
+verbilligte_vermietung_wk | werbungskosten=9046 entgelt_quote_prozent=14/1 | abziehbare_werbungskosten=1266
+verbilligte_vermietung_wk | werbungskosten=16199999 entgelt_quote_prozent=18/1 | abziehbare_werbungskosten=2916000
+verbilligte_vermietung_wk | werbungskosten=60397 entgelt_quote_prozent=1274/10 | abziehbare_werbungskosten=60397
+verbilligte_vermietung_wk | werbungskosten=548927 entgelt_quote_prozent=37/1 | abziehbare_werbungskosten=203103
+verbilligte_vermietung_wk | werbungskosten=3300001 entgelt_quote_prozent=45/1 | abziehbare_werbungskosten=1485000
+verbilligte_vermietung_wk | werbungskosten=9121981 entgelt_quote_prozent=461/10 | abziehbare_werbungskosten=4205233
+verbilligte_vermietung_wk | werbungskosten=67630994 entgelt_quote_prozent=6092/100 | abziehbare_werbungskosten=41200802
+verbilligte_vermietung_wk | werbungskosten=68759861 entgelt_quote_prozent=14323/100 | abziehbare_werbungskosten=68759861
+verbilligte_vermietung_wk | werbungskosten=19600000 entgelt_quote_prozent=351/10 | abziehbare_werbungskosten=6879600
+verbilligte_vermietung_wk | werbungskosten=4942442296 entgelt_quote_prozent=11615/100 | abziehbare_werbungskosten=4942442296
+verbilligte_vermietung_wk | werbungskosten=57536325 entgelt_quote_prozent=1344/10 | abziehbare_werbungskosten=57536325
+verbilligte_vermietung_wk | werbungskosten=3311 entgelt_quote_prozent=4/1 | abziehbare_werbungskosten=132
+verbilligte_vermietung_wk | werbungskosten=930 entgelt_quote_prozent=4321/100 | abziehbare_werbungskosten=402
+verbilligte_vermietung_wk | werbungskosten=15899999 entgelt_quote_prozent=5492/100 | abziehbare_werbungskosten=8732279
+verbilligte_vermietung_wk | werbungskosten=587613 entgelt_quote_prozent=6/100 | abziehbare_werbungskosten=353
+verbilligte_vermietung_wk | werbungskosten=41516142 entgelt_quote_prozent=4387/100 | abziehbare_werbungskosten=18213131
+verbilligte_vermietung_wk | werbungskosten=50456 entgelt_quote_prozent=318/10 | abziehbare_werbungskosten=16045
+verbilligte_vermietung_wk | werbungskosten=26022075 entgelt_quote_prozent=945/100 | abziehbare_werbungskosten=2459086
+verbilligte_vermietung_wk | werbungskosten=45 entgelt_quote_prozent=14592/100 | abziehbare_werbungskosten=45
+verbilligte_vermietung_wk | werbungskosten=3320 entgelt_quote_prozent=11/1 | abziehbare_werbungskosten=365
+verbilligte_vermietung_wk | werbungskosten=499075 entgelt_quote_prozent=139/1 | abziehbare_werbungskosten=499075
+verbilligte_vermietung_wk | werbungskosten=9036671 entgelt_quote_prozent=9358/100 | abziehbare_werbungskosten=9036671
+verbilligte_vermietung_wk | werbungskosten=806 entgelt_quote_prozent=1246/10 | abziehbare_werbungskosten=806
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=886/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=447470 entgelt_quote_prozent=48/1 | abziehbare_werbungskosten=214786
+verbilligte_vermietung_wk | werbungskosten=607423124 entgelt_quote_prozent=76/1 | abziehbare_werbungskosten=607423124
+verbilligte_vermietung_wk | werbungskosten=99 entgelt_quote_prozent=1489/10 | abziehbare_werbungskosten=99
+verbilligte_vermietung_wk | werbungskosten=39100000 entgelt_quote_prozent=111/10 | abziehbare_werbungskosten=4340100
+verbilligte_vermietung_wk | werbungskosten=7608762 entgelt_quote_prozent=108/1 | abziehbare_werbungskosten=7608762
+verbilligte_vermietung_wk | werbungskosten=73121 entgelt_quote_prozent=4154/100 | abziehbare_werbungskosten=30374
+verbilligte_vermietung_wk | werbungskosten=75328 entgelt_quote_prozent=13873/100 | abziehbare_werbungskosten=75328
+verbilligte_vermietung_wk | werbungskosten=15500000 entgelt_quote_prozent=8777/100 | abziehbare_werbungskosten=15500000
+verbilligte_vermietung_wk | werbungskosten=7 entgelt_quote_prozent=7225/100 | abziehbare_werbungskosten=7
+verbilligte_vermietung_wk | werbungskosten=42 entgelt_quote_prozent=110/1 | abziehbare_werbungskosten=42
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=755/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=1379/100 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=83/1 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=9544758 entgelt_quote_prozent=817/10 | abziehbare_werbungskosten=9544758
+verbilligte_vermietung_wk | werbungskosten=591 entgelt_quote_prozent=85/1 | abziehbare_werbungskosten=591
+verbilligte_vermietung_wk | werbungskosten=9034237 entgelt_quote_prozent=13153/100 | abziehbare_werbungskosten=9034237
+verbilligte_vermietung_wk | werbungskosten=43400000 entgelt_quote_prozent=58/1 | abziehbare_werbungskosten=25172000
+verbilligte_vermietung_wk | werbungskosten=90 entgelt_quote_prozent=84/10 | abziehbare_werbungskosten=8
+verbilligte_vermietung_wk | werbungskosten=94315 entgelt_quote_prozent=1304/10 | abziehbare_werbungskosten=94315
+verbilligte_vermietung_wk | werbungskosten=30200000 entgelt_quote_prozent=791/10 | abziehbare_werbungskosten=30200000
+verbilligte_vermietung_wk | werbungskosten=50 entgelt_quote_prozent=800/10 | abziehbare_werbungskosten=50
+verbilligte_vermietung_wk | werbungskosten=137 entgelt_quote_prozent=497/10 | abziehbare_werbungskosten=68
+verbilligte_vermietung_wk | werbungskosten=667699 entgelt_quote_prozent=22/1 | abziehbare_werbungskosten=146894
+verbilligte_vermietung_wk | werbungskosten=4600000 entgelt_quote_prozent=21/1 | abziehbare_werbungskosten=966000
+verbilligte_vermietung_wk | werbungskosten=640 entgelt_quote_prozent=16/1 | abziehbare_werbungskosten=102
+verbilligte_vermietung_wk | werbungskosten=521940 entgelt_quote_prozent=7/1 | abziehbare_werbungskosten=36536
+verbilligte_vermietung_wk | werbungskosten=74310805 entgelt_quote_prozent=114/1 | abziehbare_werbungskosten=74310805
+verbilligte_vermietung_wk | werbungskosten=38100001 entgelt_quote_prozent=76/1 | abziehbare_werbungskosten=38100001
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=1179/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=1972588 entgelt_quote_prozent=11401/100 | abziehbare_werbungskosten=1972588
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=194/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=93261440 entgelt_quote_prozent=0/1 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=14 entgelt_quote_prozent=134/1 | abziehbare_werbungskosten=14
+verbilligte_vermietung_wk | werbungskosten=48300000 entgelt_quote_prozent=114/1 | abziehbare_werbungskosten=48300000
+verbilligte_vermietung_wk | werbungskosten=785851 entgelt_quote_prozent=10/10 | abziehbare_werbungskosten=7859
+verbilligte_vermietung_wk | werbungskosten=6600000 entgelt_quote_prozent=88/1 | abziehbare_werbungskosten=6600000
+verbilligte_vermietung_wk | werbungskosten=72 entgelt_quote_prozent=7483/100 | abziehbare_werbungskosten=72
+verbilligte_vermietung_wk | werbungskosten=14396154 entgelt_quote_prozent=1146/10 | abziehbare_werbungskosten=14396154
+verbilligte_vermietung_wk | werbungskosten=611 entgelt_quote_prozent=1382/10 | abziehbare_werbungskosten=611
+verbilligte_vermietung_wk | werbungskosten=23400000 entgelt_quote_prozent=561/10 | abziehbare_werbungskosten=13127400
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=1434/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=95 entgelt_quote_prozent=31/1 | abziehbare_werbungskosten=29
+verbilligte_vermietung_wk | werbungskosten=800 entgelt_quote_prozent=3/1 | abziehbare_werbungskosten=24
+verbilligte_vermietung_wk | werbungskosten=267436 entgelt_quote_prozent=64/1 | abziehbare_werbungskosten=171159
+verbilligte_vermietung_wk | werbungskosten=42400001 entgelt_quote_prozent=83/1 | abziehbare_werbungskosten=42400001
+verbilligte_vermietung_wk | werbungskosten=434 entgelt_quote_prozent=75/1 | abziehbare_werbungskosten=434
+verbilligte_vermietung_wk | werbungskosten=6200000 entgelt_quote_prozent=19/1 | abziehbare_werbungskosten=1178000
+verbilligte_vermietung_wk | werbungskosten=348 entgelt_quote_prozent=321/100 | abziehbare_werbungskosten=11
+verbilligte_vermietung_wk | werbungskosten=645 entgelt_quote_prozent=539/10 | abziehbare_werbungskosten=348
+verbilligte_vermietung_wk | werbungskosten=38000000 entgelt_quote_prozent=391/10 | abziehbare_werbungskosten=14858000
+verbilligte_vermietung_wk | werbungskosten=87934199 entgelt_quote_prozent=3947/100 | abziehbare_werbungskosten=34707628
+verbilligte_vermietung_wk | werbungskosten=8477615 entgelt_quote_prozent=67/1 | abziehbare_werbungskosten=8477615
+verbilligte_vermietung_wk | werbungskosten=161674 entgelt_quote_prozent=51/1 | abziehbare_werbungskosten=82454
+verbilligte_vermietung_wk | werbungskosten=21872664 entgelt_quote_prozent=11066/100 | abziehbare_werbungskosten=21872664
+verbilligte_vermietung_wk | werbungskosten=88884 entgelt_quote_prozent=6432/100 | abziehbare_werbungskosten=57170
+verbilligte_vermietung_wk | werbungskosten=4634 entgelt_quote_prozent=7535/100 | abziehbare_werbungskosten=4634
+verbilligte_vermietung_wk | werbungskosten=22700000 entgelt_quote_prozent=1352/10 | abziehbare_werbungskosten=22700000
+verbilligte_vermietung_wk | werbungskosten=100 entgelt_quote_prozent=14/1 | abziehbare_werbungskosten=14
+verbilligte_vermietung_wk | werbungskosten=1 entgelt_quote_prozent=221/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=57 entgelt_quote_prozent=10138/100 | abziehbare_werbungskosten=57
+verbilligte_vermietung_wk | werbungskosten=4700000 entgelt_quote_prozent=2273/100 | abziehbare_werbungskosten=1068310
+verbilligte_vermietung_wk | werbungskosten=31600 entgelt_quote_prozent=1090/10 | abziehbare_werbungskosten=31600
+verbilligte_vermietung_wk | werbungskosten=8891581969121358887 entgelt_quote_prozent=46/10 | abziehbare_werbungskosten=409012770579582509
+verbilligte_vermietung_wk | werbungskosten=45900000 entgelt_quote_prozent=739/10 | abziehbare_werbungskosten=45900000
+verbilligte_vermietung_wk | werbungskosten=83462 entgelt_quote_prozent=134/1 | abziehbare_werbungskosten=83462
+verbilligte_vermietung_wk | werbungskosten=34400000 entgelt_quote_prozent=1210/10 | abziehbare_werbungskosten=34400000
+verbilligte_vermietung_wk | werbungskosten=13700001 entgelt_quote_prozent=914/10 | abziehbare_werbungskosten=13700001
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=972/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=2833 entgelt_quote_prozent=519/10 | abziehbare_werbungskosten=1470
+verbilligte_vermietung_wk | werbungskosten=40660 entgelt_quote_prozent=7601/100 | abziehbare_werbungskosten=40660
+verbilligte_vermietung_wk | werbungskosten=9132645450 entgelt_quote_prozent=182/100 | abziehbare_werbungskosten=166214147
+verbilligte_vermietung_wk | werbungskosten=268783 entgelt_quote_prozent=113/1 | abziehbare_werbungskosten=268783
+verbilligte_vermietung_wk | werbungskosten=31276 entgelt_quote_prozent=81/1 | abziehbare_werbungskosten=31276
+verbilligte_vermietung_wk | werbungskosten=3541 entgelt_quote_prozent=6167/100 | abziehbare_werbungskosten=2184
+verbilligte_vermietung_wk | werbungskosten=872513 entgelt_quote_prozent=3323/100 | abziehbare_werbungskosten=289936
+verbilligte_vermietung_wk | werbungskosten=5200000 entgelt_quote_prozent=120/1 | abziehbare_werbungskosten=5200000
+verbilligte_vermietung_wk | werbungskosten=38900000 entgelt_quote_prozent=4917/100 | abziehbare_werbungskosten=19127130
+verbilligte_vermietung_wk | werbungskosten=24099999 entgelt_quote_prozent=49/1 | abziehbare_werbungskosten=11809000
+verbilligte_vermietung_wk | werbungskosten=807790 entgelt_quote_prozent=40/1 | abziehbare_werbungskosten=323116
+verbilligte_vermietung_wk | werbungskosten=5755675 entgelt_quote_prozent=41/1 | abziehbare_werbungskosten=2359827
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=658/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=89202 entgelt_quote_prozent=75/1 | abziehbare_werbungskosten=89202
+verbilligte_vermietung_wk | werbungskosten=12900001 entgelt_quote_prozent=174/10 | abziehbare_werbungskosten=2244600
+verbilligte_vermietung_wk | werbungskosten=69974 entgelt_quote_prozent=3563/100 | abziehbare_werbungskosten=24932
+verbilligte_vermietung_wk | werbungskosten=5400000 entgelt_quote_prozent=6287/100 | abziehbare_werbungskosten=3394980
+verbilligte_vermietung_wk | werbungskosten=98935652 entgelt_quote_prozent=665/10 | abziehbare_werbungskosten=98935652
+verbilligte_vermietung_wk | werbungskosten=41830 entgelt_quote_prozent=88/1 | abziehbare_werbungskosten=41830
+verbilligte_vermietung_wk | werbungskosten=13599999 entgelt_quote_prozent=27/1 | abziehbare_werbungskosten=3672000
+verbilligte_vermietung_wk | werbungskosten=46000000 entgelt_quote_prozent=142/1 | abziehbare_werbungskosten=46000000
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=583/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=7612007 entgelt_quote_prozent=413/10 | abziehbare_werbungskosten=3143759
+verbilligte_vermietung_wk | werbungskosten=99 entgelt_quote_prozent=51/10 | abziehbare_werbungskosten=5
+verbilligte_vermietung_wk | werbungskosten=823 entgelt_quote_prozent=93/1 | abziehbare_werbungskosten=823
+verbilligte_vermietung_wk | werbungskosten=43500001 entgelt_quote_prozent=89/1 | abziehbare_werbungskosten=43500001
+verbilligte_vermietung_wk | werbungskosten=7671 entgelt_quote_prozent=141/1 | abziehbare_werbungskosten=7671
+verbilligte_vermietung_wk | werbungskosten=31000001 entgelt_quote_prozent=777/10 | abziehbare_werbungskosten=31000001
+verbilligte_vermietung_wk | werbungskosten=58769 entgelt_quote_prozent=7/1 | abziehbare_werbungskosten=4114
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=843/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=46199999 entgelt_quote_prozent=12/1 | abziehbare_werbungskosten=5544000
+verbilligte_vermietung_wk | werbungskosten=798 entgelt_quote_prozent=146/1 | abziehbare_werbungskosten=798
+verbilligte_vermietung_wk | werbungskosten=491128 entgelt_quote_prozent=469/10 | abziehbare_werbungskosten=230339
+verbilligte_vermietung_wk | werbungskosten=23761 entgelt_quote_prozent=1173/10 | abziehbare_werbungskosten=23761
+verbilligte_vermietung_wk | werbungskosten=25900001 entgelt_quote_prozent=1547/100 | abziehbare_werbungskosten=4006730
+verbilligte_vermietung_wk | werbungskosten=20500000 entgelt_quote_prozent=7302/100 | abziehbare_werbungskosten=20500000
+verbilligte_vermietung_wk | werbungskosten=47000000 entgelt_quote_prozent=1414/10 | abziehbare_werbungskosten=47000000
+verbilligte_vermietung_wk | werbungskosten=4017940 entgelt_quote_prozent=4284/100 | abziehbare_werbungskosten=1721285
+verbilligte_vermietung_wk | werbungskosten=0 entgelt_quote_prozent=472/10 | abziehbare_werbungskosten=0
+verbilligte_vermietung_wk | werbungskosten=39125 entgelt_quote_prozent=13193/100 | abziehbare_werbungskosten=39125
+entfernungspauschale | entfernung_km_roh=694/10 arbeitstage=358 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=114263 satz_bis_20_km=0 satz_ab_21_km=81 staffelgrenze_km=12 hoechstbetrag=173724 | entfernungspauschale=173724 abziehbarer_betrag=173724
+entfernungspauschale | entfernung_km_roh=8/1 arbeitstage=148 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=371681 satz_bis_20_km=29 satz_ab_21_km=100 staffelgrenze_km=35 hoechstbetrag=620234 | entfernungspauschale=34336 abziehbarer_betrag=371681
+entfernungspauschale | entfernung_km_roh=1389/10 arbeitstage=255 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=567232 satz_bis_20_km=13 satz_ab_21_km=93 staffelgrenze_km=23 hoechstbetrag=184057 | entfernungspauschale=184057 abziehbarer_betrag=567232
+entfernungspauschale | entfernung_km_roh=14/1 arbeitstage=67 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=695643 satz_bis_20_km=30 satz_ab_21_km=34 staffelgrenze_km=32 hoechstbetrag=219682 | entfernungspauschale=28140 abziehbarer_betrag=695643
+entfernungspauschale | entfernung_km_roh=378/10 arbeitstage=343 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=938808 satz_bis_20_km=100 satz_ab_21_km=88 staffelgrenze_km=20 hoechstbetrag=639116 | entfernungspauschale=1199128 abziehbarer_betrag=1199128
+entfernungspauschale | entfernung_km_roh=396/10 arbeitstage=198 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=0 satz_bis_20_km=3 satz_ab_21_km=14 staffelgrenze_km=17 hoechstbetrag=279956 | entfernungspauschale=71082 abziehbarer_betrag=71082
+entfernungspauschale | entfernung_km_roh=609/10 arbeitstage=214 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=1000000 satz_bis_20_km=100 satz_ab_21_km=21 staffelgrenze_km=8 hoechstbetrag=613179 | entfernungspauschale=404888 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=3217/100 arbeitstage=243 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=0 satz_bis_20_km=0 satz_ab_21_km=65 staffelgrenze_km=6 hoechstbetrag=705815 | entfernungspauschale=410670 abziehbarer_betrag=410670
+entfernungspauschale | entfernung_km_roh=2814/100 arbeitstage=310 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=406001 satz_bis_20_km=74 satz_ab_21_km=100 staffelgrenze_km=35 hoechstbetrag=792369 | entfernungspauschale=642320 abziehbarer_betrag=642320
+entfernungspauschale | entfernung_km_roh=3970/100 arbeitstage=350 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=576408 satz_bis_20_km=91 satz_ab_21_km=93 staffelgrenze_km=10 hoechstbetrag=128033 | entfernungspauschale=1262450 abziehbarer_betrag=1262450
+entfernungspauschale | entfernung_km_roh=95/1 arbeitstage=13 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=587869 satz_bis_20_km=100 satz_ab_21_km=2 staffelgrenze_km=11 hoechstbetrag=131567 | entfernungspauschale=16484 abziehbarer_betrag=587869
+entfernungspauschale | entfernung_km_roh=1429/10 arbeitstage=152 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=408182 satz_bis_20_km=100 satz_ab_21_km=75 staffelgrenze_km=1 hoechstbetrag=1000000 | entfernungspauschale=1000000 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=870/10 arbeitstage=11 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=305051 satz_bis_20_km=19 satz_ab_21_km=0 staffelgrenze_km=10 hoechstbetrag=1000000 | entfernungspauschale=2090 abziehbarer_betrag=305051
+entfernungspauschale | entfernung_km_roh=1307/10 arbeitstage=330 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=0 satz_bis_20_km=23 satz_ab_21_km=46 staffelgrenze_km=39 hoechstbetrag=1000000 | entfernungspauschale=1000000 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=120/1 arbeitstage=333 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=236043 satz_bis_20_km=47 satz_ab_21_km=80 staffelgrenze_km=34 hoechstbetrag=401152 | entfernungspauschale=2823174 abziehbarer_betrag=2823174
+entfernungspauschale | entfernung_km_roh=889/10 arbeitstage=79 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=1000000 satz_bis_20_km=0 satz_ab_21_km=2 staffelgrenze_km=38 hoechstbetrag=601926 | entfernungspauschale=7900 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=1106/10 arbeitstage=241 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=418937 satz_bis_20_km=0 satz_ab_21_km=90 staffelgrenze_km=3 hoechstbetrag=299990 | entfernungspauschale=299990 abziehbarer_betrag=418937
+entfernungspauschale | entfernung_km_roh=85/1 arbeitstage=57 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=611631 satz_bis_20_km=89 satz_ab_21_km=64 staffelgrenze_km=22 hoechstbetrag=772358 | entfernungspauschale=341430 abziehbarer_betrag=611631
+entfernungspauschale | entfernung_km_roh=1395/10 arbeitstage=112 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=0 satz_bis_20_km=86 satz_ab_21_km=17 staffelgrenze_km=33 hoechstbetrag=811794 | entfernungspauschale=519680 abziehbarer_betrag=519680
+entfernungspauschale | entfernung_km_roh=6489/100 arbeitstage=180 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=489235 satz_bis_20_km=86 satz_ab_21_km=53 staffelgrenze_km=1 hoechstbetrag=284633 | entfernungspauschale=616500 abziehbarer_betrag=616500
+entfernungspauschale | entfernung_km_roh=1037/10 arbeitstage=260 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=619606 satz_bis_20_km=5 satz_ab_21_km=50 staffelgrenze_km=36 hoechstbetrag=705552 | entfernungspauschale=917800 abziehbarer_betrag=917800
+entfernungspauschale | entfernung_km_roh=11265/100 arbeitstage=337 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=751092 satz_bis_20_km=0 satz_ab_21_km=25 staffelgrenze_km=7 hoechstbetrag=1000000 | entfernungspauschale=884625 abziehbarer_betrag=884625
+entfernungspauschale | entfernung_km_roh=1431/10 arbeitstage=226 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=111449 satz_bis_20_km=0 satz_ab_21_km=41 staffelgrenze_km=35 hoechstbetrag=869150 | entfernungspauschale=1000728 abziehbarer_betrag=1000728
+entfernungspauschale | entfernung_km_roh=5683/100 arbeitstage=307 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=685277 satz_bis_20_km=100 satz_ab_21_km=41 staffelgrenze_km=5 hoechstbetrag=917427 | entfernungspauschale=795437 abziehbarer_betrag=795437
+entfernungspauschale | entfernung_km_roh=388/10 arbeitstage=258 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=1000000 satz_bis_20_km=82 satz_ab_21_km=25 staffelgrenze_km=18 hoechstbetrag=546962 | entfernungspauschale=509808 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=1340/10 arbeitstage=55 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=79260 satz_bis_20_km=93 satz_ab_21_km=71 staffelgrenze_km=4 hoechstbetrag=594056 | entfernungspauschale=528110 abziehbarer_betrag=528110
+entfernungspauschale | entfernung_km_roh=534/100 arbeitstage=278 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=239100 satz_bis_20_km=27 satz_ab_21_km=58 staffelgrenze_km=11 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=239100
+entfernungspauschale | entfernung_km_roh=7592/100 arbeitstage=109 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=298146 satz_bis_20_km=9 satz_ab_21_km=64 staffelgrenze_km=21 hoechstbetrag=840443 | entfernungspauschale=397305 abziehbarer_betrag=397305
+entfernungspauschale | entfernung_km_roh=3107/100 arbeitstage=103 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=990464 satz_bis_20_km=88 satz_ab_21_km=4 staffelgrenze_km=12 hoechstbetrag=508928 | entfernungspauschale=116596 abziehbarer_betrag=990464
+entfernungspauschale | entfernung_km_roh=5959/100 arbeitstage=232 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=581784 satz_bis_20_km=100 satz_ab_21_km=5 staffelgrenze_km=23 hoechstbetrag=1000000 | entfernungspauschale=575360 abziehbarer_betrag=581784
+entfernungspauschale | entfernung_km_roh=90/1 arbeitstage=53 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=1000000 satz_bis_20_km=74 satz_ab_21_km=93 staffelgrenze_km=13 hoechstbetrag=0 | entfernungspauschale=430519 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=13487/100 arbeitstage=211 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=617005 satz_bis_20_km=27 satz_ab_21_km=89 staffelgrenze_km=37 hoechstbetrag=420227 | entfernungspauschale=420227 abziehbarer_betrag=617005
+entfernungspauschale | entfernung_km_roh=754/10 arbeitstage=38 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=235149 satz_bis_20_km=8 satz_ab_21_km=9 staffelgrenze_km=2 hoechstbetrag=192692 | entfernungspauschale=25574 abziehbarer_betrag=235149
+entfernungspauschale | entfernung_km_roh=301/10 arbeitstage=44 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=218617 satz_bis_20_km=63 satz_ab_21_km=37 staffelgrenze_km=0 hoechstbetrag=789129 | entfernungspauschale=48840 abziehbarer_betrag=218617
+entfernungspauschale | entfernung_km_roh=54/1 arbeitstage=69 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=561000 satz_bis_20_km=56 satz_ab_21_km=99 staffelgrenze_km=18 hoechstbetrag=557130 | entfernungspauschale=315468 abziehbarer_betrag=561000
+entfernungspauschale | entfernung_km_roh=50/1 arbeitstage=186 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=566211 satz_bis_20_km=49 satz_ab_21_km=98 staffelgrenze_km=31 hoechstbetrag=820518 | entfernungspauschale=628866 abziehbarer_betrag=628866
+entfernungspauschale | entfernung_km_roh=276/10 arbeitstage=64 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=281243 satz_bis_20_km=4 satz_ab_21_km=100 staffelgrenze_km=8 hoechstbetrag=0 | entfernungspauschale=123648 abziehbarer_betrag=281243
+entfernungspauschale | entfernung_km_roh=5761/100 arbeitstage=35 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=89643 satz_bis_20_km=55 satz_ab_21_km=0 staffelgrenze_km=19 hoechstbetrag=580052 | entfernungspauschale=36575 abziehbarer_betrag=89643
+entfernungspauschale | entfernung_km_roh=709/10 arbeitstage=259 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=0 satz_bis_20_km=79 satz_ab_21_km=14 staffelgrenze_km=26 hoechstbetrag=902123 | entfernungspauschale=691530 abziehbarer_betrag=691530
+entfernungspauschale | entfernung_km_roh=1050/100 arbeitstage=153 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=576078 satz_bis_20_km=0 satz_ab_21_km=100 staffelgrenze_km=14 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=576078
+entfernungspauschale | entfernung_km_roh=432/100 arbeitstage=264 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=925341 satz_bis_20_km=72 satz_ab_21_km=24 staffelgrenze_km=39 hoechstbetrag=535880 | entfernungspauschale=76032 abziehbarer_betrag=925341
+entfernungspauschale | entfernung_km_roh=337/10 arbeitstage=128 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=448197 satz_bis_20_km=11 satz_ab_21_km=66 staffelgrenze_km=13 hoechstbetrag=815425 | entfernungspauschale=187264 abziehbarer_betrag=448197
+entfernungspauschale | entfernung_km_roh=5255/100 arbeitstage=302 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=599964 satz_bis_20_km=0 satz_ab_21_km=80 staffelgrenze_km=3 hoechstbetrag=413206 | entfernungspauschale=1183840 abziehbarer_betrag=1183840
+entfernungspauschale | entfernung_km_roh=8168/100 arbeitstage=252 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=286525 satz_bis_20_km=26 satz_ab_21_km=80 staffelgrenze_km=16 hoechstbetrag=595645 | entfernungspauschale=595645 abziehbarer_betrag=595645
+entfernungspauschale | entfernung_km_roh=8270/100 arbeitstage=172 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=0 satz_bis_20_km=97 satz_ab_21_km=100 staffelgrenze_km=13 hoechstbetrag=1000000 | entfernungspauschale=1000000 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=11328/100 arbeitstage=323 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=938360 satz_bis_20_km=93 satz_ab_21_km=50 staffelgrenze_km=5 hoechstbetrag=881172 | entfernungspauschale=881172 abziehbarer_betrag=938360
+entfernungspauschale | entfernung_km_roh=829/10 arbeitstage=75 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=398357 satz_bis_20_km=0 satz_ab_21_km=31 staffelgrenze_km=15 hoechstbetrag=1000000 | entfernungspauschale=155775 abziehbarer_betrag=398357
+entfernungspauschale | entfernung_km_roh=1134/10 arbeitstage=4 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=311410 satz_bis_20_km=14 satz_ab_21_km=54 staffelgrenze_km=13 hoechstbetrag=541899 | entfernungspauschale=22328 abziehbarer_betrag=311410
+entfernungspauschale | entfernung_km_roh=612/10 arbeitstage=141 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=142566 satz_bis_20_km=3 satz_ab_21_km=11 staffelgrenze_km=13 hoechstbetrag=582455 | entfernungspauschale=79947 abziehbarer_betrag=142566
+entfernungspauschale | entfernung_km_roh=92/1 arbeitstage=94 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=0 satz_bis_20_km=13 satz_ab_21_km=3 staffelgrenze_km=35 hoechstbetrag=741623 | entfernungspauschale=58844 abziehbarer_betrag=58844
+entfernungspauschale | entfernung_km_roh=292/10 arbeitstage=164 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=841463 satz_bis_20_km=14 satz_ab_21_km=34 staffelgrenze_km=6 hoechstbetrag=110143 | entfernungspauschale=110143 abziehbarer_betrag=841463
+entfernungspauschale | entfernung_km_roh=968/10 arbeitstage=42 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=282071 satz_bis_20_km=83 satz_ab_21_km=99 staffelgrenze_km=31 hoechstbetrag=738323 | entfernungspauschale=378336 abziehbarer_betrag=378336
+entfernungspauschale | entfernung_km_roh=145/1 arbeitstage=165 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=46665 satz_bis_20_km=21 satz_ab_21_km=75 staffelgrenze_km=34 hoechstbetrag=111928 | entfernungspauschale=1491435 abziehbarer_betrag=1491435
+entfernungspauschale | entfernung_km_roh=95/1 arbeitstage=310 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=46231 satz_bis_20_km=30 satz_ab_21_km=14 staffelgrenze_km=13 hoechstbetrag=992698 | entfernungspauschale=476780 abziehbarer_betrag=476780
+entfernungspauschale | entfernung_km_roh=1198/10 arbeitstage=23 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=489425 satz_bis_20_km=100 satz_ab_21_km=53 staffelgrenze_km=3 hoechstbetrag=554568 | entfernungspauschale=148304 abziehbarer_betrag=489425
+entfernungspauschale | entfernung_km_roh=492/10 arbeitstage=162 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=446087 satz_bis_20_km=30 satz_ab_21_km=0 staffelgrenze_km=3 hoechstbetrag=85971 | entfernungspauschale=14580 abziehbarer_betrag=446087
+entfernungspauschale | entfernung_km_roh=17/1 arbeitstage=146 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=0 satz_bis_20_km=48 satz_ab_21_km=85 staffelgrenze_km=39 hoechstbetrag=660481 | entfernungspauschale=119136 abziehbarer_betrag=119136
+entfernungspauschale | entfernung_km_roh=86/1 arbeitstage=187 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=596385 satz_bis_20_km=39 satz_ab_21_km=98 staffelgrenze_km=32 hoechstbetrag=1000000 | entfernungspauschale=1000000 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=97/1 arbeitstage=21 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=73078 satz_bis_20_km=66 satz_ab_21_km=19 staffelgrenze_km=14 hoechstbetrag=581902 | entfernungspauschale=52521 abziehbarer_betrag=73078
+entfernungspauschale | entfernung_km_roh=973/10 arbeitstage=141 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=286753 satz_bis_20_km=100 satz_ab_21_km=44 staffelgrenze_km=15 hoechstbetrag=939089 | entfernungspauschale=720228 abziehbarer_betrag=720228
+entfernungspauschale | entfernung_km_roh=50/1 arbeitstage=63 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=157437 satz_bis_20_km=7 satz_ab_21_km=69 staffelgrenze_km=16 hoechstbetrag=132583 | entfernungspauschale=154854 abziehbarer_betrag=157437
+entfernungspauschale | entfernung_km_roh=2123/100 arbeitstage=118 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=206903 satz_bis_20_km=21 satz_ab_21_km=56 staffelgrenze_km=37 hoechstbetrag=242149 | entfernungspauschale=52038 abziehbarer_betrag=206903
+entfernungspauschale | entfernung_km_roh=95/1 arbeitstage=280 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=518790 satz_bis_20_km=47 satz_ab_21_km=48 staffelgrenze_km=35 hoechstbetrag=0 | entfernungspauschale=1267000 abziehbarer_betrag=1267000
+entfernungspauschale | entfernung_km_roh=10/1 arbeitstage=312 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=0 satz_bis_20_km=0 satz_ab_21_km=52 staffelgrenze_km=35 hoechstbetrag=508668 | entfernungspauschale=0 abziehbarer_betrag=0
+entfernungspauschale | entfernung_km_roh=532/10 arbeitstage=186 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=0 satz_bis_20_km=95 satz_ab_21_km=69 staffelgrenze_km=34 hoechstbetrag=997013 | entfernungspauschale=844626 abziehbarer_betrag=844626
+entfernungspauschale | entfernung_km_roh=142/1 arbeitstage=207 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=0 satz_bis_20_km=15 satz_ab_21_km=74 staffelgrenze_km=29 hoechstbetrag=815783 | entfernungspauschale=815783 abziehbarer_betrag=815783
+entfernungspauschale | entfernung_km_roh=471/10 arbeitstage=64 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=690199 satz_bis_20_km=6 satz_ab_21_km=91 staffelgrenze_km=35 hoechstbetrag=110758 | entfernungspauschale=83328 abziehbarer_betrag=690199
+entfernungspauschale | entfernung_km_roh=113/1 arbeitstage=137 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=625522 satz_bis_20_km=0 satz_ab_21_km=63 staffelgrenze_km=22 hoechstbetrag=71436 | entfernungspauschale=785421 abziehbarer_betrag=785421
+entfernungspauschale | entfernung_km_roh=549/10 arbeitstage=30 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=642062 satz_bis_20_km=65 satz_ab_21_km=80 staffelgrenze_km=9 hoechstbetrag=217753 | entfernungspauschale=125550 abziehbarer_betrag=642062
+entfernungspauschale | entfernung_km_roh=27/1 arbeitstage=230 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=967165 satz_bis_20_km=100 satz_ab_21_km=16 staffelgrenze_km=22 hoechstbetrag=798823 | entfernungspauschale=524400 abziehbarer_betrag=967165
+entfernungspauschale | entfernung_km_roh=13092/100 arbeitstage=187 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=0 satz_bis_20_km=74 satz_ab_21_km=55 staffelgrenze_km=22 hoechstbetrag=293154 | entfernungspauschale=1415216 abziehbarer_betrag=1415216
+entfernungspauschale | entfernung_km_roh=1511/100 arbeitstage=347 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=980945 satz_bis_20_km=100 satz_ab_21_km=100 staffelgrenze_km=0 hoechstbetrag=528140 | entfernungspauschale=520500 abziehbarer_betrag=980945
+entfernungspauschale | entfernung_km_roh=100/1 arbeitstage=6 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=0 satz_bis_20_km=41 satz_ab_21_km=17 staffelgrenze_km=23 hoechstbetrag=592053 | entfernungspauschale=13512 abziehbarer_betrag=13512
+entfernungspauschale | entfernung_km_roh=1346/10 arbeitstage=26 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=984082 satz_bis_20_km=99 satz_ab_21_km=9 staffelgrenze_km=7 hoechstbetrag=196288 | entfernungspauschale=47736 abziehbarer_betrag=984082
+entfernungspauschale | entfernung_km_roh=516/10 arbeitstage=191 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=812669 satz_bis_20_km=10 satz_ab_21_km=91 staffelgrenze_km=9 hoechstbetrag=721349 | entfernungspauschale=747192 abziehbarer_betrag=812669
+entfernungspauschale | entfernung_km_roh=106/1 arbeitstage=77 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=548267 satz_bis_20_km=58 satz_ab_21_km=0 staffelgrenze_km=12 hoechstbetrag=958196 | entfernungspauschale=53592 abziehbarer_betrag=548267
+entfernungspauschale | entfernung_km_roh=10/1 arbeitstage=297 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=1000000 satz_bis_20_km=100 satz_ab_21_km=44 staffelgrenze_km=7 hoechstbetrag=529217 | entfernungspauschale=247104 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=11400/100 arbeitstage=69 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=1000000 satz_bis_20_km=100 satz_ab_21_km=40 staffelgrenze_km=32 hoechstbetrag=286055 | entfernungspauschale=447120 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=1519/100 arbeitstage=105 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=0 satz_bis_20_km=36 satz_ab_21_km=16 staffelgrenze_km=29 hoechstbetrag=274291 | entfernungspauschale=56700 abziehbarer_betrag=56700
+entfernungspauschale | entfernung_km_roh=137/10 arbeitstage=150 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=68935 satz_bis_20_km=89 satz_ab_21_km=0 staffelgrenze_km=1 hoechstbetrag=972484 | entfernungspauschale=13350 abziehbarer_betrag=68935
+entfernungspauschale | entfernung_km_roh=124/1 arbeitstage=322 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=321470 satz_bis_20_km=65 satz_ab_21_km=27 staffelgrenze_km=24 hoechstbetrag=390100 | entfernungspauschale=390100 abziehbarer_betrag=390100
+entfernungspauschale | entfernung_km_roh=1302/10 arbeitstage=325 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=712136 satz_bis_20_km=57 satz_ab_21_km=75 staffelgrenze_km=21 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=712136
+entfernungspauschale | entfernung_km_roh=10440/100 arbeitstage=84 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=192072 satz_bis_20_km=31 satz_ab_21_km=32 staffelgrenze_km=20 hoechstbetrag=142829 | entfernungspauschale=142829 abziehbarer_betrag=192072
+entfernungspauschale | entfernung_km_roh=73/1 arbeitstage=145 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=66026 satz_bis_20_km=83 satz_ab_21_km=82 staffelgrenze_km=24 hoechstbetrag=945936 | entfernungspauschale=871450 abziehbarer_betrag=871450
+entfernungspauschale | entfernung_km_roh=140/1 arbeitstage=91 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=0 satz_bis_20_km=100 satz_ab_21_km=14 staffelgrenze_km=12 hoechstbetrag=54297 | entfernungspauschale=54297 abziehbarer_betrag=54297
+entfernungspauschale | entfernung_km_roh=14842/100 arbeitstage=213 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=317715 satz_bis_20_km=44 satz_ab_21_km=80 staffelgrenze_km=37 hoechstbetrag=31778 | entfernungspauschale=2238204 abziehbarer_betrag=2238204
+entfernungspauschale | entfernung_km_roh=12149/100 arbeitstage=322 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=0 satz_bis_20_km=68 satz_ab_21_km=60 staffelgrenze_km=8 hoechstbetrag=558529 | entfernungspauschale=2358328 abziehbarer_betrag=2358328
+entfernungspauschale | entfernung_km_roh=937/10 arbeitstage=168 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=1000000 satz_bis_20_km=26 satz_ab_21_km=27 staffelgrenze_km=15 hoechstbetrag=782914 | entfernungspauschale=419328 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=8396/100 arbeitstage=24 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=858090 satz_bis_20_km=84 satz_ab_21_km=100 staffelgrenze_km=12 hoechstbetrag=1000000 | entfernungspauschale=194592 abziehbarer_betrag=858090
+entfernungspauschale | entfernung_km_roh=690/10 arbeitstage=33 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=592023 satz_bis_20_km=47 satz_ab_21_km=100 staffelgrenze_km=3 hoechstbetrag=331395 | entfernungspauschale=222453 abziehbarer_betrag=592023
+entfernungspauschale | entfernung_km_roh=581/10 arbeitstage=312 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=906896 satz_bis_20_km=100 satz_ab_21_km=100 staffelgrenze_km=10 hoechstbetrag=671035 | entfernungspauschale=671035 abziehbarer_betrag=906896
+entfernungspauschale | entfernung_km_roh=389/10 arbeitstage=214 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=1000000 satz_bis_20_km=100 satz_ab_21_km=88 staffelgrenze_km=16 hoechstbetrag=664617 | entfernungspauschale=664617 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=11738/100 arbeitstage=74 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=846542 satz_bis_20_km=100 satz_ab_21_km=13 staffelgrenze_km=16 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=846542
+entfernungspauschale | entfernung_km_roh=206/10 arbeitstage=280 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=494037 satz_bis_20_km=16 satz_ab_21_km=40 staffelgrenze_km=31 hoechstbetrag=961004 | entfernungspauschale=89600 abziehbarer_betrag=494037
+entfernungspauschale | entfernung_km_roh=47/1 arbeitstage=346 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=586316 satz_bis_20_km=40 satz_ab_21_km=16 staffelgrenze_km=18 hoechstbetrag=833501 | entfernungspauschale=409664 abziehbarer_betrag=586316
+entfernungspauschale | entfernung_km_roh=3895/100 arbeitstage=9 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=888866 satz_bis_20_km=31 satz_ab_21_km=39 staffelgrenze_km=0 hoechstbetrag=92985 | entfernungspauschale=13338 abziehbarer_betrag=888866
+entfernungspauschale | entfernung_km_roh=136/10 arbeitstage=238 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=834209 satz_bis_20_km=4 satz_ab_21_km=56 staffelgrenze_km=19 hoechstbetrag=107655 | entfernungspauschale=12376 abziehbarer_betrag=834209
+entfernungspauschale | entfernung_km_roh=1170/10 arbeitstage=17 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=222483 satz_bis_20_km=48 satz_ab_21_km=100 staffelgrenze_km=0 hoechstbetrag=952358 | entfernungspauschale=198900 abziehbarer_betrag=222483
+entfernungspauschale | entfernung_km_roh=1286/10 arbeitstage=39 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=89254 satz_bis_20_km=100 satz_ab_21_km=79 staffelgrenze_km=27 hoechstbetrag=1000000 | entfernungspauschale=416481 abziehbarer_betrag=416481
+entfernungspauschale | entfernung_km_roh=1469/10 arbeitstage=209 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=421991 satz_bis_20_km=100 satz_ab_21_km=18 staffelgrenze_km=5 hoechstbetrag=0 | entfernungspauschale=634942 abziehbarer_betrag=634942
+entfernungspauschale | entfernung_km_roh=840/10 arbeitstage=237 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=903828 satz_bis_20_km=88 satz_ab_21_km=0 staffelgrenze_km=18 hoechstbetrag=455722 | entfernungspauschale=375408 abziehbarer_betrag=903828
+entfernungspauschale | entfernung_km_roh=1447/10 arbeitstage=69 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=92645 satz_bis_20_km=19 satz_ab_21_km=93 staffelgrenze_km=7 hoechstbetrag=888933 | entfernungspauschale=888306 abziehbarer_betrag=888306
+entfernungspauschale | entfernung_km_roh=1285/10 arbeitstage=30 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=529391 satz_bis_20_km=29 satz_ab_21_km=44 staffelgrenze_km=32 hoechstbetrag=510208 | entfernungspauschale=154560 abziehbarer_betrag=529391
+entfernungspauschale | entfernung_km_roh=4972/100 arbeitstage=39 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=178696 satz_bis_20_km=100 satz_ab_21_km=100 staffelgrenze_km=10 hoechstbetrag=373365 | entfernungspauschale=191100 abziehbarer_betrag=191100
+entfernungspauschale | entfernung_km_roh=141/1 arbeitstage=122 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=484083 satz_bis_20_km=100 satz_ab_21_km=30 staffelgrenze_km=12 hoechstbetrag=841643 | entfernungspauschale=618540 abziehbarer_betrag=618540
+entfernungspauschale | entfernung_km_roh=11862/100 arbeitstage=245 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=0 satz_bis_20_km=45 satz_ab_21_km=100 staffelgrenze_km=40 hoechstbetrag=700448 | entfernungspauschale=2352000 abziehbarer_betrag=2352000
+entfernungspauschale | entfernung_km_roh=9/1 arbeitstage=349 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=743178 satz_bis_20_km=0 satz_ab_21_km=17 staffelgrenze_km=3 hoechstbetrag=420130 | entfernungspauschale=35598 abziehbarer_betrag=743178
+entfernungspauschale | entfernung_km_roh=5850/100 arbeitstage=210 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=897707 satz_bis_20_km=64 satz_ab_21_km=5 staffelgrenze_km=8 hoechstbetrag=112733 | entfernungspauschale=160020 abziehbarer_betrag=897707
+entfernungspauschale | entfernung_km_roh=95/1 arbeitstage=132 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=879149 satz_bis_20_km=97 satz_ab_21_km=0 staffelgrenze_km=9 hoechstbetrag=807417 | entfernungspauschale=115236 abziehbarer_betrag=879149
+entfernungspauschale | entfernung_km_roh=144/1 arbeitstage=209 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=96211 satz_bis_20_km=91 satz_ab_21_km=0 staffelgrenze_km=16 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=96211
+entfernungspauschale | entfernung_km_roh=178/10 arbeitstage=3 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=0 satz_bis_20_km=90 satz_ab_21_km=12 staffelgrenze_km=38 hoechstbetrag=782550 | entfernungspauschale=4590 abziehbarer_betrag=4590
+entfernungspauschale | entfernung_km_roh=38/10 arbeitstage=31 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=213205 satz_bis_20_km=41 satz_ab_21_km=92 staffelgrenze_km=3 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=213205
+entfernungspauschale | entfernung_km_roh=50/1 arbeitstage=92 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=224224 satz_bis_20_km=28 satz_ab_21_km=63 staffelgrenze_km=19 hoechstbetrag=286915 | entfernungspauschale=228620 abziehbarer_betrag=228620
+entfernungspauschale | entfernung_km_roh=141/1 arbeitstage=258 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=303219 satz_bis_20_km=77 satz_ab_21_km=100 staffelgrenze_km=32 hoechstbetrag=580674 | entfernungspauschale=580674 abziehbarer_betrag=580674
+entfernungspauschale | entfernung_km_roh=43/1 arbeitstage=77 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=179842 satz_bis_20_km=11 satz_ab_21_km=50 staffelgrenze_km=16 hoechstbetrag=190449 | entfernungspauschale=117502 abziehbarer_betrag=179842
+entfernungspauschale | entfernung_km_roh=219/10 arbeitstage=33 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=619880 satz_bis_20_km=100 satz_ab_21_km=52 staffelgrenze_km=38 hoechstbetrag=969684 | entfernungspauschale=69300 abziehbarer_betrag=619880
+entfernungspauschale | entfernung_km_roh=6/1 arbeitstage=115 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=166703 satz_bis_20_km=100 satz_ab_21_km=72 staffelgrenze_km=22 hoechstbetrag=946036 | entfernungspauschale=69000 abziehbarer_betrag=166703
+entfernungspauschale | entfernung_km_roh=20/1 arbeitstage=171 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=828791 satz_bis_20_km=66 satz_ab_21_km=12 staffelgrenze_km=27 hoechstbetrag=651052 | entfernungspauschale=225720 abziehbarer_betrag=828791
+entfernungspauschale | entfernung_km_roh=42/1 arbeitstage=209 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=387825 satz_bis_20_km=100 satz_ab_21_km=100 staffelgrenze_km=12 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=387825
+entfernungspauschale | entfernung_km_roh=114/1 arbeitstage=181 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=4993 satz_bis_20_km=84 satz_ab_21_km=29 staffelgrenze_km=4 hoechstbetrag=954243 | entfernungspauschale=638206 abziehbarer_betrag=638206
+entfernungspauschale | entfernung_km_roh=144/10 arbeitstage=196 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=222624 satz_bis_20_km=41 satz_ab_21_km=34 staffelgrenze_km=30 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=222624
+entfernungspauschale | entfernung_km_roh=66/1 arbeitstage=188 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=996800 satz_bis_20_km=7 satz_ab_21_km=19 staffelgrenze_km=2 hoechstbetrag=749791 | entfernungspauschale=231240 abziehbarer_betrag=996800
+entfernungspauschale | entfernung_km_roh=5557/100 arbeitstage=61 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=714192 satz_bis_20_km=55 satz_ab_21_km=72 staffelgrenze_km=25 hoechstbetrag=17729 | entfernungspauschale=17729 abziehbarer_betrag=714192
+entfernungspauschale | entfernung_km_roh=123/1 arbeitstage=95 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=384717 satz_bis_20_km=27 satz_ab_21_km=0 staffelgrenze_km=39 hoechstbetrag=397967 | entfernungspauschale=100035 abziehbarer_betrag=384717
+entfernungspauschale | entfernung_km_roh=301/100 arbeitstage=172 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=48369 satz_bis_20_km=76 satz_ab_21_km=90 staffelgrenze_km=20 hoechstbetrag=924944 | entfernungspauschale=39216 abziehbarer_betrag=48369
+entfernungspauschale | entfernung_km_roh=468/10 arbeitstage=107 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=1000000 satz_bis_20_km=78 satz_ab_21_km=100 staffelgrenze_km=14 hoechstbetrag=792463 | entfernungspauschale=459244 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=7823/100 arbeitstage=29 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=16582 satz_bis_20_km=80 satz_ab_21_km=68 staffelgrenze_km=38 hoechstbetrag=753184 | entfernungspauschale=167040 abziehbarer_betrag=167040
+entfernungspauschale | entfernung_km_roh=11561/100 arbeitstage=68 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=325423 satz_bis_20_km=77 satz_ab_21_km=70 staffelgrenze_km=14 hoechstbetrag=598248 | entfernungspauschale=554064 abziehbarer_betrag=554064
+entfernungspauschale | entfernung_km_roh=46/10 arbeitstage=90 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=656839 satz_bis_20_km=55 satz_ab_21_km=96 staffelgrenze_km=26 hoechstbetrag=815781 | entfernungspauschale=19800 abziehbarer_betrag=656839
+entfernungspauschale | entfernung_km_roh=140/1 arbeitstage=107 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=434136 satz_bis_20_km=24 satz_ab_21_km=0 staffelgrenze_km=40 hoechstbetrag=897352 | entfernungspauschale=102720 abziehbarer_betrag=434136
+entfernungspauschale | entfernung_km_roh=299/10 arbeitstage=94 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=0 satz_bis_20_km=33 satz_ab_21_km=98 staffelgrenze_km=24 hoechstbetrag=983010 | entfernungspauschale=120508 abziehbarer_betrag=120508
+entfernungspauschale | entfernung_km_roh=44/1 arbeitstage=35 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=542097 satz_bis_20_km=97 satz_ab_21_km=68 staffelgrenze_km=24 hoechstbetrag=1000000 | entfernungspauschale=129080 abziehbarer_betrag=542097
+entfernungspauschale | entfernung_km_roh=2289/100 arbeitstage=198 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=0 satz_bis_20_km=12 satz_ab_21_km=31 staffelgrenze_km=6 hoechstbetrag=486520 | entfernungspauschale=112464 abziehbarer_betrag=112464
+entfernungspauschale | entfernung_km_roh=14423/100 arbeitstage=266 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=432924 satz_bis_20_km=39 satz_ab_21_km=100 staffelgrenze_km=39 hoechstbetrag=970860 | entfernungspauschale=970860 abziehbarer_betrag=970860
+entfernungspauschale | entfernung_km_roh=2128/100 arbeitstage=60 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=164894 satz_bis_20_km=39 satz_ab_21_km=63 staffelgrenze_km=30 hoechstbetrag=580851 | entfernungspauschale=49140 abziehbarer_betrag=164894
+entfernungspauschale | entfernung_km_roh=43/1 arbeitstage=220 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=934708 satz_bis_20_km=74 satz_ab_21_km=23 staffelgrenze_km=20 hoechstbetrag=353662 | entfernungspauschale=353662 abziehbarer_betrag=934708
+entfernungspauschale | entfernung_km_roh=2754/100 arbeitstage=322 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=934122 satz_bis_20_km=91 satz_ab_21_km=93 staffelgrenze_km=13 hoechstbetrag=82633 | entfernungspauschale=800170 abziehbarer_betrag=934122
+entfernungspauschale | entfernung_km_roh=146/100 arbeitstage=291 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=678224 satz_bis_20_km=53 satz_ab_21_km=33 staffelgrenze_km=20 hoechstbetrag=901510 | entfernungspauschale=15423 abziehbarer_betrag=678224
+entfernungspauschale | entfernung_km_roh=1119/10 arbeitstage=55 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=750476 satz_bis_20_km=14 satz_ab_21_km=0 staffelgrenze_km=25 hoechstbetrag=598556 | entfernungspauschale=19250 abziehbarer_betrag=750476
+entfernungspauschale | entfernung_km_roh=7797/100 arbeitstage=254 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=1000000 satz_bis_20_km=56 satz_ab_21_km=0 staffelgrenze_km=18 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=1229/10 arbeitstage=215 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=732551 satz_bis_20_km=80 satz_ab_21_km=17 staffelgrenze_km=17 hoechstbetrag=925774 | entfernungspauschale=676175 abziehbarer_betrag=732551
+entfernungspauschale | entfernung_km_roh=105/1 arbeitstage=355 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=615131 satz_bis_20_km=11 satz_ab_21_km=100 staffelgrenze_km=13 hoechstbetrag=0 | entfernungspauschale=3316765 abziehbarer_betrag=3316765
+entfernungspauschale | entfernung_km_roh=45/1 arbeitstage=53 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=1000000 satz_bis_20_km=32 satz_ab_21_km=40 staffelgrenze_km=6 hoechstbetrag=42256 | entfernungspauschale=92856 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=1059/10 arbeitstage=97 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=847649 satz_bis_20_km=75 satz_ab_21_km=80 staffelgrenze_km=5 hoechstbetrag=334491 | entfernungspauschale=334491 abziehbarer_betrag=847649
+entfernungspauschale | entfernung_km_roh=1397/10 arbeitstage=180 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=121190 satz_bis_20_km=7 satz_ab_21_km=100 staffelgrenze_km=11 hoechstbetrag=794471 | entfernungspauschale=794471 abziehbarer_betrag=794471
+entfernungspauschale | entfernung_km_roh=303/10 arbeitstage=3 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=774198 satz_bis_20_km=59 satz_ab_21_km=100 staffelgrenze_km=33 hoechstbetrag=1000000 | entfernungspauschale=5310 abziehbarer_betrag=774198
+entfernungspauschale | entfernung_km_roh=98/1 arbeitstage=212 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=779136 satz_bis_20_km=14 satz_ab_21_km=100 staffelgrenze_km=12 hoechstbetrag=643946 | entfernungspauschale=1858816 abziehbarer_betrag=1858816
+entfernungspauschale | entfernung_km_roh=149/1 arbeitstage=303 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=218922 satz_bis_20_km=6 satz_ab_21_km=100 staffelgrenze_km=21 hoechstbetrag=192318 | entfernungspauschale=3916578 abziehbarer_betrag=3916578
+entfernungspauschale | entfernung_km_roh=1155/100 arbeitstage=348 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=0 satz_bis_20_km=21 satz_ab_21_km=90 staffelgrenze_km=35 hoechstbetrag=884343 | entfernungspauschale=80388 abziehbarer_betrag=80388
+entfernungspauschale | entfernung_km_roh=8375/100 arbeitstage=285 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=645592 satz_bis_20_km=100 satz_ab_21_km=94 staffelgrenze_km=23 hoechstbetrag=544444 | entfernungspauschale=544444 abziehbarer_betrag=645592
