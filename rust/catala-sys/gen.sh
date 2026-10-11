@@ -11,7 +11,9 @@
 # modules is exactly this substitution, nothing else.
 #
 # generated/ is committed so `cargo build` needs no opam (Entscheidung REWRITE_PLAN.md §3).
-# Re-run this script (`make catala-c`) after any change under rules/estg/.
+# Re-run this script (`make catala-c`) after any change under rules/estg/, and then `make catala-orakel`
+# (the oracle file of the Rust test tests/catala_orakel.rs; the CI job catala-toolchain regenerates it
+# and fails on a diff).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

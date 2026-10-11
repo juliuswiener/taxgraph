@@ -165,6 +165,23 @@ jobs:
           clerk build p32a-python
           bash oracle/gettsim/assemble_catala.sh
 
+      # Frischetor des Catala-Orakels. rust/catala-sys/orakel/orakel.txt haelt erzeugte Eingaben samt
+      # Ergebnis des Catala-INTERPRETERS; der Rust-Test catala_orakel.rs (Job rust, ohne opam) spielt sie
+      # gegen das eingecheckte C-Backend ab. Hier, wo der Interpreter da ist, wird die Datei neu erzeugt
+      # und mit dem Stand im Repo verglichen: eine Regel- oder Generatoraenderung ohne neu erzeugte,
+      # eingecheckte Datei macht diesen Schritt rot (git diff --exit-code). Rust ist gepinnt wie im Job
+      # rust (Rust 1.99.0 festlegen).
+      - name: Catala-Orakel neu erzeugen, gegen den Stand im Repo pruefen
+        run: |
+          set -e
+          rustup toolchain install 1.99.0 --profile minimal
+          rustup default 1.99.0
+          rustc --version
+          eval $(opam env --switch=taxgraph --set-switch)
+          git ls-files --error-unmatch rust/catala-sys/orakel/orakel.txt
+          (cd rust && cargo run -p catala-sys --example orakel_erzeugen)
+          git diff --exit-code -- rust/catala-sys/orakel/orakel.txt
+
       # -n 4: GitHub-Runner haben 4 Kerne, und der Catala-Build ist zu diesem Zeitpunkt
       # fertig — sie stehen frei. --dist loadfile haelt jede Testdatei auf EINEM Worker;
       # das ist Pflicht, nicht Kuer: test_bescheid_fn_collector und

@@ -286,6 +286,12 @@ blockmatrix-rust:
 catala-c:
 	$(OPAM_ENV); bash rust/catala-sys/gen.sh
 
+## Orakel fuer rust/catala-sys/tests/catala_orakel.rs: erzeugte Eingaben, vom Catala-INTERPRETER
+## gerechnet, in rust/catala-sys/orakel/orakel.txt. Nach `catala-c` und nach jeder Regelaenderung
+## neu erzeugen und mit einchecken (der Test prueft den Regel-Hash im Kopf der Datei).
+catala-orakel:
+	$(OPAM_ENV); cd rust && cargo run -p catala-sys --example orakel_erzeugen
+
 rust-build:
 	cd rust && cargo build
 
