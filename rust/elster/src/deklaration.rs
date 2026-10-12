@@ -291,6 +291,50 @@ fn ist_versorgung_ring_wert(feld_id: &str) -> bool {
 /// Veranlagungsjahr lehnt `ERiC` ab (Regel `Arbeitslohn_ab08_5`); der Bescheid sperrt ihn schon vorher (`VersorgungsbeginnNachVz`).
 const VERSORGUNG_SPERRE_BEGINN: &str = "Versorgungsbezüge über 0 Euro: Der Bezug beginnt im Veranlagungsjahr oder später. Bei einem Beginn im Veranlagungsjahr verlangt der Vordruck in Zeile 14 den ersten und den letzten Zahlungsmonat, und die Erklärung trägt diese Zeile nicht. Ein Beginn nach dem Veranlagungsjahr lehnt ELSTER ab. Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
 
+/// Die Gruende der Abgabe-Sperre (Abweichung Nr. 66), wenn der Nutzer eine der vier Rueckfragen zum Versorgungsbezug mit Ja beantwortet
+/// ([`VERSORGUNG_RUECKFRAGEN`]). Die Eingaben verraten diese Faelle nicht, und die Erklaerung traegt die Zeilen dafuer nicht: ein
+/// zweiter Bezug (zweite Spalte der Zeilen 11 bis 16, § 19 Abs. 2 S. 6 `EStG`), Sterbegeld und Verwandtes (Zeile 15, Nr. 32 der
+/// Lohnsteuerbescheinigung), Bezuege fuer mehrere Kalenderjahre (Zeile 16, Nr. 9; ohne die Zeile fehlt die Fuenftelregelung, § 34
+/// Abs. 1 `EStG`) und ein Bezug, der nicht das ganze Jahr lief (Zeile 14, Nr. 31; § 19 Abs. 2 S. 12 `EStG`). Jeder Text nennt sein
+/// eigenes Merkmal, die Sperre und das amtliche Formular.
+const VERSORGUNG_SPERRE_ZWEITER_BEZUG: &str = "Versorgungsbezüge über 0 Euro: Angegeben sind zwei verschiedene Versorgungsbezüge. Der Vordruck hat dafür eine zweite Spalte in den Zeilen 11 bis 16, und die Erklärung trägt nur den ersten Bezug. Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+const VERSORGUNG_SPERRE_STERBEGELD: &str = "Versorgungsbezüge über 0 Euro: Angegeben sind Sterbegeld, eine Kapitalauszahlung, eine Abfindung oder eine Nachzahlung von Versorgungsbezügen (Nummer 32 der Lohnsteuerbescheinigung). Der Vordruck verlangt dafür Zeile 15, und die Erklärung trägt diese Zeile nicht. Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+const VERSORGUNG_SPERRE_MEHRERE_JAHRE: &str = "Versorgungsbezüge über 0 Euro: Angegeben sind Versorgungsbezüge für mehrere Kalenderjahre (Nummer 9 der Lohnsteuerbescheinigung). Der Vordruck verlangt dafür Zeile 16, und die Erklärung trägt diese Zeile nicht; ohne sie fehlt die ermäßigte Besteuerung (Fünftelregelung). Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+const VERSORGUNG_SPERRE_NICHT_GANZJAEHRIG: &str = "Versorgungsbezüge über 0 Euro: Angegeben ist, dass die Versorgungsbezüge nicht in allen zwölf Monaten gezahlt wurden (Nummer 31 der Lohnsteuerbescheinigung). Der Vordruck verlangt dafür in Zeile 14 den ersten und den letzten Zahlungsmonat, und die Erklärung trägt diese Zeile nicht. Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+
+/// Eine Rueckfrage zum Versorgungsbezug (Abweichung Nr. 66): die Felder von Person A und Ehegatte (Ja/Nein, kein Kz) und der Grund der
+/// Sperre bei Ja.
+struct Rueckfrage {
+    person_a: &'static str,
+    partner: &'static str,
+    text: &'static str,
+}
+
+/// Die vier Rueckfragen, in der Reihenfolge, in der ihre Gruende in `unvollstaendig` stehen. Normalfall ist Nein: nur ein bestaetigtes Ja
+/// sperrt ([`Bau::versorgung_rueckfragen`]), eine fehlende, vorlaeufige oder nicht boolesche Antwort zaehlt wie Nein.
+const VERSORGUNG_RUECKFRAGEN: [Rueckfrage; 4] = [
+    Rueckfrage {
+        person_a: "versorgung_zweiter_bezug",
+        partner: "versorgung_zweiter_bezug_partner",
+        text: VERSORGUNG_SPERRE_ZWEITER_BEZUG,
+    },
+    Rueckfrage {
+        person_a: "versorgung_sterbegeld",
+        partner: "versorgung_sterbegeld_partner",
+        text: VERSORGUNG_SPERRE_STERBEGELD,
+    },
+    Rueckfrage {
+        person_a: "versorgung_mehrere_jahre",
+        partner: "versorgung_mehrere_jahre_partner",
+        text: VERSORGUNG_SPERRE_MEHRERE_JAHRE,
+    },
+    Rueckfrage {
+        person_a: "versorgung_nicht_ganzjaehrig",
+        partner: "versorgung_nicht_ganzjaehrig_partner",
+        text: VERSORGUNG_SPERRE_NICHT_GANZJAEHRIG,
+    },
+];
+
 /// Nur Rust (Abweichung Nr. 50): die Ring-Werte zu den Zeilen 11 bis 13 der Anlage N, je Person. `bescheid::deklaration::
 /// mit_ring_werten` setzt sie auf `true`, wenn der Bescheid den Bezug als steuerbeguenstigten Versorgungsbezug rechnet (alle
 /// drei Angaben bestaetigt, Alters-Gate erfuellt): das Gate kennt `elster` nicht. Beide Felder tragen kein Kz.
@@ -930,6 +974,28 @@ impl Bau<'_> {
             })
     }
 
+    /// Hat der Nutzer die Rueckfrage `feld` mit Ja beantwortet (Abweichung Nr. 66)? Nur ein BESTAETIGTES `true` zaehlt. Eine fehlende, vorlaeufige
+    /// oder nicht boolesche Antwort zaehlt wie Nein: Nein ist der Normalfall, und die Frage steht weiter in der Fragenliste. Das ist gemessen
+    /// und benannt (Test `eine_unbeantwortete_rueckfrage_sperrt_nicht`), kein stilles Nein.
+    fn rueckfrage_ja(&self, feld: &str) -> bool {
+        self.snapshot
+            .get(feld)
+            .is_some_and(|s| s.zustand == Zustand::Bestaetigt && matches!(s.wert, PyWert::Bool(true)))
+    }
+
+    /// Die Rueckfragen der Person, die der Nutzer mit Ja beantwortet hat (Abweichung Nr. 66): je Ja ein Grund in `unvollstaendig`, unter dem
+    /// Feld der Rueckfrage (so findet der Nutzer die Antwort, die er aendern kann). Sie gelten unabhaengig davon, ob die Zeilen 11 bis 13 den
+    /// Bezug tragen: auch ein sonst getragener Bezug braucht bei Ja die Zeilen 14 bis 16 oder die zweite Spalte, die die Erklaerung nicht hat.
+    /// Der Aufrufer ruft das nur fuer einen bestaetigten Bezug ueber 0 einer Person, die zaehlt ([`Bau::versorgung`]).
+    fn versorgung_rueckfragen(&mut self, partner: bool) {
+        for r in &VERSORGUNG_RUECKFRAGEN {
+            let feld = if partner { r.partner } else { r.person_a };
+            if self.rueckfrage_ja(feld) {
+                self.offen(feld, r.text);
+            }
+        }
+    }
+
     /// Schreibt `wert` unter `kz` in die Anlage N der Person: Person A in die Deklaration, Person B in die zweite Instanz
     /// (`person_b`, wie die Kz aus `PARTNER_INSTANZ`).
     fn schreibe_versorgung(
@@ -956,9 +1022,10 @@ impl Bau<'_> {
     /// [`VERSORGUNG_SPERRE`]. Bei einem Beginn im Veranlagungsjahr oder danach (oder einem Beginnjahr, das sich nicht als
     /// bestaetigte ganze Zahl lesen laesst) gilt in jedem freien Fall [`VERSORGUNG_SPERRE_BEGINN`]. ponytail: ein Beginn im
     /// Veranlagungsjahr gilt als unterjaehrig (Zeile 14), auch wenn der
-    /// Bezug am 1. Januar begann; ein Bezug, der im Veranlagungsjahr ENDET (Zeile 14, Sterbegeld Zeile 15, mehrere
-    /// Kalenderjahre Zeile 16, zweiter Bezug je Person), ist aus den Eingaben nicht erkennbar und bleibt eine benannte Grenze.
-    /// Upgrade-Pfad: die Zeilen 14 bis 16 und den zweiten Bezug bauen.
+    /// Bezug am 1. Januar begann. Ein Bezug, der im Veranlagungsjahr ENDET (Zeile 14, Sterbegeld Zeile 15, mehrere
+    /// Kalenderjahre Zeile 16, zweiter Bezug je Person), ist aus den Eingaben nicht erkennbar: seit Abweichung Nr. 66 fragt die
+    /// Erklaerung danach ([`Bau::versorgung_rueckfragen`], getrennt von dieser Sperre), und ein Ja sperrt. Upgrade-Pfad: die Zeilen 14
+    /// bis 16 und die zweite Spalte bauen; dann entfaellt die Frage zum jeweiligen Fall.
     fn versorgung_sperre(&self, partner: bool) -> Option<&'static str> {
         if !self.versorgung_zeile_gilt(partner) {
             // Kein Ring-Wert fuer die Zeilen: drei Gruende. Die Person erreicht die Altersgrenze erst nach dem Veranlagungsjahr
@@ -1011,6 +1078,7 @@ impl Bau<'_> {
             if let Some(grund) = self.versorgung_sperre(partner) {
                 self.offen(feld_id, grund);
             }
+            self.versorgung_rueckfragen(partner);
         }
         Ok(())
     }
@@ -3147,6 +3215,28 @@ mod tests {
                 && !text.contains("nicht in die Zeilen 11 bis 13"),
             "{text}"
         );
+        // Abweichung Nr. 66: jeder der vier Texte der Rueckfragen nennt die Sperre und das Formular, die Zeile des Vordrucks (oder die zweite
+        // Spalte) und sein EIGENES Merkmal; keiner traegt das Merkmal eines anderen Falls (sonst verwechselte sich die Tabelle der Tests).
+        let faelle = [
+            (super::VERSORGUNG_SPERRE_ZWEITER_BEZUG, "zwei verschiedene Versorgungsbezüge", "zweite Spalte"),
+            (super::VERSORGUNG_SPERRE_STERBEGELD, "Sterbegeld", "Zeile 15"),
+            (super::VERSORGUNG_SPERRE_MEHRERE_JAHRE, "mehrere Kalenderjahre", "Zeile 16"),
+            (super::VERSORGUNG_SPERRE_NICHT_GANZJAEHRIG, "nicht in allen zwölf Monaten", "Zeile 14"),
+        ];
+        for (text, merkmal, zeile) in faelle {
+            assert!(text.starts_with("Versorgungsbezüge über 0 Euro") && text.contains("gesperrt") && text.contains("Formular"), "{text}");
+            assert!(text.contains(merkmal) && text.contains(zeile), "{text}");
+            for (anderer, _, _) in faelle {
+                assert_eq!(anderer == text, anderer.contains(merkmal), "der Text trägt ein fremdes Merkmal {merkmal}: {anderer}");
+            }
+            for fremd in [
+                super::VERSORGUNG_SPERRE,
+                super::VERSORGUNG_SPERRE_BEGINN,
+                super::VERSORGUNG_SPERRE_ALTERSGRENZE,
+            ] {
+                assert!(!fremd.contains(merkmal), "der Text eines anderen Grundes trägt das Merkmal {merkmal}: {fremd}");
+            }
+        }
     }
 
     /// Abweichung Nr. 64: steht der Ring-Wert auf `true` (die Zeilen 11 bis 13 stehen im XML), sperrt ein Bezug NUR, wenn er im
@@ -3290,6 +3380,171 @@ mod tests {
                 assert_eq!(nicht("versorgung_jahresrente"), 1, "{name}: der Betrag steht mit Grund in nicht_deklariert");
             }
         }
+    }
+
+    /// Abweichung Nr. 66: ein bestaetigtes Ja auf eine der vier Rueckfragen zum Versorgungsbezug sperrt mit dem Text des Falls, unter dem
+    /// Feld der Rueckfrage. Nur dort: bei einem bestaetigten Bezug ueber 0 der Person, die zaehlt (Ehegatte nur bei bestaetigter
+    /// Zusammenveranlagung). Nein, eine fehlende, eine vorlaeufige und eine nicht boolesche Antwort sperren nicht (Normalfall Nein,
+    /// `eine_unbeantwortete_rueckfrage_sperrt_nicht`). Die Antwort der einen Person gilt nie fuer die andere.
+    #[test]
+    fn ein_ja_auf_eine_rueckfrage_sperrt_mit_dem_text_des_falls() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
+            wert: wert.into(),
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let b = Zustand::Bestaetigt;
+        let faelle = [
+            ("versorgung_zweiter_bezug", super::VERSORGUNG_SPERRE_ZWEITER_BEZUG),
+            ("versorgung_sterbegeld", super::VERSORGUNG_SPERRE_STERBEGELD),
+            ("versorgung_mehrere_jahre", super::VERSORGUNG_SPERRE_MEHRERE_JAHRE),
+            ("versorgung_nicht_ganzjaehrig", super::VERSORGUNG_SPERRE_NICHT_GANZJAEHRIG),
+        ];
+        for partner in [false, true] {
+            let s = if partner { "_partner" } else { "" };
+            let fremd = if partner { "" } else { "_partner" };
+            for (name, text) in faelle {
+                let eigen = format!("{name}{s}");
+                // (Antwort, Zustand, Bezug in CENT, Veranlagung, wird gesperrt?)
+                let reihen = [
+                    (Some(json!(true)), b, 3_000_000, "zusammen", true),
+                    (Some(json!(false)), b, 3_000_000, "zusammen", false),
+                    (None, b, 3_000_000, "zusammen", false),
+                    (Some(json!(true)), Zustand::Vorlaeufig, 3_000_000, "zusammen", false),
+                    (Some(json!("ja")), b, 3_000_000, "zusammen", false),
+                    (Some(json!(1)), b, 3_000_000, "zusammen", false),
+                    // Ohne Bezug ueber 0 ist die Frage verborgen: ein gespeichertes Ja sperrt nichts.
+                    (Some(json!(true)), b, 0, "zusammen", false),
+                    // Der Ehegatte zaehlt nur bei bestaetigter Zusammenveranlagung.
+                    (Some(json!(true)), b, 3_000_000, "einzel", !partner),
+                ];
+                for (antwort, zustand, bezug, veranlagung, soll) in reihen {
+                    let mut felder = Felder::from([
+                        (format!("versorgung_jahresrente{s}"), feld(json!(bezug), b)),
+                        (format!("versorgung_bemessungsgrundlage{s}"), feld(json!(2_500_000), b)),
+                        (format!("versorgung_beginn_jahr{s}"), feld(json!(2020), b)),
+                        (format!("versorgung_art{s}"), feld(json!("beamtenrechtlich"), b)),
+                        (format!("versorgung_zeile{s}"), feld(json!(true), b)),
+                        ("veranlagung".to_owned(), feld(json!(veranlagung), b)),
+                    ]);
+                    if let Some(w) = &antwort {
+                        felder.insert(eigen.clone(), feld(w.clone(), zustand));
+                    }
+                    let d = deklariere(&felder, &index, 2025, None).unwrap();
+                    let wo = format!("Person {}, {eigen} = {antwort:?} {zustand:?}, Bezug {bezug}, {veranlagung}", if partner { "B" } else { "A" });
+                    let gesperrt: Vec<(&str, &str)> = d
+                        .unvollstaendig()
+                        .iter()
+                        .filter(|e| e.grund.starts_with("Versorgungsbezüge über 0 Euro"))
+                        .map(|e| (e.feld_id.as_str(), e.grund.as_str()))
+                        .collect();
+                    let erwartet: Vec<(&str, &str)> = if soll { vec![(eigen.as_str(), text)] } else { vec![] };
+                    assert_eq!(gesperrt, erwartet, "{wo}");
+                    // Die Rueckfrage ist kein Feld der Erklaerung: mit Grund in `nicht_deklariert`, ein bestaetigtes Ja steht in keinem Kz.
+                    if antwort.is_some() && zustand == b {
+                        assert_eq!(d.nicht_deklariert.iter().filter(|e| e.feld_id == eigen).count(), 1, "{wo}: nicht_deklariert");
+                    }
+                }
+                // Die Antwort der anderen Person gilt nicht fuer diese: das Ja der anderen Person sperrt bei dieser nichts.
+                let felder = Felder::from([
+                    (format!("versorgung_jahresrente{s}"), feld(json!(3_000_000), b)),
+                    (format!("versorgung_bemessungsgrundlage{s}"), feld(json!(2_500_000), b)),
+                    (format!("versorgung_beginn_jahr{s}"), feld(json!(2020), b)),
+                    (format!("versorgung_art{s}"), feld(json!("beamtenrechtlich"), b)),
+                    (format!("versorgung_zeile{s}"), feld(json!(true), b)),
+                    ("veranlagung".to_owned(), feld(json!("zusammen"), b)),
+                    (format!("{name}{fremd}"), feld(json!(true), b)),
+                ]);
+                let d = deklariere(&felder, &index, 2025, None).unwrap();
+                assert!(
+                    d.unvollstaendig().iter().all(|e| !e.grund.starts_with("Versorgungsbezüge über 0 Euro")),
+                    "Person {}: das Ja der anderen Person sperrt: {:?}",
+                    if partner { "B" } else { "A" },
+                    d.unvollstaendig()
+                );
+            }
+        }
+    }
+
+    /// Abweichung Nr. 66, Gegenstueck: eine unbeantwortete Rueckfrage sperrt NICHT (kein stilles Gesperrt) und aendert die Erklaerung nicht
+    /// (kein stilles Anderes). Nein ist der Normalfall, die Frage steht weiter in der Fragenliste; vier Ja zusammen geben vier Gruende,
+    /// in der Reihenfolge der Faelle, und neben einem Grund des Bezugs selbst (unter 1 Euro) bleibt dieser stehen.
+    #[test]
+    fn eine_unbeantwortete_rueckfrage_sperrt_nicht() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let basis = |bezug: i64, zeile: bool| {
+            Felder::from([
+                ("versorgung_jahresrente".to_owned(), feld(json!(bezug))),
+                ("versorgung_bemessungsgrundlage".to_owned(), feld(json!(2_500_000))),
+                ("versorgung_beginn_jahr".to_owned(), feld(json!(2020))),
+                ("versorgung_art".to_owned(), feld(json!("beamtenrechtlich"))),
+                ("versorgung_zeile".to_owned(), feld(json!(zeile))),
+            ])
+        };
+        let namen = ["versorgung_zweiter_bezug", "versorgung_sterbegeld", "versorgung_mehrere_jahre", "versorgung_nicht_ganzjaehrig"];
+        // Ohne jede Antwort: kein Grund, und dieselbe Deklaration wie mit vier Nein.
+        let ohne = deklariere(&basis(3_000_000, true), &index, 2025, None).unwrap();
+        assert!(ohne.unvollstaendig().is_empty(), "ohne Antwort sperrt etwas: {:?}", ohne.unvollstaendig());
+        let mut mit_nein = basis(3_000_000, true);
+        for n in namen {
+            mit_nein.insert(n.to_owned(), feld(json!(false)));
+        }
+        let nein = deklariere(&mit_nein, &index, 2025, None).unwrap();
+        assert!(nein.unvollstaendig().is_empty(), "vier Nein sperren: {:?}", nein.unvollstaendig());
+        assert_eq!(nein.deklaration, ohne.deklaration, "vier Nein aendern die Erklaerung");
+        // Vier Ja: vier Gruende, in der Reihenfolge der Faelle, jeder unter seinem Feld.
+        let mut mit_ja = basis(3_000_000, true);
+        for n in namen {
+            mit_ja.insert(n.to_owned(), feld(json!(true)));
+        }
+        let ja = deklariere(&mit_ja, &index, 2025, None).unwrap();
+        let ids: Vec<&str> = ja.unvollstaendig().iter().map(|e| e.feld_id.as_str()).collect();
+        assert_eq!(ids, namen, "Reihenfolge und Felder der Gruende");
+        assert_eq!(ja.deklaration, ohne.deklaration, "ein Ja aendert die Zeilen der Erklaerung nicht, es sperrt nur");
+        // Ein Bezug unter 1 Euro (keine Zeile) UND ein Ja: der Grund des Bezugs steht neben dem der Rueckfrage.
+        let mut klein = basis(99, false);
+        klein.insert("versorgung_sterbegeld".to_owned(), feld(json!(true)));
+        let d = deklariere(&klein, &index, 2025, None).unwrap();
+        let gruende: Vec<(&str, &str)> = d.unvollstaendig().iter().map(|e| (e.feld_id.as_str(), e.grund.as_str())).collect();
+        assert_eq!(
+            gruende,
+            [
+                ("versorgung_jahresrente", super::VERSORGUNG_SPERRE),
+                ("versorgung_sterbegeld", super::VERSORGUNG_SPERRE_STERBEGELD),
+            ]
+        );
     }
 
     /// Python `dict.get(wert)` an allen drei Aufrufstellen der Enum-Felder: Konfession (`feld`),

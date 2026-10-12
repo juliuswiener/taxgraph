@@ -152,6 +152,87 @@ bindungen:
       zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
 
+  # Rueckfragen zu vier Faellen, die die Eingaben nicht verraten (Abweichung Nr. 66, Julius 2026-10-12): ein zweiter Bezug (zweite
+  # Spalte der Zeilen 11 bis 16), Sterbegeld und Verwandtes (Zeile 15), Bezuege fuer mehrere Kalenderjahre (Zeile 16) und ein
+  # Bezug, der nicht das ganze Jahr lief (Zeile 14). Die Erklaerung traegt diese Zeilen nicht: "Ja" sperrt die Abgabe mit einem
+  # Text je Fall (`Bau::versorgung_rueckfragen` in `rust/elster/src/deklaration.rs`), "Nein" und Schweigen aendern nichts (Normalfall
+  # ist "Nein"; eine unbeantwortete Frage sperrt NICHT, sie steht weiter in der Fragenliste). Wie `ep_unfallkosten`: `feld_bedingung`
+  # fuer die Sichtbarkeit und `signatur_slot` als Etikett, nie `geltungsbedingung` (das machte die Frage zum Gate und verschobe die
+  # Reihenfolge aller Fragen; Vault: decisions/ein-neues-betragsfeld-haengt-an-feld-bedingung-nie-an-geltungsbedingung). Die Frage
+  # haengt am BETRAG (`groesser_als: 0`, positiver Beweis), nie am Ring-Wert `versorgung_zeile`: den setzt der Bescheid erst aus
+  # diesen Eingaben, die Frage stuende sonst hinter dem, was sie steuert.
+  - feld_id: versorgung_zweiter_bezug
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: versorgung_zweiter_bezug}
+    feld_bedingung: {feld: versorgung_jahresrente, groesser_als: 0, grund: "Ein zweiter Versorgungsbezug setzt einen ersten voraus: ohne bestaetigten Bezug ueber 0 Euro gibt es nichts, wozu ein zweiter dazukaeme, und die Frage verlaengerte nur das Interview."}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du dieses Jahr zwei verschiedene Versorgungsbezüge bekommen, zum Beispiel eine Pension und zusätzlich ein Witwengeld?"
+    hilfe_kurz: "Gemeint sind zwei Versorgungsbezüge mit unterschiedlichem Beginn, die getrennt bescheinigt werden. Der Vordruck der Anlage N hat dafür eine zweite Spalte, und die Erklärung trägt nur den ersten Bezug. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (die zweite Spalte der Zeilen 11 bis 16 traegt die Erklaerung nicht), bei Nein oder ohne Antwort aendert sich nichts."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 6 EStG"
+      zitatanker: "Bei mehreren Versorgungsbezügen mit unterschiedlichem Bezugsbeginn"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_sterbegeld
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: versorgung_sterbegeld}
+    feld_bedingung: {feld: versorgung_jahresrente, groesser_als: 0, grund: "Sterbegeld, Kapitalauszahlung, Abfindung und Nachzahlung stehen nach dem Vordruck IN den Versorgungsbezuegen (Zeile 15 'in den Zeilen 5 und 11 enthalten'): ohne bestaetigten Bezug ueber 0 Euro gibt es nichts, worin sie enthalten sein koennten."}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du dieses Jahr Sterbegeld, eine Kapitalauszahlung, eine Abfindung oder eine Nachzahlung von Versorgungsbezügen bekommen?"
+    hilfe_kurz: "Das steht unter Nummer 32 der Lohnsteuerbescheinigung. Der Betrag steckt schon in deinem Bruttoarbeitslohn und in den Versorgungsbezügen. Der Vordruck verlangt ihn zusätzlich in Zeile 15, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (Zeile 15 traegt die Erklaerung nicht), bei Nein oder ohne Antwort aendert sich nichts."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 1 S. 2 EStG"
+      zitatanker: "Es ist gleichgültig, ob es sich um laufende oder um einmalige Bezüge handelt"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_mehrere_jahre
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: versorgung_mehrere_jahre}
+    feld_bedingung: {feld: versorgung_jahresrente, groesser_als: 0, grund: "Versorgungsbezuege fuer mehrere Kalenderjahre stehen nach dem Vordruck IM Bruttoarbeitslohn (Zeile 16 'im Bruttoarbeitslohn laut Zeile 5 enthalten'): ohne bestaetigten Bezug ueber 0 Euro gibt es keine Versorgungsbezuege, die mehrere Jahre abdecken koennten."}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Enthalten deine Versorgungsbezüge Zahlungen für mehrere Kalenderjahre, zum Beispiel eine Nachzahlung für frühere Jahre?"
+    hilfe_kurz: "Das steht unter Nummer 9 der Lohnsteuerbescheinigung. Für solche Beträge kommt die ermäßigte Besteuerung (Fünftelregelung) in Betracht; das Finanzamt wendet sie anhand von Zeile 16 der Anlage N an. Die Erklärung trägt diese Zeile nicht, ohne sie fehlt dir die Ermäßigung. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (Zeile 16 traegt die Erklaerung nicht, die Fuenftelregelung faellt aus), bei Nein oder ohne Antwort aendert sich nichts."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 1 EStG"
+      zitatanker: "Sind in dem zu versteuernden Einkommen außerordentliche Einkünfte enthalten"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+
+  - feld_id: versorgung_nicht_ganzjaehrig
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: versorgung_nicht_ganzjaehrig}
+    feld_bedingung: {feld: versorgung_jahresrente, groesser_als: 0, grund: "Ein Bezug, der nicht das ganze Jahr lief, setzt einen bestaetigten Bezug ueber 0 Euro voraus. Beginnt er erst im Veranlagungsjahr, sperrt die Abgabe schon ohne diese Frage (Abweichung Nr. 64)."}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du die Versorgungsbezüge dieses Jahr nicht in allen zwölf Monaten bekommen, zum Beispiel weil sie im Laufe des Jahres endeten oder ausgesetzt waren?"
+    hilfe_kurz: "Das steht unter Nummer 31 der Lohnsteuerbescheinigung (erster und letzter Zahlungsmonat). Für jeden vollen Monat ohne Zahlung sinkt der Versorgungsfreibetrag um ein Zwölftel. Der Vordruck verlangt dafür Zeile 14, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beginnt der Bezug erst in diesem Jahr, sperrt die Abgabe schon ohne diese Frage."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (Zeile 14 traegt die Erklaerung nicht), bei Nein oder ohne Antwort aendert sich nichts."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 12 EStG"
+      zitatanker: "Für jeden vollen Kalendermonat, für den keine Versorgungsbezüge gezahlt werden"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
   # Ring-Wert (Abweichung Nr. 50): wahr, wenn die Erklaerung den Bezug in den Zeilen 11 bis 13 der Anlage N traegt (Betrag
   # E0200801, Bemessungsgrundlage E0200902, Beginnjahr E0201307). `mit_ring_werten` setzt ihn nur aus bestaetigten Feldern, wenn
   # der Bescheid den Bezug als steuerbeguenstigten Versorgungsbezug rechnet (Alters-Gate erfuellt). `deklariere` schreibt daraus
@@ -1634,6 +1715,109 @@ bindungen:
     anker_ref:
       quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"
       zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  # Rueckfragen des Ehegatten (Abweichung Nr. 66), wie die von Person A (siehe dort). Sichtbar nur bei Zusammenveranlagung (`wert`,
+  # wie `kein_lohn_pension_partner`) UND bei einem bestaetigten Bezug des Ehegatten ueber 0 (`und` mit `groesser_als`, wie die
+  # Schulgeld-Anteilsfrage). Ein Ja zaehlt in `Bau::versorgung_rueckfragen` nur bei bestaetigter Zusammenveranlagung.
+  - feld_id: versorgung_zweiter_bezug_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_zweiter_bezug_partner}
+    feld_bedingung:
+      feld: veranlagung
+      wert: zusammen
+      grund: "§ 26b EStG: nur bei Zusammenveranlagung sind die Bezuege des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen."
+      und:
+        feld: versorgung_jahresrente_partner
+        groesser_als: 0
+        grund: "Ein zweiter Versorgungsbezug des Partners setzt einen ersten voraus: ohne bestaetigten Bezug ueber 0 Euro gibt es nichts, wozu ein zweiter dazukaeme."
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner dieses Jahr zwei verschiedene Versorgungsbezüge bekommen, zum Beispiel eine Pension und zusätzlich ein Witwengeld?"
+    hilfe_kurz: "Gemeint sind zwei Versorgungsbezüge mit unterschiedlichem Beginn, die getrennt bescheinigt werden. Der Vordruck der Anlage N hat dafür eine zweite Spalte, und die Erklärung trägt nur den ersten Bezug. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wie `versorgung_zweiter_bezug` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 6 EStG"
+      zitatanker: "Bei mehreren Versorgungsbezügen mit unterschiedlichem Bezugsbeginn"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_sterbegeld_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_sterbegeld_partner}
+    feld_bedingung:
+      feld: veranlagung
+      wert: zusammen
+      grund: "§ 26b EStG: nur bei Zusammenveranlagung sind die Bezuege des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen."
+      und:
+        feld: versorgung_jahresrente_partner
+        groesser_als: 0
+        grund: "Sterbegeld, Kapitalauszahlung, Abfindung und Nachzahlung stehen nach dem Vordruck IN den Versorgungsbezuegen des Partners: ohne bestaetigten Bezug ueber 0 Euro gibt es nichts, worin sie enthalten sein koennten."
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner dieses Jahr Sterbegeld, eine Kapitalauszahlung, eine Abfindung oder eine Nachzahlung von Versorgungsbezügen bekommen?"
+    hilfe_kurz: "Das steht unter Nummer 32 der Lohnsteuerbescheinigung deines Partners. Der Betrag steckt schon in seinem Bruttoarbeitslohn und in seinen Versorgungsbezügen. Der Vordruck verlangt ihn zusätzlich in Zeile 15, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wie `versorgung_sterbegeld` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 1 S. 2 EStG"
+      zitatanker: "Es ist gleichgültig, ob es sich um laufende oder um einmalige Bezüge handelt"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_mehrere_jahre_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_mehrere_jahre_partner}
+    feld_bedingung:
+      feld: veranlagung
+      wert: zusammen
+      grund: "§ 26b EStG: nur bei Zusammenveranlagung sind die Bezuege des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen."
+      und:
+        feld: versorgung_jahresrente_partner
+        groesser_als: 0
+        grund: "Versorgungsbezuege fuer mehrere Kalenderjahre stehen nach dem Vordruck IM Bruttoarbeitslohn des Partners: ohne bestaetigten Bezug ueber 0 Euro gibt es keine Versorgungsbezuege, die mehrere Jahre abdecken koennten."
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Enthalten die Versorgungsbezüge deines Ehe-/Lebenspartners Zahlungen für mehrere Kalenderjahre, zum Beispiel eine Nachzahlung für frühere Jahre?"
+    hilfe_kurz: "Das steht unter Nummer 9 der Lohnsteuerbescheinigung deines Partners. Für solche Beträge kommt die ermäßigte Besteuerung (Fünftelregelung) in Betracht; das Finanzamt wendet sie anhand von Zeile 16 der Anlage N an. Die Erklärung trägt diese Zeile nicht, ohne sie fehlt die Ermäßigung. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wie `versorgung_mehrere_jahre` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 1 EStG"
+      zitatanker: "Sind in dem zu versteuernden Einkommen außerordentliche Einkünfte enthalten"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+
+  - feld_id: versorgung_nicht_ganzjaehrig_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_nicht_ganzjaehrig_partner}
+    feld_bedingung:
+      feld: veranlagung
+      wert: zusammen
+      grund: "§ 26b EStG: nur bei Zusammenveranlagung sind die Bezuege des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen."
+      und:
+        feld: versorgung_jahresrente_partner
+        groesser_als: 0
+        grund: "Ein Bezug, der nicht das ganze Jahr lief, setzt einen bestaetigten Bezug des Partners ueber 0 Euro voraus. Beginnt er erst im Veranlagungsjahr, sperrt die Abgabe schon ohne diese Frage (Abweichung Nr. 64)."
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner die Versorgungsbezüge dieses Jahr nicht in allen zwölf Monaten bekommen, zum Beispiel weil sie im Laufe des Jahres endeten oder ausgesetzt waren?"
+    hilfe_kurz: "Das steht unter Nummer 31 der Lohnsteuerbescheinigung deines Partners (erster und letzter Zahlungsmonat). Für jeden vollen Monat ohne Zahlung sinkt der Versorgungsfreibetrag um ein Zwölftel. Der Vordruck verlangt dafür Zeile 14, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beginnt der Bezug erst in diesem Jahr, sperrt die Abgabe schon ohne diese Frage."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wie `versorgung_nicht_ganzjaehrig` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 12 EStG"
+      zitatanker: "Für jeden vollen Kalendermonat, für den keine Versorgungsbezüge gezahlt werden"
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
 
   # Ring-Wert des Ehegatten (Abweichung Nr. 50), wie `versorgung_zeile` von Person A: die drei Zeilen stehen in der zweiten Anlage N.

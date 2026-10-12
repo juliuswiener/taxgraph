@@ -382,8 +382,16 @@ felder:
   - versorgung_bemessungsgrundlage_partner
   - versorgung_jahresrente
   - versorgung_jahresrente_partner
+  - versorgung_mehrere_jahre
+  - versorgung_mehrere_jahre_partner
+  - versorgung_nicht_ganzjaehrig
+  - versorgung_nicht_ganzjaehrig_partner
+  - versorgung_sterbegeld
+  - versorgung_sterbegeld_partner
   - versorgung_zeile
   - versorgung_zeile_partner
+  - versorgung_zweiter_bezug
+  - versorgung_zweiter_bezug_partner
   - vor_ag_anteil_rv
   - vor_ag_anteil_rv_partner
   - vor_an_anteil_rv
