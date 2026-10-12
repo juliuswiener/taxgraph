@@ -192,6 +192,90 @@ pub fn telenummer(rueckgabe_xml: &str) -> Option<String> {
     None
 }
 
+/// `ERIC_TRANSFER_ERR_XML_THEADER` (`eric_fehlercodes.h`): der Annahmeserver meldet einen Fehler im
+/// Transferheader; die Fehlermeldungen stehen im Serverantwortpuffer.
+pub const ERIC_TRANSFER_ERR_XML_THEADER: i32 = 610_101_210;
+
+/// `ERIC_TRANSFER_ERR_XML_NHEADER` (`eric_fehlercodes.h`): dasselbe fuer den Nutzdatenheader.
+pub const ERIC_TRANSFER_ERR_XML_NHEADER: i32 = 610_101_292;
+
+/// Laenge, auf die Code und Text einer Servermeldung gekuerzt werden.
+const MELDUNG_CODE_MAX: usize = 20;
+const MELDUNG_TEXT_MAX: usize = 300;
+
+/// Eine Fehlermeldung des ELSTER-Servers: Code und Text aus einem `RC`-Block der Serverantwort.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Servermeldung {
+    pub code: String,
+    pub text: String,
+}
+
+/// Steuerzeichen werden zu Leerzeichen, Leerraum zusammengezogen, auf `max` Zeichen gekuerzt: die
+/// Serverantwort ist fremder Text, der auf ein Terminal geht.
+fn bereinigt(text: &str, max: usize) -> String {
+    let ohne_steuerzeichen: String = text
+        .chars()
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect();
+    let eng = ohne_steuerzeichen.split_whitespace().collect::<Vec<_>>().join(" ");
+    eng.chars().take(max).collect()
+}
+
+/// Die Fehlermeldungen des Servers aus der Serverantwort (`EricBearbeiteVorgang`, bei
+/// [`ERIC_TRANSFER_ERR_XML_THEADER`] und [`ERIC_TRANSFER_ERR_XML_NHEADER`]): Code und Text der
+/// `Rueckgabe`- und `Stack`-Eintraege im `RC`-Block von `TransferHeader` und `NutzdatenHeader`
+/// (Aufbau: ERiC-Dokumentation, `Datenarten/.../Beispiele/*_Response.xml`). Code 0 heisst „OK" und
+/// zaehlt nicht; gleiche Eintraege stehen einmal. Aus dem Datenteil kommt nichts. Eine leere,
+/// unlesbare oder fremd aufgebaute Antwort liefert eine leere Liste.
+///
+/// ```
+/// let xml = "<Elster><TransferHeader><RC><Rueckgabe><Code>42</Code><Text>Nein</Text></Rueckgabe>\
+///            </RC></TransferHeader></Elster>";
+/// let m = versand::servermeldungen(xml);
+/// assert_eq!(m.len(), 1);
+/// assert_eq!(m.first().map(|x| (x.code.as_str(), x.text.as_str())), Some(("42", "Nein")));
+/// assert!(versand::servermeldungen("kein xml").is_empty());
+/// ```
+#[must_use]
+// ponytail: Aufbau nur aus der ERiC-Dokumentation, an einer echten Ablehnung ungemessen; bei einer
+// Abweichung hier anpassen oder `EricGetErrormessagesFromXMLAnswer` ueber FFI rufen (ericapi.h).
+pub fn servermeldungen(serverantwort_xml: &str) -> Vec<Servermeldung> {
+    let Ok(dok) = roxmltree::Document::parse(serverantwort_xml) else {
+        return Vec::new();
+    };
+    let heisst = |n: &roxmltree::Node<'_, '_>, namen: &[&str]| {
+        n.is_element() && namen.contains(&n.tag_name().name())
+    };
+    let mut aus: Vec<Servermeldung> = Vec::new();
+    for rc in dok.descendants().filter(|n| {
+        heisst(n, &["RC"])
+            && n.parent_element()
+                .is_some_and(|p| heisst(&p, &["TransferHeader", "NutzdatenHeader"]))
+    }) {
+        for eintrag in rc.children().filter(|e| heisst(e, &["Rueckgabe", "Stack"])) {
+            let kind = |name: &str| {
+                eintrag
+                    .children()
+                    .find(|k| heisst(k, &[name]))
+                    .and_then(|k| k.text())
+                    .unwrap_or_default()
+            };
+            let code = bereinigt(kind("Code"), MELDUNG_CODE_MAX);
+            if code.chars().all(|c| c == '0') {
+                continue;
+            }
+            let meldung = Servermeldung {
+                code,
+                text: bereinigt(kind("Text"), MELDUNG_TEXT_MAX),
+            };
+            if !aus.contains(&meldung) {
+                aus.push(meldung);
+            }
+        }
+    }
+    aus
+}
+
 /// Nur unbedenkliche Metadaten fuers Logging und `--dry-run`: nie Zertifikatspfad, PIN,
 /// Steuernummer oder IBAN (die stehen im XML-Inhalt, der hier nie ausgegeben wird).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -348,5 +432,100 @@ mod tests {
             freigabe: ECHTVERSAND_FREIGABE.to_owned(),
         };
         assert!(!zusammenfassung(xml, "ESt_2025", &echt, &z).merker_konsistent);
+    }
+
+    // Aufbau der Serverantwort: ERiC-Dokumentation (`ericapi.h`, „Fehler in der Serverantwort") und
+    // ihre Beispiele unter `Dokumentation/Datenarten/`: `ElsterSignatur/Kontoinformation/Beispiele/
+    // Kontoinformation_Response.xml` (`TransferHeader/RC`, Code 0) und `ElsterDatenabholung/
+    // PostfachBestaetigung/Beispiele/2_b1_PostfachBestaetigung_32_1NDB_Response.xml`
+    // (`NutzdatenHeader/RC`, Code 67890; im Datenteil ein weiteres `Rueckgabe` mit Code 194346573).
+    const DOC_TRANSFERHEADER_OK: &str = concat!(
+        r#"<Elster xmlns="http://www.elster.de/elsterxml/schema/v11"><TransferHeader version="11">"#,
+        r"<RC><Rueckgabe><Code>0</Code><Text>OK</Text></Rueckgabe>",
+        r"<Stack><Code>0</Code><Text /></Stack></RC></TransferHeader></Elster>"
+    );
+    const DOC_NUTZDATENHEADER_FEHLER: &str = concat!(
+        r#"<Elster xmlns="http://www.elster.de/elsterxml/schema/v11">"#,
+        r#"<TransferHeader version="11"><RC><Rueckgabe><Code>0</Code><Text>OK</Text></Rueckgabe>"#,
+        r"</RC></TransferHeader><DatenTeil><Nutzdatenblock>",
+        r#"<NutzdatenHeader version="11"><RC>"#,
+        r"<Rueckgabe><Code>67890</Code><Text>Der Empfang von mindestens einer der Daten wurde nicht ",
+        r"erfolgreich bestaetigt.</Text></Rueckgabe>",
+        r"<Stack><Code>67890</Code><Text>Der Empfang von mindestens einer der Daten wurde nicht ",
+        r"erfolgreich bestaetigt.</Text></Stack></RC></NutzdatenHeader>",
+        r"<Nutzdaten><Bereitstellung><Rueckgabe><Code>194346573</Code>",
+        r"<Text>Datensatz nicht gefunden.</Text></Rueckgabe></Bereitstellung></Nutzdaten>",
+        r"</Nutzdatenblock></DatenTeil></Elster>"
+    );
+
+    fn meldung(code: &str, text: &str) -> Servermeldung {
+        Servermeldung {
+            code: code.to_owned(),
+            text: text.to_owned(),
+        }
+    }
+
+    #[test]
+    fn servermeldungen_liest_den_rc_block_des_nutzdatenheaders_und_nur_ihn() {
+        assert_eq!(
+            servermeldungen(DOC_NUTZDATENHEADER_FEHLER),
+            vec![meldung(
+                "67890",
+                "Der Empfang von mindestens einer der Daten wurde nicht erfolgreich bestaetigt."
+            )],
+            "Rueckgabe und Stack gleichen Inhalts stehen einmal; der Datenteil zaehlt nicht"
+        );
+    }
+
+    #[test]
+    fn servermeldungen_kennt_code_null_als_ok() {
+        assert_eq!(servermeldungen(DOC_TRANSFERHEADER_OK), Vec::new());
+    }
+
+    #[test]
+    fn servermeldungen_nennt_verschiedene_eintraege_in_dokumentreihenfolge() {
+        let xml = "<Elster><TransferHeader><RC>\
+                   <Rueckgabe><Code>080015009</Code><Text>Zertifikat gesperrt</Text></Rueckgabe>\
+                   <Stack><Code>000000042</Code><Text>Weiter unten</Text></Stack>\
+                   <Stack><Code>080015009</Code><Text>Zertifikat gesperrt</Text></Stack>\
+                   </RC></TransferHeader></Elster>";
+        assert_eq!(
+            servermeldungen(xml),
+            vec![
+                meldung("080015009", "Zertifikat gesperrt"),
+                meldung("000000042", "Weiter unten")
+            ]
+        );
+    }
+
+    #[test]
+    fn servermeldungen_bereinigt_steuerzeichen_und_kuerzt() {
+        // ESC ist in XML 1.0 verboten (die Antwort wuerde nicht gelesen); U+009B (CSI, ein
+        // Steuerzeichen der C1-Gruppe) ist erlaubt und wirkt auf manchen Terminals wie ESC `[`.
+        let lang = "a".repeat(400);
+        let xml = format!(
+            "<Elster><TransferHeader><RC><Rueckgabe><Code>7</Code>\
+             <Text>\u{9b}31mrot\n\tZeile &amp; mehr</Text></Rueckgabe>\
+             <Stack><Code>8</Code><Text>{lang}</Text></Stack></RC></TransferHeader></Elster>"
+        );
+        let m = servermeldungen(&xml);
+        assert_eq!(m.first(), Some(&meldung("7", "31mrot Zeile & mehr")));
+        assert_eq!(m.get(1).map(|x| x.text.chars().count()), Some(MELDUNG_TEXT_MAX));
+        assert!(!m.iter().any(|x| x.text.chars().any(char::is_control)));
+    }
+
+    #[test]
+    fn servermeldungen_liefert_bei_unbrauchbarer_antwort_nichts() {
+        for t in [
+            "",
+            "kein xml",
+            "<Elster/>",
+            "<Elster><TransferHeader/></Elster>",
+            "<Elster><RC><Rueckgabe><Code>5</Code><Text>nicht im Header</Text></Rueckgabe></RC></Elster>",
+            "<Elster><TransferHeader><RC><Rueckgabe><Text>ohne Code</Text></Rueckgabe></RC></TransferHeader></Elster>",
+            "<!DOCTYPE Elster [<!ENTITY a \"b\">]><Elster/>",
+        ] {
+            assert_eq!(servermeldungen(t), Vec::new(), "{t}");
+        }
     }
 }

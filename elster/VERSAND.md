@@ -176,6 +176,12 @@ Stattdessen:
 2. Bei ERiC-Fehlern (`rc != 0`): den Rückgabetext ansehen (wird bei `rc != 0` mit ausgegeben) — der
    nennt den genauen ERiC-Fehlercode. Das Programm nennt außerdem den Ort von `eric.log`, aber nie
    dessen Inhalt: er enthält Auszüge der Erklärung.
+   Lehnt der ELSTER-Server ab (`rc=610101210`: Fehler im Transferheader, `rc=610101292`: Fehler im
+   Nutzdatenheader), druckt das Programm zusätzlich unter „Antwort des ELSTER-Servers“ Code und Text
+   jeder Meldung. Das ist der Grund der Ablehnung; `eric.log` brauchst du dafür nicht. Steht dort
+   stattdessen „nennt keinen auswertbaren Fehler“, bleibt nur `eric.log`. Das Programm druckt nie den
+   Datenteil der Antwort. Der Aufbau der Serverantwort stammt aus der ERiC-Dokumentation und ist an
+   einer echten Ablehnung noch nicht gemessen.
 3. Bei Unsicherheit, ob eine vorherige Übermittlung schon angekommen ist: NICHT einfach
    nochmal senden. Erst klären (z.B. über das ELSTER-Portal/eine vorherige Telenummer),
    ob der Fall schon drin ist.
