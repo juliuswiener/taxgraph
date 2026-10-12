@@ -6,11 +6,12 @@
 //! Ersatz der gelaufenen Parity-Suiten und muss die Python-Suite (Loeschstufe L2) ueberleben; deshalb steht er eigenstaendig
 //! neben `catala-toolchain`. Dieser Test liest nur die Datei und haelt fest, was den Job wirkungslos machen wuerde:
 //!
-//! - der Job existiert und ist nicht mit `continue-on-error` entschaerft;
-//! - genau ein Schritt ruft `orakel_erzeugen` auf, ohne `if`, ohne `continue-on-error`, mit `set -e`, ohne `|| true`;
-//! - in diesem Schritt stehen drei Zeilen wortgleich und in dieser Reihenfolge: `git ls-files --error-unmatch` auf die
-//!   Datei (`git diff` meldet fuer eine Datei ausserhalb des Index nichts, das waere ein stilles Gruen), der Aufruf des
-//!   Generators, `git diff --exit-code` auf dieselbe Datei; dazu `rustup default 1.99.0` (gleicher Pin wie Job `rust`);
+//! - der Job existiert, ist nicht mit `continue-on-error` entschaerft und hat kein `if` (ein uebersprungener Job ist nicht rot);
+//! - genau ein Schritt ruft `orakel_erzeugen` auf, ohne `if`, ohne `continue-on-error`, mit `set -e`, ohne `|| true`, ohne `exit`;
+//! - in diesem Schritt stehen drei Zeilen wortgleich, unmittelbar hintereinander und am Ende des Schritts: `git ls-files
+//!   --error-unmatch` auf die Datei (`git diff` meldet fuer eine Datei ausserhalb des Index nichts, das waere ein stilles
+//!   Gruen), der Aufruf des Generators, `git diff --exit-code` auf dieselbe Datei (eine Zeile dazwischen, etwa `git checkout`
+//!   der Datei, machte den Vergleich wirkungslos); dazu `rustup default 1.99.0` (gleicher Pin wie Job `rust`);
 //! - ein Schritt installiert `catala.1.2.1`;
 //! - kein Schritt des Jobs braucht Python: kein `pip`, kein `clerk build`, kein `assemble_catala`, kein `pytest`, kein
 //!   `requirements-ci`, kein `actions/setup-python`. Gemessen im frischen Worktree ohne `_build/` und
@@ -80,6 +81,9 @@ fn orakel_job(wf: &Value) -> Vec<String> {
     if entschaerft(job.get("continue-on-error")) {
         aus.push("der Job hat `continue-on-error`: ein roter Frischetor bliebe gruen".to_string());
     }
+    if job.get("if").is_some() {
+        aus.push("der Job hat ein `if`: er koennte uebersprungen werden (Status skipped, nicht rot)".to_string());
+    }
     let Some(schritte) = job.get("steps").and_then(Value::as_sequence) else {
         aus.push("der Job hat keine `steps`".to_string());
         return aus;
@@ -136,11 +140,15 @@ fn frischetor_schritt(schritt: &Value) -> Vec<String> {
         aus.push("der Frischetor-Schritt schluckt Fehler (`|| true` oder `set +e`)".to_string());
     }
     let zeilen: Vec<&str> = run.lines().map(str::trim).collect();
+    if zeilen.iter().any(|l| l.starts_with("exit")) {
+        aus.push("der Frischetor-Schritt beendet sich vorzeitig (`exit`)".to_string());
+    }
     let pos = |z: &str| zeilen.iter().position(|l| *l == z);
+    let letzte = zeilen.iter().rposition(|l| !l.is_empty());
     match (pos(LS_FILES), pos(ERZEUGEN), pos(DIFF)) {
-        (Some(a), Some(b), Some(c)) if a < b && b < c => {}
+        (Some(a), Some(b), Some(c)) if b == a + 1 && c == b + 1 && Some(c) == letzte => {}
         (a, b, c) => aus.push(format!(
-            "die Zeilen `{LS_FILES}`, `{ERZEUGEN}`, `{DIFF}` stehen nicht wortgleich und in dieser Reihenfolge im Schritt (Zeilen {a:?}, {b:?}, {c:?})"
+            "die Zeilen `{LS_FILES}`, `{ERZEUGEN}`, `{DIFF}` stehen nicht wortgleich, unmittelbar hintereinander und am Ende des Schritts (Zeilen {a:?}, {b:?}, {c:?}, letzte {letzte:?})"
         )),
     }
     if !zeilen.contains(&"rustup default 1.99.0") {
@@ -220,6 +228,11 @@ fn die_pruefung_schlaegt_an() {
         ("pytest", "      - uses: actions/checkout@v4\n", "      - uses: actions/checkout@v4\n      - run: python3 -m pytest tests/ -q\n"),
         ("setup-python", "      - uses: actions/checkout@v4\n", "      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n"),
         ("zweiter Generator-Schritt", "      - uses: actions/checkout@v4\n", "      - uses: actions/checkout@v4\n      - run: cargo run --example orakel_erzeugen\n"),
+        ("Job mit if", "    timeout-minutes: 45\n", "    timeout-minutes: 45\n    if: false\n"),
+        ("exit 0 zwischen Generator und Diff", "          git diff --exit-code -- rust/catala-sys/orakel/orakel.txt\n", "          exit 0\n          git diff --exit-code -- rust/catala-sys/orakel/orakel.txt\n"),
+        ("git checkout der Datei vor dem Diff", "          git diff --exit-code -- rust/catala-sys/orakel/orakel.txt\n", "          git checkout -- rust/catala-sys/orakel/orakel.txt\n          git diff --exit-code -- rust/catala-sys/orakel/orakel.txt\n"),
+        ("exit 0 am Anfang des Schritts", "          set -e\n          rustup", "          set -e\n          exit 0\n          rustup"),
+        ("Zeile hinter dem Diff", "--exit-code -- rust/catala-sys/orakel/orakel.txt\n", "--exit-code -- rust/catala-sys/orakel/orakel.txt\n          echo fertig\n"),
     ];
     for (was, alt, neu) in faelle {
         let text = GUT.replace(alt, neu);
