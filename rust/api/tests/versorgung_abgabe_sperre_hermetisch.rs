@@ -1,16 +1,18 @@
-//! Versorgungsbezuege sperren die Abgabe (Abweichung Nr. 42): die HTTP-Naht. Ohne `PARITY=1`, ohne Python, ohne Netz, ohne
-//! `ERiC`. Python laesst die Abgabe zu (Nr. 33: "stehen im Bescheid, aber nicht im XML").
+//! Versorgungsbezuege und die Abgabe-Sperre (Abweichung Nr. 42, gehoben fuer die getragenen Faelle mit Nr. 64): die HTTP-Naht.
+//! Ohne `PARITY=1`, ohne Python, ohne Netz, ohne `ERiC`. Python laesst die Abgabe zu (Nr. 33: "stehen im Bescheid, aber nicht im
+//! XML").
 //!
 //! **Worum es geht.** Wer einen Versorgungsbezug (Pension) angibt, bekommt ihn im Bescheid verrechnet. Die ELSTER-Erklaerung
-//! traegt ihn nicht: `versorgung_jahresrente` (Person A) und `versorgung_jahresrente_partner` (Ehegatte) haben kein
-//! Kennzeichen. Vorher stand der Betrag nur in `nicht_deklariert`, und die Abgabe ging durch.
+//! traegt ihn seit Abweichung Nr. 50 in den Zeilen 11 bis 13 der Anlage N (Person A, Ehegatte in der zweiten Anlage N). Bis
+//! Nr. 64 sperrte `GET /deklaration` (`unvollstaendig`) und `POST /einreichen` (409 `deklaration_unvollstaendig`) jeden
+//! bestaetigten Bezug ueber 0.
 //!
-//! **Warum es zaehlt.** Das Finanzamt haette den Bezug nie gesehen. Jetzt sperrt `GET /deklaration` (`unvollstaendig`) und
-//! `POST /einreichen` (409 `deklaration_unvollstaendig`) bei einem bestaetigten Betrag ueber 0; die Zahl im Bescheid bleibt.
+//! **Warum es zaehlt.** Julius hat die Sperre am 2026-10-12 fuer die getragenen Faelle gehoben. Sie bleibt, wo die Erklaerung den
+//! Bezug nicht voll traegt: ohne Zeile (Altersgrenze nicht erreicht, unter 1 Euro) und bei Beginn im Veranlagungsjahr (Zeile 14).
 //!
-//! **Wo es sitzt.** `rust/elster/src/deklaration.rs::Bau::versorgung`. Die Sperre selbst und ihre Grenzen prueft
-//! `rust/bescheid/tests/versorgung_abgabe_sperre.rs`; hier stehen die Scheiben `gesamt` und `rentner_gesamt` auf dem Weg
-//! `POST /event`, `GET /deklaration`, `GET /ergebnis`, `POST /einreichen`.
+//! **Wo es sitzt.** `rust/elster/src/deklaration.rs::Bau::versorgung_sperre`. Die Sperre selbst und ihre Grenzen pruefen
+//! `rust/bescheid/tests/versorgung_abgabe_sperre.rs` und `versorgung_sperre_faelle.rs`; hier stehen die Scheiben `gesamt` und
+//! `rentner_gesamt` auf dem Weg `POST /event`, `GET /deklaration`, `GET /ergebnis`, `POST /einreichen`.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -237,12 +239,13 @@ fn gesamt_zusammen() -> Paare {
     p
 }
 
-/// Bezug von `euro`, Bemessungsgrundlage gleich dem Bezug, Beginn 2025, beamtenrechtlich.
+/// Bezug von `euro`, Bemessungsgrundlage gleich dem Bezug, Beginn 2020 (vor dem Veranlagungsjahr 2025), beamtenrechtlich: ein
+/// Fall, den die Zeilen 11 bis 13 voll tragen (Abweichung Nr. 64).
 fn bezug_a(euro: i64) -> Paare {
     vec![
         (A, json!(euro * 100)),
         ("versorgung_bemessungsgrundlage", json!(euro * 100)),
-        ("versorgung_beginn_jahr", json!(2025)),
+        ("versorgung_beginn_jahr", json!(2020)),
         ("versorgung_art", json!("beamtenrechtlich")),
     ]
 }
@@ -251,9 +254,19 @@ fn bezug_b(euro: i64) -> Paare {
     vec![
         (B, json!(euro * 100)),
         ("versorgung_bemessungsgrundlage_partner", json!(euro * 100)),
-        ("versorgung_beginn_jahr_partner", json!(2025)),
+        ("versorgung_beginn_jahr_partner", json!(2020)),
         ("versorgung_art_partner", json!("beamtenrechtlich")),
     ]
+}
+
+/// Dieselben Felder mit Beginn im Veranlagungsjahr 2025: die Erklaerung traegt Zeile 14 nicht, die Abgabe sperrt.
+fn im_veranlagungsjahr(mut p: Paare) -> Paare {
+    for (f, w) in &mut p {
+        if f.starts_with("versorgung_beginn_jahr") {
+            *w = json!(2025);
+        }
+    }
+    p
 }
 
 /// Der Bruttoarbeitslohn (Nr. 3 der Lohnsteuerbescheinigung) enthaelt den Bezug (Abweichung Nr. 50): ein Bezug von `euro`
@@ -284,41 +297,60 @@ async fn kontrolle_bezug_null_sperrt_nichts() {
     assert!(nicht.contains(&A.to_owned()) && nicht.contains(&B.to_owned()), "{nicht:?}");
 }
 
-/// AK1, Rentner-Scheibe: der Bezug von Person A RECHNET (bestaetigte Zahl, hoeher als ohne Bezug) und sperrt die Abgabe; der
-/// Betrag steht seit Abweichung Nr. 50 in Zeile 11 und nicht mehr in `nicht_deklariert`. Ohne die Kontrolle "rechnet" belegte das
-/// Rot nichts.
+/// AK1, Rentner-Scheibe: der Bezug von Person A RECHNET (bestaetigte Zahl, hoeher als ohne Bezug); ein getragener Bezug (Beginn
+/// 2020) sperrt die Abgabe NICHT (Abweichung Nr. 64), einer mit Beginn im Veranlagungsjahr 2025 sperrt (Zeile 14). Der Betrag
+/// steht in beiden Faellen in Zeile 11 und nicht in `nicht_deklariert` (Nr. 50). Ohne die Kontrolle "rechnet" belegte das Rot nichts.
 #[tokio::test]
-async fn person_a_rechnet_und_sperrt_auf_rentner_gesamt() {
+async fn person_a_rechnet_und_sperrt_auf_rentner_gesamt_nur_im_beginnjahr() {
     let ohne = bericht(&fall_mit("rentner_gesamt", &rentner(2_000_000, "zusammen")).await).await.2;
     let p = mit(mit(rentner(2_000_000, "zusammen"), lohn_a(30_000)), bezug_a(30_000));
     let (offen, nicht, erg) = bericht(&fall_mit("rentner_gesamt", &p).await).await;
     assert_eq!(erg["grund"], json!("bestaetigt"), "der Bezug rechnet: {erg}");
     assert_ne!(erg["zahl_cent"], ohne["zahl_cent"], "der Bezug aendert die Zahl nicht: {erg}");
-    assert_eq!(offen, [A], "unvollstaendig: {offen:?}");
+    assert!(offen.is_empty(), "der getragene Bezug sperrt: {offen:?}");
     assert!(!nicht.contains(&A.to_owned()), "der Betrag steht in Zeile 11, nicht in nicht_deklariert: {nicht:?}");
+
+    let p = mit(mit(rentner(2_000_000, "zusammen"), lohn_a(30_000)), im_veranlagungsjahr(bezug_a(30_000)));
+    let (offen, nicht, erg) = bericht(&fall_mit("rentner_gesamt", &p).await).await;
+    assert_eq!(erg["grund"], json!("bestaetigt"), "der Bezug rechnet: {erg}");
+    assert_eq!(offen, [A], "Beginn im Veranlagungsjahr: unvollstaendig {offen:?}");
+    assert!(!nicht.contains(&A.to_owned()), "{nicht:?}");
 }
 
-/// AK1, Scheibe `gesamt` (Arbeitnehmer mit Versorgung): nur Person A ist dort beantwortbar, und sie sperrt.
+/// AK1, Scheibe `gesamt` (Arbeitnehmer mit Versorgung): nur Person A ist dort beantwortbar. Der getragene Bezug sperrt nicht,
+/// der mit Beginn im Veranlagungsjahr sperrt.
 #[tokio::test]
-async fn person_a_sperrt_auf_gesamt() {
+async fn person_a_sperrt_auf_gesamt_nur_im_beginnjahr() {
     // Der Kegel traegt `bruttoarbeitslohn` = 0; ein zweites Event auf dasselbe Feld waere ein Fehler, also ersetzt der Lohn
     // des Bezugs den Eintrag.
     let mut kegel = gesamt_zusammen();
     kegel.retain(|(f, _)| *f != "bruttoarbeitslohn");
-    let p = mit(mit(kegel, lohn_a(30_000)), bezug_a(30_000));
+    let p = mit(mit(kegel.clone(), lohn_a(30_000)), bezug_a(30_000));
     let (offen, _, erg) = bericht(&fall_mit("gesamt", &p).await).await;
     assert_eq!(erg["grund"], json!("bestaetigt"), "der Bezug rechnet: {erg}");
-    assert_eq!(offen, [A], "unvollstaendig: {offen:?}");
+    assert!(offen.is_empty(), "der getragene Bezug sperrt: {offen:?}");
+
+    let p = mit(mit(kegel, lohn_a(30_000)), im_veranlagungsjahr(bezug_a(30_000)));
+    let (offen, _, erg) = bericht(&fall_mit("gesamt", &p).await).await;
+    assert_eq!(erg["grund"], json!("bestaetigt"), "der Bezug rechnet: {erg}");
+    assert_eq!(offen, [A], "Beginn im Veranlagungsjahr: unvollstaendig {offen:?}");
 }
 
-/// AK2: der Ehegatte sperrt bei bestaetigter Zusammenveranlagung, und sein Bezug rechnet (bestaetigte Zahl).
+/// AK2: der Ehegatte zaehlt bei bestaetigter Zusammenveranlagung, und sein Bezug rechnet (bestaetigte Zahl). Ein getragener
+/// Bezug sperrt nicht, einer mit Beginn im Veranlagungsjahr sperrt.
 #[tokio::test]
-async fn der_ehegatte_sperrt_bei_zusammenveranlagung() {
+async fn der_ehegatte_sperrt_bei_zusammenveranlagung_nur_im_beginnjahr() {
     let p = mit(mit(rentner(2_000_000, "zusammen"), lohn_b(30_000)), bezug_b(30_000));
     let (offen, nicht, erg) = bericht(&fall_mit("rentner_gesamt", &p).await).await;
     assert_eq!(erg["grund"], json!("bestaetigt"), "der Bezug rechnet: {erg}");
-    assert_eq!(offen, [B], "unvollstaendig: {offen:?}");
+    assert!(offen.is_empty(), "der getragene Bezug des Ehegatten sperrt: {offen:?}");
     assert!(!nicht.contains(&B.to_owned()), "der Betrag steht in Zeile 11 der zweiten Anlage N: {nicht:?}");
+
+    let p = mit(mit(rentner(2_000_000, "zusammen"), lohn_b(30_000)), im_veranlagungsjahr(bezug_b(30_000)));
+    let (offen, nicht, erg) = bericht(&fall_mit("rentner_gesamt", &p).await).await;
+    assert_eq!(erg["grund"], json!("bestaetigt"), "der Bezug rechnet: {erg}");
+    assert_eq!(offen, [B], "Beginn im Veranlagungsjahr: unvollstaendig {offen:?}");
+    assert!(!nicht.contains(&B.to_owned()), "{nicht:?}");
 }
 
 /// AK2, Gegenprobe: bei Einzelveranlagung zaehlt der Bezug des Ehegatten im Bescheid nicht (gleiche Zahl mit und ohne), also
@@ -355,11 +387,9 @@ async fn ein_vorlaeufiger_betrag_behaelt_den_alten_grund() {
     assert!(!grund.contains("Versorgungsbezüge"), "{grund}");
 }
 
-/// AK1, `POST /einreichen`: eine vollstaendige Akte (`rust/fixtures/e2e/gesamt.json`) mit bestaetigtem Bezug wird mit 409
-/// `deklaration_unvollstaendig` abgewiesen, und die Liste nennt genau dieses Feld mit einem Grund, der die Sperre und das
-/// Formular nennt. Die Sperre liegt VOR dem Writer und vor `ERiC`: der Test setzt weder `ERiC` noch ein Schema voraus.
-#[tokio::test]
-async fn einreichen_mit_versorgungsbezug_ist_409_mit_eigenem_grund() {
+/// `POST /einreichen` auf der vollstaendigen Akte `rust/fixtures/e2e/gesamt.json` mit den Bezug-Feldern `paare`:
+/// `(Status, Antwort)`. Die Sperren liegen VOR dem Writer und vor `ERiC`: der Test setzt weder `ERiC` noch ein Schema voraus.
+async fn einreichen_der_akte(paare: Paare) -> (u16, Value) {
     let d = dienst();
     let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../fixtures/e2e/gesamt.json");
     let mut akte: Value = serde_json::from_slice(&std::fs::read(pfad).unwrap()).unwrap();
@@ -370,11 +400,19 @@ async fn einreichen_mit_versorgungsbezug_ist_409_mit_eigenem_grund() {
         serde_json::to_vec(&akte).unwrap(),
     )
     .unwrap();
-    for (feld, wert) in bezug_a(30_000) {
+    for (feld, wert) in paare {
         let (status, antwort) = sende(&d, "POST", "/fall/vs/event", Some(&ereignis(feld, &wert, true))).await;
         assert_eq!(status, 201, "POST /event {feld}: {antwort}");
     }
-    let (status, a) = sende(&d, "POST", "/fall/vs/einreichen", Some(&json!({}))).await;
+    sende(&d, "POST", "/fall/vs/einreichen", Some(&json!({}))).await
+}
+
+/// Abweichung Nr. 64, `POST /einreichen`: ein Bezug mit Beginn im Veranlagungsjahr 2025 wird mit 409
+/// `deklaration_unvollstaendig` abgewiesen, und die Liste nennt genau dieses Feld mit einem Grund, der Zeile 14, die Sperre und das
+/// Formular nennt.
+#[tokio::test]
+async fn einreichen_mit_beginn_im_veranlagungsjahr_ist_409_mit_eigenem_grund() {
+    let (status, a) = einreichen_der_akte(im_veranlagungsjahr(bezug_a(30_000))).await;
     assert_eq!(status, 409, "erwartet 409, erhalten {status}: {a}");
     assert_eq!(a["grund"], "deklaration_unvollstaendig", "{a}");
     let eintraege = a["unvollstaendig"].as_array().unwrap();
@@ -385,7 +423,46 @@ async fn einreichen_mit_versorgungsbezug_ist_409_mit_eigenem_grund() {
     );
     let grund = eintraege[0]["grund"].as_str().unwrap();
     assert!(
-        grund.contains("gesperrt") && grund.contains("Formular"),
-        "der Grund nennt die Sperre nicht: {grund}"
+        grund.contains("Zeile 14") && grund.contains("gesperrt") && grund.contains("Formular"),
+        "der Grund nennt Zeile 14, die Sperre und das Formular nicht: {grund}"
+    );
+}
+
+/// Abweichung Nr. 64, `POST /einreichen`: ein Bezug, den die Zeilen 11 bis 13 nicht tragen (Alters-Gate nicht erfuellt: 62 Jahre bei
+/// Beginn), wird mit 409 und dem Grund "nicht in die Zeilen 11 bis 13" abgewiesen.
+#[tokio::test]
+async fn einreichen_ohne_zeile_ist_409_mit_eigenem_grund() {
+    let mut p = bezug_a(30_000);
+    for (f, w) in &mut p {
+        if *f == "versorgung_art" {
+            *w = json!("altersgrenze_sonstige");
+        }
+    }
+    p.push(("versorgung_alter_bei_beginn", json!(62)));
+    let (status, a) = einreichen_der_akte(p).await;
+    assert_eq!(status, 409, "erwartet 409, erhalten {status}: {a}");
+    assert_eq!(a["grund"], "deklaration_unvollstaendig", "{a}");
+    let eintraege = a["unvollstaendig"].as_array().unwrap();
+    assert_eq!(eintraege.iter().filter_map(|e| e["feld_id"].as_str()).collect::<Vec<_>>(), [A], "{a}");
+    let grund = eintraege[0]["grund"].as_str().unwrap();
+    assert!(
+        grund.contains("nicht in die Zeilen 11 bis 13") && grund.contains("gesperrt") && grund.contains("Formular"),
+        "{grund}"
+    );
+}
+
+/// Abweichung Nr. 64, `POST /einreichen`: ein getragener Bezug (Beginn 2020) antwortet NICHT mehr 409
+/// `deklaration_unvollstaendig`. Wie weit die Abgabe danach kommt, haengt von Schema, Hersteller-ID und `ERiC` der Umgebung ab
+/// (ohne Hersteller-ID: 422 `xml_nicht_baubar`); der Test prueft nur, dass die Versorgungs-Sperre nicht mehr greift und kein
+/// Eintrag der Versorgungsfelder uebrig bleibt.
+#[tokio::test]
+async fn einreichen_mit_getragenem_bezug_ist_nicht_mehr_409_deklaration_unvollstaendig() {
+    let (status, a) = einreichen_der_akte(bezug_a(30_000)).await;
+    assert_ne!(a["grund"], json!("deklaration_unvollstaendig"), "die Sperre greift noch: {status} {a}");
+    assert!(
+        a["unvollstaendig"]
+            .as_array()
+            .is_none_or(|e| e.iter().all(|x| !x["feld_id"].as_str().unwrap_or("").starts_with("versorgung_"))),
+        "ein Eintrag der Versorgungsfelder bleibt: {a}"
     );
 }

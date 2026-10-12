@@ -521,9 +521,10 @@ async fn ohne_angaben_zum_ehegatten_bleibt_die_erklaerung_abgabefaehig() {
 /// Die Deklaration (`GET /deklaration`, schreibt nichts, reicht nichts ein): Lohn und Steuerklasse des Ehegatten stehen in
 /// Anlage N der Person B (E0200201, E0200002). Der Bezug des Ehegatten steht seit Abweichung Nr. 50 in den Zeilen 11 bis 13
 /// der zweiten Anlage N (E0200801, E0200902, E0201307, wie bei Person A); die Art (Weiche des Alters-Gates) ist kein Feld der
-/// Erklaerung und bleibt mit Grund in `nicht_deklariert`, nichts verschwindet unsichtbar. Die Abgabe bleibt gesperrt
-/// (Abweichung Nr. 42): `unvollstaendig` nennt den bestaetigten Betrag des Ehegatten bei Zusammenveranlagung (die Sperre
-/// selbst prueft `versorgung_abgabe_sperre_hermetisch.rs`).
+/// Erklaerung und bleibt mit Grund in `nicht_deklariert`, nichts verschwindet unsichtbar. Der Bezug des Ehegatten beginnt hier
+/// 2025, im Veranlagungsjahr: die Abgabe bleibt gesperrt (Abweichung Nr. 42, seit Nr. 64 nur noch wegen Zeile 14), und
+/// `unvollstaendig` nennt den bestaetigten Betrag des Ehegatten bei Zusammenveranlagung (die Sperre selbst prueft
+/// `versorgung_abgabe_sperre_hermetisch.rs`).
 #[tokio::test]
 async fn die_deklaration_traegt_lohn_steuerklasse_und_die_versorgungszeilen_und_nennt_die_art_als_nicht_deklariert() {
     let mut p = mit(paar(2_000_000), lohn_partner(40_000));
@@ -561,8 +562,16 @@ async fn die_deklaration_traegt_lohn_steuerklasse_und_die_versorgungszeilen_und_
         .collect();
     assert!(
         offen.contains(&"versorgung_jahresrente_partner"),
-        "der Bezug des Ehegatten sperrt die Abgabe nicht: {offen:?}"
+        "der Bezug des Ehegatten mit Beginn im Veranlagungsjahr sperrt die Abgabe nicht: {offen:?}"
     );
+    let grund = dekl["unvollstaendig"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["feld_id"] == json!("versorgung_jahresrente_partner"))
+        .map(|e| e["grund"].as_str().unwrap().to_owned())
+        .unwrap();
+    assert!(grund.contains("Zeile 14"), "die Sperre nennt Zeile 14 nicht: {grund}");
 }
 
 /// Ein Versorgungsbezug des Ehegatten ohne Beginnjahr und Bemessungsgrundlage sperrt mit dem bestehenden Grund
