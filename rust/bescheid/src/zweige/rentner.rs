@@ -176,7 +176,8 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     // § 23 und § 22 Nr. 3 additiv zu renten.
     let p23 = p23_privatverkauf(&q, vz, p)?;
     renten = add(renten, p23)?;
-    renten = add(renten, nr3_euro(f)?)?;
+    let nr3 = nr3_euro(f)?;
+    renten = add(renten, nr3)?;
     // §§ 13-18 Gewinn: laufend + § 16-vg netto (+ Gewinn des Ehegatten erst danach, s. u.).
     let netto_vg = netto_vg(f)?;
     let (laufend, mitu) = laufender_gewinn(f, &q)?;
@@ -188,16 +189,17 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     let zusammen = veranlagung.zusammen();
     let lohn = feld_euro_oder_null(f, "bruttoarbeitslohn")?;
     let ns = einkuenfte_ns_aus_lohn(f, vz, p, lohn, Euro::new(0), zusammen)?;
-    // § 24a-Bemessung: Arbeitslohn plus Nicht-§19-Einkuenfte (Gewinn + § 23); Versorgungsbezuege und
-    // Leibrente § 22 Nr. 1 sind ausgenommen (§ 24a Satz 2 Nr. 1 und 2). § 24a gilt je Person: der Ehegatte hat
-    // eigenen Lohn und eigenes Geburtsjahr (Abweichung Nr. 36) und seinen eigenen Gewinn (Abweichung Nr. 62), sonst wie im
-    // Gesamt-Zweig (`entlastungen`, die einzige Stelle der Bemessung). Hier stehen nur die uebrigen Einkuenfte von Person A.
+    // § 24a-Bemessung: Arbeitslohn plus Nicht-§19-Einkuenfte (Gewinn + § 23 + § 22 Nr. 3, Abweichung Nr. 63; Python Zeile 1195
+    // laesst Nr. 3 aus); Versorgungsbezuege und Leibrente § 22 Nr. 1 sind ausgenommen (§ 24a Satz 2 Nr. 1 und 2). § 24a gilt je
+    // Person: der Ehegatte hat eigenen Lohn und eigenes Geburtsjahr (Abweichung Nr. 36) und seinen eigenen Gewinn (Abweichung
+    // Nr. 62), sonst wie im Gesamt-Zweig (`entlastungen`, die einzige Stelle der Bemessung). Hier stehen nur die uebrigen
+    // Einkuenfte von Person A.
     let (alt_a, alt_b, ent) = entlastungen(
         f,
         vz,
         p,
         zusammen,
-        summe_euro(&[laufend, netto_vg, p23, rav_rente.eingeschlossen])?,
+        summe_euro(&[laufend, netto_vg, p23, nr3, rav_rente.eingeschlossen])?,
     )?;
     let alt = add(alt_a, alt_b)?;
     let (gewinn_partner, _mitu_partner, netto_vg_partner) = gewinn_partner_anteil(f)?;

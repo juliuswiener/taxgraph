@@ -490,15 +490,12 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
     let rav_rente = renten_nach_pauschbetrag(rav.ertragsanteil, rav.voll, vz, p)?;
     // § 24a/§ 24b mindern den GdE VOR den Abzuegen. Die uebrigen Einkuenfte von Person A sind NUR ihre eigenen: der Gewinn des
     // Ehegatten (`gewinn_partner`) steht in `g.einkuenfte_gewinn`, aber nicht hier; `entlastungen` bemisst ihn bei Person B.
-    // Beifund: `g.einkuenfte_sonstige` ist an dieser Stelle noch 0 (der Wert entsteht erst weiter unten); § 23 und § 22 Nr. 3
-    // gehen deshalb nicht in die Bemessung von A ein, im Rentner-Zweig ist § 23 dabei. Vorbestehend, nicht Teil von Nr. 62.
-    let uebrige_a = summe_euro(&[
-        vv,
-        laufend,
-        netto_vg,
-        g.einkuenfte_sonstige,
-        rav_rente.eingeschlossen,
-    ])?;
+    // § 24a Satz 2 nimmt nur Versorgungsbezuege, Leibrenten (Nr. 2) und Teile des § 22 Nr. 4 und 5 heraus: der private Verkauf (§ 23)
+    // und die sonstigen Leistungen (§ 22 Nr. 3) zaehlen mit (Abweichung Nr. 63; Python liest hier `einkuenfte_sonstige`, das erst
+    // spaeter entsteht, `bescheid_zweige.py` Zeile 671/770). Die Leibrente (`rav_rente.gesamt`) und der KiSt-Ueberhang gehen nicht hinein.
+    let p23 = p23_privatverkauf(&q, vz, p)?;
+    let nr3 = nr3_euro(f)?;
+    let uebrige_a = summe_euro(&[vv, laufend, netto_vg, p23, nr3, rav_rente.eingeschlossen])?;
     let (alt_a, alt_b, ent24b) = entlastungen(f, vz, p, zusammen, uebrige_a)?;
     g.altersentlastungsbetrag = add(alt_a, alt_b)?;
     g.entlastungsbetrag_alleinerziehende = ent24b;
@@ -521,11 +518,7 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
     g.aussergewoehnliche_belastungen = s.aussergewoehnliche_belastungen;
     let kapitaleinkuenfte = p20_kapitaleinkuenfte(f, zusammen, vz, p)?;
     // § 23 + § 22 Nr. 3 + § 22 Nr. 5 in einkuenfte_sonstige; der KiSt-Ueberhang laeuft mangels Slot dort mit.
-    g.einkuenfte_sonstige = summe_euro(&[
-        p23_privatverkauf(&q, vz, p)?,
-        nr3_euro(f)?,
-        rav_rente.gesamt,
-    ])?;
+    g.einkuenfte_sonstige = summe_euro(&[p23, nr3, rav_rente.gesamt])?;
     g.einkuenfte_sonstige = add(g.einkuenfte_sonstige, ueberhang)?;
     // § 10d Abs. 2 Verlustvortrag, § 33a, DBA (§ 34c): auf der vollen GdE.
     let gde_p10d = gesamt_gde(&gde_fall(&g), p)?;
