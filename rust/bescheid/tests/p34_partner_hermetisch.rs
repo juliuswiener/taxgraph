@@ -194,7 +194,7 @@ fn gesperrt(g: &str) -> Ausgang {
 }
 
 /// Zusammenveranlagung, A mit 60.000 Euro Lohn, der Partner mit `x_euro` Veraeusserungsgewinn (Freibetrag § 16 Abs. 4
-/// erfuellt, ab 181.000 Euro null). Der Partner-Antrag samt Berechtigung (geboren 1960) steht NICHT drin; der Aufrufer
+/// erfuellt, ab 181.000 Euro null). Der Partner-Antrag samt Berechtigung (geboren 1965) steht NICHT drin; der Aufrufer
 /// setzt ihn mit [`mit_antrag`].
 fn partner_gewinn(x_euro: i64) -> Paare {
     vec![
@@ -214,11 +214,14 @@ fn partner_gewinn(x_euro: i64) -> Paare {
     ]
 }
 
-/// Die Antrags-Angaben des Partners: Antrag gestellt, geboren 1960 (65 Jahre), nicht berufsunfaehig, nie zuvor genutzt.
+/// Die Antrags-Angaben des Partners: Antrag gestellt, geboren 1965 (60 Jahre), nicht berufsunfaehig, nie zuvor genutzt.
+/// 1965, nicht 1960: ab 55 Jahren (Abs. 3) ist der Partner mit 60 berechtigt, aber § 24a verlangt 64 vollendete Jahre. Mit Jahrgang
+/// 1960 bekaeme der Partner 627 Euro Altersentlastung aus seinem Gewinn (Abweichung Nr. 62, § 24a Satz 4), und der Gesamtbetrag
+/// jeder Zeile der Handrechnung oben saenke um 627 Euro. Die Handrechnung rechnet keine Altersentlastung.
 fn mit_antrag(mut basis: Paare) -> Paare {
     basis.extend([
         ("antrag_ermaessigter_satz_partner", json!(true)),
-        ("geburtsjahr_partner", json!(1960)),
+        ("geburtsjahr_partner", json!(1965)),
         ("dauernd_berufsunfaehig_partner", json!(false)),
         ("ermaessigung_einmal_genutzt_partner", json!(false)),
     ]);
@@ -466,7 +469,7 @@ fn einzelveranlagung_liest_die_partner_angaben_nicht() {
     let ohne = kette(gesamt(&einzel(Vec::new())));
     let mit_antrag = kette(gesamt(&einzel(vec![
         ("antrag_ermaessigter_satz_partner", json!(true)),
-        ("geburtsjahr_partner", json!(1960)),
+        ("geburtsjahr_partner", json!(1965)),
         ("dauernd_berufsunfaehig_partner", json!(false)),
         ("ermaessigung_einmal_genutzt_partner", json!(false)),
     ])));
@@ -668,7 +671,8 @@ fn die_rentner_scheibe_rechnet_den_partner_antrag_ebenso() {
         if antrag {
             b.extend([
                 ("antrag_ermaessigter_satz_partner", json!(true)),
-                ("geburtsjahr_partner", json!(1960)),
+                // 1965 (60 Jahre), nicht 1960: kein § 24a fuer den Partner, die Handrechnung oben rechnet keinen
+                ("geburtsjahr_partner", json!(1965)),
                 ("dauernd_berufsunfaehig_partner", json!(false)),
                 ("ermaessigung_einmal_genutzt_partner", json!(false)),
             ]);

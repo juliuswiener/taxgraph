@@ -155,12 +155,18 @@ pub(super) fn pauschbetrag_partner(f: &Felder, vz: Vz, p: &bindung::Params) -> R
 }
 
 /// § 24a Altersentlastung Person A/B und § 24b Entlastungsbetrag: `(alt24a_a, alt24a_b, ent24b)`.
+///
+/// Die Bemessung des § 24a steht NUR hier und gilt je Person (Satz 4; Abweichung Nr. 62, Bezug Nr. 36): Arbeitslohn ohne
+/// Versorgungsbezug der Person plus `max(0, uebrige Einkuenfte der Person)`. `uebrige_a` sind die uebrigen Einkuenfte von Person A
+/// (der Aufrufer kennt sie: Vermietung, eigener Gewinn, Sonstige, Leistungen mit Leistungsmitteilung), NICHT gefloort. Die uebrigen
+/// Einkuenfte von Person B sind ihr laufender und ihr § 16-Gewinn nach Freibetrag (`gewinn_partner_anteil`); sonst kennt das Modell
+/// fuer B nichts. Der Gewinn des Ehegatten gehoert nie in die Bemessung von Person A.
 pub(super) fn entlastungen(
     f: &Felder,
     vz: Vz,
     p: &bindung::Params,
     zusammen: bool,
-    positive_andere: Euro,
+    uebrige_a: Euro,
 ) -> R<(Euro, Euro, Euro)> {
     let jahr = i64::from(vz.jahr());
     // § 24a Satz 2 Nr. 1: Versorgungsbezuege (§ 19 Abs. 2) bleiben ausser Betracht. Der Lohn enthaelt den Bezug (Abweichung
@@ -173,11 +179,11 @@ pub(super) fn entlastungen(
                 feld_euro_oder_null(f, "bruttoarbeitslohn")?.get(),
                 &versorgungsbezug(f, &VERSORGUNG_A)?,
             )?),
-            positive_andere_einkuenfte: positive_andere,
+            positive_andere_einkuenfte: max0(uebrige_a),
         },
         p,
     )?;
-    // § 24a PER PERSON: der Ehegatte hat eigene Kohorte und Bemessung.
+    // § 24a PER PERSON (Satz 4): der Ehegatte hat eigene Kohorte und eigene Bemessung, auch aus seinem eigenen Gewinn.
     let alt_b = if zusammen {
         p24a_altersentlastung(
             &P24aAltersentlastungEingabe {
@@ -187,7 +193,7 @@ pub(super) fn entlastungen(
                     feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?.get(),
                     &versorgungsbezug(f, &VERSORGUNG_B)?,
                 )?),
-                positive_andere_einkuenfte: Euro::new(0),
+                positive_andere_einkuenfte: max0(gewinn_partner_anteil(f)?.0),
             },
             p,
         )?
@@ -482,14 +488,18 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
     // Nr. 4) geht in die Bemessung des Altersentlastungsbetrags ein (§ 24a Satz 2).
     let rav = rav_bav_einkuenfte(f, &q, vz, p)?;
     let rav_rente = renten_nach_pauschbetrag(rav.ertragsanteil, rav.voll, vz, p)?;
-    // § 24a/§ 24b mindern den GdE VOR den Abzuegen.
-    let positive_andere = max0(summe_euro(&[
+    // § 24a/§ 24b mindern den GdE VOR den Abzuegen. Die uebrigen Einkuenfte von Person A sind NUR ihre eigenen: der Gewinn des
+    // Ehegatten (`gewinn_partner`) steht in `g.einkuenfte_gewinn`, aber nicht hier; `entlastungen` bemisst ihn bei Person B.
+    // Beifund: `g.einkuenfte_sonstige` ist an dieser Stelle noch 0 (der Wert entsteht erst weiter unten); § 23 und § 22 Nr. 3
+    // gehen deshalb nicht in die Bemessung von A ein, im Rentner-Zweig ist § 23 dabei. Vorbestehend, nicht Teil von Nr. 62.
+    let uebrige_a = summe_euro(&[
         vv,
-        g.einkuenfte_gewinn,
+        laufend,
+        netto_vg,
         g.einkuenfte_sonstige,
         rav_rente.eingeschlossen,
-    ])?);
-    let (alt_a, alt_b, ent24b) = entlastungen(f, vz, p, zusammen, positive_andere)?;
+    ])?;
+    let (alt_a, alt_b, ent24b) = entlastungen(f, vz, p, zusammen, uebrige_a)?;
     g.altersentlastungsbetrag = add(alt_a, alt_b)?;
     g.entlastungsbetrag_alleinerziehende = ent24b;
     (
@@ -566,5 +576,131 @@ pub(super) fn gde_fall(g: &GesamtfallEingabe) -> GesamtfallEingabe {
         altersentlastungsbetrag: g.altersentlastungsbetrag,
         entlastungsbetrag_alleinerziehende: g.entlastungsbetrag_alleinerziehende,
         ..leerer_gesamtfall(g.vz, g.zusammenveranlagung)
+    }
+}
+
+/// Die Hoehe von `alt24a_a` und `alt24a_b` einzeln (Abweichung Nr. 62); die Steuerwirkung und die beiden Zweige pruefen
+/// `tests/altersentlastung_je_ehegatte_hermetisch.rs`. Alle Faelle VZ 2025, Jahrgang 1955: Zeile 2020 der Tabelle in § 24a,
+/// 16,0 %, Hoechstbetrag 760 EUR (`sources/gesetze-im-internet/estg_p24a_2026-07-13.txt`).
+#[cfg(test)]
+mod tests {
+    use serde_json::{json, Value};
+
+    use super::*;
+    use crate::testhilfe::{felder, params, store};
+
+    /// `(alt24a_a, alt24a_b)` in EUR. `uebrige_a_euro` sind die uebrigen Einkuenfte von Person A, wie der Aufrufer sie bildet.
+    fn alt(veranlagung: &str, felder_cent: &[(&str, Value)], uebrige_a_euro: i64) -> (i64, i64) {
+        let mut ereignisse = vec![("veranlagung", json!(veranlagung), true)];
+        ereignisse.extend(felder_cent.iter().map(|(f, w)| (*f, w.clone(), true)));
+        let f = felder(&store(&ereignisse));
+        let zusammen = veranlagung == "zusammen";
+        let (a, b, _ent) = entlastungen(&f, Vz::Vz2025, params(), zusammen, Euro::new(uebrige_a_euro)).unwrap();
+        (a.get(), b.get())
+    }
+
+    /// AK3: beide 1955 mit eigenem Gewinn, A 2.000 EUR, B 3.000 EUR. Je Person 16,0 %: A 0,16 · 2.000 = 320, B 0,16 · 3.000 = 480.
+    /// Der Deckel von 760 EUR gilt je Person und wird nicht erreicht. Eine gemeinsame Bemessung gaebe 0,16 · 5.000 = 800, gedeckelt
+    /// 760 EUR, und ein Betrag mehr bei der Person mit dem kleineren Gewinn.
+    #[test]
+    fn beide_ehegatten_bekommen_16_prozent_ihres_eigenen_gewinns() {
+        let ehegatten = [
+            ("geburtsjahr", json!(1955)),
+            ("geburtsjahr_partner", json!(1955)),
+            ("einkuenfte_gewinn_partner", json!(300_000)),
+        ];
+        assert_eq!(alt("zusammen", &ehegatten, 2_000), (320, 480));
+    }
+
+    /// Der Ehegatte mit Lohn UND Gewinn: Bemessung = Lohn 2.000 EUR + Gewinn 1.000 EUR = 3.000 EUR, 0,16 · 3.000 = 480 EUR. Nur der
+    /// Lohn gaebe 320, nur der Gewinn 160. Person A hat weder Lohn noch uebrige Einkuenfte: 0.
+    #[test]
+    fn der_ehegatte_mit_lohn_und_gewinn_bemisst_beides() {
+        let ehegatten = [
+            ("geburtsjahr", json!(1955)),
+            ("geburtsjahr_partner", json!(1955)),
+            ("bruttoarbeitslohn_partner", json!(200_000)),
+            ("einkuenfte_gewinn_partner", json!(100_000)),
+        ];
+        assert_eq!(alt("zusammen", &ehegatten, 0), (0, 480));
+    }
+
+    /// § 24a Satz 1: nur die POSITIVE Summe der uebrigen Einkuenfte. Ein Verlust beim Gewinn mindert den Lohn nicht: B hat Lohn
+    /// 2.000 EUR und Gewinn −5.000 EUR, Bemessung 2.000 + max(0, −5.000) = 2.000, 0,16 · 2.000 = 320. A hat Lohn 2.000 EUR und uebrige
+    /// Einkuenfte −1.000 EUR: ebenso 320.
+    #[test]
+    fn ein_verlust_der_uebrigen_einkuenfte_mindert_den_lohn_nicht() {
+        let ehegatten = [
+            ("geburtsjahr", json!(1955)),
+            ("geburtsjahr_partner", json!(1955)),
+            ("bruttoarbeitslohn", json!(200_000)),
+            ("bruttoarbeitslohn_partner", json!(200_000)),
+            ("einkuenfte_gewinn_partner", json!(-500_000)),
+        ];
+        assert_eq!(alt("zusammen", &ehegatten, -1_000), (320, 320));
+    }
+
+    /// Der Gewinn des Ehegatten (80.000 EUR) gehoert nicht in die Bemessung von Person A: A hat nichts (0), B ist 1990 und
+    /// bekommt nichts (0). Vorher bekam A hier 760 EUR.
+    #[test]
+    fn der_gewinn_des_ehegatten_entlastet_person_a_nicht() {
+        let ehegatten = [
+            ("geburtsjahr", json!(1955)),
+            ("geburtsjahr_partner", json!(1990)),
+            ("einkuenfte_gewinn_partner", json!(8_000_000)),
+        ];
+        assert_eq!(alt("zusammen", &ehegatten, 0), (0, 0));
+    }
+
+    /// Person B 1955 mit Gewinn 80.000 EUR, Person A 1990: B bekommt den Deckel, 0,16 · 80.000 = 12.800, gedeckelt 760 EUR.
+    /// Vorher bekam B nie etwas.
+    #[test]
+    fn der_aeltere_ehegatte_mit_eigenem_gewinn_bekommt_den_deckel() {
+        let ehegatten = [
+            ("geburtsjahr", json!(1990)),
+            ("geburtsjahr_partner", json!(1955)),
+            ("einkuenfte_gewinn_partner", json!(8_000_000)),
+        ];
+        assert_eq!(alt("zusammen", &ehegatten, 0), (0, 760));
+    }
+
+    /// Einzelveranlagung: `alt24a_b` bleibt 0, auch mit Jahrgang, Lohn (2.000 EUR) und Gewinn des Partners in den Feldern; A
+    /// bekommt aus 20.000 EUR uebrigen Einkuenften 0,16 · 20.000 = 3.200, gedeckelt 760 EUR.
+    #[test]
+    fn einzelveranlagung_rechnet_nur_person_a() {
+        let felder_partner = [
+            ("geburtsjahr", json!(1955)),
+            ("geburtsjahr_partner", json!(1955)),
+            ("bruttoarbeitslohn_partner", json!(200_000)),
+            ("einkuenfte_gewinn_partner", json!(5_000_000)),
+        ];
+        assert_eq!(alt("einzel", &felder_partner, 20_000), (760, 0));
+    }
+
+    /// Der § 16-Gewinn des Ehegatten (1.000 EUR, ohne Freibetrag, weil die zwei Angaben zu § 16 Abs. 4 fehlen) geht in dessen
+    /// Bemessung ein: 0,16 · 1.000 = 160 EUR. Ohne ihn ergaebe sich 0 (der laufende Gewinn ist 0).
+    #[test]
+    fn der_veraeusserungsgewinn_des_ehegatten_geht_in_dessen_bemessung() {
+        let ehegatten = [
+            ("geburtsjahr", json!(1990)),
+            ("geburtsjahr_partner", json!(1955)),
+            ("rentner_veraeusserungsgewinn_partner", json!(100_000)),
+        ];
+        assert_eq!(alt("zusammen", &ehegatten, 0), (0, 160));
+    }
+
+    /// Der Freibetrag nach § 16 Abs. 4 mindert den Gewinn des Ehegatten VOR der Bemessung: 30.000 EUR Gewinn mit beiden Angaben
+    /// (ab 55 Jahren, erstmals) liegen unter dem Freibetrag von 45.000 EUR, netto 0, also `alt24a_b` = 0. Mit dem rohen Gewinn
+    /// ergaebe sich 0,16 · 30.000 = 4.800, gedeckelt 760 EUR.
+    #[test]
+    fn der_freibetrag_nach_p16_4_mindert_den_gewinn_vor_der_bemessung() {
+        let ehegatten = [
+            ("geburtsjahr", json!(1990)),
+            ("geburtsjahr_partner", json!(1955)),
+            ("rentner_veraeusserungsgewinn_partner", json!(3_000_000)),
+            ("rentner_alter_55_oder_berufsunfaehig_partner", json!(true)),
+            ("rentner_freibetrag_erstmalig_partner", json!(true)),
+        ];
+        assert_eq!(alt("zusammen", &ehegatten, 0), (0, 0));
     }
 }
