@@ -210,7 +210,6 @@ RE_, RA = BER / "rauchprobe-echtdaten.md", BER / "rauchprobe-abweichungen.md"
 CB = BER / "cutover-bau.md"
 ZF1, ZF2 = LOG1 / "zusammenfassung.txt", LOG2 / "zusammenfassung.txt"
 DEKL = "rust/elster/src/deklaration.rs"
-APIT = "rust/parity/tests/api_http_paritaet.rs"
 FIXTURE = "rust/fixtures/wertwache_orakel.json"
 ARCHIV = str(T / "cutover-smoke" / "backups" / "*.tar.gz")
 
@@ -237,10 +236,8 @@ def fundstellen() -> list[P]:
         ("Cargo.toml overflow-checks (Waechter)", R, r"`rust/Cargo\.toml:(68)`\), und der Test", "rust/Cargo.toml", "^overflow-checks = true"),
         ("Cargo.toml overflow-checks (Betriebsfolge)", R, r"`rust/Cargo\.toml:(68)`\);", "rust/Cargo.toml", "^overflow-checks = true"),
         ("Makefile --release", R, r"`Makefile:(119)`", "Makefile", "Ein Bau mit `--release`"),
-        ("Test 1h/1i Block", R, r"^\s*`api_http_paritaet\.rs:(6027)`", APIT, "// 1h/1i"),
-        ("Test dokumentierte_abweichungen", R, r"beginnt bei Zeile (5848)", APIT, "fn dokumentierte_abweichungen"),
-        ("Test 1g Kommentar", R, r"api_http_paritaet\.rs:(5964)", APIT, "1g: Scheibe `gesamt`, EIN Betrag"),
-        ("Test 1g Test", R, r"Test ab Zeile (6309)", APIT, "// 1g: Summen des Gesamt-Scopes"),
+        # L1 (2026-10-12): Fundstellen in rust/parity/tests/api_http_paritaet.rs (Test 1h/1i, dokumentierte_abweichungen, 1g)
+        # entfallen -- die Datei ist geloescht. Die Zeilen stehen weiter im Doc und gelten fuer `git show 37269912:<Datei>`.
         ("deklaration.rs p23_gewinn", R, r"elster/src/deklaration\.rs:(959-975)", DEKL, "checked_sub"),
         ("api deklaration.rs Ueberlauf", R, r"api/src/deklaration\.rs:(27-28)", "rust/api/src/deklaration.rs", "matches!\\(e, DeklarationsFehler::Ueberlauf"),
         ("deklaration.rs wrapping_add", R, r"`deklaration\.rs:(936)`", DEKL, "ponytail: `wrapping_add`"),
@@ -275,14 +272,10 @@ def vault_pfade(texte: dict[str, str], wurzel: Path = VAULT_WURZEL) -> list[P]:
 def tabelle() -> list[P]:
     rows: list[P] = []
     # --- Baum
+    # L1 (2026-10-12): die Zeilen "Parity-Suiten", "Suiten mit Fallzahl-Schalter" und "Suiten ohne Schalter" zaehlten Dateien unter
+    # rust/parity/tests; das Verzeichnis ist geloescht, die Doc-Zahlen gelten fuer `git show 37269912:rust/parity/tests/`.
     rows += [
-        P("Parity-Suiten", R, r"→ (\d+); `make golden`", lauf=lambda: str(len(glob.glob(str(REPO / "rust/parity/tests/*_paritaet.rs")))),
-          kommando="ls rust/parity/tests/*_paritaet.rs | wc -l"),
         b("Golden-Faelle (Pin im Test)", R, r"Vergleichssuiten und die (\d+) Golden-Fälle", 'grep -n "^N_FAELLE = " tests/test_golden_fallzahl.py', ist=r"= (\d+)"),
-        P("Suiten mit Fallzahl-Schalter", R, r"jede der (\d+) Suiten mit Fallzahl-Schalter", kommando='grep -l "fallzahl::" rust/parity/tests/*_paritaet.rs | wc -l',
-          lauf=lambda: str(sum("fallzahl::" in Path(f).read_text(encoding="utf-8") for f in glob.glob(str(REPO / "rust/parity/tests/*_paritaet.rs"))))),
-        P("Suiten ohne Schalter", R, r"für die (fünf) Suiten ohne Schalter", kommando='grep -L "fallzahl::" rust/parity/tests/*_paritaet.rs | wc -l',
-          lauf=lambda: str(sum("fallzahl::" not in Path(f).read_text(encoding="utf-8") for f in glob.glob(str(REPO / "rust/parity/tests/*_paritaet.rs"))))),
         P("Fixture-Faelle", R, r"das Fixture hat jetzt (\d+) Fälle", kommando=f"python3 -c len(json {FIXTURE})", lauf=lambda: str(fixture_zahlen()["faelle"])),
         P("Fixture-Funktionen (Doc: 11)", R, r"Python-Lauf, (11) Funktionen\)", kommando=f"python3 -c distinct fn {FIXTURE}", lauf=lambda: str(fixture_zahlen()["funktionen"])),
         P("Fixture-Funktionen (Doc: elf)", R, r"Rümpfe der (elf) Funktionen", kommando=f"python3 -c distinct fn {FIXTURE}", lauf=lambda: str(fixture_zahlen()["funktionen"])),
@@ -295,14 +288,13 @@ def tabelle() -> list[P]:
         b("Solz-Faktor 119 im Code", R, r"Solz-Faktor 118 statt (119)", 'grep -n -o -m1 "119" rust/engine/src/zugriff/teil2/solz.rs', ist=r"^\d+:(\d+)"),
         b("Veranlagungsjahr unten", R, r"Jahr außerhalb (2024)\.\.2026", 'grep -n "Self::Vz2024 => " rust/domain/src/vz.rs', ist=r"=> (\d+)"),
         b("Veranlagungsjahr oben", R, r"Jahr außerhalb 2024\.\.(2026)", 'grep -n "Self::Vz2026 => " rust/domain/src/vz.rs', ist=r"=> (\d+)"),
-        b("lesende Routen", R, r"192 Fälle, (8) lesende Routen", r"grep -c -E '^(FALL|FELD)_ROUTEN' tools/parity/rauchprobe_echtdaten.py", lauf=lambda: str(
-            len(re.findall(r'"[a-z]+"', "".join(z for z in datei_text("tools/parity/rauchprobe_echtdaten.py").splitlines() if z.startswith(("FALL_ROUTEN", "FELD_ROUTEN"))))))),
+        # L1: die Zeile "lesende Routen" las FALL_ROUTEN/FELD_ROUTEN aus tools/parity/rauchprobe_echtdaten.py (geloescht).
         b("SERVE_PORT Plan", R, r"`SERVE_PORT` \(Standard (\d+)\)", 'grep -n "^SERVE_PORT" Makefile', ist=r"\?= (\d+)"),
         b("SERVE_PORT README", RD, r"127\.0\.0\.1:(\d+)", 'grep -n "^SERVE_PORT" Makefile', ist=r"\?= (\d+)"),
         b("Bindung Plan", R, r"bindet nur (127\.0\.0\.1)", 'grep -n "const HOST" rust/api/src/main.rs', ist=r'"([0-9.]+)"'),
         b("Bindung README", RD, r"bindet nur (127\.0\.0\.1)", 'grep -n "const HOST" rust/api/src/main.rs', ist=r'"([0-9.]+)"'),
         b("TESTMAP ohne Zeile (heute)", R, r"TESTMAP 451 Dateien, (0) ohne Zeile", "python3 tests/test_testmap_vollstaendig.py", ist=r"(\d+) ohne Zeile"),
-        q("Betrag 9223372036854775800 im Test", R, r"Bruttolohn von (9223372036854775800) ct", APIT, r"{0}"),
+        # L1: "Betrag 9223372036854775800 im Test" stand in rust/parity/tests/api_http_paritaet.rs (geloescht).
         q("Vorzeichenkipper im Code", R, r"\(\+(446 744 073 709 551 616) ct", DEKL, "446744073709551616"),
         q("3,7e17 im Code", R, r"höchstens (3),7·10\^17", DEKL, "<= 3,7e17"),
         b("HTTP 422 Ueberlauf (Code)", R, r"in Rust ein (422) \(", 'grep -n "^/// 422" rust/api/src/stand.rs', ist=r"/// (\d+) "),
@@ -395,7 +387,6 @@ def tabelle_quellen() -> list[P]:
     # --- Abdeckung der uebrigen Zahlen der hinzugefuegten Doc-Zeilen (Ergaenzung nach dem Abdeckungslauf)
     DEC = Path.home() / "00_projects" / "vault" / "decisions" / "betrag-ausserhalb-i64-rechnung-antwortet-422-statt-500.md"
     BEREIT = VAULT_ARCHIV / "cutover-bereitschaft-rust-port-2026-10-03.md"
-    HTTP = "rust/parity/tests/api_http_paritaet.rs"
     rows += [
         q("(a) 0 failed je Suite", R, r"141 passed / (0) failed, Summe", PV, r"141 passed, {0} failed"),
         q("(c) 0 failed Gesamtlauf", R, r"1580 passed / (0) failed / 21 ignored", PV, r"1580 passed, {0} failed"),
@@ -409,7 +400,7 @@ def tabelle_quellen() -> list[P]:
         q("1h beide 500", R, r"mit vollständiger Akte antworten beide (500)\)", RA, r"beide Dienste mit {0}\."),
         q("beide 403", R, r"beide Dienste antworten mit (403)$", RA, r"beide Dienste antworten dann mit {0}"),
         q("Python 200 (1c)", R, r"Python rechnet weiter und antwortet (200) \(Vault", DEC, r"antwortet {0}: gewollte Abweichung, Eintrag 1c"),
-        q("1g Rust 422 / Python 200", R, r"in Rust (422), in Python (200); Kommentar", HTTP, r"Rust {0} auf `stand`, `fragen` und `ergebnis` .*, Python {1}: der Fehler"),
+        # L1: "1g Rust 422 / Python 200" las den Kommentar in rust/parity/tests/api_http_paritaet.rs (geloescht).
         q("API 422 (p23)", R, r"die API antwortet (422) \(`rust/api", "rust/api/src/deklaration.rs", r"ApiFehler::Status\({0}, ref t\)"),
         q("Summe hoechstens 3,7e17", R, r"Summe höchstens (3,7)·10\^17", "rust/elster/src/deklaration.rs", r"<= {0}e17"),
         q("0 stille Falschzahlen", R, r"^\s+(0) stille Falschzahlen über HTTP", UC, r"\*\*{0} stille Falschzahlen:"),
@@ -723,8 +714,8 @@ def selbsttest() -> int:
         raise AssertionError("rm waere ausgefuehrt worden")
     # Gegenprobe an der echten Tabelle: aendere eine Doc-Zahl im Speicher, die Zeile muss ABWEICHUNG melden.
     echt = lies_docs()
-    echt[R] = echt[R].replace("→ 22; `make golden`", "→ 23; `make golden`")
-    zeile_ = next(p for p in tabelle() if p.zahl == "Parity-Suiten")
+    echt[R] = echt[R].replace("Vergleichssuiten und die 135 Golden-Fälle", "Vergleichssuiten und die 136 Golden-Fälle")
+    zeile_ = next(p for p in tabelle() if p.zahl == "Golden-Faelle (Pin im Test)")
     assert pruefe(zeile_, echt)[4] == "ABWEICHUNG", "echte Zeile erkennt die geaenderte Zahl nicht"
     # Vault-Pfade: ein Pfad, den es gibt, ist OK; ein erfundener und ein Pfad, der nach `note supersede` im Archiv liegt, sind rot.
     with tempfile.TemporaryDirectory() as tmp:
