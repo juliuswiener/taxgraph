@@ -21,7 +21,7 @@ use crate::einkuenfte::{
     dba_abzug_werbungskosten, netto_vg_partner, KAP_ERTRAEGE, KAP_ERTRAEGE_PARTNER, KAP_TOEPFE,
     KAP_TOEPFE_PARTNER,
 };
-use crate::zweige::{netto_vg, versorgung_zeilen};
+use crate::zweige::{netto_vg, versorgung_lage, VersorgungLage};
 use crate::{
     cent_zu_euro, euro_plus, feld_int_oder_null, ist_positive_zahl, ist_true, ist_zusammen, minus,
     plus, py_int, wert, zahl_oder_null, BescheidFehler, Felder,
@@ -85,7 +85,7 @@ pub fn mit_ring_werten(felder: &mut Felder, vz: Option<Vz>, p: &Params) -> R<()>
     einzelzeilen(felder, &h)?;
     p34_antrag(felder, vz, &h)?;
     dba_abzug_zeile(felder, &h)?;
-    versorgung_zeile(felder, &h)
+    versorgung_zeile(felder, &h, vz)
 }
 
 // ---------------------------------------------------------------- (10) Versorgungsbezug in den Zeilen 11 bis 13 der Anlage N
@@ -96,13 +96,27 @@ pub fn mit_ring_werten(felder: &mut Felder, vz: Option<Vz>, p: &Params) -> R<()>
 /// erfuellt, und Bezug und Bemessungsgrundlage ergeben auf volle Euro mindestens 1. Gelesen werden nur BESTAETIGTE Felder
 /// ([`bestaetigte`]); der Ehegatte zaehlt nur bei bestaetigter Zusammenveranlagung. Ohne Bezug entsteht kein Eintrag. Das Gate
 /// kennt nur `bescheid`; `deklariere` (in `elster`) schreibt aus dem Wert die drei Zeilen.
-fn versorgung_zeile(f: &mut Felder, h: &HerkunftVektor) -> R<()> {
+///
+/// Dazu `versorgung_altersgrenze` und `versorgung_altersgrenze_partner` (Abweichung Nr. 65), Text, nur wenn das Alters-Gate (Alter
+/// bei Beginn) nicht erfuellt ist: `lohn`, wenn die Person die Altersgrenze erst nach dem Veranlagungsjahr erreicht (der Bezug ist
+/// das ganze Jahr Arbeitslohn und braucht keine Zeilen), `darueber`, wenn sie die Grenze im oder vor dem Jahr erreicht hat (ab da
+/// ein Versorgungsbezug, dem die Zeilen fehlen). Beide Werte schliessen sich mit `versorgung_zeile` aus.
+fn versorgung_zeile(f: &mut Felder, h: &HerkunftVektor, vz: Option<Vz>) -> R<()> {
     let fb = bestaetigte(f);
-    if versorgung_zeilen(&fb, false)? {
-        setze(f, "versorgung_zeile", PyWert::Bool(true), h);
-    }
-    if ist_zusammen(&fb) && versorgung_zeilen(&fb, true)? {
-        setze(f, "versorgung_zeile_partner", PyWert::Bool(true), h);
+    let zusammen = ist_zusammen(&fb);
+    for (partner, zeile, altersgrenze) in [
+        (false, "versorgung_zeile", "versorgung_altersgrenze"),
+        (true, "versorgung_zeile_partner", "versorgung_altersgrenze_partner"),
+    ] {
+        if partner && !zusammen {
+            continue;
+        }
+        match versorgung_lage(&fb, partner, vz)? {
+            VersorgungLage::Zeilen => setze(f, zeile, PyWert::Bool(true), h),
+            VersorgungLage::Lohn => setze(f, altersgrenze, PyWert::Text("lohn".to_owned()), h),
+            VersorgungLage::UeberDerGrenze => setze(f, altersgrenze, PyWert::Text("darueber".to_owned()), h),
+            VersorgungLage::Keine => {}
+        }
     }
     Ok(())
 }

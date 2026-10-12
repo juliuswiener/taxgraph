@@ -253,12 +253,37 @@ const VERSORGUNG_PARTNER: &str = "versorgung_jahresrente_partner";
 
 /// Der Grund der Abgabe-Sperre bei einem bestaetigten Versorgungsbezug ueber 0, den die Erklaerung NICHT in den Zeilen 11 bis 13
 /// der Anlage N traegt (`VERSORGUNG`, `VERSORGUNG_PARTNER` ohne Kz; der Ring-Wert [`VERSORGUNG_ZEILE`] steht nicht auf `true`):
-/// die Altersgrenze zu Beginn des Bezugs ist nicht erreicht (der Bezug steckt dann nur als Arbeitslohn in Zeile 5), oder Betrag
+/// die Altersgrenze zu Beginn des Bezugs ist nicht erreicht (der Bezug steckt dann nur als Arbeitslohn in Zeile 5; seit Abweichung
+/// Nr. 65 sperrt das nur noch, wenn der Ring-Wert [`VERSORGUNG_ALTERSGRENZE`] fehlt, etwa ohne Veranlagungsjahr), oder Betrag
 /// oder Bemessungsgrundlage liegen unter 1 Euro (das Schema nimmt die Zeilen 11 und 12 erst ab 1 Euro). Bis Abweichung Nr. 64
 /// hielt die Sperre (Abweichung Nr. 42) JEDEN Bezug ueber 0 zurueck; Julius hat sie am 2026-10-12 fuer die Faelle gehoben, die die
 /// Zeilen 11 bis 13 voll tragen. Seit Nr. 53 nimmt der Text die Rente mit Leistungsmitteilung aus (§ 22 Nr. 5 `EStG`, kein
 /// Versorgungsbezug).
 const VERSORGUNG_SPERRE: &str = "Versorgungsbezüge über 0 Euro: Die Erklärung kann diesen Bezug nicht in die Zeilen 11 bis 13 der Anlage N eintragen. Das ist der Fall, wenn die Altersgrenze zu Beginn des Bezugs nicht erreicht ist oder wenn Betrag oder Bemessungsgrundlage unter 1 Euro liegen. Die Abgabe ist dafür gesperrt. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht in diese Zeilen. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+
+/// Der Grund der Abgabe-Sperre (Abweichung Nr. 65) bei einem Versorgungsbezug, dessen Alters-Gate (Alter bei Beginn) nicht erfuellt
+/// ist, dessen Person die Altersgrenze (63 Jahre, bei Schwerbehinderung 60) aber im Veranlagungsjahr oder davor erreicht hat
+/// (Ring-Wert [`VERSORGUNG_ALTERSGRENZE`] steht auf [`ALTERSGRENZE_DARUEBER`]). Ab dem Zeitpunkt der Vollendung ist der Bezug ein
+/// Versorgungsbezug (§ 19 Abs. 2 S. 2 Nr. 2 `EStG`), dem Zeile 11 und der Versorgungsfreibetrag in der Erklaerung fehlen. Das Feld
+/// des Geburtsjahres, das die Grenze entscheidet, kann auch unlesbar sein; auch dann sperrt die Abgabe.
+const VERSORGUNG_SPERRE_ALTERSGRENZE: &str = "Versorgungsbezüge über 0 Euro: Der Bezug begann vor der Altersgrenze (63 Jahre, bei Schwerbehinderung 60 Jahre), aber die Person hat die Altersgrenze im Veranlagungsjahr oder davor erreicht. Von da an ist der Bezug ein Versorgungsbezug, und Zeile 11 sowie der Versorgungsfreibetrag fehlen in der Erklärung. Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+
+/// Nur Rust (Abweichung Nr. 65): die Ring-Werte der Altersgrenze, je Person, Text. `bescheid::deklaration::mit_ring_werten` setzt sie
+/// nur, wenn das Alters-Gate (Alter bei Beginn) nicht erfuellt ist: [`ALTERSGRENZE_LOHN`], wenn die Person die Altersgrenze erst
+/// nach dem Veranlagungsjahr erreicht (der Bezug ist das ganze Jahr Arbeitslohn in Zeile 5 und steht in keiner Zeile 11 bis 13),
+/// [`ALTERSGRENZE_DARUEBER`], wenn sie die Grenze im oder vor dem Jahr erreicht hat. Beide Felder tragen kein Kz.
+const VERSORGUNG_ALTERSGRENZE: &str = "versorgung_altersgrenze";
+const VERSORGUNG_ALTERSGRENZE_PARTNER: &str = "versorgung_altersgrenze_partner";
+const ALTERSGRENZE_LOHN: &str = "lohn";
+const ALTERSGRENZE_DARUEBER: &str = "darueber";
+
+/// Die vier Ring-Werte des Versorgungsbezugs ohne Kz (Zeilen und Altersgrenze, je Person): kein Feld der Erklaerung.
+fn ist_versorgung_ring_wert(feld_id: &str) -> bool {
+    matches!(
+        feld_id,
+        VERSORGUNG_ZEILE | VERSORGUNG_ZEILE_PARTNER | VERSORGUNG_ALTERSGRENZE | VERSORGUNG_ALTERSGRENZE_PARTNER
+    )
+}
 
 /// Der Grund der Abgabe-Sperre (Abweichung Nr. 64) bei einem Versorgungsbezug, der im Veranlagungsjahr oder danach beginnt. Im
 /// Beginnjahr kann der Bezug unterjaehrig sein; fuer diesen Fall verlangt der Vordruck in Zeile 14 den ersten und den
@@ -888,6 +913,23 @@ impl Bau<'_> {
             .is_some_and(|s| s.zustand == Zustand::Bestaetigt && matches!(s.wert, PyWert::Bool(true)))
     }
 
+    /// Was der Ring zur Altersgrenze der Person sagt (Abweichung Nr. 65): der bestaetigte Text des Ring-Werts
+    /// [`VERSORGUNG_ALTERSGRENZE`] bzw. [`VERSORGUNG_ALTERSGRENZE_PARTNER`], `None`, wenn er fehlt, nicht bestaetigt oder kein Text ist.
+    fn altersgrenze(&self, partner: bool) -> Option<&str> {
+        let flag = if partner {
+            VERSORGUNG_ALTERSGRENZE_PARTNER
+        } else {
+            VERSORGUNG_ALTERSGRENZE
+        };
+        self.snapshot
+            .get(flag)
+            .filter(|s| s.zustand == Zustand::Bestaetigt)
+            .and_then(|s| match &s.wert {
+                PyWert::Text(t) => Some(t.as_str()),
+                _ => None,
+            })
+    }
+
     /// Schreibt `wert` unter `kz` in die Anlage N der Person: Person A in die Deklaration, Person B in die zweite Instanz
     /// (`person_b`, wie die Kz aus `PARTNER_INSTANZ`).
     fn schreibe_versorgung(
@@ -908,15 +950,25 @@ impl Bau<'_> {
 
     /// Der Grund, aus dem ein Versorgungsbezug ueber 0 die Abgabe sperrt, oder `None`, wenn die Erklaerung ihn voll traegt
     /// (Abweichung Nr. 64). Voll getragen heisst: der Ring-Wert ([`Bau::versorgung_zeile_gilt`]) steht auf `true` (Zeilen 11 bis
-    /// 13 stehen im XML) UND der Bezug beginnt vor dem Veranlagungsjahr. Ohne Ring-Wert gilt [`VERSORGUNG_SPERRE`], bei einem
-    /// Beginn im Veranlagungsjahr oder danach (oder einem Beginnjahr, das sich nicht als bestaetigte ganze Zahl lesen laesst)
-    /// [`VERSORGUNG_SPERRE_BEGINN`]. ponytail: ein Beginn im Veranlagungsjahr gilt als unterjaehrig (Zeile 14), auch wenn der
+    /// 13 stehen im XML) UND der Bezug beginnt vor dem Veranlagungsjahr. Ohne diesen Ring-Wert gilt: [`ALTERSGRENZE_LOHN`] (Alters-
+    /// Gate nicht erfuellt, die Person erreicht die Altersgrenze erst nach dem Veranlagungsjahr, Abweichung Nr. 65) ist frei, wie
+    /// ein getragener Bezug, aber ohne Zeilen; [`ALTERSGRENZE_DARUEBER`] gibt [`VERSORGUNG_SPERRE_ALTERSGRENZE`]; sonst
+    /// [`VERSORGUNG_SPERRE`]. Bei einem Beginn im Veranlagungsjahr oder danach (oder einem Beginnjahr, das sich nicht als
+    /// bestaetigte ganze Zahl lesen laesst) gilt in jedem freien Fall [`VERSORGUNG_SPERRE_BEGINN`]. ponytail: ein Beginn im
+    /// Veranlagungsjahr gilt als unterjaehrig (Zeile 14), auch wenn der
     /// Bezug am 1. Januar begann; ein Bezug, der im Veranlagungsjahr ENDET (Zeile 14, Sterbegeld Zeile 15, mehrere
     /// Kalenderjahre Zeile 16, zweiter Bezug je Person), ist aus den Eingaben nicht erkennbar und bleibt eine benannte Grenze.
     /// Upgrade-Pfad: die Zeilen 14 bis 16 und den zweiten Bezug bauen.
     fn versorgung_sperre(&self, partner: bool) -> Option<&'static str> {
         if !self.versorgung_zeile_gilt(partner) {
-            return Some(VERSORGUNG_SPERRE);
+            // Kein Ring-Wert fuer die Zeilen: drei Gruende. Die Person erreicht die Altersgrenze erst nach dem Veranlagungsjahr
+            // (der Bezug ist Arbeitslohn und frei, sofern der Beginn passt), sie hat sie im oder vor dem Jahr erreicht (eigener
+            // Text), oder der Bezug liegt unter 1 Euro bzw. fehlt etwas (alter Text).
+            match self.altersgrenze(partner) {
+                Some(ALTERSGRENZE_LOHN) => {}
+                Some(ALTERSGRENZE_DARUEBER) => return Some(VERSORGUNG_SPERRE_ALTERSGRENZE),
+                _ => return Some(VERSORGUNG_SPERRE),
+            }
         }
         let beginn = if partner {
             VERSORGUNG_BEGINN_PARTNER
@@ -1387,8 +1439,9 @@ impl Bau<'_> {
         ) = (feld_id, kz_von(b))
         {
             self.versorgung_angabe(feld_id, wert, b)?;
-        } else if let (VERSORGUNG_ZEILE | VERSORGUNG_ZEILE_PARTNER, None) = (feld_id, kz_von(b)) {
-            // Ring-Wert (Abweichung Nr. 50): kein Feld der Erklaerung. `versorgung` und `versorgung_angabe` lesen ihn.
+        } else if ist_versorgung_ring_wert(feld_id) && kz_von(b).is_none() {
+            // Ring-Werte (Abweichung Nr. 50 und Nr. 65): kein Feld der Erklaerung. `versorgung`, `versorgung_angabe` und
+            // `versorgung_sperre` lesen sie.
         } else if let (DBA_ABZUG, None) = (feld_id, kz_von(b)) {
             self.dba_abzug(feld_id, b);
         } else if let (DBA_ABZUG_ZEILE, None) = (feld_id, kz_von(b)) {
@@ -3070,7 +3123,7 @@ mod tests {
     /// der zweite nennt die Zeile 14 und den Beginn im Veranlagungsjahr.
     #[test]
     fn die_versorgung_sperren_nennen_den_grund_die_ausnahme_und_das_formular() {
-        for text in [super::VERSORGUNG_SPERRE, super::VERSORGUNG_SPERRE_BEGINN] {
+        for text in [super::VERSORGUNG_SPERRE, super::VERSORGUNG_SPERRE_BEGINN, super::VERSORGUNG_SPERRE_ALTERSGRENZE] {
             assert!(!text.contains("noch nie angenommen") && !text.contains("noch nicht freigegeben"), "{text}");
             assert!(text.starts_with("Versorgungsbezüge über 0 Euro") && text.contains("gesperrt") && text.contains("Formular"), "{text}");
             assert!(!text.contains("nicht gesperrt"), "{text}");
@@ -3083,6 +3136,17 @@ mod tests {
         assert!(text.contains("nicht in die Zeilen 11 bis 13") && text.contains("Altersgrenze") && !text.contains("Zeile 14"), "{text}");
         let text = super::VERSORGUNG_SPERRE_BEGINN;
         assert!(text.contains("Zeile 14") && text.contains("im Veranlagungsjahr oder später") && !text.contains("nicht in die Zeilen 11 bis 13"), "{text}");
+        // Abweichung Nr. 65: der Text der Altersgrenze sagt, dass die Person die Grenze im Veranlagungsjahr oder davor erreicht hat
+        // und dass Zeile 11 sowie der Freibetrag fehlen; er verwechselt sich weder mit dem Text der Zeilen noch mit dem des Beginns.
+        let text = super::VERSORGUNG_SPERRE_ALTERSGRENZE;
+        assert!(
+            text.contains("im Veranlagungsjahr oder davor erreicht")
+                && text.contains("Zeile 11")
+                && text.contains("Versorgungsfreibetrag")
+                && !text.contains("Zeile 14")
+                && !text.contains("nicht in die Zeilen 11 bis 13"),
+            "{text}"
+        );
     }
 
     /// Abweichung Nr. 64: steht der Ring-Wert auf `true` (die Zeilen 11 bis 13 stehen im XML), sperrt ein Bezug NUR, wenn er im
@@ -3146,6 +3210,84 @@ mod tests {
                         assert_eq!(da.get("E0200801"), Some(&json!(30_000)), "{name}: Zeile 11 steht");
                     }
                 }
+            }
+        }
+    }
+
+    /// Abweichung Nr. 65: ohne Ring-Wert fuer die Zeilen waehlt der Ring-Wert der Altersgrenze (`versorgung_altersgrenze`, Text) den
+    /// Grund. `lohn` (die Person erreicht die Grenze erst nach dem Veranlagungsjahr) ist frei: keine Sperre, kein Kz 11 bis 13, die
+    /// drei Felder mit Grund in `nicht_deklariert`; auch dann sperrt ein Beginn im Veranlagungsjahr oder danach. `darueber` gibt
+    /// [`VERSORGUNG_SPERRE_ALTERSGRENZE`], auch vor dem Beginn-Grund. Fehlt der Wert, ist er vorlaeufig oder ist er kein bekannter
+    /// Text, gilt [`VERSORGUNG_SPERRE`]. Bei Einzelveranlagung zaehlt der Wert des Ehegatten nicht.
+    #[test]
+    fn der_altersgrenzen_wert_waehlt_den_grund_der_sperre_ohne_zeilen() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
+            wert: wert.into(),
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        let kz = ["E0200801", "E0200902", "E0201307"];
+        for partner in [false, true] {
+            let s = if partner { "_partner" } else { "" };
+            // (Wert des Ring-Werts, Zustand, Beginnjahr, Veranlagung, erwarteter Grund)
+            let b = Zustand::Bestaetigt;
+            let faelle = [
+                (None, b, 2020, "zusammen", Some(super::VERSORGUNG_SPERRE)),
+                (Some(json!("lohn")), b, 2020, "zusammen", None),
+                (Some(json!("lohn")), b, 2025, "zusammen", Some(super::VERSORGUNG_SPERRE_BEGINN)),
+                (Some(json!("lohn")), b, 2026, "zusammen", Some(super::VERSORGUNG_SPERRE_BEGINN)),
+                (Some(json!("lohn")), Zustand::Vorlaeufig, 2020, "zusammen", Some(super::VERSORGUNG_SPERRE)),
+                (Some(json!("darueber")), b, 2020, "zusammen", Some(super::VERSORGUNG_SPERRE_ALTERSGRENZE)),
+                (Some(json!("darueber")), b, 2025, "zusammen", Some(super::VERSORGUNG_SPERRE_ALTERSGRENZE)),
+                (Some(json!("darueber")), Zustand::Vorlaeufig, 2020, "zusammen", Some(super::VERSORGUNG_SPERRE)),
+                (Some(json!("frei")), b, 2020, "zusammen", Some(super::VERSORGUNG_SPERRE)),
+                (Some(json!(true)), b, 2020, "zusammen", Some(super::VERSORGUNG_SPERRE)),
+                (Some(json!("darueber")), b, 2020, "einzel", if partner { None } else { Some(super::VERSORGUNG_SPERRE_ALTERSGRENZE) }),
+            ];
+            for (ring, zustand, beginn, veranlagung, soll) in faelle {
+                let mut felder = Felder::from([
+                    (format!("versorgung_jahresrente{s}"), feld(json!(3_000_000), b)),
+                    (format!("versorgung_bemessungsgrundlage{s}"), feld(json!(2_500_000), b)),
+                    (format!("versorgung_beginn_jahr{s}"), feld(json!(beginn), b)),
+                    (format!("versorgung_art{s}"), feld(json!("altersgrenze_sonstige"), b)),
+                    ("veranlagung".to_owned(), feld(json!(veranlagung), b)),
+                ]);
+                if let Some(wert) = &ring {
+                    felder.insert(format!("versorgung_altersgrenze{s}"), feld(wert.clone(), zustand));
+                }
+                let d = deklariere(&felder, &index, 2025, None).unwrap();
+                let name = format!("Person {}, Altersgrenze {ring:?} {zustand:?}, Beginn {beginn}, {veranlagung}", if partner { "B" } else { "A" });
+                let sperren: Vec<&str> = d
+                    .unvollstaendig()
+                    .iter()
+                    .filter(|e| e.feld_id == format!("versorgung_jahresrente{s}"))
+                    .map(|e| e.grund.as_str())
+                    .collect();
+                assert_eq!(sperren, soll.into_iter().collect::<Vec<_>>(), "{name}: Sperre");
+                // Nie eine Zeile 11 bis 13 ohne den Ring-Wert der Zeilen; der Ring-Wert der Altersgrenze ist kein Feld der Erklaerung.
+                let da = if partner { &d.person_b } else { &d.deklaration };
+                assert!(kz.iter().all(|k| da.get(*k).is_none()), "{name}: kein Kz: {da:?}");
+                let flag = format!("versorgung_altersgrenze{s}");
+                assert!(d.nicht_deklariert.iter().all(|e| e.feld_id != flag), "{name}: nicht_deklariert");
+                // Ein vorlaeufiger Wert steht wie jedes Feld ohne Bestaetigung in `unvollstaendig` (Zwei-Signal), ein bestaetigter nie.
+                let offen = d.unvollstaendig().iter().any(|e| e.feld_id == flag);
+                assert_eq!(offen, zustand != Zustand::Bestaetigt, "{name}: unvollstaendig");
+                let nicht = |f: &str| d.nicht_deklariert.iter().filter(|e| e.feld_id == format!("{f}{s}")).count();
+                assert_eq!(nicht("versorgung_jahresrente"), 1, "{name}: der Betrag steht mit Grund in nicht_deklariert");
             }
         }
     }

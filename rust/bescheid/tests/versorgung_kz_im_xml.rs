@@ -453,4 +453,28 @@ fn checkest_nimmt_die_zeilen_11_bis_13_an() {
     );
     let (rc, r) = pruefe("K3 Beginn 2025", &xml_trotz_sperre(&im_jahr, None));
     assert_eq!((rc, &r[..]), (0, &[][..]), "K3: rc={rc} Regeln {r:?}");
+    // Abweichung Nr. 65, Bezug mit nicht erfuelltem Alters-Gate (Art `altersgrenze_sonstige`, 55 Jahre bei Beginn, Beginn 2020).
+    // K4: geboren 1970 erreicht die Person die Altersgrenze erst nach dem Veranlagungsjahr: der Bezug ist Arbeitslohn, die Akte sperrt
+    // nicht, das XML traegt Zeile 5 und keine Zeilen 11 bis 13, `checkESt` nimmt es an (`rc=0`).
+    let vor_dem_gate = |geburtsjahr: i64, alter: i64| {
+        let mut b = bezug(2_000_000, 2_000_000, 2020, "altersgrenze_sonstige");
+        b.push(("versorgung_alter_bei_beginn", json!(alter)));
+        b.push(("geburtsjahr", json!(geburtsjahr)));
+        mit(lohn(20_000), b)
+    };
+    let frei = vor_dem_gate(1970, 55);
+    let (d, _) = deklaration(&frei);
+    assert!(d.unvollstaendig().is_empty(), "K4: die Akte sperrt: {:?}", d.unvollstaendig());
+    assert!(trio(&d.deklaration).is_none(), "K4: Zeilen 11 bis 13 stehen nicht");
+    let (rc, r) = pruefe("K4 vor der Altersgrenze (geboren 1970)", &xml_der_akte(&frei, None));
+    assert_eq!((rc, &r[..]), (0, &[][..]), "K4: rc={rc} Regeln {r:?}");
+    // K5: geboren 1957 hat die Person die Grenze 2020 erreicht. Die Akte sperrt; das XML ohne die Zeilen nimmt `checkESt` trotzdem an,
+    // die Plausibilitaetspruefung faengt diesen Fall nicht: die Sperre ist das einzige Netz.
+    let darueber = vor_dem_gate(1957, 62);
+    assert!(
+        deklaration(&darueber).0.unvollstaendig().iter().any(|e| e.feld_id == "versorgung_jahresrente"),
+        "K5: der Fall ueber der Altersgrenze sperrt nicht"
+    );
+    let (rc, r) = pruefe("K5 ueber der Altersgrenze (geboren 1957)", &xml_trotz_sperre(&darueber, None));
+    assert_eq!((rc, &r[..]), (0, &[][..]), "K5: rc={rc} Regeln {r:?}");
 }

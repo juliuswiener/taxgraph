@@ -76,7 +76,10 @@ fn akte(mehr: &[(&'static str, Value)]) -> Store {
         .retain(|e| !e["feld_id"].as_str().is_some_and(|f| mehr.iter().any(|(m, _)| *m == f)));
     let mut s = Store::aus_datei(serde_json::from_value(roh).unwrap());
     for (feld, wert) in mehr {
-        setze(&mut s, feld, wert.clone());
+        // `null` heisst: das Feld faellt aus der Akte und bleibt weg.
+        if !wert.is_null() {
+            setze(&mut s, feld, wert.clone());
+        }
     }
     s
 }
@@ -147,31 +150,51 @@ fn sperren(mehr: &[(&'static str, Value)]) -> Vec<(String, String)> {
         .collect()
 }
 
-/// Was ein Grund sagt, an einem Merkmal im Text: der Bezug passt nicht in die Zeilen 11 bis 13, oder er beginnt im
-/// Veranlagungsjahr oder danach (Zeile 14). Ein Text ohne eindeutiges Merkmal heisst `"?"` und macht die Tabelle rot.
+/// Was ein Grund sagt, an einem Merkmal im Text: der Bezug passt nicht in die Zeilen 11 bis 13, er beginnt im
+/// Veranlagungsjahr oder danach (Zeile 14), oder die Person hat die Altersgrenze im Veranlagungsjahr oder davor erreicht
+/// (Abweichung Nr. 65). Ein Text ohne eindeutiges Merkmal heisst `"?"` und macht die Tabelle rot.
 fn art(grund: &str) -> &'static str {
     assert!(grund.starts_with("Versorgungsbezüge über 0 Euro"), "{grund}");
-    match (grund.contains("nicht in die Zeilen 11 bis 13"), grund.contains("Zeile 14")) {
-        (true, false) => "ohne_zeile",
-        (false, true) => "beginn",
+    match (
+        grund.contains("nicht in die Zeilen 11 bis 13"),
+        grund.contains("Zeile 14"),
+        grund.contains("im Veranlagungsjahr oder davor erreicht"),
+    ) {
+        (true, false, false) => "ohne_zeile",
+        (false, true, false) => "beginn",
+        (false, false, true) => "altersgrenze",
         _ => "?",
     }
+}
+
+/// Laeuft die Faelle durch den Weg der Produktion und vergleicht je Fall die Sperren der Versorgungsfelder mit der Spalte
+/// "nachher". Mit `--nocapture` ist die Ausgabe die Tabelle "Fall, nachher" des Berichts.
+fn pruefe_tabelle(faelle: Vec<Fall>) {
+    eprintln!("TABELLE Fall | Sperren der Versorgungsfelder (Feld: Art)");
+    let mut abweichungen = Vec::new();
+    for (name, mehr, erwartet) in faelle {
+        let ist: Vec<(String, &str)> = sperren(&mehr).into_iter().map(|(f, g)| (f, art(&g))).collect();
+        let zeile = if ist.is_empty() {
+            "frei".to_owned()
+        } else {
+            ist.iter().map(|(f, a)| format!("{f}: {a}")).collect::<Vec<_>>().join(", ")
+        };
+        eprintln!("TABELLE {name} | {zeile}");
+        let soll: Vec<(String, &str)> = erwartet.iter().map(|(f, a)| ((*f).to_owned(), *a)).collect();
+        if ist != soll {
+            abweichungen.push(format!("{name}: erwartet {soll:?}, erhalten {ist:?}"));
+        }
+    }
+    assert!(abweichungen.is_empty(), "{} Fall/Faelle weichen ab:\n{}", abweichungen.len(), abweichungen.join("\n"));
 }
 
 #[test]
 fn die_tabelle_sagt_fall_fuer_fall_ob_die_abgabe_sperrt() {
     let tragbar = || mit(lohn(50_000), bezug(3_000_000, 2_800_000, 2020, "beamtenrechtlich"));
-    let gate = |alter: i64| {
-        let mut b = bezug(3_000_000, 3_000_000, 2020, "altersgrenze_sonstige");
-        b.push(("versorgung_alter_bei_beginn", json!(alter)));
-        mit(lohn(50_000), b)
-    };
     let b_tragbar = [2_000_000, 1_900_000, 2018];
     // (Fall, Akte, erwartete Sperren nachher als (Feld, Art)); eine leere Liste heisst: die Abgabe ist frei.
     let faelle: Vec<Fall> = vec![
         ("A allein, Beginn 2020", tragbar(), vec![]),
-        ("A allein, Alters-Gate mit 63 erfuellt", gate(63), vec![]),
-        ("A allein, Alters-Gate mit 62 nicht erfuellt", gate(62), vec![(A, "ohne_zeile")]),
         (
             "A allein, Bezug unter 1 Euro",
             mit(lohn(50_000), bezug(99, 99, 2020, "beamtenrechtlich")),
@@ -240,22 +263,117 @@ fn die_tabelle_sagt_fall_fuer_fall_ob_die_abgabe_sperrt() {
             vec![(A, "beginn")],
         ),
     ];
-    eprintln!("TABELLE Fall | Sperren der Versorgungsfelder (Feld: Art)");
-    let mut abweichungen = Vec::new();
-    for (name, mehr, erwartet) in faelle {
-        let ist: Vec<(String, &str)> = sperren(&mehr).into_iter().map(|(f, g)| (f, art(&g))).collect();
-        let zeile = if ist.is_empty() {
-            "frei".to_owned()
-        } else {
-            ist.iter().map(|(f, a)| format!("{f}: {a}")).collect::<Vec<_>>().join(", ")
-        };
-        eprintln!("TABELLE {name} | {zeile}");
-        let soll: Vec<(String, &str)> = erwartet.iter().map(|(f, a)| ((*f).to_owned(), *a)).collect();
-        if ist != soll {
-            abweichungen.push(format!("{name}: erwartet {soll:?}, erhalten {ist:?}"));
+    pruefe_tabelle(faelle);
+}
+
+/// Person A mit Altersgrenzen-Bezug (`altersgrenze_sonstige`, VZ 2025): Alter bei Beginn, Geburtsjahr und Grad der Behinderung
+/// (`None` = das Feld fehlt). Der Beginn ist Geburtsjahr plus Alter bei Beginn; die Betraege liegen weit ueber 1 Euro.
+fn gate_a(alter: i64, geburtsjahr: Option<i64>, gdb: Option<i64>) -> Paare {
+    gate_a_betrag(3_000_000, alter, geburtsjahr, gdb)
+}
+
+/// Wie [`gate_a`] mit einem anderen Betrag (Jahresrente und Bemessungsgrundlage in CENT).
+fn gate_a_betrag(cent: i64, alter: i64, geburtsjahr: Option<i64>, gdb: Option<i64>) -> Paare {
+    let beginn = geburtsjahr.map_or(2020, |j| j + alter);
+    let mut b = bezug(cent, cent, beginn, "altersgrenze_sonstige");
+    b.push(("versorgung_alter_bei_beginn", json!(alter)));
+    b.push(("geburtsjahr", geburtsjahr.map_or(Value::Null, |j| json!(j))));
+    b.push(("rentner_grad_der_behinderung", gdb.map_or(Value::Null, |g| json!(g))));
+    mit(lohn(50_000), b)
+}
+
+/// Abweichung Nr. 65, Person A: ein Bezug mit nicht erfuelltem Alters-Gate (Alter BEI BEGINN unter 63, unter 60 bei Grad der
+/// Behinderung ab 50) ist nur dann normaler Arbeitslohn und frei, wenn die Person die Altersgrenze erst NACH dem Veranlagungsjahr
+/// erreicht (Geburtsjahr plus Grenze groesser 2025). Hat sie die Grenze im oder vor dem Jahr erreicht, ist der Bezug ab da ein
+/// Versorgungsbezug, dem Zeile 11 und der Freibetrag fehlen: die Abgabe sperrt mit eigenem Text.
+#[test]
+fn die_altersgrenze_im_veranlagungsjahr_sagt_ob_das_alters_gate_sperrt() {
+    let faelle: Vec<Fall> = vec![
+        ("Gate erfuellt (63 bei Beginn)", gate_a(63, Some(1957), Some(0)), vec![]),
+        ("62 bei Beginn, geboren 1957: Grenze 2020 erreicht", gate_a(62, Some(1957), Some(0)), vec![(A, "altersgrenze")]),
+        ("59 bei Beginn, geboren 1965: Grenze 2028 danach", gate_a(59, Some(1965), Some(0)), vec![]),
+        ("geboren 1962: Grenze 2025 = Veranlagungsjahr", gate_a(62, Some(1962), Some(0)), vec![(A, "altersgrenze")]),
+        ("geboren 1963: Grenze 2026, ein Jahr danach", gate_a(61, Some(1963), Some(0)), vec![]),
+        ("geboren 1965, Grad 50: Grenze 60 = 2025", gate_a(59, Some(1965), Some(50)), vec![(A, "altersgrenze")]),
+        ("geboren 1965, Grad 45: Grenze 63 = 2028", gate_a(59, Some(1965), Some(45)), vec![]),
+        ("geboren 1966, Grad 50: Grenze 60 = 2026", gate_a(58, Some(1966), Some(50)), vec![]),
+        // Der Grad der Behinderung fehlt in der Gesamt-Scheibe; vorsichtig gilt die niedrigere Grenze 60.
+        ("geboren 1965, Grad fehlt: vorsichtig 60 = 2025", gate_a(59, Some(1965), None), vec![(A, "altersgrenze")]),
+        ("geboren 1966, Grad fehlt: vorsichtig 60 = 2026", gate_a(58, Some(1966), None), vec![]),
+        ("Geburtsjahr fehlt", gate_a(59, None, Some(0)), vec![(A, "altersgrenze")]),
+        (
+            "frei, aber Beginn = Veranlagungsjahr (geboren 1965, 60 bei Beginn)",
+            gate_a(60, Some(1965), Some(0)),
+            vec![(A, "beginn")],
+        ),
+        ("frei, aber Bezug unter 1 Euro (geboren 1965)", gate_a_betrag(99, 59, Some(1965), Some(0)), vec![(A, "ohne_zeile")]),
+        ("darueber und Bezug unter 1 Euro (geboren 1957)", gate_a_betrag(99, 62, Some(1957), Some(0)), vec![(A, "ohne_zeile")]),
+    ];
+    pruefe_tabelle(faelle);
+}
+
+/// Der Ehegatte mit Altersgrenzen-Bezug (`altersgrenze_sonstige`, Beginn Geburtsjahr plus Alter): Alter bei Beginn, Geburtsjahr
+/// und Grad der Behinderung (`None` = das Feld fehlt) kommen aus den Partner-Feldern.
+fn ehegatte_gate(veranlagung: &'static str, alter: i64, geburtsjahr: i64, gdb: Option<i64>) -> Paare {
+    let mut p = ehegatte(veranlagung, Some([2_000_000, 1_900_000, geburtsjahr + alter]));
+    for (f, w) in &mut p {
+        match *f {
+            "versorgung_art_partner" => *w = json!("altersgrenze_sonstige"),
+            "geburtsjahr_partner" => *w = json!(geburtsjahr),
+            _ => {}
         }
     }
-    assert!(abweichungen.is_empty(), "{} Fall/Faelle weichen ab:\n{}", abweichungen.len(), abweichungen.join("\n"));
+    p.push(("versorgung_alter_bei_beginn_partner", json!(alter)));
+    p.push(("rentner_grad_der_behinderung_partner", gdb.map_or(Value::Null, |g| json!(g))));
+    p
+}
+
+/// Abweichung Nr. 65, Ehegatte: dieselbe Regel mit den Partner-Feldern. Der Ehegatte zaehlt nur bei Zusammenveranlagung; die
+/// Grenze von Person A gilt nicht fuer ihn und umgekehrt.
+#[test]
+fn die_altersgrenze_gilt_je_person_und_der_ehegatte_nur_bei_zusammenveranlagung() {
+    let a_frei = || gate_a(59, Some(1965), Some(0));
+    let a_darueber = || gate_a(62, Some(1957), Some(0));
+    let faelle: Vec<Fall> = vec![
+        ("Ehegatte geboren 1965, Grenze 2028 danach", mit(lohn(30_000), ehegatte_gate("zusammen", 59, 1965, Some(0))), vec![]),
+        (
+            "Ehegatte geboren 1957: Grenze 2020 erreicht",
+            mit(lohn(30_000), ehegatte_gate("zusammen", 62, 1957, Some(0))),
+            vec![(B, "altersgrenze")],
+        ),
+        (
+            "Ehegatte geboren 1957, Einzelveranlagung (zaehlt nicht)",
+            mit(lohn(30_000), ehegatte_gate("einzel", 62, 1957, Some(0))),
+            vec![],
+        ),
+        (
+            "Ehegatte geboren 1965, Grad 50: Grenze 60 = 2025",
+            mit(lohn(30_000), ehegatte_gate("zusammen", 59, 1965, Some(50))),
+            vec![(B, "altersgrenze")],
+        ),
+        (
+            "Ehegatte geboren 1965, Grad fehlt: vorsichtig 60 = 2025",
+            mit(lohn(30_000), ehegatte_gate("zusammen", 59, 1965, None)),
+            vec![(B, "altersgrenze")],
+        ),
+        ("A frei, Ehegatte frei", mit(a_frei(), ehegatte_gate("zusammen", 59, 1965, Some(0))), vec![]),
+        (
+            "A frei, Ehegatte darueber",
+            mit(a_frei(), ehegatte_gate("zusammen", 62, 1957, Some(0))),
+            vec![(B, "altersgrenze")],
+        ),
+        (
+            "A darueber, Ehegatte frei",
+            mit(a_darueber(), ehegatte_gate("zusammen", 59, 1965, Some(0))),
+            vec![(A, "altersgrenze")],
+        ),
+        (
+            "A darueber, Ehegatte darueber",
+            mit(a_darueber(), ehegatte_gate("zusammen", 62, 1957, Some(0))),
+            vec![(A, "altersgrenze"), (B, "altersgrenze")],
+        ),
+    ];
+    pruefe_tabelle(faelle);
 }
 
 /// Die Schwelle selbst (100 Cent) traegt: die Zeilen 11 und 12 nehmen genau 1 Euro, die Sperre faellt. Darunter (99 Cent)

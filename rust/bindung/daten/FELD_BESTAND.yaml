@@ -372,6 +372,8 @@ felder:
   - versicherungsart_partner
   - versorgung_alter_bei_beginn
   - versorgung_alter_bei_beginn_partner
+  - versorgung_altersgrenze
+  - versorgung_altersgrenze_partner
   - versorgung_art
   - versorgung_art_partner
   - versorgung_beginn_jahr

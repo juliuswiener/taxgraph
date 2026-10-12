@@ -390,9 +390,20 @@ async fn ein_vorlaeufiger_betrag_behaelt_den_alten_grund() {
 /// `POST /einreichen` auf der vollstaendigen Akte `rust/fixtures/e2e/gesamt.json` mit den Bezug-Feldern `paare`:
 /// `(Status, Antwort)`. Die Sperren liegen VOR dem Writer und vor `ERiC`: der Test setzt weder `ERiC` noch ein Schema voraus.
 async fn einreichen_der_akte(paare: Paare) -> (u16, Value) {
+    einreichen_der_akte_geboren(paare, 1985).await
+}
+
+/// Wie [`einreichen_der_akte`] mit dem Geburtsjahr `geburtsjahr` statt 1985 (der Wert des Ereignisses `geburtsjahr` der Akte; die
+/// Altersgrenze der Person entscheidet seit Abweichung Nr. 65, ob ein Bezug vor dem Alters-Gate sperrt).
+async fn einreichen_der_akte_geboren(paare: Paare, geburtsjahr: i64) -> (u16, Value) {
     let d = dienst();
     let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../fixtures/e2e/gesamt.json");
     let mut akte: Value = serde_json::from_slice(&std::fs::read(pfad).unwrap()).unwrap();
+    for e in akte["events"].as_array_mut().unwrap() {
+        if e["feld_id"] == "geburtsjahr" {
+            e["wert"] = json!(geburtsjahr);
+        }
+    }
     akte["fall_id"] = json!("vs");
     akte["user_id"] = json!("alice");
     std::fs::write(
@@ -428,10 +439,8 @@ async fn einreichen_mit_beginn_im_veranlagungsjahr_ist_409_mit_eigenem_grund() {
     );
 }
 
-/// Abweichung Nr. 64, `POST /einreichen`: ein Bezug, den die Zeilen 11 bis 13 nicht tragen (Alters-Gate nicht erfuellt: 62 Jahre bei
-/// Beginn), wird mit 409 und dem Grund "nicht in die Zeilen 11 bis 13" abgewiesen.
-#[tokio::test]
-async fn einreichen_ohne_zeile_ist_409_mit_eigenem_grund() {
+/// Ein Bezug mit nicht erfuelltem Alters-Gate (`altersgrenze_sonstige`, 62 Jahre bei Beginn).
+fn bezug_vor_dem_gate() -> Paare {
     let mut p = bezug_a(30_000);
     for (f, w) in &mut p {
         if *f == "versorgung_art" {
@@ -439,15 +448,38 @@ async fn einreichen_ohne_zeile_ist_409_mit_eigenem_grund() {
         }
     }
     p.push(("versorgung_alter_bei_beginn", json!(62)));
-    let (status, a) = einreichen_der_akte(p).await;
+    p
+}
+
+/// Abweichung Nr. 65, `POST /einreichen`: ein Bezug mit nicht erfuelltem Alters-Gate, dessen Person die Altersgrenze im oder vor dem
+/// Veranlagungsjahr erreicht hat (geboren 1957: 63 im Jahr 2020), wird mit 409 und dem Grund "im Veranlagungsjahr oder davor
+/// erreicht" abgewiesen.
+#[tokio::test]
+async fn einreichen_ueber_der_altersgrenze_ist_409_mit_eigenem_grund() {
+    let (status, a) = einreichen_der_akte_geboren(bezug_vor_dem_gate(), 1957).await;
     assert_eq!(status, 409, "erwartet 409, erhalten {status}: {a}");
     assert_eq!(a["grund"], "deklaration_unvollstaendig", "{a}");
     let eintraege = a["unvollstaendig"].as_array().unwrap();
     assert_eq!(eintraege.iter().filter_map(|e| e["feld_id"].as_str()).collect::<Vec<_>>(), [A], "{a}");
     let grund = eintraege[0]["grund"].as_str().unwrap();
     assert!(
-        grund.contains("nicht in die Zeilen 11 bis 13") && grund.contains("gesperrt") && grund.contains("Formular"),
+        grund.contains("im Veranlagungsjahr oder davor erreicht") && grund.contains("gesperrt") && grund.contains("Formular"),
         "{grund}"
+    );
+}
+
+/// Abweichung Nr. 65, `POST /einreichen`: dasselbe Alters-Gate, aber die Person (geboren 1970) erreicht die Altersgrenze erst 2030
+/// (60, vorsichtig ohne Angabe zum Grad der Behinderung) und 2033 (63): der Bezug ist das ganze Jahr Arbeitslohn, die Antwort ist
+/// nicht mehr 409 `deklaration_unvollstaendig`, und kein Eintrag der Versorgungsfelder bleibt.
+#[tokio::test]
+async fn einreichen_vor_der_altersgrenze_ist_nicht_mehr_409_deklaration_unvollstaendig() {
+    let (status, a) = einreichen_der_akte_geboren(bezug_vor_dem_gate(), 1970).await;
+    assert_ne!(a["grund"], json!("deklaration_unvollstaendig"), "die Sperre greift noch: {status} {a}");
+    assert!(
+        a["unvollstaendig"]
+            .as_array()
+            .is_none_or(|e| e.iter().all(|x| !x["feld_id"].as_str().unwrap_or("").starts_with("versorgung_"))),
+        "ein Eintrag der Versorgungsfelder bleibt: {a}"
     );
 }
 

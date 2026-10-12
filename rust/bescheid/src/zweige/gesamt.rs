@@ -245,6 +245,7 @@ struct VersorgungsFelder {
     art: &'static str,
     alter_bei_beginn: &'static str,
     grad_der_behinderung: &'static str,
+    geburtsjahr: &'static str,
 }
 
 /// Person A.
@@ -255,6 +256,7 @@ const VERSORGUNG_A: VersorgungsFelder = VersorgungsFelder {
     art: "versorgung_art",
     alter_bei_beginn: "versorgung_alter_bei_beginn",
     grad_der_behinderung: "rentner_grad_der_behinderung",
+    geburtsjahr: "geburtsjahr",
 };
 
 /// Person B (§ 26b), Abweichung Nr. 33: Python kennt diese Felder nicht, nur die Rentner-Scheibe fragt sie.
@@ -265,7 +267,18 @@ const VERSORGUNG_B: VersorgungsFelder = VersorgungsFelder {
     art: "versorgung_art_partner",
     alter_bei_beginn: "versorgung_alter_bei_beginn_partner",
     grad_der_behinderung: "rentner_grad_der_behinderung_partner",
+    geburtsjahr: "geburtsjahr_partner",
 };
+
+/// § 19 Abs. 2 S. 2 Nr. 2 `EStG`: Bezuege wegen Erreichens einer Altersgrenze sind erst Versorgungsbezuege, wenn die Person das
+/// 63. Lebensjahr vollendet hat, bei Schwerbehinderung (Grad der Behinderung ab 50) das 60.
+fn altersgrenze_fuer_grad(grad_der_behinderung: i64) -> i64 {
+    if grad_der_behinderung >= 50 {
+        60
+    } else {
+        63
+    }
+}
 
 /// Der Versorgungsbezug einer Person, wie der Ring ihn liest.
 struct Versorgungsbezug {
@@ -288,12 +301,7 @@ fn versorgungsbezug(f: &Felder, n: &VersorgungsFelder) -> R<Versorgungsbezug> {
     let mut gate_erfuellt = true;
     if matches!(wert(f, n.art), Some(PyWert::Text(s)) if s == "altersgrenze_sonstige") && alter > 0
     {
-        let grenze = if c(n.grad_der_behinderung)? >= 50 {
-            60
-        } else {
-            63
-        };
-        gate_erfuellt = alter >= grenze;
+        gate_erfuellt = alter >= altersgrenze_fuer_grad(c(n.grad_der_behinderung)?);
     }
     Ok(Versorgungsbezug {
         jahresrente,
@@ -350,13 +358,62 @@ pub(crate) fn versorgung_ueber_lohn(f: &Felder, partner: bool) -> R<bool> {
     Ok(bezug > feld_euro_oder_null(f, lohn)?.get())
 }
 
+/// Wie die Erklaerung den Bezug einer Person liest (Abweichung Nr. 50 und Nr. 65). `mit_ring_werten` setzt daraus die Ring-Werte
+/// `versorgung_zeile` und `versorgung_altersgrenze`; `elster` kennt weder das Gate noch das Geburtsjahr.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum VersorgungLage {
+    /// Die Zeilen 11 bis 13 der Anlage N tragen den Bezug: der Bescheid rechnet ihn als Versorgungsbezug.
+    Zeilen,
+    /// Das Alters-Gate (Alter bei Beginn) ist nicht erfuellt, und die Person erreicht die Altersgrenze erst NACH dem
+    /// Veranlagungsjahr: der Bezug ist das ganze Jahr normaler Arbeitslohn (Zeile 5) und braucht keine Zeile 11 bis 13.
+    Lohn,
+    /// Das Alters-Gate ist nicht erfuellt, aber die Person hat die Altersgrenze im oder vor dem Veranlagungsjahr erreicht (oder
+    /// das Geburtsjahr ist unlesbar): ab da ist der Bezug ein Versorgungsbezug, dem Zeile 11 und der Freibetrag fehlen.
+    UeberDerGrenze,
+    /// Kein Bezug, Angaben fehlen oder ein Betrag liegt unter 1 Euro.
+    Keine,
+}
+
+/// Der Grenzfall zu [`versorgung_lage`]: die Altersgrenze der Person, gegen die das Veranlagungsjahr geprueft wird. Ist der Grad der
+/// Behinderung nicht bestaetigt (nur die Rentner-Scheibe fragt ihn), gilt vorsichtig die niedrigere Grenze: eine zu fruehe Grenze
+/// sperrt, eine zu spaete liesse einen Versorgungsbezug als Arbeitslohn durch.
+fn altersgrenze_im_jahr(f: &Felder, n: &VersorgungsFelder) -> R<i64> {
+    if wert(f, n.grad_der_behinderung).is_none() {
+        return Ok(altersgrenze_fuer_grad(50));
+    }
+    Ok(altersgrenze_fuer_grad(feld_int_oder_null(f, n.grad_der_behinderung)?))
+}
+
 /// Gehoert der Bezug einer Person in die Zeilen 11 bis 13 der Anlage N (Abweichung Nr. 50)? Ja, wenn der Bescheid ihn als
 /// Versorgungsbezug rechnet (Jahresrente, Bemessungsgrundlage und Beginnjahr gesetzt, Alters-Gate erfuellt) und beide Betraege
 /// auf volle Euro mindestens 1 ergeben: `E0200801` ist im Schema ein Betrag "nicht null" (`ponytail:` ein Bezug unter 1 Euro
-/// bekommt keine Zeile). Der Ring-Wert `versorgung_zeile` setzt `mit_ring_werten` daraus; `elster` kennt das Gate nicht.
-pub(crate) fn versorgung_zeilen(f: &Felder, partner: bool) -> R<bool> {
-    let v = versorgungsbezug(f, if partner { &VERSORGUNG_B } else { &VERSORGUNG_A })?;
-    Ok(v.versorgt && v.gate_erfuellt && v.jahresrente >= 100 && v.bemessungsgrundlage >= 100)
+/// bekommt keine Zeile). Ist das Alters-Gate (Alter BEI BEGINN) nicht erfuellt, entscheidet das Alter im Veranlagungsjahr
+/// (Abweichung Nr. 65, § 19 Abs. 2 S. 2 Nr. 2: Bezuege wegen einer Altersgrenze gelten ERST als Versorgungsbezuege, wenn die Person
+/// die Grenze vollendet hat): erreicht sie die Grenze erst nach dem Jahr (Geburtsjahr plus Grenze groesser Veranlagungsjahr), ist
+/// der Bezug [`VersorgungLage::Lohn`], sonst [`VersorgungLage::UeberDerGrenze`]. Ohne Veranlagungsjahr (`vz` ist `None`) gibt es
+/// nur [`VersorgungLage::Keine`]. `ponytail:` das Geburtsjahr genuegt statt des Geburtstags; im Jahr der Vollendung ist der Bezug
+/// schon teils Versorgungsbezug, deshalb sperrt dieses Jahr. Upgrade-Pfad: Beginn des Versorgungsbezugs ab dem Geburtstag bauen.
+pub(crate) fn versorgung_lage(f: &Felder, partner: bool, vz: Option<Vz>) -> R<VersorgungLage> {
+    let n = if partner { &VERSORGUNG_B } else { &VERSORGUNG_A };
+    let v = versorgungsbezug(f, n)?;
+    if !v.versorgt || v.jahresrente < 100 || v.bemessungsgrundlage < 100 {
+        return Ok(VersorgungLage::Keine);
+    }
+    if v.gate_erfuellt {
+        return Ok(VersorgungLage::Zeilen);
+    }
+    let Some(vz) = vz else {
+        return Ok(VersorgungLage::Keine);
+    };
+    let jahr = i64::from(vz.jahr());
+    let geburtsjahr = feld_int_oder_null(f, n.geburtsjahr)?;
+    // Ein Geburtsjahr nach dem Veranlagungsjahr ist unlesbar; 0 (Feld fehlt) und negative Jahre scheitern schon an der Summe.
+    let grenze_nach_jahr = geburtsjahr <= jahr && geburtsjahr + altersgrenze_im_jahr(f, n)? > jahr;
+    Ok(if grenze_nach_jahr {
+        VersorgungLage::Lohn
+    } else {
+        VersorgungLage::UeberDerGrenze
+    })
 }
 
 /// [`einkuenfte_ns`] mit dem Bruttoarbeitslohn Person A als Argument. Der Rentner-Ring liest keine

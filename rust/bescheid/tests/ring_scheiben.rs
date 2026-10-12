@@ -531,6 +531,35 @@ fn regeln() -> Vec<Regel> {
         &[("veranlagung", json!("zusammen"))],
         &["versorgung_zeile_partner"],
     ));
+    // (10c) Die Altersgrenze (Abweichung Nr. 65): ein Bezug mit nicht erfuelltem Alters-Gate (Art `altersgrenze_sonstige`, 58 Jahre bei
+    // Beginn) bekommt `versorgung_altersgrenze`, `lohn` oder `darueber` je nach Geburtsjahr. Ohne die Art oder ohne das Alter bei Beginn
+    // gilt das Gate als erfuellt: dann schreibt der Ring `versorgung_zeile`, nicht diesen Wert. Das Geburtsjahr ist Begleiter: fehlt es,
+    // schreibt der Ring den Wert trotzdem (`darueber`).
+    r.push(regel(
+        "versorgung_altersgrenze",
+        &[
+            ("versorgung_jahresrente", json!(3_000_000)),
+            ("versorgung_bemessungsgrundlage", json!(3_000_000)),
+            ("versorgung_beginn_jahr", json!(2020)),
+            ("versorgung_art", json!("altersgrenze_sonstige")),
+            ("versorgung_alter_bei_beginn", json!(58)),
+        ],
+        &[("geburtsjahr", json!(1965))],
+        &["versorgung_altersgrenze"],
+    ));
+    // (10d) Dieselbe Altersgrenze fuer den Ehegatten: nur bei Zusammenveranlagung, mit den Partner-Feldern.
+    r.push(regel(
+        "versorgung_altersgrenze_partner",
+        &[
+            ("versorgung_jahresrente_partner", json!(3_000_000)),
+            ("versorgung_bemessungsgrundlage_partner", json!(3_000_000)),
+            ("versorgung_beginn_jahr_partner", json!(2020)),
+            ("versorgung_art_partner", json!("altersgrenze_sonstige")),
+            ("versorgung_alter_bei_beginn_partner", json!(58)),
+        ],
+        &[("veranlagung", json!("zusammen")), ("geburtsjahr_partner", json!(1965))],
+        &["versorgung_altersgrenze_partner"],
+    ));
     r
 }
 
@@ -599,8 +628,8 @@ fn die_ergebnisfelder_der_tabelle_sind_die_nicht_fragbaren_literale_des_rings() 
     );
     assert_eq!(
         in_tabelle.len(),
-        23,
-        "Stand 2026-10-10: 23 Ergebnisfelder (Abweichung Nr. 49: dba_abzug_zeile_cent; Nr. 50: versorgung_zeile, versorgung_zeile_partner)"
+        25,
+        "Stand 2026-10-12: 25 Ergebnisfelder (Abweichung Nr. 49: dba_abzug_zeile_cent; Nr. 50: versorgung_zeile, versorgung_zeile_partner; Nr. 65: versorgung_altersgrenze, versorgung_altersgrenze_partner)"
     );
     for r in regeln() {
         for f in r
