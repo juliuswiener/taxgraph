@@ -1,16 +1,13 @@
 //! Ein einziger Zeitstempel-Helfer fuer `store`/`audit`/`fehler_log` — alle drei brauchen
 //! `_now()` (`store.py:41-42`) nur als DEFAULT, wenn der Aufrufer keinen festen Zeitstempel
-//! uebergibt (Tests/Parity liefern immer einen festen `ts`, damit Content-Adressen und
+//! uebergibt (Tests liefern immer einen festen `ts`, damit Content-Adressen und
 //! Log-Zeilen deterministisch bleiben).
+//!
+//! Bis L1 (2026-10-12) stellte das Feature `festzeit` die Uhr auf `TAXGRAPH_JETZT`, damit der
+//! Differenz-Harness `rust/parity` in beiden Servern gleiche Zeitstempel sah. Mit `rust/parity`
+//! ist das Feature gefallen (Verlauf: `git show 37269912:rust/store/src/zeit.rs`).
 #[must_use]
 pub(crate) fn jetzt_iso() -> String {
-    // Nur im Testbau (`--features festzeit`): die Uhr steht auf `TAXGRAPH_JETZT`. Der
-    // Differenz-Harness (`api_http_paritaet`) braucht gleiche Zeitstempel in beiden Servern, denn
-    // jedes abgeleitete Event traegt `_now()` und damit eine Kennung, die an der Zeit haengt.
-    #[cfg(feature = "festzeit")]
-    if let Ok(fest) = std::env::var("TAXGRAPH_JETZT") {
-        return fest;
-    }
     chrono::Utc::now().to_rfc3339()
 }
 

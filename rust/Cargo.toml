@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["catala-sys", "domain", "bindung", "parity", "store", "engine", "elster", "interview", "konsistenz", "intervall", "auth", "llm", "eingang", "bescheid", "api", "versand"]
+members = ["catala-sys", "domain", "bindung", "store", "engine", "elster", "interview", "konsistenz", "intervall", "auth", "llm", "eingang", "bescheid", "api", "versand"]
 
 [workspace.package]
 edition = "2021"
@@ -45,9 +45,9 @@ utoipa = "=6.0.0"
 
 [profile.dev]
 debug = "line-tables-only"
-# Stufe 1 statt 0: die Vergleichslaeufe gegen Python (rust/parity) und die Tests rechnen
-# Dezimalarithmetik und die Catala-Regeln; unoptimiert braucht der Rust-Teil dafuer 3- bis 5-mal so
-# viel Rechenzeit. Gemessen 2026-10-02 (12 Kerne, Rechenzeit des Rust-Prozesses, Stufe 0 -> 1):
+# Stufe 1 statt 0: die Vergleichslaeufe gegen Python (rust/parity, seit L1 geloescht) und die Tests rechnen
+# Dezimalarithmetik und die Catala-Regeln; unoptimiert braucht der Rust-Teil dafuer 3- bis 5-mal so viel Rechenzeit.
+# Die Werte unten stammen aus der Zeit mit rust/parity. Gemessen 2026-10-02 (12 Kerne, Rechenzeit des Rust-Prozesses, Stufe 0 -> 1):
 # bescheid_deklaration_paritaet 116-135 s -> 24-29 s und bescheid_zweige_paritaet 357-413 s ->
 # 50-55 s (je 2 Laeufe); die 15 uebrigen Suiten zusammen 232 s -> 67 s (je 1 Lauf). Die Wanduhrzeit
 # sinkt weniger, weil viele Suiten am Python-Orakel haengen. Kosten: ein Kaltbau des Workspace

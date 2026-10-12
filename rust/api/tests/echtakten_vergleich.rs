@@ -1,10 +1,12 @@
 //! Echtakten-Vergleich: der Rust-Dienst gegen die einmal aufgezeichneten Python-Antworten auf den
 //! echten Akten. Ersatz fuer den Teil von `rust/parity` und `tools/parity/rauchprobe_echtdaten.py`, der
-//! nur mit Python lebt (`REWRITE_PLAN`, Klassifikation 2026-10-05, Befund D).
+//! nur mit Python lebt (`REWRITE_PLAN`, Klassifikation 2026-10-05, Befund D). Beide sind seit L1
+//! (2026-10-12) geloescht; Verlauf: `git show 37269912:rust/parity/...`.
 //!
-//! Aufzeichnen (einmal, solange Python noch laeuft): `python3 tools/parity/echtakten_aufzeichnen.py aufzeichnen`
-//! schreibt `~/.local/share/taxgraph-aufzeichnung/<Datum>/aufzeichnung.json` (Pruefsummen und Zaehler,
-//! nie Werte, nie Fall-IDs, nie im Repo).
+//! Aufgezeichnet wurde einmal, am 2026-10-05, solange Python noch lief: `tools/parity/echtakten_aufzeichnen.py
+//! aufzeichnen` (seit L1 geloescht, Verlauf: `git show 37269912:tools/parity/echtakten_aufzeichnen.py`) schrieb
+//! `~/.local/share/taxgraph-aufzeichnung/<Datum>/aufzeichnung.json` (Pruefsummen und Zaehler,
+//! nie Werte, nie Fall-IDs, nie im Repo). Neu aufzeichnen geht ohne das Skript nicht mehr.
 //!
 //! Vergleichen (lokal, von Hand): `TAXGRAPH_AUFZEICHNUNG=<Verzeichnis> cargo test -p api --test
 //! echtakten_vergleich -- --ignored`. Der Test kopiert die Fall-Akten aus `TAXGRAPH_DATEN` (sonst
@@ -24,7 +26,7 @@
 //! erlaubt Faelle, die sich seit der Aufzeichnung geaendert haben; ohne das Flag sind sie rot.
 //!
 //! Der Known-Answer-Test `kanonische_pruefsumme_gleich_python` laeuft in der CI: er haelt die Pruefsumme
-//! byte-gleich zu `tools/parity/echtakten_aufzeichnen.py`.
+//! byte-gleich zu der von Python aufgezeichneten (`VEKTOR_SHA256` unten ist die Zahl des Skripts).
 //!
 //! NICHT gedeckt: schreibende Routen, `chat`, `entfernung`, `einreichen`, `kontoauszug`, Fragen jenseits der
 //! ersten drei je Fall, feste Uhr, die XML-Bildung der `elster`-Suite und die Append-Folgen der
@@ -52,7 +54,7 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use tower::ServiceExt;
 
-/// Dieselbe Zahl steht in `tools/parity/echtakten_aufzeichnen.py` (`VEKTOR_SHA256`).
+/// Dieselbe Zahl stand im Aufzeichnungsskript (`VEKTOR_SHA256`, Verlauf `37269912`); seit L1 gibt es nur diese Seite.
 const VEKTOR_SHA256: &str = "3ffffed035be23fb820d672437451d5d555315c4991f6797cce0b870cc27f110";
 const VEKTOR: &str = r#"{"b":[1,2.0,2.5,"äö",null,true,false],"a":{"x":-0.0,"y":1e300,"z":"","w":-7,"ké":[[],{}]}}"#;
 const GRENZE_GLEITKOMMA: f64 = 9_007_199_254_740_992.0; // 2^53
@@ -142,20 +144,6 @@ fn kanonische_pruefsumme_gleich_python() {
     assert_ne!(p(r#""ä""#), p(r#""a""#));
     assert_eq!(antwort_pruefsumme(404, b"kein json").1.chars().next(), Some('r'));
     assert_eq!(fall_schluessel("x").len(), 16);
-}
-
-/// Die Pruefsumme des Vektors steht in Rust und in Python. Beide Seiten pruefen ihre eigene Zahl; dieser Test
-/// haelt die beiden Zahlen gleich (sonst bestuenden beide Seiten gegen verschiedene Vektoren).
-#[test]
-fn vektor_zahl_steht_auch_im_aufzeichnungsskript() {
-    let skript = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/parity/echtakten_aufzeichnen.py");
-    let text = std::fs::read_to_string(&skript).expect(
-        "tools/parity/echtakten_aufzeichnen.py fehlt: wird das Skript gestrichen, diese Pruefung mit ihm streichen",
-    );
-    assert!(
-        text.contains(&format!("VEKTOR_SHA256 = \"{VEKTOR_SHA256}\"")),
-        "VEKTOR_SHA256 im Aufzeichnungsskript weicht von der Zahl in diesem Test ab"
-    );
 }
 
 // ---------------------------------------------------------------- Dienst auf einer Kopie

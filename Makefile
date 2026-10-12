@@ -117,9 +117,9 @@ restore:
 ## BACKUP_DIR waechst). Scheitert die Sicherung, startet nichts. SICHERN=0 ueberspringt sie.
 ## AUTH IST AN: `env -u TAXGRAPH_NO_AUTH` raeumt ein aus der Shell geerbtes Einzelnutzer-Opt-out ab.
 ## Ein Bau mit `--release` ist hier bewusst NICHT vorgesehen: Cargo schaltet dort overflow-checks und
-## debug-assertions ab, und kein Vergleichslauf (rust/parity, `make ui-rust`) hat diesen Bau je
-## gemessen. Das dev-Profil (opt-level 1, rust/Cargo.toml) ist der gepruefte Bau, nur ohne die
-## Test-Uhr (`festzeit`): der Dienst hat die echte Uhr.
+## debug-assertions ab, und kein Vergleichslauf (`make ui-rust`; rust/parity seit L1 weg) hat diesen Bau je
+## gemessen. Das dev-Profil (opt-level 1, rust/Cargo.toml) ist der gepruefte Bau. Die Test-Uhr
+## `festzeit` gibt es seit L1 nicht mehr: der Dienst hat die echte Uhr.
 ## SERVE_TARGET liegt ausserhalb des Checkouts (target/ ist mehrere GB gross). TAXGRAPH_JWT_SECRET
 ## setzen, damit Anmeldungen einen Neustart ueberleben (ohne: zufaellig je Start, wie in Python).
 SERVE_PORT   ?= 8000
@@ -311,9 +311,9 @@ rust-build:
 	cd rust && cargo build
 
 ## clippy -D warnings VOR den Tests: ein Lint-Fehler soll den Lauf so rot machen wie ein
-## Testfehler. PARITY=1 erzwingt die Tarif-Paritaet gegen tools/parity/oracle.py (braucht den
-## Opam-Switch + produkt/); ohne PARITY laufen diese Tests als No-op gruen durch (CI hat kein
-## Catala/Python-Environment).
+## Testfehler. PARITY=1 und die Tarif-Paritaet gegen tools/parity/oracle.py gibt es seit L1 nicht
+## mehr: rust/parity ist geloescht (Verlauf: `git show 37269912:rust/parity/`).
+##
 rust-test:
 	cd rust && cargo build && cargo clippy --all-targets -- -D warnings && cargo test
 

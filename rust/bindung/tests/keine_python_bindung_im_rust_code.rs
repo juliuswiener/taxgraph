@@ -10,8 +10,9 @@
 //! Ausnahmen stehen in [`AUSNAHMEN`] mit Grund und mit der erlaubten Trefferzahl. Eine Ausnahme
 //! gilt nicht fuer die ganze Datei: ein Treffer mehr als erlaubt ist ein Fehler (sonst bliebe ein
 //! Rueckfall in einer freigestellten Datei unbemerkt), ein Treffer weniger auch (die Liste
-//! schrumpft nur bewusst; Stufe 2 leert sie, wenn die Python-Fixtures eingefroren sind). Nur
-//! `parity/` hat keine Obergrenze und muss mindestens einen Treffer behalten.
+//! schrumpft nur bewusst; Stufe 2 leert sie, wenn die Python-Fixtures eingefroren sind). Eine
+//! Ausnahme ohne Obergrenze (`erlaubt: None`) muss mindestens einen Treffer behalten; die einzige
+//! solche Ausnahme, `parity/`, ist mit L1 (2026-10-12) gefallen, der Mechanismus bleibt.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -41,11 +42,6 @@ impl Ausnahme {
 }
 
 const AUSNAHMEN: &[Ausnahme] = &[
-    Ausnahme {
-        pfad: "parity/",
-        erlaubt: None,
-        grund: "PARITY=1-Suiten vergleichen Rust mit dem Python-Orakel, das produkt/bindung liest; sie fallen mit Python weg",
-    },
     Ausnahme {
         pfad: "bindung/tests/daten_verzeichnis.rs",
         erlaubt: Some(1),

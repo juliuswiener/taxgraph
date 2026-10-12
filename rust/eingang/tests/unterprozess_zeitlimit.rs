@@ -72,7 +72,7 @@ const AUSNAHMEN: &[Ausnahme] = &[
         funktion: "validiere",
         anzahl: 1,
         grund: "`validiere_xsd` und `validiere_xsd_text` pruefen ein XML offline gegen das ERiC-Schema. \
-                Nur Tests rufen sie (elster/tests, bescheid/tests/einreichung_e2e.rs, parity/tests); \
+                Nur Tests rufen sie (elster/tests, bescheid/tests/einreichung_e2e.rs); \
                 kein Dienst-Pfad. Haengt `xmllint`, haengt der Test. Ruft ein Dienst-Pfad sie, braucht \
                 diese Funktion `wait_timeout` und `kill` wie `eingang::ocr::lauf`.",
         kein_aufrufer: &["validiere_xsd", "validiere_xsd_text"],
@@ -401,9 +401,6 @@ fn quelldateien(wurzel: &Path) -> Vec<PathBuf> {
         .collect();
     crates.sort();
     for c in crates {
-        if c.file_name().is_some_and(|n| n == "parity") {
-            continue;
-        }
         sammle(&c.join("src"), &mut aus);
         if c.join("build.rs").is_file() {
             aus.push(c.join("build.rs"));
