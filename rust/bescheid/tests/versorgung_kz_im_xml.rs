@@ -8,9 +8,10 @@
 //! erfuellt. Person B steht in der zweiten Anlage N (`person_b`). Die Kz stehen NICHT in der Bindung (Weg 2): ein Kz dort
 //! liesse die Sperre von selbst fallen.
 //!
-//! Die Sperre (Abweichung Nr. 42) bleibt. Das erzeugte XML baut darum `xml_ohne_sperre`: dieselbe Akte ohne Bezug hat keine
-//! Sperre, die Inhalte der echten Deklaration (`deklaration`, `person_b`, `anlage_instanzen`) kommen hinein. Was `deklariere`
-//! berechnet hat, kommt aus dem Store, nicht aus dem Test. Fehlt das ERiC-Schema (CI), entfaellt der XML-Test.
+//! Die Sperre (Abweichung Nr. 42) ist seit Abweichung Nr. 64 fuer die getragenen Faelle gehoben (Julius, 2026-10-12): das
+//! erzeugte XML baut `xml_der_akte` direkt aus der Deklaration der Akte und verlangt, dass nichts sperrt. Was `deklariere`
+//! berechnet hat, kommt aus dem Store, nicht aus dem Test. Faelle, die die Zeilen nicht tragen, sperren weiter
+//! (`versorgung_sperre_faelle.rs`). Fehlt das ERiC-Schema (CI), entfaellt der XML-Test.
 //!
 //! `checkest_nimmt_die_zeilen_11_bis_13_an` ist `#[ignore]`: er braucht `ERiC` und die registrierte Hersteller-ID
 //! (`ELSTER_HERSTELLER_ID`, nie im Repo, nie in einer Meldung). Er prueft nur offline (`ERIC_VALIDIERE`), nichts geht raus.
@@ -193,15 +194,27 @@ fn xml_von(d: &Deklaration, felder: &Felder, hersteller: Option<&str>) -> String
     .unwrap()
 }
 
-/// Das XML, das die Deklaration mit Bezug ergaebe, waere die Sperre nicht da. `erzeuge_xml` lehnt jede Deklaration mit offenem
-/// Eintrag ab. Der Test nimmt darum die Deklaration derselben Akte OHNE die Bezug-Felder (keine Sperre) und setzt die Inhalte
-/// der echten Deklaration hinein. `hersteller` `None` liest `ELSTER_HERSTELLER_ID` (nur der `#[ignore]`-Test).
-fn xml_ohne_sperre(mehr: &[(&'static str, Value)], hersteller: Option<&str>) -> String {
-    xml_ohne_sperre_und_kz(mehr, hersteller, &[])
+/// Das XML der Akte, wie die Produktion es baut (Ring, `deklariere`, `erzeuge_xml`). Seit Abweichung Nr. 64 sperrt der getragene
+/// Bezug nicht mehr: der Test verlangt, dass `unvollstaendig` leer ist, statt die Sperre zu umgehen. `hersteller` `None` liest
+/// `ELSTER_HERSTELLER_ID` (nur der `#[ignore]`-Test).
+fn xml_der_akte(mehr: &[(&'static str, Value)], hersteller: Option<&str>) -> String {
+    xml_der_akte_ohne_kz(mehr, hersteller, &[])
 }
 
-/// Wie [`xml_ohne_sperre`], aber ohne die Kz in `weg` (die Kontrolle K1 des `#[ignore]`-Tests streicht Zeile 5).
-fn xml_ohne_sperre_und_kz(mehr: &[(&'static str, Value)], hersteller: Option<&str>, weg: &[&str]) -> String {
+/// Wie [`xml_der_akte`], aber ohne die Kz in `weg` (die Kontrolle K1 des `#[ignore]`-Tests streicht Zeile 5).
+fn xml_der_akte_ohne_kz(mehr: &[(&'static str, Value)], hersteller: Option<&str>, weg: &[&str]) -> String {
+    let (mut d, felder) = deklaration(mehr);
+    assert!(d.unvollstaendig().is_empty(), "die Akte sperrt: {:?}", d.unvollstaendig());
+    for kz in weg {
+        assert!(d.deklaration.remove(*kz).is_some(), "{kz} steht nicht in der Deklaration");
+    }
+    xml_von(&d, &felder, hersteller)
+}
+
+/// Das XML, das eine GESPERRTE Akte ergaebe, waere die Sperre nicht da (nur die Kontrollen K2 und K3 des `#[ignore]`-Tests: sie
+/// fragen `checkESt`, was es zum gesperrten Fall sagt). `erzeuge_xml` lehnt jede Deklaration mit offenem Eintrag ab. Der Test nimmt
+/// darum die Deklaration derselben Akte OHNE die Bezug-Felder (keine Sperre) und setzt die Inhalte der echten Deklaration hinein.
+fn xml_trotz_sperre(mehr: &[(&'static str, Value)], hersteller: Option<&str>) -> String {
     let (mit, felder) = deklaration(mehr);
     let ohne: Paare = mehr
         .iter()
@@ -213,9 +226,6 @@ fn xml_ohne_sperre_und_kz(mehr: &[(&'static str, Value)], hersteller: Option<&st
     sauber.deklaration.clone_from(&mit.deklaration);
     sauber.person_b.clone_from(&mit.person_b);
     sauber.anlage_instanzen.clone_from(&mit.anlage_instanzen);
-    for kz in weg {
-        assert!(sauber.deklaration.remove(*kz).is_some(), "{kz} steht nicht in der Deklaration");
-    }
     xml_von(&sauber, &felder, hersteller)
 }
 
@@ -314,14 +324,22 @@ fn bei_einzelveranlagung_steht_der_bezug_des_ehegatten_nicht_in_der_erklaerung()
     assert_eq!(trio(&d.deklaration), None);
 }
 
-/// Die Sperre bleibt (Abweichung Nr. 42, Julius): mit Bezug haelt `erzeuge_xml` die Deklaration zurueck und nennt das Feld. Gruen
-/// heute und danach; das Gegenstueck zum Umweg `xml_ohne_sperre`.
+/// Abweichung Nr. 64: der getragene Bezug (Beginn 2020) sperrt nicht, `erzeuge_xml` baut das Dokument (mit Schema; ohne Schema
+/// entfaellt der Bau, nicht die Pruefung der Sperre). Ein Bezug mit Beginn im Veranlagungsjahr sperrt weiter: `erzeuge_xml`
+/// haelt die Deklaration zurueck und nennt das Feld.
 #[test]
-fn die_sperre_bleibt_und_haelt_das_xml_zurueck() {
+fn der_getragene_bezug_sperrt_nicht_und_der_bezug_im_beginnjahr_haelt_das_xml_zurueck() {
     let (d, felder) = deklaration(&mit(lohn(50_000), bezug(3_000_000, 2_800_000, 2020, "beamtenrechtlich")));
+    assert!(d.unvollstaendig().is_empty(), "der getragene Bezug sperrt: {:?}", d.unvollstaendig());
+    if schemas_da(2025) {
+        let xml = xml_von(&d, &felder, Some("74931"));
+        assert_eq!(tag_text(&xml, BETRAG_KZ), Some("30000"));
+    }
+
+    let (d, felder) = deklaration(&mit(lohn(50_000), bezug(3_000_000, 2_800_000, 2025, "beamtenrechtlich")));
     assert!(
         d.unvollstaendig().iter().any(|e| e.feld_id == "versorgung_jahresrente"),
-        "die Sperre ist weg: {:?}",
+        "die Sperre fuer den Beginn im Veranlagungsjahr ist weg: {:?}",
         d.unvollstaendig()
     );
     let fehler = erzeuge_xml(
@@ -349,7 +367,7 @@ fn das_xml_traegt_die_zeilen_in_der_anlage_n_der_person_und_das_schema_nimmt_es(
         return;
     }
     let nur_a = mit(lohn(50_000), bezug(3_000_000, 2_800_000, 2020, "beamtenrechtlich"));
-    let xml = xml_ohne_sperre(&nur_a, Some("74931"));
+    let xml = xml_der_akte(&nur_a, Some("74931"));
     let n = anlagen_n(&xml);
     assert_eq!(n.len(), 1, "Person A allein: ein <N>");
     assert_eq!(tag_text(n[0], BETRAG_KZ), Some("30000"), "Betrag");
@@ -360,7 +378,7 @@ fn das_xml_traegt_die_zeilen_in_der_anlage_n_der_person_und_das_schema_nimmt_es(
     assert!(ok, "xmllint gegen E10-2025.xsd (Person A): {meldung}");
 
     let nur_b = mit(lohn(30_000), ehegatte(20_000, Some([2_000_000, 1_900_000, 2018])));
-    let xml = xml_ohne_sperre(&nur_b, Some("74931"));
+    let xml = xml_der_akte(&nur_b, Some("74931"));
     let n = anlagen_n(&xml);
     assert_eq!(n.len(), 2, "Zusammenveranlagung: zwei <N>");
     assert!(DREI.iter().all(|k| tag_text(n[0], k).is_none()), "Person A hat keinen Bezug: {:?}", n[0].len());
@@ -383,9 +401,12 @@ fn regeln(antwort: &str) -> Vec<String> {
 }
 
 /// `checkESt` (offline, `ERIC_VALIDIERE`) nimmt die Zeilen an: ein reiner Pensionaer (Zeile 5 = Bezug), Lohn und Bezug, und der
-/// Ehegatte in der zweiten Anlage N, je `rc=0`. KONTROLLEN, dass der Lauf urteilt: die Akte ohne Bezug ist `rc=0`; fehlt die
-/// Zeile 5, lehnt `Arbeitslohn_2` ab ("Versorgungsbezuege angegeben, aber kein Arbeitslohn"); steht ein Beginnjahr nach dem
-/// Veranlagungsjahr, lehnt `Arbeitslohn_ab08_5` ab. Die Meldungen nennen rc und Regelnamen, nie die ID, nie den Rumpf.
+/// Ehegatte in der zweiten Anlage N, je `rc=0` (die Faelle G, H und P der Abweichung Nr. 50; Fall I, Bezug ueber dem Lohn,
+/// sperrt der Bescheid vorher). Das XML kommt seit Abweichung Nr. 64 ohne Umweg aus der Produktion: die Akte sperrt nicht.
+/// KONTROLLEN, dass der Lauf urteilt: die Akte ohne Bezug ist `rc=0`; fehlt die Zeile 5, lehnt `Arbeitslohn_2` ab
+/// ("Versorgungsbezuege angegeben, aber kein Arbeitslohn", `rc=610001002`); steht ein Beginnjahr nach dem Veranlagungsjahr, lehnt
+/// `Arbeitslohn_ab08_5` ab. K3: ein Beginn IM Veranlagungsjahr nimmt `checkESt` an (`rc=0`); die Sperre dafuer kommt aus
+/// Zeile 14 des Vordrucks, nicht aus der Plausibilitaetspruefung. Die Meldungen nennen rc und Regelnamen, nie die ID, nie den Rumpf.
 #[test]
 #[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make checkest-rust` (laedt die ID aus der .env)"]
 fn checkest_nimmt_die_zeilen_11_bis_13_an() {
@@ -411,17 +432,25 @@ fn checkest_nimmt_die_zeilen_11_bis_13_an() {
     let ehe = mit(lohn(20_000), ehegatte(20_000, Some([2_000_000, 2_000_000, 2020])));
     let faelle = [("reiner Pensionaer", rein.clone()), ("Lohn und Bezug", gemischt), ("Ehegatte", ehe)];
     // Kontrolle K0: die Akte ohne Bezug ist sauber.
-    let (rc, r) = pruefe("K0 ohne Bezug", &xml_ohne_sperre(&lohn(20_000), None));
+    let (rc, r) = pruefe("K0 ohne Bezug", &xml_der_akte(&lohn(20_000), None));
     assert_eq!((rc, &r[..]), (0, &[][..]), "K0: die Basis ist nicht sauber: rc={rc} {r:?}");
     for (name, mehr) in &faelle {
-        let (rc, r) = pruefe(name, &xml_ohne_sperre(mehr, None));
+        let (rc, r) = pruefe(name, &xml_der_akte(mehr, None));
         assert_eq!((rc, &r[..]), (0, &[][..]), "{name}: rc={rc} Regeln {r:?}");
     }
     // Kontrolle K1: ohne Zeile 5 lehnt checkESt den Bezug ab. Zeile 5 faellt per Hand aus der Deklaration.
-    let (rc, r) = pruefe("K1 Bezug ohne Zeile 5", &xml_ohne_sperre_und_kz(&rein, None, &[LOHN_KZ]));
+    let (rc, r) = pruefe("K1 Bezug ohne Zeile 5", &xml_der_akte_ohne_kz(&rein, None, &[LOHN_KZ]));
     assert!(rc != 0 && r.iter().any(|x| x.contains("Arbeitslohn_2")), "K1: erwartet Arbeitslohn_2, erhalten rc={rc} {r:?}");
-    // Kontrolle K2: Beginnjahr nach dem Veranlagungsjahr.
+    // Kontrolle K2: Beginnjahr nach dem Veranlagungsjahr. Die Akte sperrt (Abweichung Nr. 64), das XML kommt am Gate vorbei.
     let spaet = mit(lohn(20_000), bezug(2_000_000, 2_000_000, 2030, "beamtenrechtlich"));
-    let (rc, r) = pruefe("K2 Beginn 2030", &xml_ohne_sperre(&spaet, None));
+    let (rc, r) = pruefe("K2 Beginn 2030", &xml_trotz_sperre(&spaet, None));
     assert!(rc != 0 && r.iter().any(|x| x.contains("Arbeitslohn_ab08_5")), "K2: erwartet Arbeitslohn_ab08_5, erhalten rc={rc} {r:?}");
+    // K3: Beginn im Veranlagungsjahr. checkESt nimmt ihn an; gesperrt ist er wegen Zeile 14, nicht wegen der Plausibilitaet.
+    let im_jahr = mit(lohn(20_000), bezug(2_000_000, 2_000_000, 2025, "beamtenrechtlich"));
+    assert!(
+        deklaration(&im_jahr).0.unvollstaendig().iter().any(|e| e.feld_id == "versorgung_jahresrente"),
+        "K3: der Beginn im Veranlagungsjahr sperrt nicht"
+    );
+    let (rc, r) = pruefe("K3 Beginn 2025", &xml_trotz_sperre(&im_jahr, None));
+    assert_eq!((rc, &r[..]), (0, &[][..]), "K3: rc={rc} Regeln {r:?}");
 }

@@ -1,18 +1,19 @@
-//! Versorgungsbezuege sperren die Abgabe (Abweichung Nr. 42): die Naht `einreichungs_xml` und `deklariere`. Ohne `PARITY=1`,
-//! ohne Python, ohne Netz, ohne `ERiC`.
+//! Versorgungsbezuege und die Abgabe-Sperre (Abweichung Nr. 42, gehoben fuer die getragenen Faelle mit Nr. 64): die Naht
+//! `einreichungs_xml` und `deklariere`. Ohne `PARITY=1`, ohne Python, ohne Netz, ohne `ERiC`.
 //!
 //! **Worum es geht.** Wer einen Versorgungsbezug (Pension) angibt, bekommt ihn im Bescheid verrechnet (Versorgungsfreibetrag,
-//! Zuschlag, Pauschbetrag). Die ELSTER-Erklaerung traegt ihn nicht: `versorgung_jahresrente` und `versorgung_jahresrente_partner`
-//! haben kein Kennzeichen (Kz). Vorher stand der Betrag nur in `nicht_deklariert`, und die Abgabe ging durch.
+//! Zuschlag, Pauschbetrag). Die ELSTER-Erklaerung traegt ihn seit Abweichung Nr. 50 in den Zeilen 11 bis 13 der Anlage N. Bis
+//! Nr. 64 sperrte die Abgabe jeden bestaetigten Bezug ueber 0; Julius hat die Sperre am 2026-10-12 fuer die getragenen Faelle
+//! gehoben.
 //!
-//! **Warum es zaehlt.** Das Finanzamt haette den Bezug nie gesehen und die Steuer aus einer Erklaerung ohne ihn gerechnet. Jetzt
-//! sperrt die Abgabe bei einem bestaetigten Betrag ueber 0, die Zahl im Bescheid bleibt. Wer den Bezug hat, traegt ihn im
-//! amtlichen Formular selbst ein, bis das Kz gebaut ist.
+//! **Warum es zaehlt.** Ein Fall, den die Erklaerung nicht voll traegt, darf nicht still durchgehen: das Finanzamt saehe einen
+//! Bezug ohne die Angaben, die der Vordruck dafuer verlangt. Es sperrt darum weiter, wo keine Zeile steht (Altersgrenze nicht
+//! erreicht, Betrag oder Bemessungsgrundlage unter 1 Euro) und wo der Bezug im Veranlagungsjahr oder danach beginnt (Zeile 14).
 //!
-//! **Wo es sitzt.** `rust/elster/src/deklaration.rs::Bau::versorgung`. Der Ehegatte sperrt nur bei bestaetigter
+//! **Wo es sitzt.** `rust/elster/src/deklaration.rs::Bau::versorgung_sperre`. Der Ehegatte zaehlt nur bei bestaetigter
 //! Zusammenveranlagung: nur dann zaehlt sein Bezug im Bescheid (Abweichung Nr. 33). Ein vorlaeufiger Betrag behaelt seinen
-//! Grund "Pflicht-Bestaetigung fehlt". Die HTTP-Naht (`GET /deklaration`, `POST /einreichen`) prueft
-//! `rust/api/tests/versorgung_abgabe_sperre_hermetisch.rs`.
+//! Grund "Pflicht-Bestaetigung fehlt". Die Faelle der Tabelle stehen in `versorgung_sperre_faelle.rs`; die HTTP-Naht
+//! (`GET /deklaration`, `POST /einreichen`) prueft `rust/api/tests/versorgung_abgabe_sperre_hermetisch.rs`.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -24,9 +25,9 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use bescheid::deklaration::{einreichungs_xml, EinreichFehler};
+use bescheid::deklaration::{einreichungs_xml, mit_ring_werten, EinreichFehler};
 use bescheid::testhilfe::{index, params};
-use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Zustand};
+use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Vz, Zustand};
 use elster::deklariere;
 use elster::testhilfe::schemas_da;
 use serde_json::{json, Value};
@@ -105,9 +106,12 @@ fn sperre(r: &Result<String, EinreichFehler>) -> Vec<(String, String)> {
     }
 }
 
-/// `(unvollstaendig, nicht_deklariert)` der Deklaration, je als `(feld_id, grund)`; nur Felder `versorgung_*`.
+/// `(unvollstaendig, nicht_deklariert)` der Deklaration, je als `(feld_id, grund)`; nur Felder `versorgung_*`. Wie die
+/// Produktion (`einreichungs_xml`): Ring, dann `deklariere`. Ohne den Ring stuende kein Ring-Wert im Snapshot, und die Sperre
+/// "keine Zeile" griffe fuer jeden Bezug (Abweichung Nr. 64).
 fn deklaration_der(s: &Store) -> (Vec<(String, String)>, Vec<String>) {
-    let (felder, _) = s.materialisiere(None).unwrap();
+    let (mut felder, _) = s.materialisiere(None).unwrap();
+    mit_ring_werten(&mut felder, Some(Vz::Vz2025), params()).unwrap();
     let d = deklariere(&felder, index(), 2025, None).unwrap();
     let offen = d
         .unvollstaendig()
@@ -124,12 +128,13 @@ fn deklaration_der(s: &Store) -> (Vec<(String, String)>, Vec<String>) {
     (offen, nicht)
 }
 
-/// Person A: Bezug von `euro`, Bemessungsgrundlage gleich dem Bezug, Beginn 2025, beamtenrechtlich.
+/// Person A: Bezug von `euro`, Bemessungsgrundlage gleich dem Bezug, Beginn 2020 (vor dem Veranlagungsjahr 2025),
+/// beamtenrechtlich: ein Fall, den die Zeilen 11 bis 13 voll tragen.
 fn versorgung_a(euro: i64) -> Vec<(&'static str, Value)> {
     vec![
         (A, json!(euro * 100)),
         ("versorgung_bemessungsgrundlage", json!(euro * 100)),
-        ("versorgung_beginn_jahr", json!(2025)),
+        ("versorgung_beginn_jahr", json!(2020)),
         ("versorgung_art", json!("beamtenrechtlich")),
     ]
 }
@@ -138,9 +143,19 @@ fn versorgung_b(euro: i64) -> Vec<(&'static str, Value)> {
     vec![
         (B, json!(euro * 100)),
         ("versorgung_bemessungsgrundlage_partner", json!(euro * 100)),
-        ("versorgung_beginn_jahr_partner", json!(2025)),
+        ("versorgung_beginn_jahr_partner", json!(2020)),
         ("versorgung_art_partner", json!("beamtenrechtlich")),
     ]
+}
+
+/// Dieselben Felder mit Beginn im Veranlagungsjahr 2025: die Erklaerung traegt Zeile 14 nicht, die Abgabe sperrt.
+fn im_veranlagungsjahr(mut p: Vec<(&'static str, Value)>) -> Vec<(&'static str, Value)> {
+    for (f, w) in &mut p {
+        if f.starts_with("versorgung_beginn_jahr") {
+            *w = json!(2025);
+        }
+    }
+    p
 }
 
 fn mit(mut a: Vec<(&'static str, Value)>, b: Vec<(&'static str, Value)>) -> Vec<(&'static str, Value)> {
@@ -173,11 +188,26 @@ fn kontrolle_bezug_null_sperrt_nichts() {
     assert!(nicht.contains(&A.to_owned()) && nicht.contains(&B.to_owned()), "{nicht:?}");
 }
 
-/// AK1: Person A, bestaetigter Bezug ueber 0 -> die Abgabe sperrt mit einem Eintrag fuer `versorgung_jahresrente`, und der
-/// Grund sagt, was fehlt und was der Nutzer tut. Der Betrag steht weiter mit Grund in `nicht_deklariert`.
+/// AK1: Person A, bestaetigter Bezug ueber 0, den die Zeilen 11 bis 13 voll tragen (Beginn 2020, Alters-Gate erfuellt): die
+/// Abgabe ist frei (kein Eintrag in `unvollstaendig`), der Betrag steht in Zeile 11 und nicht in `nicht_deklariert`. Ohne
+/// Schema (CI) endet `einreichungs_xml` erst beim XML, nie bei der Sperre.
 #[test]
-fn bezug_von_person_a_sperrt_die_abgabe() {
+fn ein_getragener_bezug_von_person_a_sperrt_die_abgabe_nicht() {
     let s = akte(&versorgung_a(30_000), &[]);
+    let r = lauf(&s);
+    assert!(sperre(&r).is_empty(), "der getragene Bezug sperrt: {}", kurz(&r));
+    assert_eq!(r.is_ok(), schemas_da(2025), "{}", kurz(&r));
+    let (offen, nicht) = deklaration_der(&s);
+    assert!(offen.is_empty(), "{offen:?}");
+    assert!(!nicht.contains(&A.to_owned()), "der Betrag steht in Zeile 11, nicht in nicht_deklariert: {nicht:?}");
+}
+
+/// AK1, Rest: Person A, Beginn im Veranlagungsjahr 2025 -> die Abgabe sperrt mit genau einem Eintrag fuer
+/// `versorgung_jahresrente`, und der Grund nennt Zeile 14, die Sperre und das Formular. Die Zeilen 11 bis 13 stehen trotzdem in
+/// der Deklaration (der Betrag ist nicht in `nicht_deklariert`): die Sperre haelt nur die Abgabe zurueck.
+#[test]
+fn ein_bezug_von_person_a_mit_beginn_im_veranlagungsjahr_sperrt_die_abgabe() {
+    let s = akte(&im_veranlagungsjahr(versorgung_a(30_000)), &[]);
     let r = lauf(&s);
     let e = sperre(&r);
     assert_eq!(
@@ -188,34 +218,104 @@ fn bezug_von_person_a_sperrt_die_abgabe() {
     );
     let grund = &e[0].1;
     assert!(
-        grund.starts_with("Versorgungsbezüge über 0 Euro") && grund.contains("gesperrt") && grund.contains("Formular"),
-        "der Grund nennt Bezug, Sperre und Formular nicht: {grund}"
+        grund.starts_with("Versorgungsbezüge über 0 Euro")
+            && grund.contains("Zeile 14")
+            && grund.contains("gesperrt")
+            && grund.contains("Formular"),
+        "der Grund nennt Bezug, Zeile 14, Sperre und Formular nicht: {grund}"
     );
     let (offen, nicht) = deklaration_der(&s);
     assert_eq!(offen.len(), 1, "{offen:?}");
-    assert!(nicht.contains(&A.to_owned()), "der Betrag verschwindet aus nicht_deklariert: {nicht:?}");
+    assert!(!nicht.contains(&A.to_owned()), "der Betrag steht in Zeile 11: {nicht:?}");
 }
 
-/// AK2: der Ehegatte sperrt nur bei BESTAETIGTER Zusammenveranlagung. Einzelveranlagung und eine vorlaeufige Antwort auf die
-/// Veranlagung sperren nicht (sein Bezug zaehlt im Bescheid dann nicht).
+/// AK1, Rest: Person A, Alters-Gate nicht erfuellt (`altersgrenze_sonstige`, 62 Jahre bei Beginn): der Bezug steckt nur als
+/// Arbeitslohn in Zeile 5, keine Zeile 11 bis 13 -> die Abgabe sperrt weiter, mit dem Grund "nicht in die Zeilen 11 bis 13", und
+/// der Betrag bleibt mit Grund in `nicht_deklariert`. Die Kontrolle mit 63 Jahren ist frei.
 #[test]
-fn der_bezug_des_ehegatten_sperrt_nur_bei_bestaetigter_zusammenveranlagung() {
-    let bezug = versorgung_b(30_000);
+fn ohne_zeile_sperrt_die_abgabe_weiter() {
+    let gate = |alter: i64| {
+        let mut p = versorgung_a(30_000);
+        for (f, w) in &mut p {
+            if *f == "versorgung_art" {
+                *w = json!("altersgrenze_sonstige");
+            }
+        }
+        p.push(("versorgung_alter_bei_beginn", json!(alter)));
+        akte(&p, &[])
+    };
+    let (offen, nicht) = deklaration_der(&gate(63));
+    assert!(offen.is_empty(), "Kontrolle, 63 Jahre: Gate erfuellt, die Zeilen stehen: {offen:?}");
+    assert!(!nicht.contains(&A.to_owned()), "{nicht:?}");
+
+    let s = gate(62);
+    let r = lauf(&s);
+    let e = sperre(&r);
+    assert_eq!(e.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(), [A], "{}", kurz(&r));
+    assert!(
+        e[0].1.contains("nicht in die Zeilen 11 bis 13") && e[0].1.contains("gesperrt") && e[0].1.contains("Formular"),
+        "{}",
+        e[0].1
+    );
+    let (_, nicht) = deklaration_der(&s);
+    assert!(nicht.contains(&A.to_owned()), "ohne Zeile steht der Betrag in nicht_deklariert: {nicht:?}");
+}
+
+/// Faelle, die der Bescheid schon vor der Erklaerung sperrt, bleiben so (kein Fall der Abgabe-Sperre): ein Bezug ueber dem
+/// Bruttoarbeitslohn (`VersorgungUeberLohn`), ein Bezug ohne Bemessungsgrundlage (`VersorgungsfreibetragOffen`) und ein Beginn
+/// nach dem Veranlagungsjahr (`VersorgungsbeginnNachVz`). `einreichungs_xml` endet bei ihnen in `Gesperrt`, nicht in
+/// `DeklarationUnvollstaendig`.
+#[test]
+fn der_bescheid_sperrt_bezug_ueber_lohn_ohne_bemessungsgrundlage_und_beginn_nach_dem_jahr_vor_der_erklaerung() {
+    let gesperrt = |p: &[(&str, Value)]| match lauf(&akte(p, &[])) {
+        Err(EinreichFehler::Gesperrt(g)) => format!("{g:?}"),
+        r => panic!("erwartet Gesperrt, erhalten {}", kurz(&r)),
+    };
+    assert_eq!(gesperrt(&versorgung_a(9_000_000)), "VersorgungUeberLohn");
+    let ohne_bmg: Vec<_> = versorgung_a(30_000)
+        .into_iter()
+        .filter(|(f, _)| *f != "versorgung_bemessungsgrundlage")
+        .collect();
+    assert_eq!(gesperrt(&ohne_bmg), "VersorgungsfreibetragOffen");
+    let mut spaet = versorgung_a(30_000);
+    for (f, w) in &mut spaet {
+        if *f == "versorgung_beginn_jahr" {
+            *w = json!(2030);
+        }
+    }
+    assert_eq!(gesperrt(&spaet), "VersorgungsbeginnNachVz");
+}
+
+/// AK2: der Ehegatte zaehlt nur bei BESTAETIGTER Zusammenveranlagung. Ein getragener Bezug sperrt nicht, einer mit Beginn im
+/// Veranlagungsjahr sperrt. Einzelveranlagung und eine vorlaeufige Antwort auf die Veranlagung sperren nie (sein Bezug zaehlt im
+/// Bescheid dann nicht).
+#[test]
+fn der_bezug_des_ehegatten_zaehlt_nur_bei_bestaetigter_zusammenveranlagung() {
+    let lohn_b = vec![("bruttoarbeitslohn_partner", json!(4_000_000))];
+    let bezug = mit(lohn_b.clone(), versorgung_b(30_000));
     let zusammen = mit(vec![("veranlagung", json!("zusammen"))], bezug.clone());
     let (offen, nicht) = deklaration_der(&akte(&zusammen, &[]));
+    assert!(offen.is_empty(), "zusammen, getragen: {offen:?}");
+    assert!(!nicht.contains(&B.to_owned()), "der Betrag steht in Zeile 11 der zweiten Anlage N: {nicht:?}");
+
+    let im_jahr = mit(vec![("veranlagung", json!("zusammen"))], mit(lohn_b.clone(), im_veranlagungsjahr(versorgung_b(30_000))));
+    let (offen, _) = deklaration_der(&akte(&im_jahr, &[]));
     assert_eq!(
         offen.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(),
         [B],
-        "zusammen: genau der Ehegatte-Betrag sperrt"
+        "zusammen, Beginn im Veranlagungsjahr: genau der Ehegatte-Betrag sperrt"
     );
-    assert!(nicht.contains(&B.to_owned()), "{nicht:?}");
+    assert!(offen[0].1.contains("Zeile 14"), "{}", offen[0].1);
 
-    let einzel = mit(vec![("veranlagung", json!("einzel"))], bezug.clone());
+    let einzel = mit(
+        vec![("veranlagung", json!("einzel"))],
+        mit(lohn_b.clone(), im_veranlagungsjahr(versorgung_b(30_000))),
+    );
     let (offen, nicht) = deklaration_der(&akte(&einzel, &[]));
     assert!(offen.is_empty(), "einzel: der Bezug des Ehegatten zaehlt nicht, also sperrt er nicht: {offen:?}");
     assert!(nicht.contains(&B.to_owned()), "{nicht:?}");
 
-    let vorlaeufig = akte(&bezug, &[("veranlagung", json!("zusammen"))]);
+    let vorlaeufig = akte(&mit(lohn_b, im_veranlagungsjahr(versorgung_b(30_000))), &[("veranlagung", json!("zusammen"))]);
     let (offen, _) = deklaration_der(&vorlaeufig);
     assert!(offen.is_empty(), "zusammen nur vorlaeufig: {offen:?}");
 }

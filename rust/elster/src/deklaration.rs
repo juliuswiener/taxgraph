@@ -251,12 +251,20 @@ const KAP_SONSTIGE: [(&str, &str, bool); 2] = [
 const VERSORGUNG: &str = "versorgung_jahresrente";
 const VERSORGUNG_PARTNER: &str = "versorgung_jahresrente_partner";
 
-/// Der Grund der Abgabe-Sperre bei einem bestaetigten Versorgungsbezug ueber 0 (`VERSORGUNG`, `VERSORGUNG_PARTNER` ohne Kz):
-/// der Bescheid rechnet den Bezug ein (Versorgungsfreibetrag, Zuschlag, Pauschbetrag). Seit Abweichung Nr. 50 traegt das XML
-/// ihn in den Zeilen 11 bis 13 der Anlage N, soweit der Bescheid ihn als Versorgungsbezug rechnet ([`VERSORGUNG_ZEILE`]); ein
-/// `checkESt`-Lauf hat diese Zeilen mit Nr. 50 offline angenommen (rc=0), die Sperre bleibt trotzdem, bis Julius sie aufhebt
-/// (Abweichung Nr. 42). Seit Nr. 53 nimmt der Text die Rente mit Leistungsmitteilung aus (§ 22 Nr. 5 `EStG`, kein Versorgungsbezug).
-const VERSORGUNG_SPERRE: &str = "Versorgungsbezüge über 0 Euro: Die Erklärung trägt sie in den Zeilen 11 bis 13 der Anlage N, soweit der Bescheid sie als Versorgungsbezug rechnet. Die Abgabe ist dafür noch nicht freigegeben und deshalb gesperrt. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht in diese Zeilen. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+/// Der Grund der Abgabe-Sperre bei einem bestaetigten Versorgungsbezug ueber 0, den die Erklaerung NICHT in den Zeilen 11 bis 13
+/// der Anlage N traegt (`VERSORGUNG`, `VERSORGUNG_PARTNER` ohne Kz; der Ring-Wert [`VERSORGUNG_ZEILE`] steht nicht auf `true`):
+/// die Altersgrenze zu Beginn des Bezugs ist nicht erreicht (der Bezug steckt dann nur als Arbeitslohn in Zeile 5), oder Betrag
+/// oder Bemessungsgrundlage liegen unter 1 Euro (das Schema nimmt die Zeilen 11 und 12 erst ab 1 Euro). Bis Abweichung Nr. 64
+/// hielt die Sperre (Abweichung Nr. 42) JEDEN Bezug ueber 0 zurueck; Julius hat sie am 2026-10-12 fuer die Faelle gehoben, die die
+/// Zeilen 11 bis 13 voll tragen. Seit Nr. 53 nimmt der Text die Rente mit Leistungsmitteilung aus (§ 22 Nr. 5 `EStG`, kein
+/// Versorgungsbezug).
+const VERSORGUNG_SPERRE: &str = "Versorgungsbezüge über 0 Euro: Die Erklärung kann diesen Bezug nicht in die Zeilen 11 bis 13 der Anlage N eintragen. Das ist der Fall, wenn die Altersgrenze zu Beginn des Bezugs nicht erreicht ist oder wenn Betrag oder Bemessungsgrundlage unter 1 Euro liegen. Die Abgabe ist dafür gesperrt. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht in diese Zeilen. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+
+/// Der Grund der Abgabe-Sperre (Abweichung Nr. 64) bei einem Versorgungsbezug, der im Veranlagungsjahr oder danach beginnt. Im
+/// Beginnjahr kann der Bezug unterjaehrig sein; fuer diesen Fall verlangt der Vordruck in Zeile 14 den ersten und den
+/// letzten Zahlungsmonat (Nr. 31 der Lohnsteuerbescheinigung), und die Erklaerung traegt diese Zeile nicht. Ein Beginn nach dem
+/// Veranlagungsjahr lehnt `ERiC` ab (Regel `Arbeitslohn_ab08_5`); der Bescheid sperrt ihn schon vorher (`VersorgungsbeginnNachVz`).
+const VERSORGUNG_SPERRE_BEGINN: &str = "Versorgungsbezüge über 0 Euro: Der Bezug beginnt im Veranlagungsjahr oder später. Bei einem Beginn im Veranlagungsjahr verlangt der Vordruck in Zeile 14 den ersten und den letzten Zahlungsmonat, und die Erklärung trägt diese Zeile nicht. Ein Beginn nach dem Veranlagungsjahr lehnt ELSTER ab. Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
 
 /// Nur Rust (Abweichung Nr. 50): die Ring-Werte zu den Zeilen 11 bis 13 der Anlage N, je Person. `bescheid::deklaration::
 /// mit_ring_werten` setzt sie auf `true`, wenn der Bescheid den Bezug als steuerbeguenstigten Versorgungsbezug rechnet (alle
@@ -544,6 +552,9 @@ struct Bau<'a> {
     /// Die Null-Verbots-Menge DIESES Veranlagungsjahres ([`null_unzulaessig`]), durchgereicht an
     /// jede Schreibstelle (`_schreibe_kz(…, null_kz)`, `est_mapping.py:288-302`).
     null_kz: &'static [&'static str],
+    /// Das Veranlagungsjahr, wie `deklariere` es bekam (Abweichung Nr. 64: ein Versorgungsbezug mit Beginn im Veranlagungsjahr
+    /// oder danach sperrt, [`Bau::versorgung_sperre`]).
+    vz: i64,
     deklaration: BTreeMap<String, Value>,
     kind_anlagen: Vec<KindAnlage>,
     person_b: BTreeMap<String, Value>,
@@ -895,15 +906,43 @@ impl Bau<'_> {
         schreibe_kz(ziel, kz, wert, Some(b.typ), self.null_kz).map_err(wert_fehler(feld_id))
     }
 
-    /// `versorgung_jahresrente` und `versorgung_jahresrente_partner` OHNE Kz (Abweichung Nr. 42, Nr. 50). Steht der Ring-Wert
-    /// ([`Bau::versorgung_zeile_gilt`]) auf `true`, steht der Betrag in Zeile 11 der Anlage N ([`VERSORGUNG_BETRAG_KZ`], auf
-    /// volle Euro abgerundet wie jede Einnahme), sonst mit Grund in `nicht_deklariert` (Bezug vor dem Alters-Gate: er steckt als
-    /// Arbeitslohn in Zeile 5; Bezug unter 1 Euro). Ein bestaetigter Betrag ueber 0 sperrt die Abgabe in beiden Faellen
-    /// ([`VERSORGUNG_SPERRE`], 409 `deklaration_unvollstaendig`), bis `checkESt` die Zeilen einmal angenommen hat; die Sperre
-    /// haelt auch `erzeuge_xml` zurueck. Der Betrag des Ehegatten sperrt nur bei bestaetigter Zusammenveranlagung: bei
-    /// Einzelveranlagung zaehlt er im Bescheid nicht. Ein vorlaeufiger Betrag erreicht diesen Zweig nicht; er behaelt den
-    /// Grund "Pflicht-Bestaetigung fehlt" (`feld`). Ein Wert, aus dem sich keine ganze Zahl lesen laesst (`None`), zaehlt wie
-    /// im Bescheid als 0 und wirft keinen Fehler (wie [`Bau::abzug_gewaehlt`]).
+    /// Der Grund, aus dem ein Versorgungsbezug ueber 0 die Abgabe sperrt, oder `None`, wenn die Erklaerung ihn voll traegt
+    /// (Abweichung Nr. 64). Voll getragen heisst: der Ring-Wert ([`Bau::versorgung_zeile_gilt`]) steht auf `true` (Zeilen 11 bis
+    /// 13 stehen im XML) UND der Bezug beginnt vor dem Veranlagungsjahr. Ohne Ring-Wert gilt [`VERSORGUNG_SPERRE`], bei einem
+    /// Beginn im Veranlagungsjahr oder danach (oder einem Beginnjahr, das sich nicht als bestaetigte ganze Zahl lesen laesst)
+    /// [`VERSORGUNG_SPERRE_BEGINN`]. ponytail: ein Beginn im Veranlagungsjahr gilt als unterjaehrig (Zeile 14), auch wenn der
+    /// Bezug am 1. Januar begann; ein Bezug, der im Veranlagungsjahr ENDET (Zeile 14, Sterbegeld Zeile 15, mehrere
+    /// Kalenderjahre Zeile 16, zweiter Bezug je Person), ist aus den Eingaben nicht erkennbar und bleibt eine benannte Grenze.
+    /// Upgrade-Pfad: die Zeilen 14 bis 16 und den zweiten Bezug bauen.
+    fn versorgung_sperre(&self, partner: bool) -> Option<&'static str> {
+        if !self.versorgung_zeile_gilt(partner) {
+            return Some(VERSORGUNG_SPERRE);
+        }
+        let beginn = if partner {
+            VERSORGUNG_BEGINN_PARTNER
+        } else {
+            VERSORGUNG_BEGINN
+        };
+        let jahr = self
+            .snapshot
+            .get(beginn)
+            .filter(|s| s.zustand == Zustand::Bestaetigt)
+            .and_then(|s| py::int(&s.wert).ok());
+        match jahr {
+            Some(jahr) if jahr < self.vz => None,
+            _ => Some(VERSORGUNG_SPERRE_BEGINN),
+        }
+    }
+
+    /// `versorgung_jahresrente` und `versorgung_jahresrente_partner` OHNE Kz (Abweichung Nr. 42, Nr. 50, Nr. 64). Steht der
+    /// Ring-Wert ([`Bau::versorgung_zeile_gilt`]) auf `true`, steht der Betrag in Zeile 11 der Anlage N
+    /// ([`VERSORGUNG_BETRAG_KZ`], auf volle Euro abgerundet wie jede Einnahme), sonst mit Grund in `nicht_deklariert` (Bezug vor
+    /// dem Alters-Gate: er steckt als Arbeitslohn in Zeile 5; Bezug unter 1 Euro). Ein bestaetigter Betrag ueber 0 sperrt die
+    /// Abgabe nur, wo die Erklaerung ihn nicht voll traegt ([`Bau::versorgung_sperre`], 409 `deklaration_unvollstaendig`); die
+    /// Sperre haelt auch `erzeuge_xml` zurueck. Der Betrag des Ehegatten zaehlt nur bei bestaetigter Zusammenveranlagung: bei
+    /// Einzelveranlagung zaehlt er im Bescheid nicht und sperrt nicht. Ein vorlaeufiger Betrag erreicht diesen Zweig nicht; er
+    /// behaelt den Grund "Pflicht-Bestaetigung fehlt" (`feld`). Ein Wert, aus dem sich keine ganze Zahl lesen laesst (`None`),
+    /// zaehlt wie im Bescheid als 0 und wirft keinen Fehler (wie [`Bau::abzug_gewaehlt`]).
     fn versorgung(&mut self, feld_id: &str, wert: &PyWert, b: &Bindung) -> Ergebnis<()> {
         let partner = feld_id == VERSORGUNG_PARTNER;
         if self.versorgung_zeile_gilt(partner) {
@@ -917,7 +956,9 @@ impl Bau<'_> {
         }
         let zaehlt = feld_id == VERSORGUNG || self.zusammen_bestaetigt();
         if zaehlt && py::int(wert).is_ok_and(|cent| cent > 0) {
-            self.offen(feld_id, VERSORGUNG_SPERRE);
+            if let Some(grund) = self.versorgung_sperre(partner) {
+                self.offen(feld_id, grund);
+            }
         }
         Ok(())
     }
@@ -1491,6 +1532,7 @@ pub fn deklariere(
         snapshot,
         bindung,
         null_kz,
+        vz,
         deklaration: KONSTANTE_KZ
             .iter()
             .map(|k| ((*k).to_owned(), Value::Bool(true)))
@@ -2934,8 +2976,8 @@ mod tests {
     /// (`versorgung_zeile`, `versorgung_zeile_partner`) in den Zeilen 11 bis 13 der Anlage N: Person A in der Deklaration, Person B
     /// in `person_b`. Der Betrag und die Bemessungsgrundlage stehen abgerundet auf volle Euro. Ohne Ring-Wert (Bezug vor dem
     /// Alters-Gate, kein Wert) steht kein Kz, und die drei Felder bleiben mit Grund in `nicht_deklariert`. Die Sperre
-    /// ([`VERSORGUNG_SPERRE`]) steht in beiden Faellen; der Ring-Wert selbst steht in keiner Liste. Das Regal (`regal.rs`) fuehrt
-    /// die drei Literale als `Verhalten` mit diesem Test.
+    /// ([`VERSORGUNG_SPERRE`]) steht genau dann, wenn keine Zeile steht (Abweichung Nr. 64); der Ring-Wert selbst steht in keiner
+    /// Liste. Das Regal (`regal.rs`) fuehrt die drei Literale als `Verhalten` mit diesem Test.
     #[test]
     fn versorgung_steht_nur_mit_dem_ring_wert_in_den_zeilen_11_bis_13() {
         let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -2994,9 +3036,16 @@ mod tests {
                 let flag = format!("versorgung_zeile{s}");
                 assert!(d.nicht_deklariert.iter().all(|e| e.feld_id != flag), "{name}");
                 assert!(d.unvollstaendig().iter().all(|e| e.feld_id != flag), "{name}");
-                // Die Sperre bleibt in jedem Fall mit Bezug (Ehegatte: Zusammenveranlagung ist bestaetigt).
-                let gesperrt = d.unvollstaendig().iter().filter(|e| e.feld_id == format!("versorgung_jahresrente{s}")).count();
-                assert_eq!(gesperrt, 1, "{name}: die Sperre bleibt");
+                // Abweichung Nr. 64: die Sperre steht nur, wo keine Zeile steht (Ehegatte: Zusammenveranlagung ist bestaetigt);
+                // der Bezug beginnt 2020, also vor dem Veranlagungsjahr.
+                let sperren: Vec<&str> = d
+                    .unvollstaendig()
+                    .iter()
+                    .filter(|e| e.feld_id == format!("versorgung_jahresrente{s}"))
+                    .map(|e| e.grund.as_str())
+                    .collect();
+                let soll: &[&str] = if steht { &[] } else { &[super::VERSORGUNG_SPERRE] };
+                assert_eq!(sperren, soll, "{name}: Sperre");
             }
             // Ein nur VORLAEUFIGER Ring-Wert gibt keine Zeile: der Ring setzt ihn nur aus bestaetigten Feldern.
             let mut felder = Felder::from([
@@ -3014,20 +3063,91 @@ mod tests {
         }
     }
 
-    /// Abweichung Nr. 53: der Grund der Abgabe-Sperre bei Versorgungsbezuegen sagt nicht mehr, ein `checkESt`-Lauf habe die
-    /// Zeilen 11 bis 13 "noch nie angenommen" (Nr. 50 hat sie offline angenommen, rc=0), und nimmt die Rente mit Leistungsmitteilung
-    /// aus. Die Sperre selbst bleibt (Abweichung Nr. 42): der Text nennt sie und das amtliche Formular.
+    /// Abweichung Nr. 53 und Nr. 64: die Gruende der Abgabe-Sperre bei Versorgungsbezuegen sagen nicht mehr, ein `checkESt`-Lauf habe
+    /// die Zeilen 11 bis 13 "noch nie angenommen" (Nr. 50 hat sie offline angenommen, rc=0) oder die Abgabe sei "noch nicht
+    /// freigegeben" (Julius hat die Sperre am 2026-10-12 fuer die getragenen Faelle gehoben). Beide nennen die Sperre und das
+    /// amtliche Formular; der erste nimmt die Rente mit Leistungsmitteilung aus und sagt, dass die Zeilen den Bezug nicht tragen,
+    /// der zweite nennt die Zeile 14 und den Beginn im Veranlagungsjahr.
     #[test]
-    fn die_versorgung_sperre_sagt_nicht_noch_nie_angenommen_und_nimmt_die_leistungsmitteilung_aus() {
+    fn die_versorgung_sperren_nennen_den_grund_die_ausnahme_und_das_formular() {
+        for text in [super::VERSORGUNG_SPERRE, super::VERSORGUNG_SPERRE_BEGINN] {
+            assert!(!text.contains("noch nie angenommen") && !text.contains("noch nicht freigegeben"), "{text}");
+            assert!(text.starts_with("Versorgungsbezüge über 0 Euro") && text.contains("gesperrt") && text.contains("Formular"), "{text}");
+            assert!(!text.contains("nicht gesperrt"), "{text}");
+        }
         let text = super::VERSORGUNG_SPERRE;
-        assert!(!text.contains("noch nie angenommen"), "{text}");
         assert!(
             text.contains("Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht in diese Zeilen"),
             "{text}"
         );
-        assert!(text.starts_with("Versorgungsbezüge über 0 Euro") && text.contains("gesperrt") && text.contains("Formular"), "{text}");
-        assert!(text.contains("noch nicht freigegeben und deshalb gesperrt"), "{text}");
-        assert!(!text.contains("nicht gesperrt"), "{text}");
+        assert!(text.contains("nicht in die Zeilen 11 bis 13") && text.contains("Altersgrenze") && !text.contains("Zeile 14"), "{text}");
+        let text = super::VERSORGUNG_SPERRE_BEGINN;
+        assert!(text.contains("Zeile 14") && text.contains("im Veranlagungsjahr oder später") && !text.contains("nicht in die Zeilen 11 bis 13"), "{text}");
+    }
+
+    /// Abweichung Nr. 64: steht der Ring-Wert auf `true` (die Zeilen 11 bis 13 stehen im XML), sperrt ein Bezug NUR, wenn er im
+    /// Veranlagungsjahr oder danach beginnt ([`VERSORGUNG_SPERRE_BEGINN`]). Das Jahr ist das von `deklariere` (hier 2024 und
+    /// 2025), keine Konstante. Ein Beginnjahr, das nur vorlaeufig dasteht, gilt als nicht gelesen und sperrt ebenso. Bei
+    /// Einzelveranlagung zaehlt der Bezug des Ehegatten nicht und sperrt nie. Die drei Zeilen stehen in jedem Fall.
+    #[test]
+    fn ein_bezug_ab_dem_veranlagungsjahr_sperrt_mit_eigenem_grund_je_veranlagungsjahr() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value, zustand: Zustand| SnapshotFeld {
+            wert: wert.into(),
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        for partner in [false, true] {
+            let s = if partner { "_partner" } else { "" };
+            for vz in [2024_i64, 2025] {
+                // (Beginnjahr, Zustand des Beginnjahres, Veranlagung, erwarteter Grund)
+                let faelle = [
+                    (vz - 1, Zustand::Bestaetigt, "zusammen", None),
+                    (vz - 30, Zustand::Bestaetigt, "zusammen", None),
+                    (vz, Zustand::Bestaetigt, "zusammen", Some(super::VERSORGUNG_SPERRE_BEGINN)),
+                    (vz + 1, Zustand::Bestaetigt, "zusammen", Some(super::VERSORGUNG_SPERRE_BEGINN)),
+                    (vz - 1, Zustand::Vorlaeufig, "zusammen", Some(super::VERSORGUNG_SPERRE_BEGINN)),
+                    (vz, Zustand::Bestaetigt, "einzel", if partner { None } else { Some(super::VERSORGUNG_SPERRE_BEGINN) }),
+                ];
+                for (beginn, zustand, veranlagung, soll) in faelle {
+                    let felder = Felder::from([
+                        (format!("versorgung_jahresrente{s}"), feld(json!(3_000_000), Zustand::Bestaetigt)),
+                        (format!("versorgung_bemessungsgrundlage{s}"), feld(json!(2_500_000), Zustand::Bestaetigt)),
+                        (format!("versorgung_beginn_jahr{s}"), feld(json!(beginn), zustand)),
+                        (format!("versorgung_art{s}"), feld(json!("beamtenrechtlich"), Zustand::Bestaetigt)),
+                        (format!("versorgung_zeile{s}"), feld(json!(true), Zustand::Bestaetigt)),
+                        ("veranlagung".to_owned(), feld(json!(veranlagung), Zustand::Bestaetigt)),
+                    ]);
+                    let d = deklariere(&felder, &index, vz, None).unwrap();
+                    let name = format!("Person {}, VZ {vz}, Beginn {beginn} {zustand:?}, {veranlagung}", if partner { "B" } else { "A" });
+                    let sperren: Vec<&str> = d
+                        .unvollstaendig()
+                        .iter()
+                        .filter(|e| e.feld_id == format!("versorgung_jahresrente{s}"))
+                        .map(|e| e.grund.as_str())
+                        .collect();
+                    let soll: Vec<&str> = soll.into_iter().collect();
+                    assert_eq!(sperren, soll, "{name}: Sperre");
+                    let da = if partner { &d.person_b } else { &d.deklaration };
+                    if veranlagung == "zusammen" || !partner {
+                        assert_eq!(da.get("E0200801"), Some(&json!(30_000)), "{name}: Zeile 11 steht");
+                    }
+                }
+            }
+        }
     }
 
     /// Python `dict.get(wert)` an allen drei Aufrufstellen der Enum-Felder: Konfession (`feld`),
