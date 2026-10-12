@@ -101,6 +101,7 @@ zvE-Werte plus Randwerte durch Catala und GETTSIM schickt und
 | `make eric-gate` | ERiC-Offline-Gate: E10-2025-XSD-Struktur + checkESt. Prueft eine Minimal-XML, **kein** Abgabeweg-Nachweis. |
 | `make abgabeweg-freigabe` | Lokaler Freigabenachweis des ERiC-Abgabewegs ueber den echten HTTP-Endpunkt. Braucht ERiC + Herstellerkennung, jeder Skip wird zu exit != 0. |
 | `make abgabeweg-freigabe-rust` | Dasselbe fuer den Rust-Dienst (`rust/api/tests/einreichen_eric_echt.rs`): echter Prozess `taxgraph-api`, echte ERiC-Bibliothek, echte Herstellerkennung, nur Pruefung. Jede fehlende Voraussetzung und jeder andere Lauf als genau ein bestandener Test ist exit != 0. |
+| `make checkest-rust` | Drei weitere Rust-Tests gegen das echte checkESt: die von `taxgraph-xml` geschriebene Datei, die Versorgungszeilen 11 bis 13, die Pflicht-Kz der Anlage SO. Echte ERiC-Bibliothek, echte Herstellerkennung, nur Pruefung. Jede fehlende Voraussetzung und jeder andere Lauf als dreimal `ok. 1 passed` ist exit != 0. |
 | `make clean` | Build- und Zwischenartefakte entfernen. |
 
 ## Der Abgabeweg wird lokal nachgewiesen, nicht in CI
@@ -142,6 +143,10 @@ einziger Netz-Syscall ausserhalb von `127.0.0.1` (dem Testserver des Durchstichs
 Python-Ziel aus der `.env`, startet `taxgraph-api` als Prozess und prueft nur (kein Versand). Die CI
 laeuft ohne den echten Test (`#[ignore]`) und deckt nur die Verdrahtung: das Make-Ziel, `--ignored`, den
 Testnamen und das `#[ignore]` am Test. `checkESt` selbst prueft die CI nicht.
+
+Dasselbe gilt fuer `make checkest-rust` (drei Tests in `rust/api` und `rust/bescheid`): die CI fuehrt nur
+`rust/bescheid/tests/checkest_verdrahtung.rs` aus. Lokal laeuft das Ziel mit der ID aus der `.env`, die
+Meldungen und das Protokoll (`rust/target/checkest-rust.log`) nennen die ID nie.
 
 `make eric-gate` ist **kein** Ersatz: es prueft eine Minimal-XML gegen das amtliche Schema
 und zaehlt die GESPERRT-Grenze der Herstellerkennung als Bestehen. Es laeuft auch dann

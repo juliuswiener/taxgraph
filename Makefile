@@ -281,6 +281,21 @@ blockmatrix-rust:
 	cat $$log; \
 	[ $$rc -eq 0 ] && grep -q "test result: ok. 7 passed" $$log
 
+## Die drei uebrigen Tests gegen das echte checkESt (Vault: drei-echte-checkest-tests-bekommen-ein-make-ziel-2026-10-12): die von
+## taxgraph-xml geschriebene Datei (rust/api/tests/xml_export_hermetisch.rs), die Versorgungszeilen 11 bis 13
+## (rust/bescheid/tests/versorgung_kz_im_xml.rs) und die Pflicht-Kz der Anlage SO (rust/bescheid/tests/checkest_privatverkauf_spike.rs).
+## Je Test ein eigener cargo-Aufruf mit --exact: ein falscher Name liefe als "0 passed" und ist darum rot, denn das Ziel verlangt
+## dreimal "ok. 1 passed". Alle drei sind #[ignore] (die CI hat kein ERiC). Nur Pruefung (ERIC_VALIDIERE), kein Versand, kein Netz.
+## Fehlende Bibliothek, fehlendes Schema, fehlende oder gesperrte (74931) ID ist ein panic. Herstellerkennung wie bei blockmatrix-rust
+## aus der gitignorierten .env; das Protokoll liegt in rust/target/ und nennt die ID nie. Die Verdrahtung (Ziel, -p, --test, --ignored,
+## --exact, Testnamen, #[ignore], #[test], Zaehlung) haelt rust/bescheid/tests/checkest_verdrahtung.rs in der CI fest.
+checkest-rust:
+	if [ -z "$$ELSTER_HERSTELLER_ID" ] && [ -f .env ]; then set -a; . ./.env; set +a; fi; \
+	mkdir -p rust/target; log=rust/target/checkest-rust.log; \
+	(cd rust && cargo test -p api --test xml_export_hermetisch -- --ignored --nocapture --exact die_geschriebene_datei_besteht_checkest && cargo test -p bescheid --test versorgung_kz_im_xml -- --ignored --nocapture --exact checkest_nimmt_die_zeilen_11_bis_13_an && cargo test -p bescheid --test checkest_privatverkauf_spike -- --ignored --nocapture --exact privatverkauf_kz_pflichtliste_gegen_echtes_checkest) > $$log 2>&1; rc=$$?; \
+	cat $$log; \
+	[ $$rc -eq 0 ] && [ "$$(grep -c 'test result: ok. 1 passed' $$log)" -eq 3 ]
+
 ## Rust-Port (REWRITE_PLAN.md). Der generierte Catala-C-Backend liegt committed unter
 ## rust/catala-sys/generated/ -- catala-c regeneriert ihn (braucht den Opam-Switch).
 catala-c:

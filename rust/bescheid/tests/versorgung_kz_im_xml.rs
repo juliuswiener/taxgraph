@@ -387,7 +387,7 @@ fn regeln(antwort: &str) -> Vec<String> {
 /// Zeile 5, lehnt `Arbeitslohn_2` ab ("Versorgungsbezuege angegeben, aber kein Arbeitslohn"); steht ein Beginnjahr nach dem
 /// Veranlagungsjahr, lehnt `Arbeitslohn_ab08_5` ab. Die Meldungen nennen rc und Regelnamen, nie die ID, nie den Rumpf.
 #[test]
-#[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): ELSTER_HERSTELLER_ID aus der .env setzen, dann `cargo test -p bescheid --test versorgung_kz_im_xml -- --ignored`"]
+#[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make checkest-rust` (laedt die ID aus der .env)"]
 fn checkest_nimmt_die_zeilen_11_bis_13_an() {
     assert!(elster::find_eric_lib().is_some(), "Bibliothek fehlt: libericapi.so liegt weder unter $ERIC_DIR noch unter ~/02_Software/eric");
     assert!(schemas_da(2025), "Schema fehlt: ohne E10-2025.xsd ist das kein Lauf");
