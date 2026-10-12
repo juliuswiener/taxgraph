@@ -1655,6 +1655,45 @@ bindungen:
       zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
 
+  # Ring-Werte der Altersgrenze (Abweichung Nr. 65), je Person; Text, nur gesetzt, wenn das Alters-Gate (Alter BEI BEGINN) nicht
+  # erfuellt ist. `lohn`: die Person erreicht die Altersgrenze erst nach dem Veranlagungsjahr, der Bezug ist das ganze Jahr
+  # Arbeitslohn und braucht keine Zeilen 11 bis 13. `darueber`: sie hat die Grenze im oder vor dem Jahr erreicht, ab da ist der Bezug
+  # ein Versorgungsbezug, dem die Zeilen fehlen. `mit_ring_werten` setzt sie nur aus bestaetigten Feldern; `deklariere` liest sie
+  # nur fuer die Sperre. Kein Kz.
+  - feld_id: versorgung_altersgrenze
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: versorgung_altersgrenze}
+    typ: text
+    einheit: null
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Wie die Altersgrenze des Versorgungsbezugs im Veranlagungsjahr steht (automatisch)"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Ring-Wert, kein Eingabefeld und kein Kz: er sagt `deklariere`, ob ein Bezug vor dem Alters-Gate das ganze Jahr Arbeitslohn ist (`lohn`) oder die Person die Altersgrenze schon erreicht hat (`darueber`, die Abgabe sperrt)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"
+      zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_altersgrenze_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_altersgrenze_partner}
+    typ: text
+    einheit: null
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Wie die Altersgrenze des Versorgungsbezugs des Ehegatten im Veranlagungsjahr steht (automatisch)"
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Ring-Wert, kein Eingabefeld und kein Kz: wie `versorgung_altersgrenze` von Person A, gesetzt nur bei bestaetigter Zusammenveranlagung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"
+      zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
   - feld_id: p36_lohnsteuer_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
     feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: die Lohnsteuerbescheinigung stellt der Arbeitgeber am Ende des Dienstverhaeltnisses aus; einbehaltene Lohnsteuer, Steuerklasse und die beiden Rentenversicherungsanteile stehen darauf. Ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es weder Arbeitgeber noch Bescheinigung, aus der etwas abzulesen waere. `bruttoarbeitslohn_partner` erhebt genau diese Existenz. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus — unbeantwortet und ein vorlaeufiger Beleg-Vorschlag lassen die Frage stehen. NICHT gegated sind die Vorsorge-Felder des Partners (basis_kv_partner, basis_pv_partner, vorsorge_*_partner und vor_rv_ausserhalb_lstb_partner = Beitraege AUSSERHALB der Lohnsteuerbescheinigung): die traegt auch ein Partner ohne Anstellung, und eine Bedingung darauf naehme ihm den Vorsorgeabzug.", und: {feld: kein_lohn_pension_partner, wert: false, grund: "Wer bestaetigt, dass der Ehe-/Lebenspartner weder Arbeitslohn noch eine Pension (Versorgungsbezug) hatte, hat keine Lohnsteuerbescheinigung und keine Versorgungsmitteilung, aus der etwas abzulesen waere. `kein_lohn_pension_partner` erhebt genau diese Existenz. Fail-closed: nur eine BESTAETIGTE Antwort schliesst aus."}}

@@ -229,12 +229,14 @@ fn ein_bezug_von_person_a_mit_beginn_im_veranlagungsjahr_sperrt_die_abgabe() {
     assert!(!nicht.contains(&A.to_owned()), "der Betrag steht in Zeile 11: {nicht:?}");
 }
 
-/// AK1, Rest: Person A, Alters-Gate nicht erfuellt (`altersgrenze_sonstige`, 62 Jahre bei Beginn): der Bezug steckt nur als
-/// Arbeitslohn in Zeile 5, keine Zeile 11 bis 13 -> die Abgabe sperrt weiter, mit dem Grund "nicht in die Zeilen 11 bis 13", und
-/// der Betrag bleibt mit Grund in `nicht_deklariert`. Die Kontrolle mit 63 Jahren ist frei.
+/// AK1, Rest, und Abweichung Nr. 65: Person A, Alters-Gate nicht erfuellt (`altersgrenze_sonstige`, 62 Jahre bei Beginn). Der
+/// Bezug steckt nur als Arbeitslohn in Zeile 5, keine Zeile 11 bis 13, und der Betrag bleibt mit Grund in `nicht_deklariert`. Ob
+/// die Abgabe sperrt, entscheidet das Geburtsjahr: geboren 1957 hat die Person die Altersgrenze 2020 erreicht (der Bezug ist ab da
+/// ein Versorgungsbezug), die Abgabe sperrt mit dem Grund "im Veranlagungsjahr oder davor erreicht"; geboren 1965 erreicht sie die
+/// Grenze erst 2028, der Bezug ist das ganze Jahr Arbeitslohn und die Abgabe ist frei. Die Kontrolle mit 63 Jahren ist frei.
 #[test]
-fn ohne_zeile_sperrt_die_abgabe_weiter() {
-    let gate = |alter: i64| {
+fn ohne_zeile_sperrt_die_abgabe_nur_wenn_die_person_die_altersgrenze_erreicht_hat() {
+    let gate = |alter: i64, geburtsjahr: i64| {
         let mut p = versorgung_a(30_000);
         for (f, w) in &mut p {
             if *f == "versorgung_art" {
@@ -242,23 +244,40 @@ fn ohne_zeile_sperrt_die_abgabe_weiter() {
             }
         }
         p.push(("versorgung_alter_bei_beginn", json!(alter)));
+        p.push(("geburtsjahr", json!(geburtsjahr)));
         akte(&p, &[])
     };
-    let (offen, nicht) = deklaration_der(&gate(63));
+    let (offen, nicht) = deklaration_der(&gate(63, 1957));
     assert!(offen.is_empty(), "Kontrolle, 63 Jahre: Gate erfuellt, die Zeilen stehen: {offen:?}");
     assert!(!nicht.contains(&A.to_owned()), "{nicht:?}");
 
-    let s = gate(62);
+    let s = gate(62, 1957);
     let r = lauf(&s);
     let e = sperre(&r);
     assert_eq!(e.iter().map(|(f, _)| f.as_str()).collect::<Vec<_>>(), [A], "{}", kurz(&r));
     assert!(
-        e[0].1.contains("nicht in die Zeilen 11 bis 13") && e[0].1.contains("gesperrt") && e[0].1.contains("Formular"),
+        e[0].1.contains("im Veranlagungsjahr oder davor erreicht")
+            && e[0].1.contains("Zeile 11")
+            && e[0].1.contains("gesperrt")
+            && e[0].1.contains("Formular"),
         "{}",
         e[0].1
     );
     let (_, nicht) = deklaration_der(&s);
     assert!(nicht.contains(&A.to_owned()), "ohne Zeile steht der Betrag in nicht_deklariert: {nicht:?}");
+
+    // Geboren 1970: die Grenze liegt 2030 (60) und 2033 (63) nach dem Veranlagungsjahr; der Bezug ist Arbeitslohn, die Abgabe ist frei.
+    let s = gate(55, 1970);
+    let (offen, nicht) = deklaration_der(&s);
+    assert!(offen.is_empty(), "geboren 1970: die Abgabe ist frei: {offen:?}");
+    assert!(nicht.contains(&A.to_owned()), "ohne Zeile steht der Betrag in nicht_deklariert: {nicht:?}");
+    let r = lauf(&s);
+    assert!(sperre(&r).is_empty(), "{}", kurz(&r));
+
+    // Geboren 1965: die Akte `gesamt` fragt den Grad der Behinderung nicht; vorsichtig gilt die Grenze 60 (2025), die Abgabe sperrt.
+    let (offen, _) = deklaration_der(&gate(59, 1965));
+    assert_eq!(offen.len(), 1, "geboren 1965, Grad unbekannt: die Abgabe sperrt: {offen:?}");
+    assert!(offen[0].1.contains("im Veranlagungsjahr oder davor erreicht"), "{}", offen[0].1);
 }
 
 /// Faelle, die der Bescheid schon vor der Erklaerung sperrt, bleiben so (kein Fall der Abgabe-Sperre): ein Bezug ueber dem
