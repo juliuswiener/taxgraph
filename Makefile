@@ -118,8 +118,8 @@ restore:
 ## AUTH IST AN: `env -u TAXGRAPH_NO_AUTH` raeumt ein aus der Shell geerbtes Einzelnutzer-Opt-out ab.
 ## Ein Bau mit `--release` ist hier bewusst NICHT vorgesehen: Cargo schaltet dort overflow-checks und
 ## debug-assertions ab, und kein Vergleichslauf (`make ui-rust`; rust/parity seit L1 weg) hat diesen Bau je
-## gemessen. Das dev-Profil (opt-level 1, rust/Cargo.toml) ist der gepruefte Bau, nur ohne die
-## Test-Uhr (`festzeit`): der Dienst hat die echte Uhr.
+## gemessen. Das dev-Profil (opt-level 1, rust/Cargo.toml) ist der gepruefte Bau. Die Test-Uhr
+## `festzeit` gibt es seit L1 nicht mehr: der Dienst hat die echte Uhr.
 ## SERVE_TARGET liegt ausserhalb des Checkouts (target/ ist mehrere GB gross). TAXGRAPH_JWT_SECRET
 ## setzen, damit Anmeldungen einen Neustart ueberleben (ohne: zufaellig je Start, wie in Python).
 SERVE_PORT   ?= 8000
