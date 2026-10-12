@@ -82,12 +82,15 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// `rav_bav_nr5_beginn`, `rav_bav_andere_nummern`, `rav_bav_basisrente`), 383 -> 392 und 297 -> 306, die Kegel bleiben;
 /// danach am 2026-10-12 `versorgung_altersgrenze` und `versorgung_altersgrenze_partner` in `gesamt` und `rentner_gesamt`
 /// (Abweichung Nr. 65), 392 -> 394 und 306 -> 308, die Kegel bleiben;
+/// danach am 2026-10-12 die acht Rueckfragen zum Versorgungsbezug (`versorgung_zweiter_bezug`, `versorgung_sterbegeld`,
+/// `versorgung_mehrere_jahre`, `versorgung_nicht_ganzjaehrig`, je Person) in `gesamt` und `rentner_gesamt` (Abweichung Nr. 66),
+/// 394 -> 402 und 308 -> 316, die Kegel bleiben;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 85, 33),
-    (Scheibe::Gesamt, 394, 35),
-    (Scheibe::RentnerGesamt, 308, 28),
+    (Scheibe::Gesamt, 402, 35),
+    (Scheibe::RentnerGesamt, 316, 28),
 ];
 
 fn registry() -> &'static Registry {

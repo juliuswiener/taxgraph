@@ -477,4 +477,28 @@ fn checkest_nimmt_die_zeilen_11_bis_13_an() {
     );
     let (rc, r) = pruefe("K5 ueber der Altersgrenze (geboren 1957)", &xml_trotz_sperre(&darueber, None));
     assert_eq!((rc, &r[..]), (0, &[][..]), "K5: rc={rc} Regeln {r:?}");
+    // Abweichung Nr. 66, die vier Rueckfragen zum Versorgungsbezug. K6: viermal Nein aendert die Erklaerung nicht (dieselben Kz wie ohne
+    // Antwort), die Akte sperrt nicht, `checkESt` nimmt das XML an (`rc=0`). K7: ein Ja sperrt die Akte; das XML ohne die Zeilen 14 bis 16
+    // nimmt `checkESt` trotzdem an, die Plausibilitaetspruefung faengt diese Faelle nicht: die Sperre ist das einzige Netz.
+    let antworten = |ja: bool| -> Paare {
+        ["versorgung_zweiter_bezug", "versorgung_sterbegeld", "versorgung_mehrere_jahre", "versorgung_nicht_ganzjaehrig"]
+            .into_iter()
+            .map(|f| (f, json!(ja)))
+            .collect()
+    };
+    let nein = mit(rein.clone(), antworten(false));
+    let (d_nein, _) = deklaration(&nein);
+    assert!(d_nein.unvollstaendig().is_empty(), "K6: viermal Nein sperrt: {:?}", d_nein.unvollstaendig());
+    assert_eq!(d_nein.deklaration, deklaration(&rein).0.deklaration, "K6: viermal Nein aendert die Erklaerung");
+    let (rc, r) = pruefe("K6 Bezug, viermal Nein", &xml_der_akte(&nein, None));
+    assert_eq!((rc, &r[..]), (0, &[][..]), "K6: rc={rc} Regeln {r:?}");
+    let ja = mit(rein.clone(), antworten(true));
+    let gesperrt: Vec<String> = deklaration(&ja).0.unvollstaendig().iter().map(|e| e.feld_id.clone()).collect();
+    assert_eq!(
+        gesperrt,
+        ["versorgung_zweiter_bezug", "versorgung_sterbegeld", "versorgung_mehrere_jahre", "versorgung_nicht_ganzjaehrig"],
+        "K7: viermal Ja sperrt nicht je Frage"
+    );
+    let (rc, r) = pruefe("K7 Bezug, viermal Ja (gesperrt)", &xml_trotz_sperre(&ja, None));
+    assert_eq!((rc, &r[..]), (0, &[][..]), "K7: rc={rc} Regeln {r:?}");
 }

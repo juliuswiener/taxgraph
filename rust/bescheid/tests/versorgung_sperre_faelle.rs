@@ -145,25 +145,31 @@ fn sperren(mehr: &[(&'static str, Value)]) -> Vec<(String, String)> {
     let d = deklariere(&felder, index(), 2025, None).unwrap();
     d.unvollstaendig()
         .iter()
-        .filter(|e| e.feld_id.starts_with("versorgung_jahresrente"))
+        .filter(|e| e.feld_id.starts_with("versorgung_"))
         .map(|e| (e.feld_id.clone(), e.grund.clone()))
         .collect()
 }
 
 /// Was ein Grund sagt, an einem Merkmal im Text: der Bezug passt nicht in die Zeilen 11 bis 13, er beginnt im
-/// Veranlagungsjahr oder danach (Zeile 14), oder die Person hat die Altersgrenze im Veranlagungsjahr oder davor erreicht
-/// (Abweichung Nr. 65). Ein Text ohne eindeutiges Merkmal heisst `"?"` und macht die Tabelle rot.
+/// Veranlagungsjahr oder danach (Zeile 14), die Person hat die Altersgrenze im Veranlagungsjahr oder davor erreicht (Abweichung
+/// Nr. 65), oder der Nutzer hat eine der vier Rueckfragen mit Ja beantwortet (Abweichung Nr. 66: zweiter Bezug, Sterbegeld, mehrere
+/// Kalenderjahre, nicht ganzjaehrig). Genau ein Merkmal muss passen; sonst heisst der Text `"?"` und macht die Tabelle rot.
 fn art(grund: &str) -> &'static str {
     assert!(grund.starts_with("Versorgungsbezüge über 0 Euro"), "{grund}");
-    match (
-        grund.contains("nicht in die Zeilen 11 bis 13"),
-        grund.contains("Zeile 14"),
-        grund.contains("im Veranlagungsjahr oder davor erreicht"),
-    ) {
-        (true, false, false) => "ohne_zeile",
-        (false, true, false) => "beginn",
-        (false, false, true) => "altersgrenze",
-        _ => "?",
+    let arten = [
+        ("nicht in die Zeilen 11 bis 13", "ohne_zeile"),
+        ("beginnt im Veranlagungsjahr oder später", "beginn"),
+        ("im Veranlagungsjahr oder davor erreicht", "altersgrenze"),
+        ("zwei verschiedene Versorgungsbezüge", "zweiter_bezug"),
+        ("Sterbegeld", "sterbegeld"),
+        ("mehrere Kalenderjahre", "mehrere_jahre"),
+        ("nicht in allen zwölf Monaten", "nicht_ganzjaehrig"),
+    ];
+    let treffer: Vec<&'static str> = arten.iter().filter(|(merkmal, _)| grund.contains(merkmal)).map(|(_, a)| *a).collect();
+    if let [einzige] = treffer[..] {
+        einzige
+    } else {
+        "?"
     }
 }
 
@@ -371,6 +377,130 @@ fn die_altersgrenze_gilt_je_person_und_der_ehegatte_nur_bei_zusammenveranlagung(
             "A darueber, Ehegatte darueber",
             mit(a_darueber(), ehegatte_gate("zusammen", 62, 1957, Some(0))),
             vec![(A, "altersgrenze"), (B, "altersgrenze")],
+        ),
+    ];
+    pruefe_tabelle(faelle);
+}
+
+/// Die Rueckfragen zum Versorgungsbezug (Abweichung Nr. 66) in der Reihenfolge, in der ihre Gruende stehen: Feld Person A, Feld
+/// Ehegatte, Art des Grundes in der Tabelle.
+const FRAGEN: [(&str, &str, &str); 4] = [
+    ("versorgung_zweiter_bezug", "versorgung_zweiter_bezug_partner", "zweiter_bezug"),
+    ("versorgung_sterbegeld", "versorgung_sterbegeld_partner", "sterbegeld"),
+    ("versorgung_mehrere_jahre", "versorgung_mehrere_jahre_partner", "mehrere_jahre"),
+    ("versorgung_nicht_ganzjaehrig", "versorgung_nicht_ganzjaehrig_partner", "nicht_ganzjaehrig"),
+];
+
+/// Antworten auf die Rueckfragen: `(Feld, Antwort)` fuer jede der vier Fragen der Person, die Antwort `ja` je Frage.
+fn antworten(partner: bool, ja: [bool; 4]) -> Paare {
+    FRAGEN.iter().zip(ja).map(|((a, b, _), j)| (if partner { *b } else { *a }, json!(j))).collect()
+}
+
+/// Das Feld einer Frage und die Art ihres Grundes in der Tabelle.
+fn frage(i: usize, partner: bool) -> (&'static str, &'static str) {
+    (if partner { FRAGEN[i].1 } else { FRAGEN[i].0 }, FRAGEN[i].2)
+}
+
+/// Abweichung Nr. 66, Person A: Die Eingaben verraten vier Faelle nicht (zweiter Bezug, Sterbegeld, mehrere Kalenderjahre, Bezug nicht
+/// ganzjaehrig). Die Erklaerung fragt danach; ein bestaetigtes Ja sperrt die Abgabe mit dem Text des Falls, unter dem Feld der Frage.
+/// Heute (vor Nr. 66) geht jeder dieser Faelle durch. Nein, eine fehlende Antwort und ein Bezug von 0 (die Frage ist verborgen)
+/// sperren nicht; neben dem Grund des Bezugs selbst bleibt dieser stehen.
+#[test]
+fn die_rueckfragen_sperren_nur_mit_ja_und_zeigen_den_fall() {
+    let tragbar = || mit(lohn(50_000), bezug(3_000_000, 2_800_000, 2020, "beamtenrechtlich"));
+    let alle_ja = antworten(false, [true; 4]);
+    let faelle: Vec<Fall> = vec![
+        ("ohne Antwort", tragbar(), vec![]),
+        ("viermal Nein", mit(tragbar(), antworten(false, [false; 4])), vec![]),
+        ("Ja: zweiter Bezug", mit(tragbar(), antworten(false, [true, false, false, false])), vec![frage(0, false)]),
+        ("Ja: Sterbegeld", mit(tragbar(), antworten(false, [false, true, false, false])), vec![frage(1, false)]),
+        ("Ja: mehrere Kalenderjahre", mit(tragbar(), antworten(false, [false, false, true, false])), vec![frage(2, false)]),
+        ("Ja: nicht ganzjaehrig", mit(tragbar(), antworten(false, [false, false, false, true])), vec![frage(3, false)]),
+        (
+            "Ja: zweiter Bezug und mehrere Kalenderjahre",
+            mit(tragbar(), antworten(false, [true, false, true, false])),
+            vec![frage(0, false), frage(2, false)],
+        ),
+        ("viermal Ja", mit(tragbar(), alle_ja.clone()), (0..4).map(|i| frage(i, false)).collect()),
+        (
+            "Ja, aber Bezug 0 (Frage verborgen)",
+            mit(mit(lohn(50_000), bezug(0, 2_800_000, 2020, "beamtenrechtlich")), antworten(false, [true; 4])),
+            vec![],
+        ),
+        (
+            "Ja neben Bezug unter 1 Euro: beide Gruende",
+            mit(
+                mit(lohn(50_000), bezug(99, 99, 2020, "beamtenrechtlich")),
+                antworten(false, [false, true, false, false]),
+            ),
+            vec![(A, "ohne_zeile"), frage(1, false)],
+        ),
+        (
+            "Ja neben Beginn im Veranlagungsjahr: beide Gruende",
+            mit(
+                mit(lohn(50_000), bezug(3_000_000, 2_800_000, 2025, "beamtenrechtlich")),
+                antworten(false, [false, false, false, true]),
+            ),
+            vec![(A, "beginn"), frage(3, false)],
+        ),
+        (
+            "Ja neben Bezug vor der Altersgrenze (frei als Arbeitslohn, geboren 1965)",
+            mit(gate_a(59, Some(1965), Some(0)), antworten(false, [true, false, false, false])),
+            vec![frage(0, false)],
+        ),
+    ];
+    pruefe_tabelle(faelle);
+}
+
+/// Abweichung Nr. 66, Ehegatte: dieselben vier Fragen mit den Partner-Feldern. Das Ja zaehlt nur bei bestaetigter Zusammenveranlagung;
+/// die Antwort der einen Person gilt nie fuer die andere.
+#[test]
+fn die_rueckfragen_des_ehegatten_zaehlen_nur_bei_zusammenveranlagung_und_nur_fuer_ihn() {
+    let b_tragbar = [2_000_000, 1_900_000, 2018];
+    let tragbar_a = || mit(lohn(50_000), bezug(3_000_000, 2_800_000, 2020, "beamtenrechtlich"));
+    let zusammen = |ja: [bool; 4]| mit(lohn(30_000), mit(ehegatte("zusammen", Some(b_tragbar)), antworten(true, ja)));
+    let faelle: Vec<Fall> = vec![
+        ("Ehegatte, viermal Nein", zusammen([false; 4]), vec![]),
+        ("Ehegatte, Ja: zweiter Bezug", zusammen([true, false, false, false]), vec![frage(0, true)]),
+        ("Ehegatte, Ja: Sterbegeld", zusammen([false, true, false, false]), vec![frage(1, true)]),
+        ("Ehegatte, Ja: mehrere Kalenderjahre", zusammen([false, false, true, false]), vec![frage(2, true)]),
+        ("Ehegatte, Ja: nicht ganzjaehrig", zusammen([false, false, false, true]), vec![frage(3, true)]),
+        ("Ehegatte, viermal Ja", zusammen([true; 4]), (0..4).map(|i| frage(i, true)).collect()),
+        (
+            "Ehegatte, Ja, Einzelveranlagung (zaehlt nicht)",
+            mit(lohn(30_000), mit(ehegatte("einzel", Some(b_tragbar)), antworten(true, [true; 4]))),
+            vec![],
+        ),
+        (
+            "Ehegatte, Ja, Bezug 0 (Frage verborgen)",
+            mit(lohn(30_000), mit(ehegatte("zusammen", Some([0, 1_900_000, 2018])), antworten(true, [true; 4]))),
+            vec![],
+        ),
+        (
+            "Ja nur bei A, Ehegatte mit Bezug: sperrt nur A",
+            mit(tragbar_a(), mit(ehegatte("zusammen", Some(b_tragbar)), antworten(false, [false, true, false, false]))),
+            vec![frage(1, false)],
+        ),
+        (
+            "Ja nur beim Ehegatten, A mit Bezug: sperrt nur den Ehegatten",
+            mit(tragbar_a(), mit(ehegatte("zusammen", Some(b_tragbar)), antworten(true, [false, false, false, true]))),
+            vec![frage(3, true)],
+        ),
+        (
+            "Ja bei beiden",
+            mit(
+                mit(tragbar_a(), antworten(false, [true, false, false, false])),
+                mit(ehegatte("zusammen", Some(b_tragbar)), antworten(true, [false, false, true, false])),
+            ),
+            vec![frage(0, false), frage(2, true)],
+        ),
+        (
+            "Ja bei A, A ohne Bezug, Ehegatte mit Bezug (die Antwort gilt nicht fuer ihn)",
+            mit(
+                mit(lohn(50_000), bezug(0, 2_800_000, 2020, "beamtenrechtlich")),
+                mit(ehegatte("zusammen", Some(b_tragbar)), antworten(false, [true; 4])),
+            ),
+            vec![],
         ),
     ];
     pruefe_tabelle(faelle);
