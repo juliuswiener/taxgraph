@@ -299,7 +299,7 @@ def _runner(req: dict) -> dict:
     """Generischer Accessor-Aufruf `runner.<name>` (Schritt 4b): ruft
     `getattr(produkt.engine.runner, name)(*args, **kwargs)` mit den rohen Dict-Argumenten, wie das
     Produkt sie uebergibt, und antwortet `{"ok": ergebnis}` oder `{"err": "<Ausnahmeklasse>"}` --
-    dieselbe Form wie `rust/fixtures/corpus/runner/*.jsonl`. `catala` markiert Catala-
+    dieselbe Form wie `rust/fixtures/corpus/runner/*.jsonl` (seit L1 geloescht). `catala` markiert Catala-
     Laufzeitausnahmen (`CatalaError`-Unterklassen), die der Rust-C-Shim nicht einzeln unterscheidet."""
     from produkt.engine import runner as _RUNNER  # lazy: nur wer runner.* ruft, zahlt den Import
     from catala_runtime import CatalaError
