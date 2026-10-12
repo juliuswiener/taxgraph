@@ -95,6 +95,18 @@ fn die_altersgrenze_im_veranlagungsjahr_entscheidet_lohn_oder_darueber() {
     }
 }
 
+/// Die Grenze folgt dem Veranlagungsjahr, nicht dem Jahr 2025: in jedem Jahr, das die Rechnung kennt, ist die Person im Jahr, in dem
+/// sie 63 wird, `darueber` und ein Jahr davor `lohn` (Mutante Y14 der Nachmessung von main hielt das Jahr fest auf 2025 und blieb gruen).
+#[test]
+fn die_grenze_folgt_dem_veranlagungsjahr() {
+    for (vz, jahr) in [(Vz::Vz2024, 2024), (Vz::Vz2025, 2025), (Vz::Vz2026, 2026)] {
+        let im_jahr = lage(&bezug_a(3_000_000, 58, jahr - 63, Some(0)), Some(vz), A);
+        assert_eq!(im_jahr.altersgrenze, Some("darueber".to_owned()), "VZ {jahr}: 63 genau im Jahr");
+        let danach = lage(&bezug_a(3_000_000, 58, jahr - 62, Some(0)), Some(vz), A);
+        assert_eq!(danach.altersgrenze, Some("lohn".to_owned()), "VZ {jahr}: 63 erst im Jahr danach");
+    }
+}
+
 /// Ein Geburtsjahr, das fehlt, nicht bestaetigt ist oder nach dem Veranlagungsjahr liegt, ist unlesbar: der Bezug sperrt (`darueber`),
 /// er faellt nicht als Arbeitslohn durch.
 #[test]
