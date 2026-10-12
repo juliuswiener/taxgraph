@@ -238,6 +238,53 @@ fn jede_bindung_der_registry_wird_geprueft() {
     );
 }
 
+/// Untergrenze der Golden-Faelle: ohne sie waere der Golden-Waechter bei einer leeren Datei gruen. Die genaue
+/// Zahl haelt `rust/bescheid/tests/golden_kopf.rs` (`N_FAELLE`); hier wird sie nicht ein drittes Mal gefuehrt.
+const MINDESTENS_GOLDEN_FAELLE: usize = 100;
+
+/// Der Anker-Schritt des Golden-Laufs, ohne Python: jedes `quelle.zitatanker` der Golden-Faelle steht im
+/// Quelltext seiner `quelle.datei`. Das war Schritt 1 von `golden/golden_lauf.py` (`make golden`) und
+/// `pipeline/tests/test_golden_anker_freeze.py`; beide fallen mit dem Python-Baum. Die Fixture
+/// `golden_cases.json` traegt `quelle` seit `extract_golden.py`. `GOLDEN_CASES_DATEI` lenkt auf eine
+/// WEGWERF-Kopie fuer den Rot-Nachweis, wie in `golden_werte.rs` und `golden_kopf.rs`.
+#[test]
+fn jeder_zitatanker_der_golden_faelle_steht_im_quelltext() {
+    let pfad = std::env::var("GOLDEN_CASES_DATEI").map_or_else(
+        |_| wurzel().join("rust/fixtures/golden_cases.json"),
+        PathBuf::from,
+    );
+    let text = std::fs::read_to_string(&pfad).expect("golden_cases.json lesen");
+    let faelle: Vec<serde_json::Value> =
+        serde_json::from_str(&text).expect("golden_cases.json ist kein JSON-Feld von Faellen");
+    let anker: Vec<Anker> = faelle
+        .iter()
+        .map(|f| Anker {
+            feld_id: f["id"].as_str().unwrap_or("<ohne id>"),
+            datei: f["quelle"]["datei"].as_str(),
+            zitatanker: f["quelle"]["zitatanker"].as_str().unwrap_or(""),
+        })
+        .collect();
+    let befund = pruefe(&wurzel(), &anker);
+    assert!(
+        befund.fehler.is_empty(),
+        "{} Golden-Faelle ohne Beleg im Quelltext:\n{}",
+        befund.fehler.len(),
+        befund.fehler.join("\n")
+    );
+    assert!(
+        faelle.len() >= MINDESTENS_GOLDEN_FAELLE,
+        "nur {} Golden-Faelle gelesen",
+        faelle.len()
+    );
+    assert_eq!(
+        befund.verglichen,
+        faelle.len(),
+        "{} Golden-Faelle verglichen, aber {} in der Datei",
+        befund.verglichen,
+        faelle.len()
+    );
+}
+
 #[test]
 fn normalisiere_wie_das_python_werkzeug() {
     // Erwartungen aus pipeline.gates._normalize (gemessen 2026-10-06), nicht aus dieser Datei abgeleitet.

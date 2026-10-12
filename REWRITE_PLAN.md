@@ -153,6 +153,7 @@ Der Absatz „Cutover vollzogen“ oben bleibt der Stand vom 2026-10-04; was sic
   Die Vorarbeit (Entkoppeln, nichts gelöscht) ist gemerged: E1 (`743c4d4f`), E1b, E5, E6b, E8 (`bed84278`). L1 (`rust/parity` löschen) ist vollzogen am 2026-10-12, siehe den Eintrag „`rust/parity` ist gelöscht“ unter „Seit `8e48cf7` in main“.
 - *Vor dem Löschen offen* (Löschplan): ein Ersatz für „keine neue Abweichung von Python“ ohne CPython (die Prüfung läuft heute nur unter `PARITY=1`); V2 (Rust-Nachweis des Abgabewegs statt `make abgabeweg-freigabe`);
   V5 (Tag `python-standard-letzter` pushen, Aufzeichnung und `users.json` sichern); E2 bis E4, E7, E9 bis E12.
+- *Golden ohne Python* (Entscheid von main, 2026-10-12, Vault `golden-ohne-python-anker-pruefung-nach-rust-und-ci-job-faellt-mit-l3-2026-10-12`): Der Wert der 135 Fälle steht schon in `rust/engine/tests/golden_werte.rs`, Zahl und Form in `rust/bescheid/tests/golden_kopf.rs`. Neu ist der Anker-Schritt von `make golden` in Rust: `rust/bindung/tests/anker.rs::jeder_zitatanker_der_golden_faelle_steht_im_quelltext` (11 Mutanten rot, 2 Kontrollen grün, `~/.cache/taxgraph-tmp/nm-golden-anker/`). Mit L3 wird `make golden` zu den drei Rust-Tests, und der CI-Job `golden` (opam, Python, 45 min) entfällt; der Job `rust` führt dieselben Tests schon aus. Nicht gebaut: die Golden-Fälle durch den Bescheid-Weg (seit L1 ohne Gegenstück, L3 vergrößert die Lücke nicht).
 
 **Seit `8e48cf7` in main** (je Spitze per `git log --first-parent 8e48cf7..HEAD`):
 
