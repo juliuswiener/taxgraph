@@ -154,10 +154,15 @@ fn pin_fehler(text: &str, paket: &str) -> Vec<String> {
     }
 }
 
+/// Alle Pin-Fehler beider Pakete. Eine eigene Funktion, damit `die_pin_pruefung_schlaegt_an` die Paketliste mitprueft: stuende sie
+/// nur im Test, bliebe ein gestrichenes `ttsim-backend` unbemerkt (Mutante C13 der Nachmessung von main lebte).
+fn oracle_fehler(text: &str) -> Vec<String> {
+    ["gettsim", "ttsim-backend"].iter().flat_map(|p| pin_fehler(text, p)).collect()
+}
+
 #[test]
 fn gettsim_und_ttsim_backend_sind_exakt_festgenagelt() {
-    let text = lesen("requirements-oracle.txt");
-    let fehler: Vec<String> = ["gettsim", "ttsim-backend"].iter().flat_map(|p| pin_fehler(&text, p)).collect();
+    let fehler = oracle_fehler(&lesen("requirements-oracle.txt"));
     assert!(fehler.is_empty(), "GETTSIM-Pin:\n  {}", fehler.join("\n  "));
 }
 
@@ -334,9 +339,7 @@ fn die_catala_pruefung_schlaegt_an() {
 /// Jeder Rueckfall im GETTSIM-Pin wird erkannt, die gute Fassung nicht (auch nicht Gross- und Kleinschreibung oder Leerzeichen).
 #[test]
 fn die_pin_pruefung_schlaegt_an() {
-    for p in ["gettsim", "ttsim-backend"] {
-        assert!(pin_fehler(PINS_GUT, p).is_empty(), "{p}: {:?}", pin_fehler(PINS_GUT, p));
-    }
+    assert!(oracle_fehler(PINS_GUT).is_empty(), "{:?}", oracle_fehler(PINS_GUT));
     assert!(pin_fehler("GETTSIM == 1.2\nTTSIM_backend==1.2.1\n", "gettsim").is_empty(), "Gross- und Kleinschreibung, Leerzeichen");
 
     let pins: &[(&str, &str, &str)] = &[
@@ -353,8 +356,7 @@ fn die_pin_pruefung_schlaegt_an() {
     for (was, alt, neu) in pins {
         let text = PINS_GUT.replacen(alt, neu, 1);
         assert_ne!(text, PINS_GUT, "{was}: der Mutant aendert nichts");
-        let erkannt = ["gettsim", "ttsim-backend"].iter().any(|p| !pin_fehler(&text, p).is_empty());
-        assert!(erkannt, "{was}: nicht erkannt");
+        assert!(!oracle_fehler(&text).is_empty(), "{was}: nicht erkannt");
     }
 }
 
