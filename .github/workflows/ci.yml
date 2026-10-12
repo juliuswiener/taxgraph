@@ -204,6 +204,58 @@ jobs:
         env:
           TAXGRAPH_OHNE_XSD: "1"
 
+  # Frischetor des Catala-Orakels als eigener Job (Vorarbeit zur Loeschstufe L2, Vault-Backlog
+  # catala-orakel-frischetor-in-eigenen-ci-job). Der gleiche Schritt steht noch im Job
+  # catala-toolchain, dort zwischen Python-Bauschritten und der pytest-Suite; faellt die Suite
+  # (L2), faellt dieser Job mit ihr und der Schritt hinge in der Luft. Hier braucht er nur den
+  # Catala-Interpreter (opam) und Rust: kein pip, kein `clerk build p32a-python`, kein
+  # assemble_catala.sh, kein pytest, kein requirements-ci.txt (gemessen im frischen Worktree ohne
+  # _build/ und oracle/gettsim/_catala, mit Attrappen statt python/pip: kein Aufruf). Der Rust-
+  # Waechter rust/bindung/tests/ci_catala_orakel.rs haelt den Job fest.
+  catala-orakel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: System-Abhaengigkeiten (opam-Build-Deps)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y opam m4 build-essential pkg-config libgmp-dev
+
+      - name: opam-Root cachen (gleicher Key wie catala-toolchain)
+        uses: actions/cache@v4
+        with:
+          path: ~/.opam
+          key: opam-taxgraph-catala-1.2.1-ocaml-4.14.2-${{ runner.os }}
+
+      - name: Catala installieren
+        run: |
+          set -e
+          export OPAMYES=1
+          export OPAMCONFIRMLEVEL=unsafe-yes
+          opam init --bare -y || true
+          opam switch create taxgraph 4.14.2 || true
+          eval $(opam env --switch=taxgraph --set-switch)
+          opam install -y catala.1.2.1
+          catala --version
+          clerk --version
+
+      # Wortgleich zum Schritt im Job catala-toolchain: Das Orakel wird neu erzeugt und mit dem
+      # eingecheckten Stand verglichen; eine Regel- oder Generatoraenderung ohne neu erzeugte Datei
+      # macht den Schritt rot. `git ls-files --error-unmatch` steht davor, weil `git diff` fuer eine
+      # Datei, die nicht im Index liegt, nichts meldet (ein stilles Gruen).
+      - name: Catala-Orakel neu erzeugen, gegen den Stand im Repo pruefen
+        run: |
+          set -e
+          rustup toolchain install 1.99.0 --profile minimal
+          rustup default 1.99.0
+          rustc --version
+          eval $(opam env --switch=taxgraph --set-switch)
+          git ls-files --error-unmatch rust/catala-sys/orakel/orakel.txt
+          (cd rust && cargo run -p catala-sys --example orakel_erzeugen)
+          git diff --exit-code -- rust/catala-sys/orakel/orakel.txt
+
   golden:
     runs-on: ubuntu-latest
     timeout-minutes: 45
