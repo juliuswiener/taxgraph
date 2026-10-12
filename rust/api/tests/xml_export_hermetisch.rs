@@ -274,6 +274,32 @@ fn die_datei_hat_die_bytes_von_einreichen_und_den_testmerker() {
     assert!(!ziel2.exists());
 }
 
+/// Das `checkESt`-Urteil über die geschriebene Datei. Die Meldung eines Rots nennt die Antwort von `ERiC`,
+/// aber nie die Hersteller-ID: sie landet im Terminal und im Protokoll von `make checkest-rust`.
+fn muss_checkest_bestehen(rc: i32, antwort: &str, id: &str) {
+    assert_eq!(
+        rc,
+        0,
+        "die geschriebene Datei besteht checkESt nicht: {}",
+        antwort.replace(id, "<ID>")
+    );
+}
+
+/// Ohne `ERiC` und ohne echte ID: eine Attrappen-Antwort, die eine Attrappen-ID nennt, darf in der Meldung
+/// nicht mehr vorkommen, der Rest des Textes schon. Bei `rc=0` panikt nichts.
+#[test]
+fn die_ablehnung_nennt_die_hersteller_id_nicht() {
+    let id = "ATTRAPPE-4711";
+    let antwort = format!("<Text>Hersteller-ID {id} ist unbekannt</Text>");
+    let fehler = std::panic::catch_unwind(|| muss_checkest_bestehen(610_301_202, &antwort, id))
+        .expect_err("rc != 0 muss panicken");
+    let meldung = fehler.downcast_ref::<String>().cloned().unwrap_or_default();
+    // Kein `assert!` mit `{meldung}`: im Fehlerfall truege der Text die ID.
+    assert!(!meldung.contains(id), "die Meldung nennt die Hersteller-ID");
+    assert!(meldung.contains("Hersteller-ID <ID> ist unbekannt"), "der Rest der Antwort fehlt in der Meldung");
+    muss_checkest_bestehen(0, &antwort, id);
+}
+
 /// `ERiC` prüft die Datei, die `taxgraph-xml` schreibt, mit der echten Hersteller-ID: `rc=0`. Eine
 /// Kontrolle mit einer beschädigten Kopie muss `rc=610001002` melden, sonst belegte das Grün nichts.
 /// Nur `ERIC_VALIDIERE`, lokal, kein Netz, kein Zertifikat.
@@ -292,7 +318,7 @@ fn die_geschriebene_datei_besteht_checkest() {
         .unwrap_or_else(|a| panic!("{}", a.body));
     let xml = std::fs::read_to_string(&ziel).unwrap();
     let (rc, antwort) = elster::validiere(xml.as_bytes(), "ESt_2025").unwrap();
-    assert_eq!(rc, 0, "die geschriebene Datei besteht checkESt nicht: {antwort}");
+    muss_checkest_bestehen(rc, &antwort, &std::env::var("ELSTER_HERSTELLER_ID").unwrap());
     // Kontrolle: ohne den Nachnamen lehnt `ERiC` dieselbe Datei ab.
     let kaputt = xml.replace("<E0100201>Maier</E0100201>", "");
     // Kein `assert_ne!`: es druckte beide Texte, und der Text traegt die Hersteller-ID.
