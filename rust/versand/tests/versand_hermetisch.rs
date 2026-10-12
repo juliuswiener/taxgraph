@@ -29,6 +29,35 @@ const ANTWORT_ERFOLG: &str =
 const PIN: &str = "PIN-SENTINEL-4711";
 const ZERT_NAME: &str = "zertifikat-SENTINEL-9f3a.pfx";
 
+/// Serverantworten fuer die Ablehnung durch den ELSTER-Server. Aufbau nach der ERiC-Dokumentation
+/// (`ericapi.h`, „Fehler in der Serverantwort"; Beispiele `Dokumentation/Datenarten/ElsterSignatur/
+/// Kontoinformation/Beispiele/Kontoinformation_Response.xml` und `ElsterDatenabholung/
+/// PostfachBestaetigung/Beispiele/2_b1_PostfachBestaetigung_32_1NDB_Response.xml`): Meldungen stehen
+/// in `TransferHeader/RC` und `NutzdatenHeader/RC`. Wortlaut und Code 080015009 der ersten nach dem
+/// Bericht vom 11.10.2026 (gesperrtes Zertifikat), NICHT aus einem Puffer gemessen. Die `*-MARKER`
+/// stehen dort, wo ERiC Inhalt der Erklaerung oder Kopfdaten fuehrt; sie duerfen nie in der Ausgabe
+/// stehen.
+const SERVER_TRANSFERHEADER: &str = concat!(
+    r#"<Elster xmlns="http://www.elster.de/elsterxml/schema/v11"><TransferHeader version="11">"#,
+    r"<DatenLieferant>DATENLIEFERANT-MARKER</DatenLieferant>",
+    r"<RC><Rueckgabe><Code>080015009</Code><Text>Zertifikat vom Herausgeber gesperrt</Text></Rueckgabe>",
+    r"<Stack><Code>080015009</Code><Text>Zertifikat vom Herausgeber gesperrt</Text></Stack></RC>",
+    r"</TransferHeader><DatenTeil><Nutzdatenblock><Nutzdaten><Steuernummer>STNR-MARKER-4711</Steuernummer>",
+    r"<Bereitstellung><Rueckgabe><Code>194346573</Code><Text>NUTZDATEN-TEXT-MARKER</Text></Rueckgabe>",
+    r"</Bereitstellung></Nutzdaten></Nutzdatenblock></DatenTeil></Elster>"
+);
+const SERVER_NUTZDATENHEADER: &str = concat!(
+    r#"<Elster xmlns="http://www.elster.de/elsterxml/schema/v11"><TransferHeader version="11">"#,
+    r"<DatenLieferant>DATENLIEFERANT-MARKER</DatenLieferant>",
+    r"<RC><Rueckgabe><Code>0</Code><Text>OK</Text></Rueckgabe></RC></TransferHeader>",
+    r#"<DatenTeil><Nutzdatenblock><NutzdatenHeader version="11"><RC>"#,
+    r"<Rueckgabe><Code>67890</Code><Text>Der Empfang von mindestens einer der Daten wurde nicht erfolgreich bestaetigt.</Text></Rueckgabe>",
+    r"</RC></NutzdatenHeader><Nutzdaten><Steuernummer>STNR-MARKER-4711</Steuernummer>",
+    r"<Bereitstellung><Rueckgabe><Code>194346573</Code><Text>NUTZDATEN-TEXT-MARKER</Text></Rueckgabe>",
+    r"</Bereitstellung></Nutzdaten></Nutzdatenblock></DatenTeil></Elster>"
+);
+const MARKER: [&str; 3] = ["STNR-MARKER-4711", "NUTZDATEN-TEXT-MARKER", "DATENLIEFERANT-MARKER"];
+
 /// Wo die Attrappe liegt: ausserhalb von `parity/`, das nach der Abnahme geloescht wird.
 const ATTRAPPE_QUELLE: &str = "../elster/tests/eric_attrappe/eric_attrappe.c";
 
@@ -571,6 +600,67 @@ fn das_programm_meldet_einen_fehlschlag_mit_exit_eins_und_dem_rueckgabetext() {
     assert!(aus.contains("TEXT-VON-ERIC") && aus.contains("eric.log"), "{aus}");
     assert!(aus.contains("Telenummer: (keine"), "{aus}");
     assert!(!aus.contains(PIN) && !aus.contains(ZERT_NAME), "{aus}");
+}
+
+/// Der Testversand gegen die Attrappe, die `rc` und die Serverantwort liefert.
+fn ablehnung(rc: i32, rueckgabe: &str, server: &str) -> Option<(i32, String)> {
+    let l = Lauf::neu(&format!("{rc}\n{rueckgabe}\n--SERVER--\n{server}"))?;
+    let datei = l.xml_datei(XML_TEST);
+    Some(l.programm(&["--xml", &datei, "--datenart", "ESt_2025", "--testversand"], "", false))
+}
+
+#[test]
+fn das_programm_nennt_bei_einer_serverablehnung_code_und_text_aber_nie_den_datenteil() {
+    for (rc, server, code, text) in [
+        (610_101_210, SERVER_TRANSFERHEADER, "080015009", "Zertifikat vom Herausgeber gesperrt"),
+        (
+            610_101_292,
+            SERVER_NUTZDATENHEADER,
+            "67890",
+            "Der Empfang von mindestens einer der Daten wurde nicht erfolgreich bestaetigt.",
+        ),
+    ] {
+        let Some((exit, aus)) = ablehnung(rc, "", server) else { return };
+        assert_eq!(exit, 1, "{aus}");
+        assert!(aus.contains(&format!("[versand] rc={rc}")), "{aus}");
+        let zeile = format!("[versand]   Code {code}: {text}");
+        assert_eq!(aus.matches(&zeile).count(), 1, "Code und Text genau einmal erwartet:\n{aus}");
+        assert!(aus.contains("Antwort des ELSTER-Servers"), "{aus}");
+        for marker in MARKER {
+            assert!(!aus.contains(marker), "{marker} steht in der Ausgabe:\n{aus}");
+        }
+    }
+}
+
+#[test]
+fn eine_serverablehnung_ohne_auswertbare_meldung_verweist_auf_das_log() {
+    for server in ["", "kein xml", "<Elster><TransferHeader/></Elster>"] {
+        let Some((exit, aus)) = ablehnung(610_101_210, "", server) else { return };
+        assert_eq!(exit, 1, "{aus}");
+        assert!(aus.contains("nennt keinen auswertbaren Fehler") && aus.contains("eric.log"), "{aus}");
+        assert!(!aus.contains("Antwort des ELSTER-Servers"), "{aus}");
+    }
+}
+
+#[test]
+fn jeder_andere_rc_behaelt_seine_ausgabe_zeichengleich_auch_mit_serverantwort() {
+    // 610101271 ist kein Fehler des Servers im Header: die Serverantwort wird nicht ausgewertet.
+    let Some((exit, aus)) =
+        ablehnung(610_101_271, "<Elster><Fehler/></Elster>", SERVER_TRANSFERHEADER)
+    else {
+        return;
+    };
+    assert_eq!(exit, 1, "{aus}");
+    let (kopf, log) = aus.split_once("[versand] eric.log: ").expect("Zeile mit eric.log fehlt");
+    assert_eq!(
+        kopf,
+        "[versand] rc=610101271\n\
+         [versand] Telenummer: (keine — kein Erfolg)\n\
+         [versand] KEIN ERFOLG. Siehe elster/VERSAND.md, Abschnitt 'Wenn etwas schiefgeht' — NICHT blind wiederholen.\n\
+         [versand] Rueckgabe von ERiC:\n\
+         <Elster><Fehler/></Elster>\n"
+    );
+    assert!(log.trim_end().ends_with("eric.log"), "{log}");
 }
 
 #[test]

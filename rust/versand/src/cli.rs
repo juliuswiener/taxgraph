@@ -13,7 +13,10 @@ use std::fmt;
 use std::io::{BufRead, Write};
 use std::path::PathBuf;
 
-use crate::{sende, zusammenfassung, Modus, Zertifikat, ECHTVERSAND_FREIGABE};
+use crate::{
+    sende, servermeldungen, zusammenfassung, Modus, Zertifikat, ECHTVERSAND_FREIGABE,
+    ERIC_TRANSFER_ERR_XML_NHEADER, ERIC_TRANSFER_ERR_XML_THEADER,
+};
 
 const NUTZUNG: &str = "Nutzung: taxgraph-versand --xml DATEI --datenart ESt_2025 \
 [--zertifikat PFAD] (--dry-run | --testversand | --echtversand --freigabe PHRASE)\n\
@@ -229,8 +232,29 @@ fn versand(
         zeile(aus, "[versand] Rueckgabe von ERiC:");
         zeile(aus, &antwort.rueckgabe_xml);
     }
+    if matches!(antwort.rc, ERIC_TRANSFER_ERR_XML_THEADER | ERIC_TRANSFER_ERR_XML_NHEADER) {
+        zeige_servermeldungen(aus, &antwort.serverantwort_xml);
+    }
     zeile(aus, &format!("[versand] eric.log: {}", antwort.log_pfad.display()));
     1
+}
+
+/// Der Grund einer Ablehnung durch den ELSTER-Server: Code und Text, sonst nichts aus der Antwort
+/// (der Datenteil kann Inhalt der Erklaerung tragen).
+fn zeige_servermeldungen(aus: &mut dyn Write, serverantwort_xml: &str) {
+    let meldungen = servermeldungen(serverantwort_xml);
+    if meldungen.is_empty() {
+        zeile(
+            aus,
+            "[versand] Die Serverantwort nennt keinen auswertbaren Fehler; der Grund steht nur in \
+             eric.log.",
+        );
+        return;
+    }
+    zeile(aus, "[versand] Antwort des ELSTER-Servers:");
+    for m in &meldungen {
+        zeile(aus, &format!("[versand]   Code {}: {}", m.code, m.text));
+    }
 }
 
 /// Fuehrt das Programm aus; der Rueckgabewert ist der Exit-Code: 0 Erfolg (oder Dry-run), 1 ERiC
