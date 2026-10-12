@@ -257,3 +257,13 @@ fn die_tabelle_sagt_fall_fuer_fall_ob_die_abgabe_sperrt() {
     }
     assert!(abweichungen.is_empty(), "{} Fall/Faelle weichen ab:\n{}", abweichungen.len(), abweichungen.join("\n"));
 }
+
+/// Die Schwelle selbst (100 Cent) traegt: die Zeilen 11 und 12 nehmen genau 1 Euro, die Sperre faellt. Darunter (99 Cent)
+/// sperrt sie, siehe die Tabelle oben. Jede der beiden Schwellen einzeln und beide zusammen.
+#[test]
+fn genau_ein_euro_in_betrag_und_bemessungsgrundlage_sperrt_nicht() {
+    for (rente, bmg) in [(100, 2_800_000), (3_000_000, 100), (100, 100)] {
+        let ist = sperren(&mit(lohn(50_000), bezug(rente, bmg, 2020, "beamtenrechtlich")));
+        assert!(ist.is_empty(), "Bezug {rente} Cent, Bemessungsgrundlage {bmg} Cent: {ist:?}");
+    }
+}
