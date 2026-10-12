@@ -143,14 +143,66 @@ fn gesperrt<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
+const LOG_DIR_PRAEFIX: &str = "eric_checkest_";
+const LOG_DIR_ALPHABET: &[u8] = b"abcdefghijklmnopqrstuvwxyz0123456789_";
+/// So viele `eric_checkest_*` bleiben im Temp-Ordner, wenn ein neues angelegt ist (das neue zaehlt
+/// mit). Aeltere raeumt [`raeume_log_dirs_auf`] weg.
+const LOG_DIRS_BEHALTEN: usize = 20;
+/// Ein juengeres Log-Verzeichnis bleibt immer: ein anderer Prozess schreibt vielleicht noch hinein.
+const LOG_DIR_MINDESTALTER: std::time::Duration = std::time::Duration::from_secs(600);
+
+/// Ist `name` ein Name, wie [`neues_log_dir`] ihn vergibt: Praefix und genau 8 Zeichen aus dem Alphabet?
+fn ist_log_dir_name(name: &str) -> bool {
+    name.strip_prefix(LOG_DIR_PRAEFIX)
+        .is_some_and(|rest| rest.len() == 8 && rest.bytes().all(|b| LOG_DIR_ALPHABET.contains(&b)))
+}
+
+/// Raeumt nach dem Anlegen von `neu` die alten Log-Verzeichnisse weg: es bleiben die
+/// [`LOG_DIRS_BEHALTEN`] juengsten (nach Aenderungszeit), nie eines unter [`LOG_DIR_MINDESTALTER`].
+/// Angefasst wird nur, was [`neues_log_dir`] selbst anlegt: ein echtes Verzeichnis (kein Symlink),
+/// dessen Name [`ist_log_dir_name`] erfuellt und das dem Besitzer von `neu` gehoert. Fehler brechen
+/// nichts ab: ein liegengebliebenes Log schadet nicht, ein ERiC, das nicht startet, schon.
+fn raeume_log_dirs_auf(neu: &std::path::Path) {
+    use std::os::unix::fs::MetadataExt;
+    let Some(wurzel) = neu.parent() else { return };
+    let Ok(eigener) = std::fs::metadata(neu).map(|m| m.uid()) else {
+        return;
+    };
+    let Ok(eintraege) = std::fs::read_dir(wurzel) else {
+        return;
+    };
+    let mut kandidaten: Vec<(std::time::SystemTime, PathBuf)> = eintraege
+        .filter_map(|e| {
+            let e = e.ok()?;
+            if !ist_log_dir_name(e.file_name().to_str()?) {
+                return None;
+            }
+            // `DirEntry::metadata` folgt keinem Symlink: ein Symlink ist hier kein Verzeichnis.
+            let meta = e.metadata().ok()?;
+            (meta.is_dir() && meta.uid() == eigener).then_some((meta.modified().ok()?, e.path()))
+        })
+        .collect();
+    kandidaten.sort_by_key(|(geaendert, _)| std::cmp::Reverse(*geaendert));
+    let jetzt = std::time::SystemTime::now();
+    for (geaendert, pfad) in kandidaten.into_iter().skip(LOG_DIRS_BEHALTEN) {
+        // Eine Zeit in der Zukunft (Uhr verstellt) gilt als jung.
+        if jetzt
+            .duration_since(geaendert)
+            .is_ok_and(|alter| alter >= LOG_DIR_MINDESTALTER)
+        {
+            let _ = std::fs::remove_dir_all(&pfad);
+        }
+    }
+}
+
 /// Wie `tempfile.mkdtemp(prefix="eric_checkest_")`: `eric_checkest_` und 8 Zeichen aus
 /// `a-z0-9_`, neu angelegt, nur fuer den Besitzer (`eric.log` nennt Auszuege der Erklaerung). Die
 /// Zeichen kommen nicht aus einer Zufallsquelle, sondern aus Zeit, Prozess und Zaehler; ein
-/// vorhandener Name wird uebersprungen.
+/// vorhandener Name wird uebersprungen. Danach raeumt [`raeume_log_dirs_auf`] die alten weg;
+/// Python legte sie an und liess sie liegen.
 fn neues_log_dir() -> Result<PathBuf, EricFehler> {
     use std::os::unix::fs::DirBuilderExt;
     use std::sync::atomic::{AtomicU64, Ordering};
-    const ALPHABET: &[u8] = b"abcdefghijklmnopqrstuvwxyz0123456789_";
     static ZAEHLER: AtomicU64 = AtomicU64::new(0);
     for _ in 0..100 {
         let nanos = std::time::SystemTime::now()
@@ -160,19 +212,22 @@ fn neues_log_dir() -> Result<PathBuf, EricFehler> {
         let mut zustand = u64::try_from(nanos & u128::from(u64::MAX)).unwrap_or(1)
             ^ (u64::from(std::process::id()) << 32)
             ^ ZAEHLER.fetch_add(1, Ordering::Relaxed).wrapping_mul(0x9E37_79B9_7F4A_7C15);
-        let mut name = String::from("eric_checkest_");
+        let mut name = String::from(LOG_DIR_PRAEFIX);
         for _ in 0..8 {
             // xorshift64*
             zustand ^= zustand >> 12;
             zustand ^= zustand << 25;
             zustand ^= zustand >> 27;
             let z = zustand.wrapping_mul(0x2545_F491_4F6C_DD1D) >> 33;
-            let ix = usize::try_from(z).unwrap_or(0) % ALPHABET.len();
-            name.push(char::from(ALPHABET.get(ix).copied().unwrap_or(b'_')));
+            let ix = usize::try_from(z).unwrap_or(0) % LOG_DIR_ALPHABET.len();
+            name.push(char::from(LOG_DIR_ALPHABET.get(ix).copied().unwrap_or(b'_')));
         }
         let dir = std::env::temp_dir().join(name);
         match std::fs::DirBuilder::new().mode(0o700).create(&dir) {
-            Ok(()) => return Ok(dir),
+            Ok(()) => {
+                raeume_log_dirs_auf(&dir);
+                return Ok(dir);
+            }
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
             Err(e) => return Err(EricFehler::LogDir(e.to_string())),
         }
@@ -367,6 +422,54 @@ mod tests {
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
+    }
+
+    fn setze_alter(pfad: &std::path::Path, alter_sekunden: u64) {
+        let zeit = std::time::SystemTime::now() - std::time::Duration::from_secs(alter_sekunden);
+        std::fs::File::open(pfad).unwrap().set_modified(zeit).unwrap();
+    }
+
+    /// Ein Verzeichnis unter `LOG_DIR_MINDESTALTER` bleibt auch weit hinter Rang `LOG_DIRS_BEHALTEN`
+    /// (das prueft `tests/eric_log_aufraeumen.rs` nicht: dort sind alle Verzeichnisse alt).
+    #[test]
+    fn junge_log_verzeichnisse_bleiben_auch_hinter_rang_20() {
+        let d = tmp("mindestalter");
+        // 22 junge (10 bis 31 s) und 5 alte (ab 1 h).
+        for i in 0..22 {
+            let p = d.join(format!("eric_checkest_jung{i:04}"));
+            std::fs::create_dir(&p).unwrap();
+            setze_alter(&p, 10 + i);
+        }
+        for i in 0..5 {
+            let p = d.join(format!("eric_checkest_alt{i:05}"));
+            std::fs::create_dir(&p).unwrap();
+            setze_alter(&p, 3600 + 60 * i);
+        }
+        raeume_log_dirs_auf(&d.join("eric_checkest_jung0000"));
+        let mut bleibt: Vec<String> = std::fs::read_dir(&d)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        bleibt.sort();
+        let erwartet: Vec<String> = (0..22).map(|i| format!("eric_checkest_jung{i:04}")).collect();
+        assert_eq!(bleibt, erwartet);
+        let _ = std::fs::remove_dir_all(d);
+    }
+
+    #[test]
+    fn log_dir_name_ist_praefix_und_acht_zeichen_aus_dem_alphabet() {
+        assert!(ist_log_dir_name("eric_checkest_ab12_xyz"));
+        for falsch in [
+            "eric_checkest_",
+            "eric_checkest_ab12_xy",
+            "eric_checkest_ab12_xyzz",
+            "eric_checkest_AB12_XYZ",
+            "eric_checkest_ab12-xyz",
+            "Eric_checkest_ab12_xyz",
+            "xeric_checkest_ab12_xyz",
+        ] {
+            assert!(!ist_log_dir_name(falsch), "{falsch}");
+        }
     }
 
     #[test]
