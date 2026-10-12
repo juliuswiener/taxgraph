@@ -1,0 +1,302 @@
+# Bindungstabelle — §10 Abs.1 Nr.5 EStG Kinderbetreuungskosten (Stufe-1, Tier-0).
+# PER-KIND (2026-08-06 Fix): Kz sitzt im Kind-Container, Ring liest per EM.instanzen.
+# KEINE Gleichverteilung mehr — vorher: 2 Kinder/10000€ → 8000€ Abzug, korrekt: 6400€.
+# kinderbetreuung_anzahl_kinder entfernt (Anzahl = len(EM.instanzen(store, bindung, "kind"))).
+version: 1
+scheibe: "Kinderbetreuungskosten (p10_1_5_kinderbetreuung)"
+
+bindungen:
+  # ========================= Kinderbetreuungskosten (p10_1_5_kinderbetreuung) =========================
+  # 2026-08-11 Fix: Kind-Qualifikation war bislang UNGEWACHT — rules.yaml registriert
+  # kind_unter_14_haushaltszugehoerig als Geltungsbedingung (Anwendbarkeitsvoraussetzung), aber
+  # kein Feld fragte sie ab; _kinderbetreuung_summe summierte jedes Kind ungeprueft. Dieses Feld
+  # schliesst die Luecke direkt am Accessor (Python-Gate wie kind_idnr bei §10 Abs.1 Nr.3 S.2).
+  - feld_id: kind_unter_14_haushaltszugehoerig
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_unter_14_haushaltszugehoerig}
+    ableitung: {aus: kind_geburtsdatum, art: alter_unter_am_jahresende, schwelle: 14, und_feld: kind_betreuung_haushaltszugehoerigkeit_zeitraum, grund: "§ 10 Abs. 1 Nr. 5 S. 1 EStG qualifiziert ein Kind, das das 14. Lebensjahr noch nicht vollendet hat ODER wegen einer vor dem 25. Lebensjahr eingetretenen Behinderung ausserstande ist, sich selbst zu unterhalten — und das zum Haushalt gehoert. Das Alter steht im Geburtsdatum, die Haushaltszugehoerigkeit im erhobenen Zeitraum. Ist das Kind juenger als 14 und der Haushaltszeitraum angegeben, steht die Qualifikation fest und die Frage entfaellt. Ist es aelter, wird weiter gefragt: dann kann die Behinderungs-Ausnahme greifen, und ein abgeleitetes Nein naehme dem Nutzer den Abzug ungefragt. Dieselbe Gefahr besteht in die andere Richtung, und sie war bis 2026-08-27 offen: ein WAHRHEITSGEMAESSES Nein des Nutzers nimmt ihm den Abzug genauso, wenn die Frage nur nach der Behinderung fragt und das Kind in Wahrheit ueber das Alter qualifiziert. Deshalb nennt der Fragetext seit dem beide Wege."}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    # Der Fragetext deckte bis 2026-08-27 nur EINEN der beiden Qualifikationswege ab (Behinderung),
+    # das Feld und der Rechenkern meinen aber beide. Wer ein fünfjähriges Kind hat und wahrheits-
+    # gemäss „nein" antwortete, bekam `false` gespeichert — und bescheid_abzuege._kinderbetreuung_
+    # summe lässt bei allem ausser `True` das Kind aus der Summe fallen. Gemessen an einem Kind von
+    # fünf Jahren mit 6.000 € Betreuungskosten: 4.800 € Abzug weg, je nach Einkommen 1.460 bis
+    # 1.965 € zu viel Steuer.
+    #
+    # Die Frage nennt jetzt beide Wege und die gemeinsame Voraussetzung (Haushalt). Sie ist damit
+    # länger — der Preis ist bewusst gewählt: sie wird nur noch gestellt, wenn Geburtsdatum oder
+    # Haushaltszeitraum fehlen, die Ableitung also nichts weiss. Wer beides angegeben hat, sieht
+    # sie gar nicht.
+    #
+    # NICHT über eine `feld_bedingung` gelöst („nur fragen, wenn das Kind 14 oder älter ist"):
+    # `feld_bedingung` vergleicht nur auf Gleichheit gegen den Wert eines anderen Feldes
+    # (schema.json: `wert`/`wert_nicht`, traverser._feld_ausgeschlossen: `==`/`!=`), und
+    # `kind_geburtsdatum` ist ein Datum — ein Altersvergleich lässt sich dort nicht ausdrücken.
+    # Er würde ausserdem nicht reichen: fehlt der Haushaltszeitraum, feuert die Ableitung nie, und
+    # das Kind fiele dann ohne jede Frage still aus der Summe (gemessen: 0 € Abzug).
+    fragetext_laie: "Gehört dein Kind zu deinem Haushalt — und ist es entweder jünger als 14 oder wegen einer Behinderung außerstande, für sich selbst zu sorgen?"
+    hilfe_kurz: "Bis 14 zählt allein das Alter; danach nur noch eine Behinderung, die vor dem 25. Geburtstag eingetreten ist. In beiden Fällen muss das Kind zu deinem Haushalt gehören. Hast du Geburtsdatum und Haushaltszeitraum bereits angegeben, beantwortet sich die Frage von selbst und wird dir gar nicht gestellt."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: reine Anwendbarkeits-Voraussetzung (§ 10 Abs. 1 Nr. 5 S. 1), kein eigener Vordruck-Kz — steuert nur, ob E0506105 gezaehlt wird."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "welches das 14. Lebensjahr noch nicht vollendet hat oder wegen einer vor Vollendung des 25. Lebensjahres eingetretenen körperlichen, geistigen oder seelischen Behinderung außerstande ist, sich selbst zu unterhalten"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: kinderbetreuungskosten
+    instanz_gruppe: kind
+    vorschlagbar_von: [beleg, llm]
+    quelle: {regel_id: p10_1_5_kinderbetreuung, signatur_slot: aufwendungen}
+    # Eingangsfrage (2026-08-26, E2E-Durchgang auf Julius' Bitte). Stand als LETZTE der zehn Betreuungsfragen. „Wie viel hast du fuer die Betreuung gezahlt?" ist die Existenzfrage des Themas; davor liefen neun Fragen nach Zeitraeumen, Dienstleistern und Eigenanteilen einer Betreuung, nach der nie gefragt war.
+    eingangsfrage: true
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du für die Betreuung deines Kindes gezahlt (Kindergarten, Tagesmutter, Babysitter)? Bitte nur Betreuungskosten, keine Verpflegung oder Unterricht."
+    hilfe_kurz: "Du kannst 80% der Kosten absetzen, höchstens 4.800 Euro pro Kind."
+    beispielwert: 600000
+    herkunft_slots: ["Betreuungsrechnung: Kosten"]
+    elster_kz: E0506105
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  # ============ Die beiden Abzugsvoraussetzungen aus S. 2 und S. 4 (2026-09-26) ============
+  # Bis heute warnt der Fragetext oben („keine Verpflegung oder Unterricht"), GEFRAGT wurde
+  # nichts: 6.000 EUR Nachhilfe und 6.000 EUR bar bezahlte Betreuung lieferten beide den
+  # vollen Abzug von 4.800 EUR (Defer-Sweep Fund 4). Eine Warnung im Fliesstext ist keine
+  # Voraussetzung — sie wird beim Ausfuellen ueberlesen und von keiner Stelle geprueft.
+  #
+  # `gate: false` auf BEIDEN Feldern, und zwar aus einem gemessenen Grund: als echtes Gate
+  # schloss ein bestaetigtes `false` auf Instanz 1 die GANZE Regel aus (relevanz(), bis
+  # feld-bedingung-liest-nur-instanz-1 am 2026-09-26), und damit verschwand auch die Frage des
+  # ZWEITEN Kindes, dessen eigener Betrag einwandfrei ist. Beide Antworten muessen die Regel
+  # stehen lassen; die Sperre sitzt in bescheid_deklaration._an_gesamt_sperrgrund und laeuft
+  # je Kind-Instanz.
+  #
+  # KEINE `feld_bedingung` („nur fragen, wenn kinderbetreuungskosten > 0"): sie las bis zum
+  # selben Tag nur Instanz 1 (traverser._feld_ausgeschlossen), ein zweites Kind fiel aus der
+  # Frage. Heute liest sie jede Instanz; nachgezogen ist sie hier nicht.
+  - feld_id: kind_betreuung_reine_betreuung
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: nur_betreuung_kein_unterricht}
+    gate: false
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Ist der Betrag reine Betreuung — ohne Nachhilfe, Unterricht, Sport- oder Freizeitkurse?"
+    hilfe_kurz: "Nur reine Betreuung zählt: Kindergarten, Tagesmutter, Babysitter, Hort. Nachhilfe, Musikunterricht, Sportkurse und Freizeitangebote sind keine Betreuung und werden nicht abgezogen. Bei einem gemischten Betrag trage bitte nur den Betreuungsteil ein."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: reine Anwendbarkeits-Voraussetzung (§ 10 Abs. 1 Nr. 5 S. 2), kein eigener Vordruck-Kz — steuert nur, ob E0506105 gezaehlt wird."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 2 EStG"
+      zitatanker: "Dies gilt nicht für Aufwendungen für Unterricht, die Vermittlung besonderer Fähigkeiten sowie für sportliche und andere Freizeitbetätigungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: kind_betreuung_rechnung_ueberweisung
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: rechnung_und_unbare_zahlung}
+    gate: false
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hast du für die Betreuung eine Rechnung bekommen und per Überweisung (nicht bar) bezahlt?"
+    hilfe_kurz: "Das Finanzamt erkennt nur Betreuungskosten an, die du per Rechnung erhalten und auf das Konto des Betreuers überwiesen hast. Eine Barzahlung ohne Überweisung zählt nicht — hast du teils bar und teils überwiesen gezahlt, trage bitte nur den überwiesenen Teil ein."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: reine Anwendbarkeits-Voraussetzung (§ 10 Abs. 1 Nr. 5 S. 4), kein eigener Vordruck-Kz — steuert nur, ob E0506105 gezaehlt wird."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 4 EStG"
+      zitatanker: "Voraussetzung für den Abzug der Aufwendungen nach Satz 1 ist, dass der Steuerpflichtige für die Aufwendungen eine Rechnung erhalten hat und die Zahlung auf das Konto des Erbringers der Leistung erfolgt ist"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  # Formalien der Anlage Kind, Zeile Kinderbetreuungskosten (KBK_72569777_CType im XSD),
+  # gemessen 2026-08-12. E0506105 (Gesamtsumme) allein reicht checkESt nicht: drei weitere
+  # Beanstandungen kommen nach — Dienstleister-Einzelposten, Eigenanteil-Angabe und
+  # Haushaltszugehoerigkeit. Alle fuenf Formalien, keine Rechenlogik — wie kind_vorname in
+  # bindung_kap_vv_familie.yaml zeigt geltungsbedingung bewusst ins Leere (siehe
+  # GELTUNGSBEDINGUNG_ZEIGT_INS_LEERE in test_bindungstabelle.py), statt signatur_slot: aufwendungen
+  # mit kinderbetreuungskosten zu teilen — das waere nur fuer typ-homogene Summanden zulaessig.
+  - feld_id: kind_betreuung_dienstleister
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wer hat dein Kind betreut? Bitte Art der Dienstleistung, Name und Anschrift des Dienstleisters angeben."
+    hilfe_kurz: "Z.B. 'Kindertagesstätte Sonnenschein, Musterstr. 1, 12345 Musterstadt'."
+    beispielwert: "Kindertagesstätte Sonnenschein, Musterstr. 1, 12345 Musterstadt"
+    herkunft_slots: ["Betreuungsrechnung: Dienstleister"]
+    elster_kz: E0506101
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: kind_betreuung_zeitraum
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
+    typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
+    standardwert: "01.01-31.12"
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum wurde dein Kind betreut?"
+    hilfe_kurz: "Meist das ganze Jahr. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
+    herkunft_slots: ["Betreuungsrechnung: Zeitraum"]
+    elster_kz: E0506103
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: kind_betreuung_eigenanteil
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Welchen Anteil der Betreuungskosten hast du (nicht der andere Elternteil) selbst getragen?"
+    hilfe_kurz: "Nur nötig, wenn ihr nicht zusammen veranlagt werdet. Falls du nichts selbst getragen hast, '0' eingeben."
+    beispielwert: 600000
+    herkunft_slots: ["Betreuungsrechnung: Eigenanteil"]
+    elster_kz: E0506604
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  # E0506104 (Einz/Betrag im Art_143900963_CType) ist der Einzelbetrag-Bruder von E0506101/
+  # E0506103 oben — checkESt verlangt alle drei zusammen ("gemeinsam anzugeben"), gemessen
+  # 2026-08-12: E0506105 (Gesamtsumme) allein reicht nicht, wenn Einz-Angaben vorhanden sind.
+  - feld_id: kind_betreuung_einzelbetrag
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war der Rechnungsbetrag der Betreuung?"
+    hilfe_kurz: "Der Einzelbetrag zu Dienstleister und Zeitraum oben."
+    beispielwert: 600000
+    herkunft_slots: ["Betreuungsrechnung: Kosten"]
+    elster_kz: E0506104
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  # E0506605/E0506606 (Einz/Betrag+Zeitraum im Kosten_m1203388157_CType) sind die Einzelposten-
+  # Bruederpaar von E0506604 (Sum) oben — gemessen 2026-08-12: Summe allein wird beanstandet
+  # ("die einzelnen Aufwendungen wurden jedoch nicht angegeben"), wenn keine Einz-Eintraege da sind.
+  - feld_id: kind_betreuung_eigenanteil_betrag
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Welchen Betrag hast du selbst getragen (nicht der andere Elternteil)?"
+    hilfe_kurz: "Der Einzelposten zur Eigenanteil-Summe oben."
+    beispielwert: 600000
+    herkunft_slots: ["Betreuungsrechnung: Eigenanteil"]
+    elster_kz: E0506605
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: kind_betreuung_eigenanteil_zeitraum
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
+    typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
+    standardwert: "01.01-31.12"
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum hast du deinen Anteil an den Betreuungskosten getragen?"
+    hilfe_kurz: "Meist das ganze Jahr. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0506606
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: kind_betreuung_kein_gemeinsamer_haushalt_zeitraum
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
+    typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
+    standardwert: "01.01-31.12"
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum habt ihr getrennt gelebt — du und der andere Elternteil?"
+    hilfe_kurz: "Wenn ihr das ganze Jahr getrennt gelebt habt — oder nie zusammen —, gib 01.01-31.12 an. Nur nötig, wenn ihr nicht zusammen veranlagt werdet. Format: TT.MM-TT.MM"
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0505201
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: kind_betreuung_haushaltszugehoerigkeit_zeitraum
+    instanz_gruppe: kind
+    quelle: {regel_id: p10_1_5_kinderbetreuung, geltungsbedingung: kind_betreuung_formalien_erklaert}
+    typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
+    standardwert: "01.01-31.12"
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "In welchem Zeitraum gehörte dein Kind zu deinem Haushalt?"
+    hilfe_kurz: "Meist das ganze Jahr. Format: TT.MM-TT.MM (z.B. 01.01-31.12)"
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0505202
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 5 S. 1 EStG"
+      zitatanker: "80 Prozent der Aufwendungen, höchstens 4 800 Euro je Kind, für Dienstleistungen zur Betreuung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+luecken:
+  # -- Kind-Qualifikation (unter 14 / Behinderung) ist seit 2026-08-11 GEBUNDEN, s.o.
+  #    kind_unter_14_haushaltszugehoerig. Vorher stand hier faelschlich "wird vorgelagert
+  #    ueberprueft" — es gab keine solche Pruefung, weder im Ring noch im Accessor.
+  - regel_id: p10_1_5_kinderbetreuung
+    geltungsbedingung: achtzig_prozent_deckel_4800_je_kind
+    grund: "80%-Quote + 4.800€-je-Kind-Deckel (§ 10 Abs. 1 Nr. 5 S. 1) sind im pure-python Accessor catala_p10_1_5_kinderbetreuung materialisiert (Rechenlogik, keine Laien-Abfrage)."
+  # ponytail: gemischte Betraege (Betreuung + Nachhilfe, oder teils bar / teils ueberwiesen)
+  # werden NICHT aufgeteilt. Der Nutzer traegt nur den abzugsfaehigen Teil ein, die beiden
+  # Fragen oben sind dann beide "ja". Ein Teilbetrag-Feld je Leistungsart waere der naechste
+  # Schritt — er kommt erst, wenn Nutzer ihn brauchen; bis dahin kostet die Aufteilung mehr
+  # Fragen als sie Geld bringt, und ein falsch aufgeteilter Betrag waere schlimmer als ein
+  # selbst eingetragener. Der Hinweis steht deshalb in hilfe_kurz beider Felder.

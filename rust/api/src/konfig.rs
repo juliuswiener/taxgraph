@@ -7,7 +7,7 @@
 //! | `TAXGRAPH_USER_STORE`, `TAXGRAPH_JWT_SECRET` | `auth.py:18-23` | Nutzerdatei, Signaturschlüssel (in `auth::Auth::aus_env`) |
 //! | `TAXGRAPH_NO_AUTH` | `api._auth_uid_oder_401` | Einzelnutzer-Opt-out, bei JEDEM Aufruf gelesen |
 //! | `TAXGRAPH_FLOW`, `TAXGRAPH_KI_DEBUG` | `flow.an` | Flag in `/health`, bei JEDEM Aufruf gelesen |
-//! | `TAXGRAPH_ROOT` (neu) | `ROOT = dirname(PRODUKT)` | Repo-Wurzel für `params/` und `produkt/haut/static/` |
+//! | `TAXGRAPH_ROOT` (neu) | `ROOT = dirname(PRODUKT)` | Repo-Wurzel für `params/` und `rust/api/static/` |
 use std::path::{Path, PathBuf};
 
 use store::fehler_log::{protokolliere, Meta, Stufe};
@@ -15,7 +15,7 @@ use store::fehler_log::{protokolliere, Meta, Stufe};
 /// Pfade des Dienstes; alles, was Python beim Import festlegt.
 #[derive(Debug, Clone)]
 pub struct Konfig {
-    /// Repo-Wurzel (`params/<VZ>/`, `produkt/haut/static/`, `produkt/auth/users.json`).
+    /// Repo-Wurzel (`params/<VZ>/`, `rust/api/static/`, bis L3 der Rückgriff `produkt/auth/users.json`).
     pub wurzel: PathBuf,
     pub faelle: PathBuf,
     pub audit_dir: PathBuf,
@@ -91,15 +91,62 @@ impl Konfig {
         self.audit_dir.join("fehler.log")
     }
 
+    /// Die Oberfläche liegt in `rust/api/static` (E2 des Löschplans; Python hatte sie in
+    /// `produkt/haut/static`, die Dateien sind byte-gleich, geprüft in `umzug_aus_produkt.rs`).
     #[must_use]
     pub fn static_dir(&self) -> PathBuf {
-        self.wurzel.join("produkt").join("haut").join("static")
+        self.wurzel.join("rust").join("api").join("static")
     }
 
-    /// Standard-Nutzerdatei, wenn `TAXGRAPH_USER_STORE` fehlt (`auth.py:18`).
+    /// Standard-Nutzerdatei, wenn `TAXGRAPH_USER_STORE` fehlt: `users.json` im Datenverzeichnis, neben
+    /// `faelle/` (E3 des Löschplans; wie `scripts/starte-api.sh`). Python legt sie noch nach
+    /// `produkt/auth/users.json` (`auth.py:18`).
+    ///
+    /// Gibt es die neue Datei nicht, aber die alte, gilt die alte: sonst verschwänden die Konten
+    /// still, sobald dieser Pfad greift (Julius kopiert die Datei erst von Hand). [`Self::nutzerdatei_ist_veraltet`]
+    /// und [`Self::melde_veraltete_nutzerdatei`] machen das sichtbar.
+    // ponytail: der Rückgriff auf `produkt/auth/users.json` fällt mit L3 (dann gibt es die alte Datei nicht mehr).
     #[must_use]
     pub fn nutzerdatei(&self) -> PathBuf {
-        self.wurzel.join("produkt").join("auth").join("users.json")
+        self.nutzerdatei_wahl().0
+    }
+
+    /// `true`, wenn [`Self::nutzerdatei`] auf die alte Datei in `produkt/auth` zurückgreift.
+    #[must_use]
+    pub fn nutzerdatei_ist_veraltet(&self) -> bool {
+        self.nutzerdatei_wahl().1
+    }
+
+    /// Schreibt die Warnung `server.nutzerdatei_veraltet` ins Fehlerlog (ohne Pfad), wenn die Standarddatei
+    /// die alte ist und `TAXGRAPH_USER_STORE` nicht gesetzt ist (`user_store_gesetzt`: gesetzt und nicht leer).
+    pub fn melde_veraltete_nutzerdatei(&self, user_store_gesetzt: bool) {
+        if user_store_gesetzt || !self.nutzerdatei_ist_veraltet() {
+            return;
+        }
+        // Das Protokoll darf den Start nie abbrechen.
+        let _ = protokolliere(
+            &self.fehler_pfad(),
+            "server.nutzerdatei_veraltet",
+            &(),
+            Stufe::Warnung,
+            None,
+            Meta::default(),
+        );
+    }
+
+    /// (Pfad, ist die alte Datei).
+    fn nutzerdatei_wahl(&self) -> (PathBuf, bool) {
+        let neu = self
+            .faelle
+            .parent()
+            .unwrap_or_else(|| Path::new("."))
+            .join("users.json");
+        let alt = self.wurzel.join("produkt").join("auth").join("users.json");
+        if !neu.is_file() && alt.is_file() {
+            (alt, true)
+        } else {
+            (neu, false)
+        }
     }
 }
 

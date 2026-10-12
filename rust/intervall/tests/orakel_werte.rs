@@ -296,7 +296,7 @@ fn fixture_unverkuerzt() {
 #[test]
 fn sicht_wie_orakel() {
     let reg = bindung::lade_registry(
-        &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung"),
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../fixtures/python_bindung_2dd056a6"),
     )
     .expect("registry");
     let bindungen: Vec<Bindung> = reg

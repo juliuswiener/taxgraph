@@ -1,0 +1,419 @@
+# Cross-cutting Regel-Bedingungen (kein eigener Feld-Bestand, keine bindungen[]).
+#
+# Hintergrund: relevanz() (produkt/traverser/traverser.py) konnte bisher nur EIGENE Gate-Felder
+# einer Regel als Ausschlussgrund heranziehen (askable bool-Geltungsbedingung, bestätigt False).
+# p2_festzusetzung_zusammen trägt aber NUR nicht-bool Gates (text/enum/datum) — strukturell konnte
+# die Regel nie ausgeschlossen werden, egal was der Nutzer antwortet. Folge: bei
+# veranlagung="einzel" blieben alle Partner-Felder (Stammdaten, KV/PV, Vorsorge, Renten) im
+# Dialog-Angebot, obwohl die Regel de facto nie zutrifft (gemessen:
+# reports/adjudikation/relevanz_nicht_bool_blast_radius_2026-08-10.md).
+#
+# regel_bedingungen (schema.json $defs/regel_bedingung) schließt genau diese Lücke: EIN
+# strukturiertes Feld+Wert-Paar pro Regel, ausgewertet regel-weit (nicht je Gate-Feld). Bestätigt
+# UND abweichend -> ausgeschlossen; unbeantwortet/vorläufig schließt NICHT aus (fail-closed).
+#
+# Nur p2_festzusetzung_zusammen: die einzige der fünf strukturell gefangenen Regeln mit einer
+# echten Ob-Bedingung. Die anderen vier (p10_1_3_3a_kv_pv, p19_2_versorgungsfreibetrag,
+# p22_1_leibrente_besteuerungsanteil, p23_veraeusserungsgewinn) sind Rechen-Weichen ohne
+# Eligibility-Charakter (Kz-Verzweigung/Kohortentabelle/Alter-Parameter/Opt-in-Instanz) — laut
+# Blast-Radius-Bericht bewusst unangetastet.
+version: 1
+scheibe: "regel_bedingungen"
+bindungen: []
+regel_bedingungen:
+  - regel_id: p2_festzusetzung_zusammen
+    feld: veranlagung
+    wert: zusammen
+    grund: "§ 26 Abs. 2 S. 2 EStG: Ehegatten werden zusammen veranlagt, wenn beide Ehegatten die Zusammenveranlagung wählen — bei veranlagung=einzel (bestätigt) sind alle Partner-Angaben der Regel gegenstandslos."
+
+  # ---------------------------------------------------------------------------------------------
+  # Screening-Gruppe B (2026-08-14, reports/adjudikation/screening_vorsortierung_2026-08-14.md).
+  #
+  # Die vier Abwesenheits-Fragen aus p2_einkunftsart_* existierten längst und wurden auch gestellt
+  # — nur hing keine einzige Folge-Regel daran. Wer "nein, keine Vermietung" antwortete, bekam
+  # trotzdem jede Vermietungs-Frage. 28 Felder, kein neues Feld, kein Code: nur die Verbindung
+  # zwischen der Frage und dem, was sie abschalten soll.
+  #
+  # Lesart der Bedingung: `wert` ist der Wert, bei dem die Regel GILT. Die kein_-Felder behaupten
+  # die ABWESENHEIT, die Regeln behandeln die ANWESENHEIT — deshalb steht hier durchgehend
+  # `wert: false`. Ausgeschlossen wird nur bei BESTÄTIGT abweichendem Wert; unbeantwortet oder
+  # vorläufig schließt nie aus (fail-closed, siehe test_s8 in test_ui_zwei_signal_sicherheit).
+  #
+  # p22_1_leibrente steht auch im rentner-Kegel. Das ist unbedenklich: ein Rentner antwortet auf
+  # "Hattest du sonstige Einkünfte (z.B. Rente)?" mit ja, also kein_sonstige=False — der Wert, bei
+  # dem die Regel gilt. Gegengemessen am Ehrlich-Lauf beider Scheiben.
+
+  - regel_id: p21_vermietung_einkuenfte
+    feld: kein_vuv
+    wert: false
+    grund: "§ 21 Abs. 1 EStG setzt Einkünfte aus Vermietung und Verpachtung voraus — wer bestätigt, keine zu haben, hat keinen Tatbestand, zu dem Miete, Werbungskosten oder AfA zu erklären wären."
+
+  - regel_id: p20_6_verlustverrechnung
+    feld: kein_kap
+    wert: false
+    grund: "§ 20 Abs. 6 EStG verrechnet Verluste aus Kapitalvermögen — ohne Kapitaleinkünfte gibt es weder Verluste noch eine Verrechnung."
+
+  - regel_id: p20_9_sparer_pauschbetrag
+    feld: kein_kap
+    wert: false
+    grund: "§ 20 Abs. 9 EStG gewährt den Sparer-Pauschbetrag von den Einnahmen aus Kapitalvermögen — ohne solche Einnahmen ist nichts abzuziehen."
+
+  - regel_id: p32d_1_kirchensteuer
+    feld: kein_kap
+    wert: false
+    grund: "§ 32d Abs. 1 S. 3 EStG mindert die Abgeltungsteuer um die darauf entfallende Kirchensteuer — ohne Kapitalerträge fällt keine Abgeltungsteuer an, auf die sich das beziehen könnte."
+
+  - regel_id: p15_1_2_mitunternehmer
+    feld: kein_gewinn
+    wert: false
+    grund: "§ 15 Abs. 1 S. 1 Nr. 2 EStG erfasst Gewinnanteile von Mitunternehmern — wer bestätigt, keine Gewinneinkünfte zu haben, ist an keiner Mitunternehmerschaft beteiligt."
+
+  - regel_id: p4_3_gewinn
+    feld: kein_gewinn
+    wert: false
+    grund: "§ 4 Abs. 3 EStG ist die Gewinnermittlung durch Einnahmen-Überschuss-Rechnung — ohne Gewinneinkünfte gibt es keinen Gewinn zu ermitteln."
+
+  - regel_id: p22_1_leibrente_besteuerungsanteil
+    feld: kein_sonstige
+    wert: false
+    grund: "§ 22 Nr. 1 S. 3 Buchst. a EStG besteuert Leibrenten mit ihrem Ertragsanteil — Renten sind sonstige Einkünfte; wer bestätigt, keine zu haben, hat keine Rente zu erklären."
+
+  - regel_id: p23_veraeusserungsgewinn
+    feld: kein_sonstige
+    wert: false
+    grund: "§ 23 EStG erfasst private Veräußerungsgeschäfte als sonstige Einkünfte (§ 22 Nr. 2 EStG) — ohne sonstige Einkünfte liegt kein solches Geschäft vor."
+
+  - regel_id: p22_3_leistungen
+    feld: kein_sonstige
+    wert: false
+    grund: "§ 22 Nr. 3 EStG erfasst Einkünfte aus Leistungen als sonstige Einkünfte — wer bestätigt, keine sonstigen Einkünfte zu haben, hat auch keine solchen Leistungen."
+
+  # ---------------------------------------------------------------------------------------------
+  # Screening C1: "Hast du Kinder?" — der größte Einzelhebel des Fragebogens (22 Felder).
+  #
+  # Dieselbe Lesart wie oben: `wert` ist der Wert, bei dem die Regel GILT. `kein_kind` behauptet
+  # die Abwesenheit, die Regeln setzen ein Kind voraus — daher durchgehend `wert: false`.
+  #
+  # p24b (Entlastungsbetrag für Alleinerziehende) steht bewusst mit in der Liste: er setzt ein
+  # haushaltszugehöriges Kind mit Kindergeldanspruch voraus (§ 24b Abs. 1 S. 1), hängt also
+  # sachlich unter derselben Frage — auch wenn sein Name das nicht sagt.
+
+  - regel_id: p32_6_kinderfreibetraege
+    feld: kein_kind
+    wert: false
+    grund: "§ 32 Abs. 6 S. 1 EStG gewährt den Freibetrag für jedes zu berücksichtigende Kind — ohne Kind gibt es keinen Freibetrag und keine der 13 Angaben dazu."
+
+  - regel_id: p24b_entlastungsbetrag
+    feld: kein_kind
+    wert: false
+    grund: "§ 24b Abs. 1 S. 1 EStG setzt ein zum Haushalt gehörendes Kind voraus, für das Kindergeld oder ein Freibetrag nach § 32 Abs. 6 zusteht — ohne Kind kein Entlastungsbetrag."
+
+  - regel_id: p10_1_3_kv_pv_kind
+    feld: kein_kind
+    wert: false
+    grund: "§ 10 Abs. 1 Nr. 3 S. 2 EStG lässt Kranken-/Pflegeversicherungsbeiträge eines Kindes als eigene Beiträge zu — ohne Kind gibt es keine solchen Beiträge zu übernehmen."
+
+  - regel_id: p33b_abs5_kind_uebertragung
+    feld: kein_kind
+    wert: false
+    grund: "§ 33b Abs. 5 S. 1 EStG überträgt den Behinderten-Pauschbetrag EINES KINDES auf die Eltern — ohne Kind gibt es nichts zu übertragen."
+
+  - regel_id: p10_1_9_schulgeld
+    feld: kein_kind
+    wert: false
+    grund: "§ 10 Abs. 1 Nr. 9 EStG betrifft das Entgelt für den Schulbesuch eines Kindes, für das ein Freibetrag oder Kindergeld zusteht — ohne Kind kein Schulgeldabzug."
+
+  - regel_id: p33a_ausbildungsfreibetrag
+    feld: kein_kind
+    wert: false
+    grund: "§ 33a Abs. 2 S. 1 EStG gewährt den Ausbildungsfreibetrag für ein auswärtig untergebrachtes Kind, für das ein Freibetrag oder Kindergeld zusteht — ohne Kind kein Freibetrag."
+
+  # -----------------------------------------------------------------------------------------------
+  # Screening-Gruppe C — AUSGABENSEITE (2026-08-21).
+  #
+  # Die Gruppen davor decken die EINNAHMEN ab (kein_gewinn/_kap/_vuv/_sonstige/_kind). Für die
+  # Ausgaben- und Ermäßigungsseite gab es bis heute KEIN einziges Flag: 143 der 316 fragbaren
+  # Felder lagen in Regeln, die keine Antwort abschalten konnte. Gemessen im echten Nutzerlauf
+  # (Julius, 2026-08-21) — er bekam Fragen zu Handwerkerleistungen, zu einem Gebäude und zu einer
+  # auswärtigen Tätigkeit, die es alle nicht gab. Felder in bindung_screening_ausgaben.yaml.
+  #
+  # Die Wirkung läuft AUSSCHLIESSLICH hier über regel_bedingungen und NICHT über ein Gate an der
+  # Ziel-Regel. Der Unterschied ist kein Stilfrage: ein askable bool an der geltungsbedingung einer
+  # echten Regel IST ein Gate, und relevanz() schliesst bei bestätigtem `false` aus — ein
+  # `keine_behinderung_pflege`-Gate an p33b_behinderten_pauschbetrag nähme den Pauschbetrag
+  # ausgerechnet dem Behinderten weg. Dieselbe Polaritätsfalle wie 519199e und wie die Anlage V
+  # am 2026-08-16.
+
+  - regel_id: p33a_unterhalt
+    feld: kein_unterhalt
+    wert: false
+    grund: "§ 33a Abs. 1 S. 1 EStG setzt Aufwendungen für den Unterhalt einer gesetzlich unterhaltsberechtigten Person voraus — wer bestätigt, niemanden unterstützt zu haben, hat keinen Tatbestand, zu dem Name, Anschrift, Vermögen und Einkünfte der unterstützten Person zu erklären wären. Grösster ungefilterter Block des Fragebogens: 17 Fragen."
+
+  - regel_id: p34c_1_anrechnung_hoechstbetrag
+    feld: keine_auslandseinkuenfte
+    wert: false
+    grund: "§ 34c Abs. 1 S. 1 EStG rechnet die im Ausland gezahlte Steuer auf die deutsche Einkommensteuer an, soweit sie auf ausländische Einkünfte entfällt — ohne ausländische Einkünfte gibt es weder eine anzurechnende Steuer noch einen Höchstbetrag zu ermitteln."
+
+  - regel_id: p34c_2_abzug_statt_anrechnung
+    feld: keine_auslandseinkuenfte
+    wert: false
+    grund: "§ 34c Abs. 2 EStG ist das Wahlrecht, dieselbe ausländische Steuer bei der Ermittlung der Einkünfte abzuziehen statt sie anzurechnen — ohne ausländische Einkünfte gibt es nichts zu wählen."
+
+  - regel_id: p33b_behinderten_pauschbetrag
+    feld: keine_behinderung_pflege
+    wert: false
+    grund: "§ 33b Abs. 2 EStG gewährt den Pauschbetrag Menschen mit einem festgestellten Grad der Behinderung ab 20 — wer bestätigt, dass weder er selbst noch eines seiner Kinder eine festgestellte Behinderung hat, erfüllt den Tatbestand nicht. Die Frage nennt die Kinder ausdrücklich mit, weil diese Regel auch kind_grad_der_behinderung trägt."
+
+  - regel_id: p33b_pflege_pauschbetrag
+    feld: keine_behinderung_pflege
+    wert: false
+    grund: "§ 33b Abs. 6 S. 1 EStG setzt voraus, dass der Steuerpflichtige eine pflegebedürftige Person persönlich in der Wohnung pflegt — wer bestätigt, niemanden zu pflegen, hat keinen Pflege-Pauschbetrag. Dieselbe Frage deckt beides ab, weil sie beide Tatbestände nennt."
+
+  - regel_id: p33_2a_fahrtkostenpauschale
+    feld: keine_behinderung_pflege
+    wert: false
+    grund: "§ 33 Abs. 2a S. 1 EStG gewährt die behinderungsbedingte Fahrtkostenpauschale nur Menschen mit den dort genannten Merkzeichen bzw. einem Grad der Behinderung ab 80 — ohne festgestellte Behinderung ist der Tatbestand nicht erfüllt."
+
+  - regel_id: p19_2_versorgungsfreibetrag
+    feld: keine_versorgungsbezuege
+    wert: false
+    grund: "§ 19 Abs. 2 S. 1 EStG stellt einen Teil der VERSORGUNGSBEZÜGE steuerfrei — wer keine bezieht, hat nichts freizustellen. Die gesetzliche Altersrente gehört ausdrücklich nicht dazu (§ 19 Abs. 2 S. 2 zählt die Bezüge abschliessend auf), deshalb nennt die Frage Pension, Ruhegehalt und Werkspension."
+
+  - regel_id: p35c_sanierung_ermaessigung
+    feld: keine_energetische_sanierung
+    wert: false
+    grund: "§ 35c Abs. 1 S. 1 EStG ermäßigt die Steuer für energetische Maßnahmen an einem zu eigenen Wohnzwecken genutzten EIGENEN Gebäude — wer bestätigt, nicht saniert zu haben, hat kein begünstigtes Objekt. Deckt den am 2026-08-21 gemeldeten Fall ab: die Frage nach früheren Ermäßigungen 'für dieses Gebäude' erreichte einen Nutzer ohne Gebäude."
+
+  - regel_id: p35c_energieberater_ermaessigung
+    feld: keine_energetische_sanierung
+    wert: false
+    grund: "§ 35c Abs. 1 S. 4 EStG rechnet die Kosten eines Energieberaters zu den Aufwendungen für die energetische Maßnahme — ohne Maßnahme gibt es keine Beratungskosten dazu."
+
+  # ---------------------------------------------------------------------------------------------
+  # Screening-Gruppe C (2026-08-25). Anlass: Julius meldete im echten Durchgang vier Fragen
+  # nacheinander mit demselben Satz — „frage hat keine daseinsberechtigung“. Alle vier fragten nach
+  # einem MERKMAL eines Sachverhalts, dessen EXISTENZ er nie bejaht hatte: der auswaertige
+  # Uebernachtungsort, das Alter beim Betriebsverkauf, das Alter des Kindes waehrend der Betreuung
+  # und die Zustimmung des Ex-Ehepartners.
+  #
+  # NACHGEMESSEN: die zugehoerige Existenzfrage stand jeweils frueh in der Queue (keine_behinderung_
+  # pflege auf Position 8, kein_gewinn auf 26) — sie zu BEANTWORTEN nahm die Detailfrage aber nicht
+  # weg, weil zwischen den beiden Regeln keine Verbindung bestand. Genau diese Luecke schliessen
+  # regel_bedingungen; die Gruppen A und B oben sind dieselbe Sache, nur frueher.
+  #
+  # Lesart wie oben: `wert` ist der Wert, bei dem die Regel GILT.
+
+  - regel_id: p10_1_5_kinderbetreuung
+    feld: kein_kind
+    wert: false
+    grund: "§ 10 Abs. 1 Nr. 5 S. 1 EStG beguenstigt Kinderbetreuungskosten fuer ein Kind, 'welches das 14. Lebensjahr noch nicht vollendet hat oder wegen einer vor Vollendung des 25. Lebensjahres eingetretenen Behinderung ausserstande ist, sich selbst zu unterhalten' — ohne Kind gibt es weder Betreuung noch die Frage nach dem Alter waehrend dieser Betreuung. Genau jene Altersfrage meldete Julius am 2026-08-25."
+
+  # p16_4_freibetrag stand hier bis 2026-08-28 mit `kein_gewinn` — regel-weit, und das war eine
+  # SACKGASSE fuer Ehepaare. Die Begruendung war fuer den Einzelveranlagten richtig und fuer das
+  # Ehepaar falsch: sie sagt „wer bestaetigt, keine Gewinneinkuenfte zu haben", meint aber nur den
+  # NUTZER, waehrend die Regel auch die beiden Partner-Gates traegt.
+  #
+  # GEMESSEN, Scheibe `gesamt`, Ehepaar, der Partner verkauft seinen Betrieb (50.000 EUR), der
+  # Nutzer kreuzt wahrheitsgemaess „keine Gewinneinkuenfte" an:
+  #
+  #     208 Felder beantwortet, Warteschlange LEER  ->  grund=p16_4_gate_offen, zahl_cent=None
+  #     die zwei Fragen, die die Sperre aufheben, wurden NIE gestellt
+  #
+  # Der Nutzer hat alles beantwortet, was das Programm ihn gefragt hat, und bekommt keine Zahl und
+  # keinen Weg zu einer. Das Kreuz, das ihn festsetzt, ist seins — der Sachverhalt gehoert dem
+  # Partner. Der Sperrgrund (bescheid_deklaration.py) liest naemlich nur FELDWERTE und weiss
+  # nichts davon, dass relevanz() die Regel abgeschaltet hat: er feuert weiter, waehrend die
+  # Fragen, die ihn aufloesen wuerden, aus der Warteschlange verschwunden sind.
+  #
+  # Die Wirkung liegt jetzt je Feld (`feld_bedingung` in bindung_rentner.yaml): die vier
+  # Ich-Felder an `kein_gewinn`, die zwei Partner-Gates an `kein_gewinn_partner`. Damit entfaellt
+  # fuer jede Person genau das, was sie nicht betrifft.
+  #
+  # ZWEI WEGE WURDEN VORHER GEPRUEFT, ueber die dieser Eingriff Schaden anrichten koennte — beide
+  # sind frei, nachgemessen statt angenommen:
+  #   1. Der Sperrgrund `p16_4_gate_offen` haengt an Feldwerten (Veraeusserungsgewinn > 0), nicht
+  #      am Regel-Status. Ohne Veraeusserungsgewinn feuert er nie, egal ob die Regel
+  #      `ausgeschlossen` oder `unentschieden` ist.
+  #   2. `_relevante_kegel_felder` (api.py) nimmt Pflichtfelder aus dem Kegel, WEIL ihre Regel
+  #      ausgeschlossen ist. Faellt der Ausschluss weg, blieben sie Pflicht — aber KEIN
+  #      p16_4-Feld liegt in einem Kegel (gesamt: 33 Felder, rentner_gesamt: 26, beide ohne).
+
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    feld: kein_gewinn
+    wert: false
+    grund: "§ 34 Abs. 3 S. 1 EStG setzt 'ausserordentliche Einkuenfte im Sinne des Absatzes 2 Nummer 1' voraus — das sind die Veraeusserungsgewinne nach §§ 14, 16, 18 Abs. 3 EStG, also Gewinneinkuenfte. Ohne sie gibt es keinen Antrag auf den ermaessigten Durchschnittssatz."
+
+  - regel_id: p21_2_verbilligte_vermietung_wk
+    feld: kein_vuv
+    wert: false
+    grund: "§ 21 Abs. 2 EStG regelt den Werbungskostenabzug bei 'Ueberlassung einer Wohnung zu Wohnzwecken' unter der ortsueblichen Marktmiete — wer bestaetigt, nicht zu vermieten, ueberlaesst keine Wohnung und hat keine Miete, die mit der ortsueblichen zu vergleichen waere."
+
+  - regel_id: p9_1_3_nr5a_uebernachtung_nach_48
+    feld: vpf_auswaertige_taetigkeit
+    wert: true
+    grund: "§ 9 Abs. 1 S. 3 Nr. 5a S. 1 EStG erfasst Mehraufwendungen 'fuer beruflich veranlasste Uebernachtungen an einer Taetigkeitsstaette, die nicht erste Taetigkeitsstaette ist' — die Uebernachtung setzt eine auswaertige Taetigkeit voraus. `vpf_auswaertige_taetigkeit` erhebt genau diese; wer sie verneint, war nicht auswaerts und hat dort auch nicht uebernachtet. Anders als die kein_-Felder behauptet dieses Feld die ANWESENHEIT, deshalb `wert: true`."
+
+# =================================================================================================
+# INSTANZ-GRUPPEN (2026-08-25)
+#
+# ANLASS, Julius im echten Durchgang: „Wie heissen deine Kinder mit Vornamen? … wie hier mehrere
+# angeben bei nur einem feld??"
+#
+# 69 Felder tragen eine `instanz_gruppe` — 31 allein fuer Kinder. Store, ELSTER-Mapping und
+# Bescheid kennen die Achse seit langem (`est_mapping.parse_instanz`: `base__2`, `base__3`, …,
+# die Basis ohne Suffix ist Instanz 1). Der Fragebogen kannte sie NICHT und fragte jedes Feld
+# genau einmal: wer zwei Kinder hat, konnte einen Vornamen eintragen, und fuer das zweite Kind
+# gab es kein Feld. Das ist ein Abgabe-Blocker, kein Anzeigefehler.
+#
+# Julius' Loesung, und sie ist besser als N Fragen hintereinander: „oder man gibt direkt n
+# inputfelder anstatt jedesmal einen neue frage." Der Traverser bleibt damit unangetastet — er
+# liefert das Basisfeld wie bisher einmal, und die Oberflaeche baut daraus N Eingabefelder.
+#
+# `anzahl_feld` sagt, WOHER die Zahl kommt. Deklariert, nicht geraten: das Zaehlfeld liegt in einer
+# anderen Regel als die Instanzfelder (fam_anzahl_kinder gehoert zu p24b_entlastungsbetrag, die
+# Kind-Felder zu p32_6_kinderfreibetraege), eine Heuristik ueber Regel oder Namen faende es nicht.
+#
+# NUR `kind` ist hier bisher gepflegt. Die uebrigen sieben Gruppen (vv_objekt mit 22 Feldern,
+# rente, p23_veraeusserung, hh_*, gwg) haben KEIN Zaehlfeld im Fragebogen — dort muss erst eines
+# gebaut werden. Bis dahin verhalten sie sich wie bisher (eine Instanz), und das ist ehrlicher als
+# eine geratene Anzahl.
+  # ---- Zweitwohnung: zwölf Detailfragen ohne Eingangsfrage (Julius, 2026-08-25) ----
+  # „diese frage hat immernoch keine gundlage: Hast du die Zweitwohnung nur aus beruflichen
+  # Gründen? … es gibt keine zweitwohnung"
+  #
+  # GEMESSEN: die Regel führt 13 askable Felder, ALLE dreizehn wurden gefragt, und KEINES davon
+  # erhob, ob es überhaupt eine Zweitwohnung gibt. `dhf_eigener_hausstand` trägt jetzt
+  # `eingangsfrage: true` und kommt zuerst; diese Bedingung sorgt dafür, dass ein „Nein" die
+  # übrigen zwölf wegnimmt, statt sie nur nach hinten zu schieben.
+  - regel_id: p9_1_3_nr5_doppelte_haushaltsfuehrung
+    feld: keine_zweitwohnung
+    wert: false
+    grund: "§ 9 Abs. 1 S. 3 Nr. 5 S. 2 EStG: eine doppelte Haushaltsfuehrung liegt NUR vor, wenn der Arbeitnehmer ausserhalb des Ortes seiner ersten Taetigkeitsstaette einen eigenen Hausstand unterhaelt. Wer bestaetigt, keinen solchen Hausstand zu haben, erfuellt den Tatbestand nicht — dann gibt es keine Zweitwohnung, zu der Miete, Monate, Lage oder berufliche Veranlassung zu erklaeren waeren. Fail-closed wie die uebrigen Bedingungen: nur eine BESTAETIGTE abweichende Antwort schliesst aus, Schweigen nicht."
+
+  # ---- Photovoltaik: drei Fragen ohne Eingangsfrage (Julius, 2026-08-26) ----
+  # Gemeldet als: es war von keiner photovoltaikanlage die rede.
+  - regel_id: p3_nr72_pv
+    feld: kein_gewinn
+    wert: false
+    grund: "§ 3 Nr. 72 EStG stellt Einnahmen aus kleinen Photovoltaikanlagen steuerfrei; sie zaehlen zu den Gewinneinkuenften (§ 15 EStG), und genau deren Existenz erhebt `kein_gewinn`. Wer bestaetigt, keine Gewinneinkuenfte zu haben, betreibt keine Anlage — dann ist weder nach Bauart, Bruttoleistung noch Zahl der Einheiten zu fragen. Die drei Felder der Regel hatten bis dahin keine einzige Frage, die ihre Existenz erhebt."
+
+  # ---- Themen ohne jede Eingangsfrage, Teil 1 (Julius, 2026-08-26: „beides angehen") ----
+  # Diese beiden hatten ihr Existenzfeld bereits — es war nur nicht als Eingang markiert und
+  # schaltete nichts ab. Kein neues Feld noetig, nur die Verbindung.
+
+  - regel_id: p24a_altersentlastungsbetrag
+    feld: rentner_alter_64_erfuellt
+    wert: true
+    grund: "§ 24a S. 3 EStG gewaehrt den Altersentlastungsbetrag nur dem, der vor Beginn des Kalenderjahres das 64. Lebensjahr vollendet hat. `rentner_alter_64_erfuellt` erhebt genau diese Voraussetzung — wer sie verneint, bekommt den Betrag nicht, und die Folgefragen dazu sind gegenstandslos. Das Feld wird aus dem Geburtsdatum berechnet und nie gefragt; fehlt das Geburtsdatum, trägt `geburtsjahr` den Rückfall (Julius 2026-10-03)."
+
+  - regel_id: p33b_hinterbliebenen_pauschbetrag
+    feld: rentner_hinterbliebenenbezuege
+    wert: true
+    grund: "§ 33b Abs. 4 EStG gewaehrt den Hinterbliebenen-Pauschbetrag nur, wenn laufende Hinterbliebenenbezuege bewilligt sind. `rentner_hinterbliebenenbezuege` erhebt deren Existenz — wer keine bezieht, hat weder Pauschbetrag noch etwas zu uebertragen."
+
+  # ---- Themen ohne jede Eingangsfrage, Teil 2: sechs neue Flags (Julius, 2026-08-26) ----
+  # „bitte geh doch mal den fragebogen selbst durch. dir sollte dabei auffallen dass das so gut
+  # wie bei jeder frage der fall ist." Gemessen: 13 Themen hatten weder Eingangsfrage noch
+  # Ankreuzfeld noch Regelbedingung. Zwei davon hatten ihr Existenzfeld schon (Teil 1 oben), fuer
+  # sechs weitere gibt es jetzt eines — die vorhandenen bool-Felder taugten NICHT, sie fragen nach
+  # MERKMALEN und setzen das Objekt bereits voraus („Ist die Anlage auf einem Gebaeude?", „Hast du
+  # das Arbeitsmittel in diesem Jahr angeschafft?").
+
+  - regel_id: p6_2_gwg_sofortabzug
+    feld: keine_arbeitsmittel
+    wert: false
+    grund: "§ 9 Abs. 1 S. 3 Nr. 6 EStG erfasst Aufwendungen fuer Arbeitsmittel; §§ 6 Abs. 2 und 7 Abs. 1 EStG regeln, ob sie sofort oder ueber die Nutzungsdauer abgezogen werden. Alle drei setzen voraus, dass ueberhaupt ein Arbeitsmittel angeschafft wurde. Wer das verneint, hat weder Anschaffungskosten noch Nutzungsdauer noch ein Wahlrecht zwischen Sofortabzug und AfA."
+
+  - regel_id: p7_1_lineare_afa
+    feld: keine_arbeitsmittel
+    wert: false
+    grund: "§ 9 Abs. 1 S. 3 Nr. 6 EStG erfasst Aufwendungen fuer Arbeitsmittel; §§ 6 Abs. 2 und 7 Abs. 1 EStG regeln, ob sie sofort oder ueber die Nutzungsdauer abgezogen werden. Alle drei setzen voraus, dass ueberhaupt ein Arbeitsmittel angeschafft wurde. Wer das verneint, hat weder Anschaffungskosten noch Nutzungsdauer noch ein Wahlrecht zwischen Sofortabzug und AfA."
+
+  - regel_id: p9_1_3_nr6_7_arbeitsmittel_afa
+    feld: keine_arbeitsmittel
+    wert: false
+    grund: "§ 9 Abs. 1 S. 3 Nr. 6 EStG erfasst Aufwendungen fuer Arbeitsmittel; §§ 6 Abs. 2 und 7 Abs. 1 EStG regeln, ob sie sofort oder ueber die Nutzungsdauer abgezogen werden. Alle drei setzen voraus, dass ueberhaupt ein Arbeitsmittel angeschafft wurde. Wer das verneint, hat weder Anschaffungskosten noch Nutzungsdauer noch ein Wahlrecht zwischen Sofortabzug und AfA."
+
+  - regel_id: p10_1a_realsplitting
+    feld: kein_realsplitting
+    wert: false
+    grund: "§ 10 Abs. 1a Nr. 1 S. 1 EStG laesst Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden Ehegatten als Sonderausgaben zu. Wer keinen solchen Unterhalt zahlt, hat weder Betrag noch Zustimmung des Empfaengers zu erklaeren — die Frage nach der Zustimmung setzt einen Ex-Partner voraus, den es nicht gibt."
+
+  - regel_id: p10b_spenden
+    feld: keine_spenden
+    wert: false
+    grund: "§ 10b Abs. 1 S. 1 EStG laesst Zuwendungen zur Foerderung steuerbeguenstigter Zwecke als Sonderausgaben zu. Wer nichts gespendet hat, hat weder einen Betrag noch eine Zuwendung in den Vermoegensstock zu erklaeren."
+
+  - regel_id: p10_1_7_berufsausbildung
+    feld: keine_berufsausbildung
+    wert: false
+    grund: "§ 10 Abs. 1 Nr. 7 EStG laesst Aufwendungen fuer die eigene Berufsausbildung bis 6.000 Euro als Sonderausgaben zu. Wer keine solche Ausbildung bezahlt hat, hat weder Betrag noch Bezeichnung der Ausbildung zu erklaeren."
+
+  - regel_id: p10d_2_verlustvortrag_abzug
+    feld: kein_verlustvortrag
+    wert: false
+    grund: "§ 10d Abs. 2 S. 1 EStG zieht Verluste frueherer Jahre vom Gesamtbetrag der Einkuenfte ab, soweit sie gesondert festgestellt sind. Ohne einen solchen Feststellungsbescheid gibt es keinen Bestand, nach dessen Hoehe zu fragen waere."
+
+  - regel_id: p32b_progressionsvorbehalt
+    feld: keine_lohnersatzleistungen
+    wert: false
+    grund: "§ 32b Abs. 1 Nr. 1 EStG unterwirft Lohnersatzleistungen dem Progressionsvorbehalt. Wer keine bezogen hat, hat keine Summe zu erklaeren."
+
+instanz_gruppen:
+  - gruppe: vv_objekt
+    anzahl_feld: vv_anzahl_objekte
+    etikett: "Objekt"
+    max: 9
+    grund: "Die Anlage V wird je vermietetem Objekt einmal ausgefuellt (§ 21 EStG). 22 Felder haengen an dieser Gruppe — Adresse, Einnahmen, Werbungskosten, AfA je Objekt. Ohne Zaehlfeld konnte der Fragebogen nur EIN Objekt aufnehmen."
+  - gruppe: rente
+    anzahl_feld: rentner_anzahl_renten
+    etikett: "Rente"
+    max: 5
+    grund: "Der Besteuerungsanteil haengt am Jahr des Rentenbeginns (§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG) und wird je Rente getrennt bestimmt. Ohne Zaehlfeld liess sich nur eine Rente erfassen — bei gesetzlicher Rente PLUS Betriebsrente fiel eine unter den Tisch."
+  - gruppe: p23_veraeusserung
+    anzahl_feld: p23_anzahl_verkaeufe
+    etikett: "Verkauf"
+    max: 9
+    grund: "§ 23 Abs. 3 S. 1 EStG rechnet Gewinn und Verlust je Veraeusserungsgeschaeft. Preis, Anschaffungskosten und Werbungskosten gehoeren zu je EINEM Verkauf; ohne Zaehlfeld liessen sich zwei Verkaeufe nicht trennen und die Zahlen vermischten sich."
+  - gruppe: hh_handwerker
+    anzahl_feld: hh_anzahl_handwerker
+    etikett: "Handwerkerleistung"
+    max: 9
+    grund: "§ 35a Abs. 3 EStG ermaessigt die Steuer um 20 % der Arbeitskosten. Art und Betrag gehoeren zu je einer Leistung; ohne Zaehlfeld war nur eine erfassbar."
+  - gruppe: hh_dienstleistung
+    anzahl_feld: hh_anzahl_dienstleistungen
+    etikett: "Dienstleistung"
+    max: 9
+    grund: "§ 35a Abs. 2 EStG ermaessigt die Steuer um 20 % der Arbeitskosten. Art und Betrag gehoeren zu je einer Dienstleistung; ohne Zaehlfeld war nur eine erfassbar."
+  - gruppe: hh_minijob
+    anzahl_feld: hh_anzahl_minijobs
+    etikett: "Minijob"
+    max: 5
+    grund: "§ 35a Abs. 1 EStG ermaessigt die Steuer um 20 % der Aufwendungen, hoechstens 510 Euro. Art und Betrag gehoeren zu je einer Beschaeftigung."
+  - gruppe: gwg
+    anzahl_feld: gwg_anzahl
+    etikett: "Gerät"
+    max: 9
+    grund: "§ 6 Abs. 2 S. 1 EStG laesst den Sofortabzug fuer jedes Wirtschaftsgut einzeln zu, dessen Anschaffungskosten 800 Euro nicht uebersteigen. Die Grenze gilt je Gegenstand — ohne Zaehlfeld liess sich nur einer erfassen, und wer zwei kaufte, verlor den zweiten Abzug."
+  - gruppe: kind
+    anzahl_feld: fam_anzahl_kinder
+    etikett: "Kind"
+    max: 9
+    grund: "Anlage Kind wird je Kind einmal ausgefuellt (§ 32 EStG, Kz E05001xx je Kind). `fam_anzahl_kinder` erhebt die Zahl der Kinder, fuer die Kindergeld oder ein Freibetrag zusteht — genau die, fuer die je eine Anlage Kind abzugeben ist. Obergrenze 9: das amtliche Formular sieht keine hoehere Zahl vor, und `fam_anzahl_kinder` selbst laesst bis 20 zu (praktische Obergrenze, kein Formularlimit)."
+
+# Themen, die im Fragebogen ZUERST kommen — unabhaengig von ihrem Gate-Gewicht.
+#
+# Die Reihenfolge folgt sonst der Streichkraft: wer viel abschaltet, kommt zuerst. Das ist fuer
+# Gates richtig, macht den EINSTIEG aber absurd. Gemessen im E2E-Durchgang am 2026-08-26 (Julius:
+# „zeig mir bitte mal die reihenfolge der fragen aus deinem e2e"): Frage 1 war „Hattest du Kosten
+# fuer Handwerker, Haushaltshilfe?" — ein Nebenthema —, waehrend Name, Adresse, Steuernummer und
+# Geburtsdatum auf den Plaetzen 50 bis 63 standen. Stammdaten schalten nichts ab und landen
+# deshalb hinten, obwohl sie die einfachsten Fragen sind und jeder sie beantworten muss.
+#
+# Nur der EINSTIEG wird hier festgelegt, nicht die ganze Ordnung: was nicht genannt ist, sortiert
+# sich weiter nach Gewicht und Thema.
+themen_zuerst:
+  - regel_id: p2_festzusetzung_einzel
+    grund: "Stammdaten (Name, Anschrift, Geburtsdatum, Steuernummer, IBAN, Steuerklasse) plus Bruttoarbeitslohn. Jeder Steuerpflichtige muss sie angeben, sie sind ohne Nachschlagen zu beantworten und sie eroeffnen den Fragebogen in der Form, die ein Papierformular auch haette."
+  - regel_id: p2_festzusetzung_zusammen
+    grund: "Dieselben Angaben fuer den Ehe-/Lebenspartner. Steht direkt hinter den eigenen Stammdaten, weil es dieselbe Sorte Frage ist — und entfaellt ganz, sobald veranlagung=einzel bestaetigt ist."

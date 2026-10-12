@@ -1,0 +1,469 @@
+# Screening-Flags der AUSGABENSEITE (2026-08-21).
+#
+# Fortsetzung eines vorhandenen, begründeten Musters, kein neues Konzept. Die Einnahmenseite hat
+# seit 2026-08-14 fünf solche Flags (kein_gewinn/_kap/_vuv/_sonstige in bindung_an_gesamt.yaml,
+# kein_kind seit 2026-08-15); die Ausgabenseite hatte bis heute KEIN einziges. Gemessen am echten
+# Nutzerpfad: ein Arbeitnehmer (einzel, Bruttolohn, alle vier Einkunftsarten verneint, keine
+# Kinder) bekam 115 Fragen in der Scheibe `gesamt`, darunter 17 zum Unterhalt an eine bedürftige
+# Person, 6 zu ausländischen Einkünften und 5 zu Versorgungsbezügen — alles Sachverhalte, die er
+# mit EINER Antwort ausschließen kann.
+#
+# BAUART, dreimal dieselbe wie bei kein_vuv (Abweichung davon war hier schon teuer):
+#
+#   1. Das Feld benennt die ABWESENHEIT (`kein_*`/`keine_*`), die Frage fragt nach der ANWESENHEIT.
+#      Die Umkehr ist DEKLARIERT (`frage_invertiert: true`), nicht geraten — bis 2026-08-20 riet
+#      die Erfassungsschicht am Feldnamen und verfehlte jede Verneinung in der Mitte des Namens
+#      (tests/test_bindung_frage_polaritaet.py).
+#
+#   2. Jedes Flag ist das EINZIGE Feld einer eigenen Pseudo-Regel. Nicht aus Ordnungsliebe: ein
+#      askable bool an der geltungsbedingung einer ECHTEN Regel IST ein Gate, und relevanz()
+#      schließt bei bestätigtem `false` aus — ein `keine_behinderung_pflege`-Gate an
+#      p33b_behinderten_pauschbetrag nähme den Pauschbetrag also ausgerechnet dem Behinderten weg.
+#      Dieselbe Polaritäts-Falle wie 519199e (Verpflegungsmehraufwand) und wie die Anlage V am
+#      2026-08-16. Die Wirkung läuft ausschließlich über `regel_bedingungen`
+#      (bindung_regel_bedingungen.yaml), wo sie regel-weit und mit Normbegründung steht.
+#
+#   3. `beispielwert: false` — der Normalfall schließt NICHTS vor. Nur eine BESTÄTIGTE Antwort
+#      schaltet ab (relevanz(): unbeantwortet und vorläufig schließen nie aus, fail-closed).
+#
+# KEIN Kz: Anwendbarkeits-Flags, keine Deklarationsfelder. Sie steuern nur, welche Fragen kommen;
+# die Angaben dahinter tragen ihre eigenen Kz (Anlage Unterhalt, Anlage AUS, Anlage Vorsorgeauf-
+# wand, Anlage Energetische Maßnahmen).
+#
+# WIRKSAM ERST MIT EINTRAG IN DIE SCHEIBE: SCHEIBEN["gesamt"]["felder"] in
+# produkt/haut/api_constants.py ist eine handgeschriebene Feldliste (so hängt auch KIND_SCREENING
+# dort, Zeile 64). Ein Feld, das hier steht und dort nicht, wird nie gefragt — tote Verdrahtung,
+# dieselbe Klasse wie der § 35c-Fund. Gate dagegen:
+# tests/test_screening_ausgabenseite.py::test_flags_haengen_in_der_scheibe_gesamt.
+version: 1
+scheibe: "Screening-Flags Ausgabenseite (Unterhalt, Ausland, Behinderung/Pflege, Versorgungsbezüge, energetische Sanierung)"
+
+bindungen:
+  # --- § 33a Abs. 1: der größte ungefilterte Block des Fragebogens (17 Fragen) ---------------
+  # Die Regel trägt NULL bool-Gates — sie konnte strukturell nie ausgeschlossen werden, egal was
+  # der Nutzer antwortet. Die 17 Fragen (Name, Geburtsdatum, IdNr, Beruf, Anschrift, Vermögen,
+  # Einkünfte der unterstützten Person …) bekam damit auch, wer niemanden unterstützt.
+  - feld_id: kein_unterhalt
+    quelle: {regel_id: p33a_unterhalt_vorhanden, geltungsbedingung: kein_unterhalt_gezahlt}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr eine Person finanziell unterstützt, der du zum Unterhalt verpflichtet bist (zum Beispiel Eltern oder ein erwachsenes Kind)?"
+    hilfe_kurz: "Gemeint sind laufende Zahlungen an bedürftige Angehörige, für die es weder Kindergeld noch einen Kinderfreibetrag gibt. Bei Nein entfällt ein Block von 17 Fragen zur unterstützten Person."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — es steuert nur, ob der Unterhaltsblock gefragt wird. Die Angaben selbst tragen ihre eigenen Kz (Anlage Unterhalt, E0120101 ff.)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "Erwachsen einem Steuerpflichtigen Aufwendungen für den Unterhalt und eine etwaige Berufsausbildung einer dem Steuerpflichtigen oder seinem Ehegatten gegenüber gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+
+  # --- § 34c: ausländische Einkünfte (7 Felder über zwei Regeln) -----------------------------
+  - feld_id: keine_auslandseinkuenfte
+    quelle: {regel_id: p34c_auslandseinkuenfte_vorhanden, geltungsbedingung: keine_auslaendischen_einkuenfte}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hattest du dieses Jahr Einkünfte aus dem Ausland, oder hast du im Ausland Steuern darauf gezahlt?"
+    hilfe_kurz: "Zum Beispiel Arbeitslohn, Mieten oder Zinsen aus einem anderen Staat. Wer nur in Deutschland arbeitet und anlegt, antwortet mit Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Auslandsangaben selbst tragen ihre eigenen Kz (Anlage AUS, E0601401/E0601901)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34c Abs. 1 S. 1 EStG"
+      zitatanker: "Bei unbeschränkt Steuerpflichtigen, die mit ausländischen Einkünften in dem Staat, aus dem die Einkünfte stammen, zu einer der deutschen Einkommensteuer entsprechenden Steuer herangezogen werden"
+      datei: "sources/gesetze-im-internet/estg_p34c_2026-07-14.txt"
+
+  # --- § 33b / § 33 Abs. 2a: Behinderung und Pflege (13 Felder über drei Regeln) -------------
+  # Die Frage nennt AUSDRÜCKLICH auch die Kinder: p33b_behinderten_pauschbetrag trägt neben den
+  # eigenen (rentner_*) auch die Kind-Felder kind_grad_der_behinderung und
+  # kind_hilflos_blind_taubblind. Eine Frage nur nach der EIGENEN Behinderung hätte dem Elternteil
+  # eines behinderten Kindes dessen Pauschbetrag genommen — ein Flag darf nur abschalten, wonach
+  # es auch gefragt hat.
+  # NICHT dabei: p33b_hinterbliebenen_pauschbetrag. § 33b Abs. 4 setzt bewilligte laufende
+  # Hinterbliebenenbezüge voraus, nicht eine Behinderung — ein anderer Tatbestand, den diese Frage
+  # nicht stellt.
+  - feld_id: keine_behinderung_pflege
+    quelle: {regel_id: p33b_behinderung_pflege_vorhanden, geltungsbedingung: keine_behinderung_und_keine_pflege}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du selbst oder hat eines deiner Kinder eine amtlich festgestellte Behinderung, oder pflegst du eine pflegebedürftige Person?"
+    hilfe_kurz: "Amtlich festgestellt heißt: es gibt einen Bescheid oder Ausweis mit einem Grad der Behinderung ab 20. Die Pflege zählt auch dann, wenn du eine andere Person zu Hause pflegst."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — Grad der Behinderung, Pflegegrad und Angaben zur gepflegten Person tragen ihre eigenen Kz (E0109708, E0161606, E0161506 ff.)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33b Abs. 2 EStG"
+      zitatanker: "Einen Pauschbetrag erhalten Menschen, deren Grad der Behinderung auf mindestens 20 festgestellt ist, sowie Menschen, die hilflos im Sinne des Absatzes 3 Satz 4 sind"
+      datei: "sources/gesetze-im-internet/estg_p33b_2026-07-13.txt"
+
+  # --- § 19 Abs. 2: Versorgungsbezüge (5 Felder) ---------------------------------------------
+  - feld_id: keine_versorgungsbezuege
+    quelle: {regel_id: p19_2_versorgungsbezuege_vorhanden, geltungsbedingung: keine_versorgungsbezuege_erhalten}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Beziehst du eine Beamtenpension, ein Ruhegehalt oder eine Werkspension aus einem früheren Dienstverhältnis?"
+    hilfe_kurz: "Solche Bezüge stehen in der Lohnsteuerbescheinigung gesondert als Versorgungsbezüge. Die gesetzliche Altersrente gehört NICHT dazu — wer nur Arbeitslohn bezieht, antwortet mit Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — der Versorgungsfreibetrag wird vom Finanzamt aus den Versorgungsbezügen der Lohnsteuerbescheinigung berechnet."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 1 EStG"
+      zitatanker: "Von Versorgungsbezügen bleiben ein nach einem Prozentsatz ermittelter, auf einen Höchstbetrag begrenzter Betrag (Versorgungsfreibetrag) und ein Zuschlag zum Versorgungsfreibetrag steuerfrei"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  # --- § 35c: energetische Sanierung (12 Felder über zwei Regeln) ----------------------------
+  # Einer der drei von Julius im echten Lauf gemeldeten Fälle: „Hast du für dieses Gebäude in
+  # früheren Jahren schon einmal …" — er hat kein Gebäude. Die Regel hat zwar bool-Gates, aber
+  # keines davon fragt nach dem Gebäude; p35c_bereits_ermaessigung_frueher trägt seit 2026-08-16
+  # zu Recht `gate: false` (die Frage ist Deklaration, keine Voraussetzung) und schaltet deshalb
+  # auch nichts ab.
+  - feld_id: keine_energetische_sanierung
+    quelle: {regel_id: p35c_sanierung_vorhanden, geltungsbedingung: keine_energetische_massnahme}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr an deinem eigenen, selbst bewohnten Haus oder deiner Eigentumswohnung energetisch saniert (zum Beispiel Dämmung, neue Fenster oder eine neue Heizung)?"
+    hilfe_kurz: "Nur für Gebäude, die dir gehören und in denen du selbst wohnst; das Gebäude muss älter als zehn Jahre sein. Wer zur Miete wohnt, antwortet mit Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Sanierungsangaben tragen ihre eigenen Kz (Anlage Energetische Maßnahmen, E0240401 ff.)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35c Abs. 1 S. 1 EStG"
+      zitatanker: "Für energetische Maßnahmen an einem in der Europäischen Union oder dem Europäischen Wirtschaftsraum belegenen zu eigenen Wohnzwecken genutzten eigenen Gebäude (begünstigtes Objekt) ermäßigt sich auf Antrag die tarifliche Einkommensteuer"
+      datei: "sources/gesetze-im-internet/estg_p35c_2026-07-13.txt"
+
+  # --- keine_arbeitsmittel: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: keine_arbeitsmittel
+    quelle: {regel_id: p9_1_3_nr6_arbeitsmittel_vorhanden, geltungsbedingung: keine_arbeitsmittel_angeschafft}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr etwas für deine Arbeit gekauft, das länger hält (zum Beispiel Laptop, Werkzeug, Fachbücher, Büromöbel)?"
+    hilfe_kurz: "Gemeint sind Gegenstände, die du überwiegend beruflich nutzt. Verbrauchsmaterial wie Papier zählt nicht dazu. Bei Nein entfallen neun Fragen zu Preis, Anschaffungsmonat und Abschreibung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Arbeitsmittel selbst werden in Anlage N erklärt."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 1 EStG"
+      zitatanker: "800 Euro nicht übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+
+  # --- kein_realsplitting: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: kein_realsplitting
+    quelle: {regel_id: p10_1a_realsplitting_vorhanden, geltungsbedingung: kein_realsplitting_beantragt}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Zahlst du Unterhalt an einen geschiedenen oder dauernd getrennt lebenden Ehe-/Lebenspartner?"
+    hilfe_kurz: "Gemeint ist nur Unterhalt an den früheren Partner, nicht an Kinder oder andere Angehörige. Der Abzug setzt dessen Zustimmung voraus (Anlage U). Bei Nein entfallen vier Fragen."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Unterhaltsleistungen selbst stehen in Anlage U."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1a Nr. 1 S. 1 EStG"
+      zitatanker: "Unterhaltsleistungen an den geschiedenen oder dauernd getrennt lebenden unbeschränkt einkommensteuerpflichtigen Ehegatten, wenn der Geber dies mit Zustimmung des Empfängers beantragt, bis zu 13 805 Euro im Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  # --- keine_spenden: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: keine_spenden
+    quelle: {regel_id: p10b_spenden_vorhanden, geltungsbedingung: keine_spenden_geleistet}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr an gemeinnützige Vereine, Stiftungen, Kirchen oder Parteien gespendet?"
+    hilfe_kurz: "Zum Beispiel eine Dauerspende, eine Fluthilfe oder der Mitgliedsbeitrag an einen gemeinnützigen Verein. Ohne Spendenquittung geht es meist nicht."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Spenden selbst stehen in der Anlage Sonderausgaben."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10b Abs. 1 S. 1 EStG"
+      zitatanker: "Zuwendungen (Spenden und Mitgliedsbeiträge) zur Förderung steuerbegünstigter Zwecke"
+      datei: "sources/gesetze-im-internet/estg_p10b_2026-07-13.txt"
+
+  # --- keine_berufsausbildung: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: keine_berufsausbildung
+    quelle: {regel_id: p10_1_7_berufsausbildung_vorhanden, geltungsbedingung: keine_berufsausbildung_kosten}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hattest du dieses Jahr Kosten für deine eigene erste Berufsausbildung oder ein Erststudium?"
+    hilfe_kurz: "Gemeint ist die ERSTE Ausbildung oder das erste Studium — zum Beispiel Studiengebühren, Fachbücher, Fahrten zur Hochschule. Eine Fortbildung im schon erlernten Beruf gehört nicht hierher, sie zählt als Werbungskosten."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Aufwendungen selbst stehen in der Anlage Sonderausgaben."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 7 EStG"
+      zitatanker: "bis zu 6 000 Euro im Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+
+  # --- kein_verlustvortrag: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: kein_verlustvortrag
+    quelle: {regel_id: p10d_2_verlustvortrag_vorhanden, geltungsbedingung: kein_verlustvortrag_festgestellt}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hat dir das Finanzamt aus früheren Jahren einen noch offenen Verlust bescheinigt?"
+    hilfe_kurz: "Das steht in einem eigenen Bescheid über die „gesonderte Feststellung des verbleibenden Verlustvortrags“. Wer so einen Bescheid nicht hat, antwortet mit Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — der Verlustvortrag wird vom Finanzamt gesondert festgestellt."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10d Abs. 2 S. 1 EStG"
+      zitatanker: "bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro unbeschränkt"
+      datei: "sources/gesetze-im-internet/estg_p10d_2026-07-13.txt"
+
+  # --- keine_lohnersatzleistungen: bis 2026-08-26 hatte dieses Thema KEINE einzige Eingangsfrage ------------------
+  - feld_id: keine_lohnersatzleistungen
+    quelle: {regel_id: p32b_progression_vorhanden, geltungsbedingung: keine_lohnersatzleistungen_bezogen}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr Arbeitslosengeld, Krankengeld, Elterngeld oder eine ähnliche Lohnersatzleistung bekommen?"
+    hilfe_kurz: "Auch Kurzarbeitergeld, Mutterschaftsgeld und Insolvenzgeld gehören dazu. Diese Leistungen sind selbst steuerfrei, erhöhen aber den Steuersatz auf dein übriges Einkommen."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die Leistungen selbst stehen in Anlage N bzw. der Bescheinigung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32b Abs. 1 Nr. 1 EStG"
+      zitatanker: "Arbeitslosengeld, Teilarbeitslosengeld, Zuschuesse zum Arbeitsentgelt, Kurzarbeitergeld"
+      datei: "sources/gesetze-im-internet/estg_p32b_2026-07-13.txt"
+
+  # --- keine_zweitwohnung: die Existenzfrage der doppelten Haushaltsführung ------------------
+  # Am 2026-08-25 stand hier `dhf_eigener_hausstand` als Eingangsfrage („Hast du an deinem
+  # Hauptwohnort einen eigenen Haushalt, der außerhalb des Arbeitsorts liegt?"). Das ist ein
+  # Tatbestandsmerkmal der Norm, aber keine Existenzfrage: § 9 Abs. 1 S. 3 Nr. 5 S. 2 EStG
+  # verlangt einen eigenen Hausstand ausserhalb des Arbeitsorts UND eine Wohnung AM Arbeitsort.
+  # Nur das ZWEITE ist ungewoehnlich. Julius, 2026-08-26: „die meisten menschen wohnen nicht
+  # unmittelbar am ort ihrer arbeit, aber hier geht es um 2. wohnsitz" — wer die alte Frage
+  # bejahte (also fast jeder), bekam alle zwoelf Detailfragen.
+  - feld_id: keine_zweitwohnung
+    quelle: {regel_id: p9_1_3_nr5_zweitwohnung_vorhanden, geltungsbedingung: keine_zweitwohnung_am_arbeitsort}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du am Arbeitsort eine ZWEITE Wohnung, zusätzlich zu deinem Zuhause?"
+    hilfe_kurz: "Gemeint ist eine zweite Unterkunft, weil dein Arbeitsort zu weit von deinem Zuhause entfernt ist — Wohnung, Zimmer, Hotel oder Monteurunterkunft. Wer nur eine Wohnung hat und von dort zur Arbeit pendelt, antwortet mit Nein, auch wenn der Weg weit ist."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — die doppelte Haushaltsführung selbst wird in Anlage N erklärt."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 5 Satz 2 EStG"
+      zitatanker: "Eine doppelte Haushaltsführung liegt nur vor, wenn der Arbeitnehmer außerhalb des Ortes seiner ersten Tätigkeitsstätte einen eigenen Hausstand unterhält"
+      datei: "sources/gesetze-im-internet/estg_p9_abs1nr5_2026-07-09.txt"
+
+  # --- vv_anzahl_objekte: Zaehlfeld der Instanz-Gruppe `vv_objekt` (2026-08-27) ------------------
+  - feld_id: vv_anzahl_objekte
+    quelle: {regel_id: p21_anzahl_objekte_erhebung, geltungsbedingung: vermietete_objekte_gezaehlt}
+    feld_bedingung: {feld: kein_vuv, wert: false, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 9, grund: "Zahl der vermieteten Objekte; das amtliche Formular sieht keine hoehere Zahl vor"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele Wohnungen oder Häuser vermietest du?"
+    hilfe_kurz: "Zähle jedes Objekt einzeln — für jedes wird eine eigene Anlage V ausgefüllt. Ein Haus mit mehreren vermieteten Wohnungen zählt als ein Objekt, wenn du es als Ganzes vermietest."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 21 Abs. 1 S. 1 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung sind"
+      datei: "sources/gesetze-im-internet/estg_p21_2026-07-13.txt"
+
+  # --- rentner_anzahl_renten: Zaehlfeld der Instanz-Gruppe `rente` (2026-08-27) ------------------
+  - feld_id: rentner_anzahl_renten
+    quelle: {regel_id: p22_anzahl_renten_erhebung, geltungsbedingung: renten_gezaehlt}
+    feld_bedingung: {feld: kein_sonstige, wert: false, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 5, grund: "Zahl der bezogenen Renten; mehr als fuenf ist praktisch ausgeschlossen"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele verschiedene Renten bekommst du?"
+    hilfe_kurz: "Zum Beispiel gesetzliche Rente und zusätzlich eine Betriebsrente — das sind zwei. Jede wird getrennt erfasst, weil Beginn und Art den steuerpflichtigen Anteil bestimmen."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 22 Nr. 1 S. 3 Buchst. a Doppelbuchst. aa EStG"
+      zitatanker: "Bemessungsgrundlage für den der Besteuerung unterliegenden Anteil ist der Jahresbetrag der Rente"
+      datei: "sources/gesetze-im-internet/estg_p22_2026-07-13.txt"
+
+  # --- p23_anzahl_verkaeufe: Zaehlfeld der Instanz-Gruppe `p23_veraeusserung` (2026-08-27) ------------------
+  - feld_id: p23_anzahl_verkaeufe
+    quelle: {regel_id: p23_anzahl_verkaeufe_erhebung, geltungsbedingung: verkaeufe_gezaehlt}
+    feld_bedingung: {feld: kein_sonstige, wert: false, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 9, grund: "Zahl der privaten Veraeusserungsgeschaefte"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele private Verkäufe innerhalb der Spekulationsfrist hattest du?"
+    hilfe_kurz: "Gemeint sind Verkäufe von Grundstücken innerhalb von zehn Jahren oder anderen Gegenständen innerhalb eines Jahres nach dem Kauf. Jeder Verkauf wird einzeln gerechnet."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 3 S. 1 EStG"
+      zitatanker: "Gewinn oder Verlust aus Veraeusserungsgeschaeften nach Absatz 1 ist der Unterschied zwischen Veraeusserungspreis"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+
+  # --- hh_anzahl_handwerker: Zaehlfeld der Instanz-Gruppe `hh_handwerker` (2026-08-27) ------------------
+  - feld_id: hh_anzahl_handwerker
+    quelle: {regel_id: p35a_anzahl_handwerker_erhebung, geltungsbedingung: handwerkerleistungen_gezaehlt}
+    feld_bedingung: {feld: hh_hat_aufwendungen, wert: true, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 9, grund: "Zahl der Handwerkerleistungen"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele verschiedene Handwerkerrechnungen hattest du dieses Jahr?"
+    hilfe_kurz: "Zum Beispiel eine Heizungswartung und eine Badsanierung — das sind zwei. Du kannst auch alles zusammenzählen und 1 angeben, wenn dir das lieber ist."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 3 EStG"
+      zitatanker: "für Renovierungs-, Erhaltungs- und Modernisierungsmaßnahmen"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+
+  # --- hh_anzahl_dienstleistungen: Zaehlfeld der Instanz-Gruppe `hh_dienstleistung` (2026-08-27) ------------------
+  - feld_id: hh_anzahl_dienstleistungen
+    quelle: {regel_id: p35a_anzahl_dienstleistungen_erhebung, geltungsbedingung: dienstleistungen_gezaehlt}
+    feld_bedingung: {feld: hh_hat_aufwendungen, wert: true, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 9, grund: "Zahl der haushaltsnahen Dienstleistungen"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele verschiedene haushaltsnahe Dienstleistungen hattest du dieses Jahr?"
+    hilfe_kurz: "Zum Beispiel Gartenpflege und Fensterputzen — das sind zwei. Du kannst auch alles zusammenzählen und 1 angeben, wenn dir das lieber ist."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 2 EStG"
+      zitatanker: "gilt nur für Arbeitskosten"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+
+  # --- hh_anzahl_minijobs: Zaehlfeld der Instanz-Gruppe `hh_minijob` (2026-08-27) ------------------
+  - feld_id: hh_anzahl_minijobs
+    quelle: {regel_id: p35a_anzahl_minijobs_erhebung, geltungsbedingung: minijobs_gezaehlt}
+    feld_bedingung: {feld: hh_hat_aufwendungen, wert: true, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 5, grund: "Zahl der Minijob-Beschaeftigungen im Haushalt"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele Haushaltshilfen auf Minijob-Basis hattest du dieses Jahr?"
+    hilfe_kurz: "Gemeint sind bei der Minijob-Zentrale angemeldete Beschäftigungen im Privathaushalt."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35a Abs. 1 EStG"
+      zitatanker: "geringfügige Beschäftigung im Sinne des § 8a des Vierten Buches Sozialgesetzbuch"
+      datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
+
+  # --- gwg_anzahl: Zaehlfeld der Instanz-Gruppe `gwg` (2026-08-27) ------------------
+  - feld_id: gwg_anzahl
+    quelle: {regel_id: p6_2_anzahl_gwg_erhebung, geltungsbedingung: gwg_gezaehlt}
+    feld_bedingung: {feld: keine_arbeitsmittel, wert: false, grund: "Die Zahl der Instanzen wird nur gebraucht, wenn es das Thema ueberhaupt gibt. Das Feld liegt in einer eigenen Pseudo-Regel (wie die Screening-Flags), damit es kein Gate der echten Rechenregel wird und deren Slot-Pruefung nicht ausloest — es traegt selbst keinen signatur_slot, weil die Anzahl nicht in die Rechnung eingeht, sondern nur bestimmt, wie viele Eingabefelder die Oberflaeche baut."}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 9, grund: "Zahl der geringwertigen Wirtschaftsgueter"}
+    askable: true
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viele günstige Arbeitsmittel (bis 800 Euro netto) hast du dieses Jahr gekauft?"
+    hilfe_kurz: "Zum Beispiel ein Bürostuhl und eine Tastatur — das sind zwei. Jedes wird einzeln geprüft, weil die 800-Euro-Grenze je Gegenstand gilt."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 6 Abs. 2 S. 1 EStG"
+      zitatanker: "800 Euro nicht übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"

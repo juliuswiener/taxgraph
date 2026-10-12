@@ -46,7 +46,8 @@ fn ts() -> &'static str {
 fn bindungen() -> &'static [Bindung] {
     static CELL: OnceLock<Vec<Bindung>> = OnceLock::new();
     CELL.get_or_init(|| {
-        let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+        let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../fixtures/python_bindung_2dd056a6");
         let reg = bindung::lade_registry(&wurzel).expect("registry");
         reg.dateien
             .into_iter()

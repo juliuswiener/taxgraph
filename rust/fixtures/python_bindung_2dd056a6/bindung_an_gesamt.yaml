@@ -1,0 +1,1791 @@
+# Bindungstabelle — Scheibe an_gesamt: Gesamtsteuer-Ring Arbeitnehmerfall (Task #11, Stufe 1).
+# Validiert gegen schema.json. Slots exakt gegen catala_est-Inputs (bruttoarbeitslohn/veranlagung),
+# Zuschnitt 19d1686. regel_id p2_festzusetzung_einzel = Catala-Scope-Andockung (kein rules/estg-Dir,
+# wie EP; Slot-Korrektheit über Abgleich mit dev-1s slot_fn). §19/§26 gefreezt 7248bae.
+# HINWEIS Kinderzahl: KEINE eigene Bindung hier — der Ring nutzt fam_anzahl_kinder aus Scheibe 3
+# (bindung_kap_vv_familie, Multiplikations-Feld); feld_id global eindeutig (Drift-Wächter Assertion 5).
+# Stufe 2. werbungskosten/sonderausgaben sind interne est-Modul-Inputs (EP-/VOR-Felder existieren).
+version: 1
+scheibe: "Gesamtsteuer-Ring Arbeitnehmer: bruttoarbeitslohn (§19) + veranlagung (§26) [p2_festzusetzung_einzel] + 4 Abwesenheits-Flags kein_gewinn/kap/vuv/sonstige (§2 Abs.1) [p2_einkunftsarten]"
+
+bindungen:
+  # ========================= Bruttoarbeitslohn (§ 19) =========================
+  - feld_id: bruttoarbeitslohn
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: bruttoarbeitslohn}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war dein Bruttoarbeitslohn dieses Jahr? (steht auf der Lohnsteuerbescheinigung)"
+    hilfe_kurz: "Der Bruttoarbeitslohn einschließlich Sachbezüge steht unter Nummer 3 der Lohnsteuerbescheinigung."
+    beispielwert: 4000000
+    herkunft_slots: ["Lohnsteuerbescheinigung Nr. 3"]
+    elster_kz: E0200201
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Gehälter, Löhne, Gratifikationen, Tantiemen und andere Bezüge und Vorteile für eine Beschäftigung"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  # ========================= Steuerklasse (§ 38b EStG, Anlage N) =========================
+  # Julius-Entscheidung 2026-08-10 (reports/adjudikation/entscheidungsvorlage_restfehler_2026-08-10.md
+  # Entscheidung 3): gemessen sauber -- +E0200002 schliesst 1 checkESt-Beanstandung ohne Kopplung.
+  # XSD-Enum "1".."6" (E10-2025.xsd, Enum_N_ArbL_LStB_1_5_Sum_E0200002_CType) deckt sich 1:1 mit den
+  # sechs Steuerklassen aus § 38b Abs. 1 EStG -- kein WERTEKODIERUNG-Eintrag noetig.
+  - feld_id: steuerklasse
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: steuerklasse}
+    typ: enum
+    enum_werte: ["1", "2", "3", "4", "5", "6"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Steuerklasse hast du (steht auf deiner Lohnsteuerbescheinigung)?"
+    hilfe_kurz: "Steuerklasse I bis VI, unter Nummer 1 der Lohnsteuerbescheinigung."
+    beispielwert: "1"
+    herkunft_slots: ["Lohnsteuerbescheinigung Nr. 1"]
+    elster_kz: E0200002
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 38b Abs. 1 EStG"
+      zitatanker: "Für die Durchführung des Lohnsteuerabzugs werden Arbeitnehmer in Steuerklassen eingereiht."
+      datei: "sources/gesetze-im-internet/estg_p38b_2026-08-10.txt"
+
+  # ========================= Versorgungsbezüge (§ 19 Abs. 2, p19_2) =========================
+  - feld_id: versorgung_jahresrente
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: jahresrente}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel Versorgung hast du dieses Jahr insgesamt bekommen (Ruhegehalt, Betriebsrente, Witwen-/Waisengeld)?"
+    hilfe_kurz: "Der Jahresbetrag deiner Pension, Betriebsrente oder Versorgung, bevor etwas abgezogen wird. Steht in der Versorgungsmitteilung."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kz abhängig von Versorgungsart und Form (Anlage N oder R); Kz-Wahl in est_mapping nach versorgung_art-Weiche."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 1 EStG"
+      zitatanker: "bleiben ein nach einem Prozentsatz ermittelter, auf einen Höchstbetrag begrenzter Betrag"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_bemessungsgrundlage
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: bemessungsgrundlage}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Welcher Betrag steht in deinem Steuerbescheid als Bemessungsgrundlage für den Versorgungsfreibetrag (in Euro)?"
+    hilfe_kurz: "Das Zwölffache des Monatsbezugs bei Versorgungsbeginn, plus anrechenbare Sonderzahlungen. Dieser Wert ändert sich nie — auch Rentensteigerungen ändern ihn nicht. Der Betrag steht im Steuerbescheid."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Keine Anlage-Kz (Bemessungsgrundlage ist interne Heuristik, kein Deklarationsfeld). Laienfeld für den fixierten Betrag aus dem Bescheid; nur Folgejahr."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 4 EStG"
+      zitatanker: "das Zwölffache des Versorgungsbezugs für den ersten vollen Monat, jeweils zuzüglich voraussichtlicher Sonderzahlungen"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_beginn_jahr
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, geltungsbedingung: versorgungsbeginn_kohorte}
+    typ: int
+    einheit: Jahr
+    bereich: {min: 1955, max: 2060, grund: "Jahr des Versorgungsbeginns; Kohorten-Staffel nach dem Jahr bestimmt den Freibetrag lebenslang."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Jahr hast du die Versorgung zum ersten Mal bekommen?"
+    hilfe_kurz: "Das Jahr der Pensionierung oder des Betriebsrenten-Starts. Dieses Jahrgang bestimmt deinen Steuerfreibetrag für immer."
+    beispielwert: 2020
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kohorten-Schlüssel für die Kz-Wahl in est_mapping (Jahr-Granularität). Kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 3 EStG"
+      zitatanker: "Jahr des Versorgungsbeginns"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_art
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, geltungsbedingung: art_beamtenrechtlich_oder_nicht}
+    typ: enum
+    einheit: null
+    enum_werte: ["beamtenrechtlich", "hinterbliebene", "erwerbsminderung", "altersgrenze_sonstige"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Art von Versorgung bekommst du?"
+    hilfe_kurz: "Beamtenrechtlich: Ruhegehalt eines Beamten oder öffentlichen Körperschaft. Hinterbliebene: Witwen-, Waisengeld. Erwerbsminderung: Rente wegen Behinderung. Altersgrenze: Betriebsrente, Direktversicherung."
+    beispielwert: "beamtenrechtlich"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche nach dem Alters-Gate in der Haut-Logik. Steuert Kz-Verzweigung in est_mapping. Kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 1-2 EStG"
+      zitatanker: "auf Grund beamtenrechtlicher oder entsprechender gesetzlicher Vorschriften"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  - feld_id: versorgung_alter_bei_beginn
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, geltungsbedingung: altersgrenze_sonstige_alter}
+    typ: int
+    einheit: null
+    bereich: {min: 18, max: 100, grund: "Vollendetes Lebensjahr bei Versorgungsbeginn; Alters-Gate nach dem Jahr (63 Lj, 60 Lj bei Schwerbehinderung)."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie alt warst du (vollendetes Lebensjahr), als die Versorgung begonnen hat?"
+    hilfe_kurz: "Nur bei nicht-beamtenrechtlichen Versorgungen nötig. Der Freibetrag wird nur gewährt, wenn du mindestens 63 Jahre alt warst (oder 60, falls schwerbehindert)."
+    beispielwert: 63
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Alters-Gate für die Haut-Logik; nur bei versorgung_art=altersgrenze_sonstige abgefragt. Kein Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"
+      zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  # ========================= Altersentlastungsbetrag §24a — Kohorten-Schlüssel (Stage-2-Faltung) =========================
+  # §24a GESAMT-ONLY (Instructor Q2, §22-Leibrente §24a-S.2-ausgeschlossen). geburtsjahr -> dev-1s slot_fn
+  # leitet massgebendes_folgejahr = geburtsjahr + 65 ab -> Prozentsatz/Höchstbetrag-Lookup in
+  # params/kohorten/altersentlastungsbetrag_p24a.yaml. Optional (Feld-Präsenz, absent -> §24a 0).
+  - feld_id: geburtsjahr
+    quelle: {regel_id: p24a_altersentlastungsbetrag, geltungsbedingung: prozentsatz_hoechstbetrag_aus_kohortentabelle}
+    ableitung: {aus: stammdaten_geburtsdatum, art: jahr_aus_datum, grund: "Das Geburtsjahr steht im Geburtsdatum, das die Stammdaten ohnehin erheben (§ 25 EStG i.V.m. § 149 AO, Angaben zur Person). Zweimal danach zu fragen ist eine Frage zu viel."}
+    typ: int
+    einheit: null
+    bereich: {min: 1900, max: 2010, grund: "Geburtsjahr, plausibler Bereich für erwerbstätige/rentennahe Steuerpflichtige."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Jahr bist du geboren?"
+    hilfe_kurz: "Bestimmt Prozentsatz und Höchstbetrag des Altersentlastungsbetrags (Kohorte nach dem Jahr, das der Vollendung des 64. Lebensjahres folgt)."
+    beispielwert: 1958
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kohorten-Schlüssel für den maßgebenden Prozentsatz/Höchstbetrag (abgeleitet über die Tabelle); das vollständige Geburtsdatum steht im Mantelbogen (eigener Kz), dies ist kein eigenes Betragsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 24a S. 5 EStG"
+      zitatanker: "maßgebende Prozentsatz und der Höchstbetrag"
+      datei: "sources/gesetze-im-internet/estg_p24a_2026-07-13.txt"
+
+  # ========================= Veranlagungsart (§ 26) =========================
+  - feld_id: veranlagung
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: veranlagung}
+    typ: enum
+    einheit: null
+    enum_werte: ["einzel", "zusammen"]
+    askable: true
+    vorjahr: uebernehmbar
+    # Julius-Entscheid 2026-08-12: die KI DARF die Veranlagungsart vorschlagen. Sie war bis dahin
+    # human-only (Default fail-closed), weil der Katalog Wahlrechte grundsätzlich ausschließt
+    # (§ 26 Abs. 1 S. 1 EStG ist ein Wahlrecht). Begründung der Öffnung: das LLM liest hier einen
+    # FAKT aus dem Freitext ("verheiratet, geben zusammen ab") und übt kein Wahlrecht aus — die
+    # Ausübung bleibt beim Menschen, weil der Vorschlag nur zustand=vorlaeufig erzeugt und ein
+    # signal_2 braucht (store.py Auflage A + Typ-Zwang). Steht bereits ein Wert des Nutzers, wird
+    # daraus KEIN stiller Ersatz, sondern ein Konflikt: veranlagung ist das einzige Feld in
+    # bindung_regel_bedingungen.yaml und damit ein "großer" Konflikt, der zurückfragt statt zu
+    # überschreiben. Gate dazu: tests/test_veranlagung_llm_freigabe.py.
+    # Gilt NUR für dieses Feld — kein Präzedenzfall für andere Wahlrechte.
+    vorschlagbar_von: [llm]
+    fragetext_laie: "Gibst du die Erklärung allein oder gemeinsam mit Ehe-/Lebenspartner ab?"
+    hilfe_kurz: "Gemeinsam = Zusammenveranlagung (oft günstiger bei unterschiedlichen Einkommen); allein = Einzelveranlagung."
+    beispielwert: "einzel"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Veranlagungsart-Weiche (Mantelbogen); global, kein eigenes Betrags-Kz — die Wahl steuert den Tarif (Grund- vs. Splittingtarif), sie wird nicht als Betrag deklariert."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 26 Abs. 1 S. 1 EStG"
+      zitatanker: "Ehegatten können zwischen der Einzelveranlagung (§ 26a) und der Zusammenveranlagung (§ 26b) wählen"
+      datei: "sources/gesetze-im-internet/estg_p26_2026-07-17.txt"
+
+  # ===== Abwesenheits-Flags (§ 2 Abs. 1 Einkunftsarten): bestätigte-Null-Blöcke =====
+  # Anwendbarkeits-VORAUSSETZUNG des reinen Arbeitnehmerfalls (kein Festsetzungs-Input) → JE FRAGE
+  # ein eigener Pseudoregel-Scope (p2_einkunftsart_gewinn/_kap/_vuv/_sonstige).
+  # 2026-08-14: die vier Flags hingen vorher an EINER Regel p2_einkunftsarten. relevanz() wertet die
+  # Gates einer Regel konjunktiv aus und bricht beim ersten bestätigten False ab (traverser.py:118-124)
+  # — wer eine Einkunftsart BEJAHTE (Haut-Inversion: kein_X=false), schloss damit die ganze Regel aus
+  # und bekam die anderen drei Fragen nie gestellt. Konjunktive Gates sind für Tatbestandsmerkmale
+  # richtig (§ 35a: bar bezahlt → kein Abzug, alle Detailfragen entfallen zu Recht) und für
+  # UNABHÄNGIGE Screeningfragen falsch. Deshalb je Frage eine eigene regel_id, in der sie das
+  # einzige Gate ist. Gate: tests/test_screening_fragen_unabhaengig.py. Positive Frage in der Haut ("Hattest du X?"), Antwort "nein"
+  # → die Haut speichert kein_X=true (bestätigte Null der Einkunftsart) — Invertierung liegt in der Haut
+  # (dev-1), hier nur das bool-Feld. Kein Kz (Anwendbarkeits-Flag, kein Deklarationsfeld).
+  # beispielwert=false: Normalfall Privatnutzer 'Nein, hatte kein X' (Haut-Inversion !ja -> kein_X=true=abwesend,
+  # fail-closed-sicher). UI-PREFILL-Effekt hängt an dev-1s bool-select-Prefill (app.js liest beispielwert noch
+  # nicht, defaultet 'Ja') = dev-1 UI-Politur; beispielwert ist forward-ready (Instructor-Ruling 2026-07-18).
+  - feld_id: kein_gewinn
+    quelle: {regel_id: p2_einkunftsart_gewinn, geltungsbedingung: keine_gewinneinkuenfte}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hattest du dieses Jahr Einkünfte aus einem Gewerbe, aus Land-/Forstwirtschaft oder aus selbständiger/freiberuflicher Arbeit?"
+    hilfe_kurz: "Wenn du nur Arbeitslohn beziehst, antworte mit Nein — dann liegen keine Gewinneinkünfte vor."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag (Voraussetzung des reinen AN-Falls), kein Deklarationsfeld — es steuert nur, ob der vereinfachte Ring greift."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 1-3 EStG"
+      zitatanker: "Einkünfte aus Land- und Forstwirtschaft, 2. Einkünfte aus Gewerbebetrieb, 3. Einkünfte aus selbständiger Arbeit"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  # Screening C1 (reports/adjudikation/screening_vorsortierung_2026-08-14.md): der groesste
+  # Einzelhebel des ganzen Fragebogens — eine Antwort nimmt 22 Felder aus dem Dialog jedes
+  # Kinderlosen (Kinderfreibetraege 13, Entlastungsbetrag 3, KV/PV-Kind 2, Uebertragung 2,
+  # Schulgeld 1, Ausbildungsfreibetrag 1).
+  #
+  # Warum ein eigenes bool und nicht `fam_anzahl_kinder`: regel_bedingungen vergleicht auf EINEN
+  # Wert ("Regel gilt bei feld == wert"). "Anzahl >= 1" laesst sich damit nicht ausdruecken.
+  #
+  # Warum eine eigene Pseudo-Regel und keine geltungsbedingung an p32_6: ein askable bool an einer
+  # geltungsbedingung IST ein Gate, und relevanz() schliesst bei bestaetigtem FALSE aus. Ein
+  # kein_kind-Gate an p32_6 wuerde die Kinderfreibetraege also ausgerechnet dem streichen, der
+  # Kinder HAT. Dieselbe Polaritaets-Falle wie beim Verpflegungsmehraufwand (519199e); die vier
+  # Einkunftsart-Flags loesen sie ebenso ueber eine eigene regel_id plus regel_bedingungen.
+  - feld_id: kein_kind
+    quelle: {regel_id: p2_kind_vorhanden, geltungsbedingung: keine_kinder}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du Kinder, für die du dieses Jahr Kindergeld oder einen Kinderfreibetrag bekommst?"
+    hilfe_kurz: "Auch Pflege-, Stief- und Enkelkinder zählen, ebenso Kinder in Ausbildung bis 25. Ohne Kinder entfällt ein ganzer Block an Fragen."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Screening-Flag, kein Deklarationsfeld — es steuert nur, ob der Kinder-Block überhaupt gefragt wird. Die Kinderangaben selbst tragen ihre eigenen Kz (Anlage Kind)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 32 Abs. 6 S. 1 EStG"
+      zitatanker: "Bei der Veranlagung zur Einkommensteuer wird für jedes zu berücksichtigende Kind des Steuerpflichtigen ein Freibetrag"
+      datei: "sources/gesetze-im-internet/estg_p32_2026-07-11.txt"
+
+  - feld_id: kein_kap
+    quelle: {regel_id: p2_einkunftsart_kap, geltungsbedingung: keine_kapitaleinkuenfte}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hattest du dieses Jahr Kapitalerträge (Zinsen, Dividenden, Kursgewinne)?"
+    hilfe_kurz: "Steht i. d. R. in der Steuerbescheinigung von Bank oder Broker. Nur Arbeitslohn → Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag (Voraussetzung des reinen AN-Falls), kein Deklarationsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 5 EStG"
+      zitatanker: "Einkünfte aus Kapitalvermögen"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  - feld_id: kein_vuv
+    quelle: {regel_id: p2_einkunftsart_vuv, geltungsbedingung: keine_vermietungseinkuenfte}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hattest du dieses Jahr Einnahmen aus Vermietung oder Verpachtung?"
+    hilfe_kurz: "Zum Beispiel Miete für eine vermietete Wohnung. Nur Arbeitslohn → Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag (Voraussetzung des reinen AN-Falls), kein Deklarationsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 6 EStG"
+      zitatanker: "Einkünfte aus Vermietung und Verpachtung"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  - feld_id: kein_sonstige
+    quelle: {regel_id: p2_einkunftsart_sonstige, geltungsbedingung: keine_sonstigen_einkuenfte}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    # Ein falsches „Nein" nimmt Rente, privaten Verkauf und gelegentliche Leistungen still aus der
+    # Rechnung. Deshalb nennt der Text je Regel an diesem Kreuz einen Alltagsfall
+    # (tests/test_screening_gruppe_b.py). Aktien fehlen mit Absicht: § 23 Abs. 2 EStG ordnet sie
+    # den Kapitalerträgen zu, die `kein_kap` erhebt.
+    fragetext_laie: "Hattest du dieses Jahr sonstige Einkünfte (z. B. eine Rente, den Verkauf einer Wohnung bis 10 Jahre oder von Kryptowährung bis 1 Jahr nach dem Kauf, Geld für das Vermieten einzelner Gegenstände)?"
+    hilfe_kurz: "Rente: gesetzliche, Versorgungswerk, Rürup oder private Rentenversicherung. Verkauf: Wohnung, Haus oder Grundstück bis 10 Jahre nach dem Kauf; Kryptowährung (z. B. Bitcoin), Gold oder Kunst bis 1 Jahr nach dem Kauf — Auto und Möbel zählen nicht. Vermieten: z. B. Wohnmobil oder Werkzeug, auch gelegentliche Vermittlungen gegen Provision. Nur Arbeitslohn → Nein."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag (Voraussetzung des reinen AN-Falls), kein Deklarationsfeld."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 7 EStG"
+      zitatanker: "sonstige Einkünfte im Sinne des § 22"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+
+  # Screening-Flag "Privater Verkauf" (§ 23 EStG, 2026-08-30): eigene Pseudoregel, gleiche Bauart
+  # wie die vier Einkunftsart-Flags darueber -- kein Gate an der echten Regel
+  # p23_veraeusserungsgewinn, sonst waere es an deren vier ECHTE Befreiungs-geltungsbedingungen
+  # gekoppelt (relevanz() wertet je regel_id konjunktiv aus). Die Software rechnet die vier
+  # Befreiungen (Spekulationsfrist, Eigennutzung, taeglicher Gebrauch, originaerer Erwerb) noch
+  # nicht -- dieses Kreuz sperrt statt eine ungeprueft zu niedrige Zahl auszugeben, sobald ein
+  # Verkauf bejaht wird (fremd_arten, produkt/haut/api_constants.py).
+  - feld_id: kein_p23_verkauf
+    quelle: {regel_id: p23_verkauf_vorhanden, geltungsbedingung: veraeusserung_erklaert}
+    typ: bool
+    screening: true
+    einheit: null
+    askable: true
+    vorjahr: vorschlag
+    frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
+    fragetext_laie: "Hast du dieses Jahr ein Grundstück, eine Wohnung oder einen anderen Vermögensgegenstand (z. B. Aktien außerhalb des Depots, Kryptowährung, Kunst) privat verkauft?"
+    hilfe_kurz: "Gemeint sind Verkäufe innerhalb der gesetzlichen Frist (Grundstücke: 10 Jahre, andere Gegenstände: 1 Jahr seit dem Kauf). Gegenstände des täglichen Gebrauchs wie dein Auto oder deine Möbel zählen nicht."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anwendbarkeits-Flag, kein Deklarationsfeld — bestätigt der Nutzer einen Verkauf, sperrt die Berechnung (fremd_arten), statt eine ungeprüfte Zahl auszugeben."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 23 Abs. 1 S. 1 EStG"
+      zitatanker: "Private Veräußerungsgeschäfte (§ 22 Nummer 2) sind 1. Veräußerungsgeschäfte bei Grundstücken und Rechten, die den Vorschriften des bürgerlichen Rechts über Grundstücke unterliegen"
+      datei: "sources/gesetze-im-internet/estg_p23_2026-07-13.txt"
+
+  # ===== Gewinneinkünfte §§ 13-18 (Stufe 1): vorberechneter § 2-Gewinn + Betriebsart-Weiche =====
+  # Der bereits ermittelte Gewinn (EÜR § 4 Abs. 3 / Betriebsvermögensvergleich) fließt DIREKT als
+  # einkuenfte_gewinn-Summand in die § 2-Stufenfolge (Engine-Slot LIVE, p32a Z.464/559; dev-1s slot_fn
+  # liest die feld_id 1:1 als CENT→EURO). Optional (absent → 0, over-tax-safe). gewinn_betriebsart =
+  # Klasse-f-Weiche (Anlage G/S/L), spiegelt § 16 rentner_veraeusserungs_betriebsart (dieselben Enum-Werte).
+  # Kz=null VORERST: die Anlage-G/S/L-Kz-Zuordnung ist eine eigene Kz-Review-Runde (Instructor-Adjudikation);
+  # sie blockiert die BERECHNUNG nicht (der Ring rechnet nur aus dem Betrag, die Weiche steuert nur den Kz).
+  - feld_id: einkuenfte_gewinn
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: einkuenfte_gewinn}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war dein Gewinn aus Gewerbebetrieb, Land-/Forstwirtschaft oder selbständiger/freiberuflicher Arbeit dieses Jahr?"
+    hilfe_kurz: "Der bereits ermittelte Gewinn (Einnahmen minus Betriebsausgaben, z. B. aus deiner Einnahmenüberschussrechnung). Einen Verlust trägst du als negativen Betrag ein."
+    beispielwert: 3000000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Gebunden via VERZWEIGUNG (est_mapping): gewerbe=E0800302 (G/Gew/Einz_U/Betr_1_2), selbstaendig=E0803202 (S/Gewinn/Freiber_T) — der EIGENE Betrieb. Nicht Ges_Fest/Sum (E0800502/E0803402): dort steht der gesondert festgestellte Beteiligungsanteil, dessen Einz-Block Finanzamt und Steuernummer der Gesellschaft verlangt (Container-Korrektur 2026-08-20, Begruendung in est_mapping). land_forst bewusst ohne Kz (Anlage L zwei Kz, Art-Feld fehlt). Kz sind Einkuenfte -> floor."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 2 S. 1 Nr. 1 EStG"
+      zitatanker: "bei Land- und Forstwirtschaft, Gewerbebetrieb und selbständiger Arbeit der Gewinn"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  - feld_id: gewinn_betriebsart
+    quelle: {regel_id: p2_festzusetzung_einzel, geltungsbedingung: gewinn_betriebsart_weiche}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    typ: enum
+    einheit: null
+    enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Aus welcher Art von Tätigkeit stammt dieser Gewinn?"
+    hilfe_kurz: "Gewerbebetrieb (Anlage G), selbständige/freiberufliche Tätigkeit (Anlage S) oder Land- und Forstwirtschaft (Anlage L). Die Auswahl steuert nur, in welche Anlage der Gewinn eingetragen wird; die Steuer ist für alle drei gleich."
+    beispielwert: "gewerbe"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche (steuert die Klasse-f-Kz-Verzweigung des Gewinns nach Anlage G/S/L), kein eigenes Betragsfeld/Kz. § 2-Gewinn ist anlage-agnostisch (der Ring rechnet gleich); die Weiche wählt nur den Deklarations-Kz. Die konkreten Anlage-Kz = eigene Kz-Review-Runde (null-Kz-MVP), gleiche Enum-Werte wie § 16 rentner_veraeusserungs_betriebsart."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 1-3 EStG"
+      zitatanker: "Einkünfte aus Land- und Forstwirtschaft, 2. Einkünfte aus Gewerbebetrieb, 3. Einkünfte aus selbständiger Arbeit"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  # Formvoraussetzung des Betriebs-Blocks (Anlage G Betr_1_2 / Anlage S Freiber_T): checkESt lehnt den
+  # Betrag ohne sie ab ("Beim 1. Betrieb müssen die genaue Bezeichnung des Gewerbes und der Gewinn
+  # gemeinsam angegeben werden", gemessen 2026-08-20). Kein Rechen-Input — der Ring rechnet aus dem
+  # Betrag, die Bezeichnung steht nur in der Anlage (SIGNATUR_SLOT_ZEIGT_INS_LEERE).
+  - feld_id: gewinn_bezeichnung
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewinn_bezeichnung}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie heißt dein Betrieb bzw. deine Tätigkeit genau?"
+    hilfe_kurz: "Bei einem Gewerbe die genaue Bezeichnung des Gewerbes (z. B. 'Einzelhandel mit Fahrrädern'), bei selbständiger Arbeit die Berufsbezeichnung oder Tätigkeit (z. B. 'Steuerberatung'). Das Finanzamt verlangt diese Angabe zusammen mit dem Gewinn."
+    beispielwert: "Softwareentwicklung"
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Gebunden via VERZWEIGUNG (est_mapping): gewerbe=E0800301 'genaue Bezeichnung des Gewerbes' (G/Gew/Einz_U/Betr_1_2), selbstaendig=E0803101 'genaue Berufsbezeichnung oder Tätigkeit' (S/Gewinn/Freiber_T). Beide im selben Block wie der Betrag — checkESt verlangt sie gemeinsam. land_forst ohne Kz wie einkuenfte_gewinn."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 1-3 EStG"
+      zitatanker: "Einkünfte aus Land- und Forstwirtschaft, 2. Einkünfte aus Gewerbebetrieb, 3. Einkünfte aus selbständiger Arbeit"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+
+  # ===== EÜR-Komponenten §§ 13-18 (Stufe 2-I EÜR-Kern): Gewinn = Einnahmen − Ausgaben (§ 4 Abs. 3) =====
+  # Der laufende Gewinn wird komponentenweise ermittelt: betriebseinnahmen − (sonstige_betriebsausgaben +
+  # afa_jahresbetrag). regel p4_3_gewinn (EuerGewinn, materialisiert) rechnet einnahmen − ausgaben; die zwei
+  # Ausgaben-Felder speisen den EINEN betriebsausgaben-Slot als SUMMANDEN (slot_beitrag, dev-1-Accessor
+  # summiert). Der Gewinn fließt additiv in einkuenfte_gewinn (§ 2-Ring). EÜR nur gewerbe/selbständig
+  # (§ 15 Abs. 2 / § 18 Abs. 1, NICHT § 13-LuF → dev-1s luf_euer_offen-Guard). Kz=null VORERST (Anlage-EÜR-Kz
+  # = eigene Kz-Review-Runde, wie Anlage-G/S/L); der Gewinn-Kz läuft über gewinn_betriebsart (Klasse-f).
+  - feld_id: betriebseinnahmen
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p4_3_gewinn, signatur_slot: betriebseinnahmen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch waren deine Betriebseinnahmen (Umsätze/Einnahmen aus dem Betrieb) dieses Jahr?"
+    hilfe_kurz: "Alle Einnahmen aus deiner gewerblichen oder selbständigen Tätigkeit (Einnahmenüberschussrechnung). Ohne Umsatzsteuer, falls du sie gesondert ausweist. Dieser EÜR-Weg (Einnahmen minus Ausgaben) setzt voraus, dass du NICHT buchführungspflichtig bist (§ 4 Abs. 3). Bist du bilanzierungs-/buchführungspflichtig, trage stattdessen deinen fertigen Bilanz-Gewinn direkt im Gewinn-Feld ein — nicht hier."
+    beispielwert: 8000000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: EÜR-Komponente (Datenart E77, nicht E10). Wert geht in betriebsausgaben-Slot -> EÜR-Gewinn (E0800502)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 4 Abs. 3 S. 1 EStG"
+      zitatanker: "Überschuss der Betriebseinnahmen über die Betriebsausgaben"
+      datei: "sources/gesetze-im-internet/estg_p4_2026-07-14.txt"
+  - feld_id: sonstige_betriebsausgaben
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p4_3_gewinn, signatur_slot: betriebsausgaben}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch waren deine Betriebsausgaben (ohne Abschreibungen) dieses Jahr?"
+    hilfe_kurz: "Alle durch den Betrieb veranlassten Ausgaben außer den Abschreibungen (die AfA erfasst das nächste Feld). Wareneinkauf, Miete, Personal, Fahrtkosten usw. NUR abzugsfähige Betriebsausgaben: OHNE Kosten der privaten Lebensführung/Repräsentation (§ 12 Nr. 1), OHNE Personensteuern wie die Einkommensteuer (§ 12 Nr. 3), OHNE durchlaufende Posten (§ 4 Abs. 3 S. 2)."
+    beispielwert: 3000000
+    herkunft_slots: null
+    elster_kz: E6004901
+    elster_kz_grund: "Anlage-EÜR Kz E6004901 „Übrige unbeschränkt abziehbare Betriebsausgaben“ (Datenart EUER/E77, E77-2025.xsd:2015). Speist zugleich den betriebsausgaben-Ring-Slot (slot_beitrag:summand) — Deklaration + Rechnung getrennt. Kz-Review 2026-07-19 (dev-2 kz_extract + Instructor-Verify)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 4 Abs. 3 S. 1 EStG"
+      zitatanker: "Überschuss der Betriebseinnahmen über die Betriebsausgaben"
+      datei: "sources/gesetze-im-internet/estg_p4_2026-07-14.txt"
+  - feld_id: afa_jahresbetrag
+    quelle: {regel_id: p4_3_gewinn, signatur_slot: betriebsausgaben}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr für Anschaffungen deines Betriebs abgeschrieben (Fachwort: AfA)?"
+    hilfe_kurz: "Der jährliche Abschreibungsbetrag für abnutzbare Wirtschaftsgüter deines Betriebs (z. B. Maschinen, Fahrzeuge, Geräte). Betriebs-AfA — NICHT die AfA einer vermieteten Immobilie (die läuft über die Anlage V)."
+    beispielwert: 500000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: EÜR-Ausgaben-Summand (Datenart E77, nicht E10). Wert geht in betriebsausgaben-Slot für den EÜR-Gewinn (E0800502)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 7 Abs. 1 S. 1 EStG"
+      zitatanker: "Absetzung für Abnutzung in gleichen Jahresbeträgen"
+      datei: "sources/gesetze-im-internet/estg_p7_2026-07-14.txt"
+
+  # ===== Mitunternehmer § 15 Abs. 1 S. 1 Nr. 2 (Gewinnanteil + 3 Sondervergütungen) =====
+  # regel p15_1_2_mitunternehmer (MitunternehmerEinkuenfte, materialisiert): einkuenfte_mitunternehmer =
+  # gewinnanteil + verguetung_taetigkeit + verguetung_darlehen + verguetung_ueberlassung. Der Output fließt
+  # additiv in einkuenfte_gewinn (betriebsart=gewerbe; § 15 = gewerblich, Anlage G — dev-1-Ring-Naht).
+  # ⚠ § 15a-ANNAHME (Mitigation A, instructor-adjudiziert): gewinnanteil = der AUSGLEICHSFÄHIGE Anteil nach
+  # § 15a (FA-festgestellt, Feststellungsbescheid) — die Verlust-Ausgleichsbeschränkung ist schon im Input,
+  # der nicht-ausgleichsfähige Kommanditist-Verlust (neg. Kapitalkonto) gehört NICHT hierher (§ 15a Abs. 2
+  # gesondert festgestellt/vorgetragen). FA-Input-Muster wie gewst_messbetrag. Kz=null VORERST (Anlage-G-
+  # Mitunternehmer-Kz = eigene Kz-Review-Runde). Alle 4 optional (absent → 0).
+  - feld_id: gewinnanteil
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: gewinnanteil}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch ist dein Anteil am Gewinn oder Verlust einer Personengesellschaft (OHG, KG oder GbR)?"
+    hilfe_kurz: "Der ausgleichsfähige Gewinn-/Verlustanteil aus deinem Feststellungsbescheid (nach § 15a). Bei Kommanditist mit negativem Kapitalkonto: der nicht-ausgleichsfähige Verlust gehört NICHT hierher — er wird gesondert festgestellt/vorgetragen (§ 15a Abs. 2). Einen Verlust trägst du als negativen Betrag ein."
+    beispielwert: 4000000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Mitu-Gewinnanteil, in E0800502 (Anlage G) aufgegangen. Schema E0800602 = ein Betrag je Beteiligung (G/Gew/M_Unt/Beteil), keine Sonderverg.-Trennung. Modell feiner als Formular."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "die Gewinnanteile der Gesellschafter einer Offenen Handelsgesellschaft, einer Kommanditgesellschaft und einer anderen Gesellschaft, bei der der Gesellschafter als Unternehmer (Mitunternehmer) des Betriebs anzusehen ist"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_taetigkeit
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_taetigkeit}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hast du als Gesellschafter Vergütungen für deine Tätigkeit im Dienst der Gesellschaft bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2: was du von der Gesellschaft für deine Mitarbeit (Geschäftsführung, Dienstleistung) erhalten hast — steuerlich Teil deiner gewerblichen Einkünfte, nicht Arbeitslohn."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung, in E0800502 aufgegangen. Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für seine Tätigkeit im Dienst der Gesellschaft"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_darlehen
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_darlehen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hast du der Gesellschaft ein Darlehen gegeben und dafür Zinsen bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2: Zinsen für die Hingabe von Darlehen an die Gesellschaft — steuerlich Teil deiner gewerblichen Einkünfte."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung, in E0800502 aufgegangen. Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für die Hingabe von Darlehen"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_ueberlassung
+    quelle: {regel_id: p15_1_2_mitunternehmer, signatur_slot: verguetung_ueberlassung}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hast du der Gesellschaft Wirtschaftsgüter überlassen (z. B. ein Grundstück vermietet) und dafür eine Vergütung bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2: Miete/Pacht für die Überlassung von Wirtschaftsgütern an die Gesellschaft — steuerlich Teil deiner gewerblichen Einkünfte, nicht Einkünfte aus Vermietung."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung, in E0800502 aufgegangen. Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für die Überlassung von Wirtschaftsgütern"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+
+  # ===== § 34 Abs. 3 Ermäßigter Durchschnittssatz (Stufe-2a) — Eligibility/Antrags-Flags =====
+  # 3 bool-Flags, KEINE Modul-Inputs (regel p34_3_ermaessigter_durchschnittssatz nimmt ao/est_gesamt/bemessung).
+  # Sie steuern den Abs.1-vs-Abs.3-Chooser im Ring (dev-1-Naht): abs3_pfad = antrag_ermaessigter_satz ∧
+  # (Alter≥55 [DERIVE aus geburtsjahr] ∨ dauernd_berufsunfaehig) ∧ ¬ermaessigung_einmal_genutzt. Sonst
+  # Abs.1-Fünftel-Default (von Amts wegen). ao_einkuenfte = REUSE rentner_veraeusserungsgewinn (§16-vg).
+  # Alle Kz=null-MVP (Antrags-/Eligibility-Tatbestände, keine Betragsfelder). ⚠ Ring fail-closed auf ao>5Mio
+  # (Überschuss = Abs.1-Fünftel-Nachtrag Stufe-2b). NICHT in flag_check kein_gewinn (keine Einkunfts-Indikatoren).
+  - feld_id: antrag_ermaessigter_satz
+    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, geltungsbedingung: antrag_gestellt}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Möchtest du für deinen Veräußerungsgewinn den ermäßigten Steuersatz beantragen? (nur einmal im Leben möglich, ab 55 oder bei dauernder Berufsunfähigkeit)"
+    hilfe_kurz: "Alternative zur Fünftelregelung (§ 34 Abs. 1): 56 % deines durchschnittlichen Steuersatzes (mind. 14 %) auf bis zu 5 Mio Euro Veräußerungsgewinn. Nur EINMAL im Leben, nur ab dem 55. Lebensjahr oder bei dauernder Berufsunfähigkeit. Ohne Antrag gilt die Fünftelregelung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Antrags-Tatbestand (§ 34 Abs. 3 S. 1 „auf Antrag“), kein Betragsfeld; steuert Abs.1-vs-Abs.3-Chooser im Ring. Anlage-G-Antragszeile = eigene Kz-Review-Runde (null-Kz-MVP)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 1 EStG"
+      zitatanker: "so kann auf Antrag abweichend von Absatz 1 die auf den Teil dieser außerordentlichen Einkünfte, der den Betrag von insgesamt 5 Millionen Euro nicht übersteigt, entfallende Einkommensteuer nach einem ermäßigten Steuersatz bemessen werden"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  - feld_id: dauernd_berufsunfaehig
+    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, signatur_slot: berufsunfaehig}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Bist du im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig?"
+    hilfe_kurz: "Alternative zur Altersgrenze (55): wer dauernd berufsunfähig ist, kann den ermäßigten Satz (§ 34 Abs. 3) auch vor 55 beantragen. Nachweis über den Rentenversicherungsträger."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Eligibility-Alternative zu Alter≥55 (§ 34 Abs. 3 S. 1 „oder wenn er im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig ist“), kein Betragsfeld. null-Kz-MVP."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 1 EStG"
+      zitatanker: "oder wenn er im sozialversicherungsrechtlichen Sinne dauernd berufsunfähig ist"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  - feld_id: ermaessigung_einmal_genutzt
+    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, signatur_slot: bereits_genutzt}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du den ermäßigten Steuersatz für Veräußerungsgewinne in einem früheren Jahr schon einmal in Anspruch genommen?"
+    hilfe_kurz: "Die Ermäßigung gibt es nur EINMAL im Leben (§ 34 Abs. 3 S. 4). Wenn du sie früher schon genutzt hast, ist ein erneuter Antrag ausgeschlossen — dann gilt die Fünftelregelung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Einmal-im-Leben-Sperre (§ 34 Abs. 3 S. 4), Selbst-Bestätigung (FA-tracked); kein Betragsfeld. Ein True SPERRT den Abs.3-Zweig (fail-closed → Abs.1). null-Kz-MVP."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 4 EStG"
+      zitatanker: "Die Ermäßigung nach den Sätzen 1 bis 3 kann der Steuerpflichtige nur einmal im Leben in Anspruch nehmen"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+  # Berechnete Antragszeile (Vault backlog p34-antrag-ohne-kennzahl-erreicht-elster-nicht, AK1/AK3): der Gewinn der
+  # Basiszeile, für den der ermäßigte Satz beantragt wird. Entsteht in _mit_ring_werten nur, wenn der Chooser
+  # Abs. 3 auch rechnet (Antrag UND _abs3_eligible UND 0 < netto_vg <= 5 Mio) und wird über
+  # est_mapping.VERZWEIGUNG nach rentner_veraeusserungs_betriebsart auf die Antrags-Kz der Anlage gelenkt.
+  # antrag_ermaessigter_satz selbst bleibt ohne Kz: er ist ein Tatbestand, kein Betrag.
+  - feld_id: p34_abs3_antragsbetrag
+    quelle: {regel_id: p34_3_ermaessigter_durchschnittssatz, geltungsbedingung: antrag_gestellt}
+    typ: cent
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: der Veräußerungsgewinn, für den der ermäßigte Steuersatz beantragt wird."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Verzweigt: das Kz haengt an rentner_veraeusserungs_betriebsart (est_mapping VERZWEIGUNG, Klasse f) — gewerbe E0801602 [G/VAe_G_v_FB/Betr_TBetr_MUAnt/VAe_G_FB_Antr] / selbstaendig E0805003 [S/VAe_Gew/Vor_FB] / land_forst E0901704 [L/VAe_G_v_FB/VAe_G_FB_Antr], je im Container der Basiszeile (E0801301 / E0804501 / E0901201), Schema E10-2024 und E10-2025 (E10-2026 liegt im ERiC-Paket 44.2.4.0 nicht vor). Der kein-FB-Zweig (E0801903 / E0805305 / E0902002) bleibt unbeschrieben: seine Basiszeilen (E0801401 / E0804601 / E0901302) schreibt TaxGraph nicht."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 34 Abs. 3 S. 1 EStG"
+      zitatanker: "so kann auf Antrag abweichend von Absatz 1 die auf den Teil dieser außerordentlichen Einkünfte, der den Betrag von insgesamt 5 Millionen Euro nicht übersteigt, entfallende Einkommensteuer nach einem ermäßigten Steuersatz bemessen werden"
+      datei: "sources/gesetze-im-internet/estg_p34_2026-07-13.txt"
+
+  # ===== GewSt § 35-Anrechnung S1 (Gewerbesteuer auf ESt): Messbetrag-Input-Pfad =====
+  # § 35 EStG: die tarifliche ESt ermäßigt sich um min(4× Messbetrag [„das Vierfache", geltende Fassung 2026 —
+  # NICHT 3,8×, angehoben VZ 2020], tatsächlich zu zahlende GewSt = Messbetrag × Hebesatz; Ermäßigungshöchstbetrag).
+  # S1 = Messbetrag-INPUT (vorberechnet aus dem GewSt-Bescheid, umgeht §7/§8/§9/§10a-Kette = S2). Nur gewerbe
+  # (§18/§13 nicht gewerbesteuerpflichtig; dev-1s Zähler-Gating). dev-1s slot_fn liest die feld_ids 1:1.
+  - feld_id: gewst_hebesatz
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewst_hebesatz}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    typ: int
+    einheit: null
+    bereich: {min: 1, max: 999, grund: "Reine Sanity-Bound (Hebesatz-Prozentzahl > 0). KEIN gesetzlicher Mindesthebesatz-Anker — § 16 Abs. 4 S. 2 GewStG (200 %) ist source-pending (GewStG-§ 16-Quelle nicht lokal); übliche Hebesätze 200-900 % sind nur Hinweis, keine harte Grenze."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie hoch ist der Gewerbesteuer-Hebesatz deiner Gemeinde (in Prozent)?"
+    hilfe_kurz: "Steht auf deinem Gewerbesteuer-Bescheid oder bei der Gemeinde (übliche Werte 200-900 %, z. B. 450). Bestimmt die tatsächlich gezahlte Gewerbesteuer für die Anrechnung auf die Einkommensteuer (§ 35)."
+    beispielwert: 450
+    herkunft_slots: null
+    # E10/G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Zu_zah_GSt_VZ — "Hebesatz in Prozent",
+    # Ganzzahl wie unser typ:int. Erster Betrieb (s. gewst_messbetrag). Belegt 2026-08-05.
+    elster_kz: E0801705
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35 Abs. 1 S. 1 EStG"
+      zitatanker: "tatsächlich zu zahlende Gewerbesteuer"
+      datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
+  - feld_id: gewst_messbetrag
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewst_messbetrag}
+    feld_bedingung: {feld: kein_gewinn, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus. `kein_gewinn` erhebt genau das; wer bestaetigt, keine zu haben, hat keinen Betrieb, zu dem Art, Bezeichnung, Hoehe oder Gewerbesteuer zu erklaeren waeren. Das Feld sitzt in der Basisregel p2_festzusetzung_*, die nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Welcher Messbetrag steht in deinem Gewerbesteuer-Messbescheid?"
+    hilfe_kurz: "Aus deinem Gewerbesteuer-Messbescheid. Trag ihn ein, wenn du die Anrechnung der Gewerbesteuer auf die Einkommensteuer (§ 35) willst — das ist freiwillig; ohne Eintrag entfällt die Anrechnung."
+    beispielwert: 2024750
+    herkunft_slots: null
+    # E10/G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Festzus_GMB_VZ — erster Betrieb. Die früher als
+    # offen notierte "Disambiguierung E0801606 vs E0802009" löst der Pfad auf: E0802009 liegt
+    # unter Weit_Betr/Einz (weitere Betriebe), also dieselbe Instanz-Achse wie Person B.
+    # Mehrbetriebs-Fall ist heute nicht erfassbar (kein instanz_gruppe) — dann greift die
+    # Instanz-Achse, sobald es ein Feld dafür gibt. Belegt 2026-08-05.
+    elster_kz: E0801606
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 11 Abs. 1 S. 1 GewStG"
+      zitatanker: "von einem Steuermessbetrag auszugehen"
+      datei: "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt"
+
+  # Die dritte Zahl, die ERiC verlangt (gemessen 2026-08-19): mit Messbetrag und Hebesatz allein
+  # antwortet checkESt rc=610001002 zweimal — "Messbetrag ... und die darauf entfallende ...
+  # tatsaechlich zu zahlende Gewerbesteuer sind GEMEINSAM anzugeben" und "Der Hebesatz wurde
+  # angegeben, die zu zahlende Gewerbesteuer jedoch nicht".
+  #
+  # BERECHNET, NICHT GEFRAGT — und das ist hier etwas anderes als bei § 22 Nr. 3 daneben. Dort
+  # war der fehlende Wert eine Angabe, die nur der Nutzer kennt; hier ist er das Ergebnis einer
+  # gesetzlichen Formel: § 16 Abs. 1 GewStG, Steuermessbetrag mal Hebesatz. Beide Faktoren hat
+  # der Nutzer selbst aus seinen Bescheiden eingetragen. Wir raten also nicht, wir rechnen.
+  #
+  # NICHT ZU VERWECHSELN mit dem 4-fachen Messbetrag aus § 35 Abs. 1 S. 2 EStG
+  # (_gewst_p35_anrechnung_cent in produkt/engine/runner.py): das ist die Obergrenze der
+  # ANRECHNUNG auf die Einkommensteuer, eine andere Norm und eine andere Zahl. Hier steht die
+  # Schuld gegenueber der Gemeinde, ungedeckelt.
+  #
+  # Grenze, benannt: bei einem Erlass oder abweichender Festsetzung durch die Gemeinde weicht die
+  # wirklich gezahlte Steuer von der Formel ab. Das Finanzamt prueft die § 35-Anrechnung ohnehin
+  # gegen den Gewerbesteuerbescheid. Ein vom Nutzer ueberschreibbarer Vorschlag waere der
+  # sauberere Zuschnitt, waere aber die erste Anwendung von zustand:vorlaeufig auf einen
+  # Engine-Wert — eigener Bau, bewusst nicht hier.
+  - feld_id: gewst_zu_zahlen
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: gewst_zu_zahlen}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Messbetrag mal Hebesatz (§ 16 Abs. 1 GewStG)."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: E0801704
+    elster_kz_grund: "E0801704 [G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Zu_zah_GSt_VZ], XSD-Label 'Gewerbesteuer' — direktes Geschwister von E0801705 (Hebesatz) im selben Container. Erster Betrieb, wie E0801606/E0801705."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35 Abs. 1 S. 1 EStG"
+      zitatanker: "tatsächlich zu zahlende Gewerbesteuer"
+      datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
+
+  # ===== § 10d Verlustvortrag (Mindestbesteuerung): GdE-Abzug vorrangig vor Sonderausgaben =====
+  # § 10d Abs. 2: der festgestellte Verlustvortrag (Abs. 4) mindert den GdE, begrenzt auf
+  # min(GdE, sockel + 70 %·(GdE−sockel)); sockel 1 Mio einzel / 2 Mio zusammen; Rest wird vorgetragen. regel
+  # p10d_2_verlustvortrag_abzug (materialisiert, fix-geregatet 294cdd6a — min(GdE)-Cap + Floor). dev-1s Ring
+  # zieht § 10d VORRANGIG vor Sonderausgaben/agB vom GdE ab (§ 2-Reihenfolge); greift in BEIDEN Ringen.
+  - feld_id: verlustvortrag_bestand
+    quelle: {regel_id: p10d_2_verlustvortrag_abzug, signatur_slot: verlustvortrag_bestand}
+    typ: cent
+    einheit: EUR
+    askable: true
+    # KEIN vorjahr-Flag (bewusst, s. tests/test_vorjahr_writer.py): der Bestand aendert sich durch
+    # Verrechnung im Vorjahr, vorjahr_writer.py kopiert den alten Wert aber wortwoertlich weiter.
+    fragetext_laie: "Welchen Verlust aus früheren Jahren hat dir das Finanzamt zum 31.12. des Vorjahres bescheinigt?"
+    hilfe_kurz: "Aus deinem Verlustfeststellungs-Bescheid (§ 10d Abs. 4). Trag ihn ein, wenn du Verluste aus Vorjahren mit diesem Jahr verrechnen willst; ohne Eintrag entfällt der Verlustabzug."
+    beispielwert: 6000000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: Typ-Unterschied. E0190701 ist Ja/Nein-Feld (RABE), unser Feld cent (Betrag). FA kennt Betrag aus Feststellungsbescheid. E10 fragt ihn nicht ab."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10d Abs. 2 S. 1 EStG"
+      zitatanker: "bis zu einem Gesamtbetrag der Einkünfte von 1 Million Euro unbeschränkt"
+      datei: "sources/gesetze-im-internet/estg_p10d_2026-07-13.txt"
+
+  # ===== Zusammenveranlagung (§ 26b): person-INDIVIDUELLE _partner-Zwillinge (Store-Modell A) =====
+  # STRENG nur die steuerlich getrennten Person-B-Einkommensfelder (eigener § 9a-Pauschbetrag / eigene
+  # LStB je Ehegatte). Globale Felder (veranlagung/Kinder/agB/Spende/Abwesenheits-Flags) bleiben GETEILT.
+  # est_mapping-Klasse Person-Multiplikation: _partner -> Anlage-N-INSTANZ B (dieselben Kz wie Person A,
+  # person_b-Bucket), KEINE neuen Kz. EP_partner (Person-B-Pendler-WK) = dokumentierter Folge-Nachtrag.
+  - feld_id: bruttoarbeitslohn_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: bruttoarbeitslohn_partner}
+    typ: cent
+    einheit: EUR
+    askable: true
+    # Diese Frage erhebt, ob der Partner ueberhaupt Arbeitslohn hatte — und daran haengen vier
+    # weitere Fragen, die alle aus SEINER Lohnsteuerbescheinigung ablesen (Steuerklasse, Lohnsteuer,
+    # Arbeitnehmer- und Arbeitgeberanteil zur Rentenversicherung, s. deren `feld_bedingung`).
+    # Ohne Arbeitslohn gibt es keine Lohnsteuerbescheinigung, aus der sie abzulesen waeren.
+    #
+    # OHNE diese Zeile wirkt die Bedingung fuer drei der vier Felder gar nicht: gemessen am
+    # 2026-08-27 stand diese Frage auf Platz 112 der Queue, `p36_lohnsteuer_partner` aber auf 99
+    # und `steuerklasse_partner` auf 108. Beide tragen eine `geltungsbedingung` und sortieren
+    # deshalb in den Gate-Block, waehrend diese Betragsfrage ein Slot ist und dahinter faellt —
+    # die Torfrage kaeme also NACH den Fragen, die sie erspart. `_nach_themen` zieht eine
+    # Eingangsfrage in ihrem Thema nach vorn, auch ein Betragsfeld (seit 2026-08-26);
+    # `_nach_vordruck` fasst sie nicht an. Genau derselbe Zuschnitt wie bei `kinderbetreuungskosten`
+    # und `agb_aufwendungen`: ein Betragsfeld, dessen Frage zugleich die Existenzfrage ist.
+    #
+    # Ein eigenes bool-Flag daneben („Hatte dein Partner Arbeitslohn?") waere sprachlich sauberer,
+    # kostete aber eine Frage MEHR fuer jeden — und diese hier steht ohnehin in der Queue.
+    eingangsfrage: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war der Bruttoarbeitslohn deines Ehe-/Lebenspartners dieses Jahr?"
+    hilfe_kurz: "Person-individuell, weil jeder Ehegatte einen EIGENEN Arbeitnehmer-Pauschbetrag hat; steht auf der Lohnsteuerbescheinigung des Partners (Nummer 3)."
+    beispielwert: 3800000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-N-Instanz B (Person-Multiplikation): derselbe Kz E0200201 wie Person A, zweites Sub-Dokument — kein distinktes Partner-Kz (E0220201 existiert nicht). herkunft_slots=null: die Beleg-Extraktion füllt nur Person A (ein LStB füllt nicht beide); Person-B-Beleg = person-scoped Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 1 S. 1 Nr. 1 EStG"
+      zitatanker: "Gehälter, Löhne, Gratifikationen, Tantiemen und andere Bezüge und Vorteile für eine Beschäftigung"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+  - feld_id: vor_an_anteil_rv_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: vor_gesamtbeitraege_partner}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: der Arbeitnehmeranteil zur Rentenversicherung steht unter Nummer 23 der Lohnsteuerbescheinigung. Er ist ein Anteil des Arbeitslohns — ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) ist er zwangslaeufig null, und es gibt keine Bescheinigung, auf der er stuende. Der Vorsorgeabzug des Partners geht dadurch NICHT verloren: Beitraege ausserhalb der Lohnsteuerbescheinigung — der Weg fuer einen freiwillig oder als Selbstaendiger einzahlenden Partner — laufen ueber `vor_rv_ausserhalb_lstb_partner`, und das bleibt ungegated. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus."}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war der Arbeitnehmeranteil zur Rentenversicherung deines Partners (Nummer 23 auf seiner Lohnsteuerbescheinigung)?"
+    hilfe_kurz: "Person-individuell: die Vorsorgeaufwendungen jedes Ehegatten stammen aus seiner eigenen Lohnsteuerbescheinigung."
+    beispielwert: 372000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-N/VOR-Instanz B (Person-Multiplikation): derselbe Kz E2000401 wie Person A, zweites Sub-Dokument."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG"
+      zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vor_ag_anteil_rv_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: vor_gesamtbeitraege_partner}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: der Arbeitgeberanteil zur Rentenversicherung steht unter Nummer 22 der Lohnsteuerbescheinigung. Er ist ein Anteil des Arbeitslohns — ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es keinen Arbeitgeber, der ihn traegt. Der Vorsorgeabzug des Partners geht dadurch NICHT verloren: Beitraege ausserhalb der Lohnsteuerbescheinigung laufen ueber `vor_rv_ausserhalb_lstb_partner`, und das bleibt ungegated. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus."}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war der Arbeitgeberanteil zur Rentenversicherung deines Partners (Nummer 22 auf seiner Lohnsteuerbescheinigung)?"
+    hilfe_kurz: "Person-individuell aus der Lohnsteuerbescheinigung des Partners."
+    beispielwert: 372000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-N/VOR-Instanz B (Person-Multiplikation): derselbe Kz E2000801 wie Person A."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG"
+      zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vor_rv_ausserhalb_lstb_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: vor_gesamtbeitraege_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hat dein Partner weitere Rentenversicherungsbeiträge außerhalb der Lohnsteuerbescheinigung gezahlt (z. B. freiwillig)?"
+    hilfe_kurz: "Person-individuell; falls keine, trage 0 ein."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Anlage-N/VOR-Instanz B (Person-Multiplikation): derselbe Kz E2000601 wie Person A."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 2, Abs. 3 EStG"
+      zitatanker: "Beiträge zu den gesetzlichen Rentenversicherungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  # ===== KV/PV Person-B (§ 10 Abs. 1 Nr. 3/3a + Abs. 4) + §24a-B — A.2, feld_id==dev-1-Read-Key 1:1 =====
+  # Slot-Kontrakt mit dev-1 fixiert: er liest die feld_ids DIREKT als Person-B-Inputs (KrankenPflegeVorsorge
+  # bzw. §24a-Kohorte); kein Präfix-Mismatch. Klasse-g Person-Multiplikation, null-Kz (Reuse Person-A-Kz).
+  - feld_id: basis_kv_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: basis_kv_pv_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Ehe-/Lebenspartner dieses Jahr an Beiträgen für seine Basis-Krankenversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell: die Kranken-Basisbeiträge deines Partners (aus seiner Beitragsbescheinigung), ohne Zusatzleistungen."
+    beispielwert: 250000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kz via PARTNER_VERZWEIGUNG (est_mapping): gesetzlich_an=E2001203, gesetzlich_freiwillig=E2001805, privat=E2003104. Art-Feld=versicherungsart_partner."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3 EStG"
+      zitatanker: "Krankenversicherungen, soweit diese zur Erlangung eines durch das Zwölfte Buch Sozialgesetzbuch bestimmten sozialhilfegleichen Versorgungsniveaus erforderlich sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: basis_pv_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: basis_kv_pv_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Ehe-/Lebenspartner dieses Jahr an Beiträgen für die gesetzliche Pflegeversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell: die Pflege-Pflichtbeiträge deines Partners (aus seiner Beitragsbescheinigung), ohne private Zusatzversicherung."
+    beispielwert: 50000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kz via PARTNER_VERZWEIGUNG (est_mapping): gesetzlich_an=E2001505, gesetzlich_freiwillig=E2002105, privat=E2003202. Art-Feld=versicherungsart_partner."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3 EStG"
+      zitatanker: "gesetzlichen Pflegeversicherung"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: versicherungsart_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: versicherungsart_partner_weiche}
+    typ: enum
+    einheit: null
+    enum_werte: ["gesetzlich_an", "gesetzlich_freiwillig", "privat"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie ist die Kranken- und Pflegeversicherung deines Partners geregelt?"
+    hilfe_kurz: "Person-individuell: gesetzlich als Arbeitnehmer, gesetzlich als Rentner/Selbstzahler oder privat. Bestimmt, welche ELSTER-Kz gesetzt werden."
+    beispielwert: gesetzlich_an
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche für KV/PV-Kz Person B (PARTNER_VERZWEIGUNG): steuert AN/And_Pers/privat-Pfad."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3 EStG"
+      zitatanker: "Krankenversicherungen, soweit diese zur Erlangung eines durch das Zwölfte Buch Sozialgesetzbuch bestimmten sozialhilfegleichen Versorgungsniveaus erforderlich sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  # Feldsplit 2026-08-06: weitere_vorsorgeaufwendungen_partner -> 5 Kategorien.
+  # ACHTUNG: Weit_Sons_VorAW ist maxOccurs=1, A_B_LP maxOccurs=1 — NICHT person-multipliziert.
+  # Anders als Beitr_g_KV_PV_Inl (maxOccurs=2) gibt es keine zweite Container-Instanz für Person B.
+  # Daher kz_status: endgueltig — es gibt kein eigenes Kz zu binden; der Betrag läuft in die
+  # gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3: gemeinsamer HB aus Summe der Einzel-HB).
+  - feld_id: vorsorge_arbeitslosenversicherung_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Partner dieses Jahr an Beiträgen zur Arbeitslosenversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell; die Arbeitnehmerbeiträge zur Arbeitslosenversicherung laut Lohnsteuerbescheinigung (Nr. 27) oder freiwillige Beiträge."
+    beispielwert: 50000
+    herkunft_slots: ["LStB Nr. 27"]
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Kein eigenes Kz: A_B_LP maxOccurs=1 (nicht person-multipliziert, anders als Beitr_g_KV_PV_Inl maxOccurs=2). Der Pers-Zweig (maxOccurs=2, mit Person-Diskriminator) führt nur E2004403 (Arbeitslosenversicherung), nicht die übrigen vier Kategorien, und ist zu A_B_LP ADDITIV — beide zu füllen würde den Partner-Anteil doppelt zählen. Der Betrag läuft daher in die gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3: gemeinsamer Höchstbetrag aus der Summe der Einzelhöchstbeträge)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_erwerbsunfaehigkeit_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Partner dieses Jahr an Beiträgen zur Erwerbs- oder Berufsunfähigkeitsversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell; Beiträge zu einer privaten Berufsunfähigkeits-, Erwerbsunfähigkeits- oder Risikolebensversicherung."
+    beispielwert: 30000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Kein eigenes Kz: A_B_LP maxOccurs=1 (nicht person-multipliziert). Pers-Zweig führt nur E2004403, nicht die übrigen 4 Kategorien, und ist zu A_B_LP ADDITIV. Betrag läuft in gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_unfall_haftpflicht_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Partner dieses Jahr an Beiträgen zur Unfall- oder Haftpflichtversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell; private Unfallversicherung und/oder Haftpflichtversicherung."
+    beispielwert: 20000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Kein eigenes Kz: A_B_LP maxOccurs=1 (nicht person-multipliziert). Pers-Zweig führt nur E2004403, nicht die übrigen 4 Kategorien, und ist zu A_B_LP ADDITIV. Betrag läuft in gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_rv_alt_mit_ueberschuss_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Partner dieses Jahr an Beiträgen zu einer privaten Rentenversicherung mit Überschussbeteiligung oder Kapitallebensversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell; private Rentenversicherung mit Überschussbeteiligung oder Kapitallebensversicherung (altklassisch)."
+    beispielwert: 40000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Kein eigenes Kz: A_B_LP maxOccurs=1 (nicht person-multipliziert). Pers-Zweig führt nur E2004403, nicht die übrigen 4 Kategorien, und ist zu A_B_LP ADDITIV. Betrag läuft in gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: vorsorge_rv_alt_ohne_ueberschuss_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: weitere_vorsorgeaufwendungen_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Partner dieses Jahr an Beiträgen zu einer privaten Rentenversicherung ohne Überschussbeteiligung oder fondsgebundenen Rentenversicherung gezahlt?"
+    hilfe_kurz: "Person-individuell; private Rentenversicherung ohne Überschussbeteiligung (z. B. fondsgebundene Rente)."
+    beispielwert: 30000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Kein eigenes Kz: A_B_LP maxOccurs=1 (nicht person-multipliziert). Pers-Zweig führt nur E2004403, nicht die übrigen 4 Kategorien, und ist zu A_B_LP ADDITIV. Betrag läuft in gemeinsame A_B_LP-Summe (§ 10 Abs. 4 S. 3)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 1 Nr. 3a EStG"
+      zitatanker: "Beiträge zu Kranken- und Pflegeversicherungen, soweit diese nicht nach Nummer 3 zu berücksichtigen sind"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: mit_anspruch_auf_zuschuss_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: mit_anspruch_auf_zuschuss_partner}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner Anspruch auf einen steuerfreien Zuschuss oder Beihilfe zu seiner Krankenversicherung (z. B. als Beamter, Betriebsrentner oder mit Arbeitgeber-Zuschuss)?"
+    hilfe_kurz: "Person-individuell: wenn ja, gilt für ihn der niedrigere Höchstbetrag (1.900 statt 2.800 Euro). Wichtig für die richtige Berechnung."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Tatbestands-Voraussetzung (Ja/Nein) für den 1900-Höchstbetrag Person B (§ 10 Abs. 4 S. 2), kein Betragsfeld; Person-Multiplikation, Kz = benannter Nachtrag."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 4 S. 2 EStG"
+      zitatanker: "Anspruch auf vollständige oder teilweise Erstattung oder Übernahme von Krankheitskosten"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: geburtsjahr_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: geburtsjahr_partner}
+    # Dieselbe Ableitung, die `geburtsjahr` fuer die eigene Person schon hat — sie fehlte nur auf
+    # der Partner-Seite. Gemessen im Durchgang vom 2026-08-27: „In welchem Jahr bist du geboren?"
+    # stand im Verlauf als ABLEITUNG und wurde nie gefragt, „In welchem Jahr ist dein
+    # Ehe-/Lebenspartner geboren?" wurde gestellt — unmittelbar nachdem das Geburtsdatum des
+    # Partners erhoben worden war. Die Angabe lag also schon vor.
+    # Systematisch nachgesehen (alle 49 Partner-Felder gegen ihr Nutzer-Gegenstueck): das hier war
+    # die EINZIGE Ableitung, die nur auf einer Seite deklariert war.
+    ableitung: {aus: stammdaten_geburtsdatum_partner, art: jahr_aus_datum, grund: "Das Geburtsjahr des Partners steht in dessen Geburtsdatum, das die Stammdaten ohnehin erheben (§ 25 EStG i.V.m. § 149 AO, Angaben zur Person). Zweimal danach zu fragen ist eine Frage zu viel — fuer die eigene Person wird sie seit der Ableitung an `geburtsjahr` nicht mehr gestellt, fuer den Partner stand sie weiter in der Queue."}
+    typ: int
+    einheit: null
+    bereich: {min: 1900, max: 2010, grund: "Geburtsjahr Ehe-/Lebenspartner, plausibler Bereich für erwerbstätige/rentennahe Steuerpflichtige."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Jahr ist dein Ehe-/Lebenspartner geboren?"
+    hilfe_kurz: "Person-individuell: bestimmt Prozentsatz und Höchstbetrag des Altersentlastungsbetrags deines Partners (eigene Kohorte nach dem Jahr, das der Vollendung des 64. Lebensjahres folgt)."
+    beispielwert: 1958
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kohorten-Schlüssel Person B (abgeleitet über die Tabelle), kein eigenes Betragsfeld; Person-Multiplikation, vollständiges Geburtsdatum im Mantelbogen."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 24a S. 5 EStG"
+      zitatanker: "maßgebende Prozentsatz und der Höchstbetrag"
+      datei: "sources/gesetze-im-internet/estg_p24a_2026-07-13.txt"
+  - feld_id: person_b_idnr
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: text
+    einheit: null
+    # askable: false (2026-08-12): ERiC lehnt E0100082 amtlich ab, egal welcher Wert (s. elster_kz_grund
+    # unten) — das Feld wird nicht mehr deklariert und darf keinen Bescheid mehr sperren
+    # (AN_GESAMT_PARTNER/GESAMT_PARTNER_19 in api_constants.py). Damit ist es in keiner Scheibe mehr
+    # erreichbar (SCHEIBEN[...]["felder"]) — es weiter askable zu lassen waere eine tote Frage.
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet die steuerliche Identifikationsnummer deines Ehe-/Lebenspartners (11 Ziffern)?"
+    hilfe_kurz: "Bei gemeinsamer Erklärung braucht das Finanzamt die Identifikationsnummer beider Personen. Steht auf dem Steuerbescheid oder dem Schreiben des Bundeszentralamts."
+    beispielwert: "02476291358"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "E0100082 (IDNrBaseCType_RABE) lehnt ERiC amtlich ab: 'Nutzdaten enthalten das Feld ... mit dem Eingefuegt-Kennzeichen J oder P' (rc=610301106), egal welcher Wert gesendet wird — gemessen 2026-08-12, scripts/measure_person_b_idnr.py. Das Kennzeichen kommt in E10-2025.xsd KEIN einziges Mal vor (reine ERiC-interne Laufzeitregel, dem Schema unsichtbar) — Person A's eigene IdNr (E0100081) erscheint aus demselben Grund auch nie im amtlichen Beispiel-XML. Beste Evidenz: beide Felder sind fuer einen ELSTER-internen Identitaets-/Zertifikatsfeed reserviert, kein vom Steuerpflichtigen zu deklarierendes Datum. Sweep (BACKLOG person-b-idnr-wird-abgelehnt) bestaetigt: von 10 Elementen mit demselben XSD-Typ ist nur dieses betroffen, kind_idnr (E0500406, gleicher Typ) ist sauber."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 26 Abs. 2 S. 2 EStG"
+      zitatanker: "Ehegatten werden zusammen veranlagt, wenn beide Ehegatten die Zusammenveranlagung wählen"
+      datei: "sources/gesetze-im-internet/estg_p26_2026-07-17.txt"
+    # p2_festzusetzung_zusammen = Pseudoregel-Scope (Catala-Andockung ohne rules/estg-Dir, wie
+    # p2_festzusetzung_einzel); beide_ehegatten_zusammen_veranlagt = Platzhalter-gb (§ 26 Abs. 2 S. 2).
+    # Der Gate validiert gb-Existenz für Pseudoregel-Scopes nicht; gesichert über Kz/Drift-Wächter.
+
+  # ========================= Stammdaten Person A (§ 150 Abs. 2 AO, ESt1A/Allg/A) =========================
+  # signatur_slot = eigene feld_id (wie bruttoarbeitslohn): kein Gate, immer relevant (Pflichtangabe
+  # in jeder Erklärung), kein echter Catala-Input — p2_festzusetzung_einzel ist Pseudoregel-Scope.
+  - feld_id: stammdaten_nachname
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_nachname}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet dein Nachname?"
+    hilfe_kurz: "Familienname, wie im Ausweis."
+    beispielwert: "Maier"
+    herkunft_slots: null
+    elster_kz: E0100201
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_vorname
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_vorname}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet dein Vorname?"
+    hilfe_kurz: "Vorname(n), wie im Ausweis."
+    beispielwert: "Hans"
+    herkunft_slots: null
+    elster_kz: E0100301
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_geburtsdatum
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_geburtsdatum}
+    typ: datum
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann bist du geboren (Tag, Monat, Jahr)?"
+    hilfe_kurz: "Geburtsdatum. Format TT.MM.JJJJ (amtliches ELSTER-Format, kein ISO-8601 — nichts in der Pipeline konvertiert Datumswerte)."
+    beispielwert: "05.05.1955"
+    herkunft_slots: null
+    elster_kz: E0100401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_strasse
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_strasse}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welcher Straße wohnst du?"
+    hilfe_kurz: "Straßenname ohne Hausnummer."
+    beispielwert: "Musterstr."
+    herkunft_slots: null
+    elster_kz: E0101104
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_hausnummer
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_hausnummer}
+    typ: text
+    muster: '^(?:[0-9]{1,4})$'   # E10-2025.xsd: [0-9]+ mit Laenge 1-4 (Rust-regex kennt kein Lookahead)
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Hausnummer hat deine Wohnadresse?"
+    hilfe_kurz: "Nur die Nummer, ggf. mit Buchstabenzusatz getrennt im Zusatzfeld."
+    beispielwert: "55"
+    herkunft_slots: null
+    elster_kz: E0101206
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_hausnummerzusatz
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_hausnummerzusatz}
+    typ: text
+    muster: '^(?:[^\n\r]{1,6})$'   # E10-2025.xsd E0101207: String_MinL1_MaxL6, Muster [^\n\r]+ (Rust-regex kennt kein Lookahead)
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hat deine Hausnummer einen Zusatz, zum Beispiel a oder b?"
+    hilfe_kurz: "Nur der Zusatz hinter der Hausnummer, höchstens sechs Zeichen. Ohne Zusatz lässt du die Frage aus."
+    beispielwert: "a"
+    herkunft_slots: null
+    elster_kz: E0101207
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_plz
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_plz}
+    typ: text
+    muster: '^(?:([0]{1}[1-9]{1}[0-9]{3})|([1-9]{1}[0-9]{4}))$'
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet die Postleitzahl deines Wohnorts?"
+    hilfe_kurz: "Fünfstellige Postleitzahl."
+    beispielwert: "55555"
+    herkunft_slots: null
+    elster_kz: E0100601
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_wohnort
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_wohnort}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welcher Stadt oder Gemeinde wohnst du?"
+    hilfe_kurz: "Wohnort/Stadt des Hauptwohnsitzes."
+    beispielwert: "Musterort"
+    herkunft_slots: null
+    elster_kz: E0100602
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_keine_bankverbindung
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_keine_bankverbindung}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du keine Bankverbindung, die du für eine Erstattung angeben möchtest?"
+    hilfe_kurz: "Sonderfeld: bestätigt gegenüber dem Finanzamt ausdrücklich, dass keine Bankverbindung vorliegt (statt IBAN/BIC anzugeben)."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: E0102002
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # IBAN/BIC jetzt gebaut (Julius-Entscheidung 2026-08-10, Bankverbindungs-Baustein) —
+    # s. stammdaten_iban/stammdaten_bic unten + est_mapping.deklariere() Exklusivitäts-Block.
+
+  - feld_id: stammdaten_iban
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_iban}
+    typ: text
+    einheit: null
+    askable: true
+    fragetext_laie: "Wie lautet die IBAN des Kontos für eine mögliche Erstattung?"
+    hilfe_kurz: "Nur ausfüllen, wenn du NICHT 'keine Bankverbindung vorhanden' erklärst — genau eines von beidem gilt. Leerzeichen sind egal, werden automatisch entfernt."
+    beispielwert: "DE02120300000000202051"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Kz hängt vom IBAN-Länderpräfix ab (E0102102 inländisch / E0102603 ausländisch, beide String_MinL5_MaxL34_Musterm188614856_CType, E10-2025.xsd) — est_mapping.deklariere() routet über den Wert selbst (Präfix 'DE' = inländisch), kein statisches 1:1-Kz."
+    kz_status: endgueltig
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # Exklusiv zu stammdaten_keine_bankverbindung: fail-closed in est_mapping.deklariere() (post-loop
+    # Bankverbindungs-Block) — genau eines von beidem darf im XML stehen (gemessen, checkESt lehnt
+    # sowohl Gleichzeitigkeit als auch Schweigen mit rc=610001002 ab). Kontoinhaber (E0101601) wird
+    # bei bestätigter IBAN automatisch mitgesetzt (kein eigenes Interview-Feld, Schein-Wahlrecht wie
+    # Art_Erkl/E0100001 — wer die eigene IBAN einträgt, IST der Kontoinhaber; E0102402/E0101602
+    # [Kontoinhaber Person B / Abtretungs-Name] bewusst NICHT gebaut, s. Person-B-Messung). Format-
+    # (XSD-Muster) und Prüfziffer-Validierung (ISO 13616, Modulo 97) sitzt ebenfalls in
+    # est_mapping.deklariere(), analog zur Steuernummer-Formatprüfung in elster_xml.py
+    # (_STNR_PATTERN) — fail-closed, PII bleibt aus jeder Fehlermeldung.
+
+  - feld_id: stammdaten_bic
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_bic}
+    typ: text
+    muster: '^(?:[a-zA-Z]{4}([a-zA-Z]{2})[0-9a-zA-Z]{2}([0-9a-zA-Z]{3})?)$'
+    einheit: null
+    askable: true
+    fragetext_laie: "Wie lautet der BIC deiner Bank (nur bei einer ausländischen Bankverbindung)?"
+    hilfe_kurz: "Nur nötig, wenn deine IBAN NICHT mit 'DE' beginnt (ausländisches Geldinstitut). Bei einer deutschen IBAN leer lassen. Der BIC hat 8 oder 11 Zeichen, ohne Leerzeichen."
+    beispielwert: "PBNKDEFF370"
+    herkunft_slots: null
+    elster_kz: E0102201
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # BIC bei Auslands-IBAN gemessen (checkESt, 2026-08-10, scripts/measure_bankverbindung.py) —
+    # KEIN Pflichtfeld (rc=0 auch ganz ohne BIC). checkESt prüft nur, WENN ein BIC mitkommt, ob er
+    # zur IBAN passt (Stellen 5-6 = Ländercode). S. est_mapping.deklariere() Bankverbindungs-Block.
+
+  - feld_id: stammdaten_art_est_erklaerung
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_art_est_erklaerung}
+    typ: bool
+    einheit: null
+    askable: false
+    fragetext_laie: null
+    hilfe_kurz: "Kennzeichnet die Erklärung im Hauptvordruck als Einkommensteuererklärung."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "E0100001 wird von est_mapping.deklariere() als KONSTANTE gesetzt (Julius-Entscheidung 2026-08-10), nicht ueber diese Bindung -- das Produkt erzeugt ausschliesslich Einkommensteuererklaerungen, die Ja/Nein-Frage war ein Schein-Wahlrecht. Kein Interview-Feld mehr."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # Art_Erkl hat 5 Kz im XSD (E0100001..E0100003, E0100009, E0100302); nur E0100001 (ESt-Erklärung,
+    # der Regelfall dieses Produkts) betroffen. Die anderen 4 (Sparzulage-Antrag u.a.) sind feature-
+    # konditional und Mindestumfang-bewusst NICHT gebaut. GELOEST 2026-08-10 (war offene Frage an
+    # Julius): askable Ja/Nein war ein Schein-Wahlrecht (das Produkt deckt nur den ESt-Fall ab) --
+    # jetzt nicht-askable Konstante (E0100001 in est_mapping.deklariere() hart gesetzt). MUSS
+    # zurueckgebaut werden, sobald das Produkt weitere Erklaerungsarten unterstuetzt (z.B.
+    # Arbeitnehmer-Sparzulage) -- dann wird Art_Erkl wieder eine echte Interview-Frage.
+
+  - feld_id: stammdaten_steuernummer
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_steuernummer}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet deine Steuernummer?"
+    hilfe_kurz: "13-stellige Steuernummer laut letztem Steuerbescheid oder Schreiben vom Finanzamt, ohne Trennzeichen (z. B. 9181/081/50815 → 9181081508155). Die ersten vier Ziffern sind die Nummer deines Finanzamts."
+    beispielwert: "9181081508155"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Vorsatz-Block (<StNr>) ist kein E10-Kz-Element (E10-2025.xsd:25286-25360, Vorsatz_67907_CType) — kz_pfade() indiziert ihn strukturell nie. Der Wert erreicht erzeuge_xml() deshalb nicht ueber deklaration/Kz, sondern ueber den Store-Snapshot (produkt/eingang/elster_xml.py:_leite_steuernummer_ab())."
+    kz_status: endgueltig
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # Format- und Finanzamts-Kopplungspruefung (amtliches Muster [0-9]{4}0[0-9]{8}, erste vier
+    # Ziffern = Finanzamtsnummer) sitzt in produkt/eingang/elster_xml.py (_STNR_PATTERN + Praefix-
+    # Check gegen empfaenger_finanzamt), nicht hier — bindung/schema.json kennt fuer typ=text kein
+    # statisches Pattern-Feld (nur beispielwert), und die Finanzamts-Kopplung ist ohnehin fallabhaengig
+    # (wechselt mit empfaenger_finanzamt), kein statischer Bindungs-Fakt.
+
+  # ========================= Stammdaten Person B (§ 150 Abs. 2 AO, ESt1A/Allg/B) =========================
+  # geltungsbedingung wie person_b_idnr: nur relevant bei Zusammenveranlagung. typ text/datum/enum,
+  # daher inert als Gate (relevanz() prüft nur `wert is False`, greift nie bei Nicht-bool-Werten).
+  - feld_id: stammdaten_nachname_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet der Nachname deines Ehe-/Lebenspartners?"
+    hilfe_kurz: "Familienname des Ehe-/Lebenspartners, wie im Ausweis."
+    beispielwert: "Maier"
+    herkunft_slots: null
+    elster_kz: E0100901
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_vorname_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet der Vorname deines Ehe-/Lebenspartners?"
+    hilfe_kurz: "Vorname(n) des Ehe-/Lebenspartners, wie im Ausweis."
+    beispielwert: "Carolina"
+    herkunft_slots: null
+    elster_kz: E0100801
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: stammdaten_geburtsdatum_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: datum
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann ist dein Ehe-/Lebenspartner geboren (Tag, Monat, Jahr)?"
+    hilfe_kurz: "Geburtsdatum des Ehe-/Lebenspartners. Format TT.MM.JJJJ (amtliches ELSTER-Format)."
+    beispielwert: "09.07.1988"
+    herkunft_slots: null
+    elster_kz: E0101001
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+
+  - feld_id: kist_konfession_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    typ: enum
+    enum_werte: [keine, evangelisch, roemisch-katholisch, andere]
+    einheit: null
+    askable: true
+    fragetext_laie: "Gehört dein Ehe-/Lebenspartner einer Kirche an, die Kirchensteuer erhebt (evangelisch oder römisch-katholisch)?"
+    hilfe_kurz: "Wie bei deiner eigenen Konfession, aber für den Ehe-/Lebenspartner. Nur evangelisch/römisch-katholisch werden hier deklariert."
+    beispielwert: roemisch-katholisch
+    herkunft_slots: null
+    elster_kz: E0101002
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 150 Abs. 2 AO"
+      zitatanker: "Die Angaben in den Steuererklärungen sind wahrheitsgemäß nach bestem Wissen und Gewissen zu machen"
+      datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
+    # Wert "andere" ohne verifizierten Code -> fail-closed in nicht_deklariert (est_mapping.WERTEKODIERUNG),
+    # wie kist_konfession (bindung_p51a_kirchensteuer.yaml). Bewusst NICHT in Kirchensteuer-Regel
+    # (p51a_kirchensteuer) verankert — der Ring rechnet Person-B-Konfession nicht mit; reines
+    # Deklarations-Stammdatum, kein Steuerungs-Slot.
+    # GELOEST 2026-08-10 (Julius-Entscheidung, war offene Kopplung): jeder Code außer "11" verlangt
+    # zusätzlich Lohnsteuer (E0200301) UND Kirchensteuer (E0200501) auf Anlage N Person B —
+    # p36_lohnsteuer_partner + kirchensteuer_arbeitgeber_partner unten decken das ab.
+
+  # ========================= Steuerklasse/Lohnsteuer/Kirchensteuer Person B (Anlage N) =========
+  # Wie kist_konfession_partner: reine Deklarations-Stammdaten, kein Ring-Input (kein Catala-Slot).
+  # PARTNER_INSTANZ in est_mapping.py routet auf DIESELBEN Person-A-Kz (kein eigenes Ehegatte-Kz).
+  - feld_id: steuerklasse_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: die Steuerklasse steht unter Nummer 1 der Lohnsteuerbescheinigung, die der Arbeitgeber ausstellt. Ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es keinen Arbeitgeber, der eine Lohnsteuerklasse anwendet, und keine Bescheinigung, auf der sie stuende. `bruttoarbeitslohn_partner` erhebt genau diese Existenz. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus — unbeantwortet und ein vorlaeufiger Beleg-Vorschlag lassen die Frage stehen. Das Feld traegt kein elster_kz, entfaellt also aus der Frageliste, ohne der Deklaration etwas zu nehmen."}
+    typ: enum
+    enum_werte: ["1", "2", "3", "4", "5", "6"]
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Welche Steuerklasse hat dein Ehe-/Lebenspartner (steht auf seiner/ihrer Lohnsteuerbescheinigung)?"
+    hilfe_kurz: "Steuerklasse I bis VI des Ehe-/Lebenspartners, unter Nummer 1 der Lohnsteuerbescheinigung."
+    beispielwert: "1"
+    herkunft_slots: ["Lohnsteuerbescheinigung Nr. 1"]
+    elster_kz: null
+    elster_kz_grund: "Anlage-N-Instanz B (Person-Multiplikation): derselbe Kz E0200002 wie Person A, zweites Sub-Dokument — kein distinktes Partner-Kz. PARTNER_INSTANZ (est_mapping.py) routet den Wert in den person_b-Bucket."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 38b Abs. 1 EStG"
+      zitatanker: "Für die Durchführung des Lohnsteuerabzugs werden Arbeitnehmer in Steuerklassen eingereiht."
+      datei: "sources/gesetze-im-internet/estg_p38b_2026-08-10.txt"
+
+  - feld_id: p36_lohnsteuer_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    feld_bedingung: {feld: bruttoarbeitslohn_partner, wert_nicht: 0, grund: "§ 41b EStG: die Lohnsteuerbescheinigung stellt der Arbeitgeber am Ende des Dienstverhaeltnisses aus; einbehaltene Lohnsteuer, Steuerklasse und die beiden Rentenversicherungsanteile stehen darauf. Ohne Arbeitslohn des Partners (§ 19 Abs. 1 S. 1 Nr. 1 EStG) gibt es weder Arbeitgeber noch Bescheinigung, aus der etwas abzulesen waere. `bruttoarbeitslohn_partner` erhebt genau diese Existenz. Fail-closed ueber `wert_nicht`: nur eine BESTAETIGTE Null schliesst aus — unbeantwortet und ein vorlaeufiger Beleg-Vorschlag lassen die Frage stehen. NICHT gegated sind die Vorsorge-Felder des Partners (basis_kv_partner, basis_pv_partner, vorsorge_*_partner und vor_rv_ausserhalb_lstb_partner = Beitraege AUSSERHALB der Lohnsteuerbescheinigung): die traegt auch ein Partner ohne Anstellung, und eine Bedingung darauf naehme ihm den Vorsorgeabzug."}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Lohnsteuer wurde im Jahr vom Arbeitgeber deines Ehe-/Lebenspartners einbehalten und abgeführt?"
+    hilfe_kurz: "Steht auf der Lohnsteuerbescheinigung des Partners (Nr. 4)."
+    beispielwert: 800000
+    herkunft_slots: ["Lohnsteuerbescheinigung Nr. 4"]
+    elster_kz: null
+    elster_kz_grund: "Anlage-N-Instanz B (Person-Multiplikation): derselbe Kz E0200301 wie Person A, zweites Sub-Dokument — PARTNER_INSTANZ (est_mapping.py) routet den Wert in den person_b-Bucket. Spiegel von p36_lohnsteuer (bindung_p36_abschlusszahlung.yaml): gleiche Julius-Entscheidung 2026-08-10 (echte Deklaration statt 0,00), aber HIER ohne Ring-Slot — der § 36-Anrechnungs-Ring rechnet nur EINE Scheiben-ESt, keine Person-B-Variante von p36_2_anrechnung. Reines Anlage-N-Deklarationsfeld fuer Person B."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 36 Abs. 2 S. 1 Nr. 2 EStG (durch Steuerabzug erhobene Einkommensteuer)"
+      zitatanker: "die durch Steuerabzug erhobene Einkommensteuer"
+      datei: sources/gesetze-im-internet/estg_p36_2026-07-11.txt
+
+  - feld_id: kirchensteuer_arbeitgeber_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
+    feld_bedingung: {feld: kist_konfession_partner, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    fragetext_laie: "Wie viel Kirchensteuer wurde im Jahr vom Arbeitgeber deines Ehe-/Lebenspartners einbehalten (nur falls kirchensteuerpflichtig)?"
+    hilfe_kurz: "Steht auf der Lohnsteuerbescheinigung des Partners, falls dort Kirchensteuer abgeführt wurde. Bei konfessionslos: 0."
+    beispielwert: 0
+    herkunft_slots: ["Lohnsteuerbescheinigung"]
+    elster_kz: null
+    elster_kz_grund: "Anlage-N-Instanz B (Person-Multiplikation): derselbe Kz E0200501 wie Person A, zweites Sub-Dokument — PARTNER_INSTANZ (est_mapping.py) routet den Wert in den person_b-Bucket. Paar-Zwang (gemessen reports/adjudikation/entscheidungsvorlage_restfehler_2026-08-10.md:279-290): sobald kist_konfession_partner ≠ \"keine\" ist, verlangt checkESt E0200301 UND E0200501 fuer Person B zusammen — koppelt strikt PRO PERSON (unabhaengig von Person A's Konfession)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 51a EStG i.V.m. Landes-KiStG (Kirchensteuer als Zuschlag der Mitglieder steuererhebender Religionsgemeinschaften)"
+      zitatanker: "Zuschlag zur Einkommen-, Lohn- und Kapitalertragsteuer"
+      datei: sources/kirchensteuer/kist_hebesatz_2026-07-22.txt
+
+  # ===== §§ 13-18 Gewinneinkünfte + § 35 GewSt Person-B (Store-Modell A) =====
+  # Wie oben (Zeile 602 ff.): _partner-Zwillinge der Gewinn-/GewSt-Felder, gleiche Kz wie Person A,
+  # Anlage-G/S-INSTANZ B (person_b-Bucket). Klasse f×g PARTNER_VERZWEIGUNG (est_mapping) fuer
+  # einkuenfte_gewinn_partner (Betriebsart-Weiche); Klasse g PARTNER_INSTANZ fuer die beiden flachen
+  # GewSt-Kz. §15-Mitunternehmer-Felder bleiben wie bei Person A elster_kz: null (aufgegangen in
+  # E0800502-Instanz-B, kein Sondervergütungs-Kz im Schema). EÜR-Komponenten (betriebseinnahmen/
+  # sonstige_betriebsausgaben/afa_jahresbetrag) bewusst NICHT dupliziert: Anlage EÜR ist Datenart E77,
+  # ein eigenes Dokument OHNE Person-A/B-Indexfeld (E77-2025.xsd hat keinen Enum_INDEXFELD_PERSON-Treffer,
+  # anders als E10 — verifiziert 2026-08-12) — der Partner-Betrieb braeuchte ein zweites E77-Dokument,
+  # die Mechanik dafuer fehlt (BACKLOG partnerseite-gewinneinkuenfte-fehlt-strukturell). §34 Abs.3-Flags ebenfalls NICHT dupliziert:
+  # diese Felder werden an Person A gerade korrigiert (ermaessigung_einmal_genutzt invertiert,
+  # dauernd_berufsunfaehig ohne Alter-55-ODER-Verknuepfung) — ein Partner-Pendant waere heute die
+  # Verdopplung eines bekannten Fehlers.
+  - feld_id: einkuenfte_gewinn_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: einkuenfte_gewinn_partner}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus, und § 26b EStG ermittelt sie je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen selbstaendigen PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Angaben samt Gewerbesteuer-Anrechnung. Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch war der Gewinn deines Ehe-/Lebenspartners aus Gewerbebetrieb, Land-/Forstwirtschaft oder selbständiger/freiberuflicher Arbeit dieses Jahr?"
+    hilfe_kurz: "Person-individuell: der bereits ermittelte Gewinn deines Partners (Einnahmen minus Betriebsausgaben, z. B. aus seiner Einnahmenüberschussrechnung). Einen Verlust trägst du als negativen Betrag ein."
+    beispielwert: 2500000
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Klasse f×g PARTNER_VERZWEIGUNG (est_mapping) je gewinn_betriebsart_partner: dieselben Kz wie Person A (gewerbe=E0800302, selbstaendig=E0803202 — der eigene Betrieb, Einz_U/Betr_1_2 bzw. Freiber_T), Anlage-G/S-INSTANZ B (person_b-Bucket) — kein distinktes Ehegatte-Kz. Container-Korrektur 2026-08-20 wie Person A (vorher Ges_Fest/Sum). land_forst bewusst ohne Kz (spiegelt Person A, Anlage L hat zwei alternative Kz je Gewinnermittlungsart)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 2 S. 1 Nr. 1 EStG"
+      zitatanker: "bei Land- und Forstwirtschaft, Gewerbebetrieb und selbständiger Arbeit der Gewinn"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  - feld_id: gewinn_betriebsart_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: gewinn_betriebsart_partner_weiche}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus, und § 26b EStG ermittelt sie je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen selbstaendigen PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Angaben samt Gewerbesteuer-Anrechnung. Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    typ: enum
+    einheit: null
+    enum_werte: ["gewerbe", "selbstaendig", "land_forst"]
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Aus welcher Art von Tätigkeit stammt der Gewinn deines Ehe-/Lebenspartners?"
+    hilfe_kurz: "Gewerbebetrieb (Anlage G), selbständige/freiberufliche Tätigkeit (Anlage S) oder Land- und Forstwirtschaft (Anlage L) — für den Betrieb deines Partners. Die Auswahl steuert nur, in welche Anlage sein Gewinn eingetragen wird."
+    beispielwert: "gewerbe"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Art-Weiche Person B (steuert die Klasse f×g-Kz-Verzweigung des Partner-Gewinns nach Anlage G/S), kein eigenes Betragsfeld/Kz. Gleiche Enum-Werte wie gewinn_betriebsart (Person A) und rentner_veraeusserungs_betriebsart."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 1-3 EStG"
+      zitatanker: "Einkünfte aus Land- und Forstwirtschaft, 2. Einkünfte aus Gewerbebetrieb, 3. Einkünfte aus selbständiger Arbeit"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  # Formvoraussetzung des Betriebs-Blocks Person B (Anlage-G/S-INSTANZ B) — wie gewinn_bezeichnung bei
+  # Person A. Ohne sie lehnt checkESt den Partner-Betrag ab, sobald einkuenfte_gewinn_partner steht.
+  - feld_id: gewinn_bezeichnung_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewinn_bezeichnung_partner}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15/§ 13/§ 18 EStG setzen Gewinneinkuenfte voraus, und § 26b EStG ermittelt sie je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen selbstaendigen PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Angaben samt Gewerbesteuer-Anrechnung. Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene und nicht ueber regel_bedingungen."}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie heißt der Betrieb bzw. die Tätigkeit deines Ehe-/Lebenspartners genau?"
+    hilfe_kurz: "Person-individuell: bei einem Gewerbe die genaue Bezeichnung des Gewerbes, bei selbständiger Arbeit die Berufsbezeichnung oder Tätigkeit. Das Finanzamt verlangt diese Angabe zusammen mit dem Gewinn."
+    beispielwert: "Grafikdesign"
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Klasse f×g PARTNER_VERZWEIGUNG (est_mapping) je gewinn_betriebsart_partner: dieselben Kz wie Person A (gewerbe=E0800301, selbstaendig=E0803101), Anlage-G/S-INSTANZ B (person_b-Bucket). Steht im selben Block wie der Betrag — checkESt verlangt sie gemeinsam."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 2 Abs. 1 S. 1 Nr. 1-3 EStG"
+      zitatanker: "Einkünfte aus Land- und Forstwirtschaft, 2. Einkünfte aus Gewerbebetrieb, 3. Einkünfte aus selbständiger Arbeit"
+      datei: "sources/gesetze-im-internet/estg_p2_2026-07-14.txt"
+  - feld_id: gewinnanteil_partner
+    # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding, statt p15_1_2_mitunternehmer):
+    # dieselbe Naht wie bruttoarbeitslohn_partner oben — rules.yaml kennt fuer p15_1_2_mitunternehmer
+    # nur Person-A-Signatur-Slots, ein zweiter Aufruf fuer Person B ist Stufe 2 (Ring, api.py) und
+    # noch nicht gebaut. Rechtsgrundlage bleibt § 15 Abs. 1 S. 1 Nr. 2 EStG (s. anker_ref unten).
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewinnanteil_partner}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15 Abs. 1 S. 1 Nr. 2 EStG erfasst den Gewinnanteil des Mitunternehmers, und § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen beteiligten PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Angaben. Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch ist der Anteil deines Ehe- oder Lebenspartners am Gewinn oder Verlust einer Personengesellschaft (OHG, KG oder GbR)?"
+    hilfe_kurz: "Der ausgleichsfähige Gewinn-/Verlustanteil deines Partners aus seinem eigenen Feststellungsbescheid (nach § 15a). Einen Verlust trägst du als negativen Betrag ein."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Mitu-Gewinnanteil Person B, in E0800502-Instanz-B aufgegangen (wie Person A). Schema E0800602 = ein Betrag je Beteiligung, keine Sonderverg.-Trennung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "die Gewinnanteile der Gesellschafter einer Offenen Handelsgesellschaft, einer Kommanditgesellschaft und einer anderen Gesellschaft, bei der der Gesellschafter als Unternehmer (Mitunternehmer) des Betriebs anzusehen ist"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_taetigkeit_partner
+    # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): s. Begruendung bei gewinnanteil_partner
+    # oben. Loest sich mit Stufe 2 auf.
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: verguetung_taetigkeit_partner}
+    # Julius, echter Durchgang 2026-08-28 (L1 #66-68, L3 #56-58): diese Frage kam, ohne dass je
+    # erhoben war, ob der Partner ueberhaupt an einer Gesellschaft beteiligt ist.
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15 Abs. 1 S. 1 Nr. 2 EStG erfasst Sonderverguetungen NUR bei einem Gesellschafter, der als Mitunternehmer anzusehen ist — die Verguetung setzt die Beteiligung voraus, und die gehoert zu den Gewinneinkuenften. Ohne bestaetigte Gewinneinkuenfte des Partners gibt es keine Gesellschafterstellung, zu der etwas zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner als Gesellschafter Vergütungen für seine Tätigkeit im Dienst der Gesellschaft bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2 für deinen Partner: was er von der Gesellschaft für seine Mitarbeit erhalten hat — steuerlich Teil seiner gewerblichen Einkünfte, nicht Arbeitslohn."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung Person B, in E0800502-Instanz-B aufgegangen (wie Person A). Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für seine Tätigkeit im Dienst der Gesellschaft"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_darlehen_partner
+    # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): s. Begruendung bei gewinnanteil_partner
+    # oben. Loest sich mit Stufe 2 auf.
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: verguetung_darlehen_partner}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15 Abs. 1 S. 1 Nr. 2 EStG erfasst Sonderverguetungen NUR bei einem Gesellschafter, der als Mitunternehmer anzusehen ist — die Verguetung fuer die Hingabe von Darlehen setzt die Beteiligung voraus, und die gehoert zu den Gewinneinkuenften. Ohne bestaetigte Gewinneinkuenfte des Partners gibt es keine Gesellschafterstellung, zu der etwas zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner der Gesellschaft ein Darlehen gegeben und dafür Zinsen bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2 für deinen Partner: Zinsen für die Hingabe von Darlehen an die Gesellschaft — steuerlich Teil seiner gewerblichen Einkünfte."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung Person B, in E0800502-Instanz-B aufgegangen (wie Person A). Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für die Hingabe von Darlehen"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: verguetung_ueberlassung_partner
+    # regel_id p2_festzusetzung_zusammen (Stufe-1-Scaffolding): s. Begruendung bei gewinnanteil_partner
+    # oben. Loest sich mit Stufe 2 auf.
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: verguetung_ueberlassung_partner}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 15 Abs. 1 S. 1 Nr. 2 EStG erfasst Sonderverguetungen NUR bei einem Gesellschafter, der als Mitunternehmer anzusehen ist — die Verguetung fuer die Ueberlassung von Wirtschaftsguetern setzt die Beteiligung voraus, und die gehoert zu den Gewinneinkuenften. Ohne bestaetigte Gewinneinkuenfte des Partners gibt es keine Gesellschafterstellung, zu der etwas zu erklaeren waere. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner der Gesellschaft Wirtschaftsgüter überlassen (z. B. ein Grundstück vermietet) und dafür eine Vergütung bezogen?"
+    hilfe_kurz: "Sondervergütung nach § 15 Abs. 1 Nr. 2 für deinen Partner: Miete/Pacht für die Überlassung von Wirtschaftsgütern an die Gesellschaft — steuerlich Teil seiner gewerblichen Einkünfte, nicht Einkünfte aus Vermietung."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: §15-Sondervergütung Person B, in E0800502-Instanz-B aufgegangen (wie Person A). Schema E0800602 (ein Betrag), keine Sondervergütungs-Trennung."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 15 Abs. 1 S. 1 Nr. 2 S. 1 EStG"
+      zitatanker: "für die Überlassung von Wirtschaftsgütern"
+      datei: "sources/gesetze-im-internet/estg_p15_2026-07-14.txt"
+  - feld_id: gewst_hebesatz_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_hebesatz_partner}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 35 EStG rechnet die Gewerbesteuer des Gewerbetreibenden an, § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen gewerbetreibenden PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Anrechnung (Kz E0801705). Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: int
+    einheit: null
+    bereich: {min: 1, max: 999, grund: "Reine Sanity-Bound (Hebesatz-Prozentzahl > 0), wie gewst_hebesatz (Person A). KEIN gesetzlicher Mindesthebesatz-Anker."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie hoch ist der Gewerbesteuer-Hebesatz der Gemeinde deines Ehe-/Lebenspartners (in Prozent)?"
+    hilfe_kurz: "Steht auf seinem Gewerbesteuer-Bescheid oder bei seiner Gemeinde (übliche Werte 200-900 %, z. B. 400). Bestimmt die tatsächlich gezahlte Gewerbesteuer für die Anrechnung auf die Einkommensteuer (§ 35) — eigener Betrieb, eigener Hebesatz."
+    beispielwert: 400
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse g PARTNER_INSTANZ (est_mapping): derselbe Kz E0801705 wie Person A (G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Zu_zah_GSt_VZ), Anlage-G-INSTANZ B (person_b-Bucket) — kein distinktes Ehegatte-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35 Abs. 1 S. 1 EStG"
+      zitatanker: "tatsächlich zu zahlende Gewerbesteuer"
+      datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
+  - feld_id: gewst_messbetrag_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_messbetrag_partner}
+    feld_bedingung: {feld: kein_gewinn_partner, wert: false, grund: "§ 35 EStG rechnet die Gewerbesteuer des Gewerbetreibenden an, § 26b EStG ermittelt die Einkuenfte je Ehegatten getrennt. Bis 2026-08-28 stand hier `kein_gewinn` — das Kreuz des NUTZERS, das woertlich nach „dir“ fragt. Wer nur einen gewerbetreibenden PARTNER hat, verneinte wahrheitsgemaess und verlor dessen Anrechnung (Kz E0801606). Jetzt entscheidet die Antwort ueber den Partner. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie hoch ist der Gewerbesteuer-Messbetrag deines Ehe-/Lebenspartners?"
+    hilfe_kurz: "Aus dem Gewerbesteuer-Messbescheid deines Partners. Trag ihn ein, wenn du die Anrechnung der Gewerbesteuer auf die Einkommensteuer (§ 35) für seinen Betrieb willst; ohne Eintrag entfällt die Anrechnung."
+    beispielwert: 1500000
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse g PARTNER_INSTANZ (est_mapping): derselbe Kz E0801606 wie Person A (G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Festzus_GMB_VZ), Anlage-G-INSTANZ B (person_b-Bucket) — kein distinktes Ehegatte-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 11 Abs. 1 S. 1 GewStG"
+      zitatanker: "von einem Steuermessbetrag auszugehen"
+      datei: "sources/gesetze-im-internet/gewstg_p11_2026-07-16.txt"
+  # Spiegel zu gewst_zu_zahlen (Person A, s. dort fuer die Formel und ihre Grenze). Ein eigener
+  # Betrieb hat einen eigenen Hebesatz, also auch eine eigene Gewerbesteuerschuld — dieselbe
+  # Rechnung, andere Faktoren.
+  - feld_id: gewst_zu_zahlen_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: gewst_zu_zahlen_partner}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: false
+    vorjahr: uebernehmbar
+    fragetext_laie: null
+    hilfe_kurz: "Berechnet: Messbetrag mal Hebesatz des Partnerbetriebs (§ 16 Abs. 1 GewStG)."
+    beispielwert: null
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Klasse g PARTNER_INSTANZ (est_mapping): derselbe Kz E0801704 wie Person A (G/St_Erm_P35/Ang_GSt_GMB/Einz_Betr/Zu_zah_GSt_VZ), Anlage-G-INSTANZ B (person_b-Bucket) — kein distinktes Ehegatte-Kz."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 35 Abs. 1 S. 1 EStG"
+      zitatanker: "tatsächlich zu zahlende Gewerbesteuer"
+      datei: "sources/gesetze-im-internet/estg_p35_2026-07-14.txt"
+
+luecken:
+  # -- §24a Altersentlastungsbetrag: Bemessungs-Inputs + Kohorten-Parameter (gesamt-Kontext, §24a gesamt-only) --
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: arbeitslohn
+    grund: "Bemessungs-Input = Bruttoarbeitslohn (§19, bereits im gesamt-Ring erfasst); §24a rechnet aus dem Gesamteinkommen, keine eigene Abfrage."
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: positive_andere_einkuenfte
+    grund: "Abgeleitet = Summe der positiven anderen Einkünfte (nicht aus nichtselbständiger Arbeit; §22-Leibrenten §24a-S.2-ausgeschlossen); dev-1s slot_fn leitet je Ring aus den Einkunftsarten ab, keine eigene Abfrage."
+  - regel_id: p24a_altersentlastungsbetrag
+    signatur_slot: prozentsatz
+    grund: "Kohorten-Parameter (maßgebender Prozentsatz), abgeleitet über das Feld geburtsjahr -> §24a-Tabelle (params/kohorten/altersentlastungsbetrag_p24a.yaml); kein Laien-Feld. (Höchstbetrag = params-Key, auto-exempt.)"
+  - regel_id: p24a_altersentlastungsbetrag
+    geltungsbedingung: alter_64_vor_bezugsjahr_vollendet
+    grund: "Im gesamt-Ring aus dem Feld geburtsjahr abgeleitet (§24a greift ab dem Jahr, das der Vollendung des 64. Lebensjahres folgt: VZ >= geburtsjahr + 65); keine eigene Ja/Nein-Abfrage nötig."
+  - regel_id: p24a_altersentlastungsbetrag
+    geltungsbedingung: bemessung_netto_nach_ausschluessen
+    grund: "Bemessung nach Ausschluss bestimmter Einkünfte (u. a. §22-Leibrenten, §24a S.2); Rechenlogik der Regel auf den bereits erfassten Einkünften, keine eigene Abfrage."
+
+  # -- § 34 Abs. 3 Ermäßigter Durchschnittssatz (p34_3, Stufe-2a): die 3 Modul-Inputs sind RING-DERIVED --
+  # (Antrag/Eligibility sind eigene Flag-Felder; die Bemessungs-Inputs berechnet die Ring-Naht, keine Abfrage).
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    signatur_slot: ao_einkuenfte
+    grund: "= rentner_veraeusserungsgewinn (§16-vg, bereits gebunden); die Ring-Naht reicht den netto-vg (nach §16 Abs.4-Freibetrag) durch, keine eigene Abfrage. Fail-closed auf ao > 5 Mio (Überschuss = §34 Abs.1-Fünftel, Stufe-2b)."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    signatur_slot: est_gesamt_zzgl_progression
+    grund: "Abgeleitet = tarifliche ESt auf das volle zvE (Ring-berechnet, catala_gesamt_tarifliche); §32b-Progressionsvorbehalt-Addend=0 solange kein §32b-Input ring-verdrahtet (grep-belegt 2026-07-19, system-weite Lücke base+Fünftel+Abs.3); kein Laien-Feld."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    signatur_slot: bemessungsgrundlage_durchschnitt
+    grund: "Abgeleitet = volles zvE zzgl Progressionsvorbehalt (Ring-berechnet, catala_gesamt_zve; §34 Abs.3 S.2 „gesamten zvE zzgl Progression“, NICHT 5Mio-gekappt); Progressions-Addend=0 (s. est_gesamt_zzgl_progression); kein Laien-Feld."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    geltungsbedingung: ao_einkuenfte_abs2_nr1
+    grund: "Definitorisch = die außerordentlichen Einkünfte sind Veräußerungsgewinne iSd §34 Abs.2 Nr.1 (§16-vg, rentner_veraeusserungsgewinn); die Ring-Naht speist genau diese als ao, keine eigene Abfrage."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    geltungsbedingung: tarifwerte_sind_p2_ergebnis
+    grund: "Kontrakt: est_gesamt_zzgl_progression + bemessungsgrundlage_durchschnitt sind Ergebnisse des §2-Tarifs (Ring-berechnet, catala_gesamt_tarifliche/_zve), keine Laien-Eingabe. Die Dekomposition boundary-reviewt der Instructor bei der Ring-Naht."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    geltungsbedingung: bemessungsgrundlage_positiv
+    grund: "Ring-Guard: bemessungsgrundlage_durchschnitt > 0 (Div-by-Zero-Schutz; ao>0 ⟹ zvE>0). Kein Laien-Feld; die Ring-Naht ruft das Modul nur bei positiver Basis."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    geltungsbedingung: persoenliche_voraussetzung_erfuellt
+    grund: "Disjunktion (Alter>=55 [DERIVE aus geburtsjahr] ODER dauernd_berufsunfaehig) — kein Einzelfeld-Gate möglich (relevanz() schließt nur UND-verknüpft auf EINEM Feld aus, wäre für den 55-Jährigen-ohne-Berufsunfähigkeit falsch-negativ). Die OR/AND/NOT-Eligibility lebt in api.py._abs3_eligible() (Chooser Abs.1-vs-Abs.3); dauernd_berufsunfaehig bleibt als reines Slot-Feld gebunden (kein Gate). Fund/Fix: reports/adjudikation/gate_screening_polaritaet_2026-08-12.md."
+  - regel_id: p34_3_ermaessigter_durchschnittssatz
+    geltungsbedingung: einmal_im_leben
+    grund: "War bis 2026-08-12 als Gate an ermaessigung_einmal_genutzt gebunden (bestätigt False schloss den Erstantragsteller-Normalfall — die große Mehrheit — aus). api.py._abs3_eligible() liest den Rohwert direkt (NOT ermaessigung_einmal_genutzt), keine Gate-Kopplung nötig; ermaessigung_einmal_genutzt bleibt als reines Slot-Feld gebunden. Fund/Fix: reports/adjudikation/gate_screening_polaritaet_2026-08-12.md."
+
+  # -- EÜR § 4 Abs. 3 (p4_3_gewinn, Stufe 2-II): Geltungsbedingungen des Gewinn-Kerns --
+  # Die vorberechneten net-Komponenten (betriebseinnahmen/-ausgaben) erfüllen die BE/BA-Reinheits-
+  # Bedingungen (§ 4 Abs. 3 S. 2 durchlaufende Posten, § 12 Nr. 1/3 nicht-abziehbar) definitorisch; die
+  # Einkunftsart-Weiche (§ 15 Abs. 2 / § 18 Abs. 1) läuft über gewinn_betriebsart (Klasse-f: gewerbe/
+  # selbständig; land_forst ausgeschlossen via dev-1s luf_euer_offen-Guard). Kein eigenes Laien-Feld.
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: nicht_buchfuehrungspflichtig_und_keine_buecher
+    grund: "§ 4 Abs. 3 S. 1 Voraussetzung (keine Buchführungspflicht + keine freiwilligen Bücher): Annahme des EÜR-MVP — wer die Einnahmenüberschussrechnung wählt, erfüllt sie. Die Bilanzierungs-Abgrenzung (§ 4 Abs. 1/§ 5) ist benannter Nachtrag."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: durchlaufende_posten_ausgeschieden
+    grund: "§ 4 Abs. 3 S. 2: die betriebseinnahmen/-ausgaben sind als net-Eingabe bereits um durchlaufende Posten bereinigt (definitorisch, kein eigenes Feld)."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: keine_lebensfuehrungskosten_p12_nr1
+    grund: "§ 12 Nr. 1 S. 1: die sonstige_betriebsausgaben-Eingabe ist betrieblich veranlasst (§ 4 Abs. 4); Lebensführungs-/Haushaltskosten sind ausgeschieden (net-Eingabe)."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: keine_repraesentation_gemischt_p12_nr1s2
+    grund: "§ 12 Nr. 1 S. 2: gemischte Repräsentationsaufwendungen sind aus der Betriebsausgaben-Eingabe ausgeschieden (net-Eingabe)."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: keine_personensteuern_p12_nr3
+    grund: "§ 12 Nr. 3: Personensteuern (Einkommensteuer u. Ä.) sind keine Betriebsausgabe und in der Eingabe nicht enthalten (net-Eingabe)."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: einkunftsart_gewerbe_p15_abs2
+    grund: "§ 15 Abs. 2 (Einkunftsart Gewerbe): über gewinn_betriebsart='gewerbe' (Klasse-f) abgebildet; der EÜR-Gewinn wird nur für gewerbe/selbständig gerechnet. § 15 Abs. 3 Abfärbung = benannter Nachtrag."
+  - regel_id: p4_3_gewinn
+    geltungsbedingung: einkunftsart_selbstaendige_arbeit_p18_abs1
+    grund: "§ 18 Abs. 1 (Einkunftsart selbständige Arbeit): über gewinn_betriebsart='selbstaendig' (Klasse-f); dieselbe EÜR-Grundmechanik. land_forst (§ 13) ausgeschlossen via luf_euer_offen-Guard (dev-1)."
+
+  # -- § 10d Verlustvortrag (p10d_2): abgeleitete Slots + Festgestellt-GB --
+  - regel_id: p10d_2_verlustvortrag_abzug
+    signatur_slot: gesamtbetrag_einkuenfte
+    grund: "Abgeleitet = der Gesamtbetrag der Einkünfte (§ 2 Abs. 3), im Ring bereits berechnet (GdE-Zwilling); keine eigene Abfrage."
+  - regel_id: p10d_2_verlustvortrag_abzug
+    signatur_slot: zusammenveranlagung
+    grund: "Abgeleitet aus veranlagung=='zusammen' (§ 26b) → Sockel 2 Mio statt 1 Mio; keine eigene Abfrage (veranlagung ist schon gebunden)."
+  - regel_id: p10d_2_verlustvortrag_abzug
+    geltungsbedingung: verlustvortrag_bestand_festgestellt
+    grund: "verlustvortrag_bestand ist der zum Vorjahresschluss gesondert festgestellte verbleibende Verlustvortrag (§ 10d Abs. 4, State-Input); die Fortschreibung selbst ist nicht Gegenstand der Regel. deckt_ab „Nicht ausgeglichene negative Einkünfte, die nicht nach Absatz 1 abgezogen worden sind“ (§ 10d Abs. 2 S. 1)."

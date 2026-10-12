@@ -60,7 +60,8 @@ pub fn doctest_registry() -> Option<bindung::Registry> {
 }
 
 /// Die Registry, ueber die Python seine eingefrorenen Orakel-Antworten berechnet hat
-/// (`produkt/bindung`, nicht `rust/bindung/daten`). Nur die Tests, die eine Fixture-Antwort von
+/// (der eingefrorene Stand von `produkt/bindung` in `rust/fixtures/python_bindung_2dd056a6`, nicht
+/// `rust/bindung/daten`; E4 des Loeschplans). Nur die Tests, die eine Fixture-Antwort von
 /// Python vergleichen (`orakel_werte`), nehmen sie: dieselbe Eingabe wie das Fixture, auch wenn
 /// `rust/bindung/daten` ein Feld mehr kennt. Faellt mit den Python-Fixtures weg (Weg B voll,
 /// Stufe 2). Nicht Teil der API.
@@ -71,6 +72,7 @@ pub fn doctest_registry() -> Option<bindung::Registry> {
 #[doc(hidden)]
 #[must_use]
 pub fn python_orakel_registry() -> Option<bindung::Registry> {
-    let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../produkt/bindung");
+    let pfad = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../fixtures/python_bindung_2dd056a6");
     bindung::lade_registry(&pfad).ok()
 }

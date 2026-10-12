@@ -233,12 +233,12 @@ async fn content_length_ausserhalb_von_u64_ist_413() {
     }
 }
 
-/// `C057`: `GET /` und `GET /static/...` liefern nur Dateien unterhalb von `produkt/haut/static`.
+/// `C057`: `GET /` und `GET /static/...` liefern nur Dateien unterhalb von `rust/api/static`.
 #[tokio::test]
 async fn statische_dateien_nur_unterhalb_von_static() {
     let d = dienst();
     let wurzel = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let index = std::fs::read(wurzel.join("produkt/haut/static/index.html")).unwrap();
+    let index = std::fs::read(wurzel.join("rust/api/static/index.html")).unwrap();
     let a = sende(&d, "GET", "/", &[], None).await;
     assert_eq!(a.status, 200);
     assert_eq!(a.kopf["content-type"], "text/html; charset=utf-8");
