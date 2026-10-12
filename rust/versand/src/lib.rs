@@ -237,6 +237,8 @@ fn bereinigt(text: &str, max: usize) -> String {
 /// assert!(versand::servermeldungen("kein xml").is_empty());
 /// ```
 #[must_use]
+// ponytail: Aufbau nur aus der ERiC-Dokumentation, an einer echten Ablehnung ungemessen; bei einer
+// Abweichung hier anpassen oder `EricGetErrormessagesFromXMLAnswer` ueber FFI rufen (ericapi.h).
 pub fn servermeldungen(serverantwort_xml: &str) -> Vec<Servermeldung> {
     let Ok(dok) = roxmltree::Document::parse(serverantwort_xml) else {
         return Vec::new();
