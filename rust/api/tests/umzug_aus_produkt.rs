@@ -203,6 +203,7 @@ fn fehlt_die_neue_gilt_die_alte_und_das_fehlerlog_warnt() {
     k.melde_veraltete_nutzerdatei(false);
     let log = u.fehlerlog();
     assert!(log.contains("server.nutzerdatei_veraltet"), "{log}");
+    assert!(log.contains("WARNING"), "Stufe Warnung, nicht Fehler: {log}");
 }
 
 /// `make -n backup` im Wegwerf-Verzeichnis `cwd`: der `tar`-Befehl, in dem `-C <dir> <datei>` die Nutzerdatei nennt.
