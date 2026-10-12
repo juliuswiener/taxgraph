@@ -20,8 +20,8 @@
 //! und der Fall mass etwas anderes. Alle anderen Faelle werden NICHT bewertet, nur gedruckt: sie sind das Messergebnis.
 //!
 //! KEIN SKIP. Der Test ist `#[ignore]` (`ERiC` und die Hersteller-ID gehoeren nicht auf einen Runner, Entscheid Julius 2026-09-12).
-//! Mit `--ignored` ist jede fehlende Voraussetzung ein `panic`. Aufruf (die ID kommt aus dem Prozess-Env, `mit_id.sh` liest sie aus
-//! der gitignorierten `.env`): `mit_id.sh cargo test -p bescheid --test checkest_privatverkauf_spike -- --ignored --nocapture`.
+//! Mit `--ignored` ist jede fehlende Voraussetzung ein `panic`. Aufruf: `make checkest-rust` (laedt die ID aus der gitignorierten
+//! `.env`); die CI prueft nur die Verdrahtung (`checkest_verdrahtung.rs`).
 //!
 //! KEIN GEHEIMNIS IN DER AUSGABE. Gedruckt werden `rc`, Klasse und die `<Text>`-Meldungen, die ID darin ersetzt durch `<ID>`; nie das
 //! XML, nie der Rumpf der `ERiC`-Antwort, nie die ID.
@@ -57,7 +57,7 @@ type Kz = (&'static str, Value);
 fn hersteller_id() -> String {
     let id = std::env::var("ELSTER_HERSTELLER_ID").unwrap_or_default();
     let id = id.trim();
-    assert!(!id.is_empty(), "ID fehlt: ELSTER_HERSTELLER_ID ist nicht gesetzt (mit_id.sh liest sie aus der .env)");
+    assert!(!id.is_empty(), "ID fehlt: ELSTER_HERSTELLER_ID ist nicht gesetzt (make checkest-rust laedt sie aus der .env)");
     assert!(
         id != PLATZHALTER_ID && !id.chars().all(|c| c == '0'),
         "ID ist der gesperrte Platzhalter: ERiC gaebe rc=610301202 und prueft nichts"
@@ -305,7 +305,7 @@ fn auslassung_und_abhaengigkeit(m: &mut Messplatz, praefix: &str, muster: &[Kz],
 
 /// Die Anlage SO gegen das echte `checkESt`: Pflicht-Kz-Liste fuer Grundstueck und anderes Wirtschaftsgut.
 #[test]
-#[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit mit_id.sh (Spike AK0)"]
+#[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make checkest-rust` (laedt die ID aus der .env; Spike AK0)"]
 fn privatverkauf_kz_pflichtliste_gegen_echtes_checkest() {
     let id = voraussetzungen();
     let (dekl, felder) = sauber();

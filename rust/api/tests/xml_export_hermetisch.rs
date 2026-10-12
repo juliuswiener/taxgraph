@@ -278,7 +278,7 @@ fn die_datei_hat_die_bytes_von_einreichen_und_den_testmerker() {
 /// Kontrolle mit einer beschädigten Kopie muss `rc=610001002` melden, sonst belegte das Grün nichts.
 /// Nur `ERIC_VALIDIERE`, lokal, kein Netz, kein Zertifikat.
 #[test]
-#[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `cargo test -p api --test xml_export_hermetisch -- --ignored`"]
+#[ignore = "braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make checkest-rust` (laedt die ID aus der .env)"]
 fn die_geschriebene_datei_besteht_checkest() {
     assert!(
         std::env::var("ELSTER_HERSTELLER_ID").is_ok_and(|v| !v.trim().is_empty() && v != "74931"),
