@@ -427,13 +427,9 @@ def main() -> None:
         if not line:
             continue
         req = json.loads(line)
-        if str(req.get("fn", "")).startswith("wert."):
-            # lazy wie unten: tools/parity/wert_oracle.py (domain::PyWert, reines CPython, kein Produktmodul)
-            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-            import wert_oracle  # noqa: E402
-            sys.stdout.write(json.dumps(wert_oracle.handle(req), ensure_ascii=False) + "\n")
-            sys.stdout.flush()
-            continue
+        # L1 (2026-10-12): die Praefixe wert., konsistenz., intervall., elster., feld_kennung., zeichensatz., schritt8.
+        # und flow. bedienten nur rust/parity; ihre Module sind geloescht (Verlauf: git show 37269912:tools/parity/).
+        # Eine Anfrage mit einem dieser Praefixe endet unten in DISPATCH mit KeyError.
         if str(req.get("fn", "")).startswith("runner."):
             sys.stdout.write(json.dumps(_runner(req)) + "\n")
             sys.stdout.flush()
@@ -442,53 +438,11 @@ def main() -> None:
             sys.stdout.write(json.dumps(_interview(req), ensure_ascii=False) + "\n")
             sys.stdout.flush()
             continue
-        if str(req.get("fn", "")).startswith(("konsistenz.", "intervall.")):
-            # lazy: die bare-Modulnamen aus produkt/konsistenz|unsicherheit nur laden, wer sie ruft
-            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-            import oracle_konsistenz  # noqa: E402
-            sys.stdout.write(json.dumps(oracle_konsistenz.antwort(req), ensure_ascii=False) + "\n")
-            sys.stdout.flush()
-            continue
-        if str(req.get("fn", "")).startswith("elster."):
-            # lazy wie oben: tools/parity/elster_oracle.py (rust/elster, Schritt 6)
-            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-            import elster_oracle  # noqa: E402
-            sys.stdout.write(json.dumps(elster_oracle.handle(req), ensure_ascii=False) + "\n")
-            sys.stdout.flush()
-            continue
-        if str(req.get("fn", "")).startswith("feld_kennung."):
-            # lazy wie oben: tools/parity/feld_kennung_oracle.py (die Regel fuer eine gueltige feld_id)
-            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-            import feld_kennung_oracle  # noqa: E402
-            sys.stdout.write(json.dumps(feld_kennung_oracle.handle(req), ensure_ascii=False) + "\n")
-            sys.stdout.flush()
-            continue
-        if str(req.get("fn", "")).startswith("zeichensatz."):
-            # lazy wie oben: tools/parity/zeichensatz_oracle.py (ELSTER-Zeichensatz, Auflage Z)
-            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-            import zeichensatz_oracle  # noqa: E402
-            sys.stdout.write(json.dumps(zeichensatz_oracle.handle(req), ensure_ascii=False) + "\n")
-            sys.stdout.flush()
-            continue
         if str(req.get("fn", "")).startswith("bescheid."):
             # lazy wie oben: tools/parity/bescheid_oracle.py (rust/bescheid, Schritt 7)
             sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
             import bescheid_oracle  # noqa: E402
             sys.stdout.write(json.dumps(bescheid_oracle.handle(req), ensure_ascii=False) + "\n")
-            sys.stdout.flush()
-            continue
-        if str(req.get("fn", "")).startswith("schritt8."):
-            # lazy wie oben: tools/parity/schritt8_oracle.py (rust/auth, rust/llm, rust/eingang)
-            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-            import schritt8_oracle  # noqa: E402
-            sys.stdout.write(json.dumps(schritt8_oracle.handle(req), ensure_ascii=False) + "\n")
-            sys.stdout.flush()
-            continue
-        if str(req.get("fn", "")).startswith("flow."):
-            # lazy wie oben: tools/parity/flow_oracle.py (rust/api/src/flow.rs, Schritt 9c/0e)
-            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-            import flow_oracle  # noqa: E402
-            sys.stdout.write(json.dumps(flow_oracle.handle(req), ensure_ascii=False) + "\n")
             sys.stdout.flush()
             continue
         try:
