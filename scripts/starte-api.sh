@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Startet den Rust-Dienst `taxgraph-api` in einem EIGENEN Datenverzeichnis.
 #
-# Warum dieses Skript im Repo liegt (und nicht in /tmp): bis heute startete `taxgraph-api`
-# nur ein Parity-Test (`rust/parity/tests/api_http_paritaet.rs`). Es gab kein Ziel, mit dem
+# Warum dieses Skript im Repo liegt (und nicht in /tmp): bis dahin startete `taxgraph-api`
+# nur ein Parity-Test (`rust/parity/tests/api_http_paritaet.rs`, seit L1 geloescht, Verlauf
+# `git show 37269912:rust/parity/tests/api_http_paritaet.rs`). Es gab kein Ziel, mit dem
 # ein Mensch den Dienst hochzieht und eine echte Anfrage dagegen stellt. Ein Startvorgang,
 # den nur die Testsuite kennt, ist kein Nutzerpfad.
 #
@@ -11,8 +12,8 @@
 # Falldateien. Dieses Skript setzt sie IMMER auf ein Verzeichnis unter `.start/` im Repo-Wurzel
 # (gitignored), damit der Start nichts anfasst, was ihm nicht gehört.
 #
-# Die Umgebung ist dieselbe, die der Parity-Test setzt (`starte()`, Zeile 120-145), damit
-# beide Wege denselben Dienst beschreiben.
+# Die Umgebung ist dieselbe, die der Parity-Test setzte (`starte()`, Zeile 120-145 im Stand `37269912`),
+# damit beide Wege denselben Dienst beschrieben.
 set -euo pipefail
 
 WURZEL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

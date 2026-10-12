@@ -326,10 +326,8 @@ jobs:
   # Readme); ohne das Programm liefert derselbe Aufruf `Start` ("No such file or directory") und
   # der Doctest ist rot. Nachgemessen 2026-10-02 im Nachbau des Runners (ubuntu:24.04).
   #
-  # Die Tarif-Paritaet gegen tools/parity/oracle.py (rust/parity/tests/tarif_paritaet.rs)
-  # BRAUCHT den Opam-Switch + `produkt/` + `oracle/gettsim/assemble_catala.sh` und ist deshalb
-  # standardmaessig ein No-op (sie erkennt PARITY!=1 und skippt sich selbst, gruen). Lokal
-  # erzwingen: `PARITY=1 make rust-test` bzw. `PARITY=1 cargo test -p parity`.
+  # Die Vergleichstests gegen Python (rust/parity, nur mit PARITY=1) sind seit L1 (2026-10-12)
+  # geloescht; hier liefen sie ohnehin nur als No-op. Verlauf: `git show 37269912:rust/parity/`.
   rust:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -384,7 +382,7 @@ jobs:
       # So verdeckte `parity --lib` am 2026-10-02 den roten eingang-Doctest (Lauf 36985004342:
       # kein einziges "Doc-tests" im Log). Der Job-Status bleibt rot, sobald ein Ziel rot ist
       # (exit 101); neu ist nur, dass ein Lauf ALLE roten Ziele zeigt statt eines je Push.
-      - name: cargo test (Tarif-Paritaet ohne PARITY=1 -- no-op, gruen)
+      - name: cargo test
         run: cd rust && cargo test --no-fail-fast
         env:
           TAXGRAPH_OHNE_XSD: "1"

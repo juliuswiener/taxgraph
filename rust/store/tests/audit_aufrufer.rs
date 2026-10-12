@@ -381,9 +381,6 @@ fn quelldateien(wurzel: &Path) -> Vec<PathBuf> {
         .collect();
     crates.sort();
     for c in crates {
-        if c.file_name().is_some_and(|n| n == "parity") {
-            continue;
-        }
         sammle(&c.join("src"), &mut aus);
     }
     aus
