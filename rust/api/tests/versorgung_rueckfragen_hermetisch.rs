@@ -247,6 +247,36 @@ async fn die_fragen_des_ehegatten_stehen_nur_bei_zusammenveranlagung_mit_bezug()
     assert_eq!(rueckfragen(&d).await, (vec![], vec![]), "Bezug des Ehegatten 0");
 }
 
+/// AK3, der Wortlaut: die Frage des Ehegatten nennt den Ehe-/Lebenspartner, die von Person A spricht den Nutzer an. Ohne das beantwortet
+/// der Nutzer die Frage fuer die falsche Person, und die Sperre trifft die andere (das Ja gilt nur unter dem Feld seiner Frage).
+#[tokio::test]
+async fn die_fragetexte_nennen_die_person_um_die_es_geht() {
+    let zusammen = [("veranlagung", json!("zusammen"))];
+    let d = akte("rentner.json", &zusammen, &mit(mit(mit(partner_kap(), mit(lohn_a(30_000), lohn_b(20_000))), bezug_a(30_000, true)), bezug_b(20_000))).await;
+    let (status, antwort) = sende(&d, "GET", "/fall/vs/fragen", None).await;
+    assert_eq!(status, 200, "GET /fragen: {antwort}");
+    let text = |feld: &str| {
+        antwort["fragen"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|q| q["feld_id"] == json!(feld))
+            .unwrap_or_else(|| panic!("{feld}: die Frage steht nicht in der Fragenliste"))["fragetext_laie"]
+            .as_str()
+            .unwrap()
+            .to_owned()
+    };
+    for feld in FRAGEN_A {
+        let t = text(feld);
+        assert!(t.contains(" du ") || t.contains("deine"),"{feld}: spricht den Nutzer nicht an: {t}");
+        assert!(!t.contains("Partner"), "{feld}: nennt den Partner: {t}");
+    }
+    for feld in FRAGEN_B {
+        let t = text(feld);
+        assert!(t.contains("Ehe-/Lebenspartner"), "{feld}: nennt den Ehe-/Lebenspartner nicht: {t}");
+    }
+}
+
 /// AK4, Person A, der ganze Weg auf der Akte `gesamt.json`: Bezug angeben (30.000 EUR, Beginn 2020: die Zeilen 11 bis 13 tragen ihn), die
 /// Frage sehen. Ohne Antwort und mit Nein sperrt `POST /einreichen` nicht (nicht 409 `deklaration_unvollstaendig`). Mit Ja auf EINE Frage
 /// antwortet es 409, die Liste nennt genau dieses Feld, und der Grund nennt Zeile, Sperre und Formular. Auf Nein geaendert, ist die

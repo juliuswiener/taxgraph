@@ -3408,6 +3408,14 @@ mod tests {
             .into(),
         };
         let b = Zustand::Bestaetigt;
+        // Die Nummer der Lohnsteuerbescheinigung steht im Text: der Nutzer sucht sie auf seinem Ausdruck.
+        for (text, nummer) in [
+            (super::VERSORGUNG_SPERRE_STERBEGELD, "(Nummer 32 der Lohnsteuerbescheinigung)"),
+            (super::VERSORGUNG_SPERRE_MEHRERE_JAHRE, "(Nummer 9 der Lohnsteuerbescheinigung)"),
+            (super::VERSORGUNG_SPERRE_NICHT_GANZJAEHRIG, "(Nummer 31 der Lohnsteuerbescheinigung)"),
+        ] {
+            assert!(text.contains(nummer), "der Text nennt {nummer} nicht: {text}");
+        }
         let faelle = [
             ("versorgung_zweiter_bezug", super::VERSORGUNG_SPERRE_ZWEITER_BEZUG),
             ("versorgung_sterbegeld", super::VERSORGUNG_SPERRE_STERBEGELD),
