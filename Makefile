@@ -40,7 +40,7 @@ unit:
 ## automatisch mit erfasst — der alte "audit.jsonl"-Operand traf nie (er lag relativ zu
 ## FAELLE_ROOT statt zu FAELLE_ROOT/faelle, Review 2026-08-17). users.json (produkt/auth/) MUSS
 ## mit ins Archiv — ohne sie zeigen restaurierte Faelle nach einem Umzug auf Konten, die es dort
-## nicht gibt, und die fail-closed Zugriffspruefung (_fall_owner_check) sperrt sie dauerhaft.
+## nicht gibt, und die fail-closed Zugriffspruefung (_fall_owner_check) sperrt sie dauerhaft. AUTH_USERS waehlt wie Konfig::nutzerdatei (E3 des Loeschplans): $(FAELLE_ROOT)/users.json, fehlt sie, gilt produkt/auth/users.json, falls es sie gibt (sonst brache backup ab); der Rueckgriff faellt mit L3.
 ## FAELLE_ROOT/AUTH_USERS/BACKUP_DIR sind per Kommandozeile overridebar (Pflicht fuer den
 ## Round-Trip-Test in tests/test_backup_restore_roundtrip.py, der NIE die echten Pfade anfasst).
 ## BACKUP_DIR liegt NEBEN dem Checkout, nicht unter $(HOME) (Nutzer-Vorgabe: nichts im Home anlegen;
@@ -59,7 +59,7 @@ unit:
 ## also stumm. `?=` bleibt: FAELLE_ROOT per Kommandozeile schlaegt alle drei Stufen.
 BACKUP_DIR  ?= $(abspath $(CURDIR)/../taxgraph-backups)
 FAELLE_ROOT ?= $(if $(TAXGRAPH_DATEN),$(TAXGRAPH_DATEN),$(if $(XDG_DATA_HOME),$(XDG_DATA_HOME),$(HOME)/.local/share)/taxgraph)
-AUTH_USERS  ?= produkt/auth/users.json
+AUTH_USERS  ?= $(or $(wildcard $(FAELLE_ROOT)/users.json),$(wildcard produkt/auth/users.json),$(FAELLE_ROOT)/users.json)
 
 backup:
 	mkdir -p $(BACKUP_DIR)

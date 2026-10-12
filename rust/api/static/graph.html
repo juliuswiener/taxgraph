@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TaxGraph — Abhängigkeits-Übersicht</title>
+  <link rel="stylesheet" href="/static/graph.css">
+</head>
+<body>
+  <main id="graph-app">
+    <header>
+      <h1>Regel-Übersicht</h1>
+      <p class="hinweis">Welche Regeln bei deinem aktuellen Stand greifen — Feld anklicken zeigt die Herkunft.</p>
+      <div class="legende">
+        <span class="status-badge status-relevant">relevant</span>
+        <span class="status-badge status-unentschieden">unentschieden</span>
+        <span class="status-badge status-ausgeschlossen">ausgeschlossen</span>
+      </div>
+    </header>
+    <section id="regeln"></section>
+    <pre id="warum-panel" class="warum" hidden></pre>
+  </main>
+  <script src="/static/graph.js"></script>
+</body>
+</html>

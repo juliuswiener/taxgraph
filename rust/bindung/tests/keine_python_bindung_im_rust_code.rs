@@ -10,7 +10,8 @@
 //! Ausnahmen stehen in [`AUSNAHMEN`] mit Grund und mit der erlaubten Trefferzahl. Eine Ausnahme
 //! gilt nicht fuer die ganze Datei: ein Treffer mehr als erlaubt ist ein Fehler (sonst bliebe ein
 //! Rueckfall in einer freigestellten Datei unbemerkt), ein Treffer weniger auch (die Liste
-//! schrumpft nur bewusst; Stufe 2 leert sie, wenn die Python-Fixtures eingefroren sind). Eine
+//! schrumpft nur bewusst; E4 des Loeschplans nahm 2026-10-12 die drei Leser der eingefrorenen
+//! Python-Antworten heraus, sie lesen jetzt `rust/fixtures/python_bindung_2dd056a6`). Eine
 //! Ausnahme ohne Obergrenze (`erlaubt: None`) muss mindestens einen Treffer behalten; die einzige
 //! solche Ausnahme, `parity/`, ist mit L1 (2026-10-12) gefallen, der Mechanismus bleibt.
 #![allow(
@@ -51,21 +52,6 @@ const AUSNAHMEN: &[Ausnahme] = &[
         pfad: "api/tests/daten_im_dienst.rs",
         erlaubt: Some(1),
         grund: "Attrappe: legt das Python-Verzeichnis nur an, um zu belegen, dass der Dienst es nicht ansieht",
-    },
-    Ausnahme {
-        pfad: "interview/src/lib.rs",
-        erlaubt: Some(1),
-        grund: "nur python_orakel_registry: die Eingabe der eingefrorenen Python-Antworten (interview, konsistenz); Stufe 2",
-    },
-    Ausnahme {
-        pfad: "eingang/tests/orakel_werte.rs",
-        erlaubt: Some(1),
-        grund: "vergleicht mit Pythons eingefrorener Antwort ueber produkt/bindung; Stufe 2",
-    },
-    Ausnahme {
-        pfad: "intervall/tests/orakel_werte.rs",
-        erlaubt: Some(1),
-        grund: "vergleicht mit Pythons eingefrorener Antwort (368 Felder) ueber produkt/bindung; Stufe 2",
     },
 ];
 

@@ -1,0 +1,397 @@
+# Bindungstabelle — §33a EStG (Unterhalt Abs.1 + Ausbildungsfreibetrag Abs.2).
+# §33a mindert GdE ("vom Gesamtbetrag der Einkünfte abgezogen" — KEIN §33-Agb,
+# keine zumutbare Eigenbelastung → sonstige_abzuege_vom_einkommen, wie §10d).
+# 4 Felder, OPTIONAL (absent→0→over-tax-safe). Kz null+MVP.
+# Task §33a-Stufe-1, Stand 2026-07-21.
+version: 1
+scheibe: "§33a EStG Unterhalt + Ausbildungsfreibetrag (gesamt + rentner)"
+
+bindungen:
+  - feld_id: p33a_unterhalt_aufwendungen
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: aufwendungen}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viel hast du im vergangenen Jahr für Unterhalt und Berufsausbildung der unterhaltsberechtigten Person tatsächlich gezahlt?"
+    hilfe_kurz: "Nur tatsächlich geleistete Zahlungen an die unterhaltsberechtigte Person (z. B. monatliche Überweisungen, Mietzahlungen direkt). Maximal abziehbar ist der Grundfreibetrag (~12.348€, plus KV/PV-Beiträge)."
+    beispielwert: 1000000
+    herkunft_slots: null
+    # E10/ESt1A_U/Ang_HH_unt_P_Unt_Leist/AW_U/U_Ztr — "Höhe der Unterhaltszahlung
+    # – ohne Bargeldzahlung – (einschließlich Beiträge zu Basis-Kranken- und
+    # Pflegeversicherungen laut Zeile E0124401)". ESt1A_U ist § 33a (unterstützte Person,
+    # Kindergeld-Anspruch, Haushaltszugehörigkeit) — NICHT Realsplitting/Anlage U, das liegt
+    # unter SO/Unt_Leist. Belegt 2026-08-05.
+    elster_kz: E0120103
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "Aufwendungen fuer den Unterhalt und eine etwaige Berufsausbildung"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+
+  # ================= Angaben zur unterstuetzten Person und ihrem Haushalt =================
+  # Bis 2026-08-19 trug die Bindung NUR die Betraege. Gemessen mit p33a_unterhalt_aufwendungen
+  # allein: rc=610001002 mit FUENF Beanstandungen auf einmal — mehr als jede andere Luecke:
+  #   "Es muss mindestens eine unterstuetzte Person ... erklaert werden"
+  #   "... ist bei jedem Haushalt die Adresse des Haushalts ... zu erklaeren"
+  #   "... muss die Anzahl der Personen, die zum Haushalt gehoeren, erklaert werden"
+  #   "Bitte geben Sie auch den Unterhaltszeitraum ... an"
+  #   "... sind die Hoehe der Unterhaltszahlung und der Zeitraum ... gemeinsam anzugeben"
+  #
+  # SIEBEN NEUE FRAGEN, und keine einzige davon ableitbar: wen jemand unterstuetzt, wo diese
+  # Person lebt, wie viele im Haushalt sind und in welchem Zeitraum gezahlt wurde, weiss nur der
+  # Nutzer. Das ist der Preis dafuer, dass Unterhalt an Angehoerige ueberhaupt einreichbar wird —
+  # ohne sie kommt die Erklaerung zurueck, egal wie richtig der Betrag ist.
+  #
+  # Sie erscheinen nur, wenn die Regel relevant ist, also wenn ueberhaupt Unterhalt eingetragen
+  # wurde. Wer keinen zahlt, sieht keine davon.
+  #
+  # MVP-GRENZE: EINE unterstuetzte Person, EIN Haushalt. Das Schema erlaubt mehr
+  # (Ang_HH_unt_P_Unt_Leist maxOccurs=99, darunter U_Ztr maxOccurs=12 und Ang_Unt_Pers
+  # maxOccurs=9). Fuer eine Instanz reicht der gewoehnliche Schreibpfad: _einhaengen() laeuft den
+  # Pfad segmentweise und legt fehlende Container schlicht an, unabhaengig von der Tiefe. Die
+  # kz_path[:2]-Ableitung in elster_xml.py:532 greift nur fuer echte Mehrfach-Gruppen ab Index 2
+  # und bleibt hier unberuehrt — geprueft, nicht vermutet.
+  #
+  # signatur_slot zeigt bei allen sieben ins Leere: p33a_unterhalt fuehrt zwar drei
+  # Geltungsbedingungen, aber alle drei betreffen die Rechenmechanik (Grundfreibetrag als
+  # Norm-Konstante, Schonbetrag 624, Netto-Einkuenfte). An einer Haushaltsadresse behauptete
+  # jede davon einen Zusammenhang, den es nicht gibt.
+  - feld_id: p33a_person_name
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzte_person_name}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wen hast du unterstützt? (Vor- und Nachname)"
+    hilfe_kurz: "Die Person, für die du Unterhalt gezahlt hast — zum Beispiel ein Elternteil oder ein Kind ohne Kindergeldanspruch."
+    beispielwert: "Maier, Erika"
+    herkunft_slots: null
+    elster_kz: E0120201
+    elster_kz_grund: "E0120201 [ESt1A_U/Ang_HH_unt_P_Unt_Leist/Ang_Unt_Pers/Allg/Persoenl], XSD-Label 'Name, Vorname'."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_person_beruf_familienstand
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzte_person_beruf}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Was macht diese Person beruflich, und ist sie verheiratet?"
+    hilfe_kurz: "Zum Beispiel: Rentnerin, verwitwet. Oder: ohne Beruf, ledig. Das Finanzamt fragt beides in einer Zeile."
+    beispielwert: "Rentnerin, verwitwet"
+    herkunft_slots: null
+    elster_kz: E0120202
+    elster_kz_grund: "E0120202 [.../Ang_Unt_Pers/Allg/Persoenl], XSD-Label 'Beruf, Familienstand' — ein Feld fuer beides, so fragt der Vordruck."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_person_geburtsdatum
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzte_person_geburtsdatum}
+    typ: datum
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann ist diese Person geboren? (Tag, Monat, Jahr)"
+    hilfe_kurz: "Format TT.MM.JJJJ (amtliches ELSTER-Format, mit Punkten und vierstelligem Jahr)."
+    beispielwert: "05.05.1955"
+    herkunft_slots: null
+    elster_kz: E0120203
+    elster_kz_grund: "E0120203 [.../Ang_Unt_Pers/Allg/Persoenl], XSD-Label 'Geburtsdatum', Typ DatumTTpMMpJJJJ — volles Datum, anders als die Zeitraum-Felder unten."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_haushalt_anschrift
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: haushalt_anschrift}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wo lebt diese Person? (Straße, Postleitzahl, Ort, bei Ausland auch der Staat)"
+    hilfe_kurz: "Die Anschrift des Haushalts, in dem die unterstützte Person gelebt hat."
+    beispielwert: "Musterstr. 5, 12345 Musterstadt"
+    herkunft_slots: null
+    elster_kz: E0120101
+    elster_kz_grund: "E0120101 [ESt1A_U/Ang_HH_unt_P_Unt_Leist/HH_unt_P], XSD-Label 'Anschrift dieses Haushaltes'."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_haushalt_personenzahl
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: haushalt_personenzahl}
+    typ: int
+    einheit: null
+    bereich: {min: 1, max: 20, grund: "Sanity-Bound: mindestens die unterstuetzte Person selbst. Keine gesetzliche Obergrenze, 20 ist eine Plausibilitaetsgrenze."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele Menschen lebten in diesem Haushalt insgesamt?"
+    hilfe_kurz: "Die unterstützte Person mitgezählt. Wenn sie allein lebt: 1."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: E0120108
+    elster_kz_grund: "E0120108 [.../HH_unt_P], XSD-Label 'Anzahl der Personen, die in dem Haushalt laut Zeile ... lebten', Typ GanzzahlNichtNeg."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  # Beide Zeitraum-Felder sind typ text, NICHT datum: der XSD-Typ ist
+  # DatumBereichTTpMMbTTpMM (E10-2025.xsd:58-64) mit dem Muster TT.MM-TT.MM — zwei Teildaten
+  # ohne Jahr, durch Bindestrich verbunden. Der Store prueft typ "datum" fail-closed gegen
+  # ^\d{2}\.\d{2}\.\d{4}$ (store.py:190) und wiese "01.01-31.12" ab. Dieselbe Entscheidung wie
+  # bei dhf_bestanden_bis.
+  - feld_id: p33a_unterstuetzungszeitraum
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzungszeitraum}
+    standardwert: "01.01-31.12"   # der Normalfall: das ganze Jahr. Ohne Vorgabe muss der Nutzer das Format raten (2026-08-26)
+    typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Zeitraum hast du diese Person unterstützt? (Tag und Monat, z. B. 01.01-31.12)"
+    hilfe_kurz: "Das ganze Jahr über? Dann 01.01-31.12. Sonst der tatsächliche Zeitraum. Das Jahr brauchst du nicht."
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0120109
+    elster_kz_grund: "E0120109 [.../AW_U/U_Ztr], XSD-Label 'Unterstuetzungszeitraum, fuer den Unterhalt geleistet wurde', Typ DatumBereichTTpMMbTTpMM."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  # ---- Zweite Schicht: erst sichtbar, nachdem die sieben oben beantwortet waren ----
+  # Sieben weitere Beanstandungen, gemessen 2026-08-19. § 33a ist damit die groesste der acht
+  # Luecken — vierzehn neue Fragen fuer eine Anlage, die vorher nur einen Betrag trug.
+  #
+  # Fuenf davon sind Ja/Nein (JaNein12, zwei echte Werte — "Nein" ist eine ANTWORT und wird als
+  # "2" geschrieben, nicht weggelassen). Eine ist Freitext. Und eine ist die
+  # Identifikationsnummer einer DRITTEN PERSON.
+  - feld_id: p33a_person_hat_einkuenfte
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: person_hat_einkuenfte}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hatte diese Person eigenes Geld — Einkünfte, Bezüge oder eine Ausbildungsförderung?"
+    hilfe_kurz: "Zum Beispiel eine eigene Rente, Lohn, BAföG. Auch kleine Beträge zählen. Das Finanzamt verlangt eine ausdrückliche Aussage, auch wenn sie „nein“ lautet."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0123313
+    elster_kz_grund: "E0123313 [.../Ang_Unt_Pers/Ek_Bez_u_P/Allg], XSD-Label 'Die unterstuetzte Person hat Einkuenfte, Bezuege und / oder oeffentliche Ausbildungshilfen im Kalenderjahr erzielt'. Der Betrag selbst steht in p33a_andere_einkuenfte_bezuege; dies ist die vorgelagerte Ja/Nein-Aussage, ohne die ERiC 'Zu den Einkuenften ... wurde keine Aussage getroffen' meldet."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 5 EStG"
+      zitatanker: "den Betrag von 624 Euro im Kalenderjahr übersteigen"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_person_hat_vermoegen
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: person_hat_vermoegen}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hatte diese Person nennenswertes Vermögen?"
+    hilfe_kurz: "Ein eigenes Haus zum Selbstbewohnen und ein kleines Schonvermögen zählen nicht dazu. Im Zweifel „nein“."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0123105
+    elster_kz_grund: "E0123105 [.../Ang_Unt_Pers/Allg/Verm_u_P], XSD-Label 'Hatte die unterstuetzte Person im Unterhaltszeitraum Vermoegen?'"
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 4 EStG"
+      zitatanker: "kein oder nur ein geringes Vermögen besitzt"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_weitere_person_beteiligt
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: weitere_person_beteiligt}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hat außer dir noch jemand zum Unterhalt dieser Person beigetragen?"
+    hilfe_kurz: "Zum Beispiel Geschwister, die sich die Unterstützung mit dir teilen. Dann wird der Höchstbetrag aufgeteilt."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0124801
+    elster_kz_grund: "E0124801 [.../Ang_Unt_Pers/Weit_beitr_P], XSD-Label 'Hat mindestens eine weitere Person zum Unterhalt der unterstuetzten Person beigetragen?'"
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 7 EStG"
+      zitatanker: "mehreren Steuerpflichtigen getragen, so wird bei jedem der Teil des sich hiernach ergebenden Betrags abgezogen"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_person_im_inlaendischen_haushalt
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: person_im_inlaendischen_haushalt}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Lebte diese Person in deinem Haushalt in Deutschland?"
+    hilfe_kurz: "Also bei dir zu Hause. Wer eine Person im Ausland oder in einem eigenen Haushalt unterstützt, antwortet „nein“."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0122505
+    elster_kz_grund: "E0122505 [.../Ang_Unt_Pers/Allg/U_Berecht], XSD-Label 'Die unterstuetzte Person lebte in meinem inlaendischen Haushalt.'"
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_kindergeld_anspruch
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: kindergeld_anspruch}
+    typ: bool
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hatte jemand für diese Person Anspruch auf Kindergeld oder einen Kinderfreibetrag?"
+    hilfe_kurz: "Meist „nein“ — bei erwachsenen Kindern oder Eltern gibt es kein Kindergeld mehr. Wenn doch, ist der Unterhaltsabzug ausgeschlossen."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: E0122613
+    elster_kz_grund: "E0122613 [.../Ang_Unt_Pers/Allg/U_Berecht], XSD-Label 'Hatte jemand fuer die unterstuetzte Person Anspruch auf Kindergeld oder Freibetraege fuer Kinder?'"
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 4 EStG"
+      zitatanker: "weder der Steuerpflichtige noch eine andere Person Anspruch auf einen Freibetrag nach § 32 Absatz 6 oder auf Kindergeld für die unterhaltene Person hat"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_verwandtschaftsverhaeltnis
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: verwandtschaftsverhaeltnis}
+    typ: text
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "In welchem Verhältnis steht diese Person zu dir?"
+    hilfe_kurz: "Zum Beispiel: Mutter, Vater, Tochter, geschiedener Ehegatte."
+    beispielwert: "Mutter"
+    herkunft_slots: null
+    elster_kz: E0120701
+    elster_kz_grund: "E0120701 [.../Ang_Unt_Pers/Allg/Persoenl], XSD-Label 'Verwandtschaftsverhaeltnis zur unterstuetzenden Person'. ERiC laesst hier die Wahl: entweder einer der Beruecksichtigungsgrund-Schalter (geschiedener Ehegatte E0122713, Kindesmutter/-vater E0122907 usw.) ODER dieses Freitextfeld. Fuer den haeufigsten Fall — Unterstuetzung der eigenen Eltern — ist das Freitextfeld der direkte Weg; die Schalter sind Sonderfaelle und bleiben ungebunden."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  # DIE IDENTIFIKATIONSNUMMER EINER DRITTEN PERSON. § 33a Abs. 1 S. 9 macht sie zur
+  # Abzugsvoraussetzung, ERiC sagt es im Klartext: "Die Angabe der erteilten steuerlichen
+  # Identifikationsnummer (§ 139b der Abgabenordnung) ist Voraussetzung fuer den Abzug von
+  # Unterhaltsleistungen". Ohne sie gibt es den Abzug nicht — das Feld ist also nicht
+  # ersetzbar, sondern der Preis dieser Anlage.
+  #
+  # Es ist damit die erste Stelle, an der das Produkt eine IdNr erhebt, die NICHT dem Nutzer
+  # oder seinem Ehegatten gehoert. Der Nutzer muss sie bei der unterstuetzten Person erfragen;
+  # der Hilfetext sagt das, damit niemand sie raet. Eine erfundene Nummer faellt ohnehin auf:
+  # sie traegt eine Pruefziffer nach § 139b AO, und ERiC prueft sie.
+  - feld_id: p33a_person_idnr
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: unterstuetzte_person_idnr}
+    typ: text
+    muster: '^(?:[0-9]{11})$'
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie lautet die Steuer-Identifikationsnummer dieser Person? (elf Ziffern)"
+    hilfe_kurz: "Die Person findet sie auf ihrem eigenen Steuerbescheid oder ihrer Lohnsteuerbescheinigung — frag sie danach. Ohne diese Nummer erkennt das Finanzamt den Unterhalt nicht an (§ 33a Abs. 1 S. 9 EStG)."
+    beispielwert: "86095742719"
+    herkunft_slots: null
+    elster_kz: E0120211
+    elster_kz_grund: "E0120211 [.../Ang_Unt_Pers/Allg/Persoenl], XSD-Label 'Identifikationsnummer', Typ IDNrBaseCType. Der Beispielwert braucht MEHR als eine gueltige Pruefziffer: eine erste Fassung (03165413965) hatte eine korrekte Pruefziffer nach § 139b AO und wurde von ERiC trotzdem abgelehnt ('Ungueltige Identifikationsnummer'). Die IdNr fordert zusaetzlich, dass die erste Ziffer nicht 0 ist und unter den ersten zehn Ziffern GENAU EINE doppelt oder dreifach vorkommt. 86095742719 erfuellt beides (scripts/idnr_pruefziffer.py::strukturell_gueltig)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 9 EStG"
+      zitatanker: "Voraussetzung für den Abzug der Aufwendungen ist die Angabe der erteilten Identifikationsnummer"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_zahlungszeitraum
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: zahlungszeitraum}
+    standardwert: "01.01-31.12"   # der Normalfall: das ganze Jahr. Ohne Vorgabe muss der Nutzer das Format raten (2026-08-26)
+    typ: text
+    muster: '^(?:(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09)-(0[1-9]|[1-2][0-9]|3[0-1])\.(10|11|12|01|02|03|04|05|06|07|08|09))$'
+    einheit: null
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wann hast du gezahlt? (Von der ersten bis zur letzten Zahlung, z. B. 01.01-31.12)"
+    hilfe_kurz: "Der Zeitraum der Zahlungen selbst — bei monatlichen Überweisungen das ganze Jahr, bei einer Einmalzahlung derselbe Tag zweimal."
+    beispielwert: "01.01-31.12"
+    herkunft_slots: null
+    elster_kz: E0120104
+    elster_kz_grund: "E0120104 [.../AW_U/U_Ztr], XSD-Label 'Zeitraum, in dem die Zahlungen fuer den Unterhalt geleistet wurden (Tag der ersten Zahlung bis Tag der letzten Zahlung)'. ERiC verlangt ihn GEMEINSAM mit der Hoehe (E0120103, oben)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 1 EStG"
+      zitatanker: "gesetzlich unterhaltsberechtigten Person"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_unterhalt_kv_pv
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: kv_pv_beitraege}
+    typ: cent
+    nicht_negativ: true
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Hast du für die unterhaltsberechtigte Person Beiträge zur Kranken- und Pflegeversicherung gezahlt?"
+    hilfe_kurz: "Diese Beiträge erhöhen den Höchstbetrag über den Grundfreibetrag hinaus (§33a Abs.1 S.2). Nur die von DIR gezahlten Beiträge."
+    beispielwert: 0
+    herkunft_slots: null
+    # E10/ESt1A_U/.../Ang_Unt_Pers/KV_PV — "In Zeile E0120103 enthaltene übernommene
+    # Beiträge zu Basis-Kranken- und gesetzlichen Pflegeversicherungen". Teilmenge von
+    # E0120103, kein additiver Posten. Belegt 2026-08-05.
+    elster_kz: E0124401
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 2 EStG"
+      zitatanker: "erhoeht sich um den Betrag der im jeweiligen Veranlagungszeitraum nach § 10 Absatz 1 Nummer 3"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_andere_einkuenfte_bezuege
+    quelle: {regel_id: p33a_unterhalt, signatur_slot: andere_einkuenfte_bezuege}
+    typ: cent
+    einheit: EUR
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie hoch sind die eigenen Einkünfte und Bezüge der unterhaltsberechtigten Person (NICHT deine eigenen)?"
+    hilfe_kurz: "⚠ Nur die Einkünfte des UNTERHALTSEMPFÄNGERS, nicht deine eigenen! Beträge über 624€ mindern den abziehbaren Unterhalt. Dazu zählen z. B. eigenes Gehalt, Rente, Kapitalerträge der unterhaltenen Person."
+    beispielwert: 0
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "Anlage Unterhalt-Kz — Teilmenge (Einkünfte des Empfängers, NIE additiv zum Welteinkommen). Ring-Input, Höchstbetragskürzung § 33a. null-MVP."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 1 S. 5 EStG"
+      zitatanker: "andere Einkuenfte oder Bezuege, so vermindert"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+  - feld_id: p33a_ausbildung_anzahl_kinder
+    quelle: {regel_id: p33a_ausbildungsfreibetrag, signatur_slot: hat_anspruch}
+    typ: int
+    einheit: null
+    bereich: {min: 0, max: 20, grund: "Anzahl qualifizierender Kinder (volljaehrig, auswaertig in Berufsausbildung, mit Kindergeld/§32-Abs.6-Anspruch). Max 20 = praktischer Cap."}
+    askable: true
+    vorjahr: uebernehmbar
+    fragetext_laie: "Wie viele deiner volljährigen Kinder sind in auswärtiger Berufsausbildung UND du hast Anspruch auf Kindergeld oder den Kinderfreibetrag für sie?"
+    hilfe_kurz: "1.200€ Freibetrag JE Kind. Nur für Kinder zählen, für die dir der VOLLE Jahresbetrag zusteht (keine Elternteil-Hälftelung in Stufe-1). Monats-Zwölftelung bei nicht-ganzjähriger Ausbildung = Stufe-2-Backlog."
+    beispielwert: 1
+    herkunft_slots: null
+    elster_kz: null
+    kz_status: endgueltig
+    elster_kz_grund: "ENDGUELTIG: Anzahl (int) als Divisor der HB-Kürzung, kein Betrags-Kz. § 33a Abs. 2 S. 4."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 33a Abs. 2 S. 1 EStG"
+      zitatanker: "einen Freibetrag in Hoehe von 1 200 Euro je Kalenderjahr"
+      datei: "sources/gesetze-im-internet/estg_p33a_2026-07-13.txt"
+
+  # ===== Lücken + Geltungsbedingungen =====
+luecken:
+  - regel_id: p33a_ausbildungsfreibetrag
+    geltungsbedingung: anspruch_ausbildung_auswaertig_volljaehrig
+    grund: "Rechtspraedikat (volljaehriges Kind in Berufsausbildung, auswaertig untergebracht, Kindergeld/§32-Abs.6-Anspruch). Im Feld p33a_ausbildung_anspruch materialisiert."
+  - regel_id: p33a_unterhalt
+    geltungsbedingung: grundfreibetrag_norm_konstante_nicht_input
+    grund: "GFB = Norm-Konstante (params-verankert, VZ-driftend). Im Accessor via _GFB_33A-Lookup. Kein Laien-Feld."
+  - regel_id: p33a_unterhalt
+    geltungsbedingung: anrechnung_ueber_schonbetrag_624
+    grund: "Schonbetrag 624€ fassungskonstant im Accessor. Materialisiert via andere_einkuenfte_bezuege-Feld."
+  - regel_id: p33a_unterhalt
+    geltungsbedingung: andere_einkuenfte_bezuege_netto
+    grund: "Einkünfte des Empfängers sind Netto (nach Abzügen) — Sachverhaltsannahme. Stufe-1 MVP."
