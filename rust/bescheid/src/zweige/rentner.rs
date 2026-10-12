@@ -190,18 +190,14 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     let ns = einkuenfte_ns_aus_lohn(f, vz, p, lohn, Euro::new(0), zusammen)?;
     // § 24a-Bemessung: Arbeitslohn plus Nicht-§19-Einkuenfte (Gewinn + § 23); Versorgungsbezuege und
     // Leibrente § 22 Nr. 1 sind ausgenommen (§ 24a Satz 2 Nr. 1 und 2). § 24a gilt je Person: der Ehegatte hat
-    // eigenen Lohn und eigenes Geburtsjahr (Abweichung Nr. 36), sonst wie im Gesamt-Zweig (`entlastungen`).
+    // eigenen Lohn und eigenes Geburtsjahr (Abweichung Nr. 36) und seinen eigenen Gewinn (Abweichung Nr. 62), sonst wie im
+    // Gesamt-Zweig (`entlastungen`, die einzige Stelle der Bemessung). Hier stehen nur die uebrigen Einkuenfte von Person A.
     let (alt_a, alt_b, ent) = entlastungen(
         f,
         vz,
         p,
         zusammen,
-        max0(summe_euro(&[
-            laufend,
-            netto_vg,
-            p23,
-            rav_rente.eingeschlossen,
-        ])?),
+        summe_euro(&[laufend, netto_vg, p23, rav_rente.eingeschlossen])?,
     )?;
     let alt = add(alt_a, alt_b)?;
     let (gewinn_partner, _mitu_partner, netto_vg_partner) = gewinn_partner_anteil(f)?;

@@ -182,7 +182,9 @@ async fn ueber_die_routen_rechnet_der_antrag_des_partners_und_beide_gewinn_sperr
     ];
     let antrag: Paare = vec![
         (ANTRAG, json!(true)),
-        ("geburtsjahr_partner", json!(1960)),
+        // 1965 (60 Jahre), nicht 1960: ab 55 berechtigt (Abs. 3), aber ohne § 24a (64 Jahre). Mit 1960 bekaeme der Partner 627
+        // Euro Altersentlastung (Abweichung Nr. 62), die Handrechnung in `bescheid/tests/p34_partner_hermetisch.rs` rechnet keine.
+        ("geburtsjahr_partner", json!(1965)),
         (BERUFSUNFAEHIG, json!(false)),
         (EINMAL, json!(false)),
     ];
