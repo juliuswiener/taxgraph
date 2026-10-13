@@ -1467,3 +1467,130 @@ async fn g28_vorlaeufiger_antrag_aendert_die_festgesetzte_steuer_nicht() {
     .await;
     erwarte_kette("g28", &a, 4_458_400, [133_770, 133_734, 44_584, 44_584]);
 }
+
+// ---- Beide Zweige rechnen dieselbe Rechenstelle gleich (Nr. 70, `test_zweig_duplikation_differential.py`) ---------------------------
+
+/// Was eine Aenderung an der Basis in der Kette bewirkt: (`GdE`, zvE) in Euro, nachher minus vorher, im SELBEN Zweig.
+///
+/// Die Python-Datei schnitt die Aufrufe der Rechenstellen mit und verglich je Accessor Argumente und Ergebnis beider Zweige. Rust ruft
+/// jede dieser Stellen nur noch aus EINER Hilfsfunktion in `zweige/gesamt.rs`, die der Rentner-Zweig mitbenutzt; die Kopie, die dort
+/// auseinanderlaufen konnte, gibt es nicht mehr. Es kann aber ein Zweig die Hilfsfunktion nicht rufen oder ihr Ergebnis weglassen
+/// (Nachmessung Nr. 70, Mutant DU1: der Rentner-Zweig laesst den Pauschbetrag der Person A weg, alle 1.673 Tests der Pakete blieben
+/// gruen). Verglichen wird darum die WIRKUNG derselben Eingabe in beiden Zweigen, nie die Endsumme: dieselbe Formel greift in
+/// verschiedene Progressionsstufen (`WAHLRECHT_TRUE_DELTA_GESAMT` 135000 gegen `_RENTNER` 126000), `GdE` und zvE aber sind Abzuege und
+/// Zurechnungen in Euro ohne Tarif.
+async fn kette_unterschied(scheibe: &str, basis: Paare, aenderungen: Paare) -> (i64, i64) {
+    let vorher = ergebnis(scheibe, &basis).await;
+    let nachher = ergebnis(scheibe, &mit(basis, aenderungen)).await;
+    for (name, a) in [("vorher", &vorher), ("nachher", &nachher)] {
+        assert_eq!(
+            a["grund"], "bestaetigt",
+            "KONTROLLE: {scheibe} {name}: Kegel vollstaendig? {a}"
+        );
+        assert!(
+            !a["kette"].is_null(),
+            "KONTROLLE: {scheibe} {name}: keine Kette -- {a}"
+        );
+    }
+    let (v, n) = (stufen(&vorher), stufen(&nachher));
+    (n[0] - v[0], n[1] - v[1])
+}
+
+/// Dieselbe Eingabe, beide Zweige: gleiche Wirkung auf `GdE` und zvE, und die Wirkung ist nicht 0 (sonst misst der Fall nichts).
+async fn beide_zweige_gleich(name: &str, aenderungen: Paare) {
+    let gesamt = kette_unterschied("gesamt", kegel_gesamt(), aenderungen.clone()).await;
+    let rentner = kette_unterschied("rentner_gesamt", kegel_rentner(), aenderungen).await;
+    assert_ne!(
+        gesamt,
+        (0, 0),
+        "KONTROLLE: {name} bewirkt im Zweig gesamt nichts -- der Fall erreicht die Rechenstelle nicht"
+    );
+    assert_eq!(
+        gesamt, rentner,
+        "DEFEKT: {name}: dieselbe Eingabe wirkt in den Zweigen verschieden (GdE, zvE in Euro): gesamt {gesamt:?}, rentner {rentner:?}"
+    );
+}
+
+#[tokio::test]
+async fn behinderten_pauschbetrag_wirkt_in_beiden_zweigen_gleich() {
+    beide_zweige_gleich(
+        "§ 33b Behinderten-Pauschbetrag (GdB 50)",
+        vec![("rentner_grad_der_behinderung", json!(50))],
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn pflege_pauschbetrag_wirkt_in_beiden_zweigen_gleich() {
+    beide_zweige_gleich(
+        "§ 33b Pflege-Pauschbetrag (Pflegegrad 2)",
+        vec![("rentner_pflegegrad", json!(2))],
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn hinterbliebenen_pauschbetrag_wirkt_in_beiden_zweigen_gleich() {
+    beide_zweige_gleich(
+        "§ 33b Hinterbliebenen-Pauschbetrag",
+        vec![("rentner_hinterbliebenenbezuege", json!(true))],
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn kirchensteuer_erstattungsueberhang_wirkt_in_beiden_zweigen_gleich() {
+    beide_zweige_gleich(
+        "§ 10 Abs. 4b Erstattungsueberhang (1.000 gezahlt, 2.500 erstattet)",
+        vec![("kist_gezahlt", json!(100_000)), ("kist_erstattet", json!(250_000))],
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn entlastungsbetrag_fuer_alleinerziehende_wirkt_in_beiden_zweigen_gleich() {
+    beide_zweige_gleich(
+        "§ 24b Entlastungsbetrag (allein stehend, ein Kind)",
+        vec![
+            ("fam_alleinstehend", json!(true)),
+            ("fam_anzahl_kinder", json!(1)),
+            ("fam_monate_ohne_voraussetzung", json!(0)),
+        ],
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn sonstige_einkuenfte_nach_p22_nr3_wirken_in_beiden_zweigen_gleich() {
+    beide_zweige_gleich(
+        "§ 22 Nr. 3 (500 EUR, ueber der Freigrenze)",
+        vec![("p22_nr3_einkuenfte", json!(50_000))],
+    )
+    .await;
+}
+
+/// Der Ehegatte: Zusammenveranlagung, Person B bestaetigt Lohn und Kapital mit 0 (der Kegel von `gesamt`) -- Gleiches fuer den Rentner.
+fn ehepaar() -> Paare {
+    vec![
+        ("veranlagung", json!("zusammen")),
+        ("bruttoarbeitslohn_partner", json!(0)),
+        ("kap_kapitalertraege_partner", json!(0)),
+        ("kap_gewinn_aktien_partner", json!(0)),
+        ("kap_gewinn_sonstige_partner", json!(0)),
+        ("kap_verlust_aktien_partner", json!(0)),
+        ("kap_verlust_sonstige_partner", json!(0)),
+    ]
+}
+
+/// Der Behinderten-Pauschbetrag des Ehegatten (nur bei Zusammenveranlagung): beide Zweige tragen ihn gleich ein.
+#[tokio::test]
+async fn behinderten_pauschbetrag_des_ehegatten_wirkt_in_beiden_zweigen_gleich() {
+    let aenderung = vec![("rentner_grad_der_behinderung_partner", json!(50))];
+    let gesamt = kette_unterschied("gesamt", mit(kegel_gesamt(), ehepaar()), aenderung.clone()).await;
+    let rentner = kette_unterschied("rentner_gesamt", mit(kegel_rentner(), ehepaar()), aenderung).await;
+    assert_ne!(gesamt, (0, 0), "KONTROLLE: der Pauschbetrag des Ehegatten wirkt im Zweig gesamt nicht");
+    assert_eq!(
+        gesamt, rentner,
+        "DEFEKT: der Pauschbetrag des Ehegatten wirkt in den Zweigen verschieden (GdE, zvE): gesamt {gesamt:?}, rentner {rentner:?}"
+    );
+}
