@@ -378,3 +378,41 @@ pub(super) const RING_RENTNER_GESAMT: [&str; 91] = [
     "vorsorge_unfall_haftpflicht_partner",
     "waehlervereinigungen_betrag",
 ];
+
+/// Zwei Listen, dieselbe Fachfrage, keine Verbindung: die Bindung sagt mit `gate: false` "keine Voraussetzung", eine eigene
+/// Tabelle der Bedingungen im Rechenpfad sagt weiter "Voraussetzung", und nur der Rechenpfad zaehlt fuer die Zahl. Bei der
+/// Dienstwohnung war das zwei Jahre lang so (3.178 EUR Unterschied; erst das Herausnehmen aus der Tabelle brachte sie zurueck).
+/// Gegenstueck zu `tests/test_gate_polaritaet.py::test_gate_false_reicht_nicht_der_rechenpfad_fuehrt_eine_zweite_liste`.
+/// Dieselben Tabellen stehen in Rust zweimal: hier (Sperrgrund-Pfad, `deklaration/konstanten.rs`) und in `zweige/wk.rs` (Rechenpfad); beide haben diesen Test.
+#[cfg(test)]
+mod bedingungen_ohne_gate_false {
+    use std::collections::BTreeSet;
+
+    use super::{DHF_BEDINGUNGEN, UEBERNACHTUNG_BEDINGUNGEN};
+
+    #[test]
+    fn die_bedingungen_des_sperrgrund_pfads_tragen_kein_gate_false() {
+        let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let reg = bindung::lade_registry_der_wurzel(&wurzel).unwrap();
+        let kein_gate: BTreeSet<&str> = reg
+            .dateien
+            .iter()
+            .flat_map(|(_, d)| d.bindungen.iter())
+            .filter(|b| b.gate == Some(false))
+            .map(|b| b.feld_id.as_str())
+            .collect();
+        assert!(kein_gate.len() >= 15, "nur {} Felder mit gate: false gelesen", kein_gate.len());
+        for (name, tabelle) in [
+            ("DHF_BEDINGUNGEN", &DHF_BEDINGUNGEN[..]),
+            ("UEBERNACHTUNG_BEDINGUNGEN", &UEBERNACHTUNG_BEDINGUNGEN[..]),
+        ] {
+            assert!(!tabelle.is_empty(), "{name} ist leer");
+            let doppelt: Vec<&&str> = tabelle.iter().filter(|f| kein_gate.contains(**f)).collect();
+            assert!(
+                doppelt.is_empty(),
+                "{doppelt:?} traegt in der Bindung `gate: false`, steht aber in {name} und ist damit im Rechenpfad weiter \
+                 Voraussetzung. Die Bindung allein entscheidet nicht ueber die Zahl: beide Stellen muessen dasselbe sagen"
+            );
+        }
+    }
+}
