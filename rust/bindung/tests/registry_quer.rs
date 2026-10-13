@@ -26,7 +26,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::OnceLock;
 
-use bindung::{Bindung, BindungDatei, Bindungspunkt, RegelBedingung, Registry, SlotBeitrag};
+use bindung::{Bindung, BindungDatei, Bindungspunkt, KzStatus, RegelBedingung, Registry, SlotBeitrag};
 use domain::{Feldtyp, MAX_FELD_ID_LAENGE};
 
 fn registry() -> &'static Registry {
@@ -558,4 +558,38 @@ fn partner_stammdaten_haengen_an_keinem_screening_kreuz() {
             "{name} haengt an Screening-Kreuz {gates:?}"
         );
     }
+}
+
+/// Die Ratsche des Python-Inventars `tests/test_nicht_deklariert_inventar.py` (`OFFEN_SOLL = 0`), nur der typisierte Teil: kein
+/// Betragsfeld ohne Kz traegt `kz_status: offen`. "Offen" heisst: die Bindungsarbeit fuer ein Kz steht noch aus. Das darf
+/// vorkommen, aber nicht still: wer ein Feld so markiert, zieht `OFFEN_SOLL` nach und sieht dabei, dass die Zahl steigt.
+///
+/// Nicht uebernommen ist die Marker-Heuristik des Python-Tests (Woerter wie "backlog", "tbd", "offen" im Freitext von
+/// `elster_kz_grund`): sie las Prosa und scheiterte am Gegenteil der Aussage ("ENDGUELTIG kein Kz, belegt, nicht Backlog" zaehlte
+/// als offen; `kz_status` ersetzt sie seit 2026-08-05). Auf den heutigen Daten faengt sie nichts: gemessen 2026-10-12, 112
+/// Betragsfelder ohne Kz, 0 Treffer. Den Rest tragen der Lader (`elster_kz=null braucht elster_kz_grund`) und die benannte Liste
+/// `BETRAGSFELDER_OHNE_KZ` in `rust/bescheid/tests/scheiben_tabellen_konsistenz.rs`.
+const OFFEN_SOLL: usize = 0;
+
+#[test]
+fn kein_betragsfeld_ohne_kz_ist_als_offen_markiert() {
+    let ohne_kz: Vec<&Bindung> = bindungen()
+        .into_iter()
+        .filter(|b| matches!(b.typ, Feldtyp::Cent | Feldtyp::Int) && b.elster_kz.is_none())
+        .collect();
+    assert!(
+        ohne_kz.len() >= 80,
+        "nur {} Betragsfelder ohne Kz gefunden: der Test saehe nichts",
+        ohne_kz.len()
+    );
+    let offen: Vec<&str> = ohne_kz
+        .iter()
+        .filter(|b| b.kz_status == Some(KzStatus::Offen))
+        .map(|b| b.feld_id.as_str())
+        .collect();
+    assert_eq!(
+        offen.len(),
+        OFFEN_SOLL,
+        "Betragsfelder mit kz_status: offen: {offen:?}. Bei gewollter Kz-Arbeit OFFEN_SOLL nachziehen, bei erledigter senken"
+    );
 }
