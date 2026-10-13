@@ -334,7 +334,7 @@ async fn fall_anlegen_prueft_jahr_kennung_und_nimmt_die_vorgaben() {
             "fall_id fehlt oder ungültig",
         ),
         (
-            format!(r#"{{"fall_id": "{lang65}"}}"#),
+            format!(r#"{{"fall_id": "{lang65}", "veranlagungszeitraum": 2025}}"#),
             "fall_id fehlt oder ungültig",
         ),
         (
@@ -348,8 +348,14 @@ async fn fall_anlegen_prueft_jahr_kennung_und_nimmt_die_vorgaben() {
         assert!(a.text().contains(teil), "{rumpf}: {}", a.text());
     }
     assert!(!d.zustand.konfig.faelle.join("x1.json").exists());
-    // Ohne Angaben gelten Scheibe `ep` und Jahr 2025.
-    let a = post_json(&d, "/fall", Some(&alice), r#"{"fall_id": "v1"}"#).await;
+    // Ohne Scheibe gilt `ep`; ohne Jahr gilt keines (400, eigener Test unten).
+    let a = post_json(
+        &d,
+        "/fall",
+        Some(&alice),
+        r#"{"fall_id": "v1", "veranlagungszeitraum": 2025}"#,
+    )
+    .await;
     assert_eq!(
         (a.status, a.json()),
         (
@@ -359,7 +365,7 @@ async fn fall_anlegen_prueft_jahr_kennung_und_nimmt_die_vorgaben() {
     );
     // 64 Zeichen sind die laengste Kennung.
     let lang64 = "b".repeat(64);
-    let rumpf = format!(r#"{{"fall_id": "{lang64}"}}"#);
+    let rumpf = format!(r#"{{"fall_id": "{lang64}", "veranlagungszeitraum": 2025}}"#);
     let a = post_json(&d, "/fall", Some(&alice), &rumpf).await;
     assert_eq!(a.status, 201, "{}", a.text());
     let a = sende(
@@ -371,6 +377,51 @@ async fn fall_anlegen_prueft_jahr_kennung_und_nimmt_die_vorgaben() {
     )
     .await;
     assert_eq!(a.status, 200, "{}", a.text());
+}
+
+/// Nr. 73: `POST /fall` ohne `veranlagungszeitraum` ist 400 mit klarer Meldung, und es entsteht kein Fall. Python setzt dort
+/// still 2025 (`api.py:285`); ein Aufrufer, der das Jahr vergisst, bekaeme die Steuer des Vorjahrs ohne Hinweis. KONTROLLE im
+/// selben Lauf: derselbe Aufruf MIT Jahr 2026 legt den Fall an und nennt 2026 (`params/2026` existiert).
+#[tokio::test]
+async fn fall_anlegen_ohne_jahr_ist_400_und_legt_keinen_fall_an() {
+    let d = dienst();
+    let alice = bearer(&d, "alice");
+    let a = post_json(
+        &d,
+        "/fall",
+        Some(&alice),
+        r#"{"fall_id": "mit26", "veranlagungszeitraum": 2026}"#,
+    )
+    .await;
+    assert_eq!(
+        (a.status, a.json()),
+        (
+            201,
+            json!({"fall_id": "mit26", "scheibe": "ep", "veranlagungszeitraum": 2026})
+        ),
+        "KONTROLLE: {}",
+        a.text()
+    );
+    for rumpf in [
+        r#"{"fall_id": "ohne"}"#,
+        r#"{"fall_id": "ohne", "scheibe": "gesamt"}"#,
+    ] {
+        let a = post_json(&d, "/fall", Some(&alice), rumpf).await;
+        assert_eq!(a.status, 400, "{rumpf}: {}", a.text());
+        let text = a.text();
+        assert!(
+            text.contains("veranlagungszeitraum fehlt"),
+            "{rumpf}: {text}"
+        );
+        assert!(
+            text.contains("verfügbar: [") && text.contains("2026"),
+            "{rumpf}: {text}"
+        );
+        assert!(
+            !d.zustand.konfig.faelle.join("ohne.json").exists(),
+            "{rumpf}: der Fall wurde trotzdem angelegt"
+        );
+    }
 }
 
 /// `C070`, `X07`: `fall_kennung` weist nur ab, was die Route schon abgewiesen hat. Eine Kennung mit
@@ -480,7 +531,9 @@ async fn entfernung_prueft_adressen_und_scheibe_vor_dem_netz() {
     let d = dienst();
     let alice = bearer(&d, "alice");
     for (id, scheibe) in [("e1", "n_vor_gwg"), ("e2", "rentner_gesamt")] {
-        let rumpf = format!(r#"{{"fall_id": "{id}", "scheibe": "{scheibe}"}}"#);
+        let rumpf = format!(
+            r#"{{"fall_id": "{id}", "scheibe": "{scheibe}", "veranlagungszeitraum": 2025}}"#
+        );
         let a = post_json(&d, "/fall", Some(&alice), &rumpf).await;
         assert_eq!(a.status, 201, "{}", a.text());
     }
