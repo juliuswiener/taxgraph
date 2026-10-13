@@ -338,6 +338,28 @@ fn luf_euer_offen_selbstaendig() {
     luf_euer_symmetrie("selbstaendig", "E0803202");
 }
 
+/// Backlog `zweig-und-ring-pruefungen-der-gruppen-c-und-d-…`, AK2: JEDE Betriebsart der Bindung (nicht
+/// abgeschrieben) sperrt mit `EUeR` plus Direktwert 0 entweder den Bescheid oder die Abgabe. Die beiden
+/// Einzeltests oben (`gewerbe`, `selbstaendig`) halten den Betrag und das Kz; dieser hier faengt eine
+/// Betriebsart, die dazukommt und keinen eigenen Test bekommt.
+#[test]
+fn luf_euer_offen_jede_betriebsart_der_bindung_sperrt_bescheid_oder_abgabe() {
+    let werte = index()["gewinn_betriebsart"].enum_werte.clone().unwrap_or_default();
+    assert!(
+        werte.len() >= 3,
+        "KONTROLLE: die Bindung nennt {} Betriebsarten, erwartet sind mindestens gewerbe, selbstaendig, land_forst: {werte:?}",
+        werte.len()
+    );
+    for betriebsart in &werte {
+        let (grund, zahl, _, gesperrt) = luf_euer_lauf(betriebsart, "");
+        let bescheid_sperrt = matches!(grund, Grund::Sperre(_)) && zahl.is_none();
+        assert!(
+            bescheid_sperrt || gesperrt,
+            "DEFEKT: {betriebsart}, grund={grund:?}, zahl_cent={zahl:?}: der Bescheid rechnet 35.000 EUR, die Erklaerung nennt 0, und die Abgabe sperrt nicht"
+        );
+    }
+}
+
 // ---------------------------------------------------------------- Vorlaeufige Werte in der Deklaration
 
 /// `_GRUND_BASIS + _STAMM` beider Leck-Tests (KAP und Verpflegung, gleich); auch Kern von p20.
