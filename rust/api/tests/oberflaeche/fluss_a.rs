@@ -6,6 +6,7 @@
 
 use serde_json::json;
 
+use crate::browser::http;
 use crate::dienst::Start;
 use crate::seite::{zum_fragebogen, Umgebung};
 
@@ -59,6 +60,11 @@ fn fluss_a_anmelden_und_abmelden() {
     );
     pp!("A.registrierung_und_anmeldung_fuehrt_in_die_anwendung", !s.sichtbar("#login"), "Anmeldemaske bleibt sichtbar");
     pp!("A.registrierung_und_anmeldung_fuehrt_in_die_anwendung", s.sichtbar("#konto-leiste"), "Konto-Leiste fehlt nach dem Login");
+    // Ohne Python-Vorbild (Mutanten U14, U18 aus der Nachmessung in main): das Passwort bleibt nicht im Feld stehen,
+    // und die Leiste nennt, WER angemeldet ist.
+    pp!("A.passwort_feld_ist_nach_der_anmeldung_leer", s.wert("#login-pw").is_empty(), "das Passwort steht nach der Anmeldung noch im Feld");
+    let leiste = s.textinhalt("#konto-user");
+    pp!("A.konto_leiste_nennt_den_nutzernamen", leiste == format!("Angemeldet als {NUTZER}"), "die Konto-Leiste sagt {leiste:?}");
 
     // Jeder Aufruf nach dem Login traegt `Authorization: Bearer …` und wird akzeptiert.
     s.skript(
@@ -76,9 +82,21 @@ fn fluss_a_anmelden_und_abmelden() {
     );
     zum_fragebogen(s, None); // der Kopf wird auch akzeptiert: /fragen kommt durch, die Ankreuzliste erscheint
 
-    // Abmelden raeumt Token, sessionStorage und Konto-Leiste und zeigt die Maske.
+    // Abmelden raeumt Token, sessionStorage und Konto-Leiste und zeigt die Maske. Ohne Python-Vorbild (Mutanten U15, U17):
+    // das alte Token gilt danach auch beim DIENST nicht mehr, und die Maske laesst den Fragefluss nicht stehen.
+    let bearer = format!("Bearer {}", token.as_str().unwrap_or_default());
+    let vorher = http(u.dienst.port, "GET", "/auth/session", None, &[("Authorization", &bearer)]);
+    pp!(
+        "A.abmelden_macht_das_token_beim_dienst_ungueltig",
+        vorher.0 == 200 && vorher.1["username"] == json!(NUTZER),
+        "Vorbedingung: das Token gilt vor dem Abmelden nicht (GET /auth/session): {vorher:?}"
+    );
+    pp!("A.anmeldemaske_verbirgt_den_fragefluss", s.sichtbar("#flow"), "Vorbedingung: der Fragefluss steht vor dem Abmelden nicht auf dem Schirm");
     s.klick("#logout-btn");
     s.warte_sichtbar("#login", 5);
+    pp!("A.anmeldemaske_verbirgt_den_fragefluss", !s.sichtbar("#flow"), "die Anmeldemaske steht, der Fragefluss darunter bleibt sichtbar");
+    let nachher = http(u.dienst.port, "GET", "/auth/session", None, &[("Authorization", &bearer)]);
+    pp!("A.abmelden_macht_das_token_beim_dienst_ungueltig", nachher.0 == 401, "das alte Token gilt nach dem Abmelden noch (GET /auth/session): {nachher:?}");
     pp!("A.abmelden_entfernt_das_token", s.ausdruck("TOKEN").is_null(), "TOKEN-Variable nach dem Abmelden nicht geleert");
     pp!(
         "A.abmelden_entfernt_das_token",
@@ -93,6 +111,7 @@ fn fluss_a_anmelden_und_abmelden() {
     zum_fragebogen(s, None);
     s.skript("versteckeNetzFehler(); TOKEN = 'kaputt.und.abgelaufen'; refresh();", &[]);
     s.warte_sichtbar("#login", 5);
+    pp!("A.anmeldemaske_verbirgt_den_fragefluss", !s.sichtbar("#flow"), "ein 401 zeigt die Maske, der Fragefluss darunter bleibt sichtbar");
     pp!(
         "A.ungueltiges_token_zeigt_maske_nicht_fehlerbanner",
         s.ausdruck("document.getElementById('netz-banner').hidden") == json!(true),

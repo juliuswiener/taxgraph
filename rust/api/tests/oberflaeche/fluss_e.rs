@@ -120,6 +120,35 @@ Partnerbezogene Angaben sind nur bei gemeinsamer Veranlagung mÃ¶glich. Bitte prÃ
     s.skript("(async () => { await zeigeErgebnis(); })();", &[]);
     let vorn = s.try_warte_bis("(() => { const e = document.getElementById('fertig'); return !!e && !e.hidden; })()", 10);
     pp!("E.sperranzeige_oeffnet_die_frage_zu_ihrem_feld", vorn.is_some(), "der Sperr-Screen ist nicht vorn: der Test misst sonst einen anderen Zustand");
+    // Ohne Python-Vorbild (Mutant U7 aus der Nachmessung in main): die Sperre zeigt den Klartext des Servers, nicht den
+    // (anderen) Satz aus der Tabelle der Oberflaeche.
+    let (_, erg5) = u.dienst.get("/fall/sf5/ergebnis");
+    let klartext = erg5["klartext"].as_str().unwrap_or_default().to_owned();
+    let gezeigt = s.ausdruck("(document.getElementById('ergebnis').firstChild || {}).textContent || ''");
+    pp!("E.sperranzeige_zeigt_den_klartext_des_servers", !klartext.is_empty(), "der Dienst schickt keinen Klartext: {erg5}");
+    pp!("E.sperranzeige_zeigt_den_klartext_des_servers", gezeigt == json!(klartext), "die Sperre zeigt {gezeigt} statt des Klartexts des Servers {klartext:?}");
+    // Ohne Python-Vorbild (Mutanten U8, U9): die Vorab-Pruefung zeigt Widersprueche und Hinweise getrennt, Art und Text wie der
+    // Dienst sie liefert, und die Liste ist sichtbar. Dieser Fall liefert beides (der Widerspruch ist die Sperre selbst).
+    let (st, pf) = u.dienst.get("/fall/sf5/preflight");
+    let items = pf["items"].as_array().cloned().unwrap_or_default();
+    let hat = |typ: &str| items.iter().any(|i| i["typ"] == typ);
+    pp!("E.vorab_pruefung_zeigt_widerspruch_und_hinweis_getrennt", st == 200 && hat("widerspruch") && hat("hinweis"), "Vorbedingung: der Fall liefert nicht beide Arten: {pf}");
+    s.skript("(async () => { await zeigePreflight(); })();", &[]);
+    let da = s.try_warte_bis("(() => { const e = document.getElementById('preflight'); return !!e && !e.hidden; })()", 10);
+    pp!("E.vorab_pruefung_zeigt_widerspruch_und_hinweis_getrennt", da.is_some() && s.sichtbar("#preflight"), "die Vorab-Pruefung bleibt verborgen, obwohl sie {} Eintraege hat", items.len());
+    let gezeigt = s.ausdruck(
+        "[...document.querySelectorAll('#preflight-liste .preflight-eintrag')].map(li => ({klasse: li.className, \
+         badge: li.querySelector('.preflight-badge').textContent, text: li.querySelector('.preflight-text').textContent}))",
+    );
+    let erwartet: Vec<Value> = items
+        .iter()
+        .map(|i| {
+            let widerspruch = i["typ"] == "widerspruch";
+            json!({"klasse": format!("preflight-eintrag preflight-{}", if widerspruch { "widerspruch" } else { "hinweis" }),
+                   "badge": if widerspruch { "Widerspruch" } else { "Hinweis" }, "text": i["text"]})
+        })
+        .collect();
+    pp!("E.vorab_pruefung_zeigt_widerspruch_und_hinweis_getrennt", gezeigt == json!(erwartet), "Anzeige {gezeigt} statt {}", json!(erwartet));
     let knoepfe = s.ausdruck("[...document.querySelectorAll('#ergebnis [data-sperr-feld]')].map(e => e.getAttribute('data-sperr-feld'))");
     pp!("E.sperranzeige_oeffnet_die_frage_zu_ihrem_feld", knoepfe == json!(["kap_kapitalertraege_partner"]), "die Sperranzeige bietet die ausloesende Angabe nicht an: {knoepfe}");
     s.klick("#ergebnis [data-sperr-feld]");

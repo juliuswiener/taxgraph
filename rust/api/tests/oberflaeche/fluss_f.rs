@@ -410,6 +410,19 @@ fn reihen(u: &Umgebung) -> Vec<Value> {
     .unwrap_or_default()
 }
 
+/// Eine Zahl wie `toLocaleString("de-DE")`: Punkt als Tausendertrenner.
+fn de_zahl(n: i64) -> String {
+    let ziffern = n.to_string();
+    let mut raus = String::new();
+    for (i, c) in ziffern.chars().rev().enumerate() {
+        if i > 0 && i % 3 == 0 {
+            raus.push('.');
+        }
+        raus.push(c);
+    }
+    raus.chars().rev().collect()
+}
+
 fn breiter_als_der_schirm(u: &Umgebung) -> i64 {
     u.s.ausdruck("document.documentElement.scrollWidth").as_i64().unwrap_or(-1)
 }
@@ -562,10 +575,29 @@ fn fluss_f_rechenweg_im_bild() {
 
     // der § 31-Satz steht als Unterzeile an der letzten Zeile.
     let lohn_300k = mit(mit(kegel_gesamt(), lohn_zusammen(30_000_000)), vec![("kein_gewinn", json!(true)), ("fam_anzahl_kinder", json!(1))]);
-    fall_bestaetigt!("F.p31_stufe_ist_im_dom_sichtbar", d, "p31-dom", "gesamt", lohn_300k);
+    let erg = fall_bestaetigt!("F.p31_stufe_ist_im_dom_sichtbar", d, "p31-dom", "gesamt", lohn_300k);
     zeige_ergebnis(&u, "p31-dom");
     pp!("F.p31_stufe_ist_im_dom_sichtbar", rechenweg_da(&u), "#rechenweg bleibt verborgen");
     let zeilen = reihen(&u);
+
+    // Ohne Python-Vorbild (Mutanten U4, U5 aus der Nachmessung in main): die zwei Zeilen zwischen den Stufen tragen Vorzeichen
+    // UND Betrag der Differenz aus der Kette der API. Dieser Fall hat zwei Differenzen ungleich 0 mit verschiedenem Vorzeichen
+    // (Abzuege mindern, die Guenstigerpruefung rechnet das Kindergeld hinzu); ein Fall mit Differenz 0 faerbte U5 nicht.
+    let k = &erg["kette"];
+    let stufe = |s: &str| k[s].as_i64().unwrap_or(0);
+    let abzuege = stufe("zu_versteuerndes_einkommen") - stufe("gesamtbetrag_der_einkuenfte");
+    let zuschlag = stufe("festzusetzende_est") - stufe("tarifliche_est");
+    pp!("F.delta_zeilen_tragen_vorzeichen_und_betrag", abzuege < 0 && zuschlag > 0, "Vorbedingung: Abzuege {abzuege}, Zuschlag {zuschlag}: kein Fall mit zwei Differenzen und verschiedenem Vorzeichen");
+    for (label, delta) in [("Abzüge", abzuege), ("Ermäßigungen/Zuschläge", zuschlag)] {
+        let soll = format!("{} {} €", if delta < 0 { '−' } else { '+' }, de_zahl(delta.abs()));
+        let zeile = zeilen.iter().find(|r| r["klasse"].as_str().unwrap_or_default().contains("rw-delta") && r["label"] == label);
+        pp!(
+            "F.delta_zeilen_tragen_vorzeichen_und_betrag",
+            zeile.is_some_and(|r| r["wert"] == soll),
+            "{label}: erwartet {soll:?} (Differenz {delta}), im Bild {:?}",
+            zeile.map(|r| &r["wert"])
+        );
+    }
     let letzte = zeilen.last().cloned().unwrap_or(Value::Null);
     pp!("F.p31_stufe_ist_im_dom_sichtbar", letzte["label"].as_str().unwrap_or_default().contains("festzusetzende Einkommensteuer"), "{letzte}");
     let sub = letzte["sub"].as_str().unwrap_or_default();
@@ -602,4 +634,20 @@ fn fluss_f_rechenweg_im_bild() {
         "Letzte Stufe zeigt {} statt 21.174 €: dann sind Zahl und Kette wieder zwei verschiedene Steuern",
         letzte["wert"]
     );
+
+    // Ohne Python-Vorbild (Mutant U6 aus der Nachmessung in main): eine echte Null-Steuer (Einkommen unter dem
+    // Grundfreibetrag) ist eine ZAHL, keine Sperre: „0,00 €“ in der Ergebnis-Karte, ohne die Klasse `ergebnis-guard`.
+    let erg = fall_bestaetigt!("F.null_steuer_ist_eine_zahl_keine_sperre", d, "rw-null", "gesamt", mit(kegel_gesamt(), vec![("bruttoarbeitslohn", json!(500_000))]));
+    pp!("F.null_steuer_ist_eine_zahl_keine_sperre", erg["zahl_cent"] == json!(0), "Vorbedingung: die Steuer ist nicht 0: {erg}");
+    zeige_ergebnis(&u, "rw-null");
+    let fertig = u.s.try_warte_bis("(() => { const e = document.getElementById('fertig'); return !!e && !e.hidden; })()", 10);
+    pp!("F.null_steuer_ist_eine_zahl_keine_sperre", fertig.is_some(), "die Ergebnisanzeige kommt nicht");
+    let klasse = u.s.ausdruck("document.getElementById('ergebnis').className");
+    pp!("F.null_steuer_ist_eine_zahl_keine_sperre", klasse == json!("ergebnis"), "die Null-Steuer wird als Sperre gezeigt (Klasse {klasse})");
+    let zahl = u.s.ausdruck("((document.querySelector('#ergebnis .erg-zahl') || {}).textContent || '').replace(/[\\u00a0\\u202f]/g, ' ').trim()");
+    pp!("F.null_steuer_ist_eine_zahl_keine_sperre", zahl == json!("0,00 €"), "die Ergebnis-Karte zeigt {zahl} statt „0,00 €“: {}", u.s.textinhalt("#ergebnis"));
+
+    // Mutant U3: ein fehlender Betrag (`null`, auch `undefined`) steht als Gedankenstrich da, nie als „NaN €“.
+    let euro = u.s.ausdruck("[euro(null), euro(undefined), euro(0), euro(123456)].map(t => t.replace(/[\\u00a0\\u202f]/g, ' '))");
+    pp!("F.fehlender_betrag_zeigt_den_gedankenstrich", euro == json!(["—", "—", "0,00 €", "1.234,56 €"]), "euro() liefert {euro}");
 }

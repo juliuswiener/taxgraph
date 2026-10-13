@@ -242,6 +242,27 @@ fn fluss_c_antwort_schreiben() {
         "der Store traegt nicht wert=0: {}",
         felder["bruttoarbeitslohn"]
     );
+
+    // Ohne Python-Vorbild (Mutant U20 aus der Nachmessung in main): Euro mit Cent wird GERUNDET, nicht abgeschnitten.
+    // In Gleitkomma liegt 4,35 * 100 bei 434,99999999999994 (Math.floor gaebe 434, der Nutzer verlore einen Cent je Feld).
+    let r = s.auswerten(
+        "() => { const q = {feld_id: 'x', typ: 'cent'}; const el = document.createElement('input'); \
+         const lies = v => { el.value = v; return leseWert(q, el); }; \
+         return {a: lies('4.35'), b: lies('19.99'), c: lies('1.15'), d: lies('0.57'), e: lies('620.5')}; }",
+        &[],
+    );
+    pp!(
+        "C.euro_mit_cent_wird_gerundet_nicht_abgeschnitten",
+        r == json!({"a": 435, "b": 1999, "c": 115, "d": 57, "e": 62050}),
+        "leseWert() liest Euro mit Cent falsch: {r}"
+    );
+    let feld = erstes_feld(&u, &fall, "cent");
+    pp!("C.euro_mit_cent_wird_gerundet_nicht_abgeschnitten", u.rendere_frage(&feld), "{feld} nicht erreichbar");
+    s.fuelle("#feld-input", "19.99");
+    s.klick("#bestaetigen");
+    s.warte_bis(&format!("STAND && STAND.felder && STAND.felder['{feld}'] !== undefined"), 8, "Stand kennt das Euro-Feld");
+    let wert = u.dienst.letzter_wert(&fall, &feld);
+    pp!("C.euro_mit_cent_wird_gerundet_nicht_abgeschnitten", wert == json!(1999), "19,99 EUR stehen als {wert} Cent in der Akte ({feld})");
 }
 
 #[test]

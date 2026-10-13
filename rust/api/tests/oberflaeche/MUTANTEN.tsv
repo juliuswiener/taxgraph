@@ -1,134 +1,171 @@
-test	mutant	art	datei	was	ergebnis	erster_pruefpunkt	lauf
-bindung_der_oberflaeche	I7	D	rust/bindung/daten/bindung_regel_bedingungen.yaml	Gruppe kind laesst nur ein Kind zu	ROT	D.die_bindung_erklaert_die_gruppe_kind	mut_neu
-bindung_der_oberflaeche	S1	D	rust/bindung/daten/bindung_an_gesamt.yaml	kein_kap fehlt in der Ankreuzliste	ROT	B.die_bindung_erklaert_welche_fragen_dazugehoeren	mut_neu
-bindung_der_oberflaeche	S2	D	rust/bindung/daten/bindung_an_gesamt.yaml	kein_kap ohne Umkehr	ROT	B.die_bindung_erklaert_welche_fragen_dazugehoeren	mut_neu
-csp_header_der_ausgelieferten_seite	A2	D	rust/api/src/antwort.rs	Richtlinie sperrt das eigene Skript (Oberflaeche tot)	ROT	A.csp_auf_der_ausgelieferten_seite	mut_neu
-csp_header_der_ausgelieferten_seite	A3	D	rust/api/src/antwort.rs	Richtlinie erlaubt Inline-Style	ROT	A.csp_erlaubt_kein_inline_skript	mut_neu
-csp_header_der_ausgelieferten_seite	A4	D	rust/api/src/antwort.rs	kein CSP-Kopf mehr	ROT	A.csp_auf_der_ausgelieferten_seite	mut_neu
-csp_html_dateien_passen_zur_richtlinie	C1	F	rust/api/static/index.html	Inline-Skript in der Seite	ROT	A.richtlinie_passt_zur_ausgelieferten_seite	mut_neu
-csp_html_dateien_passen_zur_richtlinie	C2	F	rust/api/static/index.html	style=-Attribut in der Seite	ROT	A.richtlinie_passt_zur_ausgelieferten_seite	mut_neu
-csp_html_dateien_passen_zur_richtlinie	C3	F	rust/api/static/index.html	Inline-Ereignis-Handler in der Seite	ROT	A.richtlinie_passt_zur_ausgelieferten_seite	mut_neu
-darstellung_a11y	Y1	F	rust/api/static/index.html	keine Dokumentsprache	ROT	Y.a11y_startscreen	mut_neu
-darstellung_a11y	Y2	F	rust/api/static/index.html	kein Seitentitel	ROT	Y.a11y_startscreen	mut_neu
-darstellung_a11y	Y3	F	rust/api/static/style.css	hellgrauer Text auf weissem Grund	ROT	Y.a11y_wegpunkt	mut_neu
-darstellung_a11y	Y4	F	rust/api/static/index.html	Chat-Eingabefeld ohne Beschriftung	ROT	Y.a11y_wegpunkt	mut_neu
-darstellung_lesbare_werte	L1	F	rust/api/static/app.js	Belegt-Liste zeigt den Rohwert	ROT	L.die_liste_zeigt_frage_und_lesbaren_wert	mut_neu
-darstellung_lesbare_werte	L2	F	rust/api/static/app.js	Belegt-Liste zeigt die Feld-Kennung statt der Frage	ROT	L.die_liste_zeigt_frage_und_lesbaren_wert	mut_neu
-darstellung_lesbare_werte	L3	F	rust/api/static/app.js	Ueberschrift ueber leerer Liste	ROT	L.ohne_antworten_steht_die_ueberschrift_nicht_da	mut_neu
-darstellung_lesbare_werte	L4	F	rust/api/static/style.css	Fragetext wird zur Buchstabensaeule	ROT	L.ein_langer_wert_quetscht_die_frage_nicht_zu_tode	mut_neu
-darstellung_lesbare_werte	L5	F	rust/api/static/app.js	Kopf zeigt einen Gedankenstrich als Wert	ROT	L.ohne_zahl_behauptet_der_kopf_nicht_dass_etwas_feststeht	mut_neu
-darstellung_nenner	P1	F	rust/api/static/app.js	Nenner zaehlt vorlaeufige Felder doppelt	ROT	P.ein_vorlaeufiger_wert_zaehlt_genau_einmal	mut_neu
-darstellung_nenner	P2	F	rust/api/static/app.js	Aenderung der Gesamtzahl wird nicht benannt	ROT	P.eine_antwort_die_bloecke_abschaltet_senkt_die_gesamtzahl_und_sagt_es	mut_neu
-darstellung_nenner	P3	F	rust/api/static/app.js	Leiste laeuft gegen max=1	ROT	P.nenner_ist_die_zahl_der_noch_offenen_fragen	mut_neu
-darstellung_panel	H4	F	rust/api/static/app.js	Chat-Sperre sperrt nichts	ROT	P.die_chat_sperre_greift_auch_im_zweispaltigen_bild	mut_neu
-darstellung_panel	P4	F	rust/api/static/style.css	Panel klebt nicht	ROT	P.panel_bleibt_beim_scrollen_stehen	mut_neu
-darstellung_panel	P5	F	rust/api/static/style.css	Panel liegt auch breit unter dem Inhalt	ROT	P.panel_liegt_auf_breitem_schirm_rechts_neben_dem_inhalt	mut_neu
-darstellung_panel	R4	F	rust/api/static/style.css	KI-Panel 900 px breit	ROT	P.panel_liegt_auf_breitem_schirm_rechts_neben_dem_inhalt	mut_neu
-darstellung_responsive	F10	F	rust/api/static/style.css	waagerechte Bildlaufleiste bei 360 px	ROT	R.start_screen_kacheln_responsive	mut_neu
-darstellung_responsive	R1	F	rust/api/static/style.css	Tap-Ziele nur 20 px hoch	ROT	R.start_screen_kacheln_responsive	mut_neu
-darstellung_responsive	R2	F	rust/api/static/style.css	Eingabefelder nur 16 px hoch	ROT	R.input_fields_tap_targets	mut_neu
-darstellung_responsive	R3	F	rust/api/static/index.html	Fortschrittsleiste versteckt	ROT	R.fortschrittsleiste_responsive	mut_neu
-darstellung_responsive	R4	F	rust/api/static/style.css	KI-Panel 900 px breit	ROT	R.wegpunkt_buttons_responsive	mut_neu
-fluss_a_anmelden_und_abmelden	A1	F	rust/api/static/app.js	Abmelden laesst das Token im Browser stehen	ROT	A.abmelden_entfernt_das_token	mut_neu
-fluss_a_anmelden_und_abmelden	F3	F	rust/api/static/app.js	POST ohne Authorization-Kopf	ROT	-	mut_neu
-fluss_a_anmelden_und_abmelden	F8	F	rust/api/static/app.js	401 zeigt keine Anmeldemaske	ROT	-	mut_neu
-fluss_a_anmelden_und_abmelden	F9	F	rust/api/static/index.html	leere Seite: Skript wird nicht geladen	ROT	-	mut_neu
-fluss_a_einzelnutzer_und_richtlinie	A2	D	rust/api/src/antwort.rs	Richtlinie sperrt das eigene Skript (Oberflaeche tot)	ROT	-	mut_neu
-fluss_a_einzelnutzer_und_richtlinie	D2	D	rust/api/src/antwort.rs	app.js mit falschem Content-Type (Browser fuehrt es nicht aus)	ROT	-	mut_neu
-fluss_a_einzelnutzer_und_richtlinie	F9	F	rust/api/static/index.html	leere Seite: Skript wird nicht geladen	ROT	-	mut_neu
-fluss_b_auswahl_buttons	B4	F	rust/api/static/app.js	Klick auf einen Auswahl-Button markiert ihn nicht	ROT	B.klick_setzt_den_wert_und_markiert_den_button	mut_neu
-fluss_b_auswahl_buttons	B5	F	rust/api/static/app.js	Auswahl immer als Dropdown	ROT	B.erste_frage_ist_eine_button_wahl	mut_neu
-fluss_b_auswahl_buttons	B6	F	rust/api/static/app.js	Auswahl-Button traegt den Anzeigetext als Wert	ROT	-	mut_neu
-fluss_b_auswahl_buttons	F7	F	rust/api/static/app.js	boolAntwort ohne Umkehr (Anzeige und Schreibpfad)	ROT	B.bool_inversion_bleibt_erhalten	mut_neu
-fluss_b_fallstart_und_ankreuzliste	B1	F	rust/api/static/app.js	Ankreuzliste schreibt ohne Umkehr (kein_*-Felder bekommen das Gegenteil)	ROT	B.ein_kreuz_heisst_ja_und_ein_leeres_kaestchen_nein	mut_neu
-fluss_b_fallstart_und_ankreuzliste	B2	F	rust/api/static/app.js	Ankreuzliste erscheint nie	ROT	-	mut_neu
-fluss_b_fallstart_und_ankreuzliste	B3	F	rust/api/static/app.js	Kreuz gehoert zu keinem Feld	ROT	-	mut_neu
-fluss_b_fallstart_und_ankreuzliste	F9	F	rust/api/static/index.html	leere Seite: Skript wird nicht geladen	ROT	-	mut_neu
-fluss_c_antwort_schreiben	F5	F	rust/api/static/app.js	Euro wird als Cent geschrieben	ROT	C.jeder_typ_nimmt_seinen_wert_an_und_der_store_akzeptiert_ihn	mut_neu
-fluss_c_antwort_schreiben	F6	F	rust/api/static/app.js	stille Null bei ungueltiger Zahl	ROT	C.ungueltige_ganzzahl_liest_undefined_nicht_null	mut_neu
-fluss_c_antwort_schreiben	F9	F	rust/api/static/index.html	leere Seite: Skript wird nicht geladen	ROT	-	mut_neu
-fluss_c_antwort_schreiben	M1	F	rust/api/static/app.js	Feld mit Muster ohne pattern	ROT	C.ein_wert_gegen_das_muster_wird_nicht_geschrieben	mut_neu
-fluss_c_umkehr_invertierter_fragen	D1	D	rust/api/src/fragen.rs	/fragen liefert frage_invertiert immer false	ROT	C.invertierte_frage_speichert_die_bedeutung_der_antwort	mut_neu
-fluss_c_umkehr_invertierter_fragen	F4	F	rust/api/static/app.js	Schreibpfad ohne Umkehr invertierter Fragen	ROT	C.invertierte_frage_speichert_die_bedeutung_der_antwort	mut_neu
-fluss_c_umkehr_invertierter_fragen	F7	F	rust/api/static/app.js	boolAntwort ohne Umkehr (Anzeige und Schreibpfad)	ROT	C.invertierte_frage_speichert_die_bedeutung_der_antwort	mut_neu
-fluss_d_korrektur_der_zweiten_instanz	I1	F	rust/api/static/app.js	alle Instanzen gehen an dasselbe Feld	ROT	-	mut_neu
-fluss_d_korrektur_der_zweiten_instanz	I3	F	rust/api/static/app.js	Korrektur ohne `ersetzt` (Auflage B)	ROT	-	mut_neu
-fluss_d_korrektur_der_zweiten_instanz	I4	F	rust/api/static/app.js	leere Instanz wird geschrieben	ROT	-	mut_neu
-fluss_d_mehrere_instanzen_anlegen	F9	F	rust/api/static/index.html	leere Seite: Skript wird nicht geladen	ROT	-	mut_neu
-fluss_d_mehrere_instanzen_anlegen	I1	F	rust/api/static/app.js	alle Instanzen gehen an dasselbe Feld	ROT	-	mut_neu
-fluss_d_mehrere_instanzen_anlegen	I2	F	rust/api/static/app.js	alle leer schreibt weiter und sagt es nicht	ROT	D.alle_leer_schreibt_nichts_und_sagt_es	mut_neu
-fluss_d_mehrere_instanzen_anlegen	I4	F	rust/api/static/app.js	leere Instanz wird geschrieben	ROT	-	mut_neu
-fluss_e_sperre_sichtbar_und_behebbar	E1	F	rust/api/static/app.js	Sperranzeige: der Klick auf die ausloesende Angabe tut nichts	ROT	E.sperranzeige_oeffnet_die_frage_zu_ihrem_feld	mut_e
-fluss_e_sperre_sichtbar_und_behebbar	E2	F	rust/api/static/app.js	Sperrweg setzt KORREKTUR_FID nicht (Korrektur ohne ersetzt)	ROT	E.sperranzeige_oeffnet_die_frage_zu_ihrem_feld	mut_e
-fluss_e_sperre_sichtbar_und_behebbar	E3	F	rust/api/static/app.js	korrigiereBestaetigt: die Sperre bei ausgeschlossen ist aufgeweicht	ROT	E.normale_korrektur_bleibt_im_sperrzustand_gesperrt	mut_e
-fluss_e_sperre_sichtbar_und_behebbar	E4	D	rust/api/src/ergebnis.rs	Sperrgrund nennt nie ein ausloesendes Feld	ROT	E.sperrgrund_traegt_die_ausloesende_feld_id	mut_e
-fluss_e_sperre_sichtbar_und_behebbar	E5	D	rust/konsistenz/src/partner.rs	ein Partnerfeld fehlt in der Widerspruchsliste	ROT	E.jedes_partnerfeld_wird_genauso_gemeldet	mut_e
-fluss_e_sperre_sichtbar_und_behebbar	E6	D	rust/konsistenz/src/partner.rs	Zusammenveranlagung wird als Widerspruch gemeldet	ROT	E.ohne_sperre_keine_sperr_felder	mut_e
-fluss_e_sperre_sichtbar_und_behebbar	E7	D	rust/api/src/routen/lesen.rs	Einzelfeld-Frage liefert eine andere Frage als die gefragte	ROT	E.sperrfeld_ist_ueber_den_einzelfeld_weg_erreichbar	mut_e
-fluss_e_sperre_sichtbar_und_behebbar	E8	D	rust/konsistenz/src/partner.rs	ein Partnerfeld gilt immer als gesetzt (die Korrektur auf 0 hebt die Sperre nicht auf)	ROT	E.korrektur_hebt_die_sperre_auf	mut_e
-fluss_f_kette_ueber_http	RW10	D	rust/api/src/ergebnis.rs	p31 nennt den falschen Sieger	ROT	F.p31_kindergeld_gewinnt_kette_bleibt_vollstaendig	mut_f
-fluss_f_kette_ueber_http	RW11	D	rust/api/src/ergebnis.rs	Stufe tarifliche_est traegt das zvE	ROT	F.p31_stufe_nennt_die_guenstigerpruefung	mut_f
-fluss_f_kette_ueber_http	RW8	D	rust/api/src/ergebnis.rs	Kette endet nicht bei der festzusetzenden Steuer	ROT	F.kette_endet_bei_der_zahl	mut_f
-fluss_f_kette_ueber_http	RW9	D	rust/api/src/ergebnis.rs	p31 nennt kein Kindergeld	ROT	F.p31_stufe_nennt_die_guenstigerpruefung	mut_f
-fluss_f_rechenweg_im_bild	F10	F	rust/api/static/style.css	waagerechte Bildlaufleiste bei 360 px	ROT	F.rechenweg_positiv	mut_f
-fluss_f_rechenweg_im_bild	RW1	F	rust/api/static/app.js	Rechenweg zeigt als letzte Stufe die tarifliche statt der festzusetzenden Steuer	ROT	F.p31_stufe_ist_im_dom_sichtbar	mut_f
-fluss_f_rechenweg_im_bild	RW2	F	rust/api/static/app.js	der § 31-Satz erreicht die Oberflaeche nicht	ROT	F.p31_stufe_ist_im_dom_sichtbar	mut_f
-fluss_f_rechenweg_im_bild	RW3	F	rust/api/static/app.js	kein Hinweis auf offene Angaben im Erfolgs-Zweig (stille Null)	ROT	F.ergebnis_hinweis_offen_bei_stiller_null	mut_f
-fluss_f_rechenweg_im_bild	RW4	F	rust/api/static/app.js	ohne Kette fehlt der Hinweis	ROT	F.rechenweg_bestaetigt_ohne_kette	mut_f
-fluss_f_rechenweg_im_bild	RW5	F	rust/api/static/app.js	Rechenweg erscheint im Sperr-Zweig	ROT	F.rechenweg_negativ	mut_f
-fluss_f_rechenweg_im_bild	RW6	F	rust/api/static/app.js	Betraege des Rechenwegs im falschen Zahlenformat	ROT	F.rechenweg_positiv	mut_f
-fluss_f_rechenweg_im_bild	RW7	F	rust/api/static/app.js	Rechenweg zeigt beim Gesamtbetrag das zvE	ROT	F.rechenweg_positiv	mut_f
-fluss_f_rechenweg_im_bild	RW8	D	rust/api/src/ergebnis.rs	Kette endet nicht bei der festzusetzenden Steuer	ROT	F.kette_endet_bei_der_zahl	mut_f
-fluss_g_absendeknopf_mit_eric_attrappe	G10	D	rust/api/src/einreichen.rs	Plausibilitaetsfehler tragen einen unbekannten Grund	ROT	G.beanstandet_zeigt_anderen_text_als_erfolg	mut_g
-fluss_g_absendeknopf_mit_eric_attrappe	G11	D	rust/api/src/einreichen.rs	der 200-Rumpf verschweigt nicht uebertragene Werte	ROT	G.erfolg_zeigt_in_ordnung_ohne_beanstandung_oder_unsicherheit	mut_g
-fluss_g_absendeknopf_mit_eric_attrappe	G12	D	rust/api/src/einreichen.rs	fehlendes ERiC meldet einen unbekannten Grund	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g
-fluss_g_absendeknopf_mit_eric_attrappe	G13	D	rust/api/src/einreichen.rs	kein Pruefmodul fuer das Jahr wird nicht erkannt	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g
-fluss_g_absendeknopf_mit_eric_attrappe	G14	D	rust/api/src/einreichen.rs	Plausibilitaetsfehler gelten als Nicht-Urteil	ROT	G.beanstandet_zeigt_anderen_text_als_erfolg	mut_g
-fluss_g_absendeknopf_mit_eric_attrappe	G15	D	rust/api/src/einreichen.rs	Teilrechnung meldet einen unbekannten Grund	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g
-fluss_g_absendeknopf_mit_eric_attrappe	G4	F	rust/api/static/app.js	rohes `detail` des Servers steht auf dem Schirm	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g
-fluss_g_absendeknopf_mit_eric_attrappe	G5	F	rust/api/static/app.js	„in Ordnung“ auch bei nicht uebertragenen Werten	ROT	G.erfolg_zeigt_in_ordnung_ohne_beanstandung_oder_unsicherheit	mut_g
-fluss_g_absendeknopf_mit_eric_attrappe	G6	F	rust/api/static/app.js	beanstandet klingt wie nicht geprueft	ROT	G.beanstandet_zeigt_anderen_text_als_erfolg	mut_g
-fluss_g_absendeknopf_mit_eric_attrappe	G7	F	rust/api/static/app.js	kein Pruefcode auf dem Schirm	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g
-fluss_g_absendeknopf_ohne_eric	G1	F	rust/api/static/app.js	Absendeknopf bleibt waehrend der Pruefung klickbar (Doppelklick startet zwei Laeufe)	ROT	G.doppel_klick_schuetzt_gegen_doppel_submit	mut_g
-fluss_g_absendeknopf_ohne_eric	G15	D	rust/api/src/einreichen.rs	Teilrechnung meldet einen unbekannten Grund	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g
-fluss_g_absendeknopf_ohne_eric	G2	F	rust/api/static/app.js	Sperrgrund-Klartext des Servers wird nicht gezeigt	ROT	G.sperrgrund_zeigt_den_klartext_des_servers	mut_g
-fluss_g_absendeknopf_ohne_eric	G3	F	rust/api/static/app.js	Satz-Tabelle als Objekt: „constructor“ vom Server trifft eine Eigenschaft	ROT	G.unbekannter_schluessel_zeigt_den_rueckfallsatz	mut_g
-fluss_g_absendeknopf_ohne_eric	G4	F	rust/api/static/app.js	rohes `detail` des Servers steht auf dem Schirm	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g
-fluss_g_absendeknopf_ohne_eric	G7	F	rust/api/static/app.js	kein Pruefcode auf dem Schirm	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g
-fluss_g_absendeknopf_ohne_eric	G8	F	rust/api/static/index.html	Satz „nur lokal“ hat keine Bindung zum Knopf (Screenreader)	ROT	G.vor_dem_klick_steht_nur_lokal_nichts_ans_finanzamt	mut_g
-fluss_g_absendeknopf_ohne_eric	G9	F	rust/api/static/index.html	Absendeknopf ohne type=button	ROT	G.knopf_ist_im_fertig_screen_nach_preflight	mut_g
-fluss_h_chat_aussagen	H1	F	rust/api/static/app.js	Rueckfrage und Wert am selben Feld: der Wert wird nicht zurueckgehalten	ROT	H.rueckfrage_und_vorschlag_am_selben_feld_haelt_den_wert_zurueck	mut_neu
-fluss_h_chat_aussagen	H15	F	rust/api/static/app.js	gelesene Aussagen erscheinen nicht	ROT	H.aussagen_erscheinen_mit_ihrem_beleg	mut_neu
-fluss_h_chat_aussagen	H4	F	rust/api/static/app.js	Chat-Sperre sperrt nichts	ROT	H.der_wizard_ist_waehrend_eines_laufenden_aufrufs_gesperrt	mut_neu
-fluss_h_chat_aussagen	H7	F	rust/api/static/app.js	der Chat bleibt als laufend markiert	ROT	H.aussagen_erscheinen_mit_ihrem_beleg	mut_neu
-fluss_h_chat_wartezustand	H3	F	rust/api/static/app.js	Antwort zu einer anderen Frage wird nicht gekennzeichnet	ROT	H.antwort_zu_einer_anderen_frage_wird_gekennzeichnet	mut_neu
-fluss_h_chat_wartezustand	H4	F	rust/api/static/app.js	Chat-Sperre sperrt nichts	ROT	H.waehrend_des_aufrufs_ist_der_fragenbereich_gesperrt	mut_neu
-fluss_h_chat_wartezustand	W1	F	rust/api/static/app.js	ohne Bewegung fehlt die ruhige Kennzeichnung	ROT	-	mut_neu
-fluss_h_chat_wartezustand	W2	F	rust/api/static/style.css	die Laufanzeige bewegt sich nie	ROT	H.waehrend_des_aufrufs_laeuft_eine_sichtbare_anzeige	mut_neu
-fluss_h_dialog_kanal	H2	F	rust/api/static/app.js	`unsicher` wird dem Nutzer nicht gezeigt	ROT	H.rueckfrage_nach_erklaer_mir_bleibt_im_selben_verlauf	mut_neu
-fluss_h_dialog_kanal	H9	F	rust/api/static/app.js	Erklaer-mir ohne Gesetzestext	ROT	H.erklaer_mir_erklaert_sofort_und_ohne_modell	mut_neu
-fluss_h_dialog_kanal	K1	F	rust/api/static/style.css	KI-Fenster ist nie zu sehen	ROT	H.berater_ist_ohne_klick_da_mit_genau_einem_knopf	mut_neu
-fluss_h_dialog_kanal	K3	F	rust/api/static/index.html	das alte Chat-Modal ist wieder da	ROT	H.berater_ist_ohne_klick_da_mit_genau_einem_knopf	mut_neu
-fluss_h_dialog_kanal_http	H10	D	rust/api/src/chat.rs	/chat liefert den Antworttext nicht	ROT	H.reine_frage_liefert_antwort_und_keinen_wert	mut_neu
-fluss_h_dialog_kanal_http	H11	D	rust/api/src/chat.rs	/chat verschweigt `unsicher`	ROT	H.unsicher_kommt_durch	mut_neu
-fluss_h_dialog_kanal_http	H12	D	rust/llm/src/gates.rs	Beleg-Gate laesst jeden Beleg durch	ROT	H.beleg_gate_ist_im_dialog_pfad_verdrahtet	mut_neu
-fluss_h_ki_flow	F4	F	rust/api/static/app.js	Schreibpfad ohne Umkehr invertierter Fragen	ROT	H.bool_umkehr_gilt_auch_im_rueckfragen_schritt	mut_neu
-fluss_h_ki_flow	F5	F	rust/api/static/app.js	Euro wird als Cent geschrieben	ROT	H.ein_cent_feld_landet_als_cent_im_store	mut_neu
-fluss_h_ki_flow	H7	F	rust/api/static/app.js	der Chat bleibt als laufend markiert	ROT	H.eine_neue_antwort_ueberholt_die_laufende_runde	mut_neu
-fluss_h_ki_flow_auflagen	H13	F	rust/api/static/app.js	Rechenweg unter dem Wert fehlt	ROT	H.der_rechenweg_steht_unter_dem_wert	mut_neu
-fluss_h_ki_flow_auflagen	H14	F	rust/api/static/style.css	Rueckfragen-Seite breiter als der 360-px-Schirm	ROT	H.die_seite_passt_auf_den_schmalen_schirm	mut_neu
-fluss_h_ki_flow_auflagen	H4	F	rust/api/static/app.js	Chat-Sperre sperrt nichts	ROT	H.die_chat_sperre_fasst_auch_die_rueckfragen_seite	mut_neu
-fluss_h_ki_flow_auflagen	H7	F	rust/api/static/app.js	der Chat bleibt als laufend markiert	ROT	H.eine_neue_antwort_ueberholt_die_laufende_runde	mut_neu
-fluss_h_ki_fokus	H8	F	rust/api/static/app.js	KI-Fokus schaltet sich nie ein	ROT	H.auf_dem_ki_weg_steht_NUR_das_ki_fenster	mut_neu
-fluss_h_ki_fokus	K1	F	rust/api/static/style.css	KI-Fenster ist nie zu sehen	ROT	-	mut_neu
-fluss_h_ki_fokus	K2	F	rust/api/static/style.css	Kopf (Fortschritt, Import) fehlt	ROT	H.auf_dem_fragebogen_weg_bleibt_der_kopf_vollstaendig	mut_neu
-fluss_h_verstanden_seite	D3	D	rust/api/src/anzeige.rs	Verstanden-Seite ohne frage_invertiert	ROT	H.kein_feld_wird_invertiert_angezeigt	mut_neu
-fluss_h_verstanden_seite	F7	F	rust/api/static/app.js	boolAntwort ohne Umkehr (Anzeige und Schreibpfad)	ROT	H.kein_feld_wird_invertiert_angezeigt	mut_neu
-fluss_h_verstanden_seite	H5	F	rust/api/static/app.js	Verstanden-Liste zeigt Cent als Rohzahl	ROT	H.cent_wird_als_euro_gezeigt	mut_neu
-fluss_h_verstanden_seite	H6	F	rust/api/static/app.js	Verstanden-Liste zeigt Bool ohne Umkehr	ROT	H.kein_feld_wird_invertiert_angezeigt	mut_neu
-instanz_zaehlung_am_dienst	I5	D	rust/interview/src/antwort.rs	ein vorlaeufiger Vorschlag zaehlt als Antwort (Instanz-Zahl)	ROT	D.ein_vorlaeufiger_wert_zaehlt_nicht	mut_neu
-instanz_zaehlung_am_dienst	I6	D	rust/interview/src/instanz.rs	Feld ohne Achse bekommt ein Etikett	ROT	D.ein_feld_ohne_achse_bleibt_bei_einem	mut_neu
-instanz_zaehlung_am_dienst	I7	D	rust/bindung/daten/bindung_regel_bedingungen.yaml	Gruppe kind laesst nur ein Kind zu	ROT	D.ein_vorlaeufiger_wert_zaehlt_nicht	mut_neu
-~fluss_c_umkehr	D3	D	rust/api/src/anzeige.rs	Verstanden-Seite ohne frage_invertiert	UEBERLEBT	-	mut_neu
-~fluss_c_umkehr	N0	F	rust/api/static/app.js	KONTROLLE: keine Aenderung (muss gruen bleiben)	UEBERLEBT	-	mut_neu
-~fluss_h_chat_wartezustand	H7	F	rust/api/static/app.js	der Chat bleibt als laufend markiert	UEBERLEBT	-	mut_neu
+test	mutant	art	datei	was	ergebnis	erster_pruefpunkt	lauf	sekunden
+bindung_der_oberflaeche	I7	D	rust/bindung/daten/bindung_regel_bedingungen.yaml	Gruppe kind laesst nur ein Kind zu	ROT	D.die_bindung_erklaert_die_gruppe_kind	mut_neu	-
+bindung_der_oberflaeche	S1	D	rust/bindung/daten/bindung_an_gesamt.yaml	kein_kap fehlt in der Ankreuzliste	ROT	B.die_bindung_erklaert_welche_fragen_dazugehoeren	mut_neu	-
+bindung_der_oberflaeche	S2	D	rust/bindung/daten/bindung_an_gesamt.yaml	kein_kap ohne Umkehr	ROT	B.die_bindung_erklaert_welche_fragen_dazugehoeren	mut_neu	-
+csp_header_der_ausgelieferten_seite	A2	D	rust/api/src/antwort.rs	Richtlinie sperrt das eigene Skript (Oberflaeche tot)	ROT	A.csp_auf_der_ausgelieferten_seite	mut_neu	-
+csp_header_der_ausgelieferten_seite	A3	D	rust/api/src/antwort.rs	Richtlinie erlaubt Inline-Style	ROT	A.csp_erlaubt_kein_inline_skript	mut_neu	-
+csp_header_der_ausgelieferten_seite	A4	D	rust/api/src/antwort.rs	kein CSP-Kopf mehr	ROT	A.csp_auf_der_ausgelieferten_seite	mut_neu	-
+csp_header_der_ausgelieferten_seite	S4	D	rust/api/src/antwort.rs	Dienst: CSP erlaubt Einbettung (frame-ancestors 'self')	ROT	A.csp_sperrt_einbettung_basis_und_formulare	mut_u_voll	101
+csp_header_der_ausgelieferten_seite	V3	D	rust/api/src/antwort.rs	Dienst: CSP erlaubt ein eigenes <base>	ROT	A.csp_sperrt_einbettung_basis_und_formulare	mut_u_voll	113
+csp_header_der_ausgelieferten_seite	V4	D	rust/api/src/antwort.rs	Dienst: CSP erlaubt Formular-Ziele auf die eigene Herkunft	ROT	A.csp_sperrt_einbettung_basis_und_formulare	mut_u_voll	103
+csp_html_dateien_passen_zur_richtlinie	C1	F	rust/api/static/index.html	Inline-Skript in der Seite	ROT	A.richtlinie_passt_zur_ausgelieferten_seite	mut_neu	-
+csp_html_dateien_passen_zur_richtlinie	C2	F	rust/api/static/index.html	style=-Attribut in der Seite	ROT	A.richtlinie_passt_zur_ausgelieferten_seite	mut_neu	-
+csp_html_dateien_passen_zur_richtlinie	C3	F	rust/api/static/index.html	Inline-Ereignis-Handler in der Seite	ROT	A.richtlinie_passt_zur_ausgelieferten_seite	mut_neu	-
+darstellung_a11y	Y1	F	rust/api/static/index.html	keine Dokumentsprache	ROT	Y.a11y_startscreen	mut_neu	-
+darstellung_a11y	Y2	F	rust/api/static/index.html	kein Seitentitel	ROT	Y.a11y_startscreen	mut_neu	-
+darstellung_a11y	Y3	F	rust/api/static/style.css	hellgrauer Text auf weissem Grund	ROT	Y.a11y_wegpunkt	mut_neu	-
+darstellung_a11y	Y4	F	rust/api/static/index.html	Chat-Eingabefeld ohne Beschriftung	ROT	Y.a11y_wegpunkt	mut_neu	-
+darstellung_lesbare_werte	L1	F	rust/api/static/app.js	Belegt-Liste zeigt den Rohwert	ROT	L.die_liste_zeigt_frage_und_lesbaren_wert	mut_neu	-
+darstellung_lesbare_werte	L2	F	rust/api/static/app.js	Belegt-Liste zeigt die Feld-Kennung statt der Frage	ROT	L.die_liste_zeigt_frage_und_lesbaren_wert	mut_neu	-
+darstellung_lesbare_werte	L3	F	rust/api/static/app.js	Ueberschrift ueber leerer Liste	ROT	L.ohne_antworten_steht_die_ueberschrift_nicht_da	mut_neu	-
+darstellung_lesbare_werte	L4	F	rust/api/static/style.css	Fragetext wird zur Buchstabensaeule	ROT	L.ein_langer_wert_quetscht_die_frage_nicht_zu_tode	mut_neu	-
+darstellung_lesbare_werte	L5	F	rust/api/static/app.js	Kopf zeigt einen Gedankenstrich als Wert	ROT	L.ohne_zahl_behauptet_der_kopf_nicht_dass_etwas_feststeht	mut_neu	-
+darstellung_lesbare_werte	U2	F	rust/api/static/app.js	euro() teilt durch 10 statt 100	ROT	L.die_liste_zeigt_frage_und_lesbaren_wert	mut_u_voll	93
+darstellung_nenner	P1	F	rust/api/static/app.js	Nenner zaehlt vorlaeufige Felder doppelt	ROT	P.ein_vorlaeufiger_wert_zaehlt_genau_einmal	mut_neu	-
+darstellung_nenner	P2	F	rust/api/static/app.js	Aenderung der Gesamtzahl wird nicht benannt	ROT	P.eine_antwort_die_bloecke_abschaltet_senkt_die_gesamtzahl_und_sagt_es	mut_neu	-
+darstellung_nenner	P3	F	rust/api/static/app.js	Leiste laeuft gegen max=1	ROT	P.nenner_ist_die_zahl_der_noch_offenen_fragen	mut_neu	-
+darstellung_panel	H4	F	rust/api/static/app.js	Chat-Sperre sperrt nichts	ROT	P.die_chat_sperre_greift_auch_im_zweispaltigen_bild	mut_neu	-
+darstellung_panel	P4	F	rust/api/static/style.css	Panel klebt nicht	ROT	P.panel_bleibt_beim_scrollen_stehen	mut_neu	-
+darstellung_panel	P5	F	rust/api/static/style.css	Panel liegt auch breit unter dem Inhalt	ROT	P.panel_liegt_auf_breitem_schirm_rechts_neben_dem_inhalt	mut_neu	-
+darstellung_panel	R4	F	rust/api/static/style.css	KI-Panel 900 px breit	ROT	P.panel_liegt_auf_breitem_schirm_rechts_neben_dem_inhalt	mut_neu	-
+darstellung_responsive	F10	F	rust/api/static/style.css	waagerechte Bildlaufleiste bei 360 px	ROT	R.start_screen_kacheln_responsive	mut_neu	-
+darstellung_responsive	R1	F	rust/api/static/style.css	Tap-Ziele nur 20 px hoch	ROT	R.start_screen_kacheln_responsive	mut_neu	-
+darstellung_responsive	R2	F	rust/api/static/style.css	Eingabefelder nur 16 px hoch	ROT	R.input_fields_tap_targets	mut_neu	-
+darstellung_responsive	R3	F	rust/api/static/index.html	Fortschrittsleiste versteckt	ROT	R.fortschrittsleiste_responsive	mut_neu	-
+darstellung_responsive	R4	F	rust/api/static/style.css	KI-Panel 900 px breit	ROT	R.wegpunkt_buttons_responsive	mut_neu	-
+fluss_a_anmelden_und_abmelden	A1	F	rust/api/static/app.js	Abmelden laesst das Token im Browser stehen	ROT	A.abmelden_entfernt_das_token	mut_neu	-
+fluss_a_anmelden_und_abmelden	F3	F	rust/api/static/app.js	POST ohne Authorization-Kopf	ROT	-	mut_neu	-
+fluss_a_anmelden_und_abmelden	F8	F	rust/api/static/app.js	401 zeigt keine Anmeldemaske	ROT	-	mut_neu	-
+fluss_a_anmelden_und_abmelden	F9	F	rust/api/static/index.html	leere Seite: Skript wird nicht geladen	ROT	-	mut_neu	-
+fluss_a_anmelden_und_abmelden	U1	F	rust/api/static/app.js	jget sendet nie ein Token (GET ohne Authorization)	ROT	A.request_nach_login_traegt_authorization_header	mut_u_voll	113
+fluss_a_anmelden_und_abmelden	U14	F	rust/api/static/app.js	Passwortfeld bleibt nach der Anmeldung gefuellt	ROT	A.passwort_feld_ist_nach_der_anmeldung_leer	mut_u_voll	85
+fluss_a_anmelden_und_abmelden	U15	F	rust/api/static/app.js	Abmelden nennt dem Server das Token nicht	ROT	A.abmelden_macht_das_token_beim_dienst_ungueltig	mut_u_voll	91
+fluss_a_anmelden_und_abmelden	U16	F	rust/api/static/app.js	Registrierung erwartet 200 statt 201	ROT	-	mut_u_voll	104
+fluss_a_anmelden_und_abmelden	U17	F	rust/api/static/app.js	Anmeldemaske laesst den Fragefluss sichtbar stehen	ROT	A.anmeldemaske_verbirgt_den_fragefluss	mut_u_voll	118
+fluss_a_anmelden_und_abmelden	U18	F	rust/api/static/app.js	Konto-Leiste nennt den Nutzer nicht	ROT	A.konto_leiste_nennt_den_nutzernamen	mut_u_voll	87
+fluss_a_einzelnutzer_und_richtlinie	A2	D	rust/api/src/antwort.rs	Richtlinie sperrt das eigene Skript (Oberflaeche tot)	ROT	-	mut_neu	-
+fluss_a_einzelnutzer_und_richtlinie	D2	D	rust/api/src/antwort.rs	app.js mit falschem Content-Type (Browser fuehrt es nicht aus)	ROT	-	mut_neu	-
+fluss_a_einzelnutzer_und_richtlinie	F9	F	rust/api/static/index.html	leere Seite: Skript wird nicht geladen	ROT	-	mut_neu	-
+fluss_b_auswahl_buttons	B4	F	rust/api/static/app.js	Klick auf einen Auswahl-Button markiert ihn nicht	ROT	B.klick_setzt_den_wert_und_markiert_den_button	mut_neu	-
+fluss_b_auswahl_buttons	B5	F	rust/api/static/app.js	Auswahl immer als Dropdown	ROT	B.erste_frage_ist_eine_button_wahl	mut_neu	-
+fluss_b_auswahl_buttons	B6	F	rust/api/static/app.js	Auswahl-Button traegt den Anzeigetext als Wert	ROT	-	mut_neu	-
+fluss_b_auswahl_buttons	F7	F	rust/api/static/app.js	boolAntwort ohne Umkehr (Anzeige und Schreibpfad)	ROT	B.bool_inversion_bleibt_erhalten	mut_neu	-
+fluss_b_fallstart_und_ankreuzliste	B1	F	rust/api/static/app.js	Ankreuzliste schreibt ohne Umkehr (kein_*-Felder bekommen das Gegenteil)	ROT	B.ein_kreuz_heisst_ja_und_ein_leeres_kaestchen_nein	mut_neu	-
+fluss_b_fallstart_und_ankreuzliste	B2	F	rust/api/static/app.js	Ankreuzliste erscheint nie	ROT	-	mut_neu	-
+fluss_b_fallstart_und_ankreuzliste	B3	F	rust/api/static/app.js	Kreuz gehoert zu keinem Feld	ROT	-	mut_neu	-
+fluss_b_fallstart_und_ankreuzliste	F9	F	rust/api/static/index.html	leere Seite: Skript wird nicht geladen	ROT	-	mut_neu	-
+fluss_b_fallstart_und_ankreuzliste	U21	F	rust/api/static/app.js	Doppel-Submit-Schutz der Kacheln entfernt	ROT	B.doppelklick_auf_die_kachel_legt_einen_fall_an	mut_u_voll	98
+fluss_c_antwort_schreiben	F5	F	rust/api/static/app.js	Euro wird als Cent geschrieben	ROT	C.jeder_typ_nimmt_seinen_wert_an_und_der_store_akzeptiert_ihn	mut_neu	-
+fluss_c_antwort_schreiben	F6	F	rust/api/static/app.js	stille Null bei ungueltiger Zahl	ROT	C.ungueltige_ganzzahl_liest_undefined_nicht_null	mut_neu	-
+fluss_c_antwort_schreiben	F9	F	rust/api/static/index.html	leere Seite: Skript wird nicht geladen	ROT	-	mut_neu	-
+fluss_c_antwort_schreiben	M1	F	rust/api/static/app.js	Feld mit Muster ohne pattern	ROT	C.ein_wert_gegen_das_muster_wird_nicht_geschrieben	mut_neu	-
+fluss_c_antwort_schreiben	U19	F	rust/api/static/app.js	Datum aus dem Datumsfeld wird als JJJJ.MM.TT geschrieben	ROT	C.jeder_typ_nimmt_seinen_wert_an_und_der_store_akzeptiert_ihn	mut_u_voll	100
+fluss_c_antwort_schreiben	U20	F	rust/api/static/app.js	Euro-Eingabe rundet ab statt zu runden	ROT	C.euro_mit_cent_wird_gerundet_nicht_abgeschnitten	mut_u_voll	113
+fluss_c_umkehr_invertierter_fragen	D1	D	rust/api/src/fragen.rs	/fragen liefert frage_invertiert immer false	ROT	C.invertierte_frage_speichert_die_bedeutung_der_antwort	mut_neu	-
+fluss_c_umkehr_invertierter_fragen	F4	F	rust/api/static/app.js	Schreibpfad ohne Umkehr invertierter Fragen	ROT	C.invertierte_frage_speichert_die_bedeutung_der_antwort	mut_neu	-
+fluss_c_umkehr_invertierter_fragen	F7	F	rust/api/static/app.js	boolAntwort ohne Umkehr (Anzeige und Schreibpfad)	ROT	C.invertierte_frage_speichert_die_bedeutung_der_antwort	mut_neu	-
+fluss_d_korrektur_der_zweiten_instanz	I1	F	rust/api/static/app.js	alle Instanzen gehen an dasselbe Feld	ROT	-	mut_neu	-
+fluss_d_korrektur_der_zweiten_instanz	I3	F	rust/api/static/app.js	Korrektur ohne `ersetzt` (Auflage B)	ROT	-	mut_neu	-
+fluss_d_korrektur_der_zweiten_instanz	I4	F	rust/api/static/app.js	leere Instanz wird geschrieben	ROT	-	mut_neu	-
+fluss_d_korrektur_der_zweiten_instanz	U22	F	rust/api/static/app.js	Instanzen: die letzte Instanz wird nicht gelesen	ROT	-	mut_u_voll	95
+fluss_d_mehrere_instanzen_anlegen	F9	F	rust/api/static/index.html	leere Seite: Skript wird nicht geladen	ROT	-	mut_neu	-
+fluss_d_mehrere_instanzen_anlegen	I1	F	rust/api/static/app.js	alle Instanzen gehen an dasselbe Feld	ROT	-	mut_neu	-
+fluss_d_mehrere_instanzen_anlegen	I2	F	rust/api/static/app.js	alle leer schreibt weiter und sagt es nicht	ROT	D.alle_leer_schreibt_nichts_und_sagt_es	mut_neu	-
+fluss_d_mehrere_instanzen_anlegen	I4	F	rust/api/static/app.js	leere Instanz wird geschrieben	ROT	-	mut_neu	-
+fluss_d_mehrere_instanzen_anlegen	U22	F	rust/api/static/app.js	Instanzen: die letzte Instanz wird nicht gelesen	ROT	-	mut_u_voll	95
+fluss_e_sperre_sichtbar_und_behebbar	E1	F	rust/api/static/app.js	Sperranzeige: der Klick auf die ausloesende Angabe tut nichts	ROT	E.sperranzeige_oeffnet_die_frage_zu_ihrem_feld	mut_e	-
+fluss_e_sperre_sichtbar_und_behebbar	E2	F	rust/api/static/app.js	Sperrweg setzt KORREKTUR_FID nicht (Korrektur ohne ersetzt)	ROT	E.sperranzeige_oeffnet_die_frage_zu_ihrem_feld	mut_e	-
+fluss_e_sperre_sichtbar_und_behebbar	E3	F	rust/api/static/app.js	korrigiereBestaetigt: die Sperre bei ausgeschlossen ist aufgeweicht	ROT	E.normale_korrektur_bleibt_im_sperrzustand_gesperrt	mut_e	-
+fluss_e_sperre_sichtbar_und_behebbar	E4	D	rust/api/src/ergebnis.rs	Sperrgrund nennt nie ein ausloesendes Feld	ROT	E.sperrgrund_traegt_die_ausloesende_feld_id	mut_e	-
+fluss_e_sperre_sichtbar_und_behebbar	E5	D	rust/konsistenz/src/partner.rs	ein Partnerfeld fehlt in der Widerspruchsliste	ROT	E.jedes_partnerfeld_wird_genauso_gemeldet	mut_e	-
+fluss_e_sperre_sichtbar_und_behebbar	E6	D	rust/konsistenz/src/partner.rs	Zusammenveranlagung wird als Widerspruch gemeldet	ROT	E.ohne_sperre_keine_sperr_felder	mut_e	-
+fluss_e_sperre_sichtbar_und_behebbar	E7	D	rust/api/src/routen/lesen.rs	Einzelfeld-Frage liefert eine andere Frage als die gefragte	ROT	E.sperrfeld_ist_ueber_den_einzelfeld_weg_erreichbar	mut_e	-
+fluss_e_sperre_sichtbar_und_behebbar	E8	D	rust/konsistenz/src/partner.rs	ein Partnerfeld gilt immer als gesetzt (die Korrektur auf 0 hebt die Sperre nicht auf)	ROT	E.korrektur_hebt_die_sperre_auf	mut_e	-
+fluss_e_sperre_sichtbar_und_behebbar	U7	F	rust/api/static/app.js	Ergebnis-Sperre zeigt den Klartext des Servers nicht	ROT	E.sperranzeige_zeigt_den_klartext_des_servers	mut_u_voll	105
+fluss_e_sperre_sichtbar_und_behebbar	U8	F	rust/api/static/app.js	Preflight: Widerspruch und Hinweis vertauscht	ROT	E.vorab_pruefung_zeigt_widerspruch_und_hinweis_getrennt	mut_u_voll	125
+fluss_e_sperre_sichtbar_und_behebbar	U9	F	rust/api/static/app.js	Preflight-Liste bleibt immer verborgen	ROT	E.vorab_pruefung_zeigt_widerspruch_und_hinweis_getrennt	mut_u_voll	109
+fluss_f_kette_ueber_http	RW10	D	rust/api/src/ergebnis.rs	p31 nennt den falschen Sieger	ROT	F.p31_kindergeld_gewinnt_kette_bleibt_vollstaendig	mut_f	-
+fluss_f_kette_ueber_http	RW11	D	rust/api/src/ergebnis.rs	Stufe tarifliche_est traegt das zvE	ROT	F.p31_stufe_nennt_die_guenstigerpruefung	mut_f	-
+fluss_f_kette_ueber_http	RW8	D	rust/api/src/ergebnis.rs	Kette endet nicht bei der festzusetzenden Steuer	ROT	F.kette_endet_bei_der_zahl	mut_f	-
+fluss_f_kette_ueber_http	RW9	D	rust/api/src/ergebnis.rs	p31 nennt kein Kindergeld	ROT	F.p31_stufe_nennt_die_guenstigerpruefung	mut_f	-
+fluss_f_rechenweg_im_bild	F10	F	rust/api/static/style.css	waagerechte Bildlaufleiste bei 360 px	ROT	F.rechenweg_positiv	mut_f	-
+fluss_f_rechenweg_im_bild	RW1	F	rust/api/static/app.js	Rechenweg zeigt als letzte Stufe die tarifliche statt der festzusetzenden Steuer	ROT	F.p31_stufe_ist_im_dom_sichtbar	mut_f	-
+fluss_f_rechenweg_im_bild	RW2	F	rust/api/static/app.js	der § 31-Satz erreicht die Oberflaeche nicht	ROT	F.p31_stufe_ist_im_dom_sichtbar	mut_f	-
+fluss_f_rechenweg_im_bild	RW3	F	rust/api/static/app.js	kein Hinweis auf offene Angaben im Erfolgs-Zweig (stille Null)	ROT	F.ergebnis_hinweis_offen_bei_stiller_null	mut_f	-
+fluss_f_rechenweg_im_bild	RW4	F	rust/api/static/app.js	ohne Kette fehlt der Hinweis	ROT	F.rechenweg_bestaetigt_ohne_kette	mut_f	-
+fluss_f_rechenweg_im_bild	RW5	F	rust/api/static/app.js	Rechenweg erscheint im Sperr-Zweig	ROT	F.rechenweg_negativ	mut_f	-
+fluss_f_rechenweg_im_bild	RW6	F	rust/api/static/app.js	Betraege des Rechenwegs im falschen Zahlenformat	ROT	F.rechenweg_positiv	mut_f	-
+fluss_f_rechenweg_im_bild	RW7	F	rust/api/static/app.js	Rechenweg zeigt beim Gesamtbetrag das zvE	ROT	F.rechenweg_positiv	mut_f	-
+fluss_f_rechenweg_im_bild	RW8	D	rust/api/src/ergebnis.rs	Kette endet nicht bei der festzusetzenden Steuer	ROT	F.kette_endet_bei_der_zahl	mut_f	-
+fluss_f_rechenweg_im_bild	U2	F	rust/api/static/app.js	euro() teilt durch 10 statt 100	ROT	F.fehlender_betrag_zeigt_den_gedankenstrich	mut_u_voll	93
+fluss_f_rechenweg_im_bild	U3	F	rust/api/static/app.js	euro(undefined) liefert NaN-Text statt Gedankenstrich	ROT	F.fehlender_betrag_zeigt_den_gedankenstrich	mut_u_voll	110
+fluss_f_rechenweg_im_bild	U4	F	rust/api/static/app.js	Rechenweg: Vorzeichen der Delta-Zeilen vertauscht	ROT	F.delta_zeilen_tragen_vorzeichen_und_betrag	mut_u_voll	113
+fluss_f_rechenweg_im_bild	U5	F	rust/api/static/app.js	Rechenweg: Zeile Ermaessigungen/Zuschlaege rechnet tariflich minus festzusetzend	ROT	F.delta_zeilen_tragen_vorzeichen_und_betrag	mut_u_voll	107
+fluss_f_rechenweg_im_bild	U6	F	rust/api/static/app.js	eine echte Null-Steuer (zahl_cent=0) gilt als Sperre	ROT	F.null_steuer_ist_eine_zahl_keine_sperre	mut_u_voll	103
+fluss_f_rechenweg_im_bild	V1	F	rust/api/static/app.js	Rechenweg: Zeile Abzuege rechnet Gesamtbetrag minus zvE (Vorzeichen der ersten Differenz)	ROT	F.delta_zeilen_tragen_vorzeichen_und_betrag	mut_u_voll	104
+fluss_f_rechenweg_im_bild	V2	F	rust/api/static/app.js	euro() zeigt keine Cent	ROT	F.null_steuer_ist_eine_zahl_keine_sperre	mut_u_voll	77
+fluss_g_absendeknopf_mit_eric_attrappe	G10	D	rust/api/src/einreichen.rs	Plausibilitaetsfehler tragen einen unbekannten Grund	ROT	G.beanstandet_zeigt_anderen_text_als_erfolg	mut_g	-
+fluss_g_absendeknopf_mit_eric_attrappe	G11	D	rust/api/src/einreichen.rs	der 200-Rumpf verschweigt nicht uebertragene Werte	ROT	G.erfolg_zeigt_in_ordnung_ohne_beanstandung_oder_unsicherheit	mut_g	-
+fluss_g_absendeknopf_mit_eric_attrappe	G12	D	rust/api/src/einreichen.rs	fehlendes ERiC meldet einen unbekannten Grund	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g	-
+fluss_g_absendeknopf_mit_eric_attrappe	G13	D	rust/api/src/einreichen.rs	kein Pruefmodul fuer das Jahr wird nicht erkannt	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g	-
+fluss_g_absendeknopf_mit_eric_attrappe	G14	D	rust/api/src/einreichen.rs	Plausibilitaetsfehler gelten als Nicht-Urteil	ROT	G.beanstandet_zeigt_anderen_text_als_erfolg	mut_g	-
+fluss_g_absendeknopf_mit_eric_attrappe	G15	D	rust/api/src/einreichen.rs	Teilrechnung meldet einen unbekannten Grund	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g	-
+fluss_g_absendeknopf_mit_eric_attrappe	G4	F	rust/api/static/app.js	rohes `detail` des Servers steht auf dem Schirm	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g	-
+fluss_g_absendeknopf_mit_eric_attrappe	G5	F	rust/api/static/app.js	„in Ordnung“ auch bei nicht uebertragenen Werten	ROT	G.erfolg_zeigt_in_ordnung_ohne_beanstandung_oder_unsicherheit	mut_g	-
+fluss_g_absendeknopf_mit_eric_attrappe	G6	F	rust/api/static/app.js	beanstandet klingt wie nicht geprueft	ROT	G.beanstandet_zeigt_anderen_text_als_erfolg	mut_g	-
+fluss_g_absendeknopf_mit_eric_attrappe	G7	F	rust/api/static/app.js	kein Pruefcode auf dem Schirm	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g	-
+fluss_g_absendeknopf_mit_eric_attrappe	U10	F	rust/api/static/app.js	Absendeknopf bleibt nach der Pruefung gesperrt	ROT	G.nicht_deklariert_zeigt_jeden_eintrag_statt_in_ordnung	mut_u_voll	92
+fluss_g_absendeknopf_ohne_eric	G1	F	rust/api/static/app.js	Absendeknopf bleibt waehrend der Pruefung klickbar (Doppelklick startet zwei Laeufe)	ROT	G.doppel_klick_schuetzt_gegen_doppel_submit	mut_g	-
+fluss_g_absendeknopf_ohne_eric	G15	D	rust/api/src/einreichen.rs	Teilrechnung meldet einen unbekannten Grund	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g	-
+fluss_g_absendeknopf_ohne_eric	G2	F	rust/api/static/app.js	Sperrgrund-Klartext des Servers wird nicht gezeigt	ROT	G.sperrgrund_zeigt_den_klartext_des_servers	mut_g	-
+fluss_g_absendeknopf_ohne_eric	G3	F	rust/api/static/app.js	Satz-Tabelle als Objekt: „constructor“ vom Server trifft eine Eigenschaft	ROT	G.unbekannter_schluessel_zeigt_den_rueckfallsatz	mut_g	-
+fluss_g_absendeknopf_ohne_eric	G4	F	rust/api/static/app.js	rohes `detail` des Servers steht auf dem Schirm	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g	-
+fluss_g_absendeknopf_ohne_eric	G7	F	rust/api/static/app.js	kein Pruefcode auf dem Schirm	ROT	G.je_ursache_ein_fester_text_und_alle_verschieden	mut_g	-
+fluss_g_absendeknopf_ohne_eric	G8	F	rust/api/static/index.html	Satz „nur lokal“ hat keine Bindung zum Knopf (Screenreader)	ROT	G.vor_dem_klick_steht_nur_lokal_nichts_ans_finanzamt	mut_g	-
+fluss_g_absendeknopf_ohne_eric	G9	F	rust/api/static/index.html	Absendeknopf ohne type=button	ROT	G.knopf_ist_im_fertig_screen_nach_preflight	mut_g	-
+fluss_g_absendeknopf_ohne_eric	U10	F	rust/api/static/app.js	Absendeknopf bleibt nach der Pruefung gesperrt	ROT	G.doppel_klick_schuetzt_gegen_doppel_submit	mut_u_voll	92
+fluss_g_anzeige_unerwarteter_antworten	U10	F	rust/api/static/app.js	Absendeknopf bleibt nach der Pruefung gesperrt	ROT	G.200_ohne_pruefbare_liste_ist_nicht_in_ordnung	mut_u_voll	92
+fluss_g_anzeige_unerwarteter_antworten	U11	F	rust/api/static/app.js	fehlende nicht_deklariert-Liste gilt als in Ordnung (fail-open)	ROT	G.200_ohne_pruefbare_liste_ist_nicht_in_ordnung	mut_u_voll	100
+fluss_g_anzeige_unerwarteter_antworten	U12	F	rust/api/static/app.js	Pruefcode auch bei Status 200 (rc=0)	ROT	G.200_mit_rc_null_zeigt_keinen_pruefcode	mut_u_voll	101
+fluss_g_anzeige_unerwarteter_antworten	U13	F	rust/api/static/app.js	kein_pruefmodul_fuer_vz ohne gueltiges Jahr zeigt 'undefined' statt Standardsatz	ROT	G.kein_pruefmodul_ohne_jahr_zeigt_den_standardsatz	mut_u_voll	102
+fluss_h_chat_aussagen	H1	F	rust/api/static/app.js	Rueckfrage und Wert am selben Feld: der Wert wird nicht zurueckgehalten	ROT	H.rueckfrage_und_vorschlag_am_selben_feld_haelt_den_wert_zurueck	mut_neu	-
+fluss_h_chat_aussagen	H15	F	rust/api/static/app.js	gelesene Aussagen erscheinen nicht	ROT	H.aussagen_erscheinen_mit_ihrem_beleg	mut_neu	-
+fluss_h_chat_aussagen	H4	F	rust/api/static/app.js	Chat-Sperre sperrt nichts	ROT	H.der_wizard_ist_waehrend_eines_laufenden_aufrufs_gesperrt	mut_neu	-
+fluss_h_chat_aussagen	H7	F	rust/api/static/app.js	der Chat bleibt als laufend markiert	ROT	H.aussagen_erscheinen_mit_ihrem_beleg	mut_neu	-
+fluss_h_chat_wartezustand	H3	F	rust/api/static/app.js	Antwort zu einer anderen Frage wird nicht gekennzeichnet	ROT	H.antwort_zu_einer_anderen_frage_wird_gekennzeichnet	mut_neu	-
+fluss_h_chat_wartezustand	H4	F	rust/api/static/app.js	Chat-Sperre sperrt nichts	ROT	H.waehrend_des_aufrufs_ist_der_fragenbereich_gesperrt	mut_neu	-
+fluss_h_chat_wartezustand	W1	F	rust/api/static/app.js	ohne Bewegung fehlt die ruhige Kennzeichnung	ROT	-	mut_neu	-
+fluss_h_chat_wartezustand	W2	F	rust/api/static/style.css	die Laufanzeige bewegt sich nie	ROT	H.waehrend_des_aufrufs_laeuft_eine_sichtbare_anzeige	mut_neu	-
+fluss_h_dialog_kanal	H2	F	rust/api/static/app.js	`unsicher` wird dem Nutzer nicht gezeigt	ROT	H.rueckfrage_nach_erklaer_mir_bleibt_im_selben_verlauf	mut_neu	-
+fluss_h_dialog_kanal	H9	F	rust/api/static/app.js	Erklaer-mir ohne Gesetzestext	ROT	H.erklaer_mir_erklaert_sofort_und_ohne_modell	mut_neu	-
+fluss_h_dialog_kanal	K1	F	rust/api/static/style.css	KI-Fenster ist nie zu sehen	ROT	H.berater_ist_ohne_klick_da_mit_genau_einem_knopf	mut_neu	-
+fluss_h_dialog_kanal	K3	F	rust/api/static/index.html	das alte Chat-Modal ist wieder da	ROT	H.berater_ist_ohne_klick_da_mit_genau_einem_knopf	mut_neu	-
+fluss_h_dialog_kanal_http	H10	D	rust/api/src/chat.rs	/chat liefert den Antworttext nicht	ROT	H.reine_frage_liefert_antwort_und_keinen_wert	mut_neu	-
+fluss_h_dialog_kanal_http	H11	D	rust/api/src/chat.rs	/chat verschweigt `unsicher`	ROT	H.unsicher_kommt_durch	mut_neu	-
+fluss_h_dialog_kanal_http	H12	D	rust/llm/src/gates.rs	Beleg-Gate laesst jeden Beleg durch	ROT	H.beleg_gate_ist_im_dialog_pfad_verdrahtet	mut_neu	-
+fluss_h_ki_flow	F4	F	rust/api/static/app.js	Schreibpfad ohne Umkehr invertierter Fragen	ROT	H.bool_umkehr_gilt_auch_im_rueckfragen_schritt	mut_neu	-
+fluss_h_ki_flow	F5	F	rust/api/static/app.js	Euro wird als Cent geschrieben	ROT	H.ein_cent_feld_landet_als_cent_im_store	mut_neu	-
+fluss_h_ki_flow	H7	F	rust/api/static/app.js	der Chat bleibt als laufend markiert	ROT	H.eine_neue_antwort_ueberholt_die_laufende_runde	mut_neu	-
+fluss_h_ki_flow	U22	F	rust/api/static/app.js	Instanzen: die letzte Instanz wird nicht gelesen	ROT	H.zwei_kinder_geben_zwei_ereignisse_im_store	mut_u_voll	95
+fluss_h_ki_flow_auflagen	H13	F	rust/api/static/app.js	Rechenweg unter dem Wert fehlt	ROT	H.der_rechenweg_steht_unter_dem_wert	mut_neu	-
+fluss_h_ki_flow_auflagen	H14	F	rust/api/static/style.css	Rueckfragen-Seite breiter als der 360-px-Schirm	ROT	H.die_seite_passt_auf_den_schmalen_schirm	mut_neu	-
+fluss_h_ki_flow_auflagen	H4	F	rust/api/static/app.js	Chat-Sperre sperrt nichts	ROT	H.die_chat_sperre_fasst_auch_die_rueckfragen_seite	mut_neu	-
+fluss_h_ki_flow_auflagen	H7	F	rust/api/static/app.js	der Chat bleibt als laufend markiert	ROT	H.eine_neue_antwort_ueberholt_die_laufende_runde	mut_neu	-
+fluss_h_ki_flow_auflagen	U2	F	rust/api/static/app.js	euro() teilt durch 10 statt 100	ROT	H.ein_rechenweg_ohne_satz_verschwindet_nicht	mut_u_voll	93
+fluss_h_ki_flow_auflagen	V2	F	rust/api/static/app.js	euro() zeigt keine Cent	ROT	H.ein_rechenweg_ohne_satz_verschwindet_nicht	mut_u_voll	77
+fluss_h_ki_fokus	H8	F	rust/api/static/app.js	KI-Fokus schaltet sich nie ein	ROT	H.auf_dem_ki_weg_steht_NUR_das_ki_fenster	mut_neu	-
+fluss_h_ki_fokus	K1	F	rust/api/static/style.css	KI-Fenster ist nie zu sehen	ROT	-	mut_neu	-
+fluss_h_ki_fokus	K2	F	rust/api/static/style.css	Kopf (Fortschritt, Import) fehlt	ROT	H.auf_dem_fragebogen_weg_bleibt_der_kopf_vollstaendig	mut_neu	-
+fluss_h_verstanden_seite	D3	D	rust/api/src/anzeige.rs	Verstanden-Seite ohne frage_invertiert	ROT	H.kein_feld_wird_invertiert_angezeigt	mut_neu	-
+fluss_h_verstanden_seite	F7	F	rust/api/static/app.js	boolAntwort ohne Umkehr (Anzeige und Schreibpfad)	ROT	H.kein_feld_wird_invertiert_angezeigt	mut_neu	-
+fluss_h_verstanden_seite	H5	F	rust/api/static/app.js	Verstanden-Liste zeigt Cent als Rohzahl	ROT	H.cent_wird_als_euro_gezeigt	mut_neu	-
+fluss_h_verstanden_seite	H6	F	rust/api/static/app.js	Verstanden-Liste zeigt Bool ohne Umkehr	ROT	H.kein_feld_wird_invertiert_angezeigt	mut_neu	-
+fluss_h_verstanden_seite	U2	F	rust/api/static/app.js	euro() teilt durch 10 statt 100	ROT	H.cent_wird_als_euro_gezeigt	mut_u_voll	93
+fluss_h_verstanden_seite	V2	F	rust/api/static/app.js	euro() zeigt keine Cent	ROT	H.cent_wird_als_euro_gezeigt	mut_u_voll	77
+instanz_zaehlung_am_dienst	I5	D	rust/interview/src/antwort.rs	ein vorlaeufiger Vorschlag zaehlt als Antwort (Instanz-Zahl)	ROT	D.ein_vorlaeufiger_wert_zaehlt_nicht	mut_neu	-
+instanz_zaehlung_am_dienst	I6	D	rust/interview/src/instanz.rs	Feld ohne Achse bekommt ein Etikett	ROT	D.ein_feld_ohne_achse_bleibt_bei_einem	mut_neu	-
+instanz_zaehlung_am_dienst	I7	D	rust/bindung/daten/bindung_regel_bedingungen.yaml	Gruppe kind laesst nur ein Kind zu	ROT	D.ein_vorlaeufiger_wert_zaehlt_nicht	mut_neu	-
+~(ganze Suite)	N0	F	rust/api/static/app.js	KONTROLLE: keine Aenderung (muss gruen bleiben)	UEBERLEBT	-	mut_u_voll	126
+~fluss_c_umkehr	D3	D	rust/api/src/anzeige.rs	Verstanden-Seite ohne frage_invertiert	UEBERLEBT	-	mut_neu	-
+~fluss_c_umkehr	N0	F	rust/api/static/app.js	KONTROLLE: keine Aenderung (muss gruen bleiben)	UEBERLEBT	-	mut_neu	-
+~fluss_h_chat_wartezustand	H7	F	rust/api/static/app.js	der Chat bleibt als laufend markiert	UEBERLEBT	-	mut_neu	-
