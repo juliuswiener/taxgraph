@@ -434,7 +434,13 @@ jobs:
       # So verdeckte `parity --lib` am 2026-10-02 den roten eingang-Doctest (Lauf 36985004342:
       # kein einziges "Doc-tests" im Log). Der Job-Status bleibt rot, sobald ein Ziel rot ist
       # (exit 101); neu ist nur, dass ein Lauf ALLE roten Ziele zeigt statt eines je Push.
+      #
+      # TAXGRAPH_OHNE_BROWSER=1 (Nr. 72, E9): die Browser-Tests der Oberflaeche
+      # (rust/api/tests/oberflaeche) brauchen Chromium und chromedriver; ohne beides sind sie ROT,
+      # mit dem Flag laufen sie nicht. BENANNTER MANGEL: eine gruene CI beweist nichts ueber die
+      # Oberflaeche; sie laeuft lokal (`cargo test -p api --test oberflaeche`).
       - name: cargo test
         run: cd rust && cargo test --no-fail-fast
         env:
           TAXGRAPH_OHNE_XSD: "1"
+          TAXGRAPH_OHNE_BROWSER: "1"
