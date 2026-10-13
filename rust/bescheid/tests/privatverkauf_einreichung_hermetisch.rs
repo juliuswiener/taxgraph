@@ -33,7 +33,7 @@ use bescheid::Instanzquelle;
 use domain::{Achsenwert, Herkunft, HerkunftVektor, PruefTiefe, Sperrgrund, Vz, Zustand};
 use elster::testhilfe::schemas_da;
 use serde_json::{json, Value};
-use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
+use store::{Abweisung, AbweisungRoh, BindungNachschlag, NeuesEventRoh, Signal, Store};
 
 /// Ein bestaetigter Wert (zwei Signale).
 fn setze(s: &mut Store, feld: &str, wert: Value) {
@@ -44,30 +44,34 @@ fn setze(s: &mut Store, feld: &str, wert: Value) {
 fn setze_mit(s: &mut Store, feld: &str, wert: Value, zustand: Zustand) {
     let bestaetigt = zustand == Zustand::Bestaetigt;
     let leer = HashMap::new();
-    s.append_roh(
-        &NeuesEventRoh {
-            feld_id: feld.to_owned(),
-            wert: wert.into(),
-            zustand,
-            herkunft: HerkunftVektor::Voll(Herkunft {
-                herkunft: Achsenwert::new("laie").unwrap(),
-                pruef_tiefe: PruefTiefe::Ungeprueft,
-                haftung: Achsenwert::new("nutzer").unwrap(),
-            }),
-            schreiber: "ui:laie".to_owned(),
-            signal: Signal {
-                signal_1: Some(None),
-                signal_2: bestaetigt.then(|| format!("ok@{feld}")),
-                signal_2_fehlt: !bestaetigt,
-            },
-            signal_2_fremd: None,
-            ersetzt: None,
-            ts: Some("2026-09-01T00:00:00+00:00".to_owned()),
+    let mut neu = NeuesEventRoh {
+        feld_id: feld.to_owned(),
+        wert: wert.into(),
+        zustand,
+        herkunft: HerkunftVektor::Voll(Herkunft {
+            herkunft: Achsenwert::new("laie").unwrap(),
+            pruef_tiefe: PruefTiefe::Ungeprueft,
+            haftung: Achsenwert::new("nutzer").unwrap(),
+        }),
+        schreiber: "ui:laie".to_owned(),
+        signal: Signal {
+            signal_1: Some(None),
+            signal_2: bestaetigt.then(|| format!("ok@{feld}")),
+            signal_2_fehlt: !bestaetigt,
         },
-        None,
-        BindungNachschlag::neu(&leer),
-    )
-    .unwrap();
+        signal_2_fremd: None,
+        ersetzt: None,
+        ts: Some("2026-09-01T00:00:00+00:00".to_owned()),
+    };
+    match s.append_roh(&neu, None, BindungNachschlag::neu(&leer)) {
+        Ok(_) => {}
+        // Nr. 70: ein Feld, das die Akte schon traegt (zum Beispiel `veranlagung`), wird ersetzt statt abgewiesen.
+        Err(AbweisungRoh::Store(Abweisung::AktivesEventVorhanden { aktives_event, .. })) => {
+            neu.ersetzt = Some(aktives_event.to_string());
+            s.append_roh(&neu, None, BindungNachschlag::neu(&leer)).unwrap();
+        }
+        Err(e) => panic!("{feld}: {e:?}"),
+    }
 }
 
 fn name(basis: &str, n: u8) -> String {
@@ -649,4 +653,74 @@ fn ein_zwei_drei_verkaeufe_einer_person_stehen_in_einem_so_und_einem_grdst_mit_e
             assert!(ok, "{n} Verkaeufe derselben Person: XML nicht schema-valide: {meldung}");
         }
     }
+}
+
+// ---------------------------------------------------------------- Ehepaar: der Verkauf gehoert keiner Person, also sperrt die Abgabe
+
+/// Die Akte als Zusammenveranlagung: Person B bestaetigt den Kegel der Scheibe `gesamt` (Lohn und Kapital 0), damit der Guard nicht
+/// schon an `partner_kegel_offen` endet und allein der Verkauf entscheidet.
+fn akte_ehepaar(verkaeufe: Vec<(String, Value)>) -> Store {
+    let mut s = akte(verkaeufe);
+    setze(&mut s, "veranlagung", json!("zusammen"));
+    for feld in [
+        "bruttoarbeitslohn_partner",
+        "kap_kapitalertraege_partner",
+        "kap_gewinn_aktien_partner",
+        "kap_gewinn_sonstige_partner",
+        "kap_verlust_aktien_partner",
+        "kap_verlust_sonstige_partner",
+    ] {
+        setze(&mut s, feld, json!(0));
+    }
+    s
+}
+
+/// Die Kz der Gruppe `p23_veraeusserung`, die der Schreiber in `person_b` (die zweite Anlage des Ehegatten) legt. Leer heisst: der Verkauf
+/// wird nur ueber den Instanzindex geroutet, kein Feld sagt, wessen Verkauf es ist. Ohne Ring-Werte und ohne Guard gelesen, wie
+/// `elster::deklariere` den Snapshot sieht.
+fn p23_kz_in_person_b(s: &Store) -> (Vec<String>, Vec<String>) {
+    let felder = bescheid::testhilfe::felder(s);
+    let d = elster::deklariere(&felder, index(), 2025, None).unwrap();
+    let p23: Vec<String> = d
+        .anlage_instanzen
+        .iter()
+        .filter(|(g, _)| g == "p23_veraeusserung")
+        .flat_map(|(_, ii)| ii)
+        .flat_map(|i| i.felder.keys().cloned())
+        .collect();
+    let in_b = p23
+        .iter()
+        .filter(|kz| d.person_b.contains_key(kz.as_str()))
+        .cloned()
+        .collect();
+    (p23, in_b)
+}
+
+/// `test_p23_ring_sperre_kopplung_an_personen_routing.py` (Nr. 70). Der Python-Waechter sagt: solange der Schreiber einen Verkauf nur nach
+/// Instanzindex einer Person zuordnet (kein Personenfeld, kein Kz in `person_b`), muss die Ring-Sperre halten, sonst reicht ein Ehepaar
+/// den Verkauf des Partners unter der eigenen Person ein. In Rust ist das die Sperre `p23_verkauf_nicht_gerechnet` fuer jedes Ehepaar mit
+/// bejahtem Verkauf (`p23_sperrgrund`, Abweichung Nr. 54; Julius: sie faellt nur auf sein Wort). Gemessen wird am Abgabeweg
+/// (`einreichungs_xml`): der Hauptweg `GET /ergebnis` hat schon `z2_rentner_zusammen_verkauf_bejaht_sperrt_p23_verkauf_nicht_gerechnet`,
+/// aber nur fuer `rentner_gesamt`; die Scheibe `gesamt` und die Abgabe hatten kein Ehepaar-Gegenstueck.
+///
+/// Kontrolle zuerst: derselbe Verkauf als Einzelveranlagung ist einreichbar, die Sperre unten ist also die des Ehepaars und nicht die des
+/// Verkaufs. Ursache gemessen: der Verkauf steht unter `anlage_instanzen`, kein Kz in `person_b`. Faellt die Sperre, ohne dass das Routing
+/// einen Ehegatten kennt, ist der Wert falsch (Geld: der Verkauf des Partners steht bei Person A).
+#[test]
+fn ein_ehepaar_mit_verkauf_sperrt_die_abgabe_solange_der_verkauf_keiner_person_zugeordnet_wird() {
+    erwarte_einreichbar("einzel", &lauf(&akte(pflichtig(1))));
+
+    let ehe = akte_ehepaar(pflichtig(1));
+    let (p23, in_b) = p23_kz_in_person_b(&ehe);
+    assert!(
+        !p23.is_empty(),
+        "KONTROLLE: der Verkauf steht mit keinem Kz unter anlage_instanzen['p23_veraeusserung'], die Ursachen-Messung sagt nichts"
+    );
+    let r = lauf(&ehe);
+    let gesperrt = matches!(&r, Err(EinreichFehler::Gesperrt(Sperrgrund::P23VerkaufNichtGerechnet)));
+    assert!(
+        gesperrt || !in_b.is_empty(),
+        "KOPPLUNG GEBROCHEN: ein Ehepaar mit bejahtem Verkauf wird nicht mit p23_verkauf_nicht_gerechnet gesperrt ({r:?}), und der Schreiber \
+         legt keinen Verkauf in person_b ({p23:?}): der Verkauf des Partners wuerde unter Person A eingereicht"
+    );
 }
