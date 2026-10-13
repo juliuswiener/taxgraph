@@ -784,3 +784,19 @@ fn openapi_beschreibt_keine_route_ohne_router() {
     let ohne: Vec<_> = dokument_routen().difference(&router).cloned().collect();
     assert!(ohne.is_empty(), "im Dokument, nicht im Router: {ohne:?}");
 }
+
+/// `POST /fall` verlangt das Jahr (Abweichung Nr. 73): das Dokument fuehrt es unter `required`. Sonst
+/// baut ein Klient aus dem Dokument einen Aufruf ohne Jahr und bekommt die 400.
+#[test]
+fn openapi_verlangt_das_jahr_beim_fall_anlegen() {
+    use utoipa::OpenApi;
+    let doc = serde_json::to_value(api::openapi::ApiDoc::openapi()).unwrap();
+    let pflicht: BTreeSet<String> = doc["components"]["schemas"]["FallAnlegen"]["required"]
+        .as_array()
+        .expect("FallAnlegen ohne `required`")
+        .iter()
+        .filter_map(|v| v.as_str().map(str::to_owned))
+        .collect();
+    assert!(pflicht.contains("fall_id"), "KONTROLLE: {pflicht:?}");
+    assert!(pflicht.contains("veranlagungszeitraum"), "{pflicht:?}");
+}

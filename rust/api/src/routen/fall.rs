@@ -44,10 +44,19 @@ fn verfuegbare_jahre(konfig: &Konfig) -> Result<BTreeSet<i64>, ApiFehler> {
 }
 
 fn vz_pruefen(konfig: &Konfig, obj: &Map<String, Value>) -> Result<i64, ApiFehler> {
-    let roh = obj
-        .get("veranlagungszeitraum")
-        .cloned()
-        .unwrap_or_else(|| json!(2025));
+    // Abweichung Nr. 73: Python setzt hier still 2025 (`api.py:285`). Ein vergessenes Jahr rechnete mit dem Recht des
+    // falschen Jahres, ohne Hinweis. Darum gilt hier kein Jahr: 400 mit den verfuegbaren Jahren.
+    let Some(roh) = obj.get("veranlagungszeitraum").cloned() else {
+        let liste = verfuegbare_jahre(konfig)?
+            .iter()
+            .map(i64::to_string)
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(ApiFehler::status(
+            400,
+            format!("veranlagungszeitraum fehlt — verfügbar: [{liste}]"),
+        ));
+    };
     let Some(text) = python::int(&roh) else {
         return Err(ApiFehler::status(
             400,

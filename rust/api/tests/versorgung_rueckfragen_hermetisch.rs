@@ -169,7 +169,7 @@ fn bezug_a(euro: i64, bestaetigt: bool) -> Vec<(&'static str, Value, bool)> {
 }
 
 /// Der Bruttoarbeitslohn (Nr. 3 der Lohnsteuerbescheinigung) enthaelt den Bezug: ohne ihn sperrt der Bescheid mit `versorgung_ueber_lohn`
-/// (500 auf `GET /fragen`). Nur fuer die Akte `rentner.json`; `gesamt.json` fuehrt einen Lohn.
+/// (`GET /fragen` antwortet dann 200 mit der Sperre, s. unten). Nur fuer die Akte `rentner.json`; `gesamt.json` fuehrt einen Lohn.
 fn lohn_a(euro: i64) -> Vec<(&'static str, Value, bool)> {
     vec![("bruttoarbeitslohn", json!(euro * 100), true)]
 }
@@ -362,4 +362,78 @@ async fn das_ja_des_ehegatten_sperrt_nur_bei_zusammenveranlagung() {
     let einzel = [("veranlagung", json!("einzel"))];
     let d = akte("rentner.json", &einzel, &mit(mit(lohn_b(30_000), bezug_b(20_000)), vec![("versorgung_sterbegeld_partner", json!(true), true)])).await;
     assert!(offen(&d).await.is_empty(), "Einzelveranlagung");
+}
+
+type Fall = (&'static str, &'static str, Vec<(&'static str, Value)>, Vec<(&'static str, Value, bool)>);
+
+/// Ein Bezug ueber dem Lohn sperrt den Bescheid (`versorgung_ueber_lohn`, Nr. 50). `GET /fragen` zeigt die Sperre wie `/stand` und
+/// `/ergebnis` (200, `ring_gesperrt`, Klartext) und bleibt vollstaendig. Vorher: 500 `OverflowError: ... der Guard haette sperren
+/// muessen` (Beobachtung in Nr. 66 Punkt 5), weil `gesamt_beitrag` den Ring auch dann rechnete, wenn der Kern die Sperre als Fehler
+/// meldet. KONTROLLE im selben Lauf: Lohn gleich Bezug sperrt nicht; die Fragenliste mit Lohn 10.000 (Sperre) nennt dieselben Fragen
+/// wie die mit Lohn 30.000 (keine Sperre), nur die Reihenfolge darf abweichen.
+#[tokio::test]
+async fn ein_bezug_ueber_dem_lohn_laesst_die_fragenliste_mit_der_sperre_antworten() {
+    let einzel = [("veranlagung", json!("einzel"))];
+    let zusammen = [("veranlagung", json!("zusammen"))];
+    let d = akte("rentner.json", &einzel, &mit(lohn_a(30_000), bezug_a(30_000, true))).await;
+    let (status, antwort) = sende(&d, "GET", "/fall/vs/fragen", None).await;
+    assert_eq!(status, 200, "KONTROLLE Lohn gleich Bezug: {antwort}");
+    assert_eq!(antwort["ring_gesperrt"], Value::Null, "KONTROLLE: {antwort}");
+    let mut ohne_sperre = fragen_ids(&d).await;
+    ohne_sperre.sort();
+
+    let faelle: Vec<Fall> = vec![
+        ("rentner, Bezug 30.000 ohne Lohn", "rentner.json", einzel.to_vec(), bezug_a(30_000, true)),
+        ("rentner, Lohn 0", "rentner.json", einzel.to_vec(), mit(lohn_a(0), bezug_a(30_000, true))),
+        ("rentner, Lohn 10.000", "rentner.json", einzel.to_vec(), mit(lohn_a(10_000), bezug_a(30_000, true))),
+        ("gesamt, Lohn 0", "gesamt.json", vec![("veranlagung", json!("einzel")), ("bruttoarbeitslohn", json!(0))], bezug_a(30_000, true)),
+        (
+            "rentner zusammen, Ehegatte Lohn 0 und Bezug 20.000",
+            "rentner.json",
+            zusammen.to_vec(),
+            mit(mit(partner_kap(), mit(lohn_a(30_000), lohn_b(0))), mit(bezug_a(30_000, true), bezug_b(20_000))),
+        ),
+    ];
+    for (name, datei, ersetze, mehr) in faelle {
+        let d = akte(datei, &ersetze, &mehr).await;
+        let (status, antwort) = sende(&d, "GET", "/fall/vs/fragen", None).await;
+        assert_eq!(status, 200, "{name}: {antwort}");
+        assert_eq!(antwort["ring_gesperrt"], json!("versorgung_ueber_lohn"), "{name}: {antwort}");
+        assert!(
+            antwort["ring_gesperrt_klartext"].as_str().is_some_and(|t| t.contains("Versorgungsbezug")),
+            "{name}: der Klartext fehlt: {antwort}"
+        );
+        assert!(antwort["fragen"].as_array().is_some_and(|f| f.len() > 8), "{name}: die Liste ist zu kurz: {antwort}");
+    }
+    let d = akte("rentner.json", &einzel, &mit(lohn_a(10_000), bezug_a(30_000, true))).await;
+    let mut mit_sperre = fragen_ids(&d).await;
+    mit_sperre.sort();
+    assert_eq!(mit_sperre, ohne_sperre, "die Sperre darf keine Frage aus der Liste nehmen");
+}
+
+/// Dieselbe Ursache bei den Kindern: ein Zeitraum, den es im Veranlagungsjahr nicht gibt (29.02. 2025),
+/// sperrt den Bescheid (`kind_zeitraum_unlesbar`); `GET /fragen` antwortete 500 `... der Guard haette sperren muessen`
+/// (`BescheidFehler::KindFreibetragGesperrt`). KONTROLLE: derselbe Fall mit ganzjaehrigem Zeitraum sperrt nicht.
+#[tokio::test]
+async fn ein_unlesbarer_kind_zeitraum_laesst_die_fragenliste_mit_der_sperre_antworten() {
+    let einzel = [("veranlagung", json!("einzel"))];
+    let kind = |zeitraum: &'static str| -> Vec<(&'static str, Value, bool)> {
+        vec![
+            ("fam_anzahl_kinder", json!(1), true),
+            ("kind_kindschaftsverhaeltnis_a", json!("1"), true),
+            ("kind_kindschaftsverh_zeitraum_a", json!(zeitraum), true),
+            ("kind_kindschaftsverhaeltnis_b", json!("1"), true),
+            ("kind_kindschaftsverh_zeitraum_b", json!("01.01-31.12"), true),
+        ]
+    };
+    let d = akte("gesamt.json", &einzel, &kind("01.01-31.12")).await;
+    let (status, antwort) = sende(&d, "GET", "/fall/vs/fragen", None).await;
+    assert_eq!(status, 200, "KONTROLLE ganzjaehrig: {antwort}");
+    assert_eq!(antwort["ring_gesperrt"], Value::Null, "KONTROLLE: {antwort}");
+
+    let d = akte("gesamt.json", &einzel, &kind("29.02-31.12")).await;
+    let (status, antwort) = sende(&d, "GET", "/fall/vs/fragen", None).await;
+    assert_eq!(status, 200, "{antwort}");
+    assert_eq!(antwort["ring_gesperrt"], json!("kind_zeitraum_unlesbar"), "{antwort}");
+    assert!(antwort["fragen"].as_array().is_some_and(|f| f.len() > 8), "die Liste ist zu kurz: {antwort}");
 }

@@ -73,8 +73,9 @@ pub struct Sitzung {
 pub struct FallAnlegen {
     /// `ep` (Vorgabe), `n_vor_gwg`, `an_gesamt`, `gesamt`, `rentner_gesamt`.
     pub scheibe: Option<String>,
-    /// Vorgabe 2025; nur Jahre mit Verzeichnis unter `params/`.
-    pub veranlagungszeitraum: Option<i64>,
+    /// Pflicht (Abweichung Nr. 73): ein Jahr mit Verzeichnis unter `params/`. Ohne Jahr antwortet der
+    /// Dienst mit 400.
+    pub veranlagungszeitraum: i64,
     /// `[A-Za-z0-9_-]{1,64}`.
     pub fall_id: String,
 }

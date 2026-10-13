@@ -76,7 +76,8 @@ def _konto(base, name):
 
 
 def _fall(base, kopf, fall_id):
-    st, _, obj = _req(base, "POST", "/fall", body={"fall_id": fall_id, "scheibe": "ep"},
+    st, _, obj = _req(base, "POST", "/fall",
+                      body={"fall_id": fall_id, "scheibe": "ep", "veranlagungszeitraum": 2025},
                       headers=kopf)
     assert st == 201, obj
     return fall_id
