@@ -60,9 +60,14 @@ impl Dienst {
             .env("TAXGRAPH_FLOW", "0")
             .env("ERIC_DIR", "/nicht/vorhanden")
             .current_dir(wurzel());
-        if !opt.auth {
-            cmd.env("TAXGRAPH_NO_AUTH", "1");
+        // `lade_env_dateien` liest `.env.maps`, `.env.llm`, `.env` aus TAXGRAPH_ROOT und setzt nur Schluessel, die
+        // noch FEHLEN (`var_os().is_none()`). Im Fork-Baum und in der CI gibt es diese Dateien nicht, in einem
+        // Arbeitsbaum mit echten Schluesseln schon (Nr. 72, N0 in main: echter Sprachmodell-Aufruf). Leere Werte
+        // zaehlen als gesetzt und sperren die Uebernahme.
+        for k in ["LLM_API_BASE", "LLM_API_KEY", "LLM_MODEL", "ORS_API_KEY", "ORS_API_BASE", "ELSTER_HERSTELLER_ID", "TAXGRAPH_KI_DEBUG"] {
+            cmd.env(k, "");
         }
+        cmd.env("TAXGRAPH_NO_AUTH", if opt.auth { "0" } else { "1" });
         if let Some(b) = &opt.llm_basis {
             cmd.env("LLM_API_BASE", b).env("LLM_API_KEY", "platzhalter").env("LLM_MODEL", "platzhalter");
         }
