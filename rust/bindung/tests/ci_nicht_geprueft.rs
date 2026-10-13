@@ -117,6 +117,10 @@ fn der_rust_job_ruft_das_skript_nach_dem_cargo_test_auch_bei_rot() {
     let lauf_von = |s: &serde_yaml_ng::Value| s["run"].as_str().unwrap_or("").to_owned();
     let i_test = schritte.iter().position(|s| lauf_von(s).contains("cargo test")).expect("kein cargo test");
     assert!(lauf_von(&schritte[i_test]).contains("tee"), "cargo test schreibt sein Log nicht in eine Datei (tee)");
+    // Die Verzichtszeilen stehen auf stderr. Ohne `2>&1` vor dem `tee` fehlen sie im Log, und das Skript zaehlte still null.
+    let lauf = lauf_von(&schritte[i_test]);
+    let stellen = (lauf.find("cargo test"), lauf.find("2>&1"), lauf.find("tee"));
+    assert!(matches!(stellen, (Some(c), Some(e), Some(t)) if c < e && e < t), "cargo test leitet stderr nicht per `2>&1` vor dem tee ins Log: {lauf:?}");
     // Ohne `shell: bash` laeuft der Schritt als `bash -e {0}` OHNE pipefail: dann gaebe `cargo test | tee` den Exit von tee (0)
     // zurueck, und ein rotes cargo test machte den Job gruen. `shell: bash` schaltet pipefail an.
     assert_eq!(schritte[i_test]["shell"].as_str(), Some("bash"), "cargo test | tee braucht `shell: bash` (pipefail)");
@@ -163,12 +167,15 @@ fn kein_verzicht_der_ci_schalter_meldet_sich_nur_per_eprintln() {
     let gut = "fn t() {\n    let _ = writeln!(std::io::stderr(), \"UEBERSPRUNGEN: kein Browser, TAXGRAPH_OHNE_BROWSER=1\");\n}\n";
     assert_eq!(verzichte_per_eprintln(&schlecht), vec![2], "Kontrolle: der Sucher sieht einen eprintln-Verzicht nicht");
     assert!(verzichte_per_eprintln(gut).is_empty(), "Kontrolle: der Sucher meldet eine Direktschrift");
-    // Ernstfall: alle Testdateien unter rust/*/tests.
+    // Ernstfall: alle Testdateien unter rust/*/tests und die Quelltexte unter rust/*/src (`elster::testhilfe::schemas_da` liegt in src).
     let mut dateien = Vec::new();
     for krate in std::fs::read_dir(wurzel().join("rust")).unwrap() {
-        let t = krate.unwrap().path().join("tests");
-        if t.is_dir() {
-            sammle(&t, &mut dateien);
+        let krate = krate.unwrap().path();
+        for unter in ["tests", "src"] {
+            let t = krate.join(unter);
+            if t.is_dir() {
+                sammle(&t, &mut dateien);
+            }
         }
     }
     assert!(dateien.len() > 100, "nur {} Testdateien gefunden; der Sucher liest zu wenig", dateien.len());
