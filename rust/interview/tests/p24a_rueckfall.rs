@@ -94,6 +94,7 @@ fn queue(s: &Store) -> Vec<&'static str> {
 #[test]
 fn das_rueckfallfeld_ist_abgeleitet_nicht_gefragt_und_die_erklaerung_nennt_das_geburtsjahr() {
     let b = bindung(FELD);
+    assert_eq!(b.quelle.regel_id, REGEL, "das Rueckfallfeld haengt an einer anderen Regel als seine Regelbedingung");
     assert!(!b.askable, "das Feld laesst sich in keiner Scheibe setzen: nicht askable");
     assert!(!b.eingangsfrage, "das Feld ist keine Eingangsfrage");
     let ableitung = b.ableitung.as_ref().expect("die Ableitung bleibt");
@@ -120,6 +121,7 @@ fn ohne_angabe_ist_nur_geburtsjahr_ein_offenes_gate_und_das_feld_nicht_in_der_qu
     let rel = regel(&s);
     assert_eq!(rel.status, Regelstatus::Unentschieden);
     assert_eq!(rel.gates_offen, vec!["geburtsjahr"], "vorher: geburtsjahr UND {FELD}, ein Gate ohne Antwortweg");
+    assert_eq!(rel.annahmen_offen, vec!["alter_64_vor_bezugsjahr_vollendet"], "die abgeleitete Voraussetzung bleibt eine offene Annahme der Regel");
     let q = queue(&s);
     assert!(q.contains(&"geburtsjahr"));
     assert!(!q.contains(&FELD), "das abgeleitete Feld darf nie gefragt werden");
