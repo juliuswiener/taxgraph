@@ -1569,6 +1569,23 @@ async fn sonstige_einkuenfte_nach_p22_nr3_wirken_in_beiden_zweigen_gleich() {
     .await;
 }
 
+/// Der Ueberhang geht auch in die `GdE`, die der Spenden-Hoechstbetrag (20 % der `GdE`) liest. Nachmessung Nr. 70, Mutant MR4: der
+/// Rentner-Zweig liess den Ueberhang aus der `GdE` fuer die Folgestellen weg, alle alten Tests und die sieben ersten neuen blieben
+/// gruen, weil kein Fall den Ueberhang mit einer Spende ueber dem Hoechstbetrag verband. Die Spende (20.000 EUR) steht in der
+/// BASIS und liegt in beiden Zweigen ueber dem Deckel; gemessen wird nur, was der Ueberhang dazu bewirkt.
+#[tokio::test]
+async fn erstattungsueberhang_hebt_den_spendendeckel_in_beiden_zweigen_gleich() {
+    let spende = vec![("spenden_betrag", json!(2_000_000))];
+    let aenderung = vec![("kist_gezahlt", json!(100_000)), ("kist_erstattet", json!(250_000))];
+    let gesamt = kette_unterschied("gesamt", mit(kegel_gesamt(), spende.clone()), aenderung.clone()).await;
+    let rentner = kette_unterschied("rentner_gesamt", mit(kegel_rentner(), spende), aenderung).await;
+    assert_ne!(gesamt, (0, 0), "KONTROLLE: der Ueberhang wirkt im Zweig gesamt nicht");
+    assert_eq!(
+        gesamt, rentner,
+        "DEFEKT: der Ueberhang wirkt mit einer Spende ueber dem Deckel in den Zweigen verschieden (GdE, zvE): gesamt {gesamt:?}, rentner {rentner:?}"
+    );
+}
+
 /// Der Ehegatte: Zusammenveranlagung, Person B bestaetigt Lohn und Kapital mit 0 (der Kegel von `gesamt`) -- Gleiches fuer den Rentner.
 fn ehepaar() -> Paare {
     vec![
@@ -1580,6 +1597,21 @@ fn ehepaar() -> Paare {
         ("kap_verlust_aktien_partner", json!(0)),
         ("kap_verlust_sonstige_partner", json!(0)),
     ]
+}
+
+/// Bei Einzelveranlagung sperrt eine Angabe zum Ehegatten das Ergebnis mit `partner_konsistenz_offen`, in beiden Zweigen. Nachmessung
+/// Nr. 70, Mutanten MG12 und MR6 (der Pauschbetrag des Ehegatten zaehlt auch bei Einzelveranlagung): kein Fall erreicht diese Stelle mit
+/// einer Zahl, weil die Sperre davorsteht -- die Grenze der Zweig-Tests. Faellt die Sperre, faerbt dieser Test und nennt die Stelle.
+#[tokio::test]
+async fn angabe_zum_ehegatten_bei_einzelveranlagung_sperrt_in_beiden_zweigen() {
+    let aenderung = vec![("rentner_grad_der_behinderung_partner", json!(50))];
+    for (scheibe, basis) in [("gesamt", kegel_gesamt()), ("rentner_gesamt", kegel_rentner())] {
+        let a = ergebnis(scheibe, &mit(basis, aenderung.clone())).await;
+        assert_eq!(
+            a["grund"], "partner_konsistenz_offen",
+            "DEFEKT: {scheibe}: bei Einzelveranlagung sperrt eine Angabe zum Ehegatten nicht mehr -- MG12/MR6 (Pauschbetrag des Ehegatten) sind dann erreichbar: {a}"
+        );
+    }
 }
 
 /// Der Behinderten-Pauschbetrag des Ehegatten (nur bei Zusammenveranlagung): beide Zweige tragen ihn gleich ein.
