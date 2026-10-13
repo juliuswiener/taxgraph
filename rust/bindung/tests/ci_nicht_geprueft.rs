@@ -124,7 +124,7 @@ fn der_rust_job_ruft_das_skript_nach_dem_cargo_test_auch_bei_rot() {
     let nach = nach.expect("kein Schritt nach cargo test ruft scripts/ci-nicht-geprueft.sh");
     assert_eq!(nach["if"].as_str(), Some("always()"), "der Schritt laeuft nicht bei rotem cargo test");
     // Das Log, das tee schreibt, ist das Log, das das Skript liest (nur der Dateiname zaehlt: der Test-Schritt steht in `rust/`).
-    let nach_wort = |text: &str, wort: &str| text.split_whitespace().skip_while(|w| *w != wort).nth(1).map(|w| Path::new(w).file_name().map(|f| f.to_owned()));
+    let nach_wort = |text: &str, wort: &str| text.split_whitespace().skip_while(|w| *w != wort).nth(1).map(|w| Path::new(w).file_name().map(std::borrow::ToOwned::to_owned));
     let geschrieben = nach_wort(&lauf_von(&schritte[i_test]), "tee");
     let gelesen = nach_wort(&lauf_von(nach), "scripts/ci-nicht-geprueft.sh");
     assert!(geschrieben.is_some() && geschrieben == gelesen, "tee schreibt {geschrieben:?}, das Skript liest {gelesen:?}");
