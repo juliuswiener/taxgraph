@@ -32,10 +32,11 @@
 //! unfaehige Einkunftsart) bleibt ohne Wirkung: sie loest keine Antwort auf.
 //!
 //! **Bekannte Sackgassen** ([`BEKANNT`]) sind die offenen Defekte: `kein_kap_partner` (Python `BEKANNTE_TREFFER`, in
-//! `gesamt`), `kein_sonstige_partner` (Python, nur ueber einen Seitenkanal, in `rentner_gesamt`) und
-//! `kein_lohn_pension_partner` (Rust-eigen seit Abweichung Nr. 46, Seitenkanal in `gesamt` und `an_gesamt`). Eine neue
-//! Klasse macht den Test rot; ein behobener Defekt macht `die_bekannten_sackgassen_werden_noch_gesehen` rot, der
-//! Eintrag in [`BEKANNT`] faellt dann weg.
+//! `gesamt`). Zwei Klassen standen hier und sind behoben: `kein_sonstige_partner` (Python, nur ueber einen Seitenkanal, in
+//! `rentner_gesamt`) und `kein_lohn_pension_partner` (Rust-eigen seit Abweichung Nr. 46, Seitenkanal in `gesamt` und
+//! `an_gesamt`). Beide hatten eine Ursache: eine Bedingung auf ein Kreuz, das die Scheibe nicht fragt
+//! (`interview::fragen::bedingung_schliesst_aus`). Eine neue Klasse macht den Test rot; ein behobener Defekt macht
+//! `die_bekannten_sackgassen_werden_noch_gesehen` rot, der Eintrag in [`BEKANNT`] faellt dann weg.
 //!
 //! **Grenzen** (jede mit einem Mutanten gemessen, siehe `REWRITE_PLAN.md` Nr. 71). Der Guard-Zweig braucht den passenden
 //! Zustand; der Sweep setzt Beispielwerte und sieht nur, was diese Werte erreichen. Er sieht nicht: (1) Zweige, die eine
@@ -98,26 +99,6 @@ const BEKANNT: &[(&str, bool, &str, &[&str])] = &[
             "kap_verlust_sonstige_partner",
         ],
     ),
-    // `kein_sonstige_partner = ja` steht in `rentner_gesamt` nicht im Fragebogen (Seitenkanal); setzt es jemand, nachdem das
-    // erste der Rentenfelder des Ehegatten beantwortet ist, bleiben die uebrigen aus der Warteschlange und
-    // `rente_instanz_offen` verlangt sie. Python: `BEKANNTE_TREFFER`; Rust-Gegenstueck (ignoriert):
-    // `offene_defekte::kein_sonstige_partner_korrektur_richtung_bleibt_korrekt`.
-    (
-        "RentnerGesamt",
-        true,
-        "rente_instanz_offen",
-        &[
-            "rentner_jahresrente_partner",
-            "rentner_renten_art_partner",
-            "rentner_renten_beginn_jahr_partner",
-            "rentner_rentenfreibetrag_partner",
-        ],
-    ),
-    // `kein_lohn_pension_partner = ja` (Abweichung Nr. 46, nur `rentner_gesamt` fragt es) verbirgt `bruttoarbeitslohn_partner`;
-    // in `gesamt` und `an_gesamt` verlangt `partner_kegel_offen` das Feld bei Zusammenveranlagung. Nur ueber einen
-    // Seitenkanal erreichbar: das Kreuz steht in diesen Scheiben nicht im Fragebogen.
-    ("Gesamt", true, "partner_kegel_offen", &["bruttoarbeitslohn_partner"]),
-    ("AnGesamt", true, "partner_kegel_offen", &["bruttoarbeitslohn_partner"]),
 ];
 
 // ---------------------------------------------------------------- die Welt: Bindung + Graph
@@ -832,7 +813,7 @@ fn die_bekannten_sackgassen_werden_noch_gesehen() {
 
 /// Die offenen Defekte als Aussage: es gibt keine Sackgasse. Rot sehen: `--ignored`.
 #[test]
-#[ignore = "offene Defekte, siehe BEKANNT: kein_kap_partner (gesamt), kein_sonstige_partner (rentner_gesamt, Seitenkanal), kein_lohn_pension_partner (gesamt und an_gesamt, Seitenkanal). Rot sehen: --ignored"]
+#[ignore = "offene Defekte, siehe BEKANNT: kein_kap_partner (gesamt). Rot sehen: --ignored"]
 fn es_gibt_keine_sackgasse() {
     let gesehen = klassen(&beobachtet().funde);
     assert!(gesehen.is_empty(), "DEFEKT: Sackgassen\n{}", beschreibe(&gesehen));

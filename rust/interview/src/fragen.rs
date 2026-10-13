@@ -139,6 +139,9 @@ fn ueber_schwelle(w: &PyWert, schwelle: i64) -> bool {
 }
 
 /// Schliesst GENAU DIESE Bedingung (ein Glied der Kette) das Feld aus?
+///
+/// Rust-eigen (Abweichung Nr. 74): eine Bedingung auf ein Feld, das die Scheibe nicht fragt, schliesst nichts aus.
+/// Ausnahme `groesser_als`, der Beleg.
 fn bedingung_schliesst_aus(
     bed: &FeldBedingung,
     aktiv: &Aktiv<'_>,
@@ -150,6 +153,13 @@ fn bedingung_schliesst_aus(
         return !instanz_antworten(aktiv, sicht, graph, &bed.feld).iter().any(
             |a| matches!(a, Antwort::Bestaetigt(w) if ueber_schwelle(w, schwelle)),
         );
+    }
+    // Der Nutzer kann ein Feld, das die Scheibe nicht fragt, hier nie setzen oder zuruecknehmen. Stuende eine Antwort darauf
+    // trotzdem im Store (von Hand geaenderte Akte), liesse sie eine Frage entfallen, die der Guard oder der Kegel weiter
+    // verlangt: eine Sackgasse. Hinter `groesser_als`, denn dort gilt ein Beleg, und ohne beantwortbares Feld bleibt die
+    // Folgefrage weg.
+    if sicht.get(&bed.feld).is_none() {
+        return false;
     }
     let stand = if let Some(alter) = bed.alter_im_vz {
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| {
