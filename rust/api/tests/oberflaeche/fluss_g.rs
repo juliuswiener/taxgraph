@@ -274,6 +274,65 @@ fn fluss_g_absendeknopf_ohne_eric() {
     pp!("G.sperrgrund_zeigt_den_klartext_des_servers", !a.join(" ").contains("erforderliche Angabe fehlt"), "Sammelsatz steht noch da: {a:?}");
 }
 
+// ---- Test 1b: Antworten, die der Dienst so nie schickt, die die Anzeige aber nie als „in Ordnung“ lesen darf ---------------
+
+/// Ohne Python-Vorbild (Mutanten U11 und U12 aus der Nachmessung in main). Der Dienst schickt bei 200 immer eine Liste
+/// `nicht_deklariert`; dass die Anzeige bei einer fehlenden oder falsch geformten Liste NICHT „in Ordnung“ sagt
+/// (fail-closed), und dass ein 200 mit `rc: 0` keinen „Prüfcode“ zeigt, geht darum nur mit gespielten Antworten.
+#[test]
+fn fluss_g_anzeige_unerwarteter_antworten() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 360, 640);
+    let (s, d) = (&u.s, &u.dienst);
+    d.fall("gesamt", "unerwartet");
+    fertig_screen(s, &d.basis, "unerwartet");
+    spiele_antworten_ein(s);
+
+    let ok = json!({"fall_id": "unerwartet", "eingereicht": false, "rc": 0, "klasse": "plausibel", "plausibel": true,
+                    "hinweis": "checkESt bestanden."});
+
+    // Die Vorbedingung: mit nachweislich leerer Liste sagt die Anzeige „in Ordnung“ und zeigt keinen Prüfcode.
+    let mut leer = ok.clone();
+    leer["nicht_deklariert"] = json!([]);
+    let a = gespielt(s, 200, &leer).unwrap_or_default();
+    pp!("G.200_mit_rc_null_zeigt_keinen_pruefcode", a == ["Geprüft und in Ordnung.", "checkESt bestanden."], "bei rc=0 steht mehr als Kopf und Hinweis da: {a:?}");
+
+    // Fehlt die Liste oder ist sie keine Liste, gilt der Fall NICHT als in Ordnung; der Nutzer sieht den unsicheren Kopf.
+    for (name, wert) in [("fehlt", None), ("null", Some(json!(null))), ("Text", Some(json!("alles"))), ("Zahl", Some(json!(0))), ("Objekt", Some(json!({})))] {
+        let mut body = ok.clone();
+        if let Some(w) = wert {
+            body["nicht_deklariert"] = w;
+        }
+        let a = gespielt(s, 200, &body).unwrap_or_default();
+        pp!(
+            "G.200_ohne_pruefbare_liste_ist_nicht_in_ordnung",
+            a.first().is_some_and(|k| k == "Geprüft, aber nicht alle Werte stehen in der Erklärung."),
+            "nicht_deklariert {name}: der Kopf sagt {:?}",
+            a.first()
+        );
+        pp!("G.200_ohne_pruefbare_liste_ist_nicht_in_ordnung", !a.join(" ").contains("in Ordnung"), "nicht_deklariert {name}: „in Ordnung“ steht auf dem Schirm: {a:?}");
+    }
+
+    // Mutant U13: „kein Prüfmodul für das Jahr“ ohne gültiges Jahr zeigt den Standardsatz, nie „undefined“ im Satz. Mit
+    // Jahr steht es im Satz (Vorbedingung, sonst misst der Pruefpunkt nichts).
+    let mut mit_jahr = json!({"fall_id": "unerwartet", "eingereicht": false, "grund": "kein_pruefmodul_fuer_vz", "vz": 2025});
+    let a = gespielt(s, 422, &mit_jahr);
+    pp!("G.kein_pruefmodul_ohne_jahr_zeigt_den_standardsatz", a.as_ref().is_some_and(|a| ist_nicht_geprueft(a, satz("kein_pruefmodul_fuer_vz"), None)), "mit Jahr: {a:?}");
+    for (name, vz) in [("fehlt", None), ("null", Some(json!(null))), ("Text", Some(json!("2025"))), ("Kommazahl", Some(json!(2025.5)))] {
+        if let Some(w) = vz {
+            mit_jahr["vz"] = w;
+        } else {
+            mit_jahr.as_object_mut().unwrap().remove("vz");
+        }
+        let a = gespielt(s, 422, &mit_jahr);
+        pp!(
+            "G.kein_pruefmodul_ohne_jahr_zeigt_den_standardsatz",
+            a.as_ref().is_some_and(|a| ist_nicht_geprueft(a, STANDARD_SATZ, None)),
+            "vz {name}: der Satz ist nicht der Standardsatz: {a:?}"
+        );
+    }
+}
+
 // ---- Test 2: gegen die Attrappe von libericapi.so ---------------------------------------------------------------------
 
 fn lade_fixture(name: &str) -> Value {

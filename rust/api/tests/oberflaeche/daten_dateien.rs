@@ -36,6 +36,16 @@ fn csp_header_der_ausgelieferten_seite() {
     pp!("A.csp_erlaubt_kein_inline_skript", !seite.is_empty(), "gar kein CSP-Kopf: die Pruefungen darunter waeren trivial erfuellt");
     pp!("A.csp_erlaubt_kein_inline_skript", !seite.contains("unsafe-inline"), "die Richtlinie erlaubt Inline-Skript oder -Style: {seite:?}");
     pp!("A.csp_erlaubt_kein_inline_skript", !seite.contains("unsafe-eval"), "die Richtlinie erlaubt eval(): {seite:?}");
+
+    // Ohne Python-Vorbild (Mutant S4 aus der Nachmessung in main; auch die Python-Tests pruefen nur default-src, script-src
+    // und unsafe-*): keine Einbettung in einen fremden Rahmen (Clickjacking), kein umgebogenes `<base>`, kein Formular-Ziel.
+    // Jede Anweisung einzeln und GANZ (`'self'` statt `'none'` ist ein anderer Satz), auf dem JSON-Weg und auf der Seite.
+    for (ort, kopf) in [("/health", &health), ("/", &seite)] {
+        let anweisungen: Vec<&str> = kopf.split(';').map(str::trim).collect();
+        for soll in ["frame-ancestors 'none'", "base-uri 'none'", "form-action 'none'"] {
+            pp!("A.csp_sperrt_einbettung_basis_und_formulare", anweisungen.contains(&soll), "{ort}: die Anweisung {soll:?} fehlt oder ist aufgeweicht: {kopf:?}");
+        }
+    }
 }
 
 /// Eine Richtlinie, die die eigene Oberflaeche abschaltet, waere schlimmer als keine. Gemessen gegen die Dateien:

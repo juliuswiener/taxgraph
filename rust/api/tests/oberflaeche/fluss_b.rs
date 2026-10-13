@@ -105,6 +105,21 @@ fn fluss_b_fallstart_und_ankreuzliste() {
     pp!("B.tap_ziele_und_schmaler_schirm", m["breite"].as_f64().unwrap() <= 360.0, "Seitwaerts-Scrollen bei 360 px: {}", m["breite"]);
     pp!("B.tap_ziele_und_schmaler_schirm", m["ueberlauf"] == json!([]), "Text laeuft aus seinem Kasten: {}", m["ueberlauf"]);
     pp!("B.tap_ziele_und_schmaler_schirm", m["kleinste"].as_f64().unwrap() >= 44.0, "kleinstes Tap-Ziel nur {} px", m["kleinste"]);
+
+    // Ohne Python-Vorbild (Mutant U21 aus der Nachmessung in main): ein doppelter Aufruf legt genau EINEN Fall an. Die
+    // Kachel sperrt sich nach dem ersten Klick (`disabled`), ein zweiter `click()` im selben Tick erreicht den Handler
+    // darum nie; den Schutz in `waehleScheibe` selbst misst nur der zweite, direkte Aufruf im selben Tick. Gezaehlt
+    // werden die POST /fall, die der Browser abschickt (der Aufruf kommt synchron bis zum `fetch`).
+    const ZAEHLE_POST_FALL: &str = "window.__fall_posts = 0; const echt = window.fetch; \
+         window.fetch = (u, o) => { if (o && o.method === 'POST' && new URL(String(u), location.href).pathname === '/fall') { window.__fall_posts++; } return echt(u, o); };";
+    u.oeffne_start();
+    let klicks = s.ausdruck(&format!(
+        "(() => {{ {ZAEHLE_POST_FALL} const k = document.querySelector(\".kachel[data-scheibe='gesamt']\"); k.click(); k.click(); return window.__fall_posts; }})()"
+    ));
+    pp!("B.doppelklick_auf_die_kachel_legt_einen_fall_an", klicks == json!(1), "zwei Klicks im selben Tick schicken {klicks} POST /fall");
+    u.oeffne_start();
+    let aufrufe = s.ausdruck(&format!("(() => {{ {ZAEHLE_POST_FALL} waehleScheibe('gesamt'); waehleScheibe('gesamt'); return window.__fall_posts; }})()"));
+    pp!("B.doppelklick_auf_die_kachel_legt_einen_fall_an", aufrufe == json!(1), "zwei Aufrufe im selben Tick schicken {aufrufe} POST /fall: der Schutz in waehleScheibe fehlt");
 }
 
 #[test]
