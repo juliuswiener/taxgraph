@@ -176,6 +176,45 @@ fn abbrueche_der_tiefe_zaehlen_und_schlagen_auch_bei_einem_sonst_ok_feld_an() {
     let flach = probe.schreibe("flach.xsd", &tiefe_kette_xsd(60, "E2222222"));
     let b = pruefe_bindung_mit(&[pruefling("feld_frueh", "E2222222", &[JAHR])], nur_e10(&flach)).unwrap();
     assert_eq!((b.max_depth_hits_gesamt, b.exit_code), (0, 0));
+    // Die Grenze selbst (Nachmessung Nr. 69, RX5: `>=` statt `>`): das Blatt einer Kette mit 80 Typen liegt noch in MAX_DEPTH, das einer
+    // Kette mit 81 Typen dahinter.
+    for (n, erwartet) in [(80, 0), (81, 1)] {
+        let datei = probe.schreibe(&format!("grenze{n}.xsd"), &tiefe_kette_xsd(n, "E2222222"));
+        let b = pruefe_bindung_mit(&[pruefling("feld_frueh", "E2222222", &[JAHR])], nur_e10(&datei)).unwrap();
+        assert_eq!(b.max_depth_hits_gesamt, erwartet, "Kette mit {n} Typen");
+    }
+}
+
+/// Die Suche, die fuer jedes Jahr in `schemas` dessen E10-Schema liefert und fuer jedes andere Jahr nichts.
+fn je_jahr(schemas: &[(i64, PathBuf)]) -> impl Fn(i64, &str) -> Option<PathBuf> + '_ {
+    move |jahr, muster| {
+        schemas
+            .iter()
+            .find(|(j, _)| *j == jahr && muster == "E10-{jahr}.xsd")
+            .map(|(_, p)| p.clone())
+    }
+}
+
+/// Hat ein Feld mehrere Jahre, gilt das schlechteste: Mehrdeutig vor `NichtGefunden` vor Ok (Nachmessung Nr. 69, RX1 und RX2). Ohne diese
+/// Reihenfolge meldet der Pruefer ein Kz, das in EINEM Steuerjahr fehlt, als OK, solange es im anderen steht.
+#[test]
+fn die_jahre_eines_felds_rollen_nach_dem_schlechtesten_auf() {
+    let probe = Probe::neu("rollup");
+    // E9999001 steht im ersten Schema zweimal (Mehrdeutig), im zweiten einmal (Ok), im dritten gar nicht (NichtGefunden).
+    let doppelt = probe.schreibe("doppelt.xsd", &geteilt_xsd());
+    let einmal = probe.schreibe("einmal.xsd", &einfach_xsd().replace("E1111111", "E9999001"));
+    let fehlt = probe.schreibe("fehlt.xsd", &einfach_xsd());
+    let rollup_aus = |schemas: [(i64, &PathBuf); 2]| {
+        let schemas: Vec<(i64, PathBuf)> = schemas.iter().map(|(j, p)| (*j, (*p).clone())).collect();
+        let jahre: Vec<i64> = schemas.iter().map(|(j, _)| *j).collect();
+        let b = pruefe_bindung_mit(&[pruefling("feld_x", "E9999001", &jahre)], je_jahr(&schemas)).unwrap();
+        (b.felder["feld_x"].status, b.exit_code)
+    };
+    assert_eq!(rollup_aus([(2098, &einmal), (2099, &einmal)]), (PruefStatus::Ok, 0));
+    assert_eq!(rollup_aus([(2098, &einmal), (2099, &fehlt)]), (PruefStatus::NichtGefunden, 1));
+    assert_eq!(rollup_aus([(2098, &fehlt), (2099, &einmal)]), (PruefStatus::NichtGefunden, 1));
+    assert_eq!(rollup_aus([(2098, &einmal), (2099, &doppelt)]), (PruefStatus::Mehrdeutig, 1));
+    assert_eq!(rollup_aus([(2098, &fehlt), (2099, &doppelt)]), (PruefStatus::Mehrdeutig, 1));
 }
 
 #[test]
