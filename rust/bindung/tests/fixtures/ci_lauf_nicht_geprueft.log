@@ -1,0 +1,26 @@
+running 3 tests
+test eins ... ok
+TAXGRAPH_OHNE_XSD=1: ["E10-2025.xsd", "elster11_E10_2025_extern.xsd"] fehlt, XML und XSD NICHT geprueft
+TAXGRAPH_OHNE_XSD=1: ["E10-2025.xsd", "elster11_E10_2025_extern.xsd"] fehlt, XML und XSD NICHT geprueft
+test zwei ... ok
+TAXGRAPH_OHNE_XSD=1: ["E10-2025.xsd", "elster11_E10_2025_extern.xsd"] fehlt, XML und XSD NICHT geprueft
+test drei ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+running 4 tests
+test zwoelf_bloecke_gegen_echtes_checkest ... ignored, braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make blockmatrix-rust`
+test privatverkauf_gegen_echtes_checkest ... ignored, braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make blockmatrix-rust`
+test rav_bav_gegen_echtes_checkest ... ignored, braucht die ERiC-Bibliothek und die registrierte Hersteller-ID (Umgebungs-Gate, Entscheid Julius 2026-09-12): lokal mit `make blockmatrix-rust`
+test geparkt ... ignored, wartet 301 s: manuell mit --ignored
+
+test result: ok. 0 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+running 2 tests
+UEBERSPRUNGEN: kein Browser oder chromedriver, TAXGRAPH_OHNE_BROWSER=1
+UEBERSPRUNGEN: kein Browser oder chromedriver, TAXGRAPH_OHNE_BROWSER=1
+[oberflaeche/fluss_g] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1
+test vier ... ok
+test fuenf ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s
