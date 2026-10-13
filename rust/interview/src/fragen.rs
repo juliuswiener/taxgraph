@@ -139,6 +139,9 @@ fn ueber_schwelle(w: &PyWert, schwelle: i64) -> bool {
 }
 
 /// Schliesst GENAU DIESE Bedingung (ein Glied der Kette) das Feld aus?
+///
+/// Rust-eigen (Abweichung Nr. 74): eine Bedingung auf ein Feld, das die Scheibe nicht fragt, schliesst nichts aus.
+/// Ausnahme `groesser_als`, der Beleg.
 fn bedingung_schliesst_aus(
     bed: &FeldBedingung,
     aktiv: &Aktiv<'_>,
@@ -150,6 +153,13 @@ fn bedingung_schliesst_aus(
         return !instanz_antworten(aktiv, sicht, graph, &bed.feld).iter().any(
             |a| matches!(a, Antwort::Bestaetigt(w) if ueber_schwelle(w, schwelle)),
         );
+    }
+    // Der Nutzer kann ein Feld, das die Scheibe nicht fragt, hier nie setzen oder zuruecknehmen. Stuende eine Antwort darauf
+    // trotzdem im Store (von Hand geaenderte Akte), liesse sie eine Frage entfallen, die der Guard oder der Kegel weiter
+    // verlangt: eine Sackgasse. Hinter `groesser_als`, denn dort gilt ein Beleg, und ohne beantwortbares Feld bleibt die
+    // Folgefrage weg.
+    if sicht.get(&bed.feld).is_none() {
+        return false;
     }
     let stand = if let Some(alter) = bed.alter_im_vz {
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| {
@@ -520,8 +530,15 @@ mod tests {
 
     /// Steht die Frage `feld` in der Queue eines Falls (VZ 2025), der nur diese `antworten` `(Feld, Wert, bestaetigt)` kennt?
     fn frage_steht_bei(feld: &str, antworten: Vec<(&str, PyWert, bool)>) -> bool {
+        frage_steht_in_sicht(feld, None, antworten)
+    }
+
+    /// Wie [`frage_steht_bei`], aber die Scheibe fragt das Feld `ohne` nicht: ihre Sicht laesst es weg. Eine Antwort darauf kann
+    /// trotzdem im Store stehen (Seitenkanal, von Hand geaenderte Akte).
+    fn frage_steht_in_sicht(feld: &str, ohne: Option<&str>, antworten: Vec<(&str, PyWert, bool)>) -> bool {
         let reg = crate::doctest_registry().expect("registry");
         let g = Graph::aus_registry(&reg);
+        let sicht = Sicht::aus(g.alle().iter().filter(|b| Some(b.feld_id.as_str()) != ohne));
         let events = antworten
             .into_iter()
             .map(|(f, w, b)| ereignis(f, w, b))
@@ -537,7 +554,7 @@ mod tests {
             vorjahr_referenz: None,
         });
         let ohne_beitrag: Option<&HashMap<String, i64>> = None;
-        naechste_fragen(&s, g.alle(), &g, ohne_beitrag).contains(&feld)
+        naechste_fragen(&s, &sicht, &g, ohne_beitrag).contains(&feld)
     }
 
     /// `feld_bedingung.alter_im_vz` (Abweichung Nr. 32): die Frage nach dem 55. Geburtstag steht nur, wenn das BESTAETIGTE
@@ -623,5 +640,38 @@ mod tests {
         assert!(!steht(vec![kinder(2), einzel(), kind1(null.clone(), true), kind2(null.clone(), true)]), "beide 0");
         assert!(!steht(vec![kinder(2), einzel(), kind1(null.clone(), true)]), "Kind 1 0, Kind 2 offen");
         assert!(!steht(vec![kinder(2), einzel(), kind1(viel, false), kind2(null, true)]), "Kind 1 nur vorlaeufig");
+    }
+
+    /// Eine Bedingung auf ein Feld, das die Scheibe nicht fragt, schliesst nichts aus (Rust-eigen, Abweichung Nr. 74). Das Kreuz
+    /// `kein_lohn_pension_partner` nimmt `bruttoarbeitslohn_partner` aus der Queue, wenn die Scheibe das Kreuz fragt. Fragt sie es
+    /// nicht (`gesamt`, `an_gesamt`), kann der Nutzer es dort nie setzen oder zuruecknehmen, und der Guard verlangt die Lohnfrage:
+    /// sie bleibt. Die Betragsbedingung (`groesser_als`) bleibt ein Beleg: ohne das Feld in der Scheibe gibt es keinen, die
+    /// Folgefrage steht nicht.
+    #[test]
+    fn eine_bedingung_auf_ein_feld_ausserhalb_der_scheibe_schliesst_nichts_aus() {
+        const LOHN: &str = "bruttoarbeitslohn_partner";
+        const KREUZ: &str = "kein_lohn_pension_partner";
+        const ANTEIL: &str = "kind_schulgeld_aufteilung_prozent";
+        let kreuz = || (KREUZ, PyWert::Bool(true), true);
+        assert!(frage_steht_in_sicht(LOHN, None, vec![]), "KONTROLLE: ohne Antwort steht die Lohnfrage");
+        assert!(!frage_steht_in_sicht(LOHN, None, vec![kreuz()]), "KONTROLLE: das Kreuz in der Scheibe verbirgt die Lohnfrage");
+        assert!(frage_steht_in_sicht(LOHN, Some(KREUZ), vec![kreuz()]), "das Kreuz gehoert nicht zur Scheibe: die Lohnfrage bleibt");
+        // Ein vorlaeufiges Kreuz schloss auch vorher nichts aus; es bleibt so.
+        assert!(frage_steht_in_sicht(LOHN, None, vec![(KREUZ, PyWert::Bool(true), false)]), "vorlaeufiges Kreuz");
+
+        // Die Betragsbedingung: Beleg ueber das Feld, nicht ueber seine Sicht.
+        let basis = || {
+            vec![
+                ("fam_anzahl_kinder", PyWert::Ganz(1), true),
+                ("veranlagung", PyWert::Text("einzel".to_owned()), true),
+            ]
+        };
+        let mut mit_schulgeld = basis();
+        mit_schulgeld.push(("schulgeld", PyWert::Ganz(300_000), true));
+        assert!(frage_steht_in_sicht(ANTEIL, None, mit_schulgeld), "KONTROLLE: mit bestaetigtem Schulgeld steht die Anteilsfrage");
+        assert!(
+            !frage_steht_in_sicht(ANTEIL, Some("schulgeld"), basis()),
+            "ohne das Feld in der Scheibe und ohne Beleg steht die Folgefrage nicht"
+        );
     }
 }
