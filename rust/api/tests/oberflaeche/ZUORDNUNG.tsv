@@ -1,0 +1,234 @@
+python_datei	python_funktion	fluss	art	rust_ziel	rust_datei	rust_zeile	bezug	bemerkung
+tests/test_absendeknopf_im_browser.py	test_knopf_ist_im_fertig_screen_nach_preflight	G	PRUEFPUNKT	G.knopf_ist_im_fertig_screen_nach_preflight	rust/api/tests/oberflaeche/fluss_g.rs	121	Daten	
+tests/test_absendeknopf_im_browser.py	test_vor_dem_klick_steht_nur_lokal_nichts_ans_finanzamt	G	PRUEFPUNKT	G.vor_dem_klick_steht_nur_lokal_nichts_ans_finanzamt	rust/api/tests/oberflaeche/fluss_g.rs	133	Daten	
+tests/test_absendeknopf_im_browser.py	test_klick_ruft_wirklich_den_einreichen_endpunkt	G	PRUEFPUNKT	G.klick_ruft_wirklich_den_einreichen_endpunkt	rust/api/tests/oberflaeche/fluss_g.rs	378	Daten	
+tests/test_absendeknopf_im_browser.py	test_erfolg_zeigt_in_ordnung_ohne_beanstandung_oder_unsicherheit	G	PRUEFPUNKT	G.erfolg_zeigt_in_ordnung_ohne_beanstandung_oder_unsicherheit	rust/api/tests/oberflaeche/fluss_g.rs	214	Daten	
+tests/test_absendeknopf_im_browser.py	test_beanstandet_zeigt_anderen_text_als_erfolg	G	PRUEFPUNKT	G.beanstandet_zeigt_anderen_text_als_erfolg	rust/api/tests/oberflaeche/fluss_g.rs	401	Daten	
+tests/test_absendeknopf_im_browser.py	test_nicht_geprueft_unterscheidet_sich_von_beanstandet_trotz_gleichem_http_status	G	PRUEFPUNKT	G.nicht_geprueft_unterscheidet_sich_von_beanstandet_trotz_gleichem_http_status	rust/api/tests/oberflaeche/fluss_g.rs	410	Daten	
+tests/test_absendeknopf_im_browser.py	test_einreichen_200_traegt_nicht_deklariert	G	PRUEFPUNKT	G.einreichen_200_traegt_nicht_deklariert	rust/api/tests/oberflaeche/fluss_g.rs	436	Daten	
+tests/test_absendeknopf_im_browser.py	test_nicht_deklariert_zeigt_jeden_eintrag_statt_in_ordnung	G	PRUEFPUNKT	G.nicht_deklariert_zeigt_jeden_eintrag_statt_in_ordnung	rust/api/tests/oberflaeche/fluss_g.rs	453	Daten	
+tests/test_absendeknopf_im_browser.py	test_doppel_klick_schuetzt_gegen_doppel_submit	G	PRUEFPUNKT	G.doppel_klick_schuetzt_gegen_doppel_submit	rust/api/tests/oberflaeche/fluss_g.rs	159	Daten	
+tests/test_absendeknopf_im_browser.py	test_je_ursache_ein_fester_text_und_alle_verschieden	G	PRUEFPUNKT	G.je_ursache_ein_fester_text_und_alle_verschieden	rust/api/tests/oberflaeche/fluss_g.rs	255	Daten	
+tests/test_absendeknopf_im_browser.py	test_unbekannter_schluessel_zeigt_den_rueckfallsatz	G	PRUEFPUNKT	G.unbekannter_schluessel_zeigt_den_rueckfallsatz	rust/api/tests/oberflaeche/fluss_g.rs	187	Daten	
+tests/test_absendeknopf_im_browser.py	test_roh_felder_des_servers_stehen_nie_auf_dem_schirm	G	PRUEFPUNKT	G.roh_felder_des_servers_stehen_nie_auf_dem_schirm	rust/api/tests/oberflaeche/fluss_g.rs	238	Daten	
+tests/test_absendeknopf_im_browser.py	test_pruefcode_steht_in_einer_eigenen_zeile	G	PRUEFPUNKT	G.pruefcode_steht_in_einer_eigenen_zeile	rust/api/tests/oberflaeche/fluss_g.rs	512	Daten	
+tests/test_absendeknopf_im_browser.py	test_sperrgrund_zeigt_den_klartext_des_servers	G	PRUEFPUNKT	G.sperrgrund_zeigt_den_klartext_des_servers	rust/api/tests/oberflaeche/fluss_g.rs	268	Daten	
+tests/test_dialog_kanal.py	test_reine_frage_liefert_antwort_und_keinen_wert	H	PRUEFPUNKT	H.reine_frage_liefert_antwort_und_keinen_wert	rust/api/tests/oberflaeche/fluss_h.rs	1284	Daten	
+tests/test_dialog_kanal.py	test_reine_angabe_liefert_werte_und_keine_antwort	H	PRUEFPUNKT	H.reine_angabe_liefert_werte_und_keine_antwort	rust/api/tests/oberflaeche/fluss_h.rs	1291	Daten	
+tests/test_dialog_kanal.py	test_beides_in_einem_satz	H	PRUEFPUNKT	H.beides_in_einem_satz	rust/api/tests/oberflaeche/fluss_h.rs	1297	Daten	
+tests/test_dialog_kanal.py	test_antwort_wird_nicht_gespeichert	H	PRUEFPUNKT	H.antwort_wird_nicht_gespeichert	rust/api/tests/oberflaeche/fluss_h.rs	1305	Daten	
+tests/test_dialog_kanal.py	test_unsicher_kommt_durch	H	PRUEFPUNKT	H.unsicher_kommt_durch	rust/api/tests/oberflaeche/fluss_h.rs	1311	Daten	
+tests/test_dialog_kanal.py	test_ohne_key_bleibt_es_bei_der_erklaer_grenze	H	PRUEFPUNKT	H.ohne_key_bleibt_es_bei_der_erklaer_grenze	rust/api/tests/oberflaeche/fluss_h.rs	1333	Daten	
+tests/test_dialog_kanal.py	test_kaputte_antwort_verliert_die_antwort_nicht_die_vorschlaege	H	VERLUST	-	-	-	Daten	Rust wertet eine unlesbare Stufe-3-Antwort bewusst als Ganzes als unlesbar (fail-closed): kein Vorschlag, die Akte bleibt; die Python-Halbierung (Vorschlaege behalten, Antwort verlieren) gibt es dort nicht mehr. Das Gegenstueck pinnt rust/api/tests/chat_llm_attrappe_hermetisch.rs::chat_vom_dienst_bis_zur_akte (Abschnitt Zeilen 754-830) und rust/fixtures/README.md Nr. 12.
+tests/test_dialog_kanal.py	test_beleg_gate_ist_im_dialog_pfad_verdrahtet	H	PRUEFPUNKT	H.beleg_gate_ist_im_dialog_pfad_verdrahtet	rust/api/tests/oberflaeche/fluss_h.rs	1326	Daten	
+tests/test_dialog_kanal.py	test_schema_erzwingt_beide_haelften	H	VORHANDEN	schemas_wie_python	rust/llm/tests/prompt_entscheidungen.rs	207	Daten	das Schema der dritten Stufe ist als Pruefsumme an die Python-Fassung genagelt; die Pflichtfelder pruft schema_entscheidungen.rs::dialog_schemagerecht_wie_jsonschema
+tests/test_dialog_kanal.py	test_prompt_nennt_beide_aufgaben_und_verbietet_hypothesen	H	VORHANDEN	dialog_prompt_wie_python	rust/llm/tests/prompt_entscheidungen.rs	154	Daten	der ganze Systemtext des Dialogs (AUFGABE 1/2, Hypothesen-Regel, Gegenregel) ist als Zeichenzahl und FNV-1a-Summe genagelt
+tests/test_dialog_kanal.py	test_wert_klartext_uebersetzt_die_speicherform	H	VORHANDEN	wert_klartext_wie_python	rust/api/src/chat.rs	744	Daten	Cent, Enum, kein_*-Bool: gleiche Klartexte wie Python
+tests/test_dialog_kanal.py	test_kontext_traegt_zitatanker_und_bestaetigte_angaben	H	VORHANDEN	chat_vom_dienst_bis_zur_akte	rust/api/tests/chat_llm_attrappe_hermetisch.rs	284	Daten	Abschnitt „Der Kontext an das Modell“ (Zeilen 591-661): Frage, Kurzhilfe, Gesetzestext, bestaetigte Angaben als Klartext
+tests/test_dialog_kanal.py	test_kontext_geht_wirklich_in_den_prompt	H	VORHANDEN	chat_vom_dienst_bis_zur_akte	rust/api/tests/chat_llm_attrappe_hermetisch.rs	284	Daten	derselbe Test liest den Kontext aus dem Systemtext der dritten Anfrage, die der Ersatzdienst sah; das Schema in der Anfrage pinnt rust/llm/tests/client_netz.rs
+tests/test_dialog_kanal.py	test_berater_ist_ohne_klick_da_mit_genau_einem_knopf	H	PRUEFPUNKT	H.berater_ist_ohne_klick_da_mit_genau_einem_knopf	rust/api/tests/oberflaeche/fluss_h.rs	1346	Daten	
+tests/test_dialog_kanal.py	test_erklaer_mir_erklaert_sofort_und_ohne_modell	H	PRUEFPUNKT	H.erklaer_mir_erklaert_sofort_und_ohne_modell	rust/api/tests/oberflaeche/fluss_h.rs	1357	Daten	
+tests/test_dialog_kanal.py	test_rueckfrage_nach_erklaer_mir_bleibt_im_selben_verlauf	H	PRUEFPUNKT	H.rueckfrage_nach_erklaer_mir_bleibt_im_selben_verlauf	rust/api/tests/oberflaeche/fluss_h.rs	1366	Daten	
+tests/test_dialog_kanal.py	test_frage_veraendert_den_fall_nicht	H	PRUEFPUNKT	H.frage_veraendert_den_fall_nicht	rust/api/tests/oberflaeche/fluss_h.rs	1382	Daten	
+tests/test_idor_und_csp.py	test_fremder_vorjahres_fall_wird_abgewiesen	A	VORHANDEN	die_zweite_kennung_geht_durch_dieselbe_pruefung	rust/api/tests/vorjahr_naht.rs	241	Daten	403 und unveraendertes Ziel beim Fall eines anderen Nutzers
+tests/test_idor_und_csp.py	test_eigener_vorjahres_fall_geht_weiter	A	VORHANDEN	uebernahme_vorlaeufig_in_der_reihenfolge_der_scheibe	rust/api/tests/vorjahr_naht.rs	115	Daten	derselbe Nutzer uebernimmt: 200 und uebernommen=6
+tests/test_idor_und_csp.py	test_nicht_existierender_vorjahres_fall_bleibt_404	A	VORHANDEN	die_zweite_kennung_geht_durch_dieselbe_pruefung	rust/api/tests/vorjahr_naht.rs	241	Daten	404 fuer eine unbekannte Kennung
+tests/test_idor_und_csp.py	test_csp_auf_der_ausgelieferten_seite	A	PRUEFPUNKT	A.csp_auf_der_ausgelieferten_seite	rust/api/tests/oberflaeche/daten_dateien.rs	32	Daten	
+tests/test_idor_und_csp.py	test_csp_erlaubt_kein_inline_skript	A	PRUEFPUNKT	A.csp_erlaubt_kein_inline_skript	rust/api/tests/oberflaeche/daten_dateien.rs	36	Daten	
+tests/test_idor_und_csp.py	test_die_oberflaeche_laeuft_unter_der_csp	A	PRUEFPUNKT	A.die_oberflaeche_laeuft_unter_der_csp	rust/api/tests/oberflaeche/fluss_a.rs	122	Daten	
+tests/test_idor_und_csp.py	test_es_gibt_ueberhaupt_html_dateien_fuer_die_richtlinienpruefung	A	PRUEFPUNKT	A.es_gibt_ueberhaupt_html_dateien_fuer_die_richtlinienpruefung	rust/api/tests/oberflaeche/daten_dateien.rs	53	Daten	
+tests/test_idor_und_csp.py	test_richtlinie_passt_zur_ausgelieferten_seite	A	PRUEFPUNKT	A.richtlinie_passt_zur_ausgelieferten_seite	rust/api/tests/oberflaeche/daten_dateien.rs	58	Daten	
+tests/test_sperre_bietet_ihr_feld_an.py	test_sperrgrund_traegt_die_ausloesende_feld_id	E	PRUEFPUNKT	E.sperrgrund_traegt_die_ausloesende_feld_id	rust/api/tests/oberflaeche/fluss_e.rs	70	Geld	
+tests/test_sperre_bietet_ihr_feld_an.py	test_jedes_partnerfeld_wird_genauso_gemeldet	E	PRUEFPUNKT	E.jedes_partnerfeld_wird_genauso_gemeldet	rust/api/tests/oberflaeche/fluss_e.rs	83	Geld	
+tests/test_sperre_bietet_ihr_feld_an.py	test_sperrfeld_ist_ueber_den_einzelfeld_weg_erreichbar	E	PRUEFPUNKT	E.sperrfeld_ist_ueber_den_einzelfeld_weg_erreichbar	rust/api/tests/oberflaeche/fluss_e.rs	91	Geld	
+tests/test_sperre_bietet_ihr_feld_an.py	test_korrektur_hebt_die_sperre_auf	E	PRUEFPUNKT	E.korrektur_hebt_die_sperre_auf	rust/api/tests/oberflaeche/fluss_e.rs	100	Geld	
+tests/test_sperre_bietet_ihr_feld_an.py	test_ohne_sperre_keine_sperr_felder	E	PRUEFPUNKT	E.ohne_sperre_keine_sperr_felder	rust/api/tests/oberflaeche/fluss_e.rs	113	Geld	
+tests/test_sperre_bietet_ihr_feld_an.py	test_sperranzeige_oeffnet_die_frage_zu_ihrem_feld	E	PRUEFPUNKT	E.sperranzeige_oeffnet_die_frage_zu_ihrem_feld	rust/api/tests/oberflaeche/fluss_e.rs	122	Geld	
+tests/test_sperre_bietet_ihr_feld_an.py	test_normale_korrektur_bleibt_im_sperrzustand_gesperrt	E	PRUEFPUNKT	E.normale_korrektur_bleibt_im_sperrzustand_gesperrt	rust/api/tests/oberflaeche/fluss_e.rs	144	Geld	
+tests/test_ui_a11y.py	test_a11y_startscreen	Y	PRUEFPUNKT	Y.a11y_startscreen	rust/api/tests/oberflaeche/darstellung.rs	531	Darstellung	Grundlagen statt axe-core (kein Netz, keine Bibliothek): Sprache, Titel, Name von Knoepfen und Links, Beschriftung von Eingabefeldern, alt, Farbkontrast ueber einfarbigem Grund. Die uebrigen axe-Regeln fehlen (benannter Teilverlust, Bezug Darstellung).
+tests/test_ui_a11y.py	test_a11y_wegpunkt	Y	PRUEFPUNKT	Y.a11y_wegpunkt	rust/api/tests/oberflaeche/darstellung.rs	536	Darstellung	Grundlagen statt axe-core (kein Netz, keine Bibliothek): Sprache, Titel, Name von Knoepfen und Links, Beschriftung von Eingabefeldern, alt, Farbkontrast ueber einfarbigem Grund. Die uebrigen axe-Regeln fehlen (benannter Teilverlust, Bezug Darstellung).
+tests/test_ui_chat_aussagen.py	test_aussagen_erscheinen_mit_ihrem_beleg	H	PRUEFPUNKT	H.aussagen_erscheinen_mit_ihrem_beleg	rust/api/tests/oberflaeche/fluss_h.rs	333	Daten	
+tests/test_ui_chat_aussagen.py	test_aussagen_stehen_vor_der_antwort	H	PRUEFPUNKT	H.aussagen_stehen_vor_der_antwort	rust/api/tests/oberflaeche/fluss_h.rs	356	Daten	
+tests/test_ui_chat_aussagen.py	test_eine_aussage_ohne_feld_ist_sichtbar_als_solche	H	PRUEFPUNKT	H.eine_aussage_ohne_feld_ist_sichtbar_als_solche	rust/api/tests/oberflaeche/fluss_h.rs	370	Daten	
+tests/test_ui_chat_aussagen.py	test_die_rueckfrage_steht_nur_an_EINEM_ort	H	PRUEFPUNKT	H.die_rueckfrage_steht_nur_an_EINEM_ort	rust/api/tests/oberflaeche/fluss_h.rs	389	Daten	
+tests/test_ui_chat_aussagen.py	test_die_aussage_zur_rueckfrage_bleibt_im_verlauf	H	PRUEFPUNKT	H.die_aussage_zur_rueckfrage_bleibt_im_verlauf	rust/api/tests/oberflaeche/fluss_h.rs	393	Daten	
+tests/test_ui_chat_aussagen.py	test_rueckfrage_ist_beantwortbar_und_der_ablauf_laeuft_weiter	H	PRUEFPUNKT	H.rueckfrage_ist_beantwortbar_und_der_ablauf_laeuft_weiter	rust/api/tests/oberflaeche/fluss_h.rs	403	Daten	
+tests/test_ui_chat_aussagen.py	test_ohne_feld_fuehrt_der_wizard_in_den_chat_ohne_getipptes_zu_verlieren	H	PRUEFPUNKT	H.ohne_feld_fuehrt_der_wizard_in_den_chat_ohne_getipptes_zu_verlieren	rust/api/tests/oberflaeche/fluss_h.rs	416	Daten	
+tests/test_ui_chat_aussagen.py	test_eine_rueckfrage_ohne_zuordnung_verschwindet_nicht	H	PRUEFPUNKT	H.eine_rueckfrage_ohne_zuordnung_verschwindet_nicht	rust/api/tests/oberflaeche/fluss_h.rs	428	Daten	
+tests/test_ui_chat_aussagen.py	test_rueckfrage_und_vorschlag_am_selben_feld_haelt_den_wert_zurueck	H	PRUEFPUNKT	H.rueckfrage_und_vorschlag_am_selben_feld_haelt_den_wert_zurueck	rust/api/tests/oberflaeche/fluss_h.rs	436	Daten	
+tests/test_ui_chat_aussagen.py	test_ohne_aussagen_verhaelt_sich_alles_wie_heute	H	PRUEFPUNKT	H.ohne_aussagen_verhaelt_sich_alles_wie_heute	rust/api/tests/oberflaeche/fluss_h.rs	448	Daten	
+tests/test_ui_chat_aussagen.py	test_ohne_aussagen_bleibt_die_leermeldung_stehen	H	PRUEFPUNKT	H.ohne_aussagen_bleibt_die_leermeldung_stehen	rust/api/tests/oberflaeche/fluss_h.rs	460	Daten	
+tests/test_ui_chat_aussagen.py	test_bei_offener_rueckfrage_keine_leermeldung	H	PRUEFPUNKT	H.bei_offener_rueckfrage_keine_leermeldung	rust/api/tests/oberflaeche/fluss_h.rs	465	Daten	
+tests/test_ui_chat_aussagen.py	test_der_abgeschickte_satz_steht_waehrend_des_aufrufs_nur_einmal	H	PRUEFPUNKT	H.der_abgeschickte_satz_steht_waehrend_des_aufrufs_nur_einmal	rust/api/tests/oberflaeche/fluss_h.rs	480	Daten	
+tests/test_ui_chat_aussagen.py	test_bei_einem_fehlschlag_kommt_der_satz_zurueck	H	PRUEFPUNKT	H.bei_einem_fehlschlag_kommt_der_satz_zurueck	rust/api/tests/oberflaeche/fluss_h.rs	498	Daten	
+tests/test_ui_chat_aussagen.py	test_der_wizard_ist_waehrend_eines_laufenden_aufrufs_gesperrt	H	PRUEFPUNKT	H.der_wizard_ist_waehrend_eines_laufenden_aufrufs_gesperrt	rust/api/tests/oberflaeche/fluss_h.rs	517	Daten	
+tests/test_ui_chat_aussagen.py	test_die_chat_sperre_greift_auch_mit_der_neuen_anzeige	H	PRUEFPUNKT	H.die_chat_sperre_greift_auch_mit_der_neuen_anzeige	rust/api/tests/oberflaeche/fluss_h.rs	537	Daten	
+tests/test_ui_chat_aussagen.py	test_die_anzeige_passt_auf_den_schmalen_schirm	H	PRUEFPUNKT	H.die_anzeige_passt_auf_den_schmalen_schirm	rust/api/tests/oberflaeche/fluss_h.rs	547	Daten	
+tests/test_ui_chat_wartezustand.py	test_waehrend_des_aufrufs_laeuft_eine_sichtbare_anzeige	H	PRUEFPUNKT	H.waehrend_des_aufrufs_laeuft_eine_sichtbare_anzeige	rust/api/tests/oberflaeche/fluss_h.rs	816	Daten	
+tests/test_ui_chat_wartezustand.py	test_reduzierte_bewegung_zeigt_statt_animation_eine_ruhige_kennzeichnung	H	PRUEFPUNKT	H.reduzierte_bewegung_zeigt_statt_animation_eine_ruhige_kennzeichnung	rust/api/tests/oberflaeche/fluss_h.rs	826	Daten	
+tests/test_ui_chat_wartezustand.py	test_waehrend_des_aufrufs_ist_der_fragenbereich_gesperrt	H	PRUEFPUNKT	H.waehrend_des_aufrufs_ist_der_fragenbereich_gesperrt	rust/api/tests/oberflaeche/fluss_h.rs	837	Daten	
+tests/test_ui_chat_wartezustand.py	test_waehrend_des_aufrufs_veraendert_ein_klick_die_aktuelle_frage_nicht	H	PRUEFPUNKT	H.waehrend_des_aufrufs_veraendert_ein_klick_die_aktuelle_frage_nicht	rust/api/tests/oberflaeche/fluss_h.rs	848	Daten	
+tests/test_ui_chat_wartezustand.py	test_nach_der_antwort_ist_alles_wieder_frei	H	PRUEFPUNKT	H.nach_der_antwort_ist_alles_wieder_frei	rust/api/tests/oberflaeche/fluss_h.rs	858	Daten	
+tests/test_ui_chat_wartezustand.py	test_nach_einem_fehlgeschlagenen_aufruf_ist_alles_wieder_frei	H	PRUEFPUNKT	H.nach_einem_fehlgeschlagenen_aufruf_ist_alles_wieder_frei	rust/api/tests/oberflaeche/fluss_h.rs	868	Daten	
+tests/test_ui_chat_wartezustand.py	test_eine_ausnahme_in_der_auswertung_sperrt_die_oberflaeche_nicht	H	PRUEFPUNKT	H.eine_ausnahme_in_der_auswertung_sperrt_die_oberflaeche_nicht	rust/api/tests/oberflaeche/fluss_h.rs	885	Daten	
+tests/test_ui_chat_wartezustand.py	test_antwort_zu_einer_anderen_frage_wird_gekennzeichnet	H	PRUEFPUNKT	H.antwort_zu_einer_anderen_frage_wird_gekennzeichnet	rust/api/tests/oberflaeche/fluss_h.rs	896	Daten	
+tests/test_ui_chat_wartezustand.py	test_ohne_kontextwechsel_kein_hinweis	H	PRUEFPUNKT	H.ohne_kontextwechsel_kein_hinweis	rust/api/tests/oberflaeche/fluss_h.rs	911	Daten	
+tests/test_ui_chat_wartezustand.py	test_vorschlag_landet_unter_seiner_eigenen_feld_id	H	PRUEFPUNKT	H.vorschlag_landet_unter_seiner_eigenen_feld_id	rust/api/tests/oberflaeche/fluss_h.rs	927	Daten	
+tests/test_ui_feldtypen.py	test_jeder_typ_nimmt_seinen_wert_an_und_der_store_akzeptiert_ihn	C	PRUEFPUNKT	C.jeder_typ_nimmt_seinen_wert_an_und_der_store_akzeptiert_ihn	rust/api/tests/oberflaeche/fluss_c.rs	62	Geld	
+tests/test_ui_feldtypen.py	test_text_ist_kein_zahlenfeld	C	PRUEFPUNKT	C.text_ist_kein_zahlenfeld	rust/api/tests/oberflaeche/fluss_c.rs	91	Geld	
+tests/test_ui_feldtypen.py	test_datum_wird_in_das_amtliche_format_uebersetzt	C	PRUEFPUNKT	C.datum_wird_in_das_amtliche_format_uebersetzt	rust/api/tests/oberflaeche/fluss_c.rs	103	Geld	
+tests/test_ui_feldtypen.py	test_beim_korrigieren_steht_der_alte_wert_wieder_da	C	PRUEFPUNKT	C.beim_korrigieren_steht_der_alte_wert_wieder_da	rust/api/tests/oberflaeche/fluss_c.rs	114	Geld	
+tests/test_ui_feldtypen.py	test_ein_wert_gegen_das_muster_wird_nicht_geschrieben	C	PRUEFPUNKT	C.ein_wert_gegen_das_muster_wird_nicht_geschrieben	rust/api/tests/oberflaeche/fluss_c.rs	127	Geld	
+tests/test_ui_feldtypen.py	test_der_store_weist_einen_wert_gegen_das_muster_ab	C	PRUEFPUNKT	C.der_store_weist_einen_wert_gegen_das_muster_ab	rust/api/tests/oberflaeche/fluss_c.rs	133	Geld	
+tests/test_ui_feldtypen.py	test_der_uebliche_wert_laesst_sich_mit_einem_klick_uebernehmen	C	PRUEFPUNKT	C.der_uebliche_wert_laesst_sich_mit_einem_klick_uebernehmen	rust/api/tests/oberflaeche/fluss_c.rs	154	Geld	
+tests/test_ui_feldtypen.py	test_ohne_standardwert_kein_knopf	C	PRUEFPUNKT	C.ohne_standardwert_kein_knopf	rust/api/tests/oberflaeche/fluss_c.rs	163	Geld	
+tests/test_ui_feldtypen.py	test_beispielwert_wird_nie_zur_vorbelegung	C	PRUEFPUNKT	C.beispielwert_wird_nie_zur_vorbelegung	rust/api/tests/oberflaeche/fluss_c.rs	170	Geld	
+tests/test_ui_feldtypen.py	test_die_bindung_enthaelt_diese_typen_wirklich	C	PRUEFPUNKT	C.die_bindung_enthaelt_diese_typen_wirklich	rust/api/tests/oberflaeche/daten_dateien.rs	100	Geld	
+tests/test_ui_fortschritt_und_panel.py	test_nenner_ist_die_zahl_der_noch_offenen_fragen	P	PRUEFPUNKT	P.nenner_ist_die_zahl_der_noch_offenen_fragen	rust/api/tests/oberflaeche/darstellung.rs	323	Darstellung	
+tests/test_ui_fortschritt_und_panel.py	test_nenner_waechst_nicht_mit_dem_zaehler_mit	P	PRUEFPUNKT	P.nenner_waechst_nicht_mit_dem_zaehler_mit	rust/api/tests/oberflaeche/darstellung.rs	333	Darstellung	
+tests/test_ui_fortschritt_und_panel.py	test_eine_antwort_die_bloecke_abschaltet_senkt_die_gesamtzahl_und_sagt_es	P	PRUEFPUNKT	P.eine_antwort_die_bloecke_abschaltet_senkt_die_gesamtzahl_und_sagt_es	rust/api/tests/oberflaeche/darstellung.rs	347	Darstellung	
+tests/test_ui_fortschritt_und_panel.py	test_eine_korrektur_die_bloecke_aufmacht_hebt_die_gesamtzahl_und_sagt_es	P	PRUEFPUNKT	P.eine_korrektur_die_bloecke_aufmacht_hebt_die_gesamtzahl_und_sagt_es	rust/api/tests/oberflaeche/darstellung.rs	363	Darstellung	
+tests/test_ui_fortschritt_und_panel.py	test_ein_vorlaeufiger_wert_zaehlt_genau_einmal	P	PRUEFPUNKT	P.ein_vorlaeufiger_wert_zaehlt_genau_einmal	rust/api/tests/oberflaeche/darstellung.rs	386	Darstellung	
+tests/test_ui_fortschritt_und_panel.py	test_ein_netzfehler_meldet_keinen_fortschritt	P	PRUEFPUNKT	P.ein_netzfehler_meldet_keinen_fortschritt	rust/api/tests/oberflaeche/darstellung.rs	405	Darstellung	
+tests/test_ui_fortschritt_und_panel.py	test_panel_liegt_auf_breitem_schirm_rechts_neben_dem_inhalt	P	PRUEFPUNKT	P.panel_liegt_auf_breitem_schirm_rechts_neben_dem_inhalt	rust/api/tests/oberflaeche/darstellung.rs	431	Darstellung	
+tests/test_ui_fortschritt_und_panel.py	test_panel_bleibt_beim_scrollen_stehen	P	PRUEFPUNKT	P.panel_bleibt_beim_scrollen_stehen	rust/api/tests/oberflaeche/darstellung.rs	455	Darstellung	
+tests/test_ui_fortschritt_und_panel.py	test_panel_rutscht_auf_schmalem_schirm_unter_den_inhalt	P	PRUEFPUNKT	P.panel_rutscht_auf_schmalem_schirm_unter_den_inhalt	rust/api/tests/oberflaeche/darstellung.rs	467	Darstellung	
+tests/test_ui_fortschritt_und_panel.py	test_die_chat_sperre_greift_auch_im_zweispaltigen_bild	P	PRUEFPUNKT	P.die_chat_sperre_greift_auch_im_zweispaltigen_bild	rust/api/tests/oberflaeche/darstellung.rs	481	Darstellung	
+tests/test_ui_frage_polaritaet.py	test_invertierte_frage_speichert_die_bedeutung_der_antwort	C	PRUEFPUNKT	C.invertierte_frage_speichert_die_bedeutung_der_antwort	rust/api/tests/oberflaeche/fluss_c.rs	268	Geld	
+tests/test_ui_frage_polaritaet.py	test_selbstverneinende_frage_wird_nicht_umgekehrt	C	PRUEFPUNKT	C.selbstverneinende_frage_wird_nicht_umgekehrt	rust/api/tests/oberflaeche/fluss_c.rs	278	Geld	
+tests/test_ui_frage_polaritaet.py	test_verstanden_seite_zeigt_die_antwort_nicht_den_rohwert	C	PRUEFPUNKT	C.verstanden_seite_zeigt_die_antwort_nicht_den_rohwert	rust/api/tests/oberflaeche/fluss_c.rs	297	Geld	
+tests/test_ui_instanzen.py	test_die_bindung_erklaert_die_gruppe_kind	D	PRUEFPUNKT	D.die_bindung_erklaert_die_gruppe_kind	rust/api/tests/oberflaeche/daten_dateien.rs	75	Daten	
+tests/test_ui_instanzen.py	test_die_anzahl_kommt_aus_dem_zaehlfeld	D	VORHANDEN	instanzen_wie_orakel	rust/interview/tests/orakel_werte.rs	443	Daten	Zahl, Kappung und Etikett je Szenario gegen das Python-Orakel; der Doctest an InstanzAnzahl::aus_zaehlfeld (interview/src/antwort.rs) prueft 3 -> 3, offen -> 1, 1000 -> max
+tests/test_ui_instanzen.py	test_ein_vorlaeufiger_wert_zaehlt_nicht	D	PRUEFPUNKT	D.ein_vorlaeufiger_wert_zaehlt_nicht	rust/api/tests/oberflaeche/daten_dateien.rs	128	Daten	
+tests/test_ui_instanzen.py	test_ein_feld_ohne_achse_bleibt_bei_einem	D	PRUEFPUNKT	D.ein_feld_ohne_achse_bleibt_bei_einem	rust/api/tests/oberflaeche/daten_dateien.rs	146	Daten	
+tests/test_ui_instanzen.py	test_eine_gruppe_ohne_zaehlfeld_bleibt_bei_einem	D	VORHANDEN	instanz_gruppe_hat_ihr_zaehlfeld	rust/bindung/tests/registry_quer.rs	148	Daten	jede Gruppe der Bindung fuehrt ihr Zaehlfeld (Bestand); die kuenstliche Gruppe des Python-Tests gibt es in Rust nicht, die Gruppe ist ein Typ der Registry
+tests/test_ui_instanzen.py	test_das_feldformat_ist_dasselbe_das_der_store_liest	D	VORHANDEN	basis_ohne_suffix_ist_instanz_eins	rust/domain/src/feld_id.rs	250	Daten	die Basis ist Instanz 1, `x__1` ist keine Instanz (basis_1_ist_keine_instanz); der Doctest an interview::instanz_feld_id prueft kind_vorname und kind_vorname__3
+tests/test_ui_instanzen.py	test_die_gruppen_werden_einmal_von_platte_gelesen_nicht_je_feld	D	VERLUST	-	-	-	Leistung	Python las die Bindung je Feld von der Platte und brauchte einen Cache (28,75 s statt 0,41 s). Rust haelt die Registry einmal im Speicher (rust/api/src/zustand.rs: OnceLock) und baut den Graphen daraus; es gibt keinen Plattenzugriff je Frage und keinen Cache, dessen Treffer zu zaehlen waeren. Kein Geld- und kein Datenbezug.
+tests/test_ui_instanzen.py	test_der_cache_liefert_dasselbe_wie_der_frische_read	D	VERLUST	-	-	-	Leistung	Mit dem Cache entfaellt auch seine Gleichheitspruefung: Rust hat nur den einen Lesepfad der Registry (rust/bindung/src/registry.rs), keinen zweiten Weg, der abweichen koennte. Kein Geld- und kein Datenbezug.
+tests/test_ui_instanzen.py	test_drei_kinder_geben_drei_eingabefelder	D	PRUEFPUNKT	D.drei_kinder_geben_drei_eingabefelder	rust/api/tests/oberflaeche/fluss_d.rs	93	Daten	
+tests/test_ui_instanzen.py	test_ein_kind_bleibt_ein_schlichtes_feld	D	PRUEFPUNKT	D.ein_kind_bleibt_ein_schlichtes_feld	rust/api/tests/oberflaeche/fluss_d.rs	121	Daten	
+tests/test_ui_instanzen.py	test_die_werte_landen_unter_base_und_base__n	D	PRUEFPUNKT	D.die_werte_landen_unter_base_und_base__n	rust/api/tests/oberflaeche/fluss_d.rs	112	Daten	
+tests/test_ui_instanzen.py	test_eine_leere_instanz_wird_uebersprungen_nicht_verworfen	D	PRUEFPUNKT	D.eine_leere_instanz_wird_uebersprungen_nicht_verworfen	rust/api/tests/oberflaeche/fluss_d.rs	129	Daten	
+tests/test_ui_instanzen.py	test_alle_leer_schreibt_nichts_und_sagt_es	D	PRUEFPUNKT	D.alle_leer_schreibt_nichts_und_sagt_es	rust/api/tests/oberflaeche/fluss_d.rs	143	Daten	
+tests/test_ui_instanz_korrektur.py	test_die_zerlegung_misst_sich_am_hinweg	D	PRUEFPUNKT	D.die_zerlegung_misst_sich_am_hinweg	rust/api/tests/oberflaeche/fluss_d.rs	166	Daten	
+tests/test_ui_instanz_korrektur.py	test_klick_auf_die_zweite_instanz_oeffnet_die_frage_mit_beiden_zeilen	D	PRUEFPUNKT	D.klick_auf_die_zweite_instanz_oeffnet_die_frage_mit_beiden_zeilen	rust/api/tests/oberflaeche/fluss_d.rs	187	Daten	
+tests/test_ui_instanz_korrektur.py	test_die_geaenderte_zweite_zeile_trifft_genau_ihre_instanz	D	PRUEFPUNKT	D.die_geaenderte_zweite_zeile_trifft_genau_ihre_instanz	rust/api/tests/oberflaeche/fluss_d.rs	204	Daten	
+tests/test_ui_instanz_korrektur.py	test_eine_korrektur_schreibt_auch_die_unveraenderten_zeilen_neu	D	PRUEFPUNKT	D.eine_korrektur_schreibt_auch_die_unveraenderten_zeilen_neu	rust/api/tests/oberflaeche/fluss_d.rs	209	Daten	
+tests/test_ui_instanz_korrektur.py	test_die_korrektur_materialisiert_keine_leeren_instanzen	D	PRUEFPUNKT	D.die_korrektur_materialisiert_keine_leeren_instanzen	rust/api/tests/oberflaeche/fluss_d.rs	317	Daten	
+tests/test_ui_instanz_korrektur.py	test_die_erste_zeile_laesst_sich_ueber_dieselbe_korrektur_mitgeben	D	PRUEFPUNKT	D.die_erste_zeile_laesst_sich_ueber_dieselbe_korrektur_mitgeben	rust/api/tests/oberflaeche/fluss_d.rs	286	Daten	
+tests/test_ui_instanz_korrektur.py	test_ein_feld_ohne_achse_geht_denselben_weg_wie_bisher	D	PRUEFPUNKT	D.ein_feld_ohne_achse_geht_denselben_weg_wie_bisher	rust/api/tests/oberflaeche/fluss_d.rs	334	Daten	
+tests/test_ui_instanz_korrektur.py	test_ein_bestaetigtes_feld_ohne_achse_laesst_sich_jetzt_korrigieren	D	PRUEFPUNKT	D.ein_bestaetigtes_feld_ohne_achse_laesst_sich_jetzt_korrigieren	rust/api/tests/oberflaeche/fluss_d.rs	343	Daten	
+tests/test_ui_instanz_korrektur.py	test_eine_regel_mit_offenen_gates_sperrt_die_korrektur_nicht	D	PRUEFPUNKT	D.eine_regel_mit_offenen_gates_sperrt_die_korrektur_nicht	rust/api/tests/oberflaeche/fluss_d.rs	222	Daten	
+tests/test_ui_instanz_korrektur.py	test_ein_feld_ohne_ereignis_legt_keine_frage_vor	D	PRUEFPUNKT	D.ein_feld_ohne_ereignis_legt_keine_frage_vor	rust/api/tests/oberflaeche/fluss_d.rs	363	Daten	
+tests/test_ui_instanz_korrektur.py	test_eine_abgeschaltete_frage_bekommt_den_hinweis_statt_der_frage	D	PRUEFPUNKT	D.eine_abgeschaltete_frage_bekommt_den_hinweis_statt_der_frage	rust/api/tests/oberflaeche/fluss_d.rs	247	Daten	
+tests/test_ui_instanz_korrektur.py	test_die_instanz_zeile_ist_lesbar_statt_kennung_und_rohwert	D	PRUEFPUNKT	D.die_instanz_zeile_ist_lesbar_statt_kennung_und_rohwert	rust/api/tests/oberflaeche/fluss_d.rs	272	Daten	
+tests/test_ui_instanz_korrektur.py	test_ein_einzelner_wert_wird_nicht_buchstabenweise_auf_die_zeilen_verteilt	D	PRUEFPUNKT	D.ein_einzelner_wert_wird_nicht_buchstabenweise_auf_die_zeilen_verteilt	rust/api/tests/oberflaeche/fluss_d.rs	357	Daten	
+tests/test_ui_instanz_korrektur.py	test_eine_geleerte_vorbelegte_zeile_loescht_nichts_und_sagt_das_nicht	D	PRUEFPUNKT	D.eine_geleerte_vorbelegte_zeile_loescht_nichts_und_sagt_das_nicht	rust/api/tests/oberflaeche/fluss_d.rs	304	Daten	
+tests/test_ui_ki_flow.py	test_die_wegwahl_steht_zwischen_fallart_und_fluss	H	PRUEFPUNKT	H.die_wegwahl_steht_zwischen_fallart_und_fluss	rust/api/tests/oberflaeche/fluss_h.rs	45	Daten	
+tests/test_ui_ki_flow.py	test_der_fragebogen_weg_stellt_die_erste_frage	H	PRUEFPUNKT	H.der_fragebogen_weg_stellt_die_erste_frage	rust/api/tests/oberflaeche/fluss_h.rs	65	Daten	
+tests/test_ui_ki_flow.py	test_der_ki_weg_zeigt_nur_das_ki_fenster	H	PRUEFPUNKT	H.der_ki_weg_zeigt_nur_das_ki_fenster	rust/api/tests/oberflaeche/fluss_h.rs	58	Daten	
+tests/test_ui_ki_flow.py	test_rueckfragen_kommen_einzeln	H	PRUEFPUNKT	H.rueckfragen_kommen_einzeln	rust/api/tests/oberflaeche/fluss_h.rs	70	Daten	
+tests/test_ui_ki_flow.py	test_weiter_fuehrt_zur_naechsten_rueckfrage	H	PRUEFPUNKT	H.weiter_fuehrt_zur_naechsten_rueckfrage	rust/api/tests/oberflaeche/fluss_h.rs	82	Daten	
+tests/test_ui_ki_flow.py	test_ein_cent_feld_landet_als_cent_im_store	H	PRUEFPUNKT	H.ein_cent_feld_landet_als_cent_im_store	rust/api/tests/oberflaeche/fluss_h.rs	90	Daten	
+tests/test_ui_ki_flow.py	test_bool_umkehr_gilt_auch_im_rueckfragen_schritt	H	PRUEFPUNKT	H.bool_umkehr_gilt_auch_im_rueckfragen_schritt	rust/api/tests/oberflaeche/fluss_h.rs	104	Daten	
+tests/test_ui_ki_flow.py	test_ein_leeres_feld_schreibt_nichts	H	PRUEFPUNKT	H.ein_leeres_feld_schreibt_nichts	rust/api/tests/oberflaeche/fluss_h.rs	123	Daten	
+tests/test_ui_ki_flow.py	test_spaeter_schreibt_nichts_und_die_frage_kommt_im_fragebogen_wieder	H	PRUEFPUNKT	H.spaeter_schreibt_nichts_und_die_frage_kommt_im_fragebogen_wieder	rust/api/tests/oberflaeche/fluss_h.rs	134	Daten	
+tests/test_ui_ki_flow.py	test_zwei_kinder_geben_zwei_eingabefelder_in_der_nachfrage	H	PRUEFPUNKT	H.zwei_kinder_geben_zwei_eingabefelder_in_der_nachfrage	rust/api/tests/oberflaeche/fluss_h.rs	153	Daten	
+tests/test_ui_ki_flow.py	test_zwei_kinder_geben_zwei_ereignisse_im_store	H	PRUEFPUNKT	H.zwei_kinder_geben_zwei_ereignisse_im_store	rust/api/tests/oberflaeche/fluss_h.rs	164	Daten	
+tests/test_ui_ki_flow.py	test_eine_leer_gelassene_instanz_schreibt_nichts	H	PRUEFPUNKT	H.eine_leer_gelassene_instanz_schreibt_nichts	rust/api/tests/oberflaeche/fluss_h.rs	175	Daten	
+tests/test_ui_ki_flow.py	test_spaeter_beantworten_gilt_auch_auf_der_achse	H	PRUEFPUNKT	H.spaeter_beantworten_gilt_auch_auf_der_achse	rust/api/tests/oberflaeche/fluss_h.rs	184	Daten	
+tests/test_ui_ki_flow.py	test_ein_feld_ohne_achse_bleibt_bei_einem_feld_und_einem_ereignis	H	PRUEFPUNKT	H.ein_feld_ohne_achse_bleibt_bei_einem_feld_und_einem_ereignis	rust/api/tests/oberflaeche/fluss_h.rs	197	Daten	
+tests/test_ui_ki_flow.py	test_eine_rueckfrage_ohne_feld_bleibt_beim_chat	H	PRUEFPUNKT	H.eine_rueckfrage_ohne_feld_bleibt_beim_chat	rust/api/tests/oberflaeche/fluss_h.rs	208	Daten	
+tests/test_ui_ki_flow.py	test_nie_zwei_aufforderungen_gleichzeitig	H	PRUEFPUNKT	H.nie_zwei_aufforderungen_gleichzeitig	rust/api/tests/oberflaeche/fluss_h.rs	223	Daten	
+tests/test_ui_ki_flow.py	test_nach_den_bestaetigungen_kommen_die_rueckfragen	H	PRUEFPUNKT	H.nach_den_bestaetigungen_kommen_die_rueckfragen	rust/api/tests/oberflaeche/fluss_h.rs	233	Daten	
+tests/test_ui_ki_flow.py	test_eine_rueckfrage_zu_einem_erledigten_feld_wird_nicht_gestellt	H	PRUEFPUNKT	H.eine_rueckfrage_zu_einem_erledigten_feld_wird_nicht_gestellt	rust/api/tests/oberflaeche/fluss_h.rs	246	Daten	
+tests/test_ui_ki_flow.py	test_ohne_bestaetigungen_geht_es_zurueck_in_den_fragebogen	H	PRUEFPUNKT	H.ohne_bestaetigungen_geht_es_zurueck_in_den_fragebogen	rust/api/tests/oberflaeche/fluss_h.rs	259	Daten	
+tests/test_ui_ki_flow.py	test_eine_neue_antwort_ueberholt_die_laufende_runde	H	PRUEFPUNKT	H.eine_neue_antwort_ueberholt_die_laufende_runde	rust/api/tests/oberflaeche/fluss_h.rs	1103	Daten	
+tests/test_ui_ki_flow.py	test_ohne_rueckfragen_bleibt_alles_wie_bisher	H	PRUEFPUNKT	H.ohne_rueckfragen_bleibt_alles_wie_bisher	rust/api/tests/oberflaeche/fluss_h.rs	1120	Daten	
+tests/test_ui_ki_flow.py	test_die_chat_sperre_fasst_auch_die_rueckfragen_seite	H	PRUEFPUNKT	H.die_chat_sperre_fasst_auch_die_rueckfragen_seite	rust/api/tests/oberflaeche/fluss_h.rs	1131	Daten	
+tests/test_ui_ki_flow.py	test_die_rueckfragen_seite_nimmt_den_fokus	H	PRUEFPUNKT	H.die_rueckfragen_seite_nimmt_den_fokus	rust/api/tests/oberflaeche/fluss_h.rs	1145	Daten	
+tests/test_ui_ki_flow.py	test_die_seite_passt_auf_den_schmalen_schirm	H	PRUEFPUNKT	H.die_seite_passt_auf_den_schmalen_schirm	rust/api/tests/oberflaeche/fluss_h.rs	1158	Daten	
+tests/test_ui_ki_flow.py	test_der_rechenweg_steht_unter_dem_wert	H	PRUEFPUNKT	H.der_rechenweg_steht_unter_dem_wert	rust/api/tests/oberflaeche/fluss_h.rs	1175	Daten	
+tests/test_ui_ki_flow.py	test_ohne_rechenweg_steht_dort_nichts	H	PRUEFPUNKT	H.ohne_rechenweg_steht_dort_nichts	rust/api/tests/oberflaeche/fluss_h.rs	1195	Daten	
+tests/test_ui_ki_flow.py	test_ein_rechenweg_ohne_satz_verschwindet_nicht	H	PRUEFPUNKT	H.ein_rechenweg_ohne_satz_verschwindet_nicht	rust/api/tests/oberflaeche/fluss_h.rs	1205	Daten	
+tests/test_ui_ki_flow.py	test_der_rechenweg_steht_auch_am_widerspruch	H	PRUEFPUNKT	H.der_rechenweg_steht_auch_am_widerspruch	rust/api/tests/oberflaeche/fluss_h.rs	1222	Daten	
+tests/test_ui_ki_flow.py	test_die_seite_liegt_im_ki_panel	H	PRUEFPUNKT	H.die_seite_liegt_im_ki_panel	rust/api/tests/oberflaeche/fluss_h.rs	1236	Daten	
+tests/test_ui_ki_fokus.py	test_auf_dem_ki_weg_steht_NUR_das_ki_fenster	H	PRUEFPUNKT	H.auf_dem_ki_weg_steht_NUR_das_ki_fenster	rust/api/tests/oberflaeche/fluss_h.rs	981	Daten	
+tests/test_ui_ki_fokus.py	test_auf_dem_fragebogen_weg_bleibt_die_leiste_schmal	H	PRUEFPUNKT	H.auf_dem_fragebogen_weg_bleibt_die_leiste_schmal	rust/api/tests/oberflaeche/fluss_h.rs	1015	Daten	
+tests/test_ui_ki_fokus.py	test_bei_rueckfragen_bleibt_der_ki_fokus	H	PRUEFPUNKT	H.bei_rueckfragen_bleibt_der_ki_fokus	rust/api/tests/oberflaeche/fluss_h.rs	1027	Daten	
+tests/test_ui_ki_fokus.py	test_bei_bestaetigungen_bleibt_der_ki_fokus	H	PRUEFPUNKT	H.bei_bestaetigungen_bleibt_der_ki_fokus	rust/api/tests/oberflaeche/fluss_h.rs	1039	Daten	
+tests/test_ui_ki_fokus.py	test_es_gibt_einen_weg_zurueck_in_den_fragebogen	H	PRUEFPUNKT	H.es_gibt_einen_weg_zurueck_in_den_fragebogen	rust/api/tests/oberflaeche/fluss_h.rs	1002	Daten	
+tests/test_ui_ki_fokus.py	test_der_rueckweg_ist_nur_auf_dem_ki_weg_da	H	PRUEFPUNKT	H.der_rueckweg_ist_nur_auf_dem_ki_weg_da	rust/api/tests/oberflaeche/fluss_h.rs	1016	Daten	
+tests/test_ui_ki_fokus.py	test_der_wizard_steht_im_ki_fenster	H	PRUEFPUNKT	H.der_wizard_steht_im_ki_fenster	rust/api/tests/oberflaeche/fluss_h.rs	1031	Daten	
+tests/test_ui_ki_fokus.py	test_die_bestaetigungen_stehen_auch_im_ki_fenster	H	PRUEFPUNKT	H.die_bestaetigungen_stehen_auch_im_ki_fenster	rust/api/tests/oberflaeche/fluss_h.rs	1044	Daten	
+tests/test_ui_ki_fokus.py	test_im_ki_weg_ist_kein_stueck_fragebogen_im_bild	H	PRUEFPUNKT	H.im_ki_weg_ist_kein_stueck_fragebogen_im_bild	rust/api/tests/oberflaeche/fluss_h.rs	998	Daten	
+tests/test_ui_ki_fokus.py	test_auf_dem_fragebogen_weg_bleibt_der_kopf_vollstaendig	H	PRUEFPUNKT	H.auf_dem_fragebogen_weg_bleibt_der_kopf_vollstaendig	rust/api/tests/oberflaeche/fluss_h.rs	1021	Daten	
+tests/test_ui_ki_fokus.py	test_der_verlauf_tritt_zurueck_solange_der_wizard_steht	H	PRUEFPUNKT	H.der_verlauf_tritt_zurueck_solange_der_wizard_steht	rust/api/tests/oberflaeche/fluss_h.rs	1057	Daten	
+tests/test_ui_ki_fokus.py	test_kein_konsolenfehler	H	PRUEFPUNKT	H.kein_konsolenfehler	rust/api/tests/oberflaeche/fluss_h.rs	979	Daten	
+tests/test_ui_leerwert_stille_null.py	test_leeres_feld_liest_undefined_nicht_null	C	PRUEFPUNKT	C.leeres_feld_liest_undefined_nicht_null	rust/api/tests/oberflaeche/fluss_c.rs	179	Geld	
+tests/test_ui_leerwert_stille_null.py	test_komma_statt_punkt_liest_undefined	C	PRUEFPUNKT	C.komma_statt_punkt_liest_undefined	rust/api/tests/oberflaeche/fluss_c.rs	184	Geld	
+tests/test_ui_leerwert_stille_null.py	test_explizite_null_bleibt_eine_echte_null	C	PRUEFPUNKT	C.explizite_null_bleibt_eine_echte_null	rust/api/tests/oberflaeche/fluss_c.rs	189	Geld	
+tests/test_ui_leerwert_stille_null.py	test_bestaetigen_schreibt_bei_leerem_feld_kein_event_und_zeigt_fehler	C	PRUEFPUNKT	C.bestaetigen_schreibt_bei_leerem_feld_kein_event_und_zeigt_fehler	rust/api/tests/oberflaeche/fluss_c.rs	198	Geld	
+tests/test_ui_leerwert_stille_null.py	test_bestaetigen_schreibt_explizite_null_erfolgreich	C	PRUEFPUNKT	C.bestaetigen_schreibt_explizite_null_erfolgreich	rust/api/tests/oberflaeche/fluss_c.rs	237	Geld	
+tests/test_ui_lesbare_werte.py	test_die_liste_zeigt_frage_und_lesbaren_wert	L	PRUEFPUNKT	L.die_liste_zeigt_frage_und_lesbaren_wert	rust/api/tests/oberflaeche/darstellung.rs	160	Darstellung	
+tests/test_ui_lesbare_werte.py	test_ein_bool_steht_als_ja_oder_nein_da	L	PRUEFPUNKT	L.ein_bool_steht_als_ja_oder_nein_da	rust/api/tests/oberflaeche/darstellung.rs	175	Darstellung	
+tests/test_ui_lesbare_werte.py	test_ohne_antworten_steht_die_ueberschrift_nicht_da	L	PRUEFPUNKT	L.ohne_antworten_steht_die_ueberschrift_nicht_da	rust/api/tests/oberflaeche/darstellung.rs	186	Darstellung	
+tests/test_ui_lesbare_werte.py	test_ein_langer_wert_quetscht_die_frage_nicht_zu_tode	L	PRUEFPUNKT	L.ein_langer_wert_quetscht_die_frage_nicht_zu_tode	rust/api/tests/oberflaeche/darstellung.rs	213	Darstellung	
+tests/test_ui_lesbare_werte.py	test_ohne_zahl_behauptet_der_kopf_nicht_dass_etwas_feststeht	L	PRUEFPUNKT	L.ohne_zahl_behauptet_der_kopf_nicht_dass_etwas_feststeht	rust/api/tests/oberflaeche/darstellung.rs	196	Darstellung	
+tests/test_ui_login.py	test_anmeldemaske_erscheint_wenn_auth_pflicht_ist	A	PRUEFPUNKT	A.anmeldemaske_erscheint_wenn_auth_pflicht_ist	rust/api/tests/oberflaeche/fluss_a.rs	44	Daten	
+tests/test_ui_login.py	test_registrierung_und_anmeldung_fuehrt_in_die_anwendung	A	PRUEFPUNKT	A.registrierung_und_anmeldung_fuehrt_in_die_anwendung	rust/api/tests/oberflaeche/fluss_a.rs	54	Daten	
+tests/test_ui_login.py	test_request_nach_login_traegt_authorization_header	A	PRUEFPUNKT	A.request_nach_login_traegt_authorization_header	rust/api/tests/oberflaeche/fluss_a.rs	72	Daten	
+tests/test_ui_login.py	test_abmelden_entfernt_das_token	A	PRUEFPUNKT	A.abmelden_entfernt_das_token	rust/api/tests/oberflaeche/fluss_a.rs	82	Daten	
+tests/test_ui_login.py	test_ungueltiges_token_zeigt_maske_nicht_fehlerbanner	A	PRUEFPUNKT	A.ungueltiges_token_zeigt_maske_nicht_fehlerbanner	rust/api/tests/oberflaeche/fluss_a.rs	96	Daten	
+tests/test_ui_login.py	test_einzelnutzer_modus_zeigt_nie_die_anmeldemaske	A	PRUEFPUNKT	A.einzelnutzer_modus_zeigt_nie_die_anmeldemaske	rust/api/tests/oberflaeche/fluss_a.rs	112	Daten	
+tests/test_ui_rechenweg.py	test_rechenweg_positiv	F	PRUEFPUNKT	F.rechenweg_positiv	rust/api/tests/oberflaeche/fluss_f.rs	435	Geld	
+tests/test_ui_rechenweg.py	test_rechenweg_negativ	F	PRUEFPUNKT	F.rechenweg_negativ	rust/api/tests/oberflaeche/fluss_f.rs	489	Geld	
+tests/test_ui_rechenweg.py	test_rechenweg_bestaetigt_ohne_kette	F	PRUEFPUNKT	F.rechenweg_bestaetigt_ohne_kette	rust/api/tests/oberflaeche/fluss_f.rs	515	Geld	
+tests/test_ui_rechenweg.py	test_ergebnis_hinweis_offen_bei_stiller_null	F	PRUEFPUNKT	F.ergebnis_hinweis_offen_bei_stiller_null	rust/api/tests/oberflaeche/fluss_f.rs	540	Geld	
+tests/test_ui_rechenweg.py	test_kette_endet_bei_der_zahl	F	PRUEFPUNKT	F.kette_endet_bei_der_zahl	rust/api/tests/oberflaeche/fluss_f.rs	304	Geld	
+tests/test_ui_rechenweg.py	test_p31_stufe_nennt_die_guenstigerpruefung	F	PRUEFPUNKT	F.p31_stufe_nennt_die_guenstigerpruefung	rust/api/tests/oberflaeche/fluss_f.rs	321	Geld	
+tests/test_ui_rechenweg.py	test_p31_kindergeld_gewinnt_kette_bleibt_vollstaendig	F	PRUEFPUNKT	F.p31_kindergeld_gewinnt_kette_bleibt_vollstaendig	rust/api/tests/oberflaeche/fluss_f.rs	345	Geld	
+tests/test_ui_rechenweg.py	test_p31_kontrolle_kinderlos_hat_dieselbe_kette_wie_vorher	F	PRUEFPUNKT	F.p31_kontrolle_kinderlos_hat_dieselbe_kette_wie_vorher	rust/api/tests/oberflaeche/fluss_f.rs	358	Geld	
+tests/test_ui_rechenweg.py	test_rentner_kette_mit_kind_nennt_p31	F	PRUEFPUNKT	F.rentner_kette_mit_kind_nennt_p31	rust/api/tests/oberflaeche/fluss_f.rs	368	Geld	
+tests/test_ui_rechenweg.py	test_p31_stufe_ist_im_dom_sichtbar	F	PRUEFPUNKT	F.p31_stufe_ist_im_dom_sichtbar	rust/api/tests/oberflaeche/fluss_f.rs	567	Geld	
+tests/test_ui_rechenweg.py	test_endstandskette_zeigt_tabelle_mit_der_gezahlten_steuer	F	PRUEFPUNKT	F.endstandskette_zeigt_tabelle_mit_der_gezahlten_steuer	rust/api/tests/oberflaeche/fluss_f.rs	583	Geld	
+tests/test_ui_responsive.py	test_start_screen_kacheln_responsive	R	PRUEFPUNKT	R.start_screen_kacheln_responsive	rust/api/tests/oberflaeche/darstellung.rs	73	Darstellung	
+tests/test_ui_responsive.py	test_start_screen_no_horizontal_scroll	R	PRUEFPUNKT	R.start_screen_no_horizontal_scroll	rust/api/tests/oberflaeche/darstellung.rs	84	Darstellung	
+tests/test_ui_responsive.py	test_wegpunkt_buttons_responsive	R	PRUEFPUNKT	R.wegpunkt_buttons_responsive	rust/api/tests/oberflaeche/darstellung.rs	90	Darstellung	
+tests/test_ui_responsive.py	test_fortschrittsleiste_responsive	R	PRUEFPUNKT	R.fortschrittsleiste_responsive	rust/api/tests/oberflaeche/darstellung.rs	110	Darstellung	
+tests/test_ui_responsive.py	test_belegt_liste_tap_targets	R	PRUEFPUNKT	R.belegt_liste_tap_targets	rust/api/tests/oberflaeche/darstellung.rs	119	Darstellung	staerker als Python: der Python-Test lud die Seite neu, fand keine Zeile und pruefte nichts; hier steht die Antwort im Fall der Seite, und mindestens eine Zeile ist Pflicht
+tests/test_ui_responsive.py	test_overlay_und_berater_responsive	R	PRUEFPUNKT	R.overlay_und_berater_responsive	rust/api/tests/oberflaeche/darstellung.rs	131	Darstellung	
+tests/test_ui_responsive.py	test_input_fields_tap_targets	R	PRUEFPUNKT	R.input_fields_tap_targets	rust/api/tests/oberflaeche/darstellung.rs	100	Darstellung	
+tests/test_ui_screening_liste.py	test_die_bindung_erklaert_welche_fragen_dazugehoeren	B	PRUEFPUNKT	B.die_bindung_erklaert_welche_fragen_dazugehoeren	rust/api/tests/oberflaeche/daten_dateien.rs	87	Daten	
+tests/test_ui_screening_liste.py	test_die_liste_steht_am_anfang_des_fragebogens	B	PRUEFPUNKT	B.die_liste_steht_am_anfang_des_fragebogens	rust/api/tests/oberflaeche/fluss_b.rs	33	Daten	
+tests/test_ui_screening_liste.py	test_ein_kreuz_heisst_ja_und_ein_leeres_kaestchen_nein	B	PRUEFPUNKT	B.ein_kreuz_heisst_ja_und_ein_leeres_kaestchen_nein	rust/api/tests/oberflaeche/fluss_b.rs	49	Daten	
+tests/test_ui_screening_liste.py	test_die_liste_nimmt_die_folgefragen_weg	B	PRUEFPUNKT	B.die_liste_nimmt_die_folgefragen_weg	rust/api/tests/oberflaeche/fluss_b.rs	71	Daten	
+tests/test_ui_screening_liste.py	test_nach_der_liste_kommt_der_fragebogen	B	PRUEFPUNKT	B.nach_der_liste_kommt_der_fragebogen	rust/api/tests/oberflaeche/fluss_b.rs	81	Daten	
+tests/test_ui_screening_liste.py	test_beim_zweiten_mal_kommt_sie_nicht_wieder	B	PRUEFPUNKT	B.beim_zweiten_mal_kommt_sie_nicht_wieder	rust/api/tests/oberflaeche/fluss_b.rs	84	Daten	
+tests/test_ui_screening_liste.py	test_auf_dem_ki_weg_kommt_sie_nicht_sofort	B	PRUEFPUNKT	B.auf_dem_ki_weg_kommt_sie_nicht_sofort	rust/api/tests/oberflaeche/fluss_b.rs	89	Daten	
+tests/test_ui_screening_liste.py	test_tap_ziele_und_schmaler_schirm	B	PRUEFPUNKT	B.tap_ziele_und_schmaler_schirm	rust/api/tests/oberflaeche/fluss_b.rs	105	Daten	
+tests/test_ui_verstanden_seite.py	test_chat_liefert_anzeige_metadaten	H	PRUEFPUNKT	H.chat_liefert_anzeige_metadaten	rust/api/tests/oberflaeche/fluss_h.rs	599	Daten	ueber den echten /chat des Dienstes gegen einen lokalen Ersatz fuer das Sprachmodell, ohne Browser
+tests/test_ui_verstanden_seite.py	test_vorschlaege_bleiben_vorlaeufig	H	PRUEFPUNKT	H.vorschlaege_bleiben_vorlaeufig	rust/api/tests/oberflaeche/fluss_h.rs	611	Daten	ueber den echten /chat des Dienstes gegen einen lokalen Ersatz fuer das Sprachmodell, ohne Browser
+tests/test_ui_verstanden_seite.py	test_seite_zeigt_jede_zeile_mit_ihrem_zitat	H	PRUEFPUNKT	H.seite_zeigt_jede_zeile_mit_ihrem_zitat	rust/api/tests/oberflaeche/fluss_h.rs	647	Daten	
+tests/test_ui_verstanden_seite.py	test_cent_wird_als_euro_gezeigt	H	PRUEFPUNKT	H.cent_wird_als_euro_gezeigt	rust/api/tests/oberflaeche/fluss_h.rs	652	Daten	
+tests/test_ui_verstanden_seite.py	test_enum_zeigt_den_anzeigetext	H	PRUEFPUNKT	H.enum_zeigt_den_anzeigetext	rust/api/tests/oberflaeche/fluss_h.rs	654	Daten	
+tests/test_ui_verstanden_seite.py	test_kein_feld_wird_invertiert_angezeigt	H	PRUEFPUNKT	H.kein_feld_wird_invertiert_angezeigt	rust/api/tests/oberflaeche/fluss_h.rs	657	Daten	
+tests/test_ui_verstanden_seite.py	test_stimmt_bestaetigt_genau_ein_feld	H	PRUEFPUNKT	H.stimmt_bestaetigt_genau_ein_feld	rust/api/tests/oberflaeche/fluss_h.rs	667	Daten	
+tests/test_ui_verstanden_seite.py	test_bestaetigen_schiebt_die_seite_nicht_weg	H	PRUEFPUNKT	H.bestaetigen_schiebt_die_seite_nicht_weg	rust/api/tests/oberflaeche/fluss_h.rs	675	Daten	
+tests/test_ui_verstanden_seite.py	test_weiter_fuehrt_in_den_fragefluss_und_verliert_nichts	H	PRUEFPUNKT	H.weiter_fuehrt_in_den_fragefluss_und_verliert_nichts	rust/api/tests/oberflaeche/fluss_h.rs	683	Daten	
+tests/test_ui_verstanden_seite.py	test_aendern_oeffnet_das_feld_im_fragefluss	H	PRUEFPUNKT	H.aendern_oeffnet_das_feld_im_fragefluss	rust/api/tests/oberflaeche/fluss_h.rs	695	Daten	
+tests/test_ui_verstanden_seite.py	test_aendern_kehrt_in_die_liste_zurueck	H	PRUEFPUNKT	H.aendern_kehrt_in_die_liste_zurueck	rust/api/tests/oberflaeche/fluss_h.rs	704	Daten	
+tests/test_ui_verstanden_seite.py	test_die_letzte_aenderung_laesst_die_liste_nicht_leer_stehen	H	PRUEFPUNKT	H.die_letzte_aenderung_laesst_die_liste_nicht_leer_stehen	rust/api/tests/oberflaeche/fluss_h.rs	725	Daten	
+tests/test_ui_verstanden_seite.py	test_konflikt_traegt_anzeige_metadaten	H	PRUEFPUNKT	H.konflikt_traegt_anzeige_metadaten	rust/api/tests/oberflaeche/fluss_h.rs	621	Daten	ueber den echten /chat des Dienstes gegen einen lokalen Ersatz fuer das Sprachmodell, ohne Browser
+tests/test_ui_verstanden_seite.py	test_konflikt_erscheint_und_keine_seite_gewinnt_von_allein	H	PRUEFPUNKT	H.konflikt_erscheint_und_keine_seite_gewinnt_von_allein	rust/api/tests/oberflaeche/fluss_h.rs	749	Daten	
+tests/test_ui_verstanden_seite.py	test_meins_behalten_schreibt_nichts	H	PRUEFPUNKT	H.meins_behalten_schreibt_nichts	rust/api/tests/oberflaeche/fluss_h.rs	761	Daten	
+tests/test_ui_verstanden_seite.py	test_keine_horizontale_scrollbar_bei_360px	H	PRUEFPUNKT	H.keine_horizontale_scrollbar_bei_360px	rust/api/tests/oberflaeche/fluss_h.rs	660	Daten	
+tests/test_ui_wahl_buttons.py	test_erste_frage_ist_eine_button_wahl	B	PRUEFPUNKT	B.erste_frage_ist_eine_button_wahl	rust/api/tests/oberflaeche/fluss_b.rs	118	Daten	
+tests/test_ui_wahl_buttons.py	test_buttons_tragen_den_anzeigetext_nicht_den_rohwert	B	PRUEFPUNKT	B.buttons_tragen_den_anzeigetext_nicht_den_rohwert	rust/api/tests/oberflaeche/fluss_b.rs	123	Daten	
+tests/test_ui_wahl_buttons.py	test_klick_setzt_den_wert_und_markiert_den_button	B	PRUEFPUNKT	B.klick_setzt_den_wert_und_markiert_den_button	rust/api/tests/oberflaeche/fluss_b.rs	136	Daten	
+tests/test_ui_wahl_buttons.py	test_vorauswahl_folgt_dem_beispielwert_nicht_der_ersten_option	B	PRUEFPUNKT	B.vorauswahl_folgt_dem_beispielwert_nicht_der_ersten_option	rust/api/tests/oberflaeche/fluss_b.rs	145	Daten	
+tests/test_ui_wahl_buttons.py	test_bool_inversion_bleibt_erhalten	B	PRUEFPUNKT	B.bool_inversion_bleibt_erhalten	rust/api/tests/oberflaeche/fluss_b.rs	152	Daten	
+tests/test_ui_wahl_buttons.py	test_lange_auswahl_bleibt_ein_dropdown	B	PRUEFPUNKT	B.lange_auswahl_bleibt_ein_dropdown	rust/api/tests/oberflaeche/fluss_b.rs	155	Daten	
+tests/test_ui_wahl_buttons.py	test_keine_horizontale_scrollbar_bei_360px	B	PRUEFPUNKT	B.keine_horizontale_scrollbar_bei_360px	rust/api/tests/oberflaeche/fluss_b.rs	132	Daten	
+(neu)	(neu)	C	PRUEFPUNKT	C.ungueltige_ganzzahl_liest_undefined_nicht_null	rust/api/tests/oberflaeche/fluss_c.rs	195	Geld	neuer Pruefpunkt dieser Stufe (Mutante F6: stille Null bei ungueltiger Zahl)
+(neu)	(neu)	D	PRUEFPUNKT	D.ohne_zaehlfeld_ein_feld_mit_etikett	rust/api/tests/oberflaeche/daten_dateien.rs	120	Daten	neuer Pruefpunkt am Dienst: ohne Zaehlfeld ein Eingabefeld, das Etikett der Gruppe steht da (Teil von test_die_anzahl_kommt_aus_dem_zaehlfeld)
