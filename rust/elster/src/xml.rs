@@ -975,4 +975,29 @@ mod tests {
             assert_eq!(blatt(&meta, &json!(false)), None, "{typ}");
         }
     }
+
+    /// Python: `tests/test_kz_ausschluss_vollstaendig.py` (Gegenversuch Nr. 69 `X8`). Jedes Kz der Bindung und der Transform-Tabellen steht
+    /// im E10-Schema ODER in `E10_AUSSCHLUSS_DATENART`; ein drittes gibt es nicht. Die E60-Kz gehoeren in eine andere Datenart (E77) und
+    /// stehen nie im E10-Schema; fehlte eines in der Liste, bricht `erzeuge_xml` mit "Kz ohne Pfad im E10-Schema" ab (Beleg: E6004901).
+    /// Ohne Schema pruefbar, weil die Datenart am Kz-Praefix haengt (`xsd::datenart`); die Gegenrichtung (jede Kz, die nicht E60 ist, steht
+    /// im E10-Schema) haelt `vz_gueltigkeit_schema.rs` mit dem Schema. Die Mutations-Probe des Python-Tests ist dieser Test selbst: er
+    /// wird rot, sobald ein E60-Kz aus der Liste faellt oder hineinkommt.
+    #[test]
+    fn jedes_e60_kz_der_bindung_steht_im_e10_ausschluss_und_kein_anderes() {
+        let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&wurzel)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let aus_bindung = bindungen.iter().filter_map(|b| b.elster_kz.as_ref()).map(|k| k.as_str().to_owned());
+        let aus_tabellen = crate::ernte_est_mapping_kz(&index).unwrap().into_iter().map(|k| k.elster_kz);
+        let e60: BTreeSet<String> = aus_bindung.chain(aus_tabellen).filter(|k| k.get(1..3) == Some("60")).collect();
+        // KONTROLLE: die Bindung fuehrt E60-Kz (gemessen 2026-10-13: E6002301, E6004901); eine leere Menge waere gruen und bewiese nichts.
+        assert!(e60.len() >= 2, "nur {} E60-Kz gesehen: {e60:?}", e60.len());
+        let ausschluss: BTreeSet<String> = E10_AUSSCHLUSS_DATENART.iter().map(|k| (*k).to_owned()).collect();
+        assert_eq!(e60, ausschluss);
+    }
 }

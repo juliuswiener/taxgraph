@@ -69,9 +69,9 @@ pub const KOMMA_OHNE_E60_KZ: &[&str] = &[
 /// Umgebung dieselbe Deklaration ergibt. Die Jahresliste waechst nur, wenn ein Jahres-XSD
 /// dazukommt. Drift faengt `kz_mengen_aus_xsd` (`tests/eigenschaften.rs`): jede Kz beider Mengen
 /// gegen das Schema ihres Jahres. Die Gegenrichtung (keine verbietende Kz fehlt) leiten
-/// `null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet` und fuer die Art-Verzweigung
-/// `art_verzweigung_schreibt_keine_verbotene_null` (`deklaration.rs`) live aus dem XSD 2025 ab.
-/// Fuer 2024 prueft sie niemand; Upgrade: beide Tests ueber die Jahresliste laufen lassen.
+/// `null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet` (2025), `..._auch_2024` (`E10-2024.xsd`, Gegenversuch Nr. 69) und fuer die
+/// Art-Verzweigung `art_verzweigung_schreibt_keine_verbotene_null` (`deklaration.rs`, nur 2025) live aus dem XSD ab.
+/// Upgrade: den Verzweigungs-Test ueber die Jahresliste laufen lassen.
 const NULL_UNZULAESSIG_KZ_2024: &[&str] = &[
     "E0104108", "E0104109", "E0106603", "E0107207", "E0107208", "E0108002", "E0108105", "E0108202",
     "E0108701", "E0108801", "E0109708", "E0111214", "E0111215", "E0161606", "E0203503", "E0203504", "E0205201",

@@ -592,3 +592,61 @@ fn der_filter_nimmt_nur_bestaetigte_verkaeufe_aus_dem_snapshot() {
     assert!(bleibt(Some("p23_veraeusserungspreis")), "ein vorlaeufiger Preis macht den Verkauf offen: er bleibt stehen");
     assert!(bleibt(Some("p23_anschaffungsdatum")), "ein vorlaeufiges Datum auch");
 }
+
+// ---------------------------------------------------------------------------------------------------------------------------------
+// Mehrere Verkaeufe DERSELBEN Person im XML (Python: `tests/test_p23_mehrfachverkauf_bricht_so_maxoccurs.py`, Gegenversuch Nr. 69 `P1`).
+//
+// Das Schema erlaubt `<SO>` nur EINMAL (`maxOccurs="1"`, E10-2025.xsd:8298), anders als die Anlagen mit einem Block je Person
+// (`maxOccurs="2"`). Mehrere Verkaeufe einer Person stehen als `<Einz>` (`maxOccurs="99"`) in EINEM `<Grdst>`. Ohne den Eintrag
+// `("p23_veraeusserung", "Einz")` in `INSTANZ_CONTAINER_TIEFER` (`elster/src/xml.rs`) legte der Schreiber je Verkauf ein eigenes `<SO>` an:
+// `xmllint` lehnt das hart ab, ERiC erst in der Plausibilitaetspruefung (rc=610001002, zuGrosseLfdNummer). Die Personenachse (der Verkauf
+// des Partners als zweites `<Grdst>`) beruehrt das nicht.
+
+fn zaehle(xml: &str, tag: &str) -> usize {
+    xml.matches(&format!("<{tag}>")).count() + xml.matches(&format!("<{tag} ")).count()
+}
+
+/// (`<SO>` im Dokument, `<Grdst>` und `<Einz>` zwischen dem ersten `<SO>` und dem letzten `</SO>`): die beiden letzten nur in der Anlage SO,
+/// denn `<Einz>` kehrt im Schema an rund hundert anderen Stellen wieder.
+fn so_form(xml: &str) -> (usize, usize, usize) {
+    let so = zaehle(xml, "SO");
+    let (Some(von), Some(bis)) = (xml.find("<SO>"), xml.rfind("</SO>")) else {
+        return (so, 0, 0);
+    };
+    let block = &xml[von..bis];
+    (so, zaehle(block, "Grdst"), zaehle(block, "Einz"))
+}
+
+/// Drei verschiedene steuerpflichtige Grundstuecke (Gewinn 50.000, 40.000, 20.000 EUR), alle Person A.
+fn grundstuecke(n: u8) -> Vec<(String, Value)> {
+    let mut v = pflichtig(1);
+    if n >= 2 {
+        v.extend(verkauf(2, "grundstueck", "15.06.2020", "10.03.2025", 13_000_000, 9_000_000));
+    }
+    if n >= 3 {
+        v.extend(verkauf(3, "grundstueck", "15.06.2020", "10.03.2025", 8_000_000, 6_000_000));
+    }
+    v
+}
+
+#[test]
+fn ein_zwei_drei_verkaeufe_einer_person_stehen_in_einem_so_und_einem_grdst_mit_ebenso_vielen_einz() {
+    for (n, gewinne) in [(1_u8, &[50_000_i64][..]), (2, &[50_000, 40_000]), (3, &[50_000, 40_000, 20_000])] {
+        let r = lauf(&akte(grundstuecke(n)));
+        erwarte_einreichbar(&format!("{n} Verkaeufe"), &r);
+        let Ok(e) = &r else {
+            continue;
+        };
+        for (i, gewinn) in gewinne.iter().enumerate() {
+            let i = u64::try_from(i + 1).unwrap();
+            assert_eq!(kz_der_instanz(e, i).get("E0306801"), Some(&json!(gewinn)), "Verkauf {i} von {n}: der Gewinn fehlt in der Erklaerung");
+        }
+        // Nur mit Schema baut der Schreiber ein XML; ohne (CI) bleibt `r` ein Fehler und die Form ungeprueft (stderr nennt den Verzicht).
+        if schemas_da(2025) {
+            let nz = usize::from(n);
+            assert_eq!(so_form(&e.xml), (1, 1, nz), "{n} Verkaeufe derselben Person: erwartet je ein <SO> und <Grdst> und {n} <Einz>");
+            let (ok, meldung) = elster::validiere_xsd_text(e.xml.as_bytes(), Vz::Vz2025);
+            assert!(ok, "{n} Verkaeufe derselben Person: XML nicht schema-valide: {meldung}");
+        }
+    }
+}

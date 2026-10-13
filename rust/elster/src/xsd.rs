@@ -657,6 +657,23 @@ fn rollup(jahre: &BTreeMap<i64, JahrPruefung>) -> PruefStatus {
 /// assert_eq!(b.exit_code, 0);
 /// ```
 pub fn pruefe_bindung(prueflinge: &[KzPruefling]) -> Result<Pruefbericht, XsdFehler> {
+    pruefe_bindung_mit(prueflinge, finde_schema)
+}
+
+/// [`pruefe_bindung`] mit eigener Schema-Suche (`suche(jahr, muster)`): so laeuft der Pruefer in der CI gegen selbst gebaute
+/// Schemas, ohne amtliches XSD (`xsd_verify.pruefe_bindung(bindung, schema_pfade=...)`).
+///
+/// # Errors
+/// [`XsdFehler`], wenn ein gefundenes Schema nicht auswertbar ist.
+///
+/// ```
+/// let b = elster::pruefe_bindung_mit(&[], |_, _| None).unwrap();
+/// assert_eq!(b.exit_code, 0);
+/// ```
+pub fn pruefe_bindung_mit(
+    prueflinge: &[KzPruefling],
+    suche: impl Fn(i64, &str) -> Option<PathBuf>,
+) -> Result<Pruefbericht, XsdFehler> {
     type Walk = (HashMap<String, Vec<Vec<String>>>, usize);
     let mut cache: HashMap<(PathBuf, &str), Walk> = HashMap::new();
     let mut felder = BTreeMap::new();
@@ -665,7 +682,7 @@ pub fn pruefe_bindung(prueflinge: &[KzPruefling]) -> Result<Pruefbericht, XsdFeh
         let (muster, start) = datenart(&p.elster_kz);
         let mut jahre = BTreeMap::new();
         for jahr in &p.vz_gueltigkeit {
-            let Some(schema) = finde_schema(*jahr, muster) else {
+            let Some(schema) = suche(*jahr, muster) else {
                 jahre.insert(
                     *jahr,
                     JahrPruefung {

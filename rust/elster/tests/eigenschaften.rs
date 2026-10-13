@@ -468,24 +468,28 @@ fn kz_mengen_aus_xsd() {
 /// Faellen). Die Kz-Menge kommt aus dem XSD, nicht aus `null_unzulaessig`: Typ `GanzzahlPos*`
 /// (Basis `xs:positiveInteger`) oder eine enumeration-/pattern-Facette ohne "0" (`GdB`, Pflegegrad).
 /// Geprueft wird jede Kz in allen drei Buckets, nicht nur die Kz des Feldes.
-#[test]
-fn null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet() {
-    if !schemas_da(2025) {
+///
+/// Je Veranlagungsjahr (2024 und 2025): die Jahresmenge `null_unzulaessig(jahr)` ist je Jahr eingefroren (`E0106603` verbietet die 0
+/// nur 2024), und eine fehlende Kz in der EINEN Jahresmenge blieb ohne den 2024er Lauf unbemerkt (Gegenversuch Nr. 69 `N1`;
+/// Python: `test_keine_null_in_einem_kz_das_sie_im_jahr_verbietet[2024]`).
+fn null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet_im(jahr: i64) {
+    if !schemas_da(jahr) {
         return;
     }
-    let pfad = elster::finde_schema(2025, "E10-{jahr}.xsd").unwrap();
+    let pfad = elster::finde_schema(jahr, "E10-{jahr}.xsd").unwrap();
     let meta = elster::kz_meta(&pfad, "E10").unwrap();
     // Jeder Schreibweg ueber die Bindung: 1:1, Instanz (`__2`), Person B (Klasse g); 50 Cent werden
     // auf 0 Euro abgerundet. Die Art-Verzweigung (Klasse f) haengt an `pub(crate)`-Tabellen, sie
     // prueft `art_verzweigung_schreibt_keine_verbotene_null` (`src/deklaration.rs`).
-    let durch: Vec<String> = bindungen()
+    // Der dritte Wert ist ein echter Betrag: er zeigt, welche verbietenden Kz der Lauf ueberhaupt mit einem Wert gesehen hat.
+    let ergebnis: Vec<(Vec<String>, Vec<String>)> = bindungen()
         .iter()
         .filter(|b| matches!(b.typ, Feldtyp::Cent | Feldtyp::Int))
         .flat_map(|b| {
             let werte: &'static [i64] = if b.typ == Feldtyp::Cent {
-                &[0, 50]
+                &[0, 50, 100_000]
             } else {
-                &[0]
+                &[0, 3]
             };
             let instanz = b
                 .instanz_gruppe
@@ -495,31 +499,100 @@ fn null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet() {
                 .chain(instanz)
                 .flat_map(move |s| werte.iter().map(move |&w| (s.clone(), w)))
         })
-        .flat_map(|(schluessel, wert)| {
+        .map(|(schluessel, wert)| {
             let d = deklariere(
                 &einzeln(&schluessel, json!(wert), Zustand::Bestaetigt),
                 index(),
-                2025,
+                jahr,
                 None,
             )
             .unwrap();
             let instanzen = d.anlage_instanzen.iter().flat_map(|(_, ii)| ii);
-            let kz: std::collections::BTreeSet<String> = [&d.deklaration, &d.person_b]
+            let alle: Vec<(&String, &Value)> = [&d.deklaration, &d.person_b]
                 .into_iter()
                 .chain(instanzen.map(|i| &i.felder))
                 .flatten()
-                .filter(|(kz, v)| **v == json!(0) && verbietet_null(&meta, kz))
-                .map(|(kz, _)| kz.clone())
+                .filter(|(kz, _)| verbietet_null(&meta, kz))
                 .collect();
-            kz.into_iter()
-                .map(move |kz| format!("{kz} {schluessel}={wert}"))
+            let durch = alle
+                .iter()
+                .filter(|(_, v)| **v == json!(0))
+                .map(|(kz, _)| format!("{kz} {schluessel}={wert}"))
+                .collect();
+            let gesehen = alle
+                .iter()
+                .filter(|(_, v)| **v != json!(0))
+                .map(|(kz, _)| (*kz).clone())
+                .collect();
+            (durch, gesehen)
         })
         .collect();
+    let durch: Vec<&String> = ergebnis.iter().flat_map(|(d, _)| d).collect();
+    let gesehen: std::collections::BTreeSet<&String> = ergebnis.iter().flat_map(|(_, g)| g).collect();
+    println!("null_verbot {jahr}: {} verbietende Kz mit einem Wert gesehen", gesehen.len());
+    // KONTROLLE: der Lauf hat verbietende Kz mit echten Werten gesehen (gemessen 2026-10-13: 2025: 35, 2024: 35). Ohne sie
+    // waere `durch.is_empty()` gruen, weil der Lauf nichts las.
+    assert!(
+        gesehen.len() >= 30,
+        "{jahr}: nur {} verbietende Kz der Bindung kamen mit einem Wert in der Deklaration an",
+        gesehen.len()
+    );
     assert!(
         durch.is_empty(),
-        "0 in {} Faellen durchgelassen, obwohl der XSD-Typ sie verbietet: {durch:?}",
+        "{jahr}: 0 in {} Faellen durchgelassen, obwohl der XSD-Typ sie verbietet: {durch:?}",
         durch.len()
     );
+}
+
+#[test]
+fn null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet() {
+    null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet_im(2025);
+}
+
+#[test]
+fn null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet_auch_2024() {
+    null_bleibt_aus_kz_deren_xsd_typ_sie_verbietet_im(2024);
+}
+
+/// Der Belegfall der Jahresspanne: `E0106603` (Anzahl weiterer Pflegepersonen) traegt 2024 `GanzzahlPosOhneFuehrNull` (die 0 ist
+/// verboten) und 2025 `GanzzahlNichtNegOhneFuehrNull` (die 0 ist erlaubt, das XSD-Label verlangt sie). Die Bindung fuehrt das Feld
+/// ueber beide Jahre. Ohne diesen Test waere die Jahresdrift nur eine Zahl aus einem Lauf, die beim naechsten Schema-Update still
+/// verschwindet. Python: `test_e0106603_ist_der_gemessene_fall`.
+#[test]
+fn e0106603_verbietet_die_null_2024_und_erlaubt_sie_2025() {
+    if !(schemas_da(2024) && schemas_da(2025)) {
+        return;
+    }
+    let meta = |jahr| {
+        let pfad = elster::finde_schema(jahr, "E10-{jahr}.xsd").unwrap();
+        elster::kz_meta(&pfad, "E10").unwrap()
+    };
+    let (m24, m25) = (meta(2024), meta(2025));
+    assert!(
+        m24["E0106603"].type_name.starts_with("GanzzahlPosOhneFuehrNull"),
+        "{}",
+        m24["E0106603"].type_name
+    );
+    assert!(
+        m25["E0106603"].type_name.starts_with("GanzzahlNichtNegOhneFuehrNull"),
+        "{}",
+        m25["E0106603"].type_name
+    );
+    assert!(verbietet_null(&m24, "E0106603"), "2024 muss die 0 verbieten");
+    assert!(!verbietet_null(&m25, "E0106603"), "2025 muss die 0 erlauben");
+    // Und die Bindung faehrt das Feld ueber BEIDE Jahre -- genau daraus entsteht die Luecke.
+    let b = index()["rentner_pflege_weitere_personen"];
+    assert_eq!(b.elster_kz.as_ref().map(Kz::as_str), Some("E0106603"));
+    assert!(b.vz_gueltigkeit.contains(&2024) && b.vz_gueltigkeit.contains(&2025), "{:?}", b.vz_gueltigkeit);
+}
+
+/// Dieselbe Spanne an den Listen des Produkts, ohne Schema (laeuft auch in der CI): `E0106603` steht NUR in der 2024er Liste.
+/// Der Test oben prueft Schematyp und Bindung; kein Eingabeweg schreibt die 0 dorthin (Gate), also faengt nur dieser Test eine Liste,
+/// die das Jahr vertauscht. Python: `test_e0106603_ist_der_gemessene_fall`.
+#[test]
+fn e0106603_steht_nur_in_der_null_verbots_liste_2024() {
+    assert!(elster::null_unzulaessig(2024).unwrap().contains(&"E0106603"));
+    assert!(!elster::null_unzulaessig(2025).unwrap().contains(&"E0106603"));
 }
 
 /// P9 (Vault: `decisions/elster-null-in-kz-ohne-null-weglassen`, Punkt 3): eine weggelassene 0
@@ -879,6 +952,67 @@ fn hh_summe_ist_die_summe_der_gerundeten_posten() {
     let felder = einzeln("hh_handwerker_arbeitskosten", json!(300_050), Zustand::Bestaetigt);
     let d = deklariere(&felder, index(), 2025, None).unwrap();
     assert_eq!(d.deklaration.get("E0111215"), Some(&json!(3001)));
+}
+
+/// Python: `test_einzel_kz_rundet_wie_seine_summe_auf` (Gegenversuch Nr. 69 `A1`/`A2`). Die vierzehn Einzel-Kz der Aufwandsposten runden
+/// wie ihre Summe auf volle Euro AUF: 2000,50 EUR ergeben 2001, nicht 2000. Bei § 35c und Berufsausbildung prueft ERiC Summe gegen
+/// Einzelposten EXAKT; ein Betrag, der in der Summe 2001 und im Posten 2000 hiesse, machte die ganze Erklaerung ungueltig.
+/// Die Paare sind die Vordruckzeilen (Posten, Summe), von Hand abgeschrieben und nicht aus `ABZUGS_KZ` abgeleitet.
+#[test]
+fn jedes_einzel_kz_rundet_wie_seine_summe_auf() {
+    let paare = [
+        ("E0104108", "E0104109"), // 35a Minijob
+        ("E0107207", "E0107208"), // 35a Dienstleistungen
+        ("E0111214", "E0111215"), // 35a Handwerker
+        ("E0108002", "E0108202"), // eigene Berufsausbildung
+        ("E0506104", "E0506105"), // Kinderbetreuung
+    ]
+    .into_iter()
+    .chain(
+        [
+            "E0241001", "E0241101", "E0241201", "E0241301", "E0241302", "E0241401", "E0241501", "E0241601", "E0241701",
+        ]
+        .map(|k| (k, "E0241901")), // 35c, je Massnahme
+    )
+    .collect::<Vec<_>>();
+    assert_eq!(paare.len(), 14);
+    for (einzel, summe) in paare {
+        let kz = |s: &str| Kz::new(s).unwrap();
+        assert_eq!(
+            (cent_nach_kz(Cent::new(200_050), &kz(einzel)).als_json(), cent_nach_kz(Cent::new(200_050), &kz(summe)).als_json()),
+            (json!(2001), json!(2001)),
+            "{einzel} / {summe}"
+        );
+    }
+}
+
+/// Python: `test_ein_posten_mit_cent_steht_in_summe_und_einzel_gleich`. Ein Posten mit 50 Cent steht in Summe UND Einzelzeile gleich
+/// (die Einzelzeile entsteht im Ring aus der Summe, `einzelzeile`; hier tragen beide Felder den Rohbetrag, wie der Ring ihn einhaengt).
+#[test]
+fn ein_posten_mit_cent_steht_in_summe_und_einzelzeile_gleich() {
+    for (name, paare, summe, einzel, euro) in [
+        (
+            "p35c_heizung",
+            vec![
+                ("p35c_sanierungsaufwendungen", json!(2_000_050)),
+                ("p35c_massnahme_einzelbetrag", json!(2_000_050)),
+                ("p35c_massnahme_art", json!("heizung")),
+            ],
+            "E0241901",
+            "E0241501",
+            20_001,
+        ),
+        (
+            "berufsausbildung",
+            vec![("berufsausbildung_aufwendungen", json!(200_050)), ("berufsausbildung_einzelbetrag", json!(200_050))],
+            "E0108202",
+            "E0108002",
+            2001,
+        ),
+    ] {
+        let d = deklariere(&bestaetigt(&paare), index(), 2025, None).unwrap();
+        assert_eq!((d.deklaration.get(summe), d.deklaration.get(einzel)), (Some(&json!(euro)), Some(&json!(euro))), "{name}");
+    }
 }
 
 // ------------------------------------------- Anlage R: mehrere Renten einer Person
