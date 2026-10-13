@@ -226,7 +226,6 @@ fn wo_einreichen_sperrt_entsteht_keine_datei() {
 #[test]
 fn die_datei_hat_die_bytes_von_einreichen_und_den_testmerker() {
     if !elster::testhilfe::schemas_da(2025) {
-        eprintln!("[xml_export] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
         return;
     }
     let _nacheinander = nacheinander();
@@ -370,7 +369,6 @@ async fn einreichen(z: &Zustand, token: &str, fall: &str, rumpf: &Value) -> (u16
 #[test]
 fn das_land_geht_in_die_datei_wie_in_einreichen() {
     if !elster::testhilfe::schemas_da(2025) {
-        eprintln!("[xml_export] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
         return;
     }
     let _nacheinander = nacheinander();
@@ -421,7 +419,6 @@ fn das_land_geht_in_die_datei_wie_in_einreichen() {
 #[test]
 fn das_programm_schreibt_oder_sagt_warum_nicht() {
     if !elster::testhilfe::schemas_da(2025) {
-        eprintln!("[xml_export] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
         return;
     }
     let _nacheinander = nacheinander();
@@ -503,7 +500,6 @@ fn programm(tmp: &Path, args: &[&str]) -> std::process::Output {
 #[test]
 fn eine_liegengebliebene_tmp_datei_wird_nie_zum_ziel() {
     if !elster::testhilfe::schemas_da(2025) {
-        eprintln!("[xml_export] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
         return;
     }
     let _nacheinander = nacheinander();
@@ -575,7 +571,6 @@ fn das_programm_nennt_die_fehlenden_angaben() {
 #[test]
 fn die_meldung_nennt_den_testmerker_der_datei() {
     if !elster::testhilfe::schemas_da(2025) {
-        eprintln!("[xml_export] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
         return;
     }
     let _nacheinander = nacheinander();

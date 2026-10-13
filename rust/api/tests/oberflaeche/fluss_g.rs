@@ -400,7 +400,7 @@ fn fluss_g_absendeknopf_mit_eric_attrappe() {
             std::env::var("TAXGRAPH_OHNE_XSD").as_deref() == Ok("1"),
             "E10-2025.xsd fehlt in der lokalen ERiC-Auslieferung ($ERIC_DIR, ~/02_Software/eric); nur TAXGRAPH_OHNE_XSD=1 erlaubt das Fehlen"
         );
-        eprintln!("[oberflaeche/fluss_g] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
+        { use std::io::Write; let _ = writeln!(std::io::stderr(), "[oberflaeche/fluss_g] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1"); }
         return;
     };
     let tmp = tempfile::tempdir().unwrap();
