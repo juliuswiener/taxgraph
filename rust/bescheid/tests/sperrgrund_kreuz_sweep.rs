@@ -68,10 +68,12 @@ use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Mutex, OnceLock};
 
-use bescheid::deklaration::{an_gesamt_sperrgrund, Cfg};
+use bescheid::deklaration::{an_gesamt_sperrgrund, feste_zahl, Cfg};
+use bescheid::zweige::Umgebung;
 use bescheid::{BindungIndex, Instanzquelle};
 use bindung::{Bindung, FeldBedingung, Registry};
 use domain::{Achsenwert, Feldtyp, Herkunft, HerkunftVektor, PruefTiefe, Scheibe, Vz, Zustand};
+use intervall::AchsenBindung;
 use interview::{Graph, Sicht};
 use serde_json::{json, Value};
 use store::{BindungNachschlag, NeuesEventRoh, Signal, Store};
@@ -936,5 +938,136 @@ fn ein_eingeschleustes_kreuz_wird_als_sackgasse_gesehen() {
         assert_eq!(t.grund, grund, "{feld}");
         assert!(!t.seitenkanal, "{feld}: das Kreuz steht im Fragebogen");
         assert!(t.ausgeschlossen_durch.contains("kein_gewinn"), "{feld}: {:?}", t.ausgeschlossen_durch);
+    }
+}
+
+// ---------------------------------------------------------------- Ticket kein_lohn_pension_partner
+
+/// `api::ergebnis::ergebnis` ohne HTTP: erst der Guard, dann `feste_zahl` mit Graph. `Ok(Cent)` oder der Grund als Text.
+fn zahl_oder_grund(w: &Lauf) -> Result<i64, String> {
+    let g = w.grund();
+    if g != "keiner" {
+        return Err(g);
+    }
+    let lage = w.lage;
+    let felder = w.store.materialisiere(None).unwrap().0;
+    let kegel: Vec<&str> = lage.cfg.kegel_roh().unwrap().to_vec();
+    let achsen: Vec<AchsenBindung> = lage.sicht.iter().map(AchsenBindung::from).collect();
+    let umg = Umgebung {
+        achsen: &achsen,
+        index: &lage.index,
+        params: bescheid::testhilfe::params(),
+    };
+    match feste_zahl(&felder, &lage.cfg, Vz::Vz2025, &kegel, &umg, Some(&w.store), Some(&lage.welt.graph)).unwrap() {
+        Ok(z) => Ok(z.zahl.get()),
+        Err(k) => Err(format!("{:?}", k.grund)),
+    }
+}
+
+/// Ein Lauf der Scheibe mit den Vorgaben `vorgaben`; die Warteschlange beantwortet `fuelle` bis zum Ende.
+fn lauf_mit(scheibe: Scheibe, vorgaben: &[(&str, Value)]) -> Lauf {
+    let vorgaben: Antworten = vorgaben.iter().map(|(f, w)| ((*f).to_owned(), w.clone())).collect();
+    let mut w = Lauf::neu(lage(welt(), scheibe));
+    w.fuelle(&vorgaben, &BTreeSet::new()).unwrap();
+    w
+}
+
+/// Das zusammenveranlagte Ehepaar mit den Vorgaben `mehr`.
+fn ehepaar(scheibe: Scheibe, mehr: &[(&str, Value)]) -> Lauf {
+    let mut v = vec![("veranlagung", json!("zusammen"))];
+    v.extend(mehr.iter().cloned());
+    lauf_mit(scheibe, &v)
+}
+
+/// Das Kreuz "der Ehegatte hat weder Lohn noch Pension" (Abweichung Nr. 46) baut in keiner Scheibe eine Sackgasse: wer es setzt
+/// und jede gestellte Frage beantwortet, bekommt eine Zahl. Nur `rentner_gesamt` fragt das Kreuz; in `gesamt` und `an_gesamt`
+/// steht es nicht im Fragebogen (der Dienst weist es mit 400 ab), und eine Akte, die es trotzdem traegt, darf dort nicht haengen.
+/// Kontrolle: in `rentner_gesamt` verbirgt das Kreuz die Lohnfrage des Ehegatten.
+#[test]
+fn das_kreuz_kein_lohn_pension_partner_baut_in_keiner_scheibe_eine_sackgasse() {
+    for scheibe in SCHEIBEN {
+        let w = ehepaar(scheibe, &[("kein_lohn_pension_partner", json!(true))]);
+        if scheibe == Scheibe::RentnerGesamt {
+            assert!(
+                !w.gefragt.contains("bruttoarbeitslohn_partner"),
+                "KONTROLLE: in rentner_gesamt verbirgt das Kreuz die Lohnfrage des Ehegatten"
+            );
+        }
+        let erg = zahl_oder_grund(&w);
+        assert!(erg.is_ok(), "DEFEKT {scheibe:?}: Kreuz gesetzt, alle Fragen beantwortet, keine Zahl: {erg:?}");
+    }
+}
+
+/// Dasselbe Kreuz fuer die Hauptperson (`kein_lohn_pension`) verbirgt `bruttoarbeitslohn`. Das Feld steht im Kegel von `gesamt`
+/// und `an_gesamt` (nicht in dem von `rentner_gesamt`). Der Guard verlangt es nicht, `feste_zahl` schon
+/// (`InputKegelNichtBestaetigt`): der Sweep, der nur den Guard fragt, sieht diese Sackgasse nicht.
+#[test]
+fn das_kreuz_kein_lohn_pension_baut_in_keiner_scheibe_eine_sackgasse() {
+    for scheibe in SCHEIBEN {
+        let w = lauf_mit(scheibe, &[("veranlagung", json!("einzel")), ("kein_lohn_pension", json!(true))]);
+        let erg = zahl_oder_grund(&w);
+        assert!(erg.is_ok(), "DEFEKT {scheibe:?}: Kreuz der Hauptperson gesetzt, alle Fragen beantwortet, keine Zahl: {erg:?}");
+    }
+}
+
+/// Kontrolle: ein Ehepaar MIT Lohnangabe des Ehegatten bekommt in jeder Scheibe eine Zahl ueber 0, und ohne das Kreuz fragt jede
+/// Scheibe die Lohnfrage (in `rentner_gesamt` mit ausdruecklich verneintem Kreuz). Das Fehlen der Frage im Kreuz-Fall ist also
+/// die Wirkung des Kreuzes, nicht des Messaufbaus.
+#[test]
+fn ein_ehepaar_mit_lohn_des_ehegatten_bekommt_in_jeder_scheibe_eine_zahl() {
+    for scheibe in SCHEIBEN {
+        let mit_lohn = ehepaar(scheibe, &[("bruttoarbeitslohn_partner", json!(3_800_000))]);
+        assert!(zahl_oder_grund(&mit_lohn).is_ok_and(|z| z > 0), "{scheibe:?}: {:?}", zahl_oder_grund(&mit_lohn));
+        // `fuelle` beantwortet ein gefragtes Kreuz mit dem Abwesenheitswert `true`; darum hier ausdruecklich `false`.
+        let ohne_kreuz = ehepaar(scheibe, &[("kein_lohn_pension_partner", json!(false))]);
+        assert!(
+            ohne_kreuz.gefragt.contains("bruttoarbeitslohn_partner"),
+            "KONTROLLE: {scheibe:?} fragt die Lohnfrage des Ehegatten nicht"
+        );
+        assert!(zahl_oder_grund(&ohne_kreuz).is_ok(), "{scheibe:?}: {:?}", zahl_oder_grund(&ohne_kreuz));
+    }
+}
+
+/// Widerspruch: das Kreuz sagt "kein Lohn", im Fall steht aber ein BESTAETIGTER Lohn des Ehegatten. Der Lohn zaehlt mit
+/// (Abweichung Nr. 46, Entscheidung 3): die Zahl ist die ohne Kreuz. Gilt in jeder Scheibe; kein Weg darf daran etwas aendern.
+#[test]
+fn bei_kreuz_und_bestaetigtem_lohn_zaehlt_der_lohn_mit() {
+    for scheibe in SCHEIBEN {
+        let lohn = ("bruttoarbeitslohn_partner", json!(3_800_000));
+        let ohne = zahl_oder_grund(&ehepaar(scheibe, std::slice::from_ref(&lohn)));
+        let mit = zahl_oder_grund(&ehepaar(scheibe, &[lohn, ("kein_lohn_pension_partner", json!(true))]));
+        assert!(ohne.as_ref().is_ok_and(|z| *z > 0), "{scheibe:?}: {ohne:?}");
+        assert_eq!(ohne, mit, "{scheibe:?}: das Kreuz aendert die Zahl");
+    }
+}
+
+/// Widerspruch, zweite Form: das Kreuz sagt "kein Lohn", im Fall steht aber ein nur VORLAEUFIGER Lohn des Ehegatten (Vorschlag der
+/// KI oder des Vorjahrs). In `gesamt` und `an_gesamt` bleibt die Lohnfrage in der Warteschlange; die Bestaetigung gibt die Zahl frei.
+/// Grenze: in `rentner_gesamt` (Kreuz in der Scheibe) bleibt die Frage verborgen und die Zahl gesperrt (`RingBetragVorlaeufig`),
+/// bis der Nutzer das Kreuz zuruecknimmt. Das ist ein eigener Befund und hier nicht gebaut.
+#[test]
+fn bei_kreuz_und_nur_vorlaeufigem_lohn_bleibt_die_lohnfrage_in_gesamt_und_an_gesamt_beantwortbar() {
+    for scheibe in [Scheibe::Gesamt, Scheibe::AnGesamt] {
+        let mut w = Lauf::neu(lage(welt(), scheibe));
+        for (f, v) in [("veranlagung", json!("zusammen")), ("kein_lohn_pension_partner", json!(true))] {
+            w.versucht.insert(f.to_owned());
+            w.setze(f, v).unwrap();
+        }
+        let mut e = roh("bruttoarbeitslohn_partner", json!(3_800_000), None);
+        e.zustand = Zustand::Vorlaeufig;
+        e.signal = Signal { signal_1: Some(None), signal_2: None, signal_2_fehlt: false };
+        w.store
+            .append_roh(&e, None, BindungNachschlag::neu(&w.lage.welt.nachschlag))
+            .unwrap();
+        // Der Vorschlag bleibt unbeantwortet; die uebrigen Fragen der Scheibe beantwortet `fuelle`.
+        w.versucht.insert("bruttoarbeitslohn_partner".to_owned());
+        w.fuelle(&[], &BTreeSet::new()).unwrap();
+        assert!(
+            w.fragen().iter().any(|f| f == "bruttoarbeitslohn_partner"),
+            "DEFEKT {scheibe:?}: der vorlaeufige Lohn liegt hinter dem Kreuz, die Lohnfrage fehlt in der Warteschlange"
+        );
+        w.setze("bruttoarbeitslohn_partner", json!(3_800_000)).unwrap();
+        let erg = zahl_oder_grund(&w);
+        assert!(erg.is_ok_and(|z| z > 0), "{scheibe:?}: nach der Bestaetigung keine Zahl");
     }
 }
