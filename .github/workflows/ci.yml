@@ -439,8 +439,21 @@ jobs:
       # (rust/api/tests/oberflaeche) brauchen Chromium und chromedriver; ohne beides sind sie ROT,
       # mit dem Flag laufen sie nicht. BENANNTER MANGEL: eine gruene CI beweist nichts ueber die
       # Oberflaeche; sie laeuft lokal (`cargo test -p api --test oberflaeche`).
+      #
+      # `tee` schreibt das Log fuer den Schritt unten. `shell: bash` ist Pflicht: ohne den Eintrag laeuft
+      # der Schritt als `bash -e {0}` OHNE pipefail, `cargo test | tee` lieferte dann den Exit von tee (0),
+      # und ein rotes cargo test machte den Job gruen (rust/bindung/tests/ci_nicht_geprueft.rs haelt das fest).
       - name: cargo test
-        run: cd rust && cargo test --no-fail-fast
+        shell: bash
+        run: cd rust && cargo test --no-fail-fast 2>&1 | tee ../cargo-test.log
         env:
           TAXGRAPH_OHNE_XSD: "1"
           TAXGRAPH_OHNE_BROWSER: "1"
+
+      # Der gruene Haken sagt nicht, was uebersprungen wurde (ohne Schema, ohne Browser, ohne ERiC). Dieser
+      # Schritt zaehlt es aus dem Log (Zeile NICHT GEPRUEFT, ::warning am Lauf, Tabelle in der Job-Zusammenfassung)
+      # und laeuft auch bei rotem cargo test. Er macht den Lauf nicht rot, solange das Log Tests zeigt (Exit 2
+      # nur bei fehlendem oder leerem Log): keine Ratsche, nur Sichtbarkeit.
+      - name: Was dieser Lauf nicht geprueft hat
+        if: always()
+        run: bash scripts/ci-nicht-geprueft.sh cargo-test.log

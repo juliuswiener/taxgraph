@@ -184,7 +184,7 @@ async fn einreichen_nach_dem_urteil_von_eric() {
             "E10-2025.xsd fehlt in der lokalen ERiC-Auslieferung ($ERIC_DIR, ~/02_Software/eric); \
              nur TAXGRAPH_OHNE_XSD=1 erlaubt das Fehlen"
         );
-        eprintln!("[einreichen_attrappe] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1");
+        { use std::io::Write; let _ = writeln!(std::io::stderr(), "[einreichen_attrappe] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1"); }
         return;
     };
     let tmp = tempfile::tempdir().unwrap();

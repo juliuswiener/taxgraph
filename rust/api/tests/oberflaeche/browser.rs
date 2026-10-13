@@ -158,7 +158,7 @@ impl Sitzung {
                 "Browser oder chromedriver fehlt (CHROME_BIN / CHROMEDRIVER setzen); \
                  nur TAXGRAPH_OHNE_BROWSER=1 erlaubt das Ueberspringen"
             );
-            eprintln!("UEBERSPRUNGEN: kein Browser oder chromedriver, TAXGRAPH_OHNE_BROWSER=1");
+            { use std::io::Write; let _ = writeln!(std::io::stderr(), "UEBERSPRUNGEN: kein Browser oder chromedriver, TAXGRAPH_OHNE_BROWSER=1"); }
             return None;
         };
         let port = freier_port();
