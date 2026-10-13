@@ -39,6 +39,18 @@ fn fixierung_offen(e: &RingFehler) -> bool {
     )
 }
 
+/// Der Kern wirft die Rust-eigenen Sperren (`VersorgungGesperrt`, `KindFreibetragGesperrt`) als Fehler; der Guard
+/// in `fragen` meldet sie schon als `ring_gesperrt`. Ohne Ring gibt es keine Gewichte, die Liste bleibt vollstaendig
+/// (wie bei `fixierung_offen`).
+fn guard_sperre(e: &RingFehler) -> bool {
+    matches!(
+        e,
+        IntervallFehler::Bescheid(SlotFehler::Slot(
+            BescheidFehler::VersorgungGesperrt(_) | BescheidFehler::KindFreibetragGesperrt(_)
+        ))
+    )
+}
+
 /// `{feld_id: spanne_cent}` aus den Beitraegen; bei doppelter `feld_id` gewinnt der spaetere.
 fn gewichte(beitraege: &[Beitrag]) -> HashMap<String, i64> {
     beitraege
@@ -83,7 +95,7 @@ fn gesamt_beitrag(
         ) {
             Ok(Some(r)) => return Ok(Some(gewichte(&r.beitraege))),
             Ok(None) => {}
-            Err(e) if fixierung_offen(&e) => return Ok(None),
+            Err(e) if fixierung_offen(&e) || guard_sperre(&e) => return Ok(None),
             Err(e) => return Err(intervall_fehler(&e)),
         }
     }
