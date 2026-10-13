@@ -68,7 +68,7 @@ pub use tabellen::{IBAN_TRANSFORM_ZIEL_KZ, KONSTANTE_KZ};
 pub use xml::{erzeuge_xml, XmlFehler, XmlOptionen, NS_ELSTER, TESTMERKER_ERIC};
 pub use xmllint::{finde_xsd_schema, validiere_xsd, validiere_xsd_text};
 pub use xsd::{
-    ernte_est_mapping_kz, finde_schema, ist_ja_typ, kz_meta, pruefe_bindung, schema_info, xsd_walk,
-    FeldPruefung, JahrPruefung, KzFundstellen, KzMeta, KzPruefling, PflichtKinder, PruefStatus,
+    ernte_est_mapping_kz, finde_schema, ist_ja_typ, kz_meta, pruefe_bindung, pruefe_bindung_mit,
+    schema_info, xsd_walk, FeldPruefung, JahrPruefung, KzFundstellen, KzMeta, KzPruefling, PflichtKinder, PruefStatus,
     Pruefbericht, SchemaInfo, XsdFehler, MAX_DEPTH,
 };
