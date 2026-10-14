@@ -416,6 +416,15 @@ fn teil_von(id: &str) -> usize {
         .unwrap_or(TEILE.len() - 1)
 }
 
+/// Die Felder des Teils `k`. Eine Stelle fuer beide Leser: `pruefe_teil` prueft genau diese Felder, der Waechter zaehlt genau diese.
+/// Waehlte der Test andere als der Waechter zaehlt, bliebe ein Feld ungeprueft und die Summe sagte trotzdem "alle" (Nachmessung TZ1).
+fn felder_des_teils(alle: &[Bindung], k: usize) -> Vec<Feld> {
+    bereichsfelder(alle)
+        .into_iter()
+        .filter(|f| teil_von(&f.id) == k)
+        .collect()
+}
+
 /// Untergrenze der gelesenen Bereichsfelder: der Stand der Registry heute. Ein neues Feld braucht nichts (die Grenze ist `>=`);
 /// wer ein Bereichsfeld bewusst entfernt, senkt sie hier mit Begruendung. Sinkt die Zahl ohne sein Zutun, wird der Waechter rot.
 const MINDESTENS_BEREICHSFELDER: usize = 49;
@@ -454,8 +463,13 @@ fn jedes_bereichsfeld_liegt_in_genau_einem_teil() {
             TEILE.len()
         );
     }
+    // `pruefe_teil` sucht seinen Teil ueber den Namen: tragen zwei Zeilen denselben Namen, prueft der zweite Test den ersten Teil
+    // noch einmal und der eigene Teil wird nie geprueft (Nachmessung TZ2).
+    let mut gesehen = std::collections::HashSet::new();
+    let doppelt: Vec<&str> = TEILE.iter().map(|t| t.name).filter(|n| !gesehen.insert(*n)).collect();
+    assert!(doppelt.is_empty(), "Teile mit demselben Namen: {doppelt:?}: ihr zweiter Test pruefte den ersten Teil noch einmal");
     let je_teil: Vec<usize> = (0..TEILE.len())
-        .map(|k| felder.iter().filter(|f| teil_von(&f.id) == k).count())
+        .map(|k| felder_des_teils(&alle, k).len())
         .collect();
     assert_eq!(
         je_teil.iter().sum::<usize>(),
@@ -483,10 +497,7 @@ async fn pruefe_teil(name: &str) {
         .position(|t| t.name == name)
         .expect("der Teil steht in TEILE");
     let alle = registry();
-    let felder: Vec<Feld> = bereichsfelder(&alle)
-        .into_iter()
-        .filter(|f| teil_von(&f.id) == k)
-        .collect();
+    let felder = felder_des_teils(&alle, k);
     // Der Auffangteil darf leer sein; jeder andere Teil, der nichts mehr trifft, ist ein toter Praefix (der Waechter meldet ihn auch).
     assert!(
         !felder.is_empty() || k == TEILE.len() - 1,
