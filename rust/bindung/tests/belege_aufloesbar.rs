@@ -726,6 +726,12 @@ fn jeder_beleg_der_testkarte_und_der_abweichungsliste_loest_auf() {
     if std::env::var_os("BELEGE_LISTE").is_some() {
         let _ = writeln!(std::io::stdout(), "{}", lauf.bericht(true));
     }
+    // Mit Git im Baum zaehlt kein Verweis als "ohne Verlauf": schaltet ein Umbau den Verlauf fuer die Karte oder die README
+    // still ab, prueft niemand mehr einen Hash oder eine Verlaufsform, und der Test bliebe gruen (Nachmessung Q16, Q17).
+    assert!(
+        !git.da() || ungeprueft == 0,
+        "{ungeprueft} Verweise wurden trotz vorhandenem Verlauf nicht gegen Git geprueft"
+    );
     assert!(
         lauf.befunde() == 0,
         "{} Verweise in rust/TESTMAP.tsv (Spalte 7) und rust/fixtures/README.md loesen nicht auf. Gueltig: ein Pfad im Baum, \
