@@ -13,7 +13,8 @@
 //! brauchen je ca. 0,5 bis 1 GB (Schaetzung), und viele Rechner haben nur 5 bis 9 GB frei.
 //!
 //! Fehlt Browser oder Treiber, ist der Test ROT. Nur `TAXGRAPH_OHNE_BROWSER=1` erlaubt das Ueberspringen
-//! (die CI setzt es, solange nicht gemessen ist, ob der Runner `chromedriver` mitbringt).
+//! (die CI setzt es noch als Sicherung; gemessen im Lauf 38459954734: der Runner bringt Chrome und `chromedriver`
+//! mit, die Tests liefen ohne Skip-Zeile).
 
 use std::io::{Read, Write};
 use std::net::TcpStream;

@@ -5,10 +5,11 @@
 //! benannten Verlust steht in `ZUORDNUNG.tsv` neben dieser Datei; `zuordnung.rs` haelt sie gegen den Quelltext.
 //! Ein Pruefpunkt ist ein `pp!("<Fluss>.<python_funktion>", bedingung, ...)`: dieselbe Behauptung wie im Python-Test.
 //!
-//! BENANNTER MANGEL DER CI: diese Tests brauchen Chromium und `chromedriver` (`CHROME_BIN`, `CHROMEDRIVER`,
-//! sonst `/usr/bin/chromium` und `/usr/bin/chromedriver`). Fehlt einer, ist der Test ROT. Die CI setzt vorerst
-//! `TAXGRAPH_OHNE_BROWSER=1` (der Test endet dann sofort gruen) – solange main nicht gemessen hat, ob der Runner
-//! `chromedriver` mitbringt. **Eine gruene CI beweist darum nichts ueber die Oberflaeche.** Lokal laufen sie
+//! Diese Tests brauchen Chromium und `chromedriver` (`CHROME_BIN`, `CHROMEDRIVER`, sonst `/usr/bin/chromium`
+//! und `/usr/bin/chromedriver`). Fehlt einer, ist der Test ROT. Die CI setzt `TAXGRAPH_OHNE_BROWSER=1` noch als
+//! Sicherung (der Test endet dann gruen, mit der Zeile `UEBERSPRUNGEN`, die der Zaehlschritt der CI nennt).
+//! GEMESSEN im Lauf 38459954734 (2026-10-14): der Runner bringt Chrome und `chromedriver` mit, alle 32 Tests liefen
+//! in 102,83 s ohne Skip-Zeile; eine gruene CI fuehrt sie also aus. Lokal laufen sie
 //! mit `cargo test -p api --test oberflaeche`, seriell (ein Browser, ein Dienst zugleich), ca. 0,5 bis 1 GB je Lauf.
 //!
 //! Keine neue Abhaengigkeit: `browser.rs` ist ein WebDriver-Client aus `std::net` und `serde_json`.

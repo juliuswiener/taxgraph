@@ -437,8 +437,10 @@ jobs:
       #
       # TAXGRAPH_OHNE_BROWSER=1 (Nr. 72, E9): die Browser-Tests der Oberflaeche
       # (rust/api/tests/oberflaeche) brauchen Chromium und chromedriver; ohne beides sind sie ROT,
-      # mit dem Flag laufen sie nicht. BENANNTER MANGEL: eine gruene CI beweist nichts ueber die
-      # Oberflaeche; sie laeuft lokal (`cargo test -p api --test oberflaeche`).
+      # mit dem Flag ueberspringen sie sich (Zeile UEBERSPRUNGEN, der Zaehlschritt unten nennt sie).
+      # GEMESSEN (Lauf 38459954734, 2026-10-14): der Runner bringt Chrome und chromedriver mit, die
+      # 32 Oberflaechen-Tests liefen in 102,83 s ohne eine Skip-Zeile. Das Flag ist darum nur noch
+      # Sicherung gegen einen Runner ohne Browser; faellt es, wird die CI bei so einem Runner rot.
       #
       # `tee` schreibt das Log fuer den Schritt unten. `shell: bash` ist Pflicht: ohne den Eintrag laeuft
       # der Schritt als `bash -e {0}` OHNE pipefail, `cargo test | tee` lieferte dann den Exit von tee (0),
