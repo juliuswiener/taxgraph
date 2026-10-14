@@ -384,7 +384,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      # Der ganze Verlauf, nicht der flache Klon: rust/bindung/tests/belege_aufloesbar.rs prueft, dass jeder
+      # Commit-Hash und jede Verlaufsform (<commit>^:<pfad>) in rust/TESTMAP.tsv und rust/fixtures/README.md
+      # in Git aufloest. Ohne den Verlauf wird der Test laut rot, ausser TAXGRAPH_OHNE_VERLAUF=1.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: System-Abhaengigkeiten (libgmp fuers Linken, poppler fuer den eingang-Doctest)
         run: |
