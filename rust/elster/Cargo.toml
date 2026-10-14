@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "elster"
 version = "0.0.0"
 edition.workspace = true
@@ -22,3 +23,26 @@ libloading = { workspace = true }
 [dev-dependencies]
 domain = { path = "../domain", features = ["testhilfe"] }
 proptest = { workspace = true }
+
+# Testdateien liegen in tests/it.rs zu EINEM Test-Binary zusammen (weniger Links nach einer Aenderung der Bibliothek). Eigene Ziele:
+# Dateien, die Umgebung oder Arbeitsverzeichnis des Prozesses aendern, und Dateien, die per `--test <name>` aufgerufen werden.
+# rust/bindung/tests/testbinaries_vollstaendig.rs haelt fest, dass jede Datei in it.rs ODER hier steht.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+[[test]]
+name = "eric_log_aufraeumen"
+path = "tests/eric_log_aufraeumen.rs"
+
+[[test]]
+name = "eric_thread"
+path = "tests/eric_thread.rs"
+
+[[test]]
+name = "offene_defekte"
+path = "tests/offene_defekte.rs"
+
+[[test]]
+name = "schemas_da_flag"
+path = "tests/schemas_da_flag.rs"

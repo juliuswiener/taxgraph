@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "llm"
 version = "0.0.0"
 edition.workspace = true
@@ -22,3 +23,22 @@ webpki-roots = { workspace = true }
 [dev-dependencies]
 domain = { path = "../domain", features = ["testhilfe"] }
 proptest = { workspace = true }
+
+# Testdateien liegen in tests/it.rs zu EINEM Test-Binary zusammen (weniger Links nach einer Aenderung der Bibliothek). Eigene Ziele:
+# Dateien, die Umgebung oder Arbeitsverzeichnis des Prozesses aendern, und Dateien, die per `--test <name>` aufgerufen werden.
+# rust/bindung/tests/testbinaries_vollstaendig.rs haelt fest, dass jede Datei in it.rs ODER hier steht.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+[[test]]
+name = "client_env"
+path = "tests/client_env.rs"
+
+[[test]]
+name = "kontoauszug_entscheidungen"
+path = "tests/kontoauszug_entscheidungen.rs"
+
+[[test]]
+name = "ors_env"
+path = "tests/ors_env.rs"

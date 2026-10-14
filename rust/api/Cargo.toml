@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "api"
 version = "0.0.0"
 edition.workspace = true
@@ -50,3 +51,90 @@ http-body-util = { workspace = true }
 proptest = { workspace = true }
 tempfile = { workspace = true }
 sha2 = { workspace = true }
+
+# Testdateien liegen in tests/it.rs zu EINEM Test-Binary zusammen (weniger Links nach einer Aenderung der Bibliothek). Eigene Ziele:
+# Dateien, die Umgebung oder Arbeitsverzeichnis des Prozesses aendern, und Dateien, die per `--test <name>` aufgerufen werden.
+# rust/bindung/tests/testbinaries_vollstaendig.rs haelt fest, dass jede Datei in it.rs ODER hier steht.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+[[test]]
+name = "art9_nicht_an_llm_hermetisch"
+path = "tests/art9_nicht_an_llm_hermetisch.rs"
+
+[[test]]
+name = "chat_llm_attrappe_hermetisch"
+path = "tests/chat_llm_attrappe_hermetisch.rs"
+
+[[test]]
+name = "datenwurzel"
+path = "tests/datenwurzel.rs"
+
+[[test]]
+name = "echtakten_vergleich"
+path = "tests/echtakten_vergleich.rs"
+
+[[test]]
+name = "einreichen_attrappe_hermetisch"
+path = "tests/einreichen_attrappe_hermetisch.rs"
+
+[[test]]
+name = "einreichen_eric_echt"
+path = "tests/einreichen_eric_echt.rs"
+
+[[test]]
+name = "entfernung_ors_attrappe_hermetisch"
+path = "tests/entfernung_ors_attrappe_hermetisch.rs"
+
+[[test]]
+name = "env_datei_lesefehler"
+path = "tests/env_datei_lesefehler.rs"
+
+[[test]]
+name = "flow"
+path = "tests/flow.rs"
+
+[[test]]
+name = "http"
+path = "tests/http.rs"
+
+[[test]]
+name = "kette_endstand_hermetisch"
+path = "tests/kette_endstand_hermetisch.rs"
+
+[[test]]
+name = "kontoauszug_werkzeug"
+path = "tests/kontoauszug_werkzeug.rs"
+
+[[test]]
+name = "offene_defekte"
+path = "tests/offene_defekte.rs"
+
+[[test]]
+name = "p23_befreiungen_hermetisch"
+path = "tests/p23_befreiungen_hermetisch.rs"
+
+[[test]]
+name = "rentner_ehegatte_hermetisch"
+path = "tests/rentner_ehegatte_hermetisch.rs"
+
+[[test]]
+name = "stand_fragen_orakel_hermetisch"
+path = "tests/stand_fragen_orakel_hermetisch.rs"
+
+[[test]]
+name = "typ_abweisung_ohne_wert_hermetisch"
+path = "tests/typ_abweisung_ohne_wert_hermetisch.rs"
+
+[[test]]
+name = "umzug_aus_produkt"
+path = "tests/umzug_aus_produkt.rs"
+
+[[test]]
+name = "xml_export_hermetisch"
+path = "tests/xml_export_hermetisch.rs"
+
+[[test]]
+name = "oberflaeche"
+path = "tests/oberflaeche/main.rs"
