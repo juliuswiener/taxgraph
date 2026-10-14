@@ -3,6 +3,11 @@
 //! `min - 1` und `max + 1` mit 422 ab, nimmt `min`, `max` und die 0 mit 201 an, und danach antworten
 //! `GET /ergebnis` und `GET /stand` nie mit einem 500. Standardlauf, ohne Python, ohne `PARITY=1`.
 //!
+//! Geteilt in Teile (`TEILE`, je eine Feldfamilie, je ein Test `rand_<teil>`): ein Fall legt rund 37 Events an, und die Felder
+//! liefen frueher nacheinander in EINER Funktion auf einem Kern. Jeder Teil hat seinen eigenen Dienst und laeuft parallel zu den
+//! anderen. `teil_von` ist rein und nimmt jedes Feld in den ersten passenden Teil, ein unbekanntes in den letzten (`uebrige`);
+//! `jedes_bereichsfeld_liegt_in_genau_einem_teil` haelt die SUMME der Teile fest (keins doppelt, keins fehlt, kein toter Praefix).
+//!
 //! Gegenstueck zu `tests/test_bindung_bereich_serverseitig.py` (Python, `test_wert_ausserhalb_bereich_wird_abgewiesen`,
 //! `test_null_unter_minimum_wird_angenommen`, `test_wert_im_bereich_endet_nicht_in_500`). Die Felder kommen LIVE aus der
 //! Registry, keine feste Zahl: ein neues Bereichsfeld ist ab dem ersten Lauf dabei, ein Feld ohne Bereich faellt weg.
@@ -360,15 +365,74 @@ fn unter500(l: &Lauf) -> Result<(), String> {
     Ok(())
 }
 
-/// Der Rand jedes Bereichsfelds, live aus der Registry. Siehe Moduldoku.
-#[tokio::test]
-async fn jedes_bereichsfeld_nimmt_den_rand_an_weist_den_nachbarn_ab_und_rechnet_ohne_500() {
+// ---- Die Teile: je eine Feldfamilie, je ein Test ---------------------------------------------------------------
+
+/// Eine Familie von Bereichsfeldern, die ein eigener Test prueft (eigener Dienst, eigene Fall-IDs, eigener Kern).
+struct Teil {
+    name: &'static str,
+    /// Ein Feld liegt im ERSTEN Teil, dessen Praefix auf seine Id passt (und, wenn `nur_partner`, dessen Id auf `_partner` endet).
+    praefixe: &'static [&'static str],
+    nur_partner: bool,
+}
+
+/// Erzeugt die Tabelle `TEILE` und je Zeile den Test, der den Teil prueft: Tabelle und Tests kommen aus DERSELBEN Zeile und
+/// koennen nicht auseinanderlaufen. Der LETZTE Teil ist der Auffangteil: er nimmt jedes Feld, das kein Praefix trifft, auch ein
+/// kuenftiges. Ein neues Bereichsfeld braucht deshalb nichts weiter als den Eintrag in der Registry.
+macro_rules! teile {
+    ($($test:ident: $name:literal, $praefixe:expr, $nur_partner:expr;)+) => {
+        const TEILE: &[Teil] = &[$(Teil { name: $name, praefixe: $praefixe, nur_partner: $nur_partner }),+];
+        $(
+            #[tokio::test]
+            async fn $test() {
+                pruefe_teil($name).await;
+            }
+        )+
+    };
+}
+
+// Gruppiert nach Feldfamilie und nach der gemessenen Kostenverteilung (Rentenfelder laufen je Rentenart, die Versorgungsfelder
+// des Partners ebenfalls), damit kein Teil ein Mehrfaches des Durchschnitts braucht.
+teile! {
+    rand_rentner_beginn: "rentner_beginn", &["rentner_renten_beginn", "rentner_alter"], false;
+    rand_rentner_pflege_behinderung: "rentner_pflege_behinderung", &["rentner_pflege", "rentner_grad"], false;
+    rand_versorgung_partner: "versorgung_partner", &["versorgung_"], true;
+    rand_versorgung_geburt: "versorgung_geburt", &["versorgung_", "geburtsjahr"], false;
+    rand_reise_verpflegung: "reise_verpflegung", &["vpf_", "tage_"], false;
+    rand_uebernachtung_arbeitsmittel: "uebernachtung_arbeitsmittel", &["uebernachtung_", "arbeitsmittel_", "am_", "ep_", "dhf_"], false;
+    rand_gewerbe_vermietung: "gewerbe_vermietung", &["gewst_", "vv_"], false;
+    rand_familie_kind: "familie_kind", &["fam_", "kind_", "p33a_"], false;
+    rand_wohnung: "wohnung", &["p23_", "p35c_"], false;
+    rand_gwg_haushalt: "gwg_haushalt", &["gwg_", "hh_", "rav_"], false;
+    rand_uebrige: "uebrige", &[], false;
+}
+
+/// Der Index des Teils, in dem das Feld `id` geprueft wird. Rein: dieselbe Funktion waehlt die Felder eines Teils und zaehlt sie im Waechter.
+fn teil_von(id: &str) -> usize {
+    TEILE
+        .iter()
+        .position(|t| {
+            (!t.nur_partner || id.ends_with("_partner")) && t.praefixe.iter().any(|p| id.starts_with(p))
+        })
+        .unwrap_or(TEILE.len() - 1)
+}
+
+/// Untergrenze der gelesenen Bereichsfelder: der Stand der Registry heute. Ein neues Feld braucht nichts (die Grenze ist `>=`);
+/// wer ein Bereichsfeld bewusst entfernt, senkt sie hier mit Begruendung. Sinkt die Zahl ohne sein Zutun, wird der Waechter rot.
+const MINDESTENS_BEREICHSFELDER: usize = 49;
+
+/// Waechter ueber die SUMME der Teile (ohne HTTP): die Teile zusammen decken genau alle Bereichsfelder der Registry ab, keins
+/// doppelt, keins fehlt, und kein benannter Teil ist leer. Ohne ihn liefen die Teile nach einem Schnitt in der Registry oder in
+/// `teil_von` mit weniger Feldern gruen weiter.
+#[test]
+fn jedes_bereichsfeld_liegt_in_genau_einem_teil() {
     let alle = registry();
     let felder = bereichsfelder(&alle);
     // Positivkontrolle: ohne Bereichsfelder waere jede Aussage unten leer wahr. Die Zahl steht in der Meldung.
     assert!(
-        !felder.is_empty(),
-        "Registry hat 0 Bereichsfelder: die Rand-Pruefung liefe leer (Positivkontrolle)"
+        felder.len() >= MINDESTENS_BEREICHSFELDER,
+        "Registry hat {} Bereichsfelder, erwartet mindestens {MINDESTENS_BEREICHSFELDER}: die Rand-Pruefung liefe mit weniger \
+         Feldern (Positivkontrolle; `MINDESTENS_BEREICHSFELDER` nur mit Begruendung senken)",
+        felder.len()
     );
     assert!(
         felder.iter().any(|f| f.mit_enum) && felder.iter().any(|f| !f.mit_enum && f.bereich.min > 0),
@@ -380,6 +444,53 @@ async fn jedes_bereichsfeld_nimmt_den_rand_an_weist_den_nachbarn_ab_und_rechnet_
     assert!(
         arten.len() >= 2 && enum_werte(&alle, ART_PARTNER).len() >= 2,
         "Rentenarten aus der Registry: {arten:?}: die Rentenart-Schleife liefe leer"
+    );
+    for f in &felder {
+        assert!(
+            teil_von(&f.id) < TEILE.len(),
+            "{}: Teil {} gibt es nicht (nur {} Teile): das Feld wuerde nirgends geprueft",
+            f.id,
+            teil_von(&f.id),
+            TEILE.len()
+        );
+    }
+    let je_teil: Vec<usize> = (0..TEILE.len())
+        .map(|k| felder.iter().filter(|f| teil_von(&f.id) == k).count())
+        .collect();
+    assert_eq!(
+        je_teil.iter().sum::<usize>(),
+        felder.len(),
+        "die Teile {je_teil:?} decken {} Bereichsfelder nicht genau einmal ab",
+        felder.len()
+    );
+    let (auffang, benannte) = je_teil.split_last().expect("TEILE ist nicht leer");
+    let leer: Vec<&str> = TEILE
+        .iter()
+        .zip(benannte)
+        .filter(|(_, n)| **n == 0)
+        .map(|(t, _)| t.name)
+        .collect();
+    assert!(
+        leer.is_empty(),
+        "Teile ohne Bereichsfeld: {leer:?} (Praefixe pruefen oder den Teil streichen); Auffangteil hat {auffang}"
+    );
+}
+
+/// Der Rand jedes Bereichsfelds des Teils `name`, live aus der Registry. Siehe Moduldoku.
+async fn pruefe_teil(name: &str) {
+    let k = TEILE
+        .iter()
+        .position(|t| t.name == name)
+        .expect("der Teil steht in TEILE");
+    let alle = registry();
+    let felder: Vec<Feld> = bereichsfelder(&alle)
+        .into_iter()
+        .filter(|f| teil_von(&f.id) == k)
+        .collect();
+    // Der Auffangteil darf leer sein; jeder andere Teil, der nichts mehr trifft, ist ein toter Praefix (der Waechter meldet ihn auch).
+    assert!(
+        !felder.is_empty() || k == TEILE.len() - 1,
+        "Teil {name} hat kein Bereichsfeld: die Rand-Pruefung liefe leer (Positivkontrolle)"
     );
 
     let d = dienst();
@@ -442,7 +553,7 @@ async fn jedes_bereichsfeld_nimmt_den_rand_an_weist_den_nachbarn_ab_und_rechnet_
     }
     assert!(
         falsch.is_empty(),
-        "{} von {faelle} Faellen ueber {} Bereichsfelder verletzt:\n{falsch:#?}",
+        "{} von {faelle} Faellen ueber {} Bereichsfelder (Teil {name}) verletzt:\n{falsch:#?}",
         falsch.len(),
         felder.len()
     );
