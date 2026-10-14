@@ -6,7 +6,8 @@
 //! - Datei: ein Pfad mit Endung. Gueltig ist der Pfad im Baum (ab Wurzel, ab `rust/` oder als eindeutiges Suffix) oder die
 //!   Verlaufsform `<commit>:<pfad>` / `<commit>^:<pfad>`, wenn Git den Pfad in diesem Commit kennt (Weg fuer geloeschte Dateien).
 //!   Pfade ab `decisions/`, `audits/`, `tickets/`, `backlog/`, `research/` liegen im Vault: der Test zaehlt sie und prueft sie nicht.
-//! - Test: `Pfad::name`, `Pfad::tests::name`, `Pfad::a, ::b` und `Pfad: `name`, `name``; der Name steht als `fn` in der Datei.
+//! - Test: `Pfad::name`, `Pfad::tests::name`, `Pfad::a, ::b` und `Pfad` mit Doppelpunkt und einer Liste von Namen in Backticks;
+//!   der Name steht als `fn` in der Datei.
 //! - Typ: `Name<..>` steht als `struct`, `enum`, `trait`, `type` oder `union` im Baum; ein Typ, dem der Satz selbst
 //!   abspricht zu existieren (`.. den gibt es nicht`, `.. den es nie gab`), zaehlt nicht.
 //! - Cache: `~/.cache/..` ist nie ein Beleg (fluechtig).
@@ -316,7 +317,7 @@ impl Baum {
                 .collect(),
             None => vec![name.to_owned()],
         };
-        let ist_quelltext = datei.ends_with(".rs") || datei.ends_with(".py");
+        let ist_quelltext = endet_auf(datei, "rs") || endet_auf(datei, "py");
         self.mit_text(datei, |t| {
             namen.iter().all(|n| {
                 let esc = regex::escape(n);
@@ -341,7 +342,7 @@ impl Baum {
                 for d in self
                     .dateien
                     .iter()
-                    .filter(|d| d.starts_with("rust/") && d.ends_with(".rs"))
+                    .filter(|d| d.starts_with("rust/") && endet_auf(d, "rs"))
                 {
                     for m in DEKLARATION.captures_iter(&self.lies(d)) {
                         s.insert(m[1].to_owned());
@@ -425,6 +426,10 @@ impl Ergebnis {
         }
         s
     }
+}
+
+fn endet_auf(datei: &str, endung: &str) -> bool {
+    Path::new(datei).extension().is_some_and(|e| e == endung)
 }
 
 fn ist_wort(c: char) -> bool {
@@ -751,6 +756,59 @@ fn der_rust_job_holt_den_ganzen_verlauf() {
 }
 
 // ---- Positivkontrollen: ein gebauter Mini-Baum und eine Attrappe fuer Git ----
+
+/// Das echte Git hinter dem Pruefer, auf einem gebauten Repo: Vorfahre, Nebenzweig, unbekannter Hash, `<rev>:<pfad>`; ein flacher
+/// Klon und ein Baum ohne `.git` gelten als „Verlauf fehlt“.
+#[test]
+fn das_echte_git_trennt_vorfahre_nebenzweig_und_unbekannt() {
+    let w = probebaum("git", &[("a.txt", "eins")]);
+    let sh = |args: &[&str]| {
+        let mut alle = vec!["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"];
+        alle.extend_from_slice(args);
+        let o = git(&w, &alle).unwrap();
+        assert!(o.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&o.stderr));
+        String::from_utf8_lossy(&o.stdout).trim().to_owned()
+    };
+    sh(&["init", "-q"]);
+    sh(&["add", "a.txt"]);
+    sh(&["commit", "-q", "-m", "A"]);
+    let a = sh(&["rev-parse", "--short=8", "HEAD"]);
+    sh(&["checkout", "-q", "-b", "neben"]);
+    std::fs::write(w.join("b.txt"), "zwei").unwrap();
+    sh(&["add", "b.txt"]);
+    sh(&["commit", "-q", "-m", "B"]);
+    let b = sh(&["rev-parse", "--short=8", "HEAD"]);
+    sh(&["checkout", "-q", "-"]);
+
+    let echt = EchtesGit(w.clone());
+    let flach = std::env::temp_dir().join(format!("belege-aufloesbar-flach-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&flach);
+    let geklont = Command::new("git")
+        .args(["clone", "-q", "--depth", "1", "--branch", "neben"])
+        .arg(format!("file://{}", w.display()))
+        .arg(&flach)
+        .env_remove("GIT_DIR")
+        .output()
+        .unwrap();
+    assert!(geklont.status.success(), "{}", String::from_utf8_lossy(&geklont.stderr));
+    let ergebnis = (
+        echt.da(),
+        echt.lage(&a),
+        echt.lage(&b),
+        echt.lage("0123abcd"),
+        echt.kennt(&format!("{a}:a.txt")),
+        echt.kennt(&format!("{a}:b.txt")),
+        echt.kennt(&format!("{b}^:a.txt")),
+        EchtesGit(flach.clone()).da(),
+        EchtesGit(std::env::temp_dir()).da(),
+    );
+    weg(&w);
+    weg(&flach);
+    assert_eq!(
+        ergebnis,
+        (true, Lage::Vorfahre, Lage::KeinVorfahre, Lage::KeinCommit, true, false, true, false, false)
+    );
+}
 
 struct Attrappe {
     da: bool,

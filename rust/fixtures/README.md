@@ -1,5 +1,7 @@
 # `rust/fixtures/`
 
+**Regel fuer jeden Beleg in dieser Datei und in Spalte 7 von `rust/TESTMAP.tsv`:** Er loest auf, und `rust/bindung/tests/belege_aufloesbar.rs` prueft das (`cd rust && cargo test -p bindung --test belege_aufloesbar`). Ein Beleg liegt im Repo (ein Pfad im Baum), im Verlauf (`<commit>^:<pfad>`, fuer geloeschte Dateien) oder im Vault (ein Pfad ab `audits/`, `decisions/`, `backlog/`, `tickets/` oder `research/`; der Test zaehlt ihn und prueft ihn nicht), nie im Cache des Nutzers. Ein Testname steht als `fn` in seiner Datei, ein Typ steht im Baum, ein Hash ist Vorfahre von HEAD. Das Skript einer Messung kopiert der Instructor vor dem Merge in den Vault; liegt es dort nicht, steht im Text "nicht gesichert". Das Tor des Repos (`.orch-gate.json`) fuehrt den Test nicht aus, der Job `rust` der CI schon, mit dem ganzen Verlauf. Ein flacher Klon braucht `TAXGRAPH_OHNE_VERLAUF=1` und meldet dann, wie viele Verweise ungeprueft blieben.
+
 `golden_cases.json` — Extrakt von `golden/cases/*.yaml` (135 Faelle), erzeugt von
 `tools/parity/extract_golden.py`. Kein Rust-Runner konsumiert diese Datei in Schritt 1
 („Foundation") — sie liegt bereit fuer den Golden-Runner ab Schritt 4 (`REWRITE_PLAN.md` §7).
