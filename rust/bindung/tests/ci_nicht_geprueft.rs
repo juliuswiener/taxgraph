@@ -40,15 +40,15 @@ fn das_skript_zaehlt_was_der_lauf_nicht_geprueft_hat() {
     assert!(skript().is_file(), "scripts/ci-nicht-geprueft.sh fehlt");
     assert_eq!(leer.status.code(), Some(0), "Kontrolle: {}", String::from_utf8_lossy(&leer.stderr));
     assert!(
-        out(&leer).contains("Schema-Pruefung 0x uebersprungen, Browser-Tests 0x uebersprungen, ERiC/checkESt 0x ignoriert, sonst 0x ignoriert"),
+        out(&leer).contains("Schema-Pruefung 0x uebersprungen, Browser-Tests 0x uebersprungen, ERiC/checkESt 0x ignoriert, sonst 0x ignoriert, Verlauf-Pruefung 0x uebersprungen"),
         "{}",
         out(&leer)
     );
-    // Ziel: 3 Zeilen der Hilfsfunktion + 1 eigene Wache = 4 Schema, 2 Browser, 3 ERiC-ignoriert, 1 sonst ignoriert.
+    // Ziel: 3 Zeilen der Hilfsfunktion + 1 eigene Wache = 4 Schema, 2 Browser, 3 ERiC-ignoriert, 1 sonst ignoriert, 1 Verlauf.
     let o = lauf(&fixture("ci_lauf_nicht_geprueft.log"));
     assert_eq!(o.status.code(), Some(0));
     assert!(
-        out(&o).contains("NICHT GEPRUEFT: Schema-Pruefung 4x uebersprungen, Browser-Tests 2x uebersprungen, ERiC/checkESt 3x ignoriert, sonst 1x ignoriert"),
+        out(&o).contains("NICHT GEPRUEFT: Schema-Pruefung 4x uebersprungen, Browser-Tests 2x uebersprungen, ERiC/checkESt 3x ignoriert, sonst 1x ignoriert, Verlauf-Pruefung 1x uebersprungen"),
         "{}",
         out(&o)
     );
@@ -70,6 +70,7 @@ fn das_skript_zaehlt_was_der_lauf_nicht_geprueft_hat() {
         "| Browser-Tests uebersprungen | 2 |",
         "| Tests gegen ERiC und checkESt (`#[ignore]`) | 3 |",
         "| weitere `#[ignore]`-Tests | 1 |",
+        "| Belege der Testkarte gegen den Git-Verlauf (Hash, Verlaufsform) uebersprungen | 1 |",
     ] {
         assert!(tabelle.contains(zeile), "Zusammenfassung ohne {zeile:?}: {tabelle}");
     }
@@ -102,6 +103,7 @@ fn das_skript_sucht_die_zeilen_die_der_quelltext_schreibt() {
         ("grep -c 'UEBERSPRUNGEN: .*E10-2025.xsd'", "rust/api/tests/oberflaeche/fluss_g.rs", "UEBERSPRUNGEN: E10-2025.xsd fehlt"),
         ("grep -c 'UEBERSPRUNGEN: .*E10-2025.xsd'", "rust/api/tests/einreichen_attrappe_hermetisch.rs", "UEBERSPRUNGEN: E10-2025.xsd fehlt"),
         ("grep -c 'ignored, braucht die ERiC-Bibliothek'", "rust/bescheid/tests/checkest_blockmatrix.rs", "braucht die ERiC-Bibliothek"),
+        ("grep -c 'UEBERSPRUNGEN: Verlauf fehlt'", "rust/bindung/tests/belege_aufloesbar.rs", "UEBERSPRUNGEN: Verlauf fehlt"),
     ];
     for (aufruf, datei, text) in paare {
         assert!(s.contains(aufruf), "das Skript ruft nicht {aufruf}");
@@ -143,7 +145,7 @@ fn verzichte_per_eprintln(quelle: &str) -> Vec<usize> {
         .filter(|(i, _)| {
             let ende = quelle[*i..].find(");").map_or(quelle.len(), |e| i + e);
             let text = &quelle[*i..ende];
-            text.contains("TAXGRAPH_OHNE_XSD") || text.contains("TAXGRAPH_OHNE_BROWSER")
+            text.contains("TAXGRAPH_OHNE_XSD") || text.contains("TAXGRAPH_OHNE_BROWSER") || text.contains("TAXGRAPH_OHNE_VERLAUF")
         })
         .map(|(i, _)| quelle[..i].matches('\n').count() + 1)
         .collect()

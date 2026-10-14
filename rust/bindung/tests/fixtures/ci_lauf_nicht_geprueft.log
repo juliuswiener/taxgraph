@@ -20,6 +20,7 @@ running 2 tests
 UEBERSPRUNGEN: kein Browser oder chromedriver, TAXGRAPH_OHNE_BROWSER=1
 UEBERSPRUNGEN: kein Browser oder chromedriver, TAXGRAPH_OHNE_BROWSER=1
 [oberflaeche/fluss_g] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1
+UEBERSPRUNGEN: Verlauf fehlt, 66 Verweise nicht geprueft, TAXGRAPH_OHNE_VERLAUF=1
 test vier ... ok
 test fuenf ... ok
 

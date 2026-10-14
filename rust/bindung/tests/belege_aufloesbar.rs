@@ -730,6 +730,26 @@ fn jeder_beleg_der_testkarte_und_der_abweichungsliste_loest_auf() {
     );
 }
 
+/// Der Job `rust` holt den ganzen Verlauf: ohne ihn waere jeder Hash und jede Verlaufsform auf dem Runner unpruefbar,
+/// und der Test oben wuerde dort rot (statt vorher hier, wo der Klon voll ist).
+#[test]
+fn der_rust_job_holt_den_ganzen_verlauf() {
+    let text = std::fs::read_to_string(repo_wurzel().join(".github/workflows/ci.yml")).unwrap();
+    let wf: serde_yaml_ng::Value = serde_yaml_ng::from_str(&text).unwrap();
+    let schritte = wf["jobs"]["rust"]["steps"]
+        .as_sequence()
+        .expect("Job rust ohne Schritte");
+    let checkout = schritte
+        .iter()
+        .find(|s| s["uses"].as_str().is_some_and(|u| u.starts_with("actions/checkout")))
+        .expect("Job rust ohne Checkout");
+    assert_eq!(
+        checkout["with"]["fetch-depth"].as_u64(),
+        Some(0),
+        "der Checkout im Job rust braucht `fetch-depth: 0`"
+    );
+}
+
 // ---- Positivkontrollen: ein gebauter Mini-Baum und eine Attrappe fuer Git ----
 
 struct Attrappe {
