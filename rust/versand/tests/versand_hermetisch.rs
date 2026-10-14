@@ -8,7 +8,8 @@
 //! ankam (`init_zaehler` fehlt: ERiC wurde nicht einmal geladen).
 //!
 //! `ERIC_ATTRAPPE_DIR` ist Prozess-Zustand; darum laufen alle Tests, die ERiC rufen, hintereinander
-//! (`SPERRE`). Braucht `cc`. Fehlt es, scheitert der Test — ausser mit `TAXGRAPH_OHNE_CC=1`.
+//! (`SPERRE`; unter `cargo nextest` hat jeder Test seinen eigenen Prozess, siehe `bibliothek`).
+//! Braucht `cc`. Fehlt es, scheitert der Test — ausser mit `TAXGRAPH_OHNE_CC=1`.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use std::os::unix::fs::PermissionsExt;
@@ -71,14 +72,19 @@ fn bibliothek() -> Option<&'static Path> {
             let lib = Path::new(env!("CARGO_TARGET_TMPDIR")).join("versand_attrappe");
             std::fs::create_dir_all(&lib).unwrap();
             let ziel = lib.join("libericapi.so");
+            // Unter `cargo nextest` ist jeder Test ein eigener Prozess und baut die Attrappe selbst: jeder baut in eine
+            // eigene Datei und benennt sie dann atomar auf `ziel` um. Ein Prozess, der `ziel` gerade laedt, sieht so nie
+            // eine halbe Datei ("file too short").
+            let eigene = lib.join(format!("libericapi.{}.tmp", std::process::id()));
             let quelle = Path::new(env!("CARGO_MANIFEST_DIR")).join(ATTRAPPE_QUELLE);
             assert!(quelle.is_file(), "die Quelle der Attrappe fehlt: {}", quelle.display());
             let gebaut = Command::new("cc")
                 .args(["-shared", "-fPIC", "-O0", "-o"])
-                .arg(&ziel)
+                .arg(&eigene)
                 .arg(&quelle)
                 .status();
             if gebaut.as_ref().is_ok_and(std::process::ExitStatus::success) {
+                std::fs::rename(&eigene, &ziel).unwrap();
                 return Some(ziel);
             }
             assert!(
