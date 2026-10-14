@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "eingang"
 version = "0.0.0"
 edition.workspace = true
@@ -21,3 +22,46 @@ tempfile = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+
+# Testdateien liegen in tests/it.rs zu EINEM Test-Binary zusammen (weniger Links nach einer Aenderung der Bibliothek). Eigene Ziele:
+# Dateien, die Umgebung oder Arbeitsverzeichnis des Prozesses aendern, und Dateien, die per `--test <name>` aufgerufen werden.
+# rust/bindung/tests/testbinaries_vollstaendig.rs haelt fest, dass jede Datei in it.rs ODER hier steht.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+[[test]]
+name = "entscheidungen"
+path = "tests/entscheidungen.rs"
+
+[[test]]
+name = "kontoauszug_partei_hermetisch"
+path = "tests/kontoauszug_partei_hermetisch.rs"
+
+[[test]]
+name = "kontoauszug_ueberlauf_hermetisch"
+path = "tests/kontoauszug_ueberlauf_hermetisch.rs"
+
+[[test]]
+name = "llm_zeitbudget"
+path = "tests/llm_zeitbudget.rs"
+
+[[test]]
+name = "ocr_kill"
+path = "tests/ocr_kill.rs"
+
+[[test]]
+name = "ocr_pfade"
+path = "tests/ocr_pfade.rs"
+
+[[test]]
+name = "ocr_zeitlimit"
+path = "tests/ocr_zeitlimit.rs"
+
+[[test]]
+name = "orakel_werte"
+path = "tests/orakel_werte.rs"
+
+[[test]]
+name = "rueckgabecodes"
+path = "tests/rueckgabecodes.rs"

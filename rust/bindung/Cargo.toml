@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "bindung"
 version = "0.0.0"
 edition.workspace = true
@@ -15,3 +16,26 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml_ng = { workspace = true }
 thiserror = { workspace = true }
+
+# Testdateien liegen in tests/it.rs zu EINEM Test-Binary zusammen (weniger Links nach einer Aenderung der Bibliothek). Eigene Ziele:
+# Dateien, die Umgebung oder Arbeitsverzeichnis des Prozesses aendern, und Dateien, die per `--test <name>` aufgerufen werden.
+# rust/bindung/tests/testbinaries_vollstaendig.rs haelt fest, dass jede Datei in it.rs ODER hier steht.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+[[test]]
+name = "belege_aufloesbar"
+path = "tests/belege_aufloesbar.rs"
+
+[[test]]
+name = "ci_pins"
+path = "tests/ci_pins.rs"
+
+[[test]]
+name = "feld_bestand"
+path = "tests/feld_bestand.rs"
+
+[[test]]
+name = "testbinaries_vollstaendig"
+path = "tests/testbinaries_vollstaendig.rs"

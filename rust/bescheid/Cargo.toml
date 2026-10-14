@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "bescheid"
 version = "0.0.0"
 edition.workspace = true
@@ -24,3 +25,42 @@ thiserror = { workspace = true }
 domain = { path = "../domain", features = ["testhilfe"] }
 proptest = { workspace = true }
 regex = { workspace = true }
+
+# Testdateien liegen in tests/it.rs zu EINEM Test-Binary zusammen (weniger Links nach einer Aenderung der Bibliothek). Eigene Ziele:
+# Dateien, die Umgebung oder Arbeitsverzeichnis des Prozesses aendern, und Dateien, die per `--test <name>` aufgerufen werden.
+# rust/bindung/tests/testbinaries_vollstaendig.rs haelt fest, dass jede Datei in it.rs ODER hier steht.
+[[test]]
+name = "it"
+path = "tests/it.rs"
+
+[[test]]
+name = "abschlusszahlung_ehegatte_hermetisch"
+path = "tests/abschlusszahlung_ehegatte_hermetisch.rs"
+
+[[test]]
+name = "checkest_blockmatrix"
+path = "tests/checkest_blockmatrix.rs"
+
+[[test]]
+name = "checkest_privatverkauf_spike"
+path = "tests/checkest_privatverkauf_spike.rs"
+
+[[test]]
+name = "gewst_hebesatz_hermetisch"
+path = "tests/gewst_hebesatz_hermetisch.rs"
+
+[[test]]
+name = "offene_defekte"
+path = "tests/offene_defekte.rs"
+
+[[test]]
+name = "rentner_ehegatte_hermetisch"
+path = "tests/rentner_ehegatte_hermetisch.rs"
+
+[[test]]
+name = "ring_scheiben"
+path = "tests/ring_scheiben.rs"
+
+[[test]]
+name = "versorgung_kz_im_xml"
+path = "tests/versorgung_kz_im_xml.rs"
