@@ -536,6 +536,173 @@ async fn ein_archiv_ist_nur_fuer_den_besitzer_lesbar() {
     }
 }
 
+/// Der Name eines Archivs im Namensschema von `make backup` (`taxgraph-<Datum>-<Zeit>-<ns>-<pid>.tar.gz`); `jahr` und `lfd`
+/// bestimmen die Reihenfolge nach Name: ein kleineres Jahr ist aelter.
+fn archivname(jahr: u32, lfd: u32) -> String {
+    format!("taxgraph-{jahr}0101-000000-{lfd:09}-1.tar.gz")
+}
+
+/// Legt `n` Archive (Inhalt `alt`) im Namensschema an, `jahr` fest, `lfd` von 1 bis `n`. Der Ordner wird bei Bedarf angelegt.
+fn alte_archive(u: &Umgebung, jahr: u32, n: u32) -> Vec<PathBuf> {
+    std::fs::create_dir_all(u.backups()).unwrap();
+    (1..=n)
+        .map(|i| {
+            let p = u.backups().join(archivname(jahr, i));
+            std::fs::write(&p, b"alt").unwrap();
+            p
+        })
+        .collect()
+}
+
+/// Namen im Sicherungsordner, die dem Schema von `make backup` folgen, sortiert.
+fn schema_namen(u: &Umgebung) -> Vec<String> {
+    let mut aus: Vec<String> = std::fs::read_dir(u.backups())
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+        .filter(|n| {
+            n.strip_prefix("taxgraph-")
+                .and_then(|r| r.strip_suffix(".tar.gz"))
+                .is_some_and(|m| !m.is_empty() && m.bytes().all(|b| b.is_ascii_digit() || b == b'-'))
+        })
+        .collect();
+    aus.sort();
+    aus
+}
+
+/// `make -f <Makefile> backup` aus dem Ordner `cwd` (nicht aus dem Wurzelordner), mit `extra` hinter den drei Orten.
+fn backup_aus(u: &Umgebung, cwd: &Path, extra: &[&str]) -> Output {
+    Command::new("make")
+        .arg("-f")
+        .arg(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../Makefile"))
+        .arg("backup")
+        .arg(format!("FAELLE_ROOT={}", u.daten().display()))
+        .arg(format!("AUTH_USERS={}", u.users().display()))
+        .arg(format!("BACKUP_DIR={}", u.backups().display()))
+        .args(extra)
+        .current_dir(cwd)
+        .env("HOME", u.tmp.path())
+        .env_remove("TAXGRAPH_DATEN")
+        .env_remove("XDG_DATA_HOME")
+        .output()
+        .unwrap()
+}
+
+/// S5b (Anmeldung-Ticket, Befund (e); Julius 2026-10-15, N = 30): nach einem erfolgreichen `make backup` bleiben die letzten 30
+/// Archive des Namensschemas im Sicherungsordner, die aelteren fallen weg. Nur dort und nur Dateien dieses Schemas: Fremdes im
+/// Ordner, ein gleichnamiges Archiv im Arbeitsordner des Aufrufers und Dateien anderer Namen bleiben. Das neue Archiv ist nie dabei.
+#[tokio::test]
+async fn nach_einem_backup_bleiben_die_letzten_30_archive() {
+    let u = Umgebung::neu();
+    bestand_aufbauen(&u).await;
+    let alt = alte_archive(&u, 2020, 32);
+    let fremd = ["notiz.txt", "taxgraph-sonst.tar.gz", "andere-20200101-000000-000000001-1.tar.gz", "taxgraph-20200101-000000-000000001-1.tar.bz2"];
+    for n in fremd {
+        std::fs::write(u.backups().join(n), b"fremd").unwrap();
+    }
+    // Der Arbeitsordner des Aufrufers traegt 32 Archive im Schema: `backup` raeumt nur den Sicherungsordner auf.
+    let arbeit = u.tmp.path().join("arbeit");
+    std::fs::create_dir_all(&arbeit).unwrap();
+    for i in 1..=32 {
+        std::fs::write(arbeit.join(archivname(2020, i)), b"arbeitsordner").unwrap();
+    }
+    // Kontrolle: vor dem Lauf stehen 32 Archive im Schema da, und die Fremdnamen gehoeren nicht dazu.
+    assert_eq!(schema_namen(&u).len(), 32);
+
+    let r = backup_aus(&u, &arbeit, &[]);
+    assert!(r.status.success(), "make backup:\n{}", ausgabe(&r));
+    let nachher = schema_namen(&u);
+    assert_eq!(nachher.len(), 30, "erwartet 30 Archive, da sind: {nachher:?}");
+    let erwartet: Vec<String> = alt[3..]
+        .iter()
+        .map(|p| p.file_name().unwrap().to_string_lossy().into_owned())
+        .collect();
+    assert!(
+        erwartet.iter().all(|n| nachher.contains(n)),
+        "die 29 neuesten alten Archive muessen bleiben: {nachher:?}"
+    );
+    for p in &alt[..3] {
+        assert!(!p.exists(), "{} haette wegfallen muessen", p.display());
+    }
+    // Das neue Archiv ist das 30. und liegt im Ordner: genau ein Name im Schema, der nicht zu den alten gehoert.
+    let neu: Vec<&String> = nachher
+        .iter()
+        .filter(|n| !erwartet.contains(n))
+        .collect();
+    assert_eq!(neu.len(), 1, "das neue Archiv fehlt oder es sind mehrere: {nachher:?}");
+    for n in fremd {
+        assert!(u.backups().join(n).exists(), "{n} gehoert nicht zum Schema und blieb nicht");
+    }
+    for i in 1..=32 {
+        assert!(
+            arbeit.join(archivname(2020, i)).exists(),
+            "ein Archiv im Arbeitsordner wurde geloescht: {}",
+            archivname(2020, i)
+        );
+    }
+}
+
+/// S5b: ein gescheiterter `tar` loescht nichts (Steuerdaten-Kopien sind die letzte Rueckfallebene). Der Lauf davor zeigt, dass
+/// derselbe Ordner bei einem erfolgreichen Lauf aufgeraeumt wird (Kontrolle).
+#[tokio::test]
+async fn ein_gescheitertes_tar_loescht_keine_archive() {
+    let u = Umgebung::neu();
+    bestand_aufbauen(&u).await;
+    let alt = alte_archive(&u, 2020, 35);
+    let fehlt = u.tmp.path().join("gibt-es-nicht");
+    let r = backup_aus(&u, u.tmp.path(), &[&format!("FAELLE_ROOT={}", fehlt.display())]);
+    assert!(!r.status.success(), "tar auf ein fehlendes Verzeichnis haette scheitern muessen:\n{}", ausgabe(&r));
+    // Ein gescheitertes tar laesst seine angefangene Ausgabedatei liegen (Stand vor S5b, nicht Teil davon): sie darf da sein,
+    // aber kein altes Archiv darf fehlen.
+    for p in &alt {
+        assert!(p.exists(), "ein gescheitertes tar hat {} geloescht", p.display());
+    }
+    // Kontrolle: mit dem echten Bestand raeumt derselbe Ordner auf, auf genau 30.
+    let r = backup_aus(&u, u.tmp.path(), &[]);
+    assert!(r.status.success(), "make backup:\n{}", ausgabe(&r));
+    assert_eq!(schema_namen(&u).len(), 30);
+}
+
+/// S5b: `restore` raeumt nicht auf. Die Vorher-Sicherung ruft dasselbe Rezept; raeumte sie auf, fiele das aelteste Archiv weg,
+/// und genau das kann das Archiv sein, das gerade eingespielt wird: `tar xzf` fehlte nach dem Loeschen von `faelle/`.
+#[tokio::test]
+async fn restore_loescht_das_archiv_nicht_das_es_einspielt() {
+    let u = Umgebung::neu();
+    let stand_a = bestand_aufbauen(&u).await;
+    let akten = inhalte(&u.faelle());
+    let r = u.sichern();
+    assert!(r.status.success(), "make backup:\n{}", ausgabe(&r));
+    let archiv = u.archive().remove(0);
+    // 29 juengere Archive: mit dem echten sind es 30, das echte ist das aelteste (Namen aus dem Jahr 2999 sind juenger).
+    alte_archive(&u, 2999, 29);
+    assert_eq!(schema_namen(&u).len(), 30);
+    assert_eq!(schema_namen(&u)[0], archiv.file_name().unwrap().to_string_lossy());
+    drift_erzeugen(&u).await;
+
+    let r = u.wiederherstellen(&archiv, true, "");
+    assert!(r.status.success(), "make restore:\n{}", ausgabe(&r));
+    assert!(archiv.exists(), "restore hat das Archiv geloescht, das es einspielt");
+    assert_eq!(inhalte(&u.faelle()), akten, "Bestand weicht ab");
+    assert_eq!(schema_namen(&u).len(), 31, "die Vorher-Sicherung kommt dazu, restore raeumt nicht auf");
+    pruefe_wiederhergestellt(&u, &stand_a).await;
+}
+
+/// S5b: eine Aufbewahrungszahl, die keine ganze Zahl ab 1 ist, bricht ab, BEVOR etwas angelegt oder geloescht wird (0 loeschte
+/// sonst jedes Archiv, auch das neue). Kontrolle: eine gueltige Zahl (3) raeumt im selben Ordner auf.
+#[tokio::test]
+async fn eine_ungueltige_aufbewahrungszahl_bricht_vor_jeder_aenderung_ab() {
+    let u = Umgebung::neu();
+    bestand_aufbauen(&u).await;
+    alte_archive(&u, 2020, 5);
+    for schlecht in ["0", "abc", "-1", "2.5"] {
+        let r = backup_aus(&u, u.tmp.path(), &[&format!("BACKUP_BEHALTEN={schlecht}")]);
+        assert!(!r.status.success(), "BACKUP_BEHALTEN={schlecht} haette scheitern muessen:\n{}", ausgabe(&r));
+        assert_eq!(schema_namen(&u).len(), 5, "BACKUP_BEHALTEN={schlecht} hat etwas geaendert");
+    }
+    let r = backup_aus(&u, u.tmp.path(), &["BACKUP_BEHALTEN=3"]);
+    assert!(r.status.success(), "make backup:\n{}", ausgabe(&r));
+    assert_eq!(schema_namen(&u).len(), 3);
+}
+
 /// Stellt die Rechte eines Ordners beim Verlassen wieder her, damit der Testordner sich loeschen laesst.
 struct Entsperrt(PathBuf);
 
