@@ -196,6 +196,11 @@ async fn route(d: &Dienst, id: &str, route: &str) -> (u16, Value) {
 /// - A1 `slot_klasse(SlotFehler::Slot(Ueberlauf))`: `tage_24h` `i64::MAX`, die Addition im Ring ueberlaeuft, Route `stand`.
 ///
 /// Die Gegenproben (`basis_pv` 0, keine Aenderung) liefern 200 und die Python-Zahl.
+///
+/// ABWEICHUNG Nr. 78: Der Abzug ist Vorsorge plus Pauschbetrag (36 EUR neben der Vorsorge, § 10c Satz 1 `EStG`) und muss als Euro mal 100
+/// in `i64` Cent passen. Die Gegenprobe `slot_knapp` liegt darum bei `basis_kv` = `i64::MAX` - 3.508 (floor(`i64::MAX` / 100) - 36 =
+/// 92.233.720.368.547.722 EUR, also hoechstens 9.223.372.036.854.772.299 Cent), eine Einheit mehr (`pauschbetrag`) ist ein 422 auf
+/// `stand` und `ergebnis`. Python (kein Pauschbetrag neben der Vorsorge) antwortet auch bei `i64::MAX` mit 200.
 #[tokio::test]
 async fn ein_ueberlauf_an_der_naht_ist_ein_422_mit_klarer_meldung_und_nie_ein_500() {
     let d = dienst();
@@ -204,7 +209,13 @@ async fn ein_ueberlauf_an_der_naht_ist_ein_422_mit_klarer_meldung_und_nie_ein_50
     fall_geaendert(
         &d,
         "slot_knapp",
-        &[("basis_kv", json!(m)), ("basis_pv", json!(0))],
+        &[("basis_kv", json!(m - 3_508)), ("basis_pv", json!(0))],
+    )
+    .await;
+    fall_geaendert(
+        &d,
+        "pauschbetrag",
+        &[("basis_kv", json!(m - 3_507)), ("basis_pv", json!(0))],
     )
     .await;
     fall_geaendert(
@@ -230,6 +241,8 @@ async fn ein_ueberlauf_an_der_naht_ist_ein_422_mit_klarer_meldung_und_nie_ein_50
     let ueberlaeufe = [
         ("slot", "stand"),
         ("slot", "ergebnis"),
+        ("pauschbetrag", "stand"),
+        ("pauschbetrag", "ergebnis"),
         ("ring", "stand"),
         ("ring", "ergebnis"),
     ];
@@ -424,14 +437,19 @@ async fn fall_ueber_event(
 /// echtem Python-Server und echtem Rust-Server (beide `TAXGRAPH_NO_AUTH=1`, Skripte `mess12b.py`, `mess12c.py`, 22 Zahlfelder je
 /// `i64::MAX`, `i64::MIN`, ±10^17): Python antwortet in jedem dieser Faelle auf allen Routen mit 200 und rechnet weiter (`ergebnis`
 /// `bestaetigt`, `zahl_cent` 0 bzw. 661100); der 422 ist Rusts gewollte Abweichung ("zwischen": nur das Zwischenprodukt Euro in Cent
-/// liegt ausserhalb `i64`). Elf Eingaben erreichen die Stelle: `bruttoarbeitslohn` `i64::MIN`, `ep_oepnv_kosten` `i64::MAX`,
+/// liegt ausserhalb `i64`). Zwoelf Eingaben erreichen die Stelle: `bruttoarbeitslohn` `i64::MIN`, `ep_oepnv_kosten` `i64::MAX`,
 /// `ep_entfernung_km` `i64::MAX` und 10^17 (alle drei Routen, Jahresbetrag der Entfernungspauschale, Marke `Entfernungspauschale__abziehbarer_betrag`; vor h8-ep-fenster nur
-/// `ergebnis`; `stand` und `fragen` antworteten 200), und sieben Vorsorgebetraege `i64::MIN`.
+/// `ergebnis`; `stand` und `fragen` antworteten 200), sieben Vorsorgebetraege `i64::MIN` und `basis_kv` `i64::MAX` (seit Abweichung
+/// Nr. 78, s. u.).
 /// Alle anderen Zahlfelder weist `POST /event` selbst ab (Bereich, Vorzeichen) oder die Rechnung kommt durch.
 ///
 /// Gegenproben ("knapp", Python = Rust): `bruttoarbeitslohn` `i64::MAX` (`zahl_cent` 4150517416582623200), 10^17 (44999999997974100)
-/// und -10^17 (0), `basis_kv` `i64::MAX` (0) und -10^17 (661100) rechnen auf allen drei Routen mit 200. Der Store weist
+/// und -10^17 (0), `basis_kv` `i64::MAX` - 3.508 (0) und -10^17 (661100) rechnen auf allen drei Routen mit 200. Der Store weist
 /// `ep_arbeitstage` `i64::MAX` ab (422, Bereich 0..=366): der `CatalaError` der Akte von Hand ist ueber HTTP nicht erreichbar.
+///
+/// ABWEICHUNG Nr. 78: der Sonderausgaben-Abzug ist Vorsorge plus Pauschbetrag (36 EUR neben der Vorsorge, § 10c Satz 1 `EStG`) und muss als
+/// Euro mal 100 in `i64` Cent passen. Darum ist `basis_kv` = `i64::MAX` kein "knapp" mehr, sondern ein 422 auf allen drei Routen (Python
+/// rechnet weiter); die Kante liegt bei `i64::MAX` - 3.508 (floor(`i64::MAX` / 100) - 36 = 92.233.720.368.547.722 EUR).
 #[tokio::test]
 async fn ein_betrag_ausserhalb_i64_ueber_post_event_ist_ein_422_und_nie_ein_500() {
     let d = dienst();
@@ -455,6 +473,7 @@ async fn ein_betrag_ausserhalb_i64_ueber_post_event_ist_ein_422_und_nie_ein_500(
             10_i64.pow(17),
             &["stand", "fragen", "ergebnis"],
         ),
+        ("basis_kv", hoch, &["stand", "fragen", "ergebnis"]),
     ];
     ueberlaeufe.extend(
         vorsorge
@@ -488,7 +507,7 @@ async fn ein_betrag_ausserhalb_i64_ueber_post_event_ist_ein_422_und_nie_ein_500(
         ("bruttoarbeitslohn", hoch, 4_150_517_416_582_623_200),
         ("bruttoarbeitslohn", 10_i64.pow(17), 44_999_999_997_974_100),
         ("bruttoarbeitslohn", -(10_i64.pow(17)), 0),
-        ("basis_kv", hoch, 0),
+        ("basis_kv", hoch - 3_508, 0),
         ("basis_kv", -(10_i64.pow(17)), 661_100),
     ];
     for (i, (feld, wert, zahl)) in knapp.iter().enumerate() {

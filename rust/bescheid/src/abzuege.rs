@@ -369,12 +369,29 @@ pub fn p33b_kind_pauschbetraege(
     Ok(summe)
 }
 
-/// Die drei Werte, die `_shared_steuer_sonder_agb` in `g_dict` schreibt (alle EURO).
+/// Die drei Werte, die `_shared_steuer_sonder_agb` in `g_dict` schreibt (alle EURO), dazu der Vorsorge-Anteil der Sonderausgaben.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SteuerSonderAgb {
     pub steuerermaessigungen: Euro,
+    /// Alle Sonderausgaben einschliesslich der KV/PV-Vorsorge, wie Python sie in `g_dict` schreibt.
     pub sonderausgaben: Euro,
+    /// Davon die KV/PV-Vorsorge (§ 10 Abs. 1 Nr. 3, 3a; eigene, Kind- und Partner-Beitraege). Sie steht neben dem Pauschbetrag, nicht gegen ihn
+    /// (Abweichung Nr. 78); die Zweige geben sie getrennt an die Engine (`uebrige_sonderausgaben`).
+    pub vorsorge_kv_pv: Euro,
     pub aussergewoehnliche_belastungen: Euro,
+}
+
+impl SteuerSonderAgb {
+    /// Die Sonderausgaben ohne die KV/PV-Vorsorge: das, was mit dem § 10c-Pauschbetrag konkurriert (§ 10 Abs. 1 Nr. 4, 5, 7, 9, Abs. 1a, § 10b).
+    ///
+    /// # Errors
+    /// Ueberlauf.
+    pub fn uebrige_sonderausgaben(&self) -> Result<Euro, BescheidFehler> {
+        Ok(Euro::new(minus(
+            self.sonderausgaben.get(),
+            self.vorsorge_kv_pv.get(),
+        )?))
+    }
 }
 
 /// § 35a-Einzelaufstellung: stumpfe Σ ueber alle `<gruppe>`-Instanzen (CENT). Ohne Store oder ohne
@@ -544,7 +561,9 @@ fn kv_pv_sonderausgaben(
     })?)
 }
 
-/// Sonderausgaben (§ 10, § 10b einschliesslich Abs. 2, § 10 Abs. 1a), EURO.
+/// Sonderausgaben (§ 10, § 10b einschliesslich Abs. 2, § 10 Abs. 1a), EURO: `(alle, davon KV/PV-Vorsorge)`. Die KV/PV-Vorsorge
+/// (§ 10 Abs. 1 Nr. 3, 3a, eigene, Kind- und Partner-Beitraege) steht neben dem Pauschbetrag (Abweichung Nr. 78) und geht darum getrennt
+/// aus; die Summe bleibt die von Python.
 fn sonderausgaben(
     gde: Euro,
     veranlagung: Veranlagung,
@@ -552,7 +571,7 @@ fn sonderausgaben(
     vz: Vz,
     q: &Instanzquelle<'_>,
     p: &Params,
-) -> Result<Euro, BescheidFehler> {
+) -> Result<(Euro, Euro), BescheidFehler> {
     let mut sa = p10b_spenden(&P10bSpendenEingabe {
         zuwendungen: feld_euro_oder_null(f, "spenden_betrag")?,
         gesamtbetrag_der_einkuenfte: gde,
@@ -565,10 +584,9 @@ fn sonderausgaben(
             erstattete_kirchensteuer: feld_euro_oder_null(f, "kist_erstattet")?,
         })?,
     )?;
-    sa = euro_plus(
-        sa,
-        kv_pv_sonderausgaben(f, false, kind_kv_pv_summe(q)?.get())?,
-    )?;
+    let kv_pv_a = kv_pv_sonderausgaben(f, false, kind_kv_pv_summe(q)?.get())?;
+    let mut vorsorge = kv_pv_a;
+    sa = euro_plus(sa, kv_pv_a)?;
     sa = euro_plus(sa, kinderbetreuung_summe(q, vz, p)?)?;
     sa = euro_plus(sa, schulgeld_summe(q, vz, f, p)?)?;
     if ist_true(wert(f, "realsplitting_zustimmung")) {
@@ -581,12 +599,14 @@ fn sonderausgaben(
         sa = euro_plus(sa, p10_1a_realsplitting(&e)?)?;
     }
     if veranlagung == Veranlagung::Zusammen {
-        sa = euro_plus(sa, kv_pv_sonderausgaben(f, true, 0)?)?;
+        let kv_pv_b = kv_pv_sonderausgaben(f, true, 0)?;
+        vorsorge = euro_plus(vorsorge, kv_pv_b)?;
+        sa = euro_plus(sa, kv_pv_b)?;
     }
     let ausb = P1017BerufsausbildungEingabe {
         berufsausbildung_aufwendungen: feld_euro_oder_null(f, "berufsausbildung_aufwendungen")?,
     };
-    euro_plus(sa, p10_1_7_berufsausbildung(&ausb)?)
+    Ok((euro_plus(sa, p10_1_7_berufsausbildung(&ausb)?)?, vorsorge))
 }
 
 /// Eigener oder Partner-Pauschbetrag (§ 33b Abs. 1) nach den Feldern `rentner_grad_der_behinderung*`.
@@ -698,9 +718,12 @@ pub fn shared_steuer_sonder_agb(
     q: &Instanzquelle<'_>,
     p: &Params,
 ) -> Result<SteuerSonderAgb, BescheidFehler> {
+    let steuerermaessigungen = steuerermaessigungen(f, q, veranlagung, vz, p)?;
+    let (sonderausgaben, vorsorge_kv_pv) = sonderausgaben(gde, veranlagung, f, vz, q, p)?;
     Ok(SteuerSonderAgb {
-        steuerermaessigungen: steuerermaessigungen(f, q, veranlagung, vz, p)?,
-        sonderausgaben: sonderausgaben(gde, veranlagung, f, vz, q, p)?,
+        steuerermaessigungen,
+        sonderausgaben,
+        vorsorge_kv_pv,
         aussergewoehnliche_belastungen: aussergewoehnliche_belastungen(
             gde,
             ausserg,

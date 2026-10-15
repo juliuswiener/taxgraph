@@ -2762,9 +2762,9 @@
     "intervall": {
      "exakt_bzgl_top_k": 0,
      "gedeckelt": false,
-     "max_cent": 1279600,
+     "max_cent": 1278300,
      "max_offen": true,
-     "min_cent": 1279600,
+     "min_cent": 1278300,
      "min_offen": true,
      "nicht_fixierbar": [],
      "offene_achsen": ["vor_an_anteil_rv"],

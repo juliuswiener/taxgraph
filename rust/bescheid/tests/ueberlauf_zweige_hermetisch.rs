@@ -388,6 +388,11 @@ const FESTE_ZAHL: Ausgang = Ausgang::Ueberlauf("feste_zahl");
 /// `orakel_bs5_euer.out`, Fall `euer_max_0` und `euer_max_minus_1_plus_1`). Das ist die neue Abweichung 1g ("zwischen").
 #[test]
 fn slot_summe_ausserhalb_i64_meldet_feste_zahl_ueberlauf_und_knapp_rechnet() {
+    // ABWEICHUNG Nr. 78: der Sonderausgaben-Abzug ist jetzt Vorsorge + Pauschbetrag (36 EUR neben der Vorsorge, § 10c Satz 1 EStG), nicht
+    // mehr max(Vorsorge; 36). Er muss als Euro-Betrag mal 100 in `i64` Cent passen: Vorsorge in Euro <= floor(i64::MAX / 100) - 36 =
+    // 92.233.720.368.547.758 - 36 = 92.233.720.368.547.722, die Summe der Cent-Slots also <= 9.223.372.036.854.772.299 = i64::MAX - 3.508.
+    // Python (kein Pauschbetrag neben der Vorsorge, grosse Ganzzahlen) liefert in allen vier Faellen `bestaetigt` mit Steuer 0.
+    const KNAPP: i64 = MAX - 3_508;
     let zve_ueberlauf = || {
         Ausgang::Anders(
             r#"EngineTeil2(Basis(Ueberlauf("Einkommensteuertarif__zu_versteuerndes_einkommen")))"#
@@ -396,14 +401,24 @@ fn slot_summe_ausserhalb_i64_meldet_feste_zahl_ueberlauf_und_knapp_rechnet() {
     };
     let faelle: Vec<(&str, Fall, Ausgang)> = vec![
         (
-            "knapp: basis_kv max + basis_pv 0",
-            zwei("basis_kv", MAX, "basis_pv", 0),
+            "knapp: basis_kv (max - 3.508) + basis_pv 0",
+            zwei("basis_kv", KNAPP, "basis_pv", 0),
             Ausgang::Bestaetigt(0),
         ),
         (
-            "knapp: basis_kv max - 1 + basis_pv 1",
-            zwei("basis_kv", MAX - 1, "basis_pv", 1),
+            "knapp: basis_kv (max - 3.509) + basis_pv 1",
+            zwei("basis_kv", KNAPP - 1, "basis_pv", 1),
             Ausgang::Bestaetigt(0),
+        ),
+        (
+            "zwischen: basis_kv (max - 3.507) + basis_pv 0 (Pauschbetrag neben der Vorsorge, Nr. 78)",
+            zwei("basis_kv", KNAPP + 1, "basis_pv", 0),
+            euro_nach_cent(),
+        ),
+        (
+            "zwischen: basis_kv max + basis_pv 0 (Pauschbetrag neben der Vorsorge, Nr. 78)",
+            zwei("basis_kv", MAX, "basis_pv", 0),
+            euro_nach_cent(),
         ),
         (
             "zwischen: basis_kv max + basis_pv 1",

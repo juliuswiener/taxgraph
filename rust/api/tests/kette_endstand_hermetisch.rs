@@ -586,6 +586,9 @@ async fn r5_rentner_kind_freibetrag_kette_kommt_aus_dem_freibetrag_lauf() {
 // `tests/_kegel.py::kegel_fuer` etwas hinzufuegt oder aendert, und druckt die Werte unten (Beispiel:
 // `kette_erwartung.py an_gesamt kegel_an_gesamt a4_partner_kv_pv_aenderungen`). Das Skript reproduziert auch die aelteren
 // Konstanten (g4, g5, r3).
+//
+// AUSNAHME (Abweichung Nr. 78): a1 bis a4 tragen die von Hand gerechnete Zahl von Rust (der Pauschbetrag steht neben der Vorsorge), nicht
+// die von Python; a6 hat kein Python-Gegenstueck. Die Rechnung steht am jeweiligen Fall.
 
 fn kegel_an_gesamt() -> Paare {
     vec![
@@ -820,6 +823,32 @@ fn a5_ohne_pendelstrecke_aenderungen() -> Paare {
     vec![("bruttoarbeitslohn", json!(6_000_000))]
 }
 
+/// Abweichung Nr. 78, § 101 `EStG`: das zvE der Mobilitaetspraemie kommt aus demselben Abzug wie die Steuer, also Vorsorge PLUS Pauschbetrag.
+/// 14.000 EUR Lohn, 30 km an 220 Tagen ohne Kfz: Entfernungspauschale 220 x (20 x 0,30 + 10 x 0,38) = 2.156 EUR (§ 9 Abs. 1 Nr. 4), ab dem
+/// 21. km 220 x 10 x 0,38 = 836 EUR; sie uebersteigt den Arbeitnehmer-Pauschbetrag (1.230 EUR) um 926 EUR, die Grenze aus Satz 3 greift nicht.
+/// Einkuenfte 14.000 - 2.156 = 11.844, Abzug 36 + 100 (Rentenbeitrag) = 136, zvE 11.708, Grundfreibetrag 2025 12.096: Unterschreitung 388 EUR
+/// (kleiner als 836, also bestimmt sie die Bemessung), Praemie 14 % = 5.432 ct; Steuer 0. Die alte Lesart max(100; 36) gaebe zvE 11.744,
+/// Unterschreitung 352, Praemie 4.928 ct.
+fn a6_praemie_nach_abzug_mit_pauschbetrag_aenderungen() -> Paare {
+    vec![
+        ("bruttoarbeitslohn", json!(1_400_000)),
+        ("ep_arbeitstage", json!(220)),
+        ("ep_entfernung_km", json!(30)),
+        ("vor_an_anteil_rv", json!(10_000)),
+    ]
+}
+
+#[tokio::test]
+async fn a6_mobilitaetspraemie_rechnet_mit_dem_abzug_inklusive_pauschbetrag() {
+    let a = ergebnis(
+        "an_gesamt",
+        &mit(kegel_an_gesamt(), a6_praemie_nach_abzug_mit_pauschbetrag_aenderungen()),
+    )
+    .await;
+    erwarte_zahl("a6", &a, 0);
+    assert_eq!(a["mobilitaetspraemie_cent"].as_i64(), Some(5_432), "{a}");
+}
+
 /// Grund `bestaetigt` und die gezahlte Steuer in CENT (Scheiben ohne Kette, z. B. `an_gesamt`).
 fn erwarte_zahl(name: &str, a: &Value, zahl_cent: i64) {
     assert_eq!(
@@ -991,6 +1020,11 @@ async fn g17_p35_credit_macht_die_steuer_nie_negativ() {
 
 /// § 10 Abs. 3 `EStG` (Scheibe `an_gesamt`, nur Arbeitnehmer): der Abzug ist `min(Beitraege, Hoechstbeitrag) - AG-Anteil`;
 /// 9.021 EUR Beitraege liegen UNTER dem Hoechstbeitrag. Python: 1.223.400 ct (statt 1.392.400 ct ohne Vorsorge).
+///
+/// ABWEICHUNG Nr. 78 (a1 bis a4): der Sonderausgaben-Pauschbetrag (36 EUR, zusammen 72 EUR; § 10c Satz 1 und 2 `EStG`) steht NEBEN der
+/// Vorsorge; Python rechnet `max(Vorsorge; 36)`. Die Zahlen unten sind die von Rust, von Hand gerechnet (Tarif § 32a, VZ 2025):
+/// a1: Einkuenfte 60.000 - 1.230 = 58.770, Vorsorge min(9.021; 29.344) - 4.510 (AG-Anteil 451.050 ct, abgerundet) = 4.511, zvE
+/// 58.770 - 36 - 4.511 = 54.223, Steuer 12.220 EUR = 1.222.000 ct (Python: zvE 54.259, 12.234 EUR).
 #[tokio::test]
 async fn a1_vorsorge_unter_dem_hoechstbetrag() {
     let a = ergebnis(
@@ -1001,10 +1035,12 @@ async fn a1_vorsorge_unter_dem_hoechstbetrag() {
         ),
     )
     .await;
-    erwarte_zahl("a1", &a, 1_223_400);
+    erwarte_zahl("a1", &a, 1_222_000);
 }
 
 /// Wie `a1`, aber 45.000 EUR Beitraege: der Abzug wird auf den Hoechstbeitrag gedeckelt. Python: 559.500 ct.
+/// Rust (Abweichung Nr. 78): Vorsorge min(45.000; 29.344) - 5.000 = 24.344, zvE 58.770 - 36 - 24.344 = 34.390, Steuer 5.584 EUR =
+/// 558.400 ct (Python: zvE 34.426, 5.595 EUR).
 #[tokio::test]
 async fn a2_vorsorge_ueber_dem_hoechstbetrag_wird_gedeckelt() {
     let a = ergebnis(
@@ -1015,13 +1051,15 @@ async fn a2_vorsorge_ueber_dem_hoechstbetrag_wird_gedeckelt() {
         ),
     )
     .await;
-    erwarte_zahl("a2", &a, 559_500);
+    erwarte_zahl("a2", &a, 558_400);
 }
 
 /// Der steuerfreie AG-Anteil (35.000 EUR) ist groesser als der Hoechstbeitrag: der Altersvorsorge-Abzug ist 0, nicht negativ.
 /// Mit KV/PV-Beitraegen (2.400 EUR) dazu, denn ohne sie bleibt ein negativer Abzug folgenlos (gemessen: der Mutant ohne
 /// `max(0)` blieb gruen): er wuerde die Basis-Beitraege auffressen. Python: 1.302.200 ct, gleich der Gegenprobe nur mit den
 /// KV/PV-Beitraegen.
+/// Rust (Abweichung Nr. 78): Altersvorsorge 0, KV/PV 2.000 + 400 = 2.400, zvE 58.770 - 36 - 2.400 = 56.334, Steuer 13.009 EUR =
+/// 1.300.900 ct (Python: zvE 56.370, 13.022 EUR).
 #[tokio::test]
 async fn a3_ag_anteil_ueber_dem_hoechstbetrag_gibt_keinen_negativen_abzug() {
     let a = ergebnis(
@@ -1032,11 +1070,13 @@ async fn a3_ag_anteil_ueber_dem_hoechstbetrag_gibt_keinen_negativen_abzug() {
         ),
     )
     .await;
-    erwarte_zahl("a3", &a, 1_302_200);
+    erwarte_zahl("a3", &a, 1_300_900);
 }
 
 /// Zusammenveranlagung: die KV/PV-Beitraege des Ehegatten (1.800 EUR) gehen in die gemeinsamen Sonderausgaben ein.
 /// Python: 1.650.400 ct; ohne die Partner-Beitraege 1.707.600 ct.
+/// Rust (Abweichung Nr. 78, Pauschbetrag zusammen 72 EUR neben der Vorsorge): Einkuenfte (60.000 - 1.230) + (30.000 - 1.230) = 87.540,
+/// zvE 87.540 - 72 - 1.800 = 85.668, Splitting 2 x Tarif(42.834) = 16.480 EUR = 1.648.000 ct (Python: zvE 85.740, 16.504 EUR).
 #[tokio::test]
 async fn a4_partner_kv_pv_geht_in_die_gemeinsamen_sonderausgaben() {
     let a = ergebnis(
@@ -1044,7 +1084,7 @@ async fn a4_partner_kv_pv_geht_in_die_gemeinsamen_sonderausgaben() {
         &mit(kegel_an_gesamt(), a4_partner_kv_pv_aenderungen()),
     )
     .await;
-    erwarte_zahl("a4", &a, 1_650_400);
+    erwarte_zahl("a4", &a, 1_648_000);
 }
 
 /// § 101 `EStG`: ohne Pendelstrecke (0 km) wird keine Mobilitaetspraemie gerechnet; die Antwort traegt `null`, nicht 0.

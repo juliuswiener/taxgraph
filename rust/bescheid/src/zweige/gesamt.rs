@@ -571,7 +571,9 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
     }
     let s = shared_steuer_sonder_agb(gde, ausserg, veranlagung.domain(), f, vz, &q, p)?;
     g.steuerermaessigungen = s.steuerermaessigungen;
-    g.sonderausgaben = s.sonderausgaben;
+    // Abweichung Nr. 78: die KV/PV-Vorsorge steht neben dem Pauschbetrag, die uebrigen Sonderausgaben konkurrieren mit ihm.
+    g.sonderausgaben = s.uebrige_sonderausgaben()?;
+    g.vorsorge_kv_pv = s.vorsorge_kv_pv;
     g.aussergewoehnliche_belastungen = s.aussergewoehnliche_belastungen;
     let kapitaleinkuenfte = p20_kapitaleinkuenfte(f, zusammen, vz, p)?;
     // § 23 + § 22 Nr. 3 + § 22 Nr. 5 in einkuenfte_sonstige; der KiSt-Ueberhang laeuft mangels Slot dort mit.

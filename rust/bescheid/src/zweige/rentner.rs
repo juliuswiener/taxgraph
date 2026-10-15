@@ -225,7 +225,9 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     ) = vorsorge_slots(f, zusammen)?;
     let s = shared_steuer_sonder_agb(gde, ausserg, veranlagung.domain(), f, vz, &q, p)?;
     g.steuerermaessigungen = s.steuerermaessigungen;
-    g.sonderausgaben = s.sonderausgaben;
+    // Abweichung Nr. 78: die KV/PV-Vorsorge steht neben dem Pauschbetrag, die uebrigen Sonderausgaben konkurrieren mit ihm.
+    g.sonderausgaben = s.uebrige_sonderausgaben()?;
+    g.vorsorge_kv_pv = s.vorsorge_kv_pv;
     g.aussergewoehnliche_belastungen = s.aussergewoehnliche_belastungen;
     // § 35: Zaehler wie gesamt; Nenner = § 19 + renten (§ 22 IM Nenner) + einkuenfte_gewinn, OHNE Ueberhang.
     let (mb, hs, zaehler) = p35_person_a(f, laufend, mitu)?;

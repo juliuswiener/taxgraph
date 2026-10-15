@@ -352,8 +352,8 @@ fn jede_zeile_stimmt_im_gesamtbetrag_der_einkuenfte() {
 
 /// Ohne Vorsorgeaufwendungen zieht der Bescheid-Weg Werbungskosten-Pauschbetrag (102 EUR) und Sonderausgaben-Pauschbetrag (36 EUR)
 /// ab: zvE = Anteil der Besteuerung - wk - sa, in allen 43 Zeilen. Das ist die Spaltenrechnung der Uebersicht ohne die Spalte
-/// "abzugsfaehige Vorsorgeaufwendungen" und zugleich die Kontrolle zum Defekttest unten: dort fehlt der Pauschbetrag nur, wenn
-/// Vorsorge da ist.
+/// "abzugsfaehige Vorsorgeaufwendungen" und zugleich die Kontrolle zum Test unten: dort stand der Pauschbetrag vor der Korrektur (Nr. 78)
+/// nur dann nicht im Abzug, wenn Vorsorge da war.
 #[test]
 fn jede_zeile_ohne_vorsorge_endet_nach_den_zwei_pauschbetraegen() {
     let (ab, von) = abweichungen(|z| {
@@ -372,13 +372,14 @@ fn jede_zeile_ohne_vorsorge_endet_nach_den_zwei_pauschbetraegen() {
     melde(&ab, von, "ohne Vorsorge");
 }
 
-/// DEFEKT: die Zeile der Uebersicht mit ihren Vorsorgeaufwendungen endet im Bescheid-Weg beim Grundfreibetrag und bei Steuer 0. Heute
-/// ist das zu versteuernde Einkommen in 43 von 43 Zeilen um genau 36 EUR zu hoch (2025: 12.132 statt 12.096; 2026: 12.384 statt
-/// 12.348) und die Steuer 5 EUR statt 0. Grund: `sonderausgaben_final` (`engine/src/zugriff/teil2/gesamt.rs`) bildet
-/// `max(Sonderausgaben + Vorsorge, 36)`; § 10c Satz 1 `EStG` nennt die Vorsorge (§ 10 Abs. 1 Nr. 2, 3, 3a) nicht, der Pauschbetrag gilt
-/// daneben (`sources/gesetze-im-internet/estg_p10c_2026-07-09.txt`), und die Uebersicht zieht beide ab.
+/// Die Zeile der Uebersicht mit ihren Vorsorgeaufwendungen endet im Bescheid-Weg beim Grundfreibetrag und bei Steuer 0, in 43 von 43
+/// Zeilen. Dieser Test deckte den Defekt auf (Abweichung Nr. 78): vor der Korrektur war das zu versteuernde Einkommen in allen Zeilen um
+/// genau 36 EUR zu hoch (2025: 12.132 statt 12.096; 2026: 12.384 statt 12.348) und die Steuer 5 EUR statt 0, weil `sonderausgaben_final`
+/// (`engine/src/zugriff/teil2/gesamt.rs`) `max(Sonderausgaben + Vorsorge, 36)` bildete. § 10c Satz 1 `EStG` nennt die Vorsorge (§ 10 Abs. 1
+/// Nr. 2, 3, 3a) nicht, der Pauschbetrag gilt daneben (`sources/gesetze-im-internet/estg_p10c_2026-07-09.txt`), und die Uebersicht zieht
+/// beide ab. Seit der Korrektur bildet die Engine `max(uebrige Sonderausgaben; 36) + Vorsorge`; die Kontrollen in
+/// `sa_pauschbetrag_neben_vorsorge_hermetisch.rs` decken die Grenzen (Vorsorge unter, gleich und ueber 36 EUR).
 #[test]
-#[ignore = "DEFEKT: zvE um 36 EUR zu hoch, Steuer 5 statt 0 in 43 von 43 Zeilen (Sonderausgaben-Pauschbetrag entfaellt neben der Vorsorge, engine::zugriff::teil2::gesamt::sonderausgaben_final); Quelle BMF-Uebersicht und § 10c Satz 1 EStG; Befund an main (Rente-BMF), Vault-Notiz folgt"]
 fn jede_zeile_der_uebersicht_endet_im_bescheid_weg_bei_steuer_null() {
     let (ab, von) = abweichungen(|z| {
         let soll = Ergebnis {
@@ -395,7 +396,7 @@ fn jede_zeile_der_uebersicht_endet_im_bescheid_weg_bei_steuer_null() {
             )
         })
     });
-    melde(&ab, von, "DEFEKT: Steuer null");
+    melde(&ab, von, "Steuer null");
 }
 
 /// Kontrolle: der Aufbau misst. Zwei Euro-Tausend mehr Bruttorente bei gleicher Vorsorge geben mehr Steuer als die Grenzzeile; ein

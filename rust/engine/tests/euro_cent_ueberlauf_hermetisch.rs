@@ -971,6 +971,7 @@ fn run(fnname: &str, w: &[Eingabe]) -> Result<i128, String> {
             altersentlastungsbetrag: eu(w, "altersentlastungsbetrag"),
             entlastungsbetrag_alleinerziehende: eu(w, "entlastungsbetrag_alleinerziehende"),
             sonderausgaben: eu(w, "sonderausgaben"),
+            vorsorge_kv_pv: Euro::new(0),
             vorsorge_gesamtbeitraege_inkl_ag: eu(w, "vorsorge_gesamtbeitraege_inkl_ag"),
             vorsorge_ag_anteil_steuerfrei: eu(w, "vorsorge_ag_anteil_steuerfrei"),
             aussergewoehnliche_belastungen: eu(w, "aussergewoehnliche_belastungen"),

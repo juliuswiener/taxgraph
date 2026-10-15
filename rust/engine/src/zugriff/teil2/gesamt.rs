@@ -28,8 +28,12 @@ pub struct GesamtfallEingabe {
     pub einkuenfte_gewinn: Euro,
     pub altersentlastungsbetrag: Euro,
     pub entlastungsbetrag_alleinerziehende: Euro,
-    /// Tatsaechliche Sonderausgaben vor Vorsorge-Zuschlag und § 10c-Floor.
+    /// Die uebrigen Sonderausgaben (§ 10 Abs. 1 Nr. 4, 5, 7, 9, Abs. 1a, § 10b), die mit dem § 10c-Pauschbetrag konkurrieren. OHNE Vorsorge:
+    /// die steht in `vorsorge_kv_pv` und `vorsorge_gesamtbeitraege_inkl_ag` daneben (Abweichung Nr. 78).
     pub sonderausgaben: Euro,
+    /// § 10 Abs. 1 Nr. 3, 3a: abziehbare Kranken-, Pflege- und weitere Vorsorgeaufwendungen, schon mit dem Abs.-4-Hoechstbetrag; steht NEBEN
+    /// dem Pauschbetrag (Abweichung Nr. 78). Python kennt das Feld nicht: dort steckt dieser Betrag in `sonderausgaben`.
+    pub vorsorge_kv_pv: Euro,
     /// § 10 Abs. 1 Nr. 2 Gesamtbeitraege inkl. AG-Anteil; 0 = kein Vorsorgeabzug.
     pub vorsorge_gesamtbeitraege_inkl_ag: Euro,
     pub vorsorge_ag_anteil_steuerfrei: Euro,
@@ -62,11 +66,40 @@ fn vorsorge_abzug(e: &GesamtfallEingabe, p: &Params) -> Result<i128, EngineFehle
     )
 }
 
-/// § 10c Guenstigervergleich (`runner.py` `_sonderausgaben_final`).
-fn sonderausgaben_final(e: &GesamtfallEingabe, p: &Params) -> Result<i128, EngineFehler> {
-    let pausch =
-        z(p.sonderausgaben_pauschbetrag(e.vz)?) * if e.zusammenveranlagung { 2 } else { 1 };
-    Ok((z(e.sonderausgaben) + vorsorge_abzug(e, p)?).max(pausch))
+/// § 10c Satz 1 und 2 `EStG`: der Sonderausgaben-Abzug. Der Pauschbetrag (36 EUR, bei Zusammenveranlagung 72 EUR) konkurriert nur mit den
+/// uebrigen Sonderausgaben (§ 10 Abs. 1 Nr. 4, 5, 7, 9, Abs. 1a, § 10b); die Vorsorge (§ 10 Abs. 1 Nr. 2, 3, 3a) steht daneben:
+/// `max(uebrige; Pauschbetrag) + Vorsorge`.
+///
+/// ABWEICHUNG Nr. 78: Python rechnet `max(uebrige + Vorsorge; Pauschbetrag)` (`runner.py` `_sonderausgaben_final`); dort entfaellt der
+/// Pauschbetrag ab 36 EUR Vorsorge. Die einzige Stelle, die den Abzug bildet: `gesamt` und die Scheibe `an_gesamt` rufen sie.
+///
+/// # Errors
+/// Parameterfehler (Pauschbetrag des Jahres) und `i64`-Ueberlauf, wie bei [`gesamt`].
+///
+/// ```
+/// # use engine::zugriff::teil2::gesamt::sonderausgaben_abzug;
+/// # use domain::{Euro, Vz};
+/// # let p = bindung::Params::lade(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
+/// // 36 EUR Pauschbetrag neben 10.000 EUR Vorsorge
+/// assert_eq!(sonderausgaben_abzug(Vz::Vz2025, false, Euro::new(0), Euro::new(10_000), &p).unwrap(), Euro::new(10_036));
+/// // uebrige Sonderausgaben ueber dem Pauschbetrag: sie ersetzen ihn
+/// assert_eq!(sonderausgaben_abzug(Vz::Vz2025, false, Euro::new(500), Euro::new(10_000), &p).unwrap(), Euro::new(10_500));
+/// ```
+pub fn sonderausgaben_abzug(
+    vz: Vz,
+    zusammen: bool,
+    uebrige: Euro,
+    vorsorge: Euro,
+    p: &Params,
+) -> Result<Euro, EngineFehler> {
+    let pausch = z(p.sonderausgaben_pauschbetrag(vz)?) * if zusammen { 2 } else { 1 };
+    euro(z(uebrige).max(pausch) + z(vorsorge))
+}
+
+/// Der Abzug des Gesamtfalls: uebrige Sonderausgaben gegen den Pauschbetrag, dazu die Vorsorge aus Nr. 2 (Altersvorsorge) und Nr. 3, 3a.
+fn sonderausgaben_final(e: &GesamtfallEingabe, p: &Params) -> Result<Euro, EngineFehler> {
+    let vorsorge = euro(vorsorge_abzug(e, p)? + z(e.vorsorge_kv_pv))?;
+    sonderausgaben_abzug(e.vz, e.zusammenveranlagung, e.sonderausgaben, vorsorge, p)
 }
 
 fn in_cent(v: i128) -> Result<Cent, EngineFehler> {
@@ -99,7 +132,7 @@ fn gesamt_out(
         einkuenfte_gewinn: c(e.einkuenfte_gewinn)?,
         altersentlastungsbetrag: c(e.altersentlastungsbetrag)?,
         entlastungsbetrag_alleinerziehende: c(e.entlastungsbetrag_alleinerziehende)?,
-        sonderausgaben: in_cent(sonderausgaben_final(e, p)?)?,
+        sonderausgaben: c(sonderausgaben_final(e, p)?)?,
         aussergewoehnliche_belastungen: c(e.aussergewoehnliche_belastungen)?,
         freibetraege_kinder: c(e.freibetraege_kinder)?,
         sonstige_abzuege_vom_einkommen: c(e.sonstige_abzuege_vom_einkommen)?,
@@ -244,6 +277,7 @@ pub const fn beispiel_gesamtfall() -> GesamtfallEingabe {
         altersentlastungsbetrag: n,
         entlastungsbetrag_alleinerziehende: n,
         sonderausgaben: n,
+        vorsorge_kv_pv: n,
         vorsorge_gesamtbeitraege_inkl_ag: n,
         vorsorge_ag_anteil_steuerfrei: n,
         aussergewoehnliche_belastungen: n,

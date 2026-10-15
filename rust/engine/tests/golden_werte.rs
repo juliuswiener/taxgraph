@@ -160,6 +160,8 @@ fn gesamtfall(d: &D, jahr: i64) -> R<GesamtfallEingabe> {
         altersentlastungsbetrag: eur(d, "altersentlastungsbetrag")?,
         entlastungsbetrag_alleinerziehende: eur(d, "entlastungsbetrag_alleinerziehende")?,
         sonderausgaben: eur(d, "sonderausgaben")?,
+        // Die Golden-Faelle kennen das Feld nicht: dort steht die KV/PV-Vorsorge, wenn ueberhaupt, in `sonderausgaben`.
+        vorsorge_kv_pv: Euro::new(0),
         vorsorge_gesamtbeitraege_inkl_ag: eur(d, "vorsorge_gesamtbeitraege_inkl_ag")?,
         vorsorge_ag_anteil_steuerfrei: eur(d, "vorsorge_ag_anteil_steuerfrei")?,
         aussergewoehnliche_belastungen: eur(d, "aussergewoehnliche_belastungen")?,
@@ -331,6 +333,30 @@ fn berechne(d: &D, p: &Params) -> R<i64> {
     }
 }
 
+/// ABWEICHUNG Nr. 78 (Julius d-16, 2026-10-15): der Sonderausgaben-Pauschbetrag (§ 10c Satz 1 `EStG`, 36 EUR) steht NEBEN der Vorsorge.
+/// Die sechs Faelle `gesamt_<Jahr>_vorsorge_<capped|unter>` tragen die Python-Lesart `max(SA + Vorsorge; 36)` in `erwartung`
+/// (`golden/cases/*.yaml`, `make golden` rechnet sie mit dem eingefrorenen Python-Kern nach); Rust rechnet `max(SA; 36) + Vorsorge`.
+/// Je Eintrag: `(id, erwartung der Fixture = Python, Soll von Rust)`. Das Soll von Rust ist von Hand gerechnet, nicht aus dem Lauf
+/// abgeschrieben: zvE = 60.000 - Vorsorge - 36 (§ 2 Abs. 4), Tarif § 32a Abs. 1 mit den Koeffizienten aus `params/<Jahr>/`:
+///  - 2024 capped: Vorsorge min(40.000; 27.566) - 5.000 = 22.566, zvE 37.398, Steuer 6.632 (Python: zvE 37.434, 6.644)
+///  - 2024 unter:  Vorsorge min(12.000; 27.566) - 2.000 = 10.000, zvE 49.964, Steuer 10.859 (Python: 50.000, 10.872)
+///  - 2025 capped: min(40.000; 29.344) - 5.000 = 24.344, zvE 35.620, Steuer 5.955 (Python: 35.656, 5.966)
+///  - 2025 unter:  10.000, zvE 49.964, Steuer 10.678 (Python: 50.000, 10.691)
+///  - 2026 capped: min(40.000; 30.826) - 5.000 = 25.826, zvE 34.138, Steuer 5.413 (Python: 34.174, 5.424)
+///  - 2026 unter:  10.000, zvE 49.964, Steuer 10.535 (Python: 50.000, 10.548)
+///
+/// Das Rechenskript lag ausserhalb des Repos und gab vorher an zwoelf bekannten Werten (diese sechs Python-Zahlen, sechs Tarifpunkte
+/// `g32a_*`) jeweils die Golden-Zahl wieder. Der Test verlangt, dass die Fixture weiter die Python-Zahl traegt (die Abweichung besteht)
+/// und dass jeder Eintrag einen Fall trifft.
+const ABWEICHUNGEN_NR78: [(&str, i64, i64); 6] = [
+    ("gesamt_2024_vorsorge_capped", 6_644, 6_632),
+    ("gesamt_2024_vorsorge_unter", 10_872, 10_859),
+    ("gesamt_2025_vorsorge_capped", 5_966, 5_955),
+    ("gesamt_2025_vorsorge_unter", 10_691, 10_678),
+    ("gesamt_2026_vorsorge_capped", 5_424, 5_413),
+    ("gesamt_2026_vorsorge_unter", 10_548, 10_535),
+];
+
 #[test]
 fn fallzahl_ist_135() {
     let n = faelle().len();
@@ -347,6 +373,7 @@ fn rust_rechnet_jeden_golden_fall_auf_die_erwartung() {
     let alle = faelle();
     let mut abweichungen: Vec<String> = Vec::new();
     let mut gerechnet = 0_usize;
+    let mut abweichung_getroffen = 0_usize;
     for fall in &alle {
         let id = fall["id"].as_str().unwrap_or("<ohne id>");
         let erwartet: Vec<(&str, &Value)> = fall["erwartung"]
@@ -370,6 +397,20 @@ fn rust_rechnet_jeden_golden_fall_auf_die_erwartung() {
                 "{id} [{schluessel}]: erwartet {wert} ist keine Ganzzahl"
             ));
             continue;
+        };
+        let soll = match ABWEICHUNGEN_NR78.iter().find(|(a, _, _)| *a == id) {
+            Some((_, python, rust)) => {
+                // Die Abweichung besteht nur, solange die Fixture die Python-Zahl traegt.
+                if soll != *python {
+                    abweichungen.push(format!(
+                        "{id} [{schluessel}]: Abweichung Nr. 78 traegt Python {python}, die Fixture {soll}"
+                    ));
+                    continue;
+                }
+                abweichung_getroffen += 1;
+                *rust
+            }
+            None => soll,
         };
         let Some(sv) = fall["sachverhalt"].as_object() else {
             abweichungen.push(format!("{id} [{schluessel}]: sachverhalt ist kein Objekt"));
@@ -395,4 +436,10 @@ fn rust_rechnet_jeden_golden_fall_auf_die_erwartung() {
     );
     // Ein Test, der nichts rechnet, ist gruen und beweist nichts: jeder Fall muss gerechnet worden sein.
     assert_eq!(gerechnet, alle.len(), "nicht jeder Fall wurde gerechnet");
+    // Jeder Eintrag der Abweichungsliste trifft einen Fall (ein umbenannter oder gestrichener Fall liesse die Liste still leerlaufen).
+    assert_eq!(
+        abweichung_getroffen,
+        ABWEICHUNGEN_NR78.len(),
+        "Abweichung Nr. 78: nicht jeder Eintrag trifft einen Golden-Fall"
+    );
 }

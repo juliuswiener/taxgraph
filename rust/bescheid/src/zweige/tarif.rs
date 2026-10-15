@@ -424,6 +424,7 @@ pub(crate) fn leerer_gesamtfall(vz: Vz, zusammen: bool) -> GesamtfallEingabe {
         altersentlastungsbetrag: n,
         entlastungsbetrag_alleinerziehende: n,
         sonderausgaben: n,
+        vorsorge_kv_pv: n,
         vorsorge_gesamtbeitraege_inkl_ag: n,
         vorsorge_ag_anteil_steuerfrei: n,
         aussergewoehnliche_belastungen: n,

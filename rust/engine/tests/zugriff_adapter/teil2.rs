@@ -428,6 +428,8 @@ fn gesamtfall(d: &D) -> Result<GesamtfallEingabe, Fehl> {
         altersentlastungsbetrag: eur(d, "altersentlastungsbetrag"),
         entlastungsbetrag_alleinerziehende: eur(d, "entlastungsbetrag_alleinerziehende"),
         sonderausgaben: eur(d, "sonderausgaben"),
+        // Python kennt das Feld nicht (dort steckt die KV/PV-Vorsorge in `sonderausgaben`).
+        vorsorge_kv_pv: Euro::new(0),
         vorsorge_gesamtbeitraege_inkl_ag: eur(d, "vorsorge_gesamtbeitraege_inkl_ag"),
         vorsorge_ag_anteil_steuerfrei: eur(d, "vorsorge_ag_anteil_steuerfrei"),
         aussergewoehnliche_belastungen: eur(d, "aussergewoehnliche_belastungen"),

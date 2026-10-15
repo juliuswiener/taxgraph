@@ -19,6 +19,9 @@
 //! `RZ0`) sind die Positivkontrolle: Kegel vollstaendig, Engine liefert eine Zahl; ohne sie waere "gesperrt"
 //! nicht von "Kegel offen" zu unterscheiden. Die Fehlermeldung rechnet die Differenz gegen die Baseline aus.
 //!
+//! AUSNAHME (Abweichung Nr. 78): `kv1`, `kv3`, `kv7`, `kv8` tragen die von Hand gerechnete Zahl von Rust, nicht die von Python (Rechnung
+//! an den Zeilen; der Pauschbetrag steht neben der Vorsorge).
+//!
 //! ponytail: die Erwartungswerte sind eingefroren. Faellt Python als Orakel weg und aendern sich Tarif oder
 //! Kegel, rechnet man die Baselines von Hand nach und zieht die Konstanten nach.
 #![allow(
@@ -477,12 +480,17 @@ faelle! {
     g_zweites_vv_objekt_unvollstaendig => "gesamt", plus(mit(mit(gesamt(), "vv_einnahmen", json!(B)), "kein_vuv", json!(false)), vec![("vv_einnahmen__2", json!(B))]), G0, None, "vv_instanz_offen";
     r_rentenbeginn_jahr_ungueltig => "rentner_gesamt", mit(rentner(), "rentner_renten_beginn_jahr", json!(0)), R0, None, "rentenbeginn_jahr_ungueltig";
     r_rentenbeginn_nach_vz => "rentner_gesamt", mit(rentner(), "rentner_renten_beginn_jahr", json!(2030)), R0, None, "rentenbeginn_nach_vz";
-    kv1_gesamt_kv_partner_ohne_versicherung_rechnet => "gesamt", plus(gesamt_zusammen(), vec![("basis_kv_partner", json!(100_000))]), GZ0, Some(6_123_800), "bestaetigt";
-    kv8_gesamt_kv_partner_mit_versicherung_rechnet => "gesamt", plus(gesamt_zusammen(), vec![("basis_kv_partner", json!(100_000)), ("versicherungsart_partner", json!("gesetzlich_an"))]), GZ0, Some(6_123_800), "bestaetigt";
-    kv3_gesamt_partner_pv_ohne_versicherung_rechnet => "gesamt", plus(gesamt_zusammen(), vec![("basis_pv_partner", json!(100_000))]), GZ0, Some(6_123_800), "bestaetigt";
+    // ABWEICHUNG Nr. 78 (kv1, kv3, kv7, kv8): der Sonderausgaben-Pauschbetrag (zusammen 72 EUR, § 10c Satz 1 und 2 EStG) steht neben der
+    // Vorsorge. Python rechnet max(1.000; 72) = 1.000 EUR Abzug und liefert 6.123.800 bzw. 4.785.200 Cent; Rust 1.000 + 72 = 1.072 EUR
+    // und 6.120.800 bzw. 4.782.200 Cent. Handrechnung: gesamt GdE 200.000 - 1.230 = 198.770, zvE 198.770 - 72 - 1.000 = 197.698, Splitting
+    // 2 x Tarif(98.849) = 2 x 30.604 = 61.208 EUR (Basis GZ0: zvE 198.698, 61.628 EUR); rentner GdE floor(200.000 x 0,835) - 102 =
+    // 166.898, zvE 166.898 - 72 - 1.000 = 165.826, 2 x Tarif(82.913) = 2 x 23.911 = 47.822 EUR (Basis RZ0: zvE 166.826, 48.242 EUR).
+    kv1_gesamt_kv_partner_ohne_versicherung_rechnet => "gesamt", plus(gesamt_zusammen(), vec![("basis_kv_partner", json!(100_000))]), GZ0, Some(6_120_800), "bestaetigt";
+    kv8_gesamt_kv_partner_mit_versicherung_rechnet => "gesamt", plus(gesamt_zusammen(), vec![("basis_kv_partner", json!(100_000)), ("versicherungsart_partner", json!("gesetzlich_an"))]), GZ0, Some(6_120_800), "bestaetigt";
+    kv3_gesamt_partner_pv_ohne_versicherung_rechnet => "gesamt", plus(gesamt_zusammen(), vec![("basis_pv_partner", json!(100_000))]), GZ0, Some(6_120_800), "bestaetigt";
     kv4_rentner_ohne_kv_partner_rechnet => "rentner_gesamt", rentner_zusammen(), RZ0, Some(4_824_200), "bestaetigt";
     kv5_rentner_kv_partner_ohne_versicherung_sperrt => "rentner_gesamt", plus(rentner_zusammen(), vec![("basis_kv_partner", json!(100_000))]), RZ0, None, "partner_kegel_offen";
-    kv7_rentner_kv_partner_mit_versicherung_rechnet => "rentner_gesamt", plus(rentner_zusammen(), vec![("basis_kv_partner", json!(100_000)), ("versicherungsart_partner", json!("gesetzlich_an"))]), RZ0, Some(4_785_200), "bestaetigt";
+    kv7_rentner_kv_partner_mit_versicherung_rechnet => "rentner_gesamt", plus(rentner_zusammen(), vec![("basis_kv_partner", json!(100_000)), ("versicherungsart_partner", json!("gesetzlich_an"))]), RZ0, Some(4_782_200), "bestaetigt";
     pr0_rentner_partnerkern_unvollstaendig_sperrt => "rentner_gesamt", plus(rentner_zusammen(), vec![("rentner_renten_art_partner", json!("gesetzliche_rente"))]), RZ0, None, "rente_instanz_offen";
     pr1_rentner_partnerkern_drei_von_vier_sperrt => "rentner_gesamt", plus(rentner_zusammen(), vec![("rentner_renten_art_partner", json!("gesetzliche_rente")), ("rentner_renten_beginn_jahr_partner", json!(2025)), ("rentner_alter_bei_rentenbeginn_partner", json!(65)), ("rentner_rentenfreibetrag_partner", json!(0))]), RZ0, None, "rente_instanz_offen";
     pr2_rentner_partnerrente_vollstaendig_rechnet => "rentner_gesamt", plus(rentner_zusammen(), vec![("rentner_renten_art_partner", json!("gesetzliche_rente")), ("rentner_renten_beginn_jahr_partner", json!(2025)), ("rentner_alter_bei_rentenbeginn_partner", json!(65)), ("rentner_rentenfreibetrag_partner", json!(0)), ("rentner_jahresrente_partner", json!(1_500_000))]), RZ0, Some(5_346_000), "bestaetigt";

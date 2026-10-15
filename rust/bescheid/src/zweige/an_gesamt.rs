@@ -11,6 +11,7 @@ use engine::zugriff::teil1::werbungskosten::{
 use engine::zugriff::teil2::est::{
     est_einzel, est_einzel_zve, est_zusammen, EstEinzelEingabe, EstZusammenEingabe,
 };
+use engine::zugriff::teil2::gesamt::sonderausgaben_abzug;
 use engine::zugriff::teil2::solz::{solz, SolzEingabe};
 use intervall::Slots;
 
@@ -86,6 +87,10 @@ pub(super) fn festzusetzende_est<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<
     let kv_pv_a = kv_pv(f, "", kind_kv_pv_summe(&r.q())?.get())?;
     let zusammen = ist_zusammen(f);
     let brutto_a = cent_zu_euro(py_int(slot(slots, "bruttoarbeitslohn")?)?);
+    // Abweichung Nr. 78: In dieser Scheibe sind alle Sonderausgaben Vorsorge (Nr. 2, 3, 3a); der Pauschbetrag steht daneben (§ 10c). Die
+    // Catala-Scopes bilden weiter `max(Sonderausgaben; Pauschbetrag)`; der fertige Abzug enthaelt den Pauschbetrag schon, das `max`
+    // aendert dann nichts.
+    // ponytail: der Scope kennt keine eigene Vorsorge-Eingabe; Upgrade: Eingabe `vorsorge` im Catala-Scope und `make catala-c`.
     let (est, so_einzel) = if zusammen {
         let kv_pv_b = kv_pv(f, "_partner", 0)?;
         let est = est_zusammen(&EstZusammenEingabe {
@@ -94,7 +99,13 @@ pub(super) fn festzusetzende_est<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<
             bruttoarbeitslohn_b: feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?,
             werbungskosten_a: wk,
             werbungskosten_b: Euro::new(0),
-            sonderausgaben_gemeinsam: add(kv_pv_a, kv_pv_b)?,
+            sonderausgaben_gemeinsam: sonderausgaben_abzug(
+                vz,
+                true,
+                Euro::new(0),
+                add(kv_pv_a, kv_pv_b)?,
+                p,
+            )?,
         })?;
         (est, None)
     } else {
@@ -105,7 +116,13 @@ pub(super) fn festzusetzende_est<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<
             feld_int_oder_null(f, "vor_rv_ausserhalb_lstb")?,
         ])?);
         let ag = feld_euro_oder_null(f, "vor_ag_anteil_rv")?;
-        let so = add(vorsorge_abzug(gesamt, ag, p, vz)?, kv_pv_a)?;
+        let so = sonderausgaben_abzug(
+            vz,
+            false,
+            Euro::new(0),
+            add(vorsorge_abzug(gesamt, ag, p, vz)?, kv_pv_a)?,
+            p,
+        )?;
         // Der Slot "veranlagung" muss da sein (Python: `slots["veranlagung"]`), sein Wert zaehlt hier nicht.
         slot(slots, "veranlagung")?;
         let est = est_einzel(&EstEinzelEingabe {
