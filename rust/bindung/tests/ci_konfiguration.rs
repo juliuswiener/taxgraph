@@ -19,6 +19,8 @@
 //! - `TAXGRAPH_OHNE_XSD`: jeder Testschritt des Jobs `rust` (`cargo nextest run`, `cargo test --doc`) setzt
 //!   `TAXGRAPH_OHNE_XSD` auf `1` (Entscheidung 2026-10-01, Log #142). Die Regel selbst (nur genau `1` ueberspringt) prueft
 //!   `elster/tests/schemas_da_flag.rs`.
+//! - `TAXGRAPH_OHNE_BROWSER`: die CI setzt es nirgends (Julius 2026-10-15, d-8). Der Runner bringt Chrome und `chromedriver`
+//!   mit (Lauf 38459954734: 32 Oberflaechen-Tests, 0 Skips); ein Runner ohne sie macht den Lauf rot, statt still zu uebergehen.
 //! - cargo-nextest (Entscheidung Julius 2026-10-15, d-1): der Job `rust` installiert eine feste Version mit SHA-256-Pruefsumme
 //!   VOR dem Testschritt (die Version steht im Schrittnamen, im Archivnamen und in der URL und ist dieselbe), fuehrt die Tests
 //!   mit `cargo nextest run --profile ci --no-fail-fast` aus und die Doctests (die nextest nicht kennt) danach mit
@@ -221,6 +223,18 @@ fn ohne_xsd(wf: &Value) -> Vec<String> {
         .collect()
 }
 
+/// Die CI ueberspringt die Browser-Tests der Oberflaeche nicht (Julius 2026-10-15, d-8): `TAXGRAPH_OHNE_BROWSER` steht in
+/// keiner Zeile des Workflows ausserhalb von Kommentaren (weder als `env` am Workflow, Job oder Schritt noch in einem `run`).
+/// Der Runner bringt Chrome und `chromedriver` mit (Lauf 38459954734); ein Runner ohne sie macht den Lauf rot.
+fn browser_flag(workflow_text: &str) -> Vec<String> {
+    workflow_text
+        .lines()
+        .enumerate()
+        .filter(|(_, z)| z.split('#').next().unwrap_or_default().contains("TAXGRAPH_OHNE_BROWSER"))
+        .map(|(n, z)| format!("ci.yml:{}: {} (die CI darf die Browser-Tests nicht ueberspringen)", n + 1, z.trim()))
+        .collect()
+}
+
 /// cargo-nextest im Job `rust`: eine feste Version mit SHA-256, installiert vor dem Testschritt; der Testschritt ruft
 /// `cargo nextest run --profile ci --no-fail-fast`, und die Doctests (die nextest nicht kennt) laufen danach, auch bei rotem
 /// nextest. Die Wege, die das Log fuer den Zaehlschritt schreiben, prueft `ci_nicht_geprueft.rs`.
@@ -405,6 +419,26 @@ fn der_rust_cache_schluessel_kennt_die_optimierungsstufe() {
 #[test]
 fn die_testschritte_erlauben_ein_fehlendes_schema_ausdruecklich() {
     melde("TAXGRAPH_OHNE_XSD", &ohne_xsd(&workflow()));
+}
+
+#[test]
+fn die_ci_ueberspringt_die_browser_tests_nicht() {
+    let text = std::fs::read_to_string(wurzel().join(".github/workflows/ci.yml")).unwrap();
+    melde("TAXGRAPH_OHNE_BROWSER", &browser_flag(&text));
+    // Kontrolle: der Workflow nennt das Flag im Kommentar (die Suche sieht es, zaehlt es aber nicht).
+    assert!(text.contains("TAXGRAPH_OHNE_BROWSER"), "Kontrolle: der Kommentar im Workflow nennt das Flag nicht mehr; die Suche ist ungeprueft");
+    // Jeder Weg, das Flag zu setzen, wird erkannt; ein Kommentar und eine fremde Variable nicht.
+    let gut = "      # TAXGRAPH_OHNE_BROWSER war hier\n        env:\n          TAXGRAPH_OHNE_XSD: \"1\"\n";
+    assert!(browser_flag(gut).is_empty(), "{:?}", browser_flag(gut));
+    for (was, zeile) in [
+        ("env am Schritt", "        env:\n          TAXGRAPH_OHNE_BROWSER: \"1\"\n"),
+        ("env am Job", "    env:\n      TAXGRAPH_OHNE_BROWSER: 1\n"),
+        ("env am Workflow", "env:\n  TAXGRAPH_OHNE_BROWSER: '1'\n"),
+        ("export in einem run", "        run: export TAXGRAPH_OHNE_BROWSER=1 && cargo nextest run\n"),
+        ("Zeile mit Kommentar dahinter", "          TAXGRAPH_OHNE_BROWSER: \"1\" # Sicherung\n"),
+    ] {
+        assert!(!browser_flag(&format!("{gut}{zeile}")).is_empty(), "{was}: nicht erkannt");
+    }
 }
 
 #[test]
