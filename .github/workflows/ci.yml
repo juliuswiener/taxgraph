@@ -428,39 +428,119 @@ jobs:
       - name: cargo clippy (-D warnings)
         run: cd rust && cargo clippy --all-targets -- -D warnings
 
+      # cargo-nextest (Julius 2026-10-15, d-1) statt `cargo test`: ein Prozess je Test, lokal auf 12 Kernen etwa 70 s gegen
+      # 157 bis 180 s. Die Version ist fest (nicht "latest"), und die Pruefsumme steht hier: das Archiv kommt von der
+      # Release-Seite des Projekts (SHA-256 der .tar.gz, von GitHub als Digest des Assets ausgewiesen und lokal nachgerechnet);
+      # passt sie nicht, bricht der Schritt ab. `cargo install cargo-nextest` baut das Werkzeug auf dem Runner selbst (auf
+      # 22 Kernen unter neun Minuten, auf 4 Kernen laenger) und liesse das Zeitlimit des Jobs reissen. Die Version steht an
+      # drei Stellen dieses Schritts; rust/bindung/tests/ci_konfiguration.rs verlangt, dass es dieselbe ist.
+      - name: cargo-nextest 0.9.146 installieren (Pruefsumme)
+        run: |
+          set -e
+          archiv=cargo-nextest-0.9.146-x86_64-unknown-linux-gnu.tar.gz
+          curl --proto '=https' --tlsv1.2 -fsSL -o "$RUNNER_TEMP/$archiv" "https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9.146/$archiv"
+          echo "682c21b777c333e96fd532e114d3a5a894e0729ab88d94c0a9f20f8419695428  $RUNNER_TEMP/$archiv" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archiv" -C "$HOME/.cargo/bin"
+          cargo nextest --version
+
       # Kein ERiC-Schema auf dem Runner (Lizenz, s. oben). Jeder Test, der es braucht, fragt
       # elster::testhilfe::schemas_da und waere ohne Schema ROT; TAXGRAPH_OHNE_XSD=1 erlaubt das
       # Fehlen. einreichung_e2e prueft dann nur bis zum Writer, eigenschaften ueberspringt seine
       # zehn Schema-Tests, elster einen Unit-Test und fuenf Doctests. Byte-Vergleich mit Python
       # und XSD laufen lokal (ERIC_DIR).
       #
-      # --no-fail-fast: ohne das Flag bricht cargo beim ersten roten Ziel ab, und alles danach
-      # laeuft nie -- spaetere Testziele UND die Doctests aller Crates, die cargo zuletzt faehrt.
-      # So verdeckte `parity --lib` am 2026-10-02 den roten eingang-Doctest (Lauf 36985004342:
-      # kein einziges "Doc-tests" im Log). Der Job-Status bleibt rot, sobald ein Ziel rot ist
-      # (exit 101); neu ist nur, dass ein Lauf ALLE roten Ziele zeigt statt eines je Push.
+      # --no-fail-fast (und `fail-fast = false` im Profil ci, rust/.config/nextest.toml): ohne das Flag bricht der Lauf beim
+      # ersten roten Test ab, und alles danach laeuft nie. So verdeckte `parity --lib` am 2026-10-02 den roten
+      # eingang-Doctest (Lauf 36985004342: kein einziges "Doc-tests" im Log). Der Job-Status bleibt rot, sobald ein Test
+      # rot ist; neu ist nur, dass ein Lauf ALLE roten Tests zeigt statt eines je Push.
       #
-      # TAXGRAPH_OHNE_BROWSER=1 (Nr. 72, E9): die Browser-Tests der Oberflaeche
-      # (rust/api/tests/oberflaeche) brauchen Chromium und chromedriver; ohne beides sind sie ROT,
-      # mit dem Flag ueberspringen sie sich (Zeile UEBERSPRUNGEN, der Zaehlschritt unten nennt sie).
-      # GEMESSEN (Lauf 38459954734, 2026-10-14): der Runner bringt Chrome und chromedriver mit, die
-      # 32 Oberflaechen-Tests liefen in 102,83 s ohne eine Skip-Zeile. Das Flag ist darum nur noch
-      # Sicherung gegen einen Runner ohne Browser; faellt es, wird die CI bei so einem Runner rot.
+      # nextest fuehrt KEINE Doctests aus. Sie laufen im Schritt danach (`cargo test --doc`, `if: always()`, damit ein roter
+      # Test sie nicht verdeckt) und schreiben ins selbe Log (`tee -a`). Die Testzahl eines Laufs ist die Zeile
+      # `Summary ... N tests run` des ersten Schritts plus die `test result:`-Zeilen des zweiten.
+      #
+      # KEIN TAXGRAPH_OHNE_BROWSER (Nr. 72, E9; Julius 2026-10-15, d-8): die Browser-Tests der Oberflaeche
+      # (rust/api/tests/oberflaeche) brauchen Chromium und chromedriver; ohne beides sind sie ROT. Das Flag
+      # (=1 ueberspringt sie mit der Zeile UEBERSPRUNGEN) setzt die CI nicht mehr: GEMESSEN (Lauf 38459954734,
+      # 2026-10-14) bringt der Runner Chrome und chromedriver mit, die 32 Oberflaechen-Tests liefen in 102,83 s
+      # ohne eine Skip-Zeile. Ein Runner-Image ohne Browser macht den Lauf jetzt rot, statt 32 Tests still zu
+      # uebergehen; rust/bindung/tests/ci_konfiguration.rs haelt das Flag aus allen Jobs heraus. Unter nextest laufen
+      # diese Tests nacheinander (Gruppe oberflaeche-browser in rust/.config/nextest.toml).
       #
       # `tee` schreibt das Log fuer den Schritt unten. `shell: bash` ist Pflicht: ohne den Eintrag laeuft
-      # der Schritt als `bash -e {0}` OHNE pipefail, `cargo test | tee` lieferte dann den Exit von tee (0),
-      # und ein rotes cargo test machte den Job gruen (rust/bindung/tests/ci_nicht_geprueft.rs haelt das fest).
-      - name: cargo test
+      # der Schritt als `bash -e {0}` OHNE pipefail, `cargo nextest run | tee` lieferte dann den Exit von tee (0),
+      # und ein roter Test machte den Job gruen (rust/bindung/tests/ci_nicht_geprueft.rs haelt das fest).
+      # `--profile ci` (rust/.config/nextest.toml) zeigt die Ausgabe bestandener Tests einmal am Ende: nur dort stehen die
+      # Verzichtszeilen (stderr), die der Zaehlschritt unten braucht.
+      - name: cargo nextest
         shell: bash
-        run: cd rust && cargo test --no-fail-fast 2>&1 | tee ../cargo-test.log
+        run: cd rust && cargo nextest run --profile ci --no-fail-fast 2>&1 | tee ../cargo-test.log
         env:
           TAXGRAPH_OHNE_XSD: "1"
-          TAXGRAPH_OHNE_BROWSER: "1"
+
+      - name: cargo test --doc
+        if: always()
+        shell: bash
+        run: cd rust && cargo test --doc --no-fail-fast 2>&1 | tee -a ../cargo-test.log
+        env:
+          TAXGRAPH_OHNE_XSD: "1"
 
       # Der gruene Haken sagt nicht, was uebersprungen wurde (ohne Schema, ohne Browser, ohne ERiC). Dieser
       # Schritt zaehlt es aus dem Log (Zeile NICHT GEPRUEFT, ::warning am Lauf, Tabelle in der Job-Zusammenfassung)
-      # und laeuft auch bei rotem cargo test. Er macht den Lauf nicht rot, solange das Log Tests zeigt (Exit 2
+      # und laeuft auch bei rotem Test. Er macht den Lauf nicht rot, solange das Log Tests zeigt (Exit 2
       # nur bei fehlendem oder leerem Log): keine Ratsche, nur Sichtbarkeit.
       - name: Was dieser Lauf nicht geprueft hat
         if: always()
         run: bash scripts/ci-nicht-geprueft.sh cargo-test.log
+
+  # Abhaengigkeiten auf bekannte Luecken (Julius 2026-10-15, d-12; Vault-Backlog anmeldung-drosseln-passwortlaenge-backup-rechte,
+  # AK4): NUR EIN HINWEIS, die CI bleibt gruen. Der Schritt `cargo audit` hat `continue-on-error: true`: ein Treffer (Exit 1)
+  # markiert den Schritt, nicht den Job und nicht den Lauf; der Befund steht als ::warning am Lauf, in der Job-Zusammenfassung
+  # und im Log. IN VIER WOCHEN (ca. 2026-11-12) NEU ENTSCHEIDEN, ob ein Treffer den Lauf rot macht (dann das
+  # `continue-on-error` streichen; rust/bindung/tests/ci_konfiguration.rs verlangt es heute).
+  #
+  # cargo-audit 0.22.2 mit Pruefsumme (musl-Build: statisch, laeuft auf jedem Runner-Image). Die Version ist Pflicht: 0.21.2 liest
+  # die Advisory-Datenbank seit den Eintraegen mit CVSS 4.0 nicht mehr (lokal gemessen 2026-10-13: Abbruch). Die Datenbank holt
+  # das Werkzeug frisch aus github.com/RustSec/advisory-db (kein `--no-fetch`, kein `--db`: eine alte Datenbank meldete
+  # "keine Luecke" ueber Luecken, die es laengst gibt). Gelesen wird nur rust/Cargo.lock; eine Rust-Toolchain braucht der Job nicht.
+  # Gemessen 2026-10-15 (lokal, Datenbank mit 1329 Eintraegen): 201 Pakete, 5 Meldungen (rkyv 0.7.46, 4 zu rustls 0.23.45),
+  # 1 Warnung (unsafe-libyaml, nicht gepflegt), Exit 1.
+  abhaengigkeiten:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: cargo-audit 0.22.2 installieren (Pruefsumme)
+        run: |
+          set -e
+          archiv=cargo-audit-x86_64-unknown-linux-musl-v0.22.2.tgz
+          curl --proto '=https' --tlsv1.2 -fsSL -o "$RUNNER_TEMP/$archiv" "https://github.com/rustsec/rustsec/releases/download/cargo-audit%2Fv0.22.2/$archiv"
+          echo "7fb9497f8594b389e5fce5ef9b92db08432996895b2e0c5a0167a69ed445c428  $RUNNER_TEMP/$archiv" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archiv" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/cargo-audit-x86_64-unknown-linux-musl-v0.22.2" >> "$GITHUB_PATH"
+
+      - name: cargo audit (frische Datenbank, nur Hinweis)
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          cargo-audit --version
+          cargo-audit audit --file rust/Cargo.lock 2>&1 | tee audit.log
+          rc=${PIPESTATUS[0]}
+          luecken=$(sed -nE 's/^error: ([0-9]+) vulnerabilit.*/\1/p' audit.log | head -1)
+          warnungen=$(sed -nE 's/^warning: ([0-9]+) allowed warning.*/\1/p' audit.log | head -1)
+          case "$rc" in
+            0|1) text="${luecken:-0} bekannte Luecke(n), ${warnungen:-0} Warnung(en)" ;;
+            *) text="Werkzeug oder Datenbank nicht nutzbar (Exit ${rc}): die Pruefung hat nichts geprueft" ;;
+          esac
+          echo "::warning title=Abhaengigkeiten::cargo audit: ${text} (nur Hinweis, Entscheidung Julius d-12; neu entscheiden ca. 2026-11-12)"
+          {
+            echo "### Abhaengigkeiten auf bekannte Luecken (nur Hinweis)"
+            echo
+            echo "cargo audit: ${text}. Die CI bleibt gruen; ob ein Treffer sie rot macht, wird ca. 2026-11-12 neu entschieden."
+            echo
+            echo '```'
+            grep -E '^(Crate|Version|Warning|Title|ID|Severity|Solution):' audit.log || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"

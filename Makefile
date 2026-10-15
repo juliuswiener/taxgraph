@@ -278,7 +278,7 @@ abgabeweg-freigabe:
 ## Rust-Gegenstueck zu abgabeweg-freigabe (V2): rust/api/tests/einreichen_eric_echt.rs startet den
 ## echten Dienst (taxgraph-api, echter Socket), baut einen Fall ueber die Routen und ruft POST
 ## /fall/{id}/einreichen mit der ECHTEN ERiC-Bibliothek und der ECHTEN Herstellerkennung. Nur Pruefung
-## (ERIC_VALIDIERE), kein Versand. Der Test ist #[ignore]: `cargo test --workspace` und die CI laufen
+## (ERIC_VALIDIERE), kein Versand. Der Test ist #[ignore]: `make rust-test` und die CI laufen
 ## ohne ihn, `checkESt` selbst deckt die CI also NICHT. Hier laeuft er mit --ignored, und jede fehlende
 ## Voraussetzung (Bibliothek, ID) oder ein anderer Lauf als genau ein bestandener Test macht das Ziel rot.
 ## Herstellerkennung wie bei abgabeweg-freigabe aus der gitignorierten .env; das Protokoll liegt in
@@ -338,8 +338,14 @@ rust-build:
 ## Testfehler. PARITY=1 und die Tarif-Paritaet gegen tools/parity/oracle.py gibt es seit L1 nicht
 ## mehr: rust/parity ist geloescht (Verlauf: `git show 37269912:rust/parity/`).
 ##
+## cargo-nextest statt `cargo test` (Julius 2026-10-15): ein Prozess je Test, auf 12 Kernen etwa 70 s gegen 157 bis 180 s.
+## Installation einmal: `cargo install cargo-nextest --locked` (die CI nimmt 0.9.146 mit Pruefsumme). Konfiguration:
+## rust/.config/nextest.toml. nextest fuehrt KEINE Doctests aus; sie laufen im zweiten Schritt (`cargo test --doc`).
+## Die Testzahl eines Laufs ist die Summe aus der Zeile `Summary ... N tests run` und den `test result:`-Zeilen der Doctests.
+## Die `cargo test -p ... --test ... -- --ignored --exact`-Aufrufe der lokalen ERiC-Ziele oben bleiben `cargo test`: nextest
+## braucht fuer #[ignore]-Tests `--run-ignored`, und ihre Pruefung (`test result: ok. N passed`) liest libtest-Zeilen.
 rust-test:
-	cd rust && cargo build && cargo clippy --all-targets -- -D warnings && cargo test
+	cd rust && cargo build && cargo clippy --all-targets -- -D warnings && cargo nextest run --no-fail-fast && cargo test --doc --no-fail-fast
 
 ## Playwright-Tests der Oberflaeche gegen den RUST-Server (REWRITE_PLAN §6/§7, 9c: "Playwright gegen Rust").
 ## Baut taxgraph-api und startet alle Dateien in tests/ mit `sync_playwright` (heute 22) mit dem Plugin

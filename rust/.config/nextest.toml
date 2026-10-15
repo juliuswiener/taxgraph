@@ -1,0 +1,27 @@
+# cargo-nextest (Entscheidung Julius 2026-10-15, d-1): `make rust-test` und der CI-Job `rust` fuehren die Tests mit
+# `cargo nextest run` aus. nextest fuehrt KEINE Doctests aus; `cargo test --doc` laeuft deshalb als eigener Schritt
+# (Makefile, ci.yml). Installation: `cargo install cargo-nextest --locked` (die CI nimmt 0.9.146 mit Pruefsumme).
+#
+# Ein Prozess je Test: ein `static Mutex` oder `OnceLock` schuetzt nur noch innerhalb EINES Tests. Wer eine Datei oder einen
+# Port zwischen Tests teilt, braucht eine eigene Datei je Prozess oder eine Gruppe unten (Fund: versand_hermetisch, 2026-10-14).
+# rust/bindung/tests/ci_konfiguration.rs liest diese Datei und haelt die Zeilen fest, auf die die CI sich verlaesst.
+
+# Die Browser-Tests der Oberflaeche halten bisher einen `static Mutex` (browser.rs::seriell): ein Browser plus ein Dienst
+# brauchen je etwa 0,5 bis 1 GB, und unter `cargo test` lief nur einer zugleich. Unter nextest hielte jeder Prozess seine
+# eigene Sperre; diese Gruppe stellt die Reihenfolge wieder her.
+[test-groups]
+oberflaeche-browser = { max-threads = 1 }
+
+[[profile.default.overrides]]
+filter = 'binary(oberflaeche)'
+test-group = 'oberflaeche-browser'
+
+# Profil der CI. `fail-fast = false` ist der Ersatz fuer `cargo test --no-fail-fast`: ein roter Test stoppt den Lauf nicht,
+# der Lauf zeigt alle roten Tests (so verdeckte ein Abbruch am 2026-10-02 den roten Doctest). `success-output = "final"`
+# schreibt die Ausgabe BESTANDENER Tests einmal ans Ende: nur dort steht, was ein Test auf stderr als Verzicht meldet
+# ("XSD NICHT geprueft", "UEBERSPRUNGEN: ..."); scripts/ci-nicht-geprueft.sh zaehlt es daraus. "immediate-final" waere
+# doppelt im Log und zaehlte doppelt. Rote Tests zeigen ihre Ausgabe sofort und am Ende ("immediate-final").
+[profile.ci]
+fail-fast = false
+success-output = "final"
+failure-output = "immediate-final"

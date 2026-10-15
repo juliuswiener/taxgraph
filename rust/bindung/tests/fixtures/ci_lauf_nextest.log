@@ -1,0 +1,84 @@
+   Compiling domain v0.0.0 (/home/runner/work/taxgraph/taxgraph/rust/domain)
+    Finished `test` profile [optimized] target(s) in 1m 02s
+    Starting 6 tests across 4 binaries (5 tests skipped)
+        PASS [   0.005s] (1/6) elster::it testhilfe::eins
+        PASS [   0.006s] (2/6) elster::it testhilfe::zwei
+        PASS [   0.007s] (3/6) api::oberflaeche fluss_a::fluss_a_anmelden
+        PASS [   0.008s] (4/6) api::oberflaeche fluss_g::fluss_g_absendeknopf
+        PASS [   0.009s] (5/6) bindung::it belege_aufloesbar::die_belege_loesen_auf
+        PASS [   0.010s] (6/6) domain::it tarif::sechs
+────────────
+     Summary [   0.501s] 6 tests run: 6 passed, 5 skipped
+        PASS [   0.005s] (   1/6) elster::it testhilfe::eins
+  stdout ───
+
+    running 1 test
+    test testhilfe::eins ... ok
+
+    test result: ok. 1 passed; 0 failed; 7 ignored; 0 measured; 56 filtered out; finished in 0.00s
+
+  stderr ───
+    TAXGRAPH_OHNE_XSD=1: ["E10-2025.xsd", "elster11_E10_2025_extern.xsd"] fehlt, XML und XSD NICHT geprueft
+
+        PASS [   0.006s] (   2/6) elster::it testhilfe::zwei
+  stdout ───
+
+    running 1 test
+    test testhilfe::zwei ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.00s
+
+  stderr ───
+    TAXGRAPH_OHNE_XSD=1: ["E10-2025.xsd", "elster11_E10_2025_extern.xsd"] fehlt, XML und XSD NICHT geprueft
+    TAXGRAPH_OHNE_XSD=1: ["E10-2025.xsd", "elster11_E10_2025_extern.xsd"] fehlt, XML und XSD NICHT geprueft
+
+        PASS [   0.007s] (   3/6) api::oberflaeche fluss_a::fluss_a_anmelden
+  stdout ───
+
+    running 1 test
+    test fluss_a::fluss_a_anmelden ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 0.01s
+
+  stderr ───
+    UEBERSPRUNGEN: kein Browser oder chromedriver, TAXGRAPH_OHNE_BROWSER=1
+    UEBERSPRUNGEN: kein Browser oder chromedriver, TAXGRAPH_OHNE_BROWSER=1
+
+        PASS [   0.008s] (   4/6) api::oberflaeche fluss_g::fluss_g_absendeknopf
+  stdout ───
+
+    running 1 test
+    test fluss_g::fluss_g_absendeknopf ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 0.01s
+
+  stderr ───
+    [oberflaeche/fluss_g] UEBERSPRUNGEN: E10-2025.xsd fehlt, TAXGRAPH_OHNE_XSD=1
+
+        PASS [   0.009s] (   5/6) bindung::it belege_aufloesbar::die_belege_loesen_auf
+  stdout ───
+
+    running 1 test
+    test belege_aufloesbar::die_belege_loesen_auf ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.01s
+
+  stderr ───
+    UEBERSPRUNGEN: Verlauf fehlt, 66 Verweise nicht geprueft, TAXGRAPH_OHNE_VERLAUF=1
+
+        PASS [   0.010s] (   6/6) domain::it tarif::sechs
+  stdout ───
+
+    running 1 test
+    test tarif::sechs ... ok
+
+    test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 90 filtered out; finished in 0.00s
+
+
+   Doc-tests domain
+
+running 2 tests
+test src/tarif.rs - tarif::satz (line 12) ... ok
+test src/tarif.rs - tarif::roh (line 40) ... ignored
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.10s

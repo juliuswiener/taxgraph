@@ -16,12 +16,24 @@
 //!   `rust/Cargo.toml` (dort steht das Profil; die Stufe steckt im Hash jedes Artefakts).
 //! - Profil: `[profile.dev]` hat `opt-level = 1`, und `debug-assertions` und `overflow-checks` sind nicht `false`.
 //!   `overflow-checks = true` ausdruecklich haelt `api/tests/ueberlauf_profil_waechter.rs` fest.
-//! - `TAXGRAPH_OHNE_XSD`: der `cargo test`-Schritt des Jobs `rust` setzt `TAXGRAPH_OHNE_XSD` auf `1` (Entscheidung
-//!   2026-10-01, Log #142). Die Regel selbst (nur genau `1` ueberspringt) prueft `elster/tests/schemas_da_flag.rs`.
+//! - `TAXGRAPH_OHNE_XSD`: jeder Testschritt des Jobs `rust` (`cargo nextest run`, `cargo test --doc`) setzt
+//!   `TAXGRAPH_OHNE_XSD` auf `1` (Entscheidung 2026-10-01, Log #142). Die Regel selbst (nur genau `1` ueberspringt) prueft
+//!   `elster/tests/schemas_da_flag.rs`.
+//! - `TAXGRAPH_OHNE_BROWSER`: die CI setzt es nirgends (Julius 2026-10-15, d-8). Der Runner bringt Chrome und `chromedriver`
+//!   mit (Lauf 38459954734: 32 Oberflaechen-Tests, 0 Skips); ein Runner ohne sie macht den Lauf rot, statt still zu uebergehen.
+//! - cargo-nextest (Entscheidung Julius 2026-10-15, d-1): der Job `rust` installiert eine feste Version mit SHA-256-Pruefsumme
+//!   VOR dem Testschritt (die Version steht im Schrittnamen, im Archivnamen und in der URL und ist dieselbe), fuehrt die Tests
+//!   mit `cargo nextest run --profile ci --no-fail-fast` aus und die Doctests (die nextest nicht kennt) danach mit
+//!   `cargo test --doc`, `if: always()`. `rust/.config/nextest.toml` haelt das Profil `ci` (kein Abbruch beim ersten roten Test,
+//!   Ausgabe bestandener Tests einmal am Ende) und die Gruppe, die die Browser-Tests der Oberflaeche nacheinander laufen laesst.
+//! - cargo audit (Entscheidung Julius 2026-10-15, d-12): ein Job installiert `cargo-audit` ab 0.22 in einer festen Version mit
+//!   SHA-256 und ruft `cargo-audit audit --file rust/Cargo.lock` mit `continue-on-error: true` (nur ein Hinweis, die CI bleibt gruen),
+//!   ohne `--no-fetch` und `--db` (frische Datenbank), und schreibt den Befund nach `$GITHUB_STEP_SUMMARY`. Wer in vier Wochen
+//!   (ca. 2026-11-12) entscheidet, dass ein Treffer den Lauf rot macht, streicht das `continue-on-error` UND diese Pruefung.
 //!
-//! Grenzen: Ob ein Schritt wirklich laeuft, ob die Actions die richtigen sind, ob der Runner das Flag so liest, prueft der
-//! Test nicht; er liest nur die Dateien. Das Profil liest er zeilenweise, ohne TOML-Bibliothek: eine andere Schreibweise
-//! (`profile.dev.opt-level = 1` ausserhalb des Abschnitts) ist rot, nicht gruen.
+//! Grenzen: Ob ein Schritt wirklich laeuft, ob die Actions die richtigen sind, ob der Runner das Flag so liest, ob die Pruefsumme
+//! zum Archiv passt, prueft der Test nicht; er liest nur die Dateien. Das Profil und die nextest-Konfiguration liest er zeilenweise,
+//! ohne TOML-Bibliothek: eine andere Schreibweise (`profile.dev.opt-level = 1` ausserhalb des Abschnitts) ist rot, nicht gruen.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -29,9 +41,10 @@
     clippy::panic
 )]
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
+use regex::Regex;
 use serde_yaml_ng::Value;
 
 fn wurzel() -> PathBuf {
@@ -184,16 +197,17 @@ fn ohne_xsd(wf: &Value) -> Vec<String> {
         Ok(s) => s,
         Err(e) => return vec![e],
     };
+    // nextest UND die Doctests: beide rufen `elster::testhilfe::schemas_da` (fuenf Doctests in `elster`).
     let tests: Vec<&Value> = schritte
         .iter()
         .filter(|s| {
             s.get("run")
                 .and_then(Value::as_str)
-                .is_some_and(|r| r.contains("cargo test"))
+                .is_some_and(|r| r.contains("cargo test") || r.contains("cargo nextest run"))
         })
         .collect();
     if tests.is_empty() {
-        return vec!["der Job `rust` hat keinen `cargo test`-Schritt".to_string()];
+        return vec!["der Job `rust` hat keinen `cargo nextest run`- oder `cargo test`-Schritt".to_string()];
     }
     tests
         .iter()
@@ -206,24 +220,205 @@ fn ohne_xsd(wf: &Value) -> Vec<String> {
         })
         .map(|s| {
             format!(
-                "der `cargo test`-Schritt `{}` setzt TAXGRAPH_OHNE_XSD nicht auf `1`: der Runner hat kein ERiC-Schema, der Schritt wird rot",
+                "der Testschritt `{}` setzt TAXGRAPH_OHNE_XSD nicht auf `1`: der Runner hat kein ERiC-Schema, der Schritt wird rot",
                 s.get("name").and_then(Value::as_str).unwrap_or("?")
             )
         })
         .collect()
 }
 
-/// Die Schluessel und Werte von `[profile.dev]`, Kommentare abgeschnitten.
-fn dev_profil(cargo: &str) -> Option<BTreeMap<String, String>> {
+/// Die CI ueberspringt die Browser-Tests der Oberflaeche nicht (Julius 2026-10-15, d-8): `TAXGRAPH_OHNE_BROWSER` steht in
+/// keiner Zeile des Workflows ausserhalb von Kommentaren (weder als `env` am Workflow, Job oder Schritt noch in einem `run`).
+/// Der Runner bringt Chrome und `chromedriver` mit (Lauf 38459954734); ein Runner ohne sie macht den Lauf rot.
+fn browser_flag(workflow_text: &str) -> Vec<String> {
+    workflow_text
+        .lines()
+        .enumerate()
+        .filter(|(_, z)| z.split('#').next().unwrap_or_default().contains("TAXGRAPH_OHNE_BROWSER"))
+        .map(|(n, z)| format!("ci.yml:{}: {} (die CI darf die Browser-Tests nicht ueberspringen)", n + 1, z.trim()))
+        .collect()
+}
+
+/// cargo-nextest im Job `rust`: eine feste Version mit SHA-256, installiert vor dem Testschritt; der Testschritt ruft
+/// `cargo nextest run --profile ci --no-fail-fast`, und die Doctests (die nextest nicht kennt) laufen danach, auch bei rotem
+/// nextest. Die Wege, die das Log fuer den Zaehlschritt schreiben, prueft `ci_nicht_geprueft.rs`.
+fn nextest(wf: &Value) -> Vec<String> {
+    let schritte = match rust_schritte(wf) {
+        Ok(s) => s,
+        Err(e) => return vec![e],
+    };
+    let run = |s: &Value| s.get("run").and_then(Value::as_str).unwrap_or_default().to_string();
+    let wo = |f: &dyn Fn(&str) -> bool| schritte.iter().position(|s| f(&run(s)));
+    let (i_inst, i_test, i_doc) = (
+        wo(&|r| r.contains("cargo-nextest") && r.contains("sha256sum")),
+        wo(&|r| r.contains("cargo nextest run")),
+        wo(&|r| r.contains("cargo test --doc")),
+    );
+    let mut aus = Vec::new();
+    match (i_inst, i_test) {
+        (None, _) => aus.push("kein Schritt installiert cargo-nextest mit `sha256sum`: eine Version ohne Pruefsumme laedt, was gerade hinter der URL liegt".to_string()),
+        (_, None) => aus.push("kein Schritt ruft `cargo nextest run`".to_string()),
+        (Some(a), Some(b)) if a > b => aus.push("cargo-nextest wird NACH dem Testschritt installiert".to_string()),
+        _ => {}
+    }
+    if let Some(i) = i_inst {
+        let text = format!("{}\n{}", schritte[i].get("name").and_then(Value::as_str).unwrap_or_default(), run(&schritte[i]));
+        let versionen: BTreeSet<String> = Regex::new(r"cargo-nextest[- ](\d+\.\d+\.\d+)")
+            .unwrap()
+            .captures_iter(&text)
+            .map(|t| t[1].to_string())
+            .collect();
+        if versionen.len() != 1 {
+            aus.push(format!("der Installationsschritt nennt {versionen:?} als Version von cargo-nextest, genau eine feste Version wird verlangt (nicht `latest`, nicht zwei Zahlen)"));
+        }
+        if let Some(v) = versionen.iter().next().filter(|_| versionen.len() == 1) {
+            if !text.contains(&format!("/releases/download/cargo-nextest-{v}/")) {
+                aus.push(format!("die URL nennt nicht `/releases/download/cargo-nextest-{v}/`: ohne die Version im Pfad holt sie die jeweils neueste"));
+            }
+        }
+        if !Regex::new(r"\b[0-9a-f]{64}\b").unwrap().is_match(&text) {
+            aus.push("der Installationsschritt nennt keine SHA-256-Pruefsumme (64 Hexziffern)".to_string());
+        }
+        if !text.contains("sha256sum -c") {
+            aus.push("der Installationsschritt prueft die Summe nicht (`sha256sum -c`)".to_string());
+        }
+        if !text.contains("https://") || text.contains("http://") {
+            aus.push("der Installationsschritt laedt nicht ausschliesslich ueber https".to_string());
+        }
+    }
+    if let Some(t) = i_test {
+        let r = run(&schritte[t]);
+        for noetig in ["--profile ci", "--no-fail-fast"] {
+            if !r.contains(noetig) {
+                aus.push(format!("`cargo nextest run` ohne `{noetig}`: {r:?}"));
+            }
+        }
+    }
+    match (i_doc, i_test) {
+        (None, _) => aus.push("kein Schritt ruft `cargo test --doc`: nextest fuehrt keine Doctests aus".to_string()),
+        (Some(d), t) => {
+            if t.is_some_and(|t| d < t) {
+                aus.push("die Doctests laufen VOR nextest; `tee -a` haengt dann an ein Log, das es noch nicht gibt".to_string());
+            }
+            if schritte[d].get("if").and_then(Value::as_str) != Some("always()") {
+                aus.push("der Doctest-Schritt hat kein `if: always()`: ein roter nextest-Lauf verdeckt die Doctests".to_string());
+            }
+        }
+    }
+    aus
+}
+
+/// Die Pruefung der Abhaengigkeiten auf bekannte Luecken (Julius 2026-10-15, d-12): ein Job installiert `cargo-audit` in EINER
+/// festen Version mit SHA-256 (nur ueber https, die Version im URL-Pfad; ab 0.22, denn 0.21.2 liest die Eintraege mit CVSS 4.0 nicht
+/// mehr), und sein Schritt `cargo-audit audit --file rust/Cargo.lock` hat `continue-on-error: true` (nur ein Hinweis: ein Treffer
+/// macht den Lauf nicht rot), holt die Datenbank frisch (kein `--no-fetch`, kein `--db`: eine alte Datenbank meldete "keine Luecke"
+/// ueber Luecken, die es laengst gibt) und schreibt den Befund in `$GITHUB_STEP_SUMMARY`.
+fn abhaengigkeiten(wf: &Value) -> Vec<String> {
+    let run = |s: &Value| s.get("run").and_then(Value::as_str).unwrap_or_default().to_string();
+    let gefunden = jobs(wf).into_iter().find_map(|(job, inhalt)| {
+        let schritte = inhalt.get("steps")?.as_sequence()?;
+        let i_audit = schritte.iter().position(|s| run(s).contains("cargo-audit audit"))?;
+        Some((job, schritte, i_audit))
+    });
+    let Some((job, schritte, i_audit)) = gefunden else {
+        return vec!["kein Job ruft `cargo-audit audit`: die Abhaengigkeiten werden auf keine bekannte Luecke geprueft".to_string()];
+    };
+    let audit = run(&schritte[i_audit]);
+    let mut aus = Vec::new();
+    if schritte[i_audit].get("continue-on-error") != Some(&Value::Bool(true)) {
+        aus.push(format!("Job `{job}`: der Schritt `cargo-audit audit` hat kein `continue-on-error: true`: ein Treffer machte den Lauf rot (gewollt ist nur ein Hinweis)"));
+    }
+    if !audit.contains("--file rust/Cargo.lock") {
+        aus.push(format!("Job `{job}`: `cargo-audit audit` liest nicht `--file rust/Cargo.lock` (im Wurzelordner liegt keine Cargo.lock)"));
+    }
+    for verboten in ["--no-fetch", "--db"] {
+        if audit.contains(verboten) {
+            aus.push(format!("Job `{job}`: `cargo-audit audit` nimmt `{verboten}`: keine frische Datenbank"));
+        }
+    }
+    if !audit.contains("GITHUB_STEP_SUMMARY") {
+        aus.push(format!("Job `{job}`: der Schritt `cargo-audit audit` schreibt nichts nach `$GITHUB_STEP_SUMMARY`: der Befund bliebe im Log"));
+    }
+    let Some(i_inst) = schritte.iter().position(|s| run(s).contains("cargo-audit-") && run(s).contains("sha256sum")) else {
+        aus.push(format!("Job `{job}`: kein Schritt installiert cargo-audit mit `sha256sum`"));
+        return aus;
+    };
+    if i_inst > i_audit {
+        aus.push(format!("Job `{job}`: cargo-audit wird NACH dem Aufruf installiert"));
+    }
+    let text = format!("{}\n{}", schritte[i_inst].get("name").and_then(Value::as_str).unwrap_or_default(), run(&schritte[i_inst]));
+    let versionen: BTreeSet<String> = Regex::new(r"cargo-audit[- ](?:[a-z0-9_]+-unknown-linux-[a-z]+-)?v?(\d+\.\d+\.\d+)")
+        .unwrap()
+        .captures_iter(&text)
+        .map(|t| t[1].to_string())
+        .collect();
+    if versionen.len() != 1 {
+        aus.push(format!("Job `{job}`: der Installationsschritt nennt {versionen:?} als Version von cargo-audit, genau eine feste Version wird verlangt"));
+    }
+    if let Some(v) = versionen.iter().next().filter(|_| versionen.len() == 1) {
+        if !text.contains(&format!("/releases/download/cargo-audit%2Fv{v}/")) {
+            aus.push(format!("Job `{job}`: die URL nennt nicht `/releases/download/cargo-audit%2Fv{v}/`: ohne die Version im Pfad holt sie die jeweils neueste"));
+        }
+        let teile: Vec<u32> = v.split('.').filter_map(|t| t.parse().ok()).collect();
+        if teile.as_slice() < [0u32, 22].as_slice() {
+            aus.push(format!("Job `{job}`: cargo-audit {v} liest die Eintraege mit CVSS 4.0 nicht (0.21.2 bricht ab); verlangt wird ab 0.22"));
+        }
+    }
+    if !Regex::new(r"\b[0-9a-f]{64}\b").unwrap().is_match(&text) {
+        aus.push(format!("Job `{job}`: der Installationsschritt nennt keine SHA-256-Pruefsumme (64 Hexziffern)"));
+    }
+    if !text.contains("sha256sum -c") {
+        aus.push(format!("Job `{job}`: der Installationsschritt prueft die Summe nicht (`sha256sum -c`)"));
+    }
+    if !text.contains("https://") || text.contains("http://") {
+        aus.push(format!("Job `{job}`: der Installationsschritt laedt nicht ausschliesslich ueber https"));
+    }
+    aus
+}
+
+/// `rust/.config/nextest.toml`: das Profil `ci` bricht nicht beim ersten roten Test ab und zeigt die Ausgabe bestandener Tests
+/// einmal am Ende (dort stehen die Verzichtszeilen, die `scripts/ci-nicht-geprueft.sh` zaehlt; "immediate-final" zaehlte doppelt,
+/// ein Profil ohne `success-output` zeigte sie nie); die Gruppe `oberflaeche-browser` (ein Test zugleich) gilt fuer das Test-Binary
+/// `oberflaeche`: dort hielt ein `static Mutex` die Browser-Tests nacheinander, und nextest hat einen Prozess je Test.
+fn nextest_konfiguration(text: &str) -> Vec<String> {
+    let mut aus = Vec::new();
+    match abschnitt(text, "[profile.ci]") {
+        None => aus.push("`[profile.ci]` fehlt in rust/.config/nextest.toml".to_string()),
+        Some(ci) => {
+            let wert = |k: &str| ci.get(k).map(String::as_str);
+            if wert("fail-fast") != Some("false") {
+                aus.push(format!("Profil ci: fail-fast ist {:?}, nicht false: der erste rote Test bricht den Lauf ab", wert("fail-fast")));
+            }
+            if wert("success-output") != Some("\"final\"") {
+                aus.push(format!("Profil ci: success-output ist {:?}, nicht \"final\": die Verzichtszeilen bestandener Tests fehlen im Log oder stehen doppelt", wert("success-output")));
+            }
+            if wert("failure-output").is_none() {
+                aus.push("Profil ci: failure-output fehlt".to_string());
+            }
+        }
+    }
+    let gruppe = abschnitt(text, "[test-groups]").and_then(|g| g.get("oberflaeche-browser").cloned()).unwrap_or_default();
+    if !gruppe.replace(' ', "").contains("max-threads=1") {
+        aus.push(format!("Gruppe oberflaeche-browser hat nicht `max-threads = 1`: {gruppe:?}"));
+    }
+    let ueber = abschnitt(text, "[[profile.default.overrides]]").unwrap_or_default();
+    if ueber.get("filter").map(String::as_str) != Some("'binary(oberflaeche)'") || ueber.get("test-group").map(String::as_str) != Some("'oberflaeche-browser'") {
+        aus.push(format!("keine Ueberschreibung `filter = 'binary(oberflaeche)'` mit `test-group = 'oberflaeche-browser'` im Profil default: {ueber:?}"));
+    }
+    aus
+}
+
+/// Die Schluessel und Werte eines TOML-Abschnitts (`[kopf]`), Kommentare abgeschnitten.
+fn abschnitt(text: &str, kopf: &str) -> Option<BTreeMap<String, String>> {
     let mut aus = None;
     let mut im_abschnitt = false;
-    for roh in cargo.lines() {
+    for roh in text.lines() {
         let zeile = roh.split('#').next().unwrap_or("").trim();
         if zeile.is_empty() {
             continue;
         }
         if zeile.starts_with('[') {
-            im_abschnitt = zeile == "[profile.dev]";
+            im_abschnitt = zeile == kopf;
             if im_abschnitt {
                 aus.get_or_insert_with(BTreeMap::new);
             }
@@ -237,6 +432,11 @@ fn dev_profil(cargo: &str) -> Option<BTreeMap<String, String>> {
         }
     }
     aus
+}
+
+/// Die Schluessel und Werte von `[profile.dev]`, Kommentare abgeschnitten.
+fn dev_profil(cargo: &str) -> Option<BTreeMap<String, String>> {
+    abschnitt(cargo, "[profile.dev]")
 }
 
 fn profil(cargo: &str) -> Vec<String> {
@@ -289,8 +489,44 @@ fn der_rust_cache_schluessel_kennt_die_optimierungsstufe() {
 }
 
 #[test]
-fn der_cargo_test_schritt_erlaubt_ein_fehlendes_schema_ausdruecklich() {
+fn die_testschritte_erlauben_ein_fehlendes_schema_ausdruecklich() {
     melde("TAXGRAPH_OHNE_XSD", &ohne_xsd(&workflow()));
+}
+
+#[test]
+fn die_ci_ueberspringt_die_browser_tests_nicht() {
+    let text = std::fs::read_to_string(wurzel().join(".github/workflows/ci.yml")).unwrap();
+    melde("TAXGRAPH_OHNE_BROWSER", &browser_flag(&text));
+    // Kontrolle: der Workflow nennt das Flag im Kommentar (die Suche sieht es, zaehlt es aber nicht).
+    assert!(text.contains("TAXGRAPH_OHNE_BROWSER"), "Kontrolle: der Kommentar im Workflow nennt das Flag nicht mehr; die Suche ist ungeprueft");
+    // Jeder Weg, das Flag zu setzen, wird erkannt; ein Kommentar und eine fremde Variable nicht.
+    let gut = "      # TAXGRAPH_OHNE_BROWSER war hier\n        env:\n          TAXGRAPH_OHNE_XSD: \"1\"\n";
+    assert!(browser_flag(gut).is_empty(), "{:?}", browser_flag(gut));
+    for (was, zeile) in [
+        ("env am Schritt", "        env:\n          TAXGRAPH_OHNE_BROWSER: \"1\"\n"),
+        ("env am Job", "    env:\n      TAXGRAPH_OHNE_BROWSER: 1\n"),
+        ("env am Workflow", "env:\n  TAXGRAPH_OHNE_BROWSER: '1'\n"),
+        ("export in einem run", "        run: export TAXGRAPH_OHNE_BROWSER=1 && cargo nextest run\n"),
+        ("Zeile mit Kommentar dahinter", "          TAXGRAPH_OHNE_BROWSER: \"1\" # Sicherung\n"),
+    ] {
+        assert!(!browser_flag(&format!("{gut}{zeile}")).is_empty(), "{was}: nicht erkannt");
+    }
+}
+
+#[test]
+fn cargo_nextest_ist_gepinnt_und_vor_dem_testschritt_installiert() {
+    melde("nextest", &nextest(&workflow()));
+}
+
+#[test]
+fn die_nextest_konfiguration_haelt_das_profil_ci_und_die_browser_gruppe() {
+    let text = std::fs::read_to_string(wurzel().join("rust/.config/nextest.toml")).unwrap();
+    melde("nextest.toml", &nextest_konfiguration(&text));
+}
+
+#[test]
+fn ein_job_prueft_die_abhaengigkeiten_auf_bekannte_luecken() {
+    melde("cargo audit", &abhaengigkeiten(&workflow()));
 }
 
 #[test]
@@ -326,8 +562,21 @@ jobs:
             ~/.cargo/registry
             rust/target
           key: cargo-${{ hashFiles('rust/Cargo.lock', 'rust/Cargo.toml') }}
-      - name: cargo test
-        run: cd rust && cargo test --no-fail-fast
+      - name: cargo-nextest 0.9.146 installieren (Pruefsumme)
+        run: |
+          set -e
+          archiv=cargo-nextest-0.9.146-x86_64-unknown-linux-gnu.tar.gz
+          curl --proto '=https' -fsSL -o "$archiv" "https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9.146/$archiv"
+          echo "682c21b777c333e96fd532e114d3a5a894e0729ab88d94c0a9f20f8419695428  $archiv" | sha256sum -c -
+      - name: cargo nextest
+        shell: bash
+        run: cd rust && cargo nextest run --profile ci --no-fail-fast 2>&1 | tee ../cargo-test.log
+        env:
+          TAXGRAPH_OHNE_XSD: "1"
+      - name: cargo test --doc
+        if: always()
+        shell: bash
+        run: cd rust && cargo test --doc --no-fail-fast 2>&1 | tee -a ../cargo-test.log
         env:
           TAXGRAPH_OHNE_XSD: "1"
   zweiter:
@@ -335,6 +584,23 @@ jobs:
     timeout-minutes: 5
     steps:
       - run: echo zweiter
+  abhaengigkeiten:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: cargo-audit 0.22.2 installieren (Pruefsumme)
+        run: |
+          set -e
+          archiv=cargo-audit-x86_64-unknown-linux-musl-v0.22.2.tgz
+          curl --proto '=https' -fsSL -o "$RUNNER_TEMP/$archiv" "https://github.com/rustsec/rustsec/releases/download/cargo-audit%2Fv0.22.2/$archiv"
+          echo "7fb9497f8594b389e5fce5ef9b92db08432996895b2e0c5a0167a69ed445c428  $RUNNER_TEMP/$archiv" | sha256sum -c -
+          echo "$RUNNER_TEMP/cargo-audit-x86_64-unknown-linux-musl-v0.22.2" >> "$GITHUB_PATH"
+      - name: cargo audit
+        continue-on-error: true
+        run: |
+          cargo-audit audit --file rust/Cargo.lock 2>&1 | tee audit.log
+          echo "Befund" >> "$GITHUB_STEP_SUMMARY"
 "#;
 
 const CARGO_GUT: &str = "[workspace]\nmembers = []\n\n[profile.dev]\nopt-level = 1 # Stufe\noverflow-checks = true\n\n[profile.release]\nopt-level = 3\n";
@@ -343,12 +609,14 @@ const CARGO_GUT: &str = "[workspace]\nmembers = []\n\n[profile.dev]\nopt-level =
 #[test]
 fn die_pruefungen_schlagen_an() {
     let gut = laden(GUT);
-    let pruefungen: [(&str, Pruefung); 5] = [
+    let pruefungen: [(&str, Pruefung); 7] = [
         ("Zeitlimit", zeitlimit),
         ("Nebenlaeufigkeit", nebenlaeufigkeit),
         ("Token", token),
         ("Cache", cache),
         ("TAXGRAPH_OHNE_XSD", ohne_xsd),
+        ("nextest", nextest),
+        ("cargo audit", abhaengigkeiten),
     ];
     for (wer, f) in pruefungen {
         assert!(
@@ -375,18 +643,24 @@ fn die_pruefungen_schlagen_an() {
         ("Token: Schreibrecht am Job", token, "    timeout-minutes: 5\n", "    timeout-minutes: 5\n    permissions:\n      contents: write\n"),
         ("Cache: Schluessel ohne Cargo.toml", cache, "'rust/Cargo.lock', 'rust/Cargo.toml'", "'rust/Cargo.lock'"),
         ("Cache: rust/target nicht gecacht", cache, "            rust/target\n", ""),
-        ("Cache: zwei Schritte", cache, "      - name: cargo test\n", "      - uses: actions/cache@v4\n        with:\n          path: rust/target\n          key: rust/Cargo.toml\n      - name: cargo test\n"),
+        ("Cache: zwei Schritte", cache, "      - name: cargo nextest\n", "      - uses: actions/cache@v4\n        with:\n          path: rust/target\n          key: rust/Cargo.toml\n      - name: cargo nextest\n"),
         ("Cache: kein Cache-Schritt", cache, "actions/cache@v4", "actions/other@v4"),
         ("TAXGRAPH_OHNE_XSD: Flag fehlt", ohne_xsd, "        env:\n          TAXGRAPH_OHNE_XSD: \"1\"\n", ""),
         ("TAXGRAPH_OHNE_XSD: true", ohne_xsd, "TAXGRAPH_OHNE_XSD: \"1\"", "TAXGRAPH_OHNE_XSD: \"true\""),
         ("TAXGRAPH_OHNE_XSD: 0", ohne_xsd, "TAXGRAPH_OHNE_XSD: \"1\"", "TAXGRAPH_OHNE_XSD: \"0\""),
-        ("TAXGRAPH_OHNE_XSD: kein cargo test", ohne_xsd, "cargo test --no-fail-fast", "cargo build"),
+        // Je Testschritt einzeln ohne das Flag (die Doctests rufen `schemas_da` ebenso wie nextest).
+        ("TAXGRAPH_OHNE_XSD: Doctest-Schritt ohne Flag", ohne_xsd, "run: cd rust && cargo test --doc --no-fail-fast 2>&1 | tee -a ../cargo-test.log\n        env:\n          TAXGRAPH_OHNE_XSD: \"1\"\n", "run: cd rust && cargo test --doc --no-fail-fast 2>&1 | tee -a ../cargo-test.log\n"),
+        ("TAXGRAPH_OHNE_XSD: nextest-Schritt ohne Flag", ohne_xsd, "tee ../cargo-test.log\n        env:\n          TAXGRAPH_OHNE_XSD: \"1\"\n", "tee ../cargo-test.log\n"),
     ];
     for (was, f, alt, neu) in yaml {
         let text = GUT.replace(alt, neu);
         assert_ne!(text, GUT, "{was}: der Mutant aendert nichts");
         assert!(!f(&laden(&text)).is_empty(), "{was}: nicht erkannt");
     }
+    // Ohne jeden Testschritt (weder nextest noch Doctests) meldet ohne_xsd das ausdruecklich, statt nichts zu pruefen.
+    let leer = GUT.replace("cargo nextest run", "cargo build").replace("cargo test --doc", "cargo build");
+    assert_ne!(leer, GUT);
+    assert!(!ohne_xsd(&laden(&leer)).is_empty(), "kein Testschritt: nicht erkannt");
     // Ein Wert `1` ohne Anfuehrungszeichen ist fuer GitHub derselbe Text `1`.
     let zahl = GUT.replace("TAXGRAPH_OHNE_XSD: \"1\"", "TAXGRAPH_OHNE_XSD: 1");
     assert_eq!(ohne_xsd(&laden(&zahl)).len(), 0);
@@ -428,4 +702,103 @@ fn die_pruefungen_schlagen_an() {
     // `opt-level = 1` zaehlt nur im Abschnitt `[profile.dev]`, nicht im Nachbarabschnitt.
     let falsch = "[profile.dev]\noverflow-checks = true\n\n[profile.release]\nopt-level = 1\n";
     assert_ne!(profil(falsch).len(), 0);
+}
+
+/// Jeder Rueckfall in der nextest-Festlegung des Jobs `rust` wird erkannt, die gute Fassung nicht.
+#[test]
+fn die_nextest_pruefung_schlaegt_an() {
+    assert!(nextest(&laden(GUT)).is_empty(), "{:?}", nextest(&laden(GUT)));
+    let yaml: &[YamlFall] = &[
+        ("ohne Pruefsumme", nextest, "682c21b777c333e96fd532e114d3a5a894e0729ab88d94c0a9f20f8419695428", "682c21b7"),
+        ("Summe wird nicht geprueft", nextest, "| sha256sum -c -", "| sha256sum -"),
+        ("Name nennt eine andere Version", nextest, "cargo-nextest 0.9.146 installieren", "cargo-nextest 0.9.145 installieren"),
+        ("URL nennt eine andere Version", nextest, "download/cargo-nextest-0.9.146/", "download/cargo-nextest-0.9.145/"),
+        ("URL nimmt die neueste Version", nextest, "releases/download/cargo-nextest-0.9.146/", "releases/latest/download/"),
+        ("unverschluesselt", nextest, "https://github.com", "http://github.com"),
+        ("ohne Profil ci", nextest, "--profile ci ", ""),
+        ("ohne --no-fail-fast", nextest, "cargo nextest run --profile ci --no-fail-fast", "cargo nextest run --profile ci"),
+        ("Doctests fehlen", nextest, "cargo test --doc --no-fail-fast", "cargo build"),
+        ("Doctests ohne always()", nextest, "        if: always()\n", ""),
+    ];
+    for (was, f, alt, neu) in yaml {
+        let text = GUT.replace(alt, neu);
+        assert_ne!(text, GUT, "nextest: {was}: der Mutant aendert nichts");
+        assert!(!f(&laden(&text)).is_empty(), "nextest: {was}: nicht erkannt");
+    }
+    // Umstellungen ganzer Schritte: Installation fehlt, Installation NACH dem Testschritt, Doctests VOR nextest.
+    let (von, bis) = (GUT.find("      - name: cargo-nextest 0.9.146").unwrap(), GUT.find("      - name: cargo nextest\n").unwrap());
+    let (doc, ende) = (GUT.find("      - name: cargo test --doc\n").unwrap(), GUT.find("  zweiter:").unwrap());
+    let (installation, nextest_schritt, doctests) = (&GUT[von..bis], &GUT[bis..doc], &GUT[doc..ende]);
+    let ohne_installation = GUT.replacen(installation, "", 1);
+    let spaet = format!("{}{nextest_schritt}{doctests}{installation}{}", &GUT[..von], &GUT[ende..]);
+    let doctests_zuerst = format!("{}{installation}{doctests}{nextest_schritt}{}", &GUT[..von], &GUT[ende..]);
+    for (was, text) in [("Installation fehlt", ohne_installation), ("Installation nach dem Testschritt", spaet), ("Doctests vor nextest", doctests_zuerst)] {
+        assert_ne!(text, GUT, "nextest: {was}: der Mutant aendert nichts");
+        assert!(!nextest(&laden(&text)).is_empty(), "nextest: {was}: nicht erkannt");
+    }
+}
+
+/// Jeder Rueckfall in der Pruefung der Abhaengigkeiten wird erkannt, die gute Fassung nicht.
+#[test]
+fn die_abhaengigkeitspruefung_schlaegt_an() {
+    assert!(abhaengigkeiten(&laden(GUT)).is_empty(), "{:?}", abhaengigkeiten(&laden(GUT)));
+    let summe = "7fb9497f8594b389e5fce5ef9b92db08432996895b2e0c5a0167a69ed445c428";
+    let yaml: &[YamlFall] = &[
+        ("continue-on-error fehlt (ein Treffer macht den Lauf rot)", abhaengigkeiten, "        continue-on-error: true\n", ""),
+        ("continue-on-error: false", abhaengigkeiten, "continue-on-error: true", "continue-on-error: false"),
+        ("--no-fetch (alte Datenbank)", abhaengigkeiten, "audit --file rust/Cargo.lock", "audit --no-fetch --file rust/Cargo.lock"),
+        ("--db (feste Datenbank)", abhaengigkeiten, "--file rust/Cargo.lock", "--file rust/Cargo.lock --db /tmp/db"),
+        ("liest eine andere Lock-Datei", abhaengigkeiten, "--file rust/Cargo.lock", "--file Cargo.lock"),
+        ("Zusammenfassung fehlt", abhaengigkeiten, "          echo \"Befund\" >> \"$GITHUB_STEP_SUMMARY\"\n", ""),
+        ("ohne Pruefsumme", abhaengigkeiten, summe, "7fb9497f"),
+        ("Summe wird nicht geprueft", abhaengigkeiten, "| sha256sum -c -", "| sha256sum -"),
+        ("unverschluesselt", abhaengigkeiten, "https://github.com", "http://github.com"),
+        ("URL nennt eine andere Version", abhaengigkeiten, "cargo-audit%2Fv0.22.2/", "cargo-audit%2Fv0.22.1/"),
+        ("URL nimmt die neueste Version", abhaengigkeiten, "releases/download/cargo-audit%2Fv0.22.2/", "releases/latest/download/"),
+        ("Name nennt eine andere Version", abhaengigkeiten, "cargo-audit 0.22.2 installieren", "cargo-audit 0.22.1 installieren"),
+        ("Version 0.21.2 (liest CVSS 4.0 nicht)", abhaengigkeiten, "0.22.2", "0.21.2"),
+    ];
+    for (was, f, alt, neu) in yaml {
+        let text = GUT.replace(alt, neu);
+        assert_ne!(text, GUT, "cargo audit: {was}: der Mutant aendert nichts");
+        assert!(!f(&laden(&text)).is_empty(), "cargo audit: {was}: nicht erkannt");
+    }
+    // Umstellungen ganzer Schritte: Pruefschritt entfernt, Installation entfernt, Installation NACH dem Aufruf.
+    let (von, bis) = (GUT.find("      - name: cargo-audit 0.22.2").unwrap(), GUT.find("      - name: cargo audit\n").unwrap());
+    let (installation, pruefung) = (&GUT[von..bis], &GUT[bis..]);
+    let ohne_pruefung = GUT.replacen(pruefung, "", 1);
+    let ohne_installation = GUT.replacen(installation, "", 1);
+    let spaet = format!("{}{pruefung}{installation}", &GUT[..von]);
+    for (was, text) in [("Pruefschritt entfernt", ohne_pruefung), ("Installation fehlt", ohne_installation), ("Installation nach dem Aufruf", spaet)] {
+        assert_ne!(text, GUT, "cargo audit: {was}: der Mutant aendert nichts");
+        assert!(!abhaengigkeiten(&laden(&text)).is_empty(), "cargo audit: {was}: nicht erkannt");
+    }
+}
+
+const NEXTEST_GUT: &str ="[test-groups]\noberflaeche-browser = { max-threads = 1 }\n\n[[profile.default.overrides]]\nfilter = 'binary(oberflaeche)'\ntest-group = 'oberflaeche-browser'\n\n[profile.ci]\nfail-fast = false # kein Abbruch\nsuccess-output = \"final\"\nfailure-output = \"immediate-final\"\n";
+
+/// Jeder Rueckfall in `rust/.config/nextest.toml` wird erkannt, die gute Fassung nicht (auch nicht mit Kommentar hinter dem Wert).
+#[test]
+fn die_nextest_konfiguration_schlaegt_an() {
+    assert!(nextest_konfiguration(NEXTEST_GUT).is_empty(), "{:?}", nextest_konfiguration(NEXTEST_GUT));
+    let faelle: &[(&str, &str, &str)] = &[
+        ("fail-fast an", "fail-fast = false", "fail-fast = true"),
+        ("fail-fast fehlt", "fail-fast = false # kein Abbruch\n", ""),
+        ("success-output immediate-final (doppelt im Log)", "success-output = \"final\"", "success-output = \"immediate-final\""),
+        ("success-output fehlt (Verzichtszeilen fehlen im Log)", "success-output = \"final\"\n", ""),
+        ("success-output never", "success-output = \"final\"", "success-output = \"never\""),
+        ("failure-output fehlt", "failure-output = \"immediate-final\"\n", ""),
+        ("Profil ci umbenannt", "[profile.ci]", "[profile.rot]"),
+        ("Gruppe fehlt", "oberflaeche-browser = { max-threads = 1 }\n", ""),
+        ("Gruppe mit zwei Tests zugleich", "max-threads = 1", "max-threads = 2"),
+        ("Ueberschreibung trifft ein anderes Binary", "binary(oberflaeche)", "binary(http)"),
+        ("Ueberschreibung ohne Gruppe", "test-group = 'oberflaeche-browser'\n", ""),
+        ("Ueberschreibung mit anderer Gruppe", "test-group = 'oberflaeche-browser'", "test-group = 'andere'"),
+        ("Ueberschreibung fehlt", "[[profile.default.overrides]]", "[[profile.default.nichts]]"),
+    ];
+    for (was, alt, neu) in faelle {
+        let text = NEXTEST_GUT.replace(alt, neu);
+        assert_ne!(text, NEXTEST_GUT, "{was}: der Mutant aendert nichts");
+        assert!(!nextest_konfiguration(&text).is_empty(), "{was}: nicht erkannt");
+    }
 }

@@ -6,11 +6,14 @@
 //! Ein Pruefpunkt ist ein `pp!("<Fluss>.<python_funktion>", bedingung, ...)`: dieselbe Behauptung wie im Python-Test.
 //!
 //! Diese Tests brauchen Chromium und `chromedriver` (`CHROME_BIN`, `CHROMEDRIVER`, sonst `/usr/bin/chromium`
-//! und `/usr/bin/chromedriver`). Fehlt einer, ist der Test ROT. Die CI setzt `TAXGRAPH_OHNE_BROWSER=1` noch als
-//! Sicherung (der Test endet dann gruen, mit der Zeile `UEBERSPRUNGEN`, die der Zaehlschritt der CI nennt).
+//! und `/usr/bin/chromedriver`). Fehlt einer, ist der Test ROT. `TAXGRAPH_OHNE_BROWSER=1` erlaubt lokal das Ueberspringen
+//! (der Test endet dann gruen, mit der Zeile `UEBERSPRUNGEN`, die der Zaehlschritt der CI nennt); die CI setzt es seit
+//! 2026-10-15 NICHT mehr (Julius, d-8): ein Runner ohne Browser macht den Lauf rot, statt die Tests still zu uebergehen.
 //! GEMESSEN im Lauf 38459954734 (2026-10-14): der Runner bringt Chrome und `chromedriver` mit, alle 32 Tests liefen
 //! in 102,83 s ohne Skip-Zeile; eine gruene CI fuehrt sie also aus. Lokal laufen sie
-//! mit `cargo test -p api --test oberflaeche`, seriell (ein Browser, ein Dienst zugleich), ca. 0,5 bis 1 GB je Lauf.
+//! mit `cargo test -p api --test oberflaeche` oder `cargo nextest run -p api -E 'binary(oberflaeche)'`, seriell (ein Browser,
+//! ein Dienst zugleich; unter nextest haelt die Gruppe `oberflaeche-browser` in `rust/.config/nextest.toml` das ein, weil
+//! jeder Test dort einen eigenen Prozess hat), ca. 0,5 bis 1 GB je Lauf.
 //!
 //! Keine neue Abhaengigkeit: `browser.rs` ist ein WebDriver-Client aus `std::net` und `serde_json`.
 //! Kein ELSTER-Aufruf, keine Hersteller-ID, kein Zugriff auf `~/.local/share/taxgraph`: der Dienst bekommt eine leere

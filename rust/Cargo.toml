@@ -44,7 +44,12 @@ http-body-util = "=0.1.5"
 utoipa = "=6.0.0"
 
 [profile.dev]
-debug = "line-tables-only"
+# Julius 2026-10-15 (d-3): keine Debug-Informationen. Vorher "line-tables-only". Die Test-Programme der 86 Ziele sinken von
+# 3.266 auf 636 MB, die Linksumme nach einer Beruehrung von domain_lib von 8,1 auf 6,8 s (Median aus 3), von bescheid_lib von
+# 4,1 auf 2,9 s. Kosten: eine Rueckverfolgung bei einem Panic zeigt Funktionsnamen, aber kein `at datei:zeile` mehr (auch nicht
+# fuer std); die Zeile der Panic-Meldung (`panicked at datei:zeile:spalte`) bleibt. Ueberlaufpruefung und debug_assert! bleiben
+# an (siehe unten). Wer eine Zeile je Frame braucht, baut einmal mit `CARGO_PROFILE_DEV_DEBUG=line-tables-only`.
+debug = 0
 # Stufe 1 statt 0: die Vergleichslaeufe gegen Python (rust/parity, seit L1 geloescht) und die Tests rechnen
 # Dezimalarithmetik und die Catala-Regeln; unoptimiert braucht der Rust-Teil dafuer 3- bis 5-mal so viel Rechenzeit.
 # Die Werte unten stammen aus der Zeit mit rust/parity. Gemessen 2026-10-02 (12 Kerne, Rechenzeit des Rust-Prozesses, Stufe 0 -> 1):
