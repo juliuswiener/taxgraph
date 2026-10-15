@@ -30,7 +30,7 @@
 //! `rules/estg/p32a/einkommensteuertarif.catala_en` (eingecheckt als `rust/catala-sys/generated/Einkommensteuertarif.c`), Block
 //! VZ2024: Grundfreibetrag 11.784, Konstante 10.636,31; dieselben Zahlen stehen in `params/2024/einkommensteuertarif_p32a.yaml`
 //! ("Endfassung ist massgeblich", `BGBl` 2024 I Nr. 386). Die Loesung nennt sich "Rechtsstand 2025"; ob sie die Aenderung uebersehen
-//! //! hat oder der Tarif des Repos falsch waere, entschied der Gesetzestext der Fassung fuer 2024. NACHGEPRUEFT durch main am
+//! hat oder der Tarif des Repos falsch waere, entschied der Gesetzestext der Fassung fuer 2024. NACHGEPRUEFT durch main am
 //! 2026-10-15: Die Fassung des § 32a `EStG` fuer den Veranlagungszeitraum 2024 (gueltig bis 31.12.2024, geaendert erst durch
 //! `BGBl` 2024 I Nr. 449) nennt Grundfreibetrag 11.784 und "0,42 x X - 10.636,31", wie das Repo; gelesen auf der Fassung bei
 //! buzer.de (Textspiegel eines Dritten, nicht das `BGBl` selbst; der Wortlaut liegt weiter nicht in `sources/`). Die Loesung
