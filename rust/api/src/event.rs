@@ -283,6 +283,36 @@ fn tuer<'a>(
     })
 }
 
+/// Das Kreuz "der Ehegatte hat weder Lohn noch Pension" (Rentner-Scheibe) und das Feld, das es verbirgt.
+const KREUZ_OHNE_LOHN_PARTNER: &str = "kein_lohn_pension_partner";
+const LOHN_PARTNER: &str = "bruttoarbeitslohn_partner";
+
+/// Rust-eigen (Abweichung Nr. 76, Julius 2026-10-15): das bestaetigte Kreuz `kein_lohn_pension_partner` ist ein 400, solange der
+/// Lohn des Ehegatten nur vorlaeufig im Fall steht (ein Vorschlag, den der Nutzer nicht bestaetigt hat). Das Kreuz verbirgt die
+/// Lohnfrage (Abweichung Nr. 46), und ohne die Frage kommt die Bestaetigung nie: die Zahl bliebe in `RingBetragVorlaeufig` gesperrt,
+/// ohne dass eine Frage sie loest. Ein bestaetigter Lohn bleibt neben dem Kreuz erlaubt (Nr. 46: er zaehlt weiter), ebenso ein
+/// verneintes oder nur vorlaeufiges Kreuz (beides schliesst die Lohnfrage nicht aus). Gilt nur fuer diesen Lohn: die umgekehrte
+/// Reihenfolge (Kreuz, dann Vorschlag) und das Kreuz der Hauptperson sind nicht erfasst.
+fn kreuz_gegen_vorlaeufigen_lohn(
+    store: &store::Store,
+    feld_id: &str,
+    zustand: Zustand,
+    wert: &PyWert,
+) -> Option<String> {
+    let kreuz_ja = feld_id == KREUZ_OHNE_LOHN_PARTNER
+        && matches!(zustand, Zustand::Bestaetigt)
+        && matches!(wert, PyWert::Bool(true));
+    let nur_vorlaeufig = store
+        .aktives(LOHN_PARTNER)
+        .is_some_and(|e| matches!(e.zustand, Zustand::Vorlaeufig));
+    (kreuz_ja && nur_vorlaeufig).then(|| {
+        format!(
+            "{KREUZ_OHNE_LOHN_PARTNER}: Der Lohn des Ehegatten ({LOHN_PARTNER}) liegt nur als Vorschlag vor und ist nicht bestätigt. \
+             Nimm das Kreuz zurück und bestätige oder ersetze den Lohn. Danach kannst du das Kreuz setzen."
+        )
+    })
+}
+
 /// `api.event(fall_id, body)` nach dem Owner-Check.
 ///
 /// `roh` ist der Rumpf als Bytes: der Mitschnitt (`flow.jsonl`) hält die Schlüssel in der
@@ -314,6 +344,9 @@ pub fn event(
     let wert_roh = flow::hole(&ordnung, "wert")
         .cloned()
         .unwrap_or(PyWert::Null);
+    if let Some(grund) = kreuz_gegen_vorlaeufigen_lohn(fall.store(), &feld_id, zustand_enum, &wert_roh) {
+        return Err(ApiFehler::status(400, grund));
+    }
     let abgelegt = ablegen(
         z,
         fall,

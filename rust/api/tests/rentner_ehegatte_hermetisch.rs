@@ -652,3 +652,128 @@ async fn bei_einzelveranlagung_zaehlt_die_lohnsteuer_des_ehegatten_nicht() {
     assert_eq!(abschlusszahlung(&ohne), zahl(&ohne) - 600_000, "Kontrolle: Person A allein: {ohne}");
     assert_eq!(abschlusszahlung(&mit_lst), abschlusszahlung(&ohne), "einzeln veranlagt: der Wert des Ehegatten zaehlt nicht. {mit_lst}");
 }
+
+/// Ein nur vorlaeufiger Wert ueber `POST /event`, als Vorschlag, den der Nutzer noch nicht bestaetigt hat.
+async fn event_vorlaeufig(d: &Dienst, feld: &str, wert: &Value) -> (u16, Value) {
+    let rumpf = json!({
+        "feld_id": feld, "wert": wert, "zustand": "vorlaeufig", "schreiber": "ui:laie",
+        "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": null},
+        "ts": "2026-01-01T00:00:00+00:00",
+    });
+    sende(d, "POST", "/fall/reh/event", Some(&rumpf)).await
+}
+
+/// Die Bestaetigung eines vorlaeufigen Werts: ein bestaetigtes Event, das das vorlaeufige ersetzt.
+async fn event_bestaetigt_ersetzt(d: &Dienst, feld: &str, wert: &Value, ersetzt: &str) -> (u16, Value) {
+    let rumpf = json!({
+        "feld_id": feld, "wert": wert, "zustand": "bestaetigt", "schreiber": "ui:laie", "ersetzt": ersetzt,
+        "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": format!("ok@{feld}")},
+        "ts": "2026-01-01T00:00:00+00:00",
+    });
+    sende(d, "POST", "/fall/reh/event", Some(&rumpf)).await
+}
+
+const KREUZ_PARTNER: &str = "kein_lohn_pension_partner";
+const LOHN_PARTNER: &str = "bruttoarbeitslohn_partner";
+
+/// Die Lohnfrage des Ehegatten steht in den Fragen des Falls.
+async fn lohnfrage_steht(d: &Dienst) -> bool {
+    fragen_ids(d).await.iter().any(|f| f == LOHN_PARTNER)
+}
+
+/// Abweichung Nr. 76: Steht im Fall ein nur vorlaeufiger Lohn des Ehegatten (ein Vorschlag, den der Nutzer noch nicht bestaetigt
+/// hat), weist der Dienst das bestaetigte Kreuz "Ehegatte ohne Lohn und Pension" mit 400 ab. Das Kreuz verbaergt die Lohnfrage, und
+/// ohne die Frage kaeme die Bestaetigung nie: die Zahl bliebe in `ring_betrag_vorlaeufig` gesperrt, ohne dass eine Frage sie loest.
+/// Heute (vorher): 201, die Lohnfrage fehlt, `GET /ergebnis` nennt den Lohn als offen.
+#[tokio::test]
+async fn das_kreuz_ohne_lohn_des_ehegatten_wird_bei_nur_vorlaeufigem_lohn_mit_400_abgewiesen() {
+    let lohn = json!(3_800_000);
+    let d = fall_mit("rentner_gesamt", &paar(4_000_000)).await;
+    let (status, vorschlag) = event_vorlaeufig(&d, LOHN_PARTNER, &lohn).await;
+    assert_eq!(status, 201, "Vorschlag fuer den Lohn: {vorschlag}");
+    assert!(lohnfrage_steht(&d).await, "KONTROLLE: mit dem Vorschlag steht die Lohnfrage");
+
+    let (status, antwort) = event_post(&d, KREUZ_PARTNER, &json!(true)).await;
+    assert_eq!(status, 400, "DEFEKT: das Kreuz neben einem vorlaeufigen Lohn wird angenommen: {antwort}");
+    let fehler = antwort["fehler"].as_str().unwrap_or_default();
+    assert!(
+        fehler.contains(KREUZ_PARTNER) && fehler.contains(LOHN_PARTNER),
+        "die Abweisung nennt beide Felder, damit der Nutzer weiss, was zu tun ist: {antwort}"
+    );
+
+    // Die Abweisung speichert nichts: die Lohnfrage steht weiter, die Zahl wartet auf die Bestaetigung.
+    assert!(lohnfrage_steht(&d).await, "nach der Abweisung fehlt die Lohnfrage");
+    let (_, erg) = sende(&d, "GET", "/fall/reh/ergebnis", None).await;
+    assert_eq!(erg["grund"], json!("ring_betrag_vorlaeufig"), "{erg}");
+    assert_eq!(erg["offen"], json!([LOHN_PARTNER]), "{erg}");
+
+    // Mit dem bestaetigten Lohn geht das Kreuz (Abweichung Nr. 46: ein bestaetigter Lohn zaehlt weiter), die Zahl ist da.
+    let ersetzt = vorschlag["event_id"].as_str().unwrap();
+    let (status, antwort) = event_bestaetigt_ersetzt(&d, LOHN_PARTNER, &lohn, ersetzt).await;
+    assert_eq!(status, 201, "Lohn bestaetigen: {antwort}");
+    let (status, antwort) = event_post(&d, KREUZ_PARTNER, &json!(true)).await;
+    assert_eq!(status, 201, "Kreuz nach der Bestaetigung: {antwort}");
+    let (_, erg) = sende(&d, "GET", "/fall/reh/ergebnis", None).await;
+    assert!(zahl(&erg) > 0, "{erg}");
+}
+
+/// Die Abweisung greift nur in dem einen Fall. Kontrollen, jede mit einem eigenen Fall: ohne Lohn des Ehegatten, mit verneintem
+/// Kreuz, mit nur vorlaeufigem Kreuz (es schliesst nichts aus) und mit bestaetigtem Lohn (Abweichung Nr. 46) nimmt der Dienst das
+/// Kreuz an (201).
+#[tokio::test]
+async fn das_kreuz_ohne_lohn_des_ehegatten_bleibt_sonst_erlaubt() {
+    let lohn = json!(3_800_000);
+    let kreuz_ja = json!(true);
+
+    // Ohne Lohn des Ehegatten: das Kreuz verbirgt die Lohnfrage, wie es soll.
+    let d = fall_mit("rentner_gesamt", &paar(4_000_000)).await;
+    assert!(lohnfrage_steht(&d).await, "KONTROLLE: ohne Kreuz steht die Lohnfrage");
+    let (status, antwort) = event_post(&d, KREUZ_PARTNER, &kreuz_ja).await;
+    assert_eq!(status, 201, "ohne Lohn des Ehegatten: {antwort}");
+    assert!(!lohnfrage_steht(&d).await, "das Kreuz verbirgt die Lohnfrage");
+
+    // Mit vorlaeufigem Lohn: das Kreuz "nein" (der Ehegatte hat Lohn) ist die richtige Antwort.
+    let d = fall_mit("rentner_gesamt", &paar(4_000_000)).await;
+    assert_eq!(event_vorlaeufig(&d, LOHN_PARTNER, &lohn).await.0, 201);
+    let (status, antwort) = event_post(&d, KREUZ_PARTNER, &json!(false)).await;
+    assert_eq!(status, 201, "Kreuz nein neben vorlaeufigem Lohn: {antwort}");
+    assert!(lohnfrage_steht(&d).await);
+
+    // Ein anderes Kreuz (das der Hauptperson) neben dem vorlaeufigen Lohn des Ehegatten geht: die Abweisung gilt nur diesem Kreuz.
+    let d = fall_mit("rentner_gesamt", &paar(4_000_000)).await;
+    assert_eq!(event_vorlaeufig(&d, LOHN_PARTNER, &lohn).await.0, 201);
+    let (status, antwort) = event_post(&d, "kein_lohn_pension", &kreuz_ja).await;
+    assert_eq!(status, 201, "anderes Kreuz neben vorlaeufigem Lohn des Ehegatten: {antwort}");
+    assert!(lohnfrage_steht(&d).await, "das Kreuz der Hauptperson verbirgt die Lohnfrage des Ehegatten nicht");
+
+    // Ein nur vorlaeufiges Kreuz schliesst die Lohnfrage nicht aus.
+    let d = fall_mit("rentner_gesamt", &paar(4_000_000)).await;
+    assert_eq!(event_vorlaeufig(&d, LOHN_PARTNER, &lohn).await.0, 201);
+    let (status, antwort) = event_vorlaeufig(&d, KREUZ_PARTNER, &kreuz_ja).await;
+    assert_eq!(status, 201, "vorlaeufiges Kreuz neben vorlaeufigem Lohn: {antwort}");
+    assert!(lohnfrage_steht(&d).await, "ein vorlaeufiges Kreuz verbirgt die Lohnfrage nicht");
+
+    // Mit bestaetigtem Lohn: das Kreuz geht, die Zahl bleibt die ohne Kreuz (Abweichung Nr. 46).
+    let ohne = ergebnis(&mit(paar(4_000_000), lohn_partner(38_000))).await;
+    let mit_kreuz = ergebnis(&mit(paar(4_000_000), [lohn_partner(38_000), vec![(KREUZ_PARTNER, kreuz_ja)]].concat())).await;
+    assert_eq!(zahl(&ohne), zahl(&mit_kreuz), "bestaetigter Lohn neben dem Kreuz: {mit_kreuz}");
+}
+
+/// Offener Defekt, gemessen 2026-10-15 am Stand nach Abweichung Nr. 76: die umgekehrte Reihenfolge. Das Kreuz steht schon, dann
+/// kommt der Lohn des Ehegatten als Vorschlag (KI oder Vorjahr) an. `POST /event` antwortet 201, die Lohnfrage steht nicht in den
+/// Fragen, und `GET /ergebnis` bleibt in `ring_betrag_vorlaeufig`: dieselbe Sackgasse auf dem anderen Weg. Julius hat nur das
+/// Abweisen des Kreuzes entschieden (d-7); wie dieser Weg schliesst, steht noch aus. Rot sehen: `--ignored`.
+#[tokio::test]
+#[ignore = "offener Defekt: Vorschlag fuer den Lohn nach dem Kreuz, siehe Doku; Rot sehen: --ignored"]
+async fn ein_vorschlag_fuer_den_lohn_nach_dem_kreuz_baut_keine_sackgasse() {
+    let d = fall_mit("rentner_gesamt", &paar(4_000_000)).await;
+    assert_eq!(event_post(&d, KREUZ_PARTNER, &json!(true)).await.0, 201);
+    let (status, antwort) = event_vorlaeufig(&d, LOHN_PARTNER, &json!(3_800_000)).await;
+    let (_, erg) = sende(&d, "GET", "/fall/reh/ergebnis", None).await;
+    assert!(
+        status == 400 || lohnfrage_steht(&d).await || erg["grund"] == json!("bestaetigt"),
+        "DEFEKT: der Vorschlag ({status}: {antwort}) laesst die Zahl gesperrt, ohne dass eine Frage sie loest: {erg}"
+    );
+}
