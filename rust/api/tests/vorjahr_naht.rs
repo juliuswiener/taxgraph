@@ -407,3 +407,79 @@ async fn vorjahr_nach_rentner_gesamt_uebernimmt_das_geburtsjahr() {
     assert_eq!(geburtsjahr[0]["wert"], 1980);
     assert_eq!(geburtsjahr[0]["zustand"], "vorlaeufig");
 }
+
+/// Abweichung Nr. 77, Weg Vorjahres-Uebernahme (Julius, Entscheidung d-14, 2026-10-15): steht das bestaetigte Kreuz
+/// `kein_lohn_pension_partner` im Fall, uebernimmt die Vorjahres-Uebernahme den Lohn des Ehegatten NICHT als Vorschlag. Das Kreuz
+/// verbirgt die Lohnfrage, und ein vorlaeufiger Lohn ohne Frage waere dieselbe Sackgasse wie bei `POST /event`
+/// (`ring_betrag_vorlaeufig`). Anders als `POST /event` bricht der Aufruf nicht mit 400 ab: er uebernimmt die uebrigen Felder und
+/// nennt den Lohn unter `uebersprungen`. Kontrollen: ohne das Kreuz kommt der Lohn aus dem Vorjahr; steht der Lohn im Fall schon,
+/// oder war er im Vorjahr nur ein Vorschlag, bleibt `uebersprungen` leer (nichts waere uebernommen worden).
+#[tokio::test]
+async fn die_vorjahres_uebernahme_legt_den_lohn_des_ehegatten_nicht_neben_das_kreuz() {
+    const LOHN: &str = "bruttoarbeitslohn_partner";
+    const KREUZ: &str = "kein_lohn_pension_partner";
+    let d = dienst();
+    quelle(&d, "vq1", &[(LOHN, json!(3_800_000))]).await;
+    // Ein Vorjahr, in dem der Lohn nur ein Vorschlag der KI war: er wird nie uebernommen.
+    quelle(&d, "vq2", &[]).await;
+    let llm = json!({"feld_id": LOHN, "wert": 3_800_000, "zustand": "vorlaeufig", "schreiber": "llm:naht",
+        "herkunft": {"herkunft": "llm_vorschlag", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": null}, "ts": "2026-01-01T00:00:00+00:00", "ersetzt": null});
+    assert_eq!(sende(&d, "alice", "/fall/vq2/event", &llm).await.0, 201);
+    // Die Faelle: (Kennung, Kreuz gesetzt, Lohn schon im Fall).
+    for (id, kreuz, lohn) in [("ohne", false, false), ("mit", true, false), ("aktiv", true, true)] {
+        fall_anlegen(&d, "alice", id, "rentner_gesamt", 2025).await;
+        let mut felder = vec![("veranlagung", json!("zusammen"))];
+        if kreuz {
+            felder.push((KREUZ, json!(true)));
+        }
+        if lohn {
+            felder.push((LOHN, json!(4_000_000)));
+        }
+        for (feld, wert) in &felder {
+            let (s, a) = sende(&d, "alice", &format!("/fall/{id}/event"), &ereignis(feld, wert)).await;
+            assert_eq!(s, 201, "{id} {feld}: {a}");
+        }
+    }
+    let uebernahme = |id: &'static str, quelle: &'static str| {
+        let d = &d;
+        async move { sende(d, "alice", &format!("/fall/{id}/vorjahr"), &json!({"vorjahr_fall_id": quelle})).await }
+    };
+    let lohn_events = |id: &str| -> usize {
+        akte(&d, id)["events"].as_array().unwrap().iter().filter(|e| e["feld_id"] == LOHN).count()
+    };
+
+    let (s, a) = uebernahme("ohne", "vq1").await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(
+        a,
+        json!({"uebernommen": 1, "uebersprungen": [], "vorjahr_fall_id": "vq1"}),
+        "KONTROLLE: ohne Kreuz kommt der Lohn aus dem Vorjahr"
+    );
+    assert_eq!(lohn_events("ohne"), 1);
+
+    let (s, a) = uebernahme("mit", "vq1").await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(
+        a,
+        json!({"uebernommen": 0, "uebersprungen": [LOHN], "vorjahr_fall_id": "vq1"}),
+        "DEFEKT: der Lohn des Ehegatten landet als Vorschlag neben dem Kreuz"
+    );
+    assert_eq!(lohn_events("mit"), 0, "nichts gespeichert");
+
+    // Der Lohn steht im Fall schon (bestaetigt): die Uebernahme laesst ihn wie immer still aus, sie meldet ihn nicht.
+    let (s, a) = uebernahme("aktiv", "vq1").await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(a, json!({"uebernommen": 0, "uebersprungen": [], "vorjahr_fall_id": "vq1"}), "Lohn schon im Fall");
+    assert_eq!(lohn_events("aktiv"), 1);
+
+    // Im Vorjahr nur ein Vorschlag: nichts waere uebernommen worden, also meldet die Uebernahme auch nichts.
+    fall_anlegen(&d, "alice", "mit2", "rentner_gesamt", 2025).await;
+    for (feld, wert) in [("veranlagung", json!("zusammen")), (KREUZ, json!(true))] {
+        let (s, a) = sende(&d, "alice", "/fall/mit2/event", &ereignis(feld, &wert)).await;
+        assert_eq!(s, 201, "mit2 {feld}: {a}");
+    }
+    let (s, a) = uebernahme("mit2", "vq2").await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(a, json!({"uebernommen": 0, "uebersprungen": [], "vorjahr_fall_id": "vq2"}), "Vorjahr nur ein Vorschlag");
+}

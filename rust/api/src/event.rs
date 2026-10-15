@@ -285,7 +285,7 @@ fn tuer<'a>(
 
 /// Das Kreuz "der Ehegatte hat weder Lohn noch Pension" (Rentner-Scheibe) und das Feld, das es verbirgt.
 const KREUZ_OHNE_LOHN_PARTNER: &str = "kein_lohn_pension_partner";
-const LOHN_PARTNER: &str = "bruttoarbeitslohn_partner";
+pub(crate) const LOHN_PARTNER: &str = "bruttoarbeitslohn_partner";
 
 /// Rust-eigen (Abweichung Nr. 76, Julius 2026-10-15): das bestaetigte Kreuz `kein_lohn_pension_partner` ist ein 400, solange der
 /// Lohn des Ehegatten nur vorlaeufig im Fall steht (ein Vorschlag, den der Nutzer nicht bestaetigt hat). Das Kreuz verbirgt die
@@ -309,6 +309,38 @@ fn kreuz_gegen_vorlaeufigen_lohn(
         format!(
             "{KREUZ_OHNE_LOHN_PARTNER}: Der Lohn des Ehegatten ({LOHN_PARTNER}) liegt nur als Vorschlag vor und ist nicht bestätigt. \
              Nimm das Kreuz zurück und bestätige oder ersetze den Lohn. Danach kannst du das Kreuz setzen."
+        )
+    })
+}
+
+/// Das bestaetigte Kreuz `kein_lohn_pension_partner` steht auf "ja" im Fall: es verbirgt die Lohnfrage des Ehegatten (Abweichung
+/// Nr. 46). Ein ersetztes oder zurueckgenommenes Kreuz zaehlt nicht: `aktives` kennt nur das letzte Glied der Kette.
+pub(crate) fn kreuz_ohne_lohn_steht(store: &store::Store) -> bool {
+    store.aktives(KREUZ_OHNE_LOHN_PARTNER).is_some_and(|e| {
+        matches!(e.zustand, Zustand::Bestaetigt) && matches!(e.wert, PyWert::Bool(true))
+    })
+}
+
+/// Rust-eigen (Abweichung Nr. 77, Julius 2026-10-15, Entscheidung d-14): die Gegenrichtung zu Nr. 76. Steht das bestaetigte Kreuz
+/// `kein_lohn_pension_partner` schon im Fall, ist ein nur vorlaeufiger Lohn des Ehegatten (ein Vorschlag, den der Nutzer nicht
+/// bestaetigt hat) ein 400. Das Kreuz verbirgt die Lohnfrage, und ohne die Frage kommt die Bestaetigung nie: die Zahl bliebe in
+/// `RingBetragVorlaeufig` gesperrt, ohne dass eine Frage sie loest. Ein bestaetigter Lohn bleibt neben dem Kreuz erlaubt (Nr. 46),
+/// ebenso ein vorlaeufiger Lohn ohne das Kreuz oder bei verneintem oder nur vorlaeufigem Kreuz. Eine Pruefung der Scheibe braucht
+/// die Regel nicht: das Kreuz laesst sich nur setzen, wo die Scheibe es fragt (`rentner_gesamt`), sonst ist es ein 400 an der
+/// Tuer. Gilt nur fuer diesen Lohn: die anderen Felder, die das Kreuz verbirgt, sind nicht erfasst.
+fn lohn_vorschlag_gegen_kreuz(
+    store: &store::Store,
+    feld_id: &str,
+    zustand: Zustand,
+) -> Option<String> {
+    (feld_id == LOHN_PARTNER
+        && matches!(zustand, Zustand::Vorlaeufig)
+        && kreuz_ohne_lohn_steht(store))
+    .then(|| {
+        format!(
+            "{LOHN_PARTNER}: Du hast mit dem Kreuz {KREUZ_OHNE_LOHN_PARTNER} bestätigt, dass der Ehegatte weder Lohn noch Pension hatte. \
+             Ein Lohn als Vorschlag passt dazu nicht und bliebe unbestätigt. Nimm das Kreuz zurück, wenn der Ehegatte doch Lohn hatte, \
+             oder bestätige den Lohn selbst."
         )
     })
 }
@@ -345,6 +377,9 @@ pub fn event(
         .cloned()
         .unwrap_or(PyWert::Null);
     if let Some(grund) = kreuz_gegen_vorlaeufigen_lohn(fall.store(), &feld_id, zustand_enum, &wert_roh) {
+        return Err(ApiFehler::status(400, grund));
+    }
+    if let Some(grund) = lohn_vorschlag_gegen_kreuz(fall.store(), &feld_id, zustand_enum) {
         return Err(ApiFehler::status(400, grund));
     }
     let abgelegt = ablegen(
