@@ -61,9 +61,14 @@ BACKUP_DIR  ?= $(abspath $(CURDIR)/../taxgraph-backups)
 FAELLE_ROOT ?= $(if $(TAXGRAPH_DATEN),$(TAXGRAPH_DATEN),$(if $(XDG_DATA_HOME),$(XDG_DATA_HOME),$(HOME)/.local/share)/taxgraph)
 AUTH_USERS  ?= $(or $(wildcard $(FAELLE_ROOT)/users.json),$(wildcard produkt/auth/users.json),$(FAELLE_ROOT)/users.json)
 
+## RECHTE (S5a, Julius 2026-10-15): das Archiv traegt die Passwort-Hashes (users.json) und alle Steuerdaten, es
+## darf nur der Besitzer lesen (Modus 600). Jede Rezeptzeile ist eine eigene Shell, `umask 077` steht darum in
+## jeder, die etwas anlegt; die Maske der aufrufenden Shell (ueblich 022 = 644) gilt hier nicht. Ein SCHON
+## vorhandener BACKUP_DIR behaelt seinen Modus (mkdir -p aendert ihn nicht); die Archive darin sind trotzdem 600.
+## Waechter: rust/api/tests/backup_restore_rundlauf.rs::ein_archiv_ist_nur_fuer_den_besitzer_lesbar.
 backup:
-	mkdir -p $(BACKUP_DIR)
-	tar czf $(abspath $(BACKUP_DIR))/taxgraph-$$(date +%Y%m%d-%H%M%S-%N)-$$$$.tar.gz \
+	umask 077; mkdir -p $(BACKUP_DIR)
+	umask 077; tar czf $(abspath $(BACKUP_DIR))/taxgraph-$$(date +%Y%m%d-%H%M%S-%N)-$$$$.tar.gz \
 		-C $(FAELLE_ROOT) faelle \
 		-C $(dir $(AUTH_USERS)) $(notdir $(AUTH_USERS))
 

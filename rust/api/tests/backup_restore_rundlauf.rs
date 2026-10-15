@@ -466,6 +466,76 @@ async fn restore_legt_das_datenverzeichnis_bei_totalverlust_an() {
     pruefe_wiederhergestellt(&u, &stand_a).await;
 }
 
+/// `make <ziel>` wie `Umgebung::make`, aber aus einer Shell mit der Maske `maske` (eine uebliche Anmeldeshell hat 022).
+fn make_unter_maske(u: &Umgebung, maske: &str, ziel: &str, extra: &[String]) -> Output {
+    Command::new("sh")
+        .args([
+            "-c",
+            &format!(
+                "umask {maske}; exec make {ziel} FAELLE_ROOT=\"$1\" AUTH_USERS=\"$2\" BACKUP_DIR=\"$3\" CONFIRM=yes ${{4:+\"$4\"}}"
+            ),
+            "sh",
+        ])
+        .arg(u.daten())
+        .arg(u.users())
+        .arg(u.backups())
+        .arg(extra.first().cloned().unwrap_or_default())
+        .current_dir(Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
+        .env("HOME", u.tmp.path())
+        .env_remove("TAXGRAPH_DATEN")
+        .env_remove("XDG_DATA_HOME")
+        .output()
+        .unwrap()
+}
+
+fn modus(p: &Path) -> u32 {
+    std::fs::metadata(p).unwrap().permissions().mode() & 0o777
+}
+
+/// S5a (Anmeldung-Ticket, Befund (e); Julius 2026-10-15): ein Archiv enthaelt die Nutzerdatei mit den Passwort-Hashes und
+/// alle Faelle (Steuerdaten). Es darf nur der Besitzer lesen. Die Maske des Aufrufers (hier absichtlich 022, wie bei einer
+/// ueblichen Anmeldeshell) darf das nicht aufweichen. Das gilt auch fuer die Vorher-Sicherung von `restore`, die dasselbe
+/// Rezept ruft, und fuer den Ordner, den `backup` neu anlegt. Grenze: ein schon vorhandener Ordner bleibt, wie er ist.
+#[tokio::test]
+async fn ein_archiv_ist_nur_fuer_den_besitzer_lesbar() {
+    let u = Umgebung::neu();
+    bestand_aufbauen(&u).await;
+    // Kontrolle: das Rezept laeuft und legt genau ein Archiv an (sonst kaeme ein Rot unten aus einem kaputten Aufbau).
+    let r = make_unter_maske(&u, "022", "backup", &[]);
+    assert!(r.status.success(), "make backup:\n{}", ausgabe(&r));
+    let archive = u.archive();
+    assert_eq!(archive.len(), 1, "genau ein Archiv nach einem Lauf");
+    assert_eq!(
+        modus(&archive[0]),
+        0o600,
+        "Archiv {} hat Modus {:o} unter umask 022 (erwartet 600)",
+        archive[0].display(),
+        modus(&archive[0])
+    );
+    assert_eq!(
+        modus(&u.backups()),
+        0o700,
+        "der von backup neu angelegte Ordner hat Modus {:o} unter umask 022 (erwartet 700)",
+        modus(&u.backups())
+    );
+
+    // Die Vorher-Sicherung von `restore` (dasselbe Rezept) gilt ebenso.
+    let arg = format!("ARCHIV={}", archive[0].display());
+    let r = make_unter_maske(&u, "022", "restore", &[arg]);
+    assert!(r.status.success(), "make restore:\n{}", ausgabe(&r));
+    let archive = u.archive();
+    assert_eq!(archive.len(), 2, "restore legt eine Vorher-Sicherung an");
+    for a in &archive {
+        assert_eq!(
+            modus(a),
+            0o600,
+            "Archiv {} hat Modus {:o} unter umask 022 (erwartet 600)",
+            a.display(),
+            modus(a)
+        );
+    }
+}
+
 /// Stellt die Rechte eines Ordners beim Verlassen wieder her, damit der Testordner sich loeschen laesst.
 struct Entsperrt(PathBuf);
 
