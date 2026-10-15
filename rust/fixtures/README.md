@@ -165,6 +165,32 @@ Nicht hermetisch uebernommen und offen:
   die bekannten Abweichungen fest, sie suchen keine neuen. Fuer die Zeit nach Python braucht es einen Ersatz fuer
   diese Frage (zum Beispiel einen eingefrorenen Mitschnitt der Antworten von `CPython` je Eingabe).
 
+### Auslandsfall der BStBK (Soll-Werte von aussen, ein TEILFALL)
+
+`rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs` haelt den Auslandsfall aus dem Loesungsvorschlag der
+Bundessteuerberaterkammer (BStBK) zur Steuerberaterpruefung 2022/23, Teil I Sachverhalt 1 (VZ 2024), gegen den Bescheid-Weg
+(Ticket `ausland-bstbk-sachverhalt-1-vz-2024-als-bescheid-test`, Julius d-15 am 2026-10-15). Die Zahlen stammen von der Kammer, nicht
+aus unserem Code. Quelle: BStBl I 2025 S. 1200, PDF `BStBK_2025-07-29_Loesungsvorschlag_Ertragsteuern_Steuerberaterpruefung_2022-2023.pdf`
+(SHA256 `6d26297a11260eb711b8606c30cfa3edf9eb5fcb8f26ab0dea33174b0d38f407`, abgerufen 2026-10-15), liegt NICHT im Repo; der Sachverhalt
+steht im Testkopf in eigenen Worten. Der Aufgabentext lag nicht vor, die Kammer nennt ihren Vorschlag „unverbindlich“.
+
+- **Was der Teilfall NICHT beweist.** Das Zusammenwirken von Freistellung (Italien) und Anrechnung (Brasilien) in EINER Akte. Die
+  zwei Haelften laufen getrennt durch den Bescheid-Weg, die festzusetzende Steuer des Vollfalls entsteht nur durch eine Subtraktion
+  IM TEST (`rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs::die_haelften_zusammen_ergeben_die_rechnung_der_loesung_mit_der_konstante_der_params`),
+  nicht im Bescheid.
+- **Der Vollfall wird heute abgewiesen.** Wer `dba_mehrere_staaten` bestaetigt, bekommt die Sperre `dba_multi_country_offen` statt einer
+  Zahl (bekannte Grenze, kein Defekt: ein Staat und eine Methode je Akte). Der Befehl, der es zeigt:
+  `cd rust && cargo nextest run -p bescheid --test it ausland_bstbk_2022_23_hermetisch::bekannte_grenze_der_vollfall`
+  (`rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs::bekannte_grenze_der_vollfall_in_einer_akte_ist_gesperrt_statt_falsch_gerechnet`).
+- **BEFUND: 25 Euro Abstand zur Zahl der Loesung, Ursache die Tarifkonstante.** Die Loesung rechnet „0,42 x X - 10.602,13“ (Seite 7); diese
+  Konstante gehoert zum Grundfreibetrag 11.604 Euro, dem Tarif 2024 vor dem rueckwirkenden Gesetz vom Dezember 2024 (abgeleitet,
+  `params/derive_coefficients.py`). `params/2024/einkommensteuertarif_p32a.yaml` hat 10.636,31 (Grundfreibetrag 11.784, BGBl 2024 I Nr. 386).
+  Der Bescheid-Weg trifft die Zwischenwerte der Loesung exakt (Summe der Einkuenfte 190.000, zu versteuerndes Einkommen 178.500) und die
+  Rechnung der Loesung mit der Konstante der Params-Datei: 66.955 statt 66.980, festzusetzende Steuer 51.955 statt 51.980. Die Fassung des
+  Gesetzes fuer 2024 wurde NICHT am Gesetzestext geprueft (liegt nicht in `sources/`); wer die Zahl der Loesung als Soll verlangt, muss
+  diese Frage zuerst entscheiden.
+- Geprueft sind acht Tests; der Beleg der Konstante ist `rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs::die_konstante_der_handrechnung_ist_die_der_params_datei_2024`.
+
 ## `interview_orakel.json`
 
 Szenarien fuer die Crate `interview` samt den Antworten des Python-Orakels

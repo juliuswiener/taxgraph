@@ -12,6 +12,8 @@ mod altersentlastung_je_ehegatte_hermetisch;
 mod altersentlastung_sonstige_hermetisch;
 #[path = "an_gesamt_luecken_sperren.rs"]
 mod an_gesamt_luecken_sperren;
+#[path = "ausland_bstbk_2022_23_hermetisch.rs"]
+mod ausland_bstbk_2022_23_hermetisch;
 #[path = "c2_weit_ang_xml_hermetisch.rs"]
 mod c2_weit_ang_xml_hermetisch;
 #[path = "checkest_verdrahtung.rs"]
