@@ -196,6 +196,37 @@ Mai 2025), 22 fuer 2026 (Stand Juni 2026), zusammen 43. Die Textdateien (`pdftot
 - Mutationsbeweis: 17 Mutanten an den echten Stellen (`rust/engine/src/zugriff/teil2/rente.rs`, `gesamt.rs`, `params/**`, die zwei `.txt`),
   alle rot, Kontrollen vor und nach dem Lauf gruen; Skript `audits/messbelege/nm-rente-bmf/mutanten.py`.
 
+## Auslandsfall der BStBK (Soll-Werte von aussen, ein TEILFALL)
+
+`rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs` haelt den Auslandsfall aus dem Loesungsvorschlag der
+Bundessteuerberaterkammer (BStBK) zur Steuerberaterpruefung 2022/23, Teil I Sachverhalt 1 (VZ 2024), gegen den Bescheid-Weg
+(Ticket `ausland-bstbk-sachverhalt-1-vz-2024-als-bescheid-test`, Julius d-15 am 2026-10-15). Die Zahlen stammen von der Kammer, nicht
+aus unserem Code. Quelle: BStBl I 2025 S. 1200, PDF `BStBK_2025-07-29_Loesungsvorschlag_Ertragsteuern_Steuerberaterpruefung_2022-2023.pdf`
+(SHA256 `6d26297a11260eb711b8606c30cfa3edf9eb5fcb8f26ab0dea33174b0d38f407`, abgerufen 2026-10-15), liegt NICHT im Repo; der Sachverhalt
+steht im Testkopf in eigenen Worten. Der Aufgabentext lag nicht vor, die Kammer nennt ihren Vorschlag „unverbindlich“.
+
+- **Was der Teilfall NICHT beweist.** Das Zusammenwirken von Freistellung (Italien) und Anrechnung (Brasilien) in EINER Akte. Die
+  zwei Haelften laufen getrennt durch den Bescheid-Weg, die festzusetzende Steuer des Vollfalls entsteht nur durch eine Subtraktion
+  IM TEST (`rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs::die_haelften_zusammen_ergeben_die_rechnung_der_loesung_mit_der_konstante_der_params`),
+  nicht im Bescheid.
+- **Der Vollfall wird heute abgewiesen.** Wer `dba_mehrere_staaten` bestaetigt, bekommt die Sperre `dba_multi_country_offen` statt einer
+  Zahl (bekannte Grenze, kein Defekt: ein Staat und eine Methode je Akte). Der Befehl, der es zeigt:
+  `cd rust && cargo nextest run -p bescheid --test it ausland_bstbk_2022_23_hermetisch::bekannte_grenze_der_vollfall`
+  (`rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs::bekannte_grenze_der_vollfall_in_einer_akte_ist_gesperrt_statt_falsch_gerechnet`).
+- **BEFUND: 25 Euro Abstand zur Zahl der Loesung, Ursache die Tarifkonstante.** Die Loesung rechnet „0,42 x X - 10.602,13“ (Seite 7); diese
+  Konstante gehoert zum Grundfreibetrag 11.604 Euro, dem Tarif 2024 vor dem rueckwirkenden Gesetz vom Dezember 2024 (abgeleitet,
+  `params/derive_coefficients.py`). Die Catala-Regel `rules/estg/p32a/einkommensteuertarif.catala_en` (Block VZ2024, eingecheckt als
+  `rust/catala-sys/generated/Einkommensteuertarif.c`) und `params/2024/einkommensteuertarif_p32a.yaml` haben 10.636,31 (Grundfreibetrag
+  11.784, BGBl 2024 I Nr. 386). Der Bescheid-Weg trifft die Zwischenwerte der Loesung exakt (Summe der Einkuenfte 190.000, zu versteuerndes
+  Einkommen 178.500) und die Rechnung der Loesung mit dieser Konstante: 66.955 statt 66.980, festzusetzende Steuer 51.955 statt 51.980.
+  Setzt man im C-Tarif 10.602,13 ein, liefert der Weg die 66.980 der Loesung (Mutant M8, Beleg `audits/messbelege/nm-ausland-bstbk`).
+  **Nachgeprueft (main, 2026-10-15):** Die Fassung des § 32a EStG fuer den Veranlagungszeitraum 2024 (gueltig bis 31.12.2024) nennt
+  Grundfreibetrag 11.784 und „0,42 · x - 10.636,31“, wie die Regel und `params/2024`; gelesen auf der Fassung bei buzer.de (Textspiegel eines
+  Dritten, nicht das BGBl selbst, der Wortlaut liegt nicht in `sources/`). Die Loesung der Kammer rechnet also mit dem Tarif VOR der
+  rueckwirkenden Anhebung; die 25 Euro sind ein Fehler der Loesung, kein Fehler des Bescheid-Wegs. Soll fuer den Bescheid-Weg ist die
+  Rechnung mit 10.636,31 (51.955), nicht die 51.980 der Loesung.
+- Geprueft sind acht Tests; der Beleg der Konstante ist `rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs::die_konstante_der_handrechnung_steht_in_der_params_datei_und_der_catala_regel_2024`.
+
 ## `interview_orakel.json`
 
 Szenarien fuer die Crate `interview` samt den Antworten des Python-Orakels
