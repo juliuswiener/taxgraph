@@ -1,0 +1,27 @@
+# Eingefrorene BMF-Übersicht (lokal, Nutzer-Auftrag d-15 vom 2026-10-15). Provenance-Archiv.
+# Das PDF liegt lokal neben der Textdatei (`.gitignore`: `sources/**/*.pdf`); versioniert sind .txt und diese Datei.
+dokument:
+  norm_uri: "bmf/uebersicht-rentenbesteuerung/2025"
+  norm: "BMF: Übersicht zur Rentenbesteuerung, Mai 2025 (Bis zu welcher jährlichen Bruttorente bleibt ein Rentner ohne Steuerbelastung; Angaben für 2025, 21 bzw. 22 Zeilen nach Jahr des Rentenbeginns)"
+  fassung: "Mai 2025"
+  quelle_url: "https://finanzamt.brandenburg.de/sixcms/media.php/9/Renten%20und%20Steuern_BMF-Tabelle%202025.pdf"
+  abrufdatum: "2026-10-15"
+  datei: "bmf_rentenbesteuerung_uebersicht_2025-05.txt"
+  pdf_datei: "bmf_rentenbesteuerung_uebersicht_2025-05.pdf"
+  sha256: "9ed0d7b0a4bb739df79246fb3053e70a7d65b6d63d755bcf81fbb677dfb99e2f"
+  pdf_sha256: "a786f62fa72a387a764290b52af549cc207346d2f1dc782e93d81e8527c82dd2"
+  authority: verwaltung
+  redistributable: false
+  hinweis: >
+    LIZENZ NICHT AUSDRUECKLICH GEKLAERT (Recherche d-5, Vault research/oeffentliche-musterfaelle-rente-ausland-unfall-gwg-2026-10-15,
+    Treffer [1]): weder BMF noch Spiegel nennen eine Lizenz; die Lesart "§ 5 Abs. 2 UrhG, amtliches Werk" ist nicht bewiesen.
+    Darum `false` (Exportierbarkeit nicht belegt). Julius 2026-10-15 (d-15): "die lizenz ist erstal egal das ist ja momentan ein
+    proivates projekt". Auf `true` setzen, sobald geklaert. Spiegel beim Finanzamt Brandenburg; bundesfinanzministerium.de liefert
+    HTTP 503. PDF via pdftotext -layout extrahiert, unbereinigt. Fussnote 1 der Quelle: Angaben fuer alleinstehende Rentner, nur
+    Renten aus gesetzlicher Rentenversicherung, landwirtschaftlichen Alterskassen, berufsstaendischen Versorgungseinrichtungen und
+    Basisrentenvertraegen, nur ohne andere steuerlich relevante Einkuenfte; Annahmen: Rentensteigerungen Ost, allgemeiner
+    KV-Beitragssatz ohne kassenindividuellen Zusatzbeitrag, voller PV-Beitragssatz ohne Kinderlosenzuschlag bzw. Kinderabschlaege.
+  erwartete_anker:
+    - "Angaben für das Jahr 2025"
+    - "ohne Steuerbelastung"
+  verwendet_in: ["rust/bescheid/tests/rente_bmf_uebersicht_hermetisch.rs"]

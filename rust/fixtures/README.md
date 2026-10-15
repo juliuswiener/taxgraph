@@ -165,6 +165,37 @@ Nicht hermetisch uebernommen und offen:
   die bekannten Abweichungen fest, sie suchen keine neuen. Fuer die Zeit nach Python braucht es einen Ersatz fuer
   diese Frage (zum Beispiel einen eingefrorenen Mitschnitt der Antworten von `CPython` je Eingabe).
 
+## BMF-Uebersicht zur Rentenbesteuerung (`sources/bmf/bmf_rentenbesteuerung_uebersicht_*.txt`)
+
+Keine Fixtur-Datei und keine Abweichung, sondern eine Quelle mit amtlichen Zahlen, die nicht aus unserem Code stammen. Das BMF
+nennt je Jahr des Rentenbeginns die hoechste Jahresbruttorente, bei der ein Alleinstehender mit nur einer gesetzlichen Rente keine
+Einkommensteuer zahlt, samt Herleitung (Besteuerungsanteil, steuerfreier Teil, Werbungskosten-Pauschbetrag 102 EUR,
+Sonderausgaben-Pauschbetrag 36 EUR, Vorsorgeaufwendungen, zu versteuerndes Einkommen = Grundfreibetrag). 21 Zeilen fuer 2025 (Stand
+Mai 2025), 22 fuer 2026 (Stand Juni 2026), zusammen 43. Die Textdateien (`pdftotext -layout`) und ihre `.meta.yaml` (Pruefsumme,
+`make sources-check`) sind versioniert; die PDFs liegen nur lokal (`.gitignore`). Die Lizenz ist nicht ausdruecklich geklaert
+(`redistributable: false` mit Hinweis; Julius am 2026-10-15: vorerst egal). Konsument: `rust/bescheid/tests/rente_bmf_uebersicht_hermetisch.rs`
+(liest die `.txt` zur Laufzeit, keine abgetippte Kopie).
+
+- Gemessen am Stand `b487f6bb` (Scheibe `rentner_gesamt`, VZ 2025 und 2026): der Gesamtbetrag der Einkuenfte stimmt in 43 von 43 Zeilen
+  (`rust/bescheid/tests/rente_bmf_uebersicht_hermetisch.rs::jede_zeile_stimmt_im_gesamtbetrag_der_einkuenfte`); ohne Vorsorge stimmt
+  auch das zu versteuernde Einkommen nach beiden Pauschbetraegen in 43 von 43
+  (`rust/bescheid/tests/rente_bmf_uebersicht_hermetisch.rs::jede_zeile_ohne_vorsorge_endet_nach_den_zwei_pauschbetraegen`); die Prozentspalte
+  gleicht der Besteuerungsanteil-Tabelle der Parameter in 43 von 43
+  (`rust/bescheid/tests/rente_bmf_uebersicht_hermetisch.rs::die_prozentspalte_gleicht_der_besteuerungsanteil_tabelle`).
+- **Offener Defekt (nicht behoben, Befund an main):** mit der Vorsorge-Spalte der Uebersicht ist das zu versteuernde Einkommen in 43 von 43
+  Zeilen um genau 36 EUR zu hoch (2025: 12.132 statt 12.096; 2026: 12.384 statt 12.348), die Steuer 5 EUR statt 0. Ursache:
+  `sonderausgaben_final` in `rust/engine/src/zugriff/teil2/gesamt.rs` bildet `max(Sonderausgaben + Vorsorge, 36)`; § 10c Satz 1 EStG nennt die
+  Vorsorge nicht, der Pauschbetrag gilt daneben. Der Test
+  `rust/bescheid/tests/rente_bmf_uebersicht_hermetisch.rs::jede_zeile_der_uebersicht_endet_im_bescheid_weg_bei_steuer_null` verlangt das
+  richtige Verhalten und ist `#[ignore]`; mit einer Wegwerf-Korrektur an der Stelle (`+ pausch` statt `.max(pausch)`) wird er gruen
+  (`--run-ignored only`).
+- Grenzen: nur Alleinstehende, nur gesetzliche Rente, nur Steuer 0 (Fussnote 1 der Uebersicht) — der Fall prueft den Rentenkern, nicht den
+  Tarif. Fuer Rentenbeginn vor dem Veranlagungsjahr ist der steuerfreie Teil (Rentenfreibetrag) Eingabe; die Prozente dieser 41 Jahrgaenge
+  prueft nur der Prozentspalten-Test gegen die Parameter. Die Aufteilung der Vorsorge auf Kranken- und Pflegeversicherung nennt die
+  Uebersicht nicht (der Bescheid-Weg summiert beide; Kontrolle in sechs Zeilen). `PARITY=1` nicht gelaufen.
+- Mutationsbeweis: 17 Mutanten an den echten Stellen (`rust/engine/src/zugriff/teil2/rente.rs`, `gesamt.rs`, `params/**`, die zwei `.txt`),
+  alle rot, Kontrollen vor und nach dem Lauf gruen; Skript `audits/messbelege/nm-rente-bmf/mutanten.py`.
+
 ## `interview_orakel.json`
 
 Szenarien fuer die Crate `interview` samt den Antworten des Python-Orakels

@@ -86,6 +86,8 @@ mod privatverkauf_einreichung_hermetisch;
 mod rav_bav_einreichung_hermetisch;
 #[path = "rav_bav_ring_hermetisch.rs"]
 mod rav_bav_ring_hermetisch;
+#[path = "rente_bmf_uebersicht_hermetisch.rs"]
+mod rente_bmf_uebersicht_hermetisch;
 #[path = "rente_pauschbetrag_einmal.rs"]
 mod rente_pauschbetrag_einmal;
 #[path = "rentenbeginn_jahr.rs"]
