@@ -1,0 +1,27 @@
+# Eingefrorene BMF-Übersicht (lokal, Nutzer-Auftrag d-15 vom 2026-10-15). Provenance-Archiv.
+# Das PDF liegt lokal neben der Textdatei (`.gitignore`: `sources/**/*.pdf`); versioniert sind .txt und diese Datei.
+dokument:
+  norm_uri: "bmf/uebersicht-rentenbesteuerung/2026"
+  norm: "BMF: Übersicht zur Rentenbesteuerung, Juni 2026 (Bis zu welcher jährlichen Bruttorente bleibt ein Rentner ohne Steuerbelastung; Angaben für 2026, 21 bzw. 22 Zeilen nach Jahr des Rentenbeginns)"
+  fassung: "Juni 2026"
+  quelle_url: "https://finanzamt.brandenburg.de/sixcms/media.php/9/Renten%20und%20Steuern_BMF-Tabelle%202026.pdf"
+  abrufdatum: "2026-10-15"
+  datei: "bmf_rentenbesteuerung_uebersicht_2026-06.txt"
+  pdf_datei: "bmf_rentenbesteuerung_uebersicht_2026-06.pdf"
+  sha256: "0bdf583ebf12f06fe82f42d6d37aacc66f059ca73291a8fb84c6fffb2e49797c"
+  pdf_sha256: "d8ff490025e65e6fed29e3f54e063514a62a5b60c9a03413fd3c607d5452f1aa"
+  authority: verwaltung
+  redistributable: false
+  hinweis: >
+    LIZENZ NICHT AUSDRUECKLICH GEKLAERT (Recherche d-5, Vault research/oeffentliche-musterfaelle-rente-ausland-unfall-gwg-2026-10-15,
+    Treffer [1]): weder BMF noch Spiegel nennen eine Lizenz; die Lesart "§ 5 Abs. 2 UrhG, amtliches Werk" ist nicht bewiesen.
+    Darum `false` (Exportierbarkeit nicht belegt). Julius 2026-10-15 (d-15): "die lizenz ist erstal egal das ist ja momentan ein
+    proivates projekt". Auf `true` setzen, sobald geklaert. Spiegel beim Finanzamt Brandenburg; bundesfinanzministerium.de liefert
+    HTTP 503. PDF via pdftotext -layout extrahiert, unbereinigt. Fussnote 1 der Quelle: Angaben fuer alleinstehende Rentner, nur
+    Renten aus gesetzlicher Rentenversicherung, landwirtschaftlichen Alterskassen, berufsstaendischen Versorgungseinrichtungen und
+    Basisrentenvertraegen, nur ohne andere steuerlich relevante Einkuenfte; Annahmen: Rentensteigerungen Ost, allgemeiner
+    KV-Beitragssatz ohne kassenindividuellen Zusatzbeitrag, voller PV-Beitragssatz ohne Kinderlosenzuschlag bzw. Kinderabschlaege.
+  erwartete_anker:
+    - "Angaben für das Jahr 2026"
+    - "ohne Steuerbelastung"
+  verwendet_in: ["rust/bescheid/tests/rente_bmf_uebersicht_hermetisch.rs"]

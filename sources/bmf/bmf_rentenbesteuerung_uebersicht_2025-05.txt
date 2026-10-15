@@ -1,0 +1,53 @@
+Quelle: https://finanzamt.brandenburg.de/sixcms/media.php/9/Renten%20und%20Steuern_BMF-Tabelle%202025.pdf
+Abgerufen: 2026-10-15
+Titel: BMF: Bis zu welcher jährlichen Bruttorente bleibt ein Rentner ohne Steuerbelastung (Angaben für 2025, Stand Mai 2025)
+Herkunft: BMF-Übersicht, Spiegel beim Finanzamt Brandenburg (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+
+                                                                                                                                                                                                                           Mai 2025
+
+
+
+                                  Bis zu welcher jährlichen Bruttorente1) bleibt ein Rentner bzw. eine Rentnerin ohne Steuerbelastung,
+                                                        wenn neben der Rente keine weiteren Einkünfte bestehen?
+                                    Angaben für das Jahr 2025, gegliedert nach Jahr des Rentenbeginns bzw. des Besteuerungsanteils
+                                                      entspricht                                                                                     Herleitung
+                                   Höchste                                                                                 ergibt                                       davon gehen ab
+      Jahr des                                  Monats-      Monats-                                                                                                                                           zu versteuerndes
+                                Jahresbrutto-                                      Besteuerungs-
+   Rentenbeginns                                 brutto-      brutto-                                 betragsmäßig                                       Werbungs-          Sonder-         abzugsfähige          Einkommen
+                                 rente 2025,                                      anteil nach dem                                der Besteuerung
+    (maßgeblich                                   rente        rente                                festgeschriebener                                     kosten-          ausgaben-         Vorsorge-         (entspricht dem
+                             die noch steuerun-                                   Jahr des Renten-                                unterliegender
+       für den                                  (1. Halb-    (2. Halb-                             steuerfreier Teil der                                  pausch-           pausch-           aufwen-          Grundfreibetrag
+                               belastet bleibt                                         beginns                                   Anteil der Rente
+ Besteuerungsanteil)                             jahr) 2)     jahr) 2)                                   Rente 3)                                          betrag            betrag           dungen                 2025)
+                                     in €               in €           in €              in %                   in €                    in €                 in €              in €              in €                 in €
+  2005 (oder früher)                20.249             1.656          1.718              50,0                  5.807                   14.442                102                36              2.208                12.096
+        2006                        19.896             1.628          1.688              52,0                  5.492                   14.404                102                36              2.170                12.096
+        2007                        19.596             1.603          1.663              54,0                  5.225                   14.371                102                36              2.137                12.096
+        2008                        19.413             1.588          1.647              56,0                  5.062                   14.351                102                36              2.117                12.096
+        2009                        19.180             1.569          1.628              58,0                  4.854                   14.326                102                36              2.092                12.096
+        2010                        18.857             1.543          1.600              60,0                  4.567                   14.290                102                36              2.056                12.096
+        2011                        18.619             1.523          1.580              62,0                  4.354                   14.265                102                36              2.031                12.096
+        2012                        18.446             1.509          1.565              64,0                  4.200                   14.246                102                36              2.012                12.096
+        2013                        18.269             1.494          1.550              66,0                  4.043                   14.226                102                36              1.992                12.096
+        2014                        18.060             1.477          1.533              68,0                  3.856                   14.204                102                36              1.970                12.096
+        2015                        17.930             1.467          1.522              70,0                  3.741                   14.189                102                36              1.955                12.096
+        2016                        17.810             1.457          1.511              72,0                  3.633                   14.177                102                36              1.943                12.096
+        2017                        17.605             1.440          1.494              74,0                  3.451                   14.154                102                36              1.920                12.096
+        2018                        17.392             1.423          1.476              76,0                  3.261                   14.131                102                36              1.897                12.096
+        2019                        17.181             1.405          1.458              78,0                  3.073                   14.108                102                36              1.874                12.096
+        2020                        16.888             1.382          1.433              80,0                  2.813                   14.075                102                36              1.841                12.096
+        2021                        16.821             1.376          1.427              81,0                  2.753                   14.068                102                36              1.834                12.096
+        2022                        16.838             1.377          1.429              82,0                  2.767                   14.071                102                36              1.837                12.096
+        2023                        16.925             1.385          1.436              82,5                  2.845                   14.080                102                36              1.846                12.096
+        2024                        16.969             1.388          1.440              83,0                  2.885                   14.084                102                36              1.850                12.096
+        2025                        16.853             1.379          1.430              83,5                  2.781                   14.072                102                36              1.838                12.096
+1) Angaben für alleinstehende Rentner; sie gelten nur für Renten aus der gesetzlichen Rentenversicherung, der landwirtschaftlichen Alterskassen, den berufsständischen Versorgungseinrichtungen und Basisrentenverträgen und nur
+
+dann, wenn keine anderen, steuerlich relevanten Einkünfte vorliegen. Bis zu welcher Bruttojahresrente im Einzelfall keine Steuern zu zahlen sind, hängt von weiteren persönlichen Merkmalen ab. Berechnungsannahmen:
+Rentensteigerungen Ost; allgemeiner Beitragssatz zur gesetzlichen Krankenversicherung ohne kassenindividuellen Zusatzbeitragssatz, voller Beitragssatz zu Pflegeversicherung ohne Zuschlag für Kinderlose bzw. Abschläge für Kinder.
+2) Differenzen in der Summe durch Rundung.
+3) Im Jahr, das auf den Rentenbeginn folgt.
+
