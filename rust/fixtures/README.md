@@ -184,12 +184,14 @@ steht im Testkopf in eigenen Worten. Der Aufgabentext lag nicht vor, die Kammer 
   (`rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs::bekannte_grenze_der_vollfall_in_einer_akte_ist_gesperrt_statt_falsch_gerechnet`).
 - **BEFUND: 25 Euro Abstand zur Zahl der Loesung, Ursache die Tarifkonstante.** Die Loesung rechnet „0,42 x X - 10.602,13“ (Seite 7); diese
   Konstante gehoert zum Grundfreibetrag 11.604 Euro, dem Tarif 2024 vor dem rueckwirkenden Gesetz vom Dezember 2024 (abgeleitet,
-  `params/derive_coefficients.py`). `params/2024/einkommensteuertarif_p32a.yaml` hat 10.636,31 (Grundfreibetrag 11.784, BGBl 2024 I Nr. 386).
-  Der Bescheid-Weg trifft die Zwischenwerte der Loesung exakt (Summe der Einkuenfte 190.000, zu versteuerndes Einkommen 178.500) und die
-  Rechnung der Loesung mit der Konstante der Params-Datei: 66.955 statt 66.980, festzusetzende Steuer 51.955 statt 51.980. Die Fassung des
-  Gesetzes fuer 2024 wurde NICHT am Gesetzestext geprueft (liegt nicht in `sources/`); wer die Zahl der Loesung als Soll verlangt, muss
-  diese Frage zuerst entscheiden.
-- Geprueft sind acht Tests; der Beleg der Konstante ist `rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs::die_konstante_der_handrechnung_ist_die_der_params_datei_2024`.
+  `params/derive_coefficients.py`). Die Catala-Regel `rules/estg/p32a/einkommensteuertarif.catala_en` (Block VZ2024, eingecheckt als
+  `rust/catala-sys/generated/Einkommensteuertarif.c`) und `params/2024/einkommensteuertarif_p32a.yaml` haben 10.636,31 (Grundfreibetrag
+  11.784, BGBl 2024 I Nr. 386). Der Bescheid-Weg trifft die Zwischenwerte der Loesung exakt (Summe der Einkuenfte 190.000, zu versteuerndes
+  Einkommen 178.500) und die Rechnung der Loesung mit dieser Konstante: 66.955 statt 66.980, festzusetzende Steuer 51.955 statt 51.980.
+  Setzt man im C-Tarif 10.602,13 ein, liefert der Weg die 66.980 der Loesung (Mutant M8, Beleg `audits/messbelege/nm-ausland-bstbk`).
+  Die Fassung des Gesetzes fuer 2024 wurde NICHT am Gesetzestext geprueft (liegt nicht in `sources/`; die Werte der Regel sind „aus den
+  GETTSIM-Zonenparametern abgeleitet“); wer die Zahl der Loesung als Soll verlangt, muss diese Frage zuerst entscheiden.
+- Geprueft sind acht Tests; der Beleg der Konstante ist `rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs::die_konstante_der_handrechnung_steht_in_der_params_datei_und_der_catala_regel_2024`.
 
 ## `interview_orakel.json`
 

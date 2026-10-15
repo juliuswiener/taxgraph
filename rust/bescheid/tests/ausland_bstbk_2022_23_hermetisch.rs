@@ -26,14 +26,18 @@
 //! **BEFUND: Die Zahlen der Loesung und der Bescheid-Weg weichen um 25 Euro ab, und die Ursache ist die Tarifkonstante.**
 //! Die Loesung rechnet "0,42 x X - 10.602,13" (PDF-Seite 7). Diese Konstante gehoert zum Grundfreibetrag 11.604 Euro, das ist
 //! der Tarif des Jahres 2024 VOR dem rueckwirkenden Gesetz vom Dezember 2024 (abgeleitet: `params/derive_coefficients.py`
-//! mit Grundfreibetrag 11.604 ergibt 10.602,13; mit 11.784 ergibt es 10.636,31). Der Bescheid-Weg rechnet mit
-//! `params/2024/einkommensteuertarif_p32a.yaml` (Grundfreibetrag 11.784, "Endfassung ist massgeblich", `BGBl` 2024 I Nr. 386,
-//! Konstante 10.636,31). Die Loesung nennt sich "Rechtsstand 2025"; ob sie die Aenderung uebersehen hat oder der Tarif des
-//! Repos falsch waere, entscheidet der Gesetzestext der Fassung fuer 2024. Er liegt nicht in `sources/` und lag dem Bauer nicht
-//! vor (Evidenzgrad: abgeleitet, nicht am Gesetz geprueft). Folge fuer diesen Test: Die Zahlen der Loesung stehen unveraendert
-//! als Soll in der Rechnung mit IHRER Konstante (Test 1, gruen), der Bescheid-Weg wird gegen dieselbe Rechnung mit der Konstante
-//! der Params-Datei gehalten (Tests 2 bis 6), und der Abstand zur Zahl der Loesung steht als Zahl im Test (25 Euro bei der
-//! festzusetzenden Steuer). Die Erwartung ist nirgends an den Rust-Code angepasst.
+//! mit Grundfreibetrag 11.604 ergibt 10.602,13; mit 11.784 ergibt es 10.636,31). Der Bescheid-Weg rechnet mit der Catala-Regel
+//! `rules/estg/p32a/einkommensteuertarif.catala_en` (eingecheckt als `rust/catala-sys/generated/Einkommensteuertarif.c`), Block
+//! VZ2024: Grundfreibetrag 11.784, Konstante 10.636,31; dieselben Zahlen stehen in `params/2024/einkommensteuertarif_p32a.yaml`
+//! ("Endfassung ist massgeblich", `BGBl` 2024 I Nr. 386). Die Loesung nennt sich "Rechtsstand 2025"; ob sie die Aenderung uebersehen
+//! hat oder der Tarif des Repos falsch waere, entscheidet der Gesetzestext der Fassung fuer 2024. Er liegt nicht in `sources/`
+//! und lag dem Bauer nicht vor; die Regel nennt ihre 2024-Werte "aus den GETTSIM-Zonenparametern abgeleitet, Methode gegen die
+//! VZ-2026-Literalfassung validiert" (Evidenzgrad: abgeleitet, nicht am Wortlaut 2024 geprueft). Folge fuer diesen Test: Die
+//! Zahlen der Loesung stehen unveraendert als Soll in der Rechnung mit IHRER Konstante (Test 1, gruen), der Bescheid-Weg wird
+//! gegen dieselbe Rechnung mit der Konstante der Regel gehalten (Tests 2 bis 6), und der Abstand zur Zahl der Loesung steht
+//! als Zahl im Test (25 Euro bei der festzusetzenden Steuer). Die Erwartung ist nirgends an den Rust-Code angepasst. Beleg, dass
+//! allein die Konstante den Abstand macht: setzt man im C-Tarif 10.602,13 statt 10.636,31 ein, liefert der Bescheid-Weg die
+//! 66.980 der Loesung (Mutant M8 der Nachmessung, `audits/messbelege/nm-ausland-bstbk`).
 //!
 //! HERKUNFT DER ERWARTUNGSWERTE: Loesungsvorschlag der `BStBK` zur Klausur "Einkommensteuer- und Ertragsteuerrecht", Steuerberaterpruefung
 //! 2022/2023, Fundstelle Bundessteuerblatt `BStBl` I 2025 Seite 1200 vom 30. Mai 2025 (Rechtsstand 2025, gerechnet fuer VZ 2024),
@@ -94,8 +98,10 @@ use store::Store;
 
 const VZ: Vz = Vz::Vz2024;
 
-/// Die Datei, aus der der Bescheid-Weg den Tarif 2024 liest; der Test haelt die Konstante der Handrechnung gegen sie.
+/// Die Params-Datei des Tarifs 2024 (Quelle der Handrechnungen der Tests im Repo) und die Catala-Regel, aus der der eingecheckte
+/// C-Tarif des Bescheid-Wegs entsteht; der Test haelt die Konstante der Handrechnung gegen beide.
 const TARIF_2024_YAML: &str = include_str!("../../../params/2024/einkommensteuertarif_p32a.yaml");
+const TARIF_2024_CATALA: &str = include_str!("../../../rules/estg/p32a/einkommensteuertarif.catala_en");
 
 // Zahlen der Loesung (PDF-Seite 6 und 7), in vollen Euro.
 const SUMME_DER_EINKUENFTE: i64 = 190_000;
@@ -107,7 +113,7 @@ const L_HOECHSTBETRAG_34C: i64 = 18_761;
 const L_ANGERECHNET: i64 = 15_000;
 const L_FESTZUSETZENDE_EST: i64 = 51_980;
 
-/// Zone-4-Konstante in Cent: "0,42 x X - K". Loesung: 10.602,13 Euro; Params-Datei 2024: 10.636,31 Euro.
+/// Zone-4-Konstante in Cent: "0,42 x X - K". Loesung: 10.602,13 Euro; Catala-Regel und Params-Datei 2024: 10.636,31 Euro.
 const KONSTANTE_LOESUNG: i64 = 1_060_213;
 const KONSTANTE_PARAMS_2024: i64 = 1_063_631;
 
@@ -362,11 +368,12 @@ fn die_rechenschritte_der_loesung_sind_mit_ihrer_konstante_nachgerechnet_stimmig
     assert_eq!(r.festzusetzende_est, L_FESTZUSETZENDE_EST);
 }
 
-/// Die Konstante der Handrechnung "Params 2024" ist die der Datei, aus der der Bescheid-Weg den Tarif liest, und die zwei
-/// Konstanten unterscheiden sich genau so, wie die Ableitung aus dem Grundfreibetrag es sagt (11.604 gegen 11.784). KONTROLLE: ohne
-/// diese Bindung koennte die Handrechnung eine Konstante tragen, die der Weg gar nicht benutzt.
+/// Die Konstante der Handrechnung `KONSTANTE_PARAMS_2024` (10.636,31) steht in der Params-Datei UND im VZ2024-Block der
+/// Catala-Regel, aus der der C-Tarif des Bescheid-Weges entsteht, jeweils mit dem Grundfreibetrag 11.784 (der Tarif der Loesung
+/// gehoert dagegen zu 11.604, siehe Kopf). KONTROLLE: ohne diese Bindung koennte die Handrechnung eine Konstante tragen, die der
+/// Weg gar nicht benutzt. Dass der Weg SELBST diese Konstante rechnet, messen die Tests 2 bis 6 an fuenf Punkten.
 #[test]
-fn die_konstante_der_handrechnung_ist_die_der_params_datei_2024() {
+fn die_konstante_der_handrechnung_steht_in_der_params_datei_und_der_catala_regel_2024() {
     let zeile = TARIF_2024_YAML
         .lines()
         .find(|z| z.starts_with("zone4_abzug:"))
@@ -375,11 +382,20 @@ fn die_konstante_der_handrechnung_ist_die_der_params_datei_2024() {
         zeile.contains("wert: 10636.31,"),
         "KONTROLLE: Konstante der Params-Datei: {zeile}"
     );
-    assert_eq!(KONSTANTE_PARAMS_2024, 1_063_631);
     assert!(
         TARIF_2024_YAML.contains("wert: 11784"),
         "KONTROLLE: Grundfreibetrag 2024 in der Params-Datei"
     );
+    let anfang = TARIF_2024_CATALA
+        .find("-- VZ2024: Tarifparameter {")
+        .expect("KONTROLLE: Block VZ2024 fehlt in der Catala-Regel");
+    let ende = TARIF_2024_CATALA[anfang..]
+        .find("-- VZ2025:")
+        .expect("KONTROLLE: Block VZ2025 fehlt in der Catala-Regel");
+    let block = &TARIF_2024_CATALA[anfang..anfang + ende];
+    assert!(block.contains("-- zone4_abzug: 10636.31\n"), "KONTROLLE: Block VZ2024: {block}");
+    assert!(block.contains("-- grundfreibetrag: 11784.0\n"), "KONTROLLE: Block VZ2024: {block}");
+    assert_eq!(KONSTANTE_PARAMS_2024, 1_063_631);
 }
 
 // ------------------------------------------------------------------------------------------------ Tests 2 bis 6: der Weg
