@@ -11,6 +11,7 @@ use store::BindungNachschlag;
 
 use crate::antwort::Antwort;
 use crate::eigener_fall::{fall_kennung, ist_fall_id, EigenerFall};
+use crate::event::{kreuz_ohne_lohn_steht, LOHN_PARTNER};
 use crate::fehler::ApiFehler;
 use crate::python::{text, typname, wahr};
 use crate::zustand::{Nutzer, Zustand as Dienst};
@@ -69,15 +70,27 @@ pub fn vorjahr(
         .store()
         .materialisiere(None)
         .map_err(|e| ApiFehler::unerwartet("ValueError", e.to_string()))?;
-    let felder: BTreeMap<String, VorjahrFeld> = serde_json::to_value(&felder)
+    let mut felder: BTreeMap<String, VorjahrFeld> = serde_json::to_value(&felder)
         .and_then(serde_json::from_value)
         .map_err(|e| ApiFehler::unerwartet("ValueError", e.to_string()))?;
+    // Rust-eigen (Abweichung Nr. 77, Julius 2026-10-15, d-14): neben dem bestaetigten Kreuz `kein_lohn_pension_partner` legt die
+    // Uebernahme den Lohn des Ehegatten nicht als Vorschlag an. Das Kreuz verbirgt die Lohnfrage, ein vorlaeufiger Lohn ohne Frage
+    // bliebe gesperrt (wie bei `POST /event`, dort 400). Der Aufruf bricht nicht ab: er uebernimmt den Rest und nennt den Lohn
+    // unter `uebersprungen`.
+    let lohn_gegen_kreuz = kreuz_ohne_lohn_steht(fall.store())
+        && fall.store().aktives(LOHN_PARTNER).is_none()
+        && felder
+            .get(LOHN_PARTNER)
+            .is_some_and(|f| f.zustand.as_deref() == Some("bestaetigt"));
+    if lohn_gegen_kreuz {
+        felder.remove(LOHN_PARTNER);
+    }
     // ponytail: ein Jahr außerhalb von i64 (nur eine Akte von Hand) steht als i64::MAX im Beleg
     // (`signal_1.vz`); Python hat die exakte Ganzzahl. Upgrade: `uebernehme` mit `i128`.
     let vz = i64::try_from(quelle.store().datei().veranlagungszeitraum.0).unwrap_or(i64::MAX);
     // In der Reihenfolge der Scheibe, wie Python `bindung.items()` durchgeht: so stehen die Events in
     // der Akte, und eine Abweisung bricht an derselben Stelle ab.
-    let erg = uebernehme_in_reihenfolge(
+    let mut erg = uebernehme_in_reihenfolge(
         fall.store_mut(),
         &felder,
         BindungNachschlag::neu(&sb.index),
@@ -90,6 +103,10 @@ pub fn vorjahr(
         SchreibFehler::Abweisung(a) => ApiFehler::status(422, a.to_string()),
         SchreibFehler::Konstante => ApiFehler::unerwartet("ValueError", e.to_string()),
     })?;
+    if lohn_gegen_kreuz {
+        erg.uebersprungen.push(LOHN_PARTNER.to_owned());
+        erg.uebersprungen.sort();
+    }
     if let Some(referenz) = erg.referenz {
         fall.store_mut()
             .setze_vorjahr_referenz(PyWert::from(referenz));

@@ -28,6 +28,7 @@ use store::{BindungNachschlag, Event, EventId, Katalog, NeuesEventRoh, Signal, S
 use crate::antwort::Antwort;
 use crate::anzeige::{anzeige_metadaten, enum_labels};
 use crate::eigener_fall::EigenerFall;
+use crate::event::{kreuz_ohne_lohn_steht, LOHN_PARTNER};
 use crate::fehler::ApiFehler;
 use crate::flow;
 use crate::python::{repr, typname, unhashbar, wahr};
@@ -418,6 +419,17 @@ fn verarbeite(
         };
         if let Some(aktiv) = bestehendes.filter(|_| katalog.erlaubt("llm", fid)) {
             aus.konflikte.push(konflikt(sb, v, aktiv)?);
+            continue;
+        }
+        // Rust-eigen (Abweichung Nr. 77, Julius 2026-10-15, d-14): neben dem bestaetigten Kreuz `kein_lohn_pension_partner` schreibt
+        // der Chat den Lohn des Ehegatten nicht als Vorschlag. Das Kreuz verbirgt die Lohnfrage, ein vorlaeufiger Lohn ohne Frage
+        // bliebe gesperrt (wie bei `POST /event`, dort 400). Ein Lohn, der schon im Fall steht, ist oben ein Konflikt.
+        if fid == LOHN_PARTNER && kreuz_ohne_lohn_steht(fall.store()) {
+            aus.abgelehnt.push(fid.to_owned());
+            aus.gruende.insert(
+                fid.to_owned(),
+                json!("kreuz_ohne_lohn: Das Kreuz kein_lohn_pension_partner steht, ein Lohn des Ehegatten als Vorschlag passt nicht dazu"),
+            );
             continue;
         }
         let neu = neues_event(v)?;

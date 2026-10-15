@@ -664,6 +664,17 @@ async fn event_vorlaeufig(d: &Dienst, feld: &str, wert: &Value) -> (u16, Value) 
     sende(d, "POST", "/fall/reh/event", Some(&rumpf)).await
 }
 
+/// Wie `event_vorlaeufig`, mit dem Schreiber und der Herkunft eines Vorschlags (`llm:`, `import:`, `beleg:`).
+async fn event_vorschlag_von(d: &Dienst, schreiber: &str, herkunft: &str, feld: &str, wert: &Value) -> (u16, Value) {
+    let rumpf = json!({
+        "feld_id": feld, "wert": wert, "zustand": "vorlaeufig", "schreiber": schreiber,
+        "herkunft": {"herkunft": herkunft, "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": null},
+        "ts": "2026-01-01T00:00:00+00:00",
+    });
+    sende(d, "POST", "/fall/reh/event", Some(&rumpf)).await
+}
+
 /// Die Bestaetigung eines vorlaeufigen Werts: ein bestaetigtes Event, das das vorlaeufige ersetzt.
 async fn event_bestaetigt_ersetzt(d: &Dienst, feld: &str, wert: &Value, ersetzt: &str) -> (u16, Value) {
     let rumpf = json!({
@@ -761,19 +772,105 @@ async fn das_kreuz_ohne_lohn_des_ehegatten_bleibt_sonst_erlaubt() {
     assert_eq!(zahl(&ohne), zahl(&mit_kreuz), "bestaetigter Lohn neben dem Kreuz: {mit_kreuz}");
 }
 
-/// Offener Defekt, gemessen 2026-10-15 am Stand nach Abweichung Nr. 76: die umgekehrte Reihenfolge. Das Kreuz steht schon, dann
-/// kommt der Lohn des Ehegatten als Vorschlag (KI oder Vorjahr) an. `POST /event` antwortet 201, die Lohnfrage steht nicht in den
-/// Fragen, und `GET /ergebnis` bleibt in `ring_betrag_vorlaeufig`: dieselbe Sackgasse auf dem anderen Weg. Julius hat nur das
-/// Abweisen des Kreuzes entschieden (d-7); wie dieser Weg schliesst, steht noch aus. Rot sehen: `--ignored`.
+/// Abweichung Nr. 77 (Julius, Entscheidung d-14, 2026-10-15): die Gegenrichtung zu Nr. 76. Das Kreuz steht schon, dann kommt der
+/// Lohn des Ehegatten als Vorschlag (KI, Vorjahr, Beleg) an. Vorher antwortete `POST /event` 201, die Lohnfrage stand nicht in den
+/// Fragen, und `GET /ergebnis` blieb in `ring_betrag_vorlaeufig`: dieselbe Sackgasse auf dem anderen Weg (gemessen 2026-10-15 am
+/// Stand nach Nr. 76, der alte Test `ein_vorschlag_fuer_den_lohn_nach_dem_kreuz_baut_keine_sackgasse` war rot). Jetzt weist der
+/// Dienst den Vorschlag mit 400 ab und nennt beide Felder. Mit dem zurueckgenommenen Kreuz geht er, und die Lohnfrage steht.
 #[tokio::test]
-#[ignore = "offener Defekt: Vorschlag fuer den Lohn nach dem Kreuz, siehe Doku; Rot sehen: --ignored"]
-async fn ein_vorschlag_fuer_den_lohn_nach_dem_kreuz_baut_keine_sackgasse() {
+async fn ein_vorlaeufiger_lohn_des_ehegatten_wird_bei_gesetztem_kreuz_mit_400_abgewiesen() {
+    let lohn = json!(3_800_000);
     let d = fall_mit("rentner_gesamt", &paar(4_000_000)).await;
-    assert_eq!(event_post(&d, KREUZ_PARTNER, &json!(true)).await.0, 201);
-    let (status, antwort) = event_vorlaeufig(&d, LOHN_PARTNER, &json!(3_800_000)).await;
-    let (_, erg) = sende(&d, "GET", "/fall/reh/ergebnis", None).await;
+    let (status, kreuz) = event_post(&d, KREUZ_PARTNER, &json!(true)).await;
+    assert_eq!(status, 201, "Kreuz: {kreuz}");
+    assert!(!lohnfrage_steht(&d).await, "KONTROLLE: das Kreuz verbirgt die Lohnfrage");
+    let (_, vorher) = sende(&d, "GET", "/fall/reh/ergebnis", None).await;
+    let zahl_vorher = zahl(&vorher);
+
+    let (status, antwort) = event_vorlaeufig(&d, LOHN_PARTNER, &lohn).await;
+    assert_eq!(status, 400, "DEFEKT: der Vorschlag fuer den Lohn neben dem Kreuz wird angenommen: {antwort}");
+    let fehler = antwort["fehler"].as_str().unwrap_or_default();
     assert!(
-        status == 400 || lohnfrage_steht(&d).await || erg["grund"] == json!("bestaetigt"),
-        "DEFEKT: der Vorschlag ({status}: {antwort}) laesst die Zahl gesperrt, ohne dass eine Frage sie loest: {erg}"
+        fehler.contains(KREUZ_PARTNER) && fehler.contains(LOHN_PARTNER),
+        "die Abweisung nennt beide Felder, damit der Nutzer weiss, was zu tun ist: {antwort}"
     );
+
+    // Jeder Schreiber eines Vorschlags geht durch dieselbe Tuer: Vorjahr, Beleg, KI.
+    for (schreiber, herkunft) in [("import:vorjahr", "vorjahr"), ("import:beleg", "beleg_import"), ("llm:chat", "llm_vorschlag")] {
+        let (status, antwort) = event_vorschlag_von(&d, schreiber, herkunft, LOHN_PARTNER, &lohn).await;
+        assert_eq!(status, 400, "DEFEKT: der Vorschlag von {schreiber} neben dem Kreuz wird angenommen: {antwort}");
+    }
+
+    // Die Abweisung speichert nichts: das Kreuz gilt weiter, die Zahl bleibt die von vorher.
+    assert!(!lohnfrage_steht(&d).await, "die Abweisung hat die Lohnfrage veraendert");
+    let (_, nachher) = sende(&d, "GET", "/fall/reh/ergebnis", None).await;
+    assert_eq!(zahl(&nachher), zahl_vorher, "{nachher}");
+
+    // Der Ausweg, den die Meldung nennt: das Kreuz zuruecknehmen. Dann geht der Vorschlag, und die Frage steht.
+    let ersetzt = kreuz["event_id"].as_str().unwrap();
+    let (status, antwort) = event_bestaetigt_ersetzt(&d, KREUZ_PARTNER, &json!(false), ersetzt).await;
+    assert_eq!(status, 201, "Kreuz zuruecknehmen: {antwort}");
+    let (status, antwort) = event_vorlaeufig(&d, LOHN_PARTNER, &lohn).await;
+    assert_eq!(status, 201, "Vorschlag nach dem zurueckgenommenen Kreuz: {antwort}");
+    assert!(lohnfrage_steht(&d).await, "nach dem zurueckgenommenen Kreuz steht die Lohnfrage");
+    let (_, erg) = sende(&d, "GET", "/fall/reh/ergebnis", None).await;
+    assert_eq!(erg["grund"], json!("ring_betrag_vorlaeufig"), "{erg}");
+    assert_eq!(erg["offen"], json!([LOHN_PARTNER]), "{erg}");
+}
+
+/// Die Abweisung der Gegenrichtung greift nur in dem einen Fall. Kontrollen, jede mit einem eigenen Fall: ohne Kreuz, mit
+/// verneintem Kreuz, mit nur vorlaeufigem Kreuz (es verbirgt nichts), mit dem Kreuz der Hauptperson und mit bestaetigtem Lohn
+/// nach dem Kreuz (Abweichung Nr. 46: er zaehlt weiter) nimmt der Dienst den Lohn an (201). Auf `gesamt` und `an_gesamt`
+/// laesst sich das Kreuz nicht setzen (400 an der Tuer); dort gilt die Regel nie, der Vorschlag geht und die Lohnfrage bleibt.
+#[tokio::test]
+async fn ein_vorlaeufiger_lohn_des_ehegatten_bleibt_sonst_erlaubt() {
+    let lohn = json!(3_800_000);
+
+    // Ohne Kreuz: die Lohnfrage steht, der Vorschlag geht.
+    let d = fall_mit("rentner_gesamt", &paar(4_000_000)).await;
+    assert!(lohnfrage_steht(&d).await, "KONTROLLE: ohne Kreuz steht die Lohnfrage");
+    let (status, antwort) = event_vorlaeufig(&d, LOHN_PARTNER, &lohn).await;
+    assert_eq!(status, 201, "ohne Kreuz: {antwort}");
+
+    // Verneintes Kreuz (der Ehegatte hat Lohn): die richtige Antwort neben dem Vorschlag.
+    let d = fall_mit("rentner_gesamt", &mit(paar(4_000_000), vec![(KREUZ_PARTNER, json!(false))])).await;
+    let (status, antwort) = event_vorlaeufig(&d, LOHN_PARTNER, &lohn).await;
+    assert_eq!(status, 201, "Kreuz nein: {antwort}");
+    assert!(lohnfrage_steht(&d).await);
+
+    // Ein nur vorlaeufiges Kreuz verbirgt die Lohnfrage nicht.
+    let d = fall_mit("rentner_gesamt", &paar(4_000_000)).await;
+    assert_eq!(event_vorlaeufig(&d, KREUZ_PARTNER, &json!(true)).await.0, 201);
+    let (status, antwort) = event_vorlaeufig(&d, LOHN_PARTNER, &lohn).await;
+    assert_eq!(status, 201, "vorlaeufiges Kreuz: {antwort}");
+    assert!(lohnfrage_steht(&d).await, "ein vorlaeufiges Kreuz verbirgt die Lohnfrage nicht");
+
+    // Das Kreuz der Hauptperson verbirgt die Lohnfrage des Ehegatten nicht.
+    let d = fall_mit("rentner_gesamt", &mit(paar(4_000_000), vec![("kein_lohn_pension", json!(true))])).await;
+    let (status, antwort) = event_vorlaeufig(&d, LOHN_PARTNER, &lohn).await;
+    assert_eq!(status, 201, "anderes Kreuz: {antwort}");
+    assert!(lohnfrage_steht(&d).await);
+
+    // Das Kreuz gilt nur dem Lohn: ein anderes vorlaeufiges Feld neben dem Kreuz geht (hier das Kreuz der Hauptperson).
+    let d = fall_mit("rentner_gesamt", &mit(paar(4_000_000), vec![(KREUZ_PARTNER, json!(true))])).await;
+    let (status, antwort) = event_vorlaeufig(&d, "kein_lohn_pension", &json!(true)).await;
+    assert_eq!(status, 201, "anderes Feld neben dem Kreuz: {antwort}");
+
+    // Bestaetigter Lohn nach dem Kreuz (Nr. 46): geht, und die Zahl ist die ohne Kreuz.
+    let ohne = ergebnis(&mit(paar(4_000_000), lohn_partner(38_000))).await;
+    let d = fall_mit("rentner_gesamt", &mit(paar(4_000_000), vec![(KREUZ_PARTNER, json!(true))])).await;
+    let (status, antwort) = event_post(&d, LOHN_PARTNER, &lohn).await;
+    assert_eq!(status, 201, "bestaetigter Lohn nach dem Kreuz: {antwort}");
+    let (_, mit_kreuz) = sende(&d, "GET", "/fall/reh/ergebnis", None).await;
+    assert_eq!(zahl(&ohne), zahl(&mit_kreuz), "bestaetigter Lohn nach dem Kreuz: {mit_kreuz}");
+
+    // `gesamt` und `an_gesamt` fragen das Kreuz nicht: es ist dort ein 400 an der Tuer, der Vorschlag geht.
+    for scheibe in ["gesamt", "an_gesamt"] {
+        let d = fall_mit(scheibe, &[("veranlagung", json!("zusammen"))]).await;
+        let (status, antwort) = event_post(&d, KREUZ_PARTNER, &json!(true)).await;
+        assert_eq!(status, 400, "KONTROLLE: das Kreuz ist auf {scheibe} nicht setzbar: {antwort}");
+        let (status, antwort) = event_vorlaeufig(&d, LOHN_PARTNER, &lohn).await;
+        assert_eq!(status, 201, "{scheibe}: {antwort}");
+        assert!(lohnfrage_steht(&d).await, "{scheibe}: die Lohnfrage bleibt");
+    }
 }

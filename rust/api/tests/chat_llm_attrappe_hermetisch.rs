@@ -854,6 +854,56 @@ Das hat der Nutzer bereits bestätigt:\n";
     skript.lock().unwrap().clear();
     gesehen.lock().unwrap().clear();
 
+    // --- Abweichung Nr. 77 (Julius, d-14, 2026-10-15): neben dem bestaetigten Kreuz `kein_lohn_pension_partner` schreibt der Chat
+    // den Lohn des Ehegatten nicht als Vorschlag. Das Kreuz verbirgt die Lohnfrage, ein vorlaeufiger Lohn ohne Frage bliebe gesperrt.
+    // Kontrolle: derselbe Vorschlag ohne das Kreuz wird geschrieben.
+    for (fall, kreuz) in [("kr0", false), ("kr1", true)] {
+        let (s, a) = post(
+            &d,
+            "/fall",
+            &json!({"fall_id": fall, "scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025}),
+        )
+        .await;
+        assert_eq!(s, 201, "{a}");
+        let mut paare = vec![("veranlagung", json!("zusammen"))];
+        if kreuz {
+            paare.push(("kein_lohn_pension_partner", json!(true)));
+        }
+        setze_bestaetigt(&d, fall, &paare);
+        let vorher = akte(&d, fall);
+        *skript.lock().unwrap() = vec![
+            aussagen_stufe(),
+            modell("zuordnung", &json!({"zuordnungen": []})),
+            modell(
+                "dialog",
+                &json!({"vorschlaege": [
+                    {"feld_id": "bruttoarbeitslohn_partner", "wert": 3_800_000, "beleg": "100 Euro Lohn",
+                     "begruendung": "b0", "aussage": 1, "rechenweg": null}],
+                    "rueckfragen": [], "antwort": "Das habe ich verstanden.", "unsicher": false}),
+            ),
+        ];
+        let (s, a) = post(&d, &format!("/fall/{fall}/chat"), &json!({"text": TEXT})).await;
+        assert_eq!(s, 200, "{fall}: {a}");
+        if kreuz {
+            assert_eq!(a["vorschlaege"], json!([]), "DEFEKT: der Chat schreibt den Lohn neben das Kreuz: {a}");
+            assert_eq!(a["abgelehnt"], json!(["bruttoarbeitslohn_partner"]), "{a}");
+            assert!(
+                a["abgelehnt_gruende"]["bruttoarbeitslohn_partner"]
+                    .as_str()
+                    .is_some_and(|g| g.starts_with("kreuz_ohne_lohn:")),
+                "{a}"
+            );
+            assert_eq!(akte(&d, fall), vorher, "die Akte wurde beruehrt");
+        } else {
+            let v = a["vorschlaege"].as_array().unwrap();
+            assert_eq!(v.len(), 1, "KONTROLLE: ohne Kreuz schreibt der Chat den Lohn: {a}");
+            assert_eq!(v[0]["feld_id"], json!("bruttoarbeitslohn_partner"), "{a}");
+            assert_eq!(a["abgelehnt"], json!([]), "{a}");
+        }
+        skript.lock().unwrap().clear();
+        gesehen.lock().unwrap().clear();
+    }
+
     // --- Stufe 1 faellt aus: 501 mit dem Vertrag, die Akte bleibt, das Fehlerprotokoll warnt.
     let vorher = akte(&d, "ch1");
     *skript.lock().unwrap() = vec![Schritt {
