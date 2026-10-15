@@ -428,17 +428,35 @@ jobs:
       - name: cargo clippy (-D warnings)
         run: cd rust && cargo clippy --all-targets -- -D warnings
 
+      # cargo-nextest (Julius 2026-10-15, d-1) statt `cargo test`: ein Prozess je Test, lokal auf 12 Kernen etwa 70 s gegen
+      # 157 bis 180 s. Die Version ist fest (nicht "latest"), und die Pruefsumme steht hier: das Archiv kommt von der
+      # Release-Seite des Projekts (SHA-256 der .tar.gz, von GitHub als Digest des Assets ausgewiesen und lokal nachgerechnet);
+      # passt sie nicht, bricht der Schritt ab. `cargo install cargo-nextest` baut das Werkzeug auf dem Runner selbst (auf
+      # 22 Kernen unter neun Minuten, auf 4 Kernen laenger) und liesse das Zeitlimit des Jobs reissen. Die Version steht an
+      # drei Stellen dieses Schritts; rust/bindung/tests/ci_konfiguration.rs verlangt, dass es dieselbe ist.
+      - name: cargo-nextest 0.9.146 installieren (Pruefsumme)
+        run: |
+          set -e
+          archiv=cargo-nextest-0.9.146-x86_64-unknown-linux-gnu.tar.gz
+          curl --proto '=https' --tlsv1.2 -fsSL -o "$RUNNER_TEMP/$archiv" "https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9.146/$archiv"
+          echo "682c21b777c333e96fd532e114d3a5a894e0729ab88d94c0a9f20f8419695428  $RUNNER_TEMP/$archiv" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archiv" -C "$HOME/.cargo/bin"
+          cargo nextest --version
+
       # Kein ERiC-Schema auf dem Runner (Lizenz, s. oben). Jeder Test, der es braucht, fragt
       # elster::testhilfe::schemas_da und waere ohne Schema ROT; TAXGRAPH_OHNE_XSD=1 erlaubt das
       # Fehlen. einreichung_e2e prueft dann nur bis zum Writer, eigenschaften ueberspringt seine
       # zehn Schema-Tests, elster einen Unit-Test und fuenf Doctests. Byte-Vergleich mit Python
       # und XSD laufen lokal (ERIC_DIR).
       #
-      # --no-fail-fast: ohne das Flag bricht cargo beim ersten roten Ziel ab, und alles danach
-      # laeuft nie -- spaetere Testziele UND die Doctests aller Crates, die cargo zuletzt faehrt.
-      # So verdeckte `parity --lib` am 2026-10-02 den roten eingang-Doctest (Lauf 36985004342:
-      # kein einziges "Doc-tests" im Log). Der Job-Status bleibt rot, sobald ein Ziel rot ist
-      # (exit 101); neu ist nur, dass ein Lauf ALLE roten Ziele zeigt statt eines je Push.
+      # --no-fail-fast (und `fail-fast = false` im Profil ci, rust/.config/nextest.toml): ohne das Flag bricht der Lauf beim
+      # ersten roten Test ab, und alles danach laeuft nie. So verdeckte `parity --lib` am 2026-10-02 den roten
+      # eingang-Doctest (Lauf 36985004342: kein einziges "Doc-tests" im Log). Der Job-Status bleibt rot, sobald ein Test
+      # rot ist; neu ist nur, dass ein Lauf ALLE roten Tests zeigt statt eines je Push.
+      #
+      # nextest fuehrt KEINE Doctests aus. Sie laufen im Schritt danach (`cargo test --doc`, `if: always()`, damit ein roter
+      # Test sie nicht verdeckt) und schreiben ins selbe Log (`tee -a`). Die Testzahl eines Laufs ist die Zeile
+      # `Summary ... N tests run` des ersten Schritts plus die `test result:`-Zeilen des zweiten.
       #
       # TAXGRAPH_OHNE_BROWSER=1 (Nr. 72, E9): die Browser-Tests der Oberflaeche
       # (rust/api/tests/oberflaeche) brauchen Chromium und chromedriver; ohne beides sind sie ROT,
@@ -448,18 +466,27 @@ jobs:
       # Sicherung gegen einen Runner ohne Browser; faellt es, wird die CI bei so einem Runner rot.
       #
       # `tee` schreibt das Log fuer den Schritt unten. `shell: bash` ist Pflicht: ohne den Eintrag laeuft
-      # der Schritt als `bash -e {0}` OHNE pipefail, `cargo test | tee` lieferte dann den Exit von tee (0),
-      # und ein rotes cargo test machte den Job gruen (rust/bindung/tests/ci_nicht_geprueft.rs haelt das fest).
-      - name: cargo test
+      # der Schritt als `bash -e {0}` OHNE pipefail, `cargo nextest run | tee` lieferte dann den Exit von tee (0),
+      # und ein roter Test machte den Job gruen (rust/bindung/tests/ci_nicht_geprueft.rs haelt das fest).
+      # `--profile ci` (rust/.config/nextest.toml) zeigt die Ausgabe bestandener Tests einmal am Ende: nur dort stehen die
+      # Verzichtszeilen (stderr), die der Zaehlschritt unten braucht.
+      - name: cargo nextest
         shell: bash
-        run: cd rust && cargo test --no-fail-fast 2>&1 | tee ../cargo-test.log
+        run: cd rust && cargo nextest run --profile ci --no-fail-fast 2>&1 | tee ../cargo-test.log
         env:
           TAXGRAPH_OHNE_XSD: "1"
           TAXGRAPH_OHNE_BROWSER: "1"
 
+      - name: cargo test --doc
+        if: always()
+        shell: bash
+        run: cd rust && cargo test --doc --no-fail-fast 2>&1 | tee -a ../cargo-test.log
+        env:
+          TAXGRAPH_OHNE_XSD: "1"
+
       # Der gruene Haken sagt nicht, was uebersprungen wurde (ohne Schema, ohne Browser, ohne ERiC). Dieser
       # Schritt zaehlt es aus dem Log (Zeile NICHT GEPRUEFT, ::warning am Lauf, Tabelle in der Job-Zusammenfassung)
-      # und laeuft auch bei rotem cargo test. Er macht den Lauf nicht rot, solange das Log Tests zeigt (Exit 2
+      # und laeuft auch bei rotem Test. Er macht den Lauf nicht rot, solange das Log Tests zeigt (Exit 2
       # nur bei fehlendem oder leerem Log): keine Ratsche, nur Sichtbarkeit.
       - name: Was dieser Lauf nicht geprueft hat
         if: always()
