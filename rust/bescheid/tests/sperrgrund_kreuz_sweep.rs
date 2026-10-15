@@ -54,6 +54,12 @@
 //! eine Gate-Antwort nimmt Folgefelder weg, frueher gegebene Antworten loesen den Guard weiter aus. Der Sweep prueft diese
 //! Klasse nicht gezielt, er sieht sie nur, wo die Reihenfolge der Warteschlange sie erzeugt. Der Mechanismus ist aus der
 //! Antwortfolge des Treffers gelesen, nicht an einer Nutzer-Sitzung nachgestellt.
+//!
+//! **Abweichung Nr. 74 an allen Eintraegen.** Die Regel in `bedingung_schliesst_aus` (eine Bedingung auf ein Feld, das die Scheibe
+//! nicht fragt, schliesst nichts aus) steht allgemein im Code und wirkt an jedem solchen Eintrag der Bindung, nicht nur an den
+//! zwei Lohn-Kreuzen. Der Abschnitt "Abweichung Nr. 74 an allen Eintraegen" unten zaehlt diese Eintraege aus der Bindung (43:
+//! 13 in `gesamt` und 5 in `an_gesamt`, alle an den zwei Lohn-Kreuzen, 25 in `rentner_gesamt`), haelt sie gegen die Liste [`GEPRUEFT`] und misst
+//! an jedem: die Frage bleibt stehen, auch wenn die Akte das Bedingungsfeld mit einem schliessenden Wert tragen wuerde.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -73,7 +79,7 @@ use bescheid::deklaration::{an_gesamt_sperrgrund, feste_zahl, Cfg};
 use bescheid::zweige::Umgebung;
 use bescheid::{BindungIndex, Instanzquelle};
 use bindung::{Bindung, FeldBedingung, Registry};
-use domain::{Achsenwert, Feldtyp, Herkunft, HerkunftVektor, PruefTiefe, Scheibe, Vz, Zustand};
+use domain::{Achsenwert, Feldtyp, Herkunft, HerkunftVektor, PruefTiefe, PyWert, Scheibe, Vz, Zustand};
 use intervall::AchsenBindung;
 use interview::{Graph, Sicht};
 use serde_json::{json, Value};
@@ -1050,5 +1056,366 @@ fn bei_kreuz_und_nur_vorlaeufigem_lohn_bleibt_die_lohnfrage_in_gesamt_und_an_ges
         w.setze("bruttoarbeitslohn_partner", json!(3_800_000)).unwrap();
         let erg = zahl_oder_grund(&w);
         assert!(erg.is_ok_and(|z| z > 0), "{scheibe:?}: nach der Bestaetigung keine Zahl");
+    }
+}
+
+// ---------------------------------------------------------------- Abweichung Nr. 74 an allen Eintraegen
+
+/// Wie eine Bedingung eines Felds auf ein anderes Feld (`kreuz`) in einer Scheibe wirkt.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Art {
+    /// `kreuz` steht nicht in der Scheibe: die Regel Nr. 74 laesst die Frage stehen.
+    Regel,
+    /// Dasselbe, aber die Bedingung ist `groesser_als`: ein Beleg, den ohne `kreuz` in der Scheibe nichts liefert. Die Regel
+    /// greift nicht; die Frage steht nicht.
+    Beleg,
+    /// `kreuz` steht in der Scheibe: die Bedingung wirkt wie immer (Kontrolle, dass der Sweep ein Entfallen sieht).
+    InSicht,
+}
+
+/// Ein Eintrag: das Feld `feld` der Scheibe traegt eine Bedingung auf `kreuz`.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct Eintrag {
+    scheibe: String,
+    kreuz: String,
+    feld: String,
+    art: Art,
+}
+
+/// Alle Eintraege der echten Bindung: je Scheibe, je askable Feld mit `feld_bedingung`, je Glied der Kette. Die Zahl zaehlt der
+/// Test hier selbst; kein Handwert.
+fn eintraege(welt: &'static Welt) -> BTreeSet<Eintrag> {
+    let mut out = BTreeSet::new();
+    for scheibe in SCHEIBEN {
+        let l = lage(welt, scheibe);
+        for b in l.sicht.iter().filter(|b| b.askable) {
+            let Some(fb) = &b.feld_bedingung else { continue };
+            for g in fb.kette() {
+                let art = if l.sicht.get(&g.feld).is_some() {
+                    Art::InSicht
+                } else if g.groesser_als.is_some() {
+                    Art::Beleg
+                } else {
+                    Art::Regel
+                };
+                out.insert(Eintrag {
+                    scheibe: format!("{scheibe:?}"),
+                    kreuz: g.feld.clone(),
+                    feld: b.feld_id.clone(),
+                    art,
+                });
+            }
+        }
+    }
+    out
+}
+
+/// Schliesst der Wert `v` des Bedingungsfelds das Feld des Eintrags aus, wenn man die Regel Nr. 74 wegdenkt? So rechnet
+/// `interview::fragen::bedingung_schliesst_aus` ohne die Regel (`alter_im_vz` zaehlt hier immer als schliessend).
+fn schliesst_nach_der_bedingung(welt: &Welt, e: &Eintrag, v: &Value) -> bool {
+    let Some(fb) = welt.nachschlag.get(&e.feld).and_then(|b| b.feld_bedingung.as_ref()) else {
+        return false;
+    };
+    let x = PyWert::from(v.clone());
+    fb.kette().filter(|g| g.feld == e.kreuz && g.groesser_als.is_none()).any(|g| {
+        if g.alter_im_vz.is_some() {
+            true
+        } else if let Some(nicht) = &g.wert_nicht {
+            x.py_eq(&PyWert::from(nicht.clone()))
+        } else {
+            !x.py_eq(&g.wert.clone().map_or(PyWert::Null, PyWert::from))
+        }
+    })
+}
+
+/// Was der Sweep an den Eintraegen sieht. Schluessel: (Eintrag, ob der Wert nach der Bedingung ausschliesst).
+#[derive(Default)]
+struct Messung {
+    /// Laeufe, in denen die Frage des Eintrags stand, obwohl ihr Kontext sie schon gefragt hatte.
+    stand: BTreeMap<(Eintrag, bool), usize>,
+    /// Laeufe, in denen sie fehlte (je Schluessel hoechstens drei Beispiele).
+    fehlte: BTreeMap<(Eintrag, bool), Vec<String>>,
+    /// Alle Laeufe, an denen ein Eintrag beteiligt war.
+    laeufe: usize,
+}
+
+/// Kontexte fuer die Eintraege, deren Frage noch eine zweite Bedingung der Kette verlangt (`und`): `kontexte` bildet nur Werte, die
+/// eine Bedingung WOERTLICH nennt, und `wert_nicht: 0` nennt nur die 0, also nie einen Lohn ueber 0. Je zweitem Bedingungsfeld
+/// der Scheibe ein Kontext mit dem Beispielwert des Felds.
+fn zusatzkontexte(l: &'static Lage, ver: &str, eintraege: &BTreeSet<Eintrag>) -> Vec<Kontext> {
+    let name = format!("{:?}", l.scheibe);
+    let felder: BTreeSet<&str> = eintraege
+        .iter()
+        .filter(|e| e.scheibe == name && e.art == Art::Regel)
+        .filter_map(|e| l.welt.nachschlag.get(&e.feld).and_then(|b| b.feld_bedingung.as_ref()))
+        .flat_map(FeldBedingung::kette)
+        .map(|g| g.feld.as_str())
+        .filter(|f| l.sicht.get(f).is_some())
+        .collect();
+    felder
+        .into_iter()
+        .map(|f| {
+            let vorgaben = vec![("veranlagung".to_owned(), json!(ver)), (f.to_owned(), wert(l.welt.nachschlag[f], true))];
+            kontext(l, format!("+{f}"), vorgaben, BTreeSet::new()).unwrap_or_else(|e| panic!("{name} {ver} +{f}: {e}"))
+        })
+        .collect()
+}
+
+/// Je Scheibe, Veranlagung und Kontext, der die Frage eines Eintrags schon gestellt hat, und je Wert des Bedingungsfelds: das
+/// Bedingungsfeld wird gesetzt, BEVOR irgendetwas gefragt wird (so steht es in einer von Hand geaenderten Akte), die Warteschlange
+/// wird beantwortet, und der Lauf sagt, ob die Frage noch gestellt wird. Der Store nimmt das Feld an, auch wenn die Scheibe es
+/// nicht fragt (er kennt die ganze Bindung).
+fn miss_eintraege(welt: &'static Welt, eintraege: &BTreeSet<Eintrag>, arten: &[Art]) -> Messung {
+    let m = Mutex::new(Messung::default());
+    for scheibe in SCHEIBEN {
+        for ver in VERANLAGUNGEN {
+            let l = lage(welt, scheibe);
+            let mut ctxs = kontexte(l, ver).unwrap_or_else(|e| panic!("{scheibe:?} {ver}: {e}"));
+            ctxs.extend(zusatzkontexte(l, ver, eintraege));
+            let name = format!("{scheibe:?}");
+            let kreuze: BTreeSet<&str> = eintraege
+                .iter()
+                .filter(|e| e.scheibe == name && arten.contains(&e.art))
+                .map(|e| e.kreuz.as_str())
+                .collect();
+            let naechster = AtomicUsize::new(0);
+            let faeden = std::thread::available_parallelism().map_or(2, usize::from).min(8);
+            std::thread::scope(|s| {
+                for _ in 0..faeden {
+                    s.spawn(|| loop {
+                        let i = naechster.fetch_add(1, Ordering::Relaxed);
+                        let Some(c) = ctxs.get(i) else { return };
+                        for &kreuz in &kreuze {
+                            let ziele: Vec<&Eintrag> = eintraege
+                                .iter()
+                                .filter(|e| e.scheibe == name && e.kreuz == kreuz && arten.contains(&e.art))
+                                .filter(|e| c.lauf.gefragt.contains(&e.feld))
+                                .collect();
+                            if ziele.is_empty() || c.vorgaben.iter().any(|(f, _)| f == kreuz) {
+                                continue;
+                            }
+                            for v in werte_fuer(welt, kreuz) {
+                                let mut vorgaben = c.vorgaben.clone();
+                                vorgaben.push((kreuz.to_owned(), v.clone()));
+                                let mut w = Lauf::neu(l);
+                                w.fuelle(&vorgaben, &c.offen)
+                                    .unwrap_or_else(|e| panic!("{name}/{} {kreuz}={v}: {e}", c.name));
+                                let mut m = m.lock().unwrap();
+                                m.laeufe += 1;
+                                for e in ziele.iter().copied() {
+                                    let k = (e.clone(), schliesst_nach_der_bedingung(welt, e, &v));
+                                    if w.gefragt.contains(&e.feld) {
+                                        *m.stand.entry(k).or_default() += 1;
+                                    } else {
+                                        let f = m.fehlte.entry(k).or_default();
+                                        if f.len() < 3 {
+                                            f.push(format!("{name}/{ver}/{} {kreuz}={v}", c.name));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    }
+    m.into_inner().unwrap()
+}
+
+/// Die Eintraege, an denen die Regel Nr. 74 heute greift: (Scheibe, Kreuz, Felder). Die Bindung ist die Quelle; diese Liste
+/// haelt fest, welche Eintraege geprueft sind. Waechst die Bindung um einen Eintrag oder faellt einer weg, wird
+/// `die_regel_nr_74_erfasst_genau_die_gepruefte_menge_an_eintraegen` rot, bis der Eintrag hier steht (oder in [`AUSNAHMEN`]).
+const GEPRUEFT: &[(&str, &str, &[&str])] = &[
+    ("AnGesamt", "kein_lohn_pension", &["bruttoarbeitslohn", "p36_lohnsteuer"]),
+    ("AnGesamt", "kein_lohn_pension_partner", &["bruttoarbeitslohn_partner", "vor_ag_anteil_rv_partner", "vor_an_anteil_rv_partner"]),
+    (
+        "Gesamt",
+        "kein_lohn_pension",
+        &[
+            "bruttoarbeitslohn",
+            "p36_lohnsteuer",
+            "steuerklasse",
+            "versorgung_alter_bei_beginn",
+            "versorgung_art",
+            "versorgung_beginn_jahr",
+            "versorgung_bemessungsgrundlage",
+            "versorgung_jahresrente",
+        ],
+    ),
+    (
+        "Gesamt",
+        "kein_lohn_pension_partner",
+        &["bruttoarbeitslohn_partner", "p36_lohnsteuer_partner", "steuerklasse_partner", "vor_ag_anteil_rv_partner", "vor_an_anteil_rv_partner"],
+    ),
+    (
+        "RentnerGesamt",
+        "kein_gewinn_partner",
+        &[
+            "einkuenfte_gewinn_partner",
+            "gewinn_betriebsart_partner",
+            "gewinn_bezeichnung_partner",
+            "gewinnanteil_partner",
+            "gewst_hebesatz_partner",
+            "gewst_messbetrag_partner",
+            "rentner_veraeusserungs_betriebsart_partner",
+            "rentner_veraeusserungsgewinn_partner",
+            "verguetung_darlehen_partner",
+            "verguetung_taetigkeit_partner",
+            "verguetung_ueberlassung_partner",
+        ],
+    ),
+    (
+        "RentnerGesamt",
+        "kein_kap_partner",
+        &["kap_gewinn_aktien_partner", "kap_gewinn_sonstige_partner", "kap_kapitalertraege_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner"],
+    ),
+    (
+        "RentnerGesamt",
+        "kein_sonstige_partner",
+        &["rentner_alter_bei_rentenbeginn_partner", "rentner_jahresrente_partner", "rentner_renten_art_partner", "rentner_renten_beginn_jahr_partner", "rentner_rentenfreibetrag_partner"],
+    ),
+    ("RentnerGesamt", "keine_behinderung_pflege", &["behinderungsbedingte_aufwendungen", "behinderungsbedingte_aufwendungen_wahlrecht_pb"]),
+    ("RentnerGesamt", "keine_behinderung_pflege_partner", &["rentner_grad_der_behinderung_partner", "rentner_hilflos_blind_taubblind_partner"]),
+];
+
+/// Eintraege mit `groesser_als` auf ein Feld, das die Scheibe nicht fragt: die Regel greift dort nicht, denn die Betragsbedingung
+/// verlangt einen Beleg, und ohne das Feld in der Scheibe gibt es keinen. Die Frage steht nicht.
+const BELEG: &[(&str, &str, &[&str])] = &[(
+    "Gesamt",
+    "versorgung_jahresrente_partner",
+    &["versorgung_mehrere_jahre_partner", "versorgung_nicht_ganzjaehrig_partner", "versorgung_sterbegeld_partner", "versorgung_zweiter_bezug_partner"],
+)];
+
+/// Eintraege, an denen die Frage trotz der Regel verschwindet: (Scheibe, Kreuz, Feld, Grund). Leer: der Sweep fand keinen. Ein
+/// Eintrag hier ist ein Befund fuer ein eigenes Ticket, kein Freibrief; die Regel selbst aendert dieser Test nicht.
+const AUSNAHMEN: &[(&str, &str, &str, &str)] = &[];
+
+/// Kontrolle des Sweeps: Eintraege, bei denen das Kreuz in der Scheibe steht. Dort nimmt ein schliessender Wert die Frage heraus;
+/// derselbe Messaufbau muss das sehen, sonst sagt sein "die Frage bleibt" bei den Regel-Eintraegen nichts.
+const KONTROLLE: &[(&str, &str, &str)] = &[
+    ("Gesamt", "kein_gewinn_partner", "einkuenfte_gewinn_partner"),
+    ("Gesamt", "kein_kap_partner", "kap_kapitalertraege_partner"),
+    ("RentnerGesamt", "kein_gewinn", "gewinn_betriebsart"),
+];
+
+fn als_menge(liste: &[(&str, &str, &[&str])], art: Art) -> BTreeSet<Eintrag> {
+    liste
+        .iter()
+        .flat_map(|(s, k, fs)| {
+            fs.iter().map(move |f| Eintrag { scheibe: (*s).to_owned(), kreuz: (*k).to_owned(), feld: (*f).to_owned(), art })
+        })
+        .collect()
+}
+
+fn zeige(e: &Eintrag) -> String {
+    format!("{} {} -> {}", e.scheibe, e.kreuz, e.feld)
+}
+
+/// Die Zahl der Eintraege zaehlt der Test aus der Bindung (je Scheibe, je askable Feld mit Bedingung, je Glied der Kette, dessen
+/// Bedingungsfeld die Scheibe nicht fragt) und haelt sie gegen die Liste der geprueften. Ein neuer Eintrag macht ihn rot.
+#[test]
+fn die_regel_nr_74_erfasst_genau_die_gepruefte_menge_an_eintraegen() {
+    let ist = eintraege(welt());
+    for (art, soll) in [(Art::Regel, GEPRUEFT), (Art::Beleg, BELEG)] {
+        let ist_art: BTreeSet<Eintrag> = ist.iter().filter(|e| e.art == art).cloned().collect();
+        let soll_art = als_menge(soll, art);
+        let neu: Vec<String> = ist_art.difference(&soll_art).map(zeige).collect();
+        let weg: Vec<String> = soll_art.difference(&ist_art).map(zeige).collect();
+        assert!(
+            neu.is_empty() && weg.is_empty(),
+            "{art:?}: die Bindung hat andere Eintraege als die Liste der geprueften.\nNEU in der Bindung (erst pruefen, dann in GEPRUEFT/BELEG \
+             aufnehmen oder in AUSNAHMEN benennen): {neu:#?}\nNICHT MEHR in der Bindung (aus der Liste streichen): {weg:#?}"
+        );
+    }
+    for (s, k, f, _) in AUSNAHMEN {
+        assert!(
+            ist.iter().any(|e| e.art == Art::Regel && (e.scheibe.as_str(), e.kreuz.as_str(), e.feld.as_str()) == (*s, *k, *f)),
+            "AUSNAHMEN nennt {s} {k} -> {f}, der kein Regel-Eintrag mehr ist: streichen"
+        );
+    }
+}
+
+/// An jedem Eintrag bleibt die Frage stehen, auch wenn das Bedingungsfeld in der Akte steht: das Kreuz wird gesetzt, BEVOR
+/// irgendetwas gefragt wird (so steht es in einer von Hand geaenderten Akte), in jedem Kontext der Scheibe, der die Frage sonst
+/// stellt, mit jedem Wert, den eine Bedingung nennt. Ohne die Regel faellt die Frage bei einem schliessenden Wert weg
+/// (Sackgasse, wenn der Guard sie verlangt). Zuerst die Kontrolle: derselbe Aufbau sieht das Entfallen, wenn das Kreuz in der
+/// Scheibe steht.
+#[test]
+fn an_jedem_eintrag_der_regel_nr_74_bleibt_die_frage_stehen() {
+    let w = welt();
+    let alle = eintraege(w);
+    let regel: BTreeSet<Eintrag> = alle.iter().filter(|e| e.art == Art::Regel).cloned().collect();
+    let kontrolle: BTreeSet<Eintrag> = alle
+        .iter()
+        .filter(|e| e.art == Art::InSicht && KONTROLLE.contains(&(e.scheibe.as_str(), e.kreuz.as_str(), e.feld.as_str())))
+        .cloned()
+        .collect();
+    assert_eq!(kontrolle.len(), KONTROLLE.len(), "KONTROLLE: ein Eintrag der Kontrolle steht nicht mehr in der Bindung");
+    let ziele: BTreeSet<Eintrag> = regel.union(&kontrolle).cloned().collect();
+    let m = miss_eintraege(w, &ziele, &[Art::Regel, Art::InSicht]);
+    let stand = |e: &Eintrag, schliessend| m.stand.get(&(e.clone(), schliessend)).copied().unwrap_or(0);
+    let fehlte = |e: &Eintrag, schliessend| m.fehlte.get(&(e.clone(), schliessend)).cloned().unwrap_or_default();
+    eprintln!("Messwerte: {} Eintraege, {} Laeufe", regel.len(), m.laeufe);
+    assert!(m.laeufe >= 500, "Laeufe: {} (der Sweep ist blind)", m.laeufe);
+
+    for e in &kontrolle {
+        assert!(
+            stand(e, true) == 0 && !fehlte(e, true).is_empty(),
+            "KONTROLLE {}: ein schliessender Wert nimmt die Frage nicht heraus (stand {}, fehlte {:?})",
+            zeige(e),
+            stand(e, true),
+            fehlte(e, true)
+        );
+        assert!(
+            stand(e, false) >= 1 && fehlte(e, false).is_empty(),
+            "KONTROLLE {}: ein nicht schliessender Wert nimmt die Frage heraus",
+            zeige(e)
+        );
+    }
+
+    let mut befunde: Vec<String> = Vec::new();
+    for e in &regel {
+        if AUSNAHMEN.iter().any(|(s, k, f, _)| (*s, *k, *f) == (e.scheibe.as_str(), e.kreuz.as_str(), e.feld.as_str())) {
+            continue;
+        }
+        if stand(e, true) == 0 {
+            befunde.push(format!("{}: nicht belegt, kein Lauf mit schliessendem Wert, in dem die Frage sonst steht", zeige(e)));
+        }
+        for schliessend in [true, false] {
+            let f = fehlte(e, schliessend);
+            if !f.is_empty() {
+                befunde.push(format!("{}: die Frage verschwindet (schliessender Wert: {schliessend}), z. B. {f:?}", zeige(e)));
+            }
+        }
+    }
+    assert!(befunde.is_empty(), "DEFEKT an Eintraegen der Regel Nr. 74:\n{}", befunde.join("\n"));
+}
+
+/// Die Betragsbedingung (`groesser_als`) auf ein Feld, das die Scheibe nicht fragt, bleibt ein Beleg, den es nicht gibt: die
+/// Regel Nr. 74 greift dort nicht. Die Folgefragen stehen weder im Grundzustand noch mit einem Betrag von 0; ein bestaetigter
+/// Betrag ueber der Schwelle in der Akte oeffnet sie.
+#[test]
+fn die_betragsbedingung_ausserhalb_der_scheibe_bleibt_ein_beleg() {
+    let w = welt();
+    let belege: Vec<Eintrag> = eintraege(w).into_iter().filter(|e| e.art == Art::Beleg).collect();
+    assert!(!belege.is_empty(), "KONTROLLE: kein Beleg-Eintrag in der Bindung");
+    for e in &belege {
+        let scheibe = *SCHEIBEN.iter().find(|s| format!("{s:?}") == e.scheibe).unwrap();
+        let schwelle = w.nachschlag[&e.feld]
+            .feld_bedingung
+            .as_ref()
+            .unwrap()
+            .kette()
+            .find(|g| g.feld == e.kreuz)
+            .and_then(|g| g.groesser_als)
+            .unwrap();
+        let zusammen = ("veranlagung", json!("zusammen"));
+        let ohne = lauf_mit(scheibe, std::slice::from_ref(&zusammen));
+        assert!(!ohne.gefragt.contains(&e.feld), "{}: ohne Betrag steht die Frage", zeige(e));
+        let null = lauf_mit(scheibe, &[zusammen.clone(), (e.kreuz.as_str(), json!(0))]);
+        assert!(!null.gefragt.contains(&e.feld), "{}: mit Betrag 0 steht die Frage", zeige(e));
+        let viel = lauf_mit(scheibe, &[zusammen, (e.kreuz.as_str(), json!(schwelle + 1))]);
+        assert!(viel.gefragt.contains(&e.feld), "{}: mit Betrag ueber der Schwelle steht die Frage nicht", zeige(e));
     }
 }
