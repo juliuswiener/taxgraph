@@ -488,6 +488,35 @@ async fn login_vergibt_kein_token_fuer_namen_ausserhalb_des_musters() {
     assert_eq!(fehlschlaege, abgewiesen.len());
 }
 
+/// S8 (Julius 2026-10-15, Option a): der PII-Filter erkennt einen Namen nur nach "Herr"/"Frau" (`llm::pii`, Grenze dort
+/// dokumentiert und in `pii_entscheidungen::namen_ohne_anrede_gehen_durch_bekannte_grenze` festgehalten). Die Seite
+/// mit dem KI-Eingabefeld sagt das dem Nutzer neben dem Feld: keine Namen von Personen eintippen. Das Feld verweist per
+/// `aria-describedby` auf den Hinweis, damit ein Screenreader ihn mit dem Feld vorliest.
+#[tokio::test]
+async fn die_startseite_warnt_im_chat_vor_namen() {
+    let d = dienst();
+    let a = sende(&d, "GET", "/", &[], None).await;
+    assert_eq!(a.status, 200);
+    // Kontrolle: das ist die Seite mit dem KI-Eingabefeld.
+    let feld = a.text.find(r#"id="chat-text""#).expect("kein KI-Eingabefeld auf der Startseite");
+    let hinweis = a
+        .text
+        .find(r#"id="chat-pii-hinweis""#)
+        .expect("kein Hinweis auf die Namen-Grenze des Filters auf der Startseite");
+    assert!(hinweis > feld, "der Hinweis steht nicht hinter dem Eingabefeld");
+    let absatz = &a.text[hinweis..];
+    let absatz = &absatz[..absatz.find("</p>").expect("Hinweis ohne Ende")];
+    for wort in ["Namen", "Herr", "Frau"] {
+        assert!(absatz.contains(wort), "im Hinweis fehlt '{wort}': {absatz}");
+    }
+    let feld_tag = &a.text[a.text[..feld].rfind('<').unwrap()..];
+    let feld_tag = &feld_tag[..feld_tag.find('>').unwrap()];
+    assert!(
+        feld_tag.contains(r#"aria-describedby="chat-pii-hinweis""#),
+        "das Eingabefeld verweist nicht auf den Hinweis: {feld_tag}"
+    );
+}
+
 /// Abweichung Nr. 75 (Julius 2026-10-15, S2): `POST /auth/login` mit einem Passwort ueber 72 Byte antwortet fuer einen
 /// bekannten und einen unbekannten Namen gleich (401, derselbe Rumpf). Python antwortet fuer den bekannten Namen 500
 /// (`ValueError`), fuer den unbekannten 401: ueber die Passwortlaenge liessen sich Namen erraten. `POST /auth/register`

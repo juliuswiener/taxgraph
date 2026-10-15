@@ -326,6 +326,30 @@ fn anrede_wie_python() {
     );
 }
 
+/// Bekannte Grenze (S8, Julius 2026-10-15, Option a): ein Name OHNE "Herr"/"Frau" davor geht unveraendert durch den Filter;
+/// bei "Herr Dr. Schmidt" faellt nur "Herr Dr" weg. Es gibt kein Namenserkennungs-Modell (ein neues Crate braucht Julius' Wort,
+/// E9) und keine Heuristik (sie traefe auch "Einkommensteuer Berlin"). Stattdessen warnt die Startseite neben dem KI-Eingabefeld
+/// vor Namen (`rust/api/tests/http.rs::die_startseite_warnt_im_chat_vor_namen`). Wer den Filter verbessert, aendert diesen Test,
+/// die Grenze in der Moduldoku von `pii.rs` und die Warnung gemeinsam. Rust-Messung 2026-10-15, kein Python-Lauf.
+#[test]
+fn namen_ohne_anrede_gehen_durch_bekannte_grenze() {
+    // Kontrolle: mit Anrede greift der Filter.
+    let (g, k) = filtere("Frau Mustermann hat 3 Kinder");
+    assert_eq!(g.as_str(), "[PII] hat 3 Kinder");
+    assert_eq!(k, ["anrede_name"]);
+    for text in [
+        "Max Mustermann hat 3 Kinder",
+        "Mustermann, Max hat 3 Kinder",
+        "Dr. Meier hat 3 Kinder",
+    ] {
+        let (g, k) = filtere(text);
+        assert_eq!(g.as_str(), text, "die Grenze ist weg? dann Doku und Warnung anpassen");
+        assert!(k.is_empty(), "{k:?}");
+    }
+    let (g, _) = filtere("Herr Dr. Schmidt hat 3 Kinder");
+    assert_eq!(g.as_str(), "[PII]. Schmidt hat 3 Kinder");
+}
+
 /// Reihenfolge der Muster und Leereingaben.
 #[rustfmt::skip]
 #[test]

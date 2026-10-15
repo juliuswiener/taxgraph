@@ -92,7 +92,8 @@ impl Konfig {
     }
 
     /// Die Oberfläche liegt in `rust/api/static` (E2 des Löschplans; Python hatte sie in
-    /// `produkt/haut/static`, die Dateien sind byte-gleich, geprüft in `umzug_aus_produkt.rs`).
+    /// `produkt/haut/static`, die Dateien sind byte-gleich, geprüft in `umzug_aus_produkt.rs`; Ausnahme `index.html` seit
+    /// 2026-10-15: der Namen-Hinweis neben dem KI-Eingabefeld, S8).
     #[must_use]
     pub fn static_dir(&self) -> PathBuf {
         self.wurzel.join("rust").join("api").join("static")
