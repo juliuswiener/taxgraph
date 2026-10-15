@@ -176,30 +176,39 @@ fn auth_mit_nutzer(dir: &std::path::Path, name: &str, passwort: &str) -> Auth {
     Auth::neu(GEHEIM.into(), datei, None)
 }
 
+/// Abweichung Nr. 75 (Julius 2026-10-15, S2): ein Passwort ueber 72 Byte kann kein Konto haben (`registriere` weist es
+/// ab). Das Login antwortet darauf wie auf jedes falsche Passwort, 401 mit demselben Text, FUER JEDEN NAMEN. Python
+/// prueft erst den Namen und wirft fuer einen bekannten Namen `ValueError` (500), fuer einen unbekannten bleibt es bei 401:
+/// so liessen sich Namen ueber die Passwortlaenge erraten. Das Registrieren bleibt bei 500.
 #[test]
-fn passwort_grenze_72_byte_gilt_in_bytes_und_erst_fuer_vorhandene_nutzer() {
+fn passwort_grenze_72_byte_gilt_in_bytes_und_login_antwortet_fuer_jeden_namen_gleich() {
     let dir = tempfile::tempdir().unwrap();
     // 36 Zeichen zu je 2 Byte = 72 Byte; 37 Zeichen = 74 Byte, obwohl weit unter 128 Zeichen.
     let (pw72, pw73) = ("p".repeat(72), "p".repeat(73));
     let (ae36, ae37) = ("\u{e4}".repeat(36), "\u{e4}".repeat(37));
 
-    // Einloggen mit genau 72 Byte geht (`>` 72, nicht `>=`), mit 73 Byte nicht.
+    // Einloggen mit genau 72 Byte geht (`>` 72, nicht `>=`): die Kontrolle, dass 72 Byte ein Konto haben koennen.
     let a = auth_mit_nutzer(dir.path(), "julius", &pw72);
     assert!(a.login(&an("julius", &pw72)).is_ok());
+    // Mit mehr als 72 Byte: 401 `Falsch` fuer einen bekannten, einen unbekannten und einen Namen ausserhalb des Musters,
+    // mit gleichem Text.
     for zu_lang in [&pw73, &ae37] {
-        let fehler = a.login(&an("julius", zu_lang)).unwrap_err();
-        assert!(
-            matches!(fehler, AuthFehler::PasswortUeber72Bytes),
-            "{fehler:?}"
-        );
-        assert_eq!(fehler.status(), 500);
+        let bekannt = a.login(&an("julius", zu_lang)).unwrap_err();
+        let unbekannt = a.login(&an("niemand", zu_lang)).unwrap_err();
+        let ausserhalb = a.login(&an("a b", zu_lang)).unwrap_err();
+        for fehler in [&bekannt, &unbekannt, &ausserhalb] {
+            assert!(matches!(fehler, AuthFehler::Falsch), "{fehler:?}");
+            assert_eq!(fehler.status(), 401);
+        }
+        assert_eq!(bekannt.to_string(), unbekannt.to_string());
+        assert_eq!(bekannt.to_string(), ausserhalb.to_string());
     }
-    // Python prueft erst den Namen: fuer einen unbekannten Nutzer bleibt es bei 401.
-    let fehler = a.login(&an("niemand", &pw73)).unwrap_err();
-    assert!(matches!(fehler, AuthFehler::Falsch), "{fehler:?}");
     // Bytes, nicht Zeichen: 36 Zeichen sind 72 Byte.
     let a = auth_mit_nutzer(dir.path(), "anna", &ae36);
     assert!(a.login(&an("anna", &ae36)).is_ok());
+    // 37 Zeichen sind 74 Byte: bcrypt schnitte auf die ersten 72 Byte ab, also auf annas Passwort, und liesse es durch.
+    let fehler = a.login(&an("anna", &ae37)).unwrap_err();
+    assert!(matches!(fehler, AuthFehler::Falsch), "{fehler:?}");
 
     // Registrieren: 71 und 72 Byte gehen, 73 Byte werden abgewiesen (Python-bcrypt 5: `ValueError`).
     let a = Auth::neu(GEHEIM.into(), dir.path().join("neu.json"), None);
@@ -210,6 +219,35 @@ fn passwort_grenze_72_byte_gilt_in_bytes_und_erst_fuer_vorhandene_nutzer() {
         matches!(fehler, AuthFehler::PasswortUeber72Bytes),
         "{fehler:?}"
     );
+}
+
+/// Ein zu langes Passwort ist ein Fehlversuch wie jeder andere: es steht als `login_fehlgeschlagen` im Protokoll, fuer
+/// einen bekannten wie fuer einen unbekannten Namen (Abweichung Nr. 75).
+#[test]
+fn ein_zu_langes_passwort_steht_als_fehlversuch_im_protokoll() {
+    let dir = tempfile::tempdir().unwrap();
+    let audit = dir.path().join("audit.jsonl");
+    let a = Auth::neu(
+        GEHEIM.into(),
+        dir.path().join("users.json"),
+        Some(audit.clone()),
+    );
+    a.registriere(&an("julius", "geheim123")).unwrap();
+    let spur = || -> Vec<(String, String)> {
+        lies(&audit)
+            .unwrap()
+            .into_iter()
+            .map(|e| (e.user_id, e.action.als_str().to_owned()))
+            .collect()
+    };
+    // Kontrolle: ein falsches kurzes Passwort wird protokolliert.
+    a.login(&an("julius", "falsch1234")).unwrap_err();
+    assert_eq!(spur().len(), 2, "{:?}", spur());
+    let lang = "p".repeat(73);
+    a.login(&an("julius", &lang)).unwrap_err();
+    a.login(&an("niemand", &lang)).unwrap_err();
+    let eintrag = |u: &str| (u.to_owned(), "login_fehlgeschlagen".to_owned());
+    assert_eq!(spur()[2..], [eintrag("julius"), eintrag("niemand")]);
 }
 
 /// Python-bcrypt 5.0.0 hasht ein Passwort von genau 72 Byte (`register` -> 201, `login` -> 200) und

@@ -50,7 +50,8 @@ pub enum AuthFehler {
     Existiert(Username),
     #[error("username oder password falsch")]
     Falsch,
-    /// bcrypt 5 (Python) lehnt Passwoerter ueber 72 Byte mit `ValueError` ab — 500.
+    /// bcrypt 5 (Python) lehnt Passwoerter ueber 72 Byte mit `ValueError` ab — 500. In Rust nur noch beim
+    /// Registrieren; `login` antwortet darauf 401 `Falsch` (Abweichung Nr. 75).
     #[error("password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])")]
     PasswortUeber72Bytes,
     #[error("Feld `{0}` ist kein Text")]
@@ -217,12 +218,19 @@ impl Auth {
     /// ```
     ///
     /// # Errors
-    /// 401 bei einem Namen ausserhalb des Musters, unbekanntem Namen oder falschem Passwort; 500 bei
-    /// I/O, kaputtem Hash oder Passwoertern ueber 72 Byte fuer einen EXISTIERENDEN Nutzer (Python
-    /// prueft erst den Namen).
+    /// 401 bei einem Namen ausserhalb des Musters, unbekanntem Namen, falschem Passwort oder einem Passwort
+    /// ueber 72 Byte (fuer JEDEN Namen gleich, Abweichung Nr. 75); 500 bei I/O oder kaputtem Hash.
     pub fn login(&self, a: &Anmeldung) -> Result<String, AuthFehler> {
         if !ist_gueltiger_username(&a.username) {
             return Err(self.weise_ab(&a.username));
+        }
+        // Ein Passwort ueber 72 Byte kann kein Konto haben (`registriere` weist es ab): es ist ein falsches Passwort,
+        // 401 wie jedes andere. Die Pruefung steht VOR der Nutzersuche; stuende sie dahinter, verriete der
+        // Statusunterschied (bekannter Name 500, unbekannter 401) welche Namen es gibt. Python prueft erst den Namen
+        // und wirft fuer einen bekannten `ValueError` (Abweichung Nr. 75, Julius 2026-10-15).
+        if a.password.len() > 72 {
+            self.protokolliere(&a.username, AuditAktion::LoginFehlgeschlagen);
+            return Err(AuthFehler::Falsch);
         }
         let bestand = datei::lade(&self.nutzerdatei)?;
         let hash = bestand
@@ -235,9 +243,6 @@ impl Auth {
             self.protokolliere(&a.username, AuditAktion::LoginFehlgeschlagen);
             return Err(AuthFehler::Falsch);
         };
-        if a.password.len() > 72 {
-            return Err(AuthFehler::PasswortUeber72Bytes);
-        }
         if !bcrypt::verify(&a.password, &hash)? {
             self.protokolliere(&a.username, AuditAktion::LoginFehlgeschlagen);
             return Err(AuthFehler::Falsch);
