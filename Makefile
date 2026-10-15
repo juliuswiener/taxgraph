@@ -61,11 +61,34 @@ BACKUP_DIR  ?= $(abspath $(CURDIR)/../taxgraph-backups)
 FAELLE_ROOT ?= $(if $(TAXGRAPH_DATEN),$(TAXGRAPH_DATEN),$(if $(XDG_DATA_HOME),$(XDG_DATA_HOME),$(HOME)/.local/share)/taxgraph)
 AUTH_USERS  ?= $(or $(wildcard $(FAELLE_ROOT)/users.json),$(wildcard produkt/auth/users.json),$(FAELLE_ROOT)/users.json)
 
+## RECHTE (S5a, Julius 2026-10-15): das Archiv traegt die Passwort-Hashes (users.json) und alle Steuerdaten, es
+## darf nur der Besitzer lesen (Modus 600). Jede Rezeptzeile ist eine eigene Shell, `umask 077` steht darum in
+## jeder, die etwas anlegt; die Maske der aufrufenden Shell (ueblich 022 = 644) gilt hier nicht. Ein SCHON
+## vorhandener BACKUP_DIR behaelt seinen Modus (mkdir -p aendert ihn nicht); die Archive darin sind trotzdem 600.
+## Waechter: rust/api/tests/backup_restore_rundlauf.rs::ein_archiv_ist_nur_fuer_den_besitzer_lesbar.
+##
+## AUFBEWAHRUNG (S5b, Julius 2026-10-15): nach einem ERFOLGREICHEN tar bleiben die letzten BACKUP_BEHALTEN (30)
+## Archive, die aelteren fallen weg (je Start von `make serve` entsteht eines, ohne Grenze lagen die Steuerdaten in
+## beliebig vielen Kopien). Gezaehlt und geloescht werden nur Namen im Schema dieses Rezepts
+## (`taxgraph-<Ziffern und Striche>.tar.gz`), nur im Sicherungsordner (der Schritt wechselt hinein und loescht nach
+## Namen ohne Pfad), nach Name sortiert (Datum und Uhrzeit stehen vorn, das neueste zuletzt; die Aenderungszeit der
+## Dateien zaehlt nicht). Das neue Archiv liegt dabei und ist das neueste. Eine Zahl, die keine ganze Zahl ab 1 ist
+## (0 loeschte jedes Archiv), bricht ab, BEVOR etwas angelegt oder geloescht wird. Scheitert tar, bricht make vor dem
+## Aufraeumen ab. `restore` raeumt NICHT auf (BACKUP_AUFRAEUMEN=0 an seiner Vorher-Sicherung): das aelteste Archiv
+## kann genau das sein, das eingespielt wird. Grenze: ein gescheitertes tar laesst seine angefangene Datei liegen
+## (Stand vor S5b); sie zaehlt dann mit. Waechter: backup_restore_rundlauf.rs::nach_einem_backup_bleiben_die_letzten_30_archive.
+BACKUP_BEHALTEN   ?= 30
+BACKUP_AUFRAEUMEN ?= 1
 backup:
-	mkdir -p $(BACKUP_DIR)
-	tar czf $(abspath $(BACKUP_DIR))/taxgraph-$$(date +%Y%m%d-%H%M%S-%N)-$$$$.tar.gz \
+	@if [ "$(BACKUP_AUFRAEUMEN)" = "1" ]; then test "$(BACKUP_BEHALTEN)" -ge 1 2>/dev/null || { echo "BACKUP_BEHALTEN muss eine ganze Zahl ab 1 sein, ist aber '$(BACKUP_BEHALTEN)'"; exit 1; }; fi
+	umask 077; mkdir -p $(BACKUP_DIR)
+	umask 077; tar czf $(abspath $(BACKUP_DIR))/taxgraph-$$(date +%Y%m%d-%H%M%S-%N)-$$$$.tar.gz \
 		-C $(FAELLE_ROOT) faelle \
 		-C $(dir $(AUTH_USERS)) $(notdir $(AUTH_USERS))
+	@if [ "$(BACKUP_AUFRAEUMEN)" = "1" ]; then \
+		cd "$(abspath $(BACKUP_DIR))" && ls -1 | grep -E '^taxgraph-[0-9-]+\.tar\.gz$$' | LC_ALL=C sort | head -n -$(BACKUP_BEHALTEN) | \
+			while IFS= read -r alt; do echo "Aufbewahrung: entferne $$alt"; rm -f -- "$$alt"; done; \
+	fi
 
 ## Wiederherstellung: make restore ARCHIV=<pfad.tar.gz> [FAELLE_ROOT=...] [AUTH_USERS=...] [CONFIRM=yes]
 ## ERSETZT (kein Merge, Review-Punkt 3): faelle/ wird vor dem Entpacken komplett geloescht — sonst
@@ -98,7 +121,7 @@ restore:
 		[ "$$ans" = "y" ] || [ "$$ans" = "Y" ] || { echo "Abgebrochen."; exit 1; }; \
 	fi
 	@if [ -d "$(FAELLE_ROOT)/faelle" ]; then \
-		$(MAKE) backup FAELLE_ROOT=$(FAELLE_ROOT) AUTH_USERS=$(AUTH_USERS) BACKUP_DIR=$(BACKUP_DIR) || exit 1; \
+		$(MAKE) backup FAELLE_ROOT=$(FAELLE_ROOT) AUTH_USERS=$(AUTH_USERS) BACKUP_DIR=$(BACKUP_DIR) BACKUP_AUFRAEUMEN=0 || exit 1; \
 	else \
 		echo "Hinweis: $(FAELLE_ROOT)/faelle existiert nicht — nichts zu sichern, Vorher-Sicherung uebersprungen."; \
 	fi
@@ -113,8 +136,9 @@ restore:
 ## Umgebungsvariablen und dieselben Dateien (Bestand unter $(FAELLE_ROOT)/faelle, Konten in
 ## produkt/auth/users.json, .env.llm/.env.maps/.env aus der Repo-Wurzel) — der Wechsel in beide
 ## Richtungen braucht keine Migration.
-## SICHERUNG: beide Ziele sichern den Bestand vor dem Start mit `make backup` (rund 30 MB je Start,
-## BACKUP_DIR waechst). Scheitert die Sicherung, startet nichts. SICHERN=0 ueberspringt sie.
+## SICHERUNG: beide Ziele sichern den Bestand vor dem Start mit `make backup` (rund 30 MB je Start; seit S5b
+## bleiben die letzten BACKUP_BEHALTEN = 30 Archive, die aelteren fallen weg). Scheitert die Sicherung, startet
+## nichts. SICHERN=0 ueberspringt sie.
 ## AUTH IST AN: `env -u TAXGRAPH_NO_AUTH` raeumt ein aus der Shell geerbtes Einzelnutzer-Opt-out ab.
 ## Ein Bau mit `--release` ist hier bewusst NICHT vorgesehen: Cargo schaltet dort overflow-checks und
 ## debug-assertions ab, und kein Vergleichslauf (`make ui-rust`; rust/parity seit L1 weg) hat diesen Bau je

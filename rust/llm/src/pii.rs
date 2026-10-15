@@ -9,6 +9,14 @@
 //!
 //! Reihenfolge ist tragend: IBAN vor Steuer-Id vor Kontonummer (sonst frisst die Ziffernregel
 //! den IBAN-Rumpf bzw. meldet die unspezifische Kategorie).
+//!
+//! **Grenze (Julius 2026-10-15, Option a): Namen ohne Anrede gehen durch.** Der Filter erkennt einen Namen nur nach
+//! "Herr" oder "Frau" (`anrede_name`). "Max Mustermann", "Mustermann, Max" und "Dr. Meier" bleiben unveraendert im Text,
+//! der an den Anbieter geht; bei "Herr Dr. Schmidt" faellt nur "Herr Dr" weg, der Nachname bleibt. Der Befund zaehlt, sobald
+//! `LLM_API_KEY` gesetzt ist (Ticket-Befund (g), im Code gelesen). Es gibt kein Namenserkennungs-Modell (ein
+//! neues Crate braucht Julius' Wort) und keine Heuristik (zwei grosse Woerter hintereinander trafen auch "Einkommensteuer
+//! Berlin"). Die Oberflaeche warnt darum neben dem KI-Eingabefeld vor Namen. Festgehalten ist die Grenze im Test
+//! `namen_ohne_anrede_gehen_durch_bekannte_grenze`; wer den Filter verbessert, aendert Test, diese Zeilen und die Warnung zusammen.
 use std::fmt;
 use std::sync::LazyLock;
 

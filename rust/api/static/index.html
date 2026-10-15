@@ -210,9 +210,13 @@
         </section>
 
         <div class="chat-eingabe">
-          <textarea id="chat-text" rows="2" aria-label="Der KI etwas schreiben" placeholder="Schreib einfach drauflos — eine Angabe („15 km zur Arbeit, 220 Tage"), eine Frage, oder beides."></textarea>
+          <textarea id="chat-text" rows="2" aria-label="Der KI etwas schreiben" aria-describedby="chat-pii-hinweis" placeholder="Schreib einfach drauflos — eine Angabe („15 km zur Arbeit, 220 Tage"), eine Frage, oder beides."></textarea>
           <button id="chat-send" class="maps-berechnen" type="button">Senden</button>
         </div>
+        <!-- S8 (Julius 2026-10-15): der Datenschutzfilter vor der KI erkennt einen Namen nur nach „Herr“ oder
+             „Frau“ (rust/llm/src/pii.rs, Grenze in der Moduldoku). Die Warnung steht neben dem Feld, nicht im
+             Verlauf, damit sie vor dem Absenden da ist. Gleiche Klasse wie die Nachfrage-Hinweise (13 px, gedämpft). -->
+        <p id="chat-pii-hinweis" class="chat-nachfrage-hint">Schreib keine Namen von Personen in dieses Feld. Der Filter vor der KI erkennt einen Namen nur nach „Herr“ oder „Frau“; „Max Mustermann“ ginge unverändert an die KI.</p>
         <!-- Der Rückweg. Auf dem KI-Weg ist NUR dieses Panel da (Julius 2026-08-25: „KI fenster
              Only") — ohne diesen Knopf käme der Nutzer nie mehr in den Fragebogen, ausser über die
              Bestätigungen. Nur im KI-Fokus sichtbar (style.css .zum-fragebogen); im Fragebogen

@@ -32,7 +32,9 @@ const OBERFLAECHE: &[(&str, &str)] = &[
     ("graph.css", "19db5b44291a8a6d22a93bc325b711b68f2adf181f0c63d091ac44f5fb71b60e"),
     ("graph.html", "234fc3db33fb9e036daee3c6a4a8cec959b0f3c4a5061419d7a02fba32929f5f"),
     ("graph.js", "a305763b18fc3bd907f6cf937279e2cf0587867d67c574518f85454c4c498bc9"),
-    ("index.html", "12c0ef31055f0db1e2940ebd4d957c4431b56741aae242ac6cb0e08481362c98"),
+    // index.html seit 2026-10-15 (S8, Julius) mit dem Hinweis auf die Namen-Grenze des PII-Filters neben dem KI-Eingabefeld:
+    // weicht bewusst von `produkt/haut/static/index.html` ab (Stand 12c0ef31...); Wächter `http.rs::die_startseite_warnt_im_chat_vor_namen`.
+    ("index.html", "9d923eed2beb2fe9ad7b59ba98aa8d60c8966ac66185ca62f10ed45fc3f8f856"),
     ("style.css", "f29ca8554f00ba97b396210c4391a497f07a3b3ba8d28848b67bcbd70d7ffd95"),
 ];
 
