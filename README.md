@@ -57,7 +57,10 @@ make serve-python   # Python-Dienst: Rueckfall, Referenz und Orakel der Vergleic
 - Rueckfall: `make serve-python` starten. Hat ein Rust-Lauf eine Akte beschaedigt, den Bestand mit
   `make restore ARCHIV=<tar.gz aus ../taxgraph-backups>` zurueckholen. Den Code des letzten Stands mit
   Python als Standard-Start liefert der lokale Tag `python-standard-letzter` (`904f6215`): `git checkout python-standard-letzter`. Es ist nichts geloescht.
-- Betrieb: `BACKUP_DIR` waechst um rund 30 MB je Start, ein Aufraeumen gibt es nicht. Setzt Du
+- Betrieb: Jedes `make backup` (auch der Start mit `make serve`) legt ein Archiv von rund 30 MB in `BACKUP_DIR` an,
+  nur fuer den Besitzer lesbar (Modus 600). Danach bleiben die letzten 30 Archive im Namensschema
+  `taxgraph-<Datum>-<Zeit>-….tar.gz`, die aelteren werden geloescht (`BACKUP_BEHALTEN=<n>` aendert die Zahl;
+  `make restore` raeumt nicht auf). Setzt Du
   `TAXGRAPH_USER_STORE`, sichert `make backup` weiter `produkt/auth/users.json`: dann `AUTH_USERS=<Pfad>`
   mitgeben. Der Bau liegt in `~/.cache/taxgraph-serve/target` (`SERVE_TARGET=...` aendert das); der erste
   Bau dauerte gemessen 40 s. Der Dienst bindet nur 127.0.0.1.
