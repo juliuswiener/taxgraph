@@ -13,14 +13,14 @@ make serve-python       Python-Dienst: Rückfall, Referenz und Orakel
 ```
 
 `make serve` baut im dev-Profil, nie mit `--release` (dort fehlen `overflow-checks`; nur der dev-Bau wird
-von `rust/parity` und `make ui-rust` gemessen; `tests/test_ueberlauf_waechter_text.py` hält `overflow-checks = true` im `[profile.dev]` fest). Beide Ziele laufen gegen den echten Bestand
+von `make ui-rust` gemessen; `tests/test_ueberlauf_waechter_text.py` hält `overflow-checks = true` im `[profile.dev]` fest). Beide Ziele laufen gegen den echten Bestand
 `~/.local/share/taxgraph`: Tests und Messungen setzen `TAXGRAPH_DATEN` auf eine Kopie oder nutzen
 `scripts/starte-api.sh`, nie `make serve`. Rückfall auf Python: `make serve-python`; der letzte Stand mit
-Python als Standard-Start ist der lokale Tag `python-standard-letzter` (`904f6215`, nicht gepusht). Python bleibt bis zur Löschung Orakel der `rust/parity`-Suiten.
+Python als Standard-Start ist der Tag `python-standard-letzter` (`904f6215`, auf origin). Python bleibt bis zur Löschung Referenz (`make golden`, `tests/`); die Vergleichssuite `rust/parity` ist seit L1 gelöscht.
 Die Löschung ist seit 2026-10-06 beschlossen (nach bestandener Abnahme) und noch nicht vollzogen; Reihenfolge und Vorbedingungen stehen im Vault
 (`audits/python-loeschplan-2026-10-06.md`) und im `REWRITE_PLAN.md` (Nachtrag 2026-10-06). Neue Arbeit entsteht nur in Rust, in Python wird nichts mehr
-gepflegt. Der echte ELSTER-Versand läuft in Rust (`rust/versand`, noch nie echt gesendet; Einreichen löst nur Julius aus). `BACKUP_DIR` wächst je Start;
-`AUTH_USERS` folgt `TAXGRAPH_USER_STORE` nicht von selbst.
+gepflegt. Der echte ELSTER-Versand läuft in Rust (`rust/versand`, noch nie echt gesendet; Einreichen löst nur Julius aus). Nach einem erfolgreichen Backup bleiben in `BACKUP_DIR`
+die letzten `BACKUP_BEHALTEN` (30) Archive; `AUTH_USERS` folgt `TAXGRAPH_USER_STORE` nicht von selbst.
 
 `make unit` runs plain `python3 -m pytest`, without `OPAM_ENV`/`VENV312` from the Makefile.
 `make tests` runs under `OPAM_ENV` and `make golden` under `VENV312` — call those targets,
@@ -46,6 +46,12 @@ der Test, bringt Testdateien ohne Zeile mit (so fielen `rentenbeginn_jahr.rs` un
 Lauf auf). Bei einem Konflikt in der TSV bleiben
 beide Zeilen stehen; die Python-Zeilen sind nach Pfad sortiert (ohne Satzzeichen), die Rust-Zeilen folgen. Kein
 Test prüft die Reihenfolge.
+
+**Neue Rust-Testdatei in einem Crate mit `tests/it.rs` gehört dort hinein** (`#[path = "x.rs"] mod x;`), nicht als eigene
+Datei daneben: `autotests = false` übersetzt nur Dateien, die `it.rs` oder ein `[[test]]` nennt; die Tests einer anderen laufen still nicht mehr. Der Wächter
+`rust/bindung/tests/testbinaries_vollstaendig.rs` prüft das. Eigenes `[[test]]`-Ziel nur für Dateien, die `set_var`,
+`remove_var` oder `set_current_dir` aufrufen oder per `--test <name>` von Makefile, Skript oder Wächter gerufen werden.
+Aufruf eines Moduls: `cargo test -p <crate> --test it <modul>::`.
 
 ## graphify — code graph
 
