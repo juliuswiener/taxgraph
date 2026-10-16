@@ -1,8 +1,10 @@
 #!/bin/bash
 # Pre-Commit-Pruefung der Bindungstabelle (E7 des Python-Loeschplans). Ersetzt den Hook, den `orch init-hooks` schrieb und
 # der `pytest tests/test_bindungstabelle.py` rief; der faellt mit L2/L3 weg.
-# Installation (einmal, main): `.git/hooks/pre-commit` ist eine Zeile, die dieses Skript ruft:
-#   printf '#!/bin/bash\nexec "$(git rev-parse --show-toplevel)/scripts/orch-pre-commit.sh"\n' > .git/hooks/pre-commit
+# Installation (einmal, main): `.git/hooks/pre-commit` ruft dieses Skript. Das Git-Verzeichnis gehoert allen Worktrees; ein Baum
+# aelter als E7 hat das Skript nicht, dort uebergeht der Hook die Pruefung laut statt jeden Commit zu sperren:
+#   s='"$(git rev-parse --show-toplevel)/scripts/orch-pre-commit.sh"'
+#   printf '#!/bin/bash\ns=%s\n[ -x "$s" ] || { echo "[orch-gate] $s fehlt (Baum aelter als E7): Pre-Commit-Pruefung uebersprungen"; exit 0; }\nexec "$s"\n' "$s" > .git/hooks/pre-commit
 # `orch init-hooks` schreibt den alten Hook zurueck, wenn man es erneut aufruft.
 # Prueft alle Testbinaries des Crates `bindung` (Schema, Registry, Anker, Bereich, Beleg-Aufloesung, TESTMAP). Warm etwa 1 s,
 # kalt (leeres Target) etwa 12 s. Eigenes Target je Baum, wenn CARGO_TARGET_DIR nicht gesetzt ist (rust/target).
