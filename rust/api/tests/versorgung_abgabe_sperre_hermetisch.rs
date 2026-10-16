@@ -239,24 +239,38 @@ fn gesamt_zusammen() -> Paare {
     p
 }
 
-/// Bezug von `euro`, Bemessungsgrundlage gleich dem Bezug, Beginn 2020 (vor dem Veranlagungsjahr 2025), beamtenrechtlich: ein
-/// Fall, den die Zeilen 11 bis 13 voll tragen (Abweichung Nr. 64).
+/// Die vier Rueckfragen zum Versorgungsbezug (Abweichung Nr. 66), je Person. Seit Abweichung Nr. 79 sperrt eine fehlende Antwort; die
+/// Bezuege dieser Datei sind vollstaendig beantwortet (alle vier Nein), damit die Tests nur den Grund messen, den sie meinen.
+const FRAGEN_A: [&str; 4] = ["versorgung_zweiter_bezug", "versorgung_sterbegeld", "versorgung_mehrere_jahre", "versorgung_nicht_ganzjaehrig"];
+const FRAGEN_B: [&str; 4] = [
+    "versorgung_zweiter_bezug_partner",
+    "versorgung_sterbegeld_partner",
+    "versorgung_mehrere_jahre_partner",
+    "versorgung_nicht_ganzjaehrig_partner",
+];
+
+/// Bezug von `euro`, Bemessungsgrundlage gleich dem Bezug, Beginn 2020 (vor dem Veranlagungsjahr 2025), beamtenrechtlich, die vier
+/// Rueckfragen mit Nein: ein Fall, den die Zeilen 11 bis 13 voll tragen (Abweichung Nr. 64).
 fn bezug_a(euro: i64) -> Paare {
-    vec![
+    let mut p: Paare = vec![
         (A, json!(euro * 100)),
         ("versorgung_bemessungsgrundlage", json!(euro * 100)),
         ("versorgung_beginn_jahr", json!(2020)),
         ("versorgung_art", json!("beamtenrechtlich")),
-    ]
+    ];
+    p.extend(FRAGEN_A.map(|f| (f, json!(false))));
+    p
 }
 
 fn bezug_b(euro: i64) -> Paare {
-    vec![
+    let mut p: Paare = vec![
         (B, json!(euro * 100)),
         ("versorgung_bemessungsgrundlage_partner", json!(euro * 100)),
         ("versorgung_beginn_jahr_partner", json!(2020)),
         ("versorgung_art_partner", json!("beamtenrechtlich")),
-    ]
+    ];
+    p.extend(FRAGEN_B.map(|f| (f, json!(false))));
+    p
 }
 
 /// Dieselben Felder mit Beginn im Veranlagungsjahr 2025: die Erklaerung traegt Zeile 14 nicht, die Abgabe sperrt.
