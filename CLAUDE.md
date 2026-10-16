@@ -16,8 +16,10 @@ make serve-python       Python-Dienst: Rückfall, Referenz und Orakel
 von `rust/parity` und `make ui-rust` gemessen; `tests/test_ueberlauf_waechter_text.py` hält `overflow-checks = true` im `[profile.dev]` fest). Beide Ziele laufen gegen den echten Bestand
 `~/.local/share/taxgraph`: Tests und Messungen setzen `TAXGRAPH_DATEN` auf eine Kopie oder nutzen
 `scripts/starte-api.sh`, nie `make serve`. Rückfall auf Python: `make serve-python`; der letzte Stand mit
-Python als Standard-Start ist der lokale Tag `python-standard-letzter` (`904f6215`, nicht gepusht). Python bleibt Orakel der `rust/parity`-Suiten
-und wird nicht gelöscht (`REWRITE_PLAN.md`, Absatz „Cutover vollzogen“). `BACKUP_DIR` wächst je Start;
+Python als Standard-Start ist der lokale Tag `python-standard-letzter` (`904f6215`, nicht gepusht). Python bleibt bis zur Löschung Orakel der `rust/parity`-Suiten.
+Die Löschung ist seit 2026-10-06 beschlossen (nach bestandener Abnahme) und noch nicht vollzogen; Reihenfolge und Vorbedingungen stehen im Vault
+(`audits/python-loeschplan-2026-10-06.md`) und im `REWRITE_PLAN.md` (Nachtrag 2026-10-06). Neue Arbeit entsteht nur in Rust, in Python wird nichts mehr
+gepflegt. Der echte ELSTER-Versand läuft in Rust (`rust/versand`, noch nie echt gesendet; Einreichen löst nur Julius aus). `BACKUP_DIR` wächst je Start;
 `AUTH_USERS` folgt `TAXGRAPH_USER_STORE` nicht von selbst.
 
 `make unit` runs plain `python3 -m pytest`, without `OPAM_ENV`/`VENV312` from the Makefile.
@@ -47,7 +49,7 @@ Test prüft die Reihenfolge.
 
 ## graphify — code graph
 
-The repo has a graph under `graphify-out/` (12,463 nodes, 18,058 edges). Trigram hits on
+The repo has a graph under `graphify-out/` (23,752 nodes, 46,638 edges). Trigram hits on
 the query terms pick the start nodes, then BFS walks the edges — strong on bundles of
 terms, weak on a single known identifier.
 
@@ -65,7 +67,7 @@ median 58 nodes shown of 157, with no indication of what is missing. A truncated
 looks exactly like a complete one. Not to be confused with `--token-budget`, which
 applies to `extract` and sets LLM chunk size, never answer size.
 
-**`--context call` for structural questions only.** 10,544 of 17,091 edges carry no
+**`--context call` for structural questions only.** 19,273 of 46,638 edges carry no
 context at all; the filter discards them, including the `rationale_for` edges that carry
 the domain half. On "who writes events to the store" it takes 982 hits down to 14 and
 the answer becomes complete; on a domain question it gains 6% and risks the answer.
