@@ -739,8 +739,12 @@ pub fn pruefe_bindung_mit(
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+    use std::path::PathBuf;
 
-    use super::{kz_meta, xsd_walk, KzMeta};
+    use super::{
+        expand_home, finde_datei_in, kz_meta, schema_info, xsd_walk, KzMeta, SchemaInfo, XsdFehler,
+        MAX_DEPTH,
+    };
 
     /// Selbst gebaut, kein amtliches Schema (Lizenz). Nur die Konstrukte, die der Walk in E10/E77
     /// sieht: benannte Typen, `xs:sequence`, Facetten ueber `restriction`/`extension` mit
@@ -838,5 +842,333 @@ mod tests {
                 ),
             ])
         );
+    }
+
+    // ------------------------------------------------------------------------------------------------------------
+    // Proben fuer die Stellen, an denen `cargo-mutants` einen kuenstlichen Fehler unbemerkt liess (Vault `audits/
+    // cargo-mutants-xsd-rs-21-stellen-ohne-test-2026-10-16`, Julius d-26). Jede Probe baut ein eigenes Mini-Schema; keine
+    // braucht das amtliche XSD, alle laufen also auch in der CI.
+
+    /// Wegwerf-Verzeichnis fuer selbst gebaute Schemas; weg, wenn der Test endet.
+    struct Probe(PathBuf);
+
+    impl Probe {
+        fn neu(name: &str) -> Self {
+            let d = std::env::temp_dir().join(format!(
+                "taxgraph-elster-xsd-{}-{name}",
+                std::process::id()
+            ));
+            std::fs::create_dir_all(&d).unwrap();
+            Self(d)
+        }
+
+        fn schreibe(&self, datei: &str, inhalt: &str) -> PathBuf {
+            let p = self.0.join(datei);
+            std::fs::write(&p, inhalt).unwrap();
+            p
+        }
+    }
+
+    impl Drop for Probe {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn texte(t: &[&str]) -> Vec<String> {
+        t.iter().copied().map(String::from).collect()
+    }
+
+    /// Ein Schema mit dem Start-Element `E10` (Typ `E10CType`); `rest` sind die weiteren Top-Level-Knoten.
+    fn schema(rest: &str) -> String {
+        format!(
+            r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="E10" type="E10CType"/>
+{rest}
+</xs:schema>"#
+        )
+    }
+
+    /// Das Schema `text` in eine Datei schreiben und mit `schema_info` lesen.
+    fn info(name: &str, text: &str) -> SchemaInfo {
+        let probe = Probe::neu(name);
+        schema_info(&probe.schreibe("probe.xsd", text)).unwrap()
+    }
+
+    /// `n` Typen `W1..Wn` ineinander; `Wi` fuehrt das Kz `E<i>` (7 Ziffern). `Ei` liegt eine Ebene unter dem Typ-Element `Wi`,
+    /// das Start-Element `E10` hat Tiefe 0, `W1` Tiefe 1: `Ei` hat also Tiefe `i + 1`.
+    fn kette_mit_kz(n: usize) -> String {
+        let typen: String = (1..=n)
+            .map(|i| {
+                let weiter = if i < n {
+                    format!(r#"<xs:element name="W{0}" type="W{0}CType"/>"#, i + 1)
+                } else {
+                    String::new()
+                };
+                format!(
+                    r#"<xs:complexType name="W{i}CType"><xs:sequence><xs:element name="E{i:07}" type="xs:string"/>{weiter}</xs:sequence></xs:complexType>"#
+                )
+            })
+            .collect();
+        schema(&format!(
+            r#"<xs:complexType name="E10CType"><xs:sequence><xs:element name="W1" type="W1CType"/></xs:sequence></xs:complexType>{typen}"#
+        ))
+    }
+
+    /// `Rek` enthaelt sich selbst. Ohne den Tiefenschutz (`MAX_DEPTH`, bei den Pflicht-Kindern auch `gesehen`) hoert kein Walk auf.
+    fn rekursives_xsd() -> String {
+        schema(
+            r#"<xs:complexType name="E10CType"><xs:sequence>
+  <xs:element name="E0100001" type="xs:string"/>
+  <xs:element name="Rek" type="RekCType"/>
+</xs:sequence></xs:complexType>
+<xs:complexType name="RekCType"><xs:sequence>
+  <xs:element name="Blatt" type="xs:string"/>
+  <xs:element name="E0100002" type="xs:string"/>
+  <xs:element name="Rek" type="RekCType"/>
+</xs:sequence></xs:complexType>"#,
+        )
+    }
+
+    // ---- B: Schutz gegen Endlosschleifen
+
+    /// `glob_rekursiv` liest Verzeichnisse bis Tiefe 64 (die Wurzel ist Tiefe 0) und nicht tiefer. Gegenversuche: `tiefe + 1` ->
+    /// `tiefe * 1` (die Grenze greift nie), `>` -> `>=` und `>` -> `==` (Tiefe 64 faellt weg).
+    #[test]
+    fn die_verzeichnissuche_liest_bis_tiefe_64_und_nicht_tiefer() {
+        let probe = Probe::neu("glob-tiefe");
+        let mut ebene = probe.0.clone();
+        for tiefe in 0..=66 {
+            std::fs::create_dir_all(&ebene).unwrap();
+            std::fs::write(ebene.join(format!("t{tiefe}.xsd")), "").unwrap();
+            ebene = ebene.join("d");
+        }
+        let suche =
+            |tiefe: usize| finde_datei_in(std::slice::from_ref(&probe.0), &format!("t{tiefe}.xsd"));
+        assert!(suche(0).is_some());
+        assert!(suche(64).is_some(), "Tiefe 64 liegt noch in der Grenze");
+        assert_eq!(suche(65), None, "Tiefe 65 liegt dahinter");
+    }
+
+    /// Ein Typ, der sich selbst enthaelt, endet in `meta_rek` und in `PflichtLauf::rek` bei `MAX_DEPTH`. Gegenversuch `tiefe + 1`
+    /// -> `tiefe * 1` an beiden Stellen und `&&` -> `||` bei `gesehen`: der Walk hoert nie auf, der Testprozess stirbt am
+    /// Stapelueberlauf (unter nextest ein roter Test).
+    #[test]
+    fn ein_typ_der_sich_selbst_enthaelt_endet_bei_max_depth() {
+        assert_eq!(MAX_DEPTH, 80, "Die Zaehlung unten setzt die Grenze 80 voraus");
+        let info = info("rekursiv", &rekursives_xsd());
+        // Jede Ebene `Rek` bis Tiefe 80 hat ihr `Blatt` als Pflicht-Kind; dazu der Eintrag fuer `V` (s. `schema_info`).
+        assert_eq!(info.pflicht.len(), MAX_DEPTH + 1);
+        let mut weg = texte(&["E10"]);
+        for _ in 1..=MAX_DEPTH {
+            weg.push("Rek".to_owned());
+            assert_eq!(info.pflicht[&weg], texte(&["Blatt"]), "{}x Rek", weg.len() - 1);
+        }
+        // Das Kz in `Rek` steht an jeder Ebene; der kuerzeste Pfad ist die erste.
+        assert_eq!(
+            info.pfade,
+            vec![
+                ("E0100001".to_owned(), texte(&["E10", "E0100001"])),
+                ("E0100002".to_owned(), texte(&["E10", "Rek", "E0100002"])),
+            ]
+        );
+        assert_eq!(info.kz_meta["E0100002"].type_name, "xs:string");
+    }
+
+    /// `meta_rek` liest Knoten bis Tiefe `MAX_DEPTH` (80) und nicht tiefer. Gegenversuche: `>` -> `>=` und `>` -> `==` (Tiefe 80
+    /// faellt weg).
+    #[test]
+    fn kz_meta_liest_bis_tiefe_80_und_nicht_tiefer() {
+        assert_eq!(MAX_DEPTH, 80, "Die Kz-Nummern unten setzen die Grenze 80 voraus");
+        let probe = Probe::neu("meta-tiefe");
+        let meta = kz_meta(&probe.schreibe("kette.xsd", &kette_mit_kz(90)), "E10").unwrap();
+        assert!(meta.contains_key("E0000001"));
+        assert!(meta.contains_key("E0000079"), "Tiefe 80 liegt noch in der Grenze");
+        assert!(!meta.contains_key("E0000080"), "Tiefe 81 liegt dahinter");
+    }
+
+    // ---- C: Bausteine, die kein E10-Schema nutzt (E10 2025: 0 Treffer fuer choice, all, ref, DOCTYPE, include)
+
+    /// `xs:choice` und `xs:all` sind Struktur ohne Pfad-Ebene; ihre Kz muessen gefunden werden (`flach`). Gegenversuch `||` ->
+    /// `&&` vor `all`: `choice` und `all` werden nicht mehr betreten.
+    #[test]
+    fn choice_und_all_werden_betreten_und_haben_keine_pfad_ebene() {
+        let probe = Probe::neu("choice-all");
+        let pfad = probe.schreibe(
+            "choice.xsd",
+            &schema(
+                r#"<xs:complexType name="E10CType"><xs:sequence>
+  <xs:choice><xs:element name="E0100001" type="xs:string"/></xs:choice>
+  <xs:all><xs:element name="E0100002" type="xs:string"/></xs:all>
+</xs:sequence></xs:complexType>"#,
+            ),
+        );
+        assert_eq!(
+            xsd_walk(&pfad, "E10").unwrap(),
+            (
+                vec![
+                    ("E0100001".to_owned(), vec![texte(&["E10", "E0100001"])]),
+                    ("E0100002".to_owned(), vec![texte(&["E10", "E0100002"])]),
+                ],
+                0
+            )
+        );
+    }
+
+    /// Ein Element-Verweis (`ref=`) fuehrt zum globalen Element; der Pfad traegt dessen Namen. Gegenversuch `!` gestrichen in
+    /// `abstieg`: der Verweis selbst wird betreten, hat aber weder Typ noch Inhalt, das Kz darunter fehlt.
+    #[test]
+    fn ein_element_verweis_fuehrt_zum_globalen_element() {
+        let probe = Probe::neu("verweis");
+        let pfad = probe.schreibe(
+            "verweis.xsd",
+            &schema(
+                r#"<xs:complexType name="E10CType"><xs:sequence><xs:element ref="Block"/></xs:sequence></xs:complexType>
+<xs:element name="Block" type="BlockCType"/>
+<xs:complexType name="BlockCType"><xs:sequence><xs:element name="E0100001" type="xs:string"/></xs:sequence></xs:complexType>"#,
+            ),
+        );
+        assert_eq!(
+            xsd_walk(&pfad, "E10").unwrap().0,
+            vec![("E0100001".to_owned(), vec![texte(&["E10", "Block", "E0100001"])])]
+        );
+        assert!(kz_meta(&pfad, "E10").unwrap().contains_key("E0100001"));
+    }
+
+    /// Ein Schema mit `<!DOCTYPE>` laesst sich lesen. Gegenversuch: das Feld `allow_dtd` faellt weg, roxmltree weist das DTD ab.
+    #[test]
+    fn ein_schema_mit_doctype_laesst_sich_lesen() {
+        let probe = Probe::neu("doctype");
+        let text = format!(
+            "<?xml version=\"1.0\"?>\n<!DOCTYPE xs:schema SYSTEM \"XMLSchema.dtd\">\n{}",
+            schema(
+                r#"<xs:complexType name="E10CType"><xs:sequence><xs:element name="E0100001" type="xs:string"/></xs:sequence></xs:complexType>"#
+            )
+        );
+        let walk = xsd_walk(&probe.schreibe("doctype.xsd", &text), "E10");
+        assert_eq!(walk.unwrap().0.len(), 1);
+    }
+
+    /// Ein `xs:include`/`xs:import` auf eine Datei, die es nicht gibt, wird wie im Original uebergangen; nur eine vorhandene Datei
+    /// bricht ab (`ein_einbinden_weiterer_schemas_bricht_laut_ab_statt_weniger_zu_finden`). Gegenversuch `&&` -> `||`: jedes
+    /// Einbinden bricht ab.
+    #[test]
+    fn ein_einbinden_einer_fehlenden_datei_wird_uebergangen() {
+        let probe = Probe::neu("include-fehlt");
+        for einbinden in ["include", "import"] {
+            let text = schema(
+                r#"<xs:complexType name="E10CType"><xs:sequence><xs:element name="E0100001" type="xs:string"/></xs:sequence></xs:complexType>"#,
+            )
+            .replace(
+                "<xs:element name=\"E10\"",
+                &format!("<xs:{einbinden} schemaLocation=\"gibt-es-nicht.xsd\"/>\n  <xs:element name=\"E10\""),
+            );
+            let pfad = probe.schreibe(&format!("haupt_{einbinden}.xsd"), &text);
+            let walk = xsd_walk(&pfad, "E10");
+            assert!(!matches!(walk, Err(XsdFehler::Include(_))), "{einbinden}: {walk:?}");
+            assert_eq!(walk.unwrap().0.len(), 1, "{einbinden}");
+        }
+    }
+
+    // ---- D: Pflicht-Kinder und kuerzester Pfad (`schema_info`)
+
+    /// Pflicht-Kind eines Containers = ein Element ohne eigene Element-Kinder, ohne `minOccurs="0"` und ohne Kz-Namen; ein
+    /// Element-Verweis gilt mit dem Namen des globalen Elements. Gegenversuche: `hat_element_kinder` -> `false` (Container zaehlen
+    /// mit), `!` gestrichen vor `hat_element_kinder` (nur Container zaehlen), `&&` -> `||` bei `minOccurs`/Kz (optionale Elemente
+    /// und Kz zaehlen mit), `!` gestrichen vor `r.is_empty()` in `PflichtLauf::rek` (der Verweis hat den Namen "").
+    #[test]
+    fn pflicht_kinder_sind_skalare_ohne_kz_und_ohne_min_occurs_null() {
+        let info = info(
+            "pflicht",
+            &schema(
+                r#"<xs:complexType name="E10CType"><xs:sequence>
+  <xs:element name="Pflicht1" type="xs:string"/>
+  <xs:element name="Optional" type="xs:string" minOccurs="0"/>
+  <xs:element name="E0100001" type="xs:string"/>
+  <xs:element name="Behaelter" type="BehaelterCType"/>
+  <xs:element ref="Verweis"/>
+</xs:sequence></xs:complexType>
+<xs:complexType name="BehaelterCType"><xs:sequence><xs:element name="Inner" type="xs:string"/></xs:sequence></xs:complexType>
+<xs:element name="Verweis" type="xs:string"/>"#,
+            ),
+        );
+        assert_eq!(
+            info.pflicht,
+            HashMap::from([
+                (texte(&["E10"]), texte(&["Pflicht1", "Verweis"])),
+                (texte(&["E10", "Behaelter"]), texte(&["Inner"])),
+                (texte(&["E10", "V"]), texte(&["Laufende_Nummer_V"])),
+            ])
+        );
+    }
+
+    /// Kommt derselbe Pfad zweimal vor, gilt der Inhalt des ersten (`gesehen`); der zweite ueberschriebe sonst den Eintrag.
+    /// Gegenversuch `&&` -> `||` bei `gesehen` in `PflichtLauf::rek`.
+    #[test]
+    fn ein_pfad_der_zweimal_vorkommt_gilt_mit_dem_inhalt_des_ersten() {
+        let info = info(
+            "pfad-doppelt",
+            &schema(
+                r#"<xs:complexType name="E10CType"><xs:sequence>
+  <xs:element name="Block" type="ACType"/>
+  <xs:element name="Block" type="BCType"/>
+</xs:sequence></xs:complexType>
+<xs:complexType name="ACType"><xs:sequence><xs:element name="NurA" type="xs:string"/></xs:sequence></xs:complexType>
+<xs:complexType name="BCType"><xs:sequence><xs:element name="NurB" type="xs:string"/></xs:sequence></xs:complexType>"#,
+            ),
+        );
+        assert_eq!(info.pflicht[&texte(&["E10", "Block"])], texte(&["NurA"]));
+    }
+
+    /// `Laufende_Nummer_V` steht genau einmal unter `E10/V`, auch wenn das Schema es nicht oder schon fuehrt (ERiC verlangt es trotz
+    /// `minOccurs="0"`). Gegenversuch `==` -> `!=` bei der Suche: Ergaenzt wird nur, wenn `V` nichts fuehrt (oder nur ihn).
+    #[test]
+    fn laufende_nummer_v_steht_genau_einmal_unter_v() {
+        let v_pflicht = |name: &str, v_inhalt: &str| {
+            let rest = format!(
+                r#"<xs:complexType name="E10CType"><xs:sequence><xs:element name="V" type="VCType"/></xs:sequence></xs:complexType>
+<xs:complexType name="VCType"><xs:sequence>{v_inhalt}</xs:sequence></xs:complexType>"#
+            );
+            info(name, &schema(&rest)).pflicht[&texte(&["E10", "V"])].clone()
+        };
+        let lnv = r#"<xs:element name="Laufende_Nummer_V" type="xs:string"/>"#;
+        let andere = r#"<xs:element name="Andere" type="xs:string"/>"#;
+        assert_eq!(v_pflicht("lnv-leer", ""), texte(&["Laufende_Nummer_V"]));
+        assert_eq!(v_pflicht("lnv-andere", andere), texte(&["Andere", "Laufende_Nummer_V"]));
+        assert_eq!(v_pflicht("lnv-schon", lnv), texte(&["Laufende_Nummer_V"]));
+    }
+
+    /// Hat ein Kz mehrere Fundstellen, nimmt `schema_info` den kuerzesten Pfad, bei Gleichstand den ersten. Die laengste Fundstelle
+    /// steht zuerst im Schema. Gegenversuche: `<` -> `==` und `<` -> `>` (die erste, also laengste, bleibt), `<` -> `<=` (bei
+    /// Gleichstand gewinnt die letzte).
+    #[test]
+    fn schema_info_nimmt_den_kuerzesten_pfad_und_bei_gleichstand_den_ersten() {
+        let info = info(
+            "kuerzester-pfad",
+            &schema(
+                r#"<xs:complexType name="E10CType"><xs:sequence>
+  <xs:element name="Tief" type="TiefCType"/>
+  <xs:element name="Mitte" type="MitteCType"/>
+  <xs:element name="Mitte2" type="MitteCType"/>
+</xs:sequence></xs:complexType>
+<xs:complexType name="TiefCType"><xs:sequence><xs:element name="Tiefer" type="MitteCType"/></xs:sequence></xs:complexType>
+<xs:complexType name="MitteCType"><xs:sequence><xs:element name="E0100001" type="xs:string"/></xs:sequence></xs:complexType>"#,
+            ),
+        );
+        assert_eq!(
+            info.pfade,
+            vec![("E0100001".to_owned(), texte(&["E10", "Mitte", "E0100001"]))]
+        );
+    }
+
+    /// `~` allein und `~/...` loesen auf das Heimverzeichnis auf, alles andere bleibt. Gegenversuch: der Zweig fuer `~` allein faellt weg.
+    /// Liest nur `HOME` (setzt nichts): die CI-Lage setzt es auf ein leeres Verzeichnis.
+    #[test]
+    fn expand_home_loest_tilde_allein_und_tilde_pfad_auf() {
+        let home = PathBuf::from(std::env::var_os("HOME").expect("HOME ist gesetzt"));
+        assert_eq!(expand_home("~"), home);
+        assert_eq!(expand_home("~/eric"), home.join("eric"));
+        assert_eq!(expand_home("~eric"), PathBuf::from("~eric"));
+        assert_eq!(expand_home("/opt/eric"), PathBuf::from("/opt/eric"));
     }
 }
