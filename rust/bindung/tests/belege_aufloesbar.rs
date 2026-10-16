@@ -18,8 +18,9 @@
 //! und `scripts/ci-nicht-geprueft.sh` zaehlt sie. Der Job `rust` der CI holt den Verlauf (`fetch-depth: 0`).
 //!
 //! Der Pruefer liest nur die Karte, die Abweichungsliste, den Baum und Git; nichts aus `tests/`, `tools/` oder Python
-//! (er ueberlebt L2). Das Tor des Repos (`.orch-gate.json`) fuehrt keine Rust-Tests aus (Loeschplan E7): lokal laeuft er
-//! mit `cd rust && cargo test -p bindung --test belege_aufloesbar`.
+//! (er ueberlebt L2). Das Tor des Repos (`.orch-gate.json`: `make rust-test`) und der Pre-Commit-Hook
+//! (`scripts/orch-pre-commit.sh`: `cargo test -p bindung --tests`) fuehren ihn aus (Loeschplan E7); einzeln mit
+//! `cd rust && cargo test -p bindung --test belege_aufloesbar`.
 //!
 //! Grenzen: Namen nach einer Verlaufsform werden nicht gegen die alte Datei geprueft. Vault-Pfade prueft niemand
 //! (ponytail: eine Umgebungsvariable mit dem Vault-Ordner liesse sie aufloesen). `BELEGE_LISTE=1 cargo test .. -- --nocapture`
