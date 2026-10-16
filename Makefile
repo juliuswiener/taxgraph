@@ -9,7 +9,7 @@
 OPAM_ENV := eval $$(opam env --switch=taxgraph --set-switch)
 VENV312  := oracle/.venv312/bin/activate
 
-.PHONY: all s01 s03 tests build-python s02 clean backup restore serve serve-python
+.PHONY: all s01 s03 tests build-python s02 clean backup restore serve golden
 
 all: unit-stufe-b tests s02
 
@@ -114,12 +114,11 @@ restore:
 	tar xzf $(ARCHIV) -C $(dir $(AUTH_USERS)) $(notdir $(AUTH_USERS)) 2>/dev/null || \
 		echo "Hinweis: $(notdir $(AUTH_USERS)) nicht im Archiv (altes Backup?) — Konten NICHT wiederhergestellt."
 
-## Produktstart (REWRITE_PLAN Schritt 10, Cutover 2026-10-04): der Rust-Dienst ist das Produkt, der
-## Python-Dienst bleibt Referenz, Orakel und Rueckfall (`serve-python`). Beide lesen dieselben
-## Umgebungsvariablen und dieselben Dateien (Bestand unter $(FAELLE_ROOT)/faelle, Konten in
-## produkt/auth/users.json, .env.llm/.env.maps/.env aus der Repo-Wurzel) — der Wechsel in beide
-## Richtungen braucht keine Migration.
-## SICHERUNG: beide Ziele sichern den Bestand vor dem Start mit `make backup` (rund 30 MB je Start; seit S5b
+## Produktstart (REWRITE_PLAN Schritt 10, Cutover 2026-10-04): der Rust-Dienst ist das Produkt. Der
+## Python-Dienst (`serve-python`, Rueckfall und Orakel) fiel mit L3; sein letzter Stand ist der Tag
+## `python-standard-letzter` (904f6215, auf origin). Der Rust-Dienst liest den Bestand unter
+## $(FAELLE_ROOT)/faelle und .env.llm/.env.maps/.env aus der Repo-Wurzel.
+## SICHERUNG: das Ziel sichert den Bestand vor dem Start mit `make backup` (rund 30 MB je Start; seit S5b
 ## bleiben die letzten BACKUP_BEHALTEN = 30 Archive, die aelteren fallen weg). Scheitert die Sicherung, startet
 ## nichts. SICHERN=0 ueberspringt sie.
 ## AUTH IST AN: `env -u TAXGRAPH_NO_AUTH` raeumt ein aus der Shell geerbtes Einzelnutzer-Opt-out ab.
@@ -138,11 +137,6 @@ serve: $(SICHERN_ZIEL)
 	cd rust && CARGO_TARGET_DIR=$(SERVE_TARGET) cargo build -p api --bin taxgraph-api
 	@echo "Rust-Dienst auf http://127.0.0.1:$(SERVE_PORT), Bestand $(FAELLE_ROOT)/faelle"
 	exec env -u TAXGRAPH_NO_AUTH TAXGRAPH_ROOT=$(CURDIR) $(SERVE_TARGET)/debug/taxgraph-api $(SERVE_PORT)
-
-## Rueckfall und Referenz: der Python-Dienst, wie er bis zum Cutover lief.
-serve-python: $(SICHERN_ZIEL)
-	@echo "Python-Dienst auf http://127.0.0.1:$(SERVE_PORT), Bestand $(FAELLE_ROOT)/faelle"
-	exec env -u TAXGRAPH_NO_AUTH python3 produkt/haut/server.py $(SERVE_PORT)
 
 
 ## S0.1: §32a tariff tests only.
@@ -190,9 +184,17 @@ snapshot:
 snapshot-verify:
 	python3 pipeline/snapshot.py verify --all
 
-## Run the golden corpus against the Catala formalisation (value + citation anchor).
-golden: build-python
-	. $(VENV312); python golden/golden_lauf.py
+## Die 135 Golden-Faelle gegen die Catala-Formalisierung (Wert und Zitatanker), in Rust seit L3 (Vault
+## golden-ohne-python-anker-pruefung-nach-rust-2026-10-12): golden_werte rechnet jeden Fall durch die Rust-Engine,
+## golden_kopf haelt Zahl, Erwartung und Kennungen, anker prueft jedes Zitat gegen den Quelltext in sources/.
+## Die Python-Fassung (golden/golden_lauf.py) bleibt bis L4 liegen, ist aber ohne produkt/ nicht mehr lauffaehig.
+## Ein Filter, der nichts trifft, endet in cargo mit "0 passed" und Exit 0: jeder Lauf muss mindestens einen Test bestehen.
+golden:
+	@cd rust && for t in engine:golden_werte bescheid:golden_kopf bindung:anker; do \
+		out=$$(cargo test -p $${t%%:*} --test it $${t##*:}:: 2>&1) || { echo "$$out"; exit 1; }; \
+		echo "$$out" | grep "^test result"; \
+		echo "$$out" | grep -q "test result: ok. [1-9][0-9]* passed" || { echo "golden: $$t fuehrte keinen Test aus"; exit 1; }; \
+	done
 
 ## Regenerate the golden § 32a cases from the published tariff.
 golden-generate:

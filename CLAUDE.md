@@ -7,23 +7,22 @@ make rust-test          cargo build, clippy -D warnings, nextest, doctests (das 
 make unit-stufe-b       python3 -m pytest pipeline/tests -q
 make tests              clerk test -W rules/          the Catala scope tests
 make all                unit-stufe-b + tests + s02
-make golden             golden/golden_lauf.py          full-return regression
+make golden             die 135 Golden-Fälle in Rust (golden_werte, golden_kopf, anker)
 make snapshot-verify    pipeline/snapshot.py verify --all
 make serve              Rust-Dienst (das Produkt seit dem Cutover 2026-10-04), sichert den Bestand vorher
-make serve-python       Python-Dienst: Rückfall, Referenz und Orakel
 ```
 
 `make serve` baut im dev-Profil, nie mit `--release` (dort fehlen `overflow-checks`;
-`rust/api/tests/ueberlauf_profil_waechter.rs` hält `overflow-checks = true` im `[profile.dev]` fest). Beide Ziele laufen gegen den echten Bestand
+`rust/api/tests/ueberlauf_profil_waechter.rs` hält `overflow-checks = true` im `[profile.dev]` fest). Das Ziel läuft gegen den echten Bestand
 `~/.local/share/taxgraph`: Tests und Messungen setzen `TAXGRAPH_DATEN` auf eine Kopie oder nutzen
-`scripts/starte-api.sh`, nie `make serve`. Rückfall auf Python: `make serve-python`; der letzte Stand mit
-Python als Standard-Start ist der Tag `python-standard-letzter` (`904f6215`, auf origin). Python bleibt bis zur Löschung Referenz (`make golden`, `produkt/`); die Vergleichssuite `rust/parity` ist seit L1, `tests/` und `tools/ui_rust` sind seit L2 gelöscht.
-Die Löschung ist seit 2026-10-06 beschlossen (nach bestandener Abnahme) und erst zum Teil vollzogen (L3, `produkt/`, steht aus); Reihenfolge und Vorbedingungen stehen im Vault
+`scripts/starte-api.sh`, nie `make serve`. Einen Rückfall auf Python gibt es seit L3 nicht mehr; der letzte Stand mit
+Python als Standard-Start ist der Tag `python-standard-letzter` (`904f6215`, auf origin). `rust/parity` ist seit L1, `tests/` und `tools/ui_rust` sind seit L2, `produkt/` ist seit L3 gelöscht.
+Die Löschung ist seit 2026-10-06 beschlossen (nach bestandener Abnahme) und für Stufe A vollzogen (Stufe B, L4, und die Doku, L5, stehen aus); Reihenfolge und Vorbedingungen stehen im Vault
 (`audits/python-loeschplan-2026-10-06.md`) und im `REWRITE_PLAN.md` (Nachtrag 2026-10-06). Neue Arbeit entsteht nur in Rust, in Python wird nichts mehr
 gepflegt. Der echte ELSTER-Versand läuft in Rust (`rust/versand`, noch nie echt gesendet; Einreichen löst nur Julius aus). Nach einem erfolgreichen Backup bleiben in `BACKUP_DIR`
 die letzten `BACKUP_BEHALTEN` (30) Archive; `AUTH_USERS` folgt `TAXGRAPH_USER_STORE` nicht von selbst.
 
-`make tests` runs under `OPAM_ENV` and `make golden` under `VENV312` — call those targets,
+`make tests` runs under `OPAM_ENV` and `make gettsim-crosscheck` under `VENV312` — call those targets,
 not their commands directly, or the Catala toolchain and the 3.12 venv are missing.
 
 A single test: `cargo nextest run -p <crate> <name>` (in `rust/`).
