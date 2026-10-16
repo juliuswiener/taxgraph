@@ -321,11 +321,14 @@ fn makefile_sichert(sicherung: &Path) -> PathBuf {
     // Der Befehl geht ueber drei Zeilen (`\`-Fortsetzung); die Woerter ab `tar` genuegen.
     let ab = text.find("tar czf").unwrap_or_else(|| panic!("kein tar: {text}"));
     let woerter: Vec<&str> = text[ab..].split_whitespace().collect();
-    let stelle = woerter
+    let ordner = woerter
         .windows(3)
-        .find(|w| w[0] == "-C" && w[2] == "faelle")
+        .find_map(|w| match w {
+            [c, ordner, f] if *c == "-C" && *f == "faelle" => Some(*ordner),
+            _ => None,
+        })
         .unwrap_or_else(|| panic!("kein `-C <ordner> faelle` im tar-Befehl: {text}"));
-    PathBuf::from(stelle[1])
+    PathBuf::from(ordner)
 }
 
 /// Der Ordner, den der Dienst bei dieser Umgebung benutzt: der Elternordner von `faelle`.
