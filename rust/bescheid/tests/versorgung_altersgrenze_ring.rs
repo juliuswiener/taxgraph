@@ -241,6 +241,11 @@ fn der_ehegatte_rechnet_mit_den_partner_feldern_und_nur_bei_zusammenveranlagung(
     beide.extend(bezug_a(3_000_000, 58, 1965, Some(0)));
     assert_eq!(lage(&beide, VZ, A).altersgrenze, Some("lohn".to_owned()), "A: Grad 0");
     assert_eq!(lage(&beide, VZ, B).altersgrenze, Some("darueber".to_owned()), "B: Grad 50");
+    // Abweichung Nr. 80: der Grad der Gesamtfrage ist der von Person A. Der Ehegatte (ohne eigenen Grad) rechnet weiter vorsichtig mit 60.
+    let mut fremd = partner(3_000_000, 58, 1965, None);
+    fremd.push(("veranlagung", json!("zusammen"), true));
+    fremd.push((GRAD_A[1], json!(0), true));
+    assert_eq!(lage(&fremd, VZ, B).altersgrenze, Some("darueber".to_owned()), "der Grad der Gesamtfrage von Person A gilt nicht fuer den Ehegatten");
     for veranlagung in [json!("einzel"), json!("unbekannt")] {
         let mut einzel = partner(3_000_000, 58, 1965, Some(0));
         einzel.push(("veranlagung", veranlagung.clone(), true));
