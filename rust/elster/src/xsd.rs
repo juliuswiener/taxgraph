@@ -950,13 +950,20 @@ mod tests {
         assert_eq!(suche(65), None, "Tiefe 65 liegt dahinter");
     }
 
+    /// `f` auf einem Thread mit kleinem Stapel: ein fehlender Tiefenschutz endet dann nach Kilobytes statt Gigabytes (jede Ebene
+    /// von `PflichtLauf::rek` klont den Pfad, bei 2 MiB Stapel waren es 2,2 GiB Spitzenspeicher, gemessen 2026-10-16).
+    fn auf_kleinem_stapel<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> T {
+        std::thread::Builder::new().stack_size(256 * 1024).spawn(f).unwrap().join().unwrap()
+    }
+
     /// Ein Typ, der sich selbst enthaelt, endet in `meta_rek` und in `PflichtLauf::rek` bei `MAX_DEPTH`. Gegenversuch `tiefe + 1`
     /// -> `tiefe * 1` an beiden Stellen und `&&` -> `||` bei `gesehen`: der Walk hoert nie auf, der Testprozess stirbt am
     /// Stapelueberlauf (unter nextest ein roter Test).
     #[test]
     fn ein_typ_der_sich_selbst_enthaelt_endet_bei_max_depth() {
         assert_eq!(MAX_DEPTH, 80, "Die Zaehlung unten setzt die Grenze 80 voraus");
-        let info = info("rekursiv", &rekursives_xsd());
+        let text = rekursives_xsd();
+        let info = auf_kleinem_stapel(move || info("rekursiv", &text));
         // Jede Ebene `Rek` bis Tiefe 80 hat ihr `Blatt` als Pflicht-Kind; dazu der Eintrag fuer `V` (s. `schema_info`).
         assert_eq!(info.pflicht.len(), MAX_DEPTH + 1);
         let mut weg = texte(&["E10"]);
