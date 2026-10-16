@@ -11,28 +11,11 @@ VENV312  := oracle/.venv312/bin/activate
 
 .PHONY: all s01 s03 tests build-python s02 clean backup restore serve serve-python
 
-all: unit unit-stufe-b tests s02
+all: unit-stufe-b tests s02
 
 ## Run all Catala/Clerk scope tests (S0.1 tariff, S0.3 Arbeitszimmer/Homeoffice).
 tests:
 	$(OPAM_ENV); clerk test -W rules/
-
-## Regressionstests der Gate-Semantik (kein Catala, kein Netz, <1s).
-## Parallel mit 6 Workern (Julius-Vorgabe 2026-08-19, Maschine hat 12 Kerne). Gemessen am
-## selben Checkout: sequenziell 312s, -n 12 68s, beide Läufe 0 Fails. --dist loadfile hält
-## jede Testdatei auf EINEM Worker — Pflicht, nicht Kür: test_bescheid_fn_collector und
-## test_datenwurzel_ausserhalb_repo schreiben feste /tmp-Pfade, dateiübergreifend gäbe das
-## Kollisionen. Prozess-basiert, daher kein Konflikt mit der catala-Thread-Unsafety.
-## --continue-on-collection-errors (2026-08-28): ohne das Flag bricht pytest die GANZE Sitzung
-## ab, sobald EIN Modul beim Sammeln scheitert — und fast jedes Testmodul hier ruft
-## `lade_bindung()` schon auf Modulebene. Eine einzige kaputte bindung-YAML legte damit den
-## kompletten Lauf lahm, unter -n 6 sogar mit Haenger bis zum Timeout. Gemessen an genau diesem
-## Fall: mit dem Flag laeuft tests/test_bindung_yaml_laedt.py durch und nennt Datei, Zeile,
-## Spalte und Ursache; die Folgefehler stehen daneben statt davor.
-## FAIL-CLOSED BLEIBT ES, nachgemessen: kaputte Datei -> exit 1, alles heil -> exit 0. Das Flag
-## verschluckt nichts, es verwandelt „Abbruch ohne Diagnose" in „roter Test mit Diagnose".
-unit:
-	python3 -m pytest tests/ -q -n 6 --dist loadfile --continue-on-collection-errors
 
 ## Sicherung Fall-Store + Audit-Log + Benutzerkonten (Audit 2026-08-16/17, data-no-backup-restore).
 ## Die Falldateien sind gitignored — ohne dieses Ziel gibt es KEINE Recovery. audit.jsonl liegt
@@ -141,7 +124,7 @@ restore:
 ## nichts. SICHERN=0 ueberspringt sie.
 ## AUTH IST AN: `env -u TAXGRAPH_NO_AUTH` raeumt ein aus der Shell geerbtes Einzelnutzer-Opt-out ab.
 ## Ein Bau mit `--release` ist hier bewusst NICHT vorgesehen: Cargo schaltet dort overflow-checks und
-## debug-assertions ab, und kein Vergleichslauf (`make ui-rust`; rust/parity seit L1 weg) hat diesen Bau je
+## debug-assertions ab, und kein Vergleichslauf (`make ui-rust` seit L2, rust/parity seit L1 weg) hat diesen Bau je
 ## gemessen. Das dev-Profil (opt-level 1, rust/Cargo.toml) ist der gepruefte Bau. Die Test-Uhr
 ## `festzeit` gibt es seit L1 nicht mehr: der Dienst hat die echte Uhr.
 ## SERVE_TARGET liegt ausserhalb des Checkouts (target/ ist mehrere GB gross). TAXGRAPH_JWT_SECRET
@@ -249,39 +232,14 @@ eric-gate:
 	if [ -z "$$ELSTER_HERSTELLER_ID" ] && [ -f .env ]; then set -a; . ./.env; set +a; fi; \
 	ERIC_DIR=$${ERIC_DIR:-$$HOME/02_Software/eric} python3 elster/eric_gate.py
 
-## Lokaler Freigabenachweis fuer den ERiC-Abgabeweg (Entscheidung
-## eric-abgabeweg-bleibt-lokaler-manueller-nachweis, Julius 2026-09-12). Dieses Ziel ist der
-## Nachweis, den die EIGENTLICHE Abgabe prueft — `make eric-gate` ist es NICHT: das Gate prueft
-## eine Minimal-XML und zaehlt die GESPERRT-Grenze als Bestehen, laeuft also auch dann gruen,
-## wenn der Abgabeweg nie gerechnet hat.
-##
-## Faehrt tests/test_einreichen_durchstich.py durch den ECHTEN HTTP-Endpunkt mit ECHTEM
-## checkESt und ECHTEM eric_gate — und macht aus JEDEM Skip ein exit != 0 (tests/skip_ist_rot.py,
-## ueber PYTHONPATH geholt). Ohne ERiC oder ohne Herstellerkennung ueberspringen die beiden
-## ERiC-Faelle naemlich weiterhin, und pytest meldete dafuer exit 0: "CI gruen" und "Abgabeweg
-## geprueft" saehen gleich aus. Genau diese Verwechslung ist der Backlog-Eintrag
-## ci-beweist-den-abgabeweg-nicht.
-##
-## Kein Versand: der Pfad ruft `EricBearbeiteVorgang` mit ERIC_VALIDIERE (ohne ERIC_SENDE),
-## cryptoParameter und serverantwortXmlPuffer bleiben NULL. Nachgemessen mit strace — im ganzen
-## Lauf kein einziger Netz-Syscall ausserhalb von 127.0.0.1.
-##
-## Herstellerkennung wie bei eric-gate aus einer gitignorierten .env, bereits gesetztes
-## Prozess-Env gewinnt. ERIC_DIR muss auf die ERiC-Auslieferung zeigen; der Default
-## ~/02_Software/eric findet die Lib auch in Unterordnern (elster/smoke_test.find_eric_lib).
-abgabeweg-freigabe:
-	if [ -z "$$ELSTER_HERSTELLER_ID" ] && [ -f .env ]; then set -a; . ./.env; set +a; fi; \
-	ERIC_DIR=$${ERIC_DIR:-$$HOME/02_Software/eric} \
-	PYTHONPATH=tests$${PYTHONPATH:+:$$PYTHONPATH} \
-	python3 -m pytest tests/test_einreichen_durchstich.py -q -rs -p skip_ist_rot
-
-## Rust-Gegenstueck zu abgabeweg-freigabe (V2): rust/api/tests/einreichen_eric_echt.rs startet den
+## Lokaler Freigabenachweis fuer den ERiC-Abgabeweg (V2; das Python-Ziel `abgabeweg-freigabe` fiel mit L2,
+## Verlauf: `git show 904f6215:Makefile`): rust/api/tests/einreichen_eric_echt.rs startet den
 ## echten Dienst (taxgraph-api, echter Socket), baut einen Fall ueber die Routen und ruft POST
 ## /fall/{id}/einreichen mit der ECHTEN ERiC-Bibliothek und der ECHTEN Herstellerkennung. Nur Pruefung
 ## (ERIC_VALIDIERE), kein Versand. Der Test ist #[ignore]: `make rust-test` und die CI laufen
 ## ohne ihn, `checkESt` selbst deckt die CI also NICHT. Hier laeuft er mit --ignored, und jede fehlende
 ## Voraussetzung (Bibliothek, ID) oder ein anderer Lauf als genau ein bestandener Test macht das Ziel rot.
-## Herstellerkennung wie bei abgabeweg-freigabe aus der gitignorierten .env; das Protokoll liegt in
+## Herstellerkennung aus der gitignorierten .env (bereits gesetztes Prozess-Env gewinnt); das Protokoll liegt in
 ## rust/target/ (der Test nennt weder ID noch Antwortrumpf). Die Verdrahtung (Ziel, --ignored, Testname,
 ## #[ignore]) haelt rust/api/tests/einreichen_eric_echt.rs::die_freigabe_ist_verdrahtet in der CI fest.
 abgabeweg-freigabe-rust:
@@ -346,30 +304,6 @@ rust-build:
 ## braucht fuer #[ignore]-Tests `--run-ignored`, und ihre Pruefung (`test result: ok. N passed`) liest libtest-Zeilen.
 rust-test:
 	cd rust && cargo build && cargo clippy --all-targets -- -D warnings && cargo nextest run --no-fail-fast && cargo test --doc --no-fail-fast
-
-## Playwright-Tests der Oberflaeche gegen den RUST-Server (REWRITE_PLAN §6/§7, 9c: "Playwright gegen Rust").
-## Baut taxgraph-api und startet alle Dateien in tests/ mit `sync_playwright` (heute 22) mit dem Plugin
-## tools/ui_rust/ui_rust_plugin.py, das nur `server.make_server` durch den Start von Rust ersetzt. Die
-## Tests, die gegen Rust nicht gruen werden koennen, stehen mit Ursache in tools/ui_rust/ausschluss.tsv:
-## sie laufen als xfail(strict). Ein gelisteter Test, der gruen wird, und ein Eintrag ohne Test machen
-## den Lauf rot; ein neuer Test ausserhalb der Liste, der rot wird, bleibt rot. Braucht Playwright mit
-## Chromium (`pip install playwright`, `playwright install chromium`); CI hat beides nicht.
-## UI_N = Zahl der xdist-Worker. Das Binary liegt unter $CARGO_TARGET_DIR (sonst rust/target), UI_RUST_BIN ueberschreibt es.
-## Die Pruefung der Liste (test_ui_rust_ausschluss.py) nennt `sync_playwright` nur als Text und ist keine UI-Datei.
-UI_DATEIEN = $(shell grep -l sync_playwright tests/test_*.py | grep -v test_ui_rust_ausschluss | sort)
-UI_N ?= 4
-
-ui-rust:
-	cd rust && cargo build -p api --bin taxgraph-api
-	PYTHONPATH=tools/ui_rust python3 -m pytest -p ui_rust_plugin $(UI_DATEIEN) -q -n $(UI_N) --dist loadfile -p no:cacheprovider
-
-## Gegenprobe zu ui-rust: Rust startet und endet sofort (UI_RUST_GEGENPROBE=1). Die Tests muessen rot werden;
-## bleiben sie gruen, reden sie nicht mit Rust. Das Ziel ist gruen, wenn pytest rot war.
-ui-rust-gegenprobe:
-	cd rust && cargo build -p api --bin taxgraph-api
-	@if UI_RUST_GEGENPROBE=1 PYTHONPATH=tools/ui_rust python3 -m pytest -p ui_rust_plugin tests/test_ui_login.py -q -p no:cacheprovider; \
-	then echo "GEGENPROBE FEHLGESCHLAGEN: die Tests blieben gruen, obwohl Rust sofort endet"; exit 1; \
-	else echo "Gegenprobe rot, wie gewollt: ohne Rust-Prozess laufen die UI-Tests nicht"; fi
 
 ## Stufe-B-Tests (pipeline/, ebilanz/, GETTSIM-Gegenprobe) unter pipeline/tests/. Sie brauchen weder
 ## produkt/ noch tests/conftest.py noch Catala (gemessen 2026-10-06: gruen in einem Baum ohne produkt/,

@@ -3,43 +3,34 @@
 ## Commands
 
 ```
-make unit               python3 -m pytest tests/ -q -n 6 --dist loadfile
+make rust-test          cargo build, clippy -D warnings, nextest, doctests (das Tor)
+make unit-stufe-b       python3 -m pytest pipeline/tests -q
 make tests              clerk test -W rules/          the Catala scope tests
-make all                unit + tests + s02
+make all                unit-stufe-b + tests + s02
 make golden             golden/golden_lauf.py          full-return regression
 make snapshot-verify    pipeline/snapshot.py verify --all
 make serve              Rust-Dienst (das Produkt seit dem Cutover 2026-10-04), sichert den Bestand vorher
 make serve-python       Python-Dienst: Rückfall, Referenz und Orakel
 ```
 
-`make serve` baut im dev-Profil, nie mit `--release` (dort fehlen `overflow-checks`; nur der dev-Bau wird
-von `make ui-rust` gemessen; `tests/test_ueberlauf_waechter_text.py` hält `overflow-checks = true` im `[profile.dev]` fest). Beide Ziele laufen gegen den echten Bestand
+`make serve` baut im dev-Profil, nie mit `--release` (dort fehlen `overflow-checks`;
+`rust/api/tests/ueberlauf_profil_waechter.rs` hält `overflow-checks = true` im `[profile.dev]` fest). Beide Ziele laufen gegen den echten Bestand
 `~/.local/share/taxgraph`: Tests und Messungen setzen `TAXGRAPH_DATEN` auf eine Kopie oder nutzen
 `scripts/starte-api.sh`, nie `make serve`. Rückfall auf Python: `make serve-python`; der letzte Stand mit
-Python als Standard-Start ist der Tag `python-standard-letzter` (`904f6215`, auf origin). Python bleibt bis zur Löschung Referenz (`make golden`, `tests/`); die Vergleichssuite `rust/parity` ist seit L1 gelöscht.
-Die Löschung ist seit 2026-10-06 beschlossen (nach bestandener Abnahme) und noch nicht vollzogen; Reihenfolge und Vorbedingungen stehen im Vault
+Python als Standard-Start ist der Tag `python-standard-letzter` (`904f6215`, auf origin). Python bleibt bis zur Löschung Referenz (`make golden`, `produkt/`); die Vergleichssuite `rust/parity` ist seit L1, `tests/` und `tools/ui_rust` sind seit L2 gelöscht.
+Die Löschung ist seit 2026-10-06 beschlossen (nach bestandener Abnahme) und erst zum Teil vollzogen (L3, `produkt/`, steht aus); Reihenfolge und Vorbedingungen stehen im Vault
 (`audits/python-loeschplan-2026-10-06.md`) und im `REWRITE_PLAN.md` (Nachtrag 2026-10-06). Neue Arbeit entsteht nur in Rust, in Python wird nichts mehr
 gepflegt. Der echte ELSTER-Versand läuft in Rust (`rust/versand`, noch nie echt gesendet; Einreichen löst nur Julius aus). Nach einem erfolgreichen Backup bleiben in `BACKUP_DIR`
 die letzten `BACKUP_BEHALTEN` (30) Archive; `AUTH_USERS` folgt `TAXGRAPH_USER_STORE` nicht von selbst.
 
-`make unit` runs plain `python3 -m pytest`, without `OPAM_ENV`/`VENV312` from the Makefile.
 `make tests` runs under `OPAM_ENV` and `make golden` under `VENV312` — call those targets,
 not their commands directly, or the Catala toolchain and the 3.12 venv are missing.
 
-**`make unit` hängt nicht von `build-python` ab.** In einem frisch angelegten Worktree fehlen
-`_build/` und `oracle/gettsim/_catala/` (beide gitignored). Der Skip-Guard in
-`tests/conftest.py` greift nur bei direkten `runner`/`pkg`-Importen; die Testdateien, die
-`api`/`server` importieren, laufen trotzdem und scheitern an `engine_unavailable`. Ergebnis:
-129 failed + 2 errors, und der Lauf bleibt rot (kein Skip: ein grüner Lauf ohne Engine hätte
-nichts gemessen). Er nennt seine Ursache selbst in der Schlusszeile nach der Fehlerliste
-(`Catala-Engine fehlt in diesem Baum`). Vor jedem Tor in einem neuen Worktree einmal
-`make build-python` laufen lassen. Gemessen 2026-10-03 auf `b540590`.
+A single test: `cargo nextest run -p <crate> <name>` (in `rust/`).
 
-A single test: `python3 -m pytest tests/path/to/test_x.py::test_name -q`.
-
-**Neue Testdatei braucht eine Zeile in `rust/TESTMAP.tsv`, sonst ist `make unit` rot.** Das gilt für jede Datei
-in `tests/` und jede `.rs`/`.py`/`.c` in `rust/*/tests/`. Der Test `tests/test_testmap_vollstaendig.py` nennt die
-fehlenden Dateien; dasselbe zeigt `python3 tests/test_testmap_vollstaendig.py`. Eine Zeile hat 7 Spalten, durch
+**Neue Testdatei braucht eine Zeile in `rust/TESTMAP.tsv`, sonst ist `make rust-test` rot.** Das gilt für jede Datei
+in `pipeline/tests/` und jede `.rs`/`.py`/`.c` in `rust/*/tests/`. Der Test `rust/bindung/tests/testmap_vollstaendig.rs`
+nennt die fehlenden Dateien und die Zeilen ohne Datei; Aufruf: `cargo test -p bindung --test it testmap_vollstaendig::`. Eine Zeile hat 7 Spalten, durch
 Tab getrennt (`file`, `lines_bei_anlage`, `n_tests_bei_anlage`, `xfail`, `category`, `target_module`, Notiz), und Spalte 7 nennt nur
 Ersatz, der im Baum existiert. Spalte 2 und 3 halten den Stand beim Anlegen der Zeile; niemand zieht sie nach (kein Tor prüft sie). Wer einen Zweig mergt, ruft den Test nach dem Merge auf: ein Zweig, der älter ist als
 der Test, bringt Testdateien ohne Zeile mit (so fielen `rentenbeginn_jahr.rs` und `fallzahl_env.rs` beim ersten
