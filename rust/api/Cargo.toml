@@ -51,6 +51,7 @@ http-body-util = { workspace = true }
 proptest = { workspace = true }
 tempfile = { workspace = true }
 sha2 = { workspace = true }
+roxmltree = { workspace = true }
 
 # Testdateien liegen in tests/it.rs zu EINEM Test-Binary zusammen (weniger Links nach einer Aenderung der Bibliothek). Eigene Ziele:
 # Dateien, die Umgebung oder Arbeitsverzeichnis des Prozesses aendern, und Dateien, die per `--test <name>` aufgerufen werden.
