@@ -85,11 +85,12 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// danach am 2026-10-12 die acht Rueckfragen zum Versorgungsbezug (`versorgung_zweiter_bezug`, `versorgung_sterbegeld`,
 /// `versorgung_mehrere_jahre`, `versorgung_nicht_ganzjaehrig`, je Person) in `gesamt` und `rentner_gesamt` (Abweichung Nr. 66),
 /// 394 -> 402 und 308 -> 316, die Kegel bleiben;
+/// danach am 2026-10-16 das Feld `versorgung_grad_der_behinderung` nur in `gesamt` (Abweichung Nr. 80), 402 -> 403, der Kegel bleibt;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 85, 33),
-    (Scheibe::Gesamt, 402, 35),
+    (Scheibe::Gesamt, 403, 35),
     (Scheibe::RentnerGesamt, 316, 28),
 ];
 

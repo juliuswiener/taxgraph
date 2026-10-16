@@ -380,6 +380,7 @@ felder:
   - versorgung_beginn_jahr_partner
   - versorgung_bemessungsgrundlage
   - versorgung_bemessungsgrundlage_partner
+  - versorgung_grad_der_behinderung
   - versorgung_jahresrente
   - versorgung_jahresrente_partner
   - versorgung_mehrere_jahre

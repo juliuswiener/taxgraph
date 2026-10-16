@@ -152,6 +152,33 @@ bindungen:
       zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
 
+  # Der Grad der Behinderung fuer die Altersgrenze des Versorgungsbezugs (Abweichung Nr. 80, Julius 2026-10-16, d-22). Der Gesamtlauf
+  # fragt ihn NUR dort, wo er die Grenze entscheidet: bei einem bestaetigten Bezug ueber 0 der Art `altersgrenze_sonstige` (Grenze 63 Jahre,
+  # bei Grad ab 50 60 Jahre, § 19 Abs. 2 S. 2 Nr. 2 EStG). Ein eigenes Feld statt `rentner_grad_der_behinderung`: dieses Feld liest auch der
+  # Behinderten-Pauschbetrag (§ 33b) samt seiner Abgabe-Sperre, und die Altersgrenze soll keine Rechenzahl und keine Sperre dort anstossen.
+  # Nur Person A: die Felder des Ehegatten zum Versorgungsbezug fuehrt nur die Rentner-Scheibe (dort fragt `rentner_grad_der_behinderung_partner`),
+  # `gesamt` kennt keinen Bezug des Ehegatten. Der Ring liest zuerst das Feld der Rentner-Scheibe, sonst dieses (`zweige/gesamt.rs::grad_feld`). Ohne bestaetigte Antwort gilt weiter
+  # die vorsichtige Grenze 60 (Entscheid 2026-10-12). `feld_bedingung` mit `signatur_slot` als Etikett, nie `geltungsbedingung` (siehe Nr. 66).
+  - feld_id: versorgung_grad_der_behinderung
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: versorgung_grad_der_behinderung}
+    feld_bedingung: {feld: versorgung_art, wert: altersgrenze_sonstige, grund: "§ 19 Abs. 2 S. 2 Nr. 2 EStG: die Altersgrenze (63 Jahre, bei Schwerbehinderung 60 Jahre) gilt nur fuer Versorgungsbezuege, die nicht auf beamtenrechtlichen oder entsprechenden Vorschriften beruhen und keine Hinterbliebenen- oder Erwerbsminderungsbezuege sind. `versorgung_art` erhebt genau diese Art. Fail-closed ueber `wert`: nur eine BESTAETIGTE andere Art schliesst die Frage aus.", und: {feld: versorgung_jahresrente, groesser_als: 0, grund: "Ohne bestaetigten Bezug ueber 0 Euro gibt es keine Altersgrenze zu pruefen, und eine Frage nach einer Behinderung verlaengerte nur das Interview."}}
+    typ: int
+    einheit: null
+    bereich: {min: 20, max: 100, grund: "Spannweite des Grads der Behinderung. Zulaessig sind nur die Werte in enum_werte, Zehner- und Fuenferschritte des amtlichen Musters; die 0 heisst: kein Ausweis."}
+    enum_werte: ["0", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95", "100"]
+    askable: true
+    fragetext_laie: "Welchen Grad der Behinderung hat dein Schwerbehindertenausweis (eine Zahl von 20 bis 100, oder 0, wenn du keinen hast)?"
+    hilfe_kurz: "Die Frage steht hier, weil deine Versorgung aus einer Altersgrenze stammt: Mit einem Grad ab 50 zählt sie schon ab 60 Jahren als Versorgungsbezug, sonst erst ab 63. Den Grad findest du in deinem Feststellungsbescheid oder Schwerbehindertenausweis. Ohne Antwort rechnet die Erklärung mit 60 und sperrt die Abgabe, wenn du diese Grenze schon erreicht hast."
+    beispielwert: 50
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Eingabe fuer die Altersgrenze des Versorgungsbezugs, kein Deklarationsfeld. Der Grad der Behinderung fuer den Pauschbetrag traegt sein eigenes Kz (`rentner_grad_der_behinderung`, E0109708); dieses Feld ersetzt es nicht."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"
+      zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
   # Rueckfragen zu vier Faellen, die die Eingaben nicht verraten (Abweichung Nr. 66, Julius 2026-10-12): ein zweiter Bezug (zweite
   # Spalte der Zeilen 11 bis 16), Sterbegeld und Verwandtes (Zeile 15), Bezuege fuer mehrere Kalenderjahre (Zeile 16) und ein
   # Bezug, der nicht das ganze Jahr lief (Zeile 14). Die Erklaerung traegt diese Zeilen nicht: "Ja" sperrt die Abgabe mit einem

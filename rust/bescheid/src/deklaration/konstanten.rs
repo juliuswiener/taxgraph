@@ -179,7 +179,7 @@ pub(super) const RING_AN_GESAMT: [&str; 29] = [
     "vpf_tage_ueber_8h_nach_drei_monaten",
 ];
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_GESAMT: [&str; 103] = [
+pub(super) const RING_GESAMT: [&str; 104] = [
     "afa_jahresbetrag",
     "agb_aufwendungen",
     "am_anschaffung_monat",
@@ -264,6 +264,7 @@ pub(super) const RING_GESAMT: [&str; 103] = [
     "versorgung_alter_bei_beginn",
     "versorgung_beginn_jahr",
     "versorgung_bemessungsgrundlage",
+    "versorgung_grad_der_behinderung",
     "versorgung_jahresrente",
     "vor_ag_anteil_rv_partner",
     "vor_an_anteil_rv_partner",

@@ -468,6 +468,99 @@ async fn eine_unbeantwortete_frage_sperrt_genau_dann_wenn_sie_in_der_fragenliste
     assert_eq!(rueckfragen(&d).await.0, FRAGEN_A.to_vec(), "KONTROLLE: Bezug A zeigt vier Fragen");
 }
 
+/// Die Frage des Gesamtlaufs nach dem Grad der Behinderung (Abweichung Nr. 80). Nur Person A: `gesamt` fuehrt keinen Bezug des Ehegatten.
+const GRAD: &str = "versorgung_grad_der_behinderung";
+
+/// Der Bezug von Person A mit Art `altersgrenze_sonstige` und `alter` Jahren bei Beginn, die vier Rueckfragen mit Nein.
+fn altersgrenzen_bezug_a(euro: i64, alter: i64) -> Vec<(&'static str, Value, bool)> {
+    let mut p = bezug_a(euro, true);
+    for e in &mut p {
+        if e.0 == "versorgung_art" {
+            e.1 = json!("altersgrenze_sonstige");
+        }
+    }
+    p.push(("versorgung_alter_bei_beginn", json!(alter), true));
+    p.extend(FRAGEN_A.map(|f| (f, json!(false), true)));
+    p
+}
+
+/// Abweichung Nr. 80, die Fragenliste: der Gesamtlauf fragt den Grad der Behinderung NUR dort, wo er die Altersgrenze des Bezugs
+/// entscheidet: bei einem bestaetigten Bezug ueber 0 der Art `altersgrenze_sonstige`. Wer einen beamtenrechtlichen Bezug hat, keinen
+/// Bezug oder Bezug 0, wird nicht nach einer Behinderung gefragt. Die Rentner-Scheibe fuehrt ihre eigene Frage
+/// (`rentner_grad_der_behinderung`) und fragt diese nicht ein zweites Mal; das Feld gibt es dort nicht.
+#[tokio::test]
+async fn der_gesamtlauf_fragt_den_grad_nur_bei_einem_altersgrenzen_bezug() {
+    let einzel = vec![("veranlagung", json!("einzel"))];
+    let lagen: Vec<(&str, &str, Vec<(&str, Value)>, Vec<(&'static str, Value, bool)>, bool)> = vec![
+        ("gesamt, Altersgrenzen-Bezug A", "gesamt.json", einzel.clone(), altersgrenzen_bezug_a(30_000, 59), true),
+        ("gesamt, beamtenrechtlicher Bezug A", "gesamt.json", einzel.clone(), bezug_a(30_000, true), false),
+        ("gesamt, Altersgrenzen-Bezug 0", "gesamt.json", einzel.clone(), altersgrenzen_bezug_a(0, 59), false),
+        ("gesamt, Altersgrenzen-Bezug nur vorlaeufig", "gesamt.json", einzel.clone(), {
+            let mut p = altersgrenzen_bezug_a(30_000, 59);
+            p[0].2 = false;
+            p
+        }, false),
+        ("gesamt, kein Bezug", "gesamt.json", einzel.clone(), vec![], false),
+        // Die Rentner-Scheibe: ihre eigene Frage, keine zweite.
+        ("rentner, Altersgrenzen-Bezug A", "rentner.json", einzel.clone(), mit(lohn_a(30_000), altersgrenzen_bezug_a(30_000, 59)), false),
+    ];
+    for (name, datei, ersetze, mehr, soll) in lagen {
+        let d = akte(datei, &ersetze, &mehr).await;
+        let ids = fragen_ids(&d).await;
+        assert!(ids.len() > 8, "{name}: KONTROLLE: die Fragenliste ist nicht leer ({ids:?})");
+        assert_eq!(ids.iter().any(|i| i == GRAD), soll, "{name}: Grad-Frage in der Fragenliste");
+    }
+    // Das Feld gibt es in der Rentner-Scheibe nicht: ein POST weist es ab (`feld_id` nicht in dieser Scheibe).
+    let d = akte("rentner.json", &einzel, &mit(lohn_a(30_000), altersgrenzen_bezug_a(30_000, 59))).await;
+    let (status, antwort) = sende(&d, "POST", "/fall/vs/event", Some(&ereignis(GRAD, &json!(0), true, None))).await;
+    assert_ne!(status, 201, "die Rentner-Scheibe nimmt das Feld der Gesamtfrage an: {antwort}");
+}
+
+/// Abweichung Nr. 80, der ganze Weg auf der Akte `gesamt.json`: Person A, geboren 1965 (im Veranlagungsjahr 2025 60 Jahre alt), Bezug
+/// der Art `altersgrenze_sonstige` seit dem 59. Lebensjahr. Ohne Angabe zum Grad gilt vorsichtig die Grenze 60: der Bezug ist ein
+/// Versorgungsbezug ohne Zeile 11, die Abgabe sperrt. Ein BESTAETIGTER Grad unter 50 hebt die Sperre auf (Grenze 63 = 2028, der Bezug
+/// ist noch Arbeitslohn), ab 50 bleibt sie; ein vorlaeufiger Grad gilt als fehlend.
+#[tokio::test]
+async fn der_grad_der_gesamtfrage_hebt_die_sperre_der_altersgrenze_auf_oder_laesst_sie_stehen() {
+    // (Grad, gesperrt?) in der Reihenfolge der bestaetigten Antworten; jede ersetzt die vorige.
+    let schritte: [(i64, bool); 5] = [
+        (0, false),  // Grenze 63 = 2028: der Bezug ist noch Arbeitslohn
+        (45, false), // 45 ist keine Schwerbehinderung (49 gibt es im amtlichen Muster nicht: die Stufen gehen in Fuenferschritten)
+        (50, true),  // Grenze 60 = 2025
+        (100, true),
+        (30, false),
+    ];
+    let ersetze = vec![("veranlagung", json!("einzel")), ("geburtsjahr", json!(1965))];
+    let d = akte("gesamt.json", &ersetze, &altersgrenzen_bezug_a(30_000, 59)).await;
+    // Ohne Angabe zum Grad: vorsichtig 60, gesperrt, mit dem Grund der Altersgrenze unter dem Betrag.
+    let (status, dekl) = sende(&d, "GET", "/fall/vs/deklaration", None).await;
+    assert_eq!(status, 200, "{dekl}");
+    let gruende: Vec<(&str, &str)> = dekl["unvollstaendig"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["feld_id"].as_str().is_some_and(|f| f.starts_with("versorgung_")))
+        .map(|e| (e["feld_id"].as_str().unwrap(), e["grund"].as_str().unwrap()))
+        .collect();
+    assert_eq!(gruende.len(), 1, "Grad fehlt: {gruende:?}");
+    assert_eq!(gruende[0].0, A, "Grad fehlt");
+    assert!(gruende[0].1.contains("im Veranlagungsjahr oder davor erreicht"), "Grad fehlt: {}", gruende[0].1);
+    assert!(fragen_ids(&d).await.iter().any(|f| f == GRAD), "die Frage nach dem Grad steht in der Liste");
+
+    // Ein vorlaeufiger Grad gilt als fehlend, auch 0: die Sperre der Altersgrenze bleibt, und die Erklaerung nennt zusaetzlich den
+    // unbestaetigten Grad unter seinem eigenen Feld (wie jedes Ring-Feld, das der Nutzer nur genannt hat).
+    let (status, antwort) = sende(&d, "POST", "/fall/vs/event", Some(&ereignis(GRAD, &json!(0), false, None))).await;
+    assert_eq!(status, 201, "POST /event {GRAD} vorlaeufig: {antwort}");
+    assert_eq!(offen(&d).await, [GRAD, A], "ein vorlaeufiger Grad 0 gilt als fehlend");
+    for (wert, gesperrt) in schritte {
+        aendere(&d, GRAD, &json!(wert)).await;
+        let soll: Vec<&str> = if gesperrt { vec![A] } else { vec![] };
+        assert_eq!(offen(&d).await, soll, "Grad {wert} bestaetigt");
+    }
+    // Die Frage ist beantwortet und steht nicht mehr in der Liste.
+    assert!(!fragen_ids(&d).await.iter().any(|f| f == GRAD), "die beantwortete Frage steht noch in der Liste");
+}
+
 type Fall = (&'static str, &'static str, Vec<(&'static str, Value)>, Vec<(&'static str, Value, bool)>);
 
 /// Ein Bezug ueber dem Lohn sperrt den Bescheid (`versorgung_ueber_lohn`, Nr. 50). `GET /fragen` zeigt die Sperre wie `/stand` und

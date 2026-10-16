@@ -235,7 +235,7 @@ fn einkuenfte_ns<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots, ns_wk: Euro, zusammen
     einkuenfte_ns_aus_lohn(r.f(), r.vz(), r.p(), lohn, ns_wk, zusammen)
 }
 
-/// Die Felder der Versorgungsbezuege EINER Person (§ 19 Abs. 2 `EStG`) und das Feld des Grades der Behinderung, das IHR
+/// Die Felder der Versorgungsbezuege EINER Person (§ 19 Abs. 2 `EStG`) und die zwei Felder des Grades der Behinderung, der IHR
 /// Alters-Gate setzt. Die Namen stehen als Literale: der Scanner hinter `RING_BETRAGSFELDER`
 /// (`bescheid/tests/ring_scheiben.rs`) liest den Quelltext des Rings.
 struct VersorgungsFelder {
@@ -244,7 +244,11 @@ struct VersorgungsFelder {
     beginn_jahr: &'static str,
     art: &'static str,
     alter_bei_beginn: &'static str,
+    /// Der Grad, den die Rentner-Scheibe fragt (§ 33b-Block, immer gefragt).
     grad_der_behinderung: &'static str,
+    /// Der Grad, den der Gesamtlauf fragt (Abweichung Nr. 80), nur bei einem Bezug der Art `altersgrenze_sonstige`. Der Ehegatte hat
+    /// keinen: `gesamt` fuehrt keinen Bezug des Ehegatten, nur die Rentner-Scheibe, und die fragt seinen Grad immer.
+    grad_gesamtfrage: Option<&'static str>,
     geburtsjahr: &'static str,
 }
 
@@ -256,6 +260,7 @@ const VERSORGUNG_A: VersorgungsFelder = VersorgungsFelder {
     art: "versorgung_art",
     alter_bei_beginn: "versorgung_alter_bei_beginn",
     grad_der_behinderung: "rentner_grad_der_behinderung",
+    grad_gesamtfrage: Some("versorgung_grad_der_behinderung"),
     geburtsjahr: "geburtsjahr",
 };
 
@@ -267,6 +272,7 @@ const VERSORGUNG_B: VersorgungsFelder = VersorgungsFelder {
     art: "versorgung_art_partner",
     alter_bei_beginn: "versorgung_alter_bei_beginn_partner",
     grad_der_behinderung: "rentner_grad_der_behinderung_partner",
+    grad_gesamtfrage: None,
     geburtsjahr: "geburtsjahr_partner",
 };
 
@@ -277,6 +283,16 @@ fn altersgrenze_fuer_grad(grad_der_behinderung: i64) -> i64 {
         60
     } else {
         63
+    }
+}
+
+/// Das Feld, das den Grad der Behinderung der Person tragen soll (Abweichung Nr. 80): das der Rentner-Scheibe, wenn es in der Akte
+/// steht, sonst das, das der Gesamtlauf fragt (nur Person A). Steht keines da, ist es das der Rentner-Scheibe; der Aufrufer liest es
+/// dann als fehlend.
+fn grad_feld(f: &Felder, n: &VersorgungsFelder) -> &'static str {
+    match n.grad_gesamtfrage {
+        Some(gesamtfrage) if wert(f, n.grad_der_behinderung).is_none() => gesamtfrage,
+        _ => n.grad_der_behinderung,
     }
 }
 
@@ -301,7 +317,7 @@ fn versorgungsbezug(f: &Felder, n: &VersorgungsFelder) -> R<Versorgungsbezug> {
     let mut gate_erfuellt = true;
     if matches!(wert(f, n.art), Some(PyWert::Text(s)) if s == "altersgrenze_sonstige") && alter > 0
     {
-        gate_erfuellt = alter >= altersgrenze_fuer_grad(c(n.grad_der_behinderung)?);
+        gate_erfuellt = alter >= altersgrenze_fuer_grad(c(grad_feld(f, n))?);
     }
     Ok(Versorgungsbezug {
         jahresrente,
@@ -375,13 +391,15 @@ pub(crate) enum VersorgungLage {
 }
 
 /// Der Grenzfall zu [`versorgung_lage`]: die Altersgrenze der Person, gegen die das Veranlagungsjahr geprueft wird. Ist der Grad der
-/// Behinderung nicht bestaetigt (nur die Rentner-Scheibe fragt ihn), gilt vorsichtig die niedrigere Grenze: eine zu fruehe Grenze
-/// sperrt, eine zu spaete liesse einen Versorgungsbezug als Arbeitslohn durch.
+/// Behinderung nicht bestaetigt (die Rentner-Scheibe fragt ihn immer, der Gesamtlauf bei einem Bezug der Art `altersgrenze_sonstige`,
+/// Abweichung Nr. 80), gilt vorsichtig die niedrigere Grenze: eine zu fruehe Grenze sperrt, eine zu spaete liesse einen
+/// Versorgungsbezug als Arbeitslohn durch.
 fn altersgrenze_im_jahr(f: &Felder, n: &VersorgungsFelder) -> R<i64> {
-    if wert(f, n.grad_der_behinderung).is_none() {
+    let grad = grad_feld(f, n);
+    if wert(f, grad).is_none() {
         return Ok(altersgrenze_fuer_grad(50));
     }
-    Ok(altersgrenze_fuer_grad(feld_int_oder_null(f, n.grad_der_behinderung)?))
+    Ok(altersgrenze_fuer_grad(feld_int_oder_null(f, grad)?))
 }
 
 /// Gehoert der Bezug einer Person in die Zeilen 11 bis 13 der Anlage N (Abweichung Nr. 50)? Ja, wenn der Bescheid ihn als
