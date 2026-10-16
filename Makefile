@@ -19,30 +19,30 @@ tests:
 
 ## Sicherung Fall-Store + Audit-Log + Benutzerkonten (Audit 2026-08-16/17, data-no-backup-restore).
 ## Die Falldateien sind gitignored — ohne dieses Ziel gibt es KEINE Recovery. audit.jsonl liegt
-## BEREITS unter faelle/ (produkt/store/audit.py:AUDIT_DIR) und wird von der faelle/-Sicherung
+## BEREITS unter faelle/ (Konfig::audit_pfad, rust/api/src/konfig.rs) und wird von der faelle/-Sicherung
 ## automatisch mit erfasst — der alte "audit.jsonl"-Operand traf nie (er lag relativ zu
-## FAELLE_ROOT statt zu FAELLE_ROOT/faelle, Review 2026-08-17). users.json (produkt/auth/) MUSS
+## FAELLE_ROOT statt zu FAELLE_ROOT/faelle, Review 2026-08-17). users.json (neben faelle/) MUSS
 ## mit ins Archiv — ohne sie zeigen restaurierte Faelle nach einem Umzug auf Konten, die es dort
-## nicht gibt, und die fail-closed Zugriffspruefung (_fall_owner_check) sperrt sie dauerhaft. AUTH_USERS waehlt wie Konfig::nutzerdatei (E3 des Loeschplans): $(FAELLE_ROOT)/users.json, fehlt sie, gilt produkt/auth/users.json, falls es sie gibt (sonst brache backup ab); der Rueckgriff faellt mit L3.
+## nicht gibt, und die fail-closed Zugriffspruefung sperrt sie dauerhaft. AUTH_USERS ist wie Konfig::nutzerdatei (E3 des Loeschplans) $(FAELLE_ROOT)/users.json; fehlt sie, bricht backup ab. Der Rueckgriff auf produkt/auth/users.json fiel mit L3.
 ## FAELLE_ROOT/AUTH_USERS/BACKUP_DIR sind per Kommandozeile overridebar (Pflicht fuer den
-## Round-Trip-Test in tests/test_backup_restore_roundtrip.py, der NIE die echten Pfade anfasst).
+## Round-Trip-Test rust/api/tests/backup_restore_rundlauf.rs, der NIE die echten Pfade anfasst).
 ## BACKUP_DIR liegt NEBEN dem Checkout, nicht unter $(HOME) (Nutzer-Vorgabe: nichts im Home anlegen;
 ## dort liegen die bisherigen Sicherungen ohnehin schon).
 ##
 ## FAELLE_ROOT zeigt seit 2026-08-19 nach $XDG_DATA_HOME/taxgraph statt nach produkt/haut: die
 ## Steuerdaten liegen nicht mehr im Projektverzeichnis (Entscheidung zum Audit-Punkt
-## verschluesselung-steuerdaten-im-klartext). Der Wert MUSS mit api_constants._daten_wurzel()
+## verschluesselung-steuerdaten-im-klartext). Der Wert MUSS mit Konfig::aus_env (rust/api/src/konfig.rs)
 ## uebereinstimmen — laufen die beiden auseinander, sichert `make backup` ein leeres Verzeichnis
-## und meldet Erfolg. Genau das prueft tests/test_datenwurzel_ausserhalb_repo.py.
+## und meldet Erfolg. Das prueft kein Test mehr: das Python-Gegenstueck fiel mit L2, und backup_restore_rundlauf.rs gibt den Pfad vor.
 ##
-## Die Reihenfolge ist DREISTUFIG und muss die von _daten_wurzel() sein: $TAXGRAPH_DATEN, dann
+## Die Reihenfolge ist DREISTUFIG und muss die von Konfig::aus_env sein: $TAXGRAPH_DATEN, dann
 ## $XDG_DATA_HOME, dann ~/.local/share. Bis 2026-10-01 fehlte die erste Stufe hier: mit
 ## TAXGRAPH_DATEN=korpus-rt sicherte `make backup` weiter ~/.local/share/taxgraph, waehrend der
 ## Code nach korpus-rt schrieb — beide Pfade existierten (207 bzw. 192 Dateien), der Fehler war
 ## also stumm. `?=` bleibt: FAELLE_ROOT per Kommandozeile schlaegt alle drei Stufen.
 BACKUP_DIR  ?= $(abspath $(CURDIR)/../taxgraph-backups)
 FAELLE_ROOT ?= $(if $(TAXGRAPH_DATEN),$(TAXGRAPH_DATEN),$(if $(XDG_DATA_HOME),$(XDG_DATA_HOME),$(HOME)/.local/share)/taxgraph)
-AUTH_USERS  ?= $(or $(wildcard $(FAELLE_ROOT)/users.json),$(wildcard produkt/auth/users.json),$(FAELLE_ROOT)/users.json)
+AUTH_USERS  ?= $(FAELLE_ROOT)/users.json
 
 ## RECHTE (S5a, Julius 2026-10-15): das Archiv traegt die Passwort-Hashes (users.json) und alle Steuerdaten, es
 ## darf nur der Besitzer lesen (Modus 600). Jede Rezeptzeile ist eine eigene Shell, `umask 077` steht darum in
@@ -309,10 +309,10 @@ rust-test:
 
 ## Stufe-B-Tests (pipeline/, ebilanz/, GETTSIM-Gegenprobe) unter pipeline/tests/. Sie brauchen weder
 ## produkt/ noch tests/conftest.py noch Catala (gemessen 2026-10-06: gruen in einem Baum ohne produkt/,
-## tests/ und rust/) und laufen deshalb auch dann weiter, wenn `tests/` geloescht ist. Ohne venv312
+## tests/ und rust/) und laufen deshalb seit L2/L3 ohne diese Verzeichnisse. Ohne venv312
 ## ueberspringt sich test_gettsim_crosscheck (1 skipped); `make gettsim-crosscheck` faehrt ihn echt.
-## Nur 14 s, daher ohne -n. Steht hier und nicht bei `unit`, weil REWRITE_PLAN.md und
-## tools/docs_zahlen_pruefen.py Makefile-Zeilen verankern; Zeilen davor verschieben sie.
+## Nur 14 s, daher ohne -n. REWRITE_PLAN.md und tools/docs_zahlen_pruefen.py
+## verankern Makefile-Zeilen; Zeilen davor verschieben sie.
 unit-stufe-b:
 	python3 -m pytest pipeline/tests -q
 

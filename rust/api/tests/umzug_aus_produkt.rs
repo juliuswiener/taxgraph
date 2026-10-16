@@ -1,16 +1,16 @@
 //! E2 bis E4 des Loeschplans (Vault `audits/python-loeschplan-2026-10-06`): Oberflaeche, Nutzerdatei und
-//! das eingefrorene Register liegen in Rust-Pfaden, damit `produkt/` fallen kann (L3).
+//! das eingefrorene Register liegen in Rust-Pfaden; `produkt/` ist seit L3 weg.
 //!
 //! Was hier schiefgehen kann und wen es trifft:
 //!
-//! - Eine Datei der Oberflaeche oder des Registers weicht von Pythons Stand ab, ohne dass es auffaellt: der
+//! - Eine Datei der Oberflaeche oder des Registers aendert sich, ohne dass es auffaellt: der
 //!   Dienst zeigt dem Nutzer eine andere Seite, die Orakel-Tests vergleichen gegen ein anderes Register.
 //!   Die Tabellen unten halten den Stand als SHA-256 fest (aus `produkt/` am 2026-10-12 gemessen, `cmp` byte-gleich).
-//!   Es gibt keinen Vergleich mit `produkt/`: der stuerbe mit L3.
-//! - Die Nutzerdatei: fehlte der Rueckgriff auf `produkt/auth/users.json`, verschwaenden die Konten still, sobald der
-//!   neue Standardpfad greift. Gaelte der Rueckgriff auch bei vorhandener neuer Datei, bliebe die neue wirkungslos.
+//!   Einen Vergleich mit `produkt/` gibt es seit L3 nicht mehr; die Hashes sind der Beleg.
+//! - Die Nutzerdatei: der Standardpfad ist `users.json` neben `faelle/`. Ein Rueckgriff auf `produkt/auth/users.json`
+//!   (bis L3) gilt nicht mehr: gaelte er wieder, wuerde eine alte Datei im Repo die Konten still ersetzen.
 //!   Das Makefile (`backup`, `serve`) muss dieselbe Wahl treffen wie `Konfig::nutzerdatei`.
-//! - Nichts hier liest `produkt/` oder die echte Nutzerdatei; die Pfade liegen in Wegwerf-Verzeichnissen.
+//! - Nichts hier liest die echte Nutzerdatei; die Pfade liegen in Wegwerf-Verzeichnissen.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -20,10 +20,8 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::Mutex;
 
 use api::konfig::Konfig;
-use api::Zustand;
 use sha2::{Digest, Sha256};
 
 /// `rust/api/static`: Name, SHA-256.
@@ -124,7 +122,8 @@ fn der_dienst_liefert_die_oberflaeche_aus_rust_api_static() {
     assert!(konfig.static_dir().join("index.html").is_file());
 }
 
-/// Eine Wurzel (mit oder ohne alte Nutzerdatei) und ein Datenverzeichnis (mit oder ohne neue Nutzerdatei).
+/// Eine Wurzel (mit oder ohne Datei an der alten Stelle `produkt/auth/users.json`) und ein Datenverzeichnis (mit oder ohne
+/// `users.json`).
 struct Umgebung {
     tmp: tempfile::TempDir,
 }
@@ -167,45 +166,23 @@ impl Umgebung {
             audit_dir: self.daten().join("faelle"),
         }
     }
-
-    fn fehlerlog(&self) -> String {
-        std::fs::read_to_string(self.daten().join("faelle/fehler.log")).unwrap_or_default()
-    }
 }
 
 #[test]
-fn ohne_beide_dateien_gilt_users_json_neben_faelle() {
+fn ohne_datei_gilt_users_json_neben_faelle() {
     let u = Umgebung::neu(false, false);
-    let k = u.konfig();
-    assert_eq!(k.nutzerdatei(), u.neu_pfad());
-    assert!(!k.nutzerdatei_ist_veraltet());
-    k.melde_veraltete_nutzerdatei(false);
-    assert_eq!(u.fehlerlog(), "");
+    assert_eq!(u.konfig().nutzerdatei(), u.neu_pfad());
 }
 
 #[test]
-fn die_neue_nutzerdatei_gewinnt_auch_wenn_die_alte_noch_da_ist() {
-    let u = Umgebung::neu(true, true);
-    let k = u.konfig();
-    assert_eq!(k.nutzerdatei(), u.neu_pfad());
-    assert!(!k.nutzerdatei_ist_veraltet());
-    k.melde_veraltete_nutzerdatei(false);
-    assert_eq!(u.fehlerlog(), "");
-}
-
-#[test]
-fn fehlt_die_neue_gilt_die_alte_und_das_fehlerlog_warnt() {
+fn eine_datei_an_der_alten_stelle_zaehlt_nicht_mehr() {
+    // Nur die alte Datei da: kein Rueckgriff, der Pfad bleibt `users.json` neben `faelle/` (auch wenn es sie dort nicht gibt).
     let u = Umgebung::neu(true, false);
-    let k = u.konfig();
-    assert_eq!(k.nutzerdatei(), u.alt());
-    assert!(k.nutzerdatei_ist_veraltet());
-    // Mit `TAXGRAPH_USER_STORE` ist die Standarddatei ohne Belang: keine Warnung.
-    k.melde_veraltete_nutzerdatei(true);
-    assert_eq!(u.fehlerlog(), "");
-    k.melde_veraltete_nutzerdatei(false);
-    let log = u.fehlerlog();
-    assert!(log.contains("server.nutzerdatei_veraltet"), "{log}");
-    assert!(log.contains("WARNING"), "Stufe Warnung, nicht Fehler: {log}");
+    assert!(u.alt().is_file());
+    assert_eq!(u.konfig().nutzerdatei(), u.neu_pfad());
+    // Beide da: ebenfalls die neue.
+    let u = Umgebung::neu(true, true);
+    assert_eq!(u.konfig().nutzerdatei(), u.neu_pfad());
 }
 
 /// `make -n backup` im Wegwerf-Verzeichnis `cwd`: der `tar`-Befehl, in dem `-C <dir> <datei>` die Nutzerdatei nennt.
@@ -237,46 +214,17 @@ fn makefile_tar_zeile(u: &Umgebung, alt_im_cwd: bool) -> String {
 #[test]
 fn das_makefile_waehlt_die_nutzerdatei_wie_konfig() {
     let daten = |u: &Umgebung| u.daten().display().to_string();
-    // neue Datei da, alte auch: die neue.
+    // users.json im Datenverzeichnis da, alte Stelle im Arbeitsverzeichnis auch: die im Datenverzeichnis.
     let u = Umgebung::neu(false, true);
     let z = makefile_tar_zeile(&u, true);
     assert!(z.contains(&format!("-C {}/ users.json", daten(&u))), "{z}");
-    // nur die alte: die alte (relativ zum Wurzelordner des Makefiles).
+    // nur die alte Stelle da: kein Rueckgriff, die Datei im Datenverzeichnis (die es nicht gibt, `backup` bricht dann ab).
     let u = Umgebung::neu(false, false);
     let z = makefile_tar_zeile(&u, true);
-    assert!(z.contains("-C produkt/auth/ users.json"), "{z}");
-    // keine: die neue.
+    assert!(z.contains(&format!("-C {}/ users.json", daten(&u))), "{z}");
+    assert!(!z.contains("produkt/auth"), "{z}");
+    // keine: dieselbe.
     let u = Umgebung::neu(false, false);
     let z = makefile_tar_zeile(&u, false);
     assert!(z.contains(&format!("-C {}/ users.json", daten(&u))), "{z}");
-}
-
-/// Die Umgebungsvariablen, die `Zustand::aus_env` liest, setzt nur dieser eine Test (kein Wettlauf im Prozess).
-static UMGEBUNG: Mutex<()> = Mutex::new(());
-
-#[test]
-fn zustand_aus_env_warnt_nur_ohne_taxgraph_user_store() {
-    let _sperre = UMGEBUNG.lock().unwrap();
-    let u = Umgebung::neu(true, false);
-    std::env::set_var("TAXGRAPH_ROOT", u.wurzel());
-    std::env::set_var("TAXGRAPH_DATEN", u.daten());
-    std::env::remove_var("TAXGRAPH_AUDIT_DIR");
-    std::env::remove_var("TAXGRAPH_JWT_SECRET");
-
-    std::env::set_var("TAXGRAPH_USER_STORE", u.tmp.path().join("eigen.json"));
-    Zustand::aus_env().unwrap();
-    assert_eq!(u.fehlerlog(), "", "mit TAXGRAPH_USER_STORE keine Warnung");
-
-    std::env::set_var("TAXGRAPH_USER_STORE", "");
-    Zustand::aus_env().unwrap();
-    assert!(
-        u.fehlerlog().contains("server.nutzerdatei_veraltet"),
-        "leeres TAXGRAPH_USER_STORE zaehlt als nicht gesetzt: {}",
-        u.fehlerlog()
-    );
-
-    std::env::remove_var("TAXGRAPH_USER_STORE");
-    for k in ["TAXGRAPH_ROOT", "TAXGRAPH_DATEN"] {
-        std::env::remove_var(k);
-    }
 }

@@ -173,9 +173,6 @@ impl Zustand {
     /// Wenn die Zufallsquelle für das Geheimnis versagt.
     pub fn aus_env() -> Result<Self, auth::AuthFehler> {
         let konfig = Konfig::aus_env();
-        konfig.melde_veraltete_nutzerdatei(
-            std::env::var("TAXGRAPH_USER_STORE").is_ok_and(|v| !v.is_empty()),
-        );
         let auth = Auth::aus_env(&konfig.nutzerdatei(), Some(konfig.audit_pfad()))?;
         Ok(Self::neu(konfig, auth))
     }
