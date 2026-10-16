@@ -227,6 +227,28 @@ steht im Testkopf in eigenen Worten. Der Aufgabentext lag nicht vor, die Kammer 
   Rechnung mit 10.636,31 (51.955), nicht die 51.980 der Loesung.
 - Geprueft sind acht Tests; der Beleg der Konstante ist `rust/bescheid/tests/ausland_bstbk_2022_23_hermetisch.rs::die_konstante_der_handrechnung_steht_in_der_params_datei_und_der_catala_regel_2024`.
 
+## Gesamt-Regression auf Bescheid-Ebene (sieben Faelle, Handrechnung)
+
+`rust/bescheid/tests/gesamt_mischfaelle_hermetisch.rs` haelt sieben Faelle mit Rente, Ausland (Freistellung und Anrechnung), Unfallkosten
+mit Entfernungspauschale, GWG, AfA und privatem Verkauf gegen den Bescheid-Weg (VZ 2025, einzeln veranlagt, drei davon Mischfaelle).
+Jeder Fall nennt Gesamtbetrag der Einkuenfte, zu versteuerndes Einkommen und festzusetzende Einkommensteuer als Zahlen, die von Hand aus dem
+Gesetzestext und `params/2025/` gerechnet sind (Rechenweg im Testkopf, nie aus dem Rust-Code gelesen). Grund: `golden/cases` hat keinen Fall
+mit diesen Themen; die Golden-Fassade (`golden_werte.rs`) nimmt Rente, Auslandsteuer und Unfall nur als fertigen Betrag, der Bescheid-Weg
+rechnet sie. Entscheidung: Vault `decisions/julius-entscheidet-gesamtregression-quelle-handrechnung-mit-zweiter-lesung-2026-10-16`.
+
+- **Inventur.** `jede_kategorie_hat_einen_fall_und_zwei_faelle_verbinden_kategorien` zaehlt die sechs Themen aus der Tabelle `faelle()`, in der
+  jeder Fall rechnet; die Kategorie steht im Testcode, nicht in einem Beschreibungstext. Sie belegt nur, dass ein Fall DA ist.
+- **ZWEITE LESUNG OFFEN.** Julius liest jeden Rechenweg gegen den Gesetzestext. Ohne
+  diese Lesung teilen Code und Zahl im schlimmsten Fall denselben Lesefehler; kein Test faengt das.
+- **Grenzen.** Die Tarifkonstanten 2025 stammen aus `params/2025` (EStH 2025) und sind nicht gegen das BGBl gegengelesen; unabhaengig bestaetigt
+  ist nur der Grundfreibetrag (BMF-Rentenuebersicht). § 32b Abs. 2 und § 34c Abs. 1 nennen keine Rundung des besonderen Steuersatzes und des
+  Hoechstbetrags: die Eingaben sind so gewaehlt, dass die Lesart keine Rolle spielt (M1: 7.500 Euro Vorbehalt, exakter und auf vier Stellen
+  abgerundeter Satz geben 3.841; A1: Hoechstbetrag 3.625 ganzzahlig). Ebene `golden/cases` (Versorgung, auslaendische Steuer) ist NICHT gebaut.
+- **Mutanten.** Je Rechenort rot (Catala-C-Tarif Zone 3 und 4, Arbeitnehmer-Pauschbetrag, Besteuerungsanteil, Pauschbetraege, Entfernungspauschale,
+  Unfallkosten, GWG-Grenze, AfA-Monate, Vorbehalt, Anrechnung, Gewinn und Freigrenze des privaten Verkaufs). Eine Aenderung in
+  `params/2025/einkommensteuertarif_p32a.yaml` oder `params/2025/arbeitnehmerpauschbetrag.yaml` aendert keinen Fall: der Rechner liest beide aus
+  `rust/catala-sys/generated/Einkommensteuertarif.c`.
+
 ## `interview_orakel.json`
 
 Szenarien fuer die Crate `interview` samt den Antworten des Python-Orakels
