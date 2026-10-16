@@ -32,15 +32,6 @@ elster/zertifikat/
 # OMC state
 .omc/
 
-# Paket-B Haut: Fall-Daten sind Nutzerdaten (Steuer-Antworten) — NIE ins Repo
-# ponytail: produkt/ ist seit L3 aus dem Repo. Diese zwei Zeilen bleiben, solange eine Arbeitskopie die ungetrackten
-# Reste noch hat (Nutzerdatei mit Passwort-Hashes, Falldaten): ohne sie meldete git sie als neu und ein `git add .`
-# nahme sie mit. Sind die Reste von Hand geloescht (Loeschplan L6), fallen beide Zeilen.
-produkt/haut/faelle/
-
-# Auth runtime state (user database, not tracked)
-produkt/auth/users.json
-
 # Pipeline run artifacts (logs may contain prompts/costs; keep out of git)
 pipeline/runs/
 sources/**/*.pdf
