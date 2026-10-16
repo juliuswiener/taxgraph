@@ -76,16 +76,36 @@ fn setze(s: &mut Store, feld: &str, wert: Value) {
 fn akte(mehr: &[(&'static str, Value)]) -> Store {
     let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../fixtures/e2e/rentner.json");
     let mut roh: Value = serde_json::from_slice(&std::fs::read(pfad).unwrap()).unwrap();
+    // Steht ein Feld mehrfach in `mehr`, gilt der letzte Eintrag: `bezug` und `ehegatte` bringen die vier Rueckfragen mit Nein mit
+    // (Abweichung Nr. 79), ein Fall darf sie danach ueberschreiben. `null` laesst das Feld weg (die Frage bleibt unbeantwortet).
+    let mut letzte: Vec<(&'static str, Value)> = Vec::new();
+    for (feld, wert) in mehr {
+        match letzte.iter_mut().find(|(f, _)| f == feld) {
+            Some(eintrag) => eintrag.1 = wert.clone(),
+            None => letzte.push((feld, wert.clone())),
+        }
+    }
     roh["events"]
         .as_array_mut()
         .unwrap()
-        .retain(|e| !e["feld_id"].as_str().is_some_and(|f| mehr.iter().any(|(m, _)| *m == f)));
+        .retain(|e| !e["feld_id"].as_str().is_some_and(|f| letzte.iter().any(|(m, _)| *m == f)));
     let mut s = Store::aus_datei(serde_json::from_value(roh).unwrap());
-    for (feld, wert) in mehr {
-        setze(&mut s, feld, wert.clone());
+    for (feld, wert) in &letzte {
+        if !wert.is_null() {
+            setze(&mut s, feld, wert.clone());
+        }
     }
     s
 }
+
+/// Die vier Rueckfragen zum Versorgungsbezug (Abweichung Nr. 66) von Person A und vom Ehegatten.
+const FRAGEN_A: [&str; 4] = ["versorgung_zweiter_bezug", "versorgung_sterbegeld", "versorgung_mehrere_jahre", "versorgung_nicht_ganzjaehrig"];
+const FRAGEN_B: [&str; 4] = [
+    "versorgung_zweiter_bezug_partner",
+    "versorgung_sterbegeld_partner",
+    "versorgung_mehrere_jahre_partner",
+    "versorgung_nicht_ganzjaehrig_partner",
+];
 
 /// Der Lohnteil einer Person: Zeile 5 (Nr. 3 der Bescheinigung, enthaelt den Bezug), Steuerklasse und Lohnsteuer.
 fn lohn(euro: i64) -> Paare {
@@ -96,14 +116,17 @@ fn lohn(euro: i64) -> Paare {
     ]
 }
 
-/// Der Bezug Person A in CENT (Nr. 8, Nr. 29, Nr. 30 der Bescheinigung).
+/// Der Bezug Person A in CENT (Nr. 8, Nr. 29, Nr. 30 der Bescheinigung), die vier Rueckfragen mit Nein beantwortet (seit Abweichung
+/// Nr. 79 sperrt eine fehlende Antwort; die Tests dieser Datei messen die Zeilen im XML, nicht die Sperre der Fragen).
 fn bezug(jahresrente: i64, bemessungsgrundlage: i64, beginn: i64, art: &str) -> Paare {
-    vec![
+    let mut p: Paare = vec![
         ("versorgung_jahresrente", json!(jahresrente)),
         ("versorgung_bemessungsgrundlage", json!(bemessungsgrundlage)),
         ("versorgung_beginn_jahr", json!(beginn)),
         ("versorgung_art", json!(art)),
-    ]
+    ];
+    p.extend(FRAGEN_A.map(|f| (f, json!(false))));
+    p
 }
 
 /// Der Ehegatte als Person B: Zusammenveranlagung, Stammdaten, Kapital-Nullen, Lohnteil und optional ein Bezug.
@@ -131,6 +154,7 @@ fn ehegatte(lohn_euro: i64, bezug_partner: Option<[i64; 3]>) -> Paare {
             ("versorgung_beginn_jahr_partner", json!(beginn)),
             ("versorgung_art_partner", json!("beamtenrechtlich")),
         ]);
+        p.extend(FRAGEN_B.map(|f| (f, json!(false))));
     }
     p
 }
@@ -480,18 +504,21 @@ fn checkest_nimmt_die_zeilen_11_bis_13_an() {
     // Abweichung Nr. 66, die vier Rueckfragen zum Versorgungsbezug. K6: viermal Nein aendert die Erklaerung nicht (dieselben Kz wie ohne
     // Antwort), die Akte sperrt nicht, `checkESt` nimmt das XML an (`rc=0`). K7: ein Ja sperrt die Akte; das XML ohne die Zeilen 14 bis 16
     // nimmt `checkESt` trotzdem an, die Plausibilitaetspruefung faengt diese Faelle nicht: die Sperre ist das einzige Netz.
-    let antworten = |ja: bool| -> Paare {
-        ["versorgung_zweiter_bezug", "versorgung_sterbegeld", "versorgung_mehrere_jahre", "versorgung_nicht_ganzjaehrig"]
-            .into_iter()
-            .map(|f| (f, json!(ja)))
-            .collect()
-    };
+    // Abweichung Nr. 79: auch eine fehlende Antwort sperrt die Akte (K8); das XML aendert sich dadurch nicht.
+    let antworten = |ja: bool| -> Paare { FRAGEN_A.into_iter().map(|f| (f, json!(ja))).collect() };
     let nein = mit(rein.clone(), antworten(false));
     let (d_nein, _) = deklaration(&nein);
     assert!(d_nein.unvollstaendig().is_empty(), "K6: viermal Nein sperrt: {:?}", d_nein.unvollstaendig());
-    assert_eq!(d_nein.deklaration, deklaration(&rein).0.deklaration, "K6: viermal Nein aendert die Erklaerung");
+    let ohne_antwort = mit(rein.clone(), FRAGEN_A.into_iter().map(|f| (f, Value::Null)).collect());
+    let (d_ohne, _) = deklaration(&ohne_antwort);
+    assert_eq!(d_nein.deklaration, d_ohne.deklaration, "K6: viermal Nein aendert die Erklaerung gegenueber keiner Antwort");
     let (rc, r) = pruefe("K6 Bezug, viermal Nein", &xml_der_akte(&nein, None));
     assert_eq!((rc, &r[..]), (0, &[][..]), "K6: rc={rc} Regeln {r:?}");
+    // K8: ohne Antwort sperrt die Akte je Frage; das XML ohne Antwort nimmt `checkESt` an wie das mit Nein.
+    let gesperrt: Vec<String> = d_ohne.unvollstaendig().iter().map(|e| e.feld_id.clone()).collect();
+    assert_eq!(gesperrt, FRAGEN_A, "K8: ohne Antwort sperrt nicht je Frage");
+    let (rc, r) = pruefe("K8 Bezug, keine Antwort (gesperrt)", &xml_trotz_sperre(&ohne_antwort, None));
+    assert_eq!((rc, &r[..]), (0, &[][..]), "K8: rc={rc} Regeln {r:?}");
     let ja = mit(rein.clone(), antworten(true));
     let gesperrt: Vec<String> = deklaration(&ja).0.unvollstaendig().iter().map(|e| e.feld_id.clone()).collect();
     assert_eq!(

@@ -64,6 +64,7 @@ felder:
   versorgung_alter_bei_beginn_partner: {min: 18, max: 100}
   versorgung_beginn_jahr: {min: 1955, max: 2060}
   versorgung_beginn_jahr_partner: {min: 1955, max: 2060}
+  versorgung_grad_der_behinderung: {min: 20, max: 100}
   vpf_abwesenheit_stunden: {min: 0, max: 24}
   vpf_tage_24h_nach_drei_monaten: {min: 0, max: 366}
   vpf_tage_an_abreise_nach_drei_monaten: {min: 0, max: 366}

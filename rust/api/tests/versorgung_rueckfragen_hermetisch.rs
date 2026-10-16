@@ -278,10 +278,11 @@ async fn die_fragetexte_nennen_die_person_um_die_es_geht() {
 }
 
 /// AK4, Person A, der ganze Weg auf der Akte `gesamt.json`: Bezug angeben (30.000 EUR, Beginn 2020: die Zeilen 11 bis 13 tragen ihn), die
-/// Frage sehen. Ohne Antwort und mit Nein sperrt `POST /einreichen` nicht (nicht 409 `deklaration_unvollstaendig`). Mit Ja auf EINE Frage
-/// antwortet es 409, die Liste nennt genau dieses Feld, und der Grund nennt Zeile, Sperre und Formular. Auf Nein geaendert, ist die
-/// Sperre weg. Wie weit die Abgabe danach kommt, haengt von Schema, Hersteller-ID und `ERiC` der Umgebung ab (der Test setzt nichts davon
-/// voraus).
+/// Frage sehen. Abweichung Nr. 79: ohne Antwort sperrt `POST /einreichen` mit 409 `deklaration_unvollstaendig`, die Liste nennt alle vier
+/// Fragen, und jeder Grund sagt, dass die Antwort fehlt. Sind drei Fragen mit Nein beantwortet, nennt die Liste genau die vierte. Mit Ja
+/// auf diese Frage bleibt es 409 mit genau diesem Feld, und der Grund nennt Zeile, Sperre und Formular (nicht mehr die fehlende Antwort).
+/// Auf Nein geaendert, ist die Sperre weg. Wie weit die Abgabe danach kommt, haengt von Schema, Hersteller-ID und `ERiC` der Umgebung ab
+/// (der Test setzt nichts davon voraus).
 #[tokio::test]
 async fn ja_sperrt_die_abgabe_und_nein_gibt_sie_frei() {
     let faelle = [
@@ -294,11 +295,35 @@ async fn ja_sperrt_die_abgabe_und_nein_gibt_sie_frei() {
         let d = akte("gesamt.json", &[], &bezug_a(30_000, true)).await;
         assert!(fragen_ids(&d).await.iter().any(|f| f == frage), "{frage}: die Frage steht nicht in der Fragenliste");
 
-        // Ohne Antwort: der Normalfall ist Nein, nichts sperrt.
+        // Ohne Antwort (Nr. 79): 409, alle vier Fragen stehen in der Liste, jeder Grund nennt die fehlende Antwort und die Sperre.
         let (status, a) = sende(&d, "POST", "/fall/vs/einreichen", Some(&json!({}))).await;
-        assert_ne!(a["grund"], json!("deklaration_unvollstaendig"), "{frage} unbeantwortet: {status} {a}");
+        assert_eq!(status, 409, "{frage} unbeantwortet: erwartet 409, erhalten {status}: {a}");
+        assert_eq!(a["grund"], "deklaration_unvollstaendig", "{a}");
+        let eintraege = a["unvollstaendig"].as_array().unwrap();
+        assert_eq!(eintraege.iter().filter_map(|e| e["feld_id"].as_str()).collect::<Vec<_>>(), FRAGEN_A, "{a}");
+        for e in eintraege {
+            let grund = e["grund"].as_str().unwrap();
+            assert!(
+                grund.contains("nicht mit Ja oder Nein beantwortet") && grund.contains("Die Abgabe ist gesperrt, bis du die Frage beantwortest"),
+                "{}: der Grund nennt die fehlende Antwort und die Sperre nicht: {grund}",
+                e["feld_id"]
+            );
+        }
 
-        // Ja: 409, genau diese Frage steht in der Liste.
+        // Die drei anderen mit Nein: genau diese Frage bleibt in der Liste.
+        for andere in FRAGEN_A.iter().filter(|f| **f != frage) {
+            let (status, antwort) = sende(&d, "POST", "/fall/vs/event", Some(&ereignis(andere, &json!(false), true, None))).await;
+            assert_eq!(status, 201, "POST /event {andere}: {antwort}");
+        }
+        let (status, a) = sende(&d, "POST", "/fall/vs/einreichen", Some(&json!({}))).await;
+        assert_eq!(status, 409, "{frage} als einzige unbeantwortet: {status} {a}");
+        assert_eq!(
+            a["unvollstaendig"].as_array().unwrap().iter().filter_map(|e| e["feld_id"].as_str()).collect::<Vec<_>>(),
+            [frage],
+            "{a}"
+        );
+
+        // Ja: 409, genau diese Frage steht in der Liste, mit dem Text des Falls.
         let (status, antwort) = sende(&d, "POST", "/fall/vs/event", Some(&ereignis(frage, &json!(true), true, None))).await;
         assert_eq!(status, 201, "POST /event {frage}: {antwort}");
         let (status, a) = sende(&d, "POST", "/fall/vs/einreichen", Some(&json!({}))).await;
@@ -325,43 +350,218 @@ async fn ja_sperrt_die_abgabe_und_nein_gibt_sie_frei() {
     }
 }
 
+/// Die Felder `versorgung_*` in `unvollstaendig` von `GET /deklaration`.
+async fn offen(d: &Dienst) -> Vec<String> {
+    let (status, dekl) = sende(d, "GET", "/fall/vs/deklaration", None).await;
+    assert_eq!(status, 200, "{dekl}");
+    dekl["unvollstaendig"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|e| e["feld_id"].as_str())
+        .filter(|f| f.starts_with("versorgung_"))
+        .map(str::to_owned)
+        .collect()
+}
+
+/// Antwort `ja` auf jede Frage in `felder` (bestaetigt).
+fn antworten(felder: &[&'static str], ja: bool) -> Vec<(&'static str, Value, bool)> {
+    felder.iter().map(|f| (*f, json!(ja), true)).collect()
+}
+
 /// AK4, Ehegatte: das Ja des Ehegatten sperrt (`GET /deklaration`, `unvollstaendig` unter dem Feld seiner Frage), das Ja von Person A
-/// sperrt den Ehegatten nicht, und das Ja des Ehegatten zaehlt nicht bei Einzelveranlagung.
+/// sperrt den Ehegatten nicht, und das Ja des Ehegatten zaehlt nicht bei Einzelveranlagung. Abweichung Nr. 79: dasselbe gilt fuer die
+/// fehlende Antwort; sie sperrt alle vier Fragen des Ehegatten, bei Zusammenveranlagung und bestaetigtem Bezug des Ehegatten.
 #[tokio::test]
 async fn das_ja_des_ehegatten_sperrt_nur_bei_zusammenveranlagung() {
-    async fn offen(d: &Dienst) -> Vec<String> {
-        let (status, dekl) = sende(d, "GET", "/fall/vs/deklaration", None).await;
-        assert_eq!(status, 200, "{dekl}");
-        dekl["unvollstaendig"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter_map(|e| e["feld_id"].as_str())
-            .filter(|f| f.starts_with("versorgung_"))
-            .map(str::to_owned)
-            .collect()
-    }
     let zusammen = [("veranlagung", json!("zusammen"))];
     let basis = || mit(mit(partner_kap(), lohn_b(30_000)), bezug_b(20_000));
+    let b_nein = || antworten(&FRAGEN_B, false);
 
-    // Kontrolle: ohne Antwort sperrt nichts.
+    // Ohne Antwort (Nr. 79): alle vier Fragen des Ehegatten sperren, keine von Person A (sie hat keinen Bezug).
     let d = akte("rentner.json", &zusammen, &basis()).await;
-    assert!(offen(&d).await.is_empty(), "ohne Antwort");
+    assert_eq!(offen(&d).await, FRAGEN_B, "ohne Antwort");
+
+    // Kontrolle: viermal Nein sperrt nichts.
+    let d = akte("rentner.json", &zusammen, &mit(basis(), b_nein())).await;
+    assert!(offen(&d).await.is_empty(), "viermal Nein");
 
     // Das Ja des Ehegatten sperrt unter dem Feld seiner Frage; auf Nein geaendert, ist die Sperre weg.
-    let d = akte("rentner.json", &zusammen, &mit(basis(), vec![("versorgung_sterbegeld_partner", json!(true), true)])).await;
+    let ja = mit(
+        basis(),
+        mit(antworten(&["versorgung_zweiter_bezug_partner", "versorgung_mehrere_jahre_partner", "versorgung_nicht_ganzjaehrig_partner"], false), vec![("versorgung_sterbegeld_partner", json!(true), true)]),
+    );
+    let d = akte("rentner.json", &zusammen, &ja).await;
     assert_eq!(offen(&d).await, ["versorgung_sterbegeld_partner"]);
     aendere(&d, "versorgung_sterbegeld_partner", &json!(false)).await;
     assert!(offen(&d).await.is_empty(), "Nein");
 
-    // Das Ja von Person A (ohne eigenen Bezug) sperrt den Ehegatten nicht.
-    let d = akte("rentner.json", &zusammen, &mit(basis(), vec![("versorgung_sterbegeld", json!(true), true)])).await;
+    // Das Ja von Person A (ohne eigenen Bezug) sperrt den Ehegatten nicht, und ihre fehlenden Antworten auch nicht.
+    let d = akte("rentner.json", &zusammen, &mit(mit(basis(), b_nein()), vec![("versorgung_sterbegeld", json!(true), true)])).await;
     assert!(offen(&d).await.is_empty(), "das Ja von Person A gilt nicht fuer den Ehegatten");
 
-    // Einzelveranlagung: der Ehegatte zaehlt nicht, sein Ja sperrt nichts.
+    // Einzelveranlagung: der Ehegatte zaehlt nicht, weder sein Ja noch seine fehlende Antwort sperrt.
     let einzel = [("veranlagung", json!("einzel"))];
     let d = akte("rentner.json", &einzel, &mit(mit(lohn_b(30_000), bezug_b(20_000)), vec![("versorgung_sterbegeld_partner", json!(true), true)])).await;
-    assert!(offen(&d).await.is_empty(), "Einzelveranlagung");
+    assert!(offen(&d).await.is_empty(), "Einzelveranlagung, Ja");
+    let d = akte("rentner.json", &einzel, &mit(lohn_b(30_000), bezug_b(20_000))).await;
+    assert!(offen(&d).await.is_empty(), "Einzelveranlagung, ohne Antwort");
+}
+
+/// Abweichung Nr. 79, die Naht zwischen Frage und Sperre: eine unbeantwortete Rueckfrage sperrt GENAU DANN, wenn sie in der Fragenliste
+/// steht. Sperrte sie ohne sichtbare Frage, koennte der Nutzer die Abgabe nie freigeben; stuende sie ohne Sperre da, waere sie keine
+/// Pflicht. Gemessen an den Lagen der Sichtbarkeitstests (Bezug von Person A, Bezug 0, vorlaeufiger Bezug, Ehegatte bei Einzel- und
+/// Zusammenveranlagung): die Menge der gesperrten Fragen ist die Menge der sichtbaren. Danach Nein auf alle sichtbaren: nichts sperrt.
+#[tokio::test]
+async fn eine_unbeantwortete_frage_sperrt_genau_dann_wenn_sie_in_der_fragenliste_steht() {
+    let einzel = [("veranlagung", json!("einzel"))];
+    let zusammen = [("veranlagung", json!("zusammen"))];
+    let lagen: Vec<Fall> = vec![
+        ("kein Bezug", "rentner.json", einzel.to_vec(), vec![]),
+        ("Bezug A 30.000", "rentner.json", einzel.to_vec(), mit(lohn_a(30_000), bezug_a(30_000, true))),
+        ("Bezug A 0", "rentner.json", einzel.to_vec(), mit(lohn_a(30_000), bezug_a(0, true))),
+        ("Bezug A vorlaeufig", "rentner.json", einzel.to_vec(), mit(lohn_a(30_000), bezug_a(30_000, false))),
+        ("einzel, Bezug des Ehegatten gespeichert", "rentner.json", einzel.to_vec(), mit(mit(lohn_a(30_000), lohn_b(20_000)), mit(bezug_a(30_000, true), bezug_b(20_000)))),
+        ("zusammen, nur Ehegatte", "rentner.json", zusammen.to_vec(), mit(mit(partner_kap(), lohn_b(20_000)), bezug_b(20_000))),
+        ("zusammen, nur Person A", "rentner.json", zusammen.to_vec(), mit(mit(partner_kap(), lohn_a(30_000)), bezug_a(30_000, true))),
+        (
+            "zusammen, beide",
+            "rentner.json",
+            zusammen.to_vec(),
+            mit(mit(mit(partner_kap(), mit(lohn_a(30_000), lohn_b(20_000))), bezug_a(30_000, true)), bezug_b(20_000)),
+        ),
+        ("zusammen, Ehegatte 0", "rentner.json", zusammen.to_vec(), mit(mit(partner_kap(), lohn_b(20_000)), bezug_b(0))),
+        ("gesamt, Bezug A", "gesamt.json", vec![], bezug_a(30_000, true)),
+        // Die Eingangsfrage der Rentner-Scheibe (Nr. 46): "Nein" verbirgt die Detailfragen zum Bezug, der Wert des Bezugs bleibt gespeichert.
+        // Frage und Sperre muessen auch dann gleich entscheiden, sonst stuende eine Sperre ohne sichtbare Frage da.
+        (
+            "kein_lohn_pension ja, Bezug A gespeichert",
+            "rentner.json",
+            einzel.to_vec(),
+            mit(mit(lohn_a(30_000), bezug_a(30_000, true)), vec![("kein_lohn_pension", json!(true), true)]),
+        ),
+        (
+            "kein_lohn_pension nein, Bezug A",
+            "rentner.json",
+            einzel.to_vec(),
+            mit(mit(lohn_a(30_000), bezug_a(30_000, true)), vec![("kein_lohn_pension", json!(false), true)]),
+        ),
+    ];
+    for (name, datei, ersetze, mehr) in lagen {
+        let d = akte(datei, &ersetze, &mehr).await;
+        let (a, b) = rueckfragen(&d).await;
+        let mut sichtbar: Vec<String> = a.iter().chain(b.iter()).map(|f| (*f).to_owned()).collect();
+        sichtbar.sort();
+        let mut gesperrt: Vec<String> = offen(&d).await.into_iter().filter(|f| FRAGEN_A.contains(&f.as_str()) || FRAGEN_B.contains(&f.as_str())).collect();
+        gesperrt.sort();
+        assert_eq!(gesperrt, sichtbar, "{name}: gesperrt ist nicht gleich sichtbar");
+        // Nein auf jede sichtbare Frage: nichts sperrt mehr, und die Fragenliste fuehrt sie nicht mehr.
+        for f in &sichtbar {
+            let (status, antwort) = sende(&d, "POST", "/fall/vs/event", Some(&ereignis(f, &json!(false), true, None))).await;
+            assert_eq!(status, 201, "{name}: POST /event {f}: {antwort}");
+        }
+        let rest: Vec<String> = offen(&d).await.into_iter().filter(|f| FRAGEN_A.contains(&f.as_str()) || FRAGEN_B.contains(&f.as_str())).collect();
+        assert!(rest.is_empty(), "{name}: nach Nein auf alle sichtbaren Fragen sperrt noch {rest:?}");
+    }
+    // KONTROLLE: mindestens eine Lage hat sichtbare Fragen (sonst belegt die Gleichheit der leeren Mengen nichts).
+    let d = akte("rentner.json", &einzel, &mit(lohn_a(30_000), bezug_a(30_000, true))).await;
+    assert_eq!(rueckfragen(&d).await.0, FRAGEN_A.to_vec(), "KONTROLLE: Bezug A zeigt vier Fragen");
+}
+
+/// Die Frage des Gesamtlaufs nach dem Grad der Behinderung (Abweichung Nr. 80). Nur Person A: `gesamt` fuehrt keinen Bezug des Ehegatten.
+const GRAD: &str = "versorgung_grad_der_behinderung";
+
+/// Eine Lage der Fragenliste: Name, Akte, ersetzte Felder, Ereignisse, steht die Frage nach dem Grad in der Liste.
+type GradLage = (&'static str, &'static str, Vec<(&'static str, Value)>, Vec<(&'static str, Value, bool)>, bool);
+
+/// Der Bezug von Person A mit Art `altersgrenze_sonstige` und `alter` Jahren bei Beginn, die vier Rueckfragen mit Nein.
+fn altersgrenzen_bezug_a(euro: i64, alter: i64) -> Vec<(&'static str, Value, bool)> {
+    let mut p = bezug_a(euro, true);
+    for e in &mut p {
+        if e.0 == "versorgung_art" {
+            e.1 = json!("altersgrenze_sonstige");
+        }
+    }
+    p.push(("versorgung_alter_bei_beginn", json!(alter), true));
+    p.extend(FRAGEN_A.map(|f| (f, json!(false), true)));
+    p
+}
+
+/// Abweichung Nr. 80, die Fragenliste: der Gesamtlauf fragt den Grad der Behinderung NUR dort, wo er die Altersgrenze des Bezugs
+/// entscheidet: bei einem bestaetigten Bezug ueber 0 der Art `altersgrenze_sonstige`. Wer einen beamtenrechtlichen Bezug hat, keinen
+/// Bezug oder Bezug 0, wird nicht nach einer Behinderung gefragt. Die Rentner-Scheibe fuehrt ihre eigene Frage
+/// (`rentner_grad_der_behinderung`) und fragt diese nicht ein zweites Mal; das Feld gibt es dort nicht.
+#[tokio::test]
+async fn der_gesamtlauf_fragt_den_grad_nur_bei_einem_altersgrenzen_bezug() {
+    let einzel = vec![("veranlagung", json!("einzel"))];
+    let lagen: Vec<GradLage> = vec![
+        ("gesamt, Altersgrenzen-Bezug A", "gesamt.json", einzel.clone(), altersgrenzen_bezug_a(30_000, 59), true),
+        ("gesamt, beamtenrechtlicher Bezug A", "gesamt.json", einzel.clone(), bezug_a(30_000, true), false),
+        ("gesamt, Altersgrenzen-Bezug 0", "gesamt.json", einzel.clone(), altersgrenzen_bezug_a(0, 59), false),
+        ("gesamt, Altersgrenzen-Bezug nur vorlaeufig", "gesamt.json", einzel.clone(), {
+            let mut p = altersgrenzen_bezug_a(30_000, 59);
+            p[0].2 = false;
+            p
+        }, false),
+        ("gesamt, kein Bezug", "gesamt.json", einzel.clone(), vec![], false),
+        // Die Rentner-Scheibe: ihre eigene Frage, keine zweite.
+        ("rentner, Altersgrenzen-Bezug A", "rentner.json", einzel.clone(), mit(lohn_a(30_000), altersgrenzen_bezug_a(30_000, 59)), false),
+    ];
+    for (name, datei, ersetze, mehr, soll) in lagen {
+        let d = akte(datei, &ersetze, &mehr).await;
+        let ids = fragen_ids(&d).await;
+        assert!(ids.len() > 8, "{name}: KONTROLLE: die Fragenliste ist nicht leer ({ids:?})");
+        assert_eq!(ids.iter().any(|i| i == GRAD), soll, "{name}: Grad-Frage in der Fragenliste");
+    }
+    // Das Feld gibt es in der Rentner-Scheibe nicht: ein POST weist es ab (`feld_id` nicht in dieser Scheibe).
+    let d = akte("rentner.json", &einzel, &mit(lohn_a(30_000), altersgrenzen_bezug_a(30_000, 59))).await;
+    let (status, antwort) = sende(&d, "POST", "/fall/vs/event", Some(&ereignis(GRAD, &json!(0), true, None))).await;
+    assert_ne!(status, 201, "die Rentner-Scheibe nimmt das Feld der Gesamtfrage an: {antwort}");
+}
+
+/// Abweichung Nr. 80, der ganze Weg auf der Akte `gesamt.json`: Person A, geboren 1965 (im Veranlagungsjahr 2025 60 Jahre alt), Bezug
+/// der Art `altersgrenze_sonstige` seit dem 59. Lebensjahr. Ohne Angabe zum Grad gilt vorsichtig die Grenze 60: der Bezug ist ein
+/// Versorgungsbezug ohne Zeile 11, die Abgabe sperrt. Ein BESTAETIGTER Grad unter 50 hebt die Sperre auf (Grenze 63 = 2028, der Bezug
+/// ist noch Arbeitslohn), ab 50 bleibt sie; ein vorlaeufiger Grad gilt als fehlend.
+#[tokio::test]
+async fn der_grad_der_gesamtfrage_hebt_die_sperre_der_altersgrenze_auf_oder_laesst_sie_stehen() {
+    // (Grad, gesperrt?) in der Reihenfolge der bestaetigten Antworten; jede ersetzt die vorige.
+    let schritte: [(i64, bool); 5] = [
+        (0, false),  // Grenze 63 = 2028: der Bezug ist noch Arbeitslohn
+        (45, false), // 45 ist keine Schwerbehinderung (49 gibt es im amtlichen Muster nicht: die Stufen gehen in Fuenferschritten)
+        (50, true),  // Grenze 60 = 2025
+        (100, true),
+        (30, false),
+    ];
+    let ersetze = vec![("veranlagung", json!("einzel")), ("geburtsjahr", json!(1965))];
+    let d = akte("gesamt.json", &ersetze, &altersgrenzen_bezug_a(30_000, 59)).await;
+    // Ohne Angabe zum Grad: vorsichtig 60, gesperrt, mit dem Grund der Altersgrenze unter dem Betrag.
+    let (status, dekl) = sende(&d, "GET", "/fall/vs/deklaration", None).await;
+    assert_eq!(status, 200, "{dekl}");
+    let gruende: Vec<(&str, &str)> = dekl["unvollstaendig"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["feld_id"].as_str().is_some_and(|f| f.starts_with("versorgung_")))
+        .map(|e| (e["feld_id"].as_str().unwrap(), e["grund"].as_str().unwrap()))
+        .collect();
+    assert_eq!(gruende.len(), 1, "Grad fehlt: {gruende:?}");
+    assert_eq!(gruende[0].0, A, "Grad fehlt");
+    assert!(gruende[0].1.contains("im Veranlagungsjahr oder davor erreicht"), "Grad fehlt: {}", gruende[0].1);
+    assert!(fragen_ids(&d).await.iter().any(|f| f == GRAD), "die Frage nach dem Grad steht in der Liste");
+
+    // Ein vorlaeufiger Grad gilt als fehlend, auch 0: die Sperre der Altersgrenze bleibt, und die Erklaerung nennt zusaetzlich den
+    // unbestaetigten Grad unter seinem eigenen Feld (wie jedes Ring-Feld, das der Nutzer nur genannt hat).
+    let (status, antwort) = sende(&d, "POST", "/fall/vs/event", Some(&ereignis(GRAD, &json!(0), false, None))).await;
+    assert_eq!(status, 201, "POST /event {GRAD} vorlaeufig: {antwort}");
+    assert_eq!(offen(&d).await, [GRAD, A], "ein vorlaeufiger Grad 0 gilt als fehlend");
+    for (wert, gesperrt) in schritte {
+        aendere(&d, GRAD, &json!(wert)).await;
+        let soll: Vec<&str> = if gesperrt { vec![A] } else { vec![] };
+        assert_eq!(offen(&d).await, soll, "Grad {wert} bestaetigt");
+    }
+    // Die Frage ist beantwortet und steht nicht mehr in der Liste.
+    assert!(!fragen_ids(&d).await.iter().any(|f| f == GRAD), "die beantwortete Frage steht noch in der Liste");
 }
 
 type Fall = (&'static str, &'static str, Vec<(&'static str, Value)>, Vec<(&'static str, Value, bool)>);

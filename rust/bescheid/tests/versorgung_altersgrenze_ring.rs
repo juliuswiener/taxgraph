@@ -7,6 +7,10 @@
 //! Jahr Arbeitslohn) oder `darueber` (sie hat sie im oder vor dem Jahr erreicht). Der Wert schliesst `versorgung_zeile` aus.
 //!
 //! Die Sperre selbst, die aus diesem Wert folgt, steht in `versorgung_sperre_faelle.rs` (Tabellen) und in `elster` (Unit-Tests).
+//!
+//! **Abweichung Nr. 80.** Den Grad der Behinderung von Person A kann ein Feld der Rentner-Scheibe (`rentner_grad_der_behinderung`) oder
+//! die Frage des Gesamtlaufs (`versorgung_grad_der_behinderung`) tragen. Beide Felder muessen dieselbe Grenze ergeben; die Rentner-Scheibe
+//! geht vor. Der Ehegatte hat nur das Feld der Rentner-Scheibe: `gesamt` fuehrt keinen Bezug des Ehegatten.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -45,8 +49,18 @@ fn lage(ev: &[Ev], vz: Option<Vz>, person: (&str, &str)) -> Lage {
     Lage { zeile, altersgrenze: text }
 }
 
-/// Person A mit Altersgrenzen-Bezug in CENT, alles bestaetigt. `gdb` `None`: das Feld fehlt.
+/// Die Felder des Grades der Behinderung von Person A: die Rentner-Scheibe, dann der Gesamtlauf (Abweichung Nr. 80).
+const GRAD_A: [&str; 2] = ["rentner_grad_der_behinderung", "versorgung_grad_der_behinderung"];
+/// Das Feld des Grades der Behinderung des Ehegatten (nur die Rentner-Scheibe fragt es).
+const GRAD_B: &str = "rentner_grad_der_behinderung_partner";
+
+/// Person A mit Altersgrenzen-Bezug in CENT, alles bestaetigt. `gdb` `None`: das Feld fehlt. Der Grad steht im Feld der Rentner-Scheibe.
 fn bezug_a(cent: i64, alter: i64, geburtsjahr: i64, gdb: Option<i64>) -> Vec<Ev> {
+    bezug_a_im_feld(cent, alter, geburtsjahr, GRAD_A[0], gdb)
+}
+
+/// Wie [`bezug_a`], der Grad steht im Feld `grad_feld`.
+fn bezug_a_im_feld(cent: i64, alter: i64, geburtsjahr: i64, grad_feld: &'static str, gdb: Option<i64>) -> Vec<Ev> {
     let mut ev: Vec<Ev> = vec![
         ("versorgung_jahresrente", json!(cent), true),
         ("versorgung_bemessungsgrundlage", json!(cent), true),
@@ -56,7 +70,7 @@ fn bezug_a(cent: i64, alter: i64, geburtsjahr: i64, gdb: Option<i64>) -> Vec<Ev>
         ("geburtsjahr", json!(geburtsjahr), true),
     ];
     if let Some(g) = gdb {
-        ev.push(("rentner_grad_der_behinderung", json!(g), true));
+        ev.push((grad_feld, json!(g), true));
     }
     ev
 }
@@ -85,13 +99,16 @@ fn die_altersgrenze_im_veranlagungsjahr_entscheidet_lohn_oder_darueber() {
         (2000, Some(0), "lohn"),
         (2025, Some(0), "lohn"), // geboren im Veranlagungsjahr selbst: 63 erst 2088
     ];
-    for (geburtsjahr, gdb, soll) in faelle {
-        let ist = lage(&bezug_a(3_000_000, 58, geburtsjahr, gdb), VZ, A);
-        assert_eq!(
-            ist,
-            Lage { zeile: false, altersgrenze: Some(soll.to_owned()) },
-            "geboren {geburtsjahr}, Grad {gdb:?}"
-        );
+    // Abweichung Nr. 80: das Feld, das der Gesamtlauf fragt, ergibt dieselbe Grenze wie das der Rentner-Scheibe.
+    for grad_feld in GRAD_A {
+        for (geburtsjahr, gdb, soll) in faelle {
+            let ist = lage(&bezug_a_im_feld(3_000_000, 58, geburtsjahr, grad_feld, gdb), VZ, A);
+            assert_eq!(
+                ist,
+                Lage { zeile: false, altersgrenze: Some(soll.to_owned()) },
+                "{grad_feld}: geboren {geburtsjahr}, Grad {gdb:?}"
+            );
+        }
     }
 }
 
@@ -125,11 +142,37 @@ fn ein_unlesbares_geburtsjahr_zaehlt_als_darueber() {
 /// Ein nicht bestaetigter Grad der Behinderung gilt als nicht gefragt: vorsichtig die Grenze 60, auch bei einem Grad 0.
 #[test]
 fn ein_nicht_bestaetigter_grad_der_behinderung_gilt_als_fehlend() {
-    let mut ev = bezug_a(3_000_000, 58, 1965, None);
-    ev.push(("rentner_grad_der_behinderung", json!(0), false));
-    assert_eq!(lage(&ev, VZ, A).altersgrenze, Some("darueber".to_owned()), "Grad 0 nicht bestaetigt: 60 = 2025");
-    ev.push(("rentner_grad_der_behinderung", json!(0), true));
-    assert_eq!(lage(&ev, VZ, A).altersgrenze, Some("lohn".to_owned()), "Grad 0 bestaetigt: 63 = 2028");
+    for grad_feld in GRAD_A {
+        let mut ev = bezug_a(3_000_000, 58, 1965, None);
+        ev.push((grad_feld, json!(0), false));
+        assert_eq!(lage(&ev, VZ, A).altersgrenze, Some("darueber".to_owned()), "{grad_feld}: Grad 0 nicht bestaetigt: 60 = 2025");
+        ev.push((grad_feld, json!(0), true));
+        assert_eq!(lage(&ev, VZ, A).altersgrenze, Some("lohn".to_owned()), "{grad_feld}: Grad 0 bestaetigt: 63 = 2028");
+    }
+}
+
+/// Abweichung Nr. 80: stehen beide Felder in der Akte (die Rentner-Scheibe und der Gesamtlauf fragen je eines, eine Akte kann beide
+/// tragen), gilt das der Rentner-Scheibe; ein nicht bestaetigtes Feld der Rentner-Scheibe laesst das des Gesamtlaufs gelten. Jede Person
+/// liest nur ihre eigenen Felder.
+#[test]
+fn das_feld_der_rentner_scheibe_geht_dem_der_gesamtfrage_vor() {
+    // Geboren 1965, Alter bei Beginn 58: Grad ab 50 ist 60 = 2025 (`darueber`), darunter 63 = 2028 (`lohn`).
+    let beide = |rentner: i64, gesamt: i64| {
+        let mut ev = bezug_a_im_feld(3_000_000, 58, 1965, GRAD_A[0], Some(rentner));
+        ev.push((GRAD_A[1], json!(gesamt), true));
+        lage(&ev, VZ, A).altersgrenze
+    };
+    assert_eq!(beide(0, 50), Some("lohn".to_owned()), "Rentner 0, Gesamt 50: die Rentner-Scheibe gilt");
+    assert_eq!(beide(50, 0), Some("darueber".to_owned()), "Rentner 50, Gesamt 0: die Rentner-Scheibe gilt");
+    let mut ev = bezug_a_im_feld(3_000_000, 58, 1965, GRAD_A[0], Some(50));
+    let rentner_grad = ev.len() - 1;
+    ev[rentner_grad].2 = false;
+    ev.push((GRAD_A[1], json!(0), true));
+    assert_eq!(lage(&ev, VZ, A).altersgrenze, Some("lohn".to_owned()), "Rentner 50 nicht bestaetigt, Gesamt 0 bestaetigt: Gesamt gilt");
+    // Der Grad des Ehegatten ist kein Grad von Person A (und umgekehrt).
+    let mut fremd = bezug_a(3_000_000, 58, 1965, None);
+    fremd.push((GRAD_B, json!(0), true));
+    assert_eq!(lage(&fremd, VZ, A).altersgrenze, Some("darueber".to_owned()), "der Grad des Ehegatten zaehlt nicht fuer Person A");
 }
 
 /// Der Wert entsteht nur, wo das Alters-Gate nicht erfuellt ist und beide Betraege mindestens 1 Euro ergeben; erfuellt das Gate, gilt
@@ -139,6 +182,19 @@ fn der_wert_entsteht_nur_bei_nicht_erfuelltem_gate_und_betraegen_ab_einem_euro()
     let leer = Lage { zeile: false, altersgrenze: None };
     assert_eq!(lage(&bezug_a(3_000_000, 63, 1957, Some(0)), VZ, A), Lage { zeile: true, altersgrenze: None }, "Gate erfuellt");
     assert_eq!(lage(&bezug_a(3_000_000, 60, 1957, Some(50)), VZ, A), Lage { zeile: true, altersgrenze: None }, "Gate 60 erfuellt");
+    // Abweichung Nr. 80: das Gate (Alter BEI BEGINN) liest den Grad der Gesamtfrage wie den der Rentner-Scheibe. 60 bei Beginn genuegt nur
+    // mit Grad ab 50; mit Grad 0 ist das Gate nicht erfuellt, und die Person (geboren 1957) hat die Grenze 63 = 2020 erreicht.
+    let gesamtfrage = GRAD_A[1];
+    assert_eq!(
+        lage(&bezug_a_im_feld(3_000_000, 60, 1957, gesamtfrage, Some(50)), VZ, A),
+        Lage { zeile: true, altersgrenze: None },
+        "Gesamtfrage, Gate 60 erfuellt"
+    );
+    assert_eq!(
+        lage(&bezug_a_im_feld(3_000_000, 60, 1957, gesamtfrage, Some(0)), VZ, A),
+        Lage { zeile: false, altersgrenze: Some("darueber".to_owned()) },
+        "Gesamtfrage, Grad 0: das Gate verlangt 63"
+    );
     assert_eq!(lage(&bezug_a(99, 58, 1965, Some(0)), VZ, A), leer, "99 Cent");
     assert_eq!(lage(&bezug_a(0, 58, 1965, Some(0)), VZ, A), leer, "Bezug 0");
     let genau_ein_euro = lage(&bezug_a(100, 58, 1965, Some(0)), VZ, A);
@@ -185,6 +241,11 @@ fn der_ehegatte_rechnet_mit_den_partner_feldern_und_nur_bei_zusammenveranlagung(
     beide.extend(bezug_a(3_000_000, 58, 1965, Some(0)));
     assert_eq!(lage(&beide, VZ, A).altersgrenze, Some("lohn".to_owned()), "A: Grad 0");
     assert_eq!(lage(&beide, VZ, B).altersgrenze, Some("darueber".to_owned()), "B: Grad 50");
+    // Abweichung Nr. 80: der Grad der Gesamtfrage ist der von Person A. Der Ehegatte (ohne eigenen Grad) rechnet weiter vorsichtig mit 60.
+    let mut fremd = partner(3_000_000, 58, 1965, None);
+    fremd.push(("veranlagung", json!("zusammen"), true));
+    fremd.push((GRAD_A[1], json!(0), true));
+    assert_eq!(lage(&fremd, VZ, B).altersgrenze, Some("darueber".to_owned()), "der Grad der Gesamtfrage von Person A gilt nicht fuer den Ehegatten");
     for veranlagung in [json!("einzel"), json!("unbekannt")] {
         let mut einzel = partner(3_000_000, 58, 1965, Some(0));
         einzel.push(("veranlagung", veranlagung.clone(), true));

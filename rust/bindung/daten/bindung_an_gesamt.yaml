@@ -152,11 +152,39 @@ bindungen:
       zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
 
+  # Der Grad der Behinderung fuer die Altersgrenze des Versorgungsbezugs (Abweichung Nr. 80, Julius 2026-10-16, d-22). Der Gesamtlauf
+  # fragt ihn NUR dort, wo er die Grenze entscheidet: bei einem bestaetigten Bezug ueber 0 der Art `altersgrenze_sonstige` (Grenze 63 Jahre,
+  # bei Grad ab 50 60 Jahre, § 19 Abs. 2 S. 2 Nr. 2 EStG). Ein eigenes Feld statt `rentner_grad_der_behinderung`: dieses Feld liest auch der
+  # Behinderten-Pauschbetrag (§ 33b) samt seiner Abgabe-Sperre, und die Altersgrenze soll keine Rechenzahl und keine Sperre dort anstossen.
+  # Nur Person A: die Felder des Ehegatten zum Versorgungsbezug fuehrt nur die Rentner-Scheibe (dort fragt `rentner_grad_der_behinderung_partner`),
+  # `gesamt` kennt keinen Bezug des Ehegatten. Der Ring liest zuerst das Feld der Rentner-Scheibe, sonst dieses (`zweige/gesamt.rs::grad_feld`). Ohne bestaetigte Antwort gilt weiter
+  # die vorsichtige Grenze 60 (Entscheid 2026-10-12). `feld_bedingung` mit `signatur_slot` als Etikett, nie `geltungsbedingung` (siehe Nr. 66).
+  - feld_id: versorgung_grad_der_behinderung
+    quelle: {regel_id: p19_2_versorgungsfreibetrag, signatur_slot: versorgung_grad_der_behinderung}
+    feld_bedingung: {feld: versorgung_art, wert: altersgrenze_sonstige, grund: "§ 19 Abs. 2 S. 2 Nr. 2 EStG: die Altersgrenze (63 Jahre, bei Schwerbehinderung 60 Jahre) gilt nur fuer Versorgungsbezuege, die nicht auf beamtenrechtlichen oder entsprechenden Vorschriften beruhen und keine Hinterbliebenen- oder Erwerbsminderungsbezuege sind. `versorgung_art` erhebt genau diese Art. Fail-closed ueber `wert`: nur eine BESTAETIGTE andere Art schliesst die Frage aus.", und: {feld: versorgung_jahresrente, groesser_als: 0, grund: "Ohne bestaetigten Bezug ueber 0 Euro gibt es keine Altersgrenze zu pruefen, und eine Frage nach einer Behinderung verlaengerte nur das Interview."}}
+    typ: int
+    einheit: null
+    bereich: {min: 20, max: 100, grund: "Spannweite des Grads der Behinderung. Zulaessig sind nur die Werte in enum_werte, Zehner- und Fuenferschritte des amtlichen Musters; die 0 heisst: kein Ausweis."}
+    enum_werte: ["0", "20", "25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95", "100"]
+    askable: true
+    fragetext_laie: "Welchen Grad der Behinderung hat dein Schwerbehindertenausweis (eine Zahl von 20 bis 100, oder 0, wenn du keinen hast)?"
+    hilfe_kurz: "Die Frage steht hier, weil deine Versorgung aus einer Altersgrenze stammt: Mit einem Grad ab 50 zählt sie schon ab 60 Jahren als Versorgungsbezug, sonst erst ab 63. Den Grad findest du in deinem Feststellungsbescheid oder Schwerbehindertenausweis. Ohne Antwort rechnet die Erklärung mit 60 und sperrt die Abgabe, wenn du diese Grenze schon erreicht hast."
+    beispielwert: 50
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Eingabe fuer die Altersgrenze des Versorgungsbezugs, kein Deklarationsfeld. Der Grad der Behinderung fuer den Pauschbetrag traegt sein eigenes Kz (`rentner_grad_der_behinderung`, E0109708); dieses Feld ersetzt es nicht."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 19 Abs. 2 S. 2 Nr. 2 EStG"
+      zitatanker: "das 63. Lebensjahr oder, wenn er schwerbehindert ist, das 60. Lebensjahr vollendet hat"
+      datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
   # Rueckfragen zu vier Faellen, die die Eingaben nicht verraten (Abweichung Nr. 66, Julius 2026-10-12): ein zweiter Bezug (zweite
   # Spalte der Zeilen 11 bis 16), Sterbegeld und Verwandtes (Zeile 15), Bezuege fuer mehrere Kalenderjahre (Zeile 16) und ein
   # Bezug, der nicht das ganze Jahr lief (Zeile 14). Die Erklaerung traegt diese Zeilen nicht: "Ja" sperrt die Abgabe mit einem
-  # Text je Fall (`Bau::versorgung_rueckfragen` in `rust/elster/src/deklaration.rs`), "Nein" und Schweigen aendern nichts (Normalfall
-  # ist "Nein"; eine unbeantwortete Frage sperrt NICHT, sie steht weiter in der Fragenliste). Wie `ep_unfallkosten`: `feld_bedingung`
+  # Text je Fall (`Bau::versorgung_rueckfragen` in `rust/elster/src/deklaration.rs`), "Nein" sperrt nichts (Normalfall
+  # ist "Nein"), und eine unbeantwortete Frage sperrt seit Abweichung Nr. 79 mit eigenem Text unter ihrem Feld (sie ist Pflicht, ohne Antwort
+  # waere die Erklaerung nicht vollstaendig). Wie `ep_unfallkosten`: `feld_bedingung`
   # fuer die Sichtbarkeit und `signatur_slot` als Etikett, nie `geltungsbedingung` (das machte die Frage zum Gate und verschobe die
   # Reihenfolge aller Fragen; Vault: decisions/ein-neues-betragsfeld-haengt-an-feld-bedingung-nie-an-geltungsbedingung). Die Frage
   # haengt am BETRAG (`groesser_als: 0`, positiver Beweis), nie am Ring-Wert `versorgung_zeile`: den setzt der Bescheid erst aus
@@ -168,11 +196,11 @@ bindungen:
     einheit: null
     askable: true
     fragetext_laie: "Hast du dieses Jahr zwei verschiedene Versorgungsbezüge bekommen, zum Beispiel eine Pension und zusätzlich ein Witwengeld?"
-    hilfe_kurz: "Gemeint sind zwei Versorgungsbezüge mit unterschiedlichem Beginn, die getrennt bescheinigt werden. Der Vordruck der Anlage N hat dafür eine zweite Spalte, und die Erklärung trägt nur den ersten Bezug. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    hilfe_kurz: "Gemeint sind zwei Versorgungsbezüge mit unterschiedlichem Beginn, die getrennt bescheinigt werden. Der Vordruck der Anlage N hat dafür eine zweite Spalte, und die Erklärung trägt nur den ersten Bezug. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (die zweite Spalte der Zeilen 11 bis 16 traegt die Erklaerung nicht), bei Nein oder ohne Antwort aendert sich nichts."
+    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (die zweite Spalte der Zeilen 11 bis 16 traegt die Erklaerung nicht), bei Nein sperrt nichts, ohne Antwort sperrt die Abgabe mit eigenem Text (Abweichung Nr. 79)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 19 Abs. 2 S. 6 EStG"
@@ -186,11 +214,11 @@ bindungen:
     einheit: null
     askable: true
     fragetext_laie: "Hast du dieses Jahr Sterbegeld, eine Kapitalauszahlung, eine Abfindung oder eine Nachzahlung von Versorgungsbezügen bekommen?"
-    hilfe_kurz: "Das steht unter Nummer 32 der Lohnsteuerbescheinigung. Der Betrag steckt schon in deinem Bruttoarbeitslohn und in den Versorgungsbezügen. Der Vordruck verlangt ihn zusätzlich in Zeile 15, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    hilfe_kurz: "Das steht unter Nummer 32 der Lohnsteuerbescheinigung. Der Betrag steckt schon in deinem Bruttoarbeitslohn und in den Versorgungsbezügen. Der Vordruck verlangt ihn zusätzlich in Zeile 15, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (Zeile 15 traegt die Erklaerung nicht), bei Nein oder ohne Antwort aendert sich nichts."
+    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (Zeile 15 traegt die Erklaerung nicht), bei Nein sperrt nichts, ohne Antwort sperrt die Abgabe mit eigenem Text (Abweichung Nr. 79)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 19 Abs. 1 S. 2 EStG"
@@ -204,11 +232,11 @@ bindungen:
     einheit: null
     askable: true
     fragetext_laie: "Enthalten deine Versorgungsbezüge Zahlungen für mehrere Kalenderjahre, zum Beispiel eine Nachzahlung für frühere Jahre?"
-    hilfe_kurz: "Das steht unter Nummer 9 der Lohnsteuerbescheinigung. Für solche Beträge kommt die ermäßigte Besteuerung (Fünftelregelung) in Betracht; das Finanzamt wendet sie anhand von Zeile 16 der Anlage N an. Die Erklärung trägt diese Zeile nicht, ohne sie fehlt dir die Ermäßigung. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    hilfe_kurz: "Das steht unter Nummer 9 der Lohnsteuerbescheinigung. Für solche Beträge kommt die ermäßigte Besteuerung (Fünftelregelung) in Betracht; das Finanzamt wendet sie anhand von Zeile 16 der Anlage N an. Die Erklärung trägt diese Zeile nicht, ohne sie fehlt dir die Ermäßigung. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (Zeile 16 traegt die Erklaerung nicht, die Fuenftelregelung faellt aus), bei Nein oder ohne Antwort aendert sich nichts."
+    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (Zeile 16 traegt die Erklaerung nicht, die Fuenftelregelung faellt aus), bei Nein sperrt nichts, ohne Antwort sperrt die Abgabe mit eigenem Text (Abweichung Nr. 79)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 34 Abs. 1 EStG"
@@ -222,11 +250,11 @@ bindungen:
     einheit: null
     askable: true
     fragetext_laie: "Hast du die Versorgungsbezüge dieses Jahr nicht in allen zwölf Monaten bekommen, zum Beispiel weil sie im Laufe des Jahres endeten oder ausgesetzt waren?"
-    hilfe_kurz: "Das steht unter Nummer 31 der Lohnsteuerbescheinigung (erster und letzter Zahlungsmonat). Für jeden vollen Monat ohne Zahlung sinkt der Versorgungsfreibetrag um ein Zwölftel. Der Vordruck verlangt dafür Zeile 14, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beginnt der Bezug erst in diesem Jahr, sperrt die Abgabe schon ohne diese Frage."
+    hilfe_kurz: "Das steht unter Nummer 31 der Lohnsteuerbescheinigung (erster und letzter Zahlungsmonat). Für jeden vollen Monat ohne Zahlung sinkt der Versorgungsfreibetrag um ein Zwölftel. Der Vordruck verlangt dafür Zeile 14, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt. Beginnt der Bezug erst in diesem Jahr, sperrt die Abgabe schon ohne diese Frage."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (Zeile 14 traegt die Erklaerung nicht), bei Nein oder ohne Antwort aendert sich nichts."
+    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::versorgung_rueckfragen` die Abgabe (Zeile 14 traegt die Erklaerung nicht), bei Nein sperrt nichts, ohne Antwort sperrt die Abgabe mit eigenem Text (Abweichung Nr. 79)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 19 Abs. 2 S. 12 EStG"
@@ -1719,7 +1747,7 @@ bindungen:
 
   # Rueckfragen des Ehegatten (Abweichung Nr. 66), wie die von Person A (siehe dort). Sichtbar nur bei Zusammenveranlagung (`wert`,
   # wie `kein_lohn_pension_partner`) UND bei einem bestaetigten Bezug des Ehegatten ueber 0 (`und` mit `groesser_als`, wie die
-  # Schulgeld-Anteilsfrage). Ein Ja zaehlt in `Bau::versorgung_rueckfragen` nur bei bestaetigter Zusammenveranlagung.
+  # Schulgeld-Anteilsfrage). Ein Ja und eine fehlende Antwort zaehlen in `Bau::versorgung_rueckfragen` nur bei bestaetigter Zusammenveranlagung.
   - feld_id: versorgung_zweiter_bezug_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: versorgung_zweiter_bezug_partner}
     feld_bedingung:
@@ -1734,11 +1762,11 @@ bindungen:
     einheit: null
     askable: true
     fragetext_laie: "Hat dein Ehe-/Lebenspartner dieses Jahr zwei verschiedene Versorgungsbezüge bekommen, zum Beispiel eine Pension und zusätzlich ein Witwengeld?"
-    hilfe_kurz: "Gemeint sind zwei Versorgungsbezüge mit unterschiedlichem Beginn, die getrennt bescheinigt werden. Der Vordruck der Anlage N hat dafür eine zweite Spalte, und die Erklärung trägt nur den ersten Bezug. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    hilfe_kurz: "Gemeint sind zwei Versorgungsbezüge mit unterschiedlichem Beginn, die getrennt bescheinigt werden. Der Vordruck der Anlage N hat dafür eine zweite Spalte, und die Erklärung trägt nur den ersten Bezug. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Wie `versorgung_zweiter_bezug` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe."
+    elster_kz_grund: "Wie `versorgung_zweiter_bezug` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe, ohne Antwort ebenso mit eigenem Text (Abweichung Nr. 79)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 19 Abs. 2 S. 6 EStG"
@@ -1759,11 +1787,11 @@ bindungen:
     einheit: null
     askable: true
     fragetext_laie: "Hat dein Ehe-/Lebenspartner dieses Jahr Sterbegeld, eine Kapitalauszahlung, eine Abfindung oder eine Nachzahlung von Versorgungsbezügen bekommen?"
-    hilfe_kurz: "Das steht unter Nummer 32 der Lohnsteuerbescheinigung deines Partners. Der Betrag steckt schon in seinem Bruttoarbeitslohn und in seinen Versorgungsbezügen. Der Vordruck verlangt ihn zusätzlich in Zeile 15, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    hilfe_kurz: "Das steht unter Nummer 32 der Lohnsteuerbescheinigung deines Partners. Der Betrag steckt schon in seinem Bruttoarbeitslohn und in seinen Versorgungsbezügen. Der Vordruck verlangt ihn zusätzlich in Zeile 15, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Wie `versorgung_sterbegeld` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe."
+    elster_kz_grund: "Wie `versorgung_sterbegeld` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe, ohne Antwort ebenso mit eigenem Text (Abweichung Nr. 79)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 19 Abs. 1 S. 2 EStG"
@@ -1784,11 +1812,11 @@ bindungen:
     einheit: null
     askable: true
     fragetext_laie: "Enthalten die Versorgungsbezüge deines Ehe-/Lebenspartners Zahlungen für mehrere Kalenderjahre, zum Beispiel eine Nachzahlung für frühere Jahre?"
-    hilfe_kurz: "Das steht unter Nummer 9 der Lohnsteuerbescheinigung deines Partners. Für solche Beträge kommt die ermäßigte Besteuerung (Fünftelregelung) in Betracht; das Finanzamt wendet sie anhand von Zeile 16 der Anlage N an. Die Erklärung trägt diese Zeile nicht, ohne sie fehlt die Ermäßigung. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein."
+    hilfe_kurz: "Das steht unter Nummer 9 der Lohnsteuerbescheinigung deines Partners. Für solche Beträge kommt die ermäßigte Besteuerung (Fünftelregelung) in Betracht; das Finanzamt wendet sie anhand von Zeile 16 der Anlage N an. Die Erklärung trägt diese Zeile nicht, ohne sie fehlt die Ermäßigung. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Wie `versorgung_mehrere_jahre` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe."
+    elster_kz_grund: "Wie `versorgung_mehrere_jahre` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe, ohne Antwort ebenso mit eigenem Text (Abweichung Nr. 79)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 34 Abs. 1 EStG"
@@ -1809,11 +1837,11 @@ bindungen:
     einheit: null
     askable: true
     fragetext_laie: "Hat dein Ehe-/Lebenspartner die Versorgungsbezüge dieses Jahr nicht in allen zwölf Monaten bekommen, zum Beispiel weil sie im Laufe des Jahres endeten oder ausgesetzt waren?"
-    hilfe_kurz: "Das steht unter Nummer 31 der Lohnsteuerbescheinigung deines Partners (erster und letzter Zahlungsmonat). Für jeden vollen Monat ohne Zahlung sinkt der Versorgungsfreibetrag um ein Zwölftel. Der Vordruck verlangt dafür Zeile 14, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beginnt der Bezug erst in diesem Jahr, sperrt die Abgabe schon ohne diese Frage."
+    hilfe_kurz: "Das steht unter Nummer 31 der Lohnsteuerbescheinigung deines Partners (erster und letzter Zahlungsmonat). Für jeden vollen Monat ohne Zahlung sinkt der Versorgungsfreibetrag um ein Zwölftel. Der Vordruck verlangt dafür Zeile 14, und die Erklärung trägt diese Zeile nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt. Beginnt der Bezug erst in diesem Jahr, sperrt die Abgabe schon ohne diese Frage."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Wie `versorgung_nicht_ganzjaehrig` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe."
+    elster_kz_grund: "Wie `versorgung_nicht_ganzjaehrig` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::versorgung_rueckfragen` die Abgabe, ohne Antwort ebenso mit eigenem Text (Abweichung Nr. 79)."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 19 Abs. 2 S. 12 EStG"

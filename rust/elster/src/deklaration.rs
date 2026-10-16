@@ -302,36 +302,53 @@ const VERSORGUNG_SPERRE_STERBEGELD: &str = "Versorgungsbezüge über 0 Euro: Ang
 const VERSORGUNG_SPERRE_MEHRERE_JAHRE: &str = "Versorgungsbezüge über 0 Euro: Angegeben sind Versorgungsbezüge für mehrere Kalenderjahre (Nummer 9 der Lohnsteuerbescheinigung). Der Vordruck verlangt dafür Zeile 16, und die Erklärung trägt diese Zeile nicht; ohne sie fehlt die ermäßigte Besteuerung (Fünftelregelung). Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
 const VERSORGUNG_SPERRE_NICHT_GANZJAEHRIG: &str = "Versorgungsbezüge über 0 Euro: Angegeben ist, dass die Versorgungsbezüge nicht in allen zwölf Monaten gezahlt wurden (Nummer 31 der Lohnsteuerbescheinigung). Der Vordruck verlangt dafür in Zeile 14 den ersten und den letzten Zahlungsmonat, und die Erklärung trägt diese Zeile nicht. Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
 
-/// Eine Rueckfrage zum Versorgungsbezug (Abweichung Nr. 66): die Felder von Person A und Ehegatte (Ja/Nein, kein Kz) und der Grund der
-/// Sperre bei Ja.
+/// Eine Rueckfrage zum Versorgungsbezug (Abweichung Nr. 66): die Felder von Person A und Ehegatte (Ja/Nein, kein Kz), der Grund der
+/// Sperre bei Ja und das Merkmal des Falls fuer den Grund der fehlenden Antwort (Abweichung Nr. 79).
 struct Rueckfrage {
     person_a: &'static str,
     partner: &'static str,
     text: &'static str,
+    /// Ein Nebensatz nach "ob": steht im Grund einer unbeantworteten Frage ([`rueckfrage_unbeantwortet_grund`]).
+    merkmal: &'static str,
 }
 
-/// Die vier Rueckfragen, in der Reihenfolge, in der ihre Gruende in `unvollstaendig` stehen. Normalfall ist Nein: nur ein bestaetigtes Ja
-/// sperrt ([`Bau::versorgung_rueckfragen`]), eine fehlende, vorlaeufige oder nicht boolesche Antwort zaehlt wie Nein.
+/// Der Grund der Abgabe-Sperre (Abweichung Nr. 79), wenn der Nutzer eine der vier Rueckfragen zum Versorgungsbezug nicht mit Ja oder
+/// Nein beantwortet hat. Die Eingaben verraten den Fall nicht, die Erklaerung traegt die Zeilen dafuer nicht: ohne Antwort wuesste
+/// niemand, ob die Erklaerung vollstaendig ist. Der Text nennt die fehlende Antwort, das Merkmal des Falls und die Sperre, und er ist nie der
+/// Text des Ja: ein Nutzer, der "Ja" nie gesagt hat, soll nicht lesen, er habe es gesagt.
+fn rueckfrage_unbeantwortet_grund(merkmal: &str) -> String {
+    format!(
+        "Versorgungsbezüge über 0 Euro: Die Frage, ob {merkmal}, ist nicht mit Ja oder Nein beantwortet. Die Eingaben zeigen diesen Fall nicht, und die Erklärung trägt die Zeilen dafür nicht. Die Abgabe ist gesperrt, bis du die Frage beantwortest. Antwortest du Ja, bleibt die Abgabe gesperrt, und du trägst die Versorgungsbezüge im amtlichen Formular selbst ein."
+    )
+}
+
+/// Die vier Rueckfragen, in der Reihenfolge, in der ihre Gruende in `unvollstaendig` stehen. Normalfall ist Nein: ein bestaetigtes Nein
+/// sperrt nicht. Ein bestaetigtes Ja sperrt mit dem Text des Falls, eine fehlende, vorlaeufige oder nicht boolesche Antwort mit dem
+/// Text der fehlenden Antwort (Abweichung Nr. 79, vorher zaehlte sie wie Nein; [`Bau::versorgung_rueckfragen`]).
 const VERSORGUNG_RUECKFRAGEN: [Rueckfrage; 4] = [
     Rueckfrage {
         person_a: "versorgung_zweiter_bezug",
         partner: "versorgung_zweiter_bezug_partner",
         text: VERSORGUNG_SPERRE_ZWEITER_BEZUG,
+        merkmal: "zwei verschiedene Versorgungsbezüge gezahlt wurden",
     },
     Rueckfrage {
         person_a: "versorgung_sterbegeld",
         partner: "versorgung_sterbegeld_partner",
         text: VERSORGUNG_SPERRE_STERBEGELD,
+        merkmal: "Sterbegeld, eine Kapitalauszahlung, eine Abfindung oder eine Nachzahlung von Versorgungsbezügen gezahlt wurde",
     },
     Rueckfrage {
         person_a: "versorgung_mehrere_jahre",
         partner: "versorgung_mehrere_jahre_partner",
         text: VERSORGUNG_SPERRE_MEHRERE_JAHRE,
+        merkmal: "die Versorgungsbezüge Zahlungen für mehrere Kalenderjahre enthalten",
     },
     Rueckfrage {
         person_a: "versorgung_nicht_ganzjaehrig",
         partner: "versorgung_nicht_ganzjaehrig_partner",
         text: VERSORGUNG_SPERRE_NICHT_GANZJAEHRIG,
+        merkmal: "die Versorgungsbezüge nicht in allen zwölf Monaten gezahlt wurden",
     },
 ];
 
@@ -974,24 +991,35 @@ impl Bau<'_> {
             })
     }
 
-    /// Hat der Nutzer die Rueckfrage `feld` mit Ja beantwortet (Abweichung Nr. 66)? Nur ein BESTAETIGTES `true` zaehlt. Eine fehlende, vorlaeufige
-    /// oder nicht boolesche Antwort zaehlt wie Nein: Nein ist der Normalfall, und die Frage steht weiter in der Fragenliste. Das ist gemessen
-    /// und benannt (Test `eine_unbeantwortete_rueckfrage_sperrt_nicht`), kein stilles Nein.
+    /// Hat der Nutzer die Rueckfrage `feld` mit Ja beantwortet (Abweichung Nr. 66)? Nur ein BESTAETIGTES `true` zaehlt.
     fn rueckfrage_ja(&self, feld: &str) -> bool {
         self.snapshot
             .get(feld)
             .is_some_and(|s| s.zustand == Zustand::Bestaetigt && matches!(s.wert, PyWert::Bool(true)))
     }
 
-    /// Die Rueckfragen der Person, die der Nutzer mit Ja beantwortet hat (Abweichung Nr. 66): je Ja ein Grund in `unvollstaendig`, unter dem
-    /// Feld der Rueckfrage (so findet der Nutzer die Antwort, die er aendern kann). Sie gelten unabhaengig davon, ob die Zeilen 11 bis 13 den
-    /// Bezug tragen: auch ein sonst getragener Bezug braucht bei Ja die Zeilen 14 bis 16 oder die zweite Spalte, die die Erklaerung nicht hat.
-    /// Der Aufrufer ruft das nur fuer einen bestaetigten Bezug ueber 0 einer Person, die zaehlt ([`Bau::versorgung`]).
+    /// Hat der Nutzer die Rueckfrage `feld` mit Nein beantwortet (Abweichung Nr. 79)? Nur ein BESTAETIGTES `false` zaehlt: Nein ist der
+    /// Normalfall und die einzige Antwort, die nicht sperrt. Eine fehlende, vorlaeufige oder nicht boolesche Antwort ist keine Antwort.
+    fn rueckfrage_nein(&self, feld: &str) -> bool {
+        self.snapshot
+            .get(feld)
+            .is_some_and(|s| s.zustand == Zustand::Bestaetigt && matches!(s.wert, PyWert::Bool(false)))
+    }
+
+    /// Die Rueckfragen der Person, die den Bezug nicht frei geben (Abweichung Nr. 66, Nr. 79): je Frage hoechstens ein Grund in
+    /// `unvollstaendig`, unter dem Feld der Rueckfrage (so findet der Nutzer die Antwort, die er aendern kann). Ein bestaetigtes Ja
+    /// gibt den Text des Falls, ein bestaetigtes Nein keinen Grund, jede andere Lage (fehlend, vorlaeufig, nicht boolesch) den Text der
+    /// fehlenden Antwort: bis zur Antwort ist die Erklaerung nicht vollstaendig. Sie gelten unabhaengig davon, ob die Zeilen 11 bis 13
+    /// den Bezug tragen: auch ein sonst getragener Bezug braucht bei Ja die Zeilen 14 bis 16 oder die zweite Spalte, die die Erklaerung
+    /// nicht hat. Der Aufrufer ruft das nur fuer einen bestaetigten Bezug ueber 0 einer Person, die zaehlt ([`Bau::versorgung`]); genau
+    /// dann steht die Frage in der Fragenliste (Bindung `feld_bedingung`), die Sperre verlangt also nie eine Antwort auf eine verborgene Frage.
     fn versorgung_rueckfragen(&mut self, partner: bool) {
         for r in &VERSORGUNG_RUECKFRAGEN {
             let feld = if partner { r.partner } else { r.person_a };
             if self.rueckfrage_ja(feld) {
                 self.offen(feld, r.text);
+            } else if !self.rueckfrage_nein(feld) {
+                self.offen(feld, rueckfrage_unbeantwortet_grund(r.merkmal));
             }
         }
     }
@@ -3384,10 +3412,16 @@ mod tests {
 
     /// Abweichung Nr. 66: ein bestaetigtes Ja auf eine der vier Rueckfragen zum Versorgungsbezug sperrt mit dem Text des Falls, unter dem
     /// Feld der Rueckfrage. Nur dort: bei einem bestaetigten Bezug ueber 0 der Person, die zaehlt (Ehegatte nur bei bestaetigter
-    /// Zusammenveranlagung). Nein, eine fehlende, eine vorlaeufige und eine nicht boolesche Antwort sperren nicht (Normalfall Nein,
-    /// `eine_unbeantwortete_rueckfrage_sperrt_nicht`). Die Antwort der einen Person gilt nie fuer die andere.
+    /// Zusammenveranlagung). Abweichung Nr. 79: Nein sperrt nicht; eine fehlende, eine vorlaeufige und eine nicht boolesche Antwort sperren
+    /// mit eigenem Text ("nicht mit Ja oder Nein beantwortet", `eine_unbeantwortete_rueckfrage_sperrt_mit_eigenem_text`). Die Antwort
+    /// der einen Person gilt nie fuer die andere.
     #[test]
+    #[allow(clippy::too_many_lines, reason = "eine Fall-Tabelle mit der Zeile je Eingabe, geteilt wuerde die Setup-Zeilen doppeln")]
     fn ein_ja_auf_eine_rueckfrage_sperrt_mit_dem_text_des_falls() {
+        // Abweichung Nr. 79: der Text einer unbeantworteten Rueckfrage nennt, dass keine Ja/Nein-Antwort da ist, das Merkmal des Falls
+        // und die Sperre. Er ist nie der Text des Ja.
+        const UNBEANTWORTET: &str = "nicht mit Ja oder Nein beantwortet";
+        const SPERRE_BIS_ANTWORT: &str = "Die Abgabe ist gesperrt, bis du die Frage beantwortest";
         let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
@@ -3417,28 +3451,32 @@ mod tests {
             assert!(text.contains(nummer), "der Text nennt {nummer} nicht: {text}");
         }
         let faelle = [
-            ("versorgung_zweiter_bezug", super::VERSORGUNG_SPERRE_ZWEITER_BEZUG),
-            ("versorgung_sterbegeld", super::VERSORGUNG_SPERRE_STERBEGELD),
-            ("versorgung_mehrere_jahre", super::VERSORGUNG_SPERRE_MEHRERE_JAHRE),
-            ("versorgung_nicht_ganzjaehrig", super::VERSORGUNG_SPERRE_NICHT_GANZJAEHRIG),
+            ("versorgung_zweiter_bezug", super::VERSORGUNG_SPERRE_ZWEITER_BEZUG, "zwei verschiedene Versorgungsbezüge"),
+            ("versorgung_sterbegeld", super::VERSORGUNG_SPERRE_STERBEGELD, "Sterbegeld"),
+            ("versorgung_mehrere_jahre", super::VERSORGUNG_SPERRE_MEHRERE_JAHRE, "mehrere Kalenderjahre"),
+            ("versorgung_nicht_ganzjaehrig", super::VERSORGUNG_SPERRE_NICHT_GANZJAEHRIG, "zwölf Monaten"),
         ];
         for partner in [false, true] {
             let s = if partner { "_partner" } else { "" };
             let fremd = if partner { "" } else { "_partner" };
-            for (name, text) in faelle {
+            for (name, text, merkmal) in faelle {
                 let eigen = format!("{name}{s}");
-                // (Antwort, Zustand, Bezug in CENT, Veranlagung, wird gesperrt?)
+                // (Antwort, Zustand, Bezug in CENT, Veranlagung, Wirkung: "ja" = Text des Falls, "offen" = Text der unbeantworteten
+                // Frage, "nichts" = kein Grund unter dem Feld)
                 let reihen = [
-                    (Some(json!(true)), b, 3_000_000, "zusammen", true),
-                    (Some(json!(false)), b, 3_000_000, "zusammen", false),
-                    (None, b, 3_000_000, "zusammen", false),
-                    (Some(json!(true)), Zustand::Vorlaeufig, 3_000_000, "zusammen", false),
-                    (Some(json!("ja")), b, 3_000_000, "zusammen", false),
-                    (Some(json!(1)), b, 3_000_000, "zusammen", false),
-                    // Ohne Bezug ueber 0 ist die Frage verborgen: ein gespeichertes Ja sperrt nichts.
-                    (Some(json!(true)), b, 0, "zusammen", false),
-                    // Der Ehegatte zaehlt nur bei bestaetigter Zusammenveranlagung.
-                    (Some(json!(true)), b, 3_000_000, "einzel", !partner),
+                    (Some(json!(true)), b, 3_000_000, "zusammen", "ja"),
+                    (Some(json!(false)), b, 3_000_000, "zusammen", "nichts"),
+                    (None, b, 3_000_000, "zusammen", "offen"),
+                    (Some(json!(true)), Zustand::Vorlaeufig, 3_000_000, "zusammen", "offen"),
+                    (Some(json!(false)), Zustand::Vorlaeufig, 3_000_000, "zusammen", "offen"),
+                    (Some(json!("ja")), b, 3_000_000, "zusammen", "offen"),
+                    (Some(json!(1)), b, 3_000_000, "zusammen", "offen"),
+                    // Ohne Bezug ueber 0 ist die Frage verborgen: weder ein gespeichertes Ja noch Schweigen sperrt.
+                    (Some(json!(true)), b, 0, "zusammen", "nichts"),
+                    (None, b, 0, "zusammen", "nichts"),
+                    // Der Ehegatte zaehlt nur bei bestaetigter Zusammenveranlagung, auch mit Schweigen.
+                    (Some(json!(true)), b, 3_000_000, "einzel", if partner { "nichts" } else { "ja" }),
+                    (None, b, 3_000_000, "einzel", if partner { "nichts" } else { "offen" }),
                 ];
                 for (antwort, zustand, bezug, veranlagung, soll) in reihen {
                     let mut felder = Felder::from([
@@ -3454,14 +3492,25 @@ mod tests {
                     }
                     let d = deklariere(&felder, &index, 2025, None).unwrap();
                     let wo = format!("Person {}, {eigen} = {antwort:?} {zustand:?}, Bezug {bezug}, {veranlagung}", if partner { "B" } else { "A" });
-                    let gesperrt: Vec<(&str, &str)> = d
+                    // Nur die Gruende unter dem Feld DIESER Frage: die drei anderen Fragen der Person sind hier unbeantwortet.
+                    let gesperrt: Vec<&str> = d
                         .unvollstaendig()
                         .iter()
-                        .filter(|e| e.grund.starts_with("Versorgungsbezüge über 0 Euro"))
-                        .map(|e| (e.feld_id.as_str(), e.grund.as_str()))
+                        .filter(|e| e.feld_id == eigen && e.grund.starts_with("Versorgungsbezüge über 0 Euro"))
+                        .map(|e| e.grund.as_str())
                         .collect();
-                    let erwartet: Vec<(&str, &str)> = if soll { vec![(eigen.as_str(), text)] } else { vec![] };
-                    assert_eq!(gesperrt, erwartet, "{wo}");
+                    match soll {
+                        "ja" => assert_eq!(gesperrt, [text], "{wo}"),
+                        "offen" => {
+                            assert_eq!(gesperrt.len(), 1, "{wo}: {gesperrt:?}");
+                            let grund = gesperrt[0];
+                            assert!(grund.contains(UNBEANTWORTET), "{wo}: der Text nennt die fehlende Antwort nicht: {grund}");
+                            assert!(grund.contains(merkmal), "{wo}: der Text nennt das Merkmal {merkmal} nicht: {grund}");
+                            assert!(grund.contains(SPERRE_BIS_ANTWORT), "{wo}: der Text nennt die Sperre bis zur Antwort nicht: {grund}");
+                            assert_ne!(grund, text, "{wo}: der Text ist der des Ja");
+                        }
+                        _ => assert!(gesperrt.is_empty(), "{wo}: {gesperrt:?}"),
+                    }
                     // Die Rueckfrage ist kein Feld der Erklaerung: mit Grund in `nicht_deklariert`, ein bestaetigtes Ja steht in keinem Kz.
                     if antwort.is_some() && zustand == b {
                         assert_eq!(d.nicht_deklariert.iter().filter(|e| e.feld_id == eigen).count(), 1, "{wo}: nicht_deklariert");
@@ -3478,8 +3527,10 @@ mod tests {
                     (format!("{name}{fremd}"), feld(json!(true), b)),
                 ]);
                 let d = deklariere(&felder, &index, 2025, None).unwrap();
+                // Unter dem Feld der anderen Person steht nichts, und der Text des Ja steht nirgends (die vier Fragen DIESER Person sind
+                // hier unbeantwortet und sperren mit dem Text der fehlenden Antwort).
                 assert!(
-                    d.unvollstaendig().iter().all(|e| !e.grund.starts_with("Versorgungsbezüge über 0 Euro")),
+                    d.unvollstaendig().iter().all(|e| e.feld_id != format!("{name}{fremd}") && e.grund != text),
                     "Person {}: das Ja der anderen Person sperrt: {:?}",
                     if partner { "B" } else { "A" },
                     d.unvollstaendig()
@@ -3488,11 +3539,12 @@ mod tests {
         }
     }
 
-    /// Abweichung Nr. 66, Gegenstueck: eine unbeantwortete Rueckfrage sperrt NICHT (kein stilles Gesperrt) und aendert die Erklaerung nicht
-    /// (kein stilles Anderes). Nein ist der Normalfall, die Frage steht weiter in der Fragenliste; vier Ja zusammen geben vier Gruende,
-    /// in der Reihenfolge der Faelle, und neben einem Grund des Bezugs selbst (unter 1 Euro) bleibt dieser stehen.
+    /// Abweichung Nr. 79 (vorher Nr. 66, Grenze 3: "eine unbeantwortete Rueckfrage sperrt nicht"): eine unbeantwortete Rueckfrage sperrt
+    /// mit EIGENEM Text unter ihrem Feld, ohne die Erklaerung zu aendern (kein stilles Anderes). Vier Nein sperren nichts (Nein ist der
+    /// Normalfall); ohne jede Antwort stehen vier Gruende der fehlenden Antwort, vier Ja geben vier Gruende des Falls, beide in der
+    /// Reihenfolge der Faelle; neben einem Grund des Bezugs selbst (unter 1 Euro) bleibt dieser stehen.
     #[test]
-    fn eine_unbeantwortete_rueckfrage_sperrt_nicht() {
+    fn eine_unbeantwortete_rueckfrage_sperrt_mit_eigenem_text() {
         let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
@@ -3522,9 +3574,23 @@ mod tests {
             ])
         };
         let namen = ["versorgung_zweiter_bezug", "versorgung_sterbegeld", "versorgung_mehrere_jahre", "versorgung_nicht_ganzjaehrig"];
-        // Ohne jede Antwort: kein Grund, und dieselbe Deklaration wie mit vier Nein.
+        let merkmale = ["zwei verschiedene Versorgungsbezüge", "Sterbegeld", "mehrere Kalenderjahre", "zwölf Monaten"];
+        // Ohne jede Antwort: vier Gruende der fehlenden Antwort, jeder unter seinem Feld, jeder mit Merkmal und Sperre.
         let ohne = deklariere(&basis(3_000_000, true), &index, 2025, None).unwrap();
-        assert!(ohne.unvollstaendig().is_empty(), "ohne Antwort sperrt etwas: {:?}", ohne.unvollstaendig());
+        let ids: Vec<&str> = ohne.unvollstaendig().iter().map(|e| e.feld_id.as_str()).collect();
+        assert_eq!(ids, namen, "ohne Antwort: Reihenfolge und Felder der Gruende");
+        for (e, merkmal) in ohne.unvollstaendig().iter().zip(merkmale) {
+            assert!(
+                e.grund.starts_with("Versorgungsbezüge über 0 Euro")
+                    && e.grund.contains("nicht mit Ja oder Nein beantwortet")
+                    && e.grund.contains(merkmal)
+                    && e.grund.contains("Die Abgabe ist gesperrt, bis du die Frage beantwortest"),
+                "{}: der Text der fehlenden Antwort ist unvollstaendig: {}",
+                e.feld_id,
+                e.grund
+            );
+        }
+        // Vier Nein: nichts sperrt, und die Erklaerung ist dieselbe wie ohne Antwort (die Sperre aendert keine Zeile).
         let mut mit_nein = basis(3_000_000, true);
         for n in namen {
             mit_nein.insert(n.to_owned(), feld(json!(false)));
@@ -3532,6 +3598,15 @@ mod tests {
         let nein = deklariere(&mit_nein, &index, 2025, None).unwrap();
         assert!(nein.unvollstaendig().is_empty(), "vier Nein sperren: {:?}", nein.unvollstaendig());
         assert_eq!(nein.deklaration, ohne.deklaration, "vier Nein aendern die Erklaerung");
+        // Drei Nein und eine fehlende Antwort: genau die fehlende sperrt.
+        for (i, n) in namen.iter().enumerate() {
+            let mut f = mit_nein.clone();
+            f.remove(*n);
+            let d = deklariere(&f, &index, 2025, None).unwrap();
+            let ids: Vec<&str> = d.unvollstaendig().iter().map(|e| e.feld_id.as_str()).collect();
+            assert_eq!(ids, [*n], "nur {n} fehlt");
+            assert!(d.unvollstaendig()[0].grund.contains(merkmale[i]), "{n}: {}", d.unvollstaendig()[0].grund);
+        }
         // Vier Ja: vier Gruende, in der Reihenfolge der Faelle, jeder unter seinem Feld.
         let mut mit_ja = basis(3_000_000, true);
         for n in namen {
@@ -3543,6 +3618,9 @@ mod tests {
         assert_eq!(ja.deklaration, ohne.deklaration, "ein Ja aendert die Zeilen der Erklaerung nicht, es sperrt nur");
         // Ein Bezug unter 1 Euro (keine Zeile) UND ein Ja: der Grund des Bezugs steht neben dem der Rueckfrage.
         let mut klein = basis(99, false);
+        for n in namen {
+            klein.insert(n.to_owned(), feld(json!(false)));
+        }
         klein.insert("versorgung_sterbegeld".to_owned(), feld(json!(true)));
         let d = deklariere(&klein, &index, 2025, None).unwrap();
         let gruende: Vec<(&str, &str)> = d.unvollstaendig().iter().map(|e| (e.feld_id.as_str(), e.grund.as_str())).collect();

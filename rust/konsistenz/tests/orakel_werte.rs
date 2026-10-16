@@ -299,17 +299,19 @@ fn fixture_unverkuerzt() {
 
 #[test]
 fn konstanten_wie_orakel() {
-    // Abweichung Nr. 28, Nr. 31, Nr. 33, Nr. 38 und Nr. 44: `ep_unfallkosten`, `parteispenden_betrag`, die vier Betragsfelder der
-    // Versorgung des Ehegatten, seine einbehaltene Lohnsteuer (`p36_lohnsteuer_partner`) und `waehlervereinigungen_betrag` stehen
-    // nur in Rust (Python kennt die Felder im Ring nicht). Der Rest ist das Orakel, und genau diese ACHT Felder sind
-    // ausgenommen: ein neuntes Rust-Feld braucht seine eigene Zeile hier.
-    const NUR_RUST: [&str; 8] = [
+    // Abweichung Nr. 28, Nr. 31, Nr. 33, Nr. 38, Nr. 44 und Nr. 80: `ep_unfallkosten`, `parteispenden_betrag`, die vier Betragsfelder der
+    // Versorgung des Ehegatten, seine einbehaltene Lohnsteuer (`p36_lohnsteuer_partner`), `waehlervereinigungen_betrag` und der Grad der
+    // Behinderung, den der Gesamtlauf fuer die Altersgrenze fragt (`versorgung_grad_der_behinderung`), stehen nur in Rust (Python kennt die
+    // Felder im Ring nicht). Der Rest ist das Orakel, und genau diese NEUN Felder sind ausgenommen: ein zehntes Rust-Feld braucht seine
+    // eigene Zeile hier.
+    const NUR_RUST: [&str; 9] = [
         "ep_unfallkosten",
         "p36_lohnsteuer_partner",
         "parteispenden_betrag",
         "versorgung_alter_bei_beginn_partner",
         "versorgung_beginn_jahr_partner",
         "versorgung_bemessungsgrundlage_partner",
+        "versorgung_grad_der_behinderung",
         "versorgung_jahresrente_partner",
         "waehlervereinigungen_betrag",
     ];
