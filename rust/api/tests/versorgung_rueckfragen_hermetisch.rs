@@ -416,7 +416,7 @@ async fn das_ja_des_ehegatten_sperrt_nur_bei_zusammenveranlagung() {
 async fn eine_unbeantwortete_frage_sperrt_genau_dann_wenn_sie_in_der_fragenliste_steht() {
     let einzel = [("veranlagung", json!("einzel"))];
     let zusammen = [("veranlagung", json!("zusammen"))];
-    let lagen: Vec<(&str, &str, Vec<(&str, Value)>, Vec<(&'static str, Value, bool)>)> = vec![
+    let lagen: Vec<Fall> = vec![
         ("kein Bezug", "rentner.json", einzel.to_vec(), vec![]),
         ("Bezug A 30.000", "rentner.json", einzel.to_vec(), mit(lohn_a(30_000), bezug_a(30_000, true))),
         ("Bezug A 0", "rentner.json", einzel.to_vec(), mit(lohn_a(30_000), bezug_a(0, true))),
@@ -432,6 +432,20 @@ async fn eine_unbeantwortete_frage_sperrt_genau_dann_wenn_sie_in_der_fragenliste
         ),
         ("zusammen, Ehegatte 0", "rentner.json", zusammen.to_vec(), mit(mit(partner_kap(), lohn_b(20_000)), bezug_b(0))),
         ("gesamt, Bezug A", "gesamt.json", vec![], bezug_a(30_000, true)),
+        // Die Eingangsfrage der Rentner-Scheibe (Nr. 46): "Nein" verbirgt die Detailfragen zum Bezug, der Wert des Bezugs bleibt gespeichert.
+        // Frage und Sperre muessen auch dann gleich entscheiden, sonst stuende eine Sperre ohne sichtbare Frage da.
+        (
+            "kein_lohn_pension ja, Bezug A gespeichert",
+            "rentner.json",
+            einzel.to_vec(),
+            mit(mit(lohn_a(30_000), bezug_a(30_000, true)), vec![("kein_lohn_pension", json!(true), true)]),
+        ),
+        (
+            "kein_lohn_pension nein, Bezug A",
+            "rentner.json",
+            einzel.to_vec(),
+            mit(mit(lohn_a(30_000), bezug_a(30_000, true)), vec![("kein_lohn_pension", json!(false), true)]),
+        ),
     ];
     for (name, datei, ersetze, mehr) in lagen {
         let d = akte(datei, &ersetze, &mehr).await;

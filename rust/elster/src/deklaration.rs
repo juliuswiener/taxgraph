@@ -3416,7 +3416,12 @@ mod tests {
     /// mit eigenem Text ("nicht mit Ja oder Nein beantwortet", `eine_unbeantwortete_rueckfrage_sperrt_mit_eigenem_text`). Die Antwort
     /// der einen Person gilt nie fuer die andere.
     #[test]
+    #[allow(clippy::too_many_lines, reason = "eine Fall-Tabelle mit der Zeile je Eingabe, geteilt wuerde die Setup-Zeilen doppeln")]
     fn ein_ja_auf_eine_rueckfrage_sperrt_mit_dem_text_des_falls() {
+        // Abweichung Nr. 79: der Text einer unbeantworteten Rueckfrage nennt, dass keine Ja/Nein-Antwort da ist, das Merkmal des Falls
+        // und die Sperre. Er ist nie der Text des Ja.
+        const UNBEANTWORTET: &str = "nicht mit Ja oder Nein beantwortet";
+        const SPERRE_BIS_ANTWORT: &str = "Die Abgabe ist gesperrt, bis du die Frage beantwortest";
         let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
             .unwrap()
@@ -3451,10 +3456,6 @@ mod tests {
             ("versorgung_mehrere_jahre", super::VERSORGUNG_SPERRE_MEHRERE_JAHRE, "mehrere Kalenderjahre"),
             ("versorgung_nicht_ganzjaehrig", super::VERSORGUNG_SPERRE_NICHT_GANZJAEHRIG, "zwölf Monaten"),
         ];
-        // Abweichung Nr. 79: der Text einer unbeantworteten Rueckfrage nennt, dass keine Ja/Nein-Antwort da ist, das Merkmal des Falls
-        // und die Sperre. Er ist nie der Text des Ja.
-        const UNBEANTWORTET: &str = "nicht mit Ja oder Nein beantwortet";
-        const SPERRE_BIS_ANTWORT: &str = "Die Abgabe ist gesperrt, bis du die Frage beantwortest";
         for partner in [false, true] {
             let s = if partner { "_partner" } else { "" };
             let fremd = if partner { "" } else { "_partner" };
@@ -3502,11 +3503,11 @@ mod tests {
                         "ja" => assert_eq!(gesperrt, [text], "{wo}"),
                         "offen" => {
                             assert_eq!(gesperrt.len(), 1, "{wo}: {gesperrt:?}");
-                            let g = gesperrt[0];
-                            assert!(g.contains(UNBEANTWORTET), "{wo}: der Text nennt die fehlende Antwort nicht: {g}");
-                            assert!(g.contains(merkmal), "{wo}: der Text nennt das Merkmal {merkmal} nicht: {g}");
-                            assert!(g.contains(SPERRE_BIS_ANTWORT), "{wo}: der Text nennt die Sperre bis zur Antwort nicht: {g}");
-                            assert_ne!(g, text, "{wo}: der Text ist der des Ja");
+                            let grund = gesperrt[0];
+                            assert!(grund.contains(UNBEANTWORTET), "{wo}: der Text nennt die fehlende Antwort nicht: {grund}");
+                            assert!(grund.contains(merkmal), "{wo}: der Text nennt das Merkmal {merkmal} nicht: {grund}");
+                            assert!(grund.contains(SPERRE_BIS_ANTWORT), "{wo}: der Text nennt die Sperre bis zur Antwort nicht: {grund}");
+                            assert_ne!(grund, text, "{wo}: der Text ist der des Ja");
                         }
                         _ => assert!(gesperrt.is_empty(), "{wo}: {gesperrt:?}"),
                     }
