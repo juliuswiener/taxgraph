@@ -898,7 +898,7 @@ mod tests {
     /// `n` Typen `W1..Wn` ineinander; `Wi` fuehrt das Kz `E<i>` (7 Ziffern). `Ei` liegt eine Ebene unter dem Typ-Element `Wi`,
     /// das Start-Element `E10` hat Tiefe 0, `W1` Tiefe 1: `Ei` hat also Tiefe `i + 1`.
     fn kette_mit_kz(n: usize) -> String {
-        let typen: String = (1..=n)
+        let typen = (1..=n)
             .map(|i| {
                 let weiter = if i < n {
                     format!(r#"<xs:element name="W{0}" type="W{0}CType"/>"#, i + 1)
@@ -909,7 +909,8 @@ mod tests {
                     r#"<xs:complexType name="W{i}CType"><xs:sequence><xs:element name="E{i:07}" type="xs:string"/>{weiter}</xs:sequence></xs:complexType>"#
                 )
             })
-            .collect();
+            .collect::<Vec<String>>()
+            .concat();
         schema(&format!(
             r#"<xs:complexType name="E10CType"><xs:sequence><xs:element name="W1" type="W1CType"/></xs:sequence></xs:complexType>{typen}"#
         ))
@@ -934,6 +935,9 @@ mod tests {
 
     /// `glob_rekursiv` liest Verzeichnisse bis Tiefe 64 (die Wurzel ist Tiefe 0) und nicht tiefer. Gegenversuche: `tiefe + 1` ->
     /// `tiefe * 1` (die Grenze greift nie), `>` -> `>=` und `>` -> `==` (Tiefe 64 faellt weg).
+    ///
+    /// Echte Verzeichnisse, kein Link im Kreis: ein Link im Kreis endet unter Linux nach 40 Links von selbst (`ELOOP`; gemessen
+    /// 2026-10-16: 41 Treffer bis Ebene 40), lange vor Tiefe 64. Eine Probe mit Kreis wuerde die Grenze nicht belegen.
     #[test]
     fn die_verzeichnissuche_liest_bis_tiefe_64_und_nicht_tiefer() {
         let probe = Probe::neu("glob-tiefe");
