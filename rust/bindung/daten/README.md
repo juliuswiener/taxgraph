@@ -7,12 +7,12 @@ Hier liegen die `bindung_*.yaml`-Dateien, die `bindung::lade_registry_der_wurzel
 - **Rust-Besitz.** Das Verzeichnis begann am 2026-10-05 als byteweise Kopie von `produkt/bindung`
   (sha256 je Datei gleich, 28 Dateien) und waechst ohne Python weiter. Wer ein Feld anlegt oder
   aendert, aendert nur hier.
-- **Python liest dieses Verzeichnis nicht.** `produkt/bindung` bleibt eingefroren fuer
-  `make serve-python` und die Python-Tests. `make serve-python` kennt neue Felder nicht und rechnet
-  sie weiter falsch; das ist eine bewusste Abweichung (Liste, Test, Commit-Begruendung).
+- **Python liest dieses Verzeichnis nicht.** `produkt/bindung` blieb bis L3 eingefroren fuer
+  `make serve-python` und die Python-Tests; beide und `produkt/` fielen mit L2/L3. Der letzte Stand liegt im Tag
+  `python-standard-letzter`.
 - **Kein Rust-Code nennt `produkt/bindung`.** Jeder Lesezugriff geht ueber
   `bindung::lade_registry_der_wurzel`. Das haelt `rust/bindung/tests/keine_python_bindung_im_rust_code.rs`
-  fest; die Ausnahmen (Parity-Suiten und Tests, die eine Python-Antwort vergleichen) stehen dort
+  fest; die Ausnahmen (Tests, die eine Python-Antwort vergleichen) stehen dort
   mit Grund.
 - **Eine `feld_id` kommt in allen Dateien zusammen nur einmal vor** (der Lader prueft das beim Bauen).
 - **Eine Scheibe nimmt ein Feld nur auf, wenn es in `rust/bescheid/src/deklaration/scheiben_tabellen.rs`

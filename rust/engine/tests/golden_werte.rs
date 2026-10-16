@@ -2,8 +2,9 @@
 //!
 //! Cutover-Audit `audits/cutover-bereitschaft-rust-port-2026-10-03.md`, Befund 6: Kein Rust-Test verglich
 //! den WERT der Erwartung. `golden_kopf.rs` haelt nur die Form (Zahl, ein Feld je Fall, eindeutige IDs); die
-//! Parity-Suiten rechnen gegen Python und lesen `erwartung` nie. `make golden` pinnt den Wert, braucht aber
-//! Python und Catala. Dieser Test rechnet jeden `sachverhalt` der Fixture `rust/fixtures/golden_cases.json`
+//! Parity-Suiten rechnen gegen Python und lesen `erwartung` nie. `make golden` pinnte den Wert damals in Python
+//! (`golden/golden_lauf.py`, brauchte Python und Catala); seit L3 ruft `make golden` diesen Test.
+//! Dieser Test rechnet jeden `sachverhalt` der Fixture `rust/fixtures/golden_cases.json`
 //! durch `engine::zugriff::teil2::est::est` (die Rust-Fassung von `runner.catala_est`) und vergleicht die
 //! Zahl mit `erwartung`. Die Einheit liefert der Rueckgabetyp (`EstBetrag::Euro` oder `Cent`), sie passt
 //! zum Schluessel (`*_cent` gegen Cent, sonst Euro); ein Fehler um Faktor 100 faellt daher sofort auf.
@@ -15,11 +16,11 @@
 //!
 //! ponytail: Ceiling -- das ist die Engine-Fassade, nicht der Bescheid-Weg (Snapshot, `bescheid::`-Ring);
 //! was im Bescheid mit diesen Zahlen passiert, deckt der Test nicht. Die 106 Euro-Faelle (`tarifliche_est`,
-//! `festzusetzende_est`, `abziehbarer_betrag`, `abzug_gesamt`) sind wie bei `make golden` nur auf den
-//! vollen Euro genau (`floor`), 29 Cent-Faelle auf den Cent. Aufwertungspfad: den Bescheid-Weg ueber die
+//! `festzusetzende_est`, `abziehbarer_betrag`, `abzug_gesamt`) sind wie im Python-Lauf `golden/golden_lauf.py`
+//! nur auf den vollen Euro genau (`floor`), 29 Cent-Faelle auf den Cent. Aufwertungspfad: den Bescheid-Weg ueber die
 //! Snapshot-Abbildung von `bescheid_*_paritaet::golden_faelle` gegen dieselbe `erwartung` pinnen und die
 //! Euro-Klassen in Cent fuehren, sobald die Fixture Cent traegt. Faellt Python weg, ist `erwartung` der
-//! Anker; gemessen ist sie 2026-10-04 gleich Python (`make golden` 135/135) und gleich Rust (diese Datei).
+//! Anker; gemessen ist sie 2026-10-04 gleich Python (`make golden` damals Python, 135/135) und gleich Rust (diese Datei).
 //!
 //! `GOLDEN_CASES_DATEI` lenkt den Test auf eine WEGWERF-Kopie (wie `golden_kopf.rs`), fuer die Rot-Nachweise.
 #![allow(

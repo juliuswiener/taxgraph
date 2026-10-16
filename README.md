@@ -43,31 +43,31 @@ make s02     # Differentialtest Catala vs GETTSIM, erzeugt reports/s02-divergenz
 
 ```bash
 make serve          # Rust-Dienst, das Produkt: http://127.0.0.1:8000 (SERVE_PORT=... aendert den Port)
-make serve-python   # Python-Dienst: Rueckfall, Referenz und Orakel der Vergleichstests
 ```
 
-- Beide Ziele sichern den Bestand zuerst mit `make backup` (rund 30 MB je Start, nach
+- `make serve` sichert den Bestand zuerst mit `make backup` (rund 30 MB je Start, nach
   `../taxgraph-backups`). Scheitert die Sicherung, startet nichts. `SICHERN=0` ueberspringt sie.
-- Beide lesen dieselben Dateien und Umgebungsvariablen: Bestand unter `~/.local/share/taxgraph/faelle`
-  (`TAXGRAPH_DATEN` und `XDG_DATA_HOME` wirken wie bisher), Konten in `produkt/auth/users.json`,
-  `.env.llm` und `.env.maps` aus der Repo-Wurzel. Der Wechsel in beide Richtungen braucht keine Migration.
+- Der Dienst liest: Bestand unter `~/.local/share/taxgraph/faelle`
+  (`TAXGRAPH_DATEN` und `XDG_DATA_HOME` wirken wie bisher), Konten in `users.json` neben `faelle/`,
+  `.env.llm` und `.env.maps` aus der Repo-Wurzel.
 - Die Anmeldung ist an. `TAXGRAPH_JWT_SECRET` setzen, damit Anmeldungen einen Neustart ueberleben.
-- `make serve` baut im dev-Profil (opt-level 1), nicht mit `--release`: nur dieser Bau wird von den
-  Vergleichstests gegen Python geprueft, und `--release` schaltet `overflow-checks` ab.
-- Rueckfall: `make serve-python` starten. Hat ein Rust-Lauf eine Akte beschaedigt, den Bestand mit
+- `make serve` baut im dev-Profil (opt-level 1), nicht mit `--release`: `--release` schaltet `overflow-checks` ab;
+  `rust/api/tests/ueberlauf_profil_waechter.rs` haelt das fest.
+- Rueckweg: Hat ein Rust-Lauf eine Akte beschaedigt, den Bestand mit
   `make restore ARCHIV=<tar.gz aus ../taxgraph-backups>` zurueckholen. Den Code des letzten Stands mit
-  Python als Standard-Start liefert der lokale Tag `python-standard-letzter` (`904f6215`): `git checkout python-standard-letzter`. Es ist nichts geloescht.
+  Python als Standard-Start liefert der Tag `python-standard-letzter` (`904f6215`) auf origin: `git checkout python-standard-letzter`.
+  Einen Python-Dienst (`make serve-python`) gibt es im aktuellen Stand nicht mehr; `produkt/` fiel mit L3.
 - Betrieb: Jedes `make backup` (auch der Start mit `make serve`) legt ein Archiv von rund 30 MB in `BACKUP_DIR` an,
   nur fuer den Besitzer lesbar (Modus 600). Danach bleiben die letzten 30 Archive im Namensschema
   `taxgraph-<Datum>-<Zeit>-….tar.gz`, die aelteren werden geloescht (`BACKUP_BEHALTEN=<n>` aendert die Zahl;
   `make restore` raeumt nicht auf). Setzt Du
-  `TAXGRAPH_USER_STORE`, sichert `make backup` weiter `produkt/auth/users.json`: dann `AUTH_USERS=<Pfad>`
+  `TAXGRAPH_USER_STORE`, sichert `make backup` weiter `users.json` neben `faelle/`: dann `AUTH_USERS=<Pfad>`
   mitgeben. Der Bau liegt in `~/.cache/taxgraph-serve/target` (`SERVE_TARGET=...` aendert das); der erste
   Bau dauerte gemessen 40 s. Der Dienst bindet nur 127.0.0.1.
 - Ein Fall ohne Besitzerfeld ist bei eingeschalteter Anmeldung fuer jedes Konto gesperrt (403). Das war in
   Python schon so.
-- Der Versand an ELSTER bleibt Python (`versand.py`, Vorbehalt Julius). `POST /fall/<id>/einreichen`
-  prueft in beiden Diensten nur (ERiC `ERIC_VALIDIERE`) und sendet nichts.
+- Der echte Versand an ELSTER laeuft in Rust (`rust/versand`, Vorbehalt Julius: einreichen loest nur er aus).
+  `POST /fall/<id>/einreichen` prueft nur (ERiC `ERIC_VALIDIERE`) und sendet nichts.
 
 ### Verifizierte Regeln reproduzieren (frischer Clone)
 
@@ -96,7 +96,7 @@ rules/estg/p04_arbeitszimmer_homeoffice/# § 4 Abs. 5 Nr. 6b/6c literate Catala 
 params/2024|2025|2026/                  # Tarifparameter je VZ mit Quellen
 params/derive_coefficients.py           # Ableitung/Validierung der Koeffizienten
 oracle/gettsim/                         # Differentialtest-Harness + Assembler
-golden/                                 # Golden-Test-Korpus (M1.4) + Lauf; Rechenkern: produkt/engine/
+golden/                                 # Golden-Test-Korpus (M1.4); Lauf: make golden (Rust); Rechenkern: rust/engine/
 docstore/                               # Dokumentstore-Schema, Ingest, docker-compose (M1.5)
 sources/                                # Fassungsarchiv: eingefrorene Gesetzestexte + Hash
 reports/                                # s02-divergenzen, s03-ergonomie, gate-g0, gettsim-issue-draft

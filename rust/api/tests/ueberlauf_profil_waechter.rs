@@ -2,11 +2,11 @@
 //!
 //! Warum: Ohne die Pruefung bricht jedes ungeprueft geschriebene `+`/`-` der Geldrechnung still
 //! um und rechnet falsch weiter, statt zu paniken oder einen Fehler zu melden. `make serve` baut
-//! mit `cargo build` das dev-Profil (das Makefile verbietet `--release`), und `rust/parity` und
-//! `make ui-rust` messen nur diesen Bau. Cargo schaltet die Pruefung fuer dev von selbst ein;
+//! mit `cargo build` das dev-Profil (das Makefile verbietet `--release`), und `rust/parity` (bis L1) und
+//! `make ui-rust` (bis L2) massen nur diesen Bau. Cargo schaltet die Pruefung fuer dev von selbst ein;
 //! eine Zeile `= false` oder ein anderes Profil in `make serve` schaltet sie aus, ohne dass ein
 //! anderer Test es merkt. Ersetzt `tests/test_ueberlauf_waechter_text.py` (Waechter 2,
-//! Python-Test, entfaellt mit Python); der Shim-Waechter steht in
+//! Python-Test, mit L2 geloescht); der Shim-Waechter steht in
 //! `catala-sys/tests/shim_ueberlauf_waechter.rs`.
 //!
 //! Zwei Arten von Pruefung, absichtlich beide:

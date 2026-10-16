@@ -12,7 +12,7 @@
 #
 # generated/ is committed so `cargo build` needs no opam (Entscheidung REWRITE_PLAN.md §3).
 # Re-run this script (`make catala-c`) after any change under rules/estg/, and then `make catala-orakel`
-# (the oracle file of the Rust test tests/catala_orakel.rs; the CI job catala-toolchain regenerates it
+# (the oracle file of the Rust test tests/catala_orakel.rs; the CI job catala-orakel regenerates it
 # and fails on a diff).
 set -euo pipefail
 

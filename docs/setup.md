@@ -69,9 +69,8 @@ uv pip install --python oracle/.venv312/bin/python -r requirements-oracle.txt
 Das ist derselbe Schritt wie in der CI (`ci.yml`, Schritt `venv312 mit GETTSIM`). Die
 Versionen von `gettsim` und `ttsim-backend` stehen NUR in `requirements-oracle.txt`; dort steht
 auch, warum sie Zahlenwerte sind und kein Ablaufdetail. Die Datei bringt ausserdem `bcrypt` und
-`PyJWT` mit — ohne sie scheitert `make gettsim-crosscheck` schon beim Sammeln der Tests, weil
-`tests/conftest.py` `server` importiert. `tests/test_ci_konfiguration.py` prueft, dass kein
-anderer Installationsweg eine eigene Version nennt.
+`PyJWT` mit; sie stammen aus der Zeit, als `tests/conftest.py` `server` importierte (das Verzeichnis `tests/` fiel
+mit L2). `rust/bindung/tests/ci_pins.rs` prueft, dass kein anderer Installationsweg eine eigene Version nennt.
 
 `scripts/install-gettsim.sh` fuehrt genau diese zwei Kommandos aus.
 
@@ -99,8 +98,7 @@ zvE-Werte plus Randwerte durch Catala und GETTSIM schickt und
 | `make s02` | Differentialtest gegen GETTSIM, erzeugt den Divergenzreport. |
 | `make params-check` | Ableitung/Validierung der Tarifkoeffizienten. |
 | `make eric-gate` | ERiC-Offline-Gate: E10-2025-XSD-Struktur + checkESt. Prueft eine Minimal-XML, **kein** Abgabeweg-Nachweis. |
-| `make abgabeweg-freigabe` | Lokaler Freigabenachweis des ERiC-Abgabewegs ueber den echten HTTP-Endpunkt. Braucht ERiC + Herstellerkennung, jeder Skip wird zu exit != 0. |
-| `make abgabeweg-freigabe-rust` | Dasselbe fuer den Rust-Dienst (`rust/api/tests/einreichen_eric_echt.rs`): echter Prozess `taxgraph-api`, echte ERiC-Bibliothek, echte Herstellerkennung, nur Pruefung. Jede fehlende Voraussetzung und jeder andere Lauf als genau ein bestandener Test ist exit != 0. |
+| `make abgabeweg-freigabe-rust` | Lokaler Freigabenachweis des ERiC-Abgabewegs ueber den echten HTTP-Endpunkt (`rust/api/tests/einreichen_eric_echt.rs`): echter Prozess `taxgraph-api`, echte ERiC-Bibliothek, echte Herstellerkennung, nur Pruefung. Jede fehlende Voraussetzung und jeder andere Lauf als genau ein bestandener Test ist exit != 0. |
 | `make checkest-rust` | Drei weitere Rust-Tests gegen das echte checkESt: die von `taxgraph-xml` geschriebene Datei, die Versorgungszeilen 11 bis 13, die Pflicht-Kz der Anlage SO. Echte ERiC-Bibliothek, echte Herstellerkennung, nur Pruefung. Jede fehlende Voraussetzung und jeder andere Lauf als dreimal `ok. 1 passed` ist exit != 0. |
 | `make clean` | Build- und Zwischenartefakte entfernen. |
 
@@ -108,10 +106,10 @@ zvE-Werte plus Randwerte durch Catala und GETTSIM schickt und
 
 Der Weg, auf dem eine Einkommensteuererklaerung offiziell beim Finanzamt eingeht, braucht
 zwei Dinge, die auf einem oeffentlichen CI-Runner nicht hingehoeren: das lizenzpflichtige
-ERiC-SDK und eine registrierte Herstellerkennung. `tests/test_einreichen_durchstich.py`
-laeuft in der CI deshalb mit, ueberspringt seine beiden ERiC-bewehrten Faelle aber
-**still** — der Lauf endet mit `1 passed, 2 skipped` und exit 0. Ein gruener CI-Lauf sagt
-ueber den Abgabeweg also nichts aus; er hat ihn nie geprueft.
+ERiC-SDK und eine registrierte Herstellerkennung. Der echte Test
+`rust/api/tests/einreichen_eric_echt.rs` ist deshalb `#[ignore]`: die CI fuehrt ihn nicht aus. Ein gruener CI-Lauf sagt
+ueber den Abgabeweg also nichts aus; er hat ihn nie geprueft. (Bis L2 lief das Python-Gegenstueck
+`tests/test_einreichen_durchstich.py` in der CI mit und uebersprang seine beiden ERiC-bewehrten Faelle still.)
 
 Entschieden am 2026-09-12: Der Abgabeweg bleibt ein lokaler, manueller Nachweis. ERiC und
 Herstellerkennung werden **nicht** als CI-Secrets hochgeladen. Ein eigener geschuetzter
@@ -121,12 +119,12 @@ brauchen.
 **Vor einer Freigabe lokal ausfuehren:**
 
 ```
-make abgabeweg-freigabe
+make abgabeweg-freigabe-rust
 ```
 
-Das Ziel faehrt den echten HTTP-Endpunkt mit echtem checkESt durch und macht aus **jedem**
-uebersprungenen Test ein exit != 0 (`tests/skip_ist_rot.py`). Ohne ERiC oder ohne
-Herstellerkennung endet es rot statt mit `1 passed, 2 skipped` — genau darin liegt der
+Das Ziel faehrt den echten HTTP-Endpunkt mit echtem checkESt durch und macht jeden anderen Lauf
+als genau einen bestandenen Test zu exit != 0. Ohne ERiC oder ohne
+Herstellerkennung endet es rot statt gruen — genau darin liegt der
 Unterschied zu einem gruenen CI-Lauf. Voraussetzungen:
 
 1. ERiC-Auslieferung vorhanden, `ERIC_DIR` gesetzt (Default `~/02_Software/eric`).
@@ -135,12 +133,12 @@ Unterschied zu einem gruenen CI-Lauf. Voraussetzungen:
 
 **Kein Versand.** Der Pfad ruft `EricBearbeiteVorgang` mit `ERIC_VALIDIERE` auf (ohne
 `ERIC_SENDE`), `cryptoParameter` und `serverantwortXmlPuffer` bleiben NULL — die amtliche
-Plausibilitaetspruefung laeuft rein lokal. Nachgemessen mit `strace`: im ganzen Lauf kein
-einziger Netz-Syscall ausserhalb von `127.0.0.1` (dem Testserver des Durchstichs).
-`elster/versand.py` (mit `ERIC_SENDE`) wird von diesem Ziel nicht geladen.
+Plausibilitaetspruefung laeuft rein lokal. Das Versand-Ziel `taxgraph-versand` (`rust/versand`, mit
+`ERIC_SENDE`) startet dieses Ziel nicht. (Fuer den frueheren Python-Durchstich ist mit `strace` gemessen:
+kein Netz-Syscall ausserhalb von `127.0.0.1`; fuer den Rust-Lauf ist das nicht gemessen.)
 
-**Der Rust-Dienst hat sein eigenes Ziel**: `make abgabeweg-freigabe-rust`. Es laedt die ID wie das
-Python-Ziel aus der `.env`, startet `taxgraph-api` als Prozess und prueft nur (kein Versand). Die CI
+**Was das Ziel tut**: `make abgabeweg-freigabe-rust` laedt die ID aus der `.env`, startet `taxgraph-api`
+als Prozess und prueft nur (kein Versand). Die CI
 laeuft ohne den echten Test (`#[ignore]`) und deckt nur die Verdrahtung: das Make-Ziel, `--ignored`, den
 Testnamen und das `#[ignore]` am Test. `checkESt` selbst prueft die CI nicht.
 

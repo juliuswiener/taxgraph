@@ -1,4 +1,4 @@
-//! V2 (Gegenstueck zu `tests/test_einreichen_durchstich.py` und `make abgabeweg-freigabe`): `POST
+//! V2 (Ersatz fuer `tests/test_einreichen_durchstich.py` und `make abgabeweg-freigabe`, beide mit L2 geloescht): `POST
 //! /fall/{id}/einreichen` ueber einen ECHTEN Server-Prozess (`taxgraph-api`, echter TCP-Socket) mit der
 //! ECHTEN ERiC-Bibliothek und der ECHTEN Hersteller-ID. Nichts ist ersetzt: Fall und Ereignisse gehen
 //! ueber die Routen, das XML baut der Dienst, `checkESt` prueft es.

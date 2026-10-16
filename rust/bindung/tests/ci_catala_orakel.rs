@@ -3,8 +3,8 @@
 //! `rust/catala-sys/orakel/orakel.txt` haelt erzeugte Eingaben samt Ergebnis des Catala-INTERPRETERS; der Rust-Test
 //! `catala-sys/tests/catala_orakel.rs` spielt sie gegen das eingecheckte C-Backend ab. Der Job erzeugt die Datei neu und
 //! vergleicht mit dem Stand im Repo: eine Regel- oder Generatoraenderung ohne neu erzeugte Datei macht ihn rot. Er ist der
-//! Ersatz der gelaufenen Parity-Suiten und muss die Python-Suite (Loeschstufe L2) ueberleben; deshalb steht er eigenstaendig
-//! neben `catala-toolchain`. Dieser Test liest nur die Datei und haelt fest, was den Job wirkungslos machen wuerde:
+//! Ersatz der gelaufenen Parity-Suiten und hat die Python-Suite (Loeschstufe L2) ueberlebt; der Job `catala-toolchain`
+//! neben ihm fiel mit L2. Dieser Test liest nur die Datei und haelt fest, was den Job wirkungslos machen wuerde:
 //!
 //! - der Job existiert, ist nicht mit `continue-on-error` entschaerft und hat kein `if` (ein uebersprungener Job ist nicht rot);
 //! - genau ein Schritt ruft `orakel_erzeugen` auf, ohne `if`, ohne `continue-on-error`, mit `set -e`, ohne `|| true`, ohne `exit`;

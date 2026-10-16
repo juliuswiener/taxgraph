@@ -8,8 +8,8 @@
 //! eine Erwartung je Fall, eindeutige Fall-IDs.
 //!
 //! **Was er nicht prueft: den WERT.** Dass `tarifliche_est` 8 Euro sind oder `festzusetzende_est` 6629,
-//! entscheidet weiterhin allein `make golden` (Python, `golden/golden_lauf.py` gegen die Catala-Bibliothek).
-//! Dafuer gibt es keinen Rust-Pruefer (Befund 6 — das ist eine eigene Entscheidung, kein Anschluss an diesen Test).
+//! entschied zur Zeit des Audits allein `make golden` (Python, `golden/golden_lauf.py` gegen die Catala-Bibliothek).
+//! Seit L3 prueft `rust/engine/tests/golden_werte.rs` den Wert; `make golden` ruft ihn zusammen mit diesem Test.
 //!
 //! Die Python-Seite liest `erwartung` schon: `golden/golden_lauf.py` (Wert gegen die Catala-Bibliothek)
 //! und `tests/test_einheiten.py` (Key-Konvention `*_cent` -> Cent). Beide lesen `golden/cases/*.yaml`.
