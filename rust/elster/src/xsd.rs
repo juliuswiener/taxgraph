@@ -751,8 +751,9 @@ mod tests {
     /// `base`-Kette.
     ///
     /// ponytail: ohne `xs:choice`/`xs:all`/`xs:group`/`ref`/Inline-`complexType` — 0 Vorkommen in
-    /// E10 2020-2025 und E77 2021-2025 (gemessen 2026-10-02), diese Zweige bleiben ungeprueft.
-    /// Bringt ein neues Schema eins, hier ein Vorkommen ergaenzen.
+    /// E10 2020-2025 und E77 2021-2025 (gemessen 2026-10-02). `choice`, `all`, `ref`, `<!DOCTYPE>` und
+    /// `xs:include` auf eine fehlende Datei prueft je eine eigene Probe weiter unten (d-26); `xs:group` und
+    /// Inline-`complexType` bleiben ungeprueft. Bringt ein neues Schema eins, hier ein Vorkommen ergaenzen.
     const MINI_XSD: &str = r#"<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:element name="E10" type="E10CType"/>
   <xs:complexType name="E10CType">
