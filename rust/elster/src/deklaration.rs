@@ -3454,6 +3454,7 @@ mod tests {
         // Abweichung Nr. 79: der Text einer unbeantworteten Rueckfrage nennt, dass keine Ja/Nein-Antwort da ist, das Merkmal des Falls
         // und die Sperre. Er ist nie der Text des Ja.
         const UNBEANTWORTET: &str = "nicht mit Ja oder Nein beantwortet";
+        const SPERRE_BIS_ANTWORT: &str = "Die Abgabe ist gesperrt, bis du die Frage beantwortest";
         for partner in [false, true] {
             let s = if partner { "_partner" } else { "" };
             let fremd = if partner { "" } else { "_partner" };
@@ -3504,7 +3505,7 @@ mod tests {
                             let g = gesperrt[0];
                             assert!(g.contains(UNBEANTWORTET), "{wo}: der Text nennt die fehlende Antwort nicht: {g}");
                             assert!(g.contains(merkmal), "{wo}: der Text nennt das Merkmal {merkmal} nicht: {g}");
-                            assert!(g.contains("gesperrt"), "{wo}: der Text nennt die Sperre nicht: {g}");
+                            assert!(g.contains(SPERRE_BIS_ANTWORT), "{wo}: der Text nennt die Sperre bis zur Antwort nicht: {g}");
                             assert_ne!(g, text, "{wo}: der Text ist der des Ja");
                         }
                         _ => assert!(gesperrt.is_empty(), "{wo}: {gesperrt:?}"),
@@ -3582,7 +3583,7 @@ mod tests {
                 e.grund.starts_with("Versorgungsbezüge über 0 Euro")
                     && e.grund.contains("nicht mit Ja oder Nein beantwortet")
                     && e.grund.contains(merkmal)
-                    && e.grund.contains("gesperrt"),
+                    && e.grund.contains("Die Abgabe ist gesperrt, bis du die Frage beantwortest"),
                 "{}: der Text der fehlenden Antwort ist unvollstaendig: {}",
                 e.feld_id,
                 e.grund

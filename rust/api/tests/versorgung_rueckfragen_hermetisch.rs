@@ -304,7 +304,7 @@ async fn ja_sperrt_die_abgabe_und_nein_gibt_sie_frei() {
         for e in eintraege {
             let grund = e["grund"].as_str().unwrap();
             assert!(
-                grund.contains("nicht mit Ja oder Nein beantwortet") && grund.contains("gesperrt"),
+                grund.contains("nicht mit Ja oder Nein beantwortet") && grund.contains("Die Abgabe ist gesperrt, bis du die Frage beantwortest"),
                 "{}: der Grund nennt die fehlende Antwort und die Sperre nicht: {grund}",
                 e["feld_id"]
             );
