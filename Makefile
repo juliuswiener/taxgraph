@@ -33,7 +33,7 @@ tests:
 ## Steuerdaten liegen nicht mehr im Projektverzeichnis (Entscheidung zum Audit-Punkt
 ## verschluesselung-steuerdaten-im-klartext). Der Wert MUSS mit Konfig::aus_env (rust/api/src/konfig.rs)
 ## uebereinstimmen — laufen die beiden auseinander, sichert `make backup` ein leeres Verzeichnis
-## und meldet Erfolg. Das prueft kein Test mehr: das Python-Gegenstueck fiel mit L2, und backup_restore_rundlauf.rs gibt den Pfad vor.
+## und meldet Erfolg. Das prueft rust/api/tests/datenwurzel.rs::make_backup_sichert_den_ordner_den_der_dienst_benutzt (`make -n backup` gegen Konfig::aus_env, alle drei Stufen).
 ##
 ## Die Reihenfolge ist DREISTUFIG und muss die von Konfig::aus_env sein: $TAXGRAPH_DATEN, dann
 ## $XDG_DATA_HOME, dann ~/.local/share. Bis 2026-10-01 fehlte die erste Stufe hier: mit

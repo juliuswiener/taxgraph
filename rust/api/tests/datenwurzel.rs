@@ -15,8 +15,12 @@
 //!
 //! Eigene Testdatei, weil dieser Test die Umgebung setzt — in einem gemeinsamen Binaer liefe er
 //! gegen jeden Nachbartest, der `aus_env()` liest.
+//!
+//! Am Ende steht die Makefile-Haelfte desselben Python-Tests: `make backup` rechnet den Datenordner
+//! wie `Konfig::aus_env` (`make_backup_sichert_den_ordner_den_der_dienst_benutzt`).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
+use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use api::konfig::Konfig;
@@ -281,4 +285,92 @@ fn der_dienst_legt_akte_und_protokoll_an_denselben_ort() {
         0,
         "das Heimatverzeichnis wurde beschrieben (das echte Nutzerprotokoll laege dort)"
     );
+}
+
+// ---------------------------------------------------------------------------------------------
+// `make backup` sichert den Ordner, den der Dienst benutzt (Makefile-Haelfte von
+// `tests/test_datenwurzel_ausserhalb_repo.py`, die mit L2 ohne Ersatz fiel)
+//
+// Das Makefile rechnet `FAELLE_ROOT` selbst (`TAXGRAPH_DATEN`, dann `XDG_DATA_HOME`, dann
+// `$HOME/.local/share`, plus `/taxgraph`), der Dienst rechnet denselben Ordner in `Konfig::aus_env`.
+// Laufen beide auseinander, sichert `make backup` einen leeren Ordner und meldet Erfolg (so bis
+// 2026-10-01: `TAXGRAPH_DATEN` fehlte im Makefile). `make -n` fuehrt nichts aus; `FAELLE_ROOT` und
+// `AUTH_USERS` fehlen auf der Kommandozeile und in der Umgebung, sonst schluege der Aufruf die Rechnung tot.
+// ---------------------------------------------------------------------------------------------
+
+/// Der Ordner hinter `-C` vor dem Operanden `faelle` im `tar`-Befehl von `make -n backup`.
+fn makefile_sichert(sicherung: &Path) -> PathBuf {
+    let makefile = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../Makefile")
+        .canonicalize()
+        .unwrap();
+    let cwd = sicherung.join("cwd");
+    std::fs::create_dir_all(&cwd).unwrap();
+    let aus = std::process::Command::new("make")
+        .args(["-n", "backup", "-C"])
+        .arg(&cwd)
+        .arg("-f")
+        .arg(&makefile)
+        .arg(format!("BACKUP_DIR={}", sicherung.join("archive").display()))
+        .env_remove("FAELLE_ROOT")
+        .env_remove("AUTH_USERS")
+        .output()
+        .unwrap();
+    assert!(aus.status.success(), "{}", String::from_utf8_lossy(&aus.stderr));
+    let text = String::from_utf8(aus.stdout).unwrap();
+    // Der Befehl geht ueber drei Zeilen (`\`-Fortsetzung); die Woerter ab `tar` genuegen.
+    let ab = text.find("tar czf").unwrap_or_else(|| panic!("kein tar: {text}"));
+    let woerter: Vec<&str> = text[ab..].split_whitespace().collect();
+    let stelle = woerter
+        .windows(3)
+        .find(|w| w[0] == "-C" && w[2] == "faelle")
+        .unwrap_or_else(|| panic!("kein `-C <ordner> faelle` im tar-Befehl: {text}"));
+    PathBuf::from(stelle[1])
+}
+
+/// Der Ordner, den der Dienst bei dieser Umgebung benutzt: der Elternordner von `faelle`.
+fn dienst_ordner() -> PathBuf {
+    Konfig::aus_env().faelle.parent().unwrap().to_path_buf()
+}
+
+/// Alle drei Stufen der Rechnung: `TAXGRAPH_DATEN` gewinnt vor `XDG_DATA_HOME`, `XDG_DATA_HOME` bekommt das
+/// Segment `taxgraph`, ohne beide gilt `$HOME/.local/share/taxgraph`. Die erwarteten Werte stehen hier,
+/// damit zwei gleich falsche Rechnungen nicht als gleich durchgehen.
+#[test]
+fn make_backup_sichert_den_ordner_den_der_dienst_benutzt() {
+    let probe = tempfile::tempdir().unwrap();
+    let heim = probe.path().join("heim");
+    let eigen = probe.path().join("eigen");
+    let xdg = probe.path().join("xdg");
+    let heim_s = heim.to_str().unwrap();
+
+    // 1. TAXGRAPH_DATEN gesetzt, XDG_DATA_HOME auch: TAXGRAPH_DATEN gewinnt, ohne Segment `taxgraph`.
+    let u = Umgebung::neue(&[
+        ("TAXGRAPH_DATEN", Some(eigen.to_str().unwrap())),
+        ("XDG_DATA_HOME", Some(xdg.to_str().unwrap())),
+        ("HOME", Some(heim_s)),
+    ]);
+    assert_eq!(dienst_ordner(), eigen);
+    assert_eq!(makefile_sichert(probe.path()), eigen, "Stufe 1: TAXGRAPH_DATEN");
+    drop(u);
+
+    // 2. Nur XDG_DATA_HOME: dazu das Segment `taxgraph`.
+    let u = Umgebung::neue(&[
+        ("TAXGRAPH_DATEN", None),
+        ("XDG_DATA_HOME", Some(xdg.to_str().unwrap())),
+        ("HOME", Some(heim_s)),
+    ]);
+    assert_eq!(dienst_ordner(), xdg.join("taxgraph"));
+    assert_eq!(makefile_sichert(probe.path()), xdg.join("taxgraph"), "Stufe 2: XDG_DATA_HOME");
+    drop(u);
+
+    // 3. Keine von beiden: `$HOME/.local/share/taxgraph`.
+    let _u = Umgebung::neue(&[
+        ("TAXGRAPH_DATEN", None),
+        ("XDG_DATA_HOME", None),
+        ("HOME", Some(heim_s)),
+    ]);
+    let soll = heim.join(".local/share/taxgraph");
+    assert_eq!(dienst_ordner(), soll);
+    assert_eq!(makefile_sichert(probe.path()), soll, "Stufe 3: $HOME/.local/share");
 }
