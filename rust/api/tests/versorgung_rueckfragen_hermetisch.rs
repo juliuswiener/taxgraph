@@ -471,6 +471,9 @@ async fn eine_unbeantwortete_frage_sperrt_genau_dann_wenn_sie_in_der_fragenliste
 /// Die Frage des Gesamtlaufs nach dem Grad der Behinderung (Abweichung Nr. 80). Nur Person A: `gesamt` fuehrt keinen Bezug des Ehegatten.
 const GRAD: &str = "versorgung_grad_der_behinderung";
 
+/// Eine Lage der Fragenliste: Name, Akte, ersetzte Felder, Ereignisse, steht die Frage nach dem Grad in der Liste.
+type GradLage = (&'static str, &'static str, Vec<(&'static str, Value)>, Vec<(&'static str, Value, bool)>, bool);
+
 /// Der Bezug von Person A mit Art `altersgrenze_sonstige` und `alter` Jahren bei Beginn, die vier Rueckfragen mit Nein.
 fn altersgrenzen_bezug_a(euro: i64, alter: i64) -> Vec<(&'static str, Value, bool)> {
     let mut p = bezug_a(euro, true);
@@ -491,7 +494,7 @@ fn altersgrenzen_bezug_a(euro: i64, alter: i64) -> Vec<(&'static str, Value, boo
 #[tokio::test]
 async fn der_gesamtlauf_fragt_den_grad_nur_bei_einem_altersgrenzen_bezug() {
     let einzel = vec![("veranlagung", json!("einzel"))];
-    let lagen: Vec<(&str, &str, Vec<(&str, Value)>, Vec<(&'static str, Value, bool)>, bool)> = vec![
+    let lagen: Vec<GradLage> = vec![
         ("gesamt, Altersgrenzen-Bezug A", "gesamt.json", einzel.clone(), altersgrenzen_bezug_a(30_000, 59), true),
         ("gesamt, beamtenrechtlicher Bezug A", "gesamt.json", einzel.clone(), bezug_a(30_000, true), false),
         ("gesamt, Altersgrenzen-Bezug 0", "gesamt.json", einzel.clone(), altersgrenzen_bezug_a(0, 59), false),
