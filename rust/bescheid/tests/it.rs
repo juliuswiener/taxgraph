@@ -36,6 +36,8 @@ mod einreichung_e2e;
 mod feld_kennung_gate;
 #[path = "feste_zahl.rs"]
 mod feste_zahl;
+#[path = "gesamt_mischfaelle_hermetisch.rs"]
+mod gesamt_mischfaelle_hermetisch;
 #[path = "gewinn_und_vorsorge_einreichung_hermetisch.rs"]
 mod gewinn_und_vorsorge_einreichung_hermetisch;
 #[path = "gewst_zu_zahlen_wert.rs"]
