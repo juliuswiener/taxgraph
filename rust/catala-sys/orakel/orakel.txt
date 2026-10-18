@@ -1,5 +1,5 @@
 # catala-orakel v1 -- NICHT von Hand aendern, `make catala-orakel` erzeugt die Datei
-# regeln-hash: 2e6ae0978a5d550a1793f2af5b43c5b3452a45ea1cd1b06043fabecf0c4998db
+# regeln-hash: e63647215c4ccb2a626a4e9b66ec389e236a99604339c4f383ea08239e95d8b3
 # catala: 1.2.1
 # seed: 20261011
 # funktion | eingaben (Cent, ganze Zahl, true/false, Jahr, Bruch) | ausgaben (Cent) oder FEHLER

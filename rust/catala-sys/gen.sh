@@ -40,7 +40,7 @@ find "$BUILD_ROOT/rules/estg" -name '*.catala_en' -exec \
 cat > "$BUILD_ROOT/clerk.toml" <<'TOML'
 [project]
 # One entry per directory that declares Catala modules (module resolution is not recursive).
-# All 27 rule directories under rules/estg are listed so cross-module `> Using` resolves, even
+# All 26 rule directories under rules/estg are listed so cross-module `> Using` resolves, even
 # though the "rust-c" target below only asks for the 20 modules the Rust port needs today.
 include_dirs = [
   "rules/estg/p07_afa_ueberhangsjahr",
@@ -49,7 +49,6 @@ include_dirs = [
   "rules/estg/p32a",
   "rules/estg/p04_arbeitszimmer_homeoffice",
   "rules/estg/p09_entfernungspauschale",
-  "rules/estg/p32_kinderfreibetrag",
   "rules/estg/p33a_unterhalt",
   "rules/estg/p33",
   "rules/estg/p35a",

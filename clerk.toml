@@ -8,7 +8,6 @@ include_dirs = [
   "rules/estg/p32a",
   "rules/estg/p04_arbeitszimmer_homeoffice",
   "rules/estg/p09_entfernungspauschale",
-  "rules/estg/p32_kinderfreibetrag",
   "rules/estg/p33a_unterhalt",
   "rules/estg/p33",
   "rules/estg/p35a",
@@ -39,6 +38,6 @@ target_dir = "_target"
 # SpendenAbzug (§ 10b) sind reine Teilregeln, vom Accessor aufgerufen und in p32a eingespeist.
 [[target]]
 name = "p32a-python"
-modules = ["Einkommensteuertarif", "Entfernungspauschale", "Arbeitszimmer_homeoffice", "Haushaltsnahe", "SpendenAbzug", "AgbAbzug", "Kirchensteuerabzug", "ZumutbareBelastung", "Familienleistungsausgleich", "Altersentlastungsbetrag", "Entlastungsbetrag", "VerbilligteVermietungWk", "KrankenPflegeVorsorge", "Berufsausbildungsaufwendungen", "BetriebsFreibetrag", "EuerGewinn", "GwgSofortabzug", "Verlustvortrag", "MitunternehmerEinkuenfte", "ErmaessigterDurchschnittssatz", "Afa_ueberhangsjahr", "Energetische_massnahmen", "Familie1_euer_unternehmer", "Familie2_persges_kommanditist", "Familie3_dba_freistellung", "Familie4_dba_anrechnung", "Kinderfreibetraege", "Solzg", "Unterhaltsabzug", "Zuflussabfluss"]
+modules = ["Einkommensteuertarif", "Entfernungspauschale", "Arbeitszimmer_homeoffice", "Haushaltsnahe", "SpendenAbzug", "AgbAbzug", "Kirchensteuerabzug", "ZumutbareBelastung", "Familienleistungsausgleich", "Altersentlastungsbetrag", "Entlastungsbetrag", "VerbilligteVermietungWk", "KrankenPflegeVorsorge", "Berufsausbildungsaufwendungen", "BetriebsFreibetrag", "EuerGewinn", "GwgSofortabzug", "Verlustvortrag", "MitunternehmerEinkuenfte", "ErmaessigterDurchschnittssatz", "Afa_ueberhangsjahr", "Energetische_massnahmen", "Familie1_euer_unternehmer", "Familie2_persges_kommanditist", "Familie3_dba_freistellung", "Familie4_dba_anrechnung", "Solzg", "Unterhaltsabzug", "Zuflussabfluss"]
 backends = ["python"]
 include_sources = true
