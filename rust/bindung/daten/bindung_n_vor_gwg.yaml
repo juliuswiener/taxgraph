@@ -667,6 +667,7 @@ bindungen:
       zitatanker: "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag nach Satz 8"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
   - feld_id: vpf_steuerfreie_erstattung_betrag
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: steuerfreie_erstattung_betrag}
     typ: cent
     einheit: EUR
@@ -1133,7 +1134,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie viel hast du selbst in die gesetzliche Rentenversicherung eingezahlt (dein Anteil vom Lohn)?"
+    fragetext_laie: "Wie viel hast du selbst in die gesetzliche Rentenversicherung oder in ein Versorgungswerk eingezahlt (dein Anteil vom Lohn)?"
     hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung in Zeile 23."
     beispielwert: 372000
     herkunft_slots: ["Lohnsteuerbescheinigung Nr. 23 a/b"]
@@ -1151,7 +1152,7 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie viel hat dein Arbeitgeber steuerfrei zu deiner Rente dazugegeben?"
+    fragetext_laie: "Wie viel hat dein Arbeitgeber steuerfrei zu deiner Rente oder zu deinem Versorgungswerk dazugegeben?"
     hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung in Zeile 22."
     beispielwert: 372000
     herkunft_slots: ["Lohnsteuerbescheinigung Nr. 22 a/b"]
