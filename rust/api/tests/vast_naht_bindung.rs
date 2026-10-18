@@ -383,11 +383,11 @@ const ERWARTET_NOCH_OFFEN: usize = 8;
 #[test]
 fn beleg_felder_mit_vast_zuordnung_stehen_nur_bis_zur_ratsche_ungeprueft_in_der_liste() {
     // KONTROLLE a: ein gemapptes Feld wird nie gemeldet.
-    assert!(ungeprueft_trotz_zuordnung(&["Besteuerungsgrund/BruttoArbLohn"], &NICHT_UNTERSUCHT).is_empty());
+    assert_eq!(ungeprueft_trotz_zuordnung(&["Besteuerungsgrund/BruttoArbLohn"], &NICHT_UNTERSUCHT).len(), 0);
     // KONTROLLE b: ein Eintrag der Liste wird gefunden, ein erfundener Pfad nicht.
     let erster = NICHT_UNTERSUCHT[0].0;
     assert_eq!(ungeprueft_trotz_zuordnung(&[erster], &NICHT_UNTERSUCHT), vec![erster]);
-    assert!(ungeprueft_trotz_zuordnung(&["Besteuerungsgrund/ErfundenX"], &NICHT_UNTERSUCHT).is_empty());
+    assert_eq!(ungeprueft_trotz_zuordnung(&["Besteuerungsgrund/ErfundenX"], &NICHT_UNTERSUCHT).len(), 0);
     let offen = ungeprueft_trotz_zuordnung(&WIRKT_LAUT_VAST, &NICHT_UNTERSUCHT);
     let ausserhalb: Vec<&str> = offen.iter().copied().filter(|p| !NOCH_OFFEN.contains(p)).collect();
     assert!(
@@ -422,7 +422,7 @@ fn der_steuerfreie_verpflegungszuschuss_geht_in_das_verpflegungsfeld() {
     assert_eq!(saetze[0].wert, 12_000, "120,00 EUR sind 12000 Cent");
     assert!(saetze[0].kategorie.contains("StFreiVerpfleg"), "die Herkunft nennt das Element: {}", saetze[0].kategorie);
     // KONTROLLE: ohne das Element kommt kein Satz (kein Nullwert aus dem Nichts).
-    assert!(aus_lstb(&BTreeMap::new()).unwrap().is_empty());
+    assert_eq!(aus_lstb(&BTreeMap::new()).unwrap().len(), 0);
 }
 
 /// Mit Schema (nur lokal): JEDES Beleg-Feld der Lohnsteuerbescheinigung ist gemappt (`LSTB`, `LSTB_SUMMEN`) oder steht in einer der
