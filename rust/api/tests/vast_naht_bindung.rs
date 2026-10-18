@@ -281,6 +281,83 @@ fn die_lueckenlisten_sind_in_sich_stimmig() {
     }
 }
 
+/// Beleg-Felder, die die Zuordnung der Finanzverwaltung in ein Erklaerungsfeld fuellt (`ERiC` 44.2.4.0,
+/// `Jahresdokumentation_VAST_Vorberechnungen_2025.ods`, Blaetter `VaSt_LStB - Regeln` und `VaSt_LStB_Gesamt - Regeln`; Ticket 40). Ein solches
+/// Feld darf nicht ungeprueft in [`NICHT_UNTERSUCHT`] stehen. "Wirkt" heisst hier: die Finanzverwaltung fuellt damit ein Erklaerungsfeld, nicht:
+/// ein Euro-Betrag ist gerechnet. Die Liste ist von Hand aus den Regelzeilen abgeleitet und aendert sich nur mit einem neuen Schema-Jahr.
+const WIRKT_LAUT_VAST: [&str; 13] = [
+    "Besteuerungsgrund/ErmStBetrMKalJahr",
+    "Besteuerungsgrund/ErmStVBezMKalJahr/Wert",
+    "Besteuerungsgrund/ErmStVBezMKalJahr/Jahr",
+    "Besteuerungsgrund/StFreiArbLohnATE",
+    "Besteuerungsgrund/ArbgAnteilBerufsVers",
+    "Besteuerungsgrund/ArbnAnteilBerufsVers",
+    "Besteuerungsgrund/StFreiPrKrankVers",
+    "Besteuerungsgrund/StFreiGePflegVers",
+    "Besteuerungsgrund/StFreiArbgLeistg",
+    "Besteuerungsgrund/PauschArbgLeistg",
+    "Besteuerungsgrund/StFreiFahrtKAusw",
+    "Besteuerungsgrund/StFreiVerpfleg",
+    "Besteuerungsgrund/StFreiDopHaushalt",
+];
+
+fn ungeprueft_trotz_zuordnung<'a>(wirkt: &[&'a str], offen: &[(&str, &str)]) -> Vec<&'a str> {
+    wirkt.iter().copied().filter(|p| offen.iter().any(|(o, _)| o == p)).collect()
+}
+
+/// Ratsche: die Teilmenge von [`WIRKT_LAUT_VAST`], die heute noch ungeprueft in [`NICHT_UNTERSUCHT`] steht. Sie darf nur schrumpfen: wer ein
+/// Feld abbildet oder mit Grund nach [`NICHT_GEMAPPT`] verschiebt, streicht es hier UND in [`NICHT_UNTERSUCHT`] und senkt
+/// [`ERWARTET_NOCH_OFFEN`]. Leer ist der Endzustand von Ticket 40.
+const NOCH_OFFEN: &[&str] = &[
+    "Besteuerungsgrund/ErmStBetrMKalJahr",
+    "Besteuerungsgrund/ErmStVBezMKalJahr/Wert",
+    "Besteuerungsgrund/ErmStVBezMKalJahr/Jahr",
+    "Besteuerungsgrund/StFreiArbLohnATE",
+    "Besteuerungsgrund/ArbgAnteilBerufsVers",
+    "Besteuerungsgrund/ArbnAnteilBerufsVers",
+    "Besteuerungsgrund/StFreiPrKrankVers",
+    "Besteuerungsgrund/StFreiGePflegVers",
+    "Besteuerungsgrund/StFreiArbgLeistg",
+    "Besteuerungsgrund/PauschArbgLeistg",
+    "Besteuerungsgrund/StFreiFahrtKAusw",
+    "Besteuerungsgrund/StFreiVerpfleg",
+    "Besteuerungsgrund/StFreiDopHaushalt",
+];
+const ERWARTET_NOCH_OFFEN: usize = 13;
+
+/// Kein neues Beleg-Feld mit Zuordnung kommt ungeprueft in die Liste: alles, was [`NICHT_UNTERSUCHT`] noch von [`WIRKT_LAUT_VAST`] haelt,
+/// steht in der Ratsche [`NOCH_OFFEN`].
+#[test]
+fn beleg_felder_mit_vast_zuordnung_stehen_nur_bis_zur_ratsche_ungeprueft_in_der_liste() {
+    // KONTROLLE a: ein gemapptes Feld wird nie gemeldet.
+    assert!(ungeprueft_trotz_zuordnung(&["Besteuerungsgrund/BruttoArbLohn"], &NICHT_UNTERSUCHT).is_empty());
+    // KONTROLLE b: ein Eintrag der Liste wird gefunden, ein erfundener Pfad nicht.
+    let erster = NICHT_UNTERSUCHT[0].0;
+    assert_eq!(ungeprueft_trotz_zuordnung(&[erster], &NICHT_UNTERSUCHT), vec![erster]);
+    assert!(ungeprueft_trotz_zuordnung(&["Besteuerungsgrund/ErfundenX"], &NICHT_UNTERSUCHT).is_empty());
+    let offen = ungeprueft_trotz_zuordnung(&WIRKT_LAUT_VAST, &NICHT_UNTERSUCHT);
+    let ausserhalb: Vec<&str> = offen.iter().copied().filter(|p| !NOCH_OFFEN.contains(p)).collect();
+    assert!(
+        ausserhalb.is_empty(),
+        "{} Beleg-Felder mit Zuordnung in ein Erklaerungsfeld stehen ungeprueft in NICHT_UNTERSUCHT und nicht in der Ratsche NOCH_OFFEN: {ausserhalb:?}",
+        ausserhalb.len()
+    );
+}
+
+/// Die Ratsche selbst stimmt: genau die erwartete Zahl, kein Pfad doppelt, jeder Pfad hat eine Zuordnung und steht noch ungeprueft in der
+/// Liste (keine Karteileiche: wer ein Feld aus [`NICHT_UNTERSUCHT`] nimmt, nimmt es auch hier heraus).
+#[test]
+fn die_ratsche_noch_offen_ist_in_sich_stimmig() {
+    assert_eq!(NOCH_OFFEN.len(), ERWARTET_NOCH_OFFEN, "die Ratsche NOCH_OFFEN hat nicht die erwartete Zahl an Pfaden");
+    let einmalig: BTreeSet<&str> = NOCH_OFFEN.iter().copied().collect();
+    assert_eq!(einmalig.len(), NOCH_OFFEN.len(), "ein Pfad steht doppelt in NOCH_OFFEN");
+    let ohne_zuordnung: Vec<&str> = NOCH_OFFEN.iter().copied().filter(|p| !WIRKT_LAUT_VAST.contains(p)).collect();
+    assert!(ohne_zuordnung.is_empty(), "NOCH_OFFEN traegt Pfade ohne Zuordnung in WIRKT_LAUT_VAST: {ohne_zuordnung:?}");
+    let offen = ungeprueft_trotz_zuordnung(&WIRKT_LAUT_VAST, &NICHT_UNTERSUCHT);
+    let leichen: Vec<&str> = NOCH_OFFEN.iter().copied().filter(|p| !offen.contains(p)).collect();
+    assert!(leichen.is_empty(), "NOCH_OFFEN traegt Pfade, die nicht mehr in NICHT_UNTERSUCHT stehen: {leichen:?}");
+}
+
 /// Mit Schema (nur lokal): JEDES Beleg-Feld der Lohnsteuerbescheinigung ist gemappt (`LSTB`, `LSTB_SUMMEN`) oder steht in einer der
 /// beiden Listen. Ein neues Element im Schema faellt sonst beim Import ohne Meldung weg (Abweichung Nr. 69, Verlust (ii)).
 #[test]
