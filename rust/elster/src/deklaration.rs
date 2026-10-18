@@ -265,8 +265,10 @@ const VERSORGUNG_SPERRE: &str = "Versorgungsbezüge über 0 Euro: Die Erklärung
 /// ist, dessen Person die Altersgrenze (63 Jahre, bei Schwerbehinderung 60) aber im Veranlagungsjahr oder davor erreicht hat
 /// (Ring-Wert [`VERSORGUNG_ALTERSGRENZE`] steht auf [`ALTERSGRENZE_DARUEBER`]). Ab dem Zeitpunkt der Vollendung ist der Bezug ein
 /// Versorgungsbezug (§ 19 Abs. 2 S. 2 Nr. 2 `EStG`), dem Zeile 11 und der Versorgungsfreibetrag in der Erklaerung fehlen. Das Feld
-/// des Geburtsjahres, das die Grenze entscheidet, kann auch unlesbar sein; auch dann sperrt die Abgabe.
-const VERSORGUNG_SPERRE_ALTERSGRENZE: &str = "Versorgungsbezüge über 0 Euro: Der Bezug begann vor der Altersgrenze (63 Jahre, bei Schwerbehinderung 60 Jahre), aber die Person hat die Altersgrenze im Veranlagungsjahr oder davor erreicht. Von da an ist der Bezug ein Versorgungsbezug, und Zeile 11 sowie der Versorgungsfreibetrag fehlen in der Erklärung. Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
+/// des Geburtsjahres, das die Grenze entscheidet, kann auch unlesbar sein; auch dann sperrt die Abgabe. Seit Abweichung Nr. 82 nennt
+/// der Text die Frage nach dem Grad der Behinderung (ein Grad unter 50 gibt die Grenze 63), bedingt, denn die Frage steht nicht immer
+/// in der Liste.
+const VERSORGUNG_SPERRE_ALTERSGRENZE: &str = "Versorgungsbezüge über 0 Euro: Der Bezug begann vor der Altersgrenze (63 Jahre, bei Schwerbehinderung 60 Jahre), aber die Person hat die Altersgrenze im Veranlagungsjahr oder davor erreicht. Von da an ist der Bezug ein Versorgungsbezug, und Zeile 11 sowie der Versorgungsfreibetrag fehlen in der Erklärung. Die Abgabe ist dafür gesperrt. Steht die Frage nach dem Grad der Behinderung noch offen, beantworte sie: Mit einem Grad unter 50 gilt die Grenze 63, und die Sperre entfällt, solange du 63 noch nicht erreicht hast. Sonst trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
 
 /// Nur Rust (Abweichung Nr. 65): die Ring-Werte der Altersgrenze, je Person, Text. `bescheid::deklaration::mit_ring_werten` setzt sie
 /// nur, wenn das Alters-Gate (Alter bei Beginn) nicht erfuellt ist: [`ALTERSGRENZE_LOHN`], wenn die Person die Altersgrenze erst
@@ -3209,6 +3211,24 @@ mod tests {
             let d = deklariere(&felder, &index, 2025, None).unwrap();
             let da = if partner { &d.person_b } else { &d.deklaration };
             assert!(kz.iter().all(|k| da.get(*k).is_none()), "Person {}: vorlaeufiger Ring-Wert: {da:?}", if partner { "B" } else { "A" });
+        }
+    }
+
+    /// Abweichung Nr. 82: der Text der Altersgrenze nennt die Frage nach dem Grad der Behinderung und sagt, dass ein Grad unter 50 die
+    /// Grenze 63 gibt (die Sperre faellt, solange die Person 63 noch nicht erreicht hat). Er sagt es bedingt ("Steht die Frage ... noch
+    /// offen"), denn die Frage steht nicht immer in der Liste. Die beiden anderen Texte des Bezugs nennen sie nicht: nur diese Sperre
+    /// haengt am Grad.
+    #[test]
+    fn der_sperrtext_der_altersgrenze_nennt_die_frage_nach_dem_grad_der_behinderung() {
+        let text = super::VERSORGUNG_SPERRE_ALTERSGRENZE;
+        assert!(
+            text.contains("Steht die Frage nach dem Grad der Behinderung noch offen")
+                && text.contains("Grad unter 50")
+                && text.contains("Grenze 63"),
+            "{text}"
+        );
+        for fremd in [super::VERSORGUNG_SPERRE, super::VERSORGUNG_SPERRE_BEGINN] {
+            assert!(!fremd.contains("Grad der Behinderung"), "{fremd}");
         }
     }
 
