@@ -548,7 +548,7 @@ async fn der_grad_der_gesamtfrage_hebt_die_sperre_der_altersgrenze_auf_oder_laes
     assert_eq!(gruende.len(), 1, "Grad fehlt: {gruende:?}");
     assert_eq!(gruende[0].0, A, "Grad fehlt");
     assert!(gruende[0].1.contains("im Veranlagungsjahr oder davor erreicht"), "Grad fehlt: {}", gruende[0].1);
-    // Abweichung Nr. 82: der Text, den der Nutzer unter dem Betrag liest, nennt die Frage, die die Sperre aufhebt.
+    // Abweichung Nr. 83: der Text, den der Nutzer unter dem Betrag liest, nennt die Frage, die die Sperre aufhebt.
     assert!(gruende[0].1.contains("Frage nach dem Grad der Behinderung"), "Grad fehlt, der Text nennt die Frage nicht: {}", gruende[0].1);
     assert!(fragen_ids(&d).await.iter().any(|f| f == GRAD), "die Frage nach dem Grad steht in der Liste");
 

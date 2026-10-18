@@ -265,7 +265,7 @@ const VERSORGUNG_SPERRE: &str = "Versorgungsbezüge über 0 Euro: Die Erklärung
 /// ist, dessen Person die Altersgrenze (63 Jahre, bei Schwerbehinderung 60) aber im Veranlagungsjahr oder davor erreicht hat
 /// (Ring-Wert [`VERSORGUNG_ALTERSGRENZE`] steht auf [`ALTERSGRENZE_DARUEBER`]). Ab dem Zeitpunkt der Vollendung ist der Bezug ein
 /// Versorgungsbezug (§ 19 Abs. 2 S. 2 Nr. 2 `EStG`), dem Zeile 11 und der Versorgungsfreibetrag in der Erklaerung fehlen. Das Feld
-/// des Geburtsjahres, das die Grenze entscheidet, kann auch unlesbar sein; auch dann sperrt die Abgabe. Seit Abweichung Nr. 82 nennt
+/// des Geburtsjahres, das die Grenze entscheidet, kann auch unlesbar sein; auch dann sperrt die Abgabe. Seit Abweichung Nr. 83 nennt
 /// der Text die Frage nach dem Grad der Behinderung (ein Grad unter 50 gibt die Grenze 63), bedingt, denn die Frage steht nicht immer
 /// in der Liste.
 const VERSORGUNG_SPERRE_ALTERSGRENZE: &str = "Versorgungsbezüge über 0 Euro: Der Bezug begann vor der Altersgrenze (63 Jahre, bei Schwerbehinderung 60 Jahre), aber die Person hat die Altersgrenze im Veranlagungsjahr oder davor erreicht. Von da an ist der Bezug ein Versorgungsbezug, und Zeile 11 sowie der Versorgungsfreibetrag fehlen in der Erklärung. Die Abgabe ist dafür gesperrt. Steht die Frage nach dem Grad der Behinderung noch offen, beantworte sie: Mit einem Grad unter 50 gilt die Grenze 63, und die Sperre entfällt, solange du 63 noch nicht erreicht hast. Sonst trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
@@ -3214,7 +3214,7 @@ mod tests {
         }
     }
 
-    /// Abweichung Nr. 82: der Text der Altersgrenze nennt die Frage nach dem Grad der Behinderung und sagt, dass ein Grad unter 50 die
+    /// Abweichung Nr. 83: der Text der Altersgrenze nennt die Frage nach dem Grad der Behinderung und sagt, dass ein Grad unter 50 die
     /// Grenze 63 gibt (die Sperre faellt, solange die Person 63 noch nicht erreicht hat). Er sagt es bedingt ("Steht die Frage ... noch
     /// offen"), denn die Frage steht nicht immer in der Liste. Die beiden anderen Texte des Bezugs nennen sie nicht: nur diese Sperre
     /// haengt am Grad.
