@@ -523,6 +523,77 @@ fn vast_py_norm(v: &Value) -> Value {
 /// sie angleicht, aendert diese Liste. Sie gelten nur, solange Rust von Python abweicht.
 const UNTERSTRICH_ABWEICHUNG: [&str; 4] = ["1__2", "1_", "_1", "1e1_0"];
 
+/// BEKANNTE ABWEICHUNG Nr. 81 (`rust/fixtures/README.md`): `ArbnAnteilRenVers` und `ArbgAnteilRenVers` stehen seit der berufsstaendischen
+/// Versorgung in `LSTB_SUMMEN` (zweiter Summand `ArbnAnteilBerufsVers`, `ArbgAnteilBerufsVers`, die Python nicht las). Fuer die Faelle mit
+/// einem der beiden Elemente gilt: die Betraege der beiden Ziele sind die von Python; ihr Herkunftstext hat die Form der Summen
+/// (`LStB: <Doku> (<Element>)`, Python: `LStB/<Element>: <Doku>`), und die Ziele stehen vor den 1:1-Feldern (Summen zuerst). Alles
+/// andere im Ergebnis ist unveraendert gegen Python, auch die Reihenfolge der uebrigen Saetze.
+const NR81_ZIELE: [(&str, &str); 2] = [
+    (
+        "vor_an_anteil_rv",
+        "LStB: Arbeitnehmeranteil zur gesetzlichen Rentenversicherung (ArbnAnteilRenVers)",
+    ),
+    (
+        "vor_ag_anteil_rv",
+        "LStB: Arbeitgeberanteil zur gesetzlichen Rentenversicherung (ArbgAnteilRenVers)",
+    ),
+];
+
+/// Stand des Fixtures: drei Faelle mit einem der beiden Elemente (Nr. 215, 220, 221 in `vast.lstb`).
+const NR81_FAELLE: usize = 3;
+
+fn nr81_abgleich(z: &mut Abgleich, was: &str, rust: &Value, py: &Value) {
+    let ist_ziel = |e: &Value| NR81_ZIELE.iter().any(|(f, _)| e["feld_id"] == *f);
+    let teile = |v: &Value| -> (Vec<Value>, Vec<Value>) {
+        v["ok"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .partition(|e| ist_ziel(e))
+    };
+    let ids = |v: &[Value]| -> Value {
+        let mut a: Vec<Value> = v.iter().map(|e| e["feld_id"].clone()).collect();
+        a.sort_by_key(ToString::to_string);
+        Value::Array(a)
+    };
+    let ((r_ziele, r_rest), (p_ziele, p_rest)) = (teile(rust), teile(py));
+    z.pruefe(
+        &format!("aus_lstb {was} (Rest ausser Nr. 81)"),
+        &Value::Array(r_rest),
+        &Value::Array(p_rest),
+    );
+    z.pruefe(
+        &format!("aus_lstb {was} (Ziele Nr. 81)"),
+        &ids(&r_ziele),
+        &ids(&p_ziele),
+    );
+    for p in &p_ziele {
+        let Some(r) = r_ziele.iter().find(|r| r["feld_id"] == p["feld_id"]) else {
+            continue; // fehlt: die Ziele-Pruefung oben hat es gemeldet
+        };
+        let soll = NR81_ZIELE
+            .iter()
+            .find(|(f, _)| p["feld_id"] == *f)
+            .unwrap()
+            .1;
+        z.pruefe(
+            &format!("aus_lstb {was} {} Betrag", p["feld_id"]),
+            &r["wert"],
+            &p["wert"],
+        );
+        z.pruefe(
+            &format!("aus_lstb {was} {} Herkunftstext (Nr. 81)", p["feld_id"]),
+            &r["kategorie"],
+            &json!(soll),
+        );
+        assert_ne!(
+            r["kategorie"], p["kategorie"],
+            "{was}: Rust stimmt jetzt mit Python ueberein, Abweichung Nr. 81 kuerzen"
+        );
+    }
+}
+
 #[test]
 fn vast_betraege_wie_orakel() {
     let v = &fixture()["vast"];
@@ -556,6 +627,7 @@ fn vast_betraege_wie_orakel() {
         );
     }
     assert_eq!(abweichend, UNTERSTRICH_ABWEICHUNG.len());
+    let mut nr81_faelle = 0;
     for (i, w) in v["lstb"].as_array().unwrap().iter().enumerate() {
         let werte: BTreeMap<String, String> = w
             .as_object()
@@ -565,12 +637,22 @@ fn vast_betraege_wie_orakel() {
             .collect();
         let rust =
             eingang::vast::aus_lstb(&werte).map_or_else(|e| vast_fehler(&e), |s| json!({"ok": s}));
+        if werte.contains_key("ArbnAnteilRenVers") || werte.contains_key("ArbgAnteilRenVers") {
+            nr81_abgleich(&mut z, &w.to_string(), &rust, &vast_py_norm(&py["lstb"][i]));
+            nr81_faelle += 1;
+            continue;
+        }
         z.pruefe(
             &format!("aus_lstb {w}"),
             &rust,
             &vast_py_norm(&py["lstb"][i]),
         );
     }
+    assert_eq!(
+        nr81_faelle,
+        NR81_FAELLE,
+        "die Zahl der aus_lstb-Faelle mit RenVers hat sich verschoben"
+    );
     for (i, l) in v["lersl"].as_array().unwrap().iter().enumerate() {
         let ls: Vec<eingang::vast::Leistung> = serde_json::from_value(l.clone()).unwrap();
         let rust =

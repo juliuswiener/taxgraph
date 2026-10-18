@@ -81,7 +81,7 @@ fn vast_elemente() -> BTreeSet<&'static str> {
 #[test]
 fn jedes_ziel_steht_in_der_bindung_und_ist_ein_cent_feld() {
     let z = ziele();
-    // KONTROLLE: die Schleife unten sieht Ziele (gemessen 2026-10-13: 9 verschiedene Felder aus 8 + 1 + 1 Eintraegen).
+    // KONTROLLE: die Schleife unten sieht Ziele (9 verschiedene Felder aus 6 + 3 + 1 Eintraegen, gemessen 2026-10-18; 2026-10-13: 8 + 1 + 1).
     assert!(z.len() >= 9, "nur {} Ziele gesehen: {z:?}", z.len());
     let fehlend: Vec<&str> = z.iter().copied().filter(|f| !index().contains_key(*f)).collect();
     assert!(fehlend.is_empty(), "Mapping zeigt auf Felder, die es in der Bindung nicht gibt: {fehlend:?}");
@@ -106,13 +106,54 @@ fn jedes_element_des_mappings_kommt_als_bestaetigter_cent_wert_im_store_an() {
     assert_eq!(gesehen, erwartet, "aus_lstb liefert nicht fuer jedes Ziel einen Satz");
 
     let mut store = Store::leer(2025, None);
-    let n = uebernehme(&mut store, &saetze, Some("2026-01-01T00:00:00Z"), Some(BindungNachschlag::neu(index()))).unwrap();
-    assert_eq!(n, saetze.len(), "die Bindung hat Saetze abgewiesen oder uebersprungen");
+    let angenommen = uebernehme(&mut store, &saetze, Some("2026-01-01T00:00:00Z"), Some(BindungNachschlag::neu(index()))).unwrap();
+    assert_eq!(angenommen, saetze.len(), "die Bindung hat Saetze abgewiesen oder uebersprungen");
     let (felder, _) = store.materialisiere(None).unwrap();
+    let je_ziel = elemente_je_ziel();
     for feld in &erwartet {
         let f = &felder[*feld];
         assert_eq!(f.zustand, Zustand::Bestaetigt, "{feld}");
-        assert_eq!(f.wert, PyWert::Ganz(123_456), "{feld}: 1234,56 EUR sind 123456 Cent");
+        // Ein Ziel mit mehreren Quellen (`LSTB_SUMMEN`) traegt die Summe: je Element 1234,56 EUR.
+        let soll = 123_456 * i64::try_from(je_ziel[*feld]).unwrap();
+        assert_eq!(f.wert, PyWert::Ganz(soll), "{feld}: {} Element(e) zu je 1234,56 EUR", je_ziel[*feld]);
+    }
+}
+
+/// Wie viele Beleg-Elemente das Mapping auf ein Ziel legt: eins je Zeile in `LSTB`, mehrere in `LSTB_SUMMEN`.
+fn elemente_je_ziel() -> BTreeMap<&'static str, usize> {
+    let mut m = BTreeMap::new();
+    for (_, feld, _) in LSTB {
+        *m.entry(feld).or_insert(0) += 1;
+    }
+    for (feld, quellen) in LSTB_SUMMEN {
+        *m.entry(feld).or_insert(0) += quellen.len();
+    }
+    m
+}
+
+/// Berufsstaendische Versorgung (Abweichung Nr. 81): die Finanzverwaltung summiert Nr. 22 a/b und Nr. 23 a/b der Bescheinigung in dasselbe
+/// Erklaerungsfeld (`E2000801`, `E2000401`); `aus_lstb` addiert beide Elemente auf `vor_ag_anteil_rv` und `vor_an_anteil_rv`. Genau ein
+/// Satz je Ziel: zwei Saetze auf ein Feld liessen den zweiten den ersten ersetzen.
+#[test]
+fn berufsstaendische_beitraege_werden_zu_den_rentenversicherungsbeitraegen_addiert() {
+    let saetze = |paare: &[(&str, &str)]| -> Vec<eingang::vast::EdatenSatz> {
+        let werte: BTreeMap<String, String> = paare.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect();
+        aus_lstb(&werte).unwrap()
+    };
+    let fuer = |s: &[eingang::vast::EdatenSatz], ziel: &str| -> Vec<i64> {
+        s.iter().filter(|x| x.feld_id == ziel).map(|x| x.wert).collect()
+    };
+    for (rv, berufs, ziel) in [
+        ("ArbnAnteilRenVers", "ArbnAnteilBerufsVers", "vor_an_anteil_rv"),
+        ("ArbgAnteilRenVers", "ArbgAnteilBerufsVers", "vor_ag_anteil_rv"),
+    ] {
+        let beide = saetze(&[(rv, "1000.50"), (berufs, "250.25")]);
+        assert_eq!(fuer(&beide, ziel), vec![125_075], "{ziel}: 1000,50 + 250,25 EUR in EINEM Satz");
+        let kategorie = &beide.iter().find(|x| x.feld_id == ziel).unwrap().kategorie;
+        assert!(kategorie.contains(rv) && kategorie.contains(berufs), "{ziel}: die Herkunft nennt beide Elemente: {kategorie}");
+        assert_eq!(fuer(&saetze(&[(berufs, "250.25")]), ziel), vec![25_025], "{ziel}: nur berufsstaendisch");
+        assert_eq!(fuer(&saetze(&[(rv, "1000.50")]), ziel), vec![100_050], "{ziel}: nur gesetzlich, wie bisher");
+        assert!(fuer(&saetze(&[]), ziel).is_empty(), "{ziel}: ohne Element kein Satz");
     }
 }
 
@@ -167,7 +208,7 @@ const VBEZ_GRUND: &str = "Der Beleg liefert die Versorgungsbezüge (§ 19 Abs. 2
 /// Beleg-Elemente ohne Eintrag in `LSTB` und OHNE Grund: bis 2026-10-16 nie angesehen. Der Text ist die Doku des Schemas, KEINE
 /// Begruendung. Jede Zeile hier ist eine offene Frage „soll das gemappt werden?"; wer sie beantwortet, nimmt das Element in `LSTB` auf oder
 /// verschiebt es mit Grund nach [`NICHT_GEMAPPT`]. Die Liste darf nur schrumpfen.
-const NICHT_UNTERSUCHT: [(&str, &str); 40] = [
+const NICHT_UNTERSUCHT: [(&str, &str); 38] = [
     ("ArbGName", "Name des Arbeitgebers"),
     ("Eingangsdatum", "Übermittlungszeitpunkt der Bescheinigung an die Finanzverwaltung"),
     ("Allgemein/IdNr", "Identifikationsnummer"),
@@ -190,8 +231,6 @@ const NICHT_UNTERSUCHT: [(&str, &str); 40] = [
     ("Besteuerungsgrund/ErmStBetrMKalJahr", "Arbeitslohn für mehrere Kalenderjahre und Entschädigungen, z. B. Abfindungen (im Bruttoarbeitslohn enthalten)"),
     ("Besteuerungsgrund/KurzArbGeld", "davon: (Saison-)Kurzarbeitergeld"),
     ("Besteuerungsgrund/StFreiArbLohnATE", "steuerfreier Arbeitslohn nach Auslandstätigkeitserlass"),
-    ("Besteuerungsgrund/ArbgAnteilBerufsVers", "Arbeitgeberanteil an berufsständische Versorgungseinrichtungen"),
-    ("Besteuerungsgrund/ArbnAnteilBerufsVers", "Arbeitnehmeranteil an berufsständische Versorgungseinrichtungen"),
     ("Besteuerungsgrund/StFreiPrKrankVers", "steuerfreie Arbeitgeberzuschüsse zur privaten Krankenversicherung"),
     ("Besteuerungsgrund/StFreiGePflegVers", "steuerfreie Arbeitgeberzuschüsse zur gesetzlichen Pflegeversicherung"),
     ("Besteuerungsgrund/ArbnAnteilWBUmlage", "Arbeitnehmerbeitrag zur Winterbeschäftigungs-Umlage"),
@@ -313,8 +352,6 @@ const NOCH_OFFEN: &[&str] = &[
     "Besteuerungsgrund/ErmStVBezMKalJahr/Wert",
     "Besteuerungsgrund/ErmStVBezMKalJahr/Jahr",
     "Besteuerungsgrund/StFreiArbLohnATE",
-    "Besteuerungsgrund/ArbgAnteilBerufsVers",
-    "Besteuerungsgrund/ArbnAnteilBerufsVers",
     "Besteuerungsgrund/StFreiPrKrankVers",
     "Besteuerungsgrund/StFreiGePflegVers",
     "Besteuerungsgrund/StFreiArbgLeistg",
@@ -323,7 +360,7 @@ const NOCH_OFFEN: &[&str] = &[
     "Besteuerungsgrund/StFreiVerpfleg",
     "Besteuerungsgrund/StFreiDopHaushalt",
 ];
-const ERWARTET_NOCH_OFFEN: usize = 13;
+const ERWARTET_NOCH_OFFEN: usize = 11;
 
 /// Kein neues Beleg-Feld mit Zuordnung kommt ungeprueft in die Liste: alles, was [`NICHT_UNTERSUCHT`] noch von [`WIRKT_LAUT_VAST`] haelt,
 /// steht in der Ratsche [`NOCH_OFFEN`].

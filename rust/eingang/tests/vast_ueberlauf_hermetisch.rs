@@ -205,3 +205,37 @@ fn die_lersl_summe_ueber_i64_meldet_ueberlauf_statt_zu_wickeln() {
     );
     assert!(falsch.is_empty(), "{falsch:#?}");
 }
+
+/// Abweichung Nr. 81: `aus_lstb` addiert seit der berufsstaendischen Versorgung zwei Beleg-Elemente auf ein Ziel (`vor_an_anteil_rv`,
+/// `vor_ag_anteil_rv`). Python rechnet mit unbegrenzten Ganzzahlen und kennt hier keinen Ueberlauf; Rust meldet `Ueberlauf`, statt zu
+/// wickeln oder im dev-Profil (`overflow-checks`) abzubrechen.
+#[test]
+fn die_lstb_summe_ueber_i64_meldet_ueberlauf_statt_zu_wickeln() {
+    use eingang::vast::aus_lstb;
+    use std::collections::BTreeMap;
+
+    let werte = |paare: &[(&str, &str)]| -> BTreeMap<String, String> {
+        paare
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+            .collect()
+    };
+    for (rv, berufs) in [
+        ("ArbnAnteilRenVers", "ArbnAnteilBerufsVers"),
+        ("ArbgAnteilRenVers", "ArbgAnteilBerufsVers"),
+    ] {
+        // i64::MAX Cent plus 1 Cent
+        let ueber = aus_lstb(&werte(&[(rv, "92233720368547758,07"), (berufs, "0,01")]));
+        assert!(
+            matches!(ueber, Err(VastFehler::Ueberlauf(_))),
+            "{rv} + {berufs}: i64::MAX + 1 Cent muss Ueberlauf melden, kam {ueber:?}"
+        );
+        // KONTROLLE: knapp unter der Grenze passt; sonst bewiese die Abweisung oben nichts.
+        let grenze = aus_lstb(&werte(&[(rv, "92233720368547757,07"), (berufs, "0,01")])).unwrap();
+        assert_eq!(
+            grenze[0].wert,
+            i64::MAX - 99,
+            "{rv} + {berufs}: knapp unter der Grenze"
+        );
+    }
+}

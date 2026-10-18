@@ -157,7 +157,7 @@ pub fn cent(euro_text: Option<&str>) -> Result<Option<i64>, VastFehler> {
 }
 
 /// `LSTB`: VaSt-Element → (`feld_id`, Schema-Doku).
-pub const LSTB: [(&str, &str, &str); 8] = [
+pub const LSTB: [(&str, &str, &str); 6] = [
     ("BruttoArbLohn", "bruttoarbeitslohn", "Bruttoarbeitslohn"),
     ("LSteuer", "p36_lohnsteuer", "einbehaltene Lohnsteuer"),
     (
@@ -169,16 +169,6 @@ pub const LSTB: [(&str, &str, &str); 8] = [
         "LeistungenProgVorbeh",
         "p32b_progressionseinkuenfte",
         "Leistungen, die dem Progressionsvorbehalt unterliegen",
-    ),
-    (
-        "ArbnAnteilRenVers",
-        "vor_an_anteil_rv",
-        "Arbeitnehmeranteil zur gesetzlichen Rentenversicherung",
-    ),
-    (
-        "ArbgAnteilRenVers",
-        "vor_ag_anteil_rv",
-        "Arbeitgeberanteil zur gesetzlichen Rentenversicherung",
     ),
     (
         "ArbnAnteilKrankVers",
@@ -193,13 +183,45 @@ pub const LSTB: [(&str, &str, &str); 8] = [
 ];
 
 /// `LSTB_SUMMEN`: Zielfeld ← mehrere Beleg-Elemente.
-pub const LSTB_SUMMEN: [(&str, &[(&str, &str)]); 1] = [(
-    "vorsorge_arbeitslosenversicherung",
-    &[(
-        "ArbnAnteilArblVers",
-        "Arbeitnehmerbeiträge zur Arbeitslosenversicherung",
-    )],
-)];
+///
+/// Abweichung Nr. 81 (`rust/fixtures/README.md`): `ArbnAnteilBerufsVers` und `ArbgAnteilBerufsVers` gehen als zweiter Summand in
+/// `vor_an_anteil_rv` und `vor_ag_anteil_rv`, wie die Zuordnung der Finanzverwaltung (`E2000401`, `E2000801`: Nr. 22 a/b und 23 a/b der
+/// Lohnsteuerbescheinigung). Python las nur die gesetzliche Rentenversicherung.
+pub const LSTB_SUMMEN: [(&str, &[(&str, &str)]); 3] = [
+    (
+        "vorsorge_arbeitslosenversicherung",
+        &[(
+            "ArbnAnteilArblVers",
+            "Arbeitnehmerbeiträge zur Arbeitslosenversicherung",
+        )],
+    ),
+    (
+        "vor_an_anteil_rv",
+        &[
+            (
+                "ArbnAnteilRenVers",
+                "Arbeitnehmeranteil zur gesetzlichen Rentenversicherung",
+            ),
+            (
+                "ArbnAnteilBerufsVers",
+                "Arbeitnehmeranteil an berufsständische Versorgungseinrichtungen",
+            ),
+        ],
+    ),
+    (
+        "vor_ag_anteil_rv",
+        &[
+            (
+                "ArbgAnteilRenVers",
+                "Arbeitgeberanteil zur gesetzlichen Rentenversicherung",
+            ),
+            (
+                "ArbgAnteilBerufsVers",
+                "Arbeitgeberanteil an berufsständische Versorgungseinrichtungen",
+            ),
+        ],
+    ),
+];
 
 /// `LERSL_BETRAG_FELD`.
 pub const LERSL_BETRAG_FELD: &str = "p32b_progressionseinkuenfte";
@@ -236,9 +258,15 @@ pub fn aus_lstb(
                 .collect::<Vec<_>>()
                 .join(" + ")
         );
+        let mut wert: i64 = 0;
+        for (name, c, _) in &besetzt {
+            wert = wert.checked_add(*c).ok_or_else(|| {
+                VastFehler::Ueberlauf(werte.get(**name).cloned().unwrap_or_default())
+            })?;
+        }
         raus.push(EdatenSatz {
             feld_id: feld_id.to_owned(),
-            wert: besetzt.iter().map(|(_, c, _)| c).sum(),
+            wert,
             kategorie: kat,
         });
     }
