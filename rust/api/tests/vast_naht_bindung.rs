@@ -81,8 +81,8 @@ fn vast_elemente() -> BTreeSet<&'static str> {
 #[test]
 fn jedes_ziel_steht_in_der_bindung_und_ist_ein_cent_feld() {
     let z = ziele();
-    // KONTROLLE: die Schleife unten sieht Ziele (9 verschiedene Felder aus 6 + 3 + 1 Eintraegen, gemessen 2026-10-18; 2026-10-13: 8 + 1 + 1).
-    assert!(z.len() >= 9, "nur {} Ziele gesehen: {z:?}", z.len());
+    // KONTROLLE: die Schleife unten sieht Ziele (10 verschiedene Felder aus 7 + 3 + 1 Eintraegen, gemessen 2026-10-18; 2026-10-13: 9 aus 8 + 1 + 1).
+    assert!(z.len() >= 10, "nur {} Ziele gesehen: {z:?}", z.len());
     let fehlend: Vec<&str> = z.iter().copied().filter(|f| !index().contains_key(*f)).collect();
     assert!(fehlend.is_empty(), "Mapping zeigt auf Felder, die es in der Bindung nicht gibt: {fehlend:?}");
     let falsch: Vec<(&str, Feldtyp)> =
@@ -208,7 +208,7 @@ const VBEZ_GRUND: &str = "Der Beleg liefert die Versorgungsbezüge (§ 19 Abs. 2
 /// Beleg-Elemente ohne Eintrag in `LSTB` und OHNE Grund: bis 2026-10-16 nie angesehen. Der Text ist die Doku des Schemas, KEINE
 /// Begruendung. Jede Zeile hier ist eine offene Frage „soll das gemappt werden?"; wer sie beantwortet, nimmt das Element in `LSTB` auf oder
 /// verschiebt es mit Grund nach [`NICHT_GEMAPPT`]. Die Liste darf nur schrumpfen.
-const NICHT_UNTERSUCHT: [(&str, &str); 38] = [
+const NICHT_UNTERSUCHT: [(&str, &str); 37] = [
     ("ArbGName", "Name des Arbeitgebers"),
     ("Eingangsdatum", "Übermittlungszeitpunkt der Bescheinigung an die Finanzverwaltung"),
     ("Allgemein/IdNr", "Identifikationsnummer"),
@@ -240,7 +240,6 @@ const NICHT_UNTERSUCHT: [(&str, &str); 38] = [
     ("Besteuerungsgrund/StFreiArbgLeistg", "steuerfreie Arbeitgeberleistungen für Fahrten zwischen Wohnung und Arbeitsstätte"),
     ("Besteuerungsgrund/PauschArbgLeistg", "pauschal besteuerte Arbeitgeberleistungen für Fahrten zwischen Wohnung und Arbeitsstätte"),
     ("Besteuerungsgrund/StFreiFahrtKAusw", "steuerfreie Arbeitgeberleistungen für Fahrtkosten bei Auswärtstätigkeit"),
-    ("Besteuerungsgrund/StFreiVerpfleg", "steuerfreier Arbeitgeberzuschuss für Verpflegung bei Auswärtstätigkeit"),
     ("Besteuerungsgrund/StFreiDopHaushalt", "steuerfreie Arbeitgeberleistungen bei doppelter Haushaltsführung"),
     ("Besteuerungsgrund/FreibetragDbaTuerkei", "Freibetrag DBA Türkei"),
     ("Besteuerungsgrund/ErmStVBezMKalJahr/Wert", "Versorgungsbezüge für mehrere Kalenderjahre (im Bruttoarbeitslohn enthalten)"),
@@ -357,10 +356,9 @@ const NOCH_OFFEN: &[&str] = &[
     "Besteuerungsgrund/StFreiArbgLeistg",
     "Besteuerungsgrund/PauschArbgLeistg",
     "Besteuerungsgrund/StFreiFahrtKAusw",
-    "Besteuerungsgrund/StFreiVerpfleg",
     "Besteuerungsgrund/StFreiDopHaushalt",
 ];
-const ERWARTET_NOCH_OFFEN: usize = 11;
+const ERWARTET_NOCH_OFFEN: usize = 10;
 
 /// Kein neues Beleg-Feld mit Zuordnung kommt ungeprueft in die Liste: alles, was [`NICHT_UNTERSUCHT`] noch von [`WIRKT_LAUT_VAST`] haelt,
 /// steht in der Ratsche [`NOCH_OFFEN`].
@@ -393,6 +391,20 @@ fn die_ratsche_noch_offen_ist_in_sich_stimmig() {
     let offen = ungeprueft_trotz_zuordnung(&WIRKT_LAUT_VAST, &NICHT_UNTERSUCHT);
     let leichen: Vec<&str> = NOCH_OFFEN.iter().copied().filter(|p| !offen.contains(p)).collect();
     assert!(leichen.is_empty(), "NOCH_OFFEN traegt Pfade, die nicht mehr in NICHT_UNTERSUCHT stehen: {leichen:?}");
+}
+
+/// Steuerfreier Arbeitgeberzuschuss fuer Verpflegung (Abweichung Nr. 82): die Finanzverwaltung fuellt damit Zeile 80 (`E0205108`), die
+/// Engine zieht `vpf_steuerfreie_erstattung_betrag` von der Verpflegungspauschale ab (§ 9 Abs. 4a Satz 11 `EStG`). Ein Satz, in Cent.
+#[test]
+fn der_steuerfreie_verpflegungszuschuss_geht_in_das_verpflegungsfeld() {
+    let werte: BTreeMap<String, String> = [("StFreiVerpfleg".to_owned(), "120.00".to_owned())].into_iter().collect();
+    let saetze = aus_lstb(&werte).unwrap();
+    assert_eq!(saetze.len(), 1, "genau ein Satz: {saetze:?}");
+    assert_eq!(saetze[0].feld_id, "vpf_steuerfreie_erstattung_betrag");
+    assert_eq!(saetze[0].wert, 12_000, "120,00 EUR sind 12000 Cent");
+    assert!(saetze[0].kategorie.contains("StFreiVerpfleg"), "die Herkunft nennt das Element: {}", saetze[0].kategorie);
+    // KONTROLLE: ohne das Element kommt kein Satz (kein Nullwert aus dem Nichts).
+    assert!(aus_lstb(&BTreeMap::new()).unwrap().is_empty());
 }
 
 /// Mit Schema (nur lokal): JEDES Beleg-Feld der Lohnsteuerbescheinigung ist gemappt (`LSTB`, `LSTB_SUMMEN`) oder steht in einer der

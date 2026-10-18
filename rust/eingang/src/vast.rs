@@ -157,7 +157,7 @@ pub fn cent(euro_text: Option<&str>) -> Result<Option<i64>, VastFehler> {
 }
 
 /// `LSTB`: VaSt-Element → (`feld_id`, Schema-Doku).
-pub const LSTB: [(&str, &str, &str); 6] = [
+pub const LSTB: [(&str, &str, &str); 7] = [
     ("BruttoArbLohn", "bruttoarbeitslohn", "Bruttoarbeitslohn"),
     ("LSteuer", "p36_lohnsteuer", "einbehaltene Lohnsteuer"),
     (
@@ -179,6 +179,12 @@ pub const LSTB: [(&str, &str, &str); 6] = [
         "ArbnAnteilPflegVers",
         "basis_pv",
         "Arbeitnehmerbeiträge zur sozialen Pflegeversicherung (LStB Nr. 26)",
+    ),
+    // Abweichung Nr. 82: Python las das Element nicht; die Finanzverwaltung füllt damit Zeile 80 (`E0205108`).
+    (
+        "StFreiVerpfleg",
+        "vpf_steuerfreie_erstattung_betrag",
+        "steuerfreier Arbeitgeberzuschuss für Verpflegung bei Auswärtstätigkeit",
     ),
 ];
 

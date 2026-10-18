@@ -667,6 +667,7 @@ bindungen:
       zitatanker: "Hat der Arbeitnehmer für die Mahlzeit ein Entgelt gezahlt, mindert dieser Betrag den Kürzungsbetrag nach Satz 8"
       datei: "sources/gesetze-im-internet/estg_p9_abs4a_2026-07-09.txt"
   - feld_id: vpf_steuerfreie_erstattung_betrag
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p9_4a_verpflegungsmehraufwand, signatur_slot: steuerfreie_erstattung_betrag}
     typ: cent
     einheit: EUR
