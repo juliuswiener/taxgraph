@@ -143,6 +143,13 @@ async fn fragen_ids(d: &Dienst) -> Vec<String> {
         .collect()
 }
 
+/// Die Erklaerung des Falls (`GET /deklaration`).
+async fn erklaerung(d: &Dienst) -> Value {
+    let (status, dekl) = sende(d, "GET", "/fall/gev/deklaration", None).await;
+    assert_eq!(status, 200, "GET /deklaration: {dekl}");
+    dekl
+}
+
 fn zahl(a: &Value) -> i64 {
     assert_eq!(a["grund"], json!("bestaetigt"), "keine Zahl: {a}");
     a["zahl_cent"]
@@ -336,6 +343,52 @@ async fn die_versorgung_beider_ehegatten_zaehlt_je_fuer_sich() {
     let (klein, gross) = (ergebnis(&a_klein).await, ergebnis(&a_gross).await);
     assert_eq!(zahl(&klein), 16_970 * 100, "A 30.001, B 60.001: {klein}");
     assert_eq!(zahl(&gross), 16_970 * 100, "A 60.001, B 30.001: {gross}");
+}
+
+/// Die Erklaerung: der Bezug des Ehegatten steht in den Zeilen 11 bis 13 der zweiten Anlage N (`person_b`: `E0200801` Betrag,
+/// `E0200902` Bemessungsgrundlage, `E0201307` Beginnjahr; Zeile 5, `E0200201`, bleibt der Lohn, der den Bezug enthaelt, Nr. 50).
+/// Solange die vier Rueckfragen zum Bezug und die drei Lohnfragen des Ehegatten offen sind, stehen sie in `unvollstaendig` (die
+/// Abgabe ist gesperrt); mit allen sieben Antworten (Nein) und einem Beginn VOR dem Veranlagungsjahr sperrt nichts. Ein Beginn im
+/// Veranlagungsjahr sperrt weiter, mit der Jahresrente als einzigem Eintrag (Zeile 14, die die Erklaerung nicht traegt).
+#[tokio::test]
+async fn der_bezug_des_ehegatten_steht_in_der_zweiten_anlage_n_und_sperrt_nach_den_rueckfragen_nicht() {
+    const FRAGEN: [&str; 7] = [
+        "versorgung_zweiter_bezug_partner",
+        "versorgung_sterbegeld_partner",
+        "versorgung_mehrere_jahre_partner",
+        "versorgung_nicht_ganzjaehrig_partner",
+        "lohn_mehrere_jahre_partner",
+        "lohn_auslandstaetigkeit_partner",
+        "lohn_erstattungen_partner",
+    ];
+    let unvollstaendig = |dekl: &Value| -> Vec<String> {
+        dekl["unvollstaendig"].as_array().unwrap().iter().map(|e| e["feld_id"].as_str().unwrap().to_owned()).collect()
+    };
+    let d = fall_mit(&mit(paar("zusammen", 0, 30_001), versorgung_b(30_001, 30_001, 2024))).await;
+    let mut offen = unvollstaendig(&erklaerung(&d).await);
+    offen.sort();
+    let mut soll: Vec<String> = FRAGEN.iter().map(|f| (*f).to_owned()).collect();
+    soll.sort();
+    assert_eq!(offen, soll, "ohne Antworten sperren die sieben Fragen");
+    for frage in FRAGEN {
+        let (status, antwort) = event_post(&d, frage, &json!(false)).await;
+        assert_eq!(status, 201, "POST /event {frage}: {antwort}");
+    }
+    let dekl = erklaerung(&d).await;
+    let offen = unvollstaendig(&dekl);
+    assert_eq!(offen.len(), 0, "mit allen sieben Antworten sperrt nichts: {offen:?}");
+    assert_eq!(
+        dekl["person_b"],
+        json!({"E0200201": 30_001, "E0200801": 30_001, "E0200902": 30_001, "E0201307": 2024}),
+        "zweite Anlage N: {dekl}"
+    );
+    // Beginn im Veranlagungsjahr 2025: dieselben Antworten, die Jahresrente sperrt allein.
+    let d = fall_mit(&mit(paar("zusammen", 0, 30_001), versorgung_b(30_001, 30_001, 2025))).await;
+    for frage in FRAGEN {
+        event_post(&d, frage, &json!(false)).await;
+    }
+    let offen = unvollstaendig(&erklaerung(&d).await);
+    assert_eq!(offen, ["versorgung_jahresrente_partner"], "Beginn im Veranlagungsjahr");
 }
 
 /// Bei Einzelveranlagung zaehlen die Angaben zum Ehegatten nicht: ein bestaetigter Bezug im Feld des Ehegatten aendert die Steuer
