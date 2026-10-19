@@ -292,8 +292,9 @@ fn die_hilfetexte_nennen_fuer_computer_ein_jahr_und_kein_sofortabzug() {
             ("Fragetext", b.fragetext_laie.clone().unwrap_or_default()),
             ("Hilfetext", b.hilfe_kurz.clone()),
         ] {
-            if text.contains("3 Jahre für Laptop") || text.contains("3 Jahre fuer Laptop") {
-                verstoesse.push(format!("{} {art}: nennt 3 Jahre fuer Laptop", b.feld_id));
+            // Ein Satz, der "3 Jahre" und ein Geraet nennt, ist die alte Vorgabe, auch als "3 Jahre für einen Laptop".
+            if text.split('.').any(|satz| satz.contains("3 Jahre") && geraet.iter().any(|g| satz.contains(g))) {
+                verstoesse.push(format!("{} {art}: nennt 3 Jahre fuer ein Geraet", b.feld_id));
             }
             if geraet.iter().any(|g| text.contains(g)) && sofort.iter().any(|s| text.contains(s)) {
                 verstoesse.push(format!("{} {art}: Computer zusammen mit Sofortabzug", b.feld_id));
