@@ -193,8 +193,9 @@ jobs:
       # gleichzeitig aus. clippy 1.99.0 (2026-09-28) bringt das Lint assert_is_empty; 557b7072 lief auf
       # dem Image 20261004 deshalb rot (3 Treffer in ring_scheiben.rs), 4ddc4f3f auf dem Image 20260927
       # gruen, bei gleichem Quelltext in diesen Zeilen. Seit 2026-10-10 sind alle 75 Treffer im Baum
-      # behoben; 1.99.0 ist das Tor, lokal und hier. Anheben: erst die Treffer des neuen Lints im
-      # Baum beheben, dann die Zahl hier und lokal zugleich aendern.
+      # behoben; 1.99.0 ist das Tor, lokal (rust/rust-toolchain.toml) und hier. Anheben: erst die
+      # Treffer des neuen Lints im Baum beheben, dann die Zahl hier und in rust/rust-toolchain.toml
+      # zugleich aendern.
       - name: Rust 1.99.0 festlegen
         run: |
           rustup toolchain install 1.99.0 --profile minimal --component clippy

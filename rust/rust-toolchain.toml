@@ -1,0 +1,6 @@
+# Rust ist gepinnt wie in der CI (.github/workflows/ci.yml, Schritt "Rust 1.99.0 festlegen"):
+# lokal und dort laeuft dieselbe Version. Anheben: Treffer der neuen Lints im Baum beheben,
+# dann diese Zahl und die CI zugleich aendern.
+[toolchain]
+channel = "1.99.0"
+components = ["clippy"]
