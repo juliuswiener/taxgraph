@@ -5,6 +5,7 @@
 //! ab, ohne ERiC zu laden. Steuer-ID, Datenpaket und PIN stehen nie in einem Fehlertext.
 
 use std::ffi::{CStr, CString};
+use std::fmt;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
@@ -49,29 +50,96 @@ pub enum AbrufFehler {
     AntwortUnlesbar(&'static str),
 }
 
-/// Die Eingaben eines Abrufs, einmal geprueft. STUMPF.
-pub struct AbrufAuftrag {
-    jahr: i32,
+/// Datenart und Version fuer `EricBearbeiteVorgang` (Datenartversionmatrix.ods: `ElsterVaStDaten_<Version>`).
+const DATENART_VERSION: &str = "ElsterVaStDaten_32";
+/// Die Version des Schemas `datenabholung_32.xsd` im Nutzdatenteil.
+const SCHEMA_DATENABHOLUNG: &str = "32";
+const NS_DATENABHOLUNG: &str = "http://finkonsens.de/elster/elsterdatenabholung/v3";
+/// Der Beleg der Lohnsteuerbescheinigung; die Schemaversion 202501 ist die einzige, die der Leser
+/// aus Nr. 90 kennt (`VaSt_LStB-202501.xsd`, VZ 2025).
+const BELEGART_LSTB: &str = "VaSt_LStB";
+const SCHEMAVERSION_LSTB: &str = "202501";
+/// So viele Eintraege nennt `KeinBeleg` hoechstens.
+const GEFUNDEN_MAX: usize = 10;
+
+fn eingabe(feld: &'static str, grund: &'static str) -> AbrufFehler {
+    AbrufFehler::Eingabe { feld, grund }
 }
 
-impl std::fmt::Debug for AbrufAuftrag {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "AbrufAuftrag {{ jahr: {} }}", self.jahr)
+/// Genau `laenge` Ziffern 0 bis 9 (keine Ziffern anderer Schriften, kein Leerraum).
+fn nur_ziffern(text: &str, laenge: usize) -> bool {
+    text.len() == laenge && text.bytes().all(|b| b.is_ascii_digit())
+}
+
+/// Das Veranlagungsjahr: vier Ziffern, nicht nach `heute`, hoechstens die letzten vier Jahre
+/// (ERiC-Handbuch Kap. 9.9.5: Belege gibt es fuer die letzten vier Veranlagungszeitraeume).
+fn pruefe_jahr(text: &str, heute: i32) -> Result<i32, AbrufFehler> {
+    if !nur_ziffern(text, 4) {
+        return Err(eingabe("jahr", "muss ein Jahr aus vier Ziffern sein"));
+    }
+    let jahr: i32 = text
+        .parse()
+        .map_err(|_| eingabe("jahr", "muss ein Jahr aus vier Ziffern sein"))?;
+    if jahr > heute {
+        return Err(eingabe("jahr", "liegt in der Zukunft"));
+    }
+    if jahr < heute.saturating_sub(3) {
+        return Err(eingabe("jahr", "liegt mehr als vier Veranlagungsjahre zurueck"));
+    }
+    Ok(jahr)
+}
+
+/// Die amtliche ID eines Belegs (`ETIDCType`, `datenabholung_32.xsd`): 32 Zeichen,
+/// `[0-9a-km-z]{2}[0-9]{3}[0-9a-km-z]{27}`. Nur so kann sie ohne Maskierung in das XML.
+fn ist_amtliche_id(id: &str) -> bool {
+    let zeichen_ok = |c: char| c.is_ascii_digit() || matches!(c, 'a'..='k' | 'm'..='z');
+    id.len() == 32
+        && id.chars().enumerate().all(|(i, c)| match i {
+            2..=4 => c.is_ascii_digit(),
+            _ => zeichen_ok(c),
+        })
+}
+
+/// Die Eingaben eines Abrufs, einmal geprueft. `Debug` zeigt Steuer-ID und Hersteller-ID nicht.
+pub struct AbrufAuftrag {
+    idnr: String,
+    jahr: i32,
+    hersteller_id: String,
+}
+
+impl fmt::Debug for AbrufAuftrag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "AbrufAuftrag {{ idnr: <nicht gezeigt>, jahr: {}, hersteller_id: <nicht gezeigt> }}",
+            self.jahr
+        )
     }
 }
 
 impl AbrufAuftrag {
-    /// STUMPF.
+    /// Prueft Steuer-ID (11 Ziffern), Veranlagungsjahr (vier Ziffern, hoechstens die letzten vier
+    /// Jahre bis `heute`) und Hersteller-ID (5 Ziffern, `HerstellerIDSType`).
     ///
     /// # Errors
-    /// [`AbrufFehler::Eingabe`].
+    /// [`AbrufFehler::Eingabe`]: nennt das Feld, nie den Wert.
     pub fn neu(
-        _idnr: &str,
-        _jahr: &str,
-        _hersteller_id: &str,
-        _heute: i32,
+        idnr: &str,
+        jahr: &str,
+        hersteller_id: &str,
+        heute: i32,
     ) -> Result<Self, AbrufFehler> {
-        Ok(Self { jahr: 0 })
+        if !nur_ziffern(idnr, 11) {
+            return Err(eingabe("idnr", "muss aus genau 11 Ziffern bestehen"));
+        }
+        if !nur_ziffern(hersteller_id, 5) {
+            return Err(eingabe("hersteller_id", "muss aus genau 5 Ziffern bestehen"));
+        }
+        Ok(Self {
+            idnr: idnr.to_owned(),
+            jahr: pruefe_jahr(jahr, heute)?,
+            hersteller_id: hersteller_id.to_owned(),
+        })
     }
 
     /// Das Veranlagungsjahr.
@@ -80,35 +148,145 @@ impl AbrufAuftrag {
         self.jahr
     }
 
-    /// STUMPF.
+    /// Die Datenart fuer `EricBearbeiteVorgang`.
+    #[must_use]
+    pub fn datenart_version(&self) -> &'static str {
+        DATENART_VERSION
+    }
+
+    /// Die Anfrage nach abholbereiten Belegen (Anfragephase, ERiC-Handbuch Kap. 9.9.6.1). Aufbau
+    /// nach dem amtlichen Beispiel `4_a_ElsterVaStDaten_32_Anfrage_Request.xml`. Alle Werte sind
+    /// geprueft und tragen kein Zeichen, das maskiert werden muesste.
     #[must_use]
     pub fn anfrage_xml(&self) -> String {
-        String::new()
+        self.umschlag(&format!(
+            r#"<Anfrage idnr="{}" veranlagungsjahr="{}"/>"#,
+            self.idnr, self.jahr
+        ))
     }
 
-    /// STUMPF.
+    /// Die Abholung des Belegs mit der gewaehlten `<Id>` (Abholphase, Kap. 9.9.6.2), nach dem
+    /// Beispiel `5_a1_Einzelbescheid_ElsterVaStDaten_32_Abholung_Request.xml`.
     ///
     /// # Errors
-    /// [`AbrufFehler::AntwortUnlesbar`].
-    pub fn abholung_xml(&self, _id: &str) -> Result<String, AbrufFehler> {
-        Ok(String::new())
+    /// [`AbrufFehler::AntwortUnlesbar`] (`Id`), wenn `id` nicht dem Muster der amtlichen ID entspricht.
+    pub fn abholung_xml(&self, id: &str) -> Result<String, AbrufFehler> {
+        if !ist_amtliche_id(id) {
+            return Err(AbrufFehler::AntwortUnlesbar("Id"));
+        }
+        Ok(self.umschlag(&format!(
+            r#"<Abholung id="{id}" idnr="{}" veranlagungsjahr="{}"/>"#,
+            self.idnr, self.jahr
+        )))
+    }
+
+    /// Transfer- und Nutzdatenheader um die Nutzdaten (`send-Auth`, ohne Testmerker).
+    fn umschlag(&self, nutzdaten: &str) -> String {
+        let ns = elster::NS_ELSTER;
+        let hid = &self.hersteller_id;
+        format!(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+             <Elster xmlns=\"{ns}\">\
+             <TransferHeader version=\"11\">\
+             <Verfahren>ElsterDatenabholung</Verfahren>\
+             <DatenArt>ElsterVaStDaten</DatenArt>\
+             <Vorgang>send-Auth</Vorgang>\
+             <HerstellerID>{hid}</HerstellerID>\
+             <DatenLieferant>TaxGraph</DatenLieferant>\
+             <Datei><Verschluesselung>CMSEncryptedData</Verschluesselung>\
+             <Kompression>GZIP</Kompression><TransportSchluessel/></Datei>\
+             </TransferHeader>\
+             <DatenTeil><Nutzdatenblock>\
+             <NutzdatenHeader version=\"11\">\
+             <NutzdatenTicket>1</NutzdatenTicket>\
+             <Empfaenger id=\"L\">CS</Empfaenger>\
+             <Hersteller><ProduktName>TaxGraph</ProduktName><ProduktVersion>1</ProduktVersion></Hersteller>\
+             <DatenLieferant>TaxGraph</DatenLieferant>\
+             </NutzdatenHeader>\
+             <Nutzdaten><Datenabholung xmlns=\"{NS_DATENABHOLUNG}\" version=\"{SCHEMA_DATENABHOLUNG}\">\
+             {nutzdaten}\
+             </Datenabholung></Nutzdaten>\
+             </Nutzdatenblock></DatenTeil></Elster>"
+        )
     }
 }
 
-/// STUMPF.
-///
-/// # Errors
-/// [`AbrufFehler`].
-pub fn waehle_id(_serverantwort_xml: &str) -> Result<String, AbrufFehler> {
-    Ok(String::new())
+fn heisst(n: &roxmltree::Node<'_, '_>, name: &str) -> bool {
+    n.is_element() && n.tag_name().name() == name
 }
 
-/// STUMPF.
+fn lies_antwort(serverantwort_xml: &str) -> Result<roxmltree::Document<'_>, AbrufFehler> {
+    roxmltree::Document::parse(serverantwort_xml)
+        .map_err(|_| AbrufFehler::AntwortUnlesbar("Serverantwort"))
+}
+
+/// Die `<Id>` des Belegs `VaSt_LStB` der Schemaversion 202501 aus der Antwort auf die Anfrage. Genau
+/// einer: kein passender Beleg ergibt [`AbrufFehler::KeinBeleg`] (mit Belegart und Version der
+/// gefundenen Eintraege, nie ihrer ID), mehrere ergeben [`AbrufFehler::MehrereBelege`] (die
+/// Summenregel ueber mehrere Arbeitgeber ist unbekannt).
 ///
 /// # Errors
 /// [`AbrufFehler`].
-pub fn datenpaket(_serverantwort_xml: &str) -> Result<String, AbrufFehler> {
-    Ok(String::new())
+pub fn waehle_id(serverantwort_xml: &str) -> Result<String, AbrufFehler> {
+    let dok = lies_antwort(serverantwort_xml)?;
+    let eintraege: Vec<(&str, &str, &str)> = dok
+        .descendants()
+        .filter(|n| heisst(n, "Id") && n.parent_element().is_some_and(|p| heisst(&p, "Anfrage")))
+        .map(|n| {
+            (
+                n.attribute("id").unwrap_or_default(),
+                n.attribute("belegart").unwrap_or_default(),
+                n.attribute("schemaversion").unwrap_or_default(),
+            )
+        })
+        .collect();
+    let passend: Vec<&str> = eintraege
+        .iter()
+        .filter(|(_, art, version)| *art == BELEGART_LSTB && *version == SCHEMAVERSION_LSTB)
+        .map(|(id, _, _)| *id)
+        .collect();
+    match passend.as_slice() {
+        [] => Err(AbrufFehler::KeinBeleg {
+            gefunden: beschreibung(&eintraege),
+        }),
+        [id] if ist_amtliche_id(id) => Ok((*id).to_owned()),
+        [_] => Err(AbrufFehler::AntwortUnlesbar("Id")),
+        mehrere => Err(AbrufFehler::MehrereBelege(mehrere.len())),
+    }
+}
+
+/// Belegart und Schemaversion der Eintraege, gekuerzt und ohne Steuerzeichen (fremder Text).
+fn beschreibung(eintraege: &[(&str, &str, &str)]) -> String {
+    let teile: Vec<String> = eintraege
+        .iter()
+        .take(GEFUNDEN_MAX)
+        .map(|(_, art, version)| format!("{} {}", crate::bereinigt(art, 32), crate::bereinigt(version, 32)))
+        .collect();
+    if teile.is_empty() {
+        "keine Eintraege".to_owned()
+    } else {
+        teile.join(", ")
+    }
+}
+
+/// Das verschluesselte `<Datenpaket>` (Base64) aus der Antwort auf die Abholung, ohne Leerraum und
+/// Zeilenumbrueche.
+///
+/// # Errors
+/// [`AbrufFehler::AntwortUnlesbar`] (`Serverantwort` oder `Datenpaket`).
+pub fn datenpaket(serverantwort_xml: &str) -> Result<String, AbrufFehler> {
+    let dok = lies_antwort(serverantwort_xml)?;
+    let text: String = dok
+        .descendants()
+        .find(|n| heisst(n, "Datenpaket"))
+        .map(|n| n.children().filter_map(|k| k.text()).collect::<String>())
+        .unwrap_or_default()
+        .split_whitespace()
+        .collect();
+    if text.is_empty() {
+        return Err(AbrufFehler::AntwortUnlesbar("Datenpaket"));
+    }
+    Ok(text)
 }
 
 /// Zertifikatspfad und PIN als C-Strings; bricht VOR jedem ERiC-Aufruf ab, wenn eins fehlt.
@@ -164,6 +342,8 @@ pub fn dekodiere_datenpaket(
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write as _;
+
     use super::*;
 
     // Erfundene Werte: keine echte Steuer-ID, keine echte Hersteller-ID (74931 ist der Platzhalter der
@@ -181,14 +361,14 @@ mod tests {
 
     /// Die Antwort auf eine Anfrage nach dem Aufbau der amtlichen Beispiele (`4_b_...Response.xml`).
     fn antwort(ids: &[(&str, &str, &str)]) -> String {
-        let eintraege: String = ids
-            .iter()
-            .map(|(id, art, version)| {
-                format!(
-                    r#"<Id id="{id}" groesse="1500" belegart="{art}" hashwert="680f" schemaversion="{version}"/>"#
-                )
-            })
-            .collect();
+        let mut eintraege = String::new();
+        for (id, art, version) in ids {
+            write!(
+                eintraege,
+                r#"<Id id="{id}" groesse="1500" belegart="{art}" hashwert="680f" schemaversion="{version}"/>"#
+            )
+            .unwrap();
+        }
         format!(
             r#"<Elster xmlns="http://www.elster.de/elsterxml/schema/v11"><DatenTeil><Nutzdatenblock><Nutzdaten><Datenabholung xmlns="http://finkonsens.de/elster/elsterdatenabholung/v3" version="32"><Anfrage idnr="{IDNR}" veranlagungsjahr="2025">{eintraege}</Anfrage></Datenabholung></Nutzdaten></Nutzdatenblock></DatenTeil></Elster>"#
         )
