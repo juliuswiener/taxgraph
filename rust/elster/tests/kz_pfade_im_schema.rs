@@ -185,6 +185,7 @@ fn die_partner_spiegel_haben_kein_eigenes_kz_und_schreiben_in_das_kz_von_person_
         ("zuschuss_ag_kv_gesetzlich_partner", json!(150_000), "E2003705"),
         ("zuschuss_ag_kv_privat_partner", json!(110_000), "E2003807"),
         ("zuschuss_ag_pv_partner", json!(9_000), "E2003907"),
+        ("berufsverband_beitraege_partner", json!(17_800), "E0204003"),
     ] {
         assert!(index()[feld].elster_kz.is_none(), "{feld}: ein Partner-Spiegel traegt kein eigenes Kz (Klasse g)");
         let d = deklariere(&bestaetigt(&[("veranlagung", json!("zusammen")), (feld, wert)]), index(), VZ, None).unwrap();

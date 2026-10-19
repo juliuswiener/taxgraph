@@ -55,6 +55,23 @@ pub(crate) const UNFALLKOSTEN_ZIEL_KZ: [&str; 3] = [
 /// (VZ 2025, `bescheid/tests/checkest_blockmatrix.rs::zeilen_nr48_nr49_gegen_echtes_checkest`, rc=0).
 const UNFALLKOSTEN_TEXT: &str = "Unfallkosten Arbeitsweg";
 
+/// Nur Rust (Abweichung Nr. 93): die Beitraege zu Berufsverbaenden (§ 9 Abs. 1 S. 3 Nr. 3 `EStG`, Zeile 53 der Anlage N,
+/// `N/Wk/Berufsverb`, `E10-2025.xsd`). Das Feld traegt nur den Betrag ([`BERUFSVERBAND_BETRAG_KZ`], aufgerundet auf volle Euro,
+/// `ABZUGS_KZ`; Person A ueber die Bindung, Person B ueber `PARTNER_INSTANZ`). Bezeichnung und Summe leitet
+/// [`berufsverband_zeile`] daraus ab, fuer beide Personen.
+const BERUFSVERBAND_TEXT_KZ: &str = "E0204001";
+const BERUFSVERBAND_SUMME_KZ: &str = "E0204002";
+const BERUFSVERBAND_BETRAG_KZ: &str = "E0204003";
+
+/// Die zwei Kz, die [`berufsverband_zeile`] aus dem Betrag ableitet (kein Bindungs-Kz): die Abdeckungstests (`abdeckung.rs`)
+/// kennen sie als Transform-Ziele.
+#[cfg(test)]
+pub(crate) const BERUFSVERBAND_ZIEL_KZ: [&str; 2] = [BERUFSVERBAND_TEXT_KZ, BERUFSVERBAND_SUMME_KZ];
+
+/// Die Bezeichnung in `E0204001`. Das Schema kennt dort nur `String_MinL1_MaxL999`; der Text sagt, was die Zeile ist, nicht welchen
+/// Verband der Nutzer meint (das Feld fragt den Namen nicht, er waere ein Merkmal nach Art. 9 DSGVO).
+const BERUFSVERBAND_TEXT: &str = "Beiträge zu Berufsverbänden";
+
 /// Nur Rust (Abweichung Nr. 49): der Ring-Wert zur zweiten Zeile "Sonstiges" der Anlage N, die gezahlte auslaendische Steuer in
 /// CENT, wenn der BESCHEID den Abzug nach § 34c Abs. 2 `EStG` rechnet (`bescheid::deklaration::mit_ring_werten`). Das Feld hat kein
 /// Kz; [`Bau::dba_abzug_zeile`] leitet daraus dieselben zwei Kz ab wie die Unfallkosten ([`UNFALLKOSTEN_TEXT_KZ`],
@@ -1816,6 +1833,8 @@ pub fn deklariere(
     let anlage_instanzen = bau.instanzen_ausgabe();
     p35a_summe_aus_posten(&mut bau.deklaration, &anlage_instanzen);
     weitere_wk_summe(&mut bau.deklaration, &anlage_instanzen);
+    berufsverband_zeile(&mut bau.deklaration);
+    berufsverband_zeile(&mut bau.person_b);
     Ok(Deklaration {
         basis_snapshot: snapshot_id.map(ToString::to_string),
         deklaration: bau.deklaration,
@@ -1893,6 +1912,26 @@ fn weitere_wk_summe(
             WEITERE_WK_SUMME_KZ.to_owned(),
             Value::from(zeilen.iter().sum::<i64>()),
         );
+    }
+}
+
+/// Zeile 53 der Anlage N einer Person (Abweichung Nr. 93): ueber 0 stehen Bezeichnung [`BERUFSVERBAND_TEXT_KZ`] und Summe
+/// [`BERUFSVERBAND_SUMME_KZ`] (= der eine Betrag, es gibt nur eine Zeile je Person) neben dem Betrag [`BERUFSVERBAND_BETRAG_KZ`].
+/// Bei 0 oder einem negativen Wert faellt der Betrag weg: eine Zeile ohne Beitrag meldet nichts, und das Schema verlangt in `Einz`
+/// Bezeichnung und Betrag zusammen. Wie jede weggelassene 0 bekommt sie keinen Eintrag in `nicht_deklariert`
+/// (Vault: `decisions/elster-null-in-kz-ohne-null-weglassen`, Punkt 3).
+fn berufsverband_zeile(zeile: &mut BTreeMap<String, Value>) {
+    match zeile.get(BERUFSVERBAND_BETRAG_KZ).and_then(Value::as_i64) {
+        Some(euro) if euro > 0 => {
+            zeile.insert(
+                BERUFSVERBAND_TEXT_KZ.to_owned(),
+                Value::String(BERUFSVERBAND_TEXT.to_owned()),
+            );
+            zeile.insert(BERUFSVERBAND_SUMME_KZ.to_owned(), Value::from(euro));
+        }
+        _ => {
+            zeile.remove(BERUFSVERBAND_BETRAG_KZ);
+        }
     }
 }
 
@@ -2832,6 +2871,62 @@ mod tests {
                 assert!(d.unvollstaendig().is_empty(), "{cent} Cent: {:?}", d.unvollstaendig());
                 assert!(d.nicht_deklariert.iter().any(|e| e.feld_id == "ep_unfallkosten"));
             }
+        }
+    }
+
+    /// Abweichung Nr. 93: ein bestaetigter Beitrag ueber 0 in `berufsverband_beitraege` steht aufgerundet unter `E0204003` in der
+    /// Deklaration, der des Ehegatten unter demselben Kz in `person_b`; dazu kommen Bezeichnung `E0204001` und Summe `E0204002`.
+    /// Bei 0 und bei einem negativen Wert steht keines der drei Kz da. Das Regal (`regal.rs`) fuehrt die Literale als `Verhalten`
+    /// mit diesem Test.
+    #[test]
+    fn berufsverband_steht_ueber_null_in_zeile_53() {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let bindungen: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect();
+        let index = store::baue_nachschlag(&bindungen);
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        let feld = |wert: Value| SnapshotFeld {
+            wert: wert.into(),
+            zustand: Zustand::Bestaetigt,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        };
+        // Cent -> Betrag in Euro, wenn die Zeile steht. -500: ein negativer Wert zaehlt im Bescheid als 0, also keine Zeile.
+        for (cent, euro) in [
+            (150_000, Some(1500)),
+            (150_001, Some(1501)),
+            (1, Some(1)),
+            (0, None),
+            (-500, None),
+        ] {
+            let felder = Felder::from([
+                ("berufsverband_beitraege".to_owned(), feld(json!(cent))),
+                ("berufsverband_beitraege_partner".to_owned(), feld(json!(cent))),
+            ]);
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            for (name, zeile) in [("Person A", &d.deklaration), ("Person B", &d.person_b)] {
+                let kz = ["E0204001", "E0204002", "E0204003"].map(|k| zeile.get(k));
+                if let Some(e) = euro {
+                    assert_eq!(kz[2], Some(&json!(e)), "{name}, {cent} Cent: Betrag");
+                    assert_eq!(kz[1], Some(&json!(e)), "{name}, {cent} Cent: Summe");
+                    assert!(
+                        kz[0].and_then(Value::as_str).is_some_and(|t| t.contains("Berufsverb")),
+                        "{name}, {cent} Cent: Bezeichnung {:?}",
+                        kz[0]
+                    );
+                } else {
+                    assert!(kz.iter().all(Option::is_none), "{name}, {cent} Cent: {kz:?}");
+                }
+            }
+            assert!(d.unvollstaendig().is_empty(), "{cent} Cent: {:?}", d.unvollstaendig());
         }
     }
 

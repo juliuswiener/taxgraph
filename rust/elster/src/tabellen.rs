@@ -242,6 +242,9 @@ pub(crate) const PARTNER_INSTANZ: &[(&str, &str)] = &[
     ("zuschuss_ag_kv_gesetzlich_partner", "E2003705"),
     ("zuschuss_ag_kv_privat_partner", "E2003807"),
     ("zuschuss_ag_pv_partner", "E2003907"),
+    // Rust-eigen (Abweichung Nr. 93): die Beitraege des Ehegatten zu Berufsverbaenden, Zeile 53 der Anlage N (`Wk/Berufsverb/Einz`,
+    // Container Person B). Bezeichnung und Summe leitet `berufsverband_zeile` ab. `RUST_EIGENE_ZEILEN` in `tabellen_gleich_fixture`.
+    ("berufsverband_beitraege_partner", "E0204003"),
 ];
 
 /// Der Pflege-Block § 33b Abs. 6 EStG (Gruppe `AgB/Pflege_PB/Einz`) als eingefrorene Kz-Menge.
@@ -861,12 +864,14 @@ mod tests {
 
     /// Zeilen der Tabellen, die es nur in Rust gibt: `(Tabelle der Fixture, Feld)`. Jede steht mit Grund im README
     /// (`rust/fixtures/README.md`) und hat einen eigenen Test.
-    /// Dazu die drei Zuschussfelder des Ehegatten in `partner_instanz` (Abweichung Nr. 92, Kz E2003705, E2003807, E2003907).
-    const RUST_EIGENE_ZEILEN: [(&str, &str); 4] = [
+    /// Dazu die drei Zuschussfelder des Ehegatten in `partner_instanz` (Abweichung Nr. 92, Kz E2003705, E2003807, E2003907) und
+    /// der Berufsverbandsbeitrag des Ehegatten (Abweichung Nr. 93, Kz E0204003).
+    const RUST_EIGENE_ZEILEN: [(&str, &str); 5] = [
         ("partner_verzweigung", "p34_abs3_antragsbetrag_partner"),
         ("partner_instanz", "zuschuss_ag_kv_gesetzlich_partner"),
         ("partner_instanz", "zuschuss_ag_kv_privat_partner"),
         ("partner_instanz", "zuschuss_ag_pv_partner"),
+        ("partner_instanz", "berufsverband_beitraege_partner"),
     ];
 
     /// Kz, die es nur in Rust gibt: `(JSON-Pfad der Liste, Kz)`. E0108701 (Spenden an Parteien, Zeile 7 der Anlage
@@ -881,11 +886,15 @@ mod tests {
     /// `p23_afa` (Abschreibung eines Privatverkaufs, mindert die Anschaffungskosten, § 23 Abs. 3 S. 4 `EStG`) steht nur in
     /// `P23_BETRAGSFELDER`: Python kennt das Feld nicht. Grund und Test: Abweichung Nr. 54 (`elster/src/deklaration.rs`, Test
     /// `privatverkauf_schreibt_bezeichnung_und_daten_an_das_kz_der_art`; `bescheid/tests/privatverkauf_einreichung_hermetisch.rs`).
-    const RUST_EIGENE_KZ: [(&str, &str); 11] = [
+    /// E0204003 (Beitraege zu Berufsverbaenden, Zeile 53 der Anlage N, `Wk/Berufsverb/Einz`) steht nur in `ABZUGS_KZ`. Grund und Test:
+    /// Abweichung Nr. 93 (`elster/src/deklaration.rs`, Test `berufsverband_steht_ueber_null_in_zeile_53`;
+    /// `bescheid/tests/berufsverband_zeile_53_xml.rs`).
+    const RUST_EIGENE_KZ: [(&str, &str); 12] = [
         ("/abzugs_kz", "E0108701"),
         ("/abzugs_kz", "E0108801"),
         ("/abzugs_kz", "E0600920"),
         ("/abzugs_kz", "E0205406"),
+        ("/abzugs_kz", "E0204003"),
         ("/null_unzulaessig/je_vz/2024", "E0108701"),
         ("/null_unzulaessig/je_vz/2024", "E0108801"),
         ("/null_unzulaessig/je_vz/2025", "E0108701"),

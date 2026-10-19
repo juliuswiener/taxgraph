@@ -21,6 +21,10 @@ use crate::{
 };
 
 const UNFALLKOSTEN: &str = "ep_unfallkosten";
+/// Beitraege zu Berufsverbaenden je Person (Abweichung Nr. 93). Die Namen stehen als Literale: der Scanner hinter `RING_BETRAGSFELDER`
+/// (`bescheid/tests/ring_scheiben.rs`) liest den Quelltext des Rings.
+const BERUFSVERBAND: &str = "berufsverband_beitraege";
+const BERUFSVERBAND_PARTNER: &str = "berufsverband_beitraege_partner";
 const DHF_KOSTEN: &str = "dhf_unterkunftskosten_monat";
 const DHF_BEDINGUNGEN: [&str; 3] = [
     "dhf_beruflich_veranlasst",
@@ -111,6 +115,31 @@ pub(super) fn ep_eingabe(vz: Vz, slots: &Slots) -> R<EntfernungspauschaleEingabe
 pub(super) fn mit_unfallkosten(f: &Felder, wk: Euro) -> R<Euro> {
     let unfall = feld_euro_oder_null(f, UNFALLKOSTEN)?;
     add(wk, Euro::new(unfall.get().max(0)))
+}
+
+/// Die Beitraege zu Berufsverbaenden einer Person in EURO (Abweichung Nr. 93): Gewerkschaft oder Berufsverband, § 9 Abs. 1 Satz 3 Nr. 3
+/// `EStG`, Zeile 53 der Anlage N. `partner` waehlt den Ehegatten. Der Betrag zaehlt zu den uebrigen Werbungskosten DER PERSON und steht damit
+/// vor dem Vergleich mit dem Arbeitnehmer-Pauschbetrag (je Person), nicht daneben. Die Erklaerung traegt ihn in vollen Euro AUFGERUNDET
+/// (`E0204003`, `ABZUGS_KZ`); der Bescheid rechnet mit demselben Wert.
+///
+/// Leer, 0 und negativ heissen 0: `nicht_negativ` haelt die Schreibseite, das Laden prueft nie.
+///
+/// ponytail: Rentner und Pensionaeren (Werbungskosten gegen Versorgungsbezuege) und die Kammern (Arbeitskammer, `Kammerbeitrag/Wert`,
+/// Rechtslage ungeklaert) stehen nicht darin. Upgrade: ein Betrag je Einkunftsart, derselbe Aufruf.
+///
+/// # Errors
+/// [`BescheidFehler::Ueberlauf`] bei einem Feldwert jenseits von `i64`.
+pub(super) fn berufsverband(f: &Felder, partner: bool) -> R<Euro> {
+    let feld = if partner { BERUFSVERBAND_PARTNER } else { BERUFSVERBAND };
+    Ok(Cent::new(feld_int_oder_null(f, feld)?.max(0)).ceil_euro())
+}
+
+/// [`berufsverband`] von Person A zu ihren Werbungskosten `wk` addiert (nach `werbungskosten_n`, wie [`mit_unfallkosten`]).
+///
+/// # Errors
+/// [`BescheidFehler::Ueberlauf`].
+pub(super) fn mit_berufsverband(f: &Felder, wk: Euro) -> R<Euro> {
+    add(wk, berufsverband(f, false)?)
 }
 
 fn alle_true(f: &Felder, ids: &[&str]) -> bool {
@@ -491,6 +520,47 @@ mod computer_liste {
             assert_eq!(am_an_gesamt(&f).unwrap().map(Euro::get), an, "{name}: an_gesamt");
             let (g, a) = am_gesamt(&f).unwrap();
             assert_eq!((g.map(Euro::get), a.get()), (gwg, afa), "{name}: gesamt");
+        }
+    }
+}
+
+/// Abweichung Nr. 93 an der Rechenstelle: `berufsverband` liest je Person nur ihr eigenes Feld, rundet auf volle Euro AUF und zaehlt leer,
+/// 0 und einen negativen Wert (am Schreibweg vorbei im Store, das Laden prueft nie) als 0. Die Ende-zu-Ende-Faelle stehen in
+/// `api/tests/berufsverband_hermetisch.rs` und `api/tests/kette_endstand_hermetisch.rs`.
+#[cfg(test)]
+mod berufsverband_beitraege {
+    use domain::Euro;
+    use serde_json::json;
+
+    use super::{berufsverband, mit_berufsverband, BERUFSVERBAND, BERUFSVERBAND_PARTNER};
+    use crate::testhilfe::{felder, store};
+
+    #[test]
+    fn der_betrag_ist_je_person_aufgerundet_und_nie_negativ() {
+        // (Name, Cent von Person A, Cent von Person B, Euro von Person A, Euro von Person B)
+        let faelle = [
+            ("leer", None, None, 0, 0),
+            ("0", Some(0), Some(0), 0, 0),
+            ("1 Cent steigt auf 1 Euro", Some(1), Some(1), 1, 1),
+            ("1.500,00", Some(150_000), Some(150_000), 1_500, 1_500),
+            ("1.500,01 steigt auf 1.501", Some(150_001), Some(150_001), 1_501, 1_501),
+            ("negativ im Store zaehlt 0", Some(-500), Some(-500), 0, 0),
+            ("nur Person A", Some(17_800), None, 178, 0),
+            ("nur Person B", None, Some(17_800), 0, 178),
+        ];
+        for (name, a, b, euro_a, euro_b) in faelle {
+            let mut e = Vec::new();
+            if let Some(c) = a {
+                e.push((BERUFSVERBAND, json!(c), true));
+            }
+            if let Some(c) = b {
+                e.push((BERUFSVERBAND_PARTNER, json!(c), true));
+            }
+            let f = felder(&store(&e));
+            assert_eq!(berufsverband(&f, false).unwrap().get(), euro_a, "{name}: Person A");
+            assert_eq!(berufsverband(&f, true).unwrap().get(), euro_b, "{name}: Person B");
+            // Zu den Werbungskosten DER PERSON A zaehlt nur ihr Betrag, nie der des Ehegatten.
+            assert_eq!(mit_berufsverband(&f, Euro::new(1_000)).unwrap().get(), 1_000 + euro_a, "{name}: mit_berufsverband");
         }
     }
 }

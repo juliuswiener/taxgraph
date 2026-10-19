@@ -52,6 +52,8 @@ felder:
   - berufsausbildung_aufwendungen
   - berufsausbildung_bezeichnung
   - berufsausbildung_einzelbetrag
+  - berufsverband_beitraege
+  - berufsverband_beitraege_partner
   - betriebseinnahmen
   - bruttoarbeitslohn
   - bruttoarbeitslohn_partner

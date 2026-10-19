@@ -1,4 +1,4 @@
-//! Besondere Kategorien nach Art. 9 DSGVO (Gesundheit, Konfession) gehen nicht an das Sprachmodell, und
+//! Besondere Kategorien nach Art. 9 DSGVO (Gesundheit, Konfession, Gewerkschaft) gehen nicht an das Sprachmodell, und
 //! ein NEUES solches Bindungsfeld faellt auf, statt vergessen zu werden. Ohne Netz, ohne Python.
 //!
 //! Der Schutz ist KEIN Typ (`Art9<T>`, wie die Portierkarte es versprach), sondern ein Filter am Aufrufort:
@@ -48,7 +48,7 @@ mod stub;
 use stub::{antwort, Aktion, Stub};
 
 /// Begriffe, die eine besondere Kategorie ankuendigen, unabhaengig vom Muster in `llm::pii` formuliert.
-const VERDAECHTIG: [&str; 14] = [
+const VERDAECHTIG: [&str; 16] = [
     "behinder",
     "konfession",
     "kirche",
@@ -63,6 +63,10 @@ const VERDAECHTIG: [&str; 14] = [
     "krankheitskosten",
     "heilbehandlung",
     "schwerbehind",
+    // Abweichung Nr. 93: die Zugehoerigkeit zu einer Gewerkschaft ist eine besondere Kategorie (Art. 9 Abs. 1 DSGVO); ein Beitrag
+    // zu einem Berufsverband nennt sie. Die Felder `berufsverband_beitraege` und `berufsverband_beitraege_partner` tragen beide Woerter.
+    "gewerkschaft",
+    "berufsverband",
 ];
 
 /// GEPRUEFT, KEIN ART. 9: das Suchwort greift daneben. Jeder Eintrag mit Grund; ohne die Liste muesste das Suchwort
@@ -187,6 +191,8 @@ fn die_regel_trifft_weder_alles_noch_nichts() {
         "rentner_grad_der_behinderung",
         "rentner_hilflos_blind_taubblind",
         "kind_grad_der_behinderung",
+        "berufsverband_beitraege",
+        "berufsverband_beitraege_partner",
     ] {
         assert!(
             treffer.contains(&pflicht),
@@ -206,6 +212,31 @@ fn die_regel_trifft_weder_alles_noch_nichts() {
             !ist_besondere_kategorie(harmlos, ""),
             "{harmlos} ist ein Betrag, kein Merkmal"
         );
+    }
+}
+
+/// Abweichung Nr. 93: `gewerkschaft` und `berufsverband` sind je eine Alternative des Musters, ueber `feld_id` und ueber den Fragetext,
+/// ohne Ruecksicht auf Gross- und Kleinschreibung. Jede Alternative steht ALLEIN da (ein Treffer hier kommt nie vom Nachbarwort), und
+/// Woerter, die nur danebenliegen, treffen nicht. Die Zahl der Treffer in der Registry steht in der README-Zeile Nr. 93 (40 vorher, 42 nachher).
+#[test]
+fn gewerkschaft_und_berufsverband_sind_besondere_kategorie() {
+    for (feld, frage) in [
+        ("gewerkschaft", ""),
+        ("GEWERKSCHAFTSBEITRAG", ""),
+        ("x", "Bist du Mitglied in einer Gewerkschaft?"),
+        ("berufsverband", ""),
+        ("BERUFSVERBAND_BEITRAEGE", ""),
+        ("x", "Wie viel hast du an deinen Berufsverband gezahlt?"),
+    ] {
+        assert!(ist_besondere_kategorie(feld, frage), "({feld:?}, {frage:?}) wird nicht als besondere Kategorie erkannt");
+    }
+    for (feld, frage) in [
+        ("berufs", ""),
+        ("verband", "Welcher Verband?"),
+        ("gewerbe", "Gewinn aus Gewerbe?"),
+        ("bruttoarbeitslohn", "Wie hoch ist dein Bruttoarbeitslohn?"),
+    ] {
+        assert!(!ist_besondere_kategorie(feld, frage), "({feld:?}, {frage:?}) trifft das Muster, obwohl es nur danebenliegt");
     }
 }
 

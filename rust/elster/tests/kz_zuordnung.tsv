@@ -14,6 +14,7 @@ agb_aufwendungen	E0161804	true
 berufsausbildung_aufwendungen	E0108202	true
 berufsausbildung_bezeichnung	E0108201	true
 berufsausbildung_einzelbetrag	E0108002	false
+berufsverband_beitraege	E0204003	true
 bruttoarbeitslohn	E0200201	true
 dba_auslaendische_einkuenfte	E0601401	true
 dba_gezahlte_auslaendische_steuer	E0601901	true

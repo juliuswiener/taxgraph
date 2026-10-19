@@ -303,9 +303,12 @@ fn konstanten_wie_orakel() {
     // Versorgung des Ehegatten, seine einbehaltene Lohnsteuer (`p36_lohnsteuer_partner`), `waehlervereinigungen_betrag` und der Grad der
     // Behinderung, den der Gesamtlauf fuer die Altersgrenze fragt (`versorgung_grad_der_behinderung`), stehen nur in Rust (Python kennt die
     // Felder im Ring nicht). Dazu seit Abweichung Nr. 92 die sechs Zuschussfelder (`zuschuss_ag_kv_gesetzlich`, `zuschuss_ag_kv_privat`,
-    // `zuschuss_ag_pv`, je Person): Python kennt keinen Zuschuss. Der Rest ist das Orakel, und genau diese FUENFZEHN Felder sind
-    // ausgenommen: ein sechzehntes Rust-Feld braucht seine eigene Zeile hier.
-    const NUR_RUST: [&str; 15] = [
+    // `zuschuss_ag_pv`, je Person): Python kennt keinen Zuschuss. Dazu seit Abweichung Nr. 93 die zwei Felder der Beitraege zu
+    // Berufsverbaenden (`berufsverband_beitraege`, je Person): Python kennt sie nicht. Der Rest ist das Orakel, und genau diese
+    // SIEBZEHN Felder sind ausgenommen: ein achtzehntes Rust-Feld braucht seine eigene Zeile hier.
+    const NUR_RUST: [&str; 17] = [
+        "berufsverband_beitraege",
+        "berufsverband_beitraege_partner",
         "ep_unfallkosten",
         "p36_lohnsteuer_partner",
         "parteispenden_betrag",

@@ -331,6 +331,37 @@ bindungen:
       zitatanker: "Arbeitgeberleistungen laut Nr. 17"
       datei: "sources/bfinv/anlage_n_2025.txt"
 
+  # Beitraege zu Berufsverbaenden (Abweichung Nr. 93, Julius 2026-10-19, d-41; Vault: decisions/julius-entscheidet-zuschussfelder-bauen-
+  # beleg-abruf-s1-und-s2-planen-quellen-skripte-nach-rust-berufsverbaende-bauen-2026-10-19): Gewerkschaft oder Berufsverband, § 9 Abs. 1
+  # Satz 3 Nr. 3 EStG, Zeile 53 der Anlage N (Schema: N/Wk/Berufsverb/Einz, E0204001 Bezeichnung, E0204003 Betrag, Summe E0204002; Vordruck
+  # mit bis zu 99 Einzelposten, E10-2025.xsd). EIN Betrag je Person: alle Beitraege zusammen. Er zaehlt zu den uebrigen Werbungskosten der
+  # Person und steht vor dem Vergleich mit dem Arbeitnehmer-Pauschbetrag (`bescheid/src/zweige/wk.rs` `berufsverband`).
+  # Optionaler Betrag (leer heisst 0), KEINE Pflichtfrage und kein Kegel-Feld: `feld_bedingung` am bestaetigten Lohn ueber 0 und
+  # `signatur_slot` als Etikett, nie `geltungsbedingung` (Entscheidung ein-neues-betragsfeld-haengt-an-feld-bedingung-nie-an-
+  # geltungsbedingung). Das Feld liegt hier und nicht in `bindung_n_vor_gwg.yaml`: `n_vor_gwg` fuehrt weder Lohn noch einen Gesamtbescheid.
+  # Hoechstens 99.999 Euro (`bereich`): die Erklaerung kennt fuer `E0204003` und `E0204002` hoechstens fuenf Stellen (`GanzzahlOhneFuehrNull_
+  # MaxVK5`). `Kammerbeitrag/Wert` (Arbeitskammer, Arbeitnehmerkammer) ist ungeklaert und bleibt in `NICHT_UNTERSUCHT`; der Text sagt dazu nichts.
+  # Kein `vorschlagbar_von: [beleg]`: die Lohnsteuerbescheinigung traegt diesen Beitrag nicht.
+  - feld_id: berufsverband_beitraege
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: berufsverband_beitraege}
+    feld_bedingung: {feld: bruttoarbeitslohn, groesser_als: 0, grund: "Beitraege zu einer Gewerkschaft oder einem Berufsverband sind Werbungskosten aus dem Arbeitsverhaeltnis: ohne bestaetigten Lohn ueber 0 Euro gibt es keine Einkuenfte aus nichtselbststaendiger Arbeit, bei denen sie abzuziehen waeren."}
+    typ: cent
+    bereich: {min: 0, max: 9999900, grund: "Die Erklaerung kennt fuer den Betrag in Zeile 53 hoechstens fuenf Stellen vor dem Komma (E10-2025.xsd, E0204003 und E0204002: GanzzahlOhneFuehrNull_MaxVK5): 99.999 Euro."}
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen für eine Gewerkschaft oder einen Berufsverband gezahlt?"
+    hilfe_kurz: "Alle Beiträge des Jahres zusammen, die du an eine Gewerkschaft oder einen Berufsverband gezahlt hast. Das Gesetz nennt Beiträge zu Berufsständen und sonstigen Berufsverbänden, deren Zweck nicht auf einen wirtschaftlichen Geschäftsbetrieb gerichtet ist. Beiträge an politische Parteien gehören nicht hierher: Dafür gibt es die Frage zu Spenden an Parteien. Die Software zählt den Betrag zu deinen übrigen Werbungskosten. Die Steuer sinkt nur, wenn alle Werbungskosten zusammen den Arbeitnehmer-Pauschbetrag übersteigen. Die Erklärung trägt den Betrag in Zeile 53 der Anlage N ein, auf volle Euro aufgerundet. Wenn nichts: leer lassen oder 0."
+    beispielwert: 17800
+    herkunft_slots: null
+    elster_kz: E0204003
+    elster_kz_grund: "N/Wk/Berufsverb/Einz/E0204003 (E10-2025.xsd:18114-18118), XSD-Label 'Betrag' der Zeile 53 der Anlage N. `deklariere` setzt dazu die Bezeichnung E0204001 und die Summe E0204002 (ein Posten je Person, Summe = Summe der gerundeten Zeilen). Je Person ein Container N (Person A = Basis, Person B = person_b)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 3 EStG"
+      zitatanker: "Beiträge zu Berufsständen und sonstigen Berufsverbänden, deren Zweck nicht auf einen wirtschaftlichen Geschäftsbetrieb gerichtet ist"
+      datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
+
   # Ring-Wert (Abweichung Nr. 50): wahr, wenn die Erklaerung den Bezug in den Zeilen 11 bis 13 der Anlage N traegt (Betrag
   # E0200801, Bemessungsgrundlage E0200902, Beginnjahr E0201307). `mit_ring_werten` setzt ihn nur aus bestaetigten Feldern, wenn
   # der Bescheid den Bezug als steuerbeguenstigten Versorgungsbezug rechnet (Alters-Gate erfuellt). `deklariere` schreibt daraus
@@ -2062,6 +2093,37 @@ bindungen:
       quelle: "Anlage N, Zeile 51"
       zitatanker: "Arbeitgeberleistungen laut Nr. 17"
       datei: "sources/bfinv/anlage_n_2025.txt"
+
+  # Beitraege zu Berufsverbaenden des Ehegatten (Abweichung Nr. 93), wie `berufsverband_beitraege` von Person A: der Arbeitnehmer-
+  # Pauschbetrag gilt je Person, der Beitrag zaehlt zu den Werbungskosten DES EHEGATTEN (zweite Anlage N, `person_b`). Der Ehegatte hatte
+  # bis Nr. 93 keine Werbungskosten ausser dem Pauschbetrag (`einkuenfte_ns_aus_lohn`, `est_zusammen`); die Kirchensteuer je Person
+  # (Abweichung Nr. 94) liest seine Einkuenfte mit.
+  - feld_id: berufsverband_beitraege_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: berufsverband_beitraege_partner}
+    feld_bedingung:
+      feld: veranlagung
+      wert: zusammen
+      grund: "§ 26b EStG: nur bei Zusammenveranlagung ist der Lohn des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen."
+      und:
+        feld: bruttoarbeitslohn_partner
+        groesser_als: 0
+        grund: "Beitraege zu einer Gewerkschaft oder einem Berufsverband sind Werbungskosten aus dem Arbeitsverhaeltnis des Partners: ohne bestaetigten Lohn ueber 0 Euro gibt es keine Einkuenfte aus nichtselbststaendiger Arbeit, bei denen sie abzuziehen waeren."
+    typ: cent
+    bereich: {min: 0, max: 9999900, grund: "Die Erklaerung kennt fuer den Betrag in Zeile 53 hoechstens fuenf Stellen vor dem Komma (E10-2025.xsd, E0204003 und E0204002: GanzzahlOhneFuehrNull_MaxVK5): 99.999 Euro."}
+    einheit: EUR
+    askable: true
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel hat dein Ehe-/Lebenspartner dieses Jahr an Beiträgen für eine Gewerkschaft oder einen Berufsverband gezahlt?"
+    hilfe_kurz: "Alle Beiträge des Jahres zusammen, die dein Partner an eine Gewerkschaft oder einen Berufsverband gezahlt hat. Das Gesetz nennt Beiträge zu Berufsständen und sonstigen Berufsverbänden, deren Zweck nicht auf einen wirtschaftlichen Geschäftsbetrieb gerichtet ist. Beiträge an politische Parteien gehören nicht hierher: Dafür gibt es die Frage zu Spenden an Parteien. Die Software zählt den Betrag zu den übrigen Werbungskosten deines Partners. Die Steuer sinkt nur, wenn alle Werbungskosten deines Partners zusammen den Arbeitnehmer-Pauschbetrag übersteigen; der Pauschbetrag gilt für jeden von euch einzeln. Die Erklärung trägt den Betrag in Zeile 53 der Anlage N deines Partners ein, auf volle Euro aufgerundet. Wenn nichts: leer lassen oder 0."
+    beispielwert: 17800
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Person-B-Spiegel (Klasse g): derselbe Kz E0204003 wie Person A (N/Wk/Berufsverb/Einz, Container Person B); die Bezeichnung E0204001 und die Summe E0204002 setzt `deklariere` dazu."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 9 Abs. 1 S. 3 Nr. 3 EStG"
+      zitatanker: "Beiträge zu Berufsständen und sonstigen Berufsverbänden, deren Zweck nicht auf einen wirtschaftlichen Geschäftsbetrieb gerichtet ist"
+      datei: "sources/gesetze-im-internet/estg_p9_2026-07-10.txt"
 
   # Ring-Wert des Ehegatten (Abweichung Nr. 50), wie `versorgung_zeile` von Person A: die drei Zeilen stehen in der zweiten Anlage N.
   # Der Ring setzt ihn nur bei bestaetigter Zusammenveranlagung.

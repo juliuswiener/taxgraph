@@ -65,7 +65,8 @@ static MUSTER: LazyLock<Muster> = LazyLock::new(|| Muster {
         "(?i)konfession|kirche|grad_der_behinderung|schwerbehind|gehbehind|behinderungsbedingte\
          |behinderten_pb|behinderten.?pausch|pflegegrad|pflegebeduerftig|gepflegter\
          |pflegst|pflege_durch|pflegt die person|hilflos|blind|taubblind|merkzeichen\
-         |berufsunfaehig|erwerbsunfaehig|krankheitskosten|heilbehandlung",
+         |berufsunfaehig|erwerbsunfaehig|krankheitskosten|heilbehandlung\
+         |gewerkschaft|berufsverband",
     ),
     konto_iban: PyRegex::neu(
         r"\b([A-Za-z]{2}\d{2})(?:[A-Za-z0-9]{10,30}|(?:[ -][A-Za-z0-9]{4}){2,7}(?:[ -][A-Za-z0-9]{1,4})?)\b",
@@ -171,6 +172,8 @@ pub fn filtere(text: &str) -> (Gefiltert, Vec<&'static str>) {
 /// ```
 /// assert!(llm::pii::ist_besondere_kategorie("grad_der_behinderung", ""));
 /// assert!(llm::pii::ist_besondere_kategorie("x", "Wen PFLEGST du?"));
+/// assert!(llm::pii::ist_besondere_kategorie("berufsverband_beitraege", ""));
+/// assert!(llm::pii::ist_besondere_kategorie("x", "Beitrag an die Gewerkschaft?"));
 /// assert!(!llm::pii::ist_besondere_kategorie("bruttoarbeitslohn", "Brutto?"));
 /// ```
 #[must_use]

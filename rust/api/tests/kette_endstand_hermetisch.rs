@@ -2073,6 +2073,25 @@ async fn kist_an_gesamt_werbungskosten_von_person_a_mindern_nicht_die_einkuenfte
     erwarte_kist("an_gesamt, EP von A", &ergebnis("an_gesamt", &basis).await, 1_354_600, 110_995);
 }
 
+/// Der Beitrag von Person B zu einem Berufsverband (Abweichung Nr. 93) mindert ihre Einkuenfte erst ueber dem Pauschbetrag und damit ihren
+/// Anteil an der gemeinsamen `ESt`. Fall wie Fall 3 (Lohn A 60.000, Lohn B 20.000 EUR, nur B Mitglied, NRW 9 %), von Hand nach Gesetz und
+/// `params/2025/`: ohne Beitrag und mit 178 EUR (unter 1.230) Einkuenfte 58.770 und 18.770, `ESt` 13.838 EUR, Grundtarif 13.938 und 1.336 EUR,
+/// Kirchensteuer von B 108,93 EUR. Mit 2.000 EUR Einkuenfte 58.770 und 18.000, zvE 76.698, `ESt` 13.596 EUR, Grundtarif 13.938 und 1.149 EUR,
+/// Kirchensteuer von B 122.364 Cent mal 1.149 / 15.087 = 93,19 EUR.
+#[tokio::test]
+async fn kist_an_gesamt_beitrag_von_person_b_mindert_nur_ihre_einkuenfte() {
+    for (name, beitrag_b, zahl, kist) in [
+        ("178 EUR unter dem Pauschbetrag", 17_800, 1_383_800, 10_893),
+        ("2.000 EUR darueber", 200_000, 1_359_600, 9_319),
+    ] {
+        let basis = mit(
+            mit(kegel_an_gesamt(), kist_an_gesamt(2_000_000, "keine", Some("evangelisch"), "nordrhein_westfalen")),
+            vec![("berufsverband_beitraege_partner", json!(beitrag_b))],
+        );
+        erwarte_kist(&format!("an_gesamt, B ev., {name}"), &ergebnis("an_gesamt", &basis).await, zahl, kist);
+    }
+}
+
 /// Ohne Antwort zu Person B bleibt es wie bisher (Satz mal volle `ESt` nach Person A): die Antwort ist kein Kegel-Feld, die Zahl kommt auch ohne sie.
 #[tokio::test]
 async fn kist_an_gesamt_ohne_antwort_zu_person_b_rechnet_wie_bisher() {

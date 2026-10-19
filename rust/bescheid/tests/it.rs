@@ -14,6 +14,8 @@ mod altersentlastung_sonstige_hermetisch;
 mod an_gesamt_luecken_sperren;
 #[path = "ausland_bstbk_2022_23_hermetisch.rs"]
 mod ausland_bstbk_2022_23_hermetisch;
+#[path = "berufsverband_zeile_53_xml.rs"]
+mod berufsverband_zeile_53_xml;
 #[path = "c2_weit_ang_xml_hermetisch.rs"]
 mod c2_weit_ang_xml_hermetisch;
 #[path = "checkest_verdrahtung.rs"]
