@@ -13,8 +13,11 @@
 //! Beschreibungstext); er beweist nur, dass ein Fall DA ist. Dass seine Zahl stimmt, tragen die Rechenwege unten und die
 //! zweite Lesung.
 //!
-//! ZWEITE LESUNG: Julius (offen). Die Rechenwege stehen unten; eine Leseliste mit Zahl und
-//! Gesetzeszitat je Fall liegt dem Uebergabebericht bei. Ohne die Lesung gilt keine Zahl als abgenommen.
+//! ZWEITE LESUNG (2026-10-19): alle sieben Zahlen halten. Eine unabhaengige Nachrechnung in exakten Bruechen, jeder
+//! Schritt gegen die eingefrorenen Gesetzestexte gelesen, Tarifkonstanten 2025 extern bestaetigt (`BGBl` 2024 I Nr. 449 nicht
+//! selbst gelesen). Die Leseliste liegt im Vault unter `audits/messbelege/nm-beleg-gesamt/leseliste.md`. Offen bleibt, was
+//! unten bei M1 (knapper Fall), A1 (kuenstlicher Fall), M2a (Entfernungspauschale 2025: Gesetzestext fehlt im Korpus; GWG:
+//! Schwellenlesart brutto oder netto) steht.
 //!
 //! HERKUNFT DER ERWARTUNGSWERTE: VZ 2025, von Hand aus Gesetzestext und `params/2025/`, mit exakten Bruchzahlen
 //! nachgerechnet (Rechenskript im Auftragsordner, kein Zugriff auf den Rust-Code), nie aus dem Rust-Code gelesen.
@@ -42,27 +45,33 @@
 //! (§ 32b Abs. 1 Satz 1 Nr. 3, Abs. 2 Satz 1 Nr. 2). Das zvE bleibt 24.912. Besonderer Steuersatz = Steuer(24.912 + 7.500 =
 //! 32.412) / 32.412 = 4.998 / 32.412; angewendet auf 24.912: 4.998 × 24.912 / 32.412 = 3.841,4…, abgerundet 3.841. Der Satz ist
 //! nicht gerundet (§ 32b nennt keine Rundung des Satzes); auf vier Dezimalstellen abgerundet ergaebe dieselben 3.841 (die 7.500
-//! sind so gewaehlt, dass die Lesart keine Rolle spielt; bei 8.000 waeren es 3.894 gegen 3.893).
+//! sind so gewaehlt, dass die Lesart keine Rolle spielt; bei 8.000 waeren es 3.894 gegen 3.893). Knapper Fall: die Steuer auf
+//! 32.412 betraegt 4.998,9982, also 0,0018 unter der Euro-Grenze; mit 4.999 waere die `ESt` 3.842. Die Gleitkomma-Rechnung haelt
+//! das aus (Fehler um 1e-12).
 //!
 //! **A1a / A1b Ausland (Anrechnung, § 34c Abs. 1).** Zweite Lesung: Julius. Lohn 93.810 Euro, davon 12.000 Euro Einkuenfte aus den Niederlanden
 //! (Methode Anrechnung), einzeln. gdb = 93.810 − 1.230 = 92.580; zvE = 92.580 − 36 = 92.544. Zone 4: 0,42 × 92.544 − 10.911,92 =
-//! 27.956,56…, abgerundet 27.956. Auf die auslaendischen Einkuenfte entfaellt der durchschnittliche Steuersatz (§ 34c Abs. 1
+//! 27.956,56…, abgerundet 27.956. Der Fall ist kuenstlich: er prueft den § 34c-Mechanismus, kein reales Abkommen; die 12.000
+//! sind Einkuenfte nach Werbungskosten, der Pauschbetrag ist nicht anteilig zugeordnet. Auf die auslaendischen Einkuenfte entfaellt der durchschnittliche Steuersatz (§ 34c Abs. 1
 //! Satz 2): 27.956 × 12.000 / 92.544 = 3.625 (ganzzahlig; die Zahlen sind so gewaehlt, dass keine Rundungsfrage entsteht).
 //! A1a: gezahlt 2.000 < 3.625, angerechnet 2.000, Steuer 27.956 − 2.000 = 25.956. A1b: gezahlt 5.000 > 3.625, angerechnet
 //! hoechstens 3.625, Steuer 27.956 − 3.625 = 24.331.
 //!
 //! **M2a Unfall, Entfernungspauschale und GWG.** Zweite Lesung: Julius. Lohn 62.000 Euro, einzeln. Entfernungspauschale 200 Tage × (20 km × 0,30 +
-//! 5 km × 0,38) = 200 × 7,90 = 1.580 (§ 9 Abs. 1 Satz 3 Nr. 4, `params/2025/entfernungspauschale.yaml`; unter dem Hoechstbetrag
+//! 5 km × 0,38) = 200 × 7,90 = 1.580 (§ 9 Abs. 1 Satz 3 Nr. 4, `params/2025/entfernungspauschale.yaml`; der eingefrorene § 9 ist die
+//! Fassung 2026 mit 0,38 ab km 1, die Staffel 2025 steht nur in der YAML; unter dem Hoechstbetrag
 //! 4.500, mit Kraftwagen ohnehin ohne Grenze). Unfallkosten 2.100 (BMF-Schreiben Rz. 30, kommen zur Pauschale dazu).
-//! Arbeitsmittel mit Anschaffungskosten 780 Euro (ein Arbeitnehmer hat keinen Vorsteuerabzug: es ist der Bruttopreis), Sofortabzug
+//! Arbeitsmittel mit Anschaffungskosten 780 Euro (ein Arbeitnehmer hat keinen Vorsteuerabzug: es ist der Bruttopreis; ob die
+//! 800-Euro-Grenze brutto oder netto gilt, ist offen, Anleitung N 2025 Z. 307 sagt „ohne Umsatzsteuer“; 780 und 1.200 liegen auf
+//! derselben Seite beider Lesarten), Sofortabzug
 //! als GWG (§ 9 Abs. 1 Satz 3 Nr. 7 Satz 2 mit § 6 Abs. 2 Satz 1 bis 3: bis 800 Euro). Werbungskosten
 //! 1.580 + 2.100 + 780 = 4.460, ueber dem Arbeitnehmer-Pauschbetrag 1.230: gdb = 62.000 − 4.460 = 57.540; zvE = 57.504. Zone 3:
-//! 13.452,7…, abgerundet 13.452.
+//! 13.452,62, abgerundet 13.452.
 //!
 //! **M2b Unfall, Entfernungspauschale und `AfA`.** Zweite Lesung: Julius. Wie M2a, aber das Arbeitsmittel kostet 1.200 Euro (ueber 800 Euro: keine
 //! GWG), Nutzungsdauer 3 Jahre, gekauft im Juli 2025. `AfA` nach § 7 Abs. 1: 1.200 / 3 = 400 im Jahr, im Anschaffungsjahr je VOLLEM
 //! Monat vor dem Anschaffungsmonat ein Zwoelftel weniger: (13 − 7) / 12 = 6/12, also 200. Werbungskosten 1.580 + 2.100 + 200 =
-//! 3.880: gdb = 58.120; zvE = 58.084. Zone 3: 13.674,0…, abgerundet 13.674.
+//! 3.880: gdb = 58.120; zvE = 58.084. Zone 3: 13.674,32, abgerundet 13.674.
 //!
 //! **P1 Privatverkauf.** Zweite Lesung: Julius. Lohn 40.000 Euro, einzeln, dazu ein Grundstueck, am 15.03.2021 fuer 100.000 Euro gekauft und am
 //! 20.09.2025 fuer 145.000 Euro verkauft (innerhalb von zehn Jahren, § 23 Abs. 1 Satz 1 Nr. 1; nicht selbst bewohnt). Gewinn =
