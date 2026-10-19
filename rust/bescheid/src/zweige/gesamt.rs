@@ -247,10 +247,11 @@ struct VersorgungsFelder {
     /// Der Grad, den die Rentner-Scheibe fragt (§ 33b-Block, immer gefragt).
     grad_der_behinderung: &'static str,
     /// Der Grad, den der Gesamtlauf fragt (Abweichung Nr. 80), nur bei einem Bezug der Art `altersgrenze_sonstige`. Der Ehegatte hat
-    /// keinen: `gesamt` fuehrt keinen Bezug des Ehegatten, nur die Rentner-Scheibe, und die fragt seinen Grad immer.
+    /// keinen: sein Grad steht in `rentner_grad_der_behinderung_partner` (Abweichung Nr. 87: `gesamt` fuehrt seinen Bezug seit Nr. 87,
+    /// die Rentner-Scheibe seit Nr. 33).
     grad_gesamtfrage: Option<&'static str>,
     /// Die Eingangsfrage des Gesamtlaufs "keine Behinderung und keine Pflege" (Abweichung Nr. 84, Entscheid d-27). Bestaetigt `true` und
-    /// ohne beantworteten Grad gilt Grad 0 (Grenze 63). Der Ehegatte hat sie nicht: `gesamt` fuehrt keinen Bezug des Ehegatten.
+    /// ohne beantworteten Grad gilt Grad 0 (Grenze 63). Der Ehegatte hat sie nicht (Nr. 87): seine Verneinung leitet nichts ab.
     keine_behinderung: Option<&'static str>,
     geburtsjahr: &'static str,
 }
@@ -268,7 +269,8 @@ const VERSORGUNG_A: VersorgungsFelder = VersorgungsFelder {
     geburtsjahr: "geburtsjahr",
 };
 
-/// Person B (§ 26b), Abweichung Nr. 33: Python kennt diese Felder nicht, nur die Rentner-Scheibe fragt sie.
+/// Person B (§ 26b), Abweichung Nr. 33: Python kennt diese Felder nicht. Die Rentner-Scheibe fragt sie seit Nr. 33, der Gesamtlauf
+/// (`gesamt`) seit Nr. 87.
 const VERSORGUNG_B: VersorgungsFelder = VersorgungsFelder {
     jahresrente: "versorgung_jahresrente_partner",
     bemessungsgrundlage: "versorgung_bemessungsgrundlage_partner",

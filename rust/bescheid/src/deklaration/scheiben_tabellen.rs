@@ -102,7 +102,7 @@ pub(super) const SCHEIBEN_AN_GESAMT_KEGEL: [&str; 33] = [
 
 /// `SCHEIBEN['gesamt']["felder"]` = `VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER + GESAMT_VERSORGUNG + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + PARTNER_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN + GESAMT_DBA + GESAMT_P23 + P23_SCREENING + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG + VERPFLEGUNG_EINZELREISE + AGB_TATBESTAND + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER + STEUERKLASSE_FELDER + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 409] = [
+pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 414] = [
     "vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand",
     "vv_sonstige_wk", "vv_entgelt_quote_prozent", "vv_wohnzwecke", "vv_auf_dauer",
     "veranlagung", "bruttoarbeitslohn", "ep_arbeitstage", "ep_entfernung_km",
@@ -207,13 +207,17 @@ pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 409] = [
     "versorgung_zweiter_bezug_partner", "versorgung_sterbegeld_partner", "versorgung_mehrere_jahre_partner", "versorgung_nicht_ganzjaehrig_partner",
     // Nur in Rust (2026-10-16, Abweichung Nr. 80): der Grad der Behinderung fuer die Altersgrenze des Bezugs von Person A (kein Kegel-Feld:
     // ohne Antwort gilt die vorsichtige Grenze 60, die Abgabe verlangt keine Antwort). Nicht in `rentner_gesamt`: dort fragt
-    // `rentner_grad_der_behinderung`. Kein Feld fuer den Ehegatten: `gesamt` fuehrt keinen Versorgungsbezug des Ehegatten.
+    // `rentner_grad_der_behinderung`. Kein Feld dieser Art fuer den Ehegatten: seine Altersgrenze liest `rentner_grad_der_behinderung_partner`.
     "versorgung_grad_der_behinderung",
     // Nur in Rust (2026-10-19, Abweichung Nr. 85): die zwei Rueckfragen zum Lohn je Person (kein Kegel-Feld: ein Ja sperrt die Abgabe,
     // die Zahl aendert sich nicht).
     "lohn_mehrere_jahre", "lohn_auslandstaetigkeit", "lohn_mehrere_jahre_partner", "lohn_auslandstaetigkeit_partner",
     // Nur in Rust (2026-10-19, Abweichung Nr. 86): die Rueckfrage zu Leistungen des Arbeitgebers je Person, gleiche Bauart.
     "lohn_erstattungen", "lohn_erstattungen_partner",
+    // Nur in Rust (2026-10-19, Abweichung Nr. 87): die fuenf Versorgungsfelder des Ehegatten (die Rentner-Scheibe fuehrt sie seit Nr. 33).
+    // Kein Kegel-Feld; der Ring liest sie schon (`zweige/gesamt.rs::einkuenfte_ns_aus_lohn`, Person B).
+    "versorgung_jahresrente_partner", "versorgung_bemessungsgrundlage_partner", "versorgung_beginn_jahr_partner", "versorgung_art_partner",
+    "versorgung_alter_bei_beginn_partner",
 ];
 
 /// `SCHEIBEN['gesamt']["kegel"]` = `VV_GESAMT_FELDER + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + AGB_TATBESTAND`

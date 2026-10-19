@@ -156,8 +156,8 @@ bindungen:
   # fragt ihn NUR dort, wo er die Grenze entscheidet: bei einem bestaetigten Bezug ueber 0 der Art `altersgrenze_sonstige` (Grenze 63 Jahre,
   # bei Grad ab 50 60 Jahre, § 19 Abs. 2 S. 2 Nr. 2 EStG). Ein eigenes Feld statt `rentner_grad_der_behinderung`: dieses Feld liest auch der
   # Behinderten-Pauschbetrag (§ 33b) samt seiner Abgabe-Sperre, und die Altersgrenze soll keine Rechenzahl und keine Sperre dort anstossen.
-  # Nur Person A: die Felder des Ehegatten zum Versorgungsbezug fuehrt nur die Rentner-Scheibe (dort fragt `rentner_grad_der_behinderung_partner`),
-  # `gesamt` kennt keinen Bezug des Ehegatten. Der Ring liest zuerst das Feld der Rentner-Scheibe, sonst dieses (`zweige/gesamt.rs::grad_feld`). Ohne bestaetigte Antwort gilt weiter
+  # Nur Person A: der Ehegatte hat kein eigenes Feld dieser Art, seine Altersgrenze liest `rentner_grad_der_behinderung_partner` (Abweichung
+  # Nr. 87: `gesamt` fuehrt seinen Bezug seit Nr. 87; Nr. 84 gilt fuer ihn NICHT). Der Ring liest zuerst das Feld der Rentner-Scheibe, sonst dieses (`zweige/gesamt.rs::grad_feld`). Ohne bestaetigte Antwort gilt weiter
   # die vorsichtige Grenze 60 (Entscheid 2026-10-12). `feld_bedingung` mit `signatur_slot` als Etikett, nie `geltungsbedingung` (siehe Nr. 66).
   # Abweichung Nr. 84 (Julius 2026-10-19, d-27, Option A): Wer die Eingangsfrage `keine_behinderung_pflege` bestaetigt verneint, wird nicht
   # nach dem Grad gefragt; der Ring rechnet dann mit Grad 0 (Grenze 63), ein beantworteter Grad geht vor. Die Frage nach dem Grad
@@ -1711,7 +1711,10 @@ bindungen:
   # ========================= Versorgungsbezüge Person B (§ 19 Abs. 2) — Abweichung Nr. 33 ==============
   # Rust-eigen (Python kennt diese fünf Felder nicht): die Rentner-Scheibe fragt Lohn, Steuerklasse und Versorgung des
   # Ehegatten bei Zusammenveranlagung, analog zu Person A (Entscheidung `rentner-ehegatte-lohn-und-versorgung-wird-gefragt-
-  # nicht-gesperrt`). Der Rentner-Ring liest sie in `zweige/gesamt.rs::einkuenfte_ns_aus_lohn` (Person B).
+  # nicht-gesperrt`). Der Rentner-Ring liest sie in `zweige/gesamt.rs::einkuenfte_ns_aus_lohn` (Person B). Seit Abweichung Nr. 87
+  # (Julius, 2026-10-19, d-28) fuehrt auch die Scheibe `gesamt` die fuenf Versorgungsfelder; derselbe Ring rechnet sie dort.
+  # Die Bedingung `kein_lohn_pension_partner` gilt nur in `rentner_gesamt`; in `gesamt` fehlt dieses Kreuz, die Felder stehen dort
+  # (fail-closed) bei jeder Zusammenveranlagung, wie die von Person A (`kein_lohn_pension` fehlt dort ebenso).
   #
   # Die Bedingung "nur bei Zusammenveranlagung" kommt wie bei `bruttoarbeitslohn_partner` aus der Regel
   # `p2_festzusetzung_zusammen` (regel_bedingungen: bei bestaetigtem `einzel` faellt die ganze Regel weg). KEINE

@@ -320,9 +320,7 @@ async fn die_versorgung_beider_ehegatten_zaehlt_je_fuer_sich() {
 /// nicht (Person A ohne Einkunft: Steuer 0).
 #[tokio::test]
 async fn bei_einzelveranlagung_zaehlt_der_bezug_des_ehegatten_nicht() {
-    let mut paare = paar("einzel", 0, 0);
-    paare.extend(versorgung_b(30_001, 30_001, 2025));
-    paare.push(("bruttoarbeitslohn_partner", json!(30_001 * 100)));
+    let paare = mit(paar("einzel", 0, 30_001), versorgung_b(30_001, 30_001, 2025));
     let a = ergebnis(&paare).await;
     assert_eq!(zahl(&a), 0, "Einzelveranlagung: {a}");
 }
