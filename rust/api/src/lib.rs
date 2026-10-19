@@ -33,6 +33,7 @@ pub mod fragen;
 pub mod graph;
 pub mod konfig;
 pub mod kontoauszug;
+pub mod lstb_beleg;
 pub mod openapi;
 pub mod preflight;
 pub mod python;

@@ -110,6 +110,19 @@ pub async fn vorjahr(
     crate::vorjahr::vorjahr(&z, &nutzer, &mut fall, &wert)
 }
 
+/// `POST /fall/{id}/beleg` — Rust-eigen (Abweichung Nr. 90, Stufe S1), Rumpf in [`crate::lstb_beleg`]. Die Beleg-Datei der
+/// Lohnsteuerbescheinigung als Text im Feld `beleg_xml`; die Beträge der Person A gehen als bestätigt in den Fall.
+///
+/// # Errors
+/// Wie [`event`], dazu 400 ohne `beleg_xml` und 422 für einen Beleg oder Fall, den der Import nicht liest.
+pub async fn beleg(
+    State(z): State<Zustand>,
+    mut fall: EigenerFall,
+    Koerper(wert): Koerper,
+) -> Result<Antwort, ApiFehler> {
+    crate::lstb_beleg::beleg(&z, &mut fall, &wert)
+}
+
 /// `POST /fall/{id}/kontoauszug` — `api.kontoauszug` (`api.py:956`), Rumpf in [`crate::kontoauszug`].
 ///
 /// # Errors

@@ -183,7 +183,7 @@ async fn ein_beleg_geht_als_bestaetigter_cent_wert_der_person_a_in_den_fall() {
         let e = &ev[*feld];
         assert_eq!(e["zustand"], "bestaetigt", "{feld}");
         assert_eq!(e["wert"], *cent, "{feld}: Cent");
-        assert_eq!(e["schreiber"], "edaten", "{feld}");
+        assert_eq!(e["schreiber"], "import:elster", "{feld}: der Schreiber der eDaten-Übernahme");
     }
     assert!(!ev.keys().any(|k| k.ends_with("_partner")), "nur Person A: {:?}", ev.keys());
 }
