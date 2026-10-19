@@ -47,7 +47,7 @@ const BETRAEGE: [(&str, &str, &str, i64); 15] = [
 
 /// Die Beträge als `<Element>Text</Element>`-Zeilen, eingerückt wie ein Beleg aus ELSTER.
 fn grund_alle() -> String {
-    BETRAEGE.iter().map(|(e, t, _, _)| format!("      <{e}>{t}</{e}>\n")).collect()
+    BETRAEGE.iter().map(|(e, t, _, _)| format!("      <{e}>{t}</{e}>\n")).collect::<Vec<_>>().concat()
 }
 
 /// Ein Beleg: Namensraum, `version`-Attribut (`None` = fehlt), `Dauer/Jahr`, Zahl der `ELStAM` und der Inhalt von `Besteuerungsgrund`.
@@ -60,7 +60,8 @@ fn beleg_mit(ns: &str, version: Option<&str>, jahr: &str, elstam: usize, grund: 
                 i % 12 + 1
             )
         })
-        .collect();
+        .collect::<Vec<_>>()
+        .concat();
     format!(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<VaSt_LStB xmlns=\"{ns}\"{version}>\n  <ArbGName>Erfundene Firma GmbH</ArbGName>\n  \
          <Eingangsdatum>28.02.2026 10:00:00</Eingangsdatum>\n  <Allgemein>\n    <IdNr>{IDNR}</IdNr>\n    <Name>{NAME}</Name>\n    \

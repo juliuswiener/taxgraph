@@ -62,7 +62,7 @@ fn ziele() -> BTreeMap<&'static str, i64> {
 }
 
 fn grund_alle() -> String {
-    BETRAEGE.iter().map(|(e, t, _, _)| format!("      <{e}>{t}</{e}>\n")).collect()
+    BETRAEGE.iter().map(|(e, t, _, _)| format!("      <{e}>{t}</{e}>\n")).collect::<Vec<_>>().concat()
 }
 
 fn beleg_mit(ns: &str, version: &str, jahr: &str, grund: &str) -> String {
