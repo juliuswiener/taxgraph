@@ -269,6 +269,28 @@ async fn die_fragen_zum_versorgungsbezug_des_ehegatten_stehen_nur_bei_zusammenve
     assert!(ids.iter().any(|i| i == "versorgung_alter_bei_beginn_partner"), "altersgrenze_sonstige: {ids:?}");
 }
 
+/// Die vier Rueckfragen zum Bezug des Ehegatten (Nr. 79) stehen in `gesamt` schon und haengen an `versorgung_jahresrente_partner > 0`.
+/// Vor Nr. 87 kamen sie nie zum Zug, weil die Scheibe die Jahresrente nicht fragte; jetzt oeffnet ein bestaetigter Bezug ueber 0 alle
+/// vier, ein Bezug von 0, kein Bezug und die Einzelveranlagung keine.
+#[tokio::test]
+async fn die_rueckfragen_zum_bezug_des_ehegatten_oeffnet_nur_ein_bestaetigter_bezug_ueber_0() {
+    const RUECKFRAGEN: [&str; 4] = [
+        "versorgung_zweiter_bezug_partner",
+        "versorgung_sterbegeld_partner",
+        "versorgung_mehrere_jahre_partner",
+        "versorgung_nicht_ganzjaehrig_partner",
+    ];
+    let offen = |ids: &[String]| RUECKFRAGEN.iter().filter(|f| ids.iter().any(|i| i == **f)).count();
+    let kein_bezug = fragen_ids(&fall_mit(&paar("zusammen", 0, 0)).await).await;
+    assert_eq!(offen(&kein_bezug), 0, "kein Bezug: {kein_bezug:?}");
+    let bezug_null = fragen_ids(&fall_mit(&mit(paar("zusammen", 0, 0), versorgung_b(0, 0, 2025))).await).await;
+    assert_eq!(offen(&bezug_null), 0, "Bezug 0: {bezug_null:?}");
+    let bezug = fragen_ids(&fall_mit(&mit(paar("zusammen", 0, 30_001), versorgung_b(30_001, 30_001, 2025))).await).await;
+    assert_eq!(offen(&bezug), RUECKFRAGEN.len(), "Bezug 30.001 Euro: {bezug:?}");
+    let einzel = fragen_ids(&fall_mit(&mit(paar("einzel", 0, 30_001), versorgung_b(30_001, 30_001, 2025))).await).await;
+    assert_eq!(offen(&einzel), 0, "Einzelveranlagung: {einzel:?}");
+}
+
 /// AK1 (b): der Bezug des Ehegatten geht mit Freibetrag, Zuschlag und Pauschbetrag in die Steuer. Beginn 2025 (13,2 %, hoechstens
 /// 990, Zuschlag 297). Handrechnung (`handrechnung.py`): 30.001 − 990 − 297 − 102 = 28.612, zvE 28.540, Steuer 696 Euro;
 /// 60.001 − 1.389 = 58.612, zvE 58.540, Steuer 8.194 Euro. Der Lohn (Nr. 3) enthaelt den Bezug (Nr. 8), also ist der Lohn gleich dem Bezug.
