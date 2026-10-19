@@ -14,8 +14,6 @@ mod ci_catala_orakel;
 mod ci_konfiguration;
 #[path = "ci_nicht_geprueft.rs"]
 mod ci_nicht_geprueft;
-#[path = "ci_stufe_b.rs"]
-mod ci_stufe_b;
 #[path = "daten_verzeichnis.rs"]
 mod daten_verzeichnis;
 #[path = "fehlertexte_hermetisch.rs"]

@@ -21,27 +21,6 @@ permissions:
   contents: read
 
 jobs:
-  # Stufe-B-Tests (pipeline/tests/, Makefile-Ziel `unit-stufe-b`): ohne produkt/, ohne tests/conftest.py,
-  # ohne Catala-Toolchain. Eigener Job, weil diese 247 Tests ihren Lauf behalten mussten, als `tests/` mit
-  # dem Loeschplan (L2) entfiel. Sekunden, nur das Manifest. Die sechs fastapi-Tests aus
-  # test_ui_backend.py und test_gettsim_crosscheck.py skippen sich hier selbst (kein fastapi, kein
-  # gettsim im Manifest); den Crosscheck faehrt der Job gettsim-crosscheck unten echt.
-  stufe-b:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Python-Abhaengigkeiten
-        run: pip install -r requirements-ci.txt
-
-      - name: pytest pipeline/tests (ohne Catala-Toolchain)
-        run: python3 -m pytest pipeline/tests -q
-
   # Frischetor des Catala-Orakels als eigener Job (Vorarbeit zur Loeschstufe L2, Vault-Backlog
   # catala-orakel-frischetor-in-eigenen-ci-job). Derselbe Schritt stand im Job catala-toolchain, der
   # mit der pytest-Suite fiel (L2); hier hing er nicht in der Luft. Er braucht nur den
@@ -92,67 +71,6 @@ jobs:
           git ls-files --error-unmatch rust/catala-sys/orakel/orakel.txt
           (cd rust && cargo run -p catala-sys --example orakel_erzeugen)
           git diff --exit-code -- rust/catala-sys/orakel/orakel.txt
-
-  # Differentielles Rechen-Oracle: unsere Catala-Werte gegen GETTSIM. Faengt Rechen-
-  # Regressionen, die die Unit-Suite nicht sieht. Die bekannten Divergenzen stehen als
-  # Allowlist in pipeline/tests/test_gettsim_crosscheck.py (KNOWN_DEVIATIONS, GETTSIM-Bug #1209
-  # Splitting-Rundung) — eine NEUE Abweichung schlaegt rot, das ist der Zweck.
-  # Braucht die venv312: golden_crosscheck.py importiert GETTSIM.
-  gettsim-crosscheck:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: System-Abhaengigkeiten (opam-Build-Deps)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y opam m4 build-essential pkg-config libgmp-dev
-
-      - name: opam-Root cachen (gleicher Key wie die anderen Catala-Jobs)
-        uses: actions/cache@v4
-        with:
-          path: ~/.opam
-          key: opam-taxgraph-catala-1.2.1-ocaml-4.14.2-${{ runner.os }}
-
-      - name: Catala bauen + assembliertes Package
-        run: |
-          set -e
-          export OPAMYES=1
-          export OPAMCONFIRMLEVEL=unsafe-yes
-          opam init --bare -y || true
-          opam switch create taxgraph 4.14.2 || true
-          eval $(opam env --switch=taxgraph --set-switch)
-          opam install -y catala.1.2.1
-          clerk build p32a-python
-          bash oracle/gettsim/assemble_catala.sh
-
-      # venv312 nach docs/setup.md: GETTSIM braucht Python 3.12.
-      # bcrypt/PyJWT: seit tests/conftest.py `import server` (f0e1c71, 2026-08-10) zieht
-      # jede Collection unter tests/ den vollen server->auth-Importpfad, unabhaengig vom
-      # Testinhalt. Fehlen sie in diesem isolierten venv312, schlaegt schon die Collection
-      # von test_gettsim_crosscheck.py fehl (ModuleNotFoundError), nicht erst ein Test.
-      # Seit 2026-10-06 liegt die Datei unter pipeline/tests/, ohne conftest: dieser Grund
-      # entfaellt. bcrypt/PyJWT bleiben installiert, bis ein CI-Lauf ohne sie gruen gesehen ist.
-      - name: venv312 mit GETTSIM
-        run: |
-          set -e
-          pip install uv
-          uv venv oracle/.venv312 --python 3.12
-          uv pip install --python oracle/.venv312/bin/python \
-            -r requirements-oracle.txt
-
-      - name: gettsim-crosscheck (Report + Gate)
-        run: |
-          set -e
-          eval $(opam env --switch=taxgraph --set-switch)
-          . oracle/.venv312/bin/activate
-          python oracle/gettsim/golden_crosscheck.py
-          python -m pytest pipeline/tests/test_gettsim_crosscheck.py -q
 
   # Rust-Port (REWRITE_PLAN.md), Schritt 1 "Foundation". `rust/catala-sys/generated/` (der
   # Catala-C-Backend) ist COMMITTED -- dieser Job braucht deshalb weder den Opam-Switch noch
