@@ -849,6 +849,27 @@ async fn a6_mobilitaetspraemie_rechnet_mit_dem_abzug_inklusive_pauschbetrag() {
     assert_eq!(a["mobilitaetspraemie_cent"].as_i64(), Some(5_432), "{a}");
 }
 
+/// Abweichung Nr. 88, Scheibe `an_gesamt`: 900,00 EUR brutto bei 19 % (netto 756,30) liegen unter der Netto-Grenze, der volle Bruttopreis
+/// ist Sofortabzug. 60.000 EUR Lohn, 30 km an 220 Tagen (Entfernungspauschale 2.156 EUR, ueber dem Pauschbetrag): Einkuenfte
+/// 60.000 - 2.156 - 900 = 56.944, zvE 56.944 - 36 = 56.908, Steuer 13.226 EUR = 1.322.600 ct (wie `g29` in `gesamt`). Von Hand gerechnet
+/// (Skript `handrechnung.py`, Eichung an `a5`: zvE 58.734 ergibt 1.392.400 ct). Der Abzug kommt NACH dem Catala-Scope dazu
+/// (`mit_sofortabzug_im_band`): der Scope zaehlt 900 EUR gegen 800 EUR und lieferte 0.
+#[tokio::test]
+async fn a7_arbeitsmittel_900_eur_brutto_bei_19_prozent_sind_sofortabzug() {
+    let a = ergebnis(
+        "an_gesamt",
+        &mit(
+            kegel_an_gesamt(),
+            mit(
+                vec![("bruttoarbeitslohn", json!(6_000_000))],
+                arbeitsmittel_brutto_aenderungen(90_000, "satz_19"),
+            ),
+        ),
+    )
+    .await;
+    erwarte_zahl("a7", &a, 1_322_600);
+}
+
 /// Grund `bestaetigt` und die gezahlte Steuer in CENT (Scheiben ohne Kette, z. B. `an_gesamt`).
 fn erwarte_zahl(name: &str, a: &Value, zahl_cent: i64) {
     assert_eq!(
