@@ -86,12 +86,16 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// `versorgung_mehrere_jahre`, `versorgung_nicht_ganzjaehrig`, je Person) in `gesamt` und `rentner_gesamt` (Abweichung Nr. 66),
 /// 394 -> 402 und 308 -> 316, die Kegel bleiben;
 /// danach am 2026-10-16 das Feld `versorgung_grad_der_behinderung` nur in `gesamt` (Abweichung Nr. 80), 402 -> 403, der Kegel bleibt;
+/// danach am 2026-10-19 die vier Rueckfragen zum Lohn (`lohn_mehrere_jahre`, `lohn_auslandstaetigkeit`, je Person) in `an_gesamt`,
+/// `gesamt` und `rentner_gesamt` (Abweichung Nr. 85), 85 -> 89, 403 -> 407 und 316 -> 320, die Kegel bleiben;
+/// danach am 2026-10-19 die zwei Rueckfragen zu Leistungen des Arbeitgebers (`lohn_erstattungen`, je Person) in denselben drei Scheiben
+/// (Abweichung Nr. 86), 89 -> 91, 407 -> 409 und 320 -> 322, die Kegel bleiben;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
-    (Scheibe::AnGesamt, 85, 33),
-    (Scheibe::Gesamt, 403, 35),
-    (Scheibe::RentnerGesamt, 316, 28),
+    (Scheibe::AnGesamt, 91, 33),
+    (Scheibe::Gesamt, 409, 35),
+    (Scheibe::RentnerGesamt, 322, 28),
 ];
 
 fn registry() -> &'static Registry {

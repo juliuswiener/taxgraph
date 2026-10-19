@@ -128,6 +128,13 @@ fn eingaben(im_inland: bool) -> Vec<Value> {
         .iter()
         .all(|e| !e["feld_id"].as_str().unwrap().starts_with("dhf_")));
     alle.extend(dhf_antworten(im_inland));
+    // Der Fall hat einen Bruttoarbeitslohn ueber 0: seit Abweichung Nr. 85 und 86 sind die drei Rueckfragen zum Lohn Pflicht, sonst ist
+    // die Deklaration unvollstaendig und der Test misst diese Sperre statt der Streichung.
+    alle.extend([
+        ereignis("lohn_mehrere_jahre", &json!(false)),
+        ereignis("lohn_auslandstaetigkeit", &json!(false)),
+        ereignis("lohn_erstattungen", &json!(false)),
+    ]);
     alle
 }
 

@@ -42,6 +42,8 @@ mod kontoauszug_naht;
 mod kopfnamen;
 #[path = "lesen_naht.rs"]
 mod lesen_naht;
+#[path = "lohn_rueckfragen_hermetisch.rs"]
+mod lohn_rueckfragen_hermetisch;
 #[path = "p23_waechter_hermetisch.rs"]
 mod p23_waechter_hermetisch;
 #[path = "p34_abs3_55_geburtstag_hermetisch.rs"]
