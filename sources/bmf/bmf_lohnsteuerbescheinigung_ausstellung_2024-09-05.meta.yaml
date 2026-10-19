@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "bmf/2024-09-05/IV-C-5-S-2378-19-10002-002"
+  norm: "BMF-Schreiben Ausstellung von elektronischen Lohnsteuerbescheinigungen fuer Kalenderjahre ab 2025 v. 05.09.2024 (BStBl I S. 1255), IV C 5 - S 2378/19/10002 :002 - 2024/0468347"
+  fassung: "05.09.2024 (LStH 2025 Anhang 23 I)"
+  quelle_url: "https://ao.bundesfinanzministerium.de/lsth/2025/B-Anhaenge/Anhang-23/I/anhang-23-I.html"
+  abrufdatum: "2026-10-19"
+  datei: "bmf_lohnsteuerbescheinigung_ausstellung_2024-09-05.txt"
+  sha256: "15941ba7d6e4afd3dad4dbc2e7999ac59f7bcc33a4dc79356ba759acca35df92"
+  authority: verwaltung
+  redistributable: true
+  einfrier_ebene: schreiben
+  verwendet_in: []

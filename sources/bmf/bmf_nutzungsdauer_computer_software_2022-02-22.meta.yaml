@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "bmf/2022-02-22/IV-C-3-S-2190-21-10002-025"
+  norm: "BMF-Schreiben Nutzungsdauer von Computerhardware und Software zur Dateneingabe und -verarbeitung v. 22.02.2022 (BStBl I S. 187), IV C 3 - S 2190/21/10002 :025 - 2022/0186479"
+  fassung: "22.02.2022 (EStH 2022 Anhang 1 V)"
+  quelle_url: "https://esth.bundesfinanzministerium.de/esth/2022/C-Anhaenge/Anhang-01/V/anhang-1-V.html"
+  abrufdatum: "2026-10-19"
+  datei: "bmf_nutzungsdauer_computer_software_2022-02-22.txt"
+  sha256: "f226c4e22c9dbf0eaa517dd4e5c846344a10f8b43308e4f88fd4ef32d1e08e73"
+  authority: verwaltung
+  redistributable: true
+  einfrier_ebene: schreiben
+  verwendet_in: []

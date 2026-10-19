@@ -52,6 +52,8 @@ Kurzzitat gegen Quellsegment).
 | § 9 Abs. 1 Nr. 4/Abs. 2 EStG | 2026 (StAendG 2025, 0,38 ab km 1) | 2026-07-09 | gesetz |
 | BMF-Schreiben Entfernungspauschalen | 18.11.2021 (BStBl I 2021, 2315) | 2026-07-09 | verwaltung |
 | BMF-Schreiben Entfernungspauschalen, Wortlaut (LStH 2026 Anhang 14, Rz. 30 Unfallkosten) | 18.11.2021 (BStBl I 2021, 2315) | 2026-10-07 | verwaltung |
+| BMF-Schreiben Nutzungsdauer Computerhardware und Software (1 Jahr), EStH 2022 Anhang 1 V | 22.02.2022 (BStBl I S. 187) | 2026-10-19 | verwaltung |
+| BMF-Schreiben Ausstellung der elektronischen Lohnsteuerbescheinigung ab 2025, LStH 2025 Anhang 23 I (die Webfassung springt von Rn. 15 auf Rn. 22 ohne fehlenden Text; nach Nummer des Ausdrucks zitieren, nicht nach Rn.) | 05.09.2024 (BStBl I S. 1255) | 2026-10-19 | verwaltung |
 
 ## Einfrier-Ebene: mindestens ein ganzer Paragraph
 
