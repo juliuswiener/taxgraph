@@ -57,8 +57,8 @@
 //!
 //! **Abweichung Nr. 74 an allen Eintraegen.** Die Regel in `bedingung_schliesst_aus` (eine Bedingung auf ein Feld, das die Scheibe
 //! nicht fragt, schliesst nichts aus) steht allgemein im Code und wirkt an jedem solchen Eintrag der Bindung, nicht nur an den
-//! zwei Lohn-Kreuzen. Der Abschnitt "Abweichung Nr. 74 an allen Eintraegen" unten zaehlt diese Eintraege aus der Bindung (43:
-//! 13 in `gesamt` und 5 in `an_gesamt`, alle an den zwei Lohn-Kreuzen, 25 in `rentner_gesamt`), haelt sie gegen die Liste [`GEPRUEFT`] und misst
+//! zwei Lohn-Kreuzen. Der Abschnitt "Abweichung Nr. 74 an allen Eintraegen" unten zaehlt diese Eintraege aus der Bindung (48:
+//! 18 in `gesamt` und 5 in `an_gesamt`, alle an den zwei Lohn-Kreuzen, 25 in `rentner_gesamt`), haelt sie gegen die Liste [`GEPRUEFT`] und misst
 //! an jedem: die Frage bleibt stehen, auch wenn die Akte das Bedingungsfeld mit einem schliessenden Wert tragen wuerde.
 #![allow(
     clippy::unwrap_used,
@@ -1246,7 +1246,19 @@ const GEPRUEFT: &[(&str, &str, &[&str])] = &[
     (
         "Gesamt",
         "kein_lohn_pension_partner",
-        &["bruttoarbeitslohn_partner", "p36_lohnsteuer_partner", "steuerklasse_partner", "vor_ag_anteil_rv_partner", "vor_an_anteil_rv_partner"],
+        &[
+            "bruttoarbeitslohn_partner",
+            "p36_lohnsteuer_partner",
+            "steuerklasse_partner",
+            // Abweichung Nr. 87: die fuenf Versorgungsfelder des Ehegatten stehen seit Nr. 87 in `gesamt`.
+            "versorgung_alter_bei_beginn_partner",
+            "versorgung_art_partner",
+            "versorgung_beginn_jahr_partner",
+            "versorgung_bemessungsgrundlage_partner",
+            "versorgung_jahresrente_partner",
+            "vor_ag_anteil_rv_partner",
+            "vor_an_anteil_rv_partner",
+        ],
     ),
     (
         "RentnerGesamt",
@@ -1281,11 +1293,13 @@ const GEPRUEFT: &[(&str, &str, &[&str])] = &[
 
 /// Eintraege mit `groesser_als` auf ein Feld, das die Scheibe nicht fragt: die Regel greift dort nicht, denn die Betragsbedingung
 /// verlangt einen Beleg, und ohne das Feld in der Scheibe gibt es keinen. Die Frage steht nicht.
-const BELEG: &[(&str, &str, &[&str])] = &[(
-    "Gesamt",
-    "versorgung_jahresrente_partner",
-    &["versorgung_mehrere_jahre_partner", "versorgung_nicht_ganzjaehrig_partner", "versorgung_sterbegeld_partner", "versorgung_zweiter_bezug_partner"],
-)];
+///
+/// Leer seit Abweichung Nr. 87: die vier Rueckfragen des Ehegatten zum Versorgungsbezug (`versorgung_zweiter_bezug_partner`,
+/// `versorgung_sterbegeld_partner`, `versorgung_mehrere_jahre_partner`, `versorgung_nicht_ganzjaehrig_partner`) hingen in `gesamt`
+/// an `versorgung_jahresrente_partner > 0`, das die Scheibe nicht fragte; mit den fuenf Feldern des Ehegatten in `gesamt` hat die
+/// Bedingung ihren Beleg. Ein neuer solcher Eintrag macht `die_regel_nr_74_erfasst_genau_die_gepruefte_menge_an_eintraegen` rot,
+/// bis er hier steht; dann misst `die_betragsbedingung_ausserhalb_der_scheibe_bleibt_ein_beleg` ihn wieder.
+const BELEG: &[(&str, &str, &[&str])] = &[];
 
 /// Eintraege, an denen die Frage trotz der Regel verschwindet: (Scheibe, Kreuz, Feld, Grund). Leer: der Sweep fand keinen. Ein
 /// Eintrag hier ist ein Befund fuer ein eigenes Ticket, kein Freibrief; die Regel selbst aendert dieser Test nicht.
@@ -1399,7 +1413,8 @@ fn an_jedem_eintrag_der_regel_nr_74_bleibt_die_frage_stehen() {
 fn die_betragsbedingung_ausserhalb_der_scheibe_bleibt_ein_beleg() {
     let w = welt();
     let belege: Vec<Eintrag> = eintraege(w).into_iter().filter(|e| e.art == Art::Beleg).collect();
-    assert!(!belege.is_empty(), "KONTROLLE: kein Beleg-Eintrag in der Bindung");
+    // Leer ist erlaubt (BELEG ist seit Nr. 87 leer), solange die Bindung und die Liste dieselbe Zahl nennen: sonst lief die Schleife blind.
+    assert_eq!(belege.len(), BELEG.iter().map(|(_, _, felder)| felder.len()).sum::<usize>(), "KONTROLLE: Beleg-Eintraege der Bindung und BELEG weichen ab");
     for e in &belege {
         let scheibe = *SCHEIBEN.iter().find(|s| format!("{s:?}") == e.scheibe).unwrap();
         let schwelle = w.nachschlag[&e.feld]

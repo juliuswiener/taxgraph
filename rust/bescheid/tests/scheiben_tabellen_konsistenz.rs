@@ -92,11 +92,13 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// (Abweichung Nr. 86), 89 -> 91, 407 -> 409 und 320 -> 322, die Kegel bleiben;
 /// danach am 2026-10-19 das Feld `am_umsatzsteuersatz` in `an_gesamt` und `gesamt` (Abweichung Nr. 88), 91 -> 92 und 409 -> 410, die
 /// Kegel bleiben, `rentner_gesamt` bleibt 322;
+/// danach am 2026-10-19 die fuenf Versorgungsfelder des Ehegatten (`versorgung_jahresrente_partner`, `…_bemessungsgrundlage_partner`,
+/// `…_beginn_jahr_partner`, `…_art_partner`, `…_alter_bei_beginn_partner`) nur in `gesamt` (Abweichung Nr. 87), 410 -> 415, der Kegel bleibt;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 92, 33),
-    (Scheibe::Gesamt, 410, 35),
+    (Scheibe::Gesamt, 415, 35),
     (Scheibe::RentnerGesamt, 322, 28),
 ];
 
