@@ -28,7 +28,10 @@ use intervall::Slots;
 use super::rechnen::{add, max0, sub, summe_euro, R};
 use super::kist_anteil::EinkuenfteJePerson;
 use super::tarif::{leerer_gesamtfall, rahmen, Lage, Modus, P35};
-use super::wk::{am_gesamt, ep_eingabe, mit_sofortabzug_im_band, mit_unfallkosten, wk_teile};
+use super::wk::{
+    am_gesamt, ep_eingabe, mit_computer_im_kaufjahr, mit_sofortabzug_im_band, mit_unfallkosten,
+    wk_teile,
+};
 use super::{gesamt_tarif, slot, Marke, Ring, VeranlagungWert};
 use crate::abzuege::{p33b_kind_pauschbetraege, shared_steuer_sonder_agb};
 use crate::einkuenfte::{
@@ -515,6 +518,8 @@ fn ns_werbungskosten<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<Euro> {
     // Vergleich mit dem Arbeitnehmer-Pauschbetrag in `einkuenfte_nichtselbststaendig`.
     // Arbeitsmittel mit Bruttopreis ueber 800 EUR, netto aber unter der Grenze (Abweichung Nr. 88): der Catala-Scope hat sie nicht gesehen.
     let wk = mit_sofortabzug_im_band(f, mit_unfallkosten(f, wk)?)?;
+    // Geraet der Liste im BMF-Schreiben vom 22.02.2022 mit einem Jahr Nutzungsdauer (Abweichung Nr. 89): voller Abzug im Kaufjahr.
+    let wk = mit_computer_im_kaufjahr(f, wk)?;
     add(add(wk, afa)?, dba_abzug_werbungskosten(f)?)
 }
 

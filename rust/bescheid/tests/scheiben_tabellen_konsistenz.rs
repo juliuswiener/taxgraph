@@ -96,11 +96,13 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// `…_beginn_jahr_partner`, `…_art_partner`, `…_alter_bei_beginn_partner`) nur in `gesamt` (Abweichung Nr. 87), 410 -> 415, der Kegel bleibt;
 /// danach am 2026-10-19 das Feld `kist_konfession_partner` nur in `an_gesamt` (Abweichung Nr. 94), 92 -> 93, der Kegel bleibt, `gesamt`
 /// und `rentner_gesamt` fragen es schon;
+/// danach am 2026-10-19 das Feld `am_computer_software` in `an_gesamt` und `gesamt` (Abweichung Nr. 89), 93 -> 94 und 415 -> 416, die
+/// Kegel bleiben, `rentner_gesamt` bleibt 322;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
-    (Scheibe::AnGesamt, 93, 33),
-    (Scheibe::Gesamt, 415, 35),
+    (Scheibe::AnGesamt, 94, 33),
+    (Scheibe::Gesamt, 416, 35),
     (Scheibe::RentnerGesamt, 322, 28),
 ];
 

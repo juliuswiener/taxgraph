@@ -5,7 +5,7 @@ use domain::{PyWert, Sperrgrund};
 use rust_decimal::Decimal;
 
 use super::{bestaetigt, ganzzahl, positiv, zahl_wert, Grund, K};
-use crate::arbeitsmittel_grenze::{satz_prozent, sofortabzug, Sofortabzug};
+use crate::arbeitsmittel_grenze::{computer_ja, computer_offen, satz_prozent, sofortabzug, Sofortabzug};
 use crate::deklaration::konstanten::{
     ARBEITSMITTEL_KOSTEN, DHF_BEDINGUNGEN, DHF_KOSTEN, UEBERNACHTUNG_BEDINGUNGEN,
     UEBERNACHTUNG_KOSTEN, VERPFLEGUNG_TAGE, VERPFLEGUNG_TAGE_NACH_FRIST,
@@ -185,6 +185,25 @@ fn uebernachtung(f: &Felder) -> Option<Sperrgrund> {
 /// Satz. Darunter und darueber braucht es keine Antwort.
 fn arbeitsmittel(f: &Felder) -> Option<Sperrgrund> {
     let am = zahl_wert(wert(f, ARBEITSMITTEL_KOSTEN)).filter(|a| *a > Decimal::ZERO)?;
+    // Abweichung Nr. 89: ein BESTAETIGTES „ja“ zu „Das Geraet steht auf der Liste im BMF-Schreiben vom 22.02.2022“ ersetzt Satz, Wahl und
+    // Nutzungsdauer (ein Jahr, voller Abzug im Kaufjahr, Rz. 1.4). Offen bleibt nur, was die Zahl aendert; die Entscheidung steht in
+    // `computer_offen` (eine Stelle fuer Sperre und Rechnung). Ohne bestaetigtes „ja“ bleibt jeder Zweig unten unveraendert.
+    if computer_ja(bestaetigt(f, "am_computer_software").then(|| wert(f, "am_computer_software")).flatten()) {
+        let nd = ganzzahl(wert(f, "arbeitsmittel_nutzungsdauer"));
+        let nd_bestaetigt = bestaetigt(f, "arbeitsmittel_nutzungsdauer");
+        let kaufjahr = match wert(f, "am_afa_ist_anschaffungsjahr") {
+            Some(PyWert::Bool(b)) if bestaetigt(f, "am_afa_ist_anschaffungsjahr") => Some(*b),
+            _ => None,
+        };
+        let monat = ganzzahl(wert(f, "am_anschaffung_monat")).unwrap_or(0);
+        let offen = computer_offen(
+            nd.is_some() && !nd_bestaetigt,
+            nd.unwrap_or(0),
+            kaufjahr,
+            monat,
+        );
+        return offen.then_some(Sperrgrund::ArbeitsmittelAfaUeberGwgOffen);
+    }
     // Der Satz zaehlt erst bestaetigt, wie die Wahl des Sofortabzugs: ein vorlaeufiger Satz oeffnet nichts.
     let satz = bestaetigt(f, "am_umsatzsteuersatz")
         .then(|| satz_prozent(wert(f, "am_umsatzsteuersatz")))

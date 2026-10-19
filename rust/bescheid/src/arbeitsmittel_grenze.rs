@@ -77,9 +77,116 @@ pub(crate) fn sofortabzug(preis_cent: Decimal, satz: Option<i64>) -> Sofortabzug
     }
 }
 
+// ---------------------------------------------------------------- Computer und Software (Abweichung Nr. 89)
+
+/// **Regel** (BMF-Schreiben vom 22.02.2022, `BStBl` I S. 187, `sources/bmf/bmf_nutzungsdauer_computer_software_2022-02-22.txt`): Computerhardware
+/// und Software der Liste (Rz. 2 bis 5) haben eine betriebsgewoehnliche Nutzungsdauer von einem Jahr (Rz. 1). Das ist eine normale
+/// Abschreibung nach § 7 Abs. 1 `EStG` (Rz. 1.1), kein `GWG` und keine Sofortabschreibung; der volle Abzug im Anschaffungsjahr wird nicht
+/// beanstandet (Rz. 1.4), ein Zwoelftel nach dem Kaufmonat entfaellt. Wer davon abweicht, verteilt laenger (Rz. 1.2).
+///
+/// Ein Geraet der Liste durchlaeuft darum weder die Netto-Pruefung noch die Satzfrage (oben). Diese Funktion legt fest, was als „ja“ zaehlt: nur
+/// ein `true`. Wer ein BESTAETIGTES „ja“ verlangt, uebergibt die Antwort nur, wenn sie bestaetigt ist (die Sperre prueft das vorher; die
+/// Rechnung liest einen Stand mit bestaetigten Feldern).
+pub(crate) fn computer_ja(antwort: Option<&PyWert>) -> bool {
+    matches!(antwort, Some(PyWert::Bool(true)))
+}
+
+/// Wie ein Geraet der Liste abgeschrieben wird.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ComputerWeg {
+    /// Nutzungsdauer ein Jahr (Rz. 1): voller Abzug im Anschaffungsjahr (Rz. 1.4), in jedem anderen Jahr 0 (das Gut ist aufgebraucht).
+    EinJahr,
+    /// Eigene Nutzungsdauer ueber ein Jahr (Rz. 1.2): die Verteilung wie vor Nr. 89, mit dem Zwoelftel nach dem Kaufmonat.
+    Verteilung,
+}
+
+/// Der Weg bei der eigenen Nutzungsdauer in Jahren (`0` oder weniger = keine Angabe, die Vorgabe ist ein Jahr).
+pub(crate) fn computer_weg(nutzungsdauer: i64) -> ComputerWeg {
+    if nutzungsdauer > 1 {
+        ComputerWeg::Verteilung
+    } else {
+        ComputerWeg::EinJahr
+    }
+}
+
+/// Bleibt bei einem bestaetigten „ja“ etwas offen, das die Zahl aendert? Eine Stelle fuer die Sperre; die Rechnung liest dieselben Antworten.
+///
+/// - `nutzungsdauer_vorlaeufig`: die eigene Nutzungsdauer steht da, ist aber nicht bestaetigt. Mit der Bestaetigung wechselte die Zahl
+///   zwischen dem vollen Abzug und der Verteilung.
+/// - `kaufjahr`: die BESTAETIGTE Antwort auf „in diesem Jahr gekauft“ (`None` = keine). Sie entscheidet bei einem Jahr zwischen dem
+///   vollen Abzug und 0, darum gibt es hier keinen stillen Folgejahr-Wert.
+/// - `monat`: der Kaufmonat; nur die Verteilung im Anschaffungsjahr braucht ihn, ein Jahr nicht.
+pub(crate) fn computer_offen(
+    nutzungsdauer_vorlaeufig: bool,
+    nutzungsdauer: i64,
+    kaufjahr: Option<bool>,
+    monat: i64,
+) -> bool {
+    if nutzungsdauer_vorlaeufig {
+        return true;
+    }
+    match kaufjahr {
+        None => true,
+        Some(im_kaufjahr) => {
+            computer_weg(nutzungsdauer) == ComputerWeg::Verteilung
+                && im_kaufjahr
+                && !(1..=12).contains(&monat)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Nur ein `true` ist „ja“; `false`, Text, Zahl und keine Antwort sind es nicht.
+    #[test]
+    fn nur_ein_true_ist_ja() {
+        assert!(computer_ja(Some(&PyWert::Bool(true))));
+        assert!(!computer_ja(Some(&PyWert::Bool(false))));
+        assert!(!computer_ja(Some(&PyWert::Text("ja".to_owned()))));
+        assert!(!computer_ja(Some(&PyWert::Ganz(1))));
+        assert!(!computer_ja(None));
+    }
+
+    /// Ein Jahr ist der Normalfall (keine Angabe, 0 oder 1), jede laengere eigene Nutzungsdauer ist die Verteilung.
+    #[test]
+    fn ein_jahr_ist_die_vorgabe_und_mehr_ist_die_verteilung() {
+        for (nd, soll) in [
+            (-1, ComputerWeg::EinJahr),
+            (0, ComputerWeg::EinJahr),
+            (1, ComputerWeg::EinJahr),
+            (2, ComputerWeg::Verteilung),
+            (3, ComputerWeg::Verteilung),
+            (30, ComputerWeg::Verteilung),
+        ] {
+            assert_eq!(computer_weg(nd), soll, "Nutzungsdauer {nd}");
+        }
+    }
+
+    /// Was bei „ja“ offen bleibt: das Jahr der Anschaffung immer, die vorlaeufige Nutzungsdauer immer, der Monat nur bei einer
+    /// Verteilung im Anschaffungsjahr.
+    #[test]
+    fn offen_bleiben_das_anschaffungsjahr_die_vorlaeufige_nutzungsdauer_und_der_monat_der_verteilung() {
+        // (Name, Nutzungsdauer vorlaeufig, Nutzungsdauer, Anschaffungsjahr bestaetigt, Monat, offen)
+        let faelle = [
+            ("ein Jahr, Kaufjahr, ohne Monat", false, 0, Some(true), 0, false),
+            ("ein Jahr, Folgejahr", false, 0, Some(false), 0, false),
+            ("eigene 1, Kaufjahr, ohne Monat", false, 1, Some(true), 0, false),
+            ("Anschaffungsjahr unbeantwortet", false, 0, None, 7, true),
+            ("Verteilung 3, Kaufjahr, ohne Monat", false, 3, Some(true), 0, true),
+            ("Verteilung 3, Kaufjahr, Monat 0", false, 3, Some(true), 0, true),
+            ("Verteilung 3, Kaufjahr, Monat 13", false, 3, Some(true), 13, true),
+            ("Verteilung 3, Kaufjahr, Monat 1", false, 3, Some(true), 1, false),
+            ("Verteilung 3, Kaufjahr, Monat 12", false, 3, Some(true), 12, false),
+            ("Verteilung 3, Folgejahr, ohne Monat", false, 3, Some(false), 0, false),
+            ("Verteilung 3, Anschaffungsjahr unbeantwortet", false, 3, None, 7, true),
+            ("Nutzungsdauer vorlaeufig", true, 0, Some(true), 7, true),
+        ];
+        for (name, vorlaeufig, nd, jahr, monat, soll) in faelle {
+            assert_eq!(computer_offen(vorlaeufig, nd, jahr, monat), soll, "{name}");
+        }
+    }
 
     /// Die drei Bruttogrenzen von Julius, in Cent und ohne Rest.
     #[test]

@@ -305,12 +305,18 @@ fn die_hilfetexte_nennen_fuer_computer_ein_jahr_und_kein_sofortabzug() {
     for fid in [NUTZUNGSDAUER, "gwg_nutzungsdauer"] {
         let t = text_von(fid);
         assert!(
-            t.contains("BMF-Schreiben vom 22.02.2022") && t.contains("ein Jahr"),
+            t.contains("BMF-Schreiben zur Nutzungsdauer von Computerhardware und Software") && t.contains("ein Jahr"),
             "{fid}: nennt weder das Schreiben noch ein Jahr: {t}"
         );
     }
     let t = text_von(LISTE);
-    for muss in ["BMF-Schreiben vom 22.02.2022", "Smartphone", "617/2013", "Bestandsverzeichnis", "ein Jahr"] {
+    for muss in [
+        "BMF-Schreiben zur Nutzungsdauer von Computerhardware und Software",
+        "Smartphone",
+        "umweltgerechten Gestaltung von Computern",
+        "Bestandsverzeichnis",
+        "ein Jahr",
+    ] {
         assert!(t.contains(muss), "{LISTE}: Text nennt {muss:?} nicht: {t}");
     }
 }

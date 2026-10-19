@@ -57,7 +57,7 @@ pub(super) const SCHEIBEN_N_VOR_GWG_TEIL_RINGE: [(&str, &str, &[&str]); 1] = [
 
 /// `SCHEIBEN['an_gesamt']["felder"]` = `('bruttoarbeitslohn', 'veranlagung') + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P35A_MITVER_ANZEIGE + ('fam_anzahl_kinder', 'verlustvortrag_bestand')`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_AN_GESAMT_FELDER: [&str; 93] = [
+pub(super) const SCHEIBEN_AN_GESAMT_FELDER: [&str; 94] = [
     "bruttoarbeitslohn", "veranlagung", "ep_arbeitstage", "ep_entfernung_km",
     "ep_oepnv_kosten", "ep_eigenes_kfz", "ep_ziel_des_weges", "ep_ziel_adresse", "ep_unfallkosten",
     "vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb", "versicherungsart",
@@ -90,6 +90,9 @@ pub(super) const SCHEIBEN_AN_GESAMT_FELDER: [&str; 93] = [
     // Nur in Rust (2026-10-19, Abweichung Nr. 94): die Konfession des Ehegatten, gefragt bei Zusammenveranlagung (kein Kegel-Feld: ohne Antwort
     // bleibt es bei Satz mal volle ESt nach Person A, wie in `gesamt`; mit Antwort zahlt bei genau einem Mitglied nur dessen Anteil).
     "kist_konfession_partner",
+    // Nur in Rust (2026-10-19, Abweichung Nr. 89): die Frage, ob das Arbeitsmittel auf der Liste im BMF-Schreiben vom 22.02.2022 steht (kein
+    // Kegel-Feld: die Frage steht erst bei einem bestaetigten Preis ueber 800 EUR; ein bestaetigtes Ja ersetzt Satz, Wahl und Nutzungsdauer).
+    "am_computer_software",
 ];
 
 /// `SCHEIBEN['an_gesamt']["kegel"]` = `('bruttoarbeitslohn', 'veranlagung') + EP_FELDER + VOR_FELDER + KV_PV_FELDER + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + AN_GESAMT_FLAGS + ('fam_anzahl_kinder', 'verlustvortrag_bestand')`
@@ -108,7 +111,7 @@ pub(super) const SCHEIBEN_AN_GESAMT_KEGEL: [&str; 33] = [
 
 /// `SCHEIBEN['gesamt']["felder"]` = `VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER + GESAMT_VERSORGUNG + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + PARTNER_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN + GESAMT_DBA + GESAMT_P23 + P23_SCREENING + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG + VERPFLEGUNG_EINZELREISE + AGB_TATBESTAND + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER + STEUERKLASSE_FELDER + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 415] = [
+pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 416] = [
     "vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand",
     "vv_sonstige_wk", "vv_entgelt_quote_prozent", "vv_wohnzwecke", "vv_auf_dauer",
     "veranlagung", "bruttoarbeitslohn", "ep_arbeitstage", "ep_entfernung_km",
@@ -227,6 +230,9 @@ pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 415] = [
     // Kein Kegel-Feld; der Ring liest sie schon (`zweige/gesamt.rs::einkuenfte_ns_aus_lohn`, Person B).
     "versorgung_jahresrente_partner", "versorgung_bemessungsgrundlage_partner", "versorgung_beginn_jahr_partner", "versorgung_art_partner",
     "versorgung_alter_bei_beginn_partner",
+    // Nur in Rust (2026-10-19, Abweichung Nr. 89): die Frage, ob das Arbeitsmittel auf der Liste im BMF-Schreiben vom 22.02.2022 steht (kein
+    // Kegel-Feld: die Frage steht erst bei einem bestaetigten Preis ueber 800 EUR; ein bestaetigtes Ja ersetzt Satz, Wahl und Nutzungsdauer).
+    "am_computer_software",
 ];
 
 /// `SCHEIBEN['gesamt']["kegel"]` = `VV_GESAMT_FELDER + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + AGB_TATBESTAND`
