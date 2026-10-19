@@ -18,6 +18,7 @@ pub mod edaten;
 pub mod kontoauszug;
 pub mod ocr;
 pub mod vast;
+pub mod vast_beleg;
 pub mod vorjahr;
 pub mod vorschlag;
 

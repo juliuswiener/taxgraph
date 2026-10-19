@@ -46,7 +46,7 @@ macro_rules! fid {
 
 macro_rules! tabelle {
     ($( ($axum_fn:ident, $methode:literal, $muster:expr, $pfad:literal, $handler:path) ),+ $(,)?) => {
-        /// Alle 24 Routen in Pythons Reihenfolge.
+        /// Alle 25 Routen: die 24 aus Python in Pythons Reihenfolge, dazu `POST /fall/{id}/beleg` (Abweichung Nr. 90).
         pub const EINTRAEGE: &[Eintrag] = &[
             $( Eintrag {
                 methode: $methode,
@@ -56,7 +56,7 @@ macro_rules! tabelle {
             } ),+
         ];
 
-        /// Der axum-Router mit allen 24 Routen; Methode und Pfad stehen in [`EINTRAEGE`].
+        /// Der axum-Router mit allen 25 Routen; Methode und Pfad stehen in [`EINTRAEGE`].
         pub fn router() -> Router<Zustand> {
             Router::new()$( .route($pfad, $axum_fn($handler)) )+
         }
@@ -206,6 +206,14 @@ tabelle![
         concat!("^/fall/", id!(), "/kontoauszug$"),
         "/fall/{id}/kontoauszug",
         schreiben::kontoauszug
+    ),
+    // Rust-eigen (Abweichung Nr. 90, Stufe S1): kein Gegenstück in Python.
+    (
+        post,
+        "POST",
+        concat!("^/fall/", id!(), "/beleg$"),
+        "/fall/{id}/beleg",
+        schreiben::beleg
     ),
     (
         delete,

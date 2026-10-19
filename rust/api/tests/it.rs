@@ -52,6 +52,8 @@ mod kvpv_zuschuss_hermetisch;
 mod lesen_naht;
 #[path = "lohn_rueckfragen_hermetisch.rs"]
 mod lohn_rueckfragen_hermetisch;
+#[path = "lstb_beleg_hermetisch.rs"]
+mod lstb_beleg_hermetisch;
 #[path = "p23_waechter_hermetisch.rs"]
 mod p23_waechter_hermetisch;
 #[path = "p34_abs3_55_geburtstag_hermetisch.rs"]

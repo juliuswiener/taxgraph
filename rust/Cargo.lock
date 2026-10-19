@@ -444,6 +444,7 @@ dependencies = [
  "llm",
  "proptest",
  "regex",
+ "roxmltree",
  "serde",
  "serde_json",
  "store",

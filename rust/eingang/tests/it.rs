@@ -4,5 +4,7 @@
 
 #[path = "unterprozess_zeitlimit.rs"]
 mod unterprozess_zeitlimit;
+#[path = "vast_beleg_hermetisch.rs"]
+mod vast_beleg_hermetisch;
 #[path = "vast_ueberlauf_hermetisch.rs"]
 mod vast_ueberlauf_hermetisch;
