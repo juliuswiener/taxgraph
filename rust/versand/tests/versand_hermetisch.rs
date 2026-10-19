@@ -19,8 +19,9 @@ use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use elster::EricFehler;
 use versand::{
-    dekodiere_datenpaket, lauf, sende, AbrufFehler, Antwort, Modus, Umgebung, VersandFehler,
-    Zertifikat, ECHTVERSAND_FREIGABE,
+    dekodiere_datenpaket, hole_beleg, lauf, lauf_abruf, lege_beleg_ab, sende, AbrufAuftrag,
+    AbrufFehler, AbrufUmgebung, Antwort, Modus, Servermeldung, Umgebung, VersandFehler, Zertifikat,
+    ABRUF_FREIGABE, ECHTVERSAND_FREIGABE,
 };
 
 const XML_TEST: &[u8] = b"<?xml version=\"1.0\"?><Elster><TransferHeader>\
@@ -895,4 +896,435 @@ fn ladefehler_und_zertifikatsfehler_von_eric_kommen_benannt_und_ohne_dekodierung
         andere => panic!("erwartet Zertifikat, bekam {andere:?}"),
     }
     assert_eq!(l.zaehler("dekodiere_zaehler"), None);
+}
+
+// ------------------------------------------------------------------ Nr. 91, AK3: der Abruf und das Programm
+
+// Erfundene Werte: keine echte Steuer-ID; 74931 ist der Platzhalter der ERiC-Beispiele, keine echte Hersteller-ID.
+const IDNR: &str = "12345678903";
+const HERSTELLER: &str = "74931";
+const ID_A: &str = "xy123abcdefghijkmnopqrstuvwxyz12";
+const ID_C: &str = "ab001abcdefghijkmnopqrstuvwxyz12";
+const HEUTE: i32 = 2026;
+
+fn auftrag() -> AbrufAuftrag {
+    AbrufAuftrag::neu(IDNR, "2025", HERSTELLER, HEUTE).unwrap()
+}
+
+/// Die Antwort auf die Anfrage (Aufbau: amtliches Beispiel `4_b_ElsterVaStDaten_32_Anfrage_Response.xml`).
+fn anfrage_antwort(ids: &[(&str, &str, &str)]) -> String {
+    use std::fmt::Write as _;
+    let mut eintraege = String::new();
+    for (id, art, version) in ids {
+        write!(
+            eintraege,
+            r#"<Id id="{id}" groesse="1500" belegart="{art}" hashwert="680f" schemaversion="{version}"/>"#
+        )
+        .unwrap();
+    }
+    format!(
+        r#"<Elster xmlns="http://www.elster.de/elsterxml/schema/v11"><DatenTeil><Nutzdatenblock><Nutzdaten><Datenabholung xmlns="http://finkonsens.de/elster/elsterdatenabholung/v3" version="32"><Anfrage idnr="{IDNR}" veranlagungsjahr="2025">{eintraege}</Anfrage></Datenabholung></Nutzdaten></Nutzdatenblock></DatenTeil></Elster>"#
+    )
+}
+
+/// Die Antwort auf die Abholung (Aufbau: `5_b1_Einzelbescheid_ElsterVaStDaten_32_Abholung_Response.xml`).
+fn abholung_antwort(paket: &str) -> String {
+    format!(
+        r#"<Elster xmlns="http://www.elster.de/elsterxml/schema/v11"><DatenTeil><Nutzdatenblock><Nutzdaten><Datenabholung xmlns="http://finkonsens.de/elster/elsterdatenabholung/v3" version="32"><Abholung id="{ID_C}" idnr="{IDNR}" veranlagungsjahr="2025"><Datenpaket>{paket}</Datenpaket></Abholung></Datenabholung></Nutzdaten></Nutzdatenblock></DatenTeil></Elster>"#
+    )
+}
+
+/// Das Skript der Attrappe: ein Block je Aufruf von `EricBearbeiteVorgang` (Anfrage, dann Abholung).
+fn abruf_skript(anfrage: &str, abholung: &str) -> String {
+    format!("0\n<Erfolg/>\n--SERVER--\n{anfrage}\n=====\n0\n<Erfolg/>\n--SERVER--\n{abholung}")
+}
+
+fn gute_anfrage() -> String {
+    anfrage_antwort(&[(ID_A, "VaSt_RBM", "202501"), (ID_C, "VaSt_LStB", "202501")])
+}
+
+/// Das Datenpaket in der Antwort steht in Zeilen (wie im amtlichen Beispiel); ERiC bekommt es ohne Leerraum.
+fn gutes_skript() -> String {
+    let umbrochen = format!("{}\n    {}\n  ", &PAKET[..10], &PAKET[10..]);
+    abruf_skript(&gute_anfrage(), &abholung_antwort(&umbrochen))
+}
+
+fn modus_von(pfad: &Path) -> u32 {
+    std::fs::metadata(pfad).unwrap().permissions().mode() & 0o777
+}
+
+impl Lauf {
+    fn log_dir(&self) -> PathBuf {
+        let d = self.wurzel.path().join("log");
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    fn hole(&self) -> Result<Vec<u8>, AbrufFehler> {
+        hole_beleg(Some(&self.lib), &self.zertifikat(), &auftrag(), &self.log_dir())
+    }
+
+    /// Das Programm `taxgraph-abruf` mit der Hersteller-ID aus der Umgebung `hersteller`; die
+    /// Wegwerf-Verzeichnisse fuer ERiC-Logs liegen unter `wurzel/temp`.
+    fn abruf_programm_mit(
+        &self,
+        hersteller: &str,
+        args: &[&str],
+        stdin: &str,
+        terminal: bool,
+    ) -> (i32, String) {
+        let temp = self.wurzel.path().join("temp");
+        std::fs::create_dir_all(&temp).unwrap();
+        let env = AbrufUmgebung {
+            zertifikat_pfad: self.zert_pfad(),
+            pin: PIN.to_owned(),
+            hersteller_id: hersteller.to_owned(),
+            eric_lib: Some(self.lib.clone()),
+            heute_jahr: HEUTE,
+            temp,
+        };
+        let args: Vec<String> = args.iter().map(|s| (*s).to_owned()).collect();
+        let mut aus = Vec::new();
+        let rc = lauf_abruf(&args, &env, &mut stdin.as_bytes(), terminal, &mut aus);
+        let aus = String::from_utf8(aus).unwrap();
+        // Fuer JEDEN Programmlauf: weder PIN, Zertifikatspfad, Steuer-ID, Hersteller-ID noch Datenpaket in der Ausgabe.
+        for geheim in [PIN, ZERT_NAME, IDNR, HERSTELLER, PAKET] {
+            assert!(!aus.contains(geheim), "{geheim:?} in der Ausgabe von {args:?}:\n{aus}");
+        }
+        (rc, aus)
+    }
+
+    fn abruf_programm(&self, args: &[&str], stdin: &str, terminal: bool) -> (i32, String) {
+        self.abruf_programm_mit(HERSTELLER, args, stdin, terminal)
+    }
+
+    /// Der echte Lauf mit beiden Huerden, Ziel `ziel`.
+    fn abruf_echt(&self, ziel: &str) -> (i32, String) {
+        let tippen = format!("{ABRUF_FREIGABE}\n");
+        self.abruf_programm(
+            &["--idnr", IDNR, "--jahr", "2025", "--ziel", ziel, "--abruf", "--freigabe", ABRUF_FREIGABE],
+            &tippen,
+            true,
+        )
+    }
+}
+
+#[test]
+fn der_abruf_geht_durch_anfrage_abholung_und_dekodierung() {
+    let Some(l) = Lauf::neu(&gutes_skript()) else { return };
+    std::fs::write(l.steuer("dekodiert"), KLARTEXT).unwrap();
+    assert_eq!(l.hole().unwrap(), KLARTEXT);
+    assert_eq!(l.zaehler("zaehler"), Some(2), "Anfrage und Abholung");
+    let a = auftrag();
+    assert_eq!(std::fs::read_to_string(l.steuer("gesehen/1.xml")).unwrap(), a.anfrage_xml());
+    // Die Abholung nennt die Id des Belegs VaSt_LStB, nicht die des anderen Eintrags.
+    assert_eq!(
+        std::fs::read_to_string(l.steuer("gesehen/2.xml")).unwrap(),
+        a.abholung_xml(ID_C).unwrap()
+    );
+    for n in [1, 2] {
+        let meta = l.datei(&format!("gesehen/{n}.meta")).unwrap();
+        // ERIC_VALIDIERE (1 << 1) | ERIC_SENDE (1 << 2) = 6; send-Auth; kein Druck.
+        for zeile in [
+            "datenart=ElsterVaStDaten_32",
+            "flags=6",
+            "druck=NULL",
+            "crypto=gesetzt",
+            "serverantwort=gesetzt",
+        ] {
+            assert!(meta.lines().any(|z| z == zeile), "{zeile} fehlt in Aufruf {n}:\n{meta}");
+        }
+        assert_eq!(
+            l.datei(&format!("gesehen/{n}.crypto")).unwrap(),
+            format!("version=3\nhandle=77\npin_laenge={}\n", PIN.len())
+        );
+    }
+    assert_eq!(l.datei("dekodiere_eingabe").unwrap(), PAKET, "das Datenpaket ohne Leerraum");
+    assert_eq!(l.zaehler("dekodiere_zaehler"), Some(1));
+    assert_eq!(l.zaehler("zertifikat_zaehler"), Some(1), "ein Zertifikat, einmal geoeffnet");
+    assert_eq!(l.datei("zertifikat_geschlossen").unwrap(), "77\n");
+    assert_eq!(l.zaehler("init_zaehler"), Some(1));
+    assert_eq!(l.zaehler("beende_zaehler"), Some(1));
+    assert_eq!(l.zaehler("puffer_erzeugt"), Some(5), "zwei Aufrufe mit je zwei Puffern und die Dekodierung");
+    assert!(l.puffer_ausgeglichen(), "ein Puffer wurde nicht freigegeben");
+}
+
+#[test]
+fn ohne_passenden_beleg_oder_mit_mehreren_wird_nie_abgeholt() {
+    let ohne = anfrage_antwort(&[(ID_A, "VaSt_RBM", "202501"), (ID_C, "VaSt_LStB", "202401")]);
+    let Some(l) = Lauf::neu(&abruf_skript(&ohne, &abholung_antwort(PAKET))) else { return };
+    assert!(matches!(l.hole(), Err(AbrufFehler::KeinBeleg { .. })));
+    assert_eq!(l.zaehler("zaehler"), Some(1), "nur die Anfrage ging raus");
+    assert_eq!(l.zaehler("dekodiere_zaehler"), None);
+    assert_eq!(l.datei("zertifikat_geschlossen").unwrap(), "77\n");
+    assert!(l.puffer_ausgeglichen());
+    drop(l); // SPERRE ist nicht wiedereintrittsfaehig: ein zweiter Lauf erst nach dem ersten
+
+    let zwei = anfrage_antwort(&[(ID_A, "VaSt_LStB", "202501"), (ID_C, "VaSt_LStB", "202501")]);
+    let Some(l) = Lauf::neu(&abruf_skript(&zwei, &abholung_antwort(PAKET))) else { return };
+    assert_eq!(l.hole(), Err(AbrufFehler::MehrereBelege(2)));
+    assert_eq!(l.zaehler("zaehler"), Some(1));
+    assert_eq!(l.zaehler("dekodiere_zaehler"), None);
+}
+
+#[test]
+fn eine_ablehnung_nennt_code_und_text_der_servermeldung_nie_den_datenteil() {
+    // Anfrage abgelehnt (Transferheader).
+    let skript = format!("610101210\n<Fehler/>\n--SERVER--\n{SERVER_TRANSFERHEADER}");
+    let Some(l) = Lauf::neu(&skript) else { return };
+    let fehler = l.hole().unwrap_err();
+    let gesperrt = Servermeldung {
+        code: "080015009".to_owned(),
+        text: "Zertifikat vom Herausgeber gesperrt".to_owned(),
+    };
+    assert_eq!(
+        fehler,
+        AbrufFehler::Abgelehnt { schritt: "Anfrage", rc: 610_101_210, meldungen: vec![gesperrt] }
+    );
+    let text = fehler.to_string();
+    assert!(text.contains("080015009") && text.contains("Zertifikat vom Herausgeber gesperrt"), "{text}");
+    for m in MARKER.iter().chain([&IDNR, &PIN, &PAKET]) {
+        assert!(!text.contains(m), "{m} im Fehlertext: {text}");
+    }
+    assert_eq!(l.zaehler("zaehler"), Some(1));
+    assert_eq!(l.zaehler("dekodiere_zaehler"), None);
+    assert_eq!(l.datei("zertifikat_geschlossen").unwrap(), "77\n");
+    assert!(l.puffer_ausgeglichen());
+    drop(l);
+
+    // Abholung abgelehnt (Nutzdatenheader): die Anfrage ging durch.
+    let skript = format!(
+        "0\n<Erfolg/>\n--SERVER--\n{}\n=====\n610101292\n<Fehler/>\n--SERVER--\n{SERVER_NUTZDATENHEADER}",
+        gute_anfrage()
+    );
+    let Some(l) = Lauf::neu(&skript) else { return };
+    match l.hole() {
+        Err(AbrufFehler::Abgelehnt { schritt: "Abholung", rc: 610_101_292, meldungen }) => {
+            assert_eq!(meldungen.len(), 1, "{meldungen:?}");
+            assert_eq!(meldungen.first().map(|m| m.code.as_str()), Some("67890"));
+        }
+        andere => panic!("erwartet Abgelehnt(Abholung), bekam {andere:?}"),
+    }
+    assert_eq!(l.zaehler("zaehler"), Some(2));
+    assert_eq!(l.zaehler("dekodiere_zaehler"), None);
+}
+
+#[test]
+fn eine_abholung_ohne_datenpaket_oder_ohne_klartext_ist_ein_benannter_fehler() {
+    let Some(l) = Lauf::neu(&abruf_skript(&gute_anfrage(), &abholung_antwort(""))) else { return };
+    assert_eq!(l.hole(), Err(AbrufFehler::AntwortUnlesbar("Datenpaket")));
+    assert_eq!(l.zaehler("zaehler"), Some(2));
+    assert_eq!(l.zaehler("dekodiere_zaehler"), None);
+    drop(l);
+
+    // ERiC entschluesselt, liefert aber nichts: kein Beleg.
+    let Some(l) = Lauf::neu(&gutes_skript()) else { return };
+    assert_eq!(l.hole(), Err(AbrufFehler::AntwortUnlesbar("Klartext")));
+    assert_eq!(l.zaehler("dekodiere_zaehler"), Some(1));
+    drop(l);
+
+    // ERiC kann nicht entschluesseln: der Code, kein Klartext.
+    let Some(l) = Lauf::neu(&gutes_skript()) else { return };
+    std::fs::write(l.steuer("dekodiere_rc"), "610001862").unwrap();
+    std::fs::write(l.steuer("dekodiert"), KLARTEXT).unwrap();
+    assert_eq!(l.hole(), Err(AbrufFehler::Dekodieren { rc: 610_001_862 }));
+    assert_eq!(l.datei("zertifikat_geschlossen").unwrap(), "77\n");
+    assert!(l.puffer_ausgeglichen());
+}
+
+#[test]
+fn die_sperren_des_abrufs_gehen_jedem_eric_aufruf_voraus() {
+    let Some(l) = Lauf::neu(&gutes_skript()) else { return };
+    let faelle = [
+        (Zertifikat::neu("", PIN), "Zertifikatspfad"),
+        (Zertifikat::neu(l.zert_pfad(), ""), "PIN"),
+    ];
+    for (z, wort) in &faelle {
+        match hole_beleg(Some(&l.lib), z, &auftrag(), &l.log_dir()) {
+            Err(AbrufFehler::Zertifikat(text)) => assert!(text.contains(wort), "{text}"),
+            andere => panic!("erwartet Zertifikat({wort}), bekam {andere:?}"),
+        }
+    }
+    assert!(l.eric_unberuehrt(), "ERiC wurde trotz fehlendem Zertifikat geladen");
+    // Ohne Bibliothek: erst nach den Sperren.
+    assert_eq!(
+        hole_beleg(None, &l.zertifikat(), &auftrag(), &l.log_dir()),
+        Err(AbrufFehler::Eric(EricFehler::NichtGefunden))
+    );
+    // ERiC lehnt das Zertifikat ab: keine Anfrage.
+    std::fs::write(l.steuer("zertifikat_rc"), "610201106").unwrap();
+    assert!(matches!(l.hole(), Err(AbrufFehler::Zertifikat(t)) if t.contains("610201106")));
+    assert_eq!(l.zaehler("zaehler"), None);
+}
+
+#[test]
+fn der_beleg_liegt_in_einem_verzeichnis_0700_als_datei_0600() {
+    let wurzel = tempfile::tempdir().unwrap();
+    let pfad = lege_beleg_ab(wurzel.path(), KLARTEXT).unwrap();
+    assert_eq!(std::fs::read(&pfad).unwrap(), KLARTEXT);
+    let dir = pfad.parent().unwrap();
+    assert_eq!(dir.parent().unwrap(), wurzel.path());
+    assert!(dir.file_name().unwrap().to_string_lossy().starts_with("taxgraph_beleg_"), "{dir:?}");
+    assert_eq!(pfad.file_name().unwrap(), "beleg.xml");
+    assert_eq!(modus_von(dir), 0o700, "Verzeichnis {dir:?}");
+    assert_eq!(modus_von(&pfad), 0o600, "Datei {pfad:?}");
+    let zweiter = lege_beleg_ab(wurzel.path(), KLARTEXT).unwrap();
+    assert_ne!(zweiter.parent(), pfad.parent(), "jeder Beleg bekommt ein eigenes Verzeichnis");
+    let fehlt = wurzel.path().join("gibt-es-nicht");
+    assert_eq!(lege_beleg_ab(&fehlt, KLARTEXT), Err(AbrufFehler::Ablage("Verzeichnis")));
+}
+
+#[test]
+fn der_dry_run_laedt_eric_nie_und_zeigt_weder_steuer_id_noch_pin() {
+    let Some(l) = Lauf::neu(&gutes_skript()) else { return };
+    let (rc, aus) = l.abruf_programm(&["--idnr", IDNR, "--jahr", "2025", "--dry-run"], "", false);
+    assert_eq!(rc, 0, "{aus}");
+    for zeile in ["DRY-RUN", "ElsterVaStDaten_32", "veranlagungsjahr: 2025", "steuer_id: 11 Ziffern"] {
+        assert!(aus.contains(zeile), "{zeile} fehlt in:\n{aus}");
+    }
+    assert!(aus.contains("zertifikat_vorhanden: true"), "{aus}");
+    assert!(l.eric_unberuehrt(), "der Dry-run hat ERiC beruehrt");
+    assert_eq!(l.zaehler("dekodiere_zaehler"), None);
+}
+
+#[test]
+fn das_programm_verweigert_den_echten_abruf_ohne_die_freigabe_option() {
+    let Some(l) = Lauf::neu(&gutes_skript()) else { return };
+    let tippen = format!("{ABRUF_FREIGABE}\n");
+    for args in [
+        vec!["--idnr", IDNR, "--jahr", "2025", "--abruf"],
+        vec!["--idnr", IDNR, "--jahr", "2025", "--abruf", "--freigabe", "ja"],
+        vec!["--idnr", IDNR, "--jahr", "2025", "--abruf", "--freigabe", ECHTVERSAND_FREIGABE],
+    ] {
+        let (rc, aus) = l.abruf_programm(&args, &tippen, true);
+        assert_eq!(rc, 2, "{args:?}: {aus}");
+        assert!(aus.contains("ABRUF VERWEIGERT") && aus.contains(ABRUF_FREIGABE), "{aus}");
+    }
+    assert!(l.eric_unberuehrt());
+}
+
+#[test]
+fn das_abruf_programm_verlangt_ein_terminal_und_die_zweite_eingabe() {
+    let Some(l) = Lauf::neu(&gutes_skript()) else { return };
+    let args = ["--idnr", IDNR, "--jahr", "2025", "--abruf", "--freigabe", ABRUF_FREIGABE];
+    let tippen = format!("{ABRUF_FREIGABE}\n");
+    let (rc, aus) = l.abruf_programm(&args, &tippen, false);
+    assert_eq!(rc, 2, "{aus}");
+    assert!(aus.contains("kein Terminal"), "{aus}");
+    for (eingabe, wort) in [("", "keine interaktive"), ("ja\n", "stimmte nicht ueberein")] {
+        let (rc, aus) = l.abruf_programm(&args, eingabe, true);
+        assert_eq!(rc, 2, "{eingabe:?}: {aus}");
+        assert!(aus.contains("ABRUF VERWEIGERT") && aus.contains(wort), "{aus}");
+    }
+    assert!(l.eric_unberuehrt(), "ERiC wurde trotz verweigerter Huerde beruehrt");
+}
+
+#[test]
+fn das_programm_ruft_nach_beiden_huerden_ab_und_legt_den_beleg_in_0700_0600_ab() {
+    let Some(l) = Lauf::neu(&gutes_skript()) else { return };
+    std::fs::write(l.steuer("dekodiert"), KLARTEXT).unwrap();
+    let ziel = l.wurzel.path().join("ziel");
+    std::fs::create_dir_all(&ziel).unwrap();
+    let (rc, aus) = l.abruf_echt(&ziel.to_string_lossy());
+    assert_eq!(rc, 0, "{aus}");
+    let pfad = aus.lines().find_map(|z| z.strip_prefix("[abruf] Beleg abgelegt: ")).unwrap_or_default();
+    let pfad = PathBuf::from(pfad);
+    assert!(pfad.starts_with(&ziel), "{pfad:?} liegt nicht unter {ziel:?}:\n{aus}");
+    assert_eq!(std::fs::read(&pfad).unwrap(), KLARTEXT);
+    assert_eq!(modus_von(pfad.parent().unwrap()), 0o700);
+    assert_eq!(modus_von(&pfad), 0o600);
+    assert!(aus.contains("beginnt_mit_xml_kopf: ja"), "{aus}");
+    assert_eq!(l.zaehler("zaehler"), Some(2));
+    // Nach einem Erfolg bleibt kein ERiC-Log liegen (es koennte die Anfrage nennen).
+    let uebrig: Vec<_> = std::fs::read_dir(l.wurzel.path().join("temp")).unwrap().collect();
+    assert_eq!(uebrig.len(), 0, "{uebrig:?}");
+}
+
+#[test]
+fn das_programm_meldet_eine_ablehnung_mit_exit_eins_und_behaelt_das_log() {
+    let skript = format!("610101210\n<Fehler/>\n--SERVER--\n{SERVER_TRANSFERHEADER}");
+    let Some(l) = Lauf::neu(&skript) else { return };
+    let ziel = l.wurzel.path().join("ziel");
+    std::fs::create_dir_all(&ziel).unwrap();
+    let (rc, aus) = l.abruf_echt(&ziel.to_string_lossy());
+    assert_eq!(rc, 1, "{aus}");
+    assert!(aus.contains("Code 080015009: Zertifikat vom Herausgeber gesperrt"), "{aus}");
+    for m in MARKER {
+        assert!(!aus.contains(m), "{m} in der Ausgabe:\n{aus}");
+    }
+    let log = aus.lines().find_map(|z| z.strip_prefix("[abruf] eric.log: ")).unwrap_or_default();
+    assert!(Path::new(log).is_file(), "eric.log fehlt: {log:?}\n{aus}");
+    assert_eq!(std::fs::read_dir(&ziel).unwrap().count(), 0, "bei einem Fehler wird kein Beleg abgelegt");
+    drop(l);
+    // Ein Fehler aus der Antwort (kein Beleg) ist ebenfalls Exit 1.
+    let ohne = anfrage_antwort(&[(ID_A, "VaSt_RBM", "202501")]);
+    let Some(l) = Lauf::neu(&abruf_skript(&ohne, &abholung_antwort(PAKET))) else { return };
+    let (rc, aus) = l.abruf_echt(&l.wurzel.path().join("ziel").to_string_lossy());
+    assert_eq!(rc, 1, "{aus}");
+    assert!(aus.contains("VaSt_RBM 202501"), "{aus}");
+}
+
+#[test]
+fn das_programm_bricht_bei_ungueltiger_eingabe_vor_eric_ab() {
+    let Some(l) = Lauf::neu(&gutes_skript()) else { return };
+    let tippen = format!("{ABRUF_FREIGABE}\n");
+    for (args, feld) in [
+        (vec!["--idnr", "1234567890", "--jahr", "2025", "--dry-run"], "idnr"),
+        (vec!["--idnr", IDNR, "--jahr", "2021", "--dry-run"], "jahr"),
+        (vec!["--idnr", "x", "--jahr", "2025", "--abruf", "--freigabe", ABRUF_FREIGABE], "idnr"),
+    ] {
+        let (rc, aus) = l.abruf_programm(&args, &tippen, true);
+        assert_eq!(rc, 2, "{args:?}: {aus}");
+        assert!(aus.contains(feld), "{feld} fehlt in:\n{aus}");
+    }
+    // Ohne Hersteller-ID in der Umgebung.
+    let (rc, aus) = l.abruf_programm_mit("", &["--idnr", IDNR, "--jahr", "2025", "--dry-run"], "", false);
+    assert_eq!(rc, 2, "{aus}");
+    assert!(aus.contains("ELSTER_HERSTELLER_ID"), "{aus}");
+    // Nutzungsfehler: unbekannte Option, fehlende Pflichtangaben, zwei Modi.
+    for args in [
+        vec!["--idnr", IDNR, "--jahr", "2025", "--dry-run", "--unbekannt"],
+        vec!["--jahr", "2025", "--dry-run"],
+        vec!["--idnr", IDNR, "--dry-run"],
+        vec!["--idnr", IDNR, "--jahr", "2025"],
+        vec!["--idnr", IDNR, "--jahr", "2025", "--dry-run", "--abruf"],
+    ] {
+        let (rc, aus) = l.abruf_programm(&args, "", false);
+        assert_eq!(rc, 2, "{args:?}: {aus}");
+        assert!(aus.contains("Nutzung: taxgraph-abruf"), "{aus}");
+    }
+    assert!(l.eric_unberuehrt());
+}
+
+#[test]
+fn das_abruf_programm_als_prozess_liest_die_umgebung_und_erkennt_kein_terminal() {
+    use chrono::Datelike as _;
+    let Some(l) = Lauf::neu(&gutes_skript()) else { return };
+    let vorjahr = (chrono::Utc::now().year() - 1).to_string();
+    let lauf = |args: &[&str]| {
+        let out = Command::new(env!("CARGO_BIN_EXE_taxgraph-abruf"))
+            .args(args)
+            .env_clear()
+            .env("HOME", l.wurzel.path())
+            .env("ERIC_DIR", l.lib.parent().unwrap())
+            .env("ERIC_ATTRAPPE_DIR", l.wurzel.path().join("steuer"))
+            .env("ELSTER_ZERTIFIKAT_PFAD", l.zert_pfad())
+            .env("ELSTER_ZERTIFIKAT_PIN", PIN)
+            .env("ELSTER_HERSTELLER_ID", HERSTELLER)
+            .stdin(std::process::Stdio::null())
+            .output()
+            .unwrap();
+        let text = String::from_utf8(out.stdout).unwrap();
+        for geheim in [PIN, ZERT_NAME, IDNR, HERSTELLER] {
+            assert!(!text.contains(geheim), "{geheim:?} in der Ausgabe:\n{text}");
+        }
+        (out.status.code(), text)
+    };
+    let (code, aus) = lauf(&["--idnr", IDNR, "--jahr", &vorjahr, "--dry-run"]);
+    assert_eq!(code, Some(0), "{aus}");
+    assert!(aus.contains("DRY-RUN") && aus.contains("zertifikat_vorhanden: true"), "{aus}");
+    let (code, aus) = lauf(&["--idnr", IDNR, "--jahr", &vorjahr, "--abruf", "--freigabe", ABRUF_FREIGABE]);
+    assert_eq!(code, Some(2), "{aus}");
+    assert!(aus.contains("kein Terminal"), "{aus}");
+    assert!(l.eric_unberuehrt());
 }

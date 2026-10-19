@@ -7,11 +7,11 @@
 use std::ffi::{CStr, CString};
 use std::fmt;
 use std::os::unix::ffi::OsStrExt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use elster::EricFehler;
 
-use crate::{ffi, zertifikat_abgelehnt, Zertifikat};
+use crate::{ffi, zertifikat_abgelehnt, Servermeldung, Zertifikat};
 
 /// Warum der Abruf abbricht.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -48,6 +48,29 @@ pub enum AbrufFehler {
     /// Ein Teil der Antwort von ELSTER fehlt oder ist unlesbar.
     #[error("Die Antwort von ELSTER ist nicht lesbar ({0}).")]
     AntwortUnlesbar(&'static str),
+    /// ELSTER oder ERiC lehnt die Anfrage oder die Abholung ab; es steht nur Code und Text der
+    /// Servermeldung da, nie der Datenteil.
+    #[error("ELSTER hat die {schritt} nicht angenommen (ERiC rc={rc}){}.", meldungstext(.meldungen))]
+    Abgelehnt {
+        schritt: &'static str,
+        rc: i32,
+        meldungen: Vec<Servermeldung>,
+    },
+    /// Der Beleg liess sich nicht ablegen.
+    #[error("Der Beleg liess sich nicht ablegen ({0}).")]
+    Ablage(&'static str),
+}
+
+/// ": Code 1: Text; Code 2: Text" oder nichts.
+fn meldungstext(meldungen: &[Servermeldung]) -> String {
+    if meldungen.is_empty() {
+        return String::new();
+    }
+    let teile: Vec<String> = meldungen
+        .iter()
+        .map(|m| format!("Code {}: {}", m.code, m.text))
+        .collect();
+    format!(": {}", teile.join("; "))
 }
 
 /// Datenart und Version fuer `EricBearbeiteVorgang` (Datenartversionmatrix.ods: `ElsterVaStDaten_<Version>`).
@@ -338,6 +361,27 @@ pub fn dekodiere_datenpaket(
         .zertifikat_oeffnen(&pfad_c)
         .map_err(|rc| AbrufFehler::Zertifikat(zertifikat_abgelehnt(rc)))?;
     dekodiere_paket(&eric, &handle, &pin_c, &base64_c)
+}
+
+/// STUMPF.
+///
+/// # Errors
+/// [`AbrufFehler`].
+pub fn hole_beleg(
+    _lib: Option<&Path>,
+    _zertifikat: &Zertifikat,
+    _auftrag: &AbrufAuftrag,
+    _log_dir: &Path,
+) -> Result<Vec<u8>, AbrufFehler> {
+    Err(AbrufFehler::AntwortUnlesbar("stumpf"))
+}
+
+/// STUMPF.
+///
+/// # Errors
+/// [`AbrufFehler::Ablage`].
+pub fn lege_beleg_ab(_basis: &Path, _klartext: &[u8]) -> Result<PathBuf, AbrufFehler> {
+    Err(AbrufFehler::Ablage("stumpf"))
 }
 
 #[cfg(test)]

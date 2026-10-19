@@ -30,6 +30,7 @@
 )]
 
 mod abruf;
+mod abruf_cli;
 mod cli;
 mod ffi;
 mod merker;
@@ -39,7 +40,11 @@ use std::fmt;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 
-pub use abruf::{datenpaket, dekodiere_datenpaket, waehle_id, AbrufAuftrag, AbrufFehler};
+pub use abruf::{
+    datenpaket, dekodiere_datenpaket, hole_beleg, lege_beleg_ab, waehle_id, AbrufAuftrag,
+    AbrufFehler,
+};
+pub use abruf_cli::{lauf_abruf, AbrufUmgebung, ABRUF_FREIGABE};
 pub use cli::{lauf, Umgebung};
 pub use elster::{EricFehler, ERIC_VALIDIERE};
 pub use merker::{merker_im_xml, pruefe_merker_konsistenz};
