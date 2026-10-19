@@ -42,6 +42,9 @@ pub enum Fehler {
     /// Anker fehlen wörtlich im PDF-Text.
     #[error("Anker fehlen woertlich im Text (Freeze abgebrochen): {}", .fehlend.join("; "))]
     AnkerFehlen { fehlend: Vec<String> },
+    /// Ein festes reguläres Muster des Werkzeugs lässt sich nicht übersetzen (Programmfehler, jeder Lauf zeigt ihn sofort).
+    #[error("Muster des Werkzeugs nicht übersetzbar: {0}")]
+    Muster(String),
     /// `curl`, `gzip` oder `pdftotext` fehlt, hängt oder ist nicht lesbar.
     #[error(transparent)]
     Unterprozess(#[from] UnterprozessFehler),

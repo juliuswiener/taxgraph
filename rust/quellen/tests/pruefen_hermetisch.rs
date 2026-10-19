@@ -123,6 +123,40 @@ fn ohne_marke_zaehlt_die_ganze_datei_und_nur_die_erste_marke_teilt() {
 }
 
 #[test]
+fn zeilenenden_werden_wie_in_python_uebersetzt_und_ungueltiges_utf8_zaehlt_als_ersatzzeichen() {
+    let t = tempfile::tempdir().unwrap();
+    // open(..).read() macht aus "\r\n" und "\r" je ein "\n": 30 Zeilen "x\r\n" sind 30 x + 29 \n = 59 Zeichen, nicht 90.
+    quelle(t.path(), "a", "crlf30", &format!("--- Wortlaut {}", "x\r\n".repeat(30)));
+    quelle(t.path(), "a", "crlf60", &format!("--- Wortlaut {}", "x\r\n".repeat(60)));
+    quelle(t.path(), "a", "cr59", &format!("--- Wortlaut {}", "x\r".repeat(59)));
+    // ungültige Bytes werden Ersatzzeichen (errors="replace") und zählen mit: 40 + 2 + 30
+    let dir = t.path().join("sources/a");
+    let roh = [b"--- Wortlaut ".as_slice(), &[b'x'; 40], &[0xff, 0xfe], &[b'y'; 30]].concat();
+    fs::write(dir.join("roh.txt"), &roh).unwrap();
+    fs::write(dir.join("roh.meta.yaml"), format!("dokument:\n  datei: \"roh.txt\"\n  sha256: \"{}\"\n", sha(&roh))).unwrap();
+    assert_eq!(
+        lauf(t.path()).zeilen,
+        vec![
+            "OK       sources/a/cr59.txt",
+            "LEER     sources/a/crlf30.txt (Wortlaut nur 59 Zeichen)",
+            "OK       sources/a/crlf60.txt",
+            "OK       sources/a/roh.txt"
+        ]
+    );
+}
+
+#[test]
+fn eine_metadatei_ohne_gueltiges_utf8_ist_ein_fehler_und_die_zeilen_davor_stehen_schon_da() {
+    let t = tempfile::tempdir().unwrap();
+    quelle(t.path(), "a", "eins", &mit_kopf(&wortlaut(80)));
+    fs::write(t.path().join("sources/b.meta.yaml"), [0xffu8, 0xfe, b'\n']).unwrap();
+    let mut gesehen = Vec::new();
+    let r = quellen::pruefen::pruefe_zeilenweise(t.path(), &mut |z| gesehen.push(z.to_owned()));
+    assert!(r.is_err(), "Python bricht mit UnicodeDecodeError ab");
+    assert_eq!(gesehen, vec!["OK       sources/a/eins.txt"]);
+}
+
+#[test]
 fn eine_fehlende_datei_ist_missing_file_mit_zwei_leerzeichen() {
     let t = tempfile::tempdir().unwrap();
     quelle(t.path(), "a", "da", &mit_kopf(&wortlaut(80)));
@@ -271,6 +305,16 @@ fn kopie_einer_echten_quelle() -> (tempfile::TempDir, PathBuf, PathBuf) {
     (t, m, x)
 }
 
+/// Der Text ohne die Zeilen, die (ohne Randleerraum) mit `praefix` beginnen.
+fn ohne_zeile(text: &str, praefix: &str) -> String {
+    let mut aus = String::new();
+    for zeile in text.lines().filter(|l| !l.trim().starts_with(praefix)) {
+        aus.push_str(zeile);
+        aus.push('\n');
+    }
+    aus
+}
+
 #[test]
 fn mutationen_an_einer_kopie_einer_echten_quelle() {
     let (t, meta, txt) = kopie_einer_echten_quelle();
@@ -300,12 +344,12 @@ fn mutationen_an_einer_kopie_einer_echten_quelle() {
     assert!(z[0].starts_with("MISSING FILE:  ") && z[0].contains("(referenced by sources/gesetze-im-internet/"), "{z:?}");
 
     // 4. `datei:` fehlt -> MISSING FIELDS
-    let ohne_datei: String = meta_text.lines().filter(|l| !l.trim().starts_with("datei:")).map(|l| format!("{l}\n")).collect();
+    let ohne_datei = ohne_zeile(&meta_text, "datei:");
     fs::write(&meta, ohne_datei).unwrap();
     assert_eq!(lauf(t.path()).zeilen, vec![format!("MISSING FIELDS: sources/gesetze-im-internet/{}", meta.file_name().unwrap().to_string_lossy())]);
 
     // 5. `sha256` fehlt -> MISSING FIELDS
-    let ohne_sha: String = meta_text.lines().filter(|l| !l.trim().starts_with("sha256:")).map(|l| format!("{l}\n")).collect();
+    let ohne_sha = ohne_zeile(&meta_text, "sha256:");
     fs::write(&meta, ohne_sha).unwrap();
     assert!(lauf(t.path()).zeilen[0].starts_with("MISSING FIELDS: "));
 }
