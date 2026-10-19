@@ -20,8 +20,8 @@ use intervall::Slots;
 use super::kist_anteil::{kist_cent, EinkuenfteJePerson};
 use super::rechnen::{add, R};
 use super::wk::{
-    am_an_gesamt, ep_eingabe, mit_computer_im_kaufjahr, mit_sofortabzug_im_band, mit_unfallkosten,
-    wk_teile,
+    am_an_gesamt, berufsverband, ep_eingabe, mit_berufsverband, mit_computer_im_kaufjahr,
+    mit_sofortabzug_im_band, mit_unfallkosten, wk_teile,
 };
 use super::{kist_konfession, slot, Marke, Ring};
 use crate::abzuege::{basisbeitrag_nach_zuschuss, kind_kv_pv_summe};
@@ -69,7 +69,8 @@ pub(super) fn vorsorge_abzug(
 }
 
 /// Die Summe der Einkuenfte je Person fuer die Kirchensteuer bei Zusammenveranlagung (Abweichung Nr. 94): Lohn minus Werbungskosten,
-/// mindestens der Pauschbetrag; Person B ohne eigene Werbungskosten, wie in `est_zusammen`. Ohne Zusammenveranlagung zaehlt sie nicht.
+/// mindestens der Pauschbetrag; Person B nur mit ihren Beitraegen zu Berufsverbaenden (Abweichung Nr. 93), wie in `est_zusammen`. Ohne
+/// Zusammenveranlagung zaehlt sie nicht.
 fn kist_einkuenfte(
     f: &Felder,
     vz: domain::Vz,
@@ -89,7 +90,7 @@ fn kist_einkuenfte(
     };
     Ok(EinkuenfteJePerson {
         a: je(brutto_a, wk_a)?,
-        b: je(feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?, Euro::new(0))?,
+        b: je(feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?, berufsverband(f, true)?)?,
     })
 }
 
@@ -118,6 +119,8 @@ pub(super) fn festzusetzende_est<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<
     let wk = mit_sofortabzug_im_band(f, wk)?;
     // Geraet der Liste im BMF-Schreiben vom 22.02.2022 mit einem Jahr Nutzungsdauer (Abweichung Nr. 89): voller Abzug im Kaufjahr, nach dem Scope.
     let wk = mit_computer_im_kaufjahr(f, wk)?;
+    // Beitraege zu Berufsverbaenden (Abweichung Nr. 93, Zeile 53 der Anlage N): zaehlen zu den Werbungskosten, vor dem Pauschbetrag-Vergleich.
+    let wk = mit_berufsverband(f, wk)?;
     // Kind-Beitraege in DENSELBEN Abs.-4-Deckel (CENT, direkt addiert).
     let kv_pv_a = kv_pv(f, "", kind_kv_pv_summe(&r.q())?.get())?;
     let zusammen = ist_zusammen(f);
@@ -133,7 +136,7 @@ pub(super) fn festzusetzende_est<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<
             bruttoarbeitslohn_a: brutto_a,
             bruttoarbeitslohn_b: feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?,
             werbungskosten_a: wk,
-            werbungskosten_b: Euro::new(0),
+            werbungskosten_b: berufsverband(f, true)?,
             sonderausgaben_gemeinsam: sonderausgaben_abzug(
                 vz,
                 true,
@@ -179,7 +182,7 @@ pub(super) fn festzusetzende_est<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<
     }
     // KiSt § 51a: Massstabsteuer = festgesetzte ESt; ohne Konfession bleibt der Schluessel absent. Bei Zusammenveranlagung und
     // beantworteter Konfession des Ehegatten nach Landesrecht (Abweichung Nr. 94): die Summe der Einkuenfte je Person ist hier Lohn
-    // minus Werbungskosten, mindestens der Pauschbetrag (Person B ohne eigene Werbungskosten, wie in `est_zusammen`).
+    // minus Werbungskosten, mindestens der Pauschbetrag (Person B nur mit ihren Beitraegen zu Berufsverbaenden, wie in `est_zusammen`).
     if let (Some(extras), Some(konf)) = (r.a.extras, kist_konfession(f)) {
         let einkuenfte = kist_einkuenfte(f, vz, brutto_a, wk, zusammen)?;
         let k = kist_cent(f, vz, konf, est, zusammen, einkuenfte)?;

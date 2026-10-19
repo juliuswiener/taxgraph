@@ -21,6 +21,10 @@ use crate::{
 };
 
 const UNFALLKOSTEN: &str = "ep_unfallkosten";
+/// Beitraege zu Berufsverbaenden je Person (Abweichung Nr. 93). Die Namen stehen als Literale: der Scanner hinter `RING_BETRAGSFELDER`
+/// (`bescheid/tests/ring_scheiben.rs`) liest den Quelltext des Rings.
+const BERUFSVERBAND: &str = "berufsverband_beitraege";
+const BERUFSVERBAND_PARTNER: &str = "berufsverband_beitraege_partner";
 const DHF_KOSTEN: &str = "dhf_unterkunftskosten_monat";
 const DHF_BEDINGUNGEN: [&str; 3] = [
     "dhf_beruflich_veranlasst",
@@ -111,6 +115,31 @@ pub(super) fn ep_eingabe(vz: Vz, slots: &Slots) -> R<EntfernungspauschaleEingabe
 pub(super) fn mit_unfallkosten(f: &Felder, wk: Euro) -> R<Euro> {
     let unfall = feld_euro_oder_null(f, UNFALLKOSTEN)?;
     add(wk, Euro::new(unfall.get().max(0)))
+}
+
+/// Die Beitraege zu Berufsverbaenden einer Person in EURO (Abweichung Nr. 93): Gewerkschaft oder Berufsverband, § 9 Abs. 1 Satz 3 Nr. 3
+/// `EStG`, Zeile 53 der Anlage N. `partner` waehlt den Ehegatten. Der Betrag zaehlt zu den uebrigen Werbungskosten DER PERSON und steht damit
+/// vor dem Vergleich mit dem Arbeitnehmer-Pauschbetrag (je Person), nicht daneben. Die Erklaerung traegt ihn in vollen Euro AUFGERUNDET
+/// (`E0204003`, `ABZUGS_KZ`); der Bescheid rechnet mit demselben Wert.
+///
+/// Leer, 0 und negativ heissen 0: `nicht_negativ` haelt die Schreibseite, das Laden prueft nie.
+///
+/// ponytail: Rentner und Pensionaeren (Werbungskosten gegen Versorgungsbezuege) und die Kammern (Arbeitskammer, `Kammerbeitrag/Wert`,
+/// Rechtslage ungeklaert) stehen nicht darin. Upgrade: ein Betrag je Einkunftsart, derselbe Aufruf.
+///
+/// # Errors
+/// [`BescheidFehler::Ueberlauf`] bei einem Feldwert jenseits von `i64`.
+pub(super) fn berufsverband(f: &Felder, partner: bool) -> R<Euro> {
+    let feld = if partner { BERUFSVERBAND_PARTNER } else { BERUFSVERBAND };
+    Ok(Cent::new(feld_int_oder_null(f, feld)?.max(0)).ceil_euro())
+}
+
+/// [`berufsverband`] von Person A zu ihren Werbungskosten `wk` addiert (nach `werbungskosten_n`, wie [`mit_unfallkosten`]).
+///
+/// # Errors
+/// [`BescheidFehler::Ueberlauf`].
+pub(super) fn mit_berufsverband(f: &Felder, wk: Euro) -> R<Euro> {
+    add(wk, berufsverband(f, false)?)
 }
 
 fn alle_true(f: &Felder, ids: &[&str]) -> bool {

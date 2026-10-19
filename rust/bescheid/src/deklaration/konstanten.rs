@@ -147,12 +147,14 @@ pub(super) fn ring_kandidaten(scheibe: Scheibe) -> &'static [&'static str] {
 }
 
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_AN_GESAMT: [&str; 35] = [
+pub(super) const RING_AN_GESAMT: [&str; 37] = [
     "am_anschaffung_monat",
     "am_anschaffungskosten",
     "arbeitsmittel_nutzungsdauer",
     "basis_kv_partner",
     "basis_pv_partner",
+    "berufsverband_beitraege",
+    "berufsverband_beitraege_partner",
     "bruttoarbeitslohn_partner",
     "ep_unfallkosten",
     "p36_lohnsteuer",
@@ -185,7 +187,7 @@ pub(super) const RING_AN_GESAMT: [&str; 35] = [
     "zuschuss_ag_pv_partner",
 ];
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_GESAMT: [&str; 114] = [
+pub(super) const RING_GESAMT: [&str; 116] = [
     "afa_jahresbetrag",
     "agb_aufwendungen",
     "am_anschaffung_monat",
@@ -196,6 +198,8 @@ pub(super) const RING_GESAMT: [&str; 114] = [
     "behinderungsbedingte_aufwendungen",
     "behinderungsbedingte_aufwendungen_partner",
     "berufsausbildung_aufwendungen",
+    "berufsverband_beitraege",
+    "berufsverband_beitraege_partner",
     "betriebseinnahmen",
     "bruttoarbeitslohn_partner",
     "dba_auslaendische_einkuenfte",

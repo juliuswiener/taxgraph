@@ -100,11 +100,13 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// `an_gesamt`, `gesamt` und `rentner_gesamt` (Abweichung Nr. 92), 93 -> 99, 415 -> 421 und 322 -> 328, die Kegel bleiben;
 /// danach am 2026-10-19 das Feld `am_computer_software` in `an_gesamt` und `gesamt` (Abweichung Nr. 89), 99 -> 100 und 421 -> 422, die
 /// Kegel bleiben, `rentner_gesamt` bleibt 328;
+/// danach am 2026-10-19 die zwei Felder `berufsverband_beitraege` und `berufsverband_beitraege_partner` in `an_gesamt` und `gesamt`
+/// (Abweichung Nr. 93), 100 -> 102 und 422 -> 424, die Kegel bleiben, `rentner_gesamt` bleibt 328 (dort steht kein Werbungskosten-Feld);
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
-    (Scheibe::AnGesamt, 100, 33),
-    (Scheibe::Gesamt, 422, 35),
+    (Scheibe::AnGesamt, 102, 33),
+    (Scheibe::Gesamt, 424, 35),
     (Scheibe::RentnerGesamt, 328, 28),
 ];
 
@@ -403,6 +405,9 @@ const BETRAGSFELDER_OHNE_KZ: &[&str] = &[
     "zuschuss_ag_kv_gesetzlich_partner",
     "zuschuss_ag_kv_privat_partner",
     "zuschuss_ag_pv_partner",
+    // Seit 2026-10-19 (Abweichung Nr. 93): nicht in der Python-Liste. Der Beitrag des Ehegatten zu Berufsverbaenden ist der Spiegel von
+    // Person A (Klasse g): kein eigenes Kz, `deklariere` traegt ihn unter E0204003 in `person_b`.
+    "berufsverband_beitraege_partner",
 ];
 
 /// `cent`-Felder in den nutzerwaehlbaren Scheiben ohne Kz.

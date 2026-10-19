@@ -191,6 +191,28 @@ pub(crate) const REGAL: &[Datei] = &[
                     ],
                 },
             ),
+            // Abweichung Nr. 93: die Zeile 53 der Anlage N (Beitraege zu Berufsverbaenden) gibt es in Python nicht; der Test deckt die Literale.
+            (
+                "BERUFSVERBAND_TEXT_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0204001"],
+                    tests: &["berufsverband_steht_ueber_null_in_zeile_53"],
+                },
+            ),
+            (
+                "BERUFSVERBAND_SUMME_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0204002"],
+                    tests: &["berufsverband_steht_ueber_null_in_zeile_53"],
+                },
+            ),
+            (
+                "BERUFSVERBAND_BETRAG_KZ",
+                Zuordnung::Verhalten {
+                    kz: &["E0204003"],
+                    tests: &["berufsverband_steht_ueber_null_in_zeile_53"],
+                },
+            ),
             // Abweichung Nr. 51: der Staat der Auslandseinkuenfte (Anlage AUS "1. Staat") gibt es in Python nicht; der Test deckt das Literal.
             (
                 "STAAT_KZ",

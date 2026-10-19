@@ -111,8 +111,10 @@ fn kegel() -> Vec<(&'static str, Value)> {
     ]
 }
 
-/// Die Fragen, die es nur in Rust gibt: `ep_unfallkosten` (Abweichung Nr. 28) und die drei Rueckfragen zum Lohn (Abweichung Nr. 85, 86).
-const NUR_RUST: [&str; 4] = ["ep_unfallkosten", "lohn_mehrere_jahre", "lohn_auslandstaetigkeit", "lohn_erstattungen"];
+/// Die Fragen, die es nur in Rust gibt: `ep_unfallkosten` (Abweichung Nr. 28), die drei Rueckfragen zum Lohn (Abweichung Nr. 85, 86) und
+/// die Beitraege zu Berufsverbaenden (Abweichung Nr. 93).
+const NUR_RUST: [&str; 5] =
+    ["ep_unfallkosten", "lohn_mehrere_jahre", "lohn_auslandstaetigkeit", "lohn_erstattungen", "berufsverband_beitraege"];
 
 #[tokio::test]
 async fn die_queue_ist_nach_den_gewichten_des_rings_geordnet() {
@@ -138,12 +140,13 @@ async fn die_queue_ist_nach_den_gewichten_des_rings_geordnet() {
         .collect();
     // 31 Fragen wie in Python, dazu die eine nur-Rust-Frage `ep_unfallkosten` (Abweichung Nr. 28): die Entfernung dieses Falls
     // ist unbeantwortet, und Schweigen schliesst die Frage nicht aus (`wert_nicht: 0`, fail-closed). Dazu seit Abweichung Nr. 85 und 86 die
-    // drei Rueckfragen zum Lohn: der Fall hat einen Bruttoarbeitslohn ueber 0, und alle drei sind unbeantwortet.
+    // drei Rueckfragen zum Lohn: der Fall hat einen Bruttoarbeitslohn ueber 0, und alle drei sind unbeantwortet. Mit demselben Lohn steht
+    // seit Abweichung Nr. 93 die Frage nach den Beitraegen zu Berufsverbaenden da (`feld_bedingung`: Lohn ueber 0, kein Gate).
     assert_eq!(ids.iter().filter(|f| !NUR_RUST.contains(f)).count(), 31);
     for frage in NUR_RUST {
         assert!(ids.contains(&frage), "{frage}: {ids:?}");
     }
-    assert_eq!(ids.len(), 35);
+    assert_eq!(ids.len(), 36);
     // Die Python-Reihenfolge gilt fuer die uebrigen 31; die nur-Rust-Fragen stehen, ohne Beitrag, alphabetisch unter den Slots.
     let ids: Vec<&str> = ids.into_iter().filter(|f| !NUR_RUST.contains(f)).collect();
     // Gemessen mit Python (`g_an2` im Harness ist derselbe Fall): mit Gewichten steht die Adresse vor

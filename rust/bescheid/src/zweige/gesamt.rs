@@ -29,8 +29,8 @@ use super::rechnen::{add, max0, sub, summe_euro, R};
 use super::kist_anteil::EinkuenfteJePerson;
 use super::tarif::{leerer_gesamtfall, rahmen, Lage, Modus, P35};
 use super::wk::{
-    am_gesamt, ep_eingabe, mit_computer_im_kaufjahr, mit_sofortabzug_im_band, mit_unfallkosten,
-    wk_teile,
+    am_gesamt, berufsverband, ep_eingabe, mit_berufsverband, mit_computer_im_kaufjahr,
+    mit_sofortabzug_im_band, mit_unfallkosten, wk_teile,
 };
 use super::{gesamt_tarif, slot, Marke, Ring, VeranlagungWert};
 use crate::abzuege::{p33b_kind_pauschbetraege, shared_steuer_sonder_agb};
@@ -477,7 +477,8 @@ pub(super) fn einkuenfte_ns_aus_lohn(
         bruttoarbeitslohn: Euro::new(basis),
         werbungskosten: ns_wk,
     })?;
-    // Person B (§ 26b): § 19-Einkuenfte des Ehegatten, Person-B-WK MVP 0. Sein Lohn enthaelt wie bei Person A den Bezug.
+    // Person B (§ 26b): § 19-Einkuenfte des Ehegatten, Person-B-WK nur seine Beitraege zu Berufsverbaenden (Abweichung Nr. 93; sonst MVP 0).
+    // Sein Lohn enthaelt wie bei Person A den Bezug.
     let mut ns_b = Euro::new(0);
     if zusammen {
         let b = versorgungsbezug(f, &VERSORGUNG_B)?;
@@ -485,7 +486,7 @@ pub(super) fn einkuenfte_ns_aus_lohn(
         ns_b = einkuenfte_nichtselbststaendig(&EinkuenfteNichtselbststaendigEingabe {
             veranlagungszeitraum: vz,
             bruttoarbeitslohn: Euro::new(basis_b),
-            werbungskosten: Euro::new(0),
+            werbungskosten: berufsverband(f, true)?,
         })?;
         if b.versorgt && b.gate_erfuellt {
             ns_b = add(ns_b, einkuenfte_aus_versorgung(&b, p)?)?;
@@ -520,6 +521,8 @@ fn ns_werbungskosten<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<Euro> {
     let wk = mit_sofortabzug_im_band(f, mit_unfallkosten(f, wk)?)?;
     // Geraet der Liste im BMF-Schreiben vom 22.02.2022 mit einem Jahr Nutzungsdauer (Abweichung Nr. 89): voller Abzug im Kaufjahr.
     let wk = mit_computer_im_kaufjahr(f, wk)?;
+    // Beitraege zu Berufsverbaenden (Abweichung Nr. 93, Zeile 53 der Anlage N): zaehlen zu den Werbungskosten, vor dem Pauschbetrag-Vergleich.
+    let wk = mit_berufsverband(f, wk)?;
     add(add(wk, afa)?, dba_abzug_werbungskosten(f)?)
 }
 

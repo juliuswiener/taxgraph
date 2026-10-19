@@ -170,14 +170,21 @@ fn durchgelassen(b: &Bindung) -> Vec<String> {
     let Some(r) = &b.bereich else {
         return Vec::new();
     };
+    // Ein Cent-Bereich ueber der Grenze (heute `berufsverband_beitraege`: 0..9 999 900 Cent, fuenf Stellen im Schema): `deklariere`
+    // rundet auf volle Euro, also liefert eine Probe je Euro (jedes Vielfache von 100) jedes Ergebnis. Darunter bleibt es bei jedem Cent.
+    let schritt: i64 = if matches!(b.typ, Feldtyp::Cent) && r.max - r.min > MAX_BEREICH { 100 } else { 1 };
     assert!(
-        r.max - r.min <= MAX_BEREICH,
+        (r.max - r.min) / schritt <= MAX_BEREICH,
         "{}: Bereich {}..{} ist zu gross, um jeden Wert zu pruefen",
         b.feld_id,
         r.min,
         r.max
     );
-    (r.min..=r.max).map(|w| w.to_string()).collect()
+    let mut werte: Vec<i64> = (r.min..=r.max).step_by(usize::try_from(schritt).unwrap()).collect();
+    if werte.last() != Some(&r.max) {
+        werte.push(r.max);
+    }
+    werte.iter().map(ToString::to_string).collect()
 }
 
 /// Ein Zahlwert, wie ihn der Store ablegt: Ganzzahl, wo der Text eine ist.

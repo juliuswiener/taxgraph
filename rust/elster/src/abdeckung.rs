@@ -29,8 +29,8 @@ use domain::{Achsenwert, Herkunft, PruefTiefe, Zustand};
 use store::SnapshotFeld;
 
 use crate::deklaration::{
-    DBA_STAAT, DBA_STAAT_SONSTIGER, P23_ARTFELDER, P23_RECHENFELDER, RAV_BAV_RECHENFELDER, STAAT_KZ, UNFALLKOSTEN,
-    UNFALLKOSTEN_ZIEL_KZ,
+    BERUFSVERBAND_ZIEL_KZ, DBA_STAAT, DBA_STAAT_SONSTIGER, P23_ARTFELDER, P23_RECHENFELDER, RAV_BAV_RECHENFELDER, STAAT_KZ,
+    UNFALLKOSTEN, UNFALLKOSTEN_ZIEL_KZ,
 };
 use crate::kz_wache::{abtasten_mit, modul_dateien, rs_dateien};
 use crate::tabellen::{
@@ -194,6 +194,8 @@ fn kein_phantom_kz_in_der_deklaration() {
     erlaubt.extend(KONSTANTE_KZ.iter().copied());
     erlaubt.extend(IBAN_TRANSFORM_ZIEL_KZ.iter().copied());
     erlaubt.extend(UNFALLKOSTEN_ZIEL_KZ);
+    // Abweichung Nr. 93: Bezeichnung und Summe der Zeile 53 leitet `berufsverband_zeile` aus dem Betrag ab.
+    erlaubt.extend(BERUFSVERBAND_ZIEL_KZ);
     erlaubt.insert(STAAT_KZ);
     let phantome: Vec<&str> = deklaration()
         .deklaration
