@@ -1,7 +1,7 @@
 //! Arbeitsmittel: die Frage nach dem Umsatzsteuersatz der Rechnung steht nur, wenn der Preis ueber 800,00 EUR liegt
 //! (Abweichung Nr. 88 in `rust/fixtures/README.md`). Ohne `PARITY=1`, ohne Python, ohne Netz. Python kennt das Feld nicht.
 //!
-//! **Worum es geht.** Beim Arbeitnehmer gilt die 800-EUR-Grenze fuer den Sofortabzug netto (R 9.12 LStR, Regel von Julius
+//! **Worum es geht.** Beim Arbeitnehmer gilt die 800-EUR-Grenze fuer den Sofortabzug netto (R 9.12 `LStR`, Regel von Julius
 //! 2026-10-19): bei 19 % Umsatzsteuer bis 952,00 EUR brutto, bei 7 % bis 856,00 EUR. Im Band ueber 800,00 EUR entscheidet der Satz
 //! der Rechnung, also fragt die Software danach.
 //!

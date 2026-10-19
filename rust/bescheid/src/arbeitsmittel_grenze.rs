@@ -1,6 +1,6 @@
 //! Die 800-EUR-Grenze des Arbeitsmittel-Sofortabzugs beim Arbeitnehmer (Abweichung Nr. 88).
 //!
-//! **Regel** (Julius, 2026-10-19, R 9.12 LStR; im Korpus `source_unavailable`, die Anleitung zur Anlage N 2025 sagt
+//! **Regel** (Julius, 2026-10-19, R 9.12 `LStR`; im Korpus `source_unavailable`, die Anleitung zur Anlage N 2025 sagt
 //! „höchstens 800 € (ohne Umsatzsteuer)“): Geprueft wird der Preis OHNE Umsatzsteuer gegen 800,00 EUR, abgezogen wird der volle
 //! Bruttopreis. Die Bruttogrenze folgt dem Satz der Rechnung: 19 % ergibt 952,00 EUR, 7 % ergibt 856,00 EUR, ohne Umsatzsteuer
 //! bleibt es bei 800,00 EUR.
@@ -23,9 +23,9 @@ pub(crate) const GWG_GRENZE_CENT: i64 = 80_000;
 // die zwei Bruttogrenzen 952,00 und 856,00 EUR hat Julius am 2026-10-19 genannt (explicit).
 // ponytail: zwei feste Saetze; ein dritter Satz braeuchte einen Enum-Wert in `bindung_n_vor_gwg.yaml` und eine Zeile in
 // `satz_prozent`. Aendert sich ein Satz, aendern sich die Konstante und der Text der Frage.
-/// Regelsatz der Umsatzsteuer in Prozent (§ 12 Abs. 1 UStG).
+/// Regelsatz der Umsatzsteuer in Prozent (§ 12 Abs. 1 `UStG`).
 const REGELSATZ_PROZENT: i64 = 19;
-/// Ermaessigter Satz in Prozent (§ 12 Abs. 2 UStG), zum Beispiel Fachbuecher.
+/// Ermaessigter Satz in Prozent (§ 12 Abs. 2 `UStG`), zum Beispiel Fachbuecher.
 const ERMAESSIGT_PROZENT: i64 = 7;
 
 /// Bruttogrenze in CENT, bis zu der der Preis netto nicht ueber 800,00 EUR liegt, bei einem Satz von `prozent` Prozent.

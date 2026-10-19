@@ -1430,7 +1430,7 @@ async fn g23_arbeitsmittel_zu_800_01_eur_sind_afa_pflichtig() {
     erwarte_kette("g23", &a, 1_346_700, [57_578, 57_542, 13_467, 13_467]);
 }
 
-/// Abweichung Nr. 88 (Regel von Julius, R 9.12 LStR): ein Arbeitsmittel mit `preis` Cent BRUTTO und dem Umsatzsteuersatz der
+/// Abweichung Nr. 88 (Regel von Julius, R 9.12 `LStR`): ein Arbeitsmittel mit `preis` Cent BRUTTO und dem Umsatzsteuersatz der
 /// Rechnung, Sofortabzug gewaehlt, Nutzungsdauer 3 (gilt nur ueber der Netto-Grenze). Sonst wie `g14`.
 fn arbeitsmittel_brutto_aenderungen(preis: i64, satz: &'static str) -> Paare {
     vec![

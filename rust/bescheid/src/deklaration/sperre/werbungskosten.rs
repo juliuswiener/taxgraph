@@ -180,7 +180,7 @@ fn uebernachtung(f: &Felder) -> Option<Sperrgrund> {
 
 /// § 9 Abs. 1 Nr. 6/7 (GWG-Sofortabzug bis 800 EUR, sonst § 7-AfA). Schwelle in CENT (80.000).
 ///
-/// Abweichung Nr. 88: die Grenze gilt NETTO (R 9.12 LStR), siehe [`crate::arbeitsmittel_grenze`]. Im Band ueber 800,00 bis
+/// Abweichung Nr. 88: die Grenze gilt NETTO (R 9.12 `LStR`), siehe [`crate::arbeitsmittel_grenze`]. Im Band ueber 800,00 bis
 /// 952,00 EUR brutto entscheidet der Umsatzsteuersatz der Rechnung; ohne BESTAETIGTE Antwort sperrt der Guard, nie gilt still ein
 /// Satz. Darunter und darueber braucht es keine Antwort.
 fn arbeitsmittel(f: &Felder) -> Option<Sperrgrund> {

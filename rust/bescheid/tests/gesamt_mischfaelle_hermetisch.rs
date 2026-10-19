@@ -74,13 +74,13 @@
 //! 3.880: gdb = 58.120; zvE = 58.084. Zone 3: 13.674,32, abgerundet 13.674.
 //!
 //! **N1 bis N7 Arbeitsmittel an der Netto-Grenze (Abweichung Nr. 88).** Zweite Lesung: offen. Regel von Julius (2026-10-19, R 9.12
-//! LStR, im Korpus `source_unavailable`; Anleitung N 2025 Z. 307 sagt „höchstens 800 € (ohne Umsatzsteuer)“): geprueft wird der Preis
+//! `LStR`, im Korpus `source_unavailable`; Anleitung N 2025 Z. 307 sagt „höchstens 800 € (ohne Umsatzsteuer)“): geprueft wird der Preis
 //! OHNE Umsatzsteuer gegen 800,00 Euro, abgezogen wird der volle Bruttopreis. Netto <= 800,00 genau dann, wenn brutto x 100 <=
 //! 80.000 x (100 + Satz in Prozent): 19 % -> 95.200 Cent, 7 % -> 85.600 Cent, ohne Umsatzsteuer -> 80.000 Cent (jeweils ohne Rest,
 //! also keine Rundungsfrage an der Grenze). Sonst wie M2a: Lohn 62.000, Pendlerkosten 1.580 + 2.100 Unfall = 3.680, zvE = gdb - 36,
-//! gleicher Tarif. Sofortabzug N1 900: gdb = 62.000 - 3.680 - 900 = 57.420, zvE 57.384, ESt 13.406. N2 952: 57.368 / 57.332 /
+//! gleicher Tarif. Sofortabzug N1 900: gdb = 62.000 - 3.680 - 900 = 57.420, zvE 57.384, `ESt` 13.406. N2 952: 57.368 / 57.332 /
 //! 13.387. N4 856: 57.464 / 57.428 / 13.423. N6 800: 57.520 / 57.484 / 13.444. Ein Cent darueber gilt die `AfA` ueber vier Jahre,
-//! Folgejahr (volle Jahresrate), auf volle Euro abgerundet: N3 952,01 / 4 = 238,0025 -> 238: gdb 58.082, zvE 58.046, ESt 13.659.
+//! Folgejahr (volle Jahresrate), auf volle Euro abgerundet: N3 952,01 / 4 = 238,0025 -> 238: gdb 58.082, zvE 58.046, `ESt` 13.659.
 //! N5 856,01 / 4 -> 214: 58.106 / 58.070 / 13.668. N7 800,01 / 4 -> 200: 58.120 / 58.084 / 13.674. Die Steuer rechnet das
 //! Skript `handrechnung.py` im Auftragsordner (exakte Brueche, Tarif wie oben, Eichung an M2a 13.452 und M2b 13.674), nicht der
 //! Rust-Code.

@@ -81,7 +81,7 @@ struct Fall {
 
 /// Abweichung Nr. 88, Gruppe `am_netto`: ein Arbeitsmittel mit `preis` Cent brutto, der Wahl des Sofortabzugs, dem
 /// Umsatzsteuersatz der Rechnung (`satz`, `None` = unbeantwortet) und der Nutzungsdauer (`nd`, `None` = unbeantwortet).
-/// Python kennt die Netto-Regel nicht; die Erwartung ist die Regel von Julius (R 9.12 LStR, 2026-10-19): Der Preis ohne
+/// Python kennt die Netto-Regel nicht; die Erwartung ist die Regel von Julius (R 9.12 `LStR`, 2026-10-19): Der Preis ohne
 /// Umsatzsteuer darf 800,00 EUR nicht uebersteigen, der Satz ist nur im Band bis 952,00 EUR (19 %) noetig.
 fn am_fall(
     name: &'static str,
@@ -1394,7 +1394,7 @@ fn werbungskosten_dhf_verpflegung_uebernachtung_arbeitsmittel() {
     pruefe("wk");
 }
 
-/// Abweichung Nr. 88: die 800-EUR-Grenze des Arbeitsmittels gilt netto (R 9.12 LStR). Im Band 800,01 bis 952,00 EUR brutto
+/// Abweichung Nr. 88: die 800-EUR-Grenze des Arbeitsmittels gilt netto (R 9.12 `LStR`). Im Band 800,01 bis 952,00 EUR brutto
 /// entscheidet der Umsatzsteuersatz der Rechnung; ohne bestaetigte Antwort sperrt der Guard, darunter und darueber nicht.
 /// Die Meldung "weicht vom Python-Orakel ab" gilt hier nicht: Python kennt die Regel nicht.
 #[test]
