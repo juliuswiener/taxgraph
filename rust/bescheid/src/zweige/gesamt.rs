@@ -26,6 +26,7 @@ use engine::zugriff::teil2::sonstige::p22_nr3_einkuenfte;
 use intervall::Slots;
 
 use super::rechnen::{add, max0, sub, summe_euro, R};
+use super::kist_anteil::EinkuenfteJePerson;
 use super::tarif::{leerer_gesamtfall, rahmen, Lage, Modus, P35};
 use super::wk::{am_gesamt, ep_eingabe, mit_sofortabzug_im_band, mit_unfallkosten, wk_teile};
 use super::{gesamt_tarif, slot, Marke, Ring, VeranlagungWert};
@@ -229,8 +230,13 @@ pub(super) fn nr3_euro(f: &Felder) -> R<Euro> {
     Ok(p22_nr3_einkuenfte(domain::Cent::new(nr3)).floor_euro())
 }
 
-/// § 19-Einkuenfte Person A (+B) samt Versorgungsbezuegen (§ 19 Abs. 2) in EURO.
-fn einkuenfte_ns<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots, ns_wk: Euro, zusammen: bool) -> R<Euro> {
+/// § 19-Einkuenfte Person A und B (B nur bei `zusammen`, sonst 0) samt Versorgungsbezuegen (§ 19 Abs. 2) in EURO.
+fn einkuenfte_ns<Z: Marke>(
+    r: &Ring<'_, Z>,
+    slots: &Slots,
+    ns_wk: Euro,
+    zusammen: bool,
+) -> R<EinkuenfteJePerson> {
     let lohn = Euro::new(py_int(slot(slots, "bruttoarbeitslohn")?)?.div_euclid(100));
     einkuenfte_ns_aus_lohn(r.f(), r.vz(), r.p(), lohn, ns_wk, zusammen)
 }
@@ -449,8 +455,8 @@ pub(crate) fn versorgung_lage(f: &Felder, partner: bool, vz: Option<Vz>) -> R<Ve
 
 /// [`einkuenfte_ns`] mit dem Bruttoarbeitslohn Person A als Argument. Der Rentner-Ring liest keine
 /// Slots und reicht den Lohn aus dem Feld herein; Versorgungsbezuege und Alters-Gate sind dieselben.
-/// Bei Zusammenveranlagung (`zusammen`) kommen Lohn und Versorgung der Person B in DIESELBE Summe.
-/// Der Lohn enthaelt den Bezug ([`arbeitslohn_ohne_bezug`], Abweichung Nr. 50).
+/// Bei Zusammenveranlagung (`zusammen`) kommen Lohn und Versorgung der Person B in DIESELBE Summe (der Aufrufer addiert `a` und `b`);
+/// die Kirchensteuer braucht sie je Person (Abweichung Nr. 94). Der Lohn enthaelt den Bezug ([`arbeitslohn_ohne_bezug`], Abweichung Nr. 50).
 pub(super) fn einkuenfte_ns_aus_lohn(
     f: &Felder,
     vz: Vz,
@@ -458,36 +464,32 @@ pub(super) fn einkuenfte_ns_aus_lohn(
     lohn: Euro,
     ns_wk: Euro,
     zusammen: bool,
-) -> R<Euro> {
+) -> R<EinkuenfteJePerson> {
     let a = versorgungsbezug(f, &VERSORGUNG_A)?;
     let basis = arbeitslohn_ohne_bezug(lohn.get(), &a)?;
-    let mut ns = einkuenfte_nichtselbststaendig(&EinkuenfteNichtselbststaendigEingabe {
+    let mut ns_a = einkuenfte_nichtselbststaendig(&EinkuenfteNichtselbststaendigEingabe {
         veranlagungszeitraum: vz,
         bruttoarbeitslohn: Euro::new(basis),
         werbungskosten: ns_wk,
     })?;
-    // Person B (§ 26b): § 19-Einkuenfte des Ehegatten in DIESELBE Summe, Person-B-WK MVP 0. Sein Lohn enthaelt wie bei
-    // Person A den Bezug.
-    let b = if zusammen {
+    // Person B (§ 26b): § 19-Einkuenfte des Ehegatten, Person-B-WK MVP 0. Sein Lohn enthaelt wie bei Person A den Bezug.
+    let mut ns_b = Euro::new(0);
+    if zusammen {
         let b = versorgungsbezug(f, &VERSORGUNG_B)?;
         let basis_b = arbeitslohn_ohne_bezug(feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?.get(), &b)?;
-        let einkuenfte_b = einkuenfte_nichtselbststaendig(&EinkuenfteNichtselbststaendigEingabe {
+        ns_b = einkuenfte_nichtselbststaendig(&EinkuenfteNichtselbststaendigEingabe {
             veranlagungszeitraum: vz,
             bruttoarbeitslohn: Euro::new(basis_b),
             werbungskosten: Euro::new(0),
         })?;
-        ns = add(ns, einkuenfte_b)?;
-        Some(b)
-    } else {
-        None
-    };
+        if b.versorgt && b.gate_erfuellt {
+            ns_b = add(ns_b, einkuenfte_aus_versorgung(&b, p)?)?;
+        }
+    }
     if a.versorgt && a.gate_erfuellt {
-        ns = add(ns, einkuenfte_aus_versorgung(&a, p)?)?;
+        ns_a = add(ns_a, einkuenfte_aus_versorgung(&a, p)?)?;
     }
-    if let Some(b) = b.filter(|b| b.versorgt && b.gate_erfuellt) {
-        ns = add(ns, einkuenfte_aus_versorgung(&b, p)?)?;
-    }
-    Ok(ns)
+    Ok(EinkuenfteJePerson { a: ns_a, b: ns_b })
 }
 
 /// § 9-Werbungskosten Person A fuer den gemischten § 19-Fall (EP, dHf, Verpflegung, Uebernachtung,
@@ -564,7 +566,8 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
         ..leerer_gesamtfall(vz, zusammen)
     };
     let ns_wk = ns_werbungskosten(r, slots)?;
-    let ns = einkuenfte_ns(r, slots, ns_wk, zusammen)?;
+    let ns_je_person = einkuenfte_ns(r, slots, ns_wk, zusammen)?;
+    let ns = add(ns_je_person.a, ns_je_person.b)?;
     g.einkuenfte_nichtselbststaendig = ns;
     // §§ 13-18 Gewinn: laufend + § 16-vg netto + Gewinn des Ehegatten (Stufe 2 der Partnerachse).
     let netto_vg = netto_vg(f)?;
@@ -606,6 +609,12 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
     g.vorsorge_kv_pv = s.vorsorge_kv_pv;
     g.aussergewoehnliche_belastungen = s.aussergewoehnliche_belastungen;
     let kapitaleinkuenfte = p20_kapitaleinkuenfte(f, zusammen, vz, p)?;
+    // Summe der Einkuenfte je Person fuer die Kirchensteuer bei Zusammenveranlagung (Abweichung Nr. 94): ohne die gesondert besteuerten
+    // Kapitaleinkuenfte und ohne den KiSt-Ueberhang (keine Einkunft). Vermietung, § 22 und § 23 hat das Modell nur bei Person A.
+    let kist_einkuenfte = EinkuenfteJePerson {
+        a: summe_euro(&[ns_je_person.a, vv, laufend, netto_vg, p23, nr3, rav_rente.gesamt])?,
+        b: summe_euro(&[ns_je_person.b, gewinn_partner])?,
+    };
     // § 23 + § 22 Nr. 3 + § 22 Nr. 5 in einkuenfte_sonstige; der KiSt-Ueberhang laeuft mangels Slot dort mit.
     g.einkuenfte_sonstige = summe_euro(&[p23, nr3, rav_rente.gesamt])?;
     g.einkuenfte_sonstige = add(g.einkuenfte_sonstige, ueberhang)?;
@@ -638,6 +647,7 @@ pub(super) fn festzusetzende_est_gesamt<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots
         },
         pe_raw: progressionseinkuenfte(f, &dba)?,
         kapitaleinkuenfte,
+        kist_einkuenfte,
         kinder: feld_int_oder_null(f, "fam_anzahl_kinder")?,
         q: r.q(),
         extras: r.a.extras,

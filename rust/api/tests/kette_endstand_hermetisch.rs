@@ -1778,7 +1778,7 @@ fn kist_ehepaar(
     p
 }
 
-/// `zahl_cent` ist die gemeinsame ESt (Positivkontrolle der Handrechnung), `kist_cent` die Schaetzung der Kirchensteuer.
+/// `zahl_cent` ist die gemeinsame `ESt` (Positivkontrolle der Handrechnung), `kist_cent` die Schaetzung der Kirchensteuer.
 fn erwarte_kist(name: &str, a: &Value, zahl_cent: i64, kist_cent: i64) {
     erwarte_zahl(name, a, zahl_cent);
     assert_eq!(
@@ -1788,7 +1788,7 @@ fn erwarte_kist(name: &str, a: &Value, zahl_cent: i64, kist_cent: i64) {
     );
 }
 
-/// (Name, Lohn B in Cent, Konfession A, Konfession B, Land, gemeinsame ESt in Cent, Kirchensteuer in Cent) -- Zahlen aus `handrechnung.out`.
+/// (Name, Lohn B in Cent, Konfession A, Konfession B, Land, gemeinsame `ESt` in Cent, Kirchensteuer in Cent) -- Zahlen aus `handrechnung.out`.
 type KistFall = (
     &'static str,
     i64,
@@ -1835,7 +1835,7 @@ async fn kist_bei_zusammenveranlagung_rentner_nach_landesrecht() {
     }
 }
 
-/// Einzelveranlagung bleibt wie bisher: Satz mal ESt (58.734 EUR zvE -> 13.924 EUR, 9 % = 125.316 ct), Person B zaehlt nicht.
+/// Einzelveranlagung bleibt wie bisher: Satz mal `ESt` (58.734 EUR zvE -> 13.924 EUR, 9 % = 125.316 ct), Person B zaehlt nicht.
 #[tokio::test]
 async fn kist_bei_einzelveranlagung_bleibt_satz_mal_est() {
     let basis = mit(
@@ -1848,4 +1848,42 @@ async fn kist_bei_einzelveranlagung_bleibt_satz_mal_est() {
         ],
     );
     erwarte_kist("gesamt, einzel", &ergebnis("gesamt", &basis).await, 1_392_400, 125_316);
+}
+
+/// (Name, Scheibe, Lohn B in Cent, Aenderungen gegenueber `kist_ehepaar`, gemeinsame `ESt` in Cent, Kirchensteuer in Cent).
+type KistEinkunftFall = (&'static str, &'static str, i64, Paare, i64, i64);
+
+/// Einkunftsarten ausser Lohn gehen in die Summe der Einkuenfte der Person ein, der sie gehoeren. NRW, A ev, B keine, Zusammenveranlagung;
+/// die Zahlen stehen im Skript unter `GG1`, `GG2/GG3`, `RR1` und `RR2`. Je Zeile faellt ohne die Einkunftsart der Anteil von A anders aus.
+#[tokio::test]
+async fn kist_anteil_zaehlt_gewinn_vermietung_und_rente_der_person_zu() {
+    let gewinn_a = [("kein_gewinn", json!(false)), ("einkuenfte_gewinn", json!(2_000_000))];
+    let gewinn_b = [
+        ("kein_gewinn", json!(false)),
+        ("einkuenfte_gewinn", json!(0)),
+        ("gewinn_betriebsart_partner", json!("selbstaendig")),
+        ("einkuenfte_gewinn_partner", json!(2_000_000)),
+    ];
+    let rente_b = [
+        ("rentner_jahresrente", json!(0)),
+        ("rentner_renten_art_partner", json!("gesetzliche_rente")),
+        ("rentner_jahresrente_partner", json!(2_000_000)),
+        ("rentner_renten_beginn_jahr_partner", json!(2_025)),
+        ("rentner_alter_bei_rentenbeginn_partner", json!(65)),
+    ];
+    let faelle: [KistEinkunftFall; 5] = [
+        ("GG1 gesamt: Gewinn von B", "gesamt", 0, gewinn_b.to_vec(), 1_422_600, 114_562),
+        ("GG2 gesamt: Vermietung von A", "gesamt", 2_000_000, vec![("bruttoarbeitslohn", json!(4_000_000)), ("kein_vuv", json!(false)), ("vv_einnahmen", json!(2_000_000))], 1_383_800, 113_648),
+        ("GG3 gesamt: Gewinn von A", "gesamt", 2_000_000, [("bruttoarbeitslohn", json!(4_000_000))].into_iter().chain(gewinn_a).collect(), 1_383_800, 113_648),
+        ("RR1 rentner_gesamt: Rente von B", "rentner_gesamt", 0, [("bruttoarbeitslohn", json!(4_000_000))].into_iter().chain(rente_b).collect(), 729_000, 58_675),
+        ("RR2 rentner_gesamt: Rente von A", "rentner_gesamt", 4_000_000, vec![("bruttoarbeitslohn", json!(0)), ("rentner_jahresrente", json!(2_000_000))], 729_000, 6_934),
+    ];
+    for (name, scheibe, lohn_b, aenderung, zahl, kist) in faelle {
+        let kegel = if scheibe == "gesamt" { kegel_gesamt() } else { kegel_rentner() };
+        let basis = mit(
+            mit(kegel, ehepaar()),
+            mit(kist_ehepaar(lohn_b, "evangelisch", Some("keine"), "nordrhein_westfalen"), aenderung),
+        );
+        erwarte_kist(name, &ergebnis(scheibe, &basis).await, zahl, kist);
+    }
 }

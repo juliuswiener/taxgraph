@@ -15,6 +15,7 @@ use super::gesamt::{
     p35_person_a, pauschbetraege_a, pauschbetrag_partner, vorsorge_slots,
 };
 use super::rechnen::{add, max0, summe_euro, R};
+use super::kist_anteil::EinkuenfteJePerson;
 use super::tarif::{leerer_gesamtfall, rahmen, Lage, Modus, P35};
 use super::{rentner_tarif, Marke, Ring, VeranlagungWert};
 use crate::abzuege::{p33b_kind_pauschbetraege, shared_steuer_sonder_agb};
@@ -162,9 +163,12 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
         renten_nach_pauschbetrag(add(renten_a, rav.ertragsanteil)?, rav.voll, vz, p)?;
     let mut renten = rav_rente.gesamt;
     let zusammen_feld = VeranlagungWert::aus(feld_veranlagung(f)).zusammen();
-    if zusammen_feld && wert(f, "rentner_renten_art_partner").is_some_and(PyWert::truthy) {
-        renten = add(renten, renten_partner(f, vz, p)?)?;
-    }
+    let renten_b = if zusammen_feld && wert(f, "rentner_renten_art_partner").is_some_and(PyWert::truthy) {
+        renten_partner(f, vz, p)?
+    } else {
+        Euro::new(0)
+    };
+    renten = add(renten, renten_b)?;
     // § 33b Behinderten-/Pflege-/Hinterbliebenen-PB, Kind-Uebertragung, Ehegatte.
     let mut ausserg = add(
         pauschbetraege_a(f, vz, p)?,
@@ -188,7 +192,8 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     let veranlagung = VeranlagungWert::aus_oder_einzel(feld_veranlagung(f));
     let zusammen = veranlagung.zusammen();
     let lohn = feld_euro_oder_null(f, "bruttoarbeitslohn")?;
-    let ns = einkuenfte_ns_aus_lohn(f, vz, p, lohn, Euro::new(0), zusammen)?;
+    let ns_je_person = einkuenfte_ns_aus_lohn(f, vz, p, lohn, Euro::new(0), zusammen)?;
+    let ns = add(ns_je_person.a, ns_je_person.b)?;
     // § 24a-Bemessung: Arbeitslohn plus Nicht-§19-Einkuenfte (Gewinn + § 23 + § 22 Nr. 3, Abweichung Nr. 63; Python Zeile 1195
     // laesst Nr. 3 aus); Versorgungsbezuege und Leibrente § 22 Nr. 1 sind ausgenommen (§ 24a Satz 2 Nr. 1 und 2). § 24a gilt je
     // Person: der Ehegatte hat eigenen Lohn und eigenes Geburtsjahr (Abweichung Nr. 36) und seinen eigenen Gewinn (Abweichung
@@ -203,6 +208,12 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
     )?;
     let alt = add(alt_a, alt_b)?;
     let (gewinn_partner, _mitu_partner, netto_vg_partner) = gewinn_partner_anteil(f)?;
+    // Summe der Einkuenfte je Person fuer die Kirchensteuer bei Zusammenveranlagung (Abweichung Nr. 94): ohne die gesondert besteuerten
+    // Kapitaleinkuenfte und ohne den KiSt-Ueberhang. § 22 Nr. 3 und § 23 hat das Modell nur bei Person A.
+    let kist_einkuenfte = EinkuenfteJePerson {
+        a: summe_euro(&[ns_je_person.a, rav_rente.gesamt, p23, nr3, laufend, netto_vg])?,
+        b: summe_euro(&[ns_je_person.b, renten_b, gewinn_partner])?,
+    };
     let mut g = GesamtfallEingabe {
         einkuenfte_nichtselbststaendig: ns,
         einkuenfte_sonstige: renten,
@@ -249,6 +260,7 @@ pub(super) fn festzusetzende_est_rentner<Z: Marke>(r: &Ring<'_, Z>, _slots: &Slo
         },
         pe_raw: progressionseinkuenfte(f, &dba)?,
         kapitaleinkuenfte,
+        kist_einkuenfte,
         kinder: feld_int_oder_null(f, "fam_anzahl_kinder")?,
         q,
         extras: r.a.extras,
