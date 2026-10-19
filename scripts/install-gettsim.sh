@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Create the Python environment for the differential test: GETTSIM plus the
-# Catala-generated Python runtime. The Catala runtime uses PEP-695 syntax and
-# needs Python >= 3.12, so this env is 3.12. Uses uv as environment manager.
+# Create the Python environment for GETTSIM (make params-check, params-import).
+# The differential test against Catala and the Catala-generated Python runtime
+# fell with L4. GETTSIM needs Python >= 3.12, so this env is 3.12. Uses uv as
+# environment manager.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -10,9 +11,8 @@ echo "=== create venv oracle/.venv312 (Python 3.12) ==="
 uv venv oracle/.venv312 --python 3.12
 
 echo "=== install gettsim ==="
-# Dieselbe Datei wie die CI (ci.yml, Schritt "venv312 mit GETTSIM"): die Versionen von gettsim
-# und ttsim-backend stehen NUR dort, mit Begruendung im Kopf der Datei. Sie bringt auch
-# bcrypt/PyJWT mit, ohne die schon das Sammeln von tests/ scheitert (conftest importiert server).
+# Die Versionen von gettsim und ttsim-backend stehen NUR in requirements-oracle.txt, mit
+# Begruendung im Kopf der Datei; rust/bindung/tests/ci_pins.rs haelt die Pins fest.
 uv pip install --python oracle/.venv312/bin/python -r requirements-oracle.txt
 
 echo "=== versions ==="
