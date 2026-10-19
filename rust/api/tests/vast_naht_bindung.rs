@@ -165,8 +165,11 @@ fn berufsstaendische_beitraege_werden_zu_den_rentenversicherungsbeitraegen_addie
 /// Erklaerungsfeld fuellen, und die zwei Felder, die die Rueckfrage `versorgung_mehrere_jahre` abdeckt. Seit 2026-10-19 (Ticket 40, AK3,
 /// Abweichung Nr. 85) stehen auch `ErmStBetrMKalJahr` und `StFreiArbLohnATE` hier: die Pflichtrueckfragen zum Lohn decken sie ab. Ebenso
 /// seit 2026-10-19 (Ticket 40, AK4, Abweichung Nr. 86) die vier Arbeitgeberleistungen `StFreiArbgLeistg`, `PauschArbgLeistg`,
-/// `StFreiFahrtKAusw` und `StFreiDopHaushalt`: die eine Pflichtrueckfrage `lohn_erstattungen` deckt sie ab.
-const NICHT_GEMAPPT: [(&str, &str); 32] = [
+/// `StFreiFahrtKAusw` und `StFreiDopHaushalt`: die eine Pflichtrueckfrage `lohn_erstattungen` deckt sie ab. Die acht letzten Eintraege
+/// (`ELStAM/Steuerfreibetrag` bis `AnzahlArbTag`) kamen am 2026-10-19 aus [`NICHT_UNTERSUCHT`] (Ticket 40, AK8, D5): Lese-Fork
+/// `d5-lstb-14-felder`, Klasse A (Anzeige oder Hilfsfeld, keine Zuordnung der Finanzverwaltung, keine genannte Geldwirkung). „Keine Wirkung
+/// in der Veranlagung“ ist bei den ELStAM-Feldern abgeleitet, kein Satz in `sources/` sagt es ausdruecklich.
+const NICHT_GEMAPPT: [(&str, &str); 40] = [
     (
         "Besteuerungsgrund/Soli",
         "Solidaritätszuschlag wird vom Ring aus der festgesetzten ESt berechnet (catala_solz), nicht aus der Bescheinigung übernommen.",
@@ -229,6 +232,38 @@ const NICHT_GEMAPPT: [(&str, &str); 32] = [
     ("Besteuerungsgrund/PauschArbgLeistg", D2_GRUND),
     ("Besteuerungsgrund/StFreiFahrtKAusw", D2_GRUND),
     ("Besteuerungsgrund/StFreiDopHaushalt", D2_GRUND),
+    ("Besteuerungsmerkmal/ELStAM/Steuerfreibetrag", D5_FREIBETRAG_GRUND),
+    ("Besteuerungsmerkmal/ELStAM/Hinzurechnungsbetrag", D5_HINZURECHNUNG_GRUND),
+    (
+        "Besteuerungsmerkmal/ELStAM/Steuerklasse/Faktor",
+        "Der Faktor gehört zur Steuerklasse IV im Faktorverfahren und wirkt beim Steuerabzug vom laufenden Arbeitslohn (§ 51a Abs. 2a S. 3 \
+         EStG); die Veranlagung rechnet ihn nicht, keine Regel der Finanzverwaltung liest ihn.",
+    ),
+    (
+        "Besteuerungsmerkmal/ELStAM/Kirchensteuerabzug/Konfession",
+        "Das Kirchensteuermerkmal des Lohnsteuerabzugs steuert den Abzug vom Lohn; die Veranlagung rechnet aus `kist_konfession`. Keine Regel \
+         der Finanzverwaltung liest das Merkmal.",
+    ),
+    (
+        "Besteuerungsgrund/AnzahlU",
+        "Die Anzahl der Unterbrechungszeiträume ohne Lohnanspruch ist eine Zählangabe ohne Geldwert (BMF 05.09.2024, Nr. 2 des Ausdrucks); \
+         keine Regel der Finanzverwaltung liest sie.",
+    ),
+    (
+        "Besteuerungsgrund/KurzArbGeld",
+        "Das (Saison-)Kurzarbeitergeld ist in Nr. 15 (`LeistungenProgVorbeh`) bereits enthalten und dort gemappt; ein zweiter Import zählte es \
+         doppelt (BMF 05.09.2024; die Regel `E0202605` liest seit 2025 Nr. 15).",
+    ),
+    (
+        "Besteuerungsgrund/ArbgAnteilZusatzVers",
+        "Freiwillige Angabe in einer nicht amtlich belegten Zeile (BMF 05.09.2024); der Beitrag wurde nach den Lohnsteuerabzugsmerkmalen \
+         versteuert und steckt im Arbeitslohn; keine Regel der Finanzverwaltung liest ihn.",
+    ),
+    (
+        "Besteuerungsgrund/AnzahlArbTag",
+        "Freiwillige Zählangabe in einer nicht amtlich belegten Zeile (BMF 05.09.2024); die Arbeitstage der Entfernungspauschale trägt die \
+         Person in `ep_arbeitstage` selbst ein; keine Regel der Finanzverwaltung liest die Zahl.",
+    ),
 ];
 
 /// Grund der fuenf Namensbestandteile der Person auf dem Beleg (Ticket 40, AK7).
@@ -247,6 +282,13 @@ const D4_GRUND: &str = "durch die Pflichtrückfrage `versorgung_mehrere_jahre` a
 const D1_MEHRERE_JAHRE_GRUND: &str = "durch die Pflichtrückfrage `lohn_mehrere_jahre` abgedeckt (Nr. 85, Ja sperrt die Abgabe, die Person trägt Zeile 17 selbst ein)";
 const D1_AUSLAND_GRUND: &str = "durch die Pflichtrückfrage `lohn_auslandstaetigkeit` abgedeckt (Nr. 85, Ja sperrt die Abgabe, die Person trägt Zeile 22 und die Anlage N-AUS selbst ein)";
 
+/// Grund der zwei ELStAM-Betraege (Ticket 40, AK8, D5): BMF 05.09.2024, Nr. 3 des Ausdrucks, laesst die bescheinigte Nr. 3 von ihnen
+/// unberuehrt.
+const D5_FREIBETRAG_GRUND: &str = "Der eingetragene Steuerfreibetrag ist ein Lohnsteuerabzugsmerkmal und ändert den bescheinigten Bruttoarbeitslohn nicht \
+    (BMF 05.09.2024, Nr. 3 des Ausdrucks: andere Freibeträge sind nicht abzuziehen); keine Regel der Finanzverwaltung liest ihn.";
+const D5_HINZURECHNUNG_GRUND: &str = "Der eingetragene Hinzurechnungsbetrag ist ein Lohnsteuerabzugsmerkmal und ändert den bescheinigten Bruttoarbeitslohn \
+    nicht (BMF 05.09.2024, Nr. 3 des Ausdrucks: Hinzurechnungsbeträge sind nicht hinzuzurechnen); keine Regel der Finanzverwaltung liest ihn.";
+
 /// Grund der vier Arbeitgeberleistungen (Ticket 40, AK4, d-29 A, Abweichung Nr. 86): EINE Pflichtrueckfrage je Person deckt Fahrten zur
 /// Arbeit (steuerfrei und pauschal), Fahrtkosten bei Auswaertstaetigkeit und doppelte Haushaltsfuehrung ab, der Beleg setzt sie nicht vor.
 const D2_GRUND: &str = "durch die Pflichtrückfrage `lohn_erstattungen` abgedeckt (Nr. 86, Ja sperrt die Abgabe, die Person trägt die Zeilen dafür selbst ein)";
@@ -260,21 +302,13 @@ const VBEZ_GRUND: &str = "Der Beleg liefert die Versorgungsbezüge (§ 19 Abs. 2
 /// Beleg-Elemente ohne Eintrag in `LSTB` und OHNE Grund: bis 2026-10-16 nie angesehen. Der Text ist die Doku des Schemas, KEINE
 /// Begruendung. Jede Zeile hier ist eine offene Frage „soll das gemappt werden?"; wer sie beantwortet, nimmt das Element in `LSTB` auf oder
 /// verschiebt es mit Grund nach [`NICHT_GEMAPPT`]. Die Liste darf nur schrumpfen.
-const NICHT_UNTERSUCHT: [(&str, &str); 17] = [
-    ("Besteuerungsmerkmal/ELStAM/Steuerfreibetrag", "eingetragener Steuerfreibetrag"),
-    ("Besteuerungsmerkmal/ELStAM/Hinzurechnungsbetrag", "eingetragener Hinzurechnungsbetrag"),
-    ("Besteuerungsmerkmal/ELStAM/Steuerklasse/Faktor", "Faktor"),
-    ("Besteuerungsmerkmal/ELStAM/Kirchensteuerabzug/Konfession", "Kirchensteuermerkmal (Konfession)"),
+const NICHT_UNTERSUCHT: [(&str, &str); 9] = [
     ("Besteuerungsmerkmal/ELStAM/Kirchensteuerabzug/Ehegkonfession", "Kirchensteuermerkmal (Konfession) des Ehegatten"),
-    ("Besteuerungsgrund/AnzahlU", "Zeiträume ohne Anspruch auf Arbeitslohn (Anzahl U)"),
     ("Besteuerungsgrund/Grossbuchstaben", "bescheinigter Großbuchstabe"),
-    ("Besteuerungsgrund/KurzArbGeld", "davon: (Saison-)Kurzarbeitergeld"),
     ("Besteuerungsgrund/StFreiPrKrankVers", "steuerfreie Arbeitgeberzuschüsse zur privaten Krankenversicherung"),
     ("Besteuerungsgrund/StFreiGePflegVers", "steuerfreie Arbeitgeberzuschüsse zur gesetzlichen Pflegeversicherung"),
     ("Besteuerungsgrund/ArbnAnteilWBUmlage", "Arbeitnehmerbeitrag zur Winterbeschäftigungs-Umlage"),
-    ("Besteuerungsgrund/ArbgAnteilZusatzVers", "steuerpflichtiger Beitrag zur Zusatzversorgung"),
     ("Besteuerungsgrund/ArbnAnteilZusatzVers", "Arbeitnehmeranteil zur Zusatzversorgung"),
-    ("Besteuerungsgrund/AnzahlArbTag", "Anzahl Arbeitstage"),
     ("Besteuerungsgrund/FreibetragDbaTuerkei", "Freibetrag DBA Türkei"),
     ("Besteuerungsgrund/Kammerbeitrag/Wert", "Kammerbeitrag"),
     ("Besteuerungsgrund/Kammerbeitrag/Bundesland", "Kammerbeitrag/maßgebendes Bundesland"),
