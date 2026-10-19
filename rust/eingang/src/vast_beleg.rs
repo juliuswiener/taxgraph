@@ -1,5 +1,5 @@
 //! Die Beleg-Datei der Lohnsteuerbescheinigung (`VaSt_LStB`, ELSTER-Datenabholung, Schema `VaSt_LStB-202501.xsd`) als flache Zuordnung
-//! Element → Text für [`crate::vast::aus_lstb`] (Abweichung Nr. 90, Stufe S1). Kein Abruf bei ELSTER, kein ERiC: die Datei liegt schon da.
+//! Element → Text für [`crate::vast::aus_lstb`] (Abweichung Nr. 90, Stufe S1). Kein Abruf bei ELSTER, kein `ERiC`: die Datei liegt schon da.
 //!
 //! Genau ein Beleg, genau eine Version. Jede andere Lage ist ein benannter [`BelegFehler`]; der Aufrufer schreibt dann nichts. Die
 //! Steuer-ID und die Namen aus `Allgemein` verlassen diese Funktion nie: die Zuordnung führt nur die Elemente, die `LSTB` und `LSTB_SUMMEN`

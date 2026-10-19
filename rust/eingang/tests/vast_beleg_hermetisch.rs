@@ -1,6 +1,6 @@
 //! Der Leser der Beleg-Datei (`eingang::vast_beleg::beleg_xml_zu_werten`, Abweichung Nr. 90, Stufe S1): eine Beleg-XML der Lohnsteuerbescheinigung
 //! (Schema `VaSt_LStB-202501.xsd`) ergibt die flache Zuordnung Element → Text für `aus_lstb`. Hermetisch: jede Fixtur ist erfunden (Firma, Name,
-//! Beträge; die Steuer-ID `00000000000` beginnt mit 0 und kann nie vergeben sein), nichts kommt aus einem echten Beleg, kein ERiC, kein ELSTER.
+//! Beträge; die Steuer-ID `00000000000` beginnt mit 0 und kann nie vergeben sein), nichts kommt aus einem echten Beleg, kein `ERiC`, kein ELSTER.
 //!
 //! Aufbau der Fixtur nach dem Schema: Wurzel `VaSt_LStB` mit Namensraum und `version="202501"`; darin `Allgemein` (Steuer-ID, Name), `Dauer`
 //! (`Jahr`), `Besteuerungsmerkmal` (`ELStAM`, bis zu 12-mal) und `Besteuerungsgrund` (die Beträge, je Element höchstens einmal).
@@ -143,6 +143,17 @@ fn ein_beleg_in_einem_nutzdaten_behaelter_wird_gelesen() {
 fn ein_beleg_ohne_betraege_ergibt_eine_leere_zuordnung() {
     let werte = beleg_xml_zu_werten(&beleg_mit(BELEG_NAMENSRAUM, Some("202501"), "2025", 1, "")).unwrap();
     assert_eq!(werte.len(), 0, "ein Beleg ohne Betrag ist gültig und liefert nichts");
+}
+
+#[test]
+fn ein_element_das_der_import_nicht_liest_bleibt_draussen() {
+    // `Soli`, `AnzahlU` und `Grossbuchstaben` stehen im Schema, der Import liest sie nicht (`NICHT_GEMAPPT`): sie gehören nicht in die Zuordnung.
+    let grund = format!("{}      <Soli>55.55</Soli>\n      <AnzahlU>3</AnzahlU>\n      <Grossbuchstaben>B</Grossbuchstaben>\n", grund_alle());
+    let werte = beleg_xml_zu_werten(&beleg_mit(BELEG_NAMENSRAUM, Some("202501"), "2025", 1, &grund)).unwrap();
+    assert_eq!(werte, beleg_xml_zu_werten(&beleg_gut()).unwrap());
+    for fremd in ["Soli", "AnzahlU", "Grossbuchstaben"] {
+        assert!(!werte.contains_key(fremd), "{fremd}");
+    }
 }
 
 #[test]
