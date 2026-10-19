@@ -458,3 +458,9 @@ felder:
   - vv_wohneinheit_bezeichnung
   - vv_wohnzwecke
   - waehlervereinigungen_betrag
+  - zuschuss_ag_kv_gesetzlich
+  - zuschuss_ag_kv_gesetzlich_partner
+  - zuschuss_ag_kv_privat
+  - zuschuss_ag_kv_privat_partner
+  - zuschuss_ag_pv
+  - zuschuss_ag_pv_partner

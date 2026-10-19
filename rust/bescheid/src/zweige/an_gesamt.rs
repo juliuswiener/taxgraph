@@ -19,7 +19,7 @@ use super::rechnen::{add, R};
 use super::tarif::kist_eingabe;
 use super::wk::{am_an_gesamt, ep_eingabe, mit_sofortabzug_im_band, mit_unfallkosten, wk_teile};
 use super::{kist_konfession, slot, Marke, Ring};
-use crate::abzuege::kind_kv_pv_summe;
+use crate::abzuege::{basisbeitrag_nach_zuschuss, kind_kv_pv_summe};
 use crate::{
     cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_true, ist_zusammen, py_int, summe,
     wert, Felder,
@@ -28,7 +28,8 @@ use crate::{
 /// § 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge Person A oder B: eigener Abs.-4-Hoechstbetrag.
 fn kv_pv(f: &Felder, suffix: &str, kind_cent: i64) -> R<Euro> {
     let c = |k: &str| feld_int_oder_null(f, &format!("{k}{suffix}"));
-    let basis = summe(&[c("basis_kv")?, c("basis_pv")?, kind_cent])?;
+    // Der Basisbeitrag nach Abzug der steuerfreien Arbeitgeberzuschuesse (Abweichung Nr. 92): ein Rechenpfad mit `gesamt` und `rentner_gesamt`.
+    let basis = basisbeitrag_nach_zuschuss(f, suffix, kind_cent)?;
     let weitere = summe(&[
         c("vorsorge_arbeitslosenversicherung")?,
         c("vorsorge_erwerbsunfaehigkeit")?,

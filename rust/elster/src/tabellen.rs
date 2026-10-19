@@ -237,6 +237,11 @@ pub(crate) const PARTNER_INSTANZ: &[(&str, &str)] = &[
     ("gewst_hebesatz_partner", "E0801705"),
     ("gewst_messbetrag_partner", "E0801606"),
     ("gewst_zu_zahlen_partner", "E0801704"),
+    // Rust-eigen (Abweichung Nr. 92): die steuerfreien Arbeitgeberzuschuesse zur KV/PV des Ehegatten, Nr. 24 a, b, c der Lohnsteuerbescheinigung
+    // (`VOR/Stfr_AG_Zusch`, Container Person B). Python kennt keinen Zuschuss; `RUST_EIGENE_ZEILEN` in `tabellen_gleich_fixture`.
+    ("zuschuss_ag_kv_gesetzlich_partner", "E2003705"),
+    ("zuschuss_ag_kv_privat_partner", "E2003807"),
+    ("zuschuss_ag_pv_partner", "E2003907"),
 ];
 
 /// Der Pflege-Block § 33b Abs. 6 EStG (Gruppe `AgB/Pflege_PB/Einz`) als eingefrorene Kz-Menge.
@@ -856,8 +861,13 @@ mod tests {
 
     /// Zeilen der Tabellen, die es nur in Rust gibt: `(Tabelle der Fixture, Feld)`. Jede steht mit Grund im README
     /// (`rust/fixtures/README.md`) und hat einen eigenen Test.
-    const RUST_EIGENE_ZEILEN: [(&str, &str); 1] =
-        [("partner_verzweigung", "p34_abs3_antragsbetrag_partner")];
+    /// Dazu die drei Zuschussfelder des Ehegatten in `partner_instanz` (Abweichung Nr. 92, Kz E2003705, E2003807, E2003907).
+    const RUST_EIGENE_ZEILEN: [(&str, &str); 4] = [
+        ("partner_verzweigung", "p34_abs3_antragsbetrag_partner"),
+        ("partner_instanz", "zuschuss_ag_kv_gesetzlich_partner"),
+        ("partner_instanz", "zuschuss_ag_kv_privat_partner"),
+        ("partner_instanz", "zuschuss_ag_pv_partner"),
+    ];
 
     /// Kz, die es nur in Rust gibt: `(JSON-Pfad der Liste, Kz)`. E0108701 (Spenden an Parteien, Zeile 7 der Anlage
     /// Sonderausgaben) steht in den vier Listen, die `kz_format.rs` fuehrt; Python (`est_mapping.py`) kennt das Kz nicht.

@@ -187,3 +187,6 @@ vv_ueberschuss	E0701601	false
 vv_ueberschuss_person_a	E0701801	false
 vv_wohneinheit_bezeichnung	E0701202	true
 waehlervereinigungen_betrag	E0108801	true
+zuschuss_ag_kv_gesetzlich	E2003705	true
+zuschuss_ag_kv_privat	E2003807	true
+zuschuss_ag_pv	E2003907	true

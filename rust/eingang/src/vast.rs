@@ -157,7 +157,7 @@ pub fn cent(euro_text: Option<&str>) -> Result<Option<i64>, VastFehler> {
 }
 
 /// `LSTB`: VaSt-Element → (`feld_id`, Schema-Doku).
-pub const LSTB: [(&str, &str, &str); 7] = [
+pub const LSTB: [(&str, &str, &str); 10] = [
     ("BruttoArbLohn", "bruttoarbeitslohn", "Bruttoarbeitslohn"),
     ("LSteuer", "p36_lohnsteuer", "einbehaltene Lohnsteuer"),
     (
@@ -185,6 +185,23 @@ pub const LSTB: [(&str, &str, &str); 7] = [
         "StFreiVerpfleg",
         "vpf_steuerfreie_erstattung_betrag",
         "steuerfreier Arbeitgeberzuschuss für Verpflegung bei Auswärtstätigkeit",
+    ),
+    // Abweichung Nr. 92: die drei steuerfreien Zuschüsse zur KV und PV (LStB Nr. 24 a, b, c) mindern den Sonderausgabenabzug
+    // (§ 10 Abs. 2 S. 1 Nr. 1 EStG); die Finanzverwaltung füllt damit `E2003705`, `E2003807`, `E2003907`.
+    (
+        "StFreiGeKrankVers",
+        "zuschuss_ag_kv_gesetzlich",
+        "steuerfreie Arbeitgeberzuschüsse zur gesetzlichen Krankenversicherung (LStB Nr. 24 a)",
+    ),
+    (
+        "StFreiPrKrankVers",
+        "zuschuss_ag_kv_privat",
+        "steuerfreie Arbeitgeberzuschüsse zur privaten Krankenversicherung (LStB Nr. 24 b)",
+    ),
+    (
+        "StFreiGePflegVers",
+        "zuschuss_ag_pv",
+        "steuerfreie Arbeitgeberzuschüsse zur gesetzlichen Pflegeversicherung (LStB Nr. 24 c)",
     ),
 ];
 

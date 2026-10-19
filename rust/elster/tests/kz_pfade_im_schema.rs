@@ -70,8 +70,12 @@ fn ernte() -> &'static [KzPruefling] {
     CELL.get_or_init(|| ernte_est_mapping_kz(index()).expect("Tabellen-Kz haben ein Feld in der Bindung"))
 }
 
-/// (`feld_id` der Bindung, Kz, Pfad im E10-Schema 2025) -- Sweep Cluster A (§ 35a, § 33), B (Kapital), C (Behinderung Person A).
-const BINDUNG_PFADE: [(&str, &str, &str); 7] = [
+/// (`feld_id` der Bindung, Kz, Pfad im E10-Schema 2025) -- Sweep Cluster A (§ 35a, § 33), B (Kapital), C (Behinderung Person A), dazu seit
+/// Abweichung Nr. 92 die drei steuerfreien Arbeitgeberzuschuesse zur KV/PV (Anlage Vorsorgeaufwand, `Stfr_AG_Zusch`, Nr. 24 a, b, c).
+const BINDUNG_PFADE: [(&str, &str, &str); 10] = [
+    ("zuschuss_ag_kv_gesetzlich", "E2003705", "E10/VOR/Stfr_AG_Zusch/E2003705"),
+    ("zuschuss_ag_kv_privat", "E2003807", "E10/VOR/Stfr_AG_Zusch/E2003807"),
+    ("zuschuss_ag_pv", "E2003907", "E10/VOR/Stfr_AG_Zusch/E2003907"),
     ("hh_minijob_aufwendungen", "E0104109", "E10/HA_35a/St_Erm/Minijobs/Sum/E0104109"),
     ("hh_dienstleistungen", "E0107208", "E10/HA_35a/St_Erm/Hhn_BV_DL/Sum/E0107208"),
     ("hh_handwerker_arbeitskosten", "E0111215", "E10/HA_35a/St_Erm/Handw_L/Sum/E0111215"),
@@ -178,6 +182,9 @@ fn die_partner_spiegel_haben_kein_eigenes_kz_und_schreiben_in_das_kz_von_person_
         ("kap_kapitalertraege_partner", json!(100_000), "E1900701"),
         ("rentner_grad_der_behinderung_partner", json!(50), "E0109708"),
         ("rentner_hilflos_blind_taubblind_partner", json!(true), "E0109706"),
+        ("zuschuss_ag_kv_gesetzlich_partner", json!(150_000), "E2003705"),
+        ("zuschuss_ag_kv_privat_partner", json!(110_000), "E2003807"),
+        ("zuschuss_ag_pv_partner", json!(9_000), "E2003907"),
     ] {
         assert!(index()[feld].elster_kz.is_none(), "{feld}: ein Partner-Spiegel traegt kein eigenes Kz (Klasse g)");
         let d = deklariere(&bestaetigt(&[("veranlagung", json!("zusammen")), (feld, wert)]), index(), VZ, None).unwrap();

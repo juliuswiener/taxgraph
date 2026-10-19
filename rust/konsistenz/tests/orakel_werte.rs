@@ -302,9 +302,10 @@ fn konstanten_wie_orakel() {
     // Abweichung Nr. 28, Nr. 31, Nr. 33, Nr. 38, Nr. 44 und Nr. 80: `ep_unfallkosten`, `parteispenden_betrag`, die vier Betragsfelder der
     // Versorgung des Ehegatten, seine einbehaltene Lohnsteuer (`p36_lohnsteuer_partner`), `waehlervereinigungen_betrag` und der Grad der
     // Behinderung, den der Gesamtlauf fuer die Altersgrenze fragt (`versorgung_grad_der_behinderung`), stehen nur in Rust (Python kennt die
-    // Felder im Ring nicht). Der Rest ist das Orakel, und genau diese NEUN Felder sind ausgenommen: ein zehntes Rust-Feld braucht seine
-    // eigene Zeile hier.
-    const NUR_RUST: [&str; 9] = [
+    // Felder im Ring nicht). Dazu seit Abweichung Nr. 92 die sechs Zuschussfelder (`zuschuss_ag_kv_gesetzlich`, `zuschuss_ag_kv_privat`,
+    // `zuschuss_ag_pv`, je Person): Python kennt keinen Zuschuss. Der Rest ist das Orakel, und genau diese FUENFZEHN Felder sind
+    // ausgenommen: ein sechzehntes Rust-Feld braucht seine eigene Zeile hier.
+    const NUR_RUST: [&str; 15] = [
         "ep_unfallkosten",
         "p36_lohnsteuer_partner",
         "parteispenden_betrag",
@@ -314,6 +315,12 @@ fn konstanten_wie_orakel() {
         "versorgung_grad_der_behinderung",
         "versorgung_jahresrente_partner",
         "waehlervereinigungen_betrag",
+        "zuschuss_ag_kv_gesetzlich",
+        "zuschuss_ag_kv_gesetzlich_partner",
+        "zuschuss_ag_kv_privat",
+        "zuschuss_ag_kv_privat_partner",
+        "zuschuss_ag_pv",
+        "zuschuss_ag_pv_partner",
     ];
     let py = &fixture()["konstanten"];
     let flag: Value = k::FLAG_NEGIERT.iter().map(|(f, l)| json!([f, l])).collect();

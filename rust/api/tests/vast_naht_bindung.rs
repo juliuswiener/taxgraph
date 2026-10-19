@@ -81,8 +81,8 @@ fn vast_elemente() -> BTreeSet<&'static str> {
 #[test]
 fn jedes_ziel_steht_in_der_bindung_und_ist_ein_cent_feld() {
     let z = ziele();
-    // KONTROLLE: die Schleife unten sieht Ziele (10 verschiedene Felder aus 7 + 3 + 1 Eintraegen, gemessen 2026-10-18; 2026-10-13: 9 aus 8 + 1 + 1).
-    assert!(z.len() >= 10, "nur {} Ziele gesehen: {z:?}", z.len());
+    // KONTROLLE: die Schleife unten sieht Ziele (13 verschiedene Felder aus 10 + 3 + 1 Eintraegen, Abweichung Nr. 92; 2026-10-18: 10 aus 7 + 3 + 1; 2026-10-13: 9 aus 8 + 1 + 1).
+    assert!(z.len() >= 13, "nur {} Ziele gesehen: {z:?}", z.len());
     let fehlend: Vec<&str> = z.iter().copied().filter(|f| !index().contains_key(*f)).collect();
     assert!(fehlend.is_empty(), "Mapping zeigt auf Felder, die es in der Bindung nicht gibt: {fehlend:?}");
     let falsch: Vec<(&str, Feldtyp)> =
@@ -169,7 +169,7 @@ fn berufsstaendische_beitraege_werden_zu_den_rentenversicherungsbeitraegen_addie
 /// (`ELStAM/Steuerfreibetrag` bis `AnzahlArbTag`) kamen am 2026-10-19 aus [`NICHT_UNTERSUCHT`] (Ticket 40, AK8, D5): Lese-Fork
 /// `d5-lstb-14-felder`, Klasse A (Anzeige oder Hilfsfeld, keine Zuordnung der Finanzverwaltung, keine genannte Geldwirkung). „Keine Wirkung
 /// in der Veranlagung“ ist bei den ELStAM-Feldern abgeleitet, kein Satz in `sources/` sagt es ausdruecklich.
-const NICHT_GEMAPPT: [(&str, &str); 40] = [
+const NICHT_GEMAPPT: [(&str, &str); 39] = [
     (
         "Besteuerungsgrund/Soli",
         "Solidaritätszuschlag wird vom Ring aus der festgesetzten ESt berechnet (catala_solz), nicht aus der Bescheinigung übernommen.",
@@ -188,11 +188,6 @@ const NICHT_GEMAPPT: [(&str, &str); 40] = [
         "Private Krankenversicherung: § 10 Abs. 1 Nr. 3 S. 3 zählt nur die Beitragsanteile, die den Leistungen des SGB V entsprechen — \
          abzüglich des Krankengeld-Anteils. Der Beleg liefert den Gesamtbeitrag ohne diese Aufteilung; ihn voll als Basisabsicherung zu \
          übernehmen wäre zu hoch. Privat Versicherte tragen den Wert weiter selbst ein.",
-    ),
-    (
-        "Besteuerungsgrund/StFreiGeKrankVers",
-        "Steuerfreie Arbeitgeberzuschüsse mindern die abziehbaren Beiträge (§ 10 Abs. 2 S. 1 Nr. 1), sind aber kein eigener Abzugsposten. \
-         Ob unser basis_kv_pv brutto oder netto gemeint ist, klärt die Bindung nicht eindeutig — offen, statt auf Verdacht zu saldieren.",
     ),
     (
         "Besteuerungsgrund/StFreiArbLohnDBA",
@@ -302,11 +297,9 @@ const VBEZ_GRUND: &str = "Der Beleg liefert die Versorgungsbezüge (§ 19 Abs. 2
 /// Beleg-Elemente ohne Eintrag in `LSTB` und OHNE Grund: bis 2026-10-16 nie angesehen. Der Text ist die Doku des Schemas, KEINE
 /// Begruendung. Jede Zeile hier ist eine offene Frage „soll das gemappt werden?"; wer sie beantwortet, nimmt das Element in `LSTB` auf oder
 /// verschiebt es mit Grund nach [`NICHT_GEMAPPT`]. Die Liste darf nur schrumpfen.
-const NICHT_UNTERSUCHT: [(&str, &str); 9] = [
+const NICHT_UNTERSUCHT: [(&str, &str); 7] = [
     ("Besteuerungsmerkmal/ELStAM/Kirchensteuerabzug/Ehegkonfession", "Kirchensteuermerkmal (Konfession) des Ehegatten"),
     ("Besteuerungsgrund/Grossbuchstaben", "bescheinigter Großbuchstabe"),
-    ("Besteuerungsgrund/StFreiPrKrankVers", "steuerfreie Arbeitgeberzuschüsse zur privaten Krankenversicherung"),
-    ("Besteuerungsgrund/StFreiGePflegVers", "steuerfreie Arbeitgeberzuschüsse zur gesetzlichen Pflegeversicherung"),
     ("Besteuerungsgrund/ArbnAnteilWBUmlage", "Arbeitnehmerbeitrag zur Winterbeschäftigungs-Umlage"),
     ("Besteuerungsgrund/ArbnAnteilZusatzVers", "Arbeitnehmeranteil zur Zusatzversorgung"),
     ("Besteuerungsgrund/FreibetragDbaTuerkei", "Freibetrag DBA Türkei"),
@@ -412,11 +405,8 @@ fn ungeprueft_trotz_zuordnung<'a>(wirkt: &[&'a str], offen: &[(&str, &str)]) -> 
 /// Ratsche: die Teilmenge von [`WIRKT_LAUT_VAST`], die heute noch ungeprueft in [`NICHT_UNTERSUCHT`] steht. Sie darf nur schrumpfen: wer ein
 /// Feld abbildet oder mit Grund nach [`NICHT_GEMAPPT`] verschiebt, streicht es hier UND in [`NICHT_UNTERSUCHT`] und senkt
 /// [`ERWARTET_NOCH_OFFEN`]. Leer ist der Endzustand von Ticket 40.
-const NOCH_OFFEN: &[&str] = &[
-    "Besteuerungsgrund/StFreiPrKrankVers",
-    "Besteuerungsgrund/StFreiGePflegVers",
-];
-const ERWARTET_NOCH_OFFEN: usize = 2;
+const NOCH_OFFEN: &[&str] = &[];
+const ERWARTET_NOCH_OFFEN: usize = 0;
 
 /// Kein neues Beleg-Feld mit Zuordnung kommt ungeprueft in die Liste: alles, was [`NICHT_UNTERSUCHT`] noch von [`WIRKT_LAUT_VAST`] haelt,
 /// steht in der Ratsche [`NOCH_OFFEN`].

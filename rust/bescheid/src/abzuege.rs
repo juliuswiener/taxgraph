@@ -534,6 +534,45 @@ fn steuerermaessigungen(
     )
 }
 
+/// Der Basisbeitrag einer Person in Cent (§ 10 Abs. 1 Nr. 3 `EStG`): `basis_kv + basis_pv`, vermindert um die steuerfreien
+/// Arbeitgeberzuschuesse zur KV und PV (`zuschuss_ag_kv_gesetzlich`, `zuschuss_ag_kv_privat`, `zuschuss_ag_pv`; Lohnsteuerbescheinigung
+/// Nr. 24 a, b, c), dazu `kind_kv_pv` (die Beitraege fuer Kinder, ohne Zuschuss). `suffix` ist `""` fuer Person A, `"_partner"` fuer den
+/// Ehegatten. Der Zuschuss steht in unmittelbarem wirtschaftlichem Zusammenhang mit den Beitraegen und ist nicht abziehbar (§ 10 Abs. 2
+/// S. 1 Nr. 1 `EStG`): der eigene Beitrag sinkt um ihn, nie unter 0. Ein Zuschuss von 0 oder darunter laesst den Beitrag unveraendert
+/// (auch einen negativen, wie bisher); mehr als der Beitrag zieht nichts ueber 0 ab.
+///
+/// Der EINE Rechenpfad fuer `an_gesamt` (`zweige/an_gesamt.rs`), `gesamt` und `rentner_gesamt` (Abweichung Nr. 92).
+///
+/// ponytail: die drei Zuschuesse stehen zusammen gegen die Summe aus `basis_kv` und `basis_pv`, nicht je Art gegen ihren Beitrag. Wer die
+/// Privatversicherung (Nr. 28 des Belegs fasst KV und Pflege zusammen) in nur einem der beiden Felder eintraegt, rechnet so richtig; ein
+/// Pflegezuschuss ueber dem Pflegebeitrag mindert dafuer auch den KV-Beitrag. Upgrade: je Art getrennt, wenn der Beleg die Beitraege
+/// getrennt liefert (Nr. 90).
+///
+/// # Errors
+/// [`BescheidFehler::Ueberlauf`] bei einer Summe oder Differenz jenseits von `i64`.
+pub(crate) fn basisbeitrag_nach_zuschuss(
+    f: &Felder,
+    suffix: &str,
+    kind_kv_pv: i64,
+) -> Result<i64, BescheidFehler> {
+    let fid = |name: &str| format!("{name}{suffix}");
+    let beitrag = summe(&[
+        feld_int_oder_null(f, &fid("basis_kv"))?,
+        feld_int_oder_null(f, &fid("basis_pv"))?,
+    ])?;
+    let zuschuss = summe(&[
+        feld_int_oder_null(f, &fid("zuschuss_ag_kv_gesetzlich"))?,
+        feld_int_oder_null(f, &fid("zuschuss_ag_kv_privat"))?,
+        feld_int_oder_null(f, &fid("zuschuss_ag_pv"))?,
+    ])?;
+    let eigener = if zuschuss > 0 {
+        minus(beitrag, zuschuss)?.max(0)
+    } else {
+        beitrag
+    };
+    summe(&[eigener, kind_kv_pv])
+}
+
 /// KV/PV-Sonderausgaben einer Person; `partner` waehlt die `_partner`-Felder (ohne Kind-Beitraege).
 fn kv_pv_sonderausgaben(
     f: &Felder,
@@ -542,11 +581,7 @@ fn kv_pv_sonderausgaben(
 ) -> Result<Euro, BescheidFehler> {
     let s = if partner { "_partner" } else { "" };
     let fid = |name: &str| format!("{name}{s}");
-    let basis = summe(&[
-        feld_int_oder_null(f, &fid("basis_kv"))?,
-        feld_int_oder_null(f, &fid("basis_pv"))?,
-        kind_kv_pv,
-    ])?;
+    let basis = basisbeitrag_nach_zuschuss(f, s, kind_kv_pv)?;
     let weitere = summe(&[
         feld_int_oder_null(f, &fid("vorsorge_arbeitslosenversicherung"))?,
         feld_int_oder_null(f, &fid("vorsorge_erwerbsunfaehigkeit"))?,
