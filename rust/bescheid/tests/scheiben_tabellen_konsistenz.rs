@@ -90,11 +90,13 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// `gesamt` und `rentner_gesamt` (Abweichung Nr. 85), 85 -> 89, 403 -> 407 und 316 -> 320, die Kegel bleiben;
 /// danach am 2026-10-19 die zwei Rueckfragen zu Leistungen des Arbeitgebers (`lohn_erstattungen`, je Person) in denselben drei Scheiben
 /// (Abweichung Nr. 86), 89 -> 91, 407 -> 409 und 320 -> 322, die Kegel bleiben;
+/// danach am 2026-10-19 das Feld `am_umsatzsteuersatz` in `an_gesamt` und `gesamt` (Abweichung Nr. 88), 91 -> 92 und 409 -> 410, die
+/// Kegel bleiben, `rentner_gesamt` bleibt 322;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
-    (Scheibe::AnGesamt, 91, 33),
-    (Scheibe::Gesamt, 409, 35),
+    (Scheibe::AnGesamt, 92, 33),
+    (Scheibe::Gesamt, 410, 35),
     (Scheibe::RentnerGesamt, 322, 28),
 ];
 

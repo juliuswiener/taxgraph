@@ -36,6 +36,7 @@ felder:
   - am_anschaffungskosten
   - am_gwg_sofortabzug_gewaehlt
   - am_massgebliche_ak
+  - am_umsatzsteuersatz
   - antrag_ermaessigter_satz
   - antrag_ermaessigter_satz_partner
   - arbeitsmittel_nutzungsdauer

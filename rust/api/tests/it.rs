@@ -4,6 +4,8 @@
 
 #[path = "abhaengigkeiten.rs"]
 mod abhaengigkeiten;
+#[path = "arbeitsmittel_satzfrage_bedingung.rs"]
+mod arbeitsmittel_satzfrage_bedingung;
 #[path = "backup_restore_rundlauf.rs"]
 mod backup_restore_rundlauf;
 #[path = "bereich_rand_hermetisch.rs"]

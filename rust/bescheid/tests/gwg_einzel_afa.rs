@@ -554,6 +554,19 @@ fn die_rechnung_verlangt_die_netto_grundlage_selbst() {
     assert_eq!(afa_direkt(Geraet { betrag: 80_001, ..t1 }), 200, "800,01 EUR netto: 200,0025 -> 200 EUR");
 }
 
+/// Abweichung Nr. 88 gilt nur fuer Arbeitsmittel beim Arbeitnehmer (`am_*`). Der Betrieb prueft `gwg_anschaffungskosten_netto` gegen
+/// 800,00 EUR, ein Band bis 952,00 EUR gibt es hier nicht: 800,01 EUR netto sind ein Geraet ohne Sofortabzug und rechnen die
+/// Einzel-`AfA`. Alle Voraussetzungen "ja" (Verzeichnis, allein nutzbar, netto), damit nur die Grenze entscheidet; 4 Jahre, Januar.
+#[test]
+fn der_betrieb_kennt_kein_band_bis_952_eur() {
+    let g = |betrag| Geraet { betrag, nd: Some(4), monat: Some(1), ..GUT };
+    assert_eq!(afa_direkt(g(80_000)), 0, "KONTROLLE: genau 800,00 EUR netto ist Sofortabzug, keine AfA");
+    assert_eq!(afa_direkt(g(80_001)), 200, "800,01 EUR netto: 200,0025 -> 200 EUR");
+    assert_eq!(afa_direkt(g(90_000)), 225, "900,00 EUR netto");
+    assert_eq!(afa_direkt(g(95_200)), 238, "952,00 EUR netto");
+    assert_eq!(afa_direkt(g(95_201)), 238, "952,01 EUR netto: 238,0025 -> 238 EUR");
+}
+
 /// Eine vorlaeufige Instanz zaehlt in der strengen Summe nicht (Zwei-Signal-Regel, `Instanzquelle::zaehlt`), in der
 /// rohen schon. Die Kontrolle ist die rohe Summe: sie zeigt, dass die Instanz rechnet (100 EUR) und der Messaufbau nicht blind ist.
 #[test]

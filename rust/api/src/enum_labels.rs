@@ -15,7 +15,13 @@
 
 /// `feld_id -> [(enum-wert, anzeigetext)]`.
 #[rustfmt::skip]
-pub const ENUM_LABELS: [(&str, &[(&str, &str)]); 29] = [
+pub const ENUM_LABELS: [(&str, &[(&str, &str)]); 30] = [
+    // Nur in Rust (2026-10-19, Abweichung Nr. 88): der Umsatzsteuersatz der Rechnung eines Arbeitsmittels.
+    ("am_umsatzsteuersatz", &[
+        ("satz_19", "19 % (Regelsatz, die meisten Rechnungen)"),
+        ("satz_7", "7 % (ermäßigter Satz, zum Beispiel Fachbücher)"),
+        ("keine_ust", "Keine Umsatzsteuer auf der Rechnung (zum Beispiel Kauf von privat)"),
+    ]),
     ("dba_einkunftsart", &[
         ("unbewegliches_vermoegen", "Unbewegliches Vermögen (z. B. Immobilie)"),
         ("unternehmensgewinne", "Unternehmensgewinne"),
