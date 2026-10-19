@@ -19,7 +19,8 @@ use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use elster::EricFehler;
 use versand::{
-    lauf, sende, Antwort, Modus, Umgebung, VersandFehler, Zertifikat, ECHTVERSAND_FREIGABE,
+    dekodiere_datenpaket, lauf, sende, AbrufFehler, Antwort, Modus, Umgebung, VersandFehler,
+    Zertifikat, ECHTVERSAND_FREIGABE,
 };
 
 const XML_TEST: &[u8] = b"<?xml version=\"1.0\"?><Elster><TransferHeader>\
@@ -797,4 +798,101 @@ fn das_programm_als_prozess_erkennt_kein_terminal() {
     assert_eq!(code, Some(2), "{aus}");
     assert!(aus.contains("kein Terminal"), "{aus}");
     assert!(l.eric_unberuehrt());
+}
+
+// ------------------------------------------------------------------ Nr. 91, AK1: EricDekodiereDaten
+
+/// Ein erfundenes Datenpaket: die Attrappe entschluesselt nichts, sie notiert die Eingabe.
+const PAKET: &str = "TUlBR0NTcUdTSWIzRFFFSEE2Q0FNSUFDQVFBeA==";
+const KLARTEXT: &[u8] = b"<VaSt_LStB version=\"202501\"><Besteuerungsgrund/></VaSt_LStB>";
+
+impl Lauf {
+    fn dekodiere(&self, paket: &str) -> Result<Vec<u8>, AbrufFehler> {
+        dekodiere_datenpaket(Some(&self.lib), &self.zertifikat(), paket)
+    }
+}
+
+#[test]
+fn die_dekodierung_gibt_den_klartext_des_datenpakets_zurueck() {
+    let Some(l) = Lauf::neu("") else { return };
+    std::fs::write(l.steuer("dekodiert"), KLARTEXT).unwrap();
+    assert_eq!(l.dekodiere(PAKET).unwrap(), KLARTEXT);
+    // ERiC bekam das Datenpaket Byte fuer Byte, das Handle der Attrappe und die PIN nur als Laenge.
+    assert_eq!(l.datei("dekodiere_eingabe").unwrap(), PAKET);
+    assert_eq!(
+        l.datei("dekodiere_crypto").unwrap(),
+        format!("handle=77\npin_laenge={}\n", PIN.len())
+    );
+    assert_eq!(l.zaehler("dekodiere_zaehler"), Some(1));
+    assert_eq!(l.zaehler("zaehler"), None, "Dekodieren sendet nichts");
+    assert_eq!(l.datei("zertifikat_geschlossen").unwrap(), "77\n");
+    assert_eq!(l.zaehler("beende_zaehler"), Some(1));
+    assert_eq!(l.zaehler("puffer_erzeugt"), Some(1));
+    assert!(l.puffer_ausgeglichen(), "ein Puffer wurde nicht freigegeben");
+}
+
+#[test]
+fn die_dekodierung_liest_die_ganze_laenge_auch_hinter_einem_nul_byte() {
+    let Some(l) = Lauf::neu("") else { return };
+    let klar: &[u8] = b"\x1f\x8b\x08\x00ABC\x00D";
+    std::fs::write(l.steuer("dekodiert"), klar).unwrap();
+    assert_eq!(l.dekodiere(PAKET).unwrap(), klar);
+}
+
+#[test]
+fn ein_fehlercode_von_eric_ist_ein_benannter_fehler_ohne_paket_und_pin() {
+    let Some(l) = Lauf::neu("") else { return };
+    std::fs::write(l.steuer("dekodiere_rc"), "610001862").unwrap(); // ERIC_GLOBAL_ERR_DEKODIEREN
+    // Die Attrappe schreibt den Puffer auch im Fehlerfall (ERiC: Inhalt undefiniert); er darf nie durchkommen.
+    std::fs::write(l.steuer("dekodiert"), KLARTEXT).unwrap();
+    let fehler = l.dekodiere(PAKET).unwrap_err();
+    assert_eq!(fehler, AbrufFehler::Dekodieren { rc: 610_001_862 });
+    let text = fehler.to_string();
+    assert!(text.contains("610001862") && !text.contains(PAKET) && !text.contains(PIN), "{text}");
+    assert_eq!(l.datei("zertifikat_geschlossen").unwrap(), "77\n", "auch im Fehlerfall zu");
+    assert_eq!(l.zaehler("beende_zaehler"), Some(1));
+    assert!(l.puffer_ausgeglichen(), "ein Puffer wurde nicht freigegeben");
+}
+
+#[test]
+fn ohne_zertifikat_oder_pin_ruft_die_dekodierung_eric_nie() {
+    let Some(l) = Lauf::neu("") else { return };
+    let faelle = [
+        (Zertifikat::neu("", PIN), "Zertifikatspfad"),
+        (Zertifikat::neu(l.zert_pfad(), ""), "PIN"),
+    ];
+    for (z, wort) in &faelle {
+        match dekodiere_datenpaket(Some(&l.lib), z, PAKET) {
+            Err(AbrufFehler::Zertifikat(text)) => assert!(text.contains(wort), "{text}"),
+            andere => panic!("erwartet Zertifikat({wort}), bekam {andere:?}"),
+        }
+    }
+    assert!(l.eric_unberuehrt(), "ERiC wurde trotz fehlendem Zertifikat geladen");
+    assert_eq!(l.zaehler("dekodiere_zaehler"), None);
+}
+
+#[test]
+fn ein_leeres_datenpaket_oder_ein_nul_byte_ruft_eric_nie() {
+    let Some(l) = Lauf::neu("") else { return };
+    assert_eq!(l.dekodiere(""), Err(AbrufFehler::DatenpaketLeer));
+    assert_eq!(l.dekodiere("AB\0CD"), Err(AbrufFehler::DatenpaketNulByte));
+    assert!(l.eric_unberuehrt());
+    assert_eq!(l.zaehler("dekodiere_zaehler"), None);
+}
+
+#[test]
+fn ladefehler_und_zertifikatsfehler_von_eric_kommen_benannt_und_ohne_dekodierung() {
+    let Some(l) = Lauf::neu("") else { return };
+    std::fs::write(l.steuer("init_rc"), "5").unwrap();
+    assert_eq!(l.dekodiere(PAKET), Err(AbrufFehler::Eric(EricFehler::Init(5))));
+    assert_eq!(l.zaehler("dekodiere_zaehler"), None);
+    std::fs::write(l.steuer("init_rc"), "0").unwrap();
+    std::fs::write(l.steuer("zertifikat_rc"), "610201106").unwrap(); // ERIC_CRYPT_E_PIN_WRONG
+    match l.dekodiere(PAKET) {
+        Err(AbrufFehler::Zertifikat(text)) => {
+            assert!(text.contains("ERiC lehnt") && text.contains("610201106"), "{text}");
+        }
+        andere => panic!("erwartet Zertifikat, bekam {andere:?}"),
+    }
+    assert_eq!(l.zaehler("dekodiere_zaehler"), None);
 }
