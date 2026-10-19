@@ -18,6 +18,12 @@
 //!    Zusammenfassung.
 //!
 //! Erfolg heisst `rc == 0` UND eine Telenummer ([`Antwort::erfolg`]).
+//!
+//! Der Abruf der Lohnsteuerbescheinigung (`ElsterVaStDaten`, Abweichung Nr. 91) steht im selben
+//! Crate und folgt derselben Regel: nur das Programm `taxgraph-abruf` ruft [`hole_beleg`] auf, mit
+//! `--dry-run` ohne ERiC, sonst nur nach der woertlichen Freigabe [`ABRUF_FREIGABE`] und ihrer
+//! zweiten Eingabe am Terminal. Die Steuer-ID bleibt ein Aufrufparameter; der Beleg liegt in einer
+//! Datei (0600) in einem Verzeichnis (0700), gedruckt wird nur der Pfad.
 #![deny(unsafe_code)]
 #![cfg_attr(
     test,

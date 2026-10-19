@@ -3,6 +3,7 @@
 //! `versand` ist eine eigene Crate, damit der Dienst `api` den Sendepfad nicht erreichen kann. Das
 //! haelt nur, solange (1) `ERIC_SENDE` nirgends sonst vorkommt, (2) keine andere Crate an `versand`
 //! haengt und (3) `sende` genau eine Aufrufstelle hat: das Programm, das zwei Huerden vor sich hat.
+//! Dasselbe gilt fuer `hole_beleg` (der Abruf der Lohnsteuerbescheinigung, Nr. 91) und `taxgraph-abruf`.
 //! Jeder Test zaehlt vorher, was er durchsucht hat; ein leerer Scan waere sonst ein gruener Test.
 //!
 //! Grenze: Der Waechter sucht den NAMEN `ERIC_SENDE`, nicht den Wert `1 << 2`; wer das Flag unter einem
@@ -108,23 +109,40 @@ fn keine_andere_crate_haengt_an_versand() {
     assert!(wurzel.contains("\"versand\""), "versand fehlt im Workspace");
 }
 
-#[test]
-fn sende_hat_genau_eine_aufrufstelle_und_sie_liegt_im_programm() {
+/// Die Zeilen unter `versand/src`, die `name(` aufrufen: Datei und Zeile, ohne Kommentare und ohne
+/// die Deklaration `pub fn name(`.
+fn aufrufstellen(name: &str) -> Vec<(String, String)> {
     let mut quellen = Vec::new();
     dateien(&rust_wurzel().join("versand/src"), &[".rs"], &mut quellen);
     assert!(quellen.len() >= 5, "{quellen:?}");
+    let (aufruf, deklaration) = (format!("{name}("), format!("pub fn {name}("));
     let mut aufrufe = Vec::new();
     for q in &quellen {
         let text = std::fs::read_to_string(q).unwrap();
         for z in text.lines() {
             let z = z.trim_start();
-            if !z.starts_with("//") && !z.starts_with("pub fn sende(") && z.contains("sende(") {
+            if !z.starts_with("//") && !z.starts_with(&deklaration) && z.contains(&aufruf) {
                 aufrufe.push((q.file_name().unwrap().to_string_lossy().into_owned(), z.to_owned()));
             }
         }
     }
+    aufrufe
+}
+
+#[test]
+fn sende_hat_genau_eine_aufrufstelle_und_sie_liegt_im_programm() {
+    let aufrufe = aufrufstellen("sende");
     // Die Einheitstests in lib.rs duerfen nichts senden; eine Aufrufstelle ausser `cli.rs` waere ein
     // zweiter Weg zum Sendeaufruf ohne die Huerden des Programms.
     assert_eq!(aufrufe.len(), 1, "Aufrufstellen von sende: {aufrufe:?}");
     assert!(aufrufe.iter().all(|(datei, _)| datei == "cli.rs"), "{aufrufe:?}");
+}
+
+/// Der Abruf geht ans Netz wie der Versand (`ERIC_SENDE`) und fragt Steuerdaten ab: dieselbe Regel,
+/// eine Aufrufstelle im Programm `taxgraph-abruf`, das zwei Huerden vor sich hat.
+#[test]
+fn hole_beleg_hat_genau_eine_aufrufstelle_und_sie_liegt_im_abruf_programm() {
+    let aufrufe = aufrufstellen("hole_beleg");
+    assert_eq!(aufrufe.len(), 1, "Aufrufstellen von hole_beleg: {aufrufe:?}");
+    assert!(aufrufe.iter().all(|(datei, _)| datei == "abruf_cli.rs"), "{aufrufe:?}");
 }
